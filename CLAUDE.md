@@ -6,24 +6,37 @@ A Google **Picasa** képszerkesztő és fotókezelő szoftver teljes újraírás
 
 ## Jelenlegi fázis: KUTATÁS (research)
 
-A fejlesztés még **nem** kezdődött el. Az első lépés a kutatás:
+A formátum-kutatás első köre lezárult (2026-07-15), az eredmények a `docs/specs/`
+alatt. A hátralévő kutatási feladatok: `docs/research-plan.md`.
 
-- Az eredeti Picasa funkcionalitásának feltérképezése (fő funkciók, UI, adatmodell — pl. `.picasa.ini`, `pmp`/db3 adatbázis-formátumok).
-- Python GUI toolkit kiválasztása (pl. PyQt/PySide, Qt, egyéb).
-- Kép-, EXIF- és RAW-feldolgozó könyvtárak felmérése (Pillow, rawpy, OpenCV stb.).
-- Arcfelismerés / képfelismerés lehetőségeinek vizsgálata.
-- Architektúra és MVP-scope meghatározása.
+Elsődleges tudásforrás: NotebookLM „Picasa metaadatok és adatbázisok dekódolási
+útmutatója" notebook (ID: `f70b0a1c-1ef2-4f72-98ae-2bb7e946ba1e`, 30 forrás).
 
-> **FONTOS:** Kutatást csak akkor kezdj, ha a felhasználó erre kifejezetten megkéri. Jelenleg csak az alapdokumentáció rögzítése a feladat.
+## Rögzített döntések (2026-07-15)
+
+1. **Teljes kétirányú `.picasa.ini` kompatibilitás** — a PicasaPy ugyanazt a
+   formátumot írja és olvassa, mint a Picasa 3.x (drop-in utód, párhuzamos
+   használat lehetséges). Round-trip elv: amit nem értünk, változatlanul visszaírjuk.
+2. **Linux-first** — fejlesztés RPi5-ön; Windows/macOS később.
+3. **GUI toolkit: benchmark dönt** (PySide6/Qt a fő jelölt) — ld. research-plan.
+4. **MVP = kezelő + néző** (1. fázis); szerkesztő a 2., arcok a 3. fázis —
+   ld. `docs/specs/feature-map.md`.
+5. PMP/db3 adatbázist **csak olvassuk** (import); saját index: SQLite.
 
 ## Tech stack
 
-*Még nincs eldöntve — a kutatási fázis eredménye dönti el.*
+- Nyelv: Python 3.12+
+- GUI: TBD (benchmark alapján; fő jelölt PySide6)
+- Képfeldolgozás: TBD (pyvips / Pillow-SIMD / OpenCV mérés alapján)
+- Adattárolás: `.picasa.ini` (igazságforrás) + SQLite index + XMP export
 
-- Nyelv: Python (verzió TBD, cél: 3.12+)
-- GUI: TBD
-- Képfeldolgozás: TBD
-- Adattárolás: TBD
+## Dokumentumtérkép
+
+- `docs/specs/picasa-ini-format.md` — ini szerkezet, filters mátrix, rect64
+- `docs/specs/pmp-database.md` — db3/PMP/thumbindex, contacts.xml, import
+- `docs/specs/feature-map.md` — funkciók fázisokra bontva
+- `docs/specs/ux-principles.md` — a Picasa UX-alapelvei (minden UI-döntés mércéje)
+- `docs/research-plan.md` — nyitott kutatási kérdések
 
 ## Fejlesztési elvek
 
