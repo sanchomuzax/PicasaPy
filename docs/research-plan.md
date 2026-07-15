@@ -41,18 +41,32 @@ Terv:
 - Szempontok: RPi5 CPU/NPU-n futtathatóság, csoportosítási minőség, licenc
 - Picasa-kompatibilis kimenet: rect64 + contact_id + contacts kezelés
 
-## 5. PMP-import validálás
+## 5. PMP-import validálás — RÉSZBEN KÉSZ (2026-07-15)
 
-- `vosbergw/picasa3meta` kód auditja és felélesztése (Python 3.12+ kompat?)
-- Teszt valódi Picasa-könyvtárral: van-e hozzáférhető régi db3 mappánk?
-- Csak-db-ben-élő adatok (képsorrend, ignorált arcok) kinyerésének ellenőrzése
+- ~~`vosbergw/picasa3meta` kód auditja~~ ✅ KÉSZ: Python 2-only, nem
+  felélesztendő — formátum-dokumentációként használjuk; a parsert magunk írjuk.
+  Részletek: `docs/reference-repos-audit.md`.
+- **NYITVA:** teszt valódi Picasa-könyvtárral — kell egy régi db3 mappa
+  (felhasználói input szükséges).
+- **NYITVA:** csak-db-ben-élő adatok kinyerésének ellenőrzése valódi adaton.
 
-## 6. Referencia-repók klónozása és audit
+## 6. Referencia-repók klónozása és audit — KÉSZ (2026-07-15)
 
-`skisoo/PicasaDBReader`, `vosbergw/picasa3meta`, `vosbergw/metaSave`,
-`Philipp91/picasa2digikam`, `bufemc/picasa2xmp` → a `research/` mappába
-(gitignore-olt), licencek ellenőrzése (GPL-3.0 többnél — a *kód átvétele*
-licenc-következménnyel jár, a *formátumtudás* nem).
+Mind az 5 repó a `research/repos/` alatt; audit: `docs/reference-repos-audit.md`.
+Fő eredmények: PMP-fejléc két független implementációból keresztvalidálva;
+thumbindex.db arc-bejegyzés logika megértve; rect64 zfill(16) + EXIF-orientáció
+spec-javítás. Licencek: PicasaDBReader MIT, a többi GPL-3.0.
+
+**ÚJ NYITOTT DÖNTÉS → 7. pont.**
+
+## 7. PicasaPy licenc-választás (ÚJ, blokkoló)
+
+A GPL-3.0-s referencia-repókból kód csak akkor portolható, ha a PicasaPy is
+GPL-3.0 (vagy kompatibilis) licencű. Opciók:
+- **GPL-3.0**: minden referencia-kód használható; copyleft kötelezettség.
+- **MIT/Apache-2.0**: csak a PicasaDBReader (MIT) + saját, spec-alapú
+  implementáció; megengedőbb terjesztés.
+A döntésig: GPL-kódot csak olvasunk (formátumtudás), nem másolunk.
 
 ## NotebookLM forrás
 

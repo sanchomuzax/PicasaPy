@@ -107,8 +107,14 @@ Nyitott kérdés: `finetune2` utolsó paramétere azonosítatlan; `enhance`/`aut
 
 `rect64(3f845bcb59418507)` — 16 hex karakter = 4×16 bit: **left, top, right, bottom**.
 
+**FIGYELEM (picasa2digikam-ból validálva):** az érték rövidebb is lehet 16
+karakternél — a Picasa elhagyja a vezető nullákat! Dekódolás előtt kötelező a
+`zfill(16)` (balról nullákkal feltöltés).
+
 Dekódolás: minden 4-karakteres szegmens → int(hex) / 65536 → relatív [0.0..1.0]
 koordináta. Abszolút pixel: left/right × képszélesség, top/bottom × képmagasság.
+Megjelenítésnél/exportnál az **EXIF-orientációt** (1/3/6/8) is alkalmazni kell a
+koordinátákra (transzformációs képletek: picasa2digikam `rect64.py`).
 
 Ellenőrző példa: `3f845bcb59418507` →
 left≈0.248108, top≈0.358566, right≈0.348648, bottom≈0.519638.
