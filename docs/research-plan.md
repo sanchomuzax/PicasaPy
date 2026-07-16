@@ -3,22 +3,18 @@
 Állapot: 2026-07-15. A formátum-specifikációk megvannak (`docs/specs/`);
 az alábbiak igényelnek még kutatást/mérést a fejlesztés megkezdése előtt.
 
-## 1. GUI toolkit benchmark (döntés előtt)
+## 1. GUI toolkit benchmark — KÉSZ (2026-07-16) ✅
 
-Jelöltek: **PySide6/Qt (QML + Widgets)** — fő esélyes; GTK4 (PyGObject);
-Dear PyGui; web-frontend (Tauri/NiceGUI/Flet).
+**Döntés: PySide6 (Qt 6) + QML** — ld. `docs/decisions/gui-toolkit.md` (ADR-001).
 
-**Telepíthetőségi előszűrő KÉSZ (2026-07-16):** PySide6 (pip 6.11 aarch64 wheel
-+ apt 6.8), GTK4 (apt 4.18), Dear PyGui (pip 2.3) — mind elérhető, egyik jelölt
-sem esik ki. Ld. `docs/benchmarks/rpi5-image-libs.md`.
+Lefolyás: telepíthetőségi előszűrő (mind a 3 jelölt OK) → 5000 elemes
+thumbnail-rács demó mindhárom toolkittel valódi fotókon
+(`tools/benchmarks/gui/`) → felhasználói értékelés a kijelzőn. Dear PyGui
+kiesett (nincs virtualizáció, 3,5 s indulás); QML ≈ GTK4 érzésre — a döntést a
+keresztplatform-terv, a GPU-pipeline és a csomagolhatóság vitte a Qt felé.
 
-Mérési terv (RPi5-ön, Wayland alatt):
-- Thumbnail-rács: 10k / 50k / 100k elem görgetési FPS, memória
-- Képváltási latencia (following-kép előtöltéssel)
-- GPU-integráció: OpenGL ES 3.1 / shader-pipeline elérhetősége a toolkitből
-- Csomagolhatóság Linuxra (Flatpak/AppImage), későbbi Win/Mac port költsége
-
-Kimenet: `docs/decisions/gui-toolkit.md` (ADR).
+Későbbi finomítás (nem blokkoló): 50k–100k elemes rács-stresszteszt és
+memóriamérés a valódi MVP-rácson; képváltási latencia mérés a viewerben.
 
 ## 2. Pixelhű szűrő-reprodukció (a legnagyobb kockázat)
 

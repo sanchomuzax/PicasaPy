@@ -9,6 +9,8 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Döntések
 
+- **2026-07-16: GUI = PySide6 (Qt 6) + QML** (ADR-001) — benchmark: DPG kiesett, QML≈GTK4 érzésre; a keresztplatform + GPU-pipeline döntött. Scanner-képfeldolgozás: OpenCV.
+
 - **2026-07-16: Licenc = GPL-3.0** (LICENSE a gyökérben) — a cél a szabad megosztás; a 4 GPL-es referencia-repóból portolható kód attribúcióval.
 
 - **2026-07-15:** Teljes kétirányú `.picasa.ini` kompatibilitás (drop-in utód); round-trip elv az ismeretlen mezőkre.
