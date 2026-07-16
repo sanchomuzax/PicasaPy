@@ -31,12 +31,20 @@ Picasa ott nem futna).
    54 variáns 10 mappában, előre írt .picasa.ini-kkel; a valódi könyvtárból
    kinyert Vignette/glow/finetune paraméterekkel és 5 komplex lánccal).
    Zip: `research/golden-kit.zip` (83 MB). Útmutató: `OLVASS-EL.txt` a kitben.
-2. **FOLYAMATBAN:** a felhasználó lefuttatja a Windows-gépen (Picasa
-   beolvassa az ini-ket → mappánként Export „Use Original Size / Maximum") →
-   eredmény vissza a `research/golden-kit-result/` alá + Picasa verziószám.
-3. **UTÁNA:** összehasonlító harness (PicasaPy render vs golden, SSIM/ΔE);
-   a `finetune2` 5. paraméterének azonosítása a sweep-ekből
-   (u-05/u+05/u+10 variánsok).
+2. ~~Golden exportok~~ ✅ (2026-07-16): mind a 10 mappa hiánytalanul
+   visszaérkezett (`research/testdata/golden-kit-result/`).
+3. ~~Elemzés 1. kör~~ ✅: **eredmények: `docs/specs/filters-decoded.md`** —
+   crop renderelési szabály (crop= kulcs!), bw=Rec.601, finetune2 mind az
+   5 paramétere azonosítva (p1=fill, p4=semleges szín, p5=színhő), fill
+   LUT-család mérve, autolight/autocolor algoritmus-típus megerősítve.
+   LUT-ok: `research/golden-analysis/luts.json`.
+4. **FOLYAMATBAN — javító kör:** `research/golden-kit-fix.zip` (24 kép,
+   crop= kulccsal javítva) → felhasználó exportálja →
+   `research/testdata/golden-kit-fix-result/`. + Picasa verziószám még kell!
+5. **HÁTRAVAN (2. elemzési kör):** ld. filters-decoded.md „Nyitva" szakasza —
+   enhance/autolight pontos modell (3. kit-kör: korlátozott tartományú
+   chartok), görbeillesztések, effekt-szűrők, unsharp kernel;
+   végül: összehasonlító harness (PicasaPy render vs golden, SSIM/ΔE).
 
 ## 3. Teljesítmény-alapmérések (RPi5) — RÉSZBEN KÉSZ (2026-07-16)
 

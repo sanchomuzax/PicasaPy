@@ -223,7 +223,13 @@ def main():
             for suffix, chain in variants:
                 name = f"{base.stem}__{suffix}.jpg"
                 shutil.copy2(base, fdir / name)
-                ini.append(f"[{name}]\nfilters={chain}\n")
+                # GOLDEN-TANULSÁG (2026-07-16): a crop64 a filters-ben csak
+                # történet — a renderelést a külön crop=rect64() kulcs hajtja!
+                extra = ""
+                if "crop64=1," in chain:
+                    rect = chain.split("crop64=1,")[1].split(";")[0]
+                    extra = f"crop=rect64({rect})\n"
+                ini.append(f"[{name}]\n{extra}filters={chain}\n")
                 total += 1
         (fdir / ".picasa.ini").write_text("\n".join(ini), encoding="utf-8")
 
