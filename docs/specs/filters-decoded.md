@@ -1,8 +1,9 @@
 # Szűrő-visszafejtés — golden-elemzés eredményei
 
-Forrás: valódi Picasa 3.9 (Windows 10) golden-exportok a
+Forrás: **Picasa 3.9.141 Build 255** (Windows 10) golden-exportok a
 `tools/golden/make_golden_kit.py` kitből; elemzés:
-`tools/golden/analyze_goldens.py` → LUT-ok: `research/golden-analysis/luts.json`.
+`tools/golden/analyze_goldens.py` + `analyze_goldens2.py` →
+LUT-ok: `research/golden-analysis/luts.json`.
 
 Módszertan: szintetikus chartok (0–255 szürke rámpa, RGB rámpák, színmező,
 sakktáblák) + valódi fotók; a Picasa exportja („Use Original Size / Maximum")
@@ -83,14 +84,61 @@ tónusgörbe-komponense van. Pontos modell: 2. kör.
 HSV S-arányok a színmezőn: −0,333→0,742× · +0,25→1,232× · +0,5→1,390× ·
 +1,0→1,583× — nem lineáris szorzó, telítődő görbe; illesztés a 2. körben.
 
-## Nyitva a 2. körre
+## 2. kör — MEGFEJTVE ✅ (fix-kit + további elemzés)
 
-1. crop/tilt sorrendisége láncban (a fix kit exportjából: `08-geom-v2`,
-   `10-real-chains-v2`)
-2. `enhance` + `autolight`/`autocolor` pontos modellje → korlátozott
-   tartományú (pl. 30–200) rámpa-chartok kellenek egy 3. kit-körben
-3. `fill`/`sat` analitikus görbeillesztés a mentett LUT-okból
-4. tempA/B + p5 pontos színmátrixa (színes chart csatorna-elemzés)
-5. sepia/warm/grain2/glow/Vignette/radblur/dir_tint/tint/ansel modellek
-   (exportok megvannak, elemzés hátravan)
-6. unsharp v1/v2 kernelparaméterek (sakktábla-chart elemzés)
+### crop pixel-kerekítési szabály (fix-kit exportokból igazolva)
+
+```
+x0 = round(left · W)    x1 = round(right · W)    szélesség = x1 − x0
+y0 = round(top · H)     y1 = round(bottom · H)   magasság  = y1 − y0
+```
+
+Mindhárom crop-variáns és a 3 valódi lánc (chainB/D/E) kimeneti mérete
+pixelre egyezik e szabállyal. Láncban a crop koordináták mindig az EREDETI
+képméretre vonatkoznak (tilt után is).
+
+### `sepia` és `warm` — mért csatornagörbék
+
+Szürke bemenetre (g) nem-lineáris, csatornánként eltérő görbék
+(a teljes LUT-ok mentve; közelítő lineáris szakasz):
+
+- sepia: R≈0,82g+58 · G≈0,86g+35 · B≈0,90g+15 (sötétben széttart,
+  fehér felé összezár) — implementáció: mért 3-csatornás LUT.
+- warm: R≈0,89g+19 · G≈0,88g+1 · B≈0,93g−16 — mért LUT.
+
+### `grain2` — sztochasztikus, pixelhűen NEM reprodukálható
+
+Átlagban identitás (meredekség 1,000, eltolás −2,7), zérus körüli additív
+zaj véletlen maggal. Elfogadási teszt: statisztikai (zaj-σ, spektrum),
+nem pixel-diff. A round-trip elvet nem érinti (a filters-sztring őrzendő).
+
+### `sat` — gain-tábla (HSV S-térben, klippeletlen pixeleken mérve)
+
+| s | −0,333 | +0,25 | +0,5 | +1,0 |
+|---|---|---|---|---|
+| gain | 0,683 | 1,399 | 1,729 | 2,241 |
+
+Nem 1+s; valószínűleg nem HSV-térben dolgozik (YCbCr-chroma gain gyanú) —
+pontosítás a 3. körben.
+
+### `fill` — negatív eredmények (fontosak!)
+
+- NEM adaptív-gamma család (legjobb illesztés RMSE 14,5/255 — elvetve).
+- NEM önkompozíciós (fill025∘fill025 ≠ fill050, max|Δ|=10).
+- NEM egyetlen mestergörbe s^β keveréke (átlagban s^1,26 stimmel, de
+  pontonként max|Δ|=22 — elvetve).
+- → **Megoldás: sűrű s-sweep a 3. kit-körben** (s=0,05..1,0, 20 lépés,
+  csak chart_ramp) → 2D LUT (s×256), köztes s-re interpoláció.
+  A finetune2 p1 = fill s=1,0-nál bitre azonos (max|Δ|=0) → közös 2D LUT.
+
+## Nyitva a 3. körre (kit-bővítés kell)
+
+1. **Sűrű sweep-ek chart_ramp-en:** fill (20 lépés), highlights, shadows,
+   színhő (p5, ±), sat (10 lépés)
+2. **Korlátozott tartományú rámpák** (pl. 30–200, 60–160, színes öntettel)
+   → enhance / autolight / autocolor pontos modellje
+3. **Effektek chart_ramp-en**: tint, ansel, glow, Vignette, radblur és
+   sepia/warm sűrűbb mintavétele
+4. unsharp v1/v2 kernelparaméterek (sakktábla-elemzés — export már megvan)
+5. crop/tilt sorrend képi (nem csak méretbeli) ellenőrzése, ha a tilt
+   szög↔skála szemantika megvan

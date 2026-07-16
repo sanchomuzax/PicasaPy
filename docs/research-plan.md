@@ -38,12 +38,15 @@ Picasa ott nem futna).
    5 paramétere azonosítva (p1=fill, p4=semleges szín, p5=színhő), fill
    LUT-család mérve, autolight/autocolor algoritmus-típus megerősítve.
    LUT-ok: `research/golden-analysis/luts.json`.
-4. **FOLYAMATBAN — javító kör:** `research/golden-kit-fix.zip` (24 kép,
-   crop= kulccsal javítva) → felhasználó exportálja →
-   `research/testdata/golden-kit-fix-result/`. + Picasa verziószám még kell!
-5. **HÁTRAVAN (2. elemzési kör):** ld. filters-decoded.md „Nyitva" szakasza —
-   enhance/autolight pontos modell (3. kit-kör: korlátozott tartományú
-   chartok), görbeillesztések, effekt-szűrők, unsharp kernel;
+4. ~~Javító kör (crop)~~ ✅ (2026-07-16): fix-kit exportálva
+   (`research/testdata/golden-kit-fix/`), crop-kerekítési szabály igazolva.
+   **Picasa verzió: 3.9.141 Build 255.**
+5. ~~2. elemzési kör~~ ✅: sepia/warm LUT-ok, grain2 sztochasztikus,
+   sat gain-tábla, fill negatív eredmények (nem gamma / nem kompozíciós /
+   nem mestergörbe-keverék) — ld. filters-decoded.md.
+6. **KÖVETKEZŐ — 3. kit-kör:** sűrű sweep-ek (fill 20 lépés, sat, highlights,
+   shadows, színhő), korlátozott tartományú rámpák (enhance/autolight
+   modellhez), effektek chart_ramp-en, unsharp-kernel elemzés;
    végül: összehasonlító harness (PicasaPy render vs golden, SSIM/ΔE).
 
 ## 3. Teljesítmény-alapmérések (RPi5) — RÉSZBEN KÉSZ (2026-07-16)
