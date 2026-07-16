@@ -131,14 +131,67 @@ pontosítás a 3. körben.
   csak chart_ramp) → 2D LUT (s×256), köztes s-re interpoláció.
   A finetune2 p1 = fill s=1,0-nál bitre azonos (max|Δ|=0) → közös 2D LUT.
 
-## Nyitva a 3. körre (kit-bővítés kell)
+## 3. kör — MEGFEJTVE ✅ (sweep-kit; elemzés: `analyze_goldens3.py`)
 
-1. **Sűrű sweep-ek chart_ramp-en:** fill (20 lépés), highlights, shadows,
-   színhő (p5, ±), sat (10 lépés)
-2. **Korlátozott tartományú rámpák** (pl. 30–200, 60–160, színes öntettel)
-   → enhance / autolight / autocolor pontos modellje
-3. **Effektek chart_ramp-en**: tint, ansel, glow, Vignette, radblur és
-   sepia/warm sűrűbb mintavétele
-4. unsharp v1/v2 kernelparaméterek (sakktábla-elemzés — export már megvan)
-5. crop/tilt sorrend képi (nem csak méretbeli) ellenőrzése, ha a tilt
-   szög↔skála szemantika megvan
+### `autolight` — TELJESEN MEGFEJTVE
+
+**Globális min–max lineáris széthúzás**, minden csatornára KÖZÖS
+transzformációval (a színegyensúly megmarad):
+
+```
+gmin = min(kép összes csatornája)   gmax = max(...)
+ki = clip( (be − gmin) · 255 / (gmax − gmin) )
+```
+
+Mind a 4 korlátozott rámpán pontos (ki(min)=0, ki(max)=255, közép lineáris);
+a cast-rámpák csatorna-deltái tizedre igazolják a közös (nem csatornánkénti)
+skálázást. Percentil-klippelés a szintetikus chartokon nem volt megfigyelhető.
+
+### `enhance` (I'm Feeling Lucky) — SZERKEZETE MEGFEJTVE
+
+```
+enhance(kép) = fixLUT( autolight_stretch( autocolor(kép) ) )
+```
+
+A fix tónusgörbe (reziduál) chart-függetlenül azonos (max|Δ|=2–3/255, átlag
+0,6 — JPEG-zajon belül); mentve: `research/golden-analysis/enhance_residual.json`.
+Minták: 16→18,7 · 64→71,3 · 128→142,7 · 192→214 · 240→255 (enyhe világosítás,
+csúcsfény-emelés). Hátralévő függés: az autocolor pontos modellje (ld. lent).
+
+### `fill` — MEGOLDVA (2D LUT)
+
+20 lépéses s-sweep lemérve (`luts3.json: fill2d`); szomszéd-görbék közti
+lineáris interpoláció max hibája **1,25/255** → tetszőleges s-re ±1 pontosságú
+implementáció LUT-interpolációval. A `finetune2` p1 ugyanez a LUT.
+
+### `autocolor` — RÉSZBEN (csillapított fehéregyensúly)
+
+Semleges rámpán no-op; öntetes rámpán a színcsatornákat a szürke felé húzza,
+de NEM teljesen (pl. warmcast közép (135,142,157)→(141,145,146)). Csillapított
+szürkevilág/fehérpont-korrekció; pontos modell (súlyozás, csillapítás) a 4.
+körben mérendő célzott próbákkal.
+
+### highlights / shadows / színhő sweep-ek — LUT-ok mentve
+
+- h/s: 6-6 görbe (`luts3.json: hs`) — interpolációs implementációhoz elég
+  sűrű; jelleg: highlights = fehérpont-húzás (h040-nél 192→255), shadows =
+  feketepont-húzás.
+- színhő (p5): erősen **aszimmetrikus** — hűtés (−1: ΔB+91/ΔR−50) sokkal
+  erősebb, mint melegítés (+1: ΔB−20/ΔR+8); csatorna-eltolások mentve.
+
+### Effektek a rámpán (nyers mérések)
+
+- `tint` (szín=ffff): R-csatorna nullázódik, B=G marad → a 16 bites
+  színparaméter értelmezése tisztázandó.
+- `ansel`: semleges (B=G=R), enyhe középemelés — B/W + tónusgörbe.
+- `glow` v1/v2: középemelés (144/151) — térbeli komponens elemzése hátravan.
+- `Vignette`: átlagos sötétedés a sávban — térbeli maszk elemzése hátravan.
+
+## Nyitva a 4. körre
+
+1. **autocolor modell** — célzott cast-próbák (különböző öntet-erősségek,
+   fehérpont jelenléttel/nélkül) → csillapítási együttható
+2. unsharp v1/v2 kernel (sakktábla-elemzés — export megvan az 1. körből)
+3. térbeli effektek: Vignette/glow/radblur maszk- és kernel-modellek
+4. tilt szög↔skála szemantika (mérhető a meglévő tilt-exportokból)
+5. `tint` színparaméter-formátum; retouch/redeye régió-adatok; text overlay

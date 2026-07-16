@@ -44,10 +44,14 @@ Picasa ott nem futna).
 5. ~~2. elemzési kör~~ ✅: sepia/warm LUT-ok, grain2 sztochasztikus,
    sat gain-tábla, fill negatív eredmények (nem gamma / nem kompozíciós /
    nem mestergörbe-keverék) — ld. filters-decoded.md.
-6. **KÖVETKEZŐ — 3. kit-kör:** sűrű sweep-ek (fill 20 lépés, sat, highlights,
-   shadows, színhő), korlátozott tartományú rámpák (enhance/autolight
-   modellhez), effektek chart_ramp-en, unsharp-kernel elemzés;
-   végül: összehasonlító harness (PicasaPy render vs golden, SSIM/ΔE).
+6. ~~3. kit-kör + elemzés~~ ✅ (2026-07-16): **autolight teljesen megfejtve**
+   (globális min–max stretch), **enhance szerkezete megfejtve**
+   (fixLUT∘stretch∘autocolor, reziduál mentve), **fill megoldva** (2D LUT,
+   ±1,25/255), h/s/temp sweep LUT-ok mentve — ld. filters-decoded.md.
+7. **KÖVETKEZŐ — 4. kör:** autocolor csillapítási modell (célzott
+   cast-próbák), unsharp kernel, térbeli effektek (Vignette/glow/radblur),
+   tilt-szemantika; végül: összehasonlító harness (PicasaPy render vs
+   golden, SSIM/ΔE) — ezzel zárul a #2.
 
 ## 3. Teljesítmény-alapmérések (RPi5) — RÉSZBEN KÉSZ (2026-07-16)
 
