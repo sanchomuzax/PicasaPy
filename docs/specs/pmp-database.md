@@ -32,6 +32,36 @@ a `.picasa.ini` réteg biztosítja (a Picasa is abból építi újra a saját db
   `thumbindex.db`, `thumbs_index.db` fájlokat megtartja, és az ini + EXIF/XMP
   adatokból újraépít.
 
+## Validálás valódi adatbázison (2026-07-16) ✅
+
+Egy valódi, 2 GB-os db3 készleten (Picasa 3.9, ~140 758 thumbindex-bejegyzés,
+133 089 fájl, 2 371 album) a spec **hibátlanul teljesült**: mind az 54 `.pmp`
+fájl fejléce érvényes, a thumbindex bitre pontosan parseolható, az útvonal-
+feloldás működik. További, csak éles adatból látható tények:
+
+- **Oszloponként eltérő rekordszám** (sparse táblák): pl. `filters` 140 661,
+  `facerect` 7 044, `tags` 124 993. A tábla „hossza" = a leghosszabb oszlop.
+- A leghosszabb oszlop (`filetype`, 140 758) **pontosan egyenlő** a thumbindex
+  bejegyzésszámával → az 1:1 indexmegfeleltetés igazolt.
+- **`crop64` natív u64-ként** tárolódik (bit-pakolt rect64: 4×16 bit L/T/R/B).
+- **`facerect`** (u64): sok bejegyzésben `0x1` szentinel-érték (nem valós rect;
+  jelentése tisztázandó — valszeg „arc detektálva, régió máshol").
+- **`facerectdata`** (str): a tesztkészletben teljesen üres.
+- **`deferredregion`** (str, ÚJ oszlop — a 2012-es listában nincs): a valódi
+  arcadat-hordozó! Formátum: `rect64(<hex>),<Név>;rect64(<hex>),<Név>;...`
+  — tisztanevű (nem hash-elt) régiólista. A rect64 hex itt is rövidülhet
+  (15 karakteres érték élesben megfigyelve → zfill(16) kötelező).
+- **További új oszlopok** a 2012-es listához képest: `edit_width`,
+  `edit_height`, `deferredregion`.
+- **`albumdata.date`**: OLE variant time — dekódolása valódi dátumokra
+  helyesnek bizonyult.
+- A thumbindexben **nem** volt „üres név + érvényes szülő = arc" bejegyzés
+  (minden üres név törölt fájl volt) → az arc-bejegyzéses értelmezés
+  verziófüggő lehet; ebben a készletben az arcok a `facerect`/`deferredregion`
+  oszlopokban élnek.
+- Az útvonalak Windows-formátumúak (`C:\Users\...`) → a path-remap réteg
+  megkerülhetetlen.
+
 ## `contacts.xml`
 
 A személynevek elsődleges, legpontosabb forrása (az ini `[Contacts]`/`[Contacts2]`

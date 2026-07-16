@@ -41,14 +41,20 @@ Terv:
 - Szempontok: RPi5 CPU/NPU-n futtathatóság, csoportosítási minőség, licenc
 - Picasa-kompatibilis kimenet: rect64 + contact_id + contacts kezelés
 
-## 5. PMP-import validálás — RÉSZBEN KÉSZ (2026-07-15)
+## 5. PMP-import validálás — KÉSZ (2026-07-16) ✅
 
-- ~~`vosbergw/picasa3meta` kód auditja~~ ✅ KÉSZ: Python 2-only, nem
-  felélesztendő — formátum-dokumentációként használjuk; a parsert magunk írjuk.
+- ~~`vosbergw/picasa3meta` kód auditja~~ ✅: Python 2-only, nem felélesztendő —
+  formátum-dokumentációként használjuk; a parsert magunk írjuk.
   Részletek: `docs/reference-repos-audit.md`.
-- **NYITVA:** teszt valódi Picasa-könyvtárral — kell egy régi db3 mappa
-  (felhasználói input szükséges).
-- **NYITVA:** csak-db-ben-élő adatok kinyerésének ellenőrzése valódi adaton.
+- ~~Teszt valódi Picasa-könyvtárral~~ ✅: 2 GB-os valódi db3 a
+  `research/testdata/db3` alatt (gitignore-olt; ~140k kép, 2 371 album).
+  Mind az 54 PMP + thumbindex hibátlanul parseolható a spec szerint; tartalmi
+  dekódolás (filters, crop64, variant-dátum, deferredregion) igazolt.
+  Új formátum-tények átvezetve: `docs/specs/pmp-database.md` (validálási
+  szakasz) és `picasa-ini-format.md` (új szűrők, előjeles floatok).
+- **NYITVA (kis kockázat):** `facerect=0x1` szentinel jelentése; a
+  `contacts.xml` még hiányzik a tesztkészletből (Picasa2Albums + contacts
+  mappa is hasznos lenne, ha megvan).
 
 ## 6. Referencia-repók klónozása és audit — KÉSZ (2026-07-15)
 

@@ -99,6 +99,26 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 
 Szöveg-overlay (külön kulcs): `text=1; 136;11;sample text;Aharoni;...` + `textactive=`.
 
+### Kiegészítések valódi adatból (2026-07-16, Picasa 3.9-es db3, 13 046 szűrőzött kép)
+
+A Buchinger-táblázatban **nem szereplő** szűrők, élesben megfigyelve:
+
+| Szűrő | Példa | Megjegyzés |
+|---|---|---|
+| `fill` | `fill=1,0.308411` | kitöltőfény önálló szűrőként (nem csak finetune2-ben) |
+| `finetune` | `finetune=1,...` | a finetune2 régebbi, v1 változata |
+| `unsharp` | `unsharp=1,0.748538` | az unsharp2 v1 változata |
+| `Vignette` | `Vignette=1,...` | **nagybetűs** azonosító! — a parser legyen kis-nagybetű-tűrő |
+
+Gyakorisági sorrend a tesztkészletben: enhance (7 528), autolight (4 707),
+crop64 (2 961), fill (2 888), finetune2 (812), tilt (759), redeye (488),
+finetune (482), unsharp (469), warm (330), sat (266), Vignette (216).
+
+**Spec-javítás:** a `!` (0..1 float) jelölés nem mindig igaz — élesben
+**negatív** értékek is előfordulnak: `tilt=1,-0.114659,...` (dőlésszög) és a
+`finetune2` utolsó paramétere (`...,-0.578947;`). A parser fogadjon el
+tetszőleges előjeles floatot minden pozícióban.
+
 Nyitott kérdés: `finetune2` utolsó paramétere azonosítatlan; `enhance`/`autolight`/
 `autocolor` pontos algoritmusa nem publikus → pixelhű validálás szükséges
 (ld. research-plan.md).
