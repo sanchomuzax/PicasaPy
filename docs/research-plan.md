@@ -22,12 +22,21 @@ A kétirányú ini-kompatibilitás miatt a `filters=` láncnak ugyanazt a képet
 adnia, mint az eredeti Picasa — de az `enhance`, `autolight`, `autocolor`,
 `finetune2` pontos algoritmusa nem publikus.
 
-Terv:
-1. Eredeti Picasa 3.9 futtatása Wine alatt (vagy Windows VM-ben)
-2. Referencia-készlet: ~50 változatos tesztkép × minden szűrő × paraméter-rács
-3. A Picasa renderelt kimenetének mentése → golden képek
-4. Saját implementáció illesztése; elfogadás SSIM / ΔE metrikával (küszöb TBD)
-5. `finetune2` 5. (ismeretlen) paraméterének feltérképezése méréssel
+Állapot (2026-07-16): **golden kit elkészült és átadva** — a felhasználó
+Windows 10 + Picasa gépén fut le (Wine nem kell; a Pi ARM-os, az x86-os
+Picasa ott nem futna).
+
+1. ~~Golden kit~~ ✅: `tools/golden/make_golden_kit.py` →
+   `research/golden-kit/` (238 tesztkép: 3 szintetikus chart + 6 valódi fotó,
+   54 variáns 10 mappában, előre írt .picasa.ini-kkel; a valódi könyvtárból
+   kinyert Vignette/glow/finetune paraméterekkel és 5 komplex lánccal).
+   Zip: `research/golden-kit.zip` (83 MB). Útmutató: `OLVASS-EL.txt` a kitben.
+2. **FOLYAMATBAN:** a felhasználó lefuttatja a Windows-gépen (Picasa
+   beolvassa az ini-ket → mappánként Export „Use Original Size / Maximum") →
+   eredmény vissza a `research/golden-kit-result/` alá + Picasa verziószám.
+3. **UTÁNA:** összehasonlító harness (PicasaPy render vs golden, SSIM/ΔE);
+   a `finetune2` 5. paraméterének azonosítása a sweep-ekből
+   (u-05/u+05/u+10 variánsok).
 
 ## 3. Teljesítmény-alapmérések (RPi5) — RÉSZBEN KÉSZ (2026-07-16)
 
