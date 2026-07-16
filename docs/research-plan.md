@@ -8,6 +8,10 @@ az alábbiak igényelnek még kutatást/mérést a fejlesztés megkezdése előt
 Jelöltek: **PySide6/Qt (QML + Widgets)** — fő esélyes; GTK4 (PyGObject);
 Dear PyGui; web-frontend (Tauri/NiceGUI/Flet).
 
+**Telepíthetőségi előszűrő KÉSZ (2026-07-16):** PySide6 (pip 6.11 aarch64 wheel
++ apt 6.8), GTK4 (apt 4.18), Dear PyGui (pip 2.3) — mind elérhető, egyik jelölt
+sem esik ki. Ld. `docs/benchmarks/rpi5-image-libs.md`.
+
 Mérési terv (RPi5-ön, Wayland alatt):
 - Thumbnail-rács: 10k / 50k / 100k elem görgetési FPS, memória
 - Képváltási latencia (following-kép előtöltéssel)
@@ -29,11 +33,15 @@ Terv:
 4. Saját implementáció illesztése; elfogadás SSIM / ΔE metrikával (küszöb TBD)
 5. `finetune2` 5. (ismeretlen) paraméterének feltérképezése méréssel
 
-## 3. Teljesítmény-alapmérések (RPi5)
+## 3. Teljesítmény-alapmérések (RPi5) — RÉSZBEN KÉSZ (2026-07-16)
 
-- pyvips vs Pillow(-SIMD) vs OpenCV: thumbnail-generálás áteresztőképesség
-- SQLite indexelési stratégia 100k+ képre; FTS a kereséshez
-- Fájlrendszer-figyelés: inotify (watchdog lib) skálázhatóság sok mappára
+- ~~pyvips vs Pillow vs OpenCV thumbnail-áteresztés~~ ✅ KÉSZ:
+  `docs/benchmarks/rpi5-image-libs.md` — **OpenCV a scanner-jelölt**
+  (83 kép/s @12MP, 4 szál; teljes 140k-s könyvtár ~15–30 perc).
+  Szkript: `tools/benchmarks/bench_image_libs.py`.
+- **NYITVA:** SQLite indexelési stratégia 100k+ képre; FTS a kereséshez
+- **NYITVA:** inotify/watchdog skálázhatóság sok mappára
+- **NYITVA:** pyvips újramérés VIPS_CONCURRENCY hangolással (alacsony prio)
 
 ## 4. Arcfelismerő stack (3. fázishoz)
 
