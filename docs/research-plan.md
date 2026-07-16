@@ -52,9 +52,15 @@ Terv:
   dekódolás (filters, crop64, variant-dátum, deferredregion) igazolt.
   Új formátum-tények átvezetve: `docs/specs/pmp-database.md` (validálási
   szakasz) és `picasa-ini-format.md` (új szűrők, előjeles floatok).
-- **NYITVA (kis kockázat):** `facerect=0x1` szentinel jelentése; a
-  `contacts.xml` még hiányzik a tesztkészletből (Picasa2Albums + contacts
-  mappa is hasznos lenne, ha megvan).
+- **2026-07-16 kiegészítés:** a tesztkészlet már a teljes `Picasa2` +
+  `Picasa2Albums` mappa (`research/testdata/`). `contacts.xml` **nem létezik**
+  ebben a telepítésben (nincs contacts mappa) — az arcnevek a
+  `deferredregion` oszlopban élnek tisztanévvel; az importnak ezt az esetet
+  kezelnie kell (contacts.xml opcionális!). A `watchedfolders.txt` /
+  `frexcludefolders.txt` élesben **kisbetűs** fájlnevű → kis-nagybetű-független
+  keresés kell. Formátumuk igazolt: soronként abszolút Windows-útvonal, több
+  meghajtóról is (`C:\`, `L:\`).
+- **NYITVA (kis kockázat):** `facerect=0x1` szentinel jelentése.
 
 ## 6. Referencia-repók klónozása és audit — KÉSZ (2026-07-15)
 
@@ -65,14 +71,12 @@ spec-javítás. Licencek: PicasaDBReader MIT, a többi GPL-3.0.
 
 **ÚJ NYITOTT DÖNTÉS → 7. pont.**
 
-## 7. PicasaPy licenc-választás (ÚJ, blokkoló)
+## 7. PicasaPy licenc-választás — KÉSZ (2026-07-16) ✅
 
-A GPL-3.0-s referencia-repókból kód csak akkor portolható, ha a PicasaPy is
-GPL-3.0 (vagy kompatibilis) licencű. Opciók:
-- **GPL-3.0**: minden referencia-kód használható; copyleft kötelezettség.
-- **MIT/Apache-2.0**: csak a PicasaDBReader (MIT) + saját, spec-alapú
-  implementáció; megengedőbb terjesztés.
-A döntésig: GPL-kódot csak olvasunk (formátumtudás), nem másolunk.
+**Döntés: GPL-3.0** (LICENSE a repo gyökerében). A felhasználó célja a szabad,
+ingyenes megosztás — a GPL-3.0 ezt garantálja, és feloldja a blokkot: mostantól
+mind a 4 GPL-es referencia-repóból (picasa3meta, picasa2digikam, picasa2xmp,
+metaSave) szabadon portolható kód, attribúcióval.
 
 ## NotebookLM forrás
 
