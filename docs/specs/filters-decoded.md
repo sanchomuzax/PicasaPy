@@ -187,11 +187,46 @@ körben mérendő célzott próbákkal.
 - `glow` v1/v2: középemelés (144/151) — térbeli komponens elemzése hátravan.
 - `Vignette`: átlagos sötétedés a sávban — térbeli maszk elemzése hátravan.
 
-## Nyitva a 4. körre
+## 4. kör — MEGFEJTVE ✅ (elemzés: `analyze_goldens4.py`)
 
-1. **autocolor modell** — célzott cast-próbák (különböző öntet-erősségek,
-   fehérpont jelenléttel/nélkül) → csillapítási együttható
-2. unsharp v1/v2 kernel (sakktábla-elemzés — export megvan az 1. körből)
-3. térbeli effektek: Vignette/glow/radblur maszk- és kernel-modellek
-4. tilt szög↔skála szemantika (mérhető a meglévő tilt-exportokból)
-5. `tint` színparaméter-formátum; retouch/redeye régió-adatok; text overlay
+### `tilt=1,p,skála` — TELJESEN MEGFEJTVE
+
+- **Szög: θ = p · 0,2 radián** (= p·11,459°) — négy paraméterértéken
+  ellenőrizve (mért arány 11,46–11,50°/egység). Pozitív p = a kép tartalma
+  az óramutató járásával ellentétesen fordul (ORB-mérés szerint −θ affin).
+- **Autoskála: s = cos θ + (W/H)·sin θ** (fekvő képnél; a keret kitöltéséhez) —
+  mérve: p=0,2 → 1,0702 (számított 1,0704), p=0,05 → 1,0178 (1,0178). A kimeneti
+  képméret változatlan. A 2. ini-paraméter (skála) a teszteinkben 0 volt;
+  szerepe további mérést igényel, ha nem-nulla értékkel találkozunk.
+
+### `unsharp` / `unsharp2` — MEGFEJTVE (közelítő modell)
+
+- **`unsharp=1` (v1, param nélkül) = `unsharp2=1,0.600000`** — bitre azonos
+  kimenet (átlag|Δ|, max, szórás egyezik). Ismételt alkalmazás kumulatív.
+- Modell: Gauss-alapú unsharp mask, **σ ≈ 1,0 px**, erősítés ≈ **1,21·s**
+  (RMSE 2,2/255 valódi fotón). A pontos kernel finomítása nyitva (nem tökéletesen
+  Gauss); B/W teszteknél figyelem: telített értékeken a túllövés klippel.
+
+### `Vignette=1,35.0,1.4,0.0,00000000` — maszk lemérve
+
+Multiplikatív radiális maszk: közép 1,000 · r≈0,25: 0,994 · r≈0,45: 0,729 ·
+r≈0,65: 0,328 · sarok: 0,250. (r = képmérettel normált távolság a középponttól.)
+A paraméterek (35=belső sugár %, 1,4=erősség?) → analitikus illesztés nyitva;
+addig a mért radiális profil használható.
+
+### `autocolor` — csillapított lineáris fehéregyensúly (részleges)
+
+Csatornánkénti lineáris korrekció (ki = a·be + c, |c|<1,5):
+warmcast: R×0,936 / G×1,021 / B×1,058; bluecast tükörképe (R×1,032 / B×0,936).
+A gainek a teljes szürkevilág-korrekció ~60–90%-a — a pontos csillapítási
+szabály (gray-world vs fehérpont-alapú) még nyitott.
+
+## Nyitva (5. kör / implementáció közben)
+
+1. autocolor pontos gain-képlete (célzott cast-sweep kellene)
+2. Vignette/glow/radblur analitikus paraméter-modellek (mért maszkokból)
+3. unsharp kernel finomítás (dekonvolúciós illesztés)
+4. `tint` színparaméter-formátum (ffff → R=0 anomália)
+5. retouch/redeye régió-adatok, text overlay — régió-alapúak, 2. fázisban
+6. **Összehasonlító harness** (PicasaPy render vs golden, SSIM/ΔE) — a
+   szerkesztő-implementáció elfogadási tesztje; a szűrő-tudás ehhez már megvan

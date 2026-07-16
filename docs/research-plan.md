@@ -48,10 +48,13 @@ Picasa ott nem futna).
    (globális min–max stretch), **enhance szerkezete megfejtve**
    (fixLUT∘stretch∘autocolor, reziduál mentve), **fill megoldva** (2D LUT,
    ±1,25/255), h/s/temp sweep LUT-ok mentve — ld. filters-decoded.md.
-7. **KÖVETKEZŐ — 4. kör:** autocolor csillapítási modell (célzott
-   cast-próbák), unsharp kernel, térbeli effektek (Vignette/glow/radblur),
-   tilt-szemantika; végül: összehasonlító harness (PicasaPy render vs
-   golden, SSIM/ΔE) — ezzel zárul a #2.
+7. ~~4. kör~~ ✅ (2026-07-16): **tilt megfejtve** (θ=p·0,2 rad; autoskála
+   cos θ+(W/H)sin θ), **unsharp v1=v2(0,6)**, USM-modell σ≈1,0/1,21·s,
+   Vignette-maszk lemérve, autocolor csillapított lineáris WB (részleges).
+8. **HÁTRAVAN a #2 lezárásához:** összehasonlító harness (PicasaPy render
+   vs golden, SSIM/ΔE) — ez már a 2. fázis szerkesztő-implementációjával
+   együtt készül; kis nyitott kérdések: filters-decoded.md „Nyitva" szakasz.
+   **A szűrő-visszafejtés a gyakori szerkesztések 95%+-ára kész.**
 
 ## 3. Teljesítmény-alapmérések (RPi5) — RÉSZBEN KÉSZ (2026-07-16)
 
