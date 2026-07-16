@@ -56,15 +56,15 @@ Picasa ott nem futna).
    együtt készül; kis nyitott kérdések: filters-decoded.md „Nyitva" szakasz.
    **A szűrő-visszafejtés a gyakori szerkesztések 95%+-ára kész.**
 
-## 3. Teljesítmény-alapmérések (RPi5) — RÉSZBEN KÉSZ (2026-07-16)
+## 3. Teljesítmény-alapmérések (RPi5) — KÉSZ ✅ (2026-07-16)
 
-- ~~pyvips vs Pillow vs OpenCV thumbnail-áteresztés~~ ✅ KÉSZ:
-  `docs/benchmarks/rpi5-image-libs.md` — **OpenCV a scanner-jelölt**
-  (83 kép/s @12MP, 4 szál; teljes 140k-s könyvtár ~15–30 perc).
-  Szkript: `tools/benchmarks/bench_image_libs.py`.
-- **NYITVA:** SQLite indexelési stratégia 100k+ képre; FTS a kereséshez
-- **NYITVA:** inotify/watchdog skálázhatóság sok mappára
-- **NYITVA:** pyvips újramérés VIPS_CONCURRENCY hangolással (alacsony prio)
+- ~~pyvips vs Pillow vs OpenCV~~ ✅: `docs/benchmarks/rpi5-image-libs.md` —
+  **OpenCV a scanner-jelölt** (83 kép/s @12MP; 140k könyvtár ~15–30 perc).
+- ~~SQLite + inotify~~ ✅: `docs/benchmarks/rpi5-sqlite-inotify.md` —
+  133k valódi útvonal insert 1,06 s; FTS5 keresés 9 ms; 2 400 mappa watch
+  55 ms, latencia <2 ms. Séma-elvek rögzítve (WAL, partial index, FTS5).
+  **Fontos:** NAS-mounton inotify nem működik → periodikus rescan fallback.
+- Nyitva (alacsony prio): pyvips újramérés VIPS_CONCURRENCY hangolással.
 
 ## 4. Arcfelismerő stack (3. fázishoz)
 

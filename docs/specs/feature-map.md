@@ -12,8 +12,13 @@ A Picasa funkcionalitása → PicasaPy megvalósítási fázisok.
 - Meglévő Picasa-könyvtár felismerése; **kétirányú** `.picasa.ini` írás/olvasás
   - star, caption, keywords, albums, faces, rotate olvasás/írás
   - `filters=` lánc megőrzése akkor is, amíg a renderelés nincs kész (round-trip)
-- PMP/db3 **olvasás**: egyszeri import meglévő telepítésből + `contacts.xml`
+- PMP/db3 **olvasás**: import meglévő telepítésből + `contacts.xml` (ha van)
   - csak-db-ben élő adatok mentése: képsorrend, ignorált arcok, videó-metaadat
+  - **ISMÉTELHETŐ import** (7. rögzített döntés): a felhasználó a fejlesztés
+    alatt tovább használja a Windows-os Picasát → a frissítés útja:
+    a) `.picasa.ini`-k a fotómappák mellett (NAS) mindig frissek — a scanner
+    ezekből folyamatosan szinkronizál; b) db3-only adatokhoz friss db3-másolat
+    újraimportja path-remappel, ütközésnél az újabb nyer (mtime alapján)
 - EXIF/IPTC/XMP olvasás; JPEG-nél IPTC caption/keywords írás (Picasa-viselkedés)
 
 ## 2. fázis — Szerkesztő
