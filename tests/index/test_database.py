@@ -2,7 +2,7 @@
 
 import pytest
 
-from picasapy.index import open_index
+from picasapy.index import SCHEMA_VERSION, open_index
 
 
 class TestOpenIndex:
@@ -16,7 +16,12 @@ class TestOpenIndex:
         with open_index(tmp_path / "index.db") as conn:
             assert conn.execute("PRAGMA synchronous").fetchone()[0] == 1  # NORMAL
             assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
-            assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+            # Párhuzamos író (háttér-sync + UI) várjon, ne dobjon azonnal
+            # "database is locked"-ot.
+            assert conn.execute("PRAGMA busy_timeout").fetchone()[0] >= 3000
+            assert (
+                conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+            )
 
     def test_schema_tables(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:

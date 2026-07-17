@@ -6,9 +6,13 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
+# A hatásos caption/keywords: JPEG-nél az IPTC (caption_file) az elsődleges,
+# egyébként a .picasa.ini értéke (Picasa-viselkedés).
 _SELECT = """
 SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
-       p.star, p.caption, p.keywords, p.rotate_steps
+       p.star, COALESCE(p.caption_file, p.caption_ini) AS caption,
+       COALESCE(p.keywords_file, p.keywords_ini) AS keywords,
+       p.rotate_steps, p.taken_at, p.orientation, p.width, p.height
 FROM photos p JOIN folders f ON f.id = p.folder_id
 """
 
@@ -25,6 +29,10 @@ class PhotoRecord:
     caption: str | None
     keywords: str | None
     rotate_steps: int
+    taken_at: str | None
+    orientation: int
+    width: int | None
+    height: int | None
 
 
 def photos_in_folder(
@@ -69,6 +77,10 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             caption=row["caption"],
             keywords=row["keywords"],
             rotate_steps=row["rotate_steps"],
+            taken_at=row["taken_at"],
+            orientation=row["orientation"],
+            width=row["width"],
+            height=row["height"],
         )
         for row in rows
     )

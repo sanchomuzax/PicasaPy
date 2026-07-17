@@ -1,12 +1,48 @@
 """Az SQLite index sémája — elvek a docs/benchmarks/rpi5-sqlite-inotify.md-ből.
 
-Partial index a csillagozottakra, FTS5 external-content tábla triggerekkel a
-név/felirat/kulcsszó keresésre. A séma verzióját a user_version pragma tartja.
+A caption/keywords két forrásból jön: a `.picasa.ini`-ből (`*_ini`) és a fájl
+IPTC-jéből (`*_file`, JPEG-nél ez az elsődleges — Picasa-viselkedés). A hatásos
+értéket a lekérdezés COALESCE-olja; az FTS mindkét forrást indexeli.
+
+A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
+verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
-DDL = """
+_FTS_DDL = """
+CREATE VIRTUAL TABLE IF NOT EXISTS photos_fts USING fts5(
+    name, caption_ini, keywords_ini, caption_file, keywords_file,
+    content='photos', content_rowid='id'
+);
+
+CREATE TRIGGER IF NOT EXISTS photos_fts_insert AFTER INSERT ON photos BEGIN
+    INSERT INTO photos_fts
+        (rowid, name, caption_ini, keywords_ini, caption_file, keywords_file)
+    VALUES (new.id, new.name, new.caption_ini, new.keywords_ini,
+            new.caption_file, new.keywords_file);
+END;
+
+CREATE TRIGGER IF NOT EXISTS photos_fts_delete AFTER DELETE ON photos BEGIN
+    INSERT INTO photos_fts(photos_fts, rowid, name, caption_ini, keywords_ini,
+                           caption_file, keywords_file)
+    VALUES ('delete', old.id, old.name, old.caption_ini, old.keywords_ini,
+            old.caption_file, old.keywords_file);
+END;
+
+CREATE TRIGGER IF NOT EXISTS photos_fts_update AFTER UPDATE ON photos BEGIN
+    INSERT INTO photos_fts(photos_fts, rowid, name, caption_ini, keywords_ini,
+                           caption_file, keywords_file)
+    VALUES ('delete', old.id, old.name, old.caption_ini, old.keywords_ini,
+            old.caption_file, old.keywords_file);
+    INSERT INTO photos_fts
+        (rowid, name, caption_ini, keywords_ini, caption_file, keywords_file)
+    VALUES (new.id, new.name, new.caption_ini, new.keywords_ini,
+            new.caption_file, new.keywords_file);
+END;
+"""
+
+DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
     id INTEGER PRIMARY KEY,
     path TEXT NOT NULL UNIQUE,
@@ -21,33 +57,42 @@ CREATE TABLE IF NOT EXISTS photos (
     size INTEGER NOT NULL,
     mtime_ns INTEGER NOT NULL,
     star INTEGER NOT NULL DEFAULT 0,
-    caption TEXT,
-    keywords TEXT,
+    caption_ini TEXT,
+    keywords_ini TEXT,
     rotate_steps INTEGER NOT NULL DEFAULT 0,
+    taken_at TEXT,
+    orientation INTEGER NOT NULL DEFAULT 1,
+    width INTEGER,
+    height INTEGER,
+    caption_file TEXT,
+    keywords_file TEXT,
     UNIQUE (folder_id, name)
 );
 
 CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 1;
 
-CREATE VIRTUAL TABLE IF NOT EXISTS photos_fts USING fts5(
-    name, caption, keywords,
-    content='photos', content_rowid='id'
-);
-
-CREATE TRIGGER IF NOT EXISTS photos_fts_insert AFTER INSERT ON photos BEGIN
-    INSERT INTO photos_fts(rowid, name, caption, keywords)
-    VALUES (new.id, new.name, new.caption, new.keywords);
-END;
-
-CREATE TRIGGER IF NOT EXISTS photos_fts_delete AFTER DELETE ON photos BEGIN
-    INSERT INTO photos_fts(photos_fts, rowid, name, caption, keywords)
-    VALUES ('delete', old.id, old.name, old.caption, old.keywords);
-END;
-
-CREATE TRIGGER IF NOT EXISTS photos_fts_update AFTER UPDATE ON photos BEGIN
-    INSERT INTO photos_fts(photos_fts, rowid, name, caption, keywords)
-    VALUES ('delete', old.id, old.name, old.caption, old.keywords);
-    INSERT INTO photos_fts(rowid, name, caption, keywords)
-    VALUES (new.id, new.name, new.caption, new.keywords);
-END;
+{_FTS_DDL}
 """
+
+# kulcs: kiinduló verzió → az azt következőre emelő szkript
+MIGRATIONS = {
+    1: f"""
+DROP TRIGGER IF EXISTS photos_fts_insert;
+DROP TRIGGER IF EXISTS photos_fts_delete;
+DROP TRIGGER IF EXISTS photos_fts_update;
+DROP TABLE IF EXISTS photos_fts;
+
+ALTER TABLE photos RENAME COLUMN caption TO caption_ini;
+ALTER TABLE photos RENAME COLUMN keywords TO keywords_ini;
+ALTER TABLE photos ADD COLUMN taken_at TEXT;
+ALTER TABLE photos ADD COLUMN orientation INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE photos ADD COLUMN width INTEGER;
+ALTER TABLE photos ADD COLUMN height INTEGER;
+ALTER TABLE photos ADD COLUMN caption_file TEXT;
+ALTER TABLE photos ADD COLUMN keywords_file TEXT;
+
+{_FTS_DDL}
+
+INSERT INTO photos_fts(photos_fts) VALUES ('rebuild');
+""",
+}

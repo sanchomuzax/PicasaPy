@@ -13,7 +13,8 @@ import sqlite3
 from pathlib import Path
 
 from picasapy.ini import IniDocument, load_document
-from picasapy.scanner import PICASA_INI_NAME, FolderScan, scan_tree
+from picasapy.metadata import EMPTY_METADATA, read_file_metadata
+from picasapy.scanner import PICASA_INI_NAME, FolderScan, MediaFile, scan_tree
 
 _ROTATE = re.compile(r"^rotate\((\d+)\)$")
 
@@ -26,9 +27,14 @@ def sync_tree(conn: sqlite3.Connection, root: str | Path) -> None:
     könyvtárnál nem nő össze a WAL, és megszakadás után a futás onnan
     folytatható, ahol tartott (a szinkron mappánként idempotens).
 
-    Ismert korlát (spec, írási szabály #3): JPEG-nél a caption/keywords az
-    IPTC-ben él, nem az ini-ben — azok indexelése az IPTC/EXIF-olvasóval
-    érkezik majd.
+    Ismert korlátok:
+    - RAW és videó fájloknál nincs EXIF/IPTC-olvasás (a Pillow nem dekódolja
+      őket) → taken_at/orientation/méret üres marad; RAW-támogatás később.
+    - A változás-detektálás (mtime_ns, size) páros: egy mtime-őrző, azonos
+      méretű IPTC-átírást (pl. exiftool -P) nem vesz észre. A Picasa maga
+      mindig frissíti az mtime-ot, így ez a gyakorlatban nem fordul elő.
+    - A keywords_file vesszővel join-olt lista: vesszőt tartalmazó kulcsszó
+      nem bontható vissza veszteség nélkül (FTS-t és megjelenítést nem zavar).
     """
     root_path = Path(root).resolve()
     scans = scan_tree(root_path)
@@ -46,31 +52,78 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> None:
         "RETURNING id",
         (str(scan.path), int(scan.has_ini)),
     ).fetchone()[0]
+    existing = {
+        row["name"]: (row["mtime_ns"], row["size"])
+        for row in conn.execute(
+            "SELECT name, mtime_ns, size FROM photos WHERE folder_id = ?",
+            (folder_id,),
+        )
+    }
     document = _load_ini(scan)
     for media in scan.files:
         section = document.section(media.name) if document else None
-        conn.execute(
-            "INSERT INTO photos"
-            "(folder_id, name, kind, size, mtime_ns, star, caption, keywords,"
-            " rotate_steps) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
-            "ON CONFLICT(folder_id, name) DO UPDATE SET "
-            "kind = excluded.kind, size = excluded.size, "
-            "mtime_ns = excluded.mtime_ns, star = excluded.star, "
-            "caption = excluded.caption, keywords = excluded.keywords, "
-            "rotate_steps = excluded.rotate_steps",
-            (
-                folder_id,
-                media.name,
-                media.kind,
-                media.size,
-                media.mtime_ns,
-                int(section.get("star") == "yes") if section else 0,
-                section.get("caption") if section else None,
-                section.get("keywords") if section else None,
-                _rotate_steps(section.get("rotate")) if section else 0,
-            ),
+        ini_fields = (
+            int(section.get("star") == "yes") if section else 0,
+            section.get("caption") if section else None,
+            section.get("keywords") if section else None,
+            _rotate_steps(section.get("rotate")) if section else 0,
         )
+        if existing.get(media.name) == (media.mtime_ns, media.size):
+            # Változatlan fájl: csak az ini-mezők frissülnek, a (drága)
+            # EXIF/IPTC-olvasás kimarad, a fájl-metaadat oszlopok maradnak.
+            conn.execute(
+                "UPDATE photos SET star = ?, caption_ini = ?, keywords_ini = ?,"
+                " rotate_steps = ? WHERE folder_id = ? AND name = ?",
+                (*ini_fields, folder_id, media.name),
+            )
+        else:
+            _upsert_photo(conn, folder_id, scan, media, ini_fields)
     _prune_photos(conn, folder_id, [media.name for media in scan.files])
+
+
+def _upsert_photo(
+    conn: sqlite3.Connection,
+    folder_id: int,
+    scan: FolderScan,
+    media: MediaFile,
+    ini_fields: tuple,
+) -> None:
+    meta = (
+        read_file_metadata(scan.path / media.name)
+        if media.kind == "photo"
+        else EMPTY_METADATA
+    )
+    conn.execute(
+        "INSERT INTO photos"
+        "(folder_id, name, kind, size, mtime_ns, star, caption_ini,"
+        " keywords_ini, rotate_steps, taken_at, orientation, width, height,"
+        " caption_file, keywords_file)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        "ON CONFLICT(folder_id, name) DO UPDATE SET "
+        "kind = excluded.kind, size = excluded.size, "
+        "mtime_ns = excluded.mtime_ns, star = excluded.star, "
+        "caption_ini = excluded.caption_ini, "
+        "keywords_ini = excluded.keywords_ini, "
+        "rotate_steps = excluded.rotate_steps, "
+        "taken_at = excluded.taken_at, orientation = excluded.orientation, "
+        "width = excluded.width, height = excluded.height, "
+        "caption_file = excluded.caption_file, "
+        "keywords_file = excluded.keywords_file",
+        (
+            folder_id,
+            media.name,
+            media.kind,
+            media.size,
+            media.mtime_ns,
+            *ini_fields,
+            meta.taken_at,
+            meta.orientation,
+            meta.width,
+            meta.height,
+            meta.caption,
+            ",".join(meta.keywords) or None,
+        ),
+    )
 
 
 def _load_ini(scan: FolderScan) -> IniDocument | None:
