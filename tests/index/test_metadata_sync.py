@@ -1,14 +1,10 @@
 """Fájl-metaadat (EXIF/IPTC) integráció a szinkronba."""
 
-import sys
-from pathlib import Path
-
 import pytest
 
 from picasapy.index import open_index, photos_in_folder, search_photos, sync_tree
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "metadata"))
-from conftest import make_jpeg  # noqa: E402
+from support.jpeg_factory import make_jpeg
 
 
 @pytest.fixture

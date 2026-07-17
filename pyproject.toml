@@ -7,7 +7,7 @@ license = "GPL-3.0-or-later"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "tests"]
 
 [tool.coverage.run]
 source = ["src/picasapy"]

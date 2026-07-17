@@ -1,0 +1,98 @@
+import QtQuick
+import QtQuick.Controls
+
+// Bal oldali mappa-lista — Picasa "Folder List": szekció-fejlécek
+// (Albumok/Mappák), elemek darabszámmal, acélkék kijelöléssel.
+Rectangle {
+    id: pane
+    color: Theme.panelBg
+
+    property alias foldersModel: folderList.model
+    property string selectedPath: ""
+    signal folderChosen(string path)
+    signal starredChosen()
+
+    Column {
+        anchors.fill: parent
+
+        Rectangle {
+            width: parent.width; height: 22
+            color: Theme.panelHeaderBg
+            border.color: Theme.chromeBorder
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: parent.left; anchors.leftMargin: 6
+                text: "▼ " + qsTr("Albums") + " (1)"
+                font.pixelSize: Theme.fontSize; font.bold: true
+                color: Theme.panelHeaderText
+            }
+        }
+
+        Rectangle {
+            id: starredItem
+            width: parent.width; height: 22
+            color: pane.selectedPath === "*starred*"
+                   ? Theme.panelSelection : "transparent"
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: parent.left; anchors.leftMargin: 16
+                spacing: 5
+                Text { text: "★"; color: Theme.starYellow; font.pixelSize: Theme.fontSize }
+                Text {
+                    text: qsTr("Starred photos")
+                    font.pixelSize: Theme.fontSize
+                    color: pane.selectedPath === "*starred*"
+                           ? Theme.panelSelectionText : Theme.textDark
+                }
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: { pane.selectedPath = "*starred*"; pane.starredChosen() }
+            }
+        }
+
+        Rectangle {
+            width: parent.width; height: 22
+            color: Theme.panelHeaderBg
+            border.color: Theme.chromeBorder
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: parent.left; anchors.leftMargin: 6
+                text: "▼ " + qsTr("Folders") + " (" + folderList.count + ")"
+                font.pixelSize: Theme.fontSize; font.bold: true
+                color: Theme.panelHeaderText
+            }
+        }
+
+        ListView {
+            id: folderList
+            width: parent.width
+            height: pane.height - 66
+            clip: true
+            delegate: Rectangle {
+                required property string name
+                required property string path
+                required property int count
+                width: folderList.width; height: 22
+                color: pane.selectedPath === path ? Theme.panelSelection : "transparent"
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left; anchors.leftMargin: 16
+                    spacing: 5
+                    Text { text: "📁"; font.pixelSize: Theme.fontSize - 1 }
+                    Text {
+                        text: name + " (" + count + ")"
+                        font.pixelSize: Theme.fontSize
+                        color: pane.selectedPath === path
+                               ? Theme.panelSelectionText : Theme.textDark
+                    }
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: { pane.selectedPath = path; pane.folderChosen(path) }
+                }
+            }
+            ScrollBar.vertical: ScrollBar {}
+        }
+    }
+}
