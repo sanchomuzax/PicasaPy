@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 _SPECIAL_NAMES = frozenset({"Picasa", "Contacts", "Contacts2", "encoding", "photoid"})
-_ALBUM_PREFIX = ".album:"
+ALBUM_SECTION_PREFIX = ".album:"
 
 
 @dataclass(frozen=True)
@@ -41,7 +41,9 @@ class Section:
     @property
     def is_special(self) -> bool:
         """Nem fájlbejegyzés: [Picasa], [Contacts*], [.album:token] stb."""
-        return self.name in _SPECIAL_NAMES or self.name.startswith(_ALBUM_PREFIX)
+        return self.name in _SPECIAL_NAMES or self.name.startswith(
+            ALBUM_SECTION_PREFIX
+        )
 
     def items(self) -> tuple[tuple[str, str], ...]:
         return tuple(
