@@ -38,6 +38,22 @@ class TestFolderListModel:
         assert model.data(first, FolderListModel.CountRole) == 2
         assert model.data(first, FolderListModel.PathRole).endswith("nyaralas")
 
+    def test_windows_path_folder_name(self, qt_app, conn):
+        # Importált (Windows-os) útvonal is értelmes nevet adjon.
+        from picasapy.app.models import FolderListModel
+
+        conn.execute(
+            "INSERT INTO folders(path) VALUES ('C:\\Users\\sancho\\Pictures')"
+        )
+        conn.commit()
+        model = FolderListModel()
+        model.load(conn)
+        names = [
+            model.data(model.index(i, 0), FolderListModel.NameRole)
+            for i in range(model.rowCount())
+        ]
+        assert "Pictures" in names
+
     def test_empty_model(self, qt_app):
         from picasapy.app.models import FolderListModel
 

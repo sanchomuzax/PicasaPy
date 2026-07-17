@@ -21,6 +21,7 @@ from .thumbnail_provider import ThumbnailProvider
 class AppController(QObject):
     statusChanged = Signal()
     syncFinished = Signal()
+    syncFailed = Signal(str)
 
     def __init__(
         self,
@@ -37,6 +38,7 @@ class AppController(QObject):
         self._photos = PhotoGridModel(self)
         self._current_folder = ""
         self._status = ""
+        self._sync_running = False
         self.syncFinished.connect(self._reload)
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
@@ -66,6 +68,9 @@ class AppController(QObject):
 
     @Slot()
     def rescan(self) -> None:
+        if self._sync_running:
+            return  # egy író elég; a futó szinkron végén úgyis frissülünk
+        self._sync_running = True
         threading.Thread(target=self._sync_worker, daemon=True).start()
 
     @Slot(str)
@@ -99,10 +104,25 @@ class AppController(QObject):
     # -- belső --------------------------------------------------------------
 
     def _sync_worker(self) -> None:
-        with open_index(self._db_path) as conn:
-            for root in self._roots:
-                sync_tree(conn, root)
-        self.syncFinished.emit()
+        """Háttér-szinkron. Egy rossz gyökér (pl. elavult Windows-útvonal a
+        WatchedFolders-ből) nem nyelhet el mindent némán: hibánként jelzünk,
+        a többi gyökér feldolgozása folytatódik, és a vége mindig
+        syncFinished."""
+        errors = []
+        try:
+            with open_index(self._db_path) as conn:
+                for root in self._roots:
+                    try:
+                        sync_tree(conn, root)
+                    except (OSError, RuntimeError) as error:
+                        errors.append(f"{root}: {error}")
+        except Exception as error:  # pl. index-migrációs hiba
+            errors.append(str(error))
+        finally:
+            self._sync_running = False
+            if errors:
+                self.syncFailed.emit("; ".join(errors))
+            self.syncFinished.emit()
 
     def _reload(self) -> None:
         with open_index(self._db_path) as conn:

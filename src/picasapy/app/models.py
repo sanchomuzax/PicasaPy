@@ -3,12 +3,15 @@ rekord-tuple)."""
 
 from __future__ import annotations
 
+import re
 import sqlite3
 
 from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt
 
 from picasapy.index import PhotoRecord
-from picasapy.scanner import VIDEO_EXTENSIONS  # noqa: F401  (kind alapján döntünk)
+
+# Importált Windows-útvonalak is előfordulhatnak a folders táblában.
+_PATH_SEPARATORS = re.compile(r"[/\\]")
 
 
 class FolderListModel(QAbstractListModel):
@@ -28,7 +31,8 @@ class FolderListModel(QAbstractListModel):
         ).fetchall()
         self.beginResetModel()
         self._folders = tuple(
-            (row["path"].rsplit("/", 1)[-1], row["path"], row["n"]) for row in rows
+            (_PATH_SEPARATORS.split(row["path"])[-1], row["path"], row["n"])
+            for row in rows
         )
         self.endResetModel()
 

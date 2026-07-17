@@ -68,6 +68,22 @@ class TestGetOrCreate:
         height, width = cv2.imread(str(thumb)).shape[:2]
         assert (width, height) == (20, 10)  # nem nagyítunk fel
 
+    def test_no_temp_leftovers_on_success(self, cache, photo, tmp_path):
+        cache.get_or_create(photo, *_stat_key(photo))
+        leftovers = [
+            p for p in (tmp_path / "cache").rglob("*") if p.suffix != ".jpg" and p.is_file()
+        ]
+        assert leftovers == []
+
+    def test_no_temp_leftovers_on_encode_failure(self, cache, photo, tmp_path, monkeypatch):
+        import cv2
+
+        monkeypatch.setattr(cv2, "imencode", lambda *a, **k: (False, None))
+        assert cache.get_or_create(photo, *_stat_key(photo)) is None
+        cache_dir = tmp_path / "cache"
+        leftovers = list(cache_dir.rglob("*.tmp")) if cache_dir.exists() else []
+        assert leftovers == []
+
     def test_cache_dir_created_lazily(self, tmp_path, photo):
         cache = ThumbnailCache(tmp_path / "mely" / "utvonal", size=64)
         assert cache.get_or_create(photo, *_stat_key(photo)) is not None

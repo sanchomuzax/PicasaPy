@@ -9,11 +9,23 @@ EXIF-orientációt, ezért a thumbnail már helyesen forgatott.
 from __future__ import annotations
 
 import hashlib
+import os
+import tempfile
 from pathlib import Path
 
 import cv2
+from PIL import Image, UnidentifiedImageError
 
 _JPEG_QUALITY = 85
+
+# Nagy forrásképnél redukált JPEG-dekódolás kíméli az RPi memóriáját;
+# a cél a thumbnail-méret legalább kétszerese, hogy az INTER_AREA
+# kicsinyítésnek maradjon mintavételi tartaléka.
+_REDUCED_FLAGS = (
+    (8, cv2.IMREAD_REDUCED_COLOR_8),
+    (4, cv2.IMREAD_REDUCED_COLOR_4),
+    (2, cv2.IMREAD_REDUCED_COLOR_2),
+)
 
 
 class ThumbnailCache:
@@ -34,20 +46,43 @@ class ThumbnailCache:
         target = self.thumbnail_path(source, mtime_ns, size_bytes)
         if target.exists():
             return target
-        image = cv2.imread(str(source), cv2.IMREAD_COLOR)
+        image = cv2.imread(str(source), self._read_flag(source))
         if image is None:
             return None
         thumb = self._scale_down(image)
-        target.parent.mkdir(parents=True, exist_ok=True)
         ok, encoded = cv2.imencode(
             ".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, _JPEG_QUALITY]
         )
         if not ok:
             return None
-        temp = target.with_suffix(".tmp")
-        temp.write_bytes(encoded.tobytes())
-        temp.replace(target)
+        self._write_atomic(target, encoded.tobytes())
         return target
+
+    def _read_flag(self, source: Path) -> int:
+        """Dekódolási flag: nagy képre redukált beolvasás (memóriakímélés)."""
+        try:
+            with Image.open(source) as probe:
+                longest = max(probe.size)
+        except (OSError, UnidentifiedImageError, ValueError):
+            return cv2.IMREAD_COLOR
+        for factor, flag in _REDUCED_FLAGS:
+            if longest // factor >= self._size * 2:
+                return flag
+        return cv2.IMREAD_COLOR
+
+    @staticmethod
+    def _write_atomic(target: Path, payload: bytes) -> None:
+        """Egyedi temp-név: a provider több szálról is kérheti ugyanazt a
+        thumbnailt, fix névvel a párhuzamos írók összeakadnának."""
+        target.parent.mkdir(parents=True, exist_ok=True)
+        fd, temp_name = tempfile.mkstemp(dir=target.parent, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(payload)
+            os.replace(temp_name, target)
+        except BaseException:
+            os.unlink(temp_name)
+            raise
 
     def _scale_down(self, image):
         height, width = image.shape[:2]

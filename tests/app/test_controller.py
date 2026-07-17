@@ -63,6 +63,47 @@ class TestController:
         controller.search("nincstalalat")
         assert controller.statusText == "0 pictures"
 
+    def test_sync_failure_reported_not_swallowed(self, qt_app, tmp_path):
+        # Elavult/rossz gyökér (pl. Windows-útvonal a WatchedFolders-ből) nem
+        # fagyaszthatja némán a UI-t: syncFailed + syncFinished is jön.
+        from PySide6.QtCore import QEventLoop, QTimer
+        from picasapy.app.controller import AppController
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+        from picasapy.thumbs import ThumbnailCache
+
+        provider = ThumbnailProvider(ThumbnailCache(tmp_path / "t"))
+        ctl = AppController(
+            tmp_path / "index.db", ("C:\\Users\\regi\\Pictures",), provider
+        )
+        errors = []
+        finished = []
+        ctl.syncFailed.connect(errors.append)
+        ctl.syncFinished.connect(lambda: finished.append(True))
+        loop = QEventLoop()
+        ctl.syncFinished.connect(loop.quit)
+        ctl.rescan()
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        assert finished
+        assert errors and "Pictures" in errors[0]
+
+    def test_rescan_not_reentrant(self, controller, monkeypatch):
+        # Futó szinkron alatt az újabb rescan nem indíthat második írót.
+        import threading
+
+        started = []
+        original = threading.Thread
+
+        def counting_thread(*args, **kwargs):
+            started.append(1)
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(threading, "Thread", counting_thread)
+        monkeypatch.setattr(controller, "_sync_worker", lambda: None)
+        controller._sync_running = True
+        controller.rescan()
+        assert started == []
+
     def test_sync_worker_emits(self, controller, qt_app):
         from PySide6.QtCore import QEventLoop, QTimer
 
