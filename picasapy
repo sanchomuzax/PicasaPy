@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+"""PicasaPy indító — telepítés nélkül futtatható a repóból.
+
+Használat: ./picasapy [könyvtár-gyökér...]
+Gyökér nélkül a ~/.config/picasapy/WatchedFolders.txt-ből olvas.
+"""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+
+from picasapy.app.application import run
+
+if __name__ == "__main__":
+    sys.exit(run(sys.argv))
