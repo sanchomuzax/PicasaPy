@@ -109,6 +109,37 @@ class AppController(QObject):
         return self._filter_status
 
     @Property(str, notify=statusChanged)
+    def folderSort(self):
+        return self._get_settings().value("view/folderSort", "date")
+
+    @Property(bool, notify=statusChanged)
+    def folderSortReverse(self):
+        value = self._get_settings().value("view/folderSortReverse", "false")
+        return value in (True, "true", "1")
+
+    @Slot(str)
+    def setFolderSort(self, mode: str) -> None:
+        """Mappalista-rendezés (Nézet → Mappanézet): date/changed/size/name."""
+        if mode not in ("date", "changed", "size", "name"):
+            return
+        self._get_settings().setValue("view/folderSort", mode)
+        self._reload_folders()
+
+    @Slot()
+    def toggleFolderSortReverse(self) -> None:
+        self._get_settings().setValue(
+            "view/folderSortReverse", not self.folderSortReverse
+        )
+        self._reload_folders()
+
+    def _reload_folders(self) -> None:
+        with open_index(self._db_path) as conn:
+            self._folders.load(
+                conn, sort_mode=self.folderSort, reverse=self.folderSortReverse
+            )
+        self.statusChanged.emit()
+
+    @Property(str, notify=statusChanged)
     def thumbCaptionMode(self):
         """Indexkép-felirat mód (Nézet → Indexkép felirata) — perzisztens."""
         return self._thumb_caption_mode
@@ -433,7 +464,9 @@ class AppController(QObject):
 
     def _reload(self) -> None:
         with open_index(self._db_path) as conn:
-            self._folders.load(conn)
+            self._folders.load(
+                conn, sort_mode=self.folderSort, reverse=self.folderSortReverse
+            )
         if self._current_folder:
             self.selectFolder(self._current_folder)
         else:

@@ -32,8 +32,11 @@ class TestFolderListModel:
 
         model = FolderListModel()
         model.load(conn)
-        assert model.rowCount() == 2
-        first = model.index(0, 0)
+        # dátum-rendezés: a 2025-ös nyaralas évsort kap és elöl áll,
+        # a dátumtalan telek a lista végére kerül
+        assert model.rowCount() == 3
+        assert model.data(model.index(0, 0), FolderListModel.KindRole) == "year"
+        first = model.index(1, 0)
         assert model.data(first, FolderListModel.NameRole) == "nyaralas"
         assert model.data(first, FolderListModel.CountRole) == 2
         assert model.data(first, FolderListModel.PathRole).endswith("nyaralas")
@@ -60,6 +63,63 @@ class TestFolderListModel:
         assert rows.index(("year", "2026")) < rows.index(("folder", "2026-01-xx"))
         # nem év-prefixű mappa nem kap elválasztót maga elé
         assert ("year", "egye") not in rows
+
+    def test_default_sort_is_date_desc(self, qt_app, conn):
+        # Picasa-alapértelmezés: létrehozási dátum szerint, legújabb elöl;
+        # az évszám-elválasztók a mappa-DÁTUM évéből jönnek.
+        from picasapy.app.models import FolderListModel
+
+        for path, date in (
+            ("/k/regi", "2020-03-01T10:00:00"),
+            ("/k/uj", "2025-01-15T08:00:00"),
+            ("/k/kozep", "2023-06-01T08:00:00"),
+        ):
+            conn.execute(
+                "INSERT INTO folders(path, date) VALUES (?, ?)", (path, date)
+            )
+        conn.commit()
+        model = FolderListModel()
+        model.load(conn)
+        rows = [
+            (
+                model.data(model.index(i, 0), FolderListModel.KindRole),
+                model.data(model.index(i, 0), FolderListModel.NameRole),
+            )
+            for i in range(model.rowCount())
+        ]
+        folder_order = [n for k, n in rows if k == "folder" and n.startswith(("regi", "uj", "kozep"))]
+        assert folder_order == ["uj", "kozep", "regi"]
+        assert rows.index(("year", "2025")) < rows.index(("folder", "uj"))
+
+    def test_sort_by_name(self, qt_app, conn):
+        from picasapy.app.models import FolderListModel
+
+        for path, date in (("/k/b", "2025-01-01T00:00:00"), ("/k/a", "2020-01-01T00:00:00")):
+            conn.execute("INSERT INTO folders(path, date) VALUES (?, ?)", (path, date))
+        conn.commit()
+        model = FolderListModel()
+        model.load(conn, sort_mode="name")
+        names = [
+            model.data(model.index(i, 0), FolderListModel.NameRole)
+            for i in range(model.rowCount())
+            if model.data(model.index(i, 0), FolderListModel.KindRole) == "folder"
+        ]
+        assert names.index("a") < names.index("b")
+
+    def test_sort_reversed(self, qt_app, conn):
+        from picasapy.app.models import FolderListModel
+
+        for path, date in (("/k/b", "2025-01-01T00:00:00"), ("/k/a", "2020-01-01T00:00:00")):
+            conn.execute("INSERT INTO folders(path, date) VALUES (?, ?)", (path, date))
+        conn.commit()
+        model = FolderListModel()
+        model.load(conn, sort_mode="date", reverse=True)
+        names = [
+            model.data(model.index(i, 0), FolderListModel.NameRole)
+            for i in range(model.rowCount())
+            if model.data(model.index(i, 0), FolderListModel.KindRole) == "folder"
+        ]
+        assert names.index("a") < names.index("b")  # legrégebbi elöl
 
     def test_windows_path_folder_name(self, qt_app, conn):
         # Importált (Windows-os) útvonal is értelmes nevet adjon.

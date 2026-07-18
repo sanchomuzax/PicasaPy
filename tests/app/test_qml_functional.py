@@ -238,3 +238,45 @@ class TestMultiSelect:
         qt_app.processEvents()
         assert self._indexes(window) == []
         assert window.property("selectedIndex") == -1
+
+
+class TestLasso:
+    def test_lasso_selects_geometry_range(self, qml_app, qt_app):
+        # A lasszó rács-geometriából számol — a (0,0)-tól két cellányira
+        # húzott keret az összes (itt: 2) képet kijelöli.
+        from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+
+        window, controller, _ = qml_app
+        grid = window.findChild(QObject, "photoGrid")
+        assert grid is not None, "photoGrid nem található"
+        cell_w = grid.property("cellWidth")
+        QMetaObject.invokeMethod(
+            grid, "applyLasso", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 0), Q_ARG("QVariant", 0),
+            Q_ARG("QVariant", cell_w * 2 + 1), Q_ARG("QVariant", 1),
+            Q_ARG("QVariant", 0),
+        )
+        qt_app.processEvents()
+        value = window.property("selectedIndexes")
+        if hasattr(value, "toVariant"):
+            value = value.toVariant()
+        assert sorted(int(v) for v in value) == [0, 1]
+
+    def test_lasso_ctrl_merges(self, qml_app, qt_app):
+        from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+
+        window, controller, _ = qml_app
+        window.setProperty("selectedIndexes", [1])
+        grid = window.findChild(QObject, "photoGrid")
+        ctrl = int(Qt.KeyboardModifier.ControlModifier.value)
+        QMetaObject.invokeMethod(
+            grid, "applyLasso", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 0), Q_ARG("QVariant", 0),
+            Q_ARG("QVariant", 1), Q_ARG("QVariant", 1),
+            Q_ARG("QVariant", ctrl),
+        )
+        qt_app.processEvents()
+        value = window.property("selectedIndexes")
+        if hasattr(value, "toVariant"):
+            value = value.toVariant()
+        assert sorted(int(v) for v in value) == [0, 1]

@@ -16,6 +16,10 @@ Item {
     property string captionMode: "none"
     signal chosen(int index, int modifiers)
     signal opened(int index)
+    // lasszó: a koordináták a cella saját rendszerében — a fogadó képezi le
+    signal lassoDragged(real startX, real startY, real curX, real curY)
+    signal lassoFinished(real startX, real startY, real curX, real curY,
+                         int modifiers)
 
     readonly property string captionText: {
         switch (cell.captionMode) {
@@ -85,12 +89,40 @@ Item {
     }
 
     // MouseArea kell (nem TapHandler): a Ctrl/Shift módosítókat is
-    // továbbadjuk a többes kijelöléshez
+    // továbbadjuk, és innen indul a lasszós kijelölés is (az egér-grab a
+    // lenyomó cellánál marad, így cellahatárokon át is követjük a húzást).
     MouseArea {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: function(event) { cell.chosen(cell.index, event.modifiers) }
+        preventStealing: true
+        property bool lassoing: false
+        property bool didLasso: false
+        property real pressX: 0
+        property real pressY: 0
+        onPressed: function(event) {
+            pressX = event.x; pressY = event.y
+            lassoing = false; didLasso = false
+        }
+        onPositionChanged: function(event) {
+            if (!pressed) return
+            if (!lassoing
+                && Math.abs(event.x - pressX) + Math.abs(event.y - pressY) > 8)
+                lassoing = true
+            if (lassoing)
+                cell.lassoDragged(pressX, pressY, event.x, event.y)
+        }
+        onReleased: function(event) {
+            if (lassoing) {
+                cell.lassoFinished(
+                    pressX, pressY, event.x, event.y, event.modifiers)
+                lassoing = false
+                didLasso = true   // a rákövetkező clicked ne váltson kijelölést
+            }
+        }
+        onClicked: function(event) {
+            if (!didLasso) cell.chosen(cell.index, event.modifiers)
+        }
         onDoubleClicked: cell.opened(cell.index)
     }
 }

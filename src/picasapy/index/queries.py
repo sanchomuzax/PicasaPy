@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import re
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
+
+_PATH_SEP = re.compile(r"[/\\]")
 
 # A hatásos caption/keywords: JPEG-nél az IPTC (caption_file) az elsődleges,
 # egyébként a .picasa.ini értéke (Picasa-viselkedés).
@@ -50,16 +53,27 @@ def starred_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
 
 
 def search_photos(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ...]:
-    """FTS5 keresés név/felirat/kulcsszó mezőkben.
+    """Keresés MINDENBEN (Picasa): fájlnév/felirat/kulcsszó (FTS5) ÉS
+    mappanév — az egyező nevű mappák teljes tartalma is találat.
 
     A felhasználói inputot idézett kifejezéssé alakítjuk, hogy ne
-    értelmeződjön FTS-szintaxisként (injection/szintaxishiba ellen).
+    értelmeződjön FTS-szintaxisként (injection/szintaxishiba ellen);
+    a mappanév-egyezés casefold-os (magyar ékezetekre is jó).
     """
     phrase = '"' + query.replace('"', '""') + '"'
+    folded = query.casefold()
+    folder_ids = [
+        row["id"]
+        for row in conn.execute("SELECT id, path FROM folders")
+        if folded in _PATH_SEP.split(row["path"])[-1].casefold()
+    ]
+    placeholders = ",".join("?" * len(folder_ids))
+    folder_clause = f" OR p.folder_id IN ({placeholders})" if folder_ids else ""
     rows = conn.execute(
-        f"{_SELECT} JOIN photos_fts ON photos_fts.rowid = p.id "
-        "WHERE photos_fts MATCH ? ORDER BY f.path, p.name",
-        (phrase,),
+        f"{_SELECT} WHERE p.id IN "
+        "(SELECT rowid FROM photos_fts WHERE photos_fts MATCH ?)"
+        f"{folder_clause} ORDER BY f.path, p.name",
+        (phrase, *folder_ids),
     )
     return _records(rows)
 

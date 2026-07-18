@@ -52,6 +52,15 @@ class TestQueries:
     def test_search_no_hit(self, conn):
         assert search_photos(conn, "nincsilyen") == ()
 
+    def test_search_matches_folder_name(self, conn, tmp_path):
+        # A kereső MINDENRE keres: mappanévre is (Picasa-viselkedés) —
+        # az egyező nevű mappa összes képe találat.
+        hits = [p.name for p in search_photos(conn, "a")]  # a mappa neve: "a"
+        assert "alpha.jpg" in hits and "beta.jpg" in hits
+
+    def test_search_folder_name_case_insensitive(self, conn):
+        assert len(search_photos(conn, "B")) >= 1  # "b" mappa
+
     def test_search_quotes_fts_syntax(self, conn):
         # A felhasználói input nem FTS-szintaxis: nem dobhat hibát.
         assert search_photos(conn, 'nap" OR x') == ()

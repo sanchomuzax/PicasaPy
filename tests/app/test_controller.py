@@ -43,7 +43,8 @@ def controller(qt_app, tmp_path, library):
 
 class TestController:
     def test_folders_loaded(self, controller):
-        assert controller.folders.rowCount() == 1
+        # az évszám-elválasztó sorral együtt 2 sor, ebből 1 valódi mappa
+        assert controller.folders.folderCount == 1
 
     def test_select_folder_fills_grid_and_status(self, controller, library):
         # Picasa-stílus: "N képek   <hosszú dátum(tartomány)>   X,Y MB a lemezen"
@@ -268,7 +269,7 @@ class TestToggleStar:
         controller.rescan()
         QTimer.singleShot(5000, loop.quit)  # vészfék
         loop.exec()
-        assert controller.folders.rowCount() == 1
+        assert controller.folders.folderCount == 1
 
 
 class TestSetCaption:

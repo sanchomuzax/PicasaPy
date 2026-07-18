@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 _FTS_DDL = """
 CREATE VIRTUAL TABLE IF NOT EXISTS photos_fts USING fts5(
@@ -46,7 +46,8 @@ DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
     id INTEGER PRIMARY KEY,
     path TEXT NOT NULL UNIQUE,
-    has_ini INTEGER NOT NULL DEFAULT 0
+    has_ini INTEGER NOT NULL DEFAULT 0,
+    date TEXT
 );
 
 CREATE TABLE IF NOT EXISTS photos (
@@ -94,5 +95,11 @@ ALTER TABLE photos ADD COLUMN keywords_file TEXT;
 {_FTS_DDL}
 
 INSERT INTO photos_fts(photos_fts) VALUES ('rebuild');
+""",
+    2: """
+ALTER TABLE folders ADD COLUMN date TEXT;
+UPDATE folders SET date = (
+    SELECT MIN(p.taken_at) FROM photos p WHERE p.folder_id = folders.id
+);
 """,
 }

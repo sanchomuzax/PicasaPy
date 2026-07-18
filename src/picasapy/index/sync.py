@@ -79,6 +79,13 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> None:
         else:
             _upsert_photo(conn, folder_id, scan, media, ini_fields)
     _prune_photos(conn, folder_id, [media.name for media in scan.files])
+    # mappa-dátum (Picasa): automatikusan a legrégebbi felvétel ideje
+    conn.execute(
+        "UPDATE folders SET date = ("
+        " SELECT MIN(p.taken_at) FROM photos p WHERE p.folder_id = ?"
+        ") WHERE id = ?",
+        (folder_id, folder_id),
+    )
 
 
 def _upsert_photo(

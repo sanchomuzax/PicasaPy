@@ -74,6 +74,40 @@ MenuBar {
         MenuItem { text: qsTr("Timeline"); enabled: false }
         MenuItem { text: qsTr("Hidden Pictures"); enabled: false }
         Menu {
+            title: qsTr("Folder View")
+            MenuItem {
+                text: qsTr("Sort by creation date")
+                checkable: true
+                checked: controller.folderSort === "date"
+                onTriggered: controller.setFolderSort("date")
+            }
+            MenuItem {
+                text: qsTr("Sort by recent changes")
+                checkable: true
+                checked: controller.folderSort === "changed"
+                onTriggered: controller.setFolderSort("changed")
+            }
+            MenuItem {
+                text: qsTr("Sort by size")
+                checkable: true
+                checked: controller.folderSort === "size"
+                onTriggered: controller.setFolderSort("size")
+            }
+            MenuItem {
+                text: qsTr("Sort by name")
+                checkable: true
+                checked: controller.folderSort === "name"
+                onTriggered: controller.setFolderSort("name")
+            }
+            MenuSeparator {}
+            MenuItem {
+                text: qsTr("Reverse sort")
+                checkable: true
+                checked: controller.folderSortReverse
+                onTriggered: controller.toggleFolderSortReverse()
+            }
+        }
+        Menu {
             title: qsTr("Thumbnail Caption")
             MenuItem {
                 text: qsTr("None")

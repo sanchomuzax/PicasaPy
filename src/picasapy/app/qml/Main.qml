@@ -275,6 +275,7 @@ ApplicationWindow {
 
                 GridView {
                     id: grid
+                    objectName: "photoGrid"
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
@@ -282,6 +283,69 @@ ApplicationWindow {
                     cellWidth: window.thumbSize + 18
                     cellHeight: window.thumbSize + 18
                         + (controller.thumbCaptionMode !== "none" ? 16 : 0)
+
+                    // -- görgetési pozíció megőrzése frissítéskor --------
+                    // A modell-reset (csillag/forgatás/felirat után) nullázná
+                    // a contentY-t; a felhasználó maradjon, ahol volt.
+                    property real savedY: 0
+                    property bool restoring: false
+                    property string folderKey: ""
+                    onContentYChanged: {
+                        if (!restoring && (contentY > 0 || moving))
+                            savedY = contentY
+                    }
+                    onMovementEnded: savedY = contentY
+                    Connections {
+                        target: controller.photos
+                        function onRevisionChanged() {
+                            if (grid.folderKey === controller.currentFolder) {
+                                grid.restoring = true
+                                grid.contentY = Math.min(
+                                    grid.savedY,
+                                    Math.max(0, grid.contentHeight - grid.height))
+                                grid.restoring = false
+                            } else {
+                                grid.folderKey = controller.currentFolder
+                                grid.savedY = 0
+                            }
+                        }
+                    }
+
+                    // -- lasszós (gumikeretes) kijelölés ------------------
+                    // Az indexeket rácsgeometriából számoljuk (a delegate-ek
+                    // egyenletes cellákban ülnek).
+                    function lassoIndexes(x1, y1, x2, y2) {
+                        var cols = Math.max(1, Math.floor(width / cellWidth))
+                        var left = Math.min(x1, x2), right = Math.max(x1, x2)
+                        var top = Math.min(y1, y2), bottom = Math.max(y1, y2)
+                        var c0 = Math.max(0, Math.floor(left / cellWidth))
+                        var c1 = Math.min(cols - 1, Math.floor(right / cellWidth))
+                        var r0 = Math.max(0, Math.floor(top / cellHeight))
+                        var r1 = Math.floor(bottom / cellHeight)
+                        var result = []
+                        var total = controller.photos.rowCount()
+                        for (var r = r0; r <= r1; ++r)
+                            for (var c = c0; c <= c1; ++c) {
+                                var idx = r * cols + c
+                                if (idx >= 0 && idx < total) result.push(idx)
+                            }
+                        return result
+                    }
+                    function applyLasso(x1, y1, x2, y2, modifiers) {
+                        var picked = lassoIndexes(x1, y1, x2, y2)
+                        if (Number(modifiers) & Qt.ControlModifier) {
+                            var merged = window.selectedIndexes.slice()
+                            for (var i = 0; i < picked.length; ++i)
+                                if (merged.indexOf(picked[i]) < 0)
+                                    merged.push(picked[i])
+                            window.selectedIndexes = merged
+                        } else {
+                            window.selectedIndexes = picked
+                        }
+                        if (picked.length > 0)
+                            window.selectedIndex = picked[picked.length - 1]
+                    }
+
                     delegate: ThumbDelegate {
                         width: grid.cellWidth
                         height: grid.cellHeight
@@ -294,8 +358,36 @@ ApplicationWindow {
                             window.viewerOpen = true
                             photoViewer.show(i)
                         }
+                        onLassoDragged: function(sx, sy, cx, cy) {
+                            lassoBand.update(
+                                mapToItem(grid, sx, sy), mapToItem(grid, cx, cy))
+                        }
+                        onLassoFinished: function(sx, sy, cx, cy, mods) {
+                            var a = mapToItem(grid, sx, sy)
+                            var b = mapToItem(grid, cx, cy)
+                            grid.applyLasso(
+                                a.x, a.y + grid.contentY,
+                                b.x, b.y + grid.contentY, mods)
+                            lassoBand.visible = false
+                        }
                     }
                     ScrollBar.vertical: ScrollBar {}
+
+                    // gumikeret-vizualizáció
+                    Rectangle {
+                        id: lassoBand
+                        visible: false
+                        z: 10
+                        color: "#33009eff"
+                        border.color: Theme.thumbSelection
+                        border.width: 1
+                        function update(a, b) {
+                            x = Math.min(a.x, b.x); y = Math.min(a.y, b.y)
+                            width = Math.abs(a.x - b.x)
+                            height = Math.abs(a.y - b.y)
+                            visible = true
+                        }
+                    }
                 }
                 }
                 }

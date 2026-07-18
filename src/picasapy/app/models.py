@@ -41,16 +41,41 @@ class FolderListModel(QAbstractListModel):
         super().__init__(parent)
         self._rows: tuple[tuple[str, str, str, int], ...] = ()
 
-    def load(self, conn: sqlite3.Connection) -> None:
+    def load(
+        self,
+        conn: sqlite3.Connection,
+        sort_mode: str = "date",
+        reverse: bool = False,
+    ) -> None:
+        """Mappalista Picasa-rendezéssel.
+
+        sort_mode: 'date' (létrehozási dátum, legújabb elöl — alapérték),
+        'changed' (legutóbbi változtatás), 'size' (méret), 'name' (név).
+        A reverse a kiválasztott rendezést fordítja meg.
+        """
         db_rows = conn.execute(
-            "SELECT f.path, count(p.id) AS n FROM folders f "
-            "LEFT JOIN photos p ON p.folder_id = f.id "
-            "GROUP BY f.id ORDER BY f.path"
+            "SELECT f.path, f.date, count(p.id) AS n,"
+            " COALESCE(SUM(p.size), 0) AS total_size,"
+            " COALESCE(MAX(p.mtime_ns), 0) AS last_change"
+            " FROM folders f LEFT JOIN photos p ON p.folder_id = f.id"
+            " GROUP BY f.id ORDER BY f.path"
         ).fetchall()
+        folders = [
+            (
+                _PATH_SEPARATORS.split(row["path"])[-1],
+                row["path"],
+                row["n"],
+                row["date"],
+                row["total_size"],
+                row["last_change"],
+            )
+            for row in db_rows
+        ]
+        folders.sort(key=_sort_key(sort_mode), reverse=_descending(sort_mode) != reverse)
         self.beginResetModel()
         self._rows = _with_year_separators(
-            (_PATH_SEPARATORS.split(row["path"])[-1], row["path"], row["n"])
-            for row in db_rows
+            (name, path, count, date)
+            for name, path, count, date, _size, _change in folders
         )
         self.endResetModel()
         self.folderCountChanged.emit()
@@ -86,12 +111,33 @@ class FolderListModel(QAbstractListModel):
         }
 
 
+def _sort_key(sort_mode: str):
+    """Rendezőkulcs; dátum-módokban a dátumtalan mappák a sor végére."""
+    if sort_mode == "name":
+        return lambda f: f[0].casefold()
+    if sort_mode == "size":
+        return lambda f: f[4]
+    if sort_mode == "changed":
+        return lambda f: f[5]
+    return lambda f: (f[3] is not None, f[3] or "", f[1])
+
+
+def _descending(sort_mode: str) -> bool:
+    """A Picasa alapértéke: dátum/változás/méret csökkenő, név növekvő."""
+    return sort_mode != "name"
+
+
 def _with_year_separators(folders) -> tuple[tuple[str, str, str, int], ...]:
+    """Évszám-elválasztók a mappa-dátum évéből (fallback: név-prefix)."""
     rows = []
     last_year = None
-    for name, path, count in folders:
-        match = _YEAR_PREFIX.match(name)
-        year = match.group(1) if match else None
+    for name, path, count, date in folders:
+        year = None
+        if date:
+            year = date[:4]
+        else:
+            match = _YEAR_PREFIX.match(name)
+            year = match.group(1) if match else None
         if year and year != last_year:
             rows.append(("year", year, "", 0))
         last_year = year
