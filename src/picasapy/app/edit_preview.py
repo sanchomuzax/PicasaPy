@@ -45,12 +45,21 @@ class EditPreviewProvider(QQuickImageProvider):
         image = self._render(entry) if entry is not None else QImage()
         if image.isNull():
             image = _placeholder()
-        if requested_size is not None and requested_size.isValid():
-            image = image.scaled(
-                requested_size,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
+        # A néző sourceSize.width-del (magasság nélkül) kér: a (w, 0) a
+        # QSize.isValid() szerint érvényes, de a scaled() üres képet adna
+        # (#48 — ettől maradt szürke a néző). Fél-dimenziós kérésnél a
+        # képarányt tartó scaledToWidth/Height kell.
+        if requested_size is not None:
+            width, height = requested_size.width(), requested_size.height()
+            smooth = Qt.TransformationMode.SmoothTransformation
+            if width > 0 and height > 0:
+                image = image.scaled(
+                    requested_size, Qt.AspectRatioMode.KeepAspectRatio, smooth
+                )
+            elif width > 0:
+                image = image.scaledToWidth(width, smooth)
+            elif height > 0:
+                image = image.scaledToHeight(height, smooth)
         if size is not None:
             size.setWidth(image.width())
             size.setHeight(image.height())
