@@ -188,6 +188,7 @@ class PhotoGridModel(QAbstractListModel):
     FileUrlRole = Qt.ItemDataRole.UserRole + 7
     KeywordsRole = Qt.ItemDataRole.UserRole + 8
     ResolutionRole = Qt.ItemDataRole.UserRole + 9
+    FolderPathRole = Qt.ItemDataRole.UserRole + 10
 
     revisionChanged = Signal()
 
@@ -322,6 +323,8 @@ class PhotoGridModel(QAbstractListModel):
                 if photo.width and photo.height
                 else ""
             )
+        if role == self.FolderPathRole:
+            return photo.folder_path
         return None
 
     def roleNames(self):
@@ -335,4 +338,5 @@ class PhotoGridModel(QAbstractListModel):
             self.FileUrlRole: b"fileUrl",
             self.KeywordsRole: b"keywords",
             self.ResolutionRole: b"resolution",
+            self.FolderPathRole: b"folderPath",
         }

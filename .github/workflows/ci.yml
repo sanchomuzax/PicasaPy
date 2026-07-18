@@ -9,10 +9,6 @@ jobs:
   test:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    # A Windows-láb KÍSÉRLETI: a hibája nem buktatja a futást és nem küld
-    # hibaértesítést — a fejlesztés Linux-first, a Windows-port érésben van.
-    # Ha a Windows tartósan zöld, ez a sor eltávolítandó.
-    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
       fail-fast: false
       matrix:

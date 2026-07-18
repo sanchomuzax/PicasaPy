@@ -36,7 +36,7 @@ from picasapy.scanner import (
     write_watched_folders,
 )
 from .models import FolderListModel, PhotoGridModel
-from .search_results import group_by_folder
+from .search_results import group_by_folder, groups_to_qml
 from .thumbnail_provider import ThumbnailProvider
 
 
@@ -99,6 +99,8 @@ class AppController(QObject):
         self._feed_groups: tuple[dict, ...] = ()  # a rács mappa-csoportjai (#64)
         self._descriptions: dict[str, str] = {}  # mappa-leírás cache (NAS!)
         self._description_revision = 0
+        self._search_result_count = 0  # összes találat (#7, a bal paneli sorhoz)
+        self._search_groups: tuple = ()  # a rács mappánkénti csoportosításához
         self._settings = settings
         self._thumb_caption_mode = self._get_settings().value(
             "view/thumbCaption", "none"
@@ -143,6 +145,30 @@ class AppController(QObject):
         """A mappa leírása — Picasa-kompatibilis: `[Picasa]/description`
         kulcs a mappa `.picasa.ini`-jében."""
         return self._folder_description
+
+    @Property(bool, notify=statusChanged)
+    def searchActive(self):
+        """Aktív-e a keresés (#7): bal paneli sor + rács-csoportosítás."""
+        return self._view_mode[0] in ("search", "search-folder")
+
+    @Property(str, notify=statusChanged)
+    def searchQuery(self):
+        mode, param = self._view_mode
+        if mode == "search":
+            return param
+        if mode == "search-folder":
+            return param[0]
+        return ""
+
+    @Property(int, notify=statusChanged)
+    def searchResultCount(self):
+        """Az ÖSSZES találat (#7) — mappára szűkítve is, nem a részhalmaz."""
+        return self._search_result_count
+
+    @Property(list, notify=statusChanged)
+    def searchGroups(self):
+        """A jelenleg látszó fotók mappánkénti csoportjai QML-nek (#7)."""
+        return groups_to_qml(self._search_groups)
 
     @Property(bool, notify=statusChanged)
     def filterActive(self):
@@ -455,6 +481,7 @@ class AppController(QObject):
         találat-darabszámmal."""
         self._folders.load_matches(group_by_folder(records))
         self._folders_filtered = True
+        self._search_result_count = len(records)
 
     def _restore_full_folder_pane(self) -> None:
         """A teljes mappalista vissza, ha a hasáb keresésre volt szűkítve."""
@@ -809,6 +836,8 @@ class AppController(QObject):
         self._update_feed_groups(records)
         dates = sorted(r.taken_at for r in records if r.taken_at)
         self._folder_date = _long_date(dates[0], QLocale()) if dates else ""
+        search_active = self._view_mode[0] in ("search", "search-folder")
+        self._search_groups = group_by_folder(records) if search_active else ()
         self._update_status(records)
 
     def _update_feed_groups(self, records) -> None:

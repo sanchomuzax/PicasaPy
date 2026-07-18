@@ -569,3 +569,57 @@ class TestFolderClickDuringSearchWiring:
         qt_app.processEvents()
         assert field.property("text") == "a"      # a mező nem ürül
         assert controller.photos.rowCount() == 1  # a szűrés megmarad
+
+
+class TestSearchResultsGroupedGridWiring:
+    """#7: a bal paneli „Találatok…” sor és a rács mappánkénti
+    csoportosítása (group_by_folder bekötése a kereső-eredmény nézetbe)."""
+
+    def test_folder_pane_header_shows_query_and_count(self, qml_app, qt_app):
+        window, controller, _ = qml_app
+        header = window.findChild(QObject, "folderPaneHeader")
+        assert header is not None, "folderPaneHeader nem található"
+        assert "Folders" in header.property("text")
+        controller.search("a")
+        qt_app.processEvents()
+        assert header.property("text") == 'Search results for "a" (1)'
+
+    def test_folder_pane_header_restores_after_cleared_search(
+        self, qml_app, qt_app
+    ):
+        window, controller, _ = qml_app
+        header = window.findChild(QObject, "folderPaneHeader")
+        controller.search("a")
+        controller.search("")
+        qt_app.processEvents()
+        assert "Folders" in header.property("text")
+
+    def test_grouped_view_swaps_in_during_search(self, qml_app, qt_app):
+        window, controller, _ = qml_app
+        grid = window.findChild(QObject, "photoGrid")
+        grouped = window.findChild(QObject, "groupedSearchResults")
+        assert grid.property("visible") is True
+        assert grouped.property("visible") is False
+        controller.search("a")
+        qt_app.processEvents()
+        assert grid.property("visible") is False
+        assert grouped.property("visible") is True
+        controller.search("")
+        qt_app.processEvents()
+        assert grid.property("visible") is True
+        assert grouped.property("visible") is False
+
+    def test_grouped_view_model_follows_controller_search_groups(
+        self, qml_app, qt_app
+    ):
+        # A ListView delegate-jei offscreen módban nem jönnek létre (ld. a
+        # fájl elején a GridView-ra vonatkozó megjegyzést, ugyanez a
+        # jelenség itt is) — a kötést a modellen keresztül ellenőrizzük;
+        # a fejléc-feliratot a SearchGroupHeader önálló tesztje fedi.
+        window, controller, _ = qml_app
+        grouped = window.findChild(QObject, "groupedSearchResults")
+        controller.search("a")
+        qt_app.processEvents()
+        model = grouped.property("model")
+        assert [g["folderName"] for g in model] == ["kepek"]
+        assert model[0]["photos"][0]["name"] == "a.jpg"

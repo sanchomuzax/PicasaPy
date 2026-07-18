@@ -899,6 +899,58 @@ class TestSearchFiltersFolderPane:
             ("nyaralas", 2), ("telek", 1)
         ]
 
+    def test_search_exposes_active_query_and_total_count(
+        self, controller, two_folders
+    ):
+        # #7: a bal paneli „Találatok a(z) … kifejezésre (N)” sorhoz.
+        controller.search("IMG")
+        assert controller.searchActive is True
+        assert controller.searchQuery == "IMG"
+        assert controller.searchResultCount == 3
+
+    def test_search_folder_keeps_total_count_not_subset(
+        self, controller, two_folders
+    ):
+        # A mappára szűkítés a rácsot szűkíti, de a darabszám az ÖSSZES
+        # találaté marad (nem a rácsban látszó részhalmazé).
+        controller.search("IMG")
+        controller.selectFolderKeepSearch(str(two_folders / "telek"))
+        assert controller.searchActive is True
+        assert controller.searchResultCount == 3
+
+    def test_cleared_search_deactivates(self, controller, two_folders):
+        controller.search("IMG")
+        controller.search("")
+        assert controller.searchActive is False
+        assert controller.searchQuery == ""
+
+    def test_search_inactive_by_default(self, controller):
+        assert controller.searchActive is False
+        assert controller.searchQuery == ""
+        assert controller.searchResultCount == 0
+
+    def test_search_groups_by_folder_with_global_row_indexes(
+        self, controller, two_folders
+    ):
+        # #7: a rács mappánkénti csoportosítása — minden fotóhoz a lapos
+        # `photos` modellbeli (globális) sorindex tartozik.
+        controller.search("IMG")
+        groups = controller.searchGroups
+        assert sorted(g["folderName"] for g in groups) == ["nyaralas", "telek"]
+        rows = sorted(
+            photo["row"] for g in groups for photo in g["photos"]
+        )
+        assert rows == list(range(controller.photos.rowCount()))
+
+    def test_search_groups_empty_outside_search(self, controller, two_folders):
+        assert controller.searchGroups == []
+
+    def test_search_folder_narrows_groups_to_one(self, controller, two_folders):
+        controller.search("IMG")
+        controller.selectFolderKeepSearch(str(two_folders / "telek"))
+        groups = controller.searchGroups
+        assert [g["folderName"] for g in groups] == ["telek"]
+
     def test_background_reload_keeps_filtered_pane(self, controller, two_folders):
         controller.search("naplemente")
         controller._reload()
