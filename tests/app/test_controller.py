@@ -1,6 +1,7 @@
 """AppController: mappa-választás, keresés, státusz, provider-regisztráció."""
 
 import pytest
+from PIL import Image
 
 from support.jpeg_factory import make_jpeg
 
@@ -258,6 +259,57 @@ class TestToggleStar:
         QTimer.singleShot(5000, loop.quit)  # vészfék
         loop.exec()
         assert controller.folders.rowCount() == 1
+
+
+class TestSetCaption:
+    def test_jpeg_caption_written_to_iptc_and_model(self, controller, library):
+        # Picasa-szabály: JPEG-nél a felirat az IPTC-be kerül, nem az ini-be.
+        from picasapy.metadata import read_file_metadata
+
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.setCaption(1, "próba felirat")  # IMG_0002.jpg
+        photo_path = library / "nyaralas" / "IMG_0002.jpg"
+        assert read_file_metadata(photo_path).caption == "próba felirat"
+        assert controller.photos.photos[1].caption == "próba felirat"
+
+    def test_jpeg_caption_cleared(self, controller, library):
+        from picasapy.metadata import read_file_metadata
+
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.setCaption(1, "próba felirat")
+        controller.setCaption(1, "")
+        photo_path = library / "nyaralas" / "IMG_0002.jpg"
+        assert read_file_metadata(photo_path).caption is None
+        assert controller.photos.photos[1].caption is None
+
+    def test_non_jpeg_caption_written_to_ini(self, controller, library):
+        # Nem-JPEG (pl. PNG) esetén a Picasa a .picasa.ini-be írja a feliratot.
+        from picasapy.index import open_index, sync_tree
+
+        png_path = library / "nyaralas" / "kep.png"
+        Image.new("RGB", (4, 4), "blue").save(png_path, "PNG")
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        row = next(
+            i
+            for i, photo in enumerate(controller.photos.photos)
+            if photo.name == "kep.png"
+        )
+        controller.setCaption(row, "png felirat")
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        assert "[kep.png]" in ini_text
+        assert "caption=png felirat" in ini_text.split("[kep.png]")[1]
+        row = next(
+            i
+            for i, photo in enumerate(controller.photos.photos)
+            if photo.name == "kep.png"
+        )
+        assert controller.photos.photos[row].caption == "png felirat"
+
+    def test_invalid_index_noop(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.setCaption(99, "nem történhet")  # nem dobhat
 
 
 class TestThumbnailProvider:

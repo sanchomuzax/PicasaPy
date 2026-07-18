@@ -193,6 +193,49 @@ Rectangle {
                     anchors.centerIn: parent
                     running: photo.status === Image.Loading
                 }
+                // szerkeszthető felirat-sor — a model.revision referencia
+                // miatt a kötés modell-frissítésnél (pl. mentés után)
+                // újraértékelődik, ahogy a forgatás-kötés is (lásd fent).
+                // Gépeléskor a Qt eltávolítja a deklaratív kötést a text
+                // property-ről (közvetlen C++ írás), ezért elfogadás és
+                // Esc után Qt.binding()-gel újra be kell kötni, különben a
+                // mező a következő navigáláskor nem frissülne.
+                TextInput {
+                    id: captionField
+                    objectName: "captionField"
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 8
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: Math.min(400, photoArea.width)
+                    horizontalAlignment: TextInput.AlignHCenter
+                    color: "#ffffff"
+                    font.pixelSize: Theme.fontSize
+                    selectByMouse: true
+                    text: viewer.photosModel
+                        ? (viewer.photosModel.revision,
+                           viewer.photosModel.captionAt(viewer.currentIndex))
+                        : ""
+
+                    function rebind() {
+                        text = Qt.binding(function () {
+                            return viewer.photosModel
+                                ? (viewer.photosModel.revision,
+                                   viewer.photosModel.captionAt(viewer.currentIndex))
+                                : ""
+                        })
+                    }
+
+                    onAccepted: {
+                        controller.setCaption(viewer.currentIndex, text)
+                        rebind()
+                        viewer.forceActiveFocus()
+                    }
+                    Keys.onEscapePressed: (event) => {
+                        rebind()
+                        viewer.forceActiveFocus()
+                        event.accepted = true
+                    }
+                }
                 Text {
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 8
@@ -200,6 +243,7 @@ Rectangle {
                     text: qsTr("Make a caption!")
                     color: "#e8e8e8"
                     font.pixelSize: Theme.fontSize
+                    visible: captionField.text.length === 0 && !captionField.activeFocus
                 }
 
                 // elő-betöltés: a szomszédok már dekódolva, mire lépsz

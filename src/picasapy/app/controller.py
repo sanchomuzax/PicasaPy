@@ -25,6 +25,7 @@ from picasapy.index import (
     sync_tree,
 )
 from picasapy.ini import load_document, parse_document, save_document
+from picasapy.metadata import write_iptc_caption
 from picasapy.scanner import PICASA_INI_NAME
 from .models import FolderListModel, PhotoGridModel
 from .thumbnail_provider import ThumbnailProvider
@@ -149,6 +150,36 @@ class AppController(QObject):
         else:
             document = document.with_value(photo.name, "star", "yes")
         save_document(document, ini_path, backup=True)
+        with open_index(self._db_path) as conn:
+            sync_tree(conn, photo.folder_path)
+        self._refresh_view()
+
+    @Slot(int, str)
+    def setCaption(self, row: int, text: str) -> None:
+        """Felirat mentése — Picasa írási szabály (spec #3): JPEG-nél az
+        IPTC-be (a képfájlba) írjuk, minden más formátumnál a .picasa.ini-be,
+        ahogy a csillag/forgatás is. Az IPTC-írás sikertelensége esetén
+        (pl. sérült fájl) defenzíven az ini-útra esünk vissza."""
+        photos = self._photos.photos
+        if not 0 <= row < len(photos):
+            return
+        photo = photos[row]
+        text = text.strip()
+        is_jpeg = photo.name.lower().endswith((".jpg", ".jpeg"))
+        wrote_iptc = False
+        if is_jpeg:
+            path = Path(photo.folder_path) / photo.name
+            wrote_iptc = write_iptc_caption(path, text)
+        if not wrote_iptc:
+            ini_path = Path(photo.folder_path) / PICASA_INI_NAME
+            document = (
+                load_document(ini_path) if ini_path.exists() else parse_document("")
+            )
+            if text:
+                document = document.with_value(photo.name, "caption", text)
+            else:
+                document = document.with_removed(photo.name, "caption")
+            save_document(document, ini_path, backup=True)
         with open_index(self._db_path) as conn:
             sync_tree(conn, photo.folder_path)
         self._refresh_view()

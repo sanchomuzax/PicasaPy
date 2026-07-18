@@ -81,6 +81,35 @@ class TestViewerRotation:
         assert _viewer_image(window).property("rotation") == 0
 
 
+class TestCaptionEditing:
+    def test_caption_field_updates_after_set_caption(self, qml_app, qt_app):
+        # A felirat-mező kötésének a modell revíziójára kell reagálnia,
+        # ahogy a forgatás-kötés is (lásd photo.iniSteps fent).
+        window, controller, _ = qml_app
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", 0)
+        qt_app.processEvents()
+        field = window.findChild(QObject, "captionField")
+        assert field is not None, "captionField nem található"
+        controller.setCaption(0, "teszt felirat")
+        qt_app.processEvents()
+        assert field.property("text") == "teszt felirat"
+
+    def test_caption_field_empty_for_other_photo(self, qml_app, qt_app):
+        window, controller, _ = qml_app
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", 0)
+        qt_app.processEvents()
+        controller.setCaption(0, "teszt felirat")
+        qt_app.processEvents()
+        viewer.setProperty("currentIndex", 1)
+        qt_app.processEvents()
+        field = window.findChild(QObject, "captionField")
+        assert field.property("text") == ""
+
+
 class TestTrayStar:
     def test_star_button_reflects_selection_state(self, qml_app, qt_app):
         window, controller, _ = qml_app

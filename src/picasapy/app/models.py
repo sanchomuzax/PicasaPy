@@ -148,6 +148,14 @@ class PhotoGridModel(QAbstractListModel):
         return 0 <= row < len(self._photos) and self._photos[row].star
 
     @Slot(int, result=str)
+    def captionAt(self, row: int) -> str:
+        """A sor felirata (üres, ha nincs vagy az index érvénytelen) — a
+        néző szerkeszthető felirat-mezőjének."""
+        if not 0 <= row < len(self._photos):
+            return ""
+        return self._photos[row].caption or ""
+
+    @Slot(int, result=str)
     def fileUrlAt(self, row: int) -> str:
         """A kép file:// URL-je a nézőnek; üres, ha az index érvénytelen."""
         if not 0 <= row < len(self._photos):
