@@ -422,6 +422,27 @@ class TestThumbCaptionMode:
         assert controller.thumbCaptionMode == "resolution"
 
 
+class TestLiveWatch:
+    def test_dirty_folders_synced_into_index(self, controller, library, qt_app):
+        # A watcher-jelzés (más szálból) a jelzett mappákat szinkronizálja,
+        # és a nézet frissül — az új kép megjelenik.
+        from PySide6.QtCore import QEventLoop, QTimer
+
+        controller.selectFolder(str(library / "nyaralas"))
+        assert controller.photos.rowCount() == 2
+        make_jpeg(library / "nyaralas" / "IMG_9999.jpg")
+        loop = QEventLoop()
+        controller.syncFinished.connect(loop.quit)
+        controller._on_folders_dirty([str(library / "nyaralas")])
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+        assert controller.photos.rowCount() == 3
+
+    def test_shutdown_without_start_is_safe(self, controller):
+        controller.shutdown()  # watcher nélkül sem dobhat
+
+
 class TestBatchOperations:
     def test_toggle_star_many_stars_all(self, controller, library):
         # Picasa: a tálca-csillag a teljes kijelölésre hat — ha van még

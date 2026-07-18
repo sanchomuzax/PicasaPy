@@ -83,7 +83,10 @@ def _install_desktop_entry() -> None:
     )
     desktop_target = base / "applications" / "picasapy.desktop"
     try:
-        if not icon_target.exists():
+        if (
+            not icon_target.exists()
+            or icon_target.read_bytes() != icon_source.read_bytes()
+        ):
             icon_target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(icon_source, icon_target)
         if (
@@ -137,4 +140,6 @@ def run(argv: list[str]) -> int:
     if not engine.rootObjects():
         return 1
     controller.start()
-    return app.exec()
+    exit_code = app.exec()
+    controller.shutdown()
+    return exit_code

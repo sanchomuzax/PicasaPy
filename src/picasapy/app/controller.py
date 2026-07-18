@@ -27,7 +27,7 @@ from picasapy.index import (
 )
 from picasapy.ini import load_document, parse_document, save_document
 from picasapy.metadata import write_iptc_caption
-from picasapy.scanner import PICASA_INI_NAME
+from picasapy.scanner import PICASA_INI_NAME, LibraryWatcher
 from .models import FolderListModel, PhotoGridModel
 from .thumbnail_provider import ThumbnailProvider
 
@@ -41,6 +41,8 @@ class AppController(QObject):
     statusChanged = Signal()
     syncFinished = Signal()
     syncFailed = Signal(str)
+    # a watchdog szálából érkezik — a Qt automatikusan sorba állítja
+    watcherDirty = Signal(list)
 
     def __init__(
         self,
@@ -68,7 +70,10 @@ class AppController(QObject):
         self._thumb_caption_mode = self._get_settings().value(
             "view/thumbCaption", "none"
         )
+        self._watcher = None
+        self._rescan_timer = None
         self.syncFinished.connect(self._reload)
+        self.watcherDirty.connect(self._on_folders_dirty)
 
     def _get_settings(self) -> QSettings:
         """Lusta alapértelmezés: `QSettings("PicasaPy", "PicasaPy")`, hacsak
@@ -154,11 +159,54 @@ class AppController(QObject):
     # -- műveletek ----------------------------------------------------------
 
     def start(self) -> None:
-        """Indulás: modellek betöltése, majd háttér-szinkron."""
+        """Indulás: modellek betöltése, háttér-szinkron, élő figyelés.
+
+        Az inotify-figyelő az azonnali frissülést adja; NAS-mounton
+        (SMB/NFS) nem érkezik esemény, ezért 5 percenként periodikus
+        rescan fut fallbackként (a Picasa is folyamatosan pásztázott)."""
+        from PySide6.QtCore import QTimer
+
         self._reload()
         if not self._current_folder:
             self.restoreSession()
         self.rescan()
+        self._watcher = LibraryWatcher(
+            tuple(self._roots),
+            lambda folders: self.watcherDirty.emit(list(folders)),
+        )
+        self._watcher.start()
+        self._rescan_timer = QTimer(self)
+        self._rescan_timer.setInterval(5 * 60 * 1000)
+        self._rescan_timer.timeout.connect(self.rescan)
+        self._rescan_timer.start()
+
+    def shutdown(self) -> None:
+        """Leállítás: figyelő és időzítő leállítása (kilépéskor hívandó)."""
+        if self._rescan_timer is not None:
+            self._rescan_timer.stop()
+        if self._watcher is not None:
+            self._watcher.stop()
+            self._watcher = None
+
+    @Slot(list)
+    def _on_folders_dirty(self, folders) -> None:
+        """A watcher által jelzett mappák célzott szinkronja háttérszálon."""
+        if self._sync_running:
+            return  # a futó teljes szinkron úgyis lefedi
+        paths = [str(f) for f in folders]
+
+        def worker():
+            try:
+                with open_index(self._db_path) as conn:
+                    for folder in paths:
+                        try:
+                            sync_tree(conn, folder)
+                        except (OSError, RuntimeError):
+                            pass  # eltűnt mappa — a periodikus rescan rendezi
+            finally:
+                self.syncFinished.emit()
+
+        threading.Thread(target=worker, daemon=True).start()
 
     @Slot()
     def restoreSession(self) -> None:
