@@ -102,6 +102,23 @@ class TestPhotoGridModel:
             "/nyaralas/IMG_0001.jpg"
         )
 
+    def test_thumb_url_versioned_by_rotation(self, qt_app, conn, library):
+        # A forgatás lépésszáma az URL-ben van, hogy a QML kép-cache frissüljön.
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        url = model.data(model.index(0, 0), PhotoGridModel.ThumbUrlRole)
+        assert url.endswith("?r=0")
+
+    def test_rotate_at(self, qt_app, conn, library):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        assert model.rotateAt(0) == 0
+        assert model.rotateAt(-1) == 0
+
     def test_star_at(self, qt_app, conn, library):
         from picasapy.app.models import PhotoGridModel
 

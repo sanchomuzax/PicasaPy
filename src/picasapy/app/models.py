@@ -121,6 +121,13 @@ class PhotoGridModel(QAbstractListModel):
     def photos(self) -> tuple[PhotoRecord, ...]:
         return self._photos
 
+    @Slot(int, result=int)
+    def rotateAt(self, row: int) -> int:
+        """A sor nem-destruktív forgatási lépésszáma (0–3) a nézőnek."""
+        if not 0 <= row < len(self._photos):
+            return 0
+        return self._photos[row].rotate_steps
+
     @Slot(int, result=bool)
     def starAt(self, row: int) -> bool:
         """A sor csillag-állapota (a tálca ★ gombjának színezéséhez)."""
@@ -144,7 +151,8 @@ class PhotoGridModel(QAbstractListModel):
         if role in (self.NameRole, Qt.ItemDataRole.DisplayRole):
             return photo.name
         if role == self.ThumbUrlRole:
-            return f"image://thumbs/{photo.id}"
+            # a lépésszám cache-buster: forgatás után új URL → friss kép
+            return f"image://thumbs/{photo.id}?r={photo.rotate_steps}"
         if role == self.StarRole:
             return photo.star
         if role == self.CaptionRole:

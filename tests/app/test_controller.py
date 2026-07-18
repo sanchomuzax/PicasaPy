@@ -124,6 +124,38 @@ class TestToggleStar:
         controller.selectFolder(str(library / "nyaralas"))
         controller.toggleStar(99)  # nem dobhat
 
+    def test_rotate_right_writes_ini_and_model(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.rotateRight(0)
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        assert "rotate=rotate(1)" in ini_text
+        assert controller.photos.photos[0].rotate_steps == 1
+
+    def test_rotate_accumulates(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.rotateRight(0)
+        controller.rotateRight(0)
+        assert "rotate=rotate(2)" in (
+            library / "nyaralas" / ".picasa.ini"
+        ).read_text()
+
+    def test_rotate_left_wraps_to_three(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.rotateLeft(0)
+        assert "rotate=rotate(3)" in (
+            library / "nyaralas" / ".picasa.ini"
+        ).read_text()
+
+    def test_full_circle_removes_key(self, controller, library):
+        # 4x jobbra = alaphelyzet → a kulcs törlődik (tiszta round-trip).
+        ini = library / "nyaralas" / ".picasa.ini"
+        before = ini.read_bytes()
+        controller.selectFolder(str(library / "nyaralas"))
+        for _ in range(4):
+            controller.rotateRight(0)
+        assert "rotate=" not in ini.read_text()
+        assert ini.read_bytes() == before
+
     def test_toggle_twice_restores_ini_bytes(self, controller, library):
         # Round-trip invariáns: fel + le = bitre azonos .picasa.ini.
         ini = library / "nyaralas" / ".picasa.ini"
@@ -235,6 +267,18 @@ class TestThumbnailProvider:
         image = controller._provider.requestImage(str(photo.id), None, None)
         assert not image.isNull()
         assert max(image.width(), image.height()) <= 32
+
+    def test_rotated_photo_thumb_dims_swapped(self, controller, library):
+        # rotate_steps=1 → a provider elforgatva adja vissza a thumbnailt.
+        controller.selectFolder(str(library / "nyaralas"))
+        photo = controller.photos.photos[0]
+        base = controller._provider.requestImage(f"{photo.id}?r=0", None, None)
+        controller.rotateRight(0)
+        rotated_photo = controller.photos.photos[0]
+        rotated = controller._provider.requestImage(
+            f"{rotated_photo.id}?r=1", None, None
+        )
+        assert (rotated.width(), rotated.height()) == (base.height(), base.width())
 
     def test_unknown_id_gives_placeholder(self, controller):
         image = controller._provider.requestImage("99999", None, None)

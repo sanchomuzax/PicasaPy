@@ -12,6 +12,9 @@ Rectangle {
 
     property var photosModel: null
     property int currentIndex: -1
+    // frissítés-trigger: a Main a controller.statusText-et köti ide, így a
+    // forgatás utáni modell-reset után újraértékelődik az iniSteps
+    property string refreshTick: ""
     // a ListView.count reaktív — a rowCount() hívást a QML nem követné
     property int photoCount: filmstrip.count
     signal closed()
@@ -162,16 +165,31 @@ Rectangle {
                 Layout.fillHeight: true
                 color: "#808080"
 
-                Image {
-                    id: photo
+                Item {
+                    id: photoArea
                     anchors.fill: parent
                     anchors.margins: 14
                     anchors.bottomMargin: 30
-                    source: viewer.urlAt(viewer.currentIndex)
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    autoTransform: true   // EXIF-orientáció
-                    sourceSize.width: 2560
+
+                    Image {
+                        id: photo
+                        readonly property int iniSteps: {
+                            viewer.refreshTick
+                            return viewer.photosModel
+                                   ? viewer.photosModel.rotateAt(viewer.currentIndex)
+                                   : 0
+                        }
+                        anchors.centerIn: parent
+                        // 90°/270°-nál a befoglaló doboz oldalai cserélődnek
+                        width: iniSteps % 2 ? photoArea.height : photoArea.width
+                        height: iniSteps % 2 ? photoArea.width : photoArea.height
+                        rotation: iniSteps * 90
+                        source: viewer.urlAt(viewer.currentIndex)
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                        autoTransform: true   // EXIF-orientáció
+                        sourceSize.width: 2560
+                    }
                 }
                 BusyIndicator {
                     anchors.centerIn: parent

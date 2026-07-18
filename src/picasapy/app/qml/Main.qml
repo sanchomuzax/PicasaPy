@@ -15,6 +15,18 @@ ApplicationWindow {
     property int selectedIndex: -1
     property bool viewerOpen: false
 
+    // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat
+    Shortcut {
+        sequence: "Ctrl+R"
+        onActivated: if (trayStar.targetRow >= 0)
+                         controller.rotateRight(trayStar.targetRow)
+    }
+    Shortcut {
+        sequence: "Ctrl+Shift+R"
+        onActivated: if (trayStar.targetRow >= 0)
+                         controller.rotateLeft(trayStar.targetRow)
+    }
+
     menuBar: PicasaMenuBar {
         onRescanRequested: controller.rescan()
         onAboutRequested: aboutDialog.open()
@@ -149,6 +161,7 @@ ApplicationWindow {
         anchors.fill: parent
         visible: window.viewerOpen
         photosModel: controller.photos
+        refreshTick: controller.statusText
         onClosed: {
             window.viewerOpen = false
             window.selectedIndex = currentIndex   // a rács kövesse a nézőt
@@ -313,8 +326,18 @@ ApplicationWindow {
                         styleColor: "#9a9a9a"
                     }
                 }
-                PicasaButton { text: "↺"; enabled: false; Layout.preferredWidth: 34 }
-                PicasaButton { text: "↻"; enabled: false; Layout.preferredWidth: 34 }
+                PicasaButton {
+                    text: "↺"
+                    enabled: window.viewerOpen || window.selectedIndex >= 0
+                    Layout.preferredWidth: 34
+                    onClicked: controller.rotateLeft(trayStar.targetRow)
+                }
+                PicasaButton {
+                    text: "↻"
+                    enabled: window.viewerOpen || window.selectedIndex >= 0
+                    Layout.preferredWidth: 34
+                    onClicked: controller.rotateRight(trayStar.targetRow)
+                }
                 Item { width: 8 }
                 PicasaButton {
                     text: qsTr("Upload to Google Photos")

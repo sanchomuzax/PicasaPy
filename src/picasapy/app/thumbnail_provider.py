@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtGui import QImage
+from PySide6.QtGui import QImage, QTransform
 from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.index import PhotoRecord
@@ -30,17 +30,22 @@ class ThumbnailProvider(QQuickImageProvider):
                 Path(photo.folder_path) / photo.name,
                 photo.mtime_ns,
                 photo.size,
+                photo.rotate_steps,
             )
             for photo in photos
         }
 
     def requestImage(self, photo_id, size, requested_size):
-        entry = self._registry.get(photo_id)
-        thumb = self._cache.get_or_create(*entry) if entry else None
+        # az URL-ben ?r=<lépés> cache-buster jöhet — az id az első rész
+        entry = self._registry.get(photo_id.split("?")[0])
+        thumb = self._cache.get_or_create(*entry[:3]) if entry else None
         image = QImage(str(thumb)) if thumb else QImage()
         if image.isNull():
             image = QImage(16, 16, QImage.Format.Format_RGB32)
             image.fill(_PLACEHOLDER_COLOR)
+        elif entry and entry[3]:
+            # nem-destruktív ini-forgatás (a cache-elt thumb forgatatlan)
+            image = image.transformed(QTransform().rotate(90 * entry[3]))
         if size is not None:
             size.setWidth(image.width())
             size.setHeight(image.height())

@@ -153,6 +153,35 @@ class AppController(QObject):
             sync_tree(conn, photo.folder_path)
         self._refresh_view()
 
+    @Slot(int)
+    def rotateRight(self, row: int) -> None:
+        self._apply_rotate(row, 1)
+
+    @Slot(int)
+    def rotateLeft(self, row: int) -> None:
+        self._apply_rotate(row, -1)
+
+    def _apply_rotate(self, row: int, delta: int) -> None:
+        """Nem-destruktív forgatás: rotate=rotate(n) az ini-be; n=0-nál a
+        kulcs törlődik, így a teljes kör bitre pontos round-trip."""
+        photos = self._photos.photos
+        if not 0 <= row < len(photos):
+            return
+        photo = photos[row]
+        steps = (photo.rotate_steps + delta) % 4
+        ini_path = Path(photo.folder_path) / PICASA_INI_NAME
+        document = (
+            load_document(ini_path) if ini_path.exists() else parse_document("")
+        )
+        if steps == 0:
+            document = document.with_removed(photo.name, "rotate")
+        else:
+            document = document.with_value(photo.name, "rotate", f"rotate({steps})")
+        save_document(document, ini_path, backup=True)
+        with open_index(self._db_path) as conn:
+            sync_tree(conn, photo.folder_path)
+        self._refresh_view()
+
     def _refresh_view(self) -> None:
         """Az aktuális nézet újratöltése az indexből (mód szerint)."""
         mode, param = self._view_mode
