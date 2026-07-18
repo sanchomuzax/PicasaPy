@@ -72,11 +72,17 @@ class FolderListModel(QAbstractListModel):
             for row in db_rows
         ]
         folders.sort(key=_sort_key(sort_mode), reverse=_descending(sort_mode) != reverse)
-        self.beginResetModel()
-        self._rows = _with_year_separators(
+        rows = _with_year_separators(
             (name, path, count, date)
             for name, path, count, date, _size, _change in folders
         )
+        # Változatlan adatnál nincs reset: a reset eldobná a delegate-eket
+        # és nullázná a görgetést, így a lista minden háttér-szinkronnál
+        # a tetejére ugrana (#10).
+        if rows == self._rows:
+            return
+        self.beginResetModel()
+        self._rows = rows
         self.endResetModel()
         self.folderCountChanged.emit()
 

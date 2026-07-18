@@ -326,3 +326,20 @@ class TestLightThemeAndSearch:
         field.setProperty("text", "logo")
         qt_app.processEvents()
         assert clear.property("visible") is True
+
+
+class TestFolderPaneScrollStability:
+    def test_saved_y_survives_reset_zeroing(self, qml_app, qt_app):
+        # 10-es issue: modell-resetkor a ListView contentY-ja nullázódik,
+        # és a mentett pozíció (savedY) is felülíródott nullával — a
+        # visszaállítás így a lista tetejére "ugrott". A 0-ra ugrás nem
+        # írhatja felül a mentett pozíciót (a fotórács már így működik).
+        window, _, _ = qml_app
+        folder_list = window.findChild(QObject, "folderListView")
+        assert folder_list is not None, "folderListView nem található"
+        folder_list.setProperty("contentY", 150)
+        qt_app.processEvents()
+        assert folder_list.property("savedY") == 150
+        folder_list.setProperty("contentY", 0)  # reset mellékhatása
+        qt_app.processEvents()
+        assert folder_list.property("savedY") == 150

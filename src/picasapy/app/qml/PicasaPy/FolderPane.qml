@@ -83,16 +83,22 @@ Rectangle {
 
         ListView {
             id: folderList
+            objectName: "folderListView"
             width: parent.width
             height: pane.height - 66
             clip: true
 
             // A háttér-szinkron utáni modell-frissítés ne nullázza a
             // görgetési pozíciót — enélkül a lista folyton visszaugrik,
-            // és nem lehet görgetni.
+            // és nem lehet görgetni. A reset 0-ra ugrása nem írhatja
+            // felül a mentett pozíciót (#10, a fotórács mintájára).
             property real savedY: 0
             property bool restoring: false
-            onContentYChanged: if (!restoring) savedY = contentY
+            onContentYChanged: {
+                if (!restoring && (contentY > 0 || moving))
+                    savedY = contentY
+            }
+            onMovementEnded: savedY = contentY
             Connections {
                 target: folderList.model
                 function onFolderCountChanged() {
