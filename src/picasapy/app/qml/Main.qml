@@ -13,6 +13,7 @@ ApplicationWindow {
 
     property int thumbSize: 144
     property int selectedIndex: -1
+    property bool viewerOpen: false
 
     menuBar: PicasaMenuBar {
         onRescanRequested: controller.rescan()
@@ -81,8 +82,22 @@ ApplicationWindow {
         }
     }
 
+    PhotoViewer {
+        id: photoViewer
+        objectName: "photoViewer"
+        anchors.fill: parent
+        visible: window.viewerOpen
+        photosModel: controller.photos
+        onClosed: {
+            window.viewerOpen = false
+            window.selectedIndex = currentIndex   // a rács kövesse a nézőt
+        }
+        onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
+    }
+
     SplitView {
         anchors.fill: parent
+        visible: !window.viewerOpen
         orientation: Qt.Horizontal
 
         FolderPane {
@@ -130,6 +145,10 @@ ApplicationWindow {
                         height: grid.cellHeight
                         selected: window.selectedIndex === index
                         onChosen: function(i) { window.selectedIndex = i }
+                        onOpened: function(i) {
+                            window.viewerOpen = true
+                            photoViewer.show(i)
+                        }
                     }
                     ScrollBar.vertical: ScrollBar {}
                 }
@@ -146,9 +165,11 @@ ApplicationWindow {
             color: Theme.infoBar
             Text {
                 anchors.centerIn: parent
-                text: window.selectedIndex >= 0
-                      ? controller.photoInfo(window.selectedIndex)
-                      : controller.statusText
+                text: window.viewerOpen
+                      ? controller.viewerInfo(photoViewer.currentIndex)
+                      : (window.selectedIndex >= 0
+                         ? controller.photoInfo(window.selectedIndex)
+                         : controller.statusText)
                 color: Theme.infoBarText
                 font.pixelSize: Theme.fontSize
                 font.bold: true

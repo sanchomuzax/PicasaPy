@@ -74,6 +74,10 @@ class TestPhotoGridModel:
             "image://thumbs/"
         )
         assert model.data(first, PhotoGridModel.IsVideoRole) is False
+        assert model.data(first, PhotoGridModel.FileUrlRole).startswith("file://")
+        assert model.data(first, PhotoGridModel.FileUrlRole).endswith(
+            "/nyaralas/IMG_0001.jpg"
+        )
 
     def test_set_photos_resets(self, qt_app, conn, library):
         from picasapy.app.models import PhotoGridModel

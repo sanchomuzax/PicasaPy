@@ -12,6 +12,7 @@ Item {
     required property int index
     property bool selected: false
     signal chosen(int index)
+    signal opened(int index)
 
     Rectangle {
         id: frame
@@ -57,5 +58,8 @@ Item {
     }
 
     HoverHandler { id: hover }
-    TapHandler { onTapped: cell.chosen(cell.index) }
+    TapHandler {
+        onTapped: cell.chosen(cell.index)
+        onDoubleTapped: cell.opened(cell.index)
+    }
 }

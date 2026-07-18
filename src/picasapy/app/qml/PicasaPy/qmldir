@@ -4,3 +4,4 @@ FolderPane 1.0 FolderPane.qml
 ThumbDelegate 1.0 ThumbDelegate.qml
 PicasaMenuBar 1.0 PicasaMenuBar.qml
 LightboxHeader 1.0 LightboxHeader.qml
+PhotoViewer 1.0 PhotoViewer.qml

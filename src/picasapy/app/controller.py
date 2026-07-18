@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import threading
 from pathlib import Path
 
@@ -24,6 +25,9 @@ from picasapy.index import (
 )
 from .models import FolderListModel, PhotoGridModel
 from .thumbnail_provider import ThumbnailProvider
+
+
+_PATH_TAIL = re.compile(r"[/\\]")
 
 
 class AppController(QObject):
@@ -129,6 +133,17 @@ class AppController(QObject):
             )
         parts.append(_format_size(photo.size, locale, self.tr))
         return "   ".join(parts)
+
+    @Slot(int, result=str)
+    def viewerInfo(self, row: int) -> str:
+        """A néző infó-sávja: `mappa > név   ...   (i / N)` — Picasa-minta."""
+        photos = self._photos.photos
+        if not 0 <= row < len(photos):
+            return ""
+        photo = photos[row]
+        folder = _PATH_TAIL.split(photo.folder_path)[-1]
+        base = self.photoInfo(row).replace(photo.name, f"{folder} > {photo.name}", 1)
+        return f"{base}   ({row + 1} / {len(photos)})"
 
     @Slot()
     def showStarred(self) -> None:

@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 import sqlite3
 
-from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt
+from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt, QUrl, Slot
 
 from picasapy.index import PhotoRecord
 
@@ -66,6 +66,7 @@ class PhotoGridModel(QAbstractListModel):
     CaptionRole = Qt.ItemDataRole.UserRole + 4
     IsVideoRole = Qt.ItemDataRole.UserRole + 5
     TakenAtRole = Qt.ItemDataRole.UserRole + 6
+    FileUrlRole = Qt.ItemDataRole.UserRole + 7
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -79,6 +80,14 @@ class PhotoGridModel(QAbstractListModel):
     @property
     def photos(self) -> tuple[PhotoRecord, ...]:
         return self._photos
+
+    @Slot(int, result=str)
+    def fileUrlAt(self, row: int) -> str:
+        """A kép file:// URL-je a nézőnek; üres, ha az index érvénytelen."""
+        if not 0 <= row < len(self._photos):
+            return ""
+        photo = self._photos[row]
+        return QUrl.fromLocalFile(f"{photo.folder_path}/{photo.name}").toString()
 
     def rowCount(self, parent=QModelIndex()) -> int:
         return 0 if parent.isValid() else len(self._photos)
@@ -99,6 +108,10 @@ class PhotoGridModel(QAbstractListModel):
             return photo.kind == "video"
         if role == self.TakenAtRole:
             return photo.taken_at or ""
+        if role == self.FileUrlRole:
+            return QUrl.fromLocalFile(
+                f"{photo.folder_path}/{photo.name}"
+            ).toString()
         return None
 
     def roleNames(self):
@@ -109,4 +122,5 @@ class PhotoGridModel(QAbstractListModel):
             self.CaptionRole: b"caption",
             self.IsVideoRole: b"isVideo",
             self.TakenAtRole: b"takenAt",
+            self.FileUrlRole: b"fileUrl",
         }

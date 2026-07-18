@@ -59,6 +59,16 @@ class TestController:
         assert controller.photoInfo(-1) == ""
         assert controller.photoInfo(999) == ""
 
+    def test_viewer_info_breadcrumb_and_counter(self, controller, library):
+        # Picasa: "mappa > név   dátum   SZxM képpont   méret   (i / N)"
+        controller.selectFolder(str(library / "nyaralas"))
+        info = controller.viewerInfo(0)
+        assert info.startswith("nyaralas > IMG_0001.jpg")
+        assert "(1 / 2)" in info
+
+    def test_viewer_info_invalid_index_empty(self, controller):
+        assert controller.viewerInfo(-1) == ""
+
     def test_search(self, controller):
         controller.search("naplemente")
         assert controller.photos.rowCount() == 1
