@@ -201,6 +201,33 @@ class TestToggleStar:
         assert controller.filterActive is False
         assert controller.photos.rowCount() == 2  # a mappa teljes tartalma
 
+    def test_reload_preserves_search(self, controller, library):
+        # #38: a háttér-sync (watcher/rescan) végén futó _reload nem
+        # dobhatja el az aktív keresést — a szűrt nézet marad.
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.search("naplemente")
+        assert controller.photos.rowCount() == 1
+        controller._reload()
+        assert controller.photos.rowCount() == 1
+
+    def test_reload_preserves_starred_filter(self, controller, library):
+        # #38 társ-eset: a csillag-szűrő is élje túl a háttér-sync reloadot.
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.showStarred()
+        assert controller.photos.rowCount() == 1
+        controller._reload()
+        assert controller.photos.rowCount() == 1
+        assert controller.filterActive is True
+
+    def test_cleared_search_resets_view_mode(self, controller, library):
+        # Üres keresés után a nézet-mód a mappa — egy későbbi _refresh_view
+        # (pl. csillagozás) nem hozhatja vissza a régi keresést.
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.search("naplemente")
+        controller.search("")
+        controller._refresh_view()
+        assert controller.photos.rowCount() == 2
+
     def test_filter_status_text(self, controller, library):
         # Zöld sáv (Picasa): "N mappa / M kép látható (x,xxx másodperc) Y GB"
         controller.selectFolder(str(library / "nyaralas"))
