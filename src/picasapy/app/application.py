@@ -22,6 +22,8 @@ from PySide6.QtQuickControls2 import QQuickStyle
 from picasapy.scanner import read_watched_folders
 from picasapy.thumbs import ThumbnailCache
 from .controller import AppController
+from .edit_controller import EditController
+from .edit_preview import EditPreviewProvider
 from .thumbnail_provider import ThumbnailProvider
 
 _APP_DIR = Path(__file__).parent
@@ -170,10 +172,17 @@ def run(argv: list[str]) -> int:
         watched_file=_config_dir() / "WatchedFolders.txt",
     )
 
+    # szerkesztő-előnézet (#19): a provider a filters= láncot alkalmazva
+    # rendereli a képet; a hidat az EditController adja a QML-nek
+    edit_preview = EditPreviewProvider()
+    edit_controller = EditController(edit_preview)
+
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
+    engine.addImageProvider("editpreview", edit_preview)
     engine.addImportPath(str(_APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
+    engine.rootContext().setContextProperty("editController", edit_controller)
     engine.load(str(_APP_DIR / "qml" / "Main.qml"))
     if not engine.rootObjects():
         return 1

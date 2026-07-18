@@ -17,6 +17,8 @@ def qml_app(qt_app, tmp_path):
     """Teljes app betöltve offscreen: (window, controller, engine)."""
     import picasapy.app.application as app_module
     from picasapy.app.controller import AppController
+    from picasapy.app.edit_controller import EditController
+    from picasapy.app.edit_preview import EditPreviewProvider
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.thumbs import ThumbnailCache
     from PySide6.QtCore import QSettings
@@ -35,10 +37,15 @@ def qml_app(qt_app, tmp_path):
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
     provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
     controller = AppController(db, (str(lib),), provider, settings=settings)
+    # szerkesztő-híd (#19) — az application.py bekötésének tükre
+    edit_preview = EditPreviewProvider()
+    edit_controller = EditController(edit_preview)
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
+    engine.addImageProvider("editpreview", edit_preview)
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
+    engine.rootContext().setContextProperty("editController", edit_controller)
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
     window = engine.rootObjects()[0]
@@ -343,3 +350,93 @@ class TestFolderPaneScrollStability:
         folder_list.setProperty("contentY", 0)  # reset mellékhatása
         qt_app.processEvents()
         assert folder_list.property("savedY") == 150
+
+
+class TestEditorWiring:
+    """A #19-es bekötés: EditorPanel/CropOverlay ↔ EditController ↔ ini."""
+
+    def _open_viewer(self, window, qt_app, index=0):
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", index)
+        qt_app.processEvents()
+        return viewer
+
+    def _edit_controller(self, engine):
+        return engine.rootContext().contextProperty("editController")
+
+    def test_viewer_open_starts_edit_session(self, qml_app, qt_app):
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        edit = self._edit_controller(engine)
+        assert edit.property("previewSource").startswith("image://editpreview/")
+        image = window.findChild(QObject, "viewerImage")
+        assert image.property("source").toString().startswith("image://editpreview/")
+
+    def test_viewer_close_ends_edit_session(self, qml_app, qt_app):
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        window.setProperty("viewerOpen", False)
+        qt_app.processEvents()
+        assert self._edit_controller(engine).property("previewSource") == ""
+
+    def test_panel_toggle_writes_ini_and_syncs_state(self, qml_app, qt_app, tmp_path):
+        from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        assert panel is not None, "viewerEditorPanel nem található"
+        QMetaObject.invokeMethod(
+            panel,
+            "handleToolClick",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", "autolight"),
+        )
+        qt_app.processEvents()
+        ini_text = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
+        assert "[a.jpg]" in ini_text
+        assert "autolight=1" in ini_text
+        # a panel állapota az EditController igazságforrásából szinkronizált
+        assert panel.property("autolightActive") is True
+        # a kép forrása új ?rev=-et kap → az előnézet frissül
+        image = window.findChild(QObject, "viewerImage")
+        assert "?rev=" in image.property("source").toString()
+
+    def test_crop_accept_persists_and_advances(self, qml_app, qt_app, tmp_path):
+        from PySide6.QtCore import QMetaObject, QRectF, Qt
+
+        window, _, engine = qml_app
+        viewer = self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("cropActive", True)
+        qt_app.processEvents()
+        overlay = window.findChild(QObject, "cropOverlay")
+        assert overlay is not None, "cropOverlay nem található"
+        assert overlay.property("visible") is True
+        overlay.setProperty("cropRect", QRectF(0.25, 0.25, 0.5, 0.5))
+        QMetaObject.invokeMethod(
+            overlay, "acceptCrop", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        ini_text = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
+        assert "crop64=1," in ini_text
+        # Enter-flow: elfogadás után a néző a következő képre lép, a
+        # vágó-mód megmarad (sorozat-vágás)
+        assert viewer.property("currentIndex") == 1
+        assert panel.property("cropActive") is True
+
+    def test_crop_cancel_leaves_crop_mode(self, qml_app, qt_app):
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("cropActive", True)
+        qt_app.processEvents()
+        overlay = window.findChild(QObject, "cropOverlay")
+        QMetaObject.invokeMethod(
+            overlay, "cancelCrop", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert panel.property("cropActive") is False

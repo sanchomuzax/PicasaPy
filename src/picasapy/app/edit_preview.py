@@ -14,7 +14,7 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QImage
+from PySide6.QtGui import QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.ini.filters import FilterOp
@@ -58,7 +58,11 @@ class EditPreviewProvider(QQuickImageProvider):
 
     def _render(self, entry: tuple[Path, tuple[FilterOp, ...]]) -> QImage:
         path, ops = entry
-        source = QImage(str(path))
+        # QImageReader + autoTransform: az EXIF-orientációt a betöltés
+        # alkalmazza — a néző natív Image-e is így tesz (autoTransform: true)
+        reader = QImageReader(str(path))
+        reader.setAutoTransform(True)
+        source = reader.read()
         if source.isNull():
             return QImage()
         array = _qimage_to_rgb_array(source)
