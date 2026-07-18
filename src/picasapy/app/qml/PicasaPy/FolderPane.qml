@@ -10,6 +10,9 @@ Rectangle {
     property alias foldersModel: folderList.model
     property string selectedPath: ""
     property bool starredActive: false
+    property bool searchActive: false
+    property string searchQuery: ""
+    property int searchResultCount: 0
     signal folderChosen(string path)
     signal starredChosen()
 
@@ -72,9 +75,13 @@ Rectangle {
                 spacing: 4
                 Text { text: "▼"; font.pixelSize: 8; color: Theme.panelHeaderText }
                 Text {
-                    text: qsTr("Folders") + " ("
-                          + (folderList.model ? folderList.model.folderCount : 0)
-                          + ")"
+                    objectName: "folderPaneHeader"
+                    text: pane.searchActive
+                          ? qsTr("Search results for \"%1\" (%2)")
+                            .arg(pane.searchQuery).arg(pane.searchResultCount)
+                          : qsTr("Folders") + " ("
+                            + (folderList.model ? folderList.model.folderCount : 0)
+                            + ")"
                     font.pixelSize: Theme.fontSize; font.bold: true
                     color: Theme.panelHeaderText
                 }
