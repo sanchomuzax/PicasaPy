@@ -253,3 +253,38 @@ class TestFolderListModelStability:
         model.modelReset.connect(lambda: resets.append(1))
         model.load(conn)
         assert resets == [1]
+
+
+class TestFolderListMatches:
+    """#49: keresés közben a mappalista csak a találatos mappákat mutatja,
+    a darabszám a találatok száma."""
+
+    def _groups(self):
+        from picasapy.app.search_results import SearchGroup
+
+        return (
+            SearchGroup("/k/nyaralas", "nyaralas", 0, None, ("r1", "r2")),
+            SearchGroup("/k/telek", "telek", 2, None, ("r3",)),
+        )
+
+    def test_load_matches_rows_and_counts(self, qt_app):
+        from picasapy.app.models import FolderListModel
+
+        model = FolderListModel()
+        model.load_matches(self._groups())
+        assert model.rowCount() == 2
+        first = model.index(0, 0)
+        assert model.data(first, FolderListModel.KindRole) == "folder"
+        assert model.data(first, FolderListModel.NameRole) == "nyaralas"
+        assert model.data(first, FolderListModel.CountRole) == 2
+        assert model.folderCount == 2
+
+    def test_load_matches_unchanged_no_reset(self, qt_app):
+        from picasapy.app.models import FolderListModel
+
+        model = FolderListModel()
+        model.load_matches(self._groups())
+        resets = []
+        model.modelReset.connect(lambda: resets.append(1))
+        model.load_matches(self._groups())
+        assert resets == []
