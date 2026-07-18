@@ -38,12 +38,11 @@ class TestAssets:
         assert (assets / "logo.svg").exists()
 
     def test_icon_has_taskbar_margin(self, qt_app):
-        # 11-es issue: a taskbaron az ikon a teljes csempét kitöltötte.
-        # Élő próba után a 66%-os kitöltés viszont túl kicsinek bizonyult:
-        # a kör alakú rajzolat optikailag kisebbnek hat, mint a teli
-        # négyzet-lapkás ikonok (pl. Claude), ezért 70–78% a célsáv,
-        # középre igazítva.
-        from PySide6.QtGui import QImage
+        # 11-es issue + 37-es issue: a kör logó fehér háttér-korongon ül,
+        # amely kicsit túllóg a logó szélén (tálca-méretben ~1–2 px).
+        # A korong a vászon 82–90%-a, középen; a sarkok átlátszók
+        # maradnak (kerek forma), a perem pedig fehér.
+        from PySide6.QtGui import QImage, qAlpha, qBlue, qGreen, qRed
 
         image = QImage(str(application._APP_DIR / "assets" / "icon.png"))
         image = image.convertToFormat(QImage.Format.Format_ARGB32)
@@ -56,11 +55,18 @@ class TestAssets:
         assert xs, "az ikon teljesen átlátszó"
         content_w = max(xs) - min(xs) + 1
         content_h = max(ys) - min(ys) + 1
-        assert image.width() * 0.70 <= content_w <= image.width() * 0.78
-        assert image.height() * 0.70 <= content_h <= image.height() * 0.78
+        assert image.width() * 0.82 <= content_w <= image.width() * 0.90
+        assert image.height() * 0.82 <= content_h <= image.height() * 0.90
         # középre igazítás: a bal/jobb és felső/alsó margó közel azonos
         assert abs(min(xs) - (image.width() - 1 - max(xs))) <= 2
         assert abs(min(ys) - (image.height() - 1 - max(ys))) <= 2
+        # kerek forma: a sarkok átlátszók
+        for cx, cy in ((0, 0), (image.width() - 1, 0), (0, image.height() - 1),
+                       (image.width() - 1, image.height() - 1)):
+            assert qAlpha(image.pixel(cx, cy)) == 0
+        # a perem fehér: a korong tetejének közepe (pár px-szel beljebb)
+        top = image.pixel(image.width() // 2, min(ys) + 3)
+        assert min(qRed(top), qGreen(top), qBlue(top)) >= 240
 
 
 class TestSingleInstance:
