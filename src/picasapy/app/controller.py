@@ -41,13 +41,17 @@ _PATH_TAIL = re.compile(r"[/\\]")
 
 
 def _to_local_path(path_or_url: str) -> str:
-    """file:// URL vagy sima útvonal → lokális útvonal."""
+    """file:// URL vagy sima útvonal → OS-natív lokális útvonal.
+
+    A QUrl.toLocalFile Windowson per-jeles utat ad (C:/...) — a Path-on
+    átfuttatás normalizálja, különben ugyanaz a mappa két alakban
+    szerepelhetne a figyeltek közt."""
     from PySide6.QtCore import QUrl
 
     text = path_or_url.strip()
     if text.startswith("file:"):
-        return QUrl(text).toLocalFile()
-    return text
+        text = QUrl(text).toLocalFile()
+    return str(Path(text)) if text else ""
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
 
