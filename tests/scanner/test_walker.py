@@ -58,7 +58,12 @@ class TestScanTree:
     def test_stat_failure_skips_file(self, tree):
         # Élő NAS-on a fájl eltűnhet a listázás és a stat() között —
         # törött symlinkkel szimuláljuk; nem buktathatja el a scant.
-        (tree / "nyaralas" / "eltunt.jpg").symlink_to(tree / "nincs-ilyen.jpg")
+        try:
+            (tree / "nyaralas" / "eltunt.jpg").symlink_to(tree / "nincs-ilyen.jpg")
+        except OSError:
+            # Windowson a symlink-létrehozás jogosultsághoz kötött
+            # (Developer Mode vagy admin) — enélkül a teszt nem futtatható.
+            pytest.skip("symlink-létrehozás nem engedélyezett ezen a rendszeren")
         names = [f.name for f in scan_tree(tree)[0].files]
         assert "eltunt.jpg" not in names
         assert "IMG_0001.jpg" in names
