@@ -15,7 +15,7 @@ def library(tmp_path):
     make_jpeg(root / "nyaralas" / "IMG_0001.jpg", taken_at="2025:05:01 07:00:00")
     make_jpeg(root / "nyaralas" / "IMG_0002.jpg")
     make_jpeg(root / "telek" / "IMG_0100.jpg")
-    (root / "nyaralas" / ".picasa.ini").write_text("[IMG_0001.jpg]\nstar=yes\n")
+    (root / "nyaralas" / ".picasa.ini").write_text("[IMG_0001.jpg]\nstar=yes\n", encoding="utf-8")
     return root
 
 

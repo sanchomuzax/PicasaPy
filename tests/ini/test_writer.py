@@ -48,6 +48,10 @@ class TestAtomicity:
 
 
 class TestPermissions:
+    @pytest.mark.skipif(
+        __import__("os").name != "posix",
+        reason="Windowson a chmod csak a read-only bitet kezeli",
+    )
     def test_save_preserves_existing_file_mode(self, tmp_path):
         # NAS-on más folyamatok (az eredeti Picasa is) olvassák: a mentés
         # nem szűkítheti a jogokat a mkstemp-féle 0600-ra.

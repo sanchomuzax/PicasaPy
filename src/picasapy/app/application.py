@@ -91,10 +91,10 @@ def _install_desktop_entry() -> None:
             shutil.copy(icon_source, icon_target)
         if (
             not desktop_target.exists()
-            or desktop_target.read_text() != desktop_text
+            or desktop_target.read_text(encoding="utf-8") != desktop_text
         ):
             desktop_target.parent.mkdir(parents=True, exist_ok=True)
-            desktop_target.write_text(desktop_text)
+            desktop_target.write_text(desktop_text, encoding="utf-8")
     except OSError:
         pass  # csak kényelmi funkció — hibája nem akadályozhat indulást
 

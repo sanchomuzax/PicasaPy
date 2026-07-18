@@ -67,7 +67,12 @@ def _write_atomic(target: Path, payload: bytes) -> None:
 
 
 def _fsync_directory(directory: Path) -> None:
-    """A rename tartósságához a könyvtárbejegyzést is ki kell írni."""
+    """A rename tartósságához a könyvtárbejegyzést is ki kell írni.
+
+    Csak POSIX-on lehetséges (Windowson könyvtár nem nyitható fd-ként;
+    ott az os.replace enélkül is atomikus)."""
+    if os.name != "posix":
+        return
     dir_fd = os.open(directory, os.O_RDONLY)
     try:
         os.fsync(dir_fd)

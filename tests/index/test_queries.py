@@ -22,8 +22,8 @@ def conn(tmp_path):
     (root / "a" / ".picasa.ini").write_text(
         "[alpha.jpg]\nstar=yes\ncaption=balatoni naplemente\n"
         "[beta.jpg]\nkeywords=család,szülinap\n"
-    )
-    (root / "b" / ".picasa.ini").write_text("[gamma.jpg]\nstar=yes\n")
+    , encoding="utf-8")
+    (root / "b" / ".picasa.ini").write_text("[gamma.jpg]\nstar=yes\n", encoding="utf-8")
     with open_index(tmp_path / "index.db") as connection:
         sync_tree(connection, root)
         yield connection
@@ -69,7 +69,7 @@ class TestQueries:
         # FTS a frissítést is követi (external content + triggerek).
         (tmp_path / "kepek" / "a" / ".picasa.ini").write_text(
             "[alpha.jpg]\ncaption=hegyi túra\n"
-        )
+        , encoding="utf-8")
         sync_tree(conn, tmp_path / "kepek")
         assert search_photos(conn, "naplemente") == ()
         assert [p.name for p in search_photos(conn, "túra")] == ["alpha.jpg"]

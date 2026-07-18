@@ -16,7 +16,7 @@ def library(tmp_path):
         caption="balatoni naplemente",
     )
     make_jpeg(root / "nyaralas" / "IMG_0002.jpg")
-    (root / "nyaralas" / ".picasa.ini").write_text("[IMG_0001.jpg]\nstar=yes\n")
+    (root / "nyaralas" / ".picasa.ini").write_text("[IMG_0001.jpg]\nstar=yes\n", encoding="utf-8")
     return root
 
 
@@ -82,7 +82,7 @@ class TestToggleStar:
     def test_star_written_to_ini_and_model(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
         controller.toggleStar(1)  # IMG_0002: nincs csillag
-        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "[IMG_0002.jpg]" in ini_text
         assert "star=yes" in ini_text.split("[IMG_0002.jpg]")[1]
         assert controller.photos.photos[1].star is True
@@ -90,7 +90,7 @@ class TestToggleStar:
     def test_unstar_removes_key(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
         controller.toggleStar(0)  # IMG_0001: csillag levétele
-        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         # a kiürült szekció el is tűnik — csak az biztos, hogy csillag nincs
         assert "star=yes" not in ini_text
         assert controller.photos.photos[0].star is False
@@ -101,14 +101,14 @@ class TestToggleStar:
         ini.write_text(
             "[IMG_0001.jpg]\nstar=yes\nbackuphash=36003\n\n"
             "[Picasa]\nname=Teszt\n"
-        )
+        , encoding="utf-8")
         from picasapy.index import open_index, sync_tree
 
         with open_index(controller._db_path) as conn:
             sync_tree(conn, library)
         controller.selectFolder(str(library / "nyaralas"))
         controller.toggleStar(1)
-        text = ini.read_text()
+        text = ini.read_text(encoding="utf-8")
         assert "backuphash=36003" in text
         assert "name=Teszt" in text
 
@@ -126,7 +126,7 @@ class TestToggleStar:
             sync_tree(conn, library)
         controller.selectFolder(str(library / "nyaralas"))
         controller.toggleStar(0)
-        assert "star=yes" in ini.read_text()
+        assert "star=yes" in ini.read_text(encoding="utf-8")
 
     def test_invalid_index_noop(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
@@ -135,7 +135,7 @@ class TestToggleStar:
     def test_rotate_right_writes_ini_and_model(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
         controller.rotateRight(0)
-        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "rotate=rotate(1)" in ini_text
         assert controller.photos.photos[0].rotate_steps == 1
 
@@ -145,14 +145,14 @@ class TestToggleStar:
         controller.rotateRight(0)
         assert "rotate=rotate(2)" in (
             library / "nyaralas" / ".picasa.ini"
-        ).read_text()
+        ).read_text(encoding="utf-8")
 
     def test_rotate_left_wraps_to_three(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
         controller.rotateLeft(0)
         assert "rotate=rotate(3)" in (
             library / "nyaralas" / ".picasa.ini"
-        ).read_text()
+        ).read_text(encoding="utf-8")
 
     def test_full_circle_removes_key(self, controller, library):
         # 4x jobbra = alaphelyzet → a kulcs törlődik (tiszta round-trip).
@@ -161,7 +161,7 @@ class TestToggleStar:
         controller.selectFolder(str(library / "nyaralas"))
         for _ in range(4):
             controller.rotateRight(0)
-        assert "rotate=" not in ini.read_text()
+        assert "rotate=" not in ini.read_text(encoding="utf-8")
         assert ini.read_bytes() == before
 
     def test_toggle_twice_restores_ini_bytes(self, controller, library):
@@ -308,7 +308,7 @@ class TestSetCaption:
             if photo.name == "kep.png"
         )
         controller.setCaption(row, "png felirat")
-        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "[kep.png]" in ini_text
         assert "caption=png felirat" in ini_text.split("[kep.png]")[1]
         row = next(
@@ -510,7 +510,7 @@ class TestFolderDescription:
     def test_set_description_written_to_ini_and_property(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
         controller.setFolderDescription("nyári képek")
-        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "[Picasa]" in ini_text
         assert "description=nyári képek" in ini_text
         assert controller.folderDescription == "nyári képek"
@@ -519,7 +519,7 @@ class TestFolderDescription:
         controller.selectFolder(str(library / "nyaralas"))
         controller.setFolderDescription("nyári képek")
         controller.setFolderDescription("")
-        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "description=" not in ini_text
         assert controller.folderDescription == ""
 
@@ -533,6 +533,6 @@ class TestFolderDescription:
         # star=yes (IMG_0001.jpg) bitre pontosan megmarad a leírás-írás után.
         controller.selectFolder(str(library / "nyaralas"))
         controller.setFolderDescription("nyári képek")
-        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "[IMG_0001.jpg]" in ini_text
         assert "star=yes" in ini_text.split("[IMG_0001.jpg]")[1]

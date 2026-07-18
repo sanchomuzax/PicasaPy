@@ -57,15 +57,15 @@ class TestLibraryWatcher:
     def test_ini_change_reports_folder(self, tmp_path, watcher_factory, collector):
         (tmp_path / "m").mkdir()
         watcher_factory(tmp_path)
-        (tmp_path / "m" / ".picasa.ini").write_text("[a.jpg]\nstar=yes\n")
+        (tmp_path / "m" / ".picasa.ini").write_text("[a.jpg]\nstar=yes\n", encoding="utf-8")
         collector.wait()
         assert str(tmp_path / "m") in collector.seen
 
     def test_irrelevant_files_ignored(self, tmp_path, watcher_factory, collector):
         (tmp_path / "m").mkdir()
         watcher_factory(tmp_path)
-        (tmp_path / "m" / "jegyzet.txt").write_text("nem média")
-        (tmp_path / "m" / ".picasa.ini.bak").write_text("backup")
+        (tmp_path / "m" / "jegyzet.txt").write_text("nem média", encoding="utf-8")
+        (tmp_path / "m" / ".picasa.ini.bak").write_text("backup", encoding="utf-8")
         time.sleep(0.8)
         assert collector.batches == []
 

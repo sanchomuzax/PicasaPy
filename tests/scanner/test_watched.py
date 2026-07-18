@@ -6,7 +6,7 @@ from picasapy.scanner import read_watched_folders
 class TestReadWatchedFolders:
     def test_one_path_per_line(self, tmp_path):
         f = tmp_path / "WatchedFolders.txt"
-        f.write_text("/home/sancho/Kepek\n/mnt/nas/fotok\n")
+        f.write_text("/home/sancho/Kepek\n/mnt/nas/fotok\n", encoding="utf-8")
         assert read_watched_folders(f) == ("/home/sancho/Kepek", "/mnt/nas/fotok")
 
     def test_windows_paths_and_crlf(self, tmp_path):
@@ -20,7 +20,7 @@ class TestReadWatchedFolders:
 
     def test_blank_lines_skipped(self, tmp_path):
         f = tmp_path / "WatchedFolders.txt"
-        f.write_text("/a\n\n/b\n\n")
+        f.write_text("/a\n\n/b\n\n", encoding="utf-8")
         assert read_watched_folders(f) == ("/a", "/b")
 
     def test_utf8_bom_tolerated(self, tmp_path):

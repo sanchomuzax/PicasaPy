@@ -14,7 +14,7 @@ def library(tmp_path):
     (root / "nyaralas" / ".picasa.ini").write_text(
         "[IMG_0001.jpg]\nstar=yes\ncaption=naplemente\nkeywords=balaton,nyár\n"
         "rotate=rotate(1)\n"
-    )
+    , encoding="utf-8")
     return root
 
 
@@ -65,7 +65,7 @@ class TestSyncTree:
         sync_tree(conn, library)
         (library / "nyaralas" / ".picasa.ini").write_text(
             "[IMG_0002.jpg]\nstar=yes\n"
-        )
+        , encoding="utf-8")
         sync_tree(conn, library)
         photos = photos_in_folder(conn, library / "nyaralas")
         assert photos[0].star is False  # IMG_0001: csillag elvéve

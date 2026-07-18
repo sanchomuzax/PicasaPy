@@ -13,7 +13,7 @@ class TestResolveRoots:
         monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
         config = tmp_path / "picasapy"
         config.mkdir()
-        (config / "WatchedFolders.txt").write_text("/mnt/nas/fotok\n")
+        (config / "WatchedFolders.txt").write_text("/mnt/nas/fotok\n", encoding="utf-8")
         assert application._resolve_roots(["prog"]) == ("/mnt/nas/fotok",)
 
     def test_no_config_empty(self, tmp_path, monkeypatch):
@@ -54,7 +54,7 @@ class TestDesktopEntry:
         desktop = tmp_path / "applications" / "picasapy.desktop"
         icon = tmp_path / "icons" / "hicolor" / "256x256" / "apps" / "picasapy.png"
         assert desktop.exists() and icon.exists()
-        text = desktop.read_text()
+        text = desktop.read_text(encoding="utf-8")
         assert "Icon=picasapy" in text
         assert "Name=PicasaPy" in text
 

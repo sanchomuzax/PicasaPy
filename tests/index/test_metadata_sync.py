@@ -41,12 +41,12 @@ class TestFileMetadata:
 
     def test_iptc_caption_wins_over_ini(self, conn, library):
         # Picasa-viselkedés: JPEG-nél a felirat az IPTC-ben él.
-        (library / ".picasa.ini").write_text("[IMG_0001.jpg]\ncaption=ini felirat\n")
+        (library / ".picasa.ini").write_text("[IMG_0001.jpg]\ncaption=ini felirat\n", encoding="utf-8")
         sync_tree(conn, library)
         assert photos_in_folder(conn, library)[0].caption == "balatoni naplemente"
 
     def test_ini_caption_used_when_no_iptc(self, conn, library):
-        (library / ".picasa.ini").write_text("[IMG_0002.jpg]\ncaption=ini felirat\n")
+        (library / ".picasa.ini").write_text("[IMG_0002.jpg]\ncaption=ini felirat\n", encoding="utf-8")
         sync_tree(conn, library)
         assert photos_in_folder(conn, library)[1].caption == "ini felirat"
 
@@ -81,7 +81,7 @@ class TestChangeDetection:
 
     def test_unchanged_file_still_gets_ini_updates(self, conn, library):
         sync_tree(conn, library)
-        (library / ".picasa.ini").write_text("[IMG_0002.jpg]\nstar=yes\n")
+        (library / ".picasa.ini").write_text("[IMG_0002.jpg]\nstar=yes\n", encoding="utf-8")
         sync_tree(conn, library)
         photo = photos_in_folder(conn, library)[1]
         assert photo.star is True
