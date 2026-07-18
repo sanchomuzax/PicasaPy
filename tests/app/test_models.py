@@ -223,3 +223,33 @@ class TestPhotoGridModel:
         assert (
             model.data(model.index(0, 0), PhotoGridModel.NameRole) == "IMG_0100.jpg"
         )
+
+
+class TestFolderListModelStability:
+    def test_reload_unchanged_no_reset(self, qt_app, conn):
+        # 10-es issue: a háttér-szinkron minden körben újratöltötte a
+        # modellt akkor is, ha semmi sem változott — a reset eldobja a
+        # delegate-eket és nullázza a görgetést (a lista "ugrál").
+        from picasapy.app.models import FolderListModel
+
+        model = FolderListModel()
+        model.load(conn)
+        resets = []
+        model.modelReset.connect(lambda: resets.append(1))
+        counts = []
+        model.folderCountChanged.connect(lambda: counts.append(1))
+        model.load(conn)
+        assert resets == [], "változatlan adatnál nem szabad resetelni"
+        assert counts == []
+
+    def test_reload_changed_still_resets(self, qt_app, conn):
+        from picasapy.app.models import FolderListModel
+
+        model = FolderListModel()
+        model.load(conn)
+        conn.execute("INSERT INTO folders(path) VALUES ('/k/uj-mappa')")
+        conn.commit()
+        resets = []
+        model.modelReset.connect(lambda: resets.append(1))
+        model.load(conn)
+        assert resets == [1]
