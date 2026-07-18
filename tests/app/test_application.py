@@ -37,6 +37,30 @@ class TestAssets:
         assert not QImage(str(assets / "icon.png")).isNull()
         assert (assets / "logo.svg").exists()
 
+    def test_icon_has_taskbar_margin(self, qt_app):
+        # 11-es issue: a taskbaron az ikon a teljes csempét kitöltötte,
+        # míg a többi app (pl. a Claude) rajzolata a csempe ~2/3-át
+        # foglalja el. A rajzolat legfeljebb a vászon 66%-a lehet, és
+        # középen kell ülnie.
+        from PySide6.QtGui import QImage
+
+        image = QImage(str(application._APP_DIR / "assets" / "icon.png"))
+        image = image.convertToFormat(QImage.Format.Format_ARGB32)
+        xs, ys = [], []
+        for y in range(image.height()):
+            for x in range(image.width()):
+                if (image.pixel(x, y) >> 24) & 0xFF:
+                    xs.append(x)
+                    ys.append(y)
+        assert xs, "az ikon teljesen átlátszó"
+        content_w = max(xs) - min(xs) + 1
+        content_h = max(ys) - min(ys) + 1
+        assert content_w <= image.width() * 0.66
+        assert content_h <= image.height() * 0.66
+        # középre igazítás: a bal/jobb és felső/alsó margó közel azonos
+        assert abs(min(xs) - (image.width() - 1 - max(xs))) <= 2
+        assert abs(min(ys) - (image.height() - 1 - max(ys))) <= 2
+
 
 class TestSingleInstance:
     def test_second_lock_fails_while_held(self, tmp_path):
