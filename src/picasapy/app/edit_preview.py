@@ -1,19 +1,23 @@
 """image://editpreview/<id> képszolgáltató a szerkesztő-panelhez.
 
-A Qt a providert saját szálon hívja, így a szűrő-lánc alkalmazása nem
-blokkolja a felületet. Az `EditController` regisztrálja nála az éppen
-szerkesztett fotó (útvonal, filter-lánc) párját; a requestImage minden
-hívásnál újra alkalmazza a láncot — élő előnézet. A `?rev=<n>` az URL-ben
-csak cache-buster (a QML ettől tudja, mikor kérje újra a képet); az azonosító
-az URL első (kérdőjel előtti) része, a thumbnail_provider mintája szerint.
+A renderelés (dekód + filter-lánc) a `register()` hívásakor, a hívó (GUI)
+szálán történik (#54): a Qt a `requestImage`-et saját kép-betöltő szálán
+hívja, és ha ott futna a nehéz Python-munka, a fő szál GIL-birtokos
+Qt-várakozásai (pl. néző-bezárás, engine-leállítás) kölcsönös várakozásba
+(GIL-deadlockba) futhatnak — az app és a tesztek időnként lefagytak.
+A `requestImage` így csak egy előre kirenderelt QImage-et ad vissza lock
+alatt. A dekód a gyorsaság érdekében 2560 px-es élhosszra korlátozott
+(a néző is ekkora forrást kér). A `?rev=<n>` az URL-ben cache-buster; az
+azonosító az URL első (kérdőjel előtti) része.
 """
 
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider
 
@@ -22,6 +26,7 @@ from picasapy.render import apply_filters
 
 _PLACEHOLDER_COLOR = 0xFFE8E8E8
 _PLACEHOLDER_SIZE = 16
+_MAX_PREVIEW_EDGE = 2560
 
 
 class EditPreviewProvider(QQuickImageProvider):
@@ -29,26 +34,31 @@ class EditPreviewProvider(QQuickImageProvider):
 
     def __init__(self) -> None:
         super().__init__(QQuickImageProvider.ImageType.Image)
-        self._registry: dict[str, tuple[Path, tuple[FilterOp, ...]]] = {}
+        self._images: dict[str, QImage] = {}
+        self._lock = threading.Lock()
 
     def register(self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]) -> None:
-        """Az aktuálisan szerkesztett fotó regisztrálása/frissítése."""
-        self._registry[str(photo_id)] = (path, ops)
+        """Az aktuálisan szerkesztett fotó renderelése és eltárolása.
+
+        A hívó (GUI) szálán fut — a provider-szálra nem jut Python-munka."""
+        image = _render(Path(path), tuple(ops))
+        with self._lock:
+            self._images[str(photo_id)] = image
 
     def unregister(self, photo_id: str) -> None:
-        """A fotó eltávolítása a registry-ből (szerkesztés vége)."""
-        self._registry.pop(str(photo_id), None)
+        """A fotó eltávolítása (szerkesztés vége)."""
+        with self._lock:
+            self._images.pop(str(photo_id), None)
 
     def requestImage(self, photo_id, size, requested_size):
         # az URL-ben ?rev=<szám> cache-buster jöhet — az id az első rész
-        entry = self._registry.get(photo_id.split("?")[0])
-        image = self._render(entry) if entry is not None else QImage()
+        with self._lock:
+            image = self._images.get(photo_id.split("?")[0], QImage())
         if image.isNull():
             image = _placeholder()
         # A néző sourceSize.width-del (magasság nélkül) kér: a (w, 0) a
         # QSize.isValid() szerint érvényes, de a scaled() üres képet adna
-        # (#48 — ettől maradt szürke a néző). Fél-dimenziós kérésnél a
-        # képarányt tartó scaledToWidth/Height kell.
+        # (#48). Fél-dimenziós kérésnél képaránytartó scaledToWidth/Height.
         if requested_size is not None:
             width, height = requested_size.width(), requested_size.height()
             smooth = Qt.TransformationMode.SmoothTransformation
@@ -65,18 +75,28 @@ class EditPreviewProvider(QQuickImageProvider):
             size.setHeight(image.height())
         return image
 
-    def _render(self, entry: tuple[Path, tuple[FilterOp, ...]]) -> QImage:
-        path, ops = entry
-        # QImageReader + autoTransform: az EXIF-orientációt a betöltés
-        # alkalmazza — a néző natív Image-e is így tesz (autoTransform: true)
-        reader = QImageReader(str(path))
-        reader.setAutoTransform(True)
-        source = reader.read()
-        if source.isNull():
-            return QImage()
-        array = _qimage_to_rgb_array(source)
-        result_array, _skipped = apply_filters(array, ops)
-        return _rgb_array_to_qimage(result_array)
+
+def _render(path: Path, ops: tuple[FilterOp, ...]) -> QImage:
+    # QImageReader + autoTransform: az EXIF-orientációt a betöltés
+    # alkalmazza — a néző natív Image-e is így tesz (autoTransform: true).
+    # A dekód mérete korlátozott: az előnézethez elég, és a GUI-szálon
+    # futó renderelés így nagy képnél is gyors marad.
+    reader = QImageReader(str(path))
+    reader.setAutoTransform(True)
+    native = reader.size()
+    if native.isValid():
+        longest = max(native.width(), native.height())
+        if longest > _MAX_PREVIEW_EDGE:
+            scale = _MAX_PREVIEW_EDGE / longest
+            reader.setScaledSize(
+                QSize(round(native.width() * scale), round(native.height() * scale))
+            )
+    source = reader.read()
+    if source.isNull():
+        return QImage()
+    array = _qimage_to_rgb_array(source)
+    result_array, _skipped = apply_filters(array, ops)
+    return _rgb_array_to_qimage(result_array)
 
 
 def _placeholder() -> QImage:
