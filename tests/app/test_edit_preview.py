@@ -80,3 +80,45 @@ class TestRequestedSize:
         provider.register("1", photo, ())
         image = provider.requestImage("1", None, QSize(40, 30))
         assert max(image.width(), image.height()) <= 40
+
+
+class TestRequestedSizeHalfDimension:
+    """#48: a néző sourceSize.width-del (magasság nélkül) kér — a (w, 0)
+    kérés nem adhat üres képet (ettől maradt szürke a néző)."""
+
+    def _provider_with_photo(self, tmp_path):
+        from picasapy.app.edit_preview import EditPreviewProvider
+
+        make_jpeg(tmp_path / "p.jpg", size=(320, 160))
+        provider = EditPreviewProvider()
+        provider.register("7", tmp_path / "p.jpg", ())
+        return provider
+
+    def test_width_only_request_keeps_aspect(self, qt_app, tmp_path):
+        from PySide6.QtCore import QSize
+
+        provider = self._provider_with_photo(tmp_path)
+        image = provider.requestImage("7?rev=1", QSize(), QSize(160, 0))
+        assert not image.isNull()
+        assert (image.width(), image.height()) == (160, 80)
+
+    def test_height_only_request_keeps_aspect(self, qt_app, tmp_path):
+        from PySide6.QtCore import QSize
+
+        provider = self._provider_with_photo(tmp_path)
+        image = provider.requestImage("7?rev=1", QSize(), QSize(0, 80))
+        assert (image.width(), image.height()) == (160, 80)
+
+    def test_full_request_scales_within_box(self, qt_app, tmp_path):
+        from PySide6.QtCore import QSize
+
+        provider = self._provider_with_photo(tmp_path)
+        image = provider.requestImage("7?rev=1", QSize(), QSize(100, 100))
+        assert (image.width(), image.height()) == (100, 50)
+
+    def test_no_request_returns_native_size(self, qt_app, tmp_path):
+        from PySide6.QtCore import QSize
+
+        provider = self._provider_with_photo(tmp_path)
+        image = provider.requestImage("7?rev=1", QSize(), QSize(-1, -1))
+        assert (image.width(), image.height()) == (320, 160)
