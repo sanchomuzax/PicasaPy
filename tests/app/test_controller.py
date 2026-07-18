@@ -602,3 +602,26 @@ class TestFolderDescription:
         ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "[IMG_0001.jpg]" in ini_text
         assert "star=yes" in ini_text.split("[IMG_0001.jpg]")[1]
+
+
+class TestSearchSuggestionsSlot:
+    def test_returns_folder_dicts(self, controller, library):
+        # #7 bekötés: a QML-nek dict-lista kell (kind/name/count/param).
+        result = controller.searchSuggestions("nyar")
+        assert [(s["kind"], s["name"]) for s in result] == [("folder", "nyaralas")]
+        assert result[0]["param"].endswith("nyaralas")
+        assert result[0]["count"] == 2
+
+    def test_empty_query_empty_list(self, controller):
+        assert controller.searchSuggestions("  ") == []
+
+    def test_albums_deferred_to_issue_9(self, controller, library):
+        # Album-javaslat egyelőre nem kerül a legördülőbe: a kiválasztása
+        # csak a virtuális albumok UI-jával (#9) lesz értelmes.
+        (library / "nyaralas" / ".picasa.ini").write_text(
+            "[.album:aabb01]\nname=nyari valogatas\n"
+            "[IMG_0001.jpg]\nalbums=aabb01\nstar=yes\n",
+            encoding="utf-8",
+        )
+        result = controller.searchSuggestions("nyari")
+        assert all(s["kind"] == "folder" for s in result)

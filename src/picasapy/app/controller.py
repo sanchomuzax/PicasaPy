@@ -23,6 +23,7 @@ from picasapy.index import (
     photos_in_folder,
     remove_root,
     search_photos,
+    search_suggestions,
     starred_photos,
     sync_tree,
 )
@@ -381,6 +382,19 @@ class AppController(QObject):
                 self._view_mode = ("search", query)
                 records = search_photos(conn, query)
         self._show(records)
+
+    @Slot(str, result="QVariantList")
+    def searchSuggestions(self, text: str) -> list:
+        """Kereső-javaslatok a legördülőnek (#7) — dict-lista a QML-nek.
+
+        Egyelőre csak mappa-javaslatok: az album-sor kiválasztása csak a
+        virtuális albumok UI-jával (#9) lesz értelmes."""
+        with open_index(self._db_path) as conn:
+            return [
+                {"kind": s.kind, "name": s.name, "count": s.count, "param": s.param}
+                for s in search_suggestions(conn, text)
+                if s.kind == "folder"
+            ]
 
     @Slot(int)
     def toggleStar(self, row: int) -> None:

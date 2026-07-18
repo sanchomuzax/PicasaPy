@@ -343,3 +343,49 @@ class TestFolderPaneScrollStability:
         folder_list.setProperty("contentY", 0)  # reset mellékhatása
         qt_app.processEvents()
         assert folder_list.property("savedY") == 150
+
+
+class TestSearchSuggestionsWiring:
+    def test_refresh_fills_box_from_controller(self, qml_app, qt_app):
+        # #7 bekötés: gépelés (debounce után) a controller-slotból tölti
+        # a legördülőt.
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, controller, _ = qml_app
+        field = window.findChild(QObject, "searchField")
+        box = window.findChild(QObject, "searchSuggestions")
+        assert box is not None, "searchSuggestions nem található"
+        field.setProperty("text", "kep")
+        QMetaObject.invokeMethod(
+            window, "refreshSuggestions", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        value = box.property("suggestions")
+        if hasattr(value, "toVariant"):
+            value = value.toVariant()
+        assert [s["name"] for s in value] == ["kepek"]
+        assert box.property("visible") is True
+
+    def test_choose_folder_jumps_and_clears(self, qml_app, qt_app):
+        window, controller, _ = qml_app
+        field = window.findChild(QObject, "searchField")
+        box = window.findChild(QObject, "searchSuggestions")
+        target = controller.currentFolder
+        field.setProperty("text", "kep")
+        box.setProperty(
+            "suggestions",
+            [{"kind": "folder", "name": "kepek", "count": 2, "param": target}],
+        )
+        qt_app.processEvents()
+        from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+
+        QMetaObject.invokeMethod(
+            box, "choose", Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0)
+        )
+        qt_app.processEvents()
+        assert field.property("text") == ""
+        assert controller.currentFolder == target
+        value = box.property("suggestions")
+        if hasattr(value, "toVariant"):
+            value = value.toVariant()
+        assert value == []
