@@ -438,7 +438,11 @@ class TestWatchedFolderManagement:
         make_jpeg(other / "m" / "x.jpg")
         loop = QEventLoop()
         controller.syncFinished.connect(loop.quit)
-        controller.addWatchedFolder(f"file://{other}")  # URL-alak is jó
+        from PySide6.QtCore import QUrl
+
+        # URL-alakban adjuk át (a QML FolderDialog is azt ad) —
+        # platformhelyesen képezve, Windowson is érvényes formával
+        controller.addWatchedFolder(QUrl.fromLocalFile(str(other)).toString())
         QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert str(other) in controller.watchedFolders
