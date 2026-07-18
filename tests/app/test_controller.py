@@ -69,6 +69,70 @@ class TestController:
     def test_viewer_info_invalid_index_empty(self, controller):
         assert controller.viewerInfo(-1) == ""
 
+
+class TestToggleStar:
+    def test_star_written_to_ini_and_model(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleStar(1)  # IMG_0002: nincs csillag
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        assert "[IMG_0002.jpg]" in ini_text
+        assert "star=yes" in ini_text.split("[IMG_0002.jpg]")[1]
+        assert controller.photos.photos[1].star is True
+
+    def test_unstar_removes_key(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleStar(0)  # IMG_0001: csillag levétele
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        # a kiürült szekció el is tűnik — csak az biztos, hogy csillag nincs
+        assert "star=yes" not in ini_text
+        assert controller.photos.photos[0].star is False
+
+    def test_existing_ini_content_preserved(self, controller, library):
+        # A kézzel írt (Picasa-féle) tartalom bitre pontosan megmarad.
+        ini = library / "nyaralas" / ".picasa.ini"
+        ini.write_text(
+            "[IMG_0001.jpg]\nstar=yes\nbackuphash=36003\n\n"
+            "[Picasa]\nname=Teszt\n"
+        )
+        from picasapy.index import open_index, sync_tree
+
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleStar(1)
+        text = ini.read_text()
+        assert "backuphash=36003" in text
+        assert "name=Teszt" in text
+
+    def test_backup_created(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleStar(1)
+        assert (library / "nyaralas" / ".picasa.ini.bak").exists()
+
+    def test_creates_ini_when_missing(self, controller, library):
+        ini = library / "nyaralas" / ".picasa.ini"
+        ini.unlink()
+        from picasapy.index import open_index, sync_tree
+
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleStar(0)
+        assert "star=yes" in ini.read_text()
+
+    def test_invalid_index_noop(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleStar(99)  # nem dobhat
+
+    def test_toggle_twice_restores_ini_bytes(self, controller, library):
+        # Round-trip invariáns: fel + le = bitre azonos .picasa.ini.
+        ini = library / "nyaralas" / ".picasa.ini"
+        before = ini.read_bytes()
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleStar(1)
+        controller.toggleStar(1)
+        assert ini.read_bytes() == before
+
     def test_search(self, controller):
         controller.search("naplemente")
         assert controller.photos.rowCount() == 1

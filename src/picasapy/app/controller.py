@@ -23,6 +23,8 @@ from picasapy.index import (
     starred_photos,
     sync_tree,
 )
+from picasapy.ini import load_document, parse_document, save_document
+from picasapy.scanner import PICASA_INI_NAME
 from .models import FolderListModel, PhotoGridModel
 from .thumbnail_provider import ThumbnailProvider
 
@@ -52,6 +54,7 @@ class AppController(QObject):
         self._status = ""
         self._folder_date = ""
         self._sync_running = False
+        self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
         self.syncFinished.connect(self._reload)
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
@@ -94,6 +97,7 @@ class AppController(QObject):
     @Slot(str)
     def selectFolder(self, folder_path: str) -> None:
         self._current_folder = folder_path
+        self._view_mode = ("folder", folder_path)
         with open_index(self._db_path) as conn:
             records = photos_in_folder(conn, folder_path)
         self._show(records)
@@ -109,8 +113,44 @@ class AppController(QObject):
                     else ()
                 )
             else:
+                self._view_mode = ("search", query)
                 records = search_photos(conn, query)
         self._show(records)
+
+    @Slot(int)
+    def toggleStar(self, row: int) -> None:
+        """Csillag be/ki — a .picasa.ini-be írva (kétirányú kompatibilitás:
+        a párhuzamosan futó eredeti Picasa is látja). Levételkor a kulcs
+        törlődik, ahogy a Picasa csinálja."""
+        photos = self._photos.photos
+        if not 0 <= row < len(photos):
+            return
+        photo = photos[row]
+        ini_path = Path(photo.folder_path) / PICASA_INI_NAME
+        document = (
+            load_document(ini_path) if ini_path.exists() else parse_document("")
+        )
+        if photo.star:
+            document = document.with_removed(photo.name, "star")
+        else:
+            document = document.with_value(photo.name, "star", "yes")
+        save_document(document, ini_path, backup=True)
+        with open_index(self._db_path) as conn:
+            sync_tree(conn, photo.folder_path)
+        self._refresh_view()
+
+    def _refresh_view(self) -> None:
+        """Az aktuális nézet újratöltése az indexből (mód szerint)."""
+        mode, param = self._view_mode
+        if mode == "search":
+            with open_index(self._db_path) as conn:
+                self._show(search_photos(conn, param))
+        elif mode == "starred":
+            with open_index(self._db_path) as conn:
+                self._show(starred_photos(conn))
+        elif param:
+            with open_index(self._db_path) as conn:
+                self._show(photos_in_folder(conn, param))
 
     @Slot(int, result=str)
     def photoInfo(self, row: int) -> str:
@@ -148,6 +188,7 @@ class AppController(QObject):
     @Slot()
     def showStarred(self) -> None:
         self._current_folder = ""
+        self._view_mode = ("starred", "")
         with open_index(self._db_path) as conn:
             records = starred_photos(conn)
         self._show(records)

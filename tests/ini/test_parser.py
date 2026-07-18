@@ -154,3 +154,54 @@ class TestWithValue:
     def test_empty_document_gets_section(self):
         new = parse_document("").with_value("a.jpg", "star", "yes")
         assert new.serialize() == "[a.jpg]\nstar=yes\n"
+
+
+class TestWithRemoved:
+    def test_removes_key_line(self):
+        doc = parse_document(SAMPLE)
+        new = doc.with_removed("IMG_0001.jpg", "star")
+        assert new.section("IMG_0001.jpg").get("star") is None
+        assert new.serialize() == SAMPLE.replace("star=yes\r\n", "")
+
+    def test_other_content_untouched(self):
+        # Round-trip elv: csak az adott sor tűnhet el, minden más bitre pontos.
+        doc = parse_document(SAMPLE)
+        new = doc.with_removed("IMG_0001.jpg", "star")
+        assert new.section("IMG_0001.jpg").get("filters") == "sat=1,-1.000000;"
+        assert new.section("Picasa").get("name") == "Nyaralás 2024"
+
+    def test_missing_key_returns_same_document(self):
+        doc = parse_document(SAMPLE)
+        assert doc.with_removed("IMG_0001.jpg", "nincs") is doc
+
+    def test_missing_section_returns_same_document(self):
+        doc = parse_document(SAMPLE)
+        assert doc.with_removed("nincs.jpg", "star") is doc
+
+    def test_removes_only_first_duplicate(self):
+        doc = parse_document("[a.jpg]\nk=1\nk=2\n")
+        new = doc.with_removed("a.jpg", "k")
+        assert new.serialize() == "[a.jpg]\nk=2\n"
+
+    def test_original_unchanged(self):
+        doc = parse_document(SAMPLE)
+        doc.with_removed("IMG_0001.jpg", "star")
+        assert doc.serialize() == SAMPLE
+
+    def test_case_insensitive_key(self):
+        doc = parse_document("[a.jpg]\nStar=yes\nk=1\n")
+        new = doc.with_removed("a.jpg", "star")
+        assert new.serialize() == "[a.jpg]\nk=1\n"
+
+    def test_emptied_section_is_dropped(self):
+        # Az utolsó kulcs törlésével az (általunk létrehozott) szekció is
+        # eltűnik — így a fel+le csillagozás bitre pontos round-trip.
+        doc = parse_document("[a.jpg]\nstar=yes\n[b.jpg]\nk=1\n")
+        new = doc.with_removed("a.jpg", "star")
+        assert new.serialize() == "[b.jpg]\nk=1\n"
+
+    def test_section_with_comment_kept(self):
+        # Ismeretlen/verbatim sort tartalmazó szekciót nem dobunk el.
+        doc = parse_document("[a.jpg]\n; komment\nstar=yes\n")
+        new = doc.with_removed("a.jpg", "star")
+        assert new.serialize() == "[a.jpg]\n; komment\n"

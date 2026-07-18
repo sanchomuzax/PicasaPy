@@ -106,6 +106,34 @@ class IniDocument:
         )
         return replace(self, sections=sections)
 
+    def with_removed(self, section_name: str, key: str) -> IniDocument:
+        """Új dokumentum az első egyező kulcs-sor nélkül (kis-nagybetű-tűrő).
+
+        Ha a szekció vagy a kulcs nincs meg, változatlanul önmagát adja
+        vissza — minden más sor bitre pontosan megmarad (round-trip elv).
+        """
+        target = self.section(section_name)
+        if target is None:
+            return self
+        folded = key.casefold()
+        lines = list(target.lines)
+        for index, line in enumerate(lines):
+            if isinstance(line, KeyValueLine) and line.key.casefold() == folded:
+                del lines[index]
+                if _section_is_empty(lines):
+                    sections = tuple(
+                        section for section in self.sections
+                        if section is not target
+                    )
+                else:
+                    updated = replace(target, lines=tuple(lines))
+                    sections = tuple(
+                        updated if section is target else section
+                        for section in self.sections
+                    )
+                return replace(self, sections=sections)
+        return self
+
     def _with_new_section(self, name: str, key: str, value: str) -> IniDocument:
         newline = self.newline
         header = Line(text=f"[{name}]", ending=newline)
@@ -137,6 +165,14 @@ def _section_with_value(
         section = replace(section, header=replace(section.header, ending=newline))
     lines.insert(insert_at, _make_kv_line(key, value, newline))
     return replace(section, lines=tuple(lines))
+
+
+def _section_is_empty(lines: list[Line]) -> bool:
+    """Se kulcs, se megőrzendő (nem üres) verbatim sor nem maradt."""
+    return all(
+        not isinstance(line, KeyValueLine) and not line.text.strip()
+        for line in lines
+    )
 
 
 def _last_kv_index(lines: list[Line]) -> int:

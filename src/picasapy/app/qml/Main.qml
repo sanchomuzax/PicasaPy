@@ -188,7 +188,14 @@ ApplicationWindow {
                 anchors.leftMargin: 10; anchors.rightMargin: 10
                 spacing: 8
 
-                Button { text: "★"; enabled: false; Layout.preferredWidth: 34 }
+                Button {
+                    text: "★"
+                    enabled: window.viewerOpen || window.selectedIndex >= 0
+                    Layout.preferredWidth: 34
+                    onClicked: controller.toggleStar(
+                        window.viewerOpen ? photoViewer.currentIndex
+                                          : window.selectedIndex)
+                }
                 Button { text: "↺"; enabled: false; Layout.preferredWidth: 34 }
                 Button { text: "↻"; enabled: false; Layout.preferredWidth: 34 }
                 Item { width: 8 }
