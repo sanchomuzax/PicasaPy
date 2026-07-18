@@ -121,6 +121,41 @@ class TestGetOrCreate:
         thumb = cache.get_or_create(photo, *_stat_key(photo))
         assert thumb is not None and thumb.exists()
 
+    def test_video_thumbnail_from_first_frame(self, cache, tmp_path):
+        # Videóból (mp4) az első képkockából készül thumbnail.
+        from support.video_factory import make_mp4
+
+        video = make_mp4(tmp_path / "VID_20250516.mp4", size=(320, 160))
+        thumb = cache.get_or_create(video, *_stat_key(video))
+        assert thumb is not None and thumb.exists()
+        import cv2
+
+        height, width = cv2.imread(str(thumb)).shape[:2]
+        assert (width, height) == (64, 32)  # képarány megőrizve
+
+    def test_video_not_read_fully_into_memory(self, cache, tmp_path, monkeypatch):
+        # NAS-teljesítmény: a videót TILOS np.fromfile-lal teljesen
+        # beolvasni (egy mp4 több száz MB is lehet hálózaton át) — a
+        # VideoCapture streamelve csak a szükséges képkockát olvassa.
+        from support.video_factory import make_mp4
+
+        import picasapy.thumbs.cache as cache_module
+
+        def forbidden_fromfile(*args, **kwargs):
+            raise AssertionError("np.fromfile tiltott videó-forrásra")
+
+        monkeypatch.setattr(cache_module.np, "fromfile", forbidden_fromfile)
+        video = make_mp4(tmp_path / "VID_20250503.mp4", size=(320, 160))
+        assert cache.get_or_create(video, *_stat_key(video)) is not None
+
+    def test_corrupt_video_returns_none(self, cache, tmp_path):
+        bad = tmp_path / "rossz.mp4"
+        bad.write_bytes(b"nem video")
+        assert cache.get_or_create(bad, 1, 9) is None
+
+    def test_missing_video_returns_none(self, cache, tmp_path):
+        assert cache.get_or_create(tmp_path / "nincs.mp4", 1, 9) is None
+
     def test_write_failure_returns_none(self, cache, photo, monkeypatch):
         # Ha az írás végleg meghiúsul (tele lemez, NAS-hiba), None jár —
         # a hívó placeholder-re eshet vissza, kivétel nem szökhet ki.
