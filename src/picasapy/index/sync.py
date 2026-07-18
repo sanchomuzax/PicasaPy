@@ -67,13 +67,15 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> None:
             section.get("caption") if section else None,
             section.get("keywords") if section else None,
             _rotate_steps(section.get("rotate")) if section else 0,
+            section.get("filters") if section else None,
         )
         if existing.get(media.name) == (media.mtime_ns, media.size):
             # Változatlan fájl: csak az ini-mezők frissülnek, a (drága)
             # EXIF/IPTC-olvasás kimarad, a fájl-metaadat oszlopok maradnak.
             conn.execute(
                 "UPDATE photos SET star = ?, caption_ini = ?, keywords_ini = ?,"
-                " rotate_steps = ? WHERE folder_id = ? AND name = ?",
+                " rotate_steps = ?, filters = ?"
+                " WHERE folder_id = ? AND name = ?",
                 (*ini_fields, folder_id, media.name),
             )
         else:
@@ -103,15 +105,16 @@ def _upsert_photo(
     conn.execute(
         "INSERT INTO photos"
         "(folder_id, name, kind, size, mtime_ns, star, caption_ini,"
-        " keywords_ini, rotate_steps, taken_at, orientation, width, height,"
-        " caption_file, keywords_file)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        " keywords_ini, rotate_steps, filters, taken_at, orientation,"
+        " width, height, caption_file, keywords_file)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
         "ON CONFLICT(folder_id, name) DO UPDATE SET "
         "kind = excluded.kind, size = excluded.size, "
         "mtime_ns = excluded.mtime_ns, star = excluded.star, "
         "caption_ini = excluded.caption_ini, "
         "keywords_ini = excluded.keywords_ini, "
         "rotate_steps = excluded.rotate_steps, "
+        "filters = excluded.filters, "
         "taken_at = excluded.taken_at, orientation = excluded.orientation, "
         "width = excluded.width, height = excluded.height, "
         "caption_file = excluded.caption_file, "

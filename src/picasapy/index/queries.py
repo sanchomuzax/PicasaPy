@@ -15,7 +15,7 @@ _SELECT = """
 SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
        p.star, COALESCE(p.caption_file, p.caption_ini) AS caption,
        COALESCE(p.keywords_file, p.keywords_ini) AS keywords,
-       p.rotate_steps, p.taken_at, p.orientation, p.width, p.height
+       p.rotate_steps, p.filters, p.taken_at, p.orientation, p.width, p.height
 FROM photos p JOIN folders f ON f.id = p.folder_id
 """
 
@@ -32,6 +32,7 @@ class PhotoRecord:
     caption: str | None
     keywords: str | None
     rotate_steps: int
+    filters: str | None
     taken_at: str | None
     orientation: int
     width: int | None
@@ -167,6 +168,7 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             caption=row["caption"],
             keywords=row["keywords"],
             rotate_steps=row["rotate_steps"],
+            filters=row["filters"],
             taken_at=row["taken_at"],
             orientation=row["orientation"],
             width=row["width"],

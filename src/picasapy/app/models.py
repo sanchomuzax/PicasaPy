@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import zlib
 
 from PySide6.QtCore import (
     Property,
@@ -132,6 +133,12 @@ class FolderListModel(QAbstractListModel):
         }
 
 
+def _thumb_url(photo: PhotoRecord) -> str:
+    """Thumb-URL forgatás- és szerkesztés-érzékeny cache-busterrel (#59)."""
+    filters_tag = zlib.crc32((photo.filters or "").encode("utf-8"))
+    return f"image://thumbs/{photo.id}?r={photo.rotate_steps}&f={filters_tag}"
+
+
 def _sort_key(sort_mode: str):
     """Rendezőkulcs; dátum-módokban a dátumtalan mappák a sor végére."""
     if sort_mode == "name":
@@ -217,7 +224,7 @@ class PhotoGridModel(QAbstractListModel):
         if not 0 <= row < len(self._photos):
             return ""
         photo = self._photos[row]
-        return f"image://thumbs/{photo.id}?r={photo.rotate_steps}"
+        return _thumb_url(photo)
 
     @Slot(int, result=bool)
     def starAt(self, row: int) -> bool:
@@ -266,8 +273,8 @@ class PhotoGridModel(QAbstractListModel):
         if role in (self.NameRole, Qt.ItemDataRole.DisplayRole):
             return photo.name
         if role == self.ThumbUrlRole:
-            # a lépésszám cache-buster: forgatás után új URL → friss kép
-            return f"image://thumbs/{photo.id}?r={photo.rotate_steps}"
+            # cache-buster: forgatás/szerkesztés után új URL → friss kép (#59)
+            return _thumb_url(photo)
         if role == self.StarRole:
             return photo.star
         if role == self.CaptionRole:

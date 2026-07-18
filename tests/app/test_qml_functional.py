@@ -415,6 +415,7 @@ class TestEditorWiring:
         assert overlay is not None, "cropOverlay nem található"
         assert overlay.property("visible") is True
         overlay.setProperty("cropRect", QRectF(0.25, 0.25, 0.5, 0.5))
+        overlay.setProperty("hasSelection", True)
         QMetaObject.invokeMethod(
             overlay, "acceptCrop", Qt.ConnectionType.DirectConnection
         )

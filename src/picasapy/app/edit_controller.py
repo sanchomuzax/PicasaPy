@@ -38,6 +38,9 @@ class EditController(QObject):
         self._session = EditSession()
         self._revision = 0
         self._image_size: tuple[int, int] | None = None
+        # undo/redo verem (#59): (filters-érték a művelet ELŐTT, művelet-kulcs)
+        self._undo_stack: list[tuple[str, str]] = []
+        self._redo_stack: list[tuple[str, str]] = []
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
 
@@ -70,6 +73,29 @@ class EditController(QObject):
     def autocolorActive(self) -> bool:
         return self._session.has("autocolor")
 
+    @Property(bool, notify=toolsChanged)
+    def hasCrop(self) -> bool:
+        """Van-e alkalmazott vágás — a „Visszavonás: Vágás" gombhoz (#51)."""
+        return self._session.crop() is not None
+
+    @Property(bool, notify=toolsChanged)
+    def canUndo(self) -> bool:
+        return bool(self._undo_stack)
+
+    @Property(bool, notify=toolsChanged)
+    def canRedo(self) -> bool:
+        return bool(self._redo_stack)
+
+    @Property(str, notify=toolsChanged)
+    def undoAction(self) -> str:
+        """A visszavonható művelet kulcsa (crop/tilt/redeye/…) — a gomb
+        feliratához (#59)."""
+        return self._undo_stack[-1][1] if self._undo_stack else ""
+
+    @Property(str, notify=toolsChanged)
+    def redoAction(self) -> str:
+        return self._redo_stack[-1][1] if self._redo_stack else ""
+
     # -- műveletek ------------------------------------------------------------
 
     @Slot(str, str)
@@ -83,6 +109,8 @@ class EditController(QObject):
         self._ini_path = path.parent / PICASA_INI_NAME
         self._section_name = path.name
         self._session = EditSession.from_value(self._read_filters_value())
+        self._undo_stack.clear()
+        self._redo_stack.clear()
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
@@ -98,6 +126,8 @@ class EditController(QObject):
         self._section_name = ""
         self._session = EditSession()
         self._image_size = None
+        self._undo_stack.clear()
+        self._redo_stack.clear()
         self._bump_revision()
         self.toolsChanged.emit()
 
@@ -108,6 +138,7 @@ class EditController(QObject):
         self._require_active()
         if name.casefold() not in _TOGGLE_NAMES:
             raise ValueError(f"Érvénytelen szerkesztő-eszköz: {name!r}")
+        self._push_undo(name.casefold())
         self._session = self._session.toggle(name)
         self._save()
         self._bump_revision()
@@ -132,17 +163,21 @@ class EditController(QObject):
                 f"A clampelt crop üres lenne: ({left}, {top}, {right}, {bottom})"
             )
         rect = Rect64(left=left, top=top, right=right, bottom=bottom)
+        self._push_undo("crop")
         self._session = self._session.set_crop(rect)
         self._save()
         self._bump_revision()
+        self.toolsChanged.emit()
 
     @Slot()
     def clearCrop(self) -> None:
         """A crop64 eltávolítása."""
         self._require_active()
+        self._push_undo("crop")
         self._session = self._session.clear_crop()
         self._save()
         self._bump_revision()
+        self.toolsChanged.emit()
 
     @Slot(float)
     def setTilt(self, param: float) -> None:
@@ -152,11 +187,42 @@ class EditController(QObject):
         width, height = self._get_image_size()
         angle = math.radians(param * _TILT_MAX_DEGREES)
         scale = tilt_cover_scale(width, height, angle)
+        self._push_undo("tilt")
         self._session = self._session.set_tilt(param, scale)
         self._save()
         self._bump_revision()
 
+    @Slot()
+    def undo(self) -> None:
+        """Az utolsó művelet visszavonása (a művelet ELŐTTI lánc áll vissza)."""
+        if not self._undo_stack:
+            return
+        self._require_active()
+        previous_value, action = self._undo_stack.pop()
+        self._redo_stack.append((self._session.to_value(), action))
+        self._session = EditSession.from_value(previous_value)
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot()
+    def redo(self) -> None:
+        """A visszavont művelet ismételt alkalmazása."""
+        if not self._redo_stack:
+            return
+        self._require_active()
+        redo_value, action = self._redo_stack.pop()
+        self._undo_stack.append((self._session.to_value(), action))
+        self._session = EditSession.from_value(redo_value)
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
     # -- belső ------------------------------------------------------------
+
+    def _push_undo(self, action: str) -> None:
+        self._undo_stack.append((self._session.to_value(), action))
+        self._redo_stack.clear()
 
     def _require_active(self) -> None:
         if not self._photo_id or self._image_path is None:

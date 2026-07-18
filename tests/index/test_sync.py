@@ -167,3 +167,40 @@ class TestPruneForeignFolders:
         prune_foreign_folders(conn, (str(library),))
         photos = photos_in_folder(conn, library / "nyaralas")
         assert [p.name for p in photos] == ["IMG_0001.jpg", "IMG_0002.jpg"]
+
+
+class TestFiltersSync:
+    """#59: a filters= lánc az indexbe kerül — a thumbnail ebből renderel."""
+
+    def test_filters_synced_and_updated(self, tmp_path):
+        from picasapy.index import open_index, photos_in_folder, sync_tree
+        from support.jpeg_factory import make_jpeg
+
+        lib = tmp_path / "kepek"
+        lib.mkdir()
+        make_jpeg(lib / "a.jpg")
+        ini = lib / ".picasa.ini"
+        ini.write_text("[a.jpg]\nfilters=enhance=1;\n", encoding="utf-8")
+        with open_index(tmp_path / "i.db") as conn:
+            sync_tree(conn, lib)
+            record = photos_in_folder(conn, lib)[0]
+            assert record.filters == "enhance=1;"
+            # ini-only változás (a fájl nem változik) → UPDATE ág
+            ini.write_text(
+                "[a.jpg]\nfilters=crop64=1,1234abcd5678ef00;enhance=1;\n",
+                encoding="utf-8",
+            )
+            sync_tree(conn, lib)
+            record = photos_in_folder(conn, lib)[0]
+            assert record.filters == "crop64=1,1234abcd5678ef00;enhance=1;"
+
+    def test_no_filters_is_none(self, tmp_path):
+        from picasapy.index import open_index, photos_in_folder, sync_tree
+        from support.jpeg_factory import make_jpeg
+
+        lib = tmp_path / "kepek"
+        lib.mkdir()
+        make_jpeg(lib / "a.jpg")
+        with open_index(tmp_path / "i.db") as conn:
+            sync_tree(conn, lib)
+            assert photos_in_folder(conn, lib)[0].filters is None
