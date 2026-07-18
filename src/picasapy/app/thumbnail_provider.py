@@ -30,6 +30,18 @@ _PLACEHOLDER_COLOR = 0xFFE8E8E8
 _log = logging.getLogger(__name__)
 
 
+def _parse_ops(photo: PhotoRecord) -> tuple:
+    """A filters= érték op-listája; parse-hibánál üres lánc (#73) — egy
+    értelmezhetetlen Picasa-bejegyzés miatt nem eshet ki a bélyegkép."""
+    try:
+        return EditSession.from_value(photo.filters).ops
+    except ValueError:
+        _log.warning(
+            "filters= nem értelmezhető (%s): %r", photo.name, photo.filters
+        )
+        return ()
+
+
 class ThumbnailProvider(QQuickImageProvider):
     def __init__(self, cache: ThumbnailCache):
         super().__init__(QQuickImageProvider.ImageType.Image)
@@ -43,7 +55,7 @@ class ThumbnailProvider(QQuickImageProvider):
                 photo.mtime_ns,
                 photo.size,
                 photo.rotate_steps,
-                EditSession.from_value(photo.filters).ops,
+                _parse_ops(photo),
             )
             for photo in photos
         }
@@ -81,8 +93,15 @@ class ThumbnailProvider(QQuickImageProvider):
             # szerkesztő-lánc (filters=) a bélyegképen is (#59) — a
             # cache-elt thumb az eredeti, a láncot itt alkalmazzuk
             # (thumb-méreten olcsó)
-            array, _skipped = apply_filters(_qimage_to_rgb_array(image), entry[4])
-            image = _rgb_array_to_qimage(array)
+            try:
+                array, _skipped = apply_filters(
+                    _qimage_to_rgb_array(image), entry[4]
+                )
+                image = _rgb_array_to_qimage(array)
+            except Exception:
+                # #73: hibás/idegen lánc-bejegyzésnél a szűretlen kép a
+                # helyes visszaesés, nem a placeholder (részleges előnézet)
+                _log.exception("filters= nem alkalmazható: %s", entry[0])
         if entry[3]:
             # nem-destruktív ini-forgatás (a cache-elt thumb forgatatlan)
             image = image.transformed(QTransform().rotate(90 * entry[3]))

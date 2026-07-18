@@ -3,22 +3,18 @@ közti híd. A bekötést (QML-regisztráció, jelzések) az integrátor végzi.
 
 from __future__ import annotations
 
-import math
 from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
-from PySide6.QtGui import QImage
 
 from picasapy.edit.session import EditSession
 from picasapy.ini import load_document, parse_document, save_document
-from picasapy.ini.rect64 import Rect64
-from picasapy.render.chain import tilt_cover_scale
+from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.scanner import PICASA_INI_NAME
 
 from .edit_preview import EditPreviewProvider
 
 _TOGGLE_NAMES = ("redeye", "enhance", "autolight", "autocolor")
-_TILT_MAX_DEGREES = 11.5
 
 
 class EditController(QObject):
@@ -37,7 +33,6 @@ class EditController(QObject):
         self._section_name = ""
         self._session = EditSession()
         self._revision = 0
-        self._image_size: tuple[int, int] | None = None
         # undo/redo verem (#59): (filters-érték a művelet ELŐTT, művelet-kulcs)
         self._undo_stack: list[tuple[str, str]] = []
         self._redo_stack: list[tuple[str, str]] = []
@@ -105,7 +100,6 @@ class EditController(QObject):
         path = Path(image_path)
         self._photo_id = photo_id
         self._image_path = path
-        self._image_size = None
         self._ini_path = path.parent / PICASA_INI_NAME
         self._section_name = path.name
         self._session = EditSession.from_value(self._read_filters_value())
@@ -125,7 +119,6 @@ class EditController(QObject):
         self._ini_path = None
         self._section_name = ""
         self._session = EditSession()
-        self._image_size = None
         self._undo_stack.clear()
         self._redo_stack.clear()
         self._bump_revision()
@@ -181,14 +174,13 @@ class EditController(QObject):
 
     @Slot(float)
     def setTilt(self, param: float) -> None:
-        """A döntés-paraméter (-1..1 tartomány, Picasa-egység) beállítása;
-        a kitöltő skálát a kép tényleges méretéből számoljuk."""
+        """A döntés-paraméter (-1..1 tartomány, Picasa-egység) beállítása.
+
+        Picasa-paritás (#73): a skála-mezőbe 0.000000 kerül — a Picasa 3.x
+        is így ír, a kitöltő skálát a megjelenítő számolja renderkor."""
         self._require_active()
-        width, height = self._get_image_size()
-        angle = math.radians(param * _TILT_MAX_DEGREES)
-        scale = tilt_cover_scale(width, height, angle)
         self._push_undo("tilt")
-        self._session = self._session.set_tilt(param, scale)
+        self._session = self._session.set_tilt(param, 0.0)
         self._save()
         self._bump_revision()
 
@@ -228,14 +220,6 @@ class EditController(QObject):
         if not self._photo_id or self._image_path is None:
             raise ValueError("Nincs aktív szerkesztés (beginEdit hívása szükséges)")
 
-    def _get_image_size(self) -> tuple[int, int]:
-        if self._image_size is None:
-            image = QImage(str(self._image_path))
-            if image.isNull():
-                raise ValueError(f"A kép nem tölthető be: {self._image_path}")
-            self._image_size = (image.width(), image.height())
-        return self._image_size
-
     def _read_filters_value(self) -> str:
         if self._ini_path is None or not self._ini_path.exists():
             return ""
@@ -255,6 +239,15 @@ class EditController(QObject):
             document = document.with_value(
                 self._section_name, "filters", self._session.to_value()
             )
+        # Picasa-paritás (#73): a vágás a filters= mellett külön
+        # crop=rect64(...) kulcsba is kerül — a Picasa 3.x is így ír.
+        crop = self._session.crop()
+        if crop is not None:
+            document = document.with_value(
+                self._section_name, "crop", f"rect64({encode_rect64(crop)})"
+            )
+        else:
+            document = document.with_removed(self._section_name, "crop")
         save_document(document, self._ini_path, backup=True)
         self._register_preview()
 

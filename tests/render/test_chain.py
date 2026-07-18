@@ -84,6 +84,17 @@ class TestApplyFilters:
         assert result.shape == image.shape
         assert skipped == ()
 
+    def test_tilt_picasa_nulla_skalaval(self) -> None:
+        """#73: az éles Picasa `tilt=1,<szög>,0.000000` alakot ír — a 0 skála
+        nem hiba, hanem „számold ki a kitöltő skálát" jelentésű."""
+        image = _gradient_image()
+        ops = (FilterOp("tilt", ("1", "-0.153061", "0.000000")),)
+        result, skipped = apply_filters(image, ops)
+        assert result.shape == image.shape
+        assert skipped == ()
+        # ténylegesen forgatott (nem a bemenet másolata)
+        assert not np.array_equal(result, image)
+
     def test_nem_mutalja_a_bemenetet(self) -> None:
         image = _gradient_image()
         original = image.copy()

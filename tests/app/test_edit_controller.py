@@ -140,14 +140,34 @@ class TestClearCrop:
         controller.clearCrop()
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert "crop64" not in ini_text
+        assert "crop=" not in ini_text
+
+
+class TestPicasaCompanionCropKey:
+    """#73: a Picasa a filters= mellett külön crop=rect64(...) kulcsot is ír."""
+
+    def test_apply_crop_writes_companion_key(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "crop=rect64(" in ini_text
+
+    def test_undo_crop_removes_companion_key(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        controller.undo()
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "crop=rect64(" not in ini_text
 
 
 class TestSetTilt:
-    def test_writes_tilt_with_computed_scale(self, controller, photo):
+    def test_writes_tilt_with_picasa_zero_scale(self, controller, photo):
+        """#73: Picasa-paritás — a skála-mező 0.000000, a kitöltő skálát a
+        megjelenítő számolja (a Picasa is így ír)."""
         controller.beginEdit("1", str(photo))
         controller.setTilt(0.3)
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
-        assert "filters=tilt=1,0.300000," in ini_text
+        assert "filters=tilt=1,0.300000,0.000000;" in ini_text
 
     def test_bumps_revision_and_preview(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
