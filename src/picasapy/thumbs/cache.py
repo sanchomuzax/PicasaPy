@@ -17,6 +17,8 @@ import cv2
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
+from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
+
 _JPEG_QUALITY = 85
 
 # Nagy forrásképnél redukált JPEG-dekódolás kíméli az RPi memóriáját;
@@ -47,7 +49,7 @@ class ThumbnailCache:
         target = self.thumbnail_path(source, mtime_ns, size_bytes)
         if target.exists():
             return target
-        image = _decode_image(source, self._read_flag(source))
+        image = self._decode_source(source)
         if image is None:
             return None
         thumb = self._scale_down(image)
@@ -61,6 +63,12 @@ class ThumbnailCache:
         except OSError:
             return None  # tele lemez / NAS-hiba — a hívó placeholderre esik
         return target
+
+    def _decode_source(self, source: Path):
+        """Forrás → BGR numpy kép: videónál egy képkocka, képnél imdecode."""
+        if source.suffix.lower() in VIDEO_EXTENSIONS:
+            return _decode_video_frame(source)
+        return _decode_image(source, self._read_flag(source))
 
     def _read_flag(self, source: Path) -> int:
         """Dekódolási flag: nagy képre redukált beolvasás (memóriakímélés)."""
@@ -103,6 +111,28 @@ class ThumbnailCache:
         scale = self._size / longest
         new_size = (max(1, round(width * scale)), max(1, round(height * scale)))
         return cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
+
+
+def _decode_video_frame(source: Path):
+    """Az első dekódolható képkocka a videóból, vagy None.
+
+    Szándékosan NEM bájt-alapú (np.fromfile) út: egy mp4 több száz MB is
+    lehet, hálózati mappán a teljes beolvasás percekre akasztaná a
+    thumbnail-szálat — a VideoCapture streamelve csak a képkockához
+    szükséges részt olvassa.
+    """
+    capture = cv2.VideoCapture(str(source))
+    try:
+        if not capture.isOpened():
+            return None
+        ok, frame = capture.read()
+        if not ok or frame is None:
+            return None
+        return frame
+    except cv2.error:
+        return None
+    finally:
+        capture.release()
 
 
 def _decode_image(source: Path, flag: int):
