@@ -625,7 +625,7 @@ ApplicationWindow {
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "PicasaPy 0.1.0 — "
+                text: "PicasaPy 0.2.0 — "
                       + qsTr("A modern, open Picasa successor.")
                       + "\nGPL-3.0 · github.com/sanchomuzax/PicasaPy"
                 font.pixelSize: Theme.fontSize
