@@ -440,3 +440,66 @@ class TestEditorWiring:
         )
         qt_app.processEvents()
         assert panel.property("cropActive") is False
+
+
+class TestSearchSuggestionsWiring:
+    def test_refresh_fills_box_from_controller(self, qml_app, qt_app):
+        # #7 bekötés: gépelés (debounce után) a controller-slotból tölti
+        # a legördülőt.
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, controller, _ = qml_app
+        field = window.findChild(QObject, "searchField")
+        box = window.findChild(QObject, "searchSuggestions")
+        assert box is not None, "searchSuggestions nem található"
+        field.setProperty("text", "kep")
+        QMetaObject.invokeMethod(
+            window, "refreshSuggestions", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        value = box.property("suggestions")
+        if hasattr(value, "toVariant"):
+            value = value.toVariant()
+        assert [s["name"] for s in value] == ["kepek"]
+        assert box.property("visible") is True
+
+    def test_choose_folder_jumps_and_clears(self, qml_app, qt_app):
+        window, controller, _ = qml_app
+        field = window.findChild(QObject, "searchField")
+        box = window.findChild(QObject, "searchSuggestions")
+        target = controller.currentFolder
+        field.setProperty("text", "kep")
+        box.setProperty(
+            "suggestions",
+            [{"kind": "folder", "name": "kepek", "count": 2, "param": target}],
+        )
+        qt_app.processEvents()
+        from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+
+        QMetaObject.invokeMethod(
+            box, "choose", Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0)
+        )
+        qt_app.processEvents()
+        assert field.property("text") == ""
+        assert controller.currentFolder == target
+        value = box.property("suggestions")
+        if hasattr(value, "toVariant"):
+            value = value.toVariant()
+        assert value == []
+
+
+class TestFolderClickDuringSearchWiring:
+    def test_folder_chosen_keeps_search_text_and_filter(self, qml_app, qt_app):
+        # #45: a bal paneli mappa-kattintás keresés közben nem üríti a
+        # keresőmezőt és a szűrés megmarad (a mappára szűkítve).
+        window, controller, _ = qml_app
+        field = window.findChild(QObject, "searchField")
+        pane = window.findChild(QObject, "folderPane")
+        field.setProperty("text", "a")
+        controller.search("a")
+        qt_app.processEvents()
+        assert controller.photos.rowCount() == 1  # csak a.jpg
+        pane.folderChosen.emit(controller.currentFolder)
+        qt_app.processEvents()
+        assert field.property("text") == "a"      # a mező nem ürül
+        assert controller.photos.rowCount() == 1  # a szűrés megmarad

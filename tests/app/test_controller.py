@@ -201,6 +201,33 @@ class TestToggleStar:
         assert controller.filterActive is False
         assert controller.photos.rowCount() == 2  # a mappa teljes tartalma
 
+    def test_reload_preserves_search(self, controller, library):
+        # #38: a háttér-sync (watcher/rescan) végén futó _reload nem
+        # dobhatja el az aktív keresést — a szűrt nézet marad.
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.search("naplemente")
+        assert controller.photos.rowCount() == 1
+        controller._reload()
+        assert controller.photos.rowCount() == 1
+
+    def test_reload_preserves_starred_filter(self, controller, library):
+        # #38 társ-eset: a csillag-szűrő is élje túl a háttér-sync reloadot.
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.showStarred()
+        assert controller.photos.rowCount() == 1
+        controller._reload()
+        assert controller.photos.rowCount() == 1
+        assert controller.filterActive is True
+
+    def test_cleared_search_resets_view_mode(self, controller, library):
+        # Üres keresés után a nézet-mód a mappa — egy későbbi _refresh_view
+        # (pl. csillagozás) nem hozhatja vissza a régi keresést.
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.search("naplemente")
+        controller.search("")
+        controller._refresh_view()
+        assert controller.photos.rowCount() == 2
+
     def test_filter_status_text(self, controller, library):
         # Zöld sáv (Picasa): "N mappa / M kép látható (x,xxx másodperc) Y GB"
         controller.selectFolder(str(library / "nyaralas"))
@@ -575,3 +602,64 @@ class TestFolderDescription:
         ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "[IMG_0001.jpg]" in ini_text
         assert "star=yes" in ini_text.split("[IMG_0001.jpg]")[1]
+
+
+class TestSearchSuggestionsSlot:
+    def test_returns_folder_dicts(self, controller, library):
+        # #7 bekötés: a QML-nek dict-lista kell (kind/name/count/param).
+        result = controller.searchSuggestions("nyar")
+        assert [(s["kind"], s["name"]) for s in result] == [("folder", "nyaralas")]
+        assert result[0]["param"].endswith("nyaralas")
+        assert result[0]["count"] == 2
+
+    def test_empty_query_empty_list(self, controller):
+        assert controller.searchSuggestions("  ") == []
+
+    def test_albums_deferred_to_issue_9(self, controller, library):
+        # Album-javaslat egyelőre nem kerül a legördülőbe: a kiválasztása
+        # csak a virtuális albumok UI-jával (#9) lesz értelmes.
+        (library / "nyaralas" / ".picasa.ini").write_text(
+            "[.album:aabb01]\nname=nyari valogatas\n"
+            "[IMG_0001.jpg]\nalbums=aabb01\nstar=yes\n",
+            encoding="utf-8",
+        )
+        result = controller.searchSuggestions("nyari")
+        assert all(s["kind"] == "folder" for s in result)
+
+
+class TestFolderClickDuringSearch:
+    """#45: keresés közben a mappa-kattintás nem dobja el a szűrést —
+    a találatok az adott mappára szűkülnek (Picasa-viselkedés)."""
+
+    @pytest.fixture
+    def two_folders(self, controller, library, tmp_path):
+        from picasapy.index import open_index, sync_tree
+
+        (library / "telek").mkdir()
+        make_jpeg(library / "telek" / "IMG_0100.jpg")
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, library)
+        controller._reload()
+        return library
+
+    def test_folder_click_keeps_search_and_restricts(self, controller, two_folders):
+        controller.selectFolder(str(two_folders / "nyaralas"))
+        controller.search("IMG")
+        assert controller.photos.rowCount() == 3  # minden mappából
+        controller.selectFolderKeepSearch(str(two_folders / "telek"))
+        assert controller.photos.rowCount() == 1  # csak a telek találata
+        assert controller.currentFolder == str(two_folders / "telek")
+
+    def test_restricted_view_survives_reload(self, controller, two_folders):
+        controller.search("IMG")
+        controller.selectFolderKeepSearch(str(two_folders / "telek"))
+        controller._reload()  # háttér-sync sem dobhatja el (#38 mintájára)
+        assert controller.photos.rowCount() == 1
+
+    def test_without_active_search_plain_select(self, controller, two_folders):
+        controller.selectFolderKeepSearch(str(two_folders / "telek"))
+        assert controller.photos.rowCount() == 1  # sima mappanézet
+        controller.search("IMG")
+        controller.search("")
+        controller.selectFolderKeepSearch(str(two_folders / "nyaralas"))
+        assert controller.photos.rowCount() == 2  # törölt keresés → teljes mappa

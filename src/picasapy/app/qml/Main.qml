@@ -220,6 +220,7 @@ ApplicationWindow {
                         onTextEdited: {
                             window.clearSelection()
                             controller.search(text)
+                            suggestionsTimer.restart()
                         }
                         Text {
                             visible: searchField.text.length === 0
@@ -246,11 +247,44 @@ ApplicationWindow {
                                 searchField.clear()
                                 window.clearSelection()
                                 controller.search("")
+                                searchSuggestionsBox.suggestions = []
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    // Kereső-javaslatok (#7): gépelés után rövid szünettel (debounce)
+    // kérjük le, hogy NAS-on se fusson lekérdezés minden billentyűre.
+    function refreshSuggestions() {
+        searchSuggestionsBox.suggestions =
+            controller.searchSuggestions(searchField.text)
+    }
+    Timer {
+        id: suggestionsTimer
+        interval: 150
+        onTriggered: window.refreshSuggestions()
+    }
+    SearchSuggestions {
+        id: searchSuggestionsBox
+        objectName: "searchSuggestions"
+        z: 50
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.rightMargin: 8
+        width: 300
+        query: searchField.text
+        visible: suggestions.length > 0 && searchField.text.length > 0
+                 && !window.viewerOpen
+        onChosen: function(kind, name, param) {
+            if (kind === "folder") {
+                searchField.clear()
+                window.clearSelection()
+                controller.selectFolder(param)
+            }
+            suggestions = []
         }
     }
 
@@ -281,9 +315,15 @@ ApplicationWindow {
             selectedPath: controller.currentFolder
             starredActive: controller.filterActive
             onFolderChosen: function(path) {
-                searchField.clear()
                 window.clearSelection()
-                controller.selectFolder(path)
+                if (searchField.text.trim().length > 0) {
+                    // #45: aktív keresésnél a szűrés megmarad, a
+                    // találatok a mappára szűkülnek (Picasa-viselkedés)
+                    controller.selectFolderKeepSearch(path)
+                } else {
+                    searchField.clear()
+                    controller.selectFolder(path)
+                }
             }
             onStarredChosen: {
                 searchField.clear()

@@ -78,6 +78,82 @@ def search_photos(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ..
     return _records(rows)
 
 
+@dataclass(frozen=True)
+class SearchSuggestion:
+    """Egy sor a kereső legördülőjében (#7).
+
+    kind: "folder" | "album"; param: mappánál a teljes útvonal,
+    albumnál az album-token (a kiválasztás paramétere)."""
+
+    kind: str
+    name: str
+    count: int
+    param: str
+
+
+def search_suggestions(
+    conn: sqlite3.Connection, text: str, limit: int = 8
+) -> tuple[SearchSuggestion, ...]:
+    """Javaslatok gépelés közben: név-egyező mappák és virtuális albumok.
+
+    Picasa-viselkedés (150933-as referencia): az egyezés részszó-alapú és
+    casefold-os; előbb a mappák, aztán az albumok, névsorban, darabszámmal.
+    Az albumok a `.picasa.ini`-kből jönnek (az index nem tárolja őket);
+    ugyanaz a token több ini-ben is szerepelhet — összesítve számoljuk.
+    """
+    query = text.strip().casefold()
+    if not query:
+        return ()
+    folders = tuple(
+        SearchSuggestion(
+            kind="folder",
+            name=_PATH_SEP.split(row["path"])[-1],
+            count=row["n"],
+            param=row["path"],
+        )
+        for row in conn.execute(
+            "SELECT f.path AS path, COUNT(p.id) AS n FROM folders f "
+            "JOIN photos p ON p.folder_id = f.id GROUP BY f.id ORDER BY f.path"
+        )
+        if query in _PATH_SEP.split(row["path"])[-1].casefold()
+    )
+    albums = _album_suggestions(conn, query)
+    return (folders + albums)[:limit]
+
+
+def _album_suggestions(
+    conn: sqlite3.Connection, folded_query: str
+) -> tuple[SearchSuggestion, ...]:
+    """Album-javaslatok a has_ini-s mappák `.picasa.ini`-jeiből összesítve."""
+    from picasapy.ini import albums_of, load_document, parse_album_refs
+
+    names: dict[str, str] = {}  # token -> név (az első definíció nyer)
+    counts: dict[str, int] = {}  # token -> tagok száma az összes ini-ben
+    ini_rows = conn.execute("SELECT path FROM folders WHERE has_ini = 1")
+    for row in ini_rows:
+        ini_path = Path(row["path"]) / ".picasa.ini"
+        try:
+            document = load_document(ini_path)
+        except (OSError, ValueError):
+            continue  # időközben törölt/olvashatatlan ini — kihagyjuk
+        for album in albums_of(document):
+            if album.name and album.token not in names:
+                names[album.token] = album.name
+        for section in document.sections:
+            if section.is_special:
+                continue
+            refs = parse_album_refs(section.get("albums") or "")
+            for token in refs:
+                counts[token] = counts.get(token, 0) + 1
+    return tuple(
+        SearchSuggestion(
+            kind="album", name=name, count=counts.get(token, 0), param=token
+        )
+        for token, name in sorted(names.items(), key=lambda kv: kv[1].casefold())
+        if folded_query in name.casefold()
+    )
+
+
 def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
     return tuple(
         PhotoRecord(

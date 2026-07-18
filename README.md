@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src/picasapy/app/assets/logo.svg" alt="PicasaPy logó" width="160">
+  <img src="docs/assets/logo-card.svg" alt="PicasaPy logó" width="181">
 </p>
 
 <p align="center"><em>Google Picasa szellemében, modern Python/Qt alapokon.</em></p>
