@@ -46,18 +46,18 @@ Rectangle {
                 anchors.fill: parent
                 anchors.leftMargin: 8; anchors.rightMargin: 8
                 spacing: 8
-                Button {
+                PicasaButton {
                     text: "◀  " + qsTr("Back to Library")
                     font.pixelSize: Theme.fontSize
                     onClicked: viewer.closed()
                 }
                 Item { Layout.fillWidth: true }
-                Button {
+                PicasaButton {
                     text: "▶ " + qsTr("Play")
                     enabled: false
                     font.pixelSize: Theme.fontSize
                 }
-                Button {
+                PicasaButton {
                     text: "◀"; onClicked: viewer.previous()
                     enabled: viewer.currentIndex > 0
                     Layout.preferredWidth: 30
@@ -89,7 +89,7 @@ Rectangle {
                         }
                     }
                 }
-                Button {
+                PicasaButton {
                     text: "▶"; onClicked: viewer.next()
                     enabled: viewer.currentIndex < viewer.photoCount - 1
                     Layout.preferredWidth: 30
@@ -117,14 +117,14 @@ Rectangle {
                         columns: 2
                         columnSpacing: 6; rowSpacing: 6
                         Layout.fillWidth: true
-                        Button { text: qsTr("Crop"); enabled: false; Layout.fillWidth: true }
-                        Button { text: qsTr("Straighten"); enabled: false; Layout.fillWidth: true }
-                        Button { text: qsTr("Redeye"); enabled: false; Layout.fillWidth: true }
-                        Button { text: qsTr("I'm Feeling Lucky"); enabled: false; Layout.fillWidth: true }
-                        Button { text: qsTr("Auto Contrast"); enabled: false; Layout.fillWidth: true }
-                        Button { text: qsTr("Auto Color"); enabled: false; Layout.fillWidth: true }
-                        Button { text: qsTr("Retouch"); enabled: false; Layout.fillWidth: true }
-                        Button { text: qsTr("Text"); enabled: false; Layout.fillWidth: true }
+                        PicasaButton { text: qsTr("Crop"); enabled: false; Layout.fillWidth: true }
+                        PicasaButton { text: qsTr("Straighten"); enabled: false; Layout.fillWidth: true }
+                        PicasaButton { text: qsTr("Redeye"); enabled: false; Layout.fillWidth: true }
+                        PicasaButton { text: qsTr("I'm Feeling Lucky"); enabled: false; Layout.fillWidth: true }
+                        PicasaButton { text: qsTr("Auto Contrast"); enabled: false; Layout.fillWidth: true }
+                        PicasaButton { text: qsTr("Auto Color"); enabled: false; Layout.fillWidth: true }
+                        PicasaButton { text: qsTr("Retouch"); enabled: false; Layout.fillWidth: true }
+                        PicasaButton { text: qsTr("Text"); enabled: false; Layout.fillWidth: true }
                     }
                     Label {
                         text: qsTr("Fill Light")
@@ -133,8 +133,8 @@ Rectangle {
                     }
                     Slider { enabled: false; Layout.fillWidth: true }
                     RowLayout {
-                        Button { text: qsTr("Undo"); enabled: false; Layout.fillWidth: true }
-                        Button { text: qsTr("Redo"); enabled: false; Layout.fillWidth: true }
+                        PicasaButton { text: qsTr("Undo"); enabled: false; Layout.fillWidth: true }
+                        PicasaButton { text: qsTr("Redo"); enabled: false; Layout.fillWidth: true }
                     }
                 }
                 Rectangle {

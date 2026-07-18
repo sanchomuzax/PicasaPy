@@ -35,12 +35,11 @@ ApplicationWindow {
             anchors.fill: parent
             anchors.leftMargin: 8; anchors.rightMargin: 8
             spacing: 10
-            Button {
+            PicasaButton {
                 text: qsTr("Import")
                 enabled: false
                 Layout.preferredWidth: 100
                 Layout.preferredHeight: 24
-                font.pixelSize: Theme.fontSize
             }
             Item { Layout.fillWidth: true }
             Column {
@@ -53,18 +52,56 @@ ApplicationWindow {
                     color: Theme.textGray
                 }
                 Row {
-                    spacing: 6
+                    spacing: 7
                     Text {
                         text: "★"
                         font.pixelSize: 13
-                        color: starFilter.hovered ? Theme.starYellow : "#a0a0a0"
+                        color: starFilter.hovered ? Theme.starYellow : "#8f8f8f"
                         HoverHandler { id: starFilter }
                         TapHandler { onTapped: controller.showStarred() }
                     }
-                    Text { text: "🖼"; font.pixelSize: 12; opacity: 0.4 }
-                    Text { text: "👤"; font.pixelSize: 12; opacity: 0.4 }
-                    Text { text: "🎬"; font.pixelSize: 12; opacity: 0.4 }
-                    Text { text: "📍"; font.pixelSize: 12; opacity: 0.4 }
+                    // fotó-szűrő (inaktív): kis keretezett kép sziluett
+                    Rectangle {
+                        width: 13; height: 11; radius: 1
+                        color: "#ffffff"; border.color: "#9a9a9a"; opacity: 0.5
+                        Rectangle {
+                            x: 2; y: 6; width: 9; height: 3
+                            color: "#8ab06a"
+                        }
+                    }
+                    // személy-szűrő (inaktív)
+                    Item {
+                        width: 11; height: 11; opacity: 0.5
+                        Rectangle {
+                            x: 3; y: 0; width: 5; height: 5; radius: 2.5
+                            color: "#8a8a8a"
+                        }
+                        Rectangle {
+                            x: 1; y: 6; width: 9; height: 5
+                            radius: 2; color: "#8a8a8a"
+                        }
+                    }
+                    // videó-szűrő (inaktív)
+                    Rectangle {
+                        width: 13; height: 11; radius: 1
+                        color: "#8a8a8a"; opacity: 0.5
+                        Text {
+                            anchors.centerIn: parent
+                            text: "▶"; color: "white"; font.pixelSize: 7
+                        }
+                    }
+                    // geo-szűrő (inaktív)
+                    Item {
+                        width: 9; height: 12; opacity: 0.6
+                        Rectangle {
+                            x: 0; y: 0; width: 9; height: 9; radius: 4.5
+                            color: "#c94b3d"
+                        }
+                        Rectangle {
+                            x: 3.5; y: 8; width: 2; height: 4
+                            color: "#c94b3d"
+                        }
+                    }
                 }
             }
             Item { width: 20 }
@@ -188,7 +225,7 @@ ApplicationWindow {
                 anchors.leftMargin: 10; anchors.rightMargin: 10
                 spacing: 8
 
-                Button {
+                PicasaButton {
                     text: "★"
                     enabled: window.viewerOpen || window.selectedIndex >= 0
                     Layout.preferredWidth: 34
@@ -196,21 +233,23 @@ ApplicationWindow {
                         window.viewerOpen ? photoViewer.currentIndex
                                           : window.selectedIndex)
                 }
-                Button { text: "↺"; enabled: false; Layout.preferredWidth: 34 }
-                Button { text: "↻"; enabled: false; Layout.preferredWidth: 34 }
+                PicasaButton { text: "↺"; enabled: false; Layout.preferredWidth: 34 }
+                PicasaButton { text: "↻"; enabled: false; Layout.preferredWidth: 34 }
                 Item { width: 8 }
-                Button {
+                PicasaButton {
                     text: qsTr("Upload to Google Photos")
                     enabled: false
-                    palette.button: Theme.picasaGreen
-                    palette.buttonText: "white"
-                    font.pixelSize: Theme.fontSize
+                    accent: Theme.picasaGreen
                 }
-                Button { text: qsTr("E-Mail"); enabled: false; font.pixelSize: Theme.fontSize }
-                Button { text: qsTr("Print"); enabled: false; font.pixelSize: Theme.fontSize }
-                Button { text: qsTr("Export"); enabled: false; font.pixelSize: Theme.fontSize }
+                PicasaButton { text: qsTr("E-Mail"); enabled: false }
+                PicasaButton { text: qsTr("Print"); enabled: false }
+                PicasaButton { text: qsTr("Export"); enabled: false }
                 Item { Layout.fillWidth: true }
-                Text { text: "🖼"; font.pixelSize: 14 }
+                Rectangle {
+                    width: 14; height: 11; radius: 1
+                    color: "#ffffff"; border.color: "#9a9a9a"
+                    Rectangle { x: 2; y: 6; width: 10; height: 3; color: "#8ab06a" }
+                }
                 Slider {
                     id: sizeSlider
                     from: 72; to: 256; value: window.thumbSize

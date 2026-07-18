@@ -71,7 +71,9 @@ Rectangle {
                 spacing: 4
                 Text { text: "▼"; font.pixelSize: 8; color: Theme.panelHeaderText }
                 Text {
-                    text: qsTr("Folders") + " (" + folderList.count + ")"
+                    text: qsTr("Folders") + " ("
+                          + (folderList.model ? folderList.model.folderCount : 0)
+                          + ")"
                     font.pixelSize: Theme.fontSize; font.bold: true
                     color: Theme.panelHeaderText
                 }
@@ -84,16 +86,30 @@ Rectangle {
             height: pane.height - 66
             clip: true
             delegate: Rectangle {
+                required property string kind
                 required property string name
                 required property string path
                 required property int count
                 width: folderList.width; height: 22
-                color: pane.selectedPath === path ? Theme.panelSelection : "transparent"
+                color: kind === "folder" && pane.selectedPath === path
+                       ? Theme.panelSelection : "transparent"
+
+                // évszám-elválasztó sor (Picasa-minta)
+                Text {
+                    visible: kind === "year"
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left; anchors.leftMargin: 6
+                    text: name
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.panelYearText
+                }
+
                 Row {
+                    visible: kind === "folder"
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left; anchors.leftMargin: 16
                     spacing: 5
-                    Text { text: "📁"; font.pixelSize: Theme.fontSize - 1 }
+                    FolderIcon { size: 13; anchors.verticalCenter: parent.verticalCenter }
                     Text {
                         text: name + " (" + count + ")"
                         font.pixelSize: Theme.fontSize
@@ -102,6 +118,7 @@ Rectangle {
                     }
                 }
                 MouseArea {
+                    enabled: kind === "folder"
                     anchors.fill: parent
                     onClicked: { pane.selectedPath = path; pane.folderChosen(path) }
                 }

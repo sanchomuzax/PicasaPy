@@ -38,6 +38,29 @@ class TestFolderListModel:
         assert model.data(first, FolderListModel.CountRole) == 2
         assert model.data(first, FolderListModel.PathRole).endswith("nyaralas")
 
+    def test_year_separator_rows(self, qt_app, conn):
+        # Picasa: évszám-elválasztó sorok az év-prefixű mappák előtt.
+        from picasapy.app.models import FolderListModel
+
+        for path in ("/k/2025-05-xx", "/k/2025-07-xx", "/k/2026-01-xx", "/k/egyeb"):
+            conn.execute("INSERT INTO folders(path) VALUES (?)", (path,))
+        conn.commit()
+        model = FolderListModel()
+        model.load(conn)
+        rows = [
+            (
+                model.data(model.index(i, 0), FolderListModel.KindRole),
+                model.data(model.index(i, 0), FolderListModel.NameRole),
+            )
+            for i in range(model.rowCount())
+        ]
+        assert ("year", "2025") in rows
+        assert ("year", "2026") in rows
+        assert rows.index(("year", "2025")) < rows.index(("folder", "2025-05-xx"))
+        assert rows.index(("year", "2026")) < rows.index(("folder", "2026-01-xx"))
+        # nem év-prefixű mappa nem kap elválasztót maga elé
+        assert ("year", "egye") not in rows
+
     def test_windows_path_folder_name(self, qt_app, conn):
         # Importált (Windows-os) útvonal is értelmes nevet adjon.
         from picasapy.app.models import FolderListModel

@@ -11,7 +11,7 @@ Column {
 
     Row {
         spacing: 8
-        Text { text: "📁"; font.pixelSize: 22 }
+        FolderIcon { size: 26; anchors.verticalCenter: parent.verticalCenter }
         Column {
             spacing: 1
             Text {

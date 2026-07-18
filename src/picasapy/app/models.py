@@ -6,43 +6,69 @@ from __future__ import annotations
 import re
 import sqlite3
 
-from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt, QUrl, Slot
+from PySide6.QtCore import (
+    Property,
+    QAbstractListModel,
+    QModelIndex,
+    Qt,
+    QUrl,
+    Signal,
+    Slot,
+)
 
 from picasapy.index import PhotoRecord
 
 # Importált Windows-útvonalak is előfordulhatnak a folders táblában.
 _PATH_SEPARATORS = re.compile(r"[/\\]")
+_YEAR_PREFIX = re.compile(r"^(\d{4})")
 
 
 class FolderListModel(QAbstractListModel):
-    NameRole = Qt.ItemDataRole.UserRole + 1
-    PathRole = Qt.ItemDataRole.UserRole + 2
-    CountRole = Qt.ItemDataRole.UserRole + 3
+    """Mappa-lista évszám-elválasztó sorokkal (Picasa-minta).
+
+    Egy sor: (kind, name, path, count) — kind='year' az elválasztó,
+    kind='folder' a kattintható mappa.
+    """
+
+    KindRole = Qt.ItemDataRole.UserRole + 1
+    NameRole = Qt.ItemDataRole.UserRole + 2
+    PathRole = Qt.ItemDataRole.UserRole + 3
+    CountRole = Qt.ItemDataRole.UserRole + 4
+
+    folderCountChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._folders: tuple[tuple[str, str, int], ...] = ()
+        self._rows: tuple[tuple[str, str, str, int], ...] = ()
 
     def load(self, conn: sqlite3.Connection) -> None:
-        rows = conn.execute(
+        db_rows = conn.execute(
             "SELECT f.path, count(p.id) AS n FROM folders f "
             "LEFT JOIN photos p ON p.folder_id = f.id "
             "GROUP BY f.id ORDER BY f.path"
         ).fetchall()
         self.beginResetModel()
-        self._folders = tuple(
+        self._rows = _with_year_separators(
             (_PATH_SEPARATORS.split(row["path"])[-1], row["path"], row["n"])
-            for row in rows
+            for row in db_rows
         )
         self.endResetModel()
+        self.folderCountChanged.emit()
 
     def rowCount(self, parent=QModelIndex()) -> int:
-        return 0 if parent.isValid() else len(self._folders)
+        return 0 if parent.isValid() else len(self._rows)
+
+    @Property(int, notify=folderCountChanged)
+    def folderCount(self) -> int:
+        """Csak a valódi mappák száma (az évszám-elválasztók nélkül)."""
+        return sum(1 for row in self._rows if row[0] == "folder")
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
-        if not index.isValid() or not 0 <= index.row() < len(self._folders):
+        if not index.isValid() or not 0 <= index.row() < len(self._rows):
             return None
-        name, path, count = self._folders[index.row()]
+        kind, name, path, count = self._rows[index.row()]
+        if role == self.KindRole:
+            return kind
         if role in (self.NameRole, Qt.ItemDataRole.DisplayRole):
             return name
         if role == self.PathRole:
@@ -53,10 +79,24 @@ class FolderListModel(QAbstractListModel):
 
     def roleNames(self):
         return {
+            self.KindRole: b"kind",
             self.NameRole: b"name",
             self.PathRole: b"path",
             self.CountRole: b"count",
         }
+
+
+def _with_year_separators(folders) -> tuple[tuple[str, str, str, int], ...]:
+    rows = []
+    last_year = None
+    for name, path, count in folders:
+        match = _YEAR_PREFIX.match(name)
+        year = match.group(1) if match else None
+        if year and year != last_year:
+            rows.append(("year", year, "", 0))
+        last_year = year
+        rows.append(("folder", name, path, count))
+    return tuple(rows)
 
 
 class PhotoGridModel(QAbstractListModel):
