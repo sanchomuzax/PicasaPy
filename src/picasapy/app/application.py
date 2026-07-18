@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QLocale, QTranslator
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
 from picasapy.scanner import read_watched_folders
@@ -57,6 +57,7 @@ def run(argv: list[str]) -> int:
     app = QGuiApplication(argv)
     app.setApplicationName("PicasaPy")
     app.setOrganizationName("PicasaPy")
+    app.setWindowIcon(QIcon(str(_APP_DIR / "assets" / "icon.png")))
     _install_translator(app)
 
     roots = _resolve_roots(argv)

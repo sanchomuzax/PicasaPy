@@ -369,9 +369,22 @@ ApplicationWindow {
         modal: true
         anchors.centerIn: parent
         standardButtons: Dialog.Ok
-        Text {
-            text: "PicasaPy 0.1.0\n" + qsTr("A modern, open Picasa successor.")
-            font.pixelSize: Theme.fontSize
+        Column {
+            spacing: 10
+            Image {
+                anchors.horizontalCenter: parent.horizontalCenter
+                source: Qt.resolvedUrl("../assets/logo.svg")
+                sourceSize.width: 320
+                fillMode: Image.PreserveAspectFit
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "PicasaPy 0.1.0 — "
+                      + qsTr("A modern, open Picasa successor.")
+                      + "\nGPL-3.0 · github.com/sanchomuzax/PicasaPy"
+                font.pixelSize: Theme.fontSize
+                horizontalAlignment: Text.AlignHCenter
+            }
         }
     }
 }

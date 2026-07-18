@@ -29,6 +29,15 @@ class TestXdgDirs:
         assert application._cache_dir() == tmp_path / "c" / "picasapy"
 
 
+class TestAssets:
+    def test_icon_and_logo_exist_and_load(self, qt_app):
+        from PySide6.QtGui import QImage
+
+        assets = application._APP_DIR / "assets"
+        assert not QImage(str(assets / "icon.png")).isNull()
+        assert (assets / "logo.svg").exists()
+
+
 class TestTranslator:
     def test_hungarian_loads_and_translates(self, qt_app, monkeypatch):
         monkeypatch.setenv("PICASAPY_LANG", "hu_HU")
