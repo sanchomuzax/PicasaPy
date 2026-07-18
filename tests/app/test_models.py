@@ -171,6 +171,18 @@ class TestPhotoGridModel:
         assert model.data(first, PhotoGridModel.ResolutionRole) == "8x6"
         assert model.data(first, PhotoGridModel.KeywordsRole) == ""
 
+    def test_folder_path_role(self, qt_app, conn, library):
+        # #7: a rács mappánkénti csoportosításához (GridView section) kell
+        # a mappa-útvonal szerepkörként.
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        first = model.index(0, 0)
+        assert model.data(first, PhotoGridModel.FolderPathRole) == str(
+            library / "nyaralas"
+        )
+
     def test_thumb_url_versioned_by_rotation(self, qt_app, conn, library):
         # A forgatás lépésszáma az URL-ben van, hogy a QML kép-cache frissüljön.
         from picasapy.app.models import PhotoGridModel

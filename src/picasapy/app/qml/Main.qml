@@ -317,6 +317,9 @@ ApplicationWindow {
             foldersModel: controller.folders
             selectedPath: controller.currentFolder
             starredActive: controller.filterActive
+            searchActive: controller.searchActive
+            searchQuery: controller.searchQuery
+            searchResultCount: controller.searchResultCount
             onFolderChosen: function(path) {
                 window.clearSelection()
                 if (searchField.text.trim().length > 0) {
@@ -407,6 +410,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
+                    visible: !controller.searchActive
                     model: controller.photos
                     cellWidth: window.thumbSize + 18
                     cellHeight: window.thumbSize + 18
@@ -516,6 +520,71 @@ ApplicationWindow {
                             visible = true
                         }
                     }
+                }
+
+                // #7: keresési találatok mappánként csoportosítva (Picasa-
+                // minta) — a GridView nem támogat szekció-fejlécet, ezért
+                // csoportonként egy fejléc + egy nem-interaktív al-rács.
+                ListView {
+                    id: groupedResults
+                    objectName: "groupedSearchResults"
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    visible: controller.searchActive
+                    model: controller.searchGroups
+                    spacing: 0
+
+                    delegate: ColumnLayout {
+                        id: groupDelegate
+                        required property var modelData
+                        width: groupedResults.width
+                        spacing: 0
+
+                        SearchGroupHeader {
+                            Layout.fillWidth: true
+                            section: groupDelegate.modelData.folderName
+                        }
+
+                        GridView {
+                            id: subgrid
+                            Layout.fillWidth: true
+                            interactive: false
+                            cellWidth: window.thumbSize + 18
+                            cellHeight: window.thumbSize + 18
+                                + (controller.thumbCaptionMode !== "none" ? 16 : 0)
+                            height: Math.ceil(
+                                groupDelegate.modelData.photos.length
+                                / Math.max(1, Math.floor(width / cellWidth))
+                            ) * cellHeight
+                            model: groupDelegate.modelData.photos
+
+                            delegate: ThumbDelegate {
+                                id: groupedThumb
+                                required property var modelData
+                                width: subgrid.cellWidth
+                                height: subgrid.cellHeight
+                                name: modelData.name
+                                thumbUrl: modelData.thumbUrl
+                                star: modelData.star
+                                caption: modelData.caption
+                                isVideo: modelData.isVideo
+                                index: modelData.row
+                                keywords: modelData.keywords
+                                resolution: modelData.resolution
+                                captionMode: controller.thumbCaptionMode
+                                selected: window.selectedIndexes.indexOf(modelData.row) !== -1
+                                onChosen: function(i, mods) {
+                                    window.handleThumbClick(i, mods)
+                                }
+                                onOpened: function(i) {
+                                    window.viewerOpen = true
+                                    photoViewer.show(i)
+                                }
+                            }
+                        }
+                    }
+                    ScrollBar.vertical: ScrollBar {}
                 }
                 }
                 }

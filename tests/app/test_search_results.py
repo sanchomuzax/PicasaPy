@@ -1,6 +1,6 @@
 """Mappánként csoportosított találati modell (#7) — tiszta függvények."""
 
-from picasapy.app.search_results import group_by_folder
+from picasapy.app.search_results import group_by_folder, groups_to_qml
 from picasapy.index.queries import PhotoRecord
 
 
@@ -72,3 +72,21 @@ class TestGroupByFolder:
         groups = group_by_folder((_rec("/a", "1.jpg"),))
         assert isinstance(groups, tuple)
         assert isinstance(groups[0].photos, tuple)
+
+
+class TestGroupsToQml:
+    def test_row_offsets_are_global(self, qt_app):
+        records = (
+            _rec("/a", "1.jpg"),
+            _rec("/a", "2.jpg"),
+            _rec("/b", "3.jpg"),
+        )
+        groups = group_by_folder(records)
+        qml_groups = groups_to_qml(groups)
+        assert [g["folderName"] for g in qml_groups] == ["a", "b"]
+        assert [p["row"] for p in qml_groups[0]["photos"]] == [0, 1]
+        assert [p["row"] for p in qml_groups[1]["photos"]] == [2]
+        assert qml_groups[0]["photos"][0]["name"] == "1.jpg"
+
+    def test_empty_groups(self, qt_app):
+        assert groups_to_qml(()) == []

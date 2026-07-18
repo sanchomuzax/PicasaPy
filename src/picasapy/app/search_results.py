@@ -12,6 +12,8 @@ from dataclasses import dataclass
 
 from picasapy.index.queries import PhotoRecord
 
+from .models import _thumb_url
+
 _PATH_SEP = re.compile(r"[/\\]")
 
 
@@ -57,3 +59,32 @@ def _make_group(
         earliest_taken_at=dates[0] if dates else None,
         photos=tuple(bucket),
     )
+
+
+def groups_to_qml(groups: tuple[SearchGroup, ...]) -> list[dict]:
+    """A csoportok QML-nek adható alakja (#7): a kereső-rács
+    `controller.searchGroups`-ja ebből épül. Soronként a lapos
+    találat-listabeli (globális) sorindexet is viszi, hogy a néző/
+    kijelölés a `PhotoGridModel`-hez igazodjon."""
+    return [
+        {
+            "folderName": g.folder_name,
+            "folderPath": g.folder_path,
+            "photos": [
+                {
+                    "row": g.first_row + i,
+                    "name": p.name,
+                    "thumbUrl": _thumb_url(p),
+                    "star": p.star,
+                    "caption": p.caption or "",
+                    "isVideo": p.kind == "video",
+                    "keywords": p.keywords or "",
+                    "resolution": (
+                        f"{p.width}x{p.height}" if p.width and p.height else ""
+                    ),
+                }
+                for i, p in enumerate(g.photos)
+            ],
+        }
+        for g in groups
+    ]

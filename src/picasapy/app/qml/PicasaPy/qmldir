@@ -11,3 +11,4 @@ PicasaButton 1.0 PicasaButton.qml
 EditorPanel 1.0 EditorPanel.qml
 CropOverlay 1.0 CropOverlay.qml
 SearchSuggestions 1.0 SearchSuggestions.qml
+SearchGroupHeader 1.0 SearchGroupHeader.qml
