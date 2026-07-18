@@ -17,6 +17,42 @@ Rectangle {
     signal closed()
 
     function show(index) { currentIndex = index; forceActiveFocus() }
+
+    // -- szerkesztés (#19): EditController-életciklus --------------------
+    // A nézőbe lépés = szerkesztési munkamenet az aktuális képre; kilépéskor
+    // a munkamenet zárul. A panel kapcsoló-állapotait az EditController
+    // igazságforrásából szinkronizáljuk (a kötést a panel belső átírása
+    // megtörné, ezért imperatív sync a toolsChanged-re).
+    function beginEditCurrent() {
+        if (visible && currentIndex >= 0 && photosModel)
+            editController.beginEdit(photosModel.idAt(currentIndex),
+                                     photosModel.filePathAt(currentIndex))
+    }
+    function syncPanelFromController() {
+        editorPanel.redeyeActive = editController.redeyeActive
+        editorPanel.enhanceActive = editController.enhanceActive
+        editorPanel.autolightActive = editController.autolightActive
+        editorPanel.autocolorActive = editController.autocolorActive
+    }
+    onVisibleChanged: {
+        if (visible) {
+            beginEditCurrent()
+        } else {
+            editController.endEdit()
+            editorPanel.cropActive = false
+            editorPanel.tiltActive = false
+        }
+    }
+    onCurrentIndexChanged: {
+        if (visible) {
+            beginEditCurrent()
+            tiltSlider.value = 0
+        }
+    }
+    Connections {
+        target: editController
+        function onToolsChanged() { viewer.syncPanelFromController() }
+    }
     function next() {
         if (currentIndex < photoCount - 1) currentIndex += 1
     }
@@ -103,35 +139,49 @@ Rectangle {
             Layout.fillHeight: true
             spacing: 0
 
-            // bal eszközpanel — 2. fázisig placeholder, de dizájn-hű
+            // bal eszközpanel — Gyakori javítások élesben (#19); a
+            // Retusálás/Szöveg és a finomhangolás a #20-ban élesedik
             Rectangle {
                 Layout.preferredWidth: 230
                 Layout.fillHeight: true
                 color: Theme.chromeBg
-                ColumnLayout {
+
+                EditorPanel {
+                    id: editorPanel
+                    objectName: "viewerEditorPanel"
                     anchors.top: parent.top
+                    anchors.left: parent.left; anchors.right: parent.right
+                    height: 180
+                    onToolActivated: function(tool) {
+                        // crop/tilt helyi mód (overlay/csúszka); a többi
+                        // azonnali ini-művelet az EditControlleren át
+                        if (tool !== "crop" && tool !== "tilt")
+                            editController.toggleTool(tool)
+                    }
+                }
+
+                ColumnLayout {
+                    anchors.top: editorPanel.bottom
                     anchors.left: parent.left; anchors.right: parent.right
                     anchors.margins: 10
                     spacing: 6
-                    GridLayout {
-                        columns: 2
-                        columnSpacing: 6; rowSpacing: 6
-                        Layout.fillWidth: true
-                        PicasaButton { text: qsTr("Crop"); enabled: false; Layout.fillWidth: true }
-                        PicasaButton { text: qsTr("Straighten"); enabled: false; Layout.fillWidth: true }
-                        PicasaButton { text: qsTr("Redeye"); enabled: false; Layout.fillWidth: true }
-                        PicasaButton { text: qsTr("I'm Feeling Lucky"); enabled: false; Layout.fillWidth: true }
-                        PicasaButton { text: qsTr("Auto Contrast"); enabled: false; Layout.fillWidth: true }
-                        PicasaButton { text: qsTr("Auto Color"); enabled: false; Layout.fillWidth: true }
-                        PicasaButton { text: qsTr("Retouch"); enabled: false; Layout.fillWidth: true }
-                        PicasaButton { text: qsTr("Text"); enabled: false; Layout.fillWidth: true }
-                    }
                     Label {
-                        text: qsTr("Fill Light")
+                        visible: editorPanel.tiltActive
+                        text: qsTr("Straighten")
                         font.pixelSize: Theme.fontSize
                         color: Theme.textGray
                     }
-                    Slider { enabled: false; Layout.fillWidth: true }
+                    // döntés-csúszka: −1..1 Picasa-egység (±11,5°);
+                    // elengedéskor ír — húzás közben nem spammeljük az init
+                    Slider {
+                        id: tiltSlider
+                        objectName: "tiltSlider"
+                        visible: editorPanel.tiltActive
+                        from: -1; to: 1; value: 0
+                        Layout.fillWidth: true
+                        onPressedChanged: if (!pressed && editorPanel.tiltActive)
+                                              editController.setTilt(value)
+                    }
                     RowLayout {
                         PicasaButton { text: qsTr("Undo"); enabled: false; Layout.fillWidth: true }
                         PicasaButton { text: qsTr("Redo"); enabled: false; Layout.fillWidth: true }
@@ -182,11 +232,43 @@ Rectangle {
                         width: iniSteps % 2 ? photoArea.height : photoArea.width
                         height: iniSteps % 2 ? photoArea.width : photoArea.height
                         rotation: iniSteps * 90
-                        source: viewer.urlAt(viewer.currentIndex)
+                        // nyitott szerkesztésnél a filters= láncot alkalmazó
+                        // editpreview provider rendereli a képet (?rev=
+                        // cache-buster minden módosításnál)
+                        source: editController.previewSource !== ""
+                                ? editController.previewSource
+                                : viewer.urlAt(viewer.currentIndex)
                         fillMode: Image.PreserveAspectFit
                         asynchronous: true
                         autoTransform: true   // EXIF-orientáció
                         sourceSize.width: 2560
+                    }
+
+                    // vágó-overlay a kép TÉNYLEGESEN kirajzolt (letterbox
+                    // nélküli) területén. Enter: elfogad + következő kép a
+                    // vágó-mód megtartásával (sorozat-vágás, UX-alapelv 1);
+                    // Esc: kilép a vágásból. MVP-korlát: ini-forgatott
+                    // (rotate=) képnél a koordináták a megjelenített térben
+                    // értendők — a forgatás+vágás kombináció a #21-ben pontosodik.
+                    CropOverlay {
+                        id: cropOverlay
+                        parent: photo
+                        visible: editorPanel.cropActive
+                        x: (photo.width - photo.paintedWidth) / 2
+                        y: (photo.height - photo.paintedHeight) / 2
+                        width: photo.paintedWidth
+                        height: photo.paintedHeight
+                        onVisibleChanged: {
+                            if (visible) forceActiveFocus()
+                            else viewer.forceActiveFocus()
+                        }
+                        onAccepted: function(r) {
+                            editController.applyCrop(r.x, r.y, r.width, r.height)
+                            cropRect = Qt.rect(0.1, 0.1, 0.8, 0.8)
+                            viewer.next()
+                            if (visible) forceActiveFocus()
+                        }
+                        onCancelled: editorPanel.cropActive = false
                     }
                 }
                 BusyIndicator {

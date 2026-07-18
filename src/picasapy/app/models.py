@@ -225,6 +225,22 @@ class PhotoGridModel(QAbstractListModel):
         photo = self._photos[row]
         return QUrl.fromLocalFile(f"{photo.folder_path}/{photo.name}").toString()
 
+    @Slot(int, result=str)
+    def idAt(self, row: int) -> str:
+        """A sor fotó-azonosítója — az EditController/editpreview kulcsa."""
+        if not 0 <= row < len(self._photos):
+            return ""
+        return str(self._photos[row].id)
+
+    @Slot(int, result=str)
+    def filePathAt(self, row: int) -> str:
+        """A kép abszolút útvonala (EditController.beginEdit-hez); üres, ha
+        az index érvénytelen."""
+        if not 0 <= row < len(self._photos):
+            return ""
+        photo = self._photos[row]
+        return f"{photo.folder_path}/{photo.name}"
+
     def rowCount(self, parent=QModelIndex()) -> int:
         return 0 if parent.isValid() else len(self._photos)
 
