@@ -1,5 +1,19 @@
 # PicasaPy
 
+## ⚠️ PÁRHUZAMOS SESSIONÖK — ELSŐ SZABÁLY, MINDEN MÁS ELŐTT
+
+Ebből a mappából a felhasználó **több párhuzamos Claude-sessiont** indít.
+Mielőtt BÁRMILYEN fájlt módosítanál:
+
+1. `git status -sb` — ha a checkout nem tiszta main (másik session branché,
+   commitolatlan módosítások), **TILOS a fájlokhoz nyúlni**.
+2. Issue-feladathoz **kötelező a saját worktree**:
+   `git worktree add ../PicasaPy-wt-<issueszám> -b fix/<szám>-nev origin/main`
+   — és onnantól minden munka (szerkesztés, pytest, commit) OTT folyik.
+3. A fő checkout az integrátor sessioné. Feladat-foglalás, forró fájlok,
+   PR-protokoll: **CONTRIBUTING.md** (kötelező elolvasni feladatvállalás
+   előtt). Feladatlista: GitHub Issues (`gh issue list --label ready`).
+
 ## Projekt célja
 
 A Google **Picasa** képszerkesztő és fotókezelő szoftver teljes újraírása **Python** alapon. A Picasa-t a Google 2016-ban kivezette; a cél egy modern, nyílt, keresztplatformos utód létrehozása, amely megőrzi az eredeti szoftver erősségeit (gyors fotókezelés, nem-destruktív szerkesztés, arcfelismerés, albumkezelés).
