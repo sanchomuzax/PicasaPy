@@ -13,9 +13,10 @@ from pathlib import Path
 import shutil
 import sys
 
-from PySide6.QtCore import QLocale, QLockFile, QTranslator
+from PySide6.QtCore import QLocale, QLockFile, Qt, QTranslator
 from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
+from PySide6.QtQuickControls2 import QQuickStyle
 
 from picasapy.scanner import read_watched_folders
 from picasapy.thumbs import ThumbnailCache
@@ -109,9 +110,21 @@ def _install_translator(app: QGuiApplication) -> QTranslator | None:
 
 
 def run(argv: list[str]) -> int:
+    # A PicasaPy egyelőre MINDENHOL világos (a sötét téma V3-feature):
+    # nem natív dialógusok (a rendszer sötét mappaválasztója helyett a
+    # saját, világos QML-es), Fusion stílus + explicit világos paletta.
+    QGuiApplication.setAttribute(
+        Qt.ApplicationAttribute.AA_DontUseNativeDialogs
+    )
+    QQuickStyle.setStyle("Fusion")
+
     app = QGuiApplication(argv)
     app.setApplicationName("PicasaPy")
     app.setOrganizationName("PicasaPy")
+    try:
+        app.styleHints().setColorScheme(Qt.ColorScheme.Light)
+    except AttributeError:
+        pass  # régebbi Qt: a paletta (Main.qml) így is világost kényszerít
     app.setDesktopFileName("picasapy")  # Wayland app_id → tálca-ikon
     app.setWindowIcon(QIcon(str(_APP_DIR / "assets" / "icon.png")))
     _install_translator(app)

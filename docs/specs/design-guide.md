@@ -111,3 +111,11 @@ fontban hiányzik). Ikonjegyzék a screenshotokon; portolás fokozatosan.
 3. Mappa-panel: fa-nézet és Projektek/Albumok letöltése szekciók hiányoznak.
 4. Néző: A/AB/AA gombok, zoom-csúszka és 1:1 gomb hiányzik.
 5. Tálca tray-halom vizualizáció és címke-buborék hiányzik.
+
+## Téma-politika (2026-07-18)
+
+A PicasaPy **mindig világos** — az OS sötét módját sehol nem veszi át:
+Fusion stílus + explicit világos paletta (Main.qml), világos színséma-kérés,
+és nem-natív (QML) dialógusok, hogy a rendszer sötét mappaválasztója se
+üssön át. A **sötét téma kb. a V3-nál** kerül napirendre, önálló
+feature-ként. Az ablakkeret (címsor) a kompozitoré — az követheti az OS-t.

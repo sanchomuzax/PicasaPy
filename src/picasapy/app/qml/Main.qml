@@ -11,6 +11,24 @@ ApplicationWindow {
     title: "PicasaPy"
     color: Theme.lightboxBg
 
+    // explicit VILÁGOS paletta — az OS sötét módja sehol nem üthet át
+    // (a sötét téma V3-feature; ld. design-guide)
+    palette {
+        window: Theme.canvasBg
+        windowText: Theme.ink
+        base: "#ffffff"
+        alternateBase: Theme.panelBg
+        text: Theme.ink
+        button: "#e8e8e8"
+        buttonText: Theme.ink
+        highlight: Theme.selectionBlue
+        highlightedText: "#ffffff"
+        placeholderText: "#8f8b83"
+        mid: Theme.chromeBorder
+        light: "#ffffff"
+        dark: "#9a9a9a"
+    }
+
     property int thumbSize: 144
     property int selectedIndex: -1        // horgony (utoljára kattintott)
     property var selectedIndexes: []      // a teljes kijelölés
@@ -166,15 +184,71 @@ ApplicationWindow {
                 }
             }
             Item { width: 20 }
-            TextField {
-                id: searchField
-                placeholderText: "🔍 " + qsTr("Search")
+            // Picasa-hű kereső: fehér mező nagyítóval, törlő ×-szel
+            Rectangle {
                 Layout.preferredWidth: 300
                 Layout.preferredHeight: 24
-                font.pixelSize: Theme.fontSize
-                onTextEdited: {
-                    window.clearSelection()
-                    controller.search(text)
+                radius: 3
+                color: "#ffffff"
+                border.color: Theme.chromeBorder
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 6
+                    anchors.rightMargin: 6
+                    spacing: 5
+                    Item {   // rajzolt nagyító
+                        width: 12; height: 12
+                        Rectangle {
+                            x: 0; y: 0; width: 9; height: 9; radius: 4.5
+                            color: "transparent"
+                            border.color: "#8f8b83"; border.width: 1.5
+                        }
+                        Rectangle {
+                            x: 8; y: 8; width: 4; height: 1.5
+                            rotation: 45; color: "#8f8b83"
+                        }
+                    }
+                    TextInput {
+                        id: searchField
+                        objectName: "searchField"
+                        Layout.fillWidth: true
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                        clip: true
+                        verticalAlignment: TextInput.AlignVCenter
+                        selectByMouse: true
+                        onTextEdited: {
+                            window.clearSelection()
+                            controller.search(text)
+                        }
+                        Text {
+                            visible: searchField.text.length === 0
+                                     && !searchField.activeFocus
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: qsTr("Search")
+                            color: "#8f8b83"
+                            font.pixelSize: Theme.fontSize
+                        }
+                    }
+                    Rectangle {   // törlő gomb, csak ha van mit törölni
+                        objectName: "searchClear"
+                        visible: searchField.text.length > 0
+                        width: 14; height: 14; radius: 7
+                        color: searchClearHover.hovered ? "#c94b3d" : "#b0b0b0"
+                        Text {
+                            anchors.centerIn: parent
+                            text: "✕"; color: "white"; font.pixelSize: 8
+                            font.bold: true
+                        }
+                        HoverHandler { id: searchClearHover }
+                        TapHandler {
+                            onTapped: {
+                                searchField.clear()
+                                window.clearSelection()
+                                controller.search("")
+                            }
+                        }
+                    }
                 }
             }
         }

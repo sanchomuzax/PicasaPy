@@ -304,3 +304,25 @@ class TestFolderManager:
         assert dialog.property("visible") is True
         # a controller figyelt mappái jelennek meg benne
         assert len(controller.watchedFolders) == 1
+
+
+class TestLightThemeAndSearch:
+    def test_window_palette_forced_light(self, qml_app, qt_app):
+        # Az OS sötét módja nem üthet át: a base fehér, a text tinta.
+        from PySide6.QtQml import QQmlProperty
+
+        window, _, _ = qml_app
+        assert QQmlProperty.read(window, "palette.base").name() == "#ffffff"
+        assert QQmlProperty.read(window, "palette.text").name() == "#1c1b19"
+
+    def test_search_clear_button_appears_and_clears(self, qml_app, qt_app):
+        from PySide6.QtCore import QObject
+
+        window, controller, _ = qml_app
+        field = window.findChild(QObject, "searchField")
+        clear = window.findChild(QObject, "searchClear")
+        assert field is not None and clear is not None
+        assert clear.property("visible") is False
+        field.setProperty("text", "logo")
+        qt_app.processEvents()
+        assert clear.property("visible") is True

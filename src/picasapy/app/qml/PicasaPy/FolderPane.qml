@@ -86,6 +86,24 @@ Rectangle {
             width: parent.width
             height: pane.height - 66
             clip: true
+
+            // A háttér-szinkron utáni modell-frissítés ne nullázza a
+            // görgetési pozíciót — enélkül a lista folyton visszaugrik,
+            // és nem lehet görgetni.
+            property real savedY: 0
+            property bool restoring: false
+            onContentYChanged: if (!restoring) savedY = contentY
+            Connections {
+                target: folderList.model
+                function onFolderCountChanged() {
+                    folderList.restoring = true
+                    folderList.contentY = Math.min(
+                        folderList.savedY,
+                        Math.max(0, folderList.contentHeight
+                                    - folderList.height))
+                    folderList.restoring = false
+                }
+            }
             delegate: Rectangle {
                 required property string kind
                 required property string name
