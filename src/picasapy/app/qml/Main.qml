@@ -299,8 +299,10 @@ ApplicationWindow {
             window.selectedIndex = currentIndex   // a rács kövesse a nézőt
             window.selectedIndexes = [currentIndex]
             // a szerkesztések (filters=) azonnal látsszanak a rácson —
-            // NAS-on a fájlfigyelő nem szól, nem várhatunk a rescanre (#59)
-            controller.resyncFolder(controller.currentFolder)
+            // NAS-on a fájlfigyelő nem szól, nem várhatunk a rescanre (#59);
+            // a feedben (#64) a néző át is léphetett másik mappába, ezért a
+            // nézett kép mappáját frissítjük
+            controller.resyncFolderOfRow(currentIndex)
         }
         onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
     }
@@ -391,59 +393,72 @@ ApplicationWindow {
                     anchors.margins: 14
                     spacing: 4
 
-                    LightboxHeader {
-                    Layout.fillWidth: true
-                    folderName: controller.currentFolder
-                                ? controller.currentFolder.split("/").pop()
-                                : qsTr("Library")
-                    dateText: controller.folderDateText
-                    description: controller.folderDescription
-                    onDescriptionEdited: function(text) { controller.setFolderDescription(text) }
-                }
-
-                GridView {
+                // Könyvtár-feed (#64): az ÖSSZES kép egyetlen görgethető
+                // folyamban, a bal hasáb mappa-sorrendjében — mappánként
+                // fejléc + képfolyam, ahogy az eredeti Picasa lightboxa.
+                ListView {
                     id: grid
                     objectName: "photoGrid"
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
-                    model: controller.photos
-                    cellWidth: window.thumbSize + 18
-                    cellHeight: window.thumbSize + 18
+                    model: controller.feedGroups
+                    spacing: 14
+                    cacheBuffer: 600
+                    readonly property int cellWidth: window.thumbSize + 18
+                    readonly property int cellHeight: window.thumbSize + 18
                         + (controller.thumbCaptionMode !== "none" ? 16 : 0)
 
-                    // -- görgetési pozíció megőrzése frissítéskor --------
-                    // A modell-reset (csillag/forgatás/felirat után) nullázná
-                    // a contentY-t; a felhasználó maradjon, ahol volt.
+                    // -- görgetés: mappára ugrás + pozíció-megőrzés --------
+                    // A feedGroups-frissítés (modell-csere) nullázná a
+                    // contentY-t; mappa-kattintásnál viszont a választott
+                    // csoporthoz ugrunk.
                     property real savedY: 0
                     property bool restoring: false
-                    property string folderKey: ""
+                    property string pendingPath: ""
                     onContentYChanged: {
                         if (!restoring && (contentY > 0 || moving))
                             savedY = contentY
                     }
                     onMovementEnded: savedY = contentY
+                    function scrollToGroup(path) {
+                        for (var i = 0; i < model.length; ++i)
+                            if (model[i].path === path) {
+                                positionViewAtIndex(i, ListView.Beginning)
+                                savedY = contentY
+                                return
+                            }
+                    }
                     Connections {
-                        target: controller.photos
-                        function onRevisionChanged() {
-                            if (grid.folderKey === controller.currentFolder) {
+                        target: controller
+                        function onFolderActivated(path) {
+                            grid.pendingPath = path
+                            Qt.callLater(function() {
+                                if (grid.pendingPath !== "") {
+                                    grid.scrollToGroup(grid.pendingPath)
+                                    grid.pendingPath = ""
+                                }
+                            })
+                        }
+                        function onFeedChanged() {
+                            if (grid.pendingPath !== "")
+                                return   // mappaválasztás — oda ugrunk úgyis
+                            Qt.callLater(function() {
                                 grid.restoring = true
                                 grid.contentY = Math.min(
                                     grid.savedY,
                                     Math.max(0, grid.contentHeight - grid.height))
                                 grid.restoring = false
-                            } else {
-                                grid.folderKey = controller.currentFolder
-                                grid.savedY = 0
-                            }
+                            })
                         }
                     }
 
                     // -- lasszós (gumikeretes) kijelölés ------------------
-                    // Az indexeket rácsgeometriából számoljuk (a delegate-ek
-                    // egyenletes cellákban ülnek).
-                    function lassoIndexes(x1, y1, x2, y2) {
-                        var cols = Math.max(1, Math.floor(width / cellWidth))
+                    // Az indexeket a csoport képfolyamának geometriájából
+                    // számoljuk (egyenletes cellák a Flow-ban); a lasszó a
+                    // húzás kezdő-csoportján belül jelöl ki.
+                    function lassoIndexes(start, count, flowWidth, x1, y1, x2, y2) {
+                        var cols = Math.max(1, Math.floor(flowWidth / cellWidth))
                         var left = Math.min(x1, x2), right = Math.max(x1, x2)
                         var top = Math.min(y1, y2), bottom = Math.max(y1, y2)
                         var c0 = Math.max(0, Math.floor(left / cellWidth))
@@ -451,16 +466,18 @@ ApplicationWindow {
                         var r0 = Math.max(0, Math.floor(top / cellHeight))
                         var r1 = Math.floor(bottom / cellHeight)
                         var result = []
-                        var total = controller.photos.rowCount()
                         for (var r = r0; r <= r1; ++r)
                             for (var c = c0; c <= c1; ++c) {
                                 var idx = r * cols + c
-                                if (idx >= 0 && idx < total) result.push(idx)
+                                if (idx >= 0 && idx < count)
+                                    result.push(start + idx)
                             }
                         return result
                     }
-                    function applyLasso(x1, y1, x2, y2, modifiers) {
-                        var picked = lassoIndexes(x1, y1, x2, y2)
+                    function applyLasso(start, count, flowWidth,
+                                        x1, y1, x2, y2, modifiers) {
+                        var picked = lassoIndexes(
+                            start, count, flowWidth, x1, y1, x2, y2)
                         if (Number(modifiers) & Qt.ControlModifier) {
                             var merged = window.selectedIndexes.slice()
                             for (var i = 0; i < picked.length; ++i)
@@ -474,29 +491,80 @@ ApplicationWindow {
                             window.selectedIndex = picked[picked.length - 1]
                     }
 
-                    delegate: ThumbDelegate {
-                        width: grid.cellWidth
-                        height: grid.cellHeight
-                        captionMode: controller.thumbCaptionMode
-                        selected: window.selectedIndexes.indexOf(index) !== -1
-                        onChosen: function(i, mods) {
-                            window.handleThumbClick(i, mods)
+                    delegate: Column {
+                        id: groupCol
+                        required property var modelData
+                        width: grid.width
+                        spacing: 4
+
+                        LightboxHeader {
+                            width: parent.width
+                            folderName: groupCol.modelData.name
+                            dateText: groupCol.modelData.dateText
+                            description: (controller.descriptionRevision,
+                                controller.folderDescriptionOf(
+                                    groupCol.modelData.path))
+                            onDescriptionEdited: function(text) {
+                                controller.setFolderDescriptionOf(
+                                    groupCol.modelData.path, text)
+                            }
                         }
-                        onOpened: function(i) {
-                            window.viewerOpen = true
-                            photoViewer.show(i)
-                        }
-                        onLassoDragged: function(sx, sy, cx, cy) {
-                            lassoBand.update(
-                                mapToItem(grid, sx, sy), mapToItem(grid, cx, cy))
-                        }
-                        onLassoFinished: function(sx, sy, cx, cy, mods) {
-                            var a = mapToItem(grid, sx, sy)
-                            var b = mapToItem(grid, cx, cy)
-                            grid.applyLasso(
-                                a.x, a.y + grid.contentY,
-                                b.x, b.y + grid.contentY, mods)
-                            lassoBand.visible = false
+
+                        Flow {
+                            id: groupFlow
+                            width: parent.width
+                            Repeater {
+                                model: groupCol.modelData.count
+                                delegate: Item {
+                                    id: slot
+                                    required property int index
+                                    readonly property int row:
+                                        groupCol.modelData.start + slot.index
+                                    // a photos.revision-nel együtt kötve:
+                                    // modell-frissüléskor újraértékelődik
+                                    readonly property var info:
+                                        (controller.photos.revision,
+                                         controller.photos.itemAt(slot.row))
+                                    width: grid.cellWidth
+                                    height: grid.cellHeight
+                                    ThumbDelegate {
+                                        anchors.fill: parent
+                                        index: slot.row
+                                        name: slot.info.name || ""
+                                        thumbUrl: slot.info.thumbUrl || ""
+                                        star: slot.info.star === true
+                                        caption: slot.info.caption || ""
+                                        isVideo: slot.info.isVideo === true
+                                        keywords: slot.info.keywords || ""
+                                        resolution: slot.info.resolution || ""
+                                        captionMode: controller.thumbCaptionMode
+                                        selected: window.selectedIndexes
+                                            .indexOf(slot.row) !== -1
+                                        onChosen: function(i, mods) {
+                                            window.handleThumbClick(i, mods)
+                                        }
+                                        onOpened: function(i) {
+                                            window.viewerOpen = true
+                                            photoViewer.show(i)
+                                        }
+                                        onLassoDragged: function(sx, sy, cx, cy) {
+                                            lassoBand.update(
+                                                mapToItem(grid, sx, sy),
+                                                mapToItem(grid, cx, cy))
+                                        }
+                                        onLassoFinished: function(sx, sy, cx, cy, mods) {
+                                            var a = mapToItem(groupFlow, sx, sy)
+                                            var b = mapToItem(groupFlow, cx, cy)
+                                            grid.applyLasso(
+                                                groupCol.modelData.start,
+                                                groupCol.modelData.count,
+                                                groupFlow.width,
+                                                a.x, a.y, b.x, b.y, mods)
+                                            lassoBand.visible = false
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     ScrollBar.vertical: ScrollBar {}

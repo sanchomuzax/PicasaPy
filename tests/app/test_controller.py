@@ -680,6 +680,125 @@ class TestSearchSuggestionsSlot:
         assert all(s["kind"] == "folder" for s in result)
 
 
+class TestLibraryFeed:
+    """#64: a rács nem mappánkénti — az EGÉSZ könyvtár egyetlen görgethető
+    feed, a bal hasáb mappa-sorrendjében, mappa-csoportokra bontva."""
+
+    @pytest.fixture
+    def two_folders(self, controller, library, tmp_path):
+        from picasapy.index import open_index, sync_tree
+
+        (library / "telek").mkdir()
+        make_jpeg(library / "telek" / "IMG_0100.jpg")
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, library)
+        controller._reload()
+        return library
+
+    def test_select_folder_loads_whole_library(self, controller, two_folders):
+        controller.selectFolder(str(two_folders / "nyaralas"))
+        assert controller.photos.rowCount() == 3  # nyaralas(2) + telek(1)
+
+    def test_feed_order_follows_folder_pane(self, controller, two_folders):
+        controller.selectFolder(str(two_folders / "nyaralas"))
+        pane_order = controller.folders.folder_paths()
+        feed_folders = []
+        for photo in controller.photos.photos:
+            if photo.folder_path not in feed_folders:
+                feed_folders.append(photo.folder_path)
+        assert tuple(feed_folders) == pane_order
+
+    def test_feed_groups_cover_all_rows(self, controller, two_folders):
+        controller.selectFolder(str(two_folders / "nyaralas"))
+        groups = controller.feedGroups
+        assert [g["count"] for g in groups] == [2, 1] or [
+            g["count"] for g in groups
+        ] == [1, 2]
+        assert groups[0]["start"] == 0
+        assert groups[1]["start"] == groups[0]["count"]
+        assert {g["name"] for g in groups} == {"nyaralas", "telek"}
+        photos = controller.photos.photos
+        for g in groups:
+            for row in range(g["start"], g["start"] + g["count"]):
+                assert photos[row].folder_path == g["path"]
+
+    def test_select_folder_emits_folder_activated(self, controller, two_folders):
+        activated = []
+        controller.folderActivated.connect(activated.append)
+        target = str(two_folders / "telek")
+        controller.selectFolder(target)
+        assert activated == [target]
+
+    def test_feed_groups_stable_across_refresh(self, controller, two_folders):
+        # A csillagozás utáni _refresh_view NEM adhat ki feedChanged-et
+        # (a csoportok nem változtak) — különben a görgetés nullázódna.
+        controller.selectFolder(str(two_folders / "nyaralas"))
+        changed = []
+        controller.feedChanged.connect(lambda: changed.append(1))
+        controller.toggleStar(0)
+        assert changed == []
+
+    def test_search_still_restricts(self, controller, two_folders):
+        # A keresés/szűrő nézetek maradnak részhalmazok — csak a sima
+        # mappanézet feed.
+        controller.search("naplemente")
+        assert controller.photos.rowCount() == 1
+        assert len(controller.feedGroups) == 1
+
+    def test_starred_filter_groups(self, controller, two_folders):
+        controller.showStarred()
+        assert controller.photos.rowCount() == 1
+        groups = controller.feedGroups
+        assert len(groups) == 1 and groups[0]["count"] == 1
+
+    def test_group_date_text(self, controller, two_folders):
+        controller.selectFolder(str(two_folders / "nyaralas"))
+        by_name = {g["name"]: g for g in controller.feedGroups}
+        assert "2025" in by_name["nyaralas"]["dateText"]  # IMG_0001 taken_at
+        assert by_name["telek"]["dateText"] == ""  # nincs felvételi dátum
+
+    def test_sort_change_reorders_feed(self, controller, two_folders):
+        controller.selectFolder(str(two_folders / "nyaralas"))
+        before = tuple(p.name for p in controller.photos.photos)
+        controller.setFolderSort("name")
+        after_names = tuple(p.name for p in controller.photos.photos)
+        assert sorted(before) == sorted(after_names)  # ugyanaz a tartalom
+        pane_order = controller.folders.folder_paths()
+        feed_folders = []
+        for photo in controller.photos.photos:
+            if photo.folder_path not in feed_folders:
+                feed_folders.append(photo.folder_path)
+        assert tuple(feed_folders) == pane_order
+
+
+class TestFolderDescriptionPerPath:
+    """#64: a feed-fejlécek mappánként olvassák/írják a leírást."""
+
+    def test_description_of_reads_ini(self, controller, library):
+        (library / "nyaralas" / ".picasa.ini").write_text(
+            "[Picasa]\ndescription=nyári képek\n[IMG_0001.jpg]\nstar=yes\n",
+            encoding="utf-8",
+        )
+        assert (
+            controller.folderDescriptionOf(str(library / "nyaralas"))
+            == "nyári képek"
+        )
+
+    def test_set_description_of_writes_and_caches(self, controller, library):
+        path = str(library / "nyaralas")
+        controller.setFolderDescriptionOf(path, "új leírás")
+        assert controller.folderDescriptionOf(path) == "új leírás"
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(
+            encoding="utf-8"
+        )
+        assert "description=új leírás" in ini_text
+
+    def test_description_revision_bumped_on_set(self, controller, library):
+        before = controller.descriptionRevision
+        controller.setFolderDescriptionOf(str(library / "nyaralas"), "x")
+        assert controller.descriptionRevision == before + 1
+
+
 class TestFolderClickDuringSearch:
     """#45: keresés közben a mappa-kattintás nem dobja el a szűrést —
     a találatok az adott mappára szűkülnek (Picasa-viselkedés)."""
@@ -710,12 +829,14 @@ class TestFolderClickDuringSearch:
         assert controller.photos.rowCount() == 1
 
     def test_without_active_search_plain_select(self, controller, two_folders):
+        # Keresés nélkül a mappa-kattintás sima selectFolder → a teljes
+        # könyvtár-feed jön (#64), nem csak az egy mappa.
         controller.selectFolderKeepSearch(str(two_folders / "telek"))
-        assert controller.photos.rowCount() == 1  # sima mappanézet
+        assert controller.photos.rowCount() == 3  # feed: minden mappa
         controller.search("IMG")
         controller.search("")
         controller.selectFolderKeepSearch(str(two_folders / "nyaralas"))
-        assert controller.photos.rowCount() == 2  # törölt keresés → teljes mappa
+        assert controller.photos.rowCount() == 3  # törölt keresés → feed
 
 
 class TestSearchFiltersFolderPane:

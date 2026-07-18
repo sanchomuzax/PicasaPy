@@ -110,6 +110,11 @@ class FolderListModel(QAbstractListModel):
         """Csak a valódi mappák száma (az évszám-elválasztók nélkül)."""
         return sum(1 for row in self._rows if row[0] == "folder")
 
+    def folder_paths(self) -> tuple[str, ...]:
+        """A hasáb mappa-sorrendje (évszám-elválasztók nélkül) — a rács-feed
+        (#64) ebben a sorrendben fűzi egymás után a mappákat."""
+        return tuple(row[2] for row in self._rows if row[0] == "folder")
+
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid() or not 0 <= index.row() < len(self._rows):
             return None
@@ -225,6 +230,28 @@ class PhotoGridModel(QAbstractListModel):
             return ""
         photo = self._photos[row]
         return _thumb_url(photo)
+
+    @Slot(int, result="QVariantMap")
+    def itemAt(self, row: int) -> dict:
+        """Egy sor teljes rács-adata a feed-delegate-nek (#64) — a
+        csoportokra bontott rács Repeater-e nem modell-szerepekből köt,
+        hanem ebből a dict-ből (a photos.revision-nel együtt kötve)."""
+        if not 0 <= row < len(self._photos):
+            return {}
+        photo = self._photos[row]
+        return {
+            "name": photo.name,
+            "thumbUrl": _thumb_url(photo),
+            "star": photo.star,
+            "caption": photo.caption or "",
+            "isVideo": photo.kind == "video",
+            "keywords": photo.keywords or "",
+            "resolution": (
+                f"{photo.width}x{photo.height}"
+                if photo.width and photo.height
+                else ""
+            ),
+        }
 
     @Slot(int, result=bool)
     def starAt(self, row: int) -> bool:
