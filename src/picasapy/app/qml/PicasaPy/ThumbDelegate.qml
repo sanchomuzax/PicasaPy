@@ -30,10 +30,14 @@ Item {
         default: return ""
         }
     }
+    // a felirat-sáv a cella aljából van fenntartva — a kép nem lóghat bele
+    readonly property int captionStrip: captionMode !== "none" ? 16 : 0
 
     Rectangle {
         id: frame
-        anchors.centerIn: parent
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: -cell.captionStrip / 2
         width: image.paintedWidth + 10
         height: image.paintedHeight + 10
         color: Theme.thumbCard
@@ -45,7 +49,7 @@ Item {
             id: image
             anchors.centerIn: parent
             width: cell.width - 18
-            height: cell.height - 18
+            height: cell.height - 18 - cell.captionStrip
             source: cell.thumbUrl
             fillMode: Image.PreserveAspectFit
             asynchronous: true

@@ -8,6 +8,8 @@ ColumnLayout {
     id: header
     property string folderName: ""
     property string dateText: ""
+    property string description: ""
+    signal descriptionEdited(string text)
     spacing: 3
 
     RowLayout {
@@ -63,12 +65,48 @@ ColumnLayout {
         }
     }
 
-    Text {
-        text: qsTr("Add a description")
-        color: Theme.addDescription
-        font.pixelSize: Theme.fontSize + 1
-        font.italic: true
+    // szerkeszthető leírás-sor — Esc/elfogadás után Qt.binding()-gel újra
+    // be kell kötni, ahogy a PhotoViewer captionField-je is (a gépeléskor
+    // a Qt eltávolítja a deklaratív kötést a text property-ről). A
+    // placeholder-szöveg a mezőre fedve jelenik meg, amíg üres.
+    Item {
         Layout.leftMargin: 28
         Layout.topMargin: 6
+        Layout.fillWidth: true
+        implicitHeight: descriptionField.implicitHeight
+
+        TextInput {
+            id: descriptionField
+            objectName: "folderDescriptionField"
+            anchors.left: parent.left
+            anchors.right: parent.right
+            text: header.description
+            color: Theme.folderDate
+            font.pixelSize: Theme.fontSize + 1
+            selectByMouse: true
+
+            function rebind() {
+                text = Qt.binding(function () { return header.description })
+            }
+
+            onAccepted: {
+                header.descriptionEdited(text)
+                rebind()
+                focus = false
+            }
+            Keys.onEscapePressed: (event) => {
+                rebind()
+                focus = false
+                event.accepted = true
+            }
+        }
+        Text {
+            anchors.left: parent.left
+            text: qsTr("Add a description")
+            color: Theme.addDescription
+            font.pixelSize: Theme.fontSize + 1
+            font.italic: true
+            visible: descriptionField.text.length === 0 && !descriptionField.activeFocus
+        }
     }
 }

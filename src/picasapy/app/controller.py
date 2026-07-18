@@ -59,6 +59,7 @@ class AppController(QObject):
         self._current_folder = ""
         self._status = ""
         self._folder_date = ""
+        self._folder_description = ""
         self._sync_running = False
         self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
         self._filter_active = False
@@ -98,6 +99,12 @@ class AppController(QObject):
     def folderDateText(self):
         """A mappa-fejléc dátumsora (a legkorábbi felvétel hosszú dátuma)."""
         return self._folder_date
+
+    @Property(str, notify=statusChanged)
+    def folderDescription(self):
+        """A mappa leírása — Picasa-kompatibilis: `[Picasa]/description`
+        kulcs a mappa `.picasa.ini`-jében."""
+        return self._folder_description
 
     @Property(bool, notify=statusChanged)
     def filterActive(self):
@@ -187,9 +194,38 @@ class AppController(QObject):
         self._filter_active = False
         self._filter_status = ""
         self._get_settings().setValue("session/lastFolder", folder_path)
+        self._folder_description = self._read_folder_description(folder_path)
         with open_index(self._db_path) as conn:
             records = photos_in_folder(conn, folder_path)
         self._show(records)
+
+    @staticmethod
+    def _read_folder_description(folder_path: str) -> str:
+        """A mappa `[Picasa]/description` kulcsának beolvasása az ini-ből."""
+        ini_path = Path(folder_path) / PICASA_INI_NAME
+        if not ini_path.exists():
+            return ""
+        section = load_document(ini_path).section("Picasa")
+        return (section.get("description") if section else None) or ""
+
+    @Slot(str)
+    def setFolderDescription(self, text: str) -> None:
+        """A mappa leírásának mentése — Picasa-kompatibilis: `[Picasa]/description`
+        kulcs a mappa `.picasa.ini`-jében (nem indexelt, ezért resync nem kell)."""
+        if not self._current_folder:
+            return
+        text = text.strip()
+        ini_path = Path(self._current_folder) / PICASA_INI_NAME
+        document = (
+            load_document(ini_path) if ini_path.exists() else parse_document("")
+        )
+        if text:
+            document = document.with_value("Picasa", "description", text)
+        else:
+            document = document.with_removed("Picasa", "description")
+        save_document(document, ini_path, backup=True)
+        self._folder_description = text
+        self.statusChanged.emit()
 
     @Slot(str)
     def setThumbCaptionMode(self, mode: str) -> None:

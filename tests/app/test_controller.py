@@ -480,3 +480,38 @@ class TestThumbnailProvider:
         image = controller._provider.requestImage("99999", None, None)
         assert not image.isNull()
         assert image.width() == 16
+
+
+class TestFolderDescription:
+    """A mappa-leírás Picasa-kompatibilis mentése/olvasása:
+    `[Picasa]/description` kulcs a `.picasa.ini`-ben."""
+
+    def test_set_description_written_to_ini_and_property(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.setFolderDescription("nyári képek")
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        assert "[Picasa]" in ini_text
+        assert "description=nyári képek" in ini_text
+        assert controller.folderDescription == "nyári képek"
+
+    def test_clearing_description_removes_key(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.setFolderDescription("nyári képek")
+        controller.setFolderDescription("")
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        assert "description=" not in ini_text
+        assert controller.folderDescription == ""
+
+    def test_reselecting_folder_reloads_description(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.setFolderDescription("nyári képek")
+        controller.selectFolder(str(library / "nyaralas"))
+        assert controller.folderDescription == "nyári képek"
+
+    def test_existing_photo_keys_preserved(self, controller, library):
+        # star=yes (IMG_0001.jpg) bitre pontosan megmarad a leírás-írás után.
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.setFolderDescription("nyári képek")
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text()
+        assert "[IMG_0001.jpg]" in ini_text
+        assert "star=yes" in ini_text.split("[IMG_0001.jpg]")[1]

@@ -114,6 +114,16 @@ class TestCaptionEditing:
         assert field.property("text") == ""
 
 
+class TestFolderDescriptionField:
+    def test_field_updates_after_set_folder_description(self, qml_app, qt_app):
+        window, controller, _ = qml_app
+        controller.setFolderDescription("teszt leírás")
+        qt_app.processEvents()
+        field = window.findChild(QObject, "folderDescriptionField")
+        assert field is not None, "folderDescriptionField nem található"
+        assert field.property("text") == "teszt leírás"
+
+
 class TestFolderPaneHighlight:
     def test_selected_path_follows_controller(self, qml_app, qt_app):
         window, controller, _ = qml_app

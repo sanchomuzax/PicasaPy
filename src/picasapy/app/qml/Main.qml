@@ -271,6 +271,8 @@ ApplicationWindow {
                                 ? controller.currentFolder.split("/").pop()
                                 : qsTr("Library")
                     dateText: controller.folderDateText
+                    description: controller.folderDescription
+                    onDescriptionEdited: function(text) { controller.setFolderDescription(text) }
                 }
 
                 GridView {

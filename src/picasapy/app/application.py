@@ -10,7 +10,10 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QLocale, QTranslator
+import shutil
+import sys
+
+from PySide6.QtCore import QLocale, QLockFile, QTranslator
 from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
@@ -44,6 +47,55 @@ def _resolve_roots(argv: list[str]) -> tuple[str, ...]:
     return read_watched_folders(_config_dir() / "WatchedFolders.txt")
 
 
+def _acquire_instance_lock(data_dir: Path) -> QLockFile | None:
+    """Egy-példányos futás: zárolófájl; ha már fut a PicasaPy, None.
+
+    A QLockFile a PID-et is tárolja, így az összeomlott példány elavult
+    zárját magától felismeri és átveszi.
+    """
+    data_dir.mkdir(parents=True, exist_ok=True)
+    lock = QLockFile(str(data_dir / "picasapy.lock"))
+    if lock.tryLock(100):
+        return lock
+    return None
+
+
+def _install_desktop_entry() -> None:
+    """Asztali bejegyzés + ikon telepítése (~/.local/share) — Waylanden a
+    tálca az app_id ↔ .desktop párosításból kapja az ikont. Idempotens."""
+    base = Path(
+        os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))
+    )
+    icon_target = base / "icons" / "hicolor" / "256x256" / "apps" / "picasapy.png"
+    icon_source = _APP_DIR / "assets" / "icon.png"
+    launcher = Path(__file__).resolve().parents[3] / "picasapy"
+    exec_line = str(launcher) if launcher.exists() else "picasapy"
+    desktop_text = (
+        "[Desktop Entry]\n"
+        "Type=Application\n"
+        "Name=PicasaPy\n"
+        "Comment=Picasa-kompatibilis fotókezelő\n"
+        f"Exec={exec_line} %U\n"
+        "Icon=picasapy\n"
+        "Terminal=false\n"
+        "Categories=Graphics;Photography;Viewer;\n"
+        "StartupWMClass=picasapy\n"
+    )
+    desktop_target = base / "applications" / "picasapy.desktop"
+    try:
+        if not icon_target.exists():
+            icon_target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(icon_source, icon_target)
+        if (
+            not desktop_target.exists()
+            or desktop_target.read_text() != desktop_text
+        ):
+            desktop_target.parent.mkdir(parents=True, exist_ok=True)
+            desktop_target.write_text(desktop_text)
+    except OSError:
+        pass  # csak kényelmi funkció — hibája nem akadályozhat indulást
+
+
 def _install_translator(app: QGuiApplication) -> QTranslator | None:
     language = os.environ.get("PICASAPY_LANG") or QLocale.system().name()
     translator = QTranslator(app)
@@ -57,12 +109,22 @@ def run(argv: list[str]) -> int:
     app = QGuiApplication(argv)
     app.setApplicationName("PicasaPy")
     app.setOrganizationName("PicasaPy")
+    app.setDesktopFileName("picasapy")  # Wayland app_id → tálca-ikon
     app.setWindowIcon(QIcon(str(_APP_DIR / "assets" / "icon.png")))
     _install_translator(app)
 
     roots = _resolve_roots(argv)
     data_dir = _data_dir()
     data_dir.mkdir(parents=True, exist_ok=True)
+
+    instance_lock = _acquire_instance_lock(data_dir)
+    if instance_lock is None:
+        print(
+            "A PicasaPy már fut — egyszerre csak egy példány engedélyezett.",
+            file=sys.stderr,
+        )
+        return 0
+    _install_desktop_entry()
 
     provider = ThumbnailProvider(ThumbnailCache(_cache_dir() / "thumbs"))
     controller = AppController(data_dir / "index.db", roots, provider)

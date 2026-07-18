@@ -38,6 +38,35 @@ class TestAssets:
         assert (assets / "logo.svg").exists()
 
 
+class TestSingleInstance:
+    def test_second_lock_fails_while_held(self, tmp_path):
+        lock = application._acquire_instance_lock(tmp_path)
+        assert lock is not None
+        assert application._acquire_instance_lock(tmp_path) is None
+        lock.unlock()
+        assert application._acquire_instance_lock(tmp_path) is not None
+
+
+class TestDesktopEntry:
+    def test_installs_desktop_file_and_icon(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+        application._install_desktop_entry()
+        desktop = tmp_path / "applications" / "picasapy.desktop"
+        icon = tmp_path / "icons" / "hicolor" / "256x256" / "apps" / "picasapy.png"
+        assert desktop.exists() and icon.exists()
+        text = desktop.read_text()
+        assert "Icon=picasapy" in text
+        assert "Name=PicasaPy" in text
+
+    def test_idempotent(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+        application._install_desktop_entry()
+        desktop = tmp_path / "applications" / "picasapy.desktop"
+        first_mtime = desktop.stat().st_mtime_ns
+        application._install_desktop_entry()
+        assert desktop.stat().st_mtime_ns == first_mtime  # nem írja újra
+
+
 class TestTranslator:
     def test_hungarian_loads_and_translates(self, qt_app, monkeypatch):
         monkeypatch.setenv("PICASAPY_LANG", "hu_HU")
