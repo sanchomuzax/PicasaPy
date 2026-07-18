@@ -12,8 +12,12 @@ from pathlib import Path
 from PySide6.QtGui import QImage, QTransform
 from PySide6.QtQuick import QQuickImageProvider
 
+from picasapy.edit.session import EditSession
 from picasapy.index import PhotoRecord
+from picasapy.render import apply_filters
 from picasapy.thumbs import ThumbnailCache
+
+from .edit_preview import _qimage_to_rgb_array, _rgb_array_to_qimage
 
 _PLACEHOLDER_COLOR = 0xFFE8E8E8
 
@@ -31,6 +35,7 @@ class ThumbnailProvider(QQuickImageProvider):
                 photo.mtime_ns,
                 photo.size,
                 photo.rotate_steps,
+                EditSession.from_value(photo.filters).ops,
             )
             for photo in photos
         }
@@ -43,9 +48,18 @@ class ThumbnailProvider(QQuickImageProvider):
         if image.isNull():
             image = QImage(16, 16, QImage.Format.Format_RGB32)
             image.fill(_PLACEHOLDER_COLOR)
-        elif entry and entry[3]:
-            # nem-destruktív ini-forgatás (a cache-elt thumb forgatatlan)
-            image = image.transformed(QTransform().rotate(90 * entry[3]))
+        else:
+            if entry and entry[4]:
+                # szerkesztő-lánc (filters=) a bélyegképen is (#59) — a
+                # cache-elt thumb az eredeti, a láncot itt alkalmazzuk
+                # (thumb-méreten olcsó)
+                array, _skipped = apply_filters(
+                    _qimage_to_rgb_array(image), entry[4]
+                )
+                image = _rgb_array_to_qimage(array)
+            if entry and entry[3]:
+                # nem-destruktív ini-forgatás (a cache-elt thumb forgatatlan)
+                image = image.transformed(QTransform().rotate(90 * entry[3]))
         if size is not None:
             size.setWidth(image.width())
             size.setHeight(image.height())

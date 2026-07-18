@@ -298,6 +298,9 @@ ApplicationWindow {
             window.viewerOpen = false
             window.selectedIndex = currentIndex   // a rács kövesse a nézőt
             window.selectedIndexes = [currentIndex]
+            // a szerkesztések (filters=) azonnal látsszanak a rácson —
+            // NAS-on a fájlfigyelő nem szól, nem várhatunk a rescanre (#59)
+            controller.resyncFolder(controller.currentFolder)
         }
         onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
     }

@@ -4,12 +4,12 @@
 <context>
     <name></name>
     <message>
-        <location filename="../controller.py" line="756"/>
+        <location filename="../controller.py" line="767"/>
         <source>%1 KB</source>
         <translation>%1 KB</translation>
     </message>
     <message>
-        <location filename="../controller.py" line="757"/>
+        <location filename="../controller.py" line="768"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
     </message>
@@ -17,29 +17,29 @@
 <context>
     <name>AppController</name>
     <message>
-        <location filename="../controller.py" line="625"/>
+        <location filename="../controller.py" line="636"/>
         <source>%1x%2 pixels</source>
         <translation>%1x%2 képpont</translation>
     </message>
     <message>
-        <location filename="../controller.py" line="671"/>
+        <location filename="../controller.py" line="682"/>
         <source>%1 folders / %2 pictures visible (%3 seconds) %4 GB</source>
         <translation>%1 mappa / %2 kép látható (%3 másodperc) %4 GB</translation>
     </message>
     <message>
-        <location filename="../controller.py" line="731"/>
+        <location filename="../controller.py" line="742"/>
         <source>0 pictures</source>
         <translation>0 kép</translation>
     </message>
     <message numerus="yes">
-        <location filename="../controller.py" line="740"/>
+        <location filename="../controller.py" line="751"/>
         <source>%n picture(s)</source>
         <translation>
             <numerusform>%n kép</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../controller.py" line="742"/>
+        <location filename="../controller.py" line="753"/>
         <source>%1 MB on disk</source>
         <translation>%1 MB a lemezen</translation>
     </message>
@@ -57,142 +57,142 @@
         <translation>Újra</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="52"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="53"/>
         <source>Manual</source>
         <translation>Kézi</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="53"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="54"/>
         <source>Current aspect</source>
         <translation>Jelenlegi méretarány</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="59"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="60"/>
         <source>A4: Full page</source>
         <translation>A4: Teljes oldal</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="60"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="61"/>
         <source>Square: CD cover</source>
         <translation>Négyzet: CD-borító</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="61"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="62"/>
         <source>4:3: Standard screen</source>
         <translation>4:3: Normál képernyő</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="62"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="63"/>
         <source>16:10: Widescreen</source>
         <translation>16:10: Szélesvásznú képernyő</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="63"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="64"/>
         <source>16:9: HDTV</source>
         <translation>16:9: HDTV</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="64"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="65"/>
         <source>5:3: Wide frame</source>
         <translation>5:3: Szélesvásznú képkocka</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="190"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="192"/>
         <source>Common Fixes</source>
         <translation>Gyakori javítások</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="205"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="207"/>
         <source>Crop</source>
         <translation>Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="211"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="213"/>
         <source>Straighten</source>
         <translation>Kiegyenesítés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="217"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="219"/>
         <source>Redeye</source>
         <translation>Vörösszem</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="223"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="225"/>
         <source>I&apos;m Feeling Lucky</source>
         <translation>Jó napom van</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="229"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="231"/>
         <source>Auto Contrast</source>
         <translation>Automatikus kontraszt</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="235"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="237"/>
         <source>Auto Color</source>
         <translation>Automatikus szín</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="241"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="243"/>
         <source>Retouch</source>
         <translation>Retusálás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="246"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="248"/>
         <source>Text</source>
         <translation>Szöveg</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="264"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="266"/>
         <source>Fill Light</source>
         <translation>Derítőfény</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="320"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="324"/>
         <source>Crop Photo</source>
         <translation>Fotó vágása</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="329"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="333"/>
         <source>Choose a size below, then drag on the picture to select the area you want to keep.</source>
         <translation>Válasszon az alábbi méretek közül, majd a fogd és húzd módszerrel jelölje ki a képnek azt a részét, amelyiket meg szeretné tartani.</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="408"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="412"/>
         <source>Top left</source>
         <translation>Bal felső</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="413"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="417"/>
         <source>Landscape</source>
         <translation>Fekvő</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="418"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="422"/>
         <source>Portrait</source>
         <translation>Álló</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="428"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="432"/>
         <source>Rotate</source>
         <translation>Forgatás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="433"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="437"/>
         <source>Preview</source>
         <translation>Előnézet</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="446"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="450"/>
         <source>Reset</source>
         <translation>Alaphelyzet</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="458"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="462"/>
         <source>Apply</source>
         <translation>Alkalmaz</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/EditorPanel.qml" line="463"/>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="467"/>
         <source>Cancel</source>
         <translation>Mégse</translation>
     </message>
@@ -321,7 +321,7 @@
         <translation type="vanished">&amp;Súgó</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="654"/>
+        <location filename="../qml/Main.qml" line="657"/>
         <source>About PicasaPy</source>
         <translation>A PicasaPy névjegye</translation>
     </message>
@@ -341,37 +341,37 @@
         <translation>Keresés</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="361"/>
+        <location filename="../qml/Main.qml" line="364"/>
         <source>View All</source>
         <translation>Az összes megtekintése</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="395"/>
+        <location filename="../qml/Main.qml" line="398"/>
         <source>Library</source>
         <translation>Könyvtár</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="578"/>
+        <location filename="../qml/Main.qml" line="581"/>
         <source>Selection</source>
         <translation>Kijelölés</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="644"/>
+        <location filename="../qml/Main.qml" line="647"/>
         <source>Upload to Google Photos</source>
         <translation>Feltöltés a Google Fotókba</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="637"/>
+        <location filename="../qml/Main.qml" line="640"/>
         <source>E-Mail</source>
         <translation>E-mail</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="638"/>
+        <location filename="../qml/Main.qml" line="641"/>
         <source>Print</source>
         <translation>Nyomtatás</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="639"/>
+        <location filename="../qml/Main.qml" line="642"/>
         <source>Export</source>
         <translation>Exportálás</translation>
     </message>
@@ -392,7 +392,7 @@
         <translation type="vanished">Megosztás</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="669"/>
+        <location filename="../qml/Main.qml" line="672"/>
         <source>A modern, open Picasa successor.</source>
         <translation>Modern, nyílt Picasa-utód.</translation>
     </message>
@@ -400,39 +400,45 @@
 <context>
     <name>PhotoViewer</name>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="110"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="115"/>
         <source>Back to Library</source>
         <translation>Vissza a könyvtárhoz</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="116"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="121"/>
         <source>Play</source>
         <translation>Lejátszás</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="39"/>
         <source>Crop</source>
-        <translation type="vanished">Vágás</translation>
+        <translation>Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="224"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="40"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="239"/>
         <source>Straighten</source>
         <translation>Kiegyenesítés</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="41"/>
         <source>Redeye</source>
-        <translation type="vanished">Vörösszem</translation>
+        <translation>Vörösszem</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="42"/>
         <source>I&apos;m Feeling Lucky</source>
-        <translation type="vanished">Jó napom van</translation>
+        <translation>Jó napom van</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="43"/>
         <source>Auto Contrast</source>
-        <translation type="vanished">Automatikus kontraszt</translation>
+        <translation>Automatikus kontraszt</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="44"/>
         <source>Auto Color</source>
-        <translation type="vanished">Automatikus szín</translation>
+        <translation>Automatikus szín</translation>
     </message>
     <message>
         <source>Retouch</source>
@@ -447,32 +453,32 @@
         <translation type="vanished">Derítőfény</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="185"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="190"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="192"/>
         <source>Undo</source>
         <translation>Visszavonás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="185"/>
         <source>Undo: Crop</source>
-        <translation>Visszavonás: Vágás</translation>
+        <translation type="vanished">Visszavonás: Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="188"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="195"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="197"/>
         <source>Redo</source>
         <translation>Újra</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="188"/>
         <source>Redo: Crop</source>
-        <translation>Újra: Vágás</translation>
+        <translation type="vanished">Újra: Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="250"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="265"/>
         <source>Histogram and camera information</source>
         <translation>Hisztogram és fényképezőgép-adatok</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="379"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="394"/>
         <source>Make a caption!</source>
         <translation>Készítsen képaláírást!</translation>
     </message>

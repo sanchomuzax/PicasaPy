@@ -427,6 +427,17 @@ class AppController(QObject):
             tuple(r for r in all_matches if r.folder_path == folder_path)
         )
 
+    @Slot(str)
+    def resyncFolder(self, folder_path: str) -> None:
+        """Egy mappa azonnali újraszinkronja + nézetfrissítés — a néző
+        bezárásakor hívjuk (#59): a szerkesztések (filters=) így NAS-on is
+        rögtön látszanak a rácson, nem az 5 perces rescanre várva."""
+        if not folder_path:
+            return
+        with open_index(self._db_path) as conn:
+            sync_tree(conn, folder_path)
+        self._refresh_view()
+
     @Slot(str, result="QVariantList")
     def searchSuggestions(self, text: str) -> list:
         """Kereső-javaslatok a legördülőnek (#7) — dict-lista a QML-nek.

@@ -41,6 +41,7 @@ Rectangle {
     signal redoRequested()
     // vágás-mód jelei a hívónak
     signal quickCropRequested(string kind)   // "topleft"|"landscape"|"portrait"
+    signal cropRotateRequested()
     signal cropPreviewHold(bool held)
     signal cropResetRequested()
     signal cropApplyRequested()
@@ -98,7 +99,7 @@ Rectangle {
         signal activated(string tool)
 
         Layout.fillWidth: true
-        Layout.preferredHeight: 54
+        Layout.preferredHeight: 66
         opacity: tile.tileEnabled ? 1 : 0.4
 
         Rectangle {
@@ -112,20 +113,21 @@ Rectangle {
         }
         Image {
             anchors.top: parent.top
-            anchors.topMargin: 3
+            anchors.topMargin: 4
             anchors.horizontalCenter: parent.horizontalCenter
             width: 40; height: 30
             source: "../../assets/tools/" + tile.icon + ".png"
             smooth: true
         }
         Text {
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 1
+            anchors.top: parent.top
+            anchors.topMargin: 37   // az ikon alatt, nem érhet össze vele
             anchors.horizontalCenter: parent.horizontalCenter
             width: parent.width - 2
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap
             maximumLineCount: 2
+            lineHeight: 0.9
             text: tile.label
             font.pixelSize: Theme.fontSize - 2
             color: Theme.textDark
@@ -197,7 +199,7 @@ Rectangle {
         GridLayout {
             columns: 3
             columnSpacing: 4
-            rowSpacing: 8
+            rowSpacing: 10
             Layout.fillWidth: true
 
             ToolTile {
@@ -292,6 +294,8 @@ Rectangle {
                 objectName: "editRedoButton"
                 label: panel.redoLabel
                 buttonEnabled: panel.redoAvailable
+                Layout.fillWidth: false
+                Layout.preferredWidth: 64
                 onButtonClicked: panel.redoRequested()
             }
         }
@@ -426,7 +430,7 @@ Rectangle {
             PanelButton {
                 objectName: "cropRotateButton"
                 label: qsTr("Rotate")
-                onButtonClicked: panel.aspectRotated = !panel.aspectRotated
+                onButtonClicked: panel.cropRotateRequested()
             }
             PanelButton {
                 objectName: "cropPreviewButton"

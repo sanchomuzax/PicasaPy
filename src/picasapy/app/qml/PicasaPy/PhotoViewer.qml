@@ -18,10 +18,6 @@ Rectangle {
 
     function show(index) { currentIndex = index; forceActiveFocus() }
 
-    // Visszavonás/Újra állapot a vágáshoz (#51) — képenként érvényes
-    property var lastAppliedCrop: null
-    property var redoCropRect: null
-
     // Vágás alkalmazása a kijelölésből. advance=true: Enter-flow —
     // következő kép, vágó-mód megtartva; false: Alkalmaz gomb — a panel
     // visszaáll az eszközrácsra (Picasa-viselkedés).
@@ -32,11 +28,22 @@ Rectangle {
         }
         var r = cropOverlay.cropRect
         editController.applyCrop(r.x, r.y, r.width, r.height)
-        viewer.lastAppliedCrop = Qt.rect(r.x, r.y, r.width, r.height)
-        viewer.redoCropRect = null
         cropOverlay.resetSelection()
         if (advance) viewer.next()
         else editorPanel.cropActive = false
+    }
+
+    // a művelet-kulcs magyar gombfelirata (Visszavonás: <művelet>, #59)
+    function toolLabel(action) {
+        switch (action) {
+        case "crop": return qsTr("Crop")
+        case "tilt": return qsTr("Straighten")
+        case "redeye": return qsTr("Redeye")
+        case "enhance": return qsTr("I'm Feeling Lucky")
+        case "autolight": return qsTr("Auto Contrast")
+        case "autocolor": return qsTr("Auto Color")
+        default: return ""
+        }
     }
 
     // -- szerkesztés (#19): EditController-életciklus --------------------
@@ -69,8 +76,6 @@ Rectangle {
             beginEditCurrent()
             tiltSlider.value = 0
             cropOverlay.resetSelection()
-            viewer.lastAppliedCrop = null
-            viewer.redoCropRect = null
         }
     }
     Connections {
@@ -179,30 +184,40 @@ Rectangle {
                     imageAspect: photo.paintedHeight > 0
                                  ? photo.paintedWidth / photo.paintedHeight
                                  : 4 / 3
-                    // Visszavonás/Újra — jelenleg a vágásra (#51)
-                    undoAvailable: editController.hasCrop
-                    undoLabel: editController.hasCrop
-                               ? qsTr("Undo: Crop") : qsTr("Undo")
-                    redoAvailable: viewer.redoCropRect !== null
-                    redoLabel: viewer.redoCropRect !== null
-                               ? qsTr("Redo: Crop") : qsTr("Redo")
+                    // Visszavonás/Újra — a controller undo-verméből (#59)
+                    undoAvailable: editController.canUndo
+                    undoLabel: editController.canUndo
+                               ? qsTr("Undo") + ": "
+                                 + viewer.toolLabel(editController.undoAction)
+                               : qsTr("Undo")
+                    redoAvailable: editController.canRedo
+                    redoLabel: editController.canRedo
+                               ? qsTr("Redo") + ": "
+                                 + viewer.toolLabel(editController.redoAction)
+                               : qsTr("Redo")
                     onToolActivated: function(tool) {
                         // crop/tilt helyi mód (overlay/csúszka); a többi
                         // azonnali ini-művelet az EditControlleren át
                         if (tool !== "crop" && tool !== "tilt")
                             editController.toggleTool(tool)
                     }
-                    onUndoRequested: {
-                        viewer.redoCropRect = viewer.lastAppliedCrop
-                        editController.clearCrop()
+                    onUndoRequested: editController.undo()
+                    onRedoRequested: editController.redo()
+                    onCropRotateRequested: {
+                        // rögzített aránynál a fekvő↔álló kapcsoló forgat
+                        // (a kijelölés az arány-követéssel formálódik át);
+                        // kézi aránynál közvetlenül a kijelölést forgatjuk
+                        if (editorPanel.currentAspect > 0)
+                            editorPanel.aspectRotated =
+                                !editorPanel.aspectRotated
+                        else
+                            cropOverlay.swapSelectionOrientation()
                     }
-                    onRedoRequested: {
-                        var r = viewer.redoCropRect
-                        if (r !== null) {
-                            editController.applyCrop(r.x, r.y, r.width, r.height)
-                            viewer.lastAppliedCrop = r
-                            viewer.redoCropRect = null
-                        }
+                    // arány-választás/Forgatás: a meglévő kijelölés kövesse
+                    onCurrentAspectChanged: {
+                        if (cropOverlay.hasSelection
+                            && editorPanel.currentAspect > 0)
+                            cropOverlay.applyAspect(editorPanel.currentAspect)
                     }
                     onQuickCropRequested: (kind) => cropOverlay.selectPreset(kind)
                     onCropPreviewHold: (held) => cropOverlay.previewHold = held
