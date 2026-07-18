@@ -72,6 +72,29 @@ class TestFilterApplication:
         assert not image.isNull()
         assert (image.width(), image.height()) == (8, 6)
 
+    def test_broken_op_falls_back_to_unfiltered(self, qt_app, tmp_path):
+        """#73: hibás lánc-bejegyzésnél (pl. Picasa-írta, számunkra hiányos
+        crop64) a szűretlen kép jön, nem placeholder."""
+        from picasapy.ini.filters import FilterOp
+
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        op = FilterOp("crop64", ("1",))  # hiányzó rect64 param
+        provider.register("1", photo, (op,))
+        image = provider.requestImage("1", None, None)
+        assert (image.width(), image.height()) == (8, 6)
+
+    def test_picasa_zero_scale_tilt_renders(self, qt_app, tmp_path):
+        """#73: Picasa-írta tilt=1,<szög>,0.000000 nem eshet placeholderre."""
+        from picasapy.ini.filters import FilterOp
+
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        op = FilterOp("tilt", ("1", "-0.153061", "0.000000"))
+        provider.register("1", photo, (op,))
+        image = provider.requestImage("1", None, None)
+        assert (image.width(), image.height()) == (8, 6)
+
 
 class TestRequestedSize:
     def test_scales_to_requested_size(self, qt_app, tmp_path):

@@ -36,6 +36,54 @@ class TestThumbnailAppliesFilters:
         assert abs(image.width() / image.height() - 1.0) < 0.1
 
 
+def _library_with_ini(tmp_path, ini_body: str):
+    lib = tmp_path / "kepek"
+    lib.mkdir()
+    make_jpeg(lib / "a.jpg", size=(320, 160))
+    (lib / ".picasa.ini").write_text(ini_body, encoding="utf-8")
+    with open_index(tmp_path / "i.db") as conn:
+        sync_tree(conn, lib)
+        return photos_in_folder(conn, lib)
+
+
+class TestPicasaCompatRendering:
+    """#73: a Windows-os Picasa által írt lánc nem eshet placeholderre."""
+
+    def test_picasa_tilt_with_zero_scale_renders(self, qt_app, tmp_path):
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+
+        records = _library_with_ini(
+            tmp_path, "[a.jpg]\nfilters=tilt=1,-0.153061,0.000000;\n"
+        )
+        provider = ThumbnailProvider(ThumbnailCache(tmp_path / "th", size=64))
+        provider.register_photos(records)
+        image = provider.requestImage(str(records[0].id), None, None)
+        # nem a 16x16 placeholder: az eredeti 2:1 arányú thumb jön vissza
+        assert abs(image.width() / image.height() - 2.0) < 0.1
+
+    def test_broken_filter_falls_back_to_unfiltered(self, qt_app, tmp_path):
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+
+        records = _library_with_ini(
+            tmp_path, "[a.jpg]\nfilters=crop64=1;\n"  # hiányzó rect64 param
+        )
+        provider = ThumbnailProvider(ThumbnailCache(tmp_path / "th", size=64))
+        provider.register_photos(records)
+        image = provider.requestImage(str(records[0].id), None, None)
+        assert abs(image.width() / image.height() - 2.0) < 0.1
+
+    def test_unparseable_filters_value_falls_back(self, qt_app, tmp_path):
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+
+        records = _library_with_ini(
+            tmp_path, "[a.jpg]\nfilters=;;;csonka\n"
+        )
+        provider = ThumbnailProvider(ThumbnailCache(tmp_path / "th", size=64))
+        provider.register_photos(records)
+        image = provider.requestImage(str(records[0].id), None, None)
+        assert abs(image.width() / image.height() - 2.0) < 0.1
+
+
 class TestThumbUrlCacheBuster:
     def test_url_changes_with_filters(self, qt_app, tmp_path):
         from picasapy.app.models import PhotoGridModel

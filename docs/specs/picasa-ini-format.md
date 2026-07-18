@@ -76,8 +76,8 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 
 | Szűrő | Paraméterek | Leírás |
 |---|---|---|
-| `crop64` | `1,RECT64` | kivágás |
-| `tilt` | `1,!szög,!skála` | döntés + skálázás (levágás elkerülése) |
+| `crop64` | `1,RECT64` | kivágás — a Picasa MELLÉ külön `crop=rect64(...)` kulcsot is ír |
+| `tilt` | `1,!szög,!skála` | döntés; a skála-mező élesben jellemzően `0.000000` = „számítsd ki a kitöltő skálát" (#73) |
 | `redeye` | `1` | vörösszem-eltávolítás |
 | `enhance` | `1` | „I'm Feeling Lucky" automata |
 | `autolight` | `1` | auto kontraszt (hisztogram-széthúzás) |

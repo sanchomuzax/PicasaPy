@@ -53,9 +53,11 @@ def _apply_tilt_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     if not params:
         raise ValueError(f"A tilt szűrőnek legalább egy paramétere kell legyen: {op}")
     angle = math.radians(params[0] * _TILT_DEGREES_PER_UNIT)
-    if len(params) >= 2:
+    if len(params) >= 2 and params[1] > 0:
         scale = params[1]
     else:
+        # A Picasa 3.x a skála-mezőbe jellemzően 0.000000-t ír (#73): a 0
+        # vagy hiányzó érték jelentése „számold ki a kitöltő skálát".
         height, width = image.shape[:2]
         scale = tilt_cover_scale(width, height, angle)
     return apply_tilt(image, angle=angle, scale=scale)

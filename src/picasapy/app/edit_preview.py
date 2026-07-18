@@ -13,6 +13,7 @@ azonosító az URL első (kérdőjel előtti) része.
 
 from __future__ import annotations
 
+import logging
 import threading
 from pathlib import Path
 
@@ -27,6 +28,8 @@ from picasapy.render import apply_filters
 _PLACEHOLDER_COLOR = 0xFFE8E8E8
 _PLACEHOLDER_SIZE = 16
 _MAX_PREVIEW_EDGE = 2560
+
+_log = logging.getLogger(__name__)
 
 
 class EditPreviewProvider(QQuickImageProvider):
@@ -95,7 +98,13 @@ def _render(path: Path, ops: tuple[FilterOp, ...]) -> QImage:
     if source.isNull():
         return QImage()
     array = _qimage_to_rgb_array(source)
-    result_array, _skipped = apply_filters(array, ops)
+    try:
+        result_array, _skipped = apply_filters(array, ops)
+    except Exception:
+        # #73: hibás/idegen lánc-bejegyzésnél a szűretlen kép a helyes
+        # visszaesés, nem a placeholder (részleges előnézet elve)
+        _log.exception("filters= nem alkalmazható az előnézeten: %s", path)
+        return source
     return _rgb_array_to_qimage(result_array)
 
 
