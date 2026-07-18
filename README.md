@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml"><img src="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License: GPL-3.0"></a>
-  <img src="https://img.shields.io/badge/version-0.3.0-orange.svg" alt="Version 0.3.0">
+  <img src="https://img.shields.io/badge/version-0.4.0-orange.svg" alt="Version 0.4.0">
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+">
 </p>
 
@@ -40,7 +40,7 @@ Amit **még nem** tud: szerkesztő eszközök (2. fázis), arcfelismerés (3. f�
 
 ## Állapot
 
-⚠️ **Korai fejlesztési fázisban** van (verzió: `0.3.0`), messze az 1.0-tól. Az aktuális cél az **MVP 1. fázis**: kezelő (böngészés, rendezés, csillagozás, szűrés) + néző. A formátum-kompatibilitás és az alapvető könyvtárkezelés már működik, de az API és a fájlformátum-részletek még változhatnak.
+⚠️ **Korai fejlesztési fázisban** van (verzió: `0.4.0`), messze az 1.0-tól. Az aktuális cél az **MVP 1. fázis**: kezelő (böngészés, rendezés, csillagozás, szűrés) + néző. A formátum-kompatibilitás és az alapvető könyvtárkezelés már működik, de az API és a fájlformátum-részletek még változhatnak.
 
 ## Telepítés és futtatás Linuxon
 
