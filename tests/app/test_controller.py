@@ -585,6 +585,42 @@ class TestThumbnailProvider:
         assert not image.isNull()
         assert image.width() == 16
 
+    def test_cache_error_gives_placeholder_and_log(
+        self, controller, library, monkeypatch, caplog
+    ):
+        # #66: a betöltő szálra kiszökő kivétel a kérést némán megölné —
+        # hibánál placeholder jár, a részletek a logba kerülnek.
+        import logging
+
+        controller.selectFolder(str(library / "nyaralas"))
+        photo = controller.photos.photos[0]
+        monkeypatch.setattr(
+            controller._provider._cache,
+            "get_or_create",
+            lambda *a, **k: (_ for _ in ()).throw(OSError("NAS-hiba")),
+        )
+        with caplog.at_level(logging.ERROR, "picasapy.app.thumbnail_provider"):
+            image = controller._provider.requestImage(str(photo.id), None, None)
+        assert not image.isNull() and image.width() == 16
+        assert "thumbnail-render hiba" in caplog.text
+
+    def test_failed_thumbnail_logged_not_silent(
+        self, controller, library, monkeypatch, caplog
+    ):
+        # Ha a forrás nem dekódolható (a cache None-t ad), az ne néma
+        # szürkeség legyen: warning a logba, placeholder a rácsra.
+        import logging
+
+        controller.selectFolder(str(library / "nyaralas"))
+        photo = controller.photos.photos[0]
+        monkeypatch.setattr(
+            controller._provider._cache, "get_or_create", lambda *a, **k: None
+        )
+        with caplog.at_level(logging.WARNING, "picasapy.app.thumbnail_provider"):
+            image = controller._provider.requestImage(str(photo.id), None, None)
+        assert not image.isNull() and image.width() == 16
+        assert "thumbnail nem készült el" in caplog.text
+
 
 class TestFolderDescription:
     """A mappa-leírás Picasa-kompatibilis mentése/olvasása:

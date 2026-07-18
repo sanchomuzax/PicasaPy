@@ -87,3 +87,46 @@ class TestGetOrCreate:
     def test_cache_dir_created_lazily(self, tmp_path, photo):
         cache = ThumbnailCache(tmp_path / "mely" / "utvonal", size=64)
         assert cache.get_or_create(photo, *_stat_key(photo)) is not None
+
+    def test_accented_path_decoded(self, cache, tmp_path):
+        # #65: Windows-on a cv2.imread nem tud nem-ASCII útvonalat megnyitni
+        # (ANSI fájl-API) — a bájt-alapú dekódolás (fromfile+imdecode)
+        # minden platformon unicode-biztos. A teszt útvonala a hibát adó
+        # valós mappára rímel: "Képek".
+        folder = tmp_path / "Képek árvíztűrő"
+        folder.mkdir()
+        photo = make_jpeg(folder / "kép_őúű.jpg", size=(320, 160))
+        thumb = cache.get_or_create(photo, *_stat_key(photo))
+        assert thumb is not None and thumb.exists()
+
+    def test_missing_source_returns_none(self, cache, tmp_path):
+        # Időközben törölt/elérhetetlen forrás (NAS): None, nem kivétel.
+        assert cache.get_or_create(tmp_path / "nincs.jpg", 1, 7) is None
+
+    def test_replace_race_lost_still_returns_target(
+        self, cache, photo, monkeypatch
+    ):
+        # #66: Windows-on az os.replace PermissionError-t dob, ha a célt épp
+        # olvassa egy másik szál. Ha a cél közben (a párhuzamos író révén)
+        # létrejött, a vesztes fél is a kész thumbnailt adja vissza.
+        import os as os_module
+        from pathlib import Path
+
+        def losing_replace(temp_name, target):
+            Path(target).parent.mkdir(parents=True, exist_ok=True)
+            Path(target).write_bytes(b"\xff\xd8gyoztes")  # a másik író műve
+            raise PermissionError("sharing violation")
+
+        monkeypatch.setattr(os_module, "replace", losing_replace)
+        thumb = cache.get_or_create(photo, *_stat_key(photo))
+        assert thumb is not None and thumb.exists()
+
+    def test_write_failure_returns_none(self, cache, photo, monkeypatch):
+        # Ha az írás végleg meghiúsul (tele lemez, NAS-hiba), None jár —
+        # a hívó placeholder-re eshet vissza, kivétel nem szökhet ki.
+        monkeypatch.setattr(
+            ThumbnailCache,
+            "_write_atomic",
+            lambda self, target, payload: (_ for _ in ()).throw(OSError("nincs hely")),
+        )
+        assert cache.get_or_create(photo, *_stat_key(photo)) is None
