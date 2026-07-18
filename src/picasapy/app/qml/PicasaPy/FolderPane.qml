@@ -94,27 +94,36 @@ Rectangle {
                 color: kind === "folder" && pane.selectedPath === path
                        ? Theme.panelSelection : "transparent"
 
-                // évszám-elválasztó sor (Picasa-minta)
+                // évszám-elválasztó: mono címke (dizajnkézikönyv 08)
                 Text {
                     visible: kind === "year"
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left; anchors.leftMargin: 6
                     text: name
+                    font.family: Theme.monoFamily
                     font.pixelSize: Theme.fontSize
+                    font.letterSpacing: 0.8
                     color: Theme.panelYearText
                 }
 
                 Row {
                     visible: kind === "folder"
                     anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left; anchors.leftMargin: 16
+                    anchors.left: parent.left; anchors.leftMargin: 12
                     spacing: 5
+                    Text {
+                        text: "▸"
+                        font.pixelSize: Theme.fontSize - 2
+                        color: pane.selectedPath === path
+                               ? Theme.panelSelectionText : Theme.folderArrow
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                     FolderIcon { size: 13; anchors.verticalCenter: parent.verticalCenter }
                     Text {
                         text: name + " (" + count + ")"
                         font.pixelSize: Theme.fontSize
                         color: pane.selectedPath === path
-                               ? Theme.panelSelectionText : Theme.textDark
+                               ? Theme.panelSelectionText : Theme.ink
                     }
                 }
                 MouseArea {

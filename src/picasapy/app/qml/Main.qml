@@ -66,19 +66,20 @@ ApplicationWindow {
                 Row {
                     spacing: 3
 
-                    // aktív szűrő: benyomott, zöldes keretű fehér gomb
+                    // szűrő-kapcsolók (kézikönyv 09): ★ ☺ ⚲ ▤ + csúszka;
+                    // a bekapcsolt szűrő tónusa jelölő kék
                     Rectangle {
                         width: 22; height: 20; radius: 2
                         color: controller.filterActive ? "#ffffff" : "transparent"
                         border.width: controller.filterActive ? 1 : 0
-                        border.color: "#529a5c"
+                        border.color: Theme.selectionBlue
                         Text {
                             anchors.centerIn: parent
                             text: "★"
                             font.pixelSize: 13
                             color: controller.filterActive
-                                   ? Theme.starYellow
-                                   : (starFilter.hovered ? Theme.starYellow : "#8f8f8f")
+                                   ? Theme.selectionBlue
+                                   : (starFilter.hovered ? Theme.starYellow : "#8f8b83")
                         }
                         HoverHandler { id: starFilter }
                         TapHandler {
@@ -87,52 +88,28 @@ ApplicationWindow {
                                       : controller.showStarred()
                         }
                     }
-                    // feltöltés-szűrő (inaktív) — zöld felfelé nyíl
-                    Item {
-                        width: 22; height: 20; opacity: 0.45
-                        Text {
-                            anchors.centerIn: parent
-                            text: "▲"; font.pixelSize: 11; color: "#4a8f3c"
-                        }
+                    Text {   // arc-szűrő (3. fázis)
+                        width: 22; height: 20
+                        text: "☺"; font.pixelSize: 13; color: "#8f8b83"
+                        opacity: 0.45
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
-                    // személy-szűrő (inaktív)
-                    Item {
-                        width: 22; height: 20; opacity: 0.45
-                        Rectangle {
-                            x: 8.5; y: 3; width: 5; height: 5; radius: 2.5
-                            color: "#8a8a8a"
-                        }
-                        Rectangle {
-                            x: 6.5; y: 9; width: 9; height: 6
-                            radius: 2; color: "#8a8a8a"
-                        }
+                    Text {   // geo-szűrő
+                        width: 22; height: 20
+                        text: "⚲"; font.pixelSize: 13; color: "#8f8b83"
+                        opacity: 0.45
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
-                    // videó-szűrő (inaktív)
-                    Item {
-                        width: 22; height: 20; opacity: 0.45
-                        Rectangle {
-                            x: 4.5; y: 4; width: 13; height: 11; radius: 1
-                            color: "#8a8a8a"
-                            Text {
-                                anchors.centerIn: parent
-                                text: "▶"; color: "white"; font.pixelSize: 7
-                            }
-                        }
-                    }
-                    // geo-szűrő (inaktív)
-                    Item {
-                        width: 22; height: 20; opacity: 0.5
-                        Rectangle {
-                            x: 6.5; y: 3; width: 9; height: 9; radius: 4.5
-                            color: "#c94b3d"
-                        }
-                        Rectangle {
-                            x: 10; y: 11; width: 2; height: 4
-                            color: "#c94b3d"
-                        }
+                    Text {   // mozgókép / méret
+                        width: 22; height: 20
+                        text: "▤"; font.pixelSize: 12; color: "#8f8b83"
+                        opacity: 0.45
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
                     Item { width: 6; height: 1 }
-                    // dátum-csúszka (2. ütem — vizuális helykitöltő)
                     Slider {
                         width: 90; height: 20
                         enabled: false
@@ -232,13 +209,21 @@ ApplicationWindow {
                     }
                 }
 
-                ColumnLayout {
+                // indexkép-csoport: fehér kártya a vásznon (kézikönyv 08)
+                Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.margins: 12
+                    color: Theme.contentPanel
+                    border.color: Theme.chromeBorder
+
+                    ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
                     spacing: 4
 
                     LightboxHeader {
+                    Layout.fillWidth: true
                     folderName: controller.currentFolder
                                 ? controller.currentFolder.split("/").pop()
                                 : qsTr("Library")
@@ -264,6 +249,7 @@ ApplicationWindow {
                         }
                     }
                     ScrollBar.vertical: ScrollBar {}
+                }
                 }
                 }
             }
@@ -336,26 +322,27 @@ ApplicationWindow {
                     Layout.preferredWidth: 34
                     onClicked: controller.rotateRight(trayStar.targetRow)
                 }
-                Item { width: 8 }
-                PicasaButton {
-                    text: qsTr("Upload to Google Photos")
-                    enabled: false
-                    accent: Theme.picasaGreen
-                }
-                PicasaButton { text: qsTr("E-Mail"); enabled: false }
-                PicasaButton { text: qsTr("Print"); enabled: false }
-                PicasaButton { text: qsTr("Export"); enabled: false }
                 Item { Layout.fillWidth: true }
-                Rectangle {
-                    width: 14; height: 11; radius: 1
-                    color: "#ffffff"; border.color: "#9a9a9a"
-                    Rectangle { x: 2; y: 6; width: 10; height: 3; color: "#8ab06a" }
-                }
+                // nagyítás-csúszka − / + jelekkel (kézikönyv 06)
+                Text { text: "−"; color: Theme.textGray; font.pixelSize: 13 }
                 Slider {
                     id: sizeSlider
                     from: 72; to: 256; value: window.thumbSize
                     Layout.preferredWidth: 140
                     onMoved: window.thumbSize = value
+                }
+                Text { text: "+"; color: Theme.textGray; font.pixelSize: 13 }
+                Item { width: 10 }
+                PicasaButton { text: qsTr("E-Mail"); enabled: false }
+                PicasaButton { text: qsTr("Print"); enabled: false }
+                PicasaButton { text: qsTr("Export"); enabled: false }
+                Item { width: 6 }
+                // az egyetlen zöld elsődleges tett — jobbra igazítva,
+                // a képernyő vizuális súlypontja (kézikönyv 01/08)
+                PicasaButton {
+                    text: qsTr("Upload to Google Photos")
+                    enabled: false
+                    accent: Theme.picasaGreen
                 }
             }
         }

@@ -1,47 +1,63 @@
 pragma Singleton
 import QtQuick
 
-// Picasa 3.9 dizájn-tokenek — a felhasználó saját magyar Picasa 3.9-éről
-// készült 1920x1080-as screenshotokból mintavételezve (2026-07-18,
-// research/testdata/screenshot/).
+// Dizájn-tokenek — forrás: „Picasa 3 Dizajnkezikonyv" (claude.ai/design,
+// 2026-07-18) mint elsődleges rendszer, a valódi Picasa 3.9 screenshotok
+// mint történeti referencia. Ld. docs/specs/design-guide.md.
 QtObject {
-    // króm (menü, eszköztár, szűrősáv)
-    readonly property color chromeBg: "#e8e8e8"
-    readonly property color chromeBorder: "#d5d5d5"
+    // ------- márka (a logó színei — csak márka-kontextusban!) -------
+    readonly property color brandRed: "#e04a3f"
+    readonly property color brandYellow: "#ffd34e"
+    readonly property color brandGreen: "#0dab62"
+    readonly property color brandBlue: "#448afd"
+    readonly property color brandPurple: "#9b479f"
+    readonly property color brandSlate: "#4b5d5f"
 
-    // bal oldali mappa-panel
-    readonly property color panelBg: "#f3f3f3"
+    // ------- felület: semleges keret -------
+    readonly property color canvasBg: "#eaeaea"       // vászon (app-háttér)
+    readonly property color contentPanel: "#ffffff"   // tartalompanel (kártya)
+    readonly property color panelBg: "#f3f3f3"        // oldalsáv (mappafa)
+    readonly property color chromeBg: "#e2e2e2"       // eszköztár, sávok
+    readonly property color chromeBorder: "#cdcdcd"   // vezérlők, keretek
+    readonly property color ink: "#1c1b19"            // tinta: szöveg, menük
+
+    // kompatibilitási aliasok (fokozatos átállás)
+    readonly property color lightboxBg: canvasBg
+    readonly property color textDark: ink
+    readonly property color thumbCard: contentPanel
+
+    // ------- jelző színek -------
+    readonly property color picasaGreen: "#3b8f00"    // az EGYETLEN zöld tett
+    readonly property color selectionBlue: "#83a7bd"  // jelölő kék (lista, szűrő)
+    readonly property color panelSelection: selectionBlue
+    readonly property color folderGold: "#ebcc8f"     // mappa arany
+    readonly property color folderArrow: "#e0a92e"    // mappafa nyíl
+    readonly property color linkBlue: "#1a0dab"       // hivatkozások
+
+    // ------- oldalsáv részletek -------
     readonly property color panelHeaderBg: "#e1e4e7"
     readonly property color panelHeaderText: "#3a3a3a"
-    readonly property color panelSelection: "#83a7bd"
     readonly property color panelSelectionText: "#ffffff"
-    readonly property color panelYearText: "#8a8a8a"
+    readonly property color panelYearText: "#7a776f"  // mono évszám-címke
 
-    // lightbox (rács)
-    readonly property color lightboxBg: "#eaeaea"
-    readonly property color folderTitle: "#634b45"      // barna szerif cím!
-    readonly property color folderDate: "#444444"
-    readonly property color addDescription: "#8f8f8f"
-    readonly property color thumbCard: "#ffffff"
+    // ------- lightbox / indexkép-csoport -------
+    readonly property color folderTitle: ink          // 16px / 600 sans
+    readonly property color folderDate: "#5a5750"
+    readonly property color addDescription: "#a29e96" // dőlt
     readonly property color thumbBorder: "#d9d9d9"
-    readonly property color thumbSelection: "#009eff"   // élénk azúr keret
+    readonly property color thumbSelection: "#009eff" // rács-kijelölés (3.9)
     readonly property color thumbHover: "#a8c8de"
 
-    // alsó info-sáv (tömör acélkék) és tálca
+    // ------- infó-sáv, tálca, néző -------
     readonly property color infoBar: "#568fb7"
     readonly property color infoBarText: "#ffffff"
     readonly property color trayBg: "#f8f8f8"
     readonly property color trayBorder: "#d0d0c8"
-
-    // akcentusok
-    readonly property color picasaGreen: "#3b8f00"
-    readonly property color playGreen: "#43a047"
+    readonly property color viewerBg: "#808080"
     readonly property color starYellow: "#f5c518"
-    readonly property color textDark: "#333333"
-    readonly property color textGray: "#767676"
-    readonly property color linkBlue: "#2a5db0"
+    readonly property color textGray: "#7a776f"
 
-    readonly property int fontSize: 12
-    readonly property int folderTitleSize: 17
-    readonly property string serifFamily: "Georgia, 'Times New Roman', serif"
+    readonly property int fontSize: 12                // felület: 11–13 px
+    readonly property int folderTitleSize: 16         // csoport-fejléc / 600
+    readonly property string monoFamily: "IBM Plex Mono, monospace"
 }

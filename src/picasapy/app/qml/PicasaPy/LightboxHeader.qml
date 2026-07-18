@@ -1,65 +1,74 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 
-// Mappa-fejléc a lightboxban: sárga mappa-ikon, barna SZERIF cím, hosszú
-// dátum, zöld lejátszó + műveletsor, "Leírás hozzáadása" — Picasa 3.9 minta.
-Column {
+// Indexkép-csoport fejléce — dizajnkézikönyv 08: cím 16px/600 tintával,
+// jobbra mono SZINKRON-jelvény, alatta dőlt „Leírás hozzáadása".
+ColumnLayout {
     id: header
     property string folderName: ""
     property string dateText: ""
-    spacing: 2
+    spacing: 3
 
-    Row {
+    RowLayout {
+        Layout.fillWidth: true
         spacing: 8
-        FolderIcon { size: 26; anchors.verticalCenter: parent.verticalCenter }
-        Column {
-            spacing: 1
-            Text {
-                text: header.folderName
-                color: Theme.folderTitle
-                font.family: "Georgia"
-                font.pixelSize: Theme.folderTitleSize
-            }
-            Text {
-                visible: header.dateText !== ""
-                text: header.dateText
-                color: Theme.folderDate
-                font.family: "Georgia"
-                font.pixelSize: Theme.fontSize
-            }
+        FolderIcon { size: 20; Layout.alignment: Qt.AlignVCenter }
+        Text {
+            text: header.folderName
+            color: Theme.folderTitle
+            font.pixelSize: Theme.folderTitleSize
+            font.weight: Font.DemiBold
+            elide: Text.ElideRight
+            Layout.fillWidth: true
+        }
+        Text {
+            text: qsTr("SYNC")
+            visible: false   // webalbum-szinkron nem cél; a helye megvan
+            color: Theme.picasaGreen
+            font.family: Theme.monoFamily
+            font.pixelSize: 11
         }
     }
 
-    Item { width: 1; height: 6 }
+    Text {
+        visible: header.dateText !== ""
+        text: header.dateText
+        color: Theme.folderDate
+        font.pixelSize: Theme.fontSize
+        Layout.leftMargin: 28
+    }
 
-    Row {
+    RowLayout {
+        Layout.leftMargin: 28
+        Layout.topMargin: 4
         spacing: 6
         Rectangle {
             width: 26; height: 22; radius: 3
             color: "#ffffff"; border.color: Theme.chromeBorder
             Text {
                 anchors.centerIn: parent
-                text: "▶"; color: Theme.playGreen; font.pixelSize: 12
+                text: "▸"; color: Theme.picasaGreen; font.pixelSize: 13
             }
         }
         Rectangle {
             width: 26; height: 22; radius: 3
             color: "#ffffff"; border.color: Theme.chromeBorder
-            Text { anchors.centerIn: parent; text: "★"; color: "#c0c0c0"; font.pixelSize: 12 }
+            Text { anchors.centerIn: parent; text: "☆"; color: "#a0a0a0"; font.pixelSize: 13 }
         }
-        Button {
-            text: qsTr("Upload")
+        PicasaButton {
+            text: qsTr("Upload") + " ▾"
             enabled: false
-            height: 22
-            font.pixelSize: Theme.fontSize
+            Layout.preferredHeight: 22
         }
     }
-
-    Item { width: 1; height: 8 }
 
     Text {
         text: qsTr("Add a description")
         color: Theme.addDescription
-        font.pixelSize: Theme.fontSize
+        font.pixelSize: Theme.fontSize + 1
+        font.italic: true
+        Layout.leftMargin: 28
+        Layout.topMargin: 6
     }
 }

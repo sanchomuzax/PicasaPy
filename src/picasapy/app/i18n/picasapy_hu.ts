@@ -4,12 +4,12 @@
 <context>
     <name></name>
     <message>
-        <location filename="../controller.py" line="303"/>
+        <location filename="../controller.py" line="332"/>
         <source>%1 KB</source>
         <translation>%1 KB</translation>
     </message>
     <message>
-        <location filename="../controller.py" line="304"/>
+        <location filename="../controller.py" line="333"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
     </message>
@@ -17,29 +17,29 @@
 <context>
     <name>AppController</name>
     <message>
-        <location filename="../controller.py" line="185"/>
+        <location filename="../controller.py" line="214"/>
         <source>%1x%2 pixels</source>
         <translation>%1x%2 képpont</translation>
     </message>
     <message>
-        <location filename="../controller.py" line="231"/>
+        <location filename="../controller.py" line="260"/>
         <source>%1 folders / %2 pictures visible (%3 seconds) %4 GB</source>
         <translation>%1 mappa / %2 kép látható (%3 másodperc) %4 GB</translation>
     </message>
     <message>
-        <location filename="../controller.py" line="278"/>
+        <location filename="../controller.py" line="307"/>
         <source>0 pictures</source>
         <translation>0 kép</translation>
     </message>
     <message numerus="yes">
-        <location filename="../controller.py" line="287"/>
+        <location filename="../controller.py" line="316"/>
         <source>%n picture(s)</source>
         <translation>
             <numerusform>%n kép</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../controller.py" line="289"/>
+        <location filename="../controller.py" line="318"/>
         <source>%1 MB on disk</source>
         <translation>%1 MB a lemezen</translation>
     </message>
@@ -65,12 +65,17 @@
 <context>
     <name>LightboxHeader</name>
     <message>
-        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="51"/>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="26"/>
+        <source>SYNC</source>
+        <translation>SZINKRON</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="60"/>
         <source>Upload</source>
         <translation>Feltöltés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="61"/>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="67"/>
         <source>Add a description</source>
         <translation>Leírás hozzáadása</translation>
     </message>
@@ -134,52 +139,52 @@
         <translation type="vanished">&amp;Súgó</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="345"/>
+        <location filename="../qml/Main.qml" line="353"/>
         <source>About PicasaPy</source>
         <translation>A PicasaPy névjegye</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="39"/>
+        <location filename="../qml/Main.qml" line="51"/>
         <source>Import</source>
         <translation>Importálás</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="50"/>
+        <location filename="../qml/Main.qml" line="62"/>
         <source>Filters</source>
         <translation>Szűrők</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="134"/>
+        <location filename="../qml/Main.qml" line="123"/>
         <source>Search</source>
         <translation>Keresés</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="206"/>
+        <location filename="../qml/Main.qml" line="195"/>
         <source>View All</source>
         <translation>Az összes megtekintése</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="232"/>
+        <location filename="../qml/Main.qml" line="229"/>
         <source>Library</source>
         <translation>Könyvtár</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="320"/>
+        <location filename="../qml/Main.qml" line="343"/>
         <source>Upload to Google Photos</source>
         <translation>Feltöltés a Google Fotókba</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="324"/>
+        <location filename="../qml/Main.qml" line="336"/>
         <source>E-Mail</source>
         <translation>E-mail</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="325"/>
+        <location filename="../qml/Main.qml" line="337"/>
         <source>Print</source>
         <translation>Nyomtatás</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="326"/>
+        <location filename="../qml/Main.qml" line="338"/>
         <source>Export</source>
         <translation>Exportálás</translation>
     </message>
@@ -200,7 +205,7 @@
         <translation type="vanished">Megosztás</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="350"/>
+        <location filename="../qml/Main.qml" line="368"/>
         <source>A modern, open Picasa successor.</source>
         <translation>Modern, nyílt Picasa-utód.</translation>
     </message>
@@ -278,7 +283,7 @@
         <translation>Hisztogram és fényképezőgép-adatok</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="184"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="200"/>
         <source>Make a caption!</source>
         <translation>Készítsen képaláírást!</translation>
     </message>

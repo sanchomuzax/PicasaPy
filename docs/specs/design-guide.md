@@ -1,11 +1,31 @@
 # Dizájn-kézikönyv — Picasa 3.9 hűség-referencia
 
-Forrás: a felhasználó **magyar nyelvű Picasa 3.9-éről** készült 35 db
+**Rétegek (2026-07-18-tól):** az elsődleges dizájn-forrás a felhasználó
+claude.ai/design projektjében készült **„Picasa 3 Dizajnkezikonyv"**
+(projekt: `6a9fe53e-feff-4107-8787-eeaac68490ca`, 13 fejezet: alapelvek,
+logó, szín, tipográfia, ikonográfia, gombok, elrendezés, komponensek,
+szűrők, arcfelismerés, mappakezelő, feltöltés, nyelvezet). Ahol a
+kézikönyv rendelkezik, az felülírja az alábbi screenshot-mintavételeket;
+ahol hallgat, a screenshotok maradnak a mérce.
+
+A kézikönyv fő döntései (implementálva):
+- **Vászon** #EAEAEA-n úszó **fehér tartalomkártya** (#FFFFFF, 1px #CDCDCD).
+- Csoport-fejléc: **16px/600 sans, tinta** (#1C1B19) — a 3.9-es Georgia
+  szerif helyett, tudatos modernizálás; „Leírás hozzáadása" dőlt #A29E96.
+- **Mappa arany** #EBCC8F ikonok, amber ▸ nyilak (#E0A92E); évszám-címkék
+  mono betűvel (#7A776F).
+- Eszköztár/sávok #E2E2E2; tinta #1C1B19; hivatkozás #1A0DAB.
+- Szűrősor: ★ ☺ ⚲ ▤ + csúszka; **aktív szűrő tónusa jelölő kék** #83A7BD.
+- Tálca: nagyítás-csúszka −/+ jelekkel; az **egyetlen zöld gomb jobbra**
+  igazítva — képernyőnként egy elsődleges tett (alapelv 04).
+- Márka-színek (csak márka-kontextus): #E04A3F / #FFD34E / #0DAB62 /
+  #448AFD / #9B479F, szójel pala #4B5D5F.
+
+Történeti forrás: a felhasználó **magyar nyelvű Picasa 3.9-éről** készült 35 db
 1920×1080-as screenshot (`research/testdata/screenshot/`, 2026-07-17,
 gitignore-olt — személyes tartalom!). Minden szín pixelmintavétellel, minden
 méret pixelméréssel került ide. A QML-oldali tokenek:
-`src/picasapy/app/qml/PicasaPy/Theme.qml` — **ez a doksi az igazságforrás**,
-a Theme ebből származik.
+`src/picasapy/app/qml/PicasaPy/Theme.qml`.
 
 ## Színtokenek
 
