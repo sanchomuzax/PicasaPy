@@ -122,3 +122,28 @@ class TestRequestedSizeHalfDimension:
         provider = self._provider_with_photo(tmp_path)
         image = provider.requestImage("7?rev=1", QSize(), QSize(-1, -1))
         assert (image.width(), image.height()) == (320, 160)
+
+
+class TestMainThreadPreRender:
+    """#54: a renderelés a register() hívásakor, a hívó (GUI) szálán fut —
+    a provider-szálon nincs érdemi Python-munka (GIL-deadlock ellen)."""
+
+    def test_render_happens_at_register_not_request(self, qt_app, tmp_path):
+        from picasapy.app.edit_preview import EditPreviewProvider
+
+        make_jpeg(tmp_path / "p.jpg", size=(320, 160))
+        provider = EditPreviewProvider()
+        provider.register("9", tmp_path / "p.jpg", ())
+        (tmp_path / "p.jpg").unlink()  # a kérés idején a fájl már nincs meg
+        image = provider.requestImage("9?rev=1", None, None)
+        assert (image.width(), image.height()) == (320, 160)
+
+    def test_decode_capped_for_preview(self, qt_app, tmp_path):
+        from picasapy.app.edit_preview import EditPreviewProvider
+
+        make_jpeg(tmp_path / "nagy.jpg", size=(4000, 2000))
+        provider = EditPreviewProvider()
+        provider.register("9", tmp_path / "nagy.jpg", ())
+        image = provider.requestImage("9?rev=1", None, None)
+        assert max(image.width(), image.height()) <= 2560
+        assert abs(image.width() / image.height() - 2.0) < 0.01
