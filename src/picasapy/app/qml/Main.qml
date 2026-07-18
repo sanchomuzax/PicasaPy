@@ -52,55 +52,79 @@ ApplicationWindow {
                     color: Theme.textGray
                 }
                 Row {
-                    spacing: 7
-                    Text {
-                        text: "★"
-                        font.pixelSize: 13
-                        color: starFilter.hovered ? Theme.starYellow : "#8f8f8f"
-                        HoverHandler { id: starFilter }
-                        TapHandler { onTapped: controller.showStarred() }
-                    }
-                    // fotó-szűrő (inaktív): kis keretezett kép sziluett
+                    spacing: 3
+
+                    // aktív szűrő: benyomott, zöldes keretű fehér gomb
                     Rectangle {
-                        width: 13; height: 11; radius: 1
-                        color: "#ffffff"; border.color: "#9a9a9a"; opacity: 0.5
-                        Rectangle {
-                            x: 2; y: 6; width: 9; height: 3
-                            color: "#8ab06a"
+                        width: 22; height: 20; radius: 2
+                        color: controller.filterActive ? "#ffffff" : "transparent"
+                        border.width: controller.filterActive ? 1 : 0
+                        border.color: "#529a5c"
+                        Text {
+                            anchors.centerIn: parent
+                            text: "★"
+                            font.pixelSize: 13
+                            color: controller.filterActive
+                                   ? Theme.starYellow
+                                   : (starFilter.hovered ? Theme.starYellow : "#8f8f8f")
+                        }
+                        HoverHandler { id: starFilter }
+                        TapHandler {
+                            onTapped: controller.filterActive
+                                      ? controller.clearFilter()
+                                      : controller.showStarred()
+                        }
+                    }
+                    // feltöltés-szűrő (inaktív) — zöld felfelé nyíl
+                    Item {
+                        width: 22; height: 20; opacity: 0.45
+                        Text {
+                            anchors.centerIn: parent
+                            text: "▲"; font.pixelSize: 11; color: "#4a8f3c"
                         }
                     }
                     // személy-szűrő (inaktív)
                     Item {
-                        width: 11; height: 11; opacity: 0.5
+                        width: 22; height: 20; opacity: 0.45
                         Rectangle {
-                            x: 3; y: 0; width: 5; height: 5; radius: 2.5
+                            x: 8.5; y: 3; width: 5; height: 5; radius: 2.5
                             color: "#8a8a8a"
                         }
                         Rectangle {
-                            x: 1; y: 6; width: 9; height: 5
+                            x: 6.5; y: 9; width: 9; height: 6
                             radius: 2; color: "#8a8a8a"
                         }
                     }
                     // videó-szűrő (inaktív)
-                    Rectangle {
-                        width: 13; height: 11; radius: 1
-                        color: "#8a8a8a"; opacity: 0.5
-                        Text {
-                            anchors.centerIn: parent
-                            text: "▶"; color: "white"; font.pixelSize: 7
+                    Item {
+                        width: 22; height: 20; opacity: 0.45
+                        Rectangle {
+                            x: 4.5; y: 4; width: 13; height: 11; radius: 1
+                            color: "#8a8a8a"
+                            Text {
+                                anchors.centerIn: parent
+                                text: "▶"; color: "white"; font.pixelSize: 7
+                            }
                         }
                     }
                     // geo-szűrő (inaktív)
                     Item {
-                        width: 9; height: 12; opacity: 0.6
+                        width: 22; height: 20; opacity: 0.5
                         Rectangle {
-                            x: 0; y: 0; width: 9; height: 9; radius: 4.5
+                            x: 6.5; y: 3; width: 9; height: 9; radius: 4.5
                             color: "#c94b3d"
                         }
                         Rectangle {
-                            x: 3.5; y: 8; width: 2; height: 4
+                            x: 10; y: 11; width: 2; height: 4
                             color: "#c94b3d"
                         }
+                    }
+                    Item { width: 6; height: 1 }
+                    // dátum-csúszka (2. ütem — vizuális helykitöltő)
+                    Slider {
+                        width: 90; height: 20
+                        enabled: false
+                        anchors.verticalCenter: parent.verticalCenter
                     }
                 }
             }
@@ -159,10 +183,50 @@ ApplicationWindow {
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 12
-                spacing: 4
+                spacing: 0
 
-                LightboxHeader {
+                // zöld eredménysáv aktív szűrőnél (Picasa-minta)
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 26
+                    visible: controller.filterActive
+                    color: "#5aa865"
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 8
+                        spacing: 10
+                        Rectangle {
+                            Layout.preferredHeight: 18
+                            Layout.preferredWidth: viewAllText.width + 20
+                            radius: 9
+                            color: "#ffffff"
+                            Text {
+                                id: viewAllText
+                                anchors.centerIn: parent
+                                text: qsTr("View All")
+                                font.pixelSize: Theme.fontSize - 1
+                                font.bold: true
+                                color: "#3b8f00"
+                            }
+                            TapHandler { onTapped: controller.clearFilter() }
+                        }
+                        Text {
+                            text: controller.filterStatusText
+                            color: "white"
+                            font.pixelSize: Theme.fontSize
+                            font.bold: true
+                        }
+                        Item { Layout.fillWidth: true }
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.margins: 12
+                    spacing: 4
+
+                    LightboxHeader {
                     folderName: controller.currentFolder
                                 ? controller.currentFolder.split("/").pop()
                                 : qsTr("Library")
@@ -188,6 +252,7 @@ ApplicationWindow {
                         }
                     }
                     ScrollBar.vertical: ScrollBar {}
+                }
                 }
             }
         }
@@ -226,12 +291,27 @@ ApplicationWindow {
                 spacing: 8
 
                 PicasaButton {
-                    text: "★"
+                    id: trayStar
+                    readonly property int targetRow: window.viewerOpen
+                        ? photoViewer.currentIndex : window.selectedIndex
                     enabled: window.viewerOpen || window.selectedIndex >= 0
                     Layout.preferredWidth: 34
-                    onClicked: controller.toggleStar(
-                        window.viewerOpen ? photoViewer.currentIndex
-                                          : window.selectedIndex)
+                    onClicked: controller.toggleStar(targetRow)
+                    contentItem: Text {
+                        text: "★"
+                        font.pixelSize: 15
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        // arany, ha a kiválasztott kép csillagos; egyébként
+                        // világos kontúr-csillag (Picasa-minta, nem fekete!)
+                        color: {
+                            controller.statusText  // frissítés-trigger
+                            return controller.photos.starAt(trayStar.targetRow)
+                                   ? Theme.starYellow : "#ffffff"
+                        }
+                        style: Text.Outline
+                        styleColor: "#9a9a9a"
+                    }
                 }
                 PicasaButton { text: "↺"; enabled: false; Layout.preferredWidth: 34 }
                 PicasaButton { text: "↻"; enabled: false; Layout.preferredWidth: 34 }

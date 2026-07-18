@@ -121,6 +121,11 @@ class PhotoGridModel(QAbstractListModel):
     def photos(self) -> tuple[PhotoRecord, ...]:
         return self._photos
 
+    @Slot(int, result=bool)
+    def starAt(self, row: int) -> bool:
+        """A sor csillag-állapota (a tálca ★ gombjának színezéséhez)."""
+        return 0 <= row < len(self._photos) and self._photos[row].star
+
     @Slot(int, result=str)
     def fileUrlAt(self, row: int) -> str:
         """A kép file:// URL-je a nézőnek; üres, ha az index érvénytelen."""

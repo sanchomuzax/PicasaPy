@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import threading
+import time
 from pathlib import Path
 
 from PySide6.QtCore import (
@@ -55,6 +56,8 @@ class AppController(QObject):
         self._folder_date = ""
         self._sync_running = False
         self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
+        self._filter_active = False
+        self._filter_status = ""
         self.syncFinished.connect(self._reload)
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
@@ -80,6 +83,15 @@ class AppController(QObject):
         """A mappa-fejléc dátumsora (a legkorábbi felvétel hosszú dátuma)."""
         return self._folder_date
 
+    @Property(bool, notify=statusChanged)
+    def filterActive(self):
+        return self._filter_active
+
+    @Property(str, notify=statusChanged)
+    def filterStatusText(self):
+        """A zöld eredménysáv szövege (Picasa-minta)."""
+        return self._filter_status
+
     # -- műveletek ----------------------------------------------------------
 
     def start(self) -> None:
@@ -98,6 +110,8 @@ class AppController(QObject):
     def selectFolder(self, folder_path: str) -> None:
         self._current_folder = folder_path
         self._view_mode = ("folder", folder_path)
+        self._filter_active = False
+        self._filter_status = ""
         with open_index(self._db_path) as conn:
             records = photos_in_folder(conn, folder_path)
         self._show(records)
@@ -187,11 +201,38 @@ class AppController(QObject):
 
     @Slot()
     def showStarred(self) -> None:
-        self._current_folder = ""
+        """Csillag-szűrő be — a mappa-kontextus megmarad a visszaváltáshoz."""
         self._view_mode = ("starred", "")
+        started = time.perf_counter()
         with open_index(self._db_path) as conn:
             records = starred_photos(conn)
+        elapsed = time.perf_counter() - started
+        self._filter_active = True
+        self._filter_status = self._format_filter_status(records, elapsed)
         self._show(records)
+
+    @Slot()
+    def clearFilter(self) -> None:
+        """Szűrő ki („Az összes megtekintése") — vissza a mappa-nézethez."""
+        self._filter_active = False
+        self._filter_status = ""
+        if self._current_folder:
+            self.selectFolder(self._current_folder)
+        else:
+            self._view_mode = ("folder", "")
+            self._show(())
+
+    def _format_filter_status(self, records, elapsed: float) -> str:
+        locale = QLocale()
+        folders = len({r.folder_path for r in records})
+        total_gb = sum(r.size for r in records) / (1024**3)
+        return (
+            self.tr("%1 folders / %2 pictures visible (%3 seconds) %4 GB")
+            .replace("%1", str(folders))
+            .replace("%2", str(len(records)))
+            .replace("%3", locale.toString(elapsed, "f", 3))
+            .replace("%4", locale.toString(total_gb, "f", 1))
+        )
 
     # -- belső --------------------------------------------------------------
 

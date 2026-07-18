@@ -148,6 +148,30 @@ class TestToggleStar:
         assert controller.photos.rowCount() == 1
         assert controller.photos.photos[0].star
 
+    def test_star_filter_toggles_back_to_folder(self, controller, library):
+        # Picasa: a szűrő újra-kattintásra kikapcsol, vissza a mappához.
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.showStarred()
+        assert controller.filterActive is True
+        controller.clearFilter()
+        assert controller.filterActive is False
+        assert controller.photos.rowCount() == 2  # a mappa teljes tartalma
+
+    def test_filter_status_text(self, controller, library):
+        # Zöld sáv (Picasa): "N mappa / M kép látható (x,xxx másodperc) Y GB"
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.showStarred()
+        status = controller.filterStatusText
+        assert "1 " in status  # 1 mappa és 1 kép
+        assert "/" in status
+        assert "(" in status and ")" in status  # eltelt idő zárójelben
+        assert "GB" in status
+
+    def test_clear_filter_without_folder(self, controller):
+        controller.showStarred()
+        controller.clearFilter()  # nincs korábbi mappa — nem dobhat
+        assert controller.filterActive is False
+
     def test_status_for_empty(self, controller):
         controller.search("nincstalalat")
         assert controller.statusText == "0 pictures"

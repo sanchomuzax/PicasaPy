@@ -102,6 +102,15 @@ class TestPhotoGridModel:
             "/nyaralas/IMG_0001.jpg"
         )
 
+    def test_star_at(self, qt_app, conn, library):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        assert model.starAt(0) is True
+        assert model.starAt(1) is False
+        assert model.starAt(-1) is False
+
     def test_set_photos_resets(self, qt_app, conn, library):
         from picasapy.app.models import PhotoGridModel
 
