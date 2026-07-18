@@ -112,6 +112,20 @@ class TestSyncTree:
         conn.commit()
         assert photos_in_folder(conn, library / "nyaralas") == ()
 
+    def test_remove_root_deletes_folders_and_photos(self, conn, library, tmp_path):
+        from picasapy.index import remove_root
+
+        other = tmp_path / "masik"
+        (other / "m").mkdir(parents=True)
+        (other / "m" / "x.jpg").write_bytes(b"x")
+        sync_tree(conn, library)
+        sync_tree(conn, other)
+        remove_root(conn, library)
+        assert photos_in_folder(conn, library / "nyaralas") == ()
+        assert len(photos_in_folder(conn, other / "m")) == 1  # más gyökér marad
+        # FTS is kitakarítva (nincs árva bejegyzés)
+        assert conn.execute("SELECT count(*) FROM photos").fetchone()[0] == 1
+
     def test_missing_ini_defaults(self, conn, library):
         (library / "nyaralas" / ".picasa.ini").unlink()
         sync_tree(conn, library)

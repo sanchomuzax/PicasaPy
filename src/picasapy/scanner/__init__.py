@@ -7,7 +7,7 @@ from .filetypes import (
     media_kind_of,
 )
 from .walker import PICASA_INI_NAME, FolderScan, MediaFile, scan_tree
-from .watched import read_watched_folders
+from .watched import read_watched_folders, write_watched_folders
 from .watcher import LibraryWatcher
 
 __all__ = [
@@ -21,4 +21,5 @@ __all__ = [
     "media_kind_of",
     "read_watched_folders",
     "scan_tree",
+    "write_watched_folders",
 ]

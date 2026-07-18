@@ -16,3 +16,13 @@ def read_watched_folders(path: str | Path) -> tuple[str, ...]:
         return ()
     text = file_path.read_text(encoding="utf-8-sig")
     return tuple(line.strip() for line in text.splitlines() if line.strip())
+
+
+def write_watched_folders(path: str | Path, folders: tuple[str, ...]) -> None:
+    """A figyelt mappák listájának mentése (Picasa-formátum: soronként egy
+    abszolút útvonal, UTF-8)."""
+    file_path = Path(path)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    file_path.write_text(
+        "".join(f"{folder}\n" for folder in folders), encoding="utf-8"
+    )

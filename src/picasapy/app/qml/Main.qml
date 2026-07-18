@@ -71,6 +71,15 @@ ApplicationWindow {
         onSelectStarredRequested: controller.showStarred()
         onSelectAllRequested: window.selectAll()
         onClearSelectionRequested: window.clearSelection()
+        onFolderManagerRequested: folderManager.open()
+    }
+
+    FolderManagerDialog { id: folderManager }
+
+    // első indítás: nincs még figyelt mappa → Mappakezelő felajánlása
+    Component.onCompleted: {
+        if (controller.watchedFolders.length === 0)
+            folderManager.open()
     }
 
     // Eszköztár: Importálás | (szűrők középen) | kereső jobbra

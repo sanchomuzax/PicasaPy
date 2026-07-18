@@ -87,6 +87,42 @@ class TestWriteCaption:
         bad.write_bytes(b"nem jpeg")
         assert write_iptc_caption(bad, "x") is False
 
+    def test_replace_retried_then_succeeds(self, tmp_path, monkeypatch):
+        # Windows: a célfájl átmenetileg zárolt (a néző tölti) → retry.
+        import os as os_module
+
+        import picasapy.metadata.iptc_writer as writer_module
+
+        photo = make_jpeg(tmp_path / "a.jpg")
+        original_replace = os_module.replace
+        calls = {"n": 0}
+
+        def flaky_replace(src, dst):
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise PermissionError(13, "Access is denied")
+            return original_replace(src, dst)
+
+        monkeypatch.setattr(writer_module.os, "replace", flaky_replace)
+        assert write_iptc_caption(photo, "zárolt közben")
+        assert read_file_metadata(photo).caption == "zárolt közben"
+
+    def test_replace_falls_back_to_direct_write(self, tmp_path, monkeypatch):
+        # Ha a zár nem enged fel, nem-atomikus közvetlen írás (a képfájlnál
+        # ez elfogadható fallback; az ini-nél nem — ott nincs ilyen).
+        import picasapy.metadata.iptc_writer as writer_module
+
+        photo = make_jpeg(tmp_path / "a.jpg")
+
+        def always_denied(src, dst):
+            raise PermissionError(13, "Access is denied")
+
+        monkeypatch.setattr(writer_module.os, "replace", always_denied)
+        monkeypatch.setattr(writer_module, "_RETRY_DELAY", 0.001)
+        assert write_iptc_caption(photo, "fallback felirat")
+        assert read_file_metadata(photo).caption == "fallback felirat"
+        assert not list(tmp_path.glob("*.jpgtmp"))  # temp kitakarítva
+
     def test_no_temp_leftovers(self, tmp_path):
         photo = make_jpeg(tmp_path / "a.jpg")
         write_iptc_caption(photo, "felirat")

@@ -11,6 +11,7 @@ MenuBar {
     signal selectStarredRequested()
     signal selectAllRequested()
     signal clearSelectionRequested()
+    signal folderManagerRequested()
 
     Menu {
         title: qsTr("&File")
@@ -172,7 +173,10 @@ MenuBar {
     }
     Menu {
         title: qsTr("&Tools")
-        MenuItem { text: qsTr("Folder Manager..."); enabled: false }
+        MenuItem {
+            text: qsTr("Folder Manager...")
+            onTriggered: bar.folderManagerRequested()
+        }
         MenuItem { text: qsTr("People Manager..."); enabled: false }
         MenuSeparator {}
         MenuItem { text: qsTr("Back Up Pictures..."); enabled: false }

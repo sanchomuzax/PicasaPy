@@ -185,3 +185,12 @@ def _prune_folders(
 
 def _is_under(path: Path, root: Path) -> bool:
     return path == root or path.is_relative_to(root)
+
+
+def remove_root(conn: sqlite3.Connection, root: str | Path) -> None:
+    """Egy gyökér teljes eltávolítása az indexből (Mappakezelő:
+    „Eltávolítás a Picasából"). Explicit photos-törlés a folders előtt,
+    hogy az FTS-triggerek lefussanak."""
+    root_path = Path(root).resolve()
+    _prune_folders(conn, root_path, set())
+    conn.commit()

@@ -13,7 +13,11 @@ from __future__ import annotations
 
 import os
 import tempfile
+import time
 from pathlib import Path
+
+_RETRY_DELAY = 0.05
+_RETRY_COUNT = 5
 
 _SOI = b"\xff\xd8"
 _SOS = 0xDA
@@ -182,11 +186,21 @@ def _serialize_app13(resources: list[tuple[int, bytes, bytes]]) -> bytes:
 
 
 def _write_atomic(target: Path, payload: bytes) -> None:
+    """Atomikus csere; Windowson a nyitott célfájl (pl. a néző épp tölti)
+    zárolja a rename-et → rövid retry, végső esetben közvetlen írás
+    (képfájlnál ez elfogadható fallback)."""
     fd, temp_name = tempfile.mkstemp(dir=target.parent, suffix=".jpgtmp")
     try:
         with os.fdopen(fd, "wb") as handle:
             handle.write(payload)
-        os.replace(temp_name, target)
+        for attempt in range(_RETRY_COUNT):
+            try:
+                os.replace(temp_name, target)
+                return
+            except PermissionError:
+                time.sleep(_RETRY_DELAY * (attempt + 1))
+        target.write_bytes(payload)
+        os.unlink(temp_name)
     except BaseException:
         os.unlink(temp_name)
         raise

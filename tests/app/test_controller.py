@@ -35,7 +35,11 @@ def controller(qt_app, tmp_path, library):
     # szennyezze a teszt (session/lastFolder, view/thumbCaption).
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
     ctl = AppController(
-        tmp_path / "index.db", (str(library),), provider, settings=settings
+        tmp_path / "index.db",
+        (str(library),),
+        provider,
+        settings=settings,
+        watched_file=tmp_path / "WatchedFolders.txt",
     )
     ctl._reload()
     return ctl
@@ -420,6 +424,37 @@ class TestThumbCaptionMode:
         controller.setThumbCaptionMode("resolution")
         controller.setThumbCaptionMode("nonsense")
         assert controller.thumbCaptionMode == "resolution"
+
+
+class TestWatchedFolderManagement:
+    def test_add_watched_folder_persists_and_indexes(
+        self, controller, library, tmp_path, qt_app
+    ):
+        from PySide6.QtCore import QEventLoop, QTimer
+        from picasapy.scanner import read_watched_folders
+
+        other = tmp_path / "masik"
+        (other / "m").mkdir(parents=True)
+        make_jpeg(other / "m" / "x.jpg")
+        loop = QEventLoop()
+        controller.syncFinished.connect(loop.quit)
+        controller.addWatchedFolder(f"file://{other}")  # URL-alak is jó
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        assert str(other) in controller.watchedFolders
+        assert str(other) in read_watched_folders(controller._watched_file)
+        assert controller.folders.folderCount >= 2
+
+    def test_add_duplicate_ignored(self, controller, library):
+        before = list(controller.watchedFolders)
+        controller.addWatchedFolder(str(library))
+        assert list(controller.watchedFolders) == before
+
+    def test_remove_watched_folder_cleans_index(self, controller, library):
+        controller.removeWatchedFolder(str(library))
+        assert str(library) not in controller.watchedFolders
+        assert controller.folders.folderCount == 0
+        assert controller.photos.rowCount() == 0  # az aktuális nézet is ürül
 
 
 class TestLiveWatch:

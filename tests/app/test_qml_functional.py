@@ -290,3 +290,17 @@ class TestLasso:
         if hasattr(value, "toVariant"):
             value = value.toVariant()
         assert sorted(int(v) for v in value) == [0, 1]
+
+
+class TestFolderManager:
+    def test_dialog_lists_watched_folders(self, qml_app, qt_app):
+        from PySide6.QtCore import QMetaObject, QObject, Qt
+
+        window, controller, _ = qml_app
+        dialog = window.findChild(QObject, "folderManagerDialog")
+        assert dialog is not None, "folderManagerDialog nem található"
+        QMetaObject.invokeMethod(dialog, "open", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert dialog.property("visible") is True
+        # a controller figyelt mappái jelennek meg benne
+        assert len(controller.watchedFolders) == 1

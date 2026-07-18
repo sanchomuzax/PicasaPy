@@ -130,7 +130,12 @@ def run(argv: list[str]) -> int:
     _install_desktop_entry()
 
     provider = ThumbnailProvider(ThumbnailCache(_cache_dir() / "thumbs"))
-    controller = AppController(data_dir / "index.db", roots, provider)
+    controller = AppController(
+        data_dir / "index.db",
+        roots,
+        provider,
+        watched_file=_config_dir() / "WatchedFolders.txt",
+    )
 
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)

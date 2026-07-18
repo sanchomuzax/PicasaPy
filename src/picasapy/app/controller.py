@@ -21,18 +21,33 @@ from PySide6.QtCore import (
 from picasapy.index import (
     open_index,
     photos_in_folder,
+    remove_root,
     search_photos,
     starred_photos,
     sync_tree,
 )
 from picasapy.ini import load_document, parse_document, save_document
 from picasapy.metadata import write_iptc_caption
-from picasapy.scanner import PICASA_INI_NAME, LibraryWatcher
+from picasapy.scanner import (
+    PICASA_INI_NAME,
+    LibraryWatcher,
+    write_watched_folders,
+)
 from .models import FolderListModel, PhotoGridModel
 from .thumbnail_provider import ThumbnailProvider
 
 
 _PATH_TAIL = re.compile(r"[/\\]")
+
+
+def _to_local_path(path_or_url: str) -> str:
+    """file:// URL vagy sima útvonal → lokális útvonal."""
+    from PySide6.QtCore import QUrl
+
+    text = path_or_url.strip()
+    if text.startswith("file:"):
+        return QUrl(text).toLocalFile()
+    return text
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
 
@@ -51,10 +66,12 @@ class AppController(QObject):
         provider: ThumbnailProvider,
         parent=None,
         settings=None,
+        watched_file: Path | None = None,
     ):
         super().__init__(parent)
         self._db_path = db_path
-        self._roots = roots
+        self._roots = list(roots)
+        self._watched_file = watched_file
         self._provider = provider
         self._folders = FolderListModel(self)
         self._photos = PhotoGridModel(self)
@@ -187,6 +204,67 @@ class AppController(QObject):
         if self._watcher is not None:
             self._watcher.stop()
             self._watcher = None
+
+    # -- Mappakezelő --------------------------------------------------------
+
+    @Property(list, notify=statusChanged)
+    def watchedFolders(self):
+        return list(self._roots)
+
+    @Slot(str)
+    def addWatchedFolder(self, path_or_url: str) -> None:
+        """Új figyelt mappa (Mappakezelő / első indítás). file:// URL-t is
+        elfogad (a QML FolderDialog azt ad)."""
+        path = _to_local_path(path_or_url)
+        if not path or path in self._roots or not Path(path).is_dir():
+            return
+        self._roots.append(path)
+        self._persist_roots()
+        self._restart_watcher()
+        self.statusChanged.emit()
+
+        def worker():
+            try:
+                with open_index(self._db_path) as conn:
+                    sync_tree(conn, path)
+            finally:
+                self.syncFinished.emit()
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    @Slot(str)
+    def removeWatchedFolder(self, path: str) -> None:
+        """„Eltávolítás a Picasából": a gyökér kikerül a figyeltek közül és
+        az indexből is (a fájlokhoz természetesen nem nyúlunk)."""
+        if path not in self._roots:
+            return
+        self._roots.remove(path)
+        self._persist_roots()
+        self._restart_watcher()
+        with open_index(self._db_path) as conn:
+            remove_root(conn, path)
+        if self._current_folder and (
+            self._current_folder == path
+            or Path(self._current_folder).is_relative_to(path)
+        ):
+            self._current_folder = ""
+            self._view_mode = ("folder", "")
+            self._show(())
+        self._reload()
+
+    def _persist_roots(self) -> None:
+        if self._watched_file is not None:
+            write_watched_folders(self._watched_file, tuple(self._roots))
+
+    def _restart_watcher(self) -> None:
+        if self._watcher is None:
+            return  # a start() még nem futott (tesztek, korai hívás)
+        self._watcher.stop()
+        self._watcher = LibraryWatcher(
+            tuple(self._roots),
+            lambda folders: self.watcherDirty.emit(list(folders)),
+        )
+        self._watcher.start()
 
     @Slot(list)
     def _on_folders_dirty(self, folders) -> None:

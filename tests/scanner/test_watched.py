@@ -28,5 +28,27 @@ class TestReadWatchedFolders:
         f.write_bytes(b"\xef\xbb\xbf/k\xc3\xa9pek\n")
         assert read_watched_folders(f) == ("/képek",)
 
+    def test_write_roundtrip(self, tmp_path):
+        from picasapy.scanner import write_watched_folders
+
+        f = tmp_path / "WatchedFolders.txt"
+        write_watched_folders(f, ("/mnt/nas/fotok", "/home/sancho/Képek"))
+        assert read_watched_folders(f) == ("/mnt/nas/fotok", "/home/sancho/Képek")
+
+    def test_write_creates_parent_dir(self, tmp_path):
+        from picasapy.scanner import write_watched_folders
+
+        f = tmp_path / "mely" / "WatchedFolders.txt"
+        write_watched_folders(f, ("/a",))
+        assert read_watched_folders(f) == ("/a",)
+
+    def test_write_empty_clears(self, tmp_path):
+        from picasapy.scanner import write_watched_folders
+
+        f = tmp_path / "WatchedFolders.txt"
+        write_watched_folders(f, ("/a",))
+        write_watched_folders(f, ())
+        assert read_watched_folders(f) == ()
+
     def test_missing_file_is_empty(self, tmp_path):
         assert read_watched_folders(tmp_path / "nincs.txt") == ()
