@@ -4,37 +4,44 @@
 <context>
     <name></name>
     <message>
+        <location filename="../controller.py" line="756"/>
         <source>%1 KB</source>
-        <translation type="vanished">%1 KB</translation>
+        <translation>%1 KB</translation>
     </message>
     <message>
+        <location filename="../controller.py" line="757"/>
         <source>%1 MB</source>
-        <translation type="vanished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
 </context>
 <context>
     <name>AppController</name>
     <message>
+        <location filename="../controller.py" line="625"/>
         <source>%1x%2 pixels</source>
-        <translation type="vanished">%1x%2 képpont</translation>
+        <translation>%1x%2 képpont</translation>
     </message>
     <message>
+        <location filename="../controller.py" line="671"/>
         <source>%1 folders / %2 pictures visible (%3 seconds) %4 GB</source>
-        <translation type="vanished">%1 mappa / %2 kép látható (%3 másodperc) %4 GB</translation>
+        <translation>%1 mappa / %2 kép látható (%3 másodperc) %4 GB</translation>
     </message>
     <message>
+        <location filename="../controller.py" line="731"/>
         <source>0 pictures</source>
-        <translation type="vanished">0 kép</translation>
+        <translation>0 kép</translation>
     </message>
     <message numerus="yes">
+        <location filename="../controller.py" line="740"/>
         <source>%n picture(s)</source>
-        <translation type="vanished">
+        <translation>
             <numerusform>%n kép</numerusform>
         </translation>
     </message>
     <message>
+        <location filename="../controller.py" line="742"/>
         <source>%1 MB on disk</source>
-        <translation type="vanished">%1 MB a lemezen</translation>
+        <translation>%1 MB a lemezen</translation>
     </message>
 </context>
 <context>
