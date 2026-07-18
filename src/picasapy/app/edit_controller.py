@@ -70,6 +70,11 @@ class EditController(QObject):
     def autocolorActive(self) -> bool:
         return self._session.has("autocolor")
 
+    @Property(bool, notify=toolsChanged)
+    def hasCrop(self) -> bool:
+        """Van-e alkalmazott vágás — a „Visszavonás: Vágás" gombhoz (#51)."""
+        return self._session.crop is not None
+
     # -- műveletek ------------------------------------------------------------
 
     @Slot(str, str)
@@ -135,6 +140,7 @@ class EditController(QObject):
         self._session = self._session.set_crop(rect)
         self._save()
         self._bump_revision()
+        self.toolsChanged.emit()
 
     @Slot()
     def clearCrop(self) -> None:
@@ -143,6 +149,7 @@ class EditController(QObject):
         self._session = self._session.clear_crop()
         self._save()
         self._bump_revision()
+        self.toolsChanged.emit()
 
     @Slot(float)
     def setTilt(self, param: float) -> None:
