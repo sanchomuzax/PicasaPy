@@ -79,10 +79,55 @@ Windows-os támogatás **kísérleti** — a fejlesztés Linuxon (RPi5) folyik, 
 
 ## Tesztek futtatása
 
+Linuxon:
+
 ```bash
 pip install pytest pytest-cov
 python3 -m pytest
 ```
+
+Windowson (PowerShell):
+
+```powershell
+pip install pytest pytest-cov
+python -m pytest
+```
+
+Megjegyzések Windowshoz:
+
+- Fej nélküli környezetben (pl. CI, távoli shell) a Qt-nek offscreen platform
+  kell: `$env:QT_QPA_PLATFORM = "offscreen"`.
+- Két teszt platform-okokból kimarad (skip): a POSIX-jogosultságokra épülő
+  chmod-tesztek Windowson nem értelmezhetők.
+- A törött-symlink teszt jogosultság híján (se Developer Mode, se admin)
+  szintén skippel — ez normális, nem hiba.
+
+## Hordozhatósági tanulságok (Windows)
+
+A tesztkészlet Linuxon és Windowson is fut (CI: `ubuntu-latest` +
+`windows-latest`). A port közben rögzített szabályok:
+
+- **Atomikus fájlcsere:** az `os.replace()` Windowson is atomikus, ezért az
+  `.picasa.ini`-írás (temp fájl + csere) mindkét platformon biztonságos. A
+  könyvtár-fsync viszont csak POSIX-on lehetséges — Windowson kihagyjuk
+  (`src/picasapy/ini/io.py`).
+- **`chmod` szemantika:** Windowson a `chmod` csak a read-only bitet kezeli,
+  a `chmod(0)` nem tesz olvashatatlanná egy fájlt. A jogosultság-alapú
+  tesztek ezért `os.name == "posix"` skip-markert vagy `os.access()`-őrt
+  használnak.
+- **Symlink jogosultsághoz kötött:** Windowson symlinket csak Developer
+  Mode-dal vagy adminként lehet létrehozni — a symlinkes tesztek `OSError`
+  esetén skippelnek, sosem buknak emiatt.
+- **Útvonal-szeparátor:** minden útvonal-hasítás a `[/\\]` regexszel vagy
+  `pathlib.Path`-szal történik; `"/"`-re string-splitelni tilos. A QML felé
+  `QUrl.fromLocalFile()` adja a `file://` URL-t (Windowson `file:///C:/…`).
+- **Qt offscreen:** a CI mindkét lábon `QT_QPA_PLATFORM=offscreen`-nel fut,
+  így a QML-tesztek kijelző nélkül is működnek.
+- **Fájlfigyelés:** a `watchdog` Windowson más backendet használ
+  (`ReadDirectoryChangesW`), az eseménysorrend eltérhet — a figyelő-tesztek
+  eseményre várnak (timeoutos `Event.wait`), nem fix időzítésre építenek.
+- **OpenCV:** CI-ban az `opencv-python-headless` csomag kell (GUI-függőségek
+  nélkül); asztali gépen a sima `opencv-python` is jó.
 
 ## Architektúra röviden
 
