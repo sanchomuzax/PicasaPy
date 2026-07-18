@@ -50,7 +50,7 @@ Debian/Raspberry Pi OS (trixie) rendszercsomagokkal ajánlott, mert a PySide6 é
 sudo apt install \
   python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtqml \
   python3-pyside6.qtquick python3-pyside6.qtquickcontrols2 python3-pyside6.qtwidgets \
-  python3-opencv python3-pil python3-piexif \
+  python3-opencv python3-pil python3-piexif python3-watchdog \
   qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window
 
@@ -67,7 +67,7 @@ Windows-os támogatás **kísérleti** — a fejlesztés Linuxon (RPi5) folyik, 
 2. Telepítsd a függőségeket:
 
    ```powershell
-   pip install PySide6 opencv-python pillow piexif
+   pip install PySide6 opencv-python pillow piexif watchdog
    ```
 3. Klónozd a repót, majd indítsd:
 
