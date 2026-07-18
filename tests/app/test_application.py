@@ -91,6 +91,36 @@ class TestDesktopEntry:
         application._install_desktop_entry()
         assert desktop.stat().st_mtime_ns == first_mtime  # nem írja újra
 
+    def test_icon_change_refreshes_icon_cache(self, tmp_path, monkeypatch):
+        # 35-ös issue: a panel a hicolor/icon-theme.cache-ből dolgozik;
+        # ha az ikoncserét nem követi cache-frissítés, a felhasználó a
+        # régi ikont látja, amíg kézzel nem fut gtk-update-icon-cache.
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+        calls = []
+        monkeypatch.setattr(
+            application.shutil, "which", lambda name: f"/usr/bin/{name}"
+        )
+        monkeypatch.setattr(
+            application.subprocess,
+            "run",
+            lambda cmd, **kwargs: calls.append(cmd),
+        )
+        application._install_desktop_entry()
+        assert len(calls) == 1
+        assert str(tmp_path / "icons" / "hicolor") in calls[0]
+        calls.clear()
+        application._install_desktop_entry()  # idempotens: nincs csere
+        assert calls == []
+
+    def test_missing_cache_tool_skipped_silently(self, tmp_path, monkeypatch):
+        # Windowson (vagy eszköz híján) a cache-frissítés csendben kimarad.
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+        monkeypatch.setattr(application.shutil, "which", lambda name: None)
+        application._install_desktop_entry()  # nem dobhat
+        assert (
+            tmp_path / "icons" / "hicolor" / "256x256" / "apps" / "picasapy.png"
+        ).exists()
+
 
 class TestTranslator:
     def test_hungarian_loads_and_translates(self, qt_app, monkeypatch):

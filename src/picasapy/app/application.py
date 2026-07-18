@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 import shutil
+import subprocess
 import sys
 
 from PySide6.QtCore import QLocale, QLockFile, Qt, QTranslator
@@ -90,6 +91,7 @@ def _install_desktop_entry() -> None:
         ):
             icon_target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(icon_source, icon_target)
+            _refresh_icon_cache(base / "icons" / "hicolor")
         if (
             not desktop_target.exists()
             or desktop_target.read_text(encoding="utf-8") != desktop_text
@@ -98,6 +100,24 @@ def _install_desktop_entry() -> None:
             desktop_target.write_text(desktop_text, encoding="utf-8")
     except OSError:
         pass  # csak kényelmi funkció — hibája nem akadályozhat indulást
+
+
+def _refresh_icon_cache(icons_dir: Path) -> None:
+    """A hicolor icon-theme.cache frissítése ikoncsere után — enélkül a
+    tálca a cache-elt régi ikont mutatja, amíg kézzel nem frissítik (#35).
+    Best-effort: ahol nincs gtk-update-icon-cache (pl. Windows), kimarad."""
+    tool = shutil.which("gtk-update-icon-cache")
+    if tool is None:
+        return
+    try:
+        subprocess.run(
+            [tool, "-f", "--ignore-theme-index", str(icons_dir)],
+            check=False,
+            capture_output=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        pass  # kényelmi funkció — hibája nem akadályozhat indulást
 
 
 def _install_translator(app: QGuiApplication) -> QTranslator | None:
