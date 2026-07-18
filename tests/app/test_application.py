@@ -21,6 +21,19 @@ class TestResolveRoots:
         assert application._resolve_roots(["prog"]) == ()
 
 
+class TestDialogPolicy:
+    def test_windows_uses_native_dialogs(self):
+        # #58: Windowson a natív mappaválasztó kell — meghajtók, hálózati
+        # helyek és ékezetes mappák csak abból érhetők el rendesen.
+        assert application._force_qml_dialogs("win32") is False
+
+    def test_other_platforms_use_qml_dialogs(self):
+        # Linuxon/macOS-en marad a saját világos QML-dialógus (a rendszer
+        # sötét témájú választója helyett — rögzített dizájn-döntés).
+        assert application._force_qml_dialogs("linux") is True
+        assert application._force_qml_dialogs("darwin") is True
+
+
 class TestXdgDirs:
     def test_dirs_respect_xdg_env(self, tmp_path, monkeypatch):
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "d"))

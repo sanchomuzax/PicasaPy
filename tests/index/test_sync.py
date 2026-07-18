@@ -2,7 +2,12 @@
 
 import pytest
 
-from picasapy.index import open_index, photos_in_folder, sync_tree
+from picasapy.index import (
+    open_index,
+    photos_in_folder,
+    prune_foreign_folders,
+    sync_tree,
+)
 
 
 @pytest.fixture
@@ -133,3 +138,32 @@ class TestSyncTree:
         assert photo.star is False
         assert photo.caption is None
         assert photo.keywords is None
+
+
+class TestPruneForeignFolders:
+    def test_folders_outside_roots_removed(self, conn, library, tmp_path):
+        # #58: az előző futásokból ottragadt gyökér (pl. régi parancssori
+        # argumentum) mappái induláskor kikerülnek az indexből.
+        regi = tmp_path / "regi-gyoker"
+        (regi / "archiv").mkdir(parents=True)
+        (regi / "archiv" / "IMG_0009.jpg").write_bytes(b"z" * 9)
+        sync_tree(conn, library)
+        sync_tree(conn, regi)
+        prune_foreign_folders(conn, (str(library),))
+        assert len(photos_in_folder(conn, library / "nyaralas")) == 2
+        assert photos_in_folder(conn, regi / "archiv") == ()
+        # FTS sem tartalmaz árva sort
+        assert conn.execute("SELECT count(*) FROM photos").fetchone()[0] == 2
+
+    def test_empty_roots_keep_index(self, conn, library):
+        # Védekezés: üres gyökérlista (pl. kézzel törölt WatchedFolders.txt)
+        # nem ürítheti ki csendben az egész indexet.
+        sync_tree(conn, library)
+        prune_foreign_folders(conn, ())
+        assert len(photos_in_folder(conn, library / "nyaralas")) == 2
+
+    def test_watched_roots_untouched(self, conn, library):
+        sync_tree(conn, library)
+        prune_foreign_folders(conn, (str(library),))
+        photos = photos_in_folder(conn, library / "nyaralas")
+        assert [p.name for p in photos] == ["IMG_0001.jpg", "IMG_0002.jpg"]
