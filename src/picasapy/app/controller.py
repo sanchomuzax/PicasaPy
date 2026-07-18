@@ -376,6 +376,7 @@ class AppController(QObject):
                     if self._current_folder
                     else ()
                 )
+                self._view_mode = ("folder", self._current_folder or "")
             else:
                 self._view_mode = ("search", query)
                 records = search_photos(conn, query)
@@ -633,7 +634,12 @@ class AppController(QObject):
             self._folders.load(
                 conn, sort_mode=self.folderSort, reverse=self.folderSortReverse
             )
-        if self._current_folder:
+        mode, _ = self._view_mode
+        if mode != "folder":
+            # #38: aktív keresés/szűrő a háttér-sync után is megmarad —
+            # a selectFolder eldobná, ezért csak a nézetet frissítjük.
+            self._refresh_view()
+        elif self._current_folder:
             self.selectFolder(self._current_folder)
         else:
             self._update_status(())
