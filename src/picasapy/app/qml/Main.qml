@@ -12,8 +12,45 @@ ApplicationWindow {
     color: Theme.lightboxBg
 
     property int thumbSize: 144
-    property int selectedIndex: -1
+    property int selectedIndex: -1        // horgony (utoljára kattintott)
+    property var selectedIndexes: []      // a teljes kijelölés
     property bool viewerOpen: false
+
+    // Kijelölés-logika (Picasa): sima katt = egy kép; Ctrl = hozzávesz/
+    // elvesz; Shift = tartomány a horgonytól.
+    function handleThumbClick(index, modifiers) {
+        var i = Number(index)
+        var mods = Number(modifiers)
+        if (mods & Qt.ControlModifier) {
+            var s = window.selectedIndexes.slice()
+            var pos = s.indexOf(i)
+            if (pos >= 0) s.splice(pos, 1); else s.push(i)
+            window.selectedIndexes = s
+            window.selectedIndex = i
+        } else if ((mods & Qt.ShiftModifier) && window.selectedIndex >= 0) {
+            var lo = Math.min(window.selectedIndex, i)
+            var hi = Math.max(window.selectedIndex, i)
+            var range = []
+            for (var k = lo; k <= hi; ++k) range.push(k)
+            window.selectedIndexes = range
+        } else {
+            window.selectedIndexes = [i]
+            window.selectedIndex = i
+        }
+    }
+    function clearSelection() {
+        window.selectedIndexes = []
+        window.selectedIndex = -1
+    }
+    function selectAll() {
+        var range = []
+        for (var k = 0; k < controller.photos.rowCount(); ++k) range.push(k)
+        window.selectedIndexes = range
+        if (range.length > 0) window.selectedIndex = 0
+    }
+
+    Shortcut { sequence: "Ctrl+A"; onActivated: window.selectAll() }
+    Shortcut { sequence: "Ctrl+D"; onActivated: window.clearSelection() }
 
     // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat
     Shortcut {
@@ -32,6 +69,8 @@ ApplicationWindow {
         onAboutRequested: aboutDialog.open()
         onThumbSizePreset: function(size) { window.thumbSize = size }
         onSelectStarredRequested: controller.showStarred()
+        onSelectAllRequested: window.selectAll()
+        onClearSelectionRequested: window.clearSelection()
     }
 
     // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
@@ -125,7 +164,7 @@ ApplicationWindow {
                 Layout.preferredHeight: 24
                 font.pixelSize: Theme.fontSize
                 onTextEdited: {
-                    window.selectedIndex = -1
+                    window.clearSelection()
                     controller.search(text)
                 }
             }
@@ -141,6 +180,7 @@ ApplicationWindow {
         onClosed: {
             window.viewerOpen = false
             window.selectedIndex = currentIndex   // a rács kövesse a nézőt
+            window.selectedIndexes = [currentIndex]
         }
         onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
     }
@@ -151,17 +191,20 @@ ApplicationWindow {
         orientation: Qt.Horizontal
 
         FolderPane {
+            objectName: "folderPane"
             SplitView.preferredWidth: 230
             SplitView.minimumWidth: 160
             foldersModel: controller.folders
+            selectedPath: controller.currentFolder
+            starredActive: controller.filterActive
             onFolderChosen: function(path) {
                 searchField.clear()
-                window.selectedIndex = -1
+                window.clearSelection()
                 controller.selectFolder(path)
             }
             onStarredChosen: {
                 searchField.clear()
-                window.selectedIndex = -1
+                window.clearSelection()
                 controller.showStarred()
             }
         }
@@ -238,11 +281,15 @@ ApplicationWindow {
                     model: controller.photos
                     cellWidth: window.thumbSize + 18
                     cellHeight: window.thumbSize + 18
+                        + (controller.thumbCaptionMode !== "none" ? 16 : 0)
                     delegate: ThumbDelegate {
                         width: grid.cellWidth
                         height: grid.cellHeight
-                        selected: window.selectedIndex === index
-                        onChosen: function(i) { window.selectedIndex = i }
+                        captionMode: controller.thumbCaptionMode
+                        selected: window.selectedIndexes.indexOf(index) !== -1
+                        onChosen: function(i, mods) {
+                            window.handleThumbClick(i, mods)
+                        }
                         onOpened: function(i) {
                             window.viewerOpen = true
                             photoViewer.show(i)
@@ -267,7 +314,7 @@ ApplicationWindow {
                 anchors.centerIn: parent
                 text: window.viewerOpen
                       ? controller.viewerInfo(photoViewer.currentIndex)
-                      : (window.selectedIndex >= 0
+                      : (window.selectedIndexes.length === 1
                          ? controller.photoInfo(window.selectedIndex)
                          : controller.statusText)
                 color: Theme.infoBarText
@@ -288,13 +335,46 @@ ApplicationWindow {
                 anchors.leftMargin: 10; anchors.rightMargin: 10
                 spacing: 8
 
+                // kijelölés-tálca: a kijelölt képek miniatűrjei (Picasa)
+                Item {
+                    Layout.preferredWidth: 200
+                    Layout.preferredHeight: 46
+                    Flow {
+                        anchors.fill: parent
+                        spacing: 2
+                        clip: true
+                        Repeater {
+                            model: window.selectedIndexes
+                            delegate: Image {
+                                required property var modelData
+                                width: 20; height: 20
+                                source: controller.photos.thumbUrlAt(
+                                    Number(modelData))
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                            }
+                        }
+                    }
+                    Text {
+                        visible: window.selectedIndexes.length === 0
+                        anchors.centerIn: parent
+                        text: qsTr("Selection")
+                        color: "#b8b8b8"
+                        font.pixelSize: Theme.fontSize
+                    }
+                }
+
                 PicasaButton {
                     id: trayStar
                     readonly property int targetRow: window.viewerOpen
                         ? photoViewer.currentIndex : window.selectedIndex
+                    readonly property bool multi:
+                        !window.viewerOpen && window.selectedIndexes.length > 1
                     enabled: window.viewerOpen || window.selectedIndex >= 0
                     Layout.preferredWidth: 34
-                    onClicked: controller.toggleStar(targetRow)
+                    onClicked: multi
+                               ? controller.toggleStarMany(window.selectedIndexes)
+                               : controller.toggleStar(targetRow)
                     contentItem: Text {
                         objectName: "trayStarLabel"
                         text: "★"
@@ -314,13 +394,17 @@ ApplicationWindow {
                     text: "↺"
                     enabled: window.viewerOpen || window.selectedIndex >= 0
                     Layout.preferredWidth: 34
-                    onClicked: controller.rotateLeft(trayStar.targetRow)
+                    onClicked: trayStar.multi
+                               ? controller.rotateLeftMany(window.selectedIndexes)
+                               : controller.rotateLeft(trayStar.targetRow)
                 }
                 PicasaButton {
                     text: "↻"
                     enabled: window.viewerOpen || window.selectedIndex >= 0
                     Layout.preferredWidth: 34
-                    onClicked: controller.rotateRight(trayStar.targetRow)
+                    onClicked: trayStar.multi
+                               ? controller.rotateRightMany(window.selectedIndexes)
+                               : controller.rotateRight(trayStar.targetRow)
                 }
                 Item { Layout.fillWidth: true }
                 // nagyítás-csúszka − / + jelekkel (kézikönyv 06)

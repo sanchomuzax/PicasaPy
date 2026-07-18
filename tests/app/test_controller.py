@@ -26,11 +26,17 @@ def controller(qt_app, tmp_path, library):
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.index import open_index, sync_tree
     from picasapy.thumbs import ThumbnailCache
+    from PySide6.QtCore import QSettings
 
     with open_index(tmp_path / "index.db") as conn:
         sync_tree(conn, library)
     provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
-    ctl = AppController(tmp_path / "index.db", (str(library),), provider)
+    # elszigetelt QSettings — a rendszer valós PicasaPy-beállításait ne
+    # szennyezze a teszt (session/lastFolder, view/thumbCaption).
+    settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    ctl = AppController(
+        tmp_path / "index.db", (str(library),), provider, settings=settings
+    )
     ctl._reload()
     return ctl
 
@@ -212,14 +218,18 @@ class TestToggleStar:
     def test_sync_failure_reported_not_swallowed(self, qt_app, tmp_path):
         # Elavult/rossz gyökér (pl. Windows-útvonal a WatchedFolders-ből) nem
         # fagyaszthatja némán a UI-t: syncFailed + syncFinished is jön.
-        from PySide6.QtCore import QEventLoop, QTimer
+        from PySide6.QtCore import QEventLoop, QSettings, QTimer
         from picasapy.app.controller import AppController
         from picasapy.app.thumbnail_provider import ThumbnailProvider
         from picasapy.thumbs import ThumbnailCache
 
         provider = ThumbnailProvider(ThumbnailCache(tmp_path / "t"))
+        settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
         ctl = AppController(
-            tmp_path / "index.db", ("C:\\Users\\regi\\Pictures",), provider
+            tmp_path / "index.db",
+            ("C:\\Users\\regi\\Pictures",),
+            provider,
+            settings=settings,
         )
         errors = []
         finished = []
@@ -310,6 +320,139 @@ class TestSetCaption:
     def test_invalid_index_noop(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
         controller.setCaption(99, "nem történhet")  # nem dobhat
+
+
+class TestSessionRestore:
+    def _settings(self, tmp_path):
+        from PySide6.QtCore import QSettings
+
+        return QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+
+    def _controller(self, tmp_path, library, settings):
+        from picasapy.app.controller import AppController
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+        from picasapy.index import open_index, sync_tree
+        from picasapy.thumbs import ThumbnailCache
+
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, library)
+        provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
+        return AppController(
+            tmp_path / "index.db",
+            (str(library),),
+            provider,
+            settings=settings,
+        )
+
+    def test_restore_selects_saved_folder(self, qt_app, tmp_path, library):
+        from picasapy.index import open_index
+
+        settings = self._settings(tmp_path)
+        saved = str(library / "nyaralas")
+        settings.setValue("session/lastFolder", saved)
+        settings.sync()
+        ctl = self._controller(tmp_path, library, settings)
+        with open_index(ctl._db_path) as conn:
+            ctl._folders.load(conn)
+        ctl.restoreSession()
+        assert ctl.currentFolder == saved
+        assert ctl.photos.rowCount() == 2
+
+    def test_restore_falls_back_to_first_when_saved_missing(
+        self, qt_app, tmp_path, library
+    ):
+        settings = self._settings(tmp_path)
+        settings.setValue("session/lastFolder", str(library / "nincs-ilyen"))
+        settings.sync()
+        ctl = self._controller(tmp_path, library, settings)
+        ctl._reload()
+        ctl.restoreSession()
+        assert ctl.currentFolder == str(library / "nyaralas")
+
+    def test_restore_falls_back_to_first_when_nothing_saved(
+        self, qt_app, tmp_path, library
+    ):
+        settings = self._settings(tmp_path)
+        ctl = self._controller(tmp_path, library, settings)
+        ctl._reload()
+        ctl.restoreSession()
+        assert ctl.currentFolder == str(library / "nyaralas")
+
+    def test_select_folder_persists_choice(self, qt_app, tmp_path, library):
+        settings = self._settings(tmp_path)
+        ctl = self._controller(tmp_path, library, settings)
+        target = str(library / "nyaralas")
+        ctl.selectFolder(target)
+        settings.sync()
+        assert settings.value("session/lastFolder") == target
+
+
+class TestThumbCaptionMode:
+    def test_default_none(self, controller):
+        assert controller.thumbCaptionMode == "none"
+
+    def test_set_mode_persists(self, qt_app, tmp_path, library):
+        from picasapy.app.controller import AppController
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+        from picasapy.index import open_index, sync_tree
+        from picasapy.thumbs import ThumbnailCache
+        from PySide6.QtCore import QSettings
+
+        settings = QSettings(
+            str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
+        )
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, library)
+        provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
+        ctl = AppController(
+            tmp_path / "index.db",
+            (str(library),),
+            provider,
+            settings=settings,
+        )
+        ctl.setThumbCaptionMode("filename")
+        settings.sync()
+        assert ctl.thumbCaptionMode == "filename"
+        assert settings.value("view/thumbCaption") == "filename"
+
+    def test_invalid_mode_ignored(self, controller):
+        controller.setThumbCaptionMode("resolution")
+        controller.setThumbCaptionMode("nonsense")
+        assert controller.thumbCaptionMode == "resolution"
+
+
+class TestBatchOperations:
+    def test_toggle_star_many_stars_all(self, controller, library):
+        # Picasa: a tálca-csillag a teljes kijelölésre hat — ha van még
+        # csillagozatlan, mindet csillagozza.
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleStarMany([0, 1])  # a 0-s már csillagos
+        assert all(p.star for p in controller.photos.photos)
+
+    def test_toggle_star_many_unstars_when_all_starred(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleStarMany([0, 1])
+        controller.toggleStarMany([0, 1])
+        assert not any(p.star for p in controller.photos.photos)
+
+    def test_rotate_many(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.rotateRightMany([0, 1])
+        assert [p.rotate_steps for p in controller.photos.photos] == [1, 1]
+
+    def test_batch_single_ini_write(self, controller, library):
+        # A kötegelt művelet mappánként EGY írás: a backup a művelet
+        # ELŐTTI teljes állapot (nem köztes), tehát bitre azonos vele.
+        controller.selectFolder(str(library / "nyaralas"))
+        ini = library / "nyaralas" / ".picasa.ini"
+        before = ini.read_bytes()
+        controller.toggleStarMany([0, 1])
+        bak = library / "nyaralas" / ".picasa.ini.bak"
+        assert bak.read_bytes() == before
+
+    def test_batch_invalid_rows_ignored(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleStarMany([-1, 99])  # nem dobhat
 
 
 class TestThumbnailProvider:

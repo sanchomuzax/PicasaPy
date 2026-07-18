@@ -10,9 +10,22 @@ Item {
     required property string caption
     required property bool isVideo
     required property int index
+    required property string keywords
+    required property string resolution
     property bool selected: false
-    signal chosen(int index)
+    property string captionMode: "none"
+    signal chosen(int index, int modifiers)
     signal opened(int index)
+
+    readonly property string captionText: {
+        switch (cell.captionMode) {
+        case "filename": return cell.name
+        case "caption": return cell.caption
+        case "tags": return cell.keywords
+        case "resolution": return cell.resolution
+        default: return ""
+        }
+    }
 
     Rectangle {
         id: frame
@@ -22,7 +35,7 @@ Item {
         color: Theme.thumbCard
         border.width: cell.selected ? 3 : 1
         border.color: cell.selected ? Theme.thumbSelection
-                     : (hover.hovered ? Theme.thumbHover : Theme.thumbBorder)
+                     : (mouse.containsMouse ? Theme.thumbHover : Theme.thumbBorder)
 
         Image {
             id: image
@@ -57,9 +70,27 @@ Item {
         }
     }
 
-    HoverHandler { id: hover }
-    TapHandler {
-        onTapped: cell.chosen(cell.index)
-        onDoubleTapped: cell.opened(cell.index)
+    Text {
+        objectName: "thumbCaption"
+        visible: cell.captionMode !== "none"
+        anchors.top: frame.bottom
+        anchors.topMargin: 2
+        anchors.horizontalCenter: frame.horizontalCenter
+        width: cell.width - 8
+        horizontalAlignment: Text.AlignHCenter
+        elide: Text.ElideMiddle
+        text: cell.captionText
+        font.pixelSize: 10
+        color: Theme.textGray
+    }
+
+    // MouseArea kell (nem TapHandler): a Ctrl/Shift módosítókat is
+    // továbbadjuk a többes kijelöléshez
+    MouseArea {
+        id: mouse
+        anchors.fill: parent
+        hoverEnabled: true
+        onClicked: function(event) { cell.chosen(cell.index, event.modifiers) }
+        onDoubleClicked: cell.opened(cell.index)
     }
 }

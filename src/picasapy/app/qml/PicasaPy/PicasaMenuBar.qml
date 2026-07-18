@@ -9,6 +9,8 @@ MenuBar {
     signal aboutRequested()
     signal thumbSizePreset(int size)
     signal selectStarredRequested()
+    signal selectAllRequested()
+    signal clearSelectionRequested()
 
     Menu {
         title: qsTr("&File")
@@ -35,13 +37,19 @@ MenuBar {
         MenuItem { text: qsTr("Copy All Effects"); enabled: false }
         MenuItem { text: qsTr("Paste All Effects"); enabled: false }
         MenuSeparator {}
-        MenuItem { text: qsTr("Select All"); enabled: false }
+        MenuItem {
+            text: qsTr("Select All")
+            onTriggered: bar.selectAllRequested()
+        }
         MenuItem {
             text: qsTr("Select Starred")
             onTriggered: bar.selectStarredRequested()
         }
         MenuItem { text: qsTr("Invert Selection"); enabled: false }
-        MenuItem { text: qsTr("Clear Selection"); enabled: false }
+        MenuItem {
+            text: qsTr("Clear Selection")
+            onTriggered: bar.clearSelectionRequested()
+        }
     }
     Menu {
         title: qsTr("&View")
@@ -65,6 +73,39 @@ MenuBar {
         MenuItem { text: qsTr("Slideshow"); enabled: false }
         MenuItem { text: qsTr("Timeline"); enabled: false }
         MenuItem { text: qsTr("Hidden Pictures"); enabled: false }
+        Menu {
+            title: qsTr("Thumbnail Caption")
+            MenuItem {
+                text: qsTr("None")
+                checkable: true
+                checked: controller.thumbCaptionMode === "none"
+                onTriggered: controller.setThumbCaptionMode("none")
+            }
+            MenuItem {
+                text: qsTr("Filename")
+                checkable: true
+                checked: controller.thumbCaptionMode === "filename"
+                onTriggered: controller.setThumbCaptionMode("filename")
+            }
+            MenuItem {
+                text: qsTr("Caption")
+                checkable: true
+                checked: controller.thumbCaptionMode === "caption"
+                onTriggered: controller.setThumbCaptionMode("caption")
+            }
+            MenuItem {
+                text: qsTr("Tags")
+                checkable: true
+                checked: controller.thumbCaptionMode === "tags"
+                onTriggered: controller.setThumbCaptionMode("tags")
+            }
+            MenuItem {
+                text: qsTr("Resolution")
+                checkable: true
+                checked: controller.thumbCaptionMode === "resolution"
+                onTriggered: controller.setThumbCaptionMode("resolution")
+            }
+        }
     }
     Menu {
         title: qsTr("F&older")

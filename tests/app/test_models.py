@@ -102,6 +102,15 @@ class TestPhotoGridModel:
             "/nyaralas/IMG_0001.jpg"
         )
 
+    def test_keywords_and_resolution_roles(self, qt_app, conn, library):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        first = model.index(0, 0)
+        assert model.data(first, PhotoGridModel.ResolutionRole) == "8x6"
+        assert model.data(first, PhotoGridModel.KeywordsRole) == ""
+
     def test_thumb_url_versioned_by_rotation(self, qt_app, conn, library):
         # A forgatás lépésszáma az URL-ben van, hogy a QML kép-cache frissüljön.
         from picasapy.app.models import PhotoGridModel
@@ -127,6 +136,14 @@ class TestPhotoGridModel:
         assert model.starAt(0) is True
         assert model.starAt(1) is False
         assert model.starAt(-1) is False
+
+    def test_thumb_url_at(self, qt_app, conn, library):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        assert model.thumbUrlAt(0).startswith("image://thumbs/")
+        assert model.thumbUrlAt(-1) == ""
 
     def test_caption_at(self, qt_app, conn, library):
         from picasapy.app.models import PhotoGridModel

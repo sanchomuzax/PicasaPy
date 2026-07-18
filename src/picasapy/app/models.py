@@ -107,6 +107,8 @@ class PhotoGridModel(QAbstractListModel):
     IsVideoRole = Qt.ItemDataRole.UserRole + 5
     TakenAtRole = Qt.ItemDataRole.UserRole + 6
     FileUrlRole = Qt.ItemDataRole.UserRole + 7
+    KeywordsRole = Qt.ItemDataRole.UserRole + 8
+    ResolutionRole = Qt.ItemDataRole.UserRole + 9
 
     revisionChanged = Signal()
 
@@ -141,6 +143,14 @@ class PhotoGridModel(QAbstractListModel):
         if not 0 <= row < len(self._photos):
             return 0
         return self._photos[row].rotate_steps
+
+    @Slot(int, result=str)
+    def thumbUrlAt(self, row: int) -> str:
+        """Thumbnail-URL a kijelölés-tálca miniatűrjeihez."""
+        if not 0 <= row < len(self._photos):
+            return ""
+        photo = self._photos[row]
+        return f"image://thumbs/{photo.id}?r={photo.rotate_steps}"
 
     @Slot(int, result=bool)
     def starAt(self, row: int) -> bool:
@@ -187,6 +197,14 @@ class PhotoGridModel(QAbstractListModel):
             return QUrl.fromLocalFile(
                 f"{photo.folder_path}/{photo.name}"
             ).toString()
+        if role == self.KeywordsRole:
+            return photo.keywords or ""
+        if role == self.ResolutionRole:
+            return (
+                f"{photo.width}x{photo.height}"
+                if photo.width and photo.height
+                else ""
+            )
         return None
 
     def roleNames(self):
@@ -198,4 +216,6 @@ class PhotoGridModel(QAbstractListModel):
             self.IsVideoRole: b"isVideo",
             self.TakenAtRole: b"takenAt",
             self.FileUrlRole: b"fileUrl",
+            self.KeywordsRole: b"keywords",
+            self.ResolutionRole: b"resolution",
         }

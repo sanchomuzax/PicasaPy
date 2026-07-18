@@ -13,6 +13,7 @@ from PySide6.QtCore import (
     QDateTime,
     QLocale,
     QObject,
+    QSettings,
     Signal,
     Slot,
 )
@@ -33,6 +34,8 @@ from .thumbnail_provider import ThumbnailProvider
 
 _PATH_TAIL = re.compile(r"[/\\]")
 
+_THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
+
 
 class AppController(QObject):
     statusChanged = Signal()
@@ -45,6 +48,7 @@ class AppController(QObject):
         roots: tuple[str, ...],
         provider: ThumbnailProvider,
         parent=None,
+        settings=None,
     ):
         super().__init__(parent)
         self._db_path = db_path
@@ -59,7 +63,18 @@ class AppController(QObject):
         self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
         self._filter_active = False
         self._filter_status = ""
+        self._settings = settings
+        self._thumb_caption_mode = self._get_settings().value(
+            "view/thumbCaption", "none"
+        )
         self.syncFinished.connect(self._reload)
+
+    def _get_settings(self) -> QSettings:
+        """Lusta alapértelmezés: `QSettings("PicasaPy", "PicasaPy")`, hacsak
+        a konstruktor nem kapott sajátot (tesztekhez)."""
+        if self._settings is None:
+            self._settings = QSettings("PicasaPy", "PicasaPy")
+        return self._settings
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
 
@@ -93,12 +108,39 @@ class AppController(QObject):
         """A zöld eredménysáv szövege (Picasa-minta)."""
         return self._filter_status
 
+    @Property(str, notify=statusChanged)
+    def thumbCaptionMode(self):
+        """Indexkép-felirat mód (Nézet → Indexkép felirata) — perzisztens."""
+        return self._thumb_caption_mode
+
     # -- műveletek ----------------------------------------------------------
 
     def start(self) -> None:
         """Indulás: modellek betöltése, majd háttér-szinkron."""
         self._reload()
+        if not self._current_folder:
+            self.restoreSession()
         self.rescan()
+
+    @Slot()
+    def restoreSession(self) -> None:
+        """Az utoljára kiválasztott mappa visszaállítása (session restore).
+
+        Ha nincs mentett mappa, vagy az már nincs az indexben, az első
+        mappát választjuk. Nem ír felül kézi választást: csak akkor fut,
+        ha még nincs kiválasztott mappa."""
+        if self._current_folder:
+            return
+        saved = self._get_settings().value("session/lastFolder", "")
+        with open_index(self._db_path) as conn:
+            paths = [
+                row["path"]
+                for row in conn.execute("SELECT path FROM folders ORDER BY path")
+            ]
+        if saved and saved in paths:
+            self.selectFolder(saved)
+        elif paths:
+            self.selectFolder(paths[0])
 
     @Slot()
     def rescan(self) -> None:
@@ -113,9 +155,19 @@ class AppController(QObject):
         self._view_mode = ("folder", folder_path)
         self._filter_active = False
         self._filter_status = ""
+        self._get_settings().setValue("session/lastFolder", folder_path)
         with open_index(self._db_path) as conn:
             records = photos_in_folder(conn, folder_path)
         self._show(records)
+
+    @Slot(str)
+    def setThumbCaptionMode(self, mode: str) -> None:
+        """Indexkép-felirat mód beállítása (Nézet menü) — 5 kizáró opció."""
+        if mode not in _THUMB_CAPTION_MODES:
+            return
+        self._thumb_caption_mode = mode
+        self._get_settings().setValue("view/thumbCaption", mode)
+        self.statusChanged.emit()
 
     @Slot(str)
     def search(self, text: str) -> None:
@@ -182,6 +234,68 @@ class AppController(QObject):
             save_document(document, ini_path, backup=True)
         with open_index(self._db_path) as conn:
             sync_tree(conn, photo.folder_path)
+        self._refresh_view()
+
+    @Slot(list)
+    def toggleStarMany(self, rows) -> None:
+        """Csillag a teljes kijelölésre (Picasa-viselkedés): ha van még
+        csillagozatlan a kijelöltek közt, mindet csillagozza; ha mind az,
+        mindről leveszi. Mappánként EGY ini-írás + sync."""
+        photos = self._photos.photos
+        valid = [
+            photos[int(r)] for r in rows if 0 <= int(r) < len(photos)
+        ]
+        if not valid:
+            return
+        star_all = not all(p.star for p in valid)
+
+        def mutate(document, photo):
+            if star_all:
+                return document.with_value(photo.name, "star", "yes")
+            return document.with_removed(photo.name, "star")
+
+        self._apply_batch(valid, mutate)
+
+    @Slot(list)
+    def rotateRightMany(self, rows) -> None:
+        self._rotate_many(rows, 1)
+
+    @Slot(list)
+    def rotateLeftMany(self, rows) -> None:
+        self._rotate_many(rows, -1)
+
+    def _rotate_many(self, rows, delta: int) -> None:
+        photos = self._photos.photos
+        valid = [
+            photos[int(r)] for r in rows if 0 <= int(r) < len(photos)
+        ]
+        if not valid:
+            return
+
+        def mutate(document, photo):
+            steps = (photo.rotate_steps + delta) % 4
+            if steps == 0:
+                return document.with_removed(photo.name, "rotate")
+            return document.with_value(photo.name, "rotate", f"rotate({steps})")
+
+        self._apply_batch(valid, mutate)
+
+    def _apply_batch(self, photos, mutate) -> None:
+        """Kötegelt ini-módosítás: mappánként egyetlen (atomikus, backupolt)
+        írás és egyetlen resync — sok kijelölt képnél is gyors."""
+        by_folder: dict[str, list] = {}
+        for photo in photos:
+            by_folder.setdefault(photo.folder_path, []).append(photo)
+        for folder, folder_photos in by_folder.items():
+            ini_path = Path(folder) / PICASA_INI_NAME
+            document = (
+                load_document(ini_path) if ini_path.exists() else parse_document("")
+            )
+            for photo in folder_photos:
+                document = mutate(document, photo)
+            save_document(document, ini_path, backup=True)
+            with open_index(self._db_path) as conn:
+                sync_tree(conn, folder)
         self._refresh_view()
 
     @Slot(int)
@@ -324,6 +438,7 @@ class AppController(QObject):
             self.selectFolder(self._current_folder)
         else:
             self._update_status(())
+            self.restoreSession()
 
     def _show(self, records) -> None:
         self._provider.register_photos(records)

@@ -9,6 +9,7 @@ Rectangle {
 
     property alias foldersModel: folderList.model
     property string selectedPath: ""
+    property bool starredActive: false
     signal folderChosen(string path)
     signal starredChosen()
 
@@ -38,7 +39,7 @@ Rectangle {
         Rectangle {
             id: starredItem
             width: parent.width; height: 22
-            color: pane.selectedPath === "*starred*"
+            color: pane.starredActive
                    ? Theme.panelSelection : "transparent"
             Row {
                 anchors.verticalCenter: parent.verticalCenter
@@ -48,13 +49,13 @@ Rectangle {
                 Text {
                     text: qsTr("Starred photos")
                     font.pixelSize: Theme.fontSize
-                    color: pane.selectedPath === "*starred*"
+                    color: pane.starredActive
                            ? Theme.panelSelectionText : Theme.textDark
                 }
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: { pane.selectedPath = "*starred*"; pane.starredChosen() }
+                onClicked: pane.starredChosen()
             }
         }
 
@@ -129,7 +130,7 @@ Rectangle {
                 MouseArea {
                     enabled: kind === "folder"
                     anchors.fill: parent
-                    onClicked: { pane.selectedPath = path; pane.folderChosen(path) }
+                    onClicked: pane.folderChosen(path)
                 }
             }
             ScrollBar.vertical: ScrollBar {}
