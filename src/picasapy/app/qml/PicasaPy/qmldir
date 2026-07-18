@@ -8,3 +8,4 @@ PhotoViewer 1.0 PhotoViewer.qml
 FolderIcon 1.0 FolderIcon.qml
 FolderManagerDialog 1.0 FolderManagerDialog.qml
 PicasaButton 1.0 PicasaButton.qml
+SearchSuggestions 1.0 SearchSuggestions.qml
