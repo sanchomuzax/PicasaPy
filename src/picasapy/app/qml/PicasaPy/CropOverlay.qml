@@ -39,6 +39,29 @@ Item {
     }
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
 
+    // A meglévő kijelölés átformálása új arányra (#59): a középpont és a
+    // terület megmarad, az oldalarány az új értéket veszi fel.
+    function applyAspect(ratio) {
+        if (!overlay.hasSelection || ratio <= 0) return
+        var cx = overlay.selX + overlay.selW / 2
+        var cy = overlay.selY + overlay.selH / 2
+        var area = Math.max(overlay.selW * overlay.selH,
+                            overlay.minSelectionPx * overlay.minSelectionPx)
+        var w = Math.sqrt(area * ratio)
+        var h = w / ratio
+        if (w > overlay.width) { w = overlay.width; h = w / ratio }
+        if (h > overlay.height) { h = overlay.height; w = h * ratio }
+        var x = overlay.clamp(cx - w / 2, 0, overlay.width - w)
+        var y = overlay.clamp(cy - h / 2, 0, overlay.height - h)
+        overlay.commitFromPixels(x, y, w, h)
+    }
+
+    // Forgatás kézi (szabad) aránynál: a kijelölés fekvő↔álló váltása.
+    function swapSelectionOrientation() {
+        if (!overlay.hasSelection || overlay.selW <= 0) return
+        overlay.applyAspect(overlay.selH / overlay.selW)
+    }
+
     // Gyorsvágás (Picasa három bélyegképe): bal-felső / fekvő / álló.
     // Rögzített aránynál azt tartja; szabad aránynál 4:3-at (ill. 3:4-et).
     function selectPreset(kind) {

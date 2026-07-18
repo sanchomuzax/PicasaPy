@@ -178,7 +178,7 @@ class TestPhotoGridModel:
         model = PhotoGridModel()
         model.set_photos(photos_in_folder(conn, library / "nyaralas"))
         url = model.data(model.index(0, 0), PhotoGridModel.ThumbUrlRole)
-        assert url.endswith("?r=0")
+        assert "?r=0" in url  # #59 óta a filters-tag is az URL része
 
     def test_rotate_at(self, qt_app, conn, library):
         from picasapy.app.models import PhotoGridModel

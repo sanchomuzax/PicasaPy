@@ -154,3 +154,66 @@ class TestSetTilt:
         controller.setTilt(0.2)
         image = provider.requestImage("1", None, None)
         assert not image.isNull()
+
+
+class TestUndoRedoStack:
+    """#59: valódi undo/redo verem művelet-nevekkel."""
+
+    def _controller(self, tmp_path):
+        from picasapy.app.edit_controller import EditController
+        from picasapy.app.edit_preview import EditPreviewProvider
+        from support.jpeg_factory import make_jpeg
+
+        make_jpeg(tmp_path / "a.jpg", size=(320, 160))
+        ctl = EditController(EditPreviewProvider())
+        ctl.beginEdit("1", str(tmp_path / "a.jpg"))
+        return ctl
+
+    def test_actions_stack_in_order(self, qt_app, tmp_path):
+        ctl = self._controller(tmp_path)
+        assert ctl.canUndo is False
+        ctl.applyCrop(0.1, 0.1, 0.5, 0.5)
+        ctl.toggleTool("enhance")
+        assert ctl.canUndo is True
+        assert ctl.undoAction == "enhance"   # utoljára jött → először megy
+        ctl.undo()
+        assert ctl.undoAction == "crop"
+        assert ctl.enhanceActive is False
+        assert ctl.hasCrop is True
+        ctl.undo()
+        assert ctl.hasCrop is False
+        assert ctl.canUndo is False
+
+    def test_redo_restores_in_order(self, qt_app, tmp_path):
+        ctl = self._controller(tmp_path)
+        ctl.applyCrop(0.1, 0.1, 0.5, 0.5)
+        ctl.toggleTool("enhance")
+        ctl.undo()
+        ctl.undo()
+        assert ctl.canRedo is True
+        assert ctl.redoAction == "crop"
+        ctl.redo()
+        assert ctl.hasCrop is True
+        ctl.redo()
+        assert ctl.enhanceActive is True
+        assert ctl.canRedo is False
+
+    def test_new_action_clears_redo(self, qt_app, tmp_path):
+        ctl = self._controller(tmp_path)
+        ctl.toggleTool("enhance")
+        ctl.undo()
+        ctl.toggleTool("autolight")
+        assert ctl.canRedo is False
+
+    def test_undo_writes_ini(self, qt_app, tmp_path):
+        ctl = self._controller(tmp_path)
+        ctl.toggleTool("enhance")
+        ctl.undo()
+        ini_text = (tmp_path / ".picasa.ini").read_text(encoding="utf-8")
+        assert "enhance" not in ini_text
+
+    def test_begin_edit_resets_stacks(self, qt_app, tmp_path):
+        ctl = self._controller(tmp_path)
+        ctl.toggleTool("enhance")
+        ctl.beginEdit("1", str(tmp_path / "a.jpg"))
+        assert ctl.canUndo is False and ctl.canRedo is False

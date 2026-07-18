@@ -47,13 +47,16 @@ class TestFolderDate:
 
 class TestMigrationV3:
     def test_v2_upgrades_with_backfill(self, tmp_path, library):
-        # v2 séma szimulálása: v3 adatbázisból eldobjuk a date oszlopot.
+        # v2 séma szimulálása: a friss adatbázisból eldobjuk a v2 utáni
+        # oszlopokat (date, filters), és a verziót 2-re állítjuk — így a
+        # teljes 2→3→4 migrációs lánc fut le.
         db = tmp_path / "i.db"
         with open_index(db) as conn:
             sync_tree(conn, library)
         raw = sqlite3.connect(db)
         raw.execute("ALTER TABLE folders DROP COLUMN date")
-        raw.execute(f"PRAGMA user_version={SCHEMA_VERSION - 1}")
+        raw.execute("ALTER TABLE photos DROP COLUMN filters")
+        raw.execute("PRAGMA user_version=2")
         raw.commit()
         raw.close()
         with open_index(db) as conn:

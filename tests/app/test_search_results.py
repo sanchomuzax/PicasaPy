@@ -16,6 +16,7 @@ def _rec(folder: str, name: str, taken_at: str | None = None) -> PhotoRecord:
         caption=None,
         keywords=None,
         rotate_steps=0,
+        filters=None,
         taken_at=taken_at,
         orientation=1,
         width=8,

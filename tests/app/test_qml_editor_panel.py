@@ -221,3 +221,60 @@ class TestCropOverlay:
         overlay = self._make_overlay(qml_engine)
         assert overlay.objectName() == "cropOverlay"
         assert overlay.findChild(QObject, "cropSelection") is not None
+
+
+class TestCropAspectReshape:
+    """#59: az arány-váltás és a Forgatás a meglévő kijelölést is átformálja."""
+
+    OVERLAY = (
+        "import QtQuick\nimport PicasaPy 1.0\n"
+        "CropOverlay { width: 400; height: 300 }\n"
+    )
+
+    def _selected(self, qml_engine):
+        from PySide6.QtCore import Q_ARG
+
+        overlay = _load(qml_engine, self.OVERLAY)
+        QMetaObject.invokeMethod(
+            overlay, "updateCreation", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 100), Q_ARG("QVariant", 75),
+            Q_ARG("QVariant", 300), Q_ARG("QVariant", 225),
+        )
+        return overlay
+
+    def test_apply_aspect_reshapes_keeping_center(self, qml_engine):
+        from PySide6.QtCore import Q_ARG
+
+        overlay = self._selected(qml_engine)
+        QMetaObject.invokeMethod(
+            overlay, "applyAspect", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 2.0),
+        )
+        r = overlay.property("cropRect")
+        w_px = r.width() * 400
+        h_px = r.height() * 300
+        assert abs(w_px / h_px - 2.0) < 0.01
+        # a középpont a helyén marad
+        assert abs((r.x() + r.width() / 2) - 0.5) < 0.01
+
+    def test_swap_orientation_flips_ratio(self, qml_engine):
+        overlay = self._selected(qml_engine)
+        before = overlay.property("cropRect")
+        ratio_before = (before.width() * 400) / (before.height() * 300)
+        QMetaObject.invokeMethod(
+            overlay, "swapSelectionOrientation",
+            Qt.ConnectionType.DirectConnection,
+        )
+        after = overlay.property("cropRect")
+        ratio_after = (after.width() * 400) / (after.height() * 300)
+        assert abs(ratio_after - 1 / ratio_before) < 0.05
+
+    def test_apply_aspect_without_selection_noop(self, qml_engine):
+        from PySide6.QtCore import Q_ARG
+
+        overlay = _load(qml_engine, self.OVERLAY)
+        QMetaObject.invokeMethod(
+            overlay, "applyAspect", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 2.0),
+        )
+        assert overlay.property("hasSelection") is False
