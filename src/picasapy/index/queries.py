@@ -48,6 +48,14 @@ def photos_in_folder(
     return _records(rows)
 
 
+def all_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
+    """A teljes könyvtár a rács-feedhez (#64) — a mappán belüli sorrend
+    névsor; a mappák feed-sorrendjét a hívó (a bal hasáb rendje szerint)
+    állítja be."""
+    rows = conn.execute(f"{_SELECT} ORDER BY f.path, p.name")
+    return _records(rows)
+
+
 def starred_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     rows = conn.execute(f"{_SELECT} WHERE p.star = 1 ORDER BY f.path, p.name")
     return _records(rows)

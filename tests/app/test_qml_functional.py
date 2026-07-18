@@ -122,13 +122,60 @@ class TestCaptionEditing:
 
 
 class TestFolderDescriptionField:
-    def test_field_updates_after_set_folder_description(self, qml_app, qt_app):
+    def test_header_component_binds_description(self, qml_app, qt_app):
+        # A fejléc a feedben (#64) delegate-ként él; a leírás-kötést a
+        # komponensen önállóan ellenőrizzük (offscreen a ListView-delegate
+        # létrejötte nem garantált).
+        import picasapy.app.application as app_module
+        from PySide6.QtCore import QUrl
+        from PySide6.QtQml import QQmlComponent
+
+        window, controller, engine = qml_app
+        comp = QQmlComponent(
+            engine,
+            QUrl.fromLocalFile(
+                str(app_module._APP_DIR / "qml" / "PicasaPy" / "LightboxHeader.qml")
+            ),
+        )
+        header = comp.createWithInitialProperties(
+            {"folderName": "kepek", "description": "teszt leírás"}
+        )
+        assert comp.errors() == []
+        assert header is not None
+        field = header.findChild(QObject, "folderDescriptionField")
+        assert field is not None, "folderDescriptionField nem található"
+        assert field.property("text") == "teszt leírás"
+
+    def test_description_slot_round_trip(self, qml_app, qt_app):
+        # A feed-fejléc útvonala: setFolderDescriptionOf → ini →
+        # folderDescriptionOf (a QML-kötés ezt olvassa).
         window, controller, _ = qml_app
         controller.setFolderDescription("teszt leírás")
         qt_app.processEvents()
-        field = window.findChild(QObject, "folderDescriptionField")
-        assert field is not None, "folderDescriptionField nem található"
-        assert field.property("text") == "teszt leírás"
+        assert (
+            controller.folderDescriptionOf(controller.currentFolder)
+            == "teszt leírás"
+        )
+
+
+class TestLibraryFeedQml:
+    """#64: a rács csoportokra bontott feed-ListView."""
+
+    def test_feed_shows_groups(self, qml_app, qt_app):
+        window, controller, _ = qml_app
+        grid = window.findChild(QObject, "photoGrid")
+        assert grid is not None, "photoGrid nem található"
+        groups = controller.feedGroups
+        assert len(groups) == 1
+        assert groups[0]["count"] == 2
+        assert grid.property("count") == 1  # egy mappa-csoport a ListView-ban
+
+    def test_cell_geometry_follows_thumb_size(self, qml_app, qt_app):
+        window, _, _ = qml_app
+        grid = window.findChild(QObject, "photoGrid")
+        window.setProperty("thumbSize", 200)
+        qt_app.processEvents()
+        assert grid.property("cellWidth") == 218
 
 
 class TestFolderPaneHighlight:
@@ -258,45 +305,63 @@ class TestMultiSelect:
 
 
 class TestLasso:
+    @staticmethod
+    def _apply(qt_app, grid, start, count, flow_w, x1, y1, x2, y2, mods=0):
+        # #64: a lasszó a húzás kezdő-csoportján belül jelöl ki — a hívás
+        # a csoport (start, count) és a képfolyam szélessége szerint számol.
+        from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+
+        QMetaObject.invokeMethod(
+            grid, "applyLasso", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", start), Q_ARG("QVariant", count),
+            Q_ARG("QVariant", flow_w),
+            Q_ARG("QVariant", x1), Q_ARG("QVariant", y1),
+            Q_ARG("QVariant", x2), Q_ARG("QVariant", y2),
+            Q_ARG("QVariant", mods),
+        )
+        qt_app.processEvents()
+
     def test_lasso_selects_geometry_range(self, qml_app, qt_app):
-        # A lasszó rács-geometriából számol — a (0,0)-tól két cellányira
-        # húzott keret az összes (itt: 2) képet kijelöli.
-        from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+        # A (0,0)-tól két cellányira húzott keret a csoport mindkét képét
+        # kijelöli.
+        from PySide6.QtCore import QObject
 
         window, controller, _ = qml_app
         grid = window.findChild(QObject, "photoGrid")
         assert grid is not None, "photoGrid nem található"
         cell_w = grid.property("cellWidth")
-        QMetaObject.invokeMethod(
-            grid, "applyLasso", Qt.ConnectionType.DirectConnection,
-            Q_ARG("QVariant", 0), Q_ARG("QVariant", 0),
-            Q_ARG("QVariant", cell_w * 2 + 1), Q_ARG("QVariant", 1),
-            Q_ARG("QVariant", 0),
-        )
-        qt_app.processEvents()
+        self._apply(qt_app, grid, 0, 2, cell_w * 4, 0, 0, cell_w * 2 + 1, 1)
         value = window.property("selectedIndexes")
         if hasattr(value, "toVariant"):
             value = value.toVariant()
         assert sorted(int(v) for v in value) == [0, 1]
 
     def test_lasso_ctrl_merges(self, qml_app, qt_app):
-        from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+        from PySide6.QtCore import QObject, Qt
 
         window, controller, _ = qml_app
         window.setProperty("selectedIndexes", [1])
         grid = window.findChild(QObject, "photoGrid")
+        cell_w = grid.property("cellWidth")
         ctrl = int(Qt.KeyboardModifier.ControlModifier.value)
-        QMetaObject.invokeMethod(
-            grid, "applyLasso", Qt.ConnectionType.DirectConnection,
-            Q_ARG("QVariant", 0), Q_ARG("QVariant", 0),
-            Q_ARG("QVariant", 1), Q_ARG("QVariant", 1),
-            Q_ARG("QVariant", ctrl),
-        )
-        qt_app.processEvents()
+        self._apply(qt_app, grid, 0, 2, cell_w * 4, 0, 0, 1, 1, ctrl)
         value = window.property("selectedIndexes")
         if hasattr(value, "toVariant"):
             value = value.toVariant()
         assert sorted(int(v) for v in value) == [0, 1]
+
+    def test_lasso_respects_group_offset(self, qml_app, qt_app):
+        # Egy második csoportban (start=5) húzott lasszó globális sorokat ad.
+        from PySide6.QtCore import QObject
+
+        window, _, _ = qml_app
+        grid = window.findChild(QObject, "photoGrid")
+        cell_w = grid.property("cellWidth")
+        self._apply(qt_app, grid, 5, 3, cell_w * 4, 0, 0, cell_w * 2 + 1, 1)
+        value = window.property("selectedIndexes")
+        if hasattr(value, "toVariant"):
+            value = value.toVariant()
+        assert sorted(int(v) for v in value) == [5, 6, 7]
 
 
 class TestFolderManager:

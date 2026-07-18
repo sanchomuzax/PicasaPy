@@ -2,7 +2,7 @@
 
 A cache-kulcs a forrásfájl útvonalából + mtime-jából + méretéből képzett
 hash: fájlváltozáskor automatikusan új bejegyzés készül, a régit a későbbi
-takarító dolga eltüntetni. Az OpenCV imread alapból alkalmazza az
+takarító dolga eltüntetni. Az OpenCV imdecode alapból alkalmazza az
 EXIF-orientációt, ezért a thumbnail már helyesen forgatott.
 """
 
@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 
 import cv2
+import numpy as np
 from PIL import Image, UnidentifiedImageError
 
 _JPEG_QUALITY = 85
@@ -46,7 +47,7 @@ class ThumbnailCache:
         target = self.thumbnail_path(source, mtime_ns, size_bytes)
         if target.exists():
             return target
-        image = cv2.imread(str(source), self._read_flag(source))
+        image = _decode_image(source, self._read_flag(source))
         if image is None:
             return None
         thumb = self._scale_down(image)
@@ -55,7 +56,10 @@ class ThumbnailCache:
         )
         if not ok:
             return None
-        self._write_atomic(target, encoded.tobytes())
+        try:
+            self._write_atomic(target, encoded.tobytes())
+        except OSError:
+            return None  # tele lemez / NAS-hiba — a hívó placeholderre esik
         return target
 
     def _read_flag(self, source: Path) -> int:
@@ -80,6 +84,13 @@ class ThumbnailCache:
             with os.fdopen(fd, "wb") as handle:
                 handle.write(payload)
             os.replace(temp_name, target)
+        except OSError:
+            os.unlink(temp_name)
+            # Windows: a replace sharing violationnel bukhat, ha a célt épp
+            # olvassa egy másik szál (#66) — ha a thumbnail közben (a
+            # párhuzamos írótól) létrejött, a vesztes fél dolga kész.
+            if not target.exists():
+                raise
         except BaseException:
             os.unlink(temp_name)
             raise
@@ -92,3 +103,17 @@ class ThumbnailCache:
         scale = self._size / longest
         new_size = (max(1, round(width * scale)), max(1, round(height * scale)))
         return cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
+
+
+def _decode_image(source: Path, flag: int):
+    """Bájt-alapú dekódolás a cv2.imread helyett (#65): az imread Windows-on
+    az ANSI fájl-API-val nyit, ékezetes útvonalon (pl. „Képek") némán None-t
+    ad. A np.fromfile a Python unicode-biztos fájlkezelésével olvas, az
+    imdecode pedig az imread-del azonosan dekódol (EXIF-forgatással)."""
+    try:
+        payload = np.fromfile(source, dtype=np.uint8)
+    except OSError:
+        return None  # időközben törölt/elérhetetlen forrás (NAS)
+    if payload.size == 0:
+        return None
+    return cv2.imdecode(payload, flag)

@@ -19,6 +19,7 @@ from PySide6.QtCore import (
 )
 
 from picasapy.index import (
+    all_photos,
     open_index,
     photos_in_folder,
     remove_root,
@@ -64,6 +65,11 @@ class AppController(QObject):
     syncFailed = Signal(str)
     # a watchdog szálából érkezik — a Qt automatikusan sorba állítja
     watcherDirty = Signal(list)
+    # #64: a rács-feed mappa-csoportjai változtak (csak valódi változásnál!)
+    feedChanged = Signal()
+    # #64: mappa-választás — a rács a feedben ehhez a csoporthoz görget
+    folderActivated = Signal(str)
+    descriptionsChanged = Signal()
 
     def __init__(
         self,
@@ -90,6 +96,9 @@ class AppController(QObject):
         self._filter_active = False
         self._filter_status = ""
         self._folders_filtered = False  # a bal hasáb keresésre szűkítve (#49)
+        self._feed_groups: tuple[dict, ...] = ()  # a rács mappa-csoportjai (#64)
+        self._descriptions: dict[str, str] = {}  # mappa-leírás cache (NAS!)
+        self._description_revision = 0
         self._search_result_count = 0  # összes találat (#7, a bal paneli sorhoz)
         self._search_groups: tuple = ()  # a rács mappánkénti csoportosításához
         self._settings = settings
@@ -170,6 +179,17 @@ class AppController(QObject):
         """A zöld eredménysáv szövege (Picasa-minta)."""
         return self._filter_status
 
+    @Property("QVariantList", notify=feedChanged)
+    def feedGroups(self):
+        """A rács-feed mappa-csoportjai (#64): {path, name, start, count,
+        dateText} — a QML ebből rajzol mappa-fejlécet és képfolyamot."""
+        return [dict(group) for group in self._feed_groups]
+
+    @Property(int, notify=descriptionsChanged)
+    def descriptionRevision(self):
+        """Leírás-mentéskor nő — a feed-fejlécek leírás-kötésének triggere."""
+        return self._description_revision
+
     @Property(str, notify=statusChanged)
     def folderSort(self):
         return self._get_settings().value("view/folderSort", "date")
@@ -186,6 +206,7 @@ class AppController(QObject):
             return
         self._get_settings().setValue("view/folderSort", mode)
         self._reload_folders()
+        self._refresh_view()  # a feed sorrendje követi a hasábot (#64)
 
     @Slot()
     def toggleFolderSortReverse(self) -> None:
@@ -193,6 +214,7 @@ class AppController(QObject):
             "view/folderSortReverse", not self.folderSortReverse
         )
         self._reload_folders()
+        self._refresh_view()  # a feed sorrendje követi a hasábot (#64)
 
     def _reload_folders(self) -> None:
         with open_index(self._db_path) as conn:
@@ -348,6 +370,9 @@ class AppController(QObject):
 
     @Slot(str)
     def selectFolder(self, folder_path: str) -> None:
+        """Mappa-választás (#64): a rács a TELJES könyvtár-feedet mutatja a
+        bal hasáb sorrendjében — a választott mappához a rács odagörget
+        (folderActivated), ahogy az eredeti Picasa tette."""
         self._current_folder = folder_path
         self._view_mode = ("folder", folder_path)
         self._filter_active = False
@@ -356,8 +381,25 @@ class AppController(QObject):
         self._get_settings().setValue("session/lastFolder", folder_path)
         self._folder_description = self._read_folder_description(folder_path)
         with open_index(self._db_path) as conn:
-            records = photos_in_folder(conn, folder_path)
+            records = self._feed_records(conn)
         self._show(records)
+        self.folderActivated.emit(folder_path)
+
+    def _feed_records(self, conn) -> tuple:
+        """A teljes könyvtár a bal hasáb mappa-sorrendjében (#64)."""
+        order = {
+            path: i for i, path in enumerate(self._folders.folder_paths())
+        }
+        return tuple(
+            sorted(
+                all_photos(conn),
+                key=lambda r: (
+                    order.get(r.folder_path, len(order)),
+                    r.folder_path,
+                    r.name,
+                ),
+            )
+        )
 
     @staticmethod
     def _read_folder_description(folder_path: str) -> str:
@@ -370,12 +412,20 @@ class AppController(QObject):
 
     @Slot(str)
     def setFolderDescription(self, text: str) -> None:
-        """A mappa leírásának mentése — Picasa-kompatibilis: `[Picasa]/description`
-        kulcs a mappa `.picasa.ini`-jében (nem indexelt, ezért resync nem kell)."""
+        """A KIVÁLASZTOTT mappa leírásának mentése (kompatibilitási út —
+        a feed-fejlécek a setFolderDescriptionOf-ot hívják)."""
         if not self._current_folder:
             return
+        self.setFolderDescriptionOf(self._current_folder, text)
+
+    @Slot(str, str)
+    def setFolderDescriptionOf(self, folder_path: str, text: str) -> None:
+        """Mappa-leírás mentése — Picasa-kompatibilis: `[Picasa]/description`
+        kulcs a mappa `.picasa.ini`-jében (nem indexelt, resync nem kell)."""
+        if not folder_path:
+            return
         text = text.strip()
-        ini_path = Path(self._current_folder) / PICASA_INI_NAME
+        ini_path = Path(folder_path) / PICASA_INI_NAME
         document = (
             load_document(ini_path) if ini_path.exists() else parse_document("")
         )
@@ -384,8 +434,22 @@ class AppController(QObject):
         else:
             document = document.with_removed("Picasa", "description")
         save_document(document, ini_path, backup=True)
-        self._folder_description = text
+        self._descriptions[folder_path] = text
+        if folder_path == self._current_folder:
+            self._folder_description = text
+        self._description_revision += 1
+        self.descriptionsChanged.emit()
         self.statusChanged.emit()
+
+    @Slot(str, result=str)
+    def folderDescriptionOf(self, folder_path: str) -> str:
+        """Mappa-leírás a feed-fejlécnek (#64) — ini-olvasás kis cache-sel,
+        hogy NAS-on se olvassunk fejléc-megjelenésenként fájlt."""
+        if folder_path not in self._descriptions:
+            self._descriptions[folder_path] = self._read_folder_description(
+                folder_path
+            )
+        return self._descriptions[folder_path]
 
     @Slot(str)
     def setThumbCaptionMode(self, mode: str) -> None:
@@ -401,11 +465,7 @@ class AppController(QObject):
         query = text.strip()
         with open_index(self._db_path) as conn:
             if not query:
-                records = (
-                    photos_in_folder(conn, self._current_folder)
-                    if self._current_folder
-                    else ()
-                )
+                records = self._feed_records(conn) if self._current_folder else ()
                 self._view_mode = ("folder", self._current_folder or "")
             else:
                 self._view_mode = ("search", query)
@@ -453,6 +513,15 @@ class AppController(QObject):
         self._show(
             tuple(r for r in all_matches if r.folder_path == folder_path)
         )
+
+    @Slot(int)
+    def resyncFolderOfRow(self, row: int) -> None:
+        """A sorhoz tartozó mappa resyncje — a néző bezárásakor hívjuk:
+        a feedben (#64) a néző át is léphetett másik mappába, ezért nem a
+        kiválasztott, hanem az épp nézett kép mappáját frissítjük."""
+        photos = self._photos.photos
+        if 0 <= row < len(photos):
+            self.resyncFolder(photos[row].folder_path)
 
     @Slot(str)
     def resyncFolder(self, folder_path: str) -> None:
@@ -642,7 +711,7 @@ class AppController(QObject):
                 self._show(starred_photos(conn))
         elif param:
             with open_index(self._db_path) as conn:
-                self._show(photos_in_folder(conn, param))
+                self._show(self._feed_records(conn))
 
     @Slot(int, result=str)
     def photoInfo(self, row: int) -> str:
@@ -736,6 +805,11 @@ class AppController(QObject):
             self.syncFinished.emit()
 
     def _reload(self) -> None:
+        # a háttér-sync külső ini-változást is hozhat — a leírás-cache
+        # elavulhatott, a fejlécek olvassák újra
+        self._descriptions.clear()
+        self._description_revision += 1
+        self.descriptionsChanged.emit()
         mode, _ = self._view_mode
         # Keresésre szűkített hasábnál (#49) a teljes lista betöltése
         # felvillanást okozna — a _refresh_view frissíti a szűkítettet.
@@ -759,11 +833,38 @@ class AppController(QObject):
     def _show(self, records) -> None:
         self._provider.register_photos(records)
         self._photos.set_photos(records)
+        self._update_feed_groups(records)
         dates = sorted(r.taken_at for r in records if r.taken_at)
         self._folder_date = _long_date(dates[0], QLocale()) if dates else ""
         search_active = self._view_mode[0] in ("search", "search-folder")
         self._search_groups = group_by_folder(records) if search_active else ()
         self._update_status(records)
+
+    def _update_feed_groups(self, records) -> None:
+        """Mappa-csoportok a rács-feedhez (#64): az egymást követő azonos
+        mappájú futamok. feedChanged CSAK valódi változásnál megy ki —
+        különben minden háttér-frissítés nullázná a rács görgetését."""
+        runs: list[list] = []
+        for row, record in enumerate(records):
+            if not runs or runs[-1][0] != record.folder_path:
+                runs.append([record.folder_path, row, 0])
+            runs[-1][2] += 1
+        locale = QLocale()
+        groups = tuple(
+            {
+                "path": path,
+                "name": _PATH_TAIL.split(path)[-1],
+                "start": start,
+                "count": count,
+                "dateText": _first_date_text(
+                    records[start : start + count], locale
+                ),
+            }
+            for path, start, count in runs
+        )
+        if groups != self._feed_groups:
+            self._feed_groups = groups
+            self.feedChanged.emit()
 
     def _update_status(self, records) -> None:
         if not records:
@@ -789,6 +890,12 @@ def _long_date(iso: str, locale: QLocale) -> str:
     """Picasa-stílusú hosszú dátum: `2026. január 2., péntek`."""
     date = QDate.fromString(iso[:10], "yyyy-MM-dd")
     return locale.toString(date, QLocale.FormatType.LongFormat)
+
+
+def _first_date_text(records, locale: QLocale) -> str:
+    """A csoport fejléc-dátuma: a legkorábbi felvétel hosszú dátuma."""
+    dates = sorted(r.taken_at for r in records if r.taken_at)
+    return _long_date(dates[0], locale) if dates else ""
 
 
 def _format_size(size_bytes: int, locale: QLocale, tr) -> str:
