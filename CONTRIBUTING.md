@@ -50,6 +50,9 @@ fordításukat az integrátor generálja le.
   A Windows CI-láb kísérleti (nem blokkol); a mérce az ubuntu-láb.
 - A PR-t az integrátor session mergeli: ő oldja a konfliktusokat,
   futtatja az i18n-regent és a teljes tesztkészletet.
+- **Release-kötelezettség (integrátor):** érdemi merge-ök után verzió-bump
+  (minden előfordulási helyen) + tag + GitHub Release — a Releases hasáb
+  SOHA nem maradhat le a main mögött.
 - Commit-formátum: `feat|fix|docs|test|chore: leírás` (magyarul),
   hivatkozás az issue-ra (`#N`).
 
