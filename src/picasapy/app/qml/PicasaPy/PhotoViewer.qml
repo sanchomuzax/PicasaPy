@@ -12,9 +12,6 @@ Rectangle {
 
     property var photosModel: null
     property int currentIndex: -1
-    // frissítés-trigger: a Main a controller.statusText-et köti ide, így a
-    // forgatás utáni modell-reset után újraértékelődik az iniSteps
-    property string refreshTick: ""
     // a ListView.count reaktív — a rowCount() hívást a QML nem követné
     property int photoCount: filmstrip.count
     signal closed()
@@ -173,12 +170,13 @@ Rectangle {
 
                     Image {
                         id: photo
-                        readonly property int iniSteps: {
-                            viewer.refreshTick
-                            return viewer.photosModel
-                                   ? viewer.photosModel.rotateAt(viewer.currentIndex)
-                                   : 0
-                        }
+                        objectName: "viewerImage"
+                        // a model.revision referencia miatt a kötés minden
+                        // modell-frissítésnél újraértékelődik
+                        readonly property int iniSteps: viewer.photosModel
+                            ? (viewer.photosModel.revision,
+                               viewer.photosModel.rotateAt(viewer.currentIndex))
+                            : 0
                         anchors.centerIn: parent
                         // 90°/270°-nál a befoglaló doboz oldalai cserélődnek
                         width: iniSteps % 2 ? photoArea.height : photoArea.width

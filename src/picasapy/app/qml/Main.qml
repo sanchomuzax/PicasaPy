@@ -161,7 +161,6 @@ ApplicationWindow {
         anchors.fill: parent
         visible: window.viewerOpen
         photosModel: controller.photos
-        refreshTick: controller.statusText
         onClosed: {
             window.viewerOpen = false
             window.selectedIndex = currentIndex   // a rács kövesse a nézőt
@@ -311,17 +310,16 @@ ApplicationWindow {
                     Layout.preferredWidth: 34
                     onClicked: controller.toggleStar(targetRow)
                     contentItem: Text {
+                        objectName: "trayStarLabel"
                         text: "★"
                         font.pixelSize: 15
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         // arany, ha a kiválasztott kép csillagos; egyébként
                         // világos kontúr-csillag (Picasa-minta, nem fekete!)
-                        color: {
-                            controller.statusText  // frissítés-trigger
-                            return controller.photos.starAt(trayStar.targetRow)
-                                   ? Theme.starYellow : "#ffffff"
-                        }
+                        color: (controller.photos.revision,
+                                controller.photos.starAt(trayStar.targetRow))
+                               ? Theme.starYellow : "#ffffff"
                         style: Text.Outline
                         styleColor: "#9a9a9a"
                     }

@@ -108,14 +108,28 @@ class PhotoGridModel(QAbstractListModel):
     TakenAtRole = Qt.ItemDataRole.UserRole + 6
     FileUrlRole = Qt.ItemDataRole.UserRole + 7
 
+    revisionChanged = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._photos: tuple[PhotoRecord, ...] = ()
+        self._revision = 0
+
+    @Property(int, notify=revisionChanged)
+    def revision(self) -> int:
+        """Minden set_photos-nál nő — QML-kötések frissítés-triggere.
+
+        (A statusText-re kötés nem elég: pl. forgatásnál a szöveg nem
+        változik, így a kötés nem értékelődne újra.)
+        """
+        return self._revision
 
     def set_photos(self, photos: tuple[PhotoRecord, ...]) -> None:
         self.beginResetModel()
         self._photos = photos
         self.endResetModel()
+        self._revision += 1
+        self.revisionChanged.emit()
 
     @property
     def photos(self) -> tuple[PhotoRecord, ...]:
