@@ -19,6 +19,7 @@ from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 
+from picasapy.index import open_index, prune_foreign_folders
 from picasapy.scanner import read_watched_folders
 from picasapy.thumbs import ThumbnailCache
 from .controller import AppController
@@ -43,6 +44,17 @@ def _cache_dir() -> Path:
 def _config_dir() -> Path:
     base = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
     return Path(base) / "picasapy"
+
+
+def _force_qml_dialogs(platform: str = sys.platform) -> bool:
+    """Kényszerítsük-e a saját (nem natív) QML-dialógusokat.
+
+    Linuxon/macOS-en igen: az app mindig világos, a rendszer sötét témájú
+    választója kilógna (rögzített dizájn-döntés). Windowson viszont a natív
+    mappaválasztó kell (#58): meghajtók, hálózati helyek és ékezetes mappák
+    csak abból érhetők el rendesen — a QML-es tartalék a meghajtó szintje
+    fölé nem tud lépni."""
+    return platform != "win32"
 
 
 def _resolve_roots(argv: list[str]) -> tuple[str, ...]:
@@ -133,11 +145,13 @@ def _install_translator(app: QGuiApplication) -> QTranslator | None:
 
 def run(argv: list[str]) -> int:
     # A PicasaPy egyelőre MINDENHOL világos (a sötét téma V3-feature):
-    # nem natív dialógusok (a rendszer sötét mappaválasztója helyett a
-    # saját, világos QML-es), Fusion stílus + explicit világos paletta.
-    QGuiApplication.setAttribute(
-        Qt.ApplicationAttribute.AA_DontUseNativeDialogs
-    )
+    # Fusion stílus + explicit világos paletta; Linuxon/macOS-en a saját,
+    # világos QML-dialógusok a rendszer sötét mappaválasztója helyett.
+    # Windowson natív dialógus kell — ld. _force_qml_dialogs (#58).
+    if _force_qml_dialogs():
+        QGuiApplication.setAttribute(
+            Qt.ApplicationAttribute.AA_DontUseNativeDialogs
+        )
     QQuickStyle.setStyle("Fusion")
 
     app = QGuiApplication(argv)
@@ -163,6 +177,12 @@ def run(argv: list[str]) -> int:
         )
         return 0
     _install_desktop_entry()
+
+    # Ottragadt gyökerek takarítása (#58): az indexben csak a most figyelt
+    # mappák maradhatnak — a korábbi futások (pl. régi parancssori argumentum)
+    # mappái különben örökre a bal hasábban ragadnának.
+    with open_index(data_dir / "index.db") as conn:
+        prune_foreign_folders(conn, roots)
 
     provider = ThumbnailProvider(ThumbnailCache(_cache_dir() / "thumbs"))
     controller = AppController(

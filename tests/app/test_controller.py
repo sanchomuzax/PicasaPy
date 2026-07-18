@@ -476,6 +476,23 @@ class TestWatchedFolderManagement:
         assert str(other) in read_watched_folders(controller._watched_file)
         assert controller.folders.folderCount >= 2
 
+    def test_add_folder_with_accents_and_spaces(self, controller, tmp_path):
+        # #58: klasszikus Windows-mappa (ékezet + szóköz) becsatolása a
+        # FolderDialog százalék-kódolt URL-alakjából sem bukhat el.
+        from PySide6.QtCore import QEventLoop, QTimer, QUrl
+
+        target = tmp_path / "Régi képek 2020"
+        target.mkdir()
+        make_jpeg(target / "kep.jpg")
+        url = bytes(QUrl.fromLocalFile(str(target)).toEncoded()).decode("ascii")
+        assert "%20" in url and "%C3" in url  # tényleg kódolt alakot adunk át
+        loop = QEventLoop()
+        controller.syncFinished.connect(loop.quit)
+        controller.addWatchedFolder(url)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        assert str(target) in controller.watchedFolders
+
     def test_add_duplicate_ignored(self, controller, library):
         before = list(controller.watchedFolders)
         controller.addWatchedFolder(str(library))

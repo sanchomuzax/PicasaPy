@@ -197,3 +197,27 @@ def remove_root(conn: sqlite3.Connection, root: str | Path) -> None:
     root_path = Path(root).resolve()
     _prune_folders(conn, root_path, set())
     conn.commit()
+
+
+def prune_foreign_folders(
+    conn: sqlite3.Connection, roots: tuple[str | Path, ...]
+) -> None:
+    """A figyelt gyökerek egyikéhez sem tartozó mappák törlése az indexből.
+
+    Induláskor fut (#58): a korábbi futásokból ottragadt gyökerek (pl. régi
+    parancssori argumentum) mappái ne jelenjenek meg a bal hasábban. Üres
+    gyökérlistával nem csinál semmit — védekezés, nehogy egy hiányzó
+    WatchedFolders.txt csendben kiürítse az egész indexet. Explicit
+    photos-törlés a folders előtt, hogy az FTS-triggerek lefussanak."""
+    if not roots:
+        return
+    root_paths = tuple(Path(root).resolve() for root in roots)
+    stale_ids = [
+        row["id"]
+        for row in conn.execute("SELECT id, path FROM folders")
+        if not any(_is_under(Path(row["path"]), root) for root in root_paths)
+    ]
+    for folder_id in stale_ids:
+        conn.execute("DELETE FROM photos WHERE folder_id = ?", (folder_id,))
+        conn.execute("DELETE FROM folders WHERE id = ?", (folder_id,))
+    conn.commit()

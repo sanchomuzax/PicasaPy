@@ -10,13 +10,14 @@ from .queries import (
     starred_photos,
 )
 from .schema import SCHEMA_VERSION
-from .sync import remove_root, sync_tree
+from .sync import prune_foreign_folders, remove_root, sync_tree
 
 __all__ = [
     "SCHEMA_VERSION",
     "PhotoRecord",
     "open_index",
     "photos_in_folder",
+    "prune_foreign_folders",
     "remove_root",
     "SearchSuggestion",
     "search_photos",
