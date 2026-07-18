@@ -315,9 +315,15 @@ ApplicationWindow {
             selectedPath: controller.currentFolder
             starredActive: controller.filterActive
             onFolderChosen: function(path) {
-                searchField.clear()
                 window.clearSelection()
-                controller.selectFolder(path)
+                if (searchField.text.trim().length > 0) {
+                    // #45: aktív keresésnél a szűrés megmarad, a
+                    // találatok a mappára szűkülnek (Picasa-viselkedés)
+                    controller.selectFolderKeepSearch(path)
+                } else {
+                    searchField.clear()
+                    controller.selectFolder(path)
+                }
             }
             onStarredChosen: {
                 searchField.clear()

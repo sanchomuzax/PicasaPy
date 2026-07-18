@@ -389,3 +389,20 @@ class TestSearchSuggestionsWiring:
         if hasattr(value, "toVariant"):
             value = value.toVariant()
         assert value == []
+
+
+class TestFolderClickDuringSearchWiring:
+    def test_folder_chosen_keeps_search_text_and_filter(self, qml_app, qt_app):
+        # #45: a bal paneli mappa-kattintás keresés közben nem üríti a
+        # keresőmezőt és a szűrés megmarad (a mappára szűkítve).
+        window, controller, _ = qml_app
+        field = window.findChild(QObject, "searchField")
+        pane = window.findChild(QObject, "folderPane")
+        field.setProperty("text", "a")
+        controller.search("a")
+        qt_app.processEvents()
+        assert controller.photos.rowCount() == 1  # csak a.jpg
+        pane.folderChosen.emit(controller.currentFolder)
+        qt_app.processEvents()
+        assert field.property("text") == "a"      # a mező nem ürül
+        assert controller.photos.rowCount() == 1  # a szűrés megmarad

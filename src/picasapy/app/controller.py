@@ -383,6 +383,30 @@ class AppController(QObject):
                 records = search_photos(conn, query)
         self._show(records)
 
+    @Slot(str)
+    def selectFolderKeepSearch(self, folder_path: str) -> None:
+        """Mappa-választás aktív keresés közben (#45, Picasa-viselkedés):
+        a keresés megmarad, a találatok az adott mappára szűkülnek.
+        Keresés nélkül sima selectFolder."""
+        mode, param = self._view_mode
+        if mode == "search-folder":
+            query = param[0]
+        elif mode == "search":
+            query = param
+        else:
+            self.selectFolder(folder_path)
+            return
+        self._current_folder = folder_path  # a bal paneli kijelölés kövessen
+        self._view_mode = ("search-folder", (query, folder_path))
+        self._get_settings().setValue("session/lastFolder", folder_path)
+        with open_index(self._db_path) as conn:
+            records = tuple(
+                r
+                for r in search_photos(conn, query)
+                if r.folder_path == folder_path
+            )
+        self._show(records)
+
     @Slot(str, result="QVariantList")
     def searchSuggestions(self, text: str) -> list:
         """Kereső-javaslatok a legördülőnek (#7) — dict-lista a QML-nek.
@@ -545,6 +569,16 @@ class AppController(QObject):
         if mode == "search":
             with open_index(self._db_path) as conn:
                 self._show(search_photos(conn, param))
+        elif mode == "search-folder":
+            query, folder = param
+            with open_index(self._db_path) as conn:
+                self._show(
+                    tuple(
+                        r
+                        for r in search_photos(conn, query)
+                        if r.folder_path == folder
+                    )
+                )
         elif mode == "starred":
             with open_index(self._db_path) as conn:
                 self._show(starred_photos(conn))

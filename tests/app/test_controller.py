@@ -625,3 +625,41 @@ class TestSearchSuggestionsSlot:
         )
         result = controller.searchSuggestions("nyari")
         assert all(s["kind"] == "folder" for s in result)
+
+
+class TestFolderClickDuringSearch:
+    """#45: keresés közben a mappa-kattintás nem dobja el a szűrést —
+    a találatok az adott mappára szűkülnek (Picasa-viselkedés)."""
+
+    @pytest.fixture
+    def two_folders(self, controller, library, tmp_path):
+        from picasapy.index import open_index, sync_tree
+
+        (library / "telek").mkdir()
+        make_jpeg(library / "telek" / "IMG_0100.jpg")
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, library)
+        controller._reload()
+        return library
+
+    def test_folder_click_keeps_search_and_restricts(self, controller, two_folders):
+        controller.selectFolder(str(two_folders / "nyaralas"))
+        controller.search("IMG")
+        assert controller.photos.rowCount() == 3  # minden mappából
+        controller.selectFolderKeepSearch(str(two_folders / "telek"))
+        assert controller.photos.rowCount() == 1  # csak a telek találata
+        assert controller.currentFolder == str(two_folders / "telek")
+
+    def test_restricted_view_survives_reload(self, controller, two_folders):
+        controller.search("IMG")
+        controller.selectFolderKeepSearch(str(two_folders / "telek"))
+        controller._reload()  # háttér-sync sem dobhatja el (#38 mintájára)
+        assert controller.photos.rowCount() == 1
+
+    def test_without_active_search_plain_select(self, controller, two_folders):
+        controller.selectFolderKeepSearch(str(two_folders / "telek"))
+        assert controller.photos.rowCount() == 1  # sima mappanézet
+        controller.search("IMG")
+        controller.search("")
+        controller.selectFolderKeepSearch(str(two_folders / "nyaralas"))
+        assert controller.photos.rowCount() == 2  # törölt keresés → teljes mappa
