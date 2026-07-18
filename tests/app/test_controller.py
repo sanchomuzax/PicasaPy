@@ -663,3 +663,69 @@ class TestFolderClickDuringSearch:
         controller.search("")
         controller.selectFolderKeepSearch(str(two_folders / "nyaralas"))
         assert controller.photos.rowCount() == 2  # törölt keresés → teljes mappa
+
+
+class TestSearchFiltersFolderPane:
+    """#49: aktív keresésnél a bal hasáb a találatos mappákra szűkül."""
+
+    @pytest.fixture
+    def two_folders(self, controller, library, tmp_path):
+        from picasapy.index import open_index, sync_tree
+
+        (library / "telek").mkdir()
+        make_jpeg(library / "telek" / "IMG_0100.jpg")
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, library)
+        controller._reload()
+        return library
+
+    def _pane_rows(self, controller):
+        from picasapy.app.models import FolderListModel
+
+        model = controller.folders
+        return [
+            (
+                model.data(model.index(i, 0), FolderListModel.NameRole),
+                model.data(model.index(i, 0), FolderListModel.CountRole),
+            )
+            for i in range(model.rowCount())
+            if model.data(model.index(i, 0), FolderListModel.KindRole) == "folder"
+        ]
+
+    def test_search_narrows_pane_with_match_counts(self, controller, two_folders):
+        controller.search("naplemente")
+        assert self._pane_rows(controller) == [("nyaralas", 1)]
+
+    def test_search_all_matching_folders_listed(self, controller, two_folders):
+        controller.search("IMG")
+        assert sorted(self._pane_rows(controller)) == [
+            ("nyaralas", 2), ("telek", 1)
+        ]
+
+    def test_cleared_search_restores_full_pane(self, controller, two_folders):
+        controller.search("naplemente")
+        controller.search("")
+        rows = self._pane_rows(controller)
+        assert sorted(rows) == [("nyaralas", 2), ("telek", 1)]
+
+    def test_folder_click_keeps_filtered_pane(self, controller, two_folders):
+        # A mappára szűkítés után a hasáb továbbra is az ÖSSZES találatos
+        # mappát mutatja, hogy át lehessen kattintani a másikba.
+        controller.search("IMG")
+        controller.selectFolderKeepSearch(str(two_folders / "telek"))
+        assert sorted(self._pane_rows(controller)) == [
+            ("nyaralas", 2), ("telek", 1)
+        ]
+
+    def test_plain_select_restores_full_pane(self, controller, two_folders):
+        # Javaslatból ugrás (selectFolder) = a keresés vége → teljes lista.
+        controller.search("naplemente")
+        controller.selectFolder(str(two_folders / "telek"))
+        assert sorted(self._pane_rows(controller)) == [
+            ("nyaralas", 2), ("telek", 1)
+        ]
+
+    def test_background_reload_keeps_filtered_pane(self, controller, two_folders):
+        controller.search("naplemente")
+        controller._reload()
+        assert self._pane_rows(controller) == [("nyaralas", 1)]

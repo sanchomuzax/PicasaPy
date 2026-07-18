@@ -35,6 +35,7 @@ from picasapy.scanner import (
     write_watched_folders,
 )
 from .models import FolderListModel, PhotoGridModel
+from .search_results import group_by_folder
 from .thumbnail_provider import ThumbnailProvider
 
 
@@ -88,6 +89,7 @@ class AppController(QObject):
         self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
         self._filter_active = False
         self._filter_status = ""
+        self._folders_filtered = False  # a bal hasáb keresésre szűkítve (#49)
         self._settings = settings
         self._thumb_caption_mode = self._get_settings().value(
             "view/thumbCaption", "none"
@@ -324,6 +326,7 @@ class AppController(QObject):
         self._view_mode = ("folder", folder_path)
         self._filter_active = False
         self._filter_status = ""
+        self._restore_full_folder_pane()
         self._get_settings().setValue("session/lastFolder", folder_path)
         self._folder_description = self._read_folder_description(folder_path)
         with open_index(self._db_path) as conn:
@@ -381,7 +384,23 @@ class AppController(QObject):
             else:
                 self._view_mode = ("search", query)
                 records = search_photos(conn, query)
+        if query:
+            self._show_search_pane(records)
+        else:
+            self._restore_full_folder_pane()
         self._show(records)
+
+    def _show_search_pane(self, records) -> None:
+        """A bal hasáb keresésre szűkítése (#49): csak a találatos mappák,
+        találat-darabszámmal."""
+        self._folders.load_matches(group_by_folder(records))
+        self._folders_filtered = True
+
+    def _restore_full_folder_pane(self) -> None:
+        """A teljes mappalista vissza, ha a hasáb keresésre volt szűkítve."""
+        if self._folders_filtered:
+            self._folders_filtered = False
+            self._reload_folders()
 
     @Slot(str)
     def selectFolderKeepSearch(self, folder_path: str) -> None:
@@ -400,12 +419,13 @@ class AppController(QObject):
         self._view_mode = ("search-folder", (query, folder_path))
         self._get_settings().setValue("session/lastFolder", folder_path)
         with open_index(self._db_path) as conn:
-            records = tuple(
-                r
-                for r in search_photos(conn, query)
-                if r.folder_path == folder_path
-            )
-        self._show(records)
+            all_matches = search_photos(conn, query)
+        # a hasáb az ÖSSZES találatos mappát mutatja tovább (#49), hogy
+        # át lehessen kattintani a többibe; a rács a mappára szűkül
+        self._show_search_pane(all_matches)
+        self._show(
+            tuple(r for r in all_matches if r.folder_path == folder_path)
+        )
 
     @Slot(str, result="QVariantList")
     def searchSuggestions(self, text: str) -> list:
@@ -568,17 +588,17 @@ class AppController(QObject):
         mode, param = self._view_mode
         if mode == "search":
             with open_index(self._db_path) as conn:
-                self._show(search_photos(conn, param))
+                records = search_photos(conn, param)
+            self._show_search_pane(records)
+            self._show(records)
         elif mode == "search-folder":
             query, folder = param
             with open_index(self._db_path) as conn:
-                self._show(
-                    tuple(
-                        r
-                        for r in search_photos(conn, query)
-                        if r.folder_path == folder
-                    )
-                )
+                all_matches = search_photos(conn, query)
+            self._show_search_pane(all_matches)
+            self._show(
+                tuple(r for r in all_matches if r.folder_path == folder)
+            )
         elif mode == "starred":
             with open_index(self._db_path) as conn:
                 self._show(starred_photos(conn))
@@ -678,11 +698,16 @@ class AppController(QObject):
             self.syncFinished.emit()
 
     def _reload(self) -> None:
-        with open_index(self._db_path) as conn:
-            self._folders.load(
-                conn, sort_mode=self.folderSort, reverse=self.folderSortReverse
-            )
         mode, _ = self._view_mode
+        # Keresésre szűkített hasábnál (#49) a teljes lista betöltése
+        # felvillanást okozna — a _refresh_view frissíti a szűkítettet.
+        if mode not in ("search", "search-folder"):
+            with open_index(self._db_path) as conn:
+                self._folders.load(
+                    conn,
+                    sort_mode=self.folderSort,
+                    reverse=self.folderSortReverse,
+                )
         if mode != "folder":
             # #38: aktív keresés/szűrő a háttér-sync után is megmarad —
             # a selectFolder eldobná, ezért csak a nézetet frissítjük.

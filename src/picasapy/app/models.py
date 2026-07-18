@@ -72,10 +72,25 @@ class FolderListModel(QAbstractListModel):
             for row in db_rows
         ]
         folders.sort(key=_sort_key(sort_mode), reverse=_descending(sort_mode) != reverse)
-        rows = _with_year_separators(
-            (name, path, count, date)
-            for name, path, count, date, _size, _change in folders
+        self._set_rows(
+            _with_year_separators(
+                (name, path, count, date)
+                for name, path, count, date, _size, _change in folders
+            )
         )
+
+    def load_matches(self, groups) -> None:
+        """Keresési találatok mappái (#49): csak a találatos mappák
+        látszanak, a darabszám a találatok száma. Évszám-elválasztó nélkül —
+        a Picasa találati mappalistája is sima felsorolás."""
+        self._set_rows(
+            tuple(
+                ("folder", g.folder_name, g.folder_path, len(g.photos))
+                for g in groups
+            )
+        )
+
+    def _set_rows(self, rows: tuple[tuple[str, str, str, int], ...]) -> None:
         # Változatlan adatnál nincs reset: a reset eldobná a delegate-eket
         # és nullázná a görgetést, így a lista minden háttér-szinkronnál
         # a tetejére ugrana (#10).
