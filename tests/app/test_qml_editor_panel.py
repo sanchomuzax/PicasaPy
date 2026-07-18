@@ -161,14 +161,13 @@ class TestCropOverlay:
         )
 
     def test_croprect_default_matches_selection_geometry(self, qml_engine):
+        # #51: Picasa-hűen NINCS elő-kijelölés — a keret rejtve indul,
+        # a kijelölést a felhasználó húzással hozza létre.
         overlay = self._make_overlay(qml_engine)
         selection = overlay.findChild(QObject, "cropSelection")
         assert selection is not None
-        # alapértelmezett cropRect: 0.1,0.1,0.8,0.8 -> 200x100-as felületen
-        assert round(selection.property("x")) == 20
-        assert round(selection.property("y")) == 10
-        assert round(selection.property("width")) == 160
-        assert round(selection.property("height")) == 80
+        assert overlay.property("hasSelection") is False
+        assert selection.property("visible") is False
 
     def test_croprect_change_updates_selection_geometry(self, qml_engine, qt_app):
         overlay = self._make_overlay(qml_engine)
@@ -182,7 +181,8 @@ class TestCropOverlay:
 
     def test_enter_emits_accepted_with_current_rect(self, qml_engine, qt_app):
         overlay = self._make_overlay(
-            qml_engine, extra="cropRect: Qt.rect(0.1, 0.2, 0.3, 0.4)"
+            qml_engine,
+            extra="cropRect: Qt.rect(0.1, 0.2, 0.3, 0.4); hasSelection: true",
         )
         accepted = []
         overlay.accepted.connect(lambda r: accepted.append(r))

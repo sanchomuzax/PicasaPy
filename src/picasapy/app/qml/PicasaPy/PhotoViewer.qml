@@ -18,6 +18,27 @@ Rectangle {
 
     function show(index) { currentIndex = index; forceActiveFocus() }
 
+    // Visszavonás/Újra állapot a vágáshoz (#51) — képenként érvényes
+    property var lastAppliedCrop: null
+    property var redoCropRect: null
+
+    // Vágás alkalmazása a kijelölésből. advance=true: Enter-flow —
+    // következő kép, vágó-mód megtartva; false: Alkalmaz gomb — a panel
+    // visszaáll az eszközrácsra (Picasa-viselkedés).
+    function applyCrop(advance) {
+        if (!cropOverlay.hasSelection) {
+            if (!advance) editorPanel.cropActive = false
+            return
+        }
+        var r = cropOverlay.cropRect
+        editController.applyCrop(r.x, r.y, r.width, r.height)
+        viewer.lastAppliedCrop = Qt.rect(r.x, r.y, r.width, r.height)
+        viewer.redoCropRect = null
+        cropOverlay.resetSelection()
+        if (advance) viewer.next()
+        else editorPanel.cropActive = false
+    }
+
     // -- szerkesztés (#19): EditController-életciklus --------------------
     // A nézőbe lépés = szerkesztési munkamenet az aktuális képre; kilépéskor
     // a munkamenet zárul. A panel kapcsoló-állapotait az EditController
@@ -47,6 +68,9 @@ Rectangle {
         if (visible) {
             beginEditCurrent()
             tiltSlider.value = 0
+            cropOverlay.resetSelection()
+            viewer.lastAppliedCrop = null
+            viewer.redoCropRect = null
         }
     }
     Connections {
@@ -151,12 +175,42 @@ Rectangle {
                     objectName: "viewerEditorPanel"
                     anchors.top: parent.top
                     anchors.left: parent.left; anchors.right: parent.right
-                    height: 180
+                    height: 420
+                    imageAspect: photo.paintedHeight > 0
+                                 ? photo.paintedWidth / photo.paintedHeight
+                                 : 4 / 3
+                    // Visszavonás/Újra — jelenleg a vágásra (#51)
+                    undoAvailable: editController.hasCrop
+                    undoLabel: editController.hasCrop
+                               ? qsTr("Undo: Crop") : qsTr("Undo")
+                    redoAvailable: viewer.redoCropRect !== null
+                    redoLabel: viewer.redoCropRect !== null
+                               ? qsTr("Redo: Crop") : qsTr("Redo")
                     onToolActivated: function(tool) {
                         // crop/tilt helyi mód (overlay/csúszka); a többi
                         // azonnali ini-művelet az EditControlleren át
                         if (tool !== "crop" && tool !== "tilt")
                             editController.toggleTool(tool)
+                    }
+                    onUndoRequested: {
+                        viewer.redoCropRect = viewer.lastAppliedCrop
+                        editController.clearCrop()
+                    }
+                    onRedoRequested: {
+                        var r = viewer.redoCropRect
+                        if (r !== null) {
+                            editController.applyCrop(r.x, r.y, r.width, r.height)
+                            viewer.lastAppliedCrop = r
+                            viewer.redoCropRect = null
+                        }
+                    }
+                    onQuickCropRequested: (kind) => cropOverlay.selectPreset(kind)
+                    onCropPreviewHold: (held) => cropOverlay.previewHold = held
+                    onCropResetRequested: cropOverlay.resetSelection()
+                    onCropApplyRequested: viewer.applyCrop(false)
+                    onCropCancelRequested: {
+                        cropOverlay.resetSelection()
+                        editorPanel.cropActive = false
                     }
                 }
 
@@ -181,10 +235,6 @@ Rectangle {
                         Layout.fillWidth: true
                         onPressedChanged: if (!pressed && editorPanel.tiltActive)
                                               editController.setTilt(value)
-                    }
-                    RowLayout {
-                        PicasaButton { text: qsTr("Undo"); enabled: false; Layout.fillWidth: true }
-                        PicasaButton { text: qsTr("Redo"); enabled: false; Layout.fillWidth: true }
                     }
                 }
                 Rectangle {
@@ -254,6 +304,7 @@ Rectangle {
                         id: cropOverlay
                         parent: photo
                         visible: editorPanel.cropActive
+                        aspectRatio: editorPanel.currentAspect
                         x: (photo.width - photo.paintedWidth) / 2
                         y: (photo.height - photo.paintedHeight) / 2
                         width: photo.paintedWidth
@@ -262,13 +313,16 @@ Rectangle {
                             if (visible) forceActiveFocus()
                             else viewer.forceActiveFocus()
                         }
+                        // Enter-flow: elfogad ÉS következő kép, a vágó-mód
+                        // megtartásával (sorozat-vágás, UX-alapelv 1)
                         onAccepted: function(r) {
-                            editController.applyCrop(r.x, r.y, r.width, r.height)
-                            cropRect = Qt.rect(0.1, 0.1, 0.8, 0.8)
-                            viewer.next()
+                            viewer.applyCrop(true)
                             if (visible) forceActiveFocus()
                         }
-                        onCancelled: editorPanel.cropActive = false
+                        onCancelled: {
+                            cropOverlay.resetSelection()
+                            editorPanel.cropActive = false
+                        }
                     }
                 }
                 BusyIndicator {
