@@ -5,7 +5,15 @@ from __future__ import annotations
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import (
+    Property,
+    QDate,
+    QDateTime,
+    QLocale,
+    QObject,
+    Signal,
+    Slot,
+)
 
 from picasapy.index import (
     open_index,
@@ -38,6 +46,7 @@ class AppController(QObject):
         self._photos = PhotoGridModel(self)
         self._current_folder = ""
         self._status = ""
+        self._folder_date = ""
         self._sync_running = False
         self.syncFinished.connect(self._reload)
 
@@ -58,6 +67,11 @@ class AppController(QObject):
     @Property(str, notify=statusChanged)
     def currentFolder(self):
         return self._current_folder
+
+    @Property(str, notify=statusChanged)
+    def folderDateText(self):
+        """A mappa-fejléc dátumsora (a legkorábbi felvétel hosszú dátuma)."""
+        return self._folder_date
 
     # -- műveletek ----------------------------------------------------------
 
@@ -93,6 +107,28 @@ class AppController(QObject):
             else:
                 records = search_photos(conn, query)
         self._show(records)
+
+    @Slot(int, result=str)
+    def photoInfo(self, row: int) -> str:
+        """A kék infó-sáv kijelöléskori tartalma, Picasa-stílusban:
+        `név   dátum   SZxM képpont   méret`."""
+        photos = self._photos.photos
+        if not 0 <= row < len(photos):
+            return ""
+        photo = photos[row]
+        locale = QLocale()
+        parts = [photo.name]
+        if photo.taken_at:
+            taken = QDateTime.fromString(photo.taken_at, "yyyy-MM-ddTHH:mm:ss")
+            parts.append(locale.toString(taken, QLocale.FormatType.ShortFormat))
+        if photo.width and photo.height:
+            parts.append(
+                self.tr("%1x%2 pixels")
+                .replace("%1", str(photo.width))
+                .replace("%2", str(photo.height))
+            )
+        parts.append(_format_size(photo.size, locale, self.tr))
+        return "   ".join(parts)
 
     @Slot()
     def showStarred(self) -> None:
@@ -135,19 +171,39 @@ class AppController(QObject):
     def _show(self, records) -> None:
         self._provider.register_photos(records)
         self._photos.set_photos(records)
+        dates = sorted(r.taken_at for r in records if r.taken_at)
+        self._folder_date = _long_date(dates[0], QLocale()) if dates else ""
         self._update_status(records)
 
     def _update_status(self, records) -> None:
         if not records:
             self._status = self.tr("0 pictures")
         else:
+            locale = QLocale()
             total_mb = sum(r.size for r in records) / (1024 * 1024)
             dates = sorted(r.taken_at for r in records if r.taken_at)
             date_part = ""
             if dates:
-                first, last = dates[0][:10], dates[-1][:10]
-                date_part = first if first == last else f"{first} – {last}"
+                first = _long_date(dates[0], locale)
+                last = _long_date(dates[-1], locale)
+                date_part = first if first == last else f"{first}-{last}"
             self._status = self.tr("%n picture(s)", "", len(records)) + (
                 f"   {date_part}   " if date_part else "   "
-            ) + self.tr("%1 MB on disk").replace("%1", f"{total_mb:.1f}")
+            ) + self.tr("%1 MB on disk").replace(
+                "%1", locale.toString(total_mb, "f", 1)
+            )
         self.statusChanged.emit()
+
+
+def _long_date(iso: str, locale: QLocale) -> str:
+    """Picasa-stílusú hosszú dátum: `2026. január 2., péntek`."""
+    date = QDate.fromString(iso[:10], "yyyy-MM-dd")
+    return locale.toString(date, QLocale.FormatType.LongFormat)
+
+
+def _format_size(size_bytes: int, locale: QLocale, tr) -> str:
+    if size_bytes < 1024 * 1024:
+        return tr("%1 KB").replace("%1", str(round(size_bytes / 1024)))
+    return tr("%1 MB").replace(
+        "%1", locale.toString(size_bytes / (1024 * 1024), "f", 1)
+    )

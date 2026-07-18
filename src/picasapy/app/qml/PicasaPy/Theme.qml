@@ -1,41 +1,47 @@
 pragma Singleton
 import QtQuick
 
-// Picasa 3.9 dizájn-tokenek — a Wikipedia Picasa_3.9.jpg screenshotból
-// mintavételezett színek (2026-07-17); a felhasználói screenshotokkal
-// finomítandó.
+// Picasa 3.9 dizájn-tokenek — a felhasználó saját magyar Picasa 3.9-éről
+// készült 1920x1080-as screenshotokból mintavételezve (2026-07-18,
+// research/testdata/screenshot/).
 QtObject {
-    // króm (eszköztár, menük)
-    readonly property color chromeBg: "#ededed"
+    // króm (menü, eszköztár, szűrősáv)
+    readonly property color chromeBg: "#e8e8e8"
     readonly property color chromeBorder: "#d5d5d5"
 
     // bal oldali mappa-panel
-    readonly property color panelBg: "#e9eaef"
-    readonly property color panelHeaderBg: "#e1e2e7"
-    readonly property color panelHeaderText: "#44506b"
-    readonly property color panelSelection: "#84a9bc"
+    readonly property color panelBg: "#f3f3f3"
+    readonly property color panelHeaderBg: "#e1e4e7"
+    readonly property color panelHeaderText: "#3a3a3a"
+    readonly property color panelSelection: "#83a7bd"
     readonly property color panelSelectionText: "#ffffff"
+    readonly property color panelYearText: "#8a8a8a"
 
     // lightbox (rács)
-    readonly property color lightboxBg: "#f2f2f2"
-    readonly property color folderTitle: "#3c6ea5"
+    readonly property color lightboxBg: "#eaeaea"
+    readonly property color folderTitle: "#634b45"      // barna szerif cím!
+    readonly property color folderDate: "#444444"
+    readonly property color addDescription: "#8f8f8f"
+    readonly property color thumbCard: "#ffffff"
     readonly property color thumbBorder: "#d9d9d9"
-    readonly property color thumbSelection: "#4786b1"
-    readonly property color thumbHover: "#a8c4d6"
+    readonly property color thumbSelection: "#009eff"   // élénk azúr keret
+    readonly property color thumbHover: "#a8c8de"
 
-    // alsó info-sáv (acélkék gradiens) és tálca
-    readonly property color infoBarTop: "#639dc3"
-    readonly property color infoBarBottom: "#4786b1"
+    // alsó info-sáv (tömör acélkék) és tálca
+    readonly property color infoBar: "#568fb7"
     readonly property color infoBarText: "#ffffff"
-    readonly property color trayBg: "#f4f4f0"
+    readonly property color trayBg: "#f8f8f8"
     readonly property color trayBorder: "#d0d0c8"
 
     // akcentusok
-    readonly property color picasaGreen: "#3c9100"
+    readonly property color picasaGreen: "#3b8f00"
+    readonly property color playGreen: "#43a047"
     readonly property color starYellow: "#f5c518"
     readonly property color textDark: "#333333"
     readonly property color textGray: "#767676"
+    readonly property color linkBlue: "#2a5db0"
 
     readonly property int fontSize: 12
-    readonly property int folderTitleSize: 15
+    readonly property int folderTitleSize: 17
+    readonly property string serifFamily: "Georgia, 'Times New Roman', serif"
 }

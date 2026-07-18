@@ -17,14 +17,21 @@ Rectangle {
 
         Rectangle {
             width: parent.width; height: 22
-            color: Theme.panelHeaderBg
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "#eef0f2" }
+                GradientStop { position: 1.0; color: Theme.panelHeaderBg }
+            }
             border.color: Theme.chromeBorder
-            Text {
+            Row {
                 anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left; anchors.leftMargin: 6
-                text: "▼ " + qsTr("Albums") + " (1)"
-                font.pixelSize: Theme.fontSize; font.bold: true
-                color: Theme.panelHeaderText
+                anchors.left: parent.left; anchors.leftMargin: 4
+                spacing: 4
+                Text { text: "▼"; font.pixelSize: 8; color: Theme.panelHeaderText }
+                Text {
+                    text: qsTr("Albums") + " (1)"
+                    font.pixelSize: Theme.fontSize; font.bold: true
+                    color: Theme.panelHeaderText
+                }
             }
         }
 
@@ -53,14 +60,21 @@ Rectangle {
 
         Rectangle {
             width: parent.width; height: 22
-            color: Theme.panelHeaderBg
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "#eef0f2" }
+                GradientStop { position: 1.0; color: Theme.panelHeaderBg }
+            }
             border.color: Theme.chromeBorder
-            Text {
+            Row {
                 anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left; anchors.leftMargin: 6
-                text: "▼ " + qsTr("Folders") + " (" + folderList.count + ")"
-                font.pixelSize: Theme.fontSize; font.bold: true
-                color: Theme.panelHeaderText
+                anchors.left: parent.left; anchors.leftMargin: 4
+                spacing: 4
+                Text { text: "▼"; font.pixelSize: 8; color: Theme.panelHeaderText }
+                Text {
+                    text: qsTr("Folders") + " (" + folderList.count + ")"
+                    font.pixelSize: Theme.fontSize; font.bold: true
+                    color: Theme.panelHeaderText
+                }
             }
         }
 

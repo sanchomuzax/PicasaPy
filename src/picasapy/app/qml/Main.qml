@@ -14,48 +14,16 @@ ApplicationWindow {
     property int thumbSize: 144
     property int selectedIndex: -1
 
-    menuBar: MenuBar {
-        Menu {
-            title: qsTr("&File")
-            MenuItem { text: qsTr("Import..."); enabled: false }
-            MenuSeparator {}
-            MenuItem { text: qsTr("E&xit"); onTriggered: Qt.quit() }
-        }
-        Menu {
-            title: qsTr("&Edit")
-            MenuItem { text: qsTr("Select All"); enabled: false }
-        }
-        Menu {
-            title: qsTr("&View")
-            MenuItem {
-                text: qsTr("Refresh")
-                onTriggered: controller.rescan()
-            }
-        }
-        Menu {
-            title: qsTr("F&older")
-            MenuItem {
-                text: qsTr("Rescan folders")
-                onTriggered: controller.rescan()
-            }
-        }
-        Menu { title: qsTr("&Picture") }
-        Menu { title: qsTr("&Create") }
-        Menu {
-            title: qsTr("&Tools")
-            MenuItem { text: qsTr("Folder Manager..."); enabled: false }
-        }
-        Menu {
-            title: qsTr("&Help")
-            MenuItem {
-                text: qsTr("About PicasaPy")
-                onTriggered: aboutDialog.open()
-            }
-        }
+    menuBar: PicasaMenuBar {
+        onRescanRequested: controller.rescan()
+        onAboutRequested: aboutDialog.open()
+        onThumbSizePreset: function(size) { window.thumbSize = size }
+        onSelectStarredRequested: controller.showStarred()
     }
 
+    // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
     header: Rectangle {
-        height: 40
+        height: 34
         color: Theme.chromeBg
         Rectangle {
             anchors.bottom: parent.bottom
@@ -65,18 +33,50 @@ ApplicationWindow {
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 8; anchors.rightMargin: 8
-            spacing: 8
+            spacing: 10
             Button {
                 text: qsTr("Import")
                 enabled: false
-                Layout.preferredWidth: 110
+                Layout.preferredWidth: 100
+                Layout.preferredHeight: 24
+                font.pixelSize: Theme.fontSize
             }
             Item { Layout.fillWidth: true }
+            Column {
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 0
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: qsTr("Filters")
+                    font.pixelSize: 9
+                    color: Theme.textGray
+                }
+                Row {
+                    spacing: 6
+                    Text {
+                        text: "★"
+                        font.pixelSize: 13
+                        color: starFilter.hovered ? Theme.starYellow : "#a0a0a0"
+                        HoverHandler { id: starFilter }
+                        TapHandler { onTapped: controller.showStarred() }
+                    }
+                    Text { text: "🖼"; font.pixelSize: 12; opacity: 0.4 }
+                    Text { text: "👤"; font.pixelSize: 12; opacity: 0.4 }
+                    Text { text: "🎬"; font.pixelSize: 12; opacity: 0.4 }
+                    Text { text: "📍"; font.pixelSize: 12; opacity: 0.4 }
+                }
+            }
+            Item { width: 20 }
             TextField {
                 id: searchField
                 placeholderText: "🔍 " + qsTr("Search")
-                Layout.preferredWidth: 240
-                onTextEdited: controller.search(text)
+                Layout.preferredWidth: 300
+                Layout.preferredHeight: 24
+                font.pixelSize: Theme.fontSize
+                onTextEdited: {
+                    window.selectedIndex = -1
+                    controller.search(text)
+                }
             }
         }
     }
@@ -107,20 +107,14 @@ ApplicationWindow {
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 10
+                anchors.margins: 12
                 spacing: 4
 
-                Text {
-                    text: controller.currentFolder
-                          ? controller.currentFolder.split("/").pop()
-                          : qsTr("Library")
-                    color: Theme.folderTitle
-                    font.pixelSize: Theme.folderTitleSize
-                    font.bold: true
-                }
-                Rectangle {
-                    Layout.fillWidth: true; height: 1
-                    color: Theme.chromeBorder
+                LightboxHeader {
+                    folderName: controller.currentFolder
+                                ? controller.currentFolder.split("/").pop()
+                                : qsTr("Library")
+                    dateText: controller.folderDateText
                 }
 
                 GridView {
@@ -146,15 +140,15 @@ ApplicationWindow {
     footer: Column {
         width: parent.width
 
+        // tömör acélkék infó-sáv; kijelöléskor a kép adatai
         Rectangle {
-            width: parent.width; height: 22
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: Theme.infoBarTop }
-                GradientStop { position: 1.0; color: Theme.infoBarBottom }
-            }
+            width: parent.width; height: 20
+            color: Theme.infoBar
             Text {
                 anchors.centerIn: parent
-                text: controller.statusText
+                text: window.selectedIndex >= 0
+                      ? controller.photoInfo(window.selectedIndex)
+                      : controller.statusText
                 color: Theme.infoBarText
                 font.pixelSize: Theme.fontSize
                 font.bold: true
@@ -162,7 +156,7 @@ ApplicationWindow {
         }
 
         Rectangle {
-            width: parent.width; height: 48
+            width: parent.width; height: 52
             color: Theme.trayBg
             Rectangle {
                 width: parent.width; height: 1
@@ -172,16 +166,21 @@ ApplicationWindow {
                 anchors.fill: parent
                 anchors.leftMargin: 10; anchors.rightMargin: 10
                 spacing: 8
-                Button { text: qsTr("Hold"); enabled: false }
-                Button { text: qsTr("Clear"); enabled: false }
-                Button { text: qsTr("Add to"); enabled: false }
-                Item { width: 12 }
+
+                Button { text: "★"; enabled: false; Layout.preferredWidth: 34 }
+                Button { text: "↺"; enabled: false; Layout.preferredWidth: 34 }
+                Button { text: "↻"; enabled: false; Layout.preferredWidth: 34 }
+                Item { width: 8 }
                 Button {
-                    text: qsTr("Share")
+                    text: qsTr("Upload to Google Photos")
                     enabled: false
                     palette.button: Theme.picasaGreen
                     palette.buttonText: "white"
+                    font.pixelSize: Theme.fontSize
                 }
+                Button { text: qsTr("E-Mail"); enabled: false; font.pixelSize: Theme.fontSize }
+                Button { text: qsTr("Print"); enabled: false; font.pixelSize: Theme.fontSize }
+                Button { text: qsTr("Export"); enabled: false; font.pixelSize: Theme.fontSize }
                 Item { Layout.fillWidth: true }
                 Text { text: "🖼"; font.pixelSize: 14 }
                 Slider {

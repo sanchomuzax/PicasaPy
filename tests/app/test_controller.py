@@ -39,10 +39,25 @@ class TestController:
         assert controller.folders.rowCount() == 1
 
     def test_select_folder_fills_grid_and_status(self, controller, library):
+        # Picasa-stílus: "N képek   <hosszú dátum(tartomány)>   X,Y MB a lemezen"
         controller.selectFolder(str(library / "nyaralas"))
         assert controller.photos.rowCount() == 2
         assert controller.statusText.startswith("2 ")
-        assert "2025-05-01" in controller.statusText
+        assert "2025" in controller.statusText
+        assert "MB" in controller.statusText
+
+    def test_photo_info_for_selection(self, controller, library):
+        # Kijelöléskor a kék sáv a kép adatait mutatja (név, dátum,
+        # felbontás képpontban, méret).
+        controller.selectFolder(str(library / "nyaralas"))
+        info = controller.photoInfo(0)
+        assert "IMG_0001.jpg" in info
+        assert "8x6" in info
+        assert "2025" in info
+
+    def test_photo_info_invalid_index_empty(self, controller):
+        assert controller.photoInfo(-1) == ""
+        assert controller.photoInfo(999) == ""
 
     def test_search(self, controller):
         controller.search("naplemente")

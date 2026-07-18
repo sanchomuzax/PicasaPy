@@ -1,7 +1,7 @@
 import QtQuick
 
-// Egy indexkép a Lightboxban: fehér keret, hover- és kijelölés-szegély,
-// csillag-jelvény, videó-overlay — Picasa-stílusban.
+// Egy indexkép a lightboxban — Picasa 3.9: fehér kártya vékony szürke
+// szegéllyel a #eaeaea háttéren; kijelöléskor élénk azúr (#009eff) keret.
 Item {
     id: cell
     required property string name
@@ -16,18 +16,18 @@ Item {
     Rectangle {
         id: frame
         anchors.centerIn: parent
-        width: image.paintedWidth + 8
-        height: image.paintedHeight + 8
-        color: "#ffffff"
-        border.width: cell.selected ? 3 : (hover.hovered ? 2 : 1)
+        width: image.paintedWidth + 10
+        height: image.paintedHeight + 10
+        color: Theme.thumbCard
+        border.width: cell.selected ? 3 : 1
         border.color: cell.selected ? Theme.thumbSelection
                      : (hover.hovered ? Theme.thumbHover : Theme.thumbBorder)
 
         Image {
             id: image
             anchors.centerIn: parent
-            width: cell.width - 16
-            height: cell.height - 16
+            width: cell.width - 18
+            height: cell.height - 18
             source: cell.thumbUrl
             fillMode: Image.PreserveAspectFit
             asynchronous: true
@@ -40,7 +40,7 @@ Item {
             anchors.margins: 3
             text: "★"
             color: Theme.starYellow
-            font.pixelSize: 16
+            font.pixelSize: 15
             style: Text.Outline; styleColor: "#00000060"
         }
 
