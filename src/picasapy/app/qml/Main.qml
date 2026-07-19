@@ -674,6 +674,7 @@ ApplicationWindow {
                         else if (b.top < contentY)
                             contentY = b.top
                         savedY = contentY
+                        captureAnchor()
                     }
                     // teszt-segéd (#95): az utolsó csoport aljának távolsága
                     // a viewport tetejétől (<=0 vagy null → üres lap látszik)
@@ -719,6 +720,7 @@ ApplicationWindow {
                         var maxY = originY + Math.max(0, contentHeight - height)
                         contentY = Math.max(originY, Math.min(target, maxY))
                         savedY = contentY
+                        captureAnchor()
                     }
 
                     // -- görgetés: mappára ugrás + pozíció-megőrzés --------
@@ -728,16 +730,61 @@ ApplicationWindow {
                     property real savedY: 0
                     property bool restoring: false
                     property string pendingPath: ""
-                    onContentYChanged: {
-                        if (!restoring && (contentY > 0 || moving))
-                            savedY = contentY
+                    // #17-visszajelzés: modellcsere után a nyers contentY
+                    // nem képezhető vissza megbízhatóan — a még nem
+                    // példányosított csoportok magassága BECSLÉS, így a
+                    // nézet „elugrott" (pl. elrejtésnél). A horgony ezért
+                    // szerkezeti: a viewport tetején látszó mappacsoport
+                    // útvonala + azon belüli eltolás; visszaálláskor
+                    // positionViewAtIndex (index-alapú, pontos).
+                    property string anchorPath: ""
+                    property real anchorOffset: 0
+                    function captureAnchor() {
+                        for (var i = 0; i < count; ++i) {
+                            var it = itemAtIndex(i)
+                            if (it && contentY >= it.y
+                                    && contentY < it.y + it.height) {
+                                anchorPath = model[i] ? model[i].path : ""
+                                anchorOffset = contentY - it.y
+                                return
+                            }
+                        }
                     }
-                    onMovementEnded: savedY = contentY
+                    function restoreAnchor() {
+                        var idx = -1
+                        for (var i = 0; i < model.length; ++i)
+                            if (model[i].path === anchorPath) { idx = i; break }
+                        if (idx < 0) {
+                            // horgony-mappa már nincs (pl. minden képe
+                            // rejtett) — durva pixel-visszaállás marad
+                            contentY = Math.min(
+                                savedY, Math.max(0, contentHeight - height))
+                            savedY = contentY
+                            return
+                        }
+                        positionViewAtIndex(idx, ListView.Beginning)
+                        var it = itemAtIndex(idx)
+                        if (it) {
+                            var maxOffset = Math.max(0, it.height - height)
+                            contentY = it.y
+                                + Math.min(anchorOffset, maxOffset)
+                        }
+                        savedY = contentY
+                    }
+                    onContentYChanged: {
+                        if (!restoring && (contentY > 0 || moving)) {
+                            savedY = contentY
+                            captureAnchor()
+                        }
+                    }
+                    onMovementEnded: { savedY = contentY; captureAnchor() }
                     function scrollToGroup(path) {
                         for (var i = 0; i < model.length; ++i)
                             if (model[i].path === path) {
                                 positionViewAtIndex(i, ListView.Beginning)
                                 savedY = contentY
+                                anchorPath = path
+                                anchorOffset = 0
                                 return
                             }
                     }
@@ -757,9 +804,7 @@ ApplicationWindow {
                                 return   // mappaválasztás — oda ugrunk úgyis
                             Qt.callLater(function() {
                                 grid.restoring = true
-                                grid.contentY = Math.min(
-                                    grid.savedY,
-                                    Math.max(0, grid.contentHeight - grid.height))
+                                grid.restoreAnchor()
                                 grid.restoring = false
                             })
                         }
