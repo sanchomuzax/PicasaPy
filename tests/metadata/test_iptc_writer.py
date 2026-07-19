@@ -7,7 +7,11 @@ mezők) érintetlen marad.
 
 import pytest
 
-from picasapy.metadata import read_file_metadata, write_iptc_caption
+from picasapy.metadata import (
+    read_file_metadata,
+    write_iptc_caption,
+    write_iptc_keywords,
+)
 
 from support.jpeg_factory import make_jpeg
 
@@ -128,3 +132,86 @@ class TestWriteCaption:
         write_iptc_caption(photo, "felirat")
         leftovers = [p for p in tmp_path.iterdir() if p.suffix == ".tmp"]
         assert leftovers == []
+
+
+class TestWriteKeywords:
+    """IPTC Keywords (2:25) írása — a #12-es Címkék-panel írási útja."""
+
+    def test_keywords_written_and_readable(self, tmp_path):
+        photo = make_jpeg(tmp_path / "a.jpg")
+        assert write_iptc_keywords(photo, ("balaton", "nyár"))
+        assert read_file_metadata(photo).keywords == ("balaton", "nyár")
+
+    def test_unicode_keywords(self, tmp_path):
+        photo = make_jpeg(tmp_path / "a.jpg")
+        write_iptc_keywords(photo, ("őszi túra", "árvíztűrő"))
+        assert read_file_metadata(photo).keywords == ("őszi túra", "árvíztűrő")
+
+    def test_overwrite_replaces_old_keywords(self, tmp_path):
+        photo = make_jpeg(tmp_path / "a.jpg", keywords=("régi", "másik"))
+        write_iptc_keywords(photo, ("új",))
+        assert read_file_metadata(photo).keywords == ("új",)
+
+    def test_keywords_keep_caption(self, tmp_path):
+        photo = make_jpeg(
+            tmp_path / "a.jpg", caption="felirat", keywords=("régi",)
+        )
+        write_iptc_keywords(photo, ("balaton", "nyár"))
+        meta = read_file_metadata(photo)
+        assert meta.caption == "felirat"
+        assert meta.keywords == ("balaton", "nyár")
+
+    def test_caption_write_keeps_new_keywords(self, tmp_path):
+        # a két író nem ronthatja el egymás mezőit (oda-vissza)
+        photo = make_jpeg(tmp_path / "a.jpg")
+        write_iptc_keywords(photo, ("címke",))
+        write_iptc_caption(photo, "felirat")
+        meta = read_file_metadata(photo)
+        assert meta.caption == "felirat"
+        assert meta.keywords == ("címke",)
+
+    def test_empty_keywords_removes_datasets(self, tmp_path):
+        photo = make_jpeg(tmp_path / "a.jpg", keywords=("törlendő",))
+        write_iptc_keywords(photo, ())
+        assert read_file_metadata(photo).keywords == ()
+
+    def test_roundtrip_restores_original_bytes(self, tmp_path):
+        # címkék rá, címkék le → bitre azonos fájl (nem volt IPTC előtte)
+        photo = make_jpeg(tmp_path / "a.jpg")
+        original = photo.read_bytes()
+        write_iptc_keywords(photo, ("ideiglenes",))
+        write_iptc_keywords(photo, ())
+        assert photo.read_bytes() == original
+
+    def test_other_segments_byte_identical(self, tmp_path):
+        photo = make_jpeg(
+            tmp_path / "a.jpg", taken_at="2025:05:01 07:23:10", orientation=6
+        )
+        before = _segments(photo)
+        write_iptc_keywords(photo, ("címke",))
+        assert _segments(photo) == before
+        meta = read_file_metadata(photo)
+        assert meta.taken_at == "2025-05-01T07:23:10"
+        assert meta.orientation == 6
+
+    def test_non_jpeg_rejected(self, tmp_path):
+        from PIL import Image
+
+        png = tmp_path / "kep.png"
+        Image.new("RGB", (8, 6), "blue").save(png, "PNG")
+        assert write_iptc_keywords(png, ("x",)) is False
+
+    def test_corrupt_file_rejected(self, tmp_path):
+        bad = tmp_path / "rossz.jpg"
+        bad.write_bytes(b"nem jpeg")
+        assert write_iptc_keywords(bad, ("x",)) is False
+
+    def test_long_keyword_truncated_on_utf8_boundary(self, tmp_path):
+        # az IPTC 2:25 mező 64 bájtos; a vágás nem törhet szét UTF-8
+        # karaktert (a visszaolvasás érvényes szöveget kapjon)
+        photo = make_jpeg(tmp_path / "a.jpg")
+        long_keyword = "ő" * 40  # 80 bájt UTF-8-ban
+        write_iptc_keywords(photo, (long_keyword,))
+        (read_back,) = read_file_metadata(photo).keywords
+        assert read_back == "ő" * 32  # 64 bájt = 32 kétbájtos karakter
+        assert long_keyword.startswith(read_back)

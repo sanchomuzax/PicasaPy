@@ -34,9 +34,18 @@ ApplicationWindow {
     property int selectedIndex: -1        // horgony (utoljára kattintott)
     property var selectedIndexes: []      // a teljes kijelölés
     property bool viewerOpen: false
+    property bool tagsPanelOpen: false    // Címkék-panel (#12, Ctrl+T)
     // a jobbklikkelt kép sora (#15) — a kontextusmenü egyedi műveleteinek
     // (átnevezés, fájlkezelő) célpontja
     property int fileOpTargetRow: -1
+
+    // a kijelölt sorok listája (#12) — több-kijelölés, vagy ha az nincs,
+    // az utoljára kattintott kép
+    function selectedRows() {
+        if (window.selectedIndexes.length > 0)
+            return window.selectedIndexes
+        return window.selectedIndex >= 0 ? [window.selectedIndex] : []
+    }
 
     // a kijelölt képek abszolút útvonalai (#15/#16) — a fájlműveletek a
     // művelet ELŐTT gyűjtött útvonal-listán futnak, így a közben frissülő
@@ -125,6 +134,12 @@ ApplicationWindow {
         sequence: "Ctrl+4"
         onActivated: window.startSlideshow(-1)
     }
+    // #12: Ctrl+T — Címkék-panel (Picasa-billentyű); a könyvtár-nézetben él
+    Shortcut {
+        sequence: "Ctrl+T"
+        onActivated: if (!window.viewerOpen)
+                         window.tagsPanelOpen = !window.tagsPanelOpen
+    }
 
     // -- diavetítés (#8) ----------------------------------------------------
     // Indítás: viszonyítási pont a néző képe / a rács-kijelölés / az első
@@ -184,6 +199,8 @@ ApplicationWindow {
         }
         onDeleteRequested: deleteConfirmDialog.openFor(window.selectedPaths())
         onSlideshowRequested: window.startSlideshow(-1)
+        tagsPanelOpen: window.tagsPanelOpen
+        onTagsPanelRequested: window.tagsPanelOpen = !window.tagsPanelOpen
     }
 
     FolderManagerDialog { id: folderManager }
@@ -970,6 +987,25 @@ ApplicationWindow {
                 }
                 }
             }
+        }
+
+        // Címkék-panel (#12): jobb oldali hasáb, Ctrl+T / Nézet → Címkék
+        TagsPanel {
+            objectName: "tagsPanel"
+            visible: window.tagsPanelOpen
+            SplitView.preferredWidth: 190
+            SplitView.minimumWidth: 150
+            hasSelection: window.selectedRows().length > 0
+            // a photos.revision-nel együtt kötve: címke-írás után frissül
+            tags: (controller.photos.revision,
+                   controller.keywordsOfRows(window.selectedRows()))
+            onAddRequested: function(keyword) {
+                controller.addKeywordToRows(window.selectedRows(), keyword)
+            }
+            onRemoveRequested: function(keyword) {
+                controller.removeKeywordFromRows(window.selectedRows(), keyword)
+            }
+            onCloseRequested: window.tagsPanelOpen = false
         }
     }
 

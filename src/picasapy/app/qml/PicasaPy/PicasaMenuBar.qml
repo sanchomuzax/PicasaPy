@@ -19,6 +19,9 @@ MenuBar {
     signal locateRequested()
     signal deleteRequested()
     signal slideshowRequested()
+    // #12: a Címkék-panel állapota kívülről kötve, a menüpont csak kér
+    property bool tagsPanelOpen: false
+    signal tagsPanelRequested()
 
     Menu {
         title: qsTr("&File")
@@ -94,7 +97,13 @@ MenuBar {
         MenuItem { text: qsTr("Edit View"); enabled: false }
         MenuSeparator {}
         MenuItem { text: qsTr("Properties"); enabled: false }
-        MenuItem { text: qsTr("Tags"); enabled: false }
+        MenuItem {
+            objectName: "menuViewTags"
+            text: qsTr("Tags")
+            checkable: true
+            checked: bar.tagsPanelOpen
+            onTriggered: bar.tagsPanelRequested()
+        }
         MenuItem { text: qsTr("People"); enabled: false }
         MenuItem { text: qsTr("Places"); enabled: false }
         MenuSeparator {}

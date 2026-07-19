@@ -354,6 +354,122 @@ class TestSetCaption:
         controller.setCaption(99, "nem történhet")  # nem dobhat
 
 
+class TestKeywords:
+    """#12: kulcsszavak (címkék) hozzáadása/törlése a kijelölésre.
+
+    Picasa-szabály: JPEG-nél az IPTC Keywords (2:25) a tár, más
+    formátumnál a .picasa.ini `keywords=` CSV kulcsa."""
+
+    def _png_row(self, controller, library):
+        from picasapy.index import open_index, sync_tree
+
+        png_path = library / "nyaralas" / "kep.png"
+        Image.new("RGB", (4, 4), "blue").save(png_path, "PNG")
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        return next(
+            i
+            for i, photo in enumerate(controller.photos.photos)
+            if photo.name == "kep.png"
+        )
+
+    def test_add_keyword_jpeg_written_to_iptc_and_model(self, controller, library):
+        from picasapy.metadata import read_file_metadata
+
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.addKeywordToRows([1], "balaton")  # IMG_0002.jpg
+        photo_path = library / "nyaralas" / "IMG_0002.jpg"
+        assert read_file_metadata(photo_path).keywords == ("balaton",)
+        assert controller.photos.photos[1].keywords == "balaton"
+
+    def test_add_second_keyword_keeps_first(self, controller, library):
+        from picasapy.metadata import read_file_metadata
+
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.addKeywordToRows([1], "balaton")
+        controller.addKeywordToRows([1], "nyár")
+        photo_path = library / "nyaralas" / "IMG_0002.jpg"
+        assert read_file_metadata(photo_path).keywords == ("balaton", "nyár")
+
+    def test_duplicate_add_ignored_case_insensitive(self, controller, library):
+        from picasapy.metadata import read_file_metadata
+
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.addKeywordToRows([1], "Balaton")
+        controller.addKeywordToRows([1], "balaton")
+        photo_path = library / "nyaralas" / "IMG_0002.jpg"
+        assert read_file_metadata(photo_path).keywords == ("Balaton",)
+
+    def test_remove_keyword_jpeg(self, controller, library):
+        from picasapy.metadata import read_file_metadata
+
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.addKeywordToRows([1], "balaton")
+        controller.addKeywordToRows([1], "nyár")
+        controller.removeKeywordFromRows([1], "balaton")
+        photo_path = library / "nyaralas" / "IMG_0002.jpg"
+        assert read_file_metadata(photo_path).keywords == ("nyár",)
+        assert controller.photos.photos[1].keywords == "nyár"
+
+    def test_add_keyword_png_written_to_ini(self, controller, library):
+        row = self._png_row(controller, library)
+        controller.addKeywordToRows([row], "kék")
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(
+            encoding="utf-8"
+        )
+        assert "[kep.png]" in ini_text
+        assert "keywords=kék" in ini_text.split("[kep.png]")[1]
+
+    def test_remove_last_keyword_png_removes_ini_key(self, controller, library):
+        row = self._png_row(controller, library)
+        controller.addKeywordToRows([row], "kék")
+        controller.removeKeywordFromRows([row], "kék")
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(
+            encoding="utf-8"
+        )
+        assert "keywords=" not in ini_text
+
+    def test_add_to_many_rows(self, controller, library):
+        from picasapy.metadata import read_file_metadata
+
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.addKeywordToRows([0, 1], "közös")
+        for name in ("IMG_0001.jpg", "IMG_0002.jpg"):
+            path = library / "nyaralas" / name
+            assert "közös" in read_file_metadata(path).keywords
+
+    def test_keywords_of_rows_union_sorted(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.addKeywordToRows([0], "zebra")
+        controller.addKeywordToRows([1], "alma")
+        controller.addKeywordToRows([1], "zebra")
+        assert controller.keywordsOfRows([0, 1]) == ["alma", "zebra"]
+
+    def test_comma_stripped_from_keyword(self, controller, library):
+        # a CSV-tár (ini/index) miatt a vessző nem lehet kulcsszó része
+        from picasapy.metadata import read_file_metadata
+
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.addKeywordToRows([1], "egy, kettő")
+        photo_path = library / "nyaralas" / "IMG_0002.jpg"
+        assert read_file_metadata(photo_path).keywords == ("egy kettő",)
+
+    def test_empty_or_invalid_input_noop(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.addKeywordToRows([1], "   ")
+        controller.addKeywordToRows([99], "rossz sor")  # nem dobhat
+        controller.removeKeywordFromRows([1], "nincs ilyen")
+        assert controller.photos.photos[1].keywords is None
+
+    def test_search_finds_added_keyword(self, controller, library):
+        # a DoD kereshetőséget kér: a frissen írt címke azonnal találat
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.addKeywordToRows([1], "vitorlás")
+        controller.search("vitorlás")
+        assert [p.name for p in controller.photos.photos] == ["IMG_0002.jpg"]
+
+
 class TestSessionRestore:
     def _settings(self, tmp_path):
         from PySide6.QtCore import QSettings
