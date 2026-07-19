@@ -22,6 +22,13 @@ def _make_half_and_half(path, width=40, height=20):
     return path
 
 
+def _read_image(path):
+    """Bájt-alapú visszaolvasás: a `cv2.imread` Windowson ékezetes útvonalon
+    (pl. `forgó.jpg`) némán None-t ad (#65), ezért `fromfile` + `imdecode`."""
+    payload = np.fromfile(str(path), dtype=np.uint8)
+    return cv2.imdecode(payload, cv2.IMREAD_COLOR)
+
+
 class TestBasicExport:
     def test_exports_jpeg_with_same_stem(self, tmp_path):
         source = make_jpeg(tmp_path / "nyaralás.jpg")
@@ -57,7 +64,7 @@ class TestResize:
         report = export_photos(
             [ExportItem(source)], tmp_path / "out", ExportSettings(max_dimension=10)
         )
-        exported = cv2.imread(str(report.exported[0]))
+        exported = _read_image(report.exported[0])
         assert exported.shape[:2] == (5, 10)  # (magasság, szélesség)
 
     def test_no_upscale_beyond_original(self, tmp_path):
@@ -65,7 +72,7 @@ class TestResize:
         report = export_photos(
             [ExportItem(source)], tmp_path / "out", ExportSettings(max_dimension=1000)
         )
-        exported = cv2.imread(str(report.exported[0]))
+        exported = _read_image(report.exported[0])
         assert exported.shape[:2] == (20, 40)
 
 
@@ -77,7 +84,7 @@ class TestRotation:
         report = export_photos(
             [ExportItem(source, rotate_steps=1)], tmp_path / "out"
         )
-        exported = cv2.imread(str(report.exported[0]))
+        exported = _read_image(report.exported[0])
         assert exported.shape[:2] == (40, 20)  # oldalak felcserélve
         assert exported[:10].mean() > 200  # felső negyed: fehér
         assert exported[-10:].mean() < 50  # alsó negyed: fekete
@@ -87,7 +94,7 @@ class TestRotation:
         report = export_photos(
             [ExportItem(source, rotate_steps=2)], tmp_path / "out"
         )
-        exported = cv2.imread(str(report.exported[0]))
+        exported = _read_image(report.exported[0])
         assert exported.shape[:2] == (20, 40)
         assert exported[:, :20].mean() < 50  # bal fél: fekete lett
         assert exported[:, 20:].mean() > 200
@@ -97,7 +104,7 @@ class TestRotation:
         report = export_photos(
             [ExportItem(source, rotate_steps=4)], tmp_path / "out"
         )
-        exported = cv2.imread(str(report.exported[0]))
+        exported = _read_image(report.exported[0])
         assert exported.shape[:2] == (20, 40)
         assert exported[:, :20].mean() > 200  # változatlan
 
