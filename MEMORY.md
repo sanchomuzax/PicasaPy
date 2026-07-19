@@ -28,6 +28,11 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
   test_qml_functional.py`, #53) kizárva újrafuttatni — soha nem szabad
   percekig várni egy beragadt futásra, és nem szabad többször újrapróbálni
   ugyanazt a beragadó futást.
+- **2026-07-19: NE tesztelj túl, NE várakozz feleslegesen (felhasználói utasítás).**
+  Egy javításhoz EGY célzott tesztfutás + EGY teljes futás elég — ismételt
+  „biztonsági" újrafuttatás TILOS (a flaky-gyanút a CI dönti el, az a mérce).
+  A CI-t azonnal, rövid ciklusban kell ellenőrizni (nem 8 perces időzítővel);
+  ha a Windows-láb már zöld és a merge átmegy, nem kell az ubuntu-lábra várni.
 - **2026-07-19: Kész munka AZONNAL a main-be (felhasználói utasítás).** Ha a
   feladat kész és a tesztek zöldek, a session maga nyissa meg ÉS mergelje a
   PR-t a main-be, külön kérés nélkül — a felhasználónak soha ne kelljen
