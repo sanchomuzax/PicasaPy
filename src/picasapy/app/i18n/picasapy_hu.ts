@@ -4,12 +4,12 @@
 <context>
     <name></name>
     <message>
-        <location filename="../controller.py" line="939"/>
+        <location filename="../controller.py" line="986"/>
         <source>%1 KB</source>
         <translation>%1 KB</translation>
     </message>
     <message>
-        <location filename="../controller.py" line="940"/>
+        <location filename="../controller.py" line="987"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
     </message>
@@ -17,29 +17,29 @@
 <context>
     <name>AppController</name>
     <message>
-        <location filename="../controller.py" line="735"/>
+        <location filename="../controller.py" line="782"/>
         <source>%1x%2 pixels</source>
         <translation>%1x%2 képpont</translation>
     </message>
     <message>
-        <location filename="../controller.py" line="813"/>
+        <location filename="../controller.py" line="860"/>
         <source>%1 folders / %2 pictures visible (%3 seconds) %4 GB</source>
         <translation>%1 mappa / %2 kép látható (%3 másodperc) %4 GB</translation>
     </message>
     <message>
-        <location filename="../controller.py" line="907"/>
+        <location filename="../controller.py" line="954"/>
         <source>0 pictures</source>
         <translation>0 kép</translation>
     </message>
     <message numerus="yes">
-        <location filename="../controller.py" line="917"/>
+        <location filename="../controller.py" line="964"/>
         <source>%n picture(s)</source>
         <translation>
             <numerusform>%n kép</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../controller.py" line="919"/>
+        <location filename="../controller.py" line="966"/>
         <source>%1 MB on disk</source>
         <translation>%1 MB a lemezen</translation>
     </message>
@@ -326,7 +326,7 @@
         <translation type="vanished">&amp;Súgó</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1265"/>
+        <location filename="../qml/Main.qml" line="1295"/>
         <source>About PicasaPy</source>
         <translation>A PicasaPy névjegye</translation>
     </message>
@@ -356,75 +356,75 @@
         <translation>Az összes megtekintése</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1064"/>
+        <location filename="../qml/Main.qml" line="1094"/>
         <source>Rename...</source>
         <translation>Átnevezés…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1094"/>
+        <location filename="../qml/Main.qml" line="1124"/>
         <source>Move to Folder...</source>
         <translation>Áthelyezés új mappába…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1107"/>
+        <location filename="../qml/Main.qml" line="1137"/>
         <source>Delete from Disk</source>
         <translation>Törlés lemezről</translation>
     </message>
     <message numerus="yes">
-        <location filename="../qml/Main.qml" line="1123"/>
+        <location filename="../qml/Main.qml" line="1153"/>
         <source>%n picture(s) will be moved to the system trash.</source>
         <translation>
             <numerusform>%n kép a rendszer lomtárába kerül.</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1133"/>
+        <location filename="../qml/Main.qml" line="1163"/>
         <source>File operation failed</source>
         <translation>A fájlművelet nem sikerült</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1160"/>
-        <location filename="../qml/Main.qml" line="1233"/>
+        <location filename="../qml/Main.qml" line="1190"/>
+        <location filename="../qml/Main.qml" line="1263"/>
         <source>Export Picture to Folder...</source>
         <translation>Kép exportálása mappába…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1181"/>
+        <location filename="../qml/Main.qml" line="1211"/>
         <source>Target folder:</source>
         <translation>Célmappa:</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1191"/>
+        <location filename="../qml/Main.qml" line="1221"/>
         <source>(not selected)</source>
         <translation>(nincs kiválasztva)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1196"/>
+        <location filename="../qml/Main.qml" line="1226"/>
         <source>Browse...</source>
         <translation>Tallózás…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1203"/>
+        <location filename="../qml/Main.qml" line="1233"/>
         <source>Image size:</source>
         <translation>Képméret:</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1211"/>
+        <location filename="../qml/Main.qml" line="1241"/>
         <source>Original size</source>
         <translation>Eredeti méret</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1218"/>
+        <location filename="../qml/Main.qml" line="1248"/>
         <source>Image quality:</source>
         <translation>Képminőség:</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1256"/>
+        <location filename="../qml/Main.qml" line="1286"/>
         <source>%1 pictures exported, %2 failed.</source>
         <translation>%1 kép exportálva, %2 sikertelen.</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1258"/>
+        <location filename="../qml/Main.qml" line="1288"/>
         <source>%1 pictures exported.</source>
         <translation>%1 kép exportálva.</translation>
     </message>
@@ -433,28 +433,28 @@
         <translation type="vanished">Könyvtár</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="965"/>
+        <location filename="../qml/Main.qml" line="995"/>
         <source>Selection</source>
         <translation>Kijelölés</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1037"/>
+        <location filename="../qml/Main.qml" line="1067"/>
         <source>Upload to Google Photos</source>
         <translation>Feltöltés a Google Fotókba</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1024"/>
+        <location filename="../qml/Main.qml" line="1054"/>
         <source>E-Mail</source>
         <translation>E-mail</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1025"/>
+        <location filename="../qml/Main.qml" line="1055"/>
         <source>Print</source>
         <translation>Nyomtatás</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1028"/>
-        <location filename="../qml/Main.qml" line="1240"/>
+        <location filename="../qml/Main.qml" line="1058"/>
+        <location filename="../qml/Main.qml" line="1270"/>
         <source>Export</source>
         <translation>Exportálás</translation>
     </message>
@@ -475,7 +475,7 @@
         <translation type="vanished">Megosztás</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1280"/>
+        <location filename="../qml/Main.qml" line="1310"/>
         <source>A modern, open Picasa successor.</source>
         <translation>Modern, nyílt Picasa-utód.</translation>
     </message>
@@ -506,43 +506,43 @@
 <context>
     <name>PhotoViewer</name>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="164"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="188"/>
         <source>Back to Library</source>
         <translation>Vissza a könyvtárhoz</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="170"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="194"/>
         <source>Play</source>
         <translation>Lejátszás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="39"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="46"/>
         <source>Crop</source>
         <translation>Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="40"/>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="290"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="47"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="316"/>
         <source>Straighten</source>
         <translation>Kiegyenesítés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="41"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="48"/>
         <source>Redeye</source>
         <translation>Vörösszem</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="42"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="49"/>
         <source>I&apos;m Feeling Lucky</source>
         <translation>Jó napom van</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="43"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="50"/>
         <source>Auto Contrast</source>
         <translation>Automatikus kontraszt</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="44"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="51"/>
         <source>Auto Color</source>
         <translation>Automatikus szín</translation>
     </message>
@@ -559,8 +559,8 @@
         <translation type="vanished">Derítőfény</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="241"/>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="243"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="267"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="269"/>
         <source>Undo</source>
         <translation>Visszavonás</translation>
     </message>
@@ -569,8 +569,8 @@
         <translation type="vanished">Visszavonás: Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="246"/>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="248"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="272"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="274"/>
         <source>Redo</source>
         <translation>Újra</translation>
     </message>
@@ -579,12 +579,17 @@
         <translation type="vanished">Újra: Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="319"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="345"/>
         <source>Histogram and camera information</source>
         <translation>Hisztogram és fényképezőgép-adatok</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="453"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="422"/>
+        <source>Video playback requires the Qt Multimedia module.</source>
+        <translation>A videó-lejátszáshoz a Qt Multimedia modul szükséges.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="509"/>
         <source>Make a caption!</source>
         <translation>Készítsen képaláírást!</translation>
     </message>
@@ -943,6 +948,14 @@
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="220"/>
         <source>About PicasaPy</source>
         <translation>A PicasaPy névjegye</translation>
+    </message>
+</context>
+<context>
+    <name>VideoPlayerView</name>
+    <message>
+        <location filename="../qml/PicasaPy/VideoPlayerView.qml" line="58"/>
+        <source>Unable to play this video.</source>
+        <translation>Ez a videó nem játszható le.</translation>
     </message>
 </context>
 </TS>

@@ -293,6 +293,11 @@ class PhotoGridModel(QAbstractListModel):
         """A sor csillag-állapota (a tálca ★ gombjának színezéséhez)."""
         return 0 <= row < len(self._photos) and self._photos[row].star
 
+    @Slot(int, result=bool)
+    def isVideoAt(self, row: int) -> bool:
+        """Videó-e a sor (#14) — a néző erre vált lejátszó-nézetre."""
+        return 0 <= row < len(self._photos) and self._photos[row].kind == "video"
+
     @Slot(int, result=str)
     def captionAt(self, row: int) -> str:
         """A sor felirata (üres, ha nincs vagy az index érvénytelen) — a

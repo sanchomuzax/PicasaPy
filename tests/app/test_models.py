@@ -556,3 +556,50 @@ class TestHasEditsMark:
         # a sima forgatás és a csillag NEM módosítás (#100 spec)
         item = self._item(self._record(None, rotate_steps=2, star=True))
         assert item["hasEdits"] is False
+
+
+class TestIsVideoAt:
+    """#14: a néző a videó-sorra lejátszó-nézetre vált — a modell dönt."""
+
+    @staticmethod
+    def _record(kind: str):
+        from picasapy.index import PhotoRecord
+
+        return PhotoRecord(
+            id=1,
+            folder_path="/kepek",
+            name="a.mp4" if kind == "video" else "a.jpg",
+            kind=kind,
+            size=0,
+            mtime_ns=0,
+            star=False,
+            caption=None,
+            keywords=None,
+            rotate_steps=0,
+            filters=None,
+            taken_at=None,
+            orientation=1,
+            width=None,
+            height=None,
+        )
+
+    def test_video_row_true(self, qt_app):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos((self._record("video"),))
+        assert model.isVideoAt(0) is True
+
+    def test_photo_row_false(self, qt_app):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos((self._record("photo"),))
+        assert model.isVideoAt(0) is False
+
+    def test_out_of_range_false(self, qt_app):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        assert model.isVideoAt(0) is False
+        assert model.isVideoAt(-1) is False
