@@ -50,13 +50,19 @@ class TestEditorPanelButtons:
         "autolight": "editToolAutolight",
         "autocolor": "editToolAutocolor",
     }
+    # mód-eszközök: helyi kapcsoló-állapot ("benyomva" csempe); az egygombos
+    # javítások (enhance/autolight/autocolor) NEM kapcsolók (#116)
+    MODE_TOOLS = ["crop", "tilt", "redeye"]
     ACTIVE_PROPS = {
         "crop": "cropActive",
         "tilt": "tiltActive",
         "redeye": "redeyeActive",
-        "enhance": "enhanceActive",
-        "autolight": "autolightActive",
-        "autocolor": "autocolorActive",
+    }
+    ONE_SHOT_TOOLS = ["enhance", "autolight", "autocolor"]
+    ENABLED_PROPS = {
+        "enhance": "enhanceEnabled",
+        "autolight": "autolightEnabled",
+        "autocolor": "autocolorEnabled",
     }
 
     def _make_panel(self, qml_engine):
@@ -138,7 +144,7 @@ class TestEditorPanelButtons:
         qt_app.processEvents()
         assert requested == []
 
-    @pytest.mark.parametrize("tool", TOOLS)
+    @pytest.mark.parametrize("tool", MODE_TOOLS)
     def test_active_state_toggles_and_reflects_on_button(self, qml_engine, qt_app, tool):
         panel = self._make_panel(qml_engine)
         prop = self.ACTIVE_PROPS[tool]
@@ -167,6 +173,109 @@ class TestEditorPanelButtons:
         qt_app.processEvents()
         assert panel.property(prop) is False
         assert button.property("active") is False
+
+
+class TestOneShotTiles:
+    """#116: az egygombos javítások nem kapcsolók — a csempe tiltott, amíg
+    ugyanez a szűrő a lánc utolsó eleme (a *Enabled propertyt a hívó tölti)."""
+
+    def _make_panel(self, qml_engine):
+        return _load(
+            qml_engine,
+            'import QtQuick\nimport PicasaPy 1.0\nEditorPanel { objectName: "panel" }\n',
+        )
+
+    @pytest.mark.parametrize("tool", TestEditorPanelButtons.ONE_SHOT_TOOLS)
+    def test_default_enabled_and_not_pressed(self, qml_engine, qt_app, tool):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        button = panel.findChild(
+            QObject, TestEditorPanelButtons.OBJECT_NAMES[tool]
+        )
+        assert panel.property(TestEditorPanelButtons.ENABLED_PROPS[tool]) is True
+        assert button.property("enabled") is True
+        # nincs "benyomva" állapot — a kattintás nem billent kapcsolót
+        assert button.property("active") is False
+
+    @pytest.mark.parametrize("tool", TestEditorPanelButtons.ONE_SHOT_TOOLS)
+    def test_click_does_not_flip_pressed_state(self, qml_engine, qt_app, tool):
+        panel = self._make_panel(qml_engine)
+        button = panel.findChild(
+            QObject, TestEditorPanelButtons.OBJECT_NAMES[tool]
+        )
+        QMetaObject.invokeMethod(
+            panel,
+            "handleToolClick",
+            Qt.ConnectionType.DirectConnection,
+            *_string_arg(tool),
+        )
+        qt_app.processEvents()
+        assert button.property("active") is False
+
+    @pytest.mark.parametrize("tool", TestEditorPanelButtons.ONE_SHOT_TOOLS)
+    def test_disabled_tile_grays_out_and_ignores_click(self, qml_engine, qt_app, tool):
+        panel = self._make_panel(qml_engine)
+        panel.setProperty(TestEditorPanelButtons.ENABLED_PROPS[tool], False)
+        qt_app.processEvents()
+        button = panel.findChild(
+            QObject, TestEditorPanelButtons.OBJECT_NAMES[tool]
+        )
+        assert button.property("enabled") is False
+        assert button.property("opacity") < 1
+
+        activated = []
+        panel.toolActivated.connect(lambda t: activated.append(t))
+        QMetaObject.invokeMethod(
+            panel,
+            "handleToolClick",
+            Qt.ConnectionType.DirectConnection,
+            *_string_arg(tool),
+        )
+        qt_app.processEvents()
+        assert activated == []  # tiltott gomb: no-op védőkorlát
+
+    @pytest.mark.parametrize("tool", TestEditorPanelButtons.ONE_SHOT_TOOLS)
+    def test_reenabled_tile_emits_again(self, qml_engine, qt_app, tool):
+        panel = self._make_panel(qml_engine)
+        prop = TestEditorPanelButtons.ENABLED_PROPS[tool]
+        panel.setProperty(prop, False)
+        panel.setProperty(prop, True)
+        activated = []
+        panel.toolActivated.connect(lambda t: activated.append(t))
+        QMetaObject.invokeMethod(
+            panel,
+            "handleToolClick",
+            Qt.ConnectionType.DirectConnection,
+            *_string_arg(tool),
+        )
+        qt_app.processEvents()
+        assert activated == [tool]
+
+
+class TestFillLightDisabled:
+    """#119: a Derítőfény a render-op élesedéséig láthatóan tiltott."""
+
+    def _make_panel(self, qml_engine):
+        return _load(
+            qml_engine,
+            'import QtQuick\nimport PicasaPy 1.0\nEditorPanel { objectName: "panel" }\n',
+        )
+
+    def test_fill_light_row_visually_disabled(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        row = panel.findChild(QObject, "fillLightRow")
+        assert row is not None, "fillLightRow nem található"
+        assert row.property("enabled") is False
+        assert row.property("opacity") < 1
+
+    def test_fill_light_has_coming_soon_hint(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        hint = panel.findChild(QObject, "fillLightComingSoon")
+        assert hint is not None, "fillLightComingSoon felirat nem található"
+        assert hint.property("visible") is True
+        assert hint.property("text") != ""
 
 
 def _string_arg(value):

@@ -149,11 +149,55 @@ class EditSession:
                     return float(op.params[1])
         return None
 
-    def toggle(self, name: str) -> EditSession:
-        """Toggle paraméter nélküli szűrő.
+    def apply(self, name: str) -> EditSession:
+        """Egygombos javítás rétegként a lánc VÉGÉRE fűzése (append-only, #116).
 
-        Érvényes nevek: "redeye", "enhance", "autolight", "autocolor".
-        Ha a láncban van (case-insensitive), eltávolít; különben a végére fűz.
+        Picasa-minta: a gomb sosem távolít el — mindig új réteget tesz a
+        láncra, akkor is, ha a szűrő korábban már szerepel benne (A→B→A
+        rétegezés). A levétel kizárólag a Visszavonással történik.
+
+        Érvényes nevek: "enhance", "autolight", "autocolor".
+
+        Args:
+            name: A szűrő neve.
+
+        Returns:
+            Új EditSession.
+
+        Raises:
+            ValueError: Ha a név nem érvényes egygombos javítás.
+        """
+        valid_one_shots = {"enhance", "autolight", "autocolor"}
+        if name.casefold() not in valid_one_shots:
+            raise ValueError(
+                f"Érvénytelen egygombos javítás: {name!r}. "
+                f"Érvényes: {valid_one_shots}"
+            )
+        return EditSession(ops=self.ops + (FilterOp(name, ("1",)),))
+
+    def last_is(self, name: str) -> bool:
+        """Az utolsó lánc-elem a megadott szűrő-e (case-insensitive, #116).
+
+        A gomb-tiltási szabály alapja: az egygombos javítás gombja tiltott,
+        ha ugyanez a szűrő a lánc utolsó eleme (kétszer egymás után nincs
+        értelme).
+
+        Args:
+            name: A szűrő neve.
+
+        Returns:
+            True ha a lánc nem üres és az utolsó eleme a szűrő.
+        """
+        return bool(self.ops) and self.ops[-1].matches(name)
+
+    def toggle(self, name: str) -> EditSession:
+        """Toggle paraméter nélküli kapcsoló-szűrő.
+
+        Érvényes név jelenleg csak a "redeye": teljes képes kapcsolóként
+        működik a régió-alapú vörösszem-eszköz elkészültéig (#116). Ha a
+        láncban van (case-insensitive), MINDEN előfordulását eltávolítja;
+        különben a végére fűz. Az egygombos javításokra (enhance/autolight/
+        autocolor) az append-only `apply()` való.
 
         Args:
             name: A szűrő neve.
@@ -164,7 +208,7 @@ class EditSession:
         Raises:
             ValueError: Ha a név nem érvényes.
         """
-        valid_toggles = {"redeye", "enhance", "autolight", "autocolor"}
+        valid_toggles = {"redeye"}
         if name.casefold() not in valid_toggles:
             raise ValueError(
                 f"Érvénytelen toggle szűrő: {name!r}. "

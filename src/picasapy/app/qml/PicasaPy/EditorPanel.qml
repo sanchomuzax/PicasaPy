@@ -16,9 +16,12 @@ Rectangle {
     property bool cropActive: false
     property bool tiltActive: false
     property bool redeyeActive: false
-    property bool enhanceActive: false
-    property bool autolightActive: false
-    property bool autocolorActive: false
+    // egygombos javítások (#116): nem módkapcsolók — a gomb mindig új
+    // réteget fűz a láncra, és csak akkor tiltott, ha ugyanez a szűrő a
+    // lánc utolsó eleme (a hívó/EditController tölti)
+    property bool enhanceEnabled: true
+    property bool autolightEnabled: true
+    property bool autocolorEnabled: true
 
     // Visszavonás/Újra (jelenleg a vágásra): a hívó (PhotoViewer) tölti
     property bool undoAvailable: false
@@ -74,15 +77,16 @@ Rectangle {
         return panel.aspectRotated ? 1 / base : base
     }
 
-    // egy csempe-kattintás kezelése: kapcsoló-állapot váltása + jelzés
+    // egy csempe-kattintás kezelése: mód-eszköznél kapcsoló-állapot váltása,
+    // egygombos javításnál (#116) csak jelzés — tiltott gombnál no-op
     function handleToolClick(tool) {
         switch (tool) {
         case "crop": panel.cropActive = !panel.cropActive; break
         case "tilt": panel.tiltActive = !panel.tiltActive; break
         case "redeye": panel.redeyeActive = !panel.redeyeActive; break
-        case "enhance": panel.enhanceActive = !panel.enhanceActive; break
-        case "autolight": panel.autolightActive = !panel.autolightActive; break
-        case "autocolor": panel.autocolorActive = !panel.autocolorActive; break
+        case "enhance": if (!panel.enhanceEnabled) return; break
+        case "autolight": if (!panel.autolightEnabled) return; break
+        case "autocolor": if (!panel.autocolorEnabled) return; break
         }
         panel.toolActivated(tool)
         if (tool === "crop") panel.cropRequested()
@@ -225,22 +229,24 @@ Rectangle {
                 active: panel.redeyeActive
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
+            // egygombos javítások (#116): nincs "benyomva" állapot — a gomb
+            // tiltott, amíg ugyanez a szűrő a lánc utolsó eleme
             ToolTile {
                 objectName: "editToolEnhance"
                 toolName: "enhance"; label: qsTr("I'm Feeling Lucky"); icon: "lucky"
-                active: panel.enhanceActive
+                tileEnabled: panel.enhanceEnabled
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolAutolight"
                 toolName: "autolight"; label: qsTr("Auto Contrast"); icon: "contrast"
-                active: panel.autolightActive
+                tileEnabled: panel.autolightEnabled
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolAutocolor"
                 toolName: "autocolor"; label: qsTr("Auto Color"); icon: "color"
-                active: panel.autocolorActive
+                tileEnabled: panel.autocolorEnabled
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
@@ -255,10 +261,15 @@ Rectangle {
             }
         }
 
-        // Derítőfény — a render-op a 2. ütemben élesedik (inaktív csúszka)
+        // Derítőfény — a render-op a 2. ütemben (#20) élesedik; addig
+        // láthatóan TILTOTT (#119): ugyanaz a vizuális nyelv, mint a
+        // Retusálás/Szöveg csempéknél, plusz "Hamarosan" felirat
         RowLayout {
+            objectName: "fillLightRow"
             Layout.fillWidth: true
             spacing: 6
+            enabled: false
+            opacity: 0.4
             Image {
                 Layout.preferredWidth: 40
                 Layout.preferredHeight: 30
@@ -267,10 +278,21 @@ Rectangle {
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 4
-                Text {
-                    text: qsTr("Fill Light")
-                    font.pixelSize: Theme.fontSize - 1
-                    color: Theme.textGray
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 4
+                    Text {
+                        text: qsTr("Fill Light")
+                        font.pixelSize: Theme.fontSize - 1
+                        color: Theme.textGray
+                    }
+                    Text {
+                        objectName: "fillLightComingSoon"
+                        text: qsTr("(coming soon)")
+                        font.pixelSize: Theme.fontSize - 2
+                        font.italic: true
+                        color: Theme.textGray
+                    }
                 }
                 Rectangle {
                     Layout.fillWidth: true

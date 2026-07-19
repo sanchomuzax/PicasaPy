@@ -117,9 +117,11 @@ Rectangle {
     }
     function syncPanelFromController() {
         editorPanel.redeyeActive = editController.redeyeActive
-        editorPanel.enhanceActive = editController.enhanceActive
-        editorPanel.autolightActive = editController.autolightActive
-        editorPanel.autocolorActive = editController.autocolorActive
+        // egygombos javítások (#116): "nyomható-e" tükrözése — a gomb
+        // tiltott, amíg ugyanez a szűrő a lánc utolsó eleme
+        editorPanel.enhanceEnabled = editController.enhanceEnabled
+        editorPanel.autolightEnabled = editController.autolightEnabled
+        editorPanel.autocolorEnabled = editController.autocolorEnabled
     }
     onVisibleChanged: {
         if (visible) {

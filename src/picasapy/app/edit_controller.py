@@ -14,7 +14,10 @@ from picasapy.scanner import PICASA_INI_NAME
 
 from .edit_preview import EditPreviewProvider
 
-_TOGGLE_NAMES = ("redeye", "enhance", "autolight", "autocolor")
+# redeye: teljes képes kapcsoló a régió-alapú eszközig (#116)
+_TOGGLE_NAMES = ("redeye",)
+# egygombos javítások: append-only rétegezés, levétel csak Visszavonással
+_ONE_SHOT_NAMES = ("enhance", "autolight", "autocolor")
 
 
 class EditController(QObject):
@@ -67,6 +70,21 @@ class EditController(QObject):
     @Property(bool, notify=toolsChanged)
     def autocolorActive(self) -> bool:
         return self._session.has("autocolor")
+
+    # Gomb-tiltási szabály (#116): az egygombos javítás gombja addig tiltott,
+    # amíg ugyanez a szűrő a lánc UTOLSÓ eleme — másik effekt után újra aktív.
+
+    @Property(bool, notify=toolsChanged)
+    def enhanceEnabled(self) -> bool:
+        return not self._session.last_is("enhance")
+
+    @Property(bool, notify=toolsChanged)
+    def autolightEnabled(self) -> bool:
+        return not self._session.last_is("autolight")
+
+    @Property(bool, notify=toolsChanged)
+    def autocolorEnabled(self) -> bool:
+        return not self._session.last_is("autocolor")
 
     @Property(bool, notify=toolsChanged)
     def hasCrop(self) -> bool:
@@ -140,13 +158,24 @@ class EditController(QObject):
 
     @Slot(str)
     def toggleTool(self, name: str) -> None:
-        """Paraméter nélküli szűrő be/ki (redeye, enhance, autolight,
-        autocolor)."""
+        """Paraméter nélküli szűrő alkalmazása (#116).
+
+        Egygombos javítás (enhance/autolight/autocolor): append-only réteg a
+        lánc végére; ha ugyanez a szűrő a lánc utolsó eleme, a hívás no-op
+        (a gomb ilyenkor a UI-ban tiltott — ez a védőkorlát). A redeye
+        teljes képes be/ki kapcsoló a régió-alapú eszközig."""
         self._require_active()
-        if name.casefold() not in _TOGGLE_NAMES:
+        key = name.casefold()
+        if key in _ONE_SHOT_NAMES:
+            if self._session.last_is(key):
+                return
+            self._push_undo(key)
+            self._session = self._session.apply(key)
+        elif key in _TOGGLE_NAMES:
+            self._push_undo(key)
+            self._session = self._session.toggle(key)
+        else:
             raise ValueError(f"Érvénytelen szerkesztő-eszköz: {name!r}")
-        self._push_undo(name.casefold())
-        self._session = self._session.toggle(name)
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
