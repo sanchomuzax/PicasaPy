@@ -21,6 +21,14 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Munkafolyamat
 
+- **2026-07-19: Beragadt CI-futást TILOS otthagyni (felhasználói utasítás).**
+  A teszt-timeout szabály a GitHub Actionsre IS vonatkozik: a felhasználó nem
+  látja és nem tudja leállítani a runnereken lógó futásokat. Minden session,
+  amely pusholt/PR-t nyitott, a munkája végén KÖTELES ellenőrizni, hogy a
+  CI-futásai lezárultak-e; a 20+ perce `in_progress` futást azonnal
+  cancel-elni kell. (2026-07-19-en 19 otthagyott futás órákra megbénította
+  a teljes Actions-sort és a release-automatikát.)
+
 - **2026-07-19: Teszt-timeout KÖTELEZŐ, várakozás TILOS (felhasználói utasítás).**
   Az egészséges teljes tesztkészlet ~15–20 mp. MINDEN pytest-hívást szigorú
   `timeout`-tal kell futtatni (teljes készlet: max 60–90 mp), és az első
