@@ -65,13 +65,13 @@ class TestToggleTool:
         assert "filters=enhance=1;" in ini_text
         assert controller.enhanceActive is True
 
-    def test_toggle_off_removes_key_when_chain_empty(self, controller, photo):
+    def test_redeye_toggle_off_removes_key_when_chain_empty(self, controller, photo):
         controller.beginEdit("1", str(photo))
-        controller.toggleTool("enhance")
-        controller.toggleTool("enhance")
+        controller.toggleTool("redeye")
+        controller.toggleTool("redeye")
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert "filters=" not in ini_text
-        assert controller.enhanceActive is False
+        assert controller.redeyeActive is False
 
     def test_preserves_unrelated_keys(self, controller, photo):
         ini = photo.parent / ".picasa.ini"
@@ -99,6 +99,68 @@ class TestToggleTool:
     def test_without_active_edit_raises(self, controller):
         with pytest.raises(ValueError):
             controller.toggleTool("enhance")
+
+
+class TestOneShotLayering:
+    """#116: az egygombos javítások append-only rétegek, Picasa-mintára."""
+
+    def test_repeated_click_is_noop_while_last(self, controller, photo):
+        """Amíg a szűrő a lánc utolsó eleme, az újabb kattintás no-op —
+        nem távolít el, nem duplikál, undo-lépést sem tol."""
+        controller.beginEdit("1", str(photo))
+        controller.toggleTool("enhance")
+        assert controller.canUndo is True
+        controller.toggleTool("enhance")
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert ini_text.count("enhance=1;") == 1
+        assert controller.enhanceActive is True
+        controller.undo()
+        assert controller.canUndo is False  # csak EGY undo-lépés keletkezett
+
+    def test_layering_a_b_a_appends_new_layer(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.toggleTool("autolight")
+        controller.toggleTool("enhance")
+        controller.toggleTool("autolight")
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=autolight=1;enhance=1;autolight=1;" in ini_text
+
+    def test_enabled_follows_last_element_rule(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        assert controller.enhanceEnabled is True
+        controller.toggleTool("enhance")
+        assert controller.enhanceEnabled is False
+        assert controller.autolightEnabled is True
+        controller.toggleTool("autolight")
+        # másik effekt került a tetejére → az enhance újra nyomható
+        assert controller.enhanceEnabled is True
+        assert controller.autolightEnabled is False
+
+    def test_undo_restores_layer_by_layer(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.toggleTool("autolight")
+        controller.toggleTool("enhance")
+        controller.toggleTool("autolight")
+        controller.undo()
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=autolight=1;enhance=1;" in ini_text
+        controller.undo()
+        controller.undo()
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=" not in ini_text
+
+    def test_picasa_written_duplicate_chain_not_damaged(self, controller, photo):
+        """Round-trip: a valódi Picasa által írt, ismétlődő szűrős láncból
+        egy kattintás nem törölhet előfordulásokat (1. rögzített döntés)."""
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            "[IMG_0001.jpg]\nfilters=autolight=1;enhance=1;autolight=1;\n",
+            encoding="utf-8",
+        )
+        controller.beginEdit("1", str(photo))
+        controller.toggleTool("autocolor")
+        ini_text = ini.read_text(encoding="utf-8")
+        assert "filters=autolight=1;enhance=1;autolight=1;autocolor=1;" in ini_text
 
 
 class TestApplyCrop:

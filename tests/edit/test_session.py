@@ -171,7 +171,7 @@ class TestTilt:
 
 
 class TestToggle:
-    """Toggle szűrők: redeye, enhance, autolight, autocolor."""
+    """Toggle szűrő: redeye (teljes képes kapcsoló a régió-alapú eszközig)."""
 
     def test_toggle_add(self):
         """Hiányzó szűrőt a lánc végére fűzi."""
@@ -208,13 +208,71 @@ class TestToggle:
         with pytest.raises(ValueError):
             session.toggle("foo")
 
-    @pytest.mark.parametrize("name", ["redeye", "enhance", "autolight", "autocolor"])
-    def test_toggle_valid_names(self, name):
-        """Összes érvényes toggle név."""
+    @pytest.mark.parametrize("name", ["enhance", "autolight", "autocolor"])
+    def test_toggle_rejects_one_shot_filters(self, name):
+        """Az egygombos javítások nem kapcsolók (#116) — azokra az apply() való."""
         session = EditSession.from_value("")
-        new_session = session.toggle(name)
-        assert not new_session.is_empty()
-        assert new_session.to_value() == f"{name}=1;"
+        with pytest.raises(ValueError):
+            session.toggle(name)
+
+
+class TestApply:
+    """Egygombos javítások append-only rétegezése (#116)."""
+
+    @pytest.mark.parametrize("name", ["enhance", "autolight", "autocolor"])
+    def test_apply_appends_to_end(self, name):
+        """A javítás mindig a lánc végére kerül."""
+        session = EditSession.from_value("crop64=1,3f845bcb59418507;")
+        new_session = session.apply(name)
+        assert new_session.to_value().endswith(f"{name}=1;")
+
+    def test_apply_layers_a_b_a(self):
+        """A→B→A rétegezés: a második A új réteg, nem eltávolítás."""
+        session = EditSession.from_value("")
+        session = session.apply("autolight")
+        session = session.apply("enhance")
+        session = session.apply("autolight")
+        assert session.to_value() == "autolight=1;enhance=1;autolight=1;"
+
+    def test_apply_never_removes_existing_occurrences(self):
+        """Picasa-írta, ismétlődő szűrős lánc nem sérül (round-trip elv)."""
+        value = "autolight=1;enhance=1;autolight=1;"
+        session = EditSession.from_value(value)
+        result = session.apply("autocolor").to_value()
+        assert result == value + "autocolor=1;"
+
+    @pytest.mark.parametrize("name", ["redeye", "crop64", "tilt", "foo"])
+    def test_apply_invalid_name(self, name):
+        """Csak enhance/autolight/autocolor lehet egygombos réteg."""
+        session = EditSession.from_value("")
+        with pytest.raises(ValueError):
+            session.apply(name)
+
+    def test_apply_is_immutable(self):
+        """Az eredeti lánc érintetlen marad."""
+        session = EditSession.from_value("enhance=1;")
+        session.apply("autolight")
+        assert session.to_value() == "enhance=1;"
+
+
+class TestLastIs:
+    """last_is() — a gomb-tiltási szabály alapja (#116)."""
+
+    def test_true_for_last_element(self):
+        session = EditSession.from_value("autolight=1;enhance=1;")
+        assert session.last_is("enhance")
+
+    def test_false_for_non_last_element(self):
+        session = EditSession.from_value("autolight=1;enhance=1;")
+        assert not session.last_is("autolight")
+
+    def test_false_on_empty_chain(self):
+        session = EditSession.from_value("")
+        assert not session.last_is("enhance")
+
+    def test_case_insensitive(self):
+        session = EditSession.from_value("Enhance=1;")
+        assert session.last_is("enhance")
 
 
 class TestHas:
@@ -306,7 +364,7 @@ class TestComplexScenarios:
         session = EditSession.from_value(value)
 
         # Nem módosítjuk a finetune2-t vagy Vignette-et
-        session2 = session.toggle("autolight")
+        session2 = session.apply("autolight")
 
         # Mindkettő bitre azonos marad
         result = session2.to_value()
@@ -332,7 +390,7 @@ class TestComplexScenarios:
         session = EditSession.from_value("")
 
         # 1. enhance hozzáadása
-        session = session.toggle("enhance")
+        session = session.apply("enhance")
         assert session.has("enhance")
 
         # 2. crop beállítása
@@ -365,12 +423,12 @@ class TestComplexScenarios:
         assert session.has("tilt")
 
     def test_clear_all_operations(self):
-        """Mindent eltávolítani."""
-        value = "enhance=1;crop64=1,10000000f1ddff49;tilt=1,0.5,0.8;autolight=1;"
+        """Mindent eltávolítani (az egygombos rétegek levétele a
+        controller-szintű Visszavonás dolga, nem a sessioné — #116)."""
+        value = "redeye=1;crop64=1,10000000f1ddff49;tilt=1,0.5,0.8;"
         session = EditSession.from_value(value)
 
-        session = session.toggle("enhance")
-        session = session.toggle("autolight")
+        session = session.toggle("redeye")
         session = session.clear_crop()
         session = session.clear_tilt()
 
@@ -399,20 +457,20 @@ class TestEdgeCases:
         assert session.tilt_param() is None  # Nincs a 2. paraméter
 
     def test_toggle_idempotence(self):
-        """Toggle ismételt hívása."""
+        """Toggle ismételt hívása (redeye)."""
         session = EditSession.from_value("")
 
         # 1. toggle: add
-        session = session.toggle("enhance")
-        assert session.has("enhance")
+        session = session.toggle("redeye")
+        assert session.has("redeye")
 
         # 2. toggle: remove
-        session = session.toggle("enhance")
-        assert not session.has("enhance")
+        session = session.toggle("redeye")
+        assert not session.has("redeye")
 
         # 3. toggle: add újra
-        session = session.toggle("enhance")
-        assert session.has("enhance")
+        session = session.toggle("redeye")
+        assert session.has("redeye")
 
     def test_mixed_case_filter_names_preserved(self):
         """FilterOp név megőrzése az eredeti alak szerint."""
@@ -438,15 +496,14 @@ class TestEdgeCases:
         assert crop_idx == 1  # A harmadik elem (0-indexed: 1)
 
     def test_toggle_multiple_same_filter(self):
-        """Több azonos toggle a láncban — csak az első eltávolít."""
-        # Múltban lehetne 2x enhance (degenerált eset)
-        # A toggle csak az első függőséget végzi el
-        session = EditSession.from_value("enhance=1;enhance=1;autolight=1;")
+        """Több azonos redeye a láncban — a toggle mind eltávolítja
+        (teljes képes kapcsoló, nincs értelme kettőnek)."""
+        session = EditSession.from_value("redeye=1;redeye=1;autolight=1;")
 
-        session = session.toggle("enhance")
+        session = session.toggle("redeye")
 
-        # Mindkettő eltávolodik (mivel van már, a toggle remove-ot csinál)
-        assert not session.has("enhance")
+        assert not session.has("redeye")
+        assert session.has("autolight")
 
     def test_negative_tilt_param_formatting(self):
         """Negatív tilt szög formázása."""

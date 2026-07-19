@@ -611,8 +611,9 @@ class TestEditorWiring:
         ini_text = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
         assert "[a.jpg]" in ini_text
         assert "autolight=1" in ini_text
-        # a panel állapota az EditController igazságforrásából szinkronizált
-        assert panel.property("autolightActive") is True
+        # a panel állapota az EditController igazságforrásából szinkronizált:
+        # az egygombos javítás gombja tiltott, amíg ő a lánc utolsó eleme (#116)
+        assert panel.property("autolightEnabled") is False
         # a kép forrása új ?rev=-et kap → az előnézet frissül
         image = window.findChild(QObject, "viewerImage")
         assert "?rev=" in image.property("source").toString()
