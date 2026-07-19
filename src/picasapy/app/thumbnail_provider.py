@@ -13,8 +13,10 @@ vissza, a részletek pedig a logba kerülnek.
 from __future__ import annotations
 
 import logging
+import threading
 from pathlib import Path
 
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QImage, QTransform
 from PySide6.QtQuick import QQuickImageProvider
 
@@ -43,10 +45,17 @@ def _parse_ops(photo: PhotoRecord) -> tuple:
 
 
 class ThumbnailProvider(QQuickImageProvider):
+    # #70: az éppen futó thumbnail-kérések száma — a provider szálából
+    # jelezve; a controller busy-állapota köt rá (a Qt queued kézbesítéssel
+    # a főszálra sorolja, polling nincs)
+    activeCountChanged = Signal(int)
+
     def __init__(self, cache: ThumbnailCache):
         super().__init__(QQuickImageProvider.ImageType.Image)
         self._cache = cache
         self._registry: dict[str, tuple[Path, int, int, int, tuple]] = {}
+        self._active = 0
+        self._active_lock = threading.Lock()
 
     def register_photos(self, photos: tuple[PhotoRecord, ...]) -> None:
         self._registry = {
@@ -61,18 +70,29 @@ class ThumbnailProvider(QQuickImageProvider):
         }
 
     def requestImage(self, photo_id, size, requested_size):
+        # a jelzés a lock ALATT megy ki: így az értékek kibocsátási sorrendje
+        # a számláló sorrendjét követi (queued kézbesítésnél is), és a busy
+        # nem ragadhat be egy megcserélődött 1→0 pár miatt
+        with self._active_lock:
+            self._active += 1
+            self.activeCountChanged.emit(self._active)
         try:
-            image = self._render(photo_id)
-        except Exception:
-            _log.exception("thumbnail-render hiba: %s", photo_id)
-            image = QImage()
-        if image.isNull():
-            image = QImage(16, 16, QImage.Format.Format_RGB32)
-            image.fill(_PLACEHOLDER_COLOR)
-        if size is not None:
-            size.setWidth(image.width())
-            size.setHeight(image.height())
-        return image
+            try:
+                image = self._render(photo_id)
+            except Exception:
+                _log.exception("thumbnail-render hiba: %s", photo_id)
+                image = QImage()
+            if image.isNull():
+                image = QImage(16, 16, QImage.Format.Format_RGB32)
+                image.fill(_PLACEHOLDER_COLOR)
+            if size is not None:
+                size.setWidth(image.width())
+                size.setHeight(image.height())
+            return image
+        finally:
+            with self._active_lock:
+                self._active -= 1
+                self.activeCountChanged.emit(self._active)
 
     def _render(self, photo_id: str) -> QImage:
         """A kész (szerkesztett, forgatott) thumbnail; null-QImage, ha a

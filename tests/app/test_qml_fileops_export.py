@@ -6,61 +6,11 @@ image provider GIL) kizárásakor ezek a tesztek futhassanak tovább. A néző
 képbetöltését itt egyetlen teszt sem érinti.
 """
 
-import pytest
 from PySide6.QtCore import Q_ARG, QEventLoop, QMetaObject, QObject, Qt, QTimer
 
-from picasapy.index import open_index, sync_tree
-from picasapy.version import version_string
-from support.jpeg_factory import make_jpeg
 
-
-@pytest.fixture
-def qml_app(qt_app, tmp_path):
-    """Teljes app betöltve offscreen: (window, controller, lib, engine)."""
-    import picasapy.app.application as app_module
-    from picasapy.app.controller import AppController
-    from picasapy.app.edit_controller import EditController
-    from picasapy.app.edit_preview import EditPreviewProvider
-    from picasapy.app.fileops_controller import FileOpsController
-    from picasapy.app.thumbnail_provider import ThumbnailProvider
-    from picasapy.thumbs import ThumbnailCache
-    from PySide6.QtCore import QSettings
-    from PySide6.QtQml import QQmlApplicationEngine
-
-    lib = tmp_path / "kepek"
-    lib.mkdir()
-    make_jpeg(lib / "a.jpg", size=(320, 160))
-    make_jpeg(lib / "b.jpg", size=(100, 100))
-    db = tmp_path / "index.db"
-    with open_index(db) as conn:
-        sync_tree(conn, lib)
-
-    settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
-    provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
-    controller = AppController(db, (str(lib),), provider, settings=settings)
-    edit_preview = EditPreviewProvider()
-    edit_controller = EditController(edit_preview)
-    fileops_controller = FileOpsController()
-    app_module.wire_fileops(fileops_controller, controller)
-    engine = QQmlApplicationEngine()
-    engine.addImageProvider("thumbs", provider)
-    engine.addImageProvider("editpreview", edit_preview)
-    engine.addImportPath(str(app_module._APP_DIR / "qml"))
-    engine.rootContext().setContextProperty("controller", controller)
-    engine.rootContext().setContextProperty("editController", edit_controller)
-    engine.rootContext().setContextProperty(
-        "fileOpsController", fileops_controller
-    )
-    engine.rootContext().setContextProperty("appVersion", version_string())
-    engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
-    assert engine.rootObjects(), "Main.qml betöltése sikertelen"
-    window = engine.rootObjects()[0]
-    controller._reload()
-    controller.selectFolder(str(lib))
-    qt_app.processEvents()
-    yield window, controller, lib, engine
-    engine.deleteLater()
-    qt_app.processEvents()
+# a qml_app fixture a tests/app/conftest.py-ban él (közös a funkcionális
+# teszt-fájlokkal)
 
 
 def _child(window, name):
@@ -130,10 +80,17 @@ class TestRenameDialog:
         field = _child(window, "renameField")
         assert field.property("text") == "a.jpg"
         field.setProperty("text", "atnevezve.jpg")
+        loop = QEventLoop()
+        controller.syncFinished.connect(loop.quit)
         QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
         qt_app.processEvents()
+        # a fájl azonnal átnevezve; a rács-frissítés (#86 óta) háttérszálas
+        # resyncből érkezik — arra a syncFinished-del várunk
         assert (lib / "atnevezve.jpg").exists()
         assert not (lib / "a.jpg").exists()
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
         model_names = {photo.name for photo in controller.photos.photos}
         assert model_names == {"atnevezve.jpg", "b.jpg"}
 

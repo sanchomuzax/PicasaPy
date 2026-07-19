@@ -1018,3 +1018,99 @@ class TestExportRows:
         controller.exportRows([99], str(tmp_path / "sehova"), 0, 85)
         assert results == [(0, 0)]
         assert not (tmp_path / "sehova").exists()
+
+
+class TestBusyAndBackgroundResync:
+    """#86: a resyncFolder nem blokkolja a UI-szálat; #70: busy-állapot."""
+
+    def test_resync_folder_runs_off_main_thread(
+        self, controller, library, qt_app, monkeypatch
+    ):
+        import threading as _threading
+
+        import picasapy.app.controller as controller_module
+        from PySide6.QtCore import QEventLoop, QTimer
+
+        on_main = []
+        original = controller_module.sync_tree
+
+        def recording(conn, folder):
+            on_main.append(
+                _threading.current_thread() is _threading.main_thread()
+            )
+            return original(conn, folder)
+
+        monkeypatch.setattr(controller_module, "sync_tree", recording)
+        loop = QEventLoop()
+        controller.syncFinished.connect(loop.quit)
+        controller.resyncFolder(str(library / "nyaralas"))
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        assert on_main == [False]
+
+    def test_resync_returns_while_sync_still_running(
+        self, controller, library, qt_app, monkeypatch
+    ):
+        # a „Vissza a könyvtárhoz" útja (#86): a hívás visszatér, miközben a
+        # (lassú, NAS-t szimuláló) szinkron még fut — közben busy a jelzés
+        import threading as _threading
+
+        import picasapy.app.controller as controller_module
+        from PySide6.QtCore import QEventLoop, QTimer
+
+        started = _threading.Event()
+        release = _threading.Event()
+
+        def slow(conn, folder):
+            started.set()
+            release.wait(5)
+
+        monkeypatch.setattr(controller_module, "sync_tree", slow)
+        loop = QEventLoop()
+        controller.syncFinished.connect(loop.quit)
+        controller.resyncFolder(str(library / "nyaralas"))
+        # a hívás után azonnal itt vagyunk; a worker még a release-re vár
+        assert started.wait(5)
+        assert controller.isWorking is True
+        release.set()
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+        assert controller.isWorking is False
+
+    def test_is_working_during_rescan(self, controller, qt_app):
+        from PySide6.QtCore import QEventLoop, QTimer
+
+        transitions = []
+        controller.busyChanged.connect(
+            lambda: transitions.append(controller.isWorking)
+        )
+        loop = QEventLoop()
+        controller.syncFinished.connect(loop.quit)
+        controller.rescan()
+        assert controller.isWorking is True
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+        assert controller.isWorking is False
+        assert transitions[0] is True
+        assert transitions[-1] is False
+
+    def test_thumbnail_activity_drives_busy(self, controller, qt_app):
+        provider = controller._provider
+        provider.activeCountChanged.emit(2)
+        qt_app.processEvents()
+        assert controller.isWorking is True
+        provider.activeCountChanged.emit(0)
+        qt_app.processEvents()
+        assert controller.isWorking is False
+
+    def test_provider_request_emits_balanced_counts(self, controller, qt_app, tmp_path):
+        # a requestImage körül 1 → 0 párnak kell kimennie (ismeretlen id-nél
+        # placeholderrel tér vissza, de a könyvelés akkor is kiegyenlített)
+        counts = []
+        provider = controller._provider
+        provider.activeCountChanged.connect(counts.append)
+        provider.requestImage("nem-letezo", None, None)
+        qt_app.processEvents()
+        assert counts == [1, 0]

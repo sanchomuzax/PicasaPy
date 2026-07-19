@@ -13,3 +13,61 @@ def qt_app():
 
     app = QGuiApplication.instance() or QGuiApplication([])
     yield app
+
+
+@pytest.fixture
+def qml_app(qt_app, tmp_path):
+    """Teljes app betöltve offscreen: (window, controller, lib, engine) —
+    az application.py bekötésének tükre (controller + edit + fileops).
+
+    A test_qml_functional.py saját, azonos nevű fixture-e ezt árnyékolja
+    (ott a visszatérési alak is más); az új funkcionális teszt-fájlok ezt
+    a közöset használják."""
+    import picasapy.app.application as app_module
+    from picasapy.app.controller import AppController
+    from picasapy.app.edit_controller import EditController
+    from picasapy.app.edit_preview import EditPreviewProvider
+    from picasapy.app.fileops_controller import FileOpsController
+    from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.index import open_index, sync_tree
+    from picasapy.thumbs import ThumbnailCache
+    from picasapy.version import version_string
+    from PySide6.QtCore import QSettings
+    from PySide6.QtQml import QQmlApplicationEngine
+
+    from support.jpeg_factory import make_jpeg
+
+    lib = tmp_path / "kepek"
+    lib.mkdir()
+    make_jpeg(lib / "a.jpg", size=(320, 160))
+    make_jpeg(lib / "b.jpg", size=(100, 100))
+    db = tmp_path / "index.db"
+    with open_index(db) as conn:
+        sync_tree(conn, lib)
+
+    settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
+    controller = AppController(db, (str(lib),), provider, settings=settings)
+    edit_preview = EditPreviewProvider()
+    edit_controller = EditController(edit_preview)
+    fileops_controller = FileOpsController()
+    app_module.wire_fileops(fileops_controller, controller)
+    engine = QQmlApplicationEngine()
+    engine.addImageProvider("thumbs", provider)
+    engine.addImageProvider("editpreview", edit_preview)
+    engine.addImportPath(str(app_module._APP_DIR / "qml"))
+    engine.rootContext().setContextProperty("controller", controller)
+    engine.rootContext().setContextProperty("editController", edit_controller)
+    engine.rootContext().setContextProperty(
+        "fileOpsController", fileops_controller
+    )
+    engine.rootContext().setContextProperty("appVersion", version_string())
+    engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
+    assert engine.rootObjects(), "Main.qml betöltése sikertelen"
+    window = engine.rootObjects()[0]
+    controller._reload()
+    controller.selectFolder(str(lib))
+    qt_app.processEvents()
+    yield window, controller, lib, engine
+    engine.deleteLater()
+    qt_app.processEvents()
