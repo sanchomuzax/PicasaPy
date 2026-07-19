@@ -166,3 +166,17 @@ class TestSlideshowEntryPoints:
         window, _controller, _lib, _engine = qml_app
         button = _child(window, "viewerPlayButton")
         assert button.property("enabled") is True
+
+
+class TestSlideshowControlSizing:
+    def test_buttons_share_uniform_height(self, qml_app, qt_app):
+        # felhasználói visszajelzés (#8 után): a csillag-gomb nagyobb volt a
+        # többinél — az egységes gombmagasság regressziós védelme
+        window, _controller, _lib, _engine = qml_app
+        show = _start(window, qt_app, 0)
+        star = _child(window, "slideshowStarButton")
+        play = _child(window, "slideshowPlayButton")
+        exit_button = _child(window, "slideshowExitButton")
+        assert star.property("height") == play.property("height")
+        assert play.property("height") == exit_button.property("height")
+        _invoke(qt_app, show, "stop")
