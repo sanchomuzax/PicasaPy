@@ -166,11 +166,19 @@ class TestGridWheelScrollsPage:
         assert grid is not None, "photoGrid nem található"
         old_size = window.property("thumbSize")
         window.setProperty("thumbSize", 512)
-        # a Flow-relayout több eseményciklust is igényelhet
-        for _ in range(50):
+        # A Flow-relayout több eseményciklust igényelhet, és lassú (CI-)
+        # gépen puszta processEvents-pörgetéssel nem ér oda — minden körben
+        # kényszerített layout + rövid VALÓS várakozás kell.
+        from PySide6.QtCore import QEventLoop, QMetaObject, QTimer
+
+        for _ in range(100):
+            QMetaObject.invokeMethod(grid, "forceLayout")
             qt_app.processEvents()
             if grid.property("contentHeight") > grid.property("height"):
                 break
+            pause = QEventLoop()
+            QTimer.singleShot(10, pause.quit)
+            pause.exec()
         assert grid.property("contentHeight") > grid.property("height"), (
             "a fixture-nek görgethető tartalmat kell adnia"
         )

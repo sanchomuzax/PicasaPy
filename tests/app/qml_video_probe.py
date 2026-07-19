@@ -120,7 +120,7 @@ def main(work_dir: Path) -> None:
     assert child("videoLoader").property("active") is False
     assert child("viewerImage").property("visible") is True
 
-    print("OK")
+    print("OK", flush=True)  # os._exit nem üríti a puffert — flush kell!
     # Szándékosan NEM futtatunk rendes Qt-leállítást: a MediaPlayer/ffmpeg
     # szálak leépítése az, ami deadlockra hajlamos — a processz itt kilép,
     # az állapotot az OS takarítja (ezért fut az egész külön processzben).
