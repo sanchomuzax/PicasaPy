@@ -50,9 +50,20 @@ Debian/Raspberry Pi OS (trixie) rendszercsomagokkal ajánlott, mert a PySide6 é
 sudo apt install \
   python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtqml \
   python3-pyside6.qtquick python3-pyside6.qtquickcontrols2 python3-pyside6.qtwidgets \
+  python3-pyside6.qtmultimedia \
   python3-opencv python3-pil python3-piexif python3-watchdog \
   qml6-module-qtquick qml6-module-qtquick-controls \
-  qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window
+  qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window \
+  qml6-module-qtmultimedia
+```
+
+> **Videó-lejátszás:** a nézőbeli lejátszáshoz (#14) a `qml6-module-qtmultimedia`
+> és a `python3-pyside6.qtmultimedia` csomag kell. Ha hiányzik, a PicasaPy
+> attól még fut — a videóknál egy figyelmeztető szöveg jelenik meg a néző
+> lejátszó-felülete helyett. (Pip-es telepítésnél a `PySide6` csomag ezt
+> már tartalmazza; Linuxon a rendszer `libpulse0` csomagja is kell hozzá.)
+
+```bash
 
 git clone https://github.com/sanchomuzax/PicasaPy.git
 cd PicasaPy

@@ -14,6 +14,13 @@ Rectangle {
     property int currentIndex: -1
     // a ListView.count reaktív — a rowCount() hívást a QML nem követné
     property int photoCount: filmstrip.count
+    // #14: az aktuális elem videó-e — a néző ekkor a lejátszó-nézetet
+    // mutatja a fotó-Image helyett (a revision miatt modell-frissülésre
+    // is újraértékelődik)
+    readonly property bool isCurrentVideo: photosModel
+        ? (photosModel.revision,
+           photosModel.isVideoAt(currentIndex)) === true
+        : false
     signal closed()
 
     function show(index) { currentIndex = index; forceActiveFocus() }
@@ -52,9 +59,15 @@ Rectangle {
     // igazságforrásából szinkronizáljuk (a kötést a panel belső átírása
     // megtörné, ezért imperatív sync a toolsChanged-re).
     function beginEditCurrent() {
-        if (visible && currentIndex >= 0 && photosModel)
-            editController.beginEdit(photosModel.idAt(currentIndex),
-                                     photosModel.filePathAt(currentIndex))
+        if (!(visible && currentIndex >= 0 && photosModel)) return
+        if (viewer.isCurrentVideo) {
+            // videón nincs képszerkesztés (#14) — az előző kép nyitott
+            // munkamenete záruljon, ne lógjon át az előnézete
+            editController.endEdit()
+            return
+        }
+        editController.beginEdit(photosModel.idAt(currentIndex),
+                                 photosModel.filePathAt(currentIndex))
     }
     function syncPanelFromController() {
         editorPanel.redeyeActive = editController.redeyeActive
@@ -140,12 +153,23 @@ Rectangle {
     function urlAt(index) {
         return photosModel ? photosModel.fileUrlAt(index) : ""
     }
+    // elő-betöltéshez: videót NEM adunk az Image-nek (#14) — a képként
+    // dekódolás hibát logolna, a videó elő-betöltése nem a mi dolgunk
+    function preloadUrlAt(index) {
+        if (!photosModel || photosModel.isVideoAt(index)) return ""
+        return urlAt(index)
+    }
 
     focus: visible
     Keys.onEscapePressed: viewer.closed()
     Keys.onRightPressed: next()
     Keys.onReturnPressed: next()
     Keys.onLeftPressed: previous()
+    // szóköz: videónál lejátszás/szünet (#14) — Picasa-viselkedés
+    Keys.onSpacePressed: {
+        if (viewer.isCurrentVideo && videoLoader.item)
+            videoLoader.item.togglePlayback()
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -229,6 +253,8 @@ Rectangle {
                 EditorPanel {
                     id: editorPanel
                     objectName: "viewerEditorPanel"
+                    // videónál a szerkesztő-eszközök nem értelmezettek (#14)
+                    enabled: !viewer.isCurrentVideo
                     anchors.top: parent.top
                     anchors.left: parent.left; anchors.right: parent.right
                     height: 420
@@ -345,6 +371,9 @@ Rectangle {
                     Image {
                         id: photo
                         objectName: "viewerImage"
+                        // videónál a fotó-Image üres és rejtett (#14) — a
+                        // videofájlt nem próbáljuk képként dekódolni
+                        visible: !viewer.isCurrentVideo
                         // a model.revision referencia miatt a kötés minden
                         // modell-frissítésnél újraértékelődik
                         readonly property int iniSteps: viewer.photosModel
@@ -359,13 +388,40 @@ Rectangle {
                         // nyitott szerkesztésnél a filters= láncot alkalmazó
                         // editpreview provider rendereli a képet (?rev=
                         // cache-buster minden módosításnál)
-                        source: editController.previewSource !== ""
-                                ? editController.previewSource
-                                : viewer.urlAt(viewer.currentIndex)
+                        source: viewer.isCurrentVideo ? ""
+                                : (editController.previewSource !== ""
+                                   ? editController.previewSource
+                                   : viewer.urlAt(viewer.currentIndex))
                         fillMode: Image.PreserveAspectFit
                         asynchronous: true
                         autoTransform: true   // EXIF-orientáció
                         sourceSize.width: 2560
+                    }
+
+                    // #14: videó-lejátszó — csak videónál töltődik be, így
+                    // a Qt Multimedia hiánya a fotó-nézetet nem érinti
+                    Loader {
+                        id: videoLoader
+                        objectName: "videoLoader"
+                        anchors.fill: parent
+                        active: viewer.visible && viewer.isCurrentVideo
+                        source: "VideoPlayerView.qml"
+                    }
+                    Binding {
+                        target: videoLoader.item
+                        property: "source"
+                        value: viewer.urlAt(viewer.currentIndex)
+                        when: videoLoader.status === Loader.Ready
+                              && viewer.isCurrentVideo
+                    }
+                    Text {
+                        objectName: "videoUnavailableText"
+                        visible: viewer.isCurrentVideo
+                                 && videoLoader.status === Loader.Error
+                        anchors.centerIn: parent
+                        text: qsTr("Video playback requires the Qt Multimedia module.")
+                        color: "#e8e8e8"
+                        font.pixelSize: Theme.fontSize
                     }
 
                     // vágó-overlay a kép TÉNYLEGESEN kirajzolt (letterbox
@@ -463,7 +519,7 @@ Rectangle {
                 Image {
                     visible: false
                     source: viewer.photosModel
-                        ? viewer.urlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, 1))
+                        ? viewer.preloadUrlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, 1))
                         : ""
                     asynchronous: true; autoTransform: true
                     sourceSize.width: 2560
@@ -471,7 +527,7 @@ Rectangle {
                 Image {
                     visible: false
                     source: viewer.photosModel
-                        ? viewer.urlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, -1))
+                        ? viewer.preloadUrlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, -1))
                         : ""
                     asynchronous: true; autoTransform: true
                     sourceSize.width: 2560
