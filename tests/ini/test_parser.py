@@ -205,3 +205,89 @@ class TestWithRemoved:
         doc = parse_document("[a.jpg]\n; komment\nstar=yes\n")
         new = doc.with_removed("a.jpg", "star")
         assert new.serialize() == "[a.jpg]\n; komment\n"
+
+
+class TestWithRenamedSection:
+    """#15: fájl-átnevezéskor a szekciónév követi, a tartalom bitre pontos."""
+
+    def test_renames_header_keeps_content(self):
+        doc = parse_document(SAMPLE)
+        new = doc.with_renamed_section("IMG_0001.jpg", "IMG_0002.jpg")
+        assert new.section("IMG_0001.jpg") is None
+        renamed = new.section("IMG_0002.jpg")
+        assert renamed is not None
+        assert renamed.get("star") == "yes"
+        assert renamed.get("filters") == "sat=1,-1.000000;"
+        assert renamed.get("backuphash") == "36003"
+
+    def test_serialized_header_updated(self):
+        doc = parse_document("[a.jpg]\nstar=yes\n")
+        new = doc.with_renamed_section("a.jpg", "b.jpg")
+        assert new.serialize() == "[b.jpg]\nstar=yes\n"
+
+    def test_missing_section_returns_same_document(self):
+        doc = parse_document(SAMPLE)
+        assert doc.with_renamed_section("nincs.jpg", "b.jpg") is doc
+
+    def test_collision_raises(self):
+        doc = parse_document("[a.jpg]\nstar=yes\n[b.jpg]\nk=1\n")
+        with pytest.raises(ValueError):
+            doc.with_renamed_section("a.jpg", "b.jpg")
+
+    def test_comment_and_unknown_lines_preserved(self):
+        doc = parse_document("[a.jpg]\n; komment\nstar=yes\nfuture_key=42\n")
+        new = doc.with_renamed_section("a.jpg", "b.jpg")
+        assert new.serialize() == "[b.jpg]\n; komment\nstar=yes\nfuture_key=42\n"
+
+    def test_original_unchanged(self):
+        doc = parse_document(SAMPLE)
+        doc.with_renamed_section("IMG_0001.jpg", "IMG_0002.jpg")
+        assert doc.serialize() == SAMPLE
+
+    def test_other_sections_untouched(self):
+        doc = parse_document(SAMPLE)
+        new = doc.with_renamed_section("IMG_0001.jpg", "IMG_0002.jpg")
+        assert new.section("Picasa").get("name") == "Nyaralás 2024"
+
+
+class TestWithSection:
+    """#15: teljes szekció átvitele egyik dokumentumból a másikba (áthelyezés)."""
+
+    def test_appends_section_with_full_fidelity(self):
+        source = parse_document("[a.jpg]\n; komment\nstar=yes\nfilters=enhance=1;\n")
+        dest = parse_document("[b.jpg]\nk=1\n")
+        moved = dest.with_section(source.section("a.jpg"))
+        assert moved.serialize() == (
+            "[b.jpg]\nk=1\n[a.jpg]\n; komment\nstar=yes\nfilters=enhance=1;\n"
+        )
+
+    def test_replaces_existing_section_of_same_name(self):
+        source = parse_document("[a.jpg]\nstar=yes\n")
+        dest = parse_document("[a.jpg]\nk=old\n")
+        moved = dest.with_section(source.section("a.jpg"))
+        assert moved.section("a.jpg").get("star") == "yes"
+        assert moved.section("a.jpg").get("k") is None
+
+    def test_into_empty_document(self):
+        source = parse_document("[a.jpg]\nstar=yes\n")
+        moved = parse_document("").with_section(source.section("a.jpg"))
+        assert moved.serialize() == "[a.jpg]\nstar=yes\n"
+
+
+class TestWithoutSection:
+    """#15: teljes szekció eltávolítása (áthelyezéskor a forrás iniből)."""
+
+    def test_removes_whole_section(self):
+        doc = parse_document(SAMPLE)
+        new = doc.without_section("IMG_0001.jpg")
+        assert new.section("IMG_0001.jpg") is None
+        assert new.section("Picasa") is not None
+
+    def test_missing_section_returns_same_document(self):
+        doc = parse_document(SAMPLE)
+        assert doc.without_section("nincs.jpg") is doc
+
+    def test_serialize_drops_header_and_lines(self):
+        doc = parse_document("[a.jpg]\nstar=yes\n[b.jpg]\nk=1\n")
+        new = doc.without_section("a.jpg")
+        assert new.serialize() == "[b.jpg]\nk=1\n"

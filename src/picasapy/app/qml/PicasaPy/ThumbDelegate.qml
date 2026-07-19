@@ -20,6 +20,9 @@ Item {
     signal lassoDragged(real startX, real startY, real curX, real curY)
     signal lassoFinished(real startX, real startY, real curX, real curY,
                          int modifiers)
+    // jobbklikk (#15): fájlműveletek kontextusmenüje — a pozíció a cella
+    // saját koordináta-rendszerében, a hívó nyitja meg ott a menüt
+    signal contextMenuRequested(int index, real x, real y)
 
     readonly property string captionText: {
         switch (cell.captionMode) {
@@ -97,14 +100,17 @@ Item {
     // lenyomó cellánál marad, így cellahatárokon át is követjük a húzást).
     MouseArea {
         id: mouse
+        objectName: "thumbMouseArea"
         anchors.fill: parent
         hoverEnabled: true
         preventStealing: true
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         property bool lassoing: false
         property bool didLasso: false
         property real pressX: 0
         property real pressY: 0
         onPressed: function(event) {
+            if (event.button !== Qt.LeftButton) return
             pressX = event.x; pressY = event.y
             lassoing = false; didLasso = false
         }
@@ -125,8 +131,19 @@ Item {
             }
         }
         onClicked: function(event) {
-            if (!didLasso) cell.chosen(cell.index, event.modifiers)
+            cell.handleClicked(event.button, event.modifiers, event.x, event.y)
         }
         onDoubleClicked: cell.opened(cell.index)
+    }
+
+    // a tényleges elágazás külön, hívható függvényben (nem az onClicked
+    // kezelőben) — így teszt közvetlenül hívhatja, valódi egéresemény
+    // szintetizálása nélkül (a TestLasso.applyLasso mintája, #15)
+    function handleClicked(button, modifiers, x, y) {
+        if (button === Qt.RightButton) {
+            cell.contextMenuRequested(cell.index, x, y)
+            return
+        }
+        if (!mouse.didLasso) cell.chosen(cell.index, modifiers)
     }
 }

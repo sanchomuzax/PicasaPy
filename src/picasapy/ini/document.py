@@ -134,6 +134,59 @@ class IniDocument:
                 return replace(self, sections=sections)
         return self
 
+    def with_renamed_section(self, old_name: str, new_name: str) -> IniDocument:
+        """Szekció átnevezése (fájl-átnevezéskor, #15): a tartalom (kulcsok,
+        ismeretlen/komment sorok) bitre pontosan megmarad, csak a
+        `[szekciónév]` fejléc cserélődik.
+
+        Ha `old_name` nincs a dokumentumban, változatlanul önmagát adja
+        vissza (nincs mit átnevezni — round-trip elv).
+
+        Raises:
+            ValueError: Ha `new_name` már foglalt szekció — ütköző
+                átnevezést nem hajtunk végre csendben (adatvesztés lenne).
+        """
+        target = self.section(old_name)
+        if target is None:
+            return self
+        if self.section(new_name) is not None:
+            raise ValueError(f"A cél szekció már létezik: {new_name!r}")
+        renamed = replace(
+            target, name=new_name, header=replace(target.header, text=f"[{new_name}]")
+        )
+        sections = tuple(
+            renamed if section is target else section for section in self.sections
+        )
+        return replace(self, sections=sections)
+
+    def with_section(self, section: Section) -> IniDocument:
+        """Egy teljes `Section` beszúrása/cseréje (pl. fotó áthelyezésekor a
+        forrás szekció átvitele a cél dokumentumba, #15) — a tartalom
+        (kulcsok, komment/ismeretlen sorok) bitre pontosan megmarad.
+
+        Ha már van `section.name` nevű szekció, azt lecseréli; különben a
+        végére fűzi."""
+        existing = self.section(section.name)
+        if existing is not None:
+            sections = tuple(
+                section if s is existing else s for s in self.sections
+            )
+            return replace(self, sections=sections)
+        return replace(
+            self,
+            sections=_with_closed_last_line(self.sections, self.newline) + (section,),
+        )
+
+    def without_section(self, name: str) -> IniDocument:
+        """A teljes szekció eltávolítása (pl. áthelyezéskor a forrás
+        iniből, #15). Ha a szekció nincs meg, változatlanul önmagát adja
+        vissza."""
+        target = self.section(name)
+        if target is None:
+            return self
+        sections = tuple(section for section in self.sections if section is not target)
+        return replace(self, sections=sections)
+
     def _with_new_section(self, name: str, key: str, value: str) -> IniDocument:
         newline = self.newline
         header = Line(text=f"[{name}]", ending=newline)
