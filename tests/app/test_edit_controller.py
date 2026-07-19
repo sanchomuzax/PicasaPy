@@ -409,8 +409,92 @@ class TestUndoRedoStack:
         ini_text = (tmp_path / ".picasa.ini").read_text(encoding="utf-8")
         assert "enhance" not in ini_text
 
-    def test_begin_edit_resets_stacks(self, qt_app, tmp_path):
+    def test_begin_edit_reseeds_undo_from_chain(self, qt_app, tmp_path):
+        """Újranyitáskor a verem a mentett láncból épül újra (#116
+        visszajelzés): a meglévő réteg visszavonható marad, a redo ürül."""
         ctl = self._controller(tmp_path)
         ctl.toggleTool("enhance")
         ctl.beginEdit("1", str(tmp_path / "a.jpg"))
-        assert ctl.canUndo is False and ctl.canRedo is False
+        assert ctl.canUndo is True
+        assert ctl.undoAction == "enhance"
+        assert ctl.canRedo is False
+
+
+class TestPersistentUndoFromChain:
+    """#116 visszajelzés: annyi undo-réteg, ahány effekt a mentett láncon —
+    képváltás/újranyitás után is, fordított sorrendben."""
+
+    def _controller(self, tmp_path, filters_value):
+        from picasapy.app.edit_controller import EditController
+        from picasapy.app.edit_preview import EditPreviewProvider
+        from support.jpeg_factory import make_jpeg
+
+        make_jpeg(tmp_path / "a.jpg", size=(320, 160))
+        if filters_value:
+            (tmp_path / ".picasa.ini").write_text(
+                f"[a.jpg]\nfilters={filters_value}\n", encoding="utf-8"
+            )
+        ctl = EditController(EditPreviewProvider())
+        ctl.beginEdit("1", str(tmp_path / "a.jpg"))
+        return ctl
+
+    def test_existing_chain_is_undoable_on_open(self, qt_app, tmp_path):
+        """Aktív effekt mellett nem lehet szürke az Undo."""
+        ctl = self._controller(tmp_path, "enhance=1;")
+        assert ctl.enhanceActive is True
+        assert ctl.canUndo is True
+
+    def test_layers_undo_in_reverse_chain_order(self, qt_app, tmp_path):
+        """1,2,4,1,2 sorrendű lánc → 2,1,4,2,1 sorrendben vonható vissza."""
+        ctl = self._controller(
+            tmp_path, "enhance=1;autolight=1;redeye=1;enhance=1;autolight=1;"
+        )
+        seen = []
+        while ctl.canUndo:
+            seen.append(ctl.undoAction)
+            ctl.undo()
+        assert seen == ["autolight", "enhance", "redeye", "autolight", "enhance"]
+        ini_text = (tmp_path / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=" not in ini_text
+
+    def test_undo_removes_only_last_layer(self, qt_app, tmp_path):
+        ctl = self._controller(tmp_path, "autolight=1;enhance=1;")
+        ctl.undo()
+        ini_text = (tmp_path / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=autolight=1;" in ini_text
+
+    def test_crop_layer_labeled_as_crop(self, qt_app, tmp_path):
+        ctl = self._controller(tmp_path, "crop64=1,3f845bcb59418507;")
+        assert ctl.undoAction == "crop"
+
+    def test_unknown_picasa_filter_is_undoable_layer(self, qt_app, tmp_path):
+        """Ismeretlen (valódi Picasa írta) szűrő is réteg: visszavonható, és
+        a Visszavonásig bitre pontosan megmarad (round-trip elv)."""
+        value = "enhance=1;finetune2=1,0.333333,0.176842,0.193684,00000000,0.000000;"
+        ctl = self._controller(tmp_path, value)
+        assert ctl.undoAction == "finetune2"
+        ctl.undo()
+        ini_text = (tmp_path / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=enhance=1;" in ini_text
+        assert "finetune2" not in ini_text
+
+    def test_redo_restores_seeded_layer(self, qt_app, tmp_path):
+        ctl = self._controller(tmp_path, "enhance=1;autolight=1;")
+        ctl.undo()
+        assert ctl.canRedo is True
+        ctl.redo()
+        ini_text = (tmp_path / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=enhance=1;autolight=1;" in ini_text
+
+    def test_new_layer_after_seeded_history_stacks_on_top(self, qt_app, tmp_path):
+        ctl = self._controller(tmp_path, "enhance=1;")
+        ctl.toggleTool("autolight")
+        assert ctl.undoAction == "autolight"
+        ctl.undo()
+        assert ctl.undoAction == "enhance"
+        ctl.undo()
+        assert ctl.canUndo is False
+
+    def test_empty_chain_has_no_undo(self, qt_app, tmp_path):
+        ctl = self._controller(tmp_path, "")
+        assert ctl.canUndo is False

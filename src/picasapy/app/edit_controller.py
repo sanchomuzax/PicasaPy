@@ -135,7 +135,10 @@ class EditController(QObject):
         self._ini_path = path.parent / PICASA_INI_NAME
         self._section_name = path.name
         self._session = EditSession.from_value(self._read_filters_value())
-        self._undo_stack.clear()
+        # Perzisztens, rétegenkénti undo (#116 visszajelzés): a mentett lánc
+        # maga a réteg-verem — minden elemhez visszavonás-lépés jár, fordított
+        # sorrendben, képváltás és újranyitás után is.
+        self._undo_stack = self._seed_undo_from_chain(self._session)
         self._redo_stack.clear()
         self._register_preview()
         self._bump_revision()
@@ -284,6 +287,18 @@ class EditController(QObject):
 
     # -- belső ------------------------------------------------------------
 
+    @staticmethod
+    def _seed_undo_from_chain(session: EditSession) -> list[tuple[str, str]]:
+        """A mentett filters-láncból épített undo-verem: az i. lépés
+        visszavonása az első i elemű láncot állítja vissza. Az ismeretlen
+        (pl. valódi Picasa által írt) szűrők is rétegként vonhatók vissza —
+        a Visszavonásig a round-trip elv szerint érintetlenek maradnak."""
+        entries: list[tuple[str, str]] = []
+        for index, op in enumerate(session.ops):
+            previous_value = EditSession(ops=session.ops[:index]).to_value()
+            entries.append((previous_value, _action_key(op.name)))
+        return entries
+
     def _push_undo(self, action: str) -> None:
         self._undo_stack.append((self._session.to_value(), action))
         self._redo_stack.clear()
@@ -335,3 +350,11 @@ class EditController(QObject):
 
 def _clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))
+
+
+def _action_key(filter_name: str) -> str:
+    """Szűrő-név → művelet-kulcs a Visszavonás-felirathoz (crop64→crop)."""
+    key = filter_name.casefold()
+    if key == "crop64":
+        return "crop"
+    return key
