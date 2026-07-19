@@ -18,6 +18,7 @@ from PySide6.QtCore import (
     Slot,
 )
 
+from picasapy.export import ExportItem, ExportSettings, export_photos
 from picasapy.index import (
     all_photos,
     open_index,
@@ -70,6 +71,9 @@ class AppController(QObject):
     # #64: mappa-választás — a rács a feedben ehhez a csoporthoz görget
     folderActivated = Signal(str)
     descriptionsChanged = Signal()
+    # #16: export kész — (exportált darab, sikertelen darab); háttérszálból
+    # érkezik, a Qt automatikusan a főszálra sorolja
+    exportFinished = Signal(int, int)
 
     def __init__(
         self,
@@ -768,6 +772,38 @@ class AppController(QObject):
         else:
             self._view_mode = ("folder", "")
             self._show(())
+
+    @Slot(list, str, int, int)
+    def exportRows(self, rows, target_dir: str, max_dimension: int,
+                   jpeg_quality: int) -> None:
+        """Kijelölt sorok exportja célmappába (#16, Ctrl+Shift+S).
+
+        A forgatás (rotate_steps) beleég a célfájlba; max_dimension<=0 =
+        eredeti méret. Háttérszálon fut (NAS-on percekig tarthat), a végén
+        exportFinished(exportált, sikertelen)."""
+        photos = self._photos.photos
+        items = tuple(
+            ExportItem(
+                source=Path(photos[int(r)].folder_path) / photos[int(r)].name,
+                rotate_steps=photos[int(r)].rotate_steps,
+            )
+            for r in rows
+            if 0 <= int(r) < len(photos)
+        )
+        target = _to_local_path(target_dir)
+        if not items or not target:
+            self.exportFinished.emit(0, 0)
+            return
+        settings = ExportSettings(
+            max_dimension=max_dimension if max_dimension > 0 else None,
+            jpeg_quality=jpeg_quality,
+        )
+
+        def worker():
+            report = export_photos(items, Path(target), settings)
+            self.exportFinished.emit(len(report.exported), len(report.failed))
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _format_filter_status(self, records, elapsed: float) -> str:
         locale = QLocale()

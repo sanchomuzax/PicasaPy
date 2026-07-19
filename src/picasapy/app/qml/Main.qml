@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import PicasaPy
 
@@ -33,6 +34,35 @@ ApplicationWindow {
     property int selectedIndex: -1        // horgony (utoljára kattintott)
     property var selectedIndexes: []      // a teljes kijelölés
     property bool viewerOpen: false
+    // a jobbklikkelt kép sora (#15) — a kontextusmenü egyedi műveleteinek
+    // (átnevezés, fájlkezelő) célpontja
+    property int fileOpTargetRow: -1
+
+    // a kijelölt képek abszolút útvonalai (#15/#16) — a fájlműveletek a
+    // művelet ELŐTT gyűjtött útvonal-listán futnak, így a közben frissülő
+    // rács-indexek nem tévesztenek célt
+    function selectedPaths() {
+        var rows = window.selectedIndexes.length > 0
+            ? window.selectedIndexes
+            : (window.selectedIndex >= 0 ? [window.selectedIndex] : [])
+        var paths = []
+        for (var k = 0; k < rows.length; ++k) {
+            var p = controller.photos.filePathAt(Number(rows[k]))
+            if (p.length > 0) paths.push(p)
+        }
+        return paths
+    }
+
+    // jobbklikk a rácson (#15): a klikkelt kép kerüljön kijelölésbe (ha még
+    // nincs benne), majd a kontextusmenü a kattintás helyén nyílik
+    function openPhotoContextMenu(index, item, x, y) {
+        if (window.selectedIndexes.indexOf(index) === -1) {
+            window.selectedIndexes = [index]
+            window.selectedIndex = index
+        }
+        window.fileOpTargetRow = index
+        photoContextMenu.popup(item, x, y)
+    }
 
     // Kijelölés-logika (Picasa): sima katt = egy kép; Ctrl = hozzávesz/
     // elvesz; Shift = tartomány a horgonytól.
@@ -81,8 +111,20 @@ ApplicationWindow {
         onActivated: if (trayStar.targetRow >= 0)
                          controller.rotateLeft(trayStar.targetRow)
     }
+    // Picasa: F2 = átnevezés, Ctrl+Shift+S = exportálás mappába
+    Shortcut {
+        sequence: "F2"
+        onActivated: if (!window.viewerOpen && window.selectedIndex >= 0)
+                         renameDialog.openFor(window.selectedIndex)
+    }
+    Shortcut {
+        sequence: "Ctrl+Shift+S"
+        onActivated: if (!window.viewerOpen) exportDialog.openForSelection()
+    }
 
     menuBar: PicasaMenuBar {
+        photoActionsEnabled: !window.viewerOpen
+                             && window.selectedIndexes.length > 0
         onRescanRequested: controller.rescan()
         onAboutRequested: aboutDialog.open()
         onThumbSizePreset: function(size) { window.thumbSize = size }
@@ -90,6 +132,13 @@ ApplicationWindow {
         onSelectAllRequested: window.selectAll()
         onClearSelectionRequested: window.clearSelection()
         onFolderManagerRequested: folderManager.open()
+        onRenameRequested: renameDialog.openFor(window.selectedIndex)
+        onExportRequested: exportDialog.openForSelection()
+        onLocateRequested: {
+            var p = controller.photos.filePathAt(window.selectedIndex)
+            if (p.length > 0) fileOpsController.revealPhoto(p)
+        }
+        onDeleteRequested: deleteConfirmDialog.openFor(window.selectedPaths())
     }
 
     FolderManagerDialog { id: folderManager }
@@ -729,6 +778,10 @@ ApplicationWindow {
                                                 a.x, a.y, b.x, b.y, mods)
                                             lassoBand.visible = false
                                         }
+                                        onContextMenuRequested: function(i, cx, cy) {
+                                            window.openPhotoContextMenu(
+                                                i, slot, cx, cy)
+                                        }
                                     }
                                 }
                             }
@@ -838,6 +891,10 @@ ApplicationWindow {
                                 onOpened: function(i) {
                                     window.viewerOpen = true
                                     photoViewer.show(i)
+                                }
+                                onContextMenuRequested: function(i, cx, cy) {
+                                    window.openPhotoContextMenu(
+                                        i, groupedThumb, cx, cy)
                                 }
                             }
                         }
@@ -966,7 +1023,13 @@ ApplicationWindow {
                 Item { width: 10 }
                 PicasaButton { text: qsTr("E-Mail"); enabled: false }
                 PicasaButton { text: qsTr("Print"); enabled: false }
-                PicasaButton { text: qsTr("Export"); enabled: false }
+                PicasaButton {
+                    objectName: "trayExportButton"
+                    text: qsTr("Export")
+                    enabled: !window.viewerOpen
+                             && window.selectedIndexes.length > 0
+                    onClicked: exportDialog.openForSelection()
+                }
                 Item { width: 6 }
                 // az egyetlen zöld elsődleges tett — jobbra igazítva,
                 // a képernyő vizuális súlypontja (kézikönyv 01/08)
@@ -976,6 +1039,224 @@ ApplicationWindow {
                     accent: Theme.picasaGreen
                 }
             }
+        }
+    }
+
+    // -- fájlműveletek (#15): kontextusmenü + dialógusok --------------------
+
+    PhotoContextMenu {
+        id: photoContextMenu
+        onRenameRequested: renameDialog.openFor(window.fileOpTargetRow)
+        onMoveRequested: {
+            moveFolderDialog.paths = window.selectedPaths()
+            if (moveFolderDialog.paths.length > 0) moveFolderDialog.open()
+        }
+        onDeleteRequested: deleteConfirmDialog.openFor(window.selectedPaths())
+        onLocateRequested: {
+            var p = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (p.length > 0) fileOpsController.revealPhoto(p)
+        }
+    }
+
+    Dialog {
+        id: renameDialog
+        objectName: "renameDialog"
+        title: qsTr("Rename...")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        property string targetPath: ""
+        function openFor(row) {
+            var p = controller.photos.filePathAt(row)
+            if (p.length === 0) return
+            targetPath = p
+            renameField.text = controller.photos.itemAt(row).name || ""
+            open()
+            renameField.forceActiveFocus()
+            renameField.selectAll()
+        }
+        onAccepted: {
+            if (renameField.text.trim().length > 0)
+                fileOpsController.renamePhoto(
+                    targetPath, renameField.text.trim())
+        }
+        TextField {
+            id: renameField
+            objectName: "renameField"
+            width: 300
+            font.pixelSize: Theme.fontSize
+        }
+    }
+
+    FolderDialog {
+        id: moveFolderDialog
+        objectName: "moveFolderDialog"
+        title: qsTr("Move to Folder...")
+        property var paths: []
+        onAccepted: {
+            var dest = selectedFolder.toString()
+            for (var i = 0; i < paths.length; ++i)
+                fileOpsController.movePhoto(paths[i], dest)
+            window.clearSelection()
+        }
+    }
+
+    Dialog {
+        id: deleteConfirmDialog
+        objectName: "deleteConfirmDialog"
+        title: qsTr("Delete from Disk")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Yes | Dialog.No
+        property var paths: []
+        function openFor(pathList) {
+            if (pathList.length === 0) return
+            paths = pathList
+            open()
+        }
+        onAccepted: {
+            for (var i = 0; i < paths.length; ++i)
+                fileOpsController.deletePhoto(paths[i])
+            window.clearSelection()
+        }
+        Text {
+            text: qsTr("%n picture(s) will be moved to the system trash.",
+                       "", deleteConfirmDialog.paths.length)
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+    }
+
+    Dialog {
+        id: fileOpsErrorDialog
+        objectName: "fileOpsErrorDialog"
+        title: qsTr("File operation failed")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok
+        property string message: ""
+        Text {
+            width: 380
+            text: fileOpsErrorDialog.message
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+    }
+
+    Connections {
+        target: fileOpsController
+        function onOperationFailed(operation, message) {
+            fileOpsErrorDialog.message = message
+            fileOpsErrorDialog.open()
+        }
+    }
+
+    // -- exportálás mappába (#16, Ctrl+Shift+S) -----------------------------
+
+    Dialog {
+        id: exportDialog
+        objectName: "exportDialog"
+        title: qsTr("Export Picture to Folder...")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        property string targetFolder: ""
+        // a méret-lista indexei → leghosszabb oldal px-ben (0 = eredeti)
+        readonly property var sizeOptions: [0, 2048, 1600, 1024, 800]
+        function openForSelection() {
+            if (window.selectedIndexes.length === 0) return
+            open()
+        }
+        onOpened: standardButton(Dialog.Ok).enabled = Qt.binding(
+            function() { return exportDialog.targetFolder.length > 0 })
+        onAccepted: controller.exportRows(
+            window.selectedIndexes, targetFolder,
+            sizeOptions[exportSizeBox.currentIndex], exportQuality.value)
+        ColumnLayout {
+            spacing: 10
+            RowLayout {
+                spacing: 8
+                Text {
+                    text: qsTr("Target folder:")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+                Text {
+                    objectName: "exportTargetLabel"
+                    Layout.preferredWidth: 240
+                    elide: Text.ElideMiddle
+                    text: exportDialog.targetFolder.length > 0
+                          ? exportDialog.targetFolder
+                          : qsTr("(not selected)")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.textGray
+                }
+                PicasaButton {
+                    text: qsTr("Browse...")
+                    onClicked: exportTargetDialog.open()
+                }
+            }
+            RowLayout {
+                spacing: 8
+                Text {
+                    text: qsTr("Image size:")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+                ComboBox {
+                    id: exportSizeBox
+                    objectName: "exportSizeBox"
+                    Layout.preferredWidth: 160
+                    model: [qsTr("Original size"), "2048 px", "1600 px",
+                            "1024 px", "800 px"]
+                }
+            }
+            RowLayout {
+                spacing: 8
+                Text {
+                    text: qsTr("Image quality:")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+                SpinBox {
+                    id: exportQuality
+                    objectName: "exportQuality"
+                    from: 1; to: 100; value: 85
+                }
+            }
+        }
+    }
+
+    FolderDialog {
+        id: exportTargetDialog
+        title: qsTr("Export Picture to Folder...")
+        onAccepted: exportDialog.targetFolder = selectedFolder.toString()
+    }
+
+    Dialog {
+        id: exportResultDialog
+        objectName: "exportResultDialog"
+        title: qsTr("Export")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok
+        property string message: ""
+        Text {
+            text: exportResultDialog.message
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+    }
+
+    Connections {
+        target: controller
+        function onExportFinished(done, failed) {
+            exportResultDialog.message = failed > 0
+                ? qsTr("%1 pictures exported, %2 failed.")
+                    .arg(done).arg(failed)
+                : qsTr("%1 pictures exported.").arg(done)
+            exportResultDialog.open()
         }
     }
 
@@ -995,7 +1276,7 @@ ApplicationWindow {
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "PicasaPy 0.3.0 — "
+                text: "PicasaPy " + appVersion + " — "
                       + qsTr("A modern, open Picasa successor.")
                       + "\nGPL-3.0 · github.com/sanchomuzax/PicasaPy"
                 font.pixelSize: Theme.fontSize

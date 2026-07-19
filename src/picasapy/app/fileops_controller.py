@@ -19,6 +19,7 @@ from picasapy.fileops import (
     rename_photo,
     reveal_in_file_manager,
 )
+from .controller import _to_local_path
 
 
 class FileOpsController(QObject):
@@ -42,9 +43,10 @@ class FileOpsController(QObject):
 
     @Slot(str, str)
     def movePhoto(self, path: str, dest_folder: str) -> None:
-        """Áthelyezés másik mappába."""
+        """Áthelyezés másik mappába. A célt a QML FolderDialog `file://`
+        URL-ként adja — a lokális útvonallá alakítás itt történik."""
         try:
-            new_path = move_photo(Path(path), Path(dest_folder))
+            new_path = move_photo(Path(path), Path(_to_local_path(dest_folder)))
         except OSError as error:
             self.operationFailed.emit("move", str(error))
             return

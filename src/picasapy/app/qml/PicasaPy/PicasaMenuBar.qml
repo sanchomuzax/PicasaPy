@@ -5,6 +5,8 @@ import QtQuick.Controls
 // A még nem implementált pontok szürkék — a szerkezet a dizájn része.
 MenuBar {
     id: bar
+    // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
+    property bool photoActionsEnabled: false
     signal rescanRequested()
     signal aboutRequested()
     signal thumbSizePreset(int size)
@@ -12,6 +14,10 @@ MenuBar {
     signal selectAllRequested()
     signal clearSelectionRequested()
     signal folderManagerRequested()
+    signal renameRequested()
+    signal exportRequested()
+    signal locateRequested()
+    signal deleteRequested()
 
     Menu {
         title: qsTr("&File")
@@ -20,13 +26,33 @@ MenuBar {
         MenuItem { text: qsTr("Add File to Picasa..."); enabled: false }
         MenuItem { text: qsTr("Import From..."); enabled: false }
         MenuSeparator {}
-        MenuItem { text: qsTr("Rename..."); enabled: false }
+        MenuItem {
+            objectName: "menuFileRename"
+            text: qsTr("Rename...")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.renameRequested()
+        }
         MenuItem { text: qsTr("Save"); enabled: false }
         MenuItem { text: qsTr("Revert"); enabled: false }
-        MenuItem { text: qsTr("Export Picture to Folder..."); enabled: false }
+        MenuItem {
+            objectName: "menuFileExport"
+            text: qsTr("Export Picture to Folder...")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.exportRequested()
+        }
         MenuSeparator {}
-        MenuItem { text: qsTr("Locate on Disk"); enabled: false }
-        MenuItem { text: qsTr("Delete from Disk"); enabled: false }
+        MenuItem {
+            objectName: "menuFileLocate"
+            text: qsTr("Locate on Disk")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.locateRequested()
+        }
+        MenuItem {
+            objectName: "menuFileDelete"
+            text: qsTr("Delete from Disk")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.deleteRequested()
+        }
         MenuSeparator {}
         MenuItem { text: qsTr("Print..."); enabled: false }
         MenuItem { text: qsTr("E-Mail..."); enabled: false }

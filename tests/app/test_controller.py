@@ -955,3 +955,66 @@ class TestSearchFiltersFolderPane:
         controller.search("naplemente")
         controller._reload()
         assert self._pane_rows(controller) == [("nyaralas", 1)]
+
+
+class TestExportRows:
+    """#16: kijelölt sorok exportja célmappába, háttérszálon."""
+
+    @staticmethod
+    def _run_export(controller, qt_app, rows, target, max_dim=0, quality=85):
+        """exportRows hívása + várakozás az exportFinished-re (max 5 mp)."""
+        from PySide6.QtCore import QEventLoop, QTimer
+
+        results = []
+        loop = QEventLoop()
+        controller.exportFinished.connect(
+            lambda done, failed: results.append((done, failed))
+        )
+        controller.exportFinished.connect(loop.quit)
+        controller.exportRows(rows, target, max_dim, quality)
+        if not results:  # háttérszálas út: a jel az eseményhurokban érkezik
+            QTimer.singleShot(5000, loop.quit)
+            loop.exec()
+        return results
+
+    def test_exports_selected_rows(self, controller, library, tmp_path, qt_app):
+        controller.selectFolder(str(library / "nyaralas"))
+        target = tmp_path / "export-cel"
+        results = self._run_export(controller, qt_app, [0, 1], str(target))
+        assert results == [(2, 0)]
+        assert sorted(p.name for p in target.glob("*.jpg")) == [
+            "IMG_0001.jpg",
+            "IMG_0002.jpg",
+        ]
+
+    def test_export_resizes_to_max_dimension(self, controller, library, tmp_path, qt_app):
+        from PIL import Image
+
+        controller.selectFolder(str(library / "nyaralas"))
+        target = tmp_path / "export-kicsi"
+        results = self._run_export(
+            controller, qt_app, [0], str(target), max_dim=4
+        )
+        assert results == [(1, 0)]
+        exported = next(target.glob("*.jpg"))
+        with Image.open(exported) as image:
+            assert max(image.size) == 4
+
+    def test_export_accepts_file_url_target(self, controller, library, tmp_path, qt_app):
+        # a QML FolderDialog file:// URL-t ad — annak is működnie kell
+        controller.selectFolder(str(library / "nyaralas"))
+        target = tmp_path / "export-url"
+        results = self._run_export(
+            controller, qt_app, [0], (target).as_uri()
+        )
+        assert results == [(1, 0)]
+        assert len(list(target.glob("*.jpg"))) == 1
+
+    def test_invalid_rows_finish_immediately(self, controller, tmp_path, qt_app):
+        results = []
+        controller.exportFinished.connect(
+            lambda done, failed: results.append((done, failed))
+        )
+        controller.exportRows([99], str(tmp_path / "sehova"), 0, 85)
+        assert results == [(0, 0)]
+        assert not (tmp_path / "sehova").exists()
