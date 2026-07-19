@@ -9,6 +9,10 @@ jobs:
   test:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Egészséges futás ~5 perc; korlát nélkül egy beragadt (#53 GIL-deadlock)
+    # pytest 6 órán át foglalná a runnert, és eldugítaná a teljes Actions-sort
+    # (2026-07-19-en 19 beragadt futás állította le a release-automatikát).
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
