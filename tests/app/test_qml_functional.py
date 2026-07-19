@@ -9,6 +9,7 @@ import pytest
 from PySide6.QtCore import QObject
 
 from picasapy.index import open_index, sync_tree
+from picasapy.version import version_string
 from support.jpeg_factory import make_jpeg
 
 
@@ -46,6 +47,7 @@ def qml_app(qt_app, tmp_path):
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
+    engine.rootContext().setContextProperty("appVersion", version_string())
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
     window = engine.rootObjects()[0]
@@ -61,6 +63,14 @@ def _viewer_image(window):
     image = window.findChild(QObject, "viewerImage")
     assert image is not None, "viewerImage nem található"
     return image
+
+
+class TestVersionLabel:
+    def test_header_shows_version_string(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        label = window.findChild(QObject, "versionLabel")
+        assert label is not None, "versionLabel nem található"
+        assert label.property("text") == version_string()
 
 
 class TestViewerRotation:

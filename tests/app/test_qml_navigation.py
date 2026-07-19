@@ -9,6 +9,7 @@ import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 
 from picasapy.index import open_index, sync_tree
+from picasapy.version import version_string
 from support.jpeg_factory import make_jpeg
 
 
@@ -52,6 +53,7 @@ def qml_nav_app(qt_app, tmp_path_factory):
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
+    engine.rootContext().setContextProperty("appVersion", version_string())
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
     window = engine.rootObjects()[0]
