@@ -120,6 +120,35 @@ def main(work_dir: Path) -> None:
     assert child("videoLoader").property("active") is False
     assert child("viewerImage").property("visible") is True
 
+    # 5) #103: tálca ↺/↻ — nézőben fotón aktív, videón tiltott
+    rotate_left = child("trayRotateLeft")
+    rotate_right = child("trayRotateRight")
+    assert rotate_left.property("enabled") is True
+    assert rotate_right.property("enabled") is True
+    viewer.setProperty("currentIndex", 1)
+    app.processEvents()
+    assert rotate_left.property("enabled") is False
+    assert rotate_right.property("enabled") is False
+
+    # 6) #103: könyvtár-nézetben a kijelölés dönt — csak-videó: tiltva;
+    # fotó: aktív; vegyes: aktív (a controller a videókat kihagyja)
+    window.setProperty("viewerOpen", False)
+    window.setProperty("selectedIndexes", [1])
+    window.setProperty("selectedIndex", 1)
+    app.processEvents()
+    assert rotate_left.property("enabled") is False
+    assert rotate_right.property("enabled") is False
+    window.setProperty("selectedIndexes", [0])
+    window.setProperty("selectedIndex", 0)
+    app.processEvents()
+    assert rotate_left.property("enabled") is True
+    assert rotate_right.property("enabled") is True
+    window.setProperty("selectedIndexes", [0, 1])
+    window.setProperty("selectedIndex", 0)
+    app.processEvents()
+    assert rotate_left.property("enabled") is True
+    assert rotate_right.property("enabled") is True
+
     print("OK", flush=True)  # os._exit nem üríti a puffert — flush kell!
     # Szándékosan NEM futtatunk rendes Qt-leállítást: a MediaPlayer/ffmpeg
     # szálak leépítése az, ami deadlockra hajlamos — a processz itt kilép,

@@ -760,8 +760,12 @@ class AppController(QObject):
 
     def _rotate_many(self, rows, delta: int) -> None:
         photos = self._photos.photos
+        # #103: a videókat kihagyjuk — a rotate= kulcsnak videón nincs
+        # értelmes hatása; vegyes kijelölésnél csak a fotók forognak
         valid = [
-            photos[int(r)] for r in rows if 0 <= int(r) < len(photos)
+            photos[int(r)]
+            for r in rows
+            if 0 <= int(r) < len(photos) and photos[int(r)].kind != "video"
         ]
         if not valid:
             return
@@ -807,6 +811,8 @@ class AppController(QObject):
         if not 0 <= row < len(photos):
             return
         photo = photos[row]
+        if photo.kind == "video":
+            return  # #103: videóra nem írunk rotate= kulcsot (QML-őr mellett)
         steps = (photo.rotate_steps + delta) % 4
         ini_path = Path(photo.folder_path) / PICASA_INI_NAME
         document = (
