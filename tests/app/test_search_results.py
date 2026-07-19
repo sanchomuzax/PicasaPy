@@ -90,3 +90,17 @@ class TestGroupsToQml:
 
     def test_empty_groups(self, qt_app):
         assert groups_to_qml(()) == []
+
+
+class TestHasEditsField:
+    def test_groups_to_qml_carries_has_edits(self):
+        # #100: a keresési találat-rács is viszi a szerkesztettség-jelet
+        edited = _rec("/kepek/a", "1.jpg")
+        from dataclasses import replace
+
+        edited = replace(edited, filters="enhance=1;")
+        plain = _rec("/kepek/a", "2.jpg")
+        groups = groups_to_qml(group_by_folder((edited, plain)))
+        photos = groups[0]["photos"]
+        assert photos[0]["hasEdits"] is True
+        assert photos[1]["hasEdits"] is False

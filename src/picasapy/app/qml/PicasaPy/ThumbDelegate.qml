@@ -14,6 +14,10 @@ Item {
     required property string resolution
     property bool selected: false
     property string captionMode: "none"
+    // #100: van-e a képen Picasa-szerkesztés (filters=) — a jobb felső
+    // sarok kék „visszahajtás" jelölője erre köt. Nem required: a régi
+    // hívóhelyek (próba-oldalak, tesztek) enélkül is működnek.
+    property bool hasEdits: false
     // #85: kiegyenlített rács-sor esetén a cella (parent Item) nagyobb
     // lehet a névleges thumbSize-nál — a MEGJELENÍTETT kép mérete ekkor
     // is a névleges méretre plafonozott marad (0 = nincs plafon), hogy a
@@ -87,6 +91,29 @@ Item {
             color: Theme.starYellow
             font.pixelSize: 15
             style: Text.Outline; styleColor: "#00000060"
+        }
+
+        // #100: mini kék „visszahajtás" a jobb felső sarokban, ha a képen
+        // Picasa-szerkesztés van. Szín: Theme.infoBar — szándékosan NEM a
+        // kijelölés azúrja (thumbSelection), hogy a két jelentés ne
+        // mosódjon össze. Megvalósítás: 45°-ban forgatott négyzet, aminek
+        // a középpontja a kártya sarkán ül — a clip levágja, a bent maradó
+        // fele adja a behajtott lapsarok-háromszöget (statikus, olcsó).
+        Item {
+            objectName: "editsFoldMark"
+            visible: cell.hasEdits
+            width: 12; height: 12
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: 1
+            clip: true
+            Rectangle {
+                width: 17; height: 17
+                rotation: 45
+                x: parent.width - width / 2
+                y: -height / 2
+                color: Theme.infoBar
+            }
         }
 
         Rectangle {

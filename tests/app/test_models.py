@@ -510,3 +510,49 @@ class TestFolderListMatches:
         model.modelReset.connect(lambda: resets.append(1))
         model.load_matches(self._groups())
         assert resets == []
+
+
+class TestHasEditsMark:
+    """#100: a kék visszahajtás-jelölő adatfeltétele — filters= alapján."""
+
+    @staticmethod
+    def _record(filters: str | None, rotate_steps: int = 0, star: bool = False):
+        from picasapy.index import PhotoRecord
+
+        return PhotoRecord(
+            id=1,
+            folder_path="/kepek",
+            name="a.jpg",
+            kind="photo",
+            size=0,
+            mtime_ns=0,
+            star=star,
+            caption=None,
+            keywords=None,
+            rotate_steps=rotate_steps,
+            filters=filters,
+            taken_at=None,
+            orientation=1,
+            width=None,
+            height=None,
+        )
+
+    def _item(self, record):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos((record,))
+        return model.itemAt(0)
+
+    def test_filters_chain_marks_edited(self, qt_app):
+        item = self._item(self._record("enhance=1;crop64=1,0,0,ffffffff;"))
+        assert item["hasEdits"] is True
+
+    def test_no_filters_not_edited(self, qt_app):
+        assert self._item(self._record(None))["hasEdits"] is False
+        assert self._item(self._record("   "))["hasEdits"] is False
+
+    def test_rotate_and_star_alone_not_edits(self, qt_app):
+        # a sima forgatás és a csillag NEM módosítás (#100 spec)
+        item = self._item(self._record(None, rotate_steps=2, star=True))
+        assert item["hasEdits"] is False

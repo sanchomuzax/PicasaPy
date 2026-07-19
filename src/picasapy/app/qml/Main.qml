@@ -744,6 +744,7 @@ ApplicationWindow {
                                         star: slot.info.star === true
                                         caption: slot.info.caption || ""
                                         isVideo: slot.info.isVideo === true
+                                        hasEdits: slot.info.hasEdits === true
                                         keywords: slot.info.keywords || ""
                                         resolution: slot.info.resolution || ""
                                         captionMode: controller.thumbCaptionMode
@@ -880,6 +881,7 @@ ApplicationWindow {
                                 star: modelData.star
                                 caption: modelData.caption
                                 isVideo: modelData.isVideo
+                                hasEdits: modelData.hasEdits
                                 index: modelData.row
                                 keywords: modelData.keywords
                                 resolution: modelData.resolution
