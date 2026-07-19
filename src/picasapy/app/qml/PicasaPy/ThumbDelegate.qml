@@ -18,6 +18,9 @@ Item {
     // sarok kék „visszahajtás" jelölője erre köt. Nem required: a régi
     // hívóhelyek (próba-oldalak, tesztek) enélkül is működnek.
     property bool hasEdits: false
+    // #17: rejtett kép — csak a Nézet → Rejtett képek kapcsolóval látszik,
+    // ilyenkor félig áttetsző (Picasa-minta). Nem required (régi hívók).
+    property bool isHidden: false
     // #85: kiegyenlített rács-sor esetén a cella (parent Item) nagyobb
     // lehet a névleges thumbSize-nál — a MEGJELENÍTETT kép mérete ekkor
     // is a névleges méretre plafonozott marad (0 = nincs plafon), hogy a
@@ -54,6 +57,9 @@ Item {
 
     Rectangle {
         id: frame
+        objectName: "thumbFrame"
+        // #17: a rejtett (de előhívott) kép félig áttetsző
+        opacity: cell.isHidden ? 0.45 : 1
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: -cell.captionStrip / 2

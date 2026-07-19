@@ -83,6 +83,7 @@ def groups_to_qml(groups: tuple[SearchGroup, ...]) -> list[dict]:
                         f"{p.width}x{p.height}" if p.width and p.height else ""
                     ),
                     "hasEdits": _has_edits(p),
+                    "hidden": p.hidden,
                 }
                 for i, p in enumerate(g.photos)
             ],

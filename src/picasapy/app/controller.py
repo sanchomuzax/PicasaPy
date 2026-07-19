@@ -30,7 +30,11 @@ from picasapy.index import (
     sync_tree,
 )
 from picasapy.ini import load_document, parse_document, save_document
-from picasapy.metadata import write_iptc_caption, write_iptc_keywords
+from picasapy.metadata import (
+    read_exif_details,
+    write_iptc_caption,
+    write_iptc_keywords,
+)
 from picasapy.scanner import (
     PICASA_INI_NAME,
     LibraryWatcher,
@@ -241,6 +245,42 @@ class AppController(QObject):
     def thumbCaptionMode(self):
         """Indexkép-felirat mód (Nézet → Indexkép felirata) — perzisztens."""
         return self._thumb_caption_mode
+
+    # -- rejtett képek (#17) -------------------------------------------------
+
+    @Property(bool, notify=statusChanged)
+    def showHidden(self):
+        """Nézet → Rejtett képek: látszanak-e a rejtettek (halványítva)."""
+        value = self._get_settings().value("view/showHidden", "false")
+        return value in (True, "true", "1")
+
+    @Slot(bool)
+    def setShowHidden(self, show: bool) -> None:
+        self._get_settings().setValue("view/showHidden", bool(show))
+        self._refresh_view()
+        self.statusChanged.emit()
+
+    @Slot()
+    def toggleShowHidden(self) -> None:
+        self.setShowHidden(not self.showHidden)
+
+    @Slot(list)
+    def toggleHiddenRows(self, rows) -> None:
+        """Elrejtés/Megjelenítés a kijelölésre (Picasa): ha van még nem
+        rejtett a kijelöltek közt, mindet elrejti; ha mind rejtett, mindet
+        megjeleníti. Az ini-be `hidden=yes` kulcs kerül (levételkor törlődik)."""
+        photos = self._photos.photos
+        valid = [photos[int(r)] for r in rows if 0 <= int(r) < len(photos)]
+        if not valid:
+            return
+        hide_all = not all(p.hidden for p in valid)
+
+        def mutate(document, photo):
+            if hide_all:
+                return document.with_value(photo.name, "hidden", "yes")
+            return document.with_removed(photo.name, "hidden")
+
+        self._apply_batch(valid, mutate)
 
     # -- busy-állapot (#70) --------------------------------------------------
 
@@ -872,6 +912,81 @@ class AppController(QObject):
         parts.append(_format_size(photo.size, locale, self.tr))
         return "   ".join(parts)
 
+    @Slot(int, result="QVariantList")
+    def propertiesOf(self, row: int) -> list:
+        """A Tulajdonságok-panel (#13) sorai: {label, value} párok.
+
+        Az alap-adatok az indexből jönnek; az expozíciós EXIF-mezők
+        igény szerinti fájl-olvasással (csak a panel megnyitásakor fut,
+        griden sosem). Üres mezők kimaradnak — csak olvasás."""
+        photos = self._photos.photos
+        if not 0 <= row < len(photos):
+            return []
+        photo = photos[row]
+        locale = QLocale()
+        entries = [
+            (self.tr("File name"), photo.name),
+            (self.tr("Folder"), photo.folder_path),
+            (self.tr("File size"), _format_size(photo.size, locale, self.tr)),
+        ]
+        if photo.width and photo.height:
+            entries.append((
+                self.tr("Dimensions"),
+                self.tr("%1x%2 pixels")
+                .replace("%1", str(photo.width))
+                .replace("%2", str(photo.height)),
+            ))
+        if photo.taken_at:
+            taken = QDateTime.fromString(photo.taken_at, "yyyy-MM-ddTHH:mm:ss")
+            entries.append((
+                self.tr("Date taken"),
+                locale.toString(taken, QLocale.FormatType.ShortFormat),
+            ))
+        if photo.kind == "photo":
+            entries.extend(self._exif_entries(photo, locale))
+        return [{"label": label, "value": value} for label, value in entries]
+
+    def _exif_entries(self, photo, locale: QLocale) -> list:
+        """Fényképezőgép-adatok a Tulajdonságok-panelre (üresek kihagyva)."""
+        details = read_exif_details(
+            Path(photo.folder_path) / photo.name
+        )
+        entries = []
+        if details.camera:
+            entries.append((self.tr("Camera"), details.camera))
+        if details.exposure_seconds:
+            entries.append((
+                self.tr("Exposure"),
+                _format_exposure(details.exposure_seconds, locale),
+            ))
+        if details.f_number:
+            entries.append((
+                self.tr("Aperture"),
+                f"f/{locale.toString(details.f_number, 'g', 3)}",
+            ))
+        if details.iso:
+            entries.append((self.tr("ISO"), str(details.iso)))
+        if details.focal_mm:
+            entries.append((
+                self.tr("Focal length"),
+                self.tr("%1 mm").replace(
+                    "%1", locale.toString(details.focal_mm, "g", 4)
+                ),
+            ))
+        if details.flash_fired is not None:
+            entries.append((
+                self.tr("Flash"),
+                self.tr("Fired") if details.flash_fired
+                else self.tr("Did not fire"),
+            ))
+        if details.white_balance:
+            entries.append((
+                self.tr("White balance"),
+                self.tr("Automatic") if details.white_balance == "auto"
+                else self.tr("Manual"),
+            ))
+        return entries
+
     @Slot(int, result=str)
     def viewerInfo(self, row: int) -> str:
         """A néző infó-sávja: `mappa > név   ...   (i / N)` — Picasa-minta."""
@@ -1000,6 +1115,10 @@ class AppController(QObject):
             self.restoreSession()
 
     def _show(self, records) -> None:
+        # #17: a rejtett képek alapból sehol nem látszanak (rács, keresés,
+        # csillag-szűrő) — a Nézet → Rejtett képek kapcsolóval igen
+        if not self.showHidden:
+            records = tuple(r for r in records if not r.hidden)
         self._provider.register_photos(records)
         self._photos.set_photos(records)
         self._update_feed_groups(records)
@@ -1078,6 +1197,13 @@ def _first_date_text(records, locale: QLocale) -> str:
     """A csoport fejléc-dátuma: a legkorábbi felvétel hosszú dátuma."""
     dates = sorted(r.taken_at for r in records if r.taken_at)
     return _long_date(dates[0], locale) if dates else ""
+
+
+def _format_exposure(seconds: float, locale: QLocale) -> str:
+    """Záridő fotós alakban: 1 mp alatt `1/N s`, fölötte `N s`."""
+    if 0 < seconds < 1:
+        return f"1/{round(1 / seconds)} s"
+    return f"{locale.toString(seconds, 'g', 3)} s"
 
 
 def _format_size(size_bytes: int, locale: QLocale, tr) -> str:

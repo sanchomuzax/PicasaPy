@@ -94,7 +94,13 @@ def main(work_dir: Path) -> None:
     image = child("viewerImage")
     assert image.property("visible") is False
     assert image.property("source").toString() == ""
-    assert child("viewerEditorPanel").property("enabled") is False
+    editor_panel = child("viewerEditorPanel")
+    assert editor_panel.property("enabled") is False
+    # #103: a tiltás LÁTSSZON is — az eszköz-oszlop halvány videónál
+    tools_column = editor_panel.findChild(QObject, "toolsColumn")
+    assert tools_column.property("opacity") < 1, (
+        "az effekt-panel videónál nem szürkül el"
+    )
 
     item = loader.property("item")
     assert item is not None, "a VideoPlayerView nem töltődött be"

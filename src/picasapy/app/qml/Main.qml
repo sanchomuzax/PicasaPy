@@ -35,6 +35,8 @@ ApplicationWindow {
     property var selectedIndexes: []      // a teljes kijelölés
     property bool viewerOpen: false
     property bool tagsPanelOpen: false    // Címkék-panel (#12, Ctrl+T)
+    // Tulajdonságok-panel (#13, Alt+Enter)
+    property bool propertiesPanelOpen: false
     // a jobbklikkelt kép sora (#15) — a kontextusmenü egyedi műveleteinek
     // (átnevezés, fájlkezelő) célpontja
     property int fileOpTargetRow: -1
@@ -153,6 +155,12 @@ ApplicationWindow {
         onActivated: if (!window.viewerOpen)
                          window.tagsPanelOpen = !window.tagsPanelOpen
     }
+    // #13: Alt+Enter — Tulajdonságok-panel (Picasa-billentyű)
+    Shortcut {
+        sequence: "Alt+Return"
+        onActivated: if (!window.viewerOpen)
+                         window.propertiesPanelOpen = !window.propertiesPanelOpen
+    }
 
     // -- diavetítés (#8) ----------------------------------------------------
     // Indítás: viszonyítási pont a néző képe / a rács-kijelölés / az első
@@ -214,6 +222,19 @@ ApplicationWindow {
         onSlideshowRequested: window.startSlideshow(-1)
         tagsPanelOpen: window.tagsPanelOpen
         onTagsPanelRequested: window.tagsPanelOpen = !window.tagsPanelOpen
+        onHideToggleRequested: window.toggleHiddenSelection()
+        propertiesPanelOpen: window.propertiesPanelOpen
+        onPropertiesPanelRequested:
+            window.propertiesPanelOpen = !window.propertiesPanelOpen
+    }
+
+    // #17: Elrejtés/Megjelenítés a kijelölésre; elrejtés után a kijelölést
+    // ürítjük — az elrejtett sorok kiesnek a rácsból, az indexek eltolódnak
+    function toggleHiddenSelection() {
+        var rows = window.selectedRows()
+        if (rows.length === 0) return
+        controller.toggleHiddenRows(rows)
+        window.clearSelection()
     }
 
     FolderManagerDialog { id: folderManager }
@@ -839,6 +860,7 @@ ApplicationWindow {
                                         caption: slot.info.caption || ""
                                         isVideo: slot.info.isVideo === true
                                         hasEdits: slot.info.hasEdits === true
+                                        isHidden: slot.info.hidden === true
                                         keywords: slot.info.keywords || ""
                                         resolution: slot.info.resolution || ""
                                         captionMode: controller.thumbCaptionMode
@@ -976,6 +998,7 @@ ApplicationWindow {
                                 caption: modelData.caption
                                 isVideo: modelData.isVideo
                                 hasEdits: modelData.hasEdits
+                                isHidden: modelData.hidden === true
                                 index: modelData.row
                                 keywords: modelData.keywords
                                 resolution: modelData.resolution
@@ -1019,6 +1042,20 @@ ApplicationWindow {
                 controller.removeKeywordFromRows(window.selectedRows(), keyword)
             }
             onCloseRequested: window.tagsPanelOpen = false
+        }
+
+        // Tulajdonságok-panel (#13): jobb oldali hasáb, Alt+Enter /
+        // Nézet → Tulajdonságok — csak olvasás
+        PropertiesPanel {
+            objectName: "propertiesPanel"
+            visible: window.propertiesPanelOpen
+            SplitView.preferredWidth: 210
+            SplitView.minimumWidth: 160
+            hasSelection: window.selectedIndex >= 0
+            // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
+            entries: (controller.photos.revision,
+                      controller.propertiesOf(window.selectedIndex))
+            onCloseRequested: window.propertiesPanelOpen = false
         }
     }
 
@@ -1197,6 +1234,12 @@ ApplicationWindow {
 
     PhotoContextMenu {
         id: photoContextMenu
+        // #17: pipa, ha a jobbklikkelt kép rejtett (photos.revision-nel
+        // együtt kötve, hogy a menü újranyitáskor friss legyen)
+        hideChecked: (controller.photos.revision,
+                      (controller.photos.itemAt(window.fileOpTargetRow)
+                           .hidden === true))
+        onHideToggleRequested: window.toggleHiddenSelection()
         onRenameRequested: renameDialog.openFor(window.fileOpTargetRow)
         onMoveRequested: {
             moveFolderDialog.paths = window.selectedPaths()

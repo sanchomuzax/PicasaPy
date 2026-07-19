@@ -14,11 +14,21 @@ Menu {
     signal moveRequested()
     signal deleteRequested()
     signal locateRequested()
+    // #17: Elrejtés — pipával, ha a célpont már rejtett (Picasa-minta)
+    property bool hideChecked: false
+    signal hideToggleRequested()
 
     MenuItem {
         objectName: "contextMenuRename"
         text: qsTr("Rename...")
         onTriggered: menu.renameRequested()
+    }
+    MenuItem {
+        objectName: "contextMenuHide"
+        text: qsTr("Hide")
+        checkable: true
+        checked: menu.hideChecked
+        onTriggered: menu.hideToggleRequested()
     }
     MenuItem {
         objectName: "contextMenuMove"

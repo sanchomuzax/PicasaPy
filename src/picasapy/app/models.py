@@ -286,6 +286,7 @@ class PhotoGridModel(QAbstractListModel):
                 else ""
             ),
             "hasEdits": _has_edits(photo),
+            "hidden": photo.hidden,
         }
 
     @Slot(int, result=bool)

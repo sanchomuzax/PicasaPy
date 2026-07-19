@@ -13,7 +13,7 @@ _PATH_SEP = re.compile(r"[/\\]")
 # egyébként a .picasa.ini értéke (Picasa-viselkedés).
 _SELECT = """
 SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
-       p.star, COALESCE(p.caption_file, p.caption_ini) AS caption,
+       p.star, p.hidden, COALESCE(p.caption_file, p.caption_ini) AS caption,
        COALESCE(p.keywords_file, p.keywords_ini) AS keywords,
        p.rotate_steps, p.filters, p.taken_at, p.orientation, p.width, p.height
 FROM photos p JOIN folders f ON f.id = p.folder_id
@@ -37,6 +37,9 @@ class PhotoRecord:
     orientation: int
     width: int | None
     height: int | None
+    # defaultos mező a végén: a meglévő (pozicionális) konstruálások ne
+    # törjenek — az olvasó lekérdezés kulcsszóval tölti (#17)
+    hidden: bool = False
 
 
 def photos_in_folder(
@@ -173,6 +176,7 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             size=row["size"],
             mtime_ns=row["mtime_ns"],
             star=bool(row["star"]),
+            hidden=bool(row["hidden"]),
             caption=row["caption"],
             keywords=row["keywords"],
             rotate_steps=row["rotate_steps"],

@@ -100,7 +100,10 @@ Rectangle {
 
         Layout.fillWidth: true
         Layout.preferredHeight: 66
-        opacity: tile.tileEnabled ? 1 : 0.4
+        // az öröklött enabled is számít (#103): videónál a PhotoViewer az
+        // egész panelt tiltja — a csempe ilyenkor vizuálisan is szürkül
+        enabled: tile.tileEnabled
+        opacity: tile.enabled ? 1 : 0.4
 
         Rectangle {
             anchors.fill: parent
@@ -136,7 +139,6 @@ Rectangle {
             id: tileMouse
             anchors.fill: parent
             hoverEnabled: true
-            enabled: tile.tileEnabled
             onClicked: tile.activated(tile.toolName)
         }
     }
@@ -152,13 +154,15 @@ Rectangle {
         radius: 3
         border.width: 1
         border.color: Theme.chromeBorder
-        color: !pbtn.buttonEnabled ? "#ececec"
+        // pbtn.enabled = buttonEnabled ÉS az öröklött (panel-)enabled (#103)
+        enabled: pbtn.buttonEnabled
+        color: !pbtn.enabled ? "#ececec"
                : (pbtnMouse.pressed ? "#d8d8d8" : "#fdfdfd")
         Text {
             anchors.centerIn: parent
             text: pbtn.label
             font.pixelSize: Theme.fontSize
-            color: pbtn.buttonEnabled ? Theme.textDark : "#9a968e"
+            color: pbtn.enabled ? Theme.textDark : "#9a968e"
             elide: Text.ElideRight
             width: parent.width - 8
             horizontalAlignment: Text.AlignHCenter
@@ -166,7 +170,6 @@ Rectangle {
         MouseArea {
             id: pbtnMouse
             anchors.fill: parent
-            enabled: pbtn.buttonEnabled
             onClicked: pbtn.buttonClicked()
         }
     }
@@ -175,6 +178,8 @@ Rectangle {
     ColumnLayout {
         objectName: "toolsColumn"
         visible: !panel.cropActive
+        // tiltott panel (videó a nézőben, #103): az egész oszlop halvány
+        opacity: panel.enabled ? 1 : 0.45
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
@@ -305,6 +310,7 @@ Rectangle {
     ColumnLayout {
         objectName: "cropColumn"
         visible: panel.cropActive
+        opacity: panel.enabled ? 1 : 0.45
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
