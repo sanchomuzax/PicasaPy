@@ -267,6 +267,119 @@ class TestFolderListModelStability:
         assert resets == [1]
 
 
+class TestFolderListNavigation:
+    """#77: kurzor/görgő léptetés a mappalistán — modell-szintű navigáció."""
+
+    def test_neighbor_folder_steps_over_year_rows(self, qt_app, conn):
+        # Az évszám-elválasztó sorok nem léptethetők — a szomszéd mindig
+        # valódi mappa.
+        from picasapy.app.models import FolderListModel
+
+        model = FolderListModel()
+        model.load(conn)
+        folders = list(model.folder_paths())
+        assert len(folders) >= 2
+        assert model.neighborFolder(folders[0], 1) == folders[1]
+        assert model.neighborFolder(folders[1], -1) == folders[0]
+
+    def test_neighbor_folder_clamps_at_edges(self, qt_app, conn):
+        from picasapy.app.models import FolderListModel
+
+        model = FolderListModel()
+        model.load(conn)
+        folders = list(model.folder_paths())
+        assert model.neighborFolder(folders[0], -1) == folders[0]
+        assert model.neighborFolder(folders[-1], 1) == folders[-1]
+
+    def test_neighbor_folder_unknown_path_gives_first(self, qt_app, conn):
+        from picasapy.app.models import FolderListModel
+
+        model = FolderListModel()
+        model.load(conn)
+        folders = list(model.folder_paths())
+        assert model.neighborFolder("", 1) == folders[0]
+        assert model.neighborFolder("/nincs/ilyen", -1) == folders[0]
+
+    def test_neighbor_folder_empty_model(self, qt_app):
+        from picasapy.app.models import FolderListModel
+
+        assert FolderListModel().neighborFolder("/x", 1) == ""
+
+    def test_row_of_path(self, qt_app, conn):
+        from picasapy.app.models import FolderListModel
+
+        model = FolderListModel()
+        model.load(conn)
+        folders = list(model.folder_paths())
+        row = model.rowOfPath(folders[0])
+        assert row >= 0
+        assert model.data(model.index(row, 0), FolderListModel.PathRole) == folders[0]
+        assert model.rowOfPath("/nincs/ilyen") == -1
+
+
+class TestPhotoGridNavigation:
+    """#77: kurzorgombos léptetés célsora a rács-feedben (mappánkénti
+    csoportok, rácssor-ugrás fel/le, folytonos balra/jobbra)."""
+
+    @pytest.fixture
+    def feed_model(self, qt_app, tmp_path):
+        # A mappa: 5 kép (3 oszlopnál sorok: [0,1,2], [3,4]);
+        # B mappa: 3 kép (start=5, egyetlen sor: [5,6,7]).
+        from picasapy.app.models import PhotoGridModel
+
+        root = tmp_path / "feedlib"
+        (root / "a-mappa").mkdir(parents=True)
+        (root / "b-mappa").mkdir()
+        for i in range(5):
+            make_jpeg(root / "a-mappa" / f"a{i}.jpg")
+        for i in range(3):
+            make_jpeg(root / "b-mappa" / f"b{i}.jpg")
+        with open_index(tmp_path / "feed.db") as connection:
+            sync_tree(connection, root)
+            photos = photos_in_folder(
+                connection, root / "a-mappa"
+            ) + photos_in_folder(connection, root / "b-mappa")
+        model = PhotoGridModel()
+        model.set_photos(photos)
+        return model
+
+    def test_left_right_are_continuous_across_groups(self, feed_model):
+        assert feed_model.navigate(0, "right", 3) == 1
+        assert feed_model.navigate(4, "right", 3) == 5  # átlép a B mappába
+        assert feed_model.navigate(5, "left", 3) == 4
+        assert feed_model.navigate(0, "left", 3) == 0   # elején megáll
+        assert feed_model.navigate(7, "right", 3) == 7  # végén megáll
+
+    def test_down_within_group_jumps_a_row(self, feed_model):
+        assert feed_model.navigate(1, "down", 3) == 4
+        # csonka utolsó sor: az oszlop alatt nincs kép → az utolsóra lép
+        assert feed_model.navigate(2, "down", 3) == 4
+
+    def test_down_crosses_group_keeps_column(self, feed_model):
+        assert feed_model.navigate(3, "down", 3) == 5
+        assert feed_model.navigate(4, "down", 3) == 6
+        assert feed_model.navigate(6, "down", 3) == 6  # utolsó csoport alja
+
+    def test_up_within_and_across_groups(self, feed_model):
+        assert feed_model.navigate(4, "up", 3) == 1
+        assert feed_model.navigate(5, "up", 3) == 3  # az A utolsó sorába
+        assert feed_model.navigate(7, "up", 3) == 4  # oszlop-csonkolással
+        assert feed_model.navigate(0, "up", 3) == 0
+
+    def test_invalid_row_starts_at_first_photo(self, feed_model):
+        # Kijelölés nélkül (−1) az első képre lép — a rács-navigáció innen
+        # indul.
+        assert feed_model.navigate(-1, "down", 3) == 0
+        assert feed_model.navigate(99, "right", 3) == 0
+
+    def test_empty_model_and_bad_direction(self, qt_app, feed_model):
+        from picasapy.app.models import PhotoGridModel
+
+        assert PhotoGridModel().navigate(0, "down", 3) == -1
+        assert feed_model.navigate(2, "semerre", 3) == 2
+        assert feed_model.navigate(2, "down", 0) == 3  # oszlopszám min. 1
+
+
 class TestFolderListMatches:
     """#49: keresés közben a mappalista csak a találatos mappákat mutatja,
     a darabszám a találatok száma."""

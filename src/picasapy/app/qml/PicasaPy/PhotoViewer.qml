@@ -110,6 +110,15 @@ Rectangle {
     function previous() {
         if (currentIndex > 0) currentIndex -= 1
     }
+    // Egérgörgős lapozás (#77): a nagy nézőben a görgő a képek között
+    // lép (Picasa-viselkedés). A touchpad kis deltáit egy teljes
+    // görgő-fokozatig (120) gyűjtjük, hogy ne ugráljon több képet.
+    property real wheelAccum: 0
+    function wheelStep(delta) {
+        wheelAccum += delta
+        while (wheelAccum <= -120) { wheelAccum += 120; next() }
+        while (wheelAccum >= 120) { wheelAccum -= 120; previous() }
+    }
     function urlAt(index) {
         return photosModel ? photosModel.fileUrlAt(index) : ""
     }
@@ -301,6 +310,11 @@ Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 color: "#808080"
+
+                WheelHandler {
+                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                    onWheel: function(event) { viewer.wheelStep(event.angleDelta.y) }
+                }
 
                 Item {
                     id: photoArea
