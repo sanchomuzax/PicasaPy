@@ -237,6 +237,103 @@ class TestPhotoGridModel:
         )
 
 
+class TestPhotoGridModelFolderNavigation:
+    """#84: a nagy nézőben a lapozás a mappahatárnál álljon meg — a
+    folderNeighbor a rácsmodell szintjén szolgáltatja ezt a lépést."""
+
+    @staticmethod
+    def _record(folder: str, name: str):
+        from picasapy.index import PhotoRecord
+
+        return PhotoRecord(
+            id=abs(hash((folder, name))) % 100000,
+            folder_path=folder,
+            name=name,
+            kind="photo",
+            size=0,
+            mtime_ns=0,
+            star=False,
+            caption=None,
+            keywords=None,
+            rotate_steps=0,
+            filters=None,
+            taken_at=None,
+            orientation=1,
+            width=None,
+            height=None,
+        )
+
+    def _multi_folder_photos(self):
+        # két mappa, folytonosan (f.path, p.name szerint rendezve, ahogy a
+        # lekérdezések is adják): nyaralas (2 kép), telek (3 kép)
+        return tuple(
+            self._record(folder, name)
+            for folder, name in (
+                ("/k/nyaralas", "a.jpg"),
+                ("/k/nyaralas", "b.jpg"),
+                ("/k/telek", "c.jpg"),
+                ("/k/telek", "d.jpg"),
+                ("/k/telek", "e.jpg"),
+            )
+        )
+
+    def test_next_stops_at_folder_end(self, qt_app):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(self._multi_folder_photos())
+        # a nyaralas mappa utolsó (1. indexű) képénél a "+1" lépés helyben marad
+        assert model.folderNeighbor(1, 1) == 1
+
+    def test_previous_stops_at_folder_start(self, qt_app):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(self._multi_folder_photos())
+        # a telek mappa első (2. indexű) képénél a "-1" lépés helyben marad
+        assert model.folderNeighbor(2, -1) == 2
+
+    def test_next_moves_within_folder(self, qt_app):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(self._multi_folder_photos())
+        assert model.folderNeighbor(2, 1) == 3
+        assert model.folderNeighbor(3, 1) == 4
+
+    def test_previous_moves_within_folder(self, qt_app):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(self._multi_folder_photos())
+        assert model.folderNeighbor(1, -1) == 0
+
+    def test_invalid_row_returns_itself(self, qt_app):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(self._multi_folder_photos())
+        assert model.folderNeighbor(-1, 1) == -1
+        assert model.folderNeighbor(99, 1) == 99
+
+    def test_single_folder_behaves_like_plain_step(self, qt_app):
+        # egymappás nézetben (a jelenlegi Picasa-viselkedéssel megegyezően)
+        # a lépés a teljes fotólistán belül mozog, mert az egész lista
+        # ugyanabban a mappában van
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(
+            tuple(
+                self._record("/k/nyaralas", name)
+                for name in ("a.jpg", "b.jpg", "c.jpg")
+            )
+        )
+        assert model.folderNeighbor(0, 1) == 1
+        assert model.folderNeighbor(1, 1) == 2
+        assert model.folderNeighbor(2, 1) == 2
+
+
 class TestFolderListModelStability:
     def test_reload_unchanged_no_reset(self, qt_app, conn):
         # 10-es issue: a háttér-szinkron minden körben újratöltötte a

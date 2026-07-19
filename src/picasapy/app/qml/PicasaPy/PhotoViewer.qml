@@ -104,11 +104,29 @@ Rectangle {
             }
         }
     }
+    // A lapozás a #84 óta a modell mappán-belüli lépését használja: a
+    // rács (feed) nézet mappaátlépő listáin (csillag-szűrő, keresés) sem
+    // ugorhatunk át a szomszéd mappába — a folderNeighbor a saját mappa
+    // határán a jelenlegi indexet adja vissza, tehát nem lép tovább.
     function next() {
-        if (currentIndex < photoCount - 1) currentIndex += 1
+        if (!photosModel) return
+        currentIndex = photosModel.folderNeighbor(currentIndex, 1)
     }
     function previous() {
-        if (currentIndex > 0) currentIndex -= 1
+        if (!photosModel) return
+        currentIndex = photosModel.folderNeighbor(currentIndex, -1)
+    }
+    // a ◀/▶ gombok (és Keys.onLeft/Right) enabled-je is a mappahatárt
+    // tükrözi: nincs hova lépni, ha a folderNeighbor helyben marad
+    function hasNext() {
+        return photosModel
+            ? photosModel.folderNeighbor(currentIndex, 1) !== currentIndex
+            : false
+    }
+    function hasPrevious() {
+        return photosModel
+            ? photosModel.folderNeighbor(currentIndex, -1) !== currentIndex
+            : false
     }
     // Egérgörgős lapozás (#77): a nagy nézőben a görgő a képek között
     // lép (Picasa-viselkedés). A touchpad kis deltáit egy teljes
@@ -154,8 +172,9 @@ Rectangle {
                     font.pixelSize: Theme.fontSize
                 }
                 PicasaButton {
+                    objectName: "viewerPrevButton"
                     text: "◀"; onClicked: viewer.previous()
-                    enabled: viewer.currentIndex > 0
+                    enabled: viewer.hasPrevious()
                     Layout.preferredWidth: 30
                 }
                 ListView {
@@ -186,8 +205,9 @@ Rectangle {
                     }
                 }
                 PicasaButton {
+                    objectName: "viewerNextButton"
                     text: "▶"; onClicked: viewer.next()
-                    enabled: viewer.currentIndex < viewer.photoCount - 1
+                    enabled: viewer.hasNext()
                     Layout.preferredWidth: 30
                 }
                 Item { Layout.fillWidth: true }
@@ -436,16 +456,23 @@ Rectangle {
                     visible: captionField.text.length === 0 && !captionField.activeFocus
                 }
 
-                // elő-betöltés: a szomszédok már dekódolva, mire lépsz
+                // elő-betöltés: a szomszédok már dekódolva, mire lépsz —
+                // a #84 óta a mappán belüli szomszéd (folderNeighbor), nem
+                // a nyers currentIndex±1, hogy ne a szomszéd mappa képét
+                // töltsük elő feleslegesen a mappahatárnál
                 Image {
                     visible: false
-                    source: viewer.urlAt(viewer.currentIndex + 1)
+                    source: viewer.photosModel
+                        ? viewer.urlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, 1))
+                        : ""
                     asynchronous: true; autoTransform: true
                     sourceSize.width: 2560
                 }
                 Image {
                     visible: false
-                    source: viewer.urlAt(viewer.currentIndex - 1)
+                    source: viewer.photosModel
+                        ? viewer.urlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, -1))
+                        : ""
                     asynchronous: true; autoTransform: true
                     sourceSize.width: 2560
                 }
