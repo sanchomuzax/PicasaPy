@@ -74,6 +74,9 @@ class AppController(QObject):
     # #16: export kész — (exportált darab, sikertelen darab); háttérszálból
     # érkezik, a Qt automatikusan a főszálra sorolja
     exportFinished = Signal(int, int)
+    # #70: a háttérmunka (indexelés/thumbnail) állapota változott — a QML
+    # busy-animációjának triggere; CSAK tényleges átmenetnél megy ki
+    busyChanged = Signal()
 
     def __init__(
         self,
@@ -111,8 +114,15 @@ class AppController(QObject):
         )
         self._watcher = None
         self._rescan_timer = None
+        # #70: busy-könyvelés — futó szinkron-munkák száma + a thumbnail-
+        # provider aktív kérései; jelzés-alapú, nincs polling
+        self._sync_jobs = 0
+        self._thumb_active = 0
+        self._busy = False
         self.syncFinished.connect(self._reload)
+        self.syncFinished.connect(self._on_sync_job_done)
         self.watcherDirty.connect(self._on_folders_dirty)
+        provider.activeCountChanged.connect(self._on_thumb_active)
 
     def _get_settings(self) -> QSettings:
         """Lusta alapértelmezés: `QSettings("PicasaPy", "PicasaPy")`, hacsak
@@ -232,6 +242,38 @@ class AppController(QObject):
         """Indexkép-felirat mód (Nézet → Indexkép felirata) — perzisztens."""
         return self._thumb_caption_mode
 
+    # -- busy-állapot (#70) --------------------------------------------------
+
+    @Property(bool, notify=busyChanged)
+    def isWorking(self):
+        """Fut-e háttérmunka (indexelés/szinkron vagy thumbnail-betöltés) —
+        az alsó sáv animációja erre köt."""
+        return self._busy
+
+    def _begin_sync_job(self) -> None:
+        """Egy háttér-szinkron indul — a főszálon hívandó, a worker
+        indítása ELŐTT (a syncFinished zárja le)."""
+        self._sync_jobs += 1
+        self._update_busy()
+
+    @Slot()
+    def _on_sync_job_done(self) -> None:
+        self._sync_jobs = max(0, self._sync_jobs - 1)
+        self._update_busy()
+
+    @Slot(int)
+    def _on_thumb_active(self, count: int) -> None:
+        """A thumbnail-provider aktív kéréseinek száma (a provider szálából
+        jelezve; a Qt a főszálra sorolja)."""
+        self._thumb_active = count
+        self._update_busy()
+
+    def _update_busy(self) -> None:
+        busy = self._sync_jobs > 0 or self._thumb_active > 0
+        if busy != self._busy:
+            self._busy = busy
+            self.busyChanged.emit()
+
     # -- műveletek ----------------------------------------------------------
 
     def start(self) -> None:
@@ -289,6 +331,7 @@ class AppController(QObject):
             finally:
                 self.syncFinished.emit()
 
+        self._begin_sync_job()
         threading.Thread(target=worker, daemon=True).start()
 
     @Slot(str)
@@ -343,6 +386,7 @@ class AppController(QObject):
             finally:
                 self.syncFinished.emit()
 
+        self._begin_sync_job()
         threading.Thread(target=worker, daemon=True).start()
 
     @Slot()
@@ -370,6 +414,7 @@ class AppController(QObject):
         if self._sync_running:
             return  # egy író elég; a futó szinkron végén úgyis frissülünk
         self._sync_running = True
+        self._begin_sync_job()
         threading.Thread(target=self._sync_worker, daemon=True).start()
 
     @Slot(str)
@@ -529,14 +574,16 @@ class AppController(QObject):
 
     @Slot(str)
     def resyncFolder(self, folder_path: str) -> None:
-        """Egy mappa azonnali újraszinkronja + nézetfrissítés — a néző
-        bezárásakor hívjuk (#59): a szerkesztések (filters=) így NAS-on is
-        rögtön látszanak a rácson, nem az 5 perces rescanre várva."""
+        """Egy mappa újraszinkronja + nézetfrissítés — a néző bezárásakor
+        hívjuk (#59): a szerkesztések (filters=) így NAS-on is rögtön
+        látszanak a rácson, nem az 5 perces rescanre várva.
+
+        #86: a szinkron HÁTTÉRSZÁLON fut (a _on_folders_dirty útján), így a
+        hívó nézetváltás — „Vissza a könyvtárhoz" — hálózati meghajtón sem
+        blokkolja a UI-szálat; a végén a syncFinished frissíti a nézetet."""
         if not folder_path:
             return
-        with open_index(self._db_path) as conn:
-            sync_tree(conn, folder_path)
-        self._refresh_view()
+        self._on_folders_dirty([folder_path])
 
     @Slot(str, result="QVariantList")
     def searchSuggestions(self, text: str) -> list:

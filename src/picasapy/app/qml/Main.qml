@@ -912,8 +912,36 @@ ApplicationWindow {
 
         // tömör acélkék infó-sáv; kijelöléskor a kép adatai
         Rectangle {
+            id: infoBar
             width: parent.width; height: 20
             color: Theme.infoBar
+            clip: true
+
+            // #70: lassan végigvonuló fény-hullám, amíg a PicasaPy a
+            // háttérben dolgozik (indexelés, thumbnail-batch). XAnimator:
+            // a render-szálon fut (a főszálat/GIL-t nem érinti, ld. #53),
+            // idle-ben running=false → 0 CPU/GPU. Nem polloz: a
+            // controller.isWorking jelzés-alapú (busyChanged).
+            Rectangle {
+                id: busySweep
+                objectName: "busySweep"
+                visible: controller.isWorking
+                width: Math.max(80, infoBar.width / 5)
+                height: infoBar.height
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: "transparent" }
+                    GradientStop { position: 0.5; color: "#59ffffff" }
+                    GradientStop { position: 1.0; color: "transparent" }
+                }
+                XAnimator on x {
+                    running: busySweep.visible
+                    loops: Animation.Infinite
+                    from: -busySweep.width
+                    to: infoBar.width
+                    duration: 1800
+                }
+            }
             Text {
                 anchors.centerIn: parent
                 text: window.viewerOpen
