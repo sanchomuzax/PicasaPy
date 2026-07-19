@@ -11,15 +11,15 @@
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+">
 </p>
 
-## About
-
-PicasaPy is an open-source successor to **Google Picasa 3.x**, the photo manager and light editor that Google discontinued in 2016. It is written in Python with a PySide6 (Qt 6) / QML interface, and aims to be a drop-in replacement: it reads and writes the same `.picasa.ini` sidecar format Picasa 3.x used, so it can be used side-by-side with an existing Picasa photo library without breaking anything. Development is Linux-first (built and tested on a Raspberry Pi 5) and licensed under **GPL-3.0**. The project is in **early development** (0.1.x), well before a 1.0 release — expect rough edges and missing features.
-
----
-
 ## Mi ez?
 
-A PicasaPy a **Google Picasa** fotókezelő és -szerkesztő program nyílt forráskódú újraírása Python nyelven. A Picasát a Google 2016-ban kivezette, de sokan a mai napig használják gyors böngészés, csillagozás, feliratozás és nem-destruktív szerkesztés miatt. A PicasaPy célja egy modern, keresztplatformos utód, amely **kétirányúan kompatibilis** a Picasa `.picasa.ini` formátumával — így a régi és az új szoftver párhuzamosan, ugyanazon a fotótáron használható.
+A PicasaPy a **Google Picasa** fotókezelő és -szerkesztő program nyílt forráskódú újraírása Python nyelven. A Picasát a Google 2016-ban kivezette, de sokan a mai napig használják gyors böngészés, csillagozás, feliratozás és nem-destruktív szerkesztés miatt. A PicasaPy célja egy modern, keresztplatformos utód, amely **kétirányúan kompatibilis** a Picasa `.picasa.ini` formátumával — így a régi és az új szoftver párhuzamosan, ugyanazon a fotótáron használható. Python nyelven, PySide6 (Qt 6) / QML felülettel készül; a fejlesztés Linux-first (Raspberry Pi 5-ön épül és tesztelődik), licence **GPL-3.0**. A projekt még **korai fejlesztési fázisban** van (0.x), messze az 1.0-tól — hibák és hiányzó funkciók még előfordulhatnak.
+
+<p align="center">
+  <img src="docs/assets/screenshot-fo-ablak.png" alt="PicasaPy fő ablak rács nézetben" width="700">
+</p>
+
+---
 
 ## Fő képességek
 
