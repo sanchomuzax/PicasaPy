@@ -354,6 +354,59 @@ class TestSetCaption:
         controller.setCaption(99, "nem történhet")  # nem dobhat
 
 
+class TestVideoRotationGuard:
+    """#103: videóra a forgatás nem írhat rotate= kulcsot az ini-be."""
+
+    def _with_video(self, controller, library):
+        from picasapy.index import open_index, sync_tree
+
+        (library / "nyaralas" / "film.mp4").write_bytes(b"\x00" * 32)
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        return next(
+            i
+            for i, photo in enumerate(controller.photos.photos)
+            if photo.name == "film.mp4"
+        )
+
+    def test_single_rotate_on_video_noop(self, controller, library):
+        row = self._with_video(controller, library)
+        controller.rotateRight(row)
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(
+            encoding="utf-8"
+        )
+        assert "film.mp4" not in ini_text
+        assert controller.photos.photos[row].rotate_steps == 0
+
+    def test_mixed_selection_rotates_only_photos(self, controller, library):
+        video_row = self._with_video(controller, library)
+        photo_rows = [
+            i
+            for i, photo in enumerate(controller.photos.photos)
+            if photo.kind == "photo"
+        ]
+        controller.rotateRightMany([*photo_rows, video_row])
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(
+            encoding="utf-8"
+        )
+        assert "film.mp4" not in ini_text
+        for row in photo_rows:
+            assert controller.photos.photos[row].rotate_steps == 1
+        assert controller.photos.photos[video_row].rotate_steps == 0
+
+    def test_video_only_selection_rotate_many_noop(self, controller, library):
+        video_row = self._with_video(controller, library)
+        before = (library / "nyaralas" / ".picasa.ini").read_text(
+            encoding="utf-8"
+        )
+        controller.rotateLeftMany([video_row])
+        after = (library / "nyaralas" / ".picasa.ini").read_text(
+            encoding="utf-8"
+        )
+        assert after == before
+
+
 class TestKeywords:
     """#12: kulcsszavak (címkék) hozzáadása/törlése a kijelölésre.
 

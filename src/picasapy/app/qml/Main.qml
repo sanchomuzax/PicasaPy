@@ -115,6 +115,19 @@ ApplicationWindow {
         if (slideshow.visible) return slideshow.currentIndex
         return trayStar.targetRow
     }
+    // #103: csak-videó célpontnál a forgatás tiltott — a tálca ↺/↻
+    // gombjainak őre (a controller-slotok defenzíven szintén kihagyják
+    // a videókat, vegyes kijelölésnél csak a fotók forognak)
+    function rotateTargetsAllVideo() {
+        var rows = window.viewerOpen
+            ? [photoViewer.currentIndex]
+            : window.selectedRows()
+        if (rows.length === 0) return false
+        for (var k = 0; k < rows.length; ++k)
+            if (!controller.photos.isVideoAt(Number(rows[k])))
+                return false
+        return true
+    }
     Shortcut {
         sequence: "Ctrl+R"
         onActivated: {
@@ -1125,16 +1138,24 @@ ApplicationWindow {
                     }
                 }
                 PicasaButton {
+                    objectName: "trayRotateLeft"
                     text: "↺"
-                    enabled: window.viewerOpen || window.selectedIndex >= 0
+                    // #103: csak-videó kijelölésnél tiltva (photos.revision:
+                    // modell-frissüléskor újraértékelt kötés)
+                    enabled: (controller.photos.revision,
+                              (window.viewerOpen || window.selectedIndex >= 0)
+                              && !window.rotateTargetsAllVideo())
                     Layout.preferredWidth: 34
                     onClicked: trayStar.multi
                                ? controller.rotateLeftMany(window.selectedIndexes)
                                : controller.rotateLeft(trayStar.targetRow)
                 }
                 PicasaButton {
+                    objectName: "trayRotateRight"
                     text: "↻"
-                    enabled: window.viewerOpen || window.selectedIndex >= 0
+                    enabled: (controller.photos.revision,
+                              (window.viewerOpen || window.selectedIndex >= 0)
+                              && !window.rotateTargetsAllVideo())
                     Layout.preferredWidth: 34
                     onClicked: trayStar.multi
                                ? controller.rotateRightMany(window.selectedIndexes)
