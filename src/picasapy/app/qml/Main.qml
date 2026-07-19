@@ -447,36 +447,116 @@ ApplicationWindow {
                     // A cél-sort a modell számolja (rácssor-ugrás, mappa-
                     // csoport-határok); a kijelölés és a látótér követi. Az
                     // oszlopszám a #85 szerinti effektív elrendezésből jön.
+                    // kijelölési horgony (#96): a Shift+nyíl tartomány
+                    // kezdőpontja; sima lépés/kattintás ide állítja vissza
+                    property int selectionAnchor: -1
                     function moveSelection(direction) {
                         var t = controller.photos.navigate(
                             window.selectedIndex, direction, columns)
                         if (t < 0) return
                         window.selectedIndex = t
                         window.selectedIndexes = [t]
+                        selectionAnchor = t
                         scrollToRow(t)
                     }
-                    function scrollToRow(row) {
+                    // Shift+nyíl (#96): a horgony és a cél-index közti
+                    // tartomány kijelölése; visszafelé lépve szűkül
+                    function extendSelection(direction) {
+                        if (window.selectedIndex < 0) {
+                            moveSelection(direction); return
+                        }
+                        if (selectionAnchor < 0)
+                            selectionAnchor = window.selectedIndex
+                        var t = controller.photos.navigate(
+                            window.selectedIndex, direction, columns)
+                        if (t < 0) return
+                        window.selectedIndex = t
+                        var lo = Math.min(selectionAnchor, t)
+                        var hi = Math.max(selectionAnchor, t)
+                        var sel = []
+                        for (var r = lo; r <= hi; ++r) sel.push(r)
+                        window.selectedIndexes = sel
+                        scrollToRow(t)
+                    }
+                    function groupOfRow(row) {
                         for (var i = 0; i < model.length; ++i)
                             if (row >= model[i].start
-                                && row < model[i].start + model[i].count) {
-                                positionViewAtIndex(i, ListView.Contain)
-                                savedY = contentY
-                                return
-                            }
+                                && row < model[i].start + model[i].count)
+                                return i
+                        return -1
                     }
-                    Keys.onLeftPressed: moveSelection("left")
-                    Keys.onRightPressed: moveSelection("right")
-                    Keys.onUpPressed: moveSelection("up")
-                    Keys.onDownPressed: moveSelection("down")
+                    // a sor függőleges sávja content-koordinátában; null,
+                    // ha a csoport-delegate nincs példányosítva
+                    function rowBounds(row) {
+                        var g = groupOfRow(row)
+                        if (g < 0) return null
+                        var it = itemAtIndex(g)
+                        if (!it) return null
+                        var gridRow = Math.floor(
+                            (row - model[g].start) / columns)
+                        var top = it.y + it.flowOffset + gridRow * cellHeight
+                        return { top: top, bottom: top + cellHeight }
+                    }
+                    // #96: minimális görgetés — csak akkor és annyit mozdul
+                    // a nézet, hogy a cél-sor belógjon a látótérbe
+                    function scrollToRow(row) {
+                        var b = rowBounds(row)
+                        if (!b) {
+                            var g = groupOfRow(row)
+                            if (g < 0) return
+                            positionViewAtIndex(g, ListView.Contain)
+                            b = rowBounds(row)
+                            if (!b) { savedY = contentY; return }
+                        }
+                        if (b.bottom > contentY + height)
+                            contentY = b.bottom - height
+                        else if (b.top < contentY)
+                            contentY = b.top
+                        savedY = contentY
+                    }
+                    // teszt-segéd (#95): az utolsó csoport aljának távolsága
+                    // a viewport tetejétől (<=0 vagy null → üres lap látszik)
+                    function feedEndGap() {
+                        var it = itemAtIndex(count - 1)
+                        if (!it) return null
+                        return it.y + it.height - contentY
+                    }
+                    Keys.onLeftPressed: function(ev) {
+                        (ev.modifiers & Qt.ShiftModifier)
+                            ? extendSelection("left") : moveSelection("left")
+                    }
+                    Keys.onRightPressed: function(ev) {
+                        (ev.modifiers & Qt.ShiftModifier)
+                            ? extendSelection("right") : moveSelection("right")
+                    }
+                    Keys.onUpPressed: function(ev) {
+                        (ev.modifiers & Qt.ShiftModifier)
+                            ? extendSelection("up") : moveSelection("up")
+                    }
+                    Keys.onDownPressed: function(ev) {
+                        (ev.modifiers & Qt.ShiftModifier)
+                            ? extendSelection("down") : moveSelection("down")
+                    }
                     // görgő (#89): a LAPOT görgeti, mint egy dokumentumot —
                     // a kijelölés nem mozdul; a rácssor-léptetés kizárólag
                     // a nyilak (moveSelection) dolga. Egy görgő-kattanás
                     // (120 delta) egy rácssornyit (cellHeight) mozgat, a
                     // touchpad kis deltái arányosan simán görgetnek.
                     function wheelStep(delta) {
-                        var maxY = Math.max(0, contentHeight - height)
-                        contentY = Math.max(0, Math.min(
-                            contentY - delta / 120 * cellHeight, maxY))
+                        var target = contentY - delta / 120 * cellHeight
+                        // #95: a contentHeight a nem-példányosított csopor-
+                        // toknál BECSLÉS — túllőhet a valós tartalom-végen,
+                        // és üres lapra engedne. Az utolsó csoport VALÓS
+                        // alja állít meg, amint példányosítva van.
+                        var last = itemAtIndex(count - 1)
+                        if (delta < 0 && last) {
+                            var stopY = Math.max(
+                                originY, last.y + last.height - height)
+                            if (contentY >= stopY - 1) return
+                            if (target > stopY) target = stopY
+                        }
+                        var maxY = originY + Math.max(0, contentHeight - height)
+                        contentY = Math.max(originY, Math.min(target, maxY))
                         savedY = contentY
                     }
 
@@ -573,6 +653,9 @@ ApplicationWindow {
                         required property var modelData
                         width: grid.width
                         spacing: 4
+                        // a képfolyam (Flow) függőleges eltolása a csoporton
+                        // belül — a sor-szintű görgetés (#96) számol vele
+                        readonly property real flowOffset: groupFlow.y
 
                         LightboxHeader {
                             width: parent.width
@@ -624,6 +707,7 @@ ApplicationWindow {
                                             .indexOf(slot.row) !== -1
                                         onChosen: function(i, mods) {
                                             grid.forceActiveFocus()   // kurzorgombokhoz (#77)
+                                            grid.selectionAnchor = i  // Shift+nyíl horgony (#96)
                                             window.handleThumbClick(i, mods)
                                         }
                                         onOpened: function(i) {

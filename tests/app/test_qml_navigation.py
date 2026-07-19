@@ -6,7 +6,7 @@ léptetéshez legalább két mappa kell).
 """
 
 import pytest
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from PySide6.QtCore import Q_ARG, Q_RETURN_ARG, QMetaObject, QObject, Qt
 
 from picasapy.index import open_index, sync_tree
 from picasapy.version import version_string
@@ -73,6 +73,20 @@ def _invoke(qt_app, obj, name, *args):
         *[Q_ARG("QVariant", a) for a in args],
     )
     qt_app.processEvents()
+
+
+def _ret(qt_app, obj, name, *args):
+    result = QMetaObject.invokeMethod(
+        obj,
+        name,
+        Qt.ConnectionType.DirectConnection,
+        Q_RETURN_ARG("QVariant"),
+        *[Q_ARG("QVariant", a) for a in args],
+    )
+    qt_app.processEvents()
+    if hasattr(result, "toVariant"):
+        result = result.toVariant()
+    return result
 
 
 def _open_viewer(window, qt_app, index=0):
@@ -152,7 +166,11 @@ class TestGridWheelScrollsPage:
         assert grid is not None, "photoGrid nem található"
         old_size = window.property("thumbSize")
         window.setProperty("thumbSize", 512)
-        qt_app.processEvents()
+        # a Flow-relayout több eseményciklust is igényelhet
+        for _ in range(50):
+            qt_app.processEvents()
+            if grid.property("contentHeight") > grid.property("height"):
+                break
         assert grid.property("contentHeight") > grid.property("height"), (
             "a fixture-nek görgethető tartalmat kell adnia"
         )
@@ -209,6 +227,148 @@ class TestGridWheelScrollsPage:
         finally:
             window.setProperty("thumbSize", old_size)
             qt_app.processEvents()
+
+
+class TestWheelEndStop:
+    """#95: a görgő az utolsó képsornál megáll, üres lapra nem fut."""
+
+    def test_wheel_stops_at_last_row(self, qml_nav_app, qt_app):
+        window, _, _ = qml_nav_app
+        window.setProperty("selectedIndex", 0)
+        window.setProperty("selectedIndexes", [0])
+        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(
+            window, qt_app)
+        try:
+            grid.setProperty("contentY", 0)
+            qt_app.processEvents()
+            for _ in range(40):  # bőven a tartalom-végen túl
+                _invoke(qt_app, grid, "wheelStep", -120)
+            gap = _ret(qt_app, grid, "feedEndGap")
+            assert gap is not None, "az utolsó csoport nem látszik (üres lap)"
+            height = grid.property("height")
+            assert 0 < gap <= height + 1, (
+                f"az utolsó csoport alja a látótérben kell maradjon (gap={gap})"
+            )
+            assert window.property("selectedIndex") == 0
+            end_y = grid.property("contentY")
+            _invoke(qt_app, grid, "wheelStep", 120)  # onnan vissza is lehet
+            assert grid.property("contentY") < end_y
+        finally:
+            window.setProperty("thumbSize", old_size)
+            qt_app.processEvents()
+
+
+class TestArrowMinimalScroll:
+    """#96: a nyíl-navigáció csak a szükséges mértékben görget."""
+
+    def test_no_scroll_when_target_visible(self, qml_nav_app, qt_app):
+        window, _, _ = qml_nav_app
+        window.setProperty("selectedIndex", 1)
+        window.setProperty("selectedIndexes", [1])
+        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(
+            window, qt_app)
+        try:
+            grid.setProperty("selectionAnchor", 1)
+            grid.setProperty("contentY", 0)
+            qt_app.processEvents()
+            _invoke(qt_app, grid, "moveSelection", "up")
+            assert window.property("selectedIndex") == 0
+            assert grid.property("contentY") == 0  # látszott, nem mozdult
+        finally:
+            window.setProperty("thumbSize", old_size)
+            qt_app.processEvents()
+
+    def test_down_scrolls_just_enough(self, qml_nav_app, qt_app):
+        window, _, _ = qml_nav_app
+        window.setProperty("selectedIndex", 0)
+        window.setProperty("selectedIndexes", [0])
+        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(
+            window, qt_app)
+        try:
+            grid.setProperty("selectionAnchor", 0)
+            grid.setProperty("contentY", 0)
+            qt_app.processEvents()
+            _invoke(qt_app, grid, "moveSelection", "down")
+            target = window.property("selectedIndex")
+            assert target > 0
+            b = _ret(qt_app, grid, "rowBounds", target)
+            assert b is not None
+            content_y = grid.property("contentY")
+            height = grid.property("height")
+            # a cél-sor alja pont belóg: pontosan annyi görgetés, amennyi kell
+            assert abs(b["bottom"] - (content_y + height)) <= 1
+        finally:
+            window.setProperty("thumbSize", old_size)
+            qt_app.processEvents()
+
+    def test_up_scrolls_back_minimally(self, qml_nav_app, qt_app):
+        window, _, _ = qml_nav_app
+        window.setProperty("selectedIndex", 0)
+        window.setProperty("selectedIndexes", [0])
+        grid, old_size = TestGridWheelScrollsPage._scrollable_grid(
+            window, qt_app)
+        try:
+            grid.setProperty("selectionAnchor", 0)
+            grid.setProperty("contentY", 0)
+            qt_app.processEvents()
+            _invoke(qt_app, grid, "moveSelection", "down")
+            _invoke(qt_app, grid, "moveSelection", "down")
+            _invoke(qt_app, grid, "moveSelection", "up")
+            target = window.property("selectedIndex")
+            b = _ret(qt_app, grid, "rowBounds", target)
+            assert b is not None
+            # felfelé lépve a sor teteje igazodik a látótér tetejéhez
+            assert abs(b["top"] - grid.property("contentY")) <= 1
+        finally:
+            window.setProperty("thumbSize", old_size)
+            qt_app.processEvents()
+
+
+class TestShiftArrowSelection:
+    """#96: Shift+nyíl a horgonytól tartományt jelöl ki / von vissza."""
+
+    @staticmethod
+    def _reset(window, qt_app):
+        window.setProperty("viewerOpen", False)
+        window.setProperty("selectedIndex", 0)
+        window.setProperty("selectedIndexes", [0])
+        grid = window.findChild(QObject, "photoGrid")
+        assert grid is not None
+        grid.setProperty("selectionAnchor", 0)
+        qt_app.processEvents()
+        return grid
+
+    @staticmethod
+    def _selection(window):
+        raw = window.property("selectedIndexes")
+        if hasattr(raw, "toVariant"):
+            raw = raw.toVariant()
+        return sorted(int(i) for i in raw)
+
+    def test_extend_right_grows_range(self, qml_nav_app, qt_app):
+        window, _, _ = qml_nav_app
+        grid = self._reset(window, qt_app)
+        _invoke(qt_app, grid, "extendSelection", "right")
+        assert self._selection(window) == [0, 1]
+        assert window.property("selectedIndex") == 1
+        _invoke(qt_app, grid, "extendSelection", "right")
+        assert self._selection(window) == [0, 1, 2]
+
+    def test_extend_back_shrinks_range(self, qml_nav_app, qt_app):
+        window, _, _ = qml_nav_app
+        grid = self._reset(window, qt_app)
+        _invoke(qt_app, grid, "extendSelection", "right")
+        _invoke(qt_app, grid, "extendSelection", "right")
+        _invoke(qt_app, grid, "extendSelection", "left")
+        assert self._selection(window) == [0, 1]
+
+    def test_plain_move_resets_to_single(self, qml_nav_app, qt_app):
+        window, _, _ = qml_nav_app
+        grid = self._reset(window, qt_app)
+        _invoke(qt_app, grid, "extendSelection", "right")
+        _invoke(qt_app, grid, "moveSelection", "right")
+        assert self._selection(window) == [2]
+        assert grid.property("selectionAnchor") == 2
 
 
 class TestFolderPaneStepping:
