@@ -95,7 +95,9 @@ Rectangle {
         case "enhance": return qsTr("I'm Feeling Lucky")
         case "autolight": return qsTr("Auto Contrast")
         case "autocolor": return qsTr("Auto Color")
-        default: return ""
+        // ismeretlen (pl. valódi Picasa által írt) szűrő: a nyers név is
+        // informatívabb, mint az üres felirat
+        default: return action
         }
     }
 
