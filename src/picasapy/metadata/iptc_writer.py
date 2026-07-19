@@ -1,12 +1,13 @@
-"""IPTC-felirat írása JPEG-be, minden más bájt megőrzésével.
+"""IPTC-felirat és -kulcsszavak írása JPEG-be, minden más bájt megőrzésével.
 
 Picasa-viselkedés (spec, írási szabály #3): JPEG-nél a caption az IPTC
-Caption/Abstract (2:120) mezőbe kerül. A művelet szegmens-szintű: csak az
-APP13 (Photoshop 3.0 / 8BIM) blokk épül újra — a képadat, az EXIF és az
-IPTC többi mezője (pl. kulcsszavak) bájtra pontosan megmarad. A felirat
-UTF-8-ként íródik az 1:90-es karakterkészlet-jelölővel (digiKam/Lightroom
--kompatibilis). Üres felirat = a 2:120 mező (és ha kiürül, az egész APP13)
-eltávolítása — így a fel-le művelet bitre pontos round-trip.
+Caption/Abstract (2:120), a címkék a Keywords (2:25) mezőbe kerülnek. A
+művelet szegmens-szintű: csak az APP13 (Photoshop 3.0 / 8BIM) blokk épül
+újra — a képadat, az EXIF és az IPTC nem kezelt mezői bájtra pontosan
+megmaradnak. A szöveg UTF-8-ként íródik az 1:90-es karakterkészlet-
+jelölővel (digiKam/Lightroom-kompatibilis); a jelölő addig marad, amíg
+bármely adatmező van a rekordban. Üres érték = a mező (és ha kiürül, az
+egész APP13) eltávolítása — így a fel-le művelet bitre pontos round-trip.
 """
 
 from __future__ import annotations
@@ -27,17 +28,49 @@ _PHOTOSHOP = b"Photoshop 3.0\x00"
 _8BIM = b"8BIM"
 _IPTC_RESOURCE = 0x0404
 _CHARSET_KEY = (1, 90)
+_KEYWORDS_KEY = (2, 25)
 _CAPTION_KEY = (2, 120)
 _UTF8_MARKER = b"\x1b%G"
 _MAX_CAPTION_BYTES = 2000  # IPTC 2:120 szabvány-korlát
+_MAX_KEYWORD_BYTES = 64  # IPTC 2:25 szabvány-korlát
 
 
 def write_iptc_caption(path: str | Path, caption: str) -> bool:
     """True, ha sikerült; False, ha a fájl nem (ép) JPEG."""
+    values = (
+        [_utf8_truncated(caption, _MAX_CAPTION_BYTES)] if caption else []
+    )
+    return _write_datasets(path, _CAPTION_KEY, values)
+
+
+def write_iptc_keywords(path: str | Path, keywords: tuple[str, ...]) -> bool:
+    """A teljes kulcsszó-lista cseréje (2:25, kulcsszavanként egy adatmező).
+
+    True, ha sikerült; False, ha a fájl nem (ép) JPEG. Üres lista = az
+    összes Keywords-mező eltávolítása."""
+    values = [
+        _utf8_truncated(keyword, _MAX_KEYWORD_BYTES)
+        for keyword in keywords
+        if keyword
+    ]
+    return _write_datasets(path, _KEYWORDS_KEY, values)
+
+
+def _utf8_truncated(text: str, limit: int) -> bytes:
+    """UTF-8 bájtok a limitre vágva, karakterhatáron (nincs csonka szekvencia)."""
+    encoded = text.encode("utf-8")
+    if len(encoded) <= limit:
+        return encoded
+    return encoded[:limit].decode("utf-8", errors="ignore").encode("utf-8")
+
+
+def _write_datasets(
+    path: str | Path, key: tuple[int, int], values: list[bytes]
+) -> bool:
     target = Path(path)
     try:
         data = target.read_bytes()
-        rebuilt = _rebuild_jpeg(data, caption)
+        rebuilt = _rebuild_jpeg(data, key, values)
     except (OSError, ValueError):
         return False
     if rebuilt is None:
@@ -46,7 +79,9 @@ def write_iptc_caption(path: str | Path, caption: str) -> bool:
     return True
 
 
-def _rebuild_jpeg(data: bytes, caption: str) -> bytes | None:
+def _rebuild_jpeg(
+    data: bytes, key: tuple[int, int], values: list[bytes]
+) -> bytes | None:
     if not data.startswith(_SOI):
         return None
     segments, sos_offset = _parse_header_segments(data)
@@ -61,7 +96,7 @@ def _rebuild_jpeg(data: bytes, caption: str) -> bytes | None:
             resources = _parse_resources(data[start + 4 + len(_PHOTOSHOP) : end])
             break
 
-    resources = _with_caption(resources, caption)
+    resources = _with_datasets(resources, key, values)
     new_app13 = _serialize_app13(resources)
 
     parts = [data[:2]]
@@ -129,18 +164,25 @@ def _parse_resources(blob: bytes) -> list[tuple[int, bytes, bytes]]:
     return resources
 
 
-def _with_caption(
-    resources: list[tuple[int, bytes, bytes]], caption: str
+def _with_datasets(
+    resources: list[tuple[int, bytes, bytes]],
+    key: tuple[int, int],
+    values: list[bytes],
 ) -> list[tuple[int, bytes, bytes]]:
+    """A `key` adatmezőinek cseréje `values`-ra a 8BIM-erőforrások közt.
+
+    Az 1:90-es karakterkészlet-jelölő addig marad az elején, amíg bármely
+    adatmező van a rekordban (a másik kezelt mező — pl. a felirat a
+    kulcsszó-írásnál — nem veszítheti el az UTF-8-jelölőjét)."""
     datasets = []
     for resource_id, _name, payload in resources:
         if resource_id == _IPTC_RESOURCE:
             datasets = _parse_datasets(payload)
             break
-    kept = [d for d in datasets if d[:2] not in (_CHARSET_KEY, _CAPTION_KEY)]
-    if caption:
-        encoded = caption.encode("utf-8")[:_MAX_CAPTION_BYTES]
-        kept = [(*_CHARSET_KEY, _UTF8_MARKER), *kept, (*_CAPTION_KEY, encoded)]
+    kept = [d for d in datasets if d[:2] not in (_CHARSET_KEY, key)]
+    kept.extend((*key, value) for value in values)
+    if kept:
+        kept = [(*_CHARSET_KEY, _UTF8_MARKER), *kept]
     new_payload = b"".join(
         b"\x1c" + bytes((record, dataset)) + len(value).to_bytes(2, "big") + value
         for record, dataset, value in kept
