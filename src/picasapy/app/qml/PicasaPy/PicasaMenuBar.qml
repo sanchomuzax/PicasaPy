@@ -22,6 +22,11 @@ MenuBar {
     // #12: a Címkék-panel állapota kívülről kötve, a menüpont csak kér
     property bool tagsPanelOpen: false
     signal tagsPanelRequested()
+    // #17: Kép → Elrejtés a kijelölésre
+    signal hideToggleRequested()
+    // #13: Tulajdonságok-panel
+    property bool propertiesPanelOpen: false
+    signal propertiesPanelRequested()
 
     Menu {
         title: qsTr("&File")
@@ -96,7 +101,13 @@ MenuBar {
         }
         MenuItem { text: qsTr("Edit View"); enabled: false }
         MenuSeparator {}
-        MenuItem { text: qsTr("Properties"); enabled: false }
+        MenuItem {
+            objectName: "menuViewProperties"
+            text: qsTr("Properties")
+            checkable: true
+            checked: bar.propertiesPanelOpen
+            onTriggered: bar.propertiesPanelRequested()
+        }
         MenuItem {
             objectName: "menuViewTags"
             text: qsTr("Tags")
@@ -113,7 +124,13 @@ MenuBar {
             onTriggered: bar.slideshowRequested()
         }
         MenuItem { text: qsTr("Timeline"); enabled: false }
-        MenuItem { text: qsTr("Hidden Pictures"); enabled: false }
+        MenuItem {
+            objectName: "menuViewHidden"
+            text: qsTr("Hidden Pictures")
+            checkable: true
+            checked: controller.showHidden
+            onTriggered: controller.toggleShowHidden()
+        }
         Menu {
             title: qsTr("Folder View")
             MenuItem {
@@ -206,8 +223,17 @@ MenuBar {
         MenuItem { text: qsTr("Batch Edit"); enabled: false }
         MenuItem { text: qsTr("Undo All Edits"); enabled: false }
         MenuSeparator {}
-        MenuItem { text: qsTr("Hide"); enabled: false }
-        MenuItem { text: qsTr("Properties"); enabled: false }
+        MenuItem {
+            objectName: "menuPictureHide"
+            text: qsTr("Hide")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.hideToggleRequested()
+        }
+        MenuItem {
+            objectName: "menuPictureProperties"
+            text: qsTr("Properties")
+            onTriggered: bar.propertiesPanelRequested()
+        }
     }
     Menu {
         title: qsTr("&Create")

@@ -354,6 +354,119 @@ class TestSetCaption:
         controller.setCaption(99, "nem történhet")  # nem dobhat
 
 
+class TestPropertiesOf:
+    """#13: a Tulajdonságok-panel adatai — csak olvasás."""
+
+    def _labels(self, entries):
+        return [e["label"] for e in entries]
+
+    def test_basic_fields_present(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        entries = controller.propertiesOf(0)
+        labels = self._labels(entries)
+        values = {e["label"]: e["value"] for e in entries}
+        assert "File name" in labels
+        assert values["File name"] == "IMG_0001.jpg"
+        assert values["Folder"] == str(library / "nyaralas")
+        assert "File size" in labels
+        assert "Dimensions" in labels
+        assert "Date taken" in labels  # a fixture taken_at-ot ír
+
+    def test_exif_camera_fields(self, controller, library, tmp_path):
+        import piexif
+        from picasapy.index import open_index, sync_tree
+        from PIL import Image
+
+        path = library / "nyaralas" / "gep.jpg"
+        Image.new("RGB", (8, 6), "red").save(path, "JPEG")
+        piexif.insert(
+            piexif.dump({
+                "0th": {piexif.ImageIFD.Make: b"Canon",
+                        piexif.ImageIFD.Model: b"EOS 550D"},
+                "Exif": {piexif.ExifIFD.ExposureTime: (1, 125),
+                         piexif.ExifIFD.FNumber: (28, 10),
+                         piexif.ExifIFD.ISOSpeedRatings: 400,
+                         piexif.ExifIFD.WhiteBalance: 0},
+            }),
+            str(path),
+        )
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        row = next(
+            i for i, p in enumerate(controller.photos.photos)
+            if p.name == "gep.jpg"
+        )
+        values = {e["label"]: e["value"] for e in controller.propertiesOf(row)}
+        assert values["Camera"] == "Canon EOS 550D"
+        assert values["Exposure"] == "1/125 s"
+        assert values["Aperture"] == "f/2.8"
+        assert values["ISO"] == "400"
+        assert values["White balance"] == "Automatic"
+
+    def test_invalid_row_empty(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        assert controller.propertiesOf(-1) == []
+        assert controller.propertiesOf(99) == []
+
+
+class TestHiddenPictures:
+    """#17: Elrejtés/Megjelenítés — hidden=yes az ini-ben, a rács alapból
+    nem mutatja a rejtettet, Nézet→Rejtett képek kapcsolóval igen."""
+
+    def test_hide_writes_ini_and_disappears_from_grid(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleHiddenRows([1])  # IMG_0002.jpg
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(
+            encoding="utf-8"
+        )
+        assert "hidden=yes" in ini_text.split("[IMG_0002.jpg]")[1]
+        assert [p.name for p in controller.photos.photos] == ["IMG_0001.jpg"]
+
+    def test_show_hidden_reveals_dimmed_row(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleHiddenRows([1])
+        controller.setShowHidden(True)
+        names = [p.name for p in controller.photos.photos]
+        assert names == ["IMG_0001.jpg", "IMG_0002.jpg"]
+        assert controller.photos.photos[1].hidden is True
+        assert controller.photos.itemAt(1)["hidden"] is True
+
+    def test_unhide_removes_ini_key(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleHiddenRows([1])
+        controller.setShowHidden(True)
+        controller.toggleHiddenRows([1])  # most már látszik, sorszáma 1
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(
+            encoding="utf-8"
+        )
+        assert "hidden=yes" not in ini_text
+        controller.setShowHidden(False)
+        assert len(controller.photos.photos) == 2
+
+    def test_mixed_selection_hides_all(self, controller, library):
+        # Picasa-viselkedés (mint a csillagnál): ha van még nem rejtett a
+        # kijelöltek közt, mindet elrejti
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleHiddenRows([0, 1])
+        assert controller.photos.photos == ()
+
+    def test_show_hidden_persisted(self, controller, library):
+        controller.setShowHidden(True)
+        assert controller.showHidden is True
+        settings = controller._get_settings()
+        assert settings.value("view/showHidden") in (True, "true")
+
+    def test_hidden_excluded_from_search_by_default(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.toggleHiddenRows([0])  # IMG_0001, caption: naplemente
+        controller.search("IMG_0001")
+        assert controller.photos.photos == ()
+        controller.setShowHidden(True)
+        controller.search("IMG_0001")
+        assert [p.name for p in controller.photos.photos] == ["IMG_0001.jpg"]
+
+
 class TestVideoRotationGuard:
     """#103: videóra a forgatás nem írhat rotate= kulcsot az ini-be."""
 

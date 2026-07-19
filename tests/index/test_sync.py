@@ -43,6 +43,18 @@ class TestSyncTree:
         assert photos[1].caption is None
         assert photos[1].rotate_steps == 0
 
+    def test_hidden_flag_from_ini(self, conn, library):
+        # #17: a Picasa hidden=yes kulcsa — mtime-változás nélkül is átjön
+        # (az ini-mezők a változatlan fájlokon is frissülnek)
+        sync_tree(conn, library)
+        (library / "nyaralas" / ".picasa.ini").write_text(
+            "[IMG_0001.jpg]\nhidden=yes\n", encoding="utf-8"
+        )
+        sync_tree(conn, library)
+        photos = photos_in_folder(conn, library / "nyaralas")
+        assert photos[0].hidden is True
+        assert photos[1].hidden is False
+
     def test_sync_is_idempotent(self, conn, library):
         sync_tree(conn, library)
         first = photos_in_folder(conn, library / "nyaralas")

@@ -86,6 +86,16 @@ class TestMigrationV1:
             assert [p.name for p in search_photos(conn, "felirat")] == ["a.jpg"]
 
 
+class TestMigrationV4Hidden:
+    def test_v1_upgrade_gains_hidden_column_default_false(self, tmp_path):
+        # #17: a hidden oszlop az 5-ös sémában érkezik, defaultja 0
+        db = tmp_path / "index.db"
+        _make_v1_db(db)
+        with open_index(db) as conn:
+            photo = photos_in_folder(conn, "/kepek")[0]
+            assert photo.hidden is False
+
+
 class TestMigrationSafety:
     def test_failed_migration_rolls_back_completely(self, tmp_path, monkeypatch):
         # Félbeszakadó migráció nem hagyhat félig átalakított sémát:

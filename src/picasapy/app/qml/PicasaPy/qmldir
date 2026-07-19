@@ -16,3 +16,4 @@ PhotoContextMenu 1.0 PhotoContextMenu.qml
 VideoPlayerView 1.0 VideoPlayerView.qml
 SlideshowView 1.0 SlideshowView.qml
 TagsPanel 1.0 TagsPanel.qml
+PropertiesPanel 1.0 PropertiesPanel.qml
