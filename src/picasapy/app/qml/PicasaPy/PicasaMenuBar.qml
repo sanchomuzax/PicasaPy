@@ -18,6 +18,7 @@ MenuBar {
     signal exportRequested()
     signal locateRequested()
     signal deleteRequested()
+    signal slideshowRequested()
 
     Menu {
         title: qsTr("&File")
@@ -97,7 +98,11 @@ MenuBar {
         MenuItem { text: qsTr("People"); enabled: false }
         MenuItem { text: qsTr("Places"); enabled: false }
         MenuSeparator {}
-        MenuItem { text: qsTr("Slideshow"); enabled: false }
+        MenuItem {
+            objectName: "menuViewSlideshow"
+            text: qsTr("Slideshow")
+            onTriggered: bar.slideshowRequested()
+        }
         MenuItem { text: qsTr("Timeline"); enabled: false }
         MenuItem { text: qsTr("Hidden Pictures"); enabled: false }
         Menu {
@@ -171,7 +176,11 @@ MenuBar {
     Menu {
         title: qsTr("F&older")
         MenuItem { text: qsTr("Edit Description..."); enabled: false }
-        MenuItem { text: qsTr("View Slideshow"); enabled: false }
+        MenuItem {
+            objectName: "menuFolderSlideshow"
+            text: qsTr("View Slideshow")
+            onTriggered: bar.slideshowRequested()
+        }
         MenuSeparator {}
         MenuItem {
             text: qsTr("Refresh Thumbnails")

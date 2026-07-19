@@ -14,3 +14,4 @@ SearchSuggestions 1.0 SearchSuggestions.qml
 SearchGroupHeader 1.0 SearchGroupHeader.qml
 PhotoContextMenu 1.0 PhotoContextMenu.qml
 VideoPlayerView 1.0 VideoPlayerView.qml
+SlideshowView 1.0 SlideshowView.qml

@@ -100,16 +100,60 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+A"; onActivated: window.selectAll() }
     Shortcut { sequence: "Ctrl+D"; onActivated: window.clearSelection() }
 
-    // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat
+    // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
+    // Diavetítés közben (#8) a vetített kép a célpont, nem a rács-kijelölés.
+    function rotateTargetRow() {
+        if (slideshow.visible) return slideshow.currentIndex
+        return trayStar.targetRow
+    }
     Shortcut {
         sequence: "Ctrl+R"
-        onActivated: if (trayStar.targetRow >= 0)
-                         controller.rotateRight(trayStar.targetRow)
+        onActivated: {
+            var row = window.rotateTargetRow()
+            if (row >= 0) controller.rotateRight(row)
+        }
     }
     Shortcut {
         sequence: "Ctrl+Shift+R"
-        onActivated: if (trayStar.targetRow >= 0)
-                         controller.rotateLeft(trayStar.targetRow)
+        onActivated: {
+            var row = window.rotateTargetRow()
+            if (row >= 0) controller.rotateLeft(row)
+        }
+    }
+    // #8: Ctrl+4 — diavetítés (Picasa-billentyű)
+    Shortcut {
+        sequence: "Ctrl+4"
+        onActivated: window.startSlideshow(-1)
+    }
+
+    // -- diavetítés (#8) ----------------------------------------------------
+    // Indítás: viszonyítási pont a néző képe / a rács-kijelölés / az első
+    // kép; a vetítés valódi teljes képernyőn fut, kilépéskor az ablak
+    // visszaáll, és a rács/néző követi a vetítés utolsó képét.
+    property int visibilityBeforeSlideshow: Window.Windowed
+    function startSlideshow(fromIndex) {
+        var index = fromIndex
+        if (index < 0)
+            index = window.viewerOpen ? photoViewer.currentIndex
+                                      : Math.max(0, window.selectedIndex)
+        window.visibilityBeforeSlideshow = window.visibility
+        window.visibility = Window.FullScreen
+        slideshow.start(index)
+        if (!slideshow.visible)   // nincs vetíthető fotó — állítsuk vissza
+            window.exitSlideshow()
+    }
+    function exitSlideshow() {
+        window.visibility =
+            window.visibilityBeforeSlideshow === Window.FullScreen
+                ? Window.Windowed : window.visibilityBeforeSlideshow
+        if (slideshow.currentIndex >= 0) {
+            if (window.viewerOpen) {
+                photoViewer.show(slideshow.currentIndex)
+            } else {
+                window.selectedIndex = slideshow.currentIndex
+                window.selectedIndexes = [slideshow.currentIndex]
+            }
+        }
     }
     // Picasa: F2 = átnevezés, Ctrl+Shift+S = exportálás mappába
     Shortcut {
@@ -139,6 +183,7 @@ ApplicationWindow {
             if (p.length > 0) fileOpsController.revealPhoto(p)
         }
         onDeleteRequested: deleteConfirmDialog.openFor(window.selectedPaths())
+        onSlideshowRequested: window.startSlideshow(-1)
     }
 
     FolderManagerDialog { id: folderManager }
@@ -351,12 +396,28 @@ ApplicationWindow {
         }
     }
 
+    // #8: diavetítés-réteg — minden más felett, csak vetítés alatt látszik
+    SlideshowView {
+        id: slideshow
+        objectName: "slideshowView"
+        anchors.fill: parent
+        z: 100
+        photosModel: controller.photos
+        onClosed: window.exitSlideshow()
+        onStarToggled: function(index) { controller.toggleStar(index) }
+        onRotateRequested: function(index, delta) {
+            if (delta > 0) controller.rotateRight(index)
+            else controller.rotateLeft(index)
+        }
+    }
+
     PhotoViewer {
         id: photoViewer
         objectName: "photoViewer"
         anchors.fill: parent
         visible: window.viewerOpen
         photosModel: controller.photos
+        onPlayRequested: window.startSlideshow(currentIndex)
         onClosed: {
             window.viewerOpen = false
             window.selectedIndex = currentIndex   // a rács kövesse a nézőt
@@ -717,6 +778,9 @@ ApplicationWindow {
                                 controller.setFolderDescriptionOf(
                                     groupCol.modelData.path, text)
                             }
+                            // zöld ▸ (#8): a mappa vetítése az első képétől
+                            onPlayRequested: window.startSlideshow(
+                                groupCol.modelData.start)
                         }
 
                         Flow {

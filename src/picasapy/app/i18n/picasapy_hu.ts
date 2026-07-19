@@ -252,17 +252,17 @@
 <context>
     <name>LightboxHeader</name>
     <message>
-        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="28"/>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="30"/>
         <source>SYNC</source>
         <translation>SZINKRON</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="62"/>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="68"/>
         <source>Upload</source>
         <translation>Feltöltés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="105"/>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="111"/>
         <source>Add a description</source>
         <translation>Leírás hozzáadása</translation>
     </message>
@@ -326,105 +326,105 @@
         <translation type="vanished">&amp;Súgó</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1295"/>
+        <location filename="../qml/Main.qml" line="1359"/>
         <source>About PicasaPy</source>
         <translation>A PicasaPy névjegye</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="166"/>
+        <location filename="../qml/Main.qml" line="211"/>
         <source>Import</source>
         <translation>Importálás</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="177"/>
+        <location filename="../qml/Main.qml" line="222"/>
         <source>Filters</source>
         <translation>Szűrők</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="278"/>
+        <location filename="../qml/Main.qml" line="323"/>
         <source>Search</source>
         <translation>Keresés</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="316"/>
+        <location filename="../qml/Main.qml" line="361"/>
         <source>Verzió és build</source>
         <translation>Verzió és build</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="432"/>
+        <location filename="../qml/Main.qml" line="493"/>
         <source>View All</source>
         <translation>Az összes megtekintése</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1094"/>
+        <location filename="../qml/Main.qml" line="1158"/>
         <source>Rename...</source>
         <translation>Átnevezés…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1124"/>
+        <location filename="../qml/Main.qml" line="1188"/>
         <source>Move to Folder...</source>
         <translation>Áthelyezés új mappába…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1137"/>
+        <location filename="../qml/Main.qml" line="1201"/>
         <source>Delete from Disk</source>
         <translation>Törlés lemezről</translation>
     </message>
     <message numerus="yes">
-        <location filename="../qml/Main.qml" line="1153"/>
+        <location filename="../qml/Main.qml" line="1217"/>
         <source>%n picture(s) will be moved to the system trash.</source>
         <translation>
             <numerusform>%n kép a rendszer lomtárába kerül.</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1163"/>
+        <location filename="../qml/Main.qml" line="1227"/>
         <source>File operation failed</source>
         <translation>A fájlművelet nem sikerült</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1190"/>
-        <location filename="../qml/Main.qml" line="1263"/>
+        <location filename="../qml/Main.qml" line="1254"/>
+        <location filename="../qml/Main.qml" line="1327"/>
         <source>Export Picture to Folder...</source>
         <translation>Kép exportálása mappába…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1211"/>
+        <location filename="../qml/Main.qml" line="1275"/>
         <source>Target folder:</source>
         <translation>Célmappa:</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1221"/>
+        <location filename="../qml/Main.qml" line="1285"/>
         <source>(not selected)</source>
         <translation>(nincs kiválasztva)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1226"/>
+        <location filename="../qml/Main.qml" line="1290"/>
         <source>Browse...</source>
         <translation>Tallózás…</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1233"/>
+        <location filename="../qml/Main.qml" line="1297"/>
         <source>Image size:</source>
         <translation>Képméret:</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1241"/>
+        <location filename="../qml/Main.qml" line="1305"/>
         <source>Original size</source>
         <translation>Eredeti méret</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1248"/>
+        <location filename="../qml/Main.qml" line="1312"/>
         <source>Image quality:</source>
         <translation>Képminőség:</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1286"/>
+        <location filename="../qml/Main.qml" line="1350"/>
         <source>%1 pictures exported, %2 failed.</source>
         <translation>%1 kép exportálva, %2 sikertelen.</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1288"/>
+        <location filename="../qml/Main.qml" line="1352"/>
         <source>%1 pictures exported.</source>
         <translation>%1 kép exportálva.</translation>
     </message>
@@ -433,28 +433,28 @@
         <translation type="vanished">Könyvtár</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="995"/>
+        <location filename="../qml/Main.qml" line="1059"/>
         <source>Selection</source>
         <translation>Kijelölés</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1067"/>
+        <location filename="../qml/Main.qml" line="1131"/>
         <source>Upload to Google Photos</source>
         <translation>Feltöltés a Google Fotókba</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1054"/>
+        <location filename="../qml/Main.qml" line="1118"/>
         <source>E-Mail</source>
         <translation>E-mail</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1055"/>
+        <location filename="../qml/Main.qml" line="1119"/>
         <source>Print</source>
         <translation>Nyomtatás</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1058"/>
-        <location filename="../qml/Main.qml" line="1270"/>
+        <location filename="../qml/Main.qml" line="1122"/>
+        <location filename="../qml/Main.qml" line="1334"/>
         <source>Export</source>
         <translation>Exportálás</translation>
     </message>
@@ -475,7 +475,7 @@
         <translation type="vanished">Megosztás</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="1310"/>
+        <location filename="../qml/Main.qml" line="1374"/>
         <source>A modern, open Picasa successor.</source>
         <translation>Modern, nyílt Picasa-utód.</translation>
     </message>
@@ -506,43 +506,43 @@
 <context>
     <name>PhotoViewer</name>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="188"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="190"/>
         <source>Back to Library</source>
         <translation>Vissza a könyvtárhoz</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="194"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="197"/>
         <source>Play</source>
         <translation>Lejátszás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="46"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="48"/>
         <source>Crop</source>
         <translation>Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="47"/>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="316"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="49"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="319"/>
         <source>Straighten</source>
         <translation>Kiegyenesítés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="48"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="50"/>
         <source>Redeye</source>
         <translation>Vörösszem</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="49"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="51"/>
         <source>I&apos;m Feeling Lucky</source>
         <translation>Jó napom van</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="50"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="52"/>
         <source>Auto Contrast</source>
         <translation>Automatikus kontraszt</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="51"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="53"/>
         <source>Auto Color</source>
         <translation>Automatikus szín</translation>
     </message>
@@ -559,8 +559,8 @@
         <translation type="vanished">Derítőfény</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="267"/>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="269"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="270"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="272"/>
         <source>Undo</source>
         <translation>Visszavonás</translation>
     </message>
@@ -569,8 +569,8 @@
         <translation type="vanished">Visszavonás: Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="272"/>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="274"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="275"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="277"/>
         <source>Redo</source>
         <translation>Újra</translation>
     </message>
@@ -579,17 +579,17 @@
         <translation type="vanished">Újra: Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="345"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="348"/>
         <source>Histogram and camera information</source>
         <translation>Hisztogram és fényképezőgép-adatok</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="422"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="425"/>
         <source>Video playback requires the Qt Multimedia module.</source>
         <translation>A videó-lejátszáshoz a Qt Multimedia modul szükséges.</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="509"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="512"/>
         <source>Make a caption!</source>
         <translation>Készítsen képaláírást!</translation>
     </message>
@@ -597,357 +597,365 @@
 <context>
     <name>PicasaMenuBar</name>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="23"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="24"/>
         <source>&amp;File</source>
         <translation>&amp;Fájl</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="24"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="25"/>
         <source>New Album...</source>
         <translation>Új album…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="25"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="26"/>
         <source>Add Folder to Picasa...</source>
         <translation>Mappa hozzáadása a Picasához…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="26"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="27"/>
         <source>Add File to Picasa...</source>
         <translation>Fájl felvétele a Picasába…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="27"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="28"/>
         <source>Import From...</source>
         <translation>Importálás forrása…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="31"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="32"/>
         <source>Rename...</source>
         <translation>Átnevezés…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="35"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="36"/>
         <source>Save</source>
         <translation>Mentés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="36"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="37"/>
         <source>Revert</source>
         <translation>Visszaállítás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="39"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40"/>
         <source>Export Picture to Folder...</source>
         <translation>Kép exportálása mappába…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="46"/>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="182"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="47"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="191"/>
         <source>Locate on Disk</source>
         <translation>Keresés a lemezen</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="52"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="53"/>
         <source>Delete from Disk</source>
         <translation>Törlés lemezről</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="57"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="58"/>
         <source>Print...</source>
         <translation>Nyomtatás…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="58"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="59"/>
         <source>E-Mail...</source>
         <translation>E-mail…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="60"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="61"/>
         <source>E&amp;xit</source>
         <translation>&amp;Kilépés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="63"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="64"/>
         <source>&amp;Edit</source>
         <translation>S&amp;zerkesztés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="64"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="65"/>
         <source>Copy All Effects</source>
         <translation>Az összes effektus másolása</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="65"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="66"/>
         <source>Paste All Effects</source>
         <translation>Az összes effektus beillesztése</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="68"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="69"/>
         <source>Select All</source>
         <translation>Összes kijelölése</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="72"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="73"/>
         <source>Select Starred</source>
         <translation>Csillagozottak kijelölése</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="75"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="76"/>
         <source>Invert Selection</source>
         <translation>Kiválasztás megfordítása</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="77"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="78"/>
         <source>Clear Selection</source>
         <translation>Kijelölés törlése</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="82"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="83"/>
         <source>&amp;View</source>
         <translation>&amp;Nézet</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="83"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="84"/>
         <source>Library View</source>
         <translation>Könyvtárnézet</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="86"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="87"/>
         <source>Small Thumbnails</source>
         <translation>Kis indexképek</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="90"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="91"/>
         <source>Normal Thumbnails</source>
         <translation>Normál indexképek</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="93"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="94"/>
         <source>Edit View</source>
         <translation>Szerkesztési nézet</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="95"/>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="192"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="96"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="201"/>
         <source>Properties</source>
         <translation>Tulajdonságok</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="96"/>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="158"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="97"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="163"/>
         <source>Tags</source>
         <translation>Címkék</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="97"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="98"/>
         <source>People</source>
         <translation>Emberek</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="98"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="99"/>
         <source>Places</source>
         <translation>Helyek</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="100"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="103"/>
         <source>Slideshow</source>
         <translation>Diavetítés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="101"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106"/>
         <source>Timeline</source>
         <translation>Időrend</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="102"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="107"/>
         <source>Hidden Pictures</source>
         <translation>Rejtett képek</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="104"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="109"/>
         <source>Folder View</source>
         <translation>Mappanézet</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="111"/>
         <source>Sort by creation date</source>
         <translation>Rendezés létrehozási dátum alapján</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="112"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="117"/>
         <source>Sort by recent changes</source>
         <translation>Rendezés a legutóbbi változtatások alapján</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="118"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="123"/>
         <source>Sort by size</source>
         <translation>Rendezés méret alapján</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="124"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="129"/>
         <source>Sort by name</source>
         <translation>Rendezés név alapján</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="131"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="136"/>
         <source>Reverse sort</source>
         <translation>Rendezés megfordítása</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="138"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="143"/>
         <source>Thumbnail Caption</source>
         <translation>Indexkép felirata</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="140"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="145"/>
         <source>None</source>
         <translation>Nincs</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="146"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="151"/>
         <source>Filename</source>
         <translation>Fájlnév</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="157"/>
         <source>Caption</source>
         <translation>Képfelirat</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="164"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="169"/>
         <source>Resolution</source>
         <translation>Felbontás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="172"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="177"/>
         <source>F&amp;older</source>
         <translation>&amp;Mappa</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="173"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="178"/>
         <source>Edit Description...</source>
         <translation>Leírás szerkesztése…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="174"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="181"/>
         <source>View Slideshow</source>
         <translation>Diavetítés megtekintése</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="177"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="186"/>
         <source>Refresh Thumbnails</source>
         <translation>Indexképek frissítése</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="180"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="189"/>
         <source>Sort By</source>
         <translation>Rendezés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="183"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="192"/>
         <source>Remove from Picasa...</source>
         <translation>Eltávolítás a Picasából…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="186"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="195"/>
         <source>&amp;Picture</source>
         <translation>Ké&amp;p</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="187"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="196"/>
         <source>View and Edit</source>
         <translation>Megjelenítés és szerkesztés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="188"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="197"/>
         <source>Batch Edit</source>
         <translation>Csoportos szerkesztés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="189"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="198"/>
         <source>Undo All Edits</source>
         <translation>Összes szerkesztés visszavonása</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="191"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="200"/>
         <source>Hide</source>
         <translation>Elrejtés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="195"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="204"/>
         <source>&amp;Create</source>
         <translation>Lét&amp;rehozás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="196"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="205"/>
         <source>Make a Poster...</source>
         <translation>Poszter készítése…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="197"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="206"/>
         <source>Picture Collage...</source>
         <translation>Képkollázs…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="198"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="207"/>
         <source>Movie</source>
         <translation>Mozgófilm</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="201"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="210"/>
         <source>&amp;Tools</source>
         <translation>&amp;Eszközök</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="203"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="212"/>
         <source>Folder Manager...</source>
         <translation>Mappakezelő…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="206"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="215"/>
         <source>People Manager...</source>
         <translation>Személyek kezelése…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="208"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="217"/>
         <source>Back Up Pictures...</source>
         <translation>Képek biztonsági mentése…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="209"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="218"/>
         <source>Adjust Date and Time...</source>
         <translation>Dátum és idő beállítása…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="211"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="220"/>
         <source>Options...</source>
         <translation>Beállítások…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="214"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="223"/>
         <source>&amp;Help</source>
         <translation>&amp;Súgó</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="215"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="224"/>
         <source>Help Contents and Index</source>
         <translation>Súgó - tartalom és tárgymutató</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="216"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="225"/>
         <source>Keyboard Shortcuts</source>
         <translation>Billentyűkódok</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="218"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="227"/>
         <source>Check for Updates</source>
         <translation>Frissítések keresése</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="220"/>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="229"/>
         <source>About PicasaPy</source>
         <translation>A PicasaPy névjegye</translation>
+    </message>
+</context>
+<context>
+    <name>SlideshowView</name>
+    <message>
+        <location filename="../qml/PicasaPy/SlideshowView.qml" line="174"/>
+        <source>Exit</source>
+        <translation>Kilépés</translation>
     </message>
 </context>
 <context>
