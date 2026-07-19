@@ -25,6 +25,50 @@ Rectangle {
     // #8: a felső ▶ Lejátszás gomb — diavetítés az aktuális képtől
     signal playRequested()
 
+    // -- zoom-állapotgép (#6): fit / 1:1 / tetszőleges -------------------
+    // zoomFactor: 1.0 = illesztés (fit); a skála az illesztett mérethez
+    // képest értendő. A pásztázás (pan) csak nagyításnál él.
+    property real zoomFactor: 1.0
+    property string zoomMode: "fit"      // "fit" | "actual" | "custom"
+    property real panX: 0
+    property real panY: 0
+
+    function actualZoomFactor() {
+        // 1:1 — a kép saját pixelei ↔ logikai pixelek (a betöltött,
+        // sourceSize-plafonolt méret alapján)
+        return photo.paintedWidth > 0
+            ? photo.sourceSize.width / photo.paintedWidth : 1
+    }
+    function zoomFit() {
+        zoomFactor = 1; zoomMode = "fit"; panX = 0; panY = 0
+    }
+    function zoomActual() {
+        zoomFactor = Math.min(8, Math.max(0.25, actualZoomFactor()))
+        zoomMode = "actual"
+        clampPan()
+    }
+    function setZoom(factor) {
+        var f = Math.min(8, Math.max(0.25, factor))
+        zoomFactor = f
+        if (Math.abs(f - 1) < 0.01) { zoomMode = "fit"; panX = 0; panY = 0 }
+        else zoomMode = "custom"
+        clampPan()
+    }
+    function wheelZoom(delta) {
+        setZoom(zoomFactor * Math.pow(1.2, delta / 120))
+    }
+    // a kép széle ne szakadjon el a látótértől pásztázáskor
+    function clampPan() {
+        var w = (photo.iniSteps % 2 ? photo.paintedHeight
+                                    : photo.paintedWidth) * zoomFactor
+        var h = (photo.iniSteps % 2 ? photo.paintedWidth
+                                    : photo.paintedHeight) * zoomFactor
+        var maxX = Math.max(0, (w - photoArea.width) / 2)
+        var maxY = Math.max(0, (h - photoArea.height) / 2)
+        panX = Math.max(-maxX, Math.min(maxX, panX))
+        panY = Math.max(-maxY, Math.min(maxY, panY))
+    }
+
     function show(index) { currentIndex = index; forceActiveFocus() }
 
     // Vágás alkalmazása a kijelölésből. advance=true: Enter-flow —
@@ -79,6 +123,7 @@ Rectangle {
     }
     onVisibleChanged: {
         if (visible) {
+            zoomFit()   // #6: minden belépés illesztett nézetben indul
             beginEditCurrent()
         } else {
             // a cropActive lenullázása ELŐBB (még aktív szerkesztés alatt)
@@ -91,6 +136,7 @@ Rectangle {
     }
     onCurrentIndexChanged: {
         if (visible) {
+            zoomFit()   // #6: lapozáskor vissza illesztett nézetbe
             beginEditCurrent()
             tiltSlider.value = 0
             if (editorPanel.cropActive) {
@@ -112,6 +158,7 @@ Rectangle {
         target: editorPanel
         function onCropActiveChanged() {
             if (editorPanel.cropActive) {
+                viewer.zoomFit()   // #6: a vágó-overlay illesztett nézetet vár
                 editController.enterCropTool()
                 cropOverlay.loadSelection(editController.cropSelection)
             } else {
@@ -197,6 +244,23 @@ Rectangle {
                     text: "▶ " + qsTr("Play")
                     font.pixelSize: Theme.fontSize
                     onClicked: viewer.playRequested()
+                }
+                // #6: A/AB/AA összehasonlító nézetek — placeholder (a
+                // szerkesztő-összevetés a 2. fázisban élesedik)
+                PicasaButton {
+                    objectName: "compareButtonA"
+                    text: "A"; enabled: false
+                    Layout.preferredWidth: 28
+                }
+                PicasaButton {
+                    objectName: "compareButtonAB"
+                    text: "AB"; enabled: false
+                    Layout.preferredWidth: 32
+                }
+                PicasaButton {
+                    objectName: "compareButtonAA"
+                    text: "AA"; enabled: false
+                    Layout.preferredWidth: 32
                 }
                 PicasaButton {
                     objectName: "viewerPrevButton"
@@ -362,7 +426,14 @@ Rectangle {
 
                 WheelHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                    onWheel: function(event) { viewer.wheelStep(event.angleDelta.y) }
+                    // #6: Ctrl+görgő = zoom a kép fölött; sima görgő marad a
+                    // képek közti lapozás (#77) — a két igény így fér össze
+                    onWheel: function(event) {
+                        if (event.modifiers & Qt.ControlModifier)
+                            viewer.wheelZoom(event.angleDelta.y)
+                        else
+                            viewer.wheelStep(event.angleDelta.y)
+                    }
                 }
 
                 Item {
@@ -384,6 +455,12 @@ Rectangle {
                                viewer.photosModel.rotateAt(viewer.currentIndex))
                             : 0
                         anchors.centerIn: parent
+                        // #6: zoom + pásztázás — a skála az illesztett
+                        // mérethez képest, az eltolás a pan-állapotból
+                        anchors.horizontalCenterOffset: viewer.panX
+                        anchors.verticalCenterOffset: viewer.panY
+                        scale: viewer.zoomFactor
+                        transformOrigin: Item.Center
                         // 90°/270°-nál a befoglaló doboz oldalai cserélődnek
                         width: iniSteps % 2 ? photoArea.height : photoArea.width
                         height: iniSteps % 2 ? photoArea.width : photoArea.height
@@ -458,9 +535,78 @@ Rectangle {
                         }
                     }
                 }
+                // #6: nagyított képen húzással pásztázás; dupla katt = fit.
+                // Illesztett nézetben inaktív — az események átmennek rajta.
+                MouseArea {
+                    objectName: "viewerPanArea"
+                    anchors.fill: photoArea
+                    enabled: viewer.zoomFactor > 1.01
+                             && !editorPanel.cropActive
+                             && !viewer.isCurrentVideo
+                    cursorShape: enabled ? Qt.OpenHandCursor : Qt.ArrowCursor
+                    property real lastX: 0
+                    property real lastY: 0
+                    onPressed: function(event) {
+                        lastX = event.x; lastY = event.y
+                    }
+                    onPositionChanged: function(event) {
+                        if (!pressed) return
+                        viewer.panX += event.x - lastX
+                        viewer.panY += event.y - lastY
+                        lastX = event.x; lastY = event.y
+                        viewer.clampPan()
+                    }
+                    onDoubleClicked: viewer.zoomFit()
+                }
+
                 BusyIndicator {
                     anchors.centerIn: parent
                     running: photo.status === Image.Loading
+                }
+
+                // #6: alsó zoom-sáv (design-guide hiánylista 4.):
+                // illesztés / 1:1 / csúszka — jobb alsó sarok
+                Rectangle {
+                    id: zoomBar
+                    objectName: "viewerZoomBar"
+                    visible: !viewer.isCurrentVideo && !editorPanel.cropActive
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.margins: 4
+                    width: zoomRow.width + 12
+                    height: 26
+                    radius: 4
+                    color: "#00000059"
+                    Row {
+                        id: zoomRow
+                        anchors.centerIn: parent
+                        spacing: 4
+                        PicasaButton {
+                            objectName: "zoomFitButton"
+                            text: "⛶"
+                            width: 26; height: 20
+                            onClicked: viewer.zoomFit()
+                        }
+                        PicasaButton {
+                            objectName: "zoomActualButton"
+                            text: "1:1"
+                            width: 30; height: 20
+                            onClicked: viewer.zoomActual()
+                        }
+                        Slider {
+                            id: zoomSlider
+                            objectName: "zoomSlider"
+                            width: 110; height: 20
+                            anchors.verticalCenter: parent.verticalCenter
+                            from: 0.25; to: 8
+                            onMoved: viewer.setZoom(value)
+                            // húzás közben a kéz vezet; egyébként az állapot
+                            Binding on value {
+                                when: !zoomSlider.pressed
+                                value: viewer.zoomFactor
+                            }
+                        }
+                    }
                 }
                 // szerkeszthető felirat-sor — a model.revision referencia
                 // miatt a kötés modell-frissítésnél (pl. mentés után)
