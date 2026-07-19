@@ -163,6 +163,14 @@ class FolderListModel(QAbstractListModel):
         }
 
 
+def _has_edits(photo: PhotoRecord) -> bool:
+    """Van-e a képen Picasa-szerkesztés (#100) — a kék visszahajtás-jelölő
+    feltétele. A `filters=` lánc megléte dönt: a vágott képeknél a crop64 a
+    filters-történetben is szerepel, így a crop= külön indexelése nélkül is
+    lefedett; a sima forgatás (rotate=) és a csillag NEM módosítás."""
+    return bool(photo.filters and photo.filters.strip())
+
+
 def _thumb_url(photo: PhotoRecord) -> str:
     """Thumb-URL forgatás- és szerkesztés-érzékeny cache-busterrel (#59)."""
     filters_tag = zlib.crc32((photo.filters or "").encode("utf-8"))
@@ -277,6 +285,7 @@ class PhotoGridModel(QAbstractListModel):
                 if photo.width and photo.height
                 else ""
             ),
+            "hasEdits": _has_edits(photo),
         }
 
     @Slot(int, result=bool)

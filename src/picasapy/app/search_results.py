@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 from picasapy.index.queries import PhotoRecord
 
-from .models import _thumb_url
+from .models import _has_edits, _thumb_url
 
 _PATH_SEP = re.compile(r"[/\\]")
 
@@ -82,6 +82,7 @@ def groups_to_qml(groups: tuple[SearchGroup, ...]) -> list[dict]:
                     "resolution": (
                         f"{p.width}x{p.height}" if p.width and p.height else ""
                     ),
+                    "hasEdits": _has_edits(p),
                 }
                 for i, p in enumerate(g.photos)
             ],
