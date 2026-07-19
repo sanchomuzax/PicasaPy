@@ -65,6 +65,32 @@ class TestEditorPanelButtons:
             'import QtQuick\nimport PicasaPy 1.0\nEditorPanel { objectName: "panel" }\n',
         )
 
+    def test_disabled_panel_grays_out_tools(self, qml_engine, qt_app):
+        # #103: videónál a PhotoViewer enabled=false-ra állítja a panelt —
+        # a csempéknek VIZUÁLISAN is tiltottnak kell látszaniuk
+        panel = _load(
+            qml_engine,
+            "import QtQuick\nimport PicasaPy 1.0\n"
+            'EditorPanel { objectName: "panel"; enabled: false }\n',
+        )
+        qt_app.processEvents()
+        tools = panel.findChild(QObject, "toolsColumn")
+        assert tools.property("opacity") < 1
+        crop_tile = panel.findChild(QObject, "editToolCrop")
+        assert crop_tile.property("enabled") is False
+        assert crop_tile.property("opacity") < 1
+
+    def test_enabled_panel_tools_fully_opaque(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        tools = panel.findChild(QObject, "toolsColumn")
+        assert tools.property("opacity") == 1
+        crop_tile = panel.findChild(QObject, "editToolCrop")
+        assert crop_tile.property("opacity") == 1
+        # a 2. ütemre váró csempék viszont maradnak halványak
+        retouch = panel.findChild(QObject, "editToolRetouch")
+        assert retouch.property("opacity") < 1
+
     def test_all_buttons_present_with_object_names(self, qml_engine):
         panel = self._make_panel(qml_engine)
         for tool in self.TOOLS:
