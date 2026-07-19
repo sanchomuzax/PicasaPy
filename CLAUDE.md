@@ -1,5 +1,11 @@
 # PicasaPy
 
+## 🗣️ NYELV — A felhasználóval MINDIG magyarul
+
+Minden chat-válasz, kérdés és összefoglaló **magyarul** íródik a felhasználó
+felé. (A kód, commit-üzenetek és PR-leírások a projekt eddigi konvencióját
+követik.) Ez nem opcionális — a felhasználó anyanyelve a magyar.
+
 ## ⚠️ PÁRHUZAMOS SESSIONÖK — ELSŐ SZABÁLY, MINDEN MÁS ELŐTT
 
 Ebből a mappából a felhasználó **több párhuzamos Claude-sessiont** indít.
