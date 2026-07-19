@@ -51,8 +51,10 @@ fordításukat az integrátor generálja le.
 - A PR-t az integrátor session mergeli: ő oldja a konfliktusokat,
   futtatja az i18n-regent és a teljes tesztkészletet.
 - **Release-kötelezettség (integrátor):** érdemi merge-ök után verzió-bump
-  (minden előfordulási helyen) + tag + GitHub Release — a Releases hasáb
-  SOHA nem maradhat le a main mögött.
+  (minden előfordulási helyen). A tag + GitHub Release ezután **automatikus**
+  (`.github/workflows/release.yml`): minden main-push után lefut, és ha a
+  `pyproject.toml` verziójához még nincs kiadás, létrehozza — a Releases
+  hasáb így soha nem maradhat le a main mögött, kézi lépés nélkül.
 - Commit-formátum: `feat|fix|docs|test|chore: leírás` (magyarul),
   hivatkozás az issue-ra (`#N`).
 
