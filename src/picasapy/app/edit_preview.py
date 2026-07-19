@@ -38,20 +38,36 @@ class EditPreviewProvider(QQuickImageProvider):
     def __init__(self) -> None:
         super().__init__(QQuickImageProvider.ImageType.Image)
         self._images: dict[str, QImage] = {}
+        # dekódolt forrás gyorsítótár (#72): élő csúszka-húzásnál (pl. tilt)
+        # a register() gyakran hívódik ugyanarra a fotóra, csak a szűrő-
+        # lánc változik — a lemezes dekódot nem kell minden alkalommal
+        # megismételni, csak a filter-lánc újraszámolását.
+        self._sources: dict[str, tuple[Path, float | None, np.ndarray | None]] = {}
         self._lock = threading.Lock()
 
     def register(self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]) -> None:
         """Az aktuálisan szerkesztett fotó renderelése és eltárolása.
 
         A hívó (GUI) szálán fut — a provider-szálra nem jut Python-munka."""
-        image = _render(Path(path), tuple(ops))
+        key = str(photo_id)
+        path = Path(path)
+        mtime = path.stat().st_mtime if path.exists() else None
+        cached = self._sources.get(key)
+        if cached is not None and cached[0] == path and cached[1] == mtime:
+            source_array = cached[2]
+        else:
+            source_array = _decode_source(path)
+            self._sources[key] = (path, mtime, source_array)
+        image = _render_from_array(source_array, tuple(ops), path)
         with self._lock:
-            self._images[str(photo_id)] = image
+            self._images[key] = image
 
     def unregister(self, photo_id: str) -> None:
         """A fotó eltávolítása (szerkesztés vége)."""
+        key = str(photo_id)
+        self._sources.pop(key, None)
         with self._lock:
-            self._images.pop(str(photo_id), None)
+            self._images.pop(key, None)
 
     def requestImage(self, photo_id, size, requested_size):
         # az URL-ben ?rev=<szám> cache-buster jöhet — az id az első rész
@@ -79,11 +95,13 @@ class EditPreviewProvider(QQuickImageProvider):
         return image
 
 
-def _render(path: Path, ops: tuple[FilterOp, ...]) -> QImage:
-    # QImageReader + autoTransform: az EXIF-orientációt a betöltés
-    # alkalmazza — a néző natív Image-e is így tesz (autoTransform: true).
-    # A dekód mérete korlátozott: az előnézethez elég, és a GUI-szálon
-    # futó renderelés így nagy képnél is gyors marad.
+def _decode_source(path: Path) -> np.ndarray | None:
+    """A forráskép dekódolása RGB numpy tömbbé, előnézet-felbontásra korlátozva.
+
+    QImageReader + autoTransform: az EXIF-orientációt a betöltés alkalmazza —
+    a néző natív Image-e is így tesz (autoTransform: true). A dekód mérete
+    korlátozott: az előnézethez elég, és a GUI-szálon futó renderelés így
+    nagy képnél is gyors marad. `None`, ha a kép nem olvasható be."""
     reader = QImageReader(str(path))
     reader.setAutoTransform(True)
     native = reader.size()
@@ -96,15 +114,22 @@ def _render(path: Path, ops: tuple[FilterOp, ...]) -> QImage:
             )
     source = reader.read()
     if source.isNull():
+        return None
+    return _qimage_to_rgb_array(source)
+
+
+def _render_from_array(
+    source_array: np.ndarray | None, ops: tuple[FilterOp, ...], path: Path
+) -> QImage:
+    if source_array is None:
         return QImage()
-    array = _qimage_to_rgb_array(source)
     try:
-        result_array, _skipped = apply_filters(array, ops)
+        result_array, _skipped = apply_filters(source_array, ops)
     except Exception:
         # #73: hibás/idegen lánc-bejegyzésnél a szűretlen kép a helyes
         # visszaesés, nem a placeholder (részleges előnézet elve)
         _log.exception("filters= nem alkalmazható az előnézeten: %s", path)
-        return source
+        return _rgb_array_to_qimage(source_array)
     return _rgb_array_to_qimage(result_array)
 
 

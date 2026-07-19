@@ -184,6 +184,17 @@ class EditController(QObject):
         self._save()
         self._bump_revision()
 
+    @Slot(float)
+    def previewTilt(self, param: float) -> None:
+        """Élő forgatás-előnézet a csúszka húzása közben (#72): a képet a
+        pillanatnyi paraméterrel újrarenderli, de NEM ír ini-be és NEM tol
+        undo-lépést — a tényleges mentés az elengedéskor hívott setTilt-tel
+        történik."""
+        self._require_active()
+        preview_session = self._session.set_tilt(param, 0.0)
+        self._register_preview(preview_session)
+        self._bump_revision()
+
     @Slot()
     def undo(self) -> None:
         """Az utolsó művelet visszavonása (a művelet ELŐTTI lánc áll vissza)."""
@@ -251,9 +262,10 @@ class EditController(QObject):
         save_document(document, self._ini_path, backup=True)
         self._register_preview()
 
-    def _register_preview(self) -> None:
+    def _register_preview(self, session: EditSession | None = None) -> None:
         assert self._image_path is not None
-        self._provider.register(self._photo_id, self._image_path, self._session.ops)
+        active_session = session if session is not None else self._session
+        self._provider.register(self._photo_id, self._image_path, active_session.ops)
 
     def _bump_revision(self) -> None:
         self._revision += 1

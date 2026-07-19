@@ -240,14 +240,17 @@ Rectangle {
                         font.pixelSize: Theme.fontSize
                         color: Theme.textGray
                     }
-                    // döntés-csúszka: −1..1 Picasa-egység (±11,5°);
-                    // elengedéskor ír — húzás közben nem spammeljük az init
+                    // döntés-csúszka: −1..1 Picasa-egység (±11,5°); húzás
+                    // közben élő előnézet (previewTilt, nincs ini-mentés,
+                    // #72), elengedéskor ír + tol undo-lépést (setTilt)
                     Slider {
                         id: tiltSlider
                         objectName: "tiltSlider"
                         visible: editorPanel.tiltActive
                         from: -1; to: 1; value: 0
                         Layout.fillWidth: true
+                        onValueChanged: if (editorPanel.tiltActive)
+                                            editController.previewTilt(value)
                         onPressedChanged: if (!pressed && editorPanel.tiltActive)
                                               editController.setTilt(value)
                     }

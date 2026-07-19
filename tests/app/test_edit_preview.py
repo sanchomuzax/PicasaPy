@@ -96,6 +96,67 @@ class TestFilterApplication:
         assert (image.width(), image.height()) == (8, 6)
 
 
+class TestSourceCaching:
+    """#72: élő csúszka-húzásnál (tilt) a register() gyakran hívódik ugyanarra
+    a fotóra, csak a szűrő-lánc változik — a lemezes dekódot nem szabad
+    minden hívásnál megismételni."""
+
+    def test_repeated_register_decodes_source_once(self, qt_app, tmp_path, monkeypatch):
+        from picasapy.app import edit_preview
+        from picasapy.ini.filters import FilterOp
+
+        calls = []
+        original = edit_preview._decode_source
+
+        def counting_decode(path):
+            calls.append(path)
+            return original(path)
+
+        monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        op = FilterOp("tilt", ("1", "0.100000", "0.000000"))
+        provider.register("1", photo, (op,))
+        provider.register("1", photo, ())
+        provider.register("1", photo, (op,))
+        assert len(calls) == 1
+
+    def test_different_photo_id_decodes_again(self, qt_app, tmp_path, monkeypatch):
+        from picasapy.app import edit_preview
+
+        calls = []
+        original = edit_preview._decode_source
+
+        def counting_decode(path):
+            calls.append(path)
+            return original(path)
+
+        monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        provider.register("1", photo, ())
+        provider.register("2", photo, ())
+        assert len(calls) == 2
+
+    def test_unregister_clears_source_cache(self, qt_app, tmp_path, monkeypatch):
+        from picasapy.app import edit_preview
+
+        calls = []
+        original = edit_preview._decode_source
+
+        def counting_decode(path):
+            calls.append(path)
+            return original(path)
+
+        monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        provider.register("1", photo, ())
+        provider.unregister("1")
+        provider.register("1", photo, ())
+        assert len(calls) == 2
+
+
 class TestRequestedSize:
     def test_scales_to_requested_size(self, qt_app, tmp_path):
         provider = _make_provider()

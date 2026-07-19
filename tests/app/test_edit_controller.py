@@ -176,6 +176,51 @@ class TestSetTilt:
         assert not image.isNull()
 
 
+class TestPreviewTilt:
+    """#72: élő forgatás-előnézet a csúszka húzása közben, mentés/undo nélkül."""
+
+    def test_updates_preview_without_writing_ini(self, controller, provider, photo):
+        controller.beginEdit("1", str(photo))
+        controller.previewTilt(0.3)
+        assert not (photo.parent / ".picasa.ini").exists()
+        image = provider.requestImage("1", None, None)
+        assert not image.isNull()
+
+    def test_does_not_push_undo_step(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.previewTilt(0.3)
+        assert controller.canUndo is False
+
+    def test_bumps_revision(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        before = controller.revision
+        controller.previewTilt(0.3)
+        assert controller.revision == before + 1
+
+    def test_does_not_mutate_session_value(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.previewTilt(0.3)
+        # a következő setTilt (elengedéskor) az EREDETI (üres) láncból indul,
+        # nem a previewTilt által ideiglenesen alkalmazott értékből
+        controller.setTilt(0.5)
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=tilt=1,0.500000,0.000000;" in ini_text
+
+    def test_without_active_edit_raises(self, controller):
+        with pytest.raises(ValueError):
+            controller.previewTilt(0.3)
+
+    def test_set_tilt_after_preview_persists_and_allows_undo(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.previewTilt(0.3)
+        controller.previewTilt(0.6)
+        controller.setTilt(0.6)
+        assert controller.canUndo is True
+        assert controller.undoAction == "tilt"
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=tilt=1,0.600000,0.000000;" in ini_text
+
+
 class TestUndoRedoStack:
     """#59: valódi undo/redo verem művelet-nevekkel."""
 

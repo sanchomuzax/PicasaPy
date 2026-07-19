@@ -492,6 +492,32 @@ class TestEditorWiring:
         assert viewer.property("currentIndex") == 1
         assert panel.property("cropActive") is True
 
+    def test_tilt_drag_previews_live_then_commits_on_release(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#72: húzás közben élő előnézet, ini-mentés nélkül; elengedéskor ír."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("tiltActive", True)
+        qt_app.processEvents()
+        slider = window.findChild(QObject, "tiltSlider")
+        assert slider is not None, "tiltSlider nem található"
+        image = window.findChild(QObject, "viewerImage")
+        before_source = image.property("source").toString()
+        ini_path = tmp_path / "kepek" / ".picasa.ini"
+
+        slider.setProperty("value", 0.3)
+        qt_app.processEvents()
+        assert not ini_path.exists(), "húzás közben nem szabadna ini-be írni"
+        assert image.property("source").toString() != before_source
+
+        slider.setProperty("pressed", True)
+        slider.setProperty("pressed", False)
+        qt_app.processEvents()
+        ini_text = ini_path.read_text(encoding="utf-8")
+        assert "filters=tilt=1,0.300000,0.000000;" in ini_text
+
     def test_crop_cancel_leaves_crop_mode(self, qml_app, qt_app):
         from PySide6.QtCore import QMetaObject, Qt
 
