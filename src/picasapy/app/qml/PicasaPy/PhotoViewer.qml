@@ -438,9 +438,15 @@ Rectangle {
 
                 Item {
                     id: photoArea
+                    objectName: "viewerPhotoArea"
                     anchors.fill: parent
                     anchors.margins: 14
                     anchors.bottomMargin: 30
+                    // #6 utójavítás (felhasználói hibajelzés): a nagyított
+                    // kép NE lógjon ki a képterületből a bal panel / a
+                    // felső sáv / a felirat-sor fölé — a QML alapból nem
+                    // vág, a zoomhoz kötelező a clip
+                    clip: true
 
                     Image {
                         id: photo

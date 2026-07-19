@@ -154,3 +154,13 @@ class TestZoomBarAndPlaceholders:
         for name in ("compareButtonA", "compareButtonAB", "compareButtonAA"):
             button = _child(window, name)
             assert button.property("enabled") is False
+
+
+class TestZoomClipping:
+    def test_photo_area_clips_zoomed_image(self, qml_app, qt_app):
+        # felhasználói hibajelzés (#6 után): a nagyított kép kirajzolódott a
+        # bal paneli/felső sáv fölé — a képterület clipje a regressziós őr
+        window, _controller, _lib, _engine = qml_app
+        _open_viewer(window, qt_app)
+        area = _child(window, "viewerPhotoArea")
+        assert area.property("clip") is True
