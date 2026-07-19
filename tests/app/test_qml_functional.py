@@ -20,6 +20,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.controller import AppController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
+    from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.thumbs import ThumbnailCache
     from PySide6.QtCore import QSettings
@@ -47,6 +48,12 @@ def qml_app(qt_app, tmp_path):
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
+    # fájlműveletek (#15) — az application.py bekötésének tükre
+    fileops_controller = FileOpsController()
+    app_module.wire_fileops(fileops_controller, controller)
+    engine.rootContext().setContextProperty(
+        "fileOpsController", fileops_controller
+    )
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"

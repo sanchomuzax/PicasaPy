@@ -195,3 +195,54 @@ class TestTranslator:
     def test_unknown_language_falls_back(self, qt_app, monkeypatch):
         monkeypatch.setenv("PICASAPY_LANG", "zz_ZZ")
         assert application._install_translator(qt_app) is None
+
+
+class TestWireFileops:
+    """#15: a fájlműveletek utáni célzott resync bekötése."""
+
+    class _StubController:
+        def __init__(self, roots):
+            self.watchedFolders = list(roots)
+            self.resynced = []
+
+        def resyncFolder(self, folder):
+            self.resynced.append(folder)
+
+    @pytest.fixture
+    def wired(self, qt_app, tmp_path):
+        from picasapy.app.fileops_controller import FileOpsController
+
+        root = tmp_path / "kepek"
+        (root / "alma").mkdir(parents=True)
+        (root / "banan").mkdir()
+        stub = self._StubController([str(root)])
+        fileops = FileOpsController()
+        application.wire_fileops(fileops, stub)
+        return fileops, stub, root
+
+    def test_rename_resyncs_parent_folder(self, wired):
+        fileops, stub, root = wired
+        fileops.photoRenamed.emit(
+            str(root / "alma" / "a.jpg"), str(root / "alma" / "b.jpg")
+        )
+        assert stub.resynced == [str(root / "alma")]
+
+    def test_move_resyncs_both_folders(self, wired):
+        fileops, stub, root = wired
+        fileops.photoMoved.emit(
+            str(root / "alma" / "a.jpg"), str(root / "banan" / "a.jpg")
+        )
+        assert sorted(stub.resynced) == [str(root / "alma"), str(root / "banan")]
+
+    def test_delete_resyncs_parent_folder(self, wired):
+        fileops, stub, root = wired
+        fileops.photoDeleted.emit(str(root / "banan" / "c.jpg"))
+        assert stub.resynced == [str(root / "banan")]
+
+    def test_paths_outside_watched_roots_are_skipped(self, wired, tmp_path):
+        # figyelt körön kívüli mappát (pl. export-cél) nem szinkronizálunk
+        # az indexbe — az ottragadt idegen gyökér a #58 tanulsága
+        fileops, stub, root = wired
+        outside = tmp_path / "kivul" / "a.jpg"
+        fileops.photoMoved.emit(str(root / "alma" / "a.jpg"), str(outside))
+        assert stub.resynced == [str(root / "alma")]

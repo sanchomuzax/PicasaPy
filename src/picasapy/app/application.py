@@ -27,6 +27,7 @@ from picasapy.version import version_string
 from .controller import AppController
 from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
+from .fileops_controller import FileOpsController
 from .thumbnail_provider import ThumbnailProvider
 
 _APP_DIR = Path(__file__).parent
@@ -165,6 +166,37 @@ def _refresh_icon_cache(icons_dir: Path) -> None:
         pass  # kényelmi funkció — hibája nem akadályozhat indulást
 
 
+def _watched_folder_of(path: str, roots) -> str | None:
+    """A fájl szülőmappája, ha valamelyik figyelt gyökér alatt van; None,
+    ha nem — figyelt körön kívüli mappát nem szinkronizálunk az indexbe."""
+    folder = Path(path).parent
+    for root in roots:
+        try:
+            if folder == Path(root) or folder.is_relative_to(root):
+                return str(folder)
+        except (OSError, ValueError):
+            continue
+    return None
+
+
+def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
+    """Fájlműveletek utáni index-frissítés (#15): a sikeres átnevezés/
+    áthelyezés/törlés után az érintett mappák célzott resyncje, hogy a rács
+    (és a .picasa.ini-t követő szekció) azonnal a valós állapotot mutassa."""
+
+    def refresh(*paths: str) -> None:
+        seen: set[str] = set()
+        for path in paths:
+            folder = _watched_folder_of(path, controller.watchedFolders)
+            if folder is not None and folder not in seen:
+                seen.add(folder)
+                controller.resyncFolder(folder)
+
+    fileops.photoRenamed.connect(lambda old, new: refresh(old, new))
+    fileops.photoMoved.connect(lambda old, new: refresh(old, new))
+    fileops.photoDeleted.connect(refresh)
+
+
 def _install_translator(app: QGuiApplication) -> QTranslator | None:
     language = os.environ.get("PICASAPY_LANG") or QLocale.system().name()
     translator = QTranslator(app)
@@ -233,12 +265,19 @@ def run(argv: list[str]) -> int:
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
 
+    # fájlműveletek (#15): kontextusmenü/F2 híd + resync a műveletek után
+    fileops_controller = FileOpsController()
+    wire_fileops(fileops_controller, controller)
+
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
     engine.addImportPath(str(_APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
+    engine.rootContext().setContextProperty(
+        "fileOpsController", fileops_controller
+    )
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().
     engine.rootContext().setContextProperty("appVersion", version_string())
