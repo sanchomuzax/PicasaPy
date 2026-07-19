@@ -16,6 +16,38 @@ Rectangle {
     signal folderChosen(string path)
     signal starredChosen()
 
+    // Kurzor/görgő léptetés a könyvtárelemek között (#77): a szomszéd
+    // mappát a modell adja (az évszám-sorokat átugorva), a kiválasztás a
+    // szokásos folderChosen-úton fut. A görgő itt nem görget, hanem a
+    // kijelölt mappát lépteti (Picasa-viselkedés); a touchpad kis deltáit
+    // egy teljes fokozatig (120) gyűjtjük.
+    function stepFolder(delta) {
+        if (!folderList.model) return
+        var target = folderList.model.neighborFolder(pane.selectedPath, delta)
+        if (target !== "" && target !== pane.selectedPath)
+            pane.folderChosen(target)
+    }
+    property real wheelAccum: 0
+    function wheelStep(delta) {
+        wheelAccum += delta
+        while (wheelAccum <= -120) { wheelAccum += 120; stepFolder(1) }
+        while (wheelAccum >= 120) { wheelAccum -= 120; stepFolder(-1) }
+    }
+    // a kijelölt mappa maradjon látótérben (kívülről is változhat:
+    // kereső-javaslat, feed-görgetés)
+    onSelectedPathChanged: {
+        if (!folderList.model) return
+        var row = folderList.model.rowOfPath(pane.selectedPath)
+        if (row >= 0) folderList.positionViewAtIndex(row, ListView.Contain)
+    }
+
+    // A görgő-kezelő a pane gyökerén él: Flickable-be (ListView) ágyazott
+    // pointer-handler nem támogatott, és itt a fejléc-sávok fölött is működik.
+    WheelHandler {
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: function(event) { pane.wheelStep(event.angleDelta.y) }
+    }
+
     Column {
         anchors.fill: parent
 
@@ -95,6 +127,11 @@ Rectangle {
             height: pane.height - 66
             clip: true
 
+            // kurzorgombok, amikor a lista fókuszban van (#77)
+            activeFocusOnTab: true
+            Keys.onUpPressed: pane.stepFolder(-1)
+            Keys.onDownPressed: pane.stepFolder(1)
+
             // A háttér-szinkron utáni modell-frissítés ne nullázza a
             // görgetési pozíciót — enélkül a lista folyton visszaugrik,
             // és nem lehet görgetni. A reset 0-ra ugrása nem írhatja
@@ -161,7 +198,10 @@ Rectangle {
                 MouseArea {
                     enabled: kind === "folder"
                     anchors.fill: parent
-                    onClicked: pane.folderChosen(path)
+                    onClicked: {
+                        folderList.forceActiveFocus()   // kurzorgombokhoz (#77)
+                        pane.folderChosen(path)
+                    }
                 }
             }
             ScrollBar.vertical: ScrollBar {}

@@ -115,6 +115,31 @@ class FolderListModel(QAbstractListModel):
         (#64) ebben a sorrendben fűzi egymás után a mappákat."""
         return tuple(row[2] for row in self._rows if row[0] == "folder")
 
+    @Slot(str, result=int)
+    def rowOfPath(self, path: str) -> int:
+        """A mappa sor-indexe (évszám-sorokkal együtt számolva); -1, ha
+        nincs ilyen mappa — a lista ebből görgeti láthatóra a kijelöltet."""
+        for i, row in enumerate(self._rows):
+            if row[0] == "folder" and row[2] == path:
+                return i
+        return -1
+
+    @Slot(str, int, result=str)
+    def neighborFolder(self, path: str, delta: int) -> str:
+        """A `path` mappától `delta` lépésre lévő mappa útvonala (#77).
+
+        Az évszám-elválasztó sorokat átugorja, a lista szélein megáll.
+        Ismeretlen vagy üres path esetén az első mappát adja; üres listán
+        üres sztringet.
+        """
+        folders = [row[2] for row in self._rows if row[0] == "folder"]
+        if not folders:
+            return ""
+        if path not in folders:
+            return folders[0]
+        target = folders.index(path) + delta
+        return folders[max(0, min(len(folders) - 1, target))]
+
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid() or not 0 <= index.row() < len(self._rows):
             return None
@@ -290,6 +315,60 @@ class PhotoGridModel(QAbstractListModel):
             return ""
         photo = self._photos[row]
         return f"{photo.folder_path}/{photo.name}"
+
+    def _group_bounds(self) -> tuple[tuple[int, int], ...]:
+        """(start, count) mappánként, a feed sorrendjében — a fel/le
+        léptetés rácssor-számításához (#77)."""
+        bounds: list[tuple[int, int]] = []
+        start = 0
+        for i in range(1, len(self._photos)):
+            if self._photos[i].folder_path != self._photos[i - 1].folder_path:
+                bounds.append((start, i - start))
+                start = i
+        if self._photos:
+            bounds.append((start, len(self._photos) - start))
+        return tuple(bounds)
+
+    @Slot(int, str, int, result=int)
+    def navigate(self, row: int, direction: str, columns: int) -> int:
+        """Kurzor-léptetés célsora a rács-feedben (#77).
+
+        Balra/jobbra folytonos (mappahatáron is átlép, ahogy a feed maga);
+        fel/le a mappa-csoport rácssorai közt ugrik `columns` oszloppal,
+        a csoport szélén a szomszéd csoport azonos oszlopára lép. Érvénytelen
+        sorról (pl. −1, nincs kijelölés) az első képre lép; üres modellnél −1.
+        """
+        count = len(self._photos)
+        if count == 0:
+            return -1
+        if not 0 <= row < count:
+            return 0
+        if direction == "left":
+            return max(0, row - 1)
+        if direction == "right":
+            return min(count - 1, row + 1)
+        if direction not in ("up", "down"):
+            return row
+        cols = max(1, columns)
+        bounds = self._group_bounds()
+        group = next(i for i, (s, n) in enumerate(bounds) if s <= row < s + n)
+        start, group_count = bounds[group]
+        local = row - start
+        grid_row, col = divmod(local, cols)
+        if direction == "down":
+            if grid_row < (group_count - 1) // cols:
+                return start + min(local + cols, group_count - 1)
+            if group + 1 < len(bounds):
+                next_start, next_count = bounds[group + 1]
+                return next_start + min(col, next_count - 1)
+            return row
+        if grid_row > 0:
+            return start + local - cols
+        if group > 0:
+            prev_start, prev_count = bounds[group - 1]
+            last_grid_row = (prev_count - 1) // cols
+            return prev_start + min(last_grid_row * cols + col, prev_count - 1)
+        return row
 
     def rowCount(self, parent=QModelIndex()) -> int:
         return 0 if parent.isValid() else len(self._photos)
