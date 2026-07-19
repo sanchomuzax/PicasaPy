@@ -50,6 +50,7 @@ Item {
 
         Image {
             id: image
+            objectName: "thumbImage"
             anchors.centerIn: parent
             width: cell.width - 18
             height: cell.height - 18 - cell.captionStrip
@@ -57,6 +58,13 @@ Item {
             fillMode: Image.PreserveAspectFit
             asynchronous: true
             cache: true
+            // #83: a cache-elt thumbnail (application.py: DPR-arányos
+            // méret) mindig legalább a legnagyobb rács-fokozatnyi — ez az
+            // Image ezért csak KICSINYÍT. A mipmap a köztes csúszka-
+            // fokokon élesebb, moiré-mentes kicsinyítést ad; a smooth a
+            // felnagyítás nélküli oldalak bilineáris simítását biztosítja.
+            smooth: true
+            mipmap: true
         }
 
         Text {

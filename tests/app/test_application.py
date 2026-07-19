@@ -141,6 +141,45 @@ class TestDesktopEntry:
         ).exists()
 
 
+class TestThumbnailCacheSize:
+    """#83: a rács legnagyobb fokozatában is élesen jelenjen meg a
+    bélyegkép — a cache-cél sose legyen kisebb a legnagyobb rács-
+    megjelenítésnél (a devicePixelRatio-t is figyelembe véve)."""
+
+    def test_standard_dpr_matches_max_grid_size(self):
+        assert (
+            application._thumbnail_cache_size(1.0)
+            == application._GRID_MAX_THUMB_PX
+        )
+
+    def test_hidpi_scales_up_the_cache_target(self):
+        assert (
+            application._thumbnail_cache_size(2.0)
+            == application._GRID_MAX_THUMB_PX * 2
+        )
+
+    def test_fractional_dpr_rounds_up_never_down(self):
+        # 1.5x DPR-nél felfelé kerekítünk — a cél sose essen a küszöb alá,
+        # a ThumbnailCache úgyis csak kicsinyít, sosem nagyít.
+        assert application._thumbnail_cache_size(1.5) == 384
+
+    def test_sub_unity_dpr_is_clamped_to_one(self):
+        assert (
+            application._thumbnail_cache_size(0.5)
+            == application._GRID_MAX_THUMB_PX
+        )
+
+
+class TestScreenDevicePixelRatio:
+    def test_primary_screen_ratio_is_used(self, qt_app):
+        ratio = application._screen_device_pixel_ratio(qt_app)
+        assert ratio == qt_app.primaryScreen().devicePixelRatio()
+
+    def test_missing_screen_falls_back_to_one(self, qt_app, monkeypatch):
+        monkeypatch.setattr(qt_app, "primaryScreen", lambda: None)
+        assert application._screen_device_pixel_ratio(qt_app) == 1.0
+
+
 class TestTranslator:
     def test_hungarian_loads_and_translates(self, qt_app, monkeypatch):
         monkeypatch.setenv("PICASAPY_LANG", "hu_HU")

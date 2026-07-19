@@ -232,6 +232,42 @@ class TestThumbCaption:
         assert caption.property("visible") is True
 
 
+class TestThumbDelegateImageQuality:
+    # #83: a legnagyobb rács-méretben (256px) a cache-elt thumbnail
+    # nagyítás nélkül, kicsinyítéssel álljon elő — a delegate Image-nek
+    # mipmap-elt kicsinyítést kell használnia, hogy a köztes csúszka-
+    # fokokon se legyen recés/homályos a kép.
+    def test_delegate_image_uses_mipmap_for_quality_downscale(self, qml_app):
+        import picasapy.app.application as app_module
+        from PySide6.QtCore import QUrl
+        from PySide6.QtQml import QQmlComponent
+
+        _, _, engine = qml_app
+        comp = QQmlComponent(
+            engine,
+            QUrl.fromLocalFile(
+                str(app_module._APP_DIR / "qml" / "PicasaPy" / "ThumbDelegate.qml")
+            ),
+        )
+        delegate = comp.createWithInitialProperties(
+            {
+                "name": "a.jpg",
+                "thumbUrl": "image://thumbs/1",
+                "star": False,
+                "caption": "",
+                "isVideo": False,
+                "index": 0,
+                "keywords": "",
+                "resolution": "320x160",
+            }
+        )
+        assert comp.errors() == []
+        image = delegate.findChild(QObject, "thumbImage")
+        assert image is not None, "thumbImage Image nem található"
+        assert image.property("mipmap") is True
+        assert image.property("smooth") is True
+
+
 class TestTrayStar:
     def test_star_button_reflects_selection_state(self, qml_app, qt_app):
         window, controller, _ = qml_app
