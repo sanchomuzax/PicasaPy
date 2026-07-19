@@ -468,17 +468,16 @@ ApplicationWindow {
                     Keys.onRightPressed: moveSelection("right")
                     Keys.onUpPressed: moveSelection("up")
                     Keys.onDownPressed: moveSelection("down")
-                    // görgő: rácssor-léptetés a képek között (DoD); a
-                    // touchpad-delták 120-ig halmozódnak (PhotoViewer-minta)
-                    property real wheelAccum: 0
+                    // görgő (#89): a LAPOT görgeti, mint egy dokumentumot —
+                    // a kijelölés nem mozdul; a rácssor-léptetés kizárólag
+                    // a nyilak (moveSelection) dolga. Egy görgő-kattanás
+                    // (120 delta) egy rácssornyit (cellHeight) mozgat, a
+                    // touchpad kis deltái arányosan simán görgetnek.
                     function wheelStep(delta) {
-                        wheelAccum += delta
-                        while (wheelAccum <= -120) {
-                            wheelAccum += 120; moveSelection("down")
-                        }
-                        while (wheelAccum >= 120) {
-                            wheelAccum -= 120; moveSelection("up")
-                        }
+                        var maxY = Math.max(0, contentHeight - height)
+                        contentY = Math.max(0, Math.min(
+                            contentY - delta / 120 * cellHeight, maxY))
+                        savedY = contentY
                     }
 
                     // -- görgetés: mappára ugrás + pozíció-megőrzés --------
@@ -653,10 +652,11 @@ ApplicationWindow {
                     }
                     ScrollBar.vertical: ScrollBar {}
 
-                    // görgő-elfogó réteg (#77): a Flickable elnyelné a
-                    // wheel-eseményt, ezért a képek közti léptetés egy a
-                    // rács fölött ülő átlátszó rétegen fut; kattintás és
-                    // lasszó átmegy rajta (csak görgőt kezel).
+                    // görgő-elfogó réteg (#77/#89): a wheel-eseményt egy a
+                    // rács fölött ülő átlátszó réteg kapja el (pointer-
+                    // handler Flickable-ben nem támogatott), és lapgörgetéssé
+                    // (wheelStep → contentY) alakítja; kattintás és lasszó
+                    // átmegy rajta (csak görgőt kezel).
                     Item {
                         parent: grid
                         anchors.fill: parent

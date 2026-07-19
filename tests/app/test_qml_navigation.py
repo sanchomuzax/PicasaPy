@@ -134,20 +134,81 @@ class TestGridCursorWiring:
         _invoke(qt_app, grid, "moveSelection", "left")
         assert window.property("selectedIndex") == 0
 
-    def test_grid_wheel_steps_rows(self, qml_nav_app, qt_app):
-        window, controller, _ = qml_nav_app
+
+class TestGridWheelScrollsPage:
+    """#89: a feed-rácson a görgő a LAPOT görgeti, nem a kijelölést lépteti.
+
+    A #77-es rácssor-léptető görgő-viselkedést váltja: görgetéskor a
+    contentY mozog (mint egy dokumentumban), a selectedIndex változatlan;
+    a rácssor-léptetés kizárólag a nyilak (moveSelection) dolga marad.
+    """
+
+    @staticmethod
+    def _scrollable_grid(window, qt_app):
+        """Nagy bélyegméretet állít, hogy a feed ténylegesen görgethető
+        legyen az offscreen ablakban; visszaállítandó értéket ad vissza."""
         window.setProperty("viewerOpen", False)
+        grid = window.findChild(QObject, "photoGrid")
+        assert grid is not None, "photoGrid nem található"
+        old_size = window.property("thumbSize")
+        window.setProperty("thumbSize", 512)
+        qt_app.processEvents()
+        assert grid.property("contentHeight") > grid.property("height"), (
+            "a fixture-nek görgethető tartalmat kell adnia"
+        )
+        return grid, old_size
+
+    def test_wheel_scrolls_content_selection_stays(self, qml_nav_app, qt_app):
+        window, _, _ = qml_nav_app
         window.setProperty("selectedIndex", 0)
         window.setProperty("selectedIndexes", [0])
-        grid = window.findChild(QObject, "photoGrid")
-        cols = grid.property("feedColumns")
-        total = controller.photos.rowCount()
-        expected = controller.photos.navigate(0, "down", cols)
-        _invoke(qt_app, grid, "wheelStep", -120)
-        assert window.property("selectedIndex") == expected
-        _invoke(qt_app, grid, "wheelStep", 120)
-        assert window.property("selectedIndex") == 0
-        assert total >= 2  # az adat tényleg léptethető
+        grid, old_size = self._scrollable_grid(window, qt_app)
+        try:
+            grid.setProperty("contentY", 0)
+            qt_app.processEvents()
+            _invoke(qt_app, grid, "wheelStep", -120)  # görgő lefelé
+            assert grid.property("contentY") > 0, "a lapnak görgetődnie kell"
+            assert window.property("selectedIndex") == 0, (
+                "a kijelölés görgetéskor nem mozdulhat"
+            )
+            scrolled = grid.property("contentY")
+            _invoke(qt_app, grid, "wheelStep", 120)   # görgő felfelé
+            assert grid.property("contentY") < scrolled
+            assert window.property("selectedIndex") == 0
+        finally:
+            window.setProperty("thumbSize", old_size)
+            qt_app.processEvents()
+
+    def test_wheel_clamps_at_top(self, qml_nav_app, qt_app):
+        window, _, _ = qml_nav_app
+        grid, old_size = self._scrollable_grid(window, qt_app)
+        try:
+            grid.setProperty("contentY", 0)
+            qt_app.processEvents()
+            _invoke(qt_app, grid, "wheelStep", 120)   # felfelé a tetején
+            assert grid.property("contentY") == 0
+        finally:
+            window.setProperty("thumbSize", old_size)
+            qt_app.processEvents()
+
+    def test_arrows_start_from_selected_after_scroll(self, qml_nav_app, qt_app):
+        # Görgetés után a nyíl a KIJELÖLT képtől lép (nem a látott
+        # területtől), és a nézet visszaugrik hozzá (scrollToRow).
+        window, controller, _ = qml_nav_app
+        window.setProperty("selectedIndex", 0)
+        window.setProperty("selectedIndexes", [0])
+        grid, old_size = self._scrollable_grid(window, qt_app)
+        try:
+            for _ in range(4):
+                _invoke(qt_app, grid, "wheelStep", -120)
+            assert window.property("selectedIndex") == 0
+            cols = grid.property("feedColumns")
+            expected = controller.photos.navigate(0, "down", cols)
+            _invoke(qt_app, grid, "moveSelection", "down")
+            assert window.property("selectedIndex") == expected
+        finally:
+            window.setProperty("thumbSize", old_size)
+            qt_app.processEvents()
 
 
 class TestFolderPaneStepping:
