@@ -414,6 +414,45 @@ ApplicationWindow {
                     readonly property int cellHeight: window.thumbSize + 18
                         + (controller.thumbCaptionMode !== "none" ? 16 : 0)
 
+                    // -- kurzor/görgő navigáció (#77) ---------------------
+                    // A cél-sort a modell számolja (rácssor-ugrás, mappa-
+                    // csoport-határok); a kijelölés és a látótér követi.
+                    readonly property int feedColumns:
+                        Math.max(1, Math.floor(width / cellWidth))
+                    function moveSelection(direction) {
+                        var t = controller.photos.navigate(
+                            window.selectedIndex, direction, feedColumns)
+                        if (t < 0) return
+                        window.selectedIndex = t
+                        window.selectedIndexes = [t]
+                        scrollToRow(t)
+                    }
+                    function scrollToRow(row) {
+                        for (var i = 0; i < model.length; ++i)
+                            if (row >= model[i].start
+                                && row < model[i].start + model[i].count) {
+                                positionViewAtIndex(i, ListView.Contain)
+                                savedY = contentY
+                                return
+                            }
+                    }
+                    Keys.onLeftPressed: moveSelection("left")
+                    Keys.onRightPressed: moveSelection("right")
+                    Keys.onUpPressed: moveSelection("up")
+                    Keys.onDownPressed: moveSelection("down")
+                    // görgő: rácssor-léptetés a képek között (DoD); a
+                    // touchpad-delták 120-ig halmozódnak (PhotoViewer-minta)
+                    property real wheelAccum: 0
+                    function wheelStep(delta) {
+                        wheelAccum += delta
+                        while (wheelAccum <= -120) {
+                            wheelAccum += 120; moveSelection("down")
+                        }
+                        while (wheelAccum >= 120) {
+                            wheelAccum -= 120; moveSelection("up")
+                        }
+                    }
+
                     // -- görgetés: mappára ugrás + pozíció-megőrzés --------
                     // A feedGroups-frissítés (modell-csere) nullázná a
                     // contentY-t; mappa-kattintásnál viszont a választott
@@ -546,6 +585,7 @@ ApplicationWindow {
                                         selected: window.selectedIndexes
                                             .indexOf(slot.row) !== -1
                                         onChosen: function(i, mods) {
+                                            grid.forceActiveFocus()   // kurzorgombokhoz (#77)
                                             window.handleThumbClick(i, mods)
                                         }
                                         onOpened: function(i) {
@@ -573,6 +613,23 @@ ApplicationWindow {
                         }
                     }
                     ScrollBar.vertical: ScrollBar {}
+
+                    // görgő-elfogó réteg (#77): a Flickable elnyelné a
+                    // wheel-eseményt, ezért a képek közti léptetés egy a
+                    // rács fölött ülő átlátszó rétegen fut; kattintás és
+                    // lasszó átmegy rajta (csak görgőt kezel).
+                    Item {
+                        parent: grid
+                        anchors.fill: parent
+                        z: 15
+                        WheelHandler {
+                            acceptedDevices: PointerDevice.Mouse
+                                             | PointerDevice.TouchPad
+                            onWheel: function(event) {
+                                grid.wheelStep(event.angleDelta.y)
+                            }
+                        }
+                    }
 
                     // gumikeret-vizualizáció
                     Rectangle {

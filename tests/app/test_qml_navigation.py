@@ -115,6 +115,39 @@ class TestViewerWheelPaging:
         assert viewer.property("currentIndex") == 1
 
 
+class TestGridCursorWiring:
+    """Rács: kurzor/görgő bekötés a Main.qml-ben (DoD: fotórács)."""
+
+    def test_move_selection_steps_and_selects(self, qml_nav_app, qt_app):
+        window, controller, _ = qml_nav_app
+        window.setProperty("viewerOpen", False)
+        window.setProperty("selectedIndex", -1)
+        window.setProperty("selectedIndexes", [])
+        grid = window.findChild(QObject, "photoGrid")
+        assert grid is not None, "photoGrid nem található"
+        _invoke(qt_app, grid, "moveSelection", "right")
+        assert window.property("selectedIndex") == 0  # üresből az elsőre
+        _invoke(qt_app, grid, "moveSelection", "right")
+        assert window.property("selectedIndex") == 1
+        _invoke(qt_app, grid, "moveSelection", "left")
+        assert window.property("selectedIndex") == 0
+
+    def test_grid_wheel_steps_rows(self, qml_nav_app, qt_app):
+        window, controller, _ = qml_nav_app
+        window.setProperty("viewerOpen", False)
+        window.setProperty("selectedIndex", 0)
+        window.setProperty("selectedIndexes", [0])
+        grid = window.findChild(QObject, "photoGrid")
+        cols = grid.property("feedColumns")
+        total = controller.photos.rowCount()
+        expected = controller.photos.navigate(0, "down", cols)
+        _invoke(qt_app, grid, "wheelStep", -120)
+        assert window.property("selectedIndex") == expected
+        _invoke(qt_app, grid, "wheelStep", 120)
+        assert window.property("selectedIndex") == 0
+        assert total >= 2  # az adat tényleg léptethető
+
+
 class TestFolderPaneStepping:
     """Mappalista: kurzor/görgő a könyvtárelemek között (DoD: mappalista)."""
 
