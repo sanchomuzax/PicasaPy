@@ -253,6 +253,20 @@ ApplicationWindow {
                     }
                 }
             }
+            // Verzió + build a jobb felső sarokban — halványan, hogy
+            // zavartalanul, de bármikor ellenőrizhető legyen, PONTOSAN
+            // melyik commit fut (appVersion → version.version_string()).
+            Text {
+                objectName: "versionLabel"
+                Layout.alignment: Qt.AlignVCenter
+                text: appVersion
+                font.pixelSize: 9
+                color: Theme.textGray
+                opacity: 0.6
+                ToolTip.visible: versionHover.hovered
+                ToolTip.text: qsTr("Verzió és build")
+                HoverHandler { id: versionHover }
+            }
         }
     }
 

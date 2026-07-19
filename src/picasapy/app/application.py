@@ -22,6 +22,7 @@ from PySide6.QtQuickControls2 import QQuickStyle
 from picasapy.index import open_index, prune_foreign_folders
 from picasapy.scanner import read_watched_folders
 from picasapy.thumbs import ThumbnailCache
+from picasapy.version import version_string
 from .controller import AppController
 from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
@@ -203,6 +204,9 @@ def run(argv: list[str]) -> int:
     engine.addImportPath(str(_APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
+    # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
+    # melyik commit fut — ld. version.version_string().
+    engine.rootContext().setContextProperty("appVersion", version_string())
     engine.load(str(_APP_DIR / "qml" / "Main.qml"))
     if not engine.rootObjects():
         return 1
