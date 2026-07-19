@@ -37,6 +37,18 @@ Item {
         overlay.hasSelection = false
         overlay.cropRect = Qt.rect(0, 0, 0, 0)
     }
+
+    // meglévő (mentett) kijelölés betöltése a Vágás eszköz megnyitásakor
+    // (#71) — `selection` egy {x,y,width,height} objektum vagy null/undefined
+    function loadSelection(selection) {
+        if (selection) {
+            overlay.cropRect = Qt.rect(selection.x, selection.y,
+                                        selection.width, selection.height)
+            overlay.hasSelection = true
+        } else {
+            overlay.resetSelection()
+        }
+    }
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
 
     // A meglévő kijelölés átformálása új arányra (#59): a középpont és a

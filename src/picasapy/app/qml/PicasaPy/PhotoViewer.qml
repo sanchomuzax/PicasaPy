@@ -66,21 +66,43 @@ Rectangle {
         if (visible) {
             beginEditCurrent()
         } else {
-            editController.endEdit()
+            // a cropActive lenullázása ELŐBB (még aktív szerkesztés alatt)
+            // fut, hogy az onCropActiveChanged->exitCropTool() még érvényes
+            // munkameneten hívódjon; utána zárja az endEdit()
             editorPanel.cropActive = false
             editorPanel.tiltActive = false
+            editController.endEdit()
         }
     }
     onCurrentIndexChanged: {
         if (visible) {
             beginEditCurrent()
             tiltSlider.value = 0
-            cropOverlay.resetSelection()
+            if (editorPanel.cropActive) {
+                editController.enterCropTool()
+                cropOverlay.loadSelection(editController.cropSelection)
+            } else {
+                cropOverlay.resetSelection()
+            }
         }
     }
     Connections {
         target: editController
         function onToolsChanged() { viewer.syncPanelFromController() }
+    }
+    // Vágás eszköz nyitása/zárása (#71): nyitáskor a lánc crop64 nélküli
+    // (teljes, vágatlan) előnézete + a meglévő kijelölés betöltése; záráskor
+    // (Mégse) a rendes, crop64-et is tartalmazó előnézet visszaáll
+    Connections {
+        target: editorPanel
+        function onCropActiveChanged() {
+            if (editorPanel.cropActive) {
+                editController.enterCropTool()
+                cropOverlay.loadSelection(editController.cropSelection)
+            } else {
+                editController.exitCropTool()
+            }
+        }
     }
     function next() {
         if (currentIndex < photoCount - 1) currentIndex += 1
@@ -240,14 +262,17 @@ Rectangle {
                         font.pixelSize: Theme.fontSize
                         color: Theme.textGray
                     }
-                    // döntés-csúszka: −1..1 Picasa-egység (±11,5°);
-                    // elengedéskor ír — húzás közben nem spammeljük az init
+                    // döntés-csúszka: −1..1 Picasa-egység (±11,5°); húzás
+                    // közben élő előnézet (previewTilt, nincs ini-mentés,
+                    // #72), elengedéskor ír + tol undo-lépést (setTilt)
                     Slider {
                         id: tiltSlider
                         objectName: "tiltSlider"
                         visible: editorPanel.tiltActive
                         from: -1; to: 1; value: 0
                         Layout.fillWidth: true
+                        onValueChanged: if (editorPanel.tiltActive)
+                                            editController.previewTilt(value)
                         onPressedChanged: if (!pressed && editorPanel.tiltActive)
                                               editController.setTilt(value)
                     }

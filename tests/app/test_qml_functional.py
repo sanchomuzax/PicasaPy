@@ -492,6 +492,67 @@ class TestEditorWiring:
         assert viewer.property("currentIndex") == 1
         assert panel.property("cropActive") is True
 
+    def test_tilt_drag_previews_live_then_commits_on_release(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#72: húzás közben élő előnézet, ini-mentés nélkül; elengedéskor ír."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("tiltActive", True)
+        qt_app.processEvents()
+        slider = window.findChild(QObject, "tiltSlider")
+        assert slider is not None, "tiltSlider nem található"
+        image = window.findChild(QObject, "viewerImage")
+        before_source = image.property("source").toString()
+        ini_path = tmp_path / "kepek" / ".picasa.ini"
+
+        slider.setProperty("value", 0.3)
+        qt_app.processEvents()
+        assert not ini_path.exists(), "húzás közben nem szabadna ini-be írni"
+        assert image.property("source").toString() != before_source
+
+        slider.setProperty("pressed", True)
+        slider.setProperty("pressed", False)
+        qt_app.processEvents()
+        ini_text = ini_path.read_text(encoding="utf-8")
+        assert "filters=tilt=1,0.300000,0.000000;" in ini_text
+
+    def test_reopen_crop_tool_shows_uncropped_image_and_existing_selection(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#71: a Vágás eszköz újranyitásakor a teljes (vágatlan) kép +
+        a meglévő kijelölés látszik, a vágás folytatható marad."""
+        from PySide6.QtCore import QMetaObject, QRectF, Qt
+
+        window, _, engine = qml_app
+        viewer = self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("cropActive", True)
+        qt_app.processEvents()
+        overlay = window.findChild(QObject, "cropOverlay")
+        overlay.setProperty("cropRect", QRectF(0.25, 0.25, 0.5, 0.5))
+        overlay.setProperty("hasSelection", True)
+        QMetaObject.invokeMethod(
+            overlay, "acceptCrop", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        # Enter-flow: elfogadás után a vágó-mód megmarad, de a kijelölés
+        # üresre áll vissza a következő képre lépéskor
+        assert panel.property("cropActive") is True
+        assert overlay.property("hasSelection") is False
+
+        # visszalépés az imént megvágott képre: a teljes kép + a mentett
+        # kijelölés (nem a levágott eredmény) jelenjen meg
+        viewer.setProperty("currentIndex", 0)
+        qt_app.processEvents()
+        edit = self._edit_controller(engine)
+        assert edit.property("previewSource").startswith("image://editpreview/")
+        assert overlay.property("hasSelection") is True
+        crop_rect = overlay.property("cropRect")
+        assert crop_rect.x() == pytest.approx(0.25, abs=1e-3)
+        assert crop_rect.width() == pytest.approx(0.5, abs=1e-3)
+
     def test_crop_cancel_leaves_crop_mode(self, qml_app, qt_app):
         from PySide6.QtCore import QMetaObject, Qt
 
