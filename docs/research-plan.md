@@ -109,6 +109,14 @@ ingyenes megosztás — a GPL-3.0 ezt garantálja, és feloldja a blokkot: mosta
 mind a 4 GPL-es referencia-repóból (picasa3meta, picasa2digikam, picasa2xmp,
 metaSave) szabadon portolható kód, attribúcióval.
 
+## 8. Android/Termux futtathatóság (alacsony prio, nem blokkoló)
+
+Nem változtat a Linux-first (RPi5) terven — csak egy jövőbeli portolási ötlet.
+`pip install pyside6` Termuxban nem megy (nincs hivatalos Android/bionic
+wheel); reális út: proot-distro (Debian/Ubuntu aarch64 chroot) + apt PySide6 +
+termux-x11 a megjelenítéshez. Fő kockázat inkább a fájlrendszer-hozzáférés
+(NAS/SMB elérés Android scoped storage alatt, root nélkül) mint maga a GUI.
+
 ## NotebookLM forrás
 
 Notebook: „Picasa metaadatok és adatbázisok dekódolási útmutatója"
