@@ -10,6 +10,7 @@ import pytest
 from picasapy.ini.filters import FilterOp
 from picasapy.render.chain import apply_filters, tilt_cover_scale
 from picasapy.render.ops import apply_autocolor, apply_autolight, apply_crop
+from picasapy.render.tone import apply_fill, apply_finetune2
 
 
 def _gradient_image(width: int = 20, height: int = 10) -> np.ndarray:
@@ -56,13 +57,53 @@ class TestApplyFilters:
         image = _gradient_image()
         ops = (
             FilterOp("autolight", ("1",)),
-            FilterOp("finetune2", ("1", "0.3", "0.1", "0.2", "00000000", "0.0")),
+            FilterOp("Vignette", ("1", "35.0", "1.4", "0.0", "00000000")),
             FilterOp("autocolor", ("1",)),
         )
         result, skipped = apply_filters(image, ops)
         expected = apply_autocolor(apply_autolight(image))
         np.testing.assert_array_equal(result, expected)
-        assert skipped == ("finetune2",)
+        assert skipped == ("Vignette",)
+
+    def test_finetune2_alkalmazasa(self) -> None:
+        image = _gradient_image()
+        ops = (FilterOp("finetune2", ("1", "0.3", "0.1", "0.2", "00000000", "0.0")),)
+        result, skipped = apply_filters(image, ops)
+        expected = apply_finetune2(
+            image, fill=0.3, highlights=0.1, shadows=0.2, neutral=None, temperature=0.0
+        )
+        np.testing.assert_array_equal(result, expected)
+        assert skipped == ()
+
+    def test_fill_alkalmazasa(self) -> None:
+        image = _gradient_image()
+        ops = (FilterOp("fill", ("1", "0.5")),)
+        result, skipped = apply_filters(image, ops)
+        np.testing.assert_array_equal(result, apply_fill(image, 0.5))
+        assert skipped == ()
+
+    def test_bw_alkalmazasa(self) -> None:
+        image = np.full((4, 4, 3), (100, 150, 200), dtype=np.uint8)
+        result, skipped = apply_filters(image, (FilterOp("bw", ("1",)),))
+        assert skipped == ()
+        np.testing.assert_array_equal(result[..., 0], result[..., 1])
+        np.testing.assert_array_equal(result[..., 1], result[..., 2])
+
+    def test_sat_alkalmazasa(self) -> None:
+        image = np.full((4, 4, 3), (200, 100, 100), dtype=np.uint8)
+        result, skipped = apply_filters(image, (FilterOp("sat", ("1", "-1.0")),))
+        assert skipped == ()
+        np.testing.assert_array_equal(result[..., 0], result[..., 1])
+
+    def test_unsharp_v1_egyenerteku_unsharp2_0_6(self) -> None:
+        # mérve: unsharp=1 kimenete bitre azonos az unsharp2=1,0.600000-val
+        image = _gradient_image()
+        v1, skipped_v1 = apply_filters(image, (FilterOp("unsharp", ("1",)),))
+        v2, skipped_v2 = apply_filters(
+            image, (FilterOp("unsharp2", ("1", "0.600000")),)
+        )
+        np.testing.assert_array_equal(v1, v2)
+        assert skipped_v1 == skipped_v2 == ()
 
     def test_enhance_alkalmazasa(self) -> None:
         image = _gradient_image()

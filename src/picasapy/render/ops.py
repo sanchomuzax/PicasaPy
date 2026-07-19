@@ -3,9 +3,9 @@
 Minden függvény TISZTA: RGB `uint8` numpy tömböt (H, W, 3 alakú) kap, és
 ÚJ tömböt ad vissza — a bemenetet sosem mutálja (immutabilitás).
 
-Az `enhance`/`autolight`/`autocolor` pontos Picasa-algoritmusa nem publikus
-(ld. `docs/specs/picasa-ini-format.md`), ezért itt dokumentált,
-pixelhű-validálásra még nem alkalmas MVP-közelítéseket implementálunk.
+Az autolight/enhance a golden-elemzésben megfejtett algoritmus
+(`docs/specs/filters-decoded.md`, 3. kör); az autocolor csillapítási
+szabálya még nyitott, ott dokumentált közelítést használunk.
 """
 
 from __future__ import annotations
@@ -14,22 +14,28 @@ import cv2
 import numpy as np
 
 from picasapy.ini.rect64 import Rect64
+from picasapy.render.curves import apply_lut, curve_lut, validate_image
 
-_AUTOLIGHT_LOW_PERCENTILE = 0.5
-_AUTOLIGHT_HIGH_PERCENTILE = 99.5
-_AUTOCOLOR_WHITE_PERCENTILE = 99.0
 _REDEYE_DOMINANCE_RATIO = 1.4
 _REDEYE_MIN_RED = 60
 
+# Autocolor: a mért gainek a teljes szürkevilág-korrekció ~60–90%-a
+# (golden 3–4. kör); a pontos csillapítási szabály még nyitott kérdés.
+_AUTOCOLOR_DAMPING = 0.75
 
-def _validate_image(image: np.ndarray) -> None:
-    """RGB uint8 (H, W, 3) alak-ellenőrzés — hibás bemenetnél ValueError."""
-    if not isinstance(image, np.ndarray):
-        raise ValueError(f"A kép numpy.ndarray kell legyen, nem {type(image)!r}")
-    if image.dtype != np.uint8:
-        raise ValueError(f"A kép dtype-ja uint8 kell legyen, nem {image.dtype}")
-    if image.ndim != 3 or image.shape[2] != 3:
-        raise ValueError(f"A kép alakja (H, W, 3) kell legyen, nem {image.shape}")
+# Az enhance fix tónusgörbéjének (reziduál) mért pontjai (golden 3. kör).
+_ENHANCE_RESIDUAL_POINTS = (
+    (0.0, 0.0),
+    (16.0, 18.7),
+    (64.0, 71.3),
+    (128.0, 142.7),
+    (192.0, 214.0),
+    (240.0, 255.0),
+    (255.0, 255.0),
+)
+_ENHANCE_RESIDUAL_LUT = curve_lut(_ENHANCE_RESIDUAL_POINTS)
+
+_validate_image = validate_image
 
 
 def _rect_to_pixels(rect: Rect64, width: int, height: int) -> tuple[int, int, int, int]:
@@ -80,45 +86,50 @@ def apply_tilt(image: np.ndarray, angle: float, scale: float) -> np.ndarray:
 
 
 def apply_autolight(image: np.ndarray) -> np.ndarray:
-    """Auto kontraszt: hisztogram-széthúzás a luminancia 0.5-99.5 percentilisén,
-    a színcsatornák arányos (közös) skálázásával."""
+    """Auto kontraszt — megfejtett algoritmus (golden 3. kör).
+
+    Globális min–max lineáris széthúzás, minden csatornára KÖZÖS
+    transzformációval (a színegyensúly megmarad):
+    `ki = clip((be − gmin)·255/(gmax − gmin))`.
+    """
     _validate_image(image)
-    luminance = (
-        0.299 * image[..., 0].astype(np.float64)
-        + 0.587 * image[..., 1].astype(np.float64)
-        + 0.114 * image[..., 2].astype(np.float64)
-    )
-    low = np.percentile(luminance, _AUTOLIGHT_LOW_PERCENTILE)
-    high = np.percentile(luminance, _AUTOLIGHT_HIGH_PERCENTILE)
-    if high <= low:
+    global_min = int(image.min())
+    global_max = int(image.max())
+    if global_max <= global_min:
         return image.copy()
-    scale = 255.0 / (high - low)
-    stretched = (image.astype(np.float64) - low) * scale
-    return np.clip(stretched, 0, 255).astype(np.uint8)
+    scale = 255.0 / (global_max - global_min)
+    stretched = (image.astype(np.float64) - global_min) * scale
+    return np.clip(np.rint(stretched), 0, 255).astype(np.uint8)
 
 
 def apply_autocolor(image: np.ndarray) -> np.ndarray:
-    """Auto fehéregyensúly: csatornánkénti 99. percentilis fehérpontra skálázás,
-    clip 0..255 tartományra."""
+    """Auto fehéregyensúly — csillapított szürkevilág-korrekció.
+
+    Mérés szerint (golden 3–4. kör) a csatornákat a szürke felé húzza, de
+    nem teljesen; semleges bemeneten no-op. A csillapítás pontos szabálya
+    még nyitott — itt `_AUTOCOLOR_DAMPING` arányú lineáris korrekció fut.
+    """
     _validate_image(image)
+    means = image.reshape(-1, 3).mean(axis=0)
+    gray = float(means.mean())
     result = image.astype(np.float64)
     for channel in range(3):
-        white_point = np.percentile(image[..., channel], _AUTOCOLOR_WHITE_PERCENTILE)
-        if white_point <= 0:
+        channel_mean = float(means[channel])
+        if channel_mean <= 0.0:
             continue
-        factor = 255.0 / white_point
-        result[..., channel] = result[..., channel] * factor
-    return np.clip(result, 0, 255).astype(np.uint8)
+        gain = 1.0 + _AUTOCOLOR_DAMPING * (gray / channel_mean - 1.0)
+        result[..., channel] *= gain
+    return np.clip(np.rint(result), 0, 255).astype(np.uint8)
 
 
 def apply_enhance(image: np.ndarray) -> np.ndarray:
-    """„Jó napom van" (I'm Feeling Lucky): autolight + autocolor egymás után.
+    """„Jó napom van" (I'm Feeling Lucky) — megfejtett szerkezet (golden 3. kör):
 
-    A Picasa pontos enhance-algoritmusa nem publikus (ld. spec); ez a
-    dokumentált MVP-közelítés, nem pixelhű reprodukció.
+    `enhance(kép) = fixLUT(autolight_stretch(autocolor(kép)))`, ahol a fix
+    tónusgörbe a mért reziduál (`_ENHANCE_RESIDUAL_POINTS`) interpolációja.
     """
     _validate_image(image)
-    return apply_autocolor(apply_autolight(image))
+    return apply_lut(apply_autolight(apply_autocolor(image)), _ENHANCE_RESIDUAL_LUT)
 
 
 def apply_redeye(

@@ -11,6 +11,7 @@ import numpy as np
 
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import decode_rect64
+from picasapy.render.color import apply_bw, apply_saturation, apply_sepia, apply_warm
 from picasapy.render.ops import (
     apply_autocolor,
     apply_autolight,
@@ -19,17 +20,11 @@ from picasapy.render.ops import (
     apply_redeye,
     apply_tilt,
 )
+from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
+from picasapy.render.tone import apply_fill, apply_finetune2, parse_neutral_argb
 
-# Picasa nyers tilt-paraméter → fok közelítő átváltása (empirikus, nem publikus
-# spec alapján; ld. docs/specs/picasa-ini-format.md).
-_TILT_DEGREES_PER_UNIT = 11.5
-
-_CROP_NAMES = ("crop64",)
-_REDEYE_NAMES = ("redeye",)
-_ENHANCE_NAMES = ("enhance",)
-_AUTOLIGHT_NAMES = ("autolight",)
-_AUTOCOLOR_NAMES = ("autocolor",)
-_TILT_NAMES = ("tilt",)
+# Megfejtve (golden 4. kör): a tilt szöge θ = p·0,2 radián (= p·11,459°).
+_TILT_RADIANS_PER_UNIT = 0.2
 
 
 def tilt_cover_scale(width: int, height: int, angle: float) -> float:
@@ -38,6 +33,7 @@ def tilt_cover_scale(width: int, height: int, angle: float) -> float:
     `angle` radiánban. Az elforgatott téglalapot úgy skálázzuk, hogy a
     forgatott kép mindenütt lefedje az eredeti (width, height) vásznat:
     `s = max(cos|a| + (w/h)*sin|a|, cos|a| + (h/w)*sin|a|)`.
+    (Fekvő képen ez a mérten igazolt `cos θ + (W/H)·sin θ` képlet.)
     """
     if width <= 0 or height <= 0:
         raise ValueError(f"A méretek pozitívak kell legyenek: {width}x{height}")
@@ -52,7 +48,7 @@ def _apply_tilt_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     params = op.float_params()
     if not params:
         raise ValueError(f"A tilt szűrőnek legalább egy paramétere kell legyen: {op}")
-    angle = math.radians(params[0] * _TILT_DEGREES_PER_UNIT)
+    angle = params[0] * _TILT_RADIANS_PER_UNIT
     if len(params) >= 2 and params[1] > 0:
         scale = params[1]
     else:
@@ -70,13 +66,63 @@ def _apply_crop_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     return apply_crop(image, rect)
 
 
+def _apply_fill_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    params = op.float_params()
+    if not params:
+        raise ValueError(f"A fill szűrőnek erősség-paraméter kell: {op}")
+    return apply_fill(image, params[0])
+
+
+def _apply_sat_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    params = op.float_params()
+    if not params:
+        raise ValueError(f"A sat szűrőnek erősség-paraméter kell: {op}")
+    return apply_saturation(image, params[0])
+
+
+def _apply_unsharp_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    params = op.float_params()
+    strength = params[0] if params else UNSHARP_V1_STRENGTH
+    return apply_unsharp(image, strength)
+
+
+def _finetune_float(op: FilterOp, index: int) -> float:
+    return float(op.params[index]) if len(op.params) > index else 0.0
+
+
+def _apply_finetune_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """finetune/finetune2 — a hiányzó paraméterek semlegesek.
+
+    (A v1 p1/fill-je mérten azonos a v2-ével; a v1 színhő-skálája eltér,
+    ott a v2 modellje közelítésként fut.)
+    """
+    neutral = parse_neutral_argb(op.params[4]) if len(op.params) > 4 else None
+    return apply_finetune2(
+        image,
+        fill=_finetune_float(op, 1),
+        highlights=_finetune_float(op, 2),
+        shadows=_finetune_float(op, 3),
+        neutral=neutral,
+        temperature=_finetune_float(op, 5),
+    )
+
+
 _HANDLERS = {
-    **{name: _apply_crop_op for name in _CROP_NAMES},
-    **{name: _apply_tilt_op for name in _TILT_NAMES},
-    **{name: (lambda image, op: apply_redeye(image)) for name in _REDEYE_NAMES},
-    **{name: (lambda image, op: apply_enhance(image)) for name in _ENHANCE_NAMES},
-    **{name: (lambda image, op: apply_autolight(image)) for name in _AUTOLIGHT_NAMES},
-    **{name: (lambda image, op: apply_autocolor(image)) for name in _AUTOCOLOR_NAMES},
+    "crop64": _apply_crop_op,
+    "tilt": _apply_tilt_op,
+    "redeye": lambda image, op: apply_redeye(image),
+    "enhance": lambda image, op: apply_enhance(image),
+    "autolight": lambda image, op: apply_autolight(image),
+    "autocolor": lambda image, op: apply_autocolor(image),
+    "fill": _apply_fill_op,
+    "finetune": _apply_finetune_op,
+    "finetune2": _apply_finetune_op,
+    "bw": lambda image, op: apply_bw(image),
+    "sepia": lambda image, op: apply_sepia(image),
+    "warm": lambda image, op: apply_warm(image),
+    "sat": _apply_sat_op,
+    "unsharp": _apply_unsharp_op,
+    "unsharp2": _apply_unsharp_op,
 }
 
 
@@ -84,7 +130,8 @@ def apply_filters(
     image: np.ndarray, ops: tuple[FilterOp, ...]
 ) -> tuple[np.ndarray, tuple[str, ...]]:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, enhance,
-    autolight, autocolor).
+    autolight, autocolor, fill, finetune/finetune2, bw, sepia, warm, sat,
+    unsharp/unsharp2).
 
     A nem támogatott szűrőket szándékosan némán kihagyja (részleges
     előnézet), de a kihagyott nevek sorrendhelyes listáját is visszaadja:
