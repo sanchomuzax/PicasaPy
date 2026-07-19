@@ -14,6 +14,18 @@ Item {
     required property string resolution
     property bool selected: false
     property string captionMode: "none"
+    // #85: kiegyenlített rács-sor esetén a cella (parent Item) nagyobb
+    // lehet a névleges thumbSize-nál — a MEGJELENÍTETT kép mérete ekkor
+    // is a névleges méretre plafonozott marad (0 = nincs plafon), hogy a
+    // #83-mal beállított DPR-arányos thumbnail-cache-t ne nagyítsuk fel
+    // (recés/homályos lenne). A többletet a cellán belüli térköz kapja —
+    // a kép középen marad, csak a hézag nő.
+    property int maxContentWidth: 0
+    property int maxContentHeight: 0
+    readonly property real contentWidth:
+        maxContentWidth > 0 ? Math.min(cell.width, maxContentWidth) : cell.width
+    readonly property real contentHeight:
+        maxContentHeight > 0 ? Math.min(cell.height, maxContentHeight) : cell.height
     signal chosen(int index, int modifiers)
     signal opened(int index)
     // lasszó: a koordináták a cella saját rendszerében — a fogadó képezi le
@@ -50,13 +62,21 @@ Item {
 
         Image {
             id: image
+            objectName: "thumbImage"
             anchors.centerIn: parent
-            width: cell.width - 18
-            height: cell.height - 18 - cell.captionStrip
+            width: cell.contentWidth - 18
+            height: cell.contentHeight - 18 - cell.captionStrip
             source: cell.thumbUrl
             fillMode: Image.PreserveAspectFit
             asynchronous: true
             cache: true
+            // #83: a cache-elt thumbnail (application.py: DPR-arányos
+            // méret) mindig legalább a legnagyobb rács-fokozatnyi — ez az
+            // Image ezért csak KICSINYÍT. A mipmap a köztes csúszka-
+            // fokokon élesebb, moiré-mentes kicsinyítést ad; a smooth a
+            // felnagyítás nélküli oldalak bilineáris simítását biztosítja.
+            smooth: true
+            mipmap: true
         }
 
         Text {
@@ -87,7 +107,7 @@ Item {
         anchors.top: frame.bottom
         anchors.topMargin: 2
         anchors.horizontalCenter: frame.horizontalCenter
-        width: cell.width - 8
+        width: cell.contentWidth - 8
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideMiddle
         text: cell.captionText

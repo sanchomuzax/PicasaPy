@@ -181,11 +181,16 @@ class TestLibraryFeedQml:
         assert grid.property("count") == 1  # egy mappa-csoport a ListView-ban
 
     def test_cell_geometry_follows_thumb_size(self, qml_app, qt_app):
+        # #85: a cellWidth mostantól a kiegyenlített (effektív, a sort
+        # kitöltő) szélesség — legalább a névleges (thumbSize+18), de a
+        # rendelkezésre álló szélesség egyenletes elosztásához igazodva
+        # annál nagyobb is lehet.
         window, _, _ = qml_app
         grid = window.findChild(QObject, "photoGrid")
         window.setProperty("thumbSize", 200)
         qt_app.processEvents()
-        assert grid.property("cellWidth") == 218
+        nominal = 200 + 18
+        assert grid.property("cellWidth") >= nominal
 
 
 class TestFolderPaneHighlight:
@@ -240,6 +245,42 @@ class TestThumbCaption:
         assert caption is not None, "thumbCaption Text nem található"
         assert caption.property("text") == "a.jpg"
         assert caption.property("visible") is True
+
+
+class TestThumbDelegateImageQuality:
+    # #83: a legnagyobb rács-méretben (256px) a cache-elt thumbnail
+    # nagyítás nélkül, kicsinyítéssel álljon elő — a delegate Image-nek
+    # mipmap-elt kicsinyítést kell használnia, hogy a köztes csúszka-
+    # fokokon se legyen recés/homályos a kép.
+    def test_delegate_image_uses_mipmap_for_quality_downscale(self, qml_app):
+        import picasapy.app.application as app_module
+        from PySide6.QtCore import QUrl
+        from PySide6.QtQml import QQmlComponent
+
+        _, _, engine = qml_app
+        comp = QQmlComponent(
+            engine,
+            QUrl.fromLocalFile(
+                str(app_module._APP_DIR / "qml" / "PicasaPy" / "ThumbDelegate.qml")
+            ),
+        )
+        delegate = comp.createWithInitialProperties(
+            {
+                "name": "a.jpg",
+                "thumbUrl": "image://thumbs/1",
+                "star": False,
+                "caption": "",
+                "isVideo": False,
+                "index": 0,
+                "keywords": "",
+                "resolution": "320x160",
+            }
+        )
+        assert comp.errors() == []
+        image = delegate.findChild(QObject, "thumbImage")
+        assert image is not None, "thumbImage Image nem található"
+        assert image.property("mipmap") is True
+        assert image.property("smooth") is True
 
 
 class TestTrayStar:
@@ -372,6 +413,97 @@ class TestLasso:
         if hasattr(value, "toVariant"):
             value = value.toVariant()
         assert sorted(int(v) for v in value) == [5, 6, 7]
+
+
+class TestBalancedGridRow:
+    """#85: a sor a bal és jobb szél között kitöltött legyen, ne balra
+    rendezett maradjon fix cellamérettel — az effektív cellaszélesség a
+    rendelkezésre álló szélességből számítva töltse ki a sort."""
+
+    @staticmethod
+    def _assert_row_fills_width(grid, tolerance_cols=1):
+        width = grid.property("width")
+        cell_w = grid.property("cellWidth")
+        columns = int(grid.property("columns"))
+        assert columns >= 1, "legalább egy oszlopnak lennie kell"
+        # az oszlopok együtt (kis tűréssel) kitöltik a rendelkezésre álló
+        # szélességet — nem maradhat balra tömörült, üres jobb sáv
+        leftover = width - columns * cell_w
+        assert 0 <= leftover < cell_w * max(1, tolerance_cols) / columns + 2, (
+            f"leftover={leftover} width={width} cols={columns} cell_w={cell_w}"
+        )
+
+    def test_cell_width_fills_row_at_multiple_thumb_sizes(self, qml_app, qt_app):
+        from PySide6.QtCore import QObject
+
+        window, controller, _ = qml_app
+        grid = window.findChild(QObject, "photoGrid")
+        assert grid is not None, "photoGrid nem található"
+
+        for size in (72, 144, 256):
+            window.setProperty("thumbSize", size)
+            qt_app.processEvents()
+            nominal = size + 18
+            cell_w = grid.property("cellWidth")
+            # az effektív cella legalább akkora, mint a névleges (nem zsugorodhat)
+            assert cell_w >= nominal
+            self._assert_row_fills_width(grid)
+
+    def test_cell_width_adapts_on_window_resize(self, qml_app, qt_app):
+        from PySide6.QtCore import QObject
+
+        window, controller, _ = qml_app
+        grid = window.findChild(QObject, "photoGrid")
+        assert grid is not None, "photoGrid nem található"
+        window.setProperty("thumbSize", 144)
+
+        for w in (900, 1500):
+            window.setProperty("width", w)
+            qt_app.processEvents()
+            self._assert_row_fills_width(grid)
+
+    def test_displayed_image_capped_to_nominal_size_even_in_wide_cell(
+        self, qml_app
+    ):
+        # #85 x #83: a kiegyenlítés miatt megnőtt cellában a MEGJELENÍTETT
+        # kép ne nőjön a névleges (legnagyobb csúszka-fokozatnyi) méret
+        # fölé — a #83-mal beállított DPR-arányos cache-t ne nagyítsuk fel
+        # (recés/homályos lenne). A többlet a térközbe menjen, a kép a
+        # névleges méretre plafonozva marad.
+        import picasapy.app.application as app_module
+        from PySide6.QtCore import QObject, QUrl
+        from PySide6.QtQml import QQmlComponent
+
+        _, _, engine = qml_app
+        comp = QQmlComponent(
+            engine,
+            QUrl.fromLocalFile(
+                str(app_module._APP_DIR / "qml" / "PicasaPy" / "ThumbDelegate.qml")
+            ),
+        )
+        nominal = 256 + 18   # a legnagyobb csúszka-fokozat névleges cellája
+        wide_cell = nominal + 60   # kiegyenlítés miatt megnövelt cella
+        delegate = comp.createWithInitialProperties(
+            {
+                "name": "a.jpg",
+                "thumbUrl": "image://thumbs/1",
+                "star": False,
+                "caption": "",
+                "isVideo": False,
+                "index": 0,
+                "keywords": "",
+                "resolution": "320x160",
+                "width": wide_cell,
+                "height": wide_cell,
+                "maxContentWidth": nominal,
+                "maxContentHeight": nominal,
+            }
+        )
+        assert comp.errors() == []
+        image = delegate.findChild(QObject, "thumbImage")
+        assert image is not None, "thumbImage Image nem található"
+        assert image.property("width") <= 256
+        assert image.property("height") <= 256
 
 
 class TestFolderManager:
@@ -694,3 +826,124 @@ class TestSearchResultsGroupedGridWiring:
         model = grouped.property("model")
         assert [g["folderName"] for g in model] == ["kepek"]
         assert model[0]["photos"][0]["name"] == "a.jpg"
+
+
+class TestViewerFolderBoundedNavigation:
+    """#84: a nagy nézőben (PhotoViewer) a lapozás CSAK az aktuális mappa
+    képei között mozogjon — a rács (feed) nézet szűrői (pl. csillag-szűrő)
+    több mappa fotóit is felsorolhatják egymás után, de a néző ne lépjen
+    át a szomszéd mappába."""
+
+    @pytest.fixture
+    def qml_app_multi_folder(self, qt_app, tmp_path):
+        """Két mappa csillagozott képekkel, egyetlen (mappaátlépő) rács-
+        listában betöltve — ahogy a csillag-szűrő is összefésüli őket."""
+        import picasapy.app.application as app_module
+        from picasapy.app.controller import AppController
+        from picasapy.app.edit_controller import EditController
+        from picasapy.app.edit_preview import EditPreviewProvider
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+        from picasapy.thumbs import ThumbnailCache
+        from PySide6.QtCore import QSettings
+        from PySide6.QtQml import QQmlApplicationEngine
+
+        lib = tmp_path / "kepek"
+        folder_a = lib / "nyaralas"
+        folder_b = lib / "telek"
+        folder_a.mkdir(parents=True)
+        folder_b.mkdir()
+        make_jpeg(folder_a / "a1.jpg")
+        make_jpeg(folder_a / "a2.jpg")
+        make_jpeg(folder_b / "b1.jpg")
+        make_jpeg(folder_b / "b2.jpg")
+        (folder_a / ".picasa.ini").write_text(
+            "[a1.jpg]\nstar=yes\n\n[a2.jpg]\nstar=yes\n", encoding="utf-8"
+        )
+        (folder_b / ".picasa.ini").write_text(
+            "[b1.jpg]\nstar=yes\n\n[b2.jpg]\nstar=yes\n", encoding="utf-8"
+        )
+        db = tmp_path / "index.db"
+        with open_index(db) as conn:
+            sync_tree(conn, lib)
+
+        settings = QSettings(
+            str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
+        )
+        provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
+        controller = AppController(db, (str(lib),), provider, settings=settings)
+        edit_preview = EditPreviewProvider()
+        edit_controller = EditController(edit_preview)
+        engine = QQmlApplicationEngine()
+        engine.addImageProvider("thumbs", provider)
+        engine.addImageProvider("editpreview", edit_preview)
+        engine.addImportPath(str(app_module._APP_DIR / "qml"))
+        engine.rootContext().setContextProperty("controller", controller)
+        engine.rootContext().setContextProperty("editController", edit_controller)
+        engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
+        assert engine.rootObjects(), "Main.qml betöltése sikertelen"
+        window = engine.rootObjects()[0]
+        controller._reload()
+        # a rács (feed) nézet: mindkét mappa csillagozott képei, folytonosan
+        # (f.path, p.name szerint: nyaralas/a1, a2, telek/b1, b2)
+        controller.showStarred()
+        qt_app.processEvents()
+        yield window, controller, engine
+        engine.deleteLater()
+        qt_app.processEvents()
+
+    def _open_viewer(self, window, qt_app, index):
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", index)
+        qt_app.processEvents()
+        return viewer
+
+    def test_next_stops_at_folder_end(self, qml_app_multi_folder, qt_app):
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, controller, _ = qml_app_multi_folder
+        assert controller.photos.rowCount() == 4  # a rács nem szűkül mappára
+        viewer = self._open_viewer(window, qt_app, index=1)  # a2.jpg — nyaralas utolsó képe
+        QMetaObject.invokeMethod(viewer, "next", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert viewer.property("currentIndex") == 1, (
+            "a mappahatárnál a néző nem léphet át a szomszéd mappába"
+        )
+
+    def test_previous_stops_at_folder_start(self, qml_app_multi_folder, qt_app):
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, controller, _ = qml_app_multi_folder
+        viewer = self._open_viewer(window, qt_app, index=2)  # b1.jpg — telek első képe
+        QMetaObject.invokeMethod(
+            viewer, "previous", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert viewer.property("currentIndex") == 2
+
+    def test_next_moves_within_folder(self, qml_app_multi_folder, qt_app):
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, controller, _ = qml_app_multi_folder
+        viewer = self._open_viewer(window, qt_app, index=0)  # a1.jpg
+        QMetaObject.invokeMethod(viewer, "next", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert viewer.property("currentIndex") == 1  # a2.jpg — még a nyaralas mappa
+
+    def test_nav_buttons_disabled_at_folder_boundaries(
+        self, qml_app_multi_folder, qt_app
+    ):
+        window, controller, _ = qml_app_multi_folder
+        viewer = self._open_viewer(window, qt_app, index=1)  # a2.jpg — nyaralas utolsó
+        next_button = window.findChild(QObject, "viewerNextButton")
+        assert next_button is not None, "viewerNextButton nem található"
+        assert next_button.property("enabled") is False
+        # ugyanezen a nézőn (egyetlen engine) a telek mappa első képénél a
+        # ◀ gomb is letiltva — egy fixture-példányban ellenőrizve, hogy az
+        # offscreen tesztkörnyezetben ne kelljen két QQmlApplicationEngine-t
+        # egymás után létrehozni (ismert instabilitás a tesztfuttatóban)
+        viewer.setProperty("currentIndex", 2)  # b1.jpg — telek első képe
+        qt_app.processEvents()
+        prev_button = window.findChild(QObject, "viewerPrevButton")
+        assert prev_button is not None, "viewerPrevButton nem található"
+        assert prev_button.property("enabled") is False

@@ -6,6 +6,7 @@ Könyvtár-gyökerek: parancssori argumentumok, vagy a Picasa-paritású
 
 from __future__ import annotations
 
+import math
 import os
 import sys
 from pathlib import Path
@@ -30,6 +31,35 @@ from .thumbnail_provider import ThumbnailProvider
 
 _APP_DIR = Path(__file__).parent
 _I18N_DIR = _APP_DIR / "i18n"
+
+# A rács legnagyobb megjelenítési mérete logikai pixelben — a Main.qml
+# sizeSlider.to értékével azonos (#83). Ha az ottani felső határ változik,
+# ezt is frissíteni kell, különben a legnagyobb rács-fokozat újra
+# nagyítással (homályosan) jelenhet meg.
+_GRID_MAX_THUMB_PX = 256
+
+
+def _thumbnail_cache_size(device_pixel_ratio: float) -> int:
+    """A cache-elt thumbnail célmérete (leghosszabb oldal, px).
+
+    A cél mindig legalább a rács legnagyobb megjelenítési mérete, a
+    képernyő devicePixelRatio-jával szorozva — így a GridView-delegate
+    Image-e (ThumbDelegate.qml) minden csúszka-fokon KICSINYÍTÉSSEL áll
+    elő a cache-elt képből, sosem nagyítással (ami homályos lenne).
+    Felfelé kerekítünk (math.ceil), hogy törtszámú DPR (pl. 1.5) se
+    essen a küszöb alá. RPi5-ön jellemzően DPR=1 (natív HDMI kimenet),
+    de HiDPI monitoron (DPR=2) is éles maradjon a legnagyobb fokozat —
+    ezért nem rögzítünk fix 256-os cache-méretet, hanem a tényleges
+    képernyőhöz igazítjuk.
+    """
+    ratio = max(device_pixel_ratio, 1.0)
+    return math.ceil(_GRID_MAX_THUMB_PX * ratio)
+
+
+def _screen_device_pixel_ratio(app: QGuiApplication) -> float:
+    """A elsődleges képernyő devicePixelRatio-ja; hiányzó képernyőnél 1.0."""
+    screen = app.primaryScreen()
+    return screen.devicePixelRatio() if screen is not None else 1.0
 
 
 def _data_dir() -> Path:
@@ -185,7 +215,12 @@ def run(argv: list[str]) -> int:
     with open_index(data_dir / "index.db") as conn:
         prune_foreign_folders(conn, roots)
 
-    provider = ThumbnailProvider(ThumbnailCache(_cache_dir() / "thumbs"))
+    # #83: a cache-méretet a képernyő DPR-jéhez igazítjuk, hogy a rács
+    # legnagyobb fokozata (256px) se legyen homályos HiDPI kijelzőn.
+    cache_size = _thumbnail_cache_size(_screen_device_pixel_ratio(app))
+    provider = ThumbnailProvider(
+        ThumbnailCache(_cache_dir() / "thumbs", size=cache_size)
+    )
     controller = AppController(
         data_dir / "index.db",
         roots,

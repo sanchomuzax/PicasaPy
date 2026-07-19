@@ -424,18 +424,32 @@ ApplicationWindow {
                     model: controller.feedGroups
                     spacing: 14
                     cacheBuffer: 600
-                    readonly property int cellWidth: window.thumbSize + 18
+                    // #85: kiegyenlített sor-elrendezés — az oszlopszám a
+                    // névleges (thumbSize alapú) cellaméretből adódik, de a
+                    // ténylegesen kiosztott cellaszélesség (cellWidth) a
+                    // rendelkezésre álló szélességet tölti ki (bal–jobb
+                    // szél között), nem marad balra tömörült jobb sáv. A
+                    // ThumbDelegate a MEGJELENÍTETT képet a névleges
+                    // méretre plafonozza (#83 cache-minőség), a többlet a
+                    // cellán belüli térközbe megy.
+                    readonly property int nominalCellWidth: window.thumbSize + 18
                     readonly property int cellHeight: window.thumbSize + 18
                         + (controller.thumbCaptionMode !== "none" ? 16 : 0)
+                    readonly property int columns:
+                        Math.max(1, Math.floor(width / nominalCellWidth))
+                    // #77-kompatibilis névalias — a navigáció-tesztek ezen
+                    // a néven olvassák az oszlopszámot.
+                    readonly property int feedColumns: columns
+                    readonly property int cellWidth:
+                        columns > 0 ? Math.floor(width / columns) : nominalCellWidth
 
                     // -- kurzor/görgő navigáció (#77) ---------------------
                     // A cél-sort a modell számolja (rácssor-ugrás, mappa-
-                    // csoport-határok); a kijelölés és a látótér követi.
-                    readonly property int feedColumns:
-                        Math.max(1, Math.floor(width / cellWidth))
+                    // csoport-határok); a kijelölés és a látótér követi. Az
+                    // oszlopszám a #85 szerinti effektív elrendezésből jön.
                     function moveSelection(direction) {
                         var t = controller.photos.navigate(
-                            window.selectedIndex, direction, feedColumns)
+                            window.selectedIndex, direction, columns)
                         if (t < 0) return
                         window.selectedIndex = t
                         window.selectedIndexes = [t]
@@ -516,11 +530,17 @@ ApplicationWindow {
                     // számoljuk (egyenletes cellák a Flow-ban); a lasszó a
                     // húzás kezdő-csoportján belül jelöl ki.
                     function lassoIndexes(start, count, flowWidth, x1, y1, x2, y2) {
-                        var cols = Math.max(1, Math.floor(flowWidth / cellWidth))
+                        // #85: az oszlopszámot a névleges cellaméretből
+                        // számoljuk (mint a rács maga), de a képernyő-
+                        // koordináták bucketeléséhez a TÉNYLEGES (effektív,
+                        // kitöltő) cellaszélesség kell — ugyanaz a pitch,
+                        // amit a delegate-ek ténylegesen elfoglalnak.
+                        var cols = Math.max(1, Math.floor(flowWidth / nominalCellWidth))
+                        var pitch = cols > 0 ? Math.floor(flowWidth / cols) : nominalCellWidth
                         var left = Math.min(x1, x2), right = Math.max(x1, x2)
                         var top = Math.min(y1, y2), bottom = Math.max(y1, y2)
-                        var c0 = Math.max(0, Math.floor(left / cellWidth))
-                        var c1 = Math.min(cols - 1, Math.floor(right / cellWidth))
+                        var c0 = Math.max(0, Math.floor(left / pitch))
+                        var c1 = Math.min(cols - 1, Math.floor(right / pitch))
                         var r0 = Math.max(0, Math.floor(top / cellHeight))
                         var r1 = Math.floor(bottom / cellHeight)
                         var result = []
@@ -596,6 +616,11 @@ ApplicationWindow {
                                         keywords: slot.info.keywords || ""
                                         resolution: slot.info.resolution || ""
                                         captionMode: controller.thumbCaptionMode
+                                        // #85/#83: a megjelenő kép a névleges
+                                        // méretre plafonozott, a kiegyenlítés
+                                        // többlete a térközbe megy.
+                                        maxContentWidth: grid.nominalCellWidth
+                                        maxContentHeight: grid.cellHeight
                                         selected: window.selectedIndexes
                                             .indexOf(slot.row) !== -1
                                         onChosen: function(i, mods) {
@@ -690,12 +715,18 @@ ApplicationWindow {
                             id: subgrid
                             Layout.fillWidth: true
                             interactive: false
-                            cellWidth: window.thumbSize + 18
+                            // #85: itt is kiegyenlített sor — az oszlopszám
+                            // névleges méretből, a tényleges cellaWidth a
+                            // szélességet tölti ki.
+                            readonly property int nominalCellWidth: window.thumbSize + 18
+                            readonly property int columns:
+                                Math.max(1, Math.floor(width / nominalCellWidth))
+                            cellWidth: columns > 0
+                                ? Math.floor(width / columns) : nominalCellWidth
                             cellHeight: window.thumbSize + 18
                                 + (controller.thumbCaptionMode !== "none" ? 16 : 0)
                             height: Math.ceil(
-                                groupDelegate.modelData.photos.length
-                                / Math.max(1, Math.floor(width / cellWidth))
+                                groupDelegate.modelData.photos.length / columns
                             ) * cellHeight
                             model: groupDelegate.modelData.photos
 
@@ -704,6 +735,9 @@ ApplicationWindow {
                                 required property var modelData
                                 width: subgrid.cellWidth
                                 height: subgrid.cellHeight
+                                // #85/#83: a kép a névleges méretre plafonozott
+                                maxContentWidth: subgrid.nominalCellWidth
+                                maxContentHeight: subgrid.cellHeight
                                 name: modelData.name
                                 thumbUrl: modelData.thumbUrl
                                 star: modelData.star

@@ -307,6 +307,34 @@ class PhotoGridModel(QAbstractListModel):
             return ""
         return str(self._photos[row].id)
 
+    @Slot(int, int, result=int)
+    def folderNeighbor(self, row: int, delta: int) -> int:
+        """A `row` sortól `delta` lépés a SAJÁT mappáján belül (#84).
+
+        A nagy nézőben (PhotoViewer) a lapozás nem léphet át a szomszéd
+        mappába, még akkor sem, ha a rács-modell (pl. csillag-szűrő,
+        keresés) több mappa fotóit sorolja fel egymás után — a
+        lekérdezések mindig mappa szerint rendezettek (f.path, p.name),
+        így egy mappa fotói a listában folytonos tartományt alkotnak, és
+        elég egyesével lépkedni, amíg a mappa-útvonal egyezik. A
+        mappahatáron (vagy érvénytelen sornál) a lépés a helyben marad —
+        ez adja a néző nyíl-/görgő-navigációjának és a ◀/▶ gombok
+        enabled-jének is az alapját."""
+        if not 0 <= row < len(self._photos) or delta == 0:
+            return row
+        folder = self._photos[row].folder_path
+        step = 1 if delta > 0 else -1
+        result = row
+        for _ in range(abs(delta)):
+            candidate = result + step
+            if (
+                not 0 <= candidate < len(self._photos)
+                or self._photos[candidate].folder_path != folder
+            ):
+                break
+            result = candidate
+        return result
+
     @Slot(int, result=str)
     def filePathAt(self, row: int) -> str:
         """A kép abszolút útvonala (EditController.beginEdit-hez); üres, ha
