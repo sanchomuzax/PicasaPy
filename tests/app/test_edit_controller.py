@@ -176,6 +176,76 @@ class TestSetTilt:
         assert not image.isNull()
 
 
+class TestCropSelection:
+    """#71: a jelenlegi crop64 relatív [0..1] téglalapja a QML-nek."""
+
+    def test_none_when_no_crop(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        assert controller.cropSelection is None
+
+    def test_reflects_applied_crop(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyCrop(0.1, 0.2, 0.5, 0.3)
+        sel = controller.cropSelection
+        # rect64 kvantált (16 bites fixpontos) kódolás — kis eltérés várható
+        assert sel["x"] == pytest.approx(0.1, abs=1e-3)
+        assert sel["y"] == pytest.approx(0.2, abs=1e-3)
+        assert sel["width"] == pytest.approx(0.5, abs=1e-3)
+        assert sel["height"] == pytest.approx(0.3, abs=1e-3)
+
+
+class TestCropToolPreview:
+    """#71: a Vágás eszköz megnyitásakor a teljes (vágatlan) kép jelenik meg,
+    a meglévő crop64-et a QML overlay rajzolja rá kijelölésként."""
+
+    def test_enter_crop_tool_shows_uncropped_source(self, controller, provider, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        cropped = provider.requestImage("1", None, None)
+        assert (cropped.width(), cropped.height()) == (4, 3)
+
+        controller.enterCropTool()
+        full = provider.requestImage("1", None, None)
+        assert (full.width(), full.height()) == (8, 6)
+
+    def test_enter_crop_tool_does_not_write_ini_or_undo(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        before_undo = controller.canUndo
+        ini_before = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        controller.enterCropTool()
+        assert controller.canUndo == before_undo
+        ini_after = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert ini_after == ini_before
+
+    def test_exit_crop_tool_restores_cropped_preview(self, controller, provider, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        controller.enterCropTool()
+        controller.exitCropTool()
+        image = provider.requestImage("1", None, None)
+        assert (image.width(), image.height()) == (4, 3)
+
+    def test_enter_crop_tool_without_active_edit_raises(self, controller):
+        with pytest.raises(ValueError):
+            controller.enterCropTool()
+
+    def test_exit_crop_tool_without_active_edit_raises(self, controller):
+        with pytest.raises(ValueError):
+            controller.exitCropTool()
+
+    def test_reopen_and_reapply_replaces_crop_in_place(self, controller, photo):
+        """A vágás folytatható: az új téglalap a régi HELYÉRE kerül, nem
+        fűződik hozzá második crop64."""
+        controller.beginEdit("1", str(photo))
+        controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        controller.enterCropTool()
+        controller.applyCrop(0.1, 0.1, 0.4, 0.4)
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert ini_text.count("crop64=") == 1
+        assert "crop=rect64(" in ini_text
+
+
 class TestPreviewTilt:
     """#72: élő forgatás-előnézet a csúszka húzása közben, mentés/undo nélkül."""
 

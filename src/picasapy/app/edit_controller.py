@@ -73,6 +73,20 @@ class EditController(QObject):
         """Van-e alkalmazott vágás — a „Visszavonás: Vágás" gombhoz (#51)."""
         return self._session.crop() is not None
 
+    @Property("QVariant", notify=toolsChanged)
+    def cropSelection(self):
+        """A jelenlegi crop64 relatív [0..1] téglalapja (#71), vagy None ha
+        nincs vágás — a Vágás eszköz ezzel tölti elő a meglévő kijelölést."""
+        rect = self._session.crop()
+        if rect is None:
+            return None
+        return {
+            "x": rect.left,
+            "y": rect.top,
+            "width": rect.right - rect.left,
+            "height": rect.bottom - rect.top,
+        }
+
     @Property(bool, notify=toolsChanged)
     def canUndo(self) -> bool:
         return bool(self._undo_stack)
@@ -171,6 +185,24 @@ class EditController(QObject):
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+
+    @Slot()
+    def enterCropTool(self) -> None:
+        """A Vágás eszköz megnyitásakor (#71): az előnézet a lánc crop64
+        NÉLKÜLI változatát mutatja, hogy a teljes (vágatlan) forráskép
+        látsszon — a meglévő kijelölést a `cropSelection` alapján a QML
+        overlay rajzolja rá. Nem ír inibe, nem tol undo-lépést."""
+        self._require_active()
+        self._register_preview(self._session.clear_crop())
+        self._bump_revision()
+
+    @Slot()
+    def exitCropTool(self) -> None:
+        """A Vágás eszköz bezárásakor (Mégse) visszaáll a rendes, a
+        ténylegesen mentett crop64-et is tartalmazó előnézetre."""
+        self._require_active()
+        self._register_preview()
+        self._bump_revision()
 
     @Slot(float)
     def setTilt(self, param: float) -> None:

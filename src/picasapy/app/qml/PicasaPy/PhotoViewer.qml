@@ -66,21 +66,43 @@ Rectangle {
         if (visible) {
             beginEditCurrent()
         } else {
-            editController.endEdit()
+            // a cropActive lenullázása ELŐBB (még aktív szerkesztés alatt)
+            // fut, hogy az onCropActiveChanged->exitCropTool() még érvényes
+            // munkameneten hívódjon; utána zárja az endEdit()
             editorPanel.cropActive = false
             editorPanel.tiltActive = false
+            editController.endEdit()
         }
     }
     onCurrentIndexChanged: {
         if (visible) {
             beginEditCurrent()
             tiltSlider.value = 0
-            cropOverlay.resetSelection()
+            if (editorPanel.cropActive) {
+                editController.enterCropTool()
+                cropOverlay.loadSelection(editController.cropSelection)
+            } else {
+                cropOverlay.resetSelection()
+            }
         }
     }
     Connections {
         target: editController
         function onToolsChanged() { viewer.syncPanelFromController() }
+    }
+    // Vágás eszköz nyitása/zárása (#71): nyitáskor a lánc crop64 nélküli
+    // (teljes, vágatlan) előnézete + a meglévő kijelölés betöltése; záráskor
+    // (Mégse) a rendes, crop64-et is tartalmazó előnézet visszaáll
+    Connections {
+        target: editorPanel
+        function onCropActiveChanged() {
+            if (editorPanel.cropActive) {
+                editController.enterCropTool()
+                cropOverlay.loadSelection(editController.cropSelection)
+            } else {
+                editController.exitCropTool()
+            }
+        }
     }
     function next() {
         if (currentIndex < photoCount - 1) currentIndex += 1
