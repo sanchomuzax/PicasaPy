@@ -168,37 +168,47 @@ Rectangle {
             id: controlsRow
             anchors.centerIn: parent
             spacing: 6
+            // egységes gombmagasság: a csillag nagyobb glifje (15px) ne
+            // növessze meg a saját gombját a többihez képest
+            readonly property int buttonHeight: 28
 
             PicasaButton {
                 objectName: "slideshowExitButton"
                 text: "✕ " + qsTr("Exit")
+                height: controlsRow.buttonHeight
                 onClicked: show.stop()
             }
             PicasaButton {
                 text: "◀"; width: 34
+                height: controlsRow.buttonHeight
                 onClicked: show.goBack()
             }
             PicasaButton {
                 objectName: "slideshowPlayButton"
                 text: show.playing ? "❚❚" : "▶"
                 width: 34
+                height: controlsRow.buttonHeight
                 onClicked: show.togglePause()
             }
             PicasaButton {
                 text: "▶▶"; width: 38
+                height: controlsRow.buttonHeight
                 onClicked: show.advance()
             }
             PicasaButton {
                 text: "↺"; width: 34
+                height: controlsRow.buttonHeight
                 onClicked: show.rotateCurrent(-1)
             }
             PicasaButton {
                 text: "↻"; width: 34
+                height: controlsRow.buttonHeight
                 onClicked: show.rotateCurrent(1)
             }
             PicasaButton {
                 objectName: "slideshowStarButton"
                 width: 34
+                height: controlsRow.buttonHeight
                 onClicked: show.starCurrent()
                 contentItem: Text {
                     text: "★"
