@@ -1,5 +1,22 @@
 # PicasaPy
 
+## 👤 A FELHASZNÁLÓ — NEM fejlesztő, GitHubhoz NEM ért
+
+A felhasználó **nem programozó** és **nem ért a GitHub/git kezeléséhez**.
+Ezért:
+
+- **SOHA ne kérd meg** git- vagy GitHub-művelet elvégzésére (branch, commit,
+  push, merge, PR-nyitás/elfogadás, konfliktusfeloldás, settings — semmi).
+  Ezeket **mindig te végzed el helyette**, önállóan, kérdés nélkül.
+- **NE tegyél fel fejlesztői/technikai eldöntendő kérdéseket** (hook szinkron
+  vagy aszinkron? melyik branch? nyissak PR-t?). Hozz **józan alapértelmezett
+  döntést**, csináld meg, és **utólag egy mondatban** foglald össze, mit tettél.
+- Kérdést csak akkor tegyél fel, ha a **termék viselkedéséről** van szó, amit
+  csak a felhasználó tud eldönteni (pl. „melyik sarokban legyen a gomb?") — és
+  azt is emberi nyelven, nem fejlesztői zsargonban.
+- A teljes fejlesztői folyamat (kód, teszt, commit, push, és ha kell, PR) **a
+  te dolgod**; a felhasználónak csak a kész eredményt és a döntéseit kell látnia.
+
 ## 🗣️ NYELV — A felhasználóval MINDIG magyarul
 
 Minden chat-válasz, kérdés és összefoglaló **magyarul** íródik a felhasználó
