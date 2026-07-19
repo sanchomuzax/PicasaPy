@@ -22,6 +22,8 @@ Rectangle {
            photosModel.isVideoAt(currentIndex)) === true
         : false
     signal closed()
+    // #8: a felső ▶ Lejátszás gomb — diavetítés az aktuális képtől
+    signal playRequested()
 
     function show(index) { currentIndex = index; forceActiveFocus() }
 
@@ -191,9 +193,10 @@ Rectangle {
                 }
                 Item { Layout.fillWidth: true }
                 PicasaButton {
+                    objectName: "viewerPlayButton"
                     text: "▶ " + qsTr("Play")
-                    enabled: false
                     font.pixelSize: Theme.fontSize
+                    onClicked: viewer.playRequested()
                 }
                 PicasaButton {
                     objectName: "viewerPrevButton"

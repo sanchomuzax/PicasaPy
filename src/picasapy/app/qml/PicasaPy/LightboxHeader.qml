@@ -10,6 +10,8 @@ ColumnLayout {
     property string dateText: ""
     property string description: ""
     signal descriptionEdited(string text)
+    // zöld ▸: a mappa diavetítése (#8) — a bekötés a Main.qml-ben
+    signal playRequested()
     spacing: 3
 
     RowLayout {
@@ -46,12 +48,16 @@ ColumnLayout {
         Layout.topMargin: 4
         spacing: 6
         Rectangle {
+            objectName: "headerPlayButton"
             width: 26; height: 22; radius: 3
-            color: "#ffffff"; border.color: Theme.chromeBorder
+            color: headerPlayHover.hovered ? "#f0f0ee" : "#ffffff"
+            border.color: Theme.chromeBorder
             Text {
                 anchors.centerIn: parent
                 text: "▸"; color: Theme.picasaGreen; font.pixelSize: 13
             }
+            HoverHandler { id: headerPlayHover }
+            TapHandler { onTapped: header.playRequested() }
         }
         Rectangle {
             width: 26; height: 22; radius: 3
