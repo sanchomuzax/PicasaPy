@@ -7,16 +7,12 @@ on:
 
 jobs:
   test:
-    name: Test (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    name: Test (ubuntu-latest)
+    runs-on: ubuntu-latest
     # Egészséges futás ~5 perc; korlát nélkül egy beragadt (#53 GIL-deadlock)
     # pytest 6 órán át foglalná a runnert, és eldugítaná a teljes Actions-sort
     # (2026-07-19-en 19 beragadt futás állította le a release-automatikát).
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
     env:
       QT_QPA_PLATFORM: offscreen
 
@@ -30,7 +26,6 @@ jobs:
           python-version: "3.12"
 
       - name: Install Linux Qt runtime dependencies
-        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           # libpulse0: a Qt Multimedia (videó-lejátszás, #14) betöltéséhez
@@ -39,7 +34,39 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install PySide6 opencv-python-headless pillow piexif watchdog pytest pytest-cov
+          pip install PySide6 opencv-python-headless pillow piexif watchdog pytest pytest-cov pytest-timeout
 
       - name: Run tests
-        run: python -m pytest -q --tb=short
+        # --timeout: egyedi teszt akadjon be, ne az egész job (ld.
+        # docs/decisions/ci-windows-strategy.md) — thread-method, mert az
+        # a signal-alapúnál megbízhatóbban szakítja meg a Qt event loopot.
+        run: python -m pytest -q --tb=short --timeout=60 --timeout-method=thread
+
+  test-windows:
+    name: Test (windows-latest)
+    runs-on: windows-latest
+    # Csak a main-re kerüléskor fut (ld. docs/decisions/ci-windows-strategy.md)
+    # — a Windows runner lassú/flaky, minden PR-en futtatva feleslegesen
+    # lassítja/blokkolja a napi munkát; a platform-lefedettséghez elég, ha
+    # a mergelt kódon fut le.
+    if: github.event_name == 'push'
+    timeout-minutes: 20
+    env:
+      QT_QPA_PLATFORM: offscreen
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PySide6 opencv-python-headless pillow piexif watchdog pytest pytest-cov pytest-timeout
+
+      - name: Run tests
+        run: python -m pytest -q --tb=short --timeout=60 --timeout-method=thread
