@@ -145,6 +145,23 @@ class TestSyncTree:
         assert [p.name for p in photos] == ["IMG_0001.jpg", "IMG_0002.jpg"]
         assert photos[0].star is False
 
+    def test_decompression_bomb_photo_does_not_abort_sync(self, conn, library):
+        # #134: egy irreálisan nagy deklarált méretű ("óriáskép",
+        # decompression bomb) fájl a metaadat-olvasásnál eddig kivételt
+        # dobott, ami a teljes sync_tree-t megakasztotta — a többi fájl be
+        # sem került az indexbe. A bombának csak a saját metaadata legyen
+        # üres, a szinkron menjen tovább.
+        (library / "nyaralas" / "oriaskep.jpg").write_bytes(
+            b"P6\n50000 50000\n255\n" + b"\x00" * 16
+        )
+        sync_tree(conn, library)
+        photos = photos_in_folder(conn, library / "nyaralas")
+        assert [p.name for p in photos] == [
+            "IMG_0001.jpg",
+            "IMG_0002.jpg",
+            "oriaskep.jpg",
+        ]
+
     def test_relative_root_stored_as_absolute(self, conn, library, monkeypatch):
         # Az index kanonikus (abszolút) útvonalakra kulcsol — különböző
         # alakú gyökerekkel sem duplikálódhat / maradhat árva sor.

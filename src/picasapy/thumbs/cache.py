@@ -74,7 +74,12 @@ class ThumbnailCache:
         try:
             with Image.open(source) as probe:
                 longest = max(probe.size)
-        except (OSError, UnidentifiedImageError, ValueError):
+        except (
+            OSError,
+            UnidentifiedImageError,
+            ValueError,
+            Image.DecompressionBombError,
+        ):
             return cv2.IMREAD_COLOR
         for factor, flag in _REDUCED_FLAGS:
             if longest // factor >= self._size * 2:

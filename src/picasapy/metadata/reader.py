@@ -3,17 +3,35 @@
 Picasa-viselkedés: JPEG-nél a felirat és a kulcsszavak az IPTC-ben élnek
 (nem a .picasa.ini-ben). Az olvasó soha nem dob: sérült vagy nem kép fájlra
 EMPTY_METADATA-t ad — a szinkron nem bukhat el egyetlen rossz fájlon.
+
+#134: ide tartozik a Pillow "decompression bomb" védelme is — egy irreálisan
+nagy deklarált méretű (fejlécben meghamisított) fájl a `PIL.Image.open()`-t
+DecompressionBombError-ral (vagy szigorú módban Warning-gal) buktatja, ezt is
+el kell nyelni EMPTY_METADATA-ként. Az `Image.MAX_IMAGE_PIXELS` küszöbét
+TUDATOSAN nem emeljük meg: a Pillow alapértéke (~178 megapixel) a valós
+panorámaképeket (jellemzően összefűzött, de értelmes felbontású fájlok) még
+átengedi, a támadó célú, irreálisan nagy deklarált méretű fájlokat viszont
+kiszűri — a küszöb feltornázása épp ezt a védelmet venné el.
 """
 
 from __future__ import annotations
 
 import math
+import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 from PIL import Image
 from PIL.IptcImagePlugin import getiptcinfo
+
+_BOMB_EXCEPTIONS = (
+    OSError,
+    ValueError,
+    SyntaxError,
+    Image.DecompressionBombError,
+    Image.DecompressionBombWarning,
+)
 
 _ORIENTATION_TAG = 274
 _DATETIME_TAG = 306
@@ -53,19 +71,25 @@ EMPTY_METADATA = FileMetadata()
 
 def read_file_metadata(path: str | Path) -> FileMetadata:
     try:
-        with Image.open(path) as image:
-            exif = image.getexif()
-            iptc = getiptcinfo(image) or {}
-            width, height = image.size
-            return FileMetadata(
-                taken_at=_taken_at(exif),
-                orientation=_orientation(exif),
-                width=width,
-                height=height,
-                caption=_decode(iptc.get(_IPTC_CAPTION)),
-                keywords=_keywords(iptc.get(_IPTC_KEYWORDS)),
-            )
-    except (OSError, ValueError, SyntaxError):
+        with warnings.catch_warnings():
+            # A DecompressionBombWarning-t (a hard limit ALATTI, de gyanúsan
+            # nagy méretnél) is hibaként kezeljük, hogy az except ág elkapja
+            # — így a szigorú és a "csak figyelmeztet" Pillow-eset egyaránt
+            # EMPTY_METADATA-t ad, sosem dob tovább.
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(path) as image:
+                exif = image.getexif()
+                iptc = getiptcinfo(image) or {}
+                width, height = image.size
+                return FileMetadata(
+                    taken_at=_taken_at(exif),
+                    orientation=_orientation(exif),
+                    width=width,
+                    height=height,
+                    caption=_decode(iptc.get(_IPTC_CAPTION)),
+                    keywords=_keywords(iptc.get(_IPTC_KEYWORDS)),
+                )
+    except _BOMB_EXCEPTIONS:
         return EMPTY_METADATA
 
 
@@ -89,10 +113,12 @@ def read_exif_details(path: str | Path) -> ExifDetails:
     """Expozíciós EXIF-adatok igény szerinti olvasása (nem indexelt) —
     sérült/nem kép fájlra soha nem dob, EMPTY_EXIF_DETAILS-t ad."""
     try:
-        with Image.open(path) as image:
-            exif = image.getexif()
-            ifd = exif.get_ifd(_EXIF_IFD)
-    except (OSError, ValueError, SyntaxError):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(path) as image:
+                exif = image.getexif()
+                ifd = exif.get_ifd(_EXIF_IFD)
+    except _BOMB_EXCEPTIONS:
         return EMPTY_EXIF_DETAILS
     flash = ifd.get(_FLASH_TAG)
     white_balance = ifd.get(_WHITE_BALANCE_TAG)

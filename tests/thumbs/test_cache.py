@@ -60,6 +60,17 @@ class TestGetOrCreate:
         bad.write_bytes(b"nem kep")
         assert cache.get_or_create(bad, 1, 7) is None
 
+    def test_read_flag_survives_decompression_bomb(self, cache, tmp_path):
+        # #134: az irreálisan nagy deklarált méretű ("óriáskép") fájl a
+        # Pillow DecompressionBombError-ját dobná a próba-megnyitásnál — a
+        # _read_flag ezt is a többi "nem dekódolható forrás" esettel
+        # egyezően kezelje (fallback IMREAD_COLOR-ra), ne dobjon tovább.
+        bomb = tmp_path / "oriaskep.jpg"
+        bomb.write_bytes(b"P6\n50000 50000\n255\n" + b"\x00" * 16)
+        import cv2
+
+        assert cache._read_flag(bomb) == cv2.IMREAD_COLOR
+
     def test_upscale_avoided(self, cache, tmp_path):
         small = make_jpeg(tmp_path / "kicsi.jpg", size=(20, 10))
         thumb = cache.get_or_create(small, *_stat_key(small))
