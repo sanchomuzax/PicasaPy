@@ -16,7 +16,9 @@ import pytest
 
 
 def test_video_viewer_probe(tmp_path):
-    pytest.importorskip("PySide6.QtMultimedia")
+    # exc_type=ImportError: a felhő-konténerben a modul megvan, de a
+    # rendszerkönyvtára (libpulse) hiányzik — az is kihagyás, nem hiba
+    pytest.importorskip("PySide6.QtMultimedia", exc_type=ImportError)
     probe = Path(__file__).parent / "qml_video_probe.py"
     repo_root = Path(__file__).resolve().parents[2]
     env = dict(os.environ)
