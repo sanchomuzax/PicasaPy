@@ -108,7 +108,6 @@ def _apply_finetune_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 _HANDLERS = {
-    "crop64": _apply_crop_op,
     "tilt": _apply_tilt_op,
     "redeye": lambda image, op: apply_redeye(image),
     "enhance": lambda image, op: apply_enhance(image),
@@ -136,13 +135,26 @@ def apply_filters(
     A nem támogatott szűrőket szándékosan némán kihagyja (részleges
     előnézet), de a kihagyott nevek sorrendhelyes listáját is visszaadja:
     `(kép, kihagyott_nevek)`.
+
+    A `crop64` a láncban csak szerkesztési TÖRTÉNET — önmagában NEM vág
+    (spec: `docs/specs/filters-decoded.md`). A tényleges vágást a képszekció
+    külön `crop=` kulcsa adja, ami a lánc EFFEKTÍV (utolsó) crop64-ével egyezik.
+    Ezt egyetlenegyszer, a teljes képre futó effektusok UTÁN alkalmazzuk, az
+    EREDETI képméretre vonatkozó koordinátákkal (a tilt méret-tartó). Így a
+    több crop64-et tartalmazó valódi Picasa-láncok sem kaszkádolnak (#130).
     """
     result = image
     skipped: list[str] = []
+    crop_op: FilterOp | None = None
     for op in ops:
+        if op.name.casefold() == "crop64":
+            crop_op = op  # csak az effektív (utolsó) crop64 számít
+            continue
         handler = _HANDLERS.get(op.name.casefold())
         if handler is None:
             skipped.append(op.name)
             continue
         result = handler(result, op)
+    if crop_op is not None:
+        result = _apply_crop_op(result, crop_op)
     return result, tuple(skipped)

@@ -46,6 +46,46 @@ class TestApplyFilters:
         assert result.shape == expected.shape
         assert skipped == ()
 
+    def test_tobb_crop64_nem_kaszkadol(self) -> None:
+        # #130: valódi Picasa-láncban több crop64 lehet (szerkesztési
+        # történet), de a tényleges vágás EGY (a crop= kulcs = az effektív,
+        # utolsó crop64), az EREDETI képméretre. A régi kód mindet sorban,
+        # az aktuális köztes képre alkalmazta → kaszkád-vágás (rossz kivágás).
+        from picasapy.ini.rect64 import decode_rect64
+
+        image = _gradient_image(width=40, height=40)
+        first = "2000200060006000"   # egy köztes vágás a történetben
+        last = "10001000e000e000"    # az effektív (végső) vágás
+        ops = (
+            FilterOp("crop64", ("1", first)),
+            FilterOp("crop64", ("1", last)),
+        )
+        result, skipped = apply_filters(image, ops)
+
+        # helyes: az EREDETI képre alkalmazott EGYETLEN (utolsó) vágás
+        expected = apply_crop(image, decode_rect64(last))
+        np.testing.assert_array_equal(result, expected)
+
+        # és NEM a kaszkád (az elsőre vágott képre alkalmazott második)
+        cascade = apply_crop(apply_crop(image, decode_rect64(first)),
+                             decode_rect64(last))
+        assert result.shape != cascade.shape
+        assert skipped == ()
+
+    def test_crop_az_effektusok_utan_a_teljes_kepre(self) -> None:
+        # #130: a crop= a filterek UTÁN, a teljes képre alkalmazódik (Picasa-
+        # szemantika: a crop= külön kulcs). A fill a teljes képen fut, majd a
+        # végén vágunk — nem a vágott kis képen futna a fill.
+        from picasapy.ini.rect64 import decode_rect64
+
+        image = _gradient_image(width=40, height=20)
+        rect = "20002000c000c000"
+        ops = (FilterOp("fill", ("1", "0.5")), FilterOp("crop64", ("1", rect)))
+        result, skipped = apply_filters(image, ops)
+        expected = apply_crop(apply_fill(image, 0.5), decode_rect64(rect))
+        np.testing.assert_array_equal(result, expected)
+        assert skipped == ()
+
     def test_nem_tamogatott_szurot_nemán_kihagyja(self) -> None:
         image = _gradient_image()
         ops = (FilterOp("Vignette", ("1", "0.5")),)
