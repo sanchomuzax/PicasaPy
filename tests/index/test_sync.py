@@ -462,3 +462,73 @@ class TestSyncTreeExclude:
         excluded = library / "nyaralas"
         sync_tree(conn, library, exclude=(excluded,))
         assert photos_in_folder(conn, excluded) == ()
+
+
+class TestSyncProgress:
+    """#209: streamelt sync — mappánkénti progress-callback (a hívó a
+    worker-szálon kapja; sorrend és tartalom itt ellenőrzött)."""
+
+    @pytest.fixture
+    def multi_library(self, tmp_path):
+        root = tmp_path / "kepek"
+        for nev, darab in (("a-mappa", 2), ("b-mappa", 1), ("c-mappa", 3)):
+            (root / nev).mkdir(parents=True)
+            for i in range(darab):
+                (root / nev / f"IMG_{i:04d}.jpg").write_bytes(b"x" * (i + 1))
+        return root
+
+    def test_progress_called_per_folder_in_order(self, conn, multi_library):
+        calls = []
+        sync_tree(
+            conn,
+            multi_library,
+            progress=lambda *args: calls.append(args),
+        )
+        # három mappa → három hívás, útvonal szerinti sorrendben
+        assert [c[0] for c in calls] == [
+            str(multi_library / "a-mappa"),
+            str(multi_library / "b-mappa"),
+            str(multi_library / "c-mappa"),
+        ]
+        # kész-mappák számlálója 1..N, az összes-ismert konstans N
+        assert [c[1] for c in calls] == [1, 2, 3]
+        assert [c[2] for c in calls] == [3, 3, 3]
+        # az új fotók kumulált száma: 2, 2+1, 2+1+3
+        assert [c[3] for c in calls] == [2, 3, 6]
+
+    def test_progress_reports_skipped_folders_without_new(
+        self, conn, multi_library
+    ):
+        # első futás: minden új; második (inkrementális) futás: minden
+        # mappa kihagyott — a callback akkor is mappánként jelez, új=0
+        sync_tree(conn, multi_library)
+        calls = []
+        sync_tree(
+            conn,
+            multi_library,
+            progress=lambda *args: calls.append(args),
+        )
+        assert len(calls) == 3
+        assert [c[1] for c in calls] == [1, 2, 3]
+        assert all(c[3] == 0 for c in calls)
+
+    def test_progress_counts_only_new_photos(self, conn, multi_library):
+        # meglévő indexre érkező EGY új fájl: csak az számít újnak
+        sync_tree(conn, multi_library)
+        import time as _time
+
+        _time.sleep(0.01)
+        (multi_library / "b-mappa" / "IMG_9999.jpg").write_bytes(b"z")
+        calls = []
+        sync_tree(
+            conn,
+            multi_library,
+            incremental=False,
+            progress=lambda *args: calls.append(args),
+        )
+        assert calls[-1][3] == 1
+
+    def test_progress_none_is_default(self, conn, multi_library):
+        # progress nélkül a viselkedés változatlan (visszafelé kompatibilis)
+        sync_tree(conn, multi_library)
+        assert len(photos_in_folder(conn, multi_library / "a-mappa")) == 2
