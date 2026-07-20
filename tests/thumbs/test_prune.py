@@ -74,6 +74,10 @@ class TestCacheIntegration:
         _make_entry(root, "aa", "regi.jpg", 100, age_seconds=2000)
         kept = _make_entry(root, "bb", "uj.jpg", 100, age_seconds=1000)
         cache = ThumbnailCache(root, size=64, max_bytes=100)
+        # Az induláskori háttér-takarítót bevárjuk, hogy ne versenyezzen
+        # se a szinkron prune-nal, se a tmp-mappa teszt végi törlésével.
+        assert cache._prune_thread is not None
+        cache._prune_thread.join(5)
         cache.prune()
         assert list(root.rglob("*.jpg")) == [kept]
 

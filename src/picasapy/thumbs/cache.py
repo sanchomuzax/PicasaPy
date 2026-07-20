@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import threading
 from pathlib import Path
 
 import cv2
@@ -57,8 +58,11 @@ class ThumbnailCache:
         self._root = Path(root)
         self._size = size
         self._max_bytes = max_bytes
+        # A szál referenciáját eltároljuk, hogy a hívó (pl. teszt) be
+        # tudja várni — enélkül a takarítás versenyezne a mappa-törléssel.
+        self._prune_thread: threading.Thread | None = None
         if max_bytes is not None:
-            prune_in_background(self._root, max_bytes)
+            self._prune_thread = prune_in_background(self._root, max_bytes)
 
     def prune(self) -> int:
         """Szinkron LRU-takarítás a beállított korlátig; a törölt bájtok

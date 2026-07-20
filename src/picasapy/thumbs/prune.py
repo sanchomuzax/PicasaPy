@@ -31,15 +31,21 @@ def prune_cache_dir(root: str | Path, max_bytes: int) -> int:
         return 0
     entries: list[tuple[float, int, Path]] = []
     total = 0
-    for path in root.rglob("*.jpg"):
-        try:
-            info = path.stat()
-        except OSError:
-            continue  # időközben eltűnt (párhuzamos takarító/író)
-        # atime, ha a fájlrendszer vezeti; különben az mtime a közelítés
-        last_used = max(info.st_atime, info.st_mtime)
-        entries.append((last_used, info.st_size, path))
-        total += info.st_size
+    try:
+        for path in root.rglob("*.jpg"):
+            try:
+                info = path.stat()
+            except OSError:
+                continue  # időközben eltűnt (párhuzamos takarító/író)
+            # atime, ha a fájlrendszer vezeti; különben az mtime a közelítés
+            last_used = max(info.st_atime, info.st_mtime)
+            entries.append((last_used, info.st_size, path))
+            total += info.st_size
+    except OSError:
+        # Maga a bejárás is megszakadhat (a fát közben törlik — pl. a
+        # cache-gyökér eltűnik a háttérszál futása alatt): best-effort,
+        # az addig összegyűjtött bejegyzésekkel megyünk tovább.
+        pass
     if total <= max_bytes:
         return 0
     freed = 0
@@ -56,10 +62,11 @@ def prune_cache_dir(root: str | Path, max_bytes: int) -> int:
 
 def _remove_empty_subdirs(root: Path) -> None:
     """A kiürült shard-almappák (pl. `ab/`) eltávolítása — best-effort."""
-    for child in root.iterdir():
-        if child.is_dir():
-            with contextlib.suppress(OSError):
-                child.rmdir()  # csak ha üres; különben OSError, lenyelve
+    with contextlib.suppress(OSError):  # a gyökér is eltűnhetett közben
+        for child in root.iterdir():
+            if child.is_dir():
+                with contextlib.suppress(OSError):
+                    child.rmdir()  # csak ha üres; különben OSError, lenyelve
 
 
 def prune_in_background(root: str | Path, max_bytes: int) -> threading.Thread:
