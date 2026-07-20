@@ -66,3 +66,13 @@ class TestReadTable:
         (tmp_path / "imagedata_caption.pmp").write_bytes(b"\x00" * 30)
         with pytest.raises(PmpFormatError):
             read_table(tmp_path, "imagedata")
+
+    def test_columns_field_is_immutable(self, tmp_path):
+        # immutability-elv: a frozen dataclass NE tartalmazzon mutálható
+        # dict mezőt — a `columns`-nak írásvédettnek kell lennie
+        (tmp_path / "imagedata_caption.pmp").write_bytes(
+            build_pmp_column(0x6, ["a"])
+        )
+        table = read_table(tmp_path, "imagedata")
+        with pytest.raises(TypeError):
+            table.columns["caption"] = ("modositva",)
