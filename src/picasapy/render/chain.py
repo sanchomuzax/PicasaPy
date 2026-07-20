@@ -11,7 +11,13 @@ import numpy as np
 
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import decode_rect64
-from picasapy.render.color import apply_bw, apply_saturation, apply_sepia, apply_warm
+from picasapy.render.color import (
+    apply_bw,
+    apply_grain,
+    apply_saturation,
+    apply_sepia,
+    apply_warm,
+)
 from picasapy.render.effects import (
     GLOW_V1_INTENSITY,
     GLOW_V1_RADIUS,
@@ -121,6 +127,14 @@ def _apply_finetune_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # A grain2 sztochasztikus (véletlen mag); az élő előnézetben viszont
+    # rögzített maggal futtatjuk (seed=0), hogy egy változatlan lánc újra-
+    # renderelésekor a szemcse ne "villogjon" — a spec elfogadási teszthez
+    # (statisztikai) ez nem szükséges, csak az UI-élmény miatt választott mag.
+    return apply_grain(image, seed=0)
+
+
 def _effect_float(op: FilterOp, index: int, default: float) -> float:
     """A flag utáni `index`-edik paraméter számként, hiányzónál `default`."""
     params = op.float_params()
@@ -193,9 +207,6 @@ def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
-# A grain2-nek SZÁNDÉKOSAN nincs handlere (#149): a filmszemcse véletlen
-# maggal fut, pixelhűen nem reprodukálható (csak statisztikailag, ld.
-# docs/specs/filters-decoded.md) — a lánc kihagyja, a round-trip őrzi.
 _HANDLERS = {
     "tilt": _apply_tilt_op,
     "redeye": lambda image, op: apply_redeye(image),
@@ -211,6 +222,7 @@ _HANDLERS = {
     "sat": _apply_sat_op,
     "unsharp": _apply_unsharp_op,
     "unsharp2": _apply_unsharp_op,
+    "grain2": _apply_grain_op,
     "vignette": _apply_vignette_op,  # az ini-ben nagybetűs: Vignette
     "glow": _apply_glow_op,
     "glow2": _apply_glow_op,
@@ -227,11 +239,12 @@ def apply_filters(
 ) -> tuple[np.ndarray, tuple[str, ...]]:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, enhance,
     autolight, autocolor, fill, finetune/finetune2, bw, sepia, warm, sat,
-    unsharp/unsharp2, Vignette, glow/glow2, tint, ansel, radblur, radsat,
-    dir_tint).
+    unsharp/unsharp2, grain2, Vignette, glow/glow2, tint, ansel, radblur,
+    radsat, dir_tint).
 
-    A `grain2` szándékosan NEM támogatott (#149): véletlen magos filmszemcse,
-    pixelhűen nem reprodukálható — kihagyottként jelezzük, a round-trip őrzi.
+    A `grain2` rögzített maggal (seed=0) renderel (#20): a Picasa szemcséje
+    véletlen magos, pixelhűen nem reprodukálható — a determinisztikus mag az
+    előnézet-villogást kerüli el, statisztikailag a spec szerinti a kimenet.
 
     A nem támogatott szűrőket szándékosan némán kihagyja (részleges
     előnézet), de a kihagyott nevek sorrendhelyes listáját is visszaadja:

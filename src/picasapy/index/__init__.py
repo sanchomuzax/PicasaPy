@@ -11,7 +11,7 @@ from .queries import (
     starred_photos,
 )
 from .schema import SCHEMA_VERSION
-from .sync import prune_foreign_folders, remove_root, sync_tree
+from .sync import prune_foreign_folders, remove_root, sync_folder, sync_tree
 
 __all__ = [
     "SCHEMA_VERSION",
@@ -25,5 +25,6 @@ __all__ = [
     "search_photos",
     "search_suggestions",
     "starred_photos",
+    "sync_folder",
     "sync_tree",
 ]

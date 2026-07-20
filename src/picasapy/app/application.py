@@ -6,6 +6,7 @@ Könyvtár-gyökerek: parancssori argumentumok, vagy a Picasa-paritású
 
 from __future__ import annotations
 
+import ctypes
 import math
 import os
 import sys
@@ -13,7 +14,6 @@ from pathlib import Path
 
 import shutil
 import subprocess
-import sys
 
 from PySide6.QtCore import QLocale, QLockFile, Qt, QTranslator
 from PySide6.QtGui import QGuiApplication, QIcon
@@ -31,6 +31,7 @@ from picasapy.version import version_string
 from .controller import AppController
 from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
+from .faces_helper import FacesHelper
 from .fileops_controller import FileOpsController
 from .thumbnail_provider import ThumbnailProvider
 
@@ -126,6 +127,30 @@ def _acquire_instance_lock(data_dir: Path) -> QLockFile | None:
     if lock.tryLock(100):
         return lock
     return None
+
+
+def _set_windows_app_id() -> None:
+    """Windows taskbar-ikon: explicit AppUserModelID-beállítás (#67).
+
+    Windows alatt, ha az alkalmazás python.exe/pythonw.exe-ből fut (saját .exe
+    nélkül), a taskbar az értelmezőhöz köti a csoportosítást és az ikont,
+    hacsak nincs explicit AppUserModelID beállítva. Ez az API csak Windowson
+    érhető el; Linuxon/macOS-en nincs hatása.
+
+    A hívás a QGuiApplication indítása ELŐTT kell történjen, hogy a taskbar-
+    ikon azonnal helyesen jelenjen meg.
+    """
+    if sys.platform != "win32":
+        return  # Csak Windowson van értelme
+
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "PicasaPy.PicasaPy"
+        )
+    except (AttributeError, OSError):
+        # AttributeError: régi Windows-verzió vagy hiányzó API
+        # OSError: nem admin-felhasználó vagy rendszer-hiba — csendben kimarad
+        pass
 
 
 def _install_desktop_entry() -> None:
@@ -237,6 +262,9 @@ def run(argv: list[str]) -> int:
         )
     QQuickStyle.setStyle("Fusion")
 
+    # Windows taskbar-ikon: explicit AppUserModelID-beállítás (#67)
+    _set_windows_app_id()
+
     app = QGuiApplication(argv)
     app.setApplicationName("PicasaPy")
     app.setOrganizationName("PicasaPy")
@@ -302,6 +330,12 @@ def run(argv: list[str]) -> int:
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
     )
+    # #147: a néző arc-keret overlay-jének csak-olvasás szintű hídja —
+    # a faces=/Contacts2 közvetlenül a fotó .picasa.ini-jéből olvasva.
+    # A helyi változóban tartás megakadályozza, hogy a Python GC a
+    # context property mögül idő előtt eltüntesse a QObject-et.
+    faces_helper = FacesHelper()
+    engine.rootContext().setContextProperty("facesHelper", faces_helper)
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().
     engine.rootContext().setContextProperty("appVersion", version_string())

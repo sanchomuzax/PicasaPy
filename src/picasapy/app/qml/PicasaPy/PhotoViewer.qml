@@ -25,6 +25,20 @@ Rectangle {
     // #8: a felső ▶ Lejátszás gomb — diavetítés az aktuális képtől
     signal playRequested()
 
+    // #147: csak-olvasás arc-keret overlay — alapból KIKAPCSOLVA (a teljes
+    // felismerés/Emberek-panel a #26-ban). currentFaces: FacesHelper.facesFor()
+    // eredménye; a photosModel.revision a forgatás-kötés mintájára triggerel
+    // újraértékelést; facesHelper hiányában (régi teszt-fixture) üres lista.
+    property bool facesVisible: false
+    function toggleFaces() { viewer.facesVisible = !viewer.facesVisible }
+    readonly property var currentFaces: (!viewer.facesVisible || !photosModel
+                                          || currentIndex < 0
+                                          || typeof facesHelper === "undefined"
+                                          || !facesHelper)
+        ? []
+        : (photosModel.revision,
+           facesHelper.facesFor(photosModel.filePathAt(currentIndex)))
+
     // -- zoom-állapotgép (#6): fit / 1:1 / tetszőleges -------------------
     // zoomFactor: 1.0 = illesztés (fit); a skála az illesztett mérethez
     // képest értendő. A pásztázás (pan) csak nagyításnál él.
@@ -95,6 +109,19 @@ Rectangle {
         case "enhance": return qsTr("I'm Feeling Lucky")
         case "autolight": return qsTr("Auto Contrast")
         case "autocolor": return qsTr("Auto Color")
+        case "finetune": return qsTr("Fine Tuning")
+        // effekt-kulcsok (#20): a lánc bármely elemeként visszavonható
+        case "sepia": return qsTr("Sepia")
+        case "bw": return qsTr("B&W")
+        case "warm": return qsTr("Warmify")
+        case "grain2": return qsTr("Film Grain")
+        case "tint": return qsTr("Tint")
+        case "sat": return qsTr("Saturation")
+        case "radblur": return qsTr("Soft Focus")
+        case "glow2": return qsTr("Glow")
+        case "ansel": return qsTr("Filtered B&W")
+        case "radsat": return qsTr("Focal Saturation")
+        case "dir_tint": return qsTr("Graduated Tint")
         // ismeretlen (pl. valódi Picasa által írt) szűrő: a nyers név is
         // informatívabb, mint az üres felirat
         default: return action
@@ -133,6 +160,10 @@ Rectangle {
         editorPanel.enhanceEnabled = editController.enhanceEnabled
         editorPanel.autolightEnabled = editController.autolightEnabled
         editorPanel.autocolorEnabled = editController.autocolorEnabled
+        // Finomhangolás-csúszkák (#20): a panel binding már frissítette a
+        // fillLight/highlights/shadows/colorTemp értékeket a kontrollerből —
+        // ez a hívás azokat suppress mellett a csúszkákba is beírja
+        editorPanel.syncFinetuneSliders()
     }
     onVisibleChanged: {
         if (visible) {
@@ -154,6 +185,9 @@ Rectangle {
             // lapozáskor a csúszka az ÚJ kép mentett tilt-értékére áll —
             // suppressPreview miatt ez nem írja felül a preview-t (#131)
             syncTiltSlider()
+            // ugyanígy a Finomhangolás-csúszkák is az új kép mentett
+            // értékeire állnak (#20)
+            editorPanel.syncFinetuneSliders()
             if (editorPanel.cropActive) {
                 editController.enterCropTool()
                 cropOverlay.loadSelection(editController.cropSelection)
@@ -233,6 +267,14 @@ Rectangle {
     Keys.onSpacePressed: {
         if (viewer.isCurrentVideo && videoLoader.item)
             videoLoader.item.togglePlayback()
+    }
+    // F: arc-keretek be/ki (#147) — szövegmezőben (pl. felirat) a saját
+    // Keys-kezelés (gépelés) már elfogadja, ide nem buborékol.
+    Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
+            viewer.toggleFaces()
+            event.accepted = true
+        }
     }
 
     ColumnLayout {
@@ -354,6 +396,15 @@ Rectangle {
                                ? qsTr("Redo") + ": "
                                  + viewer.toolLabel(editController.redoAction)
                                : qsTr("Redo")
+                    // Finomhangolás (#20): a mentett értékek a kontrollerből —
+                    // a syncFinetuneSliders() ezekből tölti a csúszkákat
+                    fillLight: editController.fillLight
+                    highlights: editController.highlights
+                    shadows: editController.shadows
+                    colorTemp: editController.colorTemp
+                    onFinetunePreview: (f, h, s, t) => editController.previewFinetune(f, h, s, t)
+                    onFinetuneCommit: (f, h, s, t) => editController.setFinetune(f, h, s, t)
+                    onEffectRequested: (name) => editController.applyEffect(name)
                     onToolActivated: function(tool) {
                         // crop/tilt helyi mód (overlay/csúszka); a többi
                         // azonnali ini-művelet az EditControlleren át
@@ -400,7 +451,7 @@ Rectangle {
                     anchors.margins: 10
                     spacing: 6
                     Label {
-                        visible: editorPanel.tiltActive
+                        visible: editorPanel.tiltActive && editorPanel.activeTab === 0
                         text: qsTr("Straighten")
                         font.pixelSize: Theme.fontSize
                         color: Theme.textGray
@@ -411,7 +462,7 @@ Rectangle {
                     Slider {
                         id: tiltSlider
                         objectName: "tiltSlider"
-                        visible: editorPanel.tiltActive
+                        visible: editorPanel.tiltActive && editorPanel.activeTab === 0
                         from: -1; to: 1; value: 0
                         // programozott szinkronnál (nyitás/lapozás) NEM
                         // váltunk ki previewTilt-et — az felülírná a
@@ -570,6 +621,20 @@ Rectangle {
                             editorPanel.cropActive = false
                         }
                     }
+
+                    // #147: a mentett arc-régiók a kép kirajzolt (letterbox
+                    // nélküli) területén — a cropOverlay mintájára.
+                    FacesOverlay {
+                        id: facesOverlay
+                        parent: photo
+                        visible: viewer.facesVisible && !editorPanel.cropActive
+                                 && !viewer.isCurrentVideo
+                        x: (photo.width - photo.paintedWidth) / 2
+                        y: (photo.height - photo.paintedHeight) / 2
+                        width: photo.paintedWidth
+                        height: photo.paintedHeight
+                        faces: viewer.currentFaces
+                    }
                 }
                 // #6: nagyított képen húzással pásztázás; dupla katt = fit.
                 // Illesztett nézetben inaktív — az események átmennek rajta.
@@ -628,6 +693,17 @@ Rectangle {
                             text: "1:1"
                             width: 30; height: 20
                             onClicked: viewer.zoomActual()
+                        }
+                        // #147: arc-keretek be/ki (F billentyűvel egyenértékű)
+                        PicasaButton {
+                            objectName: "facesToggleButton"
+                            text: "☺"
+                            checkable: true
+                            checked: viewer.facesVisible
+                            width: 26; height: 20
+                            ToolTip.visible: hovered
+                            ToolTip.text: qsTr("Show Faces")
+                            onClicked: viewer.toggleFaces()
                         }
                         Slider {
                             id: zoomSlider

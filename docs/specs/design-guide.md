@@ -1,12 +1,14 @@
 # Dizájn-kézikönyv — Picasa 3.9 hűség-referencia
 
 **Rétegek (2026-07-18-tól):** az elsődleges dizájn-forrás a felhasználó
-claude.ai/design projektjében készült **„Picasa 3 Dizajnkezikonyv"**
-(projekt: `6a9fe53e-feff-4107-8787-eeaac68490ca`, 13 fejezet: alapelvek,
-logó, szín, tipográfia, ikonográfia, gombok, elrendezés, komponensek,
-szűrők, arcfelismerés, mappakezelő, feltöltés, nyelvezet). Ahol a
-kézikönyv rendelkezik, az felülírja az alábbi screenshot-mintavételeket;
-ahol hallgat, a screenshotok maradnak a mérce.
+**„Picasa 3 Dizajnkezikonyv"** brandbookja, helyi másolatban:
+`docs/assets/brandbook/2026-07-20-picasapy-dizajnkezikonyv.html`
+(14 fejezet: alapelvek, logó, szín, tipográfia, ikonográfia, gombok,
+elrendezés, komponensek, szűrők, arcfelismerés, mappakezelő, feltöltés,
+nyelvezet, indítóképernyő). Ha a felhasználó frissített változatot ad,
+az új dátumozott fájl kerül a helyére, és ez a hivatkozás frissítendő.
+Ahol a kézikönyv rendelkezik, az felülírja az alábbi
+screenshot-mintavételeket; ahol hallgat, a screenshotok maradnak a mérce.
 
 A kézikönyv fő döntései (implementálva):
 - **Vászon** #EAEAEA-n úszó **fehér tartalomkártya** (#FFFFFF, 1px #CDCDCD).
