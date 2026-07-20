@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sqlite3
 import threading
+import time
 from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
@@ -17,6 +18,13 @@ from picasapy.index import open_index, remove_root, sync_folder
 from picasapy.scanner import LibraryWatcher, write_watched_folders
 
 from .formatting import to_local_path
+
+# #209: a worker-oldali jelzés-ritkítás minimuma (mp) — sok gyorsan kihagyott
+# mappánál a queued jelzések ne árasszák el a GUI-szál eseménysorát.
+_PROGRESS_EMIT_MIN_S = 0.25
+# #209: a rács fokozatos frissítésének minimum-időköze (mp) — a köztes
+# eredmények látszanak, de nem fut modell-újratöltés minden kötegnél.
+_PROGRESS_RELOAD_MIN_S = 1.5
 
 
 class LibraryMixin:
@@ -29,6 +37,11 @@ class LibraryMixin:
     # #70: a háttérmunka (indexelés/thumbnail) állapota változott — a QML
     # busy-animációjának triggere; CSAK tényleges átmenetnél megy ki
     busyChanged = Signal()
+    # #209: mappánkénti sync-haladás (mappa, kész, összes, új fotók) — a
+    # worker-szálból emittálva; a Qt queued kapcsolattal hozza a GUI-szálra
+    syncProgress = Signal(str, int, int, int)
+    # #209: a lebegő „Importálás" panel állapota változott
+    importChanged = Signal()
 
     # -- busy-állapot (#70) --------------------------------------------------
 
@@ -61,6 +74,100 @@ class LibraryMixin:
         if busy != self._busy:
             self._busy = busy
             self.busyChanged.emit()
+
+    # -- „Importálás" folyamat-panel (#209) ----------------------------------
+
+    @Property(bool, notify=importChanged)
+    def importPanelVisible(self):
+        """Látszódjon-e a lebegő panel: fut érdemi szkennelés (új gyökér
+        importja, vagy a rescan új fotókat talált), és a felhasználó nem
+        zárta be kézzel."""
+        return self._import_visible and not self._import_dismissed
+
+    @Property(str, notify=importChanged)
+    def importFolderName(self):
+        """Az éppen feldolgozott mappa neve (nem a teljes útvonal)."""
+        return Path(self._import_folder).name if self._import_folder else ""
+
+    @Property(int, notify=importChanged)
+    def importDoneCount(self):
+        return self._import_done
+
+    @Property(int, notify=importChanged)
+    def importTotalCount(self):
+        return self._import_total
+
+    @Property(int, notify=importChanged)
+    def importNewCount(self):
+        """Az eddig talált ÚJ képek kumulált száma."""
+        return self._import_new
+
+    @Slot()
+    def dismissImportPanel(self) -> None:
+        """Kézi bezárás — a panel a futó szkennelés végéig nem tér vissza
+        (a következő szkennelés újra megjelenítheti)."""
+        self._import_dismissed = True
+        self.importChanged.emit()
+
+    @Slot(str, int, int, int)
+    def _on_sync_progress(self, folder, done, total, new_photos) -> None:
+        """Sync-haladás a GUI-szálon (queued jelzés a workerből).
+
+        A panel automatikusan akkor jelenik meg, ha a szkennelés érdemi:
+        új gyökér importja (forced), vagy új fotók kerültek elő — a csendes,
+        mindent-kihagyó 5 perces rescan nem villogtatja. A rács fokozatos
+        frissítése ritkított (max ~1,5 mp-enként), és a meglévő
+        megőrzött-görgetésű újratöltési úton fut, nem kötegenkénti
+        modell-resettel."""
+        self._import_folder = folder
+        self._import_done = done
+        self._import_total = total
+        self._import_new = new_photos
+        if not self._import_visible and (self._import_forced or new_photos > 0):
+            self._import_visible = True
+        self.importChanged.emit()
+        now = time.monotonic()
+        if (
+            new_photos > self._import_new_at_reload
+            and now - self._import_last_reload >= _PROGRESS_RELOAD_MIN_S
+        ):
+            self._import_last_reload = now
+            self._import_new_at_reload = new_photos
+            # a már feldolgozott (commitolt) mappák fotói jelenjenek meg
+            self._reload(preserve_scroll=True)
+
+    @Slot()
+    def _on_import_finished(self) -> None:
+        """A sync vége (syncFinished): a panel eltűnik, az állapot nulláz —
+        a záró teljes frissítést a meglévő _reload_after_sync út végzi."""
+        self._import_folder = ""
+        self._import_done = 0
+        self._import_total = 0
+        self._import_new = 0
+        self._import_visible = False
+        self._import_forced = False
+        self._import_dismissed = False
+        self._import_new_at_reload = 0
+        self.importChanged.emit()
+
+    def _make_progress_emitter(self):
+        """WORKER-SZÁLON futó progress-callback (ld. SyncProgressCallback):
+        a jelzés-emisszió ritkított — új fotót hozó mappa és az utolsó mappa
+        mindig átmegy, a gyors (kihagyott) mappák max ~4/s ütemben."""
+        state = {"last": 0.0, "new": -1}
+
+        def progress(folder: str, done: int, total: int, new_photos: int) -> None:
+            now = time.monotonic()
+            if (
+                new_photos != state["new"]
+                or done == total
+                or now - state["last"] >= _PROGRESS_EMIT_MIN_S
+            ):
+                state["last"] = now
+                state["new"] = new_photos
+                self.syncProgress.emit(folder, done, total, new_photos)
+
+        return progress
 
     # -- életciklus ----------------------------------------------------------
 
@@ -107,11 +214,15 @@ class LibraryMixin:
         self._persist_roots()
         self._restart_watcher()
         self.statusChanged.emit()
+        # #209: új gyökér importja mindig „nagy" szkennelés — a lebegő
+        # panel az első haladás-jelzéstől látszik (forced)
+        self._import_forced = True
+        progress = self._make_progress_emitter()
 
         def worker():
             try:
                 with open_index(self._db_path) as conn:
-                    self._sync_tree(conn, path)
+                    self._sync_tree(conn, path, progress=progress)
             finally:
                 self.syncFinished.emit()
 
@@ -219,11 +330,12 @@ class LibraryMixin:
         a többi gyökér feldolgozása folytatódik, és a vége mindig
         syncFinished."""
         errors = []
+        progress = self._make_progress_emitter()
         try:
             with open_index(self._db_path) as conn:
                 for root in self._roots:
                     try:
-                        self._sync_tree(conn, root)
+                        self._sync_tree(conn, root, progress=progress)
                     except (OSError, RuntimeError, sqlite3.OperationalError) as error:
                         errors.append(f"{root}: {error}")
         except Exception as error:  # pl. index-migrációs hiba

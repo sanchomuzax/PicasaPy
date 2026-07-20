@@ -13,6 +13,7 @@ import os
 import re
 import sqlite3
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 from picasapy.ini import IniDocument, load_document
@@ -45,12 +46,20 @@ _SCAN_STATE_DDL = (
 
 logger = logging.getLogger(__name__)
 
+# #209: streamelt sync — mappánkénti haladás-jelzés. Paraméterek:
+# (mappa útvonala, kész mappák száma, összes ismert mappa, az eddig talált
+# ÚJ fotók kumulált száma). FIGYELEM: a callback a sync_tree hívási szálán
+# fut — az app-ban ez a háttér-worker szála, NEM a GUI-szál; a hívó dolga
+# a szál-átadás (pl. Qt queued signal) és a ritkítás.
+SyncProgressCallback = Callable[[str, int, int, int], None]
+
 
 def sync_tree(
     conn: sqlite3.Connection,
     root: str | Path,
     exclude: tuple[str | Path, ...] = (),
     incremental: bool = True,
+    progress: SyncProgressCallback | None = None,
 ) -> None:
     """A gyökér alatti könyvtár teljes szinkronja az indexbe.
 
@@ -79,18 +88,34 @@ def sync_tree(
     nagyságrendi gyorsítása fejében): a mappa mtime-ját nem érintő, helyben
     történt fájl-átírást a rescan nem vesz észre — azt a watcher-ág, illetve
     egy `incremental=False` teljes sync fedi le.
+
+    #209 — streamelt haladás: ha a `progress` callback meg van adva, MINDEN
+    mappa feldolgozása (vagy kihagyása) után meghívjuk
+    `(mappa, kész, összes, új_fotók_kumulált)` argumentumokkal. A mappánkénti
+    commit miatt a már jelzett mappák fotói ekkor MÁR olvashatók az indexből
+    (másik kapcsolaton is) — erre épül a fokozatos UI-megjelenítés. A callback
+    szál-kontextusa a hívóé (worker-szál!), ld. `SyncProgressCallback`.
     """
     root_path = Path(root).resolve()
     _ensure_scan_state(conn)
     skip = _make_skip(conn) if incremental else None
     scans = scan_tree(root_path, exclude=exclude, skip=skip)
+    done = 0
+    new_total = 0
     for scan in scans:
+        done += 1
         if scan.skipped:
-            continue  # változatlan mappa: az indexbeli állapot érvényes
-        _sync_folder(conn, scan)
+            # változatlan mappa: az indexbeli állapot érvényes; a haladás-
+            # számláló ettől még lép (a hívó ritkítja a jelzés-árat)
+            if progress is not None:
+                progress(str(scan.path), done, len(scans), new_total)
+            continue
+        new_total += _sync_folder(conn, scan)
         if incremental:
             _store_scan_state(conn, scan)
         conn.commit()
+        if progress is not None:
+            progress(str(scan.path), done, len(scans), new_total)
     seen_paths = {str(scan.path) for scan in scans}
     if seen_paths or not _has_indexed_folders(conn, root_path):
         # Nem üres scan, vagy a gyökér az indexben is üres volt eddig —
@@ -203,7 +228,9 @@ def _store_scan_state(conn: sqlite3.Connection, scan: FolderScan) -> None:
     )
 
 
-def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> None:
+def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
+    """Egy mappa szinkronja; a visszatérési érték az ÚJ (az indexben eddig
+    nem szereplő) fotók száma (#209, a haladás-jelzéshez)."""
     folder_id = conn.execute(
         "INSERT INTO folders(path, has_ini) VALUES (?, ?) "
         "ON CONFLICT(path) DO UPDATE SET has_ini = excluded.has_ini "
@@ -234,6 +261,7 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> None:
         )
     }
     document = _load_ini(scan)
+    new_count = 0
     for media in scan.files:
         section = document.section(media.name) if document else None
         ini_fields = (
@@ -258,6 +286,8 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> None:
                     (*ini_fields, folder_id, media.name),
                 )
         else:
+            if current is None:
+                new_count += 1  # #209: eddig nem indexelt fotó
             _upsert_photo(conn, folder_id, scan, media, ini_fields)
     _prune_photos(conn, folder_id, [media.name for media in scan.files])
     # mappa-dátum (Picasa): automatikusan a legrégebbi felvétel ideje
@@ -267,6 +297,7 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> None:
         ") WHERE id = ?",
         (folder_id, folder_id),
     )
+    return new_count
 
 
 def _upsert_photo(

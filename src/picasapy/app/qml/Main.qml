@@ -566,6 +566,25 @@ ApplicationWindow {
         }
     }
 
+    // #209: lebegő „Importálás" folyamat-panel — jobb oldalt lebeg, húzható;
+    // a néző felett is látszik (a szkennelés közben is lehet dolgozni),
+    // csak a diavetítés (z:100) takarja
+    ImportProgressPanel {
+        id: importPanel
+        objectName: "importProgressPanel"
+        z: 90
+        visible: controller.importPanelVisible
+        folderName: controller.importFolderName
+        doneCount: controller.importDoneCount
+        totalCount: controller.importTotalCount
+        newCount: controller.importNewCount
+        onCloseRequested: controller.dismissImportPanel()
+        // induló hely: jobb felül, a kereső alatt; húzáskor a DragHandler
+        // felülírja a kötést — a panel ott marad, ahova a felhasználó tette
+        x: parent.width - width - 24
+        y: 56
+    }
+
     // alsó sáv: infó-sáv + kijelölés-tálca (TrayBar.qml, #150)
     footer: TrayBar {
         id: trayBar
