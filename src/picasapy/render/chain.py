@@ -12,6 +12,14 @@ import numpy as np
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import decode_rect64
 from picasapy.render.color import apply_bw, apply_saturation, apply_sepia, apply_warm
+from picasapy.render.effects import (
+    GLOW_V1_INTENSITY,
+    GLOW_V1_RADIUS,
+    apply_glow,
+    apply_radblur,
+    apply_radsat,
+    apply_vignette,
+)
 from picasapy.render.ops import (
     apply_autocolor,
     apply_autolight,
@@ -21,6 +29,12 @@ from picasapy.render.ops import (
     apply_tilt,
 )
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
+from picasapy.render.tinting import (
+    apply_ansel,
+    apply_dir_tint,
+    apply_tint,
+    parse_rgb_hex,
+)
 from picasapy.render.tone import apply_fill, apply_finetune2, parse_neutral_argb
 
 # Megfejtve (golden 4. kör): a tilt szöge θ = p·0,2 radián (= p·11,459°).
@@ -107,6 +121,81 @@ def _apply_finetune_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+def _effect_float(op: FilterOp, index: int, default: float) -> float:
+    """A flag utáni `index`-edik paraméter számként, hiányzónál `default`."""
+    params = op.float_params()
+    return params[index] if len(params) > index else default
+
+
+def _apply_vignette_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Vignette=1,belső%,erősség,?,szín — a 3-4. paraméter szerepe méretlen
+    return apply_vignette(
+        image,
+        inner=_effect_float(op, 0, 35.0),
+        strength=_effect_float(op, 1, 1.4),
+    )
+
+
+def _apply_glow_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # glow (v1) és glow2 azonos paraméter-alakkal: 1,intenzitás,sugár;
+    # paraméter nélkül a v1 golden-kitben mért alapértékei futnak
+    return apply_glow(
+        image,
+        intensity=_effect_float(op, 0, GLOW_V1_INTENSITY),
+        radius=_effect_float(op, 1, GLOW_V1_RADIUS),
+    )
+
+
+def _apply_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    if len(op.params) < 3:
+        raise ValueError(f"A tint szűrőnek preserve+szín paraméter kell: {op}")
+    return apply_tint(
+        image, preserve=float(op.params[1]), color=parse_rgb_hex(op.params[2])
+    )
+
+
+def _apply_ansel_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    if len(op.params) < 2:
+        raise ValueError(f"Az ansel szűrőnek színparaméter kell: {op}")
+    return apply_ansel(image, color=parse_rgb_hex(op.params[1]))
+
+
+def _apply_radblur_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    return apply_radblur(
+        image,
+        x=_effect_float(op, 0, 0.5),
+        y=_effect_float(op, 1, 0.5),
+        size=_effect_float(op, 2, 0.0),
+        amount=_effect_float(op, 3, 0.0),
+    )
+
+
+def _apply_radsat_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    return apply_radsat(
+        image,
+        x=_effect_float(op, 0, 0.5),
+        y=_effect_float(op, 1, 0.5),
+        radius=_effect_float(op, 2, 0.5),
+        sharpness=_effect_float(op, 3, 0.5),
+    )
+
+
+def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    if len(op.params) < 6:
+        raise ValueError(f"A dir_tint szűrőnek 5 paraméter kell: {op}")
+    return apply_dir_tint(
+        image,
+        x=float(op.params[1]),
+        y=float(op.params[2]),
+        gradient=float(op.params[3]),
+        shade=float(op.params[4]),
+        color=parse_rgb_hex(op.params[5]),
+    )
+
+
+# A grain2-nek SZÁNDÉKOSAN nincs handlere (#149): a filmszemcse véletlen
+# maggal fut, pixelhűen nem reprodukálható (csak statisztikailag, ld.
+# docs/specs/filters-decoded.md) — a lánc kihagyja, a round-trip őrzi.
 _HANDLERS = {
     "tilt": _apply_tilt_op,
     "redeye": lambda image, op: apply_redeye(image),
@@ -122,6 +211,14 @@ _HANDLERS = {
     "sat": _apply_sat_op,
     "unsharp": _apply_unsharp_op,
     "unsharp2": _apply_unsharp_op,
+    "vignette": _apply_vignette_op,  # az ini-ben nagybetűs: Vignette
+    "glow": _apply_glow_op,
+    "glow2": _apply_glow_op,
+    "tint": _apply_tint_op,
+    "ansel": _apply_ansel_op,
+    "radblur": _apply_radblur_op,
+    "radsat": _apply_radsat_op,
+    "dir_tint": _apply_dir_tint_op,
 }
 
 
@@ -130,7 +227,11 @@ def apply_filters(
 ) -> tuple[np.ndarray, tuple[str, ...]]:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, enhance,
     autolight, autocolor, fill, finetune/finetune2, bw, sepia, warm, sat,
-    unsharp/unsharp2).
+    unsharp/unsharp2, Vignette, glow/glow2, tint, ansel, radblur, radsat,
+    dir_tint).
+
+    A `grain2` szándékosan NEM támogatott (#149): véletlen magos filmszemcse,
+    pixelhűen nem reprodukálható — kihagyottként jelezzük, a round-trip őrzi.
 
     A nem támogatott szűrőket szándékosan némán kihagyja (részleges
     előnézet), de a kihagyott nevek sorrendhelyes listáját is visszaadja:
