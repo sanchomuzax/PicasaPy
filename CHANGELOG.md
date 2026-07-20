@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.21] – 2026-07-20
+
+### Javítva
+- **Feed-pozíció (#173, utókövetés):** a nézőből visszatérve a feed a
+  háttér-resync **befejezése után is** a megnyitás előtti pozíción marad. Az
+  előző (0.4.20-as) fix csak az azonnali frissítést kezelte; a `resyncFolderOfRow`
+  háttérszála viszont a végén (a kék „dolgozik" sáv eltűnésekor) küld egy késői
+  frissítést, ami eddig visszaugratta a nézetet a mappa elejére. A reveal
+  mostantól „ragadós": a késői async frissítésre és a layout beállására is a
+  helyes pozíciót tartja, amíg a felhasználó ténylegesen nem görget.
+
 ## [0.4.20] – 2026-07-20
 
 ### Javítva
