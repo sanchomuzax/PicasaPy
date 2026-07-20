@@ -51,3 +51,29 @@ def apply_lut(image: np.ndarray, lut: np.ndarray) -> np.ndarray:
         raise ValueError(f"A LUT alakja (256,) kell legyen, nem {lut.shape}")
     table = np.clip(np.rint(lut), 0, 255).astype(np.uint8)
     return table[image]
+
+
+def lut_ramp() -> np.ndarray:
+    """Identitás-LUT (0..255 float64 rámpa) — csatornánkénti LUT-ok alapja."""
+    return np.arange(256, dtype=np.float64)
+
+
+def apply_channel_luts(
+    image: np.ndarray, luts: tuple[np.ndarray, np.ndarray, np.ndarray]
+) -> np.ndarray:
+    """Csatornánként KÜLÖN float LUT alkalmazása (R, G, B sorrend, #140).
+
+    Pontonkénti (csatornánként független) műveletek uint8-natív, képméret-
+    független költségű futtatása: a LUT-ok 256 elemű float tömbök, a
+    kerekítés/clippelés az `apply_lut`-tal azonos módon itt történik.
+    """
+    validate_image(image)
+    if len(luts) != 3:
+        raise ValueError(f"Pontosan három (R, G, B) LUT kell, kaptunk: {len(luts)}")
+    channels = []
+    for index, lut in enumerate(luts):
+        if lut.shape != (256,):
+            raise ValueError(f"A LUT alakja (256,) kell legyen, nem {lut.shape}")
+        table = np.clip(np.rint(lut), 0, 255).astype(np.uint8)
+        channels.append(table[image[..., index]])
+    return np.stack(channels, axis=-1)

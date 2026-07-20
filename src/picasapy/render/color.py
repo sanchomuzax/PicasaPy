@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from picasapy.render.curves import validate_image
+from picasapy.render.curves import apply_channel_luts, lut_ramp, validate_image
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
 
@@ -28,12 +28,16 @@ def _to_uint8(values: np.ndarray) -> np.ndarray:
 
 
 def _luma(image: np.ndarray) -> np.ndarray:
-    """Rec.601 luminancia float64 (H, W) tömbként."""
+    """Rec.601 luminancia float32 (H, W) tömbként.
+
+    float32 munkatér (#140): a 8 bites kimenethez bőven elegendő pontosság,
+    fele akkora memóriaforgalommal, mint a float64.
+    """
     red_w, green_w, blue_w = _REC601_WEIGHTS
     return (
-        red_w * image[..., 0].astype(np.float64)
-        + green_w * image[..., 1].astype(np.float64)
-        + blue_w * image[..., 2].astype(np.float64)
+        np.float32(red_w) * image[..., 0].astype(np.float32)
+        + np.float32(green_w) * image[..., 1].astype(np.float32)
+        + np.float32(blue_w) * image[..., 2].astype(np.float32)
     )
 
 
@@ -64,10 +68,11 @@ def apply_warm(image: np.ndarray) -> np.ndarray:
     értékre alkalmazzuk — közelítés.)
     """
     validate_image(image)
-    result = image.astype(np.float64)
-    for channel, (slope, offset) in enumerate(_WARM_LINEAR):
-        result[..., channel] = slope * result[..., channel] + offset
-    return _to_uint8(result)
+    # csatornánkénti lineáris görbe → csatornánkénti LUT (#140):
+    # uint8-natív, képméret-független költség
+    ramp = lut_ramp()
+    luts = tuple(slope * ramp + offset for slope, offset in _WARM_LINEAR)
+    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 
 def apply_saturation(image: np.ndarray, strength: float) -> np.ndarray:
@@ -82,4 +87,5 @@ def apply_saturation(image: np.ndarray, strength: float) -> np.ndarray:
     if gain == 1.0:
         return image.copy()
     luma = _luma(image)[..., np.newaxis]
-    return _to_uint8(luma + gain * (image.astype(np.float64) - luma))
+    # float32 munkatér (#140): a ±1/255 tűrésen belül azonos eredmény
+    return _to_uint8(luma + np.float32(gain) * (image.astype(np.float32) - luma))

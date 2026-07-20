@@ -30,7 +30,8 @@ def apply_unsharp(
         return image.copy()
     blurred = cv2.GaussianBlur(image, (0, 0), _UNSHARP_SIGMA)
     amount = _UNSHARP_AMOUNT_PER_STRENGTH * strength
-    sharpened = image.astype(np.float64) + amount * (
-        image.astype(np.float64) - blurred.astype(np.float64)
-    )
+    # float32 munkatér (#140): a 8 bites kimenethez elegendő pontosság,
+    # fele akkora memóriaforgalommal, mint a float64
+    image_f = image.astype(np.float32)
+    sharpened = image_f + np.float32(amount) * (image_f - blurred.astype(np.float32))
     return np.clip(np.rint(sharpened), 0, 255).astype(np.uint8)

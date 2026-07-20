@@ -157,6 +157,96 @@ class TestSourceCaching:
         assert len(calls) == 2
 
 
+class TestPrefixCache:
+    """#140: élő csúszka-húzásnál (ugyanaz a lánc, csak az UTOLSÓ op
+    paramétere változik) a prefix (az utolsó op előtti köztes eredmény)
+    cache-elődik — interakció közben csak az utolsó op fut újra."""
+
+    @staticmethod
+    def _counting_apply_filters(monkeypatch):
+        from picasapy.app import edit_preview
+
+        calls: list[tuple] = []
+        original = edit_preview.apply_filters
+
+        def counting(image, ops):
+            calls.append(tuple(ops))
+            return original(image, ops)
+
+        monkeypatch.setattr(edit_preview, "apply_filters", counting)
+        return calls
+
+    @staticmethod
+    def _ops(tilt_param: str = "0.100000"):
+        from picasapy.ini.filters import FilterOp
+
+        fill = FilterOp("fill", ("1", "0.500000"))
+        tilt = FilterOp("tilt", ("1", tilt_param, "0.000000"))
+        return fill, tilt
+
+    def test_interaction_reruns_only_last_op(self, qt_app, tmp_path, monkeypatch):
+        calls = self._counting_apply_filters(monkeypatch)
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        fill, tilt = self._ops("0.100000")
+        provider.register("1", photo, (fill, tilt))
+        calls.clear()
+        _, tilt2 = self._ops("0.200000")
+        provider.register("1", photo, (fill, tilt2))
+        # csak az utolsó (megváltozott) op fut újra, a fill-prefix nem
+        assert calls == [(tilt2,)]
+
+    def test_single_op_interaction_runs_one_op_per_register(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        calls = self._counting_apply_filters(monkeypatch)
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        _, tilt = self._ops("0.100000")
+        provider.register("1", photo, (tilt,))
+        _, tilt2 = self._ops("0.200000")
+        provider.register("1", photo, (tilt2,))
+        # üres prefixhez nem kell apply_filters-hívás
+        assert calls == [(tilt,), (tilt2,)]
+
+    def test_prefix_change_recomputes(self, qt_app, tmp_path, monkeypatch):
+        from picasapy.ini.filters import FilterOp
+
+        calls = self._counting_apply_filters(monkeypatch)
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        fill, tilt = self._ops()
+        provider.register("1", photo, (fill, tilt))
+        calls.clear()
+        sat = FilterOp("sat", ("1", "0.250000"))
+        provider.register("1", photo, (sat, tilt))
+        # más prefix → a prefix újraszámolódik, majd az utolsó op fut
+        assert calls == [(sat,), (tilt,)]
+
+    def test_cached_render_matches_uncached(self, qt_app, tmp_path):
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        fill, _ = self._ops()
+        _, tilt2 = self._ops("0.200000")
+        provider.register("1", photo, (fill, tilt2))
+        cold = provider.requestImage("1", None, None)
+        fill2, tilt1 = self._ops("0.100000")
+        provider.register("1", photo, (fill2, tilt1))
+        provider.register("1", photo, (fill2, tilt2))  # cache-találat
+        warm = provider.requestImage("1", None, None)
+        assert warm == cold
+
+    def test_unregister_clears_prefix_cache(self, qt_app, tmp_path, monkeypatch):
+        calls = self._counting_apply_filters(monkeypatch)
+        provider = _make_provider()
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        fill, tilt = self._ops()
+        provider.register("1", photo, (fill, tilt))
+        provider.unregister("1")
+        calls.clear()
+        provider.register("1", photo, (fill, tilt))
+        # leregisztrálás után nincs cache-találat: prefix + utolsó op fut
+        assert calls == [(fill,), (tilt,)]
 class TestLruEviction:
     """#128: lapozáskor a provider nem nőhet korlátlanul — kis LRU tartja
     az utolsó néhány kép dekódolt forrását/előnézetét, a régebbiek

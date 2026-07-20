@@ -14,7 +14,13 @@ import cv2
 import numpy as np
 
 from picasapy.ini.rect64 import Rect64
-from picasapy.render.curves import apply_lut, curve_lut, validate_image
+from picasapy.render.curves import (
+    apply_channel_luts,
+    apply_lut,
+    curve_lut,
+    lut_ramp,
+    validate_image,
+)
 
 _REDEYE_DOMINANCE_RATIO = 1.4
 _REDEYE_MIN_RED = 60
@@ -98,8 +104,8 @@ def apply_autolight(image: np.ndarray) -> np.ndarray:
     if global_max <= global_min:
         return image.copy()
     scale = 255.0 / (global_max - global_min)
-    stretched = (image.astype(np.float64) - global_min) * scale
-    return np.clip(np.rint(stretched), 0, 255).astype(np.uint8)
+    # pontonkénti lineáris széthúzás → 256 elemű LUT (#140): képméret-független
+    return apply_lut(image, (lut_ramp() - global_min) * scale)
 
 
 def apply_autocolor(image: np.ndarray) -> np.ndarray:
@@ -112,14 +118,17 @@ def apply_autocolor(image: np.ndarray) -> np.ndarray:
     _validate_image(image)
     means = image.reshape(-1, 3).mean(axis=0)
     gray = float(means.mean())
-    result = image.astype(np.float64)
+    # csatornánkénti gain → csatornánkénti LUT (#140): képméret-független
+    ramp = lut_ramp()
+    luts = []
     for channel in range(3):
         channel_mean = float(means[channel])
         if channel_mean <= 0.0:
+            luts.append(ramp)
             continue
         gain = 1.0 + _AUTOCOLOR_DAMPING * (gray / channel_mean - 1.0)
-        result[..., channel] *= gain
-    return np.clip(np.rint(result), 0, 255).astype(np.uint8)
+        luts.append(ramp * gain)
+    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 
 def apply_enhance(image: np.ndarray) -> np.ndarray:

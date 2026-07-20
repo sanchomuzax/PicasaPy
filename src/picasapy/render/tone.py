@@ -15,9 +15,11 @@ import numpy as np
 
 from picasapy.render.curves import (
     CurvePoints,
+    apply_channel_luts,
     apply_lut,
     blend_luts,
     curve_lut,
+    lut_ramp,
     validate_image,
 )
 
@@ -55,10 +57,6 @@ def _clamp(value: float, low: float, high: float) -> float:
     return min(max(value, low), high)
 
 
-def _to_uint8(values: np.ndarray) -> np.ndarray:
-    return np.clip(np.rint(values), 0, 255).astype(np.uint8)
-
-
 def _fill_lut(strength: float) -> np.ndarray:
     """A fill görbecsalád LUT-ja tetszőleges s∈[0..1] erősségre."""
     clamped = _clamp(strength, 0.0, 1.0)
@@ -83,7 +81,8 @@ def apply_highlights(image: np.ndarray, strength: float) -> np.ndarray:
     if clamped == 0.0:
         return image.copy()
     white_point = max(255.0 - _HIGHLIGHTS_WHITEPOINT_DROP * clamped, 1.0)
-    return _to_uint8(image.astype(np.float64) * (255.0 / white_point))
+    # pontonkénti lineáris művelet → 256 elemű LUT (#140): képméret-független
+    return apply_lut(image, lut_ramp() * (255.0 / white_point))
 
 
 def apply_shadows(image: np.ndarray, strength: float) -> np.ndarray:
@@ -94,7 +93,8 @@ def apply_shadows(image: np.ndarray, strength: float) -> np.ndarray:
         return image.copy()
     black_point = _SHADOWS_BLACKPOINT_RISE * clamped
     scale = 255.0 / (255.0 - black_point)
-    return _to_uint8((image.astype(np.float64) - black_point) * scale)
+    # pontonkénti lineáris művelet → 256 elemű LUT (#140): képméret-független
+    return apply_lut(image, (lut_ramp() - black_point) * scale)
 
 
 def apply_color_temperature(image: np.ndarray, temperature: float) -> np.ndarray:
@@ -109,10 +109,9 @@ def apply_color_temperature(image: np.ndarray, temperature: float) -> np.ndarray
         return image.copy()
     red_delta = float(np.interp(clamped, _TEMPERATURE_KNOTS, _TEMPERATURE_RED_DELTAS))
     blue_delta = float(np.interp(clamped, _TEMPERATURE_KNOTS, _TEMPERATURE_BLUE_DELTAS))
-    result = image.astype(np.float64)
-    result[..., 0] += red_delta
-    result[..., 2] += blue_delta
-    return _to_uint8(result)
+    # csatornánkénti eltolás → csatornánkénti LUT (#140): képméret-független
+    ramp = lut_ramp()
+    return apply_channel_luts(image, (ramp + red_delta, ramp, ramp + blue_delta))
 
 
 def parse_neutral_argb(value: str) -> tuple[int, int, int] | None:
@@ -142,13 +141,16 @@ def apply_neutral_pipette(
     gray = (red + green + blue) / 3.0
     if gray <= 0.0:
         return image.copy()
-    result = image.astype(np.float64)
-    for channel, value in enumerate((red, green, blue)):
+    # csatornánkénti gain → csatornánkénti LUT (#140): képméret-független
+    ramp = lut_ramp()
+    luts = []
+    for value in (red, green, blue):
         if value <= 0:
+            luts.append(ramp)
             continue
         gain = 1.0 + _NEUTRAL_DAMPING * (gray / value - 1.0)
-        result[..., channel] *= gain
-    return _to_uint8(result)
+        luts.append(ramp * gain)
+    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 
 def apply_finetune2(
