@@ -21,7 +21,11 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 
 from picasapy.index import open_index, prune_foreign_folders
-from picasapy.scanner import read_watched_folders
+from picasapy.scanner import (
+    WATCHED_FOLDERS_NAME,
+    find_watched_folders_file,
+    read_watched_folders,
+)
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
 from .controller import AppController
@@ -94,10 +98,21 @@ def _force_qml_dialogs(platform: str = sys.platform) -> bool:
     return platform != "win32"
 
 
+def _watched_folders_path() -> Path:
+    """A `WatchedFolders.txt` útvonala — kis-nagybetű-független kereséssel
+    (#145): élesben (pl. importált/áthozott konfig-könyvtárban) kisbetűs
+    néven is előfordulhat. Ha nincs ilyen fájl, a kanonikus nevet adja
+    vissza (ide fog írni a `write_watched_folders`)."""
+    config_dir = _config_dir()
+    return find_watched_folders_file(config_dir) or (
+        config_dir / WATCHED_FOLDERS_NAME
+    )
+
+
 def _resolve_roots(argv: list[str]) -> tuple[str, ...]:
     if len(argv) > 1:
         return tuple(argv[1:])
-    return read_watched_folders(_config_dir() / "WatchedFolders.txt")
+    return read_watched_folders(_watched_folders_path())
 
 
 def _acquire_instance_lock(data_dir: Path) -> QLockFile | None:
@@ -266,7 +281,7 @@ def run(argv: list[str]) -> int:
         data_dir / "index.db",
         roots,
         provider,
-        watched_file=_config_dir() / "WatchedFolders.txt",
+        watched_file=_watched_folders_path(),
     )
 
     # szerkesztő-előnézet (#19): a provider a filters= láncot alkalmazva

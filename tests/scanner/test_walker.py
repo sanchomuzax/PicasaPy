@@ -76,3 +76,41 @@ class TestScanTree:
         folder = scan_tree(tree)[0]
         with pytest.raises(AttributeError):
             folder.has_ini = False
+
+
+class TestScanTreeExclude:
+    """#145: FRExcludeFolders.txt — kizárt mappák (és alfáik) ne kerüljenek
+    az eredménybe."""
+
+    def test_excluded_folder_skipped(self, tree):
+        folders = scan_tree(tree, exclude=(tree / "nyaralas" / "telek",))
+        assert [f.path for f in folders] == [tree / "nyaralas"]
+
+    def test_excluded_folder_and_subfolders_skipped(self, tmp_path):
+        root = tmp_path / "gyoker"
+        excluded = root / "privat"
+        child = excluded / "gyerek"
+        child.mkdir(parents=True)
+        (child / "titkos.jpg").write_bytes(b"x" * 5)
+        (root / "kozos").mkdir()
+        (root / "kozos" / "kep.jpg").write_bytes(b"y" * 5)
+        folders = scan_tree(root, exclude=(excluded,))
+        assert [f.path for f in folders] == [root / "kozos"]
+
+    def test_no_exclude_keeps_everything(self, tree):
+        with_exclude = scan_tree(tree, exclude=())
+        without_exclude = scan_tree(tree)
+        assert with_exclude == without_exclude
+
+
+class TestScanTreeLegacyIni:
+    """A spec szerint korai Picasa-verziók a `Picasa.ini` (pont nélküli,
+    nagybetűs) nevet használták a `.picasa.ini` helyett."""
+
+    def test_legacy_ini_name_detected(self, tmp_path):
+        folder = tmp_path / "regi"
+        folder.mkdir()
+        (folder / "kep.jpg").write_bytes(b"x" * 5)
+        (folder / "Picasa.ini").write_text("[kep.jpg]\nstar=yes\n", encoding="utf-8")
+        folders = scan_tree(tmp_path)
+        assert folders[0].has_ini
