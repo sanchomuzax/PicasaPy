@@ -1,5 +1,10 @@
 """Mappa-szkenner: médiafelderítés Picasa-kompatibilis szabályokkal."""
 
+from .discovery import (
+    PicasaInstallation,
+    discover_installations,
+    propose_watched_folders,
+)
 from .exclude import (
     EXCLUDE_FOLDERS_NAME,
     find_exclude_folders_file,
@@ -38,10 +43,13 @@ __all__ = [
     "FolderScan",
     "LibraryWatcher",
     "MediaFile",
+    "PicasaInstallation",
+    "discover_installations",
     "find_exclude_folders_file",
     "find_watched_folders_file",
     "is_excluded",
     "media_kind_of",
+    "propose_watched_folders",
     "read_exclude_folders",
     "read_watched_folders",
     "scan_tree",
