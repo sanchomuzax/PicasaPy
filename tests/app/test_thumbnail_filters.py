@@ -84,6 +84,58 @@ class TestPicasaCompatRendering:
         assert abs(image.width() / image.height() - 2.0) < 0.1
 
 
+class TestLazyFiltersParse:
+    """#142: a register_photos NE parse-olja a filters= láncot — 50k
+    fotónál a regisztráció minden frissítésnél fut, a parse viszont csak
+    a ténylegesen renderelt (látótér-közeli) képekhez kell."""
+
+    def test_register_does_not_parse_render_does(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        import picasapy.app.thumbnail_provider as tp
+
+        records = _library_with_crop(tmp_path)
+        calls = []
+        original = tp._parse_ops
+
+        def counting_parse(photo):
+            calls.append(photo.name)
+            return original(photo)
+
+        monkeypatch.setattr(tp, "_parse_ops", counting_parse)
+        provider = tp.ThumbnailProvider(
+            ThumbnailCache(tmp_path / "th", size=64)
+        )
+        provider.register_photos(records)
+        assert calls == [], "a register_photos nem parse-olhat filters-t"
+        image = provider.requestImage(str(records[0].id), None, None)
+        assert calls, "render-kor viszont kell a parse"
+        # a szerkesztés (bal fél levágva) érvényesül: 2:1 → ~1:1
+        assert abs(image.width() / image.height() - 1.0) < 0.1
+
+    def test_parse_runs_once_per_unique_chain(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        import picasapy.app.thumbnail_provider as tp
+
+        records = _library_with_crop(tmp_path)
+        calls = []
+        original = tp._parse_ops
+
+        def counting_parse(photo):
+            calls.append(photo.name)
+            return original(photo)
+
+        monkeypatch.setattr(tp, "_parse_ops", counting_parse)
+        provider = tp.ThumbnailProvider(
+            ThumbnailCache(tmp_path / "th", size=64)
+        )
+        provider.register_photos(records)
+        provider.requestImage(str(records[0].id), None, None)
+        provider.requestImage(str(records[0].id), None, None)
+        assert len(calls) == 1, "azonos lánc csak egyszer parse-olódik"
+
+
 class TestThumbUrlCacheBuster:
     def test_url_changes_with_filters(self, qt_app, tmp_path):
         from picasapy.app.models import PhotoGridModel

@@ -372,16 +372,51 @@ ListView {
                 groupCol.modelData.start)
         }
 
-        Flow {
+        // #142: csoporton belüli virtualizálás — a korábbi Flow +
+        // Repeater { model: count } MINDEN cellát példányosított (3000
+        // képes mappánál 3000 Image + thumbnail-kérés). Helyette a
+        // magasság képletből adódik (sorok száma × cellHeight — így a
+        // ListView becslése is pontos), és csak a látótér-közeli
+        // rácssorok cellái élnek: az ablak a görgetéssel együtt csúszik,
+        // a delegate-készlet mérete állandó (nincs create/destroy-vihar,
+        // csak újrakötés a sorhatár-átlépéskor).
+        Item {
             id: groupFlow
             width: parent.width
+            readonly property int totalRows: Math.ceil(
+                groupCol.modelData.count / grid.columns)
+            height: totalRows * grid.cellHeight
+            // a látótér teteje a csoport képfolyamának koordinátájában
+            readonly property real viewTop:
+                grid.contentY - groupCol.y - y
+            // puffer-sorok a látótér felett/alatt — görgetés közben a
+            // következő sor már készen áll
+            readonly property int bufferRows: 2
+            readonly property int firstRow: Math.max(0,
+                Math.floor(viewTop / grid.cellHeight) - bufferRows)
+            readonly property int lastRow: Math.min(totalRows - 1,
+                Math.ceil((viewTop + grid.height) / grid.cellHeight)
+                    + bufferRows)
+            readonly property int windowStart: firstRow * grid.columns
+            readonly property int windowCount: Math.max(0, Math.min(
+                groupCol.modelData.count - windowStart,
+                (lastRow - firstRow + 1) * grid.columns))
             Repeater {
-                model: groupCol.modelData.count
+                model: groupFlow.windowCount
                 delegate: Item {
                     id: slot
+                    objectName: "feedCell"
                     required property int index
+                    // a cella VALÓDI helye a csoportban: az ablak eleje
+                    // + a saját eltolás — görgetéskor az ablak csúszik,
+                    // a delegate újrakötődik (nem újrapéldányosul)
+                    readonly property int localIndex:
+                        groupFlow.windowStart + slot.index
                     readonly property int row:
-                        groupCol.modelData.start + slot.index
+                        groupCol.modelData.start + slot.localIndex
+                    x: (slot.localIndex % grid.columns) * grid.cellWidth
+                    y: Math.floor(slot.localIndex / grid.columns)
+                        * grid.cellHeight
                     // a photos.revision-nel együtt kötve:
                     // modell-frissüléskor újraértékelődik
                     readonly property var info:
@@ -407,8 +442,9 @@ ListView {
                         // többlete a térközbe megy.
                         maxContentWidth: grid.nominalCellWidth
                         maxContentHeight: grid.cellHeight
-                        selected: grid.appWindow.selectedIndexes
-                            .indexOf(slot.row) !== -1
+                        // #142: set-alapú lookup — O(1) cellánként
+                        selected: grid.appWindow
+                            .selectedSet[slot.row] === true
                         onChosen: function(i, mods) {
                             grid.forceActiveFocus()   // kurzorgombokhoz (#77)
                             grid.selectionAnchor = i  // Shift+nyíl horgony (#96)
