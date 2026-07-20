@@ -18,3 +18,9 @@ VideoPlayerView 1.0 VideoPlayerView.qml
 SlideshowView 1.0 SlideshowView.qml
 TagsPanel 1.0 TagsPanel.qml
 PropertiesPanel 1.0 PropertiesPanel.qml
+LightboxFeed 1.0 LightboxFeed.qml
+MainToolbar 1.0 MainToolbar.qml
+TrayBar 1.0 TrayBar.qml
+FileOpsDialogs 1.0 FileOpsDialogs.qml
+ExportDialogs 1.0 ExportDialogs.qml
+AboutDialog 1.0 AboutDialog.qml
