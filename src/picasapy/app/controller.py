@@ -90,6 +90,9 @@ class AppController(
         self._filter_status = ""
         self._folders_filtered = False  # a bal hasáb keresésre szűkítve (#49)
         self._feed_groups: tuple[dict, ...] = ()  # a rács mappa-csoportjai (#64)
+        # #142: az index fájl-pecsétje a feed betöltésekor — amíg egyezik,
+        # a mappaváltás nem olvassa újra a teljes könyvtárat
+        self._feed_stamp: tuple | None = None
         self._descriptions: dict[str, str] = {}  # mappa-leírás cache (NAS!)
         self._description_revision = 0
         self._search_result_count = 0  # összes találat (#7, a bal paneli sorhoz)
@@ -304,7 +307,19 @@ class AppController(
     def selectFolder(self, folder_path: str) -> None:
         """Mappa-választás (#64): a rács a TELJES könyvtár-feedet mutatja a
         bal hasáb sorrendjében — a választott mappához a rács odagörget
-        (folderActivated), ahogy az eredeti Picasa tette."""
+        (folderActivated), ahogy az eredeti Picasa tette.
+
+        #142: ha a feed már betöltve áll (sima mappa-nézet, szűrő nélkül)
+        ÉS az index azóta nem változott (fájl-pecsét, 1-2 stat() hívás),
+        a mappaváltás CSAK görgetés — a feed tartalma nem változik, ezért
+        nem olvassuk újra a teljes indexet (50k fotónál több száz ms)."""
+        already_in_feed = (
+            self._view_mode[0] == "folder"
+            and bool(self._view_mode[1])
+            and not self._filter_active
+            and self._feed_stamp is not None
+            and self._feed_stamp == self._index_stamp()
+        )
         self._current_folder = folder_path
         self._view_mode = ("folder", folder_path)
         self._filter_active = False
@@ -312,10 +327,29 @@ class AppController(
         self._restore_full_folder_pane()
         self._get_settings().setValue("session/lastFolder", folder_path)
         self._folder_description = self._read_folder_description(folder_path)
+        if already_in_feed:
+            # currentFolder/folderDescription frissült — jelzés a QML-nek
+            self.statusChanged.emit()
+            self.folderActivated.emit(folder_path)
+            return
         with open_index(self._db_path) as conn:
             records = self._feed_records(conn)
         self._show(records)
         self.folderActivated.emit(folder_path)
+
+    def _index_stamp(self) -> tuple:
+        """Az index-adatbázis olcsó változás-pecsétje (#142): a db és a
+        -wal fájl (mtime_ns, méret) párja. Bármely index-írás (sync,
+        fotóművelet — akár külső folyamatból) megváltoztatja, így a
+        mappaváltás gyorsútja sosem mutathat elavult feedet."""
+        stamp = []
+        for path in (self._db_path, Path(f"{self._db_path}-wal")):
+            try:
+                stat = path.stat()
+                stamp.append((stat.st_mtime_ns, stat.st_size))
+            except OSError:
+                stamp.append(None)
+        return tuple(stamp)
 
     def _feed_records(self, conn) -> tuple:
         """A teljes könyvtár a bal hasáb mappa-sorrendjében (#64)."""
@@ -527,6 +561,11 @@ class AppController(
         # csillag-szűrő) — a Nézet → Rejtett képek kapcsolóval igen
         if not self.showHidden:
             records = tuple(r for r in records if not r.hidden)
+        # #142: a mappaváltás-gyorsút pecsétje — csak a teljes feedet
+        # mutató mappa-nézet érvényes hozzá (szűrt/keresett nézet nem)
+        self._feed_stamp = (
+            self._index_stamp() if self._view_mode[0] == "folder" else None
+        )
         self._provider.register_photos(records)
         self._photos.set_photos(records)
         self._update_feed_groups(records)

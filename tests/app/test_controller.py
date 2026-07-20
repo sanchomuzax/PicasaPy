@@ -681,6 +681,101 @@ class TestKeywords:
         assert [p.name for p in controller.photos.photos] == ["IMG_0002.jpg"]
 
 
+class TestFolderSwitchNoReload:
+    """#142: a feed a TELJES könyvtárat mutatja a bal hasáb sorrendjében —
+    mappaváltáskor a tartalma nem változik, ezért NEM olvasható újra az
+    egész index (50k fotónál több száz ms lenne), csak görgetés kell."""
+
+    def _controller(self, qt_app, tmp_path):
+        from picasapy.app.controller import AppController
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+        from picasapy.index import open_index, sync_tree
+        from picasapy.thumbs import ThumbnailCache
+        from PySide6.QtCore import QSettings
+
+        root = tmp_path / "kepek"
+        (root / "nyaralas").mkdir(parents=True)
+        (root / "telek").mkdir()
+        make_jpeg(root / "nyaralas" / "IMG_0001.jpg")
+        make_jpeg(root / "telek" / "IMG_0100.jpg")
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, root)
+        provider = ThumbnailProvider(
+            ThumbnailCache(tmp_path / "thumbs", size=32)
+        )
+        settings = QSettings(
+            str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
+        )
+        ctl = AppController(
+            tmp_path / "index.db", (str(root),), provider, settings=settings
+        )
+        ctl._reload_folders()
+        return ctl, root
+
+    def _count_reads(self, monkeypatch, calls):
+        import picasapy.app.controller as controller_module
+
+        original = controller_module.all_photos
+
+        def counting(conn):
+            calls.append(1)
+            return original(conn)
+
+        monkeypatch.setattr(controller_module, "all_photos", counting)
+
+    def test_switch_only_scrolls(self, qt_app, tmp_path, monkeypatch):
+        ctl, root = self._controller(qt_app, tmp_path)
+        ctl.selectFolder(str(root / "nyaralas"))
+        calls: list = []
+        self._count_reads(monkeypatch, calls)
+        activated: list = []
+        ctl.folderActivated.connect(activated.append)
+        revision_before = ctl.photos.revision
+        ctl.selectFolder(str(root / "telek"))
+        assert calls == [], "mappaváltás nem olvashatja újra az indexet"
+        assert activated == [str(root / "telek")]
+        assert ctl.currentFolder == str(root / "telek")
+        assert ctl.photos.revision == revision_before
+        assert ctl.photos.rowCount() == 2  # a feed tartalma változatlan
+
+    def test_switch_reloads_after_external_index_write(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        # az index időközben változott (pl. külső sync) — a gyorsút nem
+        # élhet, a feedet újra kell tölteni
+        from picasapy.index import open_index, sync_tree
+
+        ctl, root = self._controller(qt_app, tmp_path)
+        ctl.selectFolder(str(root / "nyaralas"))
+        make_jpeg(root / "telek" / "IMG_0101.jpg")
+        with open_index(ctl._db_path) as conn:
+            sync_tree(conn, root)
+        calls: list = []
+        self._count_reads(monkeypatch, calls)
+        ctl.selectFolder(str(root / "telek"))
+        assert calls, "index-változás után újra kell tölteni"
+        assert ctl.photos.rowCount() == 3
+
+    def test_first_selection_still_loads(self, qt_app, tmp_path, monkeypatch):
+        ctl, root = self._controller(qt_app, tmp_path)
+        calls: list = []
+        self._count_reads(monkeypatch, calls)
+        ctl.selectFolder(str(root / "nyaralas"))
+        assert calls, "az első mappaválasztásnak be kell töltenie a feedet"
+        assert ctl.photos.rowCount() == 2
+
+    def test_after_filter_reloads(self, qt_app, tmp_path, monkeypatch):
+        # csillag-szűrőből visszalépve a feedet ÚJRA kell tölteni
+        ctl, root = self._controller(qt_app, tmp_path)
+        ctl.selectFolder(str(root / "nyaralas"))
+        ctl.showStarred()
+        calls: list = []
+        self._count_reads(monkeypatch, calls)
+        ctl.selectFolder(str(root / "telek"))
+        assert calls, "szűrő után a mappaválasztás újratölti a feedet"
+        assert ctl.photos.rowCount() == 2
+
+
 class TestSessionRestore:
     def _settings(self, tmp_path):
         from PySide6.QtCore import QSettings
