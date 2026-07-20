@@ -64,5 +64,12 @@ class FileOpsController(QObject):
 
     @Slot(str)
     def revealPhoto(self, path: str) -> None:
-        """A fájlt tartalmazó mappa megnyitása a fájlkezelőben."""
-        reveal_in_file_manager(Path(path))
+        """A fájlt tartalmazó mappa megnyitása a fájlkezelőben.
+
+        Sikertelen megnyitás (hiányzó `xdg-open` vagy nemnulla kilépési
+        kód) esetén `operationFailed`-et jelez, hogy a felhasználó ne
+        maradjon visszajelzés nélkül (#112)."""
+        try:
+            reveal_in_file_manager(Path(path))
+        except OSError as error:
+            self.operationFailed.emit("reveal", str(error))

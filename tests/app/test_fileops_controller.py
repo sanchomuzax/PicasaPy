@@ -91,10 +91,45 @@ class TestDeletePhoto:
 class TestRevealPhoto:
     def test_calls_xdg_open_on_parent_folder(self, controller, tmp_path, monkeypatch):
         calls = []
+
+        class _CompletedProcess:
+            returncode = 0
+
         monkeypatch.setattr(
             "picasapy.fileops.reveal.subprocess.run",
-            lambda args, **kwargs: calls.append(args),
+            lambda args, **kwargs: calls.append(args) or _CompletedProcess(),
         )
         photo = tmp_path / "a.jpg"
         controller.revealPhoto(str(photo))
         assert calls == [["xdg-open", str(tmp_path)]]
+
+    def test_emits_operation_failed_on_missing_xdg_open(
+        self, controller, tmp_path, monkeypatch
+    ):
+        def _raise(*_args, **_kwargs):
+            raise FileNotFoundError("xdg-open nincs telepítve")
+
+        monkeypatch.setattr("picasapy.fileops.reveal.subprocess.run", _raise)
+        failures = []
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.revealPhoto(str(tmp_path / "a.jpg"))
+        assert failures[0][0] == "reveal"
+
+    def test_emits_operation_failed_on_nonzero_exit(
+        self, controller, tmp_path, monkeypatch
+    ):
+        class _CompletedProcess:
+            returncode = 1
+
+        monkeypatch.setattr(
+            "picasapy.fileops.reveal.subprocess.run",
+            lambda args, **kwargs: _CompletedProcess(),
+        )
+        failures = []
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.revealPhoto(str(tmp_path / "a.jpg"))
+        assert failures[0][0] == "reveal"
