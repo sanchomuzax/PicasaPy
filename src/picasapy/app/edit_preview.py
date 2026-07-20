@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
@@ -28,6 +29,11 @@ from picasapy.render import apply_filters
 _PLACEHOLDER_COLOR = 0xFFE8E8E8
 _PLACEHOLDER_SIZE = 16
 _MAX_PREVIEW_EDGE = 2560
+# LRU-kapacitás (#128): lapozáskor a beginEdit új id-vel regisztrál, endEdit
+# nélkül — evikció híján a dekódolt források (~10–30 MB/kép) képenként
+# halmozódnának. Két elem elég: az aktuális + az előző kép, így az
+# előre-hátra lapozás újradekód nélkül gyors marad, a régebbiek felszabadulnak.
+_LRU_CAPACITY = 2
 
 _log = logging.getLogger(__name__)
 
@@ -37,12 +43,16 @@ class EditPreviewProvider(QQuickImageProvider):
 
     def __init__(self) -> None:
         super().__init__(QQuickImageProvider.ImageType.Image)
-        self._images: dict[str, QImage] = {}
+        # LRU-rendezett tárak (#128): a legrégebben használt kép esik ki,
+        # ha a kapacitás betelik — lapozásnál így nem szivárog a memória.
+        self._images: OrderedDict[str, QImage] = OrderedDict()
         # dekódolt forrás gyorsítótár (#72): élő csúszka-húzásnál (pl. tilt)
         # a register() gyakran hívódik ugyanarra a fotóra, csak a szűrő-
         # lánc változik — a lemezes dekódot nem kell minden alkalommal
         # megismételni, csak a filter-lánc újraszámolását.
-        self._sources: dict[str, tuple[Path, float | None, np.ndarray | None]] = {}
+        self._sources: OrderedDict[
+            str, tuple[Path, float | None, np.ndarray | None]
+        ] = OrderedDict()
         self._lock = threading.Lock()
 
     def register(self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]) -> None:
@@ -57,10 +67,19 @@ class EditPreviewProvider(QQuickImageProvider):
             source_array = cached[2]
         else:
             source_array = _decode_source(path)
-            self._sources[key] = (path, mtime, source_array)
+        # LRU-frissítés (#128): az aktuális kulcs a sor végére kerül, és a
+        # kapacitáson túli legrégebbi bejegyzések felszabadulnak — az
+        # előző kép még bent marad (gyors visszalapozás), a régebbiek nem.
+        self._sources[key] = (path, mtime, source_array)
+        self._sources.move_to_end(key)
+        while len(self._sources) > _LRU_CAPACITY:
+            self._sources.popitem(last=False)
         image = _render_from_array(source_array, tuple(ops), path)
         with self._lock:
             self._images[key] = image
+            self._images.move_to_end(key)
+            while len(self._images) > _LRU_CAPACITY:
+                self._images.popitem(last=False)
 
     def unregister(self, photo_id: str) -> None:
         """A fotó eltávolítása (szerkesztés vége)."""
