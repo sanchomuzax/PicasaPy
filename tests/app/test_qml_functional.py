@@ -668,6 +668,60 @@ class TestEditorWiring:
         ini_text = ini_path.read_text(encoding="utf-8")
         assert "filters=tilt=1,0.300000,0.000000;" in ini_text
 
+    def test_tilt_tool_opens_with_saved_value_not_zero(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#131: a döntés-csúszka a MENTETT tilt-értékről induljon, ne néma
+        0-ról — különben az első érintés kinullázza a mentett döntést."""
+        from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+
+        window, _, _ = qml_app
+        ini_path = tmp_path / "kepek" / ".picasa.ini"
+        ini_path.write_text(
+            "[a.jpg]\nfilters=tilt=1,0.400000,0.000000;\n", encoding="utf-8"
+        )
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        QMetaObject.invokeMethod(
+            panel,
+            "handleToolClick",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", "tilt"),
+        )
+        qt_app.processEvents()
+        slider = window.findChild(QObject, "tiltSlider")
+        assert slider is not None, "tiltSlider nem található"
+        assert slider.property("value") == pytest.approx(0.4)
+
+    def test_navigation_with_tilt_tool_active_preserves_next_photo_preview(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#131: aktív döntés-eszköz melletti lapozás NEM nullázza a
+        következő kép előnézetét — a csúszka a mentett tilt-értékére áll,
+        a 0-ra állás nem vált ki previewTilt(0)-t."""
+        window, _, _ = qml_app
+        ini_path = tmp_path / "kepek" / ".picasa.ini"
+        ini_path.write_text(
+            "[a.jpg]\nfilters=tilt=1,0.400000,0.000000;\n"
+            "[b.jpg]\nfilters=tilt=1,-0.200000,0.000000;\n",
+            encoding="utf-8",
+        )
+        viewer = self._open_viewer(window, qt_app, index=0)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("tiltActive", True)
+        qt_app.processEvents()
+        slider = window.findChild(QObject, "tiltSlider")
+        assert slider is not None, "tiltSlider nem található"
+
+        viewer.setProperty("currentIndex", 1)
+        qt_app.processEvents()
+
+        # a csúszka a b.jpg mentett tilt-értékére állt, NEM 0-ra
+        assert slider.property("value") == pytest.approx(-0.2)
+        # a b.jpg mentett tilt-je az ini-ben érintetlen maradt
+        ini_text = ini_path.read_text(encoding="utf-8")
+        assert "filters=tilt=1,-0.200000,0.000000;" in ini_text
+
     def test_reopen_crop_tool_shows_uncropped_image_and_existing_selection(
         self, qml_app, qt_app, tmp_path
     ):

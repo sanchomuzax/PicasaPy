@@ -117,6 +117,15 @@ Rectangle {
         editController.beginEdit(photosModel.idAt(currentIndex),
                                  photosModel.filePathAt(currentIndex))
     }
+    // Döntés-csúszka szinkronja a mentett tilt-értékkel (#131): a value
+    // beállítását elnyomjuk, hogy az onValueChanged NE váltson ki
+    // previewTilt-et — a szinkron csak a csúszkát mozgatja, az előnézet
+    // már a beginEditCurrent()/_register_preview() óta helyes.
+    function syncTiltSlider() {
+        tiltSlider.suppressPreview = true
+        tiltSlider.value = editController.tiltParam
+        tiltSlider.suppressPreview = false
+    }
     function syncPanelFromController() {
         editorPanel.redeyeActive = editController.redeyeActive
         // egygombos javítások (#116): "nyomható-e" tükrözése — a gomb
@@ -142,7 +151,9 @@ Rectangle {
         if (visible) {
             zoomFit()   // #6: lapozáskor vissza illesztett nézetbe
             beginEditCurrent()
-            tiltSlider.value = 0
+            // lapozáskor a csúszka az ÚJ kép mentett tilt-értékére áll —
+            // suppressPreview miatt ez nem írja felül a preview-t (#131)
+            syncTiltSlider()
             if (editorPanel.cropActive) {
                 editController.enterCropTool()
                 cropOverlay.loadSelection(editController.cropSelection)
@@ -346,8 +357,14 @@ Rectangle {
                     onToolActivated: function(tool) {
                         // crop/tilt helyi mód (overlay/csúszka); a többi
                         // azonnali ini-művelet az EditControlleren át
-                        if (tool !== "crop" && tool !== "tilt")
+                        if (tool === "tilt") {
+                            // eszköz-nyitáskor a csúszka a MENTETT
+                            // tilt-értékről induljon, ne 0-ról (#131)
+                            if (editorPanel.tiltActive)
+                                viewer.syncTiltSlider()
+                        } else if (tool !== "crop") {
                             editController.toggleTool(tool)
+                        }
                     }
                     onUndoRequested: editController.undo()
                     onRedoRequested: editController.redo()
@@ -396,8 +413,12 @@ Rectangle {
                         objectName: "tiltSlider"
                         visible: editorPanel.tiltActive
                         from: -1; to: 1; value: 0
+                        // programozott szinkronnál (nyitás/lapozás) NEM
+                        // váltunk ki previewTilt-et — az felülírná a
+                        // mentett érték előnézetét (#131)
+                        property bool suppressPreview: false
                         Layout.fillWidth: true
-                        onValueChanged: if (editorPanel.tiltActive)
+                        onValueChanged: if (editorPanel.tiltActive && !suppressPreview)
                                             editController.previewTilt(value)
                         onPressedChanged: if (!pressed && editorPanel.tiltActive)
                                               editController.setTilt(value)

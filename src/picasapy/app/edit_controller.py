@@ -86,6 +86,13 @@ class EditController(QObject):
     def autocolorEnabled(self) -> bool:
         return not self._session.last_is("autocolor")
 
+    @Property(float, notify=toolsChanged)
+    def tiltParam(self) -> float:
+        """A mentett döntés-paraméter (-1..1 Picasa-egység), vagy 0.0, ha
+        nincs tilt-szűrő a láncban. A döntés-csúszka ezzel áll be az eszköz
+        megnyitásakor és lapozáskor a MENTETT értékre, ne 0-ra (#131)."""
+        return self._session.tilt_param() or 0.0
+
     @Property(bool, notify=toolsChanged)
     def hasCrop(self) -> bool:
         """Van-e alkalmazott vágás — a „Visszavonás: Vágás" gombhoz (#51)."""
