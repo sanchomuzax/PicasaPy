@@ -56,3 +56,15 @@ class TestPathRemapper:
     def test_trailing_backslash_in_prefix_tolerated(self):
         remapper = PathRemapper.from_dict({"C:\\kepek\\": "/mnt/nas"})
         assert remapper.remap("C:\\kepek\\a.jpg") == "/mnt/nas/a.jpg"
+
+    def test_casefold_length_change_does_not_shift_remainder(self):
+        # ß→ss a casefold során hosszabb lesz — ha a levágás a foldolt
+        # prefix HOSSZÁVAL, de az EREDETI (nem foldolt) útvonalon történik,
+        # elcsúszik: az "alma.jpg" első karaktere lemarad ("lma.jpg" lesz)
+        remapper = PathRemapper.from_dict(
+            {"C:\\Straße\\Straße": "/mnt/nas"}
+        )
+        assert (
+            remapper.remap("C:\\Straße\\Straße\\alma.jpg")
+            == "/mnt/nas/alma.jpg"
+        )

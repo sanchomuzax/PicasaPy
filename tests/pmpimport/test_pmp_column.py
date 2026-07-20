@@ -63,6 +63,24 @@ class TestEmptyColumn:
         assert len(column) == 0
 
 
+class TestNonUtf8Names:
+    def test_invalid_utf8_logs_warning(self, tmp_path, caplog):
+        # nem-UTF-8 bájtsorozat: errors="replace" csendben ne rontsa el —
+        # legalább egy WARNING szintű naplóbejegyzés kell
+        path = tmp_path / "caption.pmp"
+        header = struct.pack(
+            "<IHHIHHI", 0x3FCCCCCD, 0x6, 0x1332, 0x00000002, 0x6, 0x1332, 1
+        )
+        body = b"\xff\xfe\x00"  # ervenytelen UTF-8 + lezaro 0x00
+        path.write_bytes(header + body)
+        with caplog.at_level("WARNING"):
+            column = read_pmp_column(path)
+        assert "�" in column.values[0]
+        assert any(
+            record.levelname == "WARNING" for record in caplog.records
+        )
+
+
 class TestCorruptHeader:
     def test_wrong_magic_raises(self, tmp_path):
         path = tmp_path / "bad.pmp"
