@@ -17,6 +17,8 @@ from .walker import (
     PICASA_INI_NAME,
     FolderScan,
     MediaFile,
+    SkipPredicate,
+    scan_folder,
     scan_tree,
 )
 from .watched import (
@@ -44,6 +46,8 @@ __all__ = [
     "media_kind_of",
     "read_exclude_folders",
     "read_watched_folders",
+    "SkipPredicate",
+    "scan_folder",
     "scan_tree",
     "write_watched_folders",
 ]

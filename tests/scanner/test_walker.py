@@ -103,6 +103,79 @@ class TestScanTreeExclude:
         assert with_exclude == without_exclude
 
 
+class TestScanTreeSkip:
+    """#143: inkrementális rescan — a skip-predikátum igaz válasza esetén a
+    mappa fájljai nem kerülnek stat-olásra (files üres, skipped=True)."""
+
+    def test_skip_predicate_receives_folder_and_mtimes(self, tree):
+        latott = []
+
+        def skip(path, mtime_ns, ini_mtime_ns):
+            latott.append((path, mtime_ns, ini_mtime_ns))
+            return False
+
+        scan_tree(tree, skip=skip)
+        paths = [item[0] for item in latott]
+        assert tree / "nyaralas" in paths
+        assert all(item[1] > 0 for item in latott)
+        ini_by_path = dict((item[0], item[2]) for item in latott)
+        assert ini_by_path[tree / "nyaralas"] is not None  # van .picasa.ini
+        assert ini_by_path[tree / "nyaralas" / "telek"] is None  # nincs ini
+
+    def test_skipped_folder_has_no_files_but_is_listed(self, tree):
+        folders = scan_tree(tree, skip=lambda *_: True)
+        assert [f.path for f in folders] == [
+            tree / "nyaralas",
+            tree / "nyaralas" / "telek",
+        ]
+        assert all(f.skipped and f.files == () for f in folders)
+        assert folders[0].has_ini  # ini-jelenlét stat nélkül is ismert
+
+    def test_no_skip_scans_everything(self, tree):
+        folders = scan_tree(tree, skip=lambda *_: False)
+        assert not any(f.skipped for f in folders)
+        assert [f.name for f in folders[0].files] == [
+            "IMG_0001.jpg",
+            "IMG_0002.cr2",
+        ]
+
+    def test_skip_none_keeps_legacy_behaviour(self, tree):
+        # skip nélkül a mappa-mtime-ot sem kérdezzük le (nincs plusz stat)
+        folder = scan_tree(tree)[0]
+        assert folder.skipped is False
+        assert folder.mtime_ns == 0
+
+
+class TestScanFolder:
+    """#143: egyetlen mappa nem-rekurzív scanje a watcher-ág számára."""
+
+    def test_scans_single_folder_without_recursion(self, tree):
+        from picasapy.scanner import scan_folder
+
+        scan = scan_folder(tree / "nyaralas")
+        assert scan is not None
+        assert scan.path == tree / "nyaralas"
+        assert [f.name for f in scan.files] == ["IMG_0001.jpg", "IMG_0002.cr2"]
+        assert scan.has_ini
+        assert scan.mtime_ns > 0
+        assert scan.ini_mtime_ns is not None
+
+    def test_missing_folder_returns_none(self, tmp_path):
+        from picasapy.scanner import scan_folder
+
+        assert scan_folder(tmp_path / "nincs") is None
+
+    def test_medialess_folder_returns_none(self, tree):
+        from picasapy.scanner import scan_folder
+
+        assert scan_folder(tree / "ures") is None
+
+    def test_hidden_folder_returns_none(self, tree):
+        from picasapy.scanner import scan_folder
+
+        assert scan_folder(tree / "nyaralas" / ".picasaoriginals") is None
+
+
 class TestScanTreeLegacyIni:
     """A spec szerint korai Picasa-verziók a `Picasa.ini` (pont nélküli,
     nagybetűs) nevet használták a `.picasa.ini` helyett."""
