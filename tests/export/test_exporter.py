@@ -1,8 +1,13 @@
 """Exportálás mappába (issue #16): forgatás beleégetése + átméretezés OpenCV-vel."""
 
+import os
+
 import cv2
 import numpy as np
+import piexif
 import pytest
+from PIL.IptcImagePlugin import getiptcinfo
+from PIL import Image
 
 from picasapy.export import ExportItem, ExportSettings, export_photos
 from support.jpeg_factory import make_jpeg
@@ -140,6 +145,139 @@ class TestFallbacksAndErrors:
         )
         assert [p.name for p in report.exported] == ["jó.jpg"]
         assert [p.name for p in report.failed] == ["rossz.jpg"]
+
+
+class TestNoopCopy:
+    """#136: ha nincs se forgatás, se átméretezés, se filters-lánc, bájthű
+    másolás történik — nincs felesleges generációs veszteség."""
+
+    def test_jpeg_bytes_are_identical_when_nothing_to_burn_in(self, tmp_path):
+        source = make_jpeg(tmp_path / "kép.jpg", caption="felirat")
+        original = source.read_bytes()
+        report = export_photos([ExportItem(source)], tmp_path / "out")
+        assert report.exported[0].read_bytes() == original
+
+    def test_mtime_is_preserved(self, tmp_path):
+        source = make_jpeg(tmp_path / "kép.jpg")
+        past = 1_600_000_000
+        os.utime(source, (past, past))
+        report = export_photos([ExportItem(source)], tmp_path / "out")
+        assert report.exported[0].stat().st_mtime == pytest.approx(past)
+
+    def test_rotation_disables_noop_copy(self, tmp_path):
+        source = _make_half_and_half(tmp_path / "forgó.jpg")
+        original = source.read_bytes()
+        report = export_photos(
+            [ExportItem(source, rotate_steps=1)], tmp_path / "out"
+        )
+        assert report.exported[0].read_bytes() != original
+
+    def test_resize_setting_disables_noop_copy(self, tmp_path):
+        source = _make_half_and_half(tmp_path / "kép.jpg", width=400, height=200)
+        original = source.read_bytes()
+        report = export_photos(
+            [ExportItem(source)], tmp_path / "out", ExportSettings(max_dimension=10)
+        )
+        assert report.exported[0].read_bytes() != original
+
+    def test_filters_disable_noop_copy(self, tmp_path):
+        source = _make_half_and_half(tmp_path / "kép.jpg")
+        original = source.read_bytes()
+        report = export_photos(
+            [ExportItem(source, filters="bw=1;")], tmp_path / "out"
+        )
+        assert report.exported[0].read_bytes() != original
+
+
+class TestVideoExport:
+    def test_video_mtime_is_preserved(self, tmp_path):
+        source = tmp_path / "videó.mp4"
+        source.write_bytes(b"nem igazi mp4")
+        past = 1_600_000_000
+        os.utime(source, (past, past))
+        report = export_photos([ExportItem(source)], tmp_path / "out")
+        assert report.exported[0].stat().st_mtime == pytest.approx(past)
+
+
+class TestMetadataTransfer:
+    """#136: az EXIF/IPTC a Picasa exportjához hasonlóan átkerül az
+    újrakódolt (forgatott/átméretezett/szerkesztett) célfájlba is."""
+
+    def test_exif_datetime_survives_reencode(self, tmp_path):
+        source = make_jpeg(
+            tmp_path / "kép.jpg", datetime_0th="2020:05:17 12:00:00"
+        )
+        report = export_photos(
+            [ExportItem(source, rotate_steps=1)], tmp_path / "out"
+        )
+        exif = piexif.load(str(report.exported[0]))
+        assert exif["0th"][piexif.ImageIFD.DateTime] == b"2020:05:17 12:00:00"
+
+    def test_iptc_caption_and_keywords_survive_reencode(self, tmp_path):
+        source = make_jpeg(
+            tmp_path / "kép.jpg",
+            caption="Nyaralás",
+            keywords=("tenger", "nyár"),
+        )
+        report = export_photos(
+            [ExportItem(source, rotate_steps=2)], tmp_path / "out"
+        )
+        with Image.open(report.exported[0]) as image:
+            iptc = getiptcinfo(image) or {}
+        assert iptc.get((2, 120)) == "Nyaralás".encode("utf-8")
+        keywords = iptc.get((2, 25))
+        keywords = keywords if isinstance(keywords, list) else [keywords]
+        assert {k.decode("utf-8") for k in keywords} == {"tenger", "nyár"}
+
+    def test_resize_also_transfers_metadata(self, tmp_path):
+        source = make_jpeg(
+            tmp_path / "kép.jpg", size=(400, 200), caption="Cím"
+        )
+        report = export_photos(
+            [ExportItem(source)], tmp_path / "out", ExportSettings(max_dimension=10)
+        )
+        with Image.open(report.exported[0]) as image:
+            iptc = getiptcinfo(image) or {}
+        assert iptc.get((2, 120)) == "Cím".encode("utf-8")
+
+
+class TestFiltersChain:
+    """#136: a `filters=` lánc beleég a célfájlba a meglévő render-lánccal."""
+
+    def test_bw_filter_is_burned_in(self, tmp_path):
+        source = _make_half_and_half(tmp_path / "kép.jpg", width=40, height=20)
+        report = export_photos(
+            [ExportItem(source, filters="bw=1;")], tmp_path / "out"
+        )
+        exported = _read_image(report.exported[0])
+        # bw után minden csatorna azonos (szürkeárnyalat), a fehér/fekete
+        # kontraszt megmarad, de a csatornák közti eltérés eltűnik.
+        diff = exported.max(axis=2).astype(int) - exported.min(axis=2).astype(int)
+        assert diff.max() <= 2  # JPEG-kvantálási tolerancia
+
+    def test_unknown_filter_falls_back_to_unfiltered_export(self, tmp_path):
+        # #73-elv: idegen/hibás lánc-bejegyzés nem buktathatja meg az exportot.
+        source = _make_half_and_half(tmp_path / "kép.jpg")
+        report = export_photos(
+            [ExportItem(source, filters="ismeretlen_szuro=1;")], tmp_path / "out"
+        )
+        assert report.failed == ()
+        assert report.exported != ()
+
+
+class TestNoSilentDeath:
+    """#136: az export_photos sosem hal el némán — kivételnél is strukturált
+    hibaeredményt ad vissza."""
+
+    def test_target_dir_creation_failure_is_reported_not_raised(self, tmp_path):
+        # A célmappa helyén egy sima FÁJL áll — a mkdir(parents=True) itt
+        # OSError-t dob, amit korábban semmi nem fogott el.
+        blocked = tmp_path / "cél"
+        blocked.write_text("nem könyvtár")
+        source = make_jpeg(tmp_path / "kép.jpg")
+        report = export_photos([ExportItem(source)], blocked)
+        assert report.exported == ()
+        assert [p.name for p in report.failed] == ["kép.jpg"]
 
 
 class TestSettingsValidation:
