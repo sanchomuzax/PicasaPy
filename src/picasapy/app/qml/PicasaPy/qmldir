@@ -26,3 +26,4 @@ ExportDialogs 1.0 ExportDialogs.qml
 AboutDialog 1.0 AboutDialog.qml
 ImportProgressPanel 1.0 ImportProgressPanel.qml
 PerfMonitorPanel 1.0 PerfMonitorPanel.qml
+PicasaImportDialog 1.0 PicasaImportDialog.qml

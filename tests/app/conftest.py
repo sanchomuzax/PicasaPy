@@ -25,6 +25,7 @@ def qml_app(qt_app, tmp_path):
     a közöset használják."""
     import picasapy.app.application as app_module
     from picasapy.app.controller import AppController
+    from picasapy.app.discovery_controller import DiscoveryController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
     from picasapy.app.faces_helper import FacesHelper
@@ -53,6 +54,7 @@ def qml_app(qt_app, tmp_path):
     edit_controller = EditController(edit_preview)
     fileops_controller = FileOpsController()
     app_module.wire_fileops(fileops_controller, controller)
+    discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
     faces_helper = FacesHelper()
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
@@ -62,6 +64,9 @@ def qml_app(qt_app, tmp_path):
     engine.rootContext().setContextProperty("editController", edit_controller)
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
+    )
+    engine.rootContext().setContextProperty(
+        "discoveryController", discovery_controller
     )
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
     engine.rootContext().setContextProperty("appVersion", version_string())
