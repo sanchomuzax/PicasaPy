@@ -12,13 +12,12 @@ egész APP13) eltávolítása — így a fel-le művelet bitre pontos round-trip
 
 from __future__ import annotations
 
-import os
-import tempfile
-import time
 from pathlib import Path
 
+from picasapy.ioutil import write_atomic
+
 _RETRY_DELAY = 0.05
-_RETRY_COUNT = 5
+_RETRY_COUNT = 4  # újrapróbálkozások száma az első csere-kísérlet után
 
 _SOI = b"\xff\xd8"
 _SOS = 0xDA
@@ -33,6 +32,9 @@ _CAPTION_KEY = (2, 120)
 _UTF8_MARKER = b"\x1b%G"
 _MAX_CAPTION_BYTES = 2000  # IPTC 2:120 szabvány-korlát
 _MAX_KEYWORD_BYTES = 64  # IPTC 2:25 szabvány-korlát
+# Egy APP13 szegmens teljes hossza max 65535 (2 bájt hossz + payload);
+# a payload elejét a "Photoshop 3.0\0" azonosító foglalja.
+_MAX_SEGMENT_BODY = 65535 - 2 - len(_PHOTOSHOP)
 
 
 def write_iptc_caption(path: str | Path, caption: str) -> bool:
@@ -75,7 +77,19 @@ def _write_datasets(
         return False
     if rebuilt is None:
         return False
-    _write_atomic(target, rebuilt)
+    # Közös helper (#129): fsync a csere előtt (crash-nél sem csonkulhat az
+    # eredeti fotó) + a fájl jogainak megőrzése (NAS-on más kliens is
+    # olvassa). Windowson a nyitott célfájl (pl. a néző épp tölti) zárolja
+    # a rename-et → rövid retry, végső esetben közvetlen írás (képfájlnál
+    # ez elfogadható fallback).
+    write_atomic(
+        target,
+        rebuilt,
+        lock_retries=_RETRY_COUNT,
+        lock_retry_delay=_RETRY_DELAY,
+        fallback_direct=True,
+        suffix=".jpgtmp",
+    )
     return True
 
 
@@ -88,28 +102,34 @@ def _rebuild_jpeg(
     if sos_offset is None:
         return None
 
-    app13_index = None
-    resources: list[tuple[int, bytes, bytes]] = []
+    # A Photoshop-erőforrások 64 KB felett TÖBB APP13 szegmensre oszlanak
+    # (egy erőforrás akár szegmenshatáron át is folytatódhat), ezért az
+    # összes Photoshop-azonosítós APP13 payloadját összefűzve parsoljuk,
+    # és az elsőnek a helyére írjuk vissza az újraépített (szükség esetén
+    # ismét feldarabolt) egészet. A nem-Photoshop APP13 érintetlen marad.
+    photoshop_indices: set[int] = set()
+    payloads: list[bytes] = []
     for index, (marker, start, end) in enumerate(segments):
         if marker == _APP13 and data[start + 4 : start + 4 + len(_PHOTOSHOP)] == _PHOTOSHOP:
-            app13_index = index
-            resources = _parse_resources(data[start + 4 + len(_PHOTOSHOP) : end])
-            break
+            photoshop_indices.add(index)
+            payloads.append(data[start + 4 + len(_PHOTOSHOP) : end])
+    first_photoshop = min(photoshop_indices) if photoshop_indices else None
+    resources, resource_tail = _parse_resources(b"".join(payloads))
 
     resources = _with_datasets(resources, key, values)
-    new_app13 = _serialize_app13(resources)
+    new_app13 = _serialize_app13(resources, resource_tail)
 
     parts = [data[:2]]
     inserted = False
     for index, (marker, start, end) in enumerate(segments):
-        if index == app13_index:
-            if new_app13:
+        if index in photoshop_indices:
+            if index == first_photoshop and new_app13:
                 parts.append(new_app13)
             inserted = True
             continue
         if (
             not inserted
-            and app13_index is None
+            and first_photoshop is None
             and new_app13
             and marker not in _APP_RANGE
         ):
@@ -144,8 +164,12 @@ def _parse_header_segments(data: bytes):
     return segments, None
 
 
-def _parse_resources(blob: bytes) -> list[tuple[int, bytes, bytes]]:
-    """8BIM erőforrások: (azonosító, név-bájtok, adat)."""
+def _parse_resources(blob: bytes) -> tuple[list[tuple[int, bytes, bytes]], bytes]:
+    """8BIM erőforrások: ((azonosító, név-bájtok, adat) lista, nyers maradék).
+
+    A nem értett részt (ismeretlen szignatúra, csonka blokk) nyers bájtként
+    adjuk vissza, hogy a round-trip elv szerint változatlanul visszaírható
+    legyen."""
     resources = []
     pos = 0
     while pos + 12 <= len(blob):
@@ -156,12 +180,16 @@ def _parse_resources(blob: bytes) -> list[tuple[int, bytes, bytes]]:
         name_end = pos + 7 + name_length
         if (name_length + 1) % 2:
             name_end += 1  # párosra igazítás
+        if name_end + 4 > len(blob):
+            break  # csonka fejléc → nyers maradékként őrizzük
         name_bytes = blob[pos + 6 : name_end]
         size = int.from_bytes(blob[name_end : name_end + 4], "big")
         data_start = name_end + 4
+        if data_start + size > len(blob):
+            break  # csonka adat → nyers maradékként őrizzük
         resources.append((resource_id, name_bytes, blob[data_start : data_start + size]))
         pos = data_start + size + (size % 2)
-    return resources
+    return resources, blob[pos:]
 
 
 def _with_datasets(
@@ -174,26 +202,54 @@ def _with_datasets(
     Az 1:90-es karakterkészlet-jelölő addig marad az elején, amíg bármely
     adatmező van a rekordban (a másik kezelt mező — pl. a felirat a
     kulcsszó-írásnál — nem veszítheti el az UTF-8-jelölőjét)."""
-    datasets = []
-    for resource_id, _name, payload in resources:
+    datasets: list[tuple[int, int, bytes, bytes]] = []
+    dataset_tail = b""
+    iptc_name = b"\x00\x00"
+    for resource_id, name, payload in resources:
         if resource_id == _IPTC_RESOURCE:
-            datasets = _parse_datasets(payload)
+            datasets, dataset_tail = _parse_datasets(payload)
+            iptc_name = name or b"\x00\x00"
             break
-    kept = [d for d in datasets if d[:2] not in (_CHARSET_KEY, key)]
-    kept.extend((*key, value) for value in values)
-    if kept:
-        kept = [(*_CHARSET_KEY, _UTF8_MARKER), *kept]
-    new_payload = b"".join(
-        b"\x1c" + bytes((record, dataset)) + len(value).to_bytes(2, "big") + value
-        for record, dataset, value in kept
-    )
-    others = [r for r in resources if r[0] != _IPTC_RESOURCE]
-    if new_payload:
-        others.append((_IPTC_RESOURCE, b"\x00\x00", new_payload))
-    return others
+    # A nem kezelt adatmezők NYERS bájtjai őrződnek meg (kiterjesztett
+    # hosszú mezők is), a nem parseolható maradék (dataset_tail) pedig
+    # változatlanul a rekord végére kerül — round-trip elv.
+    kept = [d for d in datasets if (d[0], d[1]) not in (_CHARSET_KEY, key)]
+    added = [_encode_dataset(*key, value) for value in values]
+    parts: list[bytes] = []
+    if kept or added:
+        parts.append(_encode_dataset(*_CHARSET_KEY, _UTF8_MARKER))
+        parts.extend(raw for _record, _dataset, _value, raw in kept)
+        parts.extend(added)
+    parts.append(dataset_tail)
+    new_payload = b"".join(parts)
+
+    # Az IPTC-erőforrás a helyén (nevével együtt) épül újra; ha kiürült,
+    # kimarad. A többi erőforrás sorrendje változatlan.
+    rebuilt: list[tuple[int, bytes, bytes]] = []
+    replaced = False
+    for resource in resources:
+        if resource[0] == _IPTC_RESOURCE:
+            if new_payload and not replaced:
+                rebuilt.append((_IPTC_RESOURCE, iptc_name, new_payload))
+                replaced = True
+            continue
+        rebuilt.append(resource)
+    if new_payload and not replaced:
+        rebuilt.append((_IPTC_RESOURCE, iptc_name, new_payload))
+    return rebuilt
 
 
-def _parse_datasets(payload: bytes) -> list[tuple[int, int, bytes]]:
+def _encode_dataset(record: int, dataset: int, value: bytes) -> bytes:
+    """Szabványos (nem kiterjesztett) IPTC-adatmező kódolása."""
+    return b"\x1c" + bytes((record, dataset)) + len(value).to_bytes(2, "big") + value
+
+
+def _parse_datasets(payload: bytes) -> tuple[list[tuple[int, int, bytes, bytes]], bytes]:
+    """IPTC-adatmezők: ((rekord, mező, érték, nyers bájtok) lista, maradék).
+
+    A kiterjesztett hosszú (32767 bájt feletti) mezőt is beparsoljuk, hogy
+    az utána álló mezők ne vesszenek el; a nyers bájtok megőrzésével a
+    visszaírás bitre pontos. A nem érthető maradék nyersen jön vissza."""
     datasets = []
     pos = 0
     while pos + 5 <= len(payload):
@@ -201,16 +257,27 @@ def _parse_datasets(payload: bytes) -> list[tuple[int, int, bytes]]:
             break
         record, dataset = payload[pos + 1], payload[pos + 2]
         length = int.from_bytes(payload[pos + 3 : pos + 5], "big")
-        if length > 32767:
-            break  # kiterjesztett hosszú mezőt nem kezelünk
-        datasets.append((record, dataset, payload[pos + 5 : pos + 5 + length]))
-        pos += 5 + length
-    return datasets
+        data_start = pos + 5
+        if length & 0x8000:
+            # Kiterjesztett hossz: az alsó 15 bit a következő hosszmező
+            # bájtszáma, maga a hossz abban áll.
+            size_length = length & 0x7FFF
+            data_start = pos + 5 + size_length
+            if size_length == 0 or data_start > len(payload):
+                break
+            length = int.from_bytes(payload[pos + 5 : data_start], "big")
+        end = data_start + length
+        if end > len(payload):
+            break  # csonka mező → nyers maradékként őrizzük
+        datasets.append((record, dataset, payload[data_start:end], payload[pos:end]))
+        pos = end
+    return datasets, payload[pos:]
 
 
-def _serialize_app13(resources: list[tuple[int, bytes, bytes]]) -> bytes:
-    if not resources:
-        return b""
+def _serialize_app13(
+    resources: list[tuple[int, bytes, bytes]], resource_tail: bytes = b""
+) -> bytes:
+    """APP13 szegmens(ek) építése; 64 KB felett több szegmensre darabolva."""
     body = b""
     for resource_id, name_bytes, payload in resources:
         block = (
@@ -223,26 +290,14 @@ def _serialize_app13(resources: list[tuple[int, bytes, bytes]]) -> bytes:
         if len(payload) % 2:
             block += b"\x00"
         body += block
-    payload = _PHOTOSHOP + body
-    return b"\xff" + bytes((_APP13,)) + (len(payload) + 2).to_bytes(2, "big") + payload
-
-
-def _write_atomic(target: Path, payload: bytes) -> None:
-    """Atomikus csere; Windowson a nyitott célfájl (pl. a néző épp tölti)
-    zárolja a rename-et → rövid retry, végső esetben közvetlen írás
-    (képfájlnál ez elfogadható fallback)."""
-    fd, temp_name = tempfile.mkstemp(dir=target.parent, suffix=".jpgtmp")
-    try:
-        with os.fdopen(fd, "wb") as handle:
-            handle.write(payload)
-        for attempt in range(_RETRY_COUNT):
-            try:
-                os.replace(temp_name, target)
-                return
-            except PermissionError:
-                time.sleep(_RETRY_DELAY * (attempt + 1))
-        target.write_bytes(payload)
-        os.unlink(temp_name)
-    except BaseException:
-        os.unlink(temp_name)
-        raise
+    body += resource_tail
+    segments = b""
+    for offset in range(0, len(body), _MAX_SEGMENT_BODY):
+        payload = _PHOTOSHOP + body[offset : offset + _MAX_SEGMENT_BODY]
+        segments += (
+            b"\xff"
+            + bytes((_APP13,))
+            + (len(payload) + 2).to_bytes(2, "big")
+            + payload
+        )
+    return segments

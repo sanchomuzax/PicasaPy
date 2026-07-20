@@ -9,14 +9,13 @@ EXIF-orientációt, ezért a thumbnail már helyesen forgatott.
 from __future__ import annotations
 
 import hashlib
-import os
-import tempfile
 from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
+from picasapy.ioutil import write_atomic
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
 _JPEG_QUALITY = 85
@@ -84,24 +83,18 @@ class ThumbnailCache:
 
     @staticmethod
     def _write_atomic(target: Path, payload: bytes) -> None:
-        """Egyedi temp-név: a provider több szálról is kérheti ugyanazt a
-        thumbnailt, fix névvel a párhuzamos írók összeakadnának."""
-        target.parent.mkdir(parents=True, exist_ok=True)
-        fd, temp_name = tempfile.mkstemp(dir=target.parent, suffix=".tmp")
-        try:
-            with os.fdopen(fd, "wb") as handle:
-                handle.write(payload)
-            os.replace(temp_name, target)
-        except OSError:
-            os.unlink(temp_name)
-            # Windows: a replace sharing violationnel bukhat, ha a célt épp
-            # olvassa egy másik szál (#66) — ha a thumbnail közben (a
-            # párhuzamos írótól) létrejött, a vesztes fél dolga kész.
-            if not target.exists():
-                raise
-        except BaseException:
-            os.unlink(temp_name)
-            raise
+        """Közös helper (#129), egyedi temp-névvel: a provider több szálról
+        is kérheti ugyanazt a thumbnailt. A cache tartalma újragenerálható,
+        ezért fsync nem kell (durable=False); a replace sharing violationje
+        (#66) lenyelhető, ha a thumbnail közben a párhuzamos írótól
+        létrejött (ignore_replace_race)."""
+        write_atomic(
+            target,
+            payload,
+            durable=False,
+            make_parents=True,
+            ignore_replace_race=True,
+        )
 
     def _scale_down(self, image):
         height, width = image.shape[:2]

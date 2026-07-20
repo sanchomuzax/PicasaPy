@@ -62,6 +62,40 @@ class TestSyncTree:
         second = photos_in_folder(conn, library / "nyaralas")
         assert first == second  # azonos id-k is: nem duplikál, nem törli-újraírja
 
+    def test_unchanged_files_and_ini_touch_no_rows(self, conn, library):
+        # #139: változatlan fájl + változatlan ini-mezők esetén a sync nem
+        # ír át egyetlen photos-sort sem — így az FTS-trigger sem sül el
+        # (WAL-hízás és flash-kopás elkerülése az 5 percenkénti syncnél).
+        sync_tree(conn, library)
+        conn.execute("CREATE TEMP TABLE update_szamlalo(n INTEGER NOT NULL)")
+        conn.execute("INSERT INTO update_szamlalo VALUES (0)")
+        conn.execute(
+            "CREATE TEMP TRIGGER photos_update_figyelo AFTER UPDATE ON photos"
+            " BEGIN UPDATE update_szamlalo SET n = n + 1; END"
+        )
+        sync_tree(conn, library)
+        assert conn.execute("SELECT n FROM update_szamlalo").fetchone()[0] == 0
+
+    def test_ini_change_still_updates_unchanged_file(self, conn, library):
+        # #139 ellenpróba: ha CSAK az ini változik (a fájl nem), az UPDATE
+        # ág továbbra is lefut, és pontosan az érintett sort írja át.
+        sync_tree(conn, library)
+        conn.execute("CREATE TEMP TABLE update_szamlalo(n INTEGER NOT NULL)")
+        conn.execute("INSERT INTO update_szamlalo VALUES (0)")
+        conn.execute(
+            "CREATE TEMP TRIGGER photos_update_figyelo AFTER UPDATE ON photos"
+            " BEGIN UPDATE update_szamlalo SET n = n + 1; END"
+        )
+        (library / "nyaralas" / ".picasa.ini").write_text(
+            "[IMG_0001.jpg]\nstar=yes\ncaption=naplemente\n"
+            "keywords=balaton,nyár\nrotate=rotate(1)\nhidden=yes\n",
+            encoding="utf-8",
+        )
+        sync_tree(conn, library)
+        assert conn.execute("SELECT n FROM update_szamlalo").fetchone()[0] == 1
+        photos = photos_in_folder(conn, library / "nyaralas")
+        assert photos[0].hidden is True
+
     def test_deleted_file_pruned(self, conn, library):
         sync_tree(conn, library)
         (library / "nyaralas" / "IMG_0002.jpg").unlink()

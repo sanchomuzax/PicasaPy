@@ -52,10 +52,26 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> None:
         "RETURNING id",
         (str(scan.path), int(scan.has_ini)),
     ).fetchone()[0]
+    # Az ini-mezőket is beolvassuk (#139): változatlan fájl + változatlan
+    # ini-mezők esetén az UPDATE teljesen kimarad — az SQLite azonos
+    # értékeknél is átírná a sort és elsütné az FTS-triggert (delete+insert
+    # minden fotóra minden syncnél → WAL-hízás, flash-kopás).
     existing = {
-        row["name"]: (row["mtime_ns"], row["size"])
+        row["name"]: (
+            (row["mtime_ns"], row["size"]),
+            (
+                row["star"],
+                row["hidden"],
+                row["caption_ini"],
+                row["keywords_ini"],
+                row["rotate_steps"],
+                row["filters"],
+            ),
+        )
         for row in conn.execute(
-            "SELECT name, mtime_ns, size FROM photos WHERE folder_id = ?",
+            "SELECT name, mtime_ns, size, star, hidden, caption_ini,"
+            " keywords_ini, rotate_steps, filters"
+            " FROM photos WHERE folder_id = ?",
             (folder_id,),
         )
     }
@@ -70,15 +86,19 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> None:
             _rotate_steps(section.get("rotate")) if section else 0,
             section.get("filters") if section else None,
         )
-        if existing.get(media.name) == (media.mtime_ns, media.size):
-            # Változatlan fájl: csak az ini-mezők frissülnek, a (drága)
-            # EXIF/IPTC-olvasás kimarad, a fájl-metaadat oszlopok maradnak.
-            conn.execute(
-                "UPDATE photos SET star = ?, hidden = ?, caption_ini = ?,"
-                " keywords_ini = ?, rotate_steps = ?, filters = ?"
-                " WHERE folder_id = ? AND name = ?",
-                (*ini_fields, folder_id, media.name),
-            )
+        current = existing.get(media.name)
+        if current is not None and current[0] == (media.mtime_ns, media.size):
+            # Változatlan fájl: a (drága) EXIF/IPTC-olvasás kimarad, a
+            # fájl-metaadat oszlopok maradnak. UPDATE csak akkor fut, ha
+            # az ini-mezők ténylegesen eltérnek (#139) — különben a sor
+            # érintetlen, az FTS-trigger sem sül el.
+            if current[1] != ini_fields:
+                conn.execute(
+                    "UPDATE photos SET star = ?, hidden = ?, caption_ini = ?,"
+                    " keywords_ini = ?, rotate_steps = ?, filters = ?"
+                    " WHERE folder_id = ? AND name = ?",
+                    (*ini_fields, folder_id, media.name),
+                )
         else:
             _upsert_photo(conn, folder_id, scan, media, ini_fields)
     _prune_photos(conn, folder_id, [media.name for media in scan.files])

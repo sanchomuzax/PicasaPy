@@ -7,9 +7,7 @@ bitre pontos másolással kerülnek át. Az UI-bekötés az integrátor lépése
 
 from __future__ import annotations
 
-import os
 import shutil
-import tempfile
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +15,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from picasapy.ioutil import write_atomic
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
 _ROTATIONS = {
@@ -91,7 +90,9 @@ def _export_one(
     if not ok:
         raise ValueError(f"JPEG-kódolás sikertelen: {source}")
     target = _unique_target(target_dir, source.stem, ".jpg")
-    _write_atomic(target, encoded.tobytes())
+    # Közös helper (#129): fsync + atomikus csere — félkész célfájl sose
+    # maradjon (NAS/tele lemez).
+    write_atomic(target, encoded.tobytes())
     return target
 
 
@@ -136,16 +137,3 @@ def _unique_target(target_dir: Path, stem: str, suffix: str) -> Path:
         candidate = target_dir / f"{stem}-{counter}{suffix}"
         counter += 1
     return candidate
-
-
-def _write_atomic(target: Path, payload: bytes) -> None:
-    """Temp-fájl + os.replace: félkész célfájl sose maradjon (NAS/tele lemez)."""
-    fd, temp_name = tempfile.mkstemp(dir=target.parent, suffix=".tmp")
-    try:
-        with os.fdopen(fd, "wb") as handle:
-            handle.write(payload)
-        os.replace(temp_name, target)
-    except BaseException:
-        if os.path.exists(temp_name):
-            os.unlink(temp_name)
-        raise

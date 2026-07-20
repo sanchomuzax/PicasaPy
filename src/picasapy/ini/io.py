@@ -6,11 +6,10 @@
 
 from __future__ import annotations
 
-import os
-import stat
-import tempfile
 from dataclasses import replace
 from pathlib import Path
+
+from picasapy.ioutil import write_atomic
 
 from .document import IniDocument, parse_document
 
@@ -40,41 +39,10 @@ def save_document(
         payload = _BOM + payload
     if backup and target.exists():
         _write_backup(target)
-    _write_atomic(target, payload)
+    write_atomic(target, payload)
 
 
 def _write_backup(target: Path) -> None:
     backup_path = target.with_name(target.name + ".bak")
-    _write_atomic(backup_path, target.read_bytes())
-
-
-def _write_atomic(target: Path, payload: bytes) -> None:
-    fd, temp_name = tempfile.mkstemp(dir=target.parent, prefix=f"{target.name}.tmp")
-    try:
-        with os.fdopen(fd, "wb") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        # A mkstemp 0600-at ad; egy meglévő fájl jogait meg kell őrizni,
-        # hogy a NAS-on más folyamatok (az eredeti Picasa) is olvashassák.
-        if target.exists():
-            os.chmod(temp_name, stat.S_IMODE(target.stat().st_mode))
-        os.replace(temp_name, target)
-    except BaseException:
-        os.unlink(temp_name)
-        raise
-    _fsync_directory(target.parent)
-
-
-def _fsync_directory(directory: Path) -> None:
-    """A rename tartósságához a könyvtárbejegyzést is ki kell írni.
-
-    Csak POSIX-on lehetséges (Windowson könyvtár nem nyitható fd-ként;
-    ott az os.replace enélkül is atomikus)."""
-    if os.name != "posix":
-        return
-    dir_fd = os.open(directory, os.O_RDONLY)
-    try:
-        os.fsync(dir_fd)
-    finally:
-        os.close(dir_fd)
+    # Közös helper (#129): fsync + jogmegőrzés + atomikus csere.
+    write_atomic(backup_path, target.read_bytes())
