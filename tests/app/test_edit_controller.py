@@ -538,3 +538,119 @@ class TestPersistentUndoFromChain:
     def test_empty_chain_has_no_undo(self, qt_app, tmp_path):
         ctl = self._controller(tmp_path, "")
         assert ctl.canUndo is False
+
+
+class TestFinetune:
+    """Finomhangolás (finetune2) csúszkák — #20."""
+
+    def _filters(self, photo):
+        from picasapy.ini import load_document
+
+        ini = photo.parent / ".picasa.ini"
+        if not ini.exists():
+            return ""
+        section = load_document(ini).section("IMG_0001.jpg")
+        return (section.get("filters") if section else None) or ""
+
+    def test_set_finetune_writes_ini(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setFinetune(0.5, 0.25, 0.1, -0.5)
+        assert (
+            self._filters(photo)
+            == "finetune2=1,0.500000,0.250000,0.100000,00000000,-0.500000;"
+        )
+
+    def test_finetune_properties_reflect_saved(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setFinetune(0.3, 0.6, 0.2, 0.8)
+        assert controller.fillLight == pytest.approx(0.3)
+        assert controller.highlights == pytest.approx(0.6)
+        assert controller.shadows == pytest.approx(0.2)
+        assert controller.colorTemp == pytest.approx(0.8)
+        assert controller.hasFinetune is True
+
+    def test_finetune_preloaded_from_existing_ini(self, controller, photo):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            "[IMG_0001.jpg]\nfilters=finetune2=1,0.4,0,0,00000000,0;\n",
+            encoding="utf-8",
+        )
+        controller.beginEdit("1", str(photo))
+        assert controller.fillLight == pytest.approx(0.4)
+
+    def test_set_finetune_pushes_undo(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setFinetune(0.5, 0, 0, 0)
+        assert controller.canUndo is True
+        assert controller.undoAction == "finetune"
+        controller.undo()
+        assert controller.hasFinetune is False
+
+    def test_all_zero_removes_finetune(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setFinetune(0.5, 0, 0, 0)
+        controller.setFinetune(0, 0, 0, 0)
+        assert controller.hasFinetune is False
+        assert self._filters(photo) == ""
+
+    def test_preview_finetune_no_ini_write(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        rev_before = controller.revision
+        controller.previewFinetune(0.5, 0, 0, 0)
+        # előnézet frissült, de az ini üres maradt (nincs mentés)
+        assert controller.revision == rev_before + 1
+        assert self._filters(photo) == ""
+        assert controller.canUndo is False
+
+    def test_preview_then_save_single_finetune(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.previewFinetune(0.2, 0, 0, 0)
+        controller.previewFinetune(0.7, 0, 0, 0)
+        controller.setFinetune(0.7, 0, 0, 0)
+        # a sok preview után is egyetlen finetune2 réteg marad
+        assert self._filters(photo).count("finetune2=") == 1
+
+
+class TestEffects:
+    """Effekt rétegek append-only alkalmazása — #20."""
+
+    def _filters(self, photo):
+        from picasapy.ini import load_document
+
+        ini = photo.parent / ".picasa.ini"
+        if not ini.exists():
+            return ""
+        section = load_document(ini).section("IMG_0001.jpg")
+        return (section.get("filters") if section else None) or ""
+
+    def test_apply_effect_appends(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyEffect("sepia")
+        assert self._filters(photo) == "sepia=1;"
+
+    def test_apply_effect_with_default_params(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyEffect("sat")
+        assert self._filters(photo) == "sat=1,0.500000;"
+
+    def test_apply_effect_layers(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyEffect("bw")
+        controller.applyEffect("warm")
+        assert self._filters(photo) == "bw=1;warm=1;"
+
+    def test_apply_effect_pushes_undo(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyEffect("grain2")
+        assert controller.undoAction == "grain2"
+        controller.undo()
+        assert self._filters(photo) == ""
+
+    def test_apply_unknown_effect_raises(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        with pytest.raises(ValueError):
+            controller.applyEffect("bogus")
+
+    def test_apply_effect_requires_active(self, controller):
+        with pytest.raises(ValueError):
+            controller.applyEffect("sepia")

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 
 // Szerkesztő eszközpanel — a néző bal oldali "Gyakori javítások" füle,
@@ -11,6 +12,10 @@ Rectangle {
     objectName: "editorPanel"
     color: Theme.chromeBg
     implicitWidth: 230
+
+    // aktív fül: 0 = Gyakori javítások, 1 = Finomhangolás, 2 = Effektek
+    // (a vágó-mód a fülsávtól függetlenül, a cropColumn-on át él)
+    property int activeTab: 0
 
     // kapcsoló-állapotok — az aktív eszköz csempéje "benyomva" jelenik meg
     property bool cropActive: false
@@ -36,6 +41,23 @@ Rectangle {
     property int aspectIndex: 0        // az aspectPresets lista indexe
     property bool aspectRotated: false // Forgatás: fekvő <-> álló
 
+    // Finomhangolás (#20): a hívó (PhotoViewer) tölti a mentett értékekkel;
+    // a csúszkák CSAK a syncFinetuneSliders()-en át íródnak, hogy húzás
+    // közben ne törje meg a kötést (ld. tiltSlider minta, #131)
+    property real fillLight: 0
+    property real highlights: 0
+    property real shadows: 0
+    property real colorTemp: 0
+    property bool hasFinetune: false
+    // programozott szinkronnál (nyitás/lapozás/kontroller-frissítés) NEM
+    // váltunk ki finetunePreview-t — a tiltSlider mintáját követve
+    property bool suppressFinetune: false
+    signal finetunePreview(real fill, real highlights, real shadows, real temp)
+    signal finetuneCommit(real fill, real highlights, real shadows, real temp)
+
+    // Effektek (#20): minden gomb új réteget fűz a láncra (append-only)
+    signal effectRequested(string name)
+
     // tool: "crop"|"tilt"|"redeye"|"enhance"|"autolight"|"autocolor"
     signal toolActivated(string tool)
     // a vágás külön jelet is kap — a hívó ez alapján nyitja a CropOverlay-t
@@ -49,6 +71,25 @@ Rectangle {
     signal cropResetRequested()
     signal cropApplyRequested()
     signal cropCancelRequested()
+
+    // a négy csúszka aktuális értékét egyben küldi (élő előnézet)
+    function emitFinetunePreview() {
+        panel.finetunePreview(finetuneFillSlider.value,
+                               finetuneHighlightsSlider.value,
+                               finetuneShadowsSlider.value,
+                               finetuneTempSlider.value)
+    }
+    // a csúszkák a mentett (kontroller) értékekre állnak — előnézet nélkül
+    function syncFinetuneSliders() {
+        panel.suppressFinetune = true
+        finetuneFillSlider.value = panel.fillLight
+        finetuneHighlightsSlider.value = panel.highlights
+        finetuneShadowsSlider.value = panel.shadows
+        finetuneTempSlider.value = panel.colorTemp
+        panel.suppressFinetune = false
+    }
+    onFillLightChanged: panel.syncFinetuneSliders()
+    onActiveTabChanged: panel.syncFinetuneSliders()
 
     // Arány-lista (Picasa-minta). ratio = szélesség/magasság fekvő
     // tájolásban; 0 = kézi (szabad), -1 = a kép jelenlegi aránya.
@@ -178,13 +219,70 @@ Rectangle {
         }
     }
 
+    // egy fülgomb (Gyakori javítások / Finomhangolás / Effektek, #20):
+    // kattintásra panel.activeTab vált, az aktív fül vastagabb betűvel és
+    // eltérő háttérrel emelkedik ki
+    component EditTabButton: Rectangle {
+        id: tbtn
+        required property int tabIndex
+        required property string label
+        Layout.fillWidth: true
+        Layout.preferredHeight: 22
+        color: panel.activeTab === tabIndex ? Theme.contentPanel : Theme.panelHeaderBg
+        border.width: 1
+        border.color: Theme.chromeBorder
+        Text {
+            anchors.centerIn: parent
+            text: tbtn.label
+            font.pixelSize: Theme.fontSize - 1
+            font.bold: panel.activeTab === tbtn.tabIndex
+            color: Theme.panelHeaderText
+            elide: Text.ElideRight
+            width: parent.width - 4
+            horizontalAlignment: Text.AlignHCenter
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: panel.activeTab = tbtn.tabIndex
+        }
+    }
+
+    // ---------------- fülsáv: Gyakori javítások / Finomhangolás / Effektek
+    // (#20) — csak "tools" módban, vágásnál (cropColumn) nincs értelme
+    RowLayout {
+        id: tabBar
+        objectName: "editTabBar"
+        visible: !panel.cropActive
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 10
+        spacing: 0
+
+        EditTabButton {
+            objectName: "editTabFixes"
+            tabIndex: 0
+            label: qsTr("Common Fixes")
+        }
+        EditTabButton {
+            objectName: "editTabFinetune"
+            tabIndex: 1
+            label: qsTr("Fine Tuning")
+        }
+        EditTabButton {
+            objectName: "editTabEffects"
+            tabIndex: 2
+            label: qsTr("Effects")
+        }
+    }
+
     // ---------------- "tools" mód: ikonrács ----------------
     ColumnLayout {
         objectName: "toolsColumn"
-        visible: !panel.cropActive
+        visible: !panel.cropActive && panel.activeTab === 0
         // tiltott panel (videó a nézőben, #103): az egész oszlop halvány
         opacity: panel.enabled ? 1 : 0.45
-        anchors.top: parent.top
+        anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.margins: 10
@@ -261,53 +359,6 @@ Rectangle {
             }
         }
 
-        // Derítőfény — a render-op a 2. ütemben (#20) élesedik; addig
-        // láthatóan TILTOTT (#119): ugyanaz a vizuális nyelv, mint a
-        // Retusálás/Szöveg csempéknél, plusz "Hamarosan" felirat
-        RowLayout {
-            objectName: "fillLightRow"
-            Layout.fillWidth: true
-            spacing: 6
-            enabled: false
-            opacity: 0.4
-            Image {
-                Layout.preferredWidth: 40
-                Layout.preferredHeight: 30
-                source: "../../assets/tools/filllight.png"
-            }
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 4
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 4
-                    Text {
-                        text: qsTr("Fill Light")
-                        font.pixelSize: Theme.fontSize - 1
-                        color: Theme.textGray
-                    }
-                    Text {
-                        objectName: "fillLightComingSoon"
-                        text: qsTr("(coming soon)")
-                        font.pixelSize: Theme.fontSize - 2
-                        font.italic: true
-                        color: Theme.textGray
-                    }
-                }
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 4; radius: 2
-                    color: "#d0cdc4"
-                    Rectangle {
-                        x: 0; y: -4
-                        width: 12; height: 12; radius: 6
-                        color: "#efefef"
-                        border.color: Theme.chromeBorder
-                    }
-                }
-            }
-        }
-
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
@@ -319,6 +370,233 @@ Rectangle {
             }
             PanelButton {
                 objectName: "editRedoButton"
+                label: panel.redoLabel
+                buttonEnabled: panel.redoAvailable
+                Layout.fillWidth: false
+                Layout.preferredWidth: 64
+                onButtonClicked: panel.redoRequested()
+            }
+        }
+    }
+
+    // ---------------- "finetune" mód: Finomhangolás (#20) ----------------
+    ColumnLayout {
+        objectName: "finetuneColumn"
+        visible: !panel.cropActive && panel.activeTab === 1
+        opacity: panel.enabled ? 1 : 0.45
+        anchors.top: tabBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 10
+        spacing: 8
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 22
+            color: Theme.panelHeaderBg
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: 6
+                anchors.verticalCenter: parent.verticalCenter
+                text: qsTr("Fine Tuning")
+                font.pixelSize: Theme.fontSize
+                font.bold: true
+                color: Theme.panelHeaderText
+            }
+        }
+
+        Label {
+            text: qsTr("Fill Light")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+        Slider {
+            id: finetuneFillSlider
+            objectName: "finetuneFillSlider"
+            Layout.fillWidth: true
+            from: 0; to: 1; value: 0
+            onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
+            onPressedChanged: if (!pressed)
+                panel.finetuneCommit(finetuneFillSlider.value,
+                                      finetuneHighlightsSlider.value,
+                                      finetuneShadowsSlider.value,
+                                      finetuneTempSlider.value)
+        }
+
+        Label {
+            text: qsTr("Highlights")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+        Slider {
+            id: finetuneHighlightsSlider
+            objectName: "finetuneHighlightsSlider"
+            Layout.fillWidth: true
+            from: 0; to: 1; value: 0
+            onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
+            onPressedChanged: if (!pressed)
+                panel.finetuneCommit(finetuneFillSlider.value,
+                                      finetuneHighlightsSlider.value,
+                                      finetuneShadowsSlider.value,
+                                      finetuneTempSlider.value)
+        }
+
+        Label {
+            text: qsTr("Shadows")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+        Slider {
+            id: finetuneShadowsSlider
+            objectName: "finetuneShadowsSlider"
+            Layout.fillWidth: true
+            from: 0; to: 1; value: 0
+            onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
+            onPressedChanged: if (!pressed)
+                panel.finetuneCommit(finetuneFillSlider.value,
+                                      finetuneHighlightsSlider.value,
+                                      finetuneShadowsSlider.value,
+                                      finetuneTempSlider.value)
+        }
+
+        Label {
+            text: qsTr("Color Temperature")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+        Slider {
+            id: finetuneTempSlider
+            objectName: "finetuneTempSlider"
+            Layout.fillWidth: true
+            from: -1; to: 1; value: 0
+            onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
+            onPressedChanged: if (!pressed)
+                panel.finetuneCommit(finetuneFillSlider.value,
+                                      finetuneHighlightsSlider.value,
+                                      finetuneShadowsSlider.value,
+                                      finetuneTempSlider.value)
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            PanelButton {
+                objectName: "finetuneUndoButton"
+                label: panel.undoLabel
+                buttonEnabled: panel.undoAvailable
+                onButtonClicked: panel.undoRequested()
+            }
+            PanelButton {
+                objectName: "finetuneRedoButton"
+                label: panel.redoLabel
+                buttonEnabled: panel.redoAvailable
+                Layout.fillWidth: false
+                Layout.preferredWidth: 64
+                onButtonClicked: panel.redoRequested()
+            }
+        }
+    }
+
+    // ---------------- "effects" mód: Effektek (#20) ----------------
+    ColumnLayout {
+        objectName: "effectsColumn"
+        visible: !panel.cropActive && panel.activeTab === 2
+        opacity: panel.enabled ? 1 : 0.45
+        anchors.top: tabBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 10
+        spacing: 8
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 22
+            color: Theme.panelHeaderBg
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: 6
+                anchors.verticalCenter: parent.verticalCenter
+                text: qsTr("Effects")
+                font.pixelSize: Theme.fontSize
+                font.bold: true
+                color: Theme.panelHeaderText
+            }
+        }
+
+        GridLayout {
+            columns: 2
+            columnSpacing: 6
+            rowSpacing: 6
+            Layout.fillWidth: true
+
+            PanelButton {
+                objectName: "effectSepia"
+                label: qsTr("Sepia")
+                onButtonClicked: panel.effectRequested("sepia")
+            }
+            PanelButton {
+                objectName: "effectBw"
+                label: qsTr("B&W")
+                onButtonClicked: panel.effectRequested("bw")
+            }
+            PanelButton {
+                objectName: "effectWarm"
+                label: qsTr("Warmify")
+                onButtonClicked: panel.effectRequested("warm")
+            }
+            PanelButton {
+                objectName: "effectGrain2"
+                label: qsTr("Film Grain")
+                onButtonClicked: panel.effectRequested("grain2")
+            }
+            PanelButton {
+                objectName: "effectTint"
+                label: qsTr("Tint")
+                onButtonClicked: panel.effectRequested("tint")
+            }
+            PanelButton {
+                objectName: "effectSat"
+                label: qsTr("Saturation")
+                onButtonClicked: panel.effectRequested("sat")
+            }
+            PanelButton {
+                objectName: "effectRadblur"
+                label: qsTr("Soft Focus")
+                onButtonClicked: panel.effectRequested("radblur")
+            }
+            PanelButton {
+                objectName: "effectGlow2"
+                label: qsTr("Glow")
+                onButtonClicked: panel.effectRequested("glow2")
+            }
+            PanelButton {
+                objectName: "effectAnsel"
+                label: qsTr("Filtered B&W")
+                onButtonClicked: panel.effectRequested("ansel")
+            }
+            PanelButton {
+                objectName: "effectRadsat"
+                label: qsTr("Focal Saturation")
+                onButtonClicked: panel.effectRequested("radsat")
+            }
+            PanelButton {
+                objectName: "effectDirTint"
+                label: qsTr("Graduated Tint")
+                onButtonClicked: panel.effectRequested("dir_tint")
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            PanelButton {
+                objectName: "effectsUndoButton"
+                label: panel.undoLabel
+                buttonEnabled: panel.undoAvailable
+                onButtonClicked: panel.undoRequested()
+            }
+            PanelButton {
+                objectName: "effectsRedoButton"
                 label: panel.redoLabel
                 buttonEnabled: panel.redoAvailable
                 Layout.fillWidth: false

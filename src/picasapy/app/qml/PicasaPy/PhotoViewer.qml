@@ -95,6 +95,19 @@ Rectangle {
         case "enhance": return qsTr("I'm Feeling Lucky")
         case "autolight": return qsTr("Auto Contrast")
         case "autocolor": return qsTr("Auto Color")
+        case "finetune": return qsTr("Fine Tuning")
+        // effekt-kulcsok (#20): a lánc bármely elemeként visszavonható
+        case "sepia": return qsTr("Sepia")
+        case "bw": return qsTr("B&W")
+        case "warm": return qsTr("Warmify")
+        case "grain2": return qsTr("Film Grain")
+        case "tint": return qsTr("Tint")
+        case "sat": return qsTr("Saturation")
+        case "radblur": return qsTr("Soft Focus")
+        case "glow2": return qsTr("Glow")
+        case "ansel": return qsTr("Filtered B&W")
+        case "radsat": return qsTr("Focal Saturation")
+        case "dir_tint": return qsTr("Graduated Tint")
         // ismeretlen (pl. valódi Picasa által írt) szűrő: a nyers név is
         // informatívabb, mint az üres felirat
         default: return action
@@ -133,6 +146,10 @@ Rectangle {
         editorPanel.enhanceEnabled = editController.enhanceEnabled
         editorPanel.autolightEnabled = editController.autolightEnabled
         editorPanel.autocolorEnabled = editController.autocolorEnabled
+        // Finomhangolás-csúszkák (#20): a panel binding már frissítette a
+        // fillLight/highlights/shadows/colorTemp értékeket a kontrollerből —
+        // ez a hívás azokat suppress mellett a csúszkákba is beírja
+        editorPanel.syncFinetuneSliders()
     }
     onVisibleChanged: {
         if (visible) {
@@ -154,6 +171,9 @@ Rectangle {
             // lapozáskor a csúszka az ÚJ kép mentett tilt-értékére áll —
             // suppressPreview miatt ez nem írja felül a preview-t (#131)
             syncTiltSlider()
+            // ugyanígy a Finomhangolás-csúszkák is az új kép mentett
+            // értékeire állnak (#20)
+            editorPanel.syncFinetuneSliders()
             if (editorPanel.cropActive) {
                 editController.enterCropTool()
                 cropOverlay.loadSelection(editController.cropSelection)
@@ -354,6 +374,15 @@ Rectangle {
                                ? qsTr("Redo") + ": "
                                  + viewer.toolLabel(editController.redoAction)
                                : qsTr("Redo")
+                    // Finomhangolás (#20): a mentett értékek a kontrollerből —
+                    // a syncFinetuneSliders() ezekből tölti a csúszkákat
+                    fillLight: editController.fillLight
+                    highlights: editController.highlights
+                    shadows: editController.shadows
+                    colorTemp: editController.colorTemp
+                    onFinetunePreview: (f, h, s, t) => editController.previewFinetune(f, h, s, t)
+                    onFinetuneCommit: (f, h, s, t) => editController.setFinetune(f, h, s, t)
+                    onEffectRequested: (name) => editController.applyEffect(name)
                     onToolActivated: function(tool) {
                         // crop/tilt helyi mód (overlay/csúszka); a többi
                         // azonnali ini-művelet az EditControlleren át
@@ -400,7 +429,7 @@ Rectangle {
                     anchors.margins: 10
                     spacing: 6
                     Label {
-                        visible: editorPanel.tiltActive
+                        visible: editorPanel.tiltActive && editorPanel.activeTab === 0
                         text: qsTr("Straighten")
                         font.pixelSize: Theme.fontSize
                         color: Theme.textGray
@@ -411,7 +440,7 @@ Rectangle {
                     Slider {
                         id: tiltSlider
                         objectName: "tiltSlider"
-                        visible: editorPanel.tiltActive
+                        visible: editorPanel.tiltActive && editorPanel.activeTab === 0
                         from: -1; to: 1; value: 0
                         // programozott szinkronnál (nyitás/lapozás) NEM
                         // váltunk ki previewTilt-et — az felülírná a
