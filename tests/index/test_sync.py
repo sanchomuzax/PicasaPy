@@ -305,6 +305,155 @@ class TestFiltersSync:
             assert photos_in_folder(conn, lib)[0].filters is None
 
 
+def _oregit(path, *, masodperc=3600):
+    """A mappa/fájl mtime-ját a múltba állítja, hogy az inkrementális skip
+    frissesség-védőablaka (#143) ne akadályozza a kihagyást a tesztben."""
+    import os
+
+    regi = os.stat(path).st_mtime_ns - masodperc * 1_000_000_000
+    os.utime(path, ns=(regi, regi))
+
+
+class TestIncrementalSync:
+    """#143: mappa-mtime alapú kihagyás — változatlan (és nem friss) mappa
+    fájljait a rescan nem stat-olja újra."""
+
+    def test_unchanged_old_folder_skipped_misses_inplace_edit(self, conn, library):
+        # Dokumentált kompromisszum: helyben (mtime-őrző mappa mellett)
+        # átírt fájlt az inkrementális rescan nem vesz észre — ez bizonyítja,
+        # hogy a mappa tényleg kimaradt a stat-olásból.
+        _oregit(library / "nyaralas")
+        _oregit(library / "nyaralas" / ".picasa.ini")
+        sync_tree(conn, library)
+        # a helyben-írás a mappa (és az ini) mtime-ját nem változtatja meg
+        (library / "nyaralas" / "IMG_0001.jpg").write_bytes(b"x" * 99)
+        sync_tree(conn, library)
+        assert photos_in_folder(conn, library / "nyaralas")[0].size == 10  # kimaradt
+
+    def test_incremental_false_forces_full_scan(self, conn, library):
+        _oregit(library / "nyaralas")
+        _oregit(library / "nyaralas" / ".picasa.ini")
+        sync_tree(conn, library)
+        (library / "nyaralas" / "IMG_0001.jpg").write_bytes(b"x" * 99)
+        sync_tree(conn, library, incremental=False)
+        assert photos_in_folder(conn, library / "nyaralas")[0].size == 99
+
+    def test_fresh_folder_never_skipped(self, conn, library):
+        # Friss (védőablakon belüli) mappát sosem hagyunk ki — a durva
+        # mtime-felbontás (SMB/FAT/jiffy) miatti kihagyott változás ellen.
+        sync_tree(conn, library)
+        (library / "nyaralas" / "IMG_0001.jpg").write_bytes(b"x" * 99)
+        sync_tree(conn, library)
+        assert photos_in_folder(conn, library / "nyaralas")[0].size == 99
+
+    def test_new_file_bumps_folder_mtime_and_is_found(self, conn, library):
+        _oregit(library / "nyaralas")
+        _oregit(library / "nyaralas" / ".picasa.ini")
+        sync_tree(conn, library)
+        (library / "nyaralas" / "IMG_0003.jpg").write_bytes(b"z" * 7)
+        sync_tree(conn, library)
+        names = [p.name for p in photos_in_folder(conn, library / "nyaralas")]
+        assert "IMG_0003.jpg" in names
+
+    def test_ini_rewrite_detected_despite_unchanged_folder_mtime(self, conn, library):
+        # A .picasa.ini-t a Windows-os Picasa helyben is átírhatja (a mappa
+        # mtime-ja nem változik) — az ini saját mtime-ját ezért külön követjük.
+        _oregit(library / "nyaralas")
+        _oregit(library / "nyaralas" / ".picasa.ini")
+        sync_tree(conn, library)
+        (library / "nyaralas" / ".picasa.ini").write_text(
+            "[IMG_0002.jpg]\nstar=yes\n", encoding="utf-8"
+        )
+        # az újraírt init is öregítjük: az eltérést így kizárólag a tárolt
+        # ini-mtime-tól való különbség jelzi, nem a frissesség-védőablak
+        _oregit(library / "nyaralas" / ".picasa.ini", masodperc=1800)
+        sync_tree(conn, library)
+        photos = photos_in_folder(conn, library / "nyaralas")
+        assert photos[1].star is True
+
+    def test_skipped_folder_not_pruned(self, conn, library):
+        # A kihagyott mappa a „látott" halmaz része — a prune nem törölheti.
+        _oregit(library / "nyaralas")
+        _oregit(library / "nyaralas" / ".picasa.ini")
+        sync_tree(conn, library)
+        sync_tree(conn, library)
+        assert len(photos_in_folder(conn, library / "nyaralas")) == 2
+
+
+class TestSyncFolder:
+    """#143: egy-mappás, nem-rekurzív sync-út a watcher-ág számára."""
+
+    def test_syncs_only_the_given_folder(self, conn, library):
+        from picasapy.index import sync_folder
+
+        (library / "tavasz").mkdir()
+        (library / "tavasz" / "IMG_9999.jpg").write_bytes(b"z" * 5)
+        sync_tree(conn, library)
+        (library / "nyaralas" / "IMG_0003.jpg").write_bytes(b"u" * 3)
+        (library / "tavasz" / "IMG_8888.jpg").write_bytes(b"v" * 4)
+        sync_folder(conn, library, library / "nyaralas")
+        names = [p.name for p in photos_in_folder(conn, library / "nyaralas")]
+        assert "IMG_0003.jpg" in names
+        tavasz = [p.name for p in photos_in_folder(conn, library / "tavasz")]
+        assert "IMG_8888.jpg" not in tavasz  # a testvérmappához nem nyúlt
+
+    def test_not_recursive(self, conn, library):
+        from picasapy.index import sync_folder
+
+        child = library / "nyaralas" / "telek"
+        child.mkdir()
+        (child / "video.mp4").write_bytes(b"m" * 6)
+        sync_tree(conn, library)
+        (child / "video2.mp4").write_bytes(b"n" * 6)
+        sync_folder(conn, library, library / "nyaralas")
+        names = [p.name for p in photos_in_folder(conn, child)]
+        assert "video2.mp4" not in names  # az almappát nem járta újra
+
+    def test_deleted_folder_removed_from_index(self, conn, library):
+        import shutil
+
+        from picasapy.index import sync_folder
+
+        sync_tree(conn, library)
+        shutil.rmtree(library / "nyaralas")
+        sync_folder(conn, library, library / "nyaralas")
+        assert photos_in_folder(conn, library / "nyaralas") == ()
+
+    def test_folder_outside_root_rejected(self, conn, library, tmp_path):
+        from picasapy.index import sync_folder
+
+        idegen = tmp_path / "idegen"
+        idegen.mkdir()
+        with pytest.raises(ValueError):
+            sync_folder(conn, library, idegen)
+
+    def test_excluded_folder_removed(self, conn, library):
+        from picasapy.index import sync_folder
+
+        sync_tree(conn, library)
+        sync_folder(
+            conn, library, library / "nyaralas", exclude=(library / "nyaralas",)
+        )
+        assert photos_in_folder(conn, library / "nyaralas") == ()
+
+
+class TestPruneSqlFiltering:
+    """#143: a prune SQL-oldalon szűr — és nem eshet át a prefix-csapdán."""
+
+    def test_prefix_sibling_root_untouched(self, conn, tmp_path):
+        # A „kep" gyökér takarítása nem érintheti a „kepek" gyökeret,
+        # hiába szöveg-prefixe az egyik a másiknak.
+        from picasapy.index import remove_root
+
+        for nev in ("kep", "kepek"):
+            (tmp_path / nev / "m").mkdir(parents=True)
+            (tmp_path / nev / "m" / "x.jpg").write_bytes(b"x")
+            sync_tree(conn, tmp_path / nev)
+        remove_root(conn, tmp_path / "kep")
+        assert photos_in_folder(conn, tmp_path / "kep" / "m") == ()
+        assert len(photos_in_folder(conn, tmp_path / "kepek" / "m")) == 1
+
+
 class TestSyncTreeExclude:
     """#145: FRExcludeFolders.txt — a kizárt mappa (és alfái) ne kerüljön
     az indexbe."""

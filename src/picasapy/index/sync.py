@@ -9,15 +9,39 @@ veszi át.
 from __future__ import annotations
 
 import logging
+import os
 import re
 import sqlite3
+import time
 from pathlib import Path
 
 from picasapy.ini import IniDocument, load_document
 from picasapy.metadata import EMPTY_METADATA, read_file_metadata
-from picasapy.scanner import PICASA_INI_NAME, FolderScan, MediaFile, scan_tree
+from picasapy.scanner import (
+    PICASA_INI_NAME,
+    FolderScan,
+    MediaFile,
+    scan_folder,
+    scan_tree,
+)
 
 _ROTATE = re.compile(r"^rotate\((\d+)\)$")
+
+# #143: az inkrementális kihagyás frissesség-védőablaka. A mappa- és
+# ini-mtime felbontása durva lehet (SMB/FAT: 2 s; ext4 is csak jiffy-pontos),
+# ezért az ennél frissebb mappát sosem hagyjuk ki — különben egy, a mentett
+# mtime-mal azonos időbélyegű változás észrevétlen maradna.
+_SKIP_SAFETY_NS = 2_000_000_000
+
+# #143: a scan-állapot segédtáblája. Szándékosan nem a schema.py-ban él
+# (sémaverziót csak az integrátor oszt ki): tisztán eldobható cache —
+# hiánya vagy törlése csak egy teljes újra-stat-olást jelent, adatvesztést nem.
+_SCAN_STATE_DDL = (
+    "CREATE TABLE IF NOT EXISTS folder_scan_state ("
+    " path TEXT PRIMARY KEY,"
+    " mtime_ns INTEGER NOT NULL,"
+    " ini_mtime_ns INTEGER)"
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +50,7 @@ def sync_tree(
     conn: sqlite3.Connection,
     root: str | Path,
     exclude: tuple[str | Path, ...] = (),
+    incremental: bool = True,
 ) -> None:
     """A gyökér alatti könyvtár teljes szinkronja az indexbe.
 
@@ -46,11 +71,25 @@ def sync_tree(
       mindig frissíti az mtime-ot, így ez a gyakorlatban nem fordul elő.
     - A keywords_file vesszővel join-olt lista: vesszőt tartalmazó kulcsszó
       nem bontható vissza veszteség nélkül (FTS-t és megjelenítést nem zavar).
+
+    #143 — inkrementális rescan (`incremental=True`, alapértelmezés): egy
+    mappa fájljainak stat-olása kimarad, ha a mappa mtime-ja ÉS az ini
+    mtime-ja megegyezik az indexben tárolt állapottal, és mindkettő idősebb
+    a frissesség-védőablaknál. Dokumentált kompromisszum (a NAS-rescan
+    nagyságrendi gyorsítása fejében): a mappa mtime-ját nem érintő, helyben
+    történt fájl-átírást a rescan nem vesz észre — azt a watcher-ág, illetve
+    egy `incremental=False` teljes sync fedi le.
     """
     root_path = Path(root).resolve()
-    scans = scan_tree(root_path, exclude=exclude)
+    _ensure_scan_state(conn)
+    skip = _make_skip(conn) if incremental else None
+    scans = scan_tree(root_path, exclude=exclude, skip=skip)
     for scan in scans:
+        if scan.skipped:
+            continue  # változatlan mappa: az indexbeli állapot érvényes
         _sync_folder(conn, scan)
+        if incremental:
+            _store_scan_state(conn, scan)
         conn.commit()
     seen_paths = {str(scan.path) for scan in scans}
     if seen_paths or not _has_indexed_folders(conn, root_path):
@@ -73,6 +112,95 @@ def sync_tree(
             root_path,
         )
     conn.commit()
+
+
+def sync_folder(
+    conn: sqlite3.Connection,
+    root: str | Path,
+    folder: str | Path,
+    exclude: tuple[str | Path, ...] = (),
+) -> None:
+    """Egyetlen mappa nem-rekurzív szinkronja (watcher-ág, #143).
+
+    A watcher mappa-pontos jelzést ad — nincs ok a teljes részfa
+    újrabejárására. A mappa almappáihoz nem nyúl; ha a mappa eltűnt,
+    kizárt vagy médiamentes lett, a sora (és a fotói) kikerülnek az
+    indexből. A `root` a védőkorlát: csak a figyelt gyökér alatti mappa
+    szinkronizálható."""
+    root_path = Path(root).resolve()
+    folder_path = Path(folder).resolve()
+    if not folder_path.is_relative_to(root_path):
+        raise ValueError(
+            f"A mappa nem a figyelt gyökér alatt van: {folder_path} ∉ {root_path}"
+        )
+    _ensure_scan_state(conn)
+    exclude_paths = tuple(Path(item).resolve() for item in exclude)
+    excluded = any(
+        folder_path == item or item in folder_path.parents for item in exclude_paths
+    )
+    scan = None if excluded else scan_folder(folder_path)
+    if scan is None:
+        _remove_folder(conn, folder_path)
+    else:
+        _sync_folder(conn, scan)
+        _store_scan_state(conn, scan)
+    conn.commit()
+
+
+def _remove_folder(conn: sqlite3.Connection, folder_path: Path) -> None:
+    """Egy mappa sorának (és fotóinak, scan-állapotának) törlése. Explicit
+    photos-törlés a folders előtt, hogy az FTS-triggerek lefussanak."""
+    row = conn.execute(
+        "SELECT id FROM folders WHERE path = ?", (str(folder_path),)
+    ).fetchone()
+    if row is not None:
+        conn.execute("DELETE FROM photos WHERE folder_id = ?", (row["id"],))
+        conn.execute("DELETE FROM folders WHERE id = ?", (row["id"],))
+    conn.execute(
+        "DELETE FROM folder_scan_state WHERE path = ?", (str(folder_path),)
+    )
+
+
+def _ensure_scan_state(conn: sqlite3.Connection) -> None:
+    """A scan-állapot cache-tábla lusta létrehozása (ld. _SCAN_STATE_DDL)."""
+    conn.execute(_SCAN_STATE_DDL)
+
+
+def _make_skip(conn: sqlite3.Connection):
+    """Kihagyás-predikátum az inkrementális rescanhez (#143).
+
+    Csak olyan mappa hagyható ki, amely (1) az indexben is szerepel,
+    (2) mappa- és ini-mtime-ja bitre egyezik a tárolt állapottal, és
+    (3) mindkét mtime idősebb a frissesség-védőablaknál."""
+    state = {
+        row["path"]: (row["mtime_ns"], row["ini_mtime_ns"])
+        for row in conn.execute(
+            "SELECT s.path, s.mtime_ns, s.ini_mtime_ns"
+            " FROM folder_scan_state s JOIN folders f ON f.path = s.path"
+        )
+    }
+    fresh_limit = time.time_ns() - _SKIP_SAFETY_NS
+
+    def skip(path: Path, mtime_ns: int, ini_mtime_ns: int | None) -> bool:
+        return (
+            state.get(str(path)) == (mtime_ns, ini_mtime_ns)
+            and mtime_ns <= fresh_limit
+            and (ini_mtime_ns is None or ini_mtime_ns <= fresh_limit)
+        )
+
+    return skip
+
+
+def _store_scan_state(conn: sqlite3.Connection, scan: FolderScan) -> None:
+    if not scan.mtime_ns:
+        return  # a mappa statja nem sikerült — ne rögzítsünk hamis állapotot
+    conn.execute(
+        "INSERT INTO folder_scan_state(path, mtime_ns, ini_mtime_ns)"
+        " VALUES (?, ?, ?)"
+        " ON CONFLICT(path) DO UPDATE SET mtime_ns = excluded.mtime_ns,"
+        " ini_mtime_ns = excluded.ini_mtime_ns",
+        (str(scan.path), scan.mtime_ns, scan.ini_mtime_ns),
+    )
 
 
 def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> None:
@@ -224,18 +352,36 @@ def _prune_folders(
 ) -> None:
     """A gyökér alatti, de a mostani scanben nem látott mappák törlése.
 
-    Explicit photos-törlés a folders előtt, hogy az FTS-triggerek biztosan
-    lefussanak (az FK-cascade nem minden konfigurációban futtat triggert).
+    #143: a gyökér-szűrés SQL-oldalon fut (indexelhető LIKE-prefix), nem
+    Pythonban az összes mappán iterálva. Explicit photos-törlés a folders
+    előtt, hogy az FTS-triggerek biztosan lefussanak (az FK-cascade nem
+    minden konfigurációban futtat triggert).
     """
-    stale_ids = [
-        row["id"]
-        for row in conn.execute("SELECT id, path FROM folders")
+    stale = [
+        (row["id"], row["path"])
+        for row in conn.execute(*_under_root_query("SELECT id, path", root))
         if row["path"] not in seen_paths
-        and _is_under(Path(row["path"]), root)
     ]
-    for folder_id in stale_ids:
+    for folder_id, path in stale:
         conn.execute("DELETE FROM photos WHERE folder_id = ?", (folder_id,))
         conn.execute("DELETE FROM folders WHERE id = ?", (folder_id,))
+        conn.execute("DELETE FROM folder_scan_state WHERE path = ?", (path,))
+
+
+def _under_root_query(select: str, root: Path) -> tuple[str, tuple[str, str]]:
+    """SQL + paraméterek a gyökér alatti folders-sorokhoz (#143).
+
+    A LIKE-minta escape-elt (%, _ és \\ a path-ban nem viselkedhet
+    joker-ként), és elválasztóval zárt prefixet használ — a „/a/kep" gyökér
+    nem foghatja meg a „/a/kepek" mappáit."""
+    prefix = str(root).rstrip(os.sep) + os.sep
+    escaped = (
+        prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    )
+    return (
+        f"{select} FROM folders WHERE path = ? OR path LIKE ? ESCAPE '\\'",
+        (str(root), escaped + "%"),
+    )
 
 
 def _is_under(path: Path, root: Path) -> bool:
@@ -244,10 +390,8 @@ def _is_under(path: Path, root: Path) -> bool:
 
 def _has_indexed_folders(conn: sqlite3.Connection, root: Path) -> bool:
     """Van-e a gyökér alá eső mappa az indexben (a scan-eredménytől függetlenül)."""
-    return any(
-        _is_under(Path(row["path"]), root)
-        for row in conn.execute("SELECT path FROM folders")
-    )
+    query, params = _under_root_query("SELECT 1", root)
+    return conn.execute(f"{query} LIMIT 1", params).fetchone() is not None
 
 
 def remove_root(conn: sqlite3.Connection, root: str | Path) -> None:
@@ -255,6 +399,7 @@ def remove_root(conn: sqlite3.Connection, root: str | Path) -> None:
     „Eltávolítás a Picasából"). Explicit photos-törlés a folders előtt,
     hogy az FTS-triggerek lefussanak."""
     root_path = Path(root).resolve()
+    _ensure_scan_state(conn)
     _prune_folders(conn, root_path, set())
     conn.commit()
 
@@ -271,13 +416,15 @@ def prune_foreign_folders(
     photos-törlés a folders előtt, hogy az FTS-triggerek lefussanak."""
     if not roots:
         return
+    _ensure_scan_state(conn)
     root_paths = tuple(Path(root).resolve() for root in roots)
-    stale_ids = [
-        row["id"]
+    stale = [
+        (row["id"], row["path"])
         for row in conn.execute("SELECT id, path FROM folders")
         if not any(_is_under(Path(row["path"]), root) for root in root_paths)
     ]
-    for folder_id in stale_ids:
+    for folder_id, path in stale:
         conn.execute("DELETE FROM photos WHERE folder_id = ?", (folder_id,))
         conn.execute("DELETE FROM folders WHERE id = ?", (folder_id,))
+        conn.execute("DELETE FROM folder_scan_state WHERE path = ?", (path,))
     conn.commit()
