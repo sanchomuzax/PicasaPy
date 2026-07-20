@@ -8,6 +8,7 @@ veszi át.
 
 from __future__ import annotations
 
+import logging
 import re
 import sqlite3
 from pathlib import Path
@@ -17,6 +18,8 @@ from picasapy.metadata import EMPTY_METADATA, read_file_metadata
 from picasapy.scanner import PICASA_INI_NAME, FolderScan, MediaFile, scan_tree
 
 _ROTATE = re.compile(r"^rotate\((\d+)\)$")
+
+logger = logging.getLogger(__name__)
 
 
 def sync_tree(conn: sqlite3.Connection, root: str | Path) -> None:
@@ -41,7 +44,26 @@ def sync_tree(conn: sqlite3.Connection, root: str | Path) -> None:
     for scan in scans:
         _sync_folder(conn, scan)
         conn.commit()
-    _prune_folders(conn, root_path, {str(scan.path) for scan in scans})
+    seen_paths = {str(scan.path) for scan in scans}
+    if seen_paths or not _has_indexed_folders(conn, root_path):
+        # Nem üres scan, vagy a gyökér az indexben is üres volt eddig —
+        # nincs mit óvni, a takarítás biztonságosan lefuthat.
+        _prune_folders(conn, root_path, seen_paths)
+    else:
+        # #132: az üres scan-eredmény megkülönböztethetetlen attól, hogy a
+        # gyökér ténylegesen elérhetetlen (pl. lecsatolt NAS-mount, amely
+        # üres könyvtárként van jelen). Ha korábban NEM volt üres az
+        # indexben tárolt részfa, a takarítást konzervatívan kihagyjuk —
+        # inkább maradjon egy ideig elavult bejegyzés, mint hogy a NAS
+        # visszatérése után órákig tartó teljes újraépítés legyen és a
+        # stabil rekord-id-k elvesszenek. Tényleges törléshez explicit
+        # eltávolítás szükséges (Mappakezelő → „Eltávolítás a Picasából").
+        logger.warning(
+            "A gyökér elérhetetlennek tűnik (üres scan-eredmény, de az "
+            "indexben van hozzá tartozó tartalom): %s — a takarítás "
+            "kimaradt.",
+            root_path,
+        )
     conn.commit()
 
 
@@ -210,6 +232,14 @@ def _prune_folders(
 
 def _is_under(path: Path, root: Path) -> bool:
     return path == root or path.is_relative_to(root)
+
+
+def _has_indexed_folders(conn: sqlite3.Connection, root: Path) -> bool:
+    """Van-e a gyökér alá eső mappa az indexben (a scan-eredménytől függetlenül)."""
+    return any(
+        _is_under(Path(row["path"]), root)
+        for row in conn.execute("SELECT path FROM folders")
+    )
 
 
 def remove_root(conn: sqlite3.Connection, root: str | Path) -> None:
