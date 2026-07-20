@@ -627,3 +627,94 @@ class TestEditSessionEffects:
         """Üres effekt-név ValueError."""
         with pytest.raises(ValueError):
             EditSession().append_effect("")
+
+
+class TestCopyPasteEffects:
+    """Teljes effektlánc másolása/beillesztése (#152, Picasa 'Copy/Paste All Effects')."""
+
+    def test_copy_effects_returns_ops_snapshot(self):
+        """A copy_effects() a lánc (FilterOp-ok) másolatát adja."""
+        source = EditSession.from_value("enhance=1;crop64=1,3f845bcb59418507;")
+        clipboard = source.copy_effects()
+        assert clipboard == source.ops
+        assert isinstance(clipboard, tuple)
+
+    def test_paste_effects_replaces_target_chain(self):
+        """A beillesztés LECSERÉLI a cél láncát, nem rétegez rá (Picasa-paritás)."""
+        source = EditSession.from_value(
+            "enhance=1;crop64=1,3f845bcb59418507;finetune2=1,0.3,0.1,0.2,00000000,0.0;"
+        )
+        target = EditSession.from_value("sepia=1;warm=1;")
+
+        pasted = EditSession.paste_effects(source.copy_effects())
+
+        assert pasted.to_value() == source.to_value()
+        assert pasted.to_value() != target.to_value()
+        # A cél korábbi effektjei nem maradnak a láncban.
+        assert not pasted.has("sepia")
+        assert not pasted.has("warm")
+
+    def test_paste_effects_onto_multiple_targets(self):
+        """Több kép munkamenetére is alkalmazható ugyanazzal a vágólap-tartalommal."""
+        source = EditSession.from_value("enhance=1;bw=1;")
+        clipboard = source.copy_effects()
+
+        target_a = EditSession.from_value("sepia=1;")
+        target_b = EditSession.from_value("")
+
+        pasted_a = EditSession.paste_effects(clipboard)
+        pasted_b = EditSession.paste_effects(clipboard)
+
+        assert pasted_a.to_value() == source.to_value()
+        assert pasted_b.to_value() == source.to_value()
+        # A célok korábbi állapota nem szivárog át egymásba.
+        assert pasted_a is not pasted_b
+        assert target_a.to_value() == "sepia=1;"  # a forrás target_a nem mutálódott
+
+    def test_paste_effects_preserves_unknown_entries_byte_exact(self):
+        """Idegen/ismeretlen lánc-bejegyzések a beillesztés után is bitre
+        pontosan megmaradnak (#73 round-trip elv), a paraméter-alak is."""
+        value = (
+            "enhance=1;Vignette=1,0.25,-0.578947;"
+            "finetune2=1,0.333333,0.176842,0.193684,00000000,-0.578947;"
+        )
+        source = EditSession.from_value(value)
+        pasted = EditSession.paste_effects(source.copy_effects())
+        assert pasted.to_value() == value
+
+    def test_paste_effects_onto_empty_target(self):
+        """Üres célra a teljes lánc bekerül."""
+        source = EditSession.from_value("crop64=1,10000000f1ddff49;enhance=1;")
+        pasted = EditSession.paste_effects(source.copy_effects())
+        assert pasted.crop() is not None
+        assert pasted.has("enhance")
+
+    def test_copy_paste_empty_source_clears_target(self):
+        """Üres forrás beillesztése a célt is kiüríti (a lánc lecserélődik)."""
+        source = EditSession.from_value("")
+        target = EditSession.from_value("sepia=1;")
+        pasted = EditSession.paste_effects(source.copy_effects())
+        assert pasted.is_empty()
+        assert pasted.to_value() != target.to_value()
+
+    def test_paste_effects_fits_undo_pattern(self):
+        """Az EditController undo-mintája (érték-a-művelet-előtt, kulcs) a
+        paste_effects-tel is működik: a hívó a beillesztés ELŐTTI session
+        `to_value()`-ját tolja a verembe, majd cseréli a session-t."""
+        undo_stack: list[tuple[str, str]] = []
+
+        target_session = EditSession.from_value("sepia=1;")
+        source_session = EditSession.from_value("enhance=1;autolight=1;")
+
+        # A controller-minta: push_undo(action) majd session-csere.
+        undo_stack.append((target_session.to_value(), "paste_effects"))
+        target_session = EditSession.paste_effects(source_session.copy_effects())
+
+        assert target_session.to_value() == "enhance=1;autolight=1;"
+        assert undo_stack == [("sepia=1;", "paste_effects")]
+
+        # Undo: az utolsó bejegyzés visszaállítja az eredeti (sepia) láncot.
+        previous_value, action = undo_stack.pop()
+        restored = EditSession.from_value(previous_value)
+        assert action == "paste_effects"
+        assert restored.to_value() == "sepia=1;"
