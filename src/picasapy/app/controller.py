@@ -103,11 +103,24 @@ class AppController(
         self._sync_jobs = 0
         self._thumb_active = 0
         self._busy = False
+        # #209: a lebegő „Importálás" panel állapota (LibraryMixin kezeli)
+        self._import_folder = ""
+        self._import_done = 0
+        self._import_total = 0
+        self._import_new = 0
+        self._import_visible = False
+        self._import_forced = False
+        self._import_dismissed = False
+        self._import_last_reload = 0.0
+        self._import_new_at_reload = 0
         # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
         # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
         # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
         self.syncFinished.connect(self._reload_after_sync)
         self.syncFinished.connect(self._on_sync_job_done)
+        # #209: mappánkénti haladás a workerből (queued) + panel-lezárás
+        self.syncProgress.connect(self._on_sync_progress)
+        self.syncFinished.connect(self._on_import_finished)
         self.watcherDirty.connect(self._on_folders_dirty)
         provider.activeCountChanged.connect(self._on_thumb_active)
 
@@ -428,11 +441,17 @@ class AppController(
     # -- belső --------------------------------------------------------------
 
     @staticmethod
-    def _sync_tree(conn, folder: str) -> None:
+    def _sync_tree(conn, folder: str, progress=None) -> None:
         """Indirekció a mappa-resynchez (#150): a mixinek ezen át hívják a
         `sync_tree`-t, így a tesztek patch-pontja (a modul-szintű
-        `picasapy.app.controller.sync_tree`) változatlanul él."""
-        sync_tree(conn, folder)
+        `picasapy.app.controller.sync_tree`) változatlanul él.
+
+        #209: az opcionális `progress` callback (worker-szál!) mappánkénti
+        haladás-jelzést ad tovább a `sync_tree`-nek."""
+        if progress is None:
+            sync_tree(conn, folder)
+        else:
+            sync_tree(conn, folder, progress=progress)
 
     def _refresh_view(self) -> None:
         """Az aktuális nézet újratöltése az indexből (mód szerint)."""
