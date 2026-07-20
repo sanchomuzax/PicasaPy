@@ -7,6 +7,9 @@ import QtQuick.Layouts
 // fogva húzható); automatikusan jelenik meg nagy szkennelésnél, és a
 // szkennelés végén tűnik el (a láthatóságot a Main.qml köti a
 // controller.importPanelVisible-re). Kézzel az × gombbal zárható.
+// #216: megszakításnál (figyelt mappa eltávolítása futó szkennelés közben)
+// a controller azonnal hamisra állítja az importPanelVisible-t, és a késői
+// worker-jelzéseket elnyeli — a panel így nem ragadhat be és nem villoghat.
 Rectangle {
     id: panel
 

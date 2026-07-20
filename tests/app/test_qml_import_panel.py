@@ -21,13 +21,15 @@ class TestImportPanel:
         assert panel.property("visible") is False
 
     def test_appears_on_progress_with_new_photos(self, qml_app, qt_app):
-        window, controller, _lib, _engine = qml_app
+        # #216 óta a jelzések csak FIGYELT gyökér alatti mappára hatnak —
+        # a tesztek ezért a valódi könyvtár (lib) útvonalait használják
+        window, controller, lib, _engine = qml_app
         panel = _child(window, "importProgressPanel")
         # csendes (semmi újat nem hozó) rescan-haladás: a panel NEM ugrik fel
-        controller.syncProgress.emit("/kepek/regi", 1, 10, 0)
+        controller.syncProgress.emit(str(lib / "regi"), 1, 10, 0)
         assert panel.property("visible") is False
         # új fotókat hozó haladás: a panel megjelenik, az adatok kötve
-        controller.syncProgress.emit("/kepek/nyaralas", 3, 10, 42)
+        controller.syncProgress.emit(str(lib / "nyaralas"), 3, 10, 42)
         assert panel.property("visible") is True
         assert _child(window, "importPanelFolder").property("text") == "nyaralas"
         counts = _child(window, "importPanelCounts").property("text")
@@ -42,32 +44,32 @@ class TestImportPanel:
         assert controller.importNewCount == 0
 
     def test_forced_visible_when_root_added(self, qml_app, qt_app):
-        window, controller, _lib, _engine = qml_app
+        window, controller, lib, _engine = qml_app
         panel = _child(window, "importProgressPanel")
         # új gyökér importja (forced): új fotó nélkül is látszik a haladás
         controller._import_forced = True
-        controller.syncProgress.emit("/uj-gyoker/a", 1, 500, 0)
+        controller.syncProgress.emit(str(lib / "a"), 1, 500, 0)
         assert panel.property("visible") is True
         controller.syncFinished.emit()
         qt_app.processEvents()
         assert panel.property("visible") is False
 
     def test_manual_close_hides_until_next_scan(self, qml_app, qt_app):
-        window, controller, _lib, _engine = qml_app
+        window, controller, lib, _engine = qml_app
         panel = _child(window, "importProgressPanel")
-        controller.syncProgress.emit("/kepek/b", 2, 5, 7)
+        controller.syncProgress.emit(str(lib / "b"), 2, 5, 7)
         assert panel.property("visible") is True
         # kézi bezárás: a panel eltűnik, de a futó szkennelés haladása
         # nem hozza vissza
         controller.dismissImportPanel()
         assert panel.property("visible") is False
-        controller.syncProgress.emit("/kepek/c", 3, 5, 9)
+        controller.syncProgress.emit(str(lib / "c"), 3, 5, 9)
         assert panel.property("visible") is False
         # a szkennelés vége nullázza a bezárt állapotot: a KÖVETKEZŐ
         # érdemi szkennelés újra megjelenítheti
         controller.syncFinished.emit()
         qt_app.processEvents()
-        controller.syncProgress.emit("/kepek/d", 1, 5, 3)
+        controller.syncProgress.emit(str(lib / "d"), 1, 5, 3)
         assert panel.property("visible") is True
         controller.syncFinished.emit()
         qt_app.processEvents()

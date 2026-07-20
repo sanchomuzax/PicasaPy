@@ -859,7 +859,11 @@ class TestLiveWatch:
 
         calls = []
         monkeypatch.setattr(
-            lc, "sync_folder", lambda conn, root, folder, exclude=(): calls.append((root, folder))
+            lc,
+            "sync_folder",
+            lambda conn, root, folder, exclude=(), should_stop=None: calls.append(
+                (root, folder)
+            ),
         )
         loop = _quit_on(controller.syncFinished)
         controller._on_folders_dirty([str(library / "nyaralas")])
@@ -895,7 +899,7 @@ class TestLiveWatch:
 
         import picasapy.app.library_controller as lc
 
-        def boom(conn, root, folder, exclude=()):
+        def boom(conn, root, folder, exclude=(), should_stop=None):
             raise sqlite3.OperationalError("database is locked")
 
         monkeypatch.setattr(lc, "sync_folder", boom)
@@ -1475,7 +1479,7 @@ class TestBusyAndBackgroundResync:
         on_main = []
         original = library_controller_module.sync_folder
 
-        def recording(conn, root, folder, exclude=()):
+        def recording(conn, root, folder, exclude=(), should_stop=None):
             on_main.append(
                 _threading.current_thread() is _threading.main_thread()
             )
@@ -1502,7 +1506,7 @@ class TestBusyAndBackgroundResync:
         started = _threading.Event()
         release = _threading.Event()
 
-        def slow(conn, root, folder, exclude=()):
+        def slow(conn, root, folder, exclude=(), should_stop=None):
             started.set()
             release.wait(5)
 

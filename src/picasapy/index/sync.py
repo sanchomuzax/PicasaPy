@@ -51,7 +51,12 @@ logger = logging.getLogger(__name__)
 # ÚJ fotók kumulált száma). FIGYELEM: a callback a sync_tree hívási szálán
 # fut — az app-ban ez a háttér-worker szála, NEM a GUI-szál; a hívó dolga
 # a szál-átadás (pl. Qt queued signal) és a ritkítás.
-SyncProgressCallback = Callable[[str, int, int, int], None]
+#
+# #216: a callback VISSZATÉRÉSI ÉRTÉKE megszakítás-kérés — igaz érték esetén
+# a sync a mappa-határon tisztán leáll (a már commitolt mappák megmaradnak,
+# a takarítás kimarad). A None/False (a korábbi, érték nélküli callbackek)
+# nem szakít meg — visszafelé kompatibilis.
+SyncProgressCallback = Callable[[str, int, int, int], object]
 
 
 def sync_tree(
@@ -60,6 +65,7 @@ def sync_tree(
     exclude: tuple[str | Path, ...] = (),
     incremental: bool = True,
     progress: SyncProgressCallback | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> None:
     """A gyökér alatti könyvtár teljes szinkronja az indexbe.
 
@@ -95,6 +101,13 @@ def sync_tree(
     commit miatt a már jelzett mappák fotói ekkor MÁR olvashatók az indexből
     (másik kapcsolaton is) — erre épül a fokozatos UI-megjelenítés. A callback
     szál-kontextusa a hívóé (worker-szál!), ld. `SyncProgressCallback`.
+
+    #216 — tiszta megszakítás mappa-határon: a futás leáll, ha a `should_stop`
+    igazat ad (a soron következő mappa feldolgozása ELŐTT ellenőrizve), vagy
+    ha a `progress` callback igaz értékkel tér vissza (a mappa commitja UTÁN).
+    Megszakadt futásnál a takarítás (`_prune_folders`) kimarad — a hiányos
+    „látott" halmaz érvényes mappákat törölne; a már commitolt mappák
+    megmaradnak (konzisztens, folytatható állapot).
     """
     root_path = Path(root).resolve()
     _ensure_scan_state(conn)
@@ -102,20 +115,35 @@ def sync_tree(
     scans = scan_tree(root_path, exclude=exclude, skip=skip)
     done = 0
     new_total = 0
+    cancelled = False
     for scan in scans:
+        if should_stop is not None and should_stop():
+            cancelled = True
+            break
         done += 1
         if scan.skipped:
             # változatlan mappa: az indexbeli állapot érvényes; a haladás-
             # számláló ettől még lép (a hívó ritkítja a jelzés-árat)
-            if progress is not None:
-                progress(str(scan.path), done, len(scans), new_total)
+            if progress is not None and progress(
+                str(scan.path), done, len(scans), new_total
+            ):
+                cancelled = True
+                break
             continue
         new_total += _sync_folder(conn, scan)
         if incremental:
             _store_scan_state(conn, scan)
         conn.commit()
-        if progress is not None:
-            progress(str(scan.path), done, len(scans), new_total)
+        if progress is not None and progress(
+            str(scan.path), done, len(scans), new_total
+        ):
+            cancelled = True
+            break
+    if cancelled:
+        # megszakítva: a folyamatban lévő mappa commitja már lefutott, a
+        # takarítás viszont TILOS — a hívó (pl. remove_root) takarít, ha kell
+        conn.commit()
+        return
     seen_paths = {str(scan.path) for scan in scans}
     if seen_paths or not _has_indexed_folders(conn, root_path):
         # Nem üres scan, vagy a gyökér az indexben is üres volt eddig —
@@ -144,6 +172,7 @@ def sync_folder(
     root: str | Path,
     folder: str | Path,
     exclude: tuple[str | Path, ...] = (),
+    should_stop: Callable[[], bool] | None = None,
 ) -> None:
     """Egyetlen mappa nem-rekurzív szinkronja (watcher-ág, #143).
 
@@ -151,7 +180,13 @@ def sync_folder(
     újrabejárására. A mappa almappáihoz nem nyúl; ha a mappa eltűnt,
     kizárt vagy médiamentes lett, a sora (és a fotói) kikerülnek az
     indexből. A `root` a védőkorlát: csak a figyelt gyökér alatti mappa
-    szinkronizálható."""
+    szinkronizálható.
+
+    #216: ha a `should_stop` igazat ad (a mappa a hívás pillanatában már
+    eltávolított gyökérhez tartozik), a sync ír-módosít nélkül visszatér —
+    az egyetlen mappa maga a „mappa-határ"."""
+    if should_stop is not None and should_stop():
+        return  # megszakítva még a scan előtt — az index érintetlen
     root_path = Path(root).resolve()
     folder_path = Path(folder).resolve()
     if not folder_path.is_relative_to(root_path):
