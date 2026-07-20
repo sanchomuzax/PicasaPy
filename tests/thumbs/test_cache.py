@@ -165,3 +165,116 @@ class TestGetOrCreate:
             lambda self, target, payload: (_ for _ in ()).throw(OSError("nincs hely")),
         )
         assert cache.get_or_create(photo, *_stat_key(photo)) is None
+
+
+def _gradient_jpeg(path, size):
+    """Vízszintes színátmenetes JPEG — a kivágott részleteknek van
+    mérhető változatosságuk (szemben a jpeg_factory egyszínű képével)."""
+    import numpy as np
+    from PIL import Image
+
+    width, height = size
+    ramp = np.linspace(0, 255, width, dtype=np.uint8)
+    array = np.repeat(ramp[np.newaxis, :], height, axis=0)
+    rgb = np.stack([array, array[::-1], array], axis=-1)
+    Image.fromarray(rgb, "RGB").save(path, "JPEG", quality=95)
+    return path
+
+
+def _crop_op(left, top, right, bottom):
+    from picasapy.ini.filters import FilterOp
+    from picasapy.ini.rect64 import Rect64, encode_rect64
+
+    rect = encode_rect64(Rect64(left, top, right, bottom))
+    return FilterOp("crop64", ("1", rect))
+
+
+class TestEditedThumbnail:
+    """#163: a szerkesztett (vágott) bélyegkép ne legyen homályos — a
+    filter-láncot NAGY bázison futtatjuk, a VÉGEREDMÉNYT kicsinyítjük a
+    célméretre, nem a kész kis thumbnailt vágjuk tovább."""
+
+    def test_cropped_thumbnail_kept_at_target_size(self, cache, tmp_path):
+        # 50%-os középre vágás: a kész bélyegkép leghosszabb oldala a TELJES
+        # célméret (64) marad — nem a kis thumbnail 50%-a (32), amit a rács
+        # felnagyítva homályosan mutatna.
+        photo = _gradient_jpeg(tmp_path / "nagy.jpg", size=(800, 800))
+        ops = (_crop_op(0.25, 0.25, 0.75, 0.75),)
+        thumb = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        assert thumb is not None and thumb.exists()
+        import cv2
+
+        height, width = cv2.imread(str(thumb)).shape[:2]
+        assert max(width, height) == 64
+
+    def test_cropped_thumbnail_sharper_than_naive(self, cache, tmp_path):
+        # A nagy-bázisú vágás több részletet őriz, mint a kész kis thumbnail
+        # utólagos vágása+felnagyítása: a nagyfrekvenciás minta (sakktábla)
+        # a kész kis thumbnailban már elmosódott, a nagy bázison még nem —
+        # a részletesség (szórás) így magasabb marad.
+        import cv2
+        import numpy as np
+        from PIL import Image
+
+        tile = np.indices((800, 800)).sum(axis=0) // 4 % 2
+        board = (tile * 255).astype(np.uint8)
+        Image.fromarray(np.stack([board] * 3, axis=-1), "RGB").save(
+            tmp_path / "reszletes.jpg", "JPEG", quality=95
+        )
+        photo = tmp_path / "reszletes.jpg"
+        ops = (_crop_op(0.25, 0.25, 0.75, 0.75),)
+        edited = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        good = cv2.imread(str(edited))
+
+        # naiv referencia: a kész 64-es thumbot vágjuk 50%-ra, majd vissza 64-re
+        plain = cv2.imread(str(cache.get_or_create(photo, *_stat_key(photo))))
+        h, w = plain.shape[:2]
+        naive = plain[h // 4 : 3 * h // 4, w // 4 : 3 * w // 4]
+        naive = cv2.resize(naive, (good.shape[1], good.shape[0]))
+        assert np.std(good) > np.std(naive)
+
+    def test_no_ops_delegates_to_plain(self, cache, photo):
+        edited = cache.get_or_create_edited(photo, *_stat_key(photo), ())
+        plain = cache.get_or_create(photo, *_stat_key(photo))
+        assert edited == plain
+
+    def test_edited_cache_hit_does_not_regenerate(self, cache, tmp_path):
+        photo = _gradient_jpeg(tmp_path / "hit.jpg", size=(400, 400))
+        ops = (_crop_op(0.1, 0.1, 0.9, 0.9),)
+        first = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        first_mtime = first.stat().st_mtime_ns
+        second = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        assert second == first and second.stat().st_mtime_ns == first_mtime
+
+    def test_different_chain_different_file(self, cache, tmp_path):
+        photo = _gradient_jpeg(tmp_path / "ketto.jpg", size=(400, 400))
+        a = cache.get_or_create_edited(
+            photo, *_stat_key(photo), (_crop_op(0.1, 0.1, 0.9, 0.9),)
+        )
+        b = cache.get_or_create_edited(
+            photo, *_stat_key(photo), (_crop_op(0.2, 0.2, 0.8, 0.8),)
+        )
+        assert a != b
+
+    def test_edited_differs_from_plain_cache_file(self, cache, tmp_path):
+        # a szerkesztett bélyegkép NE írja felül a szűretlen cache-fájlt
+        photo = _gradient_jpeg(tmp_path / "kulon.jpg", size=(400, 400))
+        plain = cache.get_or_create(photo, *_stat_key(photo))
+        edited = cache.get_or_create_edited(
+            photo, *_stat_key(photo), (_crop_op(0.1, 0.1, 0.9, 0.9),)
+        )
+        assert edited != plain
+
+    def test_bad_chain_falls_back_to_unfiltered(self, cache, tmp_path):
+        # #73-elv: értelmezhetetlen/hibás lánc-bejegyzésnél a szűretlen kép
+        # a helyes visszaesés, nem None (részleges előnézet).
+        from picasapy.ini.filters import FilterOp
+
+        photo = _gradient_jpeg(tmp_path / "hibas.jpg", size=(400, 400))
+        bad = (FilterOp("crop64", ("1",)),)  # hiányzó rect64 → ValueError
+        thumb = cache.get_or_create_edited(photo, *_stat_key(photo), bad)
+        assert thumb is not None and thumb.exists()
+
+    def test_edited_missing_source_returns_none(self, cache, tmp_path):
+        ops = (_crop_op(0.1, 0.1, 0.9, 0.9),)
+        assert cache.get_or_create_edited(tmp_path / "nincs.jpg", 1, 7, ops) is None

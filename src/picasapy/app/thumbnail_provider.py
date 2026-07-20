@@ -22,10 +22,7 @@ from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.edit.session import EditSession
 from picasapy.index import PhotoRecord
-from picasapy.render import apply_filters
 from picasapy.thumbs import ThumbnailCache
-
-from .edit_preview import _qimage_to_rgb_array, _rgb_array_to_qimage
 
 _PLACEHOLDER_COLOR = 0xFFE8E8E8
 
@@ -101,7 +98,15 @@ class ThumbnailProvider(QQuickImageProvider):
         entry = self._registry.get(photo_id.split("?")[0])
         if entry is None:
             return QImage()
-        thumb = self._cache.get_or_create(*entry[:3])
+        # szerkesztő-lánc (filters=) a bélyegképen is (#59): a szűrt bélyegkép
+        # a #163 óta NAGY bázison készül és külön cache-fájlba kerül — a
+        # vágott kép így éles marad, nem a kész kis thumbnailt vágjuk tovább
+        # (ami felnagyítva homályos lenne). A forgatás lentebb, a kész kis
+        # bélyegképen történik (veszteségmentes 90°-os lépés).
+        if entry[4]:
+            thumb = self._cache.get_or_create_edited(*entry[:3], entry[4])
+        else:
+            thumb = self._cache.get_or_create(*entry[:3])
         if thumb is None:
             _log.warning("thumbnail nem készült el: %s", entry[0])
             return QImage()
@@ -109,19 +114,6 @@ class ThumbnailProvider(QQuickImageProvider):
         if image.isNull():
             _log.warning("cache-elt thumbnail nem olvasható: %s", thumb)
             return image
-        if entry[4]:
-            # szerkesztő-lánc (filters=) a bélyegképen is (#59) — a
-            # cache-elt thumb az eredeti, a láncot itt alkalmazzuk
-            # (thumb-méreten olcsó)
-            try:
-                array, _skipped = apply_filters(
-                    _qimage_to_rgb_array(image), entry[4]
-                )
-                image = _rgb_array_to_qimage(array)
-            except Exception:
-                # #73: hibás/idegen lánc-bejegyzésnél a szűretlen kép a
-                # helyes visszaesés, nem a placeholder (részleges előnézet)
-                _log.exception("filters= nem alkalmazható: %s", entry[0])
         if entry[3]:
             # nem-destruktív ini-forgatás (a cache-elt thumb forgatatlan)
             image = image.transformed(QTransform().rotate(90 * entry[3]))
