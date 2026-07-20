@@ -116,18 +116,55 @@ class TestSearchSuggestions:
     def test_album_suggestions_aggregate_across_inis(self, suggest_conn):
         # Ugyanaz az album-token több .picasa.ini-ben is előfordulhat —
         # a javaslat egyszer jelenik meg, összesített darabszámmal.
-        result = search_suggestions(suggest_conn, "logo")
+        # Az album-ág opt-in (#138): include_albums=True kell hozzá.
+        result = search_suggestions(suggest_conn, "logo", include_albums=True)
         albums = [s for s in result if s.kind == "album"]
         assert [(s.name, s.count) for s in albums] == [("logo valogatas", 3)]
+
+    def test_default_no_albums_no_ini_read(self, suggest_conn, monkeypatch):
+        # #138: alapértelmezésben (include_albums=False) az album-ág teljesen
+        # kimarad — egyetlen .picasa.ini-olvasás (NAS-hozzáférés) sem történhet.
+        import picasapy.ini as ini_module
+
+        calls = {"n": 0}
+
+        def counting_load(*args, **kwargs):
+            calls["n"] += 1
+            raise AssertionError("load_document nem hívható include_albums nélkül")
+
+        monkeypatch.setattr(ini_module, "load_document", counting_load)
+        result = search_suggestions(suggest_conn, "logo")
+        assert calls["n"] == 0
+        assert all(s.kind == "folder" for s in result)
+
+    def test_include_albums_true_reads_inis(self, suggest_conn, monkeypatch):
+        # include_albums=True mellett a régi viselkedés marad: az ini-k
+        # ténylegesen beolvasódnak (számlálóval ellenőrizve).
+        import picasapy.ini as ini_module
+
+        calls = {"n": 0}
+        original = ini_module.load_document
+
+        def counting_load(*args, **kwargs):
+            calls["n"] += 1
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(ini_module, "load_document", counting_load)
+        result = search_suggestions(suggest_conn, "logo", include_albums=True)
+        assert calls["n"] == 2  # két has_ini-s mappa
+        assert any(s.kind == "album" for s in result)
 
     def test_match_is_substring_and_casefold(self, suggest_conn):
         # Picasa: a "logo" a "Sanoma Media logo" közepén is talál; ékezet/
         # kisbetű-nagybetű nem számít.
         assert search_suggestions(suggest_conn, "LOGO")
-        assert search_suggestions(suggest_conn, "NYARI")
+        assert search_suggestions(suggest_conn, "NYARI", include_albums=True)
 
     def test_folders_before_albums(self, suggest_conn):
-        kinds = [s.kind for s in search_suggestions(suggest_conn, "logo")]
+        kinds = [
+            s.kind
+            for s in search_suggestions(suggest_conn, "logo", include_albums=True)
+        ]
         assert kinds == sorted(kinds, key=lambda k: k != "folder")
 
     def test_empty_query_no_suggestions(self, suggest_conn):
@@ -141,7 +178,7 @@ class TestSearchSuggestions:
         assert len(search_suggestions(suggest_conn, "o", limit=2)) == 2
 
     def test_folder_param_is_path_album_param_is_token(self, suggest_conn):
-        result = search_suggestions(suggest_conn, "logo")
+        result = search_suggestions(suggest_conn, "logo", include_albums=True)
         folder = next(s for s in result if s.kind == "folder")
         album = next(s for s in result if s.kind == "album")
         assert folder.param.endswith("HS logo")
