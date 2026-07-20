@@ -38,6 +38,7 @@ from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
 from .keywords_controller import KeywordsMixin
 from .library_controller import LibraryMixin
 from .models import FolderListModel, PhotoGridModel
+from .perf_controller import PerfMonitorMixin
 from .photo_ops_controller import PhotoOpsMixin
 from .search_controller import SearchMixin
 from .search_results import group_by_folder, groups_to_qml
@@ -52,6 +53,7 @@ class AppController(
     PhotoOpsMixin,
     ExportMixin,
     EffectsClipboardMixin,
+    PerfMonitorMixin,
     LibraryMixin,
     QObject,
 ):
@@ -113,6 +115,9 @@ class AppController(
         self._import_dismissed = False
         self._import_last_reload = 0.0
         self._import_new_at_reload = 0
+        # #211: kapcsolható teljesítmény-monitor — alapból KI, semmi extra
+        # költség (PerfMonitorMixin saját inicializáló-metódusa)
+        self._init_perf_monitor()
         # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
         # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
         # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.

@@ -275,6 +275,14 @@ MenuBar {
         MenuItem { text: qsTr("Keyboard Shortcuts"); enabled: false }
         MenuSeparator {}
         MenuItem { text: qsTr("Check for Updates"); enabled: false }
+        MenuSeparator {}
+        MenuItem {
+            objectName: "menuHelpPerfMonitor"
+            text: qsTr("Performance Monitor")
+            checkable: true
+            checked: controller.perfMonitorEnabled
+            onTriggered: controller.togglePerfMonitor()
+        }
         MenuItem {
             text: qsTr("About PicasaPy")
             onTriggered: bar.aboutRequested()
