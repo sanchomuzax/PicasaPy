@@ -78,7 +78,14 @@ Item {
             height: cell.contentHeight - 18 - cell.captionStrip
             source: cell.thumbUrl
             fillMode: Image.PreserveAspectFit
-            asynchronous: true
+            // #53: offscreen (teszt) platformon SZINKRON betöltés — az async
+            // kép-betöltő szál (QQuickPixmapReader) a Python image-providert
+            // a GIL-en át hívja, miközben a főszál egy natív Qt-hívásban
+            // (pl. setProperty) tartja a GIL-t → kölcsönös várakozás
+            // (GIL-deadlock). A főszálon (szinkron) betöltve nincs második
+            // szál, így nincs holtpont. Produkcióban marad az async (a UI
+            // ne akadjon meg a dekódolásra).
+            asynchronous: Qt.platform.pluginName !== "offscreen"
             cache: true
             // #83: a cache-elt thumbnail (application.py: DPR-arányos
             // méret) mindig legalább a legnagyobb rács-fokozatnyi — ez az
