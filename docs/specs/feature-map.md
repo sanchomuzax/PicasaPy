@@ -6,7 +6,14 @@ A Picasa funkcionalitása → PicasaPy megvalósítási fázisok.
 
 - Mappa-figyelés (watched folders), háttér-scanner, soha nem blokkoló UI
   - abszolút útvonalak + útvonal-átíró logika (migráció más gépről)
-  - `WatchedFolders.txt` / `FRExcludeFolders.txt` megfelelőségek
+  - `WatchedFolders.txt` / `FRExcludeFolders.txt` megfelelőségek — **kész
+    (#145):** kis-nagybetű-független konfigfájl-keresés
+    (`picasapy.scanner.config_files.find_config_file`) és a kizárt mappák
+    (és alfáik) kiszűrése a `scan_tree`/`sync_tree` bejárásból. Megjegyzés:
+    a `FRExcludeFolders.txt` eredetileg csak az **arcfelismerésből** zár ki
+    mappákat (ld. `pmp-database.md`); mivel az arcfelismerés a 3. fázis,
+    a PicasaPy egyelőre a teljes indexelésből kihagyja őket — ezt a
+    3. fázisban érdemes felülvizsgálni.
 - Villámgyors thumbnail-rács nagy (100k+ képes) könyvtárakra; thumbnail-cache
 - Csillagozás, feliratok, kulcsszavak; virtuális albumok; keresés/szűrés
 - Meglévő Picasa-könyvtár felismerése; **kétirányú** `.picasa.ini` írás/olvasás

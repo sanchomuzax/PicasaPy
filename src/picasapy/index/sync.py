@@ -22,13 +22,21 @@ _ROTATE = re.compile(r"^rotate\((\d+)\)$")
 logger = logging.getLogger(__name__)
 
 
-def sync_tree(conn: sqlite3.Connection, root: str | Path) -> None:
+def sync_tree(
+    conn: sqlite3.Connection,
+    root: str | Path,
+    exclude: tuple[str | Path, ...] = (),
+) -> None:
     """A gyökér alatti könyvtár teljes szinkronja az indexbe.
 
     Az index kanonikus (feloldott, abszolút) útvonalakra kulcsol, ezért a
     gyökeret belépéskor normalizáljuk. Mappánként commitolunk: nagy (100k+)
     könyvtárnál nem nő össze a WAL, és megszakadás után a futás onnan
     folytatható, ahol tartott (a szinkron mappánként idempotens).
+
+    Az `exclude`-ban felsorolt mappák (és alfáik) kimaradnak az indexből
+    (#145, FRExcludeFolders.txt — ld. `picasapy.scanner.exclude` a fázis-1
+    szintű, ideiglenes egyszerűsítés indoklásáért).
 
     Ismert korlátok:
     - RAW és videó fájloknál nincs EXIF/IPTC-olvasás (a Pillow nem dekódolja
@@ -40,7 +48,7 @@ def sync_tree(conn: sqlite3.Connection, root: str | Path) -> None:
       nem bontható vissza veszteség nélkül (FTS-t és megjelenítést nem zavar).
     """
     root_path = Path(root).resolve()
-    scans = scan_tree(root_path)
+    scans = scan_tree(root_path, exclude=exclude)
     for scan in scans:
         _sync_folder(conn, scan)
         conn.commit()
