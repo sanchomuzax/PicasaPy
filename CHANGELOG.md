@@ -5,6 +5,38 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.23] – 2026-07-20
+
+### Hozzáadva
+- **Hiányzó effekt-renderelők (#149):** a régi Picasa-szerkesztések közül a
+  Vignetta (mért maszkkal), Ragyogás (glow/glow2), Árnyalás (tint), Szűrt FF
+  (ansel), Lágy fókusz (radblur), Fókuszos FF (radsat) és Színátmenet
+  (dir_tint) mostantól megjelenik a nézőben és a bélyegképeken. (A
+  Filmszemcse/grain2 véletlen alapú, pixelhűen nem reprodukálható — kihagyva,
+  a round-trip őrzi.)
+- **Kizárt mappák (#145):** a Picasa `FRExcludeFolders.txt`-jében kizárt
+  mappák nem kerülnek az indexbe; a konfigfájl-keresés kis-nagybetű-független
+  (`watchedfolders.txt` is működik), és a walker a legacy `Picasa.ini` nevet
+  is felismeri.
+
+### Javítva
+- **Export (#136):** az exportált JPEG megőrzi az EXIF/IPTC-adatokat (dátum,
+  GPS, kameraadat, felirat); változtatás nélküli exportnál bájthű másolás
+  (nincs generációs veszteség); videónál megmarad az mtime; az export hibái
+  strukturáltan jelződnek (nincs néma elhalás); a `filters=` szerkesztések
+  beleégnek a célfájlba.
+- **Magréteg-javítások (#151):** `.trashinfo` a fájlmozgatás előtt íródik
+  (tele lemeznél sincs árva lomtár-bejegyzés); path-remap casefold-hosszváltozás
+  javítva; thumbindex határellenőrzés (`ThumbIndexFormatError` nyers
+  IndexError helyett); nem-UTF-8 fájlnevek naplózása; watcher rejtett-mappa
+  szűrés relatív úton; watcher debounce felső korlát (30 s).
+
+### Teljesítmény
+- **Thumbnail-pipeline (#144):** párhuzamos bélyegkép-generálás (4 szál,
+  hideg mappa-megnyitás ~3,2×); szűrt-thumb memóriacache (szerkesztett képes
+  mappa görgetése ~100×); méretkorlátos cache-takarító (512 MB) a `~/.cache`
+  alatti tárnak; kérésenként eggyel kevesebb fájl-megnyitás (NAS-barát).
+
 ## [0.4.22] – 2026-07-20
 
 ### Javítva
