@@ -389,6 +389,44 @@ class EditSession:
         """
         return not self.ops
 
+    def copy_effects(self) -> tuple[FilterOp, ...]:
+        """Az effektlánc (filters=, benne a crop64-gyel) „vágólap"-pillanatképe (#152).
+
+        Picasa „Copy All Effects" viselkedése: a teljes láncot (beleértve a
+        crop64-et és minden ismeretlen/idegen bejegyzést) másolja, változtatás
+        nélkül. A visszaadott `FilterOp` tuple immutábilis — a hívó egy másik
+        `EditSession.paste_effects()`-nek adhatja tovább, string-kerülő úton
+        (nincs parse/serialize kör), így bitre pontos a round-trip.
+
+        Returns:
+            Az `ops` lánc másolata (maguk a `FilterOp` elemek immutábilisak,
+            a tuple is új példány, de tartalmilag azonos).
+        """
+        return tuple(self.ops)
+
+    @classmethod
+    def paste_effects(cls, ops: tuple[FilterOp, ...]) -> EditSession:
+        """Egy másik kép effektláncának beillesztése (#152).
+
+        Picasa „Paste All Effects" viselkedése: a CÉL kép teljes szerkesztési
+        láncát lecseréli a másolt láncra (nem rétegez rá) — a crop64 (és vele
+        a `crop=` tükör-kulcs, amit a hívó rétege ír) is átkerül, az ismeretlen
+        bejegyzések pedig változatlanul, mert a `copy_effects()`-ből kapott
+        `FilterOp`-okat nem parse-oljuk/serializáljuk újra (#73 round-trip elv).
+
+        Undo-barát használat: a hívó a meglévő minta szerint tolja az
+        undo-vermet a MEGLÉVŐ (beillesztés előtti) session `to_value()`-jával,
+        mielőtt a session-t erre az eredményre cseréli — ugyanúgy, ahogy az
+        `EditController` egyéb műveletei teszik (pl. `applyEffect`).
+
+        Args:
+            ops: Egy másik `EditSession.copy_effects()` hívás eredménye.
+
+        Returns:
+            Új EditSession, a másolt lánccal (a cél korábbi lánca eldobva).
+        """
+        return cls(ops=tuple(ops))
+
 
 def _finetune_float(op: FilterOp, index: int) -> float:
     """A finetune-op adott indexű paramétere számként; hiányzáskor 0.0.
