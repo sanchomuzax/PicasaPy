@@ -84,12 +84,25 @@ def _windows_cpu_rss() -> tuple[float, int]:
             ("PeakPagefileUsage", ctypes.c_size_t),
         ]
 
+    kernel32 = ctypes.windll.kernel32
+    # Újabb Windowson a psapi-hívások a kernel32-ben élnek K32-előtaggal;
+    # régebbin a psapi.dll-ből jönnek — mindkettőt megpróbáljuk.
+    fn = getattr(kernel32, "K32GetProcessMemoryInfo", None)
+    if fn is None:
+        fn = ctypes.windll.psapi.GetProcessMemoryInfo
+    # 64-bites Windowson kötelező a pontos prototípus (HANDLE csonkulás!)
+    fn.argtypes = [
+        ctypes.wintypes.HANDLE,
+        ctypes.POINTER(_PMC),
+        ctypes.wintypes.DWORD,
+    ]
+    fn.restype = ctypes.wintypes.BOOL
+    get_proc = kernel32.GetCurrentProcess
+    get_proc.restype = ctypes.wintypes.HANDLE
+
     pmc = _PMC()
     pmc.cb = ctypes.sizeof(_PMC)
-    handle = ctypes.windll.kernel32.GetCurrentProcess()
-    ok = ctypes.windll.psapi.GetProcessMemoryInfo(
-        handle, ctypes.byref(pmc), pmc.cb
-    )
+    ok = fn(get_proc(), ctypes.byref(pmc), pmc.cb)
     rss_bytes = int(pmc.WorkingSetSize) if ok else 0
     times = os.times()  # Windowson: (user, system, 0, 0, elapsed)
     return times.user + times.system, rss_bytes
