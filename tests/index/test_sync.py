@@ -104,12 +104,48 @@ class TestSyncTree:
         assert names == ["IMG_0001.jpg"]
 
     def test_deleted_folder_pruned(self, conn, library, tmp_path):
+        # A gyökér alatt egy másik, érintetlen mappa is marad — a scan tehát
+        # nem üres, így a #132-es védelem nem lép közbe, és a törölt mappa
+        # rendesen kikerül az indexből.
+        (library / "tavasz").mkdir()
+        (library / "tavasz" / "IMG_9999.jpg").write_bytes(b"z" * 5)
         sync_tree(conn, library)
         import shutil
 
         shutil.rmtree(library / "nyaralas")
         sync_tree(conn, library)
         assert photos_in_folder(conn, library / "nyaralas") == ()
+        assert len(photos_in_folder(conn, library / "tavasz")) == 1
+
+    def test_empty_scan_keeps_previously_indexed_subtree(self, conn, library, caplog):
+        # #132: lecsatolt NAS-mount esetén a gyökér létezik, de üresen
+        # scannelődik — ez megkülönböztethetetlen attól, hogy minden mappa
+        # ténylegesen eltűnt. A korábban felindexelt részfa ilyenkor NEM
+        # törlődik, csak egy figyelmeztetés kerül a naplóba.
+        sync_tree(conn, library)
+        before = photos_in_folder(conn, library / "nyaralas")
+        assert len(before) == 2
+
+        (library / "nyaralas" / "IMG_0001.jpg").unlink()
+        (library / "nyaralas" / "IMG_0002.jpg").unlink()
+        (library / "nyaralas" / ".picasa.ini").unlink()
+
+        import logging
+
+        with caplog.at_level(logging.WARNING, logger="picasapy.index.sync"):
+            sync_tree(conn, library)
+
+        after = photos_in_folder(conn, library / "nyaralas")
+        assert after == before  # a részfa érintetlen maradt
+        assert any("elérhetetlen" in record.message for record in caplog.records)
+
+    def test_empty_scan_with_previously_empty_index_is_noop(self, conn, tmp_path):
+        # Ha a gyökér már korábban is üres volt az indexben, nincs mit óvni:
+        # a takarítás lefut (ami itt nem csinál semmit).
+        root = tmp_path / "ures-gyoker"
+        root.mkdir()
+        sync_tree(conn, root)
+        assert photos_in_folder(conn, root) == ()
 
     def test_ini_change_updates_metadata(self, conn, library):
         # A felhasználó a Windows-os Picasában csillagoz → resync átveszi.
