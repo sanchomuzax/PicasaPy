@@ -1,6 +1,6 @@
 """WatchedFolders.txt olvasás: soronként egy abszolút útvonal (Scan Always)."""
 
-from picasapy.scanner import read_watched_folders
+from picasapy.scanner import find_watched_folders_file, read_watched_folders
 
 
 class TestReadWatchedFolders:
@@ -52,3 +52,22 @@ class TestReadWatchedFolders:
 
     def test_missing_file_is_empty(self, tmp_path):
         assert read_watched_folders(tmp_path / "nincs.txt") == ()
+
+
+class TestFindWatchedFoldersFile:
+    def test_finds_canonical_case(self, tmp_path):
+        f = tmp_path / "WatchedFolders.txt"
+        f.write_text("/a\n", encoding="utf-8")
+        assert find_watched_folders_file(tmp_path) == f
+
+    def test_finds_lowercase_variant(self, tmp_path):
+        # Élesben (#145 / MEMORY 2026-07-16) kisbetűs néven is előfordul.
+        f = tmp_path / "watchedfolders.txt"
+        f.write_text("/a\n", encoding="utf-8")
+        assert find_watched_folders_file(tmp_path) == f
+
+    def test_missing_returns_none(self, tmp_path):
+        assert find_watched_folders_file(tmp_path) is None
+
+    def test_missing_directory_returns_none(self, tmp_path):
+        assert find_watched_folders_file(tmp_path / "nincs") is None

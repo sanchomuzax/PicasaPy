@@ -27,16 +27,27 @@ class PathRemapper:
     def remap(self, windows_path: str) -> str | None:
         """A Windows-útvonal helyi megfelelője, vagy None ha nincs egyező
         prefix (az ilyen bejegyzést az import kihagyja)."""
-        slashed = _to_slashes(windows_path)
-        folded = slashed.casefold()
+        # komponensenkénti (nem karakterhossz-alapú) illesztés — a casefold
+        # egyes karaktereknél hosszváltozással jár (pl. ß→ss), ezért a
+        # foldolt prefix HOSSZA nem használható levágási határnak az
+        # eredeti (nem foldolt) útvonalon: elcsúsztatná a maradékot
+        parts = tuple(_to_slashes(windows_path).split("/"))
+        folded_parts = tuple(part.casefold() for part in parts)
         for source_prefix, target_prefix in self.mappings:
-            prefix = _to_slashes(source_prefix).casefold()
-            if folded == prefix or folded.startswith(prefix + "/"):
-                # a maradékot az EREDETI (nem casefoldolt) útvonalból vágjuk
-                # ki — a fájlnevek kis-nagybetűi nem sérülhetnek
-                remainder = slashed[len(prefix) :].lstrip("/")
+            prefix_parts = tuple(_to_slashes(source_prefix).split("/"))
+            folded_prefix_parts = tuple(part.casefold() for part in prefix_parts)
+            if (
+                len(folded_prefix_parts) <= len(folded_parts)
+                and folded_parts[: len(folded_prefix_parts)] == folded_prefix_parts
+            ):
+                # a maradékot az EREDETI (nem casefoldolt) komponensekből
+                # vesszük — a fájlnevek kis-nagybetűi nem sérülhetnek
+                remainder_parts = parts[len(folded_prefix_parts) :]
                 base = PurePosixPath(target_prefix)
-                return str(base / remainder) if remainder else str(base)
+                return (
+                    str(base.joinpath(*remainder_parts)) if remainder_parts
+                    else str(base)
+                )
         return None
 
 

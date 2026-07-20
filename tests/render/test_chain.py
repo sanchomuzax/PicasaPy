@@ -87,23 +87,25 @@ class TestApplyFilters:
         assert skipped == ()
 
     def test_nem_tamogatott_szurot_nemán_kihagyja(self) -> None:
+        # lomoish: még nem dekódolt 3.9-es effekt (#190) → nincs handlere,
+        # a lánc kihagyja (a grain2 a #20 óta rögzített maggal renderelt)
         image = _gradient_image()
-        ops = (FilterOp("Vignette", ("1", "0.5")),)
+        ops = (FilterOp("lomoish", ("1",)),)
         result, skipped = apply_filters(image, ops)
         np.testing.assert_array_equal(result, image)
-        assert skipped == ("Vignette",)
+        assert skipped == ("lomoish",)
 
     def test_vegyes_lanc_sorrend_es_kihagyottak(self) -> None:
         image = _gradient_image()
         ops = (
             FilterOp("autolight", ("1",)),
-            FilterOp("Vignette", ("1", "35.0", "1.4", "0.0", "00000000")),
+            FilterOp("lomoish", ("1",)),
             FilterOp("autocolor", ("1",)),
         )
         result, skipped = apply_filters(image, ops)
         expected = apply_autocolor(apply_autolight(image))
         np.testing.assert_array_equal(result, expected)
-        assert skipped == ("Vignette",)
+        assert skipped == ("lomoish",)
 
     def test_finetune2_alkalmazasa(self) -> None:
         image = _gradient_image()
@@ -189,3 +191,76 @@ class TestApplyFilters:
         result, skipped = apply_filters(image, ops)
         assert result.shape == image.shape
         assert skipped == ()
+
+
+class TestApplyFiltersEffects:
+    """Az effekt-szűrők (#149) regisztrációja a láncban — élesben mért
+    paraméter-alakokkal (golden-kit ini-sorok)."""
+
+    def test_vignette_alkalmazasa(self) -> None:
+        # Vignette: nagybetűs azonosító, éles alak (golden 4. kör)
+        from picasapy.render.effects import apply_vignette
+
+        image = _gradient_image()
+        ops = (FilterOp("Vignette", ("1", "35.000000", "1.400000", "0.000000", "00000000")),)
+        result, skipped = apply_filters(image, ops)
+        np.testing.assert_array_equal(result, apply_vignette(image))
+        assert skipped == ()
+
+    def test_glow_v1_alkalmazasa(self) -> None:
+        image = _gradient_image()
+        ops = (FilterOp("glow", ("1", "0.432749", "2.469705")),)
+        result, skipped = apply_filters(image, ops)
+        assert skipped == ()
+        assert not np.array_equal(result, image)
+
+    def test_glow2_alkalmazasa(self) -> None:
+        image = _gradient_image()
+        ops = (FilterOp("glow2", ("1", "0.650000", "3.000000")),)
+        result, skipped = apply_filters(image, ops)
+        assert skipped == ()
+        assert not np.array_equal(result, image)
+
+    def test_tint_alkalmazasa(self) -> None:
+        # éles alak: tint=1,79.842102,ffff (rövid, vezető nullák nélküli szín)
+        image = np.full((4, 4, 3), 128, dtype=np.uint8)
+        ops = (FilterOp("tint", ("1", "79.842102", "ffff")),)
+        result, skipped = apply_filters(image, ops)
+        assert skipped == ()
+        assert int(result[0, 0, 0]) == 0
+        assert abs(int(result[0, 0, 1]) - 128) <= 1
+
+    def test_ansel_alkalmazasa(self) -> None:
+        image = np.full((4, 4, 3), (100, 150, 200), dtype=np.uint8)
+        ops = (FilterOp("ansel", ("1", "ffffffff")),)
+        result, skipped = apply_filters(image, ops)
+        assert skipped == ()
+        assert result[0, 0, 0] == result[0, 0, 1] == result[0, 0, 2]
+
+    def test_radblur_alkalmazasa(self) -> None:
+        # éles (golden-kit) alak — size=0, amount=0: mérten no-op
+        image = _gradient_image()
+        ops = (FilterOp("radblur", ("1", "0.411585", "0.611111", "0.000000", "0.000000")),)
+        result, skipped = apply_filters(image, ops)
+        assert skipped == ()
+        np.testing.assert_array_equal(result, image)
+
+    def test_radsat_alkalmazasa(self) -> None:
+        image = np.full((21, 21, 3), (200, 80, 80), dtype=np.uint8)
+        ops = (FilterOp("radsat", ("1", "0.5", "0.5", "0.2", "1.0")),)
+        result, skipped = apply_filters(image, ops)
+        assert skipped == ()
+        corner = result[0, 0]
+        assert int(corner[0]) == int(corner[1]) == int(corner[2])
+
+    def test_dir_tint_alkalmazasa(self) -> None:
+        image = _gradient_image()
+        ops = (
+            FilterOp(
+                "dir_tint",
+                ("1", "0.432422", "0.554167", "0.250000", "0.250000", "ffffffff"),
+            ),
+        )
+        result, skipped = apply_filters(image, ops)
+        assert skipped == ()
+        assert result.shape == image.shape

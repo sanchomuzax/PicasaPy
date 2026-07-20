@@ -3,19 +3,23 @@
 Az eredeti (Windows-os) Picasa fájlját is olvassuk importnál: CRLF, BOM és
 backslash-útvonalak tűrése kötelező. A hiányzó fájl üres listát jelent
 (nincs figyelt mappa), nem hibát.
+
+Élesben (#145 / MEMORY 2026-07-16) a fájlnév kisbetűsen is előfordul
+(`watchedfolders.txt`) — a `find_watched_folders_file` ezt kis-nagybetű-
+függetlenül keresi meg egy adott könyvtárban.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
+from .config_files import find_config_file, read_path_list
+
+WATCHED_FOLDERS_NAME = "WatchedFolders.txt"
+
 
 def read_watched_folders(path: str | Path) -> tuple[str, ...]:
-    file_path = Path(path)
-    if not file_path.exists():
-        return ()
-    text = file_path.read_text(encoding="utf-8-sig")
-    return tuple(line.strip() for line in text.splitlines() if line.strip())
+    return read_path_list(path)
 
 
 def write_watched_folders(path: str | Path, folders: tuple[str, ...]) -> None:
@@ -26,3 +30,9 @@ def write_watched_folders(path: str | Path, folders: tuple[str, ...]) -> None:
     file_path.write_text(
         "".join(f"{folder}\n" for folder in folders), encoding="utf-8"
     )
+
+
+def find_watched_folders_file(directory: str | Path) -> Path | None:
+    """A `WatchedFolders.txt` kis-nagybetű-független megkeresése az adott
+    könyvtárban (pl. importnál a Picasa2Albums mappában)."""
+    return find_config_file(directory, WATCHED_FOLDERS_NAME)

@@ -21,7 +21,11 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 
 from picasapy.index import open_index, prune_foreign_folders
-from picasapy.scanner import read_watched_folders
+from picasapy.scanner import (
+    WATCHED_FOLDERS_NAME,
+    find_watched_folders_file,
+    read_watched_folders,
+)
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
 from .controller import AppController
@@ -38,6 +42,11 @@ _I18N_DIR = _APP_DIR / "i18n"
 # ezt is frissíteni kell, különben a legnagyobb rács-fokozat újra
 # nagyítással (homályosan) jelenhet meg.
 _GRID_MAX_THUMB_PX = 256
+
+# #144: a thumbnail-lemezcache méretkorlátja — induláskor háttérszálon
+# lefutó LRU-takarító tartja be, hogy a ~/.cache alatti tár ne nőjön
+# korlátlanul (minden fájlváltozás új hash-bejegyzést szül).
+_THUMB_CACHE_LIMIT_BYTES = 512 * 1024 * 1024
 
 
 def _thumbnail_cache_size(device_pixel_ratio: float) -> int:
@@ -89,10 +98,21 @@ def _force_qml_dialogs(platform: str = sys.platform) -> bool:
     return platform != "win32"
 
 
+def _watched_folders_path() -> Path:
+    """A `WatchedFolders.txt` útvonala — kis-nagybetű-független kereséssel
+    (#145): élesben (pl. importált/áthozott konfig-könyvtárban) kisbetűs
+    néven is előfordulhat. Ha nincs ilyen fájl, a kanonikus nevet adja
+    vissza (ide fog írni a `write_watched_folders`)."""
+    config_dir = _config_dir()
+    return find_watched_folders_file(config_dir) or (
+        config_dir / WATCHED_FOLDERS_NAME
+    )
+
+
 def _resolve_roots(argv: list[str]) -> tuple[str, ...]:
     if len(argv) > 1:
         return tuple(argv[1:])
-    return read_watched_folders(_config_dir() / "WatchedFolders.txt")
+    return read_watched_folders(_watched_folders_path())
 
 
 def _acquire_instance_lock(data_dir: Path) -> QLockFile | None:
@@ -251,13 +271,17 @@ def run(argv: list[str]) -> int:
     # legnagyobb fokozata (256px) se legyen homályos HiDPI kijelzőn.
     cache_size = _thumbnail_cache_size(_screen_device_pixel_ratio(app))
     provider = ThumbnailProvider(
-        ThumbnailCache(_cache_dir() / "thumbs", size=cache_size)
+        ThumbnailCache(
+            _cache_dir() / "thumbs",
+            size=cache_size,
+            max_bytes=_THUMB_CACHE_LIMIT_BYTES,
+        )
     )
     controller = AppController(
         data_dir / "index.db",
         roots,
         provider,
-        watched_file=_config_dir() / "WatchedFolders.txt",
+        watched_file=_watched_folders_path(),
     )
 
     # szerkesztő-előnézet (#19): a provider a filters= láncot alkalmazva

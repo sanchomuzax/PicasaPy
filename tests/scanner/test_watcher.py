@@ -100,3 +100,45 @@ class TestLibraryWatcher:
         )
         watcher.start()  # nem dobhat a hiányzó gyökér miatt
         watcher.stop()
+
+    def test_root_under_hidden_dir_still_reports(
+        self, tmp_path, watcher_factory, collector
+    ):
+        # a szűrés a figyelt GYÖKÉRHEZ képesti relatív úton nézze a rejtett
+        # komponenseket, ne az abszolút út minden komponensét — különben
+        # egy rejtett könyvtár alatti gyökérnél (pl. ~/.photos/...) minden
+        # esemény némán eldobódna
+        hidden_root = tmp_path / ".photos" / "album"
+        hidden_root.mkdir(parents=True)
+        watcher_factory(hidden_root)
+        (hidden_root / "uj.jpg").write_bytes(b"x")
+        collector.wait()
+        assert str(hidden_root) in collector.seen
+
+    def test_debounce_has_maximum_window(self, tmp_path, collector):
+        # hosszú másolás alatt (folyamatos, meg-nem-szakadó esemény-sorozat)
+        # a callback ne halasztódjon a végtelenbe — legyen egy max. ablak.
+        # A jelzés-sorozatot külön szálon, FOLYAMATOSAN generáljuk (nem áll
+        # le a várakozás alatt) — enélkül a debounce sosem futna le magától.
+        watcher = LibraryWatcher(
+            (), collector, debounce_seconds=0.3, max_debounce_seconds=0.4
+        )
+        watcher.start()
+        stop_marking = threading.Event()
+
+        def _mark_loop():
+            while not stop_marking.is_set():
+                watcher._mark_dirty(str(tmp_path))
+                time.sleep(0.05)
+
+        marker = threading.Thread(target=_mark_loop, daemon=True)
+        marker.start()
+        try:
+            # a max. ablaknak (0.4s) ki kell kényszerítenie a flush-t, jóval
+            # a debounce (0.3s) ismételt újraindítása által sugallt
+            # "végtelen halasztás" előtt
+            assert collector.event.wait(timeout=0.9), "nem érkezett jelzés a max. ablakon belül"
+        finally:
+            stop_marking.set()
+            marker.join(timeout=2)
+            watcher.stop()
