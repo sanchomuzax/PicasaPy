@@ -477,7 +477,14 @@ ApplicationWindow {
             // NAS-on a fájlfigyelő nem szól, nem várhatunk a rescanre (#59);
             // a feedben (#64) a néző át is léphetett másik mappába, ezért a
             // nézett kép mappáját frissítjük
+            // #173: a megnyitás előtti feed-pozíciót megőrizzük — a resync
+            // modellcseréje után NE a mappa elejére ugorjunk. A rögzítés a
+            // resync ELŐTT történik (a savedY még a megnyitáskori), az
+            // alkalmazás pedig a modellcsere UTÁN (Qt.callLater), illetve az
+            // onFeedChanged ágon.
+            grid.beginRevealAfterViewer()
             controller.resyncFolderOfRow(currentIndex)
+            Qt.callLater(grid.applyRevealAfterViewer)
         }
         onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
     }
@@ -750,6 +757,33 @@ ApplicationWindow {
                             }
                         }
                     }
+                    // -- nézőből visszatérés: pozíció-megőrzés (#173) --------
+                    // A nézőt a mappa VÉGÉN álló képen megnyitva, majd
+                    // visszalépve a feed eddig a mappa elejére ugrott: a
+                    // néző-zárás resyncFolderOfRow-ja modellcserét vált ki,
+                    // és a SZERKEZETI horgony (restoreAnchor) a még nem kész
+                    // layout becsült csoport-magasságával a csoport tetejére
+                    // esett vissza. A megbízható visszaállás a NYERS, megnyitás
+                    // előtti contentY (savedY) — pontos és delegate-
+                    // magasságtól független. A néző-zárás ezt rögzíti, a
+                    // modellcsere utáni visszaállás pedig ezt (nem a horgonyt)
+                    // alkalmazza.
+                    property bool revealAfterViewer: false
+                    property real revealTargetY: 0
+                    function beginRevealAfterViewer() {
+                        revealTargetY = savedY
+                        revealAfterViewer = true
+                    }
+                    function applyRevealAfterViewer() {
+                        if (!revealAfterViewer) return
+                        revealAfterViewer = false
+                        restoring = true
+                        contentY = Math.min(
+                            revealTargetY, Math.max(0, contentHeight - height))
+                        savedY = contentY
+                        captureAnchor()
+                        restoring = false
+                    }
                     function restoreAnchor() {
                         var idx = -1
                         for (var i = 0; i < model.length; ++i)
@@ -803,6 +837,13 @@ ApplicationWindow {
                             if (grid.pendingPath !== "")
                                 return   // mappaválasztás — oda ugrunk úgyis
                             Qt.callLater(function() {
+                                // nézőből visszatérve a megnyitás előtti nyers
+                                // pozíciót állítjuk vissza, nem a szerkezeti
+                                // horgonyt (#173)
+                                if (grid.revealAfterViewer) {
+                                    grid.applyRevealAfterViewer()
+                                    return
+                                }
                                 grid.restoring = true
                                 grid.restoreAnchor()
                                 grid.restoring = false

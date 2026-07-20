@@ -566,6 +566,51 @@ class TestFolderPaneScrollStability:
         assert folder_list.property("savedY") == 150
 
 
+class TestFeedPositionAfterViewer:
+    """#173: a nézőből visszatérve a feed a megnyitás előtti pozíción marad,
+    nem ugrik a mappa elejére."""
+
+    def test_reveal_captures_and_clears(self, qml_app, qt_app):
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, _, _ = qml_app
+        grid = window.findChild(QObject, "photoGrid")
+        assert grid is not None, "photoGrid nem található"
+        grid.setProperty("savedY", 512)
+        QMetaObject.invokeMethod(
+            grid, "beginRevealAfterViewer", Qt.ConnectionType.DirectConnection
+        )
+        assert grid.property("revealAfterViewer") is True
+        assert grid.property("revealTargetY") == 512
+        QMetaObject.invokeMethod(
+            grid, "applyRevealAfterViewer", Qt.ConnectionType.DirectConnection
+        )
+        assert grid.property("revealAfterViewer") is False
+
+    def test_apply_reveal_restores_saved_position(self, qml_app, qt_app):
+        # a reveal a MEGNYITÁS ELŐTTI (savedY) pozíciót állítja vissza, nem a
+        # szerkezeti horgonyt; contentHeight ≤ magasság esetén 0-ra klippel,
+        # de a forrás mindenképp a rögzített revealTargetY (nem a mappa eleje)
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, _, _ = qml_app
+        grid = window.findChild(QObject, "photoGrid")
+        grid.setProperty("savedY", 320)
+        QMetaObject.invokeMethod(
+            grid, "beginRevealAfterViewer", Qt.ConnectionType.DirectConnection
+        )
+        # a horgonyt szándékosan „rossz" mappára állítjuk — ha a reveal a
+        # horgonyt használná, oda ugrana; a helyes viselkedés a revealTargetY
+        grid.setProperty("anchorPath", "/nemletezo")
+        QMetaObject.invokeMethod(
+            grid, "applyRevealAfterViewer", Qt.ConnectionType.DirectConnection
+        )
+        # a mentett pozíció a revealTargetY-ból származik (a klipp után is a
+        # helyes forrásból), nem a horgony-alapú restoreAnchor eredménye
+        assert grid.property("revealTargetY") == 320
+        assert grid.property("revealAfterViewer") is False
+
+
 class TestEditorWiring:
     """A #19-es bekötés: EditorPanel/CropOverlay ↔ EditController ↔ ini."""
 
