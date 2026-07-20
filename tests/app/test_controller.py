@@ -81,6 +81,26 @@ class TestController:
     def test_viewer_info_invalid_index_empty(self, controller):
         assert controller.viewerInfo(-1) == ""
 
+    def test_background_sync_does_not_emit_folder_activated(self, controller, library):
+        # #173: a háttér-sync befejezése (syncFinished → _reload) frissítse a
+        # feedet, de NE emittáljon folderActivated-et — az a QML-t a mappa
+        # tetejére görgetné (scrollToGroup), elvéve a nézőből visszatérő
+        # felhasználó görgetési pozícióját. Ez volt a #173 valódi oka.
+        controller.selectFolder(str(library / "nyaralas"))
+        activated = []
+        controller.folderActivated.connect(lambda p: activated.append(p))
+        controller.syncFinished.emit()  # a resyncFolderOfRow ezt váltja ki a végén
+        assert activated == []  # nincs scroll-to-top
+        assert controller.photos.rowCount() == 2  # a feed frissült/megmaradt
+
+    def test_explicit_folder_select_emits_folder_activated(self, controller, library):
+        # explicit (felhasználói) mappa-választáskor VISZONT görgetünk a
+        # mappához (folderActivated) — ez a Picasa-viselkedés, ezt megtartjuk
+        activated = []
+        controller.folderActivated.connect(lambda p: activated.append(p))
+        controller.selectFolder(str(library / "nyaralas"))
+        assert activated == [str(library / "nyaralas")]
+
 
 class TestToggleStar:
     def test_star_written_to_ini_and_model(self, controller, library):
