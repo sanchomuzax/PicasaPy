@@ -40,7 +40,15 @@ Ezekben születik minden merge-konfliktus, ezért feature-branchen **tilos**
 hozzájuk nyúlni; az integrációs igényt az issue-ban kell leírni:
 
 - `src/picasapy/app/controller.py` és `src/picasapy/app/qml/Main.qml`
-  (bekötési pontok — az integrátor köti be a kész modult)
+  (bekötési pontok — az integrátor köti be a kész modult). A #150-es
+  felbontás után a kiemelt szeletek (`search_controller.py`,
+  `keywords_controller.py`, `photo_ops_controller.py`,
+  `export_controller.py`, `library_controller.py`, `formatting.py`,
+  illetve QML-oldalon `LightboxFeed.qml`, `MainToolbar.qml`,
+  `TrayBar.qml`, `FileOpsDialogs.qml`, `ExportDialogs.qml`) NEM forró
+  fájlok: feature-branchen szabadon fejleszthetők — csak a controller.py/
+  Main.qml-beli bekötésük (öröklés-lista, példányosítás, qmldir) az
+  integrátoré
 - `src/picasapy/index/schema.py` — **sémaverziót csak az integrátor
   oszt ki**; migráció-sorrend nem sérülhet
 - `src/picasapy/app/i18n/*` — a lupdate az egész fájlt átírja; a
