@@ -25,6 +25,20 @@ Rectangle {
     // #8: a felső ▶ Lejátszás gomb — diavetítés az aktuális képtől
     signal playRequested()
 
+    // #147: csak-olvasás arc-keret overlay — alapból KIKAPCSOLVA (a teljes
+    // felismerés/Emberek-panel a #26-ban). currentFaces: FacesHelper.facesFor()
+    // eredménye; a photosModel.revision a forgatás-kötés mintájára triggerel
+    // újraértékelést; facesHelper hiányában (régi teszt-fixture) üres lista.
+    property bool facesVisible: false
+    function toggleFaces() { viewer.facesVisible = !viewer.facesVisible }
+    readonly property var currentFaces: (!viewer.facesVisible || !photosModel
+                                          || currentIndex < 0
+                                          || typeof facesHelper === "undefined"
+                                          || !facesHelper)
+        ? []
+        : (photosModel.revision,
+           facesHelper.facesFor(photosModel.filePathAt(currentIndex)))
+
     // -- zoom-állapotgép (#6): fit / 1:1 / tetszőleges -------------------
     // zoomFactor: 1.0 = illesztés (fit); a skála az illesztett mérethez
     // képest értendő. A pásztázás (pan) csak nagyításnál él.
@@ -253,6 +267,14 @@ Rectangle {
     Keys.onSpacePressed: {
         if (viewer.isCurrentVideo && videoLoader.item)
             videoLoader.item.togglePlayback()
+    }
+    // F: arc-keretek be/ki (#147) — szövegmezőben (pl. felirat) a saját
+    // Keys-kezelés (gépelés) már elfogadja, ide nem buborékol.
+    Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
+            viewer.toggleFaces()
+            event.accepted = true
+        }
     }
 
     ColumnLayout {
@@ -599,6 +621,20 @@ Rectangle {
                             editorPanel.cropActive = false
                         }
                     }
+
+                    // #147: a mentett arc-régiók a kép kirajzolt (letterbox
+                    // nélküli) területén — a cropOverlay mintájára.
+                    FacesOverlay {
+                        id: facesOverlay
+                        parent: photo
+                        visible: viewer.facesVisible && !editorPanel.cropActive
+                                 && !viewer.isCurrentVideo
+                        x: (photo.width - photo.paintedWidth) / 2
+                        y: (photo.height - photo.paintedHeight) / 2
+                        width: photo.paintedWidth
+                        height: photo.paintedHeight
+                        faces: viewer.currentFaces
+                    }
                 }
                 // #6: nagyított képen húzással pásztázás; dupla katt = fit.
                 // Illesztett nézetben inaktív — az események átmennek rajta.
@@ -657,6 +693,17 @@ Rectangle {
                             text: "1:1"
                             width: 30; height: 20
                             onClicked: viewer.zoomActual()
+                        }
+                        // #147: arc-keretek be/ki (F billentyűvel egyenértékű)
+                        PicasaButton {
+                            objectName: "facesToggleButton"
+                            text: "☺"
+                            checkable: true
+                            checked: viewer.facesVisible
+                            width: 26; height: 20
+                            ToolTip.visible: hovered
+                            ToolTip.text: qsTr("Show Faces")
+                            onClicked: viewer.toggleFaces()
                         }
                         Slider {
                             id: zoomSlider
