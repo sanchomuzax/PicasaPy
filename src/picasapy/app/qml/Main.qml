@@ -619,6 +619,7 @@ ApplicationWindow {
                     // kezdőpontja; sima lépés/kattintás ide állítja vissza
                     property int selectionAnchor: -1
                     function moveSelection(direction) {
+                        cancelRevealAfterViewer()  // #173: valódi lapozás
                         var t = controller.photos.navigate(
                             window.selectedIndex, direction, columns)
                         if (t < 0) return
@@ -712,6 +713,7 @@ ApplicationWindow {
                     // (120 delta) egy rácssornyit (cellHeight) mozgat, a
                     // touchpad kis deltái arányosan simán görgetnek.
                     function wheelStep(delta) {
+                        cancelRevealAfterViewer()  // #173: valódi görgetés
                         var target = contentY - delta / 120 * cellHeight
                         // #95: a contentHeight a nem-példányosított csopor-
                         // toknál BECSLÉS — túllőhet a valós tartalom-végen,
@@ -768,6 +770,15 @@ ApplicationWindow {
                     // magasságtól független. A néző-zárás ezt rögzíti, a
                     // modellcsere utáni visszaállás pedig ezt (nem a horgonyt)
                     // alkalmazza.
+                    // „Ragadós" reveal (#173): a néző-zárás resyncFolderOfRow-ja
+                    // HÁTTÉRSZÁLON fut, és a BEFEJEZÉSEKOR (a kék isWorking sáv
+                    // eltűnésekor) küld egy KÉSŐI feedChanged-et. A revealt ezért
+                    // NEM egyszer alkalmazzuk: a flag bekapcsolva marad, és a
+                    // néző-zárás utáni MINDEN feedChanged a megnyitás előtti nyers
+                    // pozícióra (revealTargetY) állít vissza — nem a szerkezeti
+                    // horgonyra, ami a még nem kész layout miatt a mappa elejére
+                    // ugrana. A flaget a felhasználó valódi görgetése/lapozása/
+                    // mappaváltása törli (cancelRevealAfterViewer).
                     property bool revealAfterViewer: false
                     property real revealTargetY: 0
                     function beginRevealAfterViewer() {
@@ -776,13 +787,15 @@ ApplicationWindow {
                     }
                     function applyRevealAfterViewer() {
                         if (!revealAfterViewer) return
-                        revealAfterViewer = false
                         restoring = true
                         contentY = Math.min(
                             revealTargetY, Math.max(0, contentHeight - height))
                         savedY = contentY
                         captureAnchor()
                         restoring = false
+                    }
+                    function cancelRevealAfterViewer() {
+                        revealAfterViewer = false
                     }
                     function restoreAnchor() {
                         var idx = -1
@@ -807,12 +820,22 @@ ApplicationWindow {
                     }
                     onContentYChanged: {
                         if (!restoring && (contentY > 0 || moving)) {
+                            // #173: valódi felhasználói húzás/flick megszünteti
+                            // a néző-zárás utáni „ragadós" reveal-t
+                            if (moving) cancelRevealAfterViewer()
                             savedY = contentY
                             captureAnchor()
                         }
                     }
+                    // #173: amíg a reveal ragadós, a layout beállása
+                    // (delegate-ek példányosodása → contentHeight nő) újra
+                    // alkalmazza a mentett pozíciót — így az async resync utáni
+                    // fokozatos újralapozás sem hagyja a mappa elején a nézetet
+                    onContentHeightChanged: if (revealAfterViewer)
+                                                applyRevealAfterViewer()
                     onMovementEnded: { savedY = contentY; captureAnchor() }
                     function scrollToGroup(path) {
+                        cancelRevealAfterViewer()  // #173: mappaváltás
                         for (var i = 0; i < model.length; ++i)
                             if (model[i].path === path) {
                                 positionViewAtIndex(i, ListView.Beginning)

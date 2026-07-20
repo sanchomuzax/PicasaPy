@@ -570,7 +570,10 @@ class TestFeedPositionAfterViewer:
     """#173: a nézőből visszatérve a feed a megnyitás előtti pozíción marad,
     nem ugrik a mappa elejére."""
 
-    def test_reveal_captures_and_clears(self, qml_app, qt_app):
+    def test_reveal_captures_and_is_sticky(self, qml_app, qt_app):
+        # A reveal RAGADÓS: a néző-zárás után az azonnali ÉS a háttér-resync
+        # KÉSŐI (async) feedChanged-jére is érvényesül — az applyRevealAfterViewer
+        # NEM törli a flaget, csak a felhasználói görgetés (cancel).
         from PySide6.QtCore import QMetaObject, Qt
 
         window, _, _ = qml_app
@@ -582,6 +585,35 @@ class TestFeedPositionAfterViewer:
         )
         assert grid.property("revealAfterViewer") is True
         assert grid.property("revealTargetY") == 512
+        # első (azonnali) feedChanged: alkalmaz, de a flag MEGMARAD
+        QMetaObject.invokeMethod(
+            grid, "applyRevealAfterViewer", Qt.ConnectionType.DirectConnection
+        )
+        assert grid.property("revealAfterViewer") is True
+        # késői (async, a kék sáv eltűnésekor jövő) feedChanged: újra alkalmaz
+        QMetaObject.invokeMethod(
+            grid, "applyRevealAfterViewer", Qt.ConnectionType.DirectConnection
+        )
+        assert grid.property("revealAfterViewer") is True
+        assert grid.property("revealTargetY") == 512
+
+    def test_user_scroll_cancels_reveal(self, qml_app, qt_app):
+        # valódi felhasználói görgetés (wheelStep) törli a ragadós reveal-t,
+        # utána a késői feedChanged már nem áll vissza a régi pozícióra
+        from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+
+        window, _, _ = qml_app
+        grid = window.findChild(QObject, "photoGrid")
+        grid.setProperty("savedY", 512)
+        QMetaObject.invokeMethod(
+            grid, "beginRevealAfterViewer", Qt.ConnectionType.DirectConnection
+        )
+        assert grid.property("revealAfterViewer") is True
+        QMetaObject.invokeMethod(
+            grid, "wheelStep", Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", -120)
+        )
+        assert grid.property("revealAfterViewer") is False
+        # a cancel után az apply no-op
         QMetaObject.invokeMethod(
             grid, "applyRevealAfterViewer", Qt.ConnectionType.DirectConnection
         )
@@ -608,7 +640,8 @@ class TestFeedPositionAfterViewer:
         # a mentett pozíció a revealTargetY-ból származik (a klipp után is a
         # helyes forrásból), nem a horgony-alapú restoreAnchor eredménye
         assert grid.property("revealTargetY") == 320
-        assert grid.property("revealAfterViewer") is False
+        # ragadós: a flag megmarad a késői async feedChanged-hez
+        assert grid.property("revealAfterViewer") is True
 
 
 class TestEditorWiring:
