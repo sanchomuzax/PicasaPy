@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.25] – 2026-07-20
+
+### Hozzáadva
+- **Effektlánc másolás-beillesztés magja (#152):** a szerkesztő-munkamenet
+  API-szinten tudja egy kép összes effektjének átvitelét másik kép(ek)re,
+  az ismeretlen bejegyzések bitre pontos megőrzésével és undo-támogatással;
+  a Kép menü gombjainak élesítése következik.
+- **Picasa widget-króm komponensek (#3):** kézikönyv-hű görgetősáv és
+  csúszka (PicasaScrollBar, PicasaSlider) próba-oldallal; a felületre
+  bekötés következik.
+
+### Karbantartás
+- **A két óriásfájl felbontva (#150):** controller.py 1232 → 528 sor
+  (hat al-modulra bontva), Main.qml 1590 → 604 sor (hét komponensre bontva)
+  — viselkedés-változás nélkül, a tesztek módosítás nélkül zöldek. Minden
+  forrásfájl a 800 soros projektlimit alatt; a párhuzamos munka mostantól
+  kevesebb ütközéssel folyhat.
+
 ## [0.4.24] – 2026-07-20
 
 ### Hozzáadva
