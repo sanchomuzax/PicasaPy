@@ -113,12 +113,19 @@ class LibraryMixin:
     def _on_sync_progress(self, folder, done, total, new_photos) -> None:
         """Sync-haladás a GUI-szálon (queued jelzés a workerből).
 
+        #216 — késői jelzések védelme: eltávolított (már nem figyelt)
+        gyökér alatti mappa haladása nem frissít semmit — se panelt, se
+        rácsot. A worker queued jelzései az eltávolítás UTÁN is beeshetnek
+        még; ezek itt csendben elnyelődnek.
+
         A panel automatikusan akkor jelenik meg, ha a szkennelés érdemi:
         új gyökér importja (forced), vagy új fotók kerültek elő — a csendes,
         mindent-kihagyó 5 perces rescan nem villogtatja. A rács fokozatos
         frissítése ritkított (max ~1,5 mp-enként), és a meglévő
         megőrzött-görgetésű újratöltési úton fut, nem kötegenkénti
         modell-resettel."""
+        if self._root_for_folder(folder) is None:
+            return  # #216: eltávolított gyökér késői jelzése — ignorálva
         self._import_folder = folder
         self._import_done = done
         self._import_total = total
@@ -150,13 +157,18 @@ class LibraryMixin:
         self._import_new_at_reload = 0
         self.importChanged.emit()
 
-    def _make_progress_emitter(self):
+    def _make_progress_emitter(self, should_stop=None):
         """WORKER-SZÁLON futó progress-callback (ld. SyncProgressCallback):
         a jelzés-emisszió ritkított — új fotót hozó mappa és az utolsó mappa
-        mindig átmegy, a gyors (kihagyott) mappák max ~4/s ütemben."""
+        mindig átmegy, a gyors (kihagyott) mappák max ~4/s ütemben.
+
+        #216: a visszatérési érték megszakítás-kérés a `sync_tree` felé —
+        igaz, ha a `should_stop` hívható igazat ad (pl. a gyökér leállítási
+        jelzője be van állítva). A ritkítástól függetlenül MINDEN híváskor
+        kiértékelődik, így a leállás mappa-határon, másodpercen belül él."""
         state = {"last": 0.0, "new": -1}
 
-        def progress(folder: str, done: int, total: int, new_photos: int) -> None:
+        def progress(folder: str, done: int, total: int, new_photos: int) -> bool:
             now = time.monotonic()
             if (
                 new_photos != state["new"]
@@ -166,8 +178,31 @@ class LibraryMixin:
                 state["last"] = now
                 state["new"] = new_photos
                 self.syncProgress.emit(folder, done, total, new_photos)
+            return should_stop() if should_stop is not None else False
 
         return progress
+
+    # -- leállítási jelzők (#216) --------------------------------------------
+
+    def _cancel_event(self, root: str) -> threading.Event:
+        """A gyökér leállítási jelzője (lustán létrehozva — a mixinnek nincs
+        __init__-je, a szótár első használatkor születik). Beállítja a
+        `removeWatchedFolder`; a worker-oldali should_stop olvassa; az
+        újra-hozzáadás (`addWatchedFolder`) törli."""
+        try:
+            events = self._sync_cancel_events
+        except AttributeError:
+            events = self._sync_cancel_events = {}
+        if root not in events:
+            events[root] = threading.Event()
+        return events[root]
+
+    def _make_should_stop(self, root: str):
+        """Worker-oldali leállás-predikátum egy gyökérhez: igaz, ha a
+        leállítási jelző be van állítva VAGY a gyökér már nem figyelt —
+        a kettős ellenőrzés a jelző-törlés versenyhelyzetét is lefedi."""
+        event = self._cancel_event(root)
+        return lambda: event.is_set() or root not in self._roots
 
     # -- életciklus ----------------------------------------------------------
 
@@ -214,10 +249,15 @@ class LibraryMixin:
         self._persist_roots()
         self._restart_watcher()
         self.statusChanged.emit()
+        # #216: újra-hozzáadásnál a korábbi eltávolítás leállítási jelzője
+        # már nem érvényes — törölni kell, különben a sync azonnal leállna
+        self._cancel_event(path).clear()
         # #209: új gyökér importja mindig „nagy" szkennelés — a lebegő
         # panel az első haladás-jelzéstől látszik (forced)
         self._import_forced = True
-        progress = self._make_progress_emitter()
+        progress = self._make_progress_emitter(
+            should_stop=self._make_should_stop(path)
+        )
 
         def worker():
             try:
@@ -232,14 +272,28 @@ class LibraryMixin:
     @Slot(str)
     def removeWatchedFolder(self, path: str) -> None:
         """„Eltávolítás a Picasából": a gyökér kikerül a figyeltek közül és
-        az indexből is (a fájlokhoz természetesen nem nyúlunk)."""
+        az indexből is (a fájlokhoz természetesen nem nyúlunk).
+
+        #216 — futó szkennelés közben is konzisztens: (1) a leállítási
+        jelző beállítása — a gyökér futó syncje a következő mappa-határon
+        tisztán leáll; (2) azonnali index-takarítás (`remove_root`,
+        SQL-oldali prune); (3) az Importálás-panel eltüntetése, ha épp az
+        eltávolított gyökér mappáját mutatta; (4) nézet-frissítés. A worker
+        késői jelzéseit a `_on_sync_progress` gyökér-ellenőrzése nyeli el."""
         if path not in self._roots:
             return
+        # a jelző MÉG a gyökér-lista módosítása előtt áll be — a worker
+        # should_stop-ja bármelyik feltételen (jelző VAGY lista) elkapja
+        self._cancel_event(path).set()
         self._roots.remove(path)
         self._persist_roots()
         self._restart_watcher()
         with open_index(self._db_path) as conn:
             remove_root(conn, path)
+        # a panel ne ragadjon be: ha az eltávolított gyökér mappáját
+        # mutatta, azonnal tűnjön el (állapot-nullázással)
+        if self._import_folder and self._root_for_folder(self._import_folder) is None:
+            self._on_import_finished()
         if self._current_folder and (
             self._current_folder == path
             or Path(self._current_folder).is_relative_to(path)
@@ -288,7 +342,14 @@ class LibraryMixin:
                         if root is None:
                             continue  # már nem figyelt gyökér alatt — kihagyva
                         try:
-                            sync_folder(conn, root, folder, exclude=())
+                            # #216: eltávolított gyökér mappája már ne íródjon
+                            sync_folder(
+                                conn,
+                                root,
+                                folder,
+                                exclude=(),
+                                should_stop=self._make_should_stop(root),
+                            )
                         except (OSError, RuntimeError):
                             pass  # eltűnt mappa — a periodikus rescan rendezi
                         except sqlite3.OperationalError as error:
@@ -330,10 +391,17 @@ class LibraryMixin:
         a többi gyökér feldolgozása folytatódik, és a vége mindig
         syncFinished."""
         errors = []
-        progress = self._make_progress_emitter()
         try:
             with open_index(self._db_path) as conn:
-                for root in self._roots:
+                # pillanatkép: a lista a főszálon menet közben módosulhat
+                # (#216, removeWatchedFolder) — az iteráció ettől független
+                for root in tuple(self._roots):
+                    should_stop = self._make_should_stop(root)
+                    if should_stop():
+                        continue  # már az indulás előtt eltávolították
+                    # gyökerenkénti emitter: a megszakítás-kérés (a progress
+                    # visszatérési értéke) csak a saját gyökerére áll be
+                    progress = self._make_progress_emitter(should_stop=should_stop)
                     try:
                         self._sync_tree(conn, root, progress=progress)
                     except (OSError, RuntimeError, sqlite3.OperationalError) as error:
