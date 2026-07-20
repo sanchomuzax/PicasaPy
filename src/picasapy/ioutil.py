@@ -59,7 +59,15 @@ def write_atomic(
         dir=target.parent, prefix=f"{target.name}.", suffix=suffix
     )
     try:
-        with os.fdopen(fd, "wb") as handle:
+        try:
+            handle = os.fdopen(fd, "wb")
+        except BaseException:
+            # Az os.fdopen nem vette át a mkstemp nyers fd-jét → nekünk kell
+            # lezárni, különben Windowson a nyitott fd megakadályozza a temp
+            # fájl törlését (a takarítás csendben elbukna, a .tmp ottragadna).
+            os.close(fd)
+            raise
+        with handle:
             handle.write(payload)
             if durable:
                 handle.flush()
@@ -122,7 +130,10 @@ def _replace_temp(
 
 
 def _remove_quietly(temp_name: str) -> None:
-    with contextlib.suppress(FileNotFoundError):
+    # A takarítás best-effort: sosem takarhatja el az eredeti hibát, és egy
+    # ottragadt zár (Windows) sem buktathatja meg a hívást — a temp fájl
+    # legrosszabb esetben ottmarad, de kivételt innen nem engedünk ki.
+    with contextlib.suppress(OSError):
         os.unlink(temp_name)
 
 
