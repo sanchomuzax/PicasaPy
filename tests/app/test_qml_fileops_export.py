@@ -157,3 +157,46 @@ class TestTrayExportButton:
         assert button.property("enabled") is False
         _select_row(window, qt_app, 0)
         assert button.property("enabled") is True
+
+
+class TestCopyPasteEffectsMenu:
+    """#152: „Copy/Paste All Effects" — menü-bekötés QML-funkcionális teszttel."""
+
+    def test_paste_disabled_until_copied_then_applies_to_selection(
+        self, qml_app, qt_app
+    ):
+        window, controller, lib, _engine = qml_app
+        # a.jpg-nek van effektlánca, b.jpg-nek nincs
+        (lib / ".picasa.ini").write_text(
+            "[a.jpg]\nfilters=BRIT=1,e50,0.20;\n", encoding="utf-8"
+        )
+        controller.resyncFolder(str(lib))
+        loop = QEventLoop()
+        controller.syncFinished.connect(loop.quit)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+
+        copy_item = _child(window, "menuEditCopyEffects")
+        paste_item = _child(window, "menuEditPasteEffects")
+
+        _select_row(window, qt_app, 0)  # a.jpg — a forrás
+        assert paste_item.property("enabled") is False  # még nincs vágólap
+
+        QMetaObject.invokeMethod(
+            copy_item, "triggered", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert controller.hasEffectsClipboard is True
+
+        _select_row(window, qt_app, 1)  # b.jpg — a cél
+        assert paste_item.property("enabled") is True
+
+        QMetaObject.invokeMethod(
+            paste_item, "triggered", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        ini_text = (lib / ".picasa.ini").read_text(encoding="utf-8")
+        assert "[b.jpg]" in ini_text
+        assert "filters=BRIT=1,e50,0.20;" in ini_text.split("[b.jpg]")[1]
