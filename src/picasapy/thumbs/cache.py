@@ -1,14 +1,18 @@
 """OpenCV-alapú thumbnail-generálás lemez-gyorsítótárral (ADR: rpi5-image-libs).
 
 A cache-kulcs a forrásfájl útvonalából + mtime-jából + méretéből képzett
-hash: fájlváltozáskor automatikusan új bejegyzés készül, a régit a későbbi
-takarító dolga eltüntetni. Az OpenCV imdecode alapból alkalmazza az
+hash: fájlváltozáskor automatikusan új bejegyzés készül, az elárvult
+régieket a méretkorlátos LRU-takarító (`prune.py`, #144) tünteti el —
+induláskor háttérszálon fut, ha a cache méretkorláttal jött létre.
+Az OpenCV imdecode alapból alkalmazza az
 EXIF-orientációt, ezért a thumbnail már helyesen forgatott.
 """
 
 from __future__ import annotations
 
 import hashlib
+import io
+import threading
 from pathlib import Path
 
 import cv2
@@ -19,6 +23,7 @@ from picasapy.ini.filters import FilterOp, serialize_filters
 from picasapy.ioutil import write_atomic
 from picasapy.render import apply_filters
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
+from picasapy.thumbs.prune import prune_cache_dir, prune_in_background
 
 _JPEG_QUALITY = 85
 
@@ -41,9 +46,30 @@ _REDUCED_FLAGS = (
 
 
 class ThumbnailCache:
-    def __init__(self, root: str | Path, size: int = 256):
+    def __init__(
+        self,
+        root: str | Path,
+        size: int = 256,
+        max_bytes: int | None = None,
+    ):
+        """`max_bytes`: a lemez-cache méretkorlátja (#144) — ha meg van
+        adva, induláskor háttérszálon lefut az LRU-takarító, hogy a
+        `~/.cache` alatti tár ne nőjön korlátlanul."""
         self._root = Path(root)
         self._size = size
+        self._max_bytes = max_bytes
+        # A szál referenciáját eltároljuk, hogy a hívó (pl. teszt) be
+        # tudja várni — enélkül a takarítás versenyezne a mappa-törléssel.
+        self._prune_thread: threading.Thread | None = None
+        if max_bytes is not None:
+            self._prune_thread = prune_in_background(self._root, max_bytes)
+
+    def prune(self) -> int:
+        """Szinkron LRU-takarítás a beállított korlátig; a törölt bájtok
+        száma. Korlát nélkül nem csinál semmit (0)."""
+        if self._max_bytes is None:
+            return 0
+        return prune_cache_dir(self._root, self._max_bytes)
 
     def thumbnail_path(self, photo_path: Path, mtime_ns: int, size_bytes: int) -> Path:
         key = f"{photo_path}\x00{mtime_ns}\x00{size_bytes}\x00{self._size}"
@@ -133,13 +159,21 @@ class ThumbnailCache:
         nagyobb, mint a sima thumbnailé). Alapból a cache saját mérete."""
         if source.suffix.lower() in VIDEO_EXTENSIONS:
             return _decode_video_frame(source)
-        return _decode_image(source, self._read_flag(source, target))
+        # #144: a forrást EGYSZER olvassuk be — a méret-próba és a dekódolás
+        # ugyanabból a bájtpufferből dolgozik (korábban PIL Image.open +
+        # np.fromfile kétszer nyitotta a fájlt, ami NAS-on drága).
+        payload = _read_bytes(source)
+        if payload is None:
+            return None
+        return cv2.imdecode(payload, self._read_flag(payload, target))
 
-    def _read_flag(self, source: Path, target: int | None = None) -> int:
-        """Dekódolási flag: nagy képre redukált beolvasás (memóriakímélés)."""
+    def _read_flag(self, payload: np.ndarray, target: int | None = None) -> int:
+        """Dekódolási flag a MÁR beolvasott bájtokból: nagy képre redukált
+        beolvasás (memóriakímélés). A PIL itt csak a fejlécet értelmezi,
+        a fájlt nem nyitja meg újra."""
         goal = self._size if target is None else target
         try:
-            with Image.open(source) as probe:
+            with Image.open(io.BytesIO(payload)) as probe:
                 longest = max(probe.size)
         except (
             OSError,
@@ -201,8 +235,8 @@ def _decode_video_frame(source: Path):
         capture.release()
 
 
-def _decode_image(source: Path, flag: int):
-    """Bájt-alapú dekódolás a cv2.imread helyett (#65): az imread Windows-on
+def _read_bytes(source: Path) -> np.ndarray | None:
+    """A forrásfájl bájtjai np.fromfile-lal (#65): az imread Windows-on
     az ANSI fájl-API-val nyit, ékezetes útvonalon (pl. „Képek") némán None-t
     ad. A np.fromfile a Python unicode-biztos fájlkezelésével olvas, az
     imdecode pedig az imread-del azonosan dekódol (EXIF-forgatással)."""
@@ -212,4 +246,4 @@ def _decode_image(source: Path, flag: int):
         return None  # időközben törölt/elérhetetlen forrás (NAS)
     if payload.size == 0:
         return None
-    return cv2.imdecode(payload, flag)
+    return payload

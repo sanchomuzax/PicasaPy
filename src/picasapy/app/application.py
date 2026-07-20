@@ -39,6 +39,11 @@ _I18N_DIR = _APP_DIR / "i18n"
 # nagyítással (homályosan) jelenhet meg.
 _GRID_MAX_THUMB_PX = 256
 
+# #144: a thumbnail-lemezcache méretkorlátja — induláskor háttérszálon
+# lefutó LRU-takarító tartja be, hogy a ~/.cache alatti tár ne nőjön
+# korlátlanul (minden fájlváltozás új hash-bejegyzést szül).
+_THUMB_CACHE_LIMIT_BYTES = 512 * 1024 * 1024
+
 
 def _thumbnail_cache_size(device_pixel_ratio: float) -> int:
     """A cache-elt thumbnail célmérete (leghosszabb oldal, px).
@@ -251,7 +256,11 @@ def run(argv: list[str]) -> int:
     # legnagyobb fokozata (256px) se legyen homályos HiDPI kijelzőn.
     cache_size = _thumbnail_cache_size(_screen_device_pixel_ratio(app))
     provider = ThumbnailProvider(
-        ThumbnailCache(_cache_dir() / "thumbs", size=cache_size)
+        ThumbnailCache(
+            _cache_dir() / "thumbs",
+            size=cache_size,
+            max_bytes=_THUMB_CACHE_LIMIT_BYTES,
+        )
     )
     controller = AppController(
         data_dir / "index.db",

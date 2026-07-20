@@ -68,8 +68,29 @@ class TestGetOrCreate:
         bomb = tmp_path / "oriaskep.jpg"
         bomb.write_bytes(b"P6\n50000 50000\n255\n" + b"\x00" * 16)
         import cv2
+        import numpy as np
 
-        assert cache._read_flag(bomb) == cv2.IMREAD_COLOR
+        payload = np.fromfile(bomb, dtype=np.uint8)
+        assert cache._read_flag(payload) == cv2.IMREAD_COLOR
+
+    def test_source_opened_only_once(self, cache, photo, monkeypatch):
+        # #144: a méret-próba a MÁR beolvasott bájtokból megy — a forrás-
+        # fájlt tilos másodszor (útvonalról) megnyitni; a PIL csak
+        # fájlobjektumot (BytesIO) kaphat.
+        from pathlib import Path
+
+        import picasapy.thumbs.cache as cache_module
+
+        real_open = cache_module.Image.open
+
+        def guarded_open(fp, *args, **kwargs):
+            assert not isinstance(fp, (str, Path)), (
+                "Image.open útvonallal hívva — dupla fájl-nyitás (#144)"
+            )
+            return real_open(fp, *args, **kwargs)
+
+        monkeypatch.setattr(cache_module.Image, "open", guarded_open)
+        assert cache.get_or_create(photo, *_stat_key(photo)) is not None
 
     def test_upscale_avoided(self, cache, tmp_path):
         small = make_jpeg(tmp_path / "kicsi.jpg", size=(20, 10))
