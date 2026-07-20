@@ -585,6 +585,22 @@ ApplicationWindow {
         y: 56
     }
 
+    // #211: lebegő „Teljesítmény-monitor" panel — a Súgó menüből
+    // kapcsolható; balra az importálás-paneltől, hogy ne fedjék egymást
+    PerfMonitorPanel {
+        id: perfPanel
+        objectName: "perfMonitorPanel"
+        z: 90
+        visible: controller.perfMonitorEnabled
+        cpuPercent: controller.perfCpuPercent
+        rssMb: controller.perfRssMb
+        topActivity: controller.perfTopActivity
+        onCloseRequested: controller.setPerfMonitorEnabled(false)
+        onSaveRequested: perfPanel.lastSavedPath = controller.saveDiagnostics()
+        x: 24
+        y: 56
+    }
+
     // alsó sáv: infó-sáv + kijelölés-tálca (TrayBar.qml, #150)
     footer: TrayBar {
         id: trayBar
