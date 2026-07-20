@@ -57,6 +57,46 @@ class TestEndEdit:
         assert image.width() == 16  # placeholder
 
 
+class TestPagingMemory:
+    """#128: lapozás a nézőben = beginEdit új id-vel, endEdit nélkül — a
+    korábbi képek előnézete nem maradhat bent örökre a providerben."""
+
+    def test_two_begin_edits_release_older_previews(self, controller, provider, tmp_path):
+        from picasapy.app import edit_preview
+
+        first = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        second = make_jpeg(tmp_path / "IMG_0002.jpg", size=(8, 6))
+        controller.beginEdit("1", str(first))
+        controller.beginEdit("2", str(second))
+        # a cache mindkét lapozás után korlátos marad
+        assert len(provider._sources) <= edit_preview._LRU_CAPACITY
+        # tovább lapozva a legrégebbi ("1") felszabadul
+        third = make_jpeg(tmp_path / "IMG_0003.jpg", size=(8, 6))
+        controller.beginEdit("3", str(third))
+        assert "1" not in provider._sources
+        assert provider.requestImage("1", None, None).width() == 16  # placeholder
+
+    def test_previous_photo_stays_cached_for_back_paging(
+        self, controller, provider, tmp_path, monkeypatch
+    ):
+        from picasapy.app import edit_preview
+
+        calls = []
+        original = edit_preview._decode_source
+
+        def counting_decode(path):
+            calls.append(path)
+            return original(path)
+
+        monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
+        first = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        second = make_jpeg(tmp_path / "IMG_0002.jpg", size=(8, 6))
+        controller.beginEdit("1", str(first))
+        controller.beginEdit("2", str(second))
+        controller.beginEdit("1", str(first))  # visszalapozás: nincs újradekód
+        assert len(calls) == 2
+
+
 class TestToggleTool:
     def test_writes_filters_to_ini(self, controller, photo):
         controller.beginEdit("1", str(photo))

@@ -157,6 +157,45 @@ class TestSourceCaching:
         assert len(calls) == 2
 
 
+class TestLruEviction:
+    """#128: lapozáskor a provider nem nőhet korlátlanul — kis LRU tartja
+    az utolsó néhány kép dekódolt forrását/előnézetét, a régebbiek
+    felszabadulnak."""
+
+    def test_cache_is_bounded_when_paging(self, qt_app, tmp_path):
+        from picasapy.app import edit_preview
+
+        provider = _make_provider()
+        for index in range(1, 6):
+            photo = make_jpeg(tmp_path / f"IMG_{index:04}.jpg", size=(8, 6))
+            provider.register(str(index), photo, ())
+        assert len(provider._sources) <= edit_preview._LRU_CAPACITY
+        assert len(provider._images) <= edit_preview._LRU_CAPACITY
+
+    def test_oldest_entry_is_evicted(self, qt_app, tmp_path):
+        provider = _make_provider()
+        for index in range(1, 4):
+            photo = make_jpeg(tmp_path / f"IMG_{index:04}.jpg", size=(8, 6))
+            provider.register(str(index), photo, ())
+        # a legrégebbi ("1") kikerült: a kérés placeholderre esik vissza
+        assert provider.requestImage("1", None, None).width() == 16
+        # a legutóbbiak megmaradtak (előre-hátra lapozás gyors marad)
+        assert provider.requestImage("2", None, None).width() == 8
+        assert provider.requestImage("3", None, None).width() == 8
+
+    def test_reregister_same_id_does_not_evict_previous(self, qt_app, tmp_path):
+        """Csúszka-húzás (ugyanaz az id, sok register) nem szoríthatja ki
+        az előző képet — az újraregisztrálás csak frissíti a helyét."""
+        provider = _make_provider()
+        first = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        second = make_jpeg(tmp_path / "IMG_0002.jpg", size=(8, 6))
+        provider.register("1", first, ())
+        provider.register("2", second, ())
+        provider.register("2", second, ())
+        provider.register("2", second, ())
+        assert provider.requestImage("1", None, None).width() == 8
+
+
 class TestRequestedSize:
     def test_scales_to_requested_size(self, qt_app, tmp_path):
         provider = _make_provider()
