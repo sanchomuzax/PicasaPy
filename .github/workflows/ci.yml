@@ -42,4 +42,7 @@ jobs:
           pip install PySide6 opencv-python-headless pillow piexif watchdog pytest pytest-cov
 
       - name: Run tests
-        run: python -m pytest -q --tb=short
+        # darabolt futtatás (#53): a teljes készlet egy processzben a
+        # Windows-runneren rendszeresen GIL-deadlockba ragadt — a script
+        # a tests/app fájlokat külön processzben, kemény timeouttal futtatja
+        run: python scripts/run_tests.py
