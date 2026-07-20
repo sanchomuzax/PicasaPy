@@ -236,6 +236,37 @@ class TestPhotoGridModel:
             model.data(model.index(0, 0), PhotoGridModel.NameRole) == "IMG_0100.jpg"
         )
 
+    def test_set_photos_noop_on_identical_tuple(self, qt_app, conn, library):
+        # #142: változatlan tartalomnál NINCS modell-reset és NINCS
+        # revision-bump — a reset eldobná a delegate-eket és minden
+        # háttér-frissítés újrarajzolná a teljes rácsot (a
+        # FolderListModel._set_rows mintája).
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        photos = photos_in_folder(conn, library / "nyaralas")
+        model.set_photos(photos)
+        revision_before = model.revision
+        resets = []
+        model.modelAboutToBeReset.connect(lambda: resets.append(1))
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        assert resets == []
+        assert model.revision == revision_before
+
+    def test_set_photos_resets_on_changed_tuple(self, qt_app, conn, library):
+        # #142 ellenpróba: valódi változásnál a reset és a revision-bump
+        # továbbra is megtörténik.
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        revision_before = model.revision
+        resets = []
+        model.modelAboutToBeReset.connect(lambda: resets.append(1))
+        model.set_photos(photos_in_folder(conn, library / "telek"))
+        assert resets == [1]
+        assert model.revision == revision_before + 1
+
 
 class TestPhotoGridModelFolderNavigation:
     """#84: a nagy nézőben a lapozás a mappahatárnál álljon meg — a

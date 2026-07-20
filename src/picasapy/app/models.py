@@ -240,6 +240,12 @@ class PhotoGridModel(QAbstractListModel):
         return self._revision
 
     def set_photos(self, photos: tuple[PhotoRecord, ...]) -> None:
+        # #142: változatlan tartalomnál no-op — a reset eldobná a
+        # delegate-eket és a revision-bump minden élő cellát újraköttetne,
+        # így minden háttér-szinkron a teljes rácsot újrarajzolná
+        # (a FolderListModel._set_rows mintája).
+        if photos == self._photos:
+            return
         self.beginResetModel()
         self._photos = photos
         self.endResetModel()
