@@ -104,7 +104,11 @@ class SearchSuggestion:
 
 
 def search_suggestions(
-    conn: sqlite3.Connection, text: str, limit: int = 8
+    conn: sqlite3.Connection,
+    text: str,
+    limit: int = 8,
+    *,
+    include_albums: bool = False,
 ) -> tuple[SearchSuggestion, ...]:
     """Javaslatok gépelés közben: név-egyező mappák és virtuális albumok.
 
@@ -112,6 +116,12 @@ def search_suggestions(
     casefold-os; előbb a mappák, aztán az albumok, névsorban, darabszámmal.
     Az albumok a `.picasa.ini`-kből jönnek (az index nem tárolja őket);
     ugyanaz a token több ini-ben is szerepelhet — összesítve számoljuk.
+
+    Az album-ág opt-in (#138): az összes has_ini-s mappa ini-jének beolvasása
+    (NAS-on) drága, gépelés közben leütésenként hívódna, a jelenlegi hívó
+    pedig el is dobja az album-találatokat. Amíg a virtuális albumok UI-ja
+    (#9) el nem készül, az alapértelmezés `include_albums=False` — ini-olvasás
+    ilyenkor egyáltalán nem történik.
     """
     query = text.strip().casefold()
     if not query:
@@ -129,7 +139,7 @@ def search_suggestions(
         )
         if query in _PATH_SEP.split(row["path"])[-1].casefold()
     )
-    albums = _album_suggestions(conn, query)
+    albums = _album_suggestions(conn, query) if include_albums else ()
     return (folders + albums)[:limit]
 
 
