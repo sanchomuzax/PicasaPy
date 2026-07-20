@@ -228,5 +228,37 @@ szabály (gray-world vs fehérpont-alapú) még nyitott.
 3. unsharp kernel finomítás (dekonvolúciós illesztés)
 4. `tint` színparaméter-formátum (ffff → R=0 anomália)
 5. retouch/redeye régió-adatok, text overlay — régió-alapúak, 2. fázisban
-6. **Összehasonlító harness** (PicasaPy render vs golden, SSIM/ΔE) — a
-   szerkesztő-implementáció elfogadási tesztje; a szűrő-tudás ehhez már megvan
+6. ~~**Összehasonlító harness** (PicasaPy render vs golden, SSIM/ΔE)~~ —
+   KÉSZ (#115): `tools/golden/compare_render.py`, ld. lent.
+
+## Összehasonlító harness (#115) — `tools/golden/compare_render.py`
+
+A PicasaPy renderjét (`picasapy.render.apply_filters`) a valódi Picasa-exportok
+ellen méri: SSIM + ΔE (CIE76) + toleranciás pixel-diff, soronkénti ítélettel
+(**pixelhű / közelítés / eltér**), állítható küszöbökkel, JSON- és terminál-
+riporttal. Futtatás a fejlesztői gépen (ahol a golden-kitek élnek):
+
+```
+# teljes kit (make_golden_kit.py-szerkezet, exportok a kit/export/ alatt):
+python3 tools/golden/compare_render.py kit research/golden-kit-result \
+    --luts research/golden-analysis --json riport.json
+
+# egyetlen pár:
+python3 tools/golden/compare_render.py pair eredeti.jpg golden.jpg \
+    --filters "fill=1,0.500000;bw=1;"
+```
+
+Küszöbök (alapértékek; CLI-ből felülírhatók):
+
+| ítélet | feltétel | alap |
+|---|---|---|
+| pixelhű | max|Δ| ≤ `--pixel-tol` VAGY a tűrésen túli pixelek aránya ≤ `--frac-tol` | 1/255 ill. 0,2% (JPEG-alapzaj) |
+| közelítés | SSIM ≥ `--ssim-min` ÉS átlag ΔE ≤ `--de-mean-max` | 0,98 ill. 2,0 |
+| eltér | minden más (méret-eltérés is) | — |
+
+Opcionális mért LUT-ok: ha a `--luts` könyvtárban van `luts3.json`
+(`analyze_goldens3.py` kimenete — gitignore-olt, csak a fejlesztői gépen él),
+a mért 2D fill-LUT és a h/s/temp LUT-ok a beépített közelítések HELYETT
+futnak (`fill`, `finetune/finetune2`); hiányuk tiszta kihagyás, sosem hiba.
+A harness logikája szintetikus adatokkal tesztelt
+(`tests/golden/test_compare_render.py`), golden-kitek nélkül is fut.
