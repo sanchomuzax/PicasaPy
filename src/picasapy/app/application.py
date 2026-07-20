@@ -31,6 +31,7 @@ from picasapy.version import version_string
 from .controller import AppController
 from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
+from .faces_helper import FacesHelper
 from .fileops_controller import FileOpsController
 from .thumbnail_provider import ThumbnailProvider
 
@@ -302,6 +303,12 @@ def run(argv: list[str]) -> int:
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
     )
+    # #147: a néző arc-keret overlay-jének csak-olvasás szintű hídja —
+    # a faces=/Contacts2 közvetlenül a fotó .picasa.ini-jéből olvasva.
+    # A helyi változóban tartás megakadályozza, hogy a Python GC a
+    # context property mögül idő előtt eltüntesse a QObject-et.
+    faces_helper = FacesHelper()
+    engine.rootContext().setContextProperty("facesHelper", faces_helper)
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().
     engine.rootContext().setContextProperty("appVersion", version_string())

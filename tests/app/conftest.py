@@ -27,6 +27,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.controller import AppController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
+    from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.index import open_index, sync_tree
@@ -52,6 +53,7 @@ def qml_app(qt_app, tmp_path):
     edit_controller = EditController(edit_preview)
     fileops_controller = FileOpsController()
     app_module.wire_fileops(fileops_controller, controller)
+    faces_helper = FacesHelper()
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
@@ -61,6 +63,7 @@ def qml_app(qt_app, tmp_path):
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
     )
+    engine.rootContext().setContextProperty("facesHelper", faces_helper)
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"

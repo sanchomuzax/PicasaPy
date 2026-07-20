@@ -20,6 +20,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.controller import AppController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
+    from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.thumbs import ThumbnailCache
@@ -54,6 +55,9 @@ def qml_app(qt_app, tmp_path):
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
     )
+    # arc-keretek (#147) — az application.py bekötésének tükre
+    faces_helper = FacesHelper()
+    engine.rootContext().setContextProperty("facesHelper", faces_helper)
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
@@ -107,6 +111,76 @@ class TestViewerRotation:
         viewer.setProperty("currentIndex", 1)
         qt_app.processEvents()
         assert _viewer_image(window).property("rotation") == 0
+
+
+class TestViewerFacesOverlay:
+    """#147: a mentett faces= régiók kapcsolható overlay-je a nézőben —
+    csak olvasás, felismerés nélkül; a nevek a [Contacts2] szekcióból."""
+
+    def test_hidden_by_default(self, qml_app, qt_app, tmp_path):
+        ini = tmp_path / "kepek" / ".picasa.ini"
+        ini.write_text(
+            "[a.jpg]\nfaces=rect64(3f845bcb59418507),8e62b2035b74b477;\n",
+            encoding="utf-8",
+        )
+        window, _controller, _ = qml_app
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", 0)
+        qt_app.processEvents()
+
+        overlay = window.findChild(QObject, "facesOverlay")
+        assert overlay is not None, "facesOverlay nem található"
+        assert overlay.property("visible") is False
+
+    def test_toggle_shows_frame_with_resolved_name(self, qml_app, qt_app, tmp_path):
+        ini = tmp_path / "kepek" / ".picasa.ini"
+        ini.write_text(
+            "[Contacts2]\n"
+            "8e62b2035b74b477=Kis Éva;;\n"
+            "[a.jpg]\n"
+            "faces=rect64(3f845bcb59418507),8e62b2035b74b477;\n",
+            encoding="utf-8",
+        )
+        window, _controller, _ = qml_app
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", 0)
+        qt_app.processEvents()
+
+        viewer.setProperty("facesVisible", True)
+        qt_app.processEvents()
+
+        overlay = window.findChild(QObject, "facesOverlay")
+        assert overlay.property("visible") is True
+        faces = overlay.property("faces")
+        assert len(faces) == 1
+        assert faces[0]["name"] == "Kis Éva"
+
+        viewer.setProperty("facesVisible", False)
+        qt_app.processEvents()
+        assert overlay.property("visible") is False
+
+    def test_toggle_button_flips_faces_visible(self, qml_app, qt_app, tmp_path):
+        ini = tmp_path / "kepek" / ".picasa.ini"
+        ini.write_text(
+            "[a.jpg]\nfaces=rect64(3f845bcb59418507),ffffffffffffffff;\n",
+            encoding="utf-8",
+        )
+        window, _controller, _ = qml_app
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", 0)
+        qt_app.processEvents()
+
+        button = window.findChild(QObject, "facesToggleButton")
+        assert button is not None, "facesToggleButton nem található"
+        from PySide6.QtCore import QMetaObject
+
+        assert viewer.property("facesVisible") is False
+        QMetaObject.invokeMethod(button, "clicked")
+        qt_app.processEvents()
+        assert viewer.property("facesVisible") is True
 
 
 class TestCaptionEditing:
