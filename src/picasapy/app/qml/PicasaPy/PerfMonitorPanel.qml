@@ -95,13 +95,36 @@ Rectangle {
         }
 
         Text {
+            id: savedPathText
             objectName: "perfPanelSavedPath"
             Layout.fillWidth: true
             visible: panel.lastSavedPath.length > 0
             text: panel.lastSavedPath
             color: Theme.picasaGreen
             font.pixelSize: Theme.fontSize - 1
+            font.underline: savedPathHover.hovered
             wrapMode: Text.WrapAnywhere
+
+            // #217: az útvonal-szöveg kattintható — a napló mappáját
+            // nyitja meg a rendszer fájlkezelőjében (a controller globális
+            // context property, TrayBar.qml mintájára közvetlenül elérhető
+            // innen is, Main.qml-beli bekötés nélkül). Saját, paraméter
+            // nélküli függvénybe szervezve (nem közvetlenül onTapped-ben),
+            // hogy a funkcionális teszt a beépített TapHandler.tapped()
+            // fix (QEventPoint, MouseButton) szignatúrája helyett ezt
+            // hívhassa invokeMethod-dal.
+            function openSavedPathFolder() {
+                controller.openDiagnosticsFolder(panel.lastSavedPath)
+            }
+
+            TapHandler {
+                objectName: "perfPanelSavedPathTap"
+                onTapped: savedPathText.openSavedPathFolder()
+            }
+            HoverHandler {
+                id: savedPathHover
+                cursorShape: Qt.PointingHandCursor
+            }
         }
     }
 
