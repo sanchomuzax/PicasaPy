@@ -63,10 +63,48 @@ def _read_proc_stat_status(pid: int) -> tuple[float, int]:
     return cpu_time, rss_bytes
 
 
+def _windows_cpu_rss() -> tuple[float, int]:
+    """Windows: pillanatnyi RSS a psapi `GetProcessMemoryInfo`-ból
+    (WorkingSetSize), kumulatív CPU-idő az `os.times()`-ból — mindkettő
+    a standard könyvtárból, `psutil` nélkül."""
+    import ctypes
+    import ctypes.wintypes
+
+    class _PMC(ctypes.Structure):  # PROCESS_MEMORY_COUNTERS
+        _fields_ = [
+            ("cb", ctypes.wintypes.DWORD),
+            ("PageFaultCount", ctypes.wintypes.DWORD),
+            ("PeakWorkingSetSize", ctypes.c_size_t),
+            ("WorkingSetSize", ctypes.c_size_t),
+            ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+            ("PagefileUsage", ctypes.c_size_t),
+            ("PeakPagefileUsage", ctypes.c_size_t),
+        ]
+
+    pmc = _PMC()
+    pmc.cb = ctypes.sizeof(_PMC)
+    handle = ctypes.windll.kernel32.GetCurrentProcess()
+    ok = ctypes.windll.psapi.GetProcessMemoryInfo(
+        handle, ctypes.byref(pmc), pmc.cb
+    )
+    rss_bytes = int(pmc.WorkingSetSize) if ok else 0
+    times = os.times()  # Windowson: (user, system, 0, 0, elapsed)
+    return times.user + times.system, rss_bytes
+
+
 def _fallback_cpu_rss() -> tuple[float, int]:
-    """Nem-Linux (vagy /proc nélküli) tartalék: a `resource` modul —
-    a RSS itt a CSÚCS-RSS (`ru_maxrss`), nem a pillanatnyi érték; jobb
-    híján ez a legolcsóbb, függőségmentes becslés."""
+    """Nem-Linux (vagy /proc nélküli) tartalék. Windowson psapi/os.times
+    (pillanatnyi RSS); POSIX-on a `resource` modul — ott a RSS a
+    CSÚCS-RSS (`ru_maxrss`), nem a pillanatnyi érték; jobb híján ez a
+    legolcsóbb, függőségmentes becslés."""
+    if sys.platform == "win32":
+        try:
+            return _windows_cpu_rss()
+        except (OSError, AttributeError):
+            return 0.0, 0
     if resource is None:
         return 0.0, 0
     usage = resource.getrusage(resource.RUSAGE_SELF)
