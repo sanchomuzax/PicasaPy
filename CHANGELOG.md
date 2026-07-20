@@ -5,6 +5,35 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.24] – 2026-07-20
+
+### Hozzáadva
+- **Finomhangolás + Effektek fülek (#20):** Derítőfény/Kiemelések/Árnyékok/
+  Színhőmérséklet csúszkák (finetune2) és a 12 effekt-gomb élesítve a
+  szerkesztő-panelen, élő előnézettel, a `filters=` láncba írva; a
+  Filmszemcse (grain2) rögzített maggal renderel (nem „villog" újrarajzoláskor).
+- **Arc-keretek a nézőben (#147):** a régi Picasa-címkézések (`faces=`)
+  keretként + névvel megjeleníthetők — `F` billentyű vagy gomb a zoom-sávban,
+  alapból kikapcsolva. (Felismerés nincs — az a 3. fázis.)
+- **Meglévő Picasa-telepítés felderítése (#146):** a felderítő API kész
+  (Wine-útvonalak + kézi mappa, WatchedFolders-átvétel útvonal-átírással);
+  a felajánló dialógus bekötése következik.
+- **Golden-összehasonlító harness (#115):** `tools/golden/compare_render.py`
+  — a PicasaPy render a valódi Picasa-exportok ellen mérhető (SSIM/ΔE),
+  szűrőnkénti pixelhű/közelítés ítélettel.
+- Dizájnkézikönyv 2026-07-20-i helyi másolata a repóban.
+
+### Javítva
+- **Windows taskbar-ikon (#67):** explicit AppUserModelID — a tálcán a
+  PicasaPy-ikon jelenik meg a Python-ikon helyett.
+
+### Teljesítmény
+- **Scanner (#143):** fájlonként pontosan egy fájlrendszer-lekérdezés
+  (scandir-stat), mappa-mtime-alapú inkrementális újrabejárás és egy-mappás
+  sync-út — ismételt átvizsgálásnál 96%-kal kevesebb hálózati művelet
+  (NAS-on 50k fotónál ~50 s → ~2 s stat-költség); a bekötés a háttérfigyelő
+  ágra következik.
+
 ## [0.4.23] – 2026-07-20
 
 ### Hozzáadva
