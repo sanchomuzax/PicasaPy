@@ -27,6 +27,37 @@ a `.picasa.ini` réteg biztosítja (a Picasa is abból építi újra a saját db
   készült el; a PicasaPy 1. fázisban (arcfelismerés hiányában) ezt teljes
   indexelés-kizárásként értelmezi, nem csak arcfelismerés-kizárásként.
 
+## Meglévő telepítés automatikus felismerése (#146)
+
+A `picasapy.scanner.discovery` modul a fenti fájlhelyeket keresi meg
+Linuxon: Wine alatt futó Picasa esetén a `%LocalAppData%` a
+`<wine-prefix>/drive_c/users/<felhasználó>/AppData/Local` (újabb Wine) vagy
+`.../Local Settings/Application Data` (XP-stílusú profil) alá képeződik le;
+ezeket a `discover_installations()` a `~/.wine` alapértelmezett prefixben és
+(ha be van állítva) a `WINEPREFIX` környezeti változó prefixében is
+végigpásztázza. Emellett a hívó tetszőleges kézi jelölt-mappát is átadhat
+(`extra_candidates`) — ez a tipikus NAS-ra másolt db3-könyvtár esete. A
+`Google`/`Picasa2`/`Picasa2Albums` alkönyvtárak és a `WatchedFolders.txt`
+felismerése kis-nagybetű-független (#145).
+
+Publikus API (`picasapy.scanner`):
+
+- `discover_installations(extra_candidates=(), *, home=None, wineprefix=None) -> tuple[PicasaInstallation, ...]`
+  — a felismert telepítések listája (`label`, `picasa2_dir`,
+  `picasa2albums_dir`, `watched_folders_file` mezőkkel; bármelyik lehet
+  `None`). Duplikátumokat (ugyanaz a könyvtár, két úton felismerve)
+  összevonja.
+- `propose_watched_folders(installation, remap: PathRemapper) -> tuple[Path, ...]`
+  — az adott telepítés `WatchedFolders.txt`-jének beolvasása és
+  útvonal-átírása a `pmpimport.PathRemapper`-rel a helyi (pl. NAS-mount)
+  megfelelőre; az át nem írható bejegyzéseket kihagyja. Tisztán olvasó,
+  mellékhatásmentes függvény — csak *javaslatot* ad, fájlt nem ír, ezért a
+  7. rögzített döntésnek megfelelően bármikor, korlátlanul ismételhető.
+
+A tényleges felhasználói jóváhagyás (melyik mappát vegyük át) és a
+UI-bekötés (első-indulás dialógus / Mappakezelő-gomb) az integrátor
+feladata — ez a modul csak a felderítést és a javaslat-számítást végzi.
+
 ## PMP formátum (oszlop-alapú bináris)
 
 - Nem relációs db: minden logikai tábla (`imagedata`, `albumdata`, `catdata`)
