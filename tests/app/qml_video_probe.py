@@ -120,11 +120,19 @@ def main(work_dir: Path) -> None:
         f"váratlan idő-címke: {time_label.property('text')!r}"
     )
 
-    # 4) vissza fotóra: a lejátszó elenged
+    # 4) vissza fotóra: a lejátszó elenged, ÉS a kép AZONNAL szerkeszthető
+    # (#218 — korábban a videó→kép átmenetnél a szerkesztő-munkamenet
+    # NEM indult újra: a panel engedélyezettnek látszott, de az
+    # editController-ben nem volt aktív session, amíg egy TOVÁBBI
+    # lapozás nem történt)
     viewer.setProperty("currentIndex", 0)
     app.processEvents()
     assert child("videoLoader").property("active") is False
     assert child("viewerImage").property("visible") is True
+    assert child("viewerEditorPanel").property("enabled") is True
+    assert edit_controller.previewSource != "", (
+        "a szerkesztő-munkamenet nem indult el a videó→kép átmenetnél (#218)"
+    )
 
     # 5) #103: tálca ↺/↻ — nézőben fotón aktív, videón tiltott
     rotate_left = child("trayRotateLeft")

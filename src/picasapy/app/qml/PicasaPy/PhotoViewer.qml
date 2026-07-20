@@ -135,7 +135,12 @@ Rectangle {
     // megtörné, ezért imperatív sync a toolsChanged-re).
     function beginEditCurrent() {
         if (!(visible && currentIndex >= 0 && photosModel)) return
-        if (viewer.isCurrentVideo) {
+        // #218: a viewer.isCurrentVideo egy kötött property — a currentIndex
+        // váltásakor NEM garantált, hogy már újraértékelődött, mire ez a
+        // (szintén a currentIndexChanged-re futó) imperatív függvény lefut,
+        // ezért a modellt itt KÖZVETLENÜL kérdezzük le (mindig friss),
+        // nem a cache-elt property-t
+        if (photosModel.isVideoAt(currentIndex)) {
             // videón nincs képszerkesztés (#14) — az előző kép nyitott
             // munkamenete záruljon, ne lógjon át az előnézete
             editController.endEdit()
