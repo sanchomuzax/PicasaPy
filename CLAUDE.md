@@ -16,6 +16,12 @@ Ezért:
   azt is emberi nyelven, nem fejlesztői zsargonban.
 - A teljes fejlesztői folyamat (kód, teszt, commit, push, és ha kell, PR) **a
   te dolgod**; a felhasználónak csak a kész eredményt és a döntéseit kell látnia.
+- **Kérdezni és csevegni bármikor lehet PR nélkül.** Ha a felhasználó csak
+  kérdez, ötletel, vagy beszélget (nincs konkrét fejlesztési feladat), akkor
+  **CSAK válaszolj** — ne nyiss PR-t, ne committolj, ne pushölj, ne indíts
+  branchet. A git/GitHub-folyamatot **kizárólag valódi kód-feladatnál** indítsd
+  el; PR-t pedig továbbra is **csak akkor**, ha a felhasználó kifejezetten kéri.
+  A beszélgetés önmagában soha nem kiváltó ok.
 
 ## 🗣️ NYELV — A felhasználóval MINDIG magyarul
 
@@ -36,6 +42,14 @@ Mielőtt BÁRMILYEN fájlt módosítanál:
 3. A fő checkout az integrátor sessioné. Feladat-foglalás, forró fájlok,
    PR-protokoll: **CONTRIBUTING.md** (kötelező elolvasni feladatvállalás
    előtt). Feladatlista: GitHub Issues (`gh issue list --label ready`).
+4. **FOGLALÁSI KAPU — kötelező sorrend, az ELSŐ kódmódosítás/commit ELŐTT**
+   (ez blokkoló: amíg meg nem történt, TILOS a kódhoz nyúlni):
+   a) olvasd el a **CONTRIBUTING.md**-t;
+   b) a jegyen a címke `ready` **le**, `in-progress` **fel**;
+   c) branch + push (ez a foglalási zár).
+   **Lezáráskor** az `in-progress` címkét **le kell venni**. Ez nem
+   „mutató a CONTRIBUTING felé", hanem kifejezett, kihagyhatatlan lépéssor —
+   ha kimarad, a foglalás érvénytelen, és utólag azonnal pótolni kell.
 
 ## Projekt célja
 
