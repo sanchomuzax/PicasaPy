@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.22] – 2026-07-20
+
+### Javítva
+- **Feed-pozíció — a VALÓDI ok (#173):** a nézőből visszatérve a feed a
+  háttér-sync befejezésekor a mappa elejére ugrott. A tényleges ok a
+  controllerben volt: a háttér-sync (`syncFinished` → `_reload`) folder-módban
+  `selectFolder`-t hívott, ami `folderActivated`-et emittál → a UI a mappa
+  tetejére görget. Mostantól a háttér-sync `folderActivated` nélkül frissít
+  (a scroll-to-top csak explicit, felhasználói mappa-választásé), így a néző
+  bezárása után a görgetési pozíció megmarad. (A 0.4.20/0.4.21-es QML-oldali
+  reveal ehhez kiegészítés — a valódi javítás ez.)
+- **QML image-provider GIL-deadlock (#53):** a tesztkészlet (Linux/Windows,
+  offscreen) nem-determinisztikusan beragadt — az async kép-betöltő szál a
+  Python image-providert a GIL-en át hívta, míg a főszál natív Qt-hívásban
+  tartotta a GIL-t. Offscreen (teszt) platformon mostantól szinkron a
+  kép-betöltés (nincs második szál → nincs holtpont); produkcióban marad az
+  async. A korábban ~50–100%-ban beragadó QML-tesztek 10/10 futása, és a
+  Windows-CI-láb is stabilan zöld.
+
 ## [0.4.21] – 2026-07-20
 
 ### Javítva
