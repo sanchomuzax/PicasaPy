@@ -69,10 +69,15 @@ class ExportItem:
 
 @dataclass(frozen=True)
 class ExportReport:
-    """Az exportfutás eredménye: kész célfájlok és sikertelen források."""
+    """Az exportfutás eredménye: kész célfájlok és sikertelen források.
+
+    A `reasons` a `failed`-del párhuzamos, azonos hosszúságú, emberi
+    olvasásra szánt hibaüzenet-lista (#136) — a UI-hibajelzéshez, hogy a
+    felhasználó lássa, MELYIK fájl és MIÉRT hiúsult meg, ne csak a számot."""
 
     exported: tuple[Path, ...]
     failed: tuple[Path, ...]
+    reasons: tuple[str, ...] = ()
 
 
 def export_photos(
@@ -90,20 +95,26 @@ def export_photos(
     target_dir = Path(target_dir)
     try:
         target_dir.mkdir(parents=True, exist_ok=True)
-    except OSError:
+    except OSError as error:
         # A célmappa nélkül egyetlen elem sem exportálható — mindet
         # hibásként jelezzük, ahelyett hogy a kivétel megölné a hívó szálat.
-        return ExportReport(exported=(), failed=tuple(Path(item.source) for item in items))
+        failed_sources = tuple(Path(item.source) for item in items)
+        reason = f"célmappa nem hozható létre: {error}"
+        return ExportReport(
+            exported=(), failed=failed_sources, reasons=(reason,) * len(failed_sources)
+        )
 
     exported: list[Path] = []
     failed: list[Path] = []
+    reasons: list[str] = []
     for item in items:
         source = Path(item.source)
         try:
             exported.append(_export_one(source, item, target_dir, settings))
-        except Exception:  # noqa: BLE001 — egy rossz elem nem állíthatja le a köteget
+        except Exception as error:  # noqa: BLE001 — egy rossz elem nem állíthatja le a köteget
             failed.append(source)
-    return ExportReport(exported=tuple(exported), failed=tuple(failed))
+            reasons.append(str(error))
+    return ExportReport(exported=tuple(exported), failed=tuple(failed), reasons=tuple(reasons))
 
 
 def _export_one(

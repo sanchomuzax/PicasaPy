@@ -105,7 +105,9 @@ Item {
         anchors.centerIn: parent
         standardButtons: Dialog.Ok
         property string message: ""
+        property var failedDetails: []
         Text {
+            objectName: "exportResultText"
             text: exportResultDialog.message
             font.pixelSize: Theme.fontSize
             color: Theme.ink
@@ -114,11 +116,20 @@ Item {
 
     Connections {
         target: controller
+        // #136: a sikertelen fájlok neve/oka a számszerű összegzés ELŐTT
+        // érkezik — a dialógus szövegébe fűzzük, hogy a felhasználó lássa,
+        // melyik fájl és miért hiúsult meg, ne csak a darabszámot.
+        function onExportFailedDetails(details) {
+            exportResultDialog.failedDetails = details
+        }
         function onExportFinished(done, failed) {
-            exportResultDialog.message = failed > 0
-                ? qsTr("%1 pictures exported, %2 failed.")
-                    .arg(done).arg(failed)
+            var message = failed > 0
+                ? qsTr("%1 pictures exported, %2 failed.").arg(done).arg(failed)
                 : qsTr("%1 pictures exported.").arg(done)
+            if (exportResultDialog.failedDetails.length > 0)
+                message += "\n" + exportResultDialog.failedDetails.join("\n")
+            exportResultDialog.message = message
+            exportResultDialog.failedDetails = []
             exportResultDialog.open()
         }
     }
