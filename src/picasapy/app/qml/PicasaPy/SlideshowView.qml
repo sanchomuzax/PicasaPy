@@ -114,7 +114,7 @@ Rectangle {
                 ? show.photosModel.fileUrlAt(show.currentIndex)
                 : ""
         fillMode: Image.PreserveAspectFit
-        asynchronous: true
+        asynchronous: Qt.platform.pluginName !== "offscreen"
         autoTransform: true
         sourceSize.width: 2560
     }
@@ -127,7 +127,7 @@ Rectangle {
                 ? show.photosModel.fileUrlAt(
                       show.nextPhotoIndex(show.currentIndex, 1))
                 : ""
-        asynchronous: true
+        asynchronous: Qt.platform.pluginName !== "offscreen"
         autoTransform: true
         sourceSize.width: 2560
     }

@@ -303,7 +303,7 @@ Rectangle {
                             anchors.margins: 2
                             source: thumbUrl
                             fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
+                            asynchronous: Qt.platform.pluginName !== "offscreen"
                         }
                         TapHandler {
                             onTapped: viewer.currentIndex = index
@@ -504,7 +504,12 @@ Rectangle {
                                    ? editController.previewSource
                                    : viewer.urlAt(viewer.currentIndex))
                         fillMode: Image.PreserveAspectFit
-                        asynchronous: true
+                        // #53: offscreen (teszt) platformon szinkron betöltés —
+                        // itt reprodukálódott a GIL-deadlock (a lapozás
+                        // setProperty-je vs. az image-provider szál). Szinkron
+                        // betöltésnél nincs provider-szál, így nincs holtpont;
+                        // produkcióban marad az async.
+                        asynchronous: Qt.platform.pluginName !== "offscreen"
                         autoTransform: true   // EXIF-orientáció
                         sourceSize.width: 2560
                     }
@@ -701,7 +706,7 @@ Rectangle {
                     source: viewer.photosModel
                         ? viewer.preloadUrlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, 1))
                         : ""
-                    asynchronous: true; autoTransform: true
+                    asynchronous: Qt.platform.pluginName !== "offscreen"; autoTransform: true
                     sourceSize.width: 2560
                 }
                 Image {
@@ -709,7 +714,7 @@ Rectangle {
                     source: viewer.photosModel
                         ? viewer.preloadUrlAt(viewer.photosModel.folderNeighbor(viewer.currentIndex, -1))
                         : ""
-                    asynchronous: true; autoTransform: true
+                    asynchronous: Qt.platform.pluginName !== "offscreen"; autoTransform: true
                     sourceSize.width: 2560
                 }
             }
