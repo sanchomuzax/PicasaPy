@@ -85,6 +85,20 @@ class TestRobustness:
         with pytest.raises(AttributeError):
             EMPTY_METADATA.caption = "x"
 
+    def test_decompression_bomb_gives_empty(self, tmp_path):
+        # #134: az "óriáskép" (a fejlécben irreálisan nagy deklarált
+        # méret — pl. tömörítetlen adat DoS-támadásként) a Pillow
+        # DecompressionBombError-ját dobja Image.open()-ben; ezt a
+        # metaadat-olvasónak el KELL nyelnie, mint bármelyik sérült fájlt.
+        bomb = tmp_path / "oriaskep.jpg"
+        bomb.write_bytes(b"P6\n50000 50000\n255\n" + b"\x00" * 16)
+        assert read_file_metadata(bomb) == EMPTY_METADATA
+
+    def test_exif_details_decompression_bomb_gives_empty(self, tmp_path):
+        bomb = tmp_path / "oriaskep.jpg"
+        bomb.write_bytes(b"P6\n50000 50000\n255\n" + b"\x00" * 16)
+        assert read_exif_details(bomb) == EMPTY_EXIF_DETAILS
+
 
 def _jpeg_with_exif(tmp_path, zeroth=None, exif_ifd=None):
     """Kis JPEG a megadott nyers EXIF-taggekkel (piexif)."""
