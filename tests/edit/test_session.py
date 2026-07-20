@@ -522,3 +522,108 @@ class TestEdgeCases:
         # 6 tizedes: 0.000001 → "0.000001", 0.999999 → "0.999999"
         assert "0.000001" in result
         assert "0.999999" in result
+
+
+class TestEditSessionFinetune:
+    """Finomhangolás (finetune2) réteg — set/clear/read (#20)."""
+
+    def test_set_finetune_on_empty(self):
+        """Üres láncra a finetune2 a hat paraméterrel kerül be."""
+        session = EditSession().set_finetune(
+            fill=0.5, highlights=0.25, shadows=0.1, temperature=-0.5
+        )
+        assert (
+            session.to_value()
+            == "finetune2=1,0.500000,0.250000,0.100000,00000000,-0.500000;"
+        )
+
+    def test_finetune_values_roundtrip(self):
+        """A visszaolvasott csúszka-értékek egyeznek a beírtakkal."""
+        session = EditSession().set_finetune(
+            fill=0.3, highlights=0.6, shadows=0.2, temperature=0.8
+        )
+        values = session.finetune_values()
+        assert values is not None
+        assert values.fill == pytest.approx(0.3)
+        assert values.highlights == pytest.approx(0.6)
+        assert values.shadows == pytest.approx(0.2)
+        assert values.temperature == pytest.approx(0.8)
+
+    def test_set_finetune_replaces_in_place(self):
+        """Ismételt beállítás a helyén cseréli a finetune2-t, nem rétegez."""
+        session = (
+            EditSession.from_value("enhance=1;finetune2=1,0.1,0,0,00000000,0;autolight=1;")
+            .set_finetune(fill=0.9, highlights=0, shadows=0, temperature=0)
+        )
+        parts = [p for p in session.to_value().split(";") if p]
+        assert sum("finetune2=" in p for p in parts) == 1
+        # a helyén marad (a két szomszéd között)
+        assert parts[0].startswith("enhance") and parts[2].startswith("autolight")
+        assert session.finetune_values().fill == pytest.approx(0.9)
+
+    def test_set_finetune_preserves_neutral(self):
+        """A pipetta-szín (p4) megőrződik, ha a hívó nem ad meg újat."""
+        session = EditSession.from_value("finetune2=1,0.1,0,0,ffccc6b2,0;")
+        session = session.set_finetune(
+            fill=0.5, highlights=0, shadows=0, temperature=0
+        )
+        assert session.finetune_values().neutral == "ffccc6b2"
+
+    def test_set_finetune_replaces_v1_finetune(self):
+        """A v1 'finetune' réteget is a finetune2 váltja (egy finomhangolás)."""
+        session = EditSession.from_value("finetune=1,0.1,0,0,00000000,0.2;")
+        session = session.set_finetune(
+            fill=0.5, highlights=0, shadows=0, temperature=0
+        )
+        parts = [p for p in session.to_value().split(";") if p]
+        assert len(parts) == 1 and parts[0].startswith("finetune2=")
+
+    def test_clear_finetune(self):
+        """A clear eltávolítja a finomhangolást, a többit érintetlenül hagyja."""
+        session = EditSession.from_value("enhance=1;finetune2=1,0.5,0,0,00000000,0;")
+        session = session.clear_finetune()
+        assert not session.has_finetune()
+        assert session.to_value() == "enhance=1;"
+
+    def test_finetune_values_none_when_absent(self):
+        """Nincs finetune → None."""
+        assert EditSession.from_value("enhance=1;").finetune_values() is None
+
+    def test_finetune_values_tolerates_short_op(self):
+        """Hiányzó paraméterek semlegesek (részleges/idegen lánc)."""
+        session = EditSession.from_value("finetune2=1,0.4;")
+        values = session.finetune_values()
+        assert values.fill == pytest.approx(0.4)
+        assert values.highlights == 0.0 and values.temperature == 0.0
+
+
+class TestEditSessionEffects:
+    """Effekt rétegek append-only fűzése (#20)."""
+
+    def test_append_effect_appends(self):
+        """Az effekt a lánc végére kerül."""
+        session = EditSession().append_effect("sepia")
+        assert session.to_value() == "sepia=1;"
+
+    def test_append_effect_layers(self):
+        """Ugyanaz az effekt kétszer is rétegződik (append-only)."""
+        session = EditSession().append_effect("bw").append_effect("bw")
+        assert session.to_value() == "bw=1;bw=1;"
+
+    def test_append_effect_with_params(self):
+        """Paraméteres effekt (pl. sat) a megadott paraméterekkel."""
+        session = EditSession().append_effect("sat", ("1", "0.500000"))
+        assert session.to_value() == "sat=1,0.500000;"
+
+    def test_append_effect_after_finetune(self):
+        """Az effekt a meglévő finetune UTÁN kerül a láncba."""
+        session = EditSession().set_finetune(
+            fill=0.5, highlights=0, shadows=0, temperature=0
+        ).append_effect("warm")
+        parts = [p for p in session.to_value().split(";") if p]
+        assert parts[-1] == "warm=1"
+
+    def test_append_effect_empty_name_raises(self):
+        """Üres effekt-név ValueError."""
+        with pytest.raises(ValueError):
+            EditSession().append_effect("")

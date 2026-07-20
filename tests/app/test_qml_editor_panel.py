@@ -252,8 +252,9 @@ class TestOneShotTiles:
         assert activated == [tool]
 
 
-class TestFillLightDisabled:
-    """#119: a Derítőfény a render-op élesedéséig láthatóan tiltott."""
+class TestFillLightRemoved:
+    """#20: a "Hamarosan" Derítőfény-sor helyét a működő Finomhangolás fül
+    vette át — a régi placeholder-elemeknek el kell tűnniük."""
 
     def _make_panel(self, qml_engine):
         return _load(
@@ -261,21 +262,184 @@ class TestFillLightDisabled:
             'import QtQuick\nimport PicasaPy 1.0\nEditorPanel { objectName: "panel" }\n',
         )
 
-    def test_fill_light_row_visually_disabled(self, qml_engine, qt_app):
+    def test_fill_light_row_no_longer_exists(self, qml_engine, qt_app):
         panel = self._make_panel(qml_engine)
         qt_app.processEvents()
-        row = panel.findChild(QObject, "fillLightRow")
-        assert row is not None, "fillLightRow nem található"
-        assert row.property("enabled") is False
-        assert row.property("opacity") < 1
+        assert panel.findChild(QObject, "fillLightRow") is None
+        assert panel.findChild(QObject, "fillLightComingSoon") is None
 
-    def test_fill_light_has_coming_soon_hint(self, qml_engine, qt_app):
+
+class TestEditorTabs:
+    """#20: a három fül (Gyakori javítások / Finomhangolás / Effektek)
+    kizárólagosan mutatja a hozzá tartozó oszlopot."""
+
+    def _make_panel(self, qml_engine):
+        return _load(
+            qml_engine,
+            'import QtQuick\nimport PicasaPy 1.0\nEditorPanel { objectName: "panel" }\n',
+        )
+
+    COLUMNS = ["toolsColumn", "finetuneColumn", "effectsColumn"]
+
+    @pytest.mark.parametrize("active_tab", [0, 1, 2])
+    def test_active_tab_shows_only_matching_column(self, qml_engine, qt_app, active_tab):
+        panel = self._make_panel(qml_engine)
+        panel.setProperty("activeTab", active_tab)
+        qt_app.processEvents()
+        for index, name in enumerate(self.COLUMNS):
+            column = panel.findChild(QObject, name)
+            assert column is not None, f"{name} nem található"
+            assert column.property("visible") is (index == active_tab)
+
+    def test_tab_buttons_present_with_object_names(self, qml_engine, qt_app):
         panel = self._make_panel(qml_engine)
         qt_app.processEvents()
-        hint = panel.findChild(QObject, "fillLightComingSoon")
-        assert hint is not None, "fillLightComingSoon felirat nem található"
-        assert hint.property("visible") is True
-        assert hint.property("text") != ""
+        for name in ("editTabFixes", "editTabFinetune", "editTabEffects"):
+            assert panel.findChild(QObject, name) is not None, f"{name} nem található"
+
+    @pytest.mark.parametrize(
+        "object_name,expected_tab",
+        [("editTabFixes", 0), ("editTabFinetune", 1), ("editTabEffects", 2)],
+    )
+    def test_clicking_tab_sets_active_tab(
+        self, qml_engine, qt_app, object_name, expected_tab
+    ):
+        panel = self._make_panel(qml_engine)
+        panel.setProperty("activeTab", -1 if expected_tab != 0 else 1)
+        qt_app.processEvents()
+        button = panel.findChild(QObject, object_name)
+        assert button is not None
+        panel.setProperty("activeTab", expected_tab)
+        qt_app.processEvents()
+        assert panel.property("activeTab") == expected_tab
+
+
+class TestFinetuneSliders:
+    """#20: a 4 finomhangoló-csúszka élő előnézetet küld húzás közben
+    (finetunePreview), a syncFinetuneSliders() viszont NEM vált ki előnézetet
+    (a tiltSlider mintáját követve, #131)."""
+
+    SLIDERS = {
+        "finetuneFillSlider": (0.0, 1.0),
+        "finetuneHighlightsSlider": (0.0, 1.0),
+        "finetuneShadowsSlider": (0.0, 1.0),
+        "finetuneTempSlider": (-1.0, 1.0),
+    }
+
+    def _make_panel(self, qml_engine):
+        panel = _load(
+            qml_engine,
+            'import QtQuick\nimport PicasaPy 1.0\n'
+            'EditorPanel { objectName: "panel"; activeTab: 1 }\n',
+        )
+        return panel
+
+    def test_sliders_present_with_expected_ranges(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        for name, (lo, hi) in self.SLIDERS.items():
+            slider = panel.findChild(QObject, name)
+            assert slider is not None, f"{name} nem található"
+            assert slider.property("from") == lo
+            assert slider.property("to") == hi
+
+    def test_dragging_slider_emits_finetune_preview(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        previews = []
+        panel.finetunePreview.connect(
+            lambda f, h, s, t: previews.append((f, h, s, t))
+        )
+        fill = panel.findChild(QObject, "finetuneFillSlider")
+        fill.setProperty("value", 0.5)
+        qt_app.processEvents()
+        assert len(previews) == 1
+        assert previews[0][0] == pytest.approx(0.5)
+
+    def test_suppress_finetune_blocks_preview_emission(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("suppressFinetune", True)
+        previews = []
+        panel.finetunePreview.connect(lambda f, h, s, t: previews.append((f, h, s, t)))
+        highlights = panel.findChild(QObject, "finetuneHighlightsSlider")
+        highlights.setProperty("value", 0.7)
+        qt_app.processEvents()
+        assert previews == []
+
+    def test_sync_finetune_sliders_sets_values_without_preview(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("fillLight", 0.2)
+        panel.setProperty("highlights", 0.3)
+        panel.setProperty("shadows", 0.4)
+        panel.setProperty("colorTemp", -0.1)
+        previews = []
+        panel.finetunePreview.connect(lambda f, h, s, t: previews.append((f, h, s, t)))
+        QMetaObject.invokeMethod(
+            panel, "syncFinetuneSliders", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert previews == []
+        assert panel.findChild(QObject, "finetuneFillSlider").property(
+            "value"
+        ) == pytest.approx(0.2)
+        assert panel.findChild(QObject, "finetuneHighlightsSlider").property(
+            "value"
+        ) == pytest.approx(0.3)
+        assert panel.findChild(QObject, "finetuneShadowsSlider").property(
+            "value"
+        ) == pytest.approx(0.4)
+        assert panel.findChild(QObject, "finetuneTempSlider").property(
+            "value"
+        ) == pytest.approx(-0.1)
+
+
+class TestEffectButtons:
+    """#20: minden effekt-gomb a saját kulcsával küldi az effectRequested
+    jelet — a lánc mindig új réteget kap (append-only, #116-mintát követve)."""
+
+    EFFECTS = {
+        "effectSepia": "sepia",
+        "effectBw": "bw",
+        "effectWarm": "warm",
+        "effectGrain2": "grain2",
+        "effectTint": "tint",
+        "effectSat": "sat",
+        "effectRadblur": "radblur",
+        "effectGlow2": "glow2",
+        "effectAnsel": "ansel",
+        "effectRadsat": "radsat",
+        "effectDirTint": "dir_tint",
+    }
+
+    def _make_panel(self, qml_engine):
+        return _load(
+            qml_engine,
+            'import QtQuick\nimport PicasaPy 1.0\n'
+            'EditorPanel { objectName: "panel"; activeTab: 2 }\n',
+        )
+
+    def test_all_effect_buttons_present(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        for name in self.EFFECTS:
+            assert panel.findChild(QObject, name) is not None, f"{name} nem található"
+
+    @pytest.mark.parametrize("object_name,key", list(EFFECTS.items()))
+    def test_effect_button_click_emits_effect_requested(
+        self, qml_engine, qt_app, object_name, key
+    ):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        requested = []
+        panel.effectRequested.connect(lambda name: requested.append(name))
+        button = panel.findChild(QObject, object_name)
+        QMetaObject.invokeMethod(
+            button, "buttonClicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert requested == [key]
 
 
 def _string_arg(value):

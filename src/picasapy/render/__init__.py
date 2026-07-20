@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 from picasapy.render.chain import apply_filters, tilt_cover_scale
-from picasapy.render.color import apply_bw, apply_saturation, apply_sepia, apply_warm
+from picasapy.render.color import (
+    apply_bw,
+    apply_grain,
+    apply_saturation,
+    apply_sepia,
+    apply_warm,
+)
 from picasapy.render.ops import (
     apply_autocolor,
     apply_autolight,
@@ -34,6 +40,7 @@ __all__ = [
     "apply_fill",
     "apply_filters",
     "apply_finetune2",
+    "apply_grain",
     "apply_highlights",
     "apply_neutral_pipette",
     "apply_redeye",

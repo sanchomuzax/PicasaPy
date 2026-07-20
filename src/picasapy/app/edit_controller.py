@@ -18,6 +18,26 @@ from .edit_preview import EditPreviewProvider
 _TOGGLE_NAMES = ("redeye",)
 # egygombos javítások: append-only rétegezés, levétel csak Visszavonással
 _ONE_SHOT_NAMES = ("enhance", "autolight", "autocolor")
+# Effektek (#20): append-only rétegek. A render-op nélküli effektek is a
+# láncba kerülnek (round-trip), az előnézeten csak kimaradnak. A paramétert
+# igénylők (pl. sat) dokumentált alapértékkel indulnak — a finomhangolt
+# csúszkázás követő feladat.
+_EFFECT_PARAMS: dict[str, tuple[str, ...]] = {
+    "sat": ("1", "0.500000"),
+}
+_EFFECT_NAMES = (
+    "sepia",
+    "bw",
+    "warm",
+    "grain2",
+    "tint",
+    "sat",
+    "radblur",
+    "glow2",
+    "ansel",
+    "radsat",
+    "dir_tint",
+)
 
 
 class EditController(QObject):
@@ -92,6 +112,31 @@ class EditController(QObject):
         nincs tilt-szűrő a láncban. A döntés-csúszka ezzel áll be az eszköz
         megnyitásakor és lapozáskor a MENTETT értékre, ne 0-ra (#131)."""
         return self._session.tilt_param() or 0.0
+
+    # Finomhangolás (#20): a négy csúszka a MENTETT finetune2 értékeire áll
+    # az eszköz megnyitásakor és lapozáskor (a néző syncFinetuneSliders-e
+    # ezekből tölt, a tilt-csúszka mintájára).
+
+    @Property(float, notify=toolsChanged)
+    def fillLight(self) -> float:
+        return self._finetune_field("fill")
+
+    @Property(float, notify=toolsChanged)
+    def highlights(self) -> float:
+        return self._finetune_field("highlights")
+
+    @Property(float, notify=toolsChanged)
+    def shadows(self) -> float:
+        return self._finetune_field("shadows")
+
+    @Property(float, notify=toolsChanged)
+    def colorTemp(self) -> float:
+        return self._finetune_field("temperature")
+
+    @Property(bool, notify=toolsChanged)
+    def hasFinetune(self) -> bool:
+        """Van-e finomhangolás a láncban — a „Visszavonás" felirathoz."""
+        return self._session.has_finetune()
 
     @Property(bool, notify=toolsChanged)
     def hasCrop(self) -> bool:
@@ -266,6 +311,61 @@ class EditController(QObject):
         self._register_preview(preview_session)
         self._bump_revision()
 
+    @Slot(float, float, float, float)
+    def previewFinetune(
+        self, fill: float, highlights: float, shadows: float, temperature: float
+    ) -> None:
+        """Élő finomhangolás-előnézet a csúszkák húzása közben (#20): a képet
+        a pillanatnyi négy értékkel újrarenderli, de NEM ír ini-be és NEM tol
+        undo-lépést — a mentés az elengedéskor hívott setFinetune-nal történik
+        (a previewTilt mintájára)."""
+        self._require_active()
+        preview_session = self._session.set_finetune(
+            fill=fill, highlights=highlights, shadows=shadows, temperature=temperature
+        )
+        self._register_preview(preview_session)
+        self._bump_revision()
+
+    @Slot(float, float, float, float)
+    def setFinetune(
+        self, fill: float, highlights: float, shadows: float, temperature: float
+    ) -> None:
+        """A finomhangolás négy csúszkájának mentése egy finetune2 rétegbe.
+
+        A csúszka elengedésekor hívódik: undo-lépést tol és ini-be ír. Ha
+        mind a négy érték semleges (0), a réteget eltávolítja — így a
+        visszahúzott csúszkák nem hagynak fölösleges no-op finetune2-t."""
+        self._require_active()
+        self._push_undo("finetune")
+        if fill == 0.0 and highlights == 0.0 and shadows == 0.0 and temperature == 0.0:
+            self._session = self._session.clear_finetune()
+        else:
+            self._session = self._session.set_finetune(
+                fill=fill,
+                highlights=highlights,
+                shadows=shadows,
+                temperature=temperature,
+            )
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot(str)
+    def applyEffect(self, name: str) -> None:
+        """Effekt réteg a lánc végére (#20): append-only, undo-lépéssel.
+
+        Az ismeretlen név ValueError; a paramétert igénylő effektek (pl. sat)
+        dokumentált alapértékkel kerülnek be (`_EFFECT_PARAMS`)."""
+        self._require_active()
+        key = name.casefold()
+        if key not in _EFFECT_NAMES:
+            raise ValueError(f"Érvénytelen effekt: {name!r}")
+        self._push_undo(key)
+        self._session = self._session.append_effect(key, _EFFECT_PARAMS.get(key, ("1",)))
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
     @Slot()
     def undo(self) -> None:
         """Az utolsó művelet visszavonása (a művelet ELŐTTI lánc áll vissza)."""
@@ -305,6 +405,12 @@ class EditController(QObject):
             previous_value = EditSession(ops=session.ops[:index]).to_value()
             entries.append((previous_value, _action_key(op.name)))
         return entries
+
+    def _finetune_field(self, field: str) -> float:
+        """A mentett finetune2 adott csúszka-értéke, vagy 0.0, ha nincs
+        finomhangolás — a QML-csúszkák így a mentett értékre állnak (#20)."""
+        values = self._session.finetune_values()
+        return getattr(values, field) if values is not None else 0.0
 
     def _push_undo(self, action: str) -> None:
         self._undo_stack.append((self._session.to_value(), action))

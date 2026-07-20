@@ -11,7 +11,13 @@ import numpy as np
 
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import decode_rect64
-from picasapy.render.color import apply_bw, apply_saturation, apply_sepia, apply_warm
+from picasapy.render.color import (
+    apply_bw,
+    apply_grain,
+    apply_saturation,
+    apply_sepia,
+    apply_warm,
+)
 from picasapy.render.ops import (
     apply_autocolor,
     apply_autolight,
@@ -107,6 +113,14 @@ def _apply_finetune_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # A grain2 sztochasztikus (véletlen mag); az élő előnézetben viszont
+    # rögzített maggal futtatjuk (seed=0), hogy egy változatlan lánc újra-
+    # renderelésekor a szemcse ne "villogjon" — a spec elfogadási teszthez
+    # (statisztikai) ez nem szükséges, csak az UI-élmény miatt választott mag.
+    return apply_grain(image, seed=0)
+
+
 _HANDLERS = {
     "tilt": _apply_tilt_op,
     "redeye": lambda image, op: apply_redeye(image),
@@ -122,6 +136,7 @@ _HANDLERS = {
     "sat": _apply_sat_op,
     "unsharp": _apply_unsharp_op,
     "unsharp2": _apply_unsharp_op,
+    "grain2": _apply_grain_op,
 }
 
 
@@ -130,7 +145,7 @@ def apply_filters(
 ) -> tuple[np.ndarray, tuple[str, ...]]:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, enhance,
     autolight, autocolor, fill, finetune/finetune2, bw, sepia, warm, sat,
-    unsharp/unsharp2).
+    unsharp/unsharp2, grain2).
 
     A nem támogatott szűrőket szándékosan némán kihagyja (részleges
     előnézet), de a kihagyott nevek sorrendhelyes listáját is visszaadja:
