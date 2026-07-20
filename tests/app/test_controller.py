@@ -20,6 +20,17 @@ def library(tmp_path):
     return root
 
 
+def _quit_on(signal):
+    """QEventLoop, ami a `signal` érkezésekor (vagy 5 s vészfékkel) kilép —
+    háttérszálas jelzésekre váró tesztekhez."""
+    from PySide6.QtCore import QEventLoop, QTimer
+
+    loop = QEventLoop()
+    signal.connect(loop.quit)
+    QTimer.singleShot(5000, loop.quit)
+    return loop
+
+
 def _do_photo_op(controller, action) -> None:
     """#141: a csillag/felirat/forgatás háttérszálon fut (NAS-írás +
     célzott index-UPDATE) — ez a segéd megvárja a `photoOpFinished`
@@ -841,6 +852,63 @@ class TestLiveWatch:
     def test_shutdown_without_start_is_safe(self, controller):
         controller.shutdown()  # watcher nélkül sem dobhat
 
+    def test_dirty_folders_use_nonrecursive_sync(self, controller, library, monkeypatch):
+        # #143: a watcher-ág a mappa-pontos sync_folder-t hívja, NEM a
+        # rekurzív sync_tree-t.
+        import picasapy.app.library_controller as lc
+
+        calls = []
+        monkeypatch.setattr(
+            lc, "sync_folder", lambda conn, root, folder, exclude=(): calls.append((root, folder))
+        )
+        loop = _quit_on(controller.syncFinished)
+        controller._on_folders_dirty([str(library / "nyaralas")])
+        loop.exec()
+        assert calls == [(str(library), str(library / "nyaralas"))]
+
+    def test_dirty_folders_coalesced_into_one_thread(self, controller, library, monkeypatch):
+        # Több piszkos mappa EGYETLEN jelzésben EGY worker-szálban
+        # dolgozódjon fel, ne mappánként külön szál.
+        import threading
+
+        started = []
+        original = threading.Thread
+
+        def counting_thread(*args, **kwargs):
+            started.append(1)
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(threading, "Thread", counting_thread)
+        loop = _quit_on(controller.syncFinished)
+        controller._on_folders_dirty(
+            [str(library / "nyaralas"), str(library / "nyaralas")]
+        )
+        loop.exec()
+        assert started == [1]
+
+    def test_dirty_folder_operational_error_reported_not_swallowed(
+        self, controller, library, monkeypatch
+    ):
+        # #143: a busy_timeout lejárta (sqlite3.OperationalError) nem
+        # nyelhető el némán — syncFailed jelzés, syncFinished is jön.
+        import sqlite3
+
+        import picasapy.app.library_controller as lc
+
+        def boom(conn, root, folder, exclude=()):
+            raise sqlite3.OperationalError("database is locked")
+
+        monkeypatch.setattr(lc, "sync_folder", boom)
+        errors = []
+        finished = []
+        controller.syncFailed.connect(errors.append)
+        controller.syncFinished.connect(lambda: finished.append(True))
+        loop = _quit_on(controller.syncFinished)
+        controller._on_folders_dirty([str(library / "nyaralas")])
+        loop.exec()
+        assert finished
+        assert errors and "database is locked" in errors[0]
+
 
 class TestBatchOperations:
     def test_toggle_star_many_stars_all(self, controller, library):
@@ -1335,6 +1403,61 @@ class TestExportRows:
         assert results == [(0, 0)]
         assert not (tmp_path / "sehova").exists()
 
+    def test_filters_burned_into_exported_file(self, controller, library, tmp_path, qt_app):
+        # #136: a rácsban/nézőben látszó szerkesztés (filters=) az
+        # exportált fájlba is beleég, nem a szerkesztetlen forrás megy ki.
+        from picasapy.index import open_index
+
+        controller.selectFolder(str(library / "nyaralas"))
+        photo_id = controller.photos.photos[0].id
+        with open_index(controller._db_path) as conn:
+            conn.execute(
+                "UPDATE photos SET filters = ? WHERE id = ?",
+                ("BRIT=1,e50,0.20;", photo_id),
+            )
+            conn.commit()
+        controller.selectFolder(str(library / "nyaralas"))
+        target = tmp_path / "export-filters"
+        results = self._run_export(controller, qt_app, [0], str(target))
+        assert results == [(1, 0)]
+        exported = next(target.glob("*.jpg"))
+        original = library / "nyaralas" / "IMG_0001.jpg"
+        assert exported.read_bytes() != original.read_bytes()
+
+    def test_export_failure_reports_names_and_reasons(
+        self, controller, library, tmp_path, qt_app, monkeypatch
+    ):
+        # #136: a néma elhalás helyett az első néhány hibás fájl neve/oka
+        # eljut a UI-ig (exportFailedDetails), az exportFinished előtt.
+        from pathlib import Path
+
+        import picasapy.app.export_controller as ec
+        from picasapy.export import ExportReport
+
+        def boom(items, target_dir, settings):
+            return ExportReport(
+                exported=(), failed=(Path("rossz.jpg"),), reasons=("sérült fájl",)
+            )
+
+        monkeypatch.setattr(ec, "export_photos", boom)
+        controller.selectFolder(str(library / "nyaralas"))
+        details = []
+        results = []
+        from PySide6.QtCore import QEventLoop, QTimer
+
+        loop = QEventLoop()
+        controller.exportFailedDetails.connect(details.append)
+        controller.exportFinished.connect(
+            lambda done, failed: results.append((done, failed))
+        )
+        controller.exportFinished.connect(loop.quit)
+        controller.exportRows([0], str(tmp_path / "export-hiba"), 0, 85)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        assert results == [(0, 1)]
+        assert details and "rossz.jpg" in details[0][0]
+        assert "sérült fájl" in details[0][0]
+
 
 class TestBusyAndBackgroundResync:
     """#86: a resyncFolder nem blokkolja a UI-szálat; #70: busy-állapot."""
@@ -1342,21 +1465,23 @@ class TestBusyAndBackgroundResync:
     def test_resync_folder_runs_off_main_thread(
         self, controller, library, qt_app, monkeypatch
     ):
+        # #143: a resyncFolder útja a watcher-ágon (_on_folders_dirty) át fut,
+        # ami a mappa-pontos sync_folder-t hívja (NEM a rekurzív sync_tree-t).
         import threading as _threading
 
-        import picasapy.app.controller as controller_module
+        import picasapy.app.library_controller as library_controller_module
         from PySide6.QtCore import QEventLoop, QTimer
 
         on_main = []
-        original = controller_module.sync_tree
+        original = library_controller_module.sync_folder
 
-        def recording(conn, folder):
+        def recording(conn, root, folder, exclude=()):
             on_main.append(
                 _threading.current_thread() is _threading.main_thread()
             )
-            return original(conn, folder)
+            return original(conn, root, folder, exclude=exclude)
 
-        monkeypatch.setattr(controller_module, "sync_tree", recording)
+        monkeypatch.setattr(library_controller_module, "sync_folder", recording)
         loop = QEventLoop()
         controller.syncFinished.connect(loop.quit)
         controller.resyncFolder(str(library / "nyaralas"))
@@ -1371,17 +1496,17 @@ class TestBusyAndBackgroundResync:
         # (lassú, NAS-t szimuláló) szinkron még fut — közben busy a jelzés
         import threading as _threading
 
-        import picasapy.app.controller as controller_module
+        import picasapy.app.library_controller as library_controller_module
         from PySide6.QtCore import QEventLoop, QTimer
 
         started = _threading.Event()
         release = _threading.Event()
 
-        def slow(conn, folder):
+        def slow(conn, root, folder, exclude=()):
             started.set()
             release.wait(5)
 
-        monkeypatch.setattr(controller_module, "sync_tree", slow)
+        monkeypatch.setattr(library_controller_module, "sync_folder", slow)
         loop = QEventLoop()
         controller.syncFinished.connect(loop.quit)
         controller.resyncFolder(str(library / "nyaralas"))
@@ -1430,3 +1555,117 @@ class TestBusyAndBackgroundResync:
         provider.requestImage("nem-letezo", None, None)
         qt_app.processEvents()
         assert counts == [1, 0]
+
+
+class TestCopyPasteEffects:
+    """#152: „Copy/Paste All Effects" — a filters= lánc átvitele kép(ek) közt."""
+
+    def _set_filters(self, library, name, value):
+        from picasapy.ini import load_document, parse_document, save_document
+
+        ini_path = library / "nyaralas" / ".picasa.ini"
+        document = load_document(ini_path) if ini_path.exists() else parse_document("")
+        document = document.with_value(name, "filters", value)
+        save_document(document, ini_path, backup=False)
+
+    def test_no_clipboard_by_default(self, controller):
+        assert controller.hasEffectsClipboard is False
+
+    def test_copy_then_has_clipboard(self, controller, library):
+        self._set_filters(library, "IMG_0001.jpg", "BRIT=1,e50,0.20;")
+        from picasapy.index import open_index, sync_tree
+
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        row = next(
+            i for i, p in enumerate(controller.photos.photos) if p.name == "IMG_0001.jpg"
+        )
+        controller.copyEffects([row])
+        assert controller.hasEffectsClipboard is True
+
+    def test_paste_applies_source_chain_to_target(self, controller, library):
+        from picasapy.index import open_index, sync_tree
+
+        self._set_filters(library, "IMG_0001.jpg", "BRIT=1,e50,0.20;")
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        photos = controller.photos.photos
+        source_row = next(i for i, p in enumerate(photos) if p.name == "IMG_0001.jpg")
+        target_row = next(i for i, p in enumerate(photos) if p.name == "IMG_0002.jpg")
+
+        controller.copyEffects([source_row])
+        controller.pasteEffects([target_row])
+
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
+        assert "[IMG_0002.jpg]" in ini_text
+        assert "filters=BRIT=1,e50,0.20;" in ini_text.split("[IMG_0002.jpg]")[1]
+
+    def test_paste_replaces_target_chain_not_layers(self, controller, library):
+        from picasapy.index import open_index, sync_tree
+
+        self._set_filters(library, "IMG_0001.jpg", "BRIT=1,e50,0.20;")
+        self._set_filters(library, "IMG_0002.jpg", "SATU=1,e50,0.50;")
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        photos = controller.photos.photos
+        source_row = next(i for i, p in enumerate(photos) if p.name == "IMG_0001.jpg")
+        target_row = next(i for i, p in enumerate(photos) if p.name == "IMG_0002.jpg")
+
+        controller.copyEffects([source_row])
+        controller.pasteEffects([target_row])
+
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
+        target_section = ini_text.split("[IMG_0002.jpg]")[1]
+        assert "SATU" not in target_section  # a régi lánc lecserélve, nem rétegezve
+        assert "BRIT=1,e50,0.20;" in target_section
+
+    def test_paste_without_clipboard_is_noop(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        controller.pasteEffects([0])  # nincs másolat — nem dobhat, nem ír semmit
+        ini_path = library / "nyaralas" / ".picasa.ini"
+        assert "filters=" not in ini_path.read_text(encoding="utf-8")
+
+    def test_undo_paste_restores_previous_chain(self, controller, library):
+        from picasapy.index import open_index, sync_tree
+
+        self._set_filters(library, "IMG_0001.jpg", "BRIT=1,e50,0.20;")
+        self._set_filters(library, "IMG_0002.jpg", "SATU=1,e50,0.50;")
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        photos = controller.photos.photos
+        source_row = next(i for i, p in enumerate(photos) if p.name == "IMG_0001.jpg")
+        target_row = next(i for i, p in enumerate(photos) if p.name == "IMG_0002.jpg")
+
+        controller.copyEffects([source_row])
+        controller.pasteEffects([target_row])
+        controller.undoPasteEffects()
+
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
+        target_section = ini_text.split("[IMG_0002.jpg]")[1]
+        assert "SATU=1,e50,0.50;" in target_section
+        assert "BRIT" not in target_section
+
+    def test_paste_preserves_unknown_chain_entries(self, controller, library):
+        # #73/#152 round-trip elv: idegen/ismeretlen bejegyzés is átmásolódik
+        from picasapy.index import open_index, sync_tree
+
+        self._set_filters(
+            library, "IMG_0001.jpg", "BRIT=1,e50,0.20;JOVENOSZKA=1,x1,y2;"
+        )
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, library)
+        controller.selectFolder(str(library / "nyaralas"))
+        photos = controller.photos.photos
+        source_row = next(i for i, p in enumerate(photos) if p.name == "IMG_0001.jpg")
+        target_row = next(i for i, p in enumerate(photos) if p.name == "IMG_0002.jpg")
+
+        controller.copyEffects([source_row])
+        controller.pasteEffects([target_row])
+
+        ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
+        target_section = ini_text.split("[IMG_0002.jpg]")[1]
+        assert "JOVENOSZKA=1,x1,y2;" in target_section

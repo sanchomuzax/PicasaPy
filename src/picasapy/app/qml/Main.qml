@@ -221,6 +221,12 @@ ApplicationWindow {
         propertiesPanelOpen: window.propertiesPanelOpen
         onPropertiesPanelRequested:
             window.propertiesPanelOpen = !window.propertiesPanelOpen
+        // #152: „Copy/Paste All Effects" — a kijelölésre hat, a rács
+        // sorindexein keresztül (window.selectedRows() a meglévő mintát
+        // követi, ld. toggleHiddenSelection)
+        hasEffectsClipboard: controller.hasEffectsClipboard
+        onCopyEffectsRequested: controller.copyEffects(window.selectedRows())
+        onPasteEffectsRequested: controller.pasteEffects(window.selectedRows())
     }
 
     // #17: Elrejtés/Megjelenítés a kijelölésre; elrejtés után a kijelölést

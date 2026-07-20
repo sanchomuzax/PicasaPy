@@ -27,6 +27,11 @@ MenuBar {
     // #13: Tulajdonságok-panel
     property bool propertiesPanelOpen: false
     signal propertiesPanelRequested()
+    // #152: „Copy/Paste All Effects" — a Beillesztés csak akkor engedélyezett,
+    // ha van másolt effektlánc (a controller.hasEffectsClipboard-hoz kötve)
+    property bool hasEffectsClipboard: false
+    signal copyEffectsRequested()
+    signal pasteEffectsRequested()
 
     Menu {
         title: qsTr("&File")
@@ -70,8 +75,18 @@ MenuBar {
     }
     Menu {
         title: qsTr("&Edit")
-        MenuItem { text: qsTr("Copy All Effects"); enabled: false }
-        MenuItem { text: qsTr("Paste All Effects"); enabled: false }
+        MenuItem {
+            objectName: "menuEditCopyEffects"
+            text: qsTr("Copy All Effects")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.copyEffectsRequested()
+        }
+        MenuItem {
+            objectName: "menuEditPasteEffects"
+            text: qsTr("Paste All Effects")
+            enabled: bar.photoActionsEnabled && bar.hasEffectsClipboard
+            onTriggered: bar.pasteEffectsRequested()
+        }
         MenuSeparator {}
         MenuItem {
             text: qsTr("Select All")

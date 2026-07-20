@@ -31,6 +31,7 @@ from picasapy.index import (
 from picasapy.ini import load_document, parse_document, save_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
+from .effects_controller import EffectsClipboardMixin
 from .export_controller import ExportMixin
 from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
 # fileops_controller kompatibilis import-útja (#150 előtt itt élt a függvény)
@@ -50,6 +51,7 @@ class AppController(
     KeywordsMixin,
     PhotoOpsMixin,
     ExportMixin,
+    EffectsClipboardMixin,
     LibraryMixin,
     QObject,
 ):

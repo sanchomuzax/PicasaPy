@@ -7,12 +7,13 @@ a tesztek felülete változatlan."""
 
 from __future__ import annotations
 
+import sqlite3
 import threading
 from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
 
-from picasapy.index import open_index, remove_root
+from picasapy.index import open_index, remove_root, sync_folder
 from picasapy.scanner import LibraryWatcher, write_watched_folders
 
 from .formatting import to_local_path
@@ -155,24 +156,54 @@ class LibraryMixin:
 
     @Slot(list)
     def _on_folders_dirty(self, folders) -> None:
-        """A watcher által jelzett mappák célzott szinkronja háttérszálon."""
+        """A watcher által jelzett (esetleg több) mappa célzott, nem-
+        rekurzív szinkronja EGY háttérszálon (#143).
+
+        A `sync_tree` helyett a mappa-pontos `sync_folder`-t hívjuk: a
+        watcher konkrét mappát jelez, nincs ok a teljes részfa
+        újrajárására. A jelzett mappák koaleszálva, egyetlen worker-
+        szálban dolgozódnak fel — a watcher amúgy is debounce-ol
+        (`scanner/watcher.py`), így egy jelzésben több mappa is jöhet."""
         if self._sync_running:
             return  # a futó teljes szinkron úgyis lefedi
         paths = [str(f) for f in folders]
 
         def worker():
+            errors = []
             try:
                 with open_index(self._db_path) as conn:
                     for folder in paths:
+                        root = self._root_for_folder(folder)
+                        if root is None:
+                            continue  # már nem figyelt gyökér alatt — kihagyva
                         try:
-                            self._sync_tree(conn, folder)
+                            sync_folder(conn, root, folder, exclude=())
                         except (OSError, RuntimeError):
                             pass  # eltűnt mappa — a periodikus rescan rendezi
+                        except sqlite3.OperationalError as error:
+                            # busy_timeout lejárt (párhuzamos író) — ez NEM
+                            # nyelhető el némán: a felhasználó jelzést kap,
+                            # a maradék mappák feldolgozása folytatódik.
+                            errors.append(f"{folder}: {error}")
             finally:
+                if errors:
+                    self.syncFailed.emit("; ".join(errors))
                 self.syncFinished.emit()
 
         self._begin_sync_job()
         threading.Thread(target=worker, daemon=True).start()
+
+    def _root_for_folder(self, folder: str) -> str | None:
+        """A jelzett mappához tartozó figyelt gyökér (a `sync_folder`
+        védőkorlátjához) — a leghosszabb egyező előtag, ha van ilyen."""
+        folder_path = Path(folder).resolve()
+        best: str | None = None
+        for root in self._roots:
+            root_path = Path(root).resolve()
+            if folder_path == root_path or folder_path.is_relative_to(root_path):
+                if best is None or len(root) > len(best):
+                    best = root
+        return best
 
     @Slot()
     def rescan(self) -> None:
@@ -193,7 +224,7 @@ class LibraryMixin:
                 for root in self._roots:
                     try:
                         self._sync_tree(conn, root)
-                    except (OSError, RuntimeError) as error:
+                    except (OSError, RuntimeError, sqlite3.OperationalError) as error:
                         errors.append(f"{root}: {error}")
         except Exception as error:  # pl. index-migrációs hiba
             errors.append(str(error))
