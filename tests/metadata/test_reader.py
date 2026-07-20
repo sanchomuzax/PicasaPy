@@ -61,6 +61,35 @@ class TestIptc:
         assert read_file_metadata(jpeg_factory(keywords=("egy",))).keywords == ("egy",)
 
 
+class TestLegacyEncoding:
+    """#133: régi (nem UTF-8, tipikusan CP1250) Picasa-telepítésű IPTC —
+    a saját writerünk (1:90-es UTF-8-jelölő) mellett a jelölő nélküli,
+    magyar ékezetes CP1250-es feliratot is olvashatóan kell dekódolni."""
+
+    def test_cp1250_caption_without_marker_decoded_correctly(self, jpeg_factory):
+        # A régi (Windows-os) Picasa nem ír 1:90 karakterkészlet-jelölőt,
+        # a felirat CP1250-ben van — latin-1-ként olvasva ez mojibake-et
+        # adna ("õszi túra" helyett hibás karakterek).
+        meta = read_file_metadata(
+            jpeg_factory(caption="őszi túra — árvíztűrő", encoding="cp1250")
+        )
+        assert meta.caption == "őszi túra — árvíztűrő"
+
+    def test_utf8_marker_honored(self, jpeg_factory):
+        meta = read_file_metadata(
+            jpeg_factory(
+                caption="őszi túra", encoding="utf-8", charset_marker=True
+            )
+        )
+        assert meta.caption == "őszi túra"
+
+    def test_cp1250_keywords_without_marker(self, jpeg_factory):
+        meta = read_file_metadata(
+            jpeg_factory(keywords=("őszi", "árvíztűrő"), encoding="cp1250")
+        )
+        assert meta.keywords == ("őszi", "árvíztűrő")
+
+
 class TestRobustness:
     def test_corrupt_file_gives_empty(self, tmp_path):
         bad = tmp_path / "rossz.jpg"

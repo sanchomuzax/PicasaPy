@@ -266,7 +266,7 @@ def parse_document(text: str) -> IniDocument:
             sections[-1] = replace(sections[-1], lines=tuple(rest))
         current_lines = None
 
-    for raw in text.splitlines(keepends=True):
+    for raw in _split_lines(text):
         line = _parse_line(raw)
         name = _section_name(line.text)
         if name is not None:
@@ -279,6 +279,26 @@ def parse_document(text: str) -> IniDocument:
             preamble.append(line)
     _close_section()
     return IniDocument(preamble=tuple(preamble), sections=tuple(sections))
+
+
+def _split_lines(text: str) -> list[str]:
+    """A szöveg sorokra tördelése — KIZÁRÓLAG '\\n' mentén.
+
+    A `str.splitlines()`-t szándékosan NEM használjuk: az Unicode
+    sorhatár-kódpontokat is (pl. U+0085 NEL, U+2028 LINE SEPARATOR)
+    sortörésnek veszi. Régi (CP125x) `.picasa.ini` fájloknál — ha
+    latin-1-ként dekódolva a "…" bájtja (0x85) U+0085-re képződik le —
+    ez hamis szekciótörést/csonka mezőt okozna (#133), miközben a
+    `_parse_line` csak '\\n'/'\\r\\n' sorvégjelet ismer fel; a kettőnek
+    összhangban kell lennie.
+    """
+    if not text:
+        return []
+    pieces = text.split("\n")
+    lines = [piece + "\n" for piece in pieces[:-1]]
+    if pieces[-1]:
+        lines.append(pieces[-1])
+    return lines
 
 
 def _parse_line(raw: str) -> Line:
