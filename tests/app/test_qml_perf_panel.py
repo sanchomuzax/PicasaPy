@@ -6,6 +6,7 @@ tétele (vagy közvetlenül a controller.togglePerfMonitor()) vezérli.
 """
 
 import time
+from pathlib import Path
 
 from PySide6.QtCore import QObject
 
@@ -95,6 +96,118 @@ class TestPerfMonitorPanel:
         assert path.parent == tmp_path / "picasapy" / "perf"
         first_line = path.read_text(encoding="utf-8").splitlines()[0]
         assert '"type": "session"' in first_line
+
+    def test_saved_path_click_invokes_open_diagnostics_folder(
+        self, qml_app, qt_app, monkeypatch
+    ):
+        """#217: a mentés-visszajelző zöld útvonal-szöveg kattintható —
+        kattintásra a controller.openDiagnosticsFolder()-t hívja a QML
+        (TapHandler), a panel `lastSavedPath` property-jével."""
+        window, controller, _lib, _engine = qml_app
+        panel = _child(window, "perfMonitorPanel")
+        panel.setProperty("lastSavedPath", "/tmp/kepzelt/diag.jsonl")
+
+        calls = []
+        monkeypatch.setattr(
+            "picasapy.app.perf_controller.platform.system", lambda: "Linux"
+        )
+        monkeypatch.setattr(
+            "picasapy.app.perf_controller.reveal_in_file_manager",
+            lambda path: calls.append(path),
+        )
+
+        from PySide6.QtCore import QMetaObject
+
+        # a valódi kattintást az útvonal-szöveg saját, paraméter nélküli
+        # `openSavedPathFolder()` függvényének közvetlen meghívásával
+        # szimuláljuk (a panel × gombjának teszt-mintája szerint, ld.
+        # test_close_button_disables_monitor) — a beépített
+        # TapHandler.tapped() fix (QEventPoint, MouseButton) szignatúrája
+        # invokeMethod-dal nem hívható paraméterek nélkül.
+        saved_path_text = _child(window, "perfPanelSavedPath")
+        QMetaObject.invokeMethod(saved_path_text, "openSavedPathFolder")
+        qt_app.processEvents()
+
+        assert calls == [Path("/tmp/kepzelt/diag.jsonl")]
+
+    def test_open_diagnostics_folder_linux_calls_reveal(
+        self, qml_app, qt_app, tmp_path, monkeypatch
+    ):
+        """#217: Linuxon a meglévő #112-es mintát (`reveal_in_file_manager`,
+        vagyis `xdg-open` a szülőmappára) használja."""
+        window, controller, _lib, _engine = qml_app
+        calls = []
+        monkeypatch.setattr(
+            "picasapy.app.perf_controller.platform.system", lambda: "Linux"
+        )
+        monkeypatch.setattr(
+            "picasapy.app.perf_controller.reveal_in_file_manager",
+            lambda path: calls.append(path),
+        )
+        log_path = tmp_path / "perf" / "diag.jsonl"
+        log_path.parent.mkdir()
+        log_path.write_text("{}\n", encoding="utf-8")
+
+        controller.openDiagnosticsFolder(str(log_path))
+
+        assert calls == [log_path]
+
+    def test_open_diagnostics_folder_windows_uses_explorer_select(
+        self, qml_app, qt_app, tmp_path, monkeypatch
+    ):
+        """#217: Windowson az Intéző a fájlt kijelölve nyitja meg
+        (`explorer /select,<út>`)."""
+        window, controller, _lib, _engine = qml_app
+        calls = []
+
+        class _CompletedProcess:
+            returncode = 1  # az Intéző /select sikeresen is gyakran 1-et ad vissza
+
+        monkeypatch.setattr(
+            "picasapy.app.perf_controller.platform.system", lambda: "Windows"
+        )
+        monkeypatch.setattr(
+            "picasapy.app.perf_controller.subprocess.run",
+            lambda args, **kwargs: calls.append(args) or _CompletedProcess(),
+        )
+        log_path = tmp_path / "perf" / "diag.jsonl"
+
+        controller.openDiagnosticsFolder(str(log_path))
+
+        assert calls == [["explorer", f"/select,{log_path}"]]
+
+    def test_open_diagnostics_folder_reports_human_error(
+        self, qml_app, qt_app, tmp_path, monkeypatch
+    ):
+        """Hiba esetén emberi nyelvű üzenet a `diagnosticsFolderOpenFailed`
+        jelzésen — nem néma elhalás (#217 DoD)."""
+        window, controller, _lib, _engine = qml_app
+        monkeypatch.setattr(
+            "picasapy.app.perf_controller.platform.system", lambda: "Linux"
+        )
+
+        def _raise(_path):
+            raise OSError("a fájlkezelő megnyitása sikertelen (xdg-open hiányzik?)")
+
+        monkeypatch.setattr(
+            "picasapy.app.perf_controller.reveal_in_file_manager", _raise
+        )
+
+        received = []
+        controller.diagnosticsFolderOpenFailed.connect(received.append)
+        controller.openDiagnosticsFolder(str(tmp_path / "diag.jsonl"))
+
+        assert len(received) == 1
+        assert "xdg-open" in received[0]
+
+    def test_open_diagnostics_folder_empty_path_reports_error(self, qml_app, qt_app):
+        """Hiányzó útvonalnál (még nem történt mentés) is emberi nyelvű
+        hibajelzés jár, nem csendes semmittevés (#217 DoD)."""
+        window, controller, _lib, _engine = qml_app
+        received = []
+        controller.diagnosticsFolderOpenFailed.connect(received.append)
+        controller.openDiagnosticsFolder("")
+        assert len(received) == 1
 
     def test_top_activity_reflects_sync_progress(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app

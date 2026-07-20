@@ -8,10 +8,13 @@ csak a be- és kikapcsoláskor indít/állít le bármit is."""
 
 from __future__ import annotations
 
+import platform
+import subprocess
 from pathlib import Path
 
 from PySide6.QtCore import Property, QElapsedTimer, QTimer, Signal, Slot, qVersion
 
+from picasapy.fileops import reveal_in_file_manager
 from picasapy.perf.collector import PerfCollector, PerfSample
 from picasapy.perf.logwriter import PerfLogWriter
 from picasapy.version import version_string
@@ -30,6 +33,9 @@ class PerfMonitorMixin:
 
     perfMonitorChanged = Signal()
     perfSampleChanged = Signal()
+    # #217: a diagnosztika-mappa megnyitása sikertelen — emberi nyelvű
+    # hibaüzenet a QML-nek, a syncFailed/photoOpFailed mintája szerint.
+    diagnosticsFolderOpenFailed = Signal(str)
     # A PerfCollector SAJÁT (nem-Qt) háttérszáláról emittálva — a fogadó
     # (self) a GUI-szálon él, ezért a Qt automatikusan queued kézbesítéssel
     # juttatja a főszálra (ld. ThumbnailProvider.activeCountChanged minta).
@@ -232,6 +238,34 @@ class PerfMonitorMixin:
         útvonalat a QML jeleníti meg (#211 DoD)."""
         path = self._perf_writer.save()
         return str(path)
+
+    @Slot(str)
+    def openDiagnosticsFolder(self, path: str) -> None:
+        """A mentett diagnosztika-napló mappájának megnyitása a rendszer
+        fájlkezelőjében (#217) — a felhasználónak ne kelljen kézzel
+        kikeresnie a `~/.cache/picasapy/perf/` utat, amikor a fájlt
+        issue-hoz csatolná.
+
+        Windowson az Intéző a fájlt kijelölve nyitja meg
+        (`explorer /select,<út>`) — az Intéző ilyenkor is gyakran
+        nemnulla kilépési kóddal tér vissza sikeres megnyitás esetén is,
+        ezért ott csak a bináris hiányát (OSError) tekintjük hibának.
+        Linuxon a #112-es mintát (`reveal_in_file_manager`, azaz
+        `xdg-open` a szülőmappára) hasznosítja újra. Hiba esetén emberi
+        nyelvű üzenetet jelez a `diagnosticsFolderOpenFailed` jelzésen —
+        nem hal el némán."""
+        if not path:
+            self.diagnosticsFolderOpenFailed.emit(
+                "Nincs elérhető naplófájl — előbb mentsd a diagnosztikát."
+            )
+            return
+        try:
+            if platform.system() == "Windows":
+                subprocess.run(["explorer", f"/select,{path}"], check=False)
+            else:
+                reveal_in_file_manager(Path(path))
+        except OSError as error:
+            self.diagnosticsFolderOpenFailed.emit(str(error))
 
     # -- életciklus ------------------------------------------------------
 
