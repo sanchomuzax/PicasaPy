@@ -94,6 +94,32 @@ class TestFeedVirtualization:
         cells = _cell_count(grid)
         assert 0 < cells < 400, f"görgetés után is korlátos: {cells}"
 
+    def test_selected_set_drives_cell_highlight(self, big_feed_app, qt_app):
+        # #142: a cellák kijelölés-kötése set-alapú (O(1) lookup) — a
+        # window.selectedSet a selectedIndexes-ből épül, és a látható
+        # cella `selected` állapota követi
+        window, controller, grid = big_feed_app
+        window.setProperty("selectedIndexes", [0, 2])
+        window.setProperty("selectedIndex", 2)
+        _settle(qt_app)
+        selected_set = window.property("selectedSet")
+        if hasattr(selected_set, "toVariant"):
+            selected_set = selected_set.toVariant()
+        assert selected_set.get("0") or selected_set.get(0)
+
+        def find_cells(item, out):
+            if item.objectName() == "feedCell":
+                out.append(item)
+            for child in item.childItems():
+                find_cells(child, out)
+            return out
+
+        cells = find_cells(grid.property("contentItem"), [])
+        by_row = {c.property("row"): c for c in cells}
+        assert by_row[0].childItems()[0].property("selected") is True
+        assert by_row[1].childItems()[0].property("selected") is False
+        assert by_row[2].childItems()[0].property("selected") is True
+
     def test_selection_navigation_still_works(self, big_feed_app, qt_app):
         from PySide6.QtCore import Q_ARG
 

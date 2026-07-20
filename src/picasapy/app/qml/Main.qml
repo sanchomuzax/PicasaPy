@@ -37,6 +37,16 @@ ApplicationWindow {
     property int thumbSize: 144
     property int selectedIndex: -1        // horgony (utoljára kattintott)
     property var selectedIndexes: []      // a teljes kijelölés
+    // #142: a kijelölés set-alakban (sor → true) — a rács-cellák O(1)
+    // lookupja; az indexOf-os kötés O(cellák × kijelöltek) volt, ami
+    // Ctrl+A-nál minden cellán végigjárta a teljes kijelölés-listát
+    property var selectedSet: ({})
+    onSelectedIndexesChanged: {
+        var s = {}
+        for (var k = 0; k < selectedIndexes.length; ++k)
+            s[selectedIndexes[k]] = true
+        selectedSet = s
+    }
     property bool viewerOpen: false
     property bool tagsPanelOpen: false    // Címkék-panel (#12, Ctrl+T)
     // Tulajdonságok-panel (#13, Alt+Enter)
@@ -509,8 +519,9 @@ ApplicationWindow {
                                         keywords: modelData.keywords
                                         resolution: modelData.resolution
                                         captionMode: controller.thumbCaptionMode
-                                        selected: window.selectedIndexes
-                                            .indexOf(modelData.row) !== -1
+                                        // #142: set-alapú lookup
+                                        selected: window.selectedSet[
+                                            modelData.row] === true
                                         onChosen: function(i, mods) {
                                             window.handleThumbClick(i, mods)
                                         }

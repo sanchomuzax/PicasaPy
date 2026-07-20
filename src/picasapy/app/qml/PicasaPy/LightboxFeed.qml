@@ -442,8 +442,9 @@ ListView {
                         // többlete a térközbe megy.
                         maxContentWidth: grid.nominalCellWidth
                         maxContentHeight: grid.cellHeight
-                        selected: grid.appWindow.selectedIndexes
-                            .indexOf(slot.row) !== -1
+                        // #142: set-alapú lookup — O(1) cellánként
+                        selected: grid.appWindow
+                            .selectedSet[slot.row] === true
                         onChosen: function(i, mods) {
                             grid.forceActiveFocus()   // kurzorgombokhoz (#77)
                             grid.selectionAnchor = i  // Shift+nyíl horgony (#96)
