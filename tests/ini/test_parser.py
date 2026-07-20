@@ -81,9 +81,25 @@ class TestRoundTrip:
         text = SAMPLE.replace("\r\n", "\n")
         assert parse_document(text).serialize() == text
 
-    def test_no_trailing_newline(self):
-        text = "[a.jpg]\nstar=yes"
-        assert parse_document(text).serialize() == text
+    def test_u0085_inside_value_does_not_split_line(self):
+        # #133: regi (CP125x) fajl latin-1-kent betoltve -- a NEL bajtja
+        # (0x85) U+0085 kodpontta dekodolodik. A str.splitlines() ezt
+        # sorvegnek venne (fantomszekcio/csonka caption); a parse_document
+        # sortordelese csak '\n'/'\r\n' menten tortenhet.
+        text = "[a.jpg]\ncaption=Hello" + chr(0x0085) + "World\nstar=yes\n"
+        doc = parse_document(text)
+        assert doc.serialize() == text
+        assert doc.section("a.jpg").get("caption") == "Hello" + chr(0x0085) + "World"
+        assert doc.section("a.jpg").get("star") == "yes"
+        assert [s.name for s in doc.sections] == ["a.jpg"]
+
+    def test_u2028_inside_value_does_not_split_line(self):
+        # Ugyanaz a hiba mas Unicode sorhatar-kodponttal (U+2028).
+        text = "[a.jpg]\ncaption=Elso" + chr(0x2028) + "Masodik\nstar=yes\n"
+        doc = parse_document(text)
+        assert doc.serialize() == text
+        assert doc.section("a.jpg").get("caption") == "Elso" + chr(0x2028) + "Masodik"
+        assert [s.name for s in doc.sections] == ["a.jpg"]
 
     def test_verbatim_garbage_preserved(self):
         # Round-trip elv: amit nem értünk, változatlanul visszaírjuk.

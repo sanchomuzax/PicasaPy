@@ -47,6 +47,8 @@ _FOCAL_LENGTH_TAG = 37386
 _WHITE_BALANCE_TAG = 41987
 _IPTC_KEYWORDS = (2, 25)
 _IPTC_CAPTION = (2, 120)
+_IPTC_CHARSET = (1, 90)
+_UTF8_CHARSET_MARKER = b"\x1b%G"
 _EXIF_DATE_FORMAT = "%Y:%m:%d %H:%M:%S"
 
 
@@ -81,13 +83,14 @@ def read_file_metadata(path: str | Path) -> FileMetadata:
                 exif = image.getexif()
                 iptc = getiptcinfo(image) or {}
                 width, height = image.size
+                utf8_marked = _has_utf8_marker(iptc.get(_IPTC_CHARSET))
                 return FileMetadata(
                     taken_at=_taken_at(exif),
                     orientation=_orientation(exif),
                     width=width,
                     height=height,
-                    caption=_decode(iptc.get(_IPTC_CAPTION)),
-                    keywords=_keywords(iptc.get(_IPTC_KEYWORDS)),
+                    caption=_decode(iptc.get(_IPTC_CAPTION), utf8_marked),
+                    keywords=_keywords(iptc.get(_IPTC_KEYWORDS), utf8_marked),
                 )
     except _BOMB_EXCEPTIONS:
         return EMPTY_METADATA
@@ -177,19 +180,52 @@ def _orientation(exif: Image.Exif) -> int:
     return value if isinstance(value, int) and 1 <= value <= 8 else 1
 
 
-def _decode(raw: bytes | list[bytes] | None) -> str | None:
+def _has_utf8_marker(raw: bytes | list[bytes] | None) -> bool:
+    """Az IPTC 1:90-es karakterkészlet-jelölő (a saját writerünk írja,
+    #133) — ha jelen van és UTF-8-at jelöl, a szöveget megbízhatóan
+    UTF-8-ként lehet dekódolni, heurisztika nélkül."""
+    if raw is None:
+        return False
+    if isinstance(raw, list):
+        raw = raw[0] if raw else b""
+    return raw == _UTF8_CHARSET_MARKER
+
+
+def _decode(raw: bytes | list[bytes] | None, utf8_marked: bool = False) -> str | None:
+    """IPTC-szöveg dekódolása.
+
+    Sorrend (#133): ha az 1:90-es jelölő UTF-8-at mond, azt hisszük el —
+    ez a saját writerünk és a modern eszközök (digiKam, Lightroom) esete.
+    Jelölő nélkül a legtöbb mai fájl akkor is UTF-8, ezért előbb azt
+    próbáljuk; ha nem az, a régi (jellemzően magyar) Picasa-telepítések
+    tipikus CP1250-es kódolására esik vissza a heurisztika; végső
+    tartalékként a latin-1 mindig sikerül (byte-őrző, de mojibake-es).
+    """
     if raw is None:
         return None
     if isinstance(raw, list):
         raw = raw[0]
+    if utf8_marked:
+        try:
+            return raw.decode("utf-8")
+        except UnicodeDecodeError:
+            pass  # a jelölő ellenére sem UTF-8 — essünk vissza a heurisztikára
     try:
         return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        pass
+    try:
+        return raw.decode("cp1250")
     except UnicodeDecodeError:
         return raw.decode("latin-1")
 
 
-def _keywords(raw: bytes | list[bytes] | None) -> tuple[str, ...]:
+def _keywords(
+    raw: bytes | list[bytes] | None, utf8_marked: bool = False
+) -> tuple[str, ...]:
     if raw is None:
         return ()
     items = raw if isinstance(raw, list) else [raw]
-    return tuple(decoded for item in items if (decoded := _decode(item)))
+    return tuple(
+        decoded for item in items if (decoded := _decode(item, utf8_marked))
+    )
