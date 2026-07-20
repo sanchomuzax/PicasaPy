@@ -404,7 +404,8 @@ class TestCli:
             ]
         )
         assert exit_code == 0
-        report = json.loads(out_json.read_text())
+        # encoding kötelező: Windowson a default cp1252 elrontaná az "ű"-t
+        report = json.loads(out_json.read_text(encoding="utf-8"))
         assert report["osszegzes"]["pixelhű"] == 1
 
     def test_pair_mod_elteresnel_nem_nulla_kilepes(self, tmp_path: Path) -> None:
