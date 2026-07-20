@@ -43,6 +43,13 @@ class EditPreviewProvider(QQuickImageProvider):
         # lánc változik — a lemezes dekódot nem kell minden alkalommal
         # megismételni, csak a filter-lánc újraszámolását.
         self._sources: dict[str, tuple[Path, float | None, np.ndarray | None]] = {}
+        # lánc-prefix gyorsítótár (#140): élő csúszka-húzásnál csak az UTOLSÓ
+        # op paramétere változik — az utolsó op ELŐTTI köztes eredményt
+        # egyetlen rekeszben tároljuk (kulcs, prefix-lánc, forrás-referencia,
+        # prefix-kép), így interakció közben csak az utolsó op fut újra.
+        self._prefix_cache: (
+            tuple[str, tuple[FilterOp, ...], np.ndarray, np.ndarray] | None
+        ) = None
         self._lock = threading.Lock()
 
     def register(self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]) -> None:
@@ -58,7 +65,7 @@ class EditPreviewProvider(QQuickImageProvider):
         else:
             source_array = _decode_source(path)
             self._sources[key] = (path, mtime, source_array)
-        image = _render_from_array(source_array, tuple(ops), path)
+        image = self._render_cached(key, source_array, tuple(ops), path)
         with self._lock:
             self._images[key] = image
 
@@ -66,8 +73,61 @@ class EditPreviewProvider(QQuickImageProvider):
         """A fotó eltávolítása (szerkesztés vége)."""
         key = str(photo_id)
         self._sources.pop(key, None)
+        if self._prefix_cache is not None and self._prefix_cache[0] == key:
+            self._prefix_cache = None
         with self._lock:
             self._images.pop(key, None)
+
+    # -- lánc-prefix gyorsítótár (#140) ------------------------------------
+
+    def _render_cached(
+        self,
+        key: str,
+        source_array: np.ndarray | None,
+        ops: tuple[FilterOp, ...],
+        path: Path,
+    ) -> QImage:
+        """Renderelés lánc-prefix gyorsítótárral: interakció közben (azonos
+        prefix, csak az utolsó op paramétere változik) csak az utolsó op fut."""
+        if source_array is None:
+            return QImage()
+        if not ops:
+            return _rgb_array_to_qimage(source_array)
+        try:
+            prefix_array = self._cached_prefix(key, source_array, ops[:-1])
+            result_array, _skipped = apply_filters(prefix_array, ops[-1:])
+        except Exception:
+            # #73: hibás/idegen lánc-bejegyzésnél a szűretlen kép a helyes
+            # visszaesés, nem a placeholder (részleges előnézet elve)
+            _log.exception("filters= nem alkalmazható az előnézeten: %s", path)
+            return _rgb_array_to_qimage(source_array)
+        return _rgb_array_to_qimage(result_array)
+
+    def _cached_prefix(
+        self,
+        key: str,
+        source_array: np.ndarray,
+        prefix_ops: tuple[FilterOp, ...],
+    ) -> np.ndarray:
+        """Az utolsó op ELŐTTI köztes eredmény, gyorsítótárból ha lehet.
+
+        A találat feltétele: azonos fotó-kulcs, azonos prefix-lánc és
+        ugyanaz a (referencia szerint azonos) dekódolt forrás — a
+        forrás-cache frissülésekor a prefix automatikusan érvénytelen."""
+        cached = self._prefix_cache
+        if (
+            cached is not None
+            and cached[0] == key
+            and cached[1] == prefix_ops
+            and cached[2] is source_array
+        ):
+            return cached[3]
+        if prefix_ops:
+            prefix_array, _skipped = apply_filters(source_array, prefix_ops)
+        else:
+            prefix_array = source_array
+        self._prefix_cache = (key, prefix_ops, source_array, prefix_array)
+        return prefix_array
 
     def requestImage(self, photo_id, size, requested_size):
         # az URL-ben ?rev=<szám> cache-buster jöhet — az id az első rész
@@ -116,21 +176,6 @@ def _decode_source(path: Path) -> np.ndarray | None:
     if source.isNull():
         return None
     return _qimage_to_rgb_array(source)
-
-
-def _render_from_array(
-    source_array: np.ndarray | None, ops: tuple[FilterOp, ...], path: Path
-) -> QImage:
-    if source_array is None:
-        return QImage()
-    try:
-        result_array, _skipped = apply_filters(source_array, ops)
-    except Exception:
-        # #73: hibás/idegen lánc-bejegyzésnél a szűretlen kép a helyes
-        # visszaesés, nem a placeholder (részleges előnézet elve)
-        _log.exception("filters= nem alkalmazható az előnézeten: %s", path)
-        return _rgb_array_to_qimage(source_array)
-    return _rgb_array_to_qimage(result_array)
 
 
 def _placeholder() -> QImage:
