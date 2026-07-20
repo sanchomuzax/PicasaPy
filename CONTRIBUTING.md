@@ -16,6 +16,13 @@ készült. Betartása kötelező — a cél, hogy a **main mindig zöld** legyen
      **a branch létezése a zár**; aki fetch után látja, tudja, hogy foglalt.
 - **Elárvult foglalás**: ha egy `in-progress` issue branchén 3 napja nincs
   commit, kommenttel visszaállítható `ready`-re.
+- **Szüneteltetés / feladás**: ha ideiglenesen leállsz egy `in-progress`
+  jegyen (nem fejezed be), proaktívan **add vissza**: `in-progress` le,
+  `ready` fel — hogy más felvehesse. Ne „ülj" olyan foglalt jegyen, amin nem
+  dolgozol. (A fenti 3 napos elárvulás ennek a passzív, automatikus változata.)
+- **Lezáráskor** a jegy zárásával együtt az `in-progress` címkét **le kell
+  venni** — lezárt jegy soha ne mutasson `in-progress`-t; marad a
+  típus/komponens- és a P-prioritás-címke.
 - Új, menet közben talált feladatot NE kezdj el — nyiss rá issue-t.
 
 ## Munkakörnyezet
