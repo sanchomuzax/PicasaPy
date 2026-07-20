@@ -96,6 +96,14 @@ Dialog {
                         manager.selectedRow = -1
                     }
                 }
+                // #146: a régi Picasa figyelt mappáinak felajánlása — a
+                // PicasaImportDialog a Main.qml-ben él, a discoveryController
+                // globális jelzésén (dialogRequested) keresztül nyílik meg
+                PicasaButton {
+                    objectName: "adoptPicasaFoldersButton"
+                    text: qsTr("Adopt Picasa folders...")
+                    onClicked: discoveryController.openImportDialog()
+                }
             }
         }
     }

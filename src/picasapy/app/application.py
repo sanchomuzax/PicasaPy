@@ -29,6 +29,7 @@ from picasapy.scanner import (
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
 from .controller import AppController
+from .discovery_controller import DiscoveryController
 from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
 from .faces_helper import FacesHelper
@@ -321,6 +322,10 @@ def run(argv: list[str]) -> int:
     fileops_controller = FileOpsController()
     wire_fileops(fileops_controller, controller)
 
+    # meglévő Picasa-telepítés átvétele (#146): felderítés + a kijelölt
+    # mappák hozzáadása a meglévő addWatchedFolder úton
+    discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
+
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
@@ -329,6 +334,9 @@ def run(argv: list[str]) -> int:
     engine.rootContext().setContextProperty("editController", edit_controller)
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
+    )
+    engine.rootContext().setContextProperty(
+        "discoveryController", discovery_controller
     )
     # #147: a néző arc-keret overlay-jének csak-olvasás szintű hídja —
     # a faces=/Contacts2 közvetlenül a fotó .picasa.ini-jéből olvasva.

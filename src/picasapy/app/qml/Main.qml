@@ -239,6 +239,10 @@ ApplicationWindow {
     }
 
     FolderManagerDialog { id: folderManager }
+    // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő
+    // gombjából (discoveryController.dialogRequested) vagy induláskori
+    // automatikus felajánlásból (integrátori bekötés: picasaImportDialog.openAndDiscover())
+    PicasaImportDialog { id: picasaImportDialog }
 
     // első indítás: nincs még figyelt mappa → Mappakezelő felajánlása
     Component.onCompleted: {

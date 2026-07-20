@@ -18,6 +18,7 @@ def qml_app(qt_app, tmp_path):
     """Teljes app betöltve offscreen: (window, controller, engine)."""
     import picasapy.app.application as app_module
     from picasapy.app.controller import AppController
+    from picasapy.app.discovery_controller import DiscoveryController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
     from picasapy.app.faces_helper import FacesHelper
@@ -54,6 +55,12 @@ def qml_app(qt_app, tmp_path):
     app_module.wire_fileops(fileops_controller, controller)
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
+    )
+    # meglévő Picasa-telepítés átvétele (#146) — az application.py
+    # bekötésének tükre
+    discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
+    engine.rootContext().setContextProperty(
+        "discoveryController", discovery_controller
     )
     # arc-keretek (#147) — az application.py bekötésének tükre
     faces_helper = FacesHelper()
