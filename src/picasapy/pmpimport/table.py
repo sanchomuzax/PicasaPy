@@ -12,17 +12,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 
 from .pmp_column import PmpColumn, read_pmp_column
 
 
 @dataclass(frozen=True)
 class PmpTable:
-    """Egy logikai tábla: oszlopnév → sorrendhelyes, None-nal kipótolt tuple."""
+    """Egy logikai tábla: oszlopnév → sorrendhelyes, None-nal kipótolt tuple.
+
+    A `columns` írásvédett leképezés (`MappingProxyType`) — a frozen
+    dataclass immutabilitása így a beágyazott gyűjteményre is kiterjed,
+    nem csak a mezők újra-hozzárendelésére."""
 
     name: str
     row_count: int
-    columns: dict[str, tuple]
+    columns: MappingProxyType[str, tuple]
 
     def column(self, name: str) -> tuple:
         """Az oszlop értékei (üres tuple, ha az oszlop hiányzik)."""
@@ -62,4 +67,6 @@ def read_table(db3_dir: Path, table_name: str) -> PmpTable:
         name: column.values + (None,) * (row_count - len(column))
         for name, column in raw_columns.items()
     }
-    return PmpTable(name=table_name, row_count=row_count, columns=padded)
+    return PmpTable(
+        name=table_name, row_count=row_count, columns=MappingProxyType(padded)
+    )

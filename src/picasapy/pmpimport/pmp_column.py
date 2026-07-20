@@ -9,9 +9,12 @@ a PMP-adatbázist sosem írja.
 
 from __future__ import annotations
 
+import logging
 import struct
 from dataclasses import dataclass
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 _MAGIC = 0x3FCCCCCD
 _CONST_1332 = 0x1332
@@ -104,6 +107,22 @@ def _read_strings(data: bytes, offset: int, count: int, path: Path) -> list[str]
         end = data.find(b"\x00", offset)
         if end == -1:
             raise PmpFormatError(f"Hiányzó string-lezáró (0x00): {path}")
-        values.append(data[offset:end].decode("utf-8", errors="replace"))
+        values.append(_decode(data[offset:end], path))
         offset = end + 1
     return values
+
+
+def _decode(raw: bytes, path: Path) -> str:
+    """UTF-8 dekódolás; nem-UTF-8 bájtoknál naplózott figyelmeztetéssel
+    esik vissza `errors="replace"`-re — a hibás bájtok némán ne vesszenek
+    el nyomtalanul."""
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        logger.warning(
+            "Nem UTF-8 érték a(z) %s fájlban — a nem dekódolható bájtok "
+            "helyettesítő karakterrel (U+FFFD) kerülnek be: %r",
+            path,
+            raw,
+        )
+        return raw.decode("utf-8", errors="replace")

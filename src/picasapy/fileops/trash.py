@@ -41,16 +41,25 @@ def delete_to_trash(path: Path, *, trash_dir: Path | None = None) -> Path:
     files_dir.mkdir(parents=True, exist_ok=True)
     info_dir.mkdir(parents=True, exist_ok=True)
 
-    trashed_path, info_path = _unique_destination(path.name, files_dir, info_dir)
     original = str(path.resolve())
-
-    shutil.move(str(path), str(trashed_path))
-    info_path.write_text(
+    content = (
         "[Trash Info]\n"
         f"Path={urllib.parse.quote(original)}\n"
-        f"DeletionDate={datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}\n",
-        encoding="utf-8",
+        f"DeletionDate={datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}\n"
+    ).encode("utf-8")
+
+    # freedesktop-spec: az info-fájlnak a MOVE ELŐTT kell léteznie,
+    # kizárólagos létrehozással (O_EXCL) — így félbeszakadt/tele lemezes
+    # move esetén sosem marad "árva" fájl visszaállítási info nélkül.
+    trashed_path, info_path = _create_trashinfo_exclusively(
+        path.name, files_dir, info_dir, content
     )
+
+    try:
+        shutil.move(str(path), str(trashed_path))
+    except Exception:
+        info_path.unlink(missing_ok=True)
+        raise
     return trashed_path
 
 
@@ -60,17 +69,37 @@ def _trash_home() -> Path:
     return base / "Trash"
 
 
-def _unique_destination(
-    name: str, files_dir: Path, info_dir: Path
+def _candidate_name(name: str, suffix: int) -> str:
+    """Ütközésmentes célnév-jelölt (Picasa/Nautilus-minta: `_1`, `_2`, …
+    utótag a kiterjesztés elé)."""
+    if suffix == 0:
+        return name
+    stem, dot, ext = name.partition(".")
+    return f"{stem}_{suffix}{dot}{ext}" if dot else f"{name}_{suffix}"
+
+
+def _create_trashinfo_exclusively(
+    name: str, files_dir: Path, info_dir: Path, content: bytes
 ) -> tuple[Path, Path]:
-    """Ütközésmentes célnév a `files/`+`info/` párban (Picasa/Nautilus-minta:
-    `_1`, `_2`, … utótag a kiterjesztés elé)."""
-    candidate = name
+    """Az info-fájl kizárólagos (O_EXCL) létrehozása egy még szabad
+    célnévvel. Ha a `files/`-ben már foglalt a név (korábbi, be nem
+    fejezett törlés maradványa), a jelölt is kimarad — így a `files/` és
+    az `info/` pár mindig összetartozik."""
     suffix = 0
-    while (files_dir / candidate).exists() or (
-        info_dir / f"{candidate}.trashinfo"
-    ).exists():
-        suffix += 1
-        stem, dot, ext = name.partition(".")
-        candidate = f"{stem}_{suffix}{dot}{ext}" if dot else f"{name}_{suffix}"
-    return files_dir / candidate, info_dir / f"{candidate}.trashinfo"
+    while True:
+        candidate = _candidate_name(name, suffix)
+        trashed_path = files_dir / candidate
+        info_path = info_dir / f"{candidate}.trashinfo"
+        if trashed_path.exists():
+            suffix += 1
+            continue
+        try:
+            fd = os.open(info_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+        except FileExistsError:
+            suffix += 1
+            continue
+        try:
+            os.write(fd, content)
+        finally:
+            os.close(fd)
+        return trashed_path, info_path
