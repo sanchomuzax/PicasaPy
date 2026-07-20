@@ -51,6 +51,14 @@ def photos_in_folder(
     return _records(rows)
 
 
+def photo_by_id(conn: sqlite3.Connection, photo_id: int) -> PhotoRecord | None:
+    """Egy fotó friss rekordja azonosító alapján (#141): a célzott
+    index-UPDATE után ez adja vissza a rács-sor frissítéséhez szükséges
+    állapotot — nincs szükség teljes mappa-resyncre/lekérdezésre."""
+    row = conn.execute(f"{_SELECT} WHERE p.id = ?", (photo_id,)).fetchone()
+    return _records([row])[0] if row is not None else None
+
+
 def all_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     """A teljes könyvtár a rács-feedhez (#64) — a mappán belüli sorrend
     névsor; a mappák feed-sorrendjét a hívó (a bal hasáb rendje szerint)

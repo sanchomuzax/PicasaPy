@@ -250,6 +250,30 @@ class PhotoGridModel(QAbstractListModel):
     def photos(self) -> tuple[PhotoRecord, ...]:
         return self._photos
 
+    def row_of_id(self, photo_id: int) -> int:
+        """A fotó sor-indexe id alapján; -1, ha nincs a jelen nézetben
+        (#141: a célzott frissítés így akkor sem hibázik, ha a sor
+        időközben — pl. mappaváltás miatt — kikerült a nézetből)."""
+        for i, photo in enumerate(self._photos):
+            if photo.id == photo_id:
+                return i
+        return -1
+
+    def update_photo(self, photo_id: int, record: PhotoRecord) -> None:
+        """Egy sor célzott frissítése (csillag/felirat/forgatás, #141):
+        NEM fut teljes beginResetModel/endResetModel — a görgetés és a
+        delegate-ek megmaradnak. A `revision` mégis nő (ez hajtja a QML
+        itemAt/revision-mintáját, ld. fent), és a sorra dataChanged is
+        kimegy azoknak, akik szerep-alapú kötést használnak."""
+        row = self.row_of_id(photo_id)
+        if row < 0:
+            return
+        self._photos = self._photos[:row] + (record,) + self._photos[row + 1 :]
+        self._revision += 1
+        self.revisionChanged.emit()
+        index = self.index(row, 0)
+        self.dataChanged.emit(index, index)
+
     @Slot(int, result=int)
     def rotateAt(self, row: int) -> int:
         """A sor nem-destruktív forgatási lépésszáma (0–3) a nézőnek."""

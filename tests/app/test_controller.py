@@ -20,6 +20,20 @@ def library(tmp_path):
     return root
 
 
+def _do_photo_op(controller, action) -> None:
+    """#141: a csillag/felirat/forgatás háttérszálon fut (NAS-írás +
+    célzott index-UPDATE) — ez a segéd megvárja a `photoOpFinished`
+    jelzést, ugyanazzal a QEventLoop-mintával, mint az
+    `addWatchedFolder` meglévő tesztjei a `syncFinished`-re várnak."""
+    from PySide6.QtCore import QEventLoop, QTimer
+
+    loop = QEventLoop()
+    controller.photoOpFinished.connect(loop.quit)
+    action()
+    QTimer.singleShot(2000, loop.quit)
+    loop.exec()
+
+
 @pytest.fixture
 def controller(qt_app, tmp_path, library):
     from picasapy.app.controller import AppController
@@ -105,7 +119,7 @@ class TestController:
 class TestToggleStar:
     def test_star_written_to_ini_and_model(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
-        controller.toggleStar(1)  # IMG_0002: nincs csillag
+        _do_photo_op(controller, lambda: controller.toggleStar(1))  # IMG_0002: nincs csillag
         ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "[IMG_0002.jpg]" in ini_text
         assert "star=yes" in ini_text.split("[IMG_0002.jpg]")[1]
@@ -113,7 +127,7 @@ class TestToggleStar:
 
     def test_unstar_removes_key(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
-        controller.toggleStar(0)  # IMG_0001: csillag levétele
+        _do_photo_op(controller, lambda: controller.toggleStar(0))  # IMG_0001: csillag levétele
         ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         # a kiürült szekció el is tűnik — csak az biztos, hogy csillag nincs
         assert "star=yes" not in ini_text
@@ -131,14 +145,14 @@ class TestToggleStar:
         with open_index(controller._db_path) as conn:
             sync_tree(conn, library)
         controller.selectFolder(str(library / "nyaralas"))
-        controller.toggleStar(1)
+        _do_photo_op(controller, lambda: controller.toggleStar(1))
         text = ini.read_text(encoding="utf-8")
         assert "backuphash=36003" in text
         assert "name=Teszt" in text
 
     def test_backup_created(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
-        controller.toggleStar(1)
+        _do_photo_op(controller, lambda: controller.toggleStar(1))
         assert (library / "nyaralas" / ".picasa.ini.bak").exists()
 
     def test_creates_ini_when_missing(self, controller, library):
@@ -149,7 +163,7 @@ class TestToggleStar:
         with open_index(controller._db_path) as conn:
             sync_tree(conn, library)
         controller.selectFolder(str(library / "nyaralas"))
-        controller.toggleStar(0)
+        _do_photo_op(controller, lambda: controller.toggleStar(0))
         assert "star=yes" in ini.read_text(encoding="utf-8")
 
     def test_invalid_index_noop(self, controller, library):
@@ -158,22 +172,22 @@ class TestToggleStar:
 
     def test_rotate_right_writes_ini_and_model(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
-        controller.rotateRight(0)
+        _do_photo_op(controller, lambda: controller.rotateRight(0))
         ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "rotate=rotate(1)" in ini_text
         assert controller.photos.photos[0].rotate_steps == 1
 
     def test_rotate_accumulates(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
-        controller.rotateRight(0)
-        controller.rotateRight(0)
+        _do_photo_op(controller, lambda: controller.rotateRight(0))
+        _do_photo_op(controller, lambda: controller.rotateRight(0))
         assert "rotate=rotate(2)" in (
             library / "nyaralas" / ".picasa.ini"
         ).read_text(encoding="utf-8")
 
     def test_rotate_left_wraps_to_three(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
-        controller.rotateLeft(0)
+        _do_photo_op(controller, lambda: controller.rotateLeft(0))
         assert "rotate=rotate(3)" in (
             library / "nyaralas" / ".picasa.ini"
         ).read_text(encoding="utf-8")
@@ -184,7 +198,7 @@ class TestToggleStar:
         before = ini.read_bytes()
         controller.selectFolder(str(library / "nyaralas"))
         for _ in range(4):
-            controller.rotateRight(0)
+            _do_photo_op(controller, lambda: controller.rotateRight(0))
         assert "rotate=" not in ini.read_text(encoding="utf-8")
         assert ini.read_bytes() == before
 
@@ -193,8 +207,8 @@ class TestToggleStar:
         ini = library / "nyaralas" / ".picasa.ini"
         before = ini.read_bytes()
         controller.selectFolder(str(library / "nyaralas"))
-        controller.toggleStar(1)
-        controller.toggleStar(1)
+        _do_photo_op(controller, lambda: controller.toggleStar(1))
+        _do_photo_op(controller, lambda: controller.toggleStar(1))
         assert ini.read_bytes() == before
 
     def test_search(self, controller):
@@ -329,7 +343,7 @@ class TestSetCaption:
         from picasapy.metadata import read_file_metadata
 
         controller.selectFolder(str(library / "nyaralas"))
-        controller.setCaption(1, "próba felirat")  # IMG_0002.jpg
+        _do_photo_op(controller, lambda: controller.setCaption(1, "próba felirat"))  # IMG_0002.jpg
         photo_path = library / "nyaralas" / "IMG_0002.jpg"
         assert read_file_metadata(photo_path).caption == "próba felirat"
         assert controller.photos.photos[1].caption == "próba felirat"
@@ -338,8 +352,8 @@ class TestSetCaption:
         from picasapy.metadata import read_file_metadata
 
         controller.selectFolder(str(library / "nyaralas"))
-        controller.setCaption(1, "próba felirat")
-        controller.setCaption(1, "")
+        _do_photo_op(controller, lambda: controller.setCaption(1, "próba felirat"))
+        _do_photo_op(controller, lambda: controller.setCaption(1, ""))
         photo_path = library / "nyaralas" / "IMG_0002.jpg"
         assert read_file_metadata(photo_path).caption is None
         assert controller.photos.photos[1].caption is None
@@ -358,7 +372,7 @@ class TestSetCaption:
             for i, photo in enumerate(controller.photos.photos)
             if photo.name == "kep.png"
         )
-        controller.setCaption(row, "png felirat")
+        _do_photo_op(controller, lambda: controller.setCaption(row, "png felirat"))
         ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert "[kep.png]" in ini_text
         assert "caption=png felirat" in ini_text.split("[kep.png]")[1]
@@ -875,7 +889,7 @@ class TestThumbnailProvider:
         controller.selectFolder(str(library / "nyaralas"))
         photo = controller.photos.photos[0]
         base = controller._provider.requestImage(f"{photo.id}?r=0", None, None)
-        controller.rotateRight(0)
+        _do_photo_op(controller, lambda: controller.rotateRight(0))
         rotated_photo = controller.photos.photos[0]
         rotated = controller._provider.requestImage(
             f"{rotated_photo.id}?r=1", None, None
@@ -1037,7 +1051,7 @@ class TestLibraryFeed:
         controller.selectFolder(str(two_folders / "nyaralas"))
         changed = []
         controller.feedChanged.connect(lambda: changed.append(1))
-        controller.toggleStar(0)
+        _do_photo_op(controller, lambda: controller.toggleStar(0))
         assert changed == []
 
     def test_search_still_restricts(self, controller, two_folders):
