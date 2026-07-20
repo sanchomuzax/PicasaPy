@@ -46,6 +46,11 @@ _PLACEHOLDER_COLOR = 0xFFE8E8E8
 # ~3× gyorsulás 1 szálhoz képest); több szál RPi5-ön már nem segít.
 _MAX_RENDER_THREADS = 4
 
+# #142: az értelmezett filters-láncok cache-korlátja — kulcs a nyers
+# filters= sztring (az azonos láncú képek osztoznak az eredményen);
+# túlcsordulásnál a cache egyszerűen ürül, a következő render újraépíti.
+_OPS_CACHE_CAPACITY = 4096
+
 # A szűrt-thumb memóriacache bejegyzés-korlátja: 256 px-es JPEG-ből
 # dekódolt QImage ~256 KB, a korlát így legfeljebb ~32 MB — egy mappányi
 # szerkesztett kép görgetéséhez bőven elég, memóriában mégis szerény.
@@ -158,7 +163,11 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
     def __init__(self, cache: ThumbnailCache, max_threads: int | None = None):
         super().__init__()
         self._cache = cache
-        self._registry: dict[str, tuple[Path, int, int, int, tuple, int]] = {}
+        self._registry: dict[str, PhotoRecord] = {}
+        # #142: lustán értelmezett filters-láncok — kulcs a nyers
+        # filters= sztring, érték az (ops, crc32) pár
+        self._ops_cache: dict[str, tuple[tuple, int]] = {}
+        self._ops_lock = threading.Lock()
         self._active = 0
         self._active_lock = threading.Lock()
         self._memo = _FilteredThumbMemo()
@@ -172,18 +181,30 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         )
 
     def register_photos(self, photos: tuple[PhotoRecord, ...]) -> None:
-        registry = {}
-        for photo in photos:
-            ops = _parse_ops(photo)
-            registry[str(photo.id)] = (
-                Path(photo.folder_path) / photo.name,
-                photo.mtime_ns,
-                photo.size,
-                photo.rotate_steps,
-                ops,
-                _chain_crc(ops),
-            )
-        self._registry = registry
+        """#142: a regisztráció csak a (immutábilis) rekordokat jegyzi meg —
+        a filters= lánc parse-a LUSTA, először requestImage-kor fut (és az
+        eredmény lánconként cache-elődik), így 50k fotó regisztrálása is
+        olcsó marad."""
+        self._registry = {str(photo.id): photo for photo in photos}
+
+    def _resolved_ops(self, photo: PhotoRecord) -> tuple[tuple, int]:
+        """A kép (ops, crc32) párja lusta parse-szal (#142) — az azonos
+        filters= láncú képek osztoznak az eredményen. Szál-biztos: a pool
+        több szála is hívhatja."""
+        filters = photo.filters or ""
+        if not filters.strip():
+            return (), 0
+        with self._ops_lock:
+            cached = self._ops_cache.get(filters)
+        if cached is not None:
+            return cached
+        ops = _parse_ops(photo)
+        entry = (ops, _chain_crc(ops))
+        with self._ops_lock:
+            if len(self._ops_cache) >= _OPS_CACHE_CAPACITY:
+                self._ops_cache.clear()
+            self._ops_cache[filters] = entry
+        return entry
 
     def requestImageResponse(self, photo_id: str, requested_size) -> _ThumbResponse:
         """Aszinkron belépési pont (a Qt a főszálon hívja): a munka a
@@ -226,10 +247,13 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         """A kész (szerkesztett, forgatott) thumbnail; null-QImage, ha a
         forrás nem dekódolható — a hívó ebből csinál placeholdert."""
         # az URL-ben ?r=<lépés> cache-buster jöhet — az id az első rész
-        entry = self._registry.get(photo_id.split("?")[0])
-        if entry is None:
+        photo = self._registry.get(photo_id.split("?")[0])
+        if photo is None:
             return QImage()
-        path, mtime_ns, size_bytes, rotate, ops, chain_crc = entry
+        path = Path(photo.folder_path) / photo.name
+        mtime_ns, size_bytes = photo.mtime_ns, photo.size
+        rotate = photo.rotate_steps
+        ops, chain_crc = self._resolved_ops(photo)
         # #144: szűrt képnél előbb a memóriacache — találatnál a filters-
         # lánc, a lemez-dekód és a forgatás is kimarad
         memo_key = (str(path), mtime_ns, size_bytes, chain_crc, rotate)
