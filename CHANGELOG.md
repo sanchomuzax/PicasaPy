@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.27] – 2026-07-20
+
+### Hozzáadva
+- **Fokozatos, blokkolásmentes indexelés + lebegő „Importálás" panel (#209):**
+  nagy mappaszerkezet hozzáadásakor a képek mappánként, folyamatosan jelennek
+  meg (nem egy nagy blokkoló lépésben), a program végig használható marad;
+  a húzható panel mutatja az aktuális mappát és a haladást — a Picasa 3
+  import-élménye.
+- **Teljesítmény-monitor (#211):** a Súgó menüből kapcsolható lebegő panel
+  (CPU, memória, aktuális tevékenység) + „Diagnosztika mentése" gomb — a
+  mentett naplófájl issue-hoz csatolva célzott hibakeresést tesz lehetővé.
+  Kikapcsolva nulla többletköltség; a napló nem tartalmaz teljes
+  útvonalakat.
+
 ## [0.4.26] – 2026-07-20
 
 ### Javítva / Teljesítmény
