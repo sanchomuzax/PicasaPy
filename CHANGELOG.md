@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.26] – 2026-07-20
+
+### Javítva / Teljesítmény
+- **Csillag/felirat/forgatás nem fagyaszt (#141):** az ini-írás és az
+  index-frissítés háttérszálon fut, a mappa-resync helyett célzott egy-soros
+  frissítéssel; a rács csak az érintett sort frissíti, a görgetés nem ugrik.
+  NAS-mappában a több másodperces kattintás-fagyás megszűnt.
+- **Watcher-bekötés (#143 lezárás):** fájlváltozásnál mappa-pontos, gyors
+  szinkron fut a teljes részfa újrabejárása helyett; az adatbázis-foglaltság
+  hibája sem némítja el a szinkront.
+- **Export-lezárás (#136):** a szerkesztések (filters=) ténylegesen beleégnek
+  az exportált fájlba, és a sikertelen fájlok neve+oka megjelenik az
+  eredmény-ablakban.
+
+### Hozzáadva
+- **„Összes effektus másolása/beillesztése" (#152 lezárás):** a Kép menü két
+  pontja élesítve — egy kép összes effektje átvihető több kijelölt képre,
+  visszavonással.
+
 ## [0.4.25] – 2026-07-20
 
 ### Hozzáadva
