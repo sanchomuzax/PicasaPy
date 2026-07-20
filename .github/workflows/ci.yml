@@ -1,9 +1,17 @@
 name: CI
 
 on:
+  # A tisztán dokumentációs (docs/, *.md) változások nem futtatnak CI-t:
+  # ékezet-/szövegjavítás, MEMORY.md stb. a program futására nincs hatással.
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
 jobs:
   test:
