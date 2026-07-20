@@ -303,3 +303,13 @@ class TestFiltersSync:
         with open_index(tmp_path / "i.db") as conn:
             sync_tree(conn, lib)
             assert photos_in_folder(conn, lib)[0].filters is None
+
+
+class TestSyncTreeExclude:
+    """#145: FRExcludeFolders.txt — a kizárt mappa (és alfái) ne kerüljön
+    az indexbe."""
+
+    def test_excluded_folder_not_indexed(self, conn, library):
+        excluded = library / "nyaralas"
+        sync_tree(conn, library, exclude=(excluded,))
+        assert photos_in_folder(conn, excluded) == ()

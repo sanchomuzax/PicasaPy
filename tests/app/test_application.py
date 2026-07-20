@@ -20,6 +20,16 @@ class TestResolveRoots:
         monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
         assert application._resolve_roots(["prog"]) == ()
 
+    def test_watched_folders_lowercase_variant(self, tmp_path, monkeypatch):
+        # #145: élesben a fájlnév kisbetűsen is előfordul.
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+        config = tmp_path / "picasapy"
+        config.mkdir()
+        (config / "watchedfolders.txt").write_text(
+            "/mnt/nas/fotok\n", encoding="utf-8"
+        )
+        assert application._resolve_roots(["prog"]) == ("/mnt/nas/fotok",)
+
 
 class TestDialogPolicy:
     def test_windows_uses_native_dialogs(self):

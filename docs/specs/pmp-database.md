@@ -19,6 +19,13 @@ a `.picasa.ini` réteg biztosítja (a Picasa is abból építi újra a saját db
 - `WatchedFolders.txt`: soronként egy abszolút útvonal („Scan Always" mappák).
 - Az útvonalak **abszolútak** → importnál útvonal-átíró (path remap) logika kell
   (más gép/meghajtó/OS).
+- **#145:** mindkét fájl élesben kisbetűs néven is előfordul
+  (`watchedfolders.txt`, `frexcludefolders.txt`) — a PicasaPy kis-nagybetű-
+  függetlenül keresi meg őket (`picasapy.scanner.config_files`). A
+  `FRExcludeFolders.txt` beolvasása és a benne felsorolt mappák (és alfáik)
+  kiszűrése a `picasapy.scanner.exclude` / `scan_tree`/`sync_tree` modulokban
+  készült el; a PicasaPy 1. fázisban (arcfelismerés hiányában) ezt teljes
+  indexelés-kizárásként értelmezi, nem csak arcfelismerés-kizárásként.
 
 ## PMP formátum (oszlop-alapú bináris)
 
