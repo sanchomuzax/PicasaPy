@@ -5,6 +5,31 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.28] – 2026-07-21
+
+### Javítva
+- **Mappa-eltávolítás futó szkennelés közben (#216, éles hibajelentés):** az
+  eltávolítás azonnal megszakítja a szkennelést, az eltávolított mappa képei
+  rögtön eltűnnek, a kósza háttér-jelzések elnyelődnek, az Importálás-panel
+  nem ragad be.
+- **Videó utáni első kép szerkeszthetősége (#218, éles hibajelentés):** a
+  videóról képre lapozva a szerkesztő azonnal működik, nem kell egy másik
+  képre átlapozni.
+- A teljes felület magyar: az új panelek és dialógusok (effekt-fülek,
+  export, Importálás-panel, teljesítmény-monitor, Picasa-átvétel) szövegei
+  lefordítva.
+
+### Teljesítmény
+- **Rács-virtualizálás (#142):** nagy mappáknál a rács csak a látható
+  cellákat építi fel (3000 helyett ~42), a teljes nézet-frissítés
+  3,4 mp-ről 10 ms-ra csökkent, a mappaváltás pedig nem olvassa újra a
+  teljes indexet, ha nem változott — RPi5-en is sima görgetés.
+
+### Hozzáadva
+- **Kattintható diagnosztika-útvonal (#217):** a teljesítmény-monitoron a
+  mentett napló útvonalára kattintva megnyílik a mappája (Windowson a fájl
+  kijelölésével).
+
 ## [0.4.27] – 2026-07-20
 
 ### Hozzáadva

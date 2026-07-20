@@ -92,7 +92,11 @@ class TestCacheIntegration:
         root = tmp_path / "cache"
         _make_entry(root, "aa", "regi.jpg", 100, age_seconds=2000)
         _make_entry(root, "bb", "uj.jpg", 100, age_seconds=1000)
-        ThumbnailCache(root, size=64, max_bytes=100)
+        cache = ThumbnailCache(root, size=64, max_bytes=100)
+        # Determinasztikus várakozás: a szál bevárása kiveszi az időzítés-
+        # függő flakiness-t (terhelt gépen az 5 mp-es poll kevés volt).
+        assert cache._prune_thread is not None
+        cache._prune_thread.join(30)
         deadline = time.time() + 5
         while time.time() < deadline:
             if len(list(root.rglob("*.jpg"))) == 1:
