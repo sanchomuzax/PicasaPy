@@ -5,6 +5,27 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.20] – 2026-07-20
+
+### Javítva
+- **crop64-lánc rossz kivágása (#130):** a `filters=` láncbeli `crop64` a spec
+  szerint csak szerkesztési történet — a tényleges vágást a `crop=` kulcs
+  (a lánc effektív, utolsó crop64-e) adja, az eredeti képméretre. A render
+  eddig a lánc minden crop64-ét sorban, kaszkádolva alkalmazta → rossz
+  kivágás a több crop64-es valódi Picasa-fájlokon. Mostantól az effektusok a
+  teljes képre futnak, a vágás egyszer, a végén.
+- **Legacy (nem UTF-8) `.picasa.ini` (#133):** a CP1250/latin-1 fájlok három
+  hibája javítva — a U+0085/U+2028 kódpont nem töri ketté a sort
+  (fantomszekció); ékezetes szöveg legacy fájlba mentése nem omlik el
+  (UTF-8-ra váltás, végső esetben explicit `IniSaveError`); az IPTC 1:90
+  karakterkészlet-jelölő figyelembevétele csökkenti a mojibake-et.
+- **Döntés-csúszka kinullázta a mentett tilt-et (#131):** a döntés-eszköz a
+  mentett értékről indul, és aktív eszköz melletti lapozás nem írja felül az
+  új kép mentett döntését az előnézetben.
+- **Feed-pozíció elveszett a nézőből visszatérve (#173):** a mappa végén álló
+  kép megnyitása után visszalépve a feed a megnyitás előtti görgetési
+  pozíción marad, nem ugrik a mappa elejére.
+
 ## [0.4.19] – 2026-07-20
 
 ### Javítva
