@@ -394,6 +394,39 @@ def _has_indexed_folders(conn: sqlite3.Connection, root: Path) -> bool:
     return conn.execute(f"{query} LIMIT 1", params).fetchone() is not None
 
 
+# #141: fehérlista — csak ismert, biztonságos oszlopokra engedjük a célzott
+# UPDATE-et (csillag/felirat/forgatás gyors-útja, teljes resync nélkül).
+_TARGETED_UPDATE_COLUMNS = {
+    "star",
+    "hidden",
+    "caption_ini",
+    "caption_file",
+    "keywords_ini",
+    "keywords_file",
+    "rotate_steps",
+}
+
+
+def update_photo_fields(conn: sqlite3.Connection, photo_id: int, **fields) -> None:
+    """Egy fotó indexsorának célzott, egy-soros UPDATE-je (#141).
+
+    A csillag/felirat/forgatás gyors-útja: amikor az új érték már ismert (a
+    hívó épp most írta az inibe/IPTC-be), nincs szükség a teljes mappa-
+    resyncre (`sync_tree`/`sync_folder`) — egyetlen UPDATE elég, ami az
+    FTS-triggert is csak az érintett sorra sütteti el."""
+    if not fields:
+        return
+    unknown = set(fields) - _TARGETED_UPDATE_COLUMNS
+    if unknown:
+        raise ValueError(f"Nem célzott-frissíthető oszlop(ok): {sorted(unknown)}")
+    columns = ", ".join(f"{name} = ?" for name in fields)
+    conn.execute(
+        f"UPDATE photos SET {columns} WHERE id = ?",
+        (*fields.values(), photo_id),
+    )
+    conn.commit()
+
+
 def remove_root(conn: sqlite3.Connection, root: str | Path) -> None:
     """Egy gyökér teljes eltávolítása az indexből (Mappakezelő:
     „Eltávolítás a Picasából"). Explicit photos-törlés a folders előtt,

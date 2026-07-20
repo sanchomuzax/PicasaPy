@@ -76,6 +76,20 @@ def _viewer_image(window):
     return image
 
 
+def _do_photo_op(controller, qt_app, action) -> None:
+    """#141: a csillag/felirat/forgatás háttérszálon fut (NAS-írás +
+    célzott index-UPDATE) — megvárja a `photoOpFinished` jelzést, majd
+    lefuttat egy processEvents-et, hogy a QML-kötések is frissüljenek."""
+    from PySide6.QtCore import QEventLoop, QTimer
+
+    loop = QEventLoop()
+    controller.photoOpFinished.connect(loop.quit)
+    action()
+    QTimer.singleShot(2000, loop.quit)
+    loop.exec()
+    qt_app.processEvents()
+
+
 class TestVersionLabel:
     def test_header_shows_version_string(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
@@ -94,15 +108,14 @@ class TestViewerRotation:
         viewer = window.findChild(QObject, "photoViewer")
         viewer.setProperty("currentIndex", 0)
         qt_app.processEvents()
-        controller.rotateRight(0)
-        qt_app.processEvents()
+        _do_photo_op(controller, qt_app, lambda: controller.rotateRight(0))
         image = _viewer_image(window)
         assert image.property("iniSteps") == 1
         assert image.property("rotation") == 90
 
     def test_rotation_follows_navigation(self, qml_app, qt_app):
         window, controller, _ = qml_app
-        controller.rotateRight(0)  # a.jpg elforgatva, b.jpg nem
+        _do_photo_op(controller, qt_app, lambda: controller.rotateRight(0))  # a.jpg elforgatva, b.jpg nem
         window.setProperty("viewerOpen", True)
         viewer = window.findChild(QObject, "photoViewer")
         viewer.setProperty("currentIndex", 0)
@@ -194,8 +207,7 @@ class TestCaptionEditing:
         qt_app.processEvents()
         field = window.findChild(QObject, "captionField")
         assert field is not None, "captionField nem található"
-        controller.setCaption(0, "teszt felirat")
-        qt_app.processEvents()
+        _do_photo_op(controller, qt_app, lambda: controller.setCaption(0, "teszt felirat"))
         assert field.property("text") == "teszt felirat"
 
     def test_caption_field_empty_for_other_photo(self, qml_app, qt_app):
@@ -204,8 +216,7 @@ class TestCaptionEditing:
         viewer = window.findChild(QObject, "photoViewer")
         viewer.setProperty("currentIndex", 0)
         qt_app.processEvents()
-        controller.setCaption(0, "teszt felirat")
-        qt_app.processEvents()
+        _do_photo_op(controller, qt_app, lambda: controller.setCaption(0, "teszt felirat"))
         viewer.setProperty("currentIndex", 1)
         qt_app.processEvents()
         field = window.findChild(QObject, "captionField")
@@ -369,8 +380,7 @@ class TestTrayStar:
         window, controller, _ = qml_app
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
-        controller.toggleStar(0)
-        qt_app.processEvents()
+        _do_photo_op(controller, qt_app, lambda: controller.toggleStar(0))
         star_label = window.findChild(QObject, "trayStarLabel")
         assert star_label is not None
         assert star_label.property("color").name() == "#f5c518"  # arany

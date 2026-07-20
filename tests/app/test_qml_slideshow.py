@@ -34,6 +34,17 @@ def _wait_ms(qt_app, ms):
     qt_app.processEvents()
 
 
+def _invoke_photo_op(qt_app, controller, obj, name, *args):
+    """#141: a vetítés közbeni forgatás/csillag háttérszálon fut (NAS-írás
+    + célzott index-UPDATE) — az _invoke utáni processEvents nem elég,
+    meg kell várni a `photoOpFinished` jelzést."""
+    loop = QEventLoop()
+    controller.photoOpFinished.connect(loop.quit)
+    _invoke(qt_app, obj, name, *args)
+    QTimer.singleShot(2000, loop.quit)
+    loop.exec()
+
+
 class TestSlideshowBasics:
     def test_start_shows_and_timer_runs(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
@@ -132,18 +143,18 @@ class TestSlideshowActions:
     def test_rotate_during_show_writes_ini(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app
         show = _start(window, qt_app, 0)
-        _invoke(qt_app, show, "rotateCurrent", 1)
+        _invoke_photo_op(qt_app, controller, show, "rotateCurrent", 1)
         assert controller.photos.rotateAt(0) == 1
-        _invoke(qt_app, show, "rotateCurrent", -1)
+        _invoke_photo_op(qt_app, controller, show, "rotateCurrent", -1)
         assert controller.photos.rotateAt(0) == 0
         _invoke(qt_app, show, "stop")
 
     def test_star_during_show(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app
         show = _start(window, qt_app, 0)
-        _invoke(qt_app, show, "starCurrent")
+        _invoke_photo_op(qt_app, controller, show, "starCurrent")
         assert controller.photos.starAt(0) is True
-        _invoke(qt_app, show, "starCurrent")
+        _invoke_photo_op(qt_app, controller, show, "starCurrent")
         assert controller.photos.starAt(0) is False
         _invoke(qt_app, show, "stop")
 
