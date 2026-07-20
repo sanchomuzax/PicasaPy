@@ -123,7 +123,10 @@ class AppController(QObject):
         self._sync_jobs = 0
         self._thumb_active = 0
         self._busy = False
-        self.syncFinished.connect(self._reload)
+        # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
+        # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
+        # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
+        self.syncFinished.connect(self._reload_after_sync)
         self.syncFinished.connect(self._on_sync_job_done)
         self.watcherDirty.connect(self._on_folders_dirty)
         provider.activeCountChanged.connect(self._on_thumb_active)
@@ -1088,7 +1091,15 @@ class AppController(QObject):
                 self.syncFailed.emit("; ".join(errors))
             self.syncFinished.emit()
 
-    def _reload(self) -> None:
+    @Slot()
+    def _reload_after_sync(self) -> None:
+        """A háttér-sync (syncFinished) utáni frissítés: a görgetési pozíció
+        MEGŐRZÉSÉVEL (#173) — folder-módban NEM emittál folderActivated-et,
+        így a QML nem görget a mappa tetejére (scrollToGroup). A nézőből
+        visszatérve a feed így a megnyitás előtti pozícióján marad."""
+        self._reload(preserve_scroll=True)
+
+    def _reload(self, preserve_scroll: bool = False) -> None:
         # a háttér-sync külső ini-változást is hozhat — a leírás-cache
         # elavulhatott, a fejlécek olvassák újra
         self._descriptions.clear()
@@ -1109,7 +1120,14 @@ class AppController(QObject):
             # a selectFolder eldobná, ezért csak a nézetet frissítjük.
             self._refresh_view()
         elif self._current_folder:
-            self.selectFolder(self._current_folder)
+            # #173: háttér-sync után csak a feedet frissítjük (folderActivated
+            # nélkül) — a scroll-to-top csak explicit mappa-választásé. Induláskor
+            # (preserve_scroll=False) viszont a selectFolder a visszaállított
+            # mappához görget, ahogy eddig.
+            if preserve_scroll:
+                self._refresh_view()
+            else:
+                self.selectFolder(self._current_folder)
         else:
             self._update_status(())
             self.restoreSession()
