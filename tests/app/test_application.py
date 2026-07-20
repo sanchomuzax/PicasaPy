@@ -207,6 +207,99 @@ class TestTranslator:
         assert application._install_translator(qt_app) is None
 
 
+class TestWindowsAppId:
+    """#67: Windows taskbar-ikon — explicit AppUserModelID-beállítás."""
+
+    def test_sets_app_id_on_windows_win32(self, monkeypatch):
+        # A SetCurrentProcessExplicitAppUserModelID hívása Win32 platformon
+        calls = []
+
+        def mock_set_app_id(app_id):
+            calls.append(app_id)
+
+        class MockShell32:
+            SetCurrentProcessExplicitAppUserModelID = staticmethod(
+                mock_set_app_id
+            )
+
+        class MockWindll:
+            shell32 = MockShell32()
+
+        # Mock az application.sys.platform-ot és a ctypes.windll-t
+        monkeypatch.setattr(application.sys, "platform", "win32")
+        monkeypatch.setattr(application, "ctypes", type("MockCtypes", (), {
+            "windll": MockWindll()
+        })())
+
+        application._set_windows_app_id()
+
+        assert calls == ["PicasaPy.PicasaPy"]
+
+    def test_skips_non_windows_platforms(self, monkeypatch):
+        # Linuxon/macOS-en nem csinál semmit
+        calls = []
+
+        def mock_set_app_id(app_id):
+            calls.append(app_id)
+
+        class MockShell32:
+            SetCurrentProcessExplicitAppUserModelID = staticmethod(
+                mock_set_app_id
+            )
+
+        class MockWindll:
+            shell32 = MockShell32()
+
+        monkeypatch.setattr(application.sys, "platform", "linux")
+        monkeypatch.setattr(application, "ctypes", type("MockCtypes", (), {
+            "windll": MockWindll()
+        })())
+
+        application._set_windows_app_id()
+
+        assert calls == []
+
+    def test_handles_attribute_error_gracefully(self, monkeypatch):
+        # Régi Windows-verzió vagy hiányzó API — csendben kimarad
+        monkeypatch.setattr(application.sys, "platform", "win32")
+
+        class MockShell32:
+            pass
+
+        class MockWindll:
+            shell32 = MockShell32()
+
+        monkeypatch.setattr(application, "ctypes", type("MockCtypes", (), {
+            "windll": MockWindll()
+        })())
+
+        # Nem dobjuk, csak csendben megálljunk
+        application._set_windows_app_id()  # nem dobhat
+
+    def test_handles_os_error_gracefully(self, monkeypatch):
+        # Nem admin-felhasználó vagy rendszer-hiba — csendben kimarad
+        calls = []
+
+        def mock_set_app_id(app_id):
+            calls.append(app_id)
+            raise OSError("Access denied")
+
+        class MockShell32:
+            SetCurrentProcessExplicitAppUserModelID = staticmethod(
+                mock_set_app_id
+            )
+
+        class MockWindll:
+            shell32 = MockShell32()
+
+        monkeypatch.setattr(application.sys, "platform", "win32")
+        monkeypatch.setattr(application, "ctypes", type("MockCtypes", (), {
+            "windll": MockWindll()
+        })())
+
+        application._set_windows_app_id()  # nem dobhat
+
+
 class TestWireFileops:
     """#15: a fájlműveletek utáni célzott resync bekötése."""
 

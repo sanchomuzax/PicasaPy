@@ -6,6 +6,7 @@ Könyvtár-gyökerek: parancssori argumentumok, vagy a Picasa-paritású
 
 from __future__ import annotations
 
+import ctypes
 import math
 import os
 import sys
@@ -13,7 +14,6 @@ from pathlib import Path
 
 import shutil
 import subprocess
-import sys
 
 from PySide6.QtCore import QLocale, QLockFile, Qt, QTranslator
 from PySide6.QtGui import QGuiApplication, QIcon
@@ -128,6 +128,30 @@ def _acquire_instance_lock(data_dir: Path) -> QLockFile | None:
     return None
 
 
+def _set_windows_app_id() -> None:
+    """Windows taskbar-ikon: explicit AppUserModelID-beállítás (#67).
+
+    Windows alatt, ha az alkalmazás python.exe/pythonw.exe-ből fut (saját .exe
+    nélkül), a taskbar az értelmezőhöz köti a csoportosítást és az ikont,
+    hacsak nincs explicit AppUserModelID beállítva. Ez az API csak Windowson
+    érhető el; Linuxon/macOS-en nincs hatása.
+
+    A hívás a QGuiApplication indítása ELŐTT kell történjen, hogy a taskbar-
+    ikon azonnal helyesen jelenjen meg.
+    """
+    if sys.platform != "win32":
+        return  # Csak Windowson van értelme
+
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "PicasaPy.PicasaPy"
+        )
+    except (AttributeError, OSError):
+        # AttributeError: régi Windows-verzió vagy hiányzó API
+        # OSError: nem admin-felhasználó vagy rendszer-hiba — csendben kimarad
+        pass
+
+
 def _install_desktop_entry() -> None:
     """Asztali bejegyzés + ikon telepítése (~/.local/share) — Waylanden a
     tálca az app_id ↔ .desktop párosításból kapja az ikont. Idempotens."""
@@ -236,6 +260,9 @@ def run(argv: list[str]) -> int:
             Qt.ApplicationAttribute.AA_DontUseNativeDialogs
         )
     QQuickStyle.setStyle("Fusion")
+
+    # Windows taskbar-ikon: explicit AppUserModelID-beállítás (#67)
+    _set_windows_app_id()
 
     app = QGuiApplication(argv)
     app.setApplicationName("PicasaPy")
