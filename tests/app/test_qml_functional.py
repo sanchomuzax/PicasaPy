@@ -1095,6 +1095,46 @@ class TestHistogramBoxWiring:
             edit.property("histogram")["r"]
         )
 
+    def test_histogram_curve_is_populated_immediately_on_open(self, qml_app, qt_app):
+        """#228: megnyitáskor AZONNAL nem-üres a görbe (nincs csúszka-mozdulat)."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        box = window.findChild(QObject, "viewerHistogramBox")
+        histogram = box.property("histogramData")
+        assert any(v > 0.0 for v in histogram["r"]), "hisztogram üres megnyitáskor"
+
+    def test_histogram_canvas_actually_paints_without_slider_interaction(
+        self, qml_app, qt_app
+    ):
+        """#228: nem elég, hogy a kötött adat helyes — a Canvasnak TÉNYLEG
+        le is kell futnia (paintCount > 0) csúszka-mozdulat nélkül, mert a
+        korábbi hiba a rajzolás kimaradásában jelentkezett, nem a kötésben."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        canvas = window.findChild(QObject, "histogramCanvas")
+        assert canvas is not None, "histogramCanvas nem található"
+        assert canvas.property("paintCount") > 0, "a Canvas nem rajzolt automatikusan"
+
+    def test_first_histogram_paint_is_not_deferred_to_the_debounce_timer(
+        self, qml_app, qt_app
+    ):
+        """#228: a KEZDŐ rajzolás azonnali (nem a #25-ös élő-frissítési
+        debounce-Timerre vár) — időzítéstől függetlenül ellenőrizhető: a
+        debounce-Timer a kezdő megnyitáskor sosem indul el, csak a
+        KÉSŐBBI (pl. csúszka-húzás közbeni) frissítéseknél."""
+        window, _, _ = qml_app
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        # szándékosan NINCS qt_app.processEvents() e sor előtt/után — a
+        # currentIndex-beállítás szinkron QML-kötéseket vált ki, a Timer
+        # running állapota még a valós eseményhurok-kör előtt vizsgálható
+        viewer.setProperty("currentIndex", 0)
+        redraw_timer = window.findChild(QObject, "histogramRedrawTimer")
+        assert redraw_timer is not None, "histogramRedrawTimer nem található"
+        assert (
+            redraw_timer.property("running") is False
+        ), "a kezdő rajzolás a debounce-Timerre várt, nem azonnali"
+        qt_app.processEvents()
 
 class TestSearchSuggestionsWiring:
     def test_refresh_fills_box_from_controller(self, qml_app, qt_app):

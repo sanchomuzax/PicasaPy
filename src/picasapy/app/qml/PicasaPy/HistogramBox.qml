@@ -15,13 +15,38 @@ Rectangle {
     color: "#f2f2f0"
     border.color: Theme.chromeBorder
 
-    // csúszka-húzás közben a histogramData gyakran (minden mozzanatra)
-    // változhat — a Canvas újrarajzolását rövid debounce-szal ritkítjuk,
-    // hogy az élő frissítés ne akaszthassa a GUI-t (#25)
-    onHistogramDataChanged: redrawTimer.restart()
+    // #228 GYÖKÉROK: a doboz a nézőben MINDIG a rejtett (visible: false)
+    // állapotból indul — ilyenkor a PhotoViewer onVisibleChanged ága
+    // egy üres endEdit()-hisztogrammal FUT LE MÁR AZ ALKALMAZÁS INDÍTÁSAKOR
+    // is (üres → üres, nincs tényleges adat). Egy egyszerű "az első
+    // változásra rajzolj azonnal" szabály ezt az üres, "semmilyen" váltást
+    // sütné el azonnal, és a KÉP MEGNYITÁSAKORI, TÉNYLEGES adat utána már
+    // a debounce-Timerre esne — pont úgy, ahogy a hibajelentés leírja
+    // (görbe csak az első csúszka-mozdulat UTÁN jelenik meg, mert az a
+    // frissítés a KÖVETKEZŐ debounce-ablakban fut le). A helyes feltétel
+    // tehát nem "bármilyen változás", hanem "üresből valós adatra váltás":
+    // ez mindig az azonnali (nem debounce-olt) rajzolást váltja ki, EXIF-
+    // től és a kép megnyitási sorrendtől függetlenül. Csúszka-húzás közben
+    // a histogramData ezután is gyakran (minden mozzanatra) változhat — az
+    // EZUTÁNI Canvas-újrarajzolásokat rövid debounce-szal ritkítjuk, hogy
+    // az élő frissítés ne akaszthassa a GUI-t (#25).
+    function _hasRealData(data) {
+        return !!(data && data.r && data.r.some(function (v) { return v > 0 }))
+    }
+    property bool _paintedRealData: false
+    onHistogramDataChanged: {
+        if (!_paintedRealData && _hasRealData(histogramData)) {
+            _paintedRealData = true
+            histCanvas.requestPaint()
+        } else {
+            if (!_hasRealData(histogramData)) _paintedRealData = false
+            redrawTimer.restart()
+        }
+    }
 
     Timer {
         id: redrawTimer
+        objectName: "histogramRedrawTimer"
         interval: 120
         onTriggered: histCanvas.requestPaint()
     }
@@ -43,7 +68,22 @@ Rectangle {
                 { key: "b", color: "rgba(68, 138, 253, 0.8)" }
             ]
 
+            // #228: a requestPaint() a scene graph inicializálása előtt
+            // (available === false) elveszhet — a canvas ilyenkor üres
+            // marad, amíg valami MÁS (pl. csúszka-mozdulat) újra ki nem
+            // váltja a rajzolást. Amint elérhetővé válik, pótoljuk a
+            // (esetleg elveszett) kezdő rajzolást a MÁR aktuális adatból —
+            // ez a #228-as hiba MÁSODIK, egymást erősítő oka.
+            onAvailableChanged: if (available) requestPaint()
+
+            // tesztelhetőség (#228): a funkcionális teszt ebből ellenőrzi,
+            // hogy tényleg lefutott-e egy rajzolás, nem csak a kötött adat
+            // a helyes — a korábbi hiba a kötésben nem, csak a rajzolás
+            // kimaradásában jelentkezett.
+            property int paintCount: 0
+
             onPaint: {
+                paintCount += 1
                 var ctx = getContext("2d")
                 ctx.reset()
                 ctx.clearRect(0, 0, width, height)
