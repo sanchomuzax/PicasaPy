@@ -1103,38 +1103,40 @@ class TestHistogramBoxWiring:
         histogram = box.property("histogramData")
         assert any(v > 0.0 for v in histogram["r"]), "hisztogram üres megnyitáskor"
 
-    def test_histogram_canvas_actually_paints_without_slider_interaction(
-        self, qml_app, qt_app
-    ):
-        """#228: nem elég, hogy a kötött adat helyes — a Canvasnak TÉNYLEG
-        le is kell futnia (paintCount > 0) csúszka-mozdulat nélkül, mert a
-        korábbi hiba a rajzolás kimaradásában jelentkezett, nem a kötésben."""
+    def test_histogram_bars_render_with_nonzero_height(self, qml_app, qt_app):
+        """#232: a hisztogram deklaratív téglalap-oszlopokként rajzolódik
+        (nem QML Canvas). Megnyitáskor, csúszka-mozdulat nélkül is van
+        látható (nem-nulla magasságú) oszlop a rajzterületen. Ez erősebb
+        garancia a korábbi Canvas-`paintCount`-nál: a tényleges vizuális
+        kimenet meglétét ellenőrzi (nem csak azt, hogy a rajzolás elindult),
+        és nincs benne a Canvas time-of-check/paint versenyhelyzete, ami a
+        #228 után is üresen hagyta a görbét az éles (Windows) ablakban."""
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
-        canvas = window.findChild(QObject, "histogramCanvas")
-        assert canvas is not None, "histogramCanvas nem található"
-        assert canvas.property("paintCount") > 0, "a Canvas nem rajzolt automatikusan"
-
-    def test_first_histogram_paint_is_not_deferred_to_the_debounce_timer(
-        self, qml_app, qt_app
-    ):
-        """#228: a KEZDŐ rajzolás azonnali (nem a #25-ös élő-frissítési
-        debounce-Timerre vár) — időzítéstől függetlenül ellenőrizhető: a
-        debounce-Timer a kezdő megnyitáskor sosem indul el, csak a
-        KÉSŐBBI (pl. csúszka-húzás közbeni) frissítéseknél."""
-        window, _, _ = qml_app
-        window.setProperty("viewerOpen", True)
-        viewer = window.findChild(QObject, "photoViewer")
-        # szándékosan NINCS qt_app.processEvents() e sor előtt/után — a
-        # currentIndex-beállítás szinkron QML-kötéseket vált ki, a Timer
-        # running állapota még a valós eseményhurok-kör előtt vizsgálható
-        viewer.setProperty("currentIndex", 0)
-        redraw_timer = window.findChild(QObject, "histogramRedrawTimer")
-        assert redraw_timer is not None, "histogramRedrawTimer nem található"
-        assert (
-            redraw_timer.property("running") is False
-        ), "a kezdő rajzolás a debounce-Timerre várt, nem azonnali"
         qt_app.processEvents()
+        plot = window.findChild(QObject, "histogramPlot")
+        assert plot is not None, "histogramPlot nem található"
+        assert plot.property("height") > 0, "a rajzterület magassága nulla"
+        # a Repeater-delegate oszlopok VIZUÁLIS gyerekek (nem QObject-
+        # gyerekek), ezért childItems()-en át járjuk be őket rekurzívan
+        heights: list[float] = []
+
+        def _walk(item):
+            for child in item.childItems():
+                heights.append(child.property("height"))
+                _walk(child)
+
+        _walk(plot)
+        assert any((h or 0) > 0 for h in heights), "nincs látható hisztogram-oszlop"
+
+    def test_histogram_box_has_title(self, qml_app, qt_app):
+        """#232: a doboz a referencia szerinti címet viseli (a placeholder
+        helyett élő tartalom)."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        title = window.findChild(QObject, "histogramTitle")
+        assert title is not None, "histogramTitle nem található"
+        assert title.property("text") != ""
 
 class TestSearchSuggestionsWiring:
     def test_refresh_fills_box_from_controller(self, qml_app, qt_app):

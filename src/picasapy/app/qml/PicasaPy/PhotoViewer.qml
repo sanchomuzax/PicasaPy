@@ -487,7 +487,7 @@ Rectangle {
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left; anchors.right: parent.right
                     anchors.margins: 10
-                    height: 90
+                    height: 150
                     histogramData: editController.histogram
                     cameraSummary: editController.cameraSummary
                 }

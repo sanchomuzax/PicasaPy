@@ -1,9 +1,21 @@
 import QtQuick
 
-// RGB-hisztogram + fényképezőgép-adat doboz (#25): a néző bal alsó,
-// korábban placeholder dobozának élesítése, Picasa-mintára. Buta komponens
-// — a hisztogramot és az EXIF-sort kívülről kapja (EditController.histogram
+// RGB-hisztogram + fényképezőgép-adat doboz (#25, #228, #232): a néző
+// bal alsó dobozának élesítése, Picasa-mintára. Buta komponens — a
+// hisztogramot és az EXIF-sort kívülről kapja (EditController.histogram
 // / cameraSummary, ld. edit_controller.py).
+//
+// #232 GYÖKÉROK: a korábbi (#25/#228) verzió QML `Canvas`-t használt,
+// `requestPaint()`-tel. A Canvas a valós (GPU-hátterű, Windows) ablakban
+// nem-determinisztikusan üresen maradt: a `requestPaint()` a scene graph
+// inicializálása/threaded render loop időzítésén elveszhetett, és a vékony
+// 1px-es áttetsző vonalak amúgy is alig látszottak. A megjelenített adat
+// és a `paintCount>0` offscreen tesztben helyes volt, élesben mégsem
+// rajzolódott görbe. Ezért a Canvas-t deklaratív, mindig-renderelő
+// megoldásra cseréltük: vödrönként egy-egy `Rectangle`-oszlop (scene graph
+// csomópont) — nincs `requestPaint`, nincs időzítés; amint a kötött adat
+// vagy a méret érvényes, a kötések maguktól újraértékelődnek és az oszlopok
+// megjelennek. A kitöltött oszlopok ráadásul a referencia-kinézetet is hozzák.
 Rectangle {
     id: box
     objectName: "histogramBox"
@@ -12,98 +24,67 @@ Rectangle {
     property var histogramData: ({ r: [], g: [], b: [] })
     property string cameraSummary: ""
 
-    color: "#f2f2f0"
+    readonly property int bucketCount: 256
+
+    color: Theme.contentPanel
     border.color: Theme.chromeBorder
-
-    // #228 GYÖKÉROK: a doboz a nézőben MINDIG a rejtett (visible: false)
-    // állapotból indul — ilyenkor a PhotoViewer onVisibleChanged ága
-    // egy üres endEdit()-hisztogrammal FUT LE MÁR AZ ALKALMAZÁS INDÍTÁSAKOR
-    // is (üres → üres, nincs tényleges adat). Egy egyszerű "az első
-    // változásra rajzolj azonnal" szabály ezt az üres, "semmilyen" váltást
-    // sütné el azonnal, és a KÉP MEGNYITÁSAKORI, TÉNYLEGES adat utána már
-    // a debounce-Timerre esne — pont úgy, ahogy a hibajelentés leírja
-    // (görbe csak az első csúszka-mozdulat UTÁN jelenik meg, mert az a
-    // frissítés a KÖVETKEZŐ debounce-ablakban fut le). A helyes feltétel
-    // tehát nem "bármilyen változás", hanem "üresből valós adatra váltás":
-    // ez mindig az azonnali (nem debounce-olt) rajzolást váltja ki, EXIF-
-    // től és a kép megnyitási sorrendtől függetlenül. Csúszka-húzás közben
-    // a histogramData ezután is gyakran (minden mozzanatra) változhat — az
-    // EZUTÁNI Canvas-újrarajzolásokat rövid debounce-szal ritkítjuk, hogy
-    // az élő frissítés ne akaszthassa a GUI-t (#25).
-    function _hasRealData(data) {
-        return !!(data && data.r && data.r.some(function (v) { return v > 0 }))
-    }
-    property bool _paintedRealData: false
-    onHistogramDataChanged: {
-        if (!_paintedRealData && _hasRealData(histogramData)) {
-            _paintedRealData = true
-            histCanvas.requestPaint()
-        } else {
-            if (!_hasRealData(histogramData)) _paintedRealData = false
-            redrawTimer.restart()
-        }
-    }
-
-    Timer {
-        id: redrawTimer
-        objectName: "histogramRedrawTimer"
-        interval: 120
-        onTriggered: histCanvas.requestPaint()
-    }
+    radius: 3
 
     Column {
         anchors.fill: parent
-        anchors.margins: 6
-        spacing: 4
+        anchors.margins: 8
+        spacing: 5
 
-        Canvas {
-            id: histCanvas
-            objectName: "histogramCanvas"
+        Text {
+            id: titleLabel
+            objectName: "histogramTitle"
             width: parent.width
-            height: parent.height - cameraLabel.implicitHeight - 4
+            text: qsTr("Histogram and camera information")
+            font.pixelSize: Theme.fontSize
+            font.bold: true
+            color: Theme.ink
+            elide: Text.ElideRight
+        }
 
-            readonly property var channels: [
-                { key: "r", color: "rgba(224, 74, 63, 0.8)" },
-                { key: "g", color: "rgba(13, 171, 98, 0.8)" },
-                { key: "b", color: "rgba(68, 138, 253, 0.8)" }
-            ]
+        // A hisztogram rajzterülete: a három csatorna egymásra rajzolva,
+        // áttetsző kitöltésű oszlopokkal. A magasságot a fennmaradó helyből
+        // számoljuk (cím és EXIF-sor levonása után), így a doboz teljes
+        // magasságát kitölti.
+        Item {
+            id: plot
+            objectName: "histogramPlot"
+            width: parent.width
+            height: Math.max(
+                0,
+                box.height - box.anchors.margins * 2
+                - titleLabel.implicitHeight - cameraLabel.implicitHeight
+                - parent.spacing * 2)
+            clip: true
 
-            // #228: a requestPaint() a scene graph inicializálása előtt
-            // (available === false) elveszhet — a canvas ilyenkor üres
-            // marad, amíg valami MÁS (pl. csúszka-mozdulat) újra ki nem
-            // váltja a rajzolást. Amint elérhetővé válik, pótoljuk a
-            // (esetleg elveszett) kezdő rajzolást a MÁR aktuális adatból —
-            // ez a #228-as hiba MÁSODIK, egymást erősítő oka.
-            onAvailableChanged: if (available) requestPaint()
-
-            // tesztelhetőség (#228): a funkcionális teszt ebből ellenőrzi,
-            // hogy tényleg lefutott-e egy rajzolás, nem csak a kötött adat
-            // a helyes — a korábbi hiba a kötésben nem, csak a rajzolás
-            // kimaradásában jelentkezett.
-            property int paintCount: 0
-
-            onPaint: {
-                paintCount += 1
-                var ctx = getContext("2d")
-                ctx.reset()
-                ctx.clearRect(0, 0, width, height)
-                for (var c = 0; c < channels.length; c++) {
-                    var values = box.histogramData
-                                 ? box.histogramData[channels[c].key] : null
-                    if (!values || values.length === 0) continue
-                    ctx.strokeStyle = channels[c].color
-                    ctx.lineWidth = 1
-                    ctx.beginPath()
-                    var stepX = width / values.length
-                    for (var i = 0; i < values.length; i++) {
-                        var x = i * stepX
-                        var y = height - values[i] * height
-                        if (i === 0) ctx.moveTo(x, y)
-                        else ctx.lineTo(x, y)
-                    }
-                    ctx.stroke()
+            // egy csatorna oszlopsorozata — kitöltött, áttetsző (a három
+            // egymásra keveredve adja a Picasa-hisztogram színvilágát)
+            component ChannelBars : Repeater {
+                id: bars
+                required property var values
+                required property color barColor
+                model: box.bucketCount
+                delegate: Rectangle {
+                    required property int index
+                    readonly property real v: (bars.values && index < bars.values.length)
+                                              ? bars.values[index] : 0
+                    width: Math.ceil(plot.width / box.bucketCount)
+                    x: index * (plot.width / box.bucketCount)
+                    height: v * plot.height
+                    y: plot.height - height
+                    color: bars.barColor
+                    opacity: 0.55
+                    visible: height > 0
                 }
             }
+
+            ChannelBars { values: box.histogramData ? box.histogramData.r : []; barColor: Theme.brandRed }
+            ChannelBars { values: box.histogramData ? box.histogramData.g : []; barColor: Theme.brandGreen }
+            ChannelBars { values: box.histogramData ? box.histogramData.b : []; barColor: Theme.brandBlue }
         }
 
         Text {
@@ -112,12 +93,13 @@ Rectangle {
             width: parent.width
             text: box.cameraSummary.length > 0
                   ? box.cameraSummary
-                  : qsTr("No camera information available")
+                  : qsTr("No EXIF data available")
+            wrapMode: Text.WordWrap
+            maximumLineCount: 4
             elide: Text.ElideRight
             font.pixelSize: Theme.fontSize - 2
             font.italic: box.cameraSummary.length === 0
             color: Theme.textGray
-            horizontalAlignment: Text.AlignHCenter
         }
     }
 }
