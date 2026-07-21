@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.29] – 2026-07-21
+
+### Javítva
+- **Kijelölés-stabilitás (#135):** a kijelölés a fotókat követi, nem a
+  sorszámokat — háttér-frissítés közben sem csúszhat át a csillagozás/
+  forgatás/export egy másik képre; a korábban flaky navigációs tesztek
+  determinisztikusak.
+
+### Hozzáadva
+- **Élő hisztogram + fényképezőgép-adatok (#25):** a néző bal alsó doboza
+  élesedett — RGB-hisztogram a ténylegesen megjelenített (szerkesztett)
+  képből, élő frissítéssel a csúszkák húzása közben, alatta a gép,
+  expozíció, rekesz, ISO, gyújtótávolság és vaku adatai.
+- **Picasa widget-króm a teljes felületen (#3):** minden görgetősáv és
+  csúszka (videó-lejátszó, szerkesztő-panel, tálca) az egyedi, kézikönyv-hű
+  Picasa-stílust viseli a Qt alap-kinézet helyett.
+
 ## [0.4.28] – 2026-07-21
 
 ### Javítva
