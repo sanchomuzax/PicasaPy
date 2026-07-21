@@ -498,9 +498,18 @@
 <context>
     <name>HistogramBox</name>
     <message>
-        <location filename="../qml/PicasaPy/HistogramBox.qml" line="115"/>
         <source>No camera information available</source>
         <translation>Nincs elérhető fényképezőgép-adat</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/HistogramBox.qml" line="42"/>
+        <source>Histogram and camera information</source>
+        <translation>Hisztogram és fényképezőgép-adatok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/HistogramBox.qml" line="96"/>
+        <source>No EXIF data available</source>
+        <translation>Nincs elérhető EXIF-adat.</translation>
     </message>
 </context>
 <context>
@@ -542,7 +551,7 @@
     </message>
     <message>
         <source>Import...</source>
-        <translation type="vanished">Importálás…</translation>
+        <translation>Importálás…</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -570,7 +579,7 @@
     </message>
     <message>
         <source>Rescan folders</source>
-        <translation type="vanished">Mappák újraolvasása</translation>
+        <translation>Mappák újraolvasása</translation>
     </message>
     <message>
         <source>&amp;Picture</source>
@@ -631,7 +640,7 @@
     </message>
     <message numerus="yes">
         <source>%n picture(s) will be moved to the system trash.</source>
-        <translation type="vanished">
+        <translation>
             <numerusform>%n kép a rendszer lomtárába kerül.</numerusform>
         </translation>
     </message>
@@ -709,11 +718,11 @@
     </message>
     <message>
         <source>Add to</source>
-        <translation type="vanished">Hozzáadás</translation>
+        <translation>Hozzáadás</translation>
     </message>
     <message>
         <source>Share</source>
-        <translation type="vanished">Megosztás</translation>
+        <translation>Megosztás</translation>
     </message>
     <message>
         <source>A modern, open Picasa successor.</source>
@@ -917,7 +926,7 @@
     </message>
     <message>
         <source>Undo: Crop</source>
-        <translation type="vanished">Visszavonás: Vágás</translation>
+        <translation>Visszavonás: Vágás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml" line="401"/>
@@ -927,11 +936,11 @@
     </message>
     <message>
         <source>Redo: Crop</source>
-        <translation type="vanished">Újra: Vágás</translation>
+        <translation>Újra: Vágás</translation>
     </message>
     <message>
         <source>Histogram and camera information</source>
-        <translation type="vanished">Hisztogram és fényképezőgép-adatok</translation>
+        <translation>Hisztogram és fényképezőgép-adatok</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml" line="588"/>

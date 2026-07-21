@@ -15,16 +15,22 @@ BUCKET_COUNT = 256
 # nagyjából változatlan marad, a számítási idő viszont felülről korlátos
 _MAX_SAMPLED_PIXELS = 500_000
 
-EMPTY_HISTOGRAM: dict[str, tuple[float, ...]] = {
-    "r": tuple(0.0 for _ in range(BUCKET_COUNT)),
-    "g": tuple(0.0 for _ in range(BUCKET_COUNT)),
-    "b": tuple(0.0 for _ in range(BUCKET_COUNT)),
+# FONTOS (#232): a vödör-listák LISTÁK, nem tuple-ök. A PySide6 a Python
+# `list`-et JS-tömbbé alakítja (van `.length`, indexelhető), a `tuple`-t
+# viszont olyan objektummá, amin QML-ben `Array.isArray(...)` HAMIS és a
+# `.length`/`[i]` nem működik — emiatt a HistogramBox (Canvas és Repeater
+# egyaránt) sosem látott adatot, és üresen maradt a görbe (#25/#228 valódi
+# gyökéroka). Listával a QML-oldali `histogramData.r[i]` helyesen működik.
+EMPTY_HISTOGRAM: dict[str, list[float]] = {
+    "r": [0.0] * BUCKET_COUNT,
+    "g": [0.0] * BUCKET_COUNT,
+    "b": [0.0] * BUCKET_COUNT,
 }
 
 
 def compute_rgb_histogram(
     rgb_array: np.ndarray | None, buckets: int = BUCKET_COUNT
-) -> dict[str, tuple[float, ...]]:
+) -> dict[str, list[float]]:
     """RGB uint8 (H, W, 3) tömbből normalizált (0..1) hisztogram csatornánként.
 
     A `buckets` a 256 intenzitásérték összevonása (256-nak osztójának kell
@@ -53,15 +59,15 @@ def compute_rgb_histogram(
     result = {}
     for channel, hist in raw_counts.items():
         peak = hist.max()
+        # lista (nem tuple) — ld. a modul tetején a #232-es magyarázatot
         result[channel] = (
-            tuple((hist / peak).tolist()) if peak > 0 else tuple(0.0 for _ in hist)
+            (hist / peak).tolist() if peak > 0 else [0.0] * len(hist)
         )
     return result
 
 
-def _empty(buckets: int) -> dict[str, tuple[float, ...]]:
-    zeros = tuple(0.0 for _ in range(buckets))
-    return {"r": zeros, "g": zeros, "b": zeros}
+def _empty(buckets: int) -> dict[str, list[float]]:
+    return {"r": [0.0] * buckets, "g": [0.0] * buckets, "b": [0.0] * buckets}
 
 
 def _subsample(rgb_array: np.ndarray) -> np.ndarray:
