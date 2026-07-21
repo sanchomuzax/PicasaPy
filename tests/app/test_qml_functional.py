@@ -942,6 +942,63 @@ class TestEditorWiring:
         assert panel.property("cropActive") is False
 
 
+class TestHistogramBoxWiring:
+    """#25: a bal alsó placeholder-doboz élesítése — HistogramBox.qml."""
+
+    def _open_viewer(self, window, qt_app, index=0):
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", index)
+        qt_app.processEvents()
+        return viewer
+
+    def test_box_appears_in_viewer(self, qml_app, qt_app):
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        box = window.findChild(QObject, "viewerHistogramBox")
+        assert box is not None, "viewerHistogramBox nem található"
+
+    def test_histogram_data_bound_from_edit_controller(self, qml_app, qt_app):
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        box = window.findChild(QObject, "viewerHistogramBox")
+        edit = engine.rootContext().contextProperty("editController")
+        histogram = box.property("histogramData")
+        assert set(histogram.keys()) == {"r", "g", "b"}
+        assert list(histogram["r"]) == list(edit.property("histogram")["r"])
+
+    def test_camera_summary_bound_from_edit_controller(self, qml_app, qt_app):
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        box = window.findChild(QObject, "viewerHistogramBox")
+        edit = engine.rootContext().contextProperty("editController")
+        assert box.property("cameraSummary") == edit.property("cameraSummary")
+
+    def test_camera_summary_label_falls_back_when_no_exif(self, qml_app, qt_app):
+        # a support.jpeg_factory nem ír fényképezőgép-EXIF-et — a sor
+        # a "nincs adat" feliratra esik vissza, nem marad üres/eltűnő
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        label = window.findChild(QObject, "cameraSummaryText")
+        assert label is not None, "cameraSummaryText nem található"
+        assert label.property("text") != ""
+
+    def test_switching_photos_updates_the_box_binding(self, qml_app, qt_app):
+        """Lapozáskor a doboz a MÁSIK fotó előnézetéből frissül — a kötés
+        (histogramData: editController.histogram) él, nem befagyott érték."""
+        window, _, engine = qml_app
+        viewer = self._open_viewer(window, qt_app, index=0)
+        edit = engine.rootContext().contextProperty("editController")
+        box = window.findChild(QObject, "viewerHistogramBox")
+
+        viewer.setProperty("currentIndex", 1)
+        qt_app.processEvents()
+
+        assert list(box.property("histogramData")["r"]) == list(
+            edit.property("histogram")["r"]
+        )
+
+
 class TestSearchSuggestionsWiring:
     def test_refresh_fills_box_from_controller(self, qml_app, qt_app):
         # #7 bekötés: gépelés (debounce után) a controller-slotból tölti

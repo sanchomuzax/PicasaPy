@@ -26,6 +26,8 @@ from PySide6.QtQuick import QQuickImageProvider
 from picasapy.ini.filters import FilterOp
 from picasapy.render import apply_filters
 
+from .histogram_helper import EMPTY_HISTOGRAM, compute_rgb_histogram
+
 _PLACEHOLDER_COLOR = 0xFFE8E8E8
 _PLACEHOLDER_SIZE = 16
 _MAX_PREVIEW_EDGE = 2560
@@ -46,6 +48,10 @@ class EditPreviewProvider(QQuickImageProvider):
         # LRU-rendezett tárak (#128): a legrégebben használt kép esik ki,
         # ha a kapacitás betelik — lapozásnál így nem szivárog a memória.
         self._images: OrderedDict[str, QImage] = OrderedDict()
+        # RGB-hisztogram a hisztogram-dobozhoz (#25): a MEGJELENÍTETT (a
+        # filters-lánccal renderelt) előnézetből számol, az _images-szel
+        # azonos LRU-életciklussal — nem külön gyorsítótár, csak melléktermék.
+        self._histograms: OrderedDict[str, dict] = OrderedDict()
         # dekódolt forrás gyorsítótár (#72): élő csúszka-húzásnál (pl. tilt)
         # a register() gyakran hívódik ugyanarra a fotóra, csak a szűrő-
         # lánc változik — a lemezes dekódot nem kell minden alkalommal
@@ -84,12 +90,22 @@ class EditPreviewProvider(QQuickImageProvider):
         while len(self._sources) > _LRU_CAPACITY:
             self._sources.popitem(last=False)
         # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó op fut
-        image = self._render_cached(key, source_array, tuple(ops), path)
+        result_array = self._render_cached(key, source_array, tuple(ops), path)
+        image = _rgb_array_to_qimage(result_array) if result_array is not None else QImage()
+        histogram = (
+            compute_rgb_histogram(result_array)
+            if result_array is not None
+            else EMPTY_HISTOGRAM
+        )
         with self._lock:
             self._images[key] = image
             self._images.move_to_end(key)
             while len(self._images) > _LRU_CAPACITY:
                 self._images.popitem(last=False)
+            self._histograms[key] = histogram
+            self._histograms.move_to_end(key)
+            while len(self._histograms) > _LRU_CAPACITY:
+                self._histograms.popitem(last=False)
 
     def unregister(self, photo_id: str) -> None:
         """A fotó eltávolítása (szerkesztés vége)."""
@@ -99,6 +115,13 @@ class EditPreviewProvider(QQuickImageProvider):
             self._prefix_cache = None
         with self._lock:
             self._images.pop(key, None)
+            self._histograms.pop(key, None)
+
+    def histogram_for(self, photo_id: str) -> dict:
+        """Az utoljára renderelt előnézet RGB-hisztogramja (#25), vagy üres
+        hisztogram, ha a fotó nincs (már) regisztrálva."""
+        with self._lock:
+            return self._histograms.get(str(photo_id), EMPTY_HISTOGRAM)
 
     # -- lánc-prefix gyorsítótár (#140) ------------------------------------
 
@@ -108,13 +131,17 @@ class EditPreviewProvider(QQuickImageProvider):
         source_array: np.ndarray | None,
         ops: tuple[FilterOp, ...],
         path: Path,
-    ) -> QImage:
+    ) -> np.ndarray | None:
         """Renderelés lánc-prefix gyorsítótárral: interakció közben (azonos
-        prefix, csak az utolsó op paramétere változik) csak az utolsó op fut."""
+        prefix, csak az utolsó op paramétere változik) csak az utolsó op fut.
+
+        A visszaadott RGB-tömb a hisztogram (#25) és a QImage-konverzió közös
+        forrása — így a hisztogram mindig a TÉNYLEGESEN megjelenített képet
+        tükrözi, nem egy külön újraszámolt változatot."""
         if source_array is None:
-            return QImage()
+            return None
         if not ops:
-            return _rgb_array_to_qimage(source_array)
+            return source_array
         try:
             prefix_array = self._cached_prefix(key, source_array, ops[:-1])
             result_array, _skipped = apply_filters(prefix_array, ops[-1:])
@@ -122,8 +149,8 @@ class EditPreviewProvider(QQuickImageProvider):
             # #73: hibás/idegen lánc-bejegyzésnél a szűretlen kép a helyes
             # visszaesés, nem a placeholder (részleges előnézet elve)
             _log.exception("filters= nem alkalmazható az előnézeten: %s", path)
-            return _rgb_array_to_qimage(source_array)
-        return _rgb_array_to_qimage(result_array)
+            return source_array
+        return result_array
 
     def _cached_prefix(
         self,

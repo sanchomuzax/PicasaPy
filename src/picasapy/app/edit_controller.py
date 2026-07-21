@@ -5,14 +5,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
 from picasapy.edit.session import EditSession
 from picasapy.ini import load_document, parse_document, save_document
 from picasapy.ini.rect64 import Rect64, encode_rect64
+from picasapy.metadata import read_exif_details
 from picasapy.scanner import PICASA_INI_NAME
 
+from . import formatting
 from .edit_preview import EditPreviewProvider
+from .histogram_helper import EMPTY_HISTOGRAM
 
 # redeye: teljes képes kapcsoló a régió-alapú eszközig (#116)
 _TOGGLE_NAMES = ("redeye",)
@@ -59,6 +62,10 @@ class EditController(QObject):
         # undo/redo verem (#59): (filters-érték a művelet ELŐTT, művelet-kulcs)
         self._undo_stack: list[tuple[str, str]] = []
         self._redo_stack: list[tuple[str, str]] = []
+        # fényképezőgép-összefoglaló (#25): a forrásfájl EXIF-jéből, csak a
+        # beginEdit-kor olvasva — a szerkesztés alatt nem változik, a
+        # csúszka-húzás minden egyes revíziójánál újraolvasni felesleges lenne
+        self._camera_summary = ""
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
 
@@ -74,6 +81,22 @@ class EditController(QObject):
         if not self._photo_id:
             return ""
         return f"image://editpreview/{self._photo_id}?rev={self._revision}"
+
+    @Property("QVariant", notify=revisionChanged)
+    def histogram(self):
+        """A jelenleg renderelt előnézet RGB-hisztogramja (#25) — a
+        HistogramBox.qml Canvas-a ebből rajzolja a három görbét. A revision
+        minden előnézet-frissítéskor (csúszka-húzás közben is) bumpol, a
+        provider a MEGJELENÍTETT képből számolja (ld. edit_preview.py)."""
+        if not self._photo_id:
+            return dict(EMPTY_HISTOGRAM)
+        return self._provider.histogram_for(self._photo_id)
+
+    @Property(str, notify=revisionChanged)
+    def cameraSummary(self) -> str:
+        """Picasa-stílusú, egysoros gép-összefoglaló (#25) a hisztogram
+        alatt — a forrásfájl EXIF-jéből, beginEdit-kor gyorsítótárazva."""
+        return self._camera_summary
 
     @Property(bool, notify=toolsChanged)
     def redeyeActive(self) -> bool:
@@ -187,6 +210,9 @@ class EditController(QObject):
         self._ini_path = path.parent / PICASA_INI_NAME
         self._section_name = path.name
         self._session = EditSession.from_value(self._read_filters_value())
+        self._camera_summary = formatting.camera_summary_text(
+            read_exif_details(path), QLocale(), self.tr
+        )
         # Perzisztens, rétegenkénti undo (#116 visszajelzés): a mentett lánc
         # maga a réteg-verem — minden elemhez visszavonás-lépés jár, fordított
         # sorrendben, képváltás és újranyitás után is.
@@ -206,6 +232,7 @@ class EditController(QObject):
         self._ini_path = None
         self._section_name = ""
         self._session = EditSession()
+        self._camera_summary = ""
         self._undo_stack.clear()
         self._redo_stack.clear()
         self._bump_revision()
