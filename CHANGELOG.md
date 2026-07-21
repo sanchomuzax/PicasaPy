@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.31] – 2026-07-21
+
+### Javítva
+- **Hisztogram VÉGRE rajzol (#232, éles hibajelentés):** a görbe eddig
+  soha nem jelent meg — a valódi ok az volt, hogy a csatorna-értékeket
+  tuple-ként adtuk át QML-nek, ami ott nem tömbként látszott, így a rajzoló
+  minden csatornát kihagyott (a #25/#228 a Canvas-időzítést gyanította,
+  tévesen). A vödör-listák mostantól listák, a törékeny Canvas helyett
+  pedig mindig-renderelő téglalap-oszlopok rajzolják a kitöltött RGB-görbét,
+  címmel; EXIF hiánya esetén „Nincs elérhető EXIF-adat." felirattal.
+
 ## [0.4.30] – 2026-07-21
 
 ### Javítva
