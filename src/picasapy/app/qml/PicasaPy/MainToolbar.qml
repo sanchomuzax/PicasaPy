@@ -94,7 +94,7 @@ Rectangle {
                     verticalAlignment: Text.AlignVCenter
                 }
                 Item { width: 6; height: 1 }
-                Slider {
+                PicasaSlider {
                     width: 90; height: 20
                     enabled: false
                     anchors.verticalCenter: parent.verticalCenter

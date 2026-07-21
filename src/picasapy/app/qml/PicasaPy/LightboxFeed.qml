@@ -477,7 +477,7 @@ ListView {
             }
         }
     }
-    ScrollBar.vertical: ScrollBar {}
+    ScrollBar.vertical: PicasaScrollBar {}
 
     // görgő-elfogó réteg (#77/#89): a wheel-eseményt egy a
     // rács fölött ülő átlátszó réteg kapja el (pointer-

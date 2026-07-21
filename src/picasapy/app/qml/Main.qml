@@ -540,7 +540,7 @@ ApplicationWindow {
                                     }
                                 }
                             }
-                            ScrollBar.vertical: ScrollBar {}
+                            ScrollBar.vertical: PicasaScrollBar {}
                         }
                     }
                 }

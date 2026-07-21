@@ -83,7 +83,7 @@ Rectangle {
                     color: Theme.ink
                 }
             }
-            ScrollBar.vertical: ScrollBar {}
+            ScrollBar.vertical: PicasaScrollBar {}
         }
     }
 }
