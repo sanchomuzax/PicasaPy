@@ -480,22 +480,16 @@ Rectangle {
                                               editController.setTilt(value)
                     }
                 }
-                Rectangle {
+                // élő RGB-hisztogram + fényképezőgép-adat sor (#25): a
+                // korábbi placeholder-doboz élesítve — HistogramBox.qml
+                HistogramBox {
+                    objectName: "viewerHistogramBox"
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left; anchors.right: parent.right
                     anchors.margins: 10
                     height: 90
-                    color: "#f2f2f0"
-                    border.color: Theme.chromeBorder
-                    Text {
-                        anchors.centerIn: parent
-                        width: parent.width - 12
-                        text: qsTr("Histogram and camera information")
-                        font.pixelSize: Theme.fontSize - 1
-                        color: Theme.textGray
-                        wrapMode: Text.WordWrap
-                        horizontalAlignment: Text.AlignHCenter
-                    }
+                    histogramData: editController.histogram
+                    cameraSummary: editController.cameraSummary
                 }
             }
 

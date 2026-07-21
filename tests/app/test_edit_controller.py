@@ -654,3 +654,46 @@ class TestEffects:
     def test_apply_effect_requires_active(self, controller):
         with pytest.raises(ValueError):
             controller.applyEffect("sepia")
+
+
+class TestHistogramAndCameraSummary:
+    """A hisztogram-doboz kötési pontjai (#25): histogram + cameraSummary."""
+
+    def test_no_active_edit_gives_empty_histogram(self, controller):
+        histogram = controller.histogram
+        assert set(histogram) == {"r", "g", "b"}
+        assert all(v == 0.0 for v in histogram["r"])
+
+    def test_no_active_edit_gives_empty_camera_summary(self, controller):
+        assert controller.cameraSummary == ""
+
+    def test_begin_edit_populates_histogram_from_solid_red_photo(
+        self, controller, photo
+    ):
+        # a jpeg_factory tömör piros képet gyárt (Image.new("RGB", size, "red"));
+        # a JPEG-tömörítés a csatorna-értéket kissé eltolhatja (pl. 254), a
+        # LÉNYEG a magas-piros / nulla-zöld-kék eloszlás
+        controller.beginEdit("1", str(photo))
+        histogram = controller.histogram
+        assert max(histogram["r"]) == 1.0
+        assert histogram["r"].index(1.0) > 200
+        # zöld/kék csatorna: minden pixel a 0-s vödörben — a csúcs ott van
+        assert histogram["g"].index(1.0) == 0
+        assert histogram["b"].index(1.0) == 0
+
+    def test_histogram_updates_after_effect_applied(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.applyEffect("bw")
+        histogram = controller.histogram
+        # fekete-fehérben a három csatorna azonos eloszlású (szürkeárnyalat)
+        assert histogram["r"] == histogram["g"] == histogram["b"]
+
+    def test_camera_summary_is_string_after_begin_edit(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        assert isinstance(controller.cameraSummary, str)
+
+    def test_end_edit_clears_histogram_and_camera_summary(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.endEdit()
+        assert controller.cameraSummary == ""
+        assert all(v == 0.0 for v in controller.histogram["r"])

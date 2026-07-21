@@ -145,6 +145,30 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
     return entries
 
 
+def camera_summary_text(details, locale: QLocale, tr) -> str:
+    """Picasa-stílusú, egysoros fényképezőgép-összefoglaló a hisztogram-doboz
+    alá (#25): gép, expozíció, rekesz, ISO, gyújtótávolság, vaku — csak a
+    kitöltött mezők, három szóköz elválasztással (a többi info-sáv mintájára,
+    ld. `photo_info_text`). `details` egy `ExifDetails` (ld. `metadata.reader`).
+    Üres string, ha egyetlen mező sincs kitöltve (pl. EXIF nélküli fájl)."""
+    parts = []
+    if details.camera:
+        parts.append(details.camera)
+    if details.exposure_seconds:
+        parts.append(format_exposure(details.exposure_seconds, locale))
+    if details.f_number:
+        parts.append(f"f/{locale.toString(details.f_number, 'g', 3)}")
+    if details.iso:
+        parts.append(tr("ISO %1").replace("%1", str(details.iso)))
+    if details.focal_mm:
+        parts.append(
+            tr("%1 mm").replace("%1", locale.toString(details.focal_mm, "g", 4))
+        )
+    if details.flash_fired is not None:
+        parts.append(tr("Flash: Fired") if details.flash_fired else tr("Flash: Off"))
+    return "   ".join(parts)
+
+
 def filter_status_text(records, elapsed: float, locale: QLocale, tr) -> str:
     """A zöld eredménysáv szövege (Picasa-minta)."""
     folders = len({r.folder_path for r in records})
