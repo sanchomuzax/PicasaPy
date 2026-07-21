@@ -165,7 +165,7 @@ Column {
             Item { Layout.fillWidth: true }
             // nagyítás-csúszka − / + jelekkel (kézikönyv 06)
             Text { text: "−"; color: Theme.textGray; font.pixelSize: 13 }
-            Slider {
+            PicasaSlider {
                 id: sizeSlider
                 from: 72; to: 256; value: tray.appWindow.thumbSize
                 Layout.preferredWidth: 140

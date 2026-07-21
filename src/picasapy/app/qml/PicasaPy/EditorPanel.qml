@@ -410,7 +410,7 @@ Rectangle {
             font.pixelSize: Theme.fontSize - 1
             color: Theme.textGray
         }
-        Slider {
+        PicasaSlider {
             id: finetuneFillSlider
             objectName: "finetuneFillSlider"
             Layout.fillWidth: true
@@ -428,7 +428,7 @@ Rectangle {
             font.pixelSize: Theme.fontSize - 1
             color: Theme.textGray
         }
-        Slider {
+        PicasaSlider {
             id: finetuneHighlightsSlider
             objectName: "finetuneHighlightsSlider"
             Layout.fillWidth: true
@@ -446,7 +446,7 @@ Rectangle {
             font.pixelSize: Theme.fontSize - 1
             color: Theme.textGray
         }
-        Slider {
+        PicasaSlider {
             id: finetuneShadowsSlider
             objectName: "finetuneShadowsSlider"
             Layout.fillWidth: true
@@ -464,7 +464,7 @@ Rectangle {
             font.pixelSize: Theme.fontSize - 1
             color: Theme.textGray
         }
-        Slider {
+        PicasaSlider {
             id: finetuneTempSlider
             objectName: "finetuneTempSlider"
             Layout.fillWidth: true

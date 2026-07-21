@@ -204,7 +204,7 @@ Rectangle {
                     }
                 }
             }
-            ScrollBar.vertical: ScrollBar {}
+            ScrollBar.vertical: PicasaScrollBar {}
         }
     }
 }

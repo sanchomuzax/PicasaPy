@@ -78,7 +78,7 @@ Dialog {
                             onTapped: manager.selectedRow = index
                         }
                     }
-                    ScrollBar.vertical: ScrollBar {}
+                    ScrollBar.vertical: PicasaScrollBar {}
                 }
             }
             RowLayout {

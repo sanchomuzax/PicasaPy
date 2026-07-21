@@ -464,7 +464,7 @@ Rectangle {
                     // döntés-csúszka: −1..1 Picasa-egység (±11,5°); húzás
                     // közben élő előnézet (previewTilt, nincs ini-mentés,
                     // #72), elengedéskor ír + tol undo-lépést (setTilt)
-                    Slider {
+                    PicasaSlider {
                         id: tiltSlider
                         objectName: "tiltSlider"
                         visible: editorPanel.tiltActive && editorPanel.activeTab === 0
@@ -710,7 +710,7 @@ Rectangle {
                             ToolTip.text: qsTr("Show Faces")
                             onClicked: viewer.toggleFaces()
                         }
-                        Slider {
+                        PicasaSlider {
                             id: zoomSlider
                             objectName: "zoomSlider"
                             width: 110; height: 20

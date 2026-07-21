@@ -82,7 +82,7 @@ Item {
                       ? "❚❚" : "▶"
                 onClicked: player.togglePlayback()
             }
-            Slider {
+            PicasaSlider {
                 id: seek
                 objectName: "videoSeekSlider"
                 Layout.fillWidth: true
@@ -107,7 +107,7 @@ Item {
                 color: "#e8e8e8"
                 font.pixelSize: Theme.fontSize
             }
-            Slider {
+            PicasaSlider {
                 objectName: "videoVolumeSlider"
                 Layout.preferredWidth: 70
                 from: 0; to: 1
