@@ -352,6 +352,13 @@ class PhotoGridModel(QAbstractListModel):
             return ""
         return str(self._photos[row].id)
 
+    @Slot(int, result=int)
+    def rowOfId(self, photo_id: int) -> int:
+        """A fotó sor-indexe id alapján (#135): a QML ezzel képezi újra a
+        kijelölést háttér-frissítés (reset) után — -1, ha a fotó már nincs
+        a jelen nézetben (törölve/kiszűrve)."""
+        return self.row_of_id(photo_id)
+
     @Slot(int, int, result=int)
     def folderNeighbor(self, row: int, delta: int) -> int:
         """A `row` sortól `delta` lépés a SAJÁT mappáján belül (#84).
