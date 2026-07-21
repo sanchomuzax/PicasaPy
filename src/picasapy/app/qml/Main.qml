@@ -113,6 +113,36 @@ ApplicationWindow {
         if (range.length > 0) window.selectedIndex = 0
     }
 
+    // #135: a háttér-frissítés (5 perces rescan, watcher-jelzés) a
+    // rács-modellt teljesen resetelheti — beszúrt/eltűnt fájloknál a
+    // sor-indexek elcsúsznának, és a csillag/forgatás/elrejtés/export a
+    // FELHASZNÁLÓ által kijelölttől eltérő képre hatna. A resetet
+    // megelőzően elmentjük a kijelölt sorok fotó-id-it (a sor-index
+    // ekkor még a RÉGI adatot tükrözi), majd a reset után az id-k
+    // alapján képezzük újra a kijelölést — az eltűnt fotók kiesnek.
+    property var _pendingSelectedIds: []
+    property string _pendingAnchorId: ""
+    Connections {
+        target: controller.photos
+        function onModelAboutToBeReset() {
+            var ids = []
+            for (var k = 0; k < window.selectedIndexes.length; ++k) {
+                var id = controller.photos.idAt(Number(window.selectedIndexes[k]))
+                if (id.length > 0) ids.push(parseInt(id, 10))
+            }
+            window._pendingSelectedIds = ids
+            window._pendingAnchorId = window.selectedIndex >= 0
+                ? controller.photos.idAt(window.selectedIndex) : ""
+        }
+        function onModelReset() {
+            window.selectedIndexes = Selection.remapByIds(
+                window._pendingSelectedIds, controller.photos.rowOfId)
+            window.selectedIndex = window._pendingAnchorId.length > 0
+                ? controller.photos.rowOfId(parseInt(window._pendingAnchorId, 10))
+                : -1
+        }
+    }
+
     Shortcut { sequence: "Ctrl+A"; onActivated: window.selectAll() }
     Shortcut { sequence: "Ctrl+D"; onActivated: window.clearSelection() }
 

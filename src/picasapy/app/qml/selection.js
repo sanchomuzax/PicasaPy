@@ -34,3 +34,17 @@ function effectiveRows(selectedIndexes, selectedIndex) {
         return selectedIndexes
     return selectedIndex >= 0 ? [selectedIndex] : []
 }
+
+// #135: a kijelölés stabil (fotó-id) alapú újraképzése háttér-modell-
+// frissítés (reset) után — a sor-indexek elcsúszhatnak (beszúrás/törlés/
+// átrendeződés), de az id-k nem. A `rowOfId` a modell aktuális
+// id→sor leképezése (Python-oldali szereplet); a törölt/eltűnt fotók
+// (-1) kiesnek a kijelölésből, a többi a friss sorára kerül.
+function remapByIds(ids, rowOfId) {
+    var result = []
+    for (var k = 0; k < ids.length; ++k) {
+        var row = rowOfId(ids[k])
+        if (row >= 0) result.push(row)
+    }
+    return result
+}

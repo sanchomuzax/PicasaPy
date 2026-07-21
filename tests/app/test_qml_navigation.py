@@ -89,6 +89,31 @@ def _ret(qt_app, obj, name, *args):
     return result
 
 
+def _wait_for_row_bounds(qt_app, grid, row, timeout_ms=2000):
+    """#135: determinisztikus szinkronpont a `rowBounds`-ra épülő
+    tesztekhez. A #142-es virtualizált cella-ablak a `scrollToRow` utáni
+    layoutot 1-2 eseményciklus késéssel köti be (delegate-inkubáció) — ez
+    lassabb (pl. Windows-os CI) gépen az assert elé csúszhat, és a teszt
+    flaky-vé válik. `forceLayout` + rövid valós várakozás ismételt
+    lefuttatásával megvárjuk, amíg a célsor geometriája két egymást követő
+    lekérdezés között már nem változik (azaz a kötés lezárult)."""
+    from PySide6.QtCore import QEventLoop, QMetaObject, QTimer
+
+    prev = None
+    steps = max(1, timeout_ms // 20)
+    for _ in range(steps):
+        QMetaObject.invokeMethod(grid, "forceLayout")
+        qt_app.processEvents()
+        b = _ret(qt_app, grid, "rowBounds", row)
+        if b is not None and b == prev:
+            return b
+        prev = b
+        pause = QEventLoop()
+        QTimer.singleShot(20, pause.quit)
+        pause.exec()
+    return prev
+
+
 def _open_viewer(window, qt_app, index=0):
     window.setProperty("viewerOpen", True)
     viewer = window.findChild(QObject, "photoViewer")
@@ -299,7 +324,7 @@ class TestArrowMinimalScroll:
             _invoke(qt_app, grid, "moveSelection", "down")
             target = window.property("selectedIndex")
             assert target > 0
-            b = _ret(qt_app, grid, "rowBounds", target)
+            b = _wait_for_row_bounds(qt_app, grid, target)
             assert b is not None
             content_y = grid.property("contentY")
             height = grid.property("height")
@@ -323,7 +348,7 @@ class TestArrowMinimalScroll:
             _invoke(qt_app, grid, "moveSelection", "down")
             _invoke(qt_app, grid, "moveSelection", "up")
             target = window.property("selectedIndex")
-            b = _ret(qt_app, grid, "rowBounds", target)
+            b = _wait_for_row_bounds(qt_app, grid, target)
             assert b is not None
             # felfelé lépve a sor teteje igazodik a látótér tetejéhez
             assert abs(b["top"] - grid.property("contentY")) <= 1
