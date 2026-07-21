@@ -496,6 +496,14 @@
     </message>
 </context>
 <context>
+    <name>HistogramBox</name>
+    <message>
+        <location filename="../qml/PicasaPy/HistogramBox.qml" line="115"/>
+        <source>No camera information available</source>
+        <translation>Nincs elérhető fényképezőgép-adat</translation>
+    </message>
+</context>
+<context>
     <name>ImportProgressPanel</name>
     <message>
         <location filename="../qml/PicasaPy/ImportProgressPanel.qml" line="52"/>
@@ -534,7 +542,7 @@
     </message>
     <message>
         <source>Import...</source>
-        <translation>Importálás…</translation>
+        <translation type="vanished">Importálás…</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -562,7 +570,7 @@
     </message>
     <message>
         <source>Rescan folders</source>
-        <translation>Mappák újraolvasása</translation>
+        <translation type="vanished">Mappák újraolvasása</translation>
     </message>
     <message>
         <source>&amp;Picture</source>
@@ -605,7 +613,7 @@
         <translation>Verzió és build</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="411"/>
+        <location filename="../qml/Main.qml" line="441"/>
         <source>View All</source>
         <translation>Az összes megtekintése</translation>
     </message>
@@ -623,7 +631,7 @@
     </message>
     <message numerus="yes">
         <source>%n picture(s) will be moved to the system trash.</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>%n kép a rendszer lomtárába kerül.</numerusform>
         </translation>
     </message>
@@ -701,11 +709,11 @@
     </message>
     <message>
         <source>Add to</source>
-        <translation>Hozzáadás</translation>
+        <translation type="vanished">Hozzáadás</translation>
     </message>
     <message>
         <source>Share</source>
-        <translation>Megosztás</translation>
+        <translation type="vanished">Megosztás</translation>
     </message>
     <message>
         <source>A modern, open Picasa successor.</source>
@@ -909,7 +917,7 @@
     </message>
     <message>
         <source>Undo: Crop</source>
-        <translation>Visszavonás: Vágás</translation>
+        <translation type="vanished">Visszavonás: Vágás</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml" line="401"/>
@@ -919,25 +927,24 @@
     </message>
     <message>
         <source>Redo: Crop</source>
-        <translation>Újra: Vágás</translation>
+        <translation type="vanished">Újra: Vágás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="493"/>
         <source>Histogram and camera information</source>
-        <translation>Hisztogram és fényképezőgép-adatok</translation>
+        <translation type="vanished">Hisztogram és fényképezőgép-adatok</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="594"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="588"/>
         <source>Video playback requires the Qt Multimedia module.</source>
         <translation>A videó-lejátszáshoz a Qt Multimedia modul szükséges.</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="710"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="704"/>
         <source>Show Faces</source>
         <translation>Arcok megjelenítése</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="775"/>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml" line="769"/>
         <source>Make a caption!</source>
         <translation>Készítsen képaláírást!</translation>
     </message>
