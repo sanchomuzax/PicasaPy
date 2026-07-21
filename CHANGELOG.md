@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.30] – 2026-07-21
+
+### Javítva
+- **Hisztogram azonnal rajzol (#228, éles hibajelentés):** a görbe a kép
+  megnyitásakor rögtön megjelenik a megjelenített képből számolva, EXIF
+  nélküli képnél is — nem kell hozzá csúszka-mozdulat; a
+  „Nincs elérhető fényképezőgép-adat" felirat magyarul jelenik meg.
+
 ## [0.4.29] – 2026-07-21
 
 ### Javítva
