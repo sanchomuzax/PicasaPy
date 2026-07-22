@@ -30,3 +30,4 @@ ImportProgressPanel 1.0 ImportProgressPanel.qml
 PerfMonitorPanel 1.0 PerfMonitorPanel.qml
 PicasaImportDialog 1.0 PicasaImportDialog.qml
 HistogramBox 1.0 HistogramBox.qml
+SplashScreen 1.0 SplashScreen.qml

@@ -7,6 +7,7 @@ kontextusa változatlanul az `AppController` marad."""
 
 from __future__ import annotations
 
+import itertools
 import re
 from pathlib import Path
 
@@ -146,27 +147,43 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
 
 
 def camera_summary_text(details, locale: QLocale, tr) -> str:
-    """Picasa-stílusú, egysoros fényképezőgép-összefoglaló a hisztogram-doboz
-    alá (#25): gép, expozíció, rekesz, ISO, gyújtótávolság, vaku — csak a
-    kitöltött mezők, három szóköz elválasztással (a többi info-sáv mintájára,
-    ld. `photo_info_text`). `details` egy `ExifDetails` (ld. `metadata.reader`).
-    Üres string, ha egyetlen mező sincs kitöltve (pl. EXIF nélküli fájl)."""
-    parts = []
+    """Picasa-mintájú, KÉToszlopos fényképezőgép-összefoglaló a hisztogram-
+    doboz alá (#25, #235). Formátum: soronként `bal\\tjobb` cellapár, a sorok
+    `\\n`-nel — a HistogramBox.qml ebből rendereli a két címkézett oszlopot,
+    az eredeti Picasa 3 elrendezését követve:
+
+        Xiaomi Mi Note 10            1/125 s
+        Fókusztávolság: 6,7 mm       f/1.7
+        (35 mm-egyenérték: 24 mm)    ISO: 3200
+
+    Csak a kitöltött mezők kerülnek be; üres string, ha egy sincs (pl. EXIF
+    nélküli fájl). `details` egy `ExifDetails` (ld. `metadata.reader`)."""
+    left: list[str] = []
+    right: list[str] = []
     if details.camera:
-        parts.append(details.camera)
-    if details.exposure_seconds:
-        parts.append(format_exposure(details.exposure_seconds, locale))
-    if details.f_number:
-        parts.append(f"f/{locale.toString(details.f_number, 'g', 3)}")
-    if details.iso:
-        parts.append(tr("ISO %1").replace("%1", str(details.iso)))
+        left.append(details.camera)
     if details.focal_mm:
-        parts.append(
-            tr("%1 mm").replace("%1", locale.toString(details.focal_mm, "g", 4))
+        left.append(
+            tr("Focal length: %1 mm").replace(
+                "%1", locale.toString(details.focal_mm, "g", 4)
+            )
         )
+    if details.focal_35mm:
+        left.append(
+            tr("(35 mm equivalent: %1 mm)").replace("%1", str(details.focal_35mm))
+        )
+    if details.exposure_seconds:
+        right.append(format_exposure(details.exposure_seconds, locale))
+    if details.f_number:
+        right.append(f"f/{locale.toString(details.f_number, 'g', 3)}")
+    if details.iso:
+        right.append(tr("ISO: %1").replace("%1", str(details.iso)))
     if details.flash_fired is not None:
-        parts.append(tr("Flash: Fired") if details.flash_fired else tr("Flash: Off"))
-    return "   ".join(parts)
+        right.append(tr("Flash: Fired") if details.flash_fired else tr("Flash: Off"))
+    if not left and not right:
+        return ""
+    rows = itertools.zip_longest(left, right, fillvalue="")
+    return "\n".join(f"{lcell}\t{rcell}" for lcell, rcell in rows)
 
 
 def filter_status_text(records, elapsed: float, locale: QLocale, tr) -> str:

@@ -43,6 +43,10 @@ Rectangle {
             font.pixelSize: Theme.fontSize
             font.bold: true
             color: Theme.ink
+            // #235: keskeny doboznál a cím ne vágódjon `…`-ra — legfeljebb
+            // két sorba törik (az eredeti Picasában a cím mindig teljes)
+            wrapMode: Text.WordWrap
+            maximumLineCount: 2
             elide: Text.ElideRight
         }
 
@@ -87,19 +91,60 @@ Rectangle {
             ChannelBars { values: box.histogramData ? box.histogramData.b : []; barColor: Theme.brandBlue }
         }
 
-        Text {
+        // #235: a kameraadat az eredeti Picasa 2-oszlopos, címkézett
+        // elrendezését követi. A cameraSummary soronként `bal\tjobb`
+        // cellapárokat hordoz (formatting.camera_summary_text) — ha nincs
+        // tab a szövegben (régi/egyszerű érték), egyoszloposan jelenik meg.
+        Column {
             id: cameraLabel
-            objectName: "cameraSummaryText"
+            objectName: "cameraSummaryArea"
             width: parent.width
-            text: box.cameraSummary.length > 0
-                  ? box.cameraSummary
-                  : qsTr("No EXIF data available")
-            wrapMode: Text.WordWrap
-            maximumLineCount: 4
-            elide: Text.ElideRight
-            font.pixelSize: Theme.fontSize - 2
-            font.italic: box.cameraSummary.length === 0
-            color: Theme.textGray
+            spacing: 1
+
+            readonly property var summaryRows:
+                box.cameraSummary.length > 0 ? box.cameraSummary.split("\n") : []
+
+            Text {
+                objectName: "cameraSummaryText"
+                width: parent.width
+                visible: cameraLabel.summaryRows.length === 0
+                text: qsTr("No EXIF data available")
+                font.pixelSize: Theme.fontSize - 2
+                font.italic: true
+                color: Theme.textGray
+            }
+
+            Repeater {
+                model: cameraLabel.summaryRows
+                delegate: Item {
+                    required property string modelData
+                    readonly property var cells: modelData.split("\t")
+                    width: cameraLabel.width
+                    height: Math.max(leftCell.implicitHeight,
+                                     rightCell.implicitHeight)
+
+                    Text {
+                        id: leftCell
+                        anchors.left: parent.left
+                        width: Math.floor(parent.width * 0.6)
+                        text: parent.cells[0]
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
+                        font.pixelSize: Theme.fontSize - 2
+                        color: Theme.textGray
+                    }
+                    Text {
+                        id: rightCell
+                        anchors.right: parent.right
+                        width: Math.floor(parent.width * 0.38)
+                        text: parent.cells.length > 1 ? parent.cells[1] : ""
+                        elide: Text.ElideRight
+                        font.pixelSize: Theme.fontSize - 2
+                        color: Theme.textGray
+                    }
+                }
+            }
         }
     }
 }

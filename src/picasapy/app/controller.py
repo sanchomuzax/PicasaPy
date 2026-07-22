@@ -28,7 +28,7 @@ from picasapy.index import (
     starred_photos,
     sync_tree,
 )
-from picasapy.ini import load_document, parse_document, save_document
+from picasapy.ini import load_document, update_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
 from .effects_controller import EffectsClipboardMixin
@@ -394,14 +394,15 @@ class AppController(
             return
         text = text.strip()
         ini_path = Path(folder_path) / PICASA_INI_NAME
-        document = (
-            load_document(ini_path) if ini_path.exists() else parse_document("")
-        )
-        if text:
-            document = document.with_value("Picasa", "description", text)
-        else:
-            document = document.with_removed("Picasa", "description")
-        save_document(document, ini_path, backup=True)
+
+        # #137: ütközésbiztos írás — a párhuzamosan futó eredeti Picasa
+        # módosítása nem veszhet el (a mutate tiszta, újrajátszható)
+        def mutate(document):
+            if text:
+                return document.with_value("Picasa", "description", text)
+            return document.with_removed("Picasa", "description")
+
+        update_document(ini_path, mutate, backup=True)
         self._descriptions[folder_path] = text
         if folder_path == self._current_folder:
             self._folder_description = text

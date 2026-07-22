@@ -8,7 +8,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
 from picasapy.edit.session import EditSession
-from picasapy.ini import load_document, parse_document, save_document
+from picasapy.ini import load_document, update_document
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.metadata import read_exif_details
 from picasapy.scanner import PICASA_INI_NAME
@@ -455,27 +455,28 @@ class EditController(QObject):
 
     def _save(self) -> None:
         assert self._ini_path is not None
-        document = (
-            load_document(self._ini_path)
-            if self._ini_path.exists()
-            else parse_document("")
-        )
-        if self._session.is_empty():
-            document = document.with_removed(self._section_name, "filters")
-        else:
-            document = document.with_value(
-                self._section_name, "filters", self._session.to_value()
-            )
-        # Picasa-paritás (#73): a vágás a filters= mellett külön
-        # crop=rect64(...) kulcsba is kerül — a Picasa 3.x is így ír.
-        crop = self._session.crop()
-        if crop is not None:
-            document = document.with_value(
-                self._section_name, "crop", f"rect64({encode_rect64(crop)})"
-            )
-        else:
-            document = document.with_removed(self._section_name, "crop")
-        save_document(document, self._ini_path, backup=True)
+
+        def mutate(document):
+            if self._session.is_empty():
+                document = document.with_removed(self._section_name, "filters")
+            else:
+                document = document.with_value(
+                    self._section_name, "filters", self._session.to_value()
+                )
+            # Picasa-paritás (#73): a vágás a filters= mellett külön
+            # crop=rect64(...) kulcsba is kerül — a Picasa 3.x is így ír.
+            crop = self._session.crop()
+            if crop is not None:
+                document = document.with_value(
+                    self._section_name, "crop", f"rect64({encode_rect64(crop)})"
+                )
+            else:
+                document = document.with_removed(self._section_name, "crop")
+            return document
+
+        # #137: ütközésbiztos mentés — ha a párhuzamosan futó eredeti Picasa
+        # időközben más kulcsot írt ugyanabba az iniben, az nem vész el.
+        update_document(self._ini_path, mutate, backup=True)
         self._register_preview()
 
     def _register_preview(self, session: EditSession | None = None) -> None:

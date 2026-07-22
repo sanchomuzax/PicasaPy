@@ -1138,6 +1138,54 @@ class TestHistogramBoxWiring:
         assert title is not None, "histogramTitle nem található"
         assert title.property("text") != ""
 
+    def test_camera_summary_two_column_rows_render(self, qml_app, qt_app):
+        """#235: a `bal\tjobb` cellapáros összefoglaló két oszlopban
+        renderelődik (soronként bal+jobb cella), a placeholder eltűnik."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        box = window.findChild(QObject, "viewerHistogramBox")
+        box.setProperty(
+            "cameraSummary",
+            "Xiaomi Mi Note 10\t1/125 s\nFocal length: 6.72 mm\tf/1.69",
+        )
+        qt_app.processEvents()
+        area = window.findChild(QObject, "cameraSummaryArea")
+        assert area is not None, "cameraSummaryArea nem található"
+        rows = area.property("summaryRows")
+        rows = rows.toVariant() if hasattr(rows, "toVariant") else rows
+        assert list(rows) == [
+            "Xiaomi Mi Note 10\t1/125 s",
+            "Focal length: 6.72 mm\tf/1.69",
+        ]
+        fallback = window.findChild(QObject, "cameraSummaryText")
+        assert fallback.property("visible") is False
+        # a delegate-sorok VIZUÁLIS gyerekek — bal/jobb cellaszövegek
+        texts: list[str] = []
+
+        def _walk(item):
+            for child in item.childItems():
+                value = child.property("text")
+                if value:
+                    texts.append(value)
+                _walk(child)
+
+        _walk(area)
+        assert "Xiaomi Mi Note 10" in texts
+        assert "1/125 s" in texts
+        assert "Focal length: 6.72 mm" in texts
+        assert "f/1.69" in texts
+
+    def test_title_wraps_instead_of_eliding(self, qml_app, qt_app):
+        """#235: a cím keskeny doboznál sortöréssel marad teljes (max 2 sor),
+        nem `…`-ra vágva."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        title = window.findChild(QObject, "histogramTitle")
+        # a wrapMode enum PySide-oldalon nem konvertálható — a viselkedést a
+        # maximumLineCount (2 sor engedett) és a QML-forrás rögzíti
+        assert title.property("maximumLineCount") == 2
+
+
 class TestSearchSuggestionsWiring:
     def test_refresh_fills_box_from_controller(self, qml_app, qt_app):
         # #7 bekötés: gépelés (debounce után) a controller-slotból tölti
@@ -1374,3 +1422,16 @@ class TestViewerFolderBoundedNavigation:
         prev_button = window.findChild(QObject, "viewerPrevButton")
         assert prev_button is not None, "viewerPrevButton nem található"
         assert prev_button.property("enabled") is False
+
+
+class TestSplashWiring:
+    """#189 bekötés: a splash a Main.qml legfelső rétegén ül, és a
+    startupStatus.ready-re eltűnik (a fixture kész állapotból indul)."""
+
+    def test_splash_present_and_hidden_when_ready(self, qml_app, qt_app):
+        window, _, _ = qml_app
+        splash = window.findChild(QObject, "splashScreen")
+        assert splash is not None, "splashScreen nem található a Main.qml-ben"
+        qt_app.processEvents()
+        assert splash.property("ready") is True
+        assert splash.property("visible") is False

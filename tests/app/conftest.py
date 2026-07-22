@@ -70,6 +70,13 @@ def qml_app(qt_app, tmp_path):
     )
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
     engine.rootContext().setContextProperty("appVersion", version_string())
+    # #189: a splash-híd — a funkcionális tesztek kész (ready) állapotból
+    # indulnak, hogy a splash-overlay ne takarjon semmit
+    from picasapy.app.startup_status import StartupStatus
+
+    startup_status = StartupStatus()
+    startup_status.finish()
+    engine.rootContext().setContextProperty("startupStatus", startup_status)
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
     window = engine.rootObjects()[0]

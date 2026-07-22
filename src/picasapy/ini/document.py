@@ -8,10 +8,35 @@ műveletek új dokumentumot adnak vissza.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 _SPECIAL_NAMES = frozenset({"Picasa", "Contacts", "Contacts2", "encoding", "photoid"})
 ALBUM_SECTION_PREFIX = ".album:"
+
+
+@dataclass(frozen=True)
+class SourceFingerprint:
+    """A betöltött `.picasa.ini` forrásfájl állapot-ujjlenyomata (#137).
+
+    Az ütközésdetektáláshoz (párhuzamosan futó eredeti Picasa) rögzíti, hogy
+    a dokumentum betöltésekor mi volt a lemezen. Két ujjlenyomat akkor egyezik,
+    ha a fájl LÉTEZÉSE, mérete és tartalom-hashe azonos — az `mtime_ns` csak
+    tájékoztató (`compare=False`), mert egy puszta időbélyeg-változás (pl.
+    `touch`) azonos tartalom mellett nem jelent tényleges módosítást, tehát
+    fölösleges újraolvasást sem indokol.
+
+    A nem létező fájlt a `NO_SOURCE_FILE` sentinel jelöli (`exists=False`).
+    """
+
+    exists: bool
+    size: int
+    digest: str
+    mtime_ns: int = field(default=0, compare=False)
+
+
+# „Nincs fájl" ujjlenyomat — a hiányzó forrás egyértelmű, összehasonlítható
+# jelölője (üres/új dokumentum betöltésekor és az ütközés-újraellenőrzéskor).
+NO_SOURCE_FILE = SourceFingerprint(exists=False, size=0, digest="")
 
 
 @dataclass(frozen=True)
@@ -67,6 +92,12 @@ class IniDocument:
     sections: tuple[Section, ...]
     encoding: str = "utf-8"
     bom: bool = False
+    # #137: a betöltéskori forrás-ujjlenyomat. `None`, ha a dokumentum nem
+    # fájlból jött (pl. `parse_document`), így nem is követhető ütközés. A
+    # `replace`-alapú módosítók (with_value/with_removed/…) automatikusan
+    # megőrzik — a mező a betöltés pillanatának LEMEZállapotát rögzíti, ami
+    # a memóriabeli szerkesztésektől függetlenül változatlan marad.
+    source_fingerprint: SourceFingerprint | None = None
 
     @property
     def newline(self) -> str:
