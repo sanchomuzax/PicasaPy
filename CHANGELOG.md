@@ -5,6 +5,27 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.32] – 2026-07-22
+
+### Hozzáadva
+- **Indítóképernyő (#189):** PicasaPy-logós splash screen verziószámmal,
+  animált betöltési állapotszöveggel és kék „foglalt"-sávval; az app
+  használatra kész állapotánál magától eltűnik.
+- **`.picasa.ini` ütközésvédelem (#137):** a párhuzamosan futó eredeti
+  (Windows-os) Picasa írásai többé nem veszhetnek el — mentés előtti
+  ütközés-ellenőrzés, ütközésnél a módosítás biztonságos újrajátszása.
+- **Hisztogram-referenciacsomag (#236):** determinisztikus tesztképek és
+  automata ellenőrzés a hisztogram-skála Picasa-összevetéséhez.
+
+### Javítva
+- **Hisztogram-doboz (#235):** a cím nem vágódik el (2 sorba törhet), a
+  fényképezőgép-adatok az eredeti Picasa kétoszlopos, címkézett
+  elrendezését követik (35 mm-egyenértékkel).
+- **Windows taskbar-ikon (#67):** több méretű `icon.ico` — a hol
+  megjelenő / késleltetett taskbar-ikon tünete ellen.
+- **Magréteg-duplikációk (#151):** közös kép-segédmodul és ini-helper —
+  kevesebb ismétlődő kód, egységes viselkedés.
+
 ## [0.4.31] – 2026-07-21
 
 ### Javítva

@@ -1422,3 +1422,16 @@ class TestViewerFolderBoundedNavigation:
         prev_button = window.findChild(QObject, "viewerPrevButton")
         assert prev_button is not None, "viewerPrevButton nem található"
         assert prev_button.property("enabled") is False
+
+
+class TestSplashWiring:
+    """#189 bekötés: a splash a Main.qml legfelső rétegén ül, és a
+    startupStatus.ready-re eltűnik (a fixture kész állapotból indul)."""
+
+    def test_splash_present_and_hidden_when_ready(self, qml_app, qt_app):
+        window, _, _ = qml_app
+        splash = window.findChild(QObject, "splashScreen")
+        assert splash is not None, "splashScreen nem található a Main.qml-ben"
+        qt_app.processEvents()
+        assert splash.property("ready") is True
+        assert splash.property("visible") is False

@@ -4,12 +4,144 @@
 <context>
     <name></name>
     <message>
+        <location filename="../formatting.py" line="39"/>
         <source>%1 KB</source>
         <translation>%1 KB</translation>
     </message>
     <message>
+        <location filename="../formatting.py" line="40"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="67"/>
+        <source>%1x%2 pixels</source>
+        <translation>%1x%2 képpont</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="93"/>
+        <source>File name</source>
+        <translation>Fájlnév</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="94"/>
+        <source>Folder</source>
+        <translation>Mappa</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="95"/>
+        <source>File size</source>
+        <translation>Fájlméret</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="98"/>
+        <source>Dimensions</source>
+        <translation>Képméret</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="102"/>
+        <source>Date taken</source>
+        <translation>Felvétel ideje</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="115"/>
+        <source>Camera</source>
+        <translation>Fényképezőgép</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="118"/>
+        <source>Exposure</source>
+        <translation>Záridő</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="123"/>
+        <source>Aperture</source>
+        <translation>Rekesz</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="127"/>
+        <source>ISO</source>
+        <translation>ISO</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="130"/>
+        <source>Focal length</source>
+        <translation>Gyújtótávolság</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="131"/>
+        <source>%1 mm</source>
+        <translation>%1 mm</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="137"/>
+        <source>Flash</source>
+        <translation>Vaku</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="138"/>
+        <source>Fired</source>
+        <translation>Villant</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="138"/>
+        <source>Did not fire</source>
+        <translation>Nem villant</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="142"/>
+        <source>White balance</source>
+        <translation>Fehéregyensúly</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="143"/>
+        <source>Automatic</source>
+        <translation>Automatikus</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="144"/>
+        <source>Manual</source>
+        <translation>Kézi</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="167"/>
+        <source>Focal length: %1 mm</source>
+        <translation>Fókusztávolság: %1 mm</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="173"/>
+        <source>(35 mm equivalent: %1 mm)</source>
+        <translation>(35 milliméteressel egyenértékű: %1 mm)</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="180"/>
+        <source>ISO: %1</source>
+        <translation>ISO: %1</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="182"/>
+        <source>Flash: Fired</source>
+        <translation>Vaku: villant</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="182"/>
+        <source>Flash: Off</source>
+        <translation>Vaku: nem villant</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="194"/>
+        <source>%1 folders / %2 pictures visible (%3 seconds) %4 GB</source>
+        <translation>%1 mappa / %2 kép látható (%3 másodperc) %4 GB</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="207"/>
+        <source>0 pictures</source>
+        <translation>0 kép</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py" line="217"/>
+        <source>%1 MB on disk</source>
+        <translation>%1 MB a lemezen</translation>
     </message>
 </context>
 <context>
@@ -507,7 +639,7 @@
         <translation>Hisztogram és fényképezőgép-adatok</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/HistogramBox.qml" line="96"/>
+        <location filename="../qml/PicasaPy/HistogramBox.qml" line="111"/>
         <source>No EXIF data available</source>
         <translation>Nincs elérhető EXIF-adat.</translation>
     </message>
@@ -1380,6 +1512,14 @@
     </message>
 </context>
 <context>
+    <name>SplashScreen</name>
+    <message>
+        <location filename="../qml/PicasaPy/SplashScreen.qml" line="103"/>
+        <source>PicasaPy · version %1</source>
+        <translation>PicasaPy · verzió %1</translation>
+    </message>
+</context>
+<context>
     <name>TagsPanel</name>
     <message>
         <location filename="../qml/PicasaPy/TagsPanel.qml" line="42"/>
@@ -1431,6 +1571,56 @@
         <location filename="../qml/PicasaPy/VideoPlayerView.qml" line="58"/>
         <source>Unable to play this video.</source>
         <translation>Ez a videó nem játszható le.</translation>
+    </message>
+</context>
+<context>
+    <name>startup</name>
+    <message>
+        <location filename="../application.py" line="300"/>
+        <source>Starting…</source>
+        <translation>Indulás…</translation>
+    </message>
+    <message>
+        <location filename="../application.py" line="319"/>
+        <source>Preparing index…</source>
+        <translation>Index előkészítése…</translation>
+    </message>
+    <message>
+        <location filename="../application.py" line="327"/>
+        <source>Loading photo library…</source>
+        <translation>Képtár betöltése…</translation>
+    </message>
+    <message>
+        <location filename="../application.py" line="390"/>
+        <source>Scanning folders…</source>
+        <translation>Mappák beolvasása…</translation>
+    </message>
+</context>
+<context>
+    <name>EditController</name>
+    <message>
+        <source>Focal length: %1 mm</source>
+        <translation>Fókusztávolság: %1 mm</translation>
+    </message>
+    <message>
+        <source>(35 mm equivalent: %1 mm)</source>
+        <translation>(35 milliméteressel egyenértékű: %1 mm)</translation>
+    </message>
+    <message>
+        <source>ISO: %1</source>
+        <translation>ISO: %1</translation>
+    </message>
+    <message>
+        <source>Flash: Fired</source>
+        <translation>Vaku: villant</translation>
+    </message>
+    <message>
+        <source>Flash: Off</source>
+        <translation>Vaku: nem villant</translation>
+    </message>
+    <message>
+        <source>No EXIF data available</source>
+        <translation>No EXIF data available</translation>
     </message>
 </context>
 </TS>

@@ -15,7 +15,14 @@ from pathlib import Path
 import shutil
 import subprocess
 
-from PySide6.QtCore import QLocale, QLockFile, Qt, QTranslator
+from PySide6.QtCore import (
+    QCoreApplication,
+    QLocale,
+    QLockFile,
+    Qt,
+    QTimer,
+    QTranslator,
+)
 from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
@@ -34,6 +41,7 @@ from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
 from .faces_helper import FacesHelper
 from .fileops_controller import FileOpsController
+from .startup_status import StartupStatus
 from .thumbnail_provider import ThumbnailProvider
 
 _APP_DIR = Path(__file__).parent
@@ -287,6 +295,10 @@ def run(argv: list[str]) -> int:
     app.setWindowIcon(QIcon(str(_window_icon_path())))
     _install_translator(app)
 
+    # Indítóképernyő-híd (#189): korán jön létre, hogy az első állapot-
+    # üzenetek is látsszanak; helyi változóban tartva (GC ellen).
+    startup_status = StartupStatus(QCoreApplication.translate("startup", "Starting…"))
+
     roots = _resolve_roots(argv)
     data_dir = _data_dir()
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -303,11 +315,17 @@ def run(argv: list[str]) -> int:
     # Ottragadt gyökerek takarítása (#58): az indexben csak a most figyelt
     # mappák maradhatnak — a korábbi futások (pl. régi parancssori argumentum)
     # mappái különben örökre a bal hasábban ragadnának.
+    startup_status.report(
+        QCoreApplication.translate("startup", "Preparing index…")
+    )
     with open_index(data_dir / "index.db") as conn:
         prune_foreign_folders(conn, roots)
 
     # #83: a cache-méretet a képernyő DPR-jéhez igazítjuk, hogy a rács
     # legnagyobb fokozata (256px) se legyen homályos HiDPI kijelzőn.
+    startup_status.report(
+        QCoreApplication.translate("startup", "Loading photo library…")
+    )
     cache_size = _thumbnail_cache_size(_screen_device_pixel_ratio(app))
     provider = ThumbnailProvider(
         ThumbnailCache(
@@ -357,10 +375,24 @@ def run(argv: list[str]) -> int:
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().
     engine.rootContext().setContextProperty("appVersion", version_string())
+    # Indítóképernyő (#189): a Main.qml legfelső rétegén ülő SplashScreen
+    # ebből a hídból kapja az állapotot, és a finish()-re magától eltűnik.
+    engine.rootContext().setContextProperty("startupStatus", startup_status)
     engine.load(str(_APP_DIR / "qml" / "Main.qml"))
     if not engine.rootObjects():
         return 1
-    controller.start()
+
+    # A start() az első eseményhurok-körben fut (singleShot 0): így az ablak
+    # első képkockáin már a splash látszik a betöltés alatt, és a finish()
+    # pontosan akkor tünteti el, amikor az első hasznos nézet kész.
+    def _start_and_finish() -> None:
+        startup_status.report(
+            QCoreApplication.translate("startup", "Scanning folders…")
+        )
+        controller.start()
+        startup_status.finish()
+
+    QTimer.singleShot(0, _start_and_finish)
     exit_code = app.exec()
     controller.shutdown()
     return exit_code

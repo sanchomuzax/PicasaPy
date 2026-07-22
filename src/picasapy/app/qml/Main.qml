@@ -687,4 +687,18 @@ ApplicationWindow {
     }
 
     AboutDialog { id: aboutDialog }
+
+    // Indítóképernyő (#189): a legfelső rétegen ül, a startupStatus hídból
+    // kapja az állapotot, és ready-re magától kifakul/eltűnik.
+    // A kötés defenzív: híd (context property) nélkül — pl. célzott
+    // tesztkörnyezetben — a splash készre áll, azaz rejtve marad.
+    SplashScreen {
+        readonly property var statusBridge:
+            typeof startupStatus !== "undefined" ? startupStatus : null
+        anchors.fill: parent
+        z: 10000
+        version: appVersion
+        statusText: statusBridge ? statusBridge.statusText : ""
+        ready: statusBridge ? statusBridge.ready : true
+    }
 }
