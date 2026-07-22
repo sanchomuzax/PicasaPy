@@ -111,7 +111,12 @@ Item {
 
             Text {
                 objectName: "splashVersionLabel"
-                anchors.horizontalCenter: parent.horizontalCenter
+                // #242: szélesség-korlát + sortörés — a hosszú (commit-
+                // hash-es) build-sztring is a kártyán belül marad, sosem
+                // érhet a foglalt-sáv alá (a kártya-magasság az
+                // implicitHeight-ből követi a többsoros feliratot)
+                width: parent.width
+                wrapMode: Text.WordWrap
                 text: root.version.length > 0
                       ? qsTr("PicasaPy · version %1").arg(root.version)
                       : "PicasaPy"
