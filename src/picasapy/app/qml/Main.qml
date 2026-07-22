@@ -700,5 +700,9 @@ ApplicationWindow {
         version: appVersion
         statusText: statusBridge ? statusBridge.statusText : ""
         ready: statusBridge ? statusBridge.ready : true
+        // #243: félkész-figyelmeztetés + OK a betöltés végén, amíg az
+        // effekt-paritás nem teljes (a kapcsoló az application.py-ban él)
+        confirmationRequired:
+            statusBridge ? statusBridge.requiresConfirmation : false
     }
 }

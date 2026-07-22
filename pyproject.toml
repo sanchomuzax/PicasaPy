@@ -1,6 +1,6 @@
 [project]
 name = "picasapy"
-version = "0.4.33"
+version = "0.4.34"
 description = "Modern, open, cross-platform successor to Google Picasa"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
