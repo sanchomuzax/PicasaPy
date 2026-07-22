@@ -55,7 +55,9 @@ Item {
         objectName: "splashCard"
         anchors.centerIn: parent
         width: 420
-        height: column.implicitHeight + 2 * 28 + bar.height
+        // #240: explicit összeg — a title-sor is számít, és a logó fix
+        // magassága miatt a kártya SVG-hiba esetén sem eshet össze
+        height: titleBar.height + 28 + column.implicitHeight + 24 + bar.height
         radius: 6
         color: Theme.contentPanel
         border.color: Theme.chromeBorder
@@ -89,16 +91,32 @@ Item {
             spacing: 16
 
             Image {
+                id: logo
+                objectName: "splashLogo"
                 anchors.horizontalCenter: parent.horizontalCenter
-                // a qml/PicasaPy/ mappából az app/assets két szinttel feljebb
+                // a qml/PicasaPy/ mappából az app/assets két szinttel feljebb.
+                // #240: explicit magasság — az elrendezés akkor sem esik
+                // össze, ha a kép (még) nem töltődött be; SVG-hibánál (pl.
+                // hiányzó Qt-SVG plugin Debianon) raszteres fallback.
                 source: Qt.resolvedUrl("../../assets/logo.svg")
-                sourceSize.width: 240
+                height: 72
+                sourceSize.height: 144
                 fillMode: Image.PreserveAspectFit
+                onStatusChanged: {
+                    if (status === Image.Error
+                            && source !== Qt.resolvedUrl("../../assets/icon.png"))
+                        source = Qt.resolvedUrl("../../assets/icon.png")
+                }
             }
 
             Text {
                 objectName: "splashVersionLabel"
-                anchors.horizontalCenter: parent.horizontalCenter
+                // #242: szélesség-korlát + sortörés — a hosszú (commit-
+                // hash-es) build-sztring is a kártyán belül marad, sosem
+                // érhet a foglalt-sáv alá (a kártya-magasság az
+                // implicitHeight-ből követi a többsoros feliratot)
+                width: parent.width
+                wrapMode: Text.WordWrap
                 text: root.version.length > 0
                       ? qsTr("PicasaPy · version %1").arg(root.version)
                       : "PicasaPy"

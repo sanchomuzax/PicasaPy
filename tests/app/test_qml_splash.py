@@ -93,3 +93,22 @@ class TestSplashScreen:
         # a fénycsík is megáll (nem látszik)
         sweep = splash.findChild(QObject, "splashSweep")
         assert sweep.property("visible") is False
+
+
+class TestSplashLayoutRegression:
+    """#240: a kártya SVG-hiba esetén sem eshet össze — a logónak explicit
+    magassága van, a kártya-magasság a title-sort is tartalmazza."""
+
+    def test_logo_has_explicit_height(self, qml_app, qt_app):
+        _, _, _, engine = qml_app
+        splash = _make_splash(engine)
+        logo = splash.findChild(QObject, "splashLogo")
+        assert logo is not None, "splashLogo nem található"
+        assert logo.property("height") == 72
+
+    def test_card_tall_enough_for_all_rows(self, qml_app, qt_app):
+        _, _, _, engine = qml_app
+        splash = _make_splash(engine)
+        card = splash.findChild(QObject, "splashCard")
+        # title-sor (34) + logó (72) + verzió + állapotsor + margók + sáv (13)
+        assert card.property("height") > 200

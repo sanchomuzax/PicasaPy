@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.33] – 2026-07-22
+
+### Javítva
+- **Indítóképernyő (#240, éles hibajelentés):** Windowson egyáltalán nem
+  látszott — a betöltés az ablak első kirajzolása előtt lezajlott és a
+  splash már kifakulva jelent meg; mostantól az első képkocka után indul,
+  és legalább 1,5 másodpercig látható. Debianon a hiányzó logó összeejtette
+  a kártyát — a logónak fix magassága és raszteres tartalék-képe van, a
+  kártya magassága pedig nem függ a kép betöltésétől.
+
 ## [0.4.32] – 2026-07-22
 
 ### Hozzáadva

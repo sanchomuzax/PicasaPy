@@ -10,6 +10,7 @@ import ctypes
 import math
 import os
 import sys
+import time
 from pathlib import Path
 
 import shutil
@@ -160,6 +161,19 @@ def _set_windows_app_id() -> None:
         # AttributeError: régi Windows-verzió vagy hiányzó API
         # OSError: nem admin-felhasználó vagy rendszer-hiba — csendben kimarad
         pass
+
+
+# #240: a splash minimális megjelenítési ideje — az első képkockától
+# számítva legalább ennyi ideig látszik, gyors betöltésnél is.
+_SPLASH_MIN_VISIBLE_MS = 1500
+
+
+def _remaining_splash_ms(
+    elapsed_ms: float, minimum_ms: int = _SPLASH_MIN_VISIBLE_MS
+) -> int:
+    """Hátralévő splash-idő: a minimum-megjelenítésből még ki nem töltött
+    rész (0, ha a betöltés maga is elég sokáig tartott)."""
+    return max(0, round(minimum_ms - elapsed_ms))
 
 
 def _window_icon_path(platform: str = sys.platform) -> Path:
@@ -382,17 +396,36 @@ def run(argv: list[str]) -> int:
     if not engine.rootObjects():
         return 1
 
-    # A start() az első eseményhurok-körben fut (singleShot 0): így az ablak
-    # első képkockáin már a splash látszik a betöltés alatt, és a finish()
-    # pontosan akkor tünteti el, amikor az első hasznos nézet kész.
+    # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul —
+    # Windowson a korábbi singleShot(0) még az első frame előtt lefutott, a
+    # finish() a splash-t láthatatlanul kifakította. A splash emellett
+    # legalább _SPLASH_MIN_VISIBLE_MS-ig látszik (gyors betöltésnél is van
+    # ideje megjelenni, a Picasa-élményhez hasonlóan).
+    window = engine.rootObjects()[0]
+    splash_state = {"started": False}
+
     def _start_and_finish() -> None:
+        first_frame_at = time.monotonic()
         startup_status.report(
             QCoreApplication.translate("startup", "Scanning folders…")
         )
         controller.start()
-        startup_status.finish()
+        elapsed_ms = (time.monotonic() - first_frame_at) * 1000
+        QTimer.singleShot(
+            _remaining_splash_ms(elapsed_ms), startup_status.finish
+        )
 
-    QTimer.singleShot(0, _start_and_finish)
+    def _on_first_frame() -> None:
+        # a frameSwapped minden képkockánál jön — csak az első számít
+        if splash_state["started"]:
+            return
+        splash_state["started"] = True
+        QTimer.singleShot(0, _start_and_finish)
+
+    window.frameSwapped.connect(_on_first_frame)
+    # tartalék: ha a frameSwapped nem jönne (pl. offscreen platform), az
+    # indulás legkésőbb 1 s után akkor is elkezdődik
+    QTimer.singleShot(1000, _on_first_frame)
     exit_code = app.exec()
     controller.shutdown()
     return exit_code
