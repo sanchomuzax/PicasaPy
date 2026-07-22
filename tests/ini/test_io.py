@@ -74,3 +74,30 @@ class TestSaveLegacyEncoding:
         monkeypatch.setattr(type(doc), "serialize", lambda self: _BadStr("x"))
         with pytest.raises(IniSaveError):
             save_document(doc, path)
+
+
+class TestLoadOrEmpty:
+    """#151/7: a `load_document-ha-létezik + üres dokumentum` minta közös
+    helpere — a controllerek 6 helyett 1 helyen tartalmazzák a logikát."""
+
+    def test_missing_file_gives_empty_document(self, tmp_path):
+        from picasapy.ini import load_or_empty
+
+        doc = load_or_empty(tmp_path / ".picasa.ini")
+        assert doc.serialize() == ""
+
+    def test_existing_file_is_loaded(self, tmp_path):
+        from picasapy.ini import load_or_empty
+
+        path = tmp_path / ".picasa.ini"
+        path.write_bytes(b"[a.jpg]\r\nstar=yes\r\n")
+        doc = load_or_empty(path)
+        assert doc.section("a.jpg").get("star") == "yes"
+
+    def test_roundtrip_with_save(self, tmp_path):
+        from picasapy.ini import load_or_empty, save_document
+
+        path = tmp_path / ".picasa.ini"
+        doc = load_or_empty(path).with_value("a.jpg", "star", "yes")
+        save_document(doc, path, backup=True)
+        assert load_or_empty(path).section("a.jpg").get("star") == "yes"

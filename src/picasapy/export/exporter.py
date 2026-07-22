@@ -19,6 +19,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from picasapy.cvimage import read_image_bytes, scale_down
 from picasapy.ini.filters import FilterOp, parse_filters
 from picasapy.ioutil import write_atomic
 from picasapy.render import apply_filters
@@ -139,7 +140,7 @@ def _export_one(
     image = _decode_image(source)
     image = _apply_filter_chain(image, ops)
     image = _apply_rotation(image, item.rotate_steps)
-    image = _scale_down(image, settings.max_dimension)
+    image = scale_down(image, settings.max_dimension)
     ok, encoded = cv2.imencode(
         ".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality]
     )
@@ -183,11 +184,11 @@ def _apply_filter_chain(image: np.ndarray, ops: tuple[FilterOp, ...]) -> np.ndar
 
 
 def _decode_image(source: Path) -> np.ndarray:
-    """Bájt-alapú dekódolás a cv2.imread helyett (#65 tanulság: az imread
-    Windowson ékezetes útvonalon némán None-t ad). EXIF-forgatással dekódol."""
-    payload = np.fromfile(source, dtype=np.uint8)
-    if payload.size == 0:
-        raise ValueError(f"Üres forrásfájl: {source}")
+    """Bájt-alapú dekódolás a közös helperrel (`picasapy.cvimage`, #151/7).
+    EXIF-forgatással dekódol; hibánál emberi olvasásra szánt kivétel."""
+    payload = read_image_bytes(source)
+    if payload is None:
+        raise ValueError(f"Üres vagy nem olvasható forrásfájl: {source}")
     image = cv2.imdecode(payload, cv2.IMREAD_COLOR)
     if image is None:
         raise ValueError(f"Nem dekódolható kép: {source}")
@@ -200,19 +201,6 @@ def _apply_rotation(image: np.ndarray, rotate_steps: int) -> np.ndarray:
     if steps == 0:
         return image
     return cv2.rotate(image, _ROTATIONS[steps])
-
-
-def _scale_down(image: np.ndarray, max_dimension: int | None) -> np.ndarray:
-    """A leghosszabb oldal korlátozása; felskálázás soha nincs."""
-    if max_dimension is None:
-        return image
-    height, width = image.shape[:2]
-    longest = max(width, height)
-    if longest <= max_dimension:
-        return image
-    scale = max_dimension / longest
-    new_size = (max(1, round(width * scale)), max(1, round(height * scale)))
-    return cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
 
 
 def _transfer_metadata(source: Path, encoded: bytes) -> bytes:

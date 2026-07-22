@@ -40,7 +40,9 @@ from picasapy.index import PhotoRecord
 from picasapy.ini.filters import serialize_filters
 from picasapy.thumbs import ThumbnailCache
 
-_PLACEHOLDER_COLOR = 0xFFE8E8E8
+# #151/7: közös konstans — az edit-előnézet provider is ezt importálja,
+# hogy a placeholder-szürke egyetlen helyen legyen definiálva.
+PLACEHOLDER_COLOR = 0xFFE8E8E8
 
 # A generáló pool mérete: a 4 mag a mért optimum (rpi5-image-libs.md,
 # ~3× gyorsulás 1 szálhoz képest); több szál RPi5-ön már nem segít.
@@ -150,7 +152,7 @@ class _ThumbJob(QRunnable):
 
 def _placeholder() -> QImage:
     image = QImage(16, 16, QImage.Format.Format_RGB32)
-    image.fill(_PLACEHOLDER_COLOR)
+    image.fill(PLACEHOLDER_COLOR)
     return image
 
 

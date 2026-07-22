@@ -5,7 +5,7 @@ from .contacts import Contact, contacts_of
 from .document import IniDocument, KeyValueLine, Line, Section, parse_document
 from .faces import UNIDENTIFIED_CONTACT, Face, parse_faces, serialize_faces
 from .filters import FilterOp, parse_filters, serialize_filters
-from .io import IniSaveError, load_document, save_document
+from .io import IniSaveError, load_document, load_or_empty, save_document
 from .rect64 import Rect64, decode_rect64, encode_rect64
 
 __all__ = [
@@ -25,6 +25,7 @@ __all__ = [
     "decode_rect64",
     "encode_rect64",
     "load_document",
+    "load_or_empty",
     "parse_album_refs",
     "parse_document",
     "parse_faces",

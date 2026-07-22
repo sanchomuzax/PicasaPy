@@ -8,7 +8,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
 from picasapy.edit.session import EditSession
-from picasapy.ini import load_document, parse_document, save_document
+from picasapy.ini import load_document, load_or_empty, save_document
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.metadata import read_exif_details
 from picasapy.scanner import PICASA_INI_NAME
@@ -455,11 +455,7 @@ class EditController(QObject):
 
     def _save(self) -> None:
         assert self._ini_path is not None
-        document = (
-            load_document(self._ini_path)
-            if self._ini_path.exists()
-            else parse_document("")
-        )
+        document = load_or_empty(self._ini_path)
         if self._session.is_empty():
             document = document.with_removed(self._section_name, "filters")
         else:

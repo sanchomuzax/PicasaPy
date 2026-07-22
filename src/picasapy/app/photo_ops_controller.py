@@ -20,7 +20,7 @@ from pathlib import Path
 from PySide6.QtCore import Signal, Slot
 
 from picasapy.index import open_index, photo_by_id, update_photo_fields
-from picasapy.ini import IniSaveError, load_document, parse_document, save_document
+from picasapy.ini import IniSaveError, load_or_empty, save_document
 from picasapy.metadata import write_iptc_caption
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -104,9 +104,7 @@ class PhotoOpsMixin:
 
         def perform() -> dict:
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
-            document = (
-                load_document(ini_path) if ini_path.exists() else parse_document("")
-            )
+            document = load_or_empty(ini_path)
             if new_star:
                 document = document.with_value(photo.name, "star", "yes")
             else:
@@ -135,9 +133,7 @@ class PhotoOpsMixin:
                 if write_iptc_caption(path, text):
                     return {"caption_file": text or None}
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
-            document = (
-                load_document(ini_path) if ini_path.exists() else parse_document("")
-            )
+            document = load_or_empty(ini_path)
             if text:
                 document = document.with_value(photo.name, "caption", text)
             else:
@@ -223,11 +219,7 @@ class PhotoOpsMixin:
         with open_index(self._db_path) as conn:
             for folder, folder_photos in by_folder.items():
                 ini_path = Path(folder) / PICASA_INI_NAME
-                document = (
-                    load_document(ini_path)
-                    if ini_path.exists()
-                    else parse_document("")
-                )
+                document = load_or_empty(ini_path)
                 for photo in folder_photos:
                     document = mutate(document, photo)
                 save_document(document, ini_path, backup=True)
@@ -255,9 +247,7 @@ class PhotoOpsMixin:
 
         def perform() -> dict:
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
-            document = (
-                load_document(ini_path) if ini_path.exists() else parse_document("")
-            )
+            document = load_or_empty(ini_path)
             if steps == 0:
                 document = document.with_removed(photo.name, "rotate")
             else:

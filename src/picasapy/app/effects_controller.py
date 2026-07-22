@@ -13,7 +13,7 @@ from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.edit.session import EditSession
 from picasapy.index import open_index
-from picasapy.ini import load_document, parse_document, save_document
+from picasapy.ini import load_or_empty, save_document
 from picasapy.ini.rect64 import encode_rect64
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -84,9 +84,7 @@ class EffectsClipboardMixin:
         with open_index(self._db_path) as conn:
             for folder, folder_photos in by_folder.items():
                 ini_path = Path(folder) / PICASA_INI_NAME
-                document = (
-                    load_document(ini_path) if ini_path.exists() else parse_document("")
-                )
+                document = load_or_empty(ini_path)
                 for photo in folder_photos:
                     section = document.section(photo.name)
                     undo_batch.append((
@@ -118,9 +116,7 @@ class EffectsClipboardMixin:
         with open_index(self._db_path) as conn:
             for folder, entries in by_folder.items():
                 ini_path = Path(folder) / PICASA_INI_NAME
-                document = (
-                    load_document(ini_path) if ini_path.exists() else parse_document("")
-                )
+                document = load_or_empty(ini_path)
                 for name, prev_filters, prev_crop in entries:
                     document = (
                         document.with_value(name, "filters", prev_filters)

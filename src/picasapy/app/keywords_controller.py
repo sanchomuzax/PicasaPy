@@ -10,7 +10,7 @@ from pathlib import Path
 from PySide6.QtCore import Slot
 
 from picasapy.index import open_index
-from picasapy.ini import load_document, parse_document, save_document
+from picasapy.ini import load_or_empty, save_document
 from picasapy.metadata import write_iptc_keywords
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -81,9 +81,7 @@ class KeywordsMixin:
             by_folder.setdefault(photo.folder_path, []).append(photo)
         for folder, folder_photos in by_folder.items():
             ini_path = Path(folder) / PICASA_INI_NAME
-            document = (
-                load_document(ini_path) if ini_path.exists() else parse_document("")
-            )
+            document = load_or_empty(ini_path)
             ini_changed = False
             for photo in folder_photos:
                 current = _split_keywords(photo.keywords)

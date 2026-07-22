@@ -27,8 +27,8 @@ from picasapy.ini.filters import FilterOp
 from picasapy.render import apply_filters
 
 from .histogram_helper import EMPTY_HISTOGRAM, compute_rgb_histogram
-
-_PLACEHOLDER_COLOR = 0xFFE8E8E8
+# #151/7: a placeholder-szürke egyetlen helyen (thumbnail_provider) definiált
+from .thumbnail_provider import PLACEHOLDER_COLOR as _PLACEHOLDER_COLOR
 _PLACEHOLDER_SIZE = 16
 _MAX_PREVIEW_EDGE = 2560
 # LRU-kapacitás (#128): lapozáskor a beginEdit új id-vel regisztrál, endEdit

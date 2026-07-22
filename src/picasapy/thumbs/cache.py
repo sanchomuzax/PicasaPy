@@ -19,6 +19,7 @@ import cv2
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
+from picasapy.cvimage import read_image_bytes, scale_down
 from picasapy.ini.filters import FilterOp, serialize_filters
 from picasapy.ioutil import write_atomic
 from picasapy.render import apply_filters
@@ -87,7 +88,7 @@ class ThumbnailCache:
         image = self._decode_source(source)
         if image is None:
             return None
-        thumb = self._scale_down(image)
+        thumb = scale_down(image, self._size)
         ok, encoded = cv2.imencode(
             ".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, _JPEG_QUALITY]
         )
@@ -124,7 +125,7 @@ class ThumbnailCache:
         base = self._decode_source(source, self._size * _EDIT_BASE_FACTOR)
         if base is None:
             return None
-        rgb = cv2.cvtColor(self._scale_down(base, self._size * _EDIT_BASE_FACTOR),
+        rgb = cv2.cvtColor(scale_down(base, self._size * _EDIT_BASE_FACTOR),
                            cv2.COLOR_BGR2RGB)
         try:
             rendered, _skipped = apply_filters(rgb, ops)
@@ -132,7 +133,7 @@ class ThumbnailCache:
             # #73-elv: hibás/idegen lánc-bejegyzésnél a szűretlen kép a helyes
             # visszaesés (részleges előnézet), nem a placeholder.
             rendered = rgb
-        thumb = cv2.cvtColor(self._scale_down(rendered, self._size),
+        thumb = cv2.cvtColor(scale_down(rendered, self._size),
                              cv2.COLOR_RGB2BGR)
         ok, encoded = cv2.imencode(
             ".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, _JPEG_QUALITY]
@@ -162,7 +163,7 @@ class ThumbnailCache:
         # #144: a forrást EGYSZER olvassuk be — a méret-próba és a dekódolás
         # ugyanabból a bájtpufferből dolgozik (korábban PIL Image.open +
         # np.fromfile kétszer nyitotta a fájlt, ami NAS-on drága).
-        payload = _read_bytes(source)
+        payload = read_image_bytes(source)
         if payload is None:
             return None
         return cv2.imdecode(payload, self._read_flag(payload, target))
@@ -202,16 +203,6 @@ class ThumbnailCache:
             ignore_replace_race=True,
         )
 
-    def _scale_down(self, image, target: int | None = None):
-        goal = self._size if target is None else target
-        height, width = image.shape[:2]
-        longest = max(width, height)
-        if longest <= goal:
-            return image
-        scale = goal / longest
-        new_size = (max(1, round(width * scale)), max(1, round(height * scale)))
-        return cv2.resize(image, new_size, interpolation=cv2.INTER_AREA)
-
 
 def _decode_video_frame(source: Path):
     """Az első dekódolható képkocka a videóból, vagy None.
@@ -233,17 +224,3 @@ def _decode_video_frame(source: Path):
         return None
     finally:
         capture.release()
-
-
-def _read_bytes(source: Path) -> np.ndarray | None:
-    """A forrásfájl bájtjai np.fromfile-lal (#65): az imread Windows-on
-    az ANSI fájl-API-val nyit, ékezetes útvonalon (pl. „Képek") némán None-t
-    ad. A np.fromfile a Python unicode-biztos fájlkezelésével olvas, az
-    imdecode pedig az imread-del azonosan dekódol (EXIF-forgatással)."""
-    try:
-        payload = np.fromfile(source, dtype=np.uint8)
-    except OSError:
-        return None  # időközben törölt/elérhetetlen forrás (NAS)
-    if payload.size == 0:
-        return None
-    return payload

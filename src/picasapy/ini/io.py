@@ -37,6 +37,17 @@ def load_document(path: str | Path) -> IniDocument:
     return replace(parse_document(text), encoding=encoding, bom=bom)
 
 
+def load_or_empty(path: str | Path) -> IniDocument:
+    """A dokumentum betöltése, vagy üres dokumentum, ha a fájl nem létezik.
+
+    #151/7: a `load_document(p) if p.exists() else parse_document("")`
+    minta közös helpere — a controllerek eddig 6 helyen ismételték."""
+    target = Path(path)
+    if not target.exists():
+        return parse_document("")
+    return load_document(target)
+
+
 def save_document(
     document: IniDocument, path: str | Path, *, backup: bool = False
 ) -> None:
