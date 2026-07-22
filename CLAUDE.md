@@ -121,9 +121,9 @@ python3 /workspace/claude-usage-status/budget_check.py --brief
 Ha a klón nincs meg: `add_repo` a `sanchomuzax/claude-usage-status`-ra, majd
 klónozd `/workspace/claude-usage-status`-ba. A kimenet forrást is jelez
 (`live` / `CACHED Nm old`) és verdiktet ad: **GO / CAUTION / STOP / UNKNOWN**.
-Mindig **előbb `git pull`, utána a check**. Részletek (verdikt-szabályok,
-`[conserve]`/`[greedy]` politika, mikor nézd): `MEMORY.md` 2026-07-22-i
-bejegyzés + a repó `ORCHESTRATOR_PROMPT.md`-je.
+Mindig **előbb `git pull`, utána a check**. Verdikt-szabályok, a
+`[conserve]`/`[greedy]` politika és a „mikor nézd" a repó
+`ORCHESTRATOR_PROMPT.md`-jében — ez a kanonikus szabálykönyv.
 
 ## Fájlok
 
