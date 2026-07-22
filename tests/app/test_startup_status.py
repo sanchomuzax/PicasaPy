@@ -72,3 +72,18 @@ class TestFinish:
         text_hits = _count_signal(status.statusTextChanged)
         status.finish()
         assert text_hits == []
+
+
+class TestRequiresConfirmation:
+    """#243: a megerősítés-kapcsoló a hídon utazik a QML felé."""
+
+    def test_default_is_false(self):
+        from picasapy.app.startup_status import StartupStatus
+
+        assert StartupStatus().property("requiresConfirmation") is False
+
+    def test_true_when_requested(self):
+        from picasapy.app.startup_status import StartupStatus
+
+        status = StartupStatus(requires_confirmation=True)
+        assert status.property("requiresConfirmation") is True

@@ -34,10 +34,17 @@ class StartupStatus(QObject):
         self,
         status_text: str = "",
         parent: QObject | None = None,
+        *,
+        requires_confirmation: bool = False,
     ) -> None:
+        """`requires_confirmation` (#243): igaz értékkel a splash a betöltés
+        végén nem tűnik el magától, hanem „félkész szoftver" figyelmeztetést
+        és OK gombot mutat — az app ezt addig kapcsolja be, amíg az eredeti
+        Picasa effekt-készlete nincs teljesen implementálva (#20, #190)."""
         super().__init__(parent)
         self._status_text = status_text
         self._ready = False
+        self._requires_confirmation = requires_confirmation
 
     # -- QML-nek kitett property-k -------------------------------------------
 
@@ -57,6 +64,12 @@ class StartupStatus(QObject):
         """A `ready` tükre: igaz, amíg az indulás tart. A foglalt-sáv és a
         pontanimáció ehhez köthető, hogy készre álláskor magától megálljon."""
         return not self._ready
+
+    @Property(bool, constant=True)
+    def requiresConfirmation(self) -> bool:
+        """Igaz, ha a splash a betöltés végén megerősítést (OK) kér (#243) —
+        az app élettartama alatt nem változik, ezért konstans property."""
+        return self._requires_confirmation
 
     # -- az induló szekvencia hívja ------------------------------------------
 

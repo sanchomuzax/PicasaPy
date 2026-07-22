@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import PicasaPy
 
 // Indítóképernyő (#189): kártyaszerű overlay a betöltés idejére — logó,
@@ -28,19 +29,42 @@ Item {
     // -- kívülről kötött property-k (StartupStatus tükre) --------------------
     property string version: ""       // pl. "v0.4.31 (…)" — a verzió-címkéhez
     property string statusText: ""     // aktuális állapotüzenet
-    property bool ready: false          // true → a splash kifakul és eltűnik
+    property bool ready: false          // true → a betöltés befejeződött
+
+    // #243: amíg az eredeti Picasa effekt-készlete nem teljes, a splash a
+    // betöltés végén nem tűnik el magától — „félkész szoftver" figyelmeztetést
+    // és OK gombot mutat, és csak az OK után záródik be.
+    property bool confirmationRequired: false
+    property bool confirmed: false
 
     // az indulás alatt vagyunk-e: a foglalt-sáv és a pont-animáció ehhez köt,
     // hogy készre álláskor magától megálljon
     readonly property bool busy: !root.ready
+    // a figyelmeztetés + OK a betöltés VÉGÉN látszik, az OK-ig
+    readonly property bool showingNotice:
+        root.ready && root.confirmationRequired && !root.confirmed
+    // ténylegesen bezárható-e már a splash
+    readonly property bool dismissed:
+        root.ready && (!root.confirmationRequired || root.confirmed)
+
+    // az OK gomb kezelője (tesztből is hívható)
+    function dismiss() { root.confirmed = true }
 
     anchors.fill: parent
-    // kifakulás készre álláskor; a láthatóság az opacity-t követi, így a
-    // funkcionális teszt a `ready` átbillentésével szimulálhatja az eltűnést
+    // kifakulás bezáráskor; a láthatóság az opacity-t követi, így a
+    // funkcionális teszt a `ready`/`dismiss()` útján szimulálhatja az eltűnést
     visible: opacity > 0.01
-    opacity: root.ready ? 0.0 : 1.0
+    opacity: root.dismissed ? 0.0 : 1.0
     Behavior on opacity {
         NumberAnimation { duration: 260; easing.type: Easing.InOutQuad }
+    }
+
+    // amíg a splash látszik, a mögöttes felület ne kapjon kattintást — a
+    // figyelmeztetés csak az OK-kal léphető át (#243)
+    MouseArea {
+        anchors.fill: parent
+        enabled: root.visible
+        hoverEnabled: false
     }
 
     // halvány elsötétítő háttér a mögöttes (még üres) felület elé
@@ -123,6 +147,35 @@ Item {
                 color: Theme.folderDate
                 font.pixelSize: Theme.fontSize
                 horizontalAlignment: Text.AlignHCenter
+            }
+
+            // #243: „félkész szoftver" figyelmeztetés + OK gomb a betöltés
+            // végén — a splash csak az OK megnyomása után záródik be
+            Column {
+                width: parent.width
+                spacing: 12
+                visible: root.showingNotice
+
+                Text {
+                    objectName: "splashNoticeText"
+                    width: parent.width
+                    text: qsTr("Please note: PicasaPy is still a work in "
+                               + "progress. Not all effects of the original "
+                               + "Picasa are implemented yet, so it is not "
+                               + "yet fully compatible with the original "
+                               + "version.")
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+
+                Button {
+                    objectName: "splashOkButton"
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: qsTr("OK")
+                    onClicked: root.dismiss()
+                }
             }
 
             // állapotüzenet-sor + három animált pont

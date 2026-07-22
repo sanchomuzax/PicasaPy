@@ -311,7 +311,13 @@ def run(argv: list[str]) -> int:
 
     # Indítóképernyő-híd (#189): korán jön létre, hogy az első állapot-
     # üzenetek is látsszanak; helyi változóban tartva (GC ellen).
-    startup_status = StartupStatus(QCoreApplication.translate("startup", "Starting…"))
+    # #243: amíg az eredeti Picasa effekt-készlete nem teljes (#20, #190),
+    # a splash a betöltés végén „félkész szoftver" figyelmeztetést és OK
+    # gombot mutat — az effekt-paritás elérésekor ezt False-ra kell állítani.
+    startup_status = StartupStatus(
+        QCoreApplication.translate("startup", "Starting…"),
+        requires_confirmation=True,
+    )
 
     roots = _resolve_roots(argv)
     data_dir = _data_dir()

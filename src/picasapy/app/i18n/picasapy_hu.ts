@@ -251,6 +251,33 @@
     </message>
 </context>
 <context>
+    <name>EditController</name>
+    <message>
+        <source>Focal length: %1 mm</source>
+        <translation>Fókusztávolság: %1 mm</translation>
+    </message>
+    <message>
+        <source>(35 mm equivalent: %1 mm)</source>
+        <translation>(35 milliméteressel egyenértékű: %1 mm)</translation>
+    </message>
+    <message>
+        <source>ISO: %1</source>
+        <translation>ISO: %1</translation>
+    </message>
+    <message>
+        <source>Flash: Fired</source>
+        <translation>Vaku: villant</translation>
+    </message>
+    <message>
+        <source>Flash: Off</source>
+        <translation>Vaku: nem villant</translation>
+    </message>
+    <message>
+        <source>No EXIF data available</source>
+        <translation>No EXIF data available</translation>
+    </message>
+</context>
+<context>
     <name>EditorPanel</name>
     <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="34"/>
@@ -1514,9 +1541,19 @@
 <context>
     <name>SplashScreen</name>
     <message>
-        <location filename="../qml/PicasaPy/SplashScreen.qml" line="103"/>
+        <location filename="../qml/PicasaPy/SplashScreen.qml" line="145"/>
         <source>PicasaPy · version %1</source>
         <translation>PicasaPy · verzió %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/SplashScreen.qml" line="162"/>
+        <source>Please note: PicasaPy is still a work in progress. Not all effects of the original Picasa are implemented yet, so it is not yet fully compatible with the original version.</source>
+        <translation>Figyelem: a PicasaPy még fejlesztés alatt álló, félkész szoftver. Az eredeti Picasa effektjeinek egy része még hiányzik, ezért a régi, eredeti változattal még nem teljesen kompatibilis.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/SplashScreen.qml" line="176"/>
+        <source>OK</source>
+        <translation>OK</translation>
     </message>
 </context>
 <context>
@@ -1576,51 +1613,24 @@
 <context>
     <name>startup</name>
     <message>
-        <location filename="../application.py" line="300"/>
+        <location filename="../application.py" line="318"/>
         <source>Starting…</source>
         <translation>Indulás…</translation>
     </message>
     <message>
-        <location filename="../application.py" line="319"/>
+        <location filename="../application.py" line="339"/>
         <source>Preparing index…</source>
         <translation>Index előkészítése…</translation>
     </message>
     <message>
-        <location filename="../application.py" line="327"/>
+        <location filename="../application.py" line="347"/>
         <source>Loading photo library…</source>
         <translation>Képtár betöltése…</translation>
     </message>
     <message>
-        <location filename="../application.py" line="390"/>
+        <location filename="../application.py" line="416"/>
         <source>Scanning folders…</source>
         <translation>Mappák beolvasása…</translation>
-    </message>
-</context>
-<context>
-    <name>EditController</name>
-    <message>
-        <source>Focal length: %1 mm</source>
-        <translation>Fókusztávolság: %1 mm</translation>
-    </message>
-    <message>
-        <source>(35 mm equivalent: %1 mm)</source>
-        <translation>(35 milliméteressel egyenértékű: %1 mm)</translation>
-    </message>
-    <message>
-        <source>ISO: %1</source>
-        <translation>ISO: %1</translation>
-    </message>
-    <message>
-        <source>Flash: Fired</source>
-        <translation>Vaku: villant</translation>
-    </message>
-    <message>
-        <source>Flash: Off</source>
-        <translation>Vaku: nem villant</translation>
-    </message>
-    <message>
-        <source>No EXIF data available</source>
-        <translation>No EXIF data available</translation>
     </message>
 </context>
 </TS>

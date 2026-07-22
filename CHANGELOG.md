@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.34] – 2026-07-22
+
+### Hozzáadva
+- **„Félkész szoftver" figyelmeztetés az indítóképernyőn (#243):** amíg az
+  eredeti Picasa effekt-készlete nincs teljesen implementálva, a betöltés
+  végén a splash figyelmeztetést és OK gombot mutat — csak az OK
+  megnyomása után záródik be, és addig a mögöttes felület nem kattintható.
+
 ## [0.4.33] – 2026-07-22
 
 ### Javítva

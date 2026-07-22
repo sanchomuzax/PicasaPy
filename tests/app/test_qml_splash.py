@@ -112,3 +112,49 @@ class TestSplashLayoutRegression:
         card = splash.findChild(QObject, "splashCard")
         # title-sor (34) + logó (72) + verzió + állapotsor + margók + sáv (13)
         assert card.property("height") > 200
+
+
+class TestSplashConfirmation:
+    """#243: megerősítéses mód — a betöltés végén „félkész szoftver"
+    figyelmeztetés + OK gomb, a splash csak az OK után záródik be."""
+
+    def test_notice_hidden_while_loading(self, qml_app, qt_app):
+        _, _, _, engine = qml_app
+        splash = _make_splash(engine, confirmationRequired=True)
+        notice = splash.findChild(QObject, "splashNoticeText")
+        assert notice is not None, "splashNoticeText nem található"
+        assert notice.property("visible") is False
+
+    def test_ready_shows_notice_and_ok_instead_of_closing(self, qml_app, qt_app):
+        _, _, _, engine = qml_app
+        splash = _make_splash(engine, confirmationRequired=True)
+        splash.setProperty("ready", True)
+        qt_app.processEvents()
+        # a splash NEM tűnik el, a figyelmeztetés és az OK gomb látszik
+        assert not _wait_until(
+            qt_app, lambda: splash.property("visible") is False, timeout_ms=600
+        ), "a splash az OK előtt eltűnt"
+        notice = splash.findChild(QObject, "splashNoticeText")
+        button = splash.findChild(QObject, "splashOkButton")
+        assert notice.property("visible") is True
+        assert button is not None and button.property("visible") is True
+        # a foglalt-jelzések közben leálltak
+        assert splash.property("busy") is False
+
+    def test_ok_click_dismisses(self, qml_app, qt_app):
+        from PySide6.QtCore import QMetaObject
+
+        _, _, _, engine = qml_app
+        splash = _make_splash(engine, confirmationRequired=True)
+        splash.setProperty("ready", True)
+        qt_app.processEvents()
+        QMetaObject.invokeMethod(splash, "dismiss")
+        assert _wait_until(qt_app, lambda: splash.property("visible") is False), (
+            "a splash nem záródott be az OK (dismiss) után"
+        )
+
+    def test_without_confirmation_closes_as_before(self, qml_app, qt_app):
+        _, _, _, engine = qml_app
+        splash = _make_splash(engine, confirmationRequired=False)
+        splash.setProperty("ready", True)
+        assert _wait_until(qt_app, lambda: splash.property("visible") is False)
