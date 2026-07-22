@@ -349,3 +349,18 @@ class TestWireFileops:
         outside = tmp_path / "kivul" / "a.jpg"
         fileops.photoMoved.emit(str(root / "alma" / "a.jpg"), str(outside))
         assert stub.resynced == [str(root / "alma")]
+
+
+class TestWindowIconPath:
+    """#67: Windowson több méretű .ico a taskbar-ikonhoz — a futásidejű PNG
+    kis méretre skálázása a taskbaron megbízhatatlan/késleltetett."""
+
+    def test_windows_prefers_ico(self):
+        path = application._window_icon_path(platform="win32")
+        assert path.suffix == ".ico"
+        assert path.exists()
+
+    def test_linux_uses_png(self):
+        path = application._window_icon_path(platform="linux")
+        assert path.suffix == ".png"
+        assert path.exists()

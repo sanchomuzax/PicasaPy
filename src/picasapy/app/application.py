@@ -154,6 +154,16 @@ def _set_windows_app_id() -> None:
         pass
 
 
+def _window_icon_path(platform: str = sys.platform) -> Path:
+    """Az ablak-/taskbar-ikon fájlja (#67): Windowson a több méretű `.ico`
+    (a taskbar 16–32 px-es változatai előre renderelve, nem futásidejű
+    PNG-skálázással — az hol késleltetve, hol egyáltalán nem jelent meg),
+    máshol a 256 px-es PNG."""
+    if platform == "win32":
+        return _APP_DIR / "assets" / "icon.ico"
+    return _APP_DIR / "assets" / "icon.png"
+
+
 def _install_desktop_entry() -> None:
     """Asztali bejegyzés + ikon telepítése (~/.local/share) — Waylanden a
     tálca az app_id ↔ .desktop párosításból kapja az ikont. Idempotens."""
@@ -274,7 +284,7 @@ def run(argv: list[str]) -> int:
     except AttributeError:
         pass  # régebbi Qt: a paletta (Main.qml) így is világost kényszerít
     app.setDesktopFileName("picasapy")  # Wayland app_id → tálca-ikon
-    app.setWindowIcon(QIcon(str(_APP_DIR / "assets" / "icon.png")))
+    app.setWindowIcon(QIcon(str(_window_icon_path())))
     _install_translator(app)
 
     roots = _resolve_roots(argv)

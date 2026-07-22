@@ -7,8 +7,20 @@ import PicasaPy
 // Az objektum property-vezérelt: a Python-oldali StartupStatus híd tölti a
 // `statusText`-et, és `ready = true`-ra állítja, amikor az indulás kész — a
 // splash erre magától kifakul (opacity-animáció), majd láthatatlanná válik.
-// A bekötést az integrátor végzi (ld. docs/notes/splash-bekotes.md); itt a
-// komponens és a viselkedés áll készen, önállóan tesztelhetően.
+// A bekötést az integrátor végzi; itt a komponens és a viselkedés áll
+// készen, önállóan tesztelhetően. Bekötési lépések (forró fájlok):
+//
+//   application.py — korán (a controller előtt):
+//     startup_status = StartupStatus("Indulás…")   # helyi változóban (GC!)
+//     engine.rootContext().setContextProperty("startupStatus", startup_status)
+//     ...az induló lépéseknél startup_status.report("Mappák beolvasása…"),
+//     a kész nézetnél egyszer startup_status.finish() (vagy
+//     controller.syncFinished.connect(startup_status.finish))
+//
+//   Main.qml — a gyökér legfelső rétegén:
+//     SplashScreen { anchors.fill: parent; z: 10000; version: appVersion
+//                    statusText: startupStatus.statusText
+//                    ready: startupStatus.ready }
 Item {
     id: root
     objectName: "splashScreen"
