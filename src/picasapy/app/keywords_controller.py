@@ -10,7 +10,7 @@ from pathlib import Path
 from PySide6.QtCore import Slot
 
 from picasapy.index import open_index
-from picasapy.ini import load_or_empty, save_document
+from picasapy.ini import update_document
 from picasapy.metadata import write_iptc_keywords
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -81,8 +81,11 @@ class KeywordsMixin:
             by_folder.setdefault(photo.folder_path, []).append(photo)
         for folder, folder_photos in by_folder.items():
             ini_path = Path(folder) / PICASA_INI_NAME
-            document = load_or_empty(ini_path)
-            ini_changed = False
+            # Az IPTC-írás mellékhatás — az update_document mutate-je viszont
+            # tiszta (újrajátszható) kell legyen (#137). Ezért az IPTC-t itt,
+            # a mutate-en KÍVÜL, egyszer végezzük el, és csak az ini-be
+            # kerülő (kulcs, érték|None) módosításokat gyűjtjük a mutate-nek.
+            ini_edits: list[tuple[str, str | None]] = []
             for photo in folder_photos:
                 current = _split_keywords(photo.keywords)
                 updated = transform(current)
@@ -94,15 +97,20 @@ class KeywordsMixin:
                         Path(folder) / photo.name, updated
                     )
                 if not wrote_iptc:
-                    if updated:
-                        document = document.with_value(
-                            photo.name, "keywords", ",".join(updated)
+                    ini_edits.append(
+                        (photo.name, ",".join(updated) if updated else None)
+                    )
+            if ini_edits:
+                def mutate(document, edits=ini_edits):
+                    for name, value in edits:
+                        document = (
+                            document.with_value(name, "keywords", value)
+                            if value is not None
+                            else document.with_removed(name, "keywords")
                         )
-                    else:
-                        document = document.with_removed(photo.name, "keywords")
-                    ini_changed = True
-            if ini_changed:
-                save_document(document, ini_path, backup=True)
+                    return document
+
+                update_document(ini_path, mutate, backup=True)
             with open_index(self._db_path) as conn:
                 self._sync_tree(conn, folder)
         self._refresh_view()

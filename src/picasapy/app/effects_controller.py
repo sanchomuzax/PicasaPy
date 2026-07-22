@@ -13,7 +13,7 @@ from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.edit.session import EditSession
 from picasapy.index import open_index
-from picasapy.ini import load_or_empty, save_document
+from picasapy.ini import update_document
 from picasapy.ini.rect64 import encode_rect64
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -84,19 +84,31 @@ class EffectsClipboardMixin:
         with open_index(self._db_path) as conn:
             for folder, folder_photos in by_folder.items():
                 ini_path = Path(folder) / PICASA_INI_NAME
-                document = load_or_empty(ini_path)
-                for photo in folder_photos:
-                    section = document.section(photo.name)
-                    undo_batch.append((
-                        folder,
-                        photo.name,
-                        section.get("filters") if section else None,
-                        section.get("crop") if section else None,
-                    ))
-                    document = _write_session(
-                        document, photo.name, EditSession(ops=pasted_ops)
-                    )
-                save_document(document, ini_path, backup=True)
+                # #137: ütközésbiztos mentés. A beillesztés ELŐTTI (nyers)
+                # értékeket a mutate-en belül olvassuk ki, hogy ütközéskori
+                # újrajátszásnál a FRISS (más író általi) alapállapotot
+                # tükrözzék; az `entries` listát minden hívás felülírja
+                # (nem hozzáfűzi), így az újrajátszás nem duplikál.
+                entries: list[tuple[str, str, str | None, str | None]] = []
+
+                def mutate(document, folder=folder, folder_photos=folder_photos):
+                    fresh: list[tuple[str, str, str | None, str | None]] = []
+                    for photo in folder_photos:
+                        section = document.section(photo.name)
+                        fresh.append((
+                            folder,
+                            photo.name,
+                            section.get("filters") if section else None,
+                            section.get("crop") if section else None,
+                        ))
+                        document = _write_session(
+                            document, photo.name, EditSession(ops=pasted_ops)
+                        )
+                    entries[:] = fresh
+                    return document
+
+                update_document(ini_path, mutate, backup=True)
+                undo_batch.extend(entries)
                 self._sync_tree(conn, folder)
         self._effects_undo_stack.append(undo_batch)
         self.effectsClipboardChanged.emit()
@@ -116,19 +128,22 @@ class EffectsClipboardMixin:
         with open_index(self._db_path) as conn:
             for folder, entries in by_folder.items():
                 ini_path = Path(folder) / PICASA_INI_NAME
-                document = load_or_empty(ini_path)
-                for name, prev_filters, prev_crop in entries:
-                    document = (
-                        document.with_value(name, "filters", prev_filters)
-                        if prev_filters is not None
-                        else document.with_removed(name, "filters")
-                    )
-                    document = (
-                        document.with_value(name, "crop", prev_crop)
-                        if prev_crop is not None
-                        else document.with_removed(name, "crop")
-                    )
-                save_document(document, ini_path, backup=True)
+
+                def mutate(document, entries=entries):
+                    for name, prev_filters, prev_crop in entries:
+                        document = (
+                            document.with_value(name, "filters", prev_filters)
+                            if prev_filters is not None
+                            else document.with_removed(name, "filters")
+                        )
+                        document = (
+                            document.with_value(name, "crop", prev_crop)
+                            if prev_crop is not None
+                            else document.with_removed(name, "crop")
+                        )
+                    return document
+
+                update_document(ini_path, mutate, backup=True)  # #137
                 self._sync_tree(conn, folder)
         self.effectsClipboardChanged.emit()
         self._refresh_view()

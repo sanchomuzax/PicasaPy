@@ -20,11 +20,13 @@ from pathlib import Path
 from PySide6.QtCore import Signal, Slot
 
 from picasapy.index import open_index, photo_by_id, update_photo_fields
-from picasapy.ini import IniSaveError, load_or_empty, save_document
+from picasapy.ini import IniConflictError, IniSaveError, update_document
 from picasapy.metadata import write_iptc_caption
 from picasapy.scanner import PICASA_INI_NAME
 
-_WRITE_ERRORS = (OSError, IniSaveError)
+# #137: a tartós ütközés (párhuzamos Picasa-írás) is kezelt írási hiba — a
+# felhasználó a megszokott hibacsatornán kap jelzést, nem néma adatvesztés.
+_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
 
 
 class PhotoOpsMixin:
@@ -104,12 +106,13 @@ class PhotoOpsMixin:
 
         def perform() -> dict:
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
-            document = load_or_empty(ini_path)
-            if new_star:
-                document = document.with_value(photo.name, "star", "yes")
-            else:
-                document = document.with_removed(photo.name, "star")
-            save_document(document, ini_path, backup=True)
+
+            def mutate(document):
+                if new_star:
+                    return document.with_value(photo.name, "star", "yes")
+                return document.with_removed(photo.name, "star")
+
+            update_document(ini_path, mutate, backup=True)
             return {"star": int(new_star)}
 
         self._run_photo_write(photo.id, perform)
@@ -133,12 +136,13 @@ class PhotoOpsMixin:
                 if write_iptc_caption(path, text):
                     return {"caption_file": text or None}
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
-            document = load_or_empty(ini_path)
-            if text:
-                document = document.with_value(photo.name, "caption", text)
-            else:
-                document = document.with_removed(photo.name, "caption")
-            save_document(document, ini_path, backup=True)
+
+            def mutate(document):
+                if text:
+                    return document.with_value(photo.name, "caption", text)
+                return document.with_removed(photo.name, "caption")
+
+            update_document(ini_path, mutate, backup=True)
             return {"caption_ini": text or None}
 
         self._run_photo_write(photo.id, perform)
@@ -219,10 +223,16 @@ class PhotoOpsMixin:
         with open_index(self._db_path) as conn:
             for folder, folder_photos in by_folder.items():
                 ini_path = Path(folder) / PICASA_INI_NAME
-                document = load_or_empty(ini_path)
-                for photo in folder_photos:
-                    document = mutate(document, photo)
-                save_document(document, ini_path, backup=True)
+
+                # #137: a köteg egyetlen tiszta mutate-ként fut az
+                # update_document alatt — ütközés esetén az egész köteg
+                # újrajátszódik a friss (más író általi) dokumentumon.
+                def batch_mutate(document, folder_photos=folder_photos):
+                    for photo in folder_photos:
+                        document = mutate(document, photo)
+                    return document
+
+                update_document(ini_path, batch_mutate, backup=True)
                 self._sync_tree(conn, folder)
         self._refresh_view()
 
@@ -247,12 +257,13 @@ class PhotoOpsMixin:
 
         def perform() -> dict:
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
-            document = load_or_empty(ini_path)
-            if steps == 0:
-                document = document.with_removed(photo.name, "rotate")
-            else:
-                document = document.with_value(photo.name, "rotate", f"rotate({steps})")
-            save_document(document, ini_path, backup=True)
+
+            def mutate(document):
+                if steps == 0:
+                    return document.with_removed(photo.name, "rotate")
+                return document.with_value(photo.name, "rotate", f"rotate({steps})")
+
+            update_document(ini_path, mutate, backup=True)
             return {"rotate_steps": steps}
 
         self._run_photo_write(photo.id, perform)
