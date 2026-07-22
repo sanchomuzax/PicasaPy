@@ -215,3 +215,19 @@ class TestExifDetails:
             tmp_path, exif_ifd={piexif.ExifIFD.ExposureTime: (1, 0)}
         )
         assert read_exif_details(photo).exposure_seconds is None
+
+
+class TestFocal35mmEquivalent:
+    """#235: a Picasa-mintájú kameraadat-blokk 35 mm-egyenértéket is mutat
+    (FocalLengthIn35mmFilm EXIF-mező)."""
+
+    def test_focal_35mm_read(self, tmp_path):
+        photo = _jpeg_with_exif(
+            tmp_path,
+            exif_ifd={piexif.ExifIFD.FocalLengthIn35mmFilm: 24},
+        )
+        assert read_exif_details(photo).focal_35mm == 24
+
+    def test_missing_gives_none(self, tmp_path):
+        photo = _jpeg_with_exif(tmp_path, exif_ifd={})
+        assert read_exif_details(photo).focal_35mm is None

@@ -44,6 +44,7 @@ _FNUMBER_TAG = 33437
 _ISO_TAG = 34855
 _FLASH_TAG = 37385
 _FOCAL_LENGTH_TAG = 37386
+_FOCAL_35MM_TAG = 41989  # FocalLengthIn35mmFilm (#235)
 _WHITE_BALANCE_TAG = 41987
 _IPTC_KEYWORDS = (2, 25)
 _IPTC_CAPTION = (2, 120)
@@ -105,6 +106,7 @@ class ExifDetails:
     f_number: float | None = None
     iso: int | None = None
     focal_mm: float | None = None
+    focal_35mm: int | None = None  # 35 mm-egyenérték (#235)
     flash_fired: bool | None = None
     white_balance: str | None = None  # "auto" | "manual"
 
@@ -126,12 +128,19 @@ def read_exif_details(path: str | Path) -> ExifDetails:
     flash = ifd.get(_FLASH_TAG)
     white_balance = ifd.get(_WHITE_BALANCE_TAG)
     iso = ifd.get(_ISO_TAG)
+    focal_35mm = ifd.get(_FOCAL_35MM_TAG)
     return ExifDetails(
         camera=_camera(exif.get(_MAKE_TAG), exif.get(_MODEL_TAG)),
         exposure_seconds=_rational(ifd.get(_EXPOSURE_TIME_TAG)),
         f_number=_rational(ifd.get(_FNUMBER_TAG)),
         iso=iso if isinstance(iso, int) else None,
         focal_mm=_rational(ifd.get(_FOCAL_LENGTH_TAG)),
+        # a 0 értékű 35 mm-egyenérték a specben "ismeretlen"-t jelent
+        focal_35mm=(
+            focal_35mm
+            if isinstance(focal_35mm, int) and focal_35mm > 0
+            else None
+        ),
         flash_fired=bool(flash & 1) if isinstance(flash, int) else None,
         white_balance=(
             {0: "auto", 1: "manual"}.get(white_balance)
