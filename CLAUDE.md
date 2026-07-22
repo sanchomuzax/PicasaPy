@@ -108,6 +108,23 @@ A globális `~/.claude/rules/` szabályok érvényesek, kiemelten:
 - **Input-validáció és átfogó hibakezelés** mindenhol.
 - **Nincs hardkódolt titok, nincs `console.log`/nyomkövetés a kész kódban.**
 
+## 💳 Kredit-/keretállás — LEKÉRDEZHETŐ (ne dolgozz vakon!)
+
+A Claude-előfizetés terhelése **megnézhető** — ne találgass, és ne hidd, hogy
+nincs rá mód. Mielőtt nagy (pl. párhuzamos subagentes) munkába kezdesz:
+
+```sh
+git -C /workspace/claude-usage-status pull --quiet && \
+python3 /workspace/claude-usage-status/budget_check.py --brief
+```
+
+Ha a klón nincs meg: `add_repo` a `sanchomuzax/claude-usage-status`-ra, majd
+klónozd `/workspace/claude-usage-status`-ba. A kimenet forrást is jelez
+(`live` / `CACHED Nm old`) és verdiktet ad: **GO / CAUTION / STOP / UNKNOWN**.
+Mindig **előbb `git pull`, utána a check**. Részletek (verdikt-szabályok,
+`[conserve]`/`[greedy]` politika, mikor nézd): `MEMORY.md` 2026-07-22-i
+bejegyzés + a repó `ORCHESTRATOR_PROMPT.md`-je.
+
 ## Fájlok
 
 - `CLAUDE.md` — ez a fájl: projekt-kontextus és irányelvek.
