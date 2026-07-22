@@ -364,3 +364,16 @@ class TestWindowIconPath:
         path = application._window_icon_path(platform="linux")
         assert path.suffix == ".png"
         assert path.exists()
+
+
+class TestRemainingSplashMs:
+    """#240: a splash minimum-megjelenítési idejének számítása."""
+
+    def test_fast_startup_waits_out_the_minimum(self):
+        assert application._remaining_splash_ms(200, minimum_ms=1500) == 1300
+
+    def test_slow_startup_finishes_immediately(self):
+        assert application._remaining_splash_ms(4000, minimum_ms=1500) == 0
+
+    def test_exact_boundary(self):
+        assert application._remaining_splash_ms(1500, minimum_ms=1500) == 0
