@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.54] – 2026-07-23
+
+### Hozzáadva
+- **XMP sidecar-export MWG-RS arcrégiókkal és HierarchicalSubject-tel (#27):**
+  új `picasapy.export.xmp` réteg, ami a Picasa-oldali kulcsszavakat, feliratot
+  és arcrégiókat digiKam/Lightroom-kompatibilis `.xmp` sidecarba írja — az
+  adat így nem ragad a `.picasa.ini`-be (UX-alapelv 5). A `rect64`
+  (bal/fel/jobb/alul) régiók a MWG-konvenció szerinti KÖZÉPPONT-alapú,
+  normalizált Area-koordinátákra váltanak; a nevesített arcok `People|Név`
+  hierarchikus címkeként és `mwg-rs:Regions` régióként is megjelennek. A
+  fotó-szintű `xmp_export` réteg a kép melletti `.picasa.ini`-ből olvas
+  (kulcsszó/felirat/`faces=` + `[Contacts2]`-névfeloldás), a pixelméretet a
+  kép fejlécéből veszi, és atomikusan `<fájlnév>.xmp` sidecart ír. (UI-bekötés
+  külön lépés.)
+
 ## [0.4.53] – 2026-07-23
 
 ### Hozzáadva
