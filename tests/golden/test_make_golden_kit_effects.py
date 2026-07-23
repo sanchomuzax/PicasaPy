@@ -114,6 +114,35 @@ def test_kit_generalas_letrehozza_a_vart_mappaszerkezetet(
         assert p.name in utmutato
 
 
+def test_kit_generalas_zarolt_kimenetnel_felulirassal_folytat(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#190: ha a meglévő kimeneti mappa nem törölhető (OneDrive/víruskereső
+    zárolás → PermissionError, a felhasználó Windows-os esete), a generálás
+    NEM áll le — a meglévő mappába, felülírással készül el a kit."""
+    out = tmp_path / "golden-kit-zarolt"
+    out.mkdir()
+    (out / "00-base").mkdir()
+    (out / "regi.txt").write_text("onedrive-maradvany")
+
+    def _zarolt_rmtree(*_args, **_kwargs):
+        raise PermissionError(5, "A hozzáférés megtagadva")
+
+    monkeypatch.setattr(mgke.shutil, "rmtree", _zarolt_rmtree)
+    argv = sys.argv
+    sys.argv = ["make_golden_kit_effects.py", str(out)]
+    try:
+        mgke.main()
+    finally:
+        sys.argv = argv
+
+    assert (out / "UTMUTATO.md").exists()
+    assert (out / "00-base" / "photo00.jpg").exists()
+    assert sorted((out / "effekt4").glob("*.jpg")), "a képek felülírással is elkészülnek"
+    # a nem-törölhető régi tartalom megmarad — ez elfogadott, nem hiba
+    assert (out / "regi.txt").exists()
+
+
 def test_kit_generalas_fotomappa_nelkul_is_mukodik(tmp_path: Path) -> None:
     """#190: fotókönyvtár HIÁNYÁBAN (csak kimeneti mappa argumentum) a kit
     szintetikus fotóval elkészül — nem száll el, mint a korábbi verzió."""

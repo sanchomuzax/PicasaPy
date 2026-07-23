@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.44] – 2026-07-23
+
+### Javítva
+- **Golden-kit OneDrive-mappában is (#190):** a meglévő kimeneti mappa
+  törlése OneDrive-zárolásnál (WinError 5) eddig elszállt; mostantól
+  csak-olvasható attribútum-levétellel és újrapróbálkozással törlünk, ha
+  pedig így sem megy, a generálás a meglévő mappába felülírással fut le —
+  a kit a felhasználó által választott (akár OneDrive alatti) helyen készül el.
+
 ## [0.4.43] – 2026-07-23
 
 ### Javítva
