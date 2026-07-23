@@ -256,19 +256,20 @@ def _write_utmutato(out: Path, rows4: list, rows5: list) -> None:
         "húzd be a Fájlkezelőből), és várd meg, amíg a Picasa beolvassa "
         "(„Scan Once” elég, nem kell folyamatos figyelést kérni rá).",
         "",
-        "## 2. lépés — effektek ráhúzása (fájlnév szerinti sorrendben)",
+        "## 2. lépés — effektek ráhúzása (CSAK az alap-képek!)",
         "",
-        "Nyisd meg a képeket egyenként (dupla klikk → szerkesztő nézet), "
-        "és a táblázat szerint kattints a megfelelő fülre és effekt-gombra. "
-        "Ahol a fájlnév végén beállítás-jelölés van (pl. `_gyenge`, "
-        "`_eros`), és az effektnek TÉNYLEG van csúszkája/paramétere a "
-        "Picasában, állítsd be úgy, hogy a beállítások jól megkülönböztethetők "
-        "legyenek (pl. a csúszka minimumához közel = „gyenge”, maximumához "
-        "közel = „eros”) — a pontos számértéket nem kell fejben tartanod, "
-        "az a `.picasa.ini`-ből úgyis kiderül. **Ha egy effektnek NINCS "
-        "csúszkája/paramétere** (a szkript ezt csak feltételezte), elég csak "
-        "az `alap` képre alkalmazni — a többi beállítás-változatot hagyd "
-        "figyelmen kívül, arra nincs szükség.",
+        "**A dolgod egyszerű: effektenként EGY kattintás, alapértelmezett "
+        "beállítással.** Csak az `_alap` végződésű, illetve változat-jelölés "
+        "nélküli képeket csináld meg (összesen 23 db): dupla klikk a képre → "
+        "a táblázat szerinti fül és effekt-gomb → **semmilyen csúszkához/"
+        "opcióhoz NE nyúlj** → Alkalmaz → következő kép.",
+        "",
+        "**A `_gyenge`/`_eros`/`_durva`/`_finom` képeket HAGYD KI.** Az "
+        "effekteknek sok beállítása van — ezek feltérképezése NEM kézi "
+        "feladat: amint az alap-alkalmazásokból kiderülnek a `filters=` "
+        "kulcsnevek, a következő körben már a szkript írja elő a "
+        "paraméter-változatokat kész `.picasa.ini`-kkel (mint a meglévő "
+        "golden-kit), és neked csak egy tömeges exportot kell majd nyomnod.",
         "",
         "### 4. fül",
         "",
