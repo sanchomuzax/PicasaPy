@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.56] – 2026-07-23
+
+### Hozzáadva
+- **Nem-destruktív mentés-mag (#21):** új `picasapy.edit.save` — mentéskor a
+  renderelt kép az eredeti helyére kerül, az EREDETI érintetlen példánya a
+  `.picasaoriginals` almappába (az első eredetit őrizve), a `.picasa.ini`-ben
+  a szerkesztési lánc `redo=`-ba, `originhash` frissül, a `filters=` törlődik
+  — mind a round-trip ini-rétegen át (ismeretlen kulcsok bitre megőrizve). A
+  `revert` a `.picasaoriginals`-ból állítja vissza az eredetit. Megjegyzés: az
+  `originhash` képlete és a `filters→redo` szabály józan, tesztelt feltételezés,
+  valódi Picasa-mintán validálandó.
+
 ## [0.4.55] – 2026-07-23
 
 ### Hozzáadva
