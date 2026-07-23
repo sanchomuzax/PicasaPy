@@ -250,8 +250,13 @@ def synthetic_photos(out_dir: Path, n=6, start=0):
             color = rng.integers(20, 235, 3).tolist()
             cv2.circle(img, (cx, cy), r, color, -1)
         img = cv2.GaussianBlur(img, (0, 0), 25)
-        noise = rng.integers(-12, 12, (h, w, 3), dtype=np.int16)
-        img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+        # #278: a korábbi ±12-es egyenletes zaj a JPEG-round-trip után
+        # felfújta a golden-diffet a sima tartalmú fotó-alapképeken (dE
+        # ~1-2, "eltér" ítélet), miközben a chart-alapképek pixelhűek
+        # maradtak — a bizonyíték szerint azonos crop64 kód mellett
+        # chart_detail max_diff=1, a zajos photo max_diff=14 volt. A
+        # változatosságot úgyis a színátmenetek és a foltok (körök) adják,
+        # a mesterséges zaj nem szükséges — ezért a zaj-lépést elhagyjuk.
         p = Path(out_dir) / f"photo{i:02d}.jpg"
         imwrite_unicode(p, img, [cv2.IMWRITE_JPEG_QUALITY, 95])
         paths.append(p)

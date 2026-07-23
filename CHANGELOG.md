@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.52] – 2026-07-23
+
+### Javítva
+- **A PicasaPy-ikon kitölti a vásznat (#267):** a forrás `icon.png`/`icon.ico`
+  körüli vastag átlátszó margó levágva, a rajzolat most a vászon ~92%-át
+  tölti ki (előtte 82–90%), így a Windows Start menüben / Asztalon nem tűnik
+  kisebbnek az eredeti Picasa 3 ikonnál. Új, újrafuttatható
+  `tools/regenerate_icon.py`. (A végső vizuális elfogadás a felhasználónál.)
+
+## [0.4.51] – 2026-07-23
+
+### Javítva
+- **Stabil szintetikus golden-alapképek (#278):** a `make_golden_kit.py`
+  `synthetic_photos` már nem tesz ±12-es egyenletes zajt a fotószerű
+  alapképekre — a zaj a Picasa JPEG-újratömörítése után felfújta a
+  golden-diffet a sima tartalmú képeken („eltér" ítélet), miközben a
+  chart-alapképek pixelhűek maradtak. Így a tónus-szűrők szintetikus
+  fotó-alapképen is értelmes golden-számot adnak.
+
 ## [0.4.50] – 2026-07-23
 
 ### Hozzáadva
