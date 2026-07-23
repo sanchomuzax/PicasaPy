@@ -26,6 +26,7 @@ def qml_app(qt_app, tmp_path):
     import picasapy.app.application as app_module
     from picasapy.app.controller import AppController
     from picasapy.app.discovery_controller import DiscoveryController
+    from picasapy.app.drop_import_controller import DropImportController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
     from picasapy.app.faces_helper import FacesHelper
@@ -55,6 +56,10 @@ def qml_app(qt_app, tmp_path):
     fileops_controller = FileOpsController()
     app_module.wire_fileops(fileops_controller, controller)
     discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
+    # kép/mappa ablakra ejtése (#237) — az application.py bekötésének tükre
+    drop_import_controller = DropImportController(
+        add_folder=controller.addWatchedFolder
+    )
     faces_helper = FacesHelper()
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
@@ -67,6 +72,9 @@ def qml_app(qt_app, tmp_path):
     )
     engine.rootContext().setContextProperty(
         "discoveryController", discovery_controller
+    )
+    engine.rootContext().setContextProperty(
+        "dropImportController", drop_import_controller
     )
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
     engine.rootContext().setContextProperty("appVersion", version_string())

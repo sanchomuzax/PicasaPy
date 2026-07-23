@@ -39,6 +39,7 @@ from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
 from .controller import AppController
 from .discovery_controller import DiscoveryController
+from .drop_import_controller import DropImportController
 from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
 from .faces_helper import FacesHelper
@@ -376,6 +377,12 @@ def run(argv: list[str]) -> int:
     # mappák hozzáadása a meglévő addWatchedFolder úton
     discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
 
+    # kép/mappa ablakra ejtése (#237): a kép mappája (vagy maga a mappa)
+    # figyelt gyökér lesz — az ImportDropArea.qml hídja
+    drop_import_controller = DropImportController(
+        add_folder=controller.addWatchedFolder
+    )
+
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
@@ -387,6 +394,9 @@ def run(argv: list[str]) -> int:
     )
     engine.rootContext().setContextProperty(
         "discoveryController", discovery_controller
+    )
+    engine.rootContext().setContextProperty(
+        "dropImportController", drop_import_controller
     )
     # #147: a néző arc-keret overlay-jének csak-olvasás szintű hídja —
     # a faces=/Contacts2 közvetlenül a fotó .picasa.ini-jéből olvasva.

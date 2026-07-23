@@ -1633,4 +1633,17 @@
         <translation>Mappák beolvasása…</translation>
     </message>
 </context>
+<context>
+    <name>DropImportController</name>
+    <message>
+        <location filename="../drop_import_controller.py" line="104"/>
+        <source>Not added (not a picture or folder): %1</source>
+        <translation>Nem került be (nem kép vagy mappa): %1</translation>
+    </message>
+    <message>
+        <location filename="../drop_import_controller.py" line="110"/>
+        <source>Drop pictures or folders here to add them.</source>
+        <translation>Húzz ide képeket vagy mappákat a hozzáadásukhoz.</translation>
+    </message>
+</context>
 </TS>
