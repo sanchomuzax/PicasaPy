@@ -63,8 +63,13 @@ class TestAssets:
     def test_icon_has_taskbar_margin(self, qt_app):
         # 11-es issue + 37-es issue: a kör logó fehér háttér-korongon ül,
         # amely kicsit túllóg a logó szélén (tálca-méretben ~1–2 px).
-        # A korong a vászon 82–90%-a, középen; a sarkok átlátszók
-        # maradnak (kerek forma), a perem pedig fehér.
+        # A korong középen van, a sarkok átlátszók maradnak (kerek forma),
+        # a perem pedig fehér.
+        # 267-es issue: a Windows Start menüben/Asztalon a korábbi 82–90%-os
+        # kitöltés még mindig láthatóan kisebbnek tűnt az eredeti Picasa 3
+        # ikonnál, ezért a kitöltést tovább növeltük (~92–95%-ra) — ez a
+        # #11/#37 óta tartó "ne tűnjön kicsinek" trend folytatása, csak
+        # magasabb küszöbbel.
         from PySide6.QtGui import QImage, qAlpha, qBlue, qGreen, qRed
 
         image = QImage(str(application._APP_DIR / "assets" / "icon.png"))
@@ -78,8 +83,8 @@ class TestAssets:
         assert xs, "az ikon teljesen átlátszó"
         content_w = max(xs) - min(xs) + 1
         content_h = max(ys) - min(ys) + 1
-        assert image.width() * 0.82 <= content_w <= image.width() * 0.90
-        assert image.height() * 0.82 <= content_h <= image.height() * 0.90
+        assert image.width() * 0.90 <= content_w <= image.width() * 0.96
+        assert image.height() * 0.90 <= content_h <= image.height() * 0.96
         # középre igazítás: a bal/jobb és felső/alsó margó közel azonos
         assert abs(min(xs) - (image.width() - 1 - max(xs))) <= 2
         assert abs(min(ys) - (image.height() - 1 - max(ys))) <= 2
