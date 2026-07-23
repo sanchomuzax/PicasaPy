@@ -630,6 +630,44 @@
         <source>Adopt Picasa folders...</source>
         <translation>Picasa-mappák átvétele...</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+</context>
+<context>
+    <name>FolderStatePanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
+        <source>Scan Always</source>
+        <translation>Keresés mindig</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
+        <source>Scan Once</source>
+        <translation>Keresés egyszer</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
+        <source>Remove from Picasa</source>
+        <translation>Eltávolítás a Picasából</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
+        <source>Select a folder on the left.</source>
+        <translation>Jelölj ki egy mappát bal oldalt.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
+        <source>Watched folders</source>
+        <translation>Figyelt mappák</translation>
+    </message>
 </context>
 <context>
     <name>FolderPane</name>

@@ -44,6 +44,7 @@ from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
 from .faces_helper import FacesHelper
 from .fileops_controller import FileOpsController
+from .folder_tree_controller import FolderTreeController
 from .startup_status import StartupStatus
 from .thumbnail_provider import ThumbnailProvider
 from .window_geometry import virtual_desktop_rect, wire_window_geometry
@@ -383,6 +384,10 @@ def run(argv: list[str]) -> int:
         add_folder=controller.addWatchedFolder
     )
 
+    # Mappakezelő fa-nézete (#231): a helyi fájlrendszer LUSTA, háttérszálas
+    # listázása — a FolderManagerDialog.qml hídja
+    folder_tree_controller = FolderTreeController()
+
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
@@ -397,6 +402,9 @@ def run(argv: list[str]) -> int:
     )
     engine.rootContext().setContextProperty(
         "dropImportController", drop_import_controller
+    )
+    engine.rootContext().setContextProperty(
+        "folderTreeController", folder_tree_controller
     )
     # #147: a néző arc-keret overlay-jének csak-olvasás szintű hídja —
     # a faces=/Contacts2 közvetlenül a fotó .picasa.ini-jéből olvasva.

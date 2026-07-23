@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.40] – 2026-07-23
+
+### Hozzáadva
+- **Teljes Mappakezelő a Picasa 3 mintájára (#231):** önálló, mozgatható/
+  átméretezhető ablak OK/Mégse gombokkal; bal oldalon a helyi mappastruktúra
+  lusta betöltésű fája állapot-ikonokkal, jobb oldalon háromállapotú választó
+  (Keresés mindig / Keresés egyszer / Eltávolítás a Picasából) és a figyelt
+  mappák összegző listája; a „Keresés egyszer" egyszeri szkennelést végez
+  figyelés nélkül, ahogy az eredeti Picasában.
+
 ## [0.4.39] – 2026-07-23
 
 ### Javítva
