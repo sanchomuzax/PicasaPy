@@ -25,6 +25,15 @@ Rectangle {
     // #8: a felső ▶ Lejátszás gomb — diavetítés az aktuális képtől
     signal playRequested()
 
+    // #192: a Tulajdonságok-panel a nézőben is — a könyvtár-nézet közös
+    // kapcsolóját (Main.qml: window.propertiesPanelOpen) követi. A fő
+    // ablakot a Window attached property adja, így a (forró) Main.qml-hez
+    // nem kell hozzányúlni; önálló (teszt-)példányosításnál a kapcsoló
+    // hiányzik → a panel rejtve marad.
+    readonly property var appWindow: Window.window
+    readonly property bool propertiesOpen: appWindow
+        && appWindow.propertiesPanelOpen === true
+
     // #147: csak-olvasás arc-keret overlay — alapból KIKAPCSOLVA (a teljes
     // felismerés/Emberek-panel a #26-ban). currentFaces: FacesHelper.facesFor()
     // eredménye; a photosModel.revision a forgatás-kötés mintájára triggerel
@@ -791,6 +800,31 @@ Rectangle {
                         : ""
                     asynchronous: Qt.platform.pluginName !== "offscreen"; autoTransform: true
                     sourceSize.width: 2560
+                }
+            }
+
+            // #192: Tulajdonságok-panel jobb oldalt — ugyanaz a buta
+            // komponens, mint a könyvtár-nézetben (Main.qml), a nézett
+            // kép adataival; a bezárás a közös kapcsolót állítja le
+            PropertiesPanel {
+                objectName: "viewerPropertiesPanel"
+                visible: viewer.propertiesOpen
+                Layout.preferredWidth: 210
+                Layout.minimumWidth: 160
+                Layout.fillHeight: true
+                hasSelection: viewer.currentIndex >= 0
+                // a photos.revision-nel együtt kötve: modell-frissüléskor
+                // (pl. forgatás, felirat-mentés) újraolvas; a controller
+                // önálló példányosításnál (tesztek) hiányozhat
+                entries: (viewer.propertiesOpen && viewer.photosModel
+                          && typeof controller !== "undefined" && controller)
+                    ? (viewer.photosModel.revision,
+                       controller.propertiesOf(viewer.currentIndex))
+                    : []
+                onCloseRequested: {
+                    if (viewer.appWindow
+                        && viewer.appWindow.propertiesPanelOpen !== undefined)
+                        viewer.appWindow.propertiesPanelOpen = false
                 }
             }
         }
