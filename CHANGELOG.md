@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.47] – 2026-07-23
+
+### Hozzáadva
+- **A Picasa 3.9-es 4–5. effekt-fül mind a 23 `filters=` kulcsa azonosítva
+  (#190):** a felhasználó valódi Picasájából gyűjtött mintákból — kulcs-
+  táblázat a `filters-decoded.md`-ben, round-trip tesztek a valódi
+  láncokkal. A paraméter-jelentések feltérképezése a 2. (gépi) kör dolga.
+
+### Eltávolítva
+- `PicasaPy-indito.bat` (felhasználói kérésre).
+
 ## [0.4.46] – 2026-07-23
 
 ### Hozzáadva

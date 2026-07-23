@@ -221,6 +221,53 @@ warmcast: R×0,936 / G×1,021 / B×1,058; bluecast tükörképe (R×1,032 / B×0
 A gainek a teljes szürkevilág-korrekció ~60–90%-a — a pontos csillapítási
 szabály (gray-world vs fehérpont-alapú) még nyitott.
 
+## 5. kör — a 4–5. effekt-fül `filters=` kulcsai AZONOSÍTVA ✅ (#190)
+
+A felhasználó Windows-os Picasa 3.9-éből, az effekt-kit alap-alkalmazásaiból
+(2026-07-23). Minden effekt ini-alapú; a színparaméterek formátuma
+`00RRGGBB` hex. A paraméterek JELENTÉSE (csúszka-leképezés) még nyitott —
+a 2. kör deríti fel előre írt ini-variánsokkal, gépi úton.
+
+### 4. fül (zöld ecset)
+
+| Magyar UI-név | Kulcs | Alapértelmezett minta |
+|---|---|---|
+| Infravörös film | `IR` | `IR=1,0.000000;` |
+| Lomo-szerű | `Lomo` | `Lomo=1,50.000000,0.000000;` |
+| Holga-szerű | `Holga` | `Holga=1,70.000000,30.000000,0.000000;` |
+| HDR-szerű | `HDR` | `HDR=1,20.000000,3.000000,0.000000;` |
+| Kinemaszkóp | `Cinemascope` | `Cinemascope=1,0;` |
+| Orton-szerű | `Orton` | `Orton=1,25.000000,50.000000,0.000000;` |
+| 60-as évek | `Sixties` | `Sixties=1,20.000000,00ffffff,0;` |
+| Színinvertálás | `Invert` | `Invert=1;` |
+| Hőtérkép | `HeatMap` | `HeatMap=1,0.000000,0.000000;` |
+| Áttűnés | `CrossProcess` | `CrossProcess=1,0.000000;` |
+| Poszterizálás | `QuantizePalette` | `QuantizePalette=1,8.000000,80.000000,0.000000;` |
+| Kéttónusú | `TwoTone` | `TwoTone=1,0.000000,20.000000,0.000000,00004488,00ffff00;` |
+
+### 5. fül (kék ecset)
+
+| Magyar UI-név | Kulcs | Alapértelmezett minta |
+|---|---|---|
+| Felpörgetés | `Boost` | `Boost=1,50.000000;` |
+| Lágyítás | `Soften` | `Soften=1,50.000000,50.000000;` |
+| Képpontnagyítás | `Pixelate` | `Pixelate=1,20.000000,9.000000,0.000000;` |
+| Fókusznagyítás | `FocalZoom` | `FocalZoom=1,0.500000,0.500000,50.000000,50.000000,50.000000,0.000000;` |
+| Ceruzarajz | `PencilSketch` | `PencilSketch=1,2.000000,100.000000,0.000000;` |
+| Neon | `Neon` | `Neon=1,0.000000,00ff0000;` |
+| Képregény | `Comicize` | `Comicize=1,20.000000,50.000000,50.000000;` |
+| Szegély | `Border` | `Border=1,20.000000,5.000000,0.000000,00000000,00ffffff,0.000000;` |
+| Árnyékvetés | `DropShadow` | `DropShadow=1,4.000000,90.000000,10.000000,00000000,00ffffff,30.000000;` |
+| Múzeumi matt | `MuseumMatte` | `MuseumMatte=1,25.000000,40.000000,001a0e03,00f0eae4;` |
+| Polaroid | `Polaroid` | `Polaroid=1,5.000000,00e2e2e2;` |
+
+Megfigyelések: a `FocalZoom` első két paramétere 0.5,0.5 — valószínűleg
+képarányos középpont (x,y), a redeye/crop régiókkal rokon minta; a
+`Cinemascope` és `Sixties` utolsó `0` paramétere tizedesjegyek nélküli
+(eltér a szokásos `%.6f` formátumtól — a round-trip ezt is bitre őrzi).
+Round-trip tesztek a valódi mintákkal: `tests/ini/test_filters.py`
+(`TestEffektFulKulcsok190`).
+
 ## Nyitva (5. kör / implementáció közben)
 
 1. autocolor pontos gain-képlete (célzott cast-sweep kellene)
@@ -230,6 +277,10 @@ szabály (gray-world vs fehérpont-alapú) még nyitott.
 5. retouch/redeye régió-adatok, text overlay — régió-alapúak, 2. fázisban
 6. ~~**Összehasonlító harness** (PicasaPy render vs golden, SSIM/ΔE)~~ —
    KÉSZ (#115): `tools/golden/compare_render.py`, ld. lent.
+7. a 4–5. effekt-fül paraméter-jelentései (#190 2. kör): előre írt
+   `.picasa.ini`-variánsok generálása a most azonosított kulcsokkal →
+   a felhasználónál csak tömeges export → csúszka↔paraméter leképezés
+   és mérési pontok a renderhez.
 
 ## Összehasonlító harness (#115) — `tools/golden/compare_render.py`
 
