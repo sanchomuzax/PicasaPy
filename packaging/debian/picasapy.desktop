@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=PicasaPy
+Comment=Picasa-kompatibilis fotókezelő
+Exec=picasapy %U
+Icon=picasapy
+Terminal=false
+Categories=Graphics;Photography;Viewer;
+StartupWMClass=picasapy

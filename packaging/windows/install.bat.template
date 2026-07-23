@@ -1,0 +1,36 @@
+@echo off
+setlocal enabledelayedexpansion
+echo PicasaPy telepito - Windows
+echo.
+
+where py >nul 2>nul
+if errorlevel 1 (
+    echo HIBA: nem talalhato a "py" Python-inditoparancs.
+    echo Telepitsd a Python 3.12+ -t innen: https://www.python.org/downloads/windows/
+    echo Telepiteskor pipald be: "Add python.exe to PATH"
+    pause
+    exit /b 1
+)
+
+echo Pip frissitese...
+py -3.12 -m pip install --upgrade pip
+if errorlevel 1 py -3 -m pip install --upgrade pip
+
+echo.
+echo PicasaPy telepitese...
+set FOUND=0
+for %%f in ("%~dp0picasapy-__VERSION__-py3-none-any.whl") do (
+    set FOUND=1
+    py -3.12 -m pip install --upgrade "%%f"
+    if errorlevel 1 py -3 -m pip install --upgrade "%%f"
+)
+
+if "!FOUND!"=="0" (
+    echo HIBA: nem talalhato a picasapy-__VERSION__-py3-none-any.whl fajl ebben a mappaban.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Telepites kesz. Nyiss egy UJ parancssort, es probald ki: picasapy
+pause
