@@ -90,3 +90,7 @@ desktop.ini
 # Teszt- és mintaképek, generált thumbnailek
 *.tmp
 tmp/
+
+# Hisztogram-referencia renderelő kimenete (#236) — generált PNG-k, nem
+# verziózandók (a felhasználó ide másolja a Picasa-golden screenshotokat is)
+tools/histogram/out/
