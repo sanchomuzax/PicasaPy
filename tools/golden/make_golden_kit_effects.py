@@ -328,6 +328,42 @@ def _write_utmutato(out: Path, rows4: list, rows5: list) -> None:
     (out / "UTMUTATO.md").write_text("\n".join(lines), encoding="utf-8")
 
 
+def _friss_kimenet(out: Path) -> None:
+    """A kimeneti mappa előkészítése Windows-/OneDrive-tűrően (#190).
+
+    A korábbi feltétel nélküli `shutil.rmtree` OneDrive alá szinkronizált
+    mappán `PermissionError`-ral (WinError 5) bukott: a szinkronkliens még
+    fogja a fájlokat/könyvtárakat. Stratégia:
+      1. törlési kísérlet a csak-olvasható attribútum levételével és rövid
+         újrapróbálkozással (a OneDrive pár másodperc alatt elenged),
+      2. ha a mappa így sem törölhető, NEM állunk le: a generálás a meglévő
+         mappába, FELÜLÍRÁSSAL folytatódik (minden fájlt újraírunk; a
+         `.picasa.ini`-t és az exportokat a felhasználó teszi bele, azokat
+         nem bántjuk).
+    """
+    import os
+    import stat
+    import time
+
+    if not out.exists():
+        return
+
+    def _irhatova(func, p, _exc):
+        os.chmod(p, stat.S_IWRITE)
+        func(p)
+
+    for _ in range(3):
+        try:
+            shutil.rmtree(out, onerror=_irhatova)
+            return
+        except PermissionError:
+            time.sleep(1.0)  # zárolás (OneDrive/víruskereső) — várunk kicsit
+    print(
+        f"FIGYELEM: a meglévő {out} mappát nem lehetett törölni (zárolja a"
+        " OneDrive vagy a víruskereső) — a tartalmát FELÜLÍRVA folytatom."
+    )
+
+
 def main() -> None:
     # Egy argumentum = csak kimeneti mappa (szintetikus fotóval);
     # kettő = fotómappa + kimeneti mappa.
@@ -340,17 +376,16 @@ def main() -> None:
     else:
         print(__doc__)
         sys.exit(1)
-    if out.exists():
-        shutil.rmtree(out)
+    _friss_kimenet(out)
     base_dir = out / "00-base"
-    base_dir.mkdir(parents=True)
+    base_dir.mkdir(parents=True, exist_ok=True)
 
     bases = _base_images(base_dir, photos_dir)
     rows4 = _build_tab(4, EFFECTS_4, bases, out / "effekt4")
     rows5 = _build_tab(5, EFFECTS_5, bases, out / "effekt5")
     _write_utmutato(out, rows4, rows5)
 
-    (out / "export").mkdir()
+    (out / "export").mkdir(exist_ok=True)
 
     total = len(rows4) + len(rows5)
     print(f"Effekt-kit kész: {out}")
