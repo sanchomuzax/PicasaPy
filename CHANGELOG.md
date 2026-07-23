@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.53] – 2026-07-23
+
+### Hozzáadva
+- **Paraméter-sweep `.picasa.ini`-generátor a #190 effektjeihez (#190 2. kör):**
+  új `tools/golden/make_param_sweep.py` a #190 1. körben azonosított 23
+  effekt-kulcshoz előre megírt `.picasa.ini`-variánsokat generál — a fő
+  erősség-paramétert a feltételezett tartományán 5 ponton végigléptetve,
+  a `.picasa.ini`-t a projekt round-trip ini-rétegén át írva. Így a
+  csúszka↔paraméter leképezéshez a felhasználónál csak egy tömeges Picasa-
+  export marad (magyar `UTMUTATO.md`-vel). A tényleges csúszka-jelentés az
+  export feldolgozásával derül majd ki.
+
 ## [0.4.52] – 2026-07-23
 
 ### Javítva
