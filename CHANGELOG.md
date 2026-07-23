@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.36] – 2026-07-23
+
+### Hozzáadva
+- **Csomagolás (#4):** `pip install .`/pipx-telepítés működő `picasapy`
+  paranccsal (entry point + QML/ikon/fordítás a wheelben); új `packaging/`
+  könyvtár Debian-csomag (.deb) és Windows-zip összeállító szkriptekkel,
+  magyar build-útmutatóval; release-publikáláskor a csomagok automatikus
+  feltöltése release-assetként (`package.yml`).
+
 ## [0.4.35] – 2026-07-23
 
 ### Hozzáadva
