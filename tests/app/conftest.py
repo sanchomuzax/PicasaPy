@@ -31,6 +31,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.edit_preview import EditPreviewProvider
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
+    from picasapy.app.folder_tree_controller import FolderTreeController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.index import open_index, sync_tree
     from picasapy.thumbs import ThumbnailCache
@@ -60,6 +61,7 @@ def qml_app(qt_app, tmp_path):
     drop_import_controller = DropImportController(
         add_folder=controller.addWatchedFolder
     )
+    folder_tree_controller = FolderTreeController()
     faces_helper = FacesHelper()
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
@@ -75,6 +77,9 @@ def qml_app(qt_app, tmp_path):
     )
     engine.rootContext().setContextProperty(
         "dropImportController", drop_import_controller
+    )
+    engine.rootContext().setContextProperty(
+        "folderTreeController", folder_tree_controller
     )
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
     engine.rootContext().setContextProperty("appVersion", version_string())

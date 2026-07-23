@@ -23,6 +23,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.edit_preview import EditPreviewProvider
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
+    from picasapy.app.folder_tree_controller import FolderTreeController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.thumbs import ThumbnailCache
     from PySide6.QtCore import QSettings
@@ -61,6 +62,11 @@ def qml_app(qt_app, tmp_path):
     discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
     engine.rootContext().setContextProperty(
         "discoveryController", discovery_controller
+    )
+    # Mappakezelő fa-nézete (#231) — az application.py bekötésének tükre
+    folder_tree_controller = FolderTreeController()
+    engine.rootContext().setContextProperty(
+        "folderTreeController", folder_tree_controller
     )
     # arc-keretek (#147) — az application.py bekötésének tükre
     faces_helper = FacesHelper()
