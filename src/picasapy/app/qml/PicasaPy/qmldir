@@ -7,6 +7,8 @@ LightboxHeader 1.0 LightboxHeader.qml
 PhotoViewer 1.0 PhotoViewer.qml
 FolderIcon 1.0 FolderIcon.qml
 FolderManagerDialog 1.0 FolderManagerDialog.qml
+FolderTreeItem 1.0 FolderTreeItem.qml
+FolderStatePanel 1.0 FolderStatePanel.qml
 PicasaButton 1.0 PicasaButton.qml
 PicasaScrollBar 1.0 PicasaScrollBar.qml
 PicasaSlider 1.0 PicasaSlider.qml

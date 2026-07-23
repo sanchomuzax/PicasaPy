@@ -927,6 +927,69 @@ class TestWatchedFolderManagement:
         assert controller.photos.rowCount() == 0  # az aktuális nézet is ürül
 
 
+class TestScanFolderOnce:
+    """„Keresés egyszer" (#231, Mappakezelő-fa): egyszeri beolvasás a
+    figyelt gyökerek (self._roots) és a WatchedFolders.txt-persistencia
+    NÉLKÜL — a valódi Picasa is így viselkedik."""
+
+    def test_indexes_folder_without_adding_to_watched(
+        self, controller, tmp_path, qt_app
+    ):
+        other = tmp_path / "egyszeri"
+        other.mkdir()
+        make_jpeg(other / "x.jpg")
+        loop = _quit_on(controller.syncFinished)
+        controller.scanFolderOnce(str(other))
+        loop.exec()
+
+        assert controller.folders.rowOfPath(str(other)) >= 0
+        assert str(other) not in controller.watchedFolders
+
+    def test_ignores_missing_directory(self, controller, tmp_path):
+        missing = tmp_path / "nincs-ilyen"
+        before = list(controller.watchedFolders)
+        controller.scanFolderOnce(str(missing))
+        assert controller.watchedFolders == before
+        assert controller.folders.rowOfPath(str(missing)) == -1
+
+    def test_already_watched_root_is_a_noop(self, controller, library, qt_app):
+        before_folder_count = controller.folders.folderCount
+        controller.scanFolderOnce(str(library))
+        qt_app.processEvents()
+        assert controller.folders.folderCount == before_folder_count
+        assert str(library) in controller.watchedFolders
+
+
+class TestRemoveFolder:
+    """„Eltávolítás a Picasából" a Mappakezelő fájából (#231): figyelt
+    gyökérnél a meglévő `removeWatchedFolder`-logika, egyszer beolvasott
+    (nem figyelt) mappánál elég az index-takarítás."""
+
+    def test_removes_watched_root_like_remove_watched_folder(
+        self, controller, library
+    ):
+        controller.removeFolder(str(library))
+        assert str(library) not in controller.watchedFolders
+        assert controller.folders.folderCount == 0
+
+    def test_purges_once_scanned_non_root_folder(self, controller, tmp_path, qt_app):
+        other = tmp_path / "egyszeri"
+        other.mkdir()
+        make_jpeg(other / "x.jpg")
+        loop = _quit_on(controller.syncFinished)
+        controller.scanFolderOnce(str(other))
+        loop.exec()
+        assert controller.folders.rowOfPath(str(other)) >= 0
+
+        controller.removeFolder(str(other))
+        assert controller.folders.rowOfPath(str(other)) == -1
+
+    def test_ignores_empty_path(self, controller):
+        before = controller.folders.folderCount
+        controller.removeFolder("")
+        assert controller.folders.folderCount == before
+
+
 class TestLiveWatch:
     def test_dirty_folders_synced_into_index(self, controller, library, qt_app):
         # A watcher-jelzés (más szálból) a jelzett mappákat szinkronizálja,

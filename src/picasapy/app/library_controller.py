@@ -270,6 +270,50 @@ class LibraryMixin:
         threading.Thread(target=worker, daemon=True).start()
 
     @Slot(str)
+    def scanFolderOnce(self, path_or_url: str) -> None:
+        """„Keresés egyszer" (#231, Mappakezelő-fa): a mappa (és almappái)
+        egyszeri, azonnali beolvasása az indexbe — a figyelt gyökerek
+        (self._roots) és a WatchedFolders.txt-persistencia NÉLKÜL. A valódi
+        Picasa is így viselkedik: a fotók bekerülnek a könyvtárba, de a
+        mappa nem marad figyelve — újraindítás (vagy a Mappakezelő
+        újranyitása) után ismét „nem figyelt"-ként látszik.
+
+        Már figyelt gyökérnél nincs teendő (a folyamatos figyelés úgyis
+        lefedi) — a hívás ekkor csendben kimarad."""
+        path = to_local_path(path_or_url)
+        if not path or path in self._roots or not Path(path).is_dir():
+            return
+        # nincs leállítási-jelző kötés (nem figyelt gyökér): egyszeri,
+        # meg nem szakítható munka
+        progress = self._make_progress_emitter()
+
+        def worker():
+            try:
+                with open_index(self._db_path) as conn:
+                    self._sync_tree(conn, path, progress=progress)
+            finally:
+                self.syncFinished.emit()
+
+        self._begin_sync_job()
+        threading.Thread(target=worker, daemon=True).start()
+
+    @Slot(str)
+    def removeFolder(self, path: str) -> None:
+        """„Eltávolítás a Picasából" a Mappakezelő fájából (#231): figyelt
+        gyökérnél a teljes meglévő logika (`removeWatchedFolder` —
+        leállítási jelző, watcher-újraindítás, nézet-frissítés); egyszer
+        beolvasott (nem figyelt) mappánál elég az index-takarítás, nincs
+        se watcher, se leállítási jelző, amit kezelni kellene."""
+        if path in self._roots:
+            self.removeWatchedFolder(path)
+            return
+        if not path:
+            return
+        with open_index(self._db_path) as conn:
+            remove_root(conn, path)
+        self._reload()
+
+    @Slot(str)
     def removeWatchedFolder(self, path: str) -> None:
         """„Eltávolítás a Picasából": a gyökér kikerül a figyeltek közül és
         az indexből is (a fájlokhoz természetesen nem nyúlunk).
