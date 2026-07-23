@@ -268,6 +268,31 @@ képarányos középpont (x,y), a redeye/crop régiókkal rokon minta; a
 Round-trip tesztek a valódi mintákkal: `tests/ini/test_filters.py`
 (`TestEffektFulKulcsok190`).
 
+## Golden-verdiktek (#115/#279, 2026-07-23) — mely szűrő pixelhű
+
+A `compare_render.py` LUT-os futásából (`--luts research/golden-analysis`,
+`luts3.json`), a **tiszta, kemény élű `chart_detail`** alapkép egyszeres-
+szűrős sorai alapján (a sima gradiens/fotó alapképeket a Picasa JPEG-
+újratömörítése bezajosítja, ezért azok nem mérvadók — ld. #278):
+
+| Szűrő | Verdikt (chart_detail, LUT-tal) |
+|---|---|
+| `crop64`, `tilt` | pixelhű / közelítés (geometria) ✅ |
+| `unsharp`, `unsharp2` | pixelhű ✅ |
+| `bw`, `enhance`, `autolight`, `autocolor` | pixelhű ✅ |
+| `fill`, `sat` | pixelhű + közelítés ✅ |
+| `finetune2` | vegyes — extrém paraméternél (h/s=1.0) eltér ⚠️ |
+| `finetune`, `sepia`, `warm` | eltér — render-pontosítás kell ❌ |
+| `grain2` | eltér, de **szándékosan** nem reprodukálható (sztochasztikus szemcse) |
+| `Vignette` | eltér (analitikus modell hiánya — lásd Nyitva 2.) |
+
+**Módszertani zárás (#279):** a kit3 saját Picasa-exportjai (amikből a
+`luts3.json` készült) már nem elérhetők a fejlesztői gépen (a LUT-desztilláció
+után törölve; csak a `luts3.json` maradt), ezért a per-szűrő verdiktet a
+felhasználó 2026-07-23-i Windows-os golden-futásának `chart_detail` sorai
+adják. A harness (#115) és a LUT-os futás (#279) így lezárva; a fenti „eltér"
+szűrők render-pontosítása a Nyitva-listán.
+
 ## Nyitva (5. kör / implementáció közben)
 
 1. autocolor pontos gain-képlete (célzott cast-sweep kellene)
@@ -281,6 +306,9 @@ Round-trip tesztek a valódi mintákkal: `tests/ini/test_filters.py`
    `.picasa.ini`-variánsok generálása a most azonosított kulcsokkal →
    a felhasználónál csak tömeges export → csúszka↔paraméter leképezés
    és mérési pontok a renderhez.
+8. render-pontosítás a golden-verdiktek szerint (#115/#279): `finetune`
+   (v1), `sepia`, `warm` „eltér" a chart_detail-mérésben; `finetune2`
+   extrém h/s-paraméternél eltér — ezekre külön render-jegy(ek) nyithatók.
 
 ## Összehasonlító harness (#115) — `tools/golden/compare_render.py`
 
