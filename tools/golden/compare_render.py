@@ -518,7 +518,11 @@ def run_kit(
     kit = Path(kit_dir)
     if not kit.is_dir():
         raise ValueError(f"A kit-könyvtár nem létezik: {kit}")
-    results: list[ComparisonResult] = []
+
+    # #115: előbb összegyűjtjük a MUNKALISTÁT, hogy ismerjük az összes elemet
+    # és élő haladás-jelzést adhassunk — 238 kép pixel-összevetése több perc
+    # is lehet (pláne OneDrive-ról), enélkül a szkript „némán áll"-nak tűnik.
+    worklist: list[tuple[str, Path, Path | None, str]] = []
     for ini_path in sorted(kit.glob("*/.picasa.ini")):
         folder = ini_path.parent
         if folder.name.startswith("00-base") or folder.name == "export":
@@ -528,21 +532,37 @@ def run_kit(
             row_name = f"{folder.name}/{image_name}"
             original = folder / image_name
             golden = _find_export(export_dir, image_name)
-            if golden is None or not original.is_file():
-                results.append(
-                    ComparisonResult(
-                        name=row_name,
-                        filters=filters_value,
-                        verdict="hiányzik",
-                        note="nincs exportált golden ehhez a képhez",
-                    )
-                )
-                continue
+            worklist.append((row_name, original, golden, filters_value))
+
+    total = len(worklist)
+    results: list[ComparisonResult] = []
+    for index, (row_name, original, golden, filters_value) in enumerate(
+        worklist, start=1
+    ):
+        # egysoros, felülíró haladás-jelző a stderr-en (a végső riportot
+        # nem szennyezi, csővezetékben sem zavar)
+        print(
+            f"\r  [{index}/{total}] {row_name:<45.45}",
+            end="", file=sys.stderr, flush=True,
+        )
+        if golden is None or not original.is_file():
             results.append(
-                compare_pair(
-                    original, filters_value, golden, thresholds, luts, name=row_name
+                ComparisonResult(
+                    name=row_name,
+                    filters=filters_value,
+                    verdict="hiányzik",
+                    note="nincs exportált golden ehhez a képhez",
                 )
             )
+            continue
+        results.append(
+            compare_pair(
+                original, filters_value, golden, thresholds, luts, name=row_name
+            )
+        )
+    if total:
+        print(f"\r  {total}/{total} kész — összegzés lent.{' ' * 30}",
+              file=sys.stderr, flush=True)
     return results
 
 
