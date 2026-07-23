@@ -13,7 +13,6 @@ Alapból SKIP (perc nagyságrendű futás lenne minden CI-körben):
 """
 
 import os
-import resource
 import time
 
 import pytest
@@ -70,6 +69,13 @@ def _cell_count(grid) -> int:
 
 
 def _rss_mb() -> float:
+    """RSS-csúcs MB-ban — a `resource` modul Unix-only, ezért az import
+    itt él (Windowson a modul-betöltés nem bukhat el emiatt: a stresszteszt
+    ott 0-t jelent, a mérés célplatformja Linux/RPi5)."""
+    try:
+        import resource
+    except ImportError:  # Windows
+        return 0.0
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
 
 
