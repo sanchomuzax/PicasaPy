@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.43] – 2026-07-23
+
+### Javítva
+- **Golden-kit fotókönyvtár nélkül is (#190):** a
+  `make_golden_kit_effects.py` eddig kötelezően valódi fényképet keresett
+  a forrásmappában, és üres mappánál elszállt (`IndexError`). Mostantól a
+  fotó-argumentum elhagyható, üres mappánál pedig fotószerű szintetikus
+  képet generál — a kit pusztán a kimeneti mappa megadásával elkészül.
+
 ## [0.4.42] – 2026-07-23
 
 ### Hozzáadva
