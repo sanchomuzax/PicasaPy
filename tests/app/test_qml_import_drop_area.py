@@ -75,3 +75,23 @@ class TestImportDropArea:
         toast = area.findChild(QObject, "dropFeedback")
         assert toast.property("visible") is True
         assert "jegyzet.txt" in str(toast.property("message"))
+
+
+class TestMainWiring:
+    """A Main.qml-bekötés (integrátori kör): a teljes felületen át egy kép
+    ráejtése a kép mappáját a figyelt gyökerek közé teszi."""
+
+    def test_dropped_image_folder_becomes_watched(
+        self, qml_app, qt_app, tmp_path
+    ):
+        from support.jpeg_factory import make_jpeg
+
+        window, controller, _lib, _engine = qml_app
+        area = window.findChild(QObject, "importDropArea")
+        assert area is not None, "importDropArea nincs a Main.qml-ben"
+        extra = tmp_path / "ejtett"
+        extra.mkdir()
+        make_jpeg(extra / "c.jpg", size=(64, 64))
+        _invoke_submit(area, [(extra / "c.jpg").as_uri()])
+        qt_app.processEvents()
+        assert str(extra) in list(controller.watchedFolders)

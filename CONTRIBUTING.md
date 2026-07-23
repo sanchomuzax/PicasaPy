@@ -65,6 +65,11 @@ fordításukat az integrátor generálja le.
   A Windows CI-láb kísérleti (nem blokkol); a mérce az ubuntu-láb.
 - A PR-t az integrátor session mergeli: ő oldja a konfliktusokat,
   futtatja az i18n-regent és a teljes tesztkészletet.
+- **i18n-regen buktató:** a lupdate a kötött/futásidejű `tr`-hívások
+  kontextusait (pl. `formatting.py` → AppController) NEM látja, és a
+  meglévő fordításaikat `vanished`-re jelöli — azokat a lrelease kihagyná
+  a `.qm`-ből. Meglévő bejegyzés vanished-elése ezért TILOS; új szöveghez
+  elég a kontextus kézi felvétele a `.ts`-be + `pyside6-lrelease`.
 - **Release-kötelezettség (integrátor):** érdemi merge-ök után verzió-bump
   (minden előfordulási helyen). A tag + GitHub Release ezután **automatikus**
   (`.github/workflows/release.yml`): minden main-push után lefut, és ha a
@@ -72,6 +77,27 @@ fordításukat az integrátor generálja le.
   hasáb így soha nem maradhat le a main mögött, kézi lépés nélkül.
 - Commit-formátum: `feat|fix|docs|test|chore: leírás` (magyarul),
   hivatkozás az issue-ra (`#N`).
+
+## A feladat-ciklus VÉGE — meddig felelős a vállaló session?
+
+A feladat NEM ér véget a PR megnyitásával. A vállaló session a jegyet a
+teljes lezárásig viszi:
+
+1. **PR-nyitás után** a session hajtja zöldre a CI-t (a windows-láb nem
+   blokkol, de a bukását meg kell vizsgálni és a PR-ban dokumentálni).
+2. **Ha fut aktív integrátor session** (a fő checkoutban), a merge az övé —
+   a worker itt átadhatja a stafétát. **Ha nincs aktív integrátor, a
+   session MAGA veszi át az integrátor szerepet:** friss main bemergelése
+   a branchbe, a forró-fájl bekötések elvégzése (Main.qml / qmldir /
+   controller.py), i18n-regen, teljes tesztkészlet, majd zöld CI-val merge.
+3. **Merge után, még ugyanabban a körben:** az issue lezárása (kézzel — a
+   magyar „Zárja:" kulcsszót a GitHub nem ismeri), az `in-progress` címke
+   levétele, verzió-bump minden helyen + CHANGELOG-kiemelés (a tag/Release
+   ezután automatikus).
+4. Ha a lezárás a sessionön kívül álló okból nem lehetséges (pl. a
+   felhasználó gépén futtatandó lépés kell), a jegy `blocked` címkét kap,
+   és kommentben rögzítendő, pontosan mi hiányzik. PR-t vagy foglalást
+   „majd valaki befejezi" alapon nyitva hagyni TILOS.
 
 ## Dizájn és kompatibilitás
 

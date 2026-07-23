@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.35] – 2026-07-23
+
+### Hozzáadva
+- **Drag & drop import (#237):** képet az ablakra húzva a kép mappája
+  (mappát húzva maga a mappa) figyelt gyökér lesz — deduplikálva, egymásba
+  ágyazott utaknál a legfelsővel; nem támogatott elemről visszajelzés-buborék.
+- **Tulajdonságok-panel az egyképes nézőben is (#192):** a könyvtár-nézet
+  kapcsolóját követi, lapozásra frissül.
+
+### Javítva
+- **Ablakpozíció/-méret megjegyzése (#192):** záráskor mentés, induláskor
+  visszaállítás — lecsatolt monitor és hibás adat elleni védelemmel;
+  maximalizált zárásnál a normál geometria is megőrződik.
+
+### Dokumentáció
+- CONTRIBUTING: a feladat-ciklus végének pontosítása (a vállaló session a
+  merge–issue-zárás–verzió-bump körig felelős; integrátor híján maga veszi
+  át az integrátor szerepet) + i18n-regen buktató rögzítése.
+
 ## [0.4.34] – 2026-07-22
 
 ### Hozzáadva

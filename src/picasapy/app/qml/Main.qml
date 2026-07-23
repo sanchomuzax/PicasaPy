@@ -646,6 +646,16 @@ ApplicationWindow {
         y: 56
     }
 
+    // #237: kép/mappa ablakra ejtése → a kép mappája figyelt gyökér lesz
+    // (ImportDropArea → dropImportController). Egér-eseményt nem fog el;
+    // z:95 — a lebegő panelek (90) fölött, a diavetítés (100) alatt, hogy
+    // a visszajelzés-buborék látsszon
+    ImportDropArea {
+        objectName: "importDropArea"
+        anchors.fill: parent
+        z: 95
+    }
+
     // alsó sáv: infó-sáv + kijelölés-tálca (TrayBar.qml, #150)
     footer: TrayBar {
         id: trayBar
