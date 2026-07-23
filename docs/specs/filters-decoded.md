@@ -289,15 +289,22 @@ ellen méri: SSIM + ΔE (CIE76) + toleranciás pixel-diff, soronkénti ítélett
 (**pixelhű / közelítés / eltér**), állítható küszöbökkel, JSON- és terminál-
 riporttal. Futtatás a fejlesztői gépen (ahol a golden-kitek élnek):
 
+A parancsok EGY sorban írandók (PowerShellben a `\` sortörés nem működik),
+és a `<kit-mappa>` a saját, ténylegesen létező kit-mappa (pl.
+`research/golden-kit` a Pi-n, vagy a Windowson frissen generált kit):
+
 ```
 # teljes kit (make_golden_kit.py-szerkezet, exportok a kit/export/ alatt):
-python3 tools/golden/compare_render.py kit research/golden-kit-result \
-    --luts research/golden-analysis --json riport.json
+python3 tools/golden/compare_render.py kit <kit-mappa> --luts research/golden-analysis --json riport.json
 
 # egyetlen pár:
-python3 tools/golden/compare_render.py pair eredeti.jpg golden.jpg \
-    --filters "fill=1,0.500000;bw=1;"
+python3 tools/golden/compare_render.py pair eredeti.jpg golden.jpg --filters "fill=1,0.500000;bw=1;"
 ```
+
+A `--luts` elhagyható (beépített közelítések futnak). A kit bármely gépen,
+fotókönyvtár nélkül is legenerálható (#115):
+`python3 tools/golden/make_golden_kit.py <kimenet_dir>` — kevés/hiányzó
+fotónál szintetikus fotó-alapképekkel pótol.
 
 Küszöbök (alapértékek; CLI-ből felülírhatók):
 
