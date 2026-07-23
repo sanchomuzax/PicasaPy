@@ -114,6 +114,29 @@ def _wait_for_row_bounds(qt_app, grid, row, timeout_ms=2000):
     return prev
 
 
+def _wait_for_scroll_settled(qt_app, grid, timeout_ms=2000):
+    """#261: determinisztikus szinkronpont a `contentY`-ra épülő
+    tesztekhez — a `_wait_for_row_bounds` párja. A `moveSelection` utáni
+    görgetés (ensureVisible) lassabb gépen (Windows-CI) 1-2 eseményciklus
+    késéssel ér célba; addig várunk, amíg a `contentY` két egymást követő
+    lekérdezés között már nem változik."""
+    from PySide6.QtCore import QEventLoop, QMetaObject, QTimer
+
+    prev = None
+    steps = max(1, timeout_ms // 20)
+    for _ in range(steps):
+        QMetaObject.invokeMethod(grid, "forceLayout")
+        qt_app.processEvents()
+        y = grid.property("contentY")
+        if prev is not None and y == prev:
+            return y
+        prev = y
+        pause = QEventLoop()
+        QTimer.singleShot(20, pause.quit)
+        pause.exec()
+    return prev
+
+
 def _open_viewer(window, qt_app, index=0):
     window.setProperty("viewerOpen", True)
     viewer = window.findChild(QObject, "photoViewer")
@@ -304,7 +327,12 @@ class TestArrowMinimalScroll:
             grid.setProperty("selectionAnchor", 1)
             grid.setProperty("contentY", 0)
             qt_app.processEvents()
+            # #261: a virtualizált cella-ablak kötése lassabb gépen
+            # (Windows-CI) késik — a lépés ELŐTT megvárjuk a célsor
+            # geometriáját, különben az ensureVisible vakon görgetne
+            assert _wait_for_row_bounds(qt_app, grid, 0) is not None
             _invoke(qt_app, grid, "moveSelection", "up")
+            _wait_for_scroll_settled(qt_app, grid)
             assert window.property("selectedIndex") == 0
             assert grid.property("contentY") == 0  # látszott, nem mozdult
         finally:
@@ -344,9 +372,15 @@ class TestArrowMinimalScroll:
             grid.setProperty("selectionAnchor", 0)
             grid.setProperty("contentY", 0)
             qt_app.processEvents()
+            # #261: minden lépés után bevárjuk a görgetés lecsengését —
+            # e nélkül a következő lépés menet közbeni contentY-ból számol,
+            # és lassabb gépen (Windows-CI) pár pixellel mellémegy
             _invoke(qt_app, grid, "moveSelection", "down")
+            _wait_for_scroll_settled(qt_app, grid)
             _invoke(qt_app, grid, "moveSelection", "down")
+            _wait_for_scroll_settled(qt_app, grid)
             _invoke(qt_app, grid, "moveSelection", "up")
+            _wait_for_scroll_settled(qt_app, grid)
             target = window.property("selectedIndex")
             b = _wait_for_row_bounds(qt_app, grid, target)
             assert b is not None
