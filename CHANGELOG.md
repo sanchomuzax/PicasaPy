@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.37] – 2026-07-23
+
+### Hozzáadva
+- **Gyorscímkék a Címkék-panelen (#193):** 8 konfigurálható gomb (2×4)
+  egykattintásos címkézéshez, fogaskerékkel nyíló konfigurációs ablak —
+  a felső két gomb automatikusan a legutóbb használt címkéket követi
+  (kikapcsolható), az üres mezők gyakran használt címkékkel tölthetők fel;
+  a beállítások megőrződnek.
+
 ## [0.4.36] – 2026-07-23
 
 ### Hozzáadva

@@ -19,6 +19,7 @@ PhotoContextMenu 1.0 PhotoContextMenu.qml
 VideoPlayerView 1.0 VideoPlayerView.qml
 SlideshowView 1.0 SlideshowView.qml
 TagsPanel 1.0 TagsPanel.qml
+QuickTagsConfigDialog 1.0 QuickTagsConfigDialog.qml
 PropertiesPanel 1.0 PropertiesPanel.qml
 LightboxFeed 1.0 LightboxFeed.qml
 MainToolbar 1.0 MainToolbar.qml
