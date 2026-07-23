@@ -49,6 +49,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
+from picasapy.cvimage import read_image_bytes  # noqa: E402
 from picasapy.ini.filters import FilterOp, parse_filters  # noqa: E402
 from picasapy.render import apply_filters  # noqa: E402
 from picasapy.render.curves import apply_lut, lut_ramp, validate_image  # noqa: E402
@@ -417,8 +418,15 @@ class ComparisonResult:
 
 
 def _read_rgb(path: Path) -> np.ndarray:
-    """Kép beolvasása RGB uint8-ként — hibás/hiányzó fájlnál ValueError."""
-    image = cv2.imread(str(path), cv2.IMREAD_COLOR)
+    """Kép beolvasása RGB uint8-ként — hibás/hiányzó fájlnál ValueError.
+
+    #115: bájt-alapú beolvasás a `picasapy.cvimage` közös segédjével —
+    a cv2.imread Windowson az ékezetes útvonalat (pl. „Képek") némán
+    elnyeli (#65 tanulság)."""
+    payload = read_image_bytes(Path(path))
+    image = None
+    if payload is not None:
+        image = cv2.imdecode(payload, cv2.IMREAD_COLOR)
     if image is None:
         raise ValueError(f"A kép nem olvasható: {path}")
     return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
