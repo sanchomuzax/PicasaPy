@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.38] – 2026-07-23
+
+### Javítva
+- **Automatikus csomag-assetek a release-eken (#256):** a `package.yml`
+  mostantól a Release workflow lefutása után magától elkészíti és feltölti
+  a wheel/sdist/.deb/Windows-zip asseteket (a GITHUB_TOKEN
+  rekurzióvédelme miatt a korábbi `release: published` trigger sosem
+  sült el); kézi `workflow_dispatch` pótlásra továbbra is használható.
+
 ## [0.4.37] – 2026-07-23
 
 ### Hozzáadva

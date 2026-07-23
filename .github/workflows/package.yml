@@ -1,20 +1,30 @@
 name: Package
 
-# Csomagépítés + feltöltés release-asset gyanánt (#4). Külön fájl a
+# Csomagépítés + feltöltés release-asset gyanánt (#4, #256). Külön fájl a
 # release.yml mellett (azt nem módosítjuk) — a release.yml hozza létre a
 # GitHub Release-t minden main-push után (ha a verzióhoz még nincs), ez a
-# workflow pedig a "release published" eseményre kapcsolódva rá építi a
-# letölthető csomagokat (wheel, sdist, .deb, Windows-zip).
+# workflow pedig ráépíti a letölthető csomagokat (wheel, sdist, .deb,
+# Windows-zip).
+#
+# FONTOS (#256): a release-t a release.yml a beépített GITHUB_TOKEN-nel
+# hozza létre, és a GitHub az ilyen token által kiváltott eseményekről
+# (release: published) szándékosan NEM indít további workflow-t
+# (rekurzióvédelem). Ezért a fő trigger a workflow_run: a "Release"
+# workflow sikeres lefutása után ez a workflow feloldja a legfrissebb
+# release taget, és csak akkor buildel/tölt fel, ha azon még nincs asset.
 on:
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
   release:
-    types: [published]
+    types: [published]  # kézzel publikált release-ekhez továbbra is él
   workflow_dispatch:
     inputs:
       tag:
         description: >-
           Release tag, amihez a csomagokat fel kell tölteni (pl. v0.4.35).
-          Csak kézi újrafuttatáshoz kell — a "release published" esemény
-          automatikusan hozza a tag-et.
+          Csak kézi pótláshoz kell — a workflow_run/release trigger
+          magától feloldja a taget.
         required: false
         type: string
 
@@ -23,44 +33,72 @@ permissions:
 
 jobs:
   build-and-upload:
+    # workflow_run esetén csak sikeres Release-futás után fussunk
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Wheel + sdist build
-        run: |
-          python -m pip install --upgrade pip build
-          python -m build
-
-      - name: Debian-csomag build (.deb)
-        run: ./packaging/build_deb.sh
-
-      - name: Windows-zip build
-        run: ./packaging/build_windows_zip.sh
-
       - name: Tag meghatározása
         id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ github.event.release.tag_name }}"
           if [ -z "$TAG" ]; then
             TAG="${{ inputs.tag }}"
           fi
           if [ -z "$TAG" ]; then
-            echo "HIBA: nincs release tag (sem eseményből, sem workflow_dispatch inputból)." >&2
-            exit 1
+            # workflow_run ág: a legfrissebb release tagje
+            TAG="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName || true)"
+          fi
+          if [ -z "$TAG" ]; then
+            echo "Nincs release a repóban — nincs teendő."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Ha a release-en már vannak assetek, ne buildeljünk duplán
+          # (kézi dispatch-nél a --clobber miatt felül szeretnénk írni,
+          # ezért az ellenőrzés csak a workflow_run ágon fut).
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            COUNT="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets | length')"
+            if [ "$COUNT" -gt 0 ]; then
+              echo "A(z) $TAG release-en már van $COUNT asset — kihagyva."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout (a release tagjén)
+        if: steps.tag.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        if: steps.tag.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Wheel + sdist build
+        if: steps.tag.outputs.skip != 'true'
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Debian-csomag build (.deb)
+        if: steps.tag.outputs.skip != 'true'
+        run: ./packaging/build_deb.sh
+
+      - name: Windows-zip build
+        if: steps.tag.outputs.skip != 'true'
+        run: ./packaging/build_windows_zip.sh
 
       - name: Release-asset feltöltés
+        if: steps.tag.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.tag.outputs.tag }}
