@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.49] – 2026-07-23
+
+### Javítva
+- **A golden-harness ékezetes útvonalon is olvas (#115):** a
+  `compare_render.py` a közös `picasapy.cvimage` bájt-alapú beolvasóját
+  használja a cv2.imread helyett — a Windows-os néma Unicode-elnyelés
+  (#65/#190 tanulság) itt is kifogva.
+
 ## [0.4.48] – 2026-07-23
 
 ### Javítva
