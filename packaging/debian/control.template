@@ -1,0 +1,19 @@
+Package: picasapy
+Version: __VERSION__
+Section: graphics
+Priority: optional
+Architecture: all
+Maintainer: PicasaPy project <noreply@example.invalid>
+Depends: python3 (>= 3.12), python3-venv, python3-pip
+Homepage: https://github.com/sanchomuzax/PicasaPy
+Description: Modern, open, cross-platform successor to Google Picasa
+ A PicasaPy a Google 2016-ban kivezetett Picasa fotókezelőjének nyílt,
+ Python alapú újraimplementációja: gyors képnéző/kezelő, nem-destruktív
+ szerkesztés és a klasszikus .picasa.ini formátummal teljes körben
+ kompatibilis adatkezelés.
+ .
+ A csomag telepítéskor egy dedikált Python virtuális környezetet hoz
+ létre (/opt/picasapy/venv), és abba telepíti a mellékelt PicasaPy
+ .whl-t a futáshoz szükséges függőségeivel (PySide6, OpenCV stb.)
+ együtt, melyeket a PyPI-ról tölt le — ehhez internetkapcsolat
+ szükséges a telepítés (dpkg -i / apt install) pillanatában.
