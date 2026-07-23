@@ -145,7 +145,9 @@ def _synthetic_photo(path: Path) -> Path:
     img = cv2.GaussianBlur(img, (0, 0), 25)        # lágyítás → természetes
     noise = rng.integers(-12, 12, (h, w, 3), dtype=np.int16)
     img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
-    cv2.imwrite(str(path), img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    # ékezet-biztos írás (#190): Windowson a cv2.imwrite némán elnyeli a
+    # nem-ASCII útvonalat (pl. „Képek") — a helper memóriában kódol
+    _mgk.imwrite_unicode(path, img, [cv2.IMWRITE_JPEG_QUALITY, 95])
     return path
 
 

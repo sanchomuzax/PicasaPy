@@ -114,6 +114,46 @@ def test_kit_generalas_letrehozza_a_vart_mappaszerkezetet(
         assert p.name in utmutato
 
 
+def test_imwrite_imread_unicode_ekezetes_utvonalon(tmp_path: Path) -> None:
+    """#190: a cv2.imwrite/imread Windowson nem kezeli a nem-ASCII
+    útvonalat (pl. „Képek") — a helperek memóriában kódolnak/dekódolnak,
+    így az útvonalat mindig a Unicode-biztos Python-IO kezeli."""
+    mgk = mgke._mgk
+    d = tmp_path / "Képek árvíztűrő tükörfúrógép"
+    d.mkdir()
+    p = d / "próba_kép.jpg"
+    img = np.full((20, 30, 3), 128, np.uint8)
+    mgk.imwrite_unicode(p, img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    assert p.exists() and p.stat().st_size > 0
+    vissza = mgk.imread_unicode(p)
+    assert vissza is not None and vissza.shape == (20, 30, 3)
+    # olvashatatlan/hiányzó fájlnál None, mint a cv2.imread
+    assert mgk.imread_unicode(d / "nincs.jpg") is None
+
+
+def test_kit_generalas_ekezetes_kimeneti_mappaba(tmp_path: Path) -> None:
+    """#190: a teljes kit-generálás ékezetes kimeneti útvonallal is
+    hiánytalan — a felhasználó valódi esete („…\\Képek\\Picasa\\…")."""
+    out = tmp_path / "Képek" / "PicasaPy-golden-kit"
+    argv = sys.argv
+    sys.argv = ["make_golden_kit_effects.py", str(out)]
+    try:
+        mgke.main()
+    finally:
+        sys.argv = argv
+
+    assert (out / "UTMUTATO.md").exists()
+    for chart in ("chart_ramp.jpg", "chart_color.jpg", "chart_detail.jpg",
+                  "photo00.jpg"):
+        p = out / "00-base" / chart
+        assert p.exists() and p.stat().st_size > 0, f"hiányzó alapkép: {chart}"
+        assert mgke._mgk.imread_unicode(p) is not None
+    kepek = [*(out / "effekt4").glob("*.jpg"), *(out / "effekt5").glob("*.jpg")]
+    assert len(kepek) == 49
+    for p in kepek:
+        assert p.stat().st_size > 0
+
+
 def test_kit_generalas_zarolt_kimenetnel_felulirassal_folytat(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.45] – 2026-07-23
+
+### Javítva
+- **Golden-kit ékezetes útvonalon is (#190):** Windowson a cv2 képírás/
+  -olvasás némán elnyeli a nem-ASCII útvonalat (pl. „Képek") — a chart-
+  képek nem jöttek létre, a generálás érthetetlen helyen bukott. Mostantól
+  a kép-IO memóriában kódol (imencode/imdecode), az útvonalat Unicode-
+  biztos Python-IO kezeli.
+
 ## [0.4.44] – 2026-07-23
 
 ### Javítva

@@ -173,9 +173,37 @@ def make_charts(out: Path):
     paths = {}
     for name, im in charts.items():
         p = out / name
-        cv2.imwrite(str(p), im, [cv2.IMWRITE_JPEG_QUALITY, 97])
+        imwrite_unicode(p, im, [cv2.IMWRITE_JPEG_QUALITY, 97])
         paths[name] = p
     return paths
+
+
+def imwrite_unicode(path: Path, img, params=None) -> None:
+    """Kép írása ékezet-biztosan (#190).
+
+    A `cv2.imwrite` Windowson NEM kezeli a nem-ASCII útvonalat (pl.
+    „Képek") — hiba helyett CSENDBEN nem ír semmit, a folyamat pedig
+    később, érthetetlen helyen bukik el. Ezért memóriában kódolunk
+    (`imencode`), és a bájtokat Python írja ki, ami Unicode-biztos.
+    Hibánál AZONNAL, beszédes kivétellel jelzünk."""
+    ok, buf = cv2.imencode(Path(str(path)).suffix or ".jpg", img,
+                           params or [])
+    if not ok:
+        raise RuntimeError(f"képkódolás sikertelen: {path}")
+    Path(path).write_bytes(buf.tobytes())
+
+
+def imread_unicode(path: Path, flags=cv2.IMREAD_COLOR):
+    """Kép olvasása ékezet-biztosan (a `cv2.imread` Windows-korlátja
+    miatt): a bájtokat Python olvassa, a dekódolás memóriában történik.
+    Olvashatatlan/sérült fájlnál None-t ad, mint a cv2.imread."""
+    try:
+        data = np.fromfile(str(path), dtype=np.uint8)
+    except OSError:
+        return None
+    if data.size == 0:
+        return None
+    return cv2.imdecode(data, flags)
 
 
 def pick_photos(photos_dir: Path, n=6):
@@ -183,7 +211,7 @@ def pick_photos(photos_dir: Path, n=6):
     files = sorted(photos_dir.rglob("*.jp*g"))
     scored = []
     for f in files[:: max(1, len(files) // 120)]:
-        img = cv2.imread(str(f), cv2.IMREAD_REDUCED_GRAYSCALE_8)
+        img = imread_unicode(f, cv2.IMREAD_REDUCED_GRAYSCALE_8)
         if img is None:
             continue
         scored.append((float(img.mean()), f))
