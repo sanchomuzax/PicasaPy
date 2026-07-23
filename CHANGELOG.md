@@ -5,6 +5,42 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.39] – 2026-07-23
+
+### Javítva
+- **Windows-telepítő parancsikonokkal (#67):** az `install.bat` a telepítés
+  után Asztal- és Start menü-parancsikont hoz létre a PicasaPy-ikonnal —
+  a taskbar-ikon javításának (AppUserModelID, korábban a main-ben) kézzel
+  fogható kiegészítése; a végleges .exe-be ágyazott ikon a jövőbeni
+  Windows-csomagolási munka része.
+
+## [0.4.38] – 2026-07-23
+
+### Javítva
+- **Automatikus csomag-assetek a release-eken (#256):** a `package.yml`
+  mostantól a Release workflow lefutása után magától elkészíti és feltölti
+  a wheel/sdist/.deb/Windows-zip asseteket (a GITHUB_TOKEN
+  rekurzióvédelme miatt a korábbi `release: published` trigger sosem
+  sült el); kézi `workflow_dispatch` pótlásra továbbra is használható.
+
+## [0.4.37] – 2026-07-23
+
+### Hozzáadva
+- **Gyorscímkék a Címkék-panelen (#193):** 8 konfigurálható gomb (2×4)
+  egykattintásos címkézéshez, fogaskerékkel nyíló konfigurációs ablak —
+  a felső két gomb automatikusan a legutóbb használt címkéket követi
+  (kikapcsolható), az üres mezők gyakran használt címkékkel tölthetők fel;
+  a beállítások megőrződnek.
+
+## [0.4.36] – 2026-07-23
+
+### Hozzáadva
+- **Csomagolás (#4):** `pip install .`/pipx-telepítés működő `picasapy`
+  paranccsal (entry point + QML/ikon/fordítás a wheelben); új `packaging/`
+  könyvtár Debian-csomag (.deb) és Windows-zip összeállító szkriptekkel,
+  magyar build-útmutatóval; release-publikáláskor a csomagok automatikus
+  feltöltése release-assetként (`package.yml`).
+
 ## [0.4.35] – 2026-07-23
 
 ### Hozzáadva

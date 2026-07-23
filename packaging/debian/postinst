@@ -1,0 +1,64 @@
+#!/bin/sh
+# PicasaPy — telepítés utáni lépés (#4).
+#
+# A .deb maga csak a PicasaPy .whl-jét és a desktop-integrációt hordozza;
+# a nehéz, architektúra-függő függőségeket (PySide6, OpenCV, numpy stb.)
+# ide, telepítéskor húzza be a PyPI-ról egy dedikált virtuális
+# környezetbe — ezért ehhez a lépéshez internetkapcsolat kell.
+set -e
+
+VENV_DIR=/opt/picasapy/venv
+WHEEL_DIR=/opt/picasapy/dist
+
+# A rendszer "python3" parancs nem feltétlenül 3.12+ (pl. ha több Python
+# verzió is telepítve van egymás mellett) — explicit kikeressük a
+# legújabb, megfelelő verziójú értelmezőt, ne csak a python3 aliast.
+find_python() {
+    for candidate in python3.13 python3.12 python3; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            version=$("$candidate" -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null) || continue
+            major=${version%%.*}
+            minor=${version##*.}
+            if [ "$major" -eq 3 ] && [ "$minor" -ge 12 ]; then
+                echo "$candidate"
+                return 0
+            fi
+        fi
+    done
+    return 1
+}
+
+case "$1" in
+    configure)
+        if [ ! -x "$VENV_DIR/bin/python3" ]; then
+            PYTHON_BIN=$(find_python) || {
+                echo "PicasaPy: HIBA — nem található Python 3.12+ értelmező." >&2
+                echo "Telepítsd pl.: sudo apt install python3.12 python3.12-venv" >&2
+                exit 1
+            }
+            echo "PicasaPy: virtuális környezet létrehozása ($VENV_DIR, $PYTHON_BIN)…"
+            "$PYTHON_BIN" -m venv "$VENV_DIR"
+        fi
+
+        echo "PicasaPy: telepítés a virtuális környezetbe (PyPI-függőségekkel)…"
+        WHEEL_FILE=$(ls "$WHEEL_DIR"/picasapy-*.whl 2>/dev/null | head -n1)
+        if [ -z "$WHEEL_FILE" ]; then
+            echo "PicasaPy: HIBA — nem található becsomagolt .whl a $WHEEL_DIR alatt." >&2
+            exit 1
+        fi
+        "$VENV_DIR/bin/pip" install --upgrade --quiet "$WHEEL_FILE"
+
+        ln -sf "$VENV_DIR/bin/picasapy" /usr/bin/picasapy
+
+        if command -v update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database -q /usr/share/applications || true
+        fi
+        if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+            gtk-update-icon-cache -q /usr/share/icons/hicolor || true
+        fi
+
+        echo "PicasaPy telepítve. Indítás: picasapy (vagy az alkalmazásmenüből)."
+        ;;
+esac
+
+exit 0

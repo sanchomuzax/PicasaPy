@@ -1,0 +1,5 @@
+# Build-időben generált staging-könyvtár és a legyártott csomagok (#4) —
+# ezeket a build_deb.sh / build_windows_zip.sh mindig újra elkészíti,
+# nem verziózott tartalom.
+.build/
+dist/
