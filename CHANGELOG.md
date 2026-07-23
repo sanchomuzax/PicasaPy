@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.39] – 2026-07-23
+
+### Javítva
+- **Windows-telepítő parancsikonokkal (#67):** az `install.bat` a telepítés
+  után Asztal- és Start menü-parancsikont hoz létre a PicasaPy-ikonnal —
+  a taskbar-ikon javításának (AppUserModelID, korábban a main-ben) kézzel
+  fogható kiegészítése; a végleges .exe-be ágyazott ikon a jövőbeni
+  Windows-csomagolási munka része.
+
 ## [0.4.38] – 2026-07-23
 
 ### Javítva
