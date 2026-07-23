@@ -114,6 +114,46 @@ def test_kit_generalas_letrehozza_a_vart_mappaszerkezetet(
         assert p.name in utmutato
 
 
+def test_kit_generalas_fotomappa_nelkul_is_mukodik(tmp_path: Path) -> None:
+    """#190: fotókönyvtár HIÁNYÁBAN (csak kimeneti mappa argumentum) a kit
+    szintetikus fotóval elkészül — nem száll el, mint a korábbi verzió."""
+    out = tmp_path / "golden-kit-nofoto"
+    argv = sys.argv
+    sys.argv = ["make_golden_kit_effects.py", str(out)]
+    try:
+        mgke.main()
+    finally:
+        sys.argv = argv
+
+    photo = out / "00-base" / "photo00.jpg"
+    assert photo.exists(), "szintetikus fotó-alapképnek létre kell jönnie"
+    assert cv2.imread(str(photo)) is not None, "a fotó-alapkép valós kép"
+    # a photo-alapú effektek képei is legyártódtak (pl. Szegély, Polaroid)
+    kepek5 = sorted((out / "effekt5").glob("*.jpg"))
+    assert kepek5, "a photo-alapú effektek képeinek is létre kell jönnie"
+    assert (out / "UTMUTATO.md").exists()
+
+
+def test_kit_generalas_ures_fotomappaval_szintetikus_fotot_general(
+    tmp_path: Path,
+) -> None:
+    """#190: ha a megadott fotómappa létezik, de ÜRES (pontosan a
+    felhasználó esete), a pick_photos IndexError-ját elnyeljük, és
+    szintetikus fotóra esünk vissza — a generálás nem bukik el."""
+    ures = tmp_path / "ures-fotok"
+    ures.mkdir()
+    out = tmp_path / "golden-kit-ures"
+    argv = sys.argv
+    sys.argv = ["make_golden_kit_effects.py", str(ures), str(out)]
+    try:
+        mgke.main()
+    finally:
+        sys.argv = argv
+
+    assert (out / "00-base" / "photo00.jpg").exists()
+    assert (out / "UTMUTATO.md").exists()
+
+
 def test_kit_generalas_letezo_kimeneti_mappat_felulir(
     tmp_path: Path, fotok_dir: Path
 ) -> None:

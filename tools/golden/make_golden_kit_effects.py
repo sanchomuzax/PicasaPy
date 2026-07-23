@@ -18,7 +18,14 @@ Az egyértelmű effekt↔kép megfeleltetéshez minden kép fájlneve tartalmazz
 a fület, a sorszámot és az effekt ASCII-sított magyar nevét, csúszkás
 effekteknél a beállítást is (pl. `effekt4_04_hdrszeru_eros.jpg`).
 
-Használat: make_golden_kit_effects.py <fotok_dir> <kimenet_dir>
+Használat:
+    make_golden_kit_effects.py <kimenet_dir>
+    make_golden_kit_effects.py <fotok_dir> <kimenet_dir>
+
+A `<fotok_dir>` ELHAGYHATÓ: ha megadod és van benne fénykép, a keret-/
+vintage-effektekhez egy valódi fotót is beteszünk; ha nincs (vagy üres a
+mappa), fotószerű szintetikus képet generálunk. A kit így fényképek nélkül,
+pusztán a `<kimenet_dir>` megadásával is elkészül.
 """
 from __future__ import annotations
 
@@ -108,7 +115,41 @@ EFFECTS_5 = [
 ]
 
 
-def _base_images(base_dir: Path, photos_dir: Path) -> dict[str, Path]:
+def _synthetic_photo(path: Path) -> Path:
+    """Fotószerű szintetikus alapkép valódi fénykép HIÁNYÁBAN (#190).
+
+    A keret-/árnyék-/vintage-effektek (Szegély, Polaroid, Lomo, Árnyékvetés
+    stb.) elvont charton nem beszédesek — de valódi fotóra sincs feltétlenül
+    szükség: egy lágy színátmenetekből, égbolt-/tájszerű sávokból és enyhe
+    zajból álló kép bőven elég ahhoz, hogy az effekt hatása látszódjon és a
+    `filters=` kulcs kiolvasható legyen. Így a kit fotókönyvtár nélkül is
+    legenerálható (a korábbi verzió itt elszállt, ha nem volt fénykép).
+    """
+    np = _mgk.np
+    cv2 = _mgk.cv2
+    h, w = 1200, 1600
+    img = np.zeros((h, w, 3), np.uint8)
+    # függőleges ég→talaj színátmenet (meleg-hideg), hogy tónusa legyen
+    top = np.array([210, 170, 120], np.float32)   # BGR: világos, hűvös ég
+    bottom = np.array([40, 90, 130], np.float32)   # melegebb, sötétebb talaj
+    for y in range(h):
+        t = y / (h - 1)
+        img[y, :] = (top * (1 - t) + bottom * t).astype(np.uint8)
+    # néhány lágy, eltérő tónusú folt (táj-/tárgyszerű régiók)
+    rng = np.random.default_rng(190)
+    for _ in range(6):
+        cx, cy = int(rng.integers(0, w)), int(rng.integers(0, h))
+        r = int(rng.integers(120, 340))
+        color = rng.integers(30, 220, 3).tolist()
+        cv2.circle(img, (cx, cy), r, color, -1)
+    img = cv2.GaussianBlur(img, (0, 0), 25)        # lágyítás → természetes
+    noise = rng.integers(-12, 12, (h, w, 3), dtype=np.int16)
+    img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+    cv2.imwrite(str(path), img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    return path
+
+
+def _base_images(base_dir: Path, photos_dir: Path | None) -> dict[str, Path]:
     """A négy újrahasznosított alapkép (a meglévő kit chart/fotó-logikájával).
 
     - `ramp`: `chart_ramp.jpg` — szürke/RGB gradiens, tónusgörbék méréséhez
@@ -118,13 +159,25 @@ def _base_images(base_dir: Path, photos_dir: Path) -> dict[str, Path]:
     - `detail`: `chart_detail.jpg` — sakktáblák/vonalpárok élkereső és
       pixelező effektekhez (Ceruzarajz, Neon, Felpörgetés, Lágyítás,
       Képpontnagyítás).
-    - `photo`: egy valódi fénykép — kerethez/árnyékhoz/vintage-hatáshoz
-      (Szegély, Polaroid, Lomo stb.), ahol az elvont chart nem beszédes.
+    - `photo`: kerethez/árnyékhoz/vintage-hatáshoz (Szegély, Polaroid, Lomo
+      stb.). Ha a `photos_dir` megvan és van benne fénykép, egy valódi
+      fotót használunk; ha nincs (üres mappa vagy nincs megadva), fotószerű
+      szintetikus képet generálunk — a kit így fotókönyvtár nélkül is kész.
     """
     charts = _mgk.make_charts(base_dir)
-    photos = _mgk.pick_photos(photos_dir, n=1)
     photo_path = base_dir / "photo00.jpg"
-    shutil.copy2(photos[0], photo_path)
+    photos: list = []
+    if photos_dir is not None:
+        try:
+            photos = _mgk.pick_photos(photos_dir, n=1)
+        except (IndexError, ValueError):
+            # üres/olvashatatlan fotómappa: a pick_photos üres listán
+            # indexel — nem hiba, csak nincs valódi fotó, generálunk egyet
+            photos = []
+    if photos:
+        shutil.copy2(photos[0], photo_path)
+    else:
+        _synthetic_photo(photo_path)
     return {
         "ramp": charts["chart_ramp.jpg"],
         "color": charts["chart_color.jpg"],
@@ -276,11 +329,17 @@ def _write_utmutato(out: Path, rows4: list, rows5: list) -> None:
 
 
 def main() -> None:
-    if len(sys.argv) != 3:
+    # Egy argumentum = csak kimeneti mappa (szintetikus fotóval);
+    # kettő = fotómappa + kimeneti mappa.
+    if len(sys.argv) == 2:
+        photos_dir = None
+        out = Path(sys.argv[1]).expanduser()
+    elif len(sys.argv) == 3:
+        photos_dir = Path(sys.argv[1]).expanduser()
+        out = Path(sys.argv[2]).expanduser()
+    else:
         print(__doc__)
         sys.exit(1)
-    photos_dir = Path(sys.argv[1]).expanduser()
-    out = Path(sys.argv[2]).expanduser()
     if out.exists():
         shutil.rmtree(out)
     base_dir = out / "00-base"
