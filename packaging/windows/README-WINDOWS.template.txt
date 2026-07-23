@@ -26,6 +26,10 @@ Kattints duplán az install.bat fájlra ebben a mappában.
 szövegfájl-szkript, nem futtatható program, tartalma bármikor
 megnyitható/ellenőrizhető Jegyzettömbben.)
 
+A telepítő a sikeres telepítés után parancsikont is létrehoz az Asztalon és
+a Start menüben, a PicasaPy-ikonnal (ha ez valamiért kimarad, a "picasapy"
+parancs a parancssorból ekkor is működik).
+
 Ha inkább kézzel csinálnád, nyiss parancssort (cmd) ebben a mappában, és:
   py -3.12 -m pip install --upgrade pip
   py -3.12 -m pip install picasapy-__VERSION__-py3-none-any.whl
