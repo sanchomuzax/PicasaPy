@@ -20,6 +20,7 @@ from PySide6.QtCore import (
     QCoreApplication,
     QLocale,
     QLockFile,
+    QSettings,
     Qt,
     QTimer,
     QTranslator,
@@ -45,6 +46,7 @@ from .faces_helper import FacesHelper
 from .fileops_controller import FileOpsController
 from .startup_status import StartupStatus
 from .thumbnail_provider import ThumbnailProvider
+from .window_geometry import virtual_desktop_rect, wire_window_geometry
 
 _APP_DIR = Path(__file__).parent
 _I18N_DIR = _APP_DIR / "i18n"
@@ -418,6 +420,12 @@ def run(argv: list[str]) -> int:
     # legalább _SPLASH_MIN_VISIBLE_MS-ig látszik (gyors betöltésnél is van
     # ideje megjelenni, a Picasa-élményhez hasonlóan).
     window = engine.rootObjects()[0]
+
+    # #192: az utolsó ablakpozíció/-méret visszaállítása induláskor,
+    # mentése az ablak zárásakor — a controllerrel közös QSettings-tárba
+    wire_window_geometry(
+        window, QSettings("PicasaPy", "PicasaPy"), virtual_desktop_rect(app)
+    )
     splash_state = {"started": False}
 
     def _start_and_finish() -> None:
