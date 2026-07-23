@@ -1,9 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "picasapy"
-version = "0.4.35"
+version = "0.4.39"
 description = "Modern, open, cross-platform successor to Google Picasa"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
+# A futáshoz szükséges csomagok (#4 — pip/pipx-telepíthetőség). A pontos
+# listát a CI (.github/workflows/ci.yml) telepítési lépése tartja
+# karban — ha ott bővül, itt is frissítendő.
+dependencies = [
+    "PySide6",
+    "opencv-python-headless",
+    "pillow",
+    "piexif",
+    "watchdog",
+]
+
+# Parancssori belépési pont: `pip install .` / `pipx install .` után a
+# `picasapy` parancs a src/picasapy/app/__main__.py:main()-t hívja (#4).
+# Console script (nem gui-script), hogy a hibaüzenetek (pl. "már fut egy
+# példány") headless/SSH-s környezetben is látszódjanak stderr-en.
+[project.scripts]
+picasapy = "picasapy.app.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# A GUI-hoz szükséges nem-Python fájlok (QML, ikonok, fordítás) a
+# telepített csomagba is bekerüljenek — enélkül a telepített picasapy
+# induláskor nem találná a Main.qml-t / ikonokat.
+[tool.setuptools.package-data]
+"picasapy.app" = [
+    "assets/*.png",
+    "assets/*.ico",
+    "assets/*.svg",
+    "assets/tools/*.png",
+    "qml/*.qml",
+    "qml/*.js",
+    "qml/PicasaPy/*.qml",
+    "qml/PicasaPy/qmldir",
+    "i18n/*.qm",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

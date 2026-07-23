@@ -1,0 +1,16 @@
+#!/bin/sh
+# PicasaPy — eltávolítás utáni takarítás (#4).
+# A dpkg csak a maga fájljait tudja törölni; a postinst által létrehozott
+# virtuális környezet ($VENV_DIR) és a szimlink ezen a szkripten át törlődik.
+set -e
+
+VENV_DIR=/opt/picasapy/venv
+
+case "$1" in
+    purge|remove)
+        rm -f /usr/bin/picasapy
+        rm -rf "$VENV_DIR"
+        ;;
+esac
+
+exit 0

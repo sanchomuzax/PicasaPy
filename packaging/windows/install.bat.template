@@ -1,0 +1,64 @@
+@echo off
+setlocal enabledelayedexpansion
+echo PicasaPy telepito - Windows
+echo.
+
+where py >nul 2>nul
+if errorlevel 1 (
+    echo HIBA: nem talalhato a "py" Python-inditoparancs.
+    echo Telepitsd a Python 3.12+ -t innen: https://www.python.org/downloads/windows/
+    echo Telepiteskor pipald be: "Add python.exe to PATH"
+    pause
+    exit /b 1
+)
+
+echo Pip frissitese...
+py -3.12 -m pip install --upgrade pip
+if errorlevel 1 py -3 -m pip install --upgrade pip
+
+echo.
+echo PicasaPy telepitese...
+set FOUND=0
+for %%f in ("%~dp0picasapy-__VERSION__-py3-none-any.whl") do (
+    set FOUND=1
+    py -3.12 -m pip install --upgrade "%%f"
+    if errorlevel 1 py -3 -m pip install --upgrade "%%f"
+)
+
+if "!FOUND!"=="0" (
+    echo HIBA: nem talalhato a picasapy-__VERSION__-py3-none-any.whl fajl ebben a mappaban.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Parancsikonok letrehozasa (Asztal + Start menu)...
+rem #67: tálca-ikon — az .exe-hez tartozó parancsikon explicit IconLocation-t
+rem kap (assets/icon.ico), így a taskbar/Start-menü nem a Python-ikont mutatja.
+rem Ha bármi hiányzik (Scripts-mappa, ikon), a lépés csendben kimarad — ez
+rem nem fatalis hiba, a "picasapy" parancs a PATH-ból ekkor is mukodik.
+set SCRIPTS_DIR=
+for /f "delims=" %%p in ('py -3.12 -c "import sysconfig; print(sysconfig.get_path('scripts'))" 2^>nul') do set SCRIPTS_DIR=%%p
+set ICON_PATH=
+for /f "delims=" %%p in ('py -3.12 -c "import importlib.util, pathlib; s = importlib.util.find_spec('picasapy.app'); print(pathlib.Path(s.origin).parent / 'assets' / 'icon.ico')" 2^>nul') do set ICON_PATH=%%p
+
+if defined SCRIPTS_DIR if defined ICON_PATH (
+    set "TARGET_EXE=!SCRIPTS_DIR!\picasapy.exe"
+    if exist "!TARGET_EXE!" if exist "!ICON_PATH!" (
+        set "STARTMENU_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs"
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "$w = New-Object -ComObject WScript.Shell; foreach ($p in @('%USERPROFILE%\Desktop\PicasaPy.lnk', '!STARTMENU_DIR!\PicasaPy.lnk')) { $s = $w.CreateShortcut($p); $s.TargetPath = '!TARGET_EXE!'; $s.IconLocation = '!ICON_PATH!'; $s.WorkingDirectory = '!SCRIPTS_DIR!'; $s.Save() }"
+        if errorlevel 1 (
+            echo FIGYELEM: a parancsikonok letrehozasa nem sikerult, de a telepites folytatodik.
+        ) else (
+            echo Parancsikonok letrehozva: Asztal es Start menu.
+        )
+    ) else (
+        echo FIGYELEM: picasapy.exe vagy icon.ico nem talalhato, parancsikon kimarad.
+    )
+) else (
+    echo FIGYELEM: nem sikerult megallapitani a Scripts- vagy ikon-utvonalat, parancsikon kimarad.
+)
+
+echo.
+echo Telepites kesz. Nyiss egy UJ parancssort, es probald ki: picasapy
+pause

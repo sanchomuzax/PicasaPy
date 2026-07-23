@@ -147,5 +147,95 @@ Rectangle {
                 HoverHandler { id: rowHover }
             }
         }
+
+        // Gyorscímkék (#193) — a Picasa 3 mintájára: 2×4 gombrács a panel
+        // alján. A gombok a controller.quickTagButtons-t (8 elemű lista,
+        // "" = üres szlot, a QML "?" jellel jelzi) mutatják; kattintásra a
+        // MEGLÉVŐ addRequested jelen át adódnak a kijelöléshez (ugyanaz az
+        // út, mint a kézi címke-beírásé — Main.qml köti a controllerhez).
+        // A `controller` context property közvetlen elérése itt kivétel a
+        // panel „buta komponens" elvéhez képest: a Main.qml forró fájl
+        // (nem bővíthető ezzel az adatfolyammal), a mintát viszont más
+        // beágyazott QML-ek (LightboxFeed, MainToolbar) is követik.
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: Theme.chromeBorder
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            Text {
+                text: qsTr("Quick tags")
+                font.pixelSize: Theme.fontSize
+                font.bold: true
+                color: Theme.ink
+            }
+            Item { Layout.fillWidth: true }
+            Rectangle {
+                objectName: "quickTagsGearButton"
+                width: 18; height: 18; radius: 3
+                color: gearHover.hovered ? Theme.chromeBorder : "transparent"
+                Text {
+                    anchors.centerIn: parent
+                    text: "⚙"
+                    font.pixelSize: 12
+                    color: Theme.textGray
+                }
+                HoverHandler { id: gearHover }
+                TapHandler {
+                    onTapped: quickTagsConfigDialog.open()
+                }
+            }
+        }
+
+        ColumnLayout {
+            id: quickTagsGrid
+            objectName: "quickTagsGrid"
+            Layout.fillWidth: true
+            spacing: 4
+
+            // 2 sor × 4 gomb — EXPLICIT deklaráció, Repeater NÉLKÜL: egy
+            // Layout-ba ágyazott Repeater a Qt Quick Layouts sajátossága
+            // miatt úgy jelenteti meg a delegáltakat, hogy a QObject-
+            // szülőjük a Repeater marad (nem a layout) — findChild(name)
+            // ezért a tesztekben nem találná meg őket. A `quickTagButton`
+            // helyi komponens (lásd lent) DRY-vá teszi a 8 példányt.
+            component QuickTagButton: PicasaButton {
+                id: quickTagButton
+                required property int slot
+                readonly property string label:
+                    controller.quickTagButtons[quickTagButton.slot] || ""
+                objectName: "quickTagButton" + quickTagButton.slot
+                Layout.fillWidth: true
+                text: quickTagButton.label.length > 0
+                      ? quickTagButton.label : "?"
+                font.pixelSize: Theme.fontSize - 1
+                enabled: panel.hasSelection && quickTagButton.label.length > 0
+                onClicked: panel.addRequested(quickTagButton.label)
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 4
+                QuickTagButton { slot: 0 }
+                QuickTagButton { slot: 1 }
+                QuickTagButton { slot: 2 }
+                QuickTagButton { slot: 3 }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 4
+                QuickTagButton { slot: 4 }
+                QuickTagButton { slot: 5 }
+                QuickTagButton { slot: 6 }
+                QuickTagButton { slot: 7 }
+            }
+        }
+    }
+
+    QuickTagsConfigDialog {
+        id: quickTagsConfigDialog
+        objectName: "quickTagsConfigDialog"
     }
 }

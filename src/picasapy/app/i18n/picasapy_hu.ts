@@ -1573,6 +1573,39 @@
         <source>Select pictures to tag them.</source>
         <translation>Jelölj ki képeket a címkézéshez.</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/TagsPanel.qml"/>
+        <source>Quick tags</source>
+        <translation>Gyorscímkék</translation>
+    </message>
+</context>
+<context>
+    <name>QuickTagsConfigDialog</name>
+    <message>
+        <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml"/>
+        <source>Configure quick tags</source>
+        <translation>Gyorscímkék konfigurálása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml"/>
+        <source>Reserve the top two buttons for recently used tags</source>
+        <translation>A felső két gomb lefoglalása a legutóbb használt címkék számára</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml"/>
+        <source>Fill the empty boxes above with frequently used tags</source>
+        <translation>A fenti üres mezők automatikus kitöltése gyakran használt címkékkel</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml"/>
+        <source>Tag</source>
+        <translation>Címke</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/QuickTagsConfigDialog.qml"/>
+        <source>(automatic)</source>
+        <translation>(automatikus)</translation>
+    </message>
 </context>
 <context>
     <name>TrayBar</name>
