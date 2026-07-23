@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.48] – 2026-07-23
+
+### Javítva
+- **Golden-kit generátor Windowson, fotók nélkül is (#115):** a
+  `make_golden_kit.py` fotómappa-argumentuma elhagyható, kevés/hiányzó
+  fotónál szintetikus fotó-alapképekkel pótol; OneDrive-tűrő kimenet-
+  előkészítés; a harness-doksi példái egysorosak, létező útvonalakkal.
+
 ## [0.4.47] – 2026-07-23
 
 ### Hozzáadva

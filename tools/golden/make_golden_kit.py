@@ -207,7 +207,12 @@ def imread_unicode(path: Path, flags=cv2.IMREAD_COLOR):
 
 
 def pick_photos(photos_dir: Path, n=6):
-    """Fényerő szerint szórt, változatos valódi fotók kiválasztása."""
+    """Fényerő szerint szórt, változatos valódi fotók kiválasztása.
+
+    #115: üres/hiányzó fotómappánál üres listát ad (nem IndexError) —
+    a hívó szintetikus fotókkal pótol (`synthetic_photos`)."""
+    if photos_dir is None or not Path(photos_dir).is_dir():
+        return []
     files = sorted(photos_dir.rglob("*.jp*g"))
     scored = []
     for f in files[:: max(1, len(files) // 120)]:
@@ -215,23 +220,97 @@ def pick_photos(photos_dir: Path, n=6):
         if img is None:
             continue
         scored.append((float(img.mean()), f))
+    if not scored:
+        return []
     scored.sort()
-    idx = np.linspace(0, len(scored) - 1, n).astype(int)
+    idx = np.linspace(0, len(scored) - 1, min(n, len(scored))).astype(int)
     return [scored[i][1] for i in idx]
 
 
+def synthetic_photos(out_dir: Path, n=6, start=0):
+    """Fotószerű szintetikus alapképek valódi fényképek HIÁNYÁBAN (#115,
+    a #190-es `_synthetic_photo` általánosítása): eltérő tónusú/világosságú
+    „tájképek" — elég változatosak a szűrő-transzformációk méréséhez, így
+    a kit fotókönyvtár nélkül, bármely gépen legenerálható. A `start`
+    index-eltolással a valódi fotók MELLÉ is pótolhatók a hiányzók."""
+    paths = []
+    for i in range(start, start + n):
+        h, w = 1200, 1600
+        img = np.zeros((h, w, 3), np.uint8)
+        # képenként eltérő ég/talaj tónus és fényerő
+        rng = np.random.default_rng(115 + i)
+        top = rng.integers(120, 240, 3).astype(np.float32)
+        bottom = rng.integers(20, 140, 3).astype(np.float32)
+        for y in range(h):
+            t = y / (h - 1)
+            img[y, :] = (top * (1 - t) + bottom * t).astype(np.uint8)
+        for _ in range(6):
+            cx, cy = int(rng.integers(0, w)), int(rng.integers(0, h))
+            r = int(rng.integers(120, 340))
+            color = rng.integers(20, 235, 3).tolist()
+            cv2.circle(img, (cx, cy), r, color, -1)
+        img = cv2.GaussianBlur(img, (0, 0), 25)
+        noise = rng.integers(-12, 12, (h, w, 3), dtype=np.int16)
+        img = np.clip(img.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+        p = Path(out_dir) / f"photo{i:02d}.jpg"
+        imwrite_unicode(p, img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        paths.append(p)
+    return paths
+
+
+def prepare_out_dir(out: Path) -> None:
+    """Kimeneti mappa előkészítése Windows-/OneDrive-tűrően (#190/#115
+    tanulság): csak-olvasható attribútum levétele + újrapróbálkozás; ha a
+    mappa így sem törölhető (zárolás), felülírással folytatunk."""
+    import os
+    import stat
+    import time
+
+    if not out.exists():
+        return
+
+    def _irhatova(func, p, _exc):
+        os.chmod(p, stat.S_IWRITE)
+        func(p)
+
+    for _ in range(3):
+        try:
+            shutil.rmtree(out, onerror=_irhatova)
+            return
+        except PermissionError:
+            time.sleep(1.0)
+    print(
+        f"FIGYELEM: a meglévő {out} mappát nem lehetett törölni (zárolás)"
+        " — a tartalmát FELÜLÍRVA folytatom."
+    )
+
+
 def main():
-    photos_dir = Path(sys.argv[1]).expanduser()
-    out = Path(sys.argv[2]).expanduser()
-    if out.exists():
-        shutil.rmtree(out)
+    # #115: a fotómappa ELHAGYHATÓ — egy argumentumnál (csak kimenet)
+    # vagy üres fotómappánál szintetikus fotókkal készül a kit.
+    if len(sys.argv) == 2:
+        photos_dir = None
+        out = Path(sys.argv[1]).expanduser()
+    elif len(sys.argv) == 3:
+        photos_dir = Path(sys.argv[1]).expanduser()
+        out = Path(sys.argv[2]).expanduser()
+    else:
+        print("Használat: make_golden_kit.py [fotok_dir] <kimenet_dir>")
+        raise SystemExit(1)
+    prepare_out_dir(out)
     base_dir = out / "00-base"
-    base_dir.mkdir(parents=True)
+    base_dir.mkdir(parents=True, exist_ok=True)
 
     chart_paths = make_charts(base_dir)
     photos = pick_photos(photos_dir)
     for i, p in enumerate(photos):
         shutil.copy2(p, base_dir / f"photo{i:02d}.jpg")
+    if len(photos) < 6:
+        # kevés/nincs valódi fotó → szintetikussal pótoljuk photo05-ig,
+        # hogy a photos2 készlet (photo01, photo04) mindig létezzen
+        photos = list(photos) + synthetic_photos(
+            base_dir, n=6 - len(photos), start=len(photos)
+        )
 
     base_sets = {
         "charts": sorted(base_dir.glob("chart_*.jpg")),
@@ -244,7 +323,7 @@ def main():
     total = 0
     for folder, variants in F.items():
         fdir = out / folder
-        fdir.mkdir()
+        fdir.mkdir(exist_ok=True)
         ini = []
         bases = [b for key in BASES[folder] for b in base_sets[key]]
         for base in bases:
@@ -261,7 +340,7 @@ def main():
                 total += 1
         (fdir / ".picasa.ini").write_text("\n".join(ini), encoding="utf-8")
 
-    (out / "export").mkdir()
+    (out / "export").mkdir(exist_ok=True)
     n_variants = sum(len(v) for v in F.values())
     print(f"Kit kész: {out}")
     print(f"  {len(chart_paths)} chart + {len(photos)} fotó alapkép")
