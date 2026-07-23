@@ -108,3 +108,14 @@ Mivel a bin-pozíciókat a `test_histogram_reference.py` már gépi úton
 garantálja, a Picasa-golden elsősorban azt igazolja, hogy a **megjelenítés
 stílusa** (skálázás, normalizálás, színkeverés) is Picasa-hű — nem csak a
 számítás.
+
+## Ha a skála mégis eltér
+
+Ez a tesztcsomag **kizárólag mérőeszköz** — nem javítja a
+`histogram_helper.py` normalizálási logikáját (#232). Ha az összevetés során
+kiderül, hogy a PicasaPy és a Picasa 3 hisztogram-skálája/alakja **eltér**
+(pl. a Picasa globális csúcsra normalizál, nem csatornánkéntire, vagy más a
+görbe), azt **ne** ebben a jegyben javítsd ki: nyiss egy **külön GitHub
+issue-t** a konkrét eltérés leírásával (melyik referencia-képnél, milyen
+irányú a különbség, a két PNG csatolva), és azon a jegyen keresztül döntsön a
+felhasználó/csapat a normalizálás módosításáról.
