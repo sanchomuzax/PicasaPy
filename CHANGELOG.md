@@ -5,6 +5,13 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.46] – 2026-07-23
+
+### Hozzáadva
+- **`PicasaPy-indito.bat` a repó gyökerében:** dupla kattintásra frissíti
+  (git pull) és elindítja az appot Windowson — a felhasználónak nem kell
+  parancsokat és mappákat fejben tartania; hibánál emberi nyelvű üzenet.
+
 ## [0.4.45] – 2026-07-23
 
 ### Javítva
