@@ -268,30 +268,39 @@ képarányos középpont (x,y), a redeye/crop régiókkal rokon minta; a
 Round-trip tesztek a valódi mintákkal: `tests/ini/test_filters.py`
 (`TestEffektFulKulcsok190`).
 
-## Golden-verdiktek (#115/#279, 2026-07-23) — mely szűrő pixelhű
+## Golden-verdiktek (#115/#279, 2026-07-23) — mely szűrő mennyire pixelhű
 
-A `compare_render.py` LUT-os futásából (`--luts research/golden-analysis`,
-`luts3.json`), a **tiszta, kemény élű `chart_detail`** alapkép egyszeres-
-szűrős sorai alapján (a sima gradiens/fotó alapképeket a Picasa JPEG-
-újratömörítése bezajosítja, ezért azok nem mérvadók — ld. #278):
+**VÉGLEGES mérés** a `compare_render.py --luts` futásából a kit3 **saját,
+eredeti Picasa-exportjai** ellen (amikből a `luts3.json` készült; a
+felhasználó megtalálta: `research/testdata/golden-kit3`). 0 „hiányzik",
+75 összevetés. Összegzés: **pixelhű 4 · közelítés 32 · eltér 39.** A
+verdikt sok szűrőnél a paraméter erősségével romlik (a LUT-közelítés a
+végpontok felé tér el).
 
-| Szűrő | Verdikt (chart_detail, LUT-tal) |
-|---|---|
-| `crop64`, `tilt` | pixelhű / közelítés (geometria) ✅ |
-| `unsharp`, `unsharp2` | pixelhű ✅ |
-| `bw`, `enhance`, `autolight`, `autocolor` | pixelhű ✅ |
-| `fill`, `sat` | pixelhű + közelítés ✅ |
-| `finetune2` | vegyes — extrém paraméternél (h/s=1.0) eltér ⚠️ |
-| `finetune`, `sepia`, `warm` | eltér — render-pontosítás kell ❌ |
-| `grain2` | eltér, de **szándékosan** nem reprodukálható (sztochasztikus szemcse) |
-| `Vignette` | eltér (analitikus modell hiánya — lásd Nyitva 2.) |
+| Szűrő | Eredmény (dE_átlag tartomány) | Állapot |
+|---|---|---|
+| `autocolor` | pixelhű→közelítés (0.00–1.55) | ✅ kész (színöntetnél kis eltérés → Nyitva 1) |
+| `autolight` | mind közelítés (0.20–0.74) | ✅ kész |
+| `glow` | közelítés (1.85) | ✅ jó |
+| `enhance` | közelítés, színöntetnél eltér (0.49–3.02) | ✅ jó (az autocolor-komponens húzza) |
+| `sat` | negatív jó, pozitív romlik (0.70–12.71) | ⚠️ pozitív telítés pontosítandó |
+| `finetune2` | h/s alacsony jó, hő-extrém eltér (0.94–24.9) | ⚠️ hőmérséklet-tengely pontosítandó |
+| `fill` | csak gyenge erősségnél jó (1.03–6.56) | ⚠️ 2D-LUT az erősséggel driftel |
+| `glow2` | eltér (2.68) | ❌ közelítő modell |
+| `radblur` | eltér (3.18) | ❌ |
+| `Vignette` | eltér (4.65) | ❌ analitikus modell (Nyitva 2) |
+| `ansel` | eltér (5.60) | ❌ |
+| `dir_tint` | eltér (9.36) | ❌ |
+| `tint` | eltér (20.63) — legnagyobb | ❌ színparaméter-formátum (Nyitva 4) |
 
-**Módszertani zárás (#279):** a kit3 saját Picasa-exportjai (amikből a
-`luts3.json` készült) már nem elérhetők a fejlesztői gépen (a LUT-desztilláció
-után törölve; csak a `luts3.json` maradt), ezért a per-szűrő verdiktet a
-felhasználó 2026-07-23-i Windows-os golden-futásának `chart_detail` sorai
-adják. A harness (#115) és a LUT-os futás (#279) így lezárva; a fenti „eltér"
-szűrők render-pontosítása a Nyitva-listán.
+(Geometria/él/tónus — `crop64`, `tilt`, `unsharp/2`, `bw` — a `chart_detail`
+kontroll-méréseiben pixelhű; ezek a kit3-ban nem szerepelnek.)
+
+**Módszertani zárás (#279):** a kit3 exportjai megvannak
+(`research/testdata/golden-kit3/export`), a mérés a valódi kalibrációs
+goldenek ellen futott. A harness (#115) és a LUT-os validálás (#279)
+lezárva; a fenti „eltér"/„⚠️" szűrők render-pontosítása a Nyitva-listán,
+súlyosság szerint (tint → dir_tint → sat+ → finetune2-hő → fill → …).
 
 ## Nyitva (5. kör / implementáció közben)
 
@@ -306,9 +315,12 @@ szűrők render-pontosítása a Nyitva-listán.
    `.picasa.ini`-variánsok generálása a most azonosított kulcsokkal →
    a felhasználónál csak tömeges export → csúszka↔paraméter leképezés
    és mérési pontok a renderhez.
-8. render-pontosítás a golden-verdiktek szerint (#115/#279): `finetune`
-   (v1), `sepia`, `warm` „eltér" a chart_detail-mérésben; `finetune2`
-   extrém h/s-paraméternél eltér — ezekre külön render-jegy(ek) nyithatók.
+8. render-pontosítás a VÉGLEGES golden-verdiktek szerint (#115/#279,
+   kit3-mérés) — súlyossági sorrendben, külön render-jegy(ek):
+   `tint` (dE 20, formátum: Nyitva 4) → `dir_tint` (9) → `sat` pozitív
+   ág (12) → `finetune2` hőmérséklet-tengely (25 extrémnél) → `fill` 2D-LUT
+   erősség-drift (6.5) → `ansel` (5.6) → `Vignette` (4.6, Nyitva 2) →
+   `radblur` (3.2) → `glow2` (2.7).
 
 ## Összehasonlító harness (#115) — `tools/golden/compare_render.py`
 
