@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.41] – 2026-07-23
+
+### Hozzáadva
+- **Golden-kit az új effekt-fülekhez (#190):** `make_golden_kit_effects.py`
+  — a Picasa 3.9-es 4–5. effekt-fül mind a 23 effektjéhez beszédes nevű
+  referencia-képeket generál (csúszkás effekteknél több beállítással),
+  magyar lépésenkénti útmutatóval (`UTMUTATO.md`) a Windows-os Picasában
+  végzendő adatgyűjtéshez — ez alapozza meg a `filters=` kulcsok
+  dekódolását.
+
 ## [0.4.40] – 2026-07-23
 
 ### Hozzáadva
