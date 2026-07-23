@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.42] – 2026-07-23
+
+### Hozzáadva
+- **100k-s feed-stresszmérés (#142):** ismételhető benchmark-szkript +
+  env-kapcsolós stresszteszt a valódi rácson, dokumentált eredményekkel
+  (`docs/benchmarks/feed-100k-stressz.md`) — 100 000 fotónál a rács
+  0,21 s alatt betölt, a példányosított cellaszám 42–54 közt korlátos,
+  a memóriatöbblet ~66 MB; ezzel a #142 teljesítmény-jegy minden pontja
+  igazoltan teljesül.
+
 ## [0.4.41] – 2026-07-23
 
 ### Hozzáadva
