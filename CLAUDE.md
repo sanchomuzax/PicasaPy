@@ -125,6 +125,18 @@ Mindig **előbb `git pull`, utána a check**. Verdikt-szabályok, a
 `[conserve]`/`[greedy]` politika és a „mikor nézd" a repó
 `ORCHESTRATOR_PROMPT.md`-jében — ez a kanonikus szabálykönyv.
 
+## 🧠 Tartós tudás — SESSION ELEJÉN OLVASD EL a MEMORY.md-t
+
+- **`CLAUDE.md`** (ez a fájl) minden session kontextusába **automatikusan**
+  betöltődik — ide csak az kerül, amit MINDEN sessionnek kérés nélkül tudnia kell.
+- **`MEMORY.md`** **NEM töltődik be magától** — ezért **session elején OLVASD EL**
+  (döntések, munkafolyamat-szabályok, tanulságok). Enélkül a felhalmozott
+  szabályokat (modellköltség, verzióemelés, milestone-ok, teszt-ceremónia,
+  hisztogram-típusú tanulságok…) nem ismered, és „vakon" dolgozol — pont ez
+  okozta már, hogy párhuzamos session-ök újra elkövettek régen megoldott hibákat.
+- **Új tartós tudás elhelyezése:** a *mindig-kell, kérés nélkül* → CLAUDE.md; a
+  *részletek/tanulságok* → MEMORY.md (a duplikációt kerüld).
+
 ## Fájlok
 
 - `CLAUDE.md` — ez a fájl: projekt-kontextus és irányelvek.
