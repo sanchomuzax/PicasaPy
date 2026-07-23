@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.54] – 2026-07-23
+
+### Hozzáadva
+- **Duplikátum-kereső mag (#31):** új `picasapy.dedup` modul azonos és hasonló
+  képek felderítésére — pontos duplikátumok tartalom-hash-sel (SHA-256,
+  méret-előszűréssel), hasonló képek 64 bites dHash + Hamming-távolság
+  klaszterezéssel (union-find, alapértelmezett küszöb 10). A `find_duplicates`
+  immutábilis, determinisztikus eredményt ad. (A kezelő-UI külön jegy: #287.)
+
 ## [0.4.53] – 2026-07-23
 
 ### Hozzáadva
