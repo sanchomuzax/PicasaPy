@@ -19,6 +19,8 @@ MenuBar {
     signal locateRequested()
     signal deleteRequested()
     signal slideshowRequested()
+    // #24: Időrend nézet (Ctrl+5)
+    signal timelineRequested()
     // #12: a Címkék-panel állapota kívülről kötve, a menüpont csak kér
     property bool tagsPanelOpen: false
     signal tagsPanelRequested()
@@ -138,7 +140,11 @@ MenuBar {
             text: qsTr("Slideshow")
             onTriggered: bar.slideshowRequested()
         }
-        MenuItem { text: qsTr("Timeline"); enabled: false }
+        MenuItem {
+            objectName: "menuViewTimeline"
+            text: qsTr("Timeline")
+            onTriggered: bar.timelineRequested()
+        }
         MenuItem {
             objectName: "menuViewHidden"
             text: qsTr("Hidden Pictures")

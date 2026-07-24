@@ -35,3 +35,4 @@ PicasaImportDialog 1.0 PicasaImportDialog.qml
 ImportDropArea 1.0 ImportDropArea.qml
 HistogramBox 1.0 HistogramBox.qml
 SplashScreen 1.0 SplashScreen.qml
+TimelineView 1.0 TimelineView.qml
