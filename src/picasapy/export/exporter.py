@@ -81,10 +81,16 @@ class ExportReport:
     reasons: tuple[str, ...] = ()
 
 
+# Az `ExportSettings` immutábilis (frozen dataclass), ezért egyetlen
+# modul-szintű példány biztonságosan megosztható alapértékként — elkerüli a
+# B008-at (function-call a default argumentumban) viselkedésváltozás nélkül.
+_DEFAULT_EXPORT_SETTINGS = ExportSettings()
+
+
 def export_photos(
     items: Iterable[ExportItem],
     target_dir: Path,
-    settings: ExportSettings = ExportSettings(),
+    settings: ExportSettings = _DEFAULT_EXPORT_SETTINGS,
 ) -> ExportReport:
     """Elemek exportja a célmappába; egy elem hibája nem állítja le a többit.
 

@@ -60,8 +60,10 @@ def _clamp(value: float, low: float, high: float) -> float:
 def _fill_lut(strength: float) -> np.ndarray:
     """A fill görbecsalád LUT-ja tetszőleges s∈[0..1] erősségre."""
     clamped = _clamp(strength, 0.0, 1.0)
+    # strict=False: szándékosan szomszédos-pár (pairwise) iteráció — az
+    # eltolt lista eggyel rövidebb, ez a felépítés lényege, nem hiba.
     for (low_s, low_points), (high_s, high_points) in zip(
-        _FILL_CURVES, _FILL_CURVES[1:]
+        _FILL_CURVES, _FILL_CURVES[1:], strict=False
     ):
         if low_s <= clamped <= high_s:
             weight = (clamped - low_s) / (high_s - low_s)

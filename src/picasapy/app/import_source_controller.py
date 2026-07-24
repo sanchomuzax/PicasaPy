@@ -167,7 +167,9 @@ class ImportSourceController(QObject):
                     if self._provider is not None
                     else "",
                 }
-                for candidate, record in zip(candidates, records)
+                # strict=True: a records a candidates enumerate()-jéből épül,
+                # a két sorozat garantáltan azonos hosszú.
+                for candidate, record in zip(candidates, records, strict=True)
             ]
             self.sourceScanFinished.emit(items, len(candidates))
 
