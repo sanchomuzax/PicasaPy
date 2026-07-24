@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.66] – 2026-07-24
+
+### Javítva
+- **A duplikátum-kereső használhatóvá vált nagy könyvtáron (#294):** eddig
+  feltétel nélkül a TELJES indexelt könyvtárra futott, haladásjelzés és
+  megszakítás nélkül — 140 000 képnél az ablak gyakorlatilag némán állt.
+  Most: **hatókör-választó** (kijelölés / aktuális mappa+almappák / teljes
+  könyvtár), alapból a szűk hatókörrel; **folyamatjelző és Mégse gomb**;
+  **redukált dekódolás** a perceptuális hashhez (4000×3000-es fotón
+  126,9 ms → 9,3 ms, azonos hash-értékkel); a hash-ek **tárolása az
+  indexben** (új `photo_hashes` tábla, séma v6), így az ismételt keresés
+  azonnal indul; és **sávos jelöltszűrés** az O(n²) páronkénti összevetés
+  helyett (3000 hash: 2,94 s → 0,80 s; több ezer azonos lenyomatú kép
+  7,9 s helyett azonnal) — egzakt, hamis negatív nélkül.
+- **A dedup-ablak nem veszi el a rács bélyegképeit (#298):** eddig a
+  keresés lecserélte a bélyegkép-provider TELJES regisztrációját, amitől a
+  mögötte lévő rácson szürke helyőrzők maradhattak. Mostantól saját
+  id-sávban, additív regisztrációval dolgozik, és bezáráskor elengedi.
+
 ## [0.4.65] – 2026-07-24
 
 ### Javítva
