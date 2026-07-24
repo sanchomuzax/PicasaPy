@@ -116,12 +116,10 @@ class ThumbnailCache:
             return None
         rgb = cv2.cvtColor(scale_down(base, self._size * _EDIT_BASE_FACTOR),
                            cv2.COLOR_BGR2RGB)
-        try:
-            rendered, _skipped = apply_filters(rgb, ops)
-        except Exception:  # noqa: BLE001
-            # #73-elv: hibás/idegen lánc-bejegyzésnél a szűretlen kép a helyes
-            # visszaesés (részleges előnézet), nem a placeholder.
-            rendered = rgb
+        # #301: a hibás/idegen lánc-bejegyzést az apply_filters saját maga
+        # hagyja ki (kivétel nem szökik ki innen) — a lánc többi tagja lefut,
+        # a #73-elv (szűretlen kép a placeholder helyett) így is teljesül.
+        rendered, _skipped = apply_filters(rgb, ops)
         thumb = cv2.cvtColor(scale_down(rendered, self._size),
                              cv2.COLOR_RGB2BGR)
         ok, encoded = cv2.imencode(

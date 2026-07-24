@@ -216,6 +216,57 @@ class TestSyncTree:
         conn.commit()
         assert photos_in_folder(conn, library / "nyaralas") == ()
 
+    def test_prune_photos_beyond_sqlite_param_limit(self, conn):
+        # #304: SQLITE_MAX_VARIABLE_NUMBER (alapból 32 766) felett a régi,
+        # egyenkénti-paraméteres NOT IN (...) sqlite3.OperationalError-ral
+        # bukott. 40 000 fotósor közvetlenül az indexbe szúrva (valódi
+        # fájlok generálása nélkül, hogy a teszt gyors maradjon).
+        from picasapy.index.sync import _prune_photos
+
+        folder_id = conn.execute(
+            "INSERT INTO folders(path, has_ini) VALUES (?, 0) RETURNING id",
+            ("/valahol/nagy-mappa",),
+        ).fetchone()[0]
+        names = [f"kep_{i:06d}.jpg" for i in range(40_000)]
+        conn.executemany(
+            "INSERT INTO photos(folder_id, name, kind, size, mtime_ns)"
+            " VALUES (?, ?, 'photo', 1, 1)",
+            [(folder_id, name) for name in names],
+        )
+        conn.commit()
+
+        survivors = names[::2]  # minden második nevet "lát" a friss scan
+        _prune_photos(conn, folder_id, survivors)
+        conn.commit()
+
+        remaining = {
+            row["name"]
+            for row in conn.execute(
+                "SELECT name FROM photos WHERE folder_id = ?", (folder_id,)
+            )
+        }
+        assert remaining == set(survivors)
+        # FTS-triggerek is lefutottak a törölt sorokra (nincs árva bejegyzés)
+        fts_count = conn.execute(
+            "SELECT COUNT(*) FROM photos_fts WHERE rowid IN ("
+            " SELECT id FROM photos WHERE folder_id = ?)",
+            (folder_id,),
+        ).fetchone()[0]
+        assert fts_count == len(survivors)
+
+    def test_prune_photos_repeated_calls_on_same_connection(self, conn, library):
+        # A temp tábla kapcsolat-lokális, és a sync mappánként újra hívja a
+        # függvényt ugyanazon a kapcsolaton — ez nem ütközhet.
+        from picasapy.index.sync import _prune_photos
+
+        sync_tree(conn, library)
+        folder_id = conn.execute("SELECT id FROM folders").fetchone()[0]
+        _prune_photos(conn, folder_id, ["IMG_0001.jpg"])
+        _prune_photos(conn, folder_id, ["IMG_0001.jpg"])
+        conn.commit()
+        photos = photos_in_folder(conn, library / "nyaralas")
+        assert [p.name for p in photos] == ["IMG_0001.jpg"]
+
     def test_remove_root_deletes_folders_and_photos(self, conn, library, tmp_path):
         from picasapy.index import remove_root
 
@@ -532,3 +583,23 @@ class TestSyncProgress:
         # progress nélkül a viselkedés változatlan (visszafelé kompatibilis)
         sync_tree(conn, multi_library)
         assert len(photos_in_folder(conn, multi_library / "a-mappa")) == 2
+
+
+class TestIniSectionCaseInsensitive:
+    """#296: a `.picasa.ini` szekciónév fizikai fájlnév, a Windows/NAS
+    fájlrendszer pedig kis-nagybetű-független — az eltérő betűzésű fejléc
+    metaadatának is be kell kerülnie az indexbe."""
+
+    def test_differently_cased_section_is_indexed(self, conn, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        (root / "IMG_0001.jpg").write_bytes(b"x" * 10)
+        (root / ".picasa.ini").write_text(
+            "[IMG_0001.JPG]\nstar=yes\ncaption=naplemente\nrotate=rotate(1)\n",
+            encoding="utf-8",
+        )
+        sync_tree(conn, root)
+        photo = photos_in_folder(conn, root)[0]
+        assert photo.star
+        assert photo.caption == "naplemente"
+        assert photo.rotate_steps == 1

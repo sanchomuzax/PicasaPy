@@ -10,16 +10,31 @@ stat-eredményét használja — fájlonként pontosan egy stat fut, külön
 `(path / name).stat()` hívás nélkül. A `skip` predikátummal a hívó
 (inkrementális rescan) mappánként eldöntheti, hogy a fájlok stat-olása
 kihagyható-e; kihagyott mappánál csak a mappa és az esetleges ini kap statot.
+
+#303: a bejárás — az `os.walk` alapértelmezésével (`followlinks=False`)
+ellentétben — KÖVETI a symlinkelt almappákat, mert NAS-os elrendezésnél
+gyakori, hogy egy fotómappa symlinkkel van behúzva a figyelt gyökér alá
+(pl. `~/Kepek/Regi -> /mnt/nas/foto/regi`); követés nélkül ezek szótlanul
+kimaradnának az indexből. A ciklusvédelem a bejárt mappák `(st_dev, st_ino)`
+azonosítóját tartja nyilván (a teljes bejáráson át élő halmazban, ld. a
+`_walk` `visited_dirs` paraméterét) — ismétlődő célra mutató mappát
+(symlink-kör vagy önmagára mutató symlink) kihagyja, `logger.warning`-gal
+jelezve. A törött symlink (nem létező cél) csendben kimarad, nem buktatja
+el a bejárást. Ez mappánként egy plusz `os.stat` hívást jelent a korábbihoz
+képest — a fájlonkénti stat-optimalizáció (fentebb) ettől független marad.
 """
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 from .filetypes import media_kind_of
+
+logger = logging.getLogger(__name__)
 
 PICASA_INI_NAME = ".picasa.ini"
 # Korai Picasa-verziók vezető pont nélküli, nagybetűs néven írták az init
@@ -72,7 +87,7 @@ def scan_tree(
         raise FileNotFoundError(f"A szkennelendő gyökér nem létezik: {root_path}")
     exclude_paths = tuple(Path(item).resolve() for item in exclude)
     folders: list[FolderScan] = []
-    _walk(root_path, exclude_paths, skip, folders)
+    _walk(root_path, exclude_paths, skip, folders, set())
     return tuple(sorted(folders, key=lambda f: f.path))
 
 
@@ -98,11 +113,30 @@ def _walk(
     exclude_paths: tuple[Path, ...],
     skip: SkipPredicate | None,
     out: list[FolderScan],
+    visited_dirs: set[tuple[int, int]],
 ) -> None:
     """Rekurzív scandir-bejárás; olvashatatlan mappát csendben kihagy
-    (élő NAS-on a mappa el is tűnhet menet közben)."""
+    (élő NAS-on a mappa el is tűnhet menet közben).
+
+    #303: symlinket követ, ezért a `visited_dirs` (a teljes bejáráson át
+    közös, hívónként átadott állapot — NEM mappánként újul) tartja nyilván
+    a már bejárt mappák `(st_dev, st_ino)` azonosítóját. Ismétlődésnél
+    (symlink-kör, önmagára mutató symlink) a mappa kihagyásra kerül,
+    figyelmeztetéssel."""
     if _is_under_any(current, exclude_paths):
         return
+    try:
+        stat = os.stat(current)
+    except OSError:
+        return  # törött symlink vagy időközben eltűnt/elérhetetlen mappa
+    identity = (stat.st_dev, stat.st_ino)
+    if identity in visited_dirs:
+        logger.warning(
+            "Symlink-kör kihagyva: %s (a cél már egy korábban bejárt mappa)",
+            current,
+        )
+        return
+    visited_dirs.add(identity)
     try:
         with os.scandir(current) as it:
             entries = list(it)
@@ -121,13 +155,16 @@ def _walk(
     for entry in sorted(dir_entries, key=lambda e: e.name):
         if entry.name.startswith("."):
             continue
-        _walk(current / entry.name, exclude_paths, skip, out)
+        _walk(current / entry.name, exclude_paths, skip, out, visited_dirs)
 
 
 def _entry_is_dir(entry: os.DirEntry) -> bool:
-    """Mappa-e a bejegyzés (symlinket nem követve — mint az os.walk)."""
+    """Mappa-e a bejegyzés — symlinket is KÖVETVE (#303, ld. a modul-
+    docstring indoklását). Törött symlinkre a `DirEntry.is_dir()` nem dob
+    kivételt, hanem `False`-t ad — az ilyen bejegyzés fájlként landol a
+    szűrőben, ahol (jellemzően kiterjesztés hiányában) kiesik."""
     try:
-        return entry.is_dir(follow_symlinks=False)
+        return entry.is_dir(follow_symlinks=True)
     except OSError:
         return False
 
