@@ -275,3 +275,121 @@ class TestMissingIni:
         document = load_document(tmp_path / _INI_NAME)
         assert document.section("IMG_0003.png").get("redo") == "enhance=1;"
         assert result.redo_value == "enhance=1;"
+
+
+def _fail_ini_write(monkeypatch, error=None):
+    """Az ini-frissítés elbuktatása (tele lemez / zárolt fájl / párhuzamos
+    Picasa-írás modellje) — a képfájl írása ettől még sikerül."""
+    from picasapy.edit import save as save_module
+    from picasapy.ini import IniConflictError
+
+    failure = error if error is not None else IniConflictError("teszt: ütközés")
+
+    def raise_error(path, mutate, **kwargs):
+        raise failure
+
+    monkeypatch.setattr(save_module, "update_document", raise_error)
+    return failure
+
+
+class TestSaveEditedIniFailureRollsBackImage:
+    """#297: ha az ini-könyvelés ((c) lépés) elbukik, a kép már a beégetett
+    szerkesztést tartalmazná, miközben a `filters=` bent maradt — a következő
+    megnyitáskor a renderelő MÁSODSZOR is ráfuttatná a láncot. Ezért a
+    képfájlt vissza kell állítani, és a hibát tovább kell dobni."""
+
+    def test_first_save_restores_image_bytes(self, photo, monkeypatch):
+        from picasapy.ini import IniConflictError
+
+        image_path, original_bytes = photo
+        _fail_ini_write(monkeypatch)
+
+        with pytest.raises(IniConflictError):
+            save_edited(
+                image_path,
+                _solid_image((99, 88, 77)),
+                EditSession.from_value("enhance=1;"),
+            )
+
+        assert image_path.read_bytes() == original_bytes
+        # A filters= bent maradt, de a kép is a szerkesztés ELŐTTI —
+        # nincs dupla-szerkesztés a következő megnyitáskor.
+        section = load_document(image_path.parent / _INI_NAME).section("IMG_0001.png")
+        assert section.get("filters") == "enhance=1;"
+        assert section.get("redo") is None
+
+    def test_repeated_save_restores_previous_rendered_bytes(self, photo, monkeypatch):
+        from picasapy.ini import IniConflictError
+
+        image_path, original_bytes = photo
+        save_edited(
+            image_path, _solid_image((11, 22, 33)), EditSession.from_value("enhance=1;")
+        )
+        before_second = image_path.read_bytes()
+        assert before_second != original_bytes
+
+        _fail_ini_write(monkeypatch)
+        with pytest.raises(IniConflictError):
+            save_edited(
+                image_path,
+                _solid_image((44, 55, 66)),
+                EditSession.from_value("enhance=1;autolight=1;"),
+            )
+
+        # NEM az eredetire, hanem az ELŐZŐ mentés bájtjaira áll vissza.
+        assert image_path.read_bytes() == before_second
+
+    def test_failed_restore_reports_both_problems(self, photo, monkeypatch):
+        """Ha a visszaállítás is bukik, az üzenet mondja meg magyarul, hogy a
+        kép elmentődött, de a nyilvántartás nem."""
+        image_path, _original_bytes = photo
+        _fail_ini_write(monkeypatch)
+
+        from picasapy.edit import save as save_module
+
+        real_write_atomic = save_module.write_atomic
+        state = {"n": 0}
+
+        def flaky_write_atomic(path, payload, **kwargs):
+            if Path(path) == image_path:
+                # A MÁSODIK képfájl-írás a visszaállítás — az bukik el.
+                state["n"] += 1
+                if state["n"] > 1:
+                    raise OSError("teszt: a visszaállítás sem sikerült")
+            return real_write_atomic(path, payload, **kwargs)
+
+        monkeypatch.setattr(save_module, "write_atomic", flaky_write_atomic)
+
+        with pytest.raises(SaveError) as excinfo:
+            save_edited(
+                image_path,
+                _solid_image((99, 88, 77)),
+                EditSession.from_value("enhance=1;"),
+            )
+        message = str(excinfo.value)
+        assert str(image_path) in message
+        assert ORIGINALS_DIR_NAME in message
+
+
+class TestRevertIniFailureRollsBackImage:
+    """#297 fordított irányban: a `revert` előbb a képet állítja vissza, és
+    csak utána törli az ini-kulcsokat — ha a törlés bukik, a kép visszaáll
+    az eredetire, miközben az ini szerint még szerkesztett. A képfájlt ezért
+    vissza kell írni a `revert` előtti állapotra."""
+
+    def test_ini_failure_restores_edited_image(self, photo, monkeypatch):
+        from picasapy.ini import IniConflictError
+
+        image_path, _original_bytes = photo
+        save_edited(
+            image_path, _solid_image((11, 22, 33)), EditSession.from_value("enhance=1;")
+        )
+        edited_bytes = image_path.read_bytes()
+
+        _fail_ini_write(monkeypatch)
+        with pytest.raises(IniConflictError):
+            revert(image_path)
+
+        assert image_path.read_bytes() == edited_bytes
+        section = load_document(image_path.parent / _INI_NAME).section("IMG_0001.png")
+        assert section.get("redo") is not None  # a nyilvántartás változatlan

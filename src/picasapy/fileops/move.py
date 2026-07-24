@@ -2,6 +2,16 @@
 
 A forrás szekció (star/caption/rotate/filters/… és minden ismeretlen sor)
 bitre pontosan átkerül a cél mappa `.picasa.ini`-jébe.
+
+Mindkét ini-írás az ütközésbiztos `update_document`-en megy (#295): a
+NAS-mappát a párhuzamosan futó eredeti Picasa is írhatja, a sima
+`load → save` pedig némán felülírná, amit közben írt (lost update).
+
+A műveletek sorrendje adatvesztés-kerülő (#295): fájlmozgatás → cél-ini
+írása → forrás-ini takarítása. Ha a cél-ini írása bukik, a metaadat még a
+forrásmappában van (visszakereshető); ha a forrás takarítása bukik, a
+bejegyzés legfeljebb duplán marad meg — mindkettő helyreállítható, az
+elvesztése nem lenne az.
 """
 
 from __future__ import annotations
@@ -9,8 +19,17 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from picasapy.ini import load_document, parse_document, save_document
+from picasapy.ini import (
+    IniConflictError,
+    IniSaveError,
+    load_or_empty,
+    update_document,
+)
 from picasapy.scanner import PICASA_INI_NAME
+
+# Az ini-írás kezelt hibái: a fájlrendszeré (`OSError`), a kódolásé
+# (`IniSaveError`) és a tartós párhuzamos-írás-ütközésé (`IniConflictError`).
+_INI_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
 
 
 def move_photo(path: Path, dest_folder: Path) -> Path:
@@ -28,6 +47,10 @@ def move_photo(path: Path, dest_folder: Path) -> Path:
         NotADirectoryError: Ha `dest_folder` nem könyvtár.
         FileExistsError: Ha a célmappában már van azonos nevű fájl vagy
             ini-szekció — nem írjuk felül csendben.
+        OSError | IniSaveError | IniConflictError: Ha a fájl már átkerült, de
+            valamelyik ini-írás nem sikerült. A hiba TÍPUSA az eredetivel
+            azonos marad (a hívók így tudják osztályozni), az üzenete pedig
+            megmondja, hol a fájl és hol maradt a metaadat.
     """
     path = Path(path)
     dest_folder = Path(dest_folder)
@@ -41,23 +64,63 @@ def move_photo(path: Path, dest_folder: Path) -> Path:
     if target.exists():
         raise FileExistsError(f"A célfájl már létezik: {target}")
 
+    name = path.name
     source_ini = path.parent / PICASA_INI_NAME
     dest_ini = dest_folder / PICASA_INI_NAME
-    source_doc = load_document(source_ini) if source_ini.exists() else None
-    source_section = source_doc.section(path.name) if source_doc is not None else None
-
-    dest_doc = None
-    if source_section is not None:
-        dest_doc = load_document(dest_ini) if dest_ini.exists() else parse_document("")
-        if dest_doc.section(path.name) is not None:
-            raise FileExistsError(
-                f"A célmappa ini-jében már van ilyen nevű szekció: {path.name}"
-            )
+    has_section = (
+        source_ini.exists() and load_or_empty(source_ini).section(name) is not None
+    )
+    if has_section and load_or_empty(dest_ini).section(name) is not None:
+        raise FileExistsError(
+            f"A célmappa ini-jében már van ilyen nevű szekció: {name}"
+        )
 
     shutil.move(str(path), str(target))
 
-    if source_section is not None:
-        save_document(dest_doc.with_section(source_section), dest_ini, backup=True)
-        save_document(source_doc.without_section(path.name), source_ini, backup=True)
+    if not has_section:
+        return target
+
+    def _carry(document):
+        # A forrás szekciót MINDEN próbálkozásnál frissen olvassuk ki: ha az
+        # ütközés miatt újrajátszás történik, a párhuzamos író (futó Picasa)
+        # időközben bekerült módosítása is átkerüljön a célba.
+        section = load_or_empty(source_ini).section(name)
+        return document if section is None else document.with_section(section)
+
+    try:
+        update_document(dest_ini, _carry, backup=True)
+    except _INI_WRITE_ERRORS as error:
+        raise _with_context(
+            error,
+            f"A fájl átkerült ide: {target}, de a hozzá tartozó .picasa.ini "
+            f"bejegyzést nem sikerült a célmappába írni ({dest_ini}): {error}. "
+            f"A kép beállításai (csillag, felirat, szerkesztések) egyelőre itt "
+            f"maradtak: {source_ini} — az áthelyezés megismételhető.",
+        ) from error
+
+    try:
+        update_document(
+            source_ini,
+            lambda document: document.without_section(name),
+            backup=True,
+        )
+    except _INI_WRITE_ERRORS as error:
+        raise _with_context(
+            error,
+            f"A fájl átkerült ide: {target}, és a .picasa.ini bejegyzése is, "
+            f"de a régi bejegyzést nem sikerült törölni innen: {source_ini} "
+            f"({error}). A kép beállításai most mindkét mappa ini-fájljában "
+            f"szerepelnek; a forrásmappából a(z) [{name}] szakasz kézzel "
+            f"törölhető.",
+        ) from error
 
     return target
+
+
+def _with_context(error: Exception, message: str) -> Exception:
+    """Ugyanolyan TÍPUSÚ hiba, cselekvésre fordítható magyar üzenettel.
+
+    A típus megőrzése azért kell, mert a hívók (pl. a `FileOpsController`)
+    kivételosztály szerint szűrnek: egy saját, új osztály némán kicsúszna a
+    szűrőjükön, és a részleges hiba a felhasználó felé láthatatlan maradna."""
+    return type(error)(message)

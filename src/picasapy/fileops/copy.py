@@ -14,7 +14,7 @@ import shutil
 from dataclasses import replace
 from pathlib import Path
 
-from picasapy.ini import Section, load_document, parse_document, save_document
+from picasapy.ini import Section, load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 
 
@@ -45,9 +45,8 @@ def copy_photo(path: Path, dest_folder: Path) -> Path:
     shutil.copy2(str(path), str(target))  # copy2: mtime is átkerül (WYSIWYG dátum)
 
     source_ini = path.parent / PICASA_INI_NAME
-    source_doc = load_document(source_ini) if source_ini.exists() else None
     source_section = (
-        source_doc.section(path.name) if source_doc is not None else None
+        load_or_empty(source_ini).section(path.name) if source_ini.exists() else None
     )
     if source_section is not None:
         _copy_ini_section(source_section, target, dest_folder)
@@ -63,10 +62,12 @@ def _copy_ini_section(source_section: Section, target: Path, dest_folder: Path) 
     eltér a forrásétól, a szekció fejléce is a cél nevét kapja. Ha a
     célban (más forrásból) már foglalt a célnév szekciója, csendben
     kimarad — adatvesztés helyett inkább a másolt kép marad ini-adat
-    nélkül (a fájl maga ekkor is átkerül)."""
+    nélkül (a fájl maga ekkor is átkerül).
+
+    Az írás az ütközésbiztos `update_document`-en megy (#295): a párhuzamosan
+    futó eredeti Picasa közbeírása nem veszhet el."""
     dest_ini = dest_folder / PICASA_INI_NAME
-    dest_doc = load_document(dest_ini) if dest_ini.exists() else parse_document("")
-    if dest_doc.section(target.name) is not None:
+    if load_or_empty(dest_ini).section(target.name) is not None:
         return
     section_to_write = source_section
     if target.name != source_section.name:
@@ -75,7 +76,15 @@ def _copy_ini_section(source_section: Section, target: Path, dest_folder: Path) 
             name=target.name,
             header=replace(source_section.header, text=f"[{target.name}]"),
         )
-    save_document(dest_doc.with_section(section_to_write), dest_ini, backup=True)
+
+    def _mutate(document):
+        if document.section(target.name) is not None:
+            # Az újrajátszás friss dokumentumában időközben elfoglalt a név:
+            # ugyanaz a döntés, mint az előellenőrzésnél — nem írjuk felül.
+            return document
+        return document.with_section(section_to_write)
+
+    update_document(dest_ini, _mutate, backup=True)
 
 
 def _unique_target(dest_folder: Path, stem: str, suffix: str) -> Path:

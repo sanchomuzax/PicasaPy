@@ -19,7 +19,16 @@ from picasapy.fileops import (
     rename_photo,
     reveal_in_file_manager,
 )
+from picasapy.ini import IniConflictError, IniSaveError
+
 from .controller import _to_local_path
+
+# #295: az átnevezés/áthelyezés `.picasa.ini`-írása is elbukhat a
+# párhuzamosan futó eredeti Picasa miatt (`IniConflictError`) vagy kódolási
+# hibán (`IniSaveError`). Ezek nem `OSError`-ok, így a korábbi szűrő mellett
+# néma bukásként (kezeletlen kivételként) tűntek volna el a QML felé — a
+# `photo_ops_controller` mintájára itt is kezelt írási hibák.
+_OPERATION_ERRORS = (ValueError, OSError, IniSaveError, IniConflictError)
 
 
 class FileOpsController(QObject):
@@ -36,7 +45,7 @@ class FileOpsController(QObject):
         jelzi (nem emel Python-kivételt a QML felé)."""
         try:
             new_path = rename_photo(Path(path), new_name)
-        except (ValueError, OSError) as error:
+        except _OPERATION_ERRORS as error:
             self.operationFailed.emit("rename", str(error))
             return
         self.photoRenamed.emit(path, str(new_path))
@@ -47,7 +56,7 @@ class FileOpsController(QObject):
         URL-ként adja — a lokális útvonallá alakítás itt történik."""
         try:
             new_path = move_photo(Path(path), Path(_to_local_path(dest_folder)))
-        except OSError as error:
+        except _OPERATION_ERRORS as error:
             self.operationFailed.emit("move", str(error))
             return
         self.photoMoved.emit(path, str(new_path))

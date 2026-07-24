@@ -115,10 +115,26 @@ class IniDocument:
         return tuple(lines)
 
     def section(self, name: str) -> Section | None:
+        """A szekció feloldása: előbb PONTOS egyezés, utána kis-nagybetű-tűrő
+        visszaesés (#296).
+
+        A fájlbejegyzés-szekciók neve fizikai fájlnév, a Picasa pedig
+        Windows/NAS fájlrendszeren fut, ahol a fájlnév kis-nagybetű-független
+        — az `[IMG_1234.JPG]` fejléc ugyanazt a képet jelöli, mint a lemezen
+        lévő `IMG_1234.jpg`. Pontos illesztéssel a kép metaadat nélkül
+        indexelődne, íráskor pedig MÁSODIK szekció jönne létre ugyanarra a
+        fájlra. A kulcsokat a `Section.get` már eddig is így illesztette.
+
+        Ha van pontos ÉS eltérő betűzésű találat is, a PONTOS nyer (az a
+        felhasználó/Picasa által ténylegesen leírt névváltozat)."""
+        folded_match: Section | None = None
+        folded = name.casefold()
         for section in self.sections:
             if section.name == name:
                 return section
-        return None
+            if folded_match is None and section.name.casefold() == folded:
+                folded_match = section
+        return folded_match
 
     def file_sections(self) -> tuple[Section, ...]:
         return tuple(s for s in self.sections if not s.is_special)
@@ -176,11 +192,16 @@ class IniDocument:
         Raises:
             ValueError: Ha `new_name` már foglalt szekció — ütköző
                 átnevezést nem hajtunk végre csendben (adatvesztés lenne).
+                Az ütközést a `section()` kis-nagybetű-tűrő feloldásán át
+                nézzük (#296): `[B.JPG]` mellé nem hozunk létre `[b.jpg]`-t.
         """
         target = self.section(old_name)
         if target is None:
             return self
-        if self.section(new_name) is not None:
+        collision = self.section(new_name)
+        if collision is not None and collision is not target:
+            # A magára mutató találat (pl. `a.jpg` → `A.JPG`) nem ütközés,
+            # hanem a betűzés szándékos javítása — azt végrehajtjuk.
             raise ValueError(f"A cél szekció már létezik: {new_name!r}")
         renamed = replace(
             target, name=new_name, header=replace(target.header, text=f"[{new_name}]")

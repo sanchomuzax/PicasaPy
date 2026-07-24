@@ -24,6 +24,14 @@ a felhasználó sosem lát verziókáoszt, és nincs kötelező export-lépés. 
    `with_value`/`with_removed`) útján írunk, ahogy a spec 2., 4. írási
    szabálya előírja.
 
+Ha a 3. lépés elbukik (ütközés a párhuzamosan futó Picasával, tele lemez,
+zárolt ini), a 2. lépést VISSZAVONJUK: a képfájl visszakapja a mentés
+előtti bájtjait (#297). Enélkül a kép a beégetett szerkesztést tartalmazná,
+miközben a `filters=` bent maradt az ini-ben — a következő megnyitáskor a
+renderelő MÁSODSZOR is ráfuttatná a láncot. Ugyanez a védelem a `revert`-nél
+fordított irányban: ott a kulcsok törlésének bukásakor a szerkesztett kép
+íródik vissza.
+
 ## `originhash` — dokumentált, józan döntés (2026-07-23, #21)
 
 A specifikáció (`docs/specs/picasa-ini-format.md`, `[<fájlnév.ext>]` tábla)
@@ -61,7 +69,7 @@ import cv2
 import numpy as np
 
 from picasapy.edit.session import EditSession
-from picasapy.ini import update_document
+from picasapy.ini import IniConflictError, IniSaveError, update_document
 from picasapy.ioutil import write_atomic
 
 #: A rejtett almappa neve, ahová az érintetlen eredeti kerül (spec + UX #3).
@@ -76,6 +84,11 @@ _ORIGINHASH_KEY = "originhash"
 _EDIT_BOOKKEEPING_KEYS = (_FILTERS_KEY, _REDO_KEY, _ORIGINHASH_KEY)
 
 _INI_FILENAME = ".picasa.ini"
+
+# Az ini-könyvelés kezelt hibái (#297): a fájlrendszeré (`OSError`: tele
+# lemez, zárolt fájl), a kódolásé (`IniSaveError`) és a párhuzamosan futó
+# eredeti Picasa tartós ütközése (`IniConflictError`).
+_INI_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
 
 # JPEG-nél a mentés-minőség alapértéke magas (a felhasználó explicit
 # "Mentés" szándékát tükrözi — a nem-destruktív elv ELLENÉRE ez a pillanat
@@ -145,18 +158,26 @@ def save_edited(
         `SaveResult` a végrehajtott lépések adataival.
 
     Raises:
-        SaveError: ha a renderelt kép nem kódolható a cél kiterjesztésbe.
-        OSError: alacsony szintű fájlrendszer-hiba (pl. tele lemez) —
-            a hívók felől ez is jelzésértékű, nem nyeljük el csendben.
+        SaveError: ha a renderelt kép nem kódolható a cél kiterjesztésbe,
+            vagy ha az ini-hiba utáni képfájl-visszaállítás sem sikerült
+            (#297 — ekkor a kép és az ini nyilvántartása eltér).
+        OSError | IniSaveError | IniConflictError: ha az ini-könyvelés nem
+            sikerült. A képfájl ilyenkor VISSZAÁLL a mentés előtti
+            állapotra, hogy ne maradjon dupla-szerkesztés (#297).
     """
     image_path = Path(image_path)
     backup_path = _backup_path_for(image_path)
 
+    # A (b) lépés ELŐTTI bájtok — ezekre kell visszaállni, ha a (c) elbukik
+    # (#297). Első mentésnél ez maga az eredeti (ugyanaz, ami a
+    # `.picasaoriginals`-ba kerül), ismételt mentésnél a KORÁBBI mentés
+    # renderelt tartalma.
+    bytes_before_write = image_path.read_bytes()
+
     # (a) Az eredeti megőrzése — KIZÁRÓLAG ha még nincs korábbi mentésből.
     backup_created_now = not backup_path.exists()
     if backup_created_now:
-        original_bytes = image_path.read_bytes()
-        write_atomic(backup_path, original_bytes, make_parents=True)
+        write_atomic(backup_path, bytes_before_write, make_parents=True)
 
     # (b) A renderelt kép az eredeti HELYÉRE.
     payload = _encode_image(image_path.suffix, rendered_image, jpeg_quality)
@@ -165,14 +186,22 @@ def save_edited(
     # (c) `.picasa.ini`: redo/originhash frissítése, filters törlése.
     redo_value = filters.to_value()
     originhash = _compute_originhash(redo_value)
-    _update_ini_document(
-        image_path,
-        lambda document: (
-            document.with_removed(_section_name(image_path), _FILTERS_KEY)
-            .with_value(_section_name(image_path), _REDO_KEY, redo_value)
-            .with_value(_section_name(image_path), _ORIGINHASH_KEY, originhash)
-        ),
-    )
+    try:
+        _update_ini_document(
+            image_path,
+            lambda document: (
+                document.with_removed(_section_name(image_path), _FILTERS_KEY)
+                .with_value(_section_name(image_path), _REDO_KEY, redo_value)
+                .with_value(_section_name(image_path), _ORIGINHASH_KEY, originhash)
+            ),
+        )
+    except _INI_WRITE_ERRORS as error:
+        # #297: a kép ekkor már a beégetett szerkesztést tartalmazza, de a
+        # `filters=` bent maradt az ini-ben — a következő megnyitáskor a
+        # renderelő MÁSODSZOR is ráfuttatná a láncot (dupla-szerkesztés).
+        # A két állapot csak úgy marad összhangban, ha a képet visszaállítjuk.
+        _restore_image_or_raise(image_path, bytes_before_write, backup_path, error)
+        raise
 
     return SaveResult(
         image_path=image_path,
@@ -211,6 +240,12 @@ def revert(image_path: str | Path) -> RevertResult:
             f"elmentett (save_edited-en átment) képnél lehetséges."
         )
 
+    # A visszaállítás ELŐTTI (szerkesztett) bájtok — ezekre kell visszaállni,
+    # ha az ini-kulcsok törlése elbukik (#297, fordított irányú rés). Ha a
+    # képfájl közben eltűnt, nincs mire visszaállni: ilyenkor a `revert`
+    # pótolja a fájlt, és hiba esetén ott is hagyja.
+    edited_bytes = image_path.read_bytes() if image_path.exists() else None
+
     original_bytes = backup_path.read_bytes()
     write_atomic(image_path, original_bytes)
 
@@ -221,13 +256,44 @@ def revert(image_path: str | Path) -> RevertResult:
             document = document.with_removed(section, key)
         return document
 
-    _update_ini_document(image_path, _mutate)
+    try:
+        _update_ini_document(image_path, _mutate)
+    except _INI_WRITE_ERRORS as error:
+        # A kép már az eredeti, de az ini szerint még szerkesztett — a
+        # következő megnyitáskor a `redo=`/`filters=` alapján hamis állapot
+        # látszana. Visszaírjuk a szerkesztett képet, és továbbdobjuk a hibát.
+        if edited_bytes is not None:
+            _restore_image_or_raise(image_path, edited_bytes, backup_path, error)
+        raise
 
     return RevertResult(
         image_path=image_path,
         restored_from=backup_path,
         removed_keys=_EDIT_BOOKKEEPING_KEYS,
     )
+
+
+def _restore_image_or_raise(
+    image_path: Path, payload: bytes, backup_path: Path, error: Exception
+) -> None:
+    """A képfájl visszaállítása a művelet előtti bájtokra (#297).
+
+    Ha maga a visszaállítás is elbukik, `SaveError`-t emel: a felhasználónak
+    magyarul, cselekvésre fordíthatóan meg kell tudnia, hogy a kép fizikailag
+    elmentődött, a `.picasa.ini` nyilvántartása viszont nem követte — így
+    tudja, hogy a kép a következő megnyitáskor kétszer szerkesztettnek
+    látszhat, és hol keresse az eredetit."""
+    try:
+        write_atomic(image_path, payload)
+    except OSError as restore_error:
+        raise SaveError(
+            f"A kép elmentődött ({image_path}), de a .picasa.ini "
+            f"nyilvántartása nem frissült ({error}), és a kép mentés előtti "
+            f"állapotát sem sikerült visszaállítani ({restore_error}). A kép "
+            f"a következő megnyitáskor kétszer szerkesztettnek látszhat; az "
+            f"érintetlen eredeti itt található: {backup_path} "
+            f"(a(z) {ORIGINALS_DIR_NAME} mappában)."
+        ) from error
 
 
 def _backup_path_for(image_path: Path) -> Path:
