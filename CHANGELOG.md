@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.59] – 2026-07-24
+
+### Hozzáadva
+- **Import forrásból (#23):** az eszköztár korábban tiltott „Import" gombja
+  élesítve — forrás-mappa (pl. fényképezőgép/kártya, DCIM-szerkezettel is)
+  választása, a talált képek bélyegképes előnézete, cél-mappa + dátum-alapú
+  mappa-sablon (`{YYYY}/{YYYY}-{MM}-{DD}`, az Időrend nézettel közös
+  dátum-feloldással), másolás (nem-destruktív alapértelmezés) vagy áthelyezés,
+  haladásjelzéssel. Új `picasapy.fileops.copy` (ütközésbiztos másolás) és
+  `picasapy.importsource` (Qt-mentes szkennelés + sablon-logika).
+
 ## [0.4.58] – 2026-07-24
 
 ### Hozzáadva
