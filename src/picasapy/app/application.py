@@ -38,6 +38,7 @@ from picasapy.scanner import (
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
 from .controller import AppController
+from .dedup_controller import DedupController
 from .discovery_controller import DiscoveryController
 from .drop_import_controller import DropImportController
 from .edit_controller import EditController
@@ -396,6 +397,10 @@ def run(argv: list[str]) -> int:
     # épp nyitva van — a TimelineView.qml a megnyitáskor is újratölt.
     timeline_controller = TimelineController(data_dir / "index.db", provider)
     controller.syncFinished.connect(timeline_controller.reload)
+    # Duplikátum-kezelő (#287): a picasapy.dedup mag fölötti UI-híd —
+    # a DedupDialog.qml-nek adja a csoportokat, a thumbnail-providernél
+    # regisztrálja az érintett fotókat
+    dedup_controller = DedupController(data_dir / "index.db", provider)
 
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
@@ -418,6 +423,7 @@ def run(argv: list[str]) -> int:
     engine.rootContext().setContextProperty(
         "timelineController", timeline_controller
     )
+    engine.rootContext().setContextProperty("dedupController", dedup_controller)
     # #147: a néző arc-keret overlay-jének csak-olvasás szintű hídja —
     # a faces=/Contacts2 közvetlenül a fotó .picasa.ini-jéből olvasva.
     # A helyi változóban tartás megakadályozza, hogy a Python GC a
