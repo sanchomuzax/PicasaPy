@@ -133,3 +133,52 @@ class TestRevealPhoto:
         )
         controller.revealPhoto(str(tmp_path / "a.jpg"))
         assert failures[0][0] == "reveal"
+
+
+class TestIniConflictReachesUser:
+    """#295: az ini-ütközés (párhuzamosan futó eredeti Picasa) nem `OSError` —
+    a korábbi szűrő mellett kezeletlen kivételként, néma bukásként tűnt volna
+    el a QML felé. A felhasználó a megszokott `operationFailed` csatornán
+    kapjon jelzést."""
+
+    @pytest.fixture
+    def failing_ini_write(self, monkeypatch):
+        from picasapy.fileops import move as move_module
+        from picasapy.fileops import rename as rename_module
+        from picasapy.ini import IniConflictError
+
+        def raise_conflict(path, mutate, **kwargs):
+            raise IniConflictError("teszt: tartós ütközés")
+
+        monkeypatch.setattr(move_module, "update_document", raise_conflict)
+        monkeypatch.setattr(rename_module, "update_document", raise_conflict)
+
+    def test_rename_reports_ini_conflict(
+        self, controller, tmp_path, failing_ini_write
+    ):
+        photo = tmp_path / "a.jpg"
+        photo.write_bytes(b"kep")
+        (tmp_path / ".picasa.ini").write_text("[a.jpg]\nstar=yes\n", encoding="utf-8")
+        failures = []
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.renamePhoto(str(photo), "b.jpg")
+        assert failures[0][0] == "rename"
+        assert "ütközés" in failures[0][1]
+
+    def test_move_reports_ini_conflict(self, controller, tmp_path, failing_ini_write):
+        src = tmp_path / "forras"
+        dest = tmp_path / "cel"
+        src.mkdir()
+        dest.mkdir()
+        photo = src / "a.jpg"
+        photo.write_bytes(b"kep")
+        (src / ".picasa.ini").write_text("[a.jpg]\nstar=yes\n", encoding="utf-8")
+        failures = []
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.movePhoto(str(photo), str(dest))
+        assert failures[0][0] == "move"
+        assert str(src / ".picasa.ini") in failures[0][1]

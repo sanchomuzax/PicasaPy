@@ -583,3 +583,23 @@ class TestSyncProgress:
         # progress nélkül a viselkedés változatlan (visszafelé kompatibilis)
         sync_tree(conn, multi_library)
         assert len(photos_in_folder(conn, multi_library / "a-mappa")) == 2
+
+
+class TestIniSectionCaseInsensitive:
+    """#296: a `.picasa.ini` szekciónév fizikai fájlnév, a Windows/NAS
+    fájlrendszer pedig kis-nagybetű-független — az eltérő betűzésű fejléc
+    metaadatának is be kell kerülnie az indexbe."""
+
+    def test_differently_cased_section_is_indexed(self, conn, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        (root / "IMG_0001.jpg").write_bytes(b"x" * 10)
+        (root / ".picasa.ini").write_text(
+            "[IMG_0001.JPG]\nstar=yes\ncaption=naplemente\nrotate=rotate(1)\n",
+            encoding="utf-8",
+        )
+        sync_tree(conn, root)
+        photo = photos_in_folder(conn, root)[0]
+        assert photo.star
+        assert photo.caption == "naplemente"
+        assert photo.rotate_steps == 1
