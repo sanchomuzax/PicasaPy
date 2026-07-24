@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.57] – 2026-07-24
+
+### Hozzáadva
+- **Időrend nézet (#24):** a Picasa Timeline megfelelője — a teljes könyvtár
+  fotói dátum szerint, korszakokra (év/hónap) bontva, csökkenő sorrendben
+  (legújabb elöl) böngészhetők. Belépés: **Ctrl+5** vagy a Nézet → Timeline
+  menüpont. Új `picasapy.timeline` mag (GUI-mentes, tesztelt csoportosítás);
+  dátum-forrás az EXIF `taken_at`, ennek hiányában (RAW/videó, olvashatatlan
+  EXIF) a fájl-mtime.
+
 ## [0.4.56] – 2026-07-23
 
 ### Hozzáadva
