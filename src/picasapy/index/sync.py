@@ -400,17 +400,38 @@ def _rotate_steps(value: str | None) -> int:
     return int(match.group(1)) % 4 if match else 0
 
 
+_PRUNE_TEMP_TABLE = "_prune_photos_names"
+
+
 def _prune_photos(
     conn: sqlite3.Connection, folder_id: int, names: list[str]
 ) -> None:
+    """A mappából eltűnt fotók (indexbeli sorai) törlése.
+
+    #304: `names` egy nagy (32 766-nál — az SQLite `SQLITE_MAX_VARIABLE_
+    NUMBER` alapértéke — több elemű) mappánál nem paraméterezhető közvetlenül
+    egy `NOT IN (?, ?, ...)` listaként — az `sqlite3.OperationalError`-ral
+    bukna. Ehelyett egy ideiglenes (kapcsolat-lokális) táblába kerülnek a
+    látott nevek, és a törlés egy al-SELECT-tel szűr. A temp tábla neve nem
+    ütközhet más kapcsolattal (az SQLite temp táblái kapcsolat-lokálisak),
+    de a `_sync_folder` ugyanazon a kapcsolaton mappánként újra hívja ezt a
+    függvényt — ezért a hívás elején `DROP TABLE IF EXISTS`-szel takarítunk,
+    a végén pedig explicit `DROP TABLE`-lel."""
     if not names:
         conn.execute("DELETE FROM photos WHERE folder_id = ?", (folder_id,))
         return
-    placeholders = ",".join("?" * len(names))
-    conn.execute(
-        f"DELETE FROM photos WHERE folder_id = ? AND name NOT IN ({placeholders})",
-        (folder_id, *names),
+    conn.execute(f"DROP TABLE IF EXISTS temp.{_PRUNE_TEMP_TABLE}")
+    conn.execute(f"CREATE TEMP TABLE {_PRUNE_TEMP_TABLE} (name TEXT PRIMARY KEY)")
+    conn.executemany(
+        f"INSERT INTO {_PRUNE_TEMP_TABLE}(name) VALUES (?)",
+        [(name,) for name in names],
     )
+    conn.execute(
+        "DELETE FROM photos WHERE folder_id = ? AND name NOT IN"
+        f" (SELECT name FROM {_PRUNE_TEMP_TABLE})",
+        (folder_id,),
+    )
+    conn.execute(f"DROP TABLE {_PRUNE_TEMP_TABLE}")
 
 
 def _prune_folders(
