@@ -305,6 +305,8 @@ ApplicationWindow {
     // gombjából (discoveryController.dialogRequested) vagy induláskori
     // automatikus felajánlásból (integrátori bekötés: picasaImportDialog.openAndDiscover())
     PicasaImportDialog { id: picasaImportDialog }
+    // Import forrásból (#23): az eszköztár "Import" gombja nyitja
+    ImportSourceDialog { id: importSourceDialog }
 
     // első indítás: nincs még figyelt mappa → Mappakezelő felajánlása
     Component.onCompleted: {
@@ -325,6 +327,8 @@ ApplicationWindow {
             controller.search("")
             searchSuggestionsBox.suggestions = []
         }
+        // #23: az "Import" gomb az Import forrásból ablakot nyitja
+        onImportRequested: importSourceDialog.open()
     }
 
     // Kereső-javaslatok (#7): gépelés után rövid szünettel (debounce)

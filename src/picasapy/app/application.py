@@ -46,6 +46,7 @@ from .edit_preview import EditPreviewProvider
 from .faces_helper import FacesHelper
 from .fileops_controller import FileOpsController
 from .folder_tree_controller import FolderTreeController
+from .import_source_controller import ImportSourceController
 from .startup_status import StartupStatus
 from .thumbnail_provider import ThumbnailProvider
 from .timeline_controller import TimelineController
@@ -402,6 +403,14 @@ def run(argv: list[str]) -> int:
     # regisztrálja az érintett fotókat
     dedup_controller = DedupController(data_dir / "index.db", provider)
 
+    # Import forrásból (#23): külső mappa (kártya/fényképezőgép) képeinek
+    # másolása/áthelyezése a könyvtárba — a thumbnail-providerrel adja az
+    # előnézetet, sikeres import után az addWatchedFolder úton a cél-mappa
+    # a könyvtár része lesz
+    import_source_controller = ImportSourceController(
+        provider, add_folder=controller.addWatchedFolder
+    )
+
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
@@ -424,6 +433,9 @@ def run(argv: list[str]) -> int:
         "timelineController", timeline_controller
     )
     engine.rootContext().setContextProperty("dedupController", dedup_controller)
+    engine.rootContext().setContextProperty(
+        "importSourceController", import_source_controller
+    )
     # #147: a néző arc-keret overlay-jének csak-olvasás szintű hídja —
     # a faces=/Contacts2 közvetlenül a fotó .picasa.ini-jéből olvasva.
     # A helyi változóban tartás megakadályozza, hogy a Python GC a

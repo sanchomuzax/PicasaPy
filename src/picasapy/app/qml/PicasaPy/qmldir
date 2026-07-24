@@ -37,3 +37,4 @@ HistogramBox 1.0 HistogramBox.qml
 SplashScreen 1.0 SplashScreen.qml
 TimelineView 1.0 TimelineView.qml
 DedupDialog 1.0 DedupDialog.qml
+ImportSourceDialog 1.0 ImportSourceDialog.qml

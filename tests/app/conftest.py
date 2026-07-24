@@ -33,6 +33,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.folder_tree_controller import FolderTreeController
+    from picasapy.app.import_source_controller import ImportSourceController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.app.timeline_controller import TimelineController
     from picasapy.index import open_index, sync_tree
@@ -66,6 +67,10 @@ def qml_app(qt_app, tmp_path):
     folder_tree_controller = FolderTreeController()
     # Duplikátum-kezelő (#287) — az application.py bekötésének tükre
     dedup_controller = DedupController(db, provider)
+    # Import forrásból (#23) — az application.py bekötésének tükre
+    import_source_controller = ImportSourceController(
+        provider, add_folder=controller.addWatchedFolder
+    )
     faces_helper = FacesHelper()
     # Időrend nézet (#24) — az application.py bekötésének tükre: a
     # thumbnail-provider a controllerrel KÖZÖS példány
@@ -90,6 +95,9 @@ def qml_app(qt_app, tmp_path):
         "folderTreeController", folder_tree_controller
     )
     engine.rootContext().setContextProperty("dedupController", dedup_controller)
+    engine.rootContext().setContextProperty(
+        "importSourceController", import_source_controller
+    )
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
     engine.rootContext().setContextProperty(
         "timelineController", timeline_controller
