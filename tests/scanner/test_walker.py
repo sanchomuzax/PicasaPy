@@ -78,6 +78,70 @@ class TestScanTree:
             folder.has_ini = False
 
 
+class TestScanTreeSymlink:
+    """#303: a bejárás követi a symlinkelt almappákat (NAS-os elrendezésnél
+    gyakori, hogy egy fotómappa symlinkkel van behúzva a figyelt gyökér
+    alá), ciklusvédelemmel és törött-symlink-toleranciával."""
+
+    def test_symlinked_subfolder_is_followed(self, tmp_path):
+        kulso = tmp_path / "kulso-tarolo" / "regi-kepek"
+        kulso.mkdir(parents=True)
+        (kulso / "IMG_9999.jpg").write_bytes(b"x" * 10)
+        root = tmp_path / "gyoker"
+        root.mkdir()
+        try:
+            (root / "regi").symlink_to(kulso, target_is_directory=True)
+        except OSError:
+            pytest.skip("symlink-létrehozás nem engedélyezett ezen a rendszeren")
+        folders = scan_tree(root)
+        assert [f.path for f in folders] == [root / "regi"]
+        assert [f.name for f in folders[0].files] == ["IMG_9999.jpg"]
+
+    def test_symlink_cycle_does_not_hang(self, tmp_path):
+        root = tmp_path / "gyoker"
+        root.mkdir()
+        (root / "kep.jpg").write_bytes(b"x" * 5)
+        try:
+            (root / "onmagara").symlink_to(root, target_is_directory=True)
+        except OSError:
+            pytest.skip("symlink-létrehozás nem engedélyezett ezen a rendszeren")
+        # Nem akadhat meg végtelen rekurzióban — ha visszatér, a teszt zöld.
+        folders = scan_tree(root)
+        assert [f.path for f in folders] == [root]
+
+    def test_indirect_symlink_cycle_does_not_hang(self, tmp_path):
+        # a -> b -> a (kör két symlinken át)
+        a = tmp_path / "a"
+        b = tmp_path / "b"
+        a.mkdir()
+        b.mkdir()
+        (a / "kep.jpg").write_bytes(b"x" * 5)
+        (b / "kep2.jpg").write_bytes(b"y" * 5)
+        try:
+            (a / "b_link").symlink_to(b, target_is_directory=True)
+            (b / "a_link").symlink_to(a, target_is_directory=True)
+        except OSError:
+            pytest.skip("symlink-létrehozás nem engedélyezett ezen a rendszeren")
+        folders = scan_tree(a)
+        # a, a/b_link és (az onnan elért) a/b_link/a_link/b_link... a kör
+        # a második ismétlődésnél elvágódik — véges eredmény, nincs akadás.
+        assert {f.path for f in folders}.issuperset({a, a / "b_link"})
+
+    def test_broken_directory_symlink_skipped(self, tmp_path):
+        root = tmp_path / "gyoker"
+        root.mkdir()
+        (root / "kep.jpg").write_bytes(b"x" * 5)
+        try:
+            (root / "torott").symlink_to(
+                tmp_path / "nincs-ilyen-mappa", target_is_directory=True
+            )
+        except OSError:
+            pytest.skip("symlink-létrehozás nem engedélyezett ezen a rendszeren")
+        # Nem dobhat kivételt, és a törött symlink nem jelenik meg mappaként.
+        folders = scan_tree(root)
+        assert [f.path for f in folders] == [root]
+
+
 class TestScanTreeExclude:
     """#145: FRExcludeFolders.txt — kizárt mappák (és alfáik) ne kerüljenek
     az eredménybe."""
