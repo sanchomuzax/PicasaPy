@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.60] – 2026-07-24
+
+### Javítva
+- **CI-deadlock (#155):** a `tests/app/test_qml_functional.py` (~68 teszt egy
+  fájlban) Windowson processzen belül, véletlenszerű helyen deadlockolt
+  (#53-as GIL↔Qt osztály: sok QML engine/ablak-életciklus egy processzben).
+  A fájl `tests/app/qml_functional/` alá bontva 6 kisebb, témába vágó fájlra
+  (közös `qml_app` fixture-rel), amelyeket a darabolt futtató KÜLÖN-KÜLÖN
+  processzben futtat — processzenként jóval kevesebb életciklussal. A korábbi
+  Windows-kizárás (`_WINDOWS_DEADLOCK_FILES`) törölve, a fájl így minden
+  platformon fut. A tesztek tartalma változatlan (tiszta átszervezés).
+
 ## [0.4.59] – 2026-07-24
 
 ### Hozzáadva

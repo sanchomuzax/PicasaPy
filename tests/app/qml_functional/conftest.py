@@ -1,0 +1,109 @@
+"""Közös `qml_app` fixture a szétbontott QML-funkcionális tesztfájlokhoz (#155).
+
+A `tests/app/test_qml_functional.py` (68 teszt, ~20 osztály EGY fájlban,
+EGY processzben ~68 QML-engine/ablak-életciklus) volt a Windows-deadlock
+(#53) egyik fő forrása. A #155 megoldása: a fájl felbontása több kisebb
+fájlra a `tests/app/qml_functional/` alatt, amelyeket a
+`scripts/run_tests.py` KÜLÖN-KÜLÖN processzben futtat — így processzenként
+lényegesen kevesebb az engine-életciklus, és a Windowson jelentkező
+GIL↔Qt-deadlock esélye csökken.
+
+Ez a fixture SZÁNDÉKOSAN eltér a szülő `tests/app/conftest.py`
+azonos nevű `qml_app` fixture-étől (más a visszatérési alakja: itt
+`(window, controller, engine)`, ott `(window, controller, lib, engine)`).
+Az alkönyvtár-conftest felülírja a szülőét — a szétvágott fájlok ezt a
+(eredeti test_qml_functional.py-ból változatlanul áthozott) alakot kapják.
+A `qt_app` (session-scope) a szülő conftestből öröklődik, azt itt nem kell
+újradefiniálni.
+"""
+
+import pytest
+
+from picasapy.index import open_index, sync_tree
+from picasapy.version import version_string
+from support.jpeg_factory import make_jpeg
+
+
+@pytest.fixture
+def qml_app(qt_app, tmp_path):
+    """Teljes app betöltve offscreen: (window, controller, engine)."""
+    import picasapy.app.application as app_module
+    from picasapy.app.controller import AppController
+    from picasapy.app.discovery_controller import DiscoveryController
+    from picasapy.app.edit_controller import EditController
+    from picasapy.app.edit_preview import EditPreviewProvider
+    from picasapy.app.faces_helper import FacesHelper
+    from picasapy.app.fileops_controller import FileOpsController
+    from picasapy.app.folder_tree_controller import FolderTreeController
+    from picasapy.app.import_source_controller import ImportSourceController
+    from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.app.timeline_controller import TimelineController
+    from picasapy.thumbs import ThumbnailCache
+    from PySide6.QtCore import QSettings
+    from PySide6.QtQml import QQmlApplicationEngine
+
+    lib = tmp_path / "kepek"
+    lib.mkdir()
+    make_jpeg(lib / "a.jpg", size=(320, 160))
+    make_jpeg(lib / "b.jpg", size=(100, 100))
+    db = tmp_path / "index.db"
+    with open_index(db) as conn:
+        sync_tree(conn, lib)
+
+    # elszigetelt QSettings — a rendszer valós PicasaPy-beállításait ne
+    # szennyezze a teszt (session/lastFolder, view/thumbCaption).
+    settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
+    controller = AppController(db, (str(lib),), provider, settings=settings)
+    # szerkesztő-híd (#19) — az application.py bekötésének tükre
+    edit_preview = EditPreviewProvider()
+    edit_controller = EditController(edit_preview)
+    engine = QQmlApplicationEngine()
+    engine.addImageProvider("thumbs", provider)
+    engine.addImageProvider("editpreview", edit_preview)
+    engine.addImportPath(str(app_module._APP_DIR / "qml"))
+    engine.rootContext().setContextProperty("controller", controller)
+    engine.rootContext().setContextProperty("editController", edit_controller)
+    # fájlműveletek (#15) — az application.py bekötésének tükre
+    fileops_controller = FileOpsController()
+    app_module.wire_fileops(fileops_controller, controller)
+    engine.rootContext().setContextProperty(
+        "fileOpsController", fileops_controller
+    )
+    # meglévő Picasa-telepítés átvétele (#146) — az application.py
+    # bekötésének tükre
+    discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
+    engine.rootContext().setContextProperty(
+        "discoveryController", discovery_controller
+    )
+    # Mappakezelő fa-nézete (#231) — az application.py bekötésének tükre
+    folder_tree_controller = FolderTreeController()
+    engine.rootContext().setContextProperty(
+        "folderTreeController", folder_tree_controller
+    )
+    # arc-keretek (#147) — az application.py bekötésének tükre
+    faces_helper = FacesHelper()
+    engine.rootContext().setContextProperty("facesHelper", faces_helper)
+    # Időrend nézet (#24) — az application.py bekötésének tükre
+    timeline_controller = TimelineController(db, provider)
+    controller.syncFinished.connect(timeline_controller.reload)
+    engine.rootContext().setContextProperty(
+        "timelineController", timeline_controller
+    )
+    # Import forrásból (#23) — az application.py bekötésének tükre
+    import_source_controller = ImportSourceController(
+        provider, add_folder=controller.addWatchedFolder
+    )
+    engine.rootContext().setContextProperty(
+        "importSourceController", import_source_controller
+    )
+    engine.rootContext().setContextProperty("appVersion", version_string())
+    engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
+    assert engine.rootObjects(), "Main.qml betöltése sikertelen"
+    window = engine.rootObjects()[0]
+    controller._reload()
+    controller.selectFolder(str(lib))
+    qt_app.processEvents()
+    yield window, controller, engine
+    engine.deleteLater()
+    qt_app.processEvents()
