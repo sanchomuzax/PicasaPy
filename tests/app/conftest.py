@@ -33,6 +33,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.folder_tree_controller import FolderTreeController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.app.timeline_controller import TimelineController
     from picasapy.index import open_index, sync_tree
     from picasapy.thumbs import ThumbnailCache
     from picasapy.version import version_string
@@ -63,6 +64,10 @@ def qml_app(qt_app, tmp_path):
     )
     folder_tree_controller = FolderTreeController()
     faces_helper = FacesHelper()
+    # Időrend nézet (#24) — az application.py bekötésének tükre: a
+    # thumbnail-provider a controllerrel KÖZÖS példány
+    timeline_controller = TimelineController(db, provider)
+    controller.syncFinished.connect(timeline_controller.reload)
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
@@ -82,6 +87,9 @@ def qml_app(qt_app, tmp_path):
         "folderTreeController", folder_tree_controller
     )
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
+    engine.rootContext().setContextProperty(
+        "timelineController", timeline_controller
+    )
     engine.rootContext().setContextProperty("appVersion", version_string())
     # #189: a splash-híd — a funkcionális tesztek kész (ready) állapotból
     # indulnak, hogy a splash-overlay ne takarjon semmit

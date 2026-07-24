@@ -47,6 +47,7 @@ from .fileops_controller import FileOpsController
 from .folder_tree_controller import FolderTreeController
 from .startup_status import StartupStatus
 from .thumbnail_provider import ThumbnailProvider
+from .timeline_controller import TimelineController
 from .window_geometry import virtual_desktop_rect, wire_window_geometry
 
 _APP_DIR = Path(__file__).parent
@@ -388,6 +389,14 @@ def run(argv: list[str]) -> int:
     # listázása — a FolderManagerDialog.qml hídja
     folder_tree_controller = FolderTreeController()
 
+    # Időrend nézet (#24, Ctrl+5): a teljes könyvtár év/hónap szerinti
+    # csoportosítása — a MEGLÉVŐ (AppControllerrel közös) thumbnail-
+    # providert kapja, hogy a bélyegkép-URL-ek nála is regisztrálva
+    # legyenek. Háttér-szinkron után a nézet friss adatot mutasson, ha
+    # épp nyitva van — a TimelineView.qml a megnyitáskor is újratölt.
+    timeline_controller = TimelineController(data_dir / "index.db", provider)
+    controller.syncFinished.connect(timeline_controller.reload)
+
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
@@ -405,6 +414,9 @@ def run(argv: list[str]) -> int:
     )
     engine.rootContext().setContextProperty(
         "folderTreeController", folder_tree_controller
+    )
+    engine.rootContext().setContextProperty(
+        "timelineController", timeline_controller
     )
     # #147: a néző arc-keret overlay-jének csak-olvasás szintű hídja —
     # a faces=/Contacts2 közvetlenül a fotó .picasa.ini-jéből olvasva.

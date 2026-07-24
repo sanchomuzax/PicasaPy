@@ -48,6 +48,7 @@ ApplicationWindow {
         selectedSet = s
     }
     property bool viewerOpen: false
+    property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
     property bool tagsPanelOpen: false    // Címkék-panel (#12, Ctrl+T)
     // Tulajdonságok-panel (#13, Alt+Enter)
     property bool propertiesPanelOpen: false
@@ -197,6 +198,23 @@ ApplicationWindow {
                          window.propertiesPanelOpen = !window.propertiesPanelOpen
     }
 
+    // -- időrend nézet (#24, Ctrl+5) -----------------------------------------
+    // A teljes könyvtár dátum szerinti, korszakokra bontott áttekintése
+    // (TimelineView.qml) — a nézőt nem lehet vele egyszerre nyitva tartani,
+    // a diavetítéshez hasonlóan (startSlideshow) teljes képernyős réteg.
+    function toggleTimeline() {
+        if (window.timelineOpen) {
+            window.timelineOpen = false
+            return
+        }
+        timelineController.reload()
+        window.timelineOpen = true
+    }
+    Shortcut {
+        sequence: "Ctrl+5"
+        onActivated: window.toggleTimeline()
+    }
+
     // -- diavetítés (#8) ----------------------------------------------------
     // Indítás: viszonyítási pont a néző képe / a rács-kijelölés / az első
     // kép; a vetítés valódi teljes képernyőn fut, kilépéskor az ablak
@@ -255,6 +273,7 @@ ApplicationWindow {
         }
         onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())
         onSlideshowRequested: window.startSlideshow(-1)
+        onTimelineRequested: window.toggleTimeline()
         tagsPanelOpen: window.tagsPanelOpen
         onTagsPanelRequested: window.tagsPanelOpen = !window.tagsPanelOpen
         onHideToggleRequested: window.toggleHiddenSelection()
@@ -379,9 +398,31 @@ ApplicationWindow {
         onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
     }
 
+    // #24: Időrend nézet (Ctrl+5) — a teljes könyvtár korszak-áttekintése;
+    // egy bélyegképre kattintva a fő rácsban jelenítjük meg a képet
+    // (mappaváltás a bekötő selectFolder-jén át, majd a néző az
+    // odakerült sor alapján — rowOfId, a keresési-találat minta szerint).
+    TimelineView {
+        id: timelineView
+        objectName: "timelineView"
+        anchors.fill: parent
+        visible: window.timelineOpen
+        periodsModel: timelineController.periods
+        onClosed: window.timelineOpen = false
+        onPhotoChosen: function(photoId, folderPath) {
+            window.timelineOpen = false
+            controller.selectFolder(folderPath)
+            var row = controller.photos.rowOfId(photoId)
+            if (row >= 0) {
+                window.viewerOpen = true
+                photoViewer.show(row)
+            }
+        }
+    }
+
     SplitView {
         anchors.fill: parent
-        visible: !window.viewerOpen
+        visible: !window.viewerOpen && !window.timelineOpen
         orientation: Qt.Horizontal
 
         FolderPane {

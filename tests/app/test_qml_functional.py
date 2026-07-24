@@ -25,6 +25,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.folder_tree_controller import FolderTreeController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.app.timeline_controller import TimelineController
     from picasapy.thumbs import ThumbnailCache
     from PySide6.QtCore import QSettings
     from PySide6.QtQml import QQmlApplicationEngine
@@ -71,6 +72,12 @@ def qml_app(qt_app, tmp_path):
     # arc-keretek (#147) — az application.py bekötésének tükre
     faces_helper = FacesHelper()
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
+    # Időrend nézet (#24) — az application.py bekötésének tükre
+    timeline_controller = TimelineController(db, provider)
+    controller.syncFinished.connect(timeline_controller.reload)
+    engine.rootContext().setContextProperty(
+        "timelineController", timeline_controller
+    )
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
