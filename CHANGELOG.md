@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.62] – 2026-07-24
+
+### Javítva
+- **Hibás `filters=` bejegyzés nem dobja el a teljes renderelést (#301):** az
+  `apply_filters` eddig csak az ISMERETLEN NEVŰ szűrőket hagyta ki némán; egy
+  ismert nevű, de hibás paraméterű op (`tilt=1;` paraméter nélkül,
+  `crop64=1,zzz;`) kivételt dobott. A hibatűrés a három hívóból (bélyegkép-
+  gyorsítótár, élő előnézet, export) átkerült magába az `apply_filters`-be:
+  a hibás op kimarad, a lánc TÖBBI TAGJA lefut, a kivétel a logba kerül.
+  Az `EditSession.crop()`/`tilt_param()` hibás értéknél `None`-t ad, így a
+  „Paste All Effects" egy sérült, idegen láncon sem száll el.
+
+### Változott
+- **EditSession-refaktor (#302):** a `set_crop`/`set_tilt`/`set_finetune`
+  háromszor kimásolt „cseréld a helyén, vagy fűzd a végére" ciklusa közös
+  helperbe (`_with_single_layer`) került; `session.py` 441 → 378 sor,
+  viselkedésváltozás nélkül.
+
 ## [0.4.61] – 2026-07-24
 
 ### Javítva
