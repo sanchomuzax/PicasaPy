@@ -106,13 +106,19 @@ class EditSession:
     def crop(self) -> Rect64 | None:
         """Az aktuális crop64 téglalap.
 
+        Hibás/érvénytelen hex paraméternél is `None`-t ad (nem dob) — idegen
+        vagy sérült lánc olvasása se szökjön ki kivétellel (#301).
+
         Returns:
-            Rect64 a dekódolt értékkel, vagy None ha nincs crop64.
+            Rect64 a dekódolt értékkel, vagy None ha nincs (érvényes) crop64.
         """
         for op in self.ops:
             if op.matches("crop64"):
                 if len(op.params) >= 2:
-                    return decode_rect64(op.params[1])
+                    try:
+                        return decode_rect64(op.params[1])
+                    except ValueError:
+                        return None
         return None
 
     def set_tilt(self, param: float, scale: float) -> EditSession:
@@ -162,13 +168,19 @@ class EditSession:
     def tilt_param(self) -> float | None:
         """A tilt szög paramétere.
 
+        Hibás/nem numerikus paraméternél is `None`-t ad (nem dob), a `crop()`
+        mintájára (#301).
+
         Returns:
-            A float param, vagy None ha nincs tilt.
+            A float param, vagy None ha nincs (érvényes) tilt.
         """
         for op in self.ops:
             if op.matches("tilt"):
                 if len(op.params) >= 2:
-                    return float(op.params[1])
+                    try:
+                        return float(op.params[1])
+                    except ValueError:
+                        return None
         return None
 
     def set_finetune(

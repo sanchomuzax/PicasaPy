@@ -13,7 +13,6 @@ azonosító az URL első (kérdőjel előtti) része.
 
 from __future__ import annotations
 
-import logging
 import threading
 from collections import OrderedDict
 from pathlib import Path
@@ -36,8 +35,6 @@ _MAX_PREVIEW_EDGE = 2560
 # halmozódnának. Két elem elég: az aktuális + az előző kép, így az
 # előre-hátra lapozás újradekód nélkül gyors marad, a régebbiek felszabadulnak.
 _LRU_CAPACITY = 2
-
-_log = logging.getLogger(__name__)
 
 
 class EditPreviewProvider(QQuickImageProvider):
@@ -90,7 +87,7 @@ class EditPreviewProvider(QQuickImageProvider):
         while len(self._sources) > _LRU_CAPACITY:
             self._sources.popitem(last=False)
         # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó op fut
-        result_array = self._render_cached(key, source_array, tuple(ops), path)
+        result_array = self._render_cached(key, source_array, tuple(ops))
         image = _rgb_array_to_qimage(result_array) if result_array is not None else QImage()
         histogram = (
             compute_rgb_histogram(result_array)
@@ -130,26 +127,23 @@ class EditPreviewProvider(QQuickImageProvider):
         key: str,
         source_array: np.ndarray | None,
         ops: tuple[FilterOp, ...],
-        path: Path,
     ) -> np.ndarray | None:
         """Renderelés lánc-prefix gyorsítótárral: interakció közben (azonos
         prefix, csak az utolsó op paramétere változik) csak az utolsó op fut.
 
         A visszaadott RGB-tömb a hisztogram (#25) és a QImage-konverzió közös
         forrása — így a hisztogram mindig a TÉNYLEGESEN megjelenített képet
-        tükrözi, nem egy külön újraszámolt változatot."""
+        tükrözi, nem egy külön újraszámolt változatot.
+
+        #301: hibás/idegen lánc-bejegyzésnél az apply_filters saját maga esik
+        vissza a szűretlen köztes eredményre (kivétel nem szökik ki innen),
+        a #73-elv (részleges előnézet a placeholder helyett) így is teljesül."""
         if source_array is None:
             return None
         if not ops:
             return source_array
-        try:
-            prefix_array = self._cached_prefix(key, source_array, ops[:-1])
-            result_array, _skipped = apply_filters(prefix_array, ops[-1:])
-        except Exception:
-            # #73: hibás/idegen lánc-bejegyzésnél a szűretlen kép a helyes
-            # visszaesés, nem a placeholder (részleges előnézet elve)
-            _log.exception("filters= nem alkalmazható az előnézeten: %s", path)
-            return source_array
+        prefix_array = self._cached_prefix(key, source_array, ops[:-1])
+        result_array, _skipped = apply_filters(prefix_array, ops[-1:])
         return result_array
 
     def _cached_prefix(
