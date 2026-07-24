@@ -5,6 +5,29 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.63] – 2026-07-24
+
+### Javítva
+- **Kis-nagybetű-tűrő ini-szekciónév (#296):** a szekciónév-keresés eddig
+  pontos egyezést várt, miközben a kulcsokat casefold-osan illesztettük. Ha
+  az ini `[IMG_1234.JPG]`-t tartalmazott, a fájl viszont `IMG_1234.jpg` volt
+  (Windows/NAS: kis-nagybetű-független fájlrendszer), a kép **csillag,
+  felirat, forgatás és `filters=` nélkül** indexelődött, íráskor pedig
+  második szekció keletkezett ugyanarra a fájlra. Mostantól pontos egyezés →
+  casefold-os visszaesés (a pontos találat nyer), és minden író metódus
+  ugyanezen a feloldáson megy; az eredeti fejléc-betűzés változatlan marad.
+- **Ütközésbiztos ini-írás a fájlműveleteknél (#295):** az áthelyezés, az
+  átnevezés és a másolás közvetlen `load`+`save` párost használt az
+  ütközésbiztos `update_document` helyett — a párhuzamosan futó eredeti
+  Picasa módosítása némán felülíródott. Mindhárom átállítva; részleges
+  hibánál magyar, cselekvésre fordítható üzenet, és az `IniConflictError`
+  eljut a felhasználóig.
+- **Mentés-visszagörgetés (#297):** ha a mentés ini-könyvelése elbukott (pl.
+  tartós írásütközés), a kép már tartalmazta a beégetett láncot, de a
+  `filters=` is bent maradt — a következő megnyitáskor a renderelő
+  másodszor is ráfutott. A képfájl mostantól visszaáll a hiba előtti
+  állapotba, mielőtt a kivétel továbbmegy; a `revert` ugyanígy.
+
 ## [0.4.62] – 2026-07-24
 
 ### Javítva
