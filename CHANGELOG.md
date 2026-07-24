@@ -5,6 +5,29 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.64] – 2026-07-24
+
+### Változott
+- **A README összhangba hozva a kóddal (#299):** az „Amit még nem tud"
+  szakasz eddig a *szerkesztő eszközöket* sorolta hiányzóként, holott a
+  szerkesztő (20+ szűrő, mentés/Visszaállítás, hisztogram, effekt-vágólap)
+  régóta kész és bekötött. A „Fő képességek" kiegészült az Időrend
+  nézettel, Exporttal, Duplikátum-kezelővel, Import forrásból funkcióval,
+  XMP-exporttal és a Picasa-mappák átvételével; a PMP/db3-import állítása
+  pontosítva (olvasó-réteg kész, az indexbe-import a nyitott rész, #1).
+- **Teszt-parancs a dokumentációban:** a README és a CONTRIBUTING is a
+  `python3 -m pytest`-et ajánlotta — pont azt, amiről a projekt tudja, hogy
+  Qt/GIL-deadlockba ragad (#53, #155). Mindkettő a `scripts/run_tests.py`-t
+  adja elsődlegesként.
+
+### Hozzáadva
+- **Ruff-lint és lefedettség-mérés a CI-ben (#300):** `[tool.ruff]`
+  konfiguráció (a ruff alap-négyese + bugbear; a `PL*` család szándékosan
+  kimarad), önálló `lint` job a CI-ben, és a `scripts/run_tests.py --cov`
+  kapcsoló, ami a darabolt futtatás részfutásait `coverage run -p` alá
+  teszi, majd összesít. A 7 forrásbeli bugbear-találat javítva (nem
+  elnyomva). Jelenlegi összesített lefedettség: **95%**.
+
 ## [0.4.63] – 2026-07-24
 
 ### Javítva
