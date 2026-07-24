@@ -11,6 +11,21 @@ import QtQuick.Layouts
 // többi tagja pedig egy gombbal áthelyezhető a forrásmappa
 // "Duplikátumok" alkönyvtárába (NEM-DESZTRUKTÍV alapértelmezés, #287 DoD)
 // vagy törölhető a Kukába.
+//
+// #294 — HATÓKÖR, HALADÁS, MEGSZAKÍTÁS. A keresés korábban feltétel nélkül a
+// teljes indexelt könyvtárra futott, jelzés és megszakítási lehetőség
+// nélkül; 140 000 képnél az ablak némán állt. Most:
+//   * hatókör-választó (kijelölés / aktuális mappa+almappák / teljes
+//     könyvtár) — az alapértelmezés a szűk hatókör, a teljes könyvtár
+//     tudatos választás, a várható hosszról szóló figyelmeztetéssel;
+//   * folyamatjelző (a DedupController.scanProgress jelzéseiből) és
+//     Mégse gomb, amely bármikor tisztán leállítja a keresést.
+// A jelzések a worker-szálról jönnek — a Qt queued kézbesítéssel sorolja
+// őket a GUI-szálra, ahogy a scanFinished-et is.
+//
+// #298 — az ablak bezárásakor a dedup-bélyegképek regisztrációja elengedésre
+// kerül (releaseThumbnails), a fő rács regisztrációjának érintetlenül
+// hagyásával.
 Window {
     id: dedupWindow
     objectName: "dedupDialog"
@@ -21,6 +36,11 @@ Window {
     minimumWidth: 420
     minimumHeight: 320
     color: Theme.canvasBg
+
+    // OPCIONÁLIS: a főablak — a kijelölés (selectedIndexes) forrása. Amíg a
+    // Main.qml nem köti be, a "kijelölt képek" hatókör egyszerűen nem
+    // választható, minden más változatlanul működik.
+    property var appWindow: null
 
     // a legutóbbi keresés eredménye — dict-ek listája: {kind, maxDistance,
     // items: [{path, thumbUrl}, ...]}; a DedupController.scanFinished
@@ -33,16 +53,93 @@ Window {
     property bool scanning: false
     property string lastError: ""
 
+    // hatókör: 0 = kijelölt képek, 1 = aktuális mappa + almappák,
+    // 2 = teljes könyvtár. Alapértelmezés a szűk (mappa) hatókör.
+    readonly property int scopeSelection: 0
+    readonly property int scopeFolder: 1
+    readonly property int scopeLibrary: 2
+    property int scopeIndex: dedupWindow.scopeFolder
+
+    // haladás-állapot a folyamatjelzőhöz (a scanProgress jelzésekből)
+    property string progressPhase: ""
+    property int progressDone: 0
+    property int progressTotal: 0
+
+    readonly property int selectionCount:
+        (dedupWindow.appWindow && dedupWindow.appWindow.selectedIndexes)
+        ? dedupWindow.appWindow.selectedIndexes.length : 0
+    readonly property bool hasSelection: dedupWindow.selectionCount >= 2
+    readonly property string currentFolder:
+        (typeof controller !== "undefined" && controller)
+        ? controller.currentFolder : ""
+
     function open() {
+        // a legkevésbé meglepő alapértelmezés: ha van érdemi kijelölés, arra
+        // keresünk, egyébként az aktuális mappára (+almappákra)
+        dedupWindow.scopeIndex = dedupWindow.hasSelection
+                                 ? dedupWindow.scopeSelection
+                                 : dedupWindow.scopeFolder
         dedupWindow.visible = true
         if (dedupWindow.groups.length === 0 && !dedupWindow.scanning)
             dedupWindow.scan()
     }
 
+    // a kijelölt sorok fájl-URL-jei (a controller `to_local_path`-on
+    // átfuttatja őket, ezért a file:// alak is jó)
+    function selectedPaths() {
+        var rows = dedupWindow.appWindow ? dedupWindow.appWindow.selectedIndexes : []
+        var paths = []
+        for (var i = 0; i < rows.length; ++i)
+            paths.push(controller.photos.fileUrlAt(rows[i]))
+        return paths
+    }
+
     function scan() {
+        if (dedupWindow.scopeIndex === dedupWindow.scopeSelection
+                && !dedupWindow.hasSelection) {
+            dedupWindow.lastError = qsTr(
+                "Select at least two pictures in the grid, or pick another scope.")
+            return
+        }
         dedupWindow.scanning = true
         dedupWindow.lastError = ""
-        dedupController.scanForDuplicates()
+        dedupWindow.progressPhase = ""
+        dedupWindow.progressDone = 0
+        dedupWindow.progressTotal = 0
+        if (dedupWindow.scopeIndex === dedupWindow.scopeSelection)
+            dedupController.scanSelection(dedupWindow.selectedPaths())
+        else if (dedupWindow.scopeIndex === dedupWindow.scopeLibrary)
+            dedupController.scanForDuplicates()
+        else
+            dedupController.scanFolder(dedupWindow.currentFolder)
+    }
+
+    function cancelScan() {
+        dedupController.cancelScan()
+    }
+
+    // #298: bezáráskor a dedup-bélyegképek elengedése (a fő rács
+    // regisztrációja érintetlen marad), és a találatok eldobása — a
+    // következő megnyitás friss keresést indít, így soha nem maradnak
+    // "halott" image://thumbs/<id> URL-ek a listában.
+    function releaseAndReset() {
+        dedupController.cancelScan()
+        dedupController.releaseThumbnails()
+        dedupWindow.scanning = false
+        dedupWindow.groups = []
+        dedupWindow.keepByGroup = ({})
+    }
+
+    onVisibleChanged: {
+        if (!dedupWindow.visible)
+            dedupWindow.releaseAndReset()
+    }
+
+    // a haladás emberi szövege — a controller csak technikai fázis-tokent ad
+    function phaseLabel(phase) {
+        if (phase === "exact") return qsTr("Comparing files...")
+        if (phase === "phash") return qsTr("Analysing pictures...")
+        return qsTr("Searching...")
     }
 
     // a csoport megtartandó útvonala — alapértelmezés az első (0.) elem
@@ -105,6 +202,14 @@ Window {
             dedupWindow.keepByGroup = ({})
             dedupWindow.scanning = false
         }
+        function onScanProgress(phase, done, total) {
+            dedupWindow.progressPhase = phase
+            dedupWindow.progressDone = done
+            dedupWindow.progressTotal = total
+        }
+        function onScanCancelled() {
+            dedupWindow.scanning = false
+        }
         function onScanFailed(message) {
             dedupWindow.lastError = message
             dedupWindow.scanning = false
@@ -122,26 +227,120 @@ Window {
         anchors.margins: 10
         spacing: 8
 
+        Text {
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: qsTr(
+                "Groups of duplicate and similar pictures. Pick which one to "
+                + "keep in each group; the rest can be moved to a "
+                + "\"Duplikátumok\" folder or deleted.")
+            font.pixelSize: Theme.fontSize
+            color: Theme.textGray
+        }
+
+        // hatókör-választó (#294): a szűk hatókör az alapértelmezés, a
+        // teljes könyvtár tudatos választás
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
             Text {
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-                text: qsTr(
-                    "Groups of duplicate and similar pictures found in your "
-                    + "watched folders. Pick which one to keep in each group; "
-                    + "the rest can be moved to a \"Duplikátumok\" folder or "
-                    + "deleted.")
+                text: qsTr("Search in:")
                 font.pixelSize: Theme.fontSize
-                color: Theme.textGray
+                color: Theme.ink
             }
+            ComboBox {
+                id: scopeBox
+                objectName: "dedupScopeBox"
+                Layout.preferredWidth: 260
+                enabled: !dedupWindow.scanning
+                currentIndex: dedupWindow.scopeIndex
+                onCurrentIndexChanged: dedupWindow.scopeIndex = currentIndex
+                model: [
+                    dedupWindow.hasSelection
+                        ? qsTr("Selected pictures (%1)").arg(
+                              dedupWindow.selectionCount)
+                        : qsTr("Selected pictures (none)"),
+                    qsTr("This folder and its subfolders"),
+                    qsTr("Whole library")
+                ]
+            }
+            Item { Layout.fillWidth: true }
             PicasaButton {
                 objectName: "dedupScanButton"
                 text: dedupWindow.scanning ? qsTr("Scanning...")
                                            : qsTr("Scan for Duplicates")
                 enabled: !dedupWindow.scanning
                 onClicked: dedupWindow.scan()
+            }
+        }
+
+        // figyelmeztetés a teljes könyvtár várható hosszáról (#294)
+        Text {
+            objectName: "dedupScopeWarning"
+            visible: dedupWindow.scopeIndex === dedupWindow.scopeLibrary
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: qsTr(
+                "Searching the whole library reads every picture — with tens "
+                + "of thousands of photos this can take a long time. You can "
+                + "cancel at any point, and the next search starts from the "
+                + "already analysed pictures.")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.folderDate
+        }
+
+        // folyamatjelző + Mégse (#294) — csak futó keresés közben látszik
+        ColumnLayout {
+            objectName: "dedupProgressPanel"
+            visible: dedupWindow.scanning
+            Layout.fillWidth: true
+            spacing: 4
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                Text {
+                    objectName: "dedupProgressLabel"
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                    text: dedupWindow.progressTotal > 0
+                          ? qsTr("%1 %2 / %3")
+                                .arg(dedupWindow.phaseLabel(
+                                    dedupWindow.progressPhase))
+                                .arg(dedupWindow.progressDone)
+                                .arg(dedupWindow.progressTotal)
+                          : dedupWindow.phaseLabel(dedupWindow.progressPhase)
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.textGray
+                }
+                PicasaButton {
+                    objectName: "dedupCancelButton"
+                    text: qsTr("Cancel")
+                    onClicked: dedupWindow.cancelScan()
+                }
+            }
+
+            // deklaratív (mindig renderelő) sáv — az ImportProgressPanel
+            // mintája; Canvas/requestPaint szándékosan NEM (MEMORY-tanulság)
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 8
+                radius: 4
+                color: "#dddddd"
+                border.color: Theme.chromeBorder
+
+                Rectangle {
+                    objectName: "dedupProgressBarFill"
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+                    radius: parent.radius
+                    color: Theme.picasaGreen
+                    width: dedupWindow.progressTotal > 0
+                           ? parent.width * dedupWindow.progressDone
+                             / dedupWindow.progressTotal
+                           : 0
+                }
             }
         }
 

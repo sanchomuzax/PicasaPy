@@ -77,11 +77,13 @@ class TestGetOrCreate:
         # #144: a méret-próba a MÁR beolvasott bájtokból megy — a forrás-
         # fájlt tilos másodszor (útvonalról) megnyitni; a PIL csak
         # fájlobjektumot (BytesIO) kaphat.
+        # #294: a méret-próba a közös `picasapy.cvimage.reduced_color_flag`-be
+        # költözött (a dedup dHash is ezt hívja) — az őrszem is oda kerül.
         from pathlib import Path
 
-        import picasapy.thumbs.cache as cache_module
+        import picasapy.cvimage as cvimage_module
 
-        real_open = cache_module.Image.open
+        real_open = cvimage_module.Image.open
 
         def guarded_open(fp, *args, **kwargs):
             assert not isinstance(fp, (str, Path)), (
@@ -89,7 +91,7 @@ class TestGetOrCreate:
             )
             return real_open(fp, *args, **kwargs)
 
-        monkeypatch.setattr(cache_module.Image, "open", guarded_open)
+        monkeypatch.setattr(cvimage_module.Image, "open", guarded_open)
         assert cache.get_or_create(photo, *_stat_key(photo)) is not None
 
     def test_upscale_avoided(self, cache, tmp_path):

@@ -5,12 +5,34 @@ QML-hídja a `picasapy.dedup.find_duplicates` mag fölött.
 követve NEM az `AppController` mixinje, hogy a `controller.py` (forró
 fájl, ld. CONTRIBUTING.md) csak a végleges, minimális bekötést kapja.
 
-A keresés a teljes indexelt könyvtáron fut HÁTTÉRSZÁLON: a hasonlósági
-réteg O(n²) páronkénti összevetéssel dolgozik (ld. `dedup/similar.py`),
-nagy könyvtárnál másodpercekig is tarthat — ez nem blokkolhatja a
-GUI-szálat. A csoportokat (és minden elemüket) QML-nek MINDIG listaként
-(dict-ek listája) adjuk át, SOHA Python tuple-ként — a tuple QML-ben nem
-tömb, a `.length` undefined lenne (ld. MEMORY.md tanulság).
+#294 — SKÁLÁZÓDÁS. A keresés korábban feltétel nélkül a TELJES indexelt
+könyvtárra futott; egy 140 000 képes gyűjteményen ez gyakorlatilag soha
+nem ért véget, és a párbeszédablak közben némán állt. Négy dolog változott:
+
+1. **Hatókör** (`scanSelection` / `scanFolder` / `scanForDuplicates`): a UI
+   alapból a kijelölésre vagy az aktuális mappára (+almappákra) keres, a
+   teljes könyvtár tudatosan választható.
+2. **Haladás-jelzés és megszakítás** (`scanProgress`, `cancelScan`) a
+   `sync_tree` (#209/#216) mintája szerint. A jelzések a worker-szálról
+   mennek ki — a Qt queued kézbesítéssel sorolja őket a GUI-szálra,
+   ugyanúgy, ahogy a `scanFinished`-et is.
+3. **dHash-gyorsítótár az indexben** (`picasapy.index.hashes`): a lenyomat
+   kulcsa a `(útvonal, mtime_ns, méret)` hármas, így az ismételt keresés
+   csak az új/megváltozott képeket dekódolja.
+4. A dHash maga redukált JPEG-dekódolással készül (`dedup/phash.py`).
+
+#298 — BÉLYEGKÉP-REGISZTRÁCIÓ. A vezérlő korábban `register_photos`-t
+hívott, ami LECSERÉLTE a provider teljes regisztrációját: ha a dedup
+eredménye nem esett egybe a fő rács tartalmával, a rács `image://thumbs/<id>`
+URL-jei feloldhatatlanná váltak (szürke placeholder-cellák). Helyette az
+`register_additional_photos`/`unregister_additional_photos` páros megy,
+SAJÁT (negatív) id-tartománnyal — az Import-forrás ág (`import_source_
+controller.py`) mintájára —, és a dialógus bezárásakor (`releaseThumbnails`)
+vagy új keresés indításakor a bejegyzések eltűnnek.
+
+A csoportokat (és minden elemüket) QML-nek MINDIG listaként (dict-ek
+listája) adjuk át, SOHA Python tuple-ként — a tuple QML-ben nem tömb, a
+`.length` undefined lenne (ld. MEMORY.md tanulság).
 
 Alapértelmezett, NEM-destruktív feloldás (#287 DoD): a csoport minden
 tagja — a megtartandó kivételével — a forrásmappájának "Duplikátumok"
@@ -19,18 +41,44 @@ alkönyvtárába kerül (`moveOthersToDuplicatesFolder`). A Kukába törlés
 
 from __future__ import annotations
 
+import dataclasses
+import logging
 import threading
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
 
 from picasapy.dedup import find_duplicates
+from picasapy.dedup.phash import compute_dhash
 from picasapy.fileops import delete_to_trash, move_photo
-from picasapy.index import PhotoRecord, all_photos, open_index
+from picasapy.index import (
+    PhotoRecord,
+    all_photos,
+    load_dhashes,
+    open_index,
+    photos_under_folder,
+    save_dhashes,
+)
+
+from .formatting import to_local_path
 
 # A nem-destruktív áthelyezés célmappájának neve, forrásmappánként —
 # létrehozva, ha még nincs (ld. `_move_one`).
 DUPLICATES_SUBFOLDER_NAME = "Duplikátumok"
+
+# #298: a dedup-előnézetek SAJÁT id-tartománya a thumbnail-providerben.
+# A valódi indexbeli fotók id-je mindig pozitív; az Import-forrás előnézete
+# a -1-től lefelé tartó sávot használja (`import_source_controller.py`),
+# ezért a dedup ennél jóval lejjebb kezd — a két dialógus így egyszerre is
+# nyitva lehet anélkül, hogy egymás bejegyzéseit felülírnák.
+DEDUP_THUMB_ID_BASE = -1_000_000
+
+# Ennyi frissen kiszámolt lenyomat után írunk az indexbe. A köteges mentés
+# egyrészt olcsóbb, másrészt a megszakított keresés munkája sem vész el:
+# a legközelebbi futás onnan folytatja, ahol ez abbamaradt.
+_HASH_FLUSH_SIZE = 200
+
+_log = logging.getLogger(__name__)
 
 
 def _photo_path(photo: PhotoRecord) -> str:
@@ -49,7 +97,7 @@ def _thumb_url(photo_id: int | None) -> str:
 def _group_dict(
     kind: str,
     paths: tuple[Path, ...],
-    by_path: dict[str, PhotoRecord],
+    thumb_ids: dict[str, int],
     max_distance: int | None,
 ) -> dict:
     """Egy duplikátum-csoport QML-barát alakja: sima `dict`, a tagok is
@@ -57,9 +105,7 @@ def _group_dict(
     items = [
         {
             "path": str(path),
-            "thumbUrl": _thumb_url(
-                by_path[str(path)].id if str(path) in by_path else None
-            ),
+            "thumbUrl": _thumb_url(thumb_ids.get(str(path))),
         }
         for path in paths
     ]
@@ -72,18 +118,29 @@ def _group_dict(
     }
 
 
-def _build_groups(report, by_path: dict[str, PhotoRecord]) -> list[dict]:
+def _build_groups(report, thumb_ids: dict[str, int]) -> list[dict]:
     """A `DuplicateReport` (exact + similar csoportok) egyetlen, QML-nek
     adható listává lapítva — előbb a pontos, aztán a hasonló csoportok."""
     groups = [
-        _group_dict("exact", group.paths, by_path, None)
+        _group_dict("exact", group.paths, thumb_ids, None)
         for group in report.exact_groups
     ]
     groups += [
-        _group_dict("similar", group.paths, by_path, group.max_distance)
+        _group_dict("similar", group.paths, thumb_ids, group.max_distance)
         for group in report.similar_groups
     ]
     return groups
+
+
+def _grouped_paths(report) -> list[str]:
+    """A találatokban ténylegesen szereplő útvonalak (sorrendtartóan,
+    ismétlés nélkül) — csak ezekhez kell bélyegképet regisztrálni, nem a
+    teljes átvizsgált halmazhoz."""
+    seen: dict[str, None] = {}
+    for group in (*report.exact_groups, *report.similar_groups):
+        for path in group.paths:
+            seen.setdefault(str(path), None)
+    return list(seen)
 
 
 class DedupController(QObject):
@@ -91,53 +148,194 @@ class DedupController(QObject):
     feloldása (áthelyezés vagy törlés)."""
 
     scanStarted = Signal()
+    # (fázis-token, kész, összes) — a fázis technikai azonosító
+    # (`picasapy.dedup.api.PHASE_*`), az emberi szöveget a QML adja hozzá
+    scanProgress = Signal(str, int, int)
     scanFinished = Signal(list)  # csoportok (dict-ek listája)
+    scanCancelled = Signal()  # a felhasználó megszakította a keresést
     scanFailed = Signal(str)  # hibaüzenet (pl. olvashatatlan index)
     itemResolved = Signal(str)  # (feloldott elem útvonala) — a QML ebből törli a sorból
     operationFailed = Signal(str, str)  # (útvonal, hibaüzenet)
 
     def __init__(self, db_path: Path, provider) -> None:
         """`provider`: a `ThumbnailProvider` (vagy teszthez `None`) — a
-        keresés eredményét ITT regisztráljuk nála (`register_photos`),
-        hogy a csoportok `thumbUrl`-jei ténylegesen feloldhatók legyenek,
-        függetlenül attól, hogy a fő rács éppen mit mutat."""
+        találatokat ITT regisztráljuk nála (`register_additional_photos`,
+        #298), hogy a csoportok `thumbUrl`-jei feloldhatók legyenek
+        anélkül, hogy a fő rács regisztrációja sérülne."""
         super().__init__()
         self._db_path = Path(db_path)
         self._provider = provider
+        # a futó keresés megszakító-jelzője (None: nincs futó keresés)
+        self._stop_event: threading.Event | None = None
+        # a providernél jelenleg regisztrált dedup-bejegyzések id-jei
+        self._registered_ids: tuple[str, ...] = ()
+
+    # -- keresés ----------------------------------------------------------
 
     @Slot()
     def scanForDuplicates(self) -> None:
-        """A teljes (indexelt) könyvtár duplikátum-keresése HÁTTÉRSZÁLON —
-        a hívás azonnal visszatér, az eredmény a `scanFinished`-ben
-        érkezik (a Qt automatikusan a GUI-szálra sorolja, ahogy a
-        `FolderTreeController.childrenLoaded` is teszi)."""
+        """A TELJES indexelt könyvtár duplikátum-keresése.
+
+        Nagy gyűjteményen ez hosszú művelet — a UI-ban ezért tudatos
+        választás (figyelmeztetéssel), nem alapértelmezés (#294). A hívás
+        azonnal visszatér, az eredmény a `scanFinished`-ben érkezik."""
+        self._start(lambda conn: all_photos(conn))
+
+    @Slot(str)
+    def scanFolder(self, folder: str) -> None:
+        """Keresés egy mappában ÉS az almappáiban (#294) — a dialógus
+        alapértelmezett hatóköre. `folder` `file://` URL is lehet (a QML
+        oldalról ez a szokásos alak)."""
+        target = to_local_path(folder)
+        if not target:
+            self.scanFailed.emit(
+                self.tr("Choose a folder to search for duplicates in.")
+            )
+            return
+        self._start(lambda conn: photos_under_folder(conn, target))
+
+    @Slot(list)
+    def scanSelection(self, paths: list) -> None:
+        """Keresés a megadott (kijelölt) képek között (#294).
+
+        Kettőnél kevesebb kép között nem lehet duplikátum — ilyenkor
+        azonnal üres eredményt adunk, futás nélkül."""
+        wanted = {to_local_path(str(path)) for path in paths}
+        wanted.discard("")
+        if len(wanted) < 2:
+            self.scanStarted.emit()
+            self.scanFinished.emit([])
+            return
+        self._start(
+            lambda conn: tuple(
+                photo for photo in all_photos(conn) if _photo_path(photo) in wanted
+            )
+        )
+
+    @Slot()
+    def cancelScan(self) -> None:
+        """A folyamatban lévő keresés megszakítása. A worker a következő
+        ellenőrzési ponton tisztán leáll, és `scanCancelled`-t bocsát ki;
+        a már kiszámolt lenyomatok az indexben maradnak."""
+        if self._stop_event is not None:
+            self._stop_event.set()
+
+    @Slot()
+    def releaseThumbnails(self) -> None:
+        """A dedup-bélyegképek elengedése a providerből (#298) — a QML a
+        dialógus bezárásakor hívja. A fő rács regisztrációját nem érinti."""
+        if self._provider is None:
+            self._registered_ids = ()
+            return
+        self._provider.unregister_additional_photos(self._registered_ids)
+        self._registered_ids = ()
+
+    def _start(self, select_photos) -> None:
+        """A keresés elindítása HÁTTÉRSZÁLON. `select_photos`: a hatókört
+        megvalósító lekérdezés (nyitott kapcsolatot kap)."""
+        self.cancelScan()  # egyszerre csak egy keresés fusson
+        stop_event = threading.Event()
+        self._stop_event = stop_event
         self.scanStarted.emit()
+        threading.Thread(
+            target=self._run_scan, args=(select_photos, stop_event), daemon=True
+        ).start()
 
-        def worker() -> None:
-            try:
-                with open_index(self._db_path) as conn:
-                    photos = all_photos(conn)
-            except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
-                self.scanFailed.emit(str(error))
+    def _run_scan(self, select_photos, stop_event: threading.Event) -> None:
+        """A worker-szál törzse: lekérdezés → keresés → jelzés.
+
+        A kapcsolat a keresés teljes idejére nyitva marad (ugyanezen a
+        szálon jött létre, ezért szál-biztos): így a frissen számolt
+        lenyomatok kötegenként az indexbe kerülhetnek, és egy megszakított
+        futás munkája sem vész el."""
+        try:
+            with open_index(self._db_path) as conn:
+                photos = tuple(select_photos(conn))
+                report = self._find(conn, photos, stop_event)
+        except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
+            _log.exception("duplikátum-keresés hiba: %s", self._db_path)
+            self.scanFailed.emit(str(error))
+            return
+        finally:
+            if self._stop_event is stop_event:
+                self._stop_event = None
+
+        if report.cancelled:
+            self.scanCancelled.emit()
+            return
+        thumb_ids = self._register_thumbnails(report, photos)
+        self.scanFinished.emit(_build_groups(report, thumb_ids))
+
+    def _find(self, conn, photos: tuple[PhotoRecord, ...], stop_event):
+        """A tényleges keresés gyorsítótárazott lenyomatokkal.
+
+        A cache kulcsa a fájl azonossága (`útvonal, mtime_ns, méret`), így
+        egy változatlan kép soha nem dekódolódik újra — ez teszi az
+        ismételt keresést azonnal indulóvá (#294)."""
+        keys = {
+            _photo_path(photo): (_photo_path(photo), photo.mtime_ns, photo.size)
+            for photo in photos
+        }
+        cached = load_dhashes(conn, tuple(keys.values()))
+        pending: list[tuple[str, int, int, int]] = []
+
+        def flush() -> None:
+            if not pending:
                 return
+            save_dhashes(conn, pending)
+            conn.commit()
+            pending.clear()
 
-            by_path = {_photo_path(photo): photo for photo in photos}
-            report = find_duplicates(list(by_path.keys()))
+        def dhash_source(path: Path) -> int | None:
+            key = keys.get(str(path))
+            if key is not None and key in cached:
+                return cached[key]
+            value = compute_dhash(path)
+            if value is not None and key is not None:
+                pending.append((*key, value))
+                if len(pending) >= _HASH_FLUSH_SIZE:
+                    flush()
+            return value
 
-            # a csoportokban szereplő fotókat a thumbnail-providernél is
-            # regisztráljuk, hogy az `image://thumbs/<id>` URL-ek a
-            # dialógus megnyitásakor ténylegesen feloldhatók legyenek. A
-            # `register_photos` egyetlen (GIL alatt atomi) dict-cserét
-            # végez, nincs belső zár — emiatt háttérszálról hívva is
-            # biztonságos (ugyanígy hív rá a `photo_ops_controller.py`
-            # háttérszála is, csak jelzésen keresztül).
-            if self._provider is not None:
-                self._provider.register_photos(photos)
+        try:
+            return find_duplicates(
+                list(keys),
+                progress=lambda phase, done, total: self._emit_progress(
+                    phase, done, total, stop_event
+                ),
+                should_stop=stop_event.is_set,
+                dhash_source=dhash_source,
+            )
+        finally:
+            flush()
 
-            groups = _build_groups(report, by_path)
-            self.scanFinished.emit(groups)
+    def _emit_progress(self, phase: str, done: int, total: int, stop_event) -> bool:
+        """Haladás-jelzés a worker-szálról (a Qt a GUI-szálra sorolja);
+        a visszatérési érték a mag megszakítás-szerződése (#216)."""
+        self.scanProgress.emit(phase, done, total)
+        return stop_event.is_set()
 
-        threading.Thread(target=worker, daemon=True).start()
+    def _register_thumbnails(self, report, photos) -> dict[str, int]:
+        """A találatok bélyegképeinek regisztrálása a providernél SAJÁT
+        (negatív) id-tartományban (#298), a korábbi dedup-bejegyzések
+        egyidejű elengedésével. Visszaadja az útvonal → dedup-id térképet,
+        amiből a `thumbUrl`-ek készülnek."""
+        by_path = {_photo_path(photo): photo for photo in photos}
+        paths = [path for path in _grouped_paths(report) if path in by_path]
+        thumb_ids = {
+            path: DEDUP_THUMB_ID_BASE - index for index, path in enumerate(paths)
+        }
+        if self._provider is None:
+            return {}
+        records = tuple(
+            dataclasses.replace(by_path[path], id=thumb_ids[path]) for path in paths
+        )
+        self._provider.unregister_additional_photos(self._registered_ids)
+        self._provider.register_additional_photos(records)
+        self._registered_ids = tuple(str(record.id) for record in records)
+        return thumb_ids
+
+    # -- csoport feloldása ------------------------------------------------
 
     @Slot(list, str)
     def deleteOthers(self, paths: list, keep_path: str) -> None:

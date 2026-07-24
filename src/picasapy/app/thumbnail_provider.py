@@ -196,7 +196,15 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         bélyegképeit, amíg az Import-dialógus nyitva van. A hívó felelőssége
         (ld. `import_source_controller.py`) ütközésmentes, saját id-
         tartományt használni (pl. negatív id-k), hogy sose írjon felül
-        valódi könyvtárbeli fotót."""
+        valódi könyvtárbeli fotót.
+
+        FOGLALT (negatív) id-tartományok — az egyszerre nyitva lévő
+        dialógusok se üssék egymást:
+          * `-1`-től lefelé: Import forrásból előnézet
+            (`import_source_controller._preview_photo_record`);
+          * `-1_000_000`-tól lefelé: duplikátum-kereső találatok
+            (`dedup_controller.DEDUP_THUMB_ID_BASE`, #298).
+        Új hívó ide vegyen fel magának új sávot."""
         extra = {str(photo.id): photo for photo in photos}
         self._registry = {**self._registry, **extra}
 

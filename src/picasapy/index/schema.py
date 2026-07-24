@@ -8,7 +8,29 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
+
+# #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
+# nem a `photos` bővítése:
+#   * tisztán származtatott adat (a képből bármikor újraszámolható), ezért
+#     eldobható/üríthető anélkül, hogy az index bármely más része sérülne;
+#   * a `photos` bővítése az FTS5 külső-tartalmú (content='photos') tábla és
+#     a három szinkron-trigger környékét bolygatná — a triggerek csak a
+#     szöveges oszlopokat indexelik, egy bináris hash-oszlopnak semmi
+#     keresnivalója abban a szerződésben;
+#   * a kulcs a fájl AZONOSSÁGA (útvonal + mtime_ns + méret), nem a fotó
+#     index-beli id-je — így a hash a fotó újraindexelését (új id) is
+#     túléli, és a keresés indexen kívüli útvonalra is használható.
+# A PRIMARY KEY az útvonal: a megváltozott fájl SORA cserélődik (upsert),
+# nem halmozódik — a cache mérete a könyvtárral marad arányos.
+_PHOTO_HASHES_DDL = """
+CREATE TABLE IF NOT EXISTS photo_hashes (
+    path TEXT PRIMARY KEY,
+    mtime_ns INTEGER NOT NULL,
+    size INTEGER NOT NULL,
+    dhash INTEGER NOT NULL
+);
+"""
 
 _FTS_DDL = """
 CREATE VIRTUAL TABLE IF NOT EXISTS photos_fts USING fts5(
@@ -74,6 +96,8 @@ CREATE TABLE IF NOT EXISTS photos (
 
 CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 1;
 
+{_PHOTO_HASHES_DDL}
+
 {_FTS_DDL}
 """
 
@@ -110,4 +134,8 @@ ALTER TABLE photos ADD COLUMN filters TEXT;
     4: """
 ALTER TABLE photos ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;
 """,
+    # #294: a dHash-gyorsítótár tábla. Üresen jön létre — a meglévő
+    # indexekhez nem kell újraszámolni semmit, az első duplikátum-keresés
+    # tölti fel magától.
+    5: _PHOTO_HASHES_DDL,
 }
