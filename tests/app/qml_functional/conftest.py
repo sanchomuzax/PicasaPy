@@ -22,13 +22,17 @@ import pytest
 from picasapy.index import open_index, sync_tree
 from picasapy.version import version_string
 from support.jpeg_factory import make_jpeg
+from support.qml_warning_filter import is_qml_script_error
 
 
 @pytest.fixture(autouse=True)
 def qml_warnings():
     """#305: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler), és a
     teszt VÉGÉN — a `qml_app` engine-lebontása UTÁN — hibát dob, ha
-    figyelmeztetés/hiba jelent meg (pl. „Cannot read property … of null").
+    QML-SZKRIPTHIBA jelent meg (pl. „Cannot read property … of null").
+
+    A szűrésről (mire hasal el és mire nem, és miért) ld. a
+    `support/qml_warning_filter.py` modul-docstringjét (#309).
 
     `autouse=True`, ezért minden e könyvtárbeli teszthez automatikusan
     társul, `qml_app`-ot használóhoz és nem-használóhoz egyaránt — nem kell
@@ -49,14 +53,14 @@ def qml_warnings():
             QtMsgType.QtWarningMsg,
             QtMsgType.QtCriticalMsg,
             QtMsgType.QtFatalMsg,
-        ):
+        ) and is_qml_script_error(message):
             messages.append(message)
 
     previous = qInstallMessageHandler(_handler)
     yield messages
     qInstallMessageHandler(previous)
     assert not messages, (
-        "QML figyelmeztetés/hiba jelent meg a teszt során (#305) — "
+        "QML-szkripthiba jelent meg a teszt során (#305) — "
         "valószínűleg hiányzó null-őr egy `controller`-kötésben:\n"
         + "\n".join(messages)
     )

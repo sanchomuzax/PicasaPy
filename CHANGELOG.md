@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.67] – 2026-07-24
+
+### Javítva
+- **A QML-figyelmeztetés-őr Windowson elhasalt környezeti zajra (#309):** a
+  0.4.65-ben bevezetett őr (#305) MINDEN Qt-figyelmeztetésre hibát dobott,
+  így a windows-latest CI-lábat olyan üzenetek buktatták, amiknek semmi
+  közük a kódhoz (hiányzó fontkönyvtár a runneren, `OpenThemeData() failed`
+  offscreen módban, natív stílus testreszabási figyelmeztetése). Az őr
+  mostantól kizárólag a QML-SZKRIPTHIBÁKRA hasal el (`TypeError`,
+  `ReferenceError`, `SyntaxError`, „Unable to assign", „is not a
+  function") — ezek platformfüggetlenül mindig valódi kódhibák. Az
+  osztályozó külön modulba került (`tests/support/qml_warning_filter.py`)
+  és saját tesztet kapott valódi üzenet-mintákkal mindkét oldalról.
+
 ## [0.4.66] – 2026-07-24
 
 ### Javítva
