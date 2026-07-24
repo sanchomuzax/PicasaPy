@@ -175,6 +175,31 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Tanulságok
 
+- **2026-07-24 (#305 → #309): platformfüggetlen tesztőr csak platformfüggetlen
+  jelenségre hasalhat el.** A QML-figyelmeztetés-őr eredetileg MINDEN
+  Qt-figyelmeztetésre hibát dobott — Linuxon zöld volt, a windows-latest lábat
+  viszont azonnal megbuktatta olyan környezeti üzenetekkel, amiknek semmi közük
+  a kódhoz (`QFontDatabase: Cannot find font directory`, `OpenThemeData()
+  failed`, natív stílus „nem támogatja a testreszabást"). Általános szabály:
+  ha egy őr/assert a KÖRNYEZET zajára is elhasal, minden Qt-/runner-frissítés
+  hamis pirosat okoz — épp az ellenkezőjét annak, amiért az őr készült. A
+  helyes szűrés a jelenség OKÁRA szűkít (itt: QML-szkripthiba-minták —
+  `TypeError`, `ReferenceError`, `SyntaxError`, „Unable to assign", „is not a
+  function"), és az osztályozó külön, ÖNMAGÁBAN tesztelhető modulba kerül
+  (`tests/support/qml_warning_filter.py`), valódi üzenet-mintákkal mindkét
+  oldalról. Következmény a munkamódszerre: **új, minden-platformra ható
+  teszt-őrnél a Linux-zöld NEM elég bizonyíték** — a Windows-láb eredményét
+  meg kell várni, mielőtt a jegyet lezártnak tekintjük.
+
+- **2026-07-24: a GitHub PR-nyitó API tartósan hibázhat (500), miközben minden
+  más megy.** Egy ~40 perces kimaradás alatt a `POST /repos/.../pulls` végig
+  500-zal tért vissza, miközben az olvasás, a címkézés, a push és a merge
+  hibátlanul működött. Ilyenkor a munka NEM állhat meg: a feature-ágakat fel
+  kell pusholni (a foglalási zár így is él), a teljes tesztkészletet lokálisan
+  le kell futtatni ágankénti ellenőrzésként, és a main-be integrálás után a
+  CI a main-push-on úgyis lefut. Az ág maradjon a szerveren, hogy PR utólag
+  nyitható legyen rá. A tényt a merge-commit üzenetében rögzíteni kell.
+
 - **2026-07-23 (a #190-es golden-kit Windows-sagája): a felhasználó gépén futó
   eszköznek a VALÓDI Windows-környezetet kell tűrnie — három csapda, amit a
   Linux-CI SOSEM fog meg:**
