@@ -11,15 +11,13 @@ EXIF-orientációt, ezért a thumbnail már helyesen forgatott.
 from __future__ import annotations
 
 import hashlib
-import io
 import threading
 from pathlib import Path
 
 import cv2
 import numpy as np
-from PIL import Image, UnidentifiedImageError
 
-from picasapy.cvimage import read_image_bytes, scale_down
+from picasapy.cvimage import read_image_bytes, reduced_color_flag, scale_down
 from picasapy.ini.filters import FilterOp, serialize_filters
 from picasapy.ioutil import write_atomic
 from picasapy.render import apply_filters
@@ -35,15 +33,6 @@ _JPEG_QUALITY = 85
 # felnagyítana). A faktor 4: 25%-os vágás után a kimenet még pont a teljes
 # célméret; ennél erősebb vágásnál is jóval élesebb a naiv útnál.
 _EDIT_BASE_FACTOR = 4
-
-# Nagy forrásképnél redukált JPEG-dekódolás kíméli az RPi memóriáját;
-# a cél a thumbnail-méret legalább kétszerese, hogy az INTER_AREA
-# kicsinyítésnek maradjon mintavételi tartaléka.
-_REDUCED_FLAGS = (
-    (8, cv2.IMREAD_REDUCED_COLOR_8),
-    (4, cv2.IMREAD_REDUCED_COLOR_4),
-    (2, cv2.IMREAD_REDUCED_COLOR_2),
-)
 
 
 class ThumbnailCache:
@@ -170,23 +159,9 @@ class ThumbnailCache:
 
     def _read_flag(self, payload: np.ndarray, target: int | None = None) -> int:
         """Dekódolási flag a MÁR beolvasott bájtokból: nagy képre redukált
-        beolvasás (memóriakímélés). A PIL itt csak a fejlécet értelmezi,
-        a fájlt nem nyitja meg újra."""
-        goal = self._size if target is None else target
-        try:
-            with Image.open(io.BytesIO(payload)) as probe:
-                longest = max(probe.size)
-        except (
-            OSError,
-            UnidentifiedImageError,
-            ValueError,
-            Image.DecompressionBombError,
-        ):
-            return cv2.IMREAD_COLOR
-        for factor, flag in _REDUCED_FLAGS:
-            if longest // factor >= goal * 2:
-                return flag
-        return cv2.IMREAD_COLOR
+        beolvasás (memóriakímélés). A döntés a közös `picasapy.cvimage.
+        reduced_color_flag`-ben él (#294) — ugyanazt hívja a dedup dHash-e is."""
+        return reduced_color_flag(payload, self._size if target is None else target)
 
     @staticmethod
     def _write_atomic(target: Path, payload: bytes) -> None:

@@ -30,6 +30,29 @@ def checkerboard_jpeg(path, size=(64, 64), tile=8, quality=90):
     return path
 
 
+def photo_like_jpeg(path, size=(64, 64), quality=90):
+    """Fotószerű, ALACSONY frekvenciás mintázat (néhány lassú szinusz
+    összege, csatornánként eltolva) — ez az a tartomány, amit a dHash
+    ténylegesen megfog, és amin a redukált dekódolás stabil (#294).
+    A sakktáblával ellentétben nincs benne Nyquist fölötti részlet."""
+    width, height = size
+    xs = np.linspace(0, 1, width)[np.newaxis, :]
+    ys = np.linspace(0, 1, height)[:, np.newaxis]
+    channels = []
+    for phase in (0.0, 0.7, 1.4):
+        wave = (
+            np.sin(2 * np.pi * (xs + phase))
+            + np.sin(2 * np.pi * 1.5 * (ys + phase))
+            + np.sin(2 * np.pi * (xs + ys))
+        )
+        wave = np.broadcast_to(wave, (height, width))
+        normalized = (wave - wave.min()) / (wave.max() - wave.min())
+        channels.append((normalized * 255).astype(np.uint8))
+    rgb = np.stack(channels, axis=-1)
+    Image.fromarray(rgb, "RGB").save(path, "JPEG", quality=quality)
+    return path
+
+
 def resave_as_jpeg(source_path, target_path, size=None, quality=60):
     """Egy meglévő kép átméretezve és/vagy alacsonyabb minőséggel
     újratömörítve — a "hasonló, de nem bitre azonos" eset szimulálása."""

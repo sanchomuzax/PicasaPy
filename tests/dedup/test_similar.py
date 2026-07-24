@@ -1,6 +1,35 @@
 """Perceptuális-hasonlóság klaszterezés (Hamming-távolság + union-find)."""
 
+import random
+from pathlib import Path
+
+from picasapy.dedup.phash import hamming_distance
 from picasapy.dedup.similar import group_similar
+
+
+def _naive_groups(hashes, threshold):
+    """Referencia-implementáció: a #294 ELŐTTI, minden párt összevető
+    O(n²) klaszterezés — csak az útvonal-halmazokat adja vissza."""
+    ordered = sorted(hashes, key=lambda item: str(item[0]))
+    parent = list(range(len(ordered)))
+
+    def find(index):
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    for i in range(len(ordered)):
+        for j in range(i + 1, len(ordered)):
+            if hamming_distance(ordered[i][1], ordered[j][1]) <= threshold:
+                root_i, root_j = find(i), find(j)
+                if root_i != root_j:
+                    parent[root_i] = root_j
+
+    clusters = {}
+    for index in range(len(ordered)):
+        clusters.setdefault(find(index), []).append(ordered[index][0])
+    return {frozenset(members) for members in clusters.values() if len(members) >= 2}
 
 
 class TestGroupSimilar:
@@ -74,3 +103,86 @@ class TestGroupSimilar:
 
         assert forward == backward
         assert [group.paths[0].name for group in forward] == ["a.jpg", "c.jpg"]
+
+
+class TestBucketedCandidates:
+    """#294: az O(n²) páronkénti összevetés helyett sávos (banding)
+    jelöltszűrés — az eredménynek BITRE ugyanannak kell maradnia."""
+
+    def test_matches_the_naive_all_pairs_result_on_random_hashes(self):
+        rng = random.Random(20260724)
+        for threshold in (0, 3, 10, 20):
+            hashes = []
+            for i in range(120):
+                if i % 5 == 0 and hashes:
+                    # néhány közeli variáns, hogy legyenek valódi klaszterek
+                    base = hashes[-1][1]
+                    value = base ^ (1 << rng.randrange(64)) ^ (1 << rng.randrange(64))
+                else:
+                    value = rng.getrandbits(64)
+                hashes.append((Path(f"/kepek/{i:03d}.jpg"), value))
+            actual = {frozenset(group.paths) for group in group_similar(
+                hashes, threshold=threshold
+            )}
+            assert actual == _naive_groups(hashes, threshold), threshold
+
+    def test_no_false_negative_at_exactly_the_threshold(self):
+        """A sávos szűrés pigeonhole-elve: `küszöb+1` sávnál a küszöbnyi
+        eltérő bit nem eshet MINDEN sávba — pontosan a küszöbön lévő párt
+        is meg kell találnia."""
+        threshold = 10
+        base = 0xA5A5_5A5A_0F0F_F0F0
+        # 10 bit átbillentése, szándékosan szétszórva a 64 biten
+        flipped = base
+        for bit in range(0, 60, 6):  # 0, 6, ..., 54 → pontosan 10 bit
+            flipped ^= 1 << bit
+        assert hamming_distance(base, flipped) == threshold
+        hashes = [(Path("/kepek/a.jpg"), base), (Path("/kepek/b.jpg"), flipped)]
+
+        groups = group_similar(hashes, threshold=threshold)
+
+        assert len(groups) == 1
+        assert groups[0].max_distance == threshold
+
+    def test_compares_far_fewer_pairs_than_all_pairs(self, monkeypatch):
+        """A Hamming-összevetések száma töredéke a teljes n(n-1)/2-nek.
+        VÉLETLEN (maximálisan szórt) hash-eken ez a legrosszabb eset —
+        valódi könyvtárban a sávok ennél is jobban szűrnek, mert a
+        fényképek hash-ei nem egyenletesen töltik ki a 64 bites teret."""
+        import picasapy.dedup.similar as similar_module
+
+        rng = random.Random(4711)
+        hashes = [
+            (Path(f"/kepek/{i:04d}.jpg"), rng.getrandbits(64)) for i in range(400)
+        ]
+        calls = 0
+        real = similar_module.hamming_distance
+
+        def counting(a, b):
+            nonlocal calls
+            calls += 1
+            return real(a, b)
+
+        monkeypatch.setattr(similar_module, "hamming_distance", counting)
+        group_similar(hashes)
+
+        all_pairs = len(hashes) * (len(hashes) - 1) // 2
+        assert calls < all_pairs // 4
+
+    def test_huge_identical_cluster_does_not_blow_up(self):
+        """Sok ezer AZONOS lenyomatú kép (egyszínű/üres felvételek tömege)
+        a naiv úton n²/2 összevetés lenne — a réteg ezeket egyetlen
+        reprezentánsba olvasztja, a max-távolságot pedig korlátos
+        költséggel adja meg. A teszt ténye, hogy egyáltalán lefut."""
+        hashes = [(Path(f"/kepek/{i:05d}.jpg"), 0) for i in range(20_000)]
+        groups = group_similar(hashes)
+        assert len(groups) == 1
+        assert len(groups[0].paths) == 20_000
+        assert groups[0].max_distance == 0
+
+
+class TestCancellation:
+    def test_should_stop_aborts_and_reports_partial(self):
+        hashes = [(Path(f"/kepek/{i:04d}.jpg"), i) for i in range(500)]
+        groups = group_similar(hashes, should_stop=lambda: True)
+        assert groups == ()

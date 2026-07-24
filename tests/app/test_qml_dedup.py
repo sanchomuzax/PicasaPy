@@ -144,6 +144,89 @@ class TestScanResults:
         assert empty_text.property("visible") is True
 
 
+class TestScopeSelector:
+    """#294: a keresés alapból a szűk hatókörre fut, a teljes könyvtár
+    tudatos választás — figyelmeztetéssel."""
+
+    def test_default_scope_is_the_current_folder(self, qml_app, qt_app):
+        window, _controller, _lib, engine = qml_app
+        dialog = _open_and_wait_scan(window, qt_app, engine)
+        assert dialog.property("scopeIndex") == dialog.property("scopeFolder")
+
+    def test_scope_box_offers_three_scopes(self, qml_app, qt_app):
+        window, _controller, _lib, engine = qml_app
+        _open_and_wait_scan(window, qt_app, engine)
+        box = _child(window, "dedupScopeBox")
+        assert len(_to_py(box.property("model"))) == 3
+
+    def test_library_scope_shows_a_duration_warning(self, qml_app, qt_app):
+        window, _controller, _lib, engine = qml_app
+        dialog = _open_and_wait_scan(window, qt_app, engine)
+        warning = _child(window, "dedupScopeWarning")
+        assert warning.property("visible") is False
+
+        dialog.setProperty("scopeIndex", dialog.property("scopeLibrary"))
+        qt_app.processEvents()
+        assert warning.property("visible") is True
+
+    def test_folder_scope_only_scans_the_current_folder_tree(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """A könyvtárban lévő, de az aktuális mappán KÍVÜLI duplikátum-pár
+        nem kerülhet a találatok közé (ez a #294 hatókör-szűkítés lényege)."""
+        window, controller, lib, engine = qml_app
+        outside = tmp_path / "mashol"
+        outside.mkdir()
+        original = make_jpeg(outside / "x.jpg", size=(51, 27))
+        (outside / "y.jpg").write_bytes(original.read_bytes())
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, outside)
+
+        dialog = _open_and_wait_scan(window, qt_app, engine)
+
+        groups = _to_py(dialog.property("groups"))
+        found = {item["path"] for g in groups for item in g["items"]}
+        assert str(outside / "x.jpg") not in found
+
+
+class TestProgressAndCancel:
+    """#294: folyamatjelző és Mégse gomb — az ablak nem állhat némán."""
+
+    def test_progress_panel_is_hidden_when_idle(self, qml_app, qt_app):
+        window, _controller, _lib, engine = qml_app
+        _open_and_wait_scan(window, qt_app, engine)
+        assert _child(window, "dedupProgressPanel").property("visible") is False
+
+    def test_progress_bar_reflects_the_reported_ratio(self, qml_app, qt_app):
+        window, _controller, _lib, engine = qml_app
+        dialog = _open_and_wait_scan(window, qt_app, engine)
+        dialog.setProperty("scanning", True)
+        dialog.setProperty("progressTotal", 4)
+        dialog.setProperty("progressDone", 2)
+        qt_app.processEvents()
+
+        fill = _child(window, "dedupProgressBarFill")
+        assert fill.property("visible") is True
+        assert fill.property("width") > 0
+        assert _child(window, "dedupProgressPanel").property("visible") is True
+        dialog.setProperty("scanning", False)
+
+    def test_cancel_button_stops_the_scan(self, qml_app, qt_app):
+        window, _controller, _lib, engine = qml_app
+        dialog = _open_and_wait_scan(window, qt_app, engine)
+        dialog.setProperty("scanning", True)
+        qt_app.processEvents()
+
+        cancel = _child(window, "dedupCancelButton")
+        loop = _quit_on(_dedup_controller(engine).scanCancelled)
+        QMetaObject.invokeMethod(dialog, "scan", Qt.ConnectionType.DirectConnection)
+        QMetaObject.invokeMethod(cancel, "clicked", Qt.ConnectionType.DirectConnection)
+        loop.exec()
+        qt_app.processEvents()
+
+        assert dialog.property("scanning") is False
+
+
 class TestResolveGroup:
     def test_move_others_relocates_files_and_removes_group(
         self, qml_app, qt_app

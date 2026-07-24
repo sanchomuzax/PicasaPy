@@ -11,7 +11,7 @@ import hashlib
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from typing import Callable, Sequence
 
 _CHUNK_SIZE = 1 << 20  # 1 MiB — nagy fájloknál sem terheli túl a memóriát
 
@@ -42,8 +42,18 @@ def file_content_hash(path: Path) -> str | None:
     return digest.hexdigest()
 
 
-def group_exact_duplicates(paths: Sequence[Path]) -> tuple[ExactDuplicateGroup, ...]:
+def group_exact_duplicates(
+    paths: Sequence[Path],
+    progress: Callable[[int], object] | None = None,
+) -> tuple[ExactDuplicateGroup, ...]:
     """Bitre azonos fájlok csoportosítása.
+
+    `progress` (#294): a feldolgozott képek KUMULÁLT száma, képenként hívva;
+    igaz visszatérési érték megszakítás-kérés, ilyenkor a függvény üres
+    eredménnyel tér vissza (a részleges csoportosítás félrevezető lenne).
+    A méret-előszűrő miatt a hash-elés a képek töredékére fut le, a
+    haladás-jelzés viszont MINDEN képre lépked — a felhasználónak egyenletes
+    mozgás kell, nem a belső optimalizálás lenyomata.
 
     A bemeneti sorozatot NEM mutálja. Az eredmény determinisztikus sorrendű:
     a csoportok az első (rendezett) útvonaluk szerint következnek, a
@@ -58,13 +68,20 @@ def group_exact_duplicates(paths: Sequence[Path]) -> tuple[ExactDuplicateGroup, 
         by_size[size].append(path)
 
     by_hash: dict[str, list[Path]] = defaultdict(list)
+    done = 0
     for candidates in by_size.values():
         if len(candidates) < 2:
-            continue  # egyedi méret: bitre azonos párja nem lehet
+            done += len(candidates)  # egyedi méret: bitre azonos párja nem lehet
+            if progress is not None and progress(done):
+                return ()
+            continue
         for candidate in candidates:
             content_hash = file_content_hash(candidate)
             if content_hash is not None:
                 by_hash[content_hash].append(candidate)
+            done += 1
+            if progress is not None and progress(done):
+                return ()
 
     groups = [
         ExactDuplicateGroup(

@@ -51,6 +51,30 @@ def photos_in_folder(
     return _records(rows)
 
 
+def photos_under_folder(
+    conn: sqlite3.Connection, folder: str | Path
+) -> tuple[PhotoRecord, ...]:
+    """A mappa ÉS az összes almappája fotói (#294) — a duplikátum-kereső
+    „aktuális mappa (+almappák)" hatóköre.
+
+    Az illesztés a mappa saját sorára, illetve az elválasztóval kezdődő
+    részfájára megy: a `kepek/a` így NEM fogja meg a `kepek/alma` mappát.
+    A LIKE-mintában a `%` és `_` jokerek escape-elve vannak, hogy egy ilyen
+    karaktert tartalmazó mappanév se viselkedjen mintaként.
+    """
+    prefix = str(folder).rstrip("/\\")
+    escaped = (
+        prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    )
+    rows = conn.execute(
+        f"{_SELECT} WHERE f.path = ? "
+        "OR f.path LIKE ? ESCAPE '\\' OR f.path LIKE ? ESCAPE '\\' "
+        "ORDER BY f.path, p.name",
+        (prefix, f"{escaped}/%", f"{escaped}\\\\%"),
+    )
+    return _records(rows)
+
+
 def photo_by_id(conn: sqlite3.Connection, photo_id: int) -> PhotoRecord | None:
     """Egy fotó friss rekordja azonosító alapján (#141): a célzott
     index-UPDATE után ez adja vissza a rács-sor frissítéséhez szükséges

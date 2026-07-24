@@ -5,6 +5,7 @@ import pytest
 from picasapy.index import (
     open_index,
     photos_in_folder,
+    photos_under_folder,
     search_photos,
     search_suggestions,
     starred_photos,
@@ -37,6 +38,42 @@ class TestQueries:
 
     def test_unknown_folder_empty(self, conn, tmp_path):
         assert photos_in_folder(conn, tmp_path / "nincs") == ()
+
+    def test_photos_under_folder_includes_subfolders(self, conn, tmp_path):
+        # #294: a duplikátum-kereső hatóköre "mappa + almappák"
+        names = [p.name for p in photos_under_folder(conn, tmp_path / "kepek")]
+        assert names == ["alpha.jpg", "beta.jpg", "gamma.jpg"]
+
+    def test_photos_under_folder_leaf_is_just_that_folder(self, conn, tmp_path):
+        names = [
+            p.name for p in photos_under_folder(conn, tmp_path / "kepek" / "a")
+        ]
+        assert names == ["alpha.jpg", "beta.jpg"]
+
+    def test_photos_under_folder_unknown_is_empty(self, conn, tmp_path):
+        assert photos_under_folder(conn, tmp_path / "nincs") == ()
+
+    def test_photos_under_folder_does_not_match_name_prefix(self, conn, tmp_path):
+        """A "kepek/a" NEM foghatja meg a "kepek/alma" mappát — a
+        LIKE-előtag önmagában pont ezt a hibát követné el."""
+        root = tmp_path / "kepek"
+        (root / "alma").mkdir()
+        (root / "alma" / "delta.jpg").write_bytes(b"4")
+        sync_tree(conn, root)
+        names = [p.name for p in photos_under_folder(conn, root / "a")]
+        assert names == ["alpha.jpg", "beta.jpg"]
+
+    def test_photos_under_folder_escapes_like_wildcards(self, conn, tmp_path):
+        """Egy `%`-ot vagy `_`-t tartalmazó mappanév nem viselkedhet
+        jokerként (a `_` bármely karakterre illeszkedne)."""
+        root = tmp_path / "kepek"
+        (root / "a_b").mkdir()
+        (root / "a_b" / "epszilon.jpg").write_bytes(b"5")
+        (root / "axb").mkdir()
+        (root / "axb" / "zeta.jpg").write_bytes(b"6")
+        sync_tree(conn, root)
+        names = [p.name for p in photos_under_folder(conn, root / "a_b")]
+        assert names == ["epszilon.jpg"]
 
     def test_starred_across_folders(self, conn):
         assert [p.name for p in starred_photos(conn)] == ["alpha.jpg", "gamma.jpg"]
