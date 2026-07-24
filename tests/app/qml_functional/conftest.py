@@ -24,6 +24,44 @@ from picasapy.version import version_string
 from support.jpeg_factory import make_jpeg
 
 
+@pytest.fixture(autouse=True)
+def qml_warnings():
+    """#305: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler), és a
+    teszt VÉGÉN — a `qml_app` engine-lebontása UTÁN — hibát dob, ha
+    figyelmeztetés/hiba jelent meg (pl. „Cannot read property … of null").
+
+    `autouse=True`, ezért minden e könyvtárbeli teszthez automatikusan
+    társul, `qml_app`-ot használóhoz és nem-használóhoz egyaránt — nem kell
+    minden tesztfüggvény szignatúráját módosítani.
+
+    A fixture-sorrend a lényeg: mivel ez a fixture ELSŐKÉNT áll fel (a
+    pytest a szignatúrában/autouse-ban elsőként szereplőt előbb állítja
+    fel), a lebontása UTOLSÓKÉNT történik (LIFO) — vagyis a handler még
+    aktív, amikor a `qml_app` fixture a tesztek végén elvégzi az
+    `engine.deleteLater()` + `processEvents()` hívást, ami a null-őrök
+    nélkül a fenti figyelmeztetéseket generálná."""
+    from PySide6.QtCore import QtMsgType, qInstallMessageHandler
+
+    messages: list[str] = []
+
+    def _handler(msg_type, context, message):
+        if msg_type in (
+            QtMsgType.QtWarningMsg,
+            QtMsgType.QtCriticalMsg,
+            QtMsgType.QtFatalMsg,
+        ):
+            messages.append(message)
+
+    previous = qInstallMessageHandler(_handler)
+    yield messages
+    qInstallMessageHandler(previous)
+    assert not messages, (
+        "QML figyelmeztetés/hiba jelent meg a teszt során (#305) — "
+        "valószínűleg hiányzó null-őr egy `controller`-kötésben:\n"
+        + "\n".join(messages)
+    )
+
+
 @pytest.fixture
 def qml_app(qt_app, tmp_path):
     """Teljes app betöltve offscreen: (window, controller, engine)."""

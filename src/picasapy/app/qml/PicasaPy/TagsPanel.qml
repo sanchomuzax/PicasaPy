@@ -204,8 +204,12 @@ Rectangle {
             component QuickTagButton: PicasaButton {
                 id: quickTagButton
                 required property int slot
+                // #305: null-őr — a controller a QML-engine leépítésekor
+                // átmenetileg null lehet
                 readonly property string label:
-                    controller.quickTagButtons[quickTagButton.slot] || ""
+                    (controller
+                        ? controller.quickTagButtons[quickTagButton.slot]
+                        : "") || ""
                 objectName: "quickTagButton" + quickTagButton.slot
                 Layout.fillWidth: true
                 text: quickTagButton.label.length > 0

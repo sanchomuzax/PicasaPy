@@ -229,10 +229,17 @@ class TestViewerFolderBoundedNavigation:
         listában betöltve — ahogy a csillag-szűrő is összefésüli őket."""
         import picasapy.app.application as app_module
         from picasapy.app.controller import AppController
+        from picasapy.app.discovery_controller import DiscoveryController
         from picasapy.app.edit_controller import EditController
         from picasapy.app.edit_preview import EditPreviewProvider
+        from picasapy.app.faces_helper import FacesHelper
+        from picasapy.app.fileops_controller import FileOpsController
+        from picasapy.app.folder_tree_controller import FolderTreeController
+        from picasapy.app.import_source_controller import ImportSourceController
         from picasapy.app.thumbnail_provider import ThumbnailProvider
+        from picasapy.app.timeline_controller import TimelineController
         from picasapy.thumbs import ThumbnailCache
+        from picasapy.version import version_string
         from PySide6.QtCore import QSettings
         from PySide6.QtQml import QQmlApplicationEngine
 
@@ -268,6 +275,43 @@ class TestViewerFolderBoundedNavigation:
         engine.addImportPath(str(app_module._APP_DIR / "qml"))
         engine.rootContext().setContextProperty("controller", controller)
         engine.rootContext().setContextProperty("editController", edit_controller)
+        # #305: a Main.qml és a benne élő komponensek (MainToolbar,
+        # PicasaImportDialog, FileOpsDialogs, AboutDialog, TimelineView…)
+        # az application.py bekötésének megfelelően MINDIG várják ezeket a
+        # context property-ket — hiányukban nem null-t, hanem "X is not
+        # defined" ReferenceError-t dobnak. A fixture ezért a közös
+        # qml_app-hoz hasonlóan mindegyiket regisztrálja (a teszt maga csak
+        # a controller/editController-t használja, a többi csak a
+        # figyelmeztetés-mentességhez kell).
+        fileops_controller = FileOpsController()
+        app_module.wire_fileops(fileops_controller, controller)
+        engine.rootContext().setContextProperty(
+            "fileOpsController", fileops_controller
+        )
+        discovery_controller = DiscoveryController(
+            add_folder=controller.addWatchedFolder
+        )
+        engine.rootContext().setContextProperty(
+            "discoveryController", discovery_controller
+        )
+        folder_tree_controller = FolderTreeController()
+        engine.rootContext().setContextProperty(
+            "folderTreeController", folder_tree_controller
+        )
+        faces_helper = FacesHelper()
+        engine.rootContext().setContextProperty("facesHelper", faces_helper)
+        timeline_controller = TimelineController(db, provider)
+        controller.syncFinished.connect(timeline_controller.reload)
+        engine.rootContext().setContextProperty(
+            "timelineController", timeline_controller
+        )
+        import_source_controller = ImportSourceController(
+            provider, add_folder=controller.addWatchedFolder
+        )
+        engine.rootContext().setContextProperty(
+            "importSourceController", import_source_controller
+        )
+        engine.rootContext().setContextProperty("appVersion", version_string())
         engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
         assert engine.rootObjects(), "Main.qml betöltése sikertelen"
         window = engine.rootObjects()[0]

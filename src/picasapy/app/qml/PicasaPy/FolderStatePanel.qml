@@ -47,37 +47,52 @@ ColumnLayout {
 
         Repeater {
             model: panel.stateOptions
-            delegate: RowLayout {
+            // #305: a MouseArea korábban a RowLayout KÖZVETLEN (tehát
+            // layout-kezelt) gyermekeként `anchors.fill: parent`-et
+            // használt — ez a Qt Quick Layouts szerint definiálatlan
+            // viselkedés ("Detected anchors on an item that is managed
+            // by a layout") és figyelmeztetést dobott minden sorra. A
+            // delegate gyökere ezért egyszerű Item: a RowLayout csak a
+            // sor tartalmát rendezi, a MouseArea pedig ezen KÍVÜL, a
+            // gyökér-Item testvéreként fedi le a teljes sort.
+            delegate: Item {
+                id: optionRow
                 required property var modelData
-                objectName: "folderStateOption:" + modelData.state
+                objectName: "folderStateOption:" + optionRow.modelData.state
                 Layout.fillWidth: true
-                spacing: 6
+                implicitHeight: rowLayout.implicitHeight
 
-                Rectangle {
-                    width: 14; height: 14; radius: 7
-                    border.width: 1
-                    border.color: Theme.chromeBorder
-                    color: "#ffffff"
+                RowLayout {
+                    id: rowLayout
+                    anchors.fill: parent
+                    spacing: 6
+
                     Rectangle {
-                        anchors.centerIn: parent
-                        width: 8; height: 8; radius: 4
-                        color: Theme.selectionBlue
-                        visible: panel.manager !== undefined
-                                 && panel.manager !== null
-                                 && panel.manager.stateFor(panel.selectedPath)
-                                    === modelData.state
+                        width: 14; height: 14; radius: 7
+                        border.width: 1
+                        border.color: Theme.chromeBorder
+                        color: "#ffffff"
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 8; height: 8; radius: 4
+                            color: Theme.selectionBlue
+                            visible: panel.manager !== undefined
+                                     && panel.manager !== null
+                                     && panel.manager.stateFor(panel.selectedPath)
+                                        === optionRow.modelData.state
+                        }
                     }
-                }
-                Text {
-                    text: modelData.label
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
+                    Text {
+                        text: optionRow.modelData.label
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                    }
                 }
                 MouseArea {
                     anchors.fill: parent
                     onClicked: if (panel.manager)
                                    panel.manager.setState(
-                                       panel.selectedPath, modelData.state)
+                                       panel.selectedPath, optionRow.modelData.state)
                 }
             }
         }
@@ -102,7 +117,9 @@ ColumnLayout {
             anchors.fill: parent
             anchors.margins: 1
             clip: true
-            model: controller.watchedFolders
+            // #305: null-őr — a controller a QML-engine leépítésekor
+            // átmenetileg null lehet
+            model: controller ? controller.watchedFolders : []
             delegate: Rectangle {
                 required property string modelData
                 width: watchedList.width

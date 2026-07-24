@@ -17,8 +17,12 @@ ListView {
     // zöld ▸ a mappa-fejlécen: vetítés a csoport első képétől
     signal slideshowRequested(int startRow)
 
+    // #305: null-őr — a controller a QML-engine leépítésekor átmenetileg
+    // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
+    readonly property var ctl: controller
+
     clip: true
-    model: controller.feedGroups
+    model: grid.ctl ? grid.ctl.feedGroups : []
     spacing: 14
     cacheBuffer: 600
     // #85: kiegyenlített sor-elrendezés — az oszlopszám a
@@ -31,7 +35,7 @@ ListView {
     // cellán belüli térközbe megy.
     readonly property int nominalCellWidth: appWindow.thumbSize + 18
     readonly property int cellHeight: appWindow.thumbSize + 18
-        + (controller.thumbCaptionMode !== "none" ? 16 : 0)
+        + ((grid.ctl ? grid.ctl.thumbCaptionMode : "none") !== "none" ? 16 : 0)
     readonly property int columns:
         Math.max(1, Math.floor(width / nominalCellWidth))
     // #77-kompatibilis névalias — a navigáció-tesztek ezen
@@ -360,9 +364,10 @@ ListView {
             width: parent.width
             folderName: groupCol.modelData.name
             dateText: groupCol.modelData.dateText
-            description: (controller.descriptionRevision,
-                controller.folderDescriptionOf(
-                    groupCol.modelData.path))
+            description: grid.ctl
+                ? (grid.ctl.descriptionRevision,
+                   grid.ctl.folderDescriptionOf(groupCol.modelData.path))
+                : ""
             onDescriptionEdited: function(text) {
                 controller.setFolderDescriptionOf(
                     groupCol.modelData.path, text)
@@ -419,9 +424,12 @@ ListView {
                         * grid.cellHeight
                     // a photos.revision-nel együtt kötve:
                     // modell-frissüléskor újraértékelődik
-                    readonly property var info:
-                        (controller.photos.revision,
-                         controller.photos.itemAt(slot.row))
+                    // #305: null-őr — üres objektum, hogy a lenti
+                    // `slot.info.X || ...` kötések ne dőljenek el
+                    readonly property var info: grid.ctl
+                        ? (grid.ctl.photos.revision,
+                           grid.ctl.photos.itemAt(slot.row))
+                        : ({})
                     width: grid.cellWidth
                     height: grid.cellHeight
                     ThumbDelegate {
@@ -436,7 +444,7 @@ ListView {
                         isHidden: slot.info.hidden === true
                         keywords: slot.info.keywords || ""
                         resolution: slot.info.resolution || ""
-                        captionMode: controller.thumbCaptionMode
+                        captionMode: grid.ctl ? grid.ctl.thumbCaptionMode : "none"
                         // #85/#83: a megjelenő kép a névleges
                         // méretre plafonozott, a kiegyenlítés
                         // többlete a térközbe megy.
