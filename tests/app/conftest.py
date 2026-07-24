@@ -25,6 +25,7 @@ def qml_app(qt_app, tmp_path):
     a közöset használják."""
     import picasapy.app.application as app_module
     from picasapy.app.controller import AppController
+    from picasapy.app.dedup_controller import DedupController
     from picasapy.app.discovery_controller import DiscoveryController
     from picasapy.app.drop_import_controller import DropImportController
     from picasapy.app.edit_controller import EditController
@@ -63,6 +64,8 @@ def qml_app(qt_app, tmp_path):
         add_folder=controller.addWatchedFolder
     )
     folder_tree_controller = FolderTreeController()
+    # Duplikátum-kezelő (#287) — az application.py bekötésének tükre
+    dedup_controller = DedupController(db, provider)
     faces_helper = FacesHelper()
     # Időrend nézet (#24) — az application.py bekötésének tükre: a
     # thumbnail-provider a controllerrel KÖZÖS példány
@@ -86,6 +89,7 @@ def qml_app(qt_app, tmp_path):
     engine.rootContext().setContextProperty(
         "folderTreeController", folder_tree_controller
     )
+    engine.rootContext().setContextProperty("dedupController", dedup_controller)
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
     engine.rootContext().setContextProperty(
         "timelineController", timeline_controller

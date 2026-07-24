@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.58] – 2026-07-24
+
+### Hozzáadva
+- **Duplikátum-kezelő UI (#287):** kezelő-felület a `picasapy.dedup` mag fölé —
+  az Eszközök → „Find Duplicates…" pontból indítható. A pontos és hasonló
+  csoportok bélyegképes listája; csoportonként a megtartandó kép választható,
+  a többi **nem-destruktív alapértelmezéssel** a forrásmappa „Duplikátumok"
+  almappájába helyezhető át, vagy a Kukába törölhető.
+
 ## [0.4.57] – 2026-07-24
 
 ### Hozzáadva

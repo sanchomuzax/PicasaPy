@@ -14,6 +14,8 @@ MenuBar {
     signal selectAllRequested()
     signal clearSelectionRequested()
     signal folderManagerRequested()
+    // #287: Duplikátum-kereső ablak megnyitása
+    signal dedupRequested()
     signal renameRequested()
     signal exportRequested()
     signal locateRequested()
@@ -269,6 +271,12 @@ MenuBar {
             onTriggered: bar.folderManagerRequested()
         }
         MenuItem { text: qsTr("People Manager..."); enabled: false }
+        MenuSeparator {}
+        MenuItem {
+            objectName: "menuToolsDedup"
+            text: qsTr("Find Duplicates...")
+            onTriggered: bar.dedupRequested()
+        }
         MenuSeparator {}
         MenuItem { text: qsTr("Back Up Pictures..."); enabled: false }
         MenuItem { text: qsTr("Adjust Date and Time..."); enabled: false }

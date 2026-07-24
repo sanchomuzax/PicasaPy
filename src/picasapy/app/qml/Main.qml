@@ -265,6 +265,7 @@ ApplicationWindow {
         onSelectAllRequested: window.selectAll()
         onClearSelectionRequested: window.clearSelection()
         onFolderManagerRequested: folderManager.open()
+        onDedupRequested: dedupDialog.open()
         onRenameRequested: fileOpsDialogs.openRename(window.selectedIndex)
         onExportRequested: exportDialogs.openForSelection()
         onLocateRequested: {
@@ -298,6 +299,8 @@ ApplicationWindow {
     }
 
     FolderManagerDialog { id: folderManager }
+    // Duplikátum-kezelő (#287): Eszközök → "Find Duplicates..."
+    DedupDialog { id: dedupDialog }
     // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő
     // gombjából (discoveryController.dialogRequested) vagy induláskori
     // automatikus felajánlásból (integrátori bekötés: picasaImportDialog.openAndDiscover())
