@@ -21,6 +21,15 @@ nem ért véget, és a párbeszédablak közben némán állt. Négy dolog vált
    csak az új/megváltozott képeket dekódolja.
 4. A dHash maga redukált JPEG-dekódolással készül (`dedup/phash.py`).
 
+#298 — BÉLYEGKÉP-REGISZTRÁCIÓ. A vezérlő korábban `register_photos`-t
+hívott, ami LECSERÉLTE a provider teljes regisztrációját: ha a dedup
+eredménye nem esett egybe a fő rács tartalmával, a rács `image://thumbs/<id>`
+URL-jei feloldhatatlanná váltak (szürke placeholder-cellák). Helyette az
+`register_additional_photos`/`unregister_additional_photos` páros megy,
+SAJÁT (negatív) id-tartománnyal — az Import-forrás ág (`import_source_
+controller.py`) mintájára —, és a dialógus bezárásakor (`releaseThumbnails`)
+vagy új keresés indításakor a bejegyzések eltűnnek.
+
 A csoportokat (és minden elemüket) QML-nek MINDIG listaként (dict-ek
 listája) adjuk át, SOHA Python tuple-ként — a tuple QML-ben nem tömb, a
 `.length` undefined lenne (ld. MEMORY.md tanulság).
@@ -32,6 +41,7 @@ alkönyvtárába kerül (`moveOthersToDuplicatesFolder`). A Kukába törlés
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 import threading
 from pathlib import Path
@@ -55,6 +65,13 @@ from .formatting import to_local_path
 # A nem-destruktív áthelyezés célmappájának neve, forrásmappánként —
 # létrehozva, ha még nincs (ld. `_move_one`).
 DUPLICATES_SUBFOLDER_NAME = "Duplikátumok"
+
+# #298: a dedup-előnézetek SAJÁT id-tartománya a thumbnail-providerben.
+# A valódi indexbeli fotók id-je mindig pozitív; az Import-forrás előnézete
+# a -1-től lefelé tartó sávot használja (`import_source_controller.py`),
+# ezért a dedup ennél jóval lejjebb kezd — a két dialógus így egyszerre is
+# nyitva lehet anélkül, hogy egymás bejegyzéseit felülírnák.
+DEDUP_THUMB_ID_BASE = -1_000_000
 
 # Ennyi frissen kiszámolt lenyomat után írunk az indexbe. A köteges mentés
 # egyrészt olcsóbb, másrészt a megszakított keresés munkája sem vész el:
@@ -80,7 +97,7 @@ def _thumb_url(photo_id: int | None) -> str:
 def _group_dict(
     kind: str,
     paths: tuple[Path, ...],
-    by_path: dict[str, PhotoRecord],
+    thumb_ids: dict[str, int],
     max_distance: int | None,
 ) -> dict:
     """Egy duplikátum-csoport QML-barát alakja: sima `dict`, a tagok is
@@ -88,9 +105,7 @@ def _group_dict(
     items = [
         {
             "path": str(path),
-            "thumbUrl": _thumb_url(
-                by_path[str(path)].id if str(path) in by_path else None
-            ),
+            "thumbUrl": _thumb_url(thumb_ids.get(str(path))),
         }
         for path in paths
     ]
@@ -103,19 +118,29 @@ def _group_dict(
     }
 
 
-def _build_groups(report, by_path: dict[str, PhotoRecord]) -> list[dict]:
+def _build_groups(report, thumb_ids: dict[str, int]) -> list[dict]:
     """A `DuplicateReport` (exact + similar csoportok) egyetlen, QML-nek
     adható listává lapítva — előbb a pontos, aztán a hasonló csoportok."""
     groups = [
-        _group_dict("exact", group.paths, by_path, None)
+        _group_dict("exact", group.paths, thumb_ids, None)
         for group in report.exact_groups
     ]
     groups += [
-        _group_dict("similar", group.paths, by_path, group.max_distance)
+        _group_dict("similar", group.paths, thumb_ids, group.max_distance)
         for group in report.similar_groups
     ]
     return groups
 
+
+def _grouped_paths(report) -> list[str]:
+    """A találatokban ténylegesen szereplő útvonalak (sorrendtartóan,
+    ismétlés nélkül) — csak ezekhez kell bélyegképet regisztrálni, nem a
+    teljes átvizsgált halmazhoz."""
+    seen: dict[str, None] = {}
+    for group in (*report.exact_groups, *report.similar_groups):
+        for path in group.paths:
+            seen.setdefault(str(path), None)
+    return list(seen)
 
 
 class DedupController(QObject):
@@ -134,14 +159,16 @@ class DedupController(QObject):
 
     def __init__(self, db_path: Path, provider) -> None:
         """`provider`: a `ThumbnailProvider` (vagy teszthez `None`) — a
-        keresés eredményét ITT regisztráljuk nála (`register_photos`),
-        hogy a csoportok `thumbUrl`-jei ténylegesen feloldhatók legyenek,
-        függetlenül attól, hogy a fő rács éppen mit mutat."""
+        találatokat ITT regisztráljuk nála (`register_additional_photos`,
+        #298), hogy a csoportok `thumbUrl`-jei feloldhatók legyenek
+        anélkül, hogy a fő rács regisztrációja sérülne."""
         super().__init__()
         self._db_path = Path(db_path)
         self._provider = provider
         # a futó keresés megszakító-jelzője (None: nincs futó keresés)
         self._stop_event: threading.Event | None = None
+        # a providernél jelenleg regisztrált dedup-bejegyzések id-jei
+        self._registered_ids: tuple[str, ...] = ()
 
     # -- keresés ----------------------------------------------------------
 
@@ -193,6 +220,16 @@ class DedupController(QObject):
         if self._stop_event is not None:
             self._stop_event.set()
 
+    @Slot()
+    def releaseThumbnails(self) -> None:
+        """A dedup-bélyegképek elengedése a providerből (#298) — a QML a
+        dialógus bezárásakor hívja. A fő rács regisztrációját nem érinti."""
+        if self._provider is None:
+            self._registered_ids = ()
+            return
+        self._provider.unregister_additional_photos(self._registered_ids)
+        self._registered_ids = ()
+
     def _start(self, select_photos) -> None:
         """A keresés elindítása HÁTTÉRSZÁLON. `select_photos`: a hatókört
         megvalósító lekérdezés (nyitott kapcsolatot kap)."""
@@ -226,13 +263,8 @@ class DedupController(QObject):
         if report.cancelled:
             self.scanCancelled.emit()
             return
-        by_path = {_photo_path(photo): photo for photo in photos}
-        # a csoportokban szereplő fotókat a thumbnail-providernél is
-        # regisztráljuk, hogy az `image://thumbs/<id>` URL-ek a dialógus
-        # megnyitásakor ténylegesen feloldhatók legyenek.
-        if self._provider is not None:
-            self._provider.register_photos(photos)
-        self.scanFinished.emit(_build_groups(report, by_path))
+        thumb_ids = self._register_thumbnails(report, photos)
+        self.scanFinished.emit(_build_groups(report, thumb_ids))
 
     def _find(self, conn, photos: tuple[PhotoRecord, ...], stop_event):
         """A tényleges keresés gyorsítótárazott lenyomatokkal.
@@ -282,6 +314,26 @@ class DedupController(QObject):
         a visszatérési érték a mag megszakítás-szerződése (#216)."""
         self.scanProgress.emit(phase, done, total)
         return stop_event.is_set()
+
+    def _register_thumbnails(self, report, photos) -> dict[str, int]:
+        """A találatok bélyegképeinek regisztrálása a providernél SAJÁT
+        (negatív) id-tartományban (#298), a korábbi dedup-bejegyzések
+        egyidejű elengedésével. Visszaadja az útvonal → dedup-id térképet,
+        amiből a `thumbUrl`-ek készülnek."""
+        by_path = {_photo_path(photo): photo for photo in photos}
+        paths = [path for path in _grouped_paths(report) if path in by_path]
+        thumb_ids = {
+            path: DEDUP_THUMB_ID_BASE - index for index, path in enumerate(paths)
+        }
+        if self._provider is None:
+            return {}
+        records = tuple(
+            dataclasses.replace(by_path[path], id=thumb_ids[path]) for path in paths
+        )
+        self._provider.unregister_additional_photos(self._registered_ids)
+        self._provider.register_additional_photos(records)
+        self._registered_ids = tuple(str(record.id) for record in records)
+        return thumb_ids
 
     # -- csoport feloldása ------------------------------------------------
 

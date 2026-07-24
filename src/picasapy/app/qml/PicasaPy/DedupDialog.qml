@@ -22,6 +22,10 @@ import QtQuick.Layouts
 //     Mégse gomb, amely bármikor tisztán leállítja a keresést.
 // A jelzések a worker-szálról jönnek — a Qt queued kézbesítéssel sorolja
 // őket a GUI-szálra, ahogy a scanFinished-et is.
+//
+// #298 — az ablak bezárásakor a dedup-bélyegképek regisztrációja elengedésre
+// kerül (releaseThumbnails), a fő rács regisztrációjának érintetlenül
+// hagyásával.
 Window {
     id: dedupWindow
     objectName: "dedupDialog"
@@ -112,6 +116,23 @@ Window {
 
     function cancelScan() {
         dedupController.cancelScan()
+    }
+
+    // #298: bezáráskor a dedup-bélyegképek elengedése (a fő rács
+    // regisztrációja érintetlen marad), és a találatok eldobása — a
+    // következő megnyitás friss keresést indít, így soha nem maradnak
+    // "halott" image://thumbs/<id> URL-ek a listában.
+    function releaseAndReset() {
+        dedupController.cancelScan()
+        dedupController.releaseThumbnails()
+        dedupWindow.scanning = false
+        dedupWindow.groups = []
+        dedupWindow.keepByGroup = ({})
+    }
+
+    onVisibleChanged: {
+        if (!dedupWindow.visible)
+            dedupWindow.releaseAndReset()
     }
 
     // a haladás emberi szövege — a controller csak technikai fázis-tokent ad

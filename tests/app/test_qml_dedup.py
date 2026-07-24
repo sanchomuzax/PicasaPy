@@ -227,6 +227,56 @@ class TestProgressAndCancel:
         assert dialog.property("scanning") is False
 
 
+class TestCloseReleasesThumbnails:
+    """#298: a bezárás elengedi a dedup-bélyegképeket, a fő rács
+    regisztrációját viszont nem bántja."""
+
+    def test_main_grid_registration_survives_the_open_close_cycle(
+        self, qml_app, qt_app
+    ):
+        window, controller, lib, engine = qml_app
+        provider = controller._provider
+        grid_ids = [str(photo.id) for photo in controller.photos.photos]
+        assert grid_ids
+
+        dialog = _open_and_wait_scan(window, qt_app, engine)
+        close_button = _child(window, "dedupCloseButton")
+        QMetaObject.invokeMethod(
+            close_button, "clicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        assert dialog.property("visible") is False
+        for photo_id in grid_ids:
+            assert provider._registry.get(photo_id) is not None
+
+    def test_closing_drops_the_dedup_entries(self, qml_app, qt_app):
+        from picasapy.app.dedup_controller import DEDUP_THUMB_ID_BASE
+
+        window, controller, lib, engine = qml_app
+        original = make_jpeg(lib / "eredeti.jpg", size=(40, 20))
+        (lib / "masolat.jpg").write_bytes(original.read_bytes())
+        with open_index(controller._db_path) as conn:
+            sync_tree(conn, lib)
+        provider = controller._provider
+
+        dialog = _open_and_wait_scan(window, qt_app, engine)
+        registered = [
+            key
+            for key in provider._registry
+            if int(key) <= DEDUP_THUMB_ID_BASE
+        ]
+        assert registered, "a dedup nem regisztrált saját bélyegképeket"
+
+        dialog.setProperty("visible", False)
+        qt_app.processEvents()
+
+        assert not [
+            key for key in provider._registry if int(key) <= DEDUP_THUMB_ID_BASE
+        ]
+        assert _to_py(dialog.property("groups")) == []
+
+
 class TestResolveGroup:
     def test_move_others_relocates_files_and_removes_group(
         self, qml_app, qt_app
