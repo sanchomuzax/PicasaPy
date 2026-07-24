@@ -24,6 +24,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.folder_tree_controller import FolderTreeController
+    from picasapy.app.import_source_controller import ImportSourceController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.app.timeline_controller import TimelineController
     from picasapy.thumbs import ThumbnailCache
@@ -77,6 +78,13 @@ def qml_app(qt_app, tmp_path):
     controller.syncFinished.connect(timeline_controller.reload)
     engine.rootContext().setContextProperty(
         "timelineController", timeline_controller
+    )
+    # Import forrásból (#23) — az application.py bekötésének tükre
+    import_source_controller = ImportSourceController(
+        provider, add_folder=controller.addWatchedFolder
+    )
+    engine.rootContext().setContextProperty(
+        "importSourceController", import_source_controller
     )
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))

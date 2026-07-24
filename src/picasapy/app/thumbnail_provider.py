@@ -189,6 +189,28 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         olcsó marad."""
         self._registry = {str(photo.id): photo for photo in photos}
 
+    def register_additional_photos(self, photos: tuple[PhotoRecord, ...]) -> None:
+        """#23: fotók hozzáadása a MEGLÉVŐ regisztráció mellé (nem cseréli
+        le, ellentétben a `register_photos`-szal) — az Import forrásból
+        előnézete így nem takarja el a fő könyvtár épp regisztrált
+        bélyegképeit, amíg az Import-dialógus nyitva van. A hívó felelőssége
+        (ld. `import_source_controller.py`) ütközésmentes, saját id-
+        tartományt használni (pl. negatív id-k), hogy sose írjon felül
+        valódi könyvtárbeli fotót."""
+        extra = {str(photo.id): photo for photo in photos}
+        self._registry = {**self._registry, **extra}
+
+    def unregister_additional_photos(self, ids: tuple[str, ...]) -> None:
+        """A `register_additional_photos`-szal felvett bejegyzések
+        eltávolítása (pl. új szkennelés előtt vagy a dialógus zárásakor) —
+        a valódi könyvtár bejegyzéseit nem érinti."""
+        if not ids:
+            return
+        excluded = set(ids)
+        self._registry = {
+            key: value for key, value in self._registry.items() if key not in excluded
+        }
+
     def _resolved_ops(self, photo: PhotoRecord) -> tuple[tuple, int]:
         """A kép (ops, crc32) párja lusta parse-szal (#142) — az azonos
         filters= láncú képek osztoznak az eredményen. Szál-biztos: a pool

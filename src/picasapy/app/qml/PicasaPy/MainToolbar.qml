@@ -17,6 +17,8 @@ Rectangle {
     signal searchEdited(string text)
     // a törlő × gomb: a mező már üres, a nézet álljon vissza
     signal searchCleared()
+    // #23: az "Import" gomb — a megnyitást a Main.qml végzi (ImportSourceDialog)
+    signal importRequested()
 
     function clearSearch() {
         searchField.clear()
@@ -32,10 +34,12 @@ Rectangle {
         anchors.leftMargin: 8; anchors.rightMargin: 8
         spacing: 10
         PicasaButton {
+            objectName: "toolbarImportButton"
             text: qsTr("Import")
-            enabled: false
+            enabled: true
             Layout.preferredWidth: 100
             Layout.preferredHeight: 24
+            onClicked: toolbar.importRequested()
         }
         Item { Layout.fillWidth: true }
         Column {
