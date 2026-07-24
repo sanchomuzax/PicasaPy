@@ -11,6 +11,10 @@ Rectangle {
     color: "#808080"
 
     property var photosModel: null
+    // #305: null-őr — az editController a QML-engine leépítésekor
+    // átmenetileg null lehet, miközben a lenti kötések utoljára
+    // kiértékelődnek.
+    readonly property var editCtl: editController
     property int currentIndex: -1
     // a ListView.count reaktív — a rowCount() hívást a QML nem követné
     property int photoCount: filmstrip.count
@@ -400,22 +404,23 @@ Rectangle {
                                  ? photo.paintedWidth / photo.paintedHeight
                                  : 4 / 3
                     // Visszavonás/Újra — a controller undo-verméből (#59)
-                    undoAvailable: editController.canUndo
-                    undoLabel: editController.canUndo
+                    // #305: null-őr
+                    undoAvailable: viewer.editCtl ? viewer.editCtl.canUndo : false
+                    undoLabel: viewer.editCtl && viewer.editCtl.canUndo
                                ? qsTr("Undo") + ": "
-                                 + viewer.toolLabel(editController.undoAction)
+                                 + viewer.toolLabel(viewer.editCtl.undoAction)
                                : qsTr("Undo")
-                    redoAvailable: editController.canRedo
-                    redoLabel: editController.canRedo
+                    redoAvailable: viewer.editCtl ? viewer.editCtl.canRedo : false
+                    redoLabel: viewer.editCtl && viewer.editCtl.canRedo
                                ? qsTr("Redo") + ": "
-                                 + viewer.toolLabel(editController.redoAction)
+                                 + viewer.toolLabel(viewer.editCtl.redoAction)
                                : qsTr("Redo")
                     // Finomhangolás (#20): a mentett értékek a kontrollerből —
                     // a syncFinetuneSliders() ezekből tölti a csúszkákat
-                    fillLight: editController.fillLight
-                    highlights: editController.highlights
-                    shadows: editController.shadows
-                    colorTemp: editController.colorTemp
+                    fillLight: viewer.editCtl ? viewer.editCtl.fillLight : 0
+                    highlights: viewer.editCtl ? viewer.editCtl.highlights : 0
+                    shadows: viewer.editCtl ? viewer.editCtl.shadows : 0
+                    colorTemp: viewer.editCtl ? viewer.editCtl.colorTemp : 0
                     onFinetunePreview: (f, h, s, t) => editController.previewFinetune(f, h, s, t)
                     onFinetuneCommit: (f, h, s, t) => editController.setFinetune(f, h, s, t)
                     onEffectRequested: (name) => editController.applyEffect(name)
@@ -497,8 +502,10 @@ Rectangle {
                     anchors.left: parent.left; anchors.right: parent.right
                     anchors.margins: 10
                     height: 150
-                    histogramData: editController.histogram
-                    cameraSummary: editController.cameraSummary
+                    // #305: null-őr
+                    histogramData: viewer.editCtl
+                        ? viewer.editCtl.histogram : ({ r: [], g: [], b: [] })
+                    cameraSummary: viewer.editCtl ? viewer.editCtl.cameraSummary : ""
                 }
             }
 
@@ -558,9 +565,10 @@ Rectangle {
                         // nyitott szerkesztésnél a filters= láncot alkalmazó
                         // editpreview provider rendereli a képet (?rev=
                         // cache-buster minden módosításnál)
+                        // #305: null-őr
                         source: viewer.isCurrentVideo ? ""
-                                : (editController.previewSource !== ""
-                                   ? editController.previewSource
+                                : (viewer.editCtl && viewer.editCtl.previewSource !== ""
+                                   ? viewer.editCtl.previewSource
                                    : viewer.urlAt(viewer.currentIndex))
                         fillMode: Image.PreserveAspectFit
                         // #53: offscreen (teszt) platformon szinkron betöltés —

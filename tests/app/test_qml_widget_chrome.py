@@ -8,7 +8,6 @@ komponenshez, ezért tulajdonság-szintű ellenőrzés (ld. feladatleírás).
 """
 
 import pytest
-from PySide6.QtCore import QObject
 from PySide6.QtQuick import QQuickItem
 
 

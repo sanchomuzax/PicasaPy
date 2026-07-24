@@ -5,6 +5,10 @@ import QtQuick.Controls
 // A még nem implementált pontok szürkék — a szerkezet a dizájn része.
 MenuBar {
     id: bar
+    // #305: null-őr a `controller` kötésekhez — a QML-engine leépítésekor
+    // a context property átmenetileg null lehet, miközben a `checked:`
+    // kötések utoljára kiértékelődnek.
+    readonly property var ctl: controller
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
     property bool photoActionsEnabled: false
     signal rescanRequested()
@@ -151,7 +155,7 @@ MenuBar {
             objectName: "menuViewHidden"
             text: qsTr("Hidden Pictures")
             checkable: true
-            checked: controller.showHidden
+            checked: bar.ctl ? bar.ctl.showHidden : false
             onTriggered: controller.toggleShowHidden()
         }
         Menu {
@@ -159,32 +163,32 @@ MenuBar {
             MenuItem {
                 text: qsTr("Sort by creation date")
                 checkable: true
-                checked: controller.folderSort === "date"
+                checked: bar.ctl && bar.ctl.folderSort === "date"
                 onTriggered: controller.setFolderSort("date")
             }
             MenuItem {
                 text: qsTr("Sort by recent changes")
                 checkable: true
-                checked: controller.folderSort === "changed"
+                checked: bar.ctl && bar.ctl.folderSort === "changed"
                 onTriggered: controller.setFolderSort("changed")
             }
             MenuItem {
                 text: qsTr("Sort by size")
                 checkable: true
-                checked: controller.folderSort === "size"
+                checked: bar.ctl && bar.ctl.folderSort === "size"
                 onTriggered: controller.setFolderSort("size")
             }
             MenuItem {
                 text: qsTr("Sort by name")
                 checkable: true
-                checked: controller.folderSort === "name"
+                checked: bar.ctl && bar.ctl.folderSort === "name"
                 onTriggered: controller.setFolderSort("name")
             }
             MenuSeparator {}
             MenuItem {
                 text: qsTr("Reverse sort")
                 checkable: true
-                checked: controller.folderSortReverse
+                checked: bar.ctl ? bar.ctl.folderSortReverse : false
                 onTriggered: controller.toggleFolderSortReverse()
             }
         }
@@ -193,31 +197,31 @@ MenuBar {
             MenuItem {
                 text: qsTr("None")
                 checkable: true
-                checked: controller.thumbCaptionMode === "none"
+                checked: bar.ctl && bar.ctl.thumbCaptionMode === "none"
                 onTriggered: controller.setThumbCaptionMode("none")
             }
             MenuItem {
                 text: qsTr("Filename")
                 checkable: true
-                checked: controller.thumbCaptionMode === "filename"
+                checked: bar.ctl && bar.ctl.thumbCaptionMode === "filename"
                 onTriggered: controller.setThumbCaptionMode("filename")
             }
             MenuItem {
                 text: qsTr("Caption")
                 checkable: true
-                checked: controller.thumbCaptionMode === "caption"
+                checked: bar.ctl && bar.ctl.thumbCaptionMode === "caption"
                 onTriggered: controller.setThumbCaptionMode("caption")
             }
             MenuItem {
                 text: qsTr("Tags")
                 checkable: true
-                checked: controller.thumbCaptionMode === "tags"
+                checked: bar.ctl && bar.ctl.thumbCaptionMode === "tags"
                 onTriggered: controller.setThumbCaptionMode("tags")
             }
             MenuItem {
                 text: qsTr("Resolution")
                 checkable: true
-                checked: controller.thumbCaptionMode === "resolution"
+                checked: bar.ctl && bar.ctl.thumbCaptionMode === "resolution"
                 onTriggered: controller.setThumbCaptionMode("resolution")
             }
         }
@@ -294,7 +298,7 @@ MenuBar {
             objectName: "menuHelpPerfMonitor"
             text: qsTr("Performance Monitor")
             checkable: true
-            checked: controller.perfMonitorEnabled
+            checked: bar.ctl ? bar.ctl.perfMonitorEnabled : false
             onTriggered: controller.togglePerfMonitor()
         }
         MenuItem {

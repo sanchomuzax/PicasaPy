@@ -67,7 +67,9 @@ class ExportMixin:
             if report.failed:
                 details = [
                     f"{path.name}: {reason}"
-                    for path, reason in zip(report.failed, report.reasons)
+                    # strict=True: az ExportReport.reasons a failed-del
+                    # mindig azonos hosszú (ld. export/exporter.py docstring).
+                    for path, reason in zip(report.failed, report.reasons, strict=True)
                 ][: self._EXPORT_FAILED_DETAILS_LIMIT]
                 self.exportFailedDetails.emit(details)
             self.exportFinished.emit(len(report.exported), len(report.failed))

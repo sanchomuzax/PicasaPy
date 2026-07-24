@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml"><img src="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License: GPL-3.0"></a>
-  <img src="https://img.shields.io/badge/version-0.4.63-orange.svg" alt="Version 0.4.63">
+  <img src="https://img.shields.io/badge/version-0.4.65-orange.svg" alt="Version 0.4.65">
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+">
 </p>
 
@@ -23,24 +23,47 @@ A PicasaPy a **Google Picasa** fotókezelő és -szerkesztő program nyílt forr
 
 ## Fő képességek
 
-A projekt jelenlegi (MVP, 1. fázis) állapotában a következők működnek:
+A fejlesztés túllépett az 1. fázis (kezelő + néző) MVP-jén, és mélyen a 2.
+fázisban (szerkesztő) jár. A ténylegesen kész funkciók fázisonként:
 
-- **`.picasa.ini` byte-egzakt round-trip parser** — amit a PicasaPy nem ismer fel egy `.picasa.ini` fájlban, azt változtatás nélkül visszaírja.
+**Kezelő + néző (1. fázis)**
+
+- **`.picasa.ini` byte-egzakt round-trip parser** — amit a PicasaPy nem ismer fel egy `.picasa.ini` fájlban, azt változtatás nélkül visszaírja. Ide tartozik a virtuális albumok (`[.album:…]` szekciók) round-trip olvasása/megőrzése is — böngésző UI-juk még nincs.
 - **Mappa-bejárás (scanner)** a támogatott képformátumokra, watched-folders kezeléssel.
 - **SQLite + FTS5 alapú index** a gyors kereséshez és szűréshez.
 - **EXIF/IPTC metaadat-olvasás**, valamint **IPTC felirat (caption) írás** JPEG fájlokba.
 - **Miniatűr-gyorsítótár (thumbnail cache)** OpenCV-vel.
 - **PySide6/QML fő ablak**, Picasa-hű dizájnnal (rács nézet, csillagsáv, tálca).
 - **Magyar lokalizáció.**
-- **Egyképes néző (viewer)** léptetéssel.
+- **Egyképes néző (viewer)** léptetéssel, valamint **Időrend nézet** (év/hónap szerinti csoportosítás, Ctrl+5).
 - **Csillagozás, nem-destruktív forgatás, felirat-szerkesztés.**
 - **Többes kijelölés, szűrés, keresés.**
+- **Import forrásból** (kártya/mappa beolvasása, dátum-alapú mappa-sablon, másolás vagy áthelyezés).
+- **Meglévő Picasa-telepítés átvétele** (Wine-os/NAS-ra másolt `WatchedFolders.txt` felismerése és path-remap-elt átvétele).
+- **Export** célmappába (forgatás és `filters=` lánc beégetésével, EXIF/IPTC-megőrzéssel).
+- **XMP-export** sidecar fájlba (digiKam/Lightroom-kompatibilis).
+- **Duplikátum-kezelő** (egzakt és hasonlósági keresés, nem-destruktív feloldás).
 
-Amit **még nem** tud: szerkesztő eszközök (2. fázis), arcfelismerés (3. fázis), PMP/db3 import (tervezett, de még nem implementált).
+**Szerkesztő (2. fázis)**
+
+- **Nem-destruktív szerkesztő munkamenet** (Visszaállítás, undo) a `.picasa.ini` `filters=` láncára építve.
+- **20+ szűrő/effekt** (pl. autolight, autocolor, fill, finetune, unsharp, grain, vignette, glow, tint, sepia, bw, radblur/radsat, irányított tónusozás) — a teljes lista a render-motor kapcsolótáblájában (`src/picasapy/render/chain.py`).
+- **Vágás (crop) átfedő eszközzel**, hisztogram, effekt-vágólap (másolás/beillesztés több képre).
+- **PMP/db3 olvasó réteg** (PMP-oszlopok, thumbindex, deferredregion, path-remap) — tesztelt, de a tényleges *indexbe* import még nyitott (#1).
+
+Amit **még nem** tud:
+
+- **Arcfelismerés** (#26) — a `.picasa.ini`-ben már meglévő arc-régiók (`faces=`) megjelennek a nézőben, de saját felismerést/`contacts.xml`-generálást a PicasaPy még nem végez.
+- **A Picasa teljes effekt-készlete** (#190) — néhány ritkábban használt effekt dekódolása még nyitott.
+- **Retusálás és szöveg** (#148) a szerkesztőben.
+- **PMP/db3-import az indexbe** (#1) — az olvasó réteg kész, a tényleges import még nem.
+- **Geotag-térkép nézet** (#30).
+- **Kollázs/film készítés** (#29).
+- **Sötét téma** (#28) — az app egyelőre mindig világos.
 
 ## Állapot
 
-⚠️ **Korai fejlesztési fázisban** van (verzió: `0.4.63`), messze az 1.0-tól. Az aktuális cél az **MVP 1. fázis**: kezelő (böngészés, rendezés, csillagozás, szűrés) + néző. A formátum-kompatibilitás és az alapvető könyvtárkezelés már működik, de az API és a fájlformátum-részletek még változhatnak.
+⚠️ **Korai fejlesztési fázisban** van (verzió: `0.4.65`), messze az 1.0-tól. A projekt túl van az 1. fázis (kezelő + néző) MVP-jén, és mélyen a **2. fázisban** (nem-destruktív szerkesztő) jár. A formátum-kompatibilitás és az alapvető könyvtárkezelés stabil, de az API és a fájlformátum-részletek még változhatnak.
 
 ## Hogyan készült?
 
@@ -94,18 +117,30 @@ Windows-os támogatás **kísérleti** — a fejlesztés Linuxon (RPi5) folyik, 
 
 ## Tesztek futtatása
 
-Linuxon:
+A teljes tesztkészlet **egyetlen** `pytest`-processzben futtatva Qt/GIL-
+deadlockba ragadhat (#53, #155) — ezért a darabolt `scripts/run_tests.py`
+az elsődleges út: a nem-Qt teszteket egy processzben, a `tests/app` alatti
+QML-teszteket pedig fájlonként, külön processzben, kemény timeouttal
+futtatja, így egy beragadó fájl sem viszi el az egész futást.
+
+Linuxon és Windowson (PowerShell) egyaránt:
 
 ```bash
 pip install pytest pytest-cov
-python3 -m pytest
+python scripts/run_tests.py
 ```
 
-Windowson (PowerShell):
+Lefedettség-összesítővel (#300):
 
-```powershell
-pip install pytest pytest-cov
-python -m pytest
+```bash
+python scripts/run_tests.py --cov
+```
+
+Gyors, célzott ellenőrzéshez (nem a végső, teljes futás helyett) a nem-Qt
+tesztek közvetlenül, egy processzben is futtathatók:
+
+```bash
+python3 -m pytest tests --ignore=tests/app -q
 ```
 
 Megjegyzések Windowshoz:
@@ -151,13 +186,19 @@ A tesztkészlet Linuxon és Windowson is fut (CI: `ubuntu-latest` +
 - `src/picasapy/index/` — SQLite + FTS5 index, sémakezelés, szinkronizáció.
 - `src/picasapy/metadata/` — EXIF/IPTC olvasás és IPTC felirat-írás.
 - `src/picasapy/thumbs/` — miniatűr-gyorsítótár OpenCV-vel.
+- `src/picasapy/edit/` — nem-destruktív szerkesztő munkamenet (session, mentés, Visszaállítás).
+- `src/picasapy/render/` — a `filters=` lánc szűrőinek/effektjeinek render-motorja.
+- `src/picasapy/export/` — export célmappába és XMP sidecar-export.
+- `src/picasapy/dedup/` — duplikátum-kereső (egzakt és hasonlósági).
+- `src/picasapy/pmpimport/` — PMP/db3 olvasó réteg (a tényleges indexbe-import nyitott, #1).
 - `src/picasapy/app/` — PySide6/QML alkalmazás (kontroller, modellek, QML nézetek, lokalizáció).
 
 ## Kompatibilitás
 
-- **`.picasa.ini`**: csillag, forgatás, felirat és szűrők (filters mátrix) round-trip olvasása és írása, Picasa 3.x formátumban.
+- **`.picasa.ini`**: csillag, forgatás, felirat, szűrők (filters mátrix) és virtuális albumok round-trip olvasása és írása, Picasa 3.x formátumban.
 - **IPTC felirat**: JPEG fájlokba beírt IPTC caption mező kezelése.
-- **PMP/db3**: import a Picasa saját adatbázisából — **tervezett**, jelenleg még nincs implementálva.
+- **XMP**: fotónkénti sidecar-export (digiKam/Lightroom-kompatibilis).
+- **PMP/db3**: az olvasó réteg (PMP-oszlopok, thumbindex, deferredregion, path-remap) kész és tesztelt; a tényleges *indexbe* import még nyitott (#1).
 
 ## Verziózás
 

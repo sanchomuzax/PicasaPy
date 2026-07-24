@@ -32,7 +32,20 @@ készült. Betartása kötelező — a cél, hogy a **main mindig zöld** legyen
 - Fejlesztési elvek: **TDD** (bukó teszt előbb), magyar kommentek/
   docstringek, immutabilitás, fájlok 800 sor alatt. QML-viselkedéshez
   funkcionális teszt kötelező (`tests/app/test_qml_functional.py` minta).
-- Push előtt: `python3 -m pytest -q` — TELJES zöld, különben nincs push.
+- Push előtt: `python scripts/run_tests.py` — TELJES zöld, különben nincs
+  push. **NE** a sima `python3 -m pytest`-tel — a teljes készlet egy
+  processzben Qt/GIL-deadlockba ragadhat (#53, #155), ezért létezik a
+  darabolt futtató szkript. Gyors, célzott ellenőrzéshez (nem a végső
+  push előtt) a nem-Qt tesztek egy processzben is futtathatók:
+  `python3 -m pytest tests --ignore=tests/app -q`.
+- Lint: `ruff check src/ tests/` (a szabálykészlet a `pyproject.toml`
+  `[tool.ruff]`/`[tool.ruff.lint]` szekciójában). A CI-ben külön `lint`
+  job futtatja.
+- Lefedettség (#300): `python scripts/run_tests.py --cov` — a darabolt
+  futtatás minden részfutását `coverage run -p` alá teszi, a végén
+  `coverage combine` + `coverage report` összesíti. Tájékoztató jellegű,
+  küszöb (`--fail-under`) egyelőre nincs bekötve. A CI az ubuntu-lábon
+  futtatja ezzel a kapcsolóval.
 
 ## Forró fájlok — csak az integrátor session módosíthatja
 

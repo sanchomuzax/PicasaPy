@@ -57,15 +57,19 @@ Rectangle {
                 // szűrő-kapcsolók (kézikönyv 09): ★ ☺ ⚲ ▤ + csúszka;
                 // a bekapcsolt szűrő tónusa jelölő kék
                 Rectangle {
+                    // #305: null-őr — a controller a QML-engine
+                    // leépítésekor átmenetileg null lehet
+                    readonly property bool ctlFilterActive:
+                        controller ? controller.filterActive : false
                     width: 22; height: 20; radius: 2
-                    color: controller.filterActive ? "#ffffff" : "transparent"
-                    border.width: controller.filterActive ? 1 : 0
+                    color: ctlFilterActive ? "#ffffff" : "transparent"
+                    border.width: ctlFilterActive ? 1 : 0
                     border.color: Theme.selectionBlue
                     Text {
                         anchors.centerIn: parent
                         text: "★"
                         font.pixelSize: 13
-                        color: controller.filterActive
+                        color: parent.ctlFilterActive
                                ? Theme.selectionBlue
                                : (starFilter.hovered ? Theme.starYellow : "#8f8b83")
                     }
