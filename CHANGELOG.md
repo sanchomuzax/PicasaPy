@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.65] – 2026-07-24
+
+### Javítva
+- **QML null-őrök (#305):** a `controller` context property a QML-engine
+  leépítésekor `null` lesz, miközben a kötések még egyszer kiértékelődnek —
+  ez tucatnyi `Cannot read property … of null` figyelmeztetést szült a
+  tesztek kimenetében, ami elnyomta a valódi QML-hibákat (a #232-es
+  hisztogram-saga tanulsága szerint épp azok bújnak meg ott). Az érintett
+  kötések null-őrt kaptak, értelmes alapértékkel — rendes futás közben a
+  viselkedés változatlan.
+
+### Hozzáadva
+- **QML-figyelmeztetés-őr a tesztekben (#305):** a `qml_functional`
+  conftest autouse fixture-je `qInstallMessageHandler`-rel figyeli a
+  Qt/QML üzeneteket, és hibára futtatja a tesztet, ha bármilyen
+  figyelmeztetés megjelent — így a jelenség nem tud visszaszivárogni.
+
 ## [0.4.64] – 2026-07-24
 
 ### Változott
