@@ -124,7 +124,9 @@ ApplicationWindow {
     property var _pendingSelectedIds: []
     property string _pendingAnchorId: ""
     Connections {
-        target: controller.photos
+        // #305: engine-leépítéskor a `controller` context property null
+        // lehet, miközben ez a kötés újra kiértékelődik — null-őr kell.
+        target: controller ? controller.photos : null
         function onModelAboutToBeReset() {
             var ids = []
             for (var k = 0; k < window.selectedIndexes.length; ++k) {
@@ -157,6 +159,9 @@ ApplicationWindow {
     // gombjainak őre (a controller-slotok defenzíven szintén kihagyják
     // a videókat, vegyes kijelölésnél csak a fotók forognak)
     function rotateTargetsAllVideo() {
+        // #305: null-őr — a TrayBar `enabled:` kötése (ami ezt hívja)
+        // a QML-engine leépítésekor is újraértékelődhet
+        if (!controller) return false
         var rows = window.viewerOpen
             ? [photoViewer.currentIndex]
             : window.selectedRows()
@@ -284,7 +289,8 @@ ApplicationWindow {
         // #152: „Copy/Paste All Effects" — a kijelölésre hat, a rács
         // sorindexein keresztül (window.selectedRows() a meglévő mintát
         // követi, ld. toggleHiddenSelection)
-        hasEffectsClipboard: controller.hasEffectsClipboard
+        // #305: null-őr — ld. fenti Connections
+        hasEffectsClipboard: controller ? controller.hasEffectsClipboard : false
         onCopyEffectsRequested: controller.copyEffects(window.selectedRows())
         onPasteEffectsRequested: controller.pasteEffects(window.selectedRows())
     }
@@ -369,7 +375,8 @@ ApplicationWindow {
         objectName: "slideshowView"
         anchors.fill: parent
         z: 100
-        photosModel: controller.photos
+        // #305: null-őr
+        photosModel: controller ? controller.photos : null
         onClosed: window.exitSlideshow()
         onStarToggled: function(index) { controller.toggleStar(index) }
         onRotateRequested: function(index, delta) {
@@ -383,7 +390,8 @@ ApplicationWindow {
         objectName: "photoViewer"
         anchors.fill: parent
         visible: window.viewerOpen
-        photosModel: controller.photos
+        // #305: null-őr
+        photosModel: controller ? controller.photos : null
         onPlayRequested: window.startSlideshow(currentIndex)
         onClosed: {
             window.viewerOpen = false
@@ -414,7 +422,9 @@ ApplicationWindow {
         objectName: "timelineView"
         anchors.fill: parent
         visible: window.timelineOpen
-        periodsModel: timelineController.periods
+        // #305: null-őr — a timelineController is null lehet átmenetileg
+        // a QML-engine leépítésekor
+        periodsModel: timelineController ? timelineController.periods : []
         onClosed: window.timelineOpen = false
         onPhotoChosen: function(photoId, folderPath) {
             window.timelineOpen = false
@@ -436,12 +446,15 @@ ApplicationWindow {
             objectName: "folderPane"
             SplitView.preferredWidth: 230
             SplitView.minimumWidth: 160
-            foldersModel: controller.folders
-            selectedPath: controller.currentFolder
-            starredActive: controller.filterActive
-            searchActive: controller.searchActive
-            searchQuery: controller.searchQuery
-            searchResultCount: controller.searchResultCount
+            // #305: null-őr — a controller a QML-engine leépítésekor
+            // átmenetileg null lehet, amikor ezek a kötések utoljára
+            // kiértékelődnek
+            foldersModel: controller ? controller.folders : null
+            selectedPath: controller ? controller.currentFolder : ""
+            starredActive: controller ? controller.filterActive : false
+            searchActive: controller ? controller.searchActive : false
+            searchQuery: controller ? controller.searchQuery : ""
+            searchResultCount: controller ? controller.searchResultCount : 0
             onFolderChosen: function(path) {
                 window.clearSelection()
                 if (toolbar.searchText.trim().length > 0) {
@@ -472,7 +485,8 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 26
-                    visible: controller.filterActive
+                    // #305: null-őr
+                    visible: controller ? controller.filterActive : false
                     color: "#5aa865"
                     RowLayout {
                         anchors.fill: parent
@@ -494,7 +508,8 @@ ApplicationWindow {
                             TapHandler { onTapped: controller.clearFilter() }
                         }
                         Text {
-                            text: controller.filterStatusText
+                            // #305: null-őr
+                            text: controller ? controller.filterStatusText : ""
                             color: "white"
                             font.pixelSize: Theme.fontSize
                             font.bold: true
@@ -523,7 +538,8 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             // kereséskor a #7-es csoportosított nézet fut
-                            visible: !controller.searchActive
+                            // #305: null-őr
+                            visible: controller ? !controller.searchActive : true
                             appWindow: window
                             onOpenRequested: function(row) {
                                 window.viewerOpen = true
@@ -544,8 +560,9 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
-                            visible: controller.searchActive
-                            model: controller.searchGroups
+                            // #305: null-őr
+                            visible: controller ? controller.searchActive : false
+                            model: controller ? controller.searchGroups : []
                             spacing: 0
 
                             delegate: ColumnLayout {
@@ -573,8 +590,9 @@ ApplicationWindow {
                                     cellWidth: columns > 0
                                         ? Math.floor(width / columns)
                                         : nominalCellWidth
+                                    // #305: null-őr
                                     cellHeight: window.thumbSize + 18
-                                        + (controller.thumbCaptionMode !== "none"
+                                        + ((controller ? controller.thumbCaptionMode : "none") !== "none"
                                            ? 16 : 0)
                                     height: Math.ceil(
                                         groupDelegate.modelData.photos.length
@@ -600,7 +618,8 @@ ApplicationWindow {
                                         index: modelData.row
                                         keywords: modelData.keywords
                                         resolution: modelData.resolution
-                                        captionMode: controller.thumbCaptionMode
+                                        // #305: null-őr
+                                        captionMode: controller ? controller.thumbCaptionMode : "none"
                                         // #142: set-alapú lookup
                                         selected: window.selectedSet[
                                             modelData.row] === true
@@ -633,8 +652,11 @@ ApplicationWindow {
             SplitView.minimumWidth: 150
             hasSelection: window.selectedRows().length > 0
             // a photos.revision-nel együtt kötve: címke-írás után frissül
-            tags: (controller.photos.revision,
+            // #305: null-őr
+            tags: controller
+                ? (controller.photos.revision,
                    controller.keywordsOfRows(window.selectedRows()))
+                : []
             onAddRequested: function(keyword) {
                 controller.addKeywordToRows(window.selectedRows(), keyword)
             }
@@ -653,8 +675,11 @@ ApplicationWindow {
             SplitView.minimumWidth: 160
             hasSelection: window.selectedIndex >= 0
             // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
-            entries: (controller.photos.revision,
-                      controller.propertiesOf(window.selectedIndex))
+            // #305: null-őr
+            entries: controller
+                ? (controller.photos.revision,
+                   controller.propertiesOf(window.selectedIndex))
+                : []
             onCloseRequested: window.propertiesPanelOpen = false
         }
     }
@@ -666,11 +691,12 @@ ApplicationWindow {
         id: importPanel
         objectName: "importProgressPanel"
         z: 90
-        visible: controller.importPanelVisible
-        folderName: controller.importFolderName
-        doneCount: controller.importDoneCount
-        totalCount: controller.importTotalCount
-        newCount: controller.importNewCount
+        // #305: null-őr
+        visible: controller ? controller.importPanelVisible : false
+        folderName: controller ? controller.importFolderName : ""
+        doneCount: controller ? controller.importDoneCount : 0
+        totalCount: controller ? controller.importTotalCount : 0
+        newCount: controller ? controller.importNewCount : 0
         onCloseRequested: controller.dismissImportPanel()
         // induló hely: jobb felül, a kereső alatt; húzáskor a DragHandler
         // felülírja a kötést — a panel ott marad, ahova a felhasználó tette
@@ -684,10 +710,11 @@ ApplicationWindow {
         id: perfPanel
         objectName: "perfMonitorPanel"
         z: 90
-        visible: controller.perfMonitorEnabled
-        cpuPercent: controller.perfCpuPercent
-        rssMb: controller.perfRssMb
-        topActivity: controller.perfTopActivity
+        // #305: null-őr
+        visible: controller ? controller.perfMonitorEnabled : false
+        cpuPercent: controller ? controller.perfCpuPercent : 0
+        rssMb: controller ? controller.perfRssMb : 0
+        topActivity: controller ? controller.perfTopActivity : ""
         onCloseRequested: controller.setPerfMonitorEnabled(false)
         onSaveRequested: perfPanel.lastSavedPath = controller.saveDiagnostics()
         x: 24
@@ -719,9 +746,12 @@ ApplicationWindow {
         id: photoContextMenu
         // #17: pipa, ha a jobbklikkelt kép rejtett (photos.revision-nel
         // együtt kötve, hogy a menü újranyitáskor friss legyen)
-        hideChecked: (controller.photos.revision,
-                      (controller.photos.itemAt(window.fileOpTargetRow)
-                           .hidden === true))
+        // #305: null-őr
+        hideChecked: controller
+            ? (controller.photos.revision,
+               (controller.photos.itemAt(window.fileOpTargetRow)
+                    .hidden === true))
+            : false
         onHideToggleRequested: window.toggleHiddenSelection()
         onRenameRequested: fileOpsDialogs.openRename(window.fileOpTargetRow)
         onMoveRequested: fileOpsDialogs.openMove(window.selectedPaths())

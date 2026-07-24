@@ -70,7 +70,9 @@ Window {
     function stateFor(path) {
         if (!path) return "none"
         if (folderManagerWindow.onceScanned[path] === true) return "once"
-        if (controller.watchedFolders.indexOf(path) !== -1) return "always"
+        // #305: null-őr — a `selectedState` kötés (fentebb) a QML-engine
+        // leépítésekor is újraértékelődhet, amikor a `controller` már null
+        if (controller && controller.watchedFolders.indexOf(path) !== -1) return "always"
         return "none"
     }
 

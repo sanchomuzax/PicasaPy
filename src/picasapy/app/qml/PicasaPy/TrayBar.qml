@@ -19,6 +19,10 @@ Column {
     // a forgatás/csillag célsora — a Main rotateTargetRow()-ja is ezt kéri
     readonly property int starTargetRow: trayStar.targetRow
 
+    // #305: null-őr — a controller a QML-engine leépítésekor átmenetileg
+    // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
+    readonly property var ctl: controller
+
     // tömör acélkék infó-sáv; kijelöléskor a kép adatai
     Rectangle {
         id: infoBar
@@ -34,7 +38,7 @@ Column {
         Rectangle {
             id: busySweep
             objectName: "busySweep"
-            visible: controller.isWorking
+            visible: tray.ctl ? tray.ctl.isWorking : false
             width: Math.max(80, infoBar.width / 5)
             height: infoBar.height
             gradient: Gradient {
@@ -53,11 +57,11 @@ Column {
         }
         Text {
             anchors.centerIn: parent
-            text: tray.appWindow.viewerOpen
-                  ? controller.viewerInfo(tray.viewerIndex)
+            text: !tray.ctl ? "" : (tray.appWindow.viewerOpen
+                  ? tray.ctl.viewerInfo(tray.viewerIndex)
                   : (tray.appWindow.selectedIndexes.length === 1
-                     ? controller.photoInfo(tray.appWindow.selectedIndex)
-                     : controller.statusText)
+                     ? tray.ctl.photoInfo(tray.appWindow.selectedIndex)
+                     : tray.ctl.statusText))
             color: Theme.infoBarText
             font.pixelSize: Theme.fontSize
             font.bold: true
@@ -89,8 +93,9 @@ Column {
                         delegate: Image {
                             required property var modelData
                             width: 20; height: 20
-                            source: controller.photos.thumbUrlAt(
-                                Number(modelData))
+                            source: tray.ctl
+                                ? tray.ctl.photos.thumbUrlAt(Number(modelData))
+                                : ""
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: true
                         }
@@ -127,8 +132,10 @@ Column {
                     verticalAlignment: Text.AlignVCenter
                     // arany, ha a kiválasztott kép csillagos; egyébként
                     // világos kontúr-csillag (Picasa-minta, nem fekete!)
-                    color: (controller.photos.revision,
-                            controller.photos.starAt(trayStar.targetRow))
+                    color: (tray.ctl
+                            ? (tray.ctl.photos.revision,
+                               tray.ctl.photos.starAt(trayStar.targetRow))
+                            : false)
                            ? Theme.starYellow : "#ffffff"
                     style: Text.Outline
                     styleColor: "#9a9a9a"
@@ -139,7 +146,7 @@ Column {
                 text: "↺"
                 // #103: csak-videó kijelölésnél tiltva (photos.revision:
                 // modell-frissüléskor újraértékelt kötés)
-                enabled: (controller.photos.revision,
+                enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
                           (tray.appWindow.viewerOpen
                            || tray.appWindow.selectedIndex >= 0)
                           && !tray.appWindow.rotateTargetsAllVideo())
@@ -152,7 +159,7 @@ Column {
             PicasaButton {
                 objectName: "trayRotateRight"
                 text: "↻"
-                enabled: (controller.photos.revision,
+                enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
                           (tray.appWindow.viewerOpen
                            || tray.appWindow.selectedIndex >= 0)
                           && !tray.appWindow.rotateTargetsAllVideo())
