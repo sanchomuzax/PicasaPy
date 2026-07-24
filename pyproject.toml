@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "picasapy"
-version = "0.4.63"
+version = "0.4.64"
 description = "Modern, open, cross-platform successor to Google Picasa"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
@@ -54,3 +54,28 @@ source = ["src/picasapy"]
 
 [tool.coverage.report]
 show_missing = true
+
+# #300: linter-konfiguráció. A cél a `ruff check src/ tests/` zöld futása,
+# a meglévő stílushoz igazított, szűk szabálykészlettel — nem egy tömeges
+# átstilizálás.
+[tool.ruff]
+# A projekt sok magyar nyelvű docstringje/kommentje 88 karakternél hosszabb,
+# de a teljes forrásfában csak ~10 sor haladja meg a 100-at — 100 tehát jól
+# illeszkedik a meglévő stílushoz. Az E501 (line-too-long) MOST NINCS
+# bekapcsolva (ld. lent), így ez a beállítás egyelőre csak a `ruff format`
+# esetleges jövőbeli bevezetését készíti elő, a `ruff check`-et nem érinti.
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E4/E7/E9 + F: a ruff hivatalos alap-készlete (import-hiba, statement-hiba,
+# futásidejű/szintaxis-hiba, pyflakes). B: flake8-bugbear — ez adta a #300
+# jegy megfigyelését (7 találat a src/ alatt), és valódi hibaosztályokat fog
+# ki (kötetlen ciklusváltozó zárványban, megosztott mutable default stb.).
+#
+# Szándékosan NEM kapcsoltuk be a PL* (pylint) családot: a PLR2004 (magic
+# value comparison) önmagában több száz találatot adna elsősorban a
+# tesztekben (konkrét pixel-/szín-/koordináta-értékek összehasonlítása) —
+# ezt a jegy kifejezetten tiltja, és egy lint-bevezető jegybe amúgy sem
+# fér bele egy ekkora, a kódminőséget érdemben nem javító változtatás-hullám.
+select = ["E4", "E7", "E9", "F", "B"]

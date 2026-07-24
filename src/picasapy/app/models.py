@@ -23,6 +23,12 @@ from picasapy.index import PhotoRecord
 _PATH_SEPARATORS = re.compile(r"[/\\]")
 _YEAR_PREFIX = re.compile(r"^(\d{4})")
 
+# A `rowCount(parent=QModelIndex())` Qt-felülírás szokásos alapértéke — mivel
+# a QModelIndex() érvénytelen (gyökér-) index, egyetlen, modul-szintű
+# példányra hivatkozunk paraméter-alapértékként a B008 (function-call a
+# default argumentumban) elkerülésére, viselkedésváltozás nélkül.
+_ROOT_INDEX = QModelIndex()
+
 
 class FolderListModel(QAbstractListModel):
     """Mappa-lista évszám-elválasztó sorokkal (Picasa-minta).
@@ -102,7 +108,7 @@ class FolderListModel(QAbstractListModel):
         self.endResetModel()
         self.folderCountChanged.emit()
 
-    def rowCount(self, parent=QModelIndex()) -> int:
+    def rowCount(self, parent=_ROOT_INDEX) -> int:
         return 0 if parent.isValid() else len(self._rows)
 
     @Property(int, notify=folderCountChanged)
@@ -450,7 +456,7 @@ class PhotoGridModel(QAbstractListModel):
             return prev_start + min(last_grid_row * cols + col, prev_count - 1)
         return row
 
-    def rowCount(self, parent=QModelIndex()) -> int:
+    def rowCount(self, parent=_ROOT_INDEX) -> int:
         return 0 if parent.isValid() else len(self._photos)
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):

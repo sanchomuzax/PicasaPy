@@ -20,7 +20,14 @@ hagyva a futásból. A megoldás: a fájl felbontása több kisebb fájlra a
 `tests/app/qml_functional/` alatt, amelyeket ez a szkript KÜLÖN-KÜLÖN
 processzben futtat — processzenként lényegesen kevesebb az
 engine-életciklus, ezért a Windows-kizárás megszűnt, minden fájl minden
-platformon lefut."""
+platformon lefut.
+
+#300: opcionális `--cov` kapcsoló a lefedettség méréséhez. Mivel minden
+részfutás külön processz, a `pytest-cov` sima `--cov` kapcsolója önmagában
+nem összesítene — helyette minden részfutás `coverage run -p` alá kerül
+(ez processzenként egyedi nevű `.coverage.*` adatfájlt ír), a végén pedig
+egy `coverage combine` + `coverage report` fésüli össze és írja ki az
+eredményt. A `--cov` NÉLKÜLI viselkedés változatlan."""
 
 from __future__ import annotations
 
@@ -33,10 +40,13 @@ _NON_APP_TIMEOUT_S = 300
 _APP_FILE_TIMEOUT_S = 180
 
 
-def _run_pytest(args: list[str], timeout_s: int) -> int:
-    """Egy pytest-részfutás saját processzben; timeoutnál 124-gyel tér vissza."""
-    command = [
-        sys.executable,
+def _run_pytest(args: list[str], timeout_s: int, *, cov: bool) -> int:
+    """Egy pytest-részfutás saját processzben; timeoutnál 124-gyel tér vissza.
+
+    cov=True esetén a pytest a `coverage run -p` alá fut (ld. a modul
+    docstringjét) — a `--cov` nélküli híváshoz képest ez az egyetlen
+    különbség, a pytest-argumentumok változatlanok."""
+    pytest_args = [
         "-m",
         "pytest",
         "-q",
@@ -45,6 +55,10 @@ def _run_pytest(args: list[str], timeout_s: int) -> int:
         "no:cacheprovider",
         *args,
     ]
+    if cov:
+        command = [sys.executable, "-m", "coverage", "run", "-p", *pytest_args]
+    else:
+        command = [sys.executable, *pytest_args]
     print(f"$ {' '.join(command)}", flush=True)
     try:
         return subprocess.run(command, cwd=_ROOT, timeout=timeout_s).returncode
@@ -53,10 +67,34 @@ def _run_pytest(args: list[str], timeout_s: int) -> int:
         return 124
 
 
-def main() -> int:
+def _report_coverage() -> None:
+    """A darabolt `coverage run -p` adatfájljainak összefésülése és a
+    lefedettségi összesítő kiírása. Tájékoztató jellegű (#300): küszöb
+    (`--fail-under`) egyelőre nincs bekötve, ez külön döntés."""
+    print("\n$ coverage combine", flush=True)
+    subprocess.run(
+        [sys.executable, "-m", "coverage", "combine"], cwd=_ROOT, check=False
+    )
+    print("$ coverage report", flush=True)
+    subprocess.run(
+        [sys.executable, "-m", "coverage", "report"], cwd=_ROOT, check=False
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    cov = "--cov" in argv
+
+    if cov:
+        # tiszta lap: egy korábbi (pl. megszakadt) --cov futásból maradt
+        # .coverage.* adatfájlok ne keveredjenek a mostani mérésbe.
+        subprocess.run(
+            [sys.executable, "-m", "coverage", "erase"], cwd=_ROOT, check=False
+        )
+
     failures: list[tuple[str, int]] = []
 
-    returncode = _run_pytest(["tests", "--ignore=tests/app"], _NON_APP_TIMEOUT_S)
+    returncode = _run_pytest(["tests", "--ignore=tests/app"], _NON_APP_TIMEOUT_S, cov=cov)
     if returncode != 0:
         failures.append(("tests (tests/app nélkül)", returncode))
 
@@ -70,14 +108,17 @@ def main() -> int:
     )
     for test_file in app_test_files:
         relative = test_file.relative_to(_ROOT)
-        returncode = _run_pytest([str(relative)], _APP_FILE_TIMEOUT_S)
+        returncode = _run_pytest([str(relative)], _APP_FILE_TIMEOUT_S, cov=cov)
         if returncode == 124:
             # alkalmi beragadás (#53): egyszeri újrapróbálás friss
             # processzben — a tartósan beragadó fájl így is kibukik
             print(f"ÚJRAPRÓBÁLÁS (timeout után): {relative}", flush=True)
-            returncode = _run_pytest([str(relative)], _APP_FILE_TIMEOUT_S)
+            returncode = _run_pytest([str(relative)], _APP_FILE_TIMEOUT_S, cov=cov)
         if returncode != 0:
             failures.append((str(relative), returncode))
+
+    if cov:
+        _report_coverage()
 
     if failures:
         print("\nHIBÁS RÉSZFUTÁSOK:", flush=True)

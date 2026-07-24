@@ -91,7 +91,14 @@ class EffectsClipboardMixin:
                 # (nem hozzáfűzi), így az újrajátszás nem duplikál.
                 entries: list[tuple[str, str, str | None, str | None]] = []
 
-                def mutate(document, folder=folder, folder_photos=folder_photos):
+                # B023: az `entries` alapértelmezett argumentumként kötve
+                # (ugyanaz a minta, mint a `folder`/`folder_photos` esetén) —
+                # a mutate szinkron fut a ciklus adott körén belül, így a
+                # következő iteráció újrakötése előtt már lefutott, de a
+                # linter ezt statikusan nem látja.
+                def mutate(
+                    document, folder=folder, folder_photos=folder_photos, entries=entries
+                ):
                     fresh: list[tuple[str, str, str | None, str | None]] = []
                     for photo in folder_photos:
                         section = document.section(photo.name)

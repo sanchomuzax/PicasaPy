@@ -1,7 +1,5 @@
 """#59: a rács-bélyegkép a szerkesztett (filters= láncos) képet mutatja."""
 
-from pathlib import Path
-
 from picasapy.edit.session import EditSession
 from picasapy.index import open_index, photos_in_folder, sync_tree
 from picasapy.ini.rect64 import Rect64

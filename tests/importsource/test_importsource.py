@@ -5,6 +5,7 @@ Peremesetek: hiányzó EXIF-dátum → mtime-visszaesés, teljesen ismeretlen
 dátum (sem EXIF, sem statolható mtime), egyéni sablon, üres/hiányzó forrás.
 """
 
+import dataclasses
 import os
 from datetime import date
 
@@ -100,5 +101,5 @@ class TestDestinationSubpath:
 class TestImportCandidateIsImmutable:
     def test_is_a_frozen_dataclass(self, tmp_path):
         candidate = ImportCandidate(path=tmp_path / "a.jpg", date=date(2024, 1, 1))
-        with pytest.raises(Exception):
+        with pytest.raises(dataclasses.FrozenInstanceError):
             candidate.path = tmp_path / "b.jpg"
