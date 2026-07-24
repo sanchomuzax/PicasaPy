@@ -98,7 +98,7 @@ class TestTimelinePeriods:
         empty_db = tmp_path / "empty_index.db"
         from picasapy.index import open_index
 
-        with open_index(empty_db) as conn:
+        with open_index(empty_db):
             pass
         timeline_controller = engine.rootContext().contextProperty(
             "timelineController"

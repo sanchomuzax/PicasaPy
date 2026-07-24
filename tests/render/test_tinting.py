@@ -139,7 +139,9 @@ class TestApplyDirTint:
             image, x=0.5, y=0.5, gradient=0.5, shade=1.0, color=(0xFF, 0xFF, 0xFF)
         )
         column = result[:, 5, 0].astype(int)
-        assert all(a >= b for a, b in zip(column, column[1:]))
+        # szomszédos-pár (pairwise) összehasonlítás — szándékosan eggyel
+        # rövidebb a második sorozat.
+        assert all(a >= b for a, b in zip(column, column[1:], strict=False))
 
     def test_nem_mutalja_a_bemenetet(self) -> None:
         image = _uniform_image(60, height=16, width=8)

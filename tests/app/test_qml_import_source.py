@@ -4,7 +4,6 @@ az eszköztár "Import" gombja, a forrás-előnézet és a másolás/áthelyezé
 cél-mappával, mock nélkül (a `test_qml_dedup.py` mintája)."""
 
 from PySide6.QtCore import (
-    Q_ARG,
     QEventLoop,
     QMetaObject,
     QObject,

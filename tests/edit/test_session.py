@@ -104,7 +104,7 @@ class TestCrop:
     def test_crop_getter(self):
         """crop() dekódolás helyesen."""
         rect = Rect64(0.248108, 0.358566, 0.348648, 0.519638)
-        value = f"crop64=1,3f845bcb59418507;"
+        value = "crop64=1,3f845bcb59418507;"
         session = EditSession.from_value(value)
 
         fetched = session.crop()
@@ -676,7 +676,6 @@ class TestCopyPasteEffects:
         clipboard = source.copy_effects()
 
         target_a = EditSession.from_value("sepia=1;")
-        target_b = EditSession.from_value("")
 
         pasted_a = EditSession.paste_effects(clipboard)
         pasted_b = EditSession.paste_effects(clipboard)

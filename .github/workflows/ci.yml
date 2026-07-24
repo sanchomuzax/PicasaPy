@@ -52,5 +52,29 @@ jobs:
       - name: Run tests
         # darabolt futtatás (#53): a teljes készlet egy processzben a
         # Windows-runneren rendszeresen GIL-deadlockba ragadt — a script
-        # a tests/app fájlokat külön processzben, kemény timeouttal futtatja
-        run: python scripts/run_tests.py
+        # a tests/app fájlokat külön processzben, kemény timeouttal futtatja.
+        # #300: a lefedettség-összesítő elég az ubuntu-lábon (--cov); a
+        # Windows-lábat ez a plusz coverage-réteg ne terhelje/lassítsa.
+        run: python scripts/run_tests.py ${{ runner.os == 'Linux' && '--cov' || '' }}
+
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    # Gyors, önálló job — nem a teszt-mátrix része, egy platform elég egy
+    # tisztán statikus ellenőrzéshez (#300).
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: python -m pip install --upgrade pip ruff
+
+      - name: Run ruff
+        run: ruff check src/ tests/

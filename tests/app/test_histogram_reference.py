@@ -49,7 +49,7 @@ class TestReferenceSet:
         # kétszeri generálás bitre azonos képeket ad
         first = reference_images()
         second = reference_images()
-        for a, b in zip(first, second):
+        for a, b in zip(first, second, strict=True):
             assert a.name == b.name
             assert np.array_equal(a.array, b.array), a.name
 
@@ -142,7 +142,7 @@ class TestPngExport:
         cv2 = pytest.importorskip("cv2")
         paths = write_reference_pngs(tmp_path)
         assert len(paths) == len(REFERENCES)
-        for ref, path in zip(REFERENCES, paths):
+        for ref, path in zip(REFERENCES, paths, strict=True):
             assert path.exists() and path.name == f"{ref.name}.png"
             # visszaolvasva a méret és a csatornaszám egyezik
             back = cv2.imread(str(path))

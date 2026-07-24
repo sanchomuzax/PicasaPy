@@ -45,7 +45,9 @@ class TestVignetteGain:
     def test_monoton_csokkeno(self) -> None:
         radii = np.linspace(0.0, 0.7071, 30)
         gains = [vignette_gain(float(r)) for r in radii]
-        assert all(a >= b for a, b in zip(gains, gains[1:]))
+        # szomszédos-pár (pairwise) összehasonlítás — szándékosan eggyel
+        # rövidebb a második sorozat.
+        assert all(a >= b for a, b in zip(gains, gains[1:], strict=False))
 
     def test_negativ_sugar_value_error(self) -> None:
         with pytest.raises(ValueError):
