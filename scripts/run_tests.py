@@ -7,11 +7,20 @@ utolsó hat CI-futása mind így halt meg), és a felhő-konténerben is
 reprodukálható. Ezért a futás darabolva történik:
 
 1. a nem-Qt tesztek (`tests` a `tests/app` nélkül) egyetlen processzben;
-2. a `tests/app` fájlonként, külön-külön processzben, kemény timeouttal.
+2. a `tests/app` (és az alatta lévő `tests/app/qml_functional/`) fájlonként,
+   külön-külön processzben, kemény timeouttal.
 
 Egy beragadó részfutás így csak a saját timeoutját veszíti el, a többi
 eredménye megmarad, és a hibás fájl neve azonnal látszik.
-"""
+
+#155: a korábbi `tests/app/test_qml_functional.py` (~68 teszt EGY fájlban)
+egyetlen processzben ~68 QML-engine/ablak-életciklust futtatott le — ez volt
+a Windows-deadlock (#53) egyik fő forrása, ezért Windowson korábban ki volt
+hagyva a futásból. A megoldás: a fájl felbontása több kisebb fájlra a
+`tests/app/qml_functional/` alatt, amelyeket ez a szkript KÜLÖN-KÜLÖN
+processzben futtat — processzenként lényegesen kevesebb az
+engine-életciklus, ezért a Windows-kizárás megszűnt, minden fájl minden
+platformon lefut."""
 
 from __future__ import annotations
 
@@ -22,12 +31,6 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parents[1]
 _NON_APP_TIMEOUT_S = 300
 _APP_FILE_TIMEOUT_S = 180
-
-# Windowson fájlON BELÜL, véletlenszerű helyen beragadó tesztek (#53):
-# a 2026-07-20-i CI-futásban kétszer egymás után, más-más tesztnél fagyott.
-# Linuxon (a fejlesztési fő platformon) a fájl teljes egészében lefut,
-# a lefedettség ott biztosított. Követő jegy: a Windows-deadlock feloldása.
-_WINDOWS_DEADLOCK_FILES = {"test_qml_functional.py"}
 
 
 def _run_pytest(args: list[str], timeout_s: int) -> int:
@@ -57,11 +60,16 @@ def main() -> int:
     if returncode != 0:
         failures.append(("tests (tests/app nélkül)", returncode))
 
-    for test_file in sorted((_ROOT / "tests" / "app").glob("test_*.py")):
+    # a tests/app közvetlen fájljai + a tests/app/qml_functional/ alattiak
+    # (#155: a korábbi test_qml_functional.py szétbontásából) — mindegyik
+    # KÜLÖN processzben, hogy egy fájlon belüli sok engine-életciklus se
+    # torlódjon egyetlen processzbe.
+    app_dir = _ROOT / "tests" / "app"
+    app_test_files = sorted(app_dir.glob("test_*.py")) + sorted(
+        (app_dir / "qml_functional").glob("test_*.py")
+    )
+    for test_file in app_test_files:
         relative = test_file.relative_to(_ROOT)
-        if sys.platform == "win32" and test_file.name in _WINDOWS_DEADLOCK_FILES:
-            print(f"KIHAGYVA Windowson (#53 deadlock): {relative}", flush=True)
-            continue
         returncode = _run_pytest([str(relative)], _APP_FILE_TIMEOUT_S)
         if returncode == 124:
             # alkalmi beragadás (#53): egyszeri újrapróbálás friss
