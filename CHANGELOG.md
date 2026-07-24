@@ -5,6 +5,62 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.63] – 2026-07-24
+
+### Javítva
+- **Kis-nagybetű-tűrő ini-szekciónév (#296):** a szekciónév-keresés eddig
+  pontos egyezést várt, miközben a kulcsokat casefold-osan illesztettük. Ha
+  az ini `[IMG_1234.JPG]`-t tartalmazott, a fájl viszont `IMG_1234.jpg` volt
+  (Windows/NAS: kis-nagybetű-független fájlrendszer), a kép **csillag,
+  felirat, forgatás és `filters=` nélkül** indexelődött, íráskor pedig
+  második szekció keletkezett ugyanarra a fájlra. Mostantól pontos egyezés →
+  casefold-os visszaesés (a pontos találat nyer), és minden író metódus
+  ugyanezen a feloldáson megy; az eredeti fejléc-betűzés változatlan marad.
+- **Ütközésbiztos ini-írás a fájlműveleteknél (#295):** az áthelyezés, az
+  átnevezés és a másolás közvetlen `load`+`save` párost használt az
+  ütközésbiztos `update_document` helyett — a párhuzamosan futó eredeti
+  Picasa módosítása némán felülíródott. Mindhárom átállítva; részleges
+  hibánál magyar, cselekvésre fordítható üzenet, és az `IniConflictError`
+  eljut a felhasználóig.
+- **Mentés-visszagörgetés (#297):** ha a mentés ini-könyvelése elbukott (pl.
+  tartós írásütközés), a kép már tartalmazta a beégetett láncot, de a
+  `filters=` is bent maradt — a következő megnyitáskor a renderelő
+  másodszor is ráfutott. A képfájl mostantól visszaáll a hiba előtti
+  állapotba, mielőtt a kivétel továbbmegy; a `revert` ugyanígy.
+
+## [0.4.62] – 2026-07-24
+
+### Javítva
+- **Hibás `filters=` bejegyzés nem dobja el a teljes renderelést (#301):** az
+  `apply_filters` eddig csak az ISMERETLEN NEVŰ szűrőket hagyta ki némán; egy
+  ismert nevű, de hibás paraméterű op (`tilt=1;` paraméter nélkül,
+  `crop64=1,zzz;`) kivételt dobott. A hibatűrés a három hívóból (bélyegkép-
+  gyorsítótár, élő előnézet, export) átkerült magába az `apply_filters`-be:
+  a hibás op kimarad, a lánc TÖBBI TAGJA lefut, a kivétel a logba kerül.
+  Az `EditSession.crop()`/`tilt_param()` hibás értéknél `None`-t ad, így a
+  „Paste All Effects" egy sérült, idegen láncon sem száll el.
+
+### Változott
+- **EditSession-refaktor (#302):** a `set_crop`/`set_tilt`/`set_finetune`
+  háromszor kimásolt „cseréld a helyén, vagy fűzd a végére" ciklusa közös
+  helperbe (`_with_single_layer`) került; `session.py` 441 → 378 sor,
+  viselkedésváltozás nélkül.
+
+## [0.4.61] – 2026-07-24
+
+### Javítva
+- **Symlinkelt mappák bejárása (#303):** a scanner eddig `follow_symlinks=False`
+  miatt nem lépett be a symlinkelt almappákba — NAS-os elrendezésnél
+  (`~/Kepek/Regi -> /mnt/nas/foto/regi`) a PicasaPy szótlanul nulla képet
+  talált ott. A bejárás mostantól követi a symlinkeket, `(st_dev, st_ino)`
+  alapú ciklusvédelemmel (symlink-kör és önmagára mutató link is elvágódik,
+  figyelmeztetéssel), a törött symlink pedig csendben kimarad.
+- **Nagy mappa szinkronja (#304):** a `_prune_photos` a mappa összes
+  fájlnevét egyenként paraméterezte egy `NOT IN (…)` listába, ami 32 766
+  (`SQLITE_MAX_VARIABLE_NUMBER`) fölött `sqlite3.OperationalError`-ral
+  buktatta a szinkront. Helyette ideiglenes tábla + al-SELECT — a
+  paraméterszám kötött, az FTS-triggerek változatlanul lefutnak.
+
 ## [0.4.60] – 2026-07-24
 
 ### Javítva

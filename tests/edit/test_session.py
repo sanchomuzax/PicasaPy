@@ -436,6 +436,22 @@ class TestComplexScenarios:
         assert session.to_value() == ""
 
 
+class TestFaultTolerance:
+    """#301: hibás paraméterű crop64/tilt olvasása None-t ad, nem dob —
+    a lánc apply_filters-beli hibatűrésének párja a session-oldalon (az
+    effekt-beillesztés egy MÁSOLT, idegen láncon hívja a crop()-ot)."""
+
+    def test_crop_invalid_hex_returns_none(self):
+        """crop64 érvénytelen hexszel: crop() None-t ad, nem dob."""
+        session = EditSession.from_value("crop64=1,zzz;")
+        assert session.crop() is None
+
+    def test_tilt_param_invalid_returns_none(self):
+        """tilt nem numerikus paraméterrel: tilt_param() None-t ad, nem dob."""
+        session = EditSession.from_value("tilt=1,abc;")
+        assert session.tilt_param() is None
+
+
 class TestEdgeCases:
     """Speciális szituációk."""
 

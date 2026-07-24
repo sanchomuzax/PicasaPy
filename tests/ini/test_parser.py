@@ -307,3 +307,77 @@ class TestWithoutSection:
         doc = parse_document("[a.jpg]\nstar=yes\n[b.jpg]\nk=1\n")
         new = doc.without_section("a.jpg")
         assert new.serialize() == "[b.jpg]\nk=1\n"
+
+
+class TestSectionNameCaseInsensitive:
+    """#296: a szekciónév fájlnév, a Windows/NAS fájlrendszer pedig
+    kis-nagybetű-független — az ini `[IMG_1234.JPG]` fejléce ugyanazt a
+    képet jelöli, mint a lemezen lévő `IMG_1234.jpg`. Ha nem így illesztjük,
+    a kép metaadat nélkül indexelődik, íráskor pedig MÁSODIK szekció jönne
+    létre ugyanarra a fájlra."""
+
+    def test_lookup_finds_differently_cased_section(self):
+        doc = parse_document("[IMG_1234.JPG]\r\nstar=yes\r\n")
+        assert doc.section("IMG_1234.jpg").get("star") == "yes"
+
+    def test_exact_match_wins_over_differently_cased(self):
+        doc = parse_document("[a.JPG]\nstar=yes\n[a.jpg]\nstar=no\n")
+        assert doc.section("a.jpg").get("star") == "no"
+        assert doc.section("a.JPG").get("star") == "yes"
+
+    def test_exact_match_wins_even_when_it_comes_first(self):
+        doc = parse_document("[a.jpg]\nstar=no\n[a.JPG]\nstar=yes\n")
+        assert doc.section("a.jpg").get("star") == "no"
+
+    def test_unknown_name_still_returns_none(self):
+        doc = parse_document("[a.jpg]\nstar=yes\n")
+        assert doc.section("b.jpg") is None
+
+    def test_with_value_updates_existing_section(self):
+        doc = parse_document("[IMG_1234.JPG]\r\nstar=yes\r\n")
+        updated = doc.with_value("IMG_1234.jpg", "caption", "nyár")
+        # NEM jött létre második szekció ugyanarra a fájlra:
+        assert len(updated.sections) == 1
+        assert updated.section("IMG_1234.jpg").get("caption") == "nyár"
+        assert updated.section("IMG_1234.jpg").get("star") == "yes"
+
+    def test_with_value_keeps_original_header_casing(self):
+        # Round-trip elv: a fejlécet nem írjuk át a MI névváltozatunkra.
+        doc = parse_document("[IMG_1234.JPG]\r\nstar=yes\r\n")
+        text = doc.with_value("IMG_1234.jpg", "caption", "nyár").serialize()
+        assert "[IMG_1234.JPG]" in text
+        assert "[IMG_1234.jpg]" not in text
+
+    def test_with_removed_matches_case_insensitively(self):
+        doc = parse_document("[IMG_1234.JPG]\nstar=yes\ncaption=x\n")
+        updated = doc.with_removed("IMG_1234.jpg", "star")
+        assert updated.section("IMG_1234.JPG").get("star") is None
+        assert updated.serialize() == "[IMG_1234.JPG]\ncaption=x\n"
+
+    def test_without_section_matches_case_insensitively(self):
+        doc = parse_document("[IMG_1234.JPG]\nstar=yes\n[b.jpg]\nk=1\n")
+        assert doc.without_section("img_1234.jpg").serialize() == "[b.jpg]\nk=1\n"
+
+    def test_with_renamed_section_matches_case_insensitively(self):
+        doc = parse_document("[IMG_1234.JPG]\nstar=yes\n")
+        renamed = doc.with_renamed_section("IMG_1234.jpg", "uj.jpg")
+        assert renamed.serialize() == "[uj.jpg]\nstar=yes\n"
+
+    def test_rename_collision_detected_case_insensitively(self):
+        doc = parse_document("[a.jpg]\nstar=yes\n[B.JPG]\nstar=no\n")
+        with pytest.raises(ValueError):
+            doc.with_renamed_section("a.jpg", "b.jpg")
+
+    def test_case_only_rename_is_allowed(self):
+        # A célnév ugyanaz a szekció — ez nem ütközés, hanem betűzés-javítás.
+        doc = parse_document("[a.jpg]\nstar=yes\n")
+        assert doc.with_renamed_section("a.jpg", "A.JPG").serialize() == (
+            "[A.JPG]\nstar=yes\n"
+        )
+
+    def test_with_section_replaces_differently_cased_section(self):
+        doc = parse_document("[A.JPG]\nstar=yes\n")
+        incoming = parse_document("[a.jpg]\nstar=no\n").section("a.jpg")
+        replaced = doc.with_section(incoming)
+        assert len(replaced.sections) == 1
+        assert replaced.section("a.jpg").get("star") == "no"

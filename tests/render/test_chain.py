@@ -9,6 +9,7 @@ import pytest
 
 from picasapy.ini.filters import FilterOp
 from picasapy.render.chain import apply_filters, tilt_cover_scale
+from picasapy.render.color import apply_bw
 from picasapy.render.ops import apply_autocolor, apply_autolight, apply_crop
 from picasapy.render.tone import apply_fill, apply_finetune2
 
@@ -191,6 +192,46 @@ class TestApplyFilters:
         result, skipped = apply_filters(image, ops)
         assert result.shape == image.shape
         assert skipped == ()
+
+
+class TestApplyFiltersHibatoleranciaja:
+    """#301: az ismert nevű, de hibás/hiányos paraméterű bejegyzés a lánc
+    TÖBBI TAGJÁT nem viszi magával — csak ő maga marad ki, kivétel nem
+    szökik ki (a hívóknál korábban külön-külön kimásolt védelem helyett)."""
+
+    def test_hianyos_tilt_mellett_a_tobbi_lefut(self) -> None:
+        image = _gradient_image()
+        ops = (FilterOp("tilt", ("1",)), FilterOp("autolight", ("1",)))
+        result, skipped = apply_filters(image, ops)
+        np.testing.assert_array_equal(result, apply_autolight(image))
+        assert skipped == ("tilt",)
+
+    def test_ervenytelen_crop64_mellett_a_tobbi_lefut(self) -> None:
+        image = _gradient_image()
+        ops = (FilterOp("fill", ("1", "0.5")), FilterOp("crop64", ("1", "zzz")))
+        result, skipped = apply_filters(image, ops)
+        # a crop64 érvénytelen hexje miatt a vágás elmarad, de a fill lefut
+        np.testing.assert_array_equal(result, apply_fill(image, 0.5))
+        assert skipped == ("crop64",)
+
+    def test_nem_numerikus_sat_mellett_a_tobbi_lefut(self) -> None:
+        image = np.full((4, 4, 3), (100, 150, 200), dtype=np.uint8)
+        ops = (FilterOp("sat", ("1", "abc")), FilterOp("bw", ("1",)))
+        result, skipped = apply_filters(image, ops)
+        np.testing.assert_array_equal(result, apply_bw(image))
+        assert skipped == ("sat",)
+
+    def test_tobb_hibas_bejegyzes_mind_a_skipped_listaba_kerul(self) -> None:
+        image = _gradient_image()
+        ops = (
+            FilterOp("tilt", ("1",)),
+            FilterOp("lomoish", ("1",)),  # ismeretlen név
+            FilterOp("sat", ("1", "abc")),
+            FilterOp("autolight", ("1",)),
+        )
+        result, skipped = apply_filters(image, ops)
+        np.testing.assert_array_equal(result, apply_autolight(image))
+        assert skipped == ("tilt", "lomoish", "sat")
 
 
 class TestApplyFiltersEffects:

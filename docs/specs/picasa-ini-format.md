@@ -17,6 +17,15 @@ mint az eredeti Picasa 3.x.
   teljesen újraépíthető.
 - **Round-trip elv (PicasaPy):** minden nem értelmezett kulcsot változatlanul meg kell
   őrizni és visszaírni (pl. `backuphash`, ismeretlen mezők).
+- **Szekciónév-illesztés kis-nagybetű-tűrő (PicasaPy, #296):** a
+  fájlbejegyzés-szekciók neve fizikai fájlnév, a Picasa pedig Windows/NAS
+  fájlrendszeren fut, ahol a fájlnév kis-nagybetű-független — a `[IMG_1234.JPG]`
+  fejléc ugyanazt a képet jelöli, mint a lemezen lévő `IMG_1234.jpg`. A feloldás
+  előbb PONTOS egyezést keres, és csak utána esik vissza a kis-nagybetűtől
+  független illesztésre (pontos találat mindig nyer). A kulcsneveket ugyanígy,
+  kis-nagybetű-tűrően illesztjük. Íráskor **az ini-ben talált eredeti betűzés
+  marad a `[...]` fejlécben** (round-trip elv): nem írjuk át a saját
+  névváltozatunkra, és nem hozunk létre második szekciót ugyanarra a fájlra.
 
 ## Szekciók
 
