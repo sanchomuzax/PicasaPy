@@ -306,7 +306,9 @@ ApplicationWindow {
 
     FolderManagerDialog { id: folderManager }
     // Duplikátum-kezelő (#287): Eszközök → "Find Duplicates..."
-    DedupDialog { id: dedupDialog }
+    // #294: az appWindow-bekötés a „kijelölt képek" hatókörhöz kell — enélkül
+    // a dialógus a mappa-hatókörre esne vissza (integrátori bekötés).
+    DedupDialog { id: dedupDialog; appWindow: window }
     // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő
     // gombjából (discoveryController.dialogRequested) vagy induláskori
     // automatikus felajánlásból (integrátori bekötés: picasaImportDialog.openAndDiscover())
