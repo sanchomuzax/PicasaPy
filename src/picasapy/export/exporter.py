@@ -178,14 +178,12 @@ def _apply_filter_chain(image: np.ndarray, ops: tuple[FilterOp, ...]) -> np.ndar
     mint a bélyegkép-gyorsítótár, ld. `thumbs/cache.py`).
 
     Hibás/idegen lánc-bejegyzésnél (#73-elv) a szűretlen kép a helyes
-    visszaesés, nem az export teljes meghiúsulása."""
+    visszaesés, nem az export teljes meghiúsulása — ezt a #301 óta maga az
+    apply_filters garantálja (a hibás op kimarad, kivétel nem szökik ki)."""
     if not ops:
         return image
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    try:
-        rendered, _skipped = apply_filters(rgb, ops)
-    except Exception:  # noqa: BLE001
-        return image
+    rendered, _skipped = apply_filters(rgb, ops)
     return cv2.cvtColor(rendered, cv2.COLOR_RGB2BGR)
 
 

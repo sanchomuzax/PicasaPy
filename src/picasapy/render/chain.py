@@ -1,10 +1,13 @@
 """A `filters=` lánc alkalmazása numpy képekre: `apply_filters` sorban futtatja
-a támogatott műveleteket, a nem támogatottakat némán kihagyja (részleges
-előnézet), de a kihagyott nevek listáját is visszaadja.
+a támogatott műveleteket. Kihagyja mind az ISMERETLEN NEVŰ, mind az ismert
+nevű, de HIBÁS PARAMÉTERŰ bejegyzéseket (részleges előnézet), és a kihagyott
+nevek listáját is visszaadja — a lánc egyetlen hibás tagja sem dobja el a
+teljes renderelést (#301).
 """
 
 from __future__ import annotations
 
+import logging
 import math
 
 import numpy as np
@@ -42,6 +45,8 @@ from picasapy.render.tinting import (
     parse_rgb_hex,
 )
 from picasapy.render.tone import apply_fill, apply_finetune2, parse_neutral_argb
+
+_log = logging.getLogger(__name__)
 
 # Megfejtve (golden 4. kör): a tilt szöge θ = p·0,2 radián (= p·11,459°).
 _TILT_RADIANS_PER_UNIT = 0.2
@@ -246,9 +251,12 @@ def apply_filters(
     véletlen magos, pixelhűen nem reprodukálható — a determinisztikus mag az
     előnézet-villogást kerüli el, statisztikailag a spec szerinti a kimenet.
 
-    A nem támogatott szűrőket szándékosan némán kihagyja (részleges
-    előnézet), de a kihagyott nevek sorrendhelyes listáját is visszaadja:
-    `(kép, kihagyott_nevek)`.
+    A nem támogatott (ismeretlen nevű) szűrőket szándékosan némán kihagyja
+    (részleges előnézet). Ismert nevű, de hibás/hiányos paraméterű bejegyzés
+    (pl. `tilt=1;` paraméter nélkül, `crop64=1,zzz;` érvénytelen hexszel)
+    ESETÉN sem áll meg a teljes lánc — a hibás op kimarad, a kivétel a logba
+    kerül, a lánc TÖBBI TAGJA lefut (#301). A kihagyott nevek sorrendhelyes
+    listáját mindkét esetben visszaadja: `(kép, kihagyott_nevek)`.
 
     A `crop64` a láncban csak szerkesztési TÖRTÉNET — önmagában NEM vág
     (spec: `docs/specs/filters-decoded.md`). A tényleges vágást a képszekció
@@ -268,7 +276,19 @@ def apply_filters(
         if handler is None:
             skipped.append(op.name)
             continue
-        result = handler(result, op)
+        try:
+            result = handler(result, op)
+        except Exception:
+            # Ismert nevű, de hibás paraméterű bejegyzés: a lánc többi tagja
+            # ettől még lefusson (#301) — a hiba nem tűnik el nyomtalanul.
+            _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
+            skipped.append(op.name)
     if crop_op is not None:
-        result = _apply_crop_op(result, crop_op)
+        try:
+            result = _apply_crop_op(result, crop_op)
+        except Exception:
+            _log.exception(
+                "Filter-bejegyzés kihagyva (hibás paraméter): %s", crop_op
+            )
+            skipped.append(crop_op.name)
     return result, tuple(skipped)

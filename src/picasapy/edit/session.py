@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from picasapy.ini.filters import FilterOp, parse_filters, serialize_filters
@@ -63,9 +64,7 @@ class EditSession:
         return serialize_filters(self.ops)
 
     def set_crop(self, rect: Rect64) -> EditSession:
-        """Crop64 beállítása vagy cseréje.
-
-        Ha a láncban már van crop64, azt lecseréli a helyén. Különben a végére fűzi.
+        """Crop64 beállítása vagy cseréje: a láncban legfeljebb egy lehet.
 
         Args:
             rect: Az új Rect64 téglalap.
@@ -73,102 +72,66 @@ class EditSession:
         Returns:
             Új EditSession.
         """
-        encoded = encode_rect64(rect)
-        new_op = FilterOp("crop64", ("1", encoded))
-
-        # Keressük az első crop64-et (case-insensitive)
-        new_ops = []
-        replaced = False
-        for op in self.ops:
-            if op.matches("crop64"):
-                if not replaced:
-                    new_ops.append(new_op)
-                    replaced = True
-                # Többit eltávolítjuk (csak egy crop64 lehet)
-            else:
-                new_ops.append(op)
-
-        # Ha nem volt crop64, a végére fűzzük
-        if not replaced:
-            new_ops.append(new_op)
-
-        return EditSession(ops=tuple(new_ops))
+        new_op = FilterOp("crop64", ("1", encode_rect64(rect)))
+        return self._with_single_layer(lambda op: op.matches("crop64"), new_op)
 
     def clear_crop(self) -> EditSession:
-        """Crop64 eltávolítása.
-
-        Returns:
-            Új EditSession, crop64 nélkül.
-        """
+        """Crop64 eltávolítása."""
         new_ops = [op for op in self.ops if not op.matches("crop64")]
         return EditSession(ops=tuple(new_ops))
 
     def crop(self) -> Rect64 | None:
         """Az aktuális crop64 téglalap.
 
+        Hibás/érvénytelen hex paraméternél is `None`-t ad (nem dob) — idegen
+        vagy sérült lánc olvasása se szökjön ki kivétellel (#301).
+
         Returns:
-            Rect64 a dekódolt értékkel, vagy None ha nincs crop64.
+            Rect64 a dekódolt értékkel, vagy None ha nincs (érvényes) crop64.
         """
         for op in self.ops:
             if op.matches("crop64"):
                 if len(op.params) >= 2:
-                    return decode_rect64(op.params[1])
+                    try:
+                        return decode_rect64(op.params[1])
+                    except ValueError:
+                        return None
         return None
 
     def set_tilt(self, param: float, scale: float) -> EditSession:
-        """Tilt beállítása vagy cseréje.
-
-        Az szög és skála paraméterek 6 tizedes helyre formázódnak.
+        """Tilt beállítása vagy cseréje (a láncban legfeljebb egy lehet).
 
         Args:
-            param: A szög paraméter.
-            scale: A skála paraméter.
+            param: A szög paraméter (6 tizedesre formázva).
+            scale: A skála paraméter (6 tizedesre formázva).
 
         Returns:
             Új EditSession.
         """
-        # Formázás: 6 tizedes
-        formatted_param = f"{param:.6f}"
-        formatted_scale = f"{scale:.6f}"
-        new_op = FilterOp("tilt", ("1", formatted_param, formatted_scale))
-
-        # Keressük az első tilt-et
-        new_ops = []
-        replaced = False
-        for op in self.ops:
-            if op.matches("tilt"):
-                if not replaced:
-                    new_ops.append(new_op)
-                    replaced = True
-                # Többit eltávolítjuk
-            else:
-                new_ops.append(op)
-
-        # Ha nem volt tilt, a végére fűzzük
-        if not replaced:
-            new_ops.append(new_op)
-
-        return EditSession(ops=tuple(new_ops))
+        new_op = FilterOp("tilt", ("1", f"{param:.6f}", f"{scale:.6f}"))
+        return self._with_single_layer(lambda op: op.matches("tilt"), new_op)
 
     def clear_tilt(self) -> EditSession:
-        """Tilt eltávolítása.
-
-        Returns:
-            Új EditSession, tilt nélkül.
-        """
+        """Tilt eltávolítása."""
         new_ops = [op for op in self.ops if not op.matches("tilt")]
         return EditSession(ops=tuple(new_ops))
 
     def tilt_param(self) -> float | None:
         """A tilt szög paramétere.
 
+        Hibás/nem numerikus paraméternél is `None`-t ad (nem dob), a `crop()`
+        mintájára (#301).
+
         Returns:
-            A float param, vagy None ha nincs tilt.
+            A float param, vagy None ha nincs (érvényes) tilt.
         """
         for op in self.ops:
             if op.matches("tilt"):
                 if len(op.params) >= 2:
-                    return float(op.params[1])
+                    try:
+                        return float(op.params[1])
+                    except ValueError:
+                        return None
         return None
 
     def set_finetune(
@@ -212,26 +175,12 @@ class EditSession:
                 f"{temperature:.6f}",
             ),
         )
-        new_ops = []
-        replaced = False
-        for op in self.ops:
-            if op.name.casefold() in _FINETUNE_NAMES:
-                if not replaced:
-                    new_ops.append(new_op)
-                    replaced = True
-                # a további finetune-rétegeket eltávolítjuk (csak egy lehet)
-            else:
-                new_ops.append(op)
-        if not replaced:
-            new_ops.append(new_op)
-        return EditSession(ops=tuple(new_ops))
+        return self._with_single_layer(
+            lambda op: op.name.casefold() in _FINETUNE_NAMES, new_op
+        )
 
     def clear_finetune(self) -> EditSession:
-        """A finomhangolás (finetune/finetune2) réteg eltávolítása.
-
-        Returns:
-            Új EditSession, finetune nélkül.
-        """
+        """A finomhangolás (finetune/finetune2) réteg eltávolítása."""
         new_ops = [
             op for op in self.ops if op.name.casefold() not in _FINETUNE_NAMES
         ]
@@ -312,18 +261,7 @@ class EditSession:
         return EditSession(ops=self.ops + (FilterOp(name, ("1",)),))
 
     def last_is(self, name: str) -> bool:
-        """Az utolsó lánc-elem a megadott szűrő-e (case-insensitive, #116).
-
-        A gomb-tiltási szabály alapja: az egygombos javítás gombja tiltott,
-        ha ugyanez a szűrő a lánc utolsó eleme (kétszer egymás után nincs
-        értelme).
-
-        Args:
-            name: A szűrő neve.
-
-        Returns:
-            True ha a lánc nem üres és az utolsó eleme a szűrő.
-        """
+        """Az utolsó lánc-elem a megadott szűrő-e (case-insensitive, #116)."""
         return bool(self.ops) and self.ops[-1].matches(name)
 
     def toggle(self, name: str) -> EditSession:
@@ -331,7 +269,8 @@ class EditSession:
 
         Érvényes név jelenleg csak a "redeye": teljes képes kapcsolóként
         működik a régió-alapú vörösszem-eszköz elkészültéig (#116). Ha a
-        láncban van (case-insensitive), MINDEN előfordulását eltávolítja;
+        láncban van (case-insensitive), MINDEN előfordulását eltávolítja
+        (nem csak az elsőt — a set_*-ek egy-példányos cseréjétől eltérően);
         különben a végére fűz. Az egygombos javításokra (enhance/autolight/
         autocolor) az append-only `apply()` való.
 
@@ -350,44 +289,42 @@ class EditSession:
                 f"Érvénytelen toggle szűrő: {name!r}. "
                 f"Érvényes: {valid_toggles}"
             )
-
-        # Keressük, van-e már
-        new_ops = []
-        found = False
-        for op in self.ops:
-            if op.matches(name):
-                found = True
-                # Eltávolítunk
-            else:
-                new_ops.append(op)
-
-        # Ha nem volt, a végére fűzzük
-        if not found:
-            new_ops.append(FilterOp(name, ("1",)))
-
-        return EditSession(ops=tuple(new_ops))
+        if self.has(name):
+            new_ops = tuple(op for op in self.ops if not op.matches(name))
+        else:
+            new_ops = self.ops + (FilterOp(name, ("1",)),)
+        return EditSession(ops=new_ops)
 
     def has(self, name: str) -> bool:
-        """Van-e a szűrő a láncban (case-insensitive).
-
-        Args:
-            name: A szűrő neve.
-
-        Returns:
-            True ha van.
-        """
-        for op in self.ops:
-            if op.matches(name):
-                return True
-        return False
+        """Van-e a szűrő a láncban (case-insensitive)."""
+        return any(op.matches(name) for op in self.ops)
 
     def is_empty(self) -> bool:
-        """Üres-e a lánc.
-
-        Returns:
-            True ha nincs szűrő.
-        """
+        """Üres-e a lánc."""
         return not self.ops
+
+    def _with_single_layer(
+        self, matches: Callable[[FilterOp], bool], new_op: FilterOp
+    ) -> EditSession:
+        """Egy-példányos réteg beállítása: a `matches`-re illő ELSŐ tag
+        helyén cserélődik, a további egyezők eldobódnak; ha nincs egyező
+        tag, `new_op` a lánc végére kerül.
+
+        Közös implementáció a crop64/tilt/finetune „legfeljebb egy réteg,
+        a helyén cserélve" szabályához (#302) — a `toggle()` ettől eltérően
+        MINDEN egyezőt eltávolít, ezért nem ezt a helpert használja."""
+        new_ops = []
+        replaced = False
+        for op in self.ops:
+            if matches(op):
+                if not replaced:
+                    new_ops.append(new_op)
+                    replaced = True
+            else:
+                new_ops.append(op)
+        if not replaced:
+            new_ops.append(new_op)
+        return EditSession(ops=tuple(new_ops))
 
     def copy_effects(self) -> tuple[FilterOp, ...]:
         """Az effektlánc (filters=, benne a crop64-gyel) „vágólap"-pillanatképe (#152).
