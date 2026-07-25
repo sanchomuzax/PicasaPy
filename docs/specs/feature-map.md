@@ -46,7 +46,9 @@ A Picasa funkcionalitása → PicasaPy megvalósítási fázisok.
 - Arcfelismerés + arccsoportosítás (lib kutatandó: OpenCV / dlib / InsightFace)
   - tárolás: `faces=rect64(...),contact_id` + Contacts (Picasa-kompatibilis)
   - export: XMP MWG-RS + `HierarchicalSubject` `people|Név`
-- Kollázs, diavetítés, export/átméretezés, geotag-szerkesztés
+- Kollázs (kész, #29: képrács / kontaktmásolat / keretes mozaik / képhalom)
+  és mozgófilm-export (kész, #29: MP4-diavetítés áttűnéssel)
+- Diavetítés, export/átméretezés, geotag-szerkesztés
 - Duplikátum-keresés
 - (Később mérlegelendő: nyomtatás, képernyővédő, e-mail küldés — az eredeti
   Picasa funkciói, alacsony prioritás)

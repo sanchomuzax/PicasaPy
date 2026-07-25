@@ -5,6 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.69] – 2026-07-25
+
+### Hozzáadva
+- **Képkollázs és mozgófilm (#29):** a Létrehozás menü két pontja élesedett.
+  A **kollázs** négy típust ad — képrács, kontaktmásolat, keretes mozaik és
+  (magvas véletlennel, tehát megismételhető) képhalom —, 1600×1200-as
+  vászonra, fehér paszpartuval, JPEG-be mentve. A **mozgófilm** MP4-es
+  diavetítés-videót ír a kijelölésből (720p/1080p, állítható képenkénti idő,
+  automatikus áttűnés), a haladást képenként mutatva. Mindkettő háttérszálon
+  fut, egy hibás kép nem viszi el a munkát (a kimaradt képek száma a
+  végeredmény-dialógusban látszik), és az ékezetes útvonal is működik
+  (bájt-alapú írás, #190 tanulsága).
+
 ## [0.4.68] – 2026-07-25
 
 ### Hozzáadva

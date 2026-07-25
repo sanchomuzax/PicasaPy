@@ -160,6 +160,22 @@
 <context>
     <name>AppController</name>
     <message>
+        <source>No pictures are selected.</source>
+        <translation>Nincs kijelölt kép.</translation>
+    </message>
+    <message>
+        <source>No target file was chosen.</source>
+        <translation>Nem választottál célfájlt.</translation>
+    </message>
+    <message>
+        <source>Unknown collage type.</source>
+        <translation>Ismeretlen kollázs-típus.</translation>
+    </message>
+    <message>
+        <source>None of the selected pictures could be read.</source>
+        <translation>A kijelölt képek egyike sem olvasható.</translation>
+    </message>
+    <message>
         <source>%1x%2 pixels</source>
         <translation>%1x%2 képpont</translation>
     </message>
@@ -511,6 +527,124 @@
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="773"/>
         <source>Cancel</source>
         <translation>Mégse</translation>
+    </message>
+</context>
+<context>
+    <name>CreateDialogs</name>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="24"/>
+        <source>Picture Collage...</source>
+        <translation>Képkollázs…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="44"/>
+        <source>%1 pictures selected.</source>
+        <translation>%1 kép kijelölve.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="52"/>
+        <source>Collage type:</source>
+        <translation>Kollázs típusa:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62"/>
+        <source>Picture Grid</source>
+        <translation>Képrács</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62"/>
+        <source>Contact Sheet</source>
+        <translation>Kontaktmásolat</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63"/>
+        <source>Frame Mosaic</source>
+        <translation>Keretes mozaik</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63"/>
+        <source>Picture Pile</source>
+        <translation>Képhalom</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="69"/>
+        <source>Target file:</source>
+        <translation>Célfájl:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78"/>
+        <source>(not selected)</source>
+        <translation>(nincs kiválasztva)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="83"/>
+        <source>Browse...</source>
+        <translation>Tallózás…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93"/>
+        <source>JPEG images (*.jpg)</source>
+        <translation>JPEG-képek (*.jpg)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="98"/>
+        <source>Movie</source>
+        <translation>Mozgófilm</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="130"/>
+        <source>Video size:</source>
+        <translation>Videó mérete:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="146"/>
+        <source>Seconds per picture:</source>
+        <translation>Másodperc per kép:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="185"/>
+        <source>MP4 videos (*.mp4)</source>
+        <translation>MP4-videók (*.mp4)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="202"/>
+        <source>Creating movie: %1 / %2</source>
+        <translation>Mozgófilm készítése: %1 / %2</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="226"/>
+        <source>Create</source>
+        <translation>Létrehozás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="247"/>
+        <source>Collage saved: %1</source>
+        <translation>Kollázs elmentve: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="248"/>
+        <source>%1 pictures used.</source>
+        <translation>%1 kép felhasználva.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="240"/>
+        <source>%1 pictures were skipped.</source>
+        <translation>%1 kép kimaradt.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="254"/>
+        <source>The collage could not be created.</source>
+        <translation>A kollázs nem készült el.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="264"/>
+        <source>Movie saved: %1</source>
+        <translation>A mozgófilm elmentve: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="271"/>
+        <source>The movie could not be created.</source>
+        <translation>A mozgófilm nem készült el.</translation>
     </message>
 </context>
 <context>

@@ -28,6 +28,7 @@ MainToolbar 1.0 MainToolbar.qml
 TrayBar 1.0 TrayBar.qml
 FileOpsDialogs 1.0 FileOpsDialogs.qml
 ExportDialogs 1.0 ExportDialogs.qml
+CreateDialogs 1.0 CreateDialogs.qml
 AboutDialog 1.0 AboutDialog.qml
 ImportProgressPanel 1.0 ImportProgressPanel.qml
 PerfMonitorPanel 1.0 PerfMonitorPanel.qml
