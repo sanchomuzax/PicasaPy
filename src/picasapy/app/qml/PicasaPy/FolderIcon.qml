@@ -12,13 +12,13 @@ Item {
         width: icon.size * 0.45; height: icon.height * 0.3
         radius: 1
         color: Theme.folderGold
-        border.color: "#d9b571"; border.width: 1
+        border.color: Theme.folderGoldBorder; border.width: 1
     }
     Rectangle {   // test
         x: 0; y: icon.height * 0.18
         width: icon.size; height: icon.height * 0.82
         radius: 2
         color: Theme.folderGold
-        border.color: "#d9b571"; border.width: 1
+        border.color: Theme.folderGoldBorder; border.width: 1
     }
 }

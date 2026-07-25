@@ -114,10 +114,38 @@ fontban hiányzik). Ikonjegyzék a screenshotokon; portolás fokozatosan.
 4. Néző: A/AB/AA gombok, zoom-csúszka és 1:1 gomb hiányzik.
 5. Tálca tray-halom vizualizáció és címke-buborék hiányzik.
 
-## Téma-politika (2026-07-18)
+## Téma-politika (2026-07-18, kiegészítve 2026-07-25 / #28)
 
-A PicasaPy **mindig világos** — az OS sötét módját sehol nem veszi át:
-Fusion stílus + explicit világos paletta (Main.qml), világos színséma-kérés,
+A PicasaPy **alapból világos** — az OS sötét módját sehol nem veszi át:
+Fusion stílus + explicit paletta (Main.qml), világos színséma-kérés,
 és nem-natív (QML) dialógusok, hogy a rendszer sötét mappaválasztója se
-üssön át. A **sötét téma kb. a V3-nál** kerül napirendre, önálló
-feature-ként. Az ablakkeret (címsor) a kompozitoré — az követheti az OS-t.
+üssön át. Az ablakkeret (címsor) a kompozitoré — az követheti az OS-t.
+
+**Sötét téma (#28, V3).** A váltás kizárólag a felhasználó döntése:
+Nézet → Sötét téma. A kapcsoló a `controller.darkTheme` (QSettings
+`view/darkTheme`, perzisztens), ehhez van kötve a `Theme.dark` — minden
+szín-token abból számol. **A hívó QML-ek nem tudnak a témáról:** a
+tokennevek (`canvasBg`, `ink`, `panelBg`…) változatlanok, csak az
+értékük párosodott. Ezért a szabály: **új felületen tilos hardkódolt
+szín** — ami nem token, az sötét módban fehér foltként marad ott.
+
+| Token | Világos | Sötét |
+|---|---|---|
+| canvasBg | `#eaeaea` | `#232323` |
+| contentPanel | `#ffffff` | `#2e2e2e` |
+| panelBg | `#f3f3f3` | `#282828` |
+| chromeBg | `#e2e2e2` | `#303030` |
+| chromeBorder | `#cdcdcd` | `#4a4a4a` |
+| ink | `#1c1b19` | `#ececea` |
+| picasaGreen | `#3b8f00` | `#6cbf3f` |
+| selectionBlue | `#83a7bd` | `#4d6b80` |
+| linkBlue | `#1a0dab` | `#8ab4f8` |
+| infoBar | `#568fb7` | `#3c6382` |
+| trayBg | `#f8f8f8` | `#262626` |
+| viewerBg | `#808080` | `#1a1a1a` |
+| trackBg | `#dddddd` | `#3a3a3a` |
+| buttonBg | `#e8e8e8` | `#3a3a3a` |
+
+A **márkaszínek** (a logó pirosa/sárgája/kékje…) és a fotó fölé kerülő
+rétegek (néző-feliratok, arckeretek, sötét fátyol) mindkét témában
+azonosak — azok nem a felület, hanem a kép kontextusa.

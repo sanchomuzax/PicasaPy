@@ -193,7 +193,7 @@ Window {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: 110
-            color: "#ffffff"
+            color: Theme.contentPanel
             border.color: Theme.chromeBorder
 
             GridView {
@@ -284,7 +284,7 @@ Window {
             Layout.preferredHeight: 8
             visible: importSourceWindow.importing
             radius: 4
-            color: "#dddddd"
+            color: Theme.trackBg
             border.color: Theme.chromeBorder
 
             Rectangle {

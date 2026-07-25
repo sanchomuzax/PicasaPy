@@ -81,7 +81,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 8
             radius: 4
-            color: "#dddddd"
+            color: Theme.trackBg
             border.color: Theme.chromeBorder
 
             Rectangle {

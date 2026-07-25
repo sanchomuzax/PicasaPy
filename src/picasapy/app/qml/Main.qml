@@ -16,22 +16,30 @@ ApplicationWindow {
     title: "PicasaPy"
     color: Theme.lightboxBg
 
-    // explicit VILÁGOS paletta — az OS sötét módja sehol nem üthet át
-    // (a sötét téma V3-feature; ld. design-guide)
+    // #28: a téma a Theme-tokenekből jön, azok pedig a controller
+    // kapcsolójából — az OS saját sötét módja sehol nem üthet át, a
+    // váltás kizárólag a Nézet → Sötét téma menüponté (alapértelmezés:
+    // világos; ld. design-guide).
+    Binding {
+        target: Theme
+        property: "dark"
+        value: controller ? controller.darkTheme : false
+    }
+
     palette {
         window: Theme.canvasBg
         windowText: Theme.ink
-        base: "#ffffff"
+        base: Theme.controlBase
         alternateBase: Theme.panelBg
         text: Theme.ink
-        button: "#e8e8e8"
+        button: Theme.buttonBg
         buttonText: Theme.ink
         highlight: Theme.selectionBlue
-        highlightedText: "#ffffff"
-        placeholderText: "#8f8b83"
+        highlightedText: Theme.panelSelectionText
+        placeholderText: Theme.placeholderText
         mid: Theme.chromeBorder
-        light: "#ffffff"
-        dark: "#9a9a9a"
+        light: Theme.shadeLight
+        dark: Theme.shadeDark
     }
 
     property int thumbSize: 144

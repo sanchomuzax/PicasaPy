@@ -17,7 +17,7 @@ Rectangle {
     visible: suggestions.length > 0
     width: 300
     height: column.height + 2
-    color: "#ffffff"
+    color: Theme.contentPanel
     border.color: Theme.chromeBorder
 
     // A beírt rész félkövér kiemelése (casefold-os, HTML-escape-elt).
@@ -72,7 +72,7 @@ Rectangle {
                     width: 13; height: 11
                     Rectangle {
                         x: 2; y: 0; width: 10; height: 8; radius: 1
-                        color: "#ffffff"
+                        color: Theme.contentPanel
                         border.color: Theme.selectionBlue; border.width: 1
                     }
                     Rectangle {
@@ -99,7 +99,7 @@ Rectangle {
                     anchors.right: parent.right
                     anchors.rightMargin: 6
                     text: "(" + modelData.count + ")"
-                    color: "#8f8b83"
+                    color: Theme.placeholderText
                     font.pixelSize: Theme.fontSize
                 }
                 HoverHandler { id: rowHover }

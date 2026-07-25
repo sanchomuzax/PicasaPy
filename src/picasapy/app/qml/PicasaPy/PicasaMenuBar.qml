@@ -158,6 +158,14 @@ MenuBar {
             checked: bar.ctl ? bar.ctl.showHidden : false
             onTriggered: controller.toggleShowHidden()
         }
+        MenuItem {
+            // #28: opcionális sötét téma — az alapértelmezés a világos
+            objectName: "menuViewDarkTheme"
+            text: qsTr("Dark Theme")
+            checkable: true
+            checked: bar.ctl ? bar.ctl.darkTheme : false
+            onTriggered: controller.toggleDarkTheme()
+        }
         Menu {
             title: qsTr("Folder View")
             MenuItem {

@@ -8,7 +8,7 @@ import QtQuick.Layouts
 // Balra: előző, Esc: vissza a könyvtárba.
 Rectangle {
     id: viewer
-    color: "#808080"
+    color: Theme.viewerBg
 
     property var photosModel: null
     // #305: null-őr — az editController a QML-engine leépítésekor
@@ -513,7 +513,7 @@ Rectangle {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                color: "#808080"
+                color: Theme.viewerBg
 
                 WheelHandler {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad

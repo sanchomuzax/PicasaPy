@@ -105,7 +105,7 @@ Column {
                     visible: tray.appWindow.selectedIndexes.length === 0
                     anchors.centerIn: parent
                     text: qsTr("Selection")
-                    color: "#b8b8b8"
+                    color: Theme.placeholderText
                     font.pixelSize: Theme.fontSize
                 }
             }

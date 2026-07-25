@@ -31,6 +31,7 @@ from picasapy.index import (
 from picasapy.ini import load_document, update_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
+from .appearance_controller import AppearanceMixin
 from .effects_controller import EffectsClipboardMixin
 from .export_controller import ExportMixin
 from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
@@ -54,6 +55,7 @@ class AppController(
     ExportMixin,
     EffectsClipboardMixin,
     PerfMonitorMixin,
+    AppearanceMixin,
     LibraryMixin,
     QObject,
 ):
@@ -121,6 +123,8 @@ class AppController(
         # #211: kapcsolható teljesítmény-monitor — alapból KI, semmi extra
         # költség (PerfMonitorMixin saját inicializáló-metódusa)
         self._init_perf_monitor()
+        # #28: sötét téma kapcsoló — alapból világos, QSettings-ből visszaáll
+        self._init_appearance()
         # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
         # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
         # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.

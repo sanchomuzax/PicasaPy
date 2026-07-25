@@ -81,7 +81,7 @@ Dialog {
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: folderModel.count > 0
-            color: "#ffffff"
+            color: Theme.contentPanel
             border.color: Theme.chromeBorder
             ListView {
                 id: folderList

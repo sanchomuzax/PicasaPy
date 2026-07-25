@@ -54,7 +54,7 @@ Rectangle {
         Rectangle {
             width: parent.width; height: 22
             gradient: Gradient {
-                GradientStop { position: 0.0; color: "#eef0f2" }
+                GradientStop { position: 0.0; color: Theme.panelHeaderTop }
                 GradientStop { position: 1.0; color: Theme.panelHeaderBg }
             }
             border.color: Theme.chromeBorder
@@ -97,7 +97,7 @@ Rectangle {
         Rectangle {
             width: parent.width; height: 22
             gradient: Gradient {
-                GradientStop { position: 0.0; color: "#eef0f2" }
+                GradientStop { position: 0.0; color: Theme.panelHeaderTop }
                 GradientStop { position: 1.0; color: Theme.panelHeaderBg }
             }
             border.color: Theme.chromeBorder
