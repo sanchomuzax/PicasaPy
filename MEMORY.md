@@ -175,6 +175,34 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Tanulságok
 
+- **2026-07-25 (#28 → a témázhatóság szabálya): a token-készlet akkor ér
+  valamit, ha SENKI nem ír hardkódolt színt.** A sötét téma bevezetésekor a
+  `Theme.qml` tokenjeit párba állítani félórás munka volt — a valódi munka a
+  ~30 hardkódolt `"#ffffff"`/`"#dddddd"`/`"#8f8b83"` felkutatása a
+  komponensekben (dialógusok, eszköztár keresőmezője, mappafa-fejléc
+  gradiense, haladásjelző sínek), plusz a Main.qml Qt-Controls-palettája,
+  ami külön, szintén hardkódolt réteg volt. Szabály innentől: **új felületen
+  szín csak tokenből**; ami a designban tényleg téma-független (márkaszínek,
+  a fotó fölé kerülő fátyol/feliratok/arckeretek), azt kommentben kell
+  jelölni, hogy a következő átvilágítás ne akarja tokenre cserélni.
+
+- **2026-07-25 (#29/#30 — jelzésre váró tesztek): a háttérszálas művelet
+  hibaútja SZINKRON jelez.** A „hívd meg a slotot, aztán iratkozz fel a
+  jelzésre, majd pörgesd az eseményciklust" minta a sikeres (worker-szálas)
+  úton működik, a validációs hibaútra viszont NEM: az még a hívó szálon,
+  azonnal emittál, tehát az utólagos feliratkozás lemarad róla, és a teszt
+  „nem jött jelzés"-re bukik — miközben a kód helyes. A helyes segéd
+  ELŐBB iratkozik fel, UTÁNA hívja a slotot (`_run(signal, action)`, ld.
+  `tests/app/test_create_controller.py`).
+
+- **2026-07-25 (#30 — opcionális Qt-modul): a nem garantált modult külön
+  fájlba, Loader mögé.** A QtLocation nincs minden PySide6-telepítésben; ha
+  a `import QtLocation` a panel fájljában áll, a hiánya az EGÉSZ panelt (és
+  a bekötő ablakot) elviheti. A térkép ezért önálló komponens
+  (`PlacesMap.qml`), a panel `Loader`-rel tölti, `status === Loader.Error`
+  esetén magyarázó szöveggel — és a Loader csak LÁTHATÓ panelnél aktív, így
+  rejtett panel nem tölt le térkép-csempéket sem.
+
 - **2026-07-24 (#305 → #309): platformfüggetlen tesztőr csak platformfüggetlen
   jelenségre hasalhat el.** A QML-figyelmeztetés-őr eredetileg MINDEN
   Qt-figyelmeztetésre hibát dobott — Linuxon zöld volt, a windows-latest lábat
