@@ -648,7 +648,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 22
             radius: 2
-            color: "#ffffff"
+            color: Theme.contentPanel
             border.color: Theme.chromeBorder
             Text {
                 anchors.left: parent.left; anchors.leftMargin: 6
@@ -675,7 +675,7 @@ Rectangle {
             visible: false
             Layout.fillWidth: true
             Layout.preferredHeight: visible ? aspectColumn.height + 2 : 0
-            color: "#ffffff"
+            color: Theme.contentPanel
             border.color: Theme.chromeBorder
             Column {
                 id: aspectColumn

@@ -61,8 +61,8 @@ ColumnLayout {
         }
         Rectangle {
             width: 26; height: 22; radius: 3
-            color: "#ffffff"; border.color: Theme.chromeBorder
-            Text { anchors.centerIn: parent; text: "☆"; color: "#a0a0a0"; font.pixelSize: 13 }
+            color: Theme.contentPanel; border.color: Theme.chromeBorder
+            Text { anchors.centerIn: parent; text: "☆"; color: Theme.textGray; font.pixelSize: 13 }
         }
         PicasaButton {
             text: qsTr("Upload") + " ▾"

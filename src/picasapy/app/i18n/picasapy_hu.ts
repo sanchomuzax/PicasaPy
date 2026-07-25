@@ -1365,6 +1365,11 @@
         <translation>Rejtett képek</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152"/>
+        <source>Dark Theme</source>
+        <translation>Sötét téma</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="150"/>
         <source>Folder View</source>
         <translation>Mappanézet</translation>

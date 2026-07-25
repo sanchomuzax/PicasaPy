@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.68] – 2026-07-25
+
+### Hozzáadva
+- **Sötét téma (#28):** a Nézet menü új, kapcsolható „Sötét téma" pontja —
+  az alapértelmezés továbbra is a világos felület (Picasa-paritás), a
+  választás pedig megjegyződik a következő indulásig (QSettings
+  `view/darkTheme`). A `Theme.qml` tokenjei párba álltak (világos/sötét),
+  a tokennevek változatlanok, így a felület minden rétege — mappafa,
+  rács, dialógusok, eszköztár, tálca, néző és a Qt Controls-paletta is —
+  egyszerre vált. A márkaszínek (logó) és a fotó fölé kerülő rétegek
+  mindkét témában azonosak. A korábban hardkódolt fehér/szürke felületek
+  tokenre cserélve (a dizájn-kézikönyv téma-politikája bővült a teljes
+  világos/sötét tokentáblával).
+
 ## [0.4.67] – 2026-07-24
 
 ### Javítva

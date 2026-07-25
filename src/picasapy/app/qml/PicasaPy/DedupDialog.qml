@@ -326,7 +326,7 @@ Window {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 8
                 radius: 4
-                color: "#dddddd"
+                color: Theme.trackBg
                 border.color: Theme.chromeBorder
 
                 Rectangle {
@@ -386,7 +386,7 @@ Window {
                         objectName: "dedupGroup:" + groupCard.index
                         width: groupsColumn.width
                         height: groupContent.height + 16
-                        color: "#ffffff"
+                        color: Theme.contentPanel
                         border.color: Theme.chromeBorder
                         radius: 3
 

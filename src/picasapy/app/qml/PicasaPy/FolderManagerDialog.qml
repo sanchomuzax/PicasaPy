@@ -123,7 +123,7 @@ Window {
                 Layout.preferredWidth: 320
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                color: "#ffffff"
+                color: Theme.contentPanel
                 border.color: Theme.chromeBorder
 
                 Flickable {

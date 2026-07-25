@@ -82,21 +82,21 @@ Rectangle {
                 }
                 Text {   // arc-szűrő (3. fázis)
                     width: 22; height: 20
-                    text: "☺"; font.pixelSize: 13; color: "#8f8b83"
+                    text: "☺"; font.pixelSize: 13; color: Theme.placeholderText
                     opacity: 0.45
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
                 Text {   // geo-szűrő
                     width: 22; height: 20
-                    text: "⚲"; font.pixelSize: 13; color: "#8f8b83"
+                    text: "⚲"; font.pixelSize: 13; color: Theme.placeholderText
                     opacity: 0.45
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
                 Text {   // mozgókép / méret
                     width: 22; height: 20
-                    text: "▤"; font.pixelSize: 12; color: "#8f8b83"
+                    text: "▤"; font.pixelSize: 12; color: Theme.placeholderText
                     opacity: 0.45
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -115,7 +115,7 @@ Rectangle {
             Layout.preferredWidth: 300
             Layout.preferredHeight: 24
             radius: 3
-            color: "#ffffff"
+            color: Theme.controlBase
             border.color: Theme.chromeBorder
             RowLayout {
                 anchors.fill: parent
@@ -127,11 +127,11 @@ Rectangle {
                     Rectangle {
                         x: 0; y: 0; width: 9; height: 9; radius: 4.5
                         color: "transparent"
-                        border.color: "#8f8b83"; border.width: 1.5
+                        border.color: Theme.placeholderText; border.width: 1.5
                     }
                     Rectangle {
                         x: 8; y: 8; width: 4; height: 1.5
-                        rotation: 45; color: "#8f8b83"
+                        rotation: 45; color: Theme.placeholderText
                     }
                 }
                 TextInput {
@@ -149,7 +149,7 @@ Rectangle {
                                  && !searchField.activeFocus
                         anchors.verticalCenter: parent.verticalCenter
                         text: qsTr("Search")
-                        color: "#8f8b83"
+                        color: Theme.placeholderText
                         font.pixelSize: Theme.fontSize
                     }
                 }

@@ -71,7 +71,7 @@ ColumnLayout {
                         width: 14; height: 14; radius: 7
                         border.width: 1
                         border.color: Theme.chromeBorder
-                        color: "#ffffff"
+                        color: Theme.contentPanel
                         Rectangle {
                             anchors.centerIn: parent
                             width: 8; height: 8; radius: 4
@@ -108,7 +108,7 @@ ColumnLayout {
     Rectangle {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        color: "#ffffff"
+        color: Theme.contentPanel
         border.color: Theme.chromeBorder
 
         ListView {
