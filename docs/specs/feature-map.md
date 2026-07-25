@@ -48,7 +48,8 @@ A Picasa funkcionalitása → PicasaPy megvalósítási fázisok.
   - export: XMP MWG-RS + `HierarchicalSubject` `people|Név`
 - Kollázs (kész, #29: képrács / kontaktmásolat / keretes mozaik / képhalom)
   és mozgófilm-export (kész, #29: MP4-diavetítés áttűnéssel)
-- Diavetítés, export/átméretezés, geotag-szerkesztés
+- Diavetítés, export/átméretezés
+- Geocímke: Helyek-panel térképpel, geo-szűrő, `geotag=` írás (kész, #30)
 - Duplikátum-keresés
 - (Később mérlegelendő: nyomtatás, képernyővédő, e-mail küldés — az eredeti
   Picasa funkciói, alacsony prioritás)

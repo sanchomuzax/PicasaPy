@@ -1695,6 +1695,39 @@
     </message>
 </context>
 <context>
+    <name>PlacesPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="40"/>
+        <source>Places</source>
+        <translation>Helyek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="48"/>
+        <source>%1 pictures with a place</source>
+        <translation>%1 kép rendelkezik hellyel</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="54"/>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="84"/>
+        <source>The map component (QtLocation) is not available. Geotags can still be edited.</source>
+        <translation>A térkép-komponens (QtLocation) nem érhető el. A geocímkék így is szerkeszthetők.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="96"/>
+        <source>Right-click the map to place the selected pictures.</source>
+        <translation>Jobb kattintás a térképen: a kijelölt képek ide kerülnek.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PlacesPanel.qml" line="103"/>
+        <source>Remove Geotag</source>
+        <translation>Geocímke törlése</translation>
+    </message>
+</context>
+<context>
     <name>PropertiesPanel</name>
     <message>
         <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28"/>

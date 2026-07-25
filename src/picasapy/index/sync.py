@@ -286,11 +286,12 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
                 row["keywords_ini"],
                 row["rotate_steps"],
                 row["filters"],
+                row["geotag_ini"],
             ),
         )
         for row in conn.execute(
             "SELECT name, mtime_ns, size, star, hidden, caption_ini,"
-            " keywords_ini, rotate_steps, filters"
+            " keywords_ini, rotate_steps, filters, geotag_ini"
             " FROM photos WHERE folder_id = ?",
             (folder_id,),
         )
@@ -306,6 +307,10 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
             section.get("keywords") if section else None,
             _rotate_steps(section.get("rotate")) if section else 0,
             section.get("filters") if section else None,
+            # #30: a geocímke nyers ini-értéke — a feloldást (ini > EXIF)
+            # a lekérdezés-réteg végzi, itt bitre pontosan az tárolódik,
+            # ami az ini-ben áll
+            section.get("geotag") if section else None,
         )
         current = existing.get(media.name)
         if current is not None and current[0] == (media.mtime_ns, media.size):
@@ -316,7 +321,8 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
             if current[1] != ini_fields:
                 conn.execute(
                     "UPDATE photos SET star = ?, hidden = ?, caption_ini = ?,"
-                    " keywords_ini = ?, rotate_steps = ?, filters = ?"
+                    " keywords_ini = ?, rotate_steps = ?, filters = ?,"
+                    " geotag_ini = ?"
                     " WHERE folder_id = ? AND name = ?",
                     (*ini_fields, folder_id, media.name),
                 )
@@ -350,9 +356,10 @@ def _upsert_photo(
     conn.execute(
         "INSERT INTO photos"
         "(folder_id, name, kind, size, mtime_ns, star, hidden, caption_ini,"
-        " keywords_ini, rotate_steps, filters, taken_at, orientation,"
-        " width, height, caption_file, keywords_file)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        " keywords_ini, rotate_steps, filters, geotag_ini, taken_at,"
+        " orientation, width, height, caption_file, keywords_file,"
+        " exif_lat, exif_lon)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
         "ON CONFLICT(folder_id, name) DO UPDATE SET "
         "kind = excluded.kind, size = excluded.size, "
         "mtime_ns = excluded.mtime_ns, star = excluded.star, "
@@ -361,10 +368,12 @@ def _upsert_photo(
         "keywords_ini = excluded.keywords_ini, "
         "rotate_steps = excluded.rotate_steps, "
         "filters = excluded.filters, "
+        "geotag_ini = excluded.geotag_ini, "
         "taken_at = excluded.taken_at, orientation = excluded.orientation, "
         "width = excluded.width, height = excluded.height, "
         "caption_file = excluded.caption_file, "
-        "keywords_file = excluded.keywords_file",
+        "keywords_file = excluded.keywords_file, "
+        "exif_lat = excluded.exif_lat, exif_lon = excluded.exif_lon",
         (
             folder_id,
             media.name,
@@ -378,6 +387,8 @@ def _upsert_photo(
             meta.height,
             meta.caption,
             ",".join(meta.keywords) or None,
+            meta.latitude,
+            meta.longitude,
         ),
     )
 

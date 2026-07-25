@@ -58,6 +58,7 @@ ApplicationWindow {
     property bool viewerOpen: false
     property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
     property bool tagsPanelOpen: false    // Címkék-panel (#12, Ctrl+T)
+    property bool placesPanelOpen: false  // Helyek-panel (#30, térkép)
     // Tulajdonságok-panel (#13, Alt+Enter)
     property bool propertiesPanelOpen: false
     // a jobbklikkelt kép sora (#15) — a kontextusmenü egyedi műveleteinek
@@ -292,6 +293,9 @@ ApplicationWindow {
         onTimelineRequested: window.toggleTimeline()
         tagsPanelOpen: window.tagsPanelOpen
         onTagsPanelRequested: window.tagsPanelOpen = !window.tagsPanelOpen
+        placesPanelOpen: window.placesPanelOpen
+        onPlacesPanelRequested:
+            window.placesPanelOpen = !window.placesPanelOpen
         onHideToggleRequested: window.toggleHiddenSelection()
         propertiesPanelOpen: window.propertiesPanelOpen
         onPropertiesPanelRequested:
@@ -676,6 +680,21 @@ ApplicationWindow {
                 controller.removeKeywordFromRows(window.selectedRows(), keyword)
             }
             onCloseRequested: window.tagsPanelOpen = false
+        }
+
+        // Helyek-panel (#30): jobb oldali hasáb, Nézet → Helyek — a látszó
+        // képek helyei térképen, és a kijelölés geocímkézése
+        PlacesPanel {
+            objectName: "placesPanel"
+            visible: window.placesPanelOpen
+            SplitView.preferredWidth: 320
+            SplitView.minimumWidth: 220
+            appWindow: window
+            onCloseRequested: window.placesPanelOpen = false
+            onPhotoActivated: function(row) {
+                window.selectedIndexes = [row]
+                window.selectedIndex = row
+            }
         }
 
         // Tulajdonságok-panel (#13): jobb oldali hasáb, Alt+Enter /
