@@ -34,6 +34,25 @@ def _app13_segment(
     return b"\xff\xed" + (len(payload) + 2).to_bytes(2, "big") + payload
 
 
+def _dms(value: float) -> tuple:
+    """Tizedes fok → EXIF (fok, perc, másodperc) racionális hármas."""
+    degrees = int(abs(value))
+    minutes_full = (abs(value) - degrees) * 60
+    minutes = int(minutes_full)
+    seconds = round((minutes_full - minutes) * 60 * 100)
+    return ((degrees, 1), (minutes, 1), (seconds, 100))
+
+
+def _gps_ifd(latitude: float, longitude: float) -> dict:
+    """GPS-IFD a #30-as tesztekhez (féltekejelölővel)."""
+    return {
+        piexif.GPSIFD.GPSLatitudeRef: "N" if latitude >= 0 else "S",
+        piexif.GPSIFD.GPSLatitude: _dms(latitude),
+        piexif.GPSIFD.GPSLongitudeRef: "E" if longitude >= 0 else "W",
+        piexif.GPSIFD.GPSLongitude: _dms(longitude),
+    }
+
+
 def make_jpeg(
     path,
     size=(8, 6),
@@ -44,19 +63,23 @@ def make_jpeg(
     keywords: tuple[str, ...] = (),
     encoding: str = "utf-8",
     charset_marker: bool = False,
+    gps: tuple[float, float] | None = None,
 ):
     """`encoding`/`charset_marker`: legacy (nem UTF-8) IPTC szimulálásához
     (#133) — pl. CP1250, jelölő nélkül, ahogy a régi Picasa írta."""
     Image.new("RGB", size, "red").save(path, "JPEG")
     zeroth, exif_ifd = {}, {}
+    gps_ifd = _gps_ifd(*gps) if gps is not None else {}
     if orientation is not None:
         zeroth[piexif.ImageIFD.Orientation] = orientation
     if datetime_0th is not None:
         zeroth[piexif.ImageIFD.DateTime] = datetime_0th
     if taken_at is not None:
         exif_ifd[piexif.ExifIFD.DateTimeOriginal] = taken_at
-    if zeroth or exif_ifd:
-        piexif.insert(piexif.dump({"0th": zeroth, "Exif": exif_ifd}), str(path))
+    if zeroth or exif_ifd or gps_ifd:
+        piexif.insert(
+            piexif.dump({"0th": zeroth, "Exif": exif_ifd, "GPS": gps_ifd}), str(path)
+        )
     if caption is not None or keywords:
         raw = path.read_bytes()
         segment = _app13_segment(caption, keywords, encoding, charset_marker)

@@ -23,6 +23,7 @@ from PySide6.QtCore import (
 
 from picasapy.index import (
     all_photos,
+    geotagged_photos,
     open_index,
     search_photos,
     starred_photos,
@@ -35,6 +36,7 @@ from .appearance_controller import AppearanceMixin
 from .create_controller import CreateMixin
 from .effects_controller import EffectsClipboardMixin
 from .export_controller import ExportMixin
+from .geo_controller import GeoMixin
 from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
 # fileops_controller kompatibilis import-útja (#150 előtt itt élt a függvény)
 from .keywords_controller import KeywordsMixin
@@ -58,6 +60,7 @@ class AppController(
     PerfMonitorMixin,
     AppearanceMixin,
     CreateMixin,
+    GeoMixin,
     LibraryMixin,
     QObject,
 ):
@@ -518,6 +521,10 @@ class AppController(
         elif mode == "starred":
             with open_index(self._db_path) as conn:
                 self._show(starred_photos(conn))
+        elif mode == "geo":
+            # #30: hely-szűrő — a friss geocímkék (ini-írás után is) látszanak
+            with open_index(self._db_path) as conn:
+                self._show(geotagged_photos(conn))
         elif param:
             with open_index(self._db_path) as conn:
                 self._show(self._feed_records(conn))
@@ -583,6 +590,8 @@ class AppController(
         search_active = self._view_mode[0] in ("search", "search-folder")
         self._search_groups = group_by_folder(records) if search_active else ()
         self._update_status(records)
+        # #30: a térkép-jelölők mindig a LÁTSZÓ képeket tükrözik
+        self.geoChanged.emit()
 
     def _update_feed_groups(self, records) -> None:
         """Mappa-csoportok a rács-feedhez (#64). feedChanged CSAK valódi

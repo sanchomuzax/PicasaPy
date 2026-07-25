@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -91,6 +91,9 @@ CREATE TABLE IF NOT EXISTS photos (
     height INTEGER,
     caption_file TEXT,
     keywords_file TEXT,
+    geotag_ini TEXT,
+    exif_lat REAL,
+    exif_lon REAL,
     UNIQUE (folder_id, name)
 );
 
@@ -138,4 +141,12 @@ ALTER TABLE photos ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0;
     # indexekhez nem kell újraszámolni semmit, az első duplikátum-keresés
     # tölti fel magától.
     5: _PHOTO_HASHES_DDL,
+    # #30: geocímke — az ini nyers `geotag=` értéke és a fájl EXIF GPS-e
+    # külön oszlopban (a feloldás sorrendje: ini, majd EXIF). Üresen jön
+    # létre; a következő szinkron tölti fel, újraindexelés nélkül is.
+    6: """
+ALTER TABLE photos ADD COLUMN geotag_ini TEXT;
+ALTER TABLE photos ADD COLUMN exif_lat REAL;
+ALTER TABLE photos ADD COLUMN exif_lon REAL;
+""",
 }

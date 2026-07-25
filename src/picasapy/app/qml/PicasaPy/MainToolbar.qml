@@ -87,12 +87,28 @@ Rectangle {
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
-                Text {   // geo-szűrő
+                Item {   // geo-szűrő (#30) — csak akkor él, ha van geocímkés kép
+                    objectName: "geoFilter"
                     width: 22; height: 20
-                    text: "⚲"; font.pixelSize: 13; color: Theme.placeholderText
-                    opacity: 0.45
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
+                    readonly property bool ctlHasGeo:
+                        controller ? controller.geoMarkerCount > 0 : false
+                    Text {
+                        anchors.fill: parent
+                        text: "⚲"; font.pixelSize: 13
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        opacity: parent.ctlHasGeo ? 1.0 : 0.45
+                        color: geoFilterHover.hovered && parent.ctlHasGeo
+                               ? Theme.selectionBlue
+                               : Theme.placeholderText
+                    }
+                    HoverHandler { id: geoFilterHover }
+                    TapHandler {
+                        enabled: parent.ctlHasGeo
+                        onTapped: controller.filterActive
+                                  ? controller.clearFilter()
+                                  : controller.showGeotagged()
+                    }
                 }
                 Text {   // mozgókép / méret
                     width: 22; height: 20

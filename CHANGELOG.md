@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.4.70] – 2026-07-25
+
+### Hozzáadva
+- **Geocímke: Helyek-panel, térkép és szerkesztés (#30):** a képek helye
+  mostantól látszik és állítható. A hely két forrásból jön — a
+  `.picasa.ini` `geotag=` kulcsa (ez az erősebb) és a fájl EXIF GPS-adata
+  —, mindkettő az indexbe kerül (séma v7, migráció újraindexelés nélkül).
+  Új **Nézet → Helyek** panel: OpenStreetMap-térkép a látszó képek
+  jelölőivel (jelölőre kattintva kijelöli a képet), jobb kattintással a
+  kijelölt képek erre a helyre kerülnek, és egy gombbal törölhető a
+  geocímke (az EXIF-ben rögzített gépi hely megmarad). A szűrősor
+  **geo-ikonja élesedett**: egy kattintással csak a hellyel rendelkező
+  képek látszanak. A térkép külön, Loaderrel töltött komponens: QtLocation
+  nélküli telepítésen a panel a szerkesztéssel együtt működik, csak a
+  térkép helyén jelenik meg magyarázó szöveg.
+
 ## [0.4.69] – 2026-07-25
 
 ### Hozzáadva

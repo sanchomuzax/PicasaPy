@@ -33,6 +33,9 @@ MenuBar {
     // #12: a Címkék-panel állapota kívülről kötve, a menüpont csak kér
     property bool tagsPanelOpen: false
     signal tagsPanelRequested()
+    // #30: Helyek-panel (térkép)
+    property bool placesPanelOpen: false
+    signal placesPanelRequested()
     // #17: Kép → Elrejtés a kijelölésre
     signal hideToggleRequested()
     // #13: Tulajdonságok-panel
@@ -142,7 +145,13 @@ MenuBar {
             onTriggered: bar.tagsPanelRequested()
         }
         MenuItem { text: qsTr("People"); enabled: false }
-        MenuItem { text: qsTr("Places"); enabled: false }
+        MenuItem {
+            objectName: "menuViewPlaces"
+            text: qsTr("Places")
+            checkable: true
+            checked: bar.placesPanelOpen
+            onTriggered: bar.placesPanelRequested()
+        }
         MenuSeparator {}
         MenuItem {
             objectName: "menuViewSlideshow"

@@ -25,6 +25,8 @@ from pathlib import Path
 from PIL import Image
 from PIL.IptcImagePlugin import getiptcinfo
 
+from .gps import gps_from_exif
+
 _BOMB_EXCEPTIONS = (
     OSError,
     ValueError,
@@ -67,6 +69,10 @@ class FileMetadata:
     height: int | None = None
     caption: str | None = None
     keywords: tuple[str, ...] = ()
+    # #30: a fényképezőgép rögzítette hely (EXIF GPS-IFD), tizedes fokban;
+    # None, ha a fájlban nincs (értelmes) GPS-adat
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 EMPTY_METADATA = FileMetadata()
@@ -85,6 +91,7 @@ def read_file_metadata(path: str | Path) -> FileMetadata:
                 iptc = getiptcinfo(image) or {}
                 width, height = image.size
                 utf8_marked = _has_utf8_marker(iptc.get(_IPTC_CHARSET))
+                point = gps_from_exif(exif)
                 return FileMetadata(
                     taken_at=_taken_at(exif),
                     orientation=_orientation(exif),
@@ -92,6 +99,8 @@ def read_file_metadata(path: str | Path) -> FileMetadata:
                     height=height,
                     caption=_decode(iptc.get(_IPTC_CAPTION), utf8_marked),
                     keywords=_keywords(iptc.get(_IPTC_KEYWORDS), utf8_marked),
+                    latitude=point.latitude if point else None,
+                    longitude=point.longitude if point else None,
                 )
     except _BOMB_EXCEPTIONS:
         return EMPTY_METADATA

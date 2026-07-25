@@ -10,8 +10,8 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 
 class TestSchema:
-    def test_schema_version_is_six(self):
-        assert SCHEMA_VERSION == 6
+    def test_schema_version_is_seven(self):
+        assert SCHEMA_VERSION == 7
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
@@ -28,9 +28,13 @@ class TestSchema:
         with open_index(db) as conn:
             conn.execute("PRAGMA user_version = 5")
             conn.execute("DROP TABLE photo_hashes")
+            # #30: az 5-ös séma még nem ismerte a geo-oszlopokat sem
+            conn.execute("ALTER TABLE photos DROP COLUMN geotag_ini")
+            conn.execute("ALTER TABLE photos DROP COLUMN exif_lat")
+            conn.execute("ALTER TABLE photos DROP COLUMN exif_lon")
             conn.commit()
         with open_index(db) as conn:
-            assert conn.execute("PRAGMA user_version").fetchone()[0] == 6
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
             save_dhashes(conn, [("/kepek/a.jpg", 1, 2, 7)])
             assert load_dhashes(conn, [("/kepek/a.jpg", 1, 2)]) == {
                 ("/kepek/a.jpg", 1, 2): 7

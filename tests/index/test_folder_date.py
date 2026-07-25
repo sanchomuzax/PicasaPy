@@ -48,8 +48,8 @@ class TestFolderDate:
 class TestMigrationV3:
     def test_v2_upgrades_with_backfill(self, tmp_path, library):
         # v2 séma szimulálása: a friss adatbázisból eldobjuk a v2 utáni
-        # oszlopokat (date, filters, hidden), és a verziót 2-re állítjuk —
-        # így a teljes 2→3→4→5 migrációs lánc fut le.
+        # oszlopokat (date, filters, hidden, geo), és a verziót 2-re állítjuk —
+        # így a teljes 2→3→…→7 migrációs lánc fut le.
         db = tmp_path / "i.db"
         with open_index(db) as conn:
             sync_tree(conn, library)
@@ -57,6 +57,10 @@ class TestMigrationV3:
         raw.execute("ALTER TABLE folders DROP COLUMN date")
         raw.execute("ALTER TABLE photos DROP COLUMN filters")
         raw.execute("ALTER TABLE photos DROP COLUMN hidden")
+        # #30: a geo-oszlopok is a v2 utániak (séma v7)
+        raw.execute("ALTER TABLE photos DROP COLUMN geotag_ini")
+        raw.execute("ALTER TABLE photos DROP COLUMN exif_lat")
+        raw.execute("ALTER TABLE photos DROP COLUMN exif_lon")
         raw.execute("PRAGMA user_version=2")
         raw.commit()
         raw.close()

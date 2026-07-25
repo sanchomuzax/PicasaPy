@@ -15,7 +15,8 @@ _SELECT = """
 SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
        p.star, p.hidden, COALESCE(p.caption_file, p.caption_ini) AS caption,
        COALESCE(p.keywords_file, p.keywords_ini) AS keywords,
-       p.rotate_steps, p.filters, p.taken_at, p.orientation, p.width, p.height
+       p.rotate_steps, p.filters, p.taken_at, p.orientation, p.width, p.height,
+       p.geotag_ini, p.exif_lat, p.exif_lon
 FROM photos p JOIN folders f ON f.id = p.folder_id
 """
 
@@ -40,6 +41,28 @@ class PhotoRecord:
     # defaultos mező a végén: a meglévő (pozicionális) konstruálások ne
     # törjenek — az olvasó lekérdezés kulcsszóval tölti (#17)
     hidden: bool = False
+    # #30: geocímke — az ini nyers `geotag=` értéke és a fájlból olvasott
+    # EXIF GPS. A feloldás (melyik nyer) a `location` tulajdonságé.
+    geotag: str | None = None
+    exif_lat: float | None = None
+    exif_lon: float | None = None
+
+    @property
+    def location(self):
+        """A kép helye `GeoPoint`-ként; ini `geotag=` > EXIF GPS > None.
+
+        Fájlolvasás NINCS: az EXIF-koordináta az indexelésnél már eltárolva."""
+        from picasapy.metadata.gps import GeoPoint, parse_geotag
+
+        point = parse_geotag(self.geotag)
+        if point is not None:
+            return point
+        if self.exif_lat is None or self.exif_lon is None:
+            return None
+        try:
+            return GeoPoint(self.exif_lat, self.exif_lon)
+        except ValueError:
+            return None
 
 
 def photos_in_folder(
@@ -94,6 +117,24 @@ def all_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
 def starred_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     rows = conn.execute(f"{_SELECT} WHERE p.star = 1 ORDER BY f.path, p.name")
     return _records(rows)
+
+
+def geotagged_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
+    """Minden hellyel rendelkező fotó (#30) — a geo-szűrő és a térkép-nézet
+    forrása.
+
+    Az SQL csak előszűr (van-e egyáltalán adat); az ÉRVÉNYESSÉGET a
+    `PhotoRecord.location` dönti el, hogy a hibás `geotag=` ne kerüljön a
+    térképre. Rendezés: legfrissebb felvétel elöl (mint a csillagozottaknál
+    a mappa-sorrend) — a nem datált képek a végére."""
+    rows = conn.execute(
+        f"{_SELECT} WHERE p.geotag_ini IS NOT NULL AND p.geotag_ini <> ''"
+        " OR (p.exif_lat IS NOT NULL AND p.exif_lon IS NOT NULL)"
+        " ORDER BY p.taken_at IS NULL, p.taken_at DESC, f.path, p.name"
+    )
+    return tuple(
+        record for record in _records(rows) if record.location is not None
+    )
 
 
 def search_photos(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ...]:
@@ -227,6 +268,9 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             orientation=row["orientation"],
             width=row["width"],
             height=row["height"],
+            geotag=row["geotag_ini"],
+            exif_lat=row["exif_lat"],
+            exif_lon=row["exif_lon"],
         )
         for row in rows
     )

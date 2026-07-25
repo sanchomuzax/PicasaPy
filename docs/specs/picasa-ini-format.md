@@ -55,7 +55,7 @@ mint az eredeti Picasa 3.x.
 | `faces` | `rect64(3f84...),8e62...;` | arcok: rect64 + contact_id párok `;`-vel |
 | `albums` | `65d12673f3b51e3f...` | album-tokenek CSV listája |
 | `crop` | `crop=rect64(...)` | (előfordul filters-en kívül is) |
-| `geotag` | `33.770556,-84.293055` | GPS |
+| `geotag` | `33.770556,-84.293055` | GPS — szélesség,hosszúság tizedes fokban; a PicasaPy olvassa ÉS írja (#30). A kép helye: `geotag=` > EXIF GPS-IFD; törléskor csak a kulcs tűnik el, a fájl EXIF-je érintetlen. |
 | `width`,`height` | `5184`, `3456` | képméret cache |
 | `moddate` | `8094e2826277cd01` | módosítási idő (bináris FILETIME jellegű) |
 | `backuphash` | `36003` | dekódolatlan — változatlanul visszaírandó |
