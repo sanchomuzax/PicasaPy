@@ -22,6 +22,9 @@ MenuBar {
     signal dedupRequested()
     signal renameRequested()
     signal exportRequested()
+    // #29: Létrehozás → Képkollázs / Mozgófilm a kijelölésből
+    signal collageRequested()
+    signal movieRequested()
     signal locateRequested()
     signal deleteRequested()
     signal slideshowRequested()
@@ -273,8 +276,18 @@ MenuBar {
     Menu {
         title: qsTr("&Create")
         MenuItem { text: qsTr("Make a Poster..."); enabled: false }
-        MenuItem { text: qsTr("Picture Collage..."); enabled: false }
-        MenuItem { text: qsTr("Movie"); enabled: false }
+        MenuItem {
+            objectName: "menuCreateCollage"
+            text: qsTr("Picture Collage...")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.collageRequested()
+        }
+        MenuItem {
+            objectName: "menuCreateMovie"
+            text: qsTr("Movie")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.movieRequested()
+        }
     }
     Menu {
         title: qsTr("&Tools")

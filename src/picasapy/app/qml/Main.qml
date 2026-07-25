@@ -281,6 +281,8 @@ ApplicationWindow {
         onDedupRequested: dedupDialog.open()
         onRenameRequested: fileOpsDialogs.openRename(window.selectedIndex)
         onExportRequested: exportDialogs.openForSelection()
+        onCollageRequested: createDialogs.openCollage()
+        onMovieRequested: createDialogs.openMovie()
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.selectedIndex)
             if (p.length > 0) fileOpsController.revealPhoto(p)
@@ -781,6 +783,12 @@ ApplicationWindow {
     // exportálás mappába (#16, Ctrl+Shift+S; ExportDialogs.qml, #150)
     ExportDialogs {
         id: exportDialogs
+        appWindow: window
+    }
+
+    // kollázs és mozgófilm a kijelölésből (#29; CreateDialogs.qml)
+    CreateDialogs {
+        id: createDialogs
         appWindow: window
     }
 

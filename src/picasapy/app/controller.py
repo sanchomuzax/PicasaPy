@@ -32,6 +32,7 @@ from picasapy.ini import load_document, update_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
 from .appearance_controller import AppearanceMixin
+from .create_controller import CreateMixin
 from .effects_controller import EffectsClipboardMixin
 from .export_controller import ExportMixin
 from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
@@ -56,6 +57,7 @@ class AppController(
     EffectsClipboardMixin,
     PerfMonitorMixin,
     AppearanceMixin,
+    CreateMixin,
     LibraryMixin,
     QObject,
 ):
