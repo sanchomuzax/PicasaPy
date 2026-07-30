@@ -41,7 +41,7 @@ from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
 # fileops_controller kompatibilis import-útja (#150 előtt itt élt a függvény)
 from .keywords_controller import KeywordsMixin
 from .library_controller import LibraryMixin
-from .models import FolderListModel, PhotoGridModel
+from .models import FolderListModel, PhotoGridModel, folder_order
 from .perf_controller import PerfMonitorMixin
 from .photo_ops_controller import PhotoOpsMixin
 from .search_controller import SearchMixin
@@ -264,10 +264,11 @@ class AppController(
         self._refresh_view()  # a feed sorrendje követi a hasábot (#64)
 
     def _reload_folders(self) -> None:
+        # #321: a bal hasáb a SAJÁT, rögzített Picasa-sorrendjében áll (dátum
+        # szerint, évszám-elválasztókkal) — a Nézet ▸ Mappanézet beállítása
+        # csak a rácsot rendezi át, a fát soha.
         with open_index(self._db_path) as conn:
-            self._folders.load(
-                conn, sort_mode=self.folderSort, reverse=self.folderSortReverse
-            )
+            self._folders.load(conn)
         self.statusChanged.emit()
 
     # -- bal oldali mappapanel szélessége (#322) -----------------------------
@@ -400,9 +401,16 @@ class AppController(
         return tuple(stamp)
 
     def _feed_records(self, conn) -> tuple:
-        """A teljes könyvtár a bal hasáb mappa-sorrendjében (#64)."""
+        """A teljes könyvtár a Mappanézet rendezése szerint (#64, #321).
+
+        A sorrendet KÜLÖN kérdezzük le, nem a bal hasáb modelljéből vesszük:
+        a fa a saját rögzített sorrendjében áll, a rács a beállítást követi.
+        """
         order = {
-            path: i for i, path in enumerate(self._folders.folder_paths())
+            path: i
+            for i, path in enumerate(
+                folder_order(conn, self.folderSort, self.folderSortReverse)
+            )
         }
         return tuple(
             sorted(
@@ -587,11 +595,7 @@ class AppController(
         # felvillanást okozna — a _refresh_view frissíti a szűkítettet.
         if mode not in ("search", "search-folder"):
             with open_index(self._db_path) as conn:
-                self._folders.load(
-                    conn,
-                    sort_mode=self.folderSort,
-                    reverse=self.folderSortReverse,
-                )
+                self._folders.load(conn)  # #321: a fa sorrendje rögzített
         if mode != "folder":
             # #38: aktív keresés/szűrő a háttér-sync után is megmarad —
             # a selectFolder eldobná, ezért csak a nézetet frissítjük.
