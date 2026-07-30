@@ -114,22 +114,43 @@ Item {
             anchors.margins: 28
             spacing: 16
 
-            Image {
-                id: logo
-                objectName: "splashLogo"
+            // #314: a logó fehér háttér-korongja — méretét a logó TÉNYLEGES
+            // (kirajzolt) mérete adja, ~2 px ráhagyással minden oldalon
+            // (#37 mintája az app-ikonnál), így a korong sosem lóg túl a
+            // logón. A szín (Theme.logoDisc) sötét témán fehér, világos
+            // témán átlátszó — ld. a token indoklását Theme.qml-ben.
+            Item {
+                id: logoBox
                 anchors.horizontalCenter: parent.horizontalCenter
-                // a qml/PicasaPy/ mappából az app/assets két szinttel feljebb.
-                // #240: explicit magasság — az elrendezés akkor sem esik
-                // össze, ha a kép (még) nem töltődött be; SVG-hibánál (pl.
-                // hiányzó Qt-SVG plugin Debianon) raszteres fallback.
-                source: Qt.resolvedUrl("../../assets/logo.svg")
-                height: 72
-                sourceSize.height: 144
-                fillMode: Image.PreserveAspectFit
-                onStatusChanged: {
-                    if (status === Image.Error
-                            && source !== Qt.resolvedUrl("../../assets/icon.png"))
-                        source = Qt.resolvedUrl("../../assets/icon.png")
+                width: logo.paintedWidth + 4
+                height: logo.paintedHeight + 4
+
+                Rectangle {
+                    id: logoDisc
+                    objectName: "splashLogoDisc"
+                    anchors.fill: parent
+                    radius: 8
+                    color: Theme.logoDisc
+                }
+
+                Image {
+                    id: logo
+                    objectName: "splashLogo"
+                    anchors.centerIn: parent
+                    // a qml/PicasaPy/ mappából az app/assets két szinttel
+                    // feljebb. #240: explicit magasság — az elrendezés
+                    // akkor sem esik össze, ha a kép (még) nem töltődött
+                    // be; SVG-hibánál (pl. hiányzó Qt-SVG plugin Debianon)
+                    // raszteres fallback.
+                    source: Qt.resolvedUrl("../../assets/logo.svg")
+                    height: 72
+                    sourceSize.height: 144
+                    fillMode: Image.PreserveAspectFit
+                    onStatusChanged: {
+                        if (status === Image.Error
+                                && source !== Qt.resolvedUrl("../../assets/icon.png"))
+                            source = Qt.resolvedUrl("../../assets/icon.png")
+                    }
                 }
             }
 
