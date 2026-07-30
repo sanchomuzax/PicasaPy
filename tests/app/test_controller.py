@@ -1304,17 +1304,20 @@ class TestLibraryFeed:
         assert by_name["telek"]["dateText"] == ""  # nincs felvételi dátum
 
     def test_sort_change_reorders_feed(self, controller, two_folders):
+        """#321: a rendezés a RÁCSOT rendezi át — a bal hasáb sorrendje
+        (a saját, rögzített Picasa-sorrendje) nem mozdul.
+
+        A szétválasztás előtt (#64) a feed a hasábot követte; a részletes
+        ellenőrzés a `test_folder_sort_split.py`-ban van, ahol a név- és a
+        dátumsorrend szándékosan eltér.
+        """
         controller.selectFolder(str(two_folders / "nyaralas"))
         before = tuple(p.name for p in controller.photos.photos)
+        pane_before = controller.folders.folder_paths()
         controller.setFolderSort("name")
         after_names = tuple(p.name for p in controller.photos.photos)
         assert sorted(before) == sorted(after_names)  # ugyanaz a tartalom
-        pane_order = controller.folders.folder_paths()
-        feed_folders = []
-        for photo in controller.photos.photos:
-            if photo.folder_path not in feed_folders:
-                feed_folders.append(photo.folder_path)
-        assert tuple(feed_folders) == pane_order
+        assert controller.folders.folder_paths() == pane_before
 
 
 class TestFolderDescriptionPerPath:

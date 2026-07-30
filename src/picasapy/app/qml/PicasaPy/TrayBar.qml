@@ -142,6 +142,7 @@ Column {
                 }
             }
             PicasaButton {
+                id: trayRotateLeftBtn
                 objectName: "trayRotateLeft"
                 text: "↺"
                 // #103: csak-videó kijelölésnél tiltva (photos.revision:
@@ -155,8 +156,23 @@ Column {
                            ? controller.rotateLeftMany(
                                  tray.appWindow.selectedIndexes)
                            : controller.rotateLeft(trayStar.targetRow)
+                // #314: a PicasaButton alap-krómja (PicasaButton.qml) nem
+                // témavezérelt — mindig világos bevel-gomb. Az alapértelmezett
+                // contentItem az `ink`-et használná, ami sötét témán
+                // kivilágosodik és eltűnne a világos gombháttéren; itt a
+                // fix `Theme.iconInk`-kel felülírjuk (letiltva marad a
+                // PicasaButton eredeti, szintén rögzített szürkéje).
+                contentItem: Text {
+                    objectName: "trayRotateLeftLabel"
+                    text: trayRotateLeftBtn.text
+                    font: trayRotateLeftBtn.font
+                    color: trayRotateLeftBtn.enabled ? Theme.iconInk : "#9a9a9a"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
             }
             PicasaButton {
+                id: trayRotateRightBtn
                 objectName: "trayRotateRight"
                 text: "↻"
                 enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
@@ -168,6 +184,15 @@ Column {
                            ? controller.rotateRightMany(
                                  tray.appWindow.selectedIndexes)
                            : controller.rotateRight(trayStar.targetRow)
+                // #314: ld. trayRotateLeftBtn indoklása fentebb.
+                contentItem: Text {
+                    objectName: "trayRotateRightLabel"
+                    text: trayRotateRightBtn.text
+                    font: trayRotateRightBtn.font
+                    color: trayRotateRightBtn.enabled ? Theme.iconInk : "#9a9a9a"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
             }
             Item { Layout.fillWidth: true }
             // nagyítás-csúszka − / + jelekkel (kézikönyv 06)
@@ -183,11 +208,21 @@ Column {
             PicasaButton { text: qsTr("E-Mail"); enabled: false }
             PicasaButton { text: qsTr("Print"); enabled: false }
             PicasaButton {
+                id: trayExportBtn
                 objectName: "trayExportButton"
                 text: qsTr("Export")
                 enabled: !tray.appWindow.viewerOpen
                          && tray.appWindow.selectedIndexes.length > 0
                 onClicked: tray.exportRequested()
+                // #314: ld. trayRotateLeftBtn indoklása fentebb.
+                contentItem: Text {
+                    objectName: "trayExportLabel"
+                    text: trayExportBtn.text
+                    font: trayExportBtn.font
+                    color: trayExportBtn.enabled ? Theme.iconInk : "#9a9a9a"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
             }
             Item { width: 6 }
             // az egyetlen zöld elsődleges tett — jobbra igazítva,

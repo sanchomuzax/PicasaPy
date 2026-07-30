@@ -105,8 +105,40 @@ class TestSetGeotag:
         assert "sehol.jpg" in located
 
     def test_many_rows_at_once(self, controller, library):
+        """Több kijelölt kép — akkor is, ha KÜLÖNBÖZŐ mappában vannak.
+
+        A rács a #64 óta a teljes könyvtárat mutatja (végtelen feed), ezért a
+        sorindexek nem a kiválasztott mappán belül értendők: a köteg több
+        mappa ini-jét is érintheti. A teszt korábban egyetlen mappa ini-jét
+        nézte, és emiatt hibásan „elveszett írást" jelzett (#331).
+        """
         controller.selectFolder(str(library / "nyaralas"))
-        controller.setGeotagRows([0, 1], 1.0, 2.0)
+        rows_by_folder = {}
+        for row, photo in enumerate(controller.photos.photos):
+            rows_by_folder.setdefault(photo.folder_path, []).append(row)
+        assert len(rows_by_folder) >= 2, "a feed több mappát fog át"
+
+        picked = [rows[0] for rows in rows_by_folder.values()][:2]
+        controller.setGeotagRows(picked, 1.0, 2.0)
+
+        written = sum(
+            (library / folder / ".picasa.ini").read_text(encoding="utf-8").count(
+                "geotag=1,2"
+            )
+            for folder in ("nyaralas", "varos")
+        )
+        assert written == 2, "mindkét kijelölt kép megkapta a helyet"
+
+    def test_many_rows_in_the_same_folder(self, controller, library):
+        """Ugyanabban a mappában lévő két kép: egyetlen ini, két bejegyzés."""
+        controller.selectFolder(str(library / "nyaralas"))
+        rows = [
+            row
+            for row, photo in enumerate(controller.photos.photos)
+            if photo.folder_path.endswith("nyaralas")
+        ]
+        assert len(rows) == 2
+        controller.setGeotagRows(rows, 1.0, 2.0)
         ini = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         assert ini.count("geotag=1,2") == 2
 

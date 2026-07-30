@@ -5,6 +5,47 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.5.0] – 2026-07-30
+
+A kiadás a felhasználó éles, Windows-os visszajelzései nyomán készült, és
+három eredeti Picasa-képernyőkép-csomag (53 kép) szisztematikus auditjára
+épül (`docs/specs/ui-audit-menus.md`, `-editor.md`, `-mainwindow.md`).
+
+### Hozzáadva
+- **Mind a 36 Picasa-effekt (#328, #329, #330):** az audit kimutatta, hogy az
+  eredeti szerkesztőpanelen **öt** fül van (nálunk három volt), és 36 effekt
+  (nálunk 13). A hiányzó 23 megkapta a render-implementációját és a gombját:
+  a 4. fülön Infravörös film, Lomo, Holga, HDR, Kinemaszkóp, Orton, 60-as
+  évek, Színinvertálás, Hőtérkép, Áttűnés, Poszterizálás, Kéttónusú; az 5.
+  fülön Felpörgetés, Lágyítás, Képpontnagyítás, Fókusznagyítás, Ceruzarajz,
+  Neon, Képregény, Szegély, Árnyékvetés, Múzeumi matt, Polaroid. Ez nemcsak
+  hiányzó funkció volt: az ilyen effektet kapott képeket a PicasaPy eddig
+  **effekt nélkül** mutatta. A négy keretes effekt méretet növel, ezért a
+  lánc a **vágás után** alkalmazza őket.
+- **Élesítés és Vignetta (#315):** két támogatott szűrő évek óta UI nélkül
+  állt; az Élesítés az eredetiben az Effektek fül első gombja.
+- **Picasa-hű gyűjtemények a bal hasábon (#320):** Albumok, Emberek,
+  Projektek, Mappák, Egyebek — csukható fejlécekkel, megjegyzett állapottal.
+- **Húzható mappapanel (#322):** látható elválasztó, a szélesség megmarad.
+- **~44 hiányzó menüpont (#324)** és az első gyorsbillentyűk (#327).
+
+### Javítva
+- **Sötét téma (#314):** a splash logója fehér korongot kapott (eddig
+  beleolvadt), a tálca ikonjai láthatóvá váltak, és a szerkesztő gombjainak
+  feliratai olvashatók (a kontraszt 1,16-ról legalább 3,45-re nőtt).
+- **A gombfeliratok nem vágódnak le (#318)** — tördelés az elide helyett.
+- **A görgetősáv megjelent (#323):** eddig a Qt alapértelmezése szerint csak
+  görgetés közben villant fel, ezért a felhasználó gyakorlatilag sosem látta.
+- **A Mappanézet rendezés csak a rácsot rendezi (#321)**, a mappafát nem.
+- **Az effekt-paraméterek eljutnak a rendererhez (#332):** ha a Picasában
+  elhúzott csúszka értéke ott van az ini-ben, mostantól az érvényesül.
+
+### Dokumentáció
+- **Őszinte effekt-státusz (#317):** a 36 effektből 13 mögött van
+  golden-mérés, 22 szakirodalmi közelítés, 1 matematikailag pontos. A
+  `docs/specs/filters-decoded.md` új táblája ezt kimondja — a kalibráltság
+  látszata félrevezető volt.
+
 ## [0.4.70] – 2026-07-25
 
 ### Hozzáadva

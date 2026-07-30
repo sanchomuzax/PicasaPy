@@ -175,6 +175,37 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Tanulságok
 
+- **2026-07-30 (a nagy UI-audit): referencia-kép nélkül a UI-paritás VAKREPÜLÉS
+  — és évekig észrevétlen marad.** A felhasználó éles visszajelzése után
+  betöltött 53 eredeti Picasa-screenshot azonnal kimutatta, hogy a
+  szerkesztőpanelen **öt** fül van (nálunk három) és **36** effekt (nálunk 13),
+  a bal hasáb gyökerén pedig öt gyűjtemény áll (nálunk két hardkódolt fejléc).
+  Ezt kódból, spec-ből, jó szándékból SOHA nem találtuk volna ki. Következmény
+  a munkamódszerre: UI-paritás kérdésben az első lépés a referencia-kép
+  beszerzése, nem a kódolás; a `docs/specs/ui-audit-*.md` mostantól a mérce.
+  Járulékos lelet: a hiányzó 23 effekt nemcsak funkcióhiány volt — a
+  Picasával így szerkesztett képeket a renderelő ismeretlen névként némán
+  kihagyta, tehát a felhasználó **effekt nélkül** látta a saját fotóit. Az
+  „ismeretlen op = néma kihagyás" hibatűrés kényelmes, de elrejti a hiányt:
+  érdemes legalább egyszer, összesítve jelezni, mit nem tudunk renderelni.
+
+- **2026-07-30 (őszinteség a kalibrációról): a „kész" funkció és a HITELES
+  funkció nem ugyanaz.** A felhasználó jogosan háborodott fel azon, hogy a
+  szerkesztő minden effektje kalibráltnak látszik, holott 36-ból csak 13
+  mögött van golden-mérés. Új szabály: minden közelítő modell docstringje
+  KIMONDJA, hogy közelítés, mi az alapja, és melyik jegy kalibrálja; a
+  `filters-decoded.md` státusz-táblája (MÉRT / MÉRT-DE-ELTÉR / KÖZELÍTŐ /
+  PONTOS) pedig egy helyen mutatja az igazságot. Ez nem szégyen, hanem a
+  bizalom feltétele — a felhasználó a saját fotóit nézi rajta.
+
+- **2026-07-30 (a bukó teszt nem mindig termékhiba):** a `test_many_rows_at_once`
+  „geocímke-adatvesztést" jelzett; a tényleges futásidő kiíratása (MEMORY
+  2026-07-22 szabálya) megmutatta, hogy a kód HELYES — a rács a #64 óta a
+  teljes könyvtárat mutatja, ezért a 0. és 1. sor két KÜLÖNBÖZŐ mappa képe
+  volt, és a köteg helyesen két ini-be írt. A teszt élt elavult
+  feltételezéssel. Mielőtt termékkódot javítasz egy bukó tesztre: nézd meg,
+  mit lát ténylegesen a vezérlő.
+
 - **2026-07-25 (#28 → a témázhatóság szabálya): a token-készlet akkor ér
   valamit, ha SENKI nem ír hardkódolt színt.** A sötét téma bevezetésekor a
   `Theme.qml` tokenjeit párba állítani félórás munka volt — a valódi munka a

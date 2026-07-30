@@ -33,6 +33,7 @@ from picasapy.ini import load_document, update_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
 from .appearance_controller import AppearanceMixin
+from .language_controller import LanguageMixin
 from .create_controller import CreateMixin
 from .effects_controller import EffectsClipboardMixin
 from .export_controller import ExportMixin
@@ -41,7 +42,8 @@ from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
 # fileops_controller kompatibilis import-útja (#150 előtt itt élt a függvény)
 from .keywords_controller import KeywordsMixin
 from .library_controller import LibraryMixin
-from .models import FolderListModel, PhotoGridModel
+from .collections import COLLECTIONS, DEFAULT_COLLAPSED, collection_setting_key
+from .models import FolderListModel, PhotoGridModel, folder_order
 from .perf_controller import PerfMonitorMixin
 from .photo_ops_controller import PhotoOpsMixin
 from .search_controller import SearchMixin
@@ -49,6 +51,18 @@ from .search_results import group_by_folder, groups_to_qml
 from .thumbnail_provider import ThumbnailProvider
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
+
+#: A bal oldali mappapanel szélessége (#322) — a felhasználó húzhatja, az
+#: érték a QSettings-ben él. A határok azt védik ki, hogy egy elrontott
+#: (nulla vagy képernyőnél szélesebb) érték használhatatlan felülettel
+#: indítsa a következő futást.
+FOLDER_PANE_WIDTH_DEFAULT = 230
+FOLDER_PANE_WIDTH_MIN = 160
+FOLDER_PANE_WIDTH_MAX = 600
+
+
+def _clamp_folder_pane_width(width: int) -> int:
+    return max(FOLDER_PANE_WIDTH_MIN, min(FOLDER_PANE_WIDTH_MAX, width))
 
 
 class AppController(
@@ -59,6 +73,7 @@ class AppController(
     EffectsClipboardMixin,
     PerfMonitorMixin,
     AppearanceMixin,
+    LanguageMixin,
     CreateMixin,
     GeoMixin,
     LibraryMixin,
@@ -130,6 +145,7 @@ class AppController(
         self._init_perf_monitor()
         # #28: sötét téma kapcsoló — alapból világos, QSettings-ből visszaáll
         self._init_appearance()
+        self._init_language()
         # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
         # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
         # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
@@ -252,10 +268,58 @@ class AppController(
         self._refresh_view()  # a feed sorrendje követi a hasábot (#64)
 
     def _reload_folders(self) -> None:
+        # #321: a bal hasáb a SAJÁT, rögzített Picasa-sorrendjében áll (dátum
+        # szerint, évszám-elválasztókkal) — a Nézet ▸ Mappanézet beállítása
+        # csak a rácsot rendezi át, a fát soha.
         with open_index(self._db_path) as conn:
-            self._folders.load(
-                conn, sort_mode=self.folderSort, reverse=self.folderSortReverse
-            )
+            self._folders.load(conn)
+        self.statusChanged.emit()
+
+    # -- gyűjtemények a bal hasábon (#320) -----------------------------------
+
+    @Slot(str, result=bool)
+    def isCollectionCollapsed(self, name: str) -> bool:
+        """Csukva van-e a gyűjtemény fejléce (perzisztens)."""
+        if name not in COLLECTIONS:
+            return False
+        stored = self._get_settings().value(
+            collection_setting_key(name), DEFAULT_COLLAPSED[name]
+        )
+        return stored in (True, "true", "1", 1)
+
+    @Slot(str, bool)
+    def setCollectionCollapsed(self, name: str, collapsed: bool) -> None:
+        """A gyűjtemény-fejléc csukása/nyitása — ismeretlen nevet kihagy."""
+        if name not in COLLECTIONS:
+            return
+        self._get_settings().setValue(collection_setting_key(name), bool(collapsed))
+        self.statusChanged.emit()
+
+    # -- bal oldali mappapanel szélessége (#322) -----------------------------
+
+    @Property(int, notify=statusChanged)
+    def folderPaneWidth(self):
+        """A mappapanel szélessége képpontban — perzisztens, határok közé
+        szorítva. Olvashatatlan (kézzel elrontott) érték esetén az
+        alapértelmezés jön vissza, nem hiba."""
+        raw = self._get_settings().value(
+            "view/folderPaneWidth", FOLDER_PANE_WIDTH_DEFAULT
+        )
+        try:
+            width = int(raw)
+        except (TypeError, ValueError):
+            return FOLDER_PANE_WIDTH_DEFAULT
+        return _clamp_folder_pane_width(width)
+
+    @Slot(int)
+    def setFolderPaneWidth(self, width: int) -> None:
+        """A húzással beállított szélesség mentése (a QML a SplitView
+        fogantyújának elengedésekor hívja)."""
+        try:
+            clamped = _clamp_folder_pane_width(int(width))
+        except (TypeError, ValueError):
+            return
+        self._get_settings().setValue("view/folderPaneWidth", clamped)
         self.statusChanged.emit()
 
     @Property(str, notify=statusChanged)
@@ -361,9 +425,16 @@ class AppController(
         return tuple(stamp)
 
     def _feed_records(self, conn) -> tuple:
-        """A teljes könyvtár a bal hasáb mappa-sorrendjében (#64)."""
+        """A teljes könyvtár a Mappanézet rendezése szerint (#64, #321).
+
+        A sorrendet KÜLÖN kérdezzük le, nem a bal hasáb modelljéből vesszük:
+        a fa a saját rögzített sorrendjében áll, a rács a beállítást követi.
+        """
         order = {
-            path: i for i, path in enumerate(self._folders.folder_paths())
+            path: i
+            for i, path in enumerate(
+                folder_order(conn, self.folderSort, self.folderSortReverse)
+            )
         }
         return tuple(
             sorted(
@@ -548,11 +619,7 @@ class AppController(
         # felvillanást okozna — a _refresh_view frissíti a szűkítettet.
         if mode not in ("search", "search-folder"):
             with open_index(self._db_path) as conn:
-                self._folders.load(
-                    conn,
-                    sort_mode=self.folderSort,
-                    reverse=self.folderSortReverse,
-                )
+                self._folders.load(conn)  # #321: a fa sorrendje rögzített
         if mode != "folder":
             # #38: aktív keresés/szűrő a háttér-sync után is megmarad —
             # a selectFolder eldobná, ezért csak a nézetet frissítjük.

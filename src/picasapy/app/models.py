@@ -30,6 +30,47 @@ _YEAR_PREFIX = re.compile(r"^(\d{4})")
 _ROOT_INDEX = QModelIndex()
 
 
+def sorted_folder_rows(
+    conn: sqlite3.Connection, sort_mode: str = "date", reverse: bool = False
+) -> list[tuple[str, str, int, str, int, int]]:
+    """A mappák (név, útvonal, darabszám, dátum, méret, változás) sorai a kért
+    rendezésben.
+
+    Külön függvény, mert két, egymástól FÜGGETLEN sorrendet kell kiszolgálnia
+    (#321): a bal hasáb a saját, rögzített Picasa-sorrendjében áll, a rács
+    (feed) viszont a Nézet ▸ Mappanézet beállítását követi.
+    """
+    db_rows = conn.execute(
+        "SELECT f.path, f.date, count(p.id) AS n,"
+        " COALESCE(SUM(p.size), 0) AS total_size,"
+        " COALESCE(MAX(p.mtime_ns), 0) AS last_change"
+        " FROM folders f LEFT JOIN photos p ON p.folder_id = f.id"
+        " GROUP BY f.id ORDER BY f.path"
+    ).fetchall()
+    folders = [
+        (
+            _PATH_SEPARATORS.split(row["path"])[-1],
+            row["path"],
+            row["n"],
+            row["date"],
+            row["total_size"],
+            row["last_change"],
+        )
+        for row in db_rows
+    ]
+    folders.sort(key=_sort_key(sort_mode), reverse=_descending(sort_mode) != reverse)
+    return folders
+
+
+def folder_order(
+    conn: sqlite3.Connection, sort_mode: str = "date", reverse: bool = False
+) -> tuple[str, ...]:
+    """Csak a mappa-útvonalak a kért sorrendben (a rács sorrendjéhez, #321)."""
+    return tuple(path for _name, path, *_rest in sorted_folder_rows(
+        conn, sort_mode, reverse
+    ))
+
+
 class FolderListModel(QAbstractListModel):
     """Mappa-lista évszám-elválasztó sorokkal (Picasa-minta).
 
@@ -60,25 +101,7 @@ class FolderListModel(QAbstractListModel):
         'changed' (legutóbbi változtatás), 'size' (méret), 'name' (név).
         A reverse a kiválasztott rendezést fordítja meg.
         """
-        db_rows = conn.execute(
-            "SELECT f.path, f.date, count(p.id) AS n,"
-            " COALESCE(SUM(p.size), 0) AS total_size,"
-            " COALESCE(MAX(p.mtime_ns), 0) AS last_change"
-            " FROM folders f LEFT JOIN photos p ON p.folder_id = f.id"
-            " GROUP BY f.id ORDER BY f.path"
-        ).fetchall()
-        folders = [
-            (
-                _PATH_SEPARATORS.split(row["path"])[-1],
-                row["path"],
-                row["n"],
-                row["date"],
-                row["total_size"],
-                row["last_change"],
-            )
-            for row in db_rows
-        ]
-        folders.sort(key=_sort_key(sort_mode), reverse=_descending(sort_mode) != reverse)
+        folders = sorted_folder_rows(conn, sort_mode, reverse)
         self._set_rows(
             _with_year_separators(
                 (name, path, count, date)

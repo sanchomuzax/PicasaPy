@@ -18,7 +18,6 @@ import subprocess
 
 from PySide6.QtCore import (
     QCoreApplication,
-    QLocale,
     QLockFile,
     QSettings,
     Qt,
@@ -44,6 +43,11 @@ from .drop_import_controller import DropImportController
 from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
 from .faces_helper import FacesHelper
+from .language_controller import (
+    DEFAULT_LANGUAGE,
+    LANGUAGE_KEY,
+    coerce_language,
+)
 from .fileops_controller import FileOpsController
 from .folder_tree_controller import FolderTreeController
 from .import_source_controller import ImportSourceController
@@ -282,10 +286,33 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
     fileops.photoDeleted.connect(refresh)
 
 
-def _install_translator(app: QGuiApplication) -> QTranslator | None:
-    language = os.environ.get("PICASAPY_LANG") or QLocale.system().name()
+def _configured_language() -> str:
+    """A betöltendő nyelv: a környezeti változó nyer, utána a mentett
+    beállítás, végül az alapértelmezés (#333).
+
+    A rendszer nyelvét SZÁNDÉKOSAN nem nézzük: a felhasználó kérése szerint
+    az alapértelmezés az angol, és a váltás a beállításokban történik.
+    """
+    forced = os.environ.get("PICASAPY_LANG")
+    if forced:
+        return coerce_language(forced)
+    settings = QSettings("PicasaPy", "PicasaPy")
+    return coerce_language(settings.value(LANGUAGE_KEY, DEFAULT_LANGUAGE))
+
+
+def _install_translator(
+    app: QGuiApplication, language: str | None = None
+) -> QTranslator | None:
+    """A `language` (vagy a beállított) nyelv fordítójának telepítése.
+
+    Az angolhoz nincs `.qm` — a forrásszövegek maguk angolok —, ezért ott
+    nincs mit betölteni, és ez nem hiba.
+    """
+    code = coerce_language(language) if language else _configured_language()
+    if code == DEFAULT_LANGUAGE:
+        return None
     translator = QTranslator(app)
-    if translator.load(f"picasapy_{language.split('_')[0]}", str(_I18N_DIR)):
+    if translator.load(f"picasapy_{code}", str(_I18N_DIR)):
         app.installTranslator(translator)
         return translator
     return None
@@ -412,6 +439,24 @@ def run(argv: list[str]) -> int:
     )
 
     engine = QQmlApplicationEngine()
+
+    # Nyelvváltás futásidőben (#333): a régi fordító le, az új fel, majd a
+    # QML-kötések újraszámolása. A `retranslate` a qsTr-es kötéseket frissíti;
+    # a már megjelenített, C++/Python oldalon összeállított szövegek
+    # (pl. státuszsor) a következő frissítésükkor követik.
+    installed: list[QTranslator] = []
+
+    def _apply_language() -> None:
+        for old in installed:
+            app.removeTranslator(old)
+        installed.clear()
+        new = _install_translator(app, controller.language)
+        if new is not None:
+            installed.append(new)
+        engine.retranslate()
+
+    controller.languageChanged.connect(_apply_language)
+
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
     engine.addImportPath(str(_APP_DIR / "qml"))

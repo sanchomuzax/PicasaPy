@@ -77,6 +77,25 @@ QtObject {
     readonly property color shadeLight: dark ? "#3f3f3f" : "#ffffff"  // kiemelt él
     readonly property color shadeDark: dark ? "#161616" : "#9a9a9a"   // árnyék-él
 
+    // ------- #314: sötét téma kozmetikai javítások -------
+    // splash-logó háttérkorongja: az eredeti Picasa-logó is fehér korongon
+    // ül (ld. #37 az app-ikonnál, tools/regenerate_icon.py) — sötét témán a
+    // logó sötét eleme (navy "Picasa"-felirat, a pinwheel cikkelyei közti
+    // rés) a sötét kártyaháttéren szinte eltűnik. Világos témán a kártya
+    // (contentPanel) már amúgy is fehér, ott a korong láthatatlan plusz
+    // szegély lenne — ezért itt (a színen keresztül, nem külön
+    // visible-ágon) párosítjuk: sötétben fehér, világosban átlátszó. Így a
+    // SplashScreen maga nem kérdezi a témát, csak a tokent használja (#28).
+    readonly property color logoDisc: dark ? "#ffffff" : "#00ffffff"
+
+    // gomb-ikon tinta (TrayBar): a PicasaButton krómja (PicasaButton.qml)
+    // SZÁNDÉKOSAN nem témavezérelt — a háttere mindig világos-szürke bevel
+    // (Picasa-hűség), ezért a rajta lévő ikon/felirat sem követheti az
+    // `ink`-et (ami sötét témán kivilágosodik, és a világos gombháttéren
+    // eltűnne). Rögzített sötét tinta MINDKÉT témában — nem azért „pár",
+    // mert a felület, amin ül, maga sem az.
+    readonly property color iconInk: dark ? "#2b2b2b" : "#2b2b2b"
+
     readonly property int fontSize: 12              // felület: 11–13 px
     readonly property int folderTitleSize: 16         // csoport-fejléc / 600
     readonly property string monoFamily: "IBM Plex Mono, monospace"
