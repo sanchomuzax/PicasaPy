@@ -302,6 +302,26 @@ goldenek ellen futott. A harness (#115) és a LUT-os validálás (#279)
 lezárva; a fenti „eltér"/„⚠️" szűrők render-pontosítása a Nyitva-listán,
 súlyosság szerint (tint → dir_tint → sat+ → finetune2-hő → fill → …).
 
+## Implementációs státusz — MIT MENNYIRE HISZÜNK (2026-07-30, #329/#330/#332)
+
+A felhasználó jogos kifogása után („Kizárt, hogy minden effekt kalibrált"):
+ez a tábla **őszintén** megmondja, melyik effekt mögött áll mérés, és melyik
+mögött csak szakirodalmi közelítés. A UI egyik effektnél sem sugallja, hogy
+Picasa-hű lenne.
+
+| minőség | mit jelent | effektek |
+|---|---|---|
+| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `warm`, `sat`, `grain2` (statisztikai) |
+| **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `Vignette` (4,6), `ansel` (5,6), `radblur` (3,2), `glow2` (2,7) |
+| **KÖZELÍTŐ (mérés nélkül)** | a hatás jellege alapján, szakirodalomból — golden-mérés NINCS | 4. fül: `IR`, `Lomo`, `Holga`, `HDR`, `Cinemascope`, `Orton`, `Sixties`, `HeatMap`, `CrossProcess`, `QuantizePalette`, `TwoTone`; 5. fül: `Boost`, `Soften`, `Pixelate`, `FocalZoom`, `PencilSketch`, `Neon`, `Comicize`, `Border`, `DropShadow`, `MuseumMatte`, `Polaroid` |
+| **PONTOS** | matematikailag egyértelmű, mérés sem kell | `Invert` (255−x) |
+
+Vagyis a 36 effektből **13 mögött van mérés**, 22 közelítés, 1 triviálisan
+pontos. A kalibráció a **#317**-es jegyben fut; a paraméter-leképezés
+állapota: az 5. fül effektjeinél az ini-paraméterek már eljutnak a
+rendererhez (#332, a fenti mért minták pozíciói szerint), a 4. fülnél még
+az alapérték fut — ott előbb mérés kell.
+
 ## Nyitva (5. kör / implementáció közben)
 
 1. autocolor pontos gain-képlete (célzott cast-sweep kellene)
