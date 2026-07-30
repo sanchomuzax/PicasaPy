@@ -29,6 +29,7 @@ _EFFECT_PARAMS: dict[str, tuple[str, ...]] = {
     "sat": ("1", "0.500000"),
 }
 _EFFECT_NAMES = (
+    "unsharp",
     "sepia",
     "bw",
     "warm",
@@ -40,7 +41,17 @@ _EFFECT_NAMES = (
     "ansel",
     "radsat",
     "dir_tint",
+    "vignette",
 )
+
+#: A `.picasa.ini`-be írandó betűzés, ahol az eltér a belső kulcstól. A
+#: Picasa a vignette-et NAGYBETŰVEL írja (`Vignette=1,...`); a round-trip
+#: elv (CLAUDE.md 1. döntés) szerint mi is úgy írjuk, hogy a párhuzamosan
+#: futó eredeti Picasa is felismerje. Beolvasásnál mindkét alak jó — a
+#: renderelő kis-nagybetű-tűrő.
+_EFFECT_INI_NAMES: dict[str, str] = {
+    "vignette": "Vignette",
+}
 
 
 class EditController(QObject):
@@ -388,7 +399,9 @@ class EditController(QObject):
         if key not in _EFFECT_NAMES:
             raise ValueError(f"Érvénytelen effekt: {name!r}")
         self._push_undo(key)
-        self._session = self._session.append_effect(key, _EFFECT_PARAMS.get(key, ("1",)))
+        self._session = self._session.append_effect(
+            _EFFECT_INI_NAMES.get(key, key), _EFFECT_PARAMS.get(key, ("1",))
+        )
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()

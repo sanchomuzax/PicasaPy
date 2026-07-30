@@ -153,9 +153,17 @@ Rectangle {
         Rectangle {
             anchors.fill: parent
             radius: 3
-            color: tile.active ? "#cfe4f7"
-                 : (tileMouse.containsMouse && tile.tileEnabled ? "#e8eef4"
-                                                                : "transparent")
+            // #314: sem "#cfe4f7", sem "#e8eef4" nem olvasható sötét
+            // témában (fix világos árnyalatok) — a jelző-kék tokenből
+            // (Theme.selectionBlue) származtatott áttetsző rétegre váltva
+            // mindkét témán kontrasztos marad, a hover halványabb az aktívnál.
+            color: tile.active
+                   ? Qt.rgba(Theme.selectionBlue.r, Theme.selectionBlue.g,
+                             Theme.selectionBlue.b, 0.45)
+                   : (tileMouse.containsMouse && tile.tileEnabled
+                      ? Qt.rgba(Theme.selectionBlue.r, Theme.selectionBlue.g,
+                                Theme.selectionBlue.b, 0.18)
+                      : "transparent")
             border.width: tile.active ? 1 : 0
             border.color: Theme.selectionBlue
         }
@@ -195,20 +203,34 @@ Rectangle {
         property bool buttonEnabled: true
         signal buttonClicked()
         Layout.fillWidth: true
-        Layout.preferredHeight: 24
+        // #318: a felirat teljesen olvasható kell legyen — a magasság a
+        // (esetleg tördelt) feliratból számolt implicitHeight-hez igazodik,
+        // 24px az alsó korlát (rövid egysoros feliratoknál, pl. Undo/Redo).
+        Layout.preferredHeight: Math.max(24, pbtnLabel.implicitHeight + 10)
         radius: 3
         border.width: 1
         border.color: Theme.chromeBorder
         // pbtn.enabled = buttonEnabled ÉS az öröklött (panel-)enabled (#103)
         enabled: pbtn.buttonEnabled
-        color: !pbtn.enabled ? "#ececec"
-               : (pbtnMouse.pressed ? "#d8d8d8" : "#fdfdfd")
+        // #314: fix világos hexák ("#fdfdfd"/"#d8d8d8"/"#ececec") helyett
+        // téma-tokenekből — sötét témában a gomb is sötétedik, így a
+        // (szintén témafüggő) Theme.textDark felirat olvasható marad rajta.
+        color: !pbtn.enabled ? Theme.chromeBg
+               : (pbtnMouse.pressed ? Qt.darker(Theme.buttonBg, 1.15) : Theme.buttonBg)
         Text {
+            id: pbtnLabel
+            // a hívó objectName-jéből képzett saját objectName (pl.
+            // "effectGrain2Label") — a tesztek ezen ellenőrzik a
+            // tördelést/nem-vágást (#318), a histogramTitle mintája (#235).
+            objectName: pbtn.objectName ? pbtn.objectName + "Label" : ""
             anchors.centerIn: parent
             text: pbtn.label
             font.pixelSize: Theme.fontSize
-            color: pbtn.enabled ? Theme.textDark : "#9a968e"
-            elide: Text.ElideRight
+            color: pbtn.enabled ? Theme.textDark : Theme.textGray
+            // #318: elide helyett tördelés — a panel szélessége nem nőhet,
+            // de a szöveg soha nem vágódik "…"-ra; a Qt WordWrap szó-
+            // határon tör, hosszú, tördelhetetlen szónál karakterhatáron.
+            wrapMode: Text.WordWrap
             width: parent.width - 8
             horizontalAlignment: Text.AlignHCenter
         }
@@ -524,11 +546,20 @@ Rectangle {
         }
 
         GridLayout {
+            objectName: "effectsGrid"
             columns: 2
             columnSpacing: 6
             rowSpacing: 6
             Layout.fillWidth: true
 
+            // #315: az eredeti Picasa Effektek fülén az Élesítés az ELSŐ
+            // gomb — a render/chain.py "unsharp" handlere ismeri, csak a
+            // gombja hiányzott.
+            PanelButton {
+                objectName: "effectUnsharp"
+                label: qsTr("Sharpen")
+                onButtonClicked: panel.effectRequested("unsharp")
+            }
             PanelButton {
                 objectName: "effectSepia"
                 label: qsTr("Sepia")
@@ -583,6 +614,15 @@ Rectangle {
                 objectName: "effectDirTint"
                 label: qsTr("Graduated Tint")
                 onButtonClicked: panel.effectRequested("dir_tint")
+            }
+            // #315: a render/chain.py "vignette" kulcsot vár (kisbetűs,
+            // casefold), noha az ini-ben a szűrő neve nagybetűs "Vignette"
+            // — az EditController.applyEffect is casefold-ol, ezért itt is
+            // kisbetűvel küldjük az effectRequested jelet.
+            PanelButton {
+                objectName: "effectVignette"
+                label: qsTr("Vignette")
+                onButtonClicked: panel.effectRequested("vignette")
             }
         }
 
@@ -694,7 +734,10 @@ Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
                             text: modelData.label
                             font.pixelSize: Theme.fontSize
-                            color: aspectRowHover.hovered ? "#ffffff" : Theme.ink
+                            // a kijelölő-kék (Theme.panelSelection) hátteren
+                            // szándékosan téma-független fehér a token
+                            // (Theme.panelSelectionText) — nem új hardkód
+                            color: aspectRowHover.hovered ? Theme.panelSelectionText : Theme.ink
                         }
                         HoverHandler { id: aspectRowHover }
                         TapHandler {
