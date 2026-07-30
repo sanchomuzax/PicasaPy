@@ -114,6 +114,37 @@ def _wait_for_row_bounds(qt_app, grid, row, timeout_ms=2000):
     return prev
 
 
+def _settle_content_y_at(qt_app, grid, target=0.0, timeout_ms=2000):
+    """#261: a KIINDULÓ görgetés-pozíció determinisztikus beállítása.
+
+    A `_wait_for_scroll_settled` a lépés UTÁNI állapotot várja ki, de a
+    kiindulást is meg kell szilárdítani: a rács a `thumbSize` váltása utáni
+    újrarendezéskor (delegate-inkubáció, mentett pozíció visszaállítása)
+    egy-két eseményciklussal később felülírhatja a frissen beírt
+    `contentY`-t. A Windows-CI ezért látott 898-at ott, ahol a teszt 0-t
+    állított be. Itt addig ismételjük a beállítást, amíg az érték két
+    egymást követő lekérdezésben is a célértéken marad.
+    """
+    from PySide6.QtCore import QEventLoop, QMetaObject, QTimer
+
+    steps = max(1, timeout_ms // 20)
+    stable = 0
+    for _ in range(steps):
+        if grid.property("contentY") != target:
+            grid.setProperty("contentY", target)
+            stable = 0
+        else:
+            stable += 1
+            if stable >= 2:
+                return True
+        QMetaObject.invokeMethod(grid, "forceLayout")
+        qt_app.processEvents()
+        pause = QEventLoop()
+        QTimer.singleShot(20, pause.quit)
+        pause.exec()
+    return grid.property("contentY") == target
+
+
 def _wait_for_scroll_settled(qt_app, grid, timeout_ms=2000):
     """#261: determinisztikus szinkronpont a `contentY`-ra épülő
     tesztekhez — a `_wait_for_row_bounds` párja. A `moveSelection` utáni
@@ -325,8 +356,9 @@ class TestArrowMinimalScroll:
             window, qt_app)
         try:
             grid.setProperty("selectionAnchor", 1)
-            grid.setProperty("contentY", 0)
-            qt_app.processEvents()
+            # #261: a kiindulás is szinkronpontot kap — enélkül a rács
+            # újrarendezése felülírhatja a beírt 0-t (Windows-CI)
+            assert _settle_content_y_at(qt_app, grid, 0)
             # #261: a virtualizált cella-ablak kötése lassabb gépen
             # (Windows-CI) késik — a lépés ELŐTT megvárjuk a célsor
             # geometriáját, különben az ensureVisible vakon görgetne
