@@ -454,14 +454,57 @@ ApplicationWindow {
     }
 
     SplitView {
+        id: mainSplit
         anchors.fill: parent
         visible: !window.viewerOpen && !window.timelineOpen
         orientation: Qt.Horizontal
 
+        // #322: látható, fogható elválasztó. A Fusion alap-fogantyúja olyan
+        // halvány, hogy a felhasználó meg sem találta — ez a delegate a
+        // Picasa vékony sávját adja, hover/húzás közben kiemelkedve, és a
+        // kurzort is átváltja, hogy a húzhatóság magától látsszon.
+        handle: Rectangle {
+            objectName: "folderPaneHandle"
+            implicitWidth: 6
+            implicitHeight: 6
+            color: SplitHandle.pressed
+                   ? Qt.darker(Theme.chromeBorder, 1.35)
+                   : (SplitHandle.hovered
+                      ? Qt.darker(Theme.chromeBorder, 1.15)
+                      : Theme.chromeBorder)
+
+            Behavior on color {
+                ColorAnimation { duration: 100 }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton  // csak a kurzorért
+                cursorShape: Qt.SplitHCursor
+            }
+        }
+
         FolderPane {
+            id: folderPane
             objectName: "folderPane"
-            SplitView.preferredWidth: 230
+            // #305: null-őr — a controller a leépítéskor átmenetileg null
+            SplitView.preferredWidth: controller ? controller.folderPaneWidth : 230
             SplitView.minimumWidth: 160
+            SplitView.maximumWidth: 600
+
+            // A húzott szélesség mentése — késleltetve, hogy a húzás közbeni
+            // pixelenkénti változás ne írja folyamatosan a QSettings-t.
+            onWidthChanged: folderPaneWidthSaver.restart()
+
+            Timer {
+                id: folderPaneWidthSaver
+                interval: 400
+                onTriggered: {
+                    if (controller && folderPane.width > 0) {
+                        controller.setFolderPaneWidth(Math.round(folderPane.width))
+                    }
+                }
+            }
             // #305: null-őr — a controller a QML-engine leépítésekor
             // átmenetileg null lehet, amikor ezek a kötések utoljára
             // kiértékelődnek

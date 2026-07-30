@@ -50,6 +50,18 @@ from .thumbnail_provider import ThumbnailProvider
 
 _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
 
+#: A bal oldali mappapanel szélessége (#322) — a felhasználó húzhatja, az
+#: érték a QSettings-ben él. A határok azt védik ki, hogy egy elrontott
+#: (nulla vagy képernyőnél szélesebb) érték használhatatlan felülettel
+#: indítsa a következő futást.
+FOLDER_PANE_WIDTH_DEFAULT = 230
+FOLDER_PANE_WIDTH_MIN = 160
+FOLDER_PANE_WIDTH_MAX = 600
+
+
+def _clamp_folder_pane_width(width: int) -> int:
+    return max(FOLDER_PANE_WIDTH_MIN, min(FOLDER_PANE_WIDTH_MAX, width))
+
 
 class AppController(
     SearchMixin,
@@ -256,6 +268,33 @@ class AppController(
             self._folders.load(
                 conn, sort_mode=self.folderSort, reverse=self.folderSortReverse
             )
+        self.statusChanged.emit()
+
+    # -- bal oldali mappapanel szélessége (#322) -----------------------------
+
+    @Property(int, notify=statusChanged)
+    def folderPaneWidth(self):
+        """A mappapanel szélessége képpontban — perzisztens, határok közé
+        szorítva. Olvashatatlan (kézzel elrontott) érték esetén az
+        alapértelmezés jön vissza, nem hiba."""
+        raw = self._get_settings().value(
+            "view/folderPaneWidth", FOLDER_PANE_WIDTH_DEFAULT
+        )
+        try:
+            width = int(raw)
+        except (TypeError, ValueError):
+            return FOLDER_PANE_WIDTH_DEFAULT
+        return _clamp_folder_pane_width(width)
+
+    @Slot(int)
+    def setFolderPaneWidth(self, width: int) -> None:
+        """A húzással beállított szélesség mentése (a QML a SplitView
+        fogantyújának elengedésekor hívja)."""
+        try:
+            clamped = _clamp_folder_pane_width(int(width))
+        except (TypeError, ValueError):
+            return
+        self._get_settings().setValue("view/folderPaneWidth", clamped)
         self.statusChanged.emit()
 
     @Property(str, notify=statusChanged)
