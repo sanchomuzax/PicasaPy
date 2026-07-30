@@ -41,6 +41,7 @@ from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
 # fileops_controller kompatibilis import-útja (#150 előtt itt élt a függvény)
 from .keywords_controller import KeywordsMixin
 from .library_controller import LibraryMixin
+from .collections import COLLECTIONS, DEFAULT_COLLAPSED, collection_setting_key
 from .models import FolderListModel, PhotoGridModel, folder_order
 from .perf_controller import PerfMonitorMixin
 from .photo_ops_controller import PhotoOpsMixin
@@ -269,6 +270,26 @@ class AppController(
         # csak a rácsot rendezi át, a fát soha.
         with open_index(self._db_path) as conn:
             self._folders.load(conn)
+        self.statusChanged.emit()
+
+    # -- gyűjtemények a bal hasábon (#320) -----------------------------------
+
+    @Slot(str, result=bool)
+    def isCollectionCollapsed(self, name: str) -> bool:
+        """Csukva van-e a gyűjtemény fejléce (perzisztens)."""
+        if name not in COLLECTIONS:
+            return False
+        stored = self._get_settings().value(
+            collection_setting_key(name), DEFAULT_COLLAPSED[name]
+        )
+        return stored in (True, "true", "1", 1)
+
+    @Slot(str, bool)
+    def setCollectionCollapsed(self, name: str, collapsed: bool) -> None:
+        """A gyűjtemény-fejléc csukása/nyitása — ismeretlen nevet kihagy."""
+        if name not in COLLECTIONS:
+            return
+        self._get_settings().setValue(collection_setting_key(name), bool(collapsed))
         self.statusChanged.emit()
 
     # -- bal oldali mappapanel szélessége (#322) -----------------------------
