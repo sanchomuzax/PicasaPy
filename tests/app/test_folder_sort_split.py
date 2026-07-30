@@ -7,6 +7,8 @@ szerint áll, és a rendezés váltása nem mozdítja meg — csak a fő rács
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QSettings
 
@@ -74,11 +76,11 @@ class TestSortAffectsOnlyTheFeed:
 
     def test_feed_order_follows_the_sort_setting(self, controller):
         controller.setFolderSort("name")
-        by_name = [p.rsplit("/", 1)[-1] for p in _feed_folder_order(controller)]
+        by_name = [Path(p).name for p in _feed_folder_order(controller)]
         assert by_name == ["alma", "mokus", "zebra"]
 
         controller.setFolderSort("date")
-        by_date = [p.rsplit("/", 1)[-1] for p in _feed_folder_order(controller)]
+        by_date = [Path(p).name for p in _feed_folder_order(controller)]
         assert by_date == ["mokus", "zebra", "alma"], "legújabb mappa elöl"
 
     def test_reverse_flips_the_feed(self, controller):
