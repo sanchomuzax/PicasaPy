@@ -76,6 +76,53 @@ class TestPicasaScrollBar:
         item.deleteLater()
         engine.deleteLater()
 
+    # --- #323: a sáv INTERAKCIÓ NÉLKÜL is látszik, ha van mit görgetni ---
+    # A korábbi kötés az `active`-hoz kötötte a láthatóságot, így a sáv
+    # nyugalmi állapotban teljesen átlátszó volt — a felhasználó soha nem
+    # látta. A Picasa görgetősávja állandóan ott van.
+
+    def test_handle_visible_when_scrollable_without_interaction(
+        self, app_module, qt_app
+    ):
+        item, engine = _load(
+            app_module, qt_app, "PicasaScrollBar.qml", {"size": 0.3}
+        )
+        assert item.property("active") is False, "a teszt nyugalmi állapotot mér"
+        assert item.property("contentItem").property("opacity") == pytest.approx(1.0)
+        item.deleteLater()
+        engine.deleteLater()
+
+    def test_track_visible_when_scrollable_without_interaction(
+        self, app_module, qt_app
+    ):
+        item, engine = _load(
+            app_module, qt_app, "PicasaScrollBar.qml", {"size": 0.3}
+        )
+        assert item.property("background").property("opacity") > 0.0
+        item.deleteLater()
+        engine.deleteLater()
+
+    def test_hidden_when_nothing_to_scroll(self, app_module, qt_app):
+        # size == 1.0: a tartalom kifér, nincs mit görgetni
+        item, engine = _load(
+            app_module, qt_app, "PicasaScrollBar.qml", {"size": 1.0}
+        )
+        assert item.property("contentItem").property("opacity") == pytest.approx(0.0)
+        assert item.property("background").property("opacity") == pytest.approx(0.0)
+        item.deleteLater()
+        engine.deleteLater()
+
+    def test_hidden_when_policy_always_off(self, app_module, qt_app):
+        item, engine = _load(
+            app_module,
+            qt_app,
+            "PicasaScrollBar.qml",
+            {"policy": 1, "size": 0.3},  # ScrollBar.AlwaysOff == 1
+        )
+        assert item.property("contentItem").property("opacity") == pytest.approx(0.0)
+        item.deleteLater()
+        engine.deleteLater()
+
 
 class TestPicasaSlider:
     def test_instantiates_as_quick_item(self, app_module, qt_app):
