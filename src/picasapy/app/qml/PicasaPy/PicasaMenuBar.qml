@@ -1,13 +1,18 @@
 import QtQuick
 import QtQuick.Controls
 
-// A Picasa 3.9 teljes menüszerkezete (a magyar 3.9-ből dokumentálva).
-// A még nem implementált pontok szürkék — a szerkezet a dizájn része.
+// A Picasa 3.9 teljes menüszerkezete (a magyar 3.9-ből dokumentálva,
+// ld. docs/specs/ui-audit-menus.md, #324/#327). A még nem implementált
+// pontok szürkék — a szerkezet a dizájn része. A gyorsbillentyűk a
+// feliratban `\t`-tal elválasztva jelennek meg (pl. "Rename...\tF2");
+// a ténylegesen ható (élő) billentyűket vagy a lenti `Shortcut` elemek,
+// vagy a Main.qml globális `Shortcut`-jai kötik be — az inaktív
+// pontoknál a felirat csak vizuális, nincs mögötte élő billentyű.
 MenuBar {
     id: bar
     // #305: null-őr a `controller` kötésekhez — a QML-engine leépítésekor
-    // a context property átmenetileg null lehet, miközben a `checked:`
-    // kötések utoljára kiértékelődnek.
+    // a context property átmenetileg null lehet, miközben a QML-kötések
+    // utoljára kiértékelődnek.
     readonly property var ctl: controller
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
     property bool photoActionsEnabled: false
@@ -47,48 +52,94 @@ MenuBar {
     signal copyEffectsRequested()
     signal pasteEffectsRequested()
 
+    // #327: gyorsbillentyűk azoknak az AKTÍV menüpontoknak, amelyeknek
+    // még nincs élő bekötésük máshol (a többi már a Main.qml globális
+    // Shortcut-jain vagy a menüpont onTriggered-jén keresztül működik —
+    // azokhoz itt csak a MENÜBEN LÁTSZÓ felirat tartozik, ld. lent).
+    Shortcut {
+        objectName: "shortcutSmallThumbnails"
+        sequence: "Ctrl+1"
+        onActivated: bar.thumbSizePreset(96)
+    }
+    Shortcut {
+        objectName: "shortcutNormalThumbnails"
+        sequence: "Ctrl+2"
+        onActivated: bar.thumbSizePreset(144)
+    }
+    Shortcut {
+        objectName: "shortcutLocateOnDisk"
+        sequence: "Ctrl+Return"
+        enabled: bar.photoActionsEnabled
+        onActivated: bar.locateRequested()
+    }
+    Shortcut {
+        objectName: "shortcutDeleteFromDisk"
+        sequence: "Delete"
+        enabled: bar.photoActionsEnabled
+        onActivated: bar.deleteRequested()
+    }
+
     Menu {
         title: qsTr("&File")
-        MenuItem { text: qsTr("New Album..."); enabled: false }
+        MenuItem { text: qsTr("New Album...") + "\tCtrl+N"; enabled: false }
         MenuItem { text: qsTr("Add Folder to Picasa..."); enabled: false }
-        MenuItem { text: qsTr("Add File to Picasa..."); enabled: false }
-        MenuItem { text: qsTr("Import From..."); enabled: false }
+        MenuItem { text: qsTr("Add File to Picasa...") + "\tCtrl+O"; enabled: false }
+        MenuItem { text: qsTr("Import From...") + "\tCtrl+M"; enabled: false }
+        // hiányzott (#324 audit): a Google Fotókból importálás menüpontja
+        MenuItem { text: qsTr("Import From Google Photos..."); enabled: false }
         MenuSeparator {}
+        // hiányzott (#324 audit): fájl(ok) megnyitása a szerkesztőben
+        MenuItem { text: qsTr("Open File(s) in Editor") + "\tCtrl+Shift+O"; enabled: false }
+        MenuSeparator {}
+        // hiányzott (#324 audit): mappa áthelyezés a fájlműveletek csoportjában
+        MenuItem { text: qsTr("Move to New Folder..."); enabled: false }
         MenuItem {
             objectName: "menuFileRename"
-            text: qsTr("Rename...")
+            text: qsTr("Rename...") + "\tF2"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.renameRequested()
         }
-        MenuItem { text: qsTr("Save"); enabled: false }
+        MenuItem { text: qsTr("Save") + "\tCtrl+S"; enabled: false }
         MenuItem { text: qsTr("Revert"); enabled: false }
+        MenuSeparator {}
+        // hiányzott (#324 audit): eltérő mentés-változatok
+        MenuItem { text: qsTr("Save As..."); enabled: false }
+        MenuItem { text: qsTr("Save a Copy"); enabled: false }
+        MenuSeparator {}
         MenuItem {
             objectName: "menuFileExport"
-            text: qsTr("Export Picture to Folder...")
+            text: qsTr("Export Picture to Folder...") + "\tCtrl+Shift+S"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.exportRequested()
         }
         MenuSeparator {}
         MenuItem {
             objectName: "menuFileLocate"
-            text: qsTr("Locate on Disk")
+            text: qsTr("Locate on Disk") + "\tCtrl+Enter"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.locateRequested()
         }
         MenuItem {
             objectName: "menuFileDelete"
-            text: qsTr("Delete from Disk")
+            text: qsTr("Delete from Disk") + "\tDelete"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.deleteRequested()
         }
         MenuSeparator {}
-        MenuItem { text: qsTr("Print..."); enabled: false }
-        MenuItem { text: qsTr("E-Mail..."); enabled: false }
+        MenuItem { text: qsTr("Print...") + "\tCtrl+P"; enabled: false }
+        MenuItem { text: qsTr("E-Mail...") + "\tCtrl+E"; enabled: false }
+        // hiányzott (#324 audit): nyomtatott képek online rendelése
+        MenuItem { text: qsTr("Order Prints..."); enabled: false }
         MenuSeparator {}
         MenuItem { text: qsTr("E&xit"); onTriggered: Qt.quit() }
     }
     Menu {
         title: qsTr("&Edit")
+        // hiányzott (#324 audit): a szabvány vágólap-műveletek
+        MenuItem { text: qsTr("Cut") + "\tCtrl+X"; enabled: false }
+        MenuItem { text: qsTr("Copy") + "\tCtrl+C"; enabled: false }
+        MenuItem { text: qsTr("Paste") + "\tCtrl+V"; enabled: false }
+        MenuSeparator {}
         MenuItem {
             objectName: "menuEditCopyEffects"
             text: qsTr("Copy All Effects")
@@ -102,17 +153,21 @@ MenuBar {
             onTriggered: bar.pasteEffectsRequested()
         }
         MenuSeparator {}
+        // hiányzott (#324 audit): feliratszöveg vágólap-műveletei
+        MenuItem { text: qsTr("Copy Text"); enabled: false }
+        MenuItem { text: qsTr("Paste Text"); enabled: false }
+        MenuSeparator {}
         MenuItem {
-            text: qsTr("Select All")
+            text: qsTr("Select All") + "\tCtrl+A"
             onTriggered: bar.selectAllRequested()
         }
         MenuItem {
             text: qsTr("Select Starred")
             onTriggered: bar.selectStarredRequested()
         }
-        MenuItem { text: qsTr("Invert Selection"); enabled: false }
+        MenuItem { text: qsTr("Invert Selection") + "\tCtrl+I"; enabled: false }
         MenuItem {
-            text: qsTr("Clear Selection")
+            text: qsTr("Clear Selection") + "\tCtrl+D"
             onTriggered: bar.clearSelectionRequested()
         }
     }
@@ -121,14 +176,14 @@ MenuBar {
         MenuItem { text: qsTr("Library View"); checkable: true; checked: true }
         MenuSeparator {}
         MenuItem {
-            text: qsTr("Small Thumbnails")
+            text: qsTr("Small Thumbnails") + "\tCtrl+1"
             onTriggered: bar.thumbSizePreset(96)
         }
         MenuItem {
-            text: qsTr("Normal Thumbnails")
+            text: qsTr("Normal Thumbnails") + "\tCtrl+2"
             onTriggered: bar.thumbSizePreset(144)
         }
-        MenuItem { text: qsTr("Edit View"); enabled: false }
+        MenuItem { text: qsTr("Edit View") + "\tCtrl+3"; enabled: false }
         MenuSeparator {}
         MenuItem {
             objectName: "menuViewProperties"
@@ -139,7 +194,7 @@ MenuBar {
         }
         MenuItem {
             objectName: "menuViewTags"
-            text: qsTr("Tags")
+            text: qsTr("Tags") + "\tCtrl+T"
             checkable: true
             checked: bar.tagsPanelOpen
             onTriggered: bar.tagsPanelRequested()
@@ -153,16 +208,24 @@ MenuBar {
             onTriggered: bar.placesPanelRequested()
         }
         MenuSeparator {}
+        // hiányzott (#324 audit): a szerkesztő panel láthatóság-kapcsolója
+        MenuItem { text: qsTr("Show Editing Controls"); checkable: true; enabled: false }
         MenuItem {
             objectName: "menuViewSlideshow"
-            text: qsTr("Slideshow")
+            text: qsTr("Slideshow") + "\tCtrl+4"
             onTriggered: bar.slideshowRequested()
         }
         MenuItem {
             objectName: "menuViewTimeline"
-            text: qsTr("Timeline")
+            text: qsTr("Timeline") + "\tCtrl+5"
             onTriggered: bar.timelineRequested()
         }
+        MenuSeparator {}
+        // hiányzott (#324 audit): keresési opciók
+        MenuItem { text: qsTr("Search Options"); enabled: false }
+        // hiányzott (#324 audit): a jelentése a screenshotokból nem
+        // egyértelmű — feltehetően mappacím nélküli indexkép-rács
+        MenuItem { text: qsTr("Thumbnails Only"); checkable: true; enabled: false }
         MenuItem {
             objectName: "menuViewHidden"
             text: qsTr("Hidden Pictures")
@@ -170,6 +233,8 @@ MenuBar {
             checked: bar.ctl ? bar.ctl.showHidden : false
             onTriggered: controller.toggleShowHidden()
         }
+        // hiányzott (#324 audit): színprofil-kezelés kapcsoló
+        MenuItem { text: qsTr("Use Color Management"); checkable: true; enabled: false }
         MenuItem {
             // #28: opcionális sötét téma — az alapértelmezés a világos
             objectName: "menuViewDarkTheme"
@@ -177,6 +242,45 @@ MenuBar {
             checkable: true
             checked: bar.ctl ? bar.ctl.darkTheme : false
             onTriggered: controller.toggleDarkTheme()
+        }
+        MenuSeparator {}
+        // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
+        Menu {
+            title: qsTr("Display Mode")
+            enabled: false
+        }
+        Menu {
+            title: qsTr("Thumbnail Caption")
+            MenuItem {
+                text: qsTr("None")
+                checkable: true
+                checked: bar.ctl && bar.ctl.thumbCaptionMode === "none"
+                onTriggered: controller.setThumbCaptionMode("none")
+            }
+            MenuItem {
+                text: qsTr("Filename")
+                checkable: true
+                checked: bar.ctl && bar.ctl.thumbCaptionMode === "filename"
+                onTriggered: controller.setThumbCaptionMode("filename")
+            }
+            MenuItem {
+                text: qsTr("Caption")
+                checkable: true
+                checked: bar.ctl && bar.ctl.thumbCaptionMode === "caption"
+                onTriggered: controller.setThumbCaptionMode("caption")
+            }
+            MenuItem {
+                text: qsTr("Tags")
+                checkable: true
+                checked: bar.ctl && bar.ctl.thumbCaptionMode === "tags"
+                onTriggered: controller.setThumbCaptionMode("tags")
+            }
+            MenuItem {
+                text: qsTr("Resolution")
+                checkable: true
+                checked: bar.ctl && bar.ctl.thumbCaptionMode === "resolution"
+                onTriggered: controller.setThumbCaptionMode("resolution")
+            }
         }
         Menu {
             title: qsTr("Folder View")
@@ -212,46 +316,13 @@ MenuBar {
                 onTriggered: controller.toggleFolderSortReverse()
             }
         }
-        Menu {
-            title: qsTr("Thumbnail Caption")
-            MenuItem {
-                text: qsTr("None")
-                checkable: true
-                checked: bar.ctl && bar.ctl.thumbCaptionMode === "none"
-                onTriggered: controller.setThumbCaptionMode("none")
-            }
-            MenuItem {
-                text: qsTr("Filename")
-                checkable: true
-                checked: bar.ctl && bar.ctl.thumbCaptionMode === "filename"
-                onTriggered: controller.setThumbCaptionMode("filename")
-            }
-            MenuItem {
-                text: qsTr("Caption")
-                checkable: true
-                checked: bar.ctl && bar.ctl.thumbCaptionMode === "caption"
-                onTriggered: controller.setThumbCaptionMode("caption")
-            }
-            MenuItem {
-                text: qsTr("Tags")
-                checkable: true
-                checked: bar.ctl && bar.ctl.thumbCaptionMode === "tags"
-                onTriggered: controller.setThumbCaptionMode("tags")
-            }
-            MenuItem {
-                text: qsTr("Resolution")
-                checkable: true
-                checked: bar.ctl && bar.ctl.thumbCaptionMode === "resolution"
-                onTriggered: controller.setThumbCaptionMode("resolution")
-            }
-        }
     }
     Menu {
         title: qsTr("F&older")
         MenuItem { text: qsTr("Edit Description..."); enabled: false }
         MenuItem {
             objectName: "menuFolderSlideshow"
-            text: qsTr("View Slideshow")
+            text: qsTr("View Slideshow") + "\tCtrl+4"
             onTriggered: bar.slideshowRequested()
         }
         MenuSeparator {}
@@ -259,15 +330,69 @@ MenuBar {
             text: qsTr("Refresh Thumbnails")
             onTriggered: bar.rescanRequested()
         }
-        MenuItem { text: qsTr("Sort By"); enabled: false }
+        // #324 audit („eltérő"): eredetiben aktív almenü — most valódi
+        // almenü, a Nézet ▸ Mappanézet almenüvel MEGEGYEZŐ bekötéssel
+        Menu {
+            objectName: "menuFolderSortBy"
+            title: qsTr("Sort By")
+            MenuItem {
+                text: qsTr("Sort by creation date")
+                checkable: true
+                checked: bar.ctl && bar.ctl.folderSort === "date"
+                onTriggered: controller.setFolderSort("date")
+            }
+            MenuItem {
+                text: qsTr("Sort by recent changes")
+                checkable: true
+                checked: bar.ctl && bar.ctl.folderSort === "changed"
+                onTriggered: controller.setFolderSort("changed")
+            }
+            MenuItem {
+                text: qsTr("Sort by size")
+                checkable: true
+                checked: bar.ctl && bar.ctl.folderSort === "size"
+                onTriggered: controller.setFolderSort("size")
+            }
+            MenuItem {
+                text: qsTr("Sort by name")
+                checkable: true
+                checked: bar.ctl && bar.ctl.folderSort === "name"
+                onTriggered: controller.setFolderSort("name")
+            }
+            MenuSeparator {}
+            MenuItem {
+                text: qsTr("Reverse sort")
+                checkable: true
+                checked: bar.ctl ? bar.ctl.folderSortReverse : false
+                onTriggered: controller.toggleFolderSortReverse()
+            }
+        }
         MenuSeparator {}
-        MenuItem { text: qsTr("Locate on Disk"); enabled: false }
+        // hiányzott (#324 audit): mappa szintű elrejtés/megjelenítés — más,
+        // mint a Nézet ▸ Rejtett képek (kép-szintű) kapcsoló
+        MenuItem { text: qsTr("Hide"); enabled: false }
+        MenuItem { text: qsTr("Show"); enabled: false }
+        MenuSeparator {}
+        // hiányzott (#324 audit)
+        MenuItem { text: qsTr("Print Thumbnails...") + "\tCtrl+Shift+P"; enabled: false }
+        MenuItem { text: qsTr("Export as HTML Page..."); enabled: false }
+        MenuSeparator {}
+        MenuItem { text: qsTr("Locate on Disk") + "\tCtrl+Enter"; enabled: false }
         MenuItem { text: qsTr("Remove from Picasa..."); enabled: false }
+        MenuSeparator {}
+        // hiányzott (#324 audit): mappa áthelyezése/törlése a lemezen
+        MenuItem { text: qsTr("Move..."); enabled: false }
+        MenuItem { text: qsTr("Delete..."); enabled: false }
     }
     Menu {
         title: qsTr("&Picture")
-        MenuItem { text: qsTr("View and Edit"); enabled: false }
-        MenuItem { text: qsTr("Batch Edit"); enabled: false }
+        MenuItem { text: qsTr("View and Edit") + "\tCtrl+3"; enabled: false }
+        // #324 audit („eltérő"): eredetiben almenü — a tartalma a
+        // screenshotokból nem derül ki, egyelőre üres/inaktív almenü
+        Menu {
+            title: qsTr("Batch Edit")
+            enabled: false
+        }
         MenuItem { text: qsTr("Undo All Edits"); enabled: false }
         MenuSeparator {}
         MenuItem {
@@ -276,14 +401,19 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.hideToggleRequested()
         }
+        // hiányzott (#324 audit): arc-négyzetek pozíciójának visszaállítása
+        // (3. fázis, arcfelismerés-előkészítés)
+        MenuItem { text: qsTr("Reset Face Positions"); enabled: false }
         MenuItem {
             objectName: "menuPictureProperties"
-            text: qsTr("Properties")
+            text: qsTr("Properties") + "\tAlt+Enter"
             onTriggered: bar.propertiesPanelRequested()
         }
     }
     Menu {
         title: qsTr("&Create")
+        // hiányzott (#324 audit)
+        MenuItem { text: qsTr("Set as Desktop Background..."); enabled: false }
         MenuItem { text: qsTr("Make a Poster..."); enabled: false }
         MenuItem {
             objectName: "menuCreateCollage"
@@ -291,12 +421,23 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.collageRequested()
         }
-        MenuItem {
-            objectName: "menuCreateMovie"
-            text: qsTr("Movie")
+        // hiányzott (#324 audit): OS-integrációs funkciók
+        MenuItem { text: qsTr("Add to Screensaver..."); enabled: false }
+        MenuItem { text: qsTr("Make a Gift CD..."); enabled: false }
+        // #324 audit („eltérő"): eredetiben almenü — a valódi (működő)
+        // filmkészítés a submenu egyetlen tételeként maradt életben
+        Menu {
+            title: qsTr("Movie")
             enabled: bar.photoActionsEnabled
-            onTriggered: bar.movieRequested()
+            MenuItem {
+                objectName: "menuCreateMovie"
+                text: qsTr("New Movie...")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.movieRequested()
+            }
         }
+        // hiányzott (#324 audit)
+        MenuItem { text: qsTr("Publish to Blogger..."); enabled: false }
     }
     Menu {
         title: qsTr("&Tools")
@@ -304,6 +445,9 @@ MenuBar {
             text: qsTr("Folder Manager...")
             onTriggered: bar.folderManagerRequested()
         }
+        // hiányzott (#324 audit) — az auditban jelzett screenshot-időpontban
+        // az eredetiben is inaktív volt
+        MenuItem { text: qsTr("Upload Manager..."); enabled: false }
         MenuItem { text: qsTr("People Manager..."); enabled: false }
         MenuSeparator {}
         MenuItem {
@@ -312,15 +456,34 @@ MenuBar {
             onTriggered: bar.dedupRequested()
         }
         MenuSeparator {}
+        // hiányzott (#324 audit)
+        MenuItem { text: qsTr("Configure Photo Viewer..."); enabled: false }
+        MenuItem { text: qsTr("Configure Screensaver..."); enabled: false }
         MenuItem { text: qsTr("Back Up Pictures..."); enabled: false }
+        MenuItem { text: qsTr("Batch Upload..."); enabled: false }
         MenuItem { text: qsTr("Adjust Date and Time..."); enabled: false }
+        MenuSeparator {}
+        // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
+        Menu { title: qsTr("Upload"); enabled: false }
+        Menu { title: qsTr("Geotag"); enabled: false }
+        Menu { title: qsTr("Experimental"); enabled: false }
+        MenuSeparator {}
+        MenuItem { text: qsTr("Configure Buttons..."); enabled: false }
         MenuSeparator {}
         MenuItem { text: qsTr("Options..."); enabled: false }
     }
     Menu {
         title: qsTr("&Help")
-        MenuItem { text: qsTr("Help Contents and Index"); enabled: false }
+        MenuItem { text: qsTr("Help Contents and Index") + "\tF1"; enabled: false }
         MenuItem { text: qsTr("Keyboard Shortcuts"); enabled: false }
+        MenuSeparator {}
+        // hiányzott (#324 audit): web-linkek
+        MenuItem { text: qsTr("Picasa Forums"); enabled: false }
+        MenuItem { text: qsTr("Online Information"); enabled: false }
+        MenuItem { text: qsTr("Product Release Notes"); enabled: false }
+        MenuSeparator {}
+        MenuItem { text: qsTr("Privacy Policy"); enabled: false }
+        MenuItem { text: qsTr("Terms of Service"); enabled: false }
         MenuSeparator {}
         MenuItem { text: qsTr("Check for Updates"); enabled: false }
         MenuSeparator {}
