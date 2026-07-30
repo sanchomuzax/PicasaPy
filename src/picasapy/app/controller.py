@@ -33,6 +33,7 @@ from picasapy.ini import load_document, update_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
 from .appearance_controller import AppearanceMixin
+from .language_controller import LanguageMixin
 from .create_controller import CreateMixin
 from .effects_controller import EffectsClipboardMixin
 from .export_controller import ExportMixin
@@ -72,6 +73,7 @@ class AppController(
     EffectsClipboardMixin,
     PerfMonitorMixin,
     AppearanceMixin,
+    LanguageMixin,
     CreateMixin,
     GeoMixin,
     LibraryMixin,
@@ -143,6 +145,7 @@ class AppController(
         self._init_perf_monitor()
         # #28: sötét téma kapcsoló — alapból világos, QSettings-ből visszaáll
         self._init_appearance()
+        self._init_language()
         # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
         # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
         # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.

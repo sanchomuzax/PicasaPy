@@ -470,6 +470,28 @@ MenuBar {
         MenuSeparator {}
         MenuItem { text: qsTr("Configure Buttons..."); enabled: false }
         MenuSeparator {}
+        // #333: nyelvválasztás — alapértelmezés az angol, a magyar
+        // választható; a döntés a QSettings-ben marad. A #305-ös null-őr
+        // kötelező: a controller a QML-engine leépítésekor null lehet.
+        Menu {
+            objectName: "menuToolsLanguage"
+            title: qsTr("Language")
+            MenuItem {
+                objectName: "menuLanguageEnglish"
+                text: qsTr("English")
+                checkable: true
+                checked: controller ? controller.language === "en" : true
+                onTriggered: if (controller) controller.setLanguage("en")
+            }
+            MenuItem {
+                objectName: "menuLanguageHungarian"
+                text: qsTr("Hungarian")
+                checkable: true
+                checked: controller ? controller.language === "hu" : false
+                onTriggered: if (controller) controller.setLanguage("hu")
+            }
+        }
+        MenuSeparator {}
         MenuItem { text: qsTr("Options..."); enabled: false }
     }
     Menu {
