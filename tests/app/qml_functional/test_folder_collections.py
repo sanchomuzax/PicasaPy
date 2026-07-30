@@ -24,11 +24,11 @@ class TestFiveCollectionHeaders:
             "otherHeader",
         )
         headers = [window.findChild(QObject, name) for name in names]
-        for name, header in zip(names, headers):
+        for name, header in zip(names, headers, strict=True):
             assert header is not None, f"{name} nem található"
 
         labels = ("Albums", "People", "Projects", "Folders", "Other")
-        for header, label in zip(headers, labels):
+        for header, label in zip(headers, labels, strict=True):
             assert label in header.property("text")
 
     def test_default_collapsed_state_matches_spec(self, qml_app, qt_app):

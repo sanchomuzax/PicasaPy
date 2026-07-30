@@ -67,7 +67,7 @@ class TestFiveTabBar:
             assert panel.findChild(QObject, name) is not None, f"{name} nem található"
 
     @pytest.mark.parametrize(
-        "object_name,expected_tab", list(zip(TAB_NAMES, range(5)))
+        "object_name,expected_tab", list(zip(TAB_NAMES, range(5), strict=True))
     )
     def test_clicking_tab_sets_active_tab(
         self, qml_engine, qt_app, object_name, expected_tab

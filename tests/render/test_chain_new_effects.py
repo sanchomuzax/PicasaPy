@@ -110,6 +110,54 @@ class TestArtisticEffectsAreWired:
         assert result.shape[1] > sample.shape[1]
 
 
+class TestArtisticParametersReachTheRenderer:
+    """#332: az ini-ben ott álló paraméterek (a Picasában elhúzott csúszkák)
+    tényleg hassanak — ne az alapérték fusson helyettük."""
+
+    @pytest.mark.parametrize(
+        ("weak", "strong"),
+        [
+            ("Boost=1,5.000000;", "Boost=1,95.000000;"),
+            ("Soften=1,5.000000,20.000000;", "Soften=1,95.000000,90.000000;"),
+            ("Pixelate=1,4.000000,9.000000,0.000000;", "Pixelate=1,32.000000,9.000000,0.000000;"),
+            (
+                "PencilSketch=1,2.000000,40.000000,0.000000;",
+                "PencilSketch=1,9.000000,140.000000,0.000000;",
+            ),
+            ("Comicize=1,5.000000,20.000000,20.000000;", "Comicize=1,60.000000,90.000000,90.000000;"),
+        ],
+    )
+    def test_different_parameters_give_different_output(self, weak, strong, sample):
+        a, skipped_a = apply_filters(sample, parse_filters(weak))
+        b, skipped_b = apply_filters(sample, parse_filters(strong))
+        assert skipped_a == () and skipped_b == ()
+        assert not np.array_equal(a, b), "a paraméter nem jutott el a rendererhez"
+
+    def test_border_width_changes_the_size(self, sample):
+        thin, _ = apply_filters(
+            sample,
+            parse_filters("Border=1,5.000000,5.000000,0.000000,00000000,00ffffff,0.000000;"),
+        )
+        thick, _ = apply_filters(
+            sample,
+            parse_filters("Border=1,40.000000,5.000000,0.000000,00000000,00ffffff,0.000000;"),
+        )
+        assert thick.shape[0] > thin.shape[0]
+
+    def test_polaroid_width_changes_the_size(self, sample):
+        thin, _ = apply_filters(sample, parse_filters("Polaroid=1,3.000000,00e2e2e2;"))
+        thick, _ = apply_filters(sample, parse_filters("Polaroid=1,15.000000,00e2e2e2;"))
+        assert thick.shape[0] > thin.shape[0]
+
+    def test_broken_parameter_does_not_stop_the_chain(self, sample):
+        # #301: a hibás bejegyzés kimarad, a lánc többi tagja lefut
+        result, skipped = apply_filters(
+            sample, parse_filters("Boost=1,zzz;Invert=1;")
+        )
+        assert "Boost" in skipped
+        assert not np.array_equal(result, sample), "az Invert ettől még lefutott"
+
+
 class TestCropRunsBeforeTheFrame:
     """A vágás koordinátái az EREDETI képre vonatkoznak (spec), a keret
     viszont utólag kerül köré — különben a keret szélességével elcsúszna a

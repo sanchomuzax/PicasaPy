@@ -172,9 +172,20 @@ def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def _effect_float(op: FilterOp, index: int, default: float) -> float:
-    """A flag utáni `index`-edik paraméter számként, hiányzónál `default`."""
-    params = op.float_params()
-    return params[index] if len(params) > index else default
+    """A flag utáni `index`-edik paraméter számként, hiányzónál `default`.
+
+    POZÍCIÓ szerint konvertál, nem az egész listát (#332): az effekt-opok egy
+    részében szám és `00RRGGBB` szín KEVEREDIK (`Polaroid=1,5.0,00e2e2e2`),
+    és a teljes lista konvertálása egy betűt tartalmazó színen elszállt volna
+    — magával rántva az egyébként hibátlan szám-paramétereket is.
+
+    Ha az adott pozíción értelmezhetetlen érték áll, a kivétel FELSZÁLL: a
+    hívó lánc ilyenkor kihagyja ezt az egy bejegyzést, a többi lefut (#301).
+    """
+    absolute = index + 1  # a 0. paraméter az engedélyező "1" flag
+    if len(op.params) <= absolute:
+        return default
+    return float(op.params[absolute])
 
 
 def _apply_vignette_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
@@ -243,6 +254,125 @@ def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+# --- az 5. fül effektjeinek paraméter-leképezése (#332) --------------------
+# A pozíciók a `docs/specs/filters-decoded.md` 5. körében MÉRT ini-mintákból
+# jönnek (a felhasználó valódi Picasa-exportjaiból), nem találgatásból: az
+# implementált szignatúrák alapértékei rendre egybeesnek a mért mintákkal.
+# A 4. fül effektjeinél ez az egyezés NINCS meg, ott ezért továbbra is az
+# alapérték fut — a leképezés a #317-es golden-kör után jön.
+# A szín-paramétereket a projekt bevált `parse_rgb_hex`-e olvassa.
+
+
+def _effect_color(op: FilterOp, index: int, default: tuple[int, int, int]):
+    """A flag utáni `index`-edik paraméter színként, hiányzónál `default`."""
+    absolute = index + 1
+    if len(op.params) <= absolute:
+        return default
+    return parse_rgb_hex(op.params[absolute])
+
+
+def _apply_boost_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Boost=1,erősség
+    return apply_boost(image, strength=_effect_float(op, 0, 50.0))
+
+
+def _apply_soften_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Soften=1,mérték,sugár
+    return apply_soften(
+        image,
+        amount=_effect_float(op, 0, 50.0),
+        radius=_effect_float(op, 1, 50.0),
+    )
+
+
+def _apply_pixelate_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Pixelate=1,blokkméret,?,? — a 2-3. paraméter szerepe méretlen
+    return apply_pixelate(image, block_size=_effect_float(op, 0, 20.0))
+
+
+def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # FocalZoom=1,x,y,sugár,erősség,?,?
+    return apply_focal_zoom(
+        image,
+        x=_effect_float(op, 0, 0.5),
+        y=_effect_float(op, 1, 0.5),
+        radius=_effect_float(op, 2, 50.0),
+        strength=_effect_float(op, 3, 50.0),
+    )
+
+
+def _apply_pencil_sketch_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # PencilSketch=1,elmosás,fényerő,szín-keverés
+    return apply_pencil_sketch(
+        image,
+        blur_radius=_effect_float(op, 0, 2.0),
+        brightness=_effect_float(op, 1, 100.0),
+        color_mix=_effect_float(op, 2, 0.0),
+    )
+
+
+def _apply_neon_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Neon=1,intenzitás,#szín
+    return apply_neon(
+        image,
+        intensity=_effect_float(op, 0, 50.0),
+        color=_effect_color(op, 1, (0, 255, 170)),
+    )
+
+
+def _apply_comicize_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Comicize=1,élerősség,poszterizálás,simítás
+    return apply_comicize(
+        image,
+        edge_strength=_effect_float(op, 0, 20.0),
+        posterize=_effect_float(op, 1, 50.0),
+        smoothness=_effect_float(op, 2, 50.0),
+    )
+
+
+def _apply_border_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Border=1,szélesség,?,?,#szín1,#keretszín,? — a keret színe az 5. (a mért
+    # mintában 00ffffff = fehér, ami az implementált alapérték is)
+    return apply_border(
+        image,
+        width=_effect_float(op, 0, 20.0),
+        color=_effect_color(op, 4, (255, 255, 255)),
+    )
+
+
+def _apply_drop_shadow_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # DropShadow=1,keret,szög,elmosás,#árnyékszín,#keretszín,átlátszatlanság
+    return apply_drop_shadow(
+        image,
+        border_width=_effect_float(op, 0, 4.0),
+        angle=_effect_float(op, 1, 90.0),
+        blur=_effect_float(op, 2, 10.0),
+        shadow_color=_effect_color(op, 3, (0, 0, 0)),
+        border_color=_effect_color(op, 4, (255, 255, 255)),
+        opacity=_effect_float(op, 5, 30.0),
+    )
+
+
+def _apply_museum_matte_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # MuseumMatte=1,szélesség,vonalpozíció,#vonalszín,#paszpartuszín
+    return apply_museum_matte(
+        image,
+        width=_effect_float(op, 0, 25.0),
+        line_position=_effect_float(op, 1, 40.0),
+        line_color=_effect_color(op, 2, (3, 14, 26)),
+        mat_color=_effect_color(op, 3, (228, 234, 240)),
+    )
+
+
+def _apply_polaroid_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Polaroid=1,keretszélesség,#szín
+    return apply_polaroid(
+        image,
+        border_width=_effect_float(op, 0, 5.0),
+        color=_effect_color(op, 1, (226, 226, 226)),
+    )
+
+
 _HANDLERS = {
     "tilt": _apply_tilt_op,
     "redeye": lambda image, op: apply_redeye(image),
@@ -284,20 +414,20 @@ _HANDLERS = {
     "crossprocess": lambda image, op: apply_crossprocess(image),
     "quantizepalette": lambda image, op: apply_quantizepalette(image),
     "twotone": lambda image, op: apply_twotone(image),
-    # --- az 5. fül művészi effektjei (#330) --------------------------------
-    "boost": lambda image, op: apply_boost(image),
-    "soften": lambda image, op: apply_soften(image),
-    "pixelate": lambda image, op: apply_pixelate(image),
-    "focalzoom": lambda image, op: apply_focal_zoom(image),
-    "pencilsketch": lambda image, op: apply_pencil_sketch(image),
-    "neon": lambda image, op: apply_neon(image),
-    "comicize": lambda image, op: apply_comicize(image),
+    # --- az 5. fül művészi effektjei (#330, paraméterekkel: #332) ----------
+    "boost": _apply_boost_op,
+    "soften": _apply_soften_op,
+    "pixelate": _apply_pixelate_op,
+    "focalzoom": _apply_focal_zoom_op,
+    "pencilsketch": _apply_pencil_sketch_op,
+    "neon": _apply_neon_op,
+    "comicize": _apply_comicize_op,
     # keretes effektek — MEGNÖVELIK a képet, ezért a vágás UTÁN futnak
     # (ld. _FRAME_EFFECTS és az apply_filters sorrendje)
-    "border": lambda image, op: apply_border(image),
-    "dropshadow": lambda image, op: apply_drop_shadow(image),
-    "museummatte": lambda image, op: apply_museum_matte(image),
-    "polaroid": lambda image, op: apply_polaroid(image),
+    "border": _apply_border_op,
+    "dropshadow": _apply_drop_shadow_op,
+    "museummatte": _apply_museum_matte_op,
+    "polaroid": _apply_polaroid_op,
 }
 
 #: Keretet rajzoló, tehát MÉRETNÖVELŐ effektek (#330). A vágás koordinátái az
