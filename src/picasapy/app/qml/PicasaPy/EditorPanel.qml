@@ -13,7 +13,9 @@ Rectangle {
     color: Theme.chromeBg
     implicitWidth: 230
 
-    // aktív fül: 0 = Gyakori javítások, 1 = Finomhangolás, 2 = Effektek
+    // aktív fül: 0 = Gyakori javítások, 1 = Finomhangolás, 2 = Effektek,
+    // 3 = 4. effekt-fül (zöld ecset), 4 = 5. effekt-fül (kék ecset) — #328,
+    // az eredeti Picasa 5 ikonos füle (docs/specs/ui-audit-editor.md, 1. szak.)
     // (a vágó-mód a fülsávtól függetlenül, a cropColumn-on át él)
     property int activeTab: 0
 
@@ -241,25 +243,43 @@ Rectangle {
         }
     }
 
-    // egy fülgomb (Gyakori javítások / Finomhangolás / Effektek, #20):
-    // kattintásra panel.activeTab vált, az aktív fül vastagabb betűvel és
-    // eltérő háttérrel emelkedik ki
+    // egy fülgomb (Gyakori javítások / Finomhangolás / Effektek / 4. / 5.
+    // effekt-fül, #20, #328): kattintásra panel.activeTab vált, az aktív fül
+    // vastagabb betűvel és eltérő háttérrel emelkedik ki.
+    // #328 — ikon vs. szöveg döntés: az eredeti Picasa 5 fülcíme ikonos
+    // (csavarkulcs / nap / 3× ecset, ld. docs/specs/ui-audit-editor.md 1.
+    // szak.), de a projektben NINCS ehhez kézenfekvő ikon-készlet — a
+    // meglévő assets/tools/*.png csak az 1. fül (Gyakori javítások)
+    // eszköz-csempéihez való (crop/tilt/redeye/…), a fülsávhoz sosem volt
+    // ikon. Félkész/találgatott ikon rajzolása helyett a fülek SZÖVEGESEK
+    // maradnak — ez a "működő, olvasható inkább, mint félkész" elv (ld. a
+    // feladat 3. pontja). Öt fülnél a régi `elide`-es minta levágná a
+    // feliratot (#318 lesson) — ezért a fülgomb is a PanelButton mintáját
+    // követi: `wrapMode: Text.WordWrap` + a feliratból számolt magasság,
+    // nem vágás.
     component EditTabButton: Rectangle {
         id: tbtn
         required property int tabIndex
         required property string label
         Layout.fillWidth: true
-        Layout.preferredHeight: 22
+        Layout.preferredHeight: Math.max(22, tbtnLabel.implicitHeight + 8)
         color: panel.activeTab === tabIndex ? Theme.contentPanel : Theme.panelHeaderBg
         border.width: 1
         border.color: Theme.chromeBorder
         Text {
+            id: tbtnLabel
+            // a hívó objectName-jéből képzett saját objectName (pl.
+            // "editTabFixesLabel") — a PanelButton mintáját követve (#318),
+            // hogy a tesztek egyértelműen megtalálják a felirat-Text-et.
+            objectName: tbtn.objectName ? tbtn.objectName + "Label" : ""
             anchors.centerIn: parent
             text: tbtn.label
-            font.pixelSize: Theme.fontSize - 1
+            font.pixelSize: Theme.fontSize - 3
             font.bold: panel.activeTab === tbtn.tabIndex
             color: Theme.panelHeaderText
-            elide: Text.ElideRight
+            wrapMode: Text.WordWrap
+            maximumLineCount: 2
+            lineHeight: 0.9
             width: parent.width - 4
             horizontalAlignment: Text.AlignHCenter
         }
@@ -269,8 +289,10 @@ Rectangle {
         }
     }
 
-    // ---------------- fülsáv: Gyakori javítások / Finomhangolás / Effektek
-    // (#20) — csak "tools" módban, vágásnál (cropColumn) nincs értelme
+    // ---------------- fülsáv: Gyakori javítások / Finomhangolás / Effektek /
+    // 4. effekt-fül / 5. effekt-fül (#20, #328) — csak "tools" módban,
+    // vágásnál (cropColumn) nincs értelme. Öt egyenlő szélességű fül fér el
+    // a panel szélességében (Layout.fillWidth mindegyiken, ld. #328 4. pont).
     RowLayout {
         id: tabBar
         objectName: "editTabBar"
@@ -295,6 +317,19 @@ Rectangle {
             objectName: "editTabEffects"
             tabIndex: 2
             label: qsTr("Effects")
+        }
+        // #328: 4. fül (zöld ecset) — a docs/specs/ui-audit-editor.md
+        // "kreatív effektek" leírása alapján rövid "Creative" felirat.
+        EditTabButton {
+            objectName: "editTabEffects2"
+            tabIndex: 3
+            label: qsTr("Creative")
+        }
+        // #328: 5. fül (kék ecset) — "művészi effektek" alapján "Artistic".
+        EditTabButton {
+            objectName: "editTabEffects3"
+            tabIndex: 4
+            label: qsTr("Artistic")
         }
     }
 
@@ -637,6 +672,233 @@ Rectangle {
             }
             PanelButton {
                 objectName: "effectsRedoButton"
+                label: panel.redoLabel
+                buttonEnabled: panel.redoAvailable
+                Layout.fillWidth: false
+                Layout.preferredWidth: 64
+                onButtonClicked: panel.redoRequested()
+            }
+        }
+    }
+
+    // ---------------- "effects2" mód: 4. effekt-fül — zöld ecset,
+    // "kreatív effektek" (#328, docs/specs/ui-audit-editor.md 4. fül) ------
+    ColumnLayout {
+        objectName: "effectsColumn2"
+        visible: !panel.cropActive && panel.activeTab === 3
+        opacity: panel.enabled ? 1 : 0.45
+        anchors.top: tabBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 10
+        spacing: 8
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 22
+            color: Theme.panelHeaderBg
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: 6
+                anchors.verticalCenter: parent.verticalCenter
+                text: qsTr("Creative")
+                font.pixelSize: Theme.fontSize
+                font.bold: true
+                color: Theme.panelHeaderText
+            }
+        }
+
+        GridLayout {
+            objectName: "effectsGrid2"
+            columns: 2
+            columnSpacing: 6
+            rowSpacing: 6
+            Layout.fillWidth: true
+
+            PanelButton {
+                objectName: "effectIr"
+                label: qsTr("Infrared Film")
+                onButtonClicked: panel.effectRequested("ir")
+            }
+            PanelButton {
+                objectName: "effectLomo"
+                label: qsTr("Lomo-ish")
+                onButtonClicked: panel.effectRequested("lomo")
+            }
+            PanelButton {
+                objectName: "effectHolga"
+                label: qsTr("Holga-ish")
+                onButtonClicked: panel.effectRequested("holga")
+            }
+            PanelButton {
+                objectName: "effectHdr"
+                label: qsTr("HDR-ish")
+                onButtonClicked: panel.effectRequested("hdr")
+            }
+            PanelButton {
+                objectName: "effectCinemascope"
+                label: qsTr("Cinemascope")
+                onButtonClicked: panel.effectRequested("cinemascope")
+            }
+            PanelButton {
+                objectName: "effectOrton"
+                label: qsTr("Orton-ish")
+                onButtonClicked: panel.effectRequested("orton")
+            }
+            PanelButton {
+                objectName: "effectSixties"
+                label: qsTr("1960s")
+                onButtonClicked: panel.effectRequested("sixties")
+            }
+            PanelButton {
+                objectName: "effectInvert"
+                label: qsTr("Invert Colors")
+                onButtonClicked: panel.effectRequested("invert")
+            }
+            PanelButton {
+                objectName: "effectHeatMap"
+                label: qsTr("Heat Map")
+                onButtonClicked: panel.effectRequested("heatmap")
+            }
+            PanelButton {
+                objectName: "effectCrossProcess"
+                label: qsTr("Cross Process")
+                onButtonClicked: panel.effectRequested("crossprocess")
+            }
+            PanelButton {
+                objectName: "effectQuantizePalette"
+                label: qsTr("Posterize")
+                onButtonClicked: panel.effectRequested("quantizepalette")
+            }
+            PanelButton {
+                objectName: "effectTwoTone"
+                label: qsTr("Duo-Tone")
+                onButtonClicked: panel.effectRequested("twotone")
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            PanelButton {
+                objectName: "effects2UndoButton"
+                label: panel.undoLabel
+                buttonEnabled: panel.undoAvailable
+                onButtonClicked: panel.undoRequested()
+            }
+            PanelButton {
+                objectName: "effects2RedoButton"
+                label: panel.redoLabel
+                buttonEnabled: panel.redoAvailable
+                Layout.fillWidth: false
+                Layout.preferredWidth: 64
+                onButtonClicked: panel.redoRequested()
+            }
+        }
+    }
+
+    // ---------------- "effects3" mód: 5. effekt-fül — kék ecset,
+    // "művészi effektek" (#328, docs/specs/ui-audit-editor.md 5. fül) ------
+    ColumnLayout {
+        objectName: "effectsColumn3"
+        visible: !panel.cropActive && panel.activeTab === 4
+        opacity: panel.enabled ? 1 : 0.45
+        anchors.top: tabBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 10
+        spacing: 8
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 22
+            color: Theme.panelHeaderBg
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: 6
+                anchors.verticalCenter: parent.verticalCenter
+                text: qsTr("Artistic")
+                font.pixelSize: Theme.fontSize
+                font.bold: true
+                color: Theme.panelHeaderText
+            }
+        }
+
+        GridLayout {
+            objectName: "effectsGrid3"
+            columns: 2
+            columnSpacing: 6
+            rowSpacing: 6
+            Layout.fillWidth: true
+
+            PanelButton {
+                objectName: "effectBoost"
+                label: qsTr("Boost")
+                onButtonClicked: panel.effectRequested("boost")
+            }
+            PanelButton {
+                objectName: "effectSoften"
+                label: qsTr("Soft Focus")
+                onButtonClicked: panel.effectRequested("soften")
+            }
+            PanelButton {
+                objectName: "effectPixelate"
+                label: qsTr("Pixelate")
+                onButtonClicked: panel.effectRequested("pixelate")
+            }
+            PanelButton {
+                objectName: "effectFocalZoom"
+                label: qsTr("Focal Zoom")
+                onButtonClicked: panel.effectRequested("focalzoom")
+            }
+            PanelButton {
+                objectName: "effectPencilSketch"
+                label: qsTr("Pencil Sketch")
+                onButtonClicked: panel.effectRequested("pencilsketch")
+            }
+            PanelButton {
+                objectName: "effectNeon"
+                label: qsTr("Neon")
+                onButtonClicked: panel.effectRequested("neon")
+            }
+            PanelButton {
+                objectName: "effectComicize"
+                label: qsTr("Comicize")
+                onButtonClicked: panel.effectRequested("comicize")
+            }
+            PanelButton {
+                objectName: "effectBorder"
+                label: qsTr("Border")
+                onButtonClicked: panel.effectRequested("border")
+            }
+            PanelButton {
+                objectName: "effectDropShadow"
+                label: qsTr("Drop Shadow")
+                onButtonClicked: panel.effectRequested("dropshadow")
+            }
+            PanelButton {
+                objectName: "effectMuseumMatte"
+                label: qsTr("Museum Matte")
+                onButtonClicked: panel.effectRequested("museummatte")
+            }
+            PanelButton {
+                objectName: "effectPolaroid"
+                label: qsTr("Polaroid")
+                onButtonClicked: panel.effectRequested("polaroid")
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            PanelButton {
+                objectName: "effects3UndoButton"
+                label: panel.undoLabel
+                buttonEnabled: panel.undoAvailable
+                onButtonClicked: panel.undoRequested()
+            }
+            PanelButton {
+                objectName: "effects3RedoButton"
                 label: panel.redoLabel
                 buttonEnabled: panel.redoAvailable
                 Layout.fillWidth: false
