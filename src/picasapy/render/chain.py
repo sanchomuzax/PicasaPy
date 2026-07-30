@@ -29,6 +29,37 @@ from picasapy.render.effects import (
     apply_radsat,
     apply_vignette,
 )
+from picasapy.render.effects_artistic import (
+    apply_boost,
+    apply_comicize,
+    apply_focal_zoom,
+    apply_neon,
+    apply_pencil_sketch,
+    apply_pixelate,
+    apply_soften,
+)
+from picasapy.render.effects_creative import (
+    apply_cinemascope,
+    apply_holga,
+    apply_ir,
+    apply_lomo,
+    apply_orton,
+    apply_sixties,
+)
+from picasapy.render.effects_frames import (
+    apply_border,
+    apply_drop_shadow,
+    apply_museum_matte,
+    apply_polaroid,
+)
+from picasapy.render.effects_creative_tone import (
+    apply_crossprocess,
+    apply_hdr,
+    apply_heatmap,
+    apply_invert,
+    apply_quantizepalette,
+    apply_twotone,
+)
 from picasapy.render.ops import (
     apply_autocolor,
     apply_autolight,
@@ -236,7 +267,43 @@ _HANDLERS = {
     "radblur": _apply_radblur_op,
     "radsat": _apply_radsat_op,
     "dir_tint": _apply_dir_tint_op,
+    # --- a 4. fül kreatív effektjei (#329) ---------------------------------
+    # A Picasa paraméterezése ezeknél NEM ismert (golden-mérés nincs), ezért
+    # az alapértékkel futnak; a `filters=`-ben esetleg ott álló paramétereket
+    # tudatosan figyelmen kívül hagyjuk, nem találgatunk. A modellek
+    # közelítők — a kalibráció a #317-ben fut.
+    "ir": lambda image, op: apply_ir(image),
+    "lomo": lambda image, op: apply_lomo(image),
+    "holga": lambda image, op: apply_holga(image),
+    "hdr": lambda image, op: apply_hdr(image),
+    "cinemascope": lambda image, op: apply_cinemascope(image),
+    "orton": lambda image, op: apply_orton(image),
+    "sixties": lambda image, op: apply_sixties(image),
+    "invert": lambda image, op: apply_invert(image),
+    "heatmap": lambda image, op: apply_heatmap(image),
+    "crossprocess": lambda image, op: apply_crossprocess(image),
+    "quantizepalette": lambda image, op: apply_quantizepalette(image),
+    "twotone": lambda image, op: apply_twotone(image),
+    # --- az 5. fül művészi effektjei (#330) --------------------------------
+    "boost": lambda image, op: apply_boost(image),
+    "soften": lambda image, op: apply_soften(image),
+    "pixelate": lambda image, op: apply_pixelate(image),
+    "focalzoom": lambda image, op: apply_focal_zoom(image),
+    "pencilsketch": lambda image, op: apply_pencil_sketch(image),
+    "neon": lambda image, op: apply_neon(image),
+    "comicize": lambda image, op: apply_comicize(image),
+    # keretes effektek — MEGNÖVELIK a képet, ezért a vágás UTÁN futnak
+    # (ld. _FRAME_EFFECTS és az apply_filters sorrendje)
+    "border": lambda image, op: apply_border(image),
+    "dropshadow": lambda image, op: apply_drop_shadow(image),
+    "museummatte": lambda image, op: apply_museum_matte(image),
+    "polaroid": lambda image, op: apply_polaroid(image),
 }
+
+#: Keretet rajzoló, tehát MÉRETNÖVELŐ effektek (#330). A vágás koordinátái az
+#: EREDETI képre vonatkoznak, ezért ezeket a crop UTÁN kell alkalmazni —
+#: különben a keret vastagságával csúszna el a kivágás.
+_FRAME_EFFECTS = frozenset({"border", "dropshadow", "museummatte", "polaroid"})
 
 
 def apply_filters(
@@ -268,9 +335,16 @@ def apply_filters(
     result = image
     skipped: list[str] = []
     crop_op: FilterOp | None = None
+    frame_ops: list[FilterOp] = []
     for op in ops:
-        if op.name.casefold() == "crop64":
+        key = op.name.casefold()
+        if key == "crop64":
             crop_op = op  # csak az effektív (utolsó) crop64 számít
+            continue
+        if key in _FRAME_EFFECTS:
+            # a keret a vágás UTÁN kerül a képre (#330) — a lánc szerinti
+            # sorrendjüket egymás közt megtartva
+            frame_ops.append(op)
             continue
         handler = _HANDLERS.get(op.name.casefold())
         if handler is None:
@@ -291,4 +365,12 @@ def apply_filters(
                 "Filter-bejegyzés kihagyva (hibás paraméter): %s", crop_op
             )
             skipped.append(crop_op.name)
+    # keretek legvégül, a már kivágott képre (#330)
+    for op in frame_ops:
+        handler = _HANDLERS[op.name.casefold()]
+        try:
+            result = handler(result, op)
+        except Exception:
+            _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
+            skipped.append(op.name)
     return result, tuple(skipped)

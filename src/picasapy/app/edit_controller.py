@@ -42,6 +42,31 @@ _EFFECT_NAMES = (
     "radsat",
     "dir_tint",
     "vignette",
+    # 4. fül — kreatív effektek (#329)
+    "ir",
+    "lomo",
+    "holga",
+    "hdr",
+    "cinemascope",
+    "orton",
+    "sixties",
+    "invert",
+    "heatmap",
+    "crossprocess",
+    "quantizepalette",
+    "twotone",
+    # 5. fül — művészi effektek (#330)
+    "boost",
+    "soften",
+    "pixelate",
+    "focalzoom",
+    "pencilsketch",
+    "neon",
+    "comicize",
+    "border",
+    "dropshadow",
+    "museummatte",
+    "polaroid",
 )
 
 #: A `.picasa.ini`-be írandó betűzés, ahol az eltér a belső kulcstól. A
@@ -51,6 +76,31 @@ _EFFECT_NAMES = (
 #: renderelő kis-nagybetű-tűrő.
 _EFFECT_INI_NAMES: dict[str, str] = {
     "vignette": "Vignette",
+    # a 4-5. fül effektjeit a Picasa nagy kezdőbetűvel (több szónál
+    # CamelCase-szel) írja — a `filters=` így marad kölcsönösen olvasható
+    "ir": "IR",
+    "lomo": "Lomo",
+    "holga": "Holga",
+    "hdr": "HDR",
+    "cinemascope": "Cinemascope",
+    "orton": "Orton",
+    "sixties": "Sixties",
+    "invert": "Invert",
+    "heatmap": "HeatMap",
+    "crossprocess": "CrossProcess",
+    "quantizepalette": "QuantizePalette",
+    "twotone": "TwoTone",
+    "boost": "Boost",
+    "soften": "Soften",
+    "pixelate": "Pixelate",
+    "focalzoom": "FocalZoom",
+    "pencilsketch": "PencilSketch",
+    "neon": "Neon",
+    "comicize": "Comicize",
+    "border": "Border",
+    "dropshadow": "DropShadow",
+    "museummatte": "MuseumMatte",
+    "polaroid": "Polaroid",
 }
 
 
