@@ -175,6 +175,26 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Tanulságok
 
+- **2026-07-31 (Qt-csapda a QML-tesztekben): a `visible` az ÖRÖKÖLT
+  láthatóságot tükrözi, ezért gyakran hamis zöldet vagy hamis pirosat mér.**
+  Két külön eset akadt egy napon: (a) a `MenuItem.visible` **zárt** menünél
+  MINDEN elemre hamis, a saját kötésétől függetlenül — a menü-tesztnek
+  ténylegesen fel kell nyitnia a menüt (`window.openPhotoContextMenu`),
+  különben az „elem nem látszik" állítás magától teljesül; (b) a
+  szerkesztő-panel csúszkáinál fordítva: a panel a teszt-környezetben eleve
+  rejtett (a néző nincs megnyitva), így a `visible` mindenre hamis, és a
+  „csak a saját fülén látszik" állítás mérhetetlen. Szabály: a
+  HOVATARTOZÁST a szülő-kapcsolattal mérd (`szülő.findChild(...)`), a
+  láthatóságot pedig csak akkor, ha a teljes láthatósági láncot előbb
+  szándékosan felállítottad.
+
+- **2026-07-31 (Repeater-delegátumok): a QML `Repeater`/`ListView` által
+  létrehozott sorok NEM érhetők el `window.findChild`-dal** — a
+  `parentItem` elválik a `QObject::parent()`-től. A delegátumokra épülő
+  tesztek a modell adatán (`pane.albumsModel`), a `Repeater.count`-on és a
+  jelzés közvetlen kibocsátásán ellenőrizzenek (ez a `test_search.py`
+  bevált mintája is).
+
 - **2026-07-31 (i18n): a `pyside6-lupdate` ELAVULTNAK jelöli azt, amit nem
   közvetlen `tr()`-hívásként lát — és ezzel néma fordítás-vesztést okoz.**
   A `formatting.py` szövegei a vezérlőtől KAPOTT `tr` függvényen át
