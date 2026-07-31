@@ -42,6 +42,7 @@ from .discovery_controller import DiscoveryController
 from .drop_import_controller import DropImportController
 from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
+from .effect_thumbnails import EffectThumbnailProvider
 from .faces_helper import FacesHelper
 from .language_controller import (
     DEFAULT_LANGUAGE,
@@ -400,6 +401,11 @@ def run(argv: list[str]) -> int:
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
 
+    # effekt-gomb bélyegképek (#338): a meglévő thumbnail-provider
+    # regisztrációját (a teljes könyvtár fotóit) használja fel útvonal-
+    # feloldásra, saját aszinkron poollal renderel
+    effect_thumb_provider = EffectThumbnailProvider(provider.photo_record)
+
     # fájlműveletek (#15): kontextusmenü/F2 híd + resync a műveletek után
     fileops_controller = FileOpsController()
     wire_fileops(fileops_controller, controller)
@@ -459,6 +465,7 @@ def run(argv: list[str]) -> int:
 
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
+    engine.addImageProvider("effectthumb", effect_thumb_provider)
     engine.addImportPath(str(_APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)

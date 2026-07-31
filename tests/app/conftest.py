@@ -30,6 +30,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.drop_import_controller import DropImportController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
+    from picasapy.app.effect_thumbnails import EffectThumbnailProvider
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.folder_tree_controller import FolderTreeController
@@ -57,6 +58,8 @@ def qml_app(qt_app, tmp_path):
     controller = AppController(db, (str(lib),), provider, settings=settings)
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
+    # effekt-gomb bélyegképek (#338) — az application.py bekötésének tükre
+    effect_thumb_provider = EffectThumbnailProvider(provider.photo_record)
     fileops_controller = FileOpsController()
     app_module.wire_fileops(fileops_controller, controller)
     discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
@@ -79,6 +82,7 @@ def qml_app(qt_app, tmp_path):
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
+    engine.addImageProvider("effectthumb", effect_thumb_provider)
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
