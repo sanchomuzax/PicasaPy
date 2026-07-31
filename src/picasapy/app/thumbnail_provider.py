@@ -208,6 +208,13 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         extra = {str(photo.id): photo for photo in photos}
         self._registry = {**self._registry, **extra}
 
+    def photo_record(self, photo_id: str) -> PhotoRecord | None:
+        """A regisztrált fotó rekordja (#338 effekt-bélyegképek): a
+        szerkesztőpanel effekt-gombjainak bélyegkép-providere (
+        `effect_thumbnails.py`) ebből olvassa ki az útvonalat — nem kell
+        neki saját, párhuzamos fotó-regisztrációt vezetnie."""
+        return self._registry.get(str(photo_id))
+
     def unregister_additional_photos(self, ids: tuple[str, ...]) -> None:
         """A `register_additional_photos`-szal felvett bejegyzések
         eltávolítása (pl. új szkennelés előtt vagy a dialógus zárásakor) —
