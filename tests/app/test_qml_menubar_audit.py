@@ -212,3 +212,48 @@ class TestGyorsbillentyuk:
         pontosan 4 elemmel (a fenti négy aktív tételhez)."""
         src = _source()
         assert src.count("Shortcut {") == 4
+
+
+class TestMukodoTetelekBillentyui:
+    """#327: aminek a felirata billentyűt ígér ÉS a menüpont működik, ahhoz
+    tartozzon élő `Shortcut` — akár itt, akár a Main.qml globálisai közt.
+
+    A Qt a `Return` és az `Enter` billentyűt szinonimaként kezeli, a Picasa
+    viszont „Enter"-t ír a menüben; a normalizálás ezt a kettőt vonja össze,
+    hogy a felirat és a bekötés eltérése ne látsszon hiánynak.
+    """
+
+    @staticmethod
+    def _normalise(sequence: str) -> str:
+        return sequence.replace("Enter", "Return")
+
+    def _live_sequences(self) -> set[str]:
+        import re
+
+        main_qml = _MENU_QML.parent.parent / "Main.qml"
+        combined = _source() + main_qml.read_text(encoding="utf-8")
+        return {
+            self._normalise(seq)
+            for seq in re.findall(r'sequence:\s*"([^"]+)"', combined)
+        }
+
+    def test_minden_mukodo_tetel_billentyuje_elo(self):
+        import re
+
+        live = self._live_sequences()
+        missing = []
+        for item in re.findall(r"MenuItem\s*\{[^}]*?\}", _source(), re.S):
+            promised = re.search(r"\\t([A-Za-z0-9+]+)", item)
+            if not promised:
+                continue
+            works = "onTriggered" in item and "enabled: false" not in item
+            if works and self._normalise(promised.group(1)) not in live:
+                title = re.search(r'qsTr\("([^"]+)"\)', item)
+                missing.append(
+                    (promised.group(1), title.group(1) if title else "?")
+                )
+        assert not missing, f"működő menüpont élő billentyű nélkül: {missing}"
+
+    def test_a_szinonima_normalizalas_nem_nyel_el_valodi_hianyt(self):
+        # ellenpróba: egy kitalált billentyű NEM lehet a bekötöttek közt
+        assert "Ctrl+Shift+Alt+Q" not in self._live_sequences()
