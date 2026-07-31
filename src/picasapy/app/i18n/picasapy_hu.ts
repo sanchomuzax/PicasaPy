@@ -956,6 +956,10 @@
         <source>File operation failed</source>
         <translation>A fájlművelet nem sikerült</translation>
     </message>
+    <message>
+        <source>New Album...</source>
+        <translation>Új album…</translation>
+    </message>
 </context>
 <context>
     <name>FolderManagerDialog</name>
@@ -1373,6 +1377,18 @@
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="46"/>
         <source>Locate on Disk</source>
         <translation>Keresés a lemezen</translation>
+    </message>
+    <message>
+        <source>Add to Album</source>
+        <translation>Hozzáadás albumhoz</translation>
+    </message>
+    <message>
+        <source>New Album...</source>
+        <translation>Új album…</translation>
+    </message>
+    <message>
+        <source>Remove from Album</source>
+        <translation>Kivétel az albumból</translation>
     </message>
 </context>
 <context>
