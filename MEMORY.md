@@ -175,6 +175,18 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Tanulságok
 
+- **2026-07-31 (i18n): a `pyside6-lupdate` ELAVULTNAK jelöli azt, amit nem
+  közvetlen `tr()`-hívásként lát — és ezzel néma fordítás-vesztést okoz.**
+  A `formatting.py` szövegei a vezérlőtől KAPOTT `tr` függvényen át
+  fordulnak (`formatting.photo_info_text(..., self.tr)`), amit a lupdate
+  statikusan nem ismer fel: egyetlen futtatás 85 bejegyzést tett obsolete-tá,
+  és a `.qm`-ből kiesett például a „0 kép". A `test_application.py`
+  fordítás-tesztje fogta meg. Szabály innentől: a `picasapy_hu.ts`-en **ne
+  futtass vak lupdate-et**; új felirathoz szúrd be kézzel a `<message>`
+  blokkot a megfelelő kontextusba, majd `pyside6-lrelease`. Ha mégis
+  lupdate kell, előtte MENTSD a `.ts`-t, utána vesd össze az obsolete-tá
+  vált bejegyzéseket, és a ténylegesen használtakat állítsd vissza.
+
 - **2026-07-30 (a nagy UI-audit): referencia-kép nélkül a UI-paritás VAKREPÜLÉS
   — és évekig észrevétlen marad.** A felhasználó éles visszajelzése után
   betöltött 53 eredeti Picasa-screenshot azonnal kimutatta, hogy a
