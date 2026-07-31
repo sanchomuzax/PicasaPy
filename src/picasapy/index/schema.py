@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -64,6 +64,34 @@ CREATE TRIGGER IF NOT EXISTS photos_fts_update AFTER UPDATE ON photos BEGIN
 END;
 """
 
+
+# #9: virtuális albumok. Az azonosító a `.picasa.ini` `[.album:<token>]`
+# szekciójának tokenje. Ugyanaz az album TÖBB mappa ini-jében is szerepel
+# (a Picasa minden érintett mappába kiírja a definíciót), ezért a tárolás
+# DEFINÍCIÓNKÉNTI: (mappa, token) a kulcs, és a hasáb-lekérdezés vonja
+# össze őket tokenre. Így a mappánként futó, idempotens szinkron egyszerűen
+# újraírhatja a saját sorait, és az ini-ből törölt album magától kiesik —
+# akkor is, ha másik mappa még hivatkozik rá.
+_ALBUMS_DDL = """
+CREATE TABLE IF NOT EXISTS albums (
+    folder_id INTEGER NOT NULL REFERENCES folders(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    name TEXT,
+    date TEXT,
+    description TEXT,
+    location TEXT,
+    PRIMARY KEY (folder_id, token)
+);
+
+CREATE TABLE IF NOT EXISTS photo_albums (
+    photo_id INTEGER NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    PRIMARY KEY (photo_id, token)
+);
+
+CREATE INDEX IF NOT EXISTS idx_photo_albums_token ON photo_albums(token);
+"""
+
 DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
     id INTEGER PRIMARY KEY,
@@ -100,6 +128,8 @@ CREATE TABLE IF NOT EXISTS photos (
 CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 1;
 
 {_PHOTO_HASHES_DDL}
+
+{_ALBUMS_DDL}
 
 {_FTS_DDL}
 """
@@ -149,4 +179,8 @@ ALTER TABLE photos ADD COLUMN geotag_ini TEXT;
 ALTER TABLE photos ADD COLUMN exif_lat REAL;
 ALTER TABLE photos ADD COLUMN exif_lon REAL;
 """,
+    # #9: virtuális albumok. Üres táblákkal jön létre — a meglévő indexekhez
+    # nem kell újraindexelés, a következő szinkron tölti fel őket az
+    # ini-kből (a `[.album:token]` szekciók és az `albums=` kulcs alapján).
+    7: _ALBUMS_DDL,
 }
