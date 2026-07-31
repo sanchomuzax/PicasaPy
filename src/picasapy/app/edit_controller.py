@@ -7,6 +7,11 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
+from picasapy.app.effect_params import (
+    effect_params,
+    format_param_values,
+    has_params,
+)
 from picasapy.edit.session import EditSession
 from picasapy.ini import load_document, update_document
 from picasapy.ini.rect64 import Rect64, encode_rect64
@@ -481,6 +486,99 @@ class EditController(QObject):
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+
+    # -- csúszkás effekt-alpanel (#316) --------------------------------------
+
+    @Slot(str, result=bool)
+    def effectHasParams(self, name: str) -> bool:
+        """Nyíljon-e csúszkás alpanel a gombra kattintva?
+
+        A paraméter nélküli effektek (Szépia, Fekete-fehér…) az eredeti
+        Picasában is egy kattintással alkalmazódnak.
+        """
+        return has_params(name)
+
+    @Slot(str, result="QVariant")
+    def effectParams(self, name: str):
+        """Az effekt csúszkái a QML-nek — LISTÁT adunk, nem tuple-t: a
+        QML-oldalon a tuple NEM tömb (#232)."""
+        return [
+            {
+                "key": param.key,
+                "label": param.label,
+                "minimum": param.minimum,
+                "maximum": param.maximum,
+                "default": param.default,
+                "step": param.step,
+            }
+            for param in effect_params(name)
+        ]
+
+    @Slot(str, "QVariantList")
+    def previewEffect(self, name: str, values) -> None:
+        """Élő előnézet a csúszkák húzása közben: a képet a pillanatnyi
+        értékekkel újrarendereli, de NEM ír ini-be és NEM tol undo-lépést
+        (a previewFinetune mintájára, #20)."""
+        self._require_active()
+        preview_session = self._session_with_effect(name, values)
+        if preview_session is None:
+            return
+        self._register_preview(preview_session)
+        self._bump_revision()
+
+    @Slot()
+    def discardEffectPreview(self) -> None:
+        """Mégse: az előnézet elvetése, a mentett lánc visszaállítása."""
+        self._require_active()
+        self._register_preview()
+        self._bump_revision()
+
+    @Slot(str, "QVariantList")
+    def applyEffectWithParams(self, name: str, values) -> None:
+        """Alkalmaz: a beállított értékekkel fűzi a láncra (undo + mentés).
+
+        Hiányzó vagy hiányos értéklistánál a katalógus alapértékei jönnek —
+        így a gomb paraméter nélkül is ugyanazt adja, mint az `applyEffect`.
+        """
+        self._require_active()
+        session = self._session_with_effect(name, values)
+        if session is None:
+            return
+        self._push_undo(name.casefold())
+        self._session = session
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    def _session_with_effect(self, name: str, values) -> EditSession | None:
+        """A lánc az effekttel a végén; ismeretlen effektnél None.
+
+        A hiányzó értékeket a katalógus alapértéke pótolja, a fölöslegeseket
+        eldobjuk — a `filters=` sosem kaphat a katalógusnál több paramétert.
+        """
+        if not isinstance(name, str):
+            return None
+        key = name.casefold()
+        if key not in _EFFECT_NAMES:
+            return None
+        catalogue = effect_params(key)
+        if not catalogue:
+            # paraméter nélküli effekt: a meglévő, dokumentált alapérték-út
+            return self._session.append_effect(
+                _EFFECT_INI_NAMES.get(key, key), _EFFECT_PARAMS.get(key, ("1",))
+            )
+        supplied = list(values) if values is not None else []
+        resolved = [
+            supplied[index] if index < len(supplied) else param.default
+            for index, param in enumerate(catalogue)
+        ]
+        try:
+            formatted = format_param_values(resolved)
+        except (TypeError, ValueError):
+            return None
+        return self._session.append_effect(
+            _EFFECT_INI_NAMES.get(key, key), ("1", *formatted)
+        )
 
     # -- belső ------------------------------------------------------------
 
