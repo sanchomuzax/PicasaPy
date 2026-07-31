@@ -5,6 +5,27 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.5.1] – 2026-07-31
+
+### Hozzáadva
+- **Effekt-csúszkák (#316):** a paraméteres effekt gombja már nem fix
+  erősséggel csap a képre, hanem — az eredeti Picasa módjára — **alpanelt
+  nyit csúszkákkal, élő előnézettel**, alul Alkalmaz/Mégse gombbal. Húzás
+  közben a kép azonnal követi a beállítást (ini-írás és visszavonás-lépés
+  nélkül); az Alkalmaz teszi a láncra, a Mégse nyomtalanul elveti. Húsz
+  effekt kapott csúszkát (Élesítés, Telítettség, Vignetta, Ragyogás,
+  radiális elmosás/telítettség, Színezés, Színátmenet, és az 5. fül teljes
+  készlete); a paraméter nélküli effektek (Szépia, Fekete-fehér, Melegítés,
+  Filmszemcse, Színinvertálás) továbbra is egy kattintás.
+  A csúszkák tartományai és alapértékei **mért** értékek: a felhasználó
+  valódi Picasa-exportjaiból származó ini-mintákból (`filters-decoded.md`).
+
+### Javítva
+- **Fordítás-vesztés elhárítva:** a felület magyar szövegeinek egy része
+  nem közvetlen `tr()`-hívásból származik, ezért egy gépi fordítás-frissítés
+  elavultnak jelölte és kiejtette őket (például a „0 kép” feliratot). A
+  fordítás visszaállt, és a tanulság a projekt memóriájába került.
+
 ## [0.5.0] – 2026-07-30
 
 A kiadás a felhasználó éles, Windows-os visszajelzései nyomán készült, és

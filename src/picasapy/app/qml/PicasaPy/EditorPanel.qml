@@ -60,6 +60,126 @@ Rectangle {
     // Effektek (#20): minden gomb új réteget fűz a láncra (append-only)
     signal effectRequested(string name)
 
+    // Paraméteres effekt-alpanel (#316): a gombra kattintva NEM azonnal a
+    // láncra kerül, ha az effektnek vannak csúszkái — helyette megnyílik ez
+    // az alpanel, élő előnézettel, Apply/Cancel gombbal. A paraméter nélküli
+    // effektek (Sepia, B&W, Warmify, Film Grain, Invert…) VÁLTOZATLANUL egy
+    // kattintással, azonnal az effectRequested jelen át alkalmazódnak.
+    property bool paramPanelActive: false
+    property string paramEffectName: ""
+    property var paramEffectParams: []   // editController.effectParams(name)
+    property var paramEffectValues: []   // a csúszkák pillanatnyi értékei
+
+    // #305 null-őr — de ITT szigorúbb annál: az EditorPanel-t önállóan (a
+    // `PicasaPy 1.0` modulon át) betöltő tesztek (test_editor_tabs.py,
+    // test_editor_effects.py, test_qml_editor_panel.py) az editController
+    // kontextus-property-t EGYÁLTALÁN nem állítják be — ott a bare
+    // `editController` hivatkozás ReferenceError-t dobna. A `typeof` ezt is
+    // lekezeli (nem csak a null-esetet), ezért a régi izolált tesztek
+    // változatlanul a sima effectRequested-útra esnek vissza.
+    function hasEffectController() {
+        return typeof editController !== "undefined" && editController !== null
+    }
+
+    // egy effekt-gomb kattintása: ha az effektnek vannak paraméterei,
+    // megnyitja az alpanelt és true-t ad vissza — ilyenkor a hívó (a gomb
+    // onButtonClicked-je) NEM küldi az effectRequested jelet. Egyébként
+    // (vagy ha nincs editController — ld. fent) false-t ad vissza, és a
+    // gomb VÁLTOZATLANUL a meglévő effectRequested jelet küldi tovább. Az
+    // effectRequested hívás szó szerinti (nem változóból font) formája
+    // minden gombnál megmarad, csak feltételesen fut le — a
+    // test_effect_names.py #315-ös regex-alapú lefedettség-ellenőrzése
+    // erre épít.
+    function tryOpenParamPanel(name) {
+        if (panel.hasEffectController() && editController.effectHasParams(name)) {
+            panel.openParamPanel(name)
+            return true
+        }
+        return false
+    }
+
+    // az alpanel megnyitása: csúszkák a katalógus alapértékein, azonnali
+    // élő előnézettel.
+    function openParamPanel(name) {
+        if (!panel.hasEffectController()) return
+        var params = editController.effectParams(name)
+        var values = []
+        for (var i = 0; i < params.length; i++) values.push(params[i].default)
+        panel.paramEffectName = name
+        panel.paramEffectParams = params
+        panel.paramEffectValues = values
+        panel.paramPanelActive = true
+        editController.previewEffect(name, values)
+    }
+
+    // egy csúszka húzása: az értéklista frissítése + késleltetett előnézet —
+    // a folderPaneWidthSaver mintája (Main.qml): ne hívjunk feleslegesen
+    // minden pixelnyi elmozdulásnál, de az utolsó érték mindig átmegy.
+    function updateParamValue(index, value) {
+        panel.paramEffectValues[index] = value
+        paramPreviewTimer.restart()
+    }
+
+    // Apply: a beállított értékekkel a láncra (undo + mentés), vissza a rácsra.
+    function applyParamPanel() {
+        paramPreviewTimer.stop()
+        if (panel.hasEffectController())
+            editController.applyEffectWithParams(panel.paramEffectName,
+                                                  panel.paramEffectValues)
+        panel.closeParamPanel()
+    }
+
+    // Cancel: az előnézet elvetése (a mentett lánc marad érintetlen),
+    // vissza a rácsra.
+    function cancelParamPanel() {
+        paramPreviewTimer.stop()
+        if (panel.hasEffectController())
+            editController.discardEffectPreview()
+        panel.closeParamPanel()
+    }
+
+    function closeParamPanel() {
+        panel.paramPanelActive = false
+        panel.paramEffectName = ""
+        panel.paramEffectParams = []
+        panel.paramEffectValues = []
+    }
+
+    // a csúszka-feliratok fordítása (#316): a `label` a Pythonból (
+    // app/effect_params.py) angol kulcsszöveg jön — a lupdate ezt nem látja,
+    // ezért itt statikus qsTr(...) hívásokkal soroljuk fel az ÖSSZES
+    // lehetséges feliratot; az ismeretlent változatlanul adjuk vissza.
+    function paramLabel(key) {
+        switch (key) {
+        case "Amount": return qsTr("Amount")
+        case "Saturation": return qsTr("Saturation")
+        case "Inner Radius": return qsTr("Inner Radius")
+        case "Strength": return qsTr("Strength")
+        case "Intensity": return qsTr("Intensity")
+        case "Radius": return qsTr("Radius")
+        case "Center X": return qsTr("Center X")
+        case "Center Y": return qsTr("Center Y")
+        case "Size": return qsTr("Size")
+        case "Sharpness": return qsTr("Sharpness")
+        case "Preserve Color": return qsTr("Preserve Color")
+        case "Gradient": return qsTr("Gradient")
+        case "Shade": return qsTr("Shade")
+        case "Block Size": return qsTr("Block Size")
+        case "Blur Radius": return qsTr("Blur Radius")
+        case "Brightness": return qsTr("Brightness")
+        case "Color Mix": return qsTr("Color Mix")
+        case "Edge Strength": return qsTr("Edge Strength")
+        case "Posterize": return qsTr("Posterize")
+        case "Smoothness": return qsTr("Smoothness")
+        case "Width": return qsTr("Width")
+        case "Border Width": return qsTr("Border Width")
+        case "Angle": return qsTr("Angle")
+        case "Blur": return qsTr("Blur")
+        case "Line Position": return qsTr("Line Position")
+        default: return key
+        }
+    }
+
     // tool: "crop"|"tilt"|"redeye"|"enhance"|"autolight"|"autocolor"
     signal toolActivated(string tool)
     // a vágás külön jelet is kap — a hívó ez alapján nyitja a CropOverlay-t
@@ -557,7 +677,7 @@ Rectangle {
     // ---------------- "effects" mód: Effektek (#20) ----------------
     ColumnLayout {
         objectName: "effectsColumn"
-        visible: !panel.cropActive && panel.activeTab === 2
+        visible: !panel.cropActive && panel.activeTab === 2 && !panel.paramPanelActive
         opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
@@ -593,62 +713,62 @@ Rectangle {
             PanelButton {
                 objectName: "effectUnsharp"
                 label: qsTr("Sharpen")
-                onButtonClicked: panel.effectRequested("unsharp")
+                onButtonClicked: if (!panel.tryOpenParamPanel("unsharp")) panel.effectRequested("unsharp")
             }
             PanelButton {
                 objectName: "effectSepia"
                 label: qsTr("Sepia")
-                onButtonClicked: panel.effectRequested("sepia")
+                onButtonClicked: if (!panel.tryOpenParamPanel("sepia")) panel.effectRequested("sepia")
             }
             PanelButton {
                 objectName: "effectBw"
                 label: qsTr("B&W")
-                onButtonClicked: panel.effectRequested("bw")
+                onButtonClicked: if (!panel.tryOpenParamPanel("bw")) panel.effectRequested("bw")
             }
             PanelButton {
                 objectName: "effectWarm"
                 label: qsTr("Warmify")
-                onButtonClicked: panel.effectRequested("warm")
+                onButtonClicked: if (!panel.tryOpenParamPanel("warm")) panel.effectRequested("warm")
             }
             PanelButton {
                 objectName: "effectGrain2"
                 label: qsTr("Film Grain")
-                onButtonClicked: panel.effectRequested("grain2")
+                onButtonClicked: if (!panel.tryOpenParamPanel("grain2")) panel.effectRequested("grain2")
             }
             PanelButton {
                 objectName: "effectTint"
                 label: qsTr("Tint")
-                onButtonClicked: panel.effectRequested("tint")
+                onButtonClicked: if (!panel.tryOpenParamPanel("tint")) panel.effectRequested("tint")
             }
             PanelButton {
                 objectName: "effectSat"
                 label: qsTr("Saturation")
-                onButtonClicked: panel.effectRequested("sat")
+                onButtonClicked: if (!panel.tryOpenParamPanel("sat")) panel.effectRequested("sat")
             }
             PanelButton {
                 objectName: "effectRadblur"
                 label: qsTr("Soft Focus")
-                onButtonClicked: panel.effectRequested("radblur")
+                onButtonClicked: if (!panel.tryOpenParamPanel("radblur")) panel.effectRequested("radblur")
             }
             PanelButton {
                 objectName: "effectGlow2"
                 label: qsTr("Glow")
-                onButtonClicked: panel.effectRequested("glow2")
+                onButtonClicked: if (!panel.tryOpenParamPanel("glow2")) panel.effectRequested("glow2")
             }
             PanelButton {
                 objectName: "effectAnsel"
                 label: qsTr("Filtered B&W")
-                onButtonClicked: panel.effectRequested("ansel")
+                onButtonClicked: if (!panel.tryOpenParamPanel("ansel")) panel.effectRequested("ansel")
             }
             PanelButton {
                 objectName: "effectRadsat"
                 label: qsTr("Focal Saturation")
-                onButtonClicked: panel.effectRequested("radsat")
+                onButtonClicked: if (!panel.tryOpenParamPanel("radsat")) panel.effectRequested("radsat")
             }
             PanelButton {
                 objectName: "effectDirTint"
                 label: qsTr("Graduated Tint")
-                onButtonClicked: panel.effectRequested("dir_tint")
+                onButtonClicked: if (!panel.tryOpenParamPanel("dir_tint")) panel.effectRequested("dir_tint")
             }
             // #315: a render/chain.py "vignette" kulcsot vár (kisbetűs,
             // casefold), noha az ini-ben a szűrő neve nagybetűs "Vignette"
@@ -657,7 +777,7 @@ Rectangle {
             PanelButton {
                 objectName: "effectVignette"
                 label: qsTr("Vignette")
-                onButtonClicked: panel.effectRequested("vignette")
+                onButtonClicked: if (!panel.tryOpenParamPanel("vignette")) panel.effectRequested("vignette")
             }
         }
 
@@ -685,7 +805,7 @@ Rectangle {
     // "kreatív effektek" (#328, docs/specs/ui-audit-editor.md 4. fül) ------
     ColumnLayout {
         objectName: "effectsColumn2"
-        visible: !panel.cropActive && panel.activeTab === 3
+        visible: !panel.cropActive && panel.activeTab === 3 && !panel.paramPanelActive
         opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
@@ -718,62 +838,62 @@ Rectangle {
             PanelButton {
                 objectName: "effectIr"
                 label: qsTr("Infrared Film")
-                onButtonClicked: panel.effectRequested("ir")
+                onButtonClicked: if (!panel.tryOpenParamPanel("ir")) panel.effectRequested("ir")
             }
             PanelButton {
                 objectName: "effectLomo"
                 label: qsTr("Lomo-ish")
-                onButtonClicked: panel.effectRequested("lomo")
+                onButtonClicked: if (!panel.tryOpenParamPanel("lomo")) panel.effectRequested("lomo")
             }
             PanelButton {
                 objectName: "effectHolga"
                 label: qsTr("Holga-ish")
-                onButtonClicked: panel.effectRequested("holga")
+                onButtonClicked: if (!panel.tryOpenParamPanel("holga")) panel.effectRequested("holga")
             }
             PanelButton {
                 objectName: "effectHdr"
                 label: qsTr("HDR-ish")
-                onButtonClicked: panel.effectRequested("hdr")
+                onButtonClicked: if (!panel.tryOpenParamPanel("hdr")) panel.effectRequested("hdr")
             }
             PanelButton {
                 objectName: "effectCinemascope"
                 label: qsTr("Cinemascope")
-                onButtonClicked: panel.effectRequested("cinemascope")
+                onButtonClicked: if (!panel.tryOpenParamPanel("cinemascope")) panel.effectRequested("cinemascope")
             }
             PanelButton {
                 objectName: "effectOrton"
                 label: qsTr("Orton-ish")
-                onButtonClicked: panel.effectRequested("orton")
+                onButtonClicked: if (!panel.tryOpenParamPanel("orton")) panel.effectRequested("orton")
             }
             PanelButton {
                 objectName: "effectSixties"
                 label: qsTr("1960s")
-                onButtonClicked: panel.effectRequested("sixties")
+                onButtonClicked: if (!panel.tryOpenParamPanel("sixties")) panel.effectRequested("sixties")
             }
             PanelButton {
                 objectName: "effectInvert"
                 label: qsTr("Invert Colors")
-                onButtonClicked: panel.effectRequested("invert")
+                onButtonClicked: if (!panel.tryOpenParamPanel("invert")) panel.effectRequested("invert")
             }
             PanelButton {
                 objectName: "effectHeatMap"
                 label: qsTr("Heat Map")
-                onButtonClicked: panel.effectRequested("heatmap")
+                onButtonClicked: if (!panel.tryOpenParamPanel("heatmap")) panel.effectRequested("heatmap")
             }
             PanelButton {
                 objectName: "effectCrossProcess"
                 label: qsTr("Cross Process")
-                onButtonClicked: panel.effectRequested("crossprocess")
+                onButtonClicked: if (!panel.tryOpenParamPanel("crossprocess")) panel.effectRequested("crossprocess")
             }
             PanelButton {
                 objectName: "effectQuantizePalette"
                 label: qsTr("Posterize")
-                onButtonClicked: panel.effectRequested("quantizepalette")
+                onButtonClicked: if (!panel.tryOpenParamPanel("quantizepalette")) panel.effectRequested("quantizepalette")
             }
             PanelButton {
                 objectName: "effectTwoTone"
                 label: qsTr("Duo-Tone")
-                onButtonClicked: panel.effectRequested("twotone")
+                onButtonClicked: if (!panel.tryOpenParamPanel("twotone")) panel.effectRequested("twotone")
             }
         }
 
@@ -801,7 +921,7 @@ Rectangle {
     // "művészi effektek" (#328, docs/specs/ui-audit-editor.md 5. fül) ------
     ColumnLayout {
         objectName: "effectsColumn3"
-        visible: !panel.cropActive && panel.activeTab === 4
+        visible: !panel.cropActive && panel.activeTab === 4 && !panel.paramPanelActive
         opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
@@ -834,57 +954,57 @@ Rectangle {
             PanelButton {
                 objectName: "effectBoost"
                 label: qsTr("Boost")
-                onButtonClicked: panel.effectRequested("boost")
+                onButtonClicked: if (!panel.tryOpenParamPanel("boost")) panel.effectRequested("boost")
             }
             PanelButton {
                 objectName: "effectSoften"
                 label: qsTr("Soft Focus")
-                onButtonClicked: panel.effectRequested("soften")
+                onButtonClicked: if (!panel.tryOpenParamPanel("soften")) panel.effectRequested("soften")
             }
             PanelButton {
                 objectName: "effectPixelate"
                 label: qsTr("Pixelate")
-                onButtonClicked: panel.effectRequested("pixelate")
+                onButtonClicked: if (!panel.tryOpenParamPanel("pixelate")) panel.effectRequested("pixelate")
             }
             PanelButton {
                 objectName: "effectFocalZoom"
                 label: qsTr("Focal Zoom")
-                onButtonClicked: panel.effectRequested("focalzoom")
+                onButtonClicked: if (!panel.tryOpenParamPanel("focalzoom")) panel.effectRequested("focalzoom")
             }
             PanelButton {
                 objectName: "effectPencilSketch"
                 label: qsTr("Pencil Sketch")
-                onButtonClicked: panel.effectRequested("pencilsketch")
+                onButtonClicked: if (!panel.tryOpenParamPanel("pencilsketch")) panel.effectRequested("pencilsketch")
             }
             PanelButton {
                 objectName: "effectNeon"
                 label: qsTr("Neon")
-                onButtonClicked: panel.effectRequested("neon")
+                onButtonClicked: if (!panel.tryOpenParamPanel("neon")) panel.effectRequested("neon")
             }
             PanelButton {
                 objectName: "effectComicize"
                 label: qsTr("Comicize")
-                onButtonClicked: panel.effectRequested("comicize")
+                onButtonClicked: if (!panel.tryOpenParamPanel("comicize")) panel.effectRequested("comicize")
             }
             PanelButton {
                 objectName: "effectBorder"
                 label: qsTr("Border")
-                onButtonClicked: panel.effectRequested("border")
+                onButtonClicked: if (!panel.tryOpenParamPanel("border")) panel.effectRequested("border")
             }
             PanelButton {
                 objectName: "effectDropShadow"
                 label: qsTr("Drop Shadow")
-                onButtonClicked: panel.effectRequested("dropshadow")
+                onButtonClicked: if (!panel.tryOpenParamPanel("dropshadow")) panel.effectRequested("dropshadow")
             }
             PanelButton {
                 objectName: "effectMuseumMatte"
                 label: qsTr("Museum Matte")
-                onButtonClicked: panel.effectRequested("museummatte")
+                onButtonClicked: if (!panel.tryOpenParamPanel("museummatte")) panel.effectRequested("museummatte")
             }
             PanelButton {
                 objectName: "effectPolaroid"
                 label: qsTr("Polaroid")
-                onButtonClicked: panel.effectRequested("polaroid")
+                onButtonClicked: if (!panel.tryOpenParamPanel("polaroid")) panel.effectRequested("polaroid")
             }
         }
 
@@ -906,6 +1026,108 @@ Rectangle {
                 onButtonClicked: panel.redoRequested()
             }
         }
+    }
+
+    // ---------------- effekt-paraméter alpanel (#316) ----------------
+    // Bármelyik effekt-fülön (2./3./4.) megnyílhat — az adott fül rácsát
+    // fedi el ugyanazon a helyen (tabBar.bottom-tól), a visszatérés
+    // ugyanarra a fülre történik, mert az activeTab változatlan marad.
+    ColumnLayout {
+        objectName: "effectParamColumn"
+        visible: !panel.cropActive && panel.paramPanelActive
+        opacity: panel.enabled ? 1 : 0.45
+        anchors.top: tabBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 10
+        spacing: 8
+
+        Rectangle {
+            Layout.fillWidth: true
+            height: 22
+            color: Theme.panelHeaderBg
+            Text {
+                objectName: "effectParamTitle"
+                anchors.left: parent.left
+                anchors.leftMargin: 6
+                anchors.verticalCenter: parent.verticalCenter
+                text: panel.paramEffectName
+                font.pixelSize: Theme.fontSize
+                font.bold: true
+                color: Theme.panelHeaderText
+            }
+        }
+
+        Repeater {
+            objectName: "effectParamRepeater"
+            model: panel.paramEffectParams
+
+            delegate: ColumnLayout {
+                id: paramRow
+                required property var modelData
+                required property int index
+                Layout.fillWidth: true
+                spacing: 2
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Label {
+                        objectName: "effectParamLabel" + paramRow.index
+                        Layout.fillWidth: true
+                        text: panel.paramLabel(paramRow.modelData.label)
+                        font.pixelSize: Theme.fontSize - 1
+                        color: Theme.textGray
+                    }
+                    Label {
+                        objectName: "effectParamValue" + paramRow.index
+                        text: paramSlider.value.toFixed(2)
+                        font.pixelSize: Theme.fontSize - 1
+                        color: Theme.textGray
+                    }
+                }
+                PicasaSlider {
+                    id: paramSlider
+                    objectName: "effectParamSlider" + paramRow.index
+                    Layout.fillWidth: true
+                    from: paramRow.modelData.minimum
+                    to: paramRow.modelData.maximum
+                    stepSize: paramRow.modelData.step
+                    value: paramRow.modelData.default
+                    // húzás/kattintás közben élő előnézet (#316) — a
+                    // programozott kezdőérték-beállítás NEM vált ki `moved`
+                    // jelet, csak a valódi felhasználói interakció
+                    onMoved: panel.updateParamValue(paramRow.index, paramSlider.value)
+                }
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            PanelButton {
+                objectName: "effectParamApplyButton"
+                label: qsTr("Apply")
+                onButtonClicked: panel.applyParamPanel()
+            }
+            PanelButton {
+                objectName: "effectParamCancelButton"
+                label: qsTr("Cancel")
+                onButtonClicked: panel.cancelParamPanel()
+            }
+        }
+    }
+
+    // #316: húzás közben az egyes csúszka-változásokat nem küldjük azonnal
+    // (élő előnézetenként) az editControllernek — kis késleltetéssel
+    // összefogjuk (a Main.qml folderPaneWidthSaver-mintája), de az Apply
+    // előtt az utolsó érték mindenképp átmegy (applyParamPanel közvetlenül
+    // a friss paramEffectValues-t küldi, nem a timertől függ).
+    Timer {
+        id: paramPreviewTimer
+        interval: 60
+        onTriggered: if (panel.hasEffectController())
+            editController.previewEffect(panel.paramEffectName,
+                                          panel.paramEffectValues)
     }
 
     // ---------------- "crop" mód: Fotó vágása ----------------

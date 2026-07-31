@@ -658,6 +658,98 @@
         <source>Polaroid</source>
         <translation>Polaroid</translation>
     </message>
+    <message>
+        <source>Amount</source>
+        <translation>Mérték</translation>
+    </message>
+    <message>
+        <source>Angle</source>
+        <translation>Szög</translation>
+    </message>
+    <message>
+        <source>Block Size</source>
+        <translation>Blokkméret</translation>
+    </message>
+    <message>
+        <source>Blur</source>
+        <translation>Elmosás</translation>
+    </message>
+    <message>
+        <source>Blur Radius</source>
+        <translation>Elmosás sugara</translation>
+    </message>
+    <message>
+        <source>Border Width</source>
+        <translation>Keretszélesség</translation>
+    </message>
+    <message>
+        <source>Brightness</source>
+        <translation>Fényerő</translation>
+    </message>
+    <message>
+        <source>Center X</source>
+        <translation>Középpont X</translation>
+    </message>
+    <message>
+        <source>Center Y</source>
+        <translation>Középpont Y</translation>
+    </message>
+    <message>
+        <source>Color Mix</source>
+        <translation>Színkeverés</translation>
+    </message>
+    <message>
+        <source>Edge Strength</source>
+        <translation>Élerősség</translation>
+    </message>
+    <message>
+        <source>Gradient</source>
+        <translation>Átmenet</translation>
+    </message>
+    <message>
+        <source>Inner Radius</source>
+        <translation>Belső sugár</translation>
+    </message>
+    <message>
+        <source>Intensity</source>
+        <translation>Intenzitás</translation>
+    </message>
+    <message>
+        <source>Line Position</source>
+        <translation>Vonal helye</translation>
+    </message>
+    <message>
+        <source>Preserve Color</source>
+        <translation>Szín megőrzése</translation>
+    </message>
+    <message>
+        <source>Radius</source>
+        <translation>Sugár</translation>
+    </message>
+    <message>
+        <source>Shade</source>
+        <translation>Árnyalat</translation>
+    </message>
+    <message>
+        <source>Sharpness</source>
+        <translation>Élesség</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Méret</translation>
+    </message>
+    <message>
+        <source>Smoothness</source>
+        <translation>Simítás</translation>
+    </message>
+    <message>
+        <source>Strength</source>
+        <translation>Erősség</translation>
+    </message>
+    <message>
+        <source>Width</source>
+        <translation>Szélesség</translation>
+    </message>
 </context>
 <context>
     <name>CreateDialogs</name>
