@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.5.3] – 2026-07-31
+
+### Változott
+- **A szerkesztő Picasa-szerű kinézete (#338).** A felhasználó jelezte, hogy
+  „sima gombok vannak a legtöbb fülön, nem tetszik" — jogosan, mert az
+  eredetiben egészen más a panel:
+  - **Ikonos fülek** a szoros szöveges tabok helyett: csavarkulcs, nap és
+    három ecset (a három effekt-fül színben is elkülönül). Az ikonokat a
+    program maga rajzolja, nem rendszer-emojival — így RPi5-ön is
+    ugyanúgy néznek ki. A teljes név súgó-buborékban jelenik meg.
+  - **Bélyegképes effekt-gombok:** minden gombon a SAJÁT fotó látszik az
+    adott effekttel, tehát előre látni, mit csinál. A bélyegképek háttérben
+    készülnek (nem akasztják meg a felületet) és gyorsítótárazódnak, ezért a
+    csúszkák húzása vagy a visszavonás nem számoltatja újra őket. Amíg egy
+    kép nem kész, a gomb a régi kinézetét mutatja — sosem villog üresen.
+
 ## [0.5.2] – 2026-07-31
 
 ### Javítva

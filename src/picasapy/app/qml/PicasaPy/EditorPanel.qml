@@ -81,6 +81,35 @@ Rectangle {
         return typeof editController !== "undefined" && editController !== null
     }
 
+    // #338: az effekt-gombok bélyegképéhez (image://effectthumb/<id>/<effekt>)
+    // szükséges fotó-azonosító. Nincs rá külön EditController-property — az
+    // editController.previewSource ("image://editpreview/<id>?rev=<n>") már
+    // tartalmazza, innen olvassuk ki, hogy ne kelljen az EditController
+    // felületét bővíteni (a feladat scope-ja csak ezt a fájlt + a Python
+    // bélyegkép-providert engedi). Üres, ha nincs aktív szerkesztés — ekkor
+    // az effekt-gombok a korábbi, sima kinézetüket mutatják (thumbSource "").
+    readonly property string effectThumbPhotoId: {
+        if (!panel.hasEffectController()) return ""
+        var src = editController.previewSource
+        var prefix = "image://editpreview/"
+        if (!src || src.indexOf(prefix) !== 0) return ""
+        var rest = src.substring(prefix.length)
+        var q = rest.indexOf("?")
+        return q >= 0 ? rest.substring(0, q) : rest
+    }
+
+    // az adott effekt bélyegkép-URL-je, vagy "" ha nincs aktív szerkesztés
+    // (a hívó PanelButton ilyenkor a régi sima kinézetére esik vissza). A
+    // fotó ALAP állapotán mutatja az effektet (nem a jelenlegi szerkesztési
+    // láncon) — ld. effect_thumbnails.py modul-docstringjének indoklását.
+    // NINCS "?rev="-féle cache-buster: a bélyegkép csak a FOTÓTÓL függ, a
+    // szerkesztési lánc (undo/redo/csúszka-húzás) nem érvényteleníti — ez
+    // adja a kért "effektenként csak egyszer" gyorsítótárazást.
+    function effectThumbSource(effectName) {
+        if (panel.effectThumbPhotoId === "") return ""
+        return "image://effectthumb/" + panel.effectThumbPhotoId + "/" + effectName
+    }
+
     // egy effekt-gomb kattintása: ha az effektnek vannak paraméterei,
     // megnyitja az alpanelt és true-t ad vissza — ilyenkor a hívó (a gomb
     // onButtonClicked-je) NEM küldi az effectRequested jelet. Egyébként
@@ -318,17 +347,24 @@ Rectangle {
         }
     }
 
-    // egyszerű panel-gomb (PicasaButton-színvilág)
+    // egyszerű panel-gomb (PicasaButton-színvilág). #338: opcionális
+    // effekt-bélyegkép — ha a `thumbSource` üres (az Undo/Redo/Apply/
+    // Cancel/vágás-gombak sose adnak meg ilyet), a gomb a korábbi, sima
+    // kinézetét mutatja, VÁLTOZATLANUL — ez a legtöbb PanelButton-hívó.
     component PanelButton: Rectangle {
         id: pbtn
         property string label: ""
         property bool buttonEnabled: true
+        // "" = sima gomb (korábbi kinézet); egyébként image://effectthumb/…
+        property string thumbSource: ""
         signal buttonClicked()
         Layout.fillWidth: true
-        // #318: a felirat teljesen olvasható kell legyen — a magasság a
-        // (esetleg tördelt) feliratból számolt implicitHeight-hez igazodik,
-        // 24px az alsó korlát (rövid egysoros feliratoknál, pl. Undo/Redo).
-        Layout.preferredHeight: Math.max(24, pbtnLabel.implicitHeight + 10)
+        // #318: a felirat teljesen olvasható kell legyen. Bélyegképes
+        // gombnál a kép + felirat együttes magassága számít, sima gombnál
+        // (a régi mintát megtartva) csak a feliraté, 24px alsó korláttal.
+        Layout.preferredHeight: pbtn.thumbSource !== ""
+            ? pbtnThumbBox.height + pbtnLabel.implicitHeight + 12
+            : Math.max(24, pbtnLabel.implicitHeight + 10)
         radius: 3
         border.width: 1
         border.color: Theme.chromeBorder
@@ -339,13 +375,56 @@ Rectangle {
         // (szintén témafüggő) Theme.textDark felirat olvasható marad rajta.
         color: !pbtn.enabled ? Theme.chromeBg
                : (pbtnMouse.pressed ? Qt.darker(Theme.buttonBg, 1.15) : Theme.buttonBg)
+
+        // #338: a bélyegkép-terület — csak akkor foglal helyet, ha van
+        // thumbSource. A KÉSZ bélyegképig (Image.status !== Ready) a
+        // helyőrző-keret mutatja, hogy a gomb SOHA ne legyen üres/villogó.
+        Item {
+            id: pbtnThumbBox
+            visible: pbtn.thumbSource !== ""
+            anchors.top: parent.top
+            anchors.topMargin: 5
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: parent.width - 10
+            height: pbtn.thumbSource !== "" ? 56 : 0
+
+            Rectangle {
+                // helyőrző, amíg a bélyegkép még nem érkezett meg
+                anchors.fill: parent
+                radius: 2
+                color: Theme.chromeBg
+                border.width: 1
+                border.color: Theme.chromeBorder
+                visible: pbtnThumbImg.status !== Image.Ready
+            }
+            Image {
+                id: pbtnThumbImg
+                objectName: pbtn.objectName ? pbtn.objectName + "Thumb" : ""
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                source: pbtn.thumbSource
+                smooth: true
+                // amíg nem kész (Loading/Null/Error), nem rajzol semmit —
+                // a fenti helyőrző-Rectangle látszik helyette, nem üres folt
+                visible: status === Image.Ready
+            }
+        }
         Text {
             id: pbtnLabel
             // a hívó objectName-jéből képzett saját objectName (pl.
             // "effectGrain2Label") — a tesztek ezen ellenőrzik a
             // tördelést/nem-vágást (#318), a histogramTitle mintája (#235).
             objectName: pbtn.objectName ? pbtn.objectName + "Label" : ""
-            anchors.centerIn: parent
+            // #305/#338 mintája: SOHA ne kössünk anchort feltételesen
+            // `undefined`-ra (a QML-figyelmeztetés-őr ezt buktatná) — a
+            // pbtnThumbBox magassága 0, ha nincs thumbSource, így ez az
+            // egyetlen, mindig érvényes anchor-készlet mindkét esetben jó
+            // (sima gombnál csak néhány px-szel tér el a régi centerIn-től,
+            // ami a szűk, tömören méretezett gombokon nem látszik).
+            anchors.top: pbtnThumbBox.bottom
+            anchors.topMargin: pbtn.thumbSource !== "" ? 4 : 3
+            anchors.horizontalCenter: parent.horizontalCenter
             text: pbtn.label
             font.pixelSize: Theme.fontSize
             color: pbtn.enabled ? Theme.textDark : Theme.textGray
@@ -363,50 +442,154 @@ Rectangle {
         }
     }
 
+    // #338: a fülsáv ikonja — Canvas-szal rajzolt egyszerű sziluett (nem
+    // rendszer-emoji: a Linux-first célplatformon, ld. CLAUDE.md, nincs
+    // garancia színes emoji-betűkészletre — RPi5 minimál-telepítésen a
+    // csavarkulcs/nap/ecset glyph simán "tofu"-dobozként jelenhetne meg;
+    // a saját rajz mindig ugyanúgy néz ki, és a színe is szabályozható —
+    // ez adja a 3 ecset-fül "színben megkülönböztetve" követelményét is,
+    // amit egy fix színű emoji-glyph nem tudna).
+    component EditTabIcon: Canvas {
+        id: icon
+        property string kind: "wrench"   // "wrench" | "sun" | "brush"
+        property color strokeColor: Theme.iconInk
+        // ecset-füleknél a sörte színe (a 3./4./5. fül megkülönböztetése)
+        property color accentColor: strokeColor
+        // apró minta-pötty a sörtén (zöld/kék fülnél "levél"/"felhő" folt);
+        // "transparent" = nincs
+        property color fleckColor: "transparent"
+        onKindChanged: requestPaint()
+        onStrokeColorChanged: requestPaint()
+        onAccentColorChanged: requestPaint()
+        onFleckColorChanged: requestPaint()
+        onWidthChanged: requestPaint()
+        onHeightChanged: requestPaint()
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.reset()
+            ctx.clearRect(0, 0, width, height)
+            ctx.lineCap = "round"
+            ctx.lineJoin = "round"
+            var w = width, h = height
+            if (icon.kind === "wrench") {
+                // nyél: bal-alsó → jobb-felső átló
+                ctx.strokeStyle = icon.strokeColor
+                ctx.lineWidth = Math.max(2, w * 0.14)
+                ctx.beginPath()
+                ctx.moveTo(w * 0.20, h * 0.85)
+                ctx.lineTo(w * 0.58, h * 0.45)
+                ctx.stroke()
+                // fej: nyitott gyűrű (csavarkulcs-száj) a nyél végén
+                ctx.beginPath()
+                ctx.arc(w * 0.68, h * 0.32, w * 0.20, Math.PI * 0.15, Math.PI * 1.65)
+                ctx.lineWidth = Math.max(2, w * 0.12)
+                ctx.stroke()
+            } else if (icon.kind === "sun") {
+                ctx.fillStyle = icon.strokeColor
+                ctx.beginPath()
+                ctx.arc(w * 0.5, h * 0.5, w * 0.20, 0, Math.PI * 2)
+                ctx.fill()
+                ctx.strokeStyle = icon.strokeColor
+                ctx.lineWidth = Math.max(1.5, w * 0.08)
+                var rays = 8
+                for (var i = 0; i < rays; i++) {
+                    var a = (Math.PI * 2 * i) / rays
+                    var innerR = w * 0.30
+                    var outerR = w * 0.46
+                    ctx.beginPath()
+                    ctx.moveTo(w * 0.5 + Math.cos(a) * innerR, h * 0.5 + Math.sin(a) * innerR)
+                    ctx.lineTo(w * 0.5 + Math.cos(a) * outerR, h * 0.5 + Math.sin(a) * outerR)
+                    ctx.stroke()
+                }
+            } else if (icon.kind === "brush") {
+                // nyél
+                ctx.strokeStyle = icon.strokeColor
+                ctx.lineWidth = Math.max(2, w * 0.12)
+                ctx.beginPath()
+                ctx.moveTo(w * 0.28, h * 0.14)
+                ctx.lineTo(w * 0.56, h * 0.48)
+                ctx.stroke()
+                // sörte (ékalakú folt, a fül szín-tokenjével — plain/zöld/kék)
+                ctx.fillStyle = icon.accentColor
+                ctx.beginPath()
+                ctx.moveTo(w * 0.56, h * 0.50)
+                ctx.lineTo(w * 0.82, h * 0.60)
+                ctx.lineTo(w * 0.86, h * 0.82)
+                ctx.lineTo(w * 0.66, h * 0.90)
+                ctx.lineTo(w * 0.50, h * 0.68)
+                ctx.closePath()
+                ctx.fill()
+                if (icon.fleckColor.toString() !== "#00000000"
+                        && icon.fleckColor.toString() !== "transparent") {
+                    ctx.fillStyle = icon.fleckColor
+                    ctx.beginPath()
+                    ctx.arc(w * 0.70, h * 0.74, w * 0.06, 0, Math.PI * 2)
+                    ctx.fill()
+                }
+            }
+        }
+    }
+
     // egy fülgomb (Gyakori javítások / Finomhangolás / Effektek / 4. / 5.
-    // effekt-fül, #20, #328): kattintásra panel.activeTab vált, az aktív fül
-    // vastagabb betűvel és eltérő háttérrel emelkedik ki.
-    // #328 — ikon vs. szöveg döntés: az eredeti Picasa 5 fülcíme ikonos
-    // (csavarkulcs / nap / 3× ecset, ld. docs/specs/ui-audit-editor.md 1.
-    // szak.), de a projektben NINCS ehhez kézenfekvő ikon-készlet — a
-    // meglévő assets/tools/*.png csak az 1. fül (Gyakori javítások)
-    // eszköz-csempéihez való (crop/tilt/redeye/…), a fülsávhoz sosem volt
-    // ikon. Félkész/találgatott ikon rajzolása helyett a fülek SZÖVEGESEK
-    // maradnak — ez a "működő, olvasható inkább, mint félkész" elv (ld. a
-    // feladat 3. pontja). Öt fülnél a régi `elide`-es minta levágná a
-    // feliratot (#318 lesson) — ezért a fülgomb is a PanelButton mintáját
-    // követi: `wrapMode: Text.WordWrap` + a feliratból számolt magasság,
-    // nem vágás.
+    // effekt-fül, #20, #328, #338): kattintásra panel.activeTab vált, az
+    // aktív fül vastagabb kerettel/eltérő háttérrel emelkedik ki.
+    //
+    // #338: a szöveges fülcímkék a szűk (230px-es) panelen összeszorultak
+    // ("Gyakori javítások" két sorba tört, "Finomhangol…" levágódott) — az
+    // eredeti Picasa is 5 IKONOS fület használ (csavarkulcs / nap / 3×
+    // ecset, ld. docs/specs/ui-audit-editor.md 1. szak.). A jelentést a
+    // fenti EditTabIcon adja (saját Canvas-rajz, nem rendszer-glyph); a
+    // teljes nevet a ToolTip mutatja hoverre. A `tbtnLabel` Text a
+    // korábbi #318-as tördelés-teszt (test_editor_tabs.py) és a
+    // hozzáférhetőség kedvéért MEGMARAD, de rejtve (`visible: false`) —
+    // a bélyegkép-gomb (PanelButton) is hasonlóan viselkedik a felirata
+    // alatt, csak ott a felirat látszik is, itt a hely a szűk fülsávon
+    // nem engedi meg mindkettőt.
     component EditTabButton: Rectangle {
         id: tbtn
         required property int tabIndex
         required property string label
+        // "wrench" | "sun" | "brush" — melyik ikont rajzolja az EditTabIcon
+        required property string iconKind
+        property color iconAccent: Theme.iconInk
+        property color iconFleck: "transparent"
         Layout.fillWidth: true
-        Layout.preferredHeight: Math.max(22, tbtnLabel.implicitHeight + 8)
+        Layout.preferredHeight: 38
         color: panel.activeTab === tabIndex ? Theme.contentPanel : Theme.panelHeaderBg
         border.width: 1
-        border.color: Theme.chromeBorder
+        border.color: panel.activeTab === tabIndex ? Theme.selectionBlue : Theme.chromeBorder
+
+        EditTabIcon {
+            objectName: tbtn.objectName ? tbtn.objectName + "Icon" : ""
+            anchors.centerIn: parent
+            width: 22; height: 22
+            kind: tbtn.iconKind
+            strokeColor: Theme.iconInk
+            accentColor: tbtn.iconAccent
+            fleckColor: tbtn.iconFleck
+        }
+        // #318 kompatibilitás: rejtett, de a régi tördelés-logikával
+        // számolt felirat-Text — a `truncated` így sosem igaz, mert a
+        // szélessége nem szorítja a fülgomb keskeny sávjához.
         Text {
             id: tbtnLabel
-            // a hívó objectName-jéből képzett saját objectName (pl.
-            // "editTabFixesLabel") — a PanelButton mintáját követve (#318),
-            // hogy a tesztek egyértelműen megtalálják a felirat-Text-et.
             objectName: tbtn.objectName ? tbtn.objectName + "Label" : ""
-            anchors.centerIn: parent
+            visible: false
             text: tbtn.label
             font.pixelSize: Theme.fontSize - 3
-            font.bold: panel.activeTab === tbtn.tabIndex
-            color: Theme.panelHeaderText
             wrapMode: Text.WordWrap
             maximumLineCount: 2
-            lineHeight: 0.9
-            width: parent.width - 4
-            horizontalAlignment: Text.AlignHCenter
+            width: Math.max(120, implicitWidth)
         }
         MouseArea {
+            id: tabMouse
             anchors.fill: parent
+            hoverEnabled: true
             onClicked: panel.activeTab = tbtn.tabIndex
         }
+        ToolTip.text: tbtn.label
+        ToolTip.visible: tabMouse.containsMouse
+        ToolTip.delay: 400
     }
 
     // ---------------- fülsáv: Gyakori javítások / Finomhangolás / Effektek /
@@ -423,33 +606,46 @@ Rectangle {
         anchors.margins: 10
         spacing: 0
 
+        // #338: csavarkulcs — az eredeti Picasa 1. füle
         EditTabButton {
             objectName: "editTabFixes"
             tabIndex: 0
             label: qsTr("Common Fixes")
+            iconKind: "wrench"
         }
+        // #338: nap — az eredeti Picasa 2. füle
         EditTabButton {
             objectName: "editTabFinetune"
             tabIndex: 1
             label: qsTr("Fine Tuning")
+            iconKind: "sun"
         }
+        // #338: sima ecset — a törzs-effektek (3. fül, nincs szín-minta)
         EditTabButton {
             objectName: "editTabEffects"
             tabIndex: 2
             label: qsTr("Effects")
+            iconKind: "brush"
+            iconAccent: Theme.iconInk
         }
-        // #328: 4. fül (zöld ecset) — a docs/specs/ui-audit-editor.md
-        // "kreatív effektek" leírása alapján rövid "Creative" felirat.
+        // #328/#338: 4. fül — ZÖLD ecset ("kreatív effektek"), a docs/specs/
+        // ui-audit-editor.md leírása szerint zöld táj-mintával megkülönböztetve.
         EditTabButton {
             objectName: "editTabEffects2"
             tabIndex: 3
             label: qsTr("Creative")
+            iconKind: "brush"
+            iconAccent: Theme.picasaGreen
+            iconFleck: Qt.darker(Theme.picasaGreen, 1.4)
         }
-        // #328: 5. fül (kék ecset) — "művészi effektek" alapján "Artistic".
+        // #328/#338: 5. fül — KÉK ecset ("művészi effektek"), kék ég-mintával.
         EditTabButton {
             objectName: "editTabEffects3"
             tabIndex: 4
             label: qsTr("Artistic")
+            iconKind: "brush"
+            iconAccent: Theme.brandBlue
+            iconFleck: Qt.lighter(Theme.brandBlue, 1.6)
         }
     }
 
@@ -714,61 +910,73 @@ Rectangle {
                 objectName: "effectUnsharp"
                 label: qsTr("Sharpen")
                 onButtonClicked: if (!panel.tryOpenParamPanel("unsharp")) panel.effectRequested("unsharp")
+                thumbSource: panel.effectThumbSource("unsharp")
             }
             PanelButton {
                 objectName: "effectSepia"
                 label: qsTr("Sepia")
                 onButtonClicked: if (!panel.tryOpenParamPanel("sepia")) panel.effectRequested("sepia")
+                thumbSource: panel.effectThumbSource("sepia")
             }
             PanelButton {
                 objectName: "effectBw"
                 label: qsTr("B&W")
                 onButtonClicked: if (!panel.tryOpenParamPanel("bw")) panel.effectRequested("bw")
+                thumbSource: panel.effectThumbSource("bw")
             }
             PanelButton {
                 objectName: "effectWarm"
                 label: qsTr("Warmify")
                 onButtonClicked: if (!panel.tryOpenParamPanel("warm")) panel.effectRequested("warm")
+                thumbSource: panel.effectThumbSource("warm")
             }
             PanelButton {
                 objectName: "effectGrain2"
                 label: qsTr("Film Grain")
                 onButtonClicked: if (!panel.tryOpenParamPanel("grain2")) panel.effectRequested("grain2")
+                thumbSource: panel.effectThumbSource("grain2")
             }
             PanelButton {
                 objectName: "effectTint"
                 label: qsTr("Tint")
                 onButtonClicked: if (!panel.tryOpenParamPanel("tint")) panel.effectRequested("tint")
+                thumbSource: panel.effectThumbSource("tint")
             }
             PanelButton {
                 objectName: "effectSat"
                 label: qsTr("Saturation")
                 onButtonClicked: if (!panel.tryOpenParamPanel("sat")) panel.effectRequested("sat")
+                thumbSource: panel.effectThumbSource("sat")
             }
             PanelButton {
                 objectName: "effectRadblur"
                 label: qsTr("Soft Focus")
                 onButtonClicked: if (!panel.tryOpenParamPanel("radblur")) panel.effectRequested("radblur")
+                thumbSource: panel.effectThumbSource("radblur")
             }
             PanelButton {
                 objectName: "effectGlow2"
                 label: qsTr("Glow")
                 onButtonClicked: if (!panel.tryOpenParamPanel("glow2")) panel.effectRequested("glow2")
+                thumbSource: panel.effectThumbSource("glow2")
             }
             PanelButton {
                 objectName: "effectAnsel"
                 label: qsTr("Filtered B&W")
                 onButtonClicked: if (!panel.tryOpenParamPanel("ansel")) panel.effectRequested("ansel")
+                thumbSource: panel.effectThumbSource("ansel")
             }
             PanelButton {
                 objectName: "effectRadsat"
                 label: qsTr("Focal Saturation")
                 onButtonClicked: if (!panel.tryOpenParamPanel("radsat")) panel.effectRequested("radsat")
+                thumbSource: panel.effectThumbSource("radsat")
             }
             PanelButton {
                 objectName: "effectDirTint"
                 label: qsTr("Graduated Tint")
                 onButtonClicked: if (!panel.tryOpenParamPanel("dir_tint")) panel.effectRequested("dir_tint")
+                thumbSource: panel.effectThumbSource("dir_tint")
             }
             // #315: a render/chain.py "vignette" kulcsot vár (kisbetűs,
             // casefold), noha az ini-ben a szűrő neve nagybetűs "Vignette"
@@ -778,6 +986,7 @@ Rectangle {
                 objectName: "effectVignette"
                 label: qsTr("Vignette")
                 onButtonClicked: if (!panel.tryOpenParamPanel("vignette")) panel.effectRequested("vignette")
+                thumbSource: panel.effectThumbSource("vignette")
             }
         }
 
@@ -839,61 +1048,73 @@ Rectangle {
                 objectName: "effectIr"
                 label: qsTr("Infrared Film")
                 onButtonClicked: if (!panel.tryOpenParamPanel("ir")) panel.effectRequested("ir")
+                thumbSource: panel.effectThumbSource("ir")
             }
             PanelButton {
                 objectName: "effectLomo"
                 label: qsTr("Lomo-ish")
                 onButtonClicked: if (!panel.tryOpenParamPanel("lomo")) panel.effectRequested("lomo")
+                thumbSource: panel.effectThumbSource("lomo")
             }
             PanelButton {
                 objectName: "effectHolga"
                 label: qsTr("Holga-ish")
                 onButtonClicked: if (!panel.tryOpenParamPanel("holga")) panel.effectRequested("holga")
+                thumbSource: panel.effectThumbSource("holga")
             }
             PanelButton {
                 objectName: "effectHdr"
                 label: qsTr("HDR-ish")
                 onButtonClicked: if (!panel.tryOpenParamPanel("hdr")) panel.effectRequested("hdr")
+                thumbSource: panel.effectThumbSource("hdr")
             }
             PanelButton {
                 objectName: "effectCinemascope"
                 label: qsTr("Cinemascope")
                 onButtonClicked: if (!panel.tryOpenParamPanel("cinemascope")) panel.effectRequested("cinemascope")
+                thumbSource: panel.effectThumbSource("cinemascope")
             }
             PanelButton {
                 objectName: "effectOrton"
                 label: qsTr("Orton-ish")
                 onButtonClicked: if (!panel.tryOpenParamPanel("orton")) panel.effectRequested("orton")
+                thumbSource: panel.effectThumbSource("orton")
             }
             PanelButton {
                 objectName: "effectSixties"
                 label: qsTr("1960s")
                 onButtonClicked: if (!panel.tryOpenParamPanel("sixties")) panel.effectRequested("sixties")
+                thumbSource: panel.effectThumbSource("sixties")
             }
             PanelButton {
                 objectName: "effectInvert"
                 label: qsTr("Invert Colors")
                 onButtonClicked: if (!panel.tryOpenParamPanel("invert")) panel.effectRequested("invert")
+                thumbSource: panel.effectThumbSource("invert")
             }
             PanelButton {
                 objectName: "effectHeatMap"
                 label: qsTr("Heat Map")
                 onButtonClicked: if (!panel.tryOpenParamPanel("heatmap")) panel.effectRequested("heatmap")
+                thumbSource: panel.effectThumbSource("heatmap")
             }
             PanelButton {
                 objectName: "effectCrossProcess"
                 label: qsTr("Cross Process")
                 onButtonClicked: if (!panel.tryOpenParamPanel("crossprocess")) panel.effectRequested("crossprocess")
+                thumbSource: panel.effectThumbSource("crossprocess")
             }
             PanelButton {
                 objectName: "effectQuantizePalette"
                 label: qsTr("Posterize")
                 onButtonClicked: if (!panel.tryOpenParamPanel("quantizepalette")) panel.effectRequested("quantizepalette")
+                thumbSource: panel.effectThumbSource("quantizepalette")
             }
             PanelButton {
                 objectName: "effectTwoTone"
                 label: qsTr("Duo-Tone")
                 onButtonClicked: if (!panel.tryOpenParamPanel("twotone")) panel.effectRequested("twotone")
+                thumbSource: panel.effectThumbSource("twotone")
             }
         }
 
@@ -955,56 +1176,67 @@ Rectangle {
                 objectName: "effectBoost"
                 label: qsTr("Boost")
                 onButtonClicked: if (!panel.tryOpenParamPanel("boost")) panel.effectRequested("boost")
+                thumbSource: panel.effectThumbSource("boost")
             }
             PanelButton {
                 objectName: "effectSoften"
                 label: qsTr("Soft Focus")
                 onButtonClicked: if (!panel.tryOpenParamPanel("soften")) panel.effectRequested("soften")
+                thumbSource: panel.effectThumbSource("soften")
             }
             PanelButton {
                 objectName: "effectPixelate"
                 label: qsTr("Pixelate")
                 onButtonClicked: if (!panel.tryOpenParamPanel("pixelate")) panel.effectRequested("pixelate")
+                thumbSource: panel.effectThumbSource("pixelate")
             }
             PanelButton {
                 objectName: "effectFocalZoom"
                 label: qsTr("Focal Zoom")
                 onButtonClicked: if (!panel.tryOpenParamPanel("focalzoom")) panel.effectRequested("focalzoom")
+                thumbSource: panel.effectThumbSource("focalzoom")
             }
             PanelButton {
                 objectName: "effectPencilSketch"
                 label: qsTr("Pencil Sketch")
                 onButtonClicked: if (!panel.tryOpenParamPanel("pencilsketch")) panel.effectRequested("pencilsketch")
+                thumbSource: panel.effectThumbSource("pencilsketch")
             }
             PanelButton {
                 objectName: "effectNeon"
                 label: qsTr("Neon")
                 onButtonClicked: if (!panel.tryOpenParamPanel("neon")) panel.effectRequested("neon")
+                thumbSource: panel.effectThumbSource("neon")
             }
             PanelButton {
                 objectName: "effectComicize"
                 label: qsTr("Comicize")
                 onButtonClicked: if (!panel.tryOpenParamPanel("comicize")) panel.effectRequested("comicize")
+                thumbSource: panel.effectThumbSource("comicize")
             }
             PanelButton {
                 objectName: "effectBorder"
                 label: qsTr("Border")
                 onButtonClicked: if (!panel.tryOpenParamPanel("border")) panel.effectRequested("border")
+                thumbSource: panel.effectThumbSource("border")
             }
             PanelButton {
                 objectName: "effectDropShadow"
                 label: qsTr("Drop Shadow")
                 onButtonClicked: if (!panel.tryOpenParamPanel("dropshadow")) panel.effectRequested("dropshadow")
+                thumbSource: panel.effectThumbSource("dropshadow")
             }
             PanelButton {
                 objectName: "effectMuseumMatte"
                 label: qsTr("Museum Matte")
                 onButtonClicked: if (!panel.tryOpenParamPanel("museummatte")) panel.effectRequested("museummatte")
+                thumbSource: panel.effectThumbSource("museummatte")
             }
             PanelButton {
                 objectName: "effectPolaroid"
                 label: qsTr("Polaroid")
                 onButtonClicked: if (!panel.tryOpenParamPanel("polaroid")) panel.effectRequested("polaroid")
+                thumbSource: panel.effectThumbSource("polaroid")
             }
         }
 
