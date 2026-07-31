@@ -234,10 +234,32 @@ Rectangle {
     function syncFinetuneSliders() {
         panel.suppressFinetune = true
         finetuneFillSlider.value = panel.fillLight
+        fixesFillSlider.value = panel.fillLight   // #337: a másik fül párja
         finetuneHighlightsSlider.value = panel.highlights
         finetuneShadowsSlider.value = panel.shadows
         finetuneTempSlider.value = panel.colorTemp
         panel.suppressFinetune = false
+    }
+
+    // #337: a Kitöltő fény KÉT helyen látszik (Gyakori javítások és
+    // Finomhangolás), de EGY beállítás — amelyiket húzzák, a másik követi.
+    // A visszacsatolást a suppressFinetune zárja ki: a párja beállítása nem
+    // vált ki újabb előnézetet, csak a húzott csúszka.
+    function fillLightMoved(value) {
+        if (panel.suppressFinetune)
+            return
+        panel.suppressFinetune = true
+        finetuneFillSlider.value = value
+        fixesFillSlider.value = value
+        panel.suppressFinetune = false
+        panel.emitFinetunePreview()
+    }
+
+    function fillLightCommitted() {
+        panel.finetuneCommit(finetuneFillSlider.value,
+                             finetuneHighlightsSlider.value,
+                             finetuneShadowsSlider.value,
+                             finetuneTempSlider.value)
     }
     onFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: panel.syncFinetuneSliders()
@@ -732,6 +754,24 @@ Rectangle {
             }
         }
 
+        // #337: Kitöltő fény — az eredeti Picasa Alapvető javítások fülén az
+        // ikonrács alatt EZ AZ EGYETLEN csúszka, és a napi használat egyik
+        // legfontosabb eszköze. Ugyanaz a beállítás, mint a Finomhangolás
+        // fülén: a két csúszka egymást követi (fillLightMoved).
+        Label {
+            text: qsTr("Fill Light")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+        PicasaSlider {
+            id: fixesFillSlider
+            objectName: "fixesFillSlider"
+            Layout.fillWidth: true
+            from: 0; to: 1; value: 0
+            onValueChanged: panel.fillLightMoved(value)
+            onPressedChanged: if (!pressed) panel.fillLightCommitted()
+        }
+
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
@@ -788,12 +828,9 @@ Rectangle {
             objectName: "finetuneFillSlider"
             Layout.fillWidth: true
             from: 0; to: 1; value: 0
-            onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
-            onPressedChanged: if (!pressed)
-                panel.finetuneCommit(finetuneFillSlider.value,
-                                      finetuneHighlightsSlider.value,
-                                      finetuneShadowsSlider.value,
-                                      finetuneTempSlider.value)
+            // #337: a Gyakori javítások fülön lévő párjával közös állapot
+            onValueChanged: panel.fillLightMoved(value)
+            onPressedChanged: if (!pressed) panel.fillLightCommitted()
         }
 
         Label {
