@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.5.4] – 2026-07-31
+
+### Hozzáadva
+- **Kitöltő fény a Gyakori javítások fülön (#337).** Az eredeti Picasa
+  Alapvető javítások fülén az ikonrács alatt ott a Kitöltő fény csúszka —
+  nálunk eddig csak a Finomhangolás fülön volt. Mostantól mindkét helyen
+  megvan, de **egy beállításként**: amelyiket húzod, a másik követi, és a
+  mentés is közös. Így a napi használat leggyakoribb korrekciója egy
+  kattintásnyira van, anélkül hogy két külön értéket kellene fejben tartani.
+
 ## [0.5.3] – 2026-07-31
 
 ### Változott
