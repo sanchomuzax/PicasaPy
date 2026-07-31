@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.0] – 2026-07-31
+
+### Hozzáadva
+- **Virtuális albumok a bal hasábon (#9).** A Picasában létrehozott albumok
+  mostantól megjelennek az **Albumok** gyűjteményben (a Csillagozott sor
+  alatt), névvel és darabszámmal; rájuk kattintva a rács az album képeit
+  mutatja — akkor is, ha azok több mappából állnak össze.
+  - Az adat forrása a `.picasa.ini`: a `[.album:<token>]` szekciók adják a
+    nevet és a dátumot, a képek `albums=` kulcsa a tagságot.
+  - Az index bővült (séma v8), de a **meglévő könyvtárat nem kell újra
+    indexelni**: a táblák üresen jönnek létre, a következő szinkron tölti
+    fel őket.
+  - Ugyanaz az album több mappa ini-jében is szerepel (a Picasa mindegyikbe
+    kiírja) — ezért definíciónként tároljuk és a listában vonjuk össze. Így
+    ha egy albumot a Picasában törölsz, itt is eltűnik, akkor is, ha egy
+    másik mappa még hivatkozik rá.
+  - Az albumtagság **írása** (kép hozzáadása/kivétele) szándékosan külön
+    lépés — az a `.picasa.ini` módosításával jár, és önálló körben jön.
+
 ## [0.5.4] – 2026-07-31
 
 ### Hozzáadva

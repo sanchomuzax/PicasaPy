@@ -22,6 +22,8 @@ from PySide6.QtCore import (
 )
 
 from picasapy.index import (
+    album_photos,
+    albums_in_index,
     all_photos,
     geotagged_photos,
     open_index,
@@ -85,6 +87,8 @@ class AppController(
     # #64: mappa-választás — a rács a feedben ehhez a csoporthoz görget
     folderActivated = Signal(str)
     descriptionsChanged = Signal()
+    # #9: az albumlista változott (szinkron után, a mappalistával együtt)
+    albumsChanged = Signal()
 
     def __init__(
         self,
@@ -102,6 +106,7 @@ class AppController(
         self._provider = provider
         self._folders = FolderListModel(self)
         self._photos = PhotoGridModel(self)
+        self._albums: list = []  # #9: a bal hasáb Albumok gyűjteménye
         self._current_folder = ""
         self._status = ""
         self._folder_date = ""
@@ -173,6 +178,20 @@ class AppController(
     @Property(QObject, constant=True)
     def photos(self):
         return self._photos
+
+    @Property(list, notify=albumsChanged)
+    def albums(self):
+        """Albumlista a bal hasábnak (#9): {token, name, count} elemek —
+        LISTA, nem tuple (#232, a QML-ben a tuple nem tömb). A névtelen
+        albumnak is van megjelenítendő neve (a token rövidített alakja),
+        hogy ne maradjon üres sor a hasábon."""
+        return list(self._albums)
+
+    @Property(str, notify=statusChanged)
+    def currentAlbumToken(self):
+        """Az aktív album token-je (#9) — a bal hasáb kijelöléséhez."""
+        mode, param = self._view_mode
+        return param if mode == "album" else ""
 
     @Property(str, notify=statusChanged)
     def statusText(self):
@@ -547,6 +566,26 @@ class AppController(
         )
         self._show(records)
 
+    # -- virtuális albumok (#9) -----------------------------------------------
+
+    @Slot(str)
+    def showAlbum(self, token: str) -> None:
+        """Album-szűrő be — a showStarred mintáját követi: az album is
+        egy szűrt nézet (nem új nézetmód), a mappa-kontextus megmarad a
+        clearFilter-es visszaváltáshoz."""
+        if not token:
+            return
+        self._view_mode = ("album", token)
+        started = time.perf_counter()
+        with open_index(self._db_path) as conn:
+            records = album_photos(conn, token)
+        elapsed = time.perf_counter() - started
+        self._filter_active = True
+        self._filter_status = formatting.filter_status_text(
+            records, elapsed, QLocale(), self.tr
+        )
+        self._show(records)
+
     @Slot()
     def clearFilter(self) -> None:
         """Szűrő ki („Az összes megtekintése") — vissza a mappa-nézethez."""
@@ -592,6 +631,9 @@ class AppController(
         elif mode == "starred":
             with open_index(self._db_path) as conn:
                 self._show(starred_photos(conn))
+        elif mode == "album":
+            with open_index(self._db_path) as conn:
+                self._show(album_photos(conn, param))
         elif mode == "geo":
             # #30: hely-szűrő — a friss geocímkék (ini-írás után is) látszanak
             with open_index(self._db_path) as conn:
@@ -620,6 +662,7 @@ class AppController(
         if mode not in ("search", "search-folder"):
             with open_index(self._db_path) as conn:
                 self._folders.load(conn)  # #321: a fa sorrendje rögzített
+                self._load_albums(conn)  # #9: a bal hasáb albumlistája
         if mode != "folder":
             # #38: aktív keresés/szűrő a háttér-sync után is megmarad —
             # a selectFolder eldobná, ezért csak a nézetet frissítjük.
@@ -668,6 +711,26 @@ class AppController(
         if groups != self._feed_groups:
             self._feed_groups = groups
             self.feedChanged.emit()
+
+    def _load_albums(self, conn) -> None:
+        """Az albumlista frissítése (#9) — ugyanott hívjuk, mint a
+        mappalistát: a `_reload()`-ban, a háttér-szinkron után is friss
+        marad. A névtelen albumnak is van megjelenítendő neve, hogy ne
+        maradjon üres sor a hasábon."""
+        self._albums = [
+            {
+                "token": album.token,
+                "name": album.name or self._album_placeholder_name(album.token),
+                "count": album.photo_count,
+            }
+            for album in albums_in_index(conn)
+        ]
+        self.albumsChanged.emit()
+
+    def _album_placeholder_name(self, token: str) -> str:
+        """Megjelenítendő név a névtelen albumnak: a token rövidített
+        alakja — sose maradjon üres sor a hasábon."""
+        return self.tr("Album %1").replace("%1", token[:8])
 
     def _update_status(self, records) -> None:
         self._status = formatting.status_text(
