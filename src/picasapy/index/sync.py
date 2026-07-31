@@ -17,6 +17,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from picasapy.ini import IniDocument, load_document
+from picasapy.ini.albums import albums_of, parse_album_refs
 from picasapy.metadata import EMPTY_METADATA, read_file_metadata
 from picasapy.scanner import (
     PICASA_INI_NAME,
@@ -331,6 +332,7 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
                 new_count += 1  # #209: eddig nem indexelt fotó
             _upsert_photo(conn, folder_id, scan, media, ini_fields)
     _prune_photos(conn, folder_id, [media.name for media in scan.files])
+    _sync_albums(conn, folder_id, document)
     # mappa-dátum (Picasa): automatikusan a legrégebbi felvétel ideje
     conn.execute(
         "UPDATE folders SET date = ("
@@ -412,6 +414,81 @@ def _rotate_steps(value: str | None) -> int:
 
 
 _PRUNE_TEMP_TABLE = "_prune_photos_names"
+
+
+def _sync_albums(conn, folder_id: int, document) -> None:
+    """A mappa virtuális albumainak és a tagságoknak a szinkronizálása (#9).
+
+    Két külön dolog jön az ini-ből:
+    - a `[.album:<token>]` szekciók az album DEFINÍCIÓJÁT adják (név, dátum);
+      ugyanaz az album több mappában is definiálva lehet, ezért `upsert` a
+      tokenre — az utoljára látott, nem üres név nyer,
+    - a képek `albums=` kulcsa a TAGSÁGOT adja; ezt mappánként újraépítjük,
+      hogy az ini-ből kivett kép az indexből is kiessen.
+
+    Az ini nélküli mappa csak a saját tagságait törli — a máshol definiált
+    albumokat nem bántja.
+    """
+    photo_ids = {
+        row["name"]: row["id"]
+        for row in conn.execute(
+            "SELECT id, name FROM photos WHERE folder_id = ?", (folder_id,)
+        )
+    }
+    conn.execute(
+        "DELETE FROM photo_albums WHERE photo_id IN"
+        " (SELECT id FROM photos WHERE folder_id = ?)",
+        (folder_id,),
+    )
+    # a mappa SAJÁT definícióit írjuk újra — így az ini-ből törölt album
+    # akkor is kiesik, ha egy másik mappa még hivatkozik rá
+    conn.execute("DELETE FROM albums WHERE folder_id = ?", (folder_id,))
+    if document is None:
+        _prune_albums(conn)
+        return
+
+    for album in albums_of(document):
+        conn.execute(
+            "INSERT INTO albums"
+            " (folder_id, token, name, date, description, location)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                folder_id,
+                album.token,
+                album.name,
+                album.date,
+                album.description,
+                album.location,
+            ),
+        )
+
+    for name, photo_id in photo_ids.items():
+        section = document.section(name)
+        if section is None:
+            continue
+        refs = section.get("albums")
+        if not refs:
+            continue
+        for token in parse_album_refs(refs):
+            conn.execute(
+                "INSERT OR IGNORE INTO photo_albums (photo_id, token)"
+                " VALUES (?, ?)",
+                (photo_id, token),
+            )
+    _prune_albums(conn)
+
+
+def _prune_albums(conn) -> None:
+    """A már sehol nem DEFINIÁLT albumok tagságainak kivezetése.
+
+    Az albumot a definíciója tartja életben: ha egyetlen mappa ini-jében sem
+    szerepel többé a `[.album:<token>]` szekció, akkor a rá mutató tagságok
+    is értelmüket vesztik. A definíciós sorokat maga a mappa-szinkron írja
+    újra, itt csak az árván maradt hivatkozásokat takarítjuk.
+    """
+    conn.execute(
+        "DELETE FROM photo_albums WHERE token NOT IN (SELECT token FROM albums)"
+    )
 
 
 def _prune_photos(

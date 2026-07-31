@@ -5,6 +5,7 @@ import sqlite3
 import pytest
 
 from picasapy.index import SCHEMA_VERSION, open_index, photos_in_folder, search_photos
+from picasapy.index.schema import DDL
 
 # A v1 séma befagyasztott másolata (2026-07-17 előtti állapot) — a migrációs
 # tesztnek történeti sémára van szüksége, nem az aktuálisra.
@@ -140,3 +141,52 @@ class TestMigrationSafety:
         with pytest.raises(RuntimeError, match="migrációs útvonal"):
             with open_index(db):
                 pass
+
+
+class TestAlbumsMigration:
+    """#9 (séma v8): a virtuális albumok táblái a MEGLÉVŐ indexekhez is
+    hozzájönnek, újraindexelés nélkül — üresen, a következő szinkron tölti
+    fel őket az ini-kből."""
+
+    def _v7_database(self, tmp_path):
+        """Egy v7-es (album-táblák nélküli) adatbázis, egy fotóval."""
+        path = tmp_path / "regi.db"
+        raw = sqlite3.connect(path)
+        raw.executescript(DDL)
+        raw.executescript(
+            "DROP TABLE IF EXISTS photo_albums;"
+            "DROP TABLE IF EXISTS albums;"
+            "PRAGMA user_version = 7;"
+        )
+        raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
+        raw.execute(
+            "INSERT INTO photos (id, folder_id, name, kind, size, mtime_ns)"
+            " VALUES (1, 1, 'a.jpg', 'image', 10, 1)"
+        )
+        raw.commit()
+        raw.close()
+        return path
+
+    def test_tables_appear_and_data_survives(self, tmp_path):
+        path = self._v7_database(tmp_path)
+        with open_index(path) as conn:
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            assert {"albums", "photo_albums"} <= tables
+            # a meglévő adat érintetlen
+            assert conn.execute("SELECT count(*) FROM photos").fetchone()[0] == 1
+            # az új táblák üresek — nincs újraindexelés
+            assert conn.execute("SELECT count(*) FROM albums").fetchone()[0] == 0
+
+    def test_album_queries_work_on_the_migrated_database(self, tmp_path):
+        from picasapy.index.albums import album_photos, albums_in_index
+
+        path = self._v7_database(tmp_path)
+        with open_index(path) as conn:
+            assert albums_in_index(conn) == ()
+            assert album_photos(conn, "barmi") == ()

@@ -514,6 +514,8 @@ ApplicationWindow {
             searchActive: controller ? controller.searchActive : false
             searchQuery: controller ? controller.searchQuery : ""
             searchResultCount: controller ? controller.searchResultCount : 0
+            albumsModel: controller ? controller.albums : []
+            selectedAlbumToken: controller ? controller.currentAlbumToken : ""
             onFolderChosen: function(path) {
                 window.clearSelection()
                 if (toolbar.searchText.trim().length > 0) {
@@ -529,6 +531,12 @@ ApplicationWindow {
                 toolbar.clearSearch()
                 window.clearSelection()
                 controller.showStarred()
+            }
+            onAlbumChosen: function(token) {
+                if (!controller) return
+                toolbar.clearSearch()
+                window.clearSelection()
+                controller.showAlbum(token)
             }
         }
 

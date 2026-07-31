@@ -16,8 +16,13 @@ Rectangle {
     property bool searchActive: false
     property string searchQuery: ""
     property int searchResultCount: 0
+    // #9: az albumok listája ({token, name, count} elemek) és az éppen
+    // kiválasztott album token-je (a kijelölés-kiemeléshez)
+    property var albumsModel: []
+    property string selectedAlbumToken: ""
     signal folderChosen(string path)
     signal starredChosen()
+    signal albumChosen(string token)
 
     // Gyűjtemény-csukottság — kezdőérték a collections.py
     // DEFAULT_COLLAPSED-jét tükrözi (controller hiányában is ésszerű).
@@ -141,7 +146,8 @@ Rectangle {
         CollectionHeader {
             Layout.fillWidth: true
             label: qsTr("Albums")
-            itemCount: 1
+            // #9: 1 a csillagozott sorért + az összes virtuális album
+            itemCount: 1 + pane.albumsModel.length
             labelObjectName: "albumsHeader"
             collapsed: pane.albumsCollapsed
             onToggled: pane.toggleCollection("albums")
@@ -170,6 +176,45 @@ Rectangle {
             MouseArea {
                 anchors.fill: parent
                 onClicked: pane.starredChosen()
+            }
+        }
+
+        // #9: a virtuális albumok a csillagozott sor ALATT, ugyanabban
+        // az Albumok gyűjteményben — mindegyik album név + darabszám sor.
+        Repeater {
+            id: albumRepeater
+            objectName: "albumRepeater"
+            model: pane.albumsModel
+            delegate: Rectangle {
+                id: albumItem
+                required property var modelData
+                objectName: "albumItem_" + modelData.token
+                visible: !pane.albumsCollapsed
+                Layout.fillWidth: true
+                Layout.preferredHeight: 22
+                color: pane.selectedAlbumToken === modelData.token
+                       ? Theme.panelSelection : "transparent"
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left; anchors.leftMargin: 16
+                    spacing: 5
+                    Rectangle {
+                        width: 10; height: 8
+                        radius: 1
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: Theme.picasaGreen
+                    }
+                    Text {
+                        text: modelData.name + " (" + modelData.count + ")"
+                        font.pixelSize: Theme.fontSize
+                        color: pane.selectedAlbumToken === modelData.token
+                               ? Theme.panelSelectionText : Theme.textDark
+                    }
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: pane.albumChosen(modelData.token)
+                }
             }
         }
 
@@ -248,8 +293,12 @@ Rectangle {
                 required property string path
                 required property int count
                 width: folderList.width; height: 22
-                color: kind === "folder" && pane.selectedPath === path
-                       ? Theme.panelSelection : "transparent"
+                // #9: album-nézetben a mappa-kijelölés szűnjön meg — a
+                // hasábon csak az aktív album sora legyen kiemelve.
+                readonly property bool isSelectedFolder:
+                    kind === "folder" && pane.selectedPath === path
+                    && pane.selectedAlbumToken === ""
+                color: isSelectedFolder ? Theme.panelSelection : "transparent"
 
                 // évszám-elválasztó: arányos betűs címke + vékony
                 // vízszintes elválasztó vonal a panel széléig (audit:
@@ -280,7 +329,7 @@ Rectangle {
                     Text {
                         text: "▸"
                         font.pixelSize: Theme.fontSize - 2
-                        color: pane.selectedPath === path
+                        color: isSelectedFolder
                                ? Theme.panelSelectionText : Theme.folderArrow
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -288,7 +337,7 @@ Rectangle {
                     Text {
                         text: name + " (" + count + ")"
                         font.pixelSize: Theme.fontSize
-                        color: pane.selectedPath === path
+                        color: isSelectedFolder
                                ? Theme.panelSelectionText : Theme.ink
                     }
                 }

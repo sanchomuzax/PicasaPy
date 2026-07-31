@@ -265,6 +265,10 @@
         <source>%1 MB on disk</source>
         <translation>%1 MB a lemezen</translation>
     </message>
+    <message>
+        <source>Album %1</source>
+        <translation>Album %1</translation>
+    </message>
 </context>
 <context>
     <name>EditController</name>

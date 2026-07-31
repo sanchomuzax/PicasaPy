@@ -1,5 +1,6 @@
 """SQLite index: gyors lekérdezések a könyvtárra, ismételhető szinkronnal."""
 
+from .albums import AlbumRecord, album_photos, albums_in_index
 from .database import open_index
 from .hashes import load_dhashes, save_dhashes
 from .queries import (
@@ -25,7 +26,10 @@ from .sync import (
 
 __all__ = [
     "SCHEMA_VERSION",
+    "AlbumRecord",
     "PhotoRecord",
+    "album_photos",
+    "albums_in_index",
     "all_photos",
     "geotagged_photos",
     "load_dhashes",
