@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.1] – 2026-07-31
+
+### Hozzáadva
+- **Albumtagság szerkesztése (#9 második fele).** A képek jobbklikk-menüjéből
+  mostantól **albumba tehetők** („Hozzáadás albumhoz" — a meglévő albumok
+  listájával és „Új album…" ponttal), album-nézetben pedig **kivehetők**
+  belőle. Az új album a kijelölt képekkel jön létre.
+  - A `.picasa.ini`-be írás mindenhol az **ütközésbiztos** úton megy
+    (ugyanazon, mint a csillagozás és a geocímke): ha közben az eredeti
+    Picasa is írja a fájlt, egyik változtatás sem vész el.
+  - **Amit nem értünk, azt nem bántjuk:** a nem ismert kulcsok (pl.
+    `backuphash`) változatlanul maradnak — erre teszt is van.
+  - A meglévő album nevét a program **soha nem írja át**; az elnevezés a
+    felhasználó döntése marad.
+  - Több mappát átfogó kijelölésnél az album definíciója minden érintett
+    mappa ini-jébe kiíródik — ahogy az eredeti Picasa is teszi.
+
 ## [0.6.0] – 2026-07-31
 
 ### Hozzáadva

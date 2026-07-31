@@ -1,5 +1,5 @@
 """Nem-destruktív fotó-műveletek (.picasa.ini-be írva): csillag, felirat,
-forgatás, elrejtés — az AppController művelet-szelete (#150).
+forgatás, elrejtés, albumtagság — az AppController művelet-szelete (#150).
 
 Mixin-osztály: az `AppController` örökli; minden írás a round-trip ini-
 rétegen át történik (atomikus mentés + backup).
@@ -10,10 +10,16 @@ index-frissítést háttérszálon végzi — a GUI-szál egy kattintásnál sem
 fagy le NAS-mappán. Az érték már a hívás pillanatában ismert, ezért az
 indexbe egyetlen célzott UPDATE kerül (`update_photo_fields`) a teljes
 mappa-resync (`sync_tree`) helyett, a rács pedig csak az érintett sort
-frissíti (`PhotoGridModel.update_photo`), nem a teljes feedet."""
+frissíti (`PhotoGridModel.update_photo`), nem a teljes feedet.
+
+#9 (2. lépés): az albumtagság-írás (`addRowsToAlbum` / `removeRowsFromAlbum`
+/ `createAlbum`) az `_apply_batch` kötegelt úton megy (a `setGeotagRows`
+mintája, `geo_controller.py`) — az ini-réteg (`picasapy.ini.albums`) tiszta
+függvényeit hívja mutate-ként."""
 
 from __future__ import annotations
 
+import secrets
 import threading
 from pathlib import Path
 
@@ -21,6 +27,7 @@ from PySide6.QtCore import Signal, Slot
 
 from picasapy.index import open_index, photo_by_id, update_photo_fields
 from picasapy.ini import IniConflictError, IniSaveError, update_document
+from picasapy.ini.albums import ensure_album, with_album, without_album
 from picasapy.metadata import write_iptc_caption
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -38,6 +45,9 @@ class PhotoOpsMixin:
     _photoFieldUpdated = Signal(int, object)  # (photo_id, PhotoRecord | None)
     photoOpFailed = Signal(str)
     photoOpFinished = Signal()
+    # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
+    # hibaüzenet az albumtagság-íráshoz — a geoWriteFailed mintája.
+    albumWriteFailed = Signal(str)
 
     def _ensure_photo_ops_wired(self) -> None:
         """A jelzések bekötése lusta, egyszeri — így a controller.py
@@ -146,6 +156,81 @@ class PhotoOpsMixin:
             return {"caption_ini": text or None}
 
         self._run_photo_write(photo.id, perform)
+
+    # -- virtuális albumok (#9, 2. lépés) ------------------------------------
+
+    @Slot(list, str)
+    def addRowsToAlbum(self, rows, token: str) -> None:
+        """A kijelölés felvétele egy MEGLÉVŐ albumba: az `albums=` CSV
+        bővítése minden érintett fotónál, mappánként egyetlen ütközésbiztos
+        ini-írással (`_apply_batch`, a `setGeotagRows` mintája)."""
+        token = (token or "").strip()
+        if not token:
+            return
+        valid = self._rows_to_photos(rows)
+        if not valid:
+            return
+
+        def mutate(document, photo):
+            return with_album(document, photo.name, token)
+
+        self._write_album_batch(valid, mutate)
+
+    @Slot(list, str)
+    def removeRowsFromAlbum(self, rows, token: str) -> None:
+        """A kijelölés kivétele egy albumból (a definíció, `[.album:token]`,
+        a mappában marad — csak a tagság törlődik, ahogy a Picasa is teszi)."""
+        token = (token or "").strip()
+        if not token:
+            return
+        valid = self._rows_to_photos(rows)
+        if not valid:
+            return
+
+        def mutate(document, photo):
+            return without_album(document, photo.name, token)
+
+        self._write_album_batch(valid, mutate)
+
+    @Slot(str, list, result=str)
+    def createAlbum(self, name: str, rows) -> str:
+        """Új virtuális album a kijelölt képekkel: véletlen (32 hex karakteres)
+        token, a `[.album:<token>]` definíció MINDEN érintett mappa ini-jébe
+        kiírva — a Picasa is minden mappába kiírja, ahol az albumnak van
+        tagja —, a tagság pedig `with_album`-mal minden kijelölt fotónál.
+        Visszaadja az új tokent (üres kijelölésnél/hibánál üres stringet)."""
+        valid = self._rows_to_photos(rows)
+        if not valid:
+            return ""
+        token = secrets.token_hex(16)
+        clean_name = (name or "").strip() or None
+
+        def mutate(document, photo):
+            document = ensure_album(document, token, clean_name)
+            return with_album(document, photo.name, token)
+
+        if not self._write_album_batch(valid, mutate):
+            return ""
+        return token
+
+    def _rows_to_photos(self, rows) -> list:
+        photos = self._photos.photos
+        return [photos[int(r)] for r in rows if 0 <= int(r) < len(photos)]
+
+    def _write_album_batch(self, photos, mutate) -> bool:
+        """Kötegelt albumtagság-írás hibakezeléssel (a `_write_geotag`
+        mintája, `geo_controller.py`): sikertelen ütközésnél emberi
+        hibaüzenet, nem néma adatvesztés. Sikeres írás után az albumlista
+        (`controller.albums`) frissül, hogy a bal hasáb/menü azonnal lássa
+        az új tagot/albumot. Visszaadja, hogy sikerült-e."""
+        try:
+            self._apply_batch(photos, mutate)
+        except _WRITE_ERRORS as error:
+            self.albumWriteFailed.emit(str(error))
+            return False
+        with open_index(self._db_path) as conn:
+            self._load_albums(conn)
+        return True
 
     @Slot(list)
     def toggleHiddenRows(self, rows) -> None:

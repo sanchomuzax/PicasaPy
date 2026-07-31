@@ -25,6 +25,11 @@ Item {
     function openDelete(paths) {
         deleteConfirmDialog.openFor(paths)
     }
+    // #9 (2. lépés): új album neve — a rows a kijelölés sorindexei, amelyek
+    // a controller.createAlbum(name, rows) hívásba kerülnek elfogadáskor
+    function openNewAlbum(rows) {
+        newAlbumDialog.openFor(rows)
+    }
 
     Dialog {
         id: renameDialog
@@ -51,6 +56,32 @@ Item {
         TextField {
             id: renameField
             objectName: "renameField"
+            width: 300
+            font.pixelSize: Theme.fontSize
+        }
+    }
+
+    Dialog {
+        id: newAlbumDialog
+        objectName: "newAlbumDialog"
+        title: qsTr("New Album...")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        property var rows: []
+        function openFor(rowList) {
+            if (rowList.length === 0) return
+            rows = rowList
+            newAlbumField.text = ""
+            open()
+            newAlbumField.forceActiveFocus()
+        }
+        onAccepted: {
+            if (controller) controller.createAlbum(newAlbumField.text.trim(), rows)
+        }
+        TextField {
+            id: newAlbumField
+            objectName: "newAlbumField"
             width: 300
             font.pixelSize: Theme.fontSize
         }

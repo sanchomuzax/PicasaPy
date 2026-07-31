@@ -842,6 +842,18 @@ ApplicationWindow {
             var p = controller.photos.filePathAt(window.fileOpTargetRow)
             if (p.length > 0) fileOpsController.revealPhoto(p)
         }
+        // #9 (2. lépés): albumtagság — #305 null-őr
+        albums: controller ? controller.albums : []
+        currentAlbumToken: controller ? controller.currentAlbumToken : ""
+        onAddToAlbumRequested: function(token) {
+            if (controller) controller.addRowsToAlbum(window.selectedRows(), token)
+        }
+        onRemoveFromAlbumRequested: {
+            if (controller)
+                controller.removeRowsFromAlbum(
+                    window.selectedRows(), controller.currentAlbumToken)
+        }
+        onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
     }
 
     // átnevezés / áthelyezés / törlés / hiba (FileOpsDialogs.qml, #150)
