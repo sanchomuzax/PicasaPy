@@ -5,6 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.5.2] – 2026-07-31
+
+### Javítva
+- **Sötét téma: üres gombok az eszköztáron és a tálcán (#336).** Az
+  Importálás, a Vissza a könyvtárhoz, az E-mail, a Nyomtatás és az
+  Exportálás gomb felirata sötét témában eltűnt: a gomb háttere hardkódolt
+  világos volt, a felirata viszont témafüggő — világos szöveg világos
+  gombon (mért kontraszt **1,07**). A színek mostantól tokenből jönnek, és
+  mérhető tulajdonságokban élnek; teszt őrzi mind a négy kombinációt
+  (világos/sötét × engedélyezett/tiltott), minimum 3,0 kontraszttal.
+  A felület többi hardkódolt színét is átvilágítottuk: azok sötétben
+  3,9–13,0 kontraszttal olvashatók, tehát ez volt az egyetlen valódi hiba.
+
 ## [0.5.1] – 2026-07-31
 
 ### Hozzáadva
