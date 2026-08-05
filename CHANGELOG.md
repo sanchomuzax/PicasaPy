@@ -5,6 +5,28 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.2] – 2026-08-05
+
+### Hozzáadva
+- **Az eredeti Picasa 3.9 programmappa teljes feldolgozása (#345).** Négy új
+  spec: a 46 dialógus FEN-szerkezete, az exe ini-kulcs/effekt-leltára, a
+  PBZ-gombok + webexport-sablonnyelv, és a hivatalos Picasa-magyar
+  terminológia (#346–#351 jegyek ebből).
+- **Szkenner-kizárólista** az eredeti `filters.txt` mintájára (#349): a
+  `windows`, `temp`, `Originals`, `.picasaoriginals` stb. mappák kimaradnak
+  a bejárásból — a szerkesztési eredetik nem duplikálódnak a rácsban.
+- **Új effekt-nevek felismerése** a render-láncban (#347 1. lépés): a
+  `grain`, `radtint`, `RoundedEdges`, `Matte`, `NightVision` felismerten
+  kalibrálatlan, a „nem renderelhető" jelentésbe számít; a `picnik=1;`
+  érvényes jelző-token.
+
+### Javítva
+- **Hivatalos Picasa-magyar terminológia (#346):** People→Személyek,
+  „Készítsen képfeliratot!", Fókusztávolság, Indexképek és további
+  szótári igazítások (15 felirat).
+- Az exe-ből azonosított új ini-kulcsok (`[encoding]`, verziókulcsok,
+  `hidden`, `moviestart`…) round-trip megőrzése teszttel rögzítve (#348).
+
 ## [0.6.1] – 2026-07-31
 
 ### Hozzáadva
