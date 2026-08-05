@@ -237,18 +237,28 @@ def _apply_glow_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+#: A szín-paraméter nélküli tint/ansel/dir_tint alakok alapértéke (#357).
+#: Éles `.picasa.ini`-kben (élő NAS-os állomány, 2026-08-05) a Picasa
+#: ELHAGYJA a szín-paramétert, ha a felhasználó az alapértelmezett színnel
+#: mentett — a színválasztó alapállapota a fehér, ezért hiányzó szín esetén
+#: ezzel futunk. KÖZELÍTÉS: golden-méréssel még nem validált (az érintett
+#: effektek amúgy is a MÉRT-DE-ELTÉR kategóriában vannak, ld.
+#: `docs/specs/filters-decoded.md`).
+_DEFAULT_TINT_COLOR = (255, 255, 255)
+
+
 def _apply_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    if len(op.params) < 3:
-        raise ValueError(f"A tint szűrőnek preserve+szín paraméter kell: {op}")
-    return apply_tint(
-        image, preserve=float(op.params[1]), color=parse_rgb_hex(op.params[2])
-    )
+    # Élő alak: `tint=1,preserve[,szín]` — a szín opcionális (#357).
+    if len(op.params) < 2:
+        raise ValueError(f"A tint szűrőnek preserve paraméter kell: {op}")
+    color = parse_rgb_hex(op.params[2]) if len(op.params) > 2 else _DEFAULT_TINT_COLOR
+    return apply_tint(image, preserve=float(op.params[1]), color=color)
 
 
 def _apply_ansel_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    if len(op.params) < 2:
-        raise ValueError(f"Az ansel szűrőnek színparaméter kell: {op}")
-    return apply_ansel(image, color=parse_rgb_hex(op.params[1]))
+    # Élő alak: `ansel=1[,szín]` — a szín opcionális (#357); nélküle tiszta B/W.
+    color = parse_rgb_hex(op.params[1]) if len(op.params) > 1 else _DEFAULT_TINT_COLOR
+    return apply_ansel(image, color=color)
 
 
 def _apply_radblur_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
@@ -272,15 +282,18 @@ def _apply_radsat_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    if len(op.params) < 6:
-        raise ValueError(f"A dir_tint szűrőnek 5 paraméter kell: {op}")
+    # Élő alak: `dir_tint=1,x,y,gradiens,árnyalás[,szín]` — a szín
+    # opcionális (#357), hiányában az alapértelmezett színnel futunk.
+    if len(op.params) < 5:
+        raise ValueError(f"A dir_tint szűrőnek x,y,gradiens,árnyalás kell: {op}")
+    color = parse_rgb_hex(op.params[5]) if len(op.params) > 5 else _DEFAULT_TINT_COLOR
     return apply_dir_tint(
         image,
         x=float(op.params[1]),
         y=float(op.params[2]),
         gradient=float(op.params[3]),
         shade=float(op.params[4]),
-        color=parse_rgb_hex(op.params[5]),
+        color=color,
     )
 
 
