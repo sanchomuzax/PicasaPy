@@ -280,6 +280,8 @@ ApplicationWindow {
         onClearSelectionRequested: window.clearSelection()
         onFolderManagerRequested: folderManager.open()
         onDedupRequested: dedupDialog.open()
+        // #368: adatbázis-áthelyezés a Kísérleti menüből
+        onMoveDatabaseRequested: moveDatabaseDialog.open()
         onRenameRequested: fileOpsDialogs.openRename(window.selectedIndex)
         onExportRequested: exportDialogs.openForSelection()
         onLocateRequested: {
@@ -876,6 +878,9 @@ ApplicationWindow {
     }
 
     AboutDialog { id: aboutDialog }
+
+    // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
+    MoveDatabaseDialog { id: moveDatabaseDialog }
 
     // Indítóképernyő (#189): a legfelső rétegen ül, a startupStatus hídból
     // kapja az állapotot, és ready-re magától kifakul/eltűnik.

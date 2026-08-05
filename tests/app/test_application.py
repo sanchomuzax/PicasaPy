@@ -48,6 +48,29 @@ class TestXdgDirs:
     def test_dirs_respect_xdg_env(self, tmp_path, monkeypatch):
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "d"))
         monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "c"))
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
+        assert application._data_dir() == tmp_path / "d" / "picasapy"
+        assert application._cache_dir() == tmp_path / "c" / "picasapy"
+
+    def test_data_location_override_wins_over_xdg(self, tmp_path, monkeypatch):
+        # #368: a "Move Database" dialógus sikeres áthelyezés után ide írja
+        # az új, EGYESÍTETT adatgyökeret — a következő induláskor ez nyer
+        # az XDG-alapértelmezés fölött, mindkét útvonalnál (index + cache).
+        from picasapy.app.data_location import write_data_root
+
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "d"))
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "c"))
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
+        new_root = tmp_path / "athelyezett-adatok"
+        write_data_root(tmp_path / "cfg" / "picasapy", new_root)
+
+        assert application._data_dir() == new_root
+        assert application._cache_dir() == new_root
+
+    def test_no_override_file_keeps_xdg_default(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "d"))
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "c"))
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
         assert application._data_dir() == tmp_path / "d" / "picasapy"
         assert application._cache_dir() == tmp_path / "c" / "picasapy"
 
