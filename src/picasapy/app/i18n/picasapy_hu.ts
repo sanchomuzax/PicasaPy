@@ -2,6 +2,25 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>ConfirmDialog</name>
+    <message>
+        <source>Yes</source>
+        <translation>Igen</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <translation>Nem</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Don&apos;t ask again</source>
+        <translation>Ne kérdezze újra</translation>
+    </message>
+</context>
+<context>
     <name></name>
     <message>
         <location filename="../formatting.py" line="39"/>
