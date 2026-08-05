@@ -14,6 +14,7 @@ import numpy as np
 
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import decode_rect64
+from picasapy.ini.retouch import parse_retouch_regions
 from picasapy.render.color import (
     apply_bw,
     apply_grain,
@@ -68,6 +69,7 @@ from picasapy.render.ops import (
     apply_redeye,
     apply_tilt,
 )
+from picasapy.render.retouch import apply_retouch
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
 from picasapy.render.tinting import (
     apply_ansel,
@@ -428,6 +430,13 @@ def _apply_museum_matte_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+def _apply_retouch_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`retouch=1[,rect64...];` — a régiók PicasaPy-saját kiterjesztéssel
+    érkeznek (ld. `picasapy.ini.retouch` docsztring); régió nélkül no-op."""
+    regions = parse_retouch_regions(op)
+    return apply_retouch(image, regions)
+
+
 def _apply_polaroid_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # Polaroid=1,keretszélesség,#szín
     return apply_polaroid(
@@ -535,6 +544,7 @@ def _apply_twotone_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 _HANDLERS = {
     "tilt": _apply_tilt_op,
     "redeye": lambda image, op: apply_redeye(image),
+    "retouch": _apply_retouch_op,
     "enhance": lambda image, op: apply_enhance(image),
     "autolight": lambda image, op: apply_autolight(image),
     "autocolor": lambda image, op: apply_autocolor(image),
@@ -598,10 +608,14 @@ _FRAME_EFFECTS = frozenset({"border", "dropshadow", "museummatte", "polaroid"})
 def apply_filters(
     image: np.ndarray, ops: tuple[FilterOp, ...]
 ) -> tuple[np.ndarray, tuple[str, ...]]:
-    """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, enhance,
-    autolight, autocolor, fill, finetune/finetune2, bw, sepia, warm, sat,
-    unsharp/unsharp2, grain2, Vignette, glow/glow2, tint, ansel, radblur,
+    """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, retouch,
+    enhance, autolight, autocolor, fill, finetune/finetune2, bw, sepia, warm,
+    sat, unsharp/unsharp2, grain2, Vignette, glow/glow2, tint, ansel, radblur,
     radsat, dir_tint).
+
+    A `retouch` régió-adata PicasaPy-saját kiterjesztés (ld.
+    `picasapy.ini.retouch` docsztring) — valódi Picasa-eredetű, régió nélküli
+    `retouch=1;` bejegyzésnél no-op.
 
     A `grain2` rögzített maggal (seed=0) renderel (#20): a Picasa szemcséje
     véletlen magos, pixelhűen nem reprodukálható — a determinisztikus mag az

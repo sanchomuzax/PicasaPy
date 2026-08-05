@@ -8,9 +8,12 @@ import numpy as np
 import pytest
 
 from picasapy.ini.filters import FilterOp
+from picasapy.ini.rect64 import Rect64
+from picasapy.ini.retouch import build_retouch_op
 from picasapy.render.chain import apply_filters, tilt_cover_scale
 from picasapy.render.color import apply_bw
 from picasapy.render.ops import apply_autocolor, apply_autolight, apply_crop
+from picasapy.render.retouch import apply_retouch
 from picasapy.render.tone import apply_fill, apply_finetune2
 
 
@@ -305,3 +308,34 @@ class TestApplyFiltersEffects:
         result, skipped = apply_filters(image, ops)
         assert skipped == ()
         assert result.shape == image.shape
+
+
+class TestApplyFiltersRetouch:
+    """`retouch` bejegyzés a láncban (#148) — PicasaPy-saját régió-
+    kiterjesztés, ld. `picasapy.ini.retouch` docsztring."""
+
+    def test_puszta_retouch_no_op(self) -> None:
+        """Valódi Picasa-eredetű `retouch=1;` régió nélkül — nem változtat."""
+        image = _gradient_image()
+        ops = (FilterOp("retouch", ("1",)),)
+        result, skipped = apply_filters(image, ops)
+        np.testing.assert_array_equal(result, image)
+        assert skipped == ()
+
+    def test_regioval_ugyanaz_mint_kozvetlenul_hivva(self) -> None:
+        image = _gradient_image()
+        region = Rect64(0.2, 0.1, 0.6, 0.8)
+        op = build_retouch_op((region,))
+        result, skipped = apply_filters(image, (op,))
+        np.testing.assert_array_equal(result, apply_retouch(image, (region,)))
+        assert skipped == ()
+
+    def test_ervenytelen_regio_kimarad_a_tobbi_lefut(self) -> None:
+        image = _gradient_image()
+        ops = (
+            FilterOp("retouch", ("1", "nemhex")),
+            FilterOp("autolight", ("1",)),
+        )
+        result, skipped = apply_filters(image, ops)
+        np.testing.assert_array_equal(result, apply_autolight(image))
+        assert skipped == ("retouch",)
