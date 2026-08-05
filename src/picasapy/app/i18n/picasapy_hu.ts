@@ -934,6 +934,42 @@
         <source>Export</source>
         <translation>Exportálás</translation>
     </message>
+    <message>
+        <source>Export location:</source>
+        <translation>Exportálás helye:</translation>
+    </message>
+    <message>
+        <source>Name of exported folder:</source>
+        <translation>Az exportált mappa neve:</translation>
+    </message>
+    <message>
+        <source>Add numbers to file names to preserve order</source>
+        <translation>Sorszámozás a fájlnevekben a sorrend megőrzéséhez</translation>
+    </message>
+    <message>
+        <source>Add watermark</source>
+        <translation>Vízjel hozzáadása</translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation>Automatikus</translation>
+    </message>
+    <message>
+        <source>Normal</source>
+        <translation>Normál</translation>
+    </message>
+    <message>
+        <source>Maximum</source>
+        <translation>Maximális</translation>
+    </message>
+    <message>
+        <source>Minimum</source>
+        <translation>Minimális</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>Egyéni</translation>
+    </message>
 </context>
 <context>
     <name>FileOpsDialogs</name>

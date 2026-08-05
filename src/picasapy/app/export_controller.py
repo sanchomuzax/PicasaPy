@@ -12,7 +12,12 @@ from pathlib import Path
 
 from PySide6.QtCore import Signal, Slot
 
-from picasapy.export import ExportItem, ExportSettings, export_photos
+from picasapy.export import (
+    ExportItem,
+    ExportSettings,
+    export_photos,
+    resolve_export_quality,
+)
 
 from .formatting import to_local_path
 
@@ -32,16 +37,28 @@ class ExportMixin:
     # tömeges hibánál a teljes lista inkább zavaró, mint hasznos
     _EXPORT_FAILED_DETAILS_LIMIT = 5
 
-    @Slot(list, str, int, int)
+    @Slot(str, int, result=int)
+    def resolveExportQuality(self, quality_preset: str, custom_quality: int) -> int:
+        """A minőség-lenyíló (#369, export.fen "Image quality" popup)
+        preset-nevét konkrét JPEG-minőségre fordítja — ld.
+        `picasapy.export.resolve_export_quality` docstringje a közelítés
+        indoklásáért (a pontos Picasa-értékek nem dokumentáltak)."""
+        return resolve_export_quality(quality_preset, custom_quality)
+
+    @Slot(list, str, int, int, bool, str)
     def exportRows(self, rows, target_dir: str, max_dimension: int,
-                   jpeg_quality: int) -> None:
+                   jpeg_quality: int, add_numbers: bool = False,
+                   watermark_text: str = "") -> None:
         """Kijelölt sorok exportja célmappába (#16, Ctrl+Shift+S).
 
         A forgatás (rotate_steps) ÉS a `filters=` szerkesztés-lánc (#136)
         beleég a célfájlba, hogy a rács/néző szerkesztett képe és az
         exportált fájl megegyezzen (WYSIWYG); max_dimension<=0 = eredeti
-        méret. Háttérszálon fut (NAS-on percekig tarthat), a végén
-        exportFinished(exportált, sikertelen), hiba esetén előtte
+        méret. `add_numbers` (#369): a fájlnevek elé "001-" stb. sorszám
+        kerül a kijelölés sorrendjének megőrzéséhez. `watermark_text`
+        (#369): nem üres esetén jobb alsó sarokba égetett, fehér, félig
+        átlátszó szöveg. Háttérszálon fut (NAS-on percekig tarthat), a
+        végén exportFinished(exportált, sikertelen), hiba esetén előtte
         exportFailedDetails(["fájlnév: ok", ...])."""
         photos = self._photos.photos
         items = tuple(
@@ -60,6 +77,8 @@ class ExportMixin:
         settings = ExportSettings(
             max_dimension=max_dimension if max_dimension > 0 else None,
             jpeg_quality=jpeg_quality,
+            add_numbers=add_numbers,
+            watermark_text=watermark_text or None,
         )
 
         def worker():

@@ -212,6 +212,126 @@ class TestExportDialogFenParity:
         assert result == "Export"
 
 
+class TestExportDialogExtraFields:
+    """#369 (export.fen paritás): mappanév, sorszámozás, vízjel,
+    minőség-preset — az új mezők bekötése végponttól végpontig."""
+
+    def test_folder_name_field_creates_subfolder(self, qml_app, qt_app, tmp_path):
+        window, controller, _lib, _engine = qml_app
+        _select_row(window, qt_app, 0)
+        location = tmp_path / "export-hely"
+        dialog = _child(window, "exportDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openForSelection", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        dialog.setProperty("targetFolder", location.as_uri())
+        name_field = _child(window, "exportFolderNameField")
+        name_field.setProperty("text", "alalbum")
+        loop = QEventLoop()
+        controller.exportFinished.connect(loop.quit)
+        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+        assert (location / "alalbum" / "a.jpg").exists()
+
+    def test_empty_folder_name_keeps_old_behaviour(self, qml_app, qt_app, tmp_path):
+        # #369: üres mappanév-mező esetén a célmappa változatlanul a
+        # browse-szal választott hely — a régi viselkedés nem sérülhet.
+        window, controller, _lib, _engine = qml_app
+        _select_row(window, qt_app, 0)
+        target = tmp_path / "export-cel"
+        dialog = _child(window, "exportDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openForSelection", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        dialog.setProperty("targetFolder", target.as_uri())
+        loop = QEventLoop()
+        controller.exportFinished.connect(loop.quit)
+        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+        assert (target / "a.jpg").exists()
+
+    def test_add_numbers_checkbox_prefixes_exported_name(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, controller, _lib, _engine = qml_app
+        _select_row(window, qt_app, 0)
+        target = tmp_path / "export-szamozott"
+        dialog = _child(window, "exportDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openForSelection", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        dialog.setProperty("targetFolder", target.as_uri())
+        check = _child(window, "exportAddNumbersCheck")
+        check.setProperty("checked", True)
+        loop = QEventLoop()
+        controller.exportFinished.connect(loop.quit)
+        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+        assert (target / "001-a.jpg").exists()
+
+    def test_watermark_checkbox_and_field_burn_in_text(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, controller, _lib, _engine = qml_app
+        _select_row(window, qt_app, 0)
+        target = tmp_path / "export-vizjel"
+        dialog = _child(window, "exportDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openForSelection", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        dialog.setProperty("targetFolder", target.as_uri())
+        check = _child(window, "exportWatermarkCheck")
+        check.setProperty("checked", True)
+        field = _child(window, "exportWatermarkField")
+        assert field.property("enabled") is True
+        field.setProperty("text", "PicasaPy")
+        loop = QEventLoop()
+        controller.exportFinished.connect(loop.quit)
+        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+        assert (target / "a.jpg").exists()
+
+    def test_watermark_field_disabled_until_checked(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "exportDialog")
+        _select_row(window, qt_app, 0)
+        QMetaObject.invokeMethod(
+            dialog, "openForSelection", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        field = _child(window, "exportWatermarkField")
+        assert field.property("enabled") is False
+
+    def test_quality_preset_normal_is_default(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        preset = _child(window, "exportQualityPreset")
+        assert preset.property("currentIndex") == 1  # "Normal"
+        spin = _child(window, "exportQuality")
+        assert spin.property("enabled") is False  # csak "Custom"-nál aktív
+
+    def test_custom_quality_spinbox_enabled_when_custom_selected(
+        self, qml_app, qt_app
+    ):
+        window, _controller, _lib, _engine = qml_app
+        preset = _child(window, "exportQualityPreset")
+        preset.setProperty("currentIndex", 4)  # "Custom"
+        qt_app.processEvents()
+        spin = _child(window, "exportQuality")
+        assert spin.property("enabled") is True
+
+
 class TestTrayExportButton:
     def test_enabled_follows_selection(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
