@@ -129,6 +129,22 @@ szekciói redundánsak/inkonzisztensek lehetnek). Backup-ban: `backup.xml`.
 | `Philipp91/picasa2digikam` | Python | ini + contacts.xml → digiKam SQLite; tanulság: duplikált arcok üres célnál kerülhetők el |
 | `bufemc/picasa2xmp` | Python | arcok → XMP MWG-RS sidecar; exiv2 + exiftool függőség |
 
+## Lábjegyzet: a „.pmp" elnevezés eredete és további ismert fájlnevek
+
+A `.pmp` kiterjesztés **szó szerint nem fordul elő** a `Picasa3.exe`
+string-tábláiban (ld. `docs/specs/picasa-exe-strings.md`, 3. pont) — ez tehát
+nem hivatalos Google-terminológia, hanem a közösségi visszafejtés (pl.
+`skisoo/PicasaDBReader`) elnevezés-konvenciója. Nem ellentmond a fenti
+leírásnak, csak jelzi az elnevezés eredetét.
+
+Ugyanott az exe-ben további, e specben eddig nem szereplő adatbázis-/
+gyorsítótár-fájlnevek kerültek elő: `distims.db`, `profilephotos.db`,
+`thumbindex.tid` — valamint `index-thumbs.db`, `makemoviecache.db`,
+`thumbs_index.db`, `repository.dat`, `usernames.dat`, `starlist.txt`,
+`saverlist.txt`, `badfiles.txt`. Szerepük egyelőre a fájlnévből
+sejthető (pl. duplikátum-index, profilkép-cache, thumbindex-lock), tételes
+tisztázásuk nem történt meg.
+
 ## PicasaPy saját tárolási terve (munkahipotézis)
 
 - Központi index: **SQLite** — az `imagedata`/`albumdata`/`catdata` logikai

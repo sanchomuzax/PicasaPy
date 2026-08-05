@@ -175,6 +175,19 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Tanulságok
 
+- **2026-08-05 (Picasa 3.9 programmappa feldolgozva): az eredeti telepítő-mappa
+  elsőrangú referencia — 4 új spec készült belőle** (`picasa-fen-dialogs.md`,
+  `picasa-exe-strings.md`, `picasa-program-resources.md`,
+  `picasa-hu-terminology.md`). Kulcs-leletek: a dialógusok olvasható XML-ben
+  (`.fen`) vannak → dialógus-paritás mostantól forrásból, nem screenshotból;
+  az exe string-táblái a TELJES ini-kulcs/effekt-készletet adják (új:
+  `[encoding]`, 5 verziókulcs, `hidden`/`flipped`/`moviestart`/`movieend`,
+  `glow`/`grain` v1, `radtint`, `RoundedEdges`, `Matte`, `NightVision`);
+  a `Picasa3i18n.dll`-ből 40k hivatalos magyar felirat nyerhető ki (UTF-8,
+  nem UTF-16 — sima `strings -el` NEM találja meg). A binárisok maguk NEM
+  kerülhetnek a repóba (zárt Google-szoftver vs. GPL); a 7z a felhasználónál
+  van meg helyben, kérésre újra csatolja.
+
 - **2026-07-31 (Qt-csapda a QML-tesztekben): a `visible` az ÖRÖKÖLT
   láthatóságot tükrözi, ezért gyakran hamis zöldet vagy hamis pirosat mér.**
   Két külön eset akadt egy napon: (a) a `MenuItem.visible` **zárt** menünél

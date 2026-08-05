@@ -29,6 +29,21 @@ mint az eredeti Picasa 3.x.
 
 ## Szekciók
 
+### `[encoding]` — kódolás-jelző (Picasa3.exe string-tábla, 2026-08-05)
+
+A `Picasa3.exe` ini-író format-string blokkjából (ld.
+`docs/specs/picasa-exe-strings.md`) előkerült szekció, amit a korábbi kutatási
+körök nem dokumentáltak:
+
+```
+[encoding]
+utf8=1
+```
+
+Az író-kód literálisan ezt a szekciót írja a `[Picasa]` elé; az `utf8=1`
+jelzi, hogy a fájl tartalma UTF-8 kódolású. A PicasaPy-nak meg kell őriznie
+(round-trip), és UTF-8 fájl írásakor mindig ki kell adnia.
+
 ### `[Picasa]` — album-/mappaszintű metaadat
 | Kulcs | Példa | Jelentés |
 |---|---|---|
@@ -36,6 +51,15 @@ mint az eredeti Picasa 3.x.
 | `category` | `Folders on Disk` | lokális album kategória |
 | `P2category` | `Downloaded Albums~otheruserid` | webalbumból letöltött album |
 | `<user>_lh` | `joedoe_lh=5620038667642797505` | feltöltött album web-azonosítója |
+| `contactsversion` | — | globális verziószám (kontakt-adatbázis); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
+| `frversion` | — | globális verziószám (feltehetően arcfelismerés); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
+| `gpsversion` | — | globális verziószám (GPS-adatok); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
+| `colorspaceversion` | — | globális verziószám (színtér-adatok); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
+| `rawversion` | — | globális verziószám (RAW-feldolgozás); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
+
+(A verzió-kulcsok forrása: `Picasa3.exe` string-tábla, ld.
+`docs/specs/picasa-exe-strings.md` 2. pont — feltehetően adatbázis-migrációs
+számlálók, jelentésük tisztázatlan, de round-trip-ben megőrzendők.)
 
 ### `[Contacts]` / `[Contacts2]` — személyek
 - `[Contacts]` (Google-fiókkal): `<person_id>=<user>_lh,<hex_id>`
@@ -63,6 +87,10 @@ mint az eredeti Picasa 3.x.
 | `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID |
 | `screensaver` | `yes` | képernyővédőben szerepel |
 | `text`,`textactive` | ld. Buchinger-doksi | szövegfelirat-overlay paraméterei |
+| `hidden` | `hidden=yes` (feltételezett) | elrejtett kép — exe-ből azonosított (Picasa3.exe string-tábla), élő ini-ben még nem validált |
+| `flipped` | `flipped(0)` (format-string) | tükrözés, a `rotate(N)` mintájára; exe-ből azonosított, élő ini-ben még nem validált |
+| `edit_width`,`edit_height` | — | szerkesztett (crop utáni) méret cache-elése, feltehetően a `width`/`height` mintájára; exe-ből azonosított, élő ini-ben még nem validált |
+| `moviestart`,`movieend` | `moviestart=`, `movieend=` | videó lejátszási/vágási pontok; exe-ből azonosított, élő ini-ben még nem validált |
 
 ### `[.album:<token>]` — virtuális albumok
 - `token`: 32 hex karakteres azonosító, pl. `604c294a68b0de9cc9222c4714f289d5`
@@ -105,6 +133,20 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 | `ansel` | `1,#szín` | művészi f/f színezéssel |
 | `radsat` | `1,!x,!y,!sugár,!élesség` | radiális telítettség |
 | `dir_tint` | `1,!x,!y,!gradiens,!árnyék,#szín` | irányított színátmenet |
+| `glow` (v1) | ismeretlen | ragyogás v1 (a `glow2` mellett) — token az exe string-táblájában megerősítve, paraméterezése dekódolatlan |
+| `grain` (v1) | ismeretlen | filmszemcse v1 (a `grain2` mellett) — token az exe string-táblájában megerősítve, paraméterezése dekódolatlan |
+| `radtint` | ismeretlen | feltehetően a `dir_tint` radiális testvére (`rad`- előtag mint `radsat`/`radblur`) — exe-ből azonosított, paraméterezése dekódolatlan |
+| `RoundedEdges` | ismeretlen | önálló szűrő-token (a `Border`/`DropShadow` mellett) — exe-ből azonosított, paraméterezése dekódolatlan |
+| `Matte` | ismeretlen | önálló szűrő-token (a `MuseumMatte` és `Vignette` között) — exe-ből azonosított, paraméterezése dekódolatlan |
+| `NightVision` | ismeretlen | önálló szűrő-token (a `HeatMap`/`Invert` mellett) — exe-ből azonosított, paraméterezése dekódolatlan |
+| `picnik=1;` | — | önálló, boolean jellegű filters-lánc-token (`redeye=1;`/`retouch=1;` mintájára) — exe-ből azonosított, jelentése/előfordulása élő ini-ben validálatlan |
+
+Forrás a fenti (`glow` v1, `grain` v1, `radtint`, `RoundedEdges`, `Matte`,
+`NightVision`, `picnik=1;`) sorokhoz: **Picasa3.exe string-tábla** — ld.
+`docs/specs/picasa-exe-strings.md` (1. pont). Ezek egyike sem szerepelt eddig
+a mért/golden-elemzésben (`filters-decoded.md`), ezért státuszuk
+undecoded/uncalibrated: valódi ini-export teszttel kell megerősíteni, hogy
+ténylegesen `filters=` tokenként fordulnak-e elő.
 
 Szöveg-overlay (külön kulcs): `text=1; 136;11;sample text;Aharoni;...` + `textactive=`.
 
