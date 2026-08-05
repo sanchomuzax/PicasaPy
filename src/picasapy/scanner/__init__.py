@@ -17,6 +17,11 @@ from .filetypes import (
     VIDEO_EXTENSIONS,
     media_kind_of,
 )
+from .name_filters import (
+    DEFAULT_DIRECTORY_FILTERS,
+    NameFilters,
+    default_name_filters,
+)
 from .walker import (
     PICASA_INI_LEGACY_NAME,
     PICASA_INI_NAME,
@@ -35,6 +40,7 @@ from .watched import (
 from .watcher import LibraryWatcher
 
 __all__ = [
+    "DEFAULT_DIRECTORY_FILTERS",
     "EXCLUDE_FOLDERS_NAME",
     "PHOTO_EXTENSIONS",
     "PICASA_INI_LEGACY_NAME",
@@ -45,7 +51,9 @@ __all__ = [
     "FolderScan",
     "LibraryWatcher",
     "MediaFile",
+    "NameFilters",
     "PicasaInstallation",
+    "default_name_filters",
     "discover_installations",
     "find_exclude_folders_file",
     "find_watched_folders_file",
