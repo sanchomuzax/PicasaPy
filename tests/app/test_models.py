@@ -121,6 +121,35 @@ class TestFolderListModel:
         ]
         assert names.index("a") < names.index("b")  # legrégebbi elöl
 
+    def test_no_year_row_when_all_folders_share_one_year(self, qt_app, tmp_path):
+        # Audit (docs/specs/ui-audit-mainwindow.md, 1.1 pont): ha egy adott
+        # gyűjtemény-listában MINDEN mappa ugyanabba az évbe esik, a Picasa
+        # NEM rajzol évszám-fejlécet — a mappák egyenesen a gyűjtemény-
+        # fejléc alá kerülnek (screenshot: 144904/145027.png, „Mappák (67)").
+        # Saját, elszigetelt indexet használ — a megosztott `conn`-fixture
+        # már tartalmaz egy dátum nélküli mappát is (telek), ami önmagában
+        # megtörné az "összes mappa egy évbe esik" feltételt.
+        from picasapy.app.models import FolderListModel
+
+        with open_index(tmp_path / "isolated.db") as conn:
+            for path, date in (
+                ("/k/a", "2025-03-01T00:00:00"),
+                ("/k/b", "2025-06-01T00:00:00"),
+                ("/k/c", "2025-09-01T00:00:00"),
+            ):
+                conn.execute(
+                    "INSERT INTO folders(path, date) VALUES (?, ?)", (path, date)
+                )
+            conn.commit()
+            model = FolderListModel()
+            model.load(conn)
+            kinds = [
+                model.data(model.index(i, 0), FolderListModel.KindRole)
+                for i in range(model.rowCount())
+            ]
+        assert "year" not in kinds
+        assert model.rowCount() == 3
+
     def test_windows_path_folder_name(self, qt_app, conn):
         # Importált (Windows-os) útvonal is értelmes nevet adjon.
         from picasapy.app.models import FolderListModel

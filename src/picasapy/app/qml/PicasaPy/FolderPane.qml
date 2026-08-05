@@ -322,17 +322,14 @@ Rectangle {
                 }
 
                 Row {
+                    // Audit (ui-audit-mainwindow.md, mappafa 1.3/8): az
+                    // eredeti Picasa mappasorai nem nyithatók (nincs
+                    // almappa-szint a lapos Mappák-listában), ezért nincs
+                    // nyílglif előttük sem — csak a sárga mappaikon + név.
                     visible: kind === "folder"
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left; anchors.leftMargin: 12
                     spacing: 5
-                    Text {
-                        text: "▸"
-                        font.pixelSize: Theme.fontSize - 2
-                        color: isSelectedFolder
-                               ? Theme.panelSelectionText : Theme.folderArrow
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
                     FolderIcon { size: 13; anchors.verticalCenter: parent.verticalCenter }
                     Text {
                         text: name + " (" + count + ")"
