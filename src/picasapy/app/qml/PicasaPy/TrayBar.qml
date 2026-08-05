@@ -205,8 +205,53 @@ Column {
             }
             Text { text: "+"; color: Theme.textGray; font.pixelSize: 13 }
             Item { width: 10 }
-            PicasaButton { text: qsTr("E-Mail"); enabled: false }
-            PicasaButton { text: qsTr("Print"); enabled: false }
+            // #361: a kimeneti sáv gombjai saját SVG-ikonnal (PBZ-leltár:
+            // outputlayout/ebutton, /pbutton) — a felirat objectName-jei
+            // (label szöveg, iconInk-szín) VÁLTOZATLANOK, csak egy Image
+            // került a Text mellé (icons/PicasaButtonWithIcon mintája
+            // lentebb, trayExportBtn-nél).
+            PicasaButton {
+                id: trayEmailBtn
+                text: qsTr("E-Mail")
+                enabled: false
+                contentItem: Row {
+                    spacing: 5
+                    Image {
+                        anchors.verticalCenter: parent.verticalCenter
+                        source: "icons/email.svg"
+                        sourceSize: Qt.size(14, 14)
+                        opacity: trayEmailBtn.enabled ? 1.0 : 0.5
+                    }
+                    Text {
+                        objectName: "trayEmailLabel"
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: trayEmailBtn.text
+                        font: trayEmailBtn.font
+                        color: trayEmailBtn.enabled ? Theme.iconInk : "#9a9a9a"
+                    }
+                }
+            }
+            PicasaButton {
+                id: trayPrintBtn
+                text: qsTr("Print")
+                enabled: false
+                contentItem: Row {
+                    spacing: 5
+                    Image {
+                        anchors.verticalCenter: parent.verticalCenter
+                        source: "icons/print.svg"
+                        sourceSize: Qt.size(14, 14)
+                        opacity: trayPrintBtn.enabled ? 1.0 : 0.5
+                    }
+                    Text {
+                        objectName: "trayPrintLabel"
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: trayPrintBtn.text
+                        font: trayPrintBtn.font
+                        color: trayPrintBtn.enabled ? Theme.iconInk : "#9a9a9a"
+                    }
+                }
+            }
             PicasaButton {
                 id: trayExportBtn
                 objectName: "trayExportButton"
@@ -214,23 +259,102 @@ Column {
                 enabled: !tray.appWindow.viewerOpen
                          && tray.appWindow.selectedIndexes.length > 0
                 onClicked: tray.exportRequested()
-                // #314: ld. trayRotateLeftBtn indoklása fentebb.
-                contentItem: Text {
-                    objectName: "trayExportLabel"
-                    text: trayExportBtn.text
-                    font: trayExportBtn.font
-                    color: trayExportBtn.enabled ? Theme.iconInk : "#9a9a9a"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
+                // #314: a PicasaButton alap-krómja nem témavezérelt (ld.
+                // trayRotateLeftBtn indoklása fentebb) — az ikon+felirat
+                // tintája itt is a fix Theme.iconInk.
+                contentItem: Row {
+                    spacing: 5
+                    Image {
+                        anchors.verticalCenter: parent.verticalCenter
+                        source: "icons/folder-export.svg"
+                        sourceSize: Qt.size(14, 14)
+                        opacity: trayExportBtn.enabled ? 1.0 : 0.5
+                    }
+                    Text {
+                        objectName: "trayExportLabel"
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: trayExportBtn.text
+                        font: trayExportBtn.font
+                        color: trayExportBtn.enabled ? Theme.iconInk : "#9a9a9a"
+                    }
+                }
+            }
+            Item { width: 6 }
+            // #361: Kollázs / Film / Megosztás — a PBZ-leltár szerint
+            // (outputlayout/collage, /makemovie, /sharewith) az eredeti
+            // kimeneti sávnak is részei; a tényleges Létrehozás-funkció
+            // MA a Create-menüből érhető el (PicasaMenuBar.qml →
+            // CreateDialogs.qml, Main.qml köti be) — a tálcáról indítás
+            // Main.qml-bekötést igényelne (forró fájl), ezért itt egyelőre
+            // az E-Mail/Print mintáját követő, vizuálisan kész, de tiltott
+            // helyőrző (integrátor-teendő: signal + Main.qml kötés). Nincs
+            // qsTr-tooltip: a "Picture Collage..."/"Movie"/"Share" szöveg
+            // MÁR fordított a CreateDialogs/PicasaMenuBar/Main kontextusban
+            // — új kontextusban újra felvéve a lupdate "unfinished"-nek
+            // látná (test_i18n_completeness.py), az integrátor a menü-
+            // pontokkal egy körben veheti fel ide is a fordítást.
+            PicasaButton {
+                id: trayCollageBtn
+                objectName: "trayCollageButton"
+                enabled: false
+                Layout.preferredWidth: 30
+                contentItem: Image {
+                    objectName: "trayCollageIcon"
+                    anchors.centerIn: parent
+                    source: "icons/collage.svg"
+                    sourceSize: Qt.size(16, 16)
+                    opacity: 0.5
+                }
+            }
+            PicasaButton {
+                id: trayMovieBtn
+                objectName: "trayMovieButton"
+                enabled: false
+                Layout.preferredWidth: 30
+                contentItem: Image {
+                    objectName: "trayMovieIcon"
+                    anchors.centerIn: parent
+                    source: "icons/movie.svg"
+                    sourceSize: Qt.size(16, 16)
+                    opacity: 0.5
+                }
+            }
+            PicasaButton {
+                id: trayShareBtn
+                objectName: "trayShareButton"
+                enabled: false
+                Layout.preferredWidth: 30
+                contentItem: Image {
+                    objectName: "trayShareIcon"
+                    anchors.centerIn: parent
+                    source: "icons/share.svg"
+                    sourceSize: Qt.size(16, 16)
+                    opacity: 0.5
                 }
             }
             Item { width: 6 }
             // az egyetlen zöld elsődleges tett — jobbra igazítva,
             // a képernyő vizuális súlypontja (kézikönyv 01/08)
             PicasaButton {
+                id: trayUploadBtn
                 text: qsTr("Upload to Google Photos")
                 enabled: false
                 accent: Theme.picasaGreen
+                contentItem: Row {
+                    spacing: 5
+                    Image {
+                        anchors.verticalCenter: parent.verticalCenter
+                        source: "icons/upload.svg"
+                        sourceSize: Qt.size(14, 14)
+                    }
+                    Text {
+                        objectName: "trayUploadLabel"
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: trayUploadBtn.text
+                        font: trayUploadBtn.font
+                        color: "white"
+                    }
+                }
             }
         }
     }

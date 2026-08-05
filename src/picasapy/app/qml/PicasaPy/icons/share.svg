@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#361): harom kapcsolt csomopont - "Megosztas"
+       gomb (outputlayout/sharewith). -->
+  <path d="M6.5 12 17 6.2" stroke="#4b5d5f" stroke-width="1.6"
+        stroke-linecap="round"/>
+  <path d="M6.5 12 17 17.8" stroke="#4b5d5f" stroke-width="1.6"
+        stroke-linecap="round"/>
+  <circle cx="5" cy="12" r="2.6" fill="#448afd"/>
+  <circle cx="18.5" cy="5.4" r="2.6" fill="#0dab62"/>
+  <circle cx="18.5" cy="18.6" r="2.6" fill="#e04a3f"/>
+</svg>

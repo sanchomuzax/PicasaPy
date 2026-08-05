@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#361): 2x2 kepnegyzet-racs a PicasaPy logo
+       markaszineivel - "Kollazs" letrehozas gomb (outputlayout/collage). -->
+  <rect x="3" y="3" width="8.4" height="8.4" rx="1" fill="#e04a3f"/>
+  <rect x="12.6" y="3" width="8.4" height="8.4" rx="1" fill="#ffd34e"/>
+  <rect x="3" y="12.6" width="8.4" height="8.4" rx="1" fill="#448afd"/>
+  <rect x="12.6" y="12.6" width="8.4" height="8.4" rx="1" fill="#0dab62"/>
+</svg>

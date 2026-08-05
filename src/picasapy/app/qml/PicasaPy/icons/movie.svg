@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#361): filmszalag + lejatszas-haromszog -
+       "Film" (mozgofilm) letrehozas gomb (outputlayout/makemovie). -->
+  <rect x="2.5" y="4" width="19" height="16" rx="1.6" fill="#9b479f"/>
+  <g fill="#ffffff">
+    <rect x="4" y="5.4" width="2" height="2"/>
+    <rect x="4" y="9" width="2" height="2"/>
+    <rect x="4" y="12.6" width="2" height="2"/>
+    <rect x="4" y="16.2" width="2" height="2"/>
+    <rect x="18" y="5.4" width="2" height="2"/>
+    <rect x="18" y="9" width="2" height="2"/>
+    <rect x="18" y="12.6" width="2" height="2"/>
+    <rect x="18" y="16.2" width="2" height="2"/>
+  </g>
+  <path d="M10 8.3 15.5 12 10 15.7Z" fill="#ffffff"/>
+</svg>

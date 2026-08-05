@@ -92,15 +92,19 @@ Rectangle {
                     width: 22; height: 20
                     readonly property bool ctlHasGeo:
                         controller ? controller.geoMarkerCount > 0 : false
-                    Text {
+                    // #361: saját helyjelölő-tű SVG a korábbi "⚲"
+                    // unicode-glif helyett (a hover/inaktív állapotot most
+                    // opacity vezérli — a piros tű már önmagában "geo"-
+                    // hangulatú, nem kell a Theme kék hoverje a színhez).
+                    Image {
+                        objectName: "geoFilterIcon"
                         anchors.fill: parent
-                        text: "⚲"; font.pixelSize: 13
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        opacity: parent.ctlHasGeo ? 1.0 : 0.45
-                        color: geoFilterHover.hovered && parent.ctlHasGeo
-                               ? Theme.selectionBlue
-                               : Theme.placeholderText
+                        anchors.margins: 3
+                        source: "icons/geo-pin.svg"
+                        fillMode: Image.PreserveAspectFit
+                        opacity: parent.ctlHasGeo
+                                 ? (geoFilterHover.hovered ? 1.0 : 0.85)
+                                 : 0.35
                     }
                     HoverHandler { id: geoFilterHover }
                     TapHandler {
