@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#361): nyitott mappa + kilepo nyil - kimeneti
+       sav "Exportalas / mappaba mentes" gombja (outputlayout/folderbutton).
+       Szinvilag: Theme.folderGold csaladja (statikus hex, mert az SVG nem
+       tud QML tokent olvasni). -->
+  <path d="M3 6.5a1.4 1.4 0 0 1 1.4-1.4h4.2l1.6 2h9a1.4 1.4 0 0 1 1.4 1.4
+           v1.1H3Z" fill="#e0a92e"/>
+  <path d="M3 8.6h18.6l-1.8 9.3a1.6 1.6 0 0 1-1.57 1.3H6.37a1.6 1.6 0 0
+           1-1.57-1.3Z" fill="#ebcc8f" stroke="#d9b571" stroke-width="0.8"/>
+  <path d="M12 15.4V10.6" stroke="#8a7040" stroke-width="1.6"
+        stroke-linecap="round"/>
+  <path d="M9.3 12.7 12 10l2.7 2.7" fill="none" stroke="#8a7040"
+        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

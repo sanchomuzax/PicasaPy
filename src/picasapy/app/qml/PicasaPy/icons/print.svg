@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#361): nyomtato - kimeneti sav "Nyomtatas"
+       gombja (outputlayout/pbutton). -->
+  <rect x="5" y="3.5" width="14" height="6" fill="#ffffff"
+        stroke="#4b5d5f" stroke-width="1.3"/>
+  <rect x="3.2" y="8.5" width="17.6" height="8.5" rx="1.2"
+        fill="#4b5d5f"/>
+  <rect x="5.5" y="13.5" width="13" height="7" fill="#ffffff"
+        stroke="#4b5d5f" stroke-width="1.3"/>
+  <circle cx="17.2" cy="11.2" r="0.9" fill="#0dab62"/>
+</svg>

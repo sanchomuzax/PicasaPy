@@ -282,8 +282,6 @@ ApplicationWindow {
         onDedupRequested: dedupDialog.open()
         onRenameRequested: fileOpsDialogs.openRename(window.selectedIndex)
         onExportRequested: exportDialogs.openForSelection()
-        onCollageRequested: createDialogs.openCollage()
-        onMovieRequested: createDialogs.openMovie()
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.selectedIndex)
             if (p.length > 0) fileOpsController.revealPhoto(p)
@@ -820,6 +818,9 @@ ApplicationWindow {
         appWindow: window
         viewerIndex: photoViewer.currentIndex
         onExportRequested: exportDialogs.openForSelection()
+        // #361: kollázs/film a tálca ikonjairól is (CreateDialogs, #29)
+        onCollageRequested: createDialogs.openCollage()
+        onMovieRequested: createDialogs.openMovie()
     }
 
     // -- fájlműveletek (#15): kontextusmenü + dialógusok --------------------
