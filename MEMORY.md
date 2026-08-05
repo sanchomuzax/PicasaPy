@@ -173,6 +173,25 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
   a `https://github.com/sanchomuzax/PicasaPy/milestones` oldal WebFetch-csel
   olvasható — de a fenti 1/2/3 fix.
 
+- **2026-08-05: BEFEJEZÉSI GARANCIA — a kört a session fejezi be, a
+  felhasználó nógatása nélkül (felhasználói utasítás, nyomatékkal).**
+  A felhasználónak háromszor kellett rákérdeznie („Nos? Mi van?"), mert a
+  session a CI-átfutások alatt némán várt, és a lefutott CI-t nem követte
+  azonnal merge/lezárás. KÖTELEZŐ minta minden sessionnek:
+  1. PR-nyitás után AZONNAL ébresztőt kell élesíteni (5–10 perc, a CI
+     tipikus átfutása), és az ébresztő-láncot addig kell újraélesíteni, amíg
+     a kör TELJESEN le nem zárult: zöld CI → merge → jegyzárás + címkék →
+     verzióemelés → release-ellenőrzés (`get_latest_release`) → nincs
+     beragadt Actions-futás. Egyetlen lépés sem maradhat „majd a
+     felhasználó szól" állapotban.
+  2. Hosszú (subagentes/CI-s) fázisok alatt is jelentkezni kell rövid
+     állapotjelzéssel — a néma munka a felhasználó felől nézve ottfelejtett
+     munka.
+  3. A worker-subagentek hajlamosak „várakozom a háttérfutásra" állapotban
+     megállni commit/push előtt — a fő session felelőssége észrevenni és
+     helyettük befejezni (worktree-ellenőrzés: van-e commitolatlan kész
+     munka).
+
 ## Tanulságok
 
 - **2026-08-05 (Picasa 3.9 programmappa feldolgozva): az eredeti telepítő-mappa
