@@ -280,7 +280,10 @@ ApplicationWindow {
         onClearSelectionRequested: window.clearSelection()
         onFolderManagerRequested: folderManager.open()
         onDedupRequested: dedupDialog.open()
-        onRenameRequested: fileOpsDialogs.openRename(window.selectedIndex)
+        // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
+        onRenameRequested: window.selectedIndexes.length > 1
+            ? fileOpsDialogs.openRenameMany(window.selectedIndexes)
+            : fileOpsDialogs.openRename(window.selectedIndex)
         onExportRequested: exportDialogs.openForSelection()
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.selectedIndex)

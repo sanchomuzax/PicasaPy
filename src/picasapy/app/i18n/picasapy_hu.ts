@@ -982,6 +982,22 @@
         <source>Rename</source>
         <translation>Átnevezés</translation>
     </message>
+    <message>
+        <source>Include in filename:</source>
+        <translation>A fájlnévben szerepeljen:</translation>
+    </message>
+    <message>
+        <source>Date</source>
+        <translation>Dátum</translation>
+    </message>
+    <message>
+        <source>Image resolution</source>
+        <translation>Képfelbontás</translation>
+    </message>
+    <message>
+        <source>Example:</source>
+        <translation>Példa:</translation>
+    </message>
 </context>
 <context>
     <name>FolderManagerDialog</name>

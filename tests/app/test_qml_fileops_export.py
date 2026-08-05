@@ -136,6 +136,95 @@ class TestRenameDialogFenParity:
         )
 
 
+class TestRenameManyDialog:
+    """#366: tömeges átnevezés (rename.fen paritás) — dátum-/felbontás-
+    utótag jelölőnégyzetek, élő "Example:" előnézet, Picasa-mintájú
+    sorszámozás (`név`, `név-1`, …). Az egyfájlos renameDialog (F2)
+    változatlan (ld. fenti TestRenameDialog)."""
+
+    def test_shows_count_and_first_file_preview(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "renameManyDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", [0, 1]),
+        )
+        qt_app.processEvents()
+        assert dialog.property("visible") is True
+        selection_label = _child(window, "renameManySelectionLabel")
+        assert "2" in selection_label.property("text")
+        field = _child(window, "renameManyField")
+        field.setProperty("text", "nyaralas")
+        qt_app.processEvents()
+        sample_label = _child(window, "renameManySampleLabel")
+        # az élő előnézet a kijelölés ELSŐ fájlját mutatja, sorszám nélkül
+        assert sample_label.property("text") == "Example: nyaralas.jpg"
+
+    def test_size_checkbox_updates_live_preview(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "renameManyDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", [0, 1]),
+        )
+        qt_app.processEvents()
+        field = _child(window, "renameManyField")
+        field.setProperty("text", "nyaralas")
+        size_check = _child(window, "renameManySizeCheck")
+        size_check.setProperty("checked", True)
+        qt_app.processEvents()
+        sample_label = _child(window, "renameManySampleLabel")
+        # a fixture-beli a.jpg felbontása 320x160 (qml_app conftest)
+        assert sample_label.property("text") == "Example: nyaralas 320x160.jpg"
+
+    def test_accept_button_says_rename_not_ok(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "renameManyDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", [0, 1]),
+        )
+        qt_app.processEvents()
+        result = QMetaObject.invokeMethod(
+            dialog, "acceptButtonText", Qt.ConnectionType.DirectConnection,
+            Q_RETURN_ARG("QVariant"),
+        )
+        assert result == "Rename"
+
+    def test_accept_renames_both_files_with_sequence(self, qml_app, qt_app):
+        window, controller, lib, _engine = qml_app
+        dialog = _child(window, "renameManyDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", [0, 1]),
+        )
+        qt_app.processEvents()
+        field = _child(window, "renameManyField")
+        field.setProperty("text", "nyaralas")
+        loop = QEventLoop()
+        controller.photoOpFinished.connect(loop.quit)
+        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+        assert (lib / "nyaralas.jpg").exists()
+        assert (lib / "nyaralas-1.jpg").exists()
+        assert not (lib / "a.jpg").exists()
+        assert not (lib / "b.jpg").exists()
+        model_names = {photo.name for photo in controller.photos.photos}
+        assert model_names == {"nyaralas.jpg", "nyaralas-1.jpg"}
+
+    def test_empty_selection_does_not_open(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "renameManyDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", []),
+        )
+        qt_app.processEvents()
+        assert dialog.property("visible") is False
+
+
 class TestMenuBarFileActions:
     def test_items_follow_selection(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app

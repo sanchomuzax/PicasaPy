@@ -18,6 +18,14 @@ Item {
     function openRename(row) {
         renameDialog.openFor(row)
     }
+    // #366 (rename.fen paritás — tömeges mód): a kijelölés TÖBB sorára
+    // egyszerre. Az egyfájlos F2-út (openRename/renameDialog) változatlan —
+    // ez egy külön dialógus, amely dátum-/felbontás-utótag jelölőnégyzeteket
+    // és élő fájlnév-előnézetet ad (az integrátor Main.qml-bekötése:
+    // ld. a jelentést).
+    function openRenameMany(rows) {
+        renameManyDialog.openFor(rows)
+    }
     function openMove(paths) {
         moveFolderDialog.paths = paths
         if (moveFolderDialog.paths.length > 0) moveFolderDialog.open()
@@ -86,6 +94,101 @@ Item {
                 objectName: "renameField"
                 width: 300
                 font.pixelSize: Theme.fontSize
+            }
+        }
+    }
+
+    // #366: tömeges átnevezés — `rename.fen` teljes paritás (alapnév +
+    // dátum-/felbontás-utótag jelölőnégyzetek + élő "Example:" előnézet,
+    // a kijelölés ELSŐ fájlján). A sorszámozás (`név`, `név-1`, `név-2`…)
+    // az elfogadáskor a backendben (`controller.renamePhotosMany`) történik.
+    Dialog {
+        id: renameManyDialog
+        objectName: "renameManyDialog"
+        title: qsTr("Rename...")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        property var rows: []
+        onOpened: standardButton(Dialog.Ok).text = qsTr("Rename")
+        function acceptButtonText() {
+            return standardButton(Dialog.Ok) ? standardButton(Dialog.Ok).text : ""
+        }
+        function openFor(rowList) {
+            if (!rowList || rowList.length === 0) return
+            rows = rowList
+            renameManyField.text = ""
+            includeDateCheck.checked = false
+            includeSizeCheck.checked = false
+            updatePreview()
+            open()
+            renameManyField.forceActiveFocus()
+        }
+        // élő előnézet: a kijelölés első fájljának végleges neve, ahogy a
+        // rename.fen "Example:" felirata is csak az elsőt mutatja
+        function updatePreview() {
+            renameManyDialog.previewText = (controller && rows.length > 0)
+                ? controller.renamePreview(
+                      rows, renameManyField.text,
+                      includeDateCheck.checked, includeSizeCheck.checked)
+                : ""
+        }
+        property string previewText: ""
+        onAccepted: {
+            var base = renameManyField.text.trim()
+            if (base.length > 0 && controller)
+                controller.renamePhotosMany(
+                    rows, base, includeDateCheck.checked, includeSizeCheck.checked)
+        }
+        ColumnLayout {
+            spacing: 8
+            Text {
+                objectName: "renameManySelectionLabel"
+                text: qsTr(
+                    "%n file(s) selected for rename.", "",
+                    renameManyDialog.rows.length)
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            Text {
+                objectName: "renameManyPromptLabel"
+                text: qsTr("Please enter a new name for these files:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            TextField {
+                id: renameManyField
+                objectName: "renameManyField"
+                width: 300
+                font.pixelSize: Theme.fontSize
+                onTextChanged: renameManyDialog.updatePreview()
+            }
+            RowLayout {
+                objectName: "renameManyIncludeRow"
+                spacing: 16
+                Text {
+                    text: qsTr("Include in filename:")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+                CheckBox {
+                    id: includeDateCheck
+                    objectName: "renameManyDateCheck"
+                    text: qsTr("Date")
+                    onCheckedChanged: renameManyDialog.updatePreview()
+                }
+                CheckBox {
+                    id: includeSizeCheck
+                    objectName: "renameManySizeCheck"
+                    text: qsTr("Image resolution")
+                    onCheckedChanged: renameManyDialog.updatePreview()
+                }
+            }
+            Text {
+                objectName: "renameManySampleLabel"
+                text: qsTr("Example:") + " " + renameManyDialog.previewText
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
             }
         }
     }
