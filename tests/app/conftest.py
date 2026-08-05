@@ -56,6 +56,11 @@ def qml_app(qt_app, tmp_path):
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
     provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
     controller = AppController(db, (str(lib),), provider, settings=settings)
+    # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — ugyanaz az
+    # elszigetelt settings, mint a controlleré
+    from picasapy.app.confirm_settings_bridge import ConfirmSettingsBridge
+
+    confirm_settings = ConfirmSettingsBridge(settings=settings)
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
     # effekt-gomb bélyegképek (#338) — az application.py bekötésének tükre
@@ -107,6 +112,7 @@ def qml_app(qt_app, tmp_path):
         "timelineController", timeline_controller
     )
     engine.rootContext().setContextProperty("appVersion", version_string())
+    engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
     # #189: a splash-híd — a funkcionális tesztek kész (ready) állapotból
     # indulnak, hogy a splash-overlay ne takarjon semmit
     from picasapy.app.startup_status import StartupStatus

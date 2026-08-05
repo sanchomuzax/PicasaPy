@@ -129,29 +129,24 @@ Item {
         }
     }
 
-    Dialog {
+    // #367: az általános ConfirmDialog komponensre állítva (confirm.fen
+    // paritás) — a törlés-kulcs "delete", a "Don't ask again" jelöléssel
+    // legközelebb nem nyílik meg újra, hanem azonnal törli a kijelöltet.
+    ConfirmDialog {
         id: deleteConfirmDialog
         objectName: "deleteConfirmDialog"
         title: qsTr("Delete from Disk")
-        modal: true
-        anchors.centerIn: parent
-        standardButtons: Dialog.Yes | Dialog.No
         property var paths: []
         function openFor(pathList) {
             if (pathList.length === 0) return
             paths = pathList
-            open()
+            ask("delete", qsTr("%n picture(s) will be moved to the system trash.",
+                                "", pathList.length))
         }
-        onAccepted: {
+        onConfirmed: {
             for (var i = 0; i < paths.length; ++i)
                 fileOpsController.deletePhoto(paths[i])
             dialogs.appWindow.clearSelection()
-        }
-        Text {
-            text: qsTr("%n picture(s) will be moved to the system trash.",
-                       "", deleteConfirmDialog.paths.length)
-            font.pixelSize: Theme.fontSize
-            color: Theme.ink
         }
     }
 

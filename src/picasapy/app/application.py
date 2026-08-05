@@ -36,6 +36,7 @@ from picasapy.scanner import (
 )
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
+from .confirm_settings_bridge import ConfirmSettingsBridge
 from .controller import AppController
 from .dedup_controller import DedupController
 from .discovery_controller import DiscoveryController
@@ -410,6 +411,10 @@ def run(argv: list[str]) -> int:
     fileops_controller = FileOpsController()
     wire_fileops(fileops_controller, controller)
 
+    # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — a
+    # controllerrel közös QSettings("PicasaPy", "PicasaPy")-ba ír
+    confirm_settings = ConfirmSettingsBridge()
+
     # meglévő Picasa-telepítés átvétele (#146): felderítés + a kijelölt
     # mappák hozzáadása a meglévő addWatchedFolder úton
     discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
@@ -472,6 +477,7 @@ def run(argv: list[str]) -> int:
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
     )
+    engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
     engine.rootContext().setContextProperty(
         "discoveryController", discovery_controller
     )

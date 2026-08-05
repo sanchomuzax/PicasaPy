@@ -136,6 +136,73 @@ class TestRenameDialogFenParity:
         )
 
 
+class TestDeleteConfirmDialog:
+    """#367: a törlés-megerősítés az általános ConfirmDialog komponensre
+    állítva (confirm.fen paritás) — üzenet, "Don't ask again" jelölő,
+    kulcs-alapú elnyomás."""
+
+    def _open_delete(self, window, qt_app, paths):
+        dialog = _child(window, "deleteConfirmDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", paths),
+        )
+        qt_app.processEvents()
+        return dialog
+
+    def test_opens_with_message_and_unchecked_remember(self, qml_app, qt_app, tmp_path):
+        window, _controller, _lib, _engine = qml_app
+        missing = str(tmp_path / "nincs.jpg")
+        dialog = self._open_delete(window, qt_app, [missing])
+        assert dialog.property("visible") is True
+        message_label = _child(window, "confirmMessageLabel")
+        assert "1" in message_label.property("text")
+        remember = _child(window, "confirmRememberCheck")
+        assert remember.property("checked") is False
+
+    def test_cancel_closes_without_deleting(self, qml_app, qt_app, tmp_path):
+        window, _controller, _lib, _engine = qml_app
+        missing = str(tmp_path / "nincs.jpg")
+        dialog = self._open_delete(window, qt_app, [missing])
+        cancel_button = _child(window, "confirmCancelButton")
+        QMetaObject.invokeMethod(
+            cancel_button, "clicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert dialog.property("visible") is False
+
+    def test_remember_then_yes_suppresses_next_open(self, qml_app, qt_app, tmp_path):
+        window, _controller, _lib, _engine = qml_app
+        missing = str(tmp_path / "nincs.jpg")
+        dialog = self._open_delete(window, qt_app, [missing])
+        remember = _child(window, "confirmRememberCheck")
+        remember.setProperty("checked", True)
+        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert dialog.property("visible") is False
+
+        # ugyanaz a kulcs ("delete") legközelebb NEM nyit dialógust — az
+        # alapértelmezett (Igen) válasz automatikusan lefut
+        second_missing = str(tmp_path / "meg-egy-nincs.jpg")
+        dialog2 = self._open_delete(window, qt_app, [second_missing])
+        assert dialog2.property("visible") is False
+        assert dialog2 is dialog
+
+    def test_no_button_denies_without_remember_side_effect(self, qml_app, qt_app, tmp_path):
+        window, _controller, _lib, _engine = qml_app
+        missing = str(tmp_path / "nincs.jpg")
+        dialog = self._open_delete(window, qt_app, [missing])
+        no_button = _child(window, "confirmNoButton")
+        QMetaObject.invokeMethod(
+            no_button, "clicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert dialog.property("visible") is False
+        # nem lett elnyomva — a kulcs újranyitná a dialógust
+        dialog2 = self._open_delete(window, qt_app, [missing])
+        assert dialog2.property("visible") is True
+
+
 class TestMenuBarFileActions:
     def test_items_follow_selection(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app

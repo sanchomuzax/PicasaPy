@@ -40,3 +40,4 @@ SplashScreen 1.0 SplashScreen.qml
 TimelineView 1.0 TimelineView.qml
 DedupDialog 1.0 DedupDialog.qml
 ImportSourceDialog 1.0 ImportSourceDialog.qml
+ConfirmDialog 1.0 ConfirmDialog.qml
