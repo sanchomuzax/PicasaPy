@@ -6,7 +6,15 @@ image provider GIL) kizárásakor ezek a tesztek futhassanak tovább. A néző
 képbetöltését itt egyetlen teszt sem érinti.
 """
 
-from PySide6.QtCore import Q_ARG, QEventLoop, QMetaObject, QObject, Qt, QTimer
+from PySide6.QtCore import (
+    Q_ARG,
+    Q_RETURN_ARG,
+    QEventLoop,
+    QMetaObject,
+    QObject,
+    Qt,
+    QTimer,
+)
 
 
 # a qml_app fixture a tests/app/conftest.py-ban él (közös a funkcionális
@@ -95,6 +103,39 @@ class TestRenameDialog:
         assert model_names == {"atnevezve.jpg", "b.jpg"}
 
 
+class TestRenameDialogFenParity:
+    """#350: rename.fen paritás — gombfelirat és magyarázó feliratok."""
+
+    def test_accept_button_says_rename_not_ok(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "renameDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 0),
+        )
+        qt_app.processEvents()
+        result = QMetaObject.invokeMethod(
+            dialog, "acceptButtonText", Qt.ConnectionType.DirectConnection,
+            Q_RETURN_ARG("QVariant"),
+        )
+        assert result == "Rename"
+
+    def test_shows_selection_and_prompt_labels(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "renameDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 0),
+        )
+        qt_app.processEvents()
+        selection_label = _child(window, "renameSelectionLabel")
+        prompt_label = _child(window, "renamePromptLabel")
+        assert "1" in selection_label.property("text")
+        assert prompt_label.property("text") == (
+            "Please enter a new name for these files:"
+        )
+
+
 class TestMenuBarFileActions:
     def test_items_follow_selection(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
@@ -146,6 +187,29 @@ class TestExportDialog:
         )
         qt_app.processEvents()
         assert dialog.property("visible") is False
+
+
+class TestExportDialogFenParity:
+    """#350: export.fen paritás — cím és gombfelirat."""
+
+    def test_title_matches_fen_wording(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "exportDialog")
+        assert dialog.property("title") == "Export to Folder..."
+
+    def test_accept_button_says_export_not_ok(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        _select_row(window, qt_app, 0)
+        dialog = _child(window, "exportDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openForSelection", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        result = QMetaObject.invokeMethod(
+            dialog, "acceptButtonText", Qt.ConnectionType.DirectConnection,
+            Q_RETURN_ARG("QVariant"),
+        )
+        assert result == "Export"
 
 
 class TestTrayExportButton:
