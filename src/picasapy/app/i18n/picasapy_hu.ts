@@ -926,6 +926,14 @@
         <source>%1 pictures exported.</source>
         <translation>%1 kép exportálva.</translation>
     </message>
+    <message>
+        <source>Export to Folder...</source>
+        <translation>Exportálás mappába…</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>Exportálás</translation>
+    </message>
 </context>
 <context>
     <name>FileOpsDialogs</name>
@@ -959,6 +967,20 @@
     <message>
         <source>New Album...</source>
         <translation>Új album…</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n file(s) selected for rename.</source>
+        <translation>
+            <numerusform>%n fájl kijelölve átnevezésre.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Please enter a new name for these files:</source>
+        <translation>Adjon új nevet ezeknek a fájloknak:</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Átnevezés</translation>
     </message>
 </context>
 <context>
