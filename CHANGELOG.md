@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.3] – 2026-08-05
+
+### Javítva
+- **Éles ini-kompatibilitás (#357):** a `tint`/`ansel`/`dir_tint` szín-
+  paramétere opcionális — a Picasa elhagyja, ha az alapértelmezett színnel
+  mentett. Eddig ezek az effektek hibával kimaradtak a renderelésből
+  (a felhasználó effekt nélkül látta a képet, traceback-spammel); mostantól
+  a dokumentált alapértékkel (fehér) futnak.
+
 ## [0.6.2] – 2026-08-05
 
 ### Hozzáadva

@@ -138,13 +138,13 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 | `bw` | `1` | fekete-fehér |
 | `warm` | `1` | melegítés |
 | `grain2` | `1` | filmszemcse |
-| `tint` | `1,!!preserve,#szín` | színezés |
+| `tint` | `1,!!preserve[,#szín]` | színezés — a szín OPCIONÁLIS: élő ini-ben megerősítve (#357), hiányában a Picasa az alapértelmezett (fehér) színnel értendő |
 | `sat` | `1,!telítettség` | telítettség |
 | `radblur` | `1,!x,!y,!size,!amount` | radiális elmosás |
 | `glow2` | `1,!intenzitás,!!sugár` | ragyogás |
-| `ansel` | `1,#szín` | művészi f/f színezéssel |
+| `ansel` | `1[,#szín]` | művészi f/f színezéssel — a szín OPCIONÁLIS: élő ini-ben megerősítve (#357) |
 | `radsat` | `1,!x,!y,!sugár,!élesség` | radiális telítettség |
-| `dir_tint` | `1,!x,!y,!gradiens,!árnyék,#szín` | irányított színátmenet |
+| `dir_tint` | `1,!x,!y,!gradiens,!árnyék[,#szín]` | irányított színátmenet — a szín OPCIONÁLIS: élő ini-ben megerősítve (#357) |
 | `glow` (v1) | ismeretlen | ragyogás v1 (a `glow2` mellett) — token az exe string-táblájában megerősítve, paraméterezése dekódolatlan |
 | `grain` (v1) | ismeretlen | filmszemcse v1 (a `grain2` mellett) — token az exe string-táblájában megerősítve, paraméterezése dekódolatlan |
 | `radtint` | ismeretlen | feltehetően a `dir_tint` radiális testvére (`rad`- előtag mint `radsat`/`radblur`) — exe-ből azonosított, paraméterezése dekódolatlan |
