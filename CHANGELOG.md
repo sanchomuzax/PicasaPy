@@ -5,6 +5,26 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.4] – 2026-08-05
+
+### Hozzáadva
+- **Retusálás-eszköz alapjai (#148):** folt-eltávolítás OpenCV-inpainttel a
+  render-láncban, `.picasa.ini`-kompatibilis tárolással; szöveg-réteg
+  parse/serialize + közelítő rajzoló.
+- **Saját, Picasa-hű SVG ikonkészlet (#361):** a tálca és az eszköztár
+  ikonokat kapott (a Kollázs/Film a tálcáról is indítható); a geo-szűrő
+  igazi ikonnal.
+- **Dialógus-paritás 1. kör (#350):** átnevezés- és export-dialógus a FEN-
+  forrás szerinti feliratokkal; mappafa-finomítások (#320).
+
+### Javítva
+- **A 4. fül effekt-paraméterei mostantól eljutnak a rendererhez (#332)** —
+  az importált Picasa-szerkesztések nem az alapértékkel renderelődnek.
+- **A név-kizárólista miatt üres scan nem számít „elérhetetlen gyökérnek"
+  (#358)** — a kizárt mappák indexbejegyzései kitakarítódnak.
+- **Az app-ikon ténylegesen nagyobb (#325)** — a korábbi hamis-zöld
+  mérőszám helyett pixel-terület-alapú teszttel.
+
 ## [0.6.3] – 2026-08-05
 
 ### Javítva
