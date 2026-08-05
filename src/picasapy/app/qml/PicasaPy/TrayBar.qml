@@ -15,6 +15,9 @@ Column {
     property int viewerIndex: -1
     // az Exportálás gomb (a dialógus a Main.qml-ben él)
     signal exportRequested()
+    // #361: Kollázs/Film a tálcáról (a dialógusok a Main.qml-ben élnek)
+    signal collageRequested()
+    signal movieRequested()
 
     // a forgatás/csillag célsora — a Main rotateTargetRow()-ja is ezt kéri
     readonly property int starTargetRow: trayStar.targetRow
@@ -283,11 +286,9 @@ Column {
             // #361: Kollázs / Film / Megosztás — a PBZ-leltár szerint
             // (outputlayout/collage, /makemovie, /sharewith) az eredeti
             // kimeneti sávnak is részei; a tényleges Létrehozás-funkció
-            // MA a Create-menüből érhető el (PicasaMenuBar.qml →
-            // CreateDialogs.qml, Main.qml köti be) — a tálcáról indítás
-            // Main.qml-bekötést igényelne (forró fájl), ezért itt egyelőre
-            // az E-Mail/Print mintáját követő, vizuálisan kész, de tiltott
-            // helyőrző (integrátor-teendő: signal + Main.qml kötés). Nincs
+            // a Create-menü mellett innen is indítható (collage/movie
+            // signal → Main.qml → CreateDialogs); a Megosztás backend
+            // híján tiltott helyőrző marad. Nincs
             // qsTr-tooltip: a "Picture Collage..."/"Movie"/"Share" szöveg
             // MÁR fordított a CreateDialogs/PicasaMenuBar/Main kontextusban
             // — új kontextusban újra felvéve a lupdate "unfinished"-nek
@@ -296,27 +297,31 @@ Column {
             PicasaButton {
                 id: trayCollageBtn
                 objectName: "trayCollageButton"
-                enabled: false
+                enabled: !tray.appWindow.viewerOpen
+                         && tray.appWindow.selectedIndexes.length > 0
+                onClicked: tray.collageRequested()
                 Layout.preferredWidth: 30
                 contentItem: Image {
                     objectName: "trayCollageIcon"
                     anchors.centerIn: parent
                     source: "icons/collage.svg"
                     sourceSize: Qt.size(16, 16)
-                    opacity: 0.5
+                    opacity: trayCollageBtn.enabled ? 1.0 : 0.5
                 }
             }
             PicasaButton {
                 id: trayMovieBtn
                 objectName: "trayMovieButton"
-                enabled: false
+                enabled: !tray.appWindow.viewerOpen
+                         && tray.appWindow.selectedIndexes.length > 0
+                onClicked: tray.movieRequested()
                 Layout.preferredWidth: 30
                 contentItem: Image {
                     objectName: "trayMovieIcon"
                     anchors.centerIn: parent
                     source: "icons/movie.svg"
                     sourceSize: Qt.size(16, 16)
-                    opacity: 0.5
+                    opacity: trayMovieBtn.enabled ? 1.0 : 0.5
                 }
             }
             PicasaButton {
