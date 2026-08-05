@@ -25,6 +25,24 @@ ismételten, veszteségmentesen (a forrás sosem íródik felül) újra
 legenerálhatja a kitöltő változatot. Ha a jövőben lesz dedikált
 vektoros/nagyfelbontású forrás, a `SOURCE_PATH`-ot arra kell átállítani.
 
+#325 UTÓLAGOS PONTOSÍTÁS — miért nem érvényesült érzékelhetően a #267-es
+javítás: a #267 a bounding-box (átlátszó margó) kitöltési arányát mérte
+és optimalizálta ~92%-ra, és a hozzá tartozó teszt is ezt az arányt
+ellenőrizte. Csakhogy a rajzolat maga egy KÖR (fehér korong + pinwheel),
+egy kör területe pedig a befoglaló négyzetének csak kb. 78,5%-a (π/4) —
+tehát a bbox 92%-os kitöltése mellett a ténylegesen kirajzolt
+(nem-átlátszó) pixelek a teljes vászonnak csak kb. 67%-át fedték
+(FILL_RATIO=0.94 esetén mérve: 0.94² × 0,785 ≈ 0,668). A bbox-alapú
+metrika ezért ÁLPOZITÍV (false-green) volt: zölden tartotta a
+regressziós tesztet, miközben a felhasználó által ténylegesen látott
+optikai méret (a kitöltött pixelek aránya a négyzetes képmezőn) nem
+javult érdemben. A javítás ezért a FILL_RATIO-t a biztonságosan
+elérhető maximumhoz közelíti (0.94 → 0.98) — ez a kör alakot megtartva
+a lehető legnagyobbra növeli a tényleges pixel-kitöltést anélkül, hogy
+a rajzolat levágásra kerülne a vászon szélén —, és a hozzá tartozó
+teszt mostantól a TÉNYLEGES pixel-terület arányát méri, nem csak a
+bbox-ot (ld. `tests/support/test_icon.py`).
+
 Használat:
     python3 tools/regenerate_icon.py
 """
@@ -44,7 +62,11 @@ OUTPUT_ICO = ASSETS_DIR / "icon.ico"
 
 # -- paraméterek --------------------------------------------------------------
 CANVAS_SIZE = 256  # a kimeneti négyzet-vászon mérete pixelben
-FILL_RATIO = 0.94  # a rajzolat ennyi hányadát töltse ki a vászon hosszabb oldalának
+# #325: 0.94 → 0.98 — a bbox-kitöltés maximalizálása helyett a tényleges
+# pixel-terület kitöltését növeli (ld. a modul docstring #325 szakaszát).
+# 0.98-nál kisebb, mint 1.0, hogy az élsimítás se vágja le a rajzolatot
+# a vászon szélén.
+FILL_RATIO = 0.98  # a rajzolat ennyi hányadát töltse ki a vászon hosszabb oldalának
 ICO_SIZES = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
 
 
