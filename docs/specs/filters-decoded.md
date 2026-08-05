@@ -315,12 +315,15 @@ Picasa-hű lenne.
 | **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `Vignette` (4,6), `ansel` (5,6), `radblur` (3,2), `glow2` (2,7) |
 | **KÖZELÍTŐ (mérés nélkül)** | a hatás jellege alapján, szakirodalomból — golden-mérés NINCS | 4. fül: `IR`, `Lomo`, `Holga`, `HDR`, `Cinemascope`, `Orton`, `Sixties`, `HeatMap`, `CrossProcess`, `QuantizePalette`, `TwoTone`; 5. fül: `Boost`, `Soften`, `Pixelate`, `FocalZoom`, `PencilSketch`, `Neon`, `Comicize`, `Border`, `DropShadow`, `MuseumMatte`, `Polaroid` |
 | **PONTOS** | matematikailag egyértelmű, mérés sem kell | `Invert` (255−x) |
+| **ISMERETLEN (exe-ből azonosított, nincs mérés)** | csak a `Picasa3.exe` string-táblájából ismert token (ld. `docs/specs/picasa-exe-strings.md`), golden-mérés még nem volt, élő ini-előfordulása sem megerősített | `glow` (v1), `grain` (v1), `radtint`, `RoundedEdges`, `Matte`, `NightVision`, `picnik=1;` (boolean lánc-token) |
 
-Vagyis a 36 effektből **13 mögött van mérés**, 22 közelítés, 1 triviálisan
-pontos. A kalibráció a **#317**-es jegyben fut; a paraméter-leképezés
-állapota: az 5. fül effektjeinél az ini-paraméterek már eljutnak a
-rendererhez (#332, a fenti mért minták pozíciói szerint), a 4. fülnél még
-az alapérték fut — ott előbb mérés kell.
+Vagyis a 36 mért/közelített effektből **13 mögött van mérés**, 22 közelítés,
+1 triviálisan pontos — plusz a fenti 7, kizárólag az exe-ből azonosított,
+egyelőre ismeretlen jelentésű/paraméterezésű jelölt. A kalibráció a
+**#317**-es jegyben fut; a paraméter-leképezés állapota: az 5. fül
+effektjeinél az ini-paraméterek már eljutnak a rendererhez (#332, a fenti
+mért minták pozíciói szerint), a 4. fülnél még az alapérték fut — ott előbb
+mérés kell.
 
 ## Nyitva (5. kör / implementáció közben)
 

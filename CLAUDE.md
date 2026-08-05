@@ -95,6 +95,10 @@ Elsődleges tudásforrás: NotebookLM „Picasa metaadatok és adatbázisok dek�
 - `docs/specs/picasa-ini-format.md` — ini szerkezet, filters mátrix, rect64
 - `docs/specs/pmp-database.md` — db3/PMP/thumbindex, contacts.xml, import
 - `docs/specs/feature-map.md` — funkciók fázisokra bontva
+- `docs/specs/picasa-fen-dialogs.md` — az eredeti Picasa 46 dialógusának teljes szerkezete (FEN-formátum)
+- `docs/specs/picasa-exe-strings.md` — a Picasa3.exe-ből bányászott ini-kulcs/effekt-leltár
+- `docs/specs/picasa-program-resources.md` — PBZ-gombok, webexport-sablonnyelv, runtime-configok, pluginok
+- `docs/specs/picasa-hu-terminology.md` — a hivatalos Picasa-magyar terminológia (i18n DLL-ből)
 - `docs/specs/ux-principles.md` — a Picasa UX-alapelvei (minden UI-döntés mércéje)
 - `docs/research-plan.md` — nyitott kutatási kérdések
 - `docs/research-story.md` — hogyan készült a kutatás (módszertan + NotebookLM-infografika)
