@@ -284,6 +284,8 @@ ApplicationWindow {
         onRenameRequested: window.selectedIndexes.length > 1
             ? fileOpsDialogs.openRenameMany(window.selectedIndexes)
             : fileOpsDialogs.openRename(window.selectedIndex)
+        // #368: adatbázis-áthelyezés a Kísérleti menüből
+        onMoveDatabaseRequested: moveDatabaseDialog.open()
         onExportRequested: exportDialogs.openForSelection()
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.selectedIndex)
@@ -879,6 +881,9 @@ ApplicationWindow {
     }
 
     AboutDialog { id: aboutDialog }
+
+    // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
+    MoveDatabaseDialog { id: moveDatabaseDialog }
 
     // Indítóképernyő (#189): a legfelső rétegen ül, a startupStatus hídból
     // kapja az állapotot, és ready-re magától kifakul/eltűnik.

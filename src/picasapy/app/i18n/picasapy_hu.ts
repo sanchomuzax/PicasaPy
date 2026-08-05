@@ -2,6 +2,80 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>RelocateController</name>
+    <message>
+        <source>Choose a new database location first.</source>
+        <translation>Előbb válassza ki az adatbázis új helyét.</translation>
+    </message>
+</context>
+<context>
+    <name>MoveDatabaseDialog</name>
+    <message>
+        <source>Move Database</source>
+        <translation>Adatbázis áthelyezése</translation>
+    </message>
+    <message>
+        <source>Move the photo index and thumbnail cache to a new folder. A restart is required afterwards for the change to take effect.</source>
+        <translation>A fotóindex és a bélyegkép-gyorsítótár áthelyezése új mappába. A változás érvényesítéséhez utána újraindítás szükséges.</translation>
+    </message>
+    <message>
+        <source>Network drives (e.g. a NAS) are fully supported and are the normal setup for PicasaPy — make sure the drive stays connected while the app is running.</source>
+        <translation>A hálózati meghajtók (pl. NAS) teljes körűen támogatottak — a PicasaPy-nál ez a szokásos elrendezés; ügyeljen rá, hogy a meghajtó a program futása alatt elérhető maradjon.</translation>
+    </message>
+    <message>
+        <source>Current database location:</source>
+        <translation>Az adatbázis jelenlegi helye:</translation>
+    </message>
+    <message>
+        <source>New database location:</source>
+        <translation>Az adatbázis új helye:</translation>
+    </message>
+    <message>
+        <source>(none selected)</source>
+        <translation>(nincs kiválasztva)</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Tallózás…</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation>Alapértelmezett</translation>
+    </message>
+    <message>
+        <source>Choose new database location...</source>
+        <translation>Válassza ki az adatbázis új helyét…</translation>
+    </message>
+    <message>
+        <source>Choose a new database location first.</source>
+        <translation>Előbb válassza ki az adatbázis új helyét.</translation>
+    </message>
+    <message>
+        <source>Move on next restart</source>
+        <translation>Áthelyezés a következő újraindításkor</translation>
+    </message>
+    <message>
+        <source>Move cancelled — nothing was changed.</source>
+        <translation>Az áthelyezés megszakítva — semmi sem változott.</translation>
+    </message>
+    <message>
+        <source>PicasaPy is moving the database.</source>
+        <translation>A PicasaPy áthelyezi az adatbázist.</translation>
+    </message>
+    <message>
+        <source>Database moved. Restart PicasaPy for the change to take effect.</source>
+        <translation>Az adatbázis áthelyezve. A változás érvényesítéséhez indítsa újra a PicasaPy-t.</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmDialog</name>
     <message>
         <source>Yes</source>
@@ -2262,6 +2336,10 @@
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="488"/>
         <source>Hungarian</source>
         <translation>Magyar</translation>
+    </message>
+    <message>
+        <source>Move Database...</source>
+        <translation>Adatbázis áthelyezése…</translation>
     </message>
 </context>
 <context>
