@@ -113,7 +113,13 @@ def sync_tree(
     root_path = Path(root).resolve()
     _ensure_scan_state(conn)
     skip = _make_skip(conn) if incremental else None
-    scans = scan_tree(root_path, exclude=exclude, skip=skip)
+    # #358: az `excluded_names` a #349 NÉV-kizárólista miatt kihagyott
+    # mappákat gyűjti — ha ez nem üres, a gyökér scandirje bizonyíthatóan
+    # lefutott (a gyökér tehát elérhető), csak minden talált tartalom
+    # kizárt nevű mappa alatt van. Ez különbözteti meg a védő-heurisztikát
+    # a ténylegesen elérhetetlen gyökértől (ld. lent).
+    excluded_names: list[Path] = []
+    scans = scan_tree(root_path, exclude=exclude, skip=skip, excluded_names=excluded_names)
     done = 0
     new_total = 0
     cancelled = False
@@ -146,9 +152,12 @@ def sync_tree(
         conn.commit()
         return
     seen_paths = {str(scan.path) for scan in scans}
-    if seen_paths or not _has_indexed_folders(conn, root_path):
-        # Nem üres scan, vagy a gyökér az indexben is üres volt eddig —
-        # nincs mit óvni, a takarítás biztonságosan lefuthat.
+    if seen_paths or excluded_names or not _has_indexed_folders(conn, root_path):
+        # Nem üres scan, vagy a gyökér az indexben is üres volt eddig, vagy
+        # (#358) a scan a #349 NÉV-kizárólista miatt lett üres — ezekben az
+        # esetekben a gyökér bizonyítottan elérhető volt, nincs mit óvni, a
+        # takarítás biztonságosan lefuthat (a kizárt nevű mappák alatti
+        # indexbejegyzések is eltűnnek, pont ez a #349 célja).
         _prune_folders(conn, root_path, seen_paths)
     else:
         # #132: az üres scan-eredmény megkülönböztethetetlen attól, hogy a

@@ -81,6 +81,7 @@ def scan_tree(
     exclude: tuple[str | Path, ...] = (),
     skip: SkipPredicate | None = None,
     name_filters: NameFilters | None = None,
+    excluded_names: list[Path] | None = None,
 ) -> tuple[FolderScan, ...]:
     """A gyökér alatti összes médiatartalmú mappa, útvonal szerint rendezve.
 
@@ -97,14 +98,21 @@ def scan_tree(
 
     A `skip` predikátum (#143) mappánként dönthet a fájl-statok kihagyásáról:
     igaz válasz esetén a mappa `skipped=True`-val, üres `files`-szal kerül az
-    eredménybe — a hívó tudja, hogy az indexbeli állapot érvényes maradt."""
+    eredménybe — a hívó tudja, hogy az indexbeli állapot érvényes maradt.
+
+    #358 — az `excluded_names` (ha listát kapunk) minden, a #349 NÉV-
+    kizárólista miatt kihagyott mappa útvonalát felgyűjti. Ez a jel adja
+    meg a hívónak (a szinkron üres-scan-heurisztikájának), hogy a gyökér
+    ténylegesen elérhető volt (scandir sikerült rajta), csak a talált
+    tartalom szándékosan kizárt nevű mappák alatt van — szemben a gyökér
+    valódi elérhetetlenségével, amikor egyetlen mappa scandirje sem fut le."""
     root_path = Path(root)
     if not root_path.is_dir():
         raise FileNotFoundError(f"A szkennelendő gyökér nem létezik: {root_path}")
     exclude_paths = tuple(Path(item).resolve() for item in exclude)
     filters = name_filters if name_filters is not None else default_name_filters()
     folders: list[FolderScan] = []
-    _walk(root_path, exclude_paths, skip, filters, folders, set())
+    _walk(root_path, exclude_paths, skip, filters, folders, set(), excluded_names)
     return tuple(sorted(folders, key=lambda f: f.path))
 
 
@@ -138,6 +146,7 @@ def _walk(
     name_filters: NameFilters,
     out: list[FolderScan],
     visited_dirs: set[tuple[int, int]],
+    excluded_names: list[Path] | None = None,
 ) -> None:
     """Rekurzív scandir-bejárás; olvashatatlan mappát csendben kihagy
     (élő NAS-on a mappa el is tűnhet menet közben).
@@ -181,9 +190,24 @@ def _walk(
         # mindig kimaradnak; a #349 gyári NÉV-kizárólista (Originals, temp,
         # windows, winnt, Program Files) ugyanitt, ugyanígy zárja ki a
         # nem rejtett, de kizárt nevű mappákat.
-        if entry.name.startswith(".") or name_filters.is_directory_excluded(entry.name):
+        if entry.name.startswith("."):
             continue
-        _walk(current / entry.name, exclude_paths, skip, name_filters, out, visited_dirs)
+        if name_filters.is_directory_excluded(entry.name):
+            # #358: a NÉV-kizárás jelzése — ez bizonyítja, hogy a szülő
+            # mappa scandirje lefutott (a gyökér tehát elérhető), csak a
+            # tartalma szándékosan marad ki az indexből.
+            if excluded_names is not None:
+                excluded_names.append(current / entry.name)
+            continue
+        _walk(
+            current / entry.name,
+            exclude_paths,
+            skip,
+            name_filters,
+            out,
+            visited_dirs,
+            excluded_names,
+        )
 
 
 def _entry_is_dir(entry: os.DirEntry) -> bool:

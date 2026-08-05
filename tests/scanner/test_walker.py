@@ -309,6 +309,30 @@ class TestScanTreeNameFilters:
         folders = scan_tree(root, name_filters=custom)
         assert [f.path for f in folders] == [originals]
 
+    def test_excluded_names_collects_filtered_directory_paths(self, tmp_path):
+        # #358: az `excluded_names` a #349 NÉV-kizárás miatt kihagyott
+        # mappák útvonalát gyűjti — ez a jel adja meg a hívónak (a szinkron
+        # üres-scan-heurisztikájának), hogy a gyökér ténylegesen elérhető
+        # volt, csak a tartalom szándékosan van kizárva.
+        root = tmp_path / "gyoker"
+        originals = root / "Originals"
+        originals.mkdir(parents=True)
+        (originals / "kep.jpg").write_bytes(b"x" * 5)
+        excluded: list = []
+        folders = scan_tree(root, excluded_names=excluded)
+        assert folders == ()
+        assert excluded == [originals]
+
+    def test_excluded_names_stays_empty_when_root_has_no_content(self, tmp_path):
+        # Ellenpróba: valódi üres/elérhetetlen gyökérnél nincs mit
+        # kizárni — az `excluded_names` üres marad.
+        root = tmp_path / "gyoker"
+        root.mkdir()
+        excluded: list = []
+        folders = scan_tree(root, excluded_names=excluded)
+        assert folders == ()
+        assert excluded == []
+
 
 class TestScanTreeLegacyIni:
     """A spec szerint korai Picasa-verziók a `Picasa.ini` (pont nélküli,

@@ -147,6 +147,63 @@ class TestSyncTree:
         sync_tree(conn, root)
         assert photos_in_folder(conn, root) == ()
 
+    def test_excluded_only_content_still_gets_pruned(self, conn, tmp_path, caplog):
+        # #358: a gyökér MINDEN indexelt tartalma egy #349-kizárt nevű
+        # mappa (itt: Originals) alatt van. A gyökér valójában elérhető —
+        # a scan üres eredménye a NÉV-kizárás miatt, nem elérhetetlenség
+        # miatt áll elő. A takarításnak ilyenkor le KELL futnia (a kizárt
+        # mappa alatti bejegyzéseknek el kell tűnniük), és NEM szabad
+        # „elérhetetlen gyökér" figyelmeztetést naplózni.
+        root = tmp_path / "kepek"
+        originals = root / "Originals"
+        originals.mkdir(parents=True)
+        (originals / "IMG_0001.jpg").write_bytes(b"x" * 10)
+
+        # Az index közvetlen feltöltése, mert a walker a #349 gyári
+        # kizárólista miatt sosem indexelné az "Originals" mappát rendes
+        # sync_tree hívással — ez itt egy korábban (más néven, vagy a
+        # kizárólista bevezetése előtt) felindexelt állapotot szimulál.
+        from picasapy.index.sync import _sync_folder
+        from picasapy.scanner import FolderScan, MediaFile
+
+        seed_scan = FolderScan(
+            path=originals,
+            has_ini=False,
+            files=(MediaFile(name="IMG_0001.jpg", kind="image", size=10, mtime_ns=1),),
+        )
+        _sync_folder(conn, seed_scan)
+        conn.commit()
+        assert len(photos_in_folder(conn, originals)) == 1
+
+        import logging
+
+        with caplog.at_level(logging.WARNING, logger="picasapy.index.sync"):
+            sync_tree(conn, root)
+
+        assert photos_in_folder(conn, originals) == ()  # a takarítás lefutott
+        assert not any("elérhetetlen" in record.message for record in caplog.records)
+
+    def test_truly_unreachable_root_still_skips_cleanup(self, conn, library, caplog):
+        # #358 regresszió: a ténylegesen elérhetetlen gyökér (üres scan,
+        # SEMMILYEN kizárt nevű mappa nem található) viselkedése NEM
+        # változhat — a takarítás továbbra is kimarad, figyelmeztetéssel.
+        sync_tree(conn, library)
+        before = photos_in_folder(conn, library / "nyaralas")
+        assert len(before) == 2
+
+        (library / "nyaralas" / "IMG_0001.jpg").unlink()
+        (library / "nyaralas" / "IMG_0002.jpg").unlink()
+        (library / "nyaralas" / ".picasa.ini").unlink()
+
+        import logging
+
+        with caplog.at_level(logging.WARNING, logger="picasapy.index.sync"):
+            sync_tree(conn, library)
+
+        after = photos_in_folder(conn, library / "nyaralas")
+        assert after == before  # a részfa érintetlen maradt
+        assert any("elérhetetlen" in record.message for record in caplog.records)
+
     def test_ini_change_updates_metadata(self, conn, library):
         # A felhasználó a Windows-os Picasában csillagoz → resync átveszi.
         sync_tree(conn, library)
