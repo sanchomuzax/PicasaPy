@@ -92,6 +92,18 @@ számlálók, jelentésük tisztázatlan, de round-trip-ben megőrzendők.)
 | `edit_width`,`edit_height` | — | szerkesztett (crop utáni) méret cache-elése, feltehetően a `width`/`height` mintájára; exe-ből azonosított, élő ini-ben még nem validált |
 | `moviestart`,`movieend` | `moviestart=`, `movieend=` | videó lejátszási/vágási pontok; exe-ből azonosított, élő ini-ben még nem validált |
 
+**Kód-szintű állapot (#348):** a fenti új kulcsok (`[encoding]`/`utf8`, a
+`[Picasa]` verziószámok, `hidden`, `flipped(N)`, `edit_width`/`edit_height`,
+`moviestart`/`movieend`) mindegyike a meglévő, generikus sor-alapú
+round-trip rétegen (`picasapy.ini.document`) megy át — a réteg tartalom-
+agnosztikus, ezért ezeket külön kódmódosítás nélkül is bitre pontosan
+megőrzi; ezt a `tests/ini/test_new_keys_348.py` teszt zárja le. A `hidden`
+kulcs emellett a szinkron-rétegben (`index/sync.py`) tipizált `bool`-ként
+is fel van dolgozva (ld. `PhotoRecord.hidden`). A „élő ini-ben még nem
+validált" jelölés a fenti kulcsokra egyelőre marad — ehhez tényleges NAS-os
+`.picasa.ini`-fájlokban kell megkeresni az előfordulásukat (a jegy 2.
+pontja), ami külön, a felhasználó gépén/NAS-án végzendő lépés.
+
 ### `[.album:<token>]` — virtuális albumok
 - `token`: 32 hex karakteres azonosító, pl. `604c294a68b0de9cc9222c4714f289d5`
 - Mezők: `name`, `token`, `date` (ISO 8601), `description`, `location`, `<name>_lh`
