@@ -70,6 +70,14 @@ class TestAssets:
         # ikonnál, ezért a kitöltést tovább növeltük (~92–95%-ra) — ez a
         # #11/#37 óta tartó "ne tűnjön kicsinek" trend folytatása, csak
         # magasabb küszöbbel.
+        # 325-ös issue: a bbox-kitöltés (ez a teszt) még a #267 utáni
+        # ~92%-nál is zöld maradt, miközben a rajzolat KÖR alakja miatt a
+        # ténylegesen kirajzolt (nem-átlátszó) pixel-terület csak a vászon
+        # ~67%-át fedte — ez volt az igazi ok, amiért a felhasználó szerint
+        # a logó "nem javult". A bbox felső korlátját ezért feloldottuk
+        # ~99%-ra (a FILL_RATIO 0.94 → 0.98 emelésével, ld.
+        # `tools/regenerate_icon.py`); a tényleges pixel-terület kitöltését
+        # a `tests/support/test_icon.py` teszt méri és őrzi.
         from PySide6.QtGui import QImage, qAlpha, qBlue, qGreen, qRed
 
         image = QImage(str(application._APP_DIR / "assets" / "icon.png"))
@@ -83,8 +91,8 @@ class TestAssets:
         assert xs, "az ikon teljesen átlátszó"
         content_w = max(xs) - min(xs) + 1
         content_h = max(ys) - min(ys) + 1
-        assert image.width() * 0.90 <= content_w <= image.width() * 0.96
-        assert image.height() * 0.90 <= content_h <= image.height() * 0.96
+        assert image.width() * 0.90 <= content_w <= image.width() * 0.99
+        assert image.height() * 0.90 <= content_h <= image.height() * 0.99
         # középre igazítás: a bal/jobb és felső/alsó margó közel azonos
         assert abs(min(xs) - (image.width() - 1 - max(xs))) <= 2
         assert abs(min(ys) - (image.height() - 1 - max(ys))) <= 2
