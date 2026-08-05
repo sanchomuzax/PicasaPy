@@ -223,21 +223,39 @@ def _descending(sort_mode: str) -> bool:
 
 
 def _with_year_separators(folders) -> tuple[tuple[str, str, str, int], ...]:
-    """Évszám-elválasztók a mappa-dátum évéből (fallback: név-prefix)."""
+    """Évszám-elválasztók a mappa-dátum évéből (fallback: név-prefix).
+
+    Audit (`docs/specs/ui-audit-mainwindow.md`, 1.1 pont): ha a listában
+    MINDEN mappa dátumos ÉS ugyanabba az egyetlen évbe esik, a Picasa nem
+    rajzol évszám-fejlécet — a mappák egyenesen a gyűjtemény-fejléc alá
+    kerülnek (ez csak a homogén esetben áll fenn; ha akár egyetlen mappa is
+    dátumtalan, vagy legalább két különböző év van jelen, az elválasztók a
+    szokásos módon jelennek meg).
+    """
+    folders = list(folders)
+    years = [_folder_year(name, date) for name, _path, _count, date in folders]
+    distinct_years = {year for year in years if year}
+    if years and len(distinct_years) <= 1 and all(years):
+        return tuple(
+            ("folder", name, path, count) for name, path, count, _date in folders
+        )
+
     rows = []
     last_year = None
-    for name, path, count, date in folders:
-        year = None
-        if date:
-            year = date[:4]
-        else:
-            match = _YEAR_PREFIX.match(name)
-            year = match.group(1) if match else None
+    for (name, path, count, _date), year in zip(folders, years, strict=True):
         if year and year != last_year:
             rows.append(("year", year, "", 0))
         last_year = year
         rows.append(("folder", name, path, count))
     return tuple(rows)
+
+
+def _folder_year(name: str, date: str | None) -> str | None:
+    """A mappa évszáma: a dátumból, vagy ennek híján a névből (`YYYY…`)."""
+    if date:
+        return date[:4]
+    match = _YEAR_PREFIX.match(name)
+    return match.group(1) if match else None
 
 
 class PhotoGridModel(QAbstractListModel):
