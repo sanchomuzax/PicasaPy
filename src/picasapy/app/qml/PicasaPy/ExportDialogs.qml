@@ -20,7 +20,9 @@ Item {
     Dialog {
         id: exportDialog
         objectName: "exportDialog"
-        title: qsTr("Export Picture to Folder...")
+        // #350 (export.fen paritás): a FEN forrás címe "Export to Folder" —
+        // az app eddigi elnevezési konvencióját (három pont a végén) megtartva
+        title: qsTr("Export to Folder...")
         modal: true
         anchors.centerIn: parent
         standardButtons: Dialog.Ok | Dialog.Cancel
@@ -31,8 +33,17 @@ Item {
             if (dialogs.appWindow.selectedIndexes.length === 0) return
             open()
         }
-        onOpened: standardButton(Dialog.Ok).enabled = Qt.binding(
-            function() { return exportDialog.targetFolder.length > 0 })
+        // tesztelhetőség: ld. renameDialog.acceptButtonText() megjegyzése
+        function acceptButtonText() {
+            return standardButton(Dialog.Ok) ? standardButton(Dialog.Ok).text : ""
+        }
+        onOpened: {
+            standardButton(Dialog.Ok).enabled = Qt.binding(
+                function() { return exportDialog.targetFolder.length > 0 })
+            // #350 (export.fen paritás): a FEN accept gombjának felirata
+            // "Export", nem generikus "OK"
+            standardButton(Dialog.Ok).text = qsTr("Export")
+        }
         onAccepted: controller.exportRows(
             dialogs.appWindow.selectedIndexes, targetFolder,
             sizeOptions[exportSizeBox.currentIndex], exportQuality.value)

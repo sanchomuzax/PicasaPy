@@ -39,6 +39,15 @@ Item {
         anchors.centerIn: parent
         standardButtons: Dialog.Ok | Dialog.Cancel
         property string targetPath: ""
+        // #350 (rename.fen paritás): az eredeti dialógus "Rename" feliratú
+        // elfogadó gombot használ, nem generikus "OK"-t.
+        onOpened: standardButton(Dialog.Ok).text = qsTr("Rename")
+        // tesztelhetőség: a standardButton() visszatérése QQuickAbstractButton*,
+        // ami Python oldalról marshalva bizonytalan — inkább egy egyszerű
+        // stringet adunk vissza.
+        function acceptButtonText() {
+            return standardButton(Dialog.Ok) ? standardButton(Dialog.Ok).text : ""
+        }
         function openFor(row) {
             var p = controller.photos.filePathAt(row)
             if (p.length === 0) return
@@ -53,11 +62,31 @@ Item {
                 fileOpsController.renamePhoto(
                     targetPath, renameField.text.trim())
         }
-        TextField {
-            id: renameField
-            objectName: "renameField"
-            width: 300
-            font.pixelSize: Theme.fontSize
+        ColumnLayout {
+            spacing: 8
+            // #350 (rename.fen paritás): a PicasaPy jelenleg egyszerre egy
+            // fájlt nevez át (F2-út) — a FEN dinamikus "%s file(s) selected"
+            // szövegét ennek megfelelően rögzített "1"-gyel jelenítjük meg;
+            // a tömeges átnevezés (dátum-/felbontás-toldalék, élő előnézet)
+            // önálló, nagyobb feladat (ld. jelentés).
+            Text {
+                objectName: "renameSelectionLabel"
+                text: qsTr("%n file(s) selected for rename.", "", 1)
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            Text {
+                objectName: "renamePromptLabel"
+                text: qsTr("Please enter a new name for these files:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            TextField {
+                id: renameField
+                objectName: "renameField"
+                width: 300
+                font.pixelSize: Theme.fontSize
+            }
         }
     }
 
