@@ -5,6 +5,13 @@ a rejtett mappákat — köztük a .picasaoriginals-t — kihagyja. A `exclude`
 paraméterrel megadott mappák (és az alfáik) sem kerülnek bejárásra (#145,
 FRExcludeFolders.txt — ld. `picasapy.scanner.exclude`).
 
+#349: emellett a bejárás a Picasa gyári `filters.txt`-jének megfelelő
+NÉV-alapú kizárólistát is alkalmazza (`picasapy.scanner.name_filters`) —
+alapból kizárva: `windows`, `winnt`, `temp`, `Program Files`, `Originals`
+(kis-nagybetű-függetlenül). Ez főleg az `Originals` miatt fontos: ez a
+Picasa nem-destruktív szerkesztésének mentési almappája, enélkül a
+szerkesztett képek eredetije duplikátumként jelenne meg a rácsban.
+
 #143: a bejárás közvetlenül `os.scandir`-ra épül, és a DirEntry cache-elt
 stat-eredményét használja — fájlonként pontosan egy stat fut, külön
 `(path / name).stat()` hívás nélkül. A `skip` predikátummal a hívó
@@ -33,6 +40,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .filetypes import media_kind_of
+from .name_filters import NameFilters, default_name_filters
 
 logger = logging.getLogger(__name__)
 
@@ -72,12 +80,20 @@ def scan_tree(
     root: str | Path,
     exclude: tuple[str | Path, ...] = (),
     skip: SkipPredicate | None = None,
+    name_filters: NameFilters | None = None,
 ) -> tuple[FolderScan, ...]:
     """A gyökér alatti összes médiatartalmú mappa, útvonal szerint rendezve.
 
     Az `exclude`-ban felsorolt mappák (és az alfáik) kimaradnak a bejárásból
     (#145) — sem médiafájljaik, sem a bennük lévő almappák nem kerülnek az
     eredménybe.
+
+    A `name_filters` (#349, ld. `picasapy.scanner.name_filters`) a Picasa
+    gyári `filters.txt`-jének megfelelő NÉV-alapú kizárást végzi (pl.
+    `Originals`, `temp`, `windows`) — alapértelmezés `default_name_filters()`.
+    A hívó saját `NameFilters`-t adhat át (jövőbeli felhasználói
+    konfigurációhoz), amelyben a `directory_includes` felülírhat egy gyári
+    kizárást.
 
     A `skip` predikátum (#143) mappánként dönthet a fájl-statok kihagyásáról:
     igaz válasz esetén a mappa `skipped=True`-val, üres `files`-szal kerül az
@@ -86,18 +102,25 @@ def scan_tree(
     if not root_path.is_dir():
         raise FileNotFoundError(f"A szkennelendő gyökér nem létezik: {root_path}")
     exclude_paths = tuple(Path(item).resolve() for item in exclude)
+    filters = name_filters if name_filters is not None else default_name_filters()
     folders: list[FolderScan] = []
-    _walk(root_path, exclude_paths, skip, folders, set())
+    _walk(root_path, exclude_paths, skip, filters, folders, set())
     return tuple(sorted(folders, key=lambda f: f.path))
 
 
-def scan_folder(folder: str | Path) -> FolderScan | None:
+def scan_folder(
+    folder: str | Path, name_filters: NameFilters | None = None
+) -> FolderScan | None:
     """Egyetlen mappa nem-rekurzív scanje (watcher-ág, #143).
 
-    None, ha a mappa nem létezik / nem mappa / rejtett / nincs benne média —
-    a hívó ilyenkor az indexből is eltávolíthatja."""
+    None, ha a mappa nem létezik / nem mappa / rejtett / a neve gyári
+    kizárólistán van (#349) / nincs benne média — a hívó ilyenkor az
+    indexből is eltávolíthatja."""
     path = Path(folder)
     if path.name.startswith("."):
+        return None
+    filters = name_filters if name_filters is not None else default_name_filters()
+    if filters.is_directory_excluded(path.name):
         return None
     try:
         with os.scandir(path) as it:
@@ -112,6 +135,7 @@ def _walk(
     current: Path,
     exclude_paths: tuple[Path, ...],
     skip: SkipPredicate | None,
+    name_filters: NameFilters,
     out: list[FolderScan],
     visited_dirs: set[tuple[int, int]],
 ) -> None:
@@ -153,9 +177,13 @@ def _walk(
     if scan is not None:
         out.append(scan)
     for entry in sorted(dir_entries, key=lambda e: e.name):
-        if entry.name.startswith("."):
+        # A rejtett (pont-előtagú) mappák — köztük a .picasaoriginals —
+        # mindig kimaradnak; a #349 gyári NÉV-kizárólista (Originals, temp,
+        # windows, winnt, Program Files) ugyanitt, ugyanígy zárja ki a
+        # nem rejtett, de kizárt nevű mappákat.
+        if entry.name.startswith(".") or name_filters.is_directory_excluded(entry.name):
             continue
-        _walk(current / entry.name, exclude_paths, skip, out, visited_dirs)
+        _walk(current / entry.name, exclude_paths, skip, name_filters, out, visited_dirs)
 
 
 def _entry_is_dir(entry: os.DirEntry) -> bool:

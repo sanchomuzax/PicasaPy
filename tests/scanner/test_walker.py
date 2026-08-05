@@ -239,6 +239,76 @@ class TestScanFolder:
 
         assert scan_folder(tree / "nyaralas" / ".picasaoriginals") is None
 
+    def test_name_filtered_folder_returns_none(self, tree):
+        # #349: az "Originals" nevű mappa a gyári kizárólista miatt sosem
+        # kerül scan-elésre önmagában sem (watcher-ág).
+        from picasapy.scanner import scan_folder
+
+        originals = tree / "nyaralas" / "Originals"
+        originals.mkdir()
+        (originals / "IMG_0001.jpg").write_bytes(b"x" * 5)
+        assert scan_folder(originals) is None
+
+
+class TestScanTreeNameFilters:
+    """#349: az eredeti Picasa filters.txt-nek megfelelő gyári
+    könyvtárnév-kizárás (Originals, temp, windows, winnt, Program Files) a
+    bejárás alapértelmezése — az edit-originals így sosem jelenik meg
+    duplikátumként a fotórácsban."""
+
+    def test_originals_folder_and_children_excluded_by_default(self, tmp_path):
+        root = tmp_path / "gyoker"
+        originals = root / "nyaralas" / "Originals"
+        originals.mkdir(parents=True)
+        (originals / "IMG_0001.jpg").write_bytes(b"x" * 5)
+        (root / "nyaralas").mkdir(exist_ok=True)
+        (root / "nyaralas" / "IMG_0001.jpg").write_bytes(b"x" * 5)
+        folders = scan_tree(root)
+        assert [f.path for f in folders] == [root / "nyaralas"]
+
+    def test_originals_matched_case_insensitively(self, tmp_path):
+        root = tmp_path / "gyoker"
+        originals = root / "ORIGINALS"
+        originals.mkdir(parents=True)
+        (originals / "IMG_0001.jpg").write_bytes(b"x" * 5)
+        folders = scan_tree(root)
+        assert folders == ()
+
+    def test_temp_and_windows_folders_excluded(self, tmp_path):
+        root = tmp_path / "gyoker"
+        (root / "temp").mkdir(parents=True)
+        (root / "temp" / "kep.jpg").write_bytes(b"x" * 5)
+        (root / "windows").mkdir(parents=True)
+        (root / "windows" / "kep.jpg").write_bytes(b"x" * 5)
+        (root / "sajat").mkdir(parents=True)
+        (root / "sajat" / "kep.jpg").write_bytes(b"x" * 5)
+        folders = scan_tree(root)
+        assert [f.path for f in folders] == [root / "sajat"]
+
+    def test_name_containing_filter_word_not_excluded(self, tmp_path):
+        # "Temp Munkak" a nevében tartalmazza a "temp"-et, de nem egyezik
+        # vele teljesen — valódi fotómappa lehet, nem zárható ki.
+        root = tmp_path / "gyoker"
+        folder = root / "Temp Munkak"
+        folder.mkdir(parents=True)
+        (folder / "kep.jpg").write_bytes(b"x" * 5)
+        folders = scan_tree(root)
+        assert [f.path for f in folders] == [folder]
+
+    def test_custom_name_filters_can_include_back_a_default_exclusion(self, tmp_path):
+        from picasapy.scanner.name_filters import NameFilters
+
+        root = tmp_path / "gyoker"
+        originals = root / "Originals"
+        originals.mkdir(parents=True)
+        (originals / "kep.jpg").write_bytes(b"x" * 5)
+        custom = NameFilters(
+            directory_filters=("Originals",),
+            directory_includes=("Originals",),
+        )
+        folders = scan_tree(root, name_filters=custom)
+        assert [f.path for f in folders] == [originals]
+
 
 class TestScanTreeLegacyIni:
     """A spec szerint korai Picasa-verziók a `Picasa.ini` (pont nélküli,
