@@ -31,12 +31,12 @@
     <message>
         <location filename="../formatting.py" line="95"/>
         <source>File size</source>
-        <translation>Fájlméret</translation>
+        <translation>Fájl mérete</translation>
     </message>
     <message>
         <location filename="../formatting.py" line="98"/>
         <source>Dimensions</source>
-        <translation>Képméret</translation>
+        <translation>Méretek</translation>
     </message>
     <message>
         <location filename="../formatting.py" line="102"/>
@@ -66,7 +66,7 @@
     <message>
         <location filename="../formatting.py" line="130"/>
         <source>Focal length</source>
-        <translation>Gyújtótávolság</translation>
+        <translation>Fókusztávolság</translation>
     </message>
     <message>
         <location filename="../formatting.py" line="131"/>
@@ -189,11 +189,11 @@
     </message>
     <message>
         <source>File size</source>
-        <translation>Fájlméret</translation>
+        <translation>Fájl mérete</translation>
     </message>
     <message>
         <source>Dimensions</source>
-        <translation>Képméret</translation>
+        <translation>Méretek</translation>
     </message>
     <message>
         <source>Date taken</source>
@@ -217,7 +217,7 @@
     </message>
     <message>
         <source>Focal length</source>
-        <translation>Gyújtótávolság</translation>
+        <translation>Fókusztávolság</translation>
     </message>
     <message>
         <source>%1 mm</source>
@@ -664,7 +664,7 @@
     </message>
     <message>
         <source>Amount</source>
-        <translation>Mérték</translation>
+        <translation>Mennyiség</translation>
     </message>
     <message>
         <source>Angle</source>
@@ -676,7 +676,7 @@
     </message>
     <message>
         <source>Blur</source>
-        <translation>Elmosás</translation>
+        <translation>Elhomályosítás</translation>
     </message>
     <message>
         <source>Blur Radius</source>
@@ -732,7 +732,7 @@
     </message>
     <message>
         <source>Shade</source>
-        <translation>Árnyalat</translation>
+        <translation>Árnyék</translation>
     </message>
     <message>
         <source>Sharpness</source>
@@ -780,7 +780,7 @@
     <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62"/>
         <source>Contact Sheet</source>
-        <translation>Kontaktmásolat</translation>
+        <translation>Indexképek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63"/>
@@ -790,7 +790,7 @@
     <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63"/>
         <source>Picture Pile</source>
-        <translation>Képhalom</translation>
+        <translation>Képkupac</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="69"/>
@@ -1058,7 +1058,7 @@
     <message>
         <location filename="../qml/PicasaPy/FolderPane.qml" line="178"/>
         <source>People</source>
-        <translation>Emberek</translation>
+        <translation>Személyek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/FolderPane.qml" line="189"/>
@@ -1388,7 +1388,7 @@
     </message>
     <message>
         <source>Remove from Album</source>
-        <translation>Kivétel az albumból</translation>
+        <translation>Eltávolítás az albumból</translation>
     </message>
 </context>
 <context>
@@ -1543,7 +1543,7 @@
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml" line="769"/>
         <source>Make a caption!</source>
-        <translation>Készítsen képaláírást!</translation>
+        <translation>Készítsen képfeliratot!</translation>
     </message>
 </context>
 <context>
@@ -1733,7 +1733,7 @@
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="133"/>
         <source>People</source>
-        <translation>Emberek</translation>
+        <translation>Személyek</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="134"/>
@@ -1798,7 +1798,7 @@
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="186"/>
         <source>None</source>
-        <translation>Nincs</translation>
+        <translation>Egyik sem</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="192"/>
