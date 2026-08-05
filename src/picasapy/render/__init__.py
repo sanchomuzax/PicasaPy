@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from picasapy.render.chain import apply_filters, tilt_cover_scale
+from picasapy.render.chain import (
+    KNOWN_UNRENDERED_OPS,
+    apply_filters,
+    tilt_cover_scale,
+)
 from picasapy.render.color import (
     apply_bw,
     apply_grain,
@@ -47,6 +51,7 @@ from picasapy.render.tone import (
 __all__ = [
     "GLOW_V1_INTENSITY",
     "GLOW_V1_RADIUS",
+    "KNOWN_UNRENDERED_OPS",
     "UNSHARP_V1_STRENGTH",
     "apply_ansel",
     "apply_autocolor",

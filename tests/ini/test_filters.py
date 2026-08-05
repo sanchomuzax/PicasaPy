@@ -115,3 +115,36 @@ class TestEffektFulKulcsok190:
 
     def test_mind_a_23_effekt_lefedve(self):
         assert len(self.VALODI_MINTAK) == 23
+
+
+class TestExeStringBanyaszatUjNevek347:
+    """#347: az exe-string-bányászat (`docs/specs/picasa-exe-strings.md`)
+    olyan `filters=` neveket is azonosított, amiket a spec addig nem
+    dokumentált: `grain` (v1), `radtint`, `RoundedEdges`, `Matte`,
+    `NightVision`, plusz a `picnik=1;` boolean jelző-token. A parse/
+    serialize réteg generikus (bármilyen nevet elfogad), a round-trip
+    tehát ezek nélkül a renderer-bekötés nélkül is működik — ez a teszt
+    ezt őrzi."""
+
+    UJ_NEVEK = [
+        "grain=1;",
+        "radtint=1,0.500000,0.500000,0.500000,00ff0000;",
+        "RoundedEdges=1,20.000000;",
+        "Matte=1,00ffffff;",
+        "NightVision=1;",
+        "picnik=1;",
+    ]
+
+    @pytest.mark.parametrize("value", UJ_NEVEK)
+    def test_roundtrip_exact(self, value):
+        assert serialize_filters(parse_filters(value)) == value
+
+    def test_picnik_egy_masik_effekt_mellett_is_roundtrip(self):
+        # a picnik=1; feltehetően egy Creative Kit effekt melletti jelző
+        chain = "grain=1;picnik=1;"
+        assert serialize_filters(parse_filters(chain)) == chain
+
+    def test_picnik_parse_mint_a_mar_ismert_redeye_retouch_jelzok(self):
+        ops = parse_filters("picnik=1;")
+        assert ops[0].name == "picnik"
+        assert ops[0].params == ("1",)

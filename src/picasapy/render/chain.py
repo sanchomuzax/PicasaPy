@@ -82,6 +82,36 @@ _log = logging.getLogger(__name__)
 # Megfejtve (golden 4. kör): a tilt szöge θ = p·0,2 radián (= p·11,459°).
 _TILT_RADIANS_PER_UNIT = 0.2
 
+#: Az exe-string-bányászat (`docs/specs/picasa-exe-strings.md`, #347) által
+#: AZONOSÍTOTT, de golden-méréssel MÉG NEM KALIBRÁLT `filters=` nevek. A lánc
+#: FELISMERI őket — parse/round-trip rendben megy, és az `apply_filters`
+#: kihagyott-listájában (`skipped`) szerepelnek, tehát az összesített
+#: "nem renderelhető" jelentésbe számítanak —, de VIZUÁLIS MODELLT nem
+#: futtatunk rájuk: kitalált implementáció helyett a kalibráció a #347
+#: utódjegyében (golden-kör) készül el. A `RECOGNIZED_BUT_UNRENDERED`
+#: elnevezés szándékos: megkülönbözteti őket a TELJESEN ismeretlen
+#: (soha nem dokumentált) nevektől, amik ugyanabba a `skipped` listába
+#: kerülnek, de nincs mögöttük exe-forrás.
+KNOWN_UNRENDERED_OPS = frozenset(
+    {
+        "grain",  # v1 — a grain2-nek van implementációja, a bare v1-nek nincs
+        "radtint",  # feltehetően a dir_tint radiális testvére (rad- előtag)
+        "roundededges",
+        "matte",
+        "nightvision",
+    }
+)
+
+#: Boolean jelző-tokenek a láncban (`<név>=1;`, param nélkül), amik NEM
+#: effektet írnak le, hanem egy másik bejegyzés melletti METAADATOT — mint a
+#: már ismert `redeye=1;`/`retouch=1;`. A `picnik=1;` (exe-string-bányászat,
+#: #347) feltehetően azt jelzi, hogy a lánc valamelyik tagja Creative
+#: Kit ("Picnik") eredetű effekt volt. Ezeket a lánc ÉRVÉNYES no-op-ként
+#: nyeli el: nem effekt, ezért nem is kerül a "nem renderelhető" kihagyott-
+#: listába — az ini-round-trip a `picasapy.ini.filters` generikus
+#: parse/serialize rétegén keresztül változatlanul megőrzi.
+_NOOP_MARKERS = frozenset({"picnik"})
+
 
 def tilt_cover_scale(width: int, height: int, angle: float) -> float:
     """A forgatás utáni levágás elkerüléséhez szükséges minimális skála.
@@ -453,7 +483,11 @@ def apply_filters(
     (pl. `tilt=1;` paraméter nélkül, `crop64=1,zzz;` érvénytelen hexszel)
     ESETÉN sem áll meg a teljes lánc — a hibás op kimarad, a kivétel a logba
     kerül, a lánc TÖBBI TAGJA lefut (#301). A kihagyott nevek sorrendhelyes
-    listáját mindkét esetben visszaadja: `(kép, kihagyott_nevek)`.
+    listáját mindkét esetben visszaadja: `(kép, kihagyott_nevek)`. A
+    `KNOWN_UNRENDERED_OPS` (#347) tagjai ugyanide, a kihagyott-listába
+    kerülnek — FELISMERT, de kalibráció híján még vizuális modell nélküli
+    nevek; a `_NOOP_MARKERS` (pl. `picnik=1;`) viszont NEM effekt, ezért
+    nem is jelenik meg a kihagyott-listában, csendben elnyelődik.
 
     A `crop64` a láncban csak szerkesztési TÖRTÉNET — önmagában NEM vág
     (spec: `docs/specs/filters-decoded.md`). A tényleges vágást a képszekció
@@ -475,6 +509,10 @@ def apply_filters(
             # a keret a vágás UTÁN kerül a képre (#330) — a lánc szerinti
             # sorrendjüket egymás közt megtartva
             frame_ops.append(op)
+            continue
+        if key in _NOOP_MARKERS:
+            # boolean jelző-token (#347), nem effekt — érvényes no-op, nem
+            # kerül a kihagyott-listába
             continue
         handler = _HANDLERS.get(op.name.casefold())
         if handler is None:
