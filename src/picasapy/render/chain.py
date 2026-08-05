@@ -301,8 +301,12 @@ def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 # A pozíciók a `docs/specs/filters-decoded.md` 5. körében MÉRT ini-mintákból
 # jönnek (a felhasználó valódi Picasa-exportjaiból), nem találgatásból: az
 # implementált szignatúrák alapértékei rendre egybeesnek a mért mintákkal.
-# A 4. fül effektjeinél ez az egyezés NINCS meg, ott ezért továbbra is az
-# alapérték fut — a leképezés a #317-es golden-kör után jön.
+# A 4. fül effektjeinél ez az egyezés NINCS meg (a pontos PICASA-skála a
+# #317-es golden-kör híján ismeretlen) — ott ezért a paramétereket a
+# `_effect_ratio` biztonságos, 0..1-re vetített arányként veszi át (ld. a
+# 4. fül handlerei fölötti megjegyzést), nem az (esetleg más skálájú) mért
+# minta szerint — de legalább TÉNYLEG eljutnak a rendererhez, és
+# paraméter nélkül a jól hangolt implementált alapértékkel futnak.
 # A szín-paramétereket a projekt bevált `parse_rgb_hex`-e olvassa.
 
 
@@ -312,6 +316,23 @@ def _effect_color(op: FilterOp, index: int, default: tuple[int, int, int]):
     if len(op.params) <= absolute:
         return default
     return parse_rgb_hex(op.params[absolute])
+
+
+def _effect_ratio(op: FilterOp, index: int, default: float) -> float:
+    """A flag utáni `index`-edik paraméter 0..1 arányként, hiányzónál `default`.
+
+    A 4. fül effektjeinél (#332) a paraméterek PONTOS skálája nem mért
+    (#317 golden-kör még nyitva) — de a projekt többi mért csúszkája
+    (Boost, Soften, Vignette belső sugara stb.) következetesen 0..100-as
+    skálát használ. Ezt a konvenciót vetítjük 0..1 tartományba azoknál a
+    kwarg-oknál, amik szigorúan [0,1]-re vannak korlátozva (pl. `strength`,
+    `blend`, `softness`) — így egy valódi (akár a mértnél nagyobb) ini-érték
+    sem tud kivételt dobni, csak a felső korláton szaturál."""
+    absolute = index + 1
+    if len(op.params) <= absolute:
+        return default
+    raw = float(op.params[absolute])
+    return min(1.0, max(0.0, raw / 100.0))
 
 
 def _apply_boost_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
@@ -416,6 +437,101 @@ def _apply_polaroid_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+# --- a 4. fül kreatív effektjeinek paraméter-leképezése (#332) --------------
+# A pozíciók a `docs/specs/filters-decoded.md` 5. körében mért ini-mintákból
+# jönnek, de — szemben az 5. füllel — itt az implementált szignatúrák
+# alapértékei NEM esnek egybe a mért mintákkal (pl. `IR=1,0.000000;` vs. az
+# implementált `strength=1.0`): a golden-mérés (#317) még nyitva van, a
+# pontos PICASA-skála ismeretlen. Amíg paraméter NINCS a láncban, a handler
+# a jól hangolt implementált alapértékkel fut (nincs viselkedésváltozás a
+# gombbal alkalmazott, paraméter nélküli esetben) — de ha VAN paraméter (pl.
+# egy valódi Picasa-ból importált `.picasa.ini`-ben), azt tényleg felhasználja,
+# a #301 hibatűrő mintája szerint (rossz paraméter → az az egy op kimarad).
+
+
+def _apply_ir_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # IR=1,erősség
+    return apply_ir(image, strength=_effect_float(op, 0, 1.0))
+
+
+def _apply_lomo_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Lomo=1,telítettség,kontraszt,?
+    return apply_lomo(
+        image,
+        saturation=_effect_float(op, 0, 1.6),
+        contrast=_effect_float(op, 1, 1.3),
+    )
+
+
+def _apply_holga_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Holga=1,lágyítás,?,vignetta — a lágyítás [0,1]-re kötött, ezért arányos
+    # (0..100→0..1) leképezéssel; a vignetta erőssége korlátlan, közvetlenül.
+    return apply_holga(
+        image,
+        softness=_effect_ratio(op, 0, 0.4),
+        vignette_strength=_effect_float(op, 2, 2.0),
+    )
+
+
+def _apply_hdr_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # HDR=1,clip,csempeméret,erősség — a clip/csempe legalább a minimumon
+    # marad, ha az ini 0-t (vagy annál kisebbet) írna.
+    return apply_hdr(
+        image,
+        clip_limit=max(0.1, _effect_float(op, 0, 2.0)),
+        tile_grid_size=max(1, int(_effect_float(op, 1, 8))),
+        strength=_effect_ratio(op, 2, 1.0),
+    )
+
+
+def _apply_cinemascope_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Cinemascope=1,árnyalás — a mért egyetlen paraméter (jellemzően 0) a
+    # hűvös árnyalás erősségeként fut; a képarány az alapértéken marad.
+    return apply_cinemascope(image, tint_strength=_effect_ratio(op, 0, 0.15))
+
+
+def _apply_orton_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Orton=1,fényesítés,elmosás,keverés
+    return apply_orton(
+        image,
+        brightness=max(0.01, _effect_float(op, 0, 1.4)),
+        blur_sigma=max(0.01, _effect_float(op, 1, 8.0)),
+        blend=_effect_ratio(op, 2, 0.5),
+    )
+
+
+def _apply_sixties_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Sixties=1,fakítás,#szín,? — a színparamétert a modell (fix meleg
+    # csatornaeltolás) nem használja, csak a fakítást vesszük át.
+    return apply_sixties(image, fade=_effect_ratio(op, 0, 0.35))
+
+
+def _apply_heatmap_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # HeatMap=1,keverés,?
+    return apply_heatmap(image, blend=_effect_ratio(op, 0, 1.0))
+
+
+def _apply_crossprocess_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # CrossProcess=1,erősség
+    return apply_crossprocess(image, strength=_effect_ratio(op, 0, 1.0))
+
+
+def _apply_quantizepalette_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # QuantizePalette=1,szintszám,?,? — a szintszám egész, [2,256]-ra kötve
+    levels = int(_effect_float(op, 0, 4.0))
+    return apply_quantizepalette(image, levels=max(2, min(256, levels)))
+
+
+def _apply_twotone_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # TwoTone=1,?,?,?,#árnyékszín,#fényszín — a két szín egyértelmű formátumú
+    # (00RRGGBB), ezért ezeket a `parse_rgb_hex`-szel biztonsággal átvesszük.
+    return apply_twotone(
+        image,
+        shadow_color=_effect_color(op, 3, (10, 10, 40)),
+        highlight_color=_effect_color(op, 4, (255, 225, 140)),
+    )
+
+
 _HANDLERS = {
     "tilt": _apply_tilt_op,
     "redeye": lambda image, op: apply_redeye(image),
@@ -440,23 +556,23 @@ _HANDLERS = {
     "radblur": _apply_radblur_op,
     "radsat": _apply_radsat_op,
     "dir_tint": _apply_dir_tint_op,
-    # --- a 4. fül kreatív effektjei (#329) ---------------------------------
-    # A Picasa paraméterezése ezeknél NEM ismert (golden-mérés nincs), ezért
-    # az alapértékkel futnak; a `filters=`-ben esetleg ott álló paramétereket
-    # tudatosan figyelmen kívül hagyjuk, nem találgatunk. A modellek
-    # közelítők — a kalibráció a #317-ben fut.
-    "ir": lambda image, op: apply_ir(image),
-    "lomo": lambda image, op: apply_lomo(image),
-    "holga": lambda image, op: apply_holga(image),
-    "hdr": lambda image, op: apply_hdr(image),
-    "cinemascope": lambda image, op: apply_cinemascope(image),
-    "orton": lambda image, op: apply_orton(image),
-    "sixties": lambda image, op: apply_sixties(image),
+    # --- a 4. fül kreatív effektjei (#329, paraméterekkel: #332) -----------
+    # A Picasa PONTOS paraméterezése ezeknél nem mért (golden-mérés: #317),
+    # a modellek közelítők — de a láncban ott álló paramétereket mostantól
+    # tényleg felhasználjuk (ld. a handlerek fölötti megjegyzést), nem
+    # dobjuk el csendben.
+    "ir": _apply_ir_op,
+    "lomo": _apply_lomo_op,
+    "holga": _apply_holga_op,
+    "hdr": _apply_hdr_op,
+    "cinemascope": _apply_cinemascope_op,
+    "orton": _apply_orton_op,
+    "sixties": _apply_sixties_op,
     "invert": lambda image, op: apply_invert(image),
-    "heatmap": lambda image, op: apply_heatmap(image),
-    "crossprocess": lambda image, op: apply_crossprocess(image),
-    "quantizepalette": lambda image, op: apply_quantizepalette(image),
-    "twotone": lambda image, op: apply_twotone(image),
+    "heatmap": _apply_heatmap_op,
+    "crossprocess": _apply_crossprocess_op,
+    "quantizepalette": _apply_quantizepalette_op,
+    "twotone": _apply_twotone_op,
     # --- az 5. fül művészi effektjei (#330, paraméterekkel: #332) ----------
     "boost": _apply_boost_op,
     "soften": _apply_soften_op,

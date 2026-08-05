@@ -158,6 +158,66 @@ class TestArtisticParametersReachTheRenderer:
         assert not np.array_equal(result, sample), "az Invert ettől még lefutott"
 
 
+class TestCreativeParametersReachTheRenderer:
+    """#332: a 4. fül (IR, Lomo, Holga, HDR, Cinemascope, Orton, Sixties,
+    HeatMap, CrossProcess, QuantizePalette, TwoTone) effektjeinek ini-
+    paraméterei is tényleg elérjék a renderert — korábban a láncbeli
+    handlerek `lambda image, op: apply_X(image)` alakban EL SEM OLVASTÁK
+    az `op` paramétereit, így egy valódi (akár importált) Picasa-ini eltérő
+    csúszkaértékei mindig ugyanazt a képet adták (#332)."""
+
+    @pytest.mark.parametrize(
+        ("weak", "strong"),
+        [
+            ("IR=1,0.500000;", "IR=1,3.000000;"),
+            ("Lomo=1,0.500000,0.500000;", "Lomo=1,5.000000,5.000000;"),
+            ("Holga=1,10.000000,30.000000,0.000000;", "Holga=1,90.000000,30.000000,5.000000;"),
+            ("HDR=1,1.000000,2.000000,10.000000;", "HDR=1,8.000000,4.000000,90.000000;"),
+            ("Cinemascope=1,0.000000;", "Cinemascope=1,90.000000;"),
+            ("Orton=1,1.200000,4.000000,10.000000;", "Orton=1,2.000000,15.000000,90.000000;"),
+            ("Sixties=1,5.000000,00ffffff,0;", "Sixties=1,90.000000,00ffffff,0;"),
+            ("HeatMap=1,10.000000,0.000000;", "HeatMap=1,90.000000,0.000000;"),
+            ("CrossProcess=1,5.000000;", "CrossProcess=1,95.000000;"),
+            (
+                "QuantizePalette=1,2.000000,80.000000,0.000000;",
+                "QuantizePalette=1,200.000000,80.000000,0.000000;",
+            ),
+            (
+                "TwoTone=1,0.000000,20.000000,0.000000,00004488,00ffff00;",
+                "TwoTone=1,0.000000,20.000000,0.000000,00ff0000,000000ff;",
+            ),
+        ],
+    )
+    def test_different_parameters_give_different_output(self, weak, strong, sample):
+        a, skipped_a = apply_filters(sample, parse_filters(weak))
+        b, skipped_b = apply_filters(sample, parse_filters(strong))
+        assert skipped_a == () and skipped_b == ()
+        assert not np.array_equal(a, b), "a paraméter nem jutott el a rendererhez"
+
+    @pytest.mark.parametrize("key", _CREATIVE_KEYS)
+    def test_missing_parameter_keeps_previous_default_behaviour(self, key, sample):
+        # Nincs regresszió: paraméter nélkül (a gomb eddigi, egygombos
+        # alkalmazása) pontosan ugyanaz fut, mint korábban — az implementált
+        # alapérték, nem az ini mért mintája.
+        with_flag_only, skipped = apply_filters(sample, parse_filters(f"{key}=1;"))
+        assert skipped == ()
+        if with_flag_only.shape != sample.shape:
+            return  # cinemascope sávozhat/vághat
+        assert not np.array_equal(with_flag_only, sample)
+
+    def test_invert_has_no_parameters_to_ignore(self, sample):
+        # Invert=1; — nincs paraméter, tisztán matematikai (255-be) művelet.
+        result, skipped = apply_filters(sample, parse_filters("Invert=1;"))
+        assert skipped == ()
+        assert np.array_equal(result, 255 - sample)
+
+    def test_broken_parameter_does_not_stop_the_chain(self, sample):
+        # #301: a hibás bejegyzés kimarad, a lánc többi tagja lefut
+        result, skipped = apply_filters(sample, parse_filters("IR=1,zzz;Invert=1;"))
+        assert "IR" in skipped
+        assert not np.array_equal(result, sample), "az Invert ettől még lefutott"
+
+
 class TestCropRunsBeforeTheFrame:
     """A vágás koordinátái az EREDETI képre vonatkoznak (spec), a keret
     viszont utólag kerül köré — különben a keret szélességével elcsúszna a
