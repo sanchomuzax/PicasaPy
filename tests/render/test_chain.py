@@ -242,8 +242,9 @@ class TestApplyFiltersEffects:
     paraméter-alakokkal (golden-kit ini-sorok)."""
 
     def test_vignette_alkalmazasa(self) -> None:
-        # Vignette: nagybetűs azonosító, éles alak (golden 4. kör)
-        from picasapy.render.effects import apply_vignette
+        # Vignette: nagybetűs azonosító, éles alak — a filterdesc.xml EGZAKT
+        # csővezetéke (#381): GlowImageOperation(innerglow), ld. glimmer_tone.
+        from picasapy.render.glimmer_tone import apply_vignette
 
         image = _gradient_image()
         ops = (FilterOp("Vignette", ("1", "35.000000", "1.400000", "0.000000", "00000000")),)

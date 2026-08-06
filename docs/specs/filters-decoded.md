@@ -312,18 +312,24 @@ Picasa-hű lenne.
 | minőség | mit jelent | effektek |
 |---|---|---|
 | **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `warm`, `sat`, `grain2` (statisztikai) |
-| **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `Vignette` (4,6), `ansel` (5,6), `radblur` (3,2), `glow2` (2,7) |
-| **KÖZELÍTŐ (mérés nélkül)** | a hatás jellege alapján, szakirodalomból — golden-mérés NINCS | 4. fül: `IR`, `Lomo`, `Holga`, `HDR`, `Cinemascope`, `Orton`, `Sixties`, `HeatMap`, `CrossProcess`, `QuantizePalette`, `TwoTone`; 5. fül: `Boost`, `Soften`, `Pixelate`, `FocalZoom`, `PencilSketch`, `Neon`, `Comicize`, `Border`, `DropShadow`, `MuseumMatte`, `Polaroid` |
-| **PONTOS** | matematikailag egyértelmű, mérés sem kell | `Invert` (255−x) |
-| **ISMERETLEN (exe-ből azonosított, nincs mérés)** | csak a `Picasa3.exe` string-táblájából ismert token (ld. `docs/specs/picasa-exe-strings.md`), golden-mérés még nem volt, élő ini-előfordulása sem megerősített | `glow` (v1), `grain` (v1), `radtint`, `RoundedEdges`, `Matte`, `NightVision`, `picnik=1;` (boolean lánc-token) |
+| **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `ansel` (5,6), `radblur` (3,2), `glow2` (2,7) |
+| **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Neon`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
+| **RÉSZBEN MEGFEJTVE (#381)** | a paraméterNEVEK és FIX konstansok a filterdesc.xml-ből jönnek, de a belső pixel-kernel (`IRImageOperation`) a fájlban SEM publikus — a pixel-modell dokumentáltan interpretáció | `IR` |
+| **MEGFEJTVE, DE ECSET-MASZK NÉLKÜL (#381)** | a csővezeték/paraméterezés egzakt, de a Picasa ecsettel kijelölt régióra hatna — a PicasaPy-nak nincs ecset-eszköze, ezért a TELJES KÉPRE fut (jelezve a `ChainReport.range_warnings`-ban) | `PicnikTint`, `ReanimatedEyeColor` |
+| **KÖZELÍTŐ (mérés nélkül) — #381 után is maradt** | a hatás jellege alapján, szakirodalomból — sem golden-mérés, sem filterdesc-pontosítás nincs még bekötve | `FocalZoom`, `PicnikFocalPixelate`, `Comicize` |
+| **PONTOS** | matematikailag egyértelmű, mérés sem kell | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át) |
+| **ISMERETLEN (exe-ből azonosított, nincs mérés)** | csak a `Picasa3.exe` string-táblájából ismert token (ld. `docs/specs/picasa-exe-strings.md`), golden-mérés még nem volt, élő ini-előfordulása sem megerősített | `glow` (v1), `grain` (v1), `radtint`, `picnik=1;` (boolean lánc-token) |
 
-Vagyis a 36 mért/közelített effektből **13 mögött van mérés**, 22 közelítés,
-1 triviálisan pontos — plusz a fenti 7, kizárólag az exe-ből azonosított,
-egyelőre ismeretlen jelentésű/paraméterezésű jelölt. A kalibráció a
-**#317**-es jegyben fut; a paraméter-leképezés állapota: az 5. fül
-effektjeinél az ini-paraméterek már eljutnak a rendererhez (#332, a fenti
-mért minták pozíciói szerint), a 4. fülnél még az alapérték fut — ott előbb
-mérés kell.
+Vagyis a Glimmer-effektek (33) többsége #381 óta a `filterdesc.xml` EGZAKT
+csővezetékén fut — a `RoundedEdges`, `Matte`, `NightVision` a korábbi
+„exe-ből ismert, nincs mérés" kategóriából ide léptek elő. Három effekt
+(`FocalZoom`, `PicnikFocalPixelate`, `Comicize`) maradt KÖZELÍTŐ (a
+`fullResImageWidth/Height`-explicit radiális elmosás, ill. a többágú
+pontraszter-csővezeték #381 hatókörén kívül esett — ld. a jegy jelentését).
+Az `IR` RÉSZBEN MEGFEJTVE (a paraméterek ismertek, a kernel nem). A
+`PicnikTint`/`ReanimatedEyeColor` egzakt csővezetéket kapott, de ecset-
+eszköz híján a TELJES KÉPRE fut. A kalibráció (a maradék KÖZELÍTŐ effektekhez
+és a golden-pixel-összevetéshez) a **#317**-es jegyben fut tovább.
 
 ## 6. kör — a Picasa SAJÁT szűrő-definíciója előkerült ✅ (2026-08-06)
 
