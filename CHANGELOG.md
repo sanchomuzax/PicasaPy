@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.9] – 2026-08-06
+
+### Hozzáadva
+- **Személyek-gyűjtemény (#26, 1. kör):** a bal hasáb Személyek listája a
+  meglévő `.picasa.ini` arc-adatokból; személyre kattintva az ő képei.
+- **GPU-előnézet alapok (#22):** shader-alapú élő előnézet a
+  leggyakoribb csúszkákra (derítőfény/árnyék/színhő/telítettség/f-f),
+  bitre a CPU-útból származó paritással — RPi5-validálásra vár.
+- **Effekt-névlista lezárva (#347):** grain v1 egzakt csővezetékkel;
+  a maradék mérnivaló a #317-es golden-körben.
+
 ## [0.6.8] – 2026-08-06
 
 ### Hozzáadva
