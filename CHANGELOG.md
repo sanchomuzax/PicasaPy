@@ -5,6 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.5] – 2026-08-05
+
+### Hozzáadva
+- **Tömeges átnevezés (#366)** a Picasa mintája szerint: dátum-/felbontás-
+  utótag, élő példa-előnézet, sorszámozás; több kijelölt képnél automatikusan.
+- **„Ne kérdezze újra" (#367):** újrafelhasználható megerősítő dialógus
+  perzisztens beállítás-tárral; a törlés-megerősítés már ezt használja.
+- **Adatbázis áthelyezése (#368):** Eszközök → Kísérleti → Adatbázis
+  áthelyezése… — biztonságos költöztetés integritás-ellenőrzéssel; hiba
+  esetén minden marad a régiben.
+- **Export-extrák (#369):** exportmappa-név, sorszámozás, vízjel,
+  minőség-presetek az eredeti Picasa export-dialógusa szerint.
+
 ## [0.6.4] – 2026-08-05
 
 ### Hozzáadva
