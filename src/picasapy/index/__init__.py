@@ -22,6 +22,7 @@ from .queries import (
     search_suggestions,
     starred_photos,
 )
+from .people import PersonRecord, people_in_index, person_photos
 from .relocate import (
     RelocationCancelled,
     RelocationError,
@@ -41,6 +42,7 @@ from .sync import (
 __all__ = [
     "SCHEMA_VERSION",
     "AlbumRecord",
+    "PersonRecord",
     "PhotoRecord",
     "RelocationCancelled",
     "RelocationError",
@@ -56,6 +58,8 @@ __all__ = [
     "load_dhashes",
     "open_index",
     "paths_with_color",
+    "people_in_index",
+    "person_photos",
     "photo_by_id",
     "photos_in_folder",
     "photos_under_folder",

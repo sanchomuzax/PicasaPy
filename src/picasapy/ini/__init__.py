@@ -1,7 +1,7 @@
 """.picasa.ini olvasás/írás — kétirányú Picasa 3.x kompatibilitás."""
 
 from .albums import Album, albums_of, parse_album_refs, serialize_album_refs
-from .contacts import Contact, contacts_of
+from .contacts import Contact, contacts_of, ensure_contact, find_contact_id
 from .document import (
     NO_SOURCE_FILE,
     IniDocument,
@@ -11,7 +11,15 @@ from .document import (
     SourceFingerprint,
     parse_document,
 )
-from .faces import UNIDENTIFIED_CONTACT, Face, parse_faces, serialize_faces
+from .faces import (
+    UNIDENTIFIED_CONTACT,
+    Face,
+    parse_faces,
+    serialize_faces,
+    with_face,
+    with_reassigned_face,
+    without_face,
+)
 from .filters import FilterOp, parse_filters, serialize_filters
 from .folder_date import (
     is_valid_folder_date,
@@ -48,6 +56,8 @@ __all__ = [
     "contacts_of",
     "decode_rect64",
     "encode_rect64",
+    "ensure_contact",
+    "find_contact_id",
     "is_valid_folder_date",
     "load_document",
     "load_or_empty",
@@ -61,6 +71,9 @@ __all__ = [
     "serialize_faces",
     "serialize_filters",
     "update_document",
+    "with_face",
     "with_folder_date_override",
+    "with_reassigned_face",
+    "without_face",
     "without_folder_date_override",
 ]

@@ -6,8 +6,12 @@ from picasapy.ini import (
     UNIDENTIFIED_CONTACT,
     Face,
     decode_rect64,
+    parse_document,
     parse_faces,
     serialize_faces,
+    with_face,
+    with_reassigned_face,
+    without_face,
 )
 
 TWO_FACES = "rect64(3f845bcb59418507),8e62b2035b74b477;rect64(10000000f1ddff49),ffffffffffffffff;"
@@ -78,3 +82,104 @@ class TestImmutability:
         face = parse_faces(TWO_FACES)[0]
         with pytest.raises(AttributeError):
             face.contact_id = "0"
+
+
+# -- írás (#26, 1. kör) --------------------------------------------------
+
+_DOC = "[a.jpg]\nstar=yes\n"
+_FACE = Face(rect=decode_rect64("3f845bcb59418507"), contact_id="8e62b2035b74b477")
+_FACE2 = Face(rect=decode_rect64("10000000f1ddff49"), contact_id=UNIDENTIFIED_CONTACT)
+
+
+class TestWithFace:
+    def test_adds_faces_key_when_missing(self):
+        document = with_face(parse_document(_DOC), "a.jpg", _FACE)
+        section = document.section("a.jpg")
+        assert parse_faces(section.get("faces")) == (_FACE,)
+
+    def test_appends_to_existing_faces(self):
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE,))
+        )
+        updated = with_face(document, "a.jpg", _FACE2)
+        assert parse_faces(updated.section("a.jpg").get("faces")) == (_FACE, _FACE2)
+
+    def test_idempotent_for_identical_pair(self):
+        document = with_face(parse_document(_DOC), "a.jpg", _FACE)
+        again = with_face(document, "a.jpg", _FACE)
+        assert again == document
+
+    def test_missing_section_is_a_no_op_free_add(self):
+        # nincs [b.jpg] szekció — with_face létrehozza (a with_value mintája)
+        document = with_face(parse_document(_DOC), "b.jpg", _FACE)
+        assert document.section("b.jpg") is not None
+        assert parse_faces(document.section("b.jpg").get("faces")) == (_FACE,)
+
+
+class TestWithoutFace:
+    def test_removes_the_matching_pair(self):
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE, _FACE2))
+        )
+        updated = without_face(document, "a.jpg", _FACE)
+        assert parse_faces(updated.section("a.jpg").get("faces")) == (_FACE2,)
+
+    def test_removing_last_face_drops_the_key(self):
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE,))
+        )
+        updated = without_face(document, "a.jpg", _FACE)
+        assert updated.section("a.jpg").get("faces") is None
+
+    def test_no_such_pair_is_unchanged(self):
+        document = parse_document(_DOC)
+        assert without_face(document, "a.jpg", _FACE) == document
+
+    def test_missing_section_is_unchanged(self):
+        document = parse_document(_DOC)
+        assert without_face(document, "nincs.jpg", _FACE) == document
+
+
+class TestWithReassignedFace:
+    def test_replaces_contact_id_for_matching_rect(self):
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE2,))
+        )
+        updated = with_reassigned_face(
+            document, "a.jpg", _FACE2.rect, "0000000000000001"
+        )
+        faces = parse_faces(updated.section("a.jpg").get("faces"))
+        assert faces == (Face(rect=_FACE2.rect, contact_id="0000000000000001"),)
+
+    def test_region_is_unchanged_only_contact_id_moves(self):
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE,))
+        )
+        updated = with_reassigned_face(document, "a.jpg", _FACE.rect, UNIDENTIFIED_CONTACT)
+        faces = parse_faces(updated.section("a.jpg").get("faces"))
+        assert faces[0].rect == _FACE.rect
+        assert not faces[0].is_identified
+
+    def test_unknown_rect_is_a_no_op(self):
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE,))
+        )
+        other_rect = decode_rect64("0000111122223333")
+        updated = with_reassigned_face(document, "a.jpg", other_rect, "1111111111111111")
+        assert updated == document
+
+    def test_missing_section_is_unchanged(self):
+        document = parse_document(_DOC)
+        updated = with_reassigned_face(document, "nincs.jpg", _FACE.rect, "1")
+        assert updated == document
+
+    def test_only_the_first_matching_rect_is_reassigned(self):
+        # két azonos rect, eltérő contact_id — csak az ELSŐ cserélődik
+        duplicate = Face(rect=_FACE.rect, contact_id="2222222222222222")
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE, duplicate))
+        )
+        updated = with_reassigned_face(document, "a.jpg", _FACE.rect, "9999999999999999")
+        faces = parse_faces(updated.section("a.jpg").get("faces"))
+        assert faces[0].contact_id == "9999999999999999"
+        assert faces[1].contact_id == "2222222222222222"

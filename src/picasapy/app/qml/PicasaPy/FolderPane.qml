@@ -30,9 +30,15 @@ Rectangle {
     // #320: a felhasználó egyéni gyűjteményei ({name, folders} elemek) —
     // a controller.customCollections tükre, a mappasor jobbklikk-menüjéhez
     property var customCollectionsModel: []
+    // #26: a bal hasáb Emberek gyűjteménye ({name, count} elemek) és az
+    // éppen kiválasztott személy neve (a kijelölés-kiemeléshez) — az
+    // albumsModel/selectedAlbumToken mintáját követi.
+    property var peopleModel: []
+    property string selectedPersonName: ""
     signal folderChosen(string path)
     signal starredChosen()
     signal albumChosen(string token)
+    signal personChosen(string name)
 
     // #320: a controller friss gyűjtemény-listájának lekérése — a
     // Component.onCompleted-en kívül minden create/rename/delete/move
@@ -267,12 +273,55 @@ Rectangle {
         CollectionHeader {
             Layout.fillWidth: true
             label: qsTr("People")
-            // #320: a tartalom (arc-csoportok) a 3. fázisban / a #320
-            // további lépéseiben érkezik — most csak a fejléc létezik.
-            itemCount: 0
+            // #26: a `faces=`/`[Contacts2]`-ből aggregált, névvel ellátott
+            // személyek száma (arcfelismerés nélkül — a meglévő ini-
+            // adatokból, ld. picasapy.index.people).
+            itemCount: pane.peopleModel.length
             labelObjectName: "peopleHeader"
             collapsed: pane.peopleCollapsed
             onToggled: pane.toggleCollection("people")
+        }
+
+        // #26: egy-egy sor személyenként — az albumRepeater mintáját követi.
+        Repeater {
+            id: peopleRepeater
+            objectName: "peopleRepeater"
+            model: pane.peopleModel
+            delegate: Rectangle {
+                id: personItem
+                required property var modelData
+                objectName: "personItem_" + modelData.name
+                readonly property bool isSelectedPerson:
+                    pane.selectedPersonName === modelData.name
+                visible: !pane.peopleCollapsed
+                Layout.fillWidth: true
+                Layout.preferredHeight: 22
+                color: personItem.isSelectedPerson ? Theme.panelSelectionActive
+                       : (personMouse.containsMouse ? Theme.panelSelection : "transparent")
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left; anchors.leftMargin: 16
+                    spacing: 5
+                    Rectangle {
+                        width: 10; height: 10
+                        radius: 5
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: Theme.picasaGreen
+                    }
+                    Text {
+                        text: modelData.name + " (" + modelData.count + ")"
+                        font.pixelSize: Theme.fontSize
+                        color: personItem.isSelectedPerson || personMouse.containsMouse
+                               ? Theme.panelSelectionText : Theme.textDark
+                    }
+                }
+                MouseArea {
+                    id: personMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: pane.personChosen(modelData.name)
+                }
+            }
         }
 
         CollectionHeader {
