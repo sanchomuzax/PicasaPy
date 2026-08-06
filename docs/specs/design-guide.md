@@ -68,6 +68,23 @@ Két tanulság: (1) a mappalista **három** kékárnyalattal dolgozik
 (2) a kijelölt indexkép kerete kétszínű — ez az a részlet, amitől a Picasa
 rácsa „ropogósnak" hat.
 
+**Implementálva (2026-08-06, #384):** a mappafa/albumlista (`FolderPane.qml`,
+`FolderTreeItem.qml`) mostantól különválasztja a hover-tónust
+(`Theme.panelSelection`/`Theme.selectionBlue`, `#83a7bd`) a valódi
+kijelöléstől (`#25648b`); az indexkép kijelölt kerete (`ThumbDelegate.qml`)
+kétrétegű (kívül `Theme.thumbSelection` `#009eff`, belül `Theme.thumbCard`
+fehér); a fa-behúzás `17px`/szint. A `#25648b` egyelőre **nem** önálló
+Theme-token — a `Theme.qml` forró fájl, csak az integrátor módosíthatja;
+a komponensek egy helyi, kommentelt állandót (`__selectionActiveColor`)
+használnak addig. Integrátor-teendő: felvenni a `Theme.panelSelectionActive`
+tokent (világos `#25648b`; sötét témára a `constants.ui`-ban nincs adat,
+a `selectionBlue` világos/sötét arányából becsülve kb. `#1b4a68`), és a
+fenti helyi állandókat erre cserélni. A rács-térközök
+(`alayout_thumbGutterX/Y`) és a többi méret-pontosítás (`alayout_gutter`,
+`alist_hicolor2_win`, `alist_catcolor` stb.) ezen a jegyen kívül maradt —
+a `LightboxFeed.qml` rács-matematikája (dinamikus oszlopszám, egyenletes
+cellaszélesség) egyben változna, ezért külön jegyet érdemel.
+
 ## Színtokenek
 
 | Token | Érték | Hol |

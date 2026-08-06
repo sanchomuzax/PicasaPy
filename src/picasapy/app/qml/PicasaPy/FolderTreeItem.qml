@@ -26,25 +26,38 @@ Column {
     property bool loaded: false
     property var childItems: []
 
+    // #384: constants.ui alist_selcolor_win (#25648B) — a VALÓDI
+    // kijelölés a hover/jelölő tónusnál (Theme.selectionBlue = #83a7bd,
+    // alist_hicolor_win) sötétebb. A Theme.qml-ben MÉG NINCS erre saját
+    // token (hot file, ld. jelentés: Theme.panelSelectionActive) — amíg
+    // az integrátor fel nem veszi, itt helyi állandóként él; a csere csak
+    // ezt a sort érinti.
+    readonly property color __selectionActiveColor: "#25648b"
+    readonly property bool isSelected: root.manager
+                                        && root.manager.selectedPath === root.path
+
     Rectangle {
         id: rowRect
+        objectName: "folderTreeRow:" + root.path
         width: root.width
         height: 22
-        color: root.manager && root.manager.selectedPath === root.path
-               ? Theme.selectionBlue : "transparent"
+        // hover ≠ kijelölés (#384): a hover a korábbi (jelölő) tónust
+        // kapja, a tényleges kijelölés a sötétebb, hiteles színt.
+        color: root.isSelected ? root.__selectionActiveColor
+               : (rowMouse.containsMouse ? Theme.selectionBlue : "transparent")
 
         Row {
             anchors.verticalCenter: parent.verticalCenter
             anchors.left: parent.left
-            anchors.leftMargin: 6 + root.depth * 16
+            // constants.ui alist_indent = 17 (fa-behúzás szintenként)
+            anchors.leftMargin: 6 + root.depth * 17
             spacing: 4
 
             Text {
                 width: 12
                 text: root.hasChildren ? (root.expanded ? "▾" : "▸") : ""
                 font.pixelSize: Theme.fontSize - 2
-                color: root.manager && root.manager.selectedPath === root.path
-                       ? "#ffffff" : Theme.folderArrow
+                color: root.isSelected ? "#ffffff" : Theme.folderArrow
                 MouseArea {
                     anchors.fill: parent
                     enabled: root.hasChildren
@@ -57,21 +70,22 @@ Column {
             Text {
                 text: root.name
                 font.pixelSize: Theme.fontSize
-                color: root.manager && root.manager.selectedPath === root.path
-                       ? "#ffffff" : Theme.ink
+                color: root.isSelected ? "#ffffff" : Theme.ink
             }
 
             Text {
                 objectName: "folderTreeGlyph:" + root.path
                 text: root.manager ? root.manager.stateGlyph(root.path) : ""
                 font.pixelSize: Theme.fontSize - 1
-                color: root.manager && root.manager.selectedPath === root.path
-                       ? "#ffffff" : Theme.selectionBlue
+                color: root.isSelected ? "#ffffff" : Theme.selectionBlue
             }
         }
 
         MouseArea {
+            id: rowMouse
+            objectName: "folderTreeRowMouse:" + root.path
             anchors.fill: parent
+            hoverEnabled: true
             onClicked: if (root.manager) root.manager.selectedPath = root.path
         }
     }

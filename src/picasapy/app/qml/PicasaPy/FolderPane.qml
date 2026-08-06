@@ -10,6 +10,14 @@ Rectangle {
     id: pane
     color: Theme.panelBg
 
+    // #384: constants.ui alist_selcolor_win/alist_scatcolor (#25648B) —
+    // a VALÓDI kijelölés sötétebb, mint a hover/jelölő tónus
+    // (Theme.panelSelection = #83a7bd, alist_hicolor_win). A Theme.qml-ben
+    // MÉG NINCS erre saját token (hot file, ld. jelentés:
+    // Theme.panelSelectionActive) — amíg az integrátor fel nem veszi, itt
+    // helyi állandóként él; a csere csak ezt a sort érinti.
+    readonly property color __selectionActiveColor: "#25648b"
+
     property alias foldersModel: folderList.model
     property string selectedPath: ""
     property bool starredActive: false
@@ -189,8 +197,10 @@ Rectangle {
             visible: !pane.albumsCollapsed
             Layout.fillWidth: true
             Layout.preferredHeight: 22
-            color: pane.starredActive
-                   ? Theme.panelSelection : "transparent"
+            // #384: hover ≠ kijelölés — a hover a korábbi jelölő tónust
+            // kapja, a tényleges kijelölés a hitelesebb, sötétebb színt.
+            color: pane.starredActive ? pane.__selectionActiveColor
+                   : (starredMouse.containsMouse ? Theme.panelSelection : "transparent")
             Row {
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.left: parent.left; anchors.leftMargin: 16
@@ -199,12 +209,14 @@ Rectangle {
                 Text {
                     text: qsTr("Starred photos")
                     font.pixelSize: Theme.fontSize
-                    color: pane.starredActive
+                    color: pane.starredActive || starredMouse.containsMouse
                            ? Theme.panelSelectionText : Theme.textDark
                 }
             }
             MouseArea {
+                id: starredMouse
                 anchors.fill: parent
+                hoverEnabled: true
                 onClicked: pane.starredChosen()
             }
         }
@@ -219,11 +231,14 @@ Rectangle {
                 id: albumItem
                 required property var modelData
                 objectName: "albumItem_" + modelData.token
+                readonly property bool isSelectedAlbum:
+                    pane.selectedAlbumToken === modelData.token
                 visible: !pane.albumsCollapsed
                 Layout.fillWidth: true
                 Layout.preferredHeight: 22
-                color: pane.selectedAlbumToken === modelData.token
-                       ? Theme.panelSelection : "transparent"
+                // #384: hover ≠ kijelölés (ld. starredItem fent)
+                color: albumItem.isSelectedAlbum ? pane.__selectionActiveColor
+                       : (albumMouse.containsMouse ? Theme.panelSelection : "transparent")
                 Row {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left; anchors.leftMargin: 16
@@ -237,12 +252,14 @@ Rectangle {
                     Text {
                         text: modelData.name + " (" + modelData.count + ")"
                         font.pixelSize: Theme.fontSize
-                        color: pane.selectedAlbumToken === modelData.token
+                        color: albumItem.isSelectedAlbum || albumMouse.containsMouse
                                ? Theme.panelSelectionText : Theme.textDark
                     }
                 }
                 MouseArea {
+                    id: albumMouse
                     anchors.fill: parent
+                    hoverEnabled: true
                     onClicked: pane.albumChosen(modelData.token)
                 }
             }
@@ -328,7 +345,11 @@ Rectangle {
                 readonly property bool isSelectedFolder:
                     kind === "folder" && pane.selectedPath === path
                     && pane.selectedAlbumToken === ""
-                color: isSelectedFolder ? Theme.panelSelection : "transparent"
+                // #384: hover ≠ kijelölés (ld. starredItem/albumItem) —
+                // a "year" sorok nem kattinthatók, a MouseArea rájuk
+                // enabled: false, így containsMouse mindig false marad.
+                color: isSelectedFolder ? pane.__selectionActiveColor
+                       : (folderRowMouse.containsMouse ? Theme.panelSelection : "transparent")
 
                 // évszám-elválasztó: arányos betűs címke + vékony
                 // vízszintes elválasztó vonal a panel széléig (audit:
@@ -364,12 +385,14 @@ Rectangle {
                     Text {
                         text: name + " (" + count + ")"
                         font.pixelSize: Theme.fontSize
-                        color: isSelectedFolder
+                        color: isSelectedFolder || folderRowMouse.containsMouse
                                ? Theme.panelSelectionText : Theme.ink
                     }
                 }
                 MouseArea {
+                    id: folderRowMouse
                     enabled: kind === "folder"
+                    hoverEnabled: true
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     onClicked: function(mouse) {
