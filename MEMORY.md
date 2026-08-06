@@ -173,6 +173,17 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
   a `https://github.com/sanchomuzax/PicasaPy/milestones` oldal WebFetch-csel
   olvasható — de a fenti 1/2/3 fix.
 
+- **2026-08-06: ÉBRESZTŐ-MEGBÍZHATÓSÁG — a belső ScheduleWakeup NEM elég,
+  kritikus határidőhöz `send_later` KELL.** A gyakorlat megmutatta: a
+  session-beli ébresztő többször nem tüzelt (a felhasználónak kellett
+  visszajönnie — jogos panasz). A `send_later` (claude-code-remote MCP)
+  szerver-oldali, percenként pollozó, konténer-újraindulást túlélő
+  időzítő — CI-várásnál, release-ellenőrzésnél MINDIG ezt (is) kell
+  élesíteni, a belső ébresztő legfeljebb kiegészítő. A worker-agentek
+  „várakozom a háttérfutásra" leragadása ellen pedig: az agent-promptban
+  ELŐTÉRBEN futtatott tesztet kell előírni — de mivel így is leragadnak,
+  a fő session kötelező worktree-ellenőrzése marad a háló.
+
 - **2026-08-05: BEFEJEZÉSI GARANCIA — a kört a session fejezi be, a
   felhasználó nógatása nélkül (felhasználói utasítás, nyomatékkal).**
   A felhasználónak háromszor kellett rákérdeznie („Nos? Mi van?"), mert a
