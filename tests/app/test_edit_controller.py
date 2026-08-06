@@ -611,6 +611,95 @@ class TestFinetune:
         assert self._filters(photo).count("finetune2=") == 1
 
 
+class TestGpuFinetunePreview:
+    """GPU élő-előnézet (#22) — `gpuPrefixSource`/`gpuLutSource` és a
+    `previewFinetuneGpu` LUT-only gyors út."""
+
+    def _filters(self, photo):
+        from picasapy.ini import load_document
+
+        ini = photo.parent / ".picasa.ini"
+        if not ini.exists():
+            return ""
+        section = load_document(ini).section("IMG_0001.jpg")
+        return (section.get("filters") if section else None) or ""
+
+    def test_no_active_edit_gives_empty_sources(self, controller):
+        assert controller.gpuPrefixSource == ""
+        assert controller.gpuLutSource == ""
+
+    def test_begin_edit_on_empty_chain_is_gpu_eligible(self, controller, photo):
+        """Üres lánc: a `set_finetune` a végére fűzné → GPU-alkalmas."""
+        controller.beginEdit("1", str(photo))
+        assert controller.gpuPrefixSource.startswith("image://editpreview/1?gpuprefix=1")
+        assert controller.gpuLutSource.startswith("image://editpreview/1?gpulut=1")
+
+    def test_finetune_in_middle_of_chain_is_not_gpu_eligible(self, controller, photo):
+        """Ha a finetune2 UTÁN másik effekt is van a mentett láncban, a
+        GPU-előnézet nem biztonságos — üres URL-eket kell adnia."""
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            "[IMG_0001.jpg]\nfilters=finetune2=1,0.5,0,0,00000000,0;grain2=1,0.5;\n",
+            encoding="utf-8",
+        )
+        controller.beginEdit("1", str(photo))
+        assert controller.gpuPrefixSource == ""
+        assert controller.gpuLutSource == ""
+
+    def test_end_edit_clears_gpu_sources(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        assert controller.gpuPrefixSource != ""
+        controller.endEdit()
+        assert controller.gpuPrefixSource == ""
+        assert controller.gpuLutSource == ""
+
+    def test_preview_finetune_gpu_updates_lut_source_not_preview_source(
+        self, controller, photo
+    ):
+        """A GPU-gyors út csak a `gpuLutSource`-ot bumpolja — a
+        `previewSource` (a `photo` Image forrása) NEM változhat, különben a
+        drága numpy-lánc pont a GPU-réteg által elkerülni kívánt módon
+        futna újra minden húzási lépésnél."""
+        controller.beginEdit("1", str(photo))
+        preview_before = controller.previewSource
+        lut_before = controller.gpuLutSource
+        controller.previewFinetuneGpu(0.5, 0.1, 0.2, -0.3)
+        assert controller.previewSource == preview_before
+        assert controller.gpuLutSource != lut_before
+
+    def test_preview_finetune_gpu_does_not_write_ini_or_undo(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.previewFinetuneGpu(0.5, 0, 0, 0)
+        assert self._filters(photo) == ""
+        assert controller.canUndo is False
+
+    def test_preview_finetune_gpu_updates_provider_lut(self, controller, provider, photo):
+        controller.beginEdit("1", str(photo))
+        controller.previewFinetuneGpu(0.5, 0, 0, 0)
+        lut_image = provider.requestImage(
+            f"1?gpulut=1&rev={controller._gpu_revision}", None, None
+        )
+        assert not lut_image.isNull()
+        assert (lut_image.width(), lut_image.height()) == (256, 1)
+
+    def test_preview_finetune_gpu_without_active_edit_raises(self, controller):
+        with pytest.raises(ValueError):
+            controller.previewFinetuneGpu(0.5, 0, 0, 0)
+
+    def test_preview_finetune_gpu_noop_when_chain_not_eligible(self, controller, photo):
+        """Ha a mentett lánc közben GPU-alkalmatlanná vált, a hívás néma
+        no-op — nem bukik, csak nem frissít semmit."""
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            "[IMG_0001.jpg]\nfilters=finetune2=1,0.5,0,0,00000000,0;grain2=1,0.5;\n",
+            encoding="utf-8",
+        )
+        controller.beginEdit("1", str(photo))
+        lut_before = controller.gpuLutSource
+        controller.previewFinetuneGpu(0.9, 0, 0, 0)
+        assert controller.gpuLutSource == lut_before == ""
+
+
 class TestEffects:
     """Effekt rétegek append-only alkalmazása — #20."""
 

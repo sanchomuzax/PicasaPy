@@ -402,3 +402,84 @@ class TestTextOverlayPreview:
         provider.register("1", photo, ())
         image = provider.requestImage("1", None, None)
         assert (image.width(), image.height()) == (8, 6)
+
+
+class TestGpuPreviewImages:
+    """#22: `gpuprefix=1`/`gpulut=1` — a GPU élő-előnézet két képforrása."""
+
+    def test_no_gpu_args_gives_null_gpu_images(self, qt_app, tmp_path):
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        provider = _make_provider()
+        provider.register("1", photo, ())
+        assert provider.requestImage("1?gpuprefix=1&rev=1", None, None).isNull()
+        assert provider.requestImage("1?gpulut=1&rev=1", None, None).isNull()
+
+    def test_gpu_prefix_ops_registers_prefix_image(self, qt_app, tmp_path):
+        from picasapy.ini.filters import FilterOp
+
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        provider = _make_provider()
+        provider.register(
+            "1", photo, (FilterOp("enhance", ("1",)),),
+            gpu_prefix_ops=(),
+        )
+        prefix_image = provider.requestImage("1?gpuprefix=1&rev=1", None, None)
+        assert not prefix_image.isNull()
+        assert (prefix_image.width(), prefix_image.height()) == (8, 6)
+        # a forrás (enhance NÉLKÜLI) kép, nem a teljes lánc eredménye
+        full_image = provider.requestImage("1", None, None)
+        assert prefix_image != full_image
+
+    def test_gpu_lut_registers_256x1_image(self, qt_app, tmp_path):
+        import numpy as np
+
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        provider = _make_provider()
+        ramp = np.tile(
+            np.arange(256, dtype=np.uint8)[:, np.newaxis], (1, 3)
+        )
+        provider.register("1", photo, (), gpu_lut=ramp)
+        lut_image = provider.requestImage("1?gpulut=1&rev=1", None, None)
+        assert not lut_image.isNull()
+        assert (lut_image.width(), lut_image.height()) == (256, 1)
+
+    def test_update_gpu_lut_without_full_register(self, qt_app, tmp_path):
+        """A húzás-közbeni gyors út: csak a LUT cserélődik, a forrás/prefix
+        érintetlen marad (nem hív dekódot/render-láncot)."""
+        import numpy as np
+
+        provider = _make_provider()
+        ramp = np.tile(
+            np.arange(256, dtype=np.uint8)[:, np.newaxis], (1, 3)
+        )
+        provider.update_gpu_lut("1", ramp)
+        lut_image = provider.requestImage("1?gpulut=1&rev=1", None, None)
+        assert not lut_image.isNull()
+        assert (lut_image.width(), lut_image.height()) == (256, 1)
+        # a normál kép/forrás nem regisztrálódott — placeholder marad
+        assert provider.requestImage("1", None, None).width() == 16
+
+    def test_unregister_clears_gpu_images(self, qt_app, tmp_path):
+        import numpy as np
+
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        provider = _make_provider()
+        ramp = np.tile(
+            np.arange(256, dtype=np.uint8)[:, np.newaxis], (1, 3)
+        )
+        provider.register("1", photo, (), gpu_prefix_ops=(), gpu_lut=ramp)
+        provider.unregister("1")
+        assert provider.requestImage("1?gpuprefix=1&rev=1", None, None).isNull()
+        assert provider.requestImage("1?gpulut=1&rev=1", None, None).isNull()
+
+    def test_none_gpu_prefix_ops_clears_previous_prefix(self, qt_app, tmp_path):
+        """Ha egy korábbi register() GPU-alkalmas volt, de a KÖVETKEZŐ már
+        nem (pl. a lánc közepére került a finetune2), a stale prefix-kép
+        NEM maradhat bent — a hívó úgyis üres URL-t ad ekkor."""
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        provider = _make_provider()
+        provider.register("1", photo, (), gpu_prefix_ops=())
+        assert not provider.requestImage("1?gpuprefix=1&rev=1", None, None).isNull()
+
+        provider.register("1", photo, (), gpu_prefix_ops=None)
+        assert provider.requestImage("1?gpuprefix=1&rev=1", None, None).isNull()
