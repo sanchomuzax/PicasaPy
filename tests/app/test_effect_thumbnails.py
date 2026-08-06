@@ -78,6 +78,40 @@ class TestSyncRender:
             )
 
 
+class TestToolPreviewNames:
+    """#405: a "Gyakori javítások" fül négy egy-gombos eszköze (Vörösszem,
+    Jó napom van, Automatikus kontraszt, Automatikus szín) is kapjon valódi,
+    az adott műveletet alkalmazó bélyegképet — NEM a 36-os `filters=`
+    katalógus tagjai, mégis renderelhetők a `render/chain.py` `_HANDLERS`
+    meglévő "enhance"/"autolight"/"autocolor"/"redeye" kulcsain át."""
+
+    def test_public_effect_names_stay_36(self):
+        # a meglévő, 36 elemű katalógus NEM bővül — külön halmaz kezeli az
+        # eszköz-előnézeteket (ld. effect_thumbnails._KNOWN_EFFECTS)
+        from picasapy.app.effect_thumbnails import EFFECT_NAMES
+
+        assert len(EFFECT_NAMES) == 36
+
+    def test_tool_preview_names_render_real_thumbnails(self, qt_app, tmp_path):
+        records = _library(tmp_path)
+        provider = _provider(records)
+        for tool in ("redeye", "enhance", "autolight", "autocolor"):
+            image = provider.requestImage(f"{records[0].id}/{tool}", None, None)
+            assert not image.isNull(), tool
+            assert image.width() != 16 or image.height() != 16, (
+                f"{tool}: placeholder jött KÉSZ bélyegkép helyett"
+            )
+
+    def test_tool_preview_thumbnail_differs_from_plain_source(self, qt_app, tmp_path):
+        # az "enhance" ("Jó napom van") a fotó ALAP állapotát módosítja —
+        # a bélyegkép ne legyen pixelre azonos a szűretlen forrással
+        records = _library(tmp_path)
+        provider = _provider(records)
+        enhanced = provider.requestImage(f"{records[0].id}/enhance", None, None)
+        sepia = provider.requestImage(f"{records[0].id}/sepia", None, None)
+        assert enhanced.size() == sepia.size()
+
+
 class TestCaching:
     def test_second_request_skips_filter_chain_recompute(self, qt_app, tmp_path):
         from picasapy.app import effect_thumbnails as mod

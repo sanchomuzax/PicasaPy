@@ -85,6 +85,17 @@ _THUMB_CACHE_CAPACITY = 256
 #: idővel elcsúszható másolat).
 EFFECT_NAMES: tuple[str, ...] = _EFFECT_NAMES
 
+#: #405: a szerkesztőpanel „Gyakori javítások" fülének kép-előnézetes
+#: csempéihez négy további, a `render/chain.py` `_HANDLERS`-ben meglévő
+#: egy-gombos/kapcsoló művelet is bélyegképezhető (Vörösszem, Jó napom van,
+#: Automatikus kontraszt, Automatikus szín) — ezek NEM részei a rétegzett
+#: `filters=` láncnak (ld. `edit_controller._ONE_SHOT_NAMES`/`_TOGGLE_NAMES`),
+#: ezért a nyilvános, 36 elemű `EFFECT_NAMES` (ld. `test_effect_thumbnails.py`
+#: `test_all_catalogue_effects_render_without_crashing`) VÁLTOZATLAN marad —
+#: ez egy külön, csak a bélyegkép-validációhoz kombinált halmaz.
+_TOOL_PREVIEW_NAMES: tuple[str, ...] = ("redeye", "enhance", "autolight", "autocolor")
+_KNOWN_EFFECTS: frozenset[str] = frozenset(EFFECT_NAMES) | frozenset(_TOOL_PREVIEW_NAMES)
+
 PhotoLookup = Callable[[str], "PhotoRecord | None"]
 
 
@@ -279,7 +290,7 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
         raw = id_str.split("?")[0]
         photo_id, _sep, effect = raw.partition("/")
         effect_key = effect.strip().casefold()
-        if not photo_id or effect_key not in EFFECT_NAMES:
+        if not photo_id or effect_key not in _KNOWN_EFFECTS:
             return QImage()
         photo = self._lookup(photo_id)
         if photo is None:

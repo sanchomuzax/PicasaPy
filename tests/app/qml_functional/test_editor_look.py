@@ -217,14 +217,22 @@ class TestEffectThumbSourceWiring:
     def test_all_36_effect_buttons_reference_a_known_effect_key(self):
         """Regresszió-őr: a `panel.effectThumbSource("<kulcs>")` hívások
         kulcsai pontosan a Python-oldali `EFFECT_NAMES` katalógusban
-        legyenek — ha az egyik oldal bővül a másik nélkül, ez buktatja."""
+        legyenek — ha az egyik oldal bővül a másik nélkül, ez buktatja.
+
+        #405: a "Gyakori javítások" fülön 4 további hívás jelent meg
+        (Vörösszem/Jó napom van/Automatikus kontraszt/Automatikus szín) —
+        ezek NEM a 36-os `filters=` katalógus tagjai, hanem a
+        `effect_thumbnails._TOOL_PREVIEW_NAMES` külön halmazából valók
+        (ld. ottani docsztring), ezért a szigorú 36-os egyezés-ellenőrzést
+        csak a katalógus-effektekre szűrve tartjuk meg."""
         from picasapy.app.effect_thumbnails import EFFECT_NAMES
 
         qml_keys = set(
             re.findall(r'panel\.effectThumbSource\("([a-z0-9_]+)"\)', _QML_SOURCE)
         )
-        assert len(qml_keys) == 36
-        assert qml_keys == set(EFFECT_NAMES)
+        tool_preview_keys = {"redeye", "enhance", "autolight", "autocolor"}
+        assert qml_keys - tool_preview_keys == set(EFFECT_NAMES)
+        assert tool_preview_keys <= qml_keys
 
 
 class TestPanelButtonThumbnailPlaceholder:
