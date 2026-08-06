@@ -226,6 +226,7 @@ Item {
         z: 10
 
         Row {
+            id: nameRow
             anchors.top: parent.top
             anchors.left: parent.left; anchors.right: parent.right
             anchors.margins: 6
@@ -259,7 +260,9 @@ Item {
             id: suggestionsColumn
             objectName: "faceNameSuggestions"
             visible: matches.length > 0
-            anchors.top: nameField.bottom
+            // #402: a nameField a Row gyereke, nem testvér — a horgony a
+            // testvér nameRow-ra kell mutasson (QML-anchor-szabály)
+            anchors.top: nameRow.bottom
             anchors.left: parent.left; anchors.right: parent.right
             anchors.topMargin: 4
             anchors.leftMargin: 6; anchors.rightMargin: 6

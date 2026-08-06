@@ -99,3 +99,18 @@ class TestGpuFinetuneFallback:
         edit = engine.rootContext().contextProperty("editController")
         assert edit.property("gpuPrefixSource") == ""
         assert edit.property("gpuLutSource") == ""
+
+
+class TestShaderUrlFeloldas402:
+    """#402: a shader-URL a Gpu/ modulmappára kell oldódjon (a felhasználó
+    gépén a PicasaPy/ gyökérben kereste), és shader-hibánál a réteg némán
+    rejtve marad."""
+
+    def test_fragment_shader_a_gpu_mappaban(self, qml_app):
+        window, _controller, _engine = qml_app
+        preview = window.findChild(QObject, "gpuFinetunePreview")
+        assert preview is not None
+        url = preview.property("fragmentShader")
+        # QUrl vagy string — szöveggé alakítva ellenőrizzük
+        szoveg = url.toString() if hasattr(url, "toString") else str(url)
+        assert szoveg.endswith("Gpu/PointFilter.frag.qsb")
