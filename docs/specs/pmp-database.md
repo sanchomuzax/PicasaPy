@@ -104,6 +104,33 @@ feloldás működik. További, csak éles adatból látható tények:
 
 A személynevek elsődleges, legpontosabb forrása (az ini `[Contacts]`/`[Contacts2]`
 szekciói redundánsak/inkonzisztensek lehetnek). Backup-ban: `backup.xml`.
+**OPCIONÁLIS**: sok telepítésen sosem jött létre (a felhasználó nem
+kapcsolta össze Google-fiókkal a Picasát) — a hiánya nem hiba
+(`docs/research-plan.md`).
+
+Szerkezet (Atom feed, `gphoto:` névtér — a mezőnevek a `Picasa3.exe`
+string-táblájából igazoltak, ld. `picasa-exe-strings.md`):
+
+```xml
+<feed xmlns='http://www.w3.org/2005/Atom'
+      xmlns:gphoto='http://schemas.google.com/photos/2007'>
+  <entry>
+    <gphoto:personid2>b8e4117cf1d6615b</gphoto:personid2>
+    <gphoto:fullname>Roy Avery</gphoto:fullname>
+    <gaia_id>1234567890</gaia_id>
+  </entry>
+  ...
+</feed>
+```
+
+`gphoto:personid2` ↔ a `[Contacts2]` `person_id` kulcsa, `gphoto:fullname`
+↔ a név. A `gaia_id` (Google-fiók azonosító) egyelőre csak megőrzött, fel
+nem használt mező. Importer: `picasapy.ini.contacts_xml`
+(`load_contacts_xml`/`apply_contacts_xml`, #26 2. kör) — a MEGLÉVŐ
+`[Contacts2]`-bejegyzések nevét egyezteti (round-trip: az `extra` mezők és
+a kulcs írásmódja megmarad), új személyt nem hoz létre (azt az
+arc-hozzárendelés, `faces_helper.py`, teszi meg, amikor tényleg
+felhasználásra kerül).
 
 ## Csak a db-ben élő (újraépítéskor elvesző) adatok — import szempontból kritikus
 

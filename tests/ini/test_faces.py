@@ -12,6 +12,7 @@ from picasapy.ini import (
     with_face,
     with_reassigned_face,
     without_face,
+    without_face_at_rect,
 )
 
 TWO_FACES = "rect64(3f845bcb59418507),8e62b2035b74b477;rect64(10000000f1ddff49),ffffffffffffffff;"
@@ -183,3 +184,45 @@ class TestWithReassignedFace:
         faces = parse_faces(updated.section("a.jpg").get("faces"))
         assert faces[0].contact_id == "9999999999999999"
         assert faces[1].contact_id == "2222222222222222"
+
+
+# -- törlés rect szerint (#26, 2. kör) — a szerkesztő overlay ezt hívja, ------
+# mert a QML-oldal nem feltétlenül ismeri a törlendő régió contact_id-ját
+# (pl. a facesFor() csak nevet ad vissza, contact_id-t nem szükségszerűen).
+
+
+class TestWithoutFaceAtRect:
+    def test_removes_regardless_of_contact_id(self):
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE, _FACE2))
+        )
+        updated = without_face_at_rect(document, "a.jpg", _FACE.rect)
+        assert parse_faces(updated.section("a.jpg").get("faces")) == (_FACE2,)
+
+    def test_removing_last_face_drops_the_key(self):
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE,))
+        )
+        updated = without_face_at_rect(document, "a.jpg", _FACE.rect)
+        assert updated.section("a.jpg").get("faces") is None
+
+    def test_unknown_rect_is_a_no_op(self):
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE,))
+        )
+        other_rect = decode_rect64("0000111122223333")
+        updated = without_face_at_rect(document, "a.jpg", other_rect)
+        assert updated == document
+
+    def test_missing_section_is_unchanged(self):
+        document = parse_document(_DOC)
+        assert without_face_at_rect(document, "nincs.jpg", _FACE.rect) == document
+
+    def test_only_the_first_matching_rect_is_removed(self):
+        duplicate = Face(rect=_FACE.rect, contact_id="2222222222222222")
+        document = parse_document(_DOC).with_value(
+            "a.jpg", "faces", serialize_faces((_FACE, duplicate))
+        )
+        updated = without_face_at_rect(document, "a.jpg", _FACE.rect)
+        faces = parse_faces(updated.section("a.jpg").get("faces"))
+        assert faces == (duplicate,)

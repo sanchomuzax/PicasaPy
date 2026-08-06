@@ -86,6 +86,34 @@ def without_face(document: IniDocument, photo_name: str, face: Face) -> IniDocum
     return document.with_value(photo_name, "faces", serialize_faces(remaining))
 
 
+def without_face_at_rect(
+    document: IniDocument, photo_name: str, rect: Rect64
+) -> IniDocument:
+    """Az ELSŐ, `rect`-tel egyező arc-bejegyzés törlése — a `contact_id`
+    NEM számít (szemben a `without_face`-szal, ami pontos párt vár). A
+    szerkesztő overlay (#26, 2. kör) ezt hívja törléskor: a QML-oldal a
+    kijelölt régiót csak koordinátaként ismeri, a contact_id-t nem kell
+    vele küldenie.
+
+    Nem létező rect esetén a dokumentum változatlan (round-trip elv)."""
+    section = document.section(photo_name)
+    if section is None:
+        return document
+    current = parse_faces(section.get("faces") or "")
+    updated: list[Face] = []
+    removed = False
+    for entry in current:
+        if not removed and entry.rect == rect:
+            removed = True
+            continue
+        updated.append(entry)
+    if not removed:
+        return document
+    if not updated:
+        return document.with_removed(photo_name, "faces")
+    return document.with_value(photo_name, "faces", serialize_faces(tuple(updated)))
+
+
 def with_reassigned_face(
     document: IniDocument, photo_name: str, rect: Rect64, contact_id: str
 ) -> IniDocument:

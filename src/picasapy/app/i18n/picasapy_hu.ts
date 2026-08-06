@@ -2,6 +2,13 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>FacesOverlay</name>
+    <message>
+        <source>Name</source>
+        <translation>Név</translation>
+    </message>
+</context>
+<context>
     <name>OptionsDialog</name>
     <message>
         <source>Options</source>
@@ -2205,6 +2212,10 @@
         <location filename="../qml/PicasaPy/PhotoViewer.qml" line="769"/>
         <source>Make a caption!</source>
         <translation>Készítsen képfeliratot!</translation>
+    </message>
+    <message>
+        <source>Edit Faces</source>
+        <translation>Arcok szerkesztése</translation>
     </message>
 </context>
 <context>

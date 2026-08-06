@@ -44,12 +44,24 @@ Rectangle {
     // újraértékelést; facesHelper hiányában (régi teszt-fixture) üres lista.
     property bool facesVisible: false
     function toggleFaces() { viewer.facesVisible = !viewer.facesVisible }
+    // #26 (2. kör): arc-téglalap SZERKESZTŐ mód — rajzolás/átnevezés/
+    // törlés a nézőben. A szerkesztés bekapcsolása egyben láthatóvá is
+    // teszi a kereteket (nincs értelme vakon szerkeszteni).
+    property bool facesEditMode: false
+    function toggleFacesEdit() {
+        viewer.facesEditMode = !viewer.facesEditMode
+        if (viewer.facesEditMode) viewer.facesVisible = true
+    }
+    // az overlay minden sikeres írás (facesOverlay.edited) után növeli —
+    // az ini-módosítást a photosModel/index NEM látja, ez a kényszerített
+    // újraértékelés-kapcsoló a facesFor() friss lekérdezéséhez
+    property int facesEditRevision: 0
     readonly property var currentFaces: (!viewer.facesVisible || !photosModel
                                           || currentIndex < 0
                                           || typeof facesHelper === "undefined"
                                           || !facesHelper)
         ? []
-        : (photosModel.revision,
+        : (photosModel.revision, viewer.facesEditRevision,
            facesHelper.facesFor(photosModel.filePathAt(currentIndex)))
 
     // -- zoom-állapotgép (#6): fit / 1:1 / tetszőleges -------------------
@@ -319,9 +331,13 @@ Rectangle {
     }
     // F: arc-keretek be/ki (#147) — szövegmezőben (pl. felirat) a saját
     // Keys-kezelés (gépelés) már elfogadja, ide nem buborékol.
+    // Shift+F: arc-SZERKESZTŐ mód be/ki (#26, 2. kör).
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
             viewer.toggleFaces()
+            event.accepted = true
+        } else if (event.key === Qt.Key_F && event.modifiers === Qt.ShiftModifier) {
+            viewer.toggleFacesEdit()
             event.accepted = true
         }
     }
@@ -693,8 +709,10 @@ Rectangle {
                         }
                     }
 
-                    // #147: a mentett arc-régiók a kép kirajzolt (letterbox
-                    // nélküli) területén — a cropOverlay mintájára.
+                    // #147/#26: a mentett arc-régiók a kép kirajzolt
+                    // (letterbox nélküli) területén — a cropOverlay
+                    // mintájára. Szerkesztő módban (facesEditMode) itt
+                    // rajzolható/nevezhető/törölhető egy régió.
                     FacesOverlay {
                         id: facesOverlay
                         parent: photo
@@ -705,6 +723,10 @@ Rectangle {
                         width: photo.paintedWidth
                         height: photo.paintedHeight
                         faces: viewer.currentFaces
+                        editMode: viewer.facesEditMode
+                        imagePath: viewer.photosModel && viewer.currentIndex >= 0
+                            ? viewer.photosModel.filePathAt(viewer.currentIndex) : ""
+                        onEdited: viewer.facesEditRevision += 1
                     }
 
                     // #148: kattintás a képre — a kép kirajzolt (letterbox
@@ -815,6 +837,20 @@ Rectangle {
                             ToolTip.visible: hovered
                             ToolTip.text: qsTr("Show Faces")
                             onClicked: viewer.toggleFaces()
+                        }
+                        // #26 (2. kör): arc-SZERKESZTŐ mód be/ki
+                        // (Shift+F billentyűvel egyenértékű) — videónál
+                        // nincs értelme, ott letiltjuk.
+                        PicasaButton {
+                            objectName: "facesEditToggleButton"
+                            text: "✎"
+                            checkable: true
+                            checked: viewer.facesEditMode
+                            enabled: !viewer.isCurrentVideo
+                            width: 26; height: 20
+                            ToolTip.visible: hovered
+                            ToolTip.text: qsTr("Edit Faces")
+                            onClicked: viewer.toggleFacesEdit()
                         }
                         PicasaSlider {
                             id: zoomSlider
