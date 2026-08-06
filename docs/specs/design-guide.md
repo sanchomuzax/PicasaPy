@@ -29,6 +29,45 @@ gitignore-olt — személyes tartalom!). Minden szín pixelmintavétellel, minde
 méret pixelméréssel került ide. A QML-oldali tokenek:
 `src/picasapy/app/qml/PicasaPy/Theme.qml`.
 
+## Hiteles forrás: `runtime/constants.ui` (2026-08-06)
+
+A screenshot-mintavétel mellé előkerült a Picasa **saját UI-konstansfájlja**
+(`research/copy_Picasa_3_7/Picasa3/runtime/constants.ui`, `[Picasa2]`
+szekció). Ezek nem mintavett, hanem **eredeti, deklarált** értékek — ahol
+eltérés van, ez a mérvadó. Az eddigi mintavételünket **megerősítik**
+(`#f3f3f3` panelháttér, `#83a7bd` kijelölés, `#009eff` indexkép-keret,
+`#634b45` Georgia mappa-cím 20 pt) — és kiegészítik:
+
+| `constants.ui` kulcs | Érték | Mit ad hozzá |
+|---|---|---|
+| `alist_height` | 22 | mappa-panel sormagasság (egyezik a mérésünkkel) |
+| `alist_indent` | 17 | **fa-behúzás szintenként** — eddig nem volt adatunk |
+| `alist_bgcolor` | `#F3F3F3` | panelháttér ✅ |
+| `alist_hicolor_win` | `#83A7BD` | **hover/jelölő** tónus ✅ |
+| `alist_hicolor2_win` | `#E5E2DA` | **másodlagos kiemelés** (meleg szürke) — új |
+| `alist_selcolor_win` | `#25648B` | **valódi kijelölés** (sötétkék) — a `#83A7BD` ennél világosabb; a kettő külön állapot! |
+| `alist_dragcolor` | `#82A6BD` | húzás-célpont jelzése |
+| `alist_catcolor` | `#EDEAE4` | kategória-fejléc háttere |
+| `alist_scatcolor` | `#25648B` | kijelölt kategória |
+| `alist_stickycolor` | `#EAE7DC` | „ragadós" (rögzített) fejléc |
+| `alist_dotcolor` | `#BEBEBE` | elválasztó pontok |
+| `alabel_fldrcol` / `alabel_albumcol` | `#e2e2e2` | mappa- és album-címke alap |
+| `alabel_fldrhicol` / `alabel_albumhicol` | `#f2f2f2` | ugyanaz hoverben |
+| `alabel_buttfont_win` | Praxis Semi Bold/Heavy, 12 | a gombfelirat betűje |
+| `alabel_subhead` | 20 | alcím-sáv magassága |
+| `alayout_gutter` | 24 | lightbox külső margó |
+| `alayout_thumbGutterX` / `Y` | 12 / 22 | **indexkép-rács térközei** — a függőleges nagyobb (felirat helye) |
+| `alayout_titleFont` / `Size` / `Color` | Georgia / 20 / `#634B45` | mappa-cím ✅ |
+| `alayout_titleOffsetX` | 28 | a cím bal behúzása |
+| `alayout_bodyFont` / `Size` | Georgia / 14 | **a dátumsor is Georgia** ✅ |
+| `thumbsel_color1` / `color2` | `#009EFF` / `#FFFFFF` | **a kijelölt indexkép kerete KÉTSZÍNŰ**: kívül azúr, belül fehér — a mostani egyszínű keretünk ezzel pontosítható |
+| `publishtoweb_color` | `#0000FF` | a „Feltöltés a webre" hivatkozás színe |
+
+Két tanulság: (1) a mappalista **három** kékárnyalattal dolgozik
+(hover `#83A7BD`, kijelölés `#25648B`, húzás `#82A6BD`), nem eggyel;
+(2) a kijelölt indexkép kerete kétszínű — ez az a részlet, amitől a Picasa
+rácsa „ropogósnak" hat.
+
 ## Színtokenek
 
 | Token | Érték | Hol |

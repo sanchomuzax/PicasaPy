@@ -208,6 +208,53 @@ nullák megőrzendők (a `crop64=1,10000000f1ddff49` példában is).
 XMP-konverzió: MWG-RS régió séma + `HierarchicalSubject` `people|Név` címkék
 (digiKam/Lightroom/Bridge kompatibilis).
 
+## Arc-részletadat (`facerectdata` / `deferredface`) — 2026-08-06
+
+A `Picasa3.exe` string-táblájában megvan a **pontos formátumsztring**, amivel
+a Picasa az arcdetektor részletes kimenetét szerializálja:
+
+```
+conf(%.3f),pan(%.3f),leye(%.3f,%.3f),reye(%.3f,%.3f),mouth(%.3f,%.3f)
+```
+
+| mező | jelentés |
+|---|---|
+| `conf` | a detektálás megbízhatósága |
+| `pan` | fejfordulás (pán-szög) — a profilba fordulás mértéke |
+| `leye`, `reye` | a bal és jobb szem koordinátája (x, y) |
+| `mouth` | a száj koordinátája (x, y) |
+
+Mind három tizedesjegyre formázott float. Ez a `rect64()` arc-téglalap
+**mellé** tárolt, finomabb geometria: ebből származik a Picasa
+arc-indexképeinek pontos vágása és forgatása (a szemvonalra igazítás).
+
+**Honnan jön:** a `plugins/Red.dll` a Google által 2006-ban felvásárolt
+**Neven Vision** motorja (`CNevenVisionDLL::IFace`, `vbf_Cascade`,
+`vde_LocalPoseDetector`, `epi_PoseEst`, `enn_MlpNet`), a tanított modell a
+`plugins/red.cfg` (2,28 MB). Ugyanez a DLL végzi a vörösszem-detektálást is.
+Ld. `picasa-program-resources.md`, 4. fejezet.
+
+A PicasaPy szempontjából: importnál ezt a mezőt **változatlanul meg kell
+őrizni** (round-trip), de saját detektorral nem reprodukálható — a
+`conf`/`pan` értékek a Neven-motor sajátjai.
+
+## Színkereső tokenek (`color:…`) — 2026-08-06
+
+Az `.exe` string-táblája egy tömbben tartalmazza a keresés
+**szín-tokenjeit**:
+
+```
+color:red  color:orange  color:yellow  color:green  color:blue
+color:purple  color:pink  color:black  color:white  color:gray
+```
+
+Mellettük az `avgcolor` mezőnév áll — vagyis a Picasa **képenként eltárolta
+az átlagszínt**, és a keresősávba írt `color:blue` erre szűrt. Ez a
+funkció a magyar UI-ban is elérhető volt, de eddig egyik specünkben sem
+szerepelt. A PicasaPy indexe ugyanezt olcsón megteheti (átlagszín →
+legközelebbi a 10 névből), és ezzel egy elveszettnek hitt Picasa-képesség
+tér vissza.
+
 ## Írási szabályok (PicasaPy, kétirányú kompatibilitáshoz)
 
 1. Atomikus írás (temp fájl + rename), írás előtti backup.

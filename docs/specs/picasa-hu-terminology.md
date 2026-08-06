@@ -50,6 +50,47 @@ nyelvektől, ezért ott, ahol a magyar szöveg véletlenül nem tartalmazott
 ékezetet, nem szerepel a listában (ált. nem volt szükség rá, mert a
 Picasa magyar UI szinte minden szava ékezetes).
 
+### JAVÍTOTT kinyerési módszer (2026-08-06) — a korlát megszűnt
+
+A fenti heurisztika (ékezetkeresés) **nem szükséges**: a
+`Picasa3i18n.dll`-ben a string-táblák **önálló, jól formált XML
+dokumentumokként** vannak beágyazva, mindegyik a következő fejléccel
+kezdődik és `</resources>`-szel zárul:
+
+```
+<?xml version="1.0" encoding="utf-8" ?>\n<resources>
+```
+
+A DLL-ben **1642 ilyen blokk** van, összesen **183 572 `<stringres>`
+bejegyzéssel**, **4031 egyedi azonosítóra**, azaz **41 nyelven**
+(a legtöbb azonosító pontosan 41-szer fordul elő). A nyelvek
+azonosíthatók: az `options/item27.title` azonosító mindegyik nyelvi
+blokkban a „System Default (xx-XX)" szöveget tartalmazza — ezzel
+**40 nyelvi blokk kapott egyértelmű címkét** (`ar-sa`, `bg`, `da-DK`,
+`fi-FI`, **`hu-HU`**, `iw-IL`, `ja-JP`, `nl-NL`, `pl-PL`, `pt-BR`,
+`ru-RU`, `sk`, `sl-SI`, `sr`, `tr-TR`, `vi-VN`, `zh-CN`, `zh-TW`, …),
+a maradék az angol alap.
+
+A magyar teljes UI-táblája **egyetlen, 419 KB-os blokkban** él —
+ékezetszűrés nélkül, veszteségmentesen kinyerhető:
+
+```python
+d = open("Picasa3i18n.dll", "rb").read()
+i = d.find("Jó napom van".encode("utf8"))          # tetszőleges magyar horgony
+a = d.rfind(b"<?xml", 0, i); b = d.find(b"</resources>", i)
+hu = d[a:b + 12].decode("utf8")                     # jól formált XML
+```
+
+Ezzel az összes ékezet nélküli magyar szó („Album", „OK", „Import") is
+biztosan a helyére kerül, és **bármelyik másik 40 nyelv** ugyanígy
+kinyerhető.
+
+**Az azonosítók névtere azonos** a `.fen` dialógusfájlok és a `respack.yt`
+`.tre` elrendezés-forrásainak elemneveivel (`about/appname.title`,
+`options/item27.title`, `oneup/tllabel.title`) — így a felirat, az
+elrendezés és a grafika gépileg összeköthető. Ld.
+[`picasa-respack-format.md`](picasa-respack-format.md) 6. pontját.
+
 ## 2. Angol → hivatalos Picasa-magyar szójegyzék
 
 | Angol | Hivatalos Picasa-magyar | Forrás (DLL-azonosító) |

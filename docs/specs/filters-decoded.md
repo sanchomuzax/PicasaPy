@@ -325,17 +325,60 @@ effektjeinél az ini-paraméterek már eljutnak a rendererhez (#332, a fenti
 mért minták pozíciói szerint), a 4. fülnél még az alapérték fut — ott előbb
 mérés kell.
 
+## 6. kör — a Picasa SAJÁT szűrő-definíciója előkerült ✅ (2026-08-06)
+
+A `research/copy_Picasa_3_7/Picasa3/runtime/**filterdesc.xml**` a Picasa
+gépi olvasásra szánt szűrő-regisztere: mind a 84 szűrő azonosítója, UI-neve,
+üzemmódja, **csúszkánként a név / tartomány / eltolás / alapérték**, és a 33
+Glimmer-effekt **teljes képfeldolgozó-csővezetéke** (görbék, keverési módok,
+csúszka→paraméter képletek).
+
+**Teljes feldolgozás: [`filterdesc-registry.md`](filterdesc-registry.md).**
+Ami ebből közvetlenül ide tartozik:
+
+- A `.picasa.ini`-be a **`[−offset .. range−offset]`** tartományú érték
+  kerül. Ezért `sat`, `tilt`, `finetune2`-hőmérséklet előjeles `[−1..1]`;
+  `finetune` (v1) hőmérséklete viszont `[−0,5..0,5]` — **a v1/v2 eltérés
+  tehát puszta skálakülönbség (2×), nem külön algoritmus.** (Mérési
+  megerősítés: 9. Nyitva-pont.)
+- `highlights`/`shadows` valódi UI-tartománya **0..0,48**, nem 0..1 — a
+  sweepjeink ezen túlnyúltak.
+- `unsharp` (v1) Amount felső korlátja 1,0, `unsharp2`-é **3,0**.
+- A `Vignette` (és a vele azonos motorú `Matte`) modellje: **belső ragyogás**
+  (`GlowImageOperation innerglow`), `sugár = Blur·0,02·max(W,H)/4`,
+  `strength` = a 2. paraméter, `alfa = 1 − Fade/100`.
+- A `tint` `colorwheel version="0"`, az `ansel` `version="1"` — **két külön
+  színkódolás**, ez a legerősebb nyom a `tint` `ffff`-anomáliára.
+- A Glimmer-effektek ini-sorrendje: **numerikusok (max 3) → színek →
+  maradék numerikus → jelölőnégyzetek egész számként**; a jelölőnégyzet
+  magyarázza a korábban rejtélyes „tizedesjegy nélküli `0`" paramétert
+  (`Cinemascope`, `Sixties`).
+
 ## Nyitva (5. kör / implementáció közben)
 
 1. autocolor pontos gain-képlete (célzott cast-sweep kellene)
-2. Vignette/glow/radblur analitikus paraméter-modellek (mért maszkokból)
+2. ~~Vignette analitikus modell~~ — **MEGVAN** (`filterdesc-registry.md`
+   4.3): belső ragyogás, `sugár = Blur·0,02·max(W,H)/4`. A `glow`/`radblur`
+   analitikus modellje továbbra is nyitott (a `glow` sugara logaritmikus
+   leképezésű: `<log>250.0</log>`).
 3. unsharp kernel finomítás (dekonvolúciós illesztés)
-4. `tint` színparaméter-formátum (ffff → R=0 anomália)
+4. `tint` színparaméter-formátum (ffff → R=0 anomália) — **új nyom**: a
+   `tint` `colorwheel version="0"`, az `ansel`/`dir_tint` `version="1"`,
+   és valós adatban a `tint` 4 hex jegyet ír (`ffff`), a másik kettő 8-at
+   (`ffffffff`). A parszernek változó hosszú hex-színt kell tűrnie.
 5. retouch/redeye régió-adatok, text overlay — régió-alapúak, 2. fázisban
 6. ~~**Összehasonlító harness** (PicasaPy render vs golden, SSIM/ΔE)~~ —
    KÉSZ (#115): `tools/golden/compare_render.py`, ld. lent.
-7. a 4–5. effekt-fül paraméter-jelentései (#190 2. kör) — a generátor
-   szkript ELKÉSZÜLT: `tools/golden/make_param_sweep.py` (teszt:
+7. ~~a 4–5. effekt-fül paraméter-jelentései (#190 2. kör)~~ — **MEGOLDVA
+   (2026-08-06)**: a `filterdesc.xml` minden effekt minden csúszkájának
+   nevét, min–max tartományát és alapértékét megadja, és a levezetett
+   ini-sorrend mind a 8 valós mintán stimmel
+   ([`filterdesc-registry.md`](filterdesc-registry.md) 4.1–4.2). A
+   `make_param_sweep.py` találgatott tartományai lecserélhetők a pontos
+   értékekre; a sweep innentől **ellenőrzés**, nem felfedezés. Nyitva
+   maradt: a `Cinemascope` jelölőnégyzet polaritása és a
+   `PicnikFocalPixelate` puck-sorrendje. — az eredeti jegyzet:
+   a generátor szkript ELKÉSZÜLT: `tools/golden/make_param_sweep.py` (teszt:
    `tests/golden/test_make_param_sweep.py`) minden paraméteres kulcshoz
    előre megírt `.picasa.ini`-variánsokat készít, a fő erősség-paramétert
    a feltételezett tartományán 5 ponton (min/negyed/fél/háromnegyed/max)
@@ -350,6 +393,20 @@ mérés kell.
    ág (12) → `finetune2` hőmérséklet-tengely (25 extrémnél) → `fill` 2D-LUT
    erősség-drift (6.5) → `ansel` (5.6) → `Vignette` (4.6, Nyitva 2) →
    `radblur` (3.2) → `glow2` (2.7).
+9. **`finetune` v1 ↔ `finetune2` v2 hőmérséklet: 2× skála-hipotézis
+   mérése.** A `filterdesc.xml` szerint a v1 tartománya `[−0,5..0,5]`, a
+   v2-é `[−1..1]`; ha a görbe azonos, akkor `v2_érték = 2 · v1_érték`
+   pontosan reprodukálja a v1 kimenetét. Egy meglévő golden-párral (v1
+   `0,25` vs v2 `0,5`) olcsón ellenőrizhető — igazolás esetén a v1-hez
+   **nem kell külön LUT**, és a 8. pont „finetune2-hő" tétele is olcsóbb
+   lesz.
+10. **`fullres` / `slow` / `resize` jelzők beépítése a renderelőbe.** A
+    `filterdesc.xml` minden szűrőnél megmondja, hogy csak teljes
+    felbontáson helyes-e, drága-e, illetve **méretváltó-e** (`Border`,
+    `MuseumMatte`, `Polaroid`, `Cinemascope`, `DropShadow`,
+    `RoundedEdges`). Ez utóbbi a geometria-láncot érinti (vágás, arcok,
+    tilt utáni méretek) — implementáció előtt tisztázandó, hova kerül a
+    méretváltó effekt a sorrendben.
 
 ## Összehasonlító harness (#115) — `tools/golden/compare_render.py`
 
