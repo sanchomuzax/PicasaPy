@@ -2,6 +2,36 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>EmailController</name>
+    <message>
+        <source>No email program was found.</source>
+        <translation>Nem található levelezőprogram.</translation>
+    </message>
+    <message>
+        <source>No email program with attachment support was found; opening a blank email without the pictures attached.</source>
+        <translation>Nem található csatolmányt támogató levelezőprogram; üres levél nyílik, a képek csatolása nélkül.</translation>
+    </message>
+</context>
+<context>
+    <name>PrintController</name>
+    <message>
+        <source>No pictures to print.</source>
+        <translation>Nincs nyomtatható kép.</translation>
+    </message>
+    <message>
+        <source>Invalid output path.</source>
+        <translation>Érvénytelen kimeneti útvonal.</translation>
+    </message>
+    <message>
+        <source>Unknown printer: %1</source>
+        <translation>Ismeretlen nyomtató: %1</translation>
+    </message>
+    <message>
+        <source>default printer</source>
+        <translation>alapértelmezett nyomtató</translation>
+    </message>
+</context>
+<context>
     <name>OptionsDialog</name>
     <message>
         <source>Options</source>
