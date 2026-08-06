@@ -181,3 +181,29 @@ class TestToolbarGeoIconWiring:
         wrapper = window.findChild(QObject, "geoFilter")
         assert wrapper is not None
         assert wrapper.property("ctlHasGeo") is False
+
+
+class TestIconsAvoidUnsupportedSvgFeatures:
+    """#411: a Qt SVG-motorja (SVG Tiny 1.2) a `clipPath`-t ÉS a beágyazott
+    `<svg>` elemet is FIGYELMEN KÍVÜL HAGYJA — némán, hibaüzenet nélkül.
+    Emiatt a felezett ikonok „utána" rétege ráfestett az egész képre, és a
+    két fél egyformának látszott (felhasználói visszajelzés). A féloldalak
+    geometriáját ezért matematikailag elmetszve rajzoljuk; ez az őr
+    megakadályozza, hogy bárki visszacsempéssze a nem támogatott elemeket."""
+
+    @pytest.mark.parametrize("name", _ALL_ICONS)
+    def test_no_clippath_or_nested_svg(self, name):
+        # ELEM-szinten vizsgálunk (nem szövegkeresés): a magyarázó
+        # kommentekben szerepelhet a "clipPath" szó, az nem hiba.
+        doc = minidom.parse(str(_ICONS_DIR / name))
+        gyoker = doc.documentElement
+        for elem in gyoker.getElementsByTagName("*"):
+            assert elem.tagName != "clipPath", (
+                f"{name}: a Qt nem támogatja a clipPath-t — a rajz szétesik"
+            )
+            assert elem.tagName != "svg", (
+                f"{name}: beágyazott <svg> — a Qt kihagyja"
+            )
+            assert not elem.getAttribute("clip-path"), (
+                f"{name}: clip-path attribútum — a Qt figyelmen kívül hagyja"
+            )

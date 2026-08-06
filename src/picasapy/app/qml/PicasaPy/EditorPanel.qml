@@ -828,28 +828,41 @@ Rectangle {
         // mint a Finomhangolás fülén: a két csúszka egymást követi
         // (fillLightMoved). A címke a csúszka FÖLÖTT, kompakt (#405 6.
         // pont), a saját ikonnal kiegészítve (#411 9. ikonja: deritofeny).
+        // #411 (felhasználói visszajelzés): az eredetiben az ikon és a
+        // csúszka EGY EGYSÉG — a képecske közvetlenül a csúszka mellett,
+        // azonos sorban ül, a felirat a csúszka fölött. Korábban nálunk a
+        // 16x16-os ikon a felirat mellé volt tűzve, a csúszka pedig külön
+        // sorban futott — az összetartozás nem látszott.
         RowLayout {
-            spacing: 4
+            Layout.fillWidth: true
+            spacing: 6
             Image {
                 objectName: "fixesFillLightIcon"
                 source: "icons/deritofeny.svg"
-                sourceSize: Qt.size(16, 16)
-                Layout.preferredWidth: 16
-                Layout.preferredHeight: 16
+                fillMode: Image.PreserveAspectFit
+                sourceSize: Qt.size(108, 72)
+                Layout.preferredWidth: 54
+                Layout.preferredHeight: 36
             }
-            Label {
-                text: qsTr("Fill Light")
-                font.pixelSize: Theme.fontSize - 1
-                color: Theme.textGray
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 2
+                Label {
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    text: qsTr("Fill Light")
+                    font.pixelSize: Theme.fontSize - 1
+                    color: Theme.textGray
+                }
+                PicasaSlider {
+                    id: fixesFillSlider
+                    objectName: "fixesFillSlider"
+                    Layout.fillWidth: true
+                    from: 0; to: 1; value: 0
+                    onValueChanged: panel.fillLightMoved(value)
+                    onPressedChanged: if (!pressed) panel.fillLightCommitted()
+                }
             }
-        }
-        PicasaSlider {
-            id: fixesFillSlider
-            objectName: "fixesFillSlider"
-            Layout.fillWidth: true
-            from: 0; to: 1; value: 0
-            onValueChanged: panel.fillLightMoved(value)
-            onPressedChanged: if (!pressed) panel.fillLightCommitted()
         }
 
         RowLayout {

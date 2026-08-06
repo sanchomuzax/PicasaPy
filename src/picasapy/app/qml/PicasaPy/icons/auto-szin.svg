@@ -1,29 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="1.5 5 21 14" width="42" height="28">
-  <!-- PicasaPy sajat rajz (#411/#361): tajkep-miniature ELOTTE/UTANA osztasban
-       (balra szurkearnyalatos, jobbra teljes szinvilag) - a respack.yt
-       "editpanel/button(autocolor)" eredeti gombja alapjan. -->
-<rect x="1.5" y="5" width="21" height="14" rx="1" fill="#f2efe9" stroke="#c9c4ba" stroke-width="1"/>
-  <clipPath id="sc"><rect x="2" y="5" width="10" height="14"/></clipPath>
-  <g clip-path="url(#sc)">
-    <defs><linearGradient id="scsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9c9c9"/><stop offset="1" stop-color="#b3b3b3"/></linearGradient></defs>
-    <rect x="2" y="5.5" width="20" height="8.2" fill="url(#scsky)"/>
-    <path d="M2 13.6 5 8.3 7.3 10.8 9.6 6.6 12 11.2 14.3 7.6 16.6 11.6 18.8 9 22 12.4 22 18.5 2 18.5Z" fill="#b7b7b7"/>
-    <path d="M5 8.3 7.3 10.8 6.2 11.4 4.6 9.6Z" fill="#8f8f8f"/>
-    <path d="M9.6 6.6 12 11.2 10.6 11.9 8.7 8.6Z" fill="#8f8f8f"/>
-    <path d="M14.3 7.6 16.6 11.6 15.2 12.2 13.4 9.4Z" fill="#8f8f8f"/>
-    <path d="M18.8 9 22 12.4 22 13.6 17.8 10.4Z" fill="#8f8f8f"/>
-    <rect x="2" y="16.1" width="20" height="2.4" fill="#4a4a4a"/>
-  </g>
-  <clipPath id="sc2"><rect x="12" y="5" width="10" height="14"/></clipPath>
-  <g clip-path="url(#sc2)">
-    <defs><linearGradient id="sc2sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4ddd2"/><stop offset="0.55" stop-color="#f0b98a"/><stop offset="1" stop-color="#e2884f"/></linearGradient></defs>
-    <rect x="2" y="5.5" width="20" height="8.2" fill="url(#sc2sky)"/>
-    <path d="M2 13.6 5 8.3 7.3 10.8 9.6 6.6 12 11.2 14.3 7.6 16.6 11.6 18.8 9 22 12.4 22 18.5 2 18.5Z" fill="#cfd9df"/>
-    <path d="M5 8.3 7.3 10.8 6.2 11.4 4.6 9.6Z" fill="#93a5b0"/>
-    <path d="M9.6 6.6 12 11.2 10.6 11.9 8.7 8.6Z" fill="#93a5b0"/>
-    <path d="M14.3 7.6 16.6 11.6 15.2 12.2 13.4 9.4Z" fill="#93a5b0"/>
-    <path d="M18.8 9 22 12.4 22 13.6 17.8 10.4Z" fill="#93a5b0"/>
-    <rect x="2" y="16.1" width="20" height="2.4" fill="#3b2c28"/>
-  </g>
-  <path d="M12 5v14" stroke="#ffffff" stroke-width="0.6" stroke-opacity="0.8"/>
+  <!-- PicasaPy sajat rajz (#411): tajkep ELOTTE|UTANA osztasban. A ket fel
+       kulonbsege az EREDETI Picasa-ikonon MERT ertekekbol szamolt:
+       a tonus valtozatlan, a TELITETTSEG no (autocolor) (fenyesseg-szorzo 0.96, telitettseg-szorzo 0.65).
+       FONTOS: a felek geometriaja MATEMATIKAILAG van elmetszve (nincs
+       clipPath es nincs beagyazott <svg>) - a Qt SVG-motorja (SVG Tiny 1.2)
+       MINDKETTOT FIGYELMEN KIVUL HAGYJA, emiatt korabban a jobb oldali
+       reteg ravetult az egesz ikonra, es a ket fel egyformanak latszott. -->
+  <defs>
+  <linearGradient id="aszaeg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dbd7d0"/><stop offset="0.55" stop-color="#e6c4a7"/><stop offset="1" stop-color="#d9a17d"/></linearGradient>
+  <linearGradient id="aszbeg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4ddd2"/><stop offset="0.55" stop-color="#f0b98a"/><stop offset="1" stop-color="#e2884f"/></linearGradient>
+  </defs>
+  <rect x="1.5" y="5" width="21" height="14" rx="1" fill="#f2efe9" stroke="#c9c4ba" stroke-width="1"/>
+  <rect x="2" y="5.5" width="10" height="8.2" fill="url(#aszaeg)"/>
+  <path d="M2.00 13.60 5.00 8.30 7.30 10.80 9.60 6.60 12.00 11.20 12.00 11.20 12.00 18.50 2.00 18.50Z" fill="#ccd2d6"/>
+  <path d="M5.00 8.30 7.30 10.80 6.20 11.40 4.60 9.60Z" fill="#97a2a9"/>
+  <path d="M9.60 6.60 12.00 11.20 10.60 11.90 8.70 8.60Z" fill="#97a2a9"/>
+  <path d="M2.00 16.10 12.00 16.10 12.00 18.50 2.00 18.50Z" fill="#392f2d"/>
+  <rect x="12" y="5.5" width="10" height="8.2" fill="url(#aszbeg)"/>
+  <path d="M12.00 11.20 12.00 11.20 14.30 7.60 16.60 11.60 18.80 9.00 22.00 12.40 22.00 18.50 12.00 18.50Z" fill="#cfd9df"/>
+  <path d="M12.00 11.20 12.00 11.20 12.00 11.20Z" fill="#93a5b0"/>
+  <path d="M14.30 7.60 16.60 11.60 15.20 12.20 13.40 9.40Z" fill="#93a5b0"/>
+  <path d="M18.80 9.00 22.00 12.40 22.00 13.60 17.80 10.40Z" fill="#93a5b0"/>
+  <path d="M12.00 16.10 22.00 16.10 22.00 18.50 12.00 18.50Z" fill="#3b2c28"/>
+  <path d="M12 5v14" stroke="#ffffff" stroke-width="0.6" stroke-opacity="0.85"/>
 </svg>

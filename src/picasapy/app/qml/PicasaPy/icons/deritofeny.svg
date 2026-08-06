@@ -3,8 +3,7 @@
        (balra sotet/alulexponalt, jobbra felderitett) - a respack.yt
        globalbuttons/af_n (Derito feny) eredeti ikonja alapjan. -->
 <rect x="1.5" y="5" width="21" height="14" rx="1" fill="#f2efe9" stroke="#c9c4ba" stroke-width="1"/>
-  <clipPath id="fc"><rect x="2" y="5" width="10" height="14"/></clipPath>
-  <g clip-path="url(#fc)">
+  <g>
     <defs><linearGradient id="fcsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2e22"/><stop offset="1" stop-color="#454227"/></linearGradient></defs>
     <rect x="2" y="5.5" width="20" height="8.2" fill="url(#fcsky)"/>
     <path d="M2 13.6 5 8.3 7.3 10.8 9.6 6.6 12 11.2 14.3 7.6 16.6 11.6 18.8 9 22 12.4 22 18.5 2 18.5Z" fill="#4c5240"/>
@@ -14,8 +13,7 @@
     <path d="M18.8 9 22 12.4 22 13.6 17.8 10.4Z" fill="#33372a"/>
     <rect x="2" y="16.1" width="20" height="2.4" fill="#181510"/>
   </g>
-  <clipPath id="fc2"><rect x="12" y="5" width="10" height="14"/></clipPath>
-  <g clip-path="url(#fc2)">
+  <g>
     <defs><linearGradient id="fc2sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4ddd2"/><stop offset="0.55" stop-color="#f0b98a"/><stop offset="1" stop-color="#e2884f"/></linearGradient></defs>
     <rect x="2" y="5.5" width="20" height="8.2" fill="url(#fc2sky)"/>
     <path d="M2 13.6 5 8.3 7.3 10.8 9.6 6.6 12 11.2 14.3 7.6 16.6 11.6 18.8 9 22 12.4 22 18.5 2 18.5Z" fill="#cfd9df"/>

@@ -3,8 +3,7 @@
        vonalak also felen - a respack.yt "editpanel/button(straighten)" eredeti
        gombja alapjan, sajat rajzban. -->
 <rect x="1.5" y="5" width="21" height="14" rx="1" fill="#f2efe9" stroke="#c9c4ba" stroke-width="1"/>
-  <clipPath id="kc"><rect x="2" y="5" width="20" height="14"/></clipPath>
-  <g clip-path="url(#kc)">
+  <g>
     <defs><linearGradient id="kcsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4ddd2"/><stop offset="0.55" stop-color="#f0b98a"/><stop offset="1" stop-color="#e2884f"/></linearGradient></defs>
     <rect x="2" y="5.5" width="20" height="8.2" fill="url(#kcsky)"/>
     <path d="M2 13.6 5 8.3 7.3 10.8 9.6 6.6 12 11.2 14.3 7.6 16.6 11.6 18.8 9 22 12.4 22 18.5 2 18.5Z" fill="#cfd9df"/>
@@ -16,7 +15,7 @@
   </g>
   <!-- a kiegyenesites-eszkoz SEGEDVONAL-HALOJA: finom, szaggatott racs a
        TELJES kepen (vizszintes + fuggoleges) - az eredeti ikon ezt mutatja -->
-  <g clip-path="url(#kc)" stroke="#ffffff" stroke-opacity="0.75"
+  <g stroke="#ffffff" stroke-opacity="0.75"
      stroke-width="0.4" stroke-dasharray="1 1">
     <path d="M2 6.6h20 M2 9.1h20 M2 11.6h20 M2 14.1h20 M2 16.6h20 M4.0 5.2v13.6 M6.5 5.2v13.6 M9.0 5.2v13.6 M11.5 5.2v13.6 M14.0 5.2v13.6 M16.5 5.2v13.6 M19.0 5.2v13.6 M21.5 5.2v13.6"/>
   </g>
