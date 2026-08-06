@@ -452,9 +452,9 @@ Rectangle {
             // bal eszközpanel — Gyakori javítások élesben (#19); a
             // Retusálás/Szöveg és a finomhangolás a #20-ban élesedik
             Rectangle {
-                // #405: az EditorPanel.qml implicitWidth-ével összhangban
-                // (ld. az ottani kommentet a levezetésről)
-                Layout.preferredWidth: 190
+                // #411: az EditorPanel.qml implicitWidth-ével összhangban —
+                // FIX 280px, nem ablakarányos (ld. az ottani kommentet)
+                Layout.preferredWidth: 280
                 Layout.fillHeight: true
                 color: Theme.chromeBg
 
