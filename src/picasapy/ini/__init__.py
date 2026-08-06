@@ -2,6 +2,12 @@
 
 from .albums import Album, albums_of, parse_album_refs, serialize_album_refs
 from .contacts import Contact, contacts_of, ensure_contact, find_contact_id
+from .contacts_xml import (
+    ContactXmlEntry,
+    apply_contacts_xml,
+    load_contacts_xml,
+    parse_contacts_xml,
+)
 from .document import (
     NO_SOURCE_FILE,
     IniDocument,
@@ -19,6 +25,7 @@ from .faces import (
     with_face,
     with_reassigned_face,
     without_face,
+    without_face_at_rect,
 )
 from .filters import FilterOp, parse_filters, serialize_filters
 from .folder_date import (
@@ -40,6 +47,7 @@ from .rect64 import Rect64, decode_rect64, encode_rect64
 __all__ = [
     "Album",
     "Contact",
+    "ContactXmlEntry",
     "Face",
     "FilterOp",
     "IniConflictError",
@@ -53,15 +61,18 @@ __all__ = [
     "SourceFingerprint",
     "UNIDENTIFIED_CONTACT",
     "albums_of",
+    "apply_contacts_xml",
     "contacts_of",
     "decode_rect64",
     "encode_rect64",
     "ensure_contact",
     "find_contact_id",
     "is_valid_folder_date",
+    "load_contacts_xml",
     "load_document",
     "load_or_empty",
     "parse_album_refs",
+    "parse_contacts_xml",
     "parse_document",
     "parse_faces",
     "parse_filters",
@@ -75,5 +86,6 @@ __all__ = [
     "with_folder_date_override",
     "with_reassigned_face",
     "without_face",
+    "without_face_at_rect",
     "without_folder_date_override",
 ]

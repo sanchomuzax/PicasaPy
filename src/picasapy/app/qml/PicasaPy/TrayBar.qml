@@ -18,6 +18,12 @@ Column {
     // #361: Kollázs/Film a tálcáról (a dialógusok a Main.qml-ben élnek)
     signal collageRequested()
     signal movieRequested()
+    // #32 (RÉSZLEGES kör): Nyomtatás/E-mail — a dialógusok (nyomtató-
+    // választó, tárgy/szöveg-bekérés) a Main.qml-ben élnének, ugyanúgy,
+    // mint a fenti kettőnél (a bekötés az integrátor lépése, ld.
+    // print_controller.py/email_controller.py docstringje).
+    signal printRequested()
+    signal emailRequested()
 
     // a forgatás/csillag célsora — a Main rotateTargetRow()-ja is ezt kéri
     readonly property int starTargetRow: trayStar.targetRow
@@ -215,8 +221,14 @@ Column {
             // lentebb, trayExportBtn-nél).
             PicasaButton {
                 id: trayEmailBtn
+                objectName: "trayEmailButton"
                 text: qsTr("E-Mail")
-                enabled: false
+                // #32: kijelölés kell hozzá, néző-nézetben (egy kép) is
+                // elérhető — a trayExportBtn/trayCollageBtn mintája
+                enabled: tray.appWindow.viewerOpen
+                         ? tray.viewerIndex >= 0
+                         : tray.appWindow.selectedIndexes.length > 0
+                onClicked: tray.emailRequested()
                 contentItem: Row {
                     spacing: 5
                     Image {
@@ -236,8 +248,12 @@ Column {
             }
             PicasaButton {
                 id: trayPrintBtn
+                objectName: "trayPrintButton"
                 text: qsTr("Print")
-                enabled: false
+                enabled: tray.appWindow.viewerOpen
+                         ? tray.viewerIndex >= 0
+                         : tray.appWindow.selectedIndexes.length > 0
+                onClicked: tray.printRequested()
                 contentItem: Row {
                     spacing: 5
                     Image {
