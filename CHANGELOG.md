@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.8] – 2026-08-06
+
+### Hozzáadva
+- **Egzakt effekt-csővezetékek (#381):** a 4–5. effektfül a Picasa eredeti,
+  a filterdesc.xml-ből megfejtett lépéssorai és számértékei szerint
+  renderel — a korábbi közelítések helyett.
+- **Szűrő-regiszter (#382):** mind a 84 eredeti szűrő adatvezérelt
+  leírása; tartomány-validáció, teljes-felbontás/lassú/méretváltó
+  jelzők a láncban; 26 további régi szűrőnév felismerve.
+- **Szín szerinti keresés (#383):** color:-keresőtokenek + átlagszín-index
+  (az elveszett Picasa-funkció visszahozása).
+- **UI-hűség (#384):** a mappalista három kék állapota, kétszínű
+  indexkép-kijelölés-keret az eredeti constants.ui értékei szerint.
+
 ## [0.6.7] – 2026-08-06
 
 ### Hozzáadva
