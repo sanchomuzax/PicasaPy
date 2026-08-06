@@ -71,6 +71,15 @@ Picasa ott nem futna).
 - Jelöltek: OpenCV (YuNet), dlib, InsightFace/ArcFace ONNX runtime-mal
 - Szempontok: RPi5 CPU/NPU-n futtathatóság, csoportosítási minőség, licenc
 - Picasa-kompatibilis kimenet: rect64 + contact_id + contacts kezelés
+- **Az EREDETI motor azonosítva (2026-08-06):** a `plugins/Red.dll` a Google
+  által 2006-ban felvásárolt **Neven Vision** gépi látás motorja
+  (`CNevenVisionDLL::IFace`, boosted cascade + MLP), a tanított modell a
+  `plugins/red.cfg`. Ez adja a `conf/pan/leye/reye/mouth` arc-részletadatot
+  (formátum: `docs/specs/picasa-ini-format.md`). Következmény: a Picasa
+  `conf`-értékei **motorspecifikusak**, a mi detektorunk konfidenciájával nem
+  összemérhetők — az Opciók küszöb-lépcsőit (50…95) újra kell hangolni.
+  Importált képeknél viszont a tárolt **szemkoordinátákat** érdemes használni
+  az arc-indexképek igazításához, mert azok pontosabbak a sajátunknál.
 
 ## 5. PMP-import validálás — KÉSZ (2026-07-16) ✅
 
