@@ -52,9 +52,57 @@ class FakeConfirmSettings(QObject):
         self._suppressed[decision_key] = bool(remember)
 
 
+class FakeEmailController(QObject):
+    """A #32-es EmailController QML-felülete (méret-csúszdák + kliens-
+    választás) — a valódi `email_controller.py` ugyanezt a property/slot-
+    készletet exportálja."""
+
+    multiSizeIndexChanged = Signal()
+    singleSizeIndexChanged = Signal()
+    useDefaultClientChanged = Signal()
+
+    def __init__(self, multi=2, single=4, use_default=True):
+        super().__init__()
+        self._multi = multi
+        self._single = single
+        self._use_default = use_default
+        self.set_multi_calls = []
+        self.set_single_calls = []
+        self.set_use_default_calls = []
+
+    multiSizeIndex = Property(int, lambda self: self._multi, notify=multiSizeIndexChanged)
+    singleSizeIndex = Property(int, lambda self: self._single, notify=singleSizeIndexChanged)
+    useDefaultClient = Property(
+        bool, lambda self: self._use_default, notify=useDefaultClientChanged
+    )
+
+    @Slot(int)
+    def setMultiSizeIndex(self, index) -> None:
+        self.set_multi_calls.append(index)
+        self._multi = index
+        self.multiSizeIndexChanged.emit()
+
+    @Slot(int)
+    def setSingleSizeIndex(self, index) -> None:
+        self.set_single_calls.append(index)
+        self._single = index
+        self.singleSizeIndexChanged.emit()
+
+    @Slot(bool)
+    def setUseDefaultClient(self, use_default) -> None:
+        self.set_use_default_calls.append(use_default)
+        self._use_default = use_default
+        self.useDefaultClientChanged.emit()
+
+
 @pytest.fixture
 def fake_controller():
     return FakeController()
+
+
+@pytest.fixture
+def fake_email_controller():
+    return FakeEmailController()
 
 
 @pytest.fixture
@@ -242,7 +290,11 @@ class TestPlaceholderTabsAreDisabled:
     @pytest.mark.parametrize(
         "control_name",
         [
-            "optionsMailDefaultRadio",
+            # #32: az E-Mail fül méret-csúszdái/kliens-választása mostantól
+            # élő (ld. TestEmailTabLiveSettings) — a "Send movies as"/HTML
+            # mező viszont Outlook-specifikus, maradt tiltott placeholder.
+            "optionsMailMovieFirstFrameRadio",
+            "optionsMailUseHtmlCheck",
             "optionsFileTypeBmpCheck",
             "optionsSlideshowLoopCheck",
             "optionsPrintHiResPreviewCheck",
@@ -282,3 +334,97 @@ class TestPlaceholderTabsAreDisabled:
             _child(window, "optionsSkipDeleteConfirmCheck").property("enabled")
             is True
         )
+
+
+class TestEmailTabLiveSettings:
+    """#32: az OptionsTabEmail méret-csúszdái/kliens-választása az
+    `emailController`-hez kötve (a többi mező — "Send movies as"/HTML —
+    Outlook-specifikus, maradt tiltott)."""
+
+    def _dialog_with_email(self, qt_app, fake_controller, fake_confirm_settings,
+                            fake_email_controller):
+        import picasapy.app.application as app_module
+        from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+        engine = QQmlEngine()
+        engine.addImportPath(str(app_module._APP_DIR / "qml"))
+        engine.rootContext().setContextProperty("controller", fake_controller)
+        engine.rootContext().setContextProperty("confirmSettings", fake_confirm_settings)
+        engine.rootContext().setContextProperty("emailController", fake_email_controller)
+        factory = QQmlComponent(
+            engine,
+            str(app_module._APP_DIR / "qml" / "PicasaPy" / "OptionsDialog.qml"),
+        )
+        item = factory.create()
+        assert item is not None, factory.errorString()
+        # a factory-t életben kell tartani, különben a Python GC idő előtt
+        # eltünteti (a C++ tulajdonjog rajta keresztül fut, ld. a
+        # test_qml_widget_chrome.py mintája)
+        engine._email_factory = factory
+        return item, engine
+
+    def test_size_controls_are_enabled(
+        self, qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+    ):
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+        )
+        assert _child(window, "optionsMailMultiSizeSlider").property("enabled") is True
+        assert _child(window, "optionsMailSingleSizeSlider").property("enabled") is True
+        assert _child(window, "optionsMailDefaultRadio").property("enabled") is True
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+
+    def test_sliders_reflect_controller_values(
+        self, qt_app, fake_controller, fake_confirm_settings
+    ):
+        fake_email = FakeEmailController(multi=1, single=3, use_default=False)
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, fake_email
+        )
+        assert _child(window, "optionsMailMultiSizeSlider").property("value") == 1
+        assert _child(window, "optionsMailSingleSizeSlider").property("value") == 3
+        assert _child(window, "optionsMailChooseRadio").property("checked") is True
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+
+    def test_moving_multi_slider_calls_controller(
+        self, qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+    ):
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+        )
+        slider = _child(window, "optionsMailMultiSizeSlider")
+        slider.setProperty("value", 3)
+        slider.moved.emit()
+        qt_app.processEvents()
+        assert fake_email_controller.set_multi_calls == [3]
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+
+    def test_choosing_client_radio_calls_controller(
+        self, qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+    ):
+        window, engine = self._dialog_with_email(
+            qt_app, fake_controller, fake_confirm_settings, fake_email_controller
+        )
+        choose_radio = _child(window, "optionsMailChooseRadio")
+        choose_radio.setProperty("checked", True)
+        choose_radio.toggled.emit()
+        qt_app.processEvents()
+        assert fake_email_controller.set_use_default_calls == [False]
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()
+
+    def test_without_email_controller_uses_sensible_defaults(self, dialog):
+        """A `dialog` fixture NEM regisztrál `emailController`-t — a
+        null-őr miatt a mezők a modul dokumentált alapértékével jelennek
+        meg, írás nélkül (nincs kivétel/QML-hiba)."""
+        window, *_ = dialog
+        assert _child(window, "optionsMailMultiSizeSlider").property("value") == 2
+        assert _child(window, "optionsMailSingleSizeSlider").property("value") == 4
+        assert _child(window, "optionsMailDefaultRadio").property("checked") is True
