@@ -7,6 +7,9 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 
+from .colors import paths_with_color
+from .search_color import parse_color_terms
+
 _PATH_SEP = re.compile(r"[/\\]")
 
 # A hatásos caption/keywords: JPEG-nél az IPTC (caption_file) az elsődleges,
@@ -141,9 +144,29 @@ def search_photos(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ..
     """Keresés MINDENBEN (Picasa): fájlnév/felirat/kulcsszó (FTS5) ÉS
     mappanév — az egyező nevű mappák teljes tartalma is találat.
 
-    A felhasználói inputot idézett kifejezéssé alakítjuk, hogy ne
-    értelmeződjön FTS-szintaxisként (injection/szintaxishiba ellen);
-    a mappanév-egyezés casefold-os (magyar ékezetekre is jó).
+    #383: a `color:`/`szín:` tokenek (pl. `color:blue nyaralás`) a
+    szabadszavas résztől ELVÁLNAK — a színszűrés a maradék szöveges
+    kereséssel ÉS kapcsolatban van, több színtoken egymással VAGY
+    kapcsolatban (ld. `search_color.parse_color_terms`). Ha egy képre még
+    nincs kiszámolt `color_token` (a háttér-feltöltés még nem érte el),
+    a kép egyszerűen kimarad a találatokból — nem hiba, csak hiányzó adat.
+    """
+    remainder, color_tokens = parse_color_terms(query)
+    remainder = remainder.strip()
+    if not remainder and not color_tokens:
+        return ()
+    records = _text_search(conn, remainder) if remainder else all_photos(conn)
+    if color_tokens:
+        wanted_paths = paths_with_color(conn, color_tokens)
+        records = tuple(
+            record for record in records if _full_path(record) in wanted_paths
+        )
+    return records
+
+
+def _text_search(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ...]:
+    """A korábbi (#383 előtti) szöveges keresés-logika, változatlanul —
+    idézett FTS-kifejezés + casefold-os mappanév-egyezés.
     """
     phrase = '"' + query.replace('"', '""') + '"'
     folded = query.casefold()
@@ -161,6 +184,12 @@ def search_photos(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ..
         (phrase, *folder_ids),
     )
     return _records(rows)
+
+
+def _full_path(record: PhotoRecord) -> str:
+    """A fotó teljes útvonala — ugyanaz a képzési szabály, mint a
+    `photo_colors`/`photo_hashes` kulcsánál (`str(Path(folder) / name)`)."""
+    return str(Path(record.folder_path) / record.name)
 
 
 @dataclass(frozen=True)
