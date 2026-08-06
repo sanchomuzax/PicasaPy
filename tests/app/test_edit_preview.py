@@ -360,3 +360,45 @@ class TestMainThreadPreRender:
         image = provider.requestImage("9?rev=1", None, None)
         assert max(image.width(), image.height()) <= 2560
         assert abs(image.width() / image.height() - 2.0) < 0.01
+
+
+class TestTextOverlayPreview:
+    """#148: a szöveg-eszköz élő előnézete — a `text` a filters-lánc UTÁN
+    kerül a képre, a `TextOverlaySpec` dataclass-on át."""
+
+    def test_text_overlay_changes_rendered_pixels(self, qt_app, tmp_path):
+        from picasapy.app.edit_preview import EditPreviewProvider, TextOverlaySpec
+
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(64, 32))
+        provider = EditPreviewProvider()
+        provider.register("1", photo, ())
+        without_text = provider.requestImage("1", None, None)
+
+        provider.register(
+            "1", photo, (), text=TextOverlaySpec(content="Hi", x=0.1, y=0.8)
+        )
+        with_text = provider.requestImage("1", None, None)
+
+        assert without_text != with_text
+
+    def test_empty_content_is_noop(self, qt_app, tmp_path):
+        from picasapy.app.edit_preview import EditPreviewProvider, TextOverlaySpec
+
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(64, 32))
+        provider = EditPreviewProvider()
+        provider.register("1", photo, ())
+        without_text = provider.requestImage("1", None, None)
+
+        provider.register("1", photo, (), text=TextOverlaySpec(content="", x=0.5, y=0.5))
+        still_without = provider.requestImage("1", None, None)
+
+        assert without_text == still_without
+
+    def test_no_text_argument_keeps_previous_behaviour(self, qt_app, tmp_path):
+        from picasapy.app.edit_preview import EditPreviewProvider
+
+        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        provider = EditPreviewProvider()
+        provider.register("1", photo, ())
+        image = provider.requestImage("1", None, None)
+        assert (image.width(), image.height()) == (8, 6)

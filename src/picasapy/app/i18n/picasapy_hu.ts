@@ -847,6 +847,18 @@
         <source>Width</source>
         <translation>Szélesség</translation>
     </message>
+    <message>
+        <source>Click on the blemishes you want to remove, then Apply.</source>
+        <translation>Kattintson az eltávolítandó foltokra, majd Alkalmaz.</translation>
+    </message>
+    <message>
+        <source>Regions selected: %1</source>
+        <translation>Kijelölt területek: %1</translation>
+    </message>
+    <message>
+        <source>Type your text, then click on the photo to place it.</source>
+        <translation>Írja be a szöveget, majd kattintson a fotóra az elhelyezéséhez.</translation>
+    </message>
 </context>
 <context>
     <name>CreateDialogs</name>

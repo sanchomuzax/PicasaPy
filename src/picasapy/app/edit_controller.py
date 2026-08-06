@@ -15,11 +15,18 @@ from picasapy.app.effect_params import (
 from picasapy.edit.session import EditSession
 from picasapy.ini import load_document, update_document
 from picasapy.ini.rect64 import Rect64, encode_rect64
+from picasapy.ini.text_overlay import (
+    TextOverlay,
+    parse_text,
+    parse_text_active,
+    serialize_text,
+    serialize_text_active,
+)
 from picasapy.metadata import read_exif_details
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
-from .edit_preview import EditPreviewProvider
+from .edit_preview import EditPreviewProvider, TextOverlaySpec
 from .histogram_helper import EMPTY_HISTOGRAM
 
 # redeye: teljes képes kapcsoló a régió-alapú eszközig (#116)
@@ -108,10 +115,59 @@ _EFFECT_INI_NAMES: dict[str, str] = {
     "polaroid": "Polaroid",
 }
 
+#: A retusálás-eszköz (#148) egy kattintásra hozott régiójának FÉLmérete
+#: (relatív [0..1] egység) — a valódi Picasa retusáló-ecset mérete nem
+#: ismert (ld. `picasapy.ini.retouch` docsztring), ezért ez egy PicasaPy-
+#: saját, dokumentált alapérték: kb. a kép szélességének/magasságának 6%-a
+#: (2×0.03), ami a legtöbb apró folt/pattanás eltávolítására elég, anélkül,
+#: hogy nagyobb, kívánt részleteket törölne. Ecsetméret-csúszka nem készült
+#: (nincs hozzá kapaszkodó a meglévő eszközmintákban — a redeye is fix,
+#: csúszka nélküli teljes képes kapcsoló), ld. a #148 jelentés.
+_RETOUCH_REGION_HALF_SIZE = 0.03
+
+#: A szöveg-eszköz (#148) rögzített betűtípusa — a valódi Picasa `text=`
+#: kulcsának betűtípus-mezője csak ROUND-TRIP-elve kerül megőrzésre (ld.
+#: `picasapy.ini.text_overlay` docsztring), a rajzoláshoz pedig a render-
+#: réteg (`picasapy.render.text_overlay`) amúgy is egységes Hershey-fontot
+#: használ — betűtípus-választó ezért nincs a UI-ban.
+_DEFAULT_TEXT_FONT = "Arial"
+
+#: A `text=` kulcs `raw_x`/`raw_y` mezőinek JELENTÉSE ismeretlen (ld. az
+#: `picasapy.ini.text_overlay` modul docsztringje) — ezért a PicasaPy a
+#: relatív [0..1] pozíciót SAJÁT, dokumentált skálázással kódolja ezekbe az
+#: egész mezőkbe (kerekítve, 4 tizedesjegynyi felbontással). Ez PicasaPy-
+#: eredetű szövegre 100%-ban round-trip-biztos (a modul-docsztring
+#: garanciája szerint); egy VALÓDI Picasa `text=` sorát a PicasaPy nem
+#: próbálja értelmezni/felülírni, amíg a felhasználó ténylegesen nem
+#: szerkeszti (akkor a generikus round-trip réteg helyett ez a modul veszi
+#: át — attól kezdve ez a konvenció érvényes rá is).
+_TEXT_COORD_SCALE = 10000
+
+
+def _relative_to_raw(value: float) -> int:
+    return round(_clamp01(value) * _TEXT_COORD_SCALE)
+
+
+def _raw_to_relative(raw: int) -> float:
+    return _clamp01(raw / _TEXT_COORD_SCALE)
+
 
 class EditController(QObject):
     """A QML szerkesztő-panelhez tervezett híd: EditSession + ini-perzisztencia
-    + EditPreviewProvider-regisztráció egy helyen."""
+    + EditPreviewProvider-regisztráció egy helyen.
+
+    #148: a retusálás/szöveg-eszközök property-i/slot-jai is ITT élnek (nem
+    külön mixin-fájlban) — egy korábbi kísérlet, amely `_RetouchTextMixin`
+    néven, közös `toolsChanged`/`revisionChanged` Signal-aliasszal
+    próbálta szétválasztani a fájlt (a CLAUDE.md 800-soros irányelve
+    miatt), determinisztikus szegmentálási hibát (SIGSEGV) okozott a valódi
+    QQmlApplicationEngine-en át (ld. `tests/app/qml_functional/conftest.py`
+    `qml_app` fixture `engine.load(...)` hívása) — feltehetően a Qt
+    meta-objektum-rendszer nem szereti, ha egy QObject-leszármazott Signal-
+    attribútuma egy MÁSIK QObject-leszármazott osztályból származik és a
+    gyerek osztály csak alias-olja. A helyesség előbbre való a fájlméret-
+    irányelvnél, ezért ez az osztály EGYBEN maradt — ld. a #148 jelentés
+    "nyitva maradt" pontját."""
 
     revisionChanged = Signal()
     toolsChanged = Signal()
@@ -132,6 +188,18 @@ class EditController(QObject):
         # beginEdit-kor olvasva — a szerkesztés alatt nem változik, a
         # csúszka-húzás minden egyes revíziójánál újraolvasni felesleges lenne
         self._camera_summary = ""
+        # retusálás (#148): a Vágás-mintájú enter/exit + Alkalmaz/Mégse
+        # eszközhöz a kattintással hozott, MÉG NEM mentett régiók puffere —
+        # Alkalmazásig csak az élő előnézetet befolyásolja, ini-t nem ír.
+        self._retouch_pending: tuple[Rect64, ...] = ()
+        # szöveg-overlay (#148): a mentett `text=`/`textactive=` értékek
+        # típusos alakja (None, ha nincs — vagy a bejegyzés nem értelmezhető,
+        # a #301-elv szerint), plusz a szerkesztés alatti, MÉG NEM mentett
+        # piszkozat (tartalom + kattintott pozíció).
+        self._text_overlay: TextOverlay | None = None
+        self._text_active = False
+        self._text_draft = ""
+        self._text_pending_pos: tuple[float, float] | None = None
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
 
@@ -179,6 +247,46 @@ class EditController(QObject):
     @Property(bool, notify=toolsChanged)
     def autocolorActive(self) -> bool:
         return self._session.has("autocolor")
+
+    # -- retusálás (#148) ---------------------------------------------------
+
+    @Property(bool, notify=toolsChanged)
+    def hasRetouch(self) -> bool:
+        """Van-e MENTETT retusálási régió — a „Visszavonás: Retusálás"
+        felirathoz és a UI állapot-jelzéséhez."""
+        return bool(self._session.retouch_regions())
+
+    @Property(int, notify=revisionChanged)
+    def retouchPendingCount(self) -> int:
+        """A retusálás-eszközben kattintással hozzáadott, MÉG NEM
+        alkalmazott régiók száma — az Alkalmaz gomb csak akkor engedélyezett,
+        ha ez pozitív."""
+        return len(self._retouch_pending)
+
+    # -- szöveg-overlay (#148) -----------------------------------------------
+
+    @Property(str, notify=toolsChanged)
+    def textDraft(self) -> str:
+        """A szöveg-eszköz megnyitásakor a mezőbe töltendő piszkozat — a
+        mentett tartalommal indul (ha van), a szerkesztés alatt a
+        `setTextDraft` frissíti."""
+        return self._text_draft
+
+    @Property(bool, notify=revisionChanged)
+    def textHasPlacement(self) -> bool:
+        """Kattintott-e már pozíciót a felhasználó a jelenlegi piszkozathoz —
+        az Alkalmaz gomb csak ekkor engedélyezett."""
+        return self._text_pending_pos is not None
+
+    @Property(bool, notify=toolsChanged)
+    def hasTextOverlay(self) -> bool:
+        """Van-e MENTETT, aktív szöveg-overlay — a „Visszavonás: Szöveg"
+        felirathoz és a UI állapot-jelzéséhez."""
+        return (
+            self._text_overlay is not None
+            and self._text_active
+            and bool(self._text_overlay.content)
+        )
 
     # Gomb-tiltási szabály (#116): az egygombos javítás gombja addig tiltott,
     # amíg ugyanez a szűrő a lánc UTOLSÓ eleme — másik effekt után újra aktív.
@@ -284,6 +392,13 @@ class EditController(QObject):
         # sorrendben, képváltás és újranyitás után is.
         self._undo_stack = self._seed_undo_from_chain(self._session)
         self._redo_stack.clear()
+        self._retouch_pending = ()
+        self._text_overlay = self._read_text_overlay()
+        self._text_active = (
+            self._read_text_active() if self._text_overlay is not None else False
+        )
+        self._text_draft = ""
+        self._text_pending_pos = None
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
@@ -301,6 +416,11 @@ class EditController(QObject):
         self._camera_summary = ""
         self._undo_stack.clear()
         self._redo_stack.clear()
+        self._retouch_pending = ()
+        self._text_overlay = None
+        self._text_active = False
+        self._text_draft = ""
+        self._text_pending_pos = None
         self._bump_revision()
         self.toolsChanged.emit()
 
@@ -380,6 +500,152 @@ class EditController(QObject):
         self._require_active()
         self._register_preview()
         self._bump_revision()
+
+    # -- retusálás (#148): a Vágás mintáját követő enter/exit + Alkalmaz/
+    # Mégse eszköz — a kattintással hozott régiók pufferben gyűlnek, az élő
+    # előnézetet azonnal frissítik, de csak az Alkalmaz írja ini-be. -------
+
+    @Slot()
+    def enterRetouchTool(self) -> None:
+        """A Retusálás eszköz megnyitása: a puffer a MENTETT régiókkal
+        indul (ha a felhasználó korábban már alkalmazott retusálást), nem
+        ír inibe, nem tol undo-lépést."""
+        self._require_active()
+        self._retouch_pending = self._session.retouch_regions()
+        self._register_preview(self._session_with_retouch_pending())
+        self._bump_revision()
+
+    @Slot()
+    def exitRetouchTool(self) -> None:
+        """A Retusálás eszköz bezárása (Mégse): a puffer eldobása, visszaáll
+        a ténylegesen mentett előnézetre — a mentett régiók érintetlenek."""
+        self._require_active()
+        self._retouch_pending = ()
+        self._register_preview()
+        self._bump_revision()
+
+    @Slot(float, float)
+    def previewRetouchRegion(self, x: float, y: float) -> None:
+        """A kattintott pont körüli, `_RETOUCH_REGION_HALF_SIZE` félméretű
+        régió hozzáadása a PENDING pufferhez, élő előnézettel — NEM ír
+        inibe, NEM tol undo-lépést (az Alkalmazásig, `applyRetouch`)."""
+        self._require_active()
+        cx, cy = _clamp01(x), _clamp01(y)
+        rect = Rect64(
+            left=_clamp01(cx - _RETOUCH_REGION_HALF_SIZE),
+            top=_clamp01(cy - _RETOUCH_REGION_HALF_SIZE),
+            right=_clamp01(cx + _RETOUCH_REGION_HALF_SIZE),
+            bottom=_clamp01(cy + _RETOUCH_REGION_HALF_SIZE),
+        )
+        self._retouch_pending = (*self._retouch_pending, rect)
+        self._register_preview(self._session_with_retouch_pending())
+        self._bump_revision()
+
+    @Slot()
+    def applyRetouch(self) -> None:
+        """Alkalmaz: a puffer régióinak mentése a láncba (undo + ini-írás).
+        Üres puffernél no-op (a gomb ilyenkor a UI-ban tiltott)."""
+        self._require_active()
+        if not self._retouch_pending:
+            return
+        self._push_undo("retouch")
+        self._session = self._session.set_retouch_regions(self._retouch_pending)
+        self._retouch_pending = ()
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    def _session_with_retouch_pending(self) -> EditSession:
+        return self._session.set_retouch_regions(self._retouch_pending)
+
+    # -- szöveg-overlay (#148): a `text=`/`textactive=` külön ini-kulcs (NEM
+    # a filters= lánc része), ezért a piszkozat/pozíció ide, az
+    # EditController állapotába kerül, nem az EditSession-be. Az enter/exit
+    # + Alkalmaz/Mégse minta a retusáléhoz hasonló. -------------------------
+
+    @Slot()
+    def enterTextTool(self) -> None:
+        """A Szöveg eszköz megnyitása: a mező a MENTETT tartalommal indul
+        (ha van), pozíció nélkül — a felhasználónak a képre kattintva kell
+        elhelyeznie."""
+        self._require_active()
+        self._text_draft = self._text_overlay.content if self._text_overlay else ""
+        self._text_pending_pos = None
+        self.toolsChanged.emit()
+
+    @Slot()
+    def exitTextTool(self) -> None:
+        """A Szöveg eszköz bezárása (Mégse): a piszkozat eldobása, visszaáll
+        a ténylegesen mentett előnézetre."""
+        self._require_active()
+        self._text_pending_pos = None
+        self._text_draft = ""
+        self._register_preview()
+        self._bump_revision()
+
+    @Slot(str)
+    def setTextDraft(self, content: str) -> None:
+        """A szövegmező tartalmának élő követése — ha már van kattintott
+        pozíció, az élő előnézet is frissül; NEM ír inibe."""
+        self._require_active()
+        self._text_draft = content
+        self._register_preview()
+        self._bump_revision()
+
+    @Slot(float, float)
+    def previewTextPlacement(self, x: float, y: float) -> None:
+        """Kattintás a képen: a piszkozat pozíciójának beállítása, élő
+        előnézettel — NEM ír inibe, NEM tol undo-lépést (Alkalmazásig)."""
+        self._require_active()
+        self._text_pending_pos = (_clamp01(x), _clamp01(y))
+        self._register_preview()
+        self._bump_revision()
+
+    @Slot()
+    def applyText(self) -> None:
+        """Alkalmaz: a piszkozat mentése `text=`/`textactive=` kulcsokba.
+
+        Pozíció vagy tartalom nélkül no-op (a gomb ilyenkor a UI-ban
+        tiltott). **NEM kerül a Visszavonás-verembe** — ld. `clearText`
+        docsztringje az indoklásért; az újbóli Alkalmazás egyszerűen felülírja
+        az előző mentett szöveget."""
+        self._require_active()
+        if self._text_pending_pos is None or not self._text_draft.strip():
+            return
+        raw_x = _relative_to_raw(self._text_pending_pos[0])
+        raw_y = _relative_to_raw(self._text_pending_pos[1])
+        self._text_overlay = TextOverlay(
+            enabled=True,
+            raw_x=raw_x,
+            raw_y=raw_y,
+            content=self._text_draft,
+            font=_DEFAULT_TEXT_FONT,
+        )
+        self._text_active = True
+        self._text_pending_pos = None
+        self._save_text()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot()
+    def clearText(self) -> None:
+        """A mentett szöveg-overlay eltávolítása (`text=`/`textactive=`
+        kulcsok törlése az iniből).
+
+        **NEM kerül a Visszavonás-verembe**: a `text=`/`textactive=` a
+        `filters=` láncon KÍVÜLI, önálló ini-kulcs (ld. modul-tetejei
+        megjegyzés), a meglévő perzisztens undo-verem pedig kizárólag a
+        `filters=` lánc egymást követő állapotait tárolja — egy ide tolt
+        „text" lépés a Visszavonás gombon látszana, de a tényleges hatása
+        (a szöveg visszaállítása) nem történne meg, ami félrevezetőbb lenne,
+        mint egyáltalán nem kínálni. A törlés ezért azonnali és végleges."""
+        self._require_active()
+        self._text_overlay = None
+        self._text_active = False
+        self._text_pending_pos = None
+        self._save_text()
+        self._bump_revision()
+        self.toolsChanged.emit()
 
     @Slot(float)
     def setTilt(self, param: float) -> None:
@@ -614,6 +880,31 @@ class EditController(QObject):
         section = load_document(self._ini_path).section(self._section_name)
         return (section.get("filters") if section else None) or ""
 
+    def _read_text_overlay(self) -> TextOverlay | None:
+        """A mentett `text=` érték típusos alakja, vagy None ha nincs (vagy
+        nem értelmezhető, #301-elv — a generikus round-trip réteg ilyenkor
+        érintetlenül megőrzi, amíg ez a modul nem szerkeszti)."""
+        if self._ini_path is None or not self._ini_path.exists():
+            return None
+        section = load_document(self._ini_path).section(self._section_name)
+        raw = section.get("text") if section else None
+        if not raw:
+            return None
+        try:
+            return parse_text(raw)
+        except ValueError:
+            return None
+
+    def _read_text_active(self) -> bool:
+        """A mentett `textactive=` érték — hiányzó kulcsnál a MEGLÉVŐ
+        `text=` bejegyzést alapból aktívnak vesszük (a Picasa-doksi szerint
+        ez a gyakoribb eset)."""
+        if self._ini_path is None or not self._ini_path.exists():
+            return True
+        section = load_document(self._ini_path).section(self._section_name)
+        raw = section.get("textactive") if section else None
+        return parse_text_active(raw) if raw is not None else True
+
     def _save(self) -> None:
         assert self._ini_path is not None
 
@@ -640,10 +931,59 @@ class EditController(QObject):
         update_document(self._ini_path, mutate, backup=True)
         self._register_preview()
 
+    def _save_text(self) -> None:
+        """A `text=`/`textactive=` kulcsok írása/törlése (#148) — külön az
+        `_save()`-től, mert ezek NEM a `filters=` láncba tartoznak, hanem
+        önálló, szekció-szintű kulcsok (ld. `picasapy.ini.text_overlay`)."""
+        assert self._ini_path is not None
+
+        def mutate(document):
+            if self._text_overlay is None or not self._text_overlay.content:
+                document = document.with_removed(self._section_name, "text")
+                document = document.with_removed(self._section_name, "textactive")
+            else:
+                document = document.with_value(
+                    self._section_name, "text", serialize_text(self._text_overlay)
+                )
+                document = document.with_value(
+                    self._section_name,
+                    "textactive",
+                    serialize_text_active(self._text_active),
+                )
+            return document
+
+        update_document(self._ini_path, mutate, backup=True)
+        self._register_preview()
+
     def _register_preview(self, session: EditSession | None = None) -> None:
         assert self._image_path is not None
         active_session = session if session is not None else self._session
-        self._provider.register(self._photo_id, self._image_path, active_session.ops)
+        self._provider.register(
+            self._photo_id,
+            self._image_path,
+            active_session.ops,
+            text=self._current_text_spec(),
+        )
+
+    def _current_text_spec(self) -> TextOverlaySpec | None:
+        """Az élő előnézetbe rajzolandó szöveg — a PENDING piszkozat élvez
+        elsőbbséget (a szöveg-eszköz nyitva van), különben a mentett, aktív
+        overlay (ha van tartalma); egyébként None (nincs mit rajzolni)."""
+        if self._text_pending_pos is not None:
+            content = self._text_draft
+            if not content.strip():
+                return None
+            x, y = self._text_pending_pos
+            return TextOverlaySpec(content=content, x=x, y=y)
+        if (
+            self._text_overlay is not None
+            and self._text_active
+            and self._text_overlay.content
+        ):
+            x = _raw_to_relative(self._text_overlay.raw_x)
+            y = _raw_to_relative(self._text_overlay.raw_y)
+            return TextOverlaySpec(content=self._text_overlay.content, x=x, y=y)
+        return None
 
     def _bump_revision(self) -> None:
         self._revision += 1

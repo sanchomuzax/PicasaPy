@@ -41,22 +41,29 @@ def _load(engine, qml_source):
 
 
 class TestEditorPanelButtons:
-    TOOLS = ["crop", "tilt", "redeye", "enhance", "autolight", "autocolor"]
+    TOOLS = [
+        "crop", "tilt", "redeye", "retouch", "text",
+        "enhance", "autolight", "autocolor",
+    ]
     OBJECT_NAMES = {
         "crop": "editToolCrop",
         "tilt": "editToolTilt",
         "redeye": "editToolRedeye",
+        "retouch": "editToolRetouch",
+        "text": "editToolText",
         "enhance": "editToolEnhance",
         "autolight": "editToolAutolight",
         "autocolor": "editToolAutocolor",
     }
     # mód-eszközök: helyi kapcsoló-állapot ("benyomva" csempe); az egygombos
     # javítások (enhance/autolight/autocolor) NEM kapcsolók (#116)
-    MODE_TOOLS = ["crop", "tilt", "redeye"]
+    MODE_TOOLS = ["crop", "tilt", "redeye", "retouch", "text"]
     ACTIVE_PROPS = {
         "crop": "cropActive",
         "tilt": "tiltActive",
         "redeye": "redeyeActive",
+        "retouch": "retouchActive",
+        "text": "textActive",
     }
     ONE_SHOT_TOOLS = ["enhance", "autolight", "autocolor"]
     ENABLED_PROPS = {
@@ -87,15 +94,15 @@ class TestEditorPanelButtons:
         assert crop_tile.property("opacity") < 1
 
     def test_enabled_panel_tools_fully_opaque(self, qml_engine, qt_app):
+        # #148: a Retusálás/Szöveg csempe élesedett — mindkettő ugyanúgy
+        # teljesen látszó, mint a többi eszköz-csempe.
         panel = self._make_panel(qml_engine)
         qt_app.processEvents()
         tools = panel.findChild(QObject, "toolsColumn")
         assert tools.property("opacity") == 1
-        crop_tile = panel.findChild(QObject, "editToolCrop")
-        assert crop_tile.property("opacity") == 1
-        # a 2. ütemre váró csempék viszont maradnak halványak
-        retouch = panel.findChild(QObject, "editToolRetouch")
-        assert retouch.property("opacity") < 1
+        for name in ("editToolCrop", "editToolRetouch", "editToolText"):
+            tile = panel.findChild(QObject, name)
+            assert tile.property("opacity") == 1, f"{name} halvány maradt"
 
     def test_all_buttons_present_with_object_names(self, qml_engine):
         panel = self._make_panel(qml_engine)
@@ -577,3 +584,148 @@ class TestCropAspectReshape:
             Q_ARG("QVariant", 2.0),
         )
         assert overlay.property("hasSelection") is False
+
+
+class TestRetouchTool:
+    """#148: a Retusálás-eszköz Vágás-mintájú mód-panelja."""
+
+    def _make_panel(self, qml_engine):
+        return _load(
+            qml_engine,
+            'import QtQuick\nimport PicasaPy 1.0\nEditorPanel { objectName: "panel" }\n',
+        )
+
+    def test_retouch_click_shows_retouch_column_and_hides_tools(
+        self, qml_engine, qt_app
+    ):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        QMetaObject.invokeMethod(
+            panel, "handleToolClick", Qt.ConnectionType.DirectConnection,
+            *_string_arg("retouch"),
+        )
+        qt_app.processEvents()
+        assert panel.property("retouchActive") is True
+        assert panel.findChild(QObject, "retouchColumn").property("visible") is True
+        assert panel.findChild(QObject, "toolsColumn").property("visible") is False
+
+    def test_retouch_and_crop_are_mutually_exclusive_columns(
+        self, qml_engine, qt_app
+    ):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("cropActive", True)
+        qt_app.processEvents()
+        QMetaObject.invokeMethod(
+            panel, "handleToolClick", Qt.ConnectionType.DirectConnection,
+            *_string_arg("retouch"),
+        )
+        qt_app.processEvents()
+        # a cropColumn saját visible-je csak cropActive-tól függ — a
+        # retusálás-mód belépése nem oltja ki automatikusan a vágást, de a
+        # rács/fülsáv (modeToolActive) mindkettőnél ugyanúgy rejtve marad
+        assert panel.findChild(QObject, "toolsColumn").property("visible") is False
+
+    def test_apply_button_disabled_without_pending_regions(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("retouchActive", True)
+        qt_app.processEvents()
+        apply_button = panel.findChild(QObject, "retouchApplyButton")
+        assert apply_button.property("enabled") is False
+        panel.setProperty("retouchRegionCount", 2)
+        qt_app.processEvents()
+        assert apply_button.property("enabled") is True
+
+    def test_apply_and_cancel_buttons_emit_signals(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("retouchActive", True)
+        panel.setProperty("retouchRegionCount", 1)
+        qt_app.processEvents()
+        applied, cancelled = [], []
+        panel.retouchApplyRequested.connect(lambda: applied.append(True))
+        panel.retouchCancelRequested.connect(lambda: cancelled.append(True))
+        QMetaObject.invokeMethod(
+            panel.findChild(QObject, "retouchApplyButton"),
+            "buttonClicked", Qt.ConnectionType.DirectConnection,
+        )
+        QMetaObject.invokeMethod(
+            panel.findChild(QObject, "retouchCancelButton"),
+            "buttonClicked", Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+        assert applied == [True]
+        assert cancelled == [True]
+
+
+class TestTextTool:
+    """#148: a Szöveg-eszköz Vágás-mintájú mód-panelja."""
+
+    def _make_panel(self, qml_engine):
+        return _load(
+            qml_engine,
+            'import QtQuick\nimport PicasaPy 1.0\nEditorPanel { objectName: "panel" }\n',
+        )
+
+    def test_text_click_shows_text_column_and_hides_tools(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        QMetaObject.invokeMethod(
+            panel, "handleToolClick", Qt.ConnectionType.DirectConnection,
+            *_string_arg("text"),
+        )
+        qt_app.processEvents()
+        assert panel.property("textActive") is True
+        assert panel.findChild(QObject, "textColumn").property("visible") is True
+        assert panel.findChild(QObject, "toolsColumn").property("visible") is False
+
+    def test_text_field_seeded_from_draft_content(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        panel.setProperty("textDraftContent", "Hello")
+        panel.setProperty("textActive", True)
+        qt_app.processEvents()
+        field = panel.findChild(QObject, "textContentField")
+        assert field.property("text") == "Hello"
+
+    def test_typing_emits_text_draft_edited(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        panel.setProperty("textActive", True)
+        qt_app.processEvents()
+        edited = []
+        panel.textDraftEdited.connect(lambda content: edited.append(content))
+        field = panel.findChild(QObject, "textContentField")
+        field.setProperty("text", "Nyaralás 2026")
+        qt_app.processEvents()
+        assert edited[-1] == "Nyaralás 2026"
+
+    def test_apply_button_requires_placement_and_content(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        panel.setProperty("textActive", True)
+        qt_app.processEvents()
+        apply_button = panel.findChild(QObject, "textApplyButton")
+        assert apply_button.property("enabled") is False
+        field = panel.findChild(QObject, "textContentField")
+        field.setProperty("text", "Cím")
+        panel.setProperty("textPlacementPending", True)
+        qt_app.processEvents()
+        assert apply_button.property("enabled") is True
+
+    def test_apply_and_cancel_buttons_emit_signals(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        panel.setProperty("textActive", True)
+        qt_app.processEvents()
+        applied, cancelled = [], []
+        panel.textApplyRequested.connect(lambda: applied.append(True))
+        panel.textCancelRequested.connect(lambda: cancelled.append(True))
+        QMetaObject.invokeMethod(
+            panel.findChild(QObject, "textApplyButton"),
+            "buttonClicked", Qt.ConnectionType.DirectConnection,
+        )
+        QMetaObject.invokeMethod(
+            panel.findChild(QObject, "textCancelButton"),
+            "buttonClicked", Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+        assert applied == [True]
+        assert cancelled == [True]

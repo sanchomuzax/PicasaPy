@@ -119,6 +119,8 @@ Rectangle {
         case "crop": return qsTr("Crop")
         case "tilt": return qsTr("Straighten")
         case "redeye": return qsTr("Redeye")
+        case "retouch": return qsTr("Retouch")
+        case "text": return qsTr("Text")
         case "enhance": return qsTr("I'm Feeling Lucky")
         case "autolight": return qsTr("Auto Contrast")
         case "autocolor": return qsTr("Auto Color")
@@ -188,11 +190,14 @@ Rectangle {
             zoomFit()   // #6: minden belépés illesztett nézetben indul
             beginEditCurrent()
         } else {
-            // a cropActive lenullázása ELŐBB (még aktív szerkesztés alatt)
-            // fut, hogy az onCropActiveChanged->exitCropTool() még érvényes
-            // munkameneten hívódjon; utána zárja az endEdit()
+            // a cropActive/retouchActive/textActive lenullázása ELŐBB (még
+            // aktív szerkesztés alatt) fut, hogy az onXActiveChanged->
+            // exitXTool() még érvényes munkameneten hívódjon; utána zárja
+            // az endEdit()
             editorPanel.cropActive = false
             editorPanel.tiltActive = false
+            editorPanel.retouchActive = false
+            editorPanel.textActive = false
             editController.endEdit()
         }
     }
@@ -212,6 +217,15 @@ Rectangle {
             } else {
                 cropOverlay.resetSelection()
             }
+            // #148: a Retusálás/Szöveg mód lapozáson át is megtartható —
+            // az új képhez újra kell nyitni (a puffer/piszkozat az ÚJ kép
+            // mentett állapotával indul, a Vágás mintáját követve)
+            if (editorPanel.retouchActive)
+                editController.enterRetouchTool()
+            if (editorPanel.textActive) {
+                editController.enterTextTool()
+                editorPanel.textDraftContent = editController.textDraft
+            }
         }
     }
     Connections {
@@ -230,6 +244,23 @@ Rectangle {
                 cropOverlay.loadSelection(editController.cropSelection)
             } else {
                 editController.exitCropTool()
+            }
+        }
+        // #148: a Retusálás/Szöveg mód nyitása/zárása — a Vágás mintáját
+        // követve az enter/exit a puffer/piszkozat élő előnézetét kezeli,
+        // Alkalmazásig nem ír inibe.
+        function onRetouchActiveChanged() {
+            if (editorPanel.retouchActive)
+                editController.enterRetouchTool()
+            else
+                editController.exitRetouchTool()
+        }
+        function onTextActiveChanged() {
+            if (editorPanel.textActive) {
+                editController.enterTextTool()
+                editorPanel.textDraftContent = editController.textDraft
+            } else {
+                editController.exitTextTool()
             }
         }
     }
@@ -425,14 +456,19 @@ Rectangle {
                     onFinetuneCommit: (f, h, s, t) => editController.setFinetune(f, h, s, t)
                     onEffectRequested: (name) => editController.applyEffect(name)
                     onToolActivated: function(tool) {
-                        // crop/tilt helyi mód (overlay/csúszka); a többi
-                        // azonnali ini-művelet az EditControlleren át
+                        // crop/tilt/retouch/text helyi mód (overlay/
+                        // csúszka/kattintás-puffer); a többi azonnali
+                        // ini-művelet az EditControlleren át
                         if (tool === "tilt") {
                             // eszköz-nyitáskor a csúszka a MENTETT
                             // tilt-értékről induljon, ne 0-ról (#131)
                             if (editorPanel.tiltActive)
                                 viewer.syncTiltSlider()
-                        } else if (tool !== "crop") {
+                        } else if (tool === "crop" || tool === "retouch"
+                                   || tool === "text") {
+                            // az enter/exit a Connections{target: editorPanel}
+                            // blokk onXActiveChanged kezelőiben történik
+                        } else {
                             editController.toggleTool(tool)
                         }
                     }
@@ -462,6 +498,25 @@ Rectangle {
                         cropOverlay.resetSelection()
                         editorPanel.cropActive = false
                     }
+                    // #148: a retusálás pufferének mérete/az Alkalmaz-gomb
+                    // engedélyezettsége a kontrollerből
+                    retouchRegionCount: viewer.editCtl
+                        ? viewer.editCtl.retouchPendingCount : 0
+                    onRetouchApplyRequested: {
+                        editController.applyRetouch()
+                        editorPanel.retouchActive = false
+                    }
+                    onRetouchCancelRequested: editorPanel.retouchActive = false
+                    // #148: a szöveg-eszköz Alkalmaz-gombja csak akkor
+                    // engedélyezett, ha már van kattintott pozíció
+                    textPlacementPending: viewer.editCtl
+                        ? viewer.editCtl.textHasPlacement : false
+                    onTextDraftEdited: (content) => editController.setTextDraft(content)
+                    onTextApplyRequested: {
+                        editController.applyText()
+                        editorPanel.textActive = false
+                    }
+                    onTextCancelRequested: editorPanel.textActive = false
                 }
 
                 ColumnLayout {
@@ -650,6 +705,46 @@ Rectangle {
                         width: photo.paintedWidth
                         height: photo.paintedHeight
                         faces: viewer.currentFaces
+                    }
+
+                    // #148: kattintás a képre — a kép kirajzolt (letterbox
+                    // nélküli) területén relatív [0..1] koordinátát számol
+                    // és a kontrollerhez küldi. Retusálásnál minden
+                    // kattintás új régiót ad a pufferhez; szövegnél a
+                    // legutóbbi kattintás állítja be a pozíciót.
+                    MouseArea {
+                        id: retouchClickArea
+                        objectName: "retouchClickArea"
+                        parent: photo
+                        visible: editorPanel.retouchActive
+                        enabled: editorPanel.retouchActive
+                        x: (photo.width - photo.paintedWidth) / 2
+                        y: (photo.height - photo.paintedHeight) / 2
+                        width: photo.paintedWidth
+                        height: photo.paintedHeight
+                        cursorShape: Qt.CrossCursor
+                        onClicked: function(mouse) {
+                            if (width <= 0 || height <= 0) return
+                            editController.previewRetouchRegion(
+                                mouse.x / width, mouse.y / height)
+                        }
+                    }
+                    MouseArea {
+                        id: textClickArea
+                        objectName: "textClickArea"
+                        parent: photo
+                        visible: editorPanel.textActive
+                        enabled: editorPanel.textActive
+                        x: (photo.width - photo.paintedWidth) / 2
+                        y: (photo.height - photo.paintedHeight) / 2
+                        width: photo.paintedWidth
+                        height: photo.paintedHeight
+                        cursorShape: Qt.CrossCursor
+                        onClicked: function(mouse) {
+                            if (width <= 0 || height <= 0) return
+                            editController.previewTextPlacement(
+                                mouse.x / width, mouse.y / height)
+                        }
                     }
                 }
                 // #6: nagyított képen húzással pásztázás; dupla katt = fit.

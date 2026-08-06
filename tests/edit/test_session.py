@@ -170,6 +170,74 @@ class TestTilt:
         assert abs(param - 0.333333) < 0.0001
 
 
+class TestRetouch:
+    """#148: `retouch` szűrő — PicasaPy-saját `retouch=1,<rect64>...;`
+    kiterjesztés (ld. `picasapy.ini.retouch` docsztring)."""
+
+    def test_set_retouch_regions_empty_chain(self):
+        session = EditSession.from_value("")
+        rect = Rect64(0.1, 0.2, 0.3, 0.4)
+        new_session = session.set_retouch_regions((rect,))
+
+        assert new_session is not session
+        regions = new_session.retouch_regions()
+        assert len(regions) == 1
+        assert abs(regions[0].left - rect.left) < 0.001
+        assert new_session.to_value().startswith("retouch=1,")
+
+    def test_set_retouch_regions_multiple(self):
+        session = EditSession.from_value("")
+        rects = (Rect64(0.1, 0.1, 0.2, 0.2), Rect64(0.5, 0.5, 0.6, 0.6))
+        new_session = session.set_retouch_regions(rects)
+
+        regions = new_session.retouch_regions()
+        assert len(regions) == 2
+
+    def test_set_retouch_regions_replaces_existing(self):
+        value = "enhance=1;retouch=1,3f845bcb59418507;autolight=1;"
+        session = EditSession.from_value(value)
+        new_session = session.set_retouch_regions((Rect64(0.0, 0.0, 0.5, 0.5),))
+
+        result = new_session.to_value()
+        assert "enhance=1;" in result
+        assert "autolight=1;" in result
+        assert result.count("retouch=1,") == 1
+
+    def test_set_retouch_regions_empty_tuple_clears(self):
+        value = "retouch=1,3f845bcb59418507;"
+        session = EditSession.from_value(value)
+        new_session = session.set_retouch_regions(())
+        assert new_session.retouch_regions() == ()
+        assert "retouch" not in new_session.to_value()
+
+    def test_clear_retouch(self):
+        value = "enhance=1;retouch=1,3f845bcb59418507;"
+        session = EditSession.from_value(value)
+        new_session = session.clear_retouch()
+        assert new_session.retouch_regions() == ()
+        assert "retouch" not in new_session.to_value()
+
+    def test_retouch_regions_no_op_flag_gives_empty_tuple(self):
+        """Egy valódi Picasa-eredetű, régió nélküli `retouch=1;` bejegyzés
+        (ld. modul-docsztring) üres tuple-t ad, nem hibát."""
+        session = EditSession.from_value("retouch=1;")
+        assert session.retouch_regions() == ()
+
+    def test_retouch_regions_missing_gives_empty_tuple(self):
+        session = EditSession.from_value("enhance=1;")
+        assert session.retouch_regions() == ()
+
+    def test_round_trip(self):
+        session = EditSession.from_value("")
+        rect = Rect64(0.05, 0.15, 0.25, 0.35)
+        new_session = session.set_retouch_regions((rect,))
+        reloaded = EditSession.from_value(new_session.to_value())
+        regions = reloaded.retouch_regions()
+        assert len(regions) == 1
+        assert abs(regions[0].left - rect.left) < 0.001
+        assert abs(regions[0].bottom - rect.bottom) < 0.001
+
+
 class TestToggle:
     """Toggle szűrő: redeye (teljes képes kapcsoló a régió-alapú eszközig)."""
 
