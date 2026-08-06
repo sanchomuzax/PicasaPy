@@ -205,6 +205,16 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Tanulságok
 
+- **2026-08-06: a csak-dokumentációs PR magától beolvasztható — `ci-docs.yml`.**
+  A `ci.yml` szándékosan nem fut `**.md`/`docs/**` változásra, a main ág védelme
+  viszont kötelező ellenőrzésként várja a `Test (ubuntu-latest)` státuszt →
+  a docs-only PR VÉGLEG blokkolódott, és csak admin-jogú `gh pr merge --admin`
+  vitte át (#385). A javítás (#392) egy azonos NEVŰ, azonnal sikeres
+  munkafolyamat `paths: ['**.md','docs/**']` szűrővel. **Ne nyúlj a
+  `ci.yml` paths-ignore-jához** (az spórolja a runner-időt), és **ne merge-elj
+  admin-joggal** csak azért, mert „csak doksi" — ha egy docs-PR mégis
+  blokkolódik, a `ci-docs.yml` job-NEVE tért el a `ci.yml` mátrix-nevétől.
+
 - **2026-08-06 (a Picasa-telepítés 2. körös, MÉLY átvizsgálása): az eredeti
   program mappája még mindig a legjobb kutatási forrás — a felszíni pásztázás
   után is.** Az első kör (`picasa-program-resources.md`, `picasa-exe-strings.md`)
