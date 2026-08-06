@@ -217,6 +217,32 @@ class EditSession:
         """Van-e finomhangolás (finetune/finetune2) réteg a láncban."""
         return any(op.name.casefold() in _FINETUNE_NAMES for op in self.ops)
 
+    def gpu_finetune_prefix(self) -> tuple[FilterOp, ...] | None:
+        """A finetune2 réteg ELŐTTI lánc-előtag — a GPU élő-előnézet (#22)
+        feltétele.
+
+        A `GpuPointFilterPreview.qml` a finomhangolás-csúszkák húzása alatt
+        a LUT-ot GPU-n alkalmazza egy előre kirenderelt köztes képen
+        (`sourceItem`); ez csak akkor ad HELYES eredményt, ha a finetune2
+        UTÁN a láncban nincs semmi — különben az utána következő effektek
+        (pl. `grain2`, `vignette`) hiányoznának az élő-előnézetből. Ezért:
+
+        - ha van finetune2/finetune réteg és az a lánc UTOLSÓ eleme: az
+          ELŐTTE álló ops-ot adjuk vissza (ez az, amit a GPU `sourceItem`-je
+          megjelenít, a shader csak a LUT-ot teszi rá);
+        - ha nincs finetune2/finetune réteg egyáltalán: a TELJES láncot
+          adjuk vissza (a `set_finetune` ilyenkor a végére fűzné az új
+          réteget, tehát ez felel meg ugyanannak a helyzetnek);
+        - egyébként (finetune2 a lánc közepén) `None` — a hívó ilyenkor a
+          normál CPU-előnézetre esik vissza, GPU-gyorsítás nélkül.
+        """
+        for index, op in enumerate(self.ops):
+            if op.name.casefold() in _FINETUNE_NAMES:
+                if index == len(self.ops) - 1:
+                    return self.ops[:index]
+                return None
+        return self.ops
+
     def append_effect(self, name: str, params: tuple[str, ...] = ("1",)) -> EditSession:
         """Effekt réteg a lánc VÉGÉRE fűzése (append-only, #20).
 

@@ -79,6 +79,30 @@ class EditPreviewProvider(QQuickImageProvider):
         self._prefix_cache: (
             tuple[str, tuple[FilterOp, ...], np.ndarray, np.ndarray] | None
         ) = None
+        # GPU élő-előnézet (#22): KÜLÖN prefix-gyorsítótár-rekesz a fentitől
+        # — a `gpu_prefix_ops` (a finetune2 ELŐTTI lánc) ÁLTALÁBAN eltér a
+        # rendes render `ops[:-1]`-jétől (pl. ha még nincs finetune2, a GPU
+        # prefix a TELJES láncot jelenti). Ha a kettő UGYANAZT a
+        # `_prefix_cache` rekeszt használná, minden `register()`-hívás
+        # kölcsönösen kiütné a másik gyorsítótár-találatát (cache-
+        # csörgés) — MINDEN szerkesztői művelet (crop/tilt/effekt) duplán
+        # futtatná a teljes filter-láncot, nem csak a finetune-húzás
+        # alattiak. A gyakori esetben (finetune2 a lánc VÉGén) a két
+        # prefix EGYEZIK (`gpu_prefix_ops == ops[:-1]`) — ott a `register()`
+        # mindkét rekeszt frissen tartja, nincs dupla munka.
+        self._gpu_prefix_cache: (
+            tuple[str, tuple[FilterOp, ...], np.ndarray, np.ndarray] | None
+        ) = None
+        # GPU élő-előnézet (#22): a finetune2 ELŐTTI köztes kép, illetve a
+        # jelenlegi finetune2-LUT, 256×1 QImage-ként — a GpuPointFilterPreview.qml
+        # ezeket tölti be `sourceItem`/`lutItem`-ként. Ugyanazzal az LRU-
+        # életciklussal, mint `_images` (lapozáskor evikció, ld. #128).
+        # `None` a `register()` gpu_prefix_ops/gpu_lut paramétere, ha a
+        # jelenlegi lánc nem GPU-alkalmas (`EditSession.gpu_finetune_prefix()`)
+        # — ilyenkor a hívó (EditController) egyszerűen üres URL-t ad a
+        # QML-nek, a réteg nem jelenik meg.
+        self._gpu_prefix_images: OrderedDict[str, QImage] = OrderedDict()
+        self._gpu_lut_images: OrderedDict[str, QImage] = OrderedDict()
         self._lock = threading.Lock()
 
     def register(
@@ -87,13 +111,23 @@ class EditPreviewProvider(QQuickImageProvider):
         path: Path,
         ops: tuple[FilterOp, ...],
         text: TextOverlaySpec | None = None,
+        gpu_prefix_ops: tuple[FilterOp, ...] | None = None,
+        gpu_lut: np.ndarray | None = None,
     ) -> None:
         """Az aktuálisan szerkesztett fotó renderelése és eltárolása.
 
         A hívó (GUI) szálán fut — a provider-szálra nem jut Python-munka.
         A `text` (ha van) a `filters=` lánc UTÁN, a végeredményre kerül —
         ez PicasaPy-saját szöveg-eszköz (#148) élő előnézete, a `text=`
-        ini-kulcs önálló (nem a lánc része, ld. `TextOverlaySpec`)."""
+        ini-kulcs önálló (nem a lánc része, ld. `TextOverlaySpec`).
+
+        `gpu_prefix_ops`/`gpu_lut` (#22): ha a hívó (`EditController`) a
+        jelenlegi lánchoz GPU-alkalmas finetune2-előtagot és LUT-ot ad meg
+        (`EditSession.gpu_finetune_prefix()`), ezeket is kirendereljük/
+        eltároljuk a `gpuprefix=1`/`gpulut=1` jelzős `requestImage`-
+        kéréshez — a köztes kép a `_cached_prefix()`-fel MEGOSZTOTT
+        gyorsítótárból jön (nem duplikált munka), ha `ops[:-1] ==
+        gpu_prefix_ops` (a szokásos eset: finetune2-húzás alatt)."""
         key = str(photo_id)
         path = Path(path)
         mtime = path.stat().st_mtime if path.exists() else None
@@ -126,6 +160,11 @@ class EditPreviewProvider(QQuickImageProvider):
             if result_array is not None
             else EMPTY_HISTOGRAM
         )
+        gpu_prefix_image = None
+        if gpu_prefix_ops is not None:
+            prefix_array = self._cached_gpu_prefix(key, source_array, gpu_prefix_ops)
+            gpu_prefix_image = _rgb_array_to_qimage(prefix_array)
+        gpu_lut_image = _lut_array_to_qimage(gpu_lut) if gpu_lut is not None else None
         with self._lock:
             self._images[key] = image
             self._images.move_to_end(key)
@@ -135,6 +174,18 @@ class EditPreviewProvider(QQuickImageProvider):
             self._histograms.move_to_end(key)
             while len(self._histograms) > _LRU_CAPACITY:
                 self._histograms.popitem(last=False)
+            self._store_gpu_image(self._gpu_prefix_images, key, gpu_prefix_image)
+            self._store_gpu_image(self._gpu_lut_images, key, gpu_lut_image)
+
+    def update_gpu_lut(self, photo_id: str, lut: np.ndarray) -> None:
+        """A finetune2-LUT (#22) frissítése ÖNMAGÁBAN, a teljes `register()`
+        (dekód + filter-lánc + hisztogram) megkerülésével — ezt hívja a GPU
+        élő-előnézet húzás közben (`EditController.previewFinetuneGpu`),
+        hogy a húzás olcsó maradjon: csak a 256×1 LUT-kép cserélődik, a
+        forráskép/prefix érintetlen."""
+        key = str(photo_id)
+        with self._lock:
+            self._store_gpu_image(self._gpu_lut_images, key, _lut_array_to_qimage(lut))
 
     def unregister(self, photo_id: str) -> None:
         """A fotó eltávolítása (szerkesztés vége)."""
@@ -142,15 +193,33 @@ class EditPreviewProvider(QQuickImageProvider):
         self._sources.pop(key, None)
         if self._prefix_cache is not None and self._prefix_cache[0] == key:
             self._prefix_cache = None
+        if self._gpu_prefix_cache is not None and self._gpu_prefix_cache[0] == key:
+            self._gpu_prefix_cache = None
         with self._lock:
             self._images.pop(key, None)
             self._histograms.pop(key, None)
+            self._gpu_prefix_images.pop(key, None)
+            self._gpu_lut_images.pop(key, None)
 
     def histogram_for(self, photo_id: str) -> dict:
         """Az utoljára renderelt előnézet RGB-hisztogramja (#25), vagy üres
         hisztogram, ha a fotó nincs (már) regisztrálva."""
         with self._lock:
             return self._histograms.get(str(photo_id), EMPTY_HISTOGRAM)
+
+    @staticmethod
+    def _store_gpu_image(
+        store: OrderedDict[str, QImage], key: str, image: QImage | None
+    ) -> None:
+        """GPU-előnézeti kép (LRU-tárolt) frissítése — `image is None` esetén
+        a bejegyzés törlődik (a lánc jelenleg nem GPU-alkalmas, #22)."""
+        if image is None:
+            store.pop(key, None)
+            return
+        store[key] = image
+        store.move_to_end(key)
+        while len(store) > _LRU_CAPACITY:
+            store.popitem(last=False)
 
     # -- lánc-prefix gyorsítótár (#140) ------------------------------------
 
@@ -204,11 +273,54 @@ class EditPreviewProvider(QQuickImageProvider):
         self._prefix_cache = (key, prefix_ops, source_array, prefix_array)
         return prefix_array
 
+    def _cached_gpu_prefix(
+        self,
+        key: str,
+        source_array: np.ndarray,
+        prefix_ops: tuple[FilterOp, ...],
+    ) -> np.ndarray:
+        """A GPU-előnézet (#22) prefix-je, KÜLÖN gyorsítótár-rekeszben.
+
+        Ugyanaz a találat-logika, mint `_cached_prefix`-nél, de saját
+        `_gpu_prefix_cache` rekesszel — ld. a rekesz mellé írt docsztringet
+        a cache-csörgés elkerüléséről. A gyakori esetben (finetune2 a lánc
+        VÉGén, `prefix_ops == ops[:-1]`) ez a hívás olcsó: a tömb-tartalom
+        MEGEGYEZIK a `_cached_prefix`-ben az imént kiszámolttal, csak a
+        referencia más — az `apply_filters` itt is lefut, de a KÖVETKEZŐ,
+        AZONOS prefixű hívásnál már ez a rekesz is talál."""
+        cached = self._gpu_prefix_cache
+        if (
+            cached is not None
+            and cached[0] == key
+            and cached[1] == prefix_ops
+            and cached[2] is source_array
+        ):
+            return cached[3]
+        if prefix_ops:
+            prefix_array, _skipped = apply_filters(source_array, prefix_ops)
+        else:
+            prefix_array = source_array
+        self._gpu_prefix_cache = (key, prefix_ops, source_array, prefix_array)
+        return prefix_array
+
     def requestImage(self, photo_id, size, requested_size):
-        # az URL-ben ?rev=<szám> cache-buster jöhet — az id az első rész
+        # az URL-ben ?rev=<szám> cache-buster jöhet — az id az első rész.
+        # A `gpuprefix=1`/`gpulut=1` jelző (#22) a GPU-előnézeti köztes
+        # képet/LUT-ot kéri a rendes (teljes lánccal renderelt) kép helyett
+        # — ezekre a placeholder-fallback NEM vonatkozik: null képnél a
+        # QML-oldali GpuPointFilterPreview egyszerűen nem kap forrást, a
+        # hívó (EditController) pedig üres URL-t ad, amíg nincs friss adat.
+        key = photo_id.split("?")[0]
+        is_gpu_prefix = "gpuprefix=1" in photo_id
+        is_gpu_lut = "gpulut=1" in photo_id
         with self._lock:
-            image = self._images.get(photo_id.split("?")[0], QImage())
-        if image.isNull():
+            if is_gpu_prefix:
+                image = self._gpu_prefix_images.get(key, QImage())
+            elif is_gpu_lut:
+                image = self._gpu_lut_images.get(key, QImage())
+            else:
+                image = self._images.get(key, QImage())
+        if image.isNull() and not (is_gpu_prefix or is_gpu_lut):
             image = _placeholder()
         # A néző sourceSize.width-del (magasság nélkül) kér: a (w, 0) a
         # QSize.isValid() szerint érvényes, de a scaled() üres képet adna
@@ -279,3 +391,10 @@ def _rgb_array_to_qimage(array: np.ndarray) -> QImage:
         contiguous.data, width, height, stride, QImage.Format.Format_RGB888
     )
     return image.copy()
+
+
+def _lut_array_to_qimage(lut: np.ndarray) -> QImage:
+    """`(256, 3)` uint8 finetune2-LUT → 256×1 RGB8 `QImage` (#22) — a
+    `GpuPointFilterPreview.qml` ezt tölti be `lutItem`-ként és mintavételezi
+    csatornánként a shaderben (ld. `gpu_point_pipeline` modul-docsztring)."""
+    return _rgb_array_to_qimage(lut[np.newaxis, :, :])

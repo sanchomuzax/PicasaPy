@@ -681,6 +681,42 @@ class TestEditSessionFinetune:
         assert values.highlights == 0.0 and values.temperature == 0.0
 
 
+class TestGpuFinetunePrefix:
+    """`gpu_finetune_prefix()` — a GPU élő-előnézet (#22) eligibilitása."""
+
+    def test_no_finetune_returns_full_chain(self):
+        """Nincs finetune2: a `set_finetune` a végére fűzné, tehát a TELJES
+        (jelenlegi) lánc a GPU sourceItem-je."""
+        session = EditSession.from_value("enhance=1;autolight=1;")
+        assert session.gpu_finetune_prefix() == session.ops
+
+    def test_empty_session_returns_empty_prefix(self):
+        session = EditSession()
+        assert session.gpu_finetune_prefix() == ()
+
+    def test_finetune_last_returns_prefix_before_it(self):
+        """Ha a finetune2 a lánc UTOLSÓ eleme, az előtte álló ops a prefix."""
+        session = EditSession.from_value(
+            "enhance=1;finetune2=1,0.5,0,0,00000000,0;"
+        )
+        prefix = session.gpu_finetune_prefix()
+        assert prefix is not None
+        assert [op.name for op in prefix] == ["enhance"]
+
+    def test_finetune_in_middle_returns_none(self):
+        """Ha a finetune2 UTÁN másik effekt is van, GPU-előnézet nem
+        biztonságos (az utána jövő effekt hiányozna a shaderes útból)."""
+        session = EditSession.from_value(
+            "finetune2=1,0.5,0,0,00000000,0;grain2=1,0.5;"
+        )
+        assert session.gpu_finetune_prefix() is None
+
+    def test_v1_finetune_last_also_eligible(self):
+        """A v1 `finetune` névvel is működik (ugyanaz a réteg)."""
+        session = EditSession.from_value("finetune=1,0.5,0,0,00000000,0;")
+        assert session.gpu_finetune_prefix() == ()
+
+
 class TestEditSessionEffects:
     """Effekt rétegek append-only fűzése (#20)."""
 

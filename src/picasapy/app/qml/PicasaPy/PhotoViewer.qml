@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import PicasaPy.Gpu
 
 // Egyképes néző — a Picasa 3.9 "Megjelenítés és szerkesztés" képernyője
 // alapján (#808080 háttér, felső filmszalag nyilakkal, bal eszközpanel;
@@ -15,6 +16,22 @@ Rectangle {
     // átmenetileg null lehet, miközben a lenti kötések utoljára
     // kiértékelődnek.
     readonly property var editCtl: editController
+
+    // GPU élő-előnézet (#22): a finetune-csúszkák AKTÍV húzása alatt igaz —
+    // az EditorPanel finetunePreview→finetuneCommit életciklusa keretezi
+    // (ld. lent, az editorPanel bekötésénél). `gpuFinetuneEligible` a
+    // KÉT feltétel: (a) a futtatókörnyezet RHI-alapú grafikai kontextust
+    // ad (GPU-képtelen — pl. CI offscreen/software — környezetben ez
+    // MINDIG false, néma és biztonságos fallback a rendes CPU-útra), és
+    // (b) a jelenlegi szerkesztési lánc GPU-alkalmas
+    // (`EditController.gpuPrefixSource` nem üres — ld. ott a feltételt).
+    property bool gpuFinetuneActive: false
+    readonly property bool gpuCapable: GraphicsInfo.api !== GraphicsInfo.Software
+                                        && GraphicsInfo.api !== GraphicsInfo.Unknown
+                                        && GraphicsInfo.api !== GraphicsInfo.Null
+    readonly property bool gpuFinetuneEligible: viewer.gpuCapable
+        && viewer.editCtl && viewer.editCtl.gpuPrefixSource !== ""
+
     property int currentIndex: -1
     // a ListView.count reaktív — a rowCount() hívást a QML nem követné
     property int photoCount: filmstrip.count
@@ -452,8 +469,25 @@ Rectangle {
                     highlights: viewer.editCtl ? viewer.editCtl.highlights : 0
                     shadows: viewer.editCtl ? viewer.editCtl.shadows : 0
                     colorTemp: viewer.editCtl ? viewer.editCtl.colorTemp : 0
-                    onFinetunePreview: (f, h, s, t) => editController.previewFinetune(f, h, s, t)
-                    onFinetuneCommit: (f, h, s, t) => editController.setFinetune(f, h, s, t)
+                    // GPU élő-előnézet (#22): amíg a lánc GPU-alkalmas ÉS
+                    // van RHI, a húzás a LUT-only gyors utat hívja (a
+                    // `GpuPointFilterPreview` réteg jelenik meg a `photo`
+                    // fölött) — máskülönben (nincs GPU, vagy a lánc nem
+                    // GPU-alkalmas) a rendes, teljes CPU-előnézet fut,
+                    // változatlanul.
+                    onFinetunePreview: (f, h, s, t) => {
+                        viewer.gpuFinetuneActive = true
+                        if (viewer.gpuFinetuneEligible)
+                            editController.previewFinetuneGpu(f, h, s, t)
+                        else
+                            editController.previewFinetune(f, h, s, t)
+                    }
+                    onFinetuneCommit: (f, h, s, t) => {
+                        // a húzás végén MINDIG a normál CPU-út menti — az
+                        // igazságforrás sosem a GPU-réteg (ld. #22 jegy)
+                        viewer.gpuFinetuneActive = false
+                        editController.setFinetune(f, h, s, t)
+                    }
                     onEffectRequested: (name) => editController.applyEffect(name)
                     onToolActivated: function(tool) {
                         // crop/tilt/retouch/text helyi mód (overlay/
@@ -634,6 +668,50 @@ Rectangle {
                         asynchronous: Qt.platform.pluginName !== "offscreen"
                         autoTransform: true   // EXIF-orientáció
                         sourceSize.width: 2560
+                    }
+
+                    // GPU élő-előnézet (#22): a `photo` FÖLÖTT, csak akkor
+                    // látható, ha `gpuFinetuneActive && gpuFinetuneEligible`
+                    // (ld. a fenti property-k docsztringjét). A két rejtett
+                    // `Image` a forrás (a finetune2 ELŐTTI kép) és a
+                    // 256×1 LUT-textúra betöltője — `smooth: false` a
+                    // LUT-on kötelező (egzakt indexelés, ld.
+                    // GpuPointFilterPreview.qml). GPU-képtelen
+                    // futtatókörnyezetben (`gpuFinetuneEligible` mindig
+                    // false) ez a réteg SOSEM válik láthatóvá — a `photo`
+                    // Image alatta változatlanul a rendes CPU-előnézetet
+                    // mutatja, semmi nem törhet emiatt CI-ban.
+                    Image {
+                        id: gpuPrefixImage
+                        objectName: "gpuPrefixImage"
+                        visible: false
+                        source: viewer.gpuFinetuneEligible
+                                ? viewer.editCtl.gpuPrefixSource : ""
+                        asynchronous: Qt.platform.pluginName !== "offscreen"
+                        autoTransform: true
+                        sourceSize.width: 2560
+                    }
+                    Image {
+                        id: gpuLutImage
+                        objectName: "gpuLutImage"
+                        visible: false
+                        smooth: false
+                        cache: false
+                        source: viewer.gpuFinetuneEligible
+                                ? viewer.editCtl.gpuLutSource : ""
+                    }
+                    GpuPointFilterPreview {
+                        id: gpuFinetunePreview
+                        objectName: "gpuFinetunePreview"
+                        anchors.fill: photo
+                        rotation: photo.rotation
+                        scale: photo.scale
+                        transformOrigin: Item.Center
+                        visible: viewer.gpuFinetuneActive && viewer.gpuFinetuneEligible
+                        sourceItem: gpuPrefixImage
+                        lutItem: gpuLutImage
+                        satGain: 1.0
+                        bwMix: 0.0
                     }
 
                     // #14: videó-lejátszó — csak videónál töltődik be, így

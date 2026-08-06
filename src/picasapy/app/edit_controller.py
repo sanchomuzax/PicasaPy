@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
 from picasapy.app.effect_params import (
@@ -23,6 +24,8 @@ from picasapy.ini.text_overlay import (
     serialize_text_active,
 )
 from picasapy.metadata import read_exif_details
+from picasapy.render.gpu_point_pipeline import build_finetune2_lut
+from picasapy.render.tone import parse_neutral_argb
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
@@ -171,6 +174,13 @@ class EditController(QObject):
 
     revisionChanged = Signal()
     toolsChanged = Signal()
+    # GPU élő-előnézet (#22): KÜLÖN jel a revisionChanged-től — a
+    # finomhangolás-húzás GPU-útja (previewFinetuneGpu) csak a LUT-ot
+    # frissíti, a `previewSource`/`photo` Image-nek NEM szabad ilyenkor
+    # újratöltődnie (ez okozná pont azt a numpy-újraszámolást, amit a
+    # GPU-réteg elkerülni hivatott). A gpuPrefixSource/gpuLutSource ezt a
+    # jelet figyeli.
+    gpuRevisionChanged = Signal()
 
     def __init__(self, provider: EditPreviewProvider, parent=None) -> None:
         super().__init__(parent)
@@ -181,6 +191,8 @@ class EditController(QObject):
         self._section_name = ""
         self._session = EditSession()
         self._revision = 0
+        # GPU élő-előnézet (#22): önálló számláló, ld. gpuRevisionChanged
+        self._gpu_revision = 0
         # undo/redo verem (#59): (filters-érték a művelet ELŐTT, művelet-kulcs)
         self._undo_stack: list[tuple[str, str]] = []
         self._redo_stack: list[tuple[str, str]] = []
@@ -215,6 +227,25 @@ class EditController(QObject):
         if not self._photo_id:
             return ""
         return f"image://editpreview/{self._photo_id}?rev={self._revision}"
+
+    @Property(str, notify=gpuRevisionChanged)
+    def gpuPrefixSource(self) -> str:
+        """A finetune2 ELŐTTI köztes kép URL-je (#22), vagy üres string, ha
+        nincs aktív szerkesztés vagy a jelenlegi lánc nem GPU-alkalmas
+        (`EditSession.gpu_finetune_prefix()` — ld. ott a feltételt). A
+        `GpuPointFilterPreview.qml` ezt tölti be `sourceItem`-ként; a hívó
+        (QML) ÜRES string esetén nem is jeleníti meg a GPU-réteget."""
+        if not self._photo_id or self._session.gpu_finetune_prefix() is None:
+            return ""
+        return f"image://editpreview/{self._photo_id}?gpuprefix=1&rev={self._gpu_revision}"
+
+    @Property(str, notify=gpuRevisionChanged)
+    def gpuLutSource(self) -> str:
+        """A jelenlegi finetune2-LUT 256×1 képének URL-je (#22) — ugyanaz az
+        eligibilitási feltétel, mint `gpuPrefixSource`-nál."""
+        if not self._photo_id or self._session.gpu_finetune_prefix() is None:
+            return ""
+        return f"image://editpreview/{self._photo_id}?gpulut=1&rev={self._gpu_revision}"
 
     @Property("QVariant", notify=revisionChanged)
     def histogram(self):
@@ -422,6 +453,7 @@ class EditController(QObject):
         self._text_draft = ""
         self._text_pending_pos = None
         self._bump_revision()
+        self._bump_gpu_revision()
         self.toolsChanged.emit()
 
     @Slot(str)
@@ -684,6 +716,38 @@ class EditController(QObject):
         )
         self._register_preview(preview_session)
         self._bump_revision()
+
+    @Slot(float, float, float, float)
+    def previewFinetuneGpu(
+        self, fill: float, highlights: float, shadows: float, temperature: float
+    ) -> None:
+        """GPU-gyorsított élő finomhangolás-előnézet (#22).
+
+        A `previewFinetune`-nal ellentétben ez NEM futtatja újra a teljes
+        numpy filter-láncot minden húzási lépésnél — csak a (256×1, olcsó)
+        LUT-ot számolja újra és frissíti a `gpuLutSource`-ot; a
+        `GpuPointFilterPreview.qml` a drága munkát a GPU-n végzi, a
+        `gpuPrefixSource` (a finetune2 ELŐTTI kép) a húzás alatt
+        VÁLTOZATLAN. A hívó (PhotoViewer.qml) csak akkor hívja ezt
+        previewFinetune HELYETT, ha a futtatókörnyezet RHI-alapú GPU-t
+        biztosít ÉS a jelenlegi lánc GPU-alkalmas (`gpuPrefixSource`
+        nem üres) — máskülönben a normál CPU-utat használja.
+
+        NEM ír inibe, NEM tol undo-lépést, NEM bumpolja a `revision`-t (a
+        `previewSource`/`photo` Image-nek a húzás alatt NEM szabad
+        újratöltődnie) — csak a `gpuRevisionChanged`-et."""
+        self._require_active()
+        prefix_ops = self._session.gpu_finetune_prefix()
+        if prefix_ops is None:
+            # a lánc időközben (pl. párhuzamos ini-módosítás) GPU-
+            # alkalmatlanná vált — néma, biztonságos no-op, a hívó a
+            # gpuPrefixSource újraolvasásával úgyis visszavált CPU-ra
+            return
+        lut = build_finetune2_lut(
+            fill=fill, highlights=highlights, shadows=shadows, temperature=temperature
+        )
+        self._provider.update_gpu_lut(self._photo_id, lut)
+        self._bump_gpu_revision()
 
     @Slot(float, float, float, float)
     def setFinetune(
@@ -958,11 +1022,35 @@ class EditController(QObject):
     def _register_preview(self, session: EditSession | None = None) -> None:
         assert self._image_path is not None
         active_session = session if session is not None else self._session
+        gpu_prefix_ops = active_session.gpu_finetune_prefix()
+        gpu_lut = self._gpu_lut_for(active_session) if gpu_prefix_ops is not None else None
         self._provider.register(
             self._photo_id,
             self._image_path,
             active_session.ops,
             text=self._current_text_spec(),
+            gpu_prefix_ops=gpu_prefix_ops,
+            gpu_lut=gpu_lut,
+        )
+        self._bump_gpu_revision()
+
+    @staticmethod
+    def _gpu_lut_for(session: EditSession) -> np.ndarray:
+        """A `session` MENTETT finetune2-értékeiből (vagy semleges alapból,
+        ha nincs finomhangolás) épített LUT (#22) — ez indítja a
+        `gpuLutSource`-ot minden `_register_preview()`-nál, hogy a húzás
+        KEZDETÉN (az első `previewFinetuneGpu` hívás ELŐTT is) már a
+        mentett állapotot tükrözze."""
+        values = session.finetune_values()
+        if values is None:
+            return build_finetune2_lut()
+        neutral = parse_neutral_argb(values.neutral)
+        return build_finetune2_lut(
+            fill=values.fill,
+            highlights=values.highlights,
+            shadows=values.shadows,
+            neutral=neutral,
+            temperature=values.temperature,
         )
 
     def _current_text_spec(self) -> TextOverlaySpec | None:
@@ -988,6 +1076,12 @@ class EditController(QObject):
     def _bump_revision(self) -> None:
         self._revision += 1
         self.revisionChanged.emit()
+
+    def _bump_gpu_revision(self) -> None:
+        """A gpuPrefixSource/gpuLutSource cache-bustere (#22) — KÜLÖN a
+        `revisionChanged`-től, ld. a `gpuRevisionChanged` docsztringjét."""
+        self._gpu_revision += 1
+        self.gpuRevisionChanged.emit()
 
 
 def _clamp01(value: float) -> float:
