@@ -1,0 +1,30 @@
+# Csak-dokumentációs változások „üres" CI-je.
+#
+# A `ci.yml` szándékosan NEM fut `**.md` / `docs/**` változásra (a program
+# futására nincs hatásuk, felesleges 9 perc runner-idő). A main ág védelme
+# viszont KÖTELEZŐ ellenőrzésként várja a `Test (ubuntu-latest)` nevű
+# státuszt — ami így sosem érkezett meg, és a tisztán dokumentációs PR
+# örökre „beolvasztásra vár" állapotban ragadt (kézi, admin-jogú átnyomás
+# kellett hozzá).
+#
+# Ez a fájl pótolja a hiányzó státuszt: ugyanazon a néven azonnal sikeresre
+# fut, ha a PR dokumentációt érint. Vegyes (kód + doksi) PR-nél mindkét
+# munkafolyamat elindul — a VALÓDI teszt is —, tehát a védelem nem gyengül:
+# hibás kódot továbbra sem lehet beolvasztani.
+name: CI (docs)
+
+on:
+  pull_request:
+    paths:
+      - '**.md'
+      - 'docs/**'
+
+jobs:
+  test:
+    # A névnek BETŰRE egyeznie kell a ci.yml mátrix-jobjának ubuntu-lábával,
+    # különben az ág-védelem nem ismeri fel kötelező ellenőrzésként.
+    name: Test (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dokumentációs változás — nincs mit tesztelni
+        run: echo "Csak dokumentáció változott; a teljes tesztkészletet a ci.yml futtatja kódváltozásnál."
