@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from picasapy.render.chain import (
     KNOWN_UNRENDERED_OPS,
+    ChainReport,
     apply_filters,
     tilt_cover_scale,
 )
@@ -47,11 +48,23 @@ from picasapy.render.tone import (
     apply_shadows,
     parse_neutral_argb,
 )
+from picasapy.render.registry import (
+    FILTER_REGISTRY,
+    FilterSpec,
+    SliderSpec,
+    chain_flags,
+    clamp_slider_value,
+    get_filter_spec,
+)
 
 __all__ = [
+    "FILTER_REGISTRY",
     "GLOW_V1_INTENSITY",
     "GLOW_V1_RADIUS",
     "KNOWN_UNRENDERED_OPS",
+    "ChainReport",
+    "FilterSpec",
+    "SliderSpec",
     "UNSHARP_V1_STRENGTH",
     "apply_ansel",
     "apply_autocolor",
@@ -79,6 +92,9 @@ __all__ = [
     "apply_unsharp",
     "apply_vignette",
     "apply_warm",
+    "chain_flags",
+    "clamp_slider_value",
+    "get_filter_spec",
     "parse_neutral_argb",
     "parse_rgb_hex",
     "tilt_cover_scale",
