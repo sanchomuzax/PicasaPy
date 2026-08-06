@@ -11,7 +11,18 @@ Rectangle {
     id: panel
     objectName: "editorPanel"
     color: Theme.chromeBg
-    implicitWidth: 230
+    // #405 2. pont: a panel az eredetiben keskenyebb/kompaktabb. A
+    // `research/copy_Picasa_3_7/Picasa3/runtime/constants.ui` `[Picasa2]`
+    // szekciója NEM tartalmaz szerkesztőpanel-szélesség kulcsot (csak
+    // mappalista-/indexkép-értékeket, ld. `docs/specs/design-guide.md`
+    // #384 táblázata) — ezért a design-guide MÁR dokumentált, screenshot-
+    // mért referenciáját (`Néző eszközpanel ~280px @1920×1080`) használjuk,
+    // ugyanazzal a méretaránnyal levetítve az app 1280px-es alapértelmezett
+    // ablakszélességére, mint amit a design-guide a mappapanelnél alkalmaz
+    // (386px@1920 → 250px@1280) — 280 × 1280/1920 ≈ 187px, 190-re kerekítve.
+    // A PhotoViewer.qml `Layout.preferredWidth`-jét is EZZEL összhangban
+    // kell tartani (ott állítva, nem itt).
+    implicitWidth: 190
 
     // aktív fül: 0 = Gyakori javítások, 1 = Finomhangolás, 2 = Effektek,
     // 3 = 4. effekt-fül (zöld ecset), 4 = 5. effekt-fül (kék ecset) — #328,
@@ -129,6 +140,19 @@ Rectangle {
     function effectThumbSource(effectName) {
         if (panel.effectThumbPhotoId === "") return ""
         return "image://effectthumb/" + panel.effectThumbPhotoId + "/" + effectName
+    }
+
+    // #405: sima fotó-bélyegkép — a "Gyakori javítások" fül azon
+    // csempéihez, amelyek NEM egy-gombos hatást alkalmaznak, hanem
+    // interaktív eszközt nyitnak (Vágás, Retusálás, Szöveg — a
+    // Kiegyenesítés is ide tartozik, mert alapállapotban (0°) nincs
+    // vizuális hatása). Az eredeti Picasa ilyenkor is a fotót magát
+    // mutatja a csempén (ld. #405 issue), a meglévő indexkép-bélyegkép-
+    // szolgáltatót (image://thumbs/<id>) újrahasznosítva — nincs szükség
+    // külön rendereléshez az effektbélyegkép-providerben.
+    function plainThumbSource() {
+        if (panel.effectThumbPhotoId === "") return ""
+        return "image://thumbs/" + panel.effectThumbPhotoId
     }
 
     // egy effekt-gomb kattintása: ha az effektnek vannak paraméterei,
@@ -329,18 +353,29 @@ Rectangle {
         if (tool === "crop") panel.cropRequested()
     }
 
-    // ikonos eszköz-csempe: kis kép-ikon + felirat alatta (Picasa-minta)
+    // #405: kép-előnézetes eszköz-csempe — az eredeti Picasa a "Gyakori
+    // javítások" fülön MINDEN gombot fotó-miniatűrrel mutat: az effekt-
+    // előnézettel rendelkező eszközöknél (Vörösszem/Jó napom van/
+    // Automatikus kontraszt/Automatikus szín) az adott hatás alkalmazott
+    // eredményét, a tisztán interaktív eszközöknél (Vágás/Kiegyenesítés/
+    // Retusálás/Szöveg) a sima fotót (ld. panel.plainThumbSource()). A
+    // `thumbSource` üresen a régi PNG-ikon marad meg — ez tartja életben a
+    // korábbi, editController nélküli teszteket (test_qml_editor_panel.py).
     component ToolTile: Item {
         id: tile
         required property string toolName
         required property string label
         required property string icon
+        // "" = nincs kép-előnézet (a régi PNG-ikon látszik helyette)
+        property string thumbSource: ""
         property bool active: false
         property bool tileEnabled: true
         signal activated(string tool)
 
         Layout.fillWidth: true
-        Layout.preferredHeight: 66
+        // #405: nagyobb csempe — a kép-előnézet a Picasa-mintát követve
+        // jóval nagyobb helyet foglal, mint a korábbi 40×30-as ikon
+        Layout.preferredHeight: 84
         // az öröklött enabled is számít (#103): videónál a PhotoViewer az
         // egész panelt tiltja — a csempe ilyenkor vizuálisan is szürkül
         enabled: tile.tileEnabled
@@ -363,17 +398,40 @@ Rectangle {
             border.width: tile.active ? 1 : 0
             border.color: Theme.selectionBlue
         }
-        Image {
+
+        // #405: a kép-előnézet területe — amíg a bélyegkép nem kész (vagy
+        // nincs thumbSource, ld. fent), a régi PNG-ikon a helyőrző (SOHA
+        // ne legyen üres/villogó csempe).
+        Item {
+            id: tileThumbBox
             anchors.top: parent.top
             anchors.topMargin: 4
             anchors.horizontalCenter: parent.horizontalCenter
-            width: 40; height: 30
-            source: "../../assets/tools/" + tile.icon + ".png"
-            smooth: true
+            width: parent.width - 8
+            height: 54
+
+            Image {
+                id: tileIconImg
+                anchors.centerIn: parent
+                width: 40; height: 30
+                source: "../../assets/tools/" + tile.icon + ".png"
+                smooth: true
+                visible: tile.thumbSource === "" || tileThumbImg.status !== Image.Ready
+            }
+            Image {
+                id: tileThumbImg
+                objectName: tile.objectName ? tile.objectName + "Thumb" : ""
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                source: tile.thumbSource
+                smooth: true
+                visible: tile.thumbSource !== "" && status === Image.Ready
+            }
         }
         Text {
-            anchors.top: parent.top
-            anchors.topMargin: 37   // az ikon alatt, nem érhet össze vele
+            anchors.top: tileThumbBox.bottom
+            anchors.topMargin: 4
             anchors.horizontalCenter: parent.horizontalCenter
             width: parent.width - 2
             horizontalAlignment: Text.AlignHCenter
@@ -706,20 +764,9 @@ Rectangle {
         anchors.margins: 10
         spacing: 8
 
-        Rectangle {
-            Layout.fillWidth: true
-            height: 22
-            color: Theme.panelHeaderBg
-            Text {
-                anchors.left: parent.left
-                anchors.leftMargin: 6
-                anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("Common Fixes")
-                font.pixelSize: Theme.fontSize
-                font.bold: true
-                color: Theme.panelHeaderText
-            }
-        }
+        // #405: a szöveges "Common Fixes"/"Gyakori javítások" fejléc TÖRÖLVE
+        // — az eredeti Picasán a fül alatt NINCS ilyen felirat, a csempék
+        // rögtön a fülsáv alatt kezdődnek (ld. #405 issue 4. pontja).
 
         GridLayout {
             columns: 3
@@ -731,18 +778,23 @@ Rectangle {
                 objectName: "editToolCrop"
                 toolName: "crop"; label: qsTr("Crop"); icon: "crop"
                 active: panel.cropActive
+                // #405: interaktív eszköz — sima fotó-miniatűr (ld. ToolTile)
+                thumbSource: panel.plainThumbSource()
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolTilt"
                 toolName: "tilt"; label: qsTr("Straighten"); icon: "tilt"
                 active: panel.tiltActive
+                thumbSource: panel.plainThumbSource()
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolRedeye"
                 toolName: "redeye"; label: qsTr("Redeye"); icon: "redeye"
                 active: panel.redeyeActive
+                // #405: valódi hatás-előnézet (render/chain.py "redeye")
+                thumbSource: panel.effectThumbSource("redeye")
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             // egygombos javítások (#116): nincs "benyomva" állapot — a gomb
@@ -751,38 +803,46 @@ Rectangle {
                 objectName: "editToolEnhance"
                 toolName: "enhance"; label: qsTr("I'm Feeling Lucky"); icon: "lucky"
                 tileEnabled: panel.enhanceEnabled
+                thumbSource: panel.effectThumbSource("enhance")
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolAutolight"
                 toolName: "autolight"; label: qsTr("Auto Contrast"); icon: "contrast"
                 tileEnabled: panel.autolightEnabled
+                thumbSource: panel.effectThumbSource("autolight")
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolAutocolor"
                 toolName: "autocolor"; label: qsTr("Auto Color"); icon: "color"
                 tileEnabled: panel.autocolorEnabled
+                thumbSource: panel.effectThumbSource("autocolor")
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolRetouch"
                 toolName: "retouch"; label: qsTr("Retouch"); icon: "retouch"
                 active: panel.retouchActive
+                thumbSource: panel.plainThumbSource()
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolText"
                 toolName: "text"; label: qsTr("Text"); icon: "text"
                 active: panel.textActive
+                thumbSource: panel.plainThumbSource()
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
         }
 
-        // #337: Kitöltő fény — az eredeti Picasa Alapvető javítások fülén az
-        // ikonrács alatt EZ AZ EGYETLEN csúszka, és a napi használat egyik
-        // legfontosabb eszköze. Ugyanaz a beállítás, mint a Finomhangolás
-        // fülén: a két csúszka egymást követi (fillLightMoved).
+        // #337/#405: Kitöltő fény — az eredeti Picasa Alapvető javítások
+        // fülén az ikonrács alatt EZ AZ EGYETLEN csúszka, és a napi
+        // használat egyik legfontosabb eszköze. Ugyanaz a beállítás, mint a
+        // Finomhangolás fülén: a két csúszka egymást követi
+        // (fillLightMoved). A címke a csúszka FÖLÖTT, kompakt (#405 6.
+        // pont) — ez már így volt, csak megerősítve/kommentelve a hűség
+        // kedvéért.
         Label {
             text: qsTr("Fill Light")
             font.pixelSize: Theme.fontSize - 1
@@ -810,8 +870,9 @@ Rectangle {
                 objectName: "editRedoButton"
                 label: panel.redoLabel
                 buttonEnabled: panel.redoAvailable
-                Layout.fillWidth: false
-                Layout.preferredWidth: 64
+                // #405: a Visszavonás/Újra az eredetiben egyenlő szélességű
+                // pár a panel alján (nem egy keskeny + egy kitöltő) — mindkét
+                // gomb fillWidth-del osztozik a helyen.
                 onButtonClicked: panel.redoRequested()
             }
         }
@@ -925,8 +986,9 @@ Rectangle {
                 objectName: "finetuneRedoButton"
                 label: panel.redoLabel
                 buttonEnabled: panel.redoAvailable
-                Layout.fillWidth: false
-                Layout.preferredWidth: 64
+                // #405: a Visszavonás/Újra az eredetiben egyenlő szélességű
+                // pár a panel alján (nem egy keskeny + egy kitöltő) — mindkét
+                // gomb fillWidth-del osztozik a helyen.
                 onButtonClicked: panel.redoRequested()
             }
         }
@@ -1065,8 +1127,9 @@ Rectangle {
                 objectName: "effectsRedoButton"
                 label: panel.redoLabel
                 buttonEnabled: panel.redoAvailable
-                Layout.fillWidth: false
-                Layout.preferredWidth: 64
+                // #405: a Visszavonás/Újra az eredetiben egyenlő szélességű
+                // pár a panel alján (nem egy keskeny + egy kitöltő) — mindkét
+                // gomb fillWidth-del osztozik a helyen.
                 onButtonClicked: panel.redoRequested()
             }
         }
@@ -1193,8 +1256,9 @@ Rectangle {
                 objectName: "effects2RedoButton"
                 label: panel.redoLabel
                 buttonEnabled: panel.redoAvailable
-                Layout.fillWidth: false
-                Layout.preferredWidth: 64
+                // #405: a Visszavonás/Újra az eredetiben egyenlő szélességű
+                // pár a panel alján (nem egy keskeny + egy kitöltő) — mindkét
+                // gomb fillWidth-del osztozik a helyen.
                 onButtonClicked: panel.redoRequested()
             }
         }
@@ -1315,8 +1379,9 @@ Rectangle {
                 objectName: "effects3RedoButton"
                 label: panel.redoLabel
                 buttonEnabled: panel.redoAvailable
-                Layout.fillWidth: false
-                Layout.preferredWidth: 64
+                // #405: a Visszavonás/Újra az eredetiben egyenlő szélességű
+                // pár a panel alján (nem egy keskeny + egy kitöltő) — mindkét
+                // gomb fillWidth-del osztozik a helyen.
                 onButtonClicked: panel.redoRequested()
             }
         }
