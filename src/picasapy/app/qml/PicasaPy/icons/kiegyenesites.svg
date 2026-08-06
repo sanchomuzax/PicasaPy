@@ -14,7 +14,10 @@
     <path d="M18.8 9 22 12.4 22 13.6 17.8 10.4Z" fill="#93a5b0"/>
     <rect x="2" y="16.1" width="20" height="2.4" fill="#3b2c28"/>
   </g>
-  <g stroke="#ffffff" stroke-opacity="0.6" stroke-width="0.55">
-    <path d="M2 12.4h20 M2 13.9h20 M2 15.4h20 M2 16.9h20 M2 18.4h20"/>
+  <!-- a kiegyenesites-eszkoz SEGEDVONAL-HALOJA: finom, szaggatott racs a
+       TELJES kepen (vizszintes + fuggoleges) - az eredeti ikon ezt mutatja -->
+  <g clip-path="url(#kc)" stroke="#ffffff" stroke-opacity="0.75"
+     stroke-width="0.4" stroke-dasharray="1 1">
+    <path d="M2 6.6h20 M2 9.1h20 M2 11.6h20 M2 14.1h20 M2 16.6h20 M4.0 5.2v13.6 M6.5 5.2v13.6 M9.0 5.2v13.6 M11.5 5.2v13.6 M14.0 5.2v13.6 M16.5 5.2v13.6 M19.0 5.2v13.6 M21.5 5.2v13.6"/>
   </g>
 </svg>
