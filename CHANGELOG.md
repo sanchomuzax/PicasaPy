@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.7] – 2026-08-06
+
+### Hozzáadva
+- **Retusálás és szöveg a szerkesztőben (#148):** kattintásos folt-
+  eltávolítás élő előnézettel; szöveg felvitele a képre.
+- **Beállítások-dialógus (#350):** a Picasa 8 fülös beállítás-ablaka;
+  élőben a nyelv és a törlés-megerősítés, a többi előkészítve.
+- **Exportálás weboldalként (#351):** a Picasa sablonnyelvének teljes
+  motorja + „fehér" gyári sablon.
+- **Egyéni gyűjtemények és kézi mappadátum (#320):** saját gyűjtemények
+  a mappafában; a mappa éve kézzel felülírható.
+
+### Javítva
+- Indulási QML-figyelmeztetés a MoveDatabaseDialogban (#377).
+
 ## [0.6.6] – 2026-08-06
 
 ### Hozzáadva
