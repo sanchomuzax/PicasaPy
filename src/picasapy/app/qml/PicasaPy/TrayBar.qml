@@ -85,12 +85,48 @@ Column {
 
         // #406: szűk ablaknál (pl. fél képernyő) a szöveges gombok
         // (E-mail, Nyomtatás, Exportálás, Feltöltés) ne lógjanak ki —
-        // egy adott küszöb alatt ikon-only módra váltanak (tooltippel).
-        // A küszöböt a ténylegesen kiírt gombfeliratok (leghosszabb: a
-        // zöld „Feltöltés a Google Fotókba") + a kijelölés-előnézet +
-        // a csillag/forgatás/kollázs/film/megosztás ikonok együttes
-        // szélessége adja — 900px-nél ez már nem fér el felirattal.
-        readonly property bool compact: width < 1000
+        // a küszöb alatt ikon-only módra váltanak (tooltippel).
+        //
+        // A küszöb NEM fix pixelérték: a feliratok tényleges szélessége
+        // betűkészlet- és NYELVFÜGGŐ (a windows-CI éppen ezen bukott el
+        // — ott a szélesebb rendszerbetűvel 1280 px-en is kilógott a
+        // sáv). Ezért a négy feliratot `TextMetrics`-szel MEGMÉRJÜK, és
+        // a mért összeghez adjuk a fix elem-költségvetést (ikonok,
+        // térközök, csúszka, kijelölés-előnézet). A TextMetrics nem függ
+        // az elrendezéstől, így kötés-hurok sem keletkezik.
+        TextMetrics {
+            id: emailLabelMetrics
+            font.pixelSize: Theme.fontSize
+            text: qsTr("E-Mail")
+        }
+        TextMetrics {
+            id: printLabelMetrics
+            font.pixelSize: Theme.fontSize
+            text: qsTr("Print")
+        }
+        TextMetrics {
+            id: exportLabelMetrics
+            font.pixelSize: Theme.fontSize
+            text: qsTr("Export")
+        }
+        TextMetrics {
+            id: uploadLabelMetrics
+            font.pixelSize: Theme.fontSize
+            text: qsTr("Upload to Google Photos")
+        }
+        // A fix (felirat-független) elemek helyigénye: kijelölés-előnézet,
+        // ikonsorok, csúszka, térközök — mérve ~872 px, felfelé kerekítve
+        // 900-ra. INVARIÁNS, amiért ez biztonságos: a feliratos elrendezés
+        // tényleges igénye = fix + feliratok; a küszöb = 900 + feliratok.
+        // Feliratos módba csak `width >= küszöb` esetén váltunk, és ekkor
+        // width >= 900 + feliratok > fix + feliratok = igény — vagyis a
+        // tartalom BIZONYÍTHATÓAN elfér, bármilyen betűszélesség mellett.
+        readonly property real compactBudget: 900
+        readonly property bool compact: width < compactBudget
+                                        + emailLabelMetrics.width
+                                        + printLabelMetrics.width
+                                        + exportLabelMetrics.width
+                                        + uploadLabelMetrics.width
 
         Rectangle {
             width: parent.width; height: 1
