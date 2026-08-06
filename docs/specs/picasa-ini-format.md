@@ -256,6 +256,55 @@ szerepelt. A PicasaPy indexe ugyanezt olcsón megteheti (átlagszín →
 legközelebbi a 10 névből), és ezzel egy elveszettnek hitt Picasa-képesség
 tér vissza.
 
+### Megvalósítás (PicasaPy, #383)
+
+**FONTOS DISCLAIMER:** a Picasa PONTOS HSV-küszöbei (hol a határ pl. `blue`
+és `purple` között, mikor számít egy kép `pink`-nek a sima `red`/`purple`
+helyett) **nem ismertek és nem mérhetők** — a Picasa 2016 óta nem elérhető,
+csak a `color:`/`avgcolor` NÉV maradt fenn az `.exe` string-táblájában. Az
+alábbi küszöbök a mi józan implementációnk, NEM rekonstruált Picasa-
+viselkedés. A pontos konstansok és a levezetés:
+`src/picasapy/color/classify.py`.
+
+Menete:
+1. RGB → HSV.
+2. Alacsony telítettségnél (S < 0,12) akromatikus ág: `black` (V < 0,20),
+   `white` (V > 0,85), egyébként `gray`.
+3. A bíbor→vörös átmeneti hue-ívben (330°–355°), közepes telítettség
+   (0,12 ≤ S < 0,55) ÉS magas világosság (V ≥ 0,55) mellett: `pink`.
+4. Egyébként hue-sáv: `red` (345°–360° és 0°–15°), `orange` (15°–45°),
+   `yellow` (45°–70°), `green` (70°–170°), `blue` (170°–255°),
+   `purple` (255°–345°).
+
+**Tárolás:** az átlagszín (`avgcolor`, 0xRRGGBB) és a hozzá tartozó
+`color_token` NEM a `.picasa.ini`-be kerül (a Picasa sem oda írta —
+adatbázis-mező volt), hanem a PicasaPy SQLite-indexébe, egy önálló
+`photo_colors` táblába (`src/picasapy/index/colors.py`), a fájl
+AZONOSSÁGA szerint kulcsolva (útvonal, mtime_ns, méret) — ugyanaz a minta,
+mint a dedup-kereső `photo_hashes` gyorsítótáráé (#294). A tábla **lustán**
+jön létre (`CREATE TABLE IF NOT EXISTS`), NEM a `schema.py`
+sémaverziózásán át — a `schema.py` forró fájl, sémaverziót csak az
+integrátor oszt ki. Ha ez a tábla egy következő verzióban átköltözik a
+`schema.py`-ba (pl. hogy `photo_id`-alapú JOIN legyen belőle), az itt
+leírt viselkedés (útvonal-kulcs, upsert, lusta létrehozás) megmarad, csak
+a DDL helye változik.
+
+**Feltöltés:** a `backfill_colors(conn, limit)` kötegenként (alapból 200
+kép) tölti fel a még hiányzó bejegyzéseket — a kis (bélyegkép-méretű,
+redukált JPEG-dekódolású) beolvasásból számol átlagszínt, nem a teljes
+felbontásból. Ismételt hívásra 0-t ad vissza, ha nincs több teendő — így
+háttérszálon, kis kötegekben, az indulást nem blokkolva futtatható
+(az induláskori bekötés — pl. `prune_in_background` mintájára — az
+integrátor feladata, ld. a #383 jegy jelentését).
+
+**Keresés:** a `color:kék`/`szín:kék` token (mindkét nyelv egyenértékű,
+`src/picasapy/index/search_color.py`) a szabadszavas kereséstől
+elválasztva kerül feldolgozásra, ÉS kapcsolatban a maradék szöveges
+kereséssel; több színtoken egymással VAGY kapcsolatban (egy képnek csak
+egy átlagszíne van). Ha egy képre még nincs kiszámolt `color_token` (a
+háttér-feltöltés még nem érte el), a kép egyszerűen kimarad a
+találatokból — nem hibát dob.
+
 ## Írási szabályok (PicasaPy, kétirányú kompatibilitáshoz)
 
 1. Atomikus írás (temp fájl + rename), írás előtti backup.
