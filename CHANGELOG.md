@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.14] – 2026-08-06
+
+### Javítva
+- **Szerkesztő-panel szélessége (#411):** fix 280 px, mint az eredetiben —
+  a feliratok nem tördelődnek szét.
+- **„Gyakori javítások" fül ikonjai (#411):** a felhasználó képe helyett
+  saját rajzú ikonok (sötét fotónál a képes csempék egyformák voltak);
+  a Kiegyenesítés ikonon segédvonal-rács; fekvő 3:2 arány.
+- **A felezett ikonokon LÁTSZIK az effekt (#411):** a Qt SVG-motorja
+  némán kihagyta a vágást, ezért a két fél azonos volt; a féloldalak
+  mostantól matematikailag elmetszettek, a színek az eredeti ikonokon
+  mért arányokból számítva.
+- **Derítőfény (#411):** az ikon és a csúszka egy sorban, összetartozó
+  egységként, mint az eredetiben.
+
 ## [0.6.13] – 2026-08-06
 
 ### Javítva
