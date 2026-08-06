@@ -14,6 +14,13 @@ from picasapy.render.color import (
     apply_saturation,
     apply_sepia,
     apply_warm,
+    saturation_gain,
+)
+from picasapy.render.gpu_point_pipeline import (
+    LUT_SIZE,
+    PointPipelineUniforms,
+    build_finetune2_lut,
+    build_point_pipeline_uniforms,
 )
 from picasapy.render.effects import (
     GLOW_V1_INTENSITY,
@@ -62,8 +69,10 @@ __all__ = [
     "GLOW_V1_INTENSITY",
     "GLOW_V1_RADIUS",
     "KNOWN_UNRENDERED_OPS",
+    "LUT_SIZE",
     "ChainReport",
     "FilterSpec",
+    "PointPipelineUniforms",
     "SliderSpec",
     "UNSHARP_V1_STRENGTH",
     "apply_ansel",
@@ -92,11 +101,14 @@ __all__ = [
     "apply_unsharp",
     "apply_vignette",
     "apply_warm",
+    "build_finetune2_lut",
+    "build_point_pipeline_uniforms",
     "chain_flags",
     "clamp_slider_value",
     "get_filter_spec",
     "parse_neutral_argb",
     "parse_rgb_hex",
+    "saturation_gain",
     "tilt_cover_scale",
     "vignette_gain",
 ]

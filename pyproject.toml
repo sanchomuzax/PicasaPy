@@ -42,6 +42,9 @@ where = ["src"]
     "qml/*.js",
     "qml/PicasaPy/*.qml",
     "qml/PicasaPy/qmldir",
+    "qml/PicasaPy/Gpu/*.qml",
+    "qml/PicasaPy/Gpu/*.qsb",
+    "qml/PicasaPy/Gpu/qmldir",
     "i18n/*.qm",
 ]
 
