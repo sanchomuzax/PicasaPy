@@ -298,19 +298,22 @@ macOS-en, natív Windows API hiányában). Ez közvetve megerősíti, hogy a
 Picasa fejlesztői tudatosan számoltak a Wine-kompatibilitással — ami a
 PicasaPy "Linux-first" célkitűzését történeti szempontból alátámasztja.
 
-### 3.4 `respack.yt` — bináris erőforráscsomag
+### 3.4 `respack.yt` — bináris erőforráscsomag → **MEGFEJTVE (2026-08-06)**
 
-`runtime/respack.yt` (3,7 MB) és `runtime/slingshot/respack.yt` (372 KB):
-**saját, dokumentálatlan bináris formátum**, nem azonosítható ismert
-konténerként (`file` parancs csak "data"-t jelez). A fejléc-bájtok
-(`bc 13 39 00 00 00 00 00 20 03 04 02 ...`) nem egyeznek ismert
-magic-number formátumokkal. Ez tartalmazza feltehetően az összes UI-ikont,
-amelyekre a `.pbf` gombfájlok `src="runtime"` hivatkozásai (pl.
-`outputlayout/blogger_icon`) és a `fliprtl.txt` ikon-nevei mutatnak.
-Reverse-engineering nélkül a pontos belső szerkezet nem állapítható meg
-ebből a vizsgálatból — **nyitott kutatási kérdés** a `docs/research-plan.md`
-számára, ha a gomb-ikonokat natívan (nem PSD-ként csomagolva) akarjuk
-kinyerni.
+`runtime/respack.yt` (3,7 MB) és `runtime/slingshot/respack.yt` (372 KB)
+saját, dokumentálatlan bináris formátum volt — **azóta teljesen
+visszafejtve**, 2769/2769 rétegen hibátlan kicsomagolással.
+
+Teljes leírás: **[`picasa-respack-format.md`](picasa-respack-format.md)**;
+kicsomagoló: `tools/picasa/respack.py`.
+
+Röviden: névindex a fájl végén (`uint32` eltolás a 0. bájton), rekordonként
+13 bájtos fejléc (`int16` határoló doboz + kódolásbájt), az adat vagy tömör
+RGBA-kitöltés, vagy **soronkénti RLE** `(darab, R, G, B, A)` ötösökkel. A
+csomag **2909 bejegyzést** tartalmaz: 2769 rajzi réteget (ezek adják a
+`.pbf` gombfájlok `src="runtime"` és a `fliprtl.txt` ikonneveit) és
+**140 `.tre` UI-elrendezés-forrásfájlt** — vagyis a Picasa fő ablakának és
+szerkesztőjének teljes elrendezés-forráskódját.
 
 ### 3.5 `.ytf` fájlok — saját betűtípus-formátum
 
@@ -348,8 +351,8 @@ használnia helyette.
 
 | Elem | Valódi típus | Funkció |
 |---|---|---|
-| `Red.dll` | Windows PE32 DLL | **Vörösszem-javítás (red-eye correction)** natív implementációja. A szimbólumnevek (`vrd_RedEyeCorrector`, `vrd_RedEyeDetector`, `vrd_RedEyeInfo`, `eim_ByteImage`, `egr_Bitmap`) egy belső, saját képfeldolgozó keretrendszerre (`e*_`/`vrd_`/`egr_` prefixek) utalnak. |
-| `red.cfg` | **Bináris adat**, NEM szöveges konfiguráció a fájlnév ellenére | 2,28 MB. A tartalom nagy, strukturált bináris blokk — feltehetően a vörösszem-detektor **tanított paraméter-/mintakészlete** (cascade-szerű detektor-adat), amit a `Red.dll` tölt be futásidőben. Nem emberi szerkesztésre szánt "cfg". |
+| `Red.dll` | Windows PE32 DLL | **Nem csak vörösszem: ez a Picasa teljes gépi látás motorja.** A vörösszem-osztályok (`vrd_RedEyeCorrector`/`Detector`) mellett a szimbólumtábla tartalmazza a **`CNevenVisionDLL::IFace`** interfészt és egy teljes arcdetektáló készletet: `vbf_Cascade`, `vbf_BoostedClassifier` (`enn_BoostedClassifier`), `vde_LocalPoseDetector`, `vde_LocalDetectorSequence`, `erf_SlantDetector`, `vcf_PrecisionDetector`, `epi_PoseEst` (póz-becslés), `enn_MlpNet` (többrétegű perceptron). Vagyis a Picasa arcfelismerése a Google által **2006-ban felvásárolt Neven Vision** motorján fut, és ugyanez a DLL adja a vörösszem-detektálást is. |
+| `red.cfg` | **Bináris adat**, NEM szöveges konfiguráció a fájlnév ellenére | 2,28 MB. A `Red.dll` futásidőben betöltött **tanított modellje** — boosted cascade detektorok + MLP-súlyok. Ez magyarázza az `.exe`-ben talált arcadat-formátumot is: `conf(%.3f),pan(%.3f),leye(%.3f,%.3f),reye(%.3f,%.3f),mouth(%.3f,%.3f)` — megbízhatóság, fejfordulás (pán-szög) és három arcpont (bal/jobb szem, száj), pontosan az a kimenet, amit egy Neven Vision-féle póz- és jellegzetespont-detektor ad. Ld. `picasa-ini-format.md`. |
 | `ytITivo.yti` | Windows PE32 DLL (a `.yti` kiterjesztés ellenére futtatható kód) | **TiVo Desktop export plugin.** Stringek: `SOFTWARE\TiVo\Desktop\Beacon`, `TiVo Desktop\Photos\`, "Tivo Export" — képek exportálása/megosztása egy helyi TiVo Desktop-kiszolgáló felé (házimozi-integráció, kb. 2008–2015 korabeli funkció). |
 | `CDVDR/CDVDR.yti` | Windows PE32 DLL | **CD/DVD-R (lemezre írás) export plugin** — a fájlnév ("CD/DVD-Recordable") és a szimbólum (`ytICDVDR`) alapján a "Mentés CD/DVD-re" funkciót valósítja meg (ez hívja elő a `cdautorun/` alatti autorun-alkalmazásokat, ld. 5. pont). |
 | `expwebsites/expwebsites.yti` | Windows PE32 DLL, **beágyazott XML/i18n string-tábla** | **"Export files to a folder" / weboldal-export plugin** — ez a `.yti` kapcsolja össze a UI-t a 2. pontban leírt `web/templates/` sablonrendszerrel. Rengeteg lokalizált string (`<xmbtext>` elemek, kb. 20+ nyelven) van benne beágyazva, pl. "Export files to a folder", "Downloading website information…". |
@@ -432,10 +435,12 @@ vagy `Pillow` beépített ICC-támogatás a színkezeléshez).
 3. **`filters.txt` szemantikája** (4 szekció: könyvtár/fájl ×
    kizárás/kivétel) közvetlen mintaként szolgálhat a PicasaPy
    mappabeolvasó-szűrőjéhez.
-4. A **`respack.yt` bináris formátum** és a **`.ytf` betűtípus-formátum**
-   dokumentálatlan, saját bináris konténerek — ezek natív dekódolása
-   külön kutatást igényelne (nem szükséges: a PicasaPy saját ikon-/
-   betűtípuskészletet használ, Qt/QML natív eszközökkel).
+4. ~~A **`respack.yt` bináris formátum**~~ — **MEGOLDVA** (2026-08-06),
+   ld. [`picasa-respack-format.md`](picasa-respack-format.md): a formátum
+   teljesen dekódolt, az eredeti UI-grafika és a 140 `.tre`
+   elrendezés-forrás kinyerhető. A **`.ytf` betűtípus-formátum** továbbra
+   is dokumentálatlan — de nem is kell: a PicasaPy natív
+   rendszerbetűtípusokkal dolgozik.
 5. **Licenc-lista** (XMP Toolkit, lcms) megerősíti, hogy a PicasaPy-nak
    ugyanezen a két területen (XMP-metaadat, ICC-színkezelés) kell jól
    dokumentált, karbantartott Python-könyvtárt választania a

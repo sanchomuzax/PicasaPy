@@ -194,6 +194,34 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Tanulságok
 
+- **2026-08-06 (a Picasa-telepítés 2. körös, MÉLY átvizsgálása): az eredeti
+  program mappája még mindig a legjobb kutatási forrás — a felszíni pásztázás
+  után is.** Az első kör (`picasa-program-resources.md`, `picasa-exe-strings.md`)
+  fájlszinten leltározott; a mély kör négy nagy leletet hozott, amelyek közül
+  kettő korábban NYITOTT KÉRDÉSKÉNT szerepelt:
+  1. **`runtime/filterdesc.xml`** — a Picasa saját szűrő-regisztere: 84 szűrő,
+     csúszkánként név/tartomány/eltolás/alapérték, és a 33 Glimmer-effekt
+     TELJES csővezetéke (görbék, keverési módok, képletek). Ez lezárja a
+     „4–5. effektfül paraméter-jelentései" (Nyitva 7) és a „Vignette
+     analitikus modell" (Nyitva 2) pontokat, és megmagyarázza a v1/v2
+     finetune-eltérést (2× skála) meg a tizedes nélküli `0`-t (jelölőnégyzet).
+     → `docs/specs/filterdesc-registry.md`
+  2. **`runtime/respack.yt` formátuma MEGFEJTVE** (korábban „reverse-engineering
+     nélkül nem állapítható meg"): névindex + 13 bájtos rekordfejléc +
+     soronkénti RGBA-RLE; 2769/2769 réteg hibátlanul kicsomagolható, PLUSZ
+     **140 `.tre` fájl = a Picasa UI teljes elrendezés-forráskódja**.
+     → `docs/specs/picasa-respack-format.md`, `tools/picasa/respack.py`
+  3. **`Red.dll` = Neven Vision arcmotor**, nem csak vörösszem — ez adja a
+     `conf/pan/leye/reye/mouth` arc-részletadatot; `red.cfg` a tanított modell.
+  4. **`Picasa3i18n.dll`**: a string-táblák jól formált XML-blokkok
+     (1642 blokk, 4031 azonosító, **41 nyelv**) — az ékezet-heurisztikás
+     kinyerés fölösleges, minden nyelv veszteségmentesen kiszedhető.
+  **Módszertani tanulság:** ha egy fájlt az első kör „dokumentálatlan bináris"-ként
+  zárt le, azt érdemes ténylegesen megpróbálni dekódolni — a fejlécmezők
+  értelmezése (`int16` vs `uint16`!) és egy RLE-hossz-ellenőrző ciklus itt
+  fél óra alatt 100%-os fedést adott. Az „egyezik-e a kifejtett képpontszám a
+  fejléc méretével" a legolcsóbb és legerősebb visszaigazolás.
+
 - **2026-08-05 (Picasa 3.9 programmappa feldolgozva): az eredeti telepítő-mappa
   elsőrangú referencia — 4 új spec készült belőle** (`picasa-fen-dialogs.md`,
   `picasa-exe-strings.md`, `picasa-program-resources.md`,

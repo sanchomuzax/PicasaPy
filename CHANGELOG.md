@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.6] – 2026-08-06
+
+### Hozzáadva
+- **A Picasa 3.9 telepítés mély elemzése — négy új/megoldott formátum.**
+  - `docs/specs/filterdesc-registry.md`: a Picasa saját szűrő-regisztere
+    (`runtime/filterdesc.xml`) feldolgozva — mind a 84 szűrő csúszkáinak
+    neve, tartománya és alapértéke, valamint a 33 Glimmer-effekt teljes
+    képfeldolgozó-csővezetéke. Lezárja a „4–5. effektfül paraméterei" és a
+    „Vignette analitikus modellje" nyitott pontokat.
+  - `docs/specs/picasa-respack-format.md` + `tools/picasa/respack.py`: a
+    `respack.yt` bináris erőforráscsomag formátuma **teljesen visszafejtve**
+    (2769/2769 réteg hibátlanul kicsomagolható), és előkerült benne a Picasa
+    UI **140 `.tre` elrendezés-forrásfájlja**.
+  - Az arc-részletadat (`conf/pan/leye/reye/mouth`) formátuma és forrása
+    (Neven Vision motor a `Red.dll`-ben) dokumentálva.
+  - A `constants.ui` hiteles UI-konstansai bekerültek a dizájn-kézikönyvbe;
+    a `Picasa3i18n.dll` 41 nyelvű string-táblájának veszteségmentes
+    kinyerési módszere rögzítve.
+
 ## [0.6.5] – 2026-08-05
 
 ### Hozzáadva
