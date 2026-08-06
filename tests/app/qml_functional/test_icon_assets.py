@@ -78,7 +78,18 @@ class TestIconFilesExist:
         path = _ICONS_DIR / name
         doc = minidom.parse(str(path))
         assert doc.documentElement.tagName == "svg"
-        assert doc.documentElement.getAttribute("viewBox") == "0 0 24 24"
+        # #411: a szerkesztő-eszköz ikonjai FEKVŐ (3:2) vászonnal készültek —
+        # az eredeti Picasa 44x29-es gombképeinek arányával —, a kimeneti sáv
+        # ikonjai (#361) maradtak négyzetesek. Mindkettő érvényes, de a
+        # vászonnak a rajzot KI KELL TÖLTENIE (nincs üres margó), ezért az
+        # arányt ellenőrizzük, nem egy fix viewBox-sztringet.
+        view_box = doc.documentElement.getAttribute("viewBox")
+        parts = [float(v) for v in view_box.replace(",", " ").split()]
+        assert len(parts) == 4, f"hibás viewBox: {view_box!r}"
+        arany = parts[2] / parts[3]
+        assert 0.95 <= arany <= 1.05 or 1.4 <= arany <= 1.6, (
+            f"{name}: a viewBox aránya se nem négyzetes, se nem 3:2 ({arany:.2f})"
+        )
 
     def test_icons_directory_has_no_stray_files(self):
         """Csak a várt ikonok élnek a mappában — nincs bemásolt eredeti

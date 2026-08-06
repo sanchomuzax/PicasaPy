@@ -412,9 +412,13 @@ Rectangle {
                 id: tileIconImg
                 objectName: tile.objectName ? tile.objectName + "Icon" : ""
                 anchors.centerIn: parent
-                width: 36; height: 36
+                // #411: az ikonok FEKVŐ (3:2) arányúak, mint az eredeti
+                // Picasa 44x29-es gombképei — négyzetes dobozban a rajz
+                // zsugorodna/torzulna, ezért 3:2 méret + PreserveAspectFit.
+                width: 54; height: 36
+                fillMode: Image.PreserveAspectFit
                 source: "icons/" + tile.iconFile + ".svg"
-                sourceSize: Qt.size(36, 36)
+                sourceSize: Qt.size(108, 72)
                 smooth: true
             }
         }
