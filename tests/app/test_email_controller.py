@@ -4,6 +4,8 @@ parancs-összeállítás valódi, determinisztikus logikával."""
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import os
 from dataclasses import dataclass
 from unittest.mock import patch
@@ -129,7 +131,8 @@ class TestSendRows:
         argv = popen.call_args[0][0]
         assert argv[0] == "xdg-email"
         assert "--attach" in argv
-        assert "/tmp/a.jpg" in argv
+        # Windowson a Path backslash-formát ad — az elvárás is azzal számol
+        assert str(Path("/tmp/a.jpg")) in argv
 
     def test_popen_failure_emits_email_failed(self, qt_app, tmp_path):
         controller = _controller([], tmp_path)

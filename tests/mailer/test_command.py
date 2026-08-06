@@ -50,8 +50,9 @@ class TestBuildXdgEmailArgv:
         attachments = [Path("/tmp/a.jpg"), Path("/tmp/b.jpg")]
         argv = build_xdg_email_argv("s", "b", attachments)
         assert argv.count("--attach") == 2
-        assert "/tmp/a.jpg" in argv
-        assert "/tmp/b.jpg" in argv
+        # Windowson a Path backslash-formát ad — az elvárás is azzal számol
+        assert str(Path("/tmp/a.jpg")) in argv
+        assert str(Path("/tmp/b.jpg")) in argv
 
     def test_no_attach_flags_without_attachments(self):
         argv = build_xdg_email_argv("s", "b")
