@@ -2,6 +2,92 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>WebExportController</name>
+    <message>
+        <source>Choose a target folder first.</source>
+        <translation>Előbb válasszon célmappát.</translation>
+    </message>
+    <message>
+        <source>No pictures to export.</source>
+        <translation>Nincs exportálható kép.</translation>
+    </message>
+    <message>
+        <source>None of the selected pictures could be exported.</source>
+        <translation>A kijelölt képek egyikét sem sikerült exportálni.</translation>
+    </message>
+    <message>
+        <source>Unknown web export template: %1</source>
+        <translation>Ismeretlen webexport-sablon: %1</translation>
+    </message>
+</context>
+<context>
+    <name>WebExportDialog</name>
+    <message>
+        <source>Export as HTML Page...</source>
+        <translation>Exportálás HTML-oldalként…</translation>
+    </message>
+    <message>
+        <source>Page title:</source>
+        <translation>Oldal címe:</translation>
+    </message>
+    <message>
+        <source>Save to:</source>
+        <translation>Mentés ide:</translation>
+    </message>
+    <message>
+        <source>(not selected)</source>
+        <translation>(nincs kiválasztva)</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Tallózás…</translation>
+    </message>
+    <message>
+        <source>Choose target folder...</source>
+        <translation>Válassza ki a célmappát…</translation>
+    </message>
+    <message>
+        <source>Template:</source>
+        <translation>Sablon:</translation>
+    </message>
+    <message>
+        <source>Picture size:</source>
+        <translation>Kép mérete:</translation>
+    </message>
+    <message>
+        <source>Thumbnail size:</source>
+        <translation>Bélyegkép mérete:</translation>
+    </message>
+    <message>
+        <source>Original size</source>
+        <translation>Eredeti méret</translation>
+    </message>
+    <message>
+        <source>Shadow pictures</source>
+        <translation>Árnyékolt képek</translation>
+    </message>
+    <message>
+        <source>Shadow thumbnails</source>
+        <translation>Árnyékolt bélyegképek</translation>
+    </message>
+    <message>
+        <source>PicasaPy is generating the web page.</source>
+        <translation>A PicasaPy készíti a weboldalt.</translation>
+    </message>
+    <message>
+        <source>Web page generated: %1 file(s) in %2</source>
+        <translation>A weboldal elkészült: %1 fájl itt: %2</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Létrehozás</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+</context>
+<context>
     <name>RelocateController</name>
     <message>
         <source>Choose a new database location first.</source>
