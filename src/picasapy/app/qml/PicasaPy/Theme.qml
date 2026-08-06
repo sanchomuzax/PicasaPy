@@ -40,6 +40,10 @@ QtObject {
     readonly property color picasaGreen: dark ? "#6cbf3f" : "#3b8f00"    // az EGYETLEN zöld tett
     readonly property color selectionBlue: dark ? "#4d6b80" : "#83a7bd"  // jelölő kék (lista, szűrő)
     readonly property color panelSelection: selectionBlue
+    // #384: a TÉNYLEGES kijelölés mélykékje (constants.ui alist_selcolor_win);
+    // a sötét érték a selectionBlue világos/sötét arányából becsült — az
+    // eredetiben nincs sötét változat (a Picasa mindig világos).
+    readonly property color panelSelectionActive: dark ? "#1b4a68" : "#25648b"
     readonly property color folderGold: dark ? "#a98c53" : "#ebcc8f"     // mappa arany
     readonly property color folderGoldBorder: dark ? "#8a7040" : "#d9b571"
     readonly property color folderArrow: dark ? "#d9a63a" : "#e0a92e"    // mappafa nyíl

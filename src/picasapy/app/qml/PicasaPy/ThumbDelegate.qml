@@ -1,7 +1,9 @@
 import QtQuick
 
 // Egy indexkép a lightboxban — Picasa 3.9: fehér kártya vékony szürke
-// szegéllyel a #eaeaea háttéren; kijelöléskor élénk azúr (#009eff) keret.
+// szegéllyel a #eaeaea háttéren; kijelöléskor kétszínű keret (#384,
+// constants.ui thumbsel_color1/2): kívül élénk azúr (#009eff), belül
+// fehér rés.
 Item {
     id: cell
     required property string name
@@ -55,6 +57,36 @@ Item {
     // a felirat-sáv a cella aljából van fenntartva — a kép nem lóghat bele
     readonly property int captionStrip: captionMode !== "none" ? 16 : 0
 
+    // #384: constants.ui thumbsel_color1/2 — a kijelölt indexkép kerete
+    // KÉTSZÍNŰ: kívül élénk azúr (thumbsel_color1 = Theme.thumbSelection),
+    // belül egy vékony, a kártyával azonos színű sáv (thumbsel_color2 =
+    // #FFFFFF a Picasában; nálunk Theme.thumbCard — sötét témán is a
+    // kártya saját színe marad, nem kell külön token). A két réteg a
+    // `frame` MÖGÉ, teli téglalapként rajzolódik (nem `border`-ként) —
+    // QML Rectangle csak egyszínű keretet tud, két beágyazott, teli
+    // téglalap viszont egyszerűen adja ki a "kívül kék, belül fehér rés"
+    // hatást. Csak kijelöléskor látszik.
+    Rectangle {
+        id: selectionOuter
+        objectName: "thumbSelectionOuter"
+        visible: cell.selected
+        anchors.centerIn: frame
+        readonly property int outerWidth: 2
+        readonly property int innerWidth: 1
+        width: frame.width + 2 * (outerWidth + innerWidth)
+        height: frame.height + 2 * (outerWidth + innerWidth)
+        color: Theme.thumbSelection
+    }
+    Rectangle {
+        id: selectionInner
+        objectName: "thumbSelectionInner"
+        visible: cell.selected
+        anchors.centerIn: frame
+        width: frame.width + 2 * selectionOuter.innerWidth
+        height: frame.height + 2 * selectionOuter.innerWidth
+        color: Theme.thumbCard
+    }
+
     Rectangle {
         id: frame
         objectName: "thumbFrame"
@@ -66,8 +98,11 @@ Item {
         width: image.paintedWidth + 10
         height: image.paintedHeight + 10
         color: Theme.thumbCard
-        border.width: cell.selected ? 3 : 1
-        border.color: cell.selected ? Theme.thumbSelection
+        // #384: kijelöléskor a saját keret a kártyával egybeolvad — a
+        // kék/fehér kettős keretet a selectionOuter/Inner adja alatta;
+        // csak a hover/alap állapot rajzol látható 1px keretet.
+        border.width: 1
+        border.color: cell.selected ? Theme.thumbCard
                      : (mouse.containsMouse ? Theme.thumbHover : Theme.thumbBorder)
 
         Image {
