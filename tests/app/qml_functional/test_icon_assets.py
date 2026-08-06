@@ -1,14 +1,21 @@
-"""QML-funkcionális tesztek: saját SVG-ikonkészlet a kimeneti sávhoz és az
-eszköztár geo-szűrőjéhez (#361 — Picasa-hű ikonkészlet saját rajzban).
+"""QML-funkcionális tesztek: saját SVG-ikonkészlet a kimeneti sávhoz, az
+eszköztár geo-szűrőjéhez (#361) és a szerkesztő "Gyakori javítások" füléhez
+(#411 — Picasa-hű ikonkészlet saját rajzban).
 
 Két réteg:
 - `TestIconFilesExist`: minden `icons/*.svg`-re fájl-létezés + jólformáltság
   (a PBZ-leltár szerinti komplett készlet: webupload, e-mail, nyomtatás,
-  mappa-export, kollázs, film, megosztás, geo-tű).
+  mappa-export, kollázs, film, megosztás, geo-tű + a #411-es 9 szerkesztő-
+  eszköz-ikon).
 - `TestTrayBarIconWiring` / `TestToolbarGeoIconWiring`: a `qml_app`
   teljes-alkalmazás fixtúrán át — az Image-ek ténylegesen betöltődnek-e
   (nincs `Image.Error` állapot), és a meglévő objectName-ek/felirat-
   szövegek nem sérültek (E-Mail/Print/Export/Upload/geo-szűrő).
+
+A szerkesztőpanel csempéinek saját (EditorPanel-fixtúrás) tesztjei a
+`test_editor_411.py`-ban élnek — itt csak a fájlok létezését/jólformáltságát
+ellenőrizzük, hogy a "nincs kóbor fájl a mappában" ellenőrzés egy helyen,
+teljes körűen maradjon.
 """
 
 from __future__ import annotations
@@ -24,7 +31,7 @@ _ICONS_DIR = (
     / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "icons"
 )
 
-# a kimeneti sáv + eszköztár ikonjai, amiket ez a jegy vezet be
+# a kimeneti sáv + eszköztár ikonjai (#361)
 _EXPECTED_ICONS = (
     "upload.svg",           # outputlayout/webupload
     "email.svg",             # outputlayout/ebutton
@@ -36,6 +43,21 @@ _EXPECTED_ICONS = (
     "geo-pin.svg",                # eszköztár geo-szűrő (korábban "⚲" glif)
 )
 
+# a szerkesztő "Gyakori javítások" fülének 9 ikonja (#411)
+_EDITOR_TOOL_ICONS = (
+    "vagas.svg",
+    "kiegyenesites.svg",
+    "vorosszem.svg",
+    "jo-napom-van.svg",
+    "auto-kontraszt.svg",
+    "auto-szin.svg",
+    "retusalas.svg",
+    "szoveg.svg",
+    "deritofeny.svg",
+)
+
+_ALL_ICONS = _EXPECTED_ICONS + _EDITOR_TOOL_ICONS
+
 
 def _settle(qt_app, rounds=3):
     for _ in range(rounds):
@@ -46,12 +68,12 @@ def _settle(qt_app, rounds=3):
 
 
 class TestIconFilesExist:
-    @pytest.mark.parametrize("name", _EXPECTED_ICONS)
+    @pytest.mark.parametrize("name", _ALL_ICONS)
     def test_icon_file_exists(self, name):
         path = _ICONS_DIR / name
         assert path.is_file(), f"hiányzik az ikonfájl: {path}"
 
-    @pytest.mark.parametrize("name", _EXPECTED_ICONS)
+    @pytest.mark.parametrize("name", _ALL_ICONS)
     def test_icon_is_well_formed_svg(self, name):
         path = _ICONS_DIR / name
         doc = minidom.parse(str(path))
@@ -59,10 +81,11 @@ class TestIconFilesExist:
         assert doc.documentElement.getAttribute("viewBox") == "0 0 24 24"
 
     def test_icons_directory_has_no_stray_files(self):
-        """Csak a várt 8 ikon él a mappában — nincs bemásolt eredeti
-        PSD/PNG vagy elfelejtett próbafájl."""
+        """Csak a várt ikonok élnek a mappában — nincs bemásolt eredeti
+        PSD/PNG vagy elfelejtett próbafájl (#361 kimeneti sáv + #411
+        szerkesztő-eszköz-ikonok)."""
         actual = {p.name for p in _ICONS_DIR.glob("*")}
-        assert actual == set(_EXPECTED_ICONS)
+        assert actual == set(_ALL_ICONS)
 
 
 class TestTrayBarIconWiring:

@@ -119,12 +119,23 @@ cellaszélesség) egyben változna, ezért külön jegyet érdemel.
 |---|---|---|
 | Menüsor | ~20px magas | natív |
 | Eszköztár | ~37px | Importálás gomb + nézetváltók balra, Szűrők középen, kereső jobbra |
-| Bal panel szélessége | 386px (~20%) | 1280-as ablaknál ≈ 250px |
+| Bal panel szélessége | 386px (~20%) | 1280-as ablaknál ≈ 250px — **arányosan skálázandó** |
 | Panel-sor magasság | 22px | szekció-fejléc és mappa-sor egyaránt |
 | Infó-sáv | ~15px | nálunk 20px (olvashatóság) |
 | Tálca | ~85px | 800 magas ablaknál ≈ 64px |
 | Néző felső sáv | ~30px | filmszalag ~38px magas thumbokkal |
-| Néző eszközpanel | ~280px széles | fülek + gombrács + hisztogram alul |
+| Néző eszközpanel | **FIX 280px széles** | fülek + gombrács + hisztogram alul — **NEM skálázandó** (ld. lábjegyzet) |
+
+> **#411 — a Néző eszközpanel szélessége FIX, nem ablakarányos.** A
+> táblázat többi sora ("arányosítva viendő át" fejléc) az ablakmérethez
+> igazodó értékeket ad meg (pl. a Bal panel szélessége 1280px-es ablaknál
+> ≈250px-re vetítendő) — a szerkesztő-eszközpanel viszont az EREDETI
+> Picasában is fix pixelszélességű, minden ablakméretnél 280px. A #405-ös
+> kör tévesen ablakarányosan skálázta le 190px-re; a felhasználó
+> screenshot-összevetése (~955px széles ablaknál ~275px-es eredeti panel)
+> bizonyította a hibát. `EditorPanel.qml` `implicitWidth: 280` és
+> `PhotoViewer.qml` `Layout.preferredWidth: 280` — mindkettő állandó,
+> semmilyen ablakszélesség-számítás nem érintheti.
 
 ## Komponens-leltár és állapotok
 

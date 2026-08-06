@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#411/#361): SZEM (nincs rajta tajkep) - a
+       respack.yt "editpanel/button(redeye)" eredeti gombja EGESZSEGES (nem
+       piros) szemet mutat kek-zold irisszel; ezt kovetjuk sajat rajzban. -->
+<rect x="1.5" y="5" width="21" height="14" rx="1" fill="#f2efe9" stroke="#c9c4ba" stroke-width="1"/>
+  <path d="M2 12.5c3.4-5 8.2-7.6 10-7.6s6.6 2.6 10 7.6c-3.4 5-8.2 7.6-10 7.6s-6.6-2.6-10-7.6Z"
+        fill="#f4f1ec" stroke="#8a8378" stroke-width="0.8"/>
+  <path d="M2 12.1c3.4-4.6 8.1-6.6 10-6.6 1 0 2.4.4 3.9 1.2-3.6 1-7.6 3.2-9.9 6.4-1.9-.2-3-.6-4-1Z"
+        fill="#4b3b30" opacity="0.9"/>
+  <circle cx="12" cy="12.5" r="4.4" fill="url(#irisGrad)"/>
+  <circle cx="12" cy="12.5" r="2" fill="#161616"/>
+  <circle cx="13.2" cy="11.2" r="1.1" fill="#ffffff"/>
+  <defs>
+    <radialGradient id="irisGrad" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#7bb8d9"/>
+      <stop offset="0.55" stop-color="#3f7f9c"/>
+      <stop offset="1" stop-color="#2c4f42"/>
+    </radialGradient>
+  </defs>
+</svg>

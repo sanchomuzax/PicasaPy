@@ -11,18 +11,19 @@ Rectangle {
     id: panel
     objectName: "editorPanel"
     color: Theme.chromeBg
-    // #405 2. pont: a panel az eredetiben keskenyebb/kompaktabb. A
-    // `research/copy_Picasa_3_7/Picasa3/runtime/constants.ui` `[Picasa2]`
-    // szekciója NEM tartalmaz szerkesztőpanel-szélesség kulcsot (csak
-    // mappalista-/indexkép-értékeket, ld. `docs/specs/design-guide.md`
-    // #384 táblázata) — ezért a design-guide MÁR dokumentált, screenshot-
-    // mért referenciáját (`Néző eszközpanel ~280px @1920×1080`) használjuk,
-    // ugyanazzal a méretaránnyal levetítve az app 1280px-es alapértelmezett
-    // ablakszélességére, mint amit a design-guide a mappapanelnél alkalmaz
-    // (386px@1920 → 250px@1280) — 280 × 1280/1920 ≈ 187px, 190-re kerekítve.
-    // A PhotoViewer.qml `Layout.preferredWidth`-jét is EZZEL összhangban
-    // kell tartani (ott állítva, nem itt).
-    implicitWidth: 190
+    // #411: FIX pixelszélesség — az eredeti Picasa szerkesztő-eszközpanelje
+    // NEM skálázódik az ablakmérettel (ellentétben pl. a mappapanellel,
+    // ahol az arányos levetítés helyénvaló). A #405-ös kör TÉVESEN
+    // ablakarányosan skálázta le a design-guide screenshot-mért ~280px-es
+    // referenciáját 1280px-es ablakra (280 × 1280/1920 ≈ 187 → 190) — a
+    // felhasználó screenshot-összevetése bizonyította a hibát: ~955px
+    // széles ablaknál az eredeti panel ~275px, a miénk csak ~195px volt,
+    // AZONOS ablakméret mellett. A helyes érték tehát fix 280px, bármilyen
+    // ablakszélességnél (ld. docs/specs/design-guide.md "Néző eszközpanel"
+    // sorát — kifejezetten NEM skálázandó). A PhotoViewer.qml
+    // `Layout.preferredWidth`-jét is EZZEL összhangban kell tartani (ott
+    // állítva, nem itt).
+    implicitWidth: 280
 
     // aktív fül: 0 = Gyakori javítások, 1 = Finomhangolás, 2 = Effektek,
     // 3 = 4. effekt-fül (zöld ecset), 4 = 5. effekt-fül (kék ecset) — #328,
@@ -142,18 +143,14 @@ Rectangle {
         return "image://effectthumb/" + panel.effectThumbPhotoId + "/" + effectName
     }
 
-    // #405: sima fotó-bélyegkép — a "Gyakori javítások" fül azon
-    // csempéihez, amelyek NEM egy-gombos hatást alkalmaznak, hanem
-    // interaktív eszközt nyitnak (Vágás, Retusálás, Szöveg — a
-    // Kiegyenesítés is ide tartozik, mert alapállapotban (0°) nincs
-    // vizuális hatása). Az eredeti Picasa ilyenkor is a fotót magát
-    // mutatja a csempén (ld. #405 issue), a meglévő indexkép-bélyegkép-
-    // szolgáltatót (image://thumbs/<id>) újrahasznosítva — nincs szükség
-    // külön rendereléshez az effektbélyegkép-providerben.
-    function plainThumbSource() {
-        if (panel.effectThumbPhotoId === "") return ""
-        return "image://thumbs/" + panel.effectThumbPhotoId
-    }
+    // #411: a "Gyakori javítások" fül csempéi a #405 óta a felhasználó
+    // fotójának bélyegképét/effekt-előnézetét mutatták — sötét képnél ez
+    // egyforma sötét foltokká olvadt, nem lehetett a csempéket ránézésre
+    // megkülönböztetni (ld. #411 issue). Az eredeti Picasa is ezért
+    // SAJÁT ikonokat használ ezen a fülön (ld. lent, ToolTile.iconFile) —
+    // a korábbi `plainThumbSource()` fotó-bélyegkép-segédfüggvény ezért
+    // megszűnt (a 3–5. effekt-fül VÁLTOZATLANUL a fenti
+    // `effectThumbSource()`-t használja, az egy külön útvonal).
 
     // egy effekt-gomb kattintása: ha az effektnek vannak paraméterei,
     // megnyitja az alpanelt és true-t ad vissza — ilyenkor a hívó (a gomb
@@ -353,28 +350,30 @@ Rectangle {
         if (tool === "crop") panel.cropRequested()
     }
 
-    // #405: kép-előnézetes eszköz-csempe — az eredeti Picasa a "Gyakori
-    // javítások" fülön MINDEN gombot fotó-miniatűrrel mutat: az effekt-
-    // előnézettel rendelkező eszközöknél (Vörösszem/Jó napom van/
-    // Automatikus kontraszt/Automatikus szín) az adott hatás alkalmazott
-    // eredményét, a tisztán interaktív eszközöknél (Vágás/Kiegyenesítés/
-    // Retusálás/Szöveg) a sima fotót (ld. panel.plainThumbSource()). A
-    // `thumbSource` üresen a régi PNG-ikon marad meg — ez tartja életben a
-    // korábbi, editController nélküli teszteket (test_qml_editor_panel.py).
+    // #411: SAJÁT rajzú SVG-ikonos eszköz-csempe — a "Gyakori javítások"
+    // fülön a #405-ös kör a felhasználó fotójának bélyegképét/effekt-
+    // előnézetét tette a csempékre, ez viszont sötét képnél egyforma
+    // sötét foltokká olvadt össze (ld. #411 issue). Az eredeti Picasa
+    // ezért NEM a fotót mutatja ezen a fülön, hanem saját, világos
+    // ikonkészletet (a #361-es icons/ mappa stílusában, ld. lent az
+    // `iconFile`-eket) — ezek sötét képnél is ránézésre
+    // megkülönböztethetők. A 3–5. effekt-fül (PanelButton, nem ToolTile)
+    // VÁLTOZATLANUL a felhasználó fotójának effekt-előnézetét mutatja
+    // (image://effectthumb/…) — az egy teljesen külön komponens/útvonal.
     component ToolTile: Item {
         id: tile
         required property string toolName
         required property string label
-        required property string icon
-        // "" = nincs kép-előnézet (a régi PNG-ikon látszik helyette)
-        property string thumbSource: ""
+        // a "icons/<iconFile>.svg" fájlnév (kiterjesztés nélkül) — a
+        // panel.qmlDir szerinti "icons/" mappában, ld. #361/#411
+        required property string iconFile
         property bool active: false
         property bool tileEnabled: true
         signal activated(string tool)
 
         Layout.fillWidth: true
-        // #405: nagyobb csempe — a kép-előnézet a Picasa-mintát követve
-        // jóval nagyobb helyet foglal, mint a korábbi 40×30-as ikon
+        // #405/#411: nagyobb csempe — az ikon a Picasa-mintát követve
+        // jóval nagyobb helyet foglal, mint a korábbi 40×30-as PNG-ikon
         Layout.preferredHeight: 84
         // az öröklött enabled is számít (#103): videónál a PhotoViewer az
         // egész panelt tiltja — a csempe ilyenkor vizuálisan is szürkül
@@ -399,9 +398,8 @@ Rectangle {
             border.color: Theme.selectionBlue
         }
 
-        // #405: a kép-előnézet területe — amíg a bélyegkép nem kész (vagy
-        // nincs thumbSource, ld. fent), a régi PNG-ikon a helyőrző (SOHA
-        // ne legyen üres/villogó csempe).
+        // #411: az ikon területe — SAJÁT rajzú SVG, MINDIG betöltve (nincs
+        // aszinkron várakozás/helyőrző-eset, mint a fotó-bélyegképeknél).
         Item {
             id: tileThumbBox
             anchors.top: parent.top
@@ -412,21 +410,12 @@ Rectangle {
 
             Image {
                 id: tileIconImg
+                objectName: tile.objectName ? tile.objectName + "Icon" : ""
                 anchors.centerIn: parent
-                width: 40; height: 30
-                source: "../../assets/tools/" + tile.icon + ".png"
+                width: 36; height: 36
+                source: "icons/" + tile.iconFile + ".svg"
+                sourceSize: Qt.size(36, 36)
                 smooth: true
-                visible: tile.thumbSource === "" || tileThumbImg.status !== Image.Ready
-            }
-            Image {
-                id: tileThumbImg
-                objectName: tile.objectName ? tile.objectName + "Thumb" : ""
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                source: tile.thumbSource
-                smooth: true
-                visible: tile.thumbSource !== "" && status === Image.Ready
             }
         }
         Text {
@@ -776,77 +765,79 @@ Rectangle {
 
             ToolTile {
                 objectName: "editToolCrop"
-                toolName: "crop"; label: qsTr("Crop"); icon: "crop"
+                toolName: "crop"; label: qsTr("Crop"); iconFile: "vagas"
                 active: panel.cropActive
-                // #405: interaktív eszköz — sima fotó-miniatűr (ld. ToolTile)
-                thumbSource: panel.plainThumbSource()
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolTilt"
-                toolName: "tilt"; label: qsTr("Straighten"); icon: "tilt"
+                toolName: "tilt"; label: qsTr("Straighten"); iconFile: "kiegyenesites"
                 active: panel.tiltActive
-                thumbSource: panel.plainThumbSource()
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolRedeye"
-                toolName: "redeye"; label: qsTr("Redeye"); icon: "redeye"
+                toolName: "redeye"; label: qsTr("Redeye"); iconFile: "vorosszem"
                 active: panel.redeyeActive
-                // #405: valódi hatás-előnézet (render/chain.py "redeye")
-                thumbSource: panel.effectThumbSource("redeye")
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             // egygombos javítások (#116): nincs "benyomva" állapot — a gomb
             // tiltott, amíg ugyanez a szűrő a lánc utolsó eleme
             ToolTile {
                 objectName: "editToolEnhance"
-                toolName: "enhance"; label: qsTr("I'm Feeling Lucky"); icon: "lucky"
+                toolName: "enhance"; label: qsTr("I'm Feeling Lucky")
+                iconFile: "jo-napom-van"
                 tileEnabled: panel.enhanceEnabled
-                thumbSource: panel.effectThumbSource("enhance")
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolAutolight"
-                toolName: "autolight"; label: qsTr("Auto Contrast"); icon: "contrast"
+                toolName: "autolight"; label: qsTr("Auto Contrast")
+                iconFile: "auto-kontraszt"
                 tileEnabled: panel.autolightEnabled
-                thumbSource: panel.effectThumbSource("autolight")
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolAutocolor"
-                toolName: "autocolor"; label: qsTr("Auto Color"); icon: "color"
+                toolName: "autocolor"; label: qsTr("Auto Color")
+                iconFile: "auto-szin"
                 tileEnabled: panel.autocolorEnabled
-                thumbSource: panel.effectThumbSource("autocolor")
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolRetouch"
-                toolName: "retouch"; label: qsTr("Retouch"); icon: "retouch"
+                toolName: "retouch"; label: qsTr("Retouch"); iconFile: "retusalas"
                 active: panel.retouchActive
-                thumbSource: panel.plainThumbSource()
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolText"
-                toolName: "text"; label: qsTr("Text"); icon: "text"
+                toolName: "text"; label: qsTr("Text"); iconFile: "szoveg"
                 active: panel.textActive
-                thumbSource: panel.plainThumbSource()
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
         }
 
-        // #337/#405: Kitöltő fény — az eredeti Picasa Alapvető javítások
-        // fülén az ikonrács alatt EZ AZ EGYETLEN csúszka, és a napi
-        // használat egyik legfontosabb eszköze. Ugyanaz a beállítás, mint a
-        // Finomhangolás fülén: a két csúszka egymást követi
+        // #337/#405/#411: Kitöltő fény — az eredeti Picasa Alapvető
+        // javítások fülén az ikonrács alatt EZ AZ EGYETLEN csúszka, és a
+        // napi használat egyik legfontosabb eszköze. Ugyanaz a beállítás,
+        // mint a Finomhangolás fülén: a két csúszka egymást követi
         // (fillLightMoved). A címke a csúszka FÖLÖTT, kompakt (#405 6.
-        // pont) — ez már így volt, csak megerősítve/kommentelve a hűség
-        // kedvéért.
-        Label {
-            text: qsTr("Fill Light")
-            font.pixelSize: Theme.fontSize - 1
-            color: Theme.textGray
+        // pont), a saját ikonnal kiegészítve (#411 9. ikonja: deritofeny).
+        RowLayout {
+            spacing: 4
+            Image {
+                objectName: "fixesFillLightIcon"
+                source: "icons/deritofeny.svg"
+                sourceSize: Qt.size(16, 16)
+                Layout.preferredWidth: 16
+                Layout.preferredHeight: 16
+            }
+            Label {
+                text: qsTr("Fill Light")
+                font.pixelSize: Theme.fontSize - 1
+                color: Theme.textGray
+            }
         }
         PicasaSlider {
             id: fixesFillSlider

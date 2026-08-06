@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#411/#361): tajkep-miniature ELOTTE/UTANA osztasban
+       (balra lapos/homalyos, jobbra dus feny-arnyek) - a respack.yt
+       "editpanel/button(autolighting)" eredeti gombja alapjan. -->
+<rect x="1.5" y="5" width="21" height="14" rx="1" fill="#f2efe9" stroke="#c9c4ba" stroke-width="1"/>
+  <clipPath id="ac"><rect x="2" y="5" width="10" height="14"/></clipPath>
+  <g clip-path="url(#ac)">
+    <defs><linearGradient id="acsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8e2d8"/><stop offset="1" stop-color="#e4d3c0"/></linearGradient></defs>
+    <rect x="2" y="5.5" width="20" height="8.2" fill="url(#acsky)"/>
+    <path d="M2 13.6 5 8.3 7.3 10.8 9.6 6.6 12 11.2 14.3 7.6 16.6 11.6 18.8 9 22 12.4 22 18.5 2 18.5Z" fill="#c9c3b6"/>
+    <path d="M5 8.3 7.3 10.8 6.2 11.4 4.6 9.6Z" fill="#b6b0a3"/>
+    <path d="M9.6 6.6 12 11.2 10.6 11.9 8.7 8.6Z" fill="#b6b0a3"/>
+    <path d="M14.3 7.6 16.6 11.6 15.2 12.2 13.4 9.4Z" fill="#b6b0a3"/>
+    <path d="M18.8 9 22 12.4 22 13.6 17.8 10.4Z" fill="#b6b0a3"/>
+    <rect x="2" y="16.1" width="20" height="2.4" fill="#8f8578"/>
+  </g>
+  <clipPath id="ac2"><rect x="12" y="5" width="10" height="14"/></clipPath>
+  <g clip-path="url(#ac2)">
+    <defs><linearGradient id="ac2sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8501f"/><stop offset="0.5" stop-color="#f2a35c"/><stop offset="1" stop-color="#e2884f"/></linearGradient></defs>
+    <rect x="2" y="5.5" width="20" height="8.2" fill="url(#ac2sky)"/>
+    <path d="M2 13.6 5 8.3 7.3 10.8 9.6 6.6 12 11.2 14.3 7.6 16.6 11.6 18.8 9 22 12.4 22 18.5 2 18.5Z" fill="#e8f2f7"/>
+    <path d="M5 8.3 7.3 10.8 6.2 11.4 4.6 9.6Z" fill="#527086"/>
+    <path d="M9.6 6.6 12 11.2 10.6 11.9 8.7 8.6Z" fill="#527086"/>
+    <path d="M14.3 7.6 16.6 11.6 15.2 12.2 13.4 9.4Z" fill="#527086"/>
+    <path d="M18.8 9 22 12.4 22 13.6 17.8 10.4Z" fill="#527086"/>
+    <rect x="2" y="16.1" width="20" height="2.4" fill="#150e0a"/>
+  </g>
+  <path d="M12 5v14" stroke="#ffffff" stroke-width="0.6" stroke-opacity="0.8"/>
+</svg>

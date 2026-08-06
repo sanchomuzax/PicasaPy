@@ -219,20 +219,20 @@ class TestEffectThumbSourceWiring:
         kulcsai pontosan a Python-oldali `EFFECT_NAMES` katalógusban
         legyenek — ha az egyik oldal bővül a másik nélkül, ez buktatja.
 
-        #405: a "Gyakori javítások" fülön 4 további hívás jelent meg
+        #405 bevezetett négy további hívást a "Gyakori javítások" fülön
         (Vörösszem/Jó napom van/Automatikus kontraszt/Automatikus szín) —
-        ezek NEM a 36-os `filters=` katalógus tagjai, hanem a
-        `effect_thumbnails._TOOL_PREVIEW_NAMES` külön halmazából valók
-        (ld. ottani docsztring), ezért a szigorú 36-os egyezés-ellenőrzést
-        csak a katalógus-effektekre szűrve tartjuk meg."""
+        a #411 ezt VISSZAVONTA (ld. test_editor_411.py): az a fül most
+        saját SVG-ikonokat használ, `effectThumbSource()`-t egyáltalán nem
+        hív. A Python-oldali `effect_thumbnails._TOOL_PREVIEW_NAMES` külön
+        halmaz emiatt megmaradhat (a bélyegkép-provider szintjén továbbra
+        is kiszolgálható kulcsok), de a QML-forrásban már nem jelenik meg —
+        ezért a maradék 36 katalógus-effekttel pontos egyezést várunk."""
         from picasapy.app.effect_thumbnails import EFFECT_NAMES
 
         qml_keys = set(
             re.findall(r'panel\.effectThumbSource\("([a-z0-9_]+)"\)', _QML_SOURCE)
         )
-        tool_preview_keys = {"redeye", "enhance", "autolight", "autocolor"}
-        assert qml_keys - tool_preview_keys == set(EFFECT_NAMES)
-        assert tool_preview_keys <= qml_keys
+        assert qml_keys == set(EFFECT_NAMES)
 
 
 class TestPanelButtonThumbnailPlaceholder:
