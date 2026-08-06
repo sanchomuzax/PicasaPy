@@ -18,12 +18,12 @@ import pytest
 from picasapy.ini.filters import parse_filters
 from picasapy.render.chain import KNOWN_UNRENDERED_OPS, apply_filters
 
+#: `roundededges`, `matte`, `nightvision` az #381-ben MEGKAPTA az egzakt
+#: csővezetéket a `filterdesc.xml` alapján — kikerültek a listáról, ld.
+#: `TestGlimmerNowRendered` lent.
 _NEW_UNRENDERED_KEYS = (
     "grain",
     "radtint",
-    "roundededges",
-    "matte",
-    "nightvision",
 )
 
 
@@ -52,9 +52,6 @@ class TestKnownUnrenderedRegistry:
         [
             ("grain", "grain"),
             ("radtint", "radtint"),
-            ("RoundedEdges", "roundededges"),
-            ("Matte", "matte"),
-            ("NightVision", "nightvision"),
         ],
     )
     def test_picasa_eredeti_iras_is_felismert(self, spelled, key, sample):
@@ -71,6 +68,28 @@ class TestKnownUnrenderedRegistry:
         )
         assert not np.array_equal(result, sample), "az Invert lefutott"
         assert skipped == ("grain",)
+
+
+class TestGlimmerNowRendered:
+    """#381: a `roundededges`/`matte`/`nightvision` a `filterdesc.xml` egzakt
+    csővezetékét kapta — már NEM a `KNOWN_UNRENDERED_OPS` tagjai, a lánc
+    ténylegesen renderel rájuk (nem csak felismeri és kihagyja).
+    """
+
+    @pytest.mark.parametrize(
+        ("spelled", "key"), [("RoundedEdges", "roundededges"), ("Matte", "matte"), ("NightVision", "nightvision")]
+    )
+    def test_mar_nem_a_kihagyott_regiszterben(self, spelled, key):
+        assert key not in KNOWN_UNRENDERED_OPS
+
+    @pytest.mark.parametrize(
+        ("spelled", "key"), [("RoundedEdges", "roundededges"), ("Matte", "matte"), ("NightVision", "nightvision")]
+    )
+    def test_a_lanc_tenylegesen_renderel(self, spelled, key, sample):
+        del key
+        result, skipped = apply_filters(sample, parse_filters(f"{spelled}=1;"))
+        assert skipped == (), f"{spelled}: a lánc még mindig kihagyja"
+        assert not np.array_equal(result, sample)
 
 
 class TestPicnikNoopMarker:

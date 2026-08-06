@@ -224,7 +224,9 @@ class TestCropRunsBeforeTheFrame:
     vágás, és a kereten belül rossz kivágás látszana."""
 
     def test_crop_then_border(self, sample):
-        # a bal felső negyed kivágása + fehér keret
+        # a bal felső negyed kivágása + keret (alapértelmezett külső szín:
+        # a filterdesc.xml szerint FEKETE — #381, ld. filterdesc-registry.md
+        # 4.2 "Border" sora: szín Outer (#000))
         chain = "crop64=1,000000007fff7fff;border=1;"
         result, skipped = apply_filters(sample, parse_filters(chain))
         assert skipped == ()
@@ -233,8 +235,8 @@ class TestCropRunsBeforeTheFrame:
         grow_y = result.shape[0] - cropped_only.shape[0]
         grow_x = result.shape[1] - cropped_only.shape[1]
         assert grow_y > 0 and grow_x > 0
-        # és a szélső pixelsor a keret (fehér), nem a fotó
-        assert (result[0, :, :] > 200).all()
+        # és a szélső pixelsor a keret (fekete), nem a fotó
+        assert (result[0, :, :] < 20).all()
 
     def test_frame_does_not_break_a_later_crop(self, sample):
         # fordított sorrend a láncban: a crop akkor is az eredetire vonatkozik

@@ -28,39 +28,10 @@ from picasapy.render.effects import (
     apply_glow,
     apply_radblur,
     apply_radsat,
-    apply_vignette,
 )
-from picasapy.render.effects_artistic import (
-    apply_boost,
-    apply_comicize,
-    apply_focal_zoom,
-    apply_neon,
-    apply_pencil_sketch,
-    apply_pixelate,
-    apply_soften,
-)
-from picasapy.render.effects_creative import (
-    apply_cinemascope,
-    apply_holga,
-    apply_ir,
-    apply_lomo,
-    apply_orton,
-    apply_sixties,
-)
-from picasapy.render.effects_frames import (
-    apply_border,
-    apply_drop_shadow,
-    apply_museum_matte,
-    apply_polaroid,
-)
-from picasapy.render.effects_creative_tone import (
-    apply_crossprocess,
-    apply_hdr,
-    apply_heatmap,
-    apply_invert,
-    apply_quantizepalette,
-    apply_twotone,
-)
+from picasapy.render.effects_artistic import apply_comicize, apply_focal_zoom
+from picasapy.render.effects_creative_tone import apply_invert
+from picasapy.render import chain_glimmer_handlers as glimmer
 from picasapy.render.ops import (
     apply_autocolor,
     apply_autolight,
@@ -100,9 +71,6 @@ KNOWN_UNRENDERED_OPS = frozenset(
     {
         "grain",  # v1 — a grain2-nek van implementációja, a bare v1-nek nincs
         "radtint",  # feltehetően a dir_tint radiális testvére (rad- előtag)
-        "roundededges",
-        "matte",
-        "nightvision",
         # --- a filterdesc-regiszter (#382) által azonosított 21 további,
         # eddig sehol nem dokumentált szűrőnév — a filterdesc.xml-ben
         # léteznek, tehát régi könyvtárak `filters=` láncában előfordulhatnak.
@@ -250,15 +218,6 @@ def _effect_float(op: FilterOp, index: int, default: float) -> float:
     return float(op.params[absolute])
 
 
-def _apply_vignette_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Vignette=1,belső%,erősség,?,szín — a 3-4. paraméter szerepe méretlen
-    return apply_vignette(
-        image,
-        inner=_effect_float(op, 0, 35.0),
-        strength=_effect_float(op, 1, 1.4),
-    )
-
-
 def _apply_glow_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # glow (v1) és glow2 azonos paraméter-alakkal: 1,intenzitás,sugár;
     # paraméter nélkül a v1 golden-kitben mért alapértékei futnak
@@ -329,90 +288,21 @@ def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
-# --- az 5. fül effektjeinek paraméter-leképezése (#332) --------------------
-# A pozíciók a `docs/specs/filters-decoded.md` 5. körében MÉRT ini-mintákból
-# jönnek (a felhasználó valódi Picasa-exportjaiból), nem találgatásból: az
-# implementált szignatúrák alapértékei rendre egybeesnek a mért mintákkal.
-# A 4. fül effektjeinél ez az egyezés NINCS meg (a pontos PICASA-skála a
-# #317-es golden-kör híján ismeretlen) — ott ezért a paramétereket a
-# `_effect_ratio` biztonságos, 0..1-re vetített arányként veszi át (ld. a
-# 4. fül handlerei fölötti megjegyzést), nem az (esetleg más skálájú) mért
-# minta szerint — de legalább TÉNYLEG eljutnak a rendererhez, és
-# paraméter nélkül a jól hangolt implementált alapértékkel futnak.
-# A szín-paramétereket a projekt bevált `parse_rgb_hex`-e olvassa.
-
-
-def _effect_color(op: FilterOp, index: int, default: tuple[int, int, int]):
-    """A flag utáni `index`-edik paraméter színként, hiányzónál `default`."""
-    absolute = index + 1
-    if len(op.params) <= absolute:
-        return default
-    return parse_rgb_hex(op.params[absolute])
-
-
-def _effect_ratio(op: FilterOp, index: int, default: float) -> float:
-    """A flag utáni `index`-edik paraméter 0..1 arányként, hiányzónál `default`.
-
-    A 4. fül effektjeinél (#332) a paraméterek PONTOS skálája nem mért
-    (#317 golden-kör még nyitva) — de a projekt többi mért csúszkája
-    (Boost, Soften, Vignette belső sugara stb.) következetesen 0..100-as
-    skálát használ. Ezt a konvenciót vetítjük 0..1 tartományba azoknál a
-    kwarg-oknál, amik szigorúan [0,1]-re vannak korlátozva (pl. `strength`,
-    `blend`, `softness`) — így egy valódi (akár a mértnél nagyobb) ini-érték
-    sem tud kivételt dobni, csak a felső korláton szaturál."""
-    absolute = index + 1
-    if len(op.params) <= absolute:
-        return default
-    raw = float(op.params[absolute])
-    return min(1.0, max(0.0, raw / 100.0))
-
-
-def _apply_boost_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Boost=1,erősség
-    return apply_boost(image, strength=_effect_float(op, 0, 50.0))
-
-
-def _apply_soften_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Soften=1,mérték,sugár
-    return apply_soften(
-        image,
-        amount=_effect_float(op, 0, 50.0),
-        radius=_effect_float(op, 1, 50.0),
-    )
-
-
-def _apply_pixelate_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Pixelate=1,blokkméret,?,? — a 2-3. paraméter szerepe méretlen
-    return apply_pixelate(image, block_size=_effect_float(op, 0, 20.0))
+# --- a KÖZELÍTŐ maradt effektek (#381: FocalZoom, Comicize) --------------
+# A Glimmer-effektek nagy része #381-ben átállt a `filterdesc.xml` egzakt
+# csővezetékeire (`chain_glimmer_handlers.py`) — ez a két handler a régi,
+# `_effect_float`-tal pozíció szerint olvasó KÖZELÍTŐ modellen maradt.
 
 
 def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # FocalZoom=1,x,y,sugár,erősség,?,?
+    # FocalZoom=1,x,y,sugár,erősség,?,? — KÖZELÍTŐ modell maradt (#381: a
+    # PicasaPy nem implementálja még a fullres-explicit radiális elmosást).
     return apply_focal_zoom(
         image,
         x=_effect_float(op, 0, 0.5),
         y=_effect_float(op, 1, 0.5),
         radius=_effect_float(op, 2, 50.0),
         strength=_effect_float(op, 3, 50.0),
-    )
-
-
-def _apply_pencil_sketch_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # PencilSketch=1,elmosás,fényerő,szín-keverés
-    return apply_pencil_sketch(
-        image,
-        blur_radius=_effect_float(op, 0, 2.0),
-        brightness=_effect_float(op, 1, 100.0),
-        color_mix=_effect_float(op, 2, 0.0),
-    )
-
-
-def _apply_neon_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Neon=1,intenzitás,#szín
-    return apply_neon(
-        image,
-        intensity=_effect_float(op, 0, 50.0),
-        color=_effect_color(op, 1, (0, 255, 170)),
     )
 
 
@@ -426,149 +316,11 @@ def _apply_comicize_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
-def _apply_border_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Border=1,szélesség,?,?,#szín1,#keretszín,? — a keret színe az 5. (a mért
-    # mintában 00ffffff = fehér, ami az implementált alapérték is)
-    return apply_border(
-        image,
-        width=_effect_float(op, 0, 20.0),
-        color=_effect_color(op, 4, (255, 255, 255)),
-    )
-
-
-def _apply_drop_shadow_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # DropShadow=1,keret,szög,elmosás,#árnyékszín,#keretszín,átlátszatlanság
-    return apply_drop_shadow(
-        image,
-        border_width=_effect_float(op, 0, 4.0),
-        angle=_effect_float(op, 1, 90.0),
-        blur=_effect_float(op, 2, 10.0),
-        shadow_color=_effect_color(op, 3, (0, 0, 0)),
-        border_color=_effect_color(op, 4, (255, 255, 255)),
-        opacity=_effect_float(op, 5, 30.0),
-    )
-
-
-def _apply_museum_matte_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # MuseumMatte=1,szélesség,vonalpozíció,#vonalszín,#paszpartuszín
-    return apply_museum_matte(
-        image,
-        width=_effect_float(op, 0, 25.0),
-        line_position=_effect_float(op, 1, 40.0),
-        line_color=_effect_color(op, 2, (3, 14, 26)),
-        mat_color=_effect_color(op, 3, (228, 234, 240)),
-    )
-
-
 def _apply_retouch_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     """`retouch=1[,rect64...];` — a régiók PicasaPy-saját kiterjesztéssel
     érkeznek (ld. `picasapy.ini.retouch` docsztring); régió nélkül no-op."""
     regions = parse_retouch_regions(op)
     return apply_retouch(image, regions)
-
-
-def _apply_polaroid_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Polaroid=1,keretszélesség,#szín
-    return apply_polaroid(
-        image,
-        border_width=_effect_float(op, 0, 5.0),
-        color=_effect_color(op, 1, (226, 226, 226)),
-    )
-
-
-# --- a 4. fül kreatív effektjeinek paraméter-leképezése (#332) --------------
-# A pozíciók a `docs/specs/filters-decoded.md` 5. körében mért ini-mintákból
-# jönnek, de — szemben az 5. füllel — itt az implementált szignatúrák
-# alapértékei NEM esnek egybe a mért mintákkal (pl. `IR=1,0.000000;` vs. az
-# implementált `strength=1.0`): a golden-mérés (#317) még nyitva van, a
-# pontos PICASA-skála ismeretlen. Amíg paraméter NINCS a láncban, a handler
-# a jól hangolt implementált alapértékkel fut (nincs viselkedésváltozás a
-# gombbal alkalmazott, paraméter nélküli esetben) — de ha VAN paraméter (pl.
-# egy valódi Picasa-ból importált `.picasa.ini`-ben), azt tényleg felhasználja,
-# a #301 hibatűrő mintája szerint (rossz paraméter → az az egy op kimarad).
-
-
-def _apply_ir_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # IR=1,erősség
-    return apply_ir(image, strength=_effect_float(op, 0, 1.0))
-
-
-def _apply_lomo_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Lomo=1,telítettség,kontraszt,?
-    return apply_lomo(
-        image,
-        saturation=_effect_float(op, 0, 1.6),
-        contrast=_effect_float(op, 1, 1.3),
-    )
-
-
-def _apply_holga_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Holga=1,lágyítás,?,vignetta — a lágyítás [0,1]-re kötött, ezért arányos
-    # (0..100→0..1) leképezéssel; a vignetta erőssége korlátlan, közvetlenül.
-    return apply_holga(
-        image,
-        softness=_effect_ratio(op, 0, 0.4),
-        vignette_strength=_effect_float(op, 2, 2.0),
-    )
-
-
-def _apply_hdr_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # HDR=1,clip,csempeméret,erősség — a clip/csempe legalább a minimumon
-    # marad, ha az ini 0-t (vagy annál kisebbet) írna.
-    return apply_hdr(
-        image,
-        clip_limit=max(0.1, _effect_float(op, 0, 2.0)),
-        tile_grid_size=max(1, int(_effect_float(op, 1, 8))),
-        strength=_effect_ratio(op, 2, 1.0),
-    )
-
-
-def _apply_cinemascope_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Cinemascope=1,árnyalás — a mért egyetlen paraméter (jellemzően 0) a
-    # hűvös árnyalás erősségeként fut; a képarány az alapértéken marad.
-    return apply_cinemascope(image, tint_strength=_effect_ratio(op, 0, 0.15))
-
-
-def _apply_orton_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Orton=1,fényesítés,elmosás,keverés
-    return apply_orton(
-        image,
-        brightness=max(0.01, _effect_float(op, 0, 1.4)),
-        blur_sigma=max(0.01, _effect_float(op, 1, 8.0)),
-        blend=_effect_ratio(op, 2, 0.5),
-    )
-
-
-def _apply_sixties_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Sixties=1,fakítás,#szín,? — a színparamétert a modell (fix meleg
-    # csatornaeltolás) nem használja, csak a fakítást vesszük át.
-    return apply_sixties(image, fade=_effect_ratio(op, 0, 0.35))
-
-
-def _apply_heatmap_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # HeatMap=1,keverés,?
-    return apply_heatmap(image, blend=_effect_ratio(op, 0, 1.0))
-
-
-def _apply_crossprocess_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # CrossProcess=1,erősség
-    return apply_crossprocess(image, strength=_effect_ratio(op, 0, 1.0))
-
-
-def _apply_quantizepalette_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # QuantizePalette=1,szintszám,?,? — a szintszám egész, [2,256]-ra kötve
-    levels = int(_effect_float(op, 0, 4.0))
-    return apply_quantizepalette(image, levels=max(2, min(256, levels)))
-
-
-def _apply_twotone_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # TwoTone=1,?,?,?,#árnyékszín,#fényszín — a két szín egyértelmű formátumú
-    # (00RRGGBB), ezért ezeket a `parse_rgb_hex`-szel biztonsággal átvesszük.
-    return apply_twotone(
-        image,
-        shadow_color=_effect_color(op, 3, (10, 10, 40)),
-        highlight_color=_effect_color(op, 4, (255, 225, 140)),
-    )
 
 
 _HANDLERS = {
@@ -588,7 +340,6 @@ _HANDLERS = {
     "unsharp": _apply_unsharp_op,
     "unsharp2": _apply_unsharp_op,
     "grain2": _apply_grain_op,
-    "vignette": _apply_vignette_op,  # az ini-ben nagybetűs: Vignette
     "glow": _apply_glow_op,
     "glow2": _apply_glow_op,
     "tint": _apply_tint_op,
@@ -596,37 +347,46 @@ _HANDLERS = {
     "radblur": _apply_radblur_op,
     "radsat": _apply_radsat_op,
     "dir_tint": _apply_dir_tint_op,
-    # --- a 4. fül kreatív effektjei (#329, paraméterekkel: #332) -----------
-    # A Picasa PONTOS paraméterezése ezeknél nem mért (golden-mérés: #317),
-    # a modellek közelítők — de a láncban ott álló paramétereket mostantól
-    # tényleg felhasználjuk (ld. a handlerek fölötti megjegyzést), nem
-    # dobjuk el csendben.
-    "ir": _apply_ir_op,
-    "lomo": _apply_lomo_op,
-    "holga": _apply_holga_op,
-    "hdr": _apply_hdr_op,
-    "cinemascope": _apply_cinemascope_op,
-    "orton": _apply_orton_op,
-    "sixties": _apply_sixties_op,
+    # --- Glimmer-effektek: EGZAKT csővezetékek a filterdesc.xml szerint
+    # (#381, `chain_glimmer_handlers.py` + `glimmer_*` modulok). Az `IR`
+    # kivétel: a `IRImageOperation` belső kernele a filterdesc.xml-ben sem
+    # publikus, ott a modell dokumentáltan INTERPRETÁCIÓ (ld.
+    # `glimmer_creative.apply_ir` docstringjét). `FocalZoom`/
+    # `PicnikFocalPixelate`/`Comicize` egyelőre KÖZELÍTŐ maradt (#381
+    # hátralévő munka, ld. a jegy jelentését).
+    "vignette": glimmer.apply_vignette_op,  # az ini-ben nagybetűs: Vignette
+    "matte": glimmer.apply_matte_op,
+    "hdr": glimmer.apply_hdr_op,
+    "localcontrast": glimmer.apply_local_contrast_op,
+    "ir": glimmer.apply_ir_op,
+    "lomo": glimmer.apply_lomo_op,
+    "holga": glimmer.apply_holga_op,
+    "cinemascope": glimmer.apply_cinemascope_op,
+    "orton": glimmer.apply_orton_op,
+    "sixties": glimmer.apply_sixties_op,
     "invert": lambda image, op: apply_invert(image),
-    "heatmap": _apply_heatmap_op,
-    "crossprocess": _apply_crossprocess_op,
-    "quantizepalette": _apply_quantizepalette_op,
-    "twotone": _apply_twotone_op,
-    # --- az 5. fül művészi effektjei (#330, paraméterekkel: #332) ----------
-    "boost": _apply_boost_op,
-    "soften": _apply_soften_op,
-    "pixelate": _apply_pixelate_op,
-    "focalzoom": _apply_focal_zoom_op,
-    "pencilsketch": _apply_pencil_sketch_op,
-    "neon": _apply_neon_op,
-    "comicize": _apply_comicize_op,
+    "heatmap": glimmer.apply_heatmap_op,
+    "nightvision": glimmer.apply_nightvision_op,
+    "crossprocess": glimmer.apply_crossprocess_op,
+    "quantizepalette": glimmer.apply_quantizepalette_op,
+    "twotone": glimmer.apply_twotone_op,
+    "boost": glimmer.apply_boost_op,
+    "soften": glimmer.apply_soften_op,
+    "pixelate": glimmer.apply_pixelate_op,
+    "picnikgrain": glimmer.apply_picnik_grain_op,
+    "focalzoom": _apply_focal_zoom_op,  # KÖZELÍTŐ maradt (ld. fent)
+    "pencilsketch": glimmer.apply_pencil_sketch_op,
+    "neon": glimmer.apply_neon_op,
+    "comicize": _apply_comicize_op,  # KÖZELÍTŐ maradt (ld. fent)
+    "picniktint": glimmer.apply_picnik_tint_op,
+    "reanimatedeyecolor": glimmer.apply_reanimated_eye_color_op,
+    "roundededges": glimmer.apply_rounded_edges_op,
     # keretes effektek — MEGNÖVELIK a képet, ezért a vágás UTÁN futnak
     # (ld. _FRAME_EFFECTS és az apply_filters sorrendje)
-    "border": _apply_border_op,
-    "dropshadow": _apply_drop_shadow_op,
-    "museummatte": _apply_museum_matte_op,
-    "polaroid": _apply_polaroid_op,
+    "border": glimmer.apply_border_op,
+    "dropshadow": glimmer.apply_drop_shadow_op,
+    "museummatte": glimmer.apply_museum_matte_op,
+    "polaroid": glimmer.apply_polaroid_op,
 }
 
 #: Keretet rajzoló, tehát MÉRETNÖVELŐ effektek (#330/#382). A vágás
@@ -712,6 +472,10 @@ def apply_filters(
         if handler is None:
             skipped.append(op.name)
             continue
+        if key in glimmer.PAINTABLE_MASK_OPS:
+            # #381: PicnikTint/ReanimatedEyeColor ecset-maszkja hiányzik —
+            # a hatás a TELJES KÉPRE fut, ezt jelezni kell.
+            range_warnings.append(glimmer.PAINTABLE_MASK_WARNING_TEMPLATE.format(name=op.name))
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
         try:
