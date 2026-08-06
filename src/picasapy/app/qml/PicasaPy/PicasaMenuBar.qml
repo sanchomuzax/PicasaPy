@@ -25,6 +25,8 @@ MenuBar {
     signal folderManagerRequested()
     // #287: Duplikátum-kereső ablak megnyitása
     signal dedupRequested()
+    // #368: Eszközök → Kísérleti → Adatbázis áthelyezése
+    signal moveDatabaseRequested()
     signal renameRequested()
     signal exportRequested()
     // #29: Létrehozás → Képkollázs / Mozgófilm a kijelölésből
@@ -466,7 +468,15 @@ MenuBar {
         // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
         Menu { title: qsTr("Upload"); enabled: false }
         Menu { title: qsTr("Geotag"); enabled: false }
-        Menu { title: qsTr("Experimental"); enabled: false }
+        Menu {
+            title: qsTr("Experimental")
+            // #368: az eredeti Picasa is a Kísérleti almenüből nyitotta
+            MenuItem {
+                objectName: "menuToolsMoveDatabase"
+                text: qsTr("Move Database...")
+                onTriggered: bar.moveDatabaseRequested()
+            }
+        }
         MenuSeparator {}
         MenuItem { text: qsTr("Configure Buttons..."); enabled: false }
         MenuSeparator {}

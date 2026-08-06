@@ -37,6 +37,16 @@ Item {
         function acceptButtonText() {
             return standardButton(Dialog.Ok) ? standardButton(Dialog.Ok).text : ""
         }
+        // #369 (export.fen paritás): a "Name of exported folder:" mező
+        // opcionális — üresen a célmappa változatlanul a browse-szal
+        // választott hely (a régi viselkedés), kitöltve alá-mappaként jön
+        // létre (az exporter mkdir(parents=True)-ja már ma is kezeli).
+        function resolvedTargetFolder() {
+            var name = exportFolderNameField.text
+            if (name.length === 0) return targetFolder
+            var sep = targetFolder.endsWith("/") ? "" : "/"
+            return targetFolder + sep + name
+        }
         onOpened: {
             standardButton(Dialog.Ok).enabled = Qt.binding(
                 function() { return exportDialog.targetFolder.length > 0 })
@@ -44,15 +54,25 @@ Item {
             // "Export", nem generikus "OK"
             standardButton(Dialog.Ok).text = qsTr("Export")
         }
+        // #369: a lenyíló megjelenített (fordítható) szövege és a
+        // resolveExportQuality-nak átadott kulcs szándékosan külön —
+        // a logika így nem törik el, ha a szöveg egyszer lefordítódik.
+        readonly property var qualityPresetKeys:
+            ["automatic", "normal", "maximum", "minimum", "custom"]
         onAccepted: controller.exportRows(
-            dialogs.appWindow.selectedIndexes, targetFolder,
-            sizeOptions[exportSizeBox.currentIndex], exportQuality.value)
+            dialogs.appWindow.selectedIndexes, resolvedTargetFolder(),
+            sizeOptions[exportSizeBox.currentIndex],
+            controller.resolveExportQuality(
+                qualityPresetKeys[exportQualityPreset.currentIndex],
+                exportQuality.value),
+            exportAddNumbersCheck.checked,
+            exportWatermarkCheck.checked ? exportWatermarkField.text : "")
         ColumnLayout {
             spacing: 10
             RowLayout {
                 spacing: 8
                 Text {
-                    text: qsTr("Target folder:")
+                    text: qsTr("Export location:")
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
                 }
@@ -70,6 +90,24 @@ Item {
                     text: qsTr("Browse...")
                     onClicked: exportTargetDialog.open()
                 }
+            }
+            RowLayout {
+                spacing: 8
+                Text {
+                    text: qsTr("Name of exported folder:")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+                TextField {
+                    id: exportFolderNameField
+                    objectName: "exportFolderNameField"
+                    Layout.preferredWidth: 180
+                }
+            }
+            CheckBox {
+                id: exportAddNumbersCheck
+                objectName: "exportAddNumbersCheck"
+                text: qsTr("Add numbers to file names to preserve order")
             }
             RowLayout {
                 spacing: 8
@@ -93,10 +131,40 @@ Item {
                     font.pixelSize: Theme.fontSize
                     color: Theme.ink
                 }
+                ComboBox {
+                    id: exportQualityPreset
+                    objectName: "exportQualityPreset"
+                    Layout.preferredWidth: 130
+                    model: [qsTr("Automatic"), qsTr("Normal"),
+                            qsTr("Maximum"), qsTr("Minimum"), qsTr("Custom")]
+                    currentIndex: 1  // Normal — a korábbi, mindig-küldött 85 alapértelmezéssel egyező
+                }
                 SpinBox {
                     id: exportQuality
                     objectName: "exportQuality"
                     from: 1; to: 100; value: 85
+                    // #369: csak "Custom" presetnél számít az érték, ekkor
+                    // aktív — az exportRows-nak enélkül is mindig átadjuk
+                    // (resolveExportQuality a nem-custom preseteknél eldobja).
+                    enabled: exportQualityPreset.currentIndex === 4
+                }
+            }
+            ColumnLayout {
+                spacing: 4
+                CheckBox {
+                    id: exportWatermarkCheck
+                    objectName: "exportWatermarkCheck"
+                    text: qsTr("Add watermark")
+                }
+                RowLayout {
+                    spacing: 8
+                    Item { Layout.preferredWidth: 20 }  // behúzás (a FEN "indent" spacere)
+                    TextField {
+                        id: exportWatermarkField
+                        objectName: "exportWatermarkField"
+                        Layout.preferredWidth: 200
+                        enabled: exportWatermarkCheck.checked
+                    }
                 }
             }
         }

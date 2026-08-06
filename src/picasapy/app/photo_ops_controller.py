@@ -25,6 +25,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Signal, Slot
 
+from picasapy.fileops import RenameItem, preview_name, rename_photos_many
 from picasapy.index import open_index, photo_by_id, update_photo_fields
 from picasapy.ini import IniConflictError, IniSaveError, update_document
 from picasapy.ini.albums import ensure_album, with_album, without_album
@@ -48,6 +49,10 @@ class PhotoOpsMixin:
     # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
     # hibaüzenet az albumtagság-íráshoz — a geoWriteFailed mintája.
     albumWriteFailed = Signal(str)
+    # #366: a tömeges átnevezés (fájlrendszer-írás, lehet lassú NAS-on)
+    # háttérszálon fut; ez a jelzés tereli a resync/refresh-t vissza a
+    # GUI-szálra, a `_photoFieldUpdated` mintája szerint.
+    _renameBatchDone = Signal(list)  # [érintett mappák]
 
     def _ensure_photo_ops_wired(self) -> None:
         """A jelzések bekötése lusta, egyszeri — így a controller.py
@@ -59,6 +64,7 @@ class PhotoOpsMixin:
         self._photo_ops_wired = True
         self._photoFieldUpdated.connect(self._on_photo_field_updated)
         self.photoOpFailed.connect(self._on_photo_write_failed)
+        self._renameBatchDone.connect(self._on_rename_batch_done)
 
     @Slot(int, object)
     def _on_photo_field_updated(self, photo_id: int, record) -> None:
@@ -156,6 +162,84 @@ class PhotoOpsMixin:
             return {"caption_ini": text or None}
 
         self._run_photo_write(photo.id, perform)
+
+    # -- tömeges átnevezés (#366, rename.fen paritás) ------------------------
+
+    @Slot(list, str, bool, bool, result=str)
+    def renamePreview(
+        self, rows, base_name: str, include_date: bool, include_size: bool
+    ) -> str:
+        """A `rename.fen` élő előnézete: a kijelölés ELSŐ fájljának végleges
+        neve, ha most elfogadnák a dialógust (sorszám nélkül — ő az első a
+        sorban). Tiszta lekérdezés, nem ír semmit."""
+        photos = self._rows_to_photos(rows)
+        if not photos or not (base_name or "").strip():
+            return ""
+        photo = photos[0]
+        item = RenameItem(
+            path=Path(photo.folder_path) / photo.name,
+            date=photo.taken_at,
+            width=photo.width,
+            height=photo.height,
+        )
+        return preview_name(
+            base_name.strip(), item,
+            include_date=include_date, include_size=include_size, sequence=0,
+        )
+
+    @Slot(list, str, bool, bool)
+    def renamePhotosMany(
+        self, rows, base_name: str, include_date: bool, include_size: bool
+    ) -> None:
+        """Tömeges átnevezés (#366): a kijelölt N fájl közös alapnevet kap
+        (+ opcionális dátum-/felbontás-utótag), Picasa-mintájú sorszámozással
+        (`név`, `név-1`, `név-2`…). Az egyfájlos F2-út
+        (`FileOpsController.renamePhoto`) ettől függetlenül, változatlanul
+        működik — ez egy külön, kötegelt művelet. A lemezírás (potenciálisan
+        lassú NAS) és az utána következő resync háttérszálon fut, a
+        csillag/felirat mintáját követve (#141)."""
+        base_name = (base_name or "").strip()
+        photos = self._rows_to_photos(rows)
+        if not base_name or not photos:
+            return
+        self._ensure_photo_ops_wired()
+        self._begin_sync_job()
+
+        items = [
+            RenameItem(
+                path=Path(photo.folder_path) / photo.name,
+                date=photo.taken_at,
+                width=photo.width,
+                height=photo.height,
+            )
+            for photo in photos
+        ]
+
+        def worker() -> None:
+            try:
+                rename_photos_many(
+                    items, base_name,
+                    include_date=include_date, include_size=include_size,
+                )
+            except (OSError, ValueError, IniSaveError, IniConflictError) as error:
+                self.photoOpFailed.emit(str(error))
+                return
+            folders = sorted({str(item.path.parent) for item in items})
+            self._renameBatchDone.emit(folders)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    @Slot(list)
+    def _on_rename_batch_done(self, folders: list[str]) -> None:
+        """A háttérszálas tömeges átnevezés után (GUI-szálon): érintett
+        mappák resyncje + a nézet frissítése — az `_apply_batch` mintája,
+        csak háttérszálas indítással (a lemezírás már megtörtént)."""
+        with open_index(self._db_path) as conn:
+            for folder in folders:
+                self._sync_tree(conn, folder)
+        self._refresh_view()
+        self._on_sync_job_done()
+        self.photoOpFinished.emit()
 
     # -- virtuális albumok (#9, 2. lépés) ------------------------------------
 

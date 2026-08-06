@@ -9,7 +9,12 @@ import pytest
 from PIL.IptcImagePlugin import getiptcinfo
 from PIL import Image
 
-from picasapy.export import ExportItem, ExportSettings, export_photos
+from picasapy.export import (
+    ExportItem,
+    ExportSettings,
+    export_photos,
+    resolve_export_quality,
+)
 from support.jpeg_factory import make_jpeg
 
 
@@ -300,3 +305,114 @@ class TestSettingsValidation:
             [ExportItem(source)], tmp_path / "high", ExportSettings(jpeg_quality=95)
         )
         assert low.exported[0].stat().st_size < high.exported[0].stat().st_size
+
+
+class TestAddNumbers:
+    """#369 (export.fen paritás): „Add numbers to file names to preserve
+    order" — a fájlnevek elé 3 jegyű sorszám kerül, bemeneti sorrendben."""
+
+    def test_numbers_are_prefixed_in_input_order(self, tmp_path):
+        sources = [make_jpeg(tmp_path / name) for name in ("c.jpg", "a.jpg", "b.jpg")]
+        report = export_photos(
+            [ExportItem(s) for s in sources],
+            tmp_path / "out",
+            ExportSettings(add_numbers=True),
+        )
+        assert [p.name for p in report.exported] == [
+            "001-c.jpg", "002-a.jpg", "003-b.jpg",
+        ]
+
+    def test_disabled_by_default_keeps_original_names(self, tmp_path):
+        source = make_jpeg(tmp_path / "kép.jpg")
+        report = export_photos([ExportItem(source)], tmp_path / "out")
+        assert [p.name for p in report.exported] == ["kép.jpg"]
+
+    def test_numbering_still_deduplicates_collisions(self, tmp_path):
+        (tmp_path / "a").mkdir()
+        (tmp_path / "b").mkdir()
+        first = make_jpeg(tmp_path / "a" / "kép.jpg")
+        second = make_jpeg(tmp_path / "b" / "kép.jpg")
+        report = export_photos(
+            [ExportItem(first), ExportItem(second)],
+            tmp_path / "out",
+            ExportSettings(add_numbers=True),
+        )
+        assert [p.name for p in report.exported] == ["001-kép.jpg", "002-kép.jpg"]
+
+    def test_width_grows_for_large_batches(self, tmp_path):
+        # 1000+ elemnél a 3-jegyű séma nem lenne elég — a szélesség a teljes
+        # kötegméretből számolt, hogy sorrend szerint rendezve maradjon.
+        sources = [make_jpeg(tmp_path / f"{i}.jpg") for i in range(1000)]
+        report = export_photos(
+            [ExportItem(s) for s in sources],
+            tmp_path / "out",
+            ExportSettings(add_numbers=True),
+        )
+        assert report.exported[0].name == "0001-0.jpg"
+        assert report.exported[999].name == "1000-999.jpg"
+
+
+class TestWatermark:
+    """#369 (export.fen paritás): vízjel-szöveg a jobb alsó sarokban, fehér,
+    félig átlátszó — a Picasa mintáját közelítve."""
+
+    def test_watermark_brightens_bottom_right_corner(self, tmp_path):
+        # Sötét (fekete) forráskép — a fehér, félig átlátszó szöveg a jobb
+        # alsó sarokban észrevehetően felfényesíti azt a régiót.
+        image = np.zeros((200, 300, 3), dtype=np.uint8)
+        source = tmp_path / "sötét.png"
+        ok, encoded = cv2.imencode(".png", image)
+        assert ok
+        encoded.tofile(str(source))
+        report = export_photos(
+            [ExportItem(source)],
+            tmp_path / "out",
+            ExportSettings(watermark_text="PicasaPy"),
+        )
+        exported = _read_image(report.exported[0])
+        corner = exported[-40:, -100:]
+        assert corner.mean() > 5  # a szöveg felfényesíti a sarkot
+        # a bal felső sarok érintetlen marad (fekete)
+        assert exported[:40, :100].mean() < 2
+
+    def test_no_watermark_by_default_leaves_image_untouched(self, tmp_path):
+        source = _make_half_and_half(tmp_path / "kép.png")
+        report = export_photos([ExportItem(source)], tmp_path / "out")
+        exported = _read_image(report.exported[0])
+        assert exported[:, 20:].mean() < 5  # jobb fél változatlanul fekete
+
+    def test_watermark_disables_noop_copy(self, tmp_path):
+        source = make_jpeg(tmp_path / "kép.jpg")
+        original = source.read_bytes()
+        report = export_photos(
+            [ExportItem(source)],
+            tmp_path / "out",
+            ExportSettings(watermark_text="PicasaPy"),
+        )
+        assert report.exported[0].read_bytes() != original
+
+
+class TestQualityPresets:
+    """#369 (export.fen paritás): a minőség-lenyíló preset→JPEG-minőség
+    leképezése (`resolve_export_quality`) — a pontos Picasa-értékek nem
+    dokumentáltak, ez egy dokumentáltan közelítő leképezés."""
+
+    def test_normal_maximum_minimum_map_to_documented_values(self):
+        assert resolve_export_quality("normal", 50) == 85
+        assert resolve_export_quality("maximum", 50) == 100
+        assert resolve_export_quality("minimum", 50) == 70
+
+    def test_automatic_maps_to_high_approximation(self):
+        assert resolve_export_quality("automatic", 50) == 92
+
+    def test_custom_uses_the_given_value(self):
+        assert resolve_export_quality("custom", 42) == 42
+
+    def test_custom_out_of_range_raises(self):
+        with pytest.raises(ValueError):
+            resolve_export_quality("custom", 0)
+        with pytest.raises(ValueError):
+            resolve_export_quality("custom", 101)
+
+    def test_unknown_preset_falls_back_to_automatic(self):
+        assert resolve_export_quality("???", 50) == 92

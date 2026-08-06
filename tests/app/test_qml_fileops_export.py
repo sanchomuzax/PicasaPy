@@ -136,6 +136,162 @@ class TestRenameDialogFenParity:
         )
 
 
+class TestRenameManyDialog:
+    """#366: tömeges átnevezés (rename.fen paritás) — dátum-/felbontás-
+    utótag jelölőnégyzetek, élő "Example:" előnézet, Picasa-mintájú
+    sorszámozás (`név`, `név-1`, …). Az egyfájlos renameDialog (F2)
+    változatlan (ld. fenti TestRenameDialog)."""
+
+    def test_shows_count_and_first_file_preview(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "renameManyDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", [0, 1]),
+        )
+        qt_app.processEvents()
+        assert dialog.property("visible") is True
+        selection_label = _child(window, "renameManySelectionLabel")
+        assert "2" in selection_label.property("text")
+        field = _child(window, "renameManyField")
+        field.setProperty("text", "nyaralas")
+        qt_app.processEvents()
+        sample_label = _child(window, "renameManySampleLabel")
+        # az élő előnézet a kijelölés ELSŐ fájlját mutatja, sorszám nélkül
+        assert sample_label.property("text") == "Example: nyaralas.jpg"
+
+    def test_size_checkbox_updates_live_preview(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "renameManyDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", [0, 1]),
+        )
+        qt_app.processEvents()
+        field = _child(window, "renameManyField")
+        field.setProperty("text", "nyaralas")
+        size_check = _child(window, "renameManySizeCheck")
+        size_check.setProperty("checked", True)
+        qt_app.processEvents()
+        sample_label = _child(window, "renameManySampleLabel")
+        # a fixture-beli a.jpg felbontása 320x160 (qml_app conftest)
+        assert sample_label.property("text") == "Example: nyaralas 320x160.jpg"
+
+    def test_accept_button_says_rename_not_ok(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "renameManyDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", [0, 1]),
+        )
+        qt_app.processEvents()
+        result = QMetaObject.invokeMethod(
+            dialog, "acceptButtonText", Qt.ConnectionType.DirectConnection,
+            Q_RETURN_ARG("QVariant"),
+        )
+        assert result == "Rename"
+
+    def test_accept_renames_both_files_with_sequence(self, qml_app, qt_app):
+        window, controller, lib, _engine = qml_app
+        dialog = _child(window, "renameManyDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", [0, 1]),
+        )
+        qt_app.processEvents()
+        field = _child(window, "renameManyField")
+        field.setProperty("text", "nyaralas")
+        loop = QEventLoop()
+        controller.photoOpFinished.connect(loop.quit)
+        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+        assert (lib / "nyaralas.jpg").exists()
+        assert (lib / "nyaralas-1.jpg").exists()
+        assert not (lib / "a.jpg").exists()
+        assert not (lib / "b.jpg").exists()
+        model_names = {photo.name for photo in controller.photos.photos}
+        assert model_names == {"nyaralas.jpg", "nyaralas-1.jpg"}
+
+    def test_empty_selection_does_not_open(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "renameManyDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", []),
+        )
+        qt_app.processEvents()
+        assert dialog.property("visible") is False
+
+
+class TestDeleteConfirmDialog:
+    """#367: a törlés-megerősítés az általános ConfirmDialog komponensre
+    állítva (confirm.fen paritás) — üzenet, "Don't ask again" jelölő,
+    kulcs-alapú elnyomás."""
+
+    def _open_delete(self, window, qt_app, paths):
+        dialog = _child(window, "deleteConfirmDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", paths),
+        )
+        qt_app.processEvents()
+        return dialog
+
+    def test_opens_with_message_and_unchecked_remember(self, qml_app, qt_app, tmp_path):
+        window, _controller, _lib, _engine = qml_app
+        missing = str(tmp_path / "nincs.jpg")
+        dialog = self._open_delete(window, qt_app, [missing])
+        assert dialog.property("visible") is True
+        message_label = _child(window, "confirmMessageLabel")
+        assert "1" in message_label.property("text")
+        remember = _child(window, "confirmRememberCheck")
+        assert remember.property("checked") is False
+
+    def test_cancel_closes_without_deleting(self, qml_app, qt_app, tmp_path):
+        window, _controller, _lib, _engine = qml_app
+        missing = str(tmp_path / "nincs.jpg")
+        dialog = self._open_delete(window, qt_app, [missing])
+        cancel_button = _child(window, "confirmCancelButton")
+        QMetaObject.invokeMethod(
+            cancel_button, "clicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert dialog.property("visible") is False
+
+    def test_remember_then_yes_suppresses_next_open(self, qml_app, qt_app, tmp_path):
+        window, _controller, _lib, _engine = qml_app
+        missing = str(tmp_path / "nincs.jpg")
+        dialog = self._open_delete(window, qt_app, [missing])
+        remember = _child(window, "confirmRememberCheck")
+        remember.setProperty("checked", True)
+        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert dialog.property("visible") is False
+
+        # ugyanaz a kulcs ("delete") legközelebb NEM nyit dialógust — az
+        # alapértelmezett (Igen) válasz automatikusan lefut
+        second_missing = str(tmp_path / "meg-egy-nincs.jpg")
+        dialog2 = self._open_delete(window, qt_app, [second_missing])
+        assert dialog2.property("visible") is False
+        assert dialog2 is dialog
+
+    def test_no_button_denies_without_remember_side_effect(self, qml_app, qt_app, tmp_path):
+        window, _controller, _lib, _engine = qml_app
+        missing = str(tmp_path / "nincs.jpg")
+        dialog = self._open_delete(window, qt_app, [missing])
+        no_button = _child(window, "confirmNoButton")
+        QMetaObject.invokeMethod(
+            no_button, "clicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert dialog.property("visible") is False
+        # nem lett elnyomva — a kulcs újranyitná a dialógust
+        dialog2 = self._open_delete(window, qt_app, [missing])
+        assert dialog2.property("visible") is True
+
+
 class TestMenuBarFileActions:
     def test_items_follow_selection(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app

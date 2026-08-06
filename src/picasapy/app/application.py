@@ -36,7 +36,10 @@ from picasapy.scanner import (
 )
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
+from .confirm_settings_bridge import ConfirmSettingsBridge
 from .controller import AppController
+from .data_location import read_data_root
+from .relocate_controller import RelocateController
 from .dedup_controller import DedupController
 from .discovery_controller import DiscoveryController
 from .drop_import_controller import DropImportController
@@ -96,11 +99,26 @@ def _screen_device_pixel_ratio(app: QGuiApplication) -> float:
 
 
 def _data_dir() -> Path:
+    """Az index-SQLite (+ zárolófájl) mappája — ha a "Move Database"
+    dialóguson (#368) keresztül egyszer már áthelyezésre került, az
+    útvonal-felülbírálás (`data_location.py`) felülírja az XDG-
+    alapértelmezést; ilyenkor a cache-cel EGYESÍTVE ugyanazt a mappát
+    adja vissza, mint `_cache_dir()` (ld. ott)."""
+    override = read_data_root(_config_dir())
+    if override is not None:
+        return override
     base = os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))
     return Path(base) / "picasapy"
 
 
 def _cache_dir() -> Path:
+    """A thumbnail-lemezcache mappája — áthelyezés után (#368) a
+    `_data_dir()`-rel EGYESÍTVE, hogy a Picasa-paritású "egy adatbázis-
+    mappa" elv teljesüljön (a hívó ide illeszti a "thumbs" alkönyvtárat,
+    ld. `run()`)."""
+    override = read_data_root(_config_dir())
+    if override is not None:
+        return override
     base = os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache"))
     return Path(base) / "picasapy"
 
@@ -410,6 +428,10 @@ def run(argv: list[str]) -> int:
     fileops_controller = FileOpsController()
     wire_fileops(fileops_controller, controller)
 
+    # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — a
+    # controllerrel közös QSettings("PicasaPy", "PicasaPy")-ba ír
+    confirm_settings = ConfirmSettingsBridge()
+
     # meglévő Picasa-telepítés átvétele (#146): felderítés + a kijelölt
     # mappák hozzáadása a meglévő addWatchedFolder úton
     discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
@@ -472,6 +494,7 @@ def run(argv: list[str]) -> int:
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
     )
+    engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
     engine.rootContext().setContextProperty(
         "discoveryController", discovery_controller
     )
@@ -485,6 +508,13 @@ def run(argv: list[str]) -> int:
         "timelineController", timeline_controller
     )
     engine.rootContext().setContextProperty("dedupController", dedup_controller)
+    # #368: adatbázis-áthelyezés — a MoveDatabaseDialog.qml hídja
+    relocate_controller = RelocateController(
+        data_dir / "index.db", _cache_dir() / "thumbs", _config_dir()
+    )
+    engine.rootContext().setContextProperty(
+        "relocateController", relocate_controller
+    )
     engine.rootContext().setContextProperty(
         "importSourceController", import_source_controller
     )

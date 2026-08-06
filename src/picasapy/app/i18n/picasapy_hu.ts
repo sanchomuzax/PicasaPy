@@ -2,6 +2,99 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>RelocateController</name>
+    <message>
+        <source>Choose a new database location first.</source>
+        <translation>Előbb válassza ki az adatbázis új helyét.</translation>
+    </message>
+</context>
+<context>
+    <name>MoveDatabaseDialog</name>
+    <message>
+        <source>Move Database</source>
+        <translation>Adatbázis áthelyezése</translation>
+    </message>
+    <message>
+        <source>Move the photo index and thumbnail cache to a new folder. A restart is required afterwards for the change to take effect.</source>
+        <translation>A fotóindex és a bélyegkép-gyorsítótár áthelyezése új mappába. A változás érvényesítéséhez utána újraindítás szükséges.</translation>
+    </message>
+    <message>
+        <source>Network drives (e.g. a NAS) are fully supported and are the normal setup for PicasaPy — make sure the drive stays connected while the app is running.</source>
+        <translation>A hálózati meghajtók (pl. NAS) teljes körűen támogatottak — a PicasaPy-nál ez a szokásos elrendezés; ügyeljen rá, hogy a meghajtó a program futása alatt elérhető maradjon.</translation>
+    </message>
+    <message>
+        <source>Current database location:</source>
+        <translation>Az adatbázis jelenlegi helye:</translation>
+    </message>
+    <message>
+        <source>New database location:</source>
+        <translation>Az adatbázis új helye:</translation>
+    </message>
+    <message>
+        <source>(none selected)</source>
+        <translation>(nincs kiválasztva)</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Tallózás…</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation>Alapértelmezett</translation>
+    </message>
+    <message>
+        <source>Choose new database location...</source>
+        <translation>Válassza ki az adatbázis új helyét…</translation>
+    </message>
+    <message>
+        <source>Choose a new database location first.</source>
+        <translation>Előbb válassza ki az adatbázis új helyét.</translation>
+    </message>
+    <message>
+        <source>Move on next restart</source>
+        <translation>Áthelyezés a következő újraindításkor</translation>
+    </message>
+    <message>
+        <source>Move cancelled — nothing was changed.</source>
+        <translation>Az áthelyezés megszakítva — semmi sem változott.</translation>
+    </message>
+    <message>
+        <source>PicasaPy is moving the database.</source>
+        <translation>A PicasaPy áthelyezi az adatbázist.</translation>
+    </message>
+    <message>
+        <source>Database moved. Restart PicasaPy for the change to take effect.</source>
+        <translation>Az adatbázis áthelyezve. A változás érvényesítéséhez indítsa újra a PicasaPy-t.</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+</context>
+<context>
+    <name>ConfirmDialog</name>
+    <message>
+        <source>Yes</source>
+        <translation>Igen</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <translation>Nem</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Don&apos;t ask again</source>
+        <translation>Ne kérdezze újra</translation>
+    </message>
+</context>
+<context>
     <name></name>
     <message>
         <location filename="../formatting.py" line="39"/>
@@ -934,6 +1027,42 @@
         <source>Export</source>
         <translation>Exportálás</translation>
     </message>
+    <message>
+        <source>Export location:</source>
+        <translation>Exportálás helye:</translation>
+    </message>
+    <message>
+        <source>Name of exported folder:</source>
+        <translation>Az exportált mappa neve:</translation>
+    </message>
+    <message>
+        <source>Add numbers to file names to preserve order</source>
+        <translation>Sorszámozás a fájlnevekben a sorrend megőrzéséhez</translation>
+    </message>
+    <message>
+        <source>Add watermark</source>
+        <translation>Vízjel hozzáadása</translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation>Automatikus</translation>
+    </message>
+    <message>
+        <source>Normal</source>
+        <translation>Normál</translation>
+    </message>
+    <message>
+        <source>Maximum</source>
+        <translation>Maximális</translation>
+    </message>
+    <message>
+        <source>Minimum</source>
+        <translation>Minimális</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>Egyéni</translation>
+    </message>
 </context>
 <context>
     <name>FileOpsDialogs</name>
@@ -981,6 +1110,22 @@
     <message>
         <source>Rename</source>
         <translation>Átnevezés</translation>
+    </message>
+    <message>
+        <source>Include in filename:</source>
+        <translation>A fájlnévben szerepeljen:</translation>
+    </message>
+    <message>
+        <source>Date</source>
+        <translation>Dátum</translation>
+    </message>
+    <message>
+        <source>Image resolution</source>
+        <translation>Képfelbontás</translation>
+    </message>
+    <message>
+        <source>Example:</source>
+        <translation>Példa:</translation>
     </message>
 </context>
 <context>
@@ -2191,6 +2336,10 @@
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="488"/>
         <source>Hungarian</source>
         <translation>Magyar</translation>
+    </message>
+    <message>
+        <source>Move Database...</source>
+        <translation>Adatbázis áthelyezése…</translation>
     </message>
 </context>
 <context>

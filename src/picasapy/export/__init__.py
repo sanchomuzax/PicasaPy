@@ -1,6 +1,12 @@
 """Exportálás: mappába (forgatás/átméretezés, #16) és XMP sidecar (#27)."""
 
-from .exporter import ExportItem, ExportReport, ExportSettings, export_photos
+from .exporter import (
+    ExportItem,
+    ExportReport,
+    ExportSettings,
+    export_photos,
+    resolve_export_quality,
+)
 from .xmp import (
     XmpImageMetadata,
     XmpRegion,
@@ -20,6 +26,7 @@ __all__ = [
     "ExportReport",
     "ExportSettings",
     "export_photos",
+    "resolve_export_quality",
     "XmpImageMetadata",
     "XmpRegion",
     "build_sidecar_from_picasa",

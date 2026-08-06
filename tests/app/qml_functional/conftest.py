@@ -98,6 +98,11 @@ def qml_app(qt_app, tmp_path):
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
     provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
     controller = AppController(db, (str(lib),), provider, settings=settings)
+    # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — ugyanaz az
+    # elszigetelt settings, mint a controlleré
+    from picasapy.app.confirm_settings_bridge import ConfirmSettingsBridge
+
+    confirm_settings = ConfirmSettingsBridge(settings=settings)
     # szerkesztő-híd (#19) — az application.py bekötésének tükre
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
@@ -144,6 +149,7 @@ def qml_app(qt_app, tmp_path):
         "importSourceController", import_source_controller
     )
     engine.rootContext().setContextProperty("appVersion", version_string())
+    engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     assert engine.rootObjects(), "Main.qml betöltése sikertelen"
     window = engine.rootObjects()[0]

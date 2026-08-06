@@ -15,6 +15,13 @@ from .queries import (
     search_suggestions,
     starred_photos,
 )
+from .relocate import (
+    RelocationCancelled,
+    RelocationError,
+    RelocationProgress,
+    RelocationResult,
+    relocate_data_root,
+)
 from .schema import SCHEMA_VERSION
 from .sync import (
     prune_foreign_folders,
@@ -28,6 +35,10 @@ __all__ = [
     "SCHEMA_VERSION",
     "AlbumRecord",
     "PhotoRecord",
+    "RelocationCancelled",
+    "RelocationError",
+    "RelocationProgress",
+    "RelocationResult",
     "album_photos",
     "albums_in_index",
     "all_photos",
@@ -38,6 +49,7 @@ __all__ = [
     "photos_in_folder",
     "photos_under_folder",
     "prune_foreign_folders",
+    "relocate_data_root",
     "remove_root",
     "save_dhashes",
     "SearchSuggestion",
