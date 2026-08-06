@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.10] – 2026-08-06
+
+### Hozzáadva
+- **Arc-téglalapok szerkesztése (#26, 2. kör):** a nézőben rajzolható,
+  nevezhető és törölhető arc-keretek, Picasa-kompatibilis mentéssel;
+  opcionális contacts.xml-import.
+- **GPU-előnézet élesítve (#22):** a finomhangolás-csúszkák húzás közben
+  GPU-n frissülnek (ahol van rá mód — enélkül minden a régi úton megy).
+- **Nyomtatás és E-mail (#32, részleges):** a tálca Print/E-Mail gombjai
+  működnek (oldalhoz igazított nyomtatás; küldés a leveleződdel).
+
 ## [0.6.9] – 2026-08-06
 
 ### Hozzáadva
