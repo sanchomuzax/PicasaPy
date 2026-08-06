@@ -280,6 +280,10 @@ ApplicationWindow {
         onClearSelectionRequested: window.clearSelection()
         onFolderManagerRequested: folderManager.open()
         onDedupRequested: dedupDialog.open()
+        // #350: Eszközök → Beállítások…
+        onOptionsRequested: optionsDialog.open()
+        // #351: Exportálás weboldalként
+        onWebExportRequested: webExportDialog.open()
         // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
         onRenameRequested: window.selectedIndexes.length > 1
             ? fileOpsDialogs.openRenameMany(window.selectedIndexes)
@@ -881,6 +885,12 @@ ApplicationWindow {
     }
 
     AboutDialog { id: aboutDialog }
+
+    // #350: Beállítások-dialógus (options.fen)
+    OptionsDialog { id: optionsDialog }
+
+    // #351: webexport-dialógus (.tpl sablonmotor)
+    WebExportDialog { id: webExportDialog }
 
     // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
     MoveDatabaseDialog { id: moveDatabaseDialog }

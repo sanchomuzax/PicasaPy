@@ -42,3 +42,16 @@ DedupDialog 1.0 DedupDialog.qml
 ImportSourceDialog 1.0 ImportSourceDialog.qml
 ConfirmDialog 1.0 ConfirmDialog.qml
 MoveDatabaseDialog 1.0 MoveDatabaseDialog.qml
+FolderContextMenu 1.0 FolderContextMenu.qml
+NewCollectionDialog 1.0 NewCollectionDialog.qml
+FolderDateDialog 1.0 FolderDateDialog.qml
+OptionsDialog 1.0 OptionsDialog.qml
+OptionsTabGeneral 1.0 OptionsTabGeneral.qml
+OptionsTabEmail 1.0 OptionsTabEmail.qml
+OptionsTabFileTypes 1.0 OptionsTabFileTypes.qml
+OptionsTabSlideshow 1.0 OptionsTabSlideshow.qml
+OptionsTabPrinting 1.0 OptionsTabPrinting.qml
+OptionsTabNetwork 1.0 OptionsTabNetwork.qml
+OptionsTabWebAlbums 1.0 OptionsTabWebAlbums.qml
+OptionsTabNameTags 1.0 OptionsTabNameTags.qml
+WebExportDialog 1.0 WebExportDialog.qml

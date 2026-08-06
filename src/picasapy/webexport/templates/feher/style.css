@@ -1,0 +1,121 @@
+/* PicasaPy "Fehér" webexport-sablon — saját, GPL-kompatibilis stílus
+   (a Picasa eredeti whitebg-jének KINÉZETÉT idézi: fehér háttér, sűrű
+   bélyegkép-rács, egyszerű tipográfia — a CSS/HTML maga saját írás). */
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: #ffffff;
+  color: #222222;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+.album-header {
+  padding: 24px 32px 12px;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+.album-header h1 {
+  margin: 0 0 6px;
+  font-size: 1.6em;
+  font-weight: 600;
+}
+
+.album-caption {
+  margin: 0 0 4px;
+  color: #555555;
+}
+
+.album-meta {
+  margin: 0;
+  color: #888888;
+  font-size: 0.9em;
+}
+
+main {
+  padding: 24px 32px;
+}
+
+.thumb-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.thumb {
+  margin: 0;
+  background: #ffffff;
+  padding: 6px;
+  border: 1px solid #eeeeee;
+  text-align: center;
+}
+
+.thumb.shadow {
+  box-shadow: 0 2px 6px 0 var(--shadow-color, #ffffff);
+}
+
+.thumb img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.thumb figcaption {
+  margin-top: 4px;
+  font-size: 0.8em;
+  color: #555555;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-list {
+  padding: 0 32px 32px;
+}
+
+.page-list ol {
+  columns: 3;
+}
+
+.item-page {
+  text-align: center;
+  padding: 24px;
+}
+
+.back-link {
+  text-align: left;
+}
+
+.item-figure {
+  margin: 16px auto;
+}
+
+.item-figure.shadow img {
+  box-shadow: 0 4px 16px 0 var(--shadow-color, #ffffff);
+}
+
+.item-figure img {
+  max-width: 100%;
+  height: auto;
+}
+
+.item-nav {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.item-nav .disabled {
+  color: #bbbbbb;
+}
+
+.album-footer {
+  padding: 16px 32px;
+  color: #999999;
+  font-size: 0.8em;
+  border-top: 1px solid #e2e2e2;
+}

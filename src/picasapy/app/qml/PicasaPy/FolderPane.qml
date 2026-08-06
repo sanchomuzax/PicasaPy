@@ -20,9 +20,31 @@ Rectangle {
     // kiválasztott album token-je (a kijelölés-kiemeléshez)
     property var albumsModel: []
     property string selectedAlbumToken: ""
+    // #320: a felhasználó egyéni gyűjteményei ({name, folders} elemek) —
+    // a controller.customCollections tükre, a mappasor jobbklikk-menüjéhez
+    property var customCollectionsModel: []
     signal folderChosen(string path)
     signal starredChosen()
     signal albumChosen(string token)
+
+    // #320: a controller friss gyűjtemény-listájának lekérése — a
+    // Component.onCompleted-en kívül minden create/rename/delete/move
+    // után is meghívandó (#305 null-őrrel).
+    function refreshCustomCollections() {
+        if (!controller) return
+        pane.customCollectionsModel = controller.customCollections
+    }
+
+    // #320: a mappasor jobbklikk-menüjének megnyitása — a `MouseArea`
+    // delegate-ből (Repeater/ListView-elem, findChild-dal el nem érhető,
+    // ld. MEMORY 2026-07-31) kiszervezve pane-szintű, névvel hívható
+    // függvénybe, hogy közvetlenül (a valódi kattintás szintetizálása
+    // nélkül) tesztelhető legyen.
+    function openFolderContextMenu(path) {
+        folderContextMenu.folderPath = path
+        folderContextMenu.customCollections = pane.customCollectionsModel
+        folderContextMenu.popup()
+    }
 
     // Gyűjtemény-csukottság — kezdőérték a collections.py
     // DEFAULT_COLLAPSED-jét tükrözi (controller hiányában is ésszerű).
@@ -42,6 +64,14 @@ Rectangle {
         pane.projectsCollapsed = controller.isCollectionCollapsed("projects")
         pane.foldersCollapsed = controller.isCollectionCollapsed("folders")
         pane.otherCollapsed = controller.isCollectionCollapsed("other")
+        pane.refreshCustomCollections()
+    }
+
+    // #320: a gyűjtemény-lista kívülről (más ablakból, pl. a Mappakezelőből
+    // induló módosítás) is változhat — a controller jelzésére frissítünk.
+    Connections {
+        target: controller
+        function onCustomCollectionsChanged() { pane.refreshCustomCollections() }
     }
 
     // Egy gyűjtemény nyitása/csukása: a helyi állapotot azonnal frissíti
@@ -341,8 +371,13 @@ Rectangle {
                 MouseArea {
                     enabled: kind === "folder"
                     anchors.fill: parent
-                    onClicked: {
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: function(mouse) {
                         folderList.forceActiveFocus()   // kurzorgombokhoz (#77)
+                        if (mouse.button === Qt.RightButton) {
+                            pane.openFolderContextMenu(path)
+                            return
+                        }
                         pane.folderChosen(path)
                     }
                 }
@@ -359,6 +394,54 @@ Rectangle {
             labelObjectName: "otherHeader"
             collapsed: pane.otherCollapsed
             onToggled: pane.toggleCollection("other")
+        }
+    }
+
+    // #320: a mappasor jobbklikk-menüje + a hozzá tartozó két kis
+    // dialógus (önálló, signal-alapú komponensek — ld. FolderContextMenu/
+    // NewCollectionDialog/FolderDateDialog.qml). A controller-kötést itt,
+    // a FolderPane.qml-ben végezzük (nem forró fájl) — a hívott
+    // controller-slotok (createCollection, moveFolderToCollection,
+    // setFolderDate, clearFolderDate, customCollections) az AppController
+    // öröklés-listájának bővítésével válnak élővé (controller.py, forró
+    // fájl — az integrátor dolga).
+    FolderContextMenu {
+        id: folderContextMenu
+        onMoveToCollectionRequested: function(collectionName) {
+            if (controller) controller.moveFolderToCollection(
+                folderContextMenu.folderPath, collectionName)
+        }
+        onNewCollectionRequested: newCollectionDialog.open()
+        onSetDateRequested: {
+            folderDateDialog.folderPath = folderContextMenu.folderPath
+            folderDateDialog.currentDate = controller
+                ? controller.folderDateOverride(folderContextMenu.folderPath) : ""
+            folderDateDialog.open()
+        }
+    }
+
+    NewCollectionDialog {
+        id: newCollectionDialog
+        onCreated: function(name) {
+            if (!controller) return
+            controller.createCollection(name)
+            // Picasa-mintára: a "Move to Collection ▸ New Collection…"-ból
+            // indított létrehozás a jobbklikkelt mappát rögtön bele is
+            // sorolja az új gyűjteménybe.
+            if (folderContextMenu.folderPath !== "")
+                controller.moveFolderToCollection(
+                    folderContextMenu.folderPath, name)
+            pane.refreshCustomCollections()
+        }
+    }
+
+    FolderDateDialog {
+        id: folderDateDialog
+        onDateAccepted: function(path, isoDate) {
+            if (controller) controller.setFolderDate(path, isoDate)
+        }
+        onDateCleared: function(path) {
+            if (controller) controller.clearFolderDate(path)
         }
     }
 }

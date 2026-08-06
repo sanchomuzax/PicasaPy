@@ -2,6 +2,488 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>OptionsDialog</name>
+    <message>
+        <source>Options</source>
+        <translation>Beállítások</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <translation>Általános</translation>
+    </message>
+    <message>
+        <source>E-Mail</source>
+        <translation>E-mail</translation>
+    </message>
+    <message>
+        <source>File Types</source>
+        <translation>Fájltípusok</translation>
+    </message>
+    <message>
+        <source>Slideshow</source>
+        <translation>Diavetítés</translation>
+    </message>
+    <message>
+        <source>Printing</source>
+        <translation>Nyomtatás</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>Hálózat</translation>
+    </message>
+    <message>
+        <source>Web Albums</source>
+        <translation>Webalbumok</translation>
+    </message>
+    <message>
+        <source>Name Tags</source>
+        <translation>Névcímkék</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+</context>
+<context>
+    <name>OptionsTabGeneral</name>
+    <message>
+        <source>User interface:</source>
+        <translation>Felhasználói felület:</translation>
+    </message>
+    <message>
+        <source>Use special effects</source>
+        <translation>Speciális effektusok használata</translation>
+    </message>
+    <message>
+        <source>Show tooltips</source>
+        <translation>Eszköztippek megjelenítése</translation>
+    </message>
+    <message>
+        <source>Single click to exit the editing view</source>
+        <translation>Kilépés a szerkesztőnézetből egy kattintással</translation>
+    </message>
+    <message>
+        <source>Language:</source>
+        <translation>Nyelv:</translation>
+    </message>
+    <message>
+        <source>English</source>
+        <translation>Angol</translation>
+    </message>
+    <message>
+        <source>Hungarian</source>
+        <translation>Magyar</translation>
+    </message>
+    <message>
+        <source>Files:</source>
+        <translation>Fájlok:</translation>
+    </message>
+    <message>
+        <source>Detect duplicates on import</source>
+        <translation>Duplikátumok észlelése importáláskor</translation>
+    </message>
+    <message>
+        <source>Clear Cache...</source>
+        <translation>Gyorsítótár ürítése…</translation>
+    </message>
+    <message>
+        <source>Delete from disk without confirmation</source>
+        <translation>Törlés a lemezről megerősítés nélkül</translation>
+    </message>
+    <message>
+        <source>Remove from album without confirmation</source>
+        <translation>Eltávolítás az albumból megerősítés nélkül</translation>
+    </message>
+    <message>
+        <source>Help improve PicasaPy:</source>
+        <translation>Segítsen jobbá tenni a PicasaPy-t:</translation>
+    </message>
+    <message>
+        <source>Send anonymous usage statistics</source>
+        <translation>Névtelen használati statisztika küldése</translation>
+    </message>
+    <message>
+        <source>Automatic updates:</source>
+        <translation>Automatikus frissítések:</translation>
+    </message>
+    <message>
+        <source>Update automatically</source>
+        <translation>Automatikus frissítés</translation>
+    </message>
+    <message>
+        <source>Prompt before downloading updates</source>
+        <translation>Kérdezzen a frissítések letöltése előtt</translation>
+    </message>
+    <message>
+        <source>Never check for updates</source>
+        <translation>Soha ne keressen frissítést</translation>
+    </message>
+    <message>
+        <source>Import destination folder:</source>
+        <translation>Importálás célmappája:</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Tallózás…</translation>
+    </message>
+</context>
+<context>
+    <name>OptionsTabEmail</name>
+    <message>
+        <source>Use this computer&apos;s default email program</source>
+        <translation>A számítógép alapértelmezett levelezőprogramjának használata</translation>
+    </message>
+    <message>
+        <source>Let me choose each time I send a picture</source>
+        <translation>Minden képküldésnél választhassak</translation>
+    </message>
+    <message>
+        <source>Multiple photo size:</source>
+        <translation>Több fénykép mérete:</translation>
+    </message>
+    <message>
+        <source>Single photo size:</source>
+        <translation>Egy fénykép mérete:</translation>
+    </message>
+    <message>
+        <source>Send movies as:</source>
+        <translation>Filmek küldése mint:</translation>
+    </message>
+    <message>
+        <source>First frame</source>
+        <translation>Első képkocka</translation>
+    </message>
+    <message>
+        <source>Full movie</source>
+        <translation>Teljes film</translation>
+    </message>
+    <message>
+        <source>Send embedded pictures and captions (Outlook only)</source>
+        <translation>Beágyazott képek és képfeliratok küldése (csak Outlook)</translation>
+    </message>
+    <message>
+        <source>Choose your mail client:</source>
+        <translation>Válassza ki a levelezőprogramot:</translation>
+    </message>
+</context>
+<context>
+    <name>OptionsTabFileTypes</name>
+    <message>
+        <source>In addition to JPEG, also show these file types:</source>
+        <translation>A JPEG mellett a következő fájltípusok megjelenítése:</translation>
+    </message>
+    <message>
+        <source>RAW</source>
+        <translation>RAW</translation>
+    </message>
+    <message>
+        <source>Movies</source>
+        <translation>Filmek</translation>
+    </message>
+    <message>
+        <source>Supported Formats</source>
+        <translation>Támogatott formátumok</translation>
+    </message>
+</context>
+<context>
+    <name>OptionsTabSlideshow</name>
+    <message>
+        <source>Loop slideshow</source>
+        <translation>Diavetítés ismétlése</translation>
+    </message>
+    <message>
+        <source>Play MP3 music during slideshow</source>
+        <translation>MP3-zene lejátszása a diavetítés alatt</translation>
+    </message>
+    <message>
+        <source>Select a music folder:</source>
+        <translation>Válasszon zenemappát:</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Tallózás…</translation>
+    </message>
+</context>
+<context>
+    <name>OptionsTabPrinting</name>
+    <message>
+        <source>Available print sizes:</source>
+        <translation>Választható nyomtatási méretek:</translation>
+    </message>
+    <message>
+        <source>Print size %1:</source>
+        <translation>Nyomtatási méret %1:</translation>
+    </message>
+    <message>
+        <source>Use high resolution previews (slower)</source>
+        <translation>Nagy felbontású előnézetek használata (lassabb)</translation>
+    </message>
+    <message>
+        <source>Printer quality (Windows only):</source>
+        <translation>Nyomtatási minőség (csak Windows):</translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation>Normál</translation>
+    </message>
+    <message>
+        <source>High</source>
+        <translation>Magas</translation>
+    </message>
+    <message>
+        <source>Resizing algorithm quality:</source>
+        <translation>Átméretező algoritmus minősége:</translation>
+    </message>
+    <message>
+        <source>General (Lanczos-3)</source>
+        <translation>Általános (Lanczos-3)</translation>
+    </message>
+    <message>
+        <source>Very sharp (Lanczos-8)</source>
+        <translation>Nagyon éles (Lanczos-8)</translation>
+    </message>
+</context>
+<context>
+    <name>OptionsTabNetwork</name>
+    <message>
+        <source>Proxy username (Windows only):</source>
+        <translation>Proxy-felhasználónév (csak Windows):</translation>
+    </message>
+    <message>
+        <source>Proxy password:</source>
+        <translation>Proxy-jelszó:</translation>
+    </message>
+    <message>
+        <source>Automatically detect network settings</source>
+        <translation>Hálózati beállítások automatikus észlelése</translation>
+    </message>
+    <message>
+        <source>Network logging level:</source>
+        <translation>Hálózati naplózás szintje:</translation>
+    </message>
+    <message>
+        <source>Disable logging</source>
+        <translation>Naplózás kikapcsolása</translation>
+    </message>
+    <message>
+        <source>Log errors only</source>
+        <translation>Csak a hibák naplózása</translation>
+    </message>
+    <message>
+        <source>Minimal log information</source>
+        <translation>Minimális naplóinformáció</translation>
+    </message>
+    <message>
+        <source>Detailed log information</source>
+        <translation>Részletes naplóinformáció</translation>
+    </message>
+    <message>
+        <source>Log all network information</source>
+        <translation>Minden hálózati információ naplózása</translation>
+    </message>
+    <message>
+        <source>Log file:</source>
+        <translation>Naplófájl:</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Tallózás…</translation>
+    </message>
+</context>
+<context>
+    <name>OptionsTabWebAlbums</name>
+    <message>
+        <source>Default upload size:</source>
+        <translation>Alapértelmezett feltöltési méret:</translation>
+    </message>
+    <message>
+        <source>Original size</source>
+        <translation>Eredeti méret</translation>
+    </message>
+    <message>
+        <source>Upload previews first for large files</source>
+        <translation>Nagy fájloknál előbb az előnézetek feltöltése</translation>
+    </message>
+    <message>
+        <source>Keep original picture quality (uses more storage)</source>
+        <translation>Eredeti képminőség megőrzése (több tárhelyet használ)</translation>
+    </message>
+    <message>
+        <source>Sync starred photos only</source>
+        <translation>Csak a csillagozott fényképek szinkronizálása</translation>
+    </message>
+    <message>
+        <source>Don&apos;t confirm each sync (use previous settings)</source>
+        <translation>Ne erősítse meg minden szinkronizálásnál (előző beállítások használata)</translation>
+    </message>
+    <message>
+        <source>Upload name tags</source>
+        <translation>Névcímkék feltöltése</translation>
+    </message>
+    <message>
+        <source>Add a watermark to all photo uploads:</source>
+        <translation>Vízjel hozzáadása minden feltöltött fényképhez:</translation>
+    </message>
+</context>
+<context>
+    <name>OptionsTabNameTags</name>
+    <message>
+        <source>Enable face detection</source>
+        <translation>Arcfelismerés engedélyezése</translation>
+    </message>
+    <message>
+        <source>Enable suggestions:</source>
+        <translation>Javaslatok engedélyezése:</translation>
+    </message>
+    <message>
+        <source>Suggestion threshold:</source>
+        <translation>Javaslati küszöb:</translation>
+    </message>
+    <message>
+        <source>Clustering threshold:</source>
+        <translation>Csoportosítási küszöb:</translation>
+    </message>
+    <message>
+        <source>Store name tags in the file</source>
+        <translation>Névcímkék tárolása a fájlban</translation>
+    </message>
+    <message>
+        <source>Upload contact thumbnails to Google Contacts</source>
+        <translation>Névjegy-bélyegképek feltöltése a Google Címtárba</translation>
+    </message>
+</context>
+<context>
+    <name>WebExportDialog</name>
+    <message>
+        <source>Export as HTML Page...</source>
+        <translation>Exportálás HTML-oldalként…</translation>
+    </message>
+    <message>
+        <source>Page title:</source>
+        <translation>Oldal címe:</translation>
+    </message>
+    <message>
+        <source>Save to:</source>
+        <translation>Mentés ide:</translation>
+    </message>
+    <message>
+        <source>(not selected)</source>
+        <translation>(nincs kiválasztva)</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Tallózás…</translation>
+    </message>
+    <message>
+        <source>Choose target folder...</source>
+        <translation>Válassza ki a célmappát…</translation>
+    </message>
+    <message>
+        <source>Template:</source>
+        <translation>Sablon:</translation>
+    </message>
+    <message>
+        <source>Picture size:</source>
+        <translation>Kép mérete:</translation>
+    </message>
+    <message>
+        <source>Thumbnail size:</source>
+        <translation>Bélyegkép mérete:</translation>
+    </message>
+    <message>
+        <source>Original size</source>
+        <translation>Eredeti méret</translation>
+    </message>
+    <message>
+        <source>Shadow pictures</source>
+        <translation>Árnyékolt képek</translation>
+    </message>
+    <message>
+        <source>Shadow thumbnails</source>
+        <translation>Árnyékolt bélyegképek</translation>
+    </message>
+    <message>
+        <source>PicasaPy is generating the web page.</source>
+        <translation>A PicasaPy készíti a weboldalt.</translation>
+    </message>
+    <message>
+        <source>Web page generated: %1 file(s) in %2</source>
+        <translation>A weboldal elkészült: %1 fájl itt: %2</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Létrehozás</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+</context>
+<context>
+    <name>WebExportController</name>
+    <message>
+        <source>Choose a target folder first.</source>
+        <translation>Előbb válasszon célmappát.</translation>
+    </message>
+    <message>
+        <source>No pictures to export.</source>
+        <translation>Nincs exportálható kép.</translation>
+    </message>
+    <message>
+        <source>None of the selected pictures could be exported.</source>
+        <translation>A kijelölt képek egyikét sem sikerült exportálni.</translation>
+    </message>
+    <message>
+        <source>Unknown web export template: %1</source>
+        <translation>Ismeretlen webexport-sablon: %1</translation>
+    </message>
+</context>
+<context>
+    <name>FolderContextMenu</name>
+    <message>
+        <source>Move to Collection...</source>
+        <translation>Áthelyezés gyűjteménybe…</translation>
+    </message>
+    <message>
+        <source>New Collection...</source>
+        <translation>Új gyűjtemény…</translation>
+    </message>
+    <message>
+        <source>Set Folder Date...</source>
+        <translation>Mappa dátumának beállítása…</translation>
+    </message>
+</context>
+<context>
+    <name>NewCollectionDialog</name>
+    <message>
+        <source>New Collection</source>
+        <translation>Új gyűjtemény</translation>
+    </message>
+    <message>
+        <source>Collection name:</source>
+        <translation>Gyűjtemény neve:</translation>
+    </message>
+</context>
+<context>
+    <name>FolderDateDialog</name>
+    <message>
+        <source>Set Folder Date</source>
+        <translation>Mappa dátumának beállítása</translation>
+    </message>
+    <message>
+        <source>Folder date (YYYY-MM-DD):</source>
+        <translation>Mappa dátuma (ÉÉÉÉ-HH-NN):</translation>
+    </message>
+    <message>
+        <source>Enter the date as YYYY-MM-DD.</source>
+        <translation>A dátumot ÉÉÉÉ-HH-NN formában adja meg.</translation>
+    </message>
+    <message>
+        <source>Clear override (use oldest picture)</source>
+        <translation>Felülírás törlése (a legrégebbi kép számít)</translation>
+    </message>
+</context>
+<context>
     <name>RelocateController</name>
     <message>
         <source>Choose a new database location first.</source>
@@ -846,6 +1328,18 @@
     <message>
         <source>Width</source>
         <translation>Szélesség</translation>
+    </message>
+    <message>
+        <source>Click on the blemishes you want to remove, then Apply.</source>
+        <translation>Kattintson az eltávolítandó foltokra, majd Alkalmaz.</translation>
+    </message>
+    <message>
+        <source>Regions selected: %1</source>
+        <translation>Kijelölt területek: %1</translation>
+    </message>
+    <message>
+        <source>Type your text, then click on the photo to place it.</source>
+        <translation>Írja be a szöveget, majd kattintson a fotóra az elhelyezéséhez.</translation>
     </message>
 </context>
 <context>

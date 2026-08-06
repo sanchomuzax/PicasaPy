@@ -697,3 +697,178 @@ class TestHistogramAndCameraSummary:
         controller.endEdit()
         assert controller.cameraSummary == ""
         assert all(v == 0.0 for v in controller.histogram["r"])
+
+
+class TestRetouchTool:
+    """#148: a Vágás mintáját követő enter/exit + Alkalmaz/Mégse eszköz."""
+
+    def test_preview_region_does_not_write_ini(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.previewRetouchRegion(0.5, 0.5)
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists() or "retouch" not in ini.read_text(encoding="utf-8")
+        assert controller.retouchPendingCount == 1
+
+    def test_apply_writes_retouch_chain_with_rect64(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.previewRetouchRegion(0.5, 0.5)
+        controller.applyRetouch()
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=retouch=1," in ini_text
+        assert controller.retouchPendingCount == 0
+        assert controller.hasRetouch is True
+
+    def test_multiple_clicks_accumulate_regions(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.previewRetouchRegion(0.2, 0.2)
+        controller.previewRetouchRegion(0.8, 0.8)
+        assert controller.retouchPendingCount == 2
+        controller.applyRetouch()
+        from picasapy.ini import load_document
+        from picasapy.ini.retouch import parse_retouch_regions
+        from picasapy.ini.filters import parse_filters
+
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        document = load_document(photo.parent / ".picasa.ini")
+        value = document.section("IMG_0001.jpg").get("filters")
+        ops = parse_filters(value)
+        regions = parse_retouch_regions(next(op for op in ops if op.matches("retouch")))
+        assert len(regions) == 2
+        assert ini_text  # sanity: fájl nem üres
+
+    def test_exit_without_apply_discards_pending(self, controller, provider, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.previewRetouchRegion(0.5, 0.5)
+        controller.exitRetouchTool()
+        assert controller.retouchPendingCount == 0
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists() or "retouch" not in ini.read_text(encoding="utf-8")
+
+    def test_apply_with_empty_pending_is_noop(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.applyRetouch()
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists()
+
+    def test_enter_retouch_tool_seeds_pending_from_saved_regions(
+        self, controller, photo
+    ):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.previewRetouchRegion(0.3, 0.3)
+        controller.applyRetouch()
+        controller.exitRetouchTool()
+        controller.enterRetouchTool()
+        assert controller.retouchPendingCount == 1
+
+    def test_undo_removes_applied_retouch(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.previewRetouchRegion(0.5, 0.5)
+        controller.applyRetouch()
+        controller.undo()
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "retouch" not in ini_text
+        assert controller.hasRetouch is False
+
+
+class TestTextTool:
+    """#148: a szöveg-eszköz (`text=`/`textactive=`) enter/exit + Alkalmaz/Mégse."""
+
+    def test_preview_placement_does_not_write_ini(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Nyaralás")
+        controller.previewTextPlacement(0.5, 0.5)
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists() or "text=" not in ini.read_text(encoding="utf-8")
+        assert controller.textHasPlacement is True
+
+    def test_apply_writes_text_and_textactive(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Nyaralás")
+        controller.previewTextPlacement(0.25, 0.75)
+        controller.applyText()
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "text=1;" in ini_text
+        assert "Nyaralás" in ini_text
+        assert "textactive=1" in ini_text
+        assert controller.hasTextOverlay is True
+
+    def test_apply_without_placement_is_noop(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Nyaralás")
+        controller.applyText()
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists()
+
+    def test_apply_without_content_is_noop(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.previewTextPlacement(0.5, 0.5)
+        controller.applyText()
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists()
+
+    def test_exit_without_apply_discards_pending(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Nyaralás")
+        controller.previewTextPlacement(0.5, 0.5)
+        controller.exitTextTool()
+        assert controller.textHasPlacement is False
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists() or "text=" not in ini.read_text(encoding="utf-8")
+
+    def test_enter_text_tool_seeds_draft_from_saved_content(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Cím")
+        controller.previewTextPlacement(0.4, 0.6)
+        controller.applyText()
+        controller.exitTextTool()
+        controller.enterTextTool()
+        assert controller.textDraft == "Cím"
+
+    def test_clear_text_removes_ini_keys(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Cím")
+        controller.previewTextPlacement(0.4, 0.6)
+        controller.applyText()
+        controller.clearText()
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "text=" not in ini_text
+        assert "textactive=" not in ini_text
+        assert controller.hasTextOverlay is False
+
+    def test_provider_receives_text_overlay_for_preview(
+        self, controller, provider, photo
+    ):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Nyaralás")
+        controller.previewTextPlacement(0.5, 0.5)
+        image = provider.requestImage("1", None, None)
+        assert not image.isNull()
+
+    def test_reload_after_apply_restores_relative_position(self, controller, photo):
+        """A raw_x/raw_y PicasaPy-saját skálázása (#148) kerek-út (round-trip)
+        pontos legyen a relatív [0..1] koordinátára."""
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Cím")
+        controller.previewTextPlacement(0.25, 0.75)
+        controller.applyText()
+        controller.endEdit()
+        controller.beginEdit("1", str(photo))
+        assert controller.hasTextOverlay is True
+        controller.enterTextTool()
+        assert controller.textDraft == "Cím"
