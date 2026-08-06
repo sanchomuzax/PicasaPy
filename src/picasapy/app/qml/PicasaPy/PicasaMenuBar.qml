@@ -32,6 +32,8 @@ MenuBar {
     signal moveDatabaseRequested()
     signal renameRequested()
     signal exportRequested()
+    // #351: Mappa → Exportálás weboldalként… (webexport.fen)
+    signal webExportRequested()
     // #29: Létrehozás → Képkollázs / Mozgófilm a kijelölésből
     signal collageRequested()
     signal movieRequested()
@@ -380,7 +382,11 @@ MenuBar {
         MenuSeparator {}
         // hiányzott (#324 audit)
         MenuItem { text: qsTr("Print Thumbnails...") + "\tCtrl+Shift+P"; enabled: false }
-        MenuItem { text: qsTr("Export as HTML Page..."); enabled: false }
+        MenuItem {
+            objectName: "menuFolderWebExport"
+            text: qsTr("Export as HTML Page...")
+            onTriggered: bar.webExportRequested()
+        }
         MenuSeparator {}
         MenuItem { text: qsTr("Locate on Disk") + "\tCtrl+Enter"; enabled: false }
         MenuItem { text: qsTr("Remove from Picasa..."); enabled: false }

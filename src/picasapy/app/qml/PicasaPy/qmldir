@@ -54,3 +54,4 @@ OptionsTabPrinting 1.0 OptionsTabPrinting.qml
 OptionsTabNetwork 1.0 OptionsTabNetwork.qml
 OptionsTabWebAlbums 1.0 OptionsTabWebAlbums.qml
 OptionsTabNameTags 1.0 OptionsTabNameTags.qml
+WebExportDialog 1.0 WebExportDialog.qml
