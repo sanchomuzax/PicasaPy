@@ -13,6 +13,12 @@ from .document import (
 )
 from .faces import UNIDENTIFIED_CONTACT, Face, parse_faces, serialize_faces
 from .filters import FilterOp, parse_filters, serialize_filters
+from .folder_date import (
+    is_valid_folder_date,
+    read_folder_date_override,
+    with_folder_date_override,
+    without_folder_date_override,
+)
 from .io import (
     IniConflictError,
     IniSaveError,
@@ -42,15 +48,19 @@ __all__ = [
     "contacts_of",
     "decode_rect64",
     "encode_rect64",
+    "is_valid_folder_date",
     "load_document",
     "load_or_empty",
     "parse_album_refs",
     "parse_document",
     "parse_faces",
     "parse_filters",
+    "read_folder_date_override",
     "save_document",
     "serialize_album_refs",
     "serialize_faces",
     "serialize_filters",
     "update_document",
+    "with_folder_date_override",
+    "without_folder_date_override",
 ]
