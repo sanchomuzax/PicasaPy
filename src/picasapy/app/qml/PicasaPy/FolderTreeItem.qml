@@ -32,7 +32,6 @@ Column {
     // token (hot file, ld. jelentés: Theme.panelSelectionActive) — amíg
     // az integrátor fel nem veszi, itt helyi állandóként él; a csere csak
     // ezt a sort érinti.
-    readonly property color __selectionActiveColor: "#25648b"
     readonly property bool isSelected: root.manager
                                         && root.manager.selectedPath === root.path
 
@@ -43,7 +42,7 @@ Column {
         height: 22
         // hover ≠ kijelölés (#384): a hover a korábbi (jelölő) tónust
         // kapja, a tényleges kijelölés a sötétebb, hiteles színt.
-        color: root.isSelected ? root.__selectionActiveColor
+        color: root.isSelected ? Theme.panelSelectionActive
                : (rowMouse.containsMouse ? Theme.selectionBlue : "transparent")
 
         Row {

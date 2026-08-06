@@ -16,7 +16,6 @@ Rectangle {
     // MÉG NINCS erre saját token (hot file, ld. jelentés:
     // Theme.panelSelectionActive) — amíg az integrátor fel nem veszi, itt
     // helyi állandóként él; a csere csak ezt a sort érinti.
-    readonly property color __selectionActiveColor: "#25648b"
 
     property alias foldersModel: folderList.model
     property string selectedPath: ""
@@ -199,7 +198,7 @@ Rectangle {
             Layout.preferredHeight: 22
             // #384: hover ≠ kijelölés — a hover a korábbi jelölő tónust
             // kapja, a tényleges kijelölés a hitelesebb, sötétebb színt.
-            color: pane.starredActive ? pane.__selectionActiveColor
+            color: pane.starredActive ? Theme.panelSelectionActive
                    : (starredMouse.containsMouse ? Theme.panelSelection : "transparent")
             Row {
                 anchors.verticalCenter: parent.verticalCenter
@@ -237,7 +236,7 @@ Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 22
                 // #384: hover ≠ kijelölés (ld. starredItem fent)
-                color: albumItem.isSelectedAlbum ? pane.__selectionActiveColor
+                color: albumItem.isSelectedAlbum ? Theme.panelSelectionActive
                        : (albumMouse.containsMouse ? Theme.panelSelection : "transparent")
                 Row {
                     anchors.verticalCenter: parent.verticalCenter
@@ -348,7 +347,7 @@ Rectangle {
                 // #384: hover ≠ kijelölés (ld. starredItem/albumItem) —
                 // a "year" sorok nem kattinthatók, a MouseArea rájuk
                 // enabled: false, így containsMouse mindig false marad.
-                color: isSelectedFolder ? pane.__selectionActiveColor
+                color: isSelectedFolder ? Theme.panelSelectionActive
                        : (folderRowMouse.containsMouse ? Theme.panelSelection : "transparent")
 
                 // évszám-elválasztó: arányos betűs címke + vékony
