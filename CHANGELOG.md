@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.13] – 2026-08-06
+
+### Javítva
+- **Picasa-hű szerkesztő-panel (#405):** az effekt-gombok mostantól a
+  SAJÁT KÉPED kis előnézetét mutatják az adott effekttel (mint az
+  eredetiben), nem lapos ikont; a fölösleges „Gyakori javítások" fejléc
+  eltűnt; a panelarányok, fül-ikonok, a Visszavonás/Újra és a
+  Derítőfény-csúszka az eredetihez igazítva.
+
 ## [0.6.12] – 2026-08-06
 
 ### Javítva
