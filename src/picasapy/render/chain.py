@@ -69,6 +69,8 @@ from picasapy.render.ops import (
     apply_redeye,
     apply_tilt,
 )
+from picasapy.render.chain_report import ChainReport, validate_and_clamp_op
+from picasapy.render.registry import FILTER_REGISTRY, chain_flags
 from picasapy.render.retouch import apply_retouch
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
 from picasapy.render.tinting import (
@@ -101,6 +103,31 @@ KNOWN_UNRENDERED_OPS = frozenset(
         "roundededges",
         "matte",
         "nightvision",
+        # --- a filterdesc-regiszter (#382) által azonosított 21 további,
+        # eddig sehol nem dokumentált szűrőnév — a filterdesc.xml-ben
+        # léteznek, tehát régi könyvtárak `filters=` láncában előfordulhatnak.
+        # A regiszterben (`registry.py`) megvan a leírásuk, de vizuális
+        # modellt (golden-mérés híján) még nem futtatunk rájuk.
+        "triple",
+        "triple2",
+        "triple3",
+        "colorfix",
+        "autobacklight",
+        "autocontrast",
+        "rainbow",
+        "linblur",
+        "colortemp",
+        "shadow",
+        "blur",
+        "contrast",
+        "gamma",
+        "backlight",
+        "whitept",
+        "dir_sat",
+        "dir_brite",
+        "dir_sharp",
+        "focalpixelate",
+        "debug",
     }
 )
 
@@ -112,7 +139,10 @@ KNOWN_UNRENDERED_OPS = frozenset(
 #: nyeli el: nem effekt, ezért nem is kerül a "nem renderelhető" kihagyott-
 #: listába — az ini-round-trip a `picasapy.ini.filters` generikus
 #: parse/serialize rétegén keresztül változatlanul megőrzi.
-_NOOP_MARKERS = frozenset({"picnik"})
+#: A #382-es filterdesc-regiszter öt `mode="history"`/mozi-jelölő szűrője:
+#: nem képi művelet (csak szerkesztési előzmény vagy mozi-vágás-marker),
+#: ezért ugyanúgy no-op-ként nyelendők el, mint a `picnik=1;`.
+_NOOP_MARKERS = frozenset({"picnik", "save", "rot", "crop", "moviestart", "movieend"})
 
 
 def tilt_cover_scale(width: int, height: int, angle: float) -> float:
@@ -599,15 +629,22 @@ _HANDLERS = {
     "polaroid": _apply_polaroid_op,
 }
 
-#: Keretet rajzoló, tehát MÉRETNÖVELŐ effektek (#330). A vágás koordinátái az
-#: EREDETI képre vonatkoznak, ezért ezeket a crop UTÁN kell alkalmazni —
-#: különben a keret vastagságával csúszna el a kivágás.
-_FRAME_EFFECTS = frozenset({"border", "dropshadow", "museummatte", "polaroid"})
-
+#: Keretet rajzoló, tehát MÉRETNÖVELŐ effektek (#330/#382). A vágás
+#: koordinátái az EREDETI képre vonatkoznak, ezért ezeket a crop UTÁN kell
+#: alkalmazni — különben a keret vastagságával csúszna el a kivágás. A
+#: halmazt mostantól a filterdesc-regiszter `resizes` jelzője adja (a
+#: korábbi kézzel karbantartott lista helyett, #382 3. pont): minden
+#: `resizes=True` szűrő, aminek TÉNYLEG van bekötött handlere. A
+#: `RoundedEdges` a regiszterben `resizes=True`, de nincs `_HANDLERS`
+#: bejegyzése (`KNOWN_UNRENDERED_OPS` tagja) — ezért a metszetből
+#: automatikusan kimarad, amíg implementálatlan.
+_FRAME_EFFECTS = frozenset(
+    key for key, spec in FILTER_REGISTRY.items() if spec.resizes
+) & _HANDLERS.keys()
 
 def apply_filters(
     image: np.ndarray, ops: tuple[FilterOp, ...]
-) -> tuple[np.ndarray, tuple[str, ...]]:
+) -> ChainReport:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, retouch,
     enhance, autolight, autocolor, fill, finetune/finetune2, bw, sepia, warm,
     sat, unsharp/unsharp2, grain2, Vignette, glow/glow2, tint, ansel, radblur,
@@ -638,9 +675,23 @@ def apply_filters(
     Ezt egyetlenegyszer, a teljes képre futó effektusok UTÁN alkalmazzuk, az
     EREDETI képméretre vonatkozó koordinátákkal (a tilt méret-tartó). Így a
     több crop64-et tartalmazó valódi Picasa-láncok sem kaszkádolnak (#130).
+
+    **Tartomány-validáció (#382):** néhány ismert szűrőnél (`sat`, `tilt`,
+    `finetune`/`finetune2`, `unsharp`/`unsharp2`) a paraméter a `registry`
+    modul `[minimum, maximum]` tartományára VÁGVA fut le, ha az ini-beli
+    érték kilóg belőle — a kivágott figyelmeztetést a visszaadott
+    `ChainReport.range_warnings` hordozza. A `.picasa.ini` maga NEM
+    módosul (a parszer szintjén nincs szigorítás, a round-trip elv szent).
+
+    **Sáv-jelzők (#382):** a visszaadott `ChainReport.full_res`/`.slow`/
+    `.resizes` jelzi, hogy a lánc tartalmaz-e olyan szűrőt, ami csak teljes
+    felbontáson helyes, ami drága (aszinkron út kell), illetve ami
+    megváltoztatja a kimeneti képméretet — a regiszterből számolva, a
+    LÁNCBAN SZEREPLŐ (nemcsak a ténylegesen renderelt) nevek alapján.
     """
     result = image
     skipped: list[str] = []
+    range_warnings: list[str] = []
     crop_op: FilterOp | None = None
     frame_ops: list[FilterOp] = []
     for op in ops:
@@ -654,13 +705,15 @@ def apply_filters(
             frame_ops.append(op)
             continue
         if key in _NOOP_MARKERS:
-            # boolean jelző-token (#347), nem effekt — érvényes no-op, nem
-            # kerül a kihagyott-listába
+            # boolean jelző-token (#347/#382), nem effekt — érvényes no-op,
+            # nem kerül a kihagyott-listába
             continue
-        handler = _HANDLERS.get(op.name.casefold())
+        handler = _HANDLERS.get(key)
         if handler is None:
             skipped.append(op.name)
             continue
+        op, op_warnings = validate_and_clamp_op(op)
+        range_warnings.extend(op_warnings)
         try:
             result = handler(result, op)
         except Exception:
@@ -679,9 +732,20 @@ def apply_filters(
     # keretek legvégül, a már kivágott képre (#330)
     for op in frame_ops:
         handler = _HANDLERS[op.name.casefold()]
+        op, op_warnings = validate_and_clamp_op(op)
+        range_warnings.extend(op_warnings)
         try:
             result = handler(result, op)
         except Exception:
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)
-    return result, tuple(skipped)
+    all_keys = [op.name for op in ops]
+    full_res, slow, resizes = chain_flags(all_keys)
+    return ChainReport(
+        result,
+        tuple(skipped),
+        full_res=full_res,
+        slow=slow,
+        resizes=resizes,
+        range_warnings=tuple(range_warnings),
+    )
