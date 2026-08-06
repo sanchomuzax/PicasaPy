@@ -69,8 +69,15 @@ _TILT_RADIANS_PER_UNIT = 0.2
 #: kerülnek, de nincs mögöttük exe-forrás.
 KNOWN_UNRENDERED_OPS = frozenset(
     {
-        "grain",  # v1 — a grain2-nek van implementációja, a bare v1-nek nincs
-        "radtint",  # feltehetően a dir_tint radiális testvére (rad- előtag)
+        # `grain` (v1) a #347 lezáró auditban (2026-08-06) KIKERÜLT innen:
+        # a `filterdesc-registry.md` szerint a `grain2`-vel MEGEGYEZŐ,
+        # paraméter nélküli "Film Grain" oneclick család régi tagja, ezért
+        # a `grain2` golden-mért modelljét (`_apply_grain_op`) használja
+        # (ld. lent a `_HANDLERS`-ben).
+        "radtint",  # feltehetően a dir_tint radiális testvére (rad- előtag);
+        # a filterdesc csak a Feather csúszkát/színkereket dokumentálja, a
+        # tényleges csővezetéket nem (mint a glow logaritmikus sugara) —
+        # ehhez golden-mérés kell (#317).
         # --- a filterdesc-regiszter (#382) által azonosított 21 további,
         # eddig sehol nem dokumentált szűrőnév — a filterdesc.xml-ben
         # léteznek, tehát régi könyvtárak `filters=` láncában előfordulhatnak.
@@ -198,6 +205,15 @@ def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # rögzített maggal futtatjuk (seed=0), hogy egy változatlan lánc újra-
     # renderelésekor a szemcse ne "villogjon" — a spec elfogadási teszthez
     # (statisztikai) ez nem szükséges, csak az UI-élmény miatt választott mag.
+    #
+    # Ugyanez a handler szolgálja ki a `grain` (v1) bejegyzést is (#347
+    # lezáró audit, 2026-08-06): a filterdesc-regiszter szerint a `grain`
+    # ("Film Grain (Old)") és a `grain2` ("Film Grain") egyaránt paraméter
+    # nélküli oneclick — nincs se csúszka, se szín, ami megkülönböztetné
+    # őket, csak a `fullres+slow` sávjelző. A `grain` v1-re önmagára nincs
+    # külön golden-mérés, ezért ez KÖZELÍTÉS (a már mért grain2-modell
+    # újrahasznosítása) — ugyanaz a minta, mint a glow/glow2,
+    # unsharp/unsharp2, finetune/finetune2 v1/v2 párosításoknál.
     return apply_grain(image, seed=0)
 
 
@@ -339,6 +355,7 @@ _HANDLERS = {
     "sat": _apply_sat_op,
     "unsharp": _apply_unsharp_op,
     "unsharp2": _apply_unsharp_op,
+    "grain": _apply_grain_op,  # v1 — közelítés, ld. _apply_grain_op docsztringje
     "grain2": _apply_grain_op,
     "glow": _apply_glow_op,
     "glow2": _apply_glow_op,
@@ -395,9 +412,9 @@ _HANDLERS = {
 #: halmazt mostantól a filterdesc-regiszter `resizes` jelzője adja (a
 #: korábbi kézzel karbantartott lista helyett, #382 3. pont): minden
 #: `resizes=True` szűrő, aminek TÉNYLEG van bekötött handlere. A
-#: `RoundedEdges` a regiszterben `resizes=True`, de nincs `_HANDLERS`
-#: bejegyzése (`KNOWN_UNRENDERED_OPS` tagja) — ezért a metszetből
-#: automatikusan kimarad, amíg implementálatlan.
+#: `RoundedEdges` a #381-ben MEGKAPTA a `_HANDLERS` bejegyzését
+#: (`glimmer.apply_rounded_edges_op`) — a metszetben szerepel, nem marad ki
+#: (a korábbi, "implementálatlan" állapotot leíró megjegyzés elavult volt).
 _FRAME_EFFECTS = frozenset(
     key for key, spec in FILTER_REGISTRY.items() if spec.resizes
 ) & _HANDLERS.keys()

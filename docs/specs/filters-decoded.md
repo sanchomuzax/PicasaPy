@@ -311,14 +311,16 @@ Picasa-hű lenne.
 
 | minőség | mit jelent | effektek |
 |---|---|---|
-| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `warm`, `sat`, `grain2` (statisztikai) |
+| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `warm`, `sat`, `grain2` (statisztikai), `glow` (v1, ΔE 1,85 — ld. Golden-verdiktek fent) |
 | **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `ansel` (5,6), `radblur` (3,2), `glow2` (2,7) |
 | **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Neon`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
 | **RÉSZBEN MEGFEJTVE (#381)** | a paraméterNEVEK és FIX konstansok a filterdesc.xml-ből jönnek, de a belső pixel-kernel (`IRImageOperation`) a fájlban SEM publikus — a pixel-modell dokumentáltan interpretáció | `IR` |
 | **MEGFEJTVE, DE ECSET-MASZK NÉLKÜL (#381)** | a csővezeték/paraméterezés egzakt, de a Picasa ecsettel kijelölt régióra hatna — a PicasaPy-nak nincs ecset-eszköze, ezért a TELJES KÉPRE fut (jelezve a `ChainReport.range_warnings`-ban) | `PicnikTint`, `ReanimatedEyeColor` |
 | **KÖZELÍTŐ (mérés nélkül) — #381 után is maradt** | a hatás jellege alapján, szakirodalomból — sem golden-mérés, sem filterdesc-pontosítás nincs még bekötve | `FocalZoom`, `PicnikFocalPixelate`, `Comicize` |
+| **KÖZELÍTŐ (másik, mért v2-modell újrahasznosítva) — #347 lezáró audit (2026-08-06)** | a filterdesc szerint a v1/v2 pár paraméter nélküli, azonos "oneclick" család (nincs csúszka/szín, ami megkülönböztetné őket) — a v1-re önmagára nincs golden-mérés, ezért a már mért v2-modellt futtatjuk rá | `grain` (v1, a `grain2` modelljét használja) |
 | **PONTOS** | matematikailag egyértelmű, mérés sem kell | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át) |
-| **ISMERETLEN (exe-ből azonosított, nincs mérés)** | csak a `Picasa3.exe` string-táblájából ismert token (ld. `docs/specs/picasa-exe-strings.md`), golden-mérés még nem volt, élő ini-előfordulása sem megerősített | `glow` (v1), `grain` (v1), `radtint`, `picnik=1;` (boolean lánc-token) |
+| **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
+| **ISMERETLEN (exe-ből azonosított, nincs mérés)** | csak a `Picasa3.exe` string-táblájából ismert token (ld. `docs/specs/picasa-exe-strings.md`), golden-mérés még nem volt, élő ini-előfordulása sem megerősített | `radtint` (a filterdesc csak a Feather csúszkát/színkereket adja meg, csővezetéket nem — ehhez golden-mérés kell, #317) |
 
 Vagyis a Glimmer-effektek (33) többsége #381 óta a `filterdesc.xml` EGZAKT
 csővezetékén fut — a `RoundedEdges`, `Matte`, `NightVision` a korábbi
@@ -330,6 +332,15 @@ Az `IR` RÉSZBEN MEGFEJTVE (a paraméterek ismertek, a kernel nem). A
 `PicnikTint`/`ReanimatedEyeColor` egzakt csővezetéket kapott, de ecset-
 eszköz híján a TELJES KÉPRE fut. A kalibráció (a maradék KÖZELÍTŐ effektekhez
 és a golden-pixel-összevetéshez) a **#317**-es jegyben fut tovább.
+
+**#347 lezáró audit (2026-08-06):** a jegy eredeti hét neve közül HAT
+mostanra rendezett — `glow` (v1) golden-mérve MÉRT, `RoundedEdges`/`Matte`/
+`NightVision` a #381 filterdesc-csővezetéken MEGFEJTVE, `picnik` no-op
+jelzőként azonosítva, `grain` (v1) a `grain2` mért modelljét újrahasznosítva
+renderel. Egyedül `radtint` maradt ISMERETLEN — ehhez a `filterdesc.xml` nem
+közöl csővezetéket (csak a Feather csúszkát és a színkereket), a `glow`
+logaritmikus sugarához hasonlóan golden-mérés kell. A jegy emiatt SZŰKÍTVE,
+`blocked` marad kizárólag a `radtint` kalibrációjára (#317 golden-kör).
 
 ## 6. kör — a Picasa SAJÁT szűrő-definíciója előkerült ✅ (2026-08-06)
 
