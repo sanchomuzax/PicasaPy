@@ -111,10 +111,18 @@ def apply_saturation(image: np.ndarray, strength: float) -> np.ndarray:
     interpoláció, s∈[−1..1]-re szorítva.
     """
     validate_image(image)
-    clamped = min(max(strength, -1.0), 1.0)
-    gain = float(np.interp(clamped, _SATURATION_KNOTS, _SATURATION_GAINS))
+    gain = saturation_gain(strength)
     if gain == 1.0:
         return image.copy()
     luma = _luma(image)[..., np.newaxis]
     # float32 munkatér (#140): a ±1/255 tűrésen belül azonos eredmény
     return _to_uint8(luma + np.float32(gain) * (image.astype(np.float32) - luma))
+
+
+def saturation_gain(strength: float) -> float:
+    """A `sat` mért erősítés-táblájának (`_SATURATION_KNOTS`/`_GAINS`)
+    interpolációja önmagában — a GPU-pipeline (#22, `gpu_point_pipeline.py`)
+    ezt a skalárt kapja `satGain` uniformként, hogy a shaderben ugyanazt a
+    `luma + gain·(be − luma)` képletet futtassa, mint a CPU-út."""
+    clamped = min(max(strength, -1.0), 1.0)
+    return float(np.interp(clamped, _SATURATION_KNOTS, _SATURATION_GAINS))
