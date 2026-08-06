@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.11] – 2026-08-06
+
+### Javítva
+- **GPU-shader betöltés (#402):** a shader rossz mappában kereste a
+  .qsb fájlt — a GPU-előnézet most már ténylegesen elindul; hiba esetén
+  némán a CPU-útra áll vissza, napló-zaj nélkül.
+- **Arc-szerkesztő (#402):** a névjavaslat-lista QML-horgony-
+  figyelmeztetése megszűnt.
+
 ## [0.6.10] – 2026-08-06
 
 ### Hozzáadva
