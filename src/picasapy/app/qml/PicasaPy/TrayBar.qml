@@ -78,20 +78,36 @@ Column {
     }
 
     Rectangle {
+        id: trayMainBar
+        objectName: "trayMainBar"
         width: parent.width; height: 52
         color: Theme.trayBg
+
+        // #406: szűk ablaknál (pl. fél képernyő) a szöveges gombok
+        // (E-mail, Nyomtatás, Exportálás, Feltöltés) ne lógjanak ki —
+        // egy adott küszöb alatt ikon-only módra váltanak (tooltippel).
+        // A küszöböt a ténylegesen kiírt gombfeliratok (leghosszabb: a
+        // zöld „Feltöltés a Google Fotókba") + a kijelölés-előnézet +
+        // a csillag/forgatás/kollázs/film/megosztás ikonok együttes
+        // szélessége adja — 900px-nél ez már nem fér el felirattal.
+        readonly property bool compact: width < 1000
+
         Rectangle {
             width: parent.width; height: 1
             color: Theme.trayBorder
         }
         RowLayout {
+            id: trayRowLayout
+            objectName: "trayRowLayout"
             anchors.fill: parent
             anchors.leftMargin: 10; anchors.rightMargin: 10
-            spacing: 8
+            spacing: trayMainBar.compact ? 4 : 8
 
-            // kijelölés-tálca: a kijelölt képek miniatűrjei (Picasa)
+            // kijelölés-tálca: a kijelölt képek miniatűrjei (Picasa) —
+            // #406: kompakt módban zsugorodik (Layout.fillWidth), hogy
+            // helyet adjon a jobb oldali gomboknak
             Item {
-                Layout.preferredWidth: 200
+                Layout.preferredWidth: trayMainBar.compact ? 70 : 200
                 Layout.preferredHeight: 46
                 Flow {
                     anchors.fill: parent
@@ -204,16 +220,18 @@ Column {
                 }
             }
             Item { Layout.fillWidth: true }
-            // nagyítás-csúszka − / + jelekkel (kézikönyv 06)
+            // nagyítás-csúszka − / + jelekkel (kézikönyv 06) — #406:
+            // kompakt módban a csúszka is keskenyebb, hogy jusson hely
+            // a jobb oldali gomboknak
             Text { text: "−"; color: Theme.textGray; font.pixelSize: 13 }
             PicasaSlider {
                 id: sizeSlider
                 from: 72; to: 256; value: tray.appWindow.thumbSize
-                Layout.preferredWidth: 140
+                Layout.preferredWidth: trayMainBar.compact ? 90 : 140
                 onMoved: tray.appWindow.thumbSize = value
             }
             Text { text: "+"; color: Theme.textGray; font.pixelSize: 13 }
-            Item { width: 10 }
+            Item { width: trayMainBar.compact ? 4 : 10 }
             // #361: a kimeneti sáv gombjai saját SVG-ikonnal (PBZ-leltár:
             // outputlayout/ebutton, /pbutton) — a felirat objectName-jei
             // (label szöveg, iconInk-szín) VÁLTOZATLANOK, csak egy Image
@@ -229,8 +247,15 @@ Column {
                          ? tray.viewerIndex >= 0
                          : tray.appWindow.selectedIndexes.length > 0
                 onClicked: tray.emailRequested()
+                // #406: kompakt módban (szűk ablak) a felirat eltűnik,
+                // csak az ikon marad — a szöveg tooltipként érhető el
+                // (a MÁR fordított gombfeliratot használjuk, nem új
+                // qsTr-t)
+                ToolTip.text: trayEmailBtn.text
+                ToolTip.visible: trayMainBar.compact && trayEmailBtn.hovered
+                ToolTip.delay: 500
                 contentItem: Row {
-                    spacing: 5
+                    spacing: trayMainBar.compact ? 0 : 5
                     Image {
                         anchors.verticalCenter: parent.verticalCenter
                         source: "icons/email.svg"
@@ -239,6 +264,7 @@ Column {
                     }
                     Text {
                         objectName: "trayEmailLabel"
+                        visible: !trayMainBar.compact
                         anchors.verticalCenter: parent.verticalCenter
                         text: trayEmailBtn.text
                         font: trayEmailBtn.font
@@ -254,8 +280,11 @@ Column {
                          ? tray.viewerIndex >= 0
                          : tray.appWindow.selectedIndexes.length > 0
                 onClicked: tray.printRequested()
+                ToolTip.text: trayPrintBtn.text
+                ToolTip.visible: trayMainBar.compact && trayPrintBtn.hovered
+                ToolTip.delay: 500
                 contentItem: Row {
-                    spacing: 5
+                    spacing: trayMainBar.compact ? 0 : 5
                     Image {
                         anchors.verticalCenter: parent.verticalCenter
                         source: "icons/print.svg"
@@ -264,6 +293,7 @@ Column {
                     }
                     Text {
                         objectName: "trayPrintLabel"
+                        visible: !trayMainBar.compact
                         anchors.verticalCenter: parent.verticalCenter
                         text: trayPrintBtn.text
                         font: trayPrintBtn.font
@@ -281,8 +311,11 @@ Column {
                 // #314: a PicasaButton alap-krómja nem témavezérelt (ld.
                 // trayRotateLeftBtn indoklása fentebb) — az ikon+felirat
                 // tintája itt is a fix Theme.iconInk.
+                ToolTip.text: trayExportBtn.text
+                ToolTip.visible: trayMainBar.compact && trayExportBtn.hovered
+                ToolTip.delay: 500
                 contentItem: Row {
-                    spacing: 5
+                    spacing: trayMainBar.compact ? 0 : 5
                     Image {
                         anchors.verticalCenter: parent.verticalCenter
                         source: "icons/folder-export.svg"
@@ -291,6 +324,7 @@ Column {
                     }
                     Text {
                         objectName: "trayExportLabel"
+                        visible: !trayMainBar.compact
                         anchors.verticalCenter: parent.verticalCenter
                         text: trayExportBtn.text
                         font: trayExportBtn.font
@@ -298,7 +332,7 @@ Column {
                     }
                 }
             }
-            Item { width: 6 }
+            Item { width: trayMainBar.compact ? 3 : 6 }
             // #361: Kollázs / Film / Megosztás — a PBZ-leltár szerint
             // (outputlayout/collage, /makemovie, /sharewith) az eredeti
             // kimeneti sávnak is részei; a tényleges Létrehozás-funkció
@@ -353,16 +387,22 @@ Column {
                     opacity: 0.5
                 }
             }
-            Item { width: 6 }
+            Item { width: trayMainBar.compact ? 3 : 6 }
             // az egyetlen zöld elsődleges tett — jobbra igazítva,
-            // a képernyő vizuális súlypontja (kézikönyv 01/08)
+            // a képernyő vizuális súlypontja (kézikönyv 01/08) — #406:
+            // kompakt módban ez is ikon-only (a leghosszabb felirat,
+            // enélkül fér csak el a sáv szűk ablaknál)
             PicasaButton {
                 id: trayUploadBtn
+                objectName: "trayUploadButton"
                 text: qsTr("Upload to Google Photos")
                 enabled: false
                 accent: Theme.picasaGreen
+                ToolTip.text: trayUploadBtn.text
+                ToolTip.visible: trayMainBar.compact && trayUploadBtn.hovered
+                ToolTip.delay: 500
                 contentItem: Row {
-                    spacing: 5
+                    spacing: trayMainBar.compact ? 0 : 5
                     Image {
                         anchors.verticalCenter: parent.verticalCenter
                         source: "icons/upload.svg"
@@ -370,6 +410,7 @@ Column {
                     }
                     Text {
                         objectName: "trayUploadLabel"
+                        visible: !trayMainBar.compact
                         anchors.verticalCenter: parent.verticalCenter
                         text: trayUploadBtn.text
                         font: trayUploadBtn.font
