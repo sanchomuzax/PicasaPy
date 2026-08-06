@@ -723,7 +723,10 @@ Rectangle {
                         rotation: photo.rotation
                         scale: photo.scale
                         transformOrigin: Item.Center
+                        // #402: shader-hibánál (shaderOk=false) némán a
+                        // CPU-előnézet marad
                         visible: viewer.gpuFinetuneActive && viewer.gpuFinetuneEligible
+                                 && gpuFinetunePreview.shaderOk
                         sourceItem: gpuPrefixImage
                         lutItem: gpuLutImage
                         satGain: 1.0

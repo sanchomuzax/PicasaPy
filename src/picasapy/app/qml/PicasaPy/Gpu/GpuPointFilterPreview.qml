@@ -48,5 +48,12 @@ ShaderEffect {
     property variant source: sourceProxy
     property variant lut: lutProxy
 
-    fragmentShader: "PointFilter.frag.qsb"
+    // #402: a relatív URL a beágyazó modul felől rossz mappára oldódott
+    // (a felhasználó gépén a PicasaPy/ gyökérben kereste a .qsb-t) — a
+    // Qt.resolvedUrl e fájl (Gpu/) helyéhez képest ad ABSZOLÚT URL-t.
+    fragmentShader: Qt.resolvedUrl("PointFilter.frag.qsb")
+
+    // #402: néma fallback shader-hibánál is — ha a shader nem tölthető be
+    // (hiányzó/sérült .qsb), a réteg elrejti magát, a CPU-előnézet marad.
+    readonly property bool shaderOk: status !== ShaderEffect.Error
 }
