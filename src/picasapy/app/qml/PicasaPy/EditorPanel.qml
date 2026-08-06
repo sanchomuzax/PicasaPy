@@ -23,6 +23,27 @@ Rectangle {
     property bool cropActive: false
     property bool tiltActive: false
     property bool redeyeActive: false
+    // Retusálás/Szöveg (#148): a Vágás mintáját követő mód-eszközök —
+    // kattintással jelölnek a képen, Alkalmaz/Mégse gombbal zárulnak. A
+    // hívó (PhotoViewer) tölti a puffer-állapotot (retouchRegionCount,
+    // textPlacementPending) az EditControllerből.
+    property bool retouchActive: false
+    property bool textActive: false
+    property int retouchRegionCount: 0
+    // a szövegmező kezdő tartalma (eszköz-nyitáskor a hívó tölti a
+    // controller mentett/piszkozat tartalmával); onTextDraftChanged jelzi
+    // vissza a felhasználói gépelést
+    property string textDraftContent: ""
+    property bool textPlacementPending: false
+    // közös őr: crop/retouch/text bármelyike a fülsáv+rács helyett a saját
+    // teljes-panelnyi tartalmát mutatja (a cropColumn mintáját folytatva)
+    readonly property bool modeToolActive: panel.cropActive || panel.retouchActive
+                                            || panel.textActive
+    signal retouchApplyRequested()
+    signal retouchCancelRequested()
+    signal textDraftEdited(string content)
+    signal textApplyRequested()
+    signal textCancelRequested()
     // egygombos javítások (#116): nem módkapcsolók — a gomb mindig új
     // réteget fűz a láncra, és csak akkor tiltott, ha ugyanez a szűrő a
     // lánc utolsó eleme (a hívó/EditController tölti)
@@ -298,6 +319,8 @@ Rectangle {
         case "crop": panel.cropActive = !panel.cropActive; break
         case "tilt": panel.tiltActive = !panel.tiltActive; break
         case "redeye": panel.redeyeActive = !panel.redeyeActive; break
+        case "retouch": panel.retouchActive = !panel.retouchActive; break
+        case "text": panel.textActive = !panel.textActive; break
         case "enhance": if (!panel.enhanceEnabled) return; break
         case "autolight": if (!panel.autolightEnabled) return; break
         case "autocolor": if (!panel.autocolorEnabled) return; break
@@ -621,7 +644,7 @@ Rectangle {
     RowLayout {
         id: tabBar
         objectName: "editTabBar"
-        visible: !panel.cropActive
+        visible: !panel.modeToolActive
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
@@ -674,7 +697,7 @@ Rectangle {
     // ---------------- "tools" mód: ikonrács ----------------
     ColumnLayout {
         objectName: "toolsColumn"
-        visible: !panel.cropActive && panel.activeTab === 0
+        visible: !panel.modeToolActive && panel.activeTab === 0
         // tiltott panel (videó a nézőben, #103): az egész oszlop halvány
         opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
@@ -745,12 +768,14 @@ Rectangle {
             ToolTile {
                 objectName: "editToolRetouch"
                 toolName: "retouch"; label: qsTr("Retouch"); icon: "retouch"
-                tileEnabled: false   // 2. ütem
+                active: panel.retouchActive
+                onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
                 objectName: "editToolText"
                 toolName: "text"; label: qsTr("Text"); icon: "text"
-                tileEnabled: false   // 2. ütem
+                active: panel.textActive
+                onActivated: (tool) => panel.handleToolClick(tool)
             }
         }
 
@@ -795,7 +820,7 @@ Rectangle {
     // ---------------- "finetune" mód: Finomhangolás (#20) ----------------
     ColumnLayout {
         objectName: "finetuneColumn"
-        visible: !panel.cropActive && panel.activeTab === 1
+        visible: !panel.modeToolActive && panel.activeTab === 1
         opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
@@ -910,7 +935,7 @@ Rectangle {
     // ---------------- "effects" mód: Effektek (#20) ----------------
     ColumnLayout {
         objectName: "effectsColumn"
-        visible: !panel.cropActive && panel.activeTab === 2 && !panel.paramPanelActive
+        visible: !panel.modeToolActive && panel.activeTab === 2 && !panel.paramPanelActive
         opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
@@ -1051,7 +1076,7 @@ Rectangle {
     // "kreatív effektek" (#328, docs/specs/ui-audit-editor.md 4. fül) ------
     ColumnLayout {
         objectName: "effectsColumn2"
-        visible: !panel.cropActive && panel.activeTab === 3 && !panel.paramPanelActive
+        visible: !panel.modeToolActive && panel.activeTab === 3 && !panel.paramPanelActive
         opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
@@ -1179,7 +1204,7 @@ Rectangle {
     // "művészi effektek" (#328, docs/specs/ui-audit-editor.md 5. fül) ------
     ColumnLayout {
         objectName: "effectsColumn3"
-        visible: !panel.cropActive && panel.activeTab === 4 && !panel.paramPanelActive
+        visible: !panel.modeToolActive && panel.activeTab === 4 && !panel.paramPanelActive
         opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
@@ -1303,7 +1328,7 @@ Rectangle {
     // ugyanarra a fülre történik, mert az activeTab változatlan marad.
     ColumnLayout {
         objectName: "effectParamColumn"
-        visible: !panel.cropActive && panel.paramPanelActive
+        visible: !panel.modeToolActive && panel.paramPanelActive
         opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
@@ -1568,6 +1593,134 @@ Rectangle {
                 objectName: "cropCancelButton"
                 label: qsTr("Cancel") + " ✘"
                 onButtonClicked: panel.cropCancelRequested()
+            }
+        }
+    }
+
+    // ---------------- "retouch" mód: Retusálás (#148) ----------------
+    // A Vágás mintáját követi: a kép TELJES panel-területét foglalja el a
+    // fülsáv/rács helyett; a kattintások kezelését a hívó (PhotoViewer)
+    // végzi a képen (ez a fájl nem ismeri a kép geometriáját), a puffer
+    // méretét (retouchRegionCount) és az Alkalmaz/Mégse gombokat mutatja.
+    ColumnLayout {
+        objectName: "retouchColumn"
+        visible: panel.retouchActive
+        opacity: panel.enabled ? 1 : 0.45
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 10
+        spacing: 8
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            Image {
+                Layout.preferredWidth: 40
+                Layout.preferredHeight: 30
+                source: "../../assets/tools/retouch.png"
+            }
+            Text {
+                Layout.fillWidth: true
+                text: qsTr("Retouch")
+                font.pixelSize: Theme.fontSize + 3
+                color: Theme.ink
+            }
+        }
+
+        Text {
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: qsTr("Click on the blemishes you want to remove, then Apply.")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+
+        Text {
+            objectName: "retouchRegionCountLabel"
+            Layout.fillWidth: true
+            text: qsTr("Regions selected: %1").arg(panel.retouchRegionCount)
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            PanelButton {
+                objectName: "retouchApplyButton"
+                label: qsTr("Apply") + " ✔"
+                buttonEnabled: panel.retouchRegionCount > 0
+                onButtonClicked: panel.retouchApplyRequested()
+            }
+            PanelButton {
+                objectName: "retouchCancelButton"
+                label: qsTr("Cancel") + " ✘"
+                onButtonClicked: panel.retouchCancelRequested()
+            }
+        }
+    }
+
+    // ---------------- "text" mód: Szöveg-overlay (#148) ----------------
+    // A pozicionálás is kattintással történik a képen (a hívó feladata,
+    // ld. retouchColumn megjegyzése) — a szövegmező itt él, a tartalom
+    // gépelését a textDraftEdited jel viszi a controllerhez.
+    ColumnLayout {
+        objectName: "textColumn"
+        visible: panel.textActive
+        opacity: panel.enabled ? 1 : 0.45
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.margins: 10
+        spacing: 8
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            Image {
+                Layout.preferredWidth: 40
+                Layout.preferredHeight: 30
+                source: "../../assets/tools/text.png"
+            }
+            Text {
+                Layout.fillWidth: true
+                text: qsTr("Text")
+                font.pixelSize: Theme.fontSize + 3
+                color: Theme.ink
+            }
+        }
+
+        Text {
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: qsTr("Type your text, then click on the photo to place it.")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+
+        TextField {
+            id: textContentField
+            objectName: "textContentField"
+            Layout.fillWidth: true
+            text: panel.textDraftContent
+            onTextChanged: panel.textDraftEdited(text)
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            PanelButton {
+                objectName: "textApplyButton"
+                label: qsTr("Apply") + " ✔"
+                buttonEnabled: panel.textPlacementPending
+                              && textContentField.text.length > 0
+                onButtonClicked: panel.textApplyRequested()
+            }
+            PanelButton {
+                objectName: "textCancelButton"
+                label: qsTr("Cancel") + " ✘"
+                onButtonClicked: panel.textCancelRequested()
             }
         }
     }

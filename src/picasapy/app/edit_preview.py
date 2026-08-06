@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import threading
 from collections import OrderedDict
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -24,6 +25,7 @@ from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.ini.filters import FilterOp
 from picasapy.render import apply_filters
+from picasapy.render.text_overlay import apply_text_overlay
 
 from .histogram_helper import EMPTY_HISTOGRAM, compute_rgb_histogram
 # #151/7: a placeholder-szürke egyetlen helyen (thumbnail_provider) definiált
@@ -35,6 +37,20 @@ _MAX_PREVIEW_EDGE = 2560
 # halmozódnának. Két elem elég: az aktuális + az előző kép, így az
 # előre-hátra lapozás újradekód nélkül gyors marad, a régebbiek felszabadulnak.
 _LRU_CAPACITY = 2
+
+
+@dataclass(frozen=True)
+class TextOverlaySpec:
+    """A szöveg-eszköz (#148) élő előnézetéhez kért egyetlen szöveg-réteg.
+
+    A `text=` ini-kulcs NEM a `filters=` láncba tartozik (ld.
+    `picasapy.ini.text_overlay` docsztring), ezért a `FilterOp`-lánccal ellentétben
+    ezt a hívó (`EditController`) külön adja át a `register()`-nek — a
+    renderelés a filters-lánc UTÁN, a végeredményre rajzolja rá."""
+
+    content: str
+    x: float
+    y: float
 
 
 class EditPreviewProvider(QQuickImageProvider):
@@ -65,10 +81,19 @@ class EditPreviewProvider(QQuickImageProvider):
         ) = None
         self._lock = threading.Lock()
 
-    def register(self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]) -> None:
+    def register(
+        self,
+        photo_id: str,
+        path: Path,
+        ops: tuple[FilterOp, ...],
+        text: TextOverlaySpec | None = None,
+    ) -> None:
         """Az aktuálisan szerkesztett fotó renderelése és eltárolása.
 
-        A hívó (GUI) szálán fut — a provider-szálra nem jut Python-munka."""
+        A hívó (GUI) szálán fut — a provider-szálra nem jut Python-munka.
+        A `text` (ha van) a `filters=` lánc UTÁN, a végeredményre kerül —
+        ez PicasaPy-saját szöveg-eszköz (#148) élő előnézete, a `text=`
+        ini-kulcs önálló (nem a lánc része, ld. `TextOverlaySpec`)."""
         key = str(photo_id)
         path = Path(path)
         mtime = path.stat().st_mtime if path.exists() else None
@@ -88,6 +113,13 @@ class EditPreviewProvider(QQuickImageProvider):
             self._sources.popitem(last=False)
         # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó op fut
         result_array = self._render_cached(key, source_array, tuple(ops))
+        if text is not None and result_array is not None and text.content:
+            # a szöveg a filters-lánc UTÁN kerül a képre — a hisztogram (lent)
+            # így is a TÉNYLEGESEN megjelenített (szöveggel együtt renderelt)
+            # képet tükrözi, a modul-docsztring elve szerint
+            result_array = apply_text_overlay(
+                result_array, text.content, text.x, text.y
+            )
         image = _rgb_array_to_qimage(result_array) if result_array is not None else QImage()
         histogram = (
             compute_rgb_histogram(result_array)

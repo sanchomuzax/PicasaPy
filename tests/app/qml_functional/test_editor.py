@@ -216,6 +216,120 @@ class TestEditorWiring:
         qt_app.processEvents()
         assert panel.property("cropActive") is False
 
+    def test_retouch_tile_opens_tool_and_click_area_appears(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#148: a Retusálás csempe megnyitja a módot, és a kép feletti
+        kattintás-terület (retouchClickArea) csak ekkor látszik."""
+        from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        area = window.findChild(QObject, "retouchClickArea")
+        assert area is not None, "retouchClickArea nem található"
+        assert area.property("visible") is False
+        QMetaObject.invokeMethod(
+            panel, "handleToolClick", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", "retouch"),
+        )
+        qt_app.processEvents()
+        assert panel.property("retouchActive") is True
+        assert area.property("visible") is True
+
+    def test_retouch_apply_writes_region_and_closes_tool(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("retouchActive", True)
+        qt_app.processEvents()
+        edit = self._edit_controller(engine)
+        edit.previewRetouchRegion(0.5, 0.5)
+        qt_app.processEvents()
+        assert panel.property("retouchRegionCount") == 1
+        apply_button = window.findChild(QObject, "retouchApplyButton")
+        assert apply_button is not None
+        assert apply_button.property("enabled") is True
+        from PySide6.QtCore import QMetaObject, Qt
+
+        QMetaObject.invokeMethod(
+            apply_button, "buttonClicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        ini_text = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=retouch=1," in ini_text
+        assert panel.property("retouchActive") is False
+
+    def test_retouch_cancel_discards_pending_regions(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("retouchActive", True)
+        qt_app.processEvents()
+        edit = self._edit_controller(engine)
+        edit.previewRetouchRegion(0.5, 0.5)
+        qt_app.processEvents()
+        cancel_button = window.findChild(QObject, "retouchCancelButton")
+        from PySide6.QtCore import QMetaObject, Qt
+
+        QMetaObject.invokeMethod(
+            cancel_button, "buttonClicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert panel.property("retouchActive") is False
+        ini_path = tmp_path / "kepek" / ".picasa.ini"
+        assert not ini_path.exists() or "retouch" not in ini_path.read_text(
+            encoding="utf-8"
+        )
+
+    def test_text_tile_opens_tool_and_click_area_appears(self, qml_app, qt_app):
+        from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        area = window.findChild(QObject, "textClickArea")
+        assert area is not None, "textClickArea nem található"
+        assert area.property("visible") is False
+        QMetaObject.invokeMethod(
+            panel, "handleToolClick", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", "text"),
+        )
+        qt_app.processEvents()
+        assert panel.property("textActive") is True
+        assert area.property("visible") is True
+
+    def test_text_apply_writes_text_and_textactive(self, qml_app, qt_app, tmp_path):
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("textActive", True)
+        qt_app.processEvents()
+        field = window.findChild(QObject, "textContentField")
+        assert field is not None, "textContentField nem található"
+        field.setProperty("text", "Nyaralás")
+        qt_app.processEvents()
+        edit = self._edit_controller(engine)
+        edit.previewTextPlacement(0.3, 0.6)
+        qt_app.processEvents()
+        apply_button = window.findChild(QObject, "textApplyButton")
+        assert apply_button.property("enabled") is True
+        from PySide6.QtCore import QMetaObject, Qt
+
+        QMetaObject.invokeMethod(
+            apply_button, "buttonClicked", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        ini_text = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
+        assert "text=1;" in ini_text
+        assert "Nyaralás" in ini_text
+        assert "textactive=1" in ini_text
+        assert panel.property("textActive") is False
+
 
 class TestViewerFolderBoundedNavigation:
     """#84: a nagy nézőben (PhotoViewer) a lapozás CSAK az aktuális mappa

@@ -7,6 +7,11 @@ from dataclasses import dataclass
 
 from picasapy.ini.filters import FilterOp, parse_filters, serialize_filters
 from picasapy.ini.rect64 import Rect64, decode_rect64, encode_rect64
+from picasapy.ini.retouch import (
+    RETOUCH_FILTER_NAME,
+    build_retouch_op,
+    parse_retouch_regions,
+)
 
 # A finomhangolás (#20) egyetlen finetune2 réteg, a tilt/crop mintájára a
 # láncban a helyén cserélődik (nem rétegződik). A v1 "finetune"-t is ez
@@ -325,6 +330,51 @@ class EditSession:
         if not replaced:
             new_ops.append(new_op)
         return EditSession(ops=tuple(new_ops))
+
+    def set_retouch_regions(self, regions: tuple[Rect64, ...]) -> EditSession:
+        """A retusálási régiók (#148, PicasaPy-saját `retouch=1,<rect64>...;`
+        kiterjesztés, ld. `picasapy.ini.retouch`) beállítása/cseréje — a
+        crop64/tilt mintájára legfeljebb egy `retouch` réteg lehet a láncban.
+
+        Üres `regions`-nál egyenértékű a `clear_retouch()`-csal (a puszta
+        `retouch=1;` flag régió nélkül nem ír be semmit — a lánc-elem
+        megléte nélkül nem lenne mit renderelni).
+
+        Args:
+            regions: A retusálandó relatív [0..1] téglalapok.
+
+        Returns:
+            Új EditSession.
+        """
+        if not regions:
+            return self.clear_retouch()
+        new_op = build_retouch_op(regions)
+        return self._with_single_layer(
+            lambda op: op.matches(RETOUCH_FILTER_NAME), new_op
+        )
+
+    def clear_retouch(self) -> EditSession:
+        """A retusálási réteg eltávolítása."""
+        new_ops = [op for op in self.ops if not op.matches(RETOUCH_FILTER_NAME)]
+        return EditSession(ops=tuple(new_ops))
+
+    def retouch_regions(self) -> tuple[Rect64, ...]:
+        """A jelenlegi retusálási régiók.
+
+        Hibás/érvénytelen rect64-nél is üres tuple-t ad (nem dob) — a
+        `crop()`/`tilt_param()` #301-mintáját követve idegen/sérült lánc
+        olvasása se szökjön ki kivétellel.
+
+        Returns:
+            A dekódolt régiók, vagy üres tuple ha nincs (érvényes) retouch.
+        """
+        for op in self.ops:
+            if op.matches(RETOUCH_FILTER_NAME):
+                try:
+                    return parse_retouch_regions(op)
+                except ValueError:
+                    return ()
+        return ()
 
     def copy_effects(self) -> tuple[FilterOp, ...]:
         """Az effektlánc (filters=, benne a crop64-gyel) „vágólap"-pillanatképe (#152).
