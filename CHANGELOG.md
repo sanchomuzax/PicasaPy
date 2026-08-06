@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.12] – 2026-08-06
+
+### Javítva
+- **Alsó sáv reszponzivitása (#406):** szűk ablaknál (pl. fél képernyő)
+  a gombok már nem lógnak ki — a feliratok helyett ikonok jelennek meg,
+  a csúszka zsugorodik. A váltás a feliratok TÉNYLEGES szélességét méri,
+  így nyelvtől és rendszerbetűtől függetlenül sosem vág le semmit.
+
 ## [0.6.11] – 2026-08-06
 
 ### Javítva
