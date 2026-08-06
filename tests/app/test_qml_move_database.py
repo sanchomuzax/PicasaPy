@@ -199,3 +199,22 @@ class TestStartMove:
         qt_app.processEvents()
         close_button = _child(window, "moveDatabaseCloseButton")
         assert close_button.property("enabled") is False
+
+
+class TestRelocateControllerQtProperty:
+    """#377: a `currentLocation` Qt-Property kell legyen — sima Python-
+    property-ként a QML `undefined`-et olvasott, és induláskor
+    "Unable to assign [undefined] to QString" figyelmeztetés jött."""
+
+    def test_current_location_qt_property(self, tmp_path, qt_app):
+        from picasapy.app.relocate_controller import RelocateController
+
+        ctl = RelocateController(
+            tmp_path / "index.db", tmp_path / "thumbs", tmp_path / "cfg"
+        )
+        mo = ctl.metaObject()
+        nevek = {str(mo.property(i).name()) for i in range(mo.propertyCount())}
+        assert "currentLocation" in nevek
+        # a QMetaObject-úton olvasott érték soha nem undefined/None
+        assert isinstance(ctl.property("currentLocation"), str)
+        assert ctl.property("currentLocation")
