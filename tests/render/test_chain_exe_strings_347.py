@@ -8,6 +8,18 @@ nem futtatunk rájuk kitalált implementációt (MEMORY 2026-07-30, őszinteség
 szabály). A `picnik=1;` ez alól kivétel: az nem effekt, hanem boolean
 jelző-token (mint a már ismert `redeye=1;`/`retouch=1;`), ezért érvényes
 no-op-ként nyelődik el — nem kerül a kihagyott-listába.
+
+A #347 lezáró auditja (2026-08-06) szerint a hét eredeti név közül HAT
+mostanra rendezett: `glow` (v1) golden-mérve, `RoundedEdges`/`Matte`/
+`NightVision` a #381 filterdesc-csővezetéken renderel, `picnik` no-op
+jelzőként nyelődik el, és `grain` (v1) is renderel (ld. lent,
+`TestGrainV1NowRendered`) — ez a `filterdesc-registry.md` szerint a
+`grain2`-vel MEGEGYEZŐ, paraméter nélküli "Film Grain" oneclick család régi
+tagja, ezért a már golden-mért `grain2`-modellt (`apply_grain`) használja
+KÖZELÍTÉSKÉNT (a `grain` v1-re önmagára nincs külön golden-mérés). Egyedül
+`radtint` maradt ISMERETLEN: a `filterdesc.xml` csak a `Feather` csúszkát és
+a színkerék-paramétert dokumentálja, a tényleges csővezetéket (a `glow`
+logaritmikus sugarához hasonlóan) nem — ehhez golden-mérés kell (#317).
 """
 
 from __future__ import annotations
@@ -18,13 +30,12 @@ import pytest
 from picasapy.ini.filters import parse_filters
 from picasapy.render.chain import KNOWN_UNRENDERED_OPS, apply_filters
 
-#: `roundededges`, `matte`, `nightvision` az #381-ben MEGKAPTA az egzakt
-#: csővezetéket a `filterdesc.xml` alapján — kikerültek a listáról, ld.
-#: `TestGlimmerNowRendered` lent.
-_NEW_UNRENDERED_KEYS = (
-    "grain",
-    "radtint",
-)
+#: `roundededges`, `matte`, `nightvision` az #381-ben, `grain` (v1) a
+#: #347-es lezáró auditban (2026-08-06) MEGKAPTA az egzakt/közelítő
+#: csővezetéket — kikerültek a listáról, ld. `TestGlimmerNowRendered` és
+#: `TestGrainV1NowRendered` lent. Egyedül `radtint` maradt: a
+#: `filterdesc.xml` nem közöl hozzá csővezetéket, golden-mérés kell (#317).
+_NEW_UNRENDERED_KEYS = ("radtint",)
 
 
 @pytest.fixture
@@ -50,7 +61,6 @@ class TestKnownUnrenderedRegistry:
     @pytest.mark.parametrize(
         ("spelled", "key"),
         [
-            ("grain", "grain"),
             ("radtint", "radtint"),
         ],
     )
@@ -64,10 +74,10 @@ class TestKnownUnrenderedRegistry:
         # renderelhetetlen egy láncban: az ismert effekt hasson, a másik
         # csak jelentve legyen
         result, skipped = apply_filters(
-            sample, parse_filters("Invert=1;grain=1;")
+            sample, parse_filters("Invert=1;radtint=1;")
         )
         assert not np.array_equal(result, sample), "az Invert lefutott"
-        assert skipped == ("grain",)
+        assert skipped == ("radtint",)
 
 
 class TestGlimmerNowRendered:
@@ -115,13 +125,43 @@ class TestPicnikNoopMarker:
 
     def test_uj_es_ismeretlen_egyszerre_a_kihagyott_listaban(self, sample):
         # egy teljesen ismeretlen (soha nem dokumentált) név és egy #347-es
-        # felismert név is a kihagyott-listába kerül — a lista NEM
-        # különbözteti meg az API szintjén, a KNOWN_UNRENDERED_OPS regiszter
-        # felelős ezért a downstream jelentésben
+        # felismert-de-renderelhetetlen név is a kihagyott-listába kerül —
+        # a lista NEM különbözteti meg az API szintjén, a
+        # KNOWN_UNRENDERED_OPS regiszter felelős ezért a downstream
+        # jelentésben
         result, skipped = apply_filters(
-            sample, parse_filters("totallyunknownfilter=1;grain=1;")
+            sample, parse_filters("totallyunknownfilter=1;radtint=1;")
         )
         assert np.array_equal(result, sample)
-        assert skipped == ("totallyunknownfilter", "grain")
-        assert "grain" in KNOWN_UNRENDERED_OPS
+        assert skipped == ("totallyunknownfilter", "radtint")
+        assert "radtint" in KNOWN_UNRENDERED_OPS
         assert "totallyunknownfilter" not in KNOWN_UNRENDERED_OPS
+
+
+class TestGrainV1NowRendered:
+    """#347 lezáró audit (2026-08-06): a `grain` (v1) a `filterdesc-
+    registry.md` szerint a `grain2`-vel MEGEGYEZŐ, paraméter nélküli
+    "Film Grain" oneclick család régi tagja (`grain` = "Film Grain (Old)",
+    `grain2` = "Film Grain" — sem az egyik, sem a másik sorhoz nincs
+    csúszka/szín/kurzor dokumentálva, csak a `fullres+slow` sávjelző
+    különbözik). Mivel a `grain` v1-re önmagára nincs külön golden-mérés,
+    a már golden-mért `grain2`-modellt (`apply_grain`, ld.
+    `docs/specs/filters-decoded.md` MÉRT sora) használjuk KÖZELÍTÉSKÉNT —
+    ugyanaz a minta, mint a `glow`/`glow2`, `unsharp`/`unsharp2`,
+    `finetune`/`finetune2` v1/v2 párosításoknál.
+    """
+
+    def test_mar_nem_a_kihagyott_regiszterben(self):
+        assert "grain" not in KNOWN_UNRENDERED_OPS
+
+    def test_a_lanc_tenylegesen_renderel(self, sample):
+        result, skipped = apply_filters(sample, parse_filters("grain=1;"))
+        assert skipped == (), "grain: a lánc még mindig kihagyja"
+        assert not np.array_equal(result, sample)
+
+    def test_grain_es_grain2_ugyanazt_a_modellt_hasznalja(self, sample):
+        # mindkettő a determinisztikus (seed=0) apply_grain-t hívja —
+        # paraméter nélküli oneclick lévén a kimenetnek meg kell egyeznie
+        grain_result, _ = apply_filters(sample, parse_filters("grain=1;"))
+        grain2_result, _ = apply_filters(sample, parse_filters("grain2=1;"))
+        assert np.array_equal(grain_result, grain2_result)
