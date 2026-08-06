@@ -23,6 +23,9 @@ MenuBar {
     signal selectAllRequested()
     signal clearSelectionRequested()
     signal folderManagerRequested()
+    // #350: Eszközök → Beállítások... (options.fen) — az OptionsDialog
+    // megnyitását a Main.qml köti be (forró fájl, az integrátor dolga)
+    signal optionsRequested()
     // #287: Duplikátum-kereső ablak megnyitása
     signal dedupRequested()
     // #368: Eszközök → Kísérleti → Adatbázis áthelyezése
@@ -502,7 +505,14 @@ MenuBar {
             }
         }
         MenuSeparator {}
-        MenuItem { text: qsTr("Options..."); enabled: false }
+        // #350: az OptionsDialog.qml megépült (9/8 fülős options.fen
+        // paritás) — a jelzés itt fut ki, a dialógus példányosítása és a
+        // signal bekötése a Main.qml-ben (forró fájl) az integrátoré
+        MenuItem {
+            objectName: "menuToolsOptions"
+            text: qsTr("Options...")
+            onTriggered: bar.optionsRequested()
+        }
     }
     Menu {
         title: qsTr("&Help")
