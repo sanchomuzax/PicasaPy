@@ -21,7 +21,7 @@ import logging
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from picasapy.index.relocate import (
     RelocationCancelled,
@@ -65,7 +65,11 @@ class RelocateController(QObject):
         self._config_dir = Path(config_dir)
         self._stop_event: threading.Event | None = None
 
-    @property
+    # #377: Qt-Property kell (nem sima @property) — a QML a sima Python-
+    # property-t nem látja, és induláskor "Unable to assign [undefined] to
+    # QString" figyelmeztetést adott. Az érték konstans (az áthelyezés
+    # újraindítás után érvényesül), ezért constant=True.
+    @Property(str, constant=True)
     def currentLocation(self) -> str:  # noqa: N802 — QML-property-stílus
         """A jelenlegi (egyesített) adatgyökér — a `pathbox
         name="current_location"` mezőnek. Az index és a cache külön XDG-
