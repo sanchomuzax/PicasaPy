@@ -37,6 +37,8 @@ from . import formatting
 from .appearance_controller import AppearanceMixin
 from .language_controller import LanguageMixin
 from .create_controller import CreateMixin
+from .custom_collections_controller import CustomCollectionsMixin
+from .folder_date_controller import FolderDateMixin
 from .effects_controller import EffectsClipboardMixin
 from .export_controller import ExportMixin
 from .geo_controller import GeoMixin
@@ -68,6 +70,8 @@ def _clamp_folder_pane_width(width: int) -> int:
 
 
 class AppController(
+    CustomCollectionsMixin,
+    FolderDateMixin,
     SearchMixin,
     KeywordsMixin,
     PhotoOpsMixin,

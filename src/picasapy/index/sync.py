@@ -16,7 +16,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from picasapy.ini import IniDocument, load_document
+from picasapy.ini import IniDocument, load_document, read_folder_date_override
 from picasapy.ini.albums import albums_of, parse_album_refs
 from picasapy.metadata import EMPTY_METADATA, read_file_metadata
 from picasapy.scanner import (
@@ -342,14 +342,28 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
             _upsert_photo(conn, folder_id, scan, media, ini_fields)
     _prune_photos(conn, folder_id, [media.name for media in scan.files])
     _sync_albums(conn, folder_id, document)
-    # mappa-dátum (Picasa): automatikusan a legrégebbi felvétel ideje
+    _sync_folder_date(conn, folder_id, document)
+    return new_count
+
+
+def _sync_folder_date(
+    conn: sqlite3.Connection, folder_id: int, document: IniDocument | None
+) -> None:
+    """Mappa-dátum (#320): a `.picasa.ini` `[Picasa]` `date=` kézi
+    felülírása elsőbbséget élvez; ennek hiányában az alapértelmezett Picasa-
+    viselkedés — automatikusan a legrégebbi felvétel ideje."""
+    override = read_folder_date_override(document) if document else None
+    if override is not None:
+        conn.execute(
+            "UPDATE folders SET date = ? WHERE id = ?", (override, folder_id)
+        )
+        return
     conn.execute(
         "UPDATE folders SET date = ("
         " SELECT MIN(p.taken_at) FROM photos p WHERE p.folder_id = ?"
         ") WHERE id = ?",
         (folder_id, folder_id),
     )
-    return new_count
 
 
 def _upsert_photo(

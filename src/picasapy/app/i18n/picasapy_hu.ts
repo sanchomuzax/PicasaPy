@@ -2,6 +2,51 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>FolderContextMenu</name>
+    <message>
+        <source>Move to Collection...</source>
+        <translation>Áthelyezés gyűjteménybe…</translation>
+    </message>
+    <message>
+        <source>New Collection...</source>
+        <translation>Új gyűjtemény…</translation>
+    </message>
+    <message>
+        <source>Set Folder Date...</source>
+        <translation>Mappa dátumának beállítása…</translation>
+    </message>
+</context>
+<context>
+    <name>NewCollectionDialog</name>
+    <message>
+        <source>New Collection</source>
+        <translation>Új gyűjtemény</translation>
+    </message>
+    <message>
+        <source>Collection name:</source>
+        <translation>Gyűjtemény neve:</translation>
+    </message>
+</context>
+<context>
+    <name>FolderDateDialog</name>
+    <message>
+        <source>Set Folder Date</source>
+        <translation>Mappa dátumának beállítása</translation>
+    </message>
+    <message>
+        <source>Folder date (YYYY-MM-DD):</source>
+        <translation>Mappa dátuma (ÉÉÉÉ-HH-NN):</translation>
+    </message>
+    <message>
+        <source>Enter the date as YYYY-MM-DD.</source>
+        <translation>A dátumot ÉÉÉÉ-HH-NN formában adja meg.</translation>
+    </message>
+    <message>
+        <source>Clear override (use oldest picture)</source>
+        <translation>Felülírás törlése (a legrégebbi kép számít)</translation>
+    </message>
+</context>
+<context>
     <name>RelocateController</name>
     <message>
         <source>Choose a new database location first.</source>
