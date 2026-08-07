@@ -34,6 +34,7 @@ CreateDialogs 1.0 CreateDialogs.qml
 PlacesPanel 1.0 PlacesPanel.qml
 AboutDialog 1.0 AboutDialog.qml
 ImportProgressPanel 1.0 ImportProgressPanel.qml
+BatchEditProgressPanel 1.0 BatchEditProgressPanel.qml
 PerfMonitorPanel 1.0 PerfMonitorPanel.qml
 PicasaImportDialog 1.0 PicasaImportDialog.qml
 ImportDropArea 1.0 ImportDropArea.qml
