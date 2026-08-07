@@ -270,7 +270,7 @@ retus-régiók kódolása. Mind a négy **méréssel** oldható meg, kutatással
 
 | kő | mit adhat | költség |
 |---|---|---|
-| **`red.cfg` szerkezete** (2,28 MB) | a Neven-detektor kaszkád-felépítése | nagy, és nem használható (zárt modell) |
+| ~~**`red.cfg` szerkezete**~~ | **LEZÁRVA (2026-08-07):** entrópia **7,2–7,4 bit/bájt** a fájl egészében → **tömörített vagy sűrűn kvantált** adat; nincs olvasható szöveg, nincs értelmes float-tömb; ismétlődő 4 bájtos rekord-jelölő (`00 03 17 00`). A modell a motor nélkül nem fejthető ki — **és nem is használható**: a Google tanított súlyai. | — |
 | **Import/export tábla** (mely DLL-függvények) | képesség-térkép: mit tudott natívan | kicsi, közepes haszon |
 | ~~**`.rdata` konstans-táblák**~~ | **LEZÁRVA (2026-08-07): a szűrő-görbék NINCSENEK beégetve.** Ld. lent. | — |
 | **13 natív dialógus** (`RT_DIALOG`) | a korai/rendszerszintű ablakok | kicsi |
