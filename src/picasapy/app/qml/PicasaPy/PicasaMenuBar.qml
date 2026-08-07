@@ -91,6 +91,13 @@ MenuBar {
     property bool hasAllEffectsClipboard: false
     signal copyAllEffectsRequested()
     signal pasteAllEffectsRequested()
+    // #425: Kép ▸ Csoportos szerkesztés — a kijelölt N kép mindegyikére
+    // egyszerre alkalmazott egykattintásos effekt (`controller.
+    // applyEffectMany`); a `name` a `batch_effect_controller._KNOWN_EFFECTS`
+    // egyike ("autolight"/"autocolor"/"redeye"/"enhance"/"unsharp"/
+    // "grain2"/"warm"). A forgatás NEM ide tartozik — az a meglévő
+    // `rotateRightMany`/`rotateLeftMany` úton fut, közvetlenül a Main.qml-ből.
+    signal batchApplyEffectRequested(string name)
 
     // #327: gyorsbillentyűk azoknak az AKTÍV menüpontoknak, amelyeknek
     // még nincs élő bekötésük máshol (a többi már a Main.qml globális
@@ -444,11 +451,77 @@ MenuBar {
     Menu {
         title: qsTr("&Picture")
         PicasaMenuItem { text: qsTr("View and Edit") + "\tCtrl+3"; placeholder: true }
-        // #324 audit („eltérő"): eredetiben almenü — a tartalma a
-        // screenshotokból nem derül ki, egyelőre üres/inaktív almenü
+        // #425 (K.1 szakasz, ui-audit-menus.md): az almenü teljes tartalma
+        // az `eMenuPicture` osztályból ismert — a kijelölt N kép
+        // MINDEGYIKÉRE egyszerre alkalmazott egykattintásos effekt
+        // (`controller.applyEffectMany`, `batch_effect_controller`).
         Menu {
+            objectName: "menuPictureBatchEdit"
             title: qsTr("Batch Edit")
-            enabled: false
+            enabled: bar.photoActionsEnabled
+            MenuItem {
+                objectName: "menuBatchAutoContrast"
+                text: qsTr("Auto Contrast")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("autolight")
+            }
+            MenuItem {
+                objectName: "menuBatchAutoColor"
+                text: qsTr("Auto Color")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("autocolor")
+            }
+            MenuItem {
+                objectName: "menuBatchAutoRedeye"
+                text: qsTr("Auto Redeye Fix")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("redeye")
+            }
+            MenuItem {
+                objectName: "menuBatchEnhance"
+                text: qsTr("I'm Feeling Lucky")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("enhance")
+            }
+            MenuItem {
+                objectName: "menuBatchSharpen"
+                text: qsTr("Sharpen")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("unsharp")
+            }
+            MenuItem {
+                objectName: "menuBatchFilmGrain"
+                text: qsTr("Film Grain")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("grain2")
+            }
+            MenuItem {
+                objectName: "menuBatchWarmify"
+                text: qsTr("Warmify")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("warm")
+            }
+            MenuSeparator {}
+            MenuItem {
+                objectName: "menuBatchRotateRight"
+                text: qsTr("Rotate Right")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("rotate_cw")
+            }
+            MenuItem {
+                objectName: "menuBatchRotateLeft"
+                text: qsTr("Rotate Left")
+                enabled: bar.photoActionsEnabled
+                onTriggered: bar.batchApplyEffectRequested("rotate_ccw")
+            }
+            MenuSeparator {}
+            // #425 5. pont: a `docs/specs/` a szöveg-overlay index-
+            // lefedettségét nem dokumentálja (van-e a kijelölésben szöveg-
+            // réteges kép) — a feltételes engedélyezéshez szükséges adat
+            // jelenleg nincs meg olcsón, ezért egyelőre placeholder
+            // (ld. `batch_effect_controller` modul-docstring).
+            PicasaMenuItem { text: qsTr("Show Text"); placeholder: true }
+            PicasaMenuItem { text: qsTr("Hide Text"); placeholder: true }
         }
         PicasaMenuItem { text: qsTr("Undo All Edits"); placeholder: true }
         MenuSeparator {}

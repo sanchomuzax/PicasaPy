@@ -35,6 +35,7 @@ from picasapy.ini import load_document, update_document
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
 from .appearance_controller import AppearanceMixin
+from .batch_effect_controller import BatchEffectMixin
 from .language_controller import LanguageMixin
 from .create_controller import CreateMixin
 from .custom_collections_controller import CustomCollectionsMixin
@@ -75,6 +76,7 @@ class AppController(
     SearchMixin,
     KeywordsMixin,
     PhotoOpsMixin,
+    BatchEffectMixin,
     ExportMixin,
     EffectsClipboardMixin,
     PerfMonitorMixin,

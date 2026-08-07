@@ -367,6 +367,20 @@ ApplicationWindow {
         hasAllEffectsClipboard: controller ? controller.hasAllEffectsClipboard : false
         onCopyAllEffectsRequested: controller.copyAllEffects(window.selectedRows())
         onPasteAllEffectsRequested: controller.pasteAllEffects(window.selectedRows())
+        // #425: Kép ▸ Csoportos szerkesztés — a `batch_effect_controller.
+        // BatchEffectMixin`-t hívja, ugyanazon a rács-sorindex mintán
+        // a forgatás a MEGLÉVŐ (szinkron, gyors) rotateRightMany/
+        // rotateLeftMany úton fut, nem az applyEffectMany háttérszálán —
+        // a `filters=`-t bővítő 7 effekttől eltérően nem igényel ini-
+        // láncbővítést, csak a rotate= kulcs cseréjét (ld. PhotoOpsMixin).
+        // A kötegelt visszavonás (`controller.undoBatchEdit`/
+        // `canUndoBatchEdit`) egyelőre — a #426/#152 „Paste All Effects"
+        // undóihoz hasonlóan — csak a vezérlőn elérhető, UI-gomb nélkül.
+        onBatchApplyEffectRequested: (name) => {
+            if (name === "rotate_cw") controller.rotateRightMany(window.selectedRows())
+            else if (name === "rotate_ccw") controller.rotateLeftMany(window.selectedRows())
+            else controller.applyEffectMany(window.selectedRows(), name)
+        }
     }
 
     // #17: Elrejtés/Megjelenítés a kijelölésre; elrejtés után a kijelölést
@@ -855,6 +869,21 @@ ApplicationWindow {
         // felülírja a kötést — a panel ott marad, ahova a felhasználó tette
         x: parent.width - width - 24
         y: 56
+    }
+
+    // #425: lebegő „Csoportos szerkesztés" folyamat-panel — az
+    // ImportProgressPanel mintájára, Mégse gombbal (megszakítható köteg)
+    BatchEditProgressPanel {
+        id: batchEditPanel
+        objectName: "batchEditProgressPanel"
+        z: 90
+        visible: controller ? controller.batchEditActive : false
+        folderName: controller ? controller.batchEditFolderName : ""
+        doneCount: controller ? controller.batchEditDoneCount : 0
+        totalCount: controller ? controller.batchEditTotalCount : 0
+        onCancelRequested: controller.cancelBatchEdit()
+        x: parent.width - width - 24
+        y: 56 + importPanel.height + 12
     }
 
     // #211: lebegő „Teljesítmény-monitor" panel — a Súgó menüből

@@ -1861,6 +1861,24 @@
     </message>
 </context>
 <context>
+    <name>BatchEditProgressPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/BatchEditProgressPanel.qml" line="38"/>
+        <source>Batch Edit</source>
+        <translation>Csoportos szerkesztés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/BatchEditProgressPanel.qml" line="80"/>
+        <source>%1 / %2 folders</source>
+        <translation>%1 / %2 mappa</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/BatchEditProgressPanel.qml" line="90"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+</context>
+<context>
     <name>LightboxHeader</name>
     <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
@@ -2696,6 +2714,61 @@
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="238"/>
         <source>Batch Edit</source>
         <translation>Csoportos szerkesztés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="253"/>
+        <source>Auto Contrast</source>
+        <translation>Automatikus kontraszt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="259"/>
+        <source>Auto Color</source>
+        <translation>Automatikus szín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265"/>
+        <source>Auto Redeye Fix</source>
+        <translation>Automatikus vörösszem-eltávolítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="271"/>
+        <source>I&apos;m Feeling Lucky</source>
+        <translation>Jó napom van</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277"/>
+        <source>Sharpen</source>
+        <translation>Élesítés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="283"/>
+        <source>Film Grain</source>
+        <translation>Filmszemcse</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="289"/>
+        <source>Warmify</source>
+        <translation>Melegítés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="296"/>
+        <source>Rotate Right</source>
+        <translation>Forgatás jobbra</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="302"/>
+        <source>Rotate Left</source>
+        <translation>Forgatás balra</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="313"/>
+        <source>Show Text</source>
+        <translation>Szöveg megjelenítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="314"/>
+        <source>Hide Text</source>
+        <translation>Szöveg elrejtése</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="239"/>
