@@ -52,10 +52,14 @@ def library(tmp_path):
 
 @pytest.fixture
 def dedup(qt_app, library, provider):
+    """#438: a teszt végén BEVÁRJA a keresés háttérszálát (a #430 SIGSEGV-
+    osztály elkerülése), amíg a controller még él."""
     from picasapy.app.dedup_controller import DedupController
 
     _lib, _other, db = library
-    return DedupController(db, provider)
+    dedup = DedupController(db, provider)
+    yield dedup
+    assert dedup.waitForBackgroundWorkers(30.0), "a dedup háttérszála nem állt le"
 
 
 def _register_main_grid(provider, db, folder):

@@ -49,7 +49,10 @@ def controller(qt_app, tmp_path, library):
     )
     ctl._reload()
     ctl.selectFolder(str(library))
-    return ctl
+    yield ctl
+    # #438: a kötegelt effekt háttérszála bevárva, MÍG a controller még él
+    # — a #430 SIGSEGV-osztály elkerülése (BackgroundWorkerMixin).
+    assert ctl.waitForBackgroundWorkers(30.0), "a batch-effect háttérszála nem állt le"
 
 
 def _rows_by_name(controller, *names) -> list:
@@ -221,3 +224,21 @@ class TestCancelBatchEdit:
         # a megszakított köteg is visszavonható (csak a ténylegesen megírt
         # mappára vonatkozik)
         assert controller.canUndoBatchEdit is True
+
+
+class TestBackgroundThreadTeardown:
+    """#438 (a #430 SIGSEGV-osztály maradéka): a kötegelt effekt
+    háttérszála bevárható legyen, mielőtt a controller megsemmisül."""
+
+    def test_wait_without_a_run_returns_immediately(self, controller):
+        assert controller.waitForBackgroundWorkers(0.0)
+
+    def test_wait_joins_the_worker_thread(self, controller, library):
+        _run(
+            controller,
+            lambda: controller.applyEffectMany(
+                _rows_by_name(controller, "x.jpg"), "autolight"
+            ),
+        )
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()

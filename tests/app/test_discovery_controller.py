@@ -25,9 +25,13 @@ def added(monkeypatch):
 
 @pytest.fixture
 def controller(qt_app, added):
+    """#438: a teszt végén BEVÁRJA a felderítés háttérszálát (a #430
+    SIGSEGV-osztály elkerülése), amíg a controller még él."""
     from picasapy.app.discovery_controller import DiscoveryController
 
-    return DiscoveryController(add_folder=added.append)
+    ctl = DiscoveryController(add_folder=added.append)
+    yield ctl
+    assert ctl.waitForBackgroundWorkers(30.0), "a felderítés háttérszála nem állt le"
 
 
 class TestDiscoverPicasa:
@@ -135,3 +139,21 @@ class TestOpenImportDialog:
         controller.dialogRequested.connect(lambda: events.append(True))
         controller.openImportDialog()
         assert events == [True]
+
+
+class TestBackgroundThreadTeardown:
+    """#438 (a #430 SIGSEGV-osztály maradéka): a felderítés háttérszála
+    bevárható legyen, mielőtt a controller megsemmisül."""
+
+    def test_wait_without_a_run_returns_immediately(self, controller):
+        assert controller.waitForBackgroundWorkers(0.0)
+
+    def test_wait_joins_the_worker_thread(self, controller, monkeypatch):
+        monkeypatch.setattr(
+            "picasapy.app.discovery_controller.discover_installations", lambda: ()
+        )
+        loop = _quit_on(controller.discoveryFinished)
+        controller.discoverPicasa()
+        loop.exec()
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()

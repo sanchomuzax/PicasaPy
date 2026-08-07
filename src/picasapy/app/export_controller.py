@@ -7,7 +7,6 @@ használják."""
 
 from __future__ import annotations
 
-import threading
 from pathlib import Path
 
 from PySide6.QtCore import Signal, Slot
@@ -20,9 +19,10 @@ from picasapy.export import (
 )
 
 from .formatting import to_local_path
+from .worker_thread import BackgroundWorkerMixin
 
 
-class ExportMixin:
+class ExportMixin(BackgroundWorkerMixin):
     """A kijelölés háttérszálas exportja célmappába."""
 
     # #16: export kész — (exportált darab, sikertelen darab); háttérszálból
@@ -93,4 +93,5 @@ class ExportMixin:
                 self.exportFailedDetails.emit(details)
             self.exportFinished.emit(len(report.exported), len(report.failed))
 
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-export")

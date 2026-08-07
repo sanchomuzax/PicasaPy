@@ -44,7 +44,10 @@ def controller(qt_app, tmp_path, library):
     )
     ctl._reload()
     ctl.selectFolder(str(library))
-    return ctl
+    yield ctl
+    # #438: az átnevezés háttérszála bevárva, MÍG a controller még él —
+    # a #430 SIGSEGV-osztály elkerülése (BackgroundWorkerMixin).
+    assert ctl.waitForBackgroundWorkers(30.0), "az átnevezés háttérszála nem állt le"
 
 
 def _rows_by_name(controller, *names) -> list:
@@ -136,3 +139,20 @@ class TestRenamePhotosMany:
         controller.renamePhotosMany(rows, "   ", False, False)
         assert (library / "a.jpg").exists()
         assert (library / "b.jpg").exists()
+
+
+class TestBackgroundThreadTeardown:
+    """#438 (a #430 SIGSEGV-osztály maradéka): a tömeges átnevezés
+    háttérszála bevárható legyen, mielőtt a controller megsemmisül."""
+
+    def test_wait_without_a_run_returns_immediately(self, controller):
+        assert controller.waitForBackgroundWorkers(0.0)
+
+    def test_wait_joins_the_worker_thread(self, controller, library):
+        rows = _rows_by_name(controller, "a.jpg", "b.jpg")
+        _do_rename(
+            controller,
+            lambda: controller.renamePhotosMany(rows, "nyaralas", False, False),
+        )
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()

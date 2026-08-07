@@ -31,11 +31,12 @@ from picasapy.index.relocate import (
 
 from .data_location import write_data_root
 from .formatting import to_local_path
+from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
 
 
-class RelocateController(QObject):
+class RelocateController(BackgroundWorkerMixin, QObject):
     """A `MoveDatabaseDialog.qml`/`MovingDatabaseDialog.qml` háttér-hídja:
     cél-választás, háttérszálas áthelyezés haladás-jelzéssel, hiba/
     megszakítás-kezelés."""
@@ -92,9 +93,12 @@ class RelocateController(QObject):
         stop_event = threading.Event()
         self._stop_event = stop_event
         self.relocateStarted.emit()
-        threading.Thread(
-            target=self._run_relocate, args=(new_root, stop_event), daemon=True
-        ).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
+        # a `_stop_event` a megszakítási jelző marad, ez csak a szál
+        # bevárhatóságát adja hozzá.
+        self._start_background(
+            self._run_relocate, args=(new_root, stop_event), name="picasapy-relocate"
+        )
 
     @Slot()
     def cancelRelocate(self) -> None:

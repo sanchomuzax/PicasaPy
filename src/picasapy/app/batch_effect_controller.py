@@ -37,6 +37,7 @@ from picasapy.ini import update_document
 from picasapy.scanner import PICASA_INI_NAME
 
 from .photo_ops_controller import _WRITE_ERRORS
+from .worker_thread import BackgroundWorkerMixin
 
 # A K.1 táblázat 7, `filters=` láncot bővítő tétele — a forgatás a meglévő
 # rotateRightMany/rotateLeftMany úton fut, a Szöveg-tételek placeholderek.
@@ -71,7 +72,7 @@ def _write_filters(document, section_name: str, session: EditSession):
     return document.with_value(section_name, "filters", session.to_value())
 
 
-class BatchEffectMixin:
+class BatchEffectMixin(BackgroundWorkerMixin):
     """A Kép ▸ Csoportos szerkesztés almenü motorja (#425)."""
 
     # a lebegő haladás-panel állapota (az `ImportProgressPanel` mintája,
@@ -190,7 +191,8 @@ class BatchEffectMixin:
             self._batch_edit_undo = undo_batch if undo_batch else None
             self._batchEditWorkDone.emit()
 
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-batcheffect")
 
     def _sync_tree_locked(self, folder: str) -> None:
         """A `folder` resync-je saját (a hívó szálán rövid életű)

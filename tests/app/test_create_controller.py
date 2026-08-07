@@ -37,7 +37,10 @@ def controller(qt_app, tmp_path, library):
         tmp_path / "index.db", (str(library),), provider, settings=settings
     )
     ctl.selectFolder(str(library / "nyaralas"))
-    return ctl
+    yield ctl
+    # #438: a kollázs/mozgófilm háttérszála bevárva, MÍG a controller még
+    # él — a #430 SIGSEGV-osztály elkerülése (BackgroundWorkerMixin).
+    assert ctl.waitForBackgroundWorkers(30.0), "a create-worker szál nem állt le"
 
 
 def _run(signal, action, timeout_ms=10000):
@@ -175,3 +178,23 @@ class TestExportMovie:
             lambda: controller.exportMovie([0], "", 720, 1.0), 2000,
         )
         assert arrived and args[0]
+
+
+class TestBackgroundThreadTeardown:
+    """#438 (a #430 SIGSEGV-osztály maradéka): a kollázs/mozgófilm
+    háttérszála bevárható legyen, mielőtt a controller megsemmisül."""
+
+    def test_wait_without_a_run_returns_immediately(self, controller):
+        assert controller.waitForBackgroundWorkers(0.0)
+
+    def test_wait_joins_the_collage_worker_thread(self, controller, tmp_path):
+        arrived, _args = _run(
+            controller.collageFinished,
+            lambda: controller.makeCollage(
+                [0, 1], "grid", (tmp_path / "kollazs.jpg").as_uri()
+            ),
+            20000,
+        )
+        assert arrived
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()

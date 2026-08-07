@@ -36,10 +36,30 @@ def added(request):
 
 
 @pytest.fixture
-def controller(qt_app, provider, added):
+def make_controller(qt_app):
+    """`ImportSourceController`-gyár, ami a teszt végén MEGVÁRJA a
+    háttérszálakat (#438, a #430 SIGSEGV-osztály elkerülése — a
+    `test_webexport_controller.py` mintája)."""
     from picasapy.app.import_source_controller import ImportSourceController
 
-    return ImportSourceController(provider, add_folder=added.append)
+    created = []
+
+    def _make(provider, add_folder):
+        controller = ImportSourceController(provider, add_folder=add_folder)
+        created.append(controller)
+        return controller
+
+    yield _make
+
+    for controller in created:
+        assert controller.waitForBackgroundWorkers(30.0), (
+            "az import-forrás háttérszála nem állt le"
+        )
+
+
+@pytest.fixture
+def controller(make_controller, provider, added):
+    return make_controller(provider, added.append)
 
 
 def _scan(controller, folder: str):
@@ -86,13 +106,11 @@ class TestScanSource:
         for item in items:
             assert item["thumbUrl"].startswith("image://thumbs/")
 
-    def test_no_provider_gives_empty_thumb_url(self, qt_app, tmp_path, added):
-        from picasapy.app.import_source_controller import ImportSourceController
-
+    def test_no_provider_gives_empty_thumb_url(self, make_controller, tmp_path, added):
         source = tmp_path / "kartya"
         source.mkdir()
         make_jpeg(source / "a.jpg")
-        controller = ImportSourceController(None, add_folder=added.append)
+        controller = make_controller(None, added.append)
 
         items, count = _scan(controller, str(source))
 
@@ -267,3 +285,34 @@ class TestRunImport:
         assert not (dest / "2024" / "2024-03-05" / "a.jpg").exists()
         assert len(failed_details) == 1
         assert "a.jpg" in failed_details[0][0]
+
+
+class TestBackgroundThreadTeardown:
+    """#438 (a #430 SIGSEGV-osztály maradéka): a szkennelő/importáló
+    háttérszál bevárható legyen, mielőtt a controller megsemmisül."""
+
+    def test_wait_without_a_run_returns_immediately(self, controller):
+        assert controller.waitForBackgroundWorkers(0.0)
+
+    def test_wait_joins_the_scan_worker_thread(self, controller, tmp_path):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg")
+        _scan(controller, str(source))
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()
+
+    def test_wait_joins_the_import_worker_thread(self, controller, tmp_path):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+        _scan(controller, str(source))
+
+        loop = _quit_on(controller.importFinished)
+        controller.runImport(str(dest), "{YYYY}/{YYYY}-{MM}-{DD}", False)
+        loop.exec()
+
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()

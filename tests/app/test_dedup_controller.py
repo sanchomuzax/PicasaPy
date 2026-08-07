@@ -49,17 +49,36 @@ def provider(tmp_path):
 
 
 @pytest.fixture
-def controller(qt_app, tmp_path, provider):
+def make_controller(qt_app):
+    """`DedupController`-gyár, ami a teszt végén MEGVÁRJA a háttérszálakat
+    (#438, a #430 SIGSEGV-osztály elkerülése — a `test_webexport_
+    controller.py` mintája)."""
     from picasapy.app.dedup_controller import DedupController
 
-    return DedupController(tmp_path / "index.db", provider)
+    created = []
+
+    def _make(db_path, provider):
+        dedup = DedupController(db_path, provider)
+        created.append(dedup)
+        return dedup
+
+    yield _make
+
+    for dedup in created:
+        assert dedup.waitForBackgroundWorkers(30.0), (
+            "a dedup-keresés háttérszála nem állt le"
+        )
+
+
+@pytest.fixture
+def controller(make_controller, tmp_path, provider):
+    return make_controller(tmp_path / "index.db", provider)
 
 
 class TestScanForDuplicates:
     def test_finds_exact_duplicate_group_with_thumb_urls(
-        self, qt_app, tmp_path, provider
+        self, make_controller, tmp_path, provider
     ):
-        from picasapy.app.dedup_controller import DedupController
 
         lib = tmp_path / "kepek"
         lib.mkdir()
@@ -69,7 +88,7 @@ class TestScanForDuplicates:
         with open_index(db) as conn:
             sync_tree(conn, lib)
 
-        dedup = DedupController(db, provider)
+        dedup = make_controller(db, provider)
         results = []
         dedup.scanFinished.connect(lambda groups: results.append(groups))
         loop = _quit_on(dedup.scanFinished)
@@ -87,8 +106,7 @@ class TestScanForDuplicates:
             assert item["thumbUrl"].startswith("image://thumbs/")
             assert item["thumbUrl"] != "image://thumbs/"
 
-    def test_finds_similar_group_for_resized_variant(self, qt_app, tmp_path, provider):
-        from picasapy.app.dedup_controller import DedupController
+    def test_finds_similar_group_for_resized_variant(self, make_controller, tmp_path, provider):
 
         lib = tmp_path / "kepek"
         lib.mkdir()
@@ -98,7 +116,7 @@ class TestScanForDuplicates:
         with open_index(db) as conn:
             sync_tree(conn, lib)
 
-        dedup = DedupController(db, provider)
+        dedup = make_controller(db, provider)
         results = []
         dedup.scanFinished.connect(lambda groups: results.append(groups))
         loop = _quit_on(dedup.scanFinished)
@@ -112,8 +130,7 @@ class TestScanForDuplicates:
         paths = {item["path"] for item in similar[0]["items"]}
         assert paths == {str(lib / "eredeti.jpg"), str(lib / "atmeretezett.jpg")}
 
-    def test_no_duplicates_yields_empty_list(self, qt_app, tmp_path, provider):
-        from picasapy.app.dedup_controller import DedupController
+    def test_no_duplicates_yields_empty_list(self, make_controller, tmp_path, provider):
 
         lib = tmp_path / "kepek"
         lib.mkdir()
@@ -122,7 +139,7 @@ class TestScanForDuplicates:
         with open_index(db) as conn:
             sync_tree(conn, lib)
 
-        dedup = DedupController(db, provider)
+        dedup = make_controller(db, provider)
         results = []
         dedup.scanFinished.connect(lambda groups: results.append(groups))
         loop = _quit_on(dedup.scanFinished)
@@ -132,11 +149,10 @@ class TestScanForDuplicates:
         assert results == [[]]
 
     def test_groups_and_items_are_plain_lists_not_tuples(
-        self, qt_app, tmp_path, provider
+        self, make_controller, tmp_path, provider
     ):
         """QML-nek adott adat mindig `list` legyen, soha `tuple` (a projekt
         szabálya) — enélkül a QML-oldali `.length` undefined lenne."""
-        from picasapy.app.dedup_controller import DedupController
 
         lib = tmp_path / "kepek"
         lib.mkdir()
@@ -146,7 +162,7 @@ class TestScanForDuplicates:
         with open_index(db) as conn:
             sync_tree(conn, lib)
 
-        dedup = DedupController(db, provider)
+        dedup = make_controller(db, provider)
         results = []
         dedup.scanFinished.connect(lambda groups: results.append(groups))
         loop = _quit_on(dedup.scanFinished)
@@ -160,8 +176,7 @@ class TestScanForDuplicates:
             for item in group["items"]:
                 assert isinstance(item, dict)
 
-    def test_scan_started_emitted_before_finished(self, qt_app, tmp_path, provider):
-        from picasapy.app.dedup_controller import DedupController
+    def test_scan_started_emitted_before_finished(self, make_controller, tmp_path, provider):
 
         lib = tmp_path / "kepek"
         lib.mkdir()
@@ -170,7 +185,7 @@ class TestScanForDuplicates:
         with open_index(db) as conn:
             sync_tree(conn, lib)
 
-        dedup = DedupController(db, provider)
+        dedup = make_controller(db, provider)
         events = []
         dedup.scanStarted.connect(lambda: events.append("started"))
         dedup.scanFinished.connect(lambda groups: events.append("finished"))
@@ -254,3 +269,18 @@ class TestDeleteOthers:
         controller.deleteOthers([str(keep), str(missing)], str(keep))
 
         assert failures[0][0] == str(missing)
+
+
+class TestBackgroundThreadTeardown:
+    """#438 (a #430 SIGSEGV-osztály maradéka): a keresés háttérszála
+    bevárható legyen, mielőtt a controller megsemmisül."""
+
+    def test_wait_without_a_run_returns_immediately(self, controller):
+        assert controller.waitForBackgroundWorkers(0.0)
+
+    def test_wait_joins_the_worker_thread(self, controller, tmp_path):
+        loop = _quit_on(controller.scanFinished)
+        controller.scanForDuplicates()
+        loop.exec()
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()

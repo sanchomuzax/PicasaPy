@@ -32,7 +32,6 @@ rácsban, ahogy a valódi Picasa importja is tenné.
 
 from __future__ import annotations
 
-import threading
 from pathlib import Path
 from typing import Callable
 
@@ -50,6 +49,7 @@ from picasapy.ini import load_document, save_document
 from picasapy.scanner import PICASA_INI_NAME, media_kind_of
 
 from .formatting import to_local_path
+from .worker_thread import BackgroundWorkerMixin
 
 # a soronkénti importálási hibákból ennyit mutatunk a UI-nak (az
 # `ExportMixin._EXPORT_FAILED_DETAILS_LIMIT` mintája) — tömeges hibánál a
@@ -92,7 +92,7 @@ def _preview_photo_record(index: int, candidate: ImportCandidate) -> PhotoRecord
     )
 
 
-class ImportSourceController(QObject):
+class ImportSourceController(BackgroundWorkerMixin, QObject):
     """Az `ImportSourceDialog.qml` háttér-hídja: forrás-szkennelés, majd
     másolás/áthelyezés a cél-mappa dátum-sablonja szerint."""
 
@@ -173,7 +173,8 @@ class ImportSourceController(QObject):
             ]
             self.sourceScanFinished.emit(items, len(candidates))
 
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-importsource-scan")
 
     @Slot(str, str, bool)
     def runImport(self, dest_folder: str, template: str, move: bool) -> None:
@@ -219,7 +220,8 @@ class ImportSourceController(QObject):
                 self._add_folder(str(dest_root))
             self.importFinished.emit(copied, total - copied)
 
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-importsource-run")
 
 
 def _import_one(path: Path, dest_folder: Path, move: bool) -> Path:

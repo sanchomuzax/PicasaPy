@@ -61,6 +61,7 @@ from picasapy.index import (
 )
 
 from .formatting import to_local_path
+from .worker_thread import BackgroundWorkerMixin
 
 # A nem-destruktív áthelyezés célmappájának neve, forrásmappánként —
 # létrehozva, ha még nincs (ld. `_move_one`).
@@ -143,7 +144,7 @@ def _grouped_paths(report) -> list[str]:
     return list(seen)
 
 
-class DedupController(QObject):
+class DedupController(BackgroundWorkerMixin, QObject):
     """A `DedupDialog.qml` háttér-hídja: keresés indítása és a csoportok
     feloldása (áthelyezés vagy törlés)."""
 
@@ -237,9 +238,12 @@ class DedupController(QObject):
         stop_event = threading.Event()
         self._stop_event = stop_event
         self.scanStarted.emit()
-        threading.Thread(
-            target=self._run_scan, args=(select_photos, stop_event), daemon=True
-        ).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
+        # a `_stop_event` a megszakítási jelző marad, ez csak a szál
+        # bevárhatóságát adja hozzá.
+        self._start_background(
+            self._run_scan, args=(select_photos, stop_event), name="picasapy-dedup"
+        )
 
     def _run_scan(self, select_photos, stop_event: threading.Event) -> None:
         """A worker-szál törzse: lekérdezés → keresés → jelzés.
