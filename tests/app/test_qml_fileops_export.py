@@ -380,7 +380,10 @@ class TestTrayExportButton:
 
 
 class TestCopyPasteEffectsMenu:
-    """#152: „Copy/Paste All Effects" — menü-bekötés QML-funkcionális teszttel."""
+    """#426: „Az összes effektus másolása/beillesztése" — a Szerkesztés menü
+    két tétele a `photo_ops_controller` kötegelt vágólap-motorját hívja
+    (NEM a #152-es `effects_controller`-t, amely a kép-specifikus
+    `crop64`-et is átvinné — ld. `docs/specs/filterdesc-registry.md`)."""
 
     def test_paste_disabled_until_copied_then_applies_to_selection(
         self, qml_app, qt_app
@@ -407,7 +410,7 @@ class TestCopyPasteEffectsMenu:
             copy_item, "triggered", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
-        assert controller.hasEffectsClipboard is True
+        assert controller.hasAllEffectsClipboard is True
 
         _select_row(window, qt_app, 1)  # b.jpg — a cél
         assert paste_item.property("enabled") is True
@@ -420,3 +423,42 @@ class TestCopyPasteEffectsMenu:
         ini_text = (lib / ".picasa.ini").read_text(encoding="utf-8")
         assert "[b.jpg]" in ini_text
         assert "filters=BRIT=1,e50,0.20;" in ini_text.split("[b.jpg]")[1]
+
+    def test_crop_and_redeye_are_not_transferred(self, qml_app, qt_app):
+        """#426 elfogadási kritérium: a kivágás/vörösszem/retus régióhoz/
+        képhez kötött, ezért az „Az összes effektus beillesztése" ezeket
+        NEM viheti át — ellentétben a #152-es (Kép menü) korábbi
+        motorjával, amely a crop64-et is átvinné."""
+        window, controller, lib, _engine = qml_app
+        (lib / ".picasa.ini").write_text(
+            "[a.jpg]\n"
+            "filters=enhance=1;crop64=1,45930000ba03defe;redeye=1;\n",
+            encoding="utf-8",
+        )
+        controller.resyncFolder(str(lib))
+        loop = QEventLoop()
+        controller.syncFinished.connect(loop.quit)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+        qt_app.processEvents()
+
+        copy_item = _child(window, "menuEditCopyEffects")
+        paste_item = _child(window, "menuEditPasteEffects")
+
+        _select_row(window, qt_app, 0)  # a.jpg — a forrás
+        QMetaObject.invokeMethod(
+            copy_item, "triggered", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        _select_row(window, qt_app, 1)  # b.jpg — a cél
+        QMetaObject.invokeMethod(
+            paste_item, "triggered", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        ini_text = (lib / ".picasa.ini").read_text(encoding="utf-8")
+        b_block = ini_text.split("[b.jpg]")[1]
+        assert "enhance=1" in b_block
+        assert "crop64" not in b_block
+        assert "redeye" not in b_block

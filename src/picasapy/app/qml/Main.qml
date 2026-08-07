@@ -130,6 +130,14 @@ ApplicationWindow {
         window.selectedIndexes = rows
         window.selectedIndex = rows.length > 0 ? rows[0] : -1
     }
+    // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — a jelenlegi
+    // nézet csillagos képeit jelöli ki (NEM a Mappák panel nézet-szűrője).
+    function selectStarred() {
+        var rows = Selection.starredRows(
+            controller.photos.rowCount(), controller.photos.starAt)
+        window.selectedIndexes = rows
+        window.selectedIndex = rows.length > 0 ? rows[0] : -1
+    }
     // #422: „Exportálás HTML-oldalként…" a mappa-kontextusmenüből — a
     // dialógus itt él (a menüsáv is ezt nyitja)
     function openWebExport() { webExportDialog.open() }
@@ -316,7 +324,9 @@ ApplicationWindow {
         onRescanRequested: controller.rescan()
         onAboutRequested: aboutDialog.open()
         onThumbSizePreset: function(size) { window.thumbSize = size }
-        onSelectStarredRequested: controller.showStarred()
+        // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
+        // nem szűr (a Mappák panel „Csillagozott" nézete külön: onStarredChosen)
+        onSelectStarredRequested: window.selectStarred()
         onSelectAllRequested: window.selectAll()
         onClearSelectionRequested: window.clearSelection()
         onFolderManagerRequested: folderManager.open()
@@ -348,13 +358,15 @@ ApplicationWindow {
         propertiesPanelOpen: window.propertiesPanelOpen
         onPropertiesPanelRequested:
             window.propertiesPanelOpen = !window.propertiesPanelOpen
-        // #152: „Copy/Paste All Effects" — a kijelölésre hat, a rács
-        // sorindexein keresztül (window.selectedRows() a meglévő mintát
-        // követi, ld. toggleHiddenSelection)
+        // #426: „Az összes effektus másolása/beillesztése" — a kijelölésre
+        // hat, a rács sorindexein keresztül (window.selectedRows() a
+        // meglévő mintát követi, ld. toggleHiddenSelection). A
+        // `photo_ops_controller.PhotoOpsMixin`-t hívja, NEM a #152-es
+        // `effects_controller`-t (az a crop64-et is átvinné).
         // #305: null-őr — ld. fenti Connections
-        hasEffectsClipboard: controller ? controller.hasEffectsClipboard : false
-        onCopyEffectsRequested: controller.copyEffects(window.selectedRows())
-        onPasteEffectsRequested: controller.pasteEffects(window.selectedRows())
+        hasAllEffectsClipboard: controller ? controller.hasAllEffectsClipboard : false
+        onCopyAllEffectsRequested: controller.copyAllEffects(window.selectedRows())
+        onPasteAllEffectsRequested: controller.pasteAllEffects(window.selectedRows())
     }
 
     // #17: Elrejtés/Megjelenítés a kijelölésre; elrejtés után a kijelölést
