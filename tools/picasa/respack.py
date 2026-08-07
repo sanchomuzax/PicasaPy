@@ -159,6 +159,41 @@ def decode_layer(data: bytes, entry: Entry) -> Layer:
     return Layer(entry.name, x0, y0, x1, y1, encoding, pixels)
 
 
+def encode_layer(layer: Layer) -> bytes:
+    """A dekódolt rétegből VISSZAÁLLÍTJA a nyers adatblokkot (a 13 bájtos
+    fejléc nélkül).
+
+    Ez a formátum-értés legerősebb próbája: ha a visszakódolt bájtsor azonos az
+    eredetivel, akkor a kódolást pontosan értjük, nem csak olvasni tudjuk. A
+    valódi `respack.yt`-n mind az 1365 RLE-réteg bájtra egyezik.
+
+    **Fontos:** a futamok NEM sorhatárra igazítottak — a kép egyetlen,
+    folytonos képpont-folyam (ezt épp a visszakódolási próba mutatta ki, ld.
+    `docs/specs/picasa-respack-format.md` 3.2).
+    """
+    if layer.encoding == ENC_EMPTY:
+        return b""
+    if layer.encoding == ENC_SOLID:
+        return bytes(layer.pixels[:4])
+    out = bytearray()
+    px = layer.pixels
+    total = layer.width * layer.height
+    i = 0
+    while i < total:
+        color = px[i * 4 : i * 4 + 4]
+        run = 1
+        while (
+            i + run < total
+            and run < 255
+            and px[(i + run) * 4 : (i + run) * 4 + 4] == color
+        ):
+            run += 1
+        out.append(run)
+        out += color
+        i += run
+    return bytes(out)
+
+
 def extract_tre(data: bytes, entry: Entry) -> str:
     """Egy `tre:` bejegyzés szövegének kinyerése."""
     return data[entry.offset : entry.end].decode("latin1")

@@ -148,6 +148,40 @@ class TestDekodolas:
             respack.decode_layer(pack, tre_entry)
 
 
+class TestVisszakodolas:
+    """Round-trip: a dekódolt rétegből vissza kell kapnunk az eredeti bájtokat.
+
+    Ez a formátum-értés legerősebb próbája — a valódi csomagon ez mutatta ki,
+    hogy az RLE-futamok NEM sorhatárra igazítottak.
+    """
+
+    def test_rle_bajtra_azonos(self, pack: bytes) -> None:
+        entry = respack.read_index(pack)[1]
+        layer = respack.decode_layer(pack, entry)
+        assert respack.encode_layer(layer) == RLE[respack.HEADER_SIZE :]
+
+    def test_tomor_kitoltes_bajtra_azonos(self, pack: bytes) -> None:
+        entry = respack.read_index(pack)[0]
+        layer = respack.decode_layer(pack, entry)
+        assert respack.encode_layer(layer) == SOLID[respack.HEADER_SIZE :]
+
+    def test_futam_atlog_a_sorhataron(self) -> None:
+        """Egyszínű 3x2-es kép: EGYETLEN 6-os futam, nem két 3-as."""
+        blob = _header(0, 0, 3, 2, respack.ENC_RLE) + bytes([6, 1, 2, 3, 255])
+        data = _build_pack([("layer:d/flat", blob)])
+        layer = respack.decode_layer(data, respack.read_index(data)[0])
+        assert respack.encode_layer(layer) == bytes([6, 1, 2, 3, 255])
+
+    def test_255_folotti_futam_kettevagva(self) -> None:
+        """A darabszám uint8 — 300 azonos képpont két futamra bomlik."""
+        blob = _header(0, 0, 300, 1, respack.ENC_RLE) + bytes(
+            [255, 9, 9, 9, 255]
+        ) + bytes([45, 9, 9, 9, 255])
+        data = _build_pack([("layer:d/long", blob)])
+        layer = respack.decode_layer(data, respack.read_index(data)[0])
+        assert respack.encode_layer(layer) == blob[respack.HEADER_SIZE :]
+
+
 class TestSzoveg:
     def test_tre_szoveg_kinyerese(self, pack: bytes) -> None:
         entry = respack.read_index(pack)[2]
