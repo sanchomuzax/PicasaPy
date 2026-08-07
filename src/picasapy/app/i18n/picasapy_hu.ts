@@ -2150,6 +2150,70 @@
         <source>Remove from Album</source>
         <translation>Eltávolítás az albumból</translation>
     </message>
+    <message>
+        <source>View and Edit</source>
+        <translation>Megjelenítés és szerkesztés</translation>
+    </message>
+    <message>
+        <source>Rotate Right</source>
+        <translation>Forgatás jobbra</translation>
+    </message>
+    <message>
+        <source>Rotate Left</source>
+        <translation>Forgatás balra</translation>
+    </message>
+    <message>
+        <source>Undo All Edits</source>
+        <translation>Összes szerkesztés visszavonása</translation>
+    </message>
+    <message>
+        <source>Unhide</source>
+        <translation>Megjelenítés</translation>
+    </message>
+    <message>
+        <source>Move to New Folder...</source>
+        <translation>Áthelyezés új mappába…</translation>
+    </message>
+    <message>
+        <source>Split Folder Here...</source>
+        <translation>Mappa felosztása itt…</translation>
+    </message>
+    <message>
+        <source>Open File</source>
+        <translation>Fájl megnyitása</translation>
+    </message>
+    <message>
+        <source>Open With</source>
+        <translation>Társítás</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Mentés</translation>
+    </message>
+    <message>
+        <source>Revert</source>
+        <translation>Visszaállítás</translation>
+    </message>
+    <message>
+        <source>Copy Full Path</source>
+        <translation>Teljes elérési út másolása</translation>
+    </message>
+    <message>
+        <source>Upload to Picasa Web Albums...</source>
+        <translation>Feltöltés a Picasa Webalbumokba…</translation>
+    </message>
+    <message>
+        <source>Block Upload</source>
+        <translation>Feltöltés tiltása</translation>
+    </message>
+    <message>
+        <source>Reset Faces</source>
+        <translation>Arcok alaphelyzetbe állítása</translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation>Tulajdonságok</translation>
+    </message>
 </context>
 <context>
     <name>PhotoViewer</name>

@@ -1,55 +1,64 @@
 import QtQuick
 import QtQuick.Controls
 
-// Kontextusmenü a rács jobbklikkjéhez (#15): átnevezés/áthelyezés/törlés/
-// megnyitás a fájlkezelőben, a Picasa 3.9 Fájl-menüjének elnevezéseivel.
-// Önálló, próba-oldallal tesztelt komponens (CONTRIBUTING.md mintája) — a
-// ThumbDelegate.contextMenuRequested → popup(x, y) bekötést és a jelek
-// FileOpsControllerhez/PhotoOpsControllerhez kapcsolását (Main.qml, forró
-// fájl) az integrátor végzi.
+// Az indexkép (rács) jobbklikk-menüje — a Picasa `AlbumPhoto` menüosztálya,
+// 19 tétellel (#15 kezdte 7 tétellel, #422 tölti fel a teljes listára).
+//
+// A tételsort, a csoportbontást és a hivatalos magyar feliratokat a
+// `docs/specs/ui-audit-context-menus.md` 2. szakasza rögzíti.
+//
+// PARITÁS: az „Átnevezés…" KIKERÜLT ebből a menüből — az eredetiben nincs
+// itt, hanem a Fájl menüben (`F2`), ahol nálunk is megvan és működik.
+// Az „Eltávolítás az albumból" viszont MARAD: a spec szerint az eredetiben
+// is csak album-nézetben jelenik meg, és nálunk is csak ott látszik
+// (`currentAlbumToken`).
+//
+// A néző menüje (ViewerContextMenu.qml) szándékosan MÁS: az első tétel ott
+// „Visszatérés a könyvtárhoz", a mappa-műveletek elmaradnak, a törlés
+// gyorsbillentyűje pedig `Delete` — itt `Ctrl+Delete` (spec 3.).
+//
+// A még be nem kötött parancsok `PicasaMenuItem { placeholder: true }`-ként
+// szürkén LÁTSZANAK (#416, illetve a spec 5.1. szabálya: az inaktív tétel
+// is tétel, hogy a menü magassága és a tételek helye állandó maradjon).
+//
+// Önálló, signal-alapú komponens: a bekötést a Main.qml végzi.
 Menu {
     id: menu
     objectName: "photoContextMenu"
 
-    signal renameRequested()
-    signal moveRequested()
-    signal deleteRequested()
-    signal locateRequested()
-    // #17: Elrejtés — pipával, ha a célpont már rejtett (Picasa-minta)
+    // #17: igaz, ha a jobbklikkelt kép rejtett — a tétel felirata VÁLT
+    // (Elrejtés ↔ Megjelenítés), nem pipát kap (spec A.2)
     property bool hideChecked: false
-    signal hideToggleRequested()
 
-    // #9 (2. lépés): albumtagság — a Main.qml köti be a `controller.albums`
-    // listáját és az aktív album tokent (#305 null-őr, ld. ott).
+    // #9: albumtagság — a Main.qml köti be a `controller.albums` listáját
+    // és az aktív album tokent (#305 null-őr, ld. ott).
     property var albums: []
     property string currentAlbumToken: ""
+
+    signal openRequested()
     signal addToAlbumRequested(string token)
     signal removeFromAlbumRequested()
     signal newAlbumRequested()
+    signal rotateRightRequested()
+    signal rotateLeftRequested()
+    signal hideToggleRequested()
+    signal moveRequested()
+    signal openFileRequested()
+    signal locateRequested()
+    signal deleteRequested()
+    signal copyFullPathRequested()
+    signal propertiesRequested()
+
+    // -- 1. blokk: az alapértelmezett művelet (félkövér) + album ----------
 
     MenuItem {
-        objectName: "contextMenuRename"
-        text: qsTr("Rename...")
-        onTriggered: menu.renameRequested()
+        objectName: "contextMenuOpen"
+        text: qsTr("View and Edit") + "\tEnter"
+        // a félkövér első tétel a dupla­kattintás alapértelmezett
+        // művelete (spec 5.3.)
+        font.bold: true
+        onTriggered: menu.openRequested()
     }
-    MenuItem {
-        objectName: "contextMenuHide"
-        text: qsTr("Hide")
-        checkable: true
-        checked: menu.hideChecked
-        onTriggered: menu.hideToggleRequested()
-    }
-    MenuItem {
-        objectName: "contextMenuMove"
-        text: qsTr("Move to Folder...")
-        onTriggered: menu.moveRequested()
-    }
-    MenuItem {
-        objectName: "contextMenuDelete"
-        text: qsTr("Delete from Disk")
-        onTriggered: menu.deleteRequested()
-    }
-    MenuSeparator {}
     Menu {
         id: addToAlbumMenu
         objectName: "contextMenuAddToAlbum"
@@ -83,9 +92,132 @@ Menu {
         onTriggered: menu.removeFromAlbumRequested()
     }
     MenuSeparator {}
+
+    // -- 2. blokk: forgatás ------------------------------------------------
+
+    MenuItem {
+        objectName: "contextMenuRotateRight"
+        text: qsTr("Rotate Right") + "\tCtrl+R"
+        onTriggered: menu.rotateRightRequested()
+    }
+    MenuItem {
+        objectName: "contextMenuRotateLeft"
+        text: qsTr("Rotate Left") + "\tCtrl+Shift+R"
+        onTriggered: menu.rotateLeftRequested()
+    }
+    MenuSeparator {}
+
+    // -- 3. blokk: szerkesztés visszavonása --------------------------------
+
+    PicasaMenuItem {
+        objectName: "contextMenuUndoAllEdits"
+        text: qsTr("Undo All Edits")
+        placeholder: true
+    }
+    MenuSeparator {}
+
+    // -- 4. blokk: rejtés ---------------------------------------------------
+
+    MenuItem {
+        objectName: "contextMenuHide"
+        // állapotfüggő felirat-váltás UGYANAZON a helyen (spec A.2):
+        // ID_PICTURE_HIDE „Elrejtés" ↔ ID_PICTURE_UNHIDE „Megjelenítés"
+        text: menu.hideChecked ? qsTr("Unhide") : qsTr("Hide")
+        onTriggered: menu.hideToggleRequested()
+    }
+    MenuSeparator {}
+
+    // -- 5. blokk: mappa-műveletek -------------------------------------------
+
+    MenuItem {
+        objectName: "contextMenuMove"
+        text: qsTr("Move to New Folder...")
+        onTriggered: menu.moveRequested()
+    }
+    PicasaMenuItem {
+        objectName: "contextMenuSplitFolder"
+        text: qsTr("Split Folder Here...")
+        placeholder: true
+    }
+    MenuSeparator {}
+
+    // -- 6. blokk: megnyitás -------------------------------------------------
+
+    MenuItem {
+        objectName: "contextMenuOpenFile"
+        text: qsTr("Open File") + "\tCtrl+Shift+O"
+        onTriggered: menu.openFileRequested()
+    }
+    PicasaMenuItem {
+        // „Társítás ▸" — a társított alkalmazások listája még nincs meg
+        objectName: "contextMenuOpenWith"
+        text: qsTr("Open With")
+        placeholder: true
+    }
+    MenuSeparator {}
+
+    // -- 7. blokk: mentés / visszaállítás -------------------------------------
+
+    PicasaMenuItem {
+        objectName: "contextMenuSave"
+        text: qsTr("Save") + "\tCtrl+S"
+        placeholder: true
+    }
+    PicasaMenuItem {
+        objectName: "contextMenuRevert"
+        text: qsTr("Revert")
+        placeholder: true
+    }
+    MenuSeparator {}
+
+    // -- 8. blokk: lemez --------------------------------------------------------
+
     MenuItem {
         objectName: "contextMenuLocate"
-        text: qsTr("Locate on Disk")
+        text: qsTr("Locate on Disk") + "\tCtrl+Enter"
         onTriggered: menu.locateRequested()
+    }
+    MenuItem {
+        objectName: "contextMenuDelete"
+        // a rácsban Ctrl+Delete — a nézőben puszta Delete (spec 3.)
+        text: qsTr("Delete from Disk") + "\tCtrl+Delete"
+        onTriggered: menu.deleteRequested()
+    }
+    MenuItem {
+        objectName: "contextMenuCopyFullPath"
+        text: qsTr("Copy Full Path")
+        onTriggered: menu.copyFullPathRequested()
+    }
+    MenuSeparator {}
+
+    // -- 9. blokk: megosztás -----------------------------------------------------
+
+    PicasaMenuItem {
+        objectName: "contextMenuUploadToWebAlbums"
+        text: qsTr("Upload to Picasa Web Albums...")
+        placeholder: true
+    }
+    PicasaMenuItem {
+        objectName: "contextMenuBlockUpload"
+        text: qsTr("Block Upload")
+        placeholder: true
+    }
+    MenuSeparator {}
+
+    // -- 10. blokk: arcok ---------------------------------------------------------
+
+    PicasaMenuItem {
+        objectName: "contextMenuResetFaces"
+        text: qsTr("Reset Faces")
+        placeholder: true
+    }
+    MenuSeparator {}
+
+    // -- 11. blokk: tulajdonságok --------------------------------------------------
+
+    MenuItem {
+        objectName: "contextMenuProperties"
+        text: qsTr("Properties") + "\tAlt+Enter"
+        onTriggered: menu.propertiesRequested()
     }
 }
