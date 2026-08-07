@@ -272,18 +272,37 @@ retus-régiók kódolása. Mind a négy **méréssel** oldható meg, kutatással
 |---|---|---|
 | **`red.cfg` szerkezete** (2,28 MB) | a Neven-detektor kaszkád-felépítése | nagy, és nem használható (zárt modell) |
 | **Import/export tábla** (mely DLL-függvények) | képesség-térkép: mit tudott natívan | kicsi, közepes haszon |
-| **`.rdata` konstans-táblák** | beégetett LUT-ok, küszöbök, tónusgörbék — **elvben a szűrő-együtthatók is** | közepes; ha bejön, a golden-mérés egy részét kiváltja |
+| ~~**`.rdata` konstans-táblák**~~ | **LEZÁRVA (2026-08-07): a szűrő-görbék NINCSENEK beégetve.** Ld. lent. | — |
 | **13 natív dialógus** (`RT_DIALOG`) | a korai/rendszerszintű ablakok | kicsi |
 | **`.ytf` betűtípus-formátum** | előre renderelt glyphek | nincs rá szükség |
 | **Diszasszemblálás** | minden, ami nem adat | aránytalanul nagy |
 
-**A legígéretesebb a `.rdata` konstans-tábla**: a `filterdesc.xml` a *paramétereket*
-adta meg, de a *görbéket* nem. Ha a beégetett float-tömbök megtalálhatók és
-azonosíthatók (pl. 256 elemű LUT-ok), az érdemben csökkentheti a #317
-golden-körét. Módszer: `.rdata`-ban 256/512 hosszú, monoton float- vagy
-bájt-sorozatok keresése, majd összevetés a **már megmért** LUT-jainkkal
-(`research/golden-analysis/luts*.json`) — a mért görbe a kulcs, amivel a
-beégetett tábla felismerhető.
+### A konstans-tábla-kutatás eredménye (2026-08-07) — NEGATÍV, de nem üres
+
+Módszer: a `.rdata` és `.data` szakaszokban 256 elemű **monoton** bájtsorozatok
+keresése, majd összevetés a mért görbéinkkel (`research/golden-analysis/luts*.json`),
+plusz külön pásztázás 256 elemű float-tömbökre.
+
+**Eredmény: kilenc monoton bájt-tábla, EGY float-tömb — és egyik sem szűrő-LUT.**
+A mért görbéinkkel egyik sem egyezik (a legjobb „találat" az identitás-tábla volt,
+ami triviálisan illeszkedik a közel-identitás mérésekre). **A Picasa a szűrőgörbéket
+futásidőben számolja, nem táblából olvassa.** A #317 golden-köre tehát nem
+rövidíthető le ezen az úton.
+
+Amit viszont **sikerült azonosítani** (mindkettő ±1 pontossággal illeszkedik a
+modellre):
+
+| hely | tartalom | modell |
+|---|---|---|
+| `.data` @0x932bcc | **a „Mac gamma (1,6)" megjelenítési mód táblája** | `255·(x/255)^(1,6/2,2)` — mért 94/155/206, modell 93/154/207 |
+| `.rdata` @0x86bc1b | 1024 elemű **négyzetgyök-tábla**, 0…180 kimenettel | `180·√(i/1023)` — mért 0/89/127/156/180, modell 0/90/127/156/180 |
+
+Az első **bizonyíték arra, hogy a Nézet menü „Megjelenítési mód" almenüje
+(#443, #427) valódi, implementált funkció volt**, nem UI-maradvány.
+
+**Módszertani tanulság:** a negatív eredmény itt is hasznos — de csak azért volt
+kimondható, mert volt **mért kontrollmintánk**, amivel össze lehetett vetni. Tábla-
+kereséshez mindig legyen ground truth, különben a találatok azonosíthatatlanok.
 
 ---
 
