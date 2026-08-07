@@ -96,6 +96,25 @@ Rectangle {
     property bool foldersCollapsed: false
     property bool otherCollapsed: true
 
+    // #476: a felhasználói gyűjtemények (customCollectionsModel) csukottsága
+    // — név → bool térkép, csak memóriában (a controller-perzisztálásra még
+    // nincs API, ellentétben a beépített öt gyűjteménnyel fent).
+    property var collapsedCollections: ({})
+
+    function isCustomCollectionCollapsed(name) {
+        return pane.collapsedCollections[name] === true
+    }
+
+    // A toggleCollection mintáját követi, de a `next` állapotot új
+    // objektumként írja vissza — a QML csak referenciaváltásra frissíti a
+    // Repeater-kötéseket, helyben módosított property var-ra nem.
+    function toggleCustomCollection(name) {
+        var next = {}
+        for (var key in pane.collapsedCollections) next[key] = pane.collapsedCollections[key]
+        next[name] = !pane.isCustomCollectionCollapsed(name)
+        pane.collapsedCollections = next
+    }
+
     Component.onCompleted: {
         // #305: null-őr — a controller a QML-engine leépítésekor
         // átmenetileg null lehet (itt: induláskor még nem biztos, hogy
@@ -512,6 +531,70 @@ Rectangle {
                 }
             }
             ScrollBar.vertical: PicasaScrollBar {}
+        }
+
+        // #476: a felhasználói mappa-gyűjtemények (#320 óta léteznek, de
+        // eddig sehol nem jelentek meg) — a beépített "Mappák" gyűjtemény
+        // ALATT, az "Egyéb" fejléc ELŐTT, gyűjteményenként egy csukható
+        // fejléc + a hozzá sorolt mappák sorai (az albumRepeater/folderList
+        // sor-mintáját követve).
+        Repeater {
+            id: customCollectionsRepeater
+            objectName: "customCollectionsRepeater"
+            model: pane.customCollectionsModel
+            delegate: Column {
+                id: customCollectionItem
+                required property var modelData
+                objectName: "customCollectionItem_" + customCollectionItem.modelData.name
+                Layout.fillWidth: true
+                spacing: 0
+
+                CollectionHeader {
+                    width: customCollectionItem.width
+                    label: customCollectionItem.modelData.name
+                    itemCount: customCollectionItem.modelData.folders.length
+                    labelObjectName: "customCollection_" + customCollectionItem.modelData.name
+                    collapsed: pane.isCustomCollectionCollapsed(customCollectionItem.modelData.name)
+                    onToggled: pane.toggleCustomCollection(customCollectionItem.modelData.name)
+                }
+
+                Repeater {
+                    objectName: "customCollectionFoldersRepeater_" + customCollectionItem.modelData.name
+                    model: customCollectionItem.modelData.folders
+                    delegate: Rectangle {
+                        id: customFolderItem
+                        required property var modelData
+                        objectName: "customCollectionFolder_" + customFolderItem.modelData
+                        readonly property bool isSelectedFolder:
+                            pane.selectedPath === customFolderItem.modelData
+                            && pane.selectedAlbumToken === ""
+                        visible: !pane.isCustomCollectionCollapsed(customCollectionItem.modelData.name)
+                        width: customCollectionItem.width
+                        height: 22
+                        color: customFolderItem.isSelectedFolder ? Theme.panelSelectionActive
+                               : (customFolderMouse.containsMouse ? Theme.panelSelection : "transparent")
+                        Row {
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left; anchors.leftMargin: 16
+                            spacing: 5
+                            FolderIcon { size: 13; anchors.verticalCenter: parent.verticalCenter }
+                            Text {
+                                text: customFolderItem.modelData.substring(
+                                          customFolderItem.modelData.lastIndexOf("/") + 1)
+                                font.pixelSize: Theme.fontSize
+                                color: customFolderItem.isSelectedFolder || customFolderMouse.containsMouse
+                                       ? Theme.panelSelectionText : Theme.ink
+                            }
+                        }
+                        MouseArea {
+                            id: customFolderMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: pane.folderChosen(customFolderItem.modelData)
+                        }
+                    }
+                }
+            }
         }
 
         CollectionHeader {
