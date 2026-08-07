@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.26] – 2026-08-07
+
+### Hozzáadva
+- **Gyűjtemény jobbklikk-menüje (#422):** átnevezés és eltávolítás
+  (megerősítéssel) a bal panel gyűjtemény-fejlécén. Ezzel az eredeti mind a
+  nyolc kontextusmenüje megvan.
+- **Csoportos szerkesztés (#425):** a Szerkesztés menü almenüje eddig üres
+  és letiltott volt; mostantól hét egykattintásos effektus és a forgatás
+  alkalmazható egyszerre a teljes kijelölésre — háttérben, haladásjelzéssel,
+  megszakíthatóan, egy lépésben visszavonhatóan.
+
+### Javítva
+- **Az effektus-másolás nem viszi át a vágást (#426):** a menü eddig a régi
+  motorra hívott, ami a kép-specifikus vágást is átmásolta volna. Emellett a
+  „Csillagozottak kijelölése" eddig a nézet szűrőjét váltotta át, ahelyett
+  hogy a csillagos képeket kijelölte volna.
+
 ## [0.6.25] – 2026-08-07
 
 ### Hozzáadva
