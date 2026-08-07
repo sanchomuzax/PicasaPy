@@ -17,8 +17,9 @@ nem díszítés: az eredetiben több funkció **kizárólag** innen érhető el.
 
 | kontextus | eredeti tételszám | nálunk | állapot |
 |---|---|---|---|
-| mappa fejléce / a rács üres területe | 15 | 2 | súlyosan hiányos |
-| bal panel: mappa-sor | 15 (**azonos** a fentivel) | 2 | súlyosan hiányos |
+| a rács üres területe | 15 | 2 | súlyosan hiányos |
+| bal panel: mappa-sor | 15 (**azonos**) | 2 | súlyosan hiányos |
+| a rács tetején a mappa-fejléc | 15 (**azonos**) | 0 | hiányzik
 | indexkép a rácsban | 19 | 7 | hiányos |
 | kép a szerkesztőben / nézőben | 17 | **0** | teljesen hiányzik |
 | bal panel: gyűjtemény-fejléc („Mappák (n)") | 3 | **0** | teljesen hiányzik |
@@ -57,6 +58,19 @@ bájtra azonos listát ad. Egy implementáció, két megnyitási pont.
 Nálunk ma ebből: „Áthelyezés gyűjteménybe ▸" és a „Mappa dátumának
 beállítása…" — utóbbi az **eredetiben nincs is** ebben a menüben (a
 Mappaleírás-dialógusban lakik).
+
+### 1.b Harmadik megnyitási pont: a mappa-fejléc a rácsban
+
+A rács tetején ülő **mappa-fejlécre** (nagy mappa-ikon + mappanév + dátum +
+műveletsor) jobbklikkelve **ugyanez a 15 tételes menü** jön elő. Tehát a
+mappa-menünek **három** megnyitási pontja van, bájtra azonos tartalommal:
+
+1. a rács üres területe (indexképek között),
+2. a bal panel mappa-sora,
+3. a rács tetején a mappa-fejléc.
+
+Implementációs következmény: **egy** komponens, három `MouseArea`/
+`TapHandler` hívóval — nem három külön menü.
 
 ## 2. Indexkép-kontextus (kép a rácsban)
 
@@ -168,3 +182,88 @@ collection" (`CAlbumState::passprompt`), „Password Entry"
   („Tulajdonságok" vs „…"), ez sem ismert.
 - A „Társítás ▸" és a „Mappa rendezésének alapja ▸" almenük tartalma
   nincs lefényképezve.
+
+---
+
+# FÜGGELÉK: a Picasa TELJES menü-parancstáblája (a binárisból, 2026-08-07)
+
+A képernyőképek csak azt mutatják, ami épp látszott. A `Picasa3i18n.dll`
+string-táblája viszont **név szerint tartalmazza az összes menüparancsot**,
+menüosztályonként csoportosítva — angolul és magyarul egyszerre.
+**418 menüparancs**, `<menüosztály>::<ID_PARANCS>` kulcsokkal. Az `&` a
+feliratokban a billentyű-gyorsjelölés (Alt-aláhúzás) helye.
+
+## A.1 A menüosztályok = a kontextusmenük
+
+| osztály | tételszám | mi ez |
+|---|---|---|
+| `Folder` + `FolderWin` | 11 + 1 | **mappa-kontextus** (1., 4., 6. képernyőkép) |
+| `FolderPhoto` + `FolderPhotoWin` | 4 + 1 | a mappában lévő **képre** vonatkozó többlet-tételek |
+| `AlbumPhoto` + `…Win`/`…Mac` | 16 + 2/3 | **indexkép-kontextus** (2. képernyőkép) |
+| `Album` | 13 | **album-kontextus** (a mappa-menü album-változata) |
+| `OneUp` | 6 | **néző/szerkesztő-kontextus** (3. képernyőkép) |
+| `Collection` | 3 | **gyűjtemény-kontextus** (5. képernyőkép) |
+| `AlbumList` + `…Win`/`…Mac` | 11 + 3/3 | **a bal panel saját menüje** — eddig NEM ismertük |
+| `Sort` | 4 | a „Mappa rendezésének alapja ▸" **almenü** — eddig nem volt lefényképezve |
+| `Tags` | 3 | **címke-kontextus** (jobbklikk egy címkén) — eddig NEM ismertük |
+| `Tray` | 2 | **képtálca-kontextus** — eddig NEM ismertük |
+| `PplAlbum` + `PplAlbumPhoto` | 4 + 4 | **Emberek-album** kontextusmenüi |
+| `Import` + `ImportGroups` | 4 + 1 | az importáló képernyő kontextusmenüi |
+| `Address` | 7 | szövegmező-kontextus (Kivágás/Másolás/Beillesztés…) |
+| `Slingshot` | 8 | **a Windows Intéző héj-menüje** (Picasa shell-integráció) |
+| `Publish`, `Border`, `MMFilm`, `CollageS/D`, `Rotate`, `SyncOpts`, `ImpULOpts`, `AcqDevList`, `BtnConf`, `HierFolder`, `Dev` | 1–15 | további panel-specifikus menük |
+| `eMenuFile/Edit/View/Picture/Create/Tools/Help` (+Win/Mac) | 143 | a **felső menüsáv** (ld. `ui-audit-menus.md`) |
+
+## A.2 Amit a képernyőképek nem mutattak — új felfedezések
+
+**`Sort` — a „Mappa rendezésének alapja ▸" almenü teljes tartalma:**
+Dátum · Név · Méret · Fordított sorrend.
+
+**`AlbumList` — a bal panel saját kontextusmenüje (11 tétel):** Rendezés
+dátum / név / méret / legutóbbi változtatások alapján · Rendezés
+megfordítása · Személyek rendezése név / mennyiség / toplista alapján ·
+**Egyszerűsített fanézet** · Indexképek megjelenítése a könyvtárban ·
+Asztal. Windowson még: **Sajátgép · Dokumentumok · Képek** (gyors
+gyökér-váltás).
+
+**`Tags` — címke-kontextus (3 tétel):** A címke hozzáadása a teljes kijelölt
+részhez · Az ilyen címkével ellátott elemek keresése · A címke eltávolítása.
+
+**`Tray` — képtálca-kontextus (2 tétel):** Kijelölés megtartása · Kijelölés
+eltávolítása.
+
+**Állapotfüggő felirat-váltás (nem külön tétel!):** `ID_HIDEENTIREALBUM`
+„Mappa elrejtése" ↔ `ID_UNHIDEENTIREALBUM` „Mappa megjelenítése";
+`ID_PICTURE_HIDE` „Elrejtés" ↔ `ID_PICTURE_UNHIDE` „Megjelenítés".
+
+**Mappa-fanézet parancsai:** `ID_HIER_FOLDER_EXPAND` „Az összes részletes
+nézete" · `ID_HIER_FOLDER_COLLAPSE` „Az összes kicsinyítése" ·
+`ID_MOVEHIERFOLDER` „Mappa áthelyezése…".
+
+**Album-változat (`Album`, 13 tétel)** — a mappa-menü párja albumra: Album
+törlése · Albumleírás szerkesztése… · Névcímkék hozzáadása · Exportálás
+HTML-oldalként… · Az összes kép kijelölése · Kijelölés törlése · Kiválasztás
+megfordítása · **Online műveletek** · Indexképek frissítése · Feltöltés a
+Google Fotókba… / a Picasa Webalbumokba…
+
+**Emberek-album (`PplAlbum`, `PplAlbumPhoto`):** Az Emberek album törlése /
+szerkesztése… · Az összes kijelölése · Kijelölés törlése; képen: Eltávolítás
+az Emberek albumból · Hozzáadás az Emberek albumhoz · **Áthelyezés új
+személyhez…** · Beállítás az Emberek album indexképeként.
+
+**`Slingshot` — Windows Intéző héj-menü (8 tétel):** Szerkesztés a
+Picasában · Másolás · E-mail · Blog · Nyomtatás · Keresés a lemezen · Gyors
+feltöltés · Képfeliratok megjelenítése. Ez az az integráció, amitől a Picasa
+az Intézőből is elérhető volt — nálunk nincs megfelelője.
+
+## A.3 Miért fontos ez a táblázat
+
+1. **Nem kell többé képernyőképre várni** egyetlen menühöz sem: a
+   parancskészlet teljes, hivatalos magyar felirattal.
+2. Az `ID_*` nevek **kanonikus parancsazonosítók** — érdemes ezeket használni
+   a PicasaPy `Action`-jeinek belső neveként, mert így a menüsáv, a
+   kontextusmenük és a gyorsbillentyűk **egyetlen, az eredetivel egyező
+   parancstáblára** hivatkoznak. Egy parancs több menüben is megjelenhet
+   (pl. `ID_FILE_LOCATEONDISK` négy helyen) — ez a modell ezt természetesen
+   kezeli.
+3. A `&` gyorsjelölések átvehetők, így az Alt-navigáció is egyezik.
