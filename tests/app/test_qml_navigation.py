@@ -366,7 +366,17 @@ class TestArrowMinimalScroll:
             _invoke(qt_app, grid, "moveSelection", "up")
             _wait_for_scroll_settled(qt_app, grid)
             assert window.property("selectedIndex") == 0
-            assert grid.property("contentY") == 0  # látszott, nem mozdult
+            # #423: a mappa-fejléc magassága a tipográfiával változik (a
+            # Georgia 20 pt-os cím 8 px-szel magasabb fejlécet ad), ezért a
+            # korábbi fix `contentY == 0` elvárás elavult — az őr VALÓDI
+            # állítása az, hogy a MÁR LÁTSZÓ célra nem görget tovább. Ezt
+            # elrendezés-függetlenül az ismételt lépés méri: a legfelső sor
+            # elérése után egy újabb „fel" egyáltalán nem mozdíthat.
+            stabil = grid.property("contentY")
+            _invoke(qt_app, grid, "moveSelection", "up")
+            _wait_for_scroll_settled(qt_app, grid)
+            assert window.property("selectedIndex") == 0
+            assert grid.property("contentY") == stabil
         finally:
             window.setProperty("thumbSize", old_size)
             qt_app.processEvents()
