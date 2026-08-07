@@ -184,6 +184,53 @@ class TestSelectionStability:
         assert window.property("selectedIndex") == -1
 
 
+class TestSelectStarred:
+    """#426: „Csillagozottak kijelölése" (Picasa `ID_SELECTSTAR`, Szerkesztés
+    menü) — a JELENLEGI nézet csillagos képeit jelöli ki, NEM a Mappák panel
+    „Csillagozott" nézet-szűrőjét váltja (az utóbbi külön, meglévő út,
+    `controller.showStarred()`, a bal oldali fa „Starred" bejegyzésén)."""
+
+    @staticmethod
+    def _indexes(window):
+        value = window.property("selectedIndexes")
+        if hasattr(value, "toVariant"):
+            value = value.toVariant()
+        return [int(v) for v in value]
+
+    def test_selects_only_starred_rows_in_current_view(self, qml_app, qt_app):
+        window, controller, _engine = qml_app
+        wait_for_photo_op(controller, lambda: controller.toggleStar(1), qt_app=qt_app)
+
+        window.setProperty("selectedIndexes", [])
+        window.setProperty("selectedIndex", -1)
+        qt_app.processEvents()
+
+        from PySide6.QtCore import QMetaObject, Qt
+
+        QMetaObject.invokeMethod(
+            window, "selectStarred", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        assert self._indexes(window) == [1]
+        assert window.property("selectedIndex") == 1
+
+    def test_view_filter_stays_untouched(self, qml_app, qt_app):
+        """A kijelölés NEM változtatja meg az aktuális nézetet/szűrést."""
+        window, controller, _engine = qml_app
+        wait_for_photo_op(controller, lambda: controller.toggleStar(0), qt_app=qt_app)
+        before = controller.filterActive
+
+        from PySide6.QtCore import QMetaObject, Qt
+
+        QMetaObject.invokeMethod(
+            window, "selectStarred", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        assert controller.filterActive == before
+
+
 class TestLasso:
     @staticmethod
     def _apply(qt_app, grid, start, count, flow_w, x1, y1, x2, y2, mods=0):

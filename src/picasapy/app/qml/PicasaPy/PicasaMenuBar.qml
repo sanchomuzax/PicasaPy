@@ -82,11 +82,15 @@ MenuBar {
     // #13: Tulajdonságok-panel
     property bool propertiesPanelOpen: false
     signal propertiesPanelRequested()
-    // #152: „Copy/Paste All Effects" — a Beillesztés csak akkor engedélyezett,
-    // ha van másolt effektlánc (a controller.hasEffectsClipboard-hoz kötve)
-    property bool hasEffectsClipboard: false
-    signal copyEffectsRequested()
-    signal pasteEffectsRequested()
+    // #426: „Az összes effektus másolása/beillesztése" — a Beillesztés
+    // csak akkor engedélyezett, ha van másolt effektlánc (a
+    // controller.hasAllEffectsClipboard-hoz kötve). A `photo_ops_
+    // controller.PhotoOpsMixin` motorját hívja — SZÁNDÉKOSAN nem a
+    // #152-es `effects_controller`-t, mert az a kép-specifikus
+    // `crop64`-et is átvinné (ld. `docs/specs/filterdesc-registry.md`).
+    property bool hasAllEffectsClipboard: false
+    signal copyAllEffectsRequested()
+    signal pasteAllEffectsRequested()
 
     // #327: gyorsbillentyűk azoknak az AKTÍV menüpontoknak, amelyeknek
     // még nincs élő bekötésük máshol (a többi már a Main.qml globális
@@ -188,13 +192,13 @@ MenuBar {
             objectName: "menuEditCopyEffects"
             text: qsTr("Copy All Effects")
             enabled: bar.photoActionsEnabled
-            onTriggered: bar.copyEffectsRequested()
+            onTriggered: bar.copyAllEffectsRequested()
         }
         MenuItem {
             objectName: "menuEditPasteEffects"
             text: qsTr("Paste All Effects")
-            enabled: bar.photoActionsEnabled && bar.hasEffectsClipboard
-            onTriggered: bar.pasteEffectsRequested()
+            enabled: bar.photoActionsEnabled && bar.hasAllEffectsClipboard
+            onTriggered: bar.pasteAllEffectsRequested()
         }
         MenuSeparator {}
         // hiányzott (#324 audit): feliratszöveg vágólap-műveletei
