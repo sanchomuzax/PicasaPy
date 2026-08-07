@@ -50,8 +50,12 @@ def config_dir(tmp_path):
 
 @pytest.fixture
 def controller(qt_app, source, config_dir):
+    """#438: a teszt végén BEVÁRJA a háttérszálat (a #430 SIGSEGV-osztály
+    elkerülése), amíg a controller még él."""
     index_db, cache_dir = source
-    return RelocateController(index_db, cache_dir, config_dir)
+    ctl = RelocateController(index_db, cache_dir, config_dir)
+    yield ctl
+    assert ctl.waitForBackgroundWorkers(30.0), "az áthelyezés háttérszála nem állt le"
 
 
 class TestCurrentLocation:
@@ -164,3 +168,18 @@ class TestCancelRelocate:
 
     def test_cancel_before_start_is_a_noop(self, controller):
         controller.cancelRelocate()  # nincs futó áthelyezés — nem hibázik
+
+
+class TestBackgroundThreadTeardown:
+    """#438 (a #430 SIGSEGV-osztály maradéka): az áthelyezés háttérszála
+    bevárható legyen, mielőtt a controller megsemmisül."""
+
+    def test_wait_without_a_run_returns_immediately(self, controller):
+        assert controller.waitForBackgroundWorkers(0.0)
+
+    def test_wait_joins_the_worker_thread(self, controller, tmp_path):
+        loop = _quit_on(controller.relocateFinished)
+        controller.startRelocate(str(tmp_path / "uj-hely"))
+        loop.exec()
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()

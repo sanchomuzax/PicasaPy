@@ -14,13 +14,14 @@ jelzés, amit a Qt automatikusan a GUI-szálra sorol)."""
 
 from __future__ import annotations
 
-import threading
 from typing import Callable
 
 from PySide6.QtCore import QObject, Signal, Slot
 
 from picasapy.pmpimport.remap import PathRemapper
 from picasapy.scanner import discover_installations, propose_watched_folders
+
+from .worker_thread import BackgroundWorkerMixin
 
 # Wine alapértelmezett meghajtó-leképezése: a Z: meghajtó a teljes helyi
 # fájlrendszer-gyökeret (/) tükrözi — ez a leggyakoribb eset, amikor a
@@ -31,7 +32,7 @@ from picasapy.scanner import discover_installations, propose_watched_folders
 _DEFAULT_REMAP = PathRemapper.from_dict({"Z:\\": "/"})
 
 
-class DiscoveryController(QObject):
+class DiscoveryController(BackgroundWorkerMixin, QObject):
     """A `PicasaImportDialog.qml` háttér-hídja: felderítés + átvétel."""
 
     # (javasolt mappák — str lista, felismert telepítések száma)
@@ -80,7 +81,10 @@ class DiscoveryController(QObject):
                         proposed.append(text)
             self.discoveryFinished.emit(proposed, len(installations))
 
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin) — a
+        # leépítés (teszt-fixture, app-zárás) `waitForBackgroundWorkers()`-
+        # szel bevárhatja, amíg a controller még él (ld. #430).
+        self._start_background(worker, name="picasapy-discovery")
 
     @Slot(list)
     def adoptWatchedFolders(self, paths: list) -> None:

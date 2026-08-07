@@ -42,7 +42,10 @@ def controller(qt_app, tmp_path, library):
         watched_file=tmp_path / "WatchedFolders.txt",
     )
     ctl._reload()
-    return ctl
+    yield ctl
+    # #438: a szinkron-háttérszálak bevárva, MÍG a controller még él —
+    # a #430 SIGSEGV-osztály elkerülése (BackgroundWorkerMixin).
+    assert ctl.waitForBackgroundWorkers(30.0), "a szinkron háttérszála nem állt le"
 
 
 class TestCancelSignal:

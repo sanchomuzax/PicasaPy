@@ -13,10 +13,11 @@ mintája, ld. library_controller.py docsztringje)."""
 from __future__ import annotations
 
 import os
-import threading
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
+
+from .worker_thread import BackgroundWorkerMixin
 
 
 def _has_subdirectory(path: Path) -> bool:
@@ -71,7 +72,7 @@ def _list_children(path: Path) -> list[dict]:
     return children
 
 
-class FolderTreeController(QObject):
+class FolderTreeController(BackgroundWorkerMixin, QObject):
     """A `FolderManagerDialog.qml` fa-nézetének háttér-hídja."""
 
     # (a lekérdezett mappa útvonala, a közvetlen almappák listája — dict-ek:
@@ -89,4 +90,5 @@ class FolderTreeController(QObject):
             children = _list_children(Path(target))
             self.childrenLoaded.emit(target, children)
 
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-foldertree")

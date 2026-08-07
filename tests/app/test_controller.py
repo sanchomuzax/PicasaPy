@@ -61,7 +61,11 @@ def controller(qt_app, tmp_path, library):
         watched_file=tmp_path / "WatchedFolders.txt",
     )
     ctl._reload()
-    return ctl
+    yield ctl
+    # #438: minden nyilvántartott daemon-szál bevárása, AMÍG a controller
+    # még él — a #430 SIGSEGV-osztály elkerülése (ld.
+    # picasapy.app.worker_thread.BackgroundWorkerMixin).
+    assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le a teardownban"
 
 
 class TestController:
@@ -1828,3 +1832,45 @@ class TestCopyPasteEffects:
         ini_text = (library / "nyaralas" / ".picasa.ini").read_text(encoding="utf-8")
         target_section = ini_text.split("[IMG_0002.jpg]")[1]
         assert "JOVENOSZKA=1,x1,y2;" in target_section
+
+
+class TestBackgroundThreadTeardown:
+    """#438 (a #430 SIGSEGV-osztály maradéka): az AppController TÖBBFÉLE
+    mixinje (export/library/photo_ops) is háttérszálon fut — mindegyiknek
+    ugyanazon a `BackgroundWorkerMixin`-en keresztül bevárhatónak kell
+    lennie, mielőtt a controller megsemmisül."""
+
+    def test_wait_without_a_run_returns_immediately(self, controller):
+        assert controller.waitForBackgroundWorkers(0.0)
+
+    def test_wait_joins_the_export_worker_thread(self, controller, library, tmp_path):
+        from PySide6.QtCore import QEventLoop, QTimer
+
+        controller.selectFolder(str(library / "nyaralas"))
+        loop = QEventLoop()
+        controller.exportFinished.connect(loop.quit)
+        controller.exportRows([0], str(tmp_path / "export-cel"), 0, 85)
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()
+
+    def test_wait_joins_the_photo_write_worker_thread(self, controller, library):
+        controller.selectFolder(str(library / "nyaralas"))
+        _do_photo_op(controller, lambda: controller.toggleStar(0))
+
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()
+
+    def test_wait_joins_the_sync_worker_thread(self, controller, tmp_path):
+        from PySide6.QtCore import QEventLoop, QTimer
+
+        loop = QEventLoop()
+        controller.syncFinished.connect(loop.quit)
+        controller.rescan()
+        QTimer.singleShot(5000, loop.quit)
+        loop.exec()
+
+        assert controller.waitForBackgroundWorkers(30.0)
+        assert not controller.backgroundWorkersRunning()

@@ -33,7 +33,6 @@ szándékosan független egymástól."""
 from __future__ import annotations
 
 import secrets
-import threading
 from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
@@ -46,12 +45,14 @@ from picasapy.ini.albums import ensure_album, with_album, without_album
 from picasapy.metadata import write_iptc_caption
 from picasapy.scanner import PICASA_INI_NAME
 
+from .worker_thread import BackgroundWorkerMixin
+
 # #137: a tartós ütközés (párhuzamos Picasa-írás) is kezelt írási hiba — a
 # felhasználó a megszokott hibacsatornán kap jelzést, nem néma adatvesztés.
 _WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
 
 
-class PhotoOpsMixin:
+class PhotoOpsMixin(BackgroundWorkerMixin):
     """Csillag, felirat, forgatás és elrejtés — egyesével és kötegelten."""
 
     # #141: a háttérszálas ini-írás/index-UPDATE eredménye — a rács-sor
@@ -121,7 +122,8 @@ class PhotoOpsMixin:
                 return
             self._photoFieldUpdated.emit(photo_id, record)
 
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-photowrite")
 
     @Slot(int)
     def toggleStar(self, row: int) -> None:
@@ -241,7 +243,8 @@ class PhotoOpsMixin:
             folders = sorted({str(item.path.parent) for item in items})
             self._renameBatchDone.emit(folders)
 
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-rename")
 
     @Slot(list)
     def _on_rename_batch_done(self, folders: list[str]) -> None:

@@ -13,7 +13,6 @@ alakja) — a `to_local_path` fordítja vissza helyi útvonallá.
 
 from __future__ import annotations
 
-import threading
 from pathlib import Path
 
 from PySide6.QtCore import Signal, Slot
@@ -22,6 +21,7 @@ from picasapy.collage import COLLAGE_KINDS, CollageSettings, make_collage, write
 from picasapy.movie import MovieSettings, export_movie
 
 from .formatting import to_local_path
+from .worker_thread import BackgroundWorkerMixin
 
 # A kollázs alapértelmezett vászonmérete — nyomtatható, de nem irreális.
 _COLLAGE_SIZE = (1600, 1200)
@@ -33,7 +33,7 @@ _MAX_ITEMS = 200
 _MAX_TRANSITION_S = 0.5
 
 
-class CreateMixin:
+class CreateMixin(BackgroundWorkerMixin):
     """Kollázs- és mozgófilm-készítés a kijelölésből, háttérszálon."""
 
     collageFinished = Signal(str, int, int)
@@ -88,7 +88,8 @@ class CreateMixin:
                 str(path), len(report.used), len(report.skipped)
             )
 
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-collage")
 
     @Slot(list, str, int, float)
     def exportMovie(
@@ -139,4 +140,5 @@ class CreateMixin:
                 str(report.target), len(report.used), len(report.skipped)
             )
 
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-movie")

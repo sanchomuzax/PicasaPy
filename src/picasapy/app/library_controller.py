@@ -18,6 +18,7 @@ from picasapy.index import open_index, remove_root, sync_folder
 from picasapy.scanner import LibraryWatcher, write_watched_folders
 
 from .formatting import to_local_path
+from .worker_thread import BackgroundWorkerMixin
 
 # #209: a worker-oldali jelzés-ritkítás minimuma (mp) — sok gyorsan kihagyott
 # mappánál a queued jelzések ne árasszák el a GUI-szál eseménysorát.
@@ -27,7 +28,7 @@ _PROGRESS_EMIT_MIN_S = 0.25
 _PROGRESS_RELOAD_MIN_S = 1.5
 
 
-class LibraryMixin:
+class LibraryMixin(BackgroundWorkerMixin):
     """Figyelt gyökerek kezelése + szinkron-munkák könyvelése."""
 
     syncFinished = Signal()
@@ -267,7 +268,8 @@ class LibraryMixin:
                 self.syncFinished.emit()
 
         self._begin_sync_job()
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-sync-addfolder")
 
     @Slot(str)
     def scanFolderOnce(self, path_or_url: str) -> None:
@@ -295,7 +297,8 @@ class LibraryMixin:
                 self.syncFinished.emit()
 
         self._begin_sync_job()
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-sync-scanonce")
 
     @Slot(str)
     def removeFolder(self, path: str) -> None:
@@ -407,7 +410,8 @@ class LibraryMixin:
                 self.syncFinished.emit()
 
         self._begin_sync_job()
-        threading.Thread(target=worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-sync-dirty")
 
     def _root_for_folder(self, folder: str) -> str | None:
         """A jelzett mappához tartozó figyelt gyökér (a `sync_folder`
@@ -427,7 +431,8 @@ class LibraryMixin:
             return  # egy író elég; a futó szinkron végén úgyis frissülünk
         self._sync_running = True
         self._begin_sync_job()
-        threading.Thread(target=self._sync_worker, daemon=True).start()
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(self._sync_worker, name="picasapy-sync-rescan")
 
     def _sync_worker(self) -> None:
         """Háttér-szinkron. Egy rossz gyökér (pl. elavult Windows-útvonal a

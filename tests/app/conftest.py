@@ -129,3 +129,16 @@ def qml_app(qt_app, tmp_path):
     yield window, controller, lib, engine
     engine.deleteLater()
     qt_app.processEvents()
+    # #438: minden nyilvántartott daemon-szál bevárása, AMÍG a controllerek
+    # még élnek — a #430 SIGSEGV-osztály elkerülése (ld.
+    # picasapy.app.worker_thread.BackgroundWorkerMixin).
+    for bg_controller in (
+        controller,
+        discovery_controller,
+        dedup_controller,
+        folder_tree_controller,
+        import_source_controller,
+    ):
+        assert bg_controller.waitForBackgroundWorkers(30.0), (
+            "háttérszál nem állt le a qml_app teardownban (#430/#438)"
+        )
