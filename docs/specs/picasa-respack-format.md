@@ -47,9 +47,22 @@ korábban külön dokumentált fájl is a helyére kerül.
 A réteg-nevek gyakran magukban hordják a Photoshop-eredetű vagy a
 komponens-generátoros nevet, pl.
 `layer:acquirepanel/superbutton(button_notext): rotate2button`,
-`layer:thumbui/#Shape 1 copy 2`. A `#` előtaggal kezdődő és a
-`decrect(...)`, `clip:`, `rect:`, `bicubic:` prefixek a réteg *fajtáját*
-jelölik a Picasa saját rajzolómotorjában.
+`layer:thumbui/#Shape 1 copy 2`. A `decrect(...)`, `clip:`, `rect:`,
+`bicubic:` prefixek a réteg *fajtáját* jelölik a Picasa rajzolómotorjában.
+
+> ### ⚠️ A `#` a rétegnévben NEM jelent holt kódot
+>
+> **2909-ből 257 réteg neve tartalmaz `#`-et**, és köztük vannak olyanok,
+> amikről bizonyosan tudjuk, hogy kiszállítottak — pl. `#histogram_icon`,
+> `adorners/#geo`, `adorners/#people` (utóbbi kettő a felhasználó
+> képernyőképein is látszik). A `#` itt **rétegtípus-jelölés**.
+>
+> **Ne keverd össze** a `.tre` elrendezés-források **sor eleji `#`-jével**,
+> ami valódi **megjegyzés** — ott a kikommentezett sor tényleg azt jelenti,
+> hogy az elem nem kap pozíciót, tehát nem jelenik meg.
+>
+> Egy cáfoló kör pontosan ezt a kettőt keverte össze, és két helyes állítást
+> minősített tévesen „holt kódnak".
 
 ## 3. Rétegrekord
 

@@ -350,6 +350,24 @@ csak egy jóval későbbi, véletlen ellenőrzésen bukott ki. **Minden kutatás
 után futtatni kell egy cáfoló kört**, aminek az EGYETLEN feladata megtámadni a
 friss állításokat — nem újat találni.
 
+### 15.2/b A CÁFOLÓT is ellenőrizni kell — ugyanazzal a mércével
+
+Az első cáfoló körünk **egy valódi hibát talált** (a hasonlósági keresés UI-ja
+ki volt kommentezve, #447) — és **három téves riasztást** adott, mindhármat
+ugyanabból az okból: a rétegnévben lévő `#`-et összekeverte a `.tre` sor eleji
+megjegyzés-`#`-ével, és emiatt élő elemeket minősített holt kódnak.
+
+**Tanulság:** a cáfolat is **állítás**, tehát ugyanaz a bizonyítási teher
+vonatkozik rá. A helyes menet:
+
+1. a cáfoló körben **ne javíts azonnal** — gyűjtsd össze az ellenvetéseket;
+2. **mindegyiket ellenőrizd külön**, forrásból;
+3. csak a megerősítettet vezesd át — a téves riasztást pedig **írd le**, mert
+   az is tudás (nálunk ebből lett a fenti `#`-figyelmeztetés a specben).
+
+Ha a cáfolatot ellenőrzés nélkül átvezeted, **új hibát viszel be a régi
+javítása közben** — ez a legrosszabb kimenet.
+
 ### 15.3 Az ügynök a JELEN állapotot is kapja meg, ne csak a forrást
 
 A „kontextus-leépülés" megfelelője: a leltározó ügynökünk elavult listát adott,
