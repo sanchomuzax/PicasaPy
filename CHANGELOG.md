@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.18] – 2026-08-07
+
+### Javítva
+- **Véletlenszerű CI-összeomlás megszűnt (#430):** a weboldal-exportálás
+  háttérszála eddig akkor is dolgozhatott, amikor a hozzá tartozó objektumot
+  már felszámolta a program — ilyenkor a folyamat összeomlott. A szálat
+  mostantól be lehet várni, és a teszt le is várja: a hiba forrása
+  minimál-programmal reprodukálva és igazoltan megszüntetve. Ugyanez a minta
+  további kilenc vezérlőben is jelen van, a javításuk külön feladat (#438).
+
 ## [0.6.17] – 2026-08-07
 
 ### Javítva
