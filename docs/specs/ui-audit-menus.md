@@ -170,6 +170,13 @@ PicasaPy-bővítés (fejlesztői teljesítménymérő panel).
 
 ## Bónusz észrevétel: jobbklikk kontextusmenük
 
+> **FRISSÍTVE (2026-08-07):** a kontextusmenük azóta **rendszeres**
+> felmérést kaptak öt célzott képernyőképből —
+> [`ui-audit-context-menus.md`](ui-audit-context-menus.md). Az alábbi
+> szakasz a korábbi, két véletlen képernyőképből származó észrevétel; a
+> teljes tételsorokat és az eltérés-elemzést az új dokumentum tartalmazza.
+
+
 Két képernyőkép jobbklikk-kontextusmenüt is mutat (mappa a bal panelen, kép
 a rácsban). Ezek nem részei a felső menüsávnak, de két, a top-menüből teljesen
 hiányzó funkciót fednek fel, amelyek **még kontextusmenüből sem érhetők el
