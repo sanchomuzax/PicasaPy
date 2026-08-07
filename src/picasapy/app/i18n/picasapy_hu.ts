@@ -1802,6 +1802,11 @@
 <context>
     <name>LightboxHeader</name>
     <message>
+        <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0"/>
+        <source>Sync to the web</source>
+        <translation>Szinkronizálás az internettel</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/LightboxHeader.qml" line="30"/>
         <source>SYNC</source>
         <translation>SZINKRON</translation>
@@ -2289,6 +2294,11 @@
 </context>
 <context>
     <name>PicasaMenuBar</name>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
+        <source>Sign in with your Google Account</source>
+        <translation>Bejelentkezés Google Fiókkal</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="37"/>
         <source>&amp;File</source>
