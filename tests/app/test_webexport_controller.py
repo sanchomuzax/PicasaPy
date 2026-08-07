@@ -15,9 +15,16 @@ from support.jpeg_factory import make_jpeg
 
 
 def _quit_on(signal):
+    """Eseményhurok, ami a jelzésre (vagy 5 s vészfékre) lép ki.
+
+    A vészfék-timer a hurok GYERMEKE: így a hurokkal együtt megsemmisül, és
+    nem marad árva, később elsülő timer a processzben (#430)."""
     loop = QEventLoop()
     signal.connect(loop.quit)
-    QTimer.singleShot(5000, loop.quit)
+    timer = QTimer(loop)
+    timer.setSingleShot(True)
+    timer.timeout.connect(loop.quit)
+    timer.start(5000)
     return loop
 
 
@@ -43,9 +50,30 @@ def library(tmp_path):
 
 
 @pytest.fixture
-def controller(qt_app, library):
+def make_controller(qt_app):
+    """`WebExportController`-gyár, ami a teszt végén MEGVÁRJA a háttérszálat.
+
+    A generálás daemon-szálon fut: ha a teszt (vagy maga a processz) a szál
+    alatt ér véget, a szál a Qt/Python leépítése közben emitálna jelzést egy
+    már felszámolt objektumnak — ez a #430-as, futásonként változó SIGSEGV.
+    A determinista leépítés ezért a fixture felelőssége."""
+    created: list[WebExportController] = []
+
+    def _make(photo_source):
+        controller = WebExportController(photo_source=photo_source)
+        created.append(controller)
+        return controller
+
+    yield _make
+
+    for controller in created:
+        assert controller.waitForExport(30.0), "a webexport háttérszál nem állt le"
+
+
+@pytest.fixture
+def controller(make_controller, library):
     photos = [_record(library, "a.jpg", caption="Kutya"), _record(library, "b.jpg")]
-    return WebExportController(photo_source=lambda: photos)
+    return make_controller(lambda: photos)
 
 
 class TestListWebExportTemplates:
@@ -71,8 +99,8 @@ class TestGenerateWebExportValidation:
         )
         assert seen
 
-    def test_empty_photo_source_emits_failure(self, qt_app, library, tmp_path):
-        controller = WebExportController(photo_source=lambda: [])
+    def test_empty_photo_source_emits_failure(self, make_controller, tmp_path):
+        controller = make_controller(lambda: [])
         seen = []
         controller.webExportFailed.connect(seen.append)
         controller.generateWebExport(
@@ -113,11 +141,13 @@ class TestGenerateWebExportSuccess:
         loop.exec()
         assert progress == [(2, 2)]
 
-    def test_video_only_selection_fails_after_image_generation(self, qt_app, library, tmp_path):
+    def test_video_only_selection_fails_after_image_generation(
+        self, make_controller, library, tmp_path
+    ):
         video_path = library / "v.mp4"
         video_path.write_bytes(b"nem-igazi-video")
         record = _record(library, "v.mp4", kind="video")
-        controller = WebExportController(photo_source=lambda: [record])
+        controller = make_controller(lambda: [record])
         failed = []
         controller.webExportFailed.connect(failed.append)
         loop = _quit_on(controller.webExportFailed)
@@ -126,3 +156,20 @@ class TestGenerateWebExportSuccess:
         )
         loop.exec()
         assert failed
+
+
+class TestBackgroundThreadTeardown:
+    """#430: a háttérszál élettartama legyen determinista — se a teszt, se az
+    alkalmazás ne érhessen véget úgy, hogy a szál még Qt-jelzést emitál."""
+
+    def test_wait_for_export_without_a_run_returns_immediately(self, controller):
+        assert controller.waitForExport(0.0)
+
+    def test_wait_for_export_joins_the_worker_thread(self, controller, tmp_path):
+        loop = _quit_on(controller.webExportFinished)
+        controller.generateWebExport(
+            str(tmp_path / "kimenet"), "feher", "Album", 0, 0, True, False
+        )
+        loop.exec()
+        assert controller.waitForExport(30.0)
+        assert not controller.exportRunning()
