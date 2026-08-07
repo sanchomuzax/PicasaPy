@@ -1825,6 +1825,10 @@
         <source>Remove this folder from PicasaPy? The files stay on disk.</source>
         <translation>Eltávolítja ezt a mappát a PicasaPy-ból? A fájlok a lemezen maradnak.</translation>
     </message>
+    <message>
+        <source>Remove this collection? The folders and files stay on disk.</source>
+        <translation>Eltávolítja ezt a gyűjteményt? A mappák és a fájlok a lemezen maradnak.</translation>
+    </message>
 </context>
 <context>
     <name>HistogramBox</name>
@@ -3672,6 +3676,21 @@
     <message>
         <source>Export as HTML Page...</source>
         <translation>Exportálás HTML-oldalként…</translation>
+    </message>
+</context>
+<context>
+    <name>CollectionContextMenu</name>
+    <message>
+        <source>Rename Collection...</source>
+        <translation>Gyűjtemény átnevezése…</translation>
+    </message>
+    <message>
+        <source>Remove Collection</source>
+        <translation>Gyűjtemény eltávolítása</translation>
+    </message>
+    <message>
+        <source>Set/Change Password...</source>
+        <translation>Jelszó megadása/módosítása…</translation>
     </message>
 </context>
 <context>

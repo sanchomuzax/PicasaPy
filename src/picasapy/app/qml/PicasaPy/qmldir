@@ -48,6 +48,7 @@ FolderContextMenu 1.0 FolderContextMenu.qml
 AlbumContextMenu 1.0 AlbumContextMenu.qml
 PeopleAlbumContextMenu 1.0 PeopleAlbumContextMenu.qml
 FolderListContextMenu 1.0 FolderListContextMenu.qml
+CollectionContextMenu 1.0 CollectionContextMenu.qml
 TagContextMenu 1.0 TagContextMenu.qml
 TrayContextMenu 1.0 TrayContextMenu.qml
 FolderPropertiesDialog 1.0 FolderPropertiesDialog.qml
