@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.17] – 2026-08-07
+
+### Javítva
+- **A felső eszközsáv nem törik új sorba (#423):** az „Importálás" gomb
+  minden ablakszélességen a sáv bal szélén marad — a hely fogytával előbb a
+  rugalmas térköz, majd a keresőmező zsugorodik, végül a szűrő-zóna rejtőzik
+  el, a sáv magassága viszont változatlan. A „Szűrők" felirat a csíkon belül,
+  az ikonsor fölé került.
+
+### Hozzáadva
+- **Mappa-fejléc paritás (#423):** cím Georgia 20 pt, dátumsor Georgia 14 pt,
+  50 px bal behúzás; hosszú mappanév halványuló kifutással ér véget („…"
+  helyett), a jobb-felső sarokban pedig megjelent a „Szinkronizálás az
+  internettel" kapcsoló (az elrendezés része, egyelőre letiltva). A menüsáv
+  jobb szélén a „Bejelentkezés Google Fiókkal" hivatkozás.
+
 ## [0.6.16] – 2026-08-07
 
 ### Hozzáadva
