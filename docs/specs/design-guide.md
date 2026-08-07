@@ -166,6 +166,18 @@ cellaszélesség) egyben változna, ezért külön jegyet érdemel.
   „Feltöltés a Google Fotókba"; E-mail/Nyomtatás/Exportálás ikon+felirat;
   jobbra méret-csúszka + kör ikongombok (személy, hely, címke, infó).
 
+## A néző és a diavetítés — két KÜLÖN modul (pontosítás, 2026-08-07)
+
+Forrás-ellenőrzés után egyértelmű, hogy a Picasa két külön felületet használt,
+és ezt korábban összemostuk:
+
+- **`editpanel`** = a **szerkesztő/egyképes nézet**: bal oldalt az eszközpanel,
+  **fent FILMSZALAG** (`editpanel/filmstrip`, `filmclip`, `filmcontainer`,
+  `indicator`). A dizájn-kézikönyv filmszalag-leírása tehát **helyes**.
+- **`oneup`** = a **teljes képernyős diavetítés** overlay-e: kilépés, előző/
+  következő, forgatás, csillag, **átmenettípus-választó**, felirat-gomb,
+  idővonal és „Display Time" +/−. Ebben **nincs** filmszalag — nem is kell.
+
 ## Ikonok
 
 Az eredeti sárga mappa-, szűrő- és tálca-ikonok bitmap-ek. Nálunk:

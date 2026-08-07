@@ -15,12 +15,19 @@ Az `.exe` `collage::*_desc` sztringjeiből, a belső kulcsokkal együtt:
 
 | kulcs | név | leírás (eredeti) |
 |---|---|---|
-| `pile` | Picture Pile | „Looks like a pile of scattered pictures" — szétszórt kupac |
-| `pack` | Mosaic | „Automatically fit pictures into the page" — automatikus kitöltés |
-| `frame` | Frame Mosaic | „A mosaic with a prominent center picture" — mozaik kiemelt középső képpel |
-| `grid` | Grid | „Arrange pictures into regular rows and columns" — szabályos rács |
-| `csheet` | Contact Sheet | „Thumbnails with an informative header" — indexkép-ív fejléccel |
-| `multiexp` | Multiple Exposure | „Superimpose pictures over one another" — egymásra vetítés |
+| `picturepile` | Picture Pile | „Looks like a pile of scattered pictures" — szétszórt kupac |
+| `mosaic` | Mosaic | „Automatically fit pictures into the page" — automatikus kitöltés |
+| *(?)* | Frame Mosaic | „A mosaic with a prominent center picture" — mozaik kiemelt középső képpel |
+| *(?)* | Grid | „Arrange pictures into regular rows and columns" — szabályos rács |
+| `contactsheet` | Contact Sheet | „Thumbnails with an informative header" — indexkép-ív fejléccel |
+| *(?)* | Multiple Exposure | „Superimpose pictures over one another" — egymásra vetítés |
+
+> **Pontosítás (2026-08-07):** a `.cxf` `theme` attribútum értékei **teljes szavak**
+> (`picturepile`, `mosaic`, `contactsheet` — mindhárom megvan az `.exe` string-
+> táblájában). A korábbi rövid kulcsok (`pile`, `pack`, `frame`, `csheet`,
+> `multiexp`) az **ikon-rétegek nevéből** származó feltételezések voltak, NEM a
+> fájlba írt értékek. A hiányzó három (`framemosaic`? `grid`? `multiexposure`?)
+> egy-egy mentéssel tisztázható (#436).
 
 ### 1.1/b Hivatalos magyar nevek és leírások (képernyőképről, 2026-08-07)
 
@@ -138,7 +145,7 @@ projektfájlt (#436). A formátum: **UTF-8 XML, CRLF sorvégekkel.**
 | `version="2"` | formátumverzió |
 | `format="15:10"` | **oldalarány szövegként**, `SZ:M` alakban |
 | `orientation` | `portrait` / `landscape` — az arány ehhez képest forog |
-| `theme` (gyökér) | a **kollázs-típus**; a mintában `picturepile` (a „Picture Pile") |
+| `theme` (gyökér) | a **kollázs-típus** teljes szóval; a mintában `picturepile` |
 | `shadows`, `captions` | `0`/`1` kapcsolók |
 | `albumUID` | 32 hex — ugyanaz az album-token, mint a `[.album:<token>]` szekcióké |
 | `<albumTitle>`, `<albumDate>` | a Contact Sheet fejlécéhez és a mentett album nevéhez |
