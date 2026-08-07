@@ -91,6 +91,47 @@ kinyerhető.
 elrendezés és a grafika gépileg összeköthető. Ld.
 [`picasa-respack-format.md`](picasa-respack-format.md) 6. pontját.
 
+### A MÁSIK erőforrás: a felirat- és tipp-tábla (2026-08-07)
+
+A DLL **kétféle** beágyazott XML-t tartalmaz, és eddig csak az egyiket dolgoztuk fel:
+
+| erőforrás | tartalom | állapot |
+|---|---|---|
+| `<resources>` + `<stringres id="…">` | **menüparancsok** és dialógus-feliratok (4031 azonosító) | feldolgozva |
+| **`<tooltips>` + `<action type="…" target="panel/elem">`** | **a program teljes felirat- és tippkészlete panelenként** | **most feldolgozva** |
+
+A második a fő ablak vezérlőihez tartozik, és **súgó-buborékokat is tartalmaz**,
+amik sehol máshol nem szerepelnek.
+
+**Eszköz:** `tools/picasa/i18n_extract.py`
+
+```sh
+python3 tools/picasa/i18n_extract.py <Picasa3i18n.dll> --list-langs
+python3 tools/picasa/i18n_extract.py <Picasa3i18n.dll> --lang hu --out hu.tsv
+```
+
+**Mérés:** 1353 blokk, 33 panelcsoport, **nyelvenként 784 felirat/tipp**
+45 panelen. Típusonként: 394 `Label`, 265 `Tooltip`, 73 `Text`, plusz
+többsoros `Text1..7` változatok.
+
+**Nyelv-azonosítás:** a blokkok nem hordoznak nyelvjelölést. Az **angol** és a
+**magyar** tartalmilag azonosítva (a magyar az `ő`/`ű` betűkről, amik a jelen 41
+nyelv között egyediek); a többi 39 nyelvkód **sorrend-alapú becslés**, amit az
+eszköz kimenete külön jelez. Ha egy adott nyelv kell, előbb ellenőrizni kell.
+
+**Példa a kinyert magyar szövegre** (ilyet sehol máshol nem találtunk):
+
+```
+editpanel/sbutton   Tooltip   Állítson össze és nézzen diavetítést ezekből a fotókból
+editpanel/weblink   Tooltip   Ugrás az ehhez a fotóhoz társított webhelyre
+thumbui/lightbox_bgtext  Text1  A program nem talált fotókat
+editoneup/tpslabel  Text      Megjelenítési idő
+```
+
+> **Jogi korlát:** a kinyert szöveg a Google szerzői jogvédett fordítása. Az
+> **eszköz** a repóban van, a **kimenet nincs** — mindenki a saját telepítéséből
+> állítja elő, referenciaként.
+
 ## 2. Angol → hivatalos Picasa-magyar szójegyzék
 
 | Angol | Hivatalos Picasa-magyar | Forrás (DLL-azonosító) |
