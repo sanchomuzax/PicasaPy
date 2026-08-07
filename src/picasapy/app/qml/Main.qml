@@ -289,6 +289,26 @@ ApplicationWindow {
         sequence: "Ctrl+Shift+S"
         onActivated: if (!window.viewerOpen) exportDialogs.openForSelection()
     }
+    // #422: a rács kontextusmenüje `Ctrl+Delete`-et hirdet a lemezről
+    // törléshez (spec 3.) — a billentyű eddig nem élt, csak a Fájl menü
+    // `Delete`-je (ld. ui-audit-menus.md). Mindkettő ugyanoda vezet.
+    Shortcut {
+        objectName: "shortcutDeleteFromDiskGrid"
+        sequence: "Ctrl+Delete"
+        enabled: !window.viewerOpen && window.selectedRows().length > 0
+        onActivated: fileOpsDialogs.openDelete(window.selectedPaths())
+    }
+    // #422: a nézőben PUSZTA Delete törli a lemezről (spec 3.) — ott nincs
+    // ütközés, mert a rács album-parancsai nem élnek
+    Shortcut {
+        objectName: "shortcutDeleteFromDiskViewer"
+        sequence: "Delete"
+        enabled: window.viewerOpen && photoViewer.currentIndex >= 0
+        onActivated: {
+            var p = controller.photos.filePathAt(photoViewer.currentIndex)
+            if (p.length > 0) fileOpsDialogs.openDelete([p])
+        }
+    }
 
     menuBar: PicasaMenuBar {
         photoActionsEnabled: !window.viewerOpen
@@ -869,13 +889,29 @@ ApplicationWindow {
                     .hidden === true))
             : false
         onHideToggleRequested: window.toggleHiddenSelection()
-        onRenameRequested: fileOpsDialogs.openRename(window.fileOpTargetRow)
         onMoveRequested: fileOpsDialogs.openMove(window.selectedPaths())
         onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.fileOpTargetRow)
             if (p.length > 0) fileOpsController.revealPhoto(p)
         }
+        // #422 (2. lépcső): az eredeti AlbumPhoto-menü többi parancsa
+        onOpenRequested: {
+            window.viewerOpen = true
+            photoViewer.show(window.fileOpTargetRow)
+        }
+        onRotateRightRequested: controller.rotateRightMany(window.selectedRows())
+        onRotateLeftRequested: controller.rotateLeftMany(window.selectedRows())
+        onOpenFileRequested: {
+            var target = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (target.length > 0) fileOpsController.openPhoto(target)
+        }
+        onCopyFullPathRequested: {
+            var full = controller.photos.filePathAt(window.fileOpTargetRow)
+            if (full.length > 0) fileOpsController.copyFullPath(full)
+        }
+        onPropertiesRequested:
+            window.propertiesPanelOpen = !window.propertiesPanelOpen
         // #9 (2. lépés): albumtagság — #305 null-őr
         albums: controller ? controller.albums : []
         currentAlbumToken: controller ? controller.currentAlbumToken : ""

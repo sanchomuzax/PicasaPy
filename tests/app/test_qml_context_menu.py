@@ -41,12 +41,55 @@ def _load(engine, qml_source):
 
 
 class TestPhotoContextMenu:
+    # #422: az „Átnevezés…" KIKERÜLT — az eredetiben nem ebben a menüben
+    # van, hanem a Fájl menüben (F2), ahol nálunk is működik.
     ITEMS = {
-        "contextMenuRename": "renameRequested",
+        "contextMenuOpen": "openRequested",
+        "contextMenuRotateRight": "rotateRightRequested",
+        "contextMenuRotateLeft": "rotateLeftRequested",
         "contextMenuMove": "moveRequested",
-        "contextMenuDelete": "deleteRequested",
+        "contextMenuOpenFile": "openFileRequested",
         "contextMenuLocate": "locateRequested",
+        "contextMenuDelete": "deleteRequested",
+        "contextMenuCopyFullPath": "copyFullPathRequested",
+        "contextMenuProperties": "propertiesRequested",
     }
+
+    # a spec 2. szakaszának teljes tételsora, sorrendben
+    EXPECTED_ORDER = [
+        "contextMenuOpen",
+        "contextMenuAddToAlbum",
+        "contextMenuRemoveFromAlbum",
+        "contextMenuRotateRight",
+        "contextMenuRotateLeft",
+        "contextMenuUndoAllEdits",
+        "contextMenuHide",
+        "contextMenuMove",
+        "contextMenuSplitFolder",
+        "contextMenuOpenFile",
+        "contextMenuOpenWith",
+        "contextMenuSave",
+        "contextMenuRevert",
+        "contextMenuLocate",
+        "contextMenuDelete",
+        "contextMenuCopyFullPath",
+        "contextMenuUploadToWebAlbums",
+        "contextMenuBlockUpload",
+        "contextMenuResetFaces",
+        "contextMenuProperties",
+    ]
+
+    # amiknek még nincs háttere — a Picasa ezeket is MEGJELENÍTI, szürkén
+    EXPECTED_DISABLED = [
+        "contextMenuUndoAllEdits",
+        "contextMenuSplitFolder",
+        "contextMenuOpenWith",
+        "contextMenuSave",
+        "contextMenuRevert",
+        "contextMenuUploadToWebAlbums",
+        "contextMenuBlockUpload",
+        "contextMenuResetFaces",
+    ]
 
     def _make_menu(self, qml_engine):
         return _load(
@@ -84,6 +127,56 @@ class TestPhotoContextMenu:
         QMetaObject.invokeMethod(item, "triggered", Qt.ConnectionType.DirectConnection)
         qt_app.processEvents()
         assert other_events == []
+
+
+    def test_every_original_command_is_present_in_order(self, qml_engine):
+        """#422: az eredeti `AlbumPhoto` menüosztály tételsora, a
+        `docs/specs/ui-audit-context-menus.md` 2. szakaszának sorrendjében."""
+        menu = self._make_menu(qml_engine)
+        found = [
+            child.objectName()
+            for child in menu.findChildren(QObject)
+            if child.objectName() in self.EXPECTED_ORDER
+        ]
+        assert found == self.EXPECTED_ORDER
+
+    def test_rename_is_gone_from_this_menu(self, qml_engine):
+        """Paritás: az eredetiben az átnevezés a Fájl menüben van (F2)."""
+        menu = self._make_menu(qml_engine)
+        assert menu.findChild(QObject, "contextMenuRename") is None
+
+    def test_unbacked_commands_are_shown_but_disabled(self, qml_engine):
+        """Az inaktív tétel is tétel: LÁTSZIK, de szürke (spec 5.1.)."""
+        menu = self._make_menu(qml_engine)
+        for name in self.EXPECTED_DISABLED:
+            item = menu.findChild(QObject, name)
+            assert item is not None, f"{name} hiányzik"
+            assert item.property("enabled") is False, f"{name} nem szürke"
+
+    def test_first_item_is_bold(self, qml_engine):
+        """A félkövér első tétel = a duplakattintás művelete (spec 5.3.)."""
+        menu = self._make_menu(qml_engine)
+        item = menu.findChild(QObject, "contextMenuOpen")
+        assert item.property("font").bold() is True
+
+    def test_delete_shortcut_is_ctrl_delete_in_the_grid(self, qml_engine):
+        """A rácsban `Ctrl+Delete`, a nézőben `Delete` (spec 3.)."""
+        menu = self._make_menu(qml_engine)
+        text = menu.findChild(QObject, "contextMenuDelete").property("text")
+        assert text.endswith("\tCtrl+Delete")
+
+    def test_hide_label_switches_instead_of_a_checkmark(self, qml_engine, qt_app):
+        """Elrejtés ↔ Megjelenítés UGYANAZON a helyen vált (spec A.2) — az
+        eredeti nem pipát tesz, hanem feliratot cserél."""
+        menu = self._make_menu(qml_engine)
+        item = menu.findChild(QObject, "contextMenuHide")
+        menu.setProperty("hideChecked", False)
+        qt_app.processEvents()
+        shown = item.property("text")
+        menu.setProperty("hideChecked", True)
+        qt_app.processEvents()
+        hidden = item.property("text")
+        assert shown and hidden and shown != hidden
 
 
 class TestThumbDelegateContextMenu:

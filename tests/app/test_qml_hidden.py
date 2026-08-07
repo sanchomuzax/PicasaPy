@@ -74,10 +74,13 @@ class TestHiddenInMain:
         assert hidden_flags.count(True) == 1
 
     def test_context_menu_has_hide_item(self, qml_app):
+        """#422: az eredeti nem pipát tesz a tételre, hanem a FELIRATOT
+        cseréli (Elrejtés ↔ Megjelenítés, ID_PICTURE_HIDE/UNHIDE)."""
         window, controller, lib, engine = qml_app
         item = window.findChild(QObject, "contextMenuHide")
         assert item is not None
-        assert item.property("checkable") is True
+        assert item.property("checkable") is False
+        assert item.property("text")
 
 
 class TestScrollAnchorOnHide:
