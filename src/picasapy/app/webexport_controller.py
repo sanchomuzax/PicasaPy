@@ -64,6 +64,32 @@ class WebExportController(QObject):
         fotó-modellhez (ld. a modul docstringje)."""
         super().__init__(parent)
         self._photo_source = photo_source
+        # #430: a futó exportáló szál — a leépítés (teszt-fixture, app-zárás)
+        # ezen keresztül tud MEGVÁRNI egy félbehagyott futást
+        self._worker: threading.Thread | None = None
+
+    def exportRunning(self) -> bool:
+        """Fut-e éppen exportáló háttérszál?"""
+        worker = self._worker
+        return worker is not None and worker.is_alive()
+
+    def waitForExport(self, timeout_s: float = 30.0) -> bool:
+        """Megvárja a futó exportáló szál leállását; `True`, ha nincs (már)
+        futó szál.
+
+        A szál `daemon`, ezért az interpreter leépítése nem várja meg: ha a
+        processz úgy ér véget, hogy a szál még Qt-jelzést emitál egy közben
+        felszámolt objektumnak, a futás SIGSEGV-vel omlik össze (#430, a
+        #53-as Qt/GIL-osztály rokona). Aki a controller élettartamát zárja
+        (teszt-fixture, alkalmazás-kilépés), ezt hívja."""
+        worker = self._worker
+        if worker is None:
+            return True
+        worker.join(timeout_s)
+        if worker.is_alive():
+            return False
+        self._worker = None
+        return True
 
     @Slot(result=list)
     def listWebExportTemplates(self) -> list[dict]:
@@ -118,11 +144,16 @@ class WebExportController(QObject):
             shadowed_images=shadowed_images,
         )
         self.webExportStarted.emit()
-        threading.Thread(
+        worker = threading.Thread(
             target=self._run_export,
             args=(Path(target), template.path, photos, album_name, settings),
+            name="picasapy-webexport",
             daemon=True,
-        ).start()
+        )
+        # #430: a szál nyilvántartva marad, hogy a `waitForExport()` meg
+        # tudja várni — daemon-szál felett az interpreter nem várakozik
+        self._worker = worker
+        worker.start()
 
     def _run_export(
         self,
