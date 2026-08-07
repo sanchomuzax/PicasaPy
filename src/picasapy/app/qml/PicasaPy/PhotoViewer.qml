@@ -721,7 +721,23 @@ Rectangle {
                     GpuPointFilterPreview {
                         id: gpuFinetunePreview
                         objectName: "gpuFinetunePreview"
-                        anchors.fill: photo
+                        // #415: NEM `anchors.fill: photo` — az a `photo`
+                        // TELJES befoglaló dobozára igazítana (a
+                        // rendelkezésre álló terület, `photo.width`/
+                        // `photo.height`), nem a `PreserveAspectFit`
+                        // fillMode által ténylegesen kirajzolt, letterboxolt
+                        // téglalapra. Álló képnél a doboz szélesebb, mint a
+                        // kirajzolt kép — a húzás alatt ez a réteg (a `photo`
+                        // fölött) a doboz teljes szélességére nyúlt, majd
+                        // elrejtésekor (elengedéskor) a helyesen illesztett
+                        // `photo` vált újra láthatóvá: ez okozta a
+                        // bejelentett "kiugrást". A helyes geometria a
+                        // `cropOverlay`/`facesOverlay` mintáját követi —
+                        // `paintedWidth`/`paintedHeight`, középre igazítva.
+                        x: photo.x + (photo.width - photo.paintedWidth) / 2
+                        y: photo.y + (photo.height - photo.paintedHeight) / 2
+                        width: photo.paintedWidth
+                        height: photo.paintedHeight
                         rotation: photo.rotation
                         scale: photo.scale
                         transformOrigin: Item.Center
