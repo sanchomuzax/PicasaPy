@@ -8,7 +8,8 @@ A menü SZERKEZETÉT (tételsor, sorrend, szürke tételek, felirat-váltás) a
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QEventLoop, QMetaObject, QObject, Qt, QTimer
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+
 
 
 def _child(window, name):
@@ -38,14 +39,11 @@ def _close_menu(window, qt_app):
     qt_app.processEvents()
 
 
-def _do_photo_op(controller, qt_app, action) -> None:
-    """A forgatás háttérszálon fut — megvárja a `photoOpFinished`-t."""
-    loop = QEventLoop()
-    controller.photoOpFinished.connect(loop.quit)
-    action()
-    QTimer.singleShot(2000, loop.quit)
-    loop.exec()
-    qt_app.processEvents()
+# A menü forgatás-parancsa a KÖTEGELT ágat hívja (`rotateRightMany`), ami a
+# `_apply_batch`-en át SZINKRON fut — nincs háttérszál, és nem is bocsát ki
+# `photoOpFinished`-t. Korábban ez a teszt mégis arra várt: a néma, 2 mp-es
+# vészfék miatt egyszerűen letelt az idő, és az utána következő állítás
+# véletlenül helyes értéket talált. A #475-ös hangos vészfék ezt kibuktatta.
 
 
 class TestPhotoMenuCommands:
@@ -63,14 +61,16 @@ class TestPhotoMenuCommands:
     def test_rotate_right_turns_the_selected_photo(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         menu = _open_menu(window, qt_app, row=0)
-        _do_photo_op(controller, qt_app, menu.rotateRightRequested.emit)
+        menu.rotateRightRequested.emit()
+        qt_app.processEvents()
         assert controller.photos.photos[0].rotate_steps == 1
         _close_menu(window, qt_app)
 
     def test_rotate_left_turns_the_selected_photo(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         menu = _open_menu(window, qt_app, row=0)
-        _do_photo_op(controller, qt_app, menu.rotateLeftRequested.emit)
+        menu.rotateLeftRequested.emit()
+        qt_app.processEvents()
         assert controller.photos.photos[0].rotate_steps == 3
         _close_menu(window, qt_app)
 

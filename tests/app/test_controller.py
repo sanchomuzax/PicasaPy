@@ -1,6 +1,8 @@
 """AppController: mappa-választás, keresés, státusz, provider-regisztráció."""
 
 import pytest
+
+from support.qt_wait import wait_for_photo_op
 from PIL import Image
 
 from support.jpeg_factory import make_jpeg
@@ -32,17 +34,9 @@ def _quit_on(signal):
 
 
 def _do_photo_op(controller, action) -> None:
-    """#141: a csillag/felirat/forgatás háttérszálon fut (NAS-írás +
-    célzott index-UPDATE) — ez a segéd megvárja a `photoOpFinished`
-    jelzést, ugyanazzal a QEventLoop-mintával, mint az
-    `addWatchedFolder` meglévő tesztjei a `syncFinished`-re várnak."""
-    from PySide6.QtCore import QEventLoop, QTimer
-
-    loop = QEventLoop()
-    controller.photoOpFinished.connect(loop.quit)
-    action()
-    QTimer.singleShot(2000, loop.quit)
-    loop.exec()
+    """A csillag/felirat/forgatás háttérszálon fut — a közös segéd megvárja
+    a `photoOpFinished` jelzést, és ELBUKIK, ha nem jön meg (#475)."""
+    wait_for_photo_op(controller, action)
 
 
 @pytest.fixture

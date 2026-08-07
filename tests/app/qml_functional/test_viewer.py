@@ -4,6 +4,8 @@ arc-overlay, feliratszerkesztés, mappaleírás, splash (#155: a korábbi
 
 from PySide6.QtCore import QObject
 
+from support.qt_wait import wait_for_photo_op
+
 from picasapy.version import version_string
 
 
@@ -14,17 +16,9 @@ def _viewer_image(window):
 
 
 def _do_photo_op(controller, qt_app, action) -> None:
-    """#141: a csillag/felirat/forgatás háttérszálon fut (NAS-írás +
-    célzott index-UPDATE) — megvárja a `photoOpFinished` jelzést, majd
-    lefuttat egy processEvents-et, hogy a QML-kötések is frissüljenek."""
-    from PySide6.QtCore import QEventLoop, QTimer
-
-    loop = QEventLoop()
-    controller.photoOpFinished.connect(loop.quit)
-    action()
-    QTimer.singleShot(2000, loop.quit)
-    loop.exec()
-    qt_app.processEvents()
+    """A csillag/felirat/forgatás háttérszálon fut — a közös segéd megvárja
+    a `photoOpFinished` jelzést, és ELBUKIK, ha nem jön meg (#475)."""
+    wait_for_photo_op(controller, action, qt_app=qt_app)
 
 
 class TestVersionLabel:
