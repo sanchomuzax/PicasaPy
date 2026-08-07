@@ -351,6 +351,21 @@ ListView {
             appWindow.selectedIndex = picked[picked.length - 1]
     }
 
+    // #422: jobbklikk a rács ÜRES területén — a mappa-kontextusmenü első
+    // megnyitási pontja. Az indexképek saját jobbklikk-kezelője (a
+    // ThumbDelegate → openPhotoContextMenu) hamarabb elkapja az eseményt,
+    // így ez tényleg csak a képek közötti/alatti üres részen fut le. A
+    // célmappa a jelenleg kiválasztott (a hívó tölti ki üres útvonalnál).
+    TapHandler {
+        objectName: "feedEmptyAreaContextMenu"
+        acceptedButtons: Qt.RightButton
+        gesturePolicy: TapHandler.ReleaseWithinBounds
+        onSingleTapped: {
+            if (grid.appWindow && grid.appWindow.openFolderContextMenu)
+                grid.appWindow.openFolderContextMenu("")
+        }
+    }
+
     delegate: Column {
         id: groupCol
         required property var modelData
@@ -375,6 +390,13 @@ ListView {
             // zöld ▸ (#8): a mappa vetítése az első képétől
             onPlayRequested: grid.slideshowRequested(
                 groupCol.modelData.start)
+            // #422: jobbklikk a mappa-fejlécen — a mappa-kontextusmenü
+            // ARRA a mappára, amelyiknek a fejléce ez (nem a kijelöltre)
+            onContextMenuRequested: {
+                if (grid.appWindow && grid.appWindow.openFolderContextMenu)
+                    grid.appWindow.openFolderContextMenu(
+                        groupCol.modelData.path)
+            }
         }
 
         // #142: csoporton belüli virtualizálás — a korábbi Flow +

@@ -18,6 +18,16 @@ ColumnLayout {
     signal descriptionEdited(string text)
     // zöld ▸: a mappa diavetítése (#8) — a bekötés a Main.qml-ben
     signal playRequested()
+    // #422: a mappa-kontextusmenü HARMADIK megnyitási pontja — a felmérés
+    // szerint a fejlécre jobbklikkelve UGYANAZ a 15 tételes menü jön elő,
+    // mint a rács üres területén és a bal panel mappa-során
+    signal contextMenuRequested()
+
+    TapHandler {
+        acceptedButtons: Qt.RightButton
+        gesturePolicy: TapHandler.ReleaseWithinBounds
+        onSingleTapped: header.contextMenuRequested()
+    }
     spacing: 3
 
     // -- címsor: mappa-ikon + cím (50px behúzás) + jobb-felső szinkron-kapcsoló --

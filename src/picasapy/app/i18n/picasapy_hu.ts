@@ -489,6 +489,78 @@
         <source>Set Folder Date...</source>
         <translation>Mappa dátumának beállítása…</translation>
     </message>
+    <message>
+        <source>Edit Folder Description...</source>
+        <translation>Mappaleírás szerkesztése…</translation>
+    </message>
+    <message>
+        <source>Select All Pictures</source>
+        <translation>Az összes kép kijelölése</translation>
+    </message>
+    <message>
+        <source>Clear Selection</source>
+        <translation>Kijelölés törlése</translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation>Kiválasztás megfordítása</translation>
+    </message>
+    <message>
+        <source>Refresh Thumbnails</source>
+        <translation>Indexképek frissítése</translation>
+    </message>
+    <message>
+        <source>Sort Folder By</source>
+        <translation>Mappa rendezésének alapja</translation>
+    </message>
+    <message>
+        <source>Date</source>
+        <translation>Dátum</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Név</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>Méret</translation>
+    </message>
+    <message>
+        <source>Reverse Order</source>
+        <translation>Fordított sorrend</translation>
+    </message>
+    <message>
+        <source>Hide Folder</source>
+        <translation>Mappa elrejtése</translation>
+    </message>
+    <message>
+        <source>Locate on Disk</source>
+        <translation>Keresés a lemezen</translation>
+    </message>
+    <message>
+        <source>Remove from Picasa...</source>
+        <translation>Eltávolítás a Picasából…</translation>
+    </message>
+    <message>
+        <source>Move Folder...</source>
+        <translation>Mappa áthelyezése…</translation>
+    </message>
+    <message>
+        <source>Delete Folder...</source>
+        <translation>Mappa törlése…</translation>
+    </message>
+    <message>
+        <source>Upload to Google Photos...</source>
+        <translation>Feltöltés a Google Fotókba…</translation>
+    </message>
+    <message>
+        <source>Export as HTML Page...</source>
+        <translation>Exportálás HTML-oldalként…</translation>
+    </message>
+    <message>
+        <source>Add Name Tags</source>
+        <translation>Névcímkék hozzáadása</translation>
+    </message>
 </context>
 <context>
     <name>NewCollectionDialog</name>
@@ -499,25 +571,6 @@
     <message>
         <source>Collection name:</source>
         <translation>Gyűjtemény neve:</translation>
-    </message>
-</context>
-<context>
-    <name>FolderDateDialog</name>
-    <message>
-        <source>Set Folder Date</source>
-        <translation>Mappa dátumának beállítása</translation>
-    </message>
-    <message>
-        <source>Folder date (YYYY-MM-DD):</source>
-        <translation>Mappa dátuma (ÉÉÉÉ-HH-NN):</translation>
-    </message>
-    <message>
-        <source>Enter the date as YYYY-MM-DD.</source>
-        <translation>A dátumot ÉÉÉÉ-HH-NN formában adja meg.</translation>
-    </message>
-    <message>
-        <source>Clear override (use oldest picture)</source>
-        <translation>Felülírás törlése (a legrégebbi kép számít)</translation>
     </message>
 </context>
 <context>
@@ -1767,6 +1820,10 @@
         <location filename="../qml/PicasaPy/FolderPane.qml" line="309"/>
         <source>Other</source>
         <translation>Egyéb</translation>
+    </message>
+    <message>
+        <source>Remove this folder from PicasaPy? The files stay on disk.</source>
+        <translation>Eltávolítja ezt a mappát a PicasaPy-ból? A fájlok a lemezen maradnak.</translation>
     </message>
 </context>
 <context>
@@ -3400,6 +3457,41 @@
     <message>
         <source>Properties</source>
         <translation>Tulajdonságok</translation>
+    </message>
+</context>
+<context>
+    <name>FolderPropertiesDialog</name>
+    <message>
+        <source>Edit Folder Description</source>
+        <translation>Mappaleírás szerkesztése</translation>
+    </message>
+    <message>
+        <source>Name:</source>
+        <translation>Név:</translation>
+    </message>
+    <message>
+        <source>Date:</source>
+        <translation>Dátum:</translation>
+    </message>
+    <message>
+        <source>Automatic date</source>
+        <translation>Automatikus dátum</translation>
+    </message>
+    <message>
+        <source>Enter the date as YYYY-MM-DD.</source>
+        <translation>A dátumot ÉÉÉÉ-HH-NN alakban adja meg.</translation>
+    </message>
+    <message>
+        <source>Use music for Slideshow and Movie presentation:</source>
+        <translation>Zene használata a diavetítéshez és a mozgófilmhez:</translation>
+    </message>
+    <message>
+        <source>Place taken (optional):</source>
+        <translation>A felvétel helye (nem kötelező):</translation>
+    </message>
+    <message>
+        <source>Description (optional):</source>
+        <translation>Leírás (nem kötelező):</translation>
     </message>
 </context>
 </TS>

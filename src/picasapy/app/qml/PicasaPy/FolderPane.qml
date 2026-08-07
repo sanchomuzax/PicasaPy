@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 
 // Bal oldali gyűjtemény-hasáb — Picasa "Folder List" gyökere (#320): öt
 // önálló, csukható gyűjtemény (Albumok/Emberek/Projektek/Mappák/Egyéb),
@@ -56,6 +57,11 @@ Rectangle {
     function openFolderContextMenu(path) {
         folderContextMenu.folderPath = path
         folderContextMenu.customCollections = pane.customCollectionsModel
+        // #422: a rendezés-almenü pipái a jelenlegi rács-rendezést mutatják
+        if (controller) {
+            folderContextMenu.sortMode = controller.folderSort
+            folderContextMenu.sortReverse = controller.folderSortReverse
+        }
         folderContextMenu.popup()
     }
 
@@ -476,6 +482,11 @@ Rectangle {
     // setFolderDate, clearFolderDate, customCollections) az AppController
     // öröklés-listájának bővítésével válnak élővé (controller.py, forró
     // fájl — az integrátor dolga).
+    // #422: a fő ablak a kijelölés-parancsokhoz és a webexport-dialógushoz
+    // (a PhotoViewer.qml `Window.window` mintája — így a forró Main.qml-hez
+    // nem kell hozzányúlni; önálló példányosításnál egyszerűen hiányzik)
+    readonly property var appWindow: Window.window
+
     FolderContextMenu {
         id: folderContextMenu
         onMoveToCollectionRequested: function(collectionName) {
@@ -483,11 +494,69 @@ Rectangle {
                 folderContextMenu.folderPath, collectionName)
         }
         onNewCollectionRequested: newCollectionDialog.open()
-        onSetDateRequested: {
-            folderDateDialog.folderPath = folderContextMenu.folderPath
-            folderDateDialog.currentDate = controller
-                ? controller.folderDateOverride(folderContextMenu.folderPath) : ""
-            folderDateDialog.open()
+
+        // #422: az eredeti `album.fen` dialógusa — a mappa DÁTUMA is itt
+        // lakik, ezért szűnt meg a külön „Mappa dátumának beállítása…"
+        // menütétel
+        onEditDescriptionRequested: {
+            var path = folderContextMenu.folderPath
+            folderPropertiesDialog.folderPath = path
+            folderPropertiesDialog.folderName =
+                path.substring(path.lastIndexOf("/") + 1)
+            folderPropertiesDialog.currentDate =
+                controller ? controller.folderDateOverride(path) : ""
+            folderPropertiesDialog.currentDescription =
+                controller ? controller.folderDescriptionOf(path) : ""
+            folderPropertiesDialog.open()
+        }
+
+        onSelectAllRequested:
+            if (pane.appWindow && pane.appWindow.selectAll) pane.appWindow.selectAll()
+        onClearSelectionRequested:
+            if (pane.appWindow && pane.appWindow.clearSelection)
+                pane.appWindow.clearSelection()
+        onInvertSelectionRequested:
+            if (pane.appWindow && pane.appWindow.invertSelection)
+                pane.appWindow.invertSelection()
+
+        onRefreshThumbnailsRequested:
+            if (controller) controller.resyncFolder(folderContextMenu.folderPath)
+        onSortModeRequested: function(mode) {
+            if (controller) controller.setFolderSort(mode)
+        }
+        onSortReverseRequested: if (controller) controller.toggleFolderSortReverse()
+
+        onLocateRequested: {
+            if (typeof fileOpsController !== "undefined" && fileOpsController)
+                fileOpsController.revealFolder(folderContextMenu.folderPath)
+        }
+        onRemoveFromPicasaRequested: removeFolderConfirm.ask(
+            "removeFolder",
+            qsTr("Remove this folder from PicasaPy? The files stay on disk."))
+        onExportAsHtmlRequested:
+            if (pane.appWindow && pane.appWindow.openWebExport)
+                pane.appWindow.openWebExport()
+    }
+
+    // „Eltávolítás a Picasából…" — a fájlok a lemezen maradnak, csak a
+    // figyelt mappák közül kerül ki (#422)
+    ConfirmDialog {
+        id: removeFolderConfirm
+        namePrefix: "removeFolderConfirm"
+        onConfirmed: {
+            if (controller && folderContextMenu.folderPath !== "")
+                controller.removeWatchedFolder(folderContextMenu.folderPath)
+        }
+    }
+
+    FolderPropertiesDialog {
+        id: folderPropertiesDialog
+        onFolderPropertiesAccepted: function(path, isoDate, description) {
+            if (!controller) return
+            controller.setFolderDescriptionOf(path, description)
+            // üres dátum = „automatikus dátum": a felülírás törlése
+            if (isoDate.length > 0) controller.setFolderDate(path, isoDate)
+            else controller.clearFolderDate(path)
         }
     }
 
@@ -506,13 +575,4 @@ Rectangle {
         }
     }
 
-    FolderDateDialog {
-        id: folderDateDialog
-        onDateAccepted: function(path, isoDate) {
-            if (controller) controller.setFolderDate(path, isoDate)
-        }
-        onDateCleared: function(path) {
-            if (controller) controller.clearFolderDate(path)
-        }
-    }
 }

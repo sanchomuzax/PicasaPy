@@ -17,6 +17,7 @@ from PySide6.QtGui import QDesktopServices, QGuiApplication
 from picasapy.fileops import (
     delete_to_trash,
     move_photo,
+    open_folder_in_file_manager,
     rename_photo,
     reveal_in_file_manager,
 )
@@ -81,6 +82,23 @@ class FileOpsController(QObject):
         maradjon visszajelzés nélkül (#112)."""
         try:
             reveal_in_file_manager(Path(path))
+        except OSError as error:
+            self.operationFailed.emit("reveal", str(error))
+
+    @Slot(str)
+    def revealFolder(self, folder_path: str) -> None:
+        """MAGÁNAK a mappának a megnyitása a fájlkezelőben (#422: „Keresés a
+        lemezen" a mappa kontextusmenüjéből).
+
+        A `revealPhoto` a kapott ÚT SZÜLŐJÉT nyitja (fájlra van szabva) —
+        mappánál az a szülőmappát nyitná meg, ami nem az elvárt viselkedés.
+        Ezért a mappa alatti álnevet adjuk át, aminek a szülője maga a
+        mappa."""
+        local = _to_local_path(folder_path)
+        if not local:
+            return
+        try:
+            open_folder_in_file_manager(Path(local))
         except OSError as error:
             self.operationFailed.emit("reveal", str(error))
 

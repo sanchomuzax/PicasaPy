@@ -45,8 +45,8 @@ ImportSourceDialog 1.0 ImportSourceDialog.qml
 ConfirmDialog 1.0 ConfirmDialog.qml
 MoveDatabaseDialog 1.0 MoveDatabaseDialog.qml
 FolderContextMenu 1.0 FolderContextMenu.qml
+FolderPropertiesDialog 1.0 FolderPropertiesDialog.qml
 NewCollectionDialog 1.0 NewCollectionDialog.qml
-FolderDateDialog 1.0 FolderDateDialog.qml
 OptionsDialog 1.0 OptionsDialog.qml
 OptionsTabGeneral 1.0 OptionsTabGeneral.qml
 OptionsTabEmail 1.0 OptionsTabEmail.qml

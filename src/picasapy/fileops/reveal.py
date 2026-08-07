@@ -21,7 +21,17 @@ def reveal_in_file_manager(path: Path) -> None:
     emel, hogy a hívó (pl. `FileOpsController`) az `operationFailed`
     jelzésre tudja fordítani — a felhasználó ne néma némaságban maradjon,
     ha a fájlkezelő megnyitása sikertelen (#112)."""
-    folder = Path(path).parent
+    open_folder_in_file_manager(Path(path).parent)
+
+
+def open_folder_in_file_manager(folder: Path) -> None:
+    """MAGÁNAK a mappának a megnyitása a fájlkezelőben (#422).
+
+    A `reveal_in_file_manager` fájlra van szabva: a kapott út SZÜLŐJÉT
+    nyitja. A mappa-kontextusmenü „Keresés a lemezen" tételéhez viszont a
+    mappa saját tartalma kell — ez a függvény azt nyitja meg. A hibaágak
+    (hiányzó `xdg-open`, nemnulla kilépési kód) azonosak, ld. ott."""
+    folder = Path(folder)
     try:
         result = subprocess.run(["xdg-open", str(folder)], check=False)
     except OSError as error:

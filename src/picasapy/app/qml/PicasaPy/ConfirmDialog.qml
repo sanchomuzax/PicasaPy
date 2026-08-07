@@ -16,7 +16,12 @@ import QtQuick.Layouts
 // jelzés szinkron kibocsátása).
 Dialog {
     id: root
-    objectName: "confirmDialog"
+    objectName: namePrefix + "Dialog"
+    // #422: több ConfirmDialog-példány is élhet egy ablakban (a törlés
+    // megerősítése mellett pl. a mappa eltávolítása) — a belső elemek
+    // neve ezért példányonként egyedi. Az alapérték a korábbi neveket
+    // adja vissza, így a meglévő hívók változatlanok.
+    property string namePrefix: "confirm"
     modal: true
     focus: true
     // window="fit" (confirm.fen) — a tartalomhoz igazodó méret
@@ -64,7 +69,7 @@ Dialog {
         spacing: 12
 
         Text {
-            objectName: "confirmMessageLabel"
+            objectName: root.namePrefix + "MessageLabel"
             Layout.preferredWidth: 320
             text: root.message
             wrapMode: Text.WordWrap
@@ -74,7 +79,7 @@ Dialog {
 
         CheckBox {
             id: rememberCheck
-            objectName: "confirmRememberCheck"
+            objectName: root.namePrefix + "RememberCheck"
             text: qsTr("Don't ask again")
         }
 
@@ -83,13 +88,13 @@ Dialog {
             spacing: 8
 
             PicasaButton {
-                objectName: "confirmYesButton"
+                objectName: root.namePrefix + "YesButton"
                 text: qsTr("Yes")
                 accent: Theme.picasaGreen
                 onClicked: root.accept()
             }
             PicasaButton {
-                objectName: "confirmNoButton"
+                objectName: root.namePrefix + "NoButton"
                 text: qsTr("No")
                 onClicked: {
                     root.close()
@@ -97,7 +102,7 @@ Dialog {
                 }
             }
             PicasaButton {
-                objectName: "confirmCancelButton"
+                objectName: root.namePrefix + "CancelButton"
                 text: qsTr("Cancel")
                 onClicked: {
                     root.close()
