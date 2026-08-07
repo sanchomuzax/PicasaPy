@@ -205,6 +205,40 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Tanulságok
 
+- **2026-08-06 (Qt-csapda, felhasználó fedezte fel): a Qt SVG-motorja (SVG
+  Tiny 1.2) NÉMÁN kihagyja a `clipPath`-t ÉS a beágyazott `<svg>`-t.**
+  A szerkesztő „Gyakori javítások" ikonjain a féloldalakat clipPath-szal
+  vágtuk — így az „utána" réteg az EGÉSZ ikonra ráfestett, mind a három
+  felezett ikon egyformának látszott, és mindhárom egymással is azonos
+  lett. Hibaüzenet SEHOL nem volt. A felhasználó vette észre; méréssel
+  igazolódott (a két fél átlagos fényessége 182 vs 181). Szabály:
+  ikon-SVG-ben a részleges kitakarást GEOMETRIÁVAL kell megoldani (a
+  poligonokat elmetszve), és őr-teszt tiltja a nem támogatott elemeket
+  (`tests/app/qml_functional/test_icon_assets.py`). Általánosabban: ha egy
+  vizuális elem „nem látszik", előbb a RENDERELŐ képességeit ellenőrizd,
+  ne a saját színválasztásodat — és MÉRD a kimenetet, ne szemre nézd.
+
+- **2026-08-06 (UI-méretek): a fix pixelméretet TILOS ablakarányosan
+  leskálázni.** A szerkesztő-eszközpanel dokumentált ~280px-es szélességét
+  egy kör „arányosan" 190px-re vitte (280×1280/1920) — az eredetiben a
+  panel FIX széles, nem skálázódik, ezért a feliratok szétestek és a
+  felhasználó screenshotján azonnal látszott az eltérés. Ha egy méret
+  screenshot-mérésből származik, a mérés ABLAKMÉRETÉT is rögzíteni kell,
+  és jelölni, skálázódó vagy fix elemről van-e szó.
+
+- **2026-08-06 (CI-kimaradás): a GitHub Actions tud ÚGY hibázni, hogy
+  futás LÉTRE SEM JÖN.** Egész napos akadozás alatt: action-letöltési
+  hibák („Failed to resolve action download info / Service Unavailable"),
+  500-as workflow-dispatch, „skipped" csomagolás, és végül push-ra
+  egyáltalán nem induló CI (0 check run, két push után sem). Kezelés:
+  (a) a bukást előbb OKRA kell vizsgálni — az infrastruktúra-hiba nem
+  kódhiba, rerun a helyes válasz; (b) ha a release/csomagolás elmarad,
+  `release.yml`/`package.yml` kézzel dispatchelhető (utóbbi `tag`
+  bemenettel); (c) ha a CI tartósan nem indul, a merge-döntést a
+  felhasználó elé kell vinni, és a lokálisan futtatott TELJES készlettel
+  kell helyettesíteni a bizonyítékot — a tényt a PR-ban rögzítve.
+
+
 - **2026-08-06: a csak-dokumentációs PR magától beolvasztható — `ci-docs.yml`.**
   A `ci.yml` szándékosan nem fut `**.md`/`docs/**` változásra, a main ág védelme
   viszont kötelező ellenőrzésként várja a `Test (ubuntu-latest)` státuszt →
