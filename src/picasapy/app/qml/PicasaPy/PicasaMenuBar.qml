@@ -88,30 +88,34 @@ MenuBar {
 
     Menu {
         title: qsTr("&File")
-        MenuItem { text: qsTr("New Album...") + "\tCtrl+N"; enabled: false }
-        MenuItem { text: qsTr("Add Folder to Picasa..."); enabled: false }
-        MenuItem { text: qsTr("Add File to Picasa...") + "\tCtrl+O"; enabled: false }
-        MenuItem { text: qsTr("Import From...") + "\tCtrl+M"; enabled: false }
+        PicasaMenuItem {
+            objectName: "menuFileNewAlbum"
+            text: qsTr("New Album...") + "\tCtrl+N"
+            placeholder: true
+        }
+        PicasaMenuItem { text: qsTr("Add Folder to Picasa..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Add File to Picasa...") + "\tCtrl+O"; placeholder: true }
+        PicasaMenuItem { text: qsTr("Import From...") + "\tCtrl+M"; placeholder: true }
         // hiányzott (#324 audit): a Google Fotókból importálás menüpontja
-        MenuItem { text: qsTr("Import From Google Photos..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Import From Google Photos..."); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): fájl(ok) megnyitása a szerkesztőben
-        MenuItem { text: qsTr("Open File(s) in Editor") + "\tCtrl+Shift+O"; enabled: false }
+        PicasaMenuItem { text: qsTr("Open File(s) in Editor") + "\tCtrl+Shift+O"; placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): mappa áthelyezés a fájlműveletek csoportjában
-        MenuItem { text: qsTr("Move to New Folder..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Move to New Folder..."); placeholder: true }
         MenuItem {
             objectName: "menuFileRename"
             text: qsTr("Rename...") + "\tF2"
             enabled: bar.photoActionsEnabled
             onTriggered: bar.renameRequested()
         }
-        MenuItem { text: qsTr("Save") + "\tCtrl+S"; enabled: false }
-        MenuItem { text: qsTr("Revert"); enabled: false }
+        PicasaMenuItem { text: qsTr("Save") + "\tCtrl+S"; placeholder: true }
+        PicasaMenuItem { text: qsTr("Revert"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): eltérő mentés-változatok
-        MenuItem { text: qsTr("Save As..."); enabled: false }
-        MenuItem { text: qsTr("Save a Copy"); enabled: false }
+        PicasaMenuItem { text: qsTr("Save As..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Save a Copy"); placeholder: true }
         MenuSeparator {}
         MenuItem {
             objectName: "menuFileExport"
@@ -133,19 +137,23 @@ MenuBar {
             onTriggered: bar.deleteRequested()
         }
         MenuSeparator {}
-        MenuItem { text: qsTr("Print...") + "\tCtrl+P"; enabled: false }
-        MenuItem { text: qsTr("E-Mail...") + "\tCtrl+E"; enabled: false }
+        PicasaMenuItem { text: qsTr("Print...") + "\tCtrl+P"; placeholder: true }
+        PicasaMenuItem { text: qsTr("E-Mail...") + "\tCtrl+E"; placeholder: true }
         // hiányzott (#324 audit): nyomtatott képek online rendelése
-        MenuItem { text: qsTr("Order Prints..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Order Prints..."); placeholder: true }
         MenuSeparator {}
         MenuItem { text: qsTr("E&xit"); onTriggered: Qt.quit() }
     }
     Menu {
         title: qsTr("&Edit")
         // hiányzott (#324 audit): a szabvány vágólap-műveletek
-        MenuItem { text: qsTr("Cut") + "\tCtrl+X"; enabled: false }
-        MenuItem { text: qsTr("Copy") + "\tCtrl+C"; enabled: false }
-        MenuItem { text: qsTr("Paste") + "\tCtrl+V"; enabled: false }
+        PicasaMenuItem {
+            objectName: "menuEditCut"
+            text: qsTr("Cut") + "\tCtrl+X"
+            placeholder: true
+        }
+        PicasaMenuItem { text: qsTr("Copy") + "\tCtrl+C"; placeholder: true }
+        PicasaMenuItem { text: qsTr("Paste") + "\tCtrl+V"; placeholder: true }
         MenuSeparator {}
         MenuItem {
             objectName: "menuEditCopyEffects"
@@ -161,8 +169,8 @@ MenuBar {
         }
         MenuSeparator {}
         // hiányzott (#324 audit): feliratszöveg vágólap-műveletei
-        MenuItem { text: qsTr("Copy Text"); enabled: false }
-        MenuItem { text: qsTr("Paste Text"); enabled: false }
+        PicasaMenuItem { text: qsTr("Copy Text"); placeholder: true }
+        PicasaMenuItem { text: qsTr("Paste Text"); placeholder: true }
         MenuSeparator {}
         MenuItem {
             text: qsTr("Select All") + "\tCtrl+A"
@@ -172,7 +180,7 @@ MenuBar {
             text: qsTr("Select Starred")
             onTriggered: bar.selectStarredRequested()
         }
-        MenuItem { text: qsTr("Invert Selection") + "\tCtrl+I"; enabled: false }
+        PicasaMenuItem { text: qsTr("Invert Selection") + "\tCtrl+I"; placeholder: true }
         MenuItem {
             text: qsTr("Clear Selection") + "\tCtrl+D"
             onTriggered: bar.clearSelectionRequested()
@@ -190,7 +198,7 @@ MenuBar {
             text: qsTr("Normal Thumbnails") + "\tCtrl+2"
             onTriggered: bar.thumbSizePreset(144)
         }
-        MenuItem { text: qsTr("Edit View") + "\tCtrl+3"; enabled: false }
+        PicasaMenuItem { text: qsTr("Edit View") + "\tCtrl+3"; placeholder: true }
         MenuSeparator {}
         MenuItem {
             objectName: "menuViewProperties"
@@ -206,7 +214,7 @@ MenuBar {
             checked: bar.tagsPanelOpen
             onTriggered: bar.tagsPanelRequested()
         }
-        MenuItem { text: qsTr("People"); enabled: false }
+        PicasaMenuItem { text: qsTr("People"); placeholder: true }
         MenuItem {
             objectName: "menuViewPlaces"
             text: qsTr("Places")
@@ -216,7 +224,7 @@ MenuBar {
         }
         MenuSeparator {}
         // hiányzott (#324 audit): a szerkesztő panel láthatóság-kapcsolója
-        MenuItem { text: qsTr("Show Editing Controls"); checkable: true; enabled: false }
+        PicasaMenuItem { text: qsTr("Show Editing Controls"); checkable: true; placeholder: true }
         MenuItem {
             objectName: "menuViewSlideshow"
             text: qsTr("Slideshow") + "\tCtrl+4"
@@ -229,10 +237,15 @@ MenuBar {
         }
         MenuSeparator {}
         // hiányzott (#324 audit): keresési opciók
-        MenuItem { text: qsTr("Search Options"); enabled: false }
+        PicasaMenuItem { text: qsTr("Search Options"); placeholder: true }
         // hiányzott (#324 audit): a jelentése a screenshotokból nem
         // egyértelmű — feltehetően mappacím nélküli indexkép-rács
-        MenuItem { text: qsTr("Thumbnails Only"); checkable: true; enabled: false }
+        PicasaMenuItem {
+            objectName: "menuViewThumbnailsOnly"
+            text: qsTr("Thumbnails Only")
+            checkable: true
+            placeholder: true
+        }
         MenuItem {
             objectName: "menuViewHidden"
             text: qsTr("Hidden Pictures")
@@ -241,7 +254,7 @@ MenuBar {
             onTriggered: controller.toggleShowHidden()
         }
         // hiányzott (#324 audit): színprofil-kezelés kapcsoló
-        MenuItem { text: qsTr("Use Color Management"); checkable: true; enabled: false }
+        PicasaMenuItem { text: qsTr("Use Color Management"); checkable: true; placeholder: true }
         MenuItem {
             // #28: opcionális sötét téma — az alapértelmezés a világos
             objectName: "menuViewDarkTheme"
@@ -326,7 +339,7 @@ MenuBar {
     }
     Menu {
         title: qsTr("F&older")
-        MenuItem { text: qsTr("Edit Description..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Edit Description..."); placeholder: true }
         MenuItem {
             objectName: "menuFolderSlideshow"
             text: qsTr("View Slideshow") + "\tCtrl+4"
@@ -377,34 +390,34 @@ MenuBar {
         MenuSeparator {}
         // hiányzott (#324 audit): mappa szintű elrejtés/megjelenítés — más,
         // mint a Nézet ▸ Rejtett képek (kép-szintű) kapcsoló
-        MenuItem { text: qsTr("Hide"); enabled: false }
-        MenuItem { text: qsTr("Show"); enabled: false }
+        PicasaMenuItem { text: qsTr("Hide"); placeholder: true }
+        PicasaMenuItem { text: qsTr("Show"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit)
-        MenuItem { text: qsTr("Print Thumbnails...") + "\tCtrl+Shift+P"; enabled: false }
+        PicasaMenuItem { text: qsTr("Print Thumbnails...") + "\tCtrl+Shift+P"; placeholder: true }
         MenuItem {
             objectName: "menuFolderWebExport"
             text: qsTr("Export as HTML Page...")
             onTriggered: bar.webExportRequested()
         }
         MenuSeparator {}
-        MenuItem { text: qsTr("Locate on Disk") + "\tCtrl+Enter"; enabled: false }
-        MenuItem { text: qsTr("Remove from Picasa..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Locate on Disk") + "\tCtrl+Enter"; placeholder: true }
+        PicasaMenuItem { text: qsTr("Remove from Picasa..."); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): mappa áthelyezése/törlése a lemezen
-        MenuItem { text: qsTr("Move..."); enabled: false }
-        MenuItem { text: qsTr("Delete..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Move..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Delete..."); placeholder: true }
     }
     Menu {
         title: qsTr("&Picture")
-        MenuItem { text: qsTr("View and Edit") + "\tCtrl+3"; enabled: false }
+        PicasaMenuItem { text: qsTr("View and Edit") + "\tCtrl+3"; placeholder: true }
         // #324 audit („eltérő"): eredetiben almenü — a tartalma a
         // screenshotokból nem derül ki, egyelőre üres/inaktív almenü
         Menu {
             title: qsTr("Batch Edit")
             enabled: false
         }
-        MenuItem { text: qsTr("Undo All Edits"); enabled: false }
+        PicasaMenuItem { text: qsTr("Undo All Edits"); placeholder: true }
         MenuSeparator {}
         MenuItem {
             objectName: "menuPictureHide"
@@ -414,7 +427,7 @@ MenuBar {
         }
         // hiányzott (#324 audit): arc-négyzetek pozíciójának visszaállítása
         // (3. fázis, arcfelismerés-előkészítés)
-        MenuItem { text: qsTr("Reset Face Positions"); enabled: false }
+        PicasaMenuItem { text: qsTr("Reset Face Positions"); placeholder: true }
         MenuItem {
             objectName: "menuPictureProperties"
             text: qsTr("Properties") + "\tAlt+Enter"
@@ -424,8 +437,8 @@ MenuBar {
     Menu {
         title: qsTr("&Create")
         // hiányzott (#324 audit)
-        MenuItem { text: qsTr("Set as Desktop Background..."); enabled: false }
-        MenuItem { text: qsTr("Make a Poster..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Set as Desktop Background..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Make a Poster..."); placeholder: true }
         MenuItem {
             objectName: "menuCreateCollage"
             text: qsTr("Picture Collage...")
@@ -433,8 +446,8 @@ MenuBar {
             onTriggered: bar.collageRequested()
         }
         // hiányzott (#324 audit): OS-integrációs funkciók
-        MenuItem { text: qsTr("Add to Screensaver..."); enabled: false }
-        MenuItem { text: qsTr("Make a Gift CD..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Add to Screensaver..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Make a Gift CD..."); placeholder: true }
         // #324 audit („eltérő"): eredetiben almenü — a valódi (működő)
         // filmkészítés a submenu egyetlen tételeként maradt életben
         Menu {
@@ -448,7 +461,7 @@ MenuBar {
             }
         }
         // hiányzott (#324 audit)
-        MenuItem { text: qsTr("Publish to Blogger..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Publish to Blogger..."); placeholder: true }
     }
     Menu {
         title: qsTr("&Tools")
@@ -458,8 +471,8 @@ MenuBar {
         }
         // hiányzott (#324 audit) — az auditban jelzett screenshot-időpontban
         // az eredetiben is inaktív volt
-        MenuItem { text: qsTr("Upload Manager..."); enabled: false }
-        MenuItem { text: qsTr("People Manager..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Upload Manager..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("People Manager..."); placeholder: true }
         MenuSeparator {}
         MenuItem {
             objectName: "menuToolsDedup"
@@ -468,11 +481,11 @@ MenuBar {
         }
         MenuSeparator {}
         // hiányzott (#324 audit)
-        MenuItem { text: qsTr("Configure Photo Viewer..."); enabled: false }
-        MenuItem { text: qsTr("Configure Screensaver..."); enabled: false }
-        MenuItem { text: qsTr("Back Up Pictures..."); enabled: false }
-        MenuItem { text: qsTr("Batch Upload..."); enabled: false }
-        MenuItem { text: qsTr("Adjust Date and Time..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Configure Photo Viewer..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Configure Screensaver..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Back Up Pictures..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Batch Upload..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Adjust Date and Time..."); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
         Menu { title: qsTr("Upload"); enabled: false }
@@ -487,7 +500,7 @@ MenuBar {
             }
         }
         MenuSeparator {}
-        MenuItem { text: qsTr("Configure Buttons..."); enabled: false }
+        PicasaMenuItem { text: qsTr("Configure Buttons..."); placeholder: true }
         MenuSeparator {}
         // #333: nyelvválasztás — alapértelmezés az angol, a magyar
         // választható; a döntés a QSettings-ben marad. A #305-ös null-őr
@@ -522,18 +535,18 @@ MenuBar {
     }
     Menu {
         title: qsTr("&Help")
-        MenuItem { text: qsTr("Help Contents and Index") + "\tF1"; enabled: false }
-        MenuItem { text: qsTr("Keyboard Shortcuts"); enabled: false }
+        PicasaMenuItem { text: qsTr("Help Contents and Index") + "\tF1"; placeholder: true }
+        PicasaMenuItem { text: qsTr("Keyboard Shortcuts"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): web-linkek
-        MenuItem { text: qsTr("Picasa Forums"); enabled: false }
-        MenuItem { text: qsTr("Online Information"); enabled: false }
-        MenuItem { text: qsTr("Product Release Notes"); enabled: false }
+        PicasaMenuItem { text: qsTr("Picasa Forums"); placeholder: true }
+        PicasaMenuItem { text: qsTr("Online Information"); placeholder: true }
+        PicasaMenuItem { text: qsTr("Product Release Notes"); placeholder: true }
         MenuSeparator {}
-        MenuItem { text: qsTr("Privacy Policy"); enabled: false }
-        MenuItem { text: qsTr("Terms of Service"); enabled: false }
+        PicasaMenuItem { text: qsTr("Privacy Policy"); placeholder: true }
+        PicasaMenuItem { text: qsTr("Terms of Service"); placeholder: true }
         MenuSeparator {}
-        MenuItem { text: qsTr("Check for Updates"); enabled: false }
+        PicasaMenuItem { text: qsTr("Check for Updates"); placeholder: true }
         MenuSeparator {}
         MenuItem {
             objectName: "menuHelpPerfMonitor"

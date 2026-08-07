@@ -3,6 +3,7 @@ singleton Theme 1.0 Theme.qml
 FolderPane 1.0 FolderPane.qml
 ThumbDelegate 1.0 ThumbDelegate.qml
 PicasaMenuBar 1.0 PicasaMenuBar.qml
+PicasaMenuItem 1.0 PicasaMenuItem.qml
 LightboxHeader 1.0 LightboxHeader.qml
 PhotoViewer 1.0 PhotoViewer.qml
 FolderIcon 1.0 FolderIcon.qml
