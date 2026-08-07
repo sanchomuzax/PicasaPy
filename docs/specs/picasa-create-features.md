@@ -22,6 +22,37 @@ Az `.exe` `collage::*_desc` sztringjeiből, a belső kulcsokkal együtt:
 | `csheet` | Contact Sheet | „Thumbnails with an informative header" — indexkép-ív fejléccel |
 | `multiexp` | Multiple Exposure | „Superimpose pictures over one another" — egymásra vetítés |
 
+### 1.1/b Hivatalos magyar nevek és leírások (képernyőképről, 2026-08-07)
+
+A típusválasztó legördülő magyarul, ikonnal, egy soros leírással:
+
+| magyar név | leírás (szó szerint) | belső kulcs |
+|---|---|---|
+| **Képkupac** | „szétszórt képek hatását kelti" | `picturepile` (a `.cxf` `theme`-je) |
+| **Mozaik** | „a képek automatikus illesztése az oldalra" | `pack` |
+| **Képkockamozaik** | „mozaik hangsúlyos központi képpel" | `frame` |
+| **Rács** | „a képek szabályos sorokba és oszlopokba rendezése" | `grid` |
+| **Indexkép** | „Miniatűr tájékoztató jellegű fejléccel" | `csheet` |
+| **Többszörös exponálás** | „Képek egymás tetejére helyezése" | `multiexp` |
+
+(A `.cxf`-ben csak a `picturepile` érték igazolt; a többi belső kulcs az
+`.exe` ikonneveiből származik, típusonként egy-egy mentés erősítené meg.)
+
+### 1.1/c A kollázs UI szerkezete (képernyőképről)
+
+- A kollázs **nem modális ablak**, hanem **saját, felső szintű munkalap**:
+  az ablak tetején két fül van, **„Könyvtár"** és **„Kollázs"** — a
+  szerkesztés közben a könyvtár egy kattintással elérhető marad.
+- A jobb oldali panel két füle: **„Beállítások"** és **„Klipek (79)"** —
+  utóbbi darabszámmal a fülcímkében.
+- A Klipek fül **három oszlopos**, görgethető indexkép-rács, fölötte
+  **„Továbbiak…"** gomb (képek behozása a könyvtárból), mellette **zöld +**
+  (hozzáadás a kollázshoz) és **piros ×** (eltávolítás a tálcáról).
+  A kollázsban szereplő képek kerete **kék** — a rácsban látszik, melyik
+  van már felhasználva.
+- A panel alján **négy gomb, 2×2 rácsban**: „Asztali háttérkép" ·
+  **„Kollázs létrehozása"** (kiemelt) · „Alaphelyzet" · „Bezárás".
+
 ### 1.2 Három képkeret-stílus
 
 | kulcs | név | leírás |
