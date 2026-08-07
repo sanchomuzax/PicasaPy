@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.15] – 2026-08-07
+
+### Hozzáadva
+- **Helyfoglaló menüpontok jelölése (#416):** a még nem működő menüpontok
+  halványabb felirattal és a sor jobb szélén kicsi, világosszürke ponttal
+  jelennek meg — ránézésre látszik, mi működik már és mi csak a helye.
+
+### Javítva
+- **Derítőfény-csúszka méretugrása (#415):** a húzás alatt megjelenő
+  GPU-előnézet a kép befoglaló dobozához igazodott a ténylegesen kirajzolt
+  kép helyett, ezért álló képnél a lap széléig szétnyúlt, majd elengedéskor
+  visszaugrott. Az előnézet mostantól pontosan a kirajzolt képet fedi.
+- **Tálca-teszt a windows-CI-n (#417):** a „széles ablak" eset fix 1280 px
+  helyett a komponens mért küszöbéből származik, így betűkészlet- és
+  nyelvfüggetlen.
+
 ## [0.6.14] – 2026-08-06
 
 ### Javítva
