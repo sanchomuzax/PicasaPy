@@ -75,6 +75,19 @@ Rectangle {
         folderListContextMenu.popup()
     }
 
+    // #422 (4. lépcső): az album / Emberek-album jobbklikk-menüje — a
+    // sor-delegátumból (Repeater-elem) kiszervezve pane-szintű, névvel
+    // hívható függvénybe, a mappa-menü mintájára
+    function openAlbumContextMenu(token, name) {
+        albumContextMenu.albumToken = token
+        albumContextMenu.albumName = name
+        albumContextMenu.popup()
+    }
+    function openPeopleAlbumContextMenu(name) {
+        peopleAlbumContextMenu.personName = name
+        peopleAlbumContextMenu.popup()
+    }
+
     // Gyűjtemény-csukottság — kezdőérték a collections.py
     // DEFAULT_COLLAPSED-jét tükrözi (controller hiányában is ésszerű).
     property bool albumsCollapsed: false
@@ -291,7 +304,17 @@ Rectangle {
                     id: albumMouse
                     anchors.fill: parent
                     hoverEnabled: true
-                    onClicked: pane.albumChosen(modelData.token)
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: function(mouse) {
+                        // #422: jobbklikk = az album menüje; bal = megnyitás
+                        if (mouse.button === Qt.RightButton) {
+                            pane.openAlbumContextMenu(
+                                albumItem.modelData.token,
+                                albumItem.modelData.name)
+                            return
+                        }
+                        pane.albumChosen(albumItem.modelData.token)
+                    }
                 }
             }
         }
@@ -345,7 +368,16 @@ Rectangle {
                     id: personMouse
                     anchors.fill: parent
                     hoverEnabled: true
-                    onClicked: pane.personChosen(modelData.name)
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: function(mouse) {
+                        // #422: jobbklikk = az Emberek-album menüje
+                        if (mouse.button === Qt.RightButton) {
+                            pane.openPeopleAlbumContextMenu(
+                                personItem.modelData.name)
+                            return
+                        }
+                        pane.personChosen(personItem.modelData.name)
+                    }
                 }
             }
         }
@@ -506,6 +538,34 @@ Rectangle {
     // (a PhotoViewer.qml `Window.window` mintája — így a forró Main.qml-hez
     // nem kell hozzányúlni; önálló példányosításnál egyszerűen hiányzik)
     readonly property var appWindow: Window.window
+
+    AlbumContextMenu {
+        id: albumContextMenu
+        onSelectAllRequested:
+            if (pane.appWindow && pane.appWindow.selectAll) pane.appWindow.selectAll()
+        onClearSelectionRequested:
+            if (pane.appWindow && pane.appWindow.clearSelection)
+                pane.appWindow.clearSelection()
+        onInvertSelectionRequested:
+            if (pane.appWindow && pane.appWindow.invertSelection)
+                pane.appWindow.invertSelection()
+        // az album tartalma a jelenlegi mappákból áll — a frissítés a
+        // megnyitott mappa újraszinkronja (a mappa-menü mintája)
+        onRefreshThumbnailsRequested:
+            if (controller) controller.resyncFolder(controller.currentFolder)
+        onExportAsHtmlRequested:
+            if (pane.appWindow && pane.appWindow.openWebExport)
+                pane.appWindow.openWebExport()
+    }
+
+    PeopleAlbumContextMenu {
+        id: peopleAlbumContextMenu
+        onSelectAllRequested:
+            if (pane.appWindow && pane.appWindow.selectAll) pane.appWindow.selectAll()
+        onClearSelectionRequested:
+            if (pane.appWindow && pane.appWindow.clearSelection)
+                pane.appWindow.clearSelection()
+    }
 
     FolderListContextMenu {
         id: folderListContextMenu
