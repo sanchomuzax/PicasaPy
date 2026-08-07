@@ -11,7 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, QUrl, Signal, Slot
+from PySide6.QtGui import QDesktopServices, QGuiApplication
 
 from picasapy.fileops import (
     delete_to_trash,
@@ -82,3 +83,30 @@ class FileOpsController(QObject):
             reveal_in_file_manager(Path(path))
         except OSError as error:
             self.operationFailed.emit("reveal", str(error))
+
+    @Slot(str)
+    def openPhoto(self, path: str) -> None:
+        """A fájl megnyitása a rendszer társított alkalmazásával (#422:
+        „Fájl megnyitása", `Ctrl+Shift+O` a néző kontextusmenüjében).
+
+        A `revealPhoto` párja: az a fájlkezelőt nyitja a fájlra, ez magát a
+        fájlt adja át a társított programnak. Hiba esetén ugyanúgy
+        `operationFailed`, nem kivétel a QML felé (#112)."""
+        local = _to_local_path(path)
+        if not local or not Path(local).exists():
+            self.operationFailed.emit("open", f"nincs ilyen fájl: {path}")
+            return
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(local)):
+            self.operationFailed.emit("open", f"nem sikerült megnyitni: {local}")
+
+    @Slot(str)
+    def copyFullPath(self, path: str) -> None:
+        """A teljes elérési út a vágólapra (#422: „Teljes elérési út
+        másolása"). Vágólap hiányában (fej nélküli környezet) csendben
+        kimarad — nem hibaág, csak nincs hova másolni."""
+        local = _to_local_path(path)
+        if not local:
+            return
+        clipboard = QGuiApplication.clipboard()
+        if clipboard is not None:
+            clipboard.setText(local)
