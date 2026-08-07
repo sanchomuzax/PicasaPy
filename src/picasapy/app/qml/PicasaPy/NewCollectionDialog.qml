@@ -15,11 +15,17 @@ Dialog {
     anchors.centerIn: parent ? Overlay.overlay : undefined
     standardButtons: Dialog.Ok | Dialog.Cancel
 
+    // #422: a gyűjtemény ÁTNEVEZÉSE ugyanezt a névbekérőt használja (az
+    // eredetiben is egy generikus szövegbekérő szolgál mindkettőt, ld.
+    // `input.fen`) — a mező ilyenkor a jelenlegi névvel indul. A hívó
+    // dolga eldönteni, létrehozás vagy átnevezés következik.
+    property string initialName: ""
+
     // a beírt gyűjtemény-név — üresen (csak szóköz is) nem fogadható el
     signal created(string name)
 
     onOpened: {
-        nameField.text = ""
+        nameField.text = root.initialName
         nameField.forceActiveFocus()
         standardButton(Dialog.Ok).enabled = Qt.binding(
             function() { return nameField.text.trim().length > 0 })

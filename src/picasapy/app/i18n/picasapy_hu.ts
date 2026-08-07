@@ -3558,4 +3558,77 @@
         <translation>Leírás (nem kötelező):</translation>
     </message>
 </context>
+<context>
+    <name>FolderListContextMenu</name>
+    <message>
+        <source>Sort by Date</source>
+        <translation>Rendezés dátum alapján</translation>
+    </message>
+    <message>
+        <source>Sort by Name</source>
+        <translation>Rendezés név alapján</translation>
+    </message>
+    <message>
+        <source>Sort by Size</source>
+        <translation>Rendezés méret alapján</translation>
+    </message>
+    <message>
+        <source>Sort by Most Recent Changes</source>
+        <translation>Rendezés a legutóbbi változtatások alapján</translation>
+    </message>
+    <message>
+        <source>Reverse Sort Order</source>
+        <translation>Rendezés megfordítása</translation>
+    </message>
+    <message>
+        <source>Sort People by Name</source>
+        <translation>Személyek rendezése név alapján</translation>
+    </message>
+    <message>
+        <source>Sort People by Count</source>
+        <translation>Személyek rendezése mennyiség alapján</translation>
+    </message>
+    <message>
+        <source>Sort People by Top List</source>
+        <translation>Személyek rendezése toplista alapján</translation>
+    </message>
+    <message>
+        <source>Simplified Tree View</source>
+        <translation>Egyszerűsített fanézet</translation>
+    </message>
+    <message>
+        <source>Show Thumbnails in Library</source>
+        <translation>Indexképek megjelenítése a könyvtárban</translation>
+    </message>
+    <message>
+        <source>Desktop</source>
+        <translation>Asztal</translation>
+    </message>
+</context>
+<context>
+    <name>TagContextMenu</name>
+    <message>
+        <source>Add Tag to Entire Selection</source>
+        <translation>A címke hozzáadása a teljes kijelölt részhez</translation>
+    </message>
+    <message>
+        <source>Find Items Tagged This Way</source>
+        <translation>Az ilyen címkével ellátott elemek keresése</translation>
+    </message>
+    <message>
+        <source>Remove Tag</source>
+        <translation>A címke eltávolítása</translation>
+    </message>
+</context>
+<context>
+    <name>TrayContextMenu</name>
+    <message>
+        <source>Keep Selection</source>
+        <translation>Kijelölés megtartása</translation>
+    </message>
+    <message>
+        <source>Remove Selection</source>
+        <translation>Kijelölés eltávolítása</translation>
+    </message>
+</context>
 </TS>

@@ -80,6 +80,31 @@ Column {
     Rectangle {
         id: trayMainBar
         objectName: "trayMainBar"
+        // #422: jobbklikk a képtálcán — a Picasa `Tray` menüosztálya
+        TapHandler {
+            objectName: "trayContextMenuHandler"
+            acceptedButtons: Qt.RightButton
+            gesturePolicy: TapHandler.ReleaseWithinBounds
+            onSingleTapped: trayContextMenu.popup()
+        }
+        TrayContextMenu {
+            id: trayContextMenu
+            // „Kijelölés megtartása": a kijelölés a jelenlegi
+            // horgony-képre szűkül; „eltávolítása": az kikerül belőle
+            onKeepSelectionRequested: {
+                var row = tray.appWindow.selectedIndex
+                if (row >= 0) tray.appWindow.selectedIndexes = [row]
+            }
+            onRemoveSelectionRequested: {
+                var anchor = tray.appWindow.selectedIndex
+                var rest = []
+                var current = tray.appWindow.selectedIndexes
+                for (var k = 0; k < current.length; ++k)
+                    if (Number(current[k]) !== anchor) rest.push(current[k])
+                tray.appWindow.selectedIndexes = rest
+                tray.appWindow.selectedIndex = rest.length > 0 ? rest[0] : -1
+            }
+        }
         width: parent.width; height: 52
         color: Theme.trayBg
 

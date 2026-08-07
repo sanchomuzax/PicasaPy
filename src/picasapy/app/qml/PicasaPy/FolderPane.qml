@@ -65,6 +65,16 @@ Rectangle {
         folderContextMenu.popup()
     }
 
+    // #422: a bal panel saját menüjének megnyitása — a pipák a menü
+    // nyitásakor veszik át a vezérlő friss rendezés-állapotát
+    function openFolderListContextMenu() {
+        if (controller) {
+            folderListContextMenu.sortMode = controller.folderSort
+            folderListContextMenu.sortReverse = controller.folderSortReverse
+        }
+        folderListContextMenu.popup()
+    }
+
     // Gyűjtemény-csukottság — kezdőérték a collections.py
     // DEFAULT_COLLAPSED-jét tükrözi (controller hiányában is ésszerű).
     property bool albumsCollapsed: false
@@ -130,6 +140,16 @@ Rectangle {
         if (!folderList.model) return
         var row = folderList.model.rowOfPath(pane.selectedPath)
         if (row >= 0) folderList.positionViewAtIndex(row, ListView.Contain)
+    }
+
+    // #422: jobbklikk a bal panel üres részén — a Picasa `AlbumList`
+    // menüosztálya (a mappasorok saját menüje hamarabb elkapja az eseményt,
+    // így ez tényleg csak a sorokon kívül fut le).
+    TapHandler {
+        objectName: "folderPaneContextMenuHandler"
+        acceptedButtons: Qt.RightButton
+        gesturePolicy: TapHandler.ReleaseWithinBounds
+        onSingleTapped: pane.openFolderListContextMenu()
     }
 
     // A görgő-kezelő a pane gyökerén él: Flickable-be (ListView) ágyazott
@@ -486,6 +506,14 @@ Rectangle {
     // (a PhotoViewer.qml `Window.window` mintája — így a forró Main.qml-hez
     // nem kell hozzányúlni; önálló példányosításnál egyszerűen hiányzik)
     readonly property var appWindow: Window.window
+
+    FolderListContextMenu {
+        id: folderListContextMenu
+        onSortModeRequested: function(mode) {
+            if (controller) controller.setFolderSort(mode)
+        }
+        onSortReverseRequested: if (controller) controller.toggleFolderSortReverse()
+    }
 
     FolderContextMenu {
         id: folderContextMenu
