@@ -13,13 +13,15 @@ skillek) **nem ebben a repóban** élnek, hanem a privát
 
 **Kötelező, még az első fájlmódosítás előtt:**
 
-1. Ha a klón nincs meg, csatold és klónozd:
-   `add_repo sanchomuzax/picasapy-agent`, majd
-   `git clone <url> /workspace/picasapy-agent` (felhős session) vagy
-   `~/picasapy-agent` (helyi gép). Felhős sessionben ezt a
-   `.claude/hooks/session-start.sh` általában már elvégezte.
-2. Olvasd el az ottani `CLAUDE.md`-t és `memory/00-index.md`-t
-   (feladatvállalás előtt a `PROTOKOLL.md`-t is).
+1. Ha a klón nincs meg (a `.claude/hooks/session-start.sh` figyelmeztet rá),
+   felhős sessionben:
+   - `add_repo` a `sanchomuzax/picasapy-agent`-re,
+   - `git clone https://github.com/sanchomuzax/picasapy-agent /workspace/picasapy-agent`,
+   - `register_repo_root` ugyanerre az útvonalra — ettől a szabálykönyv
+     magától betöltődik a következő körben.
+   Helyi gépen a cél `~/picasapy-agent`.
+2. Olvasd el az ottani `memory/00-index.md`-t és a feladathoz tartozó
+   memória-lapokat (feladatvállalás előtt a `PROTOKOLL.md`-t is).
 
 Az ottani `CLAUDE.md` — ha a klón a helyén van — automatikusan betöltődik:
 
