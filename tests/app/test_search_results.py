@@ -104,3 +104,16 @@ class TestHasEditsField:
         photos = groups[0]["photos"]
         assert photos[0]["hasEdits"] is True
         assert photos[1]["hasEdits"] is False
+
+
+class TestHasGeoField:
+    def test_groups_to_qml_carries_has_geo(self):
+        # #463: a keresési találat-rács is viszi a geo-pin jelvény jelét
+        from dataclasses import replace
+
+        geotagged = replace(_rec("/kepek/a", "1.jpg"), geotag="47.5,19.05")
+        plain = _rec("/kepek/a", "2.jpg")
+        groups = groups_to_qml(group_by_folder((geotagged, plain)))
+        photos = groups[0]["photos"]
+        assert photos[0]["hasGeo"] is True
+        assert photos[1]["hasGeo"] is False

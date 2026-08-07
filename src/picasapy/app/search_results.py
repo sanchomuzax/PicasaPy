@@ -84,6 +84,8 @@ def groups_to_qml(groups: tuple[SearchGroup, ...]) -> list[dict]:
                     ),
                     "hasEdits": _has_edits(p),
                     "hidden": p.hidden,
+                    # #463: piros geo-pin jelvény — ld. models.py itemAt()
+                    "hasGeo": p.location is not None,
                 }
                 for i, p in enumerate(g.photos)
             ],

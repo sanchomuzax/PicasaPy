@@ -153,16 +153,31 @@ Rectangle {
                                 smooth: true
                                 mipmap: true
                             }
-                            Text {
-                                visible: cell.modelData.star === true
+                            // #463: csillag + geo-pin egy sorban a jobb
+                            // alsó sarokban (ld. ThumbDelegate.qml)
+                            Row {
+                                objectName: "timelineCornerBadges"
                                 anchors.right: parent.right
                                 anchors.bottom: parent.bottom
                                 anchors.margins: 3
-                                text: "★"
-                                color: Theme.starYellow
-                                font.pixelSize: 13
-                                style: Text.Outline
-                                styleColor: "#00000060"
+                                spacing: 2
+                                Image {
+                                    objectName: "timelineGeoMark"
+                                    visible: cell.modelData.hasGeo === true
+                                    source: "icons/geo-pin.svg"
+                                    width: 7; height: 12
+                                    sourceSize.width: 7; sourceSize.height: 12
+                                    anchors.bottom: parent.bottom
+                                }
+                                Text {
+                                    visible: cell.modelData.star === true
+                                    text: "★"
+                                    color: Theme.starYellow
+                                    font.pixelSize: 13
+                                    style: Text.Outline
+                                    styleColor: "#00000060"
+                                    anchors.bottom: parent.bottom
+                                }
                             }
                             Rectangle {
                                 visible: cell.modelData.isVideo === true

@@ -618,6 +618,60 @@ class TestHasEditsMark:
         assert item["hasEdits"] is False
 
 
+class TestHasGeoMark:
+    """#463: a piros geo-pin jelvény adatfeltétele — `PhotoRecord.location`
+    alapján (ini `geotag=` vagy EXIF GPS, ld. `metadata/gps.py`)."""
+
+    @staticmethod
+    def _record(geotag: str | None = None, exif_lat=None, exif_lon=None):
+        from picasapy.index import PhotoRecord
+
+        return PhotoRecord(
+            id=1,
+            folder_path="/kepek",
+            name="a.jpg",
+            kind="photo",
+            size=0,
+            mtime_ns=0,
+            star=False,
+            caption=None,
+            keywords=None,
+            rotate_steps=0,
+            filters=None,
+            taken_at=None,
+            orientation=1,
+            width=None,
+            height=None,
+            geotag=geotag,
+            exif_lat=exif_lat,
+            exif_lon=exif_lon,
+        )
+
+    def _item(self, record):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos((record,))
+        return model.itemAt(0)
+
+    def test_no_location_no_geo_mark(self, qt_app):
+        assert self._item(self._record())["hasGeo"] is False
+
+    def test_ini_geotag_marks_geo(self, qt_app):
+        item = self._item(self._record(geotag="47.5,19.05"))
+        assert item["hasGeo"] is True
+
+    def test_exif_gps_marks_geo(self, qt_app):
+        item = self._item(self._record(exif_lat=47.5, exif_lon=19.05))
+        assert item["hasGeo"] is True
+
+    def test_malformed_ini_geotag_no_geo_mark(self, qt_app):
+        # a hibás/értelmezhetetlen geotag= nem jelvényt kap, hanem None-t ad
+        # vissza (parse_geotag hibatűrő, ld. metadata/gps.py)
+        item = self._item(self._record(geotag="nem-koordinata"))
+        assert item["hasGeo"] is False
+
+
 class TestIsVideoAt:
     """#14: a néző a videó-sorra lejátszó-nézetre vált — a modell dönt."""
 

@@ -364,6 +364,10 @@ class PhotoGridModel(QAbstractListModel):
             ),
             "hasEdits": _has_edits(photo),
             "hidden": photo.hidden,
+            # #463: piros geo-pin jelvény — a `PhotoRecord.location` az
+            # ini `geotag=` és az EXIF GPS-t is feloldja (ld. metadata/gps.py),
+            # itt csak a meglétét kérdezzük.
+            "hasGeo": photo.location is not None,
         }
 
     @Slot(int, result=bool)
