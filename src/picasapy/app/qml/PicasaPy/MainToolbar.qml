@@ -8,6 +8,7 @@ import QtQuick.Layouts
 // frissítés és a kijelölés-ürítés a Main.qml dolga marad.
 Rectangle {
     id: toolbar
+    objectName: "mainToolbar"
     height: 34
     color: Theme.chromeBg
 
@@ -29,6 +30,17 @@ Rectangle {
         width: parent.width; height: 1
         color: Theme.chromeBorder
     }
+    // #423: a sáv MINDIG egyetlen ~34px-es csík marad — a RowLayout maga
+    // sosem tördel új sorba, de a régi kötések (fix preferredWidth minden
+    // elemen, sehol minimumWidth) szűk ablaknál egymásra csúszó/kilógó
+    // elemekhez vezettek, ami vizuálisan "törésnek" hatott. A javítás a
+    // zsugorodási sorrendet Layout.minimumWidth-ekkel rögzíti:
+    //   1. a bal oldali rugalmas térköz nyeli el az extra helyet elsőként;
+    //   2. a keresőmező zsugorodik 300px-ről 120px-ig;
+    //   3. a középső szűrő-zóna teljesen elrejtőzik `toolbarCompact` alatt;
+    //   4. az "Importálás" gomb és a verzió-címke SOHA nem zsugorodik —
+    //      a gomb Layout.minimumWidth == Layout.preferredWidth (fix).
+    readonly property bool toolbarCompact: width < 1080
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: 8; anchors.rightMargin: 8
@@ -38,20 +50,39 @@ Rectangle {
             text: qsTr("Import")
             enabled: true
             Layout.preferredWidth: 100
+            Layout.minimumWidth: 100
             Layout.preferredHeight: 24
             onClicked: toolbar.importRequested()
         }
-        Item { Layout.fillWidth: true }
-        Column {
+        Item { Layout.fillWidth: true; Layout.minimumWidth: 0 }
+        // #423: NEM Column, hanem Item — a "Szűrők" felirat a Picasa
+        // `searchcontainer.tre`-jének `filter_label` kényszere szerint
+        // (`YConstraint 0, 0, -4`) a csík TETEJÉTŐL −4px-re ül, azaz a
+        // csíkon BELÜL, az ikonsor FÖLÉ kicsúszva jelenik meg — nem külön
+        // sorba kerül (amit egy Column spacing:0 flow-ja nem tudna
+        // kifejezni, mert az mindig a felirat alá, nem fölé/bele tenné
+        // a következő sort).
+        Item {
+            id: filterZone
+            objectName: "toolbarFilterZone"
             Layout.alignment: Qt.AlignVCenter
-            spacing: 0
+            Layout.minimumWidth: 0
+            // szűk ablaknál a középső szűrő-zóna rejtőzik el — a sáv maga
+            // nem törik, csak ez a blokk tűnik el (#423)
+            visible: !toolbar.toolbarCompact
+            implicitWidth: filterIconsRow.width
+            implicitHeight: filterIconsRow.y + filterIconsRow.height
             Text {
+                objectName: "toolbarFiltersLabel"
                 anchors.horizontalCenter: parent.horizontalCenter
+                y: -4
                 text: qsTr("Filters")
                 font.pixelSize: 9
                 color: Theme.textGray
             }
             Row {
+                id: filterIconsRow
+                y: 9
                 spacing: 3
 
                 // szűrő-kapcsolók (kézikönyv 09): ★ ☺ ⚲ ▤ + csúszka;
@@ -129,10 +160,14 @@ Rectangle {
                 }
             }
         }
-        Item { width: 20 }
-        // Picasa-hű kereső: fehér mező nagyítóval, törlő ×-szel
+        Item { width: 20; visible: filterZone.visible }
+        // Picasa-hű kereső: fehér mező nagyítóval, törlő ×-szel — a
+        // zsugorodási sorrend 2. lépése (#423): 300px-ről 120px-ig
+        // zsugorodhat, mielőtt bármi máshoz hozzányúlnánk.
         Rectangle {
+            objectName: "toolbarSearchBox"
             Layout.preferredWidth: 300
+            Layout.minimumWidth: 120
             Layout.preferredHeight: 24
             radius: 3
             color: Theme.controlBase
@@ -199,6 +234,7 @@ Rectangle {
         Text {
             objectName: "versionLabel"
             Layout.alignment: Qt.AlignVCenter
+            Layout.minimumWidth: 0
             text: appVersion
             font.pixelSize: 9
             color: Theme.textGray

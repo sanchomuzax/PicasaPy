@@ -14,6 +14,35 @@ MenuBar {
     // a context property átmenetileg null lehet, miközben a QML-kötések
     // utoljára kiértékelődnek.
     readonly property var ctl: controller
+
+    // #423: a kék „Bejelentkezés Google Fiókkal" hivatkozás a menüsáv jobb
+    // szélén — az eredeti Picasa ugyanabban a sorban tartja, mint a
+    // Fájl/Szerkesztés/… menüket. A `background` felülírása szükséges,
+    // mert a MenuBar tartalma (a menük listája) csak a saját szélességét
+    // foglalja el balra — a jobb oldali üres sáv a háttérrétegen keresztül
+    // látszik, oda kerül a felirat. A `Theme.canvasBg` a Main.qml
+    // `palette.window`-jával megegyező szín (ld. Main.qml `palette {}`
+    // blokkja), így a csere vizuálisan nem tér el az alap Fusion-nézettől.
+    // Funkció még nincs mögötte (a Google-fiókos bejelentkezés nem cél) —
+    // ez csak az elrendezés része, ezért nem interaktív.
+    background: Rectangle {
+        color: Theme.canvasBg
+        Rectangle {
+            anchors.bottom: parent.bottom
+            width: parent.width; height: 1
+            color: Theme.chromeBorder
+        }
+        Text {
+            objectName: "menuBarSignInLink"
+            anchors.right: parent.right
+            anchors.rightMargin: 10
+            anchors.verticalCenter: parent.verticalCenter
+            text: qsTr("Sign in with your Google Account")
+            color: Theme.linkBlue
+            font.pixelSize: Theme.fontSize
+            font.underline: true
+        }
+    }
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
     property bool photoActionsEnabled: false
     signal rescanRequested()
