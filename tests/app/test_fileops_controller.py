@@ -1,6 +1,8 @@
 """FileOpsController: fájlműveletek (átnevezés/áthelyezés/lomtár/fájlkezelő,
 #15) QML-hídja — útvonal-alapú, az AppControllertől (forró fájl) független."""
 
+from pathlib import Path
+
 import pytest
 
 
@@ -150,7 +152,10 @@ class TestOpenPhoto:
         photo = tmp_path / "a.jpg"
         photo.write_bytes(b"\xff\xd8\xff\xe0" + b"0" * 50)
         controller.openPhoto(str(photo))
-        assert opened == [str(photo)]
+        # `QUrl.toLocalFile()` Windowson per-jeles utat ad (C:/…), a
+        # `str(Path)` viszont visszaperjeleset — a két alak ugyanaz a fájl,
+        # ezért Path-ként hasonlítunk (ld. formatting.to_local_path)
+        assert [Path(p) for p in opened] == [photo]
 
     def test_emits_operation_failed_for_a_missing_file(self, controller, tmp_path):
         failures = []
