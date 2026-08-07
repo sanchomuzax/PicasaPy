@@ -15,50 +15,40 @@ Az `.exe` `collage::*_desc` sztringjeiből, a belső kulcsokkal együtt:
 
 | kulcs | név | leírás (eredeti) |
 |---|---|---|
-| `picturepile` | Picture Pile | „Looks like a pile of scattered pictures" — szétszórt kupac |
-| `mosaic` | Mosaic | „Automatically fit pictures into the page" — automatikus kitöltés |
-| *(?)* | Frame Mosaic | „A mosaic with a prominent center picture" — mozaik kiemelt középső képpel |
-| *(?)* | Grid | „Arrange pictures into regular rows and columns" — szabályos rács |
-| `contactsheet` | Contact Sheet | „Thumbnails with an informative header" — indexkép-ív fejléccel |
-| *(?)* | Multiple Exposure | „Superimpose pictures over one another" — egymásra vetítés |
+| kulcs (`theme`) | UI-név (angol / magyar) | leírás | belső osztály |
+|---|---|---|---|
+| **`picturepile`** | Picture Pile / **Képkupac** | „Looks like a pile of scattered pictures" | `CPileTheme` |
+| **`picturegrid`** | Mosaic / **Mozaik** | „Automatically fit pictures into the page" | `CGridTheme` |
+| **`framegrid`** | Frame Mosaic / **Képkockamozaik** | „A mosaic with a prominent center picture" | `CFrameGridTheme` |
+| **`regulargrid`** | Grid / **Rács** | „Arrange pictures into regular rows and columns" | `CRegularGridTheme` |
+| **`contactsheet`** | Contact Sheet / **Indexkép** | „Thumbnails with an informative header" | `CContactSheetTheme` |
+| **`multiexp`** | Multiple Exposure / **Többszörös exponálás** | „Superimpose pictures over one another" | `CMultiExposureTheme` |
 
-> **Pontosítás (2026-08-07):** a `.cxf` `theme` attribútum értékei **teljes szavak**
-> (`picturepile`, `mosaic`, `contactsheet` — mindhárom megvan az `.exe` string-
-> táblájában). A korábbi rövid kulcsok (`pile`, `pack`, `frame`, `csheet`,
-> `multiexp`) az **ikon-rétegek nevéből** származó feltételezések voltak, NEM a
-> fájlba írt értékek. A hiányzó három (`framemosaic`? `grid`? `multiexposure`?)
-> egy-egy mentéssel tisztázható (#436).
+**Forrás (2026-08-07, célzott keresés):** az `.exe` string-táblájában a kilenc
+téma-kulcs **egyetlen összefüggő tömbben** áll:
 
-### 1.1/b Hivatalos magyar nevek és leírások (képernyőképről, 2026-08-07)
+```
+polaroid | whiteborder | noborder | picturepile | picturegrid |
+regulargrid | multiexp | contactsheet | framegrid
+```
 
-A típusválasztó legördülő magyarul, ikonnal, egy soros leírással:
+Az első három a **keret**-téma, a maradék hat a **kollázs-típus**. A hozzárendelést
+a C++ osztálynevek (RTTI) erősítik meg: `CPileTheme`, `CGridTheme`,
+`CRegularGridTheme`, `CFrameGridTheme`, `CMultiExposureTheme`,
+`CContactSheetTheme`, valamint `NoBorderTheme`, `WhiteBorderTheme`,
+`PolaroidBitmapTheme` — plusz egy `DimmedBitmapTheme` (a „tompított" háttér-mód)
+és a `CollageThemeList` gyűjtő.
 
-| magyar név | leírás (szó szerint) | belső kulcs |
-|---|---|---|
-| **Képkupac** | „szétszórt képek hatását kelti" | `picturepile` (a `.cxf` `theme`-je) |
-| **Mozaik** | „a képek automatikus illesztése az oldalra" | `pack` |
-| **Képkockamozaik** | „mozaik hangsúlyos központi képpel" | `frame` |
-| **Rács** | „a képek szabályos sorokba és oszlopokba rendezése" | `grid` |
-| **Indexkép** | „Miniatűr tájékoztató jellegű fejléccel" | `csheet` |
-| **Többszörös exponálás** | „Képek egymás tetejére helyezése" | `multiexp` |
-
-(A `.cxf`-ben csak a `picturepile` érték igazolt; a többi belső kulcs az
-`.exe` ikonneveiből származik, típusonként egy-egy mentés erősítené meg.)
-
-### 1.1/c A kollázs UI szerkezete (képernyőképről)
-
-- A kollázs **nem modális ablak**, hanem **saját, felső szintű munkalap**:
-  az ablak tetején két fül van, **„Könyvtár"** és **„Kollázs"** — a
-  szerkesztés közben a könyvtár egy kattintással elérhető marad.
-- A jobb oldali panel két füle: **„Beállítások"** és **„Klipek (79)"** —
-  utóbbi darabszámmal a fülcímkében.
-- A Klipek fül **három oszlopos**, görgethető indexkép-rács, fölötte
-  **„Továbbiak…"** gomb (képek behozása a könyvtárból), mellette **zöld +**
-  (hozzáadás a kollázshoz) és **piros ×** (eltávolítás a tálcáról).
-  A kollázsban szereplő képek kerete **kék** — a rácsban látszik, melyik
-  van már felhasználva.
-- A panel alján **négy gomb, 2×2 rácsban**: „Asztali háttérkép" ·
-  **„Kollázs létrehozása"** (kiemelt) · „Alaphelyzet" · „Bezárás".
+> **⚠️ Csapda a nevekben:** a UI-beli **„Mozaik"** kulcsa `picturegrid`, a
+> **„Rács"**-é viszont `regulargrid` — vagyis a „grid" szó a *rossz* helyen áll
+> ahhoz képest, amit az ember tippelne. Aki a UI-névből következtet, elhibázza.
+> A `regulargrid` ↔ Rács a leírásból egyértelmű („**regular** rows and columns"),
+> a `framegrid` ↔ Képkockamozaik pedig az ikonnévből (`#frame_grid_icon`); a
+> `picturegrid` ↔ Mozaik kizárásos alapon adódik, és ez az egyetlen tétel, amit
+> egy mentés még megerősíthetne.
+>
+> A tömb sorrendje **nem** a UI-sorrend — a felületen Képkupac · Mozaik ·
+> Képkockamozaik · Rács · Indexkép · Többszörös exponálás a sorrend.
 
 ### 1.2 Három képkeret-stílus
 
@@ -145,7 +135,7 @@ projektfájlt (#436). A formátum: **UTF-8 XML, CRLF sorvégekkel.**
 | `version="2"` | formátumverzió |
 | `format="15:10"` | **oldalarány szövegként**, `SZ:M` alakban |
 | `orientation` | `portrait` / `landscape` — az arány ehhez képest forog |
-| `theme` (gyökér) | a **kollázs-típus** teljes szóval; a mintában `picturepile` |
+| `theme` (gyökér) | a **kollázs-típus** kulcsa (ld. 1.1); a mintában `picturepile` |
 | `shadows`, `captions` | `0`/`1` kapcsolók |
 | `albumUID` | 32 hex — ugyanaz az album-token, mint a `[.album:<token>]` szekcióké |
 | `<albumTitle>`, `<albumDate>` | a Contact Sheet fejlécéhez és a mentett album nevéhez |
