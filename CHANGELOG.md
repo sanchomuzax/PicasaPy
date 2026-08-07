@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.22] – 2026-08-07
+
+### Hozzáadva
+- **Három új jobbklikk-menü (#422):** a bal panel üres részén a mappalista
+  rendezése (dátum, név, méret, legutóbbi változtatás, fordított sorrend);
+  a címkéken a címke rátétele a teljes kijelölésre, az ilyen címkéjű képek
+  keresése és a címke eltávolítása; a képtálcán a kijelölés megtartása,
+  illetve eltávolítása. Egyik menü sem létezett eddig.
+
 ## [0.6.21] – 2026-08-07
 
 ### Hozzáadva
