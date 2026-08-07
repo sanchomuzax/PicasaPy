@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.27] – 2026-08-07
+
+### Hozzáadva
+- **Geo-jelvény az indexképeken (#463):** a helyadattal rendelkező képek a
+  jobb alsó sarokban piros pin-jelvényt kapnak, mindhárom nézetben.
+
+### Javítva
+- **A véletlenszerű összeomlások forrása mind a tíz vezérlőben megszűnt
+  (#438):** a háttérben futó műveletek szálai mostantól bevárhatók, közös
+  megoldással. Ez a #430-ban javított hiba maradéka volt — ugyanaz a minta
+  a program több pontján is megvolt, és időnként összeomlást okozott.
+
 ## [0.6.26] – 2026-08-07
 
 ### Hozzáadva
