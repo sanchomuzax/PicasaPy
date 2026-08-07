@@ -758,6 +758,7 @@ ApplicationWindow {
                                         caption: modelData.caption
                                         isVideo: modelData.isVideo
                                         hasEdits: modelData.hasEdits
+                                        hasGeo: modelData.hasGeo === true
                                         isHidden: modelData.hidden === true
                                         index: modelData.row
                                         keywords: modelData.keywords

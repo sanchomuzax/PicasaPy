@@ -109,4 +109,6 @@ class TimelineController(QObject):
             "isVideo": photo.kind == "video",
             "folderPath": photo.folder_path,
             "hasEdits": _has_edits(photo),
+            # #463: piros geo-pin jelvény — ld. models.py itemAt()
+            "hasGeo": photo.location is not None,
         }

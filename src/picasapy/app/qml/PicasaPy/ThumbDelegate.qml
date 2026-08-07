@@ -23,6 +23,11 @@ Item {
     // #17: rejtett kép — csak a Nézet → Rejtett képek kapcsolóval látszik,
     // ilyenkor félig áttetsző (Picasa-minta). Nem required (régi hívók).
     property bool isHidden: false
+    // #463: van-e a képhez rendelve hely (ini `geotag=` vagy EXIF GPS) — a
+    // jobb alsó sarokban piros pin jelvényt kap (design-guide.md: "Geo-
+    // címkés képen piros pin jelvény a jobb alsó sarokban"). Nem required
+    // (régi hívók enélkül is működjenek).
+    property bool hasGeo: false
     // #85: kiegyenlített rács-sor esetén a cella (parent Item) nagyobb
     // lehet a névleges thumbSize-nál — a MEGJELENÍTETT kép mérete ekkor
     // is a névleges méretre plafonozott marad (0 = nincs plafon), hogy a
@@ -131,14 +136,33 @@ Item {
             mipmap: true
         }
 
-        Text {
-            visible: cell.star
+        // #463: a jobb alsó sarok jelvény-sora — csillag és geo-pin egymás
+        // mellett (a design-guide.md screenshot-mintája szerint mindkettő
+        // ide kerül, ezért Row-ba fogva, hogy ne fedjék egymást).
+        Row {
+            objectName: "thumbCornerBadges"
             anchors.right: parent.right; anchors.bottom: parent.bottom
             anchors.margins: 3
-            text: "★"
-            color: Theme.starYellow
-            font.pixelSize: 15
-            style: Text.Outline; styleColor: "#00000060"
+            spacing: 2
+            Image {
+                objectName: "geoMark"
+                visible: cell.hasGeo
+                source: "icons/geo-pin.svg"
+                // #463: a jegy réteg-adatokból kiolvasott mérete 8×14 —
+                // nálunk a csillaggal vizuálisan arányos magasságra
+                // (~14px) skálázva.
+                width: 8; height: 14
+                sourceSize.width: 8; sourceSize.height: 14
+                anchors.bottom: parent.bottom
+            }
+            Text {
+                visible: cell.star
+                text: "★"
+                color: Theme.starYellow
+                font.pixelSize: 15
+                style: Text.Outline; styleColor: "#00000060"
+                anchors.bottom: parent.bottom
+            }
         }
 
         // #100: mini kék „visszahajtás" a jobb felső sarokban, ha a képen
