@@ -49,7 +49,7 @@ jelzi, hogy a fájl tartalma UTF-8 kódolású. A PicasaPy-nak meg kell őriznie
 |---|---|---|
 | `name` | `Foo Bar birthday` | album neve |
 | `category` | `Folders on Disk` | lokális album kategória |
-| `P2category` | `Downloaded Albums~otheruserid` | webalbumból letöltött album |
+| `P2category` | `Downloaded Albums~otheruserid`, `Projects (internal)` | **gyűjtemény-hovatartozás** (nem csak letöltött album!) — a Picasa a kollázs/film kimeneti mappájába is ezt írja `Projects (internal)` értékkel; igazolva valódi `.cxf`-minta mellől (2026-08-07, #436) |
 | `<user>_lh` | `joedoe_lh=5620038667642797505` | feltöltött album web-azonosítója |
 | `contactsversion` | — | globális verziószám (kontakt-adatbázis); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |
 | `frversion` | — | globális verziószám (feltehetően arcfelismerés); exe-ből azonosított, élő ini-ben még nem validált — megőrzendő |

@@ -79,7 +79,80 @@ Vonszolás közben a kijelzett értékek formátuma: `Angle: %d` és
   után állnak ezek a format-sztringek) — vagyis a projekt-albumok is a
   normál ini-modellt használják.
 
-### 1.6 A `.cxf` tartalma (a szerializált mezőnevekből)
+### 1.6 A `.cxf` formátum — MEGFEJTVE valódi mintából (2026-08-07)
+
+A felhasználó a Windows-os Picasával készített egy kollázst, és csatolta a
+projektfájlt (#436). A formátum: **UTF-8 XML, CRLF sorvégekkel.**
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<collage version="2" format="15:10" orientation="portrait" theme="picturepile"
+         shadows="1" captions="1" albumUID="a4ef8e0fd2dbb152d25d79eb2bd2a28b">
+ <albumTitle>AI</albumTitle>
+ <albumDate>2023. november</albumDate>
+ <background type="solid" color="FFFFFFFF"/>
+ <spacing value="0.000000"/>
+ <node x="0.297852" y="0.248047" w="0.274210" h="0.219401"
+       theta="-0.009167" scale="337.000000">
+  <theme>polaroid</theme>
+  <src>$My Pictures\AI\38ae21c1-….png</src>
+  <uid>129d7730c524d5240000000000000000</uid>
+ </node>
+ …
+</collage>
+```
+
+| mező | jelentés |
+|---|---|
+| `version="2"` | formátumverzió |
+| `format="15:10"` | **oldalarány szövegként**, `SZ:M` alakban |
+| `orientation` | `portrait` / `landscape` — az arány ehhez képest forog |
+| `theme` (gyökér) | a **kollázs-típus**; a mintában `picturepile` (a „Picture Pile") |
+| `shadows`, `captions` | `0`/`1` kapcsolók |
+| `albumUID` | 32 hex — ugyanaz az album-token, mint a `[.album:<token>]` szekcióké |
+| `<albumTitle>`, `<albumDate>` | a Contact Sheet fejlécéhez és a mentett album nevéhez |
+| `<background type="solid" color="FFFFFFFF"/>` | **ARGB hex**; a `type` más értékei (kép, átlagszín) további mintából derülnek ki |
+| `<spacing value="…"/>` | 0..1 float (a Grid Spacing csúszka) |
+
+**Kép-csomópontok (`<node>`):**
+
+| attribútum | jelentés |
+|---|---|
+| `x`, `y` | a kép bal-felső sarka, **a vászon arányában** (0..1) |
+| `w`, `h` | a kép mérete ugyanígy, arányosan |
+| `theta` | **forgatás radiánban** (a mintában −0,14…+0,001 ≈ −8°…0°) |
+| `scale` | képpont (a mintában 337 / 303 / 280 / 263 / 249 / 238) — a forrás vetített szélessége |
+| `<theme>` | **a keret KÉPENKÉNT állítható** (`polaroid`), nem csak globálisan! |
+| `<src>` | útvonal **változó-behelyettesítéssel**: `$My Pictures\…`, Windows-os fordított perjelekkel |
+| `<uid>` | 32 hex, de csak az első 16 nem nulla — a kép 64 bites azonosítója 128 bitre töltve |
+
+**Két meglepetés:**
+
+1. **A keret képenkénti** (`<theme>` a `<node>`-on belül) — a UI globálisnak
+   mutatja, de az adatmodell megengedi a vegyes kollázst.
+2. **A pozíció és méret arányos (0..1), a `scale` viszont képpontban van** —
+   vagyis a fájl felbontásfüggetlenül tárolja az elrendezést, de megőrzi az
+   eredeti vetítési méretet is.
+
+**A kimeneti mappa `.picasa.ini`-je** mindössze ennyi:
+
+```ini
+[Picasa]
+P2category=Projects (internal)
+```
+
+Vagyis a **Projektek gyűjteménybe sorolást a `P2category` kulcs végzi** —
+ezt a `picasa-ini-format.md` eddig csak „webalbumból letöltött album"
+jelentéssel ismerte. Ez a kulcs tehát általánosabb: **gyűjtemény-hovatartozás**.
+
+### 1.6/b Ami még nyitott a `.cxf`-ben
+
+- A **többi öt kollázs-típus** `theme` értéke (a minta `picturepile`) — egy-egy
+  mentés típusonként megadná.
+- A `<background type=…>` további értékei (kép, „átlagszín", „dimmed").
+- Az `$My Pictures` mellett milyen további **útvonal-változók** léteznek.
+
+### 1.6/c Az eredeti mezőnév-lista (az `.exe`-ből, összevetésül)
 
 Az `.exe` egy tömbben tartalmazza a kollázs-specifikáció mezőneveit:
 
