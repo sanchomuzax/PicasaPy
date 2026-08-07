@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.19] – 2026-08-07
+
+### Hozzáadva
+- **Jobbklikk-menü a nézőben (#422, 1. lépcső):** a nagy képen eddig
+  egyetlen kontextusmenü sem nyílt — most megvan az eredeti Picasa mind a
+  17 parancsa, a hivatalos magyar feliratokkal. Élesben működik a
+  visszatérés a könyvtárhoz, a hozzáadás albumhoz, a forgatás jobbra/balra,
+  az elrejtés–megjelenítés, a fájl megnyitása, a keresés a lemezen, a
+  törlés lemezről, a teljes elérési út másolása és a tulajdonságok. A még
+  nem működő parancsok — az eredetihez hűen — szürkén láthatók maradnak,
+  hogy a menü magassága és a tételek helye soha ne ugráljon.
+
 ## [0.6.18] – 2026-08-07
 
 ### Javítva
