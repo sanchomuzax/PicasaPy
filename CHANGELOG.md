@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.16] – 2026-08-07
+
+### Hozzáadva
+- **Az összes effektus másolása/beillesztése (#426):** egy kép teljes
+  szerkesztési lánca átvihető tetszőleges számú másik képre — mappánként
+  egyetlen `.picasa.ini`-írással, és a teljes köteg egyetlen visszavonási
+  lépésként. Amit nem visz át (kivágás, retus, vörösszem, klip-vágópontok),
+  azt nem kézi lista, hanem a `filterdesc` regiszter `mode`/`persist`
+  jelzőiből származó gépi szabály dönti el. A menüpontok bekötése még
+  hátravan, ezért a jegy nyitva marad.
+
 ## [0.6.15] – 2026-08-07
 
 ### Hozzáadva
