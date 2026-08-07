@@ -97,3 +97,8 @@ tools/histogram/out/
 
 # Golden-mérési riport-kimenetek (a repó gyökerében keletkeznek)
 /riport_*.json
+
+# === Privát agent-kontextus (sanchomuzax/picasapy-agent) ===
+# A skilleket a session-start hook másolja ide a privát repóból — nem a
+# publikus repó része. A klón maga a checkouton kívül van (/workspace/… ill. ~/…).
+.claude/skills/
