@@ -48,3 +48,13 @@ function remapByIds(ids, rowOfId) {
     }
     return result
 }
+
+// #422: „Kiválasztás megfordítása" (Ctrl+I, a mappa-kontextusmenü és a
+// Szerkesztés menü tétele): ami ki volt jelölve, az nem lesz, és fordítva.
+// A `count` a rács jelenlegi sorszáma — a kimenet mindig növekvő sorrendű.
+function inverted(selected, count) {
+    var result = []
+    for (var row = 0; row < count; ++row)
+        if (selected.indexOf(row) === -1) result.push(row)
+    return result
+}

@@ -122,6 +122,26 @@ ApplicationWindow {
         window.selectedIndexes = range
         if (range.length > 0) window.selectedIndex = 0
     }
+    // #422: „Kiválasztás megfordítása" (Ctrl+I) — a mappa-kontextusmenü és
+    // a Szerkesztés menü tétele
+    function invertSelection() {
+        var rows = Selection.inverted(
+            window.selectedIndexes, controller.photos.rowCount())
+        window.selectedIndexes = rows
+        window.selectedIndex = rows.length > 0 ? rows[0] : -1
+    }
+    // #422: „Exportálás HTML-oldalként…" a mappa-kontextusmenüből — a
+    // dialógus itt él (a menüsáv is ezt nyitja)
+    function openWebExport() { webExportDialog.open() }
+    // #422: a mappa-kontextusmenünek HÁROM megnyitási pontja van (a rács
+    // üres területe, a bal panel mappa-sora, a rács mappa-fejléce), és
+    // mindhárom UGYANAZT a menüt nyitja. A menü a FolderPane-ben él; a
+    // másik két hívó ezen az ablak-szintű átjárón éri el.
+    function openFolderContextMenu(path) {
+        var target = path && path.length > 0
+            ? path : (controller ? controller.currentFolder : "")
+        if (target.length > 0) folderPane.openFolderContextMenu(target)
+    }
 
     // #135: a háttér-frissítés (5 perces rescan, watcher-jelzés) a
     // rács-modellt teljesen resetelheti — beszúrt/eltűnt fájloknál a
@@ -157,6 +177,7 @@ ApplicationWindow {
 
     Shortcut { sequence: "Ctrl+A"; onActivated: window.selectAll() }
     Shortcut { sequence: "Ctrl+D"; onActivated: window.clearSelection() }
+    Shortcut { sequence: "Ctrl+I"; onActivated: window.invertSelection() }
 
     // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
     // Diavetítés közben (#8) a vetített kép a célpont, nem a rács-kijelölés.

@@ -41,6 +41,13 @@ class _StubController(QObject):
         self.date_overrides: dict[str, str] = {}
         self.set_date_calls: list[tuple[str, str]] = []
         self.clear_date_calls: list[str] = []
+        # #422: a mappa-menü feltöltésével bekötött további slotok
+        self.descriptions: dict[str, str] = {}
+        self.set_description_calls: list[tuple[str, str]] = []
+        self.resync_calls: list[str] = []
+        self.removed_folders: list[str] = []
+        self.sort_calls: list[str] = []
+        self.reverse_calls = 0
 
     @Property("QVariant", notify=customCollectionsChanged)
     def customCollections(self):
@@ -69,6 +76,39 @@ class _StubController(QObject):
     def clearFolderDate(self, folder_path):
         self.clear_date_calls.append(folder_path)
         self.date_overrides.pop(folder_path, None)
+
+    @Slot(str, result=str)
+    def folderDescriptionOf(self, folder_path):
+        return self.descriptions.get(folder_path, "")
+
+    @Slot(str, str)
+    def setFolderDescriptionOf(self, folder_path, text):
+        self.set_description_calls.append((folder_path, text))
+        self.descriptions[folder_path] = text
+
+    @Slot(str)
+    def resyncFolder(self, folder_path):
+        self.resync_calls.append(folder_path)
+
+    @Slot(str)
+    def removeWatchedFolder(self, path):
+        self.removed_folders.append(path)
+
+    @Property(str, notify=customCollectionsChanged)
+    def folderSort(self):
+        return "date"
+
+    @Property(bool, notify=customCollectionsChanged)
+    def folderSortReverse(self):
+        return False
+
+    @Slot(str)
+    def setFolderSort(self, mode):
+        self.sort_calls.append(mode)
+
+    @Slot()
+    def toggleFolderSortReverse(self):
+        self.reverse_calls += 1
 
     # a FolderPane induláskor a gyűjtemény-csukottságot is lekérdezi
     @Slot(str, result=bool)
@@ -172,27 +212,76 @@ class TestNewCollectionFlow:
 
 
 class TestFolderDateFlow:
-    def test_set_date_requested_opens_dialog_with_current_override(
+    def test_edit_description_opens_dialog_with_current_values(
         self, pane, controller, qt_app
     ):
+        """#422: a mappa dátuma és leírása is az `album.fen` dialógusban van
+        (a külön „Mappa dátumának beállítása…" tétel megszűnt)."""
         controller.date_overrides["/kepek/balaton"] = "2019-07-04"
+        controller.descriptions["/kepek/balaton"] = "Nyaralás"
         _invoke(pane, "openFolderContextMenu", "/kepek/balaton")
         menu = pane.findChild(QObject, "folderContextMenu")
-        menu.setDateRequested.emit()
+        menu.editDescriptionRequested.emit()
         qt_app.processEvents()
 
-        dialog = pane.findChild(QObject, "folderDateDialog")
+        dialog = pane.findChild(QObject, "folderPropertiesDialog")
         assert dialog.property("folderPath") == "/kepek/balaton"
         assert dialog.property("currentDate") == "2019-07-04"
+        assert dialog.property("currentDescription") == "Nyaralás"
+        assert dialog.property("folderName") == "balaton"
 
-    def test_date_accepted_calls_controller(self, pane, controller, qt_app):
-        dialog = pane.findChild(QObject, "folderDateDialog")
-        dialog.dateAccepted.emit("/kepek/balaton", "2020-01-15")
+    def test_accepting_the_dialog_saves_description_and_date(
+        self, pane, controller, qt_app
+    ):
+        dialog = pane.findChild(QObject, "folderPropertiesDialog")
+        dialog.folderPropertiesAccepted.emit(
+            "/kepek/balaton", "2020-01-15", "Balaton")
         qt_app.processEvents()
+        assert controller.set_description_calls == [("/kepek/balaton", "Balaton")]
         assert controller.set_date_calls == [("/kepek/balaton", "2020-01-15")]
 
-    def test_date_cleared_calls_controller(self, pane, controller, qt_app):
-        dialog = pane.findChild(QObject, "folderDateDialog")
-        dialog.dateCleared.emit("/kepek/balaton")
+    def test_empty_date_means_automatic_date(self, pane, controller, qt_app):
+        """Az „Automatic date" gomb üres dátumot ad — a felülírás törlődik."""
+        dialog = pane.findChild(QObject, "folderPropertiesDialog")
+        dialog.folderPropertiesAccepted.emit("/kepek/balaton", "", "Balaton")
         qt_app.processEvents()
         assert controller.clear_date_calls == ["/kepek/balaton"]
+        assert controller.set_date_calls == []
+
+
+class TestFolderMenuCommands:
+    """#422: a mappa-menü újonnan bekötött parancsai."""
+
+    def test_refresh_thumbnails_resyncs_the_folder(self, pane, controller, qt_app):
+        _invoke(pane, "openFolderContextMenu", "/kepek/balaton")
+        menu = pane.findChild(QObject, "folderContextMenu")
+        menu.refreshThumbnailsRequested.emit()
+        qt_app.processEvents()
+        assert controller.resync_calls == ["/kepek/balaton"]
+
+    def test_sort_mode_reaches_the_controller(self, pane, controller, qt_app):
+        menu = pane.findChild(QObject, "folderContextMenu")
+        menu.sortModeRequested.emit("name")
+        qt_app.processEvents()
+        assert controller.sort_calls == ["name"]
+
+    def test_reverse_order_reaches_the_controller(self, pane, controller, qt_app):
+        menu = pane.findChild(QObject, "folderContextMenu")
+        menu.sortReverseRequested.emit()
+        qt_app.processEvents()
+        assert controller.reverse_calls == 1
+
+    def test_remove_from_picasa_asks_before_removing(self, pane, controller, qt_app):
+        """A „…" a feliratban megerősítést ígér — a mappa csak a jóváhagyás
+        után kerül ki a figyeltek közül."""
+        _invoke(pane, "openFolderContextMenu", "/kepek/balaton")
+        menu = pane.findChild(QObject, "folderContextMenu")
+        menu.removeFromPicasaRequested.emit()
+        qt_app.processEvents()
+        assert controller.removed_folders == []
+
+        confirm = pane.findChild(QObject, "removeFolderConfirmDialog")
+        assert confirm is not None
+        confirm.confirmed.emit()
+        qt_app.processEvents()
+        assert controller.removed_folders == ["/kepek/balaton"]

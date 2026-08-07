@@ -7,7 +7,7 @@ A `.picasa.ini` érintett szekciói minden művelet után round-trip-hűen
 from .copy import copy_photo
 from .move import move_photo
 from .rename import RenameItem, preview_name, rename_photo, rename_photos_many
-from .reveal import reveal_in_file_manager
+from .reveal import open_folder_in_file_manager, reveal_in_file_manager
 from .trash import delete_to_trash
 
 __all__ = [
@@ -18,5 +18,6 @@ __all__ = [
     "preview_name",
     "rename_photo",
     "rename_photos_many",
+    "open_folder_in_file_manager",
     "reveal_in_file_manager",
 ]

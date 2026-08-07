@@ -1,39 +1,87 @@
 import QtQuick
 import QtQuick.Controls
 
-// Kontextusmenü a bal hasáb mappasorainak jobbklikkjéhez (#320): az eredeti
-// Picasa mappakezelő-viselkedése — a mappa egy felhasználói gyűjteménybe
-// sorolható ("Áthelyezés gyűjteménybe…" almenü + "Új gyűjtemény…"), és a
-// mappa dátuma kézzel felülírható (az évszám-szakaszoláshoz).
+// A mappa-kontextusmenü — a Picasa `Folder` menüosztálya, 15 tétellel
+// (#320 kezdte 2 tétellel, #422 tölti fel a teljes listára).
 //
-// Önálló, próba-oldallal tesztelt komponens (CONTRIBUTING.md mintája, ld.
-// PhotoContextMenu.qml): csak jeleket bocsát ki, a controllerhez kötést a
-// FolderPane.qml (nem forró fájl) végzi.
+// A tételsort, a csoportbontást és a hivatalos magyar feliratokat a
+// `docs/specs/ui-audit-context-menus.md` 1. szakasza rögzíti. A felmérés
+// legfontosabb megállapítása: ez a menü HÁROM helyről nyílik, bájtra
+// azonos tartalommal — a rács üres területéről, a bal panel mappa-sorából
+// és a rács tetején ülő mappa-fejlécből. Ezért EGY komponens van, három
+// hívóval (FolderPane.qml, LightboxFeed.qml, LightboxHeader.qml).
+//
+// Ami az eredetiben NINCS ebben a menüben, az innen KIKERÜLT: a „Mappa
+// dátumának beállítása…" az `album.fen` („Mappaleírás szerkesztése…")
+// dialógusba költözött, ahol a Picasában is lakik — ld.
+// FolderPropertiesDialog.qml.
+//
+// A még be nem kötött parancsok `PicasaMenuItem { placeholder: true }`-ként
+// szürkén LÁTSZANAK (#416, illetve a spec 5.1. szabálya: az inaktív tétel
+// is tétel, hogy a menü magassága és a tételek helye állandó maradjon).
+//
+// Önálló, signal-alapú komponens: a controller-kötést a FolderPane.qml
+// végzi (nem forró fájl).
 Menu {
     id: menu
     objectName: "folderContextMenu"
 
-    // a jobbklikkelt mappa útvonala — a hívó (FolderPane) állítja be
-    // popup() előtt
+    // a jobbklikkelt mappa útvonala — a hívó állítja be popup() előtt
     property string folderPath: ""
     // a felhasználó egyéni gyűjteményei: {name, folders} elemek listája
     property var customCollections: []
+    // a rács jelenlegi rendezése (date/name/size/changed) és iránya — a
+    // „Mappa rendezésének alapja ▸" almenü pipáihoz
+    property string sortMode: "date"
+    property bool sortReverse: false
 
+    signal editDescriptionRequested()
+    signal selectAllRequested()
+    signal clearSelectionRequested()
+    signal invertSelectionRequested()
     signal moveToCollectionRequested(string collectionName)
     signal newCollectionRequested()
-    signal setDateRequested()
+    signal refreshThumbnailsRequested()
+    signal sortModeRequested(string mode)
+    signal sortReverseRequested()
+    signal locateRequested()
+    signal removeFromPicasaRequested()
+    signal exportAsHtmlRequested()
 
+    // -- 1. blokk: mappaleírás ---------------------------------------------
+
+    MenuItem {
+        objectName: "folderMenuEditDescription"
+        text: qsTr("Edit Folder Description...")
+        onTriggered: menu.editDescriptionRequested()
+    }
+    MenuSeparator {}
+
+    // -- 2. blokk: kijelölés + gyűjtemény ----------------------------------
+
+    MenuItem {
+        objectName: "folderMenuSelectAll"
+        text: qsTr("Select All Pictures") + "\tCtrl+A"
+        onTriggered: menu.selectAllRequested()
+    }
+    MenuItem {
+        objectName: "folderMenuClearSelection"
+        text: qsTr("Clear Selection") + "\tCtrl+D"
+        onTriggered: menu.clearSelectionRequested()
+    }
+    MenuItem {
+        objectName: "folderMenuInvertSelection"
+        text: qsTr("Invert Selection") + "\tCtrl+I"
+        onTriggered: menu.invertSelectionRequested()
+    }
     Menu {
-        id: moveMenu
         objectName: "folderContextMenuMoveToCollection"
         title: qsTr("Move to Collection...")
 
         Repeater {
-            id: moveMenuRepeater
             objectName: "folderContextMenuMoveToCollectionRepeater"
             model: menu.customCollections
             delegate: MenuItem {
-                id: moveMenuItem
                 required property var modelData
                 objectName: "folderContextMenuMoveToCollectionItem_" + modelData.name
                 text: modelData.name
@@ -48,9 +96,108 @@ Menu {
         }
     }
     MenuSeparator {}
+
+    // -- 3. blokk: nézet ----------------------------------------------------
+
     MenuItem {
-        objectName: "folderContextMenuSetDate"
-        text: qsTr("Set Folder Date...")
-        onTriggered: menu.setDateRequested()
+        objectName: "folderMenuRefreshThumbnails"
+        text: qsTr("Refresh Thumbnails")
+        onTriggered: menu.refreshThumbnailsRequested()
+    }
+    Menu {
+        objectName: "folderMenuSortBy"
+        // az eredeti `Sort` menüosztálya: Dátum · Név · Méret · Fordított
+        // sorrend (spec A.2)
+        title: qsTr("Sort Folder By")
+
+        MenuItem {
+            objectName: "folderMenuSortByDate"
+            text: qsTr("Date")
+            checkable: true
+            checked: menu.sortMode === "date"
+            onTriggered: menu.sortModeRequested("date")
+        }
+        MenuItem {
+            objectName: "folderMenuSortByName"
+            text: qsTr("Name")
+            checkable: true
+            checked: menu.sortMode === "name"
+            onTriggered: menu.sortModeRequested("name")
+        }
+        MenuItem {
+            objectName: "folderMenuSortBySize"
+            text: qsTr("Size")
+            checkable: true
+            checked: menu.sortMode === "size"
+            onTriggered: menu.sortModeRequested("size")
+        }
+        MenuSeparator {}
+        MenuItem {
+            objectName: "folderMenuSortReverse"
+            text: qsTr("Reverse Order")
+            checkable: true
+            checked: menu.sortReverse
+            onTriggered: menu.sortReverseRequested()
+        }
+    }
+    MenuSeparator {}
+
+    // -- 4. blokk: rejtés ----------------------------------------------------
+
+    PicasaMenuItem {
+        objectName: "folderMenuHideFolder"
+        text: qsTr("Hide Folder")
+        placeholder: true
+    }
+    MenuSeparator {}
+
+    // -- 5. blokk: lemez ------------------------------------------------------
+
+    MenuItem {
+        objectName: "folderMenuLocate"
+        text: qsTr("Locate on Disk") + "\tCtrl+Enter"
+        onTriggered: menu.locateRequested()
+    }
+    MenuItem {
+        objectName: "folderMenuRemoveFromPicasa"
+        text: qsTr("Remove from Picasa...")
+        onTriggered: menu.removeFromPicasaRequested()
+    }
+    MenuSeparator {}
+
+    // -- 6. blokk: áthelyezés / törlés ----------------------------------------
+
+    PicasaMenuItem {
+        objectName: "folderMenuMoveFolder"
+        text: qsTr("Move Folder...")
+        placeholder: true
+    }
+    PicasaMenuItem {
+        objectName: "folderMenuDeleteFolder"
+        text: qsTr("Delete Folder...")
+        placeholder: true
+    }
+    MenuSeparator {}
+
+    // -- 7. blokk: megosztás ---------------------------------------------------
+
+    PicasaMenuItem {
+        objectName: "folderMenuUploadToGooglePhotos"
+        text: qsTr("Upload to Google Photos...")
+        placeholder: true
+    }
+    MenuSeparator {}
+
+    // -- 8. blokk: export ------------------------------------------------------
+
+    MenuItem {
+        objectName: "folderMenuExportAsHtml"
+        text: qsTr("Export as HTML Page...")
+        onTriggered: menu.exportAsHtmlRequested()
+    }
+    PicasaMenuItem {
+        objectName: "folderMenuAddNameTags"
+        text: qsTr("Add Name Tags")
+        placeholder: true
     }
 }
