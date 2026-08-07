@@ -215,12 +215,22 @@ class TestTrayBarIconOnlyModeStillWorks:
 
     def test_wide_width_keeps_labelled_buttons(self, app_module, qt_app):
         """Széles ablaknál (>= a kompakt küszöb felett) a gombok
-        feliratosak maradnak — a kompakt mód csak szűk helyen kapcsol be."""
+        feliratosak maradnak — a kompakt mód csak szűk helyen kapcsol be.
+
+        A szélességet NEM fix pixelértékkel adjuk meg: a küszöb a mért
+        feliratszélességektől függ, azok pedig platform- és nyelvfüggők
+        (a windows-CI 1280 px-en emiatt bukott). A komponens saját
+        `compactThreshold`-jából származtatjuk."""
         app_window = FakeAppWindow()
         app_window.selectedIndexes = [0]
         tray, engine = _load_tray(app_module, app_window, width=1280)
         for _ in range(3):
             qt_app.processEvents()
+        bar = _child(tray, "trayMainBar")
+        tray.setProperty("width", bar.property("compactThreshold") + 40)
+        for _ in range(3):
+            qt_app.processEvents()
+        assert bar.property("compact") is False
         export_label = _child(tray, "trayExportLabel")
         assert export_label.property("visible") is not False
         tray.deleteLater()

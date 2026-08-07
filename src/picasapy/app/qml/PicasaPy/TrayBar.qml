@@ -122,11 +122,15 @@ Column {
         // width >= 900 + feliratok > fix + feliratok = igény — vagyis a
         // tartalom BIZONYÍTHATÓAN elfér, bármilyen betűszélesség mellett.
         readonly property real compactBudget: 900
-        readonly property bool compact: width < compactBudget
+        // A küszöb kívülről is olvasható (teszt), hogy a „széles ablak"
+        // esetet ne fix pixelértékkel kelljen megadni — az platform- és
+        // nyelvfüggő lenne (a windows-CI éppen ezen bukott el 1280-on).
+        readonly property real compactThreshold: compactBudget
                                         + emailLabelMetrics.width
                                         + printLabelMetrics.width
                                         + exportLabelMetrics.width
                                         + uploadLabelMetrics.width
+        readonly property bool compact: width < compactThreshold
 
         Rectangle {
             width: parent.width; height: 1
