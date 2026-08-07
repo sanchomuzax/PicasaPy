@@ -782,6 +782,14 @@ ApplicationWindow {
                 controller.removeKeywordFromRows(window.selectedRows(), keyword)
             }
             onCloseRequested: window.tagsPanelOpen = false
+            // #422: a címke jobbklikk-menüje (Picasa `Tags` menüosztály)
+            onAddToSelectionRequested: function(keyword) {
+                if (controller)
+                    controller.addKeywordToRows(window.selectedRows(), keyword)
+            }
+            onFindTaggedRequested: function(keyword) {
+                if (controller) controller.search(keyword)
+            }
         }
 
         // Helyek-panel (#30): jobb oldali hasáb, Nézet → Helyek — a látszó

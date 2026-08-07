@@ -17,6 +17,24 @@ Rectangle {
     signal addRequested(string keyword)
     signal removeRequested(string keyword)
     signal closeRequested()
+    // #422: a címke jobbklikk-menüje (Picasa `Tags` menüosztály) —
+    // a címke rátétele a TELJES kijelölésre, illetve az ilyen címkéjű
+    // elemek keresése; a bekötés a Main.qml-ben (a kijelölés gazdája)
+    signal addToSelectionRequested(string keyword)
+    signal findTaggedRequested(string keyword)
+
+    // a menüt a sor jobbklikkje nyitja; a célcímkét a menü hordozza
+    function openTagContextMenu(keyword) {
+        tagContextMenu.keyword = keyword
+        tagContextMenu.popup()
+    }
+
+    TagContextMenu {
+        id: tagContextMenu
+        onAddToSelectionRequested: panel.addToSelectionRequested(keyword)
+        onFindTaggedRequested: panel.findTaggedRequested(keyword)
+        onRemoveRequested: panel.removeRequested(keyword)
+    }
 
     // teszt-horog és a beviteli mező közös útja: üres/whitespace inputra
     // nem megy ki jel, sikeres leadás után a mező kiürül
@@ -145,6 +163,11 @@ Rectangle {
                     }
                 }
                 HoverHandler { id: rowHover }
+                TapHandler {
+                    acceptedButtons: Qt.RightButton
+                    gesturePolicy: TapHandler.ReleaseWithinBounds
+                    onSingleTapped: panel.openTagContextMenu(tagRow.modelData)
+                }
             }
         }
 
