@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.24] – 2026-08-07
+
+### Javítva
+- **Megbízhatóbb tesztek (#475):** a háttérműveletre váró teszt-segéd eddig
+  csendben továbbengedte a tesztet, ha a művelet nem fejeződött be időben —
+  a hiba így máshol, félrevezető üzenettel bukott ki. Mostantól beszédes
+  hibát ad, és a türelmi idő a lassú gépekhez igazodik. A javítás rögtön
+  kimutatott egy rejtett hibát az egyik saját tesztünkben is.
+
 ## [0.6.23] – 2026-08-07
 
 ### Hozzáadva
