@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.25] – 2026-08-07
+
+### Hozzáadva
+- **A saját gyűjtemények végre látszanak (#476):** eddig létre lehetett hozni
+  egy gyűjteményt és mappákat tenni bele, de utána sehol nem jelent meg.
+  Mostantól a bal panelen saját, csukható fejlécet kap, alatta a benne lévő
+  mappákkal.
+
 ## [0.6.24] – 2026-08-07
 
 ### Javítva
