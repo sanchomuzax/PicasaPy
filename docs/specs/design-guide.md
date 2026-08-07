@@ -166,6 +166,52 @@ cellaszélesség) egyben változna, ezért külön jegyet érdemel.
   „Feltöltés a Google Fotókba"; E-mail/Nyomtatás/Exportálás ikon+felirat;
   jobbra méret-csúszka + kör ikongombok (személy, hely, címke, infó).
 
+## Réteg-geometria: a Picasa saját méretei (2026-08-07)
+
+A `respack.yt` rétegeinek **határoló dobozai** képpontra megadják az eredeti
+elrendezést. **Fontos fenntartás:** a fő ablak tervezési vászna **800×534** volt
+(nem élő ablakméret) — az abszolút számok helyett az **arányok** és a
+**sávmagasságok** az érvényesek, mert azok nem skálázódtak.
+
+### Sávmagasságok (ezek abszolút értékek)
+
+| sáv | magasság | a mi guide-unk |
+|---|---|---|
+| felső fül-sáv | 29 px | — |
+| **eszköztár** | **37 px** | ~37 px ✅ **egyezik** |
+| kereső/szűrő sor | 25 px | — |
+| **mappa-fejléc** | 86 px + 4 px árnyék | — |
+| alsó vezérlő-sáv (tálca) | 105 px | ~85 px (közeli) |
+
+### Panelszélességek (a 800 px-es vászonhoz viszonyítva)
+
+bal mappa-panel **210 px ≈ 26%** (benne az albumlista 196 px) · jobb fiók
+**276 px** · a teljes jobb terület 388 px. A mi 20%-os bal panelünk ehhez képest
+**keskenyebb** — érdemes 25% körülre vinni.
+
+### Tömör kitöltések — HÁROM tokenünk igazolva
+
+| réteg | szín | tokenünk |
+|---|---|---|
+| `thumbui/basepanel` | `#e8e8e8` | `chromeBg` ✅ |
+| `thumbui/scratchpadbase` | `#f8f8f8` | `trayBg` ✅ |
+| `headerpanel/headerbase0` | `#eaeaea` | `lightboxBg` ✅ |
+
+**Új, eddig nem ismert:** a mappa-fejléc **két rétegű** — `headerbase0` `#eaeaea`
+és `headerbase1` `#f8f8f8` —, vagyis **finom átmenet** van benne, nem egyszínű.
+Erre nincs tokenünk. Az „Emberek" panel alapja `#e2e2e2`.
+
+> **Óvatosan a rétegszínekkel:** csak a valódi háttér-rétegek (`rect`,
+> `decrect`, `static`) színe hiteles. A `clip`/`superbutton`/`buttcontainer`
+> típusoknál a szín gyakran csak találat-teszt maszk (pl. lila, mustársárga
+> értékek) — ezeket **nem szabad** UI-színként átvenni.
+
+### Gombméretek
+
+A leggyakoribb kettő: **14×14 px** (kis ikongombok) és **55×36 px** (a tálca
+alatti műveletgombok). A fejléc gombjai egységesen **29×27 px**, a lista-fejléc
+gombjai **29×22 px**.
+
 ## A néző és a diavetítés — két KÜLÖN modul (pontosítás, 2026-08-07)
 
 Forrás-ellenőrzés után egyértelmű, hogy a Picasa két külön felületet használt,
