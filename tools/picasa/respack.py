@@ -14,8 +14,9 @@ Röviden:
   (`int16 x0,y0,x1,y1` + `uint8 ?` + `uint8 látható` + `uint16 ?` +
   `uint8 kódolás`), utána a hasznos adat:
   - kódolás `2` = tömör kitöltés, 4 bájt RGBA;
-  - kódolás `1` = soronkénti RLE, `(uint8 darab, R, G, B, A)` ötösök,
-    sorfolytonosan, összesen `(x1-x0) * (y1-y0)` képpont;
+  - kódolás `1` = RLE: `(uint8 darab, R, G, B, A)` ötösök **egyetlen,
+    sorhatároktól FÜGGETLEN képpont-folyamként**, összesen
+    `(x1-x0) * (y1-y0)` képpont (a futamok átlógnak a sorok között);
   - kódolás `0` = üres réteg (csak fejléc, nincs képpontadat);
   - a `tre:` nevű bejegyzések nyers ASCII szövegek (UI-elrendezés-forrás),
     nincs 13 bájtos fejlécük.

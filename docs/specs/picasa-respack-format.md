@@ -75,26 +75,40 @@ vászonból negatív origóval; előjel nélkül olvasva ezek méretei
 A fejléc után pontosan **4 bájt RGBA**; a teljes határoló doboz ezzel a
 színnel van kitöltve. A rekord így fixen 17 bájt.
 
-### 3.2 Kódolás `1` — soronkénti RLE (1365 réteg)
+### 3.2 Kódolás `1` — RLE, sorhatároktól FÜGGETLENÜL (1365 réteg)
 
-A fejléc után `(uint8 darab, R, G, B, A)` ötösök sorozata, sorfolytonosan,
-**sorhatárra igazítva** (egy futam soha nem lóg át a következő sorba).
-A futamok összege pontosan `(x1−x0) × (y1−y0)` képpont.
+A fejléc után `(uint8 darab, R, G, B, A)` ötösök sorozata: a kép **egyetlen,
+folytonos képpont-folyam**, a futamok **átlógnak a sorhatárokon**. A futamok
+összege pontosan `(x1−x0) × (y1−y0)` képpont.
 
-Ellenőrző példa (`layer:acquirepanel/#rect: center_base`, 801×325):
-`01 00000000 | ff e8e8e8ff | ff e8e8e8ff | ff e8e8e8ff | 23 e8e8e8ff …`
-→ 1 + 255 + 255 + 255 + 35 = **801** = a sor szélessége.
+> **JAVÍTÁS (2026-08-07).** Ez a leírás korábban azt állította, hogy a futamok
+> **sorhatárra igazítottak**. **Tévedés volt.** Az eredeti megfigyelés (az
+> `acquirepanel/#rect: center_base` első sora pontosan 801 képpontot ad ki)
+> csak véletlen egybeesés volt: az a sor egyszínű, ezért a futam ott ért véget.
+> A hibát a **visszakódolási (round-trip) próba** mutatta ki — ld. 3.4.
 
 ### 3.3 Kódolás `0` — üres réteg (1 db)
 
 Csak fejléc, adat nélkül — átlátszó helyőrző.
 
-### 3.4 Verifikáció
+### 3.4 Verifikáció — kétlépcsős
 
-A `tools/picasa/respack.py png` a valódi 3,7 MB-os csomagon
-**2769/2769 réteget csomagol ki hibátlanul**, egyetlen kihagyás nélkül —
-a képpontszámok minden rétegnél pontosan kiadják a fejléc szerinti
-méretet. A formátum tehát nem részleges illesztés, hanem teljes.
+**1. lépcső — kifejtés.** A `tools/picasa/respack.py png` a valódi 3,7 MB-os
+csomagon **2769/2769 réteget csomagol ki hibátlanul**, és a képpontszámok
+minden rétegnél kiadják a fejléc szerinti méretet.
+
+**2. lépcső — VISSZAKÓDOLÁS (round-trip).** A dekódolt képpontokból
+újrakódolva a bájtsort, és összevetve az eredetivel: **1365/1365 RLE-réteg
+bájtra azonos**.
+
+Ez a második lépcső a döntő, és **egy hibát ki is mutatott**: az első
+próbálkozás (sorhatárra igazított kódolás) 1025 rétegen HOSSZABB bájtsort
+adott az eredetinél — ebből derült ki, hogy a futamok valójában átlógnak a
+sorokon. A sorfüggetlen kódolással azonnal 100% lett az egyezés.
+
+**Tanulság:** a „minden bejegyzés kifejthető" még nem jelenti, hogy a formátumot
+pontosan értjük — csak a **bájthű visszakódolás** bizonyítja. Ez a
+`binaris-regeszet-modszertan.md` validációs létrájának legfelső foka.
 
 ## 4. Mit ad ez a közösségnek
 
