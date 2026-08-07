@@ -305,6 +305,45 @@ egy átlagszíne van). Ha egy képre még nincs kiszámolt `color_token` (a
 háttér-feltöltés még nem érte el), a kép egyszerűen kimarad a
 találatokból — nem hibát dob.
 
+## Egy kövület: a `[LifeScape]` szekció — a formátum ŐSE (2026-08-07)
+
+A telepítés `web/templates/blackfrm/` mappájában ott hever egy **véletlenül
+kiszállított** fájl, `xLifescape.ini` néven — a másik hat sablonmappában nincs
+párja:
+
+```ini
+[LifeScape]
+name=blackbg
+description=
+date=37429.106389
+category=Other Pictures
+```
+
+Ez **album-metaadat a fejlesztők saját Picasájából**, ami bennmaradt a csomagban.
+A `date` **OLE Automation-dátum** (napok 1899-12-30 óta): **37429,106389 →
+2002. június 22., 02:33** — vagyis a **LifeScape-korszakból**, jóval a Google
+2004-es felvásárlása előttről. (A „Lifescape Solutions Inc." nevet a
+registry-kulcsokban is megtaláltuk: `Software\Lifescape Solutions Inc.\Picasa`.)
+
+**Amit a formátum fejlődéséről elárul:**
+
+| akkor (2002, `[LifeScape]`) | ma (`[Picasa]`) |
+|---|---|
+| `name` | `name` — **változatlan** |
+| `description` | a `[.album:]` szekcióba került |
+| `date` — **OLE-dátum** (lebegőpontos napszám) | ISO 8601 a `[.album:]`-ban |
+| `category` = „Other Pictures" | `category` = „Folders on Disk" stb. |
+
+A **`category`** mező tehát **több mint húsz éve** ugyanazt a szerepet tölti be:
+a mappa/album gyűjteménybe sorolását. A mai `P2category` ennek a leszármazottja.
+Az „Other Pictures" pedig ott van a mai beépített gyűjtemény-nevek listáján is —
+**„Other Stuff"** néven.
+
+**Gyakorlati haszon:** nagyon régi Picasa-könyvtárban előfordulhatnak
+`[LifeScape]` szekciójú ini-fájlok. A parszernek ezt **nem kell értenie**, de a
+round-trip elv szerint **változatlanul meg kell őriznie** — importnál pedig a
+`name`/`category` kiolvasható belőle.
+
 ## Írási szabályok (PicasaPy, kétirányú kompatibilitáshoz)
 
 1. Atomikus írás (temp fájl + rename), írás előtti backup.
