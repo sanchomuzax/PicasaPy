@@ -26,7 +26,18 @@ Rectangle {
 
     readonly property int bucketCount: 256
 
-    color: Theme.contentPanel
+    // #429: az eredeti Picasa `nerdview` paneljének HÁTTERE a `respack.yt`
+    // szerint meleg barna `#a88974` (NEM szürke Theme-token) — ez a panel
+    // saját, rögzített arculati színe, nem az általános felület-paletta
+    // része, ezért szándékosan literál (nem Theme-token, ld. CLAUDE.md).
+    // Mivel a szín rögzített (nem sötét/világos témafüggő), a rajta lévő
+    // szöveg is a `.tre`-ben dokumentált rögzített `#333333` — a
+    // téma-függő Theme.ink/textGray sötét témában szinte fehér lenne,
+    // ami a barna alapon olvashatatlan volna.
+    readonly property color panelBrown: "#a88974"
+    readonly property color panelInk: "#333333"
+
+    color: panelBrown
     border.color: Theme.chromeBorder
     radius: 3
 
@@ -42,7 +53,7 @@ Rectangle {
             text: qsTr("Histogram and camera information")
             font.pixelSize: Theme.fontSize
             font.bold: true
-            color: Theme.ink
+            color: box.panelInk
             // #235: keskeny doboznál a cím ne vágódjon `…`-ra — legfeljebb
             // két sorba törik (az eredeti Picasában a cím mindig teljes)
             wrapMode: Text.WordWrap
@@ -64,6 +75,15 @@ Rectangle {
                 - titleLabel.implicitHeight - cameraLabel.implicitHeight
                 - parent.spacing * 2)
             clip: true
+
+            // #429: a rajzterület (`histoback`/`histo` réteg) fehér alapú —
+            // a `respack.yt`-ben elkülönül a barna panel-háttértől
+            Rectangle {
+                id: plotBackground
+                objectName: "histogramPlotBackground"
+                anchors.fill: parent
+                color: "#ffffff"
+            }
 
             // egy csatorna oszlopsorozata — kitöltött, áttetsző (a három
             // egymásra keveredve adja a Picasa-hisztogram színvilágát)
@@ -111,7 +131,7 @@ Rectangle {
                 text: qsTr("No EXIF data available")
                 font.pixelSize: Theme.fontSize - 2
                 font.italic: true
-                color: Theme.textGray
+                color: box.panelInk
             }
 
             Repeater {
@@ -132,7 +152,7 @@ Rectangle {
                         maximumLineCount: 2
                         elide: Text.ElideRight
                         font.pixelSize: Theme.fontSize - 2
-                        color: Theme.textGray
+                        color: box.panelInk
                     }
                     Text {
                         id: rightCell
@@ -141,7 +161,7 @@ Rectangle {
                         text: parent.cells.length > 1 ? parent.cells[1] : ""
                         elide: Text.ElideRight
                         font.pixelSize: Theme.fontSize - 2
-                        color: Theme.textGray
+                        color: box.panelInk
                     }
                 }
             }

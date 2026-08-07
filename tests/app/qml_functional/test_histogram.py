@@ -1,8 +1,9 @@
-"""QML-funkcionális tesztek: hisztogram-doboz (#25, #228, #232, #235) —
+"""QML-funkcionális tesztek: hisztogram-doboz (#25, #228, #232, #235, #429) —
 a bal alsó placeholder-doboz élesítése, HistogramBox.qml (#155: a korábbi
 `test_qml_functional.py` egyik szelete, processzenkénti izolációhoz)."""
 
 from PySide6.QtCore import QObject
+from PySide6.QtGui import QColor
 
 
 class TestHistogramBoxWiring:
@@ -150,3 +151,20 @@ class TestHistogramBoxWiring:
         # a wrapMode enum PySide-oldalon nem konvertálható — a viselkedést a
         # maximumLineCount (2 sor engedett) és a QML-forrás rögzíti
         assert title.property("maximumLineCount") == 2
+
+    def test_panel_background_is_original_picasa_brown(self, qml_app, qt_app):
+        """#429: az eredeti `nerdview` panel háttere meleg barna `#a88974`,
+        nem szürke Theme-token (`respack.yt` határolódoboz-adata)."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        box = window.findChild(QObject, "viewerHistogramBox")
+        assert box.property("color") == QColor("#a88974")
+
+    def test_plot_area_has_white_background(self, qml_app, qt_app):
+        """#429: a rajzterület (`histoback`/`histo` réteg) fehér alapú,
+        elkülönül a barna panel-háttértől."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        background = window.findChild(QObject, "histogramPlotBackground")
+        assert background is not None, "histogramPlotBackground nem található"
+        assert background.property("color") == QColor("#ffffff")
