@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.23] – 2026-08-07
+
+### Hozzáadva
+- **Album és Emberek-album jobbklikk-menüje (#422):** a bal panel album-,
+  illetve személy-során. Élő a kijelölés-parancsok, az indexképek
+  frissítése és a HTML-export; az album törlése/leírása, a névcímkék és a
+  webes műveletek — az eredetihez hűen — szürkén láthatók.
+
 ## [0.6.22] – 2026-08-07
 
 ### Hozzáadva
