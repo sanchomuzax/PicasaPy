@@ -1,0 +1,4872 @@
+{
+  "kuszobok": {
+    "pixel_tol": 1,
+    "frac_tol": 0.002,
+    "ssim_min": 0.98,
+    "de_mean_max": 2.0
+  },
+  "lut_forras": "research/golden-analysis/luts3.json",
+  "osszegzes": {
+    "pixelhű": 16,
+    "közelítés": 43,
+    "eltér": 179,
+    "hiányzik": 0
+  },
+  "szuronkent": {
+    "Vignette": "eltér",
+    "ansel": "eltér",
+    "autocolor": "eltér",
+    "autolight": "eltér",
+    "bw": "közelítés",
+    "crop64": "eltér",
+    "dir_tint": "eltér",
+    "enhance": "eltér",
+    "fill": "eltér",
+    "finetune": "eltér",
+    "finetune2": "eltér",
+    "glow": "eltér",
+    "glow2": "eltér",
+    "grain2": "eltér",
+    "radblur": "eltér",
+    "sat": "eltér",
+    "sepia": "eltér",
+    "tilt": "eltér",
+    "tint": "eltér",
+    "unsharp": "eltér",
+    "unsharp2": "eltér",
+    "warm": "eltér"
+  },
+  "eredmenyek": [
+    {
+      "nev": "01-auto/chart_color__enhance.jpg",
+      "filters": "enhance=1;",
+      "szurok": [
+        "enhance"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99638,
+        "delta_e_mean": 7.35,
+        "delta_e_p99": 13.731,
+        "max_diff": 47,
+        "mean_diff": 9.088295486111111,
+        "over_tolerance_ratio": 0.9990057291666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/chart_color__autolight.jpg",
+      "filters": "autolight=1;",
+      "szurok": [
+        "autolight"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99627,
+        "delta_e_mean": 3.241,
+        "delta_e_p99": 5.572,
+        "max_diff": 25,
+        "mean_diff": 5.211245138888889,
+        "over_tolerance_ratio": 0.9969239583333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/chart_color__autocolor.jpg",
+      "filters": "autocolor=1;",
+      "szurok": [
+        "autocolor"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99886,
+        "delta_e_mean": 5.632,
+        "delta_e_p99": 9.553,
+        "max_diff": 35,
+        "mean_diff": 6.641763194444445,
+        "over_tolerance_ratio": 0.9952197916666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/chart_detail__enhance.jpg",
+      "filters": "enhance=1;",
+      "szurok": [
+        "enhance"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.015,
+        "delta_e_p99": 0.345,
+        "max_diff": 2,
+        "mean_diff": 0.04796875,
+        "over_tolerance_ratio": 0.00026041666666666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/chart_detail__autolight.jpg",
+      "filters": "autolight=1;",
+      "szurok": [
+        "autolight"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.01,
+        "delta_e_p99": 0.345,
+        "max_diff": 1,
+        "mean_diff": 0.031510416666666666,
+        "over_tolerance_ratio": 0.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/chart_detail__autocolor.jpg",
+      "filters": "autocolor=1;",
+      "szurok": [
+        "autocolor"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.01,
+        "delta_e_p99": 0.345,
+        "max_diff": 1,
+        "mean_diff": 0.031510416666666666,
+        "over_tolerance_ratio": 0.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/chart_ramp__enhance.jpg",
+      "filters": "enhance=1;",
+      "szurok": [
+        "enhance"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99826,
+        "delta_e_mean": 2.074,
+        "delta_e_p99": 4.952,
+        "max_diff": 41,
+        "mean_diff": 3.0148140625,
+        "over_tolerance_ratio": 0.8387276041666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/chart_ramp__autolight.jpg",
+      "filters": "autolight=1;",
+      "szurok": [
+        "autolight"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99995,
+        "delta_e_mean": 0.094,
+        "delta_e_p99": 2.696,
+        "max_diff": 40,
+        "mean_diff": 0.08444947916666666,
+        "over_tolerance_ratio": 0.019572916666666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/chart_ramp__autocolor.jpg",
+      "filters": "autocolor=1;",
+      "szurok": [
+        "autocolor"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99954,
+        "delta_e_mean": 0.373,
+        "delta_e_p99": 3.176,
+        "max_diff": 41,
+        "mean_diff": 0.29661197916666665,
+        "over_tolerance_ratio": 0.2248109375
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo00__enhance.jpg",
+      "filters": "enhance=1;",
+      "szurok": [
+        "enhance"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96645,
+        "delta_e_mean": 14.743,
+        "delta_e_p99": 22.5,
+        "max_diff": 50,
+        "mean_diff": 20.286595659722224,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo00__autolight.jpg",
+      "filters": "autolight=1;",
+      "szurok": [
+        "autolight"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98504,
+        "delta_e_mean": 4.072,
+        "delta_e_p99": 9.283,
+        "max_diff": 24,
+        "mean_diff": 6.561901215277778,
+        "over_tolerance_ratio": 0.9978479166666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo00__autocolor.jpg",
+      "filters": "autocolor=1;",
+      "szurok": [
+        "autocolor"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99731,
+        "delta_e_mean": 4.115,
+        "delta_e_p99": 7.319,
+        "max_diff": 11,
+        "mean_diff": 2.7425359375,
+        "over_tolerance_ratio": 0.9959645833333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo01__enhance.jpg",
+      "filters": "enhance=1;",
+      "szurok": [
+        "enhance"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97766,
+        "delta_e_mean": 19.905,
+        "delta_e_p99": 28.423,
+        "max_diff": 41,
+        "mean_diff": 19.01229826388889,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo01__autolight.jpg",
+      "filters": "autolight=1;",
+      "szurok": [
+        "autolight"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99392,
+        "delta_e_mean": 4.369,
+        "delta_e_p99": 8.408,
+        "max_diff": 18,
+        "mean_diff": 4.449711979166667,
+        "over_tolerance_ratio": 0.9964046875
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo01__autocolor.jpg",
+      "filters": "autocolor=1;",
+      "szurok": [
+        "autocolor"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99621,
+        "delta_e_mean": 7.051,
+        "delta_e_p99": 9.858,
+        "max_diff": 27,
+        "mean_diff": 6.908314930555555,
+        "over_tolerance_ratio": 0.9999854166666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo02__enhance.jpg",
+      "filters": "enhance=1;",
+      "szurok": [
+        "enhance"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.94092,
+        "delta_e_mean": 11.166,
+        "delta_e_p99": 16.763,
+        "max_diff": 58,
+        "mean_diff": 19.520338020833332,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo02__autolight.jpg",
+      "filters": "autolight=1;",
+      "szurok": [
+        "autolight"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98558,
+        "delta_e_mean": 5.763,
+        "delta_e_p99": 10.252,
+        "max_diff": 22,
+        "mean_diff": 6.087313541666667,
+        "over_tolerance_ratio": 0.9978541666666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo02__autocolor.jpg",
+      "filters": "autocolor=1;",
+      "szurok": [
+        "autocolor"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99752,
+        "delta_e_mean": 13.879,
+        "delta_e_p99": 25.333,
+        "max_diff": 45,
+        "mean_diff": 8.986735590277778,
+        "over_tolerance_ratio": 0.9999994791666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo03__enhance.jpg",
+      "filters": "enhance=1;",
+      "szurok": [
+        "enhance"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98397,
+        "delta_e_mean": 19.925,
+        "delta_e_p99": 27.956,
+        "max_diff": 57,
+        "mean_diff": 16.32958489583333,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo03__autolight.jpg",
+      "filters": "autolight=1;",
+      "szurok": [
+        "autolight"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99066,
+        "delta_e_mean": 4.019,
+        "delta_e_p99": 8.395,
+        "max_diff": 20,
+        "mean_diff": 5.1937125,
+        "over_tolerance_ratio": 0.9976036458333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo03__autocolor.jpg",
+      "filters": "autocolor=1;",
+      "szurok": [
+        "autocolor"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99714,
+        "delta_e_mean": 8.756,
+        "delta_e_p99": 13.68,
+        "max_diff": 26,
+        "mean_diff": 6.6803515625,
+        "over_tolerance_ratio": 0.99988125
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo04__enhance.jpg",
+      "filters": "enhance=1;",
+      "szurok": [
+        "enhance"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.95033,
+        "delta_e_mean": 11.37,
+        "delta_e_p99": 24.249,
+        "max_diff": 50,
+        "mean_diff": 13.784679166666667,
+        "over_tolerance_ratio": 0.999021875
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo04__autolight.jpg",
+      "filters": "autolight=1;",
+      "szurok": [
+        "autolight"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99329,
+        "delta_e_mean": 2.661,
+        "delta_e_p99": 6.904,
+        "max_diff": 20,
+        "mean_diff": 3.706341666666667,
+        "over_tolerance_ratio": 0.9357145833333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo04__autocolor.jpg",
+      "filters": "autocolor=1;",
+      "szurok": [
+        "autocolor"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99771,
+        "delta_e_mean": 4.775,
+        "delta_e_p99": 7.805,
+        "max_diff": 13,
+        "mean_diff": 3.235221354166667,
+        "over_tolerance_ratio": 0.9942505208333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo05__enhance.jpg",
+      "filters": "enhance=1;",
+      "szurok": [
+        "enhance"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97279,
+        "delta_e_mean": 11.289,
+        "delta_e_p99": 22.199,
+        "max_diff": 32,
+        "mean_diff": 15.46695486111111,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo05__autolight.jpg",
+      "filters": "autolight=1;",
+      "szurok": [
+        "autolight"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99222,
+        "delta_e_mean": 4.989,
+        "delta_e_p99": 9.399,
+        "max_diff": 19,
+        "mean_diff": 5.4083347222222224,
+        "over_tolerance_ratio": 0.9989
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "01-auto/photo05__autocolor.jpg",
+      "filters": "autocolor=1;",
+      "szurok": [
+        "autocolor"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99539,
+        "delta_e_mean": 2.787,
+        "delta_e_p99": 6.966,
+        "max_diff": 25,
+        "mean_diff": 4.454102951388889,
+        "over_tolerance_ratio": 0.9994151041666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_color__fill025.jpg",
+      "filters": "fill=1,0.250000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99398,
+        "delta_e_mean": 5.719,
+        "delta_e_p99": 12.613,
+        "max_diff": 32,
+        "mean_diff": 5.542410590277778,
+        "over_tolerance_ratio": 0.9990671875
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_color__fill050.jpg",
+      "filters": "fill=1,0.500000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99356,
+        "delta_e_mean": 10.688,
+        "delta_e_p99": 22.176,
+        "max_diff": 42,
+        "mean_diff": 10.426892881944445,
+        "over_tolerance_ratio": 0.9993802083333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_color__fill075.jpg",
+      "filters": "fill=1,0.750000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99301,
+        "delta_e_mean": 14.329,
+        "delta_e_p99": 29.323,
+        "max_diff": 57,
+        "mean_diff": 13.932594270833333,
+        "over_tolerance_ratio": 0.9996916666666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_color__fill100.jpg",
+      "filters": "fill=1,1.000000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9921,
+        "delta_e_mean": 18.302,
+        "delta_e_p99": 40.792,
+        "max_diff": 90,
+        "mean_diff": 17.293444444444443,
+        "over_tolerance_ratio": 0.9996921875
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_detail__fill025.jpg",
+      "filters": "fill=1,0.250000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.014,
+        "delta_e_p99": 0.345,
+        "max_diff": 2,
+        "mean_diff": 0.047552083333333335,
+        "over_tolerance_ratio": 5.208333333333334e-05
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_detail__fill050.jpg",
+      "filters": "fill=1,0.500000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99999,
+        "delta_e_mean": 0.038,
+        "delta_e_p99": 1.097,
+        "max_diff": 4,
+        "mean_diff": 0.12697916666666667,
+        "over_tolerance_ratio": 0.023854166666666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_detail__fill075.jpg",
+      "filters": "fill=1,0.750000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99986,
+        "delta_e_mean": 0.097,
+        "delta_e_p99": 4.132,
+        "max_diff": 16,
+        "mean_diff": 0.3190625,
+        "over_tolerance_ratio": 0.02411458333333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_detail__fill100.jpg",
+      "filters": "fill=1,1.000000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99393,
+        "delta_e_mean": 0.398,
+        "delta_e_p99": 17.483,
+        "max_diff": 44,
+        "mean_diff": 1.0633333333333332,
+        "over_tolerance_ratio": 0.01609375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_ramp__fill025.jpg",
+      "filters": "fill=1,0.250000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98622,
+        "delta_e_mean": 3.036,
+        "delta_e_p99": 10.844,
+        "max_diff": 38,
+        "mean_diff": 2.7906199652777777,
+        "over_tolerance_ratio": 0.6438796875
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_ramp__fill050.jpg",
+      "filters": "fill=1,0.500000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97959,
+        "delta_e_mean": 5.062,
+        "delta_e_p99": 18.955,
+        "max_diff": 50,
+        "mean_diff": 4.5956296875,
+        "over_tolerance_ratio": 0.64604375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_ramp__fill075.jpg",
+      "filters": "fill=1,0.750000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9647,
+        "delta_e_mean": 6.181,
+        "delta_e_p99": 24.12,
+        "max_diff": 60,
+        "mean_diff": 6.092700520833334,
+        "over_tolerance_ratio": 0.6278197916666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/chart_ramp__fill100.jpg",
+      "filters": "fill=1,1.000000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.92698,
+        "delta_e_mean": 6.461,
+        "delta_e_p99": 34.937,
+        "max_diff": 91,
+        "mean_diff": 7.996512326388889,
+        "over_tolerance_ratio": 0.5724744791666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/photo01__fill025.jpg",
+      "filters": "fill=1,0.250000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9753,
+        "delta_e_mean": 4.775,
+        "delta_e_p99": 12.246,
+        "max_diff": 21,
+        "mean_diff": 4.612209895833334,
+        "over_tolerance_ratio": 0.9938369791666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/photo01__fill050.jpg",
+      "filters": "fill=1,0.500000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9671,
+        "delta_e_mean": 10.652,
+        "delta_e_p99": 20.898,
+        "max_diff": 38,
+        "mean_diff": 10.09150625,
+        "over_tolerance_ratio": 0.9990807291666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/photo01__fill075.jpg",
+      "filters": "fill=1,0.750000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.93347,
+        "delta_e_mean": 16.784,
+        "delta_e_p99": 25.906,
+        "max_diff": 70,
+        "mean_diff": 15.866446875,
+        "over_tolerance_ratio": 0.9996760416666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/photo01__fill100.jpg",
+      "filters": "fill=1,1.000000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.93558,
+        "delta_e_mean": 23.344,
+        "delta_e_p99": 37.202,
+        "max_diff": 105,
+        "mean_diff": 21.069288020833334,
+        "over_tolerance_ratio": 0.9997213541666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/photo04__fill025.jpg",
+      "filters": "fill=1,0.250000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97522,
+        "delta_e_mean": 2.993,
+        "delta_e_p99": 8.115,
+        "max_diff": 22,
+        "mean_diff": 2.829775,
+        "over_tolerance_ratio": 0.9433484375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/photo04__fill050.jpg",
+      "filters": "fill=1,0.500000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96957,
+        "delta_e_mean": 5.231,
+        "delta_e_p99": 15.04,
+        "max_diff": 38,
+        "mean_diff": 4.676402951388889,
+        "over_tolerance_ratio": 0.9801036458333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/photo04__fill075.jpg",
+      "filters": "fill=1,0.750000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.94745,
+        "delta_e_mean": 7.747,
+        "delta_e_p99": 21.678,
+        "max_diff": 46,
+        "mean_diff": 6.8101123263888885,
+        "over_tolerance_ratio": 0.99864375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "02-fill/photo04__fill100.jpg",
+      "filters": "fill=1,1.000000;",
+      "szurok": [
+        "fill"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96711,
+        "delta_e_mean": 10.02,
+        "delta_e_p99": 34.195,
+        "max_diff": 76,
+        "mean_diff": 8.569095486111111,
+        "over_tolerance_ratio": 0.9998947916666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__b025.jpg",
+      "filters": "finetune2=1,0.250000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99398,
+        "delta_e_mean": 5.719,
+        "delta_e_p99": 12.613,
+        "max_diff": 32,
+        "mean_diff": 5.542410590277778,
+        "over_tolerance_ratio": 0.9990671875
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__b050.jpg",
+      "filters": "finetune2=1,0.500000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99356,
+        "delta_e_mean": 10.688,
+        "delta_e_p99": 22.176,
+        "max_diff": 42,
+        "mean_diff": 10.426892881944445,
+        "over_tolerance_ratio": 0.9993802083333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__b100.jpg",
+      "filters": "finetune2=1,1.000000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9921,
+        "delta_e_mean": 18.302,
+        "delta_e_p99": 40.792,
+        "max_diff": 90,
+        "mean_diff": 17.293444444444443,
+        "over_tolerance_ratio": 0.9996921875
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__h050.jpg",
+      "filters": "finetune2=1,0.000000,0.500000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99122,
+        "delta_e_mean": 3.174,
+        "delta_e_p99": 12.758,
+        "max_diff": 56,
+        "mean_diff": 2.750190451388889,
+        "over_tolerance_ratio": 0.7298817708333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__h100.jpg",
+      "filters": "finetune2=1,0.000000,1.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97208,
+        "delta_e_mean": 14.046,
+        "delta_e_p99": 119.593,
+        "max_diff": 254,
+        "mean_diff": 13.148447743055556,
+        "over_tolerance_ratio": 0.3129885416666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__s050.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.500000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.93209,
+        "delta_e_mean": 3.67,
+        "delta_e_p99": 8.816,
+        "max_diff": 51,
+        "mean_diff": 4.174912326388889,
+        "over_tolerance_ratio": 0.893684375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__s100.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,1.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.26398,
+        "delta_e_mean": 43.903,
+        "delta_e_p99": 99.136,
+        "max_diff": 255,
+        "mean_diff": 29.34464357638889,
+        "over_tolerance_ratio": 0.7485161458333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__tempA.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,fff7f5f3,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99908,
+        "delta_e_mean": 0.875,
+        "delta_e_p99": 1.954,
+        "max_diff": 25,
+        "mean_diff": 0.7903015625,
+        "over_tolerance_ratio": 0.3350166666666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__tempB.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,ffccc6b2,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99902,
+        "delta_e_mean": 3.209,
+        "delta_e_p99": 6.023,
+        "max_diff": 29,
+        "mean_diff": 2.9535505208333332,
+        "over_tolerance_ratio": 0.9180182291666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__u-05.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,-0.500000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99859,
+        "delta_e_mean": 6.003,
+        "delta_e_p99": 12.561,
+        "max_diff": 31,
+        "mean_diff": 6.017661458333333,
+        "over_tolerance_ratio": 0.9969005208333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__u+05.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,0.500000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99905,
+        "delta_e_mean": 3.225,
+        "delta_e_p99": 5.927,
+        "max_diff": 29,
+        "mean_diff": 2.9796741319444444,
+        "over_tolerance_ratio": 0.9750020833333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_color__u+10.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,1.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99886,
+        "delta_e_mean": 4.621,
+        "delta_e_p99": 8.856,
+        "max_diff": 33,
+        "mean_diff": 4.103139409722222,
+        "over_tolerance_ratio": 0.99698125
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__b025.jpg",
+      "filters": "finetune2=1,0.250000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.014,
+        "delta_e_p99": 0.345,
+        "max_diff": 2,
+        "mean_diff": 0.047552083333333335,
+        "over_tolerance_ratio": 5.208333333333334e-05
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__b050.jpg",
+      "filters": "finetune2=1,0.500000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99999,
+        "delta_e_mean": 0.038,
+        "delta_e_p99": 1.097,
+        "max_diff": 4,
+        "mean_diff": 0.12697916666666667,
+        "over_tolerance_ratio": 0.023854166666666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__b100.jpg",
+      "filters": "finetune2=1,1.000000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99393,
+        "delta_e_mean": 0.398,
+        "delta_e_p99": 17.483,
+        "max_diff": 44,
+        "mean_diff": 1.0633333333333332,
+        "over_tolerance_ratio": 0.01609375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__h050.jpg",
+      "filters": "finetune2=1,0.000000,0.500000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.017,
+        "delta_e_p99": 0.345,
+        "max_diff": 2,
+        "mean_diff": 0.057193229166666665,
+        "over_tolerance_ratio": 0.0006864583333333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__h100.jpg",
+      "filters": "finetune2=1,0.000000,1.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.8464,
+        "delta_e_mean": 7.17,
+        "delta_e_p99": 99.726,
+        "max_diff": 254,
+        "mean_diff": 17.55614322916667,
+        "over_tolerance_ratio": 0.2832369791666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__s050.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.500000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.023,
+        "delta_e_p99": 0.345,
+        "max_diff": 3,
+        "mean_diff": 0.07397604166666667,
+        "over_tolerance_ratio": 0.004872395833333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__s100.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,1.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.02531,
+        "delta_e_mean": 56.024,
+        "delta_e_p99": 100.0,
+        "max_diff": 255,
+        "mean_diff": 142.85645833333334,
+        "over_tolerance_ratio": 0.5604166666666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__tempA.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,fff7f5f3,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99998,
+        "delta_e_mean": 0.387,
+        "delta_e_p99": 1.201,
+        "max_diff": 4,
+        "mean_diff": 0.47266493055555553,
+        "over_tolerance_ratio": 0.095546875
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__tempB.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,ffccc6b2,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99996,
+        "delta_e_mean": 1.595,
+        "delta_e_p99": 4.007,
+        "max_diff": 6,
+        "mean_diff": 1.2382310763888889,
+        "over_tolerance_ratio": 0.7137130208333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__u-05.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,-0.500000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96722,
+        "delta_e_mean": 7.308,
+        "delta_e_p99": 11.718,
+        "max_diff": 25,
+        "mean_diff": 6.712902604166667,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__u+05.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,0.500000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99587,
+        "delta_e_mean": 3.359,
+        "delta_e_p99": 7.596,
+        "max_diff": 17,
+        "mean_diff": 2.6475444444444443,
+        "over_tolerance_ratio": 0.9890177083333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_detail__u+10.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,1.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98385,
+        "delta_e_mean": 5.121,
+        "delta_e_p99": 10.109,
+        "max_diff": 22,
+        "mean_diff": 4.24385,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__b025.jpg",
+      "filters": "finetune2=1,0.250000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98622,
+        "delta_e_mean": 3.036,
+        "delta_e_p99": 10.844,
+        "max_diff": 38,
+        "mean_diff": 2.7906199652777777,
+        "over_tolerance_ratio": 0.6438796875
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__b050.jpg",
+      "filters": "finetune2=1,0.500000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97959,
+        "delta_e_mean": 5.062,
+        "delta_e_p99": 18.955,
+        "max_diff": 50,
+        "mean_diff": 4.5956296875,
+        "over_tolerance_ratio": 0.64604375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__b100.jpg",
+      "filters": "finetune2=1,1.000000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.92698,
+        "delta_e_mean": 6.461,
+        "delta_e_p99": 34.937,
+        "max_diff": 91,
+        "mean_diff": 7.996512326388889,
+        "over_tolerance_ratio": 0.5724744791666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__h050.jpg",
+      "filters": "finetune2=1,0.000000,0.500000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.98498,
+        "delta_e_mean": 1.849,
+        "delta_e_p99": 9.5,
+        "max_diff": 58,
+        "mean_diff": 2.8460907986111112,
+        "over_tolerance_ratio": 0.5316989583333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__h100.jpg",
+      "filters": "finetune2=1,0.000000,1.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.51116,
+        "delta_e_mean": 30.0,
+        "delta_e_p99": 165.786,
+        "max_diff": 255,
+        "mean_diff": 42.160457118055554,
+        "over_tolerance_ratio": 0.5904182291666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__s050.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.500000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.92567,
+        "delta_e_mean": 1.858,
+        "delta_e_p99": 11.228,
+        "max_diff": 75,
+        "mean_diff": 2.678973958333333,
+        "over_tolerance_ratio": 0.49464895833333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__s100.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,1.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.81221,
+        "delta_e_mean": 13.91,
+        "delta_e_p99": 133.43,
+        "max_diff": 255,
+        "mean_diff": 19.44388298611111,
+        "over_tolerance_ratio": 0.19068541666666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__tempA.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,fff7f5f3,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99892,
+        "delta_e_mean": 0.603,
+        "delta_e_p99": 3.023,
+        "max_diff": 40,
+        "mean_diff": 0.6846100694444445,
+        "over_tolerance_ratio": 0.14425572916666668
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__tempB.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,ffccc6b2,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99849,
+        "delta_e_mean": 1.971,
+        "delta_e_p99": 5.354,
+        "max_diff": 42,
+        "mean_diff": 1.8480555555555556,
+        "over_tolerance_ratio": 0.721803125
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__u-05.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,-0.500000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9685,
+        "delta_e_mean": 6.897,
+        "delta_e_p99": 15.343,
+        "max_diff": 35,
+        "mean_diff": 6.907375520833333,
+        "over_tolerance_ratio": 0.9366489583333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__u+05.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,0.500000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99615,
+        "delta_e_mean": 2.665,
+        "delta_e_p99": 7.199,
+        "max_diff": 45,
+        "mean_diff": 2.2275416666666668,
+        "over_tolerance_ratio": 0.8891104166666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/chart_ramp__u+10.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,1.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98346,
+        "delta_e_mean": 4.224,
+        "delta_e_p99": 10.632,
+        "max_diff": 47,
+        "mean_diff": 3.7852630208333333,
+        "over_tolerance_ratio": 0.9835802083333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__b025.jpg",
+      "filters": "finetune2=1,0.250000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9753,
+        "delta_e_mean": 4.775,
+        "delta_e_p99": 12.246,
+        "max_diff": 21,
+        "mean_diff": 4.612209895833334,
+        "over_tolerance_ratio": 0.9938369791666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__b050.jpg",
+      "filters": "finetune2=1,0.500000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9671,
+        "delta_e_mean": 10.652,
+        "delta_e_p99": 20.898,
+        "max_diff": 38,
+        "mean_diff": 10.09150625,
+        "over_tolerance_ratio": 0.9990807291666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__b100.jpg",
+      "filters": "finetune2=1,1.000000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.93558,
+        "delta_e_mean": 23.344,
+        "delta_e_p99": 37.202,
+        "max_diff": 105,
+        "mean_diff": 21.069288020833334,
+        "over_tolerance_ratio": 0.9997213541666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__h050.jpg",
+      "filters": "finetune2=1,0.000000,0.500000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.90714,
+        "delta_e_mean": 7.087,
+        "delta_e_p99": 16.284,
+        "max_diff": 44,
+        "mean_diff": 6.724707118055556,
+        "over_tolerance_ratio": 0.9890932291666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__h100.jpg",
+      "filters": "finetune2=1,0.000000,1.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.87026,
+        "delta_e_mean": 5.986,
+        "delta_e_p99": 49.844,
+        "max_diff": 244,
+        "mean_diff": 5.022480555555555,
+        "over_tolerance_ratio": 0.17975625
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__s050.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.500000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.91223,
+        "delta_e_mean": 7.295,
+        "delta_e_p99": 16.521,
+        "max_diff": 39,
+        "mean_diff": 6.882522395833333,
+        "over_tolerance_ratio": 0.9934807291666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__s100.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,1.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.73127,
+        "delta_e_mean": 16.197,
+        "delta_e_p99": 95.389,
+        "max_diff": 225,
+        "mean_diff": 10.5131546875,
+        "over_tolerance_ratio": 0.26589375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__tempA.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,fff7f5f3,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99774,
+        "delta_e_mean": 0.983,
+        "delta_e_p99": 2.642,
+        "max_diff": 9,
+        "mean_diff": 0.9637916666666667,
+        "over_tolerance_ratio": 0.5309307291666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__tempB.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,ffccc6b2,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99813,
+        "delta_e_mean": 3.442,
+        "delta_e_p99": 6.743,
+        "max_diff": 18,
+        "mean_diff": 3.2217442708333333,
+        "over_tolerance_ratio": 0.9975286458333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__u-05.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,-0.500000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99758,
+        "delta_e_mean": 2.64,
+        "delta_e_p99": 7.0,
+        "max_diff": 22,
+        "mean_diff": 3.0249734375,
+        "over_tolerance_ratio": 0.9724354166666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__u+05.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,0.500000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99808,
+        "delta_e_mean": 2.115,
+        "delta_e_p99": 6.727,
+        "max_diff": 17,
+        "mean_diff": 2.0214539930555557,
+        "over_tolerance_ratio": 0.8361255208333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo01__u+10.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,1.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99809,
+        "delta_e_mean": 2.757,
+        "delta_e_p99": 9.061,
+        "max_diff": 22,
+        "mean_diff": 2.414802951388889,
+        "over_tolerance_ratio": 0.8196651041666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__b025.jpg",
+      "filters": "finetune2=1,0.250000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97522,
+        "delta_e_mean": 2.993,
+        "delta_e_p99": 8.115,
+        "max_diff": 22,
+        "mean_diff": 2.829775,
+        "over_tolerance_ratio": 0.9433484375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__b050.jpg",
+      "filters": "finetune2=1,0.500000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96957,
+        "delta_e_mean": 5.231,
+        "delta_e_p99": 15.04,
+        "max_diff": 38,
+        "mean_diff": 4.676402951388889,
+        "over_tolerance_ratio": 0.9801036458333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__b100.jpg",
+      "filters": "finetune2=1,1.000000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96711,
+        "delta_e_mean": 10.02,
+        "delta_e_p99": 34.195,
+        "max_diff": 76,
+        "mean_diff": 8.569095486111111,
+        "over_tolerance_ratio": 0.9998947916666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__h050.jpg",
+      "filters": "finetune2=1,0.000000,0.500000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.91994,
+        "delta_e_mean": 4.744,
+        "delta_e_p99": 12.417,
+        "max_diff": 42,
+        "mean_diff": 6.2629564236111115,
+        "over_tolerance_ratio": 0.80545
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__h100.jpg",
+      "filters": "finetune2=1,0.000000,1.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97892,
+        "delta_e_mean": 3.109,
+        "delta_e_p99": 75.272,
+        "max_diff": 241,
+        "mean_diff": 2.18605,
+        "over_tolerance_ratio": 0.07551354166666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__s050.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.500000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.76007,
+        "delta_e_mean": 6.029,
+        "delta_e_p99": 17.497,
+        "max_diff": 43,
+        "mean_diff": 7.477422395833333,
+        "over_tolerance_ratio": 0.92861875
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__s100.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,1.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.80583,
+        "delta_e_mean": 11.791,
+        "delta_e_p99": 99.0,
+        "max_diff": 234,
+        "mean_diff": 5.885539409722222,
+        "over_tolerance_ratio": 0.1741859375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__tempA.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,fff7f5f3,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99853,
+        "delta_e_mean": 1.051,
+        "delta_e_p99": 2.944,
+        "max_diff": 10,
+        "mean_diff": 0.9592918402777778,
+        "over_tolerance_ratio": 0.5672619791666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__tempB.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,ffccc6b2,0.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99788,
+        "delta_e_mean": 3.483,
+        "delta_e_p99": 6.074,
+        "max_diff": 18,
+        "mean_diff": 3.0859319444444444,
+        "over_tolerance_ratio": 0.9879953125
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__u-05.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,-0.500000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99774,
+        "delta_e_mean": 2.949,
+        "delta_e_p99": 9.499,
+        "max_diff": 23,
+        "mean_diff": 3.1782427083333333,
+        "over_tolerance_ratio": 0.8722338541666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__u+05.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,0.500000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99844,
+        "delta_e_mean": 2.119,
+        "delta_e_p99": 6.045,
+        "max_diff": 17,
+        "mean_diff": 1.986134548611111,
+        "over_tolerance_ratio": 0.8252192708333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "03-finetune2/photo04__u+10.jpg",
+      "filters": "finetune2=1,0.000000,0.000000,0.000000,00000000,1.000000;",
+      "szurok": [
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99798,
+        "delta_e_mean": 2.93,
+        "delta_e_p99": 8.329,
+        "max_diff": 21,
+        "mean_diff": 2.542281076388889,
+        "over_tolerance_ratio": 0.84179375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "04-finetune1/chart_color__b050.jpg",
+      "filters": "finetune=1,0.500000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99356,
+        "delta_e_mean": 10.688,
+        "delta_e_p99": 22.176,
+        "max_diff": 42,
+        "mean_diff": 10.426892881944445,
+        "over_tolerance_ratio": 0.9993802083333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "04-finetune1/chart_color__u+05.jpg",
+      "filters": "finetune=1,0.000000,0.000000,0.000000,00000000,0.500000;",
+      "szurok": [
+        "finetune"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98819,
+        "delta_e_mean": 26.142,
+        "delta_e_p99": 36.719,
+        "max_diff": 71,
+        "mean_diff": 27.106175694444445,
+        "over_tolerance_ratio": 0.9999984375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "04-finetune1/chart_color__u-05.jpg",
+      "filters": "finetune=1,0.000000,0.000000,0.000000,00000000,-0.500000;",
+      "szurok": [
+        "finetune"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99148,
+        "delta_e_mean": 17.406,
+        "delta_e_p99": 25.787,
+        "max_diff": 65,
+        "mean_diff": 17.673947569444444,
+        "over_tolerance_ratio": 0.9999942708333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "04-finetune1/chart_detail__b050.jpg",
+      "filters": "finetune=1,0.500000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99999,
+        "delta_e_mean": 0.038,
+        "delta_e_p99": 1.097,
+        "max_diff": 4,
+        "mean_diff": 0.12697916666666667,
+        "over_tolerance_ratio": 0.023854166666666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "04-finetune1/chart_detail__u+05.jpg",
+      "filters": "finetune=1,0.000000,0.000000,0.000000,00000000,0.500000;",
+      "szurok": [
+        "finetune"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99578,
+        "delta_e_mean": 4.072,
+        "delta_e_p99": 6.605,
+        "max_diff": 14,
+        "mean_diff": 2.889392361111111,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "04-finetune1/chart_detail__u-05.jpg",
+      "filters": "finetune=1,0.000000,0.000000,0.000000,00000000,-0.500000;",
+      "szurok": [
+        "finetune"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96713,
+        "delta_e_mean": 7.85,
+        "delta_e_p99": 11.398,
+        "max_diff": 24,
+        "mean_diff": 6.774053819444444,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "04-finetune1/chart_ramp__b050.jpg",
+      "filters": "finetune=1,0.500000,0.000000,0.000000,00000000,0.000000;",
+      "szurok": [
+        "finetune"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97959,
+        "delta_e_mean": 5.062,
+        "delta_e_p99": 18.955,
+        "max_diff": 50,
+        "mean_diff": 4.5956296875,
+        "over_tolerance_ratio": 0.64604375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "04-finetune1/chart_ramp__u+05.jpg",
+      "filters": "finetune=1,0.000000,0.000000,0.000000,00000000,0.500000;",
+      "szurok": [
+        "finetune"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9515,
+        "delta_e_mean": 20.19,
+        "delta_e_p99": 42.582,
+        "max_diff": 74,
+        "mean_diff": 17.77887395833333,
+        "over_tolerance_ratio": 0.9922885416666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "04-finetune1/chart_ramp__u-05.jpg",
+      "filters": "finetune=1,0.000000,0.000000,0.000000,00000000,-0.500000;",
+      "szurok": [
+        "finetune"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.92688,
+        "delta_e_mean": 13.217,
+        "delta_e_p99": 26.264,
+        "max_diff": 67,
+        "mean_diff": 14.830927430555555,
+        "over_tolerance_ratio": 0.9999229166666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_color__bw.jpg",
+      "filters": "bw=1;",
+      "szurok": [
+        "bw"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99923,
+        "delta_e_mean": 0.169,
+        "delta_e_p99": 0.468,
+        "max_diff": 3,
+        "mean_diff": 0.4267640625,
+        "over_tolerance_ratio": 0.008493229166666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_color__sepia.jpg",
+      "filters": "sepia=1;",
+      "szurok": [
+        "sepia"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99874,
+        "delta_e_mean": 3.035,
+        "delta_e_p99": 7.912,
+        "max_diff": 18,
+        "mean_diff": 3.1290598958333335,
+        "over_tolerance_ratio": 0.941884375
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_color__warm.jpg",
+      "filters": "warm=1;",
+      "szurok": [
+        "warm"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99798,
+        "delta_e_mean": 2.624,
+        "delta_e_p99": 6.077,
+        "max_diff": 23,
+        "mean_diff": 3.5516251736111113,
+        "over_tolerance_ratio": 0.995725
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_color__grain2.jpg",
+      "filters": "grain2=1;",
+      "szurok": [
+        "grain2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.43324,
+        "delta_e_mean": 3.153,
+        "delta_e_p99": 9.755,
+        "max_diff": 55,
+        "mean_diff": 7.616994444444445,
+        "over_tolerance_ratio": 0.9380770833333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_detail__bw.jpg",
+      "filters": "bw=1;",
+      "szurok": [
+        "bw"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.01,
+        "delta_e_p99": 0.345,
+        "max_diff": 1,
+        "mean_diff": 0.031510416666666666,
+        "over_tolerance_ratio": 0.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_detail__sepia.jpg",
+      "filters": "sepia=1;",
+      "szurok": [
+        "sepia"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99992,
+        "delta_e_mean": 8.122,
+        "delta_e_p99": 15.048,
+        "max_diff": 22,
+        "mean_diff": 6.390223784722222,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_detail__warm.jpg",
+      "filters": "warm=1;",
+      "szurok": [
+        "warm"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.95897,
+        "delta_e_mean": 5.516,
+        "delta_e_p99": 6.593,
+        "max_diff": 20,
+        "mean_diff": 7.27983125,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_detail__grain2.jpg",
+      "filters": "grain2=1;",
+      "szurok": [
+        "grain2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96913,
+        "delta_e_mean": 1.05,
+        "delta_e_p99": 5.907,
+        "max_diff": 38,
+        "mean_diff": 3.299630034722222,
+        "over_tolerance_ratio": 0.5203270833333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_ramp__bw.jpg",
+      "filters": "bw=1;",
+      "szurok": [
+        "bw"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99831,
+        "delta_e_mean": 0.081,
+        "delta_e_p99": 1.005,
+        "max_diff": 3,
+        "mean_diff": 0.20534895833333333,
+        "over_tolerance_ratio": 0.0205890625
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_ramp__sepia.jpg",
+      "filters": "sepia=1;",
+      "szurok": [
+        "sepia"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9993,
+        "delta_e_mean": 5.427,
+        "delta_e_p99": 11.62,
+        "max_diff": 15,
+        "mean_diff": 4.693654340277778,
+        "over_tolerance_ratio": 0.9597505208333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_ramp__warm.jpg",
+      "filters": "warm=1;",
+      "szurok": [
+        "warm"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.94371,
+        "delta_e_mean": 3.78,
+        "delta_e_p99": 8.469,
+        "max_diff": 34,
+        "mean_diff": 5.067317708333333,
+        "over_tolerance_ratio": 0.9834119791666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/chart_ramp__grain2.jpg",
+      "filters": "grain2=1;",
+      "szurok": [
+        "grain2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.53839,
+        "delta_e_mean": 3.13,
+        "delta_e_p99": 10.979,
+        "max_diff": 59,
+        "mean_diff": 6.002340104166667,
+        "over_tolerance_ratio": 0.8837505208333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/photo01__bw.jpg",
+      "filters": "bw=1;",
+      "szurok": [
+        "bw"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99831,
+        "delta_e_mean": 0.259,
+        "delta_e_p99": 0.795,
+        "max_diff": 3,
+        "mean_diff": 0.6535661458333333,
+        "over_tolerance_ratio": 0.018746875
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/photo01__sepia.jpg",
+      "filters": "sepia=1;",
+      "szurok": [
+        "sepia"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99227,
+        "delta_e_mean": 4.42,
+        "delta_e_p99": 8.213,
+        "max_diff": 15,
+        "mean_diff": 4.289449131944444,
+        "over_tolerance_ratio": 0.9838515625
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/photo01__warm.jpg",
+      "filters": "warm=1;",
+      "szurok": [
+        "warm"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99382,
+        "delta_e_mean": 3.939,
+        "delta_e_p99": 7.212,
+        "max_diff": 16,
+        "mean_diff": 3.8158460069444446,
+        "over_tolerance_ratio": 0.996253125
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/photo01__grain2.jpg",
+      "filters": "grain2=1;",
+      "szurok": [
+        "grain2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.53959,
+        "delta_e_mean": 3.436,
+        "delta_e_p99": 10.156,
+        "max_diff": 52,
+        "mean_diff": 8.191843055555555,
+        "over_tolerance_ratio": 0.9573046875
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/photo04__bw.jpg",
+      "filters": "bw=1;",
+      "szurok": [
+        "bw"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99789,
+        "delta_e_mean": 0.165,
+        "delta_e_p99": 0.453,
+        "max_diff": 3,
+        "mean_diff": 0.425596875,
+        "over_tolerance_ratio": 0.008960416666666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/photo04__sepia.jpg",
+      "filters": "sepia=1;",
+      "szurok": [
+        "sepia"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99224,
+        "delta_e_mean": 3.491,
+        "delta_e_p99": 8.134,
+        "max_diff": 15,
+        "mean_diff": 3.531808333333333,
+        "over_tolerance_ratio": 0.9238875
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/photo04__warm.jpg",
+      "filters": "warm=1;",
+      "szurok": [
+        "warm"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.994,
+        "delta_e_mean": 3.96,
+        "delta_e_p99": 7.135,
+        "max_diff": 18,
+        "mean_diff": 3.9205501736111112,
+        "over_tolerance_ratio": 0.9975671875
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "05-tone/photo04__grain2.jpg",
+      "filters": "grain2=1;",
+      "szurok": [
+        "grain2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.53012,
+        "delta_e_mean": 3.56,
+        "delta_e_p99": 10.598,
+        "max_diff": 55,
+        "mean_diff": 8.374979166666666,
+        "over_tolerance_ratio": 0.955909375
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_color__satm033.jpg",
+      "filters": "sat=1,-0.333333;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99863,
+        "delta_e_mean": 1.133,
+        "delta_e_p99": 2.818,
+        "max_diff": 20,
+        "mean_diff": 1.451098611111111,
+        "over_tolerance_ratio": 0.8390135416666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_color__satp025.jpg",
+      "filters": "sat=1,0.250000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99353,
+        "delta_e_mean": 5.195,
+        "delta_e_p99": 26.028,
+        "max_diff": 108,
+        "mean_diff": 5.879046354166666,
+        "over_tolerance_ratio": 0.9972442708333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_color__satp050.jpg",
+      "filters": "sat=1,0.500000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98276,
+        "delta_e_mean": 8.6,
+        "delta_e_p99": 49.769,
+        "max_diff": 185,
+        "mean_diff": 9.282047395833333,
+        "over_tolerance_ratio": 0.9961515625
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_color__satp100.jpg",
+      "filters": "sat=1,1.000000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.95852,
+        "delta_e_mean": 14.322,
+        "delta_e_p99": 85.211,
+        "max_diff": 244,
+        "mean_diff": 15.093172395833333,
+        "over_tolerance_ratio": 0.9954130208333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_detail__satm033.jpg",
+      "filters": "sat=1,-0.333333;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.01,
+        "delta_e_p99": 0.345,
+        "max_diff": 1,
+        "mean_diff": 0.031510416666666666,
+        "over_tolerance_ratio": 0.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_detail__satp025.jpg",
+      "filters": "sat=1,0.250000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99994,
+        "delta_e_mean": 0.394,
+        "delta_e_p99": 1.036,
+        "max_diff": 4,
+        "mean_diff": 1.150625,
+        "over_tolerance_ratio": 0.5205208333333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_detail__satp050.jpg",
+      "filters": "sat=1,0.500000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99994,
+        "delta_e_mean": 0.394,
+        "delta_e_p99": 1.036,
+        "max_diff": 4,
+        "mean_diff": 1.150625,
+        "over_tolerance_ratio": 0.5205208333333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_detail__satp100.jpg",
+      "filters": "sat=1,1.000000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99987,
+        "delta_e_mean": 0.812,
+        "delta_e_p99": 1.73,
+        "max_diff": 8,
+        "mean_diff": 1.8786284722222222,
+        "over_tolerance_ratio": 0.5720572916666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_ramp__satm033.jpg",
+      "filters": "sat=1,-0.333333;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99844,
+        "delta_e_mean": 0.824,
+        "delta_e_p99": 3.354,
+        "max_diff": 31,
+        "mean_diff": 1.0114381944444444,
+        "over_tolerance_ratio": 0.41305260416666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_ramp__satp025.jpg",
+      "filters": "sat=1,0.250000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9763,
+        "delta_e_mean": 6.442,
+        "delta_e_p99": 69.744,
+        "max_diff": 168,
+        "mean_diff": 5.043920659722223,
+        "over_tolerance_ratio": 0.6503557291666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_ramp__satp050.jpg",
+      "filters": "sat=1,0.500000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96642,
+        "delta_e_mean": 8.849,
+        "delta_e_p99": 103.919,
+        "max_diff": 229,
+        "mean_diff": 6.718904513888889,
+        "over_tolerance_ratio": 0.66088125
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/chart_ramp__satp100.jpg",
+      "filters": "sat=1,1.000000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.94096,
+        "delta_e_mean": 13.439,
+        "delta_e_p99": 132.046,
+        "max_diff": 255,
+        "mean_diff": 10.079530729166667,
+        "over_tolerance_ratio": 0.7901088541666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/photo01__satm033.jpg",
+      "filters": "sat=1,-0.333333;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99725,
+        "delta_e_mean": 1.449,
+        "delta_e_p99": 3.54,
+        "max_diff": 12,
+        "mean_diff": 1.7809609375,
+        "over_tolerance_ratio": 0.8958734375
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/photo01__satp025.jpg",
+      "filters": "sat=1,0.250000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97505,
+        "delta_e_mean": 7.92,
+        "delta_e_p99": 17.809,
+        "max_diff": 54,
+        "mean_diff": 8.363877777777779,
+        "over_tolerance_ratio": 0.9974270833333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/photo01__satp050.jpg",
+      "filters": "sat=1,0.500000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.94731,
+        "delta_e_mean": 16.528,
+        "delta_e_p99": 42.45,
+        "max_diff": 104,
+        "mean_diff": 15.986505555555556,
+        "over_tolerance_ratio": 0.9992645833333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/photo01__satp100.jpg",
+      "filters": "sat=1,1.000000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.88095,
+        "delta_e_mean": 27.857,
+        "delta_e_p99": 56.655,
+        "max_diff": 168,
+        "mean_diff": 27.73519079861111,
+        "over_tolerance_ratio": 0.9996213541666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/photo04__satm033.jpg",
+      "filters": "sat=1,-0.333333;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99719,
+        "delta_e_mean": 1.217,
+        "delta_e_p99": 3.234,
+        "max_diff": 10,
+        "mean_diff": 1.074265625,
+        "over_tolerance_ratio": 0.6018442708333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/photo04__satp025.jpg",
+      "filters": "sat=1,0.250000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98523,
+        "delta_e_mean": 3.18,
+        "delta_e_p99": 17.891,
+        "max_diff": 57,
+        "mean_diff": 2.714822916666667,
+        "over_tolerance_ratio": 0.9310802083333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/photo04__satp050.jpg",
+      "filters": "sat=1,0.500000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98132,
+        "delta_e_mean": 6.205,
+        "delta_e_p99": 31.886,
+        "max_diff": 78,
+        "mean_diff": 4.68794375,
+        "over_tolerance_ratio": 0.9771947916666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "06-sat/photo04__satp100.jpg",
+      "filters": "sat=1,1.000000;",
+      "szurok": [
+        "sat"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.95776,
+        "delta_e_mean": 12.573,
+        "delta_e_p99": 62.194,
+        "max_diff": 106,
+        "mean_diff": 9.097185243055556,
+        "over_tolerance_ratio": 0.9982010416666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/chart_detail__un1x1.jpg",
+      "filters": "unsharp=1;",
+      "szurok": [
+        "unsharp"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.01,
+        "delta_e_p99": 0.345,
+        "max_diff": 2,
+        "mean_diff": 0.0327078125,
+        "over_tolerance_ratio": 0.00010416666666666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/chart_detail__un1x3.jpg",
+      "filters": "unsharp=1;unsharp=1;unsharp=1;",
+      "szurok": [
+        "unsharp",
+        "unsharp",
+        "unsharp"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 0.99999,
+        "delta_e_mean": 0.011,
+        "delta_e_p99": 0.345,
+        "max_diff": 7,
+        "mean_diff": 0.034583854166666664,
+        "over_tolerance_ratio": 0.0008078125
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/chart_detail__un2-030.jpg",
+      "filters": "unsharp2=1,0.300000;",
+      "szurok": [
+        "unsharp2"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.01,
+        "delta_e_p99": 0.345,
+        "max_diff": 2,
+        "mean_diff": 0.03234375,
+        "over_tolerance_ratio": 0.00010416666666666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/chart_detail__un2-060.jpg",
+      "filters": "unsharp2=1,0.600000;",
+      "szurok": [
+        "unsharp2"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.01,
+        "delta_e_p99": 0.345,
+        "max_diff": 2,
+        "mean_diff": 0.0327078125,
+        "over_tolerance_ratio": 0.00010416666666666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/chart_detail__un2-100.jpg",
+      "filters": "unsharp2=1,1.000000;",
+      "szurok": [
+        "unsharp2"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.01,
+        "delta_e_p99": 0.345,
+        "max_diff": 2,
+        "mean_diff": 0.032811979166666665,
+        "over_tolerance_ratio": 0.00010416666666666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/photo01__un1x1.jpg",
+      "filters": "unsharp=1;",
+      "szurok": [
+        "unsharp"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.98766,
+        "delta_e_mean": 0.922,
+        "delta_e_p99": 2.42,
+        "max_diff": 10,
+        "mean_diff": 1.5448604166666666,
+        "over_tolerance_ratio": 0.6531463541666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/photo01__un1x3.jpg",
+      "filters": "unsharp=1;unsharp=1;unsharp=1;",
+      "szurok": [
+        "unsharp",
+        "unsharp",
+        "unsharp"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.84253,
+        "delta_e_mean": 7.3,
+        "delta_e_p99": 20.817,
+        "max_diff": 78,
+        "mean_diff": 15.823993055555556,
+        "over_tolerance_ratio": 0.9966921875
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/photo01__un2-030.jpg",
+      "filters": "unsharp2=1,0.300000;",
+      "szurok": [
+        "unsharp2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96871,
+        "delta_e_mean": 0.973,
+        "delta_e_p99": 2.64,
+        "max_diff": 13,
+        "mean_diff": 1.9160302083333334,
+        "over_tolerance_ratio": 0.6696026041666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/photo01__un2-060.jpg",
+      "filters": "unsharp2=1,0.600000;",
+      "szurok": [
+        "unsharp2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.98766,
+        "delta_e_mean": 0.922,
+        "delta_e_p99": 2.42,
+        "max_diff": 10,
+        "mean_diff": 1.5448604166666666,
+        "over_tolerance_ratio": 0.6531463541666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/photo01__un2-100.jpg",
+      "filters": "unsharp2=1,1.000000;",
+      "szurok": [
+        "unsharp2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96237,
+        "delta_e_mean": 1.744,
+        "delta_e_p99": 4.108,
+        "max_diff": 19,
+        "mean_diff": 3.471082638888889,
+        "over_tolerance_ratio": 0.8913317708333334
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/photo04__un1x1.jpg",
+      "filters": "unsharp=1;",
+      "szurok": [
+        "unsharp"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.98769,
+        "delta_e_mean": 0.976,
+        "delta_e_p99": 2.612,
+        "max_diff": 10,
+        "mean_diff": 1.551711111111111,
+        "over_tolerance_ratio": 0.65630625
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/photo04__un1x3.jpg",
+      "filters": "unsharp=1;unsharp=1;unsharp=1;",
+      "szurok": [
+        "unsharp",
+        "unsharp",
+        "unsharp"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.8338,
+        "delta_e_mean": 7.505,
+        "delta_e_p99": 20.442,
+        "max_diff": 87,
+        "mean_diff": 16.39325329861111,
+        "over_tolerance_ratio": 0.9962151041666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/photo04__un2-030.jpg",
+      "filters": "unsharp2=1,0.300000;",
+      "szurok": [
+        "unsharp2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96871,
+        "delta_e_mean": 1.021,
+        "delta_e_p99": 2.763,
+        "max_diff": 13,
+        "mean_diff": 1.9221840277777777,
+        "over_tolerance_ratio": 0.6730796875
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/photo04__un2-060.jpg",
+      "filters": "unsharp2=1,0.600000;",
+      "szurok": [
+        "unsharp2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.98769,
+        "delta_e_mean": 0.976,
+        "delta_e_p99": 2.612,
+        "max_diff": 10,
+        "mean_diff": 1.551711111111111,
+        "over_tolerance_ratio": 0.65630625
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "07-sharp/photo04__un2-100.jpg",
+      "filters": "unsharp2=1,1.000000;",
+      "szurok": [
+        "unsharp2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96242,
+        "delta_e_mean": 1.817,
+        "delta_e_p99": 4.244,
+        "max_diff": 20,
+        "mean_diff": 3.4750677083333334,
+        "over_tolerance_ratio": 0.8914442708333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/chart_detail__tiltm20.jpg",
+      "filters": "tilt=1,-0.200000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99864,
+        "delta_e_mean": 0.706,
+        "delta_e_p99": 6.289,
+        "max_diff": 23,
+        "mean_diff": 1.8413182291666668,
+        "over_tolerance_ratio": 0.24940208333333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/chart_detail__tiltm05.jpg",
+      "filters": "tilt=1,-0.050000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99961,
+        "delta_e_mean": 0.37,
+        "delta_e_p99": 3.122,
+        "max_diff": 14,
+        "mean_diff": 0.9810947916666667,
+        "over_tolerance_ratio": 0.2217609375
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/chart_detail__tiltp05.jpg",
+      "filters": "tilt=1,0.050000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99967,
+        "delta_e_mean": 0.334,
+        "delta_e_p99": 2.631,
+        "max_diff": 13,
+        "mean_diff": 0.8910859375,
+        "over_tolerance_ratio": 0.21050416666666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/chart_detail__tiltp20.jpg",
+      "filters": "tilt=1,0.200000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99812,
+        "delta_e_mean": 0.916,
+        "delta_e_p99": 6.622,
+        "max_diff": 22,
+        "mean_diff": 2.3781953125,
+        "over_tolerance_ratio": 0.26960260416666665
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/chart_detail__cropsym.jpg",
+      "filters": "crop64=1,19991999e666e666;",
+      "szurok": [
+        "crop64"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.007,
+        "delta_e_p99": 0.345,
+        "max_diff": 1,
+        "mean_diff": 0.023763020833333332,
+        "over_tolerance_ratio": 0.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/chart_detail__cropmid.jpg",
+      "filters": "crop64=1,40004000c000c000;",
+      "szurok": [
+        "crop64"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 0.99999,
+        "delta_e_mean": 0.001,
+        "delta_e_p99": 0.0,
+        "max_diff": 1,
+        "mean_diff": 0.0021875,
+        "over_tolerance_ratio": 0.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/chart_detail__cropasy.jpg",
+      "filters": "crop64=1,0ccd333399997333;",
+      "szurok": [
+        "crop64"
+      ],
+      "itelet": "pixelhű",
+      "metrikak": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.007,
+        "delta_e_p99": 0.345,
+        "max_diff": 1,
+        "mean_diff": 0.024166666666666666,
+        "over_tolerance_ratio": 0.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo01__tiltm20.jpg",
+      "filters": "tilt=1,-0.200000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96571,
+        "delta_e_mean": 1.386,
+        "delta_e_p99": 3.511,
+        "max_diff": 13,
+        "mean_diff": 1.8287666666666667,
+        "over_tolerance_ratio": 0.8241510416666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo01__tiltm05.jpg",
+      "filters": "tilt=1,-0.050000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96714,
+        "delta_e_mean": 1.402,
+        "delta_e_p99": 3.557,
+        "max_diff": 15,
+        "mean_diff": 1.8231328125,
+        "over_tolerance_ratio": 0.8260598958333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo01__tiltp05.jpg",
+      "filters": "tilt=1,0.050000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96721,
+        "delta_e_mean": 1.401,
+        "delta_e_p99": 3.556,
+        "max_diff": 13,
+        "mean_diff": 1.82235,
+        "over_tolerance_ratio": 0.8255854166666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo01__tiltp20.jpg",
+      "filters": "tilt=1,0.200000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9657,
+        "delta_e_mean": 1.386,
+        "delta_e_p99": 3.507,
+        "max_diff": 14,
+        "mean_diff": 1.8282640625,
+        "over_tolerance_ratio": 0.8232958333333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo01__cropsym.jpg",
+      "filters": "crop64=1,19991999e666e666;",
+      "szurok": [
+        "crop64"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99908,
+        "delta_e_mean": 1.226,
+        "delta_e_p99": 3.722,
+        "max_diff": 11,
+        "mean_diff": 1.02611572265625,
+        "over_tolerance_ratio": 0.64994140625
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo01__cropmid.jpg",
+      "filters": "crop64=1,40004000c000c000;",
+      "szurok": [
+        "crop64"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9653,
+        "delta_e_mean": 1.411,
+        "delta_e_p99": 3.654,
+        "max_diff": 14,
+        "mean_diff": 1.8912840277777778,
+        "over_tolerance_ratio": 0.8244625
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo01__cropasy.jpg",
+      "filters": "crop64=1,0ccd333399997333;",
+      "szurok": [
+        "crop64"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99878,
+        "delta_e_mean": 0.575,
+        "delta_e_p99": 2.524,
+        "max_diff": 10,
+        "mean_diff": 0.49600757575757576,
+        "over_tolerance_ratio": 0.3413939393939394
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo04__tiltm20.jpg",
+      "filters": "tilt=1,-0.200000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96579,
+        "delta_e_mean": 1.46,
+        "delta_e_p99": 3.74,
+        "max_diff": 14,
+        "mean_diff": 1.8198364583333333,
+        "over_tolerance_ratio": 0.8204088541666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo04__tiltm05.jpg",
+      "filters": "tilt=1,-0.050000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96725,
+        "delta_e_mean": 1.477,
+        "delta_e_p99": 3.794,
+        "max_diff": 15,
+        "mean_diff": 1.8149684027777777,
+        "over_tolerance_ratio": 0.8234786458333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo04__tiltp05.jpg",
+      "filters": "tilt=1,0.050000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96733,
+        "delta_e_mean": 1.476,
+        "delta_e_p99": 3.797,
+        "max_diff": 14,
+        "mean_diff": 1.814584375,
+        "over_tolerance_ratio": 0.8236822916666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo04__tiltp20.jpg",
+      "filters": "tilt=1,0.200000,0.000000;",
+      "szurok": [
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96584,
+        "delta_e_mean": 1.461,
+        "delta_e_p99": 3.737,
+        "max_diff": 14,
+        "mean_diff": 1.8202034722222222,
+        "over_tolerance_ratio": 0.82080625
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo04__cropsym.jpg",
+      "filters": "crop64=1,19991999e666e666;",
+      "szurok": [
+        "crop64"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.9991,
+        "delta_e_mean": 1.316,
+        "delta_e_p99": 3.973,
+        "max_diff": 10,
+        "mean_diff": 1.0181526692708334,
+        "over_tolerance_ratio": 0.6422355143229167
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo04__cropmid.jpg",
+      "filters": "crop64=1,40004000c000c000;",
+      "szurok": [
+        "crop64"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9654,
+        "delta_e_mean": 1.54,
+        "delta_e_p99": 3.986,
+        "max_diff": 13,
+        "mean_diff": 1.8821541666666666,
+        "over_tolerance_ratio": 0.8214729166666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "08-geom/photo04__cropasy.jpg",
+      "filters": "crop64=1,0ccd333399997333;",
+      "szurok": [
+        "crop64"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.9988,
+        "delta_e_mean": 0.671,
+        "delta_e_p99": 2.799,
+        "max_diff": 10,
+        "mean_diff": 0.49840782828282826,
+        "over_tolerance_ratio": 0.33512878787878786
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/chart_color__glow1.jpg",
+      "filters": "glow=1,0.432749,2.469705;",
+      "szurok": [
+        "glow"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99767,
+        "delta_e_mean": 3.005,
+        "delta_e_p99": 6.56,
+        "max_diff": 24,
+        "mean_diff": 3.794387847222222,
+        "over_tolerance_ratio": 0.9998744791666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/chart_color__glow2.jpg",
+      "filters": "glow2=1,0.650000,3.000000;",
+      "szurok": [
+        "glow2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99643,
+        "delta_e_mean": 4.258,
+        "delta_e_p99": 9.391,
+        "max_diff": 25,
+        "mean_diff": 5.7164282986111115,
+        "over_tolerance_ratio": 0.9999744791666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/chart_color__vignette.jpg",
+      "filters": "Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97532,
+        "delta_e_mean": 5.895,
+        "delta_e_p99": 23.804,
+        "max_diff": 77,
+        "mean_diff": 11.724479340277778,
+        "over_tolerance_ratio": 0.7874895833333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/chart_color__radblur.jpg",
+      "filters": "radblur=1,0.411585,0.611111,0.000000,0.000000;",
+      "szurok": [
+        "radblur"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.9881,
+        "delta_e_mean": 1.924,
+        "delta_e_p99": 21.603,
+        "max_diff": 130,
+        "mean_diff": 2.939118402777778,
+        "over_tolerance_ratio": 0.8456854166666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/chart_color__dirtint.jpg",
+      "filters": "dir_tint=1,0.432422,0.554167,0.250000,0.250000,ffffffff;",
+      "szurok": [
+        "dir_tint"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97187,
+        "delta_e_mean": 11.429,
+        "delta_e_p99": 34.172,
+        "max_diff": 68,
+        "mean_diff": 21.97545920138889,
+        "over_tolerance_ratio": 0.68060625
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/chart_color__tint.jpg",
+      "filters": "tint=1,79.842102,ffff;",
+      "szurok": [
+        "tint"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99015,
+        "delta_e_mean": 22.17,
+        "delta_e_p99": 60.628,
+        "max_diff": 128,
+        "mean_diff": 29.71711892361111,
+        "over_tolerance_ratio": 0.9988317708333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/chart_color__ansel.jpg",
+      "filters": "ansel=1,ffffffff;",
+      "szurok": [
+        "ansel"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98624,
+        "delta_e_mean": 5.719,
+        "delta_e_p99": 19.872,
+        "max_diff": 61,
+        "mean_diff": 14.831233854166667,
+        "over_tolerance_ratio": 0.9802145833333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo01__glow1.jpg",
+      "filters": "glow=1,0.432749,2.469705;",
+      "szurok": [
+        "glow"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99367,
+        "delta_e_mean": 3.243,
+        "delta_e_p99": 6.454,
+        "max_diff": 14,
+        "mean_diff": 3.168603125,
+        "over_tolerance_ratio": 0.9883145833333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo01__glow2.jpg",
+      "filters": "glow2=1,0.650000,3.000000;",
+      "szurok": [
+        "glow2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98921,
+        "delta_e_mean": 4.741,
+        "delta_e_p99": 8.937,
+        "max_diff": 18,
+        "mean_diff": 4.5485682291666665,
+        "over_tolerance_ratio": 0.9973828125
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo01__vignette.jpg",
+      "filters": "Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.95947,
+        "delta_e_mean": 5.484,
+        "delta_e_p99": 18.444,
+        "max_diff": 65,
+        "mean_diff": 10.541427604166667,
+        "over_tolerance_ratio": 0.8574994791666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo01__radblur.jpg",
+      "filters": "radblur=1,0.411585,0.611111,0.000000,0.000000;",
+      "szurok": [
+        "radblur"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.76262,
+        "delta_e_mean": 2.773,
+        "delta_e_p99": 7.751,
+        "max_diff": 31,
+        "mean_diff": 4.327384722222222,
+        "over_tolerance_ratio": 0.9403177083333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo01__dirtint.jpg",
+      "filters": "dir_tint=1,0.432422,0.554167,0.250000,0.250000,ffffffff;",
+      "szurok": [
+        "dir_tint"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96328,
+        "delta_e_mean": 12.611,
+        "delta_e_p99": 30.858,
+        "max_diff": 67,
+        "mean_diff": 25.080155208333334,
+        "over_tolerance_ratio": 0.7896614583333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo01__tint.jpg",
+      "filters": "tint=1,79.842102,ffff;",
+      "szurok": [
+        "tint"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98664,
+        "delta_e_mean": 20.662,
+        "delta_e_p99": 41.125,
+        "max_diff": 78,
+        "mean_diff": 20.378570486111112,
+        "over_tolerance_ratio": 0.9999651041666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo01__ansel.jpg",
+      "filters": "ansel=1,ffffffff;",
+      "szurok": [
+        "ansel"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98672,
+        "delta_e_mean": 5.021,
+        "delta_e_p99": 13.802,
+        "max_diff": 39,
+        "mean_diff": 13.0316828125,
+        "over_tolerance_ratio": 0.9072192708333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo04__glow1.jpg",
+      "filters": "glow=1,0.432749,2.469705;",
+      "szurok": [
+        "glow"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99268,
+        "delta_e_mean": 1.927,
+        "delta_e_p99": 5.019,
+        "max_diff": 13,
+        "mean_diff": 2.753321701388889,
+        "over_tolerance_ratio": 0.931953125
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo04__glow2.jpg",
+      "filters": "glow2=1,0.650000,3.000000;",
+      "szurok": [
+        "glow2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98705,
+        "delta_e_mean": 2.625,
+        "delta_e_p99": 7.258,
+        "max_diff": 16,
+        "mean_diff": 3.9477864583333333,
+        "over_tolerance_ratio": 0.9773510416666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo04__vignette.jpg",
+      "filters": "Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.95903,
+        "delta_e_mean": 5.432,
+        "delta_e_p99": 21.475,
+        "max_diff": 77,
+        "mean_diff": 11.57621857638889,
+        "over_tolerance_ratio": 0.8552776041666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo04__radblur.jpg",
+      "filters": "radblur=1,0.411585,0.611111,0.000000,0.000000;",
+      "szurok": [
+        "radblur"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.76273,
+        "delta_e_mean": 2.618,
+        "delta_e_p99": 6.785,
+        "max_diff": 32,
+        "mean_diff": 4.280394270833333,
+        "over_tolerance_ratio": 0.93045
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo04__dirtint.jpg",
+      "filters": "dir_tint=1,0.432422,0.554167,0.250000,0.250000,ffffffff;",
+      "szurok": [
+        "dir_tint"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96068,
+        "delta_e_mean": 9.995,
+        "delta_e_p99": 27.186,
+        "max_diff": 72,
+        "mean_diff": 23.697483854166666,
+        "over_tolerance_ratio": 0.792896875
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo04__tint.jpg",
+      "filters": "tint=1,79.842102,ffff;",
+      "szurok": [
+        "tint"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.97989,
+        "delta_e_mean": 11.145,
+        "delta_e_p99": 34.165,
+        "max_diff": 78,
+        "mean_diff": 13.787914409722223,
+        "over_tolerance_ratio": 0.9999791666666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "09-effects/photo04__ansel.jpg",
+      "filters": "ansel=1,ffffffff;",
+      "szurok": [
+        "ansel"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99203,
+        "delta_e_mean": 2.58,
+        "delta_e_p99": 12.131,
+        "max_diff": 34,
+        "mean_diff": 6.749577604166666,
+        "over_tolerance_ratio": 0.8215536458333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_color__chainA.jpg",
+      "filters": "enhance=1;fill=1,0.308411;finetune2=1,0.000000,0.000000,0.000000,00000000,0.309942;tilt=1,-0.114659,0.000000;",
+      "szurok": [
+        "enhance",
+        "fill",
+        "finetune2",
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99405,
+        "delta_e_mean": 11.405,
+        "delta_e_p99": 20.189,
+        "max_diff": 69,
+        "mean_diff": 11.953501041666666,
+        "over_tolerance_ratio": 0.9999979166666667
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_color__chainB.jpg",
+      "filters": "crop64=1,30c00155dd7ffae3;fill=1,0.336449;finetune2=1,0.000000,0.000000,0.067368,00000000,0.000000;Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "crop64",
+        "fill",
+        "finetune2",
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.95276,
+        "delta_e_mean": 12.033,
+        "delta_e_p99": 45.736,
+        "max_diff": 144,
+        "mean_diff": 18.96298540645158,
+        "over_tolerance_ratio": 0.9998138510650095
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_color__chainC.jpg",
+      "filters": "warm=1;sat=1,0.824561;finetune=1,0.228070,0.103860,0.000000,00000000,0.000000;tilt=1,0.154150,0.000000;",
+      "szurok": [
+        "warm",
+        "sat",
+        "finetune",
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.9653,
+        "delta_e_mean": 14.127,
+        "delta_e_p99": 68.108,
+        "max_diff": 215,
+        "mean_diff": 14.747816319444444,
+        "over_tolerance_ratio": 0.9940973958333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_color__chainD.jpg",
+      "filters": "fill=1,0.579439;autolight=1;crop64=1,46060f47ab28d291;finetune2=1,0.000000,0.000000,0.000000,ffccc6b2,0.000000;finetune2=1,0.315789,0.000000,0.050526,00000000,0.000000;",
+      "szurok": [
+        "fill",
+        "autolight",
+        "crop64",
+        "finetune2",
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98782,
+        "delta_e_mean": 15.225,
+        "delta_e_p99": 30.748,
+        "max_diff": 76,
+        "mean_diff": 18.38591339835374,
+        "over_tolerance_ratio": 0.9999740610085079
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_color__chainE.jpg",
+      "filters": "tilt=1,0.122530,0.000000;crop64=1,1e3308cdb932ffff;enhance=1;sepia=1;autolight=1;Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "tilt",
+        "crop64",
+        "enhance",
+        "sepia",
+        "autolight",
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.89313,
+        "delta_e_mean": 12.0,
+        "delta_e_p99": 38.811,
+        "max_diff": 126,
+        "mean_diff": 26.397581390816153,
+        "over_tolerance_ratio": 0.9960879284649776
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_detail__chainA.jpg",
+      "filters": "enhance=1;fill=1,0.308411;finetune2=1,0.000000,0.000000,0.000000,00000000,0.309942;tilt=1,-0.114659,0.000000;",
+      "szurok": [
+        "enhance",
+        "fill",
+        "finetune2",
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.99902,
+        "delta_e_mean": 2.767,
+        "delta_e_p99": 6.769,
+        "max_diff": 28,
+        "mean_diff": 2.8864336805555557,
+        "over_tolerance_ratio": 0.7471661458333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_detail__chainB.jpg",
+      "filters": "crop64=1,30c00155dd7ffae3;fill=1,0.336449;finetune2=1,0.000000,0.000000,0.067368,00000000,0.000000;Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "crop64",
+        "fill",
+        "finetune2",
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.94214,
+        "delta_e_mean": 5.502,
+        "delta_e_p99": 44.267,
+        "max_diff": 152,
+        "mean_diff": 14.703021157608738,
+        "over_tolerance_ratio": 0.4375672314504567
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_detail__chainC.jpg",
+      "filters": "warm=1;sat=1,0.824561;finetune=1,0.228070,0.103860,0.000000,00000000,0.000000;tilt=1,0.154150,0.000000;",
+      "szurok": [
+        "warm",
+        "sat",
+        "finetune",
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.94019,
+        "delta_e_mean": 11.909,
+        "delta_e_p99": 23.98,
+        "max_diff": 60,
+        "mean_diff": 9.564792881944445,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_detail__chainD.jpg",
+      "filters": "fill=1,0.579439;autolight=1;crop64=1,46060f47ab28d291;finetune2=1,0.000000,0.000000,0.000000,ffccc6b2,0.000000;finetune2=1,0.315789,0.000000,0.050526,00000000,0.000000;",
+      "szurok": [
+        "fill",
+        "autolight",
+        "crop64",
+        "finetune2",
+        "finetune2"
+      ],
+      "itelet": "közelítés",
+      "metrikak": {
+        "ssim": 0.99946,
+        "delta_e_mean": 1.718,
+        "delta_e_p99": 3.951,
+        "max_diff": 12,
+        "mean_diff": 1.7552978949067348,
+        "over_tolerance_ratio": 0.7743048350280141
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_detail__chainE.jpg",
+      "filters": "tilt=1,0.122530,0.000000;crop64=1,1e3308cdb932ffff;enhance=1;sepia=1;autolight=1;Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "tilt",
+        "crop64",
+        "enhance",
+        "sepia",
+        "autolight",
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": -0.02345,
+        "delta_e_mean": 40.466,
+        "delta_e_p99": 96.819,
+        "max_diff": 255,
+        "mean_diff": 95.76438466950468,
+        "over_tolerance_ratio": 0.9984472935488702
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_ramp__chainA.jpg",
+      "filters": "enhance=1;fill=1,0.308411;finetune2=1,0.000000,0.000000,0.000000,00000000,0.309942;tilt=1,-0.114659,0.000000;",
+      "szurok": [
+        "enhance",
+        "fill",
+        "finetune2",
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98934,
+        "delta_e_mean": 3.917,
+        "delta_e_p99": 10.016,
+        "max_diff": 56,
+        "mean_diff": 4.455824479166667,
+        "over_tolerance_ratio": 0.9268072916666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_ramp__chainB.jpg",
+      "filters": "crop64=1,30c00155dd7ffae3;fill=1,0.336449;finetune2=1,0.000000,0.000000,0.067368,00000000,0.000000;Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "crop64",
+        "fill",
+        "finetune2",
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.96052,
+        "delta_e_mean": 8.599,
+        "delta_e_p99": 40.465,
+        "max_diff": 122,
+        "mean_diff": 11.181121065458415,
+        "over_tolerance_ratio": 0.9199813058941881
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_ramp__chainC.jpg",
+      "filters": "warm=1;sat=1,0.824561;finetune=1,0.228070,0.103860,0.000000,00000000,0.000000;tilt=1,0.154150,0.000000;",
+      "szurok": [
+        "warm",
+        "sat",
+        "finetune",
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.95518,
+        "delta_e_mean": 17.274,
+        "delta_e_p99": 130.594,
+        "max_diff": 255,
+        "mean_diff": 15.114521006944445,
+        "over_tolerance_ratio": 0.8712364583333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_ramp__chainD.jpg",
+      "filters": "fill=1,0.579439;autolight=1;crop64=1,46060f47ab28d291;finetune2=1,0.000000,0.000000,0.000000,ffccc6b2,0.000000;finetune2=1,0.315789,0.000000,0.050526,00000000,0.000000;",
+      "szurok": [
+        "fill",
+        "autolight",
+        "crop64",
+        "finetune2",
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.98343,
+        "delta_e_mean": 11.816,
+        "delta_e_p99": 30.158,
+        "max_diff": 73,
+        "mean_diff": 9.610565815867746,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/chart_ramp__chainE.jpg",
+      "filters": "tilt=1,0.122530,0.000000;crop64=1,1e3308cdb932ffff;enhance=1;sepia=1;autolight=1;Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "tilt",
+        "crop64",
+        "enhance",
+        "sepia",
+        "autolight",
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.87945,
+        "delta_e_mean": 11.433,
+        "delta_e_p99": 39.304,
+        "max_diff": 212,
+        "mean_diff": 21.417250491422976,
+        "over_tolerance_ratio": 0.9897710337352662
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/photo01__chainA.jpg",
+      "filters": "enhance=1;fill=1,0.308411;finetune2=1,0.000000,0.000000,0.000000,00000000,0.309942;tilt=1,-0.114659,0.000000;",
+      "szurok": [
+        "enhance",
+        "fill",
+        "finetune2",
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.94976,
+        "delta_e_mean": 24.34,
+        "delta_e_p99": 36.257,
+        "max_diff": 60,
+        "mean_diff": 22.649132118055554,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/photo01__chainB.jpg",
+      "filters": "crop64=1,30c00155dd7ffae3;fill=1,0.336449;finetune2=1,0.000000,0.000000,0.067368,00000000,0.000000;Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "crop64",
+        "fill",
+        "finetune2",
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.89749,
+        "delta_e_mean": 11.587,
+        "delta_e_p99": 38.414,
+        "max_diff": 141,
+        "mean_diff": 17.901923010912817,
+        "over_tolerance_ratio": 0.9987476533352344
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/photo01__chainC.jpg",
+      "filters": "warm=1;sat=1,0.824561;finetune=1,0.228070,0.103860,0.000000,00000000,0.000000;tilt=1,0.154150,0.000000;",
+      "szurok": [
+        "warm",
+        "sat",
+        "finetune",
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.89646,
+        "delta_e_mean": 14.366,
+        "delta_e_p99": 41.569,
+        "max_diff": 139,
+        "mean_diff": 18.217416666666665,
+        "over_tolerance_ratio": 0.9854276041666666
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/photo01__chainD.jpg",
+      "filters": "fill=1,0.579439;autolight=1;crop64=1,46060f47ab28d291;finetune2=1,0.000000,0.000000,0.000000,ffccc6b2,0.000000;finetune2=1,0.315789,0.000000,0.050526,00000000,0.000000;",
+      "szurok": [
+        "fill",
+        "autolight",
+        "crop64",
+        "finetune2",
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.88866,
+        "delta_e_mean": 35.797,
+        "delta_e_p99": 46.015,
+        "max_diff": 124,
+        "mean_diff": 32.05213794932097,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/photo01__chainE.jpg",
+      "filters": "tilt=1,0.122530,0.000000;crop64=1,1e3308cdb932ffff;enhance=1;sepia=1;autolight=1;Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "tilt",
+        "crop64",
+        "enhance",
+        "sepia",
+        "autolight",
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.52033,
+        "delta_e_mean": 12.573,
+        "delta_e_p99": 41.717,
+        "max_diff": 163,
+        "mean_diff": 23.240859354387865,
+        "over_tolerance_ratio": 0.9984339235162829
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/photo04__chainA.jpg",
+      "filters": "enhance=1;fill=1,0.308411;finetune2=1,0.000000,0.000000,0.000000,00000000,0.309942;tilt=1,-0.114659,0.000000;",
+      "szurok": [
+        "enhance",
+        "fill",
+        "finetune2",
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.93548,
+        "delta_e_mean": 13.636,
+        "delta_e_p99": 31.294,
+        "max_diff": 62,
+        "mean_diff": 15.059740972222222,
+        "over_tolerance_ratio": 0.9999375
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/photo04__chainB.jpg",
+      "filters": "crop64=1,30c00155dd7ffae3;fill=1,0.336449;finetune2=1,0.000000,0.000000,0.067368,00000000,0.000000;Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "crop64",
+        "fill",
+        "finetune2",
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.8974,
+        "delta_e_mean": 8.575,
+        "delta_e_p99": 38.497,
+        "max_diff": 121,
+        "mean_diff": 17.011469942887924,
+        "over_tolerance_ratio": 0.9892255412181269
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/photo04__chainC.jpg",
+      "filters": "warm=1;sat=1,0.824561;finetune=1,0.228070,0.103860,0.000000,00000000,0.000000;tilt=1,0.154150,0.000000;",
+      "szurok": [
+        "warm",
+        "sat",
+        "finetune",
+        "tilt"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.91252,
+        "delta_e_mean": 15.555,
+        "delta_e_p99": 37.576,
+        "max_diff": 79,
+        "mean_diff": 14.243881770833333,
+        "over_tolerance_ratio": 0.9998630208333333
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "finetune"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/photo04__chainD.jpg",
+      "filters": "fill=1,0.579439;autolight=1;crop64=1,46060f47ab28d291;finetune2=1,0.000000,0.000000,0.000000,ffccc6b2,0.000000;finetune2=1,0.315789,0.000000,0.050526,00000000,0.000000;",
+      "szurok": [
+        "fill",
+        "autolight",
+        "crop64",
+        "finetune2",
+        "finetune2"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.86324,
+        "delta_e_mean": 18.947,
+        "delta_e_p99": 44.625,
+        "max_diff": 122,
+        "mean_diff": 34.674172257960386,
+        "over_tolerance_ratio": 1.0
+      },
+      "kihagyott": [],
+      "lut_szurok": [
+        "fill",
+        "finetune2"
+      ],
+      "megjegyzes": ""
+    },
+    {
+      "nev": "10-real-chains/photo04__chainE.jpg",
+      "filters": "tilt=1,0.122530,0.000000;crop64=1,1e3308cdb932ffff;enhance=1;sepia=1;autolight=1;Vignette=1,35.000000,1.400000,0.000000,00000000;",
+      "szurok": [
+        "tilt",
+        "crop64",
+        "enhance",
+        "sepia",
+        "autolight",
+        "Vignette"
+      ],
+      "itelet": "eltér",
+      "metrikak": {
+        "ssim": 0.61992,
+        "delta_e_mean": 11.059,
+        "delta_e_p99": 37.332,
+        "max_diff": 140,
+        "mean_diff": 21.80560923376046,
+        "over_tolerance_ratio": 0.9965451835794608
+      },
+      "kihagyott": [],
+      "lut_szurok": [],
+      "megjegyzes": ""
+    }
+  ]
+}
