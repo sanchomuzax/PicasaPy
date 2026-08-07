@@ -47,6 +47,9 @@ class _StubController(QObject):
     def __init__(self):
         super().__init__()
         self._collections: list[dict] = []
+        # #422: a gyűjtemény-menü (átnevezés/eltávolítás) bekötéséhez
+        self.renamed: list[tuple[str, str]] = []
+        self.deleted: list[str] = []
 
     @Property("QVariant", notify=customCollectionsChanged)
     def customCollections(self):
@@ -63,6 +66,14 @@ class _StubController(QObject):
     @Slot(str, bool)
     def setCollectionCollapsed(self, name, collapsed):
         pass
+
+    @Slot(str, str)
+    def renameCollection(self, old_name, new_name):
+        self.renamed.append((old_name, new_name))
+
+    @Slot(str)
+    def deleteCollection(self, name):
+        self.deleted.append(name)
 
 
 @pytest.fixture
@@ -287,3 +298,62 @@ class TestCustomCollectionCollapse:
         qt_app.processEvents()
         row = _folder_row(item0, "Nyaralások", 0)
         assert row.property("visible") is True
+
+
+class TestCustomCollectionContextMenu:
+    """#422 (utolsó menü): a gyűjtemény-fejléc jobbklikk-menüje —
+    `pane.openCollectionContextMenu(name)`-en át (a delegate-MouseArea/
+    TapHandler Repeater-elemből findChild-dal el nem érhető,
+    MEMORY 2026-07-31), az `openAlbumContextMenu` mintája."""
+
+    def test_open_sets_the_collection_name_on_the_menu(self, pane, controller, qt_app):
+        controller.set_collections([{"name": "Nyaralások", "folders": []}])
+        qt_app.processEvents()
+
+        QMetaObject.invokeMethod(
+            pane, "openCollectionContextMenu", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", "Nyaralások"),
+        )
+        menu = pane.findChild(QObject, "collectionContextMenu")
+        assert menu is not None
+        assert menu.property("collectionName") == "Nyaralások"
+
+    def test_remove_requested_asks_before_deleting(self, pane, controller, qt_app):
+        controller.set_collections([{"name": "Nyaralások", "folders": []}])
+        qt_app.processEvents()
+        QMetaObject.invokeMethod(
+            pane, "openCollectionContextMenu", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", "Nyaralások"),
+        )
+        menu = pane.findChild(QObject, "collectionContextMenu")
+        menu.removeRequested.emit()
+        qt_app.processEvents()
+        assert controller.deleted == []
+
+        confirm = pane.findChild(QObject, "removeCollectionConfirmDialog")
+        assert confirm is not None
+        confirm.confirmed.emit()
+        qt_app.processEvents()
+        assert controller.deleted == ["Nyaralások"]
+
+    def test_rename_requested_opens_dialog_with_current_name_then_renames(
+        self, pane, controller, qt_app
+    ):
+        controller.set_collections([{"name": "Nyaralások", "folders": []}])
+        qt_app.processEvents()
+        QMetaObject.invokeMethod(
+            pane, "openCollectionContextMenu", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", "Nyaralások"),
+        )
+        menu = pane.findChild(QObject, "collectionContextMenu")
+        menu.renameRequested.emit()
+        qt_app.processEvents()
+
+        dialog = pane.findChild(QObject, "newCollectionDialog")
+        assert dialog is not None
+        assert dialog.property("initialName") == "Nyaralások"
+
+        dialog.created.emit("Nyaralások 2024")
+        qt_app.processEvents()
+
+        assert controller.renamed == [("Nyaralások", "Nyaralások 2024")]

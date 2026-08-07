@@ -88,6 +88,22 @@ Rectangle {
         peopleAlbumContextMenu.popup()
     }
 
+    // #422 (utolsó menü): a felhasználói gyűjtemény jobbklikk-menüjének
+    // megnyitása — az album-menü mintájára, pane-szintű, névvel hívható
+    // függvényben (tesztelhetőség).
+    function openCollectionContextMenu(name) {
+        collectionContextMenu.collectionName = name
+        collectionContextMenu.popup()
+    }
+
+    // #422: melyik gyűjtemény átnevezése fut éppen a newCollectionDialog-on
+    // keresztül — üres string esetén a dialógus a régi
+    // "létrehozás" ágon fut (createCollection + esetleg
+    // moveFolderToCollection), nem üres esetén az átnevezés ágon
+    // (renameCollection). A newCollectionDialog egyetlen példány, ezt a
+    // property-t kell megnézni a created(name) jelre.
+    property string _renamingCollection: ""
+
     // Gyűjtemény-csukottság — kezdőérték a collections.py
     // DEFAULT_COLLAPSED-jét tükrözi (controller hiányában is ésszerű).
     property bool albumsCollapsed: false
@@ -202,6 +218,10 @@ Rectangle {
         property string labelObjectName: ""
         property bool collapsed: false
         signal toggled()
+        // #422: a felhasználói gyűjtemény-fejléc jobbklikk-menüjéhez — a
+        // beépített öt gyűjtemény fejléce (Albumok/Emberek/…) nem köti be,
+        // csak a customCollectionsRepeater-beli példány (ld. lent).
+        signal rightClicked()
 
         // a sor saját objectName-je a fejlécéből képezve (teszthez: a
         // "toggled" jel innen közvetlenül kiváltható, ahogy a projektben
@@ -237,6 +257,14 @@ Rectangle {
         MouseArea {
             anchors.fill: parent
             onClicked: header.toggled()
+        }
+        // #422: jobbklikk a gyűjtemény-menühöz — a mappasor/albumsor
+        // mintáját követve TapHandler-rel (ReleaseWithinBounds), hogy a
+        // sima MouseArea bal-kattintás-kezelését ne zavarja.
+        TapHandler {
+            acceptedButtons: Qt.RightButton
+            gesturePolicy: TapHandler.ReleaseWithinBounds
+            onTapped: header.rightClicked()
         }
     }
 
@@ -556,6 +584,8 @@ Rectangle {
                     labelObjectName: "customCollection_" + customCollectionItem.modelData.name
                     collapsed: pane.isCustomCollectionCollapsed(customCollectionItem.modelData.name)
                     onToggled: pane.toggleCustomCollection(customCollectionItem.modelData.name)
+                    onRightClicked: pane.openCollectionContextMenu(
+                        customCollectionItem.modelData.name)
                 }
 
                 Repeater {
@@ -664,7 +694,14 @@ Rectangle {
             if (controller) controller.moveFolderToCollection(
                 folderContextMenu.folderPath, collectionName)
         }
-        onNewCollectionRequested: newCollectionDialog.open()
+        onNewCollectionRequested: {
+            // #422: a létrehozás-ág — a _renamingCollection üresen marad,
+            // az initialName is üres (a korábbi átnevezésből esetleg
+            // bennragadt értéket felülírjuk)
+            pane._renamingCollection = ""
+            newCollectionDialog.initialName = ""
+            newCollectionDialog.open()
+        }
 
         // #422: az eredeti `album.fen` dialógusa — a mappa DÁTUMA is itt
         // lakik, ezért szűnt meg a külön „Mappa dátumának beállítása…"
@@ -735,13 +772,49 @@ Rectangle {
         id: newCollectionDialog
         onCreated: function(name) {
             if (!controller) return
-            controller.createCollection(name)
-            // Picasa-mintára: a "Move to Collection ▸ New Collection…"-ból
-            // indított létrehozás a jobbklikkelt mappát rögtön bele is
-            // sorolja az új gyűjteménybe.
-            if (folderContextMenu.folderPath !== "")
-                controller.moveFolderToCollection(
-                    folderContextMenu.folderPath, name)
+            // #422: ugyanaz a dialógus szolgálja a létrehozást (a
+            // FolderContextMenu "Új gyűjtemény…" ága) ÉS az átnevezést (a
+            // CollectionContextMenu "Gyűjtemény átnevezése…" ága) — a két
+            // használatot a pane._renamingCollection különbözteti meg.
+            if (pane._renamingCollection !== "") {
+                controller.renameCollection(pane._renamingCollection, name)
+                pane._renamingCollection = ""
+            } else {
+                controller.createCollection(name)
+                // Picasa-mintára: a "Move to Collection ▸ New Collection…"-ból
+                // indított létrehozás a jobbklikkelt mappát rögtön bele is
+                // sorolja az új gyűjteménybe.
+                if (folderContextMenu.folderPath !== "")
+                    controller.moveFolderToCollection(
+                        folderContextMenu.folderPath, name)
+            }
+            pane.refreshCustomCollections()
+        }
+    }
+
+    // #422: a gyűjtemény jobbklikk-menüje (átnevezés/eltávolítás/jelszó) —
+    // a Collection menüosztály, a #476-ban készült CollectionHeader
+    // fejlécre kötve (pane.openCollectionContextMenu).
+    CollectionContextMenu {
+        id: collectionContextMenu
+        onRenameRequested: {
+            pane._renamingCollection = collectionContextMenu.collectionName
+            newCollectionDialog.initialName = collectionContextMenu.collectionName
+            newCollectionDialog.open()
+        }
+        onRemoveRequested: removeCollectionConfirm.ask(
+            "removeCollection",
+            qsTr("Remove this collection? The folders and files stay on disk."))
+    }
+
+    // „Gyűjtemény eltávolítása" megerősítése (#422) — egyedi namePrefix,
+    // hogy ne ütközzön a removeFolderConfirm-mal
+    ConfirmDialog {
+        id: removeCollectionConfirm
+        namePrefix: "removeCollectionConfirm"
+        onConfirmed: {
+            if (controller && collectionContextMenu.collectionName !== "")
+                controller.deleteCollection(collectionContextMenu.collectionName)
             pane.refreshCustomCollections()
         }
     }
