@@ -205,6 +205,21 @@ Projekt-szintű memória. Egy sor per bejegyzés: rövid horog + kontextus. A r�
 
 ## Tanulságok
 
+- **2026-08-07: `git add -A` TILOS — fájlonként adj hozzá (felhasználói
+  felháborodás után).** Egy dokumentációs PR-be a `git add -A` besöpörte a
+  repó gyökerében heverő `riport_*.json` mérési kimeneteket, ezért a PR NEM
+  számított csak-dokumentációsnak, és **lefutott rá a teljes, 9 perces CI** —
+  pontosan az, amit a `ci.yml` `paths-ignore`-ja elkerülni hivatott. A
+  felhasználó ezt joggal élte meg értelmetlen pazarlásként.
+  **Szabály:** commitnál MINDIG explicit fájlútvonal (`git add docs/x.md`),
+  soha `-A`/`.`; commit előtt `git status --short` ellenőrzés. A
+  `riport_*.json` azóta gitignore-ban.
+- **2026-08-07: csak-dokumentációs változás → NE nyiss PR-t, tolj közvetlenül
+  a main-re.** A `.md`/`docs/**` push a main-en `paths-ignore` miatt semmilyen
+  CI-t nem indít, és az ág-védelem admin-jogon átengedi. PR-t nyitni docs-ra
+  felesleges kerülő (és a `ci-docs.yml` csonk-futás is látszik a felhasználónak).
+  PR csak akkor, ha a változás kódot is érint.
+
 - **2026-08-06 (Qt-csapda, felhasználó fedezte fel): a Qt SVG-motorja (SVG
   Tiny 1.2) NÉMÁN kihagyja a `clipPath`-t ÉS a beágyazott `<svg>`-t.**
   A szerkesztő „Gyakori javítások" ikonjain a féloldalakat clipPath-szal
