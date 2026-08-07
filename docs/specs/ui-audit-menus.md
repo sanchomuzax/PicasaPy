@@ -266,3 +266,124 @@ dokumentált feature az eredeti Picasában)
 7. **Mappa szintű Elrejtés/Megjelenítés** — ez különbözik a már megvalósított
    „Rejtett képek" nézetkapcsolótól: az eredetiben egy egész mappa
    kihagyható a könyvtárból, nem csak képenként rejthető el.
+
+---
+
+# KIEGÉSZÍTÉS: amit a képernyőképek nem mutattak (2026-08-07)
+
+A fenti audit 35 képernyőképen alapul — csak azt látta, ami épp nyitva volt.
+A `Picasa3i18n.dll` **418 menüparancsa** (ld.
+[`ui-audit-context-menus.md`](ui-audit-context-menus.md) függeléke) a teljes
+készletet adja. Az összevetés **70 olyan menüpontot** talált a felső
+menüsávban, amely az audit táblázataiban nem szerepel — köztük **öt egész
+almenüt**, amelyek tartalma addig ismeretlen volt.
+
+## K.1 „Csoportos szerkesztés ▸" — az almenü tartalma MEGVAN
+
+A Kép-menü táblázata annyit mondott: *„az almenü tartalma a képekből nem
+derül ki"*. Az `eMenuPicture` osztály megadja — ez a Picasa **kötegelt
+szerkesztése**, a kijelölt képek mindegyikére egyszerre:
+
+| ID | magyar felirat |
+|---|---|
+| `ID_PICTURE_AUTO_LIGHTING` | Automatikus kontraszt |
+| `ID_PICTURE_AUTO_COLOR` | Automatikus szín |
+| `ID_PICTURE_AUTO_REDEYE` | Automatikus vörösszem-eltávolítás |
+| `ID_PICTURE_ENHANCE` | Jó napom van |
+| `ID_PICTURE_SHARPEN` | Élesítés |
+| `ID_PICTURE_FILM_GRAIN` | Filmszemcse |
+| `ID_PICTURE_WARMIFY` | Melegítés |
+| `ID_PICTURE_ROTATECLOCKWISE` / `…COUNTERCLOCKWISE` | Forgatás jobbra / balra |
+| `ID_PICTURE_SHOW_TEXT` / `…HIDE_TEXT` | Szöveg megjelenítése / elrejtése |
+
+Ezek pontosan a már implementált `filters=` egykattintásos szűrőink
+(`autolight`, `autocolor`, `redeye`, `enhance`, `unsharp`, `grain`, `warm`) —
+vagyis a kötegelt alkalmazás **motorja megvan**, csak a menü hiányzik.
+
+## K.2 Nézet → megjelenítési módok (fejlesztői/diagnosztikai almenü)
+
+Soha nem fényképeztük le. Ez az, amiért a Picasát a fotós közösség szerette:
+
+| csoport | tételek |
+|---|---|
+| színmélység | 24 bites · 16 bites (szemcsézett) · Automatikus |
+| próba-nézet | Fekete-fehér · Szépia |
+| gamma / fehérpont | LCD fehérpont · Lineáris gamma (2.2) · Mac gamma (1.6) |
+| színkezelés | **Színkezelés használata** (ICC) |
+| diagnosztika | **Túlcsordult képpontok megjelenítése** (kiégett részek jelölése) |
+| megjelenítési mód | Projektor mód · Távoli asztal · Kis képek |
+
+A **túlcsordult képpontok** és a **színkezelés** kapcsoló komoly, fotós
+funkciók; a gamma-választók a korabeli kevert Mac/PC monitorpark miatt
+kellettek.
+
+## K.3 Nézet → indexkép-felirat almenü (`ID_CAP*`)
+
+Mit írjon ki a Picasa az indexkép alá: **Nincs · Fájlnév · Képfelirat ·
+Felbontás · Címkék**. Nálunk ez ma fixen kötött.
+
+## K.4 Nézet → fanézet-változatok
+
+**Fanézet** · **Egyszerű mappanézet** · **Egyszerűsített fanézet** ·
+**Asztal**, Windowson még **Sajátgép · Dokumentumok · Képek** (gyors
+gyökérváltás). Ugyanez a hetes készlet a bal panel saját
+kontextusmenüjében is ott van (`AlbumList`).
+
+## K.5 Eszközök → szín-almenü (`ID_S_*`)
+
+**Piros · Narancssárga · Sárga · Zöld · Kék · Lila** — ez a `color:`
+keresőtokenek menüs megfelelője (ld. #383). Vagyis a szín szerinti szűrés
+nem csak beírható volt, hanem menüből is elérhető.
+
+## K.6 Eszközök — hiányzó tételek
+
+| magyar felirat | megjegyzés |
+|---|---|
+| **Útlevélkép…** | igazolványkép-elrendezés nyomtatáshoz — eddig sehol nem szerepelt |
+| Közzététel FTP-n keresztül… | a HTML-export FTP-feltöltéssel (#351 rokona) |
+| Keresési eredmények mentése… | a keresés eredménye **albumként** rögzítve |
+| Címke megjelenítése albumként… | egy címke virtuális albummá emelése |
+| Arcinformációk írása XMP-adatokba… | a `faces=` → XMP export kézi indítása (#26 rokona) |
+| Fájlok másodpéldányainak megjelenítése | duplikátum-kereső (nálunk #31 megvan) |
+| Geocímkézés a Google Earth programmal… / Geocímkék törlése | geotag be/ki |
+| Exportálás Google Earth-fájlba / Megtekintés a Google Earth programban… | KML-export (a `runtime/geotag.kml` sablon ehhez való) |
+| Üres online albumok törlése… · Csoportos feltöltés… · Feltöltéskezelő… · Feltöltés a YouTube webhelyre · Feltöltés közös szerkesztésű webalbumba · Névcímkék letöltése a Picasa Webalbumokból | webes műveletek — nálunk nem értelmezhetők |
+| Fotómegjelenítő beállítása… · Képernyővédő konfigurálása… · Gombok konfigurálása… | kiegészítő komponensek beállítása |
+
+## K.7 Szerkesztés — két igazi hiány
+
+| magyar felirat | miért fontos |
+|---|---|
+| **Az összes effektus másolása / beillesztése** | egy kép szerkesztési láncát (`filters=`) átmásolja másik képre — ez a Picasa egyik legerősebb, kevéssé ismert funkciója, és nálunk a `filters=` lánc már megvan hozzá |
+| Szöveg másolása / beillesztése | a rárakott szövegréteg átvitele |
+| Csillagozottak kijelölése | gyors kijelölés csillag alapján |
+
+## K.8 Fájl — hiányzó tételek
+
+Importálás a Picasa Webalbumokból… · Importálás az iPhoto alkalmazásból… ·
+**Másolat mentése** · **Mentés másként…**
+
+## K.9 További, panelhez kötött menük (a képernyőképeken nem látszottak)
+
+| osztály | mi ez | tételek |
+|---|---|---|
+| `SyncOpts` (15) | a **szinkronizálás/feltöltés legördülő menüje** | méret: 800 / 1024 / 1600 / 2048 / eredeti · láthatóság: Csak Ön / Korlátozott / Korlátozott, a link birtokában bárki / Nyilvános az interneten · Csak csillagozott képek · URL-cím másolása · Megtekintés online · Online album törlése · Szinkronizálás ki-/bekapcsolása · Online állapot frissítése |
+| `eMenuLabelFolder` (12) | a **Mappa/Album menü egyesített változata** | + **Diavetítés megtekintése** · **Indexképek nyomtatása…** · beépített rendezés-almenü |
+| `CollageS` (6) | jobbklikk **egy képen a kollázs-szerkesztőben** | Legfelülre / Legalulra helyezés · Beállítás háttérként · Beállítás képkockaközéppontként · Eltávolítás · Megjelenítés és szerkesztés |
+| `CollageD` (4) | jobbklikk a **kollázs-vásznon** | Képek összekeverése · Képek szétszórása · Az összes kijelölése / kijelölés megszüntetése |
+| `Border` (3) | kollázs-szegély választó | Egyik sem · Fehér szegély · Polaroid fényképezőgép |
+| `MMFilm` (3) | **filmkészítő filmszalag** menüje | Szöveges dia beszúrása · Eltávolítás · Megjelenítés és szerkesztés |
+| `Dev` (2) | **videó vágópontjai** | Mozgófilm kezdetének / végének beállítása — ezek írják a `moviestart=` / `movieend=` ini-kulcsokat |
+| `eMenuCreateMovie` (2) | film készítése | A kijelölésben lévő arcokból… · Az Emberek albumból… |
+| `BtnConf` (1) | jobbklikk a **gombsávon** | Gombok konfigurálása… (a `buttons/*.pbz` rendszer) |
+| `AcqDevList` (1) | importáló eszközlista | „Nincs rendelkezésre álló eszköz" |
+| `ImpULOpts` (5) | import/feltöltés opciók | méret-választás + „A kijelölt csoportok együttműködhetnek a fotókon" |
+| `Address` (7) | **szövegmező-kontextus** | Visszavonás · Kivágás · Másolás · Beillesztés · Törlés · Az összes kijelölése · Automatikus kitöltés |
+| `Slingshot` (8) | **Windows Intéző héj-menü** | Szerkesztés a Picasában · Másolás · E-mail · Blog · Nyomtatás · Keresés a lemezen · Gyors feltöltés · Képfeliratok megjelenítése |
+
+## K.10 Módszertan
+
+A hiánylista gépi összevetéssel készült: a bináris `eMenu*` osztályainak
+magyar feliratait vetettük össze e dokumentum szövegével. A 70 találat
+között lehet néhány álpozitív (eltérő szóhasználat) — a fenti szakaszokba
+csak azok kerültek, amelyeket kézzel is ellenőriztünk.
