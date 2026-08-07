@@ -19,6 +19,7 @@ FacesOverlay 1.0 FacesOverlay.qml
 SearchSuggestions 1.0 SearchSuggestions.qml
 SearchGroupHeader 1.0 SearchGroupHeader.qml
 PhotoContextMenu 1.0 PhotoContextMenu.qml
+ViewerContextMenu 1.0 ViewerContextMenu.qml
 VideoPlayerView 1.0 VideoPlayerView.qml
 SlideshowView 1.0 SlideshowView.qml
 TagsPanel 1.0 TagsPanel.qml

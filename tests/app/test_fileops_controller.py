@@ -1,6 +1,8 @@
 """FileOpsController: fájlműveletek (átnevezés/áthelyezés/lomtár/fájlkezelő,
 #15) QML-hídja — útvonal-alapú, az AppControllertől (forró fájl) független."""
 
+from pathlib import Path
+
 import pytest
 
 
@@ -133,6 +135,80 @@ class TestRevealPhoto:
         )
         controller.revealPhoto(str(tmp_path / "a.jpg"))
         assert failures[0][0] == "reveal"
+
+
+class TestOpenPhoto:
+    """#422: „Fájl megnyitása" a néző kontextusmenüjéből — a `revealPhoto`
+    párja: az a fájlkezelőt nyitja, ez a társított alkalmazást."""
+
+    def test_opens_the_file_itself_with_the_associated_app(
+        self, controller, tmp_path, monkeypatch
+    ):
+        opened = []
+        monkeypatch.setattr(
+            "picasapy.app.fileops_controller.QDesktopServices.openUrl",
+            lambda url: opened.append(url.toLocalFile()) or True,
+        )
+        photo = tmp_path / "a.jpg"
+        photo.write_bytes(b"\xff\xd8\xff\xe0" + b"0" * 50)
+        controller.openPhoto(str(photo))
+        # `QUrl.toLocalFile()` Windowson per-jeles utat ad (C:/…), a
+        # `str(Path)` viszont visszaperjeleset — a két alak ugyanaz a fájl,
+        # ezért Path-ként hasonlítunk (ld. formatting.to_local_path)
+        assert [Path(p) for p in opened] == [photo]
+
+    def test_emits_operation_failed_for_a_missing_file(self, controller, tmp_path):
+        failures = []
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.openPhoto(str(tmp_path / "nincs.jpg"))
+        assert failures[0][0] == "open"
+
+    def test_emits_operation_failed_when_the_desktop_refuses(
+        self, controller, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(
+            "picasapy.app.fileops_controller.QDesktopServices.openUrl",
+            lambda url: False,
+        )
+        photo = tmp_path / "a.jpg"
+        photo.write_bytes(b"\xff\xd8\xff\xe0" + b"0" * 50)
+        failures = []
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.openPhoto(str(photo))
+        assert failures[0][0] == "open"
+
+
+class TestCopyFullPath:
+    """#422: „Teljes elérési út másolása" — a vágólapra kerül a helyi út."""
+
+    def test_puts_the_local_path_on_the_clipboard(self, controller, tmp_path, qt_app):
+        from PySide6.QtGui import QGuiApplication
+
+        photo = tmp_path / "a.jpg"
+        controller.copyFullPath(str(photo))
+        clipboard = QGuiApplication.clipboard()
+        if clipboard is None:  # fej nélküli környezet — nincs mit ellenőrizni
+            return
+        assert clipboard.text() == str(photo)
+
+    def test_accepts_a_file_url_too(self, controller, tmp_path, qt_app):
+        """A QML `filePathAt` `file://` URL-t is adhat — a helyi útra
+        fordítás a `_to_local_path` dolga, ahogy a többi slotnál."""
+        from PySide6.QtGui import QGuiApplication
+
+        photo = tmp_path / "a.jpg"
+        controller.copyFullPath(photo.as_uri())
+        clipboard = QGuiApplication.clipboard()
+        if clipboard is None:
+            return
+        assert clipboard.text() == str(photo)
+
+    def test_empty_path_is_a_no_op(self, controller):
+        controller.copyFullPath("")  # nem dobhat
 
 
 class TestIniConflictReachesUser:

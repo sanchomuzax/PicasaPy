@@ -45,6 +45,10 @@ Rectangle {
     signal closed()
     // #8: a felső ▶ Lejátszás gomb — diavetítés az aktuális képtől
     signal playRequested()
+    // #422: a néző kontextusmenüjének „Törlés lemezről" tétele — a
+    // megerősítő dialógus a Main.qml-ben él (FileOpsDialogs), ezért a
+    // kérés jelként megy kifelé
+    signal deleteRequested(string path)
 
     // #192: a Tulajdonságok-panel a nézőben is — a könyvtár-nézet közös
     // kapcsolóját (Main.qml: window.propertiesPanelOpen) követi. A fő
@@ -1065,6 +1069,88 @@ Rectangle {
                         viewer.appWindow.propertiesPanelOpen = false
                 }
             }
+        }
+    }
+
+    // -- #422: jobbklikk-menü a nagy képen ---------------------------------
+    // A nézőben eddig egyáltalán nem volt kontextusmenü (a Picasa `OneUp`
+    // menüosztálya, 17 tétel — ld. ViewerContextMenu.qml). A parancsok a
+    // globális context property-ken (controller, fileOpsController) át
+    // futnak, a törlés dialógusa pedig jelként megy a Main.qml-nek — így a
+    // forró Main.qml csak egyetlen bekötést kap.
+
+    readonly property string currentPath: viewer.photosModel
+        && viewer.currentIndex >= 0
+        ? viewer.photosModel.filePathAt(viewer.currentIndex) : ""
+
+    function openContextMenu(x, y) { viewerMenu.popup(viewer, x, y) }
+
+    ViewerContextMenu {
+        id: viewerMenu
+        // a revision-nel együtt kötve, hogy a menü újranyitáskor friss
+        // rejtett-állapotot mutasson (a PhotoContextMenu mintája)
+        hidden: viewer.photosModel && viewer.currentIndex >= 0
+            ? (viewer.photosModel.revision,
+               viewer.photosModel.itemAt(viewer.currentIndex).hidden === true)
+            : false
+        // #305: null-őr — a controller a leépítéskor átmenetileg null lehet
+        albums: typeof controller !== "undefined" && controller
+            ? controller.albums : []
+
+        onBackToLibraryRequested: viewer.closed()
+        onAddToAlbumRequested: function(token) {
+            if (typeof controller !== "undefined" && controller)
+                controller.addRowsToAlbum([viewer.currentIndex], token)
+        }
+        onRotateRightRequested: {
+            if (typeof controller !== "undefined" && controller
+                && viewer.currentIndex >= 0)
+                controller.rotateRight(viewer.currentIndex)
+        }
+        onRotateLeftRequested: {
+            if (typeof controller !== "undefined" && controller
+                && viewer.currentIndex >= 0)
+                controller.rotateLeft(viewer.currentIndex)
+        }
+        onHideToggleRequested: {
+            if (typeof controller !== "undefined" && controller
+                && viewer.currentIndex >= 0)
+                controller.toggleHiddenRows([viewer.currentIndex])
+        }
+        onOpenFileRequested: {
+            if (typeof fileOpsController !== "undefined" && fileOpsController
+                && viewer.currentPath.length > 0)
+                fileOpsController.openPhoto(viewer.currentPath)
+        }
+        onLocateRequested: {
+            if (typeof fileOpsController !== "undefined" && fileOpsController
+                && viewer.currentPath.length > 0)
+                fileOpsController.revealPhoto(viewer.currentPath)
+        }
+        onCopyFullPathRequested: {
+            if (typeof fileOpsController !== "undefined" && fileOpsController
+                && viewer.currentPath.length > 0)
+                fileOpsController.copyFullPath(viewer.currentPath)
+        }
+        onDeleteRequested: {
+            if (viewer.currentPath.length > 0)
+                viewer.deleteRequested(viewer.currentPath)
+        }
+        onPropertiesRequested: {
+            if (viewer.appWindow
+                && viewer.appWindow.propertiesPanelOpen !== undefined)
+                viewer.appWindow.propertiesPanelOpen =
+                    !viewer.appWindow.propertiesPanelOpen
+        }
+    }
+
+    // jobbklikk BÁRHOL a nézőn — a Picasában a nagy kép és a körülötte lévő
+    // szürke háttér is ugyanezt a menüt nyitja
+    TapHandler {
+        acceptedButtons: Qt.RightButton
+        gesturePolicy: TapHandler.ReleaseWithinBounds
+        onSingleTapped: function(point) {
+            viewer.openContextMenu(point.position.x, point.position.y)
         }
     }
 }

@@ -3327,4 +3327,79 @@
         <translation>Még nincsenek képek</translation>
     </message>
 </context>
+<context>
+    <name>ViewerContextMenu</name>
+    <message>
+        <source>Back to Library</source>
+        <translation>Visszatérés a könyvtárhoz</translation>
+    </message>
+    <message>
+        <source>Add to Album</source>
+        <translation>Hozzáadás az albumhoz</translation>
+    </message>
+    <message>
+        <source>Rotate Right</source>
+        <translation>Forgatás jobbra</translation>
+    </message>
+    <message>
+        <source>Rotate Left</source>
+        <translation>Forgatás balra</translation>
+    </message>
+    <message>
+        <source>Undo All Edits</source>
+        <translation>Összes szerkesztés visszavonása</translation>
+    </message>
+    <message>
+        <source>Hide</source>
+        <translation>Elrejtés</translation>
+    </message>
+    <message>
+        <source>Unhide</source>
+        <translation>Megjelenítés</translation>
+    </message>
+    <message>
+        <source>Open File</source>
+        <translation>Fájl megnyitása</translation>
+    </message>
+    <message>
+        <source>Open With</source>
+        <translation>Társítás</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation>Mentés</translation>
+    </message>
+    <message>
+        <source>Revert</source>
+        <translation>Visszaállítás</translation>
+    </message>
+    <message>
+        <source>Locate on Disk</source>
+        <translation>Keresés a lemezen</translation>
+    </message>
+    <message>
+        <source>Delete from Disk</source>
+        <translation>Törlés lemezről</translation>
+    </message>
+    <message>
+        <source>Copy Full Path</source>
+        <translation>Teljes elérési út másolása</translation>
+    </message>
+    <message>
+        <source>Quick Upload</source>
+        <translation>Gyors feltöltés</translation>
+    </message>
+    <message>
+        <source>Block Upload</source>
+        <translation>Feltöltés tiltása</translation>
+    </message>
+    <message>
+        <source>Reset Faces</source>
+        <translation>Arcok alaphelyzetbe állítása</translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation>Tulajdonságok</translation>
+    </message>
+</context>
 </TS>

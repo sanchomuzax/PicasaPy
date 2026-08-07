@@ -434,6 +434,9 @@ ApplicationWindow {
             Qt.callLater(grid.applyRevealAfterViewer)
         }
         onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
+        // #422: a néző kontextusmenüjének „Törlés lemezről" tétele — a
+        // megerősítő dialógus itt él (a menü maga a PhotoViewer-ben)
+        onDeleteRequested: function(path) { fileOpsDialogs.openDelete([path]) }
     }
 
     // #24: Időrend nézet (Ctrl+5) — a teljes könyvtár korszak-áttekintése;
