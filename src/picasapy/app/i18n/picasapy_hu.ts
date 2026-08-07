@@ -3631,4 +3631,66 @@
         <translation>Kijelölés eltávolítása</translation>
     </message>
 </context>
+<context>
+    <name>AlbumContextMenu</name>
+    <message>
+        <source>Delete Album</source>
+        <translation>Album törlése</translation>
+    </message>
+    <message>
+        <source>Edit Album Description...</source>
+        <translation>Albumleírás szerkesztése…</translation>
+    </message>
+    <message>
+        <source>Add Name Tags</source>
+        <translation>Névcímkék hozzáadása</translation>
+    </message>
+    <message>
+        <source>Select All Pictures</source>
+        <translation>Az összes kép kijelölése</translation>
+    </message>
+    <message>
+        <source>Clear Selection</source>
+        <translation>Kijelölés törlése</translation>
+    </message>
+    <message>
+        <source>Invert Selection</source>
+        <translation>Kiválasztás megfordítása</translation>
+    </message>
+    <message>
+        <source>Refresh Thumbnails</source>
+        <translation>Indexképek frissítése</translation>
+    </message>
+    <message>
+        <source>Online Actions</source>
+        <translation>Online műveletek</translation>
+    </message>
+    <message>
+        <source>Upload to Google Photos...</source>
+        <translation>Feltöltés a Google Fotókba…</translation>
+    </message>
+    <message>
+        <source>Export as HTML Page...</source>
+        <translation>Exportálás HTML-oldalként…</translation>
+    </message>
+</context>
+<context>
+    <name>PeopleAlbumContextMenu</name>
+    <message>
+        <source>Delete People Album</source>
+        <translation>Az Emberek album törlése</translation>
+    </message>
+    <message>
+        <source>Edit People Album...</source>
+        <translation>Az Emberek album szerkesztése…</translation>
+    </message>
+    <message>
+        <source>Select All</source>
+        <translation>Az összes kijelölése</translation>
+    </message>
+    <message>
+        <source>Clear Selection</source>
+        <translation>Kijelölés törlése</translation>
+    </message>
+</context>
 </TS>
