@@ -5,6 +5,27 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.20] – 2026-08-07
+
+### Hozzáadva
+- **Mappa jobbklikk-menüje: 2 helyett 15 parancs (#422):** kijelölés-
+  parancsok, indexképek frissítése, a mappa rendezésének alapja, keresés a
+  lemezen, eltávolítás a Picasából (megerősítéssel) és HTML-export. A menü
+  mostantól — az eredetihez hűen — **három helyről** nyílik ugyanazzal a
+  tartalommal: a bal panel mappa-sorából, a rács üres területéről és a rács
+  mappa-fejlécéből.
+- **„Mappaleírás szerkesztése…" ablak:** az eredeti Picasa mezősorával
+  (név, dátum + automatikus dátum, zene, a felvétel helye, leírás).
+
+### Megváltozott
+- **A mappa dátuma a helyére került (#422):** eddig külön menüpont volt a
+  mappa jobbklikk-menüjében, az eredetiben viszont a „Mappaleírás
+  szerkesztése…" ablakban van. A funkció nem veszett el, csak oda költözött,
+  ahol a Picasában is található.
+
+### Javítva
+- Két megerősítő ablak együtt már nem zavarja egymást.
+
 ## [0.6.19] – 2026-08-07
 
 ### Hozzáadva
