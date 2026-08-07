@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.21] – 2026-08-07
+
+### Hozzáadva
+- **Indexkép jobbklikk-menüje: 7 helyett 19 parancs (#422):** megjelenítés
+  és szerkesztés (félkövéren, mint a duplakattintás művelete), forgatás
+  mindkét irányba a teljes kijelölésre, fájl megnyitása, teljes elérési út
+  másolása és tulajdonságok. A még nem működő parancsok — az eredetihez
+  hűen — szürkén láthatók maradnak.
+- **Törlés-gyorsbillentyű az eredeti szerint:** a rácsban `Ctrl+Delete`, a
+  nézőben sima `Delete` törli a lemezről; a kettő kizárja egymást.
+
+### Megváltozott
+- **Az „Átnevezés…" a helyére került (#422):** kikerült a rács jobbklikk-
+  menüjéből, mert az eredetiben a Fájl menüben van — ott (és `F2`-vel)
+  változatlanul elérhető.
+- **Elrejtés/Megjelenítés (#422):** a menüpont mostantól feliratot vált
+  pipa helyett, ahogy az eredeti.
+
 ## [0.6.20] – 2026-08-07
 
 ### Hozzáadva
