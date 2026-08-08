@@ -479,6 +479,51 @@ A fájl **szó szerint ActionScript 3 osztálykonstansokat** használ:
 `flash.display.BlendMode`). Ez zárja le a `quality` kérdését: **az elmosás
 átfutásainak száma**, és a Glimmer-effektekben végig 3.
 
+### 4.6 A natív motor többet tud, mint amit a fájl használ
+
+A `Picasa3.exe` MSVC-RTTI nevei **69 `glimmer::` osztályt** őriznek, ebből
+**32 nem szerepel a `filterdesc.xml`-ben**. Ez azt jelenti, hogy a fájl a
+motornak csak egy részhalmazát szólítja meg.
+
+**A végrehajtási modell: verem-alapú utasításlista.** A deklaratív XML-t a
+motor `glimmer::EffectParser`-rel utasításokra fordítja:
+
+> `OpInstruction`, `ApplyInstruction`, `BlendInstruction`, `MaskInstruction`,
+> `PartialMaskInstruction`, `MaskWithSourceAlphaInstruction`,
+> `DupeInstruction`, `PopInstruction`, `SetVarInstruction`,
+> `GetVarInstruction`, `ClearVarInstruction`, `NamedVarInstruction`,
+> `ReExecutingInstruction`
+
+A `Dupe`/`Pop` pár elárulja, hogy **verem** van mögötte: a 4.5-ben leírt
+`NestedImageOperation` valójában `Dupe → (gyerekek) → Blend → Pop`-ra fordul,
+a `SetVar`/`GetVar` pedig a verem melletti nevesített regiszterekre. A
+`ReExecutingInstruction` a csúszkamozgatás közbeni újraszámolás
+(`dynamic*CachePriority` attribútumok) végrehajtója.
+
+**Képi műveletek, amikre a `filterdesc.xml` nem hivatkozik:**
+
+| osztály | mire utal |
+|---|---|
+| `ShaderImageOperation` | programozható shader-lépés a láncban |
+| `SharpenImageOperation` | a natív élesítés (`unsharp`) |
+| `ExposureImageOperation` | expozíció (a `finetune` „fill light" családja) |
+| `PaletteMapImageOperation` | paletta-leképezés |
+| `EdgeDetectionSobelImageOperation` | Sobel (a fájl csak az `EdgeDetectionB`-t hívja) |
+| `BlendImageOperation` | önálló keverő-lépés |
+| `PaintMaskPlusImageMask` | **festett** maszk (ecsettel) |
+| `ShapeGradientImageMask` | nem körkörös, alakzat-alapú színátmenetes maszk |
+
+A festett maszkhoz tartozó vezérlők is megvannak (`BrushSizeSlider`,
+`CircularBrush`), valamint két, a fájlban nem használt vezérlőtípus
+(`RadioButton`, `StaticRangeSlider`). Ezek a `mode="paint"` szűrőket
+(`PicnikTint`, `Soften` — `cnt:PaintEffectCanvas`) szolgálják ki: ott a
+felhasználó **ecsettel jelöli ki**, hol hasson az effekt.
+
+> **Figyelem:** a `ShaderImageOperation` léte önmagában nem bizonyítja, hogy a
+> Picasa GPU-t használt az effektekhez — a binárisban **nincs** `ps_*`/`vs_*`
+> shader-bájtkód vagy `d3dx`/`glsl` nyom (keresve: 0 találat). Az osztály
+> létezik, a használatára nincs bizonyíték.
+
 ## 5. Következmények a PicasaPy-ra
 
 1. A `.picasa.ini` **paraméter-validáció** most már tartomány-alapú lehet
