@@ -658,6 +658,87 @@ class TestRetouchTool:
         assert applied == [True]
         assert cancelled == [True]
 
+    def test_refining_label_visible_only_while_patch_pending(
+        self, qml_engine, qt_app
+    ):
+        """#445: a "Refining…" felirat a félbehagyott folt (cél kijelölve,
+        forrás mozgatás alatt) ideje alatt látszik."""
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("retouchActive", True)
+        qt_app.processEvents()
+        label = panel.findChild(QObject, "retouchRefiningLabel")
+        assert label.property("visible") is False
+        panel.setProperty("retouchPatchPending", True)
+        qt_app.processEvents()
+        assert label.property("visible") is True
+
+    def test_undo_redo_patch_buttons_gated_by_availability(
+        self, qml_engine, qt_app
+    ):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("retouchActive", True)
+        qt_app.processEvents()
+        undo_button = panel.findChild(QObject, "retouchUndoPatchButton")
+        redo_button = panel.findChild(QObject, "retouchRedoPatchButton")
+        assert undo_button.property("enabled") is False
+        assert redo_button.property("enabled") is False
+        panel.setProperty("canUndoPatch", True)
+        panel.setProperty("canRedoPatch", True)
+        qt_app.processEvents()
+        assert undo_button.property("enabled") is True
+        assert redo_button.property("enabled") is True
+
+    def test_undo_redo_reset_buttons_emit_signals(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("retouchActive", True)
+        panel.setProperty("canUndoPatch", True)
+        panel.setProperty("canRedoPatch", True)
+        panel.setProperty("retouchRegionCount", 1)
+        qt_app.processEvents()
+        undone, redone, reset = [], [], []
+        panel.retouchUndoPatchRequested.connect(lambda: undone.append(True))
+        panel.retouchRedoPatchRequested.connect(lambda: redone.append(True))
+        panel.retouchResetRequested.connect(lambda: reset.append(True))
+        QMetaObject.invokeMethod(
+            panel.findChild(QObject, "retouchUndoPatchButton"),
+            "buttonClicked", Qt.ConnectionType.DirectConnection,
+        )
+        QMetaObject.invokeMethod(
+            panel.findChild(QObject, "retouchRedoPatchButton"),
+            "buttonClicked", Qt.ConnectionType.DirectConnection,
+        )
+        QMetaObject.invokeMethod(
+            panel.findChild(QObject, "retouchResetButton"),
+            "buttonClicked", Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+        assert undone == [True]
+        assert redone == [True]
+        assert reset == [True]
+
+    def test_brush_size_slider_reflects_property_and_emits_edited(
+        self, qml_engine, qt_app
+    ):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("retouchActive", True)
+        panel.setProperty("brushSize", 42)
+        qt_app.processEvents()
+        slider = panel.findChild(QObject, "retouchBrushSizeSlider")
+        assert slider is not None
+        assert slider.property("from") == 1
+        assert slider.property("to") == 100
+        assert slider.property("value") == 42
+        edited = []
+        panel.brushSizeEdited.connect(lambda value: edited.append(value))
+        slider.setProperty("value", 77)
+        QMetaObject.invokeMethod(slider, "moved", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert edited == [77]
+
 
 class TestTextTool:
     """#148: a Szöveg-eszköz Vágás-mintájú mód-panelja."""

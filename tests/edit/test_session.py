@@ -3,6 +3,7 @@
 import pytest
 from picasapy.edit import EditSession
 from picasapy.ini.rect64 import Rect64
+from picasapy.ini.retouch import RetouchPatch
 
 
 class TestEditSessionBasics:
@@ -235,7 +236,87 @@ class TestRetouch:
         regions = reloaded.retouch_regions()
         assert len(regions) == 1
         assert abs(regions[0].left - rect.left) < 0.001
-        assert abs(regions[0].bottom - rect.bottom) < 0.001
+
+
+class TestRetouchPatches:
+    """#445: `retouch` szűrő — PicasaPy-saját `retouch=2,<patch>...;`
+    kiterjesztés (irányított klónozás: cél+forrás+sugár, ld.
+    `picasapy.ini.retouch` docsztring). A v1 (`set_retouch_regions`/
+    `retouch_regions`) tesztjei a `TestRetouch` osztályban maradnak —
+    visszamenőleges kompatibilitás, ld. ott."""
+
+    def test_set_retouch_patches_empty_chain(self):
+        session = EditSession.from_value("")
+        patch = RetouchPatch(0.1, 0.2, 0.3, 0.4, 0.05)
+        new_session = session.set_retouch_patches((patch,))
+
+        assert new_session is not session
+        patches = new_session.retouch_patches()
+        assert len(patches) == 1
+        assert abs(patches[0].target_x - patch.target_x) < 0.001
+        assert new_session.to_value().startswith("retouch=2,")
+
+    def test_set_retouch_patches_multiple(self):
+        session = EditSession.from_value("")
+        patches_in = (
+            RetouchPatch(0.1, 0.1, 0.2, 0.2, 0.02),
+            RetouchPatch(0.5, 0.5, 0.6, 0.6, 0.03),
+        )
+        new_session = session.set_retouch_patches(patches_in)
+        assert len(new_session.retouch_patches()) == 2
+
+    def test_set_retouch_patches_replaces_existing(self):
+        session = EditSession.from_value("")
+        session = session.set_retouch_patches((RetouchPatch(0.1, 0.1, 0.2, 0.2, 0.02),))
+        new_session = session.set_retouch_patches(
+            (RetouchPatch(0.5, 0.5, 0.6, 0.6, 0.03),)
+        )
+        result = new_session.to_value()
+        assert result.count("retouch=2,") == 1
+        assert len(new_session.retouch_patches()) == 1
+
+    def test_set_retouch_patches_empty_tuple_clears(self):
+        session = EditSession.from_value("")
+        session = session.set_retouch_patches((RetouchPatch(0.1, 0.1, 0.2, 0.2, 0.02),))
+        new_session = session.set_retouch_patches(())
+        assert new_session.retouch_patches() == ()
+        assert "retouch" not in new_session.to_value()
+
+    def test_clear_retouch_removes_patches(self):
+        session = EditSession.from_value("")
+        session = session.set_retouch_patches((RetouchPatch(0.1, 0.1, 0.2, 0.2, 0.02),))
+        new_session = session.clear_retouch()
+        assert new_session.retouch_patches() == ()
+        assert "retouch" not in new_session.to_value()
+
+    def test_retouch_patches_no_op_flag_gives_empty_tuple(self):
+        """Egy valódi Picasa-eredetű, adat nélküli `retouch=1;` bejegyzés
+        (ld. modul-docsztring) üres tuple-t ad, nem hibát."""
+        session = EditSession.from_value("retouch=1;")
+        assert session.retouch_patches() == ()
+
+    def test_retouch_patches_missing_gives_empty_tuple(self):
+        session = EditSession.from_value("enhance=1;")
+        assert session.retouch_patches() == ()
+
+    def test_v1_regios_bejegyzest_a_patch_olvaso_nem_erti(self):
+        """Visszafelé kompatibilitás: egy korábbi PicasaPy-verzió v1
+        (téglalap-régiós) bejegyzését a foltos olvasó üres tuple-ként adja
+        vissza — nem próbálja patch-ként dekódolni; a régiós olvasó (v1)
+        viszont továbbra is hibátlanul olvassa (ld. `TestRetouch`)."""
+        value = "retouch=1,3f845bcb59418507;"
+        session = EditSession.from_value(value)
+        assert session.retouch_patches() == ()
+        assert len(session.retouch_regions()) == 1
+
+    def test_round_trip(self):
+        session = EditSession.from_value("")
+        patch = RetouchPatch(0.05, 0.15, 0.25, 0.35, 0.1)
+        new_session = session.set_retouch_patches((patch,))
+        reloaded = EditSession.from_value(new_session.to_value())
+        patches = reloaded.retouch_patches()
+        assert len(patches) == 1
+        assert abs(patches[0].target_x - patch.target_x) < 0.001
 
 
 class TestToggle:

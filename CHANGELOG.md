@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.36] – 2026-08-08
+
+### Módosítva
+- **Retusálás az eredeti munkamenete szerint (#445, első lépcső):** a
+  foltozás eddig egyetlen kattintással, fix méretű négyzetes területen
+  dolgozott. Az eredeti Picasában ez **irányított klónozás** volt: az első
+  kattintás kijelöli a javítandó foltot, az egeret mozgatva **élőben
+  látszik, mivel fogja pótolni**, a második kattintás pedig véglegesíti.
+  Mostantól nálunk is így működik, **kör alakú, állítható méretű ecsettel**
+  („Brush Size"), és a foltok **egyenként visszavonhatók** („Undo Patch" /
+  „Redo Patch" / „Reset").
+- A mentési formátum foltonként rögzíti a cél-pontot, a forrás-pontot és a
+  sugarat. A korábbi, téglalapos alakkal mentett szerkesztések továbbra is
+  betölthetők és megjelennek — nem vesznek el.
+
 ## [0.6.35] – 2026-08-08
 
 ### Hozzáadva

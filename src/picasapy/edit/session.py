@@ -9,7 +9,10 @@ from picasapy.ini.filters import FilterOp, parse_filters, serialize_filters
 from picasapy.ini.rect64 import Rect64, decode_rect64, encode_rect64
 from picasapy.ini.retouch import (
     RETOUCH_FILTER_NAME,
+    RetouchPatch,
     build_retouch_op,
+    build_retouch_patches_op,
+    parse_retouch_patches,
     parse_retouch_regions,
 )
 
@@ -380,24 +383,68 @@ class EditSession:
         )
 
     def clear_retouch(self) -> EditSession:
-        """A retusálási réteg eltávolítása."""
+        """A retusálási réteg eltávolítása (v1 régió- és v2 folt-alak is)."""
         new_ops = [op for op in self.ops if not op.matches(RETOUCH_FILTER_NAME)]
         return EditSession(ops=tuple(new_ops))
 
     def retouch_regions(self) -> tuple[Rect64, ...]:
-        """A jelenlegi retusálási régiók.
+        """A jelenlegi, v1 (téglalap-régiós, #148) retusálási régiók.
 
+        Csak visszamenőleges olvasáshoz (ld. `picasapy.ini.retouch`
+        docsztring) — a szerkesztő UI a `retouch_patches()`-t használja.
         Hibás/érvénytelen rect64-nél is üres tuple-t ad (nem dob) — a
         `crop()`/`tilt_param()` #301-mintáját követve idegen/sérült lánc
         olvasása se szökjön ki kivétellel.
 
         Returns:
-            A dekódolt régiók, vagy üres tuple ha nincs (érvényes) retouch.
+            A dekódolt régiók, vagy üres tuple ha nincs (érvényes) v1 retouch.
         """
         for op in self.ops:
             if op.matches(RETOUCH_FILTER_NAME):
                 try:
                     return parse_retouch_regions(op)
+                except ValueError:
+                    return ()
+        return ()
+
+    def set_retouch_patches(self, patches: tuple[RetouchPatch, ...]) -> EditSession:
+        """A retusálási FOLTOK (#445, PicasaPy-saját `retouch=2,<patch>...;`
+        kiterjesztés, ld. `picasapy.ini.retouch`) beállítása/cseréje — a
+        crop64/tilt mintájára legfeljebb egy `retouch` réteg lehet a láncban
+        (a v1 régiós alakot is ez váltja le, ha lenne).
+
+        Üres `patches`-nél egyenértékű a `clear_retouch()`-csal.
+
+        Args:
+            patches: A retusálandó relatív [0..1] foltok (cél+forrás+sugár).
+
+        Returns:
+            Új EditSession.
+        """
+        if not patches:
+            return self.clear_retouch()
+        new_op = build_retouch_patches_op(patches)
+        return self._with_single_layer(
+            lambda op: op.matches(RETOUCH_FILTER_NAME), new_op
+        )
+
+    def retouch_patches(self) -> tuple[RetouchPatch, ...]:
+        """A jelenlegi, v2 (folt-alapú, #445) retusálási foltok.
+
+        Egy v1 (téglalap-régiós) vagy valódi Picasa-eredetű, adat nélküli
+        `retouch=1;` bejegyzésnél üres tuple-t ad — ezeket a szerkesztő UI
+        nem tudja folt-alakban megjeleníteni (ld. `picasapy.ini.retouch`
+        docsztring), de a render-lánc továbbra is alkalmazza őket (a
+        `retouch_regions()`-on át). Hibás/érvénytelen kódolásnál is üres
+        tuple-t ad (nem dob), a #301-elv szerint.
+
+        Returns:
+            A dekódolt foltok, vagy üres tuple ha nincs (érvényes) v2 retouch.
+        """
+        for op in self.ops:
+            if op.matches(RETOUCH_FILTER_NAME):
+                try:
+                    return parse_retouch_patches(op)
                 except ValueError:
                     return ()
         return ()

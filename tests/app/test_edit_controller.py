@@ -789,49 +789,97 @@ class TestHistogramAndCameraSummary:
 
 
 class TestRetouchTool:
-    """#148: a Vágás mintáját követő enter/exit + Alkalmaz/Mégse eszköz."""
+    """#445: a Vágás mintáját követő enter/exit + Alkalmaz/Mégse eszköz, DE
+    a foltok maguk a Picasa súgószövege szerinti kétkattintásos, irányított
+    klónozással jönnek létre (cél → forrás-előnézet → véglegesítés)."""
 
-    def test_preview_region_does_not_write_ini(self, controller, photo):
+    def test_begin_patch_does_not_write_ini(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRetouchTool()
-        controller.previewRetouchRegion(0.5, 0.5)
+        controller.beginRetouchPatch(0.5, 0.5)
         ini = photo.parent / ".picasa.ini"
         assert not ini.exists() or "retouch" not in ini.read_text(encoding="utf-8")
-        assert controller.retouchPendingCount == 1
+        assert controller.retouchPendingCount == 0
+        assert controller.retouchPatchPending is True
 
-    def test_apply_writes_retouch_chain_with_rect64(self, controller, photo):
+    def test_preview_source_does_not_write_ini_or_commit(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRetouchTool()
-        controller.previewRetouchRegion(0.5, 0.5)
+        controller.beginRetouchPatch(0.5, 0.5)
+        controller.previewRetouchSource(0.2, 0.2)
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists() or "retouch" not in ini.read_text(encoding="utf-8")
+        assert controller.retouchPendingCount == 0
+        assert controller.retouchPatchPending is True
+
+    def test_preview_source_without_target_is_noop(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.previewRetouchSource(0.2, 0.2)
+        assert controller.retouchPendingCount == 0
+        assert controller.retouchPatchPending is False
+
+    def test_commit_finalizes_patch_in_buffer(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.beginRetouchPatch(0.5, 0.5)
+        controller.previewRetouchSource(0.2, 0.2)
+        controller.commitRetouchPatch(0.2, 0.2)
+        assert controller.retouchPendingCount == 1
+        assert controller.retouchPatchPending is False
+
+    def test_commit_without_target_is_noop(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.commitRetouchPatch(0.2, 0.2)
+        assert controller.retouchPendingCount == 0
+
+    def test_cancel_patch_discards_target_only(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.beginRetouchPatch(0.5, 0.5)
+        controller.previewRetouchSource(0.2, 0.2)
+        controller.commitRetouchPatch(0.2, 0.2)
+        controller.beginRetouchPatch(0.6, 0.6)
+        controller.cancelRetouchPatch()
+        assert controller.retouchPatchPending is False
+        assert controller.retouchPendingCount == 1  # a korábban véglegesített folt marad
+
+    def test_apply_writes_retouch_chain_v2(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.beginRetouchPatch(0.5, 0.5)
+        controller.commitRetouchPatch(0.2, 0.2)
         controller.applyRetouch()
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
-        assert "filters=retouch=1," in ini_text
+        assert "filters=retouch=2," in ini_text
         assert controller.retouchPendingCount == 0
         assert controller.hasRetouch is True
 
-    def test_multiple_clicks_accumulate_regions(self, controller, photo):
+    def test_multiple_commits_accumulate_patches(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRetouchTool()
-        controller.previewRetouchRegion(0.2, 0.2)
-        controller.previewRetouchRegion(0.8, 0.8)
+        controller.beginRetouchPatch(0.2, 0.2)
+        controller.commitRetouchPatch(0.3, 0.3)
+        controller.beginRetouchPatch(0.8, 0.8)
+        controller.commitRetouchPatch(0.7, 0.7)
         assert controller.retouchPendingCount == 2
         controller.applyRetouch()
         from picasapy.ini import load_document
-        from picasapy.ini.retouch import parse_retouch_regions
+        from picasapy.ini.retouch import parse_retouch_patches
         from picasapy.ini.filters import parse_filters
 
-        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         document = load_document(photo.parent / ".picasa.ini")
         value = document.section("IMG_0001.jpg").get("filters")
         ops = parse_filters(value)
-        regions = parse_retouch_regions(next(op for op in ops if op.matches("retouch")))
-        assert len(regions) == 2
-        assert ini_text  # sanity: fájl nem üres
+        patches = parse_retouch_patches(next(op for op in ops if op.matches("retouch")))
+        assert len(patches) == 2
 
     def test_exit_without_apply_discards_pending(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRetouchTool()
-        controller.previewRetouchRegion(0.5, 0.5)
+        controller.beginRetouchPatch(0.5, 0.5)
+        controller.commitRetouchPatch(0.2, 0.2)
         controller.exitRetouchTool()
         assert controller.retouchPendingCount == 0
         ini = photo.parent / ".picasa.ini"
@@ -844,12 +892,13 @@ class TestRetouchTool:
         ini = photo.parent / ".picasa.ini"
         assert not ini.exists()
 
-    def test_enter_retouch_tool_seeds_pending_from_saved_regions(
+    def test_enter_retouch_tool_seeds_pending_from_saved_patches(
         self, controller, photo
     ):
         controller.beginEdit("1", str(photo))
         controller.enterRetouchTool()
-        controller.previewRetouchRegion(0.3, 0.3)
+        controller.beginRetouchPatch(0.3, 0.3)
+        controller.commitRetouchPatch(0.4, 0.4)
         controller.applyRetouch()
         controller.exitRetouchTool()
         controller.enterRetouchTool()
@@ -858,12 +907,118 @@ class TestRetouchTool:
     def test_undo_removes_applied_retouch(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.enterRetouchTool()
-        controller.previewRetouchRegion(0.5, 0.5)
+        controller.beginRetouchPatch(0.5, 0.5)
+        controller.commitRetouchPatch(0.2, 0.2)
         controller.applyRetouch()
         controller.undo()
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
         assert "retouch" not in ini_text
         assert controller.hasRetouch is False
+
+
+class TestRetouchPatchUndoRedo:
+    """#445: patch-enkénti Undo/Redo/Reset — a retusálás PUFFERÉN dolgozik,
+    NEM a globális Visszavonás-verem (ld. `EditController.undoPatch`
+    docsztringje)."""
+
+    def _commit_patch(self, controller, target, source):
+        controller.beginRetouchPatch(*target)
+        controller.commitRetouchPatch(*source)
+
+    def test_can_undo_patch_false_initially(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        assert controller.canUndoPatch is False
+        assert controller.canRedoPatch is False
+
+    def test_undo_patch_removes_last_commit(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        self._commit_patch(controller, (0.2, 0.2), (0.3, 0.3))
+        self._commit_patch(controller, (0.6, 0.6), (0.7, 0.7))
+        assert controller.retouchPendingCount == 2
+        controller.undoPatch()
+        assert controller.retouchPendingCount == 1
+        assert controller.canUndoPatch is True
+        assert controller.canRedoPatch is True
+
+    def test_redo_patch_restores_undone_commit(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        self._commit_patch(controller, (0.2, 0.2), (0.3, 0.3))
+        controller.undoPatch()
+        assert controller.retouchPendingCount == 0
+        controller.redoPatch()
+        assert controller.retouchPendingCount == 1
+        assert controller.canRedoPatch is False
+
+    def test_new_commit_clears_redo_stack(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        self._commit_patch(controller, (0.2, 0.2), (0.3, 0.3))
+        controller.undoPatch()
+        self._commit_patch(controller, (0.5, 0.5), (0.4, 0.4))
+        assert controller.canRedoPatch is False
+
+    def test_undo_patch_without_history_is_noop(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.undoPatch()  # nem dobhat
+        assert controller.retouchPendingCount == 0
+
+    def test_reset_patches_clears_buffer_with_undo_step(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        self._commit_patch(controller, (0.2, 0.2), (0.3, 0.3))
+        self._commit_patch(controller, (0.6, 0.6), (0.7, 0.7))
+        controller.resetPatches()
+        assert controller.retouchPendingCount == 0
+        assert controller.canUndoPatch is True
+        controller.undoPatch()
+        assert controller.retouchPendingCount == 2
+
+    def test_reset_patches_discards_half_made_patch(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.beginRetouchPatch(0.5, 0.5)
+        controller.resetPatches()
+        assert controller.retouchPatchPending is False
+
+    def test_reset_patches_empty_buffer_is_noop(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRetouchTool()
+        controller.resetPatches()
+        assert controller.canUndoPatch is False
+
+
+class TestRetouchBrushSize:
+    """#445: kör alakú ecset, állítható mérettel — csúszka [1..100]."""
+
+    def test_default_brush_size(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        assert 1 <= controller.brushSize <= 100
+
+    def test_set_brush_size_updates_property(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setBrushSize(50)
+        assert controller.brushSize == 50
+
+    def test_set_brush_size_clamped_to_upper_bound(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setBrushSize(500)
+        assert controller.brushSize == 100
+
+    def test_set_brush_size_clamped_to_lower_bound(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setBrushSize(-5)
+        assert controller.brushSize == 1
+
+    def test_brush_size_resets_on_begin_edit(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setBrushSize(99)
+        controller.endEdit()
+        controller.beginEdit("1", str(photo))
+        assert controller.brushSize != 99
 
 
 class TestTextTool:

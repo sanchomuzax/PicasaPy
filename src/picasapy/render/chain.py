@@ -14,7 +14,7 @@ import numpy as np
 
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import decode_rect64
-from picasapy.ini.retouch import parse_retouch_regions
+from picasapy.ini.retouch import parse_retouch_patches, parse_retouch_regions
 from picasapy.render.color import (
     apply_bw,
     apply_grain,
@@ -42,7 +42,7 @@ from picasapy.render.ops import (
 )
 from picasapy.render.chain_report import ChainReport, validate_and_clamp_op
 from picasapy.render.registry import FILTER_REGISTRY, chain_flags
-from picasapy.render.retouch import apply_retouch
+from picasapy.render.retouch import apply_retouch, apply_retouch_patches
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
 from picasapy.render.tinting import (
     apply_ansel,
@@ -333,8 +333,16 @@ def _apply_comicize_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def _apply_retouch_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    """`retouch=1[,rect64...];` — a régiók PicasaPy-saját kiterjesztéssel
-    érkeznek (ld. `picasapy.ini.retouch` docsztring); régió nélkül no-op."""
+    """`retouch=1[,rect64...];` (v1) vagy `retouch=2[,patch...];` (v2, #445)
+    — mindkét adat-alak PicasaPy-saját kiterjesztés (ld.
+    `picasapy.ini.retouch` docsztring); adat nélkül no-op.
+
+    A két alak kölcsönösen kizárja egymást a verzió-jelző (`params[0]`)
+    alapján, ezért elég mindkét parsert megpróbálni és az eredményt
+    összefésülni — pontosan az egyik ad nem-üres eredményt."""
+    patches = parse_retouch_patches(op)
+    if patches:
+        return apply_retouch_patches(image, patches)
     regions = parse_retouch_regions(op)
     return apply_retouch(image, regions)
 
