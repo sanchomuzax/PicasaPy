@@ -19,6 +19,7 @@ from pathlib import Path
 from picasapy.ini import IniDocument, load_document, read_folder_date_override
 from picasapy.ini.albums import albums_of, parse_album_refs
 from picasapy.metadata import EMPTY_METADATA, read_file_metadata
+from picasapy.paths import normalize_path
 from picasapy.scanner import (
     PICASA_INI_NAME,
     FolderScan,
@@ -110,7 +111,7 @@ def sync_tree(
     „látott" halmaz érvényes mappákat törölne; a már commitolt mappák
     megmaradnak (konzisztens, folytatható állapot).
     """
-    root_path = Path(root).resolve()
+    root_path = Path(normalize_path(root))
     _ensure_scan_state(conn)
     skip = _make_skip(conn) if incremental else None
     # #358: az `excluded_names` a #349 NÉV-kizárólista miatt kihagyott
@@ -197,14 +198,14 @@ def sync_folder(
     az egyetlen mappa maga a „mappa-határ"."""
     if should_stop is not None and should_stop():
         return  # megszakítva még a scan előtt — az index érintetlen
-    root_path = Path(root).resolve()
-    folder_path = Path(folder).resolve()
+    root_path = Path(normalize_path(root))
+    folder_path = Path(normalize_path(folder))
     if not folder_path.is_relative_to(root_path):
         raise ValueError(
             f"A mappa nem a figyelt gyökér alatt van: {folder_path} ∉ {root_path}"
         )
     _ensure_scan_state(conn)
-    exclude_paths = tuple(Path(item).resolve() for item in exclude)
+    exclude_paths = tuple(Path(normalize_path(item)) for item in exclude)
     excluded = any(
         folder_path == item or item in folder_path.parents for item in exclude_paths
     )
@@ -629,7 +630,7 @@ def remove_root(conn: sqlite3.Connection, root: str | Path) -> None:
     """Egy gyökér teljes eltávolítása az indexből (Mappakezelő:
     „Eltávolítás a Picasából"). Explicit photos-törlés a folders előtt,
     hogy az FTS-triggerek lefussanak."""
-    root_path = Path(root).resolve()
+    root_path = Path(normalize_path(root))
     _ensure_scan_state(conn)
     _prune_folders(conn, root_path, set())
     conn.commit()
@@ -648,7 +649,7 @@ def prune_foreign_folders(
     if not roots:
         return
     _ensure_scan_state(conn)
-    root_paths = tuple(Path(root).resolve() for root in roots)
+    root_paths = tuple(Path(normalize_path(root)) for root in roots)
     stale = [
         (row["id"], row["path"])
         for row in conn.execute("SELECT id, path FROM folders")

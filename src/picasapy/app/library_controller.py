@@ -7,6 +7,7 @@ a tesztek felülete változatlan."""
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 import threading
 import time
@@ -15,6 +16,8 @@ from pathlib import Path
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.index import open_index, remove_root, sync_folder
+from picasapy.index.dedup_folders import merge_duplicate_folders
+from picasapy.paths import normalize_path, path_key
 from picasapy.scanner import (
     LibraryWatcher,
     is_excluded,
@@ -24,6 +27,8 @@ from picasapy.scanner import (
 
 from .formatting import to_local_path
 from .worker_thread import BackgroundWorkerMixin
+
+logger = logging.getLogger(__name__)
 
 # #209: a worker-oldali jelzés-ritkítás minimuma (mp) — sok gyorsan kihagyott
 # mappánál a queued jelzések ne árasszák el a GUI-szál eseménysorát.
@@ -220,6 +225,22 @@ class LibraryMixin(BackgroundWorkerMixin):
         rescan fut fallbackként (a Picasa is folyamatosan pásztázott)."""
         from PySide6.QtCore import QTimer
 
+        self._dedupe_roots()
+        with open_index(self._db_path) as conn:
+            report = merge_duplicate_folders(conn)
+        if report.merged:
+            logger.info(
+                "#507: induláskor %d mappa-duplikátum-csoport összevonva",
+                len(report.merged),
+            )
+        if report.skipped:
+            logger.warning(
+                "#507: %d mappa-duplikátum-csoport ÖSSZEVONÁSA KIHAGYVA "
+                "(ütköző szerkesztés — a duplikátum megmarad, adatvesztés "
+                "helyett): %s",
+                len(report.skipped),
+                ", ".join(key for key, _reason in report.skipped),
+            )
         self._reload()
         if not self._current_folder:
             self.restoreSession()
@@ -234,6 +255,24 @@ class LibraryMixin(BackgroundWorkerMixin):
         self._rescan_timer.timeout.connect(self.rescan)
         self._rescan_timer.start()
 
+    def _dedupe_roots(self) -> None:
+        """#507: a betöltött (esetleg régi, még nem normalizált
+        `WatchedFolders.txt`-ből származó) figyelt gyökerek normalizálása
+        és duplikátum-szűrése — az elsőként látott alak marad meg
+        (kanonikus, `path_key` szerint egyedi). Csak akkor ír, ha
+        ténylegesen változott valami (ne piszkítsuk a fájlt feleslegesen)."""
+        seen: dict[str, str] = {}
+        for root in self._roots:
+            normalized = normalize_path(root)
+            if not normalized:
+                continue
+            key = path_key(normalized)
+            seen.setdefault(key, normalized)
+        deduped = list(seen.values())
+        if deduped != self._roots:
+            self._roots = deduped
+            self._persist_roots()
+
     def shutdown(self) -> None:
         """Leállítás: figyelő és időzítő leállítása (kilépéskor hívandó)."""
         if self._rescan_timer is not None:
@@ -244,12 +283,28 @@ class LibraryMixin(BackgroundWorkerMixin):
 
     # -- Mappakezelő ---------------------------------------------------------
 
+    def _find_root(self, path: str) -> str | None:
+        """#507: a `path`-hoz tartozó, MÁR figyelt gyökér — `path_key`
+        szerinti (normalizált, platformhelyes kis-nagybetű-kezelésű)
+        egyezéssel, nem nyers szövegösszehasonlítással. `None`, ha nincs
+        ilyen figyelt gyökér."""
+        key = path_key(path)
+        for root in self._roots:
+            if path_key(root) == key:
+                return root
+        return None
+
     @Slot(str)
     def addWatchedFolder(self, path_or_url: str) -> None:
         """Új figyelt mappa (Mappakezelő / első indítás). file:// URL-t is
-        elfogad (a QML FolderDialog azt ad)."""
-        path = to_local_path(path_or_url)
-        if not path or path in self._roots or not Path(path).is_dir():
+        elfogad (a QML FolderDialog azt ad).
+
+        #507: a duplikáció-védelem `path_key`-alapú (a normalizált,
+        platformhelyes kis-nagybetű-kezelésű alakra nézve egyedi) —
+        záró perjel, `..`/`.` szegmens, szimbolikus link vagy (Windowson)
+        eltérő kis-nagybetűzés SEM vezet duplikátumhoz."""
+        path = normalize_path(to_local_path(path_or_url))
+        if not path or self._find_root(path) is not None or not Path(path).is_dir():
             return
         self._roots.append(path)
         self._persist_roots()
@@ -287,8 +342,8 @@ class LibraryMixin(BackgroundWorkerMixin):
 
         Már figyelt gyökérnél nincs teendő (a folyamatos figyelés úgyis
         lefedi) — a hívás ekkor csendben kimarad."""
-        path = to_local_path(path_or_url)
-        if not path or path in self._roots or not Path(path).is_dir():
+        path = normalize_path(to_local_path(path_or_url))
+        if not path or self._find_root(path) is not None or not Path(path).is_dir():
             return
         # nincs leállítási-jelző kötés (nem figyelt gyökér): egyszeri,
         # meg nem szakítható munka
@@ -312,10 +367,12 @@ class LibraryMixin(BackgroundWorkerMixin):
         leállítási jelző, watcher-újraindítás, nézet-frissítés); egyszer
         beolvasott (nem figyelt) mappánál elég az index-takarítás, nincs
         se watcher, se leállítási jelző, amit kezelni kellene."""
-        if path in self._roots:
-            self.removeWatchedFolder(path)
-            return
+        path = normalize_path(path)
         if not path:
+            return
+        watched_root = self._find_root(path)
+        if watched_root is not None:
+            self.removeWatchedFolder(watched_root)
             return
         with open_index(self._db_path) as conn:
             remove_root(conn, path)
@@ -332,8 +389,10 @@ class LibraryMixin(BackgroundWorkerMixin):
         SQL-oldali prune); (3) az Importálás-panel eltüntetése, ha épp az
         eltávolított gyökér mappáját mutatta; (4) nézet-frissítés. A worker
         késői jelzéseit a `_on_sync_progress` gyökér-ellenőrzése nyeli el."""
-        if path not in self._roots:
+        watched_root = self._find_root(path)
+        if watched_root is None:
             return
+        path = watched_root
         # a jelző MÉG a gyökér-lista módosítása előtt áll be — a worker
         # should_stop-ja bármelyik feltételen (jelző VAGY lista) elkapja
         self._cancel_event(path).set()
