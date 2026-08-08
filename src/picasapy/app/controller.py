@@ -38,6 +38,7 @@ from .appearance_controller import AppearanceMixin
 from .batch_effect_controller import BatchEffectMixin
 from .language_controller import LanguageMixin
 from .create_controller import CreateMixin
+from .custom_aspect_ratios_controller import CustomAspectRatiosMixin
 from .custom_collections_controller import CustomCollectionsMixin
 from .folder_date_controller import FolderDateMixin
 from .effects_controller import EffectsClipboardMixin
@@ -72,6 +73,7 @@ def _clamp_folder_pane_width(width: int) -> int:
 
 
 class AppController(
+    CustomAspectRatiosMixin,
     CustomCollectionsMixin,
     FolderDateMixin,
     SearchMixin,

@@ -94,8 +94,13 @@ Rectangle {
     // a kép aktuális szélesség/magasság aránya ("Jelenlegi méretarány"-hoz)
     property real imageAspect: 4 / 3
 
+    // #448: a Kiegyenesítés-figyelmeztetés bekapcsolója — a hívó (PhotoViewer)
+    // tölti az `editController.tiltParam !== 0` állapotból (a panel maga NEM
+    // ismeri az editControllert, a többi mód-állapot mintáját folytatva).
+    property bool straightenActive: false
+
     // vágás-mód állapota
-    property int aspectIndex: 0        // az aspectPresets lista indexe
+    property int aspectIndex: 0        // az aspectFullList lista indexe
     property bool aspectRotated: false // Forgatás: fekvő <-> álló
 
     // Finomhangolás (#20): a hívó (PhotoViewer) tölti a mentett értékekkel;
@@ -327,32 +332,105 @@ Rectangle {
     }
     onFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: panel.syncFinetuneSliders()
+    // #448: a vágó-eszköz megnyitásakor a legutóbb használt arány töltődik
+    // vissza (lastCropRatio)
+    onCropActiveChanged: if (panel.cropActive) panel.restoreLastCropRatio()
 
-    // Arány-lista (Picasa-minta). ratio = szélesség/magasság fekvő
-    // tájolásban; 0 = kézi (szabad), -1 = a kép jelenlegi aránya.
+    // Arány-lista (#448 — a Picasa BINÁRISÁBAN élő kulcskészlet szerint,
+    // ld. a #448 jegy 2026-08-07-es javító kommentjét: "ha egyszer
+    // implementáljuk, a KULCSNEVEKET használjuk, ne a magyarázatokat").
+    // `key` = a bináris tényleges kulcsneve (perzisztenciához, lastCropRatio-
+    // hoz); `label` = megjelenő felirat, a kulcsnevet követve (pl. "4x6"),
+    // KIVÉVE ahol a kulcs maga nem arány-pár (Manual/CurrentRatio/Square/
+    // FullPage) — ott a korábbi, leíró feliratot tartottuk meg.
+    // ratio = szélesség/magasság fekvő tájolásban; 0 = kézi (szabad),
+    // -1 = a kép jelenlegi aránya.
+    //
+    // KIHAGYVA (a jegy kommentje szerint az arányuk NEM vezethető le
+    // egyértelműen a kulcsnévből, találgatás helyett kimaradtak — ld. a
+    // feladat jelentése): `CurrentDisplay`, `WideFrame`, `Widescreen`, `Other`.
+    // A `20x25` a MEGLÉVŐ listában volt, de a javított kulcslistában NEM
+    // szerepel — nem törölve (a felhasználó dönt róla), csak jelezve.
     readonly property var aspectPresets: [
-        { label: qsTr("Manual"), ratio: 0 },
-        { label: qsTr("Current aspect"), ratio: -1 },
-        { label: "5x8", ratio: 8 / 5 },
-        { label: "9x13", ratio: 13 / 9 },
-        { label: "10x15", ratio: 15 / 10 },
-        { label: "13x18", ratio: 18 / 13 },
-        { label: "20x25", ratio: 25 / 20 },
-        { label: qsTr("A4: Full page"), ratio: 297 / 210 },
-        { label: qsTr("Square: CD cover"), ratio: 1 },
-        { label: qsTr("4:3: Standard screen"), ratio: 4 / 3 },
-        { label: qsTr("16:10: Widescreen"), ratio: 16 / 10 },
-        { label: qsTr("16:9: HDTV"), ratio: 16 / 9 },
-        { label: qsTr("5:3: Wide frame"), ratio: 5 / 3 }
+        { key: "Manual", label: qsTr("Manual"), ratio: 0 },
+        { key: "CurrentRatio", label: qsTr("Current ratio"), ratio: -1 },
+        { key: "4x4", label: "4x4", ratio: 1 },
+        { key: "Desktop4x3", label: "4x3", ratio: 4 / 3 },
+        { key: "4x6", label: "4x6", ratio: 6 / 4 },
+        { key: "5x7", label: "5x7", ratio: 7 / 5 },
+        { key: "8x10", label: "8x10", ratio: 10 / 8 },
+        { key: "5x3", label: "5x3", ratio: 5 / 3 },
+        { key: "9x13", label: "9x13", ratio: 13 / 9 },
+        { key: "10x15", label: "10x15", ratio: 15 / 10 },
+        { key: "13x18", label: "13x18", ratio: 18 / 13 },
+        // ld. fent: nincs a #448 javított kulcslistában, megtartva
+        { key: "20x25", label: "20x25", ratio: 25 / 20 },
+        { key: "5x8", label: "5x8", ratio: 8 / 5 },
+        { key: "16x10", label: "16x10", ratio: 16 / 10 },
+        { key: "HDTV16x9", label: "16x9", ratio: 16 / 9 },
+        { key: "Square", label: qsTr("Square"), ratio: 1 },
+        { key: "FullPage", label: qsTr("Full page (A4)"), ratio: 297 / 210 }
     ]
+
+    // #448: a beépített lista + a felhasználó egyéni arányai (QSettings-en
+    // át, `controller.customAspectRatios`) — EGY listaként, hogy a legördülő
+    // és az `aspectIndex` egységesen kezelje mindkettőt.
+    readonly property var customAspectRatios:
+        (typeof controller !== "undefined" && controller)
+            ? controller.customAspectRatios : []
+
+    readonly property var aspectFullList: {
+        var list = panel.aspectPresets.slice()
+        for (var i = 0; i < panel.customAspectRatios.length; i++) {
+            var c = panel.customAspectRatios[i]
+            list.push({
+                key: "custom:" + c.name + ":" + c.width + "x" + c.height,
+                label: c.width + " x " + c.height + "   " + c.name,
+                ratio: c.width / c.height,
+                isCustom: true,
+                customName: c.name,
+                customWidth: c.width,
+                customHeight: c.height
+            })
+        }
+        return list
+    }
+
+    // az aktuálisan kiválasztott tétel — védve az esetleges (törlés utáni)
+    // tartomány-túllépéstől
+    readonly property var selectedPreset:
+        panel.aspectFullList[Math.max(0, Math.min(panel.aspectIndex,
+                                               panel.aspectFullList.length - 1))]
 
     // a kiválasztott arány a Forgatással együtt — a CropOverlay-nek
     readonly property real currentAspect: {
-        var base = aspectPresets[aspectIndex].ratio
+        var base = panel.selectedPreset.ratio
         if (base === 0) return 0
         if (base === -1) base = panel.imageAspect
         if (base < 1) base = 1 / base   // fekvő alapállás
         return panel.aspectRotated ? 1 / base : base
+    }
+
+    // #448 `lastCropRatio`: az eszköz megnyitásakor a legutóbb használt
+    // arányt tölti vissza (QSettings-ből, `controller` közvetítésével) — a
+    // hívó (`onCropActiveChanged` a fájl végén) hívja.
+    function restoreLastCropRatio() {
+        if (typeof controller === "undefined" || !controller) return
+        var key = controller.lastCropRatio
+        for (var i = 0; i < panel.aspectFullList.length; i++) {
+            if (panel.aspectFullList[i].key === key) {
+                panel.aspectIndex = i
+                return
+            }
+        }
+    }
+    function selectAspect(index) {
+        panel.aspectIndex = index
+        panel.aspectRotated = false
+        if (typeof controller !== "undefined" && controller) {
+            var key = panel.aspectFullList[index].key
+            if (key) controller.setLastCropRatio(key)
+        }
     }
 
     // egy csempe-kattintás kezelése: mód-eszköznél kapcsoló-állapot váltása,
@@ -1624,6 +1702,23 @@ Rectangle {
             color: Theme.textGray
         }
 
+        // #448: a Kiegyenesítés-figyelmeztetés — az eredeti Picasa szó
+        // szerinti szövege (a jegy idézi), csak akkor jelenik meg, ha a
+        // képen MÁR van aktív kiegyenesítés (`straightenActive`, a hívó
+        // tölti az editController.tiltParam-ből).
+        Text {
+            objectName: "cropStraightenWarning"
+            visible: panel.straightenActive
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: qsTr("This image's orientation has been modified by the "
+                       + "Straighten tool and might not crop accurately… "
+                       + "try undoing the Straighten fix, then recrop, and "
+                       + "Straighten again if necessary.")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+
         // arány-választó legördülő (Picasa-lista)
         Rectangle {
             objectName: "cropAspectCombo"
@@ -1637,7 +1732,7 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width - 28
                 elide: Text.ElideRight
-                text: panel.aspectPresets[panel.aspectIndex].label
+                text: panel.selectedPreset.label
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
@@ -1664,8 +1759,9 @@ Rectangle {
                 x: 1; y: 1
                 width: parent.width - 2
                 Repeater {
-                    model: panel.aspectPresets
+                    model: panel.aspectFullList
                     Rectangle {
+                        id: aspectRow
                         required property var modelData
                         required property int index
                         width: aspectColumn.width; height: 20
@@ -1673,21 +1769,78 @@ Rectangle {
                                : "transparent"
                         Text {
                             anchors.left: parent.left; anchors.leftMargin: 6
+                            anchors.right: aspectDeleteBtn.visible
+                                ? aspectDeleteBtn.left : parent.right
+                            anchors.rightMargin: 4
                             anchors.verticalCenter: parent.verticalCenter
-                            text: modelData.label
+                            elide: Text.ElideRight
+                            text: aspectRow.modelData.label
                             font.pixelSize: Theme.fontSize
                             // a kijelölő-kék (Theme.panelSelection) hátteren
                             // szándékosan téma-független fehér a token
                             // (Theme.panelSelectionText) — nem új hardkód
                             color: aspectRowHover.hovered ? Theme.panelSelectionText : Theme.ink
                         }
+                        // #448: az EGYÉNI (felhasználó felvette) arányok
+                        // törölhetők — a beépített preset-eknek nincs "×".
+                        Text {
+                            id: aspectDeleteBtn
+                            objectName: "cropAspectDelete" + aspectRow.index
+                            visible: aspectRow.modelData.isCustom === true
+                            anchors.right: parent.right; anchors.rightMargin: 6
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "✕"
+                            font.pixelSize: Theme.fontSize - 1
+                            color: aspectDeleteMouse.containsMouse
+                                   ? Theme.selectionBlue : Theme.textGray
+                            MouseArea {
+                                id: aspectDeleteMouse
+                                anchors.fill: parent
+                                anchors.margins: -4
+                                hoverEnabled: true
+                                onClicked: {
+                                    deleteCustomAspectConfirm.pendingName =
+                                        aspectRow.modelData.customName
+                                    deleteCustomAspectConfirm.pendingWidth =
+                                        aspectRow.modelData.customWidth
+                                    deleteCustomAspectConfirm.pendingHeight =
+                                        aspectRow.modelData.customHeight
+                                    deleteCustomAspectConfirm.ask(
+                                        "deleteCustomAspectRatio",
+                                        qsTr("Delete this custom aspect ratio?"))
+                                }
+                            }
+                        }
                         HoverHandler { id: aspectRowHover }
                         TapHandler {
                             onTapped: {
-                                panel.aspectIndex = index
-                                panel.aspectRotated = false
+                                panel.selectAspect(aspectRow.index)
                                 aspectList.visible = false
                             }
+                        }
+                    }
+                }
+                // #448: "AddCustomAspectRatio" — a beépítettek alatt, saját
+                // sorban (a jegy szerint a dialógus szélesség × magasság +
+                // nevet kér, a lista "<szél> x <mag>   <név>" alakban mutatja).
+                Rectangle {
+                    objectName: "cropAspectAddRow"
+                    width: aspectColumn.width; height: 20
+                    color: addAspectRowHover.hovered ? Theme.panelSelection
+                           : "transparent"
+                    Text {
+                        anchors.left: parent.left; anchors.leftMargin: 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: qsTr("Add Custom Aspect Ratio…")
+                        font.pixelSize: Theme.fontSize
+                        color: addAspectRowHover.hovered
+                               ? Theme.panelSelectionText : Theme.ink
+                    }
+                    HoverHandler { id: addAspectRowHover }
+                    TapHandler {
+                        onTapped: {
+                            aspectList.visible = false
+                            addCustomAspectRatioDialog.open()
                         }
                     }
                 }
@@ -1757,6 +1910,44 @@ Rectangle {
                 objectName: "cropCancelButton"
                 label: qsTr("Cancel") + " ✘"
                 onButtonClicked: panel.cropCancelRequested()
+            }
+        }
+    }
+
+    // #448: "AddCustomAspectRatio" — szélesség × magasság + név bekérő; a
+    // hívó (fent, a "Add Custom Aspect Ratio…" sor) nyitja, a `created`
+    // jelre a controlleren át QSettings-be ír (CustomAspectRatiosMixin) és
+    // rögtön ki is választja az újonnan felvett arányt.
+    AddCustomAspectRatioDialog {
+        id: addCustomAspectRatioDialog
+        onCreated: (newWidth, newHeight, newName) => {
+            if (typeof controller === "undefined" || !controller) return
+            controller.addCustomAspectRatio(newWidth, newHeight, newName)
+            // az új tétel a lista VÉGÉN jelenik meg (a beépítettek után) —
+            // a customAspectRatios friss hosszából számolható az indexe
+            // (a hozzáadás óta +1 hosszú lista utolsó eleme)
+            panel.selectAspect(panel.aspectPresets.length
+                + panel.customAspectRatios.length - 1)
+        }
+    }
+
+    // #448: az egyéni arány törlésének megerősítése (a jegy szerint az
+    // egyéni tételek törölhetők) — #422 mintája szerint EGYEDI namePrefix.
+    ConfirmDialog {
+        id: deleteCustomAspectConfirm
+        namePrefix: "deleteCustomAspectConfirm"
+        property string pendingName: ""
+        property real pendingWidth: 0
+        property real pendingHeight: 0
+        onConfirmed: {
+            if (typeof controller !== "undefined" && controller
+                    && deleteCustomAspectConfirm.pendingName !== "") {
+                controller.deleteCustomAspectRatio(
+                    deleteCustomAspectConfirm.pendingName,
+                    deleteCustomAspectConfirm.pendingWidth,
+                    deleteCustomAspectConfirm.pendingHeight)
+                // törlés után a kiválasztás védetten (selectedPreset)
+                // tartományon belülre esik — nincs teendő itt
             }
         }
     }
