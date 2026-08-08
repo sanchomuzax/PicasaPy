@@ -15,7 +15,12 @@ from pathlib import Path
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.index import open_index, remove_root, sync_folder
-from picasapy.scanner import LibraryWatcher, write_watched_folders
+from picasapy.scanner import (
+    LibraryWatcher,
+    is_excluded,
+    write_exclude_folders,
+    write_watched_folders,
+)
 
 from .formatting import to_local_path
 from .worker_thread import BackgroundWorkerMixin
@@ -349,6 +354,56 @@ class LibraryMixin(BackgroundWorkerMixin):
             self._view_mode = ("folder", "")
             self._show(())
         self._reload()
+
+    # -- Arcfelismerés-kizárás (#449, NEGYEDIK, a Scan Always/Once/Remove
+    # hármastól FÜGGETLEN kapcsoló) -------------------------------------
+
+    @Slot(str, result=bool)
+    def faceDetectionEnabledFor(self, path: str) -> bool:
+        """Igaz, ha a mappa NINCS az arcfelismerésből kizárva (nincs a
+        `FRExcludeFolders.txt`-ben, és egyik őse sincs) — ld.
+        `scanner/exclude.py`. Ez a kapcsoló TELJESEN FÜGGETLEN a
+        `stateFor`/`setState` (Scan Always/Once/Remove) hármastól: egy
+        mappa lehet egyszerre figyelt ÉS arcfelismerésből kizárt.
+
+        ŐSZINTESÉG: a projektben MÉG NINCS arcfelismerés-motor — ez a
+        property egyelőre csak a felhasználó SZÁNDÉKÁT tükrözi (a
+        Picasa-kompatibilis fájlba írva); életbe akkor lép majd, amikor
+        az arcfelismerés-fázis megérkezik."""
+        if not path:
+            return True
+        return not is_excluded(path, tuple(self._face_excluded_roots))
+
+    @Slot(str, bool)
+    def setFaceDetectionEnabled(self, path: str, enabled: bool) -> None:
+        """Arcfelismerés be/ki egy mappára és az alfáira (#449) — a három
+        scan-állapottól FÜGGETLENÜL. Kikapcsoláskor a mappa felkerül a
+        `FRExcludeFolders.txt`-be, bekapcsoláskor lekerül róla; a fájl
+        Picasa-kompatibilis formátumban íródik (`write_exclude_folders`,
+        a `write_watched_folders` mintájára).
+
+        ŐSZINTESÉG: ez a metódus MA nem töröl semmilyen tényleges arc-
+        adatot vagy név-címkét (arcfelismerés-motor még nincs a
+        projektben) — kizárólag a kizárási szándékot rögzíti. A
+        felhasználó felé megjelenő megerősítő kérdés (eredeti Picasa-
+        szöveg) a `FolderStatePanel.qml`-ben él, ezt a metódust csak a
+        megerősítés UTÁN hívja a QML."""
+        path = str(path)
+        if not path:
+            return
+        roots = list(self._face_excluded_roots)
+        if enabled:
+            if path in roots:
+                roots.remove(path)
+        else:
+            if path not in roots:
+                roots.append(path)
+        if roots == self._face_excluded_roots:
+            return
+        self._face_excluded_roots = roots
+        if self._exclude_file is not None:
+            write_exclude_folders(self._exclude_file, tuple(roots))
+        self.statusChanged.emit()
 
     def _persist_roots(self) -> None:
         if self._watched_file is not None:

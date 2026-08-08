@@ -1832,6 +1832,16 @@
         <source>Watched folders</source>
         <translation>Figyelt mappák</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
+        <source>Face detection</source>
+        <translation>Arcfelismerés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
+        <source>Are you sure you want to remove all faces and name tags from excluded folders?</source>
+        <translation>Biztosan eltávolítod az összes arcot és névcímkét a kizárt mappákból?</translation>
+    </message>
 </context>
 <context>
     <name>FolderPane</name>

@@ -30,8 +30,11 @@ from PySide6.QtQuickControls2 import QQuickStyle
 
 from picasapy.index import open_index, prune_foreign_folders
 from picasapy.scanner import (
+    EXCLUDE_FOLDERS_NAME,
     WATCHED_FOLDERS_NAME,
+    find_exclude_folders_file,
     find_watched_folders_file,
+    read_exclude_folders,
     read_watched_folders,
 )
 from picasapy.thumbs import ThumbnailCache
@@ -147,6 +150,18 @@ def _watched_folders_path() -> Path:
     config_dir = _config_dir()
     return find_watched_folders_file(config_dir) or (
         config_dir / WATCHED_FOLDERS_NAME
+    )
+
+
+def _exclude_folders_path() -> Path:
+    """A `FRExcludeFolders.txt` útvonala — kis-nagybetű-független kereséssel
+    (#145/#449, a `_watched_folders_path` mintáját követve). NEGYEDIK,
+    a figyelt-mappa hármastól (Scan Always/Once/Remove) FÜGGETLEN
+    kapcsoló: az arcfelismerésből kizárt mappák (ma még csak SZÁNDÉK-
+    rögzítés, arcfelismerés-motor nélkül, ld. library_controller.py)."""
+    config_dir = _config_dir()
+    return find_exclude_folders_file(config_dir) or (
+        config_dir / EXCLUDE_FOLDERS_NAME
     )
 
 
@@ -412,6 +427,8 @@ def run(argv: list[str]) -> int:
         roots,
         provider,
         watched_file=_watched_folders_path(),
+        exclude_file=_exclude_folders_path(),
+        face_excluded=read_exclude_folders(_exclude_folders_path()),
     )
 
     # szerkesztő-előnézet (#19): a provider a filters= láncot alkalmazva

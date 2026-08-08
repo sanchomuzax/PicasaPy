@@ -10,6 +10,7 @@ from .exclude import (
     find_exclude_folders_file,
     is_excluded,
     read_exclude_folders,
+    write_exclude_folders,
 )
 from .filetypes import (
     PHOTO_EXTENSIONS,
@@ -65,5 +66,6 @@ __all__ = [
     "SkipPredicate",
     "scan_folder",
     "scan_tree",
+    "write_exclude_folders",
     "write_watched_folders",
 ]
