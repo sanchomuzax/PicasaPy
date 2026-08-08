@@ -404,6 +404,81 @@ legyen (ugyanúgy nézzen ki kicsiben és nagyban):
 > Gauss-elmosása **zárt formában** (tengelyenként egy `erf`) számolható,
 > sugártól független költséggel.
 
+### 4.5 A művelet-készlet — mind a 31 `imageOperations:` művelet
+
+A `<effect>` blokkok **31 különböző** műveletet használnak. A `db` oszlop azt
+mutatja, hányszor fordul elő; az attribútumok a fájlból kigyűjtve.
+
+| művelet | db | attribútumok |
+|---|---|---|
+| `NestedImageOperation` | 31 | `BlendAlpha BlendMode Mask maskWithSourceAlpha dynamicAlphaCachePriority id` |
+| `AdjustCurvesImageOperation` | 12 | `MasterCurve RedCurve GreenCurve BlueCurve` |
+| `GetVarImageOperation` | 11 | `Name BlendMode Mask` |
+| `SetVar` | 10 | `Name` |
+| `BlurImageOperation` | 9 | `xblur yblur quality BlendAlpha BlendMode Mask` |
+| `SimpleColorMatrixImageOperation` | 8 | `Brightness Contrast Saturation ContrastAndBrightnessLinked BlendAlpha Mask` |
+| `GlowImageOperation` | 8 | `color glowalpha xblur yblur strength quality innerglow knockout BlendAlpha` |
+| `AutoFixImageOperation` | 6 | — |
+| `BorderImageOperation` | 5 | `outercolor innercolor outerthickness innerthickness cornerradius captionheight` |
+| `ResizeImageOperation` | 5 | `width height smoothing ignoreObjects` |
+| `NoiseImageOperation` | 5 | `low high channelOptions grayScale randomSeed BlendAlpha BlendMode` |
+| `BWImageOperation` | 4 | `filtercolor` |
+| `TintImageOperation` | 4 | `Color BlendAlpha BlendMode Mask` |
+| `CircularGradientImageMask` | 4 | `width height xCenter yCenter innerRadius outerRadius innerAlpha outerAlpha` |
+| `CropImageOperation` | 2 | `x y width height` |
+| `SimpleBorderImageOperation` | 2 | `color top bottom left right` |
+| `TiledImageMask` | 2 | `tileWidth tileHeight offsetX offsetY alphaMin width height` |
+| `PixelateImageOperation` | 2 | `pixelWidth pixelHeight offsetX offsetY` |
+| `ColorMatrixImageOperation` | 2 | `Matrix UseAlpha` |
+| `DropShadowImageOperation` | 2 | `distance angle blurX blurY strength quality shadowColor shadowAlpha backgroundColor` |
+| `LocalContrastImageOperation` | 2 | `Radius Strength BlendAlpha` |
+| `MultiplyColorMatrixImageOperation` | 2 | `Multiplier` |
+| `RadialBlurImageOperation` | 1 | `amount x y Mask ignoreObjects` |
+| `HSVGradientMapImageOperation` | 1 | `gradientObjectArray hueOffset` |
+| `IRImageOperation` | 1 | `greenglow greenglowalpha redweight BlendAlpha` |
+| `EdgeDetectionBImageOperation` | 1 | `detail` |
+| `GradientMapImageOperation` | 1 | `gradientArray` |
+| `RotateImageOperation` | 1 | `degAngle borderColor padBorder` |
+| `QuantizePaletteImageOperation` | 1 | `Steps Depth` |
+| `TwoToneImageOperation` | 1 | `blackColor whiteColor` |
+
+#### A csővezeték NEM lineáris: rétegek és nevesített regiszterek
+
+Három szerkezeti elem, ami nélkül a receptek félreolvashatók:
+
+1. **`NestedImageOperation`** — a gyerekei a **pillanatnyi kép másolatán**
+   futnak, az eredmény pedig a `BlendMode`/`BlendAlpha`/`Mask` szerint
+   keveredik vissza a szülőbe. Minden effekt legkülső burka egy ilyen, aminek
+   a `BlendAlpha`-ja `{1-(_sldrFade.value/100)}` — **így valósul meg a Fade,
+   egységesen, mind a 31 effektnél.**
+2. **`SetVar Name="A"` / `GetVarImageOperation Name="A"`** — nevesített
+   képregiszter: elmenti a pillanatnyi képet, később `BlendMode`-dal
+   visszakeveri. Négy effekt használja: `Comicize` (6 pár), `LocalContrast`
+   (2/3), `Neon`, `PencilSketch`.
+3. **`Mask`** — bármely művelet korlátozható egy `CircularGradientImageMask`
+   vagy `TiledImageMask` objektumra hivatkozva (`Mask="{_msk}"`).
+
+Példa (`PencilSketch`, a teljes recept):
+
+```xml
+<BWImageOperation/> <AutoFixImageOperation/>
+<SetVar Name="A"/>                                  <!-- elmentjük -->
+<NestedImageOperation BlendMode="{BlendMode.ADD}">  <!-- másolaton dolgozik -->
+  <AdjustCurvesImageOperation MasterCurve="{[{x:0,y:255},{x:255,y:0}]}"/>
+  <BlurImageOperation xblur="{_sldrRadius.value}" .../>
+</NestedImageOperation>                             <!-- ADD-dal vissza -->
+<GetVarImageOperation Name="A" BlendMode="{BlendMode.OVERLAY}"/>
+<AutoFixImageOperation/> <AdjustCurvesImageOperation .../>
+```
+
+#### Végleges bizonyíték a Flash-örökségre
+
+A fájl **szó szerint ActionScript 3 osztálykonstansokat** használ:
+`quality="{BitmapFilterQuality.HIGH}"` (a `flash.filters.BitmapFilterQuality`,
+`HIGH = 3`) és `BlendMode.ADD` / `.OVERLAY` / `.SCREEN` / `.LIGHTEN` (a
+`flash.display.BlendMode`). Ez zárja le a `quality` kérdését: **az elmosás
+átfutásainak száma**, és a Glimmer-effektekben végig 3.
+
 ## 5. Következmények a PicasaPy-ra
 
 1. A `.picasa.ini` **paraméter-validáció** most már tartomány-alapú lehet
