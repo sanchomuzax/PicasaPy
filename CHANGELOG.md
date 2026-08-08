@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.45] – 2026-08-08
+
+### Javítva
+- **A fekete-fehér effektek színes kimenete (#504):** az eredeti Picasa
+  Holga-exportjaihoz mérve kiderült, hogy a kimenetnek **tiszta
+  szürkének** kell lennie (minden képponton R=G=B) — a receptben szereplő
+  szín nem színez, hanem a szürkítés **csatornasúlyait** hangolja, mint egy
+  színszűrő a fekete-fehér film előtt. A mi kódunk ezzel szemben színes
+  képet adott. Javítva: a kimenet mostantól valódi szürkeárnyalatos.
+  Mérve az eredeti kimenethez: az eltérés **71,0 → 31,6**.
+
+### Ismert korlát
+- A referencia-mérés szerint a teljes egyezéshez (~14,6) ez **nem elég**:
+  a ragyogás számítási modelljét is le kellene cserélni a fizikailag
+  pontosabb változatra, és külön eltérés van az automatikus
+  színkorrekcióban is (a mienk sötétít, az eredeti világosít). Mindkettő
+  külön munka — ld. #504 és #317.
+
 ## [0.6.44] – 2026-08-08
 
 ### Javítva

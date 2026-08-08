@@ -141,17 +141,20 @@ class TestHolgaRealPhoto504510:
     ellenőrzi.
     """
 
-    def test_r_nagyobb_mint_b_a_kimeneten(self):
-        """#510 elfogadási feltétel: a Holga kimenete MELEG (R>B), a
-        valódi (fájlba kerülő) BGR-reprezentációban mérve — nem a
-        glimmer-belső RGB-tömbön, aminek a csatornasorrendje félrevezette
-        az eredeti jegy "bizonyítékát" (ld. jelentés)."""
+    def test_kimenet_szurke_r_egyenlo_b_vel(self):
+        """#504 (Holga-referencia): a Picasa Holga-kimenete TISZTA SZÜRKE
+        (R=G=B minden képponton) — a `#510` elfogadási feltétele (R>B, azaz
+        SZÍNES kimenet) TÉVES volt: a `bw_tint` javítása után a kimenetnek
+        éppen R=B kell legyen (ésszerű kerekítési tűréssel), nem R>B. Ld. a
+        `glimmer_ops.bw_tint` docstringjét a bizonyítékért."""
         photo_rgb = _real_photo_rgb(200, 300)
         result_rgb = c.apply_holga(photo_rgb)
         result_bgr = cv2.cvtColor(result_rgb, cv2.COLOR_RGB2BGR)
         red_mean = float(result_bgr[..., 2].mean())
         blue_mean = float(result_bgr[..., 0].mean())
-        assert red_mean > blue_mean, f"R={red_mean:.1f} nem nagyobb, mint B={blue_mean:.1f}"
+        assert abs(red_mean - blue_mean) < 1.0, (
+            f"a kimenetnek szürkének kellene lennie, de R={red_mean:.1f} != B={blue_mean:.1f}"
+        )
 
     @pytest.mark.parametrize("effect_name,apply_fn", [("Holga", c.apply_holga), ("Lomo", c.apply_lomo)])
     def test_meretfuggetlen_fekete_arany_a_korlat_ALATT(self, effect_name, apply_fn):
