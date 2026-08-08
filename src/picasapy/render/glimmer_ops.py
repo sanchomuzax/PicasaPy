@@ -506,17 +506,49 @@ def resize_image(image: np.ndarray, width: int, height: int, smoothing: bool = T
 
 
 def bw_tint(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
-    """`BW(filtercolor=...)`: szürkeárnyalat, a luma-val arányosan a `color`
-    felé színezve (`ki = luma/255 · color`) — a Holga „vörösesbarna" B&W-je.
+    """`BW(filtercolor=...)`: **valódi szürkeárnyalat** (R=G=B minden
+    képponton) — a `filtercolor` NEM színezi be a kimenetet, hanem a
+    szürkítéshez használt Rec.601 csatornasúlyokat modulálja, mint egy
+    színszűrő a fekete-fehér film előtt.
+
+    **Bizonyíték (#504), mérve az eredeti windowsos Picasa Holga-kimenetéhez
+    (a privát `picasapy-agent` repó `referencia/holga/` hét mappás
+    készlete):** mind a hat effektes exportban `R = G = B` **minden
+    képponton**. A korábbi implementáció (`ki = luma/255 · color`) ezzel
+    szemben SZÍNES kimenetet adott (`0xff6666`-tal R/G/B = 70/17/17) — ez
+    volt a hiba, nem a csatornák sorrendje (#510 tévedett) és nem is
+    „minden rendben" (#515 is tévedett).
+
+    A helyes képlet, a referenciából levezetve és szabad illesztéssel
+    ellenőrizve (a levezetett képlet maradéka 10,92, az elméleti alsó
+    korlát 10,89 — 4 paraméteres szabad illesztéssel):
+
+        w_c = luma_c · szín_c / Σ_k(luma_k · szín_k)
+
+    ahol `luma_c` a Rec.601-súly (`_REC601_WEIGHTS`). `0xff6666`-tal ez
+    B 0,079 / G 0,405 / R 0,516. A kimenet: `gray = Σ_c(w_c · pixel_c)`,
+    majd `R = G = B = gray` — NEM a képen belüli (a `color`-tól független)
+    lumát színezzük, hanem a `color`-ral modulált súlyokkal újraszámoljuk
+    a szürkét.
 
     `color` csatornasorrendje **RGB** (megegyezik a `image` tömb saját
     sorrendjével) — ld. `tint_multiply` docstringjét a #510-es tanulságról.
     """
     validate_image(image)
     image_f = to_float(image)
-    gray = luma(image_f) / np.float32(255.0)
-    color_arr = np.array(color, dtype=np.float32)
-    return to_uint8(gray[..., np.newaxis] * color_arr)
+    red_w, green_w, blue_w = _REC601_WEIGHTS
+    raw_weights = np.array(
+        [red_w * color[0], green_w * color[1], blue_w * color[2]], dtype=np.float64
+    )
+    total = float(raw_weights.sum())
+    if total > 1e-9:
+        weights = (raw_weights / total).astype(np.float32)
+    else:
+        weights = np.array([red_w, green_w, blue_w], dtype=np.float32)
+    gray = (
+        weights[0] * image_f[..., 0] + weights[1] * image_f[..., 1] + weights[2] * image_f[..., 2]
+    )
+    return to_uint8(np.repeat(gray[..., np.newaxis], 3, axis=-1))
 
 
 __all__ = [

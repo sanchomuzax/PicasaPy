@@ -164,6 +164,81 @@ class TestClampGlowRadius:
         assert g.clamp_glow_radius(raw_radius) == pytest.approx(raw_radius)
 
 
+class TestClampGlowRadiusTengelyenkent:
+    """#504 (Holga-referencia): a Holga anizotrop sugarai (`0,5·R` és
+    `0,4·R`) tengelyenként KÜLÖN vágandók a 255-ös korláttal — a referencia
+    illesztése szerint a `255/255` jobban illeszkedik (RMS 0,112), mint az
+    arányt megtartó `255/204` (RMS 0,137). A Holga-hívás
+    (`glimmer_creative.apply_holga`) a `clamp_glow_radius`-t xblur-re és
+    yblur-re KÜLÖN-KÜLÖN hívja — ez a teszt ezt a hívási mintát rögzíti."""
+
+    def test_nagy_kepen_mindket_tengely_kulon_255re_vagva(self):
+        # 2560×1702-es képen (a referencia mérete): xblur=0,5·1280=640,
+        # yblur=0,4·1280=512 — mindkettő a korlát fölött, de nem egyenlő
+        # egymással, tehát ha egy közös (pl. a nagyobbik) értéket vágnánk,
+        # az arányt megtartva 255/204-et adna, NEM 255/255-öt.
+        outer_r = max(2560, 1702) / 2.0
+        xblur_raw = 0.5 * outer_r
+        yblur_raw = 0.4 * outer_r
+        xblur = g.clamp_glow_radius(xblur_raw)
+        yblur = g.clamp_glow_radius(yblur_raw)
+        assert xblur == g.GLOW_RADIUS_MAX
+        assert yblur == g.GLOW_RADIUS_MAX
+        # a rossz (arány-megtartó) eredmény 255/204 lenne — ellenőrizzük,
+        # hogy NEM azt kapjuk:
+        assert yblur != pytest.approx(xblur * (yblur_raw / xblur_raw))
+
+
+class TestBwTint:
+    """#504 (Holga-referencia): a `BW(filtercolor=...)` NEM színez, hanem a
+    szürkítés Rec.601-csatornasúlyait modulálja a `color`-ral — a Picasa
+    Holga-kimenete minden mért képponton R=G=B. A korábbi implementáció
+    (`ki = luma/255 · color`) SZÍNES kimenetet adott — ez volt a #504 hibája,
+    nem a csatornasorrend (#510 tévedett)."""
+
+    def test_kimenet_szurke_minden_pixelen(self):
+        rng = np.random.default_rng(3)
+        img = rng.integers(0, 255, size=(16, 16, 3), dtype=np.uint8)
+        result = g.bw_tint(img, (255, 102, 102))
+        assert np.all(result[..., 0] == result[..., 1])
+        assert np.all(result[..., 1] == result[..., 2])
+
+    def test_sulyok_a_referencia_kepletnek_megfeleloen(self):
+        """A `0xff6666` (255,102,102) szín melletti effektív súlyok a
+        referencia-méréssel egyeznek: R 0,516 / G 0,405 / B 0,079 (2 tizedes
+        tűréssel) — `w_c = luma_c·szín_c / Σ(luma_k·szín_k)`."""
+        # Tiszta piros/zöld/kék síkokon a bw_tint eredménye pontosan a
+        # hozzá tartozó súly (255-tel szorozva), mert a másik két csatorna
+        # bemenete nulla.
+        red_plane = np.zeros((1, 1, 3), dtype=np.uint8)
+        red_plane[0, 0, 0] = 255
+        green_plane = np.zeros((1, 1, 3), dtype=np.uint8)
+        green_plane[0, 0, 1] = 255
+        blue_plane = np.zeros((1, 1, 3), dtype=np.uint8)
+        blue_plane[0, 0, 2] = 255
+
+        color = (255, 102, 102)
+        red_w = float(g.bw_tint(red_plane, color)[0, 0, 0]) / 255.0
+        green_w = float(g.bw_tint(green_plane, color)[0, 0, 0]) / 255.0
+        blue_w = float(g.bw_tint(blue_plane, color)[0, 0, 0]) / 255.0
+
+        assert red_w == pytest.approx(0.516, abs=0.02)
+        assert green_w == pytest.approx(0.405, abs=0.02)
+        assert blue_w == pytest.approx(0.079, abs=0.02)
+
+    def test_semleges_szinnel_visszaadja_a_rec601_lumat(self):
+        """Ha `color` mindhárom csatornája egyenlő (pl. fehér), a súlyok a
+        sima Rec.601-re egyszerűsödnek — nincs modulálás."""
+        rng = np.random.default_rng(4)
+        img = rng.integers(0, 255, size=(8, 8, 3), dtype=np.uint8)
+        result = g.bw_tint(img, (255, 255, 255))
+        image_f = img.astype(np.float32)
+        expected = g.luma(image_f)
+        np.testing.assert_allclose(
+            result[..., 0].astype(np.float32), np.clip(np.rint(expected), 0, 255), atol=1.0
+        )
+
+
 class TestNoiseAndGradient:
     def test_zaj_determinisztikus(self, image):
         first = g.apply_noise(image, seed=5, low=0, high=50, grayscale=True, blend_alpha=1.0, blend_mode="multiply")
