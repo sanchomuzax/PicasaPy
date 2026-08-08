@@ -5,6 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.47] – 2026-08-08
+
+### Javítva
+- **A vignettás effektek most már az eredetihez hasonlítanak (#522, #504):**
+  a ragyogás számítása egy közelítő trükk helyett zárt képlettel dolgozik,
+  ahogy az eredeti művelet. Az eredeti Picasa kimenetéhez mérve az
+  eltérés a **Holgánál 31,6 → 14,2**, a **Lomónál 14,6 → 8,6**
+  (viszonyításul: az érintetlen kép eltérése 33,4 és 32,1).
+- A **Vignette** tiszta fekete képpontjainak aránya nagy képen
+  **8,2% → 0,1%** — a korábbi „befeketedő sarok" gyakorlatilag eltűnt.
+- A számítás **sebessége nem romlott**, és már nem függ a ragyogás
+  sugarától.
+
 ## [0.6.46] – 2026-08-08
 
 ### Hozzáadva
