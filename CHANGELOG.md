@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.38] – 2026-08-08
+
+### Hozzáadva
+- **Arcfelismerés — első lépcső (#26):** megjelent az arcok automatikus
+  megtalálásának alapja. A felismerő az OpenCV-be épített motorra épül,
+  **új függőség nélkül**, és a Picasáéval azonos öt arcpontot adja, amiből
+  a szemvonalra igazított arc-indexkép készül. **A meglévő névcímkéidhez
+  nem nyúl:** ahol már van ember által adott név, ott a program nem
+  detektál újra — a Picasában felépített arccímkék érintetlenek maradnak.
+- A felismerő modell fájlja **nincs a programban**, külön lépésben
+  szerezhető be. Ha hiányzik, az arcfelismerés **csendben kikapcsol**, és
+  minden más változatlanul működik.
+
+### Megjegyzés
+- Ez a lépcső még **nem jelenik meg a felületen** — a csoportosítás, az
+  elnevezés és a javaslatok a következő lépcsők.
+
 ## [0.6.37] – 2026-08-08
 
 ### Hozzáadva
