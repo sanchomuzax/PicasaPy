@@ -1,6 +1,7 @@
 """FileOpsController: fájlműveletek (átnevezés/áthelyezés/lomtár/fájlkezelő,
 #15) QML-hídja — útvonal-alapú, az AppControllertől (forró fájl) független."""
 
+import os
 from pathlib import Path
 
 import pytest
@@ -88,6 +89,91 @@ class TestDeletePhoto:
         )
         controller.deletePhoto(str(tmp_path / "nincs.jpg"))
         assert failures[0][0] == "delete"
+
+
+class TestDeletePhotoPermanently:
+    """#457: NAS-on/hálózati meghajtón, ahol nincs elérhető lomtár, a
+    végleges, azonnali törlésre külön slot — a `deletePhoto`-val
+    ellentétben nem a lomtárba mozgat."""
+
+    def test_emits_photo_deleted_and_removes_the_file(self, controller, tmp_path):
+        photo = tmp_path / "a.jpg"
+        photo.write_bytes(b"kep")
+        events = []
+        controller.photoDeleted.connect(lambda path: events.append(path))
+        controller.deletePhotoPermanently(str(photo))
+        assert events == [str(photo)]
+        assert not photo.exists()
+
+    def test_emits_operation_failed_on_missing_file(self, controller, tmp_path):
+        failures = []
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.deletePhotoPermanently(str(tmp_path / "nincs.jpg"))
+        assert failures[0][0] == "delete"
+
+
+@pytest.mark.skipif(
+    not hasattr(os, "getuid"),
+    reason="A mount-specifikus lomtár freedesktop.org (POSIX) fogalom — "
+    "Windowson a #457 előtti, home-trash viselkedés marad.",
+)
+class TestTrashAvailableFor:
+    """#457: kuka vs. végleges törlés megkülönböztetéséhez a QML-oldal ezzel
+    dönti el, melyik szöveget/slotot használja."""
+
+    def test_true_when_the_file_is_on_the_home_filesystem(
+        self, controller, tmp_path, monkeypatch
+    ):
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+        photo = tmp_path / "a.jpg"
+        photo.write_bytes(b"kep")
+        assert controller.trashAvailableFor([str(photo)]) is True
+
+    def test_false_when_no_path_has_a_trash(self, controller, tmp_path, monkeypatch):
+        topdir = tmp_path / "nas"
+        topdir.mkdir()
+        photo = topdir / "a.jpg"
+        photo.write_bytes(b"kep")
+        monkeypatch.setattr(
+            "picasapy.fileops.trash._device_of",
+            lambda p: 1 if str(p).startswith(str(topdir)) else 2,
+        )
+        monkeypatch.setattr("picasapy.fileops.trash._mount_point", lambda p: topdir)
+        monkeypatch.setattr(
+            "picasapy.fileops.trash.os.access", lambda path, mode: False
+        )
+        assert controller.trashAvailableFor([str(photo)]) is False
+
+    def test_mixed_selection_is_false_the_stricter_branch_wins(
+        self, controller, tmp_path, monkeypatch
+    ):
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+        with_trash = tmp_path / "a.jpg"
+        with_trash.write_bytes(b"kep")
+
+        topdir = tmp_path / "nas"
+        topdir.mkdir()
+        without_trash = topdir / "b.jpg"
+        without_trash.write_bytes(b"kep")
+
+        def device_of(p):
+            return 1 if str(p).startswith(str(topdir)) else 2
+
+        monkeypatch.setattr("picasapy.fileops.trash._device_of", device_of)
+        monkeypatch.setattr("picasapy.fileops.trash._mount_point", lambda p: topdir)
+        monkeypatch.setattr(
+            "picasapy.fileops.trash.os.access", lambda path, mode: False
+        )
+
+        assert (
+            controller.trashAvailableFor([str(with_trash), str(without_trash)])
+            is False
+        )
+
+    def test_empty_selection_is_true(self, controller):
+        assert controller.trashAvailableFor([]) is True
 
 
 class TestRevealPhoto:
