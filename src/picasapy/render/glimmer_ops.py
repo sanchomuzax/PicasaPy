@@ -247,6 +247,42 @@ def local_contrast(image_f: np.ndarray, radius: float, strength: float) -> np.nd
 
 # --- Belső ragyogás (GlowImageOperation innerglow) ----------------------
 
+# Nagy szigmájú Gauss-elmosásnál a szigma/lépték arányát ekörül tartjuk a
+# leskálázott rácson — elég kicsi ahhoz, hogy a `GaussianBlur` kernelmérete
+# ne robbanjon a felbontással, elég nagy ahhoz, hogy a visszaskálázás után a
+# szél→közép esés alakja ne torzuljon láthatóan (mérve: #504 jelentés).
+_BORDER_GLOW_TARGET_SIGMA = 8.0
+
+
+def _border_glow(height: int, width: int, xblur: float, yblur: float) -> np.ndarray:
+    """A `height`×`width` képhatár egypixeles keret-impulzusának
+    `xblur`/`yblur` szigmájú Gauss-elmosása.
+
+    Nagy szigmánál a teljes felbontáson futó `GaussianBlur` kernelmérete
+    (és ezzel a futásideje) a szigmával nő — egy valódi fényképméretű
+    (pl. 4000×3000) képen ez percekig tartó „lefagyást" okoz (#504). Mivel
+    a bemenet (a keret-impulzus) és a kimenet iránti igény is csak a
+    NAGYVONALÚ, szél→közép lecsengő ALAKRA vonatkozik (az `inner_glow` a
+    végén úgyis min-max normalizál), a keret leskálázható, ott elmosható
+    kisebb (arányosan kisebb szigmájú) rácson, majd a kép méretére
+    visszaskálázható — érdemi vizuális veszteség nélkül, sokkal
+    gyorsabban.
+    """
+    border = np.zeros((height, width), dtype=np.float32)
+    border[0, :] = 1.0
+    border[-1, :] = 1.0
+    border[:, 0] = 1.0
+    border[:, -1] = 1.0
+    min_sigma = min(float(xblur), float(yblur))
+    scale = max(1, int(min_sigma / _BORDER_GLOW_TARGET_SIGMA))
+    if scale <= 1:
+        return gaussian_blur_f(border, xblur, yblur)
+    small_h = max(1, height // scale)
+    small_w = max(1, width // scale)
+    small_border = cv2.resize(border, (small_w, small_h), interpolation=cv2.INTER_AREA)
+    small_glow = gaussian_blur_f(small_border, xblur / scale, yblur / scale)
+    return cv2.resize(small_glow, (width, height), interpolation=cv2.INTER_LINEAR)
+
 
 def inner_glow(
     image: np.ndarray,
@@ -267,18 +303,28 @@ def inner_glow(
     ~1, a középpont felé lecsengő), ezt `strength`-tel súlyozva keverjük
     a `color`-ral az eredeti kép fölé. `mask` (opcionális, H×W [0,1])
     ezt a hatást TOVÁBB korlátozza (pl. MuseumMatte csak a vonal sávján).
+
+    Nagy `xblur`/`yblur` szigmánál a keret-impulzus szétterül és majdnem
+    egyenletessé válik a teljes képen — a puszta maximumra normálás
+    (`glow / glow.max()`) ekkor a majdnem-lapos teret is 1-ig pumpálná,
+    ami a KÖZÉPPONTOT is befedné a `color`-ral (a #504 hiba: a Lomo/Holga
+    kimenete emiatt vált feketévé). Ezért a minimumot is figyelembe véve,
+    `(glow − min) / (max − min)` alakban normálunk — ez a szélen ~1-re,
+    a majdnem lapos belső területen ~0-ra fut, a szigmától függetlenül.
+    Elfajuló esetben (`max − min` ~0, azaz a tér a lebegőpontos zaj
+    szintjéig ellaposodott) nincs értelmezhető szél→közép esés, így a
+    súlyt egységesen nullázzuk — nincs látható ragyogás-hatás.
     """
     validate_image(image)
     height, width = image.shape[:2]
-    border = np.zeros((height, width), dtype=np.float32)
-    border[0, :] = 1.0
-    border[-1, :] = 1.0
-    border[:, 0] = 1.0
-    border[:, -1] = 1.0
-    glow = gaussian_blur_f(border, xblur, yblur)
+    glow = _border_glow(height, width, xblur, yblur)
     peak = float(glow.max())
-    if peak > 0:
-        glow = glow / np.float32(peak)
+    floor = float(glow.min())
+    spread = peak - floor
+    if spread > 1e-6:
+        glow = (glow - np.float32(floor)) / np.float32(spread)
+    else:
+        glow = np.zeros_like(glow)
     weight = np.clip(glow * np.float32(strength), 0.0, 1.0) * np.float32(alpha)
     if mask is not None:
         weight = weight * mask

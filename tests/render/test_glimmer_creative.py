@@ -65,6 +65,17 @@ class TestHolga:
     def test_fade_100_valtozatlan(self, image):
         np.testing.assert_array_equal(c.apply_holga(image, fade=100.0), image)
 
+    @pytest.mark.parametrize("height,width", [(64, 96), (600, 800)])
+    def test_nem_fekete_a_kimenet(self, height, width):
+        """#504: a Holga kisképe feketedett be nagy szigmájú belső
+        ragyogásnál — a kimenet átlagos fényessége maradjon érdemben
+        nulla fölött kicsi ÉS nagy képen is.
+        """
+        rng = np.random.default_rng(11)
+        img = rng.integers(20, 235, size=(height, width, 3), dtype=np.uint8)
+        result = c.apply_holga(img)
+        assert result.mean() > 5.0
+
 
 class TestLomo:
     @pytest.mark.parametrize("blur,fade", [(0.0, 0.0), (50.0, 0.0), (100.0, 100.0)])
@@ -73,6 +84,34 @@ class TestLomo:
 
     def test_fade_100_valtozatlan(self, image):
         np.testing.assert_array_equal(c.apply_lomo(image, fade=100.0), image)
+
+    @pytest.mark.parametrize("height,width", [(64, 96), (600, 800)])
+    def test_nem_fekete_a_kimenet(self, height, width):
+        """#504: a Lomo kisképe feketedett be (a 800×600-as eset a
+        bejelentés szerint teljesen fekete volt, átlag ~0) — a kimenet
+        átlagos fényessége maradjon érdemben nulla fölött kicsi ÉS nagy
+        képen is.
+        """
+        rng = np.random.default_rng(11)
+        img = rng.integers(20, 235, size=(height, width, 3), dtype=np.uint8)
+        result = c.apply_lomo(img)
+        assert result.mean() > 5.0
+
+    def test_teljesitmeny_nagy_kepen_gyors(self):
+        """#504: a nagy szigmájú belső ragyogás Gauss-elmosása O(percek)
+        volt egy fényképméretű (2000×1500) képen — a leskálázott
+        elmosásnak ez alá kell szorítania. Nagyvonalú korlát, hogy lassú
+        CI-n se legyen ingatag (a mért érték ~1-1,5 s volt fejlesztői
+        gépen, a régi kód ~37 s-ot vett igénybe ugyanitt).
+        """
+        import time
+
+        rng = np.random.default_rng(11)
+        img = rng.integers(20, 235, size=(1500, 2000, 3), dtype=np.uint8)
+        t0 = time.perf_counter()
+        c.apply_lomo(img)
+        elapsed = time.perf_counter() - t0
+        assert elapsed < 10.0, f"apply_lomo(2000x1500) túl lassú: {elapsed:.2f}s"
 
 
 class TestIr:
