@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.33] – 2026-08-08
+
+### Hozzáadva
+- **Szöveg-eszköz: kitöltés + körvonal, átlátszóság, felirat-átvétel
+  (#450, első lépcső):** a felirat eddig egyetlen színnel készült, így
+  tarka hátterű képen olvashatatlan volt. Mostantól külön választható a
+  **kitöltés** és a **körvonal** színe, állítható a körvonal vastagsága és
+  a szöveg átlátszósága, és bekapcsolható a **csak körvonalas** felirat.
+  Két új gomb: a **„Felirat átvétele"** egy kattintással beteszi a kép
+  meglévő feliratát a szövegmezőbe, a **„Minden meglévő szöveg törlése"**
+  pedig eltávolítja a képre írt szöveget.
+
 ## [0.6.32] – 2026-08-08
 
 ### Hozzáadva

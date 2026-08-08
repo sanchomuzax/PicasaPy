@@ -41,16 +41,26 @@ _LRU_CAPACITY = 2
 
 @dataclass(frozen=True)
 class TextOverlaySpec:
-    """A szöveg-eszköz (#148) élő előnézetéhez kért egyetlen szöveg-réteg.
+    """A szöveg-eszköz (#148/#450) élő előnézetéhez kért egyetlen szöveg-réteg.
 
     A `text=` ini-kulcs NEM a `filters=` láncba tartozik (ld.
     `picasapy.ini.text_overlay` docsztring), ezért a `FilterOp`-lánccal ellentétben
     ezt a hívó (`EditController`) külön adja át a `register()`-nek — a
-    renderelés a filters-lánc UTÁN, a végeredményre rajzolja rá."""
+    renderelés a filters-lánc UTÁN, a végeredményre rajzolja rá.
+
+    A stílus-mezők (`fill_color`/`outline_color`/`outline_thickness`/
+    `fill_enabled`/`opacity`, #450) alapértéke a `picasapy.render.text_overlay
+    .apply_text_overlay` alapértékeivel egyezik — a régi hívók (ahol a
+    hívó nem ad meg stílust) kimenete így változatlan marad."""
 
     content: str
     x: float
     y: float
+    fill_color: tuple[int, int, int] = (255, 255, 255)
+    outline_color: tuple[int, int, int] | None = None
+    outline_thickness: int = 0
+    fill_enabled: bool = True
+    opacity: float = 1.0
 
 
 class EditPreviewProvider(QQuickImageProvider):
@@ -152,7 +162,15 @@ class EditPreviewProvider(QQuickImageProvider):
             # így is a TÉNYLEGESEN megjelenített (szöveggel együtt renderelt)
             # képet tükrözi, a modul-docsztring elve szerint
             result_array = apply_text_overlay(
-                result_array, text.content, text.x, text.y
+                result_array,
+                text.content,
+                text.x,
+                text.y,
+                color=text.fill_color,
+                outline_color=text.outline_color,
+                outline_thickness=text.outline_thickness,
+                fill_enabled=text.fill_enabled,
+                opacity=text.opacity,
             )
         image = _rgb_array_to_qimage(result_array) if result_array is not None else QImage()
         histogram = (

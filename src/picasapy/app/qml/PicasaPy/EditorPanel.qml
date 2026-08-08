@@ -47,6 +47,21 @@ Rectangle {
     // vissza a felhasználói gépelést
     property string textDraftContent: ""
     property bool textPlacementPending: false
+    // #450: a kép mentett felirata ("Copy Caption" gombhoz) — a hívó
+    // (PhotoViewer) tölti a photosModel.captionAt()-ból; üresnél a gomb
+    // tiltott. A hasTextOverlay ("Remove all existing text" gombhoz) a
+    // controller.hasTextOverlay tükre, a többi (redeyeActive stb.) mintáját
+    // követve.
+    property string captionText: ""
+    property bool hasTextOverlay: false
+    // #450: szöveg-stílus — kitöltés+körvonal szín, körvonal-vastagság,
+    // kitöltés ki/be, átlátszóság; a hívó tölti a controller mentett
+    // értékeivel, az onXChanged jelek viszik vissza a felhasználói módosítást
+    property string textFillColor: "#ffffff"
+    property string textOutlineColor: "#000000"
+    property real textOutlineThickness: 0
+    property bool textFillEnabled: true
+    property real textOpacity: 1
     // közös őr: crop/retouch/text bármelyike a fülsáv+rács helyett a saját
     // teljes-panelnyi tartalmát mutatja (a cropColumn mintáját folytatva)
     readonly property bool modeToolActive: panel.cropActive || panel.retouchActive
@@ -56,6 +71,13 @@ Rectangle {
     signal textDraftEdited(string content)
     signal textApplyRequested()
     signal textCancelRequested()
+    signal textCopyCaptionRequested()
+    signal textRemoveAllRequested()
+    signal textFillColorEdited(string hex)
+    signal textOutlineColorEdited(string hex)
+    signal textOutlineThicknessEdited(real value)
+    signal textFillEnabledEdited(bool value)
+    signal textOpacityEdited(real value)
     // egygombos javítások (#116): nem módkapcsolók — a gomb mindig új
     // réteget fűz a láncra, és csak akkor tiltott, ha ugyanez a szűrő a
     // lánc utolsó eleme (a hívó/EditController tölti)
@@ -453,6 +475,9 @@ Rectangle {
         property bool buttonEnabled: true
         // "" = sima gomb (korábbi kinézet); egyébként image://effectthumb/…
         property string thumbSource: ""
+        // #450: opcionális hover-buboréksúgó (pl. "Copy Caption" gomb) —
+        // üres stringnél nincs tooltip (a legtöbb PanelButton-hívó)
+        property string tooltip: ""
         signal buttonClicked()
         Layout.fillWidth: true
         // #318: a felirat teljesen olvasható kell legyen. Bélyegképes
@@ -534,7 +559,44 @@ Rectangle {
         MouseArea {
             id: pbtnMouse
             anchors.fill: parent
+            hoverEnabled: pbtn.tooltip.length > 0
             onClicked: pbtn.buttonClicked()
+        }
+        ToolTip.text: pbtn.tooltip
+        ToolTip.visible: pbtn.tooltip.length > 0 && pbtnMouse.containsMouse
+        ToolTip.delay: 400
+    }
+
+    // #450: kitöltés/körvonal szín-választó — rögzített, PicasaPy-saját
+    // színpaletta (nincs a projektben natív ColorDialog-használat, ld.
+    // #450 jelentés), a kijelölt szín kék kerettel jelölt. A `currentColor`
+    // a controller mentett/piszkozat értékét tükrözi, `colorPicked` viszi
+    // vissza a kattintást a hívóhoz.
+    component TextColorSwatches: RowLayout {
+        id: swatches
+        property string currentColor: "#ffffff"
+        signal colorPicked(string hex)
+        readonly property var palette: [
+            "#ffffff", "#000000", "#ff0000", "#ffff00",
+            "#00a651", "#0072bc", "#ff7f27", "#a349a4"
+        ]
+        spacing: 3
+        Repeater {
+            model: swatches.palette
+            delegate: Rectangle {
+                required property string modelData
+                required property int index
+                objectName: swatches.objectName + "Swatch" + index
+                width: 16; height: 16; radius: 2
+                color: modelData
+                border.width: modelData.toLowerCase() === swatches.currentColor.toLowerCase() ? 2 : 1
+                border.color: modelData.toLowerCase() === swatches.currentColor.toLowerCase()
+                              ? Theme.selectionBlue : Theme.chromeBorder
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: swatches.colorPicked(modelData)
+                }
+            }
         }
     }
 
@@ -1809,6 +1871,90 @@ Rectangle {
             onTextChanged: panel.textDraftEdited(text)
         }
 
+        // #450: a kép meglévő feliratát tölti a szövegmezőbe — feliratozatlan
+        // képnél a gomb tiltott (a jegy szó szerinti szövege szerint)
+        PanelButton {
+            objectName: "textCopyCaptionButton"
+            Layout.fillWidth: true
+            label: qsTr("Copy Caption")
+            tooltip: qsTr("Add text based on the picture's caption")
+            buttonEnabled: panel.captionText.length > 0
+            onButtonClicked: panel.textCopyCaptionRequested()
+        }
+
+        // #450: kitöltés-szín ÉS körvonal-szín, egymástól függetlenül — a
+        // betűtípus-lista/méret/félkövér-dőlt-aláhúzott/igazítás ehhez a
+        // lépcsőhöz NEM tartozik (valódi TrueType-rajzolót igényelne, ma
+        // Hershey-fonttal rajzolunk — ld. #450 jegy).
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+            ColumnLayout {
+                spacing: 4
+                Text {
+                    text: qsTr("Text color")
+                    font.pixelSize: Theme.fontSize - 1
+                    color: Theme.textGray
+                }
+                TextColorSwatches {
+                    objectName: "textFillColorSwatches"
+                    currentColor: panel.textFillColor
+                    onColorPicked: (hex) => panel.textFillColorEdited(hex)
+                }
+            }
+            ColumnLayout {
+                spacing: 4
+                Text {
+                    text: qsTr("Outline color")
+                    font.pixelSize: Theme.fontSize - 1
+                    color: Theme.textGray
+                }
+                TextColorSwatches {
+                    objectName: "textOutlineColorSwatches"
+                    currentColor: panel.textOutlineColor
+                    onColorPicked: (hex) => panel.textOutlineColorEdited(hex)
+                }
+            }
+        }
+
+        CheckBox {
+            id: textFillDisabledCheck
+            objectName: "textFillDisabledCheck"
+            Layout.fillWidth: true
+            text: qsTr("Don't show the solid fill color (show outline only)")
+            checked: !panel.textFillEnabled
+            onToggled: panel.textFillEnabledEdited(!checked)
+        }
+
+        Label {
+            text: qsTr("Outline thickness")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+        PicasaSlider {
+            id: textOutlineThicknessSlider
+            objectName: "textOutlineThicknessSlider"
+            Layout.fillWidth: true
+            from: 0; to: 8
+            stepSize: 1
+            value: panel.textOutlineThickness
+            onMoved: panel.textOutlineThicknessEdited(value)
+        }
+
+        Label {
+            text: qsTr("Opacity")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+        PicasaSlider {
+            id: textOpacitySlider
+            objectName: "textOpacitySlider"
+            Layout.fillWidth: true
+            from: 0; to: 1
+            value: panel.textOpacity
+            onMoved: panel.textOpacityEdited(value)
+        }
+
         RowLayout {
             Layout.fillWidth: true
             spacing: 6
@@ -1824,6 +1970,16 @@ Rectangle {
                 label: qsTr("Cancel") + " ✘"
                 onButtonClicked: panel.textCancelRequested()
             }
+        }
+
+        // #450: az összes szövegelem törlése — ma egyetlen szövegelem van,
+        // a meglévő clearText (Visszavonás-verem NÉLKÜLI, azonnali) útvonalon
+        PanelButton {
+            objectName: "textRemoveAllButton"
+            Layout.fillWidth: true
+            label: qsTr("Remove all existing text")
+            buttonEnabled: panel.hasTextOverlay
+            onButtonClicked: panel.textRemoveAllRequested()
         }
     }
 }
