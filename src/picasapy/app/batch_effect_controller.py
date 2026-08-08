@@ -23,7 +23,17 @@ része ennek a szeletnek: az index nem tárolja, mely fotóknak van szöveg-
 overlay-je (`text=`/`textactive=`, ld. `picasapy.ini.text_overlay`), így a
 menüpont #425 5. pontban leírt feltételes engedélyezése (csak akkor aktív,
 ha a kijelölésben van szövegréteges kép) jelen ismeretekkel nem
-állapítható meg olcsón — a `PicasaMenuBar.qml`-ben egyelőre placeholder."""
+állapítható meg olcsón — a `PicasaMenuBar.qml`-ben egyelőre placeholder.
+
+„Undo All Edits" (#465 3. pont, a Kép-menü ugyanezen tétele, a Csoportos
+szerkesztés almenün KÍVÜL): a `clearAllEffectsMany` a fenti infrastruktúrát
+(mappánkénti írás, undo-verem) újrahasználva törli a kijelölt képek TELJES
+`filters=` láncát a `crop=` tükör-kulccsal együtt — a `_write_filters`-től
+eltérően EZ igen érinti a crop64-et, hiszen a „mindent vissza" definíció
+szerint (ld. #465 issue) a teljes láncot törli, nem csak egy effektet. Az
+`_batch_edit_undo` verem ezért MINDKÉT kulcs (`filters=`, `crop=`) előző
+nyers értékét megőrzi — enélkül az „Undo All Edits" visszavonása a vágást
+véglegesen elveszítené, miközben a szűrőlánc visszatérne (#465 javítás)."""
 
 from __future__ import annotations
 
@@ -72,6 +82,16 @@ def _write_filters(document, section_name: str, session: EditSession):
     return document.with_value(section_name, "filters", session.to_value())
 
 
+def _clear_all_effects(document, section_name: str):
+    """A `filters=` lánc TELJES törlése a `crop=` tükör-kulccsal együtt
+    (#465 3. pont, „Undo All Edits") — az `edit_controller._save()` mintája:
+    a crop64 a láncon belül lakik, ezért a láncot törölve a külön
+    Picasa-paritás `crop=rect64(...)` kulcs is elavulttá válna, ha
+    érintetlenül maradna."""
+    document = document.with_removed(section_name, "filters")
+    return document.with_removed(section_name, "crop")
+
+
 class BatchEffectMixin(BackgroundWorkerMixin):
     """A Kép ▸ Csoportos szerkesztés almenü motorja (#425)."""
 
@@ -95,8 +115,16 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         self._batch_edit_total = 0
         self._batch_edit_cancel = threading.Event()
         # az utolsó köteg visszavonási adatai: (mappa, fájlnév, ELŐZŐ nyers
-        # filters=) hármasok listája; None = nincs (törölve/le nem futott)
-        self._batch_edit_undo: list[tuple[str, str, str | None]] | None = None
+        # filters=, ELŐZŐ nyers crop=) négyesek listája; None = nincs
+        # (törölve/le nem futott). A `crop=` Picasa-paritás tükör-kulcs is
+        # KELL az undóhoz (#465 javítás): a `clearAllEffectsMany` ezt is
+        # törli, enélkül az „Undo All Edits" visszavonása után a vágás
+        # véglegesen elveszne, miközben a szűrőlánc visszatér — ez
+        # adatvesztés lenne. Az `applyEffectMany` nem érinti a crop=-ot,
+        # de ártalmatlan ugyanazt az (érintetlen) értéket visszaírni.
+        self._batch_edit_undo: (
+            list[tuple[str, str, str | None, str | None]] | None
+        ) = None
         self._batchEditProgress.connect(self._on_batch_edit_progress)
         self._batchEditWorkDone.connect(self._on_batch_edit_work_done)
 
@@ -154,13 +182,13 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         self._begin_sync_job()
 
         def worker() -> None:
-            undo_batch: list[tuple[str, str, str | None]] = []
+            undo_batch: list[tuple[str, str, str | None, str | None]] = []
             done = 0
             for folder, folder_photos in by_folder.items():
                 if self._batch_edit_cancel.is_set():
                     break
                 ini_path = Path(folder) / PICASA_INI_NAME
-                entries: list[tuple[str, str, str | None]] = []
+                entries: list[tuple[str, str, str | None, str | None]] = []
 
                 # B023-minta (`effects_controller.pasteEffects`): az
                 # `entries` alapértelmezett argumentumként kötve, mert a
@@ -169,13 +197,79 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                     document, folder=folder, folder_photos=folder_photos,
                     entries=entries,
                 ):
-                    fresh: list[tuple[str, str, str | None]] = []
+                    fresh: list[tuple[str, str, str | None, str | None]] = []
                     for photo in folder_photos:
                         section = document.section(photo.name)
                         prev = section.get("filters") if section else None
-                        fresh.append((folder, photo.name, prev))
+                        prev_crop = section.get("crop") if section else None
+                        fresh.append((folder, photo.name, prev, prev_crop))
                         session = _apply_one(EditSession.from_value(prev), effect_name)
                         document = _write_filters(document, photo.name, session)
+                    entries[:] = fresh
+                    return document
+
+                try:
+                    update_document(ini_path, mutate, backup=True)
+                except _WRITE_ERRORS as error:
+                    self.photoOpFailed.emit(str(error))
+                    break
+                undo_batch.extend(entries)
+                self._sync_tree_locked(folder)
+                done += 1
+                self._batchEditProgress.emit(folder, done, len(by_folder))
+            self._batch_edit_undo = undo_batch if undo_batch else None
+            self._batchEditWorkDone.emit()
+
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-batcheffect")
+
+    @Slot(list)
+    def clearAllEffectsMany(self, rows) -> None:
+        """„Undo All Edits" (#465 3. pont): a kijelölt képek MINDEGYIKÉNEK
+        teljes szerkesztési lánca (`filters=`, a `crop=` tükör-kulccsal
+        együtt) törlődik — az `applyEffectMany` mappánkénti, háttérszálas,
+        megszakítható mintáját követi, és UGYANAZT az `_batch_edit_undo`
+        vermet tölti, tehát a `undoBatchEdit()` ezt is visszavonja — a
+        `crop=` tükör-kulccsal EGYÜTT (#465 javítás): enélkül a vágás
+        visszavonás után is véglegesen elveszne, miközben a szűrőlánc
+        visszatérne."""
+        self._ensure_batch_edit()
+        photos = self._rows_to_photos(rows)
+        if not photos:
+            return
+
+        by_folder: dict[str, list] = {}
+        for photo in photos:
+            by_folder.setdefault(photo.folder_path, []).append(photo)
+
+        self._batch_edit_cancel.clear()
+        self._batch_edit_active = True
+        self._batch_edit_done = 0
+        self._batch_edit_total = len(by_folder)
+        self._batch_edit_folder = next(iter(by_folder))
+        self.batchEditChanged.emit()
+        self._begin_sync_job()
+
+        def worker() -> None:
+            undo_batch: list[tuple[str, str, str | None, str | None]] = []
+            done = 0
+            for folder, folder_photos in by_folder.items():
+                if self._batch_edit_cancel.is_set():
+                    break
+                ini_path = Path(folder) / PICASA_INI_NAME
+                entries: list[tuple[str, str, str | None, str | None]] = []
+
+                def mutate(
+                    document, folder=folder, folder_photos=folder_photos,
+                    entries=entries,
+                ):
+                    fresh: list[tuple[str, str, str | None, str | None]] = []
+                    for photo in folder_photos:
+                        section = document.section(photo.name)
+                        prev = section.get("filters") if section else None
+                        prev_crop = section.get("crop") if section else None
+                        fresh.append((folder, photo.name, prev, prev_crop))
+                        document = _clear_all_effects(document, photo.name)
                     entries[:] = fresh
                     return document
 
@@ -231,18 +325,23 @@ class BatchEffectMixin(BackgroundWorkerMixin):
 
     @Slot()
     def undoBatchEdit(self) -> None:
-        """Az utolsó kötegelt effekt-alkalmazás visszavonása — minden
-        érintett kép `filters=` kulcsa visszaáll az alkalmazás előtti
-        (nyers) értékre (#425 4. pont: egyetlen visszavonási lépés)."""
+        """Az utolsó kötegelt effekt-alkalmazás (vagy „Undo All Edits")
+        visszavonása — minden érintett kép `filters=` KULCSA ÉS `crop=`
+        tükör-kulcsa is visszaáll az alkalmazás előtti (nyers) értékre
+        (#425 4. pont: egyetlen visszavonási lépés; #465 javítás: a
+        `crop=` visszaállítása nélkül a `clearAllEffectsMany` által törölt
+        vágás visszavonás után is véglegesen elveszne — az `applyEffectMany`
+        nem érinti a crop=-ot, ott ugyanazt az értéket írjuk vissza, ami
+        ártalmatlan no-op)."""
         self._ensure_batch_edit()
         if not self._batch_edit_undo:
             return
         batch = self._batch_edit_undo
         self._batch_edit_undo = None
 
-        by_folder: dict[str, list[tuple[str, str | None]]] = {}
-        for folder, name, prev_filters in batch:
-            by_folder.setdefault(folder, []).append((name, prev_filters))
+        by_folder: dict[str, list[tuple[str, str | None, str | None]]] = {}
+        for folder, name, prev_filters, prev_crop in batch:
+            by_folder.setdefault(folder, []).append((name, prev_filters, prev_crop))
 
         from picasapy.index import open_index
 
@@ -251,13 +350,19 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                 ini_path = Path(folder) / PICASA_INI_NAME
 
                 def mutate(document, entries=entries):
-                    for name, prev_filters in entries:
+                    for name, prev_filters, prev_crop in entries:
                         if prev_filters is not None:
                             document = document.with_value(
                                 name, "filters", prev_filters
                             )
                         else:
                             document = document.with_removed(name, "filters")
+                        if prev_crop is not None:
+                            document = document.with_value(
+                                name, "crop", prev_crop
+                            )
+                        else:
+                            document = document.with_removed(name, "crop")
                     return document
 
                 try:

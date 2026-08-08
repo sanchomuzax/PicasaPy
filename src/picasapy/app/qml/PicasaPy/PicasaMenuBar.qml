@@ -98,6 +98,10 @@ MenuBar {
     // "grain2"/"warm"). A forgatás NEM ide tartozik — az a meglévő
     // `rotateRightMany`/`rotateLeftMany` úton fut, közvetlenül a Main.qml-ből.
     signal batchApplyEffectRequested(string name)
+    // #465 3. pont: „Undo All Edits" — a kijelölt kép(ek) TELJES
+    // szerkesztési láncát törli (a Csoportos szerkesztés almenün KÍVÜL, a
+    // Kép menü saját tétele) — megerősítéssel, ld. Main.qml ConfirmDialog.
+    signal undoAllEditsRequested()
 
     // #327: gyorsbillentyűk azoknak az AKTÍV menüpontoknak, amelyeknek
     // még nincs élő bekötésük máshol (a többi már a Main.qml globális
@@ -523,7 +527,14 @@ MenuBar {
             PicasaMenuItem { text: qsTr("Show Text"); placeholder: true }
             PicasaMenuItem { text: qsTr("Hide Text"); placeholder: true }
         }
-        PicasaMenuItem { text: qsTr("Undo All Edits"); placeholder: true }
+        // #465 3. pont: korábban placeholder — a kijelölt kép(ek) teljes
+        // szerkesztési láncát törli, megerősítéssel (Main.qml)
+        MenuItem {
+            objectName: "menuPictureUndoAllEdits"
+            text: qsTr("Undo All Edits")
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.undoAllEditsRequested()
+        }
         MenuSeparator {}
         MenuItem {
             objectName: "menuPictureHide"

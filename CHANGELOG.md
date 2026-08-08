@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.29] – 2026-08-08
+
+### Hozzáadva
+- **Képtálca: a képek mappaváltás után is megmaradnak (#455, első lépcső):**
+  az alsó sáv eddig csak a pillanatnyi kijelölést tükrözte, így mappát váltva
+  minden elveszett. Mostantól a „Megtartás" gombbal több mappából
+  gyűjthetők össze képek; a megtartottakat zöld tű jelöli a rácsban, és a
+  tálca ürítése rákérdez.
+
 ## [0.6.28] – 2026-08-08
 
 ### Javítva
