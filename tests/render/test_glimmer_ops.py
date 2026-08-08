@@ -115,6 +115,27 @@ class TestInnerGlow:
         result = g.inner_glow(white, (0, 0, 0), 6.0, 6.0, 1.4, alpha=1.0)
         assert int(result[0, 30, 0]) < int(result[20, 30, 0])
 
+    @pytest.mark.parametrize("sigma", [5.0, 20.0, 60.0, 140.0, 280.0])
+    def test_nagy_szigmanal_a_kozeppont_sulya_kozel_nulla(self, sigma):
+        """#504: nagy szigmánál a keret-impulzus szinte egyenletessé mosódik
+        szét — a puszta max-normálás ekkor a KÖZÉPPONTOT is majdnem 1
+        súlyra pumpálná (teljes befeketedés). A `(glow−min)/(max−min)`
+        normálásnak a középpont súlyát ~0-n kell tartania minden szigmánál.
+        """
+        white = np.full((600, 800, 3), 255, dtype=np.uint8)
+        result = g.inner_glow(white, (0, 0, 0), sigma, sigma, 1.1, alpha=1.0)
+        center = result[300, 400]
+        # fehér alapon: a súly ~0 <=> a középpont pixel közel fehér marad
+        assert center.astype(np.float64).mean() > 250.0
+
+    def test_nagy_kepen_sem_feketedik_be_a_kozep(self):
+        """A #504 jelentés konkrét mérete (800×600) valódi zajképen."""
+        rng = np.random.default_rng(7)
+        img = rng.integers(20, 235, size=(600, 800, 3), dtype=np.uint8)
+        radius = 35.0 * 0.02 * max(img.shape[:2]) / 2.0  # apply_lomo sugara ~280
+        result = g.inner_glow(img, (0, 0, 0), radius, radius, 1.1, alpha=1.0)
+        assert result.mean() > 20.0
+
 
 class TestNoiseAndGradient:
     def test_zaj_determinisztikus(self, image):

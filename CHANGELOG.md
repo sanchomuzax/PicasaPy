@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.39] – 2026-08-08
+
+### Javítva
+- **A „Lomo-szerű" effekt fekete képe és a befagyás (#504):** az effekt
+  kimenete teljesen fekete lett, az alkalmazása pedig percekre
+  megbénította a programot — és mivel az effekt minden megnyitáskor
+  újraszámolódik, az így mentett kép sem nyílt meg. **A képek nem
+  sérültek meg**, csak a számítás akadt el. Mindkét ok javítva: a
+  vignetta-számítás nagy sugárnál az egész képet befeketítette, a nagy
+  elmosás pedig a képmérettel robbanásszerűen lassult.
+  Mérve: a Lomo kimenetének átlagos fényessége 0,0 → 52,0, a futásideje
+  2000×1500-as képen **37 s → 0,87 s**; a Holgáé 14,6 s → 1,1 s.
+
+### Ismert korlát
+- A „Holga-szerű" effekt már nem feketedik és nem lassú, de **továbbra is
+  nagyon sötét**. Ez nem a fenti hiba maradéka, hanem az effekt
+  hangolásának kérdése (a vignetta sugarai nincsenek dokumentálva az
+  eredetiből) — külön munka, ld. #504.
+
 ## [0.6.38] – 2026-08-08
 
 ### Hozzáadva
