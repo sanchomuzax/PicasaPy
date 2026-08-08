@@ -159,10 +159,19 @@ def read_exif_details(path: str | Path) -> ExifDetails:
     )
 
 
+# #429: a Picasa `.exe`-jéből előkerült, gyártói EXIF-szemetet takarító
+# átírás — konkrétan csak ez az egy eset dokumentált (a binárisban a
+# `histogram` rétegtípus natív kódja van, a további gyártói átírások nem
+# derülnek ki innen; ÚJ bejegyzést csak bizonyított forrás alapján vegyünk fel).
+_MAKE_NORMALIZATION = {"NIKON CORPORATION": "NIKON"}
+
+
 def _camera(make, model) -> str | None:
     """`Gyártó Modell` — de sok gyártó a modellbe is beleírja a márkát,
-    ilyenkor nem duplikálunk."""
+    ilyenkor nem duplikálunk. A gyártónevet a Picasa-mintájú takarítás után
+    (`_MAKE_NORMALIZATION`, #429) használjuk fel."""
     make = make.strip() if isinstance(make, str) else ""
+    make = _MAKE_NORMALIZATION.get(make.upper(), make)
     model = model.strip() if isinstance(model, str) else ""
     if not model:
         return make or None

@@ -186,6 +186,24 @@ class TestExifDetails:
         )
         assert read_exif_details(photo).camera == "Canon EOS 550D"
 
+    def test_nikon_corporation_make_normalized(self, tmp_path):
+        # #429: az eredeti Picasa a gyártói EXIF-szemetet takarítja —
+        # a `.exe`-ből előkerült konkrét átírás: NIKON CORPORATION -> NIKON
+        photo = _jpeg_with_exif(
+            tmp_path,
+            zeroth={
+                piexif.ImageIFD.Make: b"NIKON CORPORATION",
+                piexif.ImageIFD.Model: b"NIKON D90",
+            },
+        )
+        assert read_exif_details(photo).camera == "NIKON D90"
+
+    def test_nikon_corporation_make_normalized_without_model(self, tmp_path):
+        photo = _jpeg_with_exif(
+            tmp_path, zeroth={piexif.ImageIFD.Make: b"NIKON CORPORATION"}
+        )
+        assert read_exif_details(photo).camera == "NIKON"
+
     def test_no_exif_gives_empty(self, tmp_path):
         from PIL import Image
 
