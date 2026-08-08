@@ -574,6 +574,21 @@
     </message>
 </context>
 <context>
+    <name>AddCustomAspectRatioDialog</name>
+    <message>
+        <source>Add Custom Aspect Ratio</source>
+        <translation>Egyéni képarány hozzáadása</translation>
+    </message>
+    <message>
+        <source>Width:</source>
+        <translation>Szélesség:</translation>
+    </message>
+    <message>
+        <source>Name:</source>
+        <translation>Név:</translation>
+    </message>
+</context>
+<context>
     <name>RelocateController</name>
     <message>
         <source>Choose a new database location first.</source>
@@ -985,14 +1000,44 @@
         <translation>Jelenlegi méretarány</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="356"/>
+        <source>Current ratio</source>
+        <translation>Jelenlegi arány</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="104"/>
         <source>A4: Full page</source>
         <translation>A4: Teljes oldal</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="372"/>
+        <source>Full page (A4)</source>
+        <translation>Teljes oldal (A4)</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="105"/>
         <source>Square: CD cover</source>
         <translation>Négyzet: CD-borító</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="371"/>
+        <source>Square</source>
+        <translation>Négyzet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="1714"/>
+        <source>This image's orientation has been modified by the Straighten tool and might not crop accurately… try undoing the Straighten fix, then recrop, and Straighten again if necessary.</source>
+        <translation>A kép tájolását a Kiegyenesítés eszköz módosította, ezért a vágás pontatlan lehet… próbálja meg visszavonni a Kiegyenesítés javítást, végezze el a vágást, majd szükség esetén alkalmazza újra a Kiegyenesítést.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="1834"/>
+        <source>Add Custom Aspect Ratio…</source>
+        <translation>Egyéni képarány hozzáadása…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="1810"/>
+        <source>Delete this custom aspect ratio?</source>
+        <translation>Törli ezt az egyéni képarányt?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="106"/>

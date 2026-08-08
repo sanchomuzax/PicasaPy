@@ -54,6 +54,7 @@ TagContextMenu 1.0 TagContextMenu.qml
 TrayContextMenu 1.0 TrayContextMenu.qml
 FolderPropertiesDialog 1.0 FolderPropertiesDialog.qml
 NewCollectionDialog 1.0 NewCollectionDialog.qml
+AddCustomAspectRatioDialog 1.0 AddCustomAspectRatioDialog.qml
 OptionsDialog 1.0 OptionsDialog.qml
 OptionsTabGeneral 1.0 OptionsTabGeneral.qml
 OptionsTabEmail 1.0 OptionsTabEmail.qml

@@ -205,9 +205,15 @@ Rectangle {
         tiltSlider.suppressPreview = true
         tiltSlider.value = editController.tiltParam
         tiltSlider.suppressPreview = false
+        // #448: a Kiegyenesítés-figyelmeztetés a vágó-panelen — a
+        // tiltParam a mentett döntés-paraméter, 0.0 = nincs aktív tilt
+        editorPanel.straightenActive = editController.tiltParam !== 0
     }
     function syncPanelFromController() {
         editorPanel.redeyeActive = editController.redeyeActive
+        // #448: a tilt-szűrő a láncban változhatott (pl. a felhasználó
+        // épp most alkalmazta a Kiegyenesítést) — a figyelmeztetés kövesse
+        editorPanel.straightenActive = editController.tiltParam !== 0
         // egygombos javítások (#116): "nyomható-e" tükrözése — a gomb
         // tiltott, amíg ugyanez a szűrő a lánc utolsó eleme
         editorPanel.enhanceEnabled = editController.enhanceEnabled

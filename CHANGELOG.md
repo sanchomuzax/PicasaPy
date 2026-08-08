@@ -5,6 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.35] – 2026-08-08
+
+### Hozzáadva
+- **Vágás: az eredeti képarány-készlet és saját arányok (#448, első
+  lépcső):** a vágás-panel arány-listája az eredeti Picasa tényleges
+  kulcskészletét követi (4x4, 4x3, 4x6, 5x7, 8x10, 5x3, 9x13, 10x15,
+  13x18, 5x8, 16x10, 16x9, négyzet, A4). Mostantól **saját képarány is
+  felvehető névvel** (szélesség × magasság), és törölhető is; a program
+  megjegyzi a **legutóbb használt arányt**.
+- **Figyelmeztetés a kiegyenesítés után:** ha a képen már van
+  kiegyenesítés, a vágás-panel az eredeti Picasa szövegével figyelmezteti
+  a felhasználót, hogy a vágás pontatlan lehet.
+
 ## [0.6.34] – 2026-08-08
 
 ### Hozzáadva
