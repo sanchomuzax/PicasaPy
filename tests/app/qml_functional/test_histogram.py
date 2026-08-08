@@ -152,19 +152,56 @@ class TestHistogramBoxWiring:
         # maximumLineCount (2 sor engedett) és a QML-forrás rögzíti
         assert title.property("maximumLineCount") == 2
 
-    def test_panel_background_is_original_picasa_brown(self, qml_app, qt_app):
-        """#429: az eredeti `nerdview` panel háttere meleg barna `#a88974`,
-        nem szürke Theme-token (`respack.yt` határolódoboz-adata)."""
+    def test_panel_background_is_not_brown(self, qml_app, qt_app):
+        """#512: a #429-ben bevezetett `#a88974` meleg barna REGRESSZIÓ volt
+        — a bejelentő eredeti Picasa-képernyőképe világosszürke panelt
+        mutat. A panel mostantól a `Theme.chromeBg` tokent követi (a
+        szerkesztőpanel saját krómháttere), nem rögzített barna literál."""
+        window, _, engine = qml_app
+        self._open_viewer(window, qt_app)
+        box = window.findChild(QObject, "viewerHistogramBox")
+        theme = engine.singletonInstance("PicasaPy", "Theme")
+        assert box.property("color") != QColor("#a88974")
+        assert theme is not None
+        assert box.property("color") == theme.property("chromeBg")
+
+    def test_plot_area_background_is_distinct_from_panel(self, qml_app, qt_app):
+        """#512: a rajzterület (`histoback`/`histo` réteg) az eredeti
+        képernyőkép szerint elkülönül, világosabb a panel hátterétől —
+        a `Theme.contentPanel` tokent használja, ami eltér a panel
+        `Theme.chromeBg` hátterétől."""
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
         box = window.findChild(QObject, "viewerHistogramBox")
-        assert box.property("color") == QColor("#a88974")
-
-    def test_plot_area_has_white_background(self, qml_app, qt_app):
-        """#429: a rajzterület (`histoback`/`histo` réteg) fehér alapú,
-        elkülönül a barna panel-háttértől."""
-        window, _, _ = qml_app
-        self._open_viewer(window, qt_app)
         background = window.findChild(QObject, "histogramPlotBackground")
         assert background is not None, "histogramPlotBackground nem található"
-        assert background.property("color") == QColor("#ffffff")
+        assert background.property("color") != box.property("color")
+
+    def test_plot_area_never_overlaps_long_multiline_exif_text(self, qml_app, qt_app):
+        """#512 regresszió: hosszú, TÖBB SOROS (pl. magyar fordítású) EXIF-
+        blokk mellett is a rajzterület alja a szöveg fölött / annak tetején
+        marad — nem lóg rá. Korábban a kézzel számolt magasság-levonás
+        (`box.anchors.margins`, `cameraLabel.implicitHeight`) hibás margót
+        használt, és bőséges szöveg mellett a rajzterület és a szöveg
+        doboza AZONOS y-pozícióból indult (mérve: 8 soros EXIF esetén
+        mindkettő 19px-en). A ColumnLayout-alapú elosztás ezt szerkezetileg
+        kizárja."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        box = window.findChild(QObject, "viewerHistogramBox")
+        rows = [
+            f"Nagyon hosszú fényképezőgép-adat sor {i}, ami biztosan több sorba törik\tÉrték {i}"
+            for i in range(8)
+        ]
+        box.setProperty("cameraSummary", "\n".join(rows))
+        for _ in range(6):
+            qt_app.processEvents()
+
+        plot = window.findChild(QObject, "histogramPlot")
+        camera = window.findChild(QObject, "cameraSummaryArea")
+        assert plot is not None and camera is not None
+        plot_bottom = plot.property("y") + plot.property("height")
+        assert plot_bottom <= camera.property("y") + 0.01, (
+            f"a rajzterület ({plot_bottom}) rálóg az EXIF-szövegre "
+            f"({camera.property('y')})"
+        )

@@ -28,6 +28,11 @@ SZKRIPTHIBAK = [
     "file:///…/PicasaMenuBar.qml:154: Unable to assign [undefined] to bool",
     "file:///…/PhotoViewer.qml:12: TypeError: controller.viewerInfo "
     "is not a function",
+    # #506: a saját komponens tulajdonsága elfedi az alaposztály tagját
+    # (pl. `palette` az Item/Control-on) — mindig kódhiba, mindig buktasson.
+    "qt.qml.propertyCache.append: Member palette of the object "
+    "TextColorSwatches overrides a member of the base object. Consider "
+    "renaming it or adding final or override specifier",
 ]
 
 # Platformfüggő környezeti zaj — ezek NEM buktathatják a tesztet.

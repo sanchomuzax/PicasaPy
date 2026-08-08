@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.43] – 2026-08-08
+
+### Javítva
+- **Hisztogram-panel (#512):** a panel hibás barna hátteret kapott, és a
+  görbe rajzterülete **ráfutott a fényképezőgép-adatokra**, ha azok több
+  sorba törtek (magyarul jellemzően igen). A panel mostantól az eredeti
+  szerinti világosszürke, elkülönülő világos rajzterülettel, és a
+  területek elosztása szerkezetileg zárja ki az átfedést — tetszőleges
+  hosszúságú szöveg mellett is.
+- **Indulási QML-figyelmeztetés (#506):** a szöveg-eszköz színválasztója
+  olyan nevet használt, ami ütközött a Qt beépített nevével. Átnevezve; a
+  figyelmeztetés eltűnt. A tesztek figyelmeztetés-őre mostantól **elkapja
+  ezt a hibaosztályt**, így nem térhet vissza észrevétlenül.
+
+### Dokumentáció
+- A `histogram-reference.md` a panel hátterét tévesen dokumentálta
+  (innen ered a #429-es barna háttér). A téves sor korrekciós jegyzetet
+  kapott, hogy ne lehessen rá tényként hivatkozni.
+
 ## [0.6.42] – 2026-08-08
 
 ### Megjegyzés

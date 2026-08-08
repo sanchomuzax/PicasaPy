@@ -30,6 +30,12 @@ QML_SCRIPT_ERROR_PATTERNS = (
     "SyntaxError",
     "Unable to assign",
     "is not a function",
+    # #506: `qt.qml.propertyCache.append: Member X of the object Y
+    # overrides a member of the base object.` — saját komponens tulajdonsága
+    # elfedi az alaposztály (pl. Item/Control `palette`) azonos nevű tagját.
+    # Mindig a mi kódunk hibája (névütközés), platformfüggetlen — sose
+    # buktatná el hamisan a CI-t.
+    "overrides a member of the base object",
 )
 
 

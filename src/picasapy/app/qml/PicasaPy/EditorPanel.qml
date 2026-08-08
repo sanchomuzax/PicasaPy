@@ -666,13 +666,16 @@ Rectangle {
         id: swatches
         property string currentColor: "#ffffff"
         signal colorPicked(string hex)
-        readonly property var palette: [
+        // #506: a "palette" néven elnevezve elfedte az Item/Control
+        // beépített `palette` tulajdonságát (Qt-figyelmeztetés induláskor)
+        // — átnevezve `swatchColors`-ra.
+        readonly property var swatchColors: [
             "#ffffff", "#000000", "#ff0000", "#ffff00",
             "#00a651", "#0072bc", "#ff7f27", "#a349a4"
         ]
         spacing: 3
         Repeater {
-            model: swatches.palette
+            model: swatches.swatchColors
             delegate: Rectangle {
                 required property string modelData
                 required property int index

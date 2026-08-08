@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 
 // RGB-hisztogram + fényképezőgép-adat doboz (#25, #228, #232): a néző
 // bal alsó dobozának élesítése, Picasa-mintára. Buta komponens — a
@@ -26,22 +27,23 @@ Rectangle {
 
     readonly property int bucketCount: 256
 
-    // #429: az eredeti Picasa `nerdview` paneljének HÁTTERE a `respack.yt`
-    // szerint meleg barna `#a88974` (NEM szürke Theme-token) — ez a panel
-    // saját, rögzített arculati színe, nem az általános felület-paletta
-    // része, ezért szándékosan literál (nem Theme-token, ld. CLAUDE.md).
-    // Mivel a szín rögzített (nem sötét/világos témafüggő), a rajta lévő
-    // szöveg is a `.tre`-ben dokumentált rögzített `#333333` — a
-    // téma-függő Theme.ink/textGray sötét témában szinte fehér lenne,
-    // ami a barna alapon olvashatatlan volna.
-    readonly property color panelBrown: "#a88974"
-    readonly property color panelInk: "#333333"
-
-    color: panelBrown
+    // #512: a #429-ben bevezetett meleg barna (`#a88974`) hibás volt — a
+    // bejelentő ELEREDETI Picasa-képernyőképe világosszürke panelt mutat,
+    // benne egy elkülönülő, világos rajzterülettel. A `respack.yt`-ből
+    // idézett érték vagy nem ehhez a panelhez tartozott, vagy félreolvasás
+    // volt; a képernyőkép az erősebb bizonyíték, ezért a barna literál
+    // helyett a `Theme.chromeBg` tokent használjuk — pontosan ez a token
+    // adja a szerkesztőpanel (EditorPanel.qml) saját krómhátterét is, és a
+    // `nerdview` a Picasában ugyanennek a panelnek a része (ld.
+    // docs/specs/picasa-respack-format.md 5.2). Így a hisztogram-doboz
+    // témafüggően illeszkedik (világos/sötét), nem rögzített.
+    // A szöveg ezért is követheti a Theme.ink tokent (nem kell rögzített
+    // `#333333` olvashatósági kényszer-szín, mint a barna alapon).
+    color: Theme.chromeBg
     border.color: Theme.chromeBorder
     radius: 3
 
-    Column {
+    ColumnLayout {
         anchors.fill: parent
         anchors.margins: 8
         spacing: 5
@@ -49,11 +51,11 @@ Rectangle {
         Text {
             id: titleLabel
             objectName: "histogramTitle"
-            width: parent.width
+            Layout.fillWidth: true
             text: qsTr("Histogram and camera information")
             font.pixelSize: Theme.fontSize
             font.bold: true
-            color: box.panelInk
+            color: Theme.ink
             // #235: keskeny doboznál a cím ne vágódjon `…`-ra — legfeljebb
             // két sorba törik (az eredeti Picasában a cím mindig teljes)
             wrapMode: Text.WordWrap
@@ -62,27 +64,51 @@ Rectangle {
         }
 
         // A hisztogram rajzterülete: a három csatorna egymásra rajzolva,
-        // áttetsző kitöltésű oszlopokkal. A magasságot a fennmaradó helyből
-        // számoljuk (cím és EXIF-sor levonása után), így a doboz teljes
-        // magasságát kitölti.
+        // áttetsző kitöltésű oszlopokkal.
+        //
+        // #512: KORÁBBAN a magasságot kézzel számoltuk (doboz-magasság
+        // mínusz cím/EXIF-sor implicitHeight-je) — ez két okból is hibás
+        // volt: (1) `box.anchors.margins` a `box` KÜLSŐ (a szülőhöz való
+        // horgonyzási) margóját adta vissza, ami a PhotoViewer.qml-beli
+        // példányosításnál VÉLETLENÜL nem-nulla (10), miközben a valódi,
+        // itt számító belső margó 8 — a kettő összecserélése hibás
+        // levonást adott; (2) a `Math.max(0, …)` alsó korlát miatt bőséges
+        // (pl. magyar, több soros) EXIF-szöveg mellett a rajzterület
+        // magassága NULLÁRA zuhant, és a `Column` a KÖVETKEZŐ elemet
+        // (`cameraLabel`) ilyenkor a `plot` UTÁNI térköz hozzáadása
+        // NÉLKÜL, közvetlenül a cím alá helyezte — mérve: 8 soros EXIF
+        // mellett `plot.y === cameraLabel.y` (mindkettő 19px), azaz a
+        // rajzterület és a szöveg doboza AZONOS pozícióból indult.
+        // (A `cameraLabel.implicitHeight` „sortörés előtti" hipotézise
+        // NEM igazolódott: a kötött szélesség miatt már a tördelt,
+        // véglegesen soktornyú szöveg magasságát tükrözi.)
+        //
+        // A ROBUSZTUS megoldás: nem számolunk kézzel — a `ColumnLayout`
+        // maga osztja el a helyet. A cím és az EXIF-sor a saját
+        // (`implicitHeight`-ből származó) preferált magasságát kapja, a
+        // rajzterület `Layout.fillHeight`-tel a MARADÉKOT — soha nem
+        // csúszhat rá a szövegre, mert egy Layout elemei sosem fedik
+        // egymást (legfeljebb szélsőségesen bőséges szöveg esetén a
+        // rajzterület `Layout.minimumHeight: 0`-ra zsugorodik, ahelyett
+        // hogy átfedne).
         Item {
             id: plot
             objectName: "histogramPlot"
-            width: parent.width
-            height: Math.max(
-                0,
-                box.height - box.anchors.margins * 2
-                - titleLabel.implicitHeight - cameraLabel.implicitHeight
-                - parent.spacing * 2)
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumHeight: 0
             clip: true
 
-            // #429: a rajzterület (`histoback`/`histo` réteg) fehér alapú —
-            // a `respack.yt`-ben elkülönül a barna panel-háttértől
+            // #512: a rajzterület (`histoback`/`histo` réteg) elkülönül a
+            // panel hátterétől — a `Theme.contentPanel` a projekt szokásos
+            // „elkülönülő világos tartalom" tokene (ld. pl. EditorPanel
+            // fültartalma), világos témán fehér, sötét témán sötétszürke
+            // kártyaháttér.
             Rectangle {
                 id: plotBackground
                 objectName: "histogramPlotBackground"
                 anchors.fill: parent
-                color: "#ffffff"
+                color: Theme.contentPanel
             }
 
             // egy csatorna oszlopsorozata — kitöltött, áttetsző (a három
@@ -118,7 +144,7 @@ Rectangle {
         Column {
             id: cameraLabel
             objectName: "cameraSummaryArea"
-            width: parent.width
+            Layout.fillWidth: true
             spacing: 1
 
             readonly property var summaryRows:
@@ -131,7 +157,7 @@ Rectangle {
                 text: qsTr("No EXIF data available")
                 font.pixelSize: Theme.fontSize - 2
                 font.italic: true
-                color: box.panelInk
+                color: Theme.ink
             }
 
             Repeater {
@@ -152,7 +178,7 @@ Rectangle {
                         maximumLineCount: 2
                         elide: Text.ElideRight
                         font.pixelSize: Theme.fontSize - 2
-                        color: box.panelInk
+                        color: Theme.ink
                     }
                     Text {
                         id: rightCell
@@ -161,7 +187,7 @@ Rectangle {
                         text: parent.cells.length > 1 ? parent.cells[1] : ""
                         elide: Text.ElideRight
                         font.pixelSize: Theme.fontSize - 2
-                        color: box.panelInk
+                        color: Theme.ink
                     }
                 }
             }

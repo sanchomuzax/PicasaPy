@@ -156,6 +156,18 @@ Ebből két dolog következik, amit eddig nem tudtunk biztosan:
 
 ## H.2 A panel pontos geometriája (képpontban)
 
+> **#512 KORREKCIÓ (utólagos):** a lenti táblázat `#a88974` (meleg barna)
+> panelháttér-értékét a #429-es kör kódba is átvitte, de a bejelentő
+> **eredeti Picasáról készült képernyőképe világosszürke panelt mutat**, nem
+> barnát. A képernyőkép — mint közvetlen vizuális bizonyíték — erősebb, mint
+> ez a `respack.yt`-ből visszafejtett táblázat, ezért a kódban (`HistogramBox.qml`)
+> a barna helyett a `Theme.chromeBg` (szürke króm-háttér) tokent használjuk.
+> A táblázatot alább VÁLTOZATLANUL hagytuk (történeti feljegyzés, a
+> geometria-adatok továbbra is hasznosak lehetnek), de a színoszlopnak ez a
+> sora **megkérdőjelezett** — vagy rossz réteget olvasott ki a kinyerő
+> eszköz, vagy a `respack.yt`-beli RGBA-RLE dekódolás hibázott ezen a
+> rekordon. Újra-igazolás nélkül ne hivatkozz erre mint tényre.
+
 A `respack.yt` rétegeinek határoló dobozaiból, közvetlenül:
 
 | elem | pozíció → méret | szín |
