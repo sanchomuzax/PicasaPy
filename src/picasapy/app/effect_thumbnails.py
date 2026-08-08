@@ -105,7 +105,11 @@ def _default_op(effect: str) -> FilterOp:
     params = effect_params(effect)
     if not params:
         return FilterOp(name=effect, params=("1",))
-    formatted = format_param_values([p.default for p in params])
+    # #516: "color" vezérlőnél a hex-alapérték a kezdőérték, nem a (náluk
+    # értelmezetlen) numerikus `default` mező — az `openParamPanel()` QML-
+    # függvény ugyanígy dönt
+    values = [p.color if p.kind == "color" else p.default for p in params]
+    formatted = format_param_values(values, params)
     return FilterOp(name=effect, params=("1", *formatted))
 
 

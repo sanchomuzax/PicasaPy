@@ -1418,6 +1418,26 @@
         <translation>Polaroid</translation>
     </message>
     <message>
+        <source>Matte</source>
+        <translation>Matt</translation>
+    </message>
+    <message>
+        <source>Night Vision</source>
+        <translation>Éjjellátó</translation>
+    </message>
+    <message>
+        <source>Local Contrast</source>
+        <translation>Helyi kontraszt</translation>
+    </message>
+    <message>
+        <source>Rounded Edges</source>
+        <translation>Lekerekített sarkok</translation>
+    </message>
+    <message>
+        <source>Film Grain (Fine)</source>
+        <translation>Filmszemcse (finom)</translation>
+    </message>
+    <message>
         <source>Amount</source>
         <translation>Mennyiség</translation>
     </message>
@@ -1508,6 +1528,98 @@
     <message>
         <source>Width</source>
         <translation>Szélesség</translation>
+    </message>
+    <message>
+        <source>Grain</source>
+        <translation>Szemcse</translation>
+    </message>
+    <message>
+        <source>Contrast</source>
+        <translation>Kontraszt</translation>
+    </message>
+    <message>
+        <source>Bloom</source>
+        <translation>Ragyogás</translation>
+    </message>
+    <message>
+        <source>Steps</source>
+        <translation>Lépcsők</translation>
+    </message>
+    <message>
+        <source>Smoothing</source>
+        <translation>Simítás (fokozat)</translation>
+    </message>
+    <message>
+        <source>Impact</source>
+        <translation>Hatás</translation>
+    </message>
+    <message>
+        <source>Blend Mode</source>
+        <translation>Keverési mód</translation>
+    </message>
+    <message>
+        <source>Hue</source>
+        <translation>Árnyalat</translation>
+    </message>
+    <message>
+        <source>Fade</source>
+        <translation>Elhalványítás</translation>
+    </message>
+    <message>
+        <source>Color</source>
+        <translation>Szín</translation>
+    </message>
+    <message>
+        <source>Outer Color</source>
+        <translation>Külső szín</translation>
+    </message>
+    <message>
+        <source>Inner Color</source>
+        <translation>Belső szín</translation>
+    </message>
+    <message>
+        <source>Black Color</source>
+        <translation>Fekete szín</translation>
+    </message>
+    <message>
+        <source>White Color</source>
+        <translation>Fehér szín</translation>
+    </message>
+    <message>
+        <source>Outer Thickness</source>
+        <translation>Külső vastagság</translation>
+    </message>
+    <message>
+        <source>Inner Thickness</source>
+        <translation>Belső vastagság</translation>
+    </message>
+    <message>
+        <source>Corner Radius</source>
+        <translation>Sarok-sugár</translation>
+    </message>
+    <message>
+        <source>Caption Height</source>
+        <translation>Felirat-magasság</translation>
+    </message>
+    <message>
+        <source>Distance</source>
+        <translation>Távolság</translation>
+    </message>
+    <message>
+        <source>Shadow Color</source>
+        <translation>Árnyék színe</translation>
+    </message>
+    <message>
+        <source>Background Color</source>
+        <translation>Háttérszín</translation>
+    </message>
+    <message>
+        <source>Rounded</source>
+        <translation>Lekerekített</translation>
+    </message>
+    <message>
+        <source>Lighten</source>
+        <translation>Fényesítés</translation>
     </message>
     <message>
         <source>Click to select the area to fix. Then, move the mouse to see a preview of the replacement area. Click on the image again to finalize. Lather, rinse, repeat.</source>

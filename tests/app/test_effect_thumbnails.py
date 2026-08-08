@@ -63,13 +63,13 @@ class TestSyncRender:
         )
 
     def test_all_catalogue_effects_render_without_crashing(self, qt_app, tmp_path):
-        """A panel mind a 36 effekt-gombja adjon KÉSZ (nem placeholder)
+        """A panel mind a 41 effekt-gombja adjon KÉSZ (nem placeholder)
         bélyegképet — egyik effekt se dobjon ki kivételt idáig."""
         from picasapy.app.effect_thumbnails import EFFECT_NAMES
 
         records = _library(tmp_path)
         provider = _provider(records)
-        assert len(EFFECT_NAMES) == 36
+        assert len(EFFECT_NAMES) == 41
         for effect in EFFECT_NAMES:
             image = provider.requestImage(f"{records[0].id}/{effect}", None, None)
             assert not image.isNull(), effect
@@ -81,16 +81,16 @@ class TestSyncRender:
 class TestToolPreviewNames:
     """#405: a "Gyakori javítások" fül négy egy-gombos eszköze (Vörösszem,
     Jó napom van, Automatikus kontraszt, Automatikus szín) is kapjon valódi,
-    az adott műveletet alkalmazó bélyegképet — NEM a 36-os `filters=`
+    az adott műveletet alkalmazó bélyegképet — NEM a 41-es `filters=`
     katalógus tagjai, mégis renderelhetők a `render/chain.py` `_HANDLERS`
     meglévő "enhance"/"autolight"/"autocolor"/"redeye" kulcsain át."""
 
-    def test_public_effect_names_stay_36(self):
-        # a meglévő, 36 elemű katalógus NEM bővül — külön halmaz kezeli az
+    def test_public_effect_names_stay_41(self):
+        # a meglévő, 41 elemű katalógus (#516: +5) NEM bővül tovább — külön halmaz kezeli az
         # eszköz-előnézeteket (ld. effect_thumbnails._KNOWN_EFFECTS)
         from picasapy.app.effect_thumbnails import EFFECT_NAMES
 
-        assert len(EFFECT_NAMES) == 36
+        assert len(EFFECT_NAMES) == 41
 
     def test_tool_preview_names_render_real_thumbnails(self, qt_app, tmp_path):
         records = _library(tmp_path)
@@ -136,7 +136,7 @@ class TestCaching:
         assert first.size() == second.size()
 
     def test_source_decode_happens_once_per_photo(self, qt_app, tmp_path):
-        """36 effekt UGYANARRÓL a fotóról induljon — a lemez-dekód (a
+        """41 effekt UGYANARRÓL a fotóról induljon — a lemez-dekód (a
         legdrágább lépés) fotónként EGYSZER fusson, ne effektenként."""
         from picasapy.app import effect_thumbnails as mod
 
