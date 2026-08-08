@@ -1,9 +1,21 @@
 """Könyvtár-felügyelet: figyelt mappák, élő figyelés (watchdog), háttér-
-szinkron és a busy-állapot (#70) — az AppController könyvtár-szelete (#150).
+szinkron és a busy-állapot (#70, #505) — az AppController könyvtár-szelete
+(#150).
 
 Mixin-osztály: az `AppController` örökli; a jelzések (syncFinished stb.)
 és a slotok a végső osztály meta-objektumába regisztrálódnak, így a QML és
-a tesztek felülete változatlan."""
+a tesztek felülete változatlan.
+
+#505: a szinkron-munkák busy-könyvelése (`_begin_sync_job`/`_on_sync_job_done`,
+korábban itt élt) MEGSZŰNT — a `BackgroundWorkerMixin._start_background`
+(minden szinkron-munka ezen indul) magától bejelentkezik/kijelentkezik a
+közös `AppBusyRegistry`-ből (`busy_registry.py`), ezért itt már nincs
+teendő. Az `isWorking`/`busyChanged` ezt a KÖZÖS nyilvántartást olvassa — a
+bélyegkép-betöltés (`_on_thumb_active`) az egyetlen forrás, ami NEM
+`_start_background`-on át fut (a `ThumbnailProvider` saját szálkészletet
+használ, "aktív kérések száma" szintjelzéssel, nem job-onkénti indítással),
+ezért ez marad az egyetlen hely, ahol egy controller KÉZZEL jelentkezik be
+a regisztrátumba (él/lefut-szélenként, ld. lent)."""
 
 from __future__ import annotations
 
@@ -25,6 +37,7 @@ from picasapy.scanner import (
     write_watched_folders,
 )
 
+from .busy_registry import get_app_busy_registry
 from .formatting import to_local_path
 from .worker_thread import BackgroundWorkerMixin
 
@@ -54,37 +67,31 @@ class LibraryMixin(BackgroundWorkerMixin):
     # #209: a lebegő „Importálás" panel állapota változott
     importChanged = Signal()
 
-    # -- busy-állapot (#70) --------------------------------------------------
+    # -- busy-állapot (#70, #505) --------------------------------------------
 
     @Property(bool, notify=busyChanged)
     def isWorking(self):
-        """Fut-e háttérmunka (indexelés/szinkron vagy thumbnail-betöltés) —
-        az alsó sáv animációja erre köt."""
-        return self._busy
-
-    def _begin_sync_job(self) -> None:
-        """Egy háttér-szinkron indul — a főszálon hívandó, a worker
-        indítása ELŐTT (a syncFinished zárja le)."""
-        self._sync_jobs += 1
-        self._update_busy()
-
-    @Slot()
-    def _on_sync_job_done(self) -> None:
-        self._sync_jobs = max(0, self._sync_jobs - 1)
-        self._update_busy()
+        """Fut-e háttérmunka (bármelyik, a közös `AppBusyRegistry`-be
+        bejelentkezett munka — szinkron, kötegelt effekt, export, import-
+        forrás, duplikátum-keresés, arc-szkennelés, adatbázis-áthelyezés
+        stb., ld. `busy_registry.py`) — az alsó sáv animációja erre köt.
+        Küszöbölt/minimális-láthatóságú érték (a nyilvántartás intézi, ne
+        villogjon), nem a nyers "fut-e valami" jel."""
+        return get_app_busy_registry().visible
 
     @Slot(int)
     def _on_thumb_active(self, count: int) -> None:
         """A thumbnail-provider aktív kéréseinek száma (a provider szálából
-        jelezve; a Qt a főszálra sorolja)."""
+        jelezve; a Qt a főszálra sorolja) — SZINT, nem esemény, ezért a
+        közös regisztrátumba ÉL-alapon (0 -> pozitív / pozitív -> 0
+        átmenetkor) jelentkezünk be/ki, nem minden hívásnál."""
+        was_active = self._thumb_active > 0
         self._thumb_active = count
-        self._update_busy()
-
-    def _update_busy(self) -> None:
-        busy = self._sync_jobs > 0 or self._thumb_active > 0
-        if busy != self._busy:
-            self._busy = busy
-            self.busyChanged.emit()
+        is_active = count > 0
+        if is_active and not was_active:
+            get_app_busy_registry().begin()
+        elif was_active and not is_active:
+            get_app_busy_registry().end()
 
     # -- „Importálás" folyamat-panel (#209) ----------------------------------
 
@@ -327,8 +334,8 @@ class LibraryMixin(BackgroundWorkerMixin):
             finally:
                 self.syncFinished.emit()
 
-        self._begin_sync_job()
-        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
+        # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
         self._start_background(worker, name="picasapy-sync-addfolder")
 
     @Slot(str)
@@ -356,8 +363,8 @@ class LibraryMixin(BackgroundWorkerMixin):
             finally:
                 self.syncFinished.emit()
 
-        self._begin_sync_job()
-        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
+        # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
         self._start_background(worker, name="picasapy-sync-scanonce")
 
     @Slot(str)
@@ -523,8 +530,8 @@ class LibraryMixin(BackgroundWorkerMixin):
                     self.syncFailed.emit("; ".join(errors))
                 self.syncFinished.emit()
 
-        self._begin_sync_job()
-        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
+        # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
         self._start_background(worker, name="picasapy-sync-dirty")
 
     def _root_for_folder(self, folder: str) -> str | None:
@@ -544,8 +551,8 @@ class LibraryMixin(BackgroundWorkerMixin):
         if self._sync_running:
             return  # egy író elég; a futó szinkron végén úgyis frissülünk
         self._sync_running = True
-        self._begin_sync_job()
-        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
+        # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
         self._start_background(self._sync_worker, name="picasapy-sync-rescan")
 
     def _sync_worker(self) -> None:

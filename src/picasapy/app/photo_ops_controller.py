@@ -91,7 +91,6 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             # pótoljuk (olcsó, csak a jelen nézet listáját írja újra, nem
             # lemezműveletet indít)
             self._provider.register_photos(self._photos.photos)
-        self._on_sync_job_done()
         self.photoOpFinished.emit()
 
     @Slot(str)
@@ -99,16 +98,15 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         # meglévő hibajelzési minta (#86/#150): ugyanaz a csatorna, mint a
         # háttér-szinkron hibáié
         self.syncFailed.emit(message)
-        self._on_sync_job_done()
         self.photoOpFinished.emit()
 
     def _run_photo_write(self, photo_id: int, perform) -> None:
         """Ini/IPTC-írás (NAS: backup+temp+fsync) + célzott index-UPDATE
         háttérszálon (#141). A `perform()` a teljes lassú munkát végzi (fájl-
         írás + a {oszlop: érték} dict összeállítása), és teljes egészében a
-        munkásszálon fut."""
+        munkásszálon fut. #505: a busy-jelzést a `_start_background`
+        (`worker_thread.py`) intézi, nem itt."""
         self._ensure_photo_ops_wired()
-        self._begin_sync_job()
 
         def worker() -> None:
             try:
@@ -219,7 +217,6 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if not base_name or not photos:
             return
         self._ensure_photo_ops_wired()
-        self._begin_sync_job()
 
         items = [
             RenameItem(
@@ -255,7 +252,6 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             for folder in folders:
                 self._sync_tree(conn, folder)
         self._refresh_view()
-        self._on_sync_job_done()
         self.photoOpFinished.emit()
 
     # -- virtuális albumok (#9, 2. lépés) ------------------------------------

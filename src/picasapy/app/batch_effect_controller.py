@@ -18,6 +18,11 @@ Mixin-osztály: az `AppController` örökli, a `photo_ops_controller`
 lusta-bekötés mintáját (#150) követve — nem kell az __init__-et (forró fájl)
 módosítani.
 
+#505: a háttérmunka a `BackgroundWorkerMixin._start_background`-on fut,
+ami MAGÁTÓL bejelentkezik a közös busy-nyilvántartásba (`busy_registry.py`)
+— a korábbi, itt élt kézi `_begin_sync_job`/`_on_sync_job_done` hívások
+emiatt megszűntek.
+
 A Szöveg megjelenítése/elrejtése (`ID_PICTURE_SHOW_TEXT`/`…HIDE_TEXT`) NEM
 része ennek a szeletnek: az index nem tárolja, mely fotóknak van szöveg-
 overlay-je (`text=`/`textactive=`, ld. `picasapy.ini.text_overlay`), így a
@@ -185,7 +190,6 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         self._batch_edit_total = len(by_folder)
         self._batch_edit_folder = next(iter(by_folder))
         self.batchEditChanged.emit()
-        self._begin_sync_job()
 
         def worker() -> None:
             undo_batch: list[tuple[str, str, str | None, str | None]] = []
@@ -257,7 +261,6 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         self._batch_edit_total = len(by_folder)
         self._batch_edit_folder = next(iter(by_folder))
         self.batchEditChanged.emit()
-        self._begin_sync_job()
 
         def worker() -> None:
             undo_batch: list[tuple[str, str, str | None, str | None]] = []
@@ -320,7 +323,6 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         self.batchEditChanged.emit()
         self.canUndoBatchEditChanged.emit()
         self._refresh_view()
-        self._on_sync_job_done()
         self.photoOpFinished.emit()
 
     @Slot()

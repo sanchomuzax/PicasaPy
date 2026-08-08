@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.41] – 2026-08-08
+
+### Hozzáadva
+- **Az alsó kék csík mostantól minden hosszú műveletnél animál (#505):**
+  eddig csak a beolvasás és a bélyegkép-betöltés alatt jelzett, minden más
+  némán futott. A jelzés egyetlen közös ponton, a háttérmunkák indításánál
+  került be, ezért **minden** háttérművelet magától megkapja — a kötegelt
+  effektek, az export, az importálás, a duplikátum-keresés, a webexport, a
+  csillagozás/forgatás és az arc-szkennelés is. Rövid műveletnél nem
+  villan fel (0,3 mp késleltetés), és ha megjelent, nem tűnik el azonnal.
+- Ha egy háttérművelet **hibával áll le**, a jelzés akkor is lezárul — a
+  csík nem marad örökre pörögve.
+
+### Ismert korlát
+- **A szerkesztő effektjei (köztük a Polaroid) továbbra sem jeleznek**,
+  mert a képszámítás a felhasználói felület szálán fut. Ott a csík nem is
+  tudna animálni. Ugyanez vonatkozik a nyomtatásra készítésre. Ezek
+  áthelyezése háttérszálra külön munka.
+
 ## [0.6.40] – 2026-08-08
 
 ### Javítva

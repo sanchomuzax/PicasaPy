@@ -18,12 +18,19 @@ INTEGRÁTOR lépésében:
 
 A generálás HÁTTÉRSZÁLON fut (a kép-átméretezés/kódolás percekig tarthat
 nagyobb albumnál) — a `webExportProgress` a `picasapy.webexport.images`
-képenkénti előrehaladását jelzi."""
+képenkénti előrehaladását jelzi.
+
+#505: a háttérszál a `BackgroundWorkerMixin`-en át indul (korábban saját,
+kézzel nyilvántartott `threading.Thread` volt — ez a modul íródott a
+mixin ELŐTT, ld. `worker_thread.py` docstringje) — ez adja MAGÁTÓL az
+alsó kék sáv busy-animációját is (`AppBusyRegistry`, `busy_registry.py`),
+külön bekötés nélkül. Az `exportRunning`/`waitForExport` metódusnevek
+megmaradtak (a hívók/tesztek ezekre hivatkoznak), de belül a mixin
+`backgroundWorkersRunning`/`waitForBackgroundWorkers`-ét hívják."""
 
 from __future__ import annotations
 
 import logging
-import threading
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -39,11 +46,12 @@ from picasapy.webexport import (
 from picasapy.webexport.images import prepare_photo_exports
 
 from .formatting import to_local_path
+from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
 
 
-class WebExportController(QObject):
+class WebExportController(BackgroundWorkerMixin, QObject):
     """A `WebExportDialog.qml` háttér-hídja: sablon-lista, háttérszálas
     generálás haladás-jelzéssel, hiba-visszajelzés."""
 
@@ -64,14 +72,10 @@ class WebExportController(QObject):
         fotó-modellhez (ld. a modul docstringje)."""
         super().__init__(parent)
         self._photo_source = photo_source
-        # #430: a futó exportáló szál — a leépítés (teszt-fixture, app-zárás)
-        # ezen keresztül tud MEGVÁRNI egy félbehagyott futást
-        self._worker: threading.Thread | None = None
 
     def exportRunning(self) -> bool:
-        """Fut-e éppen exportáló háttérszál?"""
-        worker = self._worker
-        return worker is not None and worker.is_alive()
+        """Fut-e éppen exportáló háttérszál? (a mixin nyilvántartásán át)."""
+        return self.backgroundWorkersRunning()
 
     def waitForExport(self, timeout_s: float = 30.0) -> bool:
         """Megvárja a futó exportáló szál leállását; `True`, ha nincs (már)
@@ -82,14 +86,7 @@ class WebExportController(QObject):
         felszámolt objektumnak, a futás SIGSEGV-vel omlik össze (#430, a
         #53-as Qt/GIL-osztály rokona). Aki a controller élettartamát zárja
         (teszt-fixture, alkalmazás-kilépés), ezt hívja."""
-        worker = self._worker
-        if worker is None:
-            return True
-        worker.join(timeout_s)
-        if worker.is_alive():
-            return False
-        self._worker = None
-        return True
+        return self.waitForBackgroundWorkers(timeout_s)
 
     @Slot(result=list)
     def listWebExportTemplates(self) -> list[dict]:
@@ -144,16 +141,13 @@ class WebExportController(QObject):
             shadowed_images=shadowed_images,
         )
         self.webExportStarted.emit()
-        worker = threading.Thread(
-            target=self._run_export,
+        # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        # — a busy-bejelentkezés is ITT, a mixinben történik automatikusan
+        self._start_background(
+            self._run_export,
             args=(Path(target), template.path, photos, album_name, settings),
             name="picasapy-webexport",
-            daemon=True,
         )
-        # #430: a szál nyilvántartva marad, hogy a `waitForExport()` meg
-        # tudja várni — daemon-szál felett az interpreter nem várakozik
-        self._worker = worker
-        worker.start()
 
     def _run_export(
         self,

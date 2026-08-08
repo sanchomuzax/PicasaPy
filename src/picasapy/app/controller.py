@@ -36,6 +36,7 @@ from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
 from .appearance_controller import AppearanceMixin
 from .batch_effect_controller import BatchEffectMixin
+from .busy_registry import get_app_busy_registry
 from .language_controller import LanguageMixin
 from .create_controller import CreateMixin
 from .custom_aspect_ratios_controller import CustomAspectRatiosMixin
@@ -150,11 +151,10 @@ class AppController(
         )
         self._watcher = None
         self._rescan_timer = None
-        # #70: busy-könyvelés — futó szinkron-munkák száma + a thumbnail-
-        # provider aktív kérései; jelzés-alapú, nincs polling
-        self._sync_jobs = 0
+        # #70/#505: a busy-számlálás magában a közös `AppBusyRegistry`-ben él
+        # (`busy_registry.py`) — itt csak a thumbnail-provider él-figyeléséhez
+        # kell a legutóbbi SZINT (ld. `LibraryMixin._on_thumb_active`).
         self._thumb_active = 0
-        self._busy = False
         # #209: a lebegő „Importálás" panel állapota (LibraryMixin kezeli)
         self._import_folder = ""
         self._import_done = 0
@@ -175,12 +175,16 @@ class AppController(
         # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
         # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
         self.syncFinished.connect(self._reload_after_sync)
-        self.syncFinished.connect(self._on_sync_job_done)
         # #209: mappánkénti haladás a workerből (queued) + panel-lezárás
         self.syncProgress.connect(self._on_sync_progress)
         self.syncFinished.connect(self._on_import_finished)
         self.watcherDirty.connect(self._on_folders_dirty)
         provider.activeCountChanged.connect(self._on_thumb_active)
+        # #505: a közös busy-nyilvántartás (bármely controller munkája,
+        # ld. `busy_registry.py`) LÁTHATÓ-állapot-változása közvetlenül a
+        # meglévő `busyChanged` jelzést váltja ki — a QML/tesztek felülete
+        # (`controller.isWorking`/`busyChanged`) változatlan marad.
+        get_app_busy_registry().visibleChanged.connect(self.busyChanged)
 
     def _get_settings(self) -> QSettings:
         """Lusta alapértelmezés: `QSettings("PicasaPy", "PicasaPy")`, hacsak
