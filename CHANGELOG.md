@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.40] – 2026-08-08
+
+### Javítva
+- **Kétszer megjelenő mappa (#507):** ha ugyanazt a mappát két, kicsit
+  másképp leírt útvonalon vetted fel figyelésre (szimbolikus linken
+  keresztül, vagy `..` szegmenst tartalmazó úton), a program két külön
+  bejegyzésként kezelte. Mostantól minden útvonal egységesen normalizálódik
+  — Windowson kis-nagybetűtől függetlenül, Linuxon a fájlrendszer
+  szabályai szerint.
+- **A már meglévő duplikátumok összevonása:** indításkor a program egyszer
+  összevonja a korábban duplán bekerült mappákat. Az összevonás
+  **adatvesztés nélküli**: ha egy fotónál mindkét oldalon eltérő, valódi
+  szerkesztés áll (csillag, felirat, kulcsszó, szűrő, helyadat), akkor a
+  program **inkább meghagyja a duplikátumot**, mint hogy bármit felülírjon.
+
 ## [0.6.39] – 2026-08-08
 
 ### Javítva
