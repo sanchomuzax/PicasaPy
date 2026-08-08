@@ -463,6 +463,13 @@ ListView {
                         caption: slot.info.caption || ""
                         isVideo: slot.info.isVideo === true
                         hasEdits: slot.info.hasEdits === true
+                        // #455: a tálcán tartott kép jelvénye — a
+                        // `heldCount` a reaktív trigger (a `photos.
+                        // revision` fenti mintája szerint), mert a
+                        // tartott-halmaz külön jelzésen (heldChanged) fut.
+                        held: grid.ctl
+                              ? (grid.ctl.heldCount, grid.ctl.isHeldAt(slot.row))
+                              : false
                         isHidden: slot.info.hidden === true
                         keywords: slot.info.keywords || ""
                         resolution: slot.info.resolution || ""

@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.28] – 2026-08-08
+
+### Javítva
+- **Hisztogram-panel az eredeti arculatával (#429):** a panel a Picasa meleg
+  barna hátterét kapta, a görbe alatt elkülönített fehér rajzterülettel. A
+  fényképezőgép neve is az eredeti szerint jelenik meg (a „NIKON
+  CORPORATION" mostantól „NIKON").
+
 ## [0.6.27] – 2026-08-07
 
 ### Hozzáadva

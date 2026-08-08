@@ -41,6 +41,10 @@ _EXPECTED_ICONS = (
     "movie.svg",                # outputlayout/makemovie
     "share.svg",                 # outputlayout/sharewith
     "geo-pin.svg",                # eszköztár geo-szűrő (korábban "⚲" glif)
+    # #455 képtálca: a megtartott kép jelvénye a rácsban, és a tálca
+    # ürítés-gombja az alsó sávon
+    "hold-pin.svg",
+    "tray-clear.svg",
 )
 
 # a szerkesztő "Gyakori javítások" fülének 9 ikonja (#411)

@@ -3240,6 +3240,26 @@
         <source>Upload to Google Photos</source>
         <translation>Feltöltés a Google Fotókba</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml" line="232"/>
+        <source>Hold Selection</source>
+        <translation>Kijelölés megtartása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml" line="249"/>
+        <source>Clear Tray</source>
+        <translation>Tálca ürítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml" line="266"/>
+        <source>Would you like to clear your old held items from the tray?</source>
+        <translation>Szeretné üríteni a tálcán korábban megtartott elemeket?</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml" line="279"/>
+        <source>Don&apos;t Clear</source>
+        <translation>Ne ürítse</translation>
+    </message>
 </context>
 <context>
     <name>VideoPlayerView</name>

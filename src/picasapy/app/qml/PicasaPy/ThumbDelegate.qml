@@ -28,6 +28,10 @@ Item {
     // címkés képen piros pin jelvény a jobb alsó sarokban"). Nem required
     // (régi hívók enélkül is működjenek).
     property bool hasGeo: false
+    // #455: a kép a képtálcán van-e ("megtartva", `TrayMixin.isHeldAt`) —
+    // bal alsó sarokban zöld pin jelvényt kap (a jobb alsó sarok már a
+    // csillagé/geo-piné). Nem required (régi hívók enélkül is működjenek).
+    property bool held: false
     // #85: kiegyenlített rács-sor esetén a cella (parent Item) nagyobb
     // lehet a névleges thumbSize-nál — a MEGJELENÍTETT kép mérete ekkor
     // is a névleges méretre plafonozott marad (0 = nincs plafon), hogy a
@@ -186,6 +190,20 @@ Item {
                 y: -height / 2
                 color: Theme.infoBar
             }
+        }
+
+        // #455: a tálcán tartott kép jelvénye — a jobb alsó sarok
+        // (csillag/geo) mintája, de a BAL alsó sarokban, hogy ne
+        // fedjék egymást.
+        Image {
+            objectName: "holdMark"
+            visible: cell.held
+            source: "icons/hold-pin.svg"
+            width: 8; height: 14
+            sourceSize.width: 8; sourceSize.height: 14
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            anchors.margins: 3
         }
 
         Rectangle {
