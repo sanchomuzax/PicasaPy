@@ -124,6 +124,11 @@ def _split_device_by_prefix(topdir):
     return lambda p: 1 if str(p).startswith(str(topdir)) else 2
 
 
+@pytest.mark.skipif(
+    not hasattr(os, "getuid"),
+    reason="A mount-specifikus lomtár freedesktop.org (POSIX) fogalom — "
+    "Windowson a #457 előtti, home-trash viselkedés marad.",
+)
 class TestFindTrashDir:
     """#457: mount-specifikus lomtár (freedesktop `$topdir/.Trash[-uid]`) —
     a `_device_of`/`_mount_point` mockolásával szimulált fájlrendszer-
@@ -235,6 +240,11 @@ class TestFindTrashDir:
         assert find_trash_dir(photo) == per_user
 
 
+@pytest.mark.skipif(
+    not hasattr(os, "getuid"),
+    reason="A mount-specifikus lomtár freedesktop.org (POSIX) fogalom — "
+    "Windowson a #457 előtti, home-trash viselkedés marad.",
+)
 class TestTrashAvailable:
     def test_true_when_a_trash_dir_is_found(self, tmp_path):
         assert trash_available(tmp_path / "a.jpg", trash_dir=tmp_path / "T") is True
@@ -254,6 +264,11 @@ class TestTrashAvailable:
         assert trash_available(photo) is False
 
 
+@pytest.mark.skipif(
+    not hasattr(os, "getuid"),
+    reason="A mount-specifikus lomtár freedesktop.org (POSIX) fogalom — "
+    "Windowson a #457 előtti, home-trash viselkedés marad.",
+)
 class TestDeleteToTrashRaisesWhenNoTrashAvailable:
     def test_raises_trash_unavailable_error_and_keeps_the_file(
         self, tmp_path, monkeypatch

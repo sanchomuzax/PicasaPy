@@ -136,6 +136,14 @@ def find_trash_dir(path: Path, *, trash_dir: Path | None = None) -> Path | None:
         return home_trash
 
     topdir = _mount_point(path)
+    if not hasattr(os, "getuid"):
+        # A mount-specifikus `$topdir/.Trash[-uid]` a freedesktop.org
+        # (POSIX) szabvány fogalma — Windowson nem létezik, és a Lomtár
+        # feltérképezése egészen más (shell-API) úton menne. Amíg az nincs
+        # megírva, ott a #457 ELŐTTI viselkedés marad érvényben: mindig a
+        # home trash. Így Windowson nem jelenik meg a NAS-figyelmeztetés,
+        # de nem is romlik el semmi, ami eddig működött.
+        return home_trash
     uid = os.getuid()
 
     shared = topdir / ".Trash"

@@ -1,6 +1,7 @@
 """FileOpsController: fájlműveletek (átnevezés/áthelyezés/lomtár/fájlkezelő,
 #15) QML-hídja — útvonal-alapú, az AppControllertől (forró fájl) független."""
 
+import os
 from pathlib import Path
 
 import pytest
@@ -113,6 +114,11 @@ class TestDeletePhotoPermanently:
         assert failures[0][0] == "delete"
 
 
+@pytest.mark.skipif(
+    not hasattr(os, "getuid"),
+    reason="A mount-specifikus lomtár freedesktop.org (POSIX) fogalom — "
+    "Windowson a #457 előtti, home-trash viselkedés marad.",
+)
 class TestTrashAvailableFor:
     """#457: kuka vs. végleges törlés megkülönböztetéséhez a QML-oldal ezzel
     dönti el, melyik szöveget/slotot használja."""

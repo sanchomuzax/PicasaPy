@@ -6,6 +6,9 @@ image provider GIL) kizárásakor ezek a tesztek futhassanak tovább. A néző
 képbetöltését itt egyetlen teszt sem érinti.
 """
 
+import os
+
+import pytest
 from PySide6.QtCore import (
     Q_ARG,
     Q_RETURN_ARG,
@@ -292,6 +295,11 @@ class TestDeleteConfirmDialog:
         assert dialog2.property("visible") is True
 
 
+@pytest.mark.skipif(
+    not hasattr(os, "getuid"),
+    reason="A mount-specifikus lomtár freedesktop.org (POSIX) fogalom — "
+    "Windowson a #457 előtti, home-trash viselkedés marad.",
+)
 class TestDeleteConfirmDialogNoTrashAvailable:
     """#457: NAS/hálózati meghajtón (nincs elérhető lomtár) a dialógus külön,
     hangsúlyos szöveggel figyelmeztet, hogy a törlés AZONNALI és VÉGLEGES —
