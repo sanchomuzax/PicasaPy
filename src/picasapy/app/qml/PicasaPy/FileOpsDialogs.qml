@@ -235,20 +235,41 @@ Item {
     // #367: az általános ConfirmDialog komponensre állítva (confirm.fen
     // paritás) — a törlés-kulcs "delete", a "Don't ask again" jelöléssel
     // legközelebb nem nyílik meg újra, hanem azonnal törli a kijelöltet.
+    //
+    // #457: NAS/hálózati meghajtón (ahol nincs elérhető lomtár, sem a
+    // home, sem a mount-specifikus) a Picasa 3 külön, hangsúlyos szöveggel
+    // figyelmeztet, hogy a törlés AZONNALI és VÉGLEGES — ezt a
+    // `fileOpsController.trashAvailableFor(paths)` dönti el megnyitáskor;
+    // a "ne kérdezze újra" kulcs ("delete") ilyenkor is a lomtár-ágé marad
+    // (`DoNotConfirmDeleteFromDisk` — ld. picasa-fen-dialogs.md), a
+    // végleges ágnak külön kulcsa van, hogy a NAS-figyelmeztetés soha ne
+    // legyen elnémítható elnémítás-tévedésből.
     ConfirmDialog {
         id: deleteConfirmDialog
         objectName: "deleteConfirmDialog"
         title: qsTr("Delete from Disk")
         property var paths: []
+        property bool trashAvailable: true
         function openFor(pathList) {
             if (pathList.length === 0) return
             paths = pathList
-            ask("delete", qsTr("%n picture(s) will be moved to the system trash.",
-                                "", pathList.length))
+            trashAvailable = fileOpsController.trashAvailableFor(pathList)
+            if (trashAvailable) {
+                ask("delete", qsTr(
+                        "%n picture(s) will be moved to the system trash.",
+                        "", pathList.length))
+            } else {
+                ask("deletePermanently", qsTr(
+                    "This file cannot be moved to the Trash and will be deleted immediately. This cannot be undone."))
+            }
         }
         onConfirmed: {
-            for (var i = 0; i < paths.length; ++i)
-                fileOpsController.deletePhoto(paths[i])
+            for (var i = 0; i < paths.length; ++i) {
+                if (trashAvailable)
+                    fileOpsController.deletePhoto(paths[i])
+                else
+                    fileOpsController.deletePhotoPermanently(paths[i])
+            }
             dialogs.appWindow.clearSelection()
         }
     }

@@ -292,6 +292,75 @@ class TestDeleteConfirmDialog:
         assert dialog2.property("visible") is True
 
 
+class TestDeleteConfirmDialogNoTrashAvailable:
+    """#457: NAS/hálózati meghajtón (nincs elérhető lomtár) a dialógus külön,
+    hangsúlyos szöveggel figyelmeztet, hogy a törlés AZONNALI és VÉGLEGES —
+    és `deletePhotoPermanently`-t hív a lomtáras `deletePhoto` helyett.
+
+    A `trash.py` mount-határ-mockolásával szimuláljuk a NAS-esetet (nincs
+    valódi másik fájlrendszer a tesztkonténerben), ugyanúgy, mint a
+    `tests/fileops/test_trash.py`-ban."""
+
+    def _open_delete(self, window, qt_app, paths):
+        dialog = _child(window, "deleteConfirmDialog")
+        QMetaObject.invokeMethod(
+            dialog, "openFor", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", paths),
+        )
+        qt_app.processEvents()
+        return dialog
+
+    def _make_nas_unavailable(self, monkeypatch, tmp_path):
+        topdir = tmp_path / "nas"
+        topdir.mkdir()
+        photo = topdir / "a.jpg"
+        photo.write_bytes(b"kep")
+        monkeypatch.setattr(
+            "picasapy.fileops.trash._device_of",
+            lambda p: 1 if str(p).startswith(str(topdir)) else 2,
+        )
+        monkeypatch.setattr("picasapy.fileops.trash._mount_point", lambda p: topdir)
+        monkeypatch.setattr(
+            "picasapy.fileops.trash.os.access", lambda path, mode: False
+        )
+        return photo
+
+    def test_shows_the_permanent_delete_warning(
+        self, qml_app, qt_app, monkeypatch, tmp_path
+    ):
+        window, _controller, _lib, _engine = qml_app
+        photo = self._make_nas_unavailable(monkeypatch, tmp_path)
+        dialog = self._open_delete(window, qt_app, [str(photo)])
+        assert dialog.property("visible") is True
+        message_label = _child(window, "confirmMessageLabel")
+        text = message_label.property("text")
+        assert "cannot be moved to the Trash" in text
+        assert "cannot be undone" in text
+
+    def test_confirming_deletes_permanently_not_via_trash(
+        self, qml_app, qt_app, monkeypatch, tmp_path
+    ):
+        window, _controller, _lib, _engine = qml_app
+        photo = self._make_nas_unavailable(monkeypatch, tmp_path)
+        dialog = self._open_delete(window, qt_app, [str(photo)])
+        QMetaObject.invokeMethod(dialog, "accept", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert not photo.exists()
+        assert not (photo.parent / ".Trash-0" / "files" / "a.jpg").exists()
+        assert not list(photo.parent.glob(".Trash*"))
+
+    def test_normal_selection_still_shows_the_trash_message(
+        self, qml_app, qt_app, tmp_path
+    ):
+        # kontroll: a mockolás nélküli, normál (home-fájlrendszeres)
+        # kijelölésnél a lomtáras szöveg marad — a NAS-ág nem "ragad be"
+        window, _controller, lib, _engine = qml_app
+        photo = lib / "a.jpg"
+        self._open_delete(window, qt_app, [str(photo)])
+        message_label = _child(window, "confirmMessageLabel")
+        assert "system trash" in message_label.property("text")
+
+
 class TestMenuBarFileActions:
     def test_items_follow_selection(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app

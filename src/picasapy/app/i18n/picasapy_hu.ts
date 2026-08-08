@@ -1678,6 +1678,10 @@
         </translation>
     </message>
     <message>
+        <source>This file cannot be moved to the Trash and will be deleted immediately. This cannot be undone.</source>
+        <translation>Ez a fájl nem helyezhető át a Lomtárba, ezért azonnal, véglegesen törlődik. Ez nem vonható vissza.</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="101"/>
         <source>File operation failed</source>
         <translation>A fájlművelet nem sikerült</translation>

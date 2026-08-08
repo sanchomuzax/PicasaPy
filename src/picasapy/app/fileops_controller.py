@@ -15,11 +15,13 @@ from PySide6.QtCore import QObject, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 
 from picasapy.fileops import (
+    delete_permanently,
     delete_to_trash,
     move_photo,
     open_folder_in_file_manager,
     rename_photo,
     reveal_in_file_manager,
+    trash_available,
 )
 from picasapy.ini import IniConflictError, IniSaveError
 
@@ -72,6 +74,29 @@ class FileOpsController(QObject):
             self.operationFailed.emit("delete", str(error))
             return
         self.photoDeleted.emit(path)
+
+    @Slot(str)
+    def deletePhotoPermanently(self, path: str) -> None:
+        """Végleges, azonnali törlés — akkor hívandó, ha a `path`-hoz nincs
+        elérhető lomtár (#457: hálózati meghajtó/NAS), és a felhasználó a
+        `deleteConfirmDialog` erre figyelmeztető, külön szövegű ágán mégis
+        megerősítette a törlést."""
+        try:
+            delete_permanently(Path(path))
+        except OSError as error:
+            self.operationFailed.emit("delete", str(error))
+            return
+        self.photoDeleted.emit(path)
+
+    @Slot(list, result=bool)
+    def trashAvailableFor(self, paths: list) -> bool:
+        """True, ha MINDEN megadott útvonalhoz van elérhető lomtár (#457).
+        Kevert kijelölésnél (van, ami nem) a szigorúbb ág nyer — `False` —,
+        hogy a `deleteConfirmDialog` a végleges-törlés szövegét mutassa,
+        és az ne törölje csendben azt is, amihez lett volna lomtár."""
+        if not paths:
+            return True
+        return all(trash_available(Path(path)) for path in paths)
 
     @Slot(str)
     def revealPhoto(self, path: str) -> None:
