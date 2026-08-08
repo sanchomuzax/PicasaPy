@@ -10,9 +10,9 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 
 class TestSchema:
-    def test_schema_version_is_eight(self):
-        # v8: virtuális albumok (#9) — albums + photo_albums
-        assert SCHEMA_VERSION == 8
+    def test_schema_version_is_current(self):
+        # v9: saját arc-detektálás (#26, 1. lépcső) — a `face` tábla
+        assert SCHEMA_VERSION == 9
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
