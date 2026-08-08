@@ -7,13 +7,24 @@ A Picasa funkcionalitása → PicasaPy megvalósítási fázisok.
 - Mappa-figyelés (watched folders), háttér-scanner, soha nem blokkoló UI
   - abszolút útvonalak + útvonal-átíró logika (migráció más gépről)
   - `WatchedFolders.txt` / `FRExcludeFolders.txt` megfelelőségek — **kész
-    (#145):** kis-nagybetű-független konfigfájl-keresés
-    (`picasapy.scanner.config_files.find_config_file`) és a kizárt mappák
-    (és alfáik) kiszűrése a `scan_tree`/`sync_tree` bejárásból. Megjegyzés:
-    a `FRExcludeFolders.txt` eredetileg csak az **arcfelismerésből** zár ki
-    mappákat (ld. `pmp-database.md`); mivel az arcfelismerés a 3. fázis,
-    a PicasaPy egyelőre a teljes indexelésből kihagyja őket — ezt a
-    3. fázisban érdemes felülvizsgálni.
+    (#145, pontosítva #449-ben):** kis-nagybetű-független konfigfájl-keresés
+    (`picasapy.scanner.config_files.find_config_file`), mindkét fájl olvasása
+    ÉS írása (`read/write_watched_folders`, `read/write_exclude_folders`).
+    **Pontosítás (#449) — a Mappakezelőben a Picasa 3-ban NÉGY vezérlő volt,
+    nem három:** a Scan Always/Scan Once/Remove from Picasa hármas mellett
+    egy TŐLÜK FÜGGETLEN, negyedik kapcsoló (jelölőnégyzet, nem rádiógomb)
+    zárja ki a mappát (és alfáit) az **arcfelismerésből** — ez a
+    `FRExcludeFolders.txt`, ld. `pmp-database.md`. A kulcs KIZÁRÓLAG az
+    arcfelismerést érinti, az általános indexelést NEM (a korábbi, itt
+    dokumentált feltevés téves volt: a fájlt a PicasaPy korábban
+    ténylegesen sehol nem is használta, csak olvasó függvényei léteztek,
+    hívó nélkül). Kikapcsoláskor a Picasa megerősítést kér („Are you sure
+    you want to remove all faces and name tags from excluded folders?");
+    a PicasaPy ezt a szöveget megtartja, de mivel a projektben MÉG NINCS
+    arcfelismerés-motor (3. fázis), a kapcsoló egyelőre csak a
+    kizárási SZÁNDÉKOT rögzíti a Picasa-kompatibilis fájlban — tényleges
+    arc-/névcímke-törlés nem történik, amíg az arcfelismerés meg nem
+    érkezik (ld. `app/library_controller.py: setFaceDetectionEnabled`).
 - Villámgyors thumbnail-rács nagy (100k+ képes) könyvtárakra; thumbnail-cache
 - Csillagozás, feliratok, kulcsszavak; virtuális albumok; keresés/szűrés
 - Meglévő Picasa-könyvtár felismerése; **kétirányú** `.picasa.ini` írás/olvasás

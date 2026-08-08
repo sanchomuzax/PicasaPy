@@ -106,11 +106,21 @@ class AppController(
         parent=None,
         settings=None,
         watched_file: Path | None = None,
+        exclude_file: Path | None = None,
+        face_excluded: tuple[str, ...] = (),
     ):
         super().__init__(parent)
         self._db_path = db_path
         self._roots = list(roots)
         self._watched_file = watched_file
+        # #449: a Mappakezelő NEGYEDIK, a Scan Always/Once/Remove hármastól
+        # FÜGGETLEN kapcsolója — az arcfelismerésből kizárt gyökerek
+        # (FRExcludeFolders.txt, ld. library_controller.py). Arcfelismerés-
+        # motor MÉG NINCS a projektben: ez egyelőre csak a SZÁNDÉKOT
+        # rögzíti, a fájl-formátum viszont már az eredeti Picasáéval
+        # kompatibilis.
+        self._exclude_file = exclude_file
+        self._face_excluded_roots = list(face_excluded)
         self._provider = provider
         self._folders = FolderListModel(self)
         self._photos = PhotoGridModel(self)
@@ -267,6 +277,14 @@ class AppController(
     @Property(list, notify=statusChanged)
     def watchedFolders(self):
         return list(self._roots)
+
+    @Property(list, notify=statusChanged)
+    def faceExcludedFolders(self):
+        """Az arcfelismerésből kizárt gyökér-mappák (#449) — a
+        `FolderStatePanel.qml` ebből számolja (ős-mappákra is kiterjedő
+        egyezéssel) a jelölőnégyzet állapotát, a `watchedFolders` mintáját
+        követve."""
+        return list(self._face_excluded_roots)
 
     @Property(str, notify=statusChanged)
     def folderSort(self):

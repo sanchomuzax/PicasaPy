@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.34] – 2026-08-08
+
+### Hozzáadva
+- **Mappakezelő: negyedik, önálló arcfelismerés-kapcsoló (#449):** az
+  eredeti Picasában a mappa beolvasási állapota (Folyamatos figyelés /
+  Egyszeri beolvasás / Eltávolítás) mellett egy **tőlük független**
+  kapcsoló döntötte el, hogy az adott mappában fusson-e az arcfelismerés.
+  Ez eddig teljesen hiányzott; mostantól a Mappakezelőben külön
+  jelölőnégyzet, kikapcsoláskor az eredeti szövegű rákérdezéssel. A
+  beállítás a Picasával azonos formátumú `FRExcludeFolders.txt`-be kerül.
+  *(Arcfelismerés-motor még nincs a projektben, így a kapcsoló egyelőre a
+  kizárási szándékot rögzíti — arcok és névcímkék törlése nem történik.)*
+
+### Javítva
+- **Félrevezető dokumentáció az `FRExcludeFolders.txt`-ről:** a
+  funkciótérkép azt állította, hogy a fájl a teljes indexelésből zárja ki
+  a mappákat. Valójában kizárólag az arcfelismerést érinti — és a program
+  korábban egyáltalán nem is használta a fájlt.
+
 ## [0.6.33] – 2026-08-08
 
 ### Hozzáadva

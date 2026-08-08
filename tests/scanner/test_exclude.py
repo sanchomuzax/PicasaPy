@@ -22,6 +22,33 @@ class TestReadExcludeFolders:
         assert read_exclude_folders(tmp_path / "nincs.txt") == ()
 
 
+class TestWriteExcludeFolders:
+    def test_write_roundtrip(self, tmp_path):
+        from picasapy.scanner import write_exclude_folders
+
+        f = tmp_path / "FRExcludeFolders.txt"
+        write_exclude_folders(f, ("/mnt/nas/privat", "/home/sancho/Titkos"))
+        assert read_exclude_folders(f) == (
+            "/mnt/nas/privat",
+            "/home/sancho/Titkos",
+        )
+
+    def test_write_creates_parent_dir(self, tmp_path):
+        from picasapy.scanner import write_exclude_folders
+
+        f = tmp_path / "mely" / "FRExcludeFolders.txt"
+        write_exclude_folders(f, ("/a",))
+        assert read_exclude_folders(f) == ("/a",)
+
+    def test_write_empty_clears(self, tmp_path):
+        from picasapy.scanner import write_exclude_folders
+
+        f = tmp_path / "FRExcludeFolders.txt"
+        write_exclude_folders(f, ("/a",))
+        write_exclude_folders(f, ())
+        assert read_exclude_folders(f) == ()
+
+
 class TestFindExcludeFoldersFile:
     def test_finds_canonical_case(self, tmp_path):
         f = tmp_path / "FRExcludeFolders.txt"

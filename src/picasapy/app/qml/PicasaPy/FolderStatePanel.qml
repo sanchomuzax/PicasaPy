@@ -27,6 +27,30 @@ ColumnLayout {
         { state: "none", label: qsTr("Remove from Picasa") }
     ]
 
+    // #449: a Picasa 3 Mappakezelőjében NÉGY vezérlő volt, nem három — az
+    // arcfelismerés be/ki kapcsolója a fenti hármastól (Scan Always/Once/
+    // Remove) TELJESEN FÜGGETLEN (pl. egy mappa lehet egyszerre figyelt ÉS
+    // arcfelismerésből kizárt), ezért szándékosan NEM negyedik rádiógomb,
+    // hanem önálló jelölőnégyzet — vizuálisan is elkülönítve (lásd lent).
+    //
+    // A kizárt-e eldöntés (ős-mappákra is kiterjedő egyezéssel) itt, JS-ben
+    // fut a `controller.faceExcludedFolders` NOTIFY-property alapján — a
+    // `stateFor` (FolderManagerDialog.qml) mintáját követve, hogy a
+    // binding automatikusan újraértékelődjön a lista változásakor (a
+    // Python `faceDetectionEnabledFor` a tényleges, ős-mappát is kezelő
+    // igazságforrás, ezt tükrözi vissza itt egyszerű előtag-egyezéssel).
+    function facesExcludedFor(path) {
+        if (!path || typeof controller === "undefined" || !controller) return false
+        var roots = controller.faceExcludedFolders
+        for (var i = 0; i < roots.length; i++) {
+            var root = roots[i]
+            if (path === root) return true
+            if (path.indexOf(root + "/") === 0) return true
+            if (path.indexOf(root + "\\") === 0) return true
+        }
+        return false
+    }
+
     Text {
         Layout.fillWidth: true
         text: panel.selectedPath.length > 0
@@ -96,6 +120,89 @@ ColumnLayout {
                 }
             }
         }
+    }
+
+    // #449: vékony elválasztó — vizuálisan is jelezze, hogy a lenti
+    // kapcsoló NEM tartozik a fenti hármashoz.
+    Rectangle {
+        Layout.fillWidth: true
+        Layout.topMargin: 4
+        Layout.bottomMargin: 4
+        height: 1
+        color: Theme.chromeBorder
+    }
+
+    Item {
+        id: faceDetectionRow
+        objectName: "faceDetectionToggle"
+        Layout.fillWidth: true
+        implicitHeight: faceDetectionLayout.implicitHeight
+        enabled: panel.selectedPath.length > 0
+
+        readonly property bool enabledForSelection:
+            !panel.facesExcludedFor(panel.selectedPath)
+
+        // a jelölőnégyzet kattintás-logikája külön, nevesített
+        // függvényben (a MouseArea `clicked(mouse)` szignálja kötelező
+        // paramétert visz, ami közvetlen tesztbeli meghívást nehezítene) —
+        // ki: megerősítést kér (faceDetectionConfirm); be: azonnali
+        function toggle() {
+            if (typeof controller === "undefined" || !controller) return
+            if (faceDetectionRow.enabledForSelection) {
+                faceDetectionConfirm.pendingPath = panel.selectedPath
+                faceDetectionConfirm.ask(
+                    "removeFacesFromExcludedFolder",
+                    qsTr("Are you sure you want to remove all faces "
+                         + "and name tags from excluded folders?"))
+            } else {
+                controller.setFaceDetectionEnabled(panel.selectedPath, true)
+            }
+        }
+
+        RowLayout {
+            id: faceDetectionLayout
+            anchors.fill: parent
+            spacing: 6
+
+            Rectangle {
+                width: 14; height: 14
+                border.width: 1
+                border.color: Theme.chromeBorder
+                color: Theme.contentPanel
+                Text {
+                    anchors.centerIn: parent
+                    text: "✓"
+                    font.pixelSize: 11
+                    color: Theme.selectionBlue
+                    visible: faceDetectionRow.enabledForSelection
+                }
+            }
+            Text {
+                text: qsTr("Face detection")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+        }
+        MouseArea {
+            objectName: "faceDetectionToggleArea"
+            anchors.fill: parent
+            onClicked: faceDetectionRow.toggle()
+        }
+    }
+
+    // #449: az eredeti Picasa megerősítő kérdése arcfelismerés
+    // kikapcsolásakor. ŐSZINTESÉG: a projektben MÉG NINCS arcfelismerés-
+    // motor, tehát ez a lépés MA nem töröl tényleges arc-adatot — csak a
+    // mappát veszi fel a `FRExcludeFolders.txt`-be (a kizárási szándékot
+    // rögzíti), ld. `library_controller.py: setFaceDetectionEnabled`.
+    ConfirmDialog {
+        id: faceDetectionConfirm
+        namePrefix: "faceDetectionConfirm"
+        property string pendingPath: ""
+        onConfirmed: if (typeof controller !== "undefined" && controller
+                          && faceDetectionConfirm.pendingPath !== "")
+                         controller.setFaceDetectionEnabled(
+                             faceDetectionConfirm.pendingPath, false)
     }
 
     Text {
