@@ -372,10 +372,13 @@ Ebből következik két dolog, amit a fájl **nem** közöl, és amit ezért
    (1–3, ahol 3 ≈ Gauss). A Glimmer-effektekben végig `quality="3"`. A
    PicasaPy jelenleg figyelmen kívül hagyja.
 2. **Az `xblur`/`yblur` pixel-jelentése.** Flashben a `blurX` **nem
-   Gauss-σ**, hanem elmosás-szélesség, és **0–255-re korlátozott**. Nem
-   tudjuk, hogy a natív port átvette-e a korlátot. A kérdés csak a
-   *látványt* érinti, mert a méretfüggő képletek (ld. lent) egy nagy fotón
-   messze 255 fölé mennek.
+   Gauss-σ**, hanem elmosás-szélesség, és **0–255-re korlátozott**.
+   **A natív port átvette a korlátot — ez mérésből bizonyított.** Eredeti
+   windowsos Picasa-exportokból (Lomo, 2560×1702) visszafejtve a ragyogás
+   súlytérképét, az illeszkedés optimuma **σ ≈ 255–340**, miközben a nyers
+   képlet 896-ot adna; a teljes láncon a Picasa kimenetétől való átlagos
+   csatorna-eltérés korlát nélkül 41,8, **255-ös korláttal 9,0**. Vagyis:
+   a méretfüggő képletek eredményét **255-re kell vágni** (#504, #317).
 
 #### Méretfüggő elmosás-sugarak — a hét érintett szűrő
 
