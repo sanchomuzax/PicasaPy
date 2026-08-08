@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -92,6 +92,51 @@ CREATE TABLE IF NOT EXISTS photo_albums (
 CREATE INDEX IF NOT EXISTS idx_photo_albums_token ON photo_albums(token);
 """
 
+# #26 (1. lépcső): saját (YuNet) arc-detektálás találatai — SZÁNDÉKOSAN
+# külön tábla, a `photo_hashes` mintáját követve: tisztán származtatott
+# adat (a képből újraszámolható), fotónkénti UPSERT-tel (a scan-worker
+# egyszerűen törli-és-újraírja egy fotó sorait, ld. `index/faces_detected.py`).
+#
+# A `.picasa.ini` `faces=`/`deferredface` mezőit ez a tábla NEM érinti és
+# NEM írja felül — azok a saját, motorspecifikus round-trip rétegen
+# (`ini/faces.py`) élnek tovább változatlanul (a Picasa döntései szentek,
+# ld. issue #26 terve). A `state` oszlop a tervezett későbbi lépcsőké
+# (javaslat/elnevezés/ignorálás) — 1. lépcsőben mindig 'unnamed'.
+#
+# NINCS `embedding` oszlop (SFace-lenyomat) — az a terv 2. lépcsője
+# (csoportosítás), ez az 1. lépcső csak detektál, nem azonosít.
+#
+# A rect és a landmark-koordináták KÉPPIXELBEN tárolódnak (nem [0..1]
+# relatív, szemben a rect64-gyel) — a szemvonalra igazított arc-indexkép
+# (`picasapy.faces.align`) ezekkel dolgozik közvetlenül, konverzió nélkül;
+# a fotó `width`/`height`-je (a `photos` táblában már megvan) elég a
+# relatívvá alakításhoz, ha egy jövőbeli lépcsőnek arra lesz szüksége.
+_FACE_DDL = """
+CREATE TABLE IF NOT EXISTS face (
+    id INTEGER PRIMARY KEY,
+    photo_id INTEGER NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
+    rect_left REAL NOT NULL,
+    rect_top REAL NOT NULL,
+    rect_right REAL NOT NULL,
+    rect_bottom REAL NOT NULL,
+    det_conf REAL NOT NULL,
+    right_eye_x REAL NOT NULL,
+    right_eye_y REAL NOT NULL,
+    left_eye_x REAL NOT NULL,
+    left_eye_y REAL NOT NULL,
+    nose_x REAL NOT NULL,
+    nose_y REAL NOT NULL,
+    mouth_right_x REAL NOT NULL,
+    mouth_right_y REAL NOT NULL,
+    mouth_left_x REAL NOT NULL,
+    mouth_left_y REAL NOT NULL,
+    state TEXT NOT NULL DEFAULT 'unnamed'
+);
+
+CREATE INDEX IF NOT EXISTS idx_face_photo ON face(photo_id);
+CREATE INDEX IF NOT EXISTS idx_face_state ON face(state);
+"""
+
 DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
     id INTEGER PRIMARY KEY,
@@ -130,6 +175,8 @@ CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 
 {_PHOTO_HASHES_DDL}
 
 {_ALBUMS_DDL}
+
+{_FACE_DDL}
 
 {_FTS_DDL}
 """
@@ -183,4 +230,8 @@ ALTER TABLE photos ADD COLUMN exif_lon REAL;
     # nem kell újraindexelés, a következő szinkron tölti fel őket az
     # ini-kből (a `[.album:token]` szekciók és az `albums=` kulcs alapján).
     7: _ALBUMS_DDL,
+    # #26 (1. lépcső): a saját arc-detektálás táblája. Üresen jön létre —
+    # a meglévő indexekhez nem kell újraindexelés; a következő arc-scan
+    # (`FaceScanController`, opcionális háttérfolyamat) tölti fel.
+    8: _FACE_DDL,
 }

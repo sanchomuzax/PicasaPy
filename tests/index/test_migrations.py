@@ -190,3 +190,44 @@ class TestAlbumsMigration:
         with open_index(path) as conn:
             assert albums_in_index(conn) == ()
             assert album_photos(conn, "barmi") == ()
+
+
+class TestFaceMigration:
+    """#26 (séma v9): a saját arc-detektálás `face` táblája a MEGLÉVŐ
+    indexekhez is hozzájön, újraindexelés nélkül — üresen, a következő
+    arc-szkennelés (`FaceScanController`) tölti fel."""
+
+    def _v8_database(self, tmp_path):
+        path = tmp_path / "regi.db"
+        raw = sqlite3.connect(path)
+        raw.executescript(DDL)
+        raw.executescript("DROP TABLE IF EXISTS face;\nPRAGMA user_version = 8;")
+        raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
+        raw.execute(
+            "INSERT INTO photos (id, folder_id, name, kind, size, mtime_ns)"
+            " VALUES (1, 1, 'a.jpg', 'image', 10, 1)"
+        )
+        raw.commit()
+        raw.close()
+        return path
+
+    def test_table_appears_and_data_survives(self, tmp_path):
+        path = self._v8_database(tmp_path)
+        with open_index(path) as conn:
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            assert "face" in tables
+            assert conn.execute("SELECT count(*) FROM photos").fetchone()[0] == 1
+            assert conn.execute("SELECT count(*) FROM face").fetchone()[0] == 0
+
+    def test_face_queries_work_on_the_migrated_database(self, tmp_path):
+        from picasapy.index.faces_detected import unnamed_album_photos
+
+        path = self._v8_database(tmp_path)
+        with open_index(path) as conn:
+            assert unnamed_album_photos(conn) == ()

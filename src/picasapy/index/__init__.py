@@ -9,6 +9,12 @@ from .colors import (
     save_colors,
 )
 from .database import open_index
+from .faces_detected import (
+    clear_faces,
+    detected_face_count,
+    replace_faces,
+    unnamed_album_photos,
+)
 from .hashes import load_dhashes, save_dhashes
 from .queries import (
     PhotoRecord,
@@ -52,7 +58,9 @@ __all__ = [
     "albums_in_index",
     "all_photos",
     "backfill_colors",
+    "clear_faces",
     "compute_photo_color",
+    "detected_face_count",
     "geotagged_photos",
     "load_color_tokens",
     "load_dhashes",
@@ -61,11 +69,13 @@ __all__ = [
     "people_in_index",
     "person_photos",
     "photo_by_id",
+    "unnamed_album_photos",
     "photos_in_folder",
     "photos_under_folder",
     "prune_foreign_folders",
     "relocate_data_root",
     "remove_root",
+    "replace_faces",
     "save_colors",
     "save_dhashes",
     "SearchSuggestion",
