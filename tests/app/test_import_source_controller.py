@@ -5,6 +5,8 @@ mintája)."""
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QEventLoop, QSettings, QTimer
 
@@ -186,7 +188,9 @@ class TestDuplicateExclusion:
         items, count = _scan(controller, str(source))
 
         assert count == 2
-        by_name = {item["path"].split("/")[-1]: item for item in items}
+        # Path(...).name, NEM split("/") — Windowson a szeparátor "\\",
+        # ott a naiv vágás az EGÉSZ útvonalat adná kulcsnak (KeyError).
+        by_name = {Path(item["path"]).name: item for item in items}
         assert by_name["eredeti.jpg"]["duplicate"] is True
         assert by_name["uj.jpg"]["duplicate"] is False
 
