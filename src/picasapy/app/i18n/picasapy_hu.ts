@@ -2007,6 +2007,18 @@
         <translation>A fájlművelet nem sikerült</translation>
     </message>
     <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Undo All Edits</source>
+        <translation>Összes szerkesztés visszavonása</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qml/Main.qml"/>
+        <source>All edits will be removed from %n selected picture(s).</source>
+        <translation>
+            <numerusform>%n kijelölt kép összes szerkesztése törlődik.</numerusform>
+        </translation>
+    </message>
+    <message>
         <source>Export Picture to Folder...</source>
         <translation>Kép exportálása mappába…</translation>
     </message>

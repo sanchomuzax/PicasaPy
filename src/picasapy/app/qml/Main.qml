@@ -381,6 +381,29 @@ ApplicationWindow {
             else if (name === "rotate_ccw") controller.rotateLeftMany(window.selectedRows())
             else controller.applyEffectMany(window.selectedRows(), name)
         }
+        // #465 3. pont: „Undo All Edits" — megerősítéssel, a kijelölt
+        // kép(ek) TELJES szerkesztési lánca törlődik (`clearAllEffectsMany`,
+        // ugyanaz a kötegelt undo-verem mint a `applyEffectMany`-nál).
+        onUndoAllEditsRequested: undoAllEditsDialog.openFor(window.selectedRows())
+    }
+
+    // #465 3. pont: az általános ConfirmDialog mintáját követi (ld.
+    // FileOpsDialogs.qml deleteConfirmDialog) — a döntés-kulcs
+    // "undoAllEdits" a „Don't ask again" jelölő eltárolásához.
+    ConfirmDialog {
+        id: undoAllEditsDialog
+        objectName: "undoAllEditsDialog"
+        namePrefix: "undoAllEdits"
+        title: qsTr("Undo All Edits")
+        property var rows: []
+        function openFor(rowList) {
+            if (rowList.length === 0) return
+            rows = rowList
+            ask("undoAllEdits", qsTr(
+                "All edits will be removed from %n selected picture(s).",
+                "", rowList.length))
+        }
+        onConfirmed: controller.clearAllEffectsMany(rows)
     }
 
     // #17: Elrejtés/Megjelenítés a kijelölésre; elrejtés után a kijelölést

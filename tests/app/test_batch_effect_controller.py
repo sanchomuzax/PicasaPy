@@ -21,9 +21,13 @@ def library(tmp_path):
     folder_b.mkdir(parents=True)
     make_jpeg(folder_a / "x.jpg", size=(800, 600))
     make_jpeg(folder_a / "y.jpg", size=(800, 600))
+    make_jpeg(folder_a / "w.jpg", size=(800, 600))
     make_jpeg(folder_b / "z.jpg", size=(800, 600))
     (folder_a / ".picasa.ini").write_text(
-        "[x.jpg]\nfilters=sat=1,-0.2;\n", encoding="utf-8"
+        "[x.jpg]\nfilters=sat=1,-0.2;\n"
+        "[w.jpg]\nfilters=crop64=1,3f845bcb59418507;\n"
+        "crop=rect64(3f845bcb59418507)\n",
+        encoding="utf-8",
     )
     return root
 
@@ -224,6 +228,76 @@ class TestCancelBatchEdit:
         # a megszakított köteg is visszavonható (csak a ténylegesen megírt
         # mappára vonatkozik)
         assert controller.canUndoBatchEdit is True
+
+
+class TestClearAllEffectsMany:
+    """„Undo All Edits" (#465 3. pont): a Kép menü tétele a kijelölt N kép
+    MINDEGYIKÉNEK teljes `filters=` láncát törli (a `crop=` tükör-kulccsal
+    együtt, ld. `edit_controller._save` mintája) — a #425 kötegelt
+    infrastruktúrát (mappánkénti írás, undo-verem) újrahasználva."""
+
+    def test_ures_kijeloles_nem_ir(self, controller, library):
+        before = _ini_text(library)
+        _run(controller, lambda: controller.clearAllEffectsMany([]))
+        assert _ini_text(library) == before
+
+    def test_torli_a_filters_kulcsot(self, controller, library):
+        _run(
+            controller,
+            lambda: controller.clearAllEffectsMany(
+                _rows_by_name(controller, "x.jpg")
+            ),
+        )
+        text = _ini_text(library)
+        # az egykulcsos [x.jpg] szekció a filters= törlésével teljesen
+        # eltűnik (a `with_removed` az üres szekciót nem tartja meg)
+        assert "filters=sat=1,-0.2;" not in text
+        assert "[x.jpg]" not in text
+
+    def test_torli_a_crop_tukorkulcsot_is(self, controller, library):
+        _run(
+            controller,
+            lambda: controller.clearAllEffectsMany(
+                _rows_by_name(controller, "w.jpg")
+            ),
+        )
+        text = _ini_text(library)
+        assert "crop=rect64(" not in text
+        assert "filters=crop64=" not in text
+
+    def test_nem_erinti_a_ki_nem_jelolt_kepet(self, controller, library):
+        _run(
+            controller,
+            lambda: controller.clearAllEffectsMany(
+                _rows_by_name(controller, "x.jpg")
+            ),
+        )
+        # w.jpg-t nem érintettük — a crop64/crop= érintetlen marad
+        assert "crop=rect64(3f845bcb59418507)" in _ini_text(library)
+
+    def test_mappankent_minden_erintett_mappa_iridik(self, controller, library):
+        _run(
+            controller,
+            lambda: controller.clearAllEffectsMany(
+                _rows_by_name(controller, "x.jpg", "z.jpg")
+            ),
+        )
+        assert "filters=sat=1,-0.2;" not in _ini_text(library)
+        assert controller.canUndoBatchEdit is True
+
+    def test_egy_lepesben_visszavonhato(self, controller, library):
+        """A kötegelt undo-verem közös az `applyEffectMany`-jal — ugyanazzal
+        az `undoBatchEdit`-tel az „Undo All Edits" is visszavonható."""
+        _run(
+            controller,
+            lambda: controller.clearAllEffectsMany(
+                _rows_by_name(controller, "x.jpg")
+            ),
+        )
+        assert controller.canUndoBatchEdit is True
+        controller.undoBatchEdit()
+        assert "filters=sat=1,-0.2;" in _ini_text(library)
+        assert controller.canUndoBatchEdit is False
 
 
 class TestBackgroundThreadTeardown:
