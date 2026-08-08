@@ -961,3 +961,77 @@ class TestTextTool:
         assert controller.hasTextOverlay is True
         controller.enterTextTool()
         assert controller.textDraft == "Cím"
+
+
+class TestTextStyle:
+    """#450: kitöltés+körvonal szín, körvonal-vastagság, kitöltés ki/be,
+    átlátszóság — munkamenet-szintű állapot, NEM kerül a `.picasa.ini`-be
+    (ld. `_DEFAULT_TEXT_*` megjegyzését az edit_controller.py-ban)."""
+
+    def test_defaults(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        assert controller.textFillColor == "#ffffff"
+        assert controller.textOutlineColor == "#000000"
+        assert controller.textOutlineThickness == 0
+        assert controller.textFillEnabled is True
+        assert controller.textOpacity == 1.0
+
+    def test_setters_update_properties(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setTextFillColor("#ff0000")
+        controller.setTextOutlineColor("#00ff00")
+        controller.setTextOutlineThickness(3)
+        controller.setTextFillEnabled(False)
+        controller.setTextOpacity(0.5)
+        assert controller.textFillColor == "#ff0000"
+        assert controller.textOutlineColor == "#00ff00"
+        assert controller.textOutlineThickness == 3
+        assert controller.textFillEnabled is False
+        assert controller.textOpacity == 0.5
+
+    def test_reset_to_defaults_on_new_begin_edit(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setTextFillColor("#ff0000")
+        controller.setTextOutlineThickness(5)
+        controller.endEdit()
+        controller.beginEdit("1", str(photo))
+        assert controller.textFillColor == "#ffffff"
+        assert controller.textOutlineThickness == 0
+
+    def test_negative_outline_thickness_raises(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        with pytest.raises(ValueError):
+            controller.setTextOutlineThickness(-1)
+
+    def test_out_of_range_opacity_raises(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        with pytest.raises(ValueError):
+            controller.setTextOpacity(1.5)
+
+    def test_style_does_not_write_ini(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Nyaralás")
+        controller.previewTextPlacement(0.5, 0.5)
+        controller.setTextFillColor("#ff0000")
+        controller.setTextOutlineColor("#00ff00")
+        controller.setTextOutlineThickness(2)
+        controller.setTextFillEnabled(False)
+        controller.setTextOpacity(0.4)
+        controller.applyText()
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        # csak az ismert öt mező + esetleges raw_tail kerül a text=-be —
+        # a stílus-mezők NEM ini-kulcsok (#450)
+        assert "ff0000" not in ini_text.lower()
+        assert "00ff00" not in ini_text.lower()
+
+    def test_style_change_affects_live_preview(self, controller, provider, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("A")
+        controller.previewTextPlacement(0.5, 0.5)
+        base = provider.requestImage("1", None, None)
+        controller.setTextOutlineThickness(4)
+        controller.setTextOutlineColor("#00ff00")
+        styled = provider.requestImage("1", None, None)
+        assert base != styled

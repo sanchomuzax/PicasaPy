@@ -146,6 +146,35 @@ _DEFAULT_TEXT_FONT = "Arial"
 #: át — attól kezdve ez a konvenció érvényes rá is).
 _TEXT_COORD_SCALE = 10000
 
+#: A szöveg-eszköz stílus-beállításai (#450: kitöltés+körvonal szín,
+#: körvonal-vastagság, kitöltés ki/be, átlátszóság) NEM ismert `text=`
+#: mezők — a valódi Picasa `text=` sorának `raw_tail` (a betűtípus UTÁNI,
+#: tagolatlan) része is ismeretlen jelentésű (ld. `picasapy.ini.text_overlay`
+#: docsztring), ezért ide NEM próbálunk kódolni. Ezek a beállítások PicasaPy-
+#: saját, KIZÁRÓLAG a folyamatban lévő szerkesztési munkamenet állapotában
+#: élnek (mint a `_text_draft`/`_text_pending_pos`) — beginEdit/endEdit
+#: alapértékre állnak, a `.picasa.ini`-be jelenleg NEM kerülnek be.
+_DEFAULT_TEXT_FILL_COLOR = (255, 255, 255)
+_DEFAULT_TEXT_OUTLINE_COLOR = (0, 0, 0)
+_DEFAULT_TEXT_OUTLINE_THICKNESS = 0
+_DEFAULT_TEXT_FILL_ENABLED = True
+_DEFAULT_TEXT_OPACITY = 1.0
+
+
+def _rgb_to_hex(rgb: tuple[int, int, int]) -> str:
+    r, g, b = rgb
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def _hex_to_rgb(value: str) -> tuple[int, int, int]:
+    text = value.strip().lstrip("#")
+    if len(text) != 6:
+        raise ValueError(f"Érvénytelen szín (nem #rrggbb alakú): {value!r}")
+    try:
+        return (int(text[0:2], 16), int(text[2:4], 16), int(text[4:6], 16))
+    except ValueError as error:
+        raise ValueError(f"Érvénytelen szín (nem #rrggbb alakú): {value!r}") from error
+
 
 def _relative_to_raw(value: float) -> int:
     return round(_clamp01(value) * _TEXT_COORD_SCALE)
@@ -212,6 +241,15 @@ class EditController(QObject):
         self._text_active = False
         self._text_draft = ""
         self._text_pending_pos: tuple[float, float] | None = None
+        # szöveg-stílus (#450): PicasaPy-saját, csak a munkamenetben élő
+        # állapot (ld. a `_DEFAULT_TEXT_*` konstansok megjegyzését) — a
+        # `.picasa.ini`-be NEM kerül, minden szerkesztés-nyitáskor alapértékre
+        # áll (ld. `beginEdit`/`endEdit`).
+        self._text_fill_color: tuple[int, int, int] = _DEFAULT_TEXT_FILL_COLOR
+        self._text_outline_color: tuple[int, int, int] = _DEFAULT_TEXT_OUTLINE_COLOR
+        self._text_outline_thickness: int = _DEFAULT_TEXT_OUTLINE_THICKNESS
+        self._text_fill_enabled: bool = _DEFAULT_TEXT_FILL_ENABLED
+        self._text_opacity: float = _DEFAULT_TEXT_OPACITY
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
 
@@ -318,6 +356,89 @@ class EditController(QObject):
             and self._text_active
             and bool(self._text_overlay.content)
         )
+
+    # -- szöveg-stílus (#450): kitöltés+körvonal szín, körvonal-vastagság,
+    # kitöltés ki/be, átlátszóság — ld. a `_DEFAULT_TEXT_*` konstansok
+    # megjegyzését: PicasaPy-saját, csak a munkamenetben élő állapot, a
+    # `.picasa.ini`-be jelenleg NEM kerül. A `#rrggbb` sztring-alak QML-
+    # barát (a `Rectangle.color`/swatch-gombok is így fogadják). ---------
+
+    @Property(str, notify=toolsChanged)
+    def textFillColor(self) -> str:
+        """A kitöltés-szín `#rrggbb` alakban."""
+        return _rgb_to_hex(self._text_fill_color)
+
+    @Property(str, notify=toolsChanged)
+    def textOutlineColor(self) -> str:
+        """A körvonal-szín `#rrggbb` alakban (a fill-től KÜLÖN választható)."""
+        return _rgb_to_hex(self._text_outline_color)
+
+    @Property(int, notify=toolsChanged)
+    def textOutlineThickness(self) -> int:
+        """A körvonal vastagsága képpontban — `0` esetén nincs körvonal
+        (ez az alapérték)."""
+        return self._text_outline_thickness
+
+    @Property(bool, notify=toolsChanged)
+    def textFillEnabled(self) -> bool:
+        """Kitöltve jelenjen-e meg a szöveg — `False` a „Don't show the
+        solid fill color (show outline only)" kapcsolónak felel meg."""
+        return self._text_fill_enabled
+
+    @Property(float, notify=toolsChanged)
+    def textOpacity(self) -> float:
+        """A szöveg-réteg átlátszósága [0..1] — `1.0` (alapérték) a
+        teljesen fedő, korábbi viselkedés."""
+        return self._text_opacity
+
+    @Slot(str)
+    def setTextFillColor(self, value: str) -> None:
+        """A kitöltés-szín beállítása (`#rrggbb`); élő előnézettel."""
+        self._require_active()
+        self._text_fill_color = _hex_to_rgb(value)
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot(str)
+    def setTextOutlineColor(self, value: str) -> None:
+        """A körvonal-szín beállítása (`#rrggbb`); élő előnézettel."""
+        self._require_active()
+        self._text_outline_color = _hex_to_rgb(value)
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot(int)
+    def setTextOutlineThickness(self, value: int) -> None:
+        """A körvonal-vastagság beállítása (>=0 képpont); élő előnézettel."""
+        self._require_active()
+        if value < 0:
+            raise ValueError(f"A textOutlineThickness nem lehet negatív: {value}")
+        self._text_outline_thickness = value
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot(bool)
+    def setTextFillEnabled(self, value: bool) -> None:
+        """A kitöltés ki/be kapcsolása; élő előnézettel."""
+        self._require_active()
+        self._text_fill_enabled = value
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot(float)
+    def setTextOpacity(self, value: float) -> None:
+        """Az átlátszóság beállítása [0..1]; élő előnézettel."""
+        self._require_active()
+        if not 0.0 <= value <= 1.0:
+            raise ValueError(f"A textOpacity a [0..1] tartományon kívül: {value}")
+        self._text_opacity = value
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
 
     # Gomb-tiltási szabály (#116): az egygombos javítás gombja addig tiltott,
     # amíg ugyanez a szűrő a lánc UTOLSÓ eleme — másik effekt után újra aktív.
@@ -430,6 +551,11 @@ class EditController(QObject):
         )
         self._text_draft = ""
         self._text_pending_pos = None
+        self._text_fill_color = _DEFAULT_TEXT_FILL_COLOR
+        self._text_outline_color = _DEFAULT_TEXT_OUTLINE_COLOR
+        self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
+        self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
+        self._text_opacity = _DEFAULT_TEXT_OPACITY
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
@@ -452,6 +578,11 @@ class EditController(QObject):
         self._text_active = False
         self._text_draft = ""
         self._text_pending_pos = None
+        self._text_fill_color = _DEFAULT_TEXT_FILL_COLOR
+        self._text_outline_color = _DEFAULT_TEXT_OUTLINE_COLOR
+        self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
+        self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
+        self._text_opacity = _DEFAULT_TEXT_OPACITY
         self._bump_revision()
         self._bump_gpu_revision()
         self.toolsChanged.emit()
@@ -1062,7 +1193,9 @@ class EditController(QObject):
             if not content.strip():
                 return None
             x, y = self._text_pending_pos
-            return TextOverlaySpec(content=content, x=x, y=y)
+            return TextOverlaySpec(
+                content=content, x=x, y=y, **self._text_style_kwargs()
+            )
         if (
             self._text_overlay is not None
             and self._text_active
@@ -1070,8 +1203,24 @@ class EditController(QObject):
         ):
             x = _raw_to_relative(self._text_overlay.raw_x)
             y = _raw_to_relative(self._text_overlay.raw_y)
-            return TextOverlaySpec(content=self._text_overlay.content, x=x, y=y)
+            return TextOverlaySpec(
+                content=self._text_overlay.content,
+                x=x,
+                y=y,
+                **self._text_style_kwargs(),
+            )
         return None
+
+    def _text_style_kwargs(self) -> dict:
+        """A `TextOverlaySpec` stílus-mezői a jelenlegi (#450, munkamenet-
+        szintű, ini-be nem kerülő) beállításokból."""
+        return {
+            "fill_color": self._text_fill_color,
+            "outline_color": self._text_outline_color,
+            "outline_thickness": self._text_outline_thickness,
+            "fill_enabled": self._text_fill_enabled,
+            "opacity": self._text_opacity,
+        }
 
     def _bump_revision(self) -> None:
         self._revision += 1

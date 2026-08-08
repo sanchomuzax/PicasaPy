@@ -217,6 +217,15 @@ Rectangle {
         // fillLight/highlights/shadows/colorTemp értékeket a kontrollerből —
         // ez a hívás azokat suppress mellett a csúszkákba is beírja
         editorPanel.syncFinetuneSliders()
+        // #450: "Remove all existing text" gomb tiltási állapota
+        editorPanel.hasTextOverlay = editController.hasTextOverlay
+        // #450: szöveg-stílus — kitöltés+körvonal szín, körvonal-vastagság,
+        // kitöltés ki/be, átlátszóság
+        editorPanel.textFillColor = editController.textFillColor
+        editorPanel.textOutlineColor = editController.textOutlineColor
+        editorPanel.textOutlineThickness = editController.textOutlineThickness
+        editorPanel.textFillEnabled = editController.textFillEnabled
+        editorPanel.textOpacity = editController.textOpacity
     }
     onVisibleChanged: {
         if (visible) {
@@ -567,12 +576,36 @@ Rectangle {
                     // engedélyezett, ha már van kattintott pozíció
                     textPlacementPending: viewer.editCtl
                         ? viewer.editCtl.textHasPlacement : false
+                    // #450: "Copy Caption" gomb — a kép model.revision-re
+                    // is frissülő mentett feliratát tükrözi (a captionField
+                    // mintáját követve fent)
+                    captionText: viewer.photosModel
+                        ? (viewer.photosModel.revision,
+                           viewer.photosModel.captionAt(viewer.currentIndex))
+                        : ""
                     onTextDraftEdited: (content) => editController.setTextDraft(content)
                     onTextApplyRequested: {
                         editController.applyText()
                         editorPanel.textActive = false
                     }
                     onTextCancelRequested: editorPanel.textActive = false
+                    // #450: a kép feliratát tölti a szövegmezőbe
+                    onTextCopyCaptionRequested: {
+                        editorPanel.textDraftContent = editorPanel.captionText
+                    }
+                    // #450: az összes (ma: az egyetlen) szövegelem törlése —
+                    // a meglévő clearText útvonalon, a szerkesztőeszköz is zárul
+                    onTextRemoveAllRequested: {
+                        editController.clearText()
+                        editorPanel.textDraftContent = ""
+                        editorPanel.textActive = false
+                    }
+                    onTextFillColorEdited: (hex) => editController.setTextFillColor(hex)
+                    onTextOutlineColorEdited: (hex) => editController.setTextOutlineColor(hex)
+                    onTextOutlineThicknessEdited: (value) =>
+                        editController.setTextOutlineThickness(Math.round(value))
+                    onTextFillEnabledEdited: (value) => editController.setTextFillEnabled(value)
+                    onTextOpacityEdited: (value) => editController.setTextOpacity(value)
                 }
 
                 ColumnLayout {

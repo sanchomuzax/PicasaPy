@@ -1078,6 +1078,46 @@
         <translation>Szöveg</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Copy Caption</source>
+        <translation>Felirat átvétele</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Add text based on the picture&apos;s caption</source>
+        <translation>Szöveg hozzáadása a kép felirata alapján</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Text color</source>
+        <translation>Szöveg színe</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Outline color</source>
+        <translation>Körvonal színe</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Don&apos;t show the solid fill color (show outline only)</source>
+        <translation>Ne jelenjen meg a kitöltőszín (csak körvonal)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Outline thickness</source>
+        <translation>Körvonal vastagsága</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Opacity</source>
+        <translation>Átlátszatlanság</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Remove all existing text</source>
+        <translation>Minden meglévő szöveg törlése</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="409"/>
         <source>Fill Light</source>
         <translation>Derítőfény</translation>
