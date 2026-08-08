@@ -5,6 +5,28 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.44] – 2026-08-08
+
+### Javítva
+- **A vignettás effektek sötétsége nagy fényképeken (#504):** az eredeti
+  Picasa felülről korlátozza a ragyogás sugarát, a mi számításunk viszont
+  nem — ezért nagy képen az effektek jóval sötétebbek lettek a kelleténél.
+  Eredeti Picasa-exportokhoz mérve: a kimenetünk átlagos eltérése a
+  korlát nélkül **41,8**, a korláttal **9,0** volt (viszonyításul az
+  érintetlen kép eltérése 32,1 — vagyis korlát nélkül rosszabbak voltunk,
+  mintha meg sem csináltuk volna az effektet).
+  A korlát mind a hat érintett helyre bekerült, **egy közös pontra**, hogy
+  új effektnél se lehessen elfelejteni.
+  Mérve, valódi fényképen: a **Holgánál** egy 4000×3000-es képen a tiszta
+  fekete képpontok aránya **43% → 11%**, a **Lomónál** 2560 px-en
+  **34% → 7%**, a **Vignette**-nél **19% → 7%**.
+
+### Ismert korlát
+- **Kis képeken (kb. 1000 képpont alatt) ez nem változtat semmit**, mert
+  ott a számított sugár eleve a korlát alatt van. A Holga ilyen méretben
+  továbbra is sötét; ennek okát Holga-referenciakép nélkül nem lehet
+  eldönteni (a referenciakészlet ma csak a Lomóhoz létezik).
+
 ## [0.6.43] – 2026-08-08
 
 ### Javítva

@@ -245,6 +245,34 @@ def local_contrast(image_f: np.ndarray, radius: float, strength: float) -> np.nd
     return image_f + (image_f - blurred) * np.float32(strength)
 
 
+# --- Ragyogás-sugár korlátozása (Flash blurX/blurY limit, #504) ------------
+
+#: A Picasa `GlowImageOperation` a Flash `GlowFilter` portja, a Flashben
+#: pedig a `blurX`/`blurY` `[0, 255]`-re korlátozott (Flash 8+ dokumentáció).
+#: A méretfüggő sugár-képletek (`35·0,02·max(W,H)/2` stb., ld. lentebb Lomo,
+#: Holga, NightVision, Matte, Vignette) ezt a korlátot NEM ismerik — nagy
+#: képen tehát a Picasa tényleges σ-ja jóval kisebb, mint amit a képlet
+#: naivan adna.
+#:
+#: Bizonyíték (#504, mérve a `sanchomuzax/picasapy-agent` privát repó
+#: `referencia/lomo/` öt mappás készletéhez, 2560×1702-es Lomo-exporttal):
+#: a `filterdesc.xml` képlete ezen a képen 896-ot adna; az illesztés
+#: optimuma σ≈255–340. A teljes láncon a Picasa kimenetétől való átlagos
+#: csatorna-eltérés **41,8-ról (korlát nélkül) 9,0-ra** csökken a 255-ös
+#: korláttal — viszonyításul az ÉRINTETLEN kép eltérése 32,1, azaz korlát
+#: nélkül ROSSZABBAK vagyunk, mintha meg sem csináltuk volna az effektet.
+GLOW_RADIUS_MAX = 255.0
+
+
+def clamp_glow_radius(radius: float) -> float:
+    """A méretfüggő ragyogás-sugár képletek (Lomo, Holga, NightVision,
+    Matte, Vignette, MuseumMatte) KÖZÖS korlátja — ld. `GLOW_RADIUS_MAX`
+    docstringjét a bizonyítékért (#504). Minden méretfüggő σ-számítás ide
+    fusson be, hogy a korlát egy helyen legyen dokumentálva és karbantartva.
+    """
+    return min(float(radius), GLOW_RADIUS_MAX)
+
+
 # --- Belső ragyogás (GlowImageOperation innerglow) ----------------------
 
 # Nagy szigmájú Gauss-elmosásnál a szigma/lépték arányát ekörül tartjuk a
@@ -497,6 +525,8 @@ __all__ = [
     "luma",
     "fade_alpha",
     "alpha_blend",
+    "GLOW_RADIUS_MAX",
+    "clamp_glow_radius",
     "adjust_curves",
     "invert_curve",
     "apply_blend_mode",

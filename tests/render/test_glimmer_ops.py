@@ -137,6 +137,33 @@ class TestInnerGlow:
         assert result.mean() > 20.0
 
 
+class TestClampGlowRadius:
+    """#504: a Flash `GlowFilter.blurX`/`blurY` öröksége — a Picasa
+    `GlowImageOperation`-je (`inner_glow`) méretfüggő sugár-képletei
+    (Lomo, Holga, NightVision, Matte, Vignette, MuseumMatte) sosem
+    futhatnak 255 fölé, bármekkora is a kép (ld. `GLOW_RADIUS_MAX`
+    docstringje a lomo-referenciakészlettel mért bizonyítékért)."""
+
+    def test_konstans_255(self):
+        assert g.GLOW_RADIUS_MAX == 255.0
+
+    def test_nagy_kepen_a_tenyleges_sigma_255re_vagva(self):
+        # Lomo képlete: 35·0,02·max(W,H)/2 — egy 4000×3000-es fotón ez
+        # 35·0,02·4000/2 = 1400 lenne, jóval a Flash-korlát fölött.
+        height, width = 3000, 4000
+        raw_radius = 35.0 * 0.02 * max(height, width) / 2.0
+        assert raw_radius > g.GLOW_RADIUS_MAX
+        assert g.clamp_glow_radius(raw_radius) == g.GLOW_RADIUS_MAX
+
+    def test_kis_kepen_a_kepletnek_megfelelo_kisebb_ertek(self):
+        # Ugyanaz a Lomo-képlet egy 96×72-es kis képen a korlát alatt marad
+        # — a `clamp_glow_radius` ekkor NEM módosít az értéken.
+        height, width = 72, 96
+        raw_radius = 35.0 * 0.02 * max(height, width) / 2.0
+        assert raw_radius < g.GLOW_RADIUS_MAX
+        assert g.clamp_glow_radius(raw_radius) == pytest.approx(raw_radius)
+
+
 class TestNoiseAndGradient:
     def test_zaj_determinisztikus(self, image):
         first = g.apply_noise(image, seed=5, low=0, high=50, grayscale=True, blend_alpha=1.0, blend_mode="multiply")

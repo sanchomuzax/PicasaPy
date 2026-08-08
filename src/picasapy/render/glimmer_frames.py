@@ -82,11 +82,11 @@ def apply_museum_matte(
     külső gyűrű (`Outer`).
     """
     from picasapy.render.glimmer_frame_ops import add_ring
-    from picasapy.render.glimmer_ops import inner_glow
+    from picasapy.render.glimmer_ops import clamp_glow_radius, inner_glow
 
     validate_image(image)
     height, width = image.shape[:2]
-    radius = 2.0 * 0.02 * max(height, width) / 4.0
+    radius = clamp_glow_radius(2.0 * 0.02 * max(height, width) / 4.0)
     glowed_inner = inner_glow(image, (0, 0, 0), radius, radius, 1.3, alpha=0.7)
     ringed_inner = add_ring(glowed_inner, inner_thickness, inner_color)
     glowed_outer = inner_glow(ringed_inner, (0, 0, 0), radius, radius, 1.3, alpha=0.6)
