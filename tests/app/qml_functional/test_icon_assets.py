@@ -5,8 +5,8 @@ eszköztár geo-szűrőjéhez (#361) és a szerkesztő "Gyakori javítások" fü
 Két réteg:
 - `TestIconFilesExist`: minden `icons/*.svg`-re fájl-létezés + jólformáltság
   (a PBZ-leltár szerinti komplett készlet: webupload, e-mail, nyomtatás,
-  mappa-export, kollázs, film, megosztás, geo-tű + a #411-es 9 szerkesztő-
-  eszköz-ikon).
+  mappa-export, kollázs, film, megosztás, geo-tű + a #411-es 9 + a #464-es
+  1 szerkesztő-eszköz-ikon).
 - `TestTrayBarIconWiring` / `TestToolbarGeoIconWiring`: a `qml_app`
   teljes-alkalmazás fixtúrán át — az Image-ek ténylegesen betöltődnek-e
   (nincs `Image.Error` állapot), és a meglévő objectName-ek/felirat-
@@ -47,7 +47,8 @@ _EXPECTED_ICONS = (
     "tray-clear.svg",
 )
 
-# a szerkesztő "Gyakori javítások" fülének 9 ikonja (#411)
+# a szerkesztő "Gyakori javítások" fülének ikonjai (#411, + #464: a
+# "Kreatív Kit" helyőrző-gomb saját ikonja)
 _EDITOR_TOOL_ICONS = (
     "vagas.svg",
     "kiegyenesites.svg",
@@ -58,6 +59,7 @@ _EDITOR_TOOL_ICONS = (
     "retusalas.svg",
     "szoveg.svg",
     "deritofeny.svg",
+    "kreativ-kit.svg",
 )
 
 _ALL_ICONS = _EXPECTED_ICONS + _EDITOR_TOOL_ICONS

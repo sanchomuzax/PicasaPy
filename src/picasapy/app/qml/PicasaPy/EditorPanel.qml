@@ -761,6 +761,12 @@ Rectangle {
         // — az eredeti Picasán a fül alatt NINCS ilyen felirat, a csempék
         // rögtön a fülsáv alatt kezdődnek (ld. #405 issue 4. pontja).
 
+        // #464: a gombkészlet és a sorrend a jegy szövegéből (a tulajdonos
+        // eredeti Picasa 3.9-en olvasta le): Kivágás -> Vörösszem -> Jó
+        // napom van -> Kreatív Kit -> Automatikus szín -> Automatikus
+        // kontraszt -> [Derítőfény-csúszka] -> Kiegyenesítés -> Szöveg ->
+        // Retusálás. A Derítőfény a gombok KÖZÖTT ül (nem külön fülön),
+        // ezért a rács két részre bomlik, a csúszka sora közéjük ékelve.
         GridLayout {
             columns: 3
             columnSpacing: 4
@@ -771,12 +777,6 @@ Rectangle {
                 objectName: "editToolCrop"
                 toolName: "crop"; label: qsTr("Crop"); iconFile: "vagas"
                 active: panel.cropActive
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "editToolTilt"
-                toolName: "tilt"; label: qsTr("Straighten"); iconFile: "kiegyenesites"
-                active: panel.tiltActive
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
@@ -794,11 +794,17 @@ Rectangle {
                 tileEnabled: panel.enhanceEnabled
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
+            // #464: „Kreatív Kit" — a Picasa a Picnik külső szerkesztőt
+            // első osztályú polgárként kezelte, negyedik helyen. A
+            // projektnek nincs külső-szerkesztő integrációja (nincs
+            // háttere), ezért a gomb egyelőre HELYŐRZŐ: a helye megvan,
+            // letiltva jelenik meg (a PicasaMenuItem-placeholder mintát
+            // követve, ToolTile-lel — nincs saját "placeholder" property).
             ToolTile {
-                objectName: "editToolAutolight"
-                toolName: "autolight"; label: qsTr("Auto Contrast")
-                iconFile: "auto-kontraszt"
-                tileEnabled: panel.autolightEnabled
+                objectName: "editToolCreativeKit"
+                toolName: "creativekit"; label: qsTr("Creative Kit")
+                iconFile: "kreativ-kit"
+                tileEnabled: false
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
@@ -809,15 +815,10 @@ Rectangle {
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
-                objectName: "editToolRetouch"
-                toolName: "retouch"; label: qsTr("Retouch"); iconFile: "retusalas"
-                active: panel.retouchActive
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "editToolText"
-                toolName: "text"; label: qsTr("Text"); iconFile: "szoveg"
-                active: panel.textActive
+                objectName: "editToolAutolight"
+                toolName: "autolight"; label: qsTr("Auto Contrast")
+                iconFile: "auto-kontraszt"
+                tileEnabled: panel.autolightEnabled
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
         }
@@ -862,6 +863,34 @@ Rectangle {
                     onValueChanged: panel.fillLightMoved(value)
                     onPressedChanged: if (!pressed) panel.fillLightCommitted()
                 }
+            }
+        }
+
+        // #464: a sorrend maradék három gombja a Derítőfény-csúszka UTÁN —
+        // Kiegyenesítés -> Szöveg -> Retusálás.
+        GridLayout {
+            columns: 3
+            columnSpacing: 4
+            rowSpacing: 10
+            Layout.fillWidth: true
+
+            ToolTile {
+                objectName: "editToolTilt"
+                toolName: "tilt"; label: qsTr("Straighten"); iconFile: "kiegyenesites"
+                active: panel.tiltActive
+                onActivated: (tool) => panel.handleToolClick(tool)
+            }
+            ToolTile {
+                objectName: "editToolText"
+                toolName: "text"; label: qsTr("Text"); iconFile: "szoveg"
+                active: panel.textActive
+                onActivated: (tool) => panel.handleToolClick(tool)
+            }
+            ToolTile {
+                objectName: "editToolRetouch"
+                toolName: "retouch"; label: qsTr("Retouch"); iconFile: "retusalas"
+                active: panel.retouchActive
+                onActivated: (tool) => panel.handleToolClick(tool)
             }
         }
 
