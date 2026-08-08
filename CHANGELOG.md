@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.32] – 2026-08-08
+
+### Hozzáadva
+- **Kuka vs. végleges törlés megkülönböztetése (#457, 1. pont):** a törlés
+  eddig minden esetben azt írta, hogy a kép „a rendszer lomtárába kerül" —
+  hálózati megosztáson (NAS) azonban a lomtár jellemzően nem elérhető.
+  Mostantól a program megnézi, van-e valódi lomtár az adott meghajtón (a
+  freedesktop-szabvány szerinti mount-specifikus lomtárat is beleértve), és
+  ha nincs, az eredeti Picasa 3 szövegével figyelmeztet: a törlés azonnali
+  és nem vonható vissza. Ez a figyelmeztetés külön kulcsot kapott, így a
+  „ne kérdezze újra" beállítás a lomtáras esetnél nem némítja el.
+
 ## [0.6.31] – 2026-08-08
 
 ### Javítva
