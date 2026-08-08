@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.31] – 2026-08-08
+
+### Javítva
+- **A szerkesztő első fülének gombsora az eredeti szerint (#464):** az
+  „Automatikus szín" és az „Automatikus kontraszt" gomb sorrendje fordított
+  volt a Picasa 3-hoz képest, és hiányzott a „Kreatív Kit" gomb. Mindkettő
+  javítva.
+- **Kötegelt effektus: a művelet üres kijelölésnél sem hallgat el:** a
+  nem-dolgozó ágak eddig jelzés nélkül tértek vissza, így a hívó örökre
+  várt a befejezésre. A tesztek mostantól hangos, leíró hibaüzenettel
+  buknak el, ha egy Qt-jel nem érkezik meg.
+
 ## [0.6.30] – 2026-08-08
 
 ### Hozzáadva
