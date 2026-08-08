@@ -131,7 +131,7 @@ class TestFiveColumnsExclusive:
             assert column.property("visible") is (index == active_tab)
 
 
-# 4. fül (zöld ecset, "kreatív effektek") — 12 gomb, docs/specs/
+# 4. fül (zöld ecset, "kreatív effektek") — 15 gomb (#516 óta), docs/specs/
 # ui-audit-editor.md 4. fülének kulcsai.
 TAB4_BUTTONS = [
     ("effectIr", "ir"),
@@ -146,9 +146,14 @@ TAB4_BUTTONS = [
     ("effectCrossProcess", "crossprocess"),
     ("effectQuantizePalette", "quantizepalette"),
     ("effectTwoTone", "twotone"),
+    # #516: eddig gomb nélküli, de a render/ rétegben már bekötött effektek
+    ("effectMatte", "matte"),
+    ("effectNightVision", "nightvision"),
+    ("effectLocalContrast", "localcontrast"),
 ]
 
-# 5. fül (kék ecset, "művészi effektek") — 11 gomb.
+# 5. fül (kék ecset, "művészi effektek") — 13 gomb (#516: +RoundedEdges,
+# +PicnikGrain).
 TAB5_BUTTONS = [
     ("effectBoost", "boost"),
     ("effectSoften", "soften"),
@@ -161,19 +166,21 @@ TAB5_BUTTONS = [
     ("effectDropShadow", "dropshadow"),
     ("effectMuseumMatte", "museummatte"),
     ("effectPolaroid", "polaroid"),
+    ("effectRoundedEdges", "roundededges"),
+    ("effectPicnikGrain", "picnikgrain"),
 ]
 
 
 class TestTab4CreativeEffects:
-    """#329: a 4. effekt-fül (zöld ecset) 12 gombja."""
+    """#329/#516: a 4. effekt-fül (zöld ecset) 15 gombja."""
 
-    def test_grid_has_twelve_buttons(self, qml_engine, qt_app):
+    def test_grid_has_fifteen_buttons(self, qml_engine, qt_app):
         panel = _make_panel(qml_engine, active_tab=3)
         qt_app.processEvents()
         grid = panel.findChild(QObject, "effectsGrid2")
         assert grid is not None
         buttons = [c for c in grid.children() if c.objectName().startswith("effect")]
-        assert len(buttons) == len(TAB4_BUTTONS) == 12
+        assert len(buttons) == len(TAB4_BUTTONS) == 15
 
     @pytest.mark.parametrize("object_name,key", TAB4_BUTTONS)
     def test_button_exists_on_tab4(self, qml_engine, qt_app, object_name, key):
@@ -200,15 +207,15 @@ class TestTab4CreativeEffects:
 
 
 class TestTab5ArtisticEffects:
-    """#330: az 5. effekt-fül (kék ecset) 11 gombja."""
+    """#330/#516: az 5. effekt-fül (kék ecset) 13 gombja."""
 
-    def test_grid_has_eleven_buttons(self, qml_engine, qt_app):
+    def test_grid_has_thirteen_buttons(self, qml_engine, qt_app):
         panel = _make_panel(qml_engine, active_tab=4)
         qt_app.processEvents()
         grid = panel.findChild(QObject, "effectsGrid3")
         assert grid is not None
         buttons = [c for c in grid.children() if c.objectName().startswith("effect")]
-        assert len(buttons) == len(TAB5_BUTTONS) == 11
+        assert len(buttons) == len(TAB5_BUTTONS) == 13
 
     @pytest.mark.parametrize("object_name,key", TAB5_BUTTONS)
     def test_button_exists_on_tab5(self, qml_engine, qt_app, object_name, key):

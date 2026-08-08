@@ -17,7 +17,7 @@ import pytest
 from PySide6.QtCore import Q_ARG, Q_RETURN_ARG, QMetaObject, QObject, Qt, QUrl, Slot
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 
-from picasapy.app.effect_params import effect_params, has_params
+from picasapy.app.effect_params import effect_params, has_params, resolve_effect_params
 
 # a QML-ből létrehozott gyökér-objektumok élő Python-referencia nélkül a
 # JS-motor tulajdonába kerülnek és a GC bármikor eltávolíthatja őket —
@@ -28,17 +28,23 @@ _KEEPALIVE = []
 
 def _params_payload(name):
     """A valós katalógus (`effect_params.py`) alakja, ahogy a QML-nek az
-    EditController.effectParams(...) is adná (lista dict-ekből)."""
+    EditController.effectParams(...) is adná (lista dict-ekből) — #516: a
+    `kind`/`color` mezőkkel együtt, hogy a fake ugyanazt a payloadot adja,
+    mint a valós vezérlő (a képfüggő tartományok itt egy fix, teszt-célú
+    méretre oldódnak fel, mint az `EditController.effectParams` teszi)."""
+    resolved = resolve_effect_params(name, width=1000, height=1000)
     return [
         {
             "key": p.key,
             "label": p.label,
+            "kind": p.kind,
             "minimum": p.minimum,
             "maximum": p.maximum,
             "default": p.default,
             "step": p.step,
+            "color": p.color,
         }
-        for p in effect_params(name)
+        for p in resolved
     ]
 
 
@@ -135,13 +141,18 @@ class TestParamSubpanelIsolatedOpening:
         "active_tab,object_name,key,expected_count",
         [
             (2, "effectSat", "sat", 1),
-            (2, "effectVignette", "vignette", 2),
+            (2, "effectVignette", "vignette", 4),
             (2, "effectUnsharp", "unsharp", 1),
             (2, "effectRadblur", "radblur", 4),
             (2, "effectDirTint", "dir_tint", 4),
             (3, "effectBoost", "boost", 1),
-            (4, "effectPixelate", "pixelate", 1),
+            (4, "effectPixelate", "pixelate", 3),
             (4, "effectComicize", "comicize", 3),
+            # #516: az újonnan bekötött vezérlők — csúszka+szín (Holga/Lomo
+            # csak csúszka, Sixties csúszka+szín+jelölő)
+            (3, "effectHolga", "holga", 3),
+            (3, "effectSixties", "sixties", 3),
+            (4, "effectRoundedEdges", "roundededges", 2),
         ],
     )
     def test_param_effect_click_opens_subpanel_with_right_slider_count(
@@ -171,9 +182,15 @@ class TestParamSubpanelIsolatedOpening:
         assert repeater is not None
         assert repeater.property("count") == expected_count
 
-        expected_defaults = [p.default for p in effect_params(key)]
+        # #516: "color" vezérlőnél a kezdőérték a hex-alapérték, nem a
+        # (náluk értelmezetlen) numerikus `default` mező — az
+        # `openParamPanel()` QML-függvény ugyanígy dönt
+        expected_defaults = [
+            p.color if p.kind == "color" else p.default
+            for p in resolve_effect_params(key, width=1000, height=1000)
+        ]
         actual_defaults = _as_list(panel.property("paramEffectValues"))
-        assert actual_defaults == pytest.approx(expected_defaults)
+        assert list(actual_defaults) == expected_defaults
         actual_params = _as_list(panel.property("paramEffectParams"))
         assert len(actual_params) == expected_count
 
@@ -352,6 +369,32 @@ class TestParamLabelTranslationHelper:
             "Angle",
             "Blur",
             "Line Position",
+            # #516: a filterdesc-registry.md 4.2 táblázatából átvezetett
+            # vezérlők feliratai
+            "Grain",
+            "Contrast",
+            "Bloom",
+            "Steps",
+            "Smoothing",
+            "Impact",
+            "Blend Mode",
+            "Hue",
+            "Rotate",
+            "Fade",
+            "Color",
+            "Outer Color",
+            "Inner Color",
+            "Black Color",
+            "White Color",
+            "Outer Thickness",
+            "Inner Thickness",
+            "Corner Radius",
+            "Caption Height",
+            "Distance",
+            "Shadow Color",
+            "Background Color",
+            "Rounded",
+            "Lighten",
         }
         from picasapy.app.effect_params import _CATALOGUE
 
@@ -425,3 +468,114 @@ class TestParamSubpanelIntegration:
         ini_text = ini_path.read_text(encoding="utf-8") if ini_path.exists() else ""
         assert "Vignette" not in ini_text
         assert "filters=" not in ini_text
+
+    def _open_creative_tab(self, window, qt_app):
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        assert panel is not None
+        panel.setProperty("activeTab", 3)
+        qt_app.processEvents()
+        return panel
+
+    def _open_artistic_tab(self, window, qt_app):
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        assert panel is not None
+        panel.setProperty("activeTab", 4)
+        qt_app.processEvents()
+        return panel
+
+    def test_slider_drag_on_a_previously_control_less_effect_reaches_the_chain(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#516: a Holgának korábban EGYÁLTALÁN nem volt vezérlője (a gomb
+        rögtön alkalmazott) — most a Blur/Grain/Fade csúszkák húzása
+        ténylegesen eljut a `filters=` láncig."""
+        window, _controller, _engine = qml_app
+        panel = self._open_creative_tab(window, qt_app)
+
+        _click(panel.findChild(QObject, "effectHolga"))
+        qt_app.processEvents()
+        assert panel.property("paramPanelActive") is True
+
+        # a Grain csúszka (1-es index) elhúzása
+        QMetaObject.invokeMethod(
+            panel,
+            "updateParamValue",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 1),
+            Q_ARG("QVariant", 55.0),
+        )
+        _click(panel.findChild(QObject, "effectParamApplyButton"))
+        qt_app.processEvents()
+
+        assert panel.property("paramPanelActive") is False
+        ini_text = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
+        # Blur=70 (alap), Grain=55 (húzott), Fade=0 (alap)
+        assert "filters=Holga=1,70.000000,55.000000,0.000000;" in ini_text
+
+    def test_checkbox_and_color_controls_reach_the_chain(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#516: a Sixties jelölőnégyzete (Rounded) és színválasztója
+        (Outer Color) — a katalógus 3. vezérlő-fajtája is eljut a láncig,
+        nem csak a csúszka."""
+        window, _controller, _engine = qml_app
+        panel = self._open_creative_tab(window, qt_app)
+
+        _click(panel.findChild(QObject, "effectSixties"))
+        qt_app.processEvents()
+        assert panel.property("paramPanelActive") is True
+
+        # a Repeater delegate-jei NEM QObject-gyermekei a panelnek (ld. a
+        # fenti `TestParamSubpanelIsolatedOpening` osztály kommentjét) — a
+        # kezdőértékeket a `paramEffectValues` property-n át ellenőrizzük:
+        # [Fade=20, Color="#ffffff", Rounded=1(be)]
+        initial = _as_list(panel.property("paramEffectValues"))
+        assert initial == [20.0, "#ffffff", 1.0]
+
+        QMetaObject.invokeMethod(
+            panel,
+            "updateParamValue",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 1),
+            Q_ARG("QVariant", "#000000"),
+        )
+        # a jelölőnégyzet kikapcsolása (Rounded be -> ki)
+        QMetaObject.invokeMethod(
+            panel,
+            "updateParamValue",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 2),
+            Q_ARG("QVariant", 0),
+        )
+        qt_app.processEvents()
+
+        _click(panel.findChild(QObject, "effectParamApplyButton"))
+        qt_app.processEvents()
+
+        assert panel.property("paramPanelActive") is False
+        ini_text = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
+        # Fade=20 (alap), Color=fekete (000000), Rounded=0 (kikapcsolva)
+        assert "filters=Sixties=1,20.000000,00000000,0;" in ini_text
+
+    def test_image_dependent_range_is_used_for_the_default_value(
+        self, qml_app, qt_app, tmp_path
+    ):
+        """#516: a RoundedEdges alapértéke `min(W,H)/10` — a MEGNYITÁSKOR
+        a katalógus már a valódi kép méretével számol, nem egy beégetett
+        számmal."""
+        window, _controller, _engine = qml_app
+        panel = self._open_artistic_tab(window, qt_app)
+
+        _click(panel.findChild(QObject, "effectRoundedEdges"))
+        qt_app.processEvents()
+        assert panel.property("paramPanelActive") is True
+
+        # a `qml_app` fixture "a.jpg" fotója 320x160 (ld. conftest.py) —
+        # min(W,H)/10 = 16.0, MIN(W,H)/2 = 80.0 (nem a katalógus 0..0
+        # helyőrzője)
+        initial = _as_list(panel.property("paramEffectValues"))
+        params = _as_list(panel.property("paramEffectParams"))
+        assert initial[0] == pytest.approx(16.0)
+        assert params[0]["maximum"] == pytest.approx(80.0)

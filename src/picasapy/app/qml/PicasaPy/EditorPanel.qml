@@ -213,8 +213,11 @@ Rectangle {
     function openParamPanel(name) {
         if (!panel.hasEffectController()) return
         var params = editController.effectParams(name)
+        // #516: a "color" vezérlők kezdőértéke a katalógus hex-alapértéke,
+        // nem a (náluk értelmezetlen) numerikus `default` mező
         var values = []
-        for (var i = 0; i < params.length; i++) values.push(params[i].default)
+        for (var i = 0; i < params.length; i++)
+            values.push(params[i].kind === "color" ? params[i].color : params[i].default)
         panel.paramEffectName = name
         panel.paramEffectParams = params
         panel.paramEffectValues = values
@@ -286,6 +289,32 @@ Rectangle {
         case "Angle": return qsTr("Angle")
         case "Blur": return qsTr("Blur")
         case "Line Position": return qsTr("Line Position")
+        // #516: a filterdesc-registry.md 4.2 táblázatából átvezetett
+        // vezérlők feliratai
+        case "Grain": return qsTr("Grain")
+        case "Contrast": return qsTr("Contrast")
+        case "Bloom": return qsTr("Bloom")
+        case "Steps": return qsTr("Steps")
+        case "Smoothing": return qsTr("Smoothing")
+        case "Impact": return qsTr("Impact")
+        case "Blend Mode": return qsTr("Blend Mode")
+        case "Hue": return qsTr("Hue")
+        case "Rotate": return qsTr("Rotate")
+        case "Fade": return qsTr("Fade")
+        case "Color": return qsTr("Color")
+        case "Outer Color": return qsTr("Outer Color")
+        case "Inner Color": return qsTr("Inner Color")
+        case "Black Color": return qsTr("Black Color")
+        case "White Color": return qsTr("White Color")
+        case "Outer Thickness": return qsTr("Outer Thickness")
+        case "Inner Thickness": return qsTr("Inner Thickness")
+        case "Corner Radius": return qsTr("Corner Radius")
+        case "Caption Height": return qsTr("Caption Height")
+        case "Distance": return qsTr("Distance")
+        case "Shadow Color": return qsTr("Shadow Color")
+        case "Background Color": return qsTr("Background Color")
+        case "Rounded": return qsTr("Rounded")
+        case "Lighten": return qsTr("Lighten")
         default: return key
         }
     }
@@ -1433,6 +1462,26 @@ Rectangle {
                 onButtonClicked: if (!panel.tryOpenParamPanel("twotone")) panel.effectRequested("twotone")
                 thumbSource: panel.effectThumbSource("twotone")
             }
+            // #516: eddig vezérlő és gomb NÉLKÜLI, de a render/ rétegben
+            // MÁR bekötött (chain._HANDLERS) effektek
+            PanelButton {
+                objectName: "effectMatte"
+                label: qsTr("Matte")
+                onButtonClicked: if (!panel.tryOpenParamPanel("matte")) panel.effectRequested("matte")
+                thumbSource: panel.effectThumbSource("matte")
+            }
+            PanelButton {
+                objectName: "effectNightVision"
+                label: qsTr("Night Vision")
+                onButtonClicked: if (!panel.tryOpenParamPanel("nightvision")) panel.effectRequested("nightvision")
+                thumbSource: panel.effectThumbSource("nightvision")
+            }
+            PanelButton {
+                objectName: "effectLocalContrast"
+                label: qsTr("Local Contrast")
+                onButtonClicked: if (!panel.tryOpenParamPanel("localcontrast")) panel.effectRequested("localcontrast")
+                thumbSource: panel.effectThumbSource("localcontrast")
+            }
         }
 
         RowLayout {
@@ -1556,6 +1605,20 @@ Rectangle {
                 onButtonClicked: if (!panel.tryOpenParamPanel("polaroid")) panel.effectRequested("polaroid")
                 thumbSource: panel.effectThumbSource("polaroid")
             }
+            // #516: eddig vezérlő és gomb NÉLKÜLI, de a render/ rétegben
+            // MÁR bekötött (chain._HANDLERS) effektek
+            PanelButton {
+                objectName: "effectRoundedEdges"
+                label: qsTr("Rounded Edges")
+                onButtonClicked: if (!panel.tryOpenParamPanel("roundededges")) panel.effectRequested("roundededges")
+                thumbSource: panel.effectThumbSource("roundededges")
+            }
+            PanelButton {
+                objectName: "effectPicnikGrain"
+                label: qsTr("Film Grain (Fine)")
+                onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain")) panel.effectRequested("picnikgrain")
+                thumbSource: panel.effectThumbSource("picnikgrain")
+            }
         }
 
         RowLayout {
@@ -1613,6 +1676,13 @@ Rectangle {
             objectName: "effectParamRepeater"
             model: panel.paramEffectParams
 
+            // #516: a katalógus 3 vezérlő-fajtát ismer — "slider" (számtar-
+            // tomány), "checkbox" (jelölőnégyzet) és "color" (színválasztó,
+            // a #450 szöveg-eszköz `TextColorSwatches`-ának mintájára). Egy
+            // delegate-en belül mindhárom ág megvan, csak a `kind` szerint
+            // látszik az egyik — így a Repeater indexelése (és vele a
+            // `panel.updateParamValue(index, …)` pozíció-egyeztetés)
+            // változatlan marad, akármilyen a vezérlő-keverék.
             delegate: ColumnLayout {
                 id: paramRow
                 required property var modelData
@@ -1622,6 +1692,7 @@ Rectangle {
 
                 RowLayout {
                     Layout.fillWidth: true
+                    visible: paramRow.modelData.kind !== "checkbox"
                     Label {
                         objectName: "effectParamLabel" + paramRow.index
                         Layout.fillWidth: true
@@ -1631,6 +1702,7 @@ Rectangle {
                     }
                     Label {
                         objectName: "effectParamValue" + paramRow.index
+                        visible: paramRow.modelData.kind === "slider"
                         text: paramSlider.value.toFixed(2)
                         font.pixelSize: Theme.fontSize - 1
                         color: Theme.textGray
@@ -1639,6 +1711,7 @@ Rectangle {
                 PicasaSlider {
                     id: paramSlider
                     objectName: "effectParamSlider" + paramRow.index
+                    visible: paramRow.modelData.kind === "slider"
                     Layout.fillWidth: true
                     from: paramRow.modelData.minimum
                     to: paramRow.modelData.maximum
@@ -1648,6 +1721,23 @@ Rectangle {
                     // programozott kezdőérték-beállítás NEM vált ki `moved`
                     // jelet, csak a valódi felhasználói interakció
                     onMoved: panel.updateParamValue(paramRow.index, paramSlider.value)
+                }
+                CheckBox {
+                    id: paramCheckbox
+                    objectName: "effectParamCheckbox" + paramRow.index
+                    visible: paramRow.modelData.kind === "checkbox"
+                    text: panel.paramLabel(paramRow.modelData.label)
+                    checked: paramRow.modelData.default !== 0
+                    onToggled: panel.updateParamValue(paramRow.index, paramCheckbox.checked ? 1 : 0)
+                }
+                TextColorSwatches {
+                    id: paramColorSwatches
+                    objectName: "effectParamColor" + paramRow.index
+                    visible: paramRow.modelData.kind === "color"
+                    // #305 null-őr: régebbi/fake vezérlők (pl. teszt-dupla)
+                    // "color" mező nélküli payloadot is küldhetnek
+                    currentColor: paramRow.modelData.color ? paramRow.modelData.color : "#000000"
+                    onColorPicked: (hex) => panel.updateParamValue(paramRow.index, hex)
                 }
             }
         }

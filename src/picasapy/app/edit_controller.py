@@ -6,12 +6,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+from PIL import Image, UnidentifiedImageError
 from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
 from picasapy.app.effect_params import (
-    effect_params,
     format_param_values,
     has_params,
+    resolve_effect_params,
 )
 from picasapy.edit.session import EditSession
 from picasapy.ini import load_document, update_document
@@ -71,6 +72,9 @@ _EFFECT_NAMES = (
     "crossprocess",
     "quantizepalette",
     "twotone",
+    "matte",
+    "nightvision",
+    "localcontrast",
     # 5. fül — művészi effektek (#330)
     "boost",
     "soften",
@@ -83,6 +87,8 @@ _EFFECT_NAMES = (
     "dropshadow",
     "museummatte",
     "polaroid",
+    "roundededges",
+    "picnikgrain",
 )
 
 #: A `.picasa.ini`-be írandó betűzés, ahol az eltér a belső kulcstól. A
@@ -106,6 +112,11 @@ _EFFECT_INI_NAMES: dict[str, str] = {
     "crossprocess": "CrossProcess",
     "quantizepalette": "QuantizePalette",
     "twotone": "TwoTone",
+    "matte": "Matte",
+    "nightvision": "NightVision",
+    "localcontrast": "LocalContrast",
+    "roundededges": "RoundedEdges",
+    "picnikgrain": "PicnikGrain",
     "boost": "Boost",
     "soften": "Soften",
     "pixelate": "Pixelate",
@@ -221,6 +232,10 @@ class EditController(QObject):
         self._provider = provider
         self._photo_id = ""
         self._image_path: Path | None = None
+        # #516: a képfüggő effekt-tartományok (pl. `CornerRadius` 0..
+        # min(W,H)/2) kiszámolásához — csak a fejlécet olvassuk (PIL nem
+        # dekódolja a pixeleket), `beginEdit`-enként újraszámolva
+        self._image_size: tuple[int, int] | None = None
         self._ini_path: Path | None = None
         self._section_name = ""
         self._session = EditSession()
@@ -574,6 +589,7 @@ class EditController(QObject):
         path = Path(image_path)
         self._photo_id = photo_id
         self._image_path = path
+        self._image_size = self._read_image_size(path)
         self._ini_path = path.parent / PICASA_INI_NAME
         self._section_name = path.name
         self._session = EditSession.from_value(self._read_filters_value())
@@ -612,6 +628,7 @@ class EditController(QObject):
             self._provider.unregister(self._photo_id)
         self._photo_id = ""
         self._image_path = None
+        self._image_size = None
         self._ini_path = None
         self._section_name = ""
         self._session = EditSession()
@@ -1127,18 +1144,25 @@ class EditController(QObject):
 
     @Slot(str, result="QVariant")
     def effectParams(self, name: str):
-        """Az effekt csúszkái a QML-nek — LISTÁT adunk, nem tuple-t: a
-        QML-oldalon a tuple NEM tömb (#232)."""
+        """Az effekt vezérlői a QML-nek — LISTÁT adunk, nem tuple-t: a
+        QML-oldalon a tuple NEM tömb (#232).
+
+        #516: a képfüggő tartományokat (`CornerRadius` 0..min(W,H)/2 stb.)
+        a JELENLEG szerkesztett kép valódi méretével számoljuk ki
+        (`resolve_effect_params`) — nincs bebetonozott szám."""
+        width, height = self._image_size if self._image_size else (None, None)
         return [
             {
                 "key": param.key,
                 "label": param.label,
+                "kind": param.kind,
                 "minimum": param.minimum,
                 "maximum": param.maximum,
                 "default": param.default,
                 "step": param.step,
+                "color": param.color,
             }
-            for param in effect_params(name)
+            for param in resolve_effect_params(name, width, height)
         ]
 
     @Slot(str, "QVariantList")
@@ -1188,7 +1212,8 @@ class EditController(QObject):
         key = name.casefold()
         if key not in _EFFECT_NAMES:
             return None
-        catalogue = effect_params(key)
+        width, height = self._image_size if self._image_size else (None, None)
+        catalogue = resolve_effect_params(key, width, height)
         if not catalogue:
             # paraméter nélküli effekt: a meglévő, dokumentált alapérték-út
             return self._session.append_effect(
@@ -1196,16 +1221,31 @@ class EditController(QObject):
             )
         supplied = list(values) if values is not None else []
         resolved = [
-            supplied[index] if index < len(supplied) else param.default
+            supplied[index]
+            if index < len(supplied)
+            else (param.color if param.kind == "color" else param.default)
             for index, param in enumerate(catalogue)
         ]
         try:
-            formatted = format_param_values(resolved)
+            formatted = format_param_values(resolved, catalogue)
         except (TypeError, ValueError):
             return None
         return self._session.append_effect(
             _EFFECT_INI_NAMES.get(key, key), ("1", *formatted)
         )
+
+    @staticmethod
+    def _read_image_size(path: Path) -> tuple[int, int] | None:
+        """A kép pixel-mérete a #516 képfüggő effekt-tartományaihoz
+        (`CornerRadius` 0..min(W,H)/2, `CaptionHeight` 0..H/6 stb.) — a PIL
+        `Image.open` csak a fejlécet olvassa, nem dekódolja a pixeleket, a
+        próba tehát olcsó. Olvashatatlan/hiányzó fájlnál `None` — a hívó
+        ilyenkor a katalógus fallback-méretére esik vissza."""
+        try:
+            with Image.open(path) as probe:
+                return probe.size
+        except (OSError, UnidentifiedImageError, ValueError):
+            return None
 
     # -- belső ------------------------------------------------------------
 

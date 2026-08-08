@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.46] – 2026-08-08
+
+### Hozzáadva
+- **Az effektek csúszkái és vezérlői megjelentek (#516):** eddig a legtöbb
+  effektet csak alapbeállítással lehetett használni. Mostantól 21 effekt
+  kapott állítható vezérlőket az eredeti Picasa dokumentált értékei
+  szerint — csúszkákat, jelölőnégyzeteket és színválasztókat.
+- **Öt effekt eddig egyáltalán nem látszott a felületen** (Matte,
+  Éjjellátó, Helyi kontraszt, Lekerekített szélek, Szemcse), pedig a
+  motorban készen voltak — ezek most gombot kaptak.
+- A képmérettől függő tartományok (sarok-lekerekítés, felirat-magasság) a
+  tényleges képméretből számolódnak, nem rögzített értékek.
+
+### Javítva
+- **Az effekt-bélyegképek elronthatták a mentett beállításokat:** a
+  bélyegkép-készítés minden paramétert számként írt ki, így a **színek és
+  a ki/be kapcsolók sérültek** minden színt használó effektnél. Javítva.
+
 ## [0.6.45] – 2026-08-08
 
 ### Javítva
