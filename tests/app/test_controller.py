@@ -1,11 +1,45 @@
 """AppController: mappa-választás, keresés, státusz, provider-regisztráció."""
 
+import time
+
 import pytest
 
 from support.qt_wait import wait_for_photo_op
 from PIL import Image
 
 from support.jpeg_factory import make_jpeg
+
+# #505: a `TestBusyAndBackgroundResync` a küszöbölt/min-láthatóságú
+# `AppBusyRegistry`-t (`busy_registry.py`) gyakorolja — apró (nem nulla)
+# értékekre állítva, hogy a régi, AZONNALI `isWorking`-elvárások
+# determinisztikus, rövid várakozással teljesíthetők maradjanak.
+_TEST_SHOW_DELAY_MS = 20
+_TEST_MIN_VISIBLE_MS = 20
+
+
+@pytest.fixture(autouse=True)
+def _small_busy_timings(monkeypatch):
+    from picasapy.app import busy_registry as busy_registry_module
+    from picasapy.app.busy_registry import reset_app_busy_registry
+
+    monkeypatch.setattr(busy_registry_module, "SHOW_DELAY_MS", _TEST_SHOW_DELAY_MS)
+    monkeypatch.setattr(busy_registry_module, "MIN_VISIBLE_MS", _TEST_MIN_VISIBLE_MS)
+    reset_app_busy_registry()
+    yield
+    reset_app_busy_registry()
+
+
+def _wait_until(qt_app, predicate, timeout_s=5.0):
+    """Aktív várakozás valódi idő-előrehaladással, eseményfeldolgozással —
+    a küszöbölt busy-jelzés (`AppBusyRegistry`) `QTimer`-en át tüzel, ami
+    csak `processEvents()` alatt fut le."""
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        qt_app.processEvents()
+        if predicate():
+            return True
+        time.sleep(0.005)
+    return False
 
 
 @pytest.fixture
@@ -1675,15 +1709,32 @@ class TestBusyAndBackgroundResync:
         controller.resyncFolder(str(library / "nyaralas"))
         # a hívás után azonnal itt vagyunk; a worker még a release-re vár
         assert started.wait(5)
-        assert controller.isWorking is True
+        # #505: küszöbölt jelzés — a worker addig blokkol (release-re vár),
+        # amíg a csík fel nem gyullad, ezért ez determinisztikusan bevárható
+        assert _wait_until(qt_app, lambda: controller.isWorking is True)
         release.set()
         QTimer.singleShot(5000, loop.quit)
         loop.exec()
-        qt_app.processEvents()
-        assert controller.isWorking is False
+        assert _wait_until(qt_app, lambda: controller.isWorking is False)
 
-    def test_is_working_during_rescan(self, controller, qt_app):
+    def test_is_working_during_rescan(self, controller, qt_app, monkeypatch):
+        import picasapy.app.controller as controller_module
         from PySide6.QtCore import QEventLoop, QTimer
+
+        # #505: a rescan a valódi (apró) teszt-könyvtáron a küszöbnél is
+        # gyorsabban lefuthatna — egy rövid, mesterséges késleltetéssel
+        # biztosítjuk, hogy a küszöb-ablak alatt még fusson, így a
+        # `isWorking is True` állítás determinisztikus marad.
+        original_sync_tree = controller_module.sync_tree
+
+        def slow_sync_tree(conn, folder, progress=None):
+            time.sleep(0.05)
+            if progress is None:
+                original_sync_tree(conn, folder)
+            else:
+                original_sync_tree(conn, folder, progress=progress)
+
+        monkeypatch.setattr(controller_module, "sync_tree", slow_sync_tree)
 
         transitions = []
         controller.busyChanged.connect(
@@ -1692,22 +1743,19 @@ class TestBusyAndBackgroundResync:
         loop = QEventLoop()
         controller.syncFinished.connect(loop.quit)
         controller.rescan()
-        assert controller.isWorking is True
+        assert _wait_until(qt_app, lambda: controller.isWorking is True)
         QTimer.singleShot(5000, loop.quit)
         loop.exec()
-        qt_app.processEvents()
-        assert controller.isWorking is False
+        assert _wait_until(qt_app, lambda: controller.isWorking is False)
         assert transitions[0] is True
         assert transitions[-1] is False
 
     def test_thumbnail_activity_drives_busy(self, controller, qt_app):
         provider = controller._provider
         provider.activeCountChanged.emit(2)
-        qt_app.processEvents()
-        assert controller.isWorking is True
+        assert _wait_until(qt_app, lambda: controller.isWorking is True)
         provider.activeCountChanged.emit(0)
-        qt_app.processEvents()
-        assert controller.isWorking is False
+        assert _wait_until(qt_app, lambda: controller.isWorking is False)
 
     def test_provider_request_emits_balanced_counts(self, controller, qt_app, tmp_path):
         # a requestImage körül 1 → 0 párnak kell kimennie (ismeretlen id-nél

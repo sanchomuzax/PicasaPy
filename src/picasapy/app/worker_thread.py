@@ -20,7 +20,15 @@ mintát adja mixinként, hogy a többi controllerban ne kilencszer másolva
 egyszerre TÖBB háttérszál is futhat (különböző mappák/fotók egymástól
 függetlenül) — a halmaz ezt is helyesen fedi, az egyetlen-szálas eset
 (pl. `DiscoveryController`) speciális esete csupán legfeljebb egy elemű
-halmaznak."""
+halmaznak.
+
+#505: `_start_background` MINDEN hívása automatikusan bejelentkezik az
+alkalmazás-szintű `AppBusyRegistry`-be (`busy_registry.py`) — az alsó kék
+sáv animációja ezért MINDEN, ezen a mixinen át indított háttérmunkánál
+magától megjelenik (a jelenlegieknél ÉS a jövőbelieknél is), anélkül hogy
+az egyes controllereknek külön be kellene jelentkezniük. A bejelentkezés
+`try`/`finally`-vel párosított — hibával leálló munka is lezárja a
+bejegyzést, különben a csík örökre pörögne."""
 
 from __future__ import annotations
 
@@ -28,6 +36,8 @@ import threading
 import time
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
+
+from .busy_registry import get_app_busy_registry
 
 
 class BackgroundWorkerMixin:
@@ -61,14 +71,23 @@ class BackgroundWorkerMixin:
 
         A szál a saját végén automatikusan kikerül a nyilvántartásból —
         a halmaz mindig csak a TÉNYLEG futó szálakat tartalmazza, nem nő
-        korlátlanul hosszú futás alatt sok hívással."""
+        korlátlanul hosszú futás alatt sok hívással.
+
+        #505: a busy-nyilvántartás bejelentkezése/kijelentkezése ITT, EGY
+        helyen történik — a hívó controllernek nem kell külön hívnia. A
+        `begin()` a hívó (jellemzően GUI-) szálon fut, MIELŐTT a szál
+        elindulna; az `end()` a `finally`-ben — kivétellel leálló munkánál
+        is, hogy a csík ne pörögjön örökre."""
         workers = self._bg_worker_set()
+        registry = get_app_busy_registry()
+        registry.begin()
 
         def _run() -> None:
             try:
                 target(*args, **(kwargs or {}))
             finally:
                 workers.discard(thread)
+                registry.end()
 
         thread = threading.Thread(target=_run, name=name, daemon=True)
         workers.add(thread)
