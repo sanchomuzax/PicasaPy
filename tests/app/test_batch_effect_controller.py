@@ -299,6 +299,45 @@ class TestClearAllEffectsMany:
         assert "filters=sat=1,-0.2;" in _ini_text(library)
         assert controller.canUndoBatchEdit is False
 
+    def test_undo_a_crop_tukorkulcsot_is_visszaallitja(self, controller, library):
+        """Adatvesztés-javítás: az „Undo All Edits" undo-lépése NE csak a
+        `filters=` láncot állítsa vissza, hanem a `crop=` tükör-kulcsot is —
+        különben a vágás visszavonás UTÁN is véglegesen elveszne."""
+        _run(
+            controller,
+            lambda: controller.clearAllEffectsMany(
+                _rows_by_name(controller, "w.jpg")
+            ),
+        )
+        assert "crop=rect64(3f845bcb59418507)" not in _ini_text(library)
+        controller.undoBatchEdit()
+        text = _ini_text(library)
+        assert "filters=crop64=1,3f845bcb59418507;" in text
+        assert "crop=rect64(3f845bcb59418507)" in text
+
+    def test_undo_nem_szul_crop_kulcsot_ha_eredetileg_nem_volt(
+        self, controller, library
+    ):
+        """Ha a törölt képnek eredetileg NEM volt `crop=` kulcsa (csak
+        `filters=`), az undo utáni ini-ben se jelenjen meg — a visszaállítás
+        nem szülhet olyan kulcsot, ami korábban nem is létezett."""
+        _run(
+            controller,
+            lambda: controller.clearAllEffectsMany(
+                _rows_by_name(controller, "x.jpg")
+            ),
+        )
+        controller.undoBatchEdit()
+        text = _ini_text(library)
+        assert "filters=sat=1,-0.2;" in text
+        # a `.picasa.ini`-ben w.jpg-nek VAN saját crop= kulcsa — a
+        # visszaállított x.jpg szekció alatt (közvetlenül a filters= sor
+        # után) viszont nem jelenhet meg, mert eredetileg se volt neki
+        lines = text.splitlines()
+        x_index = lines.index("[x.jpg]")
+        x_section = lines[x_index + 1 : x_index + 2]
+        assert not any(line.startswith("crop=") for line in x_section)
+
 
 class TestBackgroundThreadTeardown:
     """#438 (a #430 SIGSEGV-osztály maradéka): a kötegelt effekt
