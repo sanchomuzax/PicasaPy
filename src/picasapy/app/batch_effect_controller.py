@@ -163,10 +163,16 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         megszakíthatósággal (`cancelBatchEdit`). A beillesztés előtti nyers
         `filters=` értékek egyetlen undo-lépésként kerülnek a verembe."""
         self._ensure_batch_edit()
+        # A nem-dolgozó ágakon is JELEZNÜNK kell a befejezést: a hívó (és a
+        # teszt) a photoOpFinished-re vár, és néma visszatérésnél örökre
+        # várna. A hibát a #475-ös hangos vészfék buktatta ki — a néma,
+        # 5 mp-es változat alatt a rá írt teszt hamisan ment át.
         if effect_name not in _KNOWN_EFFECTS:
+            self.photoOpFinished.emit()
             return
         photos = self._rows_to_photos(rows)
         if not photos:
+            self.photoOpFinished.emit()
             return
 
         by_folder: dict[str, list] = {}
@@ -236,6 +242,9 @@ class BatchEffectMixin(BackgroundWorkerMixin):
         self._ensure_batch_edit()
         photos = self._rows_to_photos(rows)
         if not photos:
+            # ld. az applyEffectMany-nél: a néma visszatérés örökké várató
+            # hívót hagyna maga után (#475)
+            self.photoOpFinished.emit()
             return
 
         by_folder: dict[str, list] = {}

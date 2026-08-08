@@ -7,7 +7,7 @@ követi (AppController + QEventLoop, amíg a háttérszál végez)."""
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QEventLoop, QTimer
+from support.qt_wait import wait_for_photo_op
 
 from support.jpeg_factory import make_jpeg
 
@@ -74,11 +74,14 @@ def _ini_text_b(folder) -> str:
 
 
 def _run(controller, action) -> None:
-    loop = QEventLoop()
-    controller.photoOpFinished.connect(loop.quit)
-    action()
-    QTimer.singleShot(5000, loop.quit)
-    loop.exec()
+    """A kötegelt művelet bevárása a KÖZÖS, hangos segéddel (#475).
+
+    Korábban itt is a néma, 5 másodperces vészfék-minta állt: ha a jelzés
+    nem jött meg időben, a hurok csendben kilépett, és egy KÉSŐBBI állítás
+    bukott el félrevezető üzenettel. A lassú windows-CI-n pontosan ez
+    történt — a kötegelt írás (immár két ini-kulccsal) túllépte az 5
+    másodpercet."""
+    wait_for_photo_op(controller, action)
 
 
 class TestApplyEffectMany:
