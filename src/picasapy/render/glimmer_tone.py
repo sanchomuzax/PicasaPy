@@ -24,6 +24,7 @@ from picasapy.render.glimmer_ops import (
     alpha_blend,
     apply_noise,
     autofix,
+    clamp_glow_radius,
     fade_alpha,
     hsv_gradient_map,
     inner_glow,
@@ -40,7 +41,7 @@ from picasapy.render.glimmer_ops import (
 def _glow_vignette(image, blur, strength, color, fade):
     validate_image(image)
     height, width = image.shape[:2]
-    radius = blur * 0.02 * max(height, width) / 4.0
+    radius = clamp_glow_radius(blur * 0.02 * max(height, width) / 4.0)
     glowed = inner_glow(image, color, radius, radius, strength, alpha=1.0)
     return to_uint8(alpha_blend(to_float(image), to_float(glowed), fade_alpha(fade)))
 
@@ -171,7 +172,7 @@ def apply_nightvision(image, brightness: float = 0.0, contrast: float = 0.0, fad
     fixed = autofix(image)
     mapped = gradient_map(fixed, _NIGHTVISION_COLORS)
     height, width = mapped.shape[:2]
-    radius = 35.0 * 0.02 * max(height, width) / 3.0
+    radius = clamp_glow_radius(35.0 * 0.02 * max(height, width) / 3.0)
     glowed = inner_glow(mapped, (0, 0, 0), radius, radius, 1.5, alpha=1.0)
     noised = apply_noise(
         glowed, seed=30, low=0.0, high=180.0, grayscale=False, blend_alpha=0.2, blend_mode="lighten"

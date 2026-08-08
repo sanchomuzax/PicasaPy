@@ -125,6 +125,11 @@ class TestLomo:
         assert elapsed < 10.0, f"apply_lomo(2000x1500) túl lassú: {elapsed:.2f}s"
 
 
+def _black_pct(img: np.ndarray) -> float:
+    """A tiszta fekete (mindhárom csatornán 0) képpontok aránya, %."""
+    return float(np.all(img == 0, axis=-1).mean() * 100.0)
+
+
 class TestHolgaRealPhoto504510:
     """#504/#510 — VALÓDI (folytonos hisztogramú) fotóval mért regresszió,
     nem szintetikus szürke/zaj lappal (j1). A `main` állapotában a Holga
@@ -149,20 +154,37 @@ class TestHolgaRealPhoto504510:
         assert red_mean > blue_mean, f"R={red_mean:.1f} nem nagyobb, mint B={blue_mean:.1f}"
 
     @pytest.mark.parametrize("effect_name,apply_fn", [("Holga", c.apply_holga), ("Lomo", c.apply_lomo)])
-    def test_meretfuggetlen_fekete_arany(self, effect_name, apply_fn):
-        """j2: a tiszta fekete képpontok aránya 96 px-en és 1600 px-en
-        néhány százalékon belül egyezzen (nagyvonalú, 15pp tolerancia,
-        hogy ne legyen ingatag a mérés-zaj miatt)."""
+    def test_meretfuggetlen_fekete_arany_a_korlat_ALATT(self, effect_name, apply_fn):
+        """j2: a KORLÁT ALATTI tartományban a fekete-arány méretfüggetlen.
 
-        def black_pct(img: np.ndarray) -> float:
-            return float(np.all(img == 0, axis=-1).mean() * 100.0)
+        #504 után a `clamp_glow_radius` 255-ös korlátja SZÁNDÉKOSAN
+        megtöri a méretfüggetlenséget — de csak ott, ahol a képlet a
+        korlát fölé nőne. 96 px és 700 px legnagyobb oldalnál mind az öt
+        effekt sugara a korlát ALATT marad (a legnagyobb szorzó 0,35·max
+        → 245 < 255), tehát ITT a méretfüggetlenségnek szigorúan állnia
+        kell. A korábbi, 96↔1600 px-es változat a két tartományt keverte,
+        ezért kellett volna 30 pp-es (érdemi ellenőrzést nem adó) tűrés."""
 
         small = apply_fn(_real_photo_rgb(96, 72))
-        large = apply_fn(_real_photo_rgb(1600, 1200))
-        diff = abs(black_pct(small) - black_pct(large))
-        assert diff <= 15.0, (
-            f"{effect_name}: fekete-arány 96px={black_pct(small):.1f}% "
-            f"vs 1600px={black_pct(large):.1f}% — {diff:.1f}pp eltérés"
+        large = apply_fn(_real_photo_rgb(700, 525))
+        diff = abs(_black_pct(small) - _black_pct(large))
+        assert diff <= 10.0, (
+            f"{effect_name}: fekete-arány 96px={_black_pct(small):.1f}% "
+            f"vs 700px={_black_pct(large):.1f}% — {diff:.1f}pp eltérés"
+        )
+
+    @pytest.mark.parametrize("effect_name,apply_fn", [("Holga", c.apply_holga), ("Lomo", c.apply_lomo)])
+    def test_a_korlat_FOLOTT_keskenyebb_a_vignetta(self, effect_name, apply_fn):
+        """#504: a korlát fölött a sugár már NEM nő a képmérettel, ezért a
+        vignetta relatíve keskenyebb, és ÉRDEMBEN kevesebb a tiszta fekete
+        képpont. Ez a korlát létezésének közvetlen, mérhető következménye —
+        ha valaki visszavenné a `clamp_glow_radius`-t, ez a teszt bukna."""
+
+        small = apply_fn(_real_photo_rgb(96, 72))
+        huge = apply_fn(_real_photo_rgb(2560, 1920))
+        assert _black_pct(huge) < _black_pct(small) - 5.0, (
+            f"{effect_name}: a korlát fölött NEM csökkent érdemben a fekete-arány "
+            f"(96px={_black_pct(small):.1f}%, 2560px={_black_pct(huge):.1f}%)"
         )
 
     def test_holga_perf_nagy_kepen(self):
