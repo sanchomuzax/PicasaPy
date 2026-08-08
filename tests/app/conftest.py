@@ -77,7 +77,10 @@ def qml_app(qt_app, tmp_path):
     dedup_controller = DedupController(db, provider)
     # Import forrásból (#23) — az application.py bekötésének tükre
     import_source_controller = ImportSourceController(
-        provider, add_folder=controller.addWatchedFolder
+        provider,
+        add_folder=controller.addWatchedFolder,
+        index_path=db,
+        settings=settings,
     )
     faces_helper = FacesHelper()
     # Időrend nézet (#24) — az application.py bekötésének tükre: a

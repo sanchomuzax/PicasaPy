@@ -3,26 +3,25 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
 
-// Import forrásból (#23): külső mappa (pl. fényképezőgép/kártya csatolt
-// mappája, vagy bármely más mappa) képeinek/videóinak másolása/áthelyezése
-// a könyvtárba, dátum szerinti mappa-sablonnal — a Mappakezelő/DedupDialog
-// mintájára ÖNÁLLÓ, mozgatható/átméretezhető ablak (nem a főablakba ékelt
-// Dialog).
+// Import forrásból (#23/#441): külső mappa (pl. fényképezőgép/kártya
+// csatolt mappája, vagy bármely más mappa) képeinek/videóinak másolása a
+// könyvtárba — a Mappakezelő/DedupDialog mintájára ÖNÁLLÓ, mozgatható/
+// átméretezhető ablak (nem a főablakba ékelt Dialog).
 //
-// Alapértelmezés NEM-DESZTRUKTÍV (#23 DoD): másolás — a forrás (kártya/
-// mappa) érintetlen marad; az áthelyezés kapcsoló (`moveInsteadOfCopy`)
-// explicit bekapcsolást igényel. A mappa-sablon józan alapértelmezése
-// "év/év-hónap-nap" (`{YYYY}/{YYYY}-{MM}-{DD}`, a kép EXIF-dátuma vagy
-// hiányában a fájl módosítási ideje alapján — ld. `picasapy.importsource`).
+// #441 — a mai szabad szöveges mappa-sablon mező helyett HÁROM célmappa-
+// elnevezési mód (namingMode: "manual" | "date" | "today"), duplikátum-
+// kizárás (autoExclude, a jelölt-előnézetben "duplicate"/"excluded"
+// zászlókkal), egyenkénti válogatás, és háromállapotú, kétlépcsős
+// megerősítésű forrás-törlés ("After Copying:").
 Window {
     id: importSourceWindow
     objectName: "importSourceDialog"
     title: qsTr("Import from Source")
     modality: Qt.ApplicationModal
     width: 640
-    height: 560
+    height: 680
     minimumWidth: 480
-    minimumHeight: 420
+    minimumHeight: 480
     color: Theme.canvasBg
 
     // a forrás/cél FolderDialog `selectedFolder.toString()`-ja (file:// URL
@@ -32,14 +31,37 @@ Window {
     // egyszerűen lehántja a "file://" előtagot.
     property string sourceFolder: ""
     property string destFolder: ""
-    property string template: "{YYYY}/{YYYY}-{MM}-{DD}"
-    property bool moveInsteadOfCopy: false
+
+    // #441: a HÁROM célmappa-elnevezési mód — a `picasapy.importsource.
+    // NAMING_*` konstansaival egyező string. A dátum szerinti bontás a
+    // Picasa import-munkafolyamatának lelke, ezért ez az alapértelmezés.
+    property string namingMode: "date"
+    property string manualFolderName: ""
+
+    // #441: "After Copying:" — a `picasapy.app.import_source_controller.
+    // AFTER_COPY_*` konstansaival egyező string.
+    property string afterCopying: "leave"
 
     property bool scanning: false
-    // előnézeti elemek — dict-ek listája: {path, thumbUrl}; a controller
-    // MINDIG listát ad (soha tuple-t, ld. MEMORY.md-tanulság)
+    // előnézeti elemek — dict-ek listája: {path, thumbUrl, duplicate,
+    // excluded}; a controller MINDIG listát ad (soha tuple-t, ld.
+    // MEMORY.md-tanulság)
     property var previewItems: []
     property int previewCount: 0
+    readonly property int duplicateCount: {
+        var count = 0
+        for (var i = 0; i < importSourceWindow.previewItems.length; i++) {
+            if (importSourceWindow.previewItems[i].duplicate) count++
+        }
+        return count
+    }
+    readonly property int includedCount: {
+        var count = 0
+        for (var j = 0; j < importSourceWindow.previewItems.length; j++) {
+            if (!importSourceWindow.previewItems[j].excluded) count++
+        }
+        return count
+    }
 
     property bool importing: false
     property int importDone: 0
@@ -70,14 +92,29 @@ Window {
         importSourceController.scanSource(importSourceWindow.sourceFolder)
     }
 
-    function startImport() {
-        if (importSourceWindow.destFolder.length === 0) return
-        if (importSourceWindow.previewCount === 0) return
+    // #441: a másolás tényleges indítása — a kétlépcsős megerősítés (ld.
+    // lent, `requestImport`) UTÁN hívódik.
+    function runImportNow() {
         importSourceWindow.lastError = ""
         importSourceController.runImport(
             importSourceWindow.destFolder,
-            importSourceWindow.template,
-            importSourceWindow.moveInsteadOfCopy)
+            importSourceWindow.namingMode,
+            importSourceWindow.manualFolderName,
+            importSourceWindow.afterCopying)
+    }
+
+    // #441: "After Copying:" — kétlépcsős, egyre erősebb megerősítés a
+    // törléssel járó két állapotnál; "Leave card alone"-nál nincs kérdés.
+    function requestImport() {
+        if (importSourceWindow.destFolder.length === 0) return
+        if (importSourceWindow.includedCount === 0) return
+        if (importSourceWindow.afterCopying === "leave") {
+            importSourceWindow.runImportNow()
+            return
+        }
+        removeImportedConfirm.ask("importSourceRemoveImported", qsTr(
+            "Are you sure you want to remove the imported files from your "
+            + "card? This cannot be undone."))
     }
 
     Connections {
@@ -91,6 +128,9 @@ Window {
         function onSourceScanFailed(message) {
             importSourceWindow.lastError = message
             importSourceWindow.scanning = false
+        }
+        function onSelectionChanged(items) {
+            importSourceWindow.previewItems = items
         }
         function onImportStarted(total) {
             importSourceWindow.importing = true
@@ -152,6 +192,33 @@ Window {
             }
         }
 
+        // #441: "Exclude Duplicates" — "Exclude photos that are already
+        // imported into Picasa" (autoexclude QSettings-kulcs, a
+        // controller property-je).
+        CheckBox {
+            objectName: "importSourceAutoExcludeCheckBox"
+            text: qsTr("Exclude Duplicates")
+            checked: typeof importSourceController !== "undefined"
+                     && importSourceController
+                     ? importSourceController.autoExclude : false
+            onToggled: importSourceController.setAutoExclude(checked)
+        }
+        Text {
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: qsTr("Exclude photos that are already imported into Picasa")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+        Text {
+            objectName: "importSourceDuplicateCountText"
+            visible: importSourceWindow.duplicateCount > 0
+            text: qsTr("%n of those are duplicates already in Picasa", "",
+                       importSourceWindow.duplicateCount)
+            font.pixelSize: Theme.fontSize
+            color: Theme.textGray
+        }
+
         Text {
             objectName: "importSourceErrorText"
             visible: importSourceWindow.lastError.length > 0
@@ -188,6 +255,24 @@ Window {
             color: Theme.textGray
         }
 
+        // -- egyenkénti válogatás parancsai (#441) -------------------------
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            visible: importSourceWindow.previewCount > 0
+            PicasaButton {
+                objectName: "importSourceExcludeAllButton"
+                text: qsTr("Exclude All")
+                onClicked: importSourceController.excludeAll()
+            }
+            PicasaButton {
+                objectName: "importSourceIncludeAllButton"
+                text: qsTr("Include All")
+                onClicked: importSourceController.includeAll()
+            }
+            Item { Layout.fillWidth: true }
+        }
+
         // -- előnézeti bélyegkép-rács -------------------------------------
         Rectangle {
             Layout.fillWidth: true
@@ -203,31 +288,59 @@ Window {
                 anchors.margins: 4
                 clip: true
                 cellWidth: 76
-                cellHeight: 76
+                cellHeight: 92
                 model: importSourceWindow.previewItems
                 delegate: Rectangle {
-                    id: previewCell
+                    id: thumbFrame
                     required property var modelData
                     required property int index
-                    objectName: "importSourceThumb:" + previewCell.index
+                    objectName: "importSourceThumb:" + thumbFrame.index
                     width: 72
                     height: 72
                     color: Theme.thumbCard
-                    border.color: Theme.thumbBorder
-                    border.width: 1
+                    border.color: thumbFrame.modelData.duplicate
+                                  ? Theme.brandRed : Theme.thumbBorder
+                    border.width: thumbFrame.modelData.duplicate ? 2 : 1
+                    opacity: thumbFrame.modelData.excluded ? 0.4 : 1.0
+
                     Image {
                         anchors.fill: parent
                         anchors.margins: 2
-                        source: previewCell.modelData.thumbUrl
+                        source: thumbFrame.modelData.thumbUrl
                         fillMode: Image.PreserveAspectFit
                         asynchronous: Qt.platform.pluginName !== "offscreen"
+                    }
+
+                    Text {
+                        id: toggleLabel
+                        objectName: "importSourceToggleLabel:" + thumbFrame.index
+                        anchors.top: parent.bottom
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: thumbFrame.modelData.excluded
+                              ? qsTr("Include") : qsTr("Exclude")
+                        font.pixelSize: Theme.fontSize - 1
+                        color: Theme.brandBlue
+                    }
+                    MouseArea {
+                        objectName: "importSourceToggle:" + thumbFrame.index
+                        anchors.fill: toggleLabel
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (thumbFrame.modelData.excluded) {
+                                importSourceController.includeFile(
+                                    thumbFrame.modelData.path)
+                            } else {
+                                importSourceController.excludeFile(
+                                    thumbFrame.modelData.path)
+                            }
+                        }
                     }
                 }
                 ScrollBar.vertical: PicasaScrollBar {}
             }
         }
 
-        // -- cél + mappa-sablon --------------------------------------------
+        // -- cél + célmappa-elnevezés (#441) -------------------------------
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
@@ -253,29 +366,75 @@ Window {
             }
         }
 
-        RowLayout {
+        ButtonGroup { id: namingModeGroup }
+
+        ColumnLayout {
             Layout.fillWidth: true
-            spacing: 8
-            Text {
-                text: qsTr("Folder template:")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
+            spacing: 2
+            RadioButton {
+                objectName: "importSourceNamingManualRadio"
+                text: qsTr("Enter new folder title or choose existing folder to continue")
+                ButtonGroup.group: namingModeGroup
+                checked: importSourceWindow.namingMode === "manual"
+                onToggled: if (checked) importSourceWindow.namingMode = "manual"
             }
             TextField {
-                id: templateField
-                objectName: "importSourceTemplateField"
+                id: manualFolderField
+                objectName: "importSourceManualNameField"
                 Layout.fillWidth: true
-                font.pixelSize: Theme.fontSize
-                text: importSourceWindow.template
-                onEditingFinished: importSourceWindow.template = text
+                Layout.leftMargin: 24
+                enabled: importSourceWindow.namingMode === "manual"
+                text: importSourceWindow.manualFolderName
+                onEditingFinished: importSourceWindow.manualFolderName = text
+            }
+            RadioButton {
+                objectName: "importSourceNamingByDateRadio"
+                text: qsTr("Import into separate folders for each date taken")
+                ButtonGroup.group: namingModeGroup
+                checked: importSourceWindow.namingMode === "date"
+                onToggled: if (checked) importSourceWindow.namingMode = "date"
+            }
+            RadioButton {
+                objectName: "importSourceNamingTodayRadio"
+                text: qsTr("Import into folder with today's date")
+                ButtonGroup.group: namingModeGroup
+                checked: importSourceWindow.namingMode === "today"
+                onToggled: if (checked) importSourceWindow.namingMode = "today"
             }
         }
 
-        CheckBox {
-            objectName: "importSourceMoveCheckBox"
-            text: qsTr("Move instead of copy (source files will be deleted)")
-            checked: importSourceWindow.moveInsteadOfCopy
-            onToggled: importSourceWindow.moveInsteadOfCopy = checked
+        // -- "After Copying:" háromállapotú forrás-törlés (#441) -----------
+        Text {
+            text: qsTr("After Copying:")
+            font.pixelSize: Theme.fontSize
+            font.bold: true
+            color: Theme.ink
+        }
+        ButtonGroup { id: afterCopyingGroup }
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 2
+            RadioButton {
+                objectName: "importSourceAfterLeaveRadio"
+                text: qsTr("Leave card alone")
+                ButtonGroup.group: afterCopyingGroup
+                checked: importSourceWindow.afterCopying === "leave"
+                onToggled: if (checked) importSourceWindow.afterCopying = "leave"
+            }
+            RadioButton {
+                objectName: "importSourceAfterDeleteCopiedRadio"
+                text: qsTr("Delete only copied photos")
+                ButtonGroup.group: afterCopyingGroup
+                checked: importSourceWindow.afterCopying === "delete_copied"
+                onToggled: if (checked) importSourceWindow.afterCopying = "delete_copied"
+            }
+            RadioButton {
+                objectName: "importSourceAfterDeleteAllRadio"
+                text: qsTr("Delete everything on card")
+                ButtonGroup.group: afterCopyingGroup
+                checked: importSourceWindow.afterCopying === "delete_all"
+                onToggled: if (checked) importSourceWindow.afterCopying = "delete_all"
+            }
         }
 
         // -- haladás -------------------------------------------------------
@@ -330,10 +489,10 @@ Window {
                 objectName: "importSourceStartButton"
                 text: qsTr("Import")
                 accent: Theme.picasaGreen
-                enabled: importSourceWindow.previewCount > 0
+                enabled: importSourceWindow.includedCount > 0
                          && importSourceWindow.destFolder.length > 0
                          && !importSourceWindow.importing
-                onClicked: importSourceWindow.startImport()
+                onClicked: importSourceWindow.requestImport()
             }
             PicasaButton {
                 objectName: "importSourceCloseButton"
@@ -356,5 +515,31 @@ Window {
         id: destFolderDialog
         title: qsTr("Choose destination folder...")
         onAccepted: importSourceWindow.destFolder = selectedFolder.toString()
+    }
+
+    // #441 — kétlépcsős, egyre erősebb megerősítés a forrás-törléshez.
+    // 1. lépés: mindkét törléssel járó "After Copying:" állapotra közös,
+    // generikus kérdés. "delete_all"-nál ezt követi a 2. lépés (erősebb
+    // figyelmeztetés + "ne figyelmeztess többé"), "delete_copied"-nél a
+    // 2. lépés kimarad — a #422 mintája szerint EGYEDI namePrefix.
+    ConfirmDialog {
+        id: removeImportedConfirm
+        namePrefix: "importSourceRemoveImportedConfirm"
+        title: qsTr("Import from Source")
+        onConfirmed: {
+            if (importSourceWindow.afterCopying === "delete_all") {
+                deleteAllWarningConfirm.ask("importSourceDeleteAllWarning", qsTr(
+                    "WARNING! You have chosen to delete ALL FILES…"))
+            } else {
+                importSourceWindow.runImportNow()
+            }
+        }
+    }
+
+    ConfirmDialog {
+        id: deleteAllWarningConfirm
+        namePrefix: "importSourceDeleteAllWarningConfirm"
+        title: qsTr("Import from Source")
+        onConfirmed: importSourceWindow.runImportNow()
     }
 }

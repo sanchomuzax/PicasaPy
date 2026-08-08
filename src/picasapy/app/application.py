@@ -480,7 +480,9 @@ def run(argv: list[str]) -> int:
     # előnézetet, sikeres import után az addWatchedFolder úton a cél-mappa
     # a könyvtár része lesz
     import_source_controller = ImportSourceController(
-        provider, add_folder=controller.addWatchedFolder
+        provider,
+        add_folder=controller.addWatchedFolder,
+        index_path=data_dir / "index.db",
     )
 
     engine = QQmlApplicationEngine()
