@@ -230,7 +230,7 @@ A 33 „Glimmer" effekt (a Picnik-felvásárlásból örökölt réteg) `<effect
 blokkja **deklaratív képfeldolgozó-gráf**: vezérlők (csúszka, színválasztó,
 jelölőnégyzet) + `imageOperations:` műveletek, adatkötés-kifejezésekkel
 (`{_sldrImpact.value * 20 / 50}`). Ez gyakorlatilag **az effektek
-forráskódja**.
+forráskódja** — de csak a *recept*, nem a pixel-szemantika (ld. 4.4).
 
 ### 4.1 A `.picasa.ini` paraméter-sorrend szabálya
 
@@ -344,7 +344,62 @@ formában rakhat össze.
 - **`Comicize`**: két, félpixellel eltolt csempézett pontmaszk (`_nDotSize =
   W/70 + 1`) + pixelesítés + küszöbgörbék → valódi féltónusos raszter.
 
-Ezek **nem közelítések**: a Picasa pontosan ezt hajtotta végre.
+Ezek **a Picasa saját lépéssorai** — a *sorrend*, a *műveletnevek* és a
+*paraméterértékek* nem közelítések. A műveletek **pixel-szemantikája**
+viszont NEM ebből a fájlból jön (ld. 4.4).
+
+### 4.4 Amit a fájl NEM mond meg — a Flash/Flex-örökség
+
+Az `<effect>` blokkok **Adobe Flex MXML**-ben íródtak: `cnt:EffectCanvas`
+gyökér, `{…}` adatkötések `Math.max`-szal, `HSliderPlus`/`HSliderFastDrag`
+vezérlők. Ez a Picnik-örökség közvetlen nyoma — a futtató viszont a Picasa
+saját, natív C++ motorja (`Picasa3.exe`, RTTI-nevek: `glimmer::EffectParser`,
+`glimmer::GlowImageOperation`, `glimmer::BlurImageOperation`, …), tehát a
+fájl egy **Flash-korabeli receptet** ír le egy **natív végrehajtónak**.
+
+A műveletek paraméterlistája karakterre a Flash szűrő-API-t követi:
+
+| `filterdesc.xml` | Flash megfelelő |
+|---|---|
+| `GlowImageOperation(color, glowalpha, xblur, yblur, strength, quality, innerglow, knockout)` | `flash.filters.GlowFilter(color, alpha, blurX, blurY, strength, quality, inner, knockout)` |
+| `BlurImageOperation(xblur, yblur, quality)` | `flash.filters.BlurFilter(blurX, blurY, quality)` |
+| `DropShadowImageOperation(blurX, blurY, …)` | `flash.filters.DropShadowFilter` |
+
+Ebből következik két dolog, amit a fájl **nem** közöl, és amit ezért
+**mérésből** kell eldönteni:
+
+1. **A `quality` jelentése.** Flashben ez az elmosás *átfutásainak száma*
+   (1–3, ahol 3 ≈ Gauss). A Glimmer-effektekben végig `quality="3"`. A
+   PicasaPy jelenleg figyelmen kívül hagyja.
+2. **Az `xblur`/`yblur` pixel-jelentése.** Flashben a `blurX` **nem
+   Gauss-σ**, hanem elmosás-szélesség, és **0–255-re korlátozott**. Nem
+   tudjuk, hogy a natív port átvette-e a korlátot. A kérdés csak a
+   *látványt* érinti, mert a méretfüggő képletek (ld. lent) egy nagy fotón
+   messze 255 fölé mennek.
+
+#### Méretfüggő elmosás-sugarak — a hét érintett szűrő
+
+Ezek a képletek a képmérethez skálázódnak, hogy az effekt **arányos**
+legyen (ugyanúgy nézzen ki kicsiben és nagyban):
+
+| szűrő | képlet | σ egy 4000 px-es fotón |
+|---|---|---|
+| `Lomo` | `35·0,02·max(W,H)/2` = 0,35·max | 1400 |
+| `Holga` | `0,5·max/2` és `0,4·max/2` | 1000 / 800 |
+| `NightVision` | `35·0,02·max(W,H)/3` | 933 |
+| `Matte` | `Blur·0,02·max(W,H)/4` (alap Blur=40) | 800 |
+| `Vignette` | `Blur·0,02·max(W,H)/4` (alap Blur=35) | 700 |
+| `Comicize` | `35·0,02·max(W,H)/2` (a második elmosás) | 1400 |
+| `MuseumMatte` | `2·0,02·max(W,H)/4` = 0,01·max | 40 |
+
+> **Implementációs csapda (#504).** Ha az `xblur`-t közvetlenül
+> Gauss-σ-ként adjuk egy kernel-alapú elmosásnak (pl.
+> `cv2.GaussianBlur(..., (0,0), sigma)`, ahol a kernel ≈ 8σ+1), a költség a
+> kép méretével **köbösen** nő: egy 4000×3000-es fotón a Lomo egyetlen
+> ragyogás-lépése RPi5-en **168 s** (mérés). Belső ragyogásnál erre nincs
+> szükség: a bemenet mindig egy tömör téglalap alfa-maszk, aminek a
+> Gauss-elmosása **zárt formában** (tengelyenként egy `erf`) számolható,
+> sugártól független költséggel.
 
 ## 5. Következmények a PicasaPy-ra
 
