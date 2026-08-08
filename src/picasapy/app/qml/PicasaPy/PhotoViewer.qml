@@ -356,7 +356,15 @@ Rectangle {
     }
 
     focus: visible
-    Keys.onEscapePressed: viewer.closed()
+    // #445: Esc a retusálás-eszköz félbehagyott foltját dobja el ELŐSZÖR
+    // (a Picasa súgószövege szerinti irányított klónozás megszakítása) —
+    // csak ennek hiányában zárja a nézőt (a korábbi, egyértelmű viselkedés).
+    Keys.onEscapePressed: {
+        if (editorPanel.retouchActive && editorPanel.retouchPatchPending)
+            editController.cancelRetouchPatch()
+        else
+            viewer.closed()
+    }
     Keys.onRightPressed: next()
     Keys.onReturnPressed: next()
     Keys.onLeftPressed: previous()
@@ -569,10 +577,20 @@ Rectangle {
                         cropOverlay.resetSelection()
                         editorPanel.cropActive = false
                     }
-                    // #148: a retusálás pufferének mérete/az Alkalmaz-gomb
-                    // engedélyezettsége a kontrollerből
+                    // #148/#445: a retusálás pufferének mérete/az Alkalmaz-
+                    // gomb engedélyezettsége, a félbehagyott folt ("Refining…")
+                    // és a patch-enkénti Undo/Redo/ecsetméret a kontrollerből
                     retouchRegionCount: viewer.editCtl
                         ? viewer.editCtl.retouchPendingCount : 0
+                    retouchPatchPending: viewer.editCtl
+                        ? viewer.editCtl.retouchPatchPending : false
+                    canUndoPatch: viewer.editCtl ? viewer.editCtl.canUndoPatch : false
+                    canRedoPatch: viewer.editCtl ? viewer.editCtl.canRedoPatch : false
+                    brushSize: viewer.editCtl ? viewer.editCtl.brushSize : 20
+                    onBrushSizeEdited: (value) => editController.setBrushSize(value)
+                    onRetouchUndoPatchRequested: editController.undoPatch()
+                    onRetouchRedoPatchRequested: editController.redoPatch()
+                    onRetouchResetRequested: editController.resetPatches()
                     onRetouchApplyRequested: {
                         editController.applyRetouch()
                         editorPanel.retouchActive = false
@@ -871,26 +889,60 @@ Rectangle {
                         onEdited: viewer.facesEditRevision += 1
                     }
 
-                    // #148: kattintás a képre — a kép kirajzolt (letterbox
-                    // nélküli) területén relatív [0..1] koordinátát számol
-                    // és a kontrollerhez küldi. Retusálásnál minden
-                    // kattintás új régiót ad a pufferhez; szövegnél a
-                    // legutóbbi kattintás állítja be a pozíciót.
+                    // #445: a retusálás a Picasa súgószövege szerinti,
+                    // KÉTKATTINTÁSOS, irányított klónozás — 1. kattintás a
+                    // CÉL kijelölése, egérmozgatás a FORRÁS élő előnézete,
+                    // 2. kattintás véglegesíti. `Ctrl`+húzás eközben a
+                    // meglévő nagyítás-pásztázó (`viewer.panX`/`panY`/
+                    // `clampPan()`, ld. lent a `viewerPanArea`-t) állapotára
+                    // ül rá, hogy zoomolt nézetben kattintás nélkül lehessen
+                    // odébb húzni a képet.
                     MouseArea {
                         id: retouchClickArea
                         objectName: "retouchClickArea"
                         parent: photo
                         visible: editorPanel.retouchActive
                         enabled: editorPanel.retouchActive
+                        hoverEnabled: true
                         x: (photo.width - photo.paintedWidth) / 2
                         y: (photo.height - photo.paintedHeight) / 2
                         width: photo.paintedWidth
                         height: photo.paintedHeight
                         cursorShape: Qt.CrossCursor
+                        property bool ctrlPanning: false
+                        property real panLastX: 0
+                        property real panLastY: 0
+                        onPressed: function(mouse) {
+                            if (mouse.modifiers & Qt.ControlModifier) {
+                                ctrlPanning = true
+                                panLastX = mouse.x; panLastY = mouse.y
+                            }
+                        }
+                        onPositionChanged: function(mouse) {
+                            if (width <= 0 || height <= 0) return
+                            if (ctrlPanning) {
+                                viewer.panX += mouse.x - panLastX
+                                viewer.panY += mouse.y - panLastY
+                                panLastX = mouse.x; panLastY = mouse.y
+                                viewer.clampPan()
+                                return
+                            }
+                            if (editController.retouchPatchPending)
+                                editController.previewRetouchSource(
+                                    mouse.x / width, mouse.y / height)
+                        }
+                        onReleased: function(mouse) { ctrlPanning = false }
                         onClicked: function(mouse) {
                             if (width <= 0 || height <= 0) return
-                            editController.previewRetouchRegion(
-                                mouse.x / width, mouse.y / height)
+                            // Ctrl+húzás UTÁNi felengedés is "clicked"-et vált
+                            // ki QML-ben — ez NEM patch-kattintás
+                            if (mouse.modifiers & Qt.ControlModifier) return
+                            if (editController.retouchPatchPending)
+                                editController.commitRetouchPatch(
+                                    mouse.x / width, mouse.y / height)
+                            else
+                                editController.beginRetouchPatch(
+                                    mouse.x / width, mouse.y / height)
                         }
                     }
                     MouseArea {

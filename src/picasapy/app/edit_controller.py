@@ -16,6 +16,7 @@ from picasapy.app.effect_params import (
 from picasapy.edit.session import EditSession
 from picasapy.ini import load_document, update_document
 from picasapy.ini.rect64 import Rect64, encode_rect64
+from picasapy.ini.retouch import RetouchPatch
 from picasapy.ini.text_overlay import (
     TextOverlay,
     parse_text,
@@ -118,15 +119,19 @@ _EFFECT_INI_NAMES: dict[str, str] = {
     "polaroid": "Polaroid",
 }
 
-#: A retusálás-eszköz (#148) egy kattintásra hozott régiójának FÉLmérete
-#: (relatív [0..1] egység) — a valódi Picasa retusáló-ecset mérete nem
-#: ismert (ld. `picasapy.ini.retouch` docsztring), ezért ez egy PicasaPy-
-#: saját, dokumentált alapérték: kb. a kép szélességének/magasságának 6%-a
-#: (2×0.03), ami a legtöbb apró folt/pattanás eltávolítására elég, anélkül,
-#: hogy nagyobb, kívánt részleteket törölne. Ecsetméret-csúszka nem készült
-#: (nincs hozzá kapaszkodó a meglévő eszközmintákban — a redeye is fix,
-#: csúszka nélküli teljes képes kapcsoló), ld. a #148 jelentés.
-_RETOUCH_REGION_HALF_SIZE = 0.03
+#: A retusálás-eszköz (#445) kör alakú ecsetének mérete-csúszkája [1..100]
+#: egész egységben ("Brush Size", ld. `EditorPanel.qml`) — a valódi Picasa
+#: ecsetméret-egysége nem ismert (ld. `picasapy.ini.retouch` docsztring),
+#: ezért ez egy PicasaPy-saját, dokumentált leképezés: a csúszka-érték a
+#: `_BRUSH_SIZE_TO_RELATIVE_DIVISOR`-ral osztva adja a relatív [0..1]
+#: sugarat (a kép rövidebb oldalára vonatkoztatva, ld.
+#: `picasapy.render.retouch.apply_retouch_patches`) — a felső határnál
+#: (100) ez 0.1, azaz a kép rövidebb oldalának 10%-a, ami a legnagyobb
+#: gyakorlati foltnak is elég, anélkül, hogy a fél képet lefedné.
+_BRUSH_SIZE_MIN = 1
+_BRUSH_SIZE_MAX = 100
+_DEFAULT_BRUSH_SIZE = 20
+_BRUSH_SIZE_TO_RELATIVE_DIVISOR = 1000.0
 
 #: A szöveg-eszköz (#148) rögzített betűtípusa — a valódi Picasa `text=`
 #: kulcsának betűtípus-mezője csak ROUND-TRIP-elve kerül megőrzésre (ld.
@@ -229,10 +234,23 @@ class EditController(QObject):
         # beginEdit-kor olvasva — a szerkesztés alatt nem változik, a
         # csúszka-húzás minden egyes revíziójánál újraolvasni felesleges lenne
         self._camera_summary = ""
-        # retusálás (#148): a Vágás-mintájú enter/exit + Alkalmaz/Mégse
-        # eszközhöz a kattintással hozott, MÉG NEM mentett régiók puffere —
-        # Alkalmazásig csak az élő előnézetet befolyásolja, ini-t nem ír.
-        self._retouch_pending: tuple[Rect64, ...] = ()
+        # retusálás (#445): a Vágás-mintájú enter/exit + Alkalmaz/Mégse
+        # eszközhöz a kétkattintásos, irányított klónozással (cél→forrás)
+        # hozott, MÉG NEM mentett foltok puffere — Alkalmazásig csak az élő
+        # előnézetet befolyásolja, ini-t nem ír. A `_retouch_target` az
+        # ELSŐ kattintással kijelölt, de a forrás-pont hiányában még nem
+        # véglegesített folt cél-pontja (None, ha nincs ilyen félbehagyott
+        # folt). A patch-enkénti Undo/Redo/Reset EZEN a pufferen dolgozik —
+        # a globális (`_undo_stack`) verem csak az Alkalmazott retusálást
+        # látja EGY lépésként, a foltok belső részleteit nem.
+        self._retouch_patches: tuple[RetouchPatch, ...] = ()
+        self._retouch_target: tuple[float, float] | None = None
+        self._retouch_patch_undo: list[tuple[RetouchPatch, ...]] = []
+        self._retouch_patch_redo: list[tuple[RetouchPatch, ...]] = []
+        # kör alakú ecset mérete (#445) — munkamenet-szintű állapot (a
+        # szöveg-stílushoz hasonlóan NEM kerül a `.picasa.ini`-be), minden
+        # szerkesztés-nyitáskor alapértékre áll.
+        self._brush_size: int = _DEFAULT_BRUSH_SIZE
         # szöveg-overlay (#148): a mentett `text=`/`textactive=` értékek
         # típusos alakja (None, ha nincs — vagy a bejegyzés nem értelmezhető,
         # a #301-elv szerint), plusz a szerkesztés alatti, MÉG NEM mentett
@@ -321,16 +339,39 @@ class EditController(QObject):
 
     @Property(bool, notify=toolsChanged)
     def hasRetouch(self) -> bool:
-        """Van-e MENTETT retusálási régió — a „Visszavonás: Retusálás"
-        felirathoz és a UI állapot-jelzéséhez."""
-        return bool(self._session.retouch_regions())
+        """Van-e MENTETT retusálás — akár a jelenlegi (v2, folt-alapú, #445),
+        akár egy korábbi PicasaPy-verzió (v1, téglalap-régiós, #148) által
+        mentett alakban — a „Visszavonás: Retusálás" felirathoz és a UI
+        állapot-jelzéséhez."""
+        return bool(self._session.retouch_patches()) or bool(self._session.retouch_regions())
 
     @Property(int, notify=revisionChanged)
     def retouchPendingCount(self) -> int:
-        """A retusálás-eszközben kattintással hozzáadott, MÉG NEM
-        alkalmazott régiók száma — az Alkalmaz gomb csak akkor engedélyezett,
+        """A retusálás-eszközben véglegesített (kétkattintásos), MÉG NEM
+        alkalmazott foltok száma — az Alkalmaz gomb csak akkor engedélyezett,
         ha ez pozitív."""
-        return len(self._retouch_pending)
+        return len(self._retouch_patches)
+
+    @Property(bool, notify=revisionChanged)
+    def retouchPatchPending(self) -> bool:
+        """Van-e félbehagyott folt (cél kijelölve, forrás még nincs
+        véglegesítve) — a „Refining…" felirathoz a QML-ben."""
+        return self._retouch_target is not None
+
+    @Property(bool, notify=revisionChanged)
+    def canUndoPatch(self) -> bool:
+        """Van-e patch-enkénti visszavonható lépés a retusálás-pufferben
+        (NEM a globális Visszavonás-verem, ld. `undoPatch`)."""
+        return bool(self._retouch_patch_undo)
+
+    @Property(bool, notify=revisionChanged)
+    def canRedoPatch(self) -> bool:
+        return bool(self._retouch_patch_redo)
+
+    @Property(int, notify=toolsChanged)
+    def brushSize(self) -> int:
+        """A retusálás-ecset mérete [1..100] egészben ("Brush Size", #445)."""
+        return self._brush_size
 
     # -- szöveg-overlay (#148) -----------------------------------------------
 
@@ -544,7 +585,11 @@ class EditController(QObject):
         # sorrendben, képváltás és újranyitás után is.
         self._undo_stack = self._seed_undo_from_chain(self._session)
         self._redo_stack.clear()
-        self._retouch_pending = ()
+        self._retouch_patches = ()
+        self._retouch_target = None
+        self._retouch_patch_undo = []
+        self._retouch_patch_redo = []
+        self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = self._read_text_overlay()
         self._text_active = (
             self._read_text_active() if self._text_overlay is not None else False
@@ -573,7 +618,11 @@ class EditController(QObject):
         self._camera_summary = ""
         self._undo_stack.clear()
         self._redo_stack.clear()
-        self._retouch_pending = ()
+        self._retouch_patches = ()
+        self._retouch_target = None
+        self._retouch_patch_undo = []
+        self._retouch_patch_redo = []
+        self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = None
         self._text_active = False
         self._text_draft = ""
@@ -664,62 +713,179 @@ class EditController(QObject):
         self._register_preview()
         self._bump_revision()
 
-    # -- retusálás (#148): a Vágás mintáját követő enter/exit + Alkalmaz/
-    # Mégse eszköz — a kattintással hozott régiók pufferben gyűlnek, az élő
-    # előnézetet azonnal frissítik, de csak az Alkalmaz írja ini-be. -------
+    # -- retusálás (#445): a Vágás mintáját követő enter/exit + Alkalmaz/
+    # Mégse eszköz, DE a foltok maguk a Picasa súgószövege szerinti
+    # kétkattintásos, irányított klónozással jönnek létre:
+    #   1. beginRetouchPatch(x, y)   — a javítandó folt (CÉL) kijelölése,
+    #   2. previewRetouchSource(x, y) — egérmozgatásra a FORRÁS élő
+    #      előnézete (a cél helyére a forrás körüli tartalom kerül),
+    #   3. commitRetouchPatch(x, y) — a második kattintás véglegesíti a
+    #      foltot a PENDING pufferben (nem ír inibe, nem tol GLOBÁLIS
+    #      undo-lépést — csak a patch-enkénti undo/redo látja, ld. lent),
+    #   4. cancelRetouchPatch()      — félbehagyott folt eldobása (pl. Esc).
+    # A puffer élő előnézetet azonnal frissít, de csak az Alkalmaz (a Vágás
+    # mintájára) írja ini-be, EGY globális undo-lépésként. ------------------
 
     @Slot()
     def enterRetouchTool(self) -> None:
-        """A Retusálás eszköz megnyitása: a puffer a MENTETT régiókkal
-        indul (ha a felhasználó korábban már alkalmazott retusálást), nem
-        ír inibe, nem tol undo-lépést."""
+        """A Retusálás eszköz megnyitása: a puffer a MENTETT foltokkal
+        indul (ha a felhasználó korábban már alkalmazott retusálást ezzel
+        az eszközzel — egy korábbi, v1 téglalap-régiós retusálás nem
+        tölthető be foltként, ld. `EditSession.retouch_patches` docsztring),
+        nem ír inibe, nem tol undo-lépést."""
         self._require_active()
-        self._retouch_pending = self._session.retouch_regions()
+        self._retouch_patches = self._session.retouch_patches()
+        self._retouch_target = None
+        self._retouch_patch_undo = []
+        self._retouch_patch_redo = []
         self._register_preview(self._session_with_retouch_pending())
         self._bump_revision()
 
     @Slot()
     def exitRetouchTool(self) -> None:
         """A Retusálás eszköz bezárása (Mégse): a puffer eldobása, visszaáll
-        a ténylegesen mentett előnézetre — a mentett régiók érintetlenek."""
+        a ténylegesen mentett előnézetre — a mentett foltok érintetlenek."""
         self._require_active()
-        self._retouch_pending = ()
+        self._retouch_patches = ()
+        self._retouch_target = None
+        self._retouch_patch_undo = []
+        self._retouch_patch_redo = []
         self._register_preview()
         self._bump_revision()
 
     @Slot(float, float)
-    def previewRetouchRegion(self, x: float, y: float) -> None:
-        """A kattintott pont körüli, `_RETOUCH_REGION_HALF_SIZE` félméretű
-        régió hozzáadása a PENDING pufferhez, élő előnézettel — NEM ír
-        inibe, NEM tol undo-lépést (az Alkalmazásig, `applyRetouch`)."""
+    def beginRetouchPatch(self, x: float, y: float) -> None:
+        """1. kattintás: a javítandó folt (CÉL) kijelölése. Félbehagyott
+        (korábban elkezdett, de nem véglegesített) folt esetén a régi
+        cél-pontot csendben lecseréli az újra."""
         self._require_active()
-        cx, cy = _clamp01(x), _clamp01(y)
-        rect = Rect64(
-            left=_clamp01(cx - _RETOUCH_REGION_HALF_SIZE),
-            top=_clamp01(cy - _RETOUCH_REGION_HALF_SIZE),
-            right=_clamp01(cx + _RETOUCH_REGION_HALF_SIZE),
-            bottom=_clamp01(cy + _RETOUCH_REGION_HALF_SIZE),
-        )
-        self._retouch_pending = (*self._retouch_pending, rect)
+        self._retouch_target = (_clamp01(x), _clamp01(y))
+        self._bump_revision()
+
+    @Slot(float, float)
+    def previewRetouchSource(self, x: float, y: float) -> None:
+        """Egérmozgatás a CÉL kijelölése UTÁN: a csereterület (FORRÁS) élő
+        előnézete — NEM ír inibe, NEM tol undo-lépést. Cél nélkül (nincs
+        folyamatban lévő folt) néma no-op."""
+        self._require_active()
+        if self._retouch_target is None:
+            return
+        patch = self._build_patch(self._retouch_target, (_clamp01(x), _clamp01(y)))
+        preview_patches = (*self._retouch_patches, patch)
+        self._register_preview(self._session.set_retouch_patches(preview_patches))
+        self._bump_revision()
+
+    @Slot(float, float)
+    def commitRetouchPatch(self, x: float, y: float) -> None:
+        """2. kattintás: a folt véglegesítése a PENDING pufferben (patch-
+        enkénti undo-lépéssel) — NEM ír inibe (az Alkalmazásig). Cél nélkül
+        néma no-op."""
+        self._require_active()
+        if self._retouch_target is None:
+            return
+        patch = self._build_patch(self._retouch_target, (_clamp01(x), _clamp01(y)))
+        self._retouch_patch_undo.append(self._retouch_patches)
+        self._retouch_patch_redo.clear()
+        self._retouch_patches = (*self._retouch_patches, patch)
+        self._retouch_target = None
+        self._register_preview(self._session_with_retouch_pending())
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot()
+    def cancelRetouchPatch(self) -> None:
+        """Félbehagyott folt eldobása (pl. Esc) — a korábban VÉGLEGESÍTETT
+        foltok érintetlenek. Félbehagyott folt nélkül néma no-op."""
+        self._require_active()
+        if self._retouch_target is None:
+            return
+        self._retouch_target = None
         self._register_preview(self._session_with_retouch_pending())
         self._bump_revision()
 
+    @Slot(int)
+    def setBrushSize(self, value: int) -> None:
+        """Az ecset méretének beállítása ([1..100]-ra clampelve, #445)."""
+        self._require_active()
+        self._brush_size = max(_BRUSH_SIZE_MIN, min(_BRUSH_SIZE_MAX, value))
+        self.toolsChanged.emit()
+
+    # -- patch-enkénti Undo/Redo/Reset (#445): a retusálás PUFFERÉN
+    # (`_retouch_patches`) dolgozik, NEM a globális `_undo_stack`/
+    # `_redo_stack` vermen — az eszközön belüli, foltonkénti lépegetés,
+    # a „Undo Patch"/„Redo Patch"/„Reset" gombokhoz. -----------------------
+
+    @Slot()
+    def undoPatch(self) -> None:
+        """Az utoljára véglegesített folt visszavonása a pufferben."""
+        if not self._retouch_patch_undo:
+            return
+        self._require_active()
+        self._retouch_patch_redo.append(self._retouch_patches)
+        self._retouch_patches = self._retouch_patch_undo.pop()
+        self._register_preview(self._session_with_retouch_pending())
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot()
+    def redoPatch(self) -> None:
+        """A visszavont folt ismételt alkalmazása a pufferben."""
+        if not self._retouch_patch_redo:
+            return
+        self._require_active()
+        self._retouch_patch_undo.append(self._retouch_patches)
+        self._retouch_patches = self._retouch_patch_redo.pop()
+        self._register_preview(self._session_with_retouch_pending())
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    @Slot()
+    def resetPatches(self) -> None:
+        """A puffer minden foltjának törlése (a félbehagyott folt is) —
+        patch-enkénti undo-lépéssel (`undoPatch` visszaállíthatja). Üres
+        pufferen/félbehagyott folt nélkül néma no-op."""
+        if not self._retouch_patches and self._retouch_target is None:
+            return
+        self._require_active()
+        self._retouch_patch_undo.append(self._retouch_patches)
+        self._retouch_patch_redo.clear()
+        self._retouch_patches = ()
+        self._retouch_target = None
+        self._register_preview(self._session_with_retouch_pending())
+        self._bump_revision()
+        self.toolsChanged.emit()
+
     @Slot()
     def applyRetouch(self) -> None:
-        """Alkalmaz: a puffer régióinak mentése a láncba (undo + ini-írás).
-        Üres puffernél no-op (a gomb ilyenkor a UI-ban tiltott)."""
+        """Alkalmaz: a puffer foltjainak mentése a láncba (undo + ini-írás).
+        Üres puffernél no-op (a gomb ilyenkor a UI-ban tiltott) — egy
+        félbehagyott (cél nélküli forrás) folt csendben elvész."""
         self._require_active()
-        if not self._retouch_pending:
+        if not self._retouch_patches:
             return
         self._push_undo("retouch")
-        self._session = self._session.set_retouch_regions(self._retouch_pending)
-        self._retouch_pending = ()
+        self._session = self._session.set_retouch_patches(self._retouch_patches)
+        self._retouch_patches = ()
+        self._retouch_target = None
+        self._retouch_patch_undo = []
+        self._retouch_patch_redo = []
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
 
+    def _build_patch(
+        self, target: tuple[float, float], source: tuple[float, float]
+    ) -> RetouchPatch:
+        return RetouchPatch(
+            target_x=target[0],
+            target_y=target[1],
+            source_x=source[0],
+            source_y=source[1],
+            radius=self._brush_size / _BRUSH_SIZE_TO_RELATIVE_DIVISOR,
+        )
+
     def _session_with_retouch_pending(self) -> EditSession:
-        return self._session.set_retouch_regions(self._retouch_pending)
+        return self._session.set_retouch_patches(self._retouch_patches)
 
     # -- szöveg-overlay (#148): a `text=`/`textactive=` külön ini-kulcs (NEM
     # a filters= lánc része), ezért a piszkozat/pozíció ide, az

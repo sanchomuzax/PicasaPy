@@ -42,6 +42,18 @@ Rectangle {
     property bool retouchActive: false
     property bool textActive: false
     property int retouchRegionCount: 0
+    // #445: kétkattintásos, irányított klónozás — a hívó (PhotoViewer) a
+    // controllerből tölti: van-e félbehagyott folt (cél kijelölve, forrás
+    // még mozgatás alatt — a "Refining…" felirathoz), a patch-enkénti
+    // Undo/Redo elérhetősége, és az ecset mérete [1..100].
+    property bool retouchPatchPending: false
+    property bool canUndoPatch: false
+    property bool canRedoPatch: false
+    property int brushSize: 20
+    signal brushSizeEdited(int value)
+    signal retouchUndoPatchRequested()
+    signal retouchRedoPatchRequested()
+    signal retouchResetRequested()
     // a szövegmező kezdő tartalma (eszköz-nyitáskor a hívó tölti a
     // controller mentett/piszkozat tartalmával); onTextDraftChanged jelzi
     // vissza a felhasználói gépelést
@@ -1986,9 +1998,27 @@ Rectangle {
         Text {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
-            text: qsTr("Click on the blemishes you want to remove, then Apply.")
+            text: qsTr("Click to select the area to fix. Then, move the"
+                       + " mouse to see a preview of the replacement area."
+                       + " Click on the image again to finalize. Lather,"
+                       + " rinse, repeat.")
             font.pixelSize: Theme.fontSize - 1
             color: Theme.textGray
+        }
+
+        Label {
+            text: qsTr("Brush Size")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+        PicasaSlider {
+            id: retouchBrushSizeSlider
+            objectName: "retouchBrushSizeSlider"
+            Layout.fillWidth: true
+            from: 1; to: 100
+            stepSize: 1
+            value: panel.brushSize
+            onMoved: panel.brushSizeEdited(Math.round(value))
         }
 
         Text {
@@ -1997,6 +2027,42 @@ Rectangle {
             text: qsTr("Regions selected: %1").arg(panel.retouchRegionCount)
             font.pixelSize: Theme.fontSize - 1
             color: Theme.textGray
+        }
+
+        // #445: a Picasa súgószövege szerinti, számítás-alatti előnézetet
+        // jelző felirat — a folt véglegesítéséig (cél kijelölve, forrás
+        // mozgatás alatt) látszik az előnézet fölött.
+        Text {
+            objectName: "retouchRefiningLabel"
+            Layout.fillWidth: true
+            visible: panel.retouchPatchPending
+            text: qsTr("Refining…")
+            font.pixelSize: Theme.fontSize - 1
+            font.italic: true
+            color: Theme.textGray
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 6
+            PanelButton {
+                objectName: "retouchUndoPatchButton"
+                label: qsTr("Undo Patch")
+                buttonEnabled: panel.canUndoPatch
+                onButtonClicked: panel.retouchUndoPatchRequested()
+            }
+            PanelButton {
+                objectName: "retouchRedoPatchButton"
+                label: qsTr("Redo Patch")
+                buttonEnabled: panel.canRedoPatch
+                onButtonClicked: panel.retouchRedoPatchRequested()
+            }
+            PanelButton {
+                objectName: "retouchResetButton"
+                label: qsTr("Reset")
+                buttonEnabled: panel.retouchRegionCount > 0 || panel.retouchPatchPending
+                onButtonClicked: panel.retouchResetRequested()
+            }
         }
 
         RowLayout {

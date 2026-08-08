@@ -9,11 +9,11 @@ import pytest
 
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import Rect64
-from picasapy.ini.retouch import build_retouch_op
+from picasapy.ini.retouch import RetouchPatch, build_retouch_op, build_retouch_patches_op
 from picasapy.render.chain import apply_filters, tilt_cover_scale
 from picasapy.render.color import apply_bw
 from picasapy.render.ops import apply_autocolor, apply_autolight, apply_crop
-from picasapy.render.retouch import apply_retouch
+from picasapy.render.retouch import apply_retouch, apply_retouch_patches
 from picasapy.render.tone import apply_fill, apply_finetune2
 
 
@@ -335,6 +335,31 @@ class TestApplyFiltersRetouch:
         image = _gradient_image()
         ops = (
             FilterOp("retouch", ("1", "nemhex")),
+            FilterOp("autolight", ("1",)),
+        )
+        result, skipped = apply_filters(image, ops)
+        np.testing.assert_array_equal(result, apply_autolight(image))
+        assert skipped == ("retouch",)
+
+    def test_folttal_ugyanaz_mint_kozvetlenul_hivva(self) -> None:
+        """#445: `retouch=2,<patch>...;` — a v2 (folt-alapú, irányított
+        klónozás) kiterjesztés a láncon keresztül is."""
+        image = _gradient_image()
+        # #445: a rádiuszt/koordinátákat úgy választjuk, hogy a fixpontos
+        # (encode_patch/decode_patch) kerekítés kimenete biztosan
+        # megegyezzen a lánc VISSZAOLVASOTT (kvantált) foltjával — egy
+        # pixelhatáron (pl. radius*height == x.5) a kvantálási zaj
+        # Python `round()`-jának bankár-kerekítése eltérő pixelt adhat.
+        patch = RetouchPatch(target_x=0.65, target_y=0.5, source_x=0.15, source_y=0.5, radius=0.12)
+        op = build_retouch_patches_op((patch,))
+        result, skipped = apply_filters(image, (op,))
+        np.testing.assert_array_equal(result, apply_retouch_patches(image, (patch,)))
+        assert skipped == ()
+
+    def test_ervenytelen_patch_kimarad_a_tobbi_lefut(self) -> None:
+        image = _gradient_image()
+        ops = (
+            FilterOp("retouch", ("2", "nemhex")),
             FilterOp("autolight", ("1",)),
         )
         result, skipped = apply_filters(image, ops)

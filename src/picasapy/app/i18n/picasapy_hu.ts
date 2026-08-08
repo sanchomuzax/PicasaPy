@@ -1510,8 +1510,24 @@
         <translation>Szélesség</translation>
     </message>
     <message>
-        <source>Click on the blemishes you want to remove, then Apply.</source>
-        <translation>Kattintson az eltávolítandó foltokra, majd Alkalmaz.</translation>
+        <source>Click to select the area to fix. Then, move the mouse to see a preview of the replacement area. Click on the image again to finalize. Lather, rinse, repeat.</source>
+        <translation>Kattintson a javítandó terület kijelöléséhez. Ezután mozgassa az egeret a csereterület előnézetének megtekintéséhez. Kattintson újra a képre a véglegesítéshez. Ismételje a folt eltüntetéséig.</translation>
+    </message>
+    <message>
+        <source>Brush Size</source>
+        <translation>Ecset mérete</translation>
+    </message>
+    <message>
+        <source>Refining…</source>
+        <translation>Finomítás…</translation>
+    </message>
+    <message>
+        <source>Undo Patch</source>
+        <translation>Folt visszavonása</translation>
+    </message>
+    <message>
+        <source>Redo Patch</source>
+        <translation>Folt újra</translation>
     </message>
     <message>
         <source>Regions selected: %1</source>
