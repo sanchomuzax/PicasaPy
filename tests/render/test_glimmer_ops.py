@@ -115,18 +115,46 @@ class TestInnerGlow:
         result = g.inner_glow(white, (0, 0, 0), 6.0, 6.0, 1.4, alpha=1.0)
         assert int(result[0, 30, 0]) < int(result[20, 30, 0])
 
-    @pytest.mark.parametrize("sigma", [5.0, 20.0, 60.0, 140.0, 280.0])
-    def test_nagy_szigmanal_a_kozeppont_sulya_kozel_nulla(self, sigma):
-        """#504: nagy szigmánál a keret-impulzus szinte egyenletessé mosódik
-        szét — a puszta max-normálás ekkor a KÖZÉPPONTOT is majdnem 1
-        súlyra pumpálná (teljes befeketedés). A `(glow−min)/(max−min)`
-        normálásnak a középpont súlyát ~0-n kell tartania minden szigmánál.
-        """
+    @pytest.mark.parametrize("sigma", [5.0, 20.0, 60.0])
+    def test_kis_szigmanal_a_kozeppont_sulya_kozel_nulla(self, sigma):
+        """#522: az analitikus modellben (a #509 min-max normálásának
+        felváltása) a középpont súlya akkor tart nullához, ha σ jóval
+        kisebb a kép méreténél — ez a VALÓS üzemi tartomány (a
+        `clamp_glow_radius` 255-re vágja σ-t, a fényképek pedig ennél
+        nagyságrendekkel nagyobbak, ld. `TestAnalyticWeightMapProperties`).
+        Ezen a 600×800-as képen az 5–60 tartomány σ << méret."""
         white = np.full((600, 800, 3), 255, dtype=np.uint8)
         result = g.inner_glow(white, (0, 0, 0), sigma, sigma, 1.1, alpha=1.0)
         center = result[300, 400]
-        # fehér alapon: a súly ~0 <=> a középpont pixel közel fehér marad
         assert center.astype(np.float64).mean() > 250.0
+
+    @pytest.mark.parametrize("sigma", [140.0, 280.0])
+    def test_nagy_szigmanal_a_kozep_is_erintve_analitikus_modellben(self, sigma):
+        """#522: ELTÉRÉS a korábbi (#504-es) teszttől — SZÁNDÉKOSAN.
+
+        A #509-es min-max modell ezen a 600×800-as képen MESTERSÉGESEN
+        ~0-n tartotta a közép súlyát FÜGGETLENÜL σ-tól (a saját min/maxára
+        nyújtott) — ez volt pontosan a #522 jegyben megnevezett hiba: a σ
+        nem csak az ALAKOT, hanem tévesen a MÉLYSÉGET is befolyásolta. Az
+        analitikus modellben, ha σ összemérhető a kép méretével, a közép
+        LEGITIM módon kap ragyogást — ez a valódi fizika, amit a
+        referencia-mérés igazol (Holga-eltérés 31,64→14,19, Lomo-eltérés
+        14,63→8,55, ld. a PR-jelentést). A teszt csak azt várja el, hogy a
+        hatás MÉRHETŐ (nem nullázott mesterségesen), és σ növelésével nő.
+        """
+        white = np.full((600, 800, 3), 255, dtype=np.uint8)
+        result = g.inner_glow(white, (0, 0, 0), sigma, sigma, 1.1, alpha=1.0)
+        center = result[300, 400].astype(np.float64).mean()
+        assert center < 250.0
+
+    def test_nagy_szigmanal_a_kozep_hatasa_no_sigmaval(self):
+        """#522: a 140→280 σ-emelés a fenti (600×800-as, összemérhető méretű)
+        képen ERŐSÍTI a közép-hatást — ez a valódi, renormalizálatlan
+        mélység-viselkedés."""
+        white = np.full((600, 800, 3), 255, dtype=np.uint8)
+        center_140 = g.inner_glow(white, (0, 0, 0), 140.0, 140.0, 1.1, alpha=1.0)[300, 400].mean()
+        center_280 = g.inner_glow(white, (0, 0, 0), 280.0, 280.0, 1.1, alpha=1.0)[300, 400].mean()
+        assert center_280 < center_140
 
     def test_nagy_kepen_sem_feketedik_be_a_kozep(self):
         """A #504 jelentés konkrét mérete (800×600) valódi zajképen."""
@@ -135,6 +163,46 @@ class TestInnerGlow:
         radius = 35.0 * 0.02 * max(img.shape[:2]) / 2.0  # apply_lomo sugara ~280
         result = g.inner_glow(img, (0, 0, 0), radius, radius, 1.1, alpha=1.0)
         assert result.mean() > 20.0
+
+
+class TestAnalyticWeightMapProperties:
+    """#522: az analitikus súlytérkép (`covered = ay·ax`, `weight =
+    (1−covered)·strength`) ELVÁRT tulajdonságai VALÓS fényképméretű
+    (2560×1702, a referencia-fotó mérete) képen, a `GLOW_RADIUS_MAX`-ig
+    (255) terjedő TETSZŐLEGES σ-ra — ezt a #509-es min-max normálás NEM
+    tudta garantálni (a saját min/maxára nyújtott, ami σ-tól függően
+    torzította a tényleges mélységet)."""
+
+    _HEIGHT, _WIDTH = 1702, 2560
+
+    @pytest.mark.parametrize("sigma", [1.0, 10.0, 50.0, 100.0, 200.0, 255.0])
+    def test_kozeppont_sulya_kozel_nulla_barmely_korlatozott_sigmara(self, sigma):
+        white = np.full((self._HEIGHT, self._WIDTH, 3), 255, dtype=np.uint8)
+        result = g.inner_glow(white, (0, 0, 0), sigma, sigma, 1.4, alpha=1.0)
+        center = result[self._HEIGHT // 2, self._WIDTH // 2].astype(np.float64).mean()
+        assert center > 245.0, f"σ={sigma}: közép={center:.1f}, várt >245"
+
+    @pytest.mark.parametrize("sigma", [1.0, 10.0, 50.0, 100.0, 200.0, 255.0])
+    def test_szel_sulya_szigoruan_nagyobb_mint_a_kozepe(self, sigma):
+        white = np.full((self._HEIGHT, self._WIDTH, 3), 255, dtype=np.uint8)
+        result = g.inner_glow(white, (0, 0, 0), sigma, sigma, 1.4, alpha=1.0)
+        edge = float(result[0, self._WIDTH // 2, 0])
+        center = float(result[self._HEIGHT // 2, self._WIDTH // 2, 0])
+        assert edge <= center
+
+    def test_szel_sulya_monoton_kozeliti_a_strengtht_sigma_novelesevel(self):
+        """A σ növelésével a szél EGYRE SÖTÉTEBB (a `strength`-hez egyre
+        közelebbi VALÓDI mélységet kap) — ez a renormalizálatlan mélység-
+        hatás, amit a min-max modell elfedett (ott a szél súlya σ-tól
+        gyakorlatilag függetlenül ~1-re volt nyújtva)."""
+        white = np.full((self._HEIGHT, self._WIDTH, 3), 255, dtype=np.uint8)
+        strength = 1.4
+        sigmas = [1.0, 20.0, 80.0, 150.0, 255.0]
+        edges = [
+            float(g.inner_glow(white, (0, 0, 0), s, s, strength, alpha=1.0)[0, self._WIDTH // 2, 0])
+            for s in sigmas
+        ]
+        assert edges == sorted(edges, reverse=True)
 
 
 class TestClampGlowRadius:

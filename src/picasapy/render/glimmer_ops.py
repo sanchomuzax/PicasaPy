@@ -275,41 +275,31 @@ def clamp_glow_radius(radius: float) -> float:
 
 # --- Belső ragyogás (GlowImageOperation innerglow) ----------------------
 
-# Nagy szigmájú Gauss-elmosásnál a szigma/lépték arányát ekörül tartjuk a
-# leskálázott rácson — elég kicsi ahhoz, hogy a `GaussianBlur` kernelmérete
-# ne robbanjon a felbontással, elég nagy ahhoz, hogy a visszaskálázás után a
-# szél→közép esés alakja ne torzuljon láthatóan (mérve: #504 jelentés).
-_BORDER_GLOW_TARGET_SIGMA = 8.0
+# `erf` közelítés (Abramowitz–Stegun 7.1.26, |hiba| < 1,5·10⁻⁷) — a projekt
+# nem függ a scipy-től, ez a néhány ezer elemű (egy-egy tengelyre eső)
+# tömbön bőven elég pontos, és `numpy`-only marad.
+_ERF_A = (0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429)
+_ERF_P = 0.3275911
 
 
-def _border_glow(height: int, width: int, xblur: float, yblur: float) -> np.ndarray:
-    """A `height`×`width` képhatár egypixeles keret-impulzusának
-    `xblur`/`yblur` szigmájú Gauss-elmosása.
+def _erf(x: np.ndarray) -> np.ndarray:
+    sign = np.sign(x)
+    ax = np.abs(x)
+    t = 1.0 / (1.0 + _ERF_P * ax)
+    poly = ((((_ERF_A[4] * t + _ERF_A[3]) * t + _ERF_A[2]) * t + _ERF_A[1]) * t + _ERF_A[0]) * t
+    y = 1.0 - poly * np.exp(-ax * ax)
+    return sign * y
 
-    Nagy szigmánál a teljes felbontáson futó `GaussianBlur` kernelmérete
-    (és ezzel a futásideje) a szigmával nő — egy valódi fényképméretű
-    (pl. 4000×3000) képen ez percekig tartó „lefagyást" okoz (#504). Mivel
-    a bemenet (a keret-impulzus) és a kimenet iránti igény is csak a
-    NAGYVONALÚ, szél→közép lecsengő ALAKRA vonatkozik (az `inner_glow` a
-    végén úgyis min-max normalizál), a keret leskálázható, ott elmosható
-    kisebb (arányosan kisebb szigmájú) rácson, majd a kép méretére
-    visszaskálázható — érdemi vizuális veszteség nélkül, sokkal
-    gyorsabban.
+
+def _box_blur_axis(length: int, sigma: float) -> np.ndarray:
+    """Az `[0, length)` tömör (mindenütt 1) szakasz Gauss-elmosása
+    `sigma` szigmával, zárt alakban (`erf`-fel), a szakasz pixelközepein
+    kiértékelve — a `covered` (borítottság) egyik tengelye `inner_glow`-ban.
     """
-    border = np.zeros((height, width), dtype=np.float32)
-    border[0, :] = 1.0
-    border[-1, :] = 1.0
-    border[:, 0] = 1.0
-    border[:, -1] = 1.0
-    min_sigma = min(float(xblur), float(yblur))
-    scale = max(1, int(min_sigma / _BORDER_GLOW_TARGET_SIGMA))
-    if scale <= 1:
-        return gaussian_blur_f(border, xblur, yblur)
-    small_h = max(1, height // scale)
-    small_w = max(1, width // scale)
-    small_border = cv2.resize(border, (small_w, small_h), interpolation=cv2.INTER_AREA)
-    small_glow = gaussian_blur_f(small_border, xblur / scale, yblur / scale)
-    return cv2.resize(small_glow, (width, height), interpolation=cv2.INTER_LINEAR)
+    sigma = max(float(sigma), 1e-6)
+    denom = np.sqrt(2.0) * sigma
+    idx = np.arange(length, dtype=np.float64) + 0.5
+    return 0.5 * (_erf(idx / denom) - _erf((idx - length) / denom))
 
 
 def inner_glow(
@@ -321,41 +311,40 @@ def inner_glow(
     alpha: float = 1.0,
     mask: np.ndarray | None = None,
 ) -> np.ndarray:
-    """`GlowImageOperation(innerglow=true)`: a kép SZÉLÉTŐL befelé ható,
-    Gauss-elmosott „izzás" a `color` színnel — a Picasa ezt Vignette-hez
-    (fekete) és Matte-hoz (fehér) használja, MuseumMatte-nál pedig a
-    paszpartu-vonalak mellett.
+    """`GlowImageOperation(innerglow=true)`: a kép SZÉLÉTŐL befelé ható
+    „izzás" a `color` színnel — a Picasa ezt Vignette-hez (fekete) és
+    Matte-hoz (fehér) használja, MuseumMatte-nál pedig a paszpartu-vonalak
+    mellett.
 
-    Implementáció: a képhatár egypixeles impulzusát `xblur`/`yblur`
-    szigmával elmosva kapjuk a befelé futó „izzás-térképet" (a szélen
-    ~1, a középpont felé lecsengő), ezt `strength`-tel súlyozva keverjük
-    a `color`-ral az eredeti kép fölé. `mask` (opcionális, H×W [0,1])
-    ezt a hatást TOVÁBB korlátozza (pl. MuseumMatte csak a vonal sávján).
-    `color` csatornasorrendje **RGB** — ld. `tint_multiply` docstringjét
-    (#510).
+    **Analitikus modell (#522, a #509-es min-max normálás felváltása).**
+    A belső ragyogás bemenete mindig egy TÖMÖR téglalap alfa-maszk (a teljes
+    kép — a régi „keret-impulzus" ennek az élén futó Gauss-elmosás
+    közelítése volt). Egy tömör téglalap Gauss-elmosása a szeparábilis
+    kernel miatt tengelyenként EGY-EGY `erf`-fel, zárt alakban számolható
+    (`_box_blur_axis`), a 2D borítottság a két tengely SZORZATA:
 
-    Nagy `xblur`/`yblur` szigmánál a keret-impulzus szétterül és majdnem
-    egyenletessé válik a teljes képen — a puszta maximumra normálás
-    (`glow / glow.max()`) ekkor a majdnem-lapos teret is 1-ig pumpálná,
-    ami a KÖZÉPPONTOT is befedné a `color`-ral (a #504 hiba: a Lomo/Holga
-    kimenete emiatt vált feketévé). Ezért a minimumot is figyelembe véve,
-    `(glow − min) / (max − min)` alakban normálunk — ez a szélen ~1-re,
-    a majdnem lapos belső területen ~0-ra fut, a szigmától függetlenül.
-    Elfajuló esetben (`max − min` ~0, azaz a tér a lebegőpontos zaj
-    szintjéig ellaposodott) nincs értelmezhető szél→közép esés, így a
-    súlyt egységesen nullázzuk — nincs látható ragyogás-hatás.
+        covered = ay[:, None] · ax[None, :]
+        weight  = (1 − covered) · strength
+
+    Ez a szélen ad NAGY (a `strength`-hez közeli), a középen ~0 súlyt —
+    és a `strength` a súly VALÓDI mélységét szabja, nem csak az alakot: itt
+    nincs saját min/maxra nyújtás, tehát (ellentétben a #509 min-max
+    modelljével) nagy szigmánál a `strength` ténylegesen elhalványul, nem
+    marad mesterségesen 1-re pumpálva. Nincs konvolúciós kernel, nincs
+    le-fel skálázás — a költség a kép méretével lineáris és a σ-tól
+    FÜGGETLEN (a `_box_blur_axis` csak a szélesség/magasság hosszú 1D
+    tömbökön dolgozik, a 2D `covered` egyetlen külső szorzat).
+
+    `mask` (opcionális, H×W [0,1]) a hatást TOVÁBB korlátozza (pl.
+    MuseumMatte csak a vonal sávján). `color` csatornasorrendje **RGB** —
+    ld. `tint_multiply` docstringjét (#510).
     """
     validate_image(image)
     height, width = image.shape[:2]
-    glow = _border_glow(height, width, xblur, yblur)
-    peak = float(glow.max())
-    floor = float(glow.min())
-    spread = peak - floor
-    if spread > 1e-6:
-        glow = (glow - np.float32(floor)) / np.float32(spread)
-    else:
-        glow = np.zeros_like(glow)
-    weight = np.clip(glow * np.float32(strength), 0.0, 1.0) * np.float32(alpha)
+    ax = _box_blur_axis(width, xblur)
+    ay = _box_blur_axis(height, yblur)
+    covered = (ay[:, np.newaxis] * ax[np.newaxis, :]).astype(np.float32)
+    weight = np.clip((1.0 - covered) * np.float32(strength), 0.0, 1.0) * np.float32(alpha)
     if mask is not None:
         weight = weight * mask
     color_arr = np.array(color, dtype=np.float32)
