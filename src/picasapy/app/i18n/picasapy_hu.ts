@@ -1053,6 +1053,11 @@
         <translation>Jó napom van</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="352"/>
+        <source>Creative Kit</source>
+        <translation>Kreatív Kit</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="340"/>
         <source>Auto Contrast</source>
         <translation>Automatikus kontraszt</translation>

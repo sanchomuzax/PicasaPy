@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.30] – 2026-08-08
+
+### Hozzáadva
+- **„Összes szerkesztés visszavonása" (#465):** a Kép menü eddig szürke
+  pontja mostantól működik — a kijelölt képek teljes szerkesztési láncát
+  törli, megerősítés után. A művelet egy lépésben visszavonható, és a
+  visszavonás a vágást is helyreállítja.
+
 ## [0.6.29] – 2026-08-08
 
 ### Hozzáadva
