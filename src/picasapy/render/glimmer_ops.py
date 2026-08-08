@@ -303,6 +303,8 @@ def inner_glow(
     ~1, a középpont felé lecsengő), ezt `strength`-tel súlyozva keverjük
     a `color`-ral az eredeti kép fölé. `mask` (opcionális, H×W [0,1])
     ezt a hatást TOVÁBB korlátozza (pl. MuseumMatte csak a vonal sávján).
+    `color` csatornasorrendje **RGB** — ld. `tint_multiply` docstringjét
+    (#510).
 
     Nagy `xblur`/`yblur` szigmánál a keret-impulzus szétterül és majdnem
     egyenletessé válik a teljes képen — a puszta maximumra normálás
@@ -374,6 +376,9 @@ def apply_noise(
 def gradient_map(image: np.ndarray, colors: tuple[tuple[int, int, int], ...]) -> np.ndarray:
     """`GradientMap`: a Rec.601 luma [0..255] értékét a `colors` (egyenletes
     közű, `len(colors)` pontos) színátmenetére képezi le.
+
+    `colors` elemeinek csatornasorrendje **RGB** — ld. `tint_multiply`
+    docstringjét (#510).
     """
     validate_image(image)
     if len(colors) < 2:
@@ -441,7 +446,17 @@ def circular_gradient_mask(
 
 
 def tint_multiply(image: np.ndarray, color: tuple[int, int, int], alpha: float) -> np.ndarray:
-    """`Tint(Color=..., BlendMode=multiply)`: szorzó-színezés `alpha` súllyal."""
+    """`Tint(Color=..., BlendMode=multiply)`: szorzó-színezés `alpha` súllyal.
+
+    `color` csatornasorrendje **ugyanaz, mint a `image` tömbé** — ez a
+    modul (és a teljes `render/chain.py` csővezeték, ld. a modul-docstring
+    tetejét) **RGB**-terű, NEM BGR: `color[0]` = R, `color[1]` = G,
+    `color[2]` = B. A `filterdesc.xml` hex színeit (`0xRRGGBB`) ezért
+    közvetlenül, csere nélkül `(R, G, B)` sorrendben kell megadni. A
+    BGR/RGB keveredés (#510) csak a modulhatárokon (pl. `cv2.imread`
+    kimenete, `export/exporter.py::_apply_filter_chain`) számít, ahol a
+    hívó `cv2.cvtColor(..., COLOR_BGR2RGB/RGB2BGR)`-rel konvertál.
+    """
     validate_image(image)
     image_f = to_float(image)
     color_layer = np.empty_like(image_f)
@@ -465,6 +480,9 @@ def resize_image(image: np.ndarray, width: int, height: int, smoothing: bool = T
 def bw_tint(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
     """`BW(filtercolor=...)`: szürkeárnyalat, a luma-val arányosan a `color`
     felé színezve (`ki = luma/255 · color`) — a Holga „vörösesbarna" B&W-je.
+
+    `color` csatornasorrendje **RGB** (megegyezik a `image` tömb saját
+    sorrendjével) — ld. `tint_multiply` docstringjét a #510-es tanulságról.
     """
     validate_image(image)
     image_f = to_float(image)

@@ -15,6 +15,12 @@ Mért alapok (`docs/specs/filters-decoded.md`, 3. kör):
   az y középpont körül, `gradiens` szélességű átmenettel, `árnyék` erősségű
   keveréssel a szín felé; az x és az irány szerepe méretlen) dokumentált
   KÖZELÍTÉS — a #115 golden-harness pontosítja majd.
+
+#510: a `color` paraméterek (mind a három függvénynél) **RGB**
+csatornasorrendűek — ugyanaz, mint a hívó `render/chain.py`/`glimmer_*`
+csővezeték belső képábrázolása (ld. `glimmer_ops.py` modul-docstringjét).
+`parse_rgb_hex` a `filters=` hexát (`AARRGGBB`) is `(R, G, B)`-ként adja
+vissza, nincs csere.
 """
 
 from __future__ import annotations
