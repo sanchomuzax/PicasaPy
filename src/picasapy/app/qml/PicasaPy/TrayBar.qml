@@ -170,33 +170,130 @@ Column {
 
             // kijelölés-tálca: a kijelölt képek miniatűrjei (Picasa) —
             // #406: kompakt módban zsugorodik (Layout.fillWidth), hogy
-            // helyet adjon a jobb oldali gomboknak
+            // helyet adjon a jobb oldali gomboknak.
+            // #455: ha a tálcán van MEGTARTOTT kép (a mappaváltást is
+            // túlélő `TrayMixin`-halmaz), az előnézet AZOKAT mutatja —
+            // mappától függetlenül (`heldThumbUrlAt`); tartott kép
+            // híján a régi viselkedés (a jelenlegi kijelölés) marad.
             Item {
+                id: trayPreview
                 Layout.preferredWidth: trayMainBar.compact ? 70 : 200
                 Layout.preferredHeight: 46
+                readonly property int heldCount: tray.ctl ? tray.ctl.heldCount : 0
                 Flow {
                     anchors.fill: parent
                     spacing: 2
                     clip: true
                     Repeater {
-                        model: tray.appWindow.selectedIndexes
+                        objectName: "trayPreviewRepeater"
+                        model: trayPreview.heldCount > 0
+                            ? trayPreview.heldCount
+                            : tray.appWindow.selectedIndexes.length
                         delegate: Image {
-                            required property var modelData
+                            objectName: "trayPreviewThumb"
+                            required property int index
                             width: 20; height: 20
-                            source: tray.ctl
-                                ? tray.ctl.photos.thumbUrlAt(Number(modelData))
-                                : ""
+                            source: !tray.ctl ? ""
+                                : trayPreview.heldCount > 0
+                                  ? tray.ctl.heldThumbUrlAt(index)
+                                  : tray.ctl.photos.thumbUrlAt(
+                                        Number(tray.appWindow.selectedIndexes[index]))
                             fillMode: Image.PreserveAspectCrop
                             asynchronous: true
                         }
                     }
                 }
                 Text {
-                    visible: tray.appWindow.selectedIndexes.length === 0
+                    visible: trayPreview.heldCount === 0
+                             && tray.appWindow.selectedIndexes.length === 0
                     anchors.centerIn: parent
                     text: qsTr("Selection")
                     color: Theme.placeholderText
                     font.pixelSize: Theme.fontSize
+                }
+            }
+            // #455: a Picasa 3-gombos oszlopa (design-guide.md tálca-audit,
+            // 5.2/5.3-2. pont) — a zöld pin ("Kijelölés megtartása" / Hold
+            // Selection) és a piros kör ("Tálca ürítése" / Clear Tray) a
+            // TrayMixin-t köti be. A HARMADIK gomb (kék könyv+nyíl,
+            // "Add to" album) NEM készül el ebben a lépcsőben — a
+            // tálcán tartott képek albumhoz adása külön jegy (a
+            // modul-docstring "NINCS ebben a lépcsőben" szakasza).
+            PicasaButton {
+                id: trayHoldBtn
+                objectName: "trayHoldButton"
+                enabled: !tray.appWindow.viewerOpen
+                         && tray.appWindow.selectedIndexes.length > 0
+                onClicked: tray.ctl && tray.ctl.holdRows(
+                    tray.appWindow.selectedIndexes)
+                Layout.preferredWidth: 26
+                ToolTip.text: qsTr("Hold Selection")
+                ToolTip.visible: trayHoldBtn.hovered
+                ToolTip.delay: 500
+                contentItem: Image {
+                    objectName: "trayHoldIcon"
+                    anchors.centerIn: parent
+                    source: "icons/hold-pin.svg"
+                    sourceSize: Qt.size(14, 14)
+                    opacity: trayHoldBtn.enabled ? 1.0 : 0.5
+                }
+            }
+            PicasaButton {
+                id: trayClearBtn
+                objectName: "trayClearButton"
+                enabled: trayPreview.heldCount > 0
+                onClicked: trayClearConfirm.open()
+                Layout.preferredWidth: 26
+                ToolTip.text: qsTr("Clear Tray")
+                ToolTip.visible: trayClearBtn.hovered
+                ToolTip.delay: 500
+                contentItem: Image {
+                    objectName: "trayClearIcon"
+                    anchors.centerIn: parent
+                    source: "icons/tray-clear.svg"
+                    sourceSize: Qt.size(14, 14)
+                    opacity: trayClearBtn.enabled ? 1.0 : 0.5
+                }
+            }
+            // #455: a Picasa saját szövegű rákérdezése ürítéskor —
+            // „Would you like to clear your old held items from the
+            // tray?" → „Clear Tray" / „Don't Clear" (az issue kutatása
+            // szerint ez a szöveg). Az általános `ConfirmDialog` Igen/
+            // Nem/Mégse feliratai NEM egyeznek ezekkel, ezért itt egyedi,
+            // egyszerű dialógus.
+            Dialog {
+                id: trayClearConfirm
+                objectName: "trayClearConfirmDialog"
+                modal: true
+                anchors.centerIn: parent ? Overlay.overlay : undefined
+                title: qsTr("Clear Tray")
+                Text {
+                    Layout.preferredWidth: 280
+                    text: qsTr(
+                        "Would you like to clear your old held items"
+                        + " from the tray?")
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+                footer: RowLayout {
+                    spacing: 8
+                    Item { Layout.fillWidth: true }
+                    PicasaButton {
+                        objectName: "trayClearConfirmYesButton"
+                        text: qsTr("Clear Tray")
+                        accent: Theme.picasaGreen
+                        onClicked: {
+                            tray.ctl && tray.ctl.clearHeld()
+                            trayClearConfirm.close()
+                        }
+                    }
+                    PicasaButton {
+                        objectName: "trayClearConfirmNoButton"
+                        text: qsTr("Don't Clear")
+                        onClicked: trayClearConfirm.close()
+                    }
+                    Item { width: 8 }
                 }
             }
 

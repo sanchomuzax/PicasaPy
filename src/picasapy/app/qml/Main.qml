@@ -759,6 +759,14 @@ ApplicationWindow {
                                         isVideo: modelData.isVideo
                                         hasEdits: modelData.hasEdits
                                         hasGeo: modelData.hasGeo === true
+                                        // #455: a tálcán tartott kép
+                                        // jelvénye — a `heldCount` a
+                                        // reaktív trigger (a `photos.
+                                        // revision` mintája, ld. TrayBar).
+                                        held: controller
+                                              ? (controller.heldCount,
+                                                 controller.isHeldAt(modelData.row))
+                                              : false
                                         isHidden: modelData.hidden === true
                                         index: modelData.row
                                         keywords: modelData.keywords

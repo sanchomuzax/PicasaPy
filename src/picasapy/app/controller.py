@@ -52,6 +52,7 @@ from .models import FolderListModel, PhotoGridModel, folder_order
 from .perf_controller import PerfMonitorMixin
 from .photo_ops_controller import PhotoOpsMixin
 from .search_controller import SearchMixin
+from .tray_controller import TrayMixin
 from .search_results import group_by_folder, groups_to_qml
 from .thumbnail_provider import ThumbnailProvider
 
@@ -85,6 +86,7 @@ class AppController(
     CreateMixin,
     GeoMixin,
     LibraryMixin,
+    TrayMixin,
     QObject,
 ):
     statusChanged = Signal()

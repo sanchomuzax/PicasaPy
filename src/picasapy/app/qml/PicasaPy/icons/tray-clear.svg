@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#455): "Tálca ürítése" (Clear Tray) gomb ikonja
+       - a design-guide.md tálca-auditja szerint az eredeti 3-gombos
+       oszlopában a törlés/tiltás gombja piros kör-ikon (a pontos
+       Picasa-rajzolat nem ismert, csak a szín + jelentés). -->
+  <circle cx="12" cy="12" r="9" fill="#e04a3f"/>
+  <rect x="6.5" y="10.4" width="11" height="3.2" rx="1.2" fill="#ffffff"/>
+</svg>
