@@ -5,6 +5,27 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.37] – 2026-08-08
+
+### Hozzáadva
+- **Importálás az eredeti munkamenete szerint (#441):**
+  - **Célmappa neve három módban** — kézi név, **a felvétel dátuma szerint
+    külön mappákba bontva** (ez a Picasa importjának a lelke), vagy a mai
+    dátum. A korábbi, szabad szöveges sablon-mezőt ez váltja fel.
+  - **„Duplikátumok kizárása"** — a már importált képek kimaradnak, és az
+    előnézet kiírja, hány ilyen van.
+  - **Egyenkénti válogatás** — a bélyegképeken ki/be kapcsolható, mi jöjjön
+    át; plusz „Összes kizárása" / „Összes felvétele".
+  - **„Másolás után:" három állapot** — a forrás érintetlenül hagyása, csak
+    az átmásolt képek törlése, vagy minden törlése. A két törlő állapothoz
+    az eredeti kétlépcsős, egyre erősebb figyelmeztetése tartozik.
+
+### Javítva
+- **Az importálás nem törölhet át nem jutott fájlt:** ha a másolás közben
+  néhány fájl elbukik, a „minden törlése" ezentúl meghagyja őket a
+  forráson — korábban azok is törlődtek volna, pedig épp azok nem kerültek
+  át. A törlés továbbra is csak sikeres másolás után fut le.
+
 ## [0.6.36] – 2026-08-08
 
 ### Módosítva

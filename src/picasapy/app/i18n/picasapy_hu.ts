@@ -3606,6 +3606,44 @@
         <translation>Nincs kép vagy videó ebben a mappában.</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="200"/>
+        <source>Exclude Duplicates</source>
+        <translation>Duplikátumok kizárása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209"/>
+        <source>Exclude photos that are already imported into Picasa</source>
+        <translation>A már a Picasába importált fényképek kizárása</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216"/>
+        <source>%n of those are duplicates already in Picasa</source>
+        <translation>
+            <numerusform>Ebből %n már szerepel a Picasában (duplikátum)</numerusform>
+            <numerusform>Ebből %n már szerepel a Picasában (duplikátum)</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="265"/>
+        <source>Exclude All</source>
+        <translation>Összes kizárása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="270"/>
+        <source>Include All</source>
+        <translation>Összes bevonása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320"/>
+        <source>Include</source>
+        <translation>Bevonás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320"/>
+        <source>Exclude</source>
+        <translation>Kizárás</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="235"/>
         <source>Destination:</source>
         <translation>Cél:</translation>
@@ -3616,37 +3654,82 @@
         <translation>Mappasablon:</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376"/>
+        <source>Enter new folder title or choose existing folder to continue</source>
+        <translation>Adj meg egy új mappanevet, vagy válassz meglévő mappát a folytatáshoz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="392"/>
+        <source>Import into separate folders for each date taken</source>
+        <translation>Importálás külön mappákba felvétel dátuma szerint</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="399"/>
+        <source>Import into folder with today's date</source>
+        <translation>Importálás a mai dátum nevű mappába</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="408"/>
+        <source>After Copying:</source>
+        <translation>Másolás után:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="419"/>
+        <source>Leave card alone</source>
+        <translation>Kártya érintetlenül hagyása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="426"/>
+        <source>Delete only copied photos</source>
+        <translation>Csak a másolt fényképek törlése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="433"/>
+        <source>Delete everything on card</source>
+        <translation>Minden törlése a kártyáról</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="115"/>
+        <source>Are you sure you want to remove the imported files from your card? This cannot be undone.</source>
+        <translation>Biztosan eltávolítod az importált fájlokat a kártyáról? Ez nem vonható vissza.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="531"/>
+        <source>WARNING! You have chosen to delete ALL FILES…</source>
+        <translation>FIGYELEM! Az ÖSSZES FÁJL törlését választottad…</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="276"/>
         <source>Move instead of copy (source files will be deleted)</source>
         <translation>Áthelyezés másolás helyett (a forrásfájlok törlődnek)</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="307"/>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="466"/>
         <source>%1 / %2 imported</source>
         <translation>%1 / %2 importálva</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="318"/>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="477"/>
         <source>Done: %1 imported, %2 failed</source>
         <translation>Kész: %1 importálva, %2 sikertelen</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="331"/>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="490"/>
         <source>Import</source>
         <translation>Importálás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="340"/>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="499"/>
         <source>Close</source>
         <translation>Bezárás</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="348"/>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507"/>
         <source>Choose source folder...</source>
         <translation>Forrásmappa kiválasztása…</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="357"/>
+        <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="516"/>
         <source>Choose destination folder...</source>
         <translation>Célmappa kiválasztása…</translation>
     </message>
