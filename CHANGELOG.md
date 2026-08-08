@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.42] – 2026-08-08
+
+### Megjegyzés
+- **Az effekt-színek rendben vannak (#510):** felmerült, hogy három effekt
+  (Holga, CrossProcess, NightVision) színénél fel van cserélve a piros és a
+  kék. Méréssel kiderült, hogy **nincs hiba**: az effekt-lánc szándékosan
+  RGB-térben dolgozik, a be- és kilépési pontok pedig átváltanak. A Holga
+  kimenete a valódi feldolgozási úton meleg vörös, ahogy az eredetiben is.
+  Az érintett függvények leírása mostantól **kimondja** a színsorrendet,
+  hogy ez ne okozzon újabb félreértést.
+- **A „Holga-szerű" effekt sötétsége nem programhiba (#504):** a lánc
+  minden lépése az eredeti Picasa dokumentált receptje szerint fut. A
+  sötétség az effekt hangolásának kérdése (#317), nem hibás számításé.
+
+### Hozzáadva
+- Az öt vignettát használó effektre (Lomo, Holga, Vignette, Matte,
+  NightVision) **valódi fényképpel** futó tesztek: színsorrend,
+  méretfüggetlenség és futásidő-korlát.
+
 ## [0.6.41] – 2026-08-08
 
 ### Hozzáadva

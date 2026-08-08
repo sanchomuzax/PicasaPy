@@ -4,10 +4,14 @@ Neon min/alap/max határeset-tesztjei.
 
 from __future__ import annotations
 
+import time
+
+import cv2
 import numpy as np
 import pytest
 
 from picasapy.render import glimmer_creative as c
+from tests.support.realistic_photo import make_realistic_photo
 
 
 @pytest.fixture
@@ -16,6 +20,13 @@ def image() -> np.ndarray:
     img = rng.integers(20, 235, size=(64, 96, 3), dtype=np.uint8)
     img[:20, :, 0] = 220
     return img
+
+
+def _real_photo_rgb(height: int, width: int, seed: int = 7) -> np.ndarray:
+    """#504 (j1): VALÓDI, folytonos hisztogramú fotó-szerű kép, a
+    `render/chain.py`/`export/exporter.py` mintáját követve BGR→RGB
+    konvertálva (a glimmer-csővezeték RGB-terű, ld. `glimmer_ops.py`)."""
+    return cv2.cvtColor(make_realistic_photo(height=height, width=width, seed=seed), cv2.COLOR_BGR2RGB)
 
 
 def _assert_valid(result):
@@ -112,6 +123,57 @@ class TestLomo:
         c.apply_lomo(img)
         elapsed = time.perf_counter() - t0
         assert elapsed < 10.0, f"apply_lomo(2000x1500) túl lassú: {elapsed:.2f}s"
+
+
+class TestHolgaRealPhoto504510:
+    """#504/#510 — VALÓDI (folytonos hisztogramú) fotóval mért regresszió,
+    nem szintetikus szürke/zaj lappal (j1). A `main` állapotában a Holga
+    sötét (~kétharmad tiszta fekete), de ez az `inner_glow`/`bw_tint`/
+    kontraszt-lánc DOKUMENTÁLT, a `filterdesc.xml`-ből átvett receptjének
+    a következménye, nem implementációs hiba — ld. a #504 utolsó
+    kommentjét és a PR-jelentést. A teszt ezt a MÉRT állapotot rögzíti
+    (nem "javítja meg" találgatással), plusz a #510 csatorna-sorrendet
+    ellenőrzi.
+    """
+
+    def test_r_nagyobb_mint_b_a_kimeneten(self):
+        """#510 elfogadási feltétel: a Holga kimenete MELEG (R>B), a
+        valódi (fájlba kerülő) BGR-reprezentációban mérve — nem a
+        glimmer-belső RGB-tömbön, aminek a csatornasorrendje félrevezette
+        az eredeti jegy "bizonyítékát" (ld. jelentés)."""
+        photo_rgb = _real_photo_rgb(200, 300)
+        result_rgb = c.apply_holga(photo_rgb)
+        result_bgr = cv2.cvtColor(result_rgb, cv2.COLOR_RGB2BGR)
+        red_mean = float(result_bgr[..., 2].mean())
+        blue_mean = float(result_bgr[..., 0].mean())
+        assert red_mean > blue_mean, f"R={red_mean:.1f} nem nagyobb, mint B={blue_mean:.1f}"
+
+    @pytest.mark.parametrize("effect_name,apply_fn", [("Holga", c.apply_holga), ("Lomo", c.apply_lomo)])
+    def test_meretfuggetlen_fekete_arany(self, effect_name, apply_fn):
+        """j2: a tiszta fekete képpontok aránya 96 px-en és 1600 px-en
+        néhány százalékon belül egyezzen (nagyvonalú, 15pp tolerancia,
+        hogy ne legyen ingatag a mérés-zaj miatt)."""
+
+        def black_pct(img: np.ndarray) -> float:
+            return float(np.all(img == 0, axis=-1).mean() * 100.0)
+
+        small = apply_fn(_real_photo_rgb(96, 72))
+        large = apply_fn(_real_photo_rgb(1600, 1200))
+        diff = abs(black_pct(small) - black_pct(large))
+        assert diff <= 15.0, (
+            f"{effect_name}: fekete-arány 96px={black_pct(small):.1f}% "
+            f"vs 1600px={black_pct(large):.1f}% — {diff:.1f}pp eltérés"
+        )
+
+    def test_holga_perf_nagy_kepen(self):
+        """j5: a ragyogás-lépés (közös `_border_glow`) nagy képen is
+        gyors maradjon (a javítás előtt egy 4000×3000-es fotón egyetlen
+        ragyogás-lépés 168 s volt — nagyvonalú korlát a lassú CI miatt)."""
+        photo_rgb = _real_photo_rgb(1500, 2000)
+        t0 = time.perf_counter()
+        c.apply_holga(photo_rgb)
+        elapsed = time.perf_counter() - t0
+        assert elapsed < 20.0, f"apply_holga(2000x1500) túl lassú: {elapsed:.2f}s"
 
 
 class TestIr:

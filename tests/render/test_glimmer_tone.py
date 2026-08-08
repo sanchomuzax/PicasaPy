@@ -5,10 +5,14 @@ határeset-tesztjei, a `filterdesc-registry.md` 4.2 tartományai szerint.
 
 from __future__ import annotations
 
+import time
+
+import cv2
 import numpy as np
 import pytest
 
 from picasapy.render import glimmer_tone as t
+from tests.support.realistic_photo import make_realistic_photo
 
 
 @pytest.fixture
@@ -17,6 +21,11 @@ def image() -> np.ndarray:
     img = rng.integers(20, 235, size=(48, 64, 3), dtype=np.uint8)
     img[:16, :, 0] = 220
     return img
+
+
+def _real_photo_rgb(height: int, width: int, seed: int = 7) -> np.ndarray:
+    """#504 (j1): ld. `test_glimmer_creative.py` ugyanilyen helperjét."""
+    return cv2.cvtColor(make_realistic_photo(height=height, width=width, seed=seed), cv2.COLOR_BGR2RGB)
 
 
 def _assert_valid(result, image):
@@ -96,6 +105,64 @@ class TestNightVision:
 
     def test_fade_100_valtozatlan(self, image):
         np.testing.assert_array_equal(t.apply_nightvision(image, fade=100.0), image)
+
+
+class TestVignetteMatteNightVisionRealPhoto504510:
+    """#504/#510 — valódi (folytonos hisztogramú) fotóval mért kiegészítés
+    a `TestHolgaRealPhoto504510`-hez (`test_glimmer_creative.py`): a #509/
+    #504 mind az ÖT méretfüggő ragyogás-effektet érintette (j3), nemcsak a
+    Lomo/Holga párt."""
+
+    def test_nightvision_r_nagyobb_mint_b(self):
+        """#510: a NightVision `#57cc29` (R=0x57=87 > B=0x29=41) tintje a
+        valódi BGR-kimeneten is R>B legyen — ellenőrzi, hogy a
+        `_NIGHTVISION_COLORS` RGB-ként helyesen íródott."""
+        photo_rgb = _real_photo_rgb(200, 300)
+        result_rgb = t.apply_nightvision(photo_rgb)
+        result_bgr = cv2.cvtColor(result_rgb, cv2.COLOR_RGB2BGR)
+        assert float(result_bgr[..., 2].mean()) > float(result_bgr[..., 0].mean())
+
+    @pytest.mark.parametrize(
+        "effect_name,apply_fn",
+        [
+            ("Vignette", t.apply_vignette),
+            ("Matte", t.apply_matte),
+            ("NightVision", t.apply_nightvision),
+        ],
+    )
+    def test_meretfuggetlen_fekete_arany(self, effect_name, apply_fn):
+        """j2: a méretfüggő ragyogás-sugár ellenére a tiszta fekete arány
+        96 px-en és 1600 px-en néhány százalékon belül egyezzen."""
+
+        def black_pct(img: np.ndarray) -> float:
+            return float(np.all(img == 0, axis=-1).mean() * 100.0)
+
+        small = apply_fn(_real_photo_rgb(96, 72))
+        large = apply_fn(_real_photo_rgb(1600, 1200))
+        diff = abs(black_pct(small) - black_pct(large))
+        assert diff <= 15.0, (
+            f"{effect_name}: fekete-arány 96px={black_pct(small):.1f}% "
+            f"vs 1600px={black_pct(large):.1f}% — {diff:.1f}pp eltérés"
+        )
+
+    @pytest.mark.parametrize(
+        "effect_name,apply_fn",
+        [
+            ("Vignette", t.apply_vignette),
+            ("Matte", t.apply_matte),
+            ("NightVision", t.apply_nightvision),
+        ],
+    )
+    def test_perf_nagy_kepen(self, effect_name, apply_fn):
+        """j5: a közös `_border_glow` nagy képen is gyors maradjon
+        (nagyvonalú korlát, hogy lassú CI-n se legyen ingatag — a
+        javítás előtt a Vignette 124 s, a Matte 89 s volt egy
+        4000×3000-es fotón, ld. a #504 utolsó kommentje)."""
+        photo_rgb = _real_photo_rgb(1500, 2000)
+        t0 = time.perf_counter()
+        apply_fn(photo_rgb)
+        elapsed = time.perf_counter() - t0
+        assert elapsed < 20.0, f"{effect_name}(2000x1500) túl lassú: {elapsed:.2f}s"
 
 
 class TestTwoTone:
