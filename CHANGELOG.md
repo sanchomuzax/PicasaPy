@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.54] – 2026-08-10
+
+### Javítva
+- **Az effekt-fülek újra három oszlopban rajzolnak (#537).** A 3., 4. és 5.
+  szerkesztő-fülön az effekt-csempék két oszlopba tördelődtek, miközben az
+  eredeti Picasán — és nálunk az első két fülön — három oszlop van. A
+  csempék sorrendje változatlan, csak a szélességük igazodik.
+
 ## [0.6.53] – 2026-08-10
 
 ### Javítva
