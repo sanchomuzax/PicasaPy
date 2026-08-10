@@ -265,6 +265,8 @@ class TestApplyCrop:
     def test_provider_reflects_cropped_size(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
         controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        # #514: a mentett lánc újrarenderelése háttérszálon fut
+        assert controller.waitForBackgroundWorkers(10.0)
         image = provider.requestImage("1", None, None)
         assert (image.width(), image.height()) == (4, 3)
 
@@ -349,6 +351,7 @@ class TestCropToolPreview:
     def test_enter_crop_tool_shows_uncropped_source(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
         controller.applyCrop(0.0, 0.0, 0.5, 0.5)
+        assert controller.waitForBackgroundWorkers(10.0)  # #514
         cropped = provider.requestImage("1", None, None)
         assert (cropped.width(), cropped.height()) == (4, 3)
 
@@ -819,6 +822,7 @@ class TestHistogramAndCameraSummary:
     def test_histogram_updates_after_effect_applied(self, controller, photo):
         controller.beginEdit("1", str(photo))
         controller.applyEffect("bw")
+        assert controller.waitForBackgroundWorkers(10.0)  # #514
         histogram = controller.histogram
         # fekete-fehérben a három csatorna azonos eloszlású (szürkeárnyalat)
         assert histogram["r"] == histogram["g"] == histogram["b"]
@@ -1236,3 +1240,116 @@ class TestTextStyle:
         controller.setTextOutlineColor("#00ff00")
         styled = provider.requestImage("1", None, None)
         assert base != styled
+
+
+class TestEffectRenderRunsOffTheUiThread:
+    """#514: a mentett lánc újrarenderelése NEM a felület szálán fut.
+
+    Amíg a hosszú effektek (Lomo, Polaroid…) a GUI-szálon számoltak, a
+    felület befagyottnak látszott, és a közös haladásjelző csík (#505) sem
+    tudott animálni — ugyanaz a szál számolt, ami rajzol.
+    """
+
+    def test_apply_effect_returns_before_the_render_finishes(
+        self, controller, provider, photo, monkeypatch
+    ):
+        """A hívás VISSZATÉR, miközben a renderelés még be sem fejeződött —
+        ez az a tulajdonság, ami a felületet életben tartja."""
+        import threading
+
+        controller.beginEdit("1", str(photo))
+        release = threading.Event()
+        entered = threading.Event()
+        original = provider.register
+
+        def slow_register(*args, **kwargs):
+            entered.set()
+            assert release.wait(10.0), "a lassú render nem kapott elengedést"
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(provider, "register", slow_register)
+        controller.applyEffect("bw")
+        # ha a renderelés a hívó szálán futna, ide csak a release UTÁN
+        # jutnánk el — a teszt önmagában holtpontra futna
+        assert entered.wait(10.0), "a renderelés el sem indult"
+        release.set()
+        assert controller.waitForBackgroundWorkers(10.0)
+
+    def test_busy_indicator_is_engaged_during_the_render(
+        self, qt_app, controller, provider, photo, monkeypatch
+    ):
+        """A #505 csíkja MAGÁTÓL pörög: a `_start_background` jelentkezik be
+        a busy-nyilvántartásba, a hívónak nem kell külön kérnie."""
+        import threading
+
+        from picasapy.app.busy_registry import get_app_busy_registry
+
+        controller.beginEdit("1", str(photo))
+        registry = get_app_busy_registry()
+        # a be-/kijelentkezés szálhatáron át, sorba állítva érkezik (ld.
+        # busy_registry modul-docstring) — a kiindulási állapotot is csak
+        # az események leürítése után szabad leolvasni
+        qt_app.processEvents()
+        before = registry.activeCount
+        release = threading.Event()
+        entered = threading.Event()
+        original = provider.register
+
+        def slow_register(*args, **kwargs):
+            entered.set()
+            assert release.wait(10.0)
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(provider, "register", slow_register)
+        controller.applyEffect("bw")
+        assert entered.wait(10.0)
+        qt_app.processEvents()
+        assert registry.activeCount > before, "a haladásjelzés nem indult el"
+        release.set()
+        assert controller.waitForBackgroundWorkers(10.0)
+        qt_app.processEvents()
+        assert registry.activeCount == before, "a csík a munka után is pörögne"
+
+    def test_the_rendered_image_is_the_last_requested_state(
+        self, controller, provider, photo
+    ):
+        """Gyors kattintás-sorozat után is az UTOLSÓ állapot látszik — az
+        elavult (közben túlhaladott) renderelések kihagyják magukat."""
+        from picasapy.app.edit_preview import EditPreviewProvider
+        from picasapy.edit.session import EditSession
+
+        controller.beginEdit("1", str(photo))
+        controller.applyEffect("bw")
+        controller.applyEffect("sepia")
+        assert controller.waitForBackgroundWorkers(10.0)
+        image = provider.requestImage("1", None, None)
+
+        # viszonyítás: ugyanaz a lánc SZINKRON kirenderelve egy önálló
+        # providerrel — a háttérszálas útnak pontosan ezt kell adnia
+        reference_provider = EditPreviewProvider()
+        session = EditSession().append_effect("bw", ("1",)).append_effect(
+            "sepia", ("1",)
+        )
+        reference_provider.register("1", photo, session.ops)
+        expected = reference_provider.requestImage("1", None, None)
+
+        assert (image.width(), image.height()) == (
+            expected.width(),
+            expected.height(),
+        )
+        mismatched = [
+            (x, y)
+            for y in range(expected.height())
+            for x in range(expected.width())
+            if image.pixelColor(x, y) != expected.pixelColor(x, y)
+        ]
+        assert mismatched == [], "nem az utolsó (szépia) állapot látszik"
+
+    def test_slider_preview_stays_synchronous(self, controller, provider, photo):
+        """Az élő csúszka-előnézet marad szinkron: a húzás minden lépésénél
+        AZONNAL friss képet kell adnia (nincs villogás, nincs késés)."""
+        controller.beginEdit("1", str(photo))
+        controller.previewEffect("sat", [2.0])
+        # háttérszál el sem indult — a kép már most a helyén van
+        image = provider.requestImage("1", None, None)
+        assert (image.width(), image.height()) == (8, 6)

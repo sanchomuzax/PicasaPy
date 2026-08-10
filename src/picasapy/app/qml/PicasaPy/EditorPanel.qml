@@ -1243,7 +1243,8 @@ Rectangle {
 
         GridLayout {
             objectName: "effectsGrid"
-            columns: 2
+            // #537: HÁROM oszlop, mint az eredeti Picasa effekt-fülein
+            columns: 3
             columnSpacing: 6
             rowSpacing: 6
             Layout.fillWidth: true
@@ -1385,7 +1386,8 @@ Rectangle {
 
         GridLayout {
             objectName: "effectsGrid2"
-            columns: 2
+            // #537: HÁROM oszlop, mint az eredeti Picasa effekt-fülein
+            columns: 3
             columnSpacing: 6
             rowSpacing: 6
             Layout.fillWidth: true
@@ -1534,7 +1536,8 @@ Rectangle {
 
         GridLayout {
             objectName: "effectsGrid3"
-            columns: 2
+            // #537: HÁROM oszlop, mint az eredeti Picasa effekt-fülein
+            columns: 3
             columnSpacing: 6
             rowSpacing: 6
             Layout.fillWidth: true

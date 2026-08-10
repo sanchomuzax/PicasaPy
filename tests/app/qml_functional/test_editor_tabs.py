@@ -262,3 +262,25 @@ class TestNewEffectLabelsNotTruncated:
             assert label.property("truncated") is False, (
                 f"{object_name}: a felirat levágódott"
             )
+
+
+class TestEffectGridsHaveThreeColumns:
+    """#537: mindhárom effekt-fül HÁROM oszlopban rajzol, mint az eredeti.
+
+    Az 1-2. fül rácsai már korábban is három oszlopban álltak, csak a három
+    effekt-fül maradt ki — a teszt mindhármat lefedi, hogy a visszaesés
+    (`columns: 2`) azonnal kiessen.
+    """
+
+    @pytest.mark.parametrize(
+        "active_tab,grid_name",
+        [(2, "effectsGrid"), (3, "effectsGrid2"), (4, "effectsGrid3")],
+    )
+    def test_grid_has_three_columns(self, qml_engine, qt_app, active_tab, grid_name):
+        panel = _make_panel(qml_engine, active_tab=active_tab)
+        qt_app.processEvents()
+        grid = panel.findChild(QObject, grid_name)
+        assert grid is not None, f"{grid_name} nem található"
+        assert grid.property("columns") == 3, (
+            f"{grid_name}: {grid.property('columns')} oszlop 3 helyett"
+        )
