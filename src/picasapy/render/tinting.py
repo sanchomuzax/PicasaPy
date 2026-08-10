@@ -7,10 +7,10 @@ Mért alapok (`docs/specs/filters-decoded.md`, 3. kör):
   `0000ffff` (cián) → a luma csatornánkénti szorzása a színnel pontosan ezt
   adja. A `preserve` paraméter szürkén mérten hatástalan; színes képen a
   króma visszakeverésének súlyaként értelmezzük (0..100 skála) — KÖZELÍTÉS.
-- **ansel** — `ansel=1,ffffffff` kimenete semleges (R=G=B), enyhe
-  középemeléssel; a pontos tónusgörbe méretlen → gamma 0,93 KÖZELÍTÉS
-  (végpont-tartó, enyhe középemelés). A színparaméter a tint-tel azonos
-  módon színez.
+- **ansel** (Filtered B&W) — a színparaméter **SZŰRŐ**, nem festék: a
+  csatornák súlyát adja a szürkévé alakításban, a kimenet mindig semleges
+  (R=G=B). A tónusgörbe a `referencia/filteredbw/` fehér szűrős exportjából
+  MÉRT (#317), nem gamma-közelítés. Ld. `apply_ansel` docstringjét.
 - **dir_tint** — nincs mért kimeneti adat; a modell (függőleges színátmenet
   az y középpont körül, `gradiens` szélességű átmenettel, `árnyék` erősségű
   keveréssel a szín felé; az x és az irány szerepe méretlen) dokumentált
@@ -33,9 +33,16 @@ from picasapy.render.curves import validate_image
 
 _HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{1,8}$")
 
-# ansel: enyhe középemelés — méretlen görbe helyett gamma-KÖZELÍTÉS
-# (0→0, 255→255, 128→~134; a spec csak a jelleget rögzíti).
-_ANSEL_GAMMA = 0.93
+#: `ansel` (Filtered B&W) MÉRT tónusgörbéje — `referencia/filteredbw/`
+#: (fehér szűrőszínnel exportált 2560×1702-es kép, #317): a szűrt szürke
+#: 0, 16, 32 … 240, 255 értékeihez tartozó kimenet. Enyhe S-alak, a
+#: korábbi gamma-közelítésnél (0,93) mérhetően jobb: az eltérés a valódi
+#: Picasa-kimenettől **6,11 → 0,53** (az érintetlen képé 15,15).
+_ANSEL_ANCHOR_INPUTS = tuple(range(0, 256, 16)) + (255,)
+_ANSEL_ANCHOR_CURVE = (
+    0.1, 16.8, 34.0, 51.0, 67.7, 84.3, 100.7, 117.0, 133.0, 148.9,
+    164.5, 180.0, 195.3, 210.4, 225.4, 240.0, 253.8,
+)
 
 # tint: a preserve paraméter skálája (79.842102 az éles példa) — 0..100.
 _PRESERVE_SCALE = 100.0
@@ -96,18 +103,36 @@ def apply_tint(
 
 
 def apply_ansel(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
-    """Ansel-effekt: fekete-fehér + enyhe középemelő tónusgörbe + színezés.
+    """Filtered B&W (`ansel`): a szín **SZŰRŐ**, nem festék — a kimenet
+    mindig szürke (#317).
 
-    A görbe gamma-KÖZELÍTÉS (`ki = 255·(luma/255)^0,93`): végpont-tartó,
-    a mért „enyhe középemelés" jelleggel; fehér színparaméterrel a kimenet
-    semleges (R=G=B), ahogy a golden-mérés mutatta.
+    A `color` a fényképészeti szűrők szerepét játssza (a Picasa saját
+    palettája sárga/narancs/vörös/zöld szűrőkből áll, ld.
+    `referencia/filteredbw/panel-screenshot-2.png`): a csatornák súlyát
+    adja meg a szürkévé alakításnál — `szürke = Σ(szín_c · c) / Σ szín_c` —,
+    NEM színezi a végeredményt. A korábbi változat a kimenetet a színnel
+    festette; a fehér szűrős exportnál ez nem látszott (fehérrel a festés
+    semleges), a mérés viszont a súlyokat is eldöntötte: fehér szűrővel a
+    három csatorna súlya 0,345 / 0,336 / 0,326 — gyakorlatilag EGYENLŐ,
+    tehát a szín az egyetlen súlyforrás (nem szorzódik rá a Rec.601 luma).
+
+    A szűrt szürkére a MÉRT tónusgörbe kerül (`_ANSEL_ANCHOR_CURVE`); a
+    fehér szűrős exporttól való átlagos eltérés **0,53** (a korábbi
+    modellé 6,11, az érintetlen képé 15,15). A nem fehér szűrőszínekre
+    nincs export — ott a súlyozás a fenti képlet szerinti KÖVETKEZTETÉS.
     """
     validate_image(image)
-    gray = _luma(image)
-    lifted = np.float32(255.0) * np.power(
-        gray / np.float32(255.0), np.float32(_ANSEL_GAMMA)
-    )
-    return _to_uint8(_colorize(lifted, color))
+    weights = np.array(color, dtype=np.float32)
+    total = float(weights.sum())
+    if total <= 0.0:
+        # elfajult (fekete) szűrő: nincs mit súlyozni — egyenletes szürke
+        weights = np.full(3, 1.0 / 3.0, dtype=np.float32)
+    else:
+        weights = weights / np.float32(total)
+    filtered = (image.astype(np.float32) * weights).sum(axis=-1)
+    toned = np.interp(filtered, _ANSEL_ANCHOR_INPUTS, _ANSEL_ANCHOR_CURVE)
+    gray = _to_uint8(toned)
+    return np.stack([gray, gray, gray], axis=-1)
 
 
 def apply_dir_tint(

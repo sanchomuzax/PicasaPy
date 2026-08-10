@@ -85,6 +85,24 @@ class TestMuseumMatte:
         _assert_valid(result)
         assert result.shape[0] >= image.shape[0]
 
+    @pytest.mark.parametrize(
+        "outer_thickness,inner_thickness", [(25.0, 40.0), (25.0, 0.0), (0.0, 40.0), (100.0, 40.0)]
+    )
+    def test_keret_vastagsaga_pixelben_ertendo(self, image, outer_thickness, inner_thickness):
+        """#317: a `referencia/museummatte/` hét exportja pixelre eldöntötte,
+        hogy a vastagságok PIXELBEN értendők, nem a rövidebb oldal
+        százalékában — a hozzáadott keret oldalanként pontosan
+        `Outer + Inner`. (A régi, százalékos értelmezés egy 2560 széles
+        fotóra 1447 px-es keretet rakott 65 helyett, és a kimenet
+        5454×4596-ra hízott.)
+        """
+        result = f.apply_museum_matte(
+            image, outer_thickness=outer_thickness, inner_thickness=inner_thickness
+        )
+        expected = 2 * int(round(outer_thickness + inner_thickness))
+        assert result.shape[0] - image.shape[0] == expected
+        assert result.shape[1] - image.shape[1] == expected
+
 
 class TestPolaroid:
     @pytest.mark.parametrize("rotate", [-10.0, 5.0, 10.0])

@@ -5,6 +5,32 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.56] – 2026-08-10
+
+### Javítva — öt effekt a valódi Picasa-kimenethez kalibrálva (#317)
+A felhasználó hat új mérőkészletet exportált (ugyanaz a fotó, csúszkánként
+külön mappa). Az effektek eltérése a valódi Picasa-kimenettől:
+
+- **Vignette:** 2,66 → **0,70** (8 export; az érintetlen kép 14,4). Kiderült,
+  hogy a ragyogás sugara a dokumentált képlet **fele**, és hogy a
+  Lomo/Holga-nál mért 255-ös korlát ide **nem** érvényes.
+- **Museum Matte:** a keret vastagsága **pixelben** értendő, nem a rövidebb
+  oldal százalékában — eddig egy 2560 széles fotóra 1447 px-es keretet
+  rakott 65 helyett (a kép 5454×4596-ra hízott). Most mind a hét export
+  mérete pontos, az eltérés **2,01**.
+- **Szépia:** 4,40 → **0,89** — a lineáris közelítés helyett a mért
+  tónusgörbék.
+- **Filtered B&W:** 6,11 → **0,36**. A szín itt **szűrő, nem festék**: a
+  kimenet mindig szürke marad (mint a fényképészeti sárga/narancs/vörös
+  szűrők), eddig tévesen színezte a képet.
+- **Orton-ish:** 4,43 → **2,05** — az elmosás szigmája szintén a fele a
+  dokumentáltnak, a fényerő-görbe kitérése pedig ±96 (nem ±75).
+
+### Ismert korlát
+- A **HDR-ish** modellje továbbra sem pontos (átlagosan 11,2 az érintetlen
+  kép 25,3-ához képest): a mérés szerint globális S-görbe és
+  telítettség-emelés is van benne, nem csak lokális kontraszt. Külön jegyen.
+
 ## [0.6.55] – 2026-08-10
 
 ### Javítva

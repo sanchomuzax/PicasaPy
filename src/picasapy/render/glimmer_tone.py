@@ -38,10 +38,31 @@ from picasapy.render.glimmer_ops import (
 # --- Vignette / Matte: GlowImageOperation(innerglow=true) ------------------
 
 
+#: A `Vignette`/`Matte` ragyogás-sugara: `Blur · 0,02 · max(W,H) · ez`.
+#:
+#: A `filterdesc.xml` képlete `Blur·0,02·max(W,H)/4` — a **mérés viszont
+#: ennek a FELÉT adja** (`referencia/vignette/`, 8 export ugyanarról a
+#: 2560×1702-es fotóról, #317). A két szélső Blur-állás egymástól
+#: függetlenül ugyanezt mondja:
+#:
+#:     Blur=35 (alap)  a legjobb illesztés σ ≈ 220   (a képlet /8-a: 224)
+#:     Blur=50 (max)   a legjobb illesztés σ ≈ 310–320 (a képlet /8-a: 320)
+#:
+#: A képlet nem tévedés, csak nem közvetlenül Gauss-szigmát ad: a Flash-
+#: örökségű `blurX/blurY` és a szigma között ez a 2-es szorzó ül (ld.
+#: `glimmer_ops.inner_glow` docstringje).
+#:
+#: A 255-ös `clamp_glow_radius` korlát ITT NEM alkalmazható: a Blur=50-es
+#: export illesztése 310–320-at kíván, a 255-re vágott sugár mérhetően
+#: rosszabb (eltérés 5,79 a 1,22 helyett). A korlát a Lomo/Holga láncban
+#: mért, ott érvényes marad (#518).
+VIGNETTE_RADIUS_FACTOR = 0.02 / 8.0
+
+
 def _glow_vignette(image, blur, strength, color, fade):
     validate_image(image)
     height, width = image.shape[:2]
-    radius = clamp_glow_radius(blur * 0.02 * max(height, width) / 4.0)
+    radius = blur * VIGNETTE_RADIUS_FACTOR * max(height, width)
     glowed = inner_glow(image, color, radius, radius, strength, alpha=1.0)
     return to_uint8(alpha_blend(to_float(image), to_float(glowed), fade_alpha(fade)))
 

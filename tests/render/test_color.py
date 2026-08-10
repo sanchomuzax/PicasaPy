@@ -43,13 +43,16 @@ class TestApplyBw:
 
 
 class TestApplySepia:
-    def test_dokumentalt_csatornagorbe_g128(self) -> None:
-        # mért közelítés: R≈0,82g+58 · G≈0,86g+35 · B≈0,90g+15
+    def test_mert_csatornagorbe_g128(self) -> None:
+        """#317: a VALÓDI Picasa-kimenetből (`referencia/sepia/`) mért
+        görbe a 128-as szürkére 171/146/124-et ad — a korábbi lineáris
+        közelítés 163/145/130-at adott, és a teljes képen 4,40-gyel tért
+        el a Picasáétól (a mért görbével 0,89)."""
         image = _uniform_image(128)
         result = apply_sepia(image)
-        assert abs(int(result[0, 0, 0]) - 163) <= 1
-        assert abs(int(result[0, 0, 1]) - 145) <= 1
-        assert abs(int(result[0, 0, 2]) - 130) <= 1
+        assert abs(int(result[0, 0, 0]) - 171) <= 1
+        assert abs(int(result[0, 0, 1]) - 146) <= 1
+        assert abs(int(result[0, 0, 2]) - 124) <= 1
 
     def test_szines_bemenet_monokrom_tonusra_kepez(self) -> None:
         image = _uniform_image((30, 180, 60))

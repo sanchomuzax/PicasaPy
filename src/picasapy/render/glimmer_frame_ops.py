@@ -18,17 +18,27 @@ from picasapy.render.glimmer_ops import fade_alpha, gaussian_blur_f, to_float, t
 
 
 def thickness_px(height: int, width: int, percent: float) -> int:
-    """Vastagság-százalék (0..100) → pixel, a kép rövidebb oldalára vetítve."""
+    """Százalék (0..100) → pixel, a kép rövidebb oldalára vetítve.
+
+    #317 óta CSAK a `DropShadow` `Blur` paramétere használja (a szegély-
+    vastagságok pixelben értendők, ld. `add_ring`) — ott nincs mért adat,
+    ez marad a dokumentált közelítés.
+    """
     return max(0, round(min(height, width) * percent / 100.0))
 
 
-def add_ring(image: np.ndarray, thickness_percent: float, color: tuple[int, int, int]) -> np.ndarray:
-    """Egyetlen egyenletes szegélygyűrű hozzáadása — `thickness_percent`
-    (0..100) a kép rövidebb oldalának százalékában.
+def add_ring(image: np.ndarray, thickness: float, color: tuple[int, int, int]) -> np.ndarray:
+    """Egyetlen egyenletes szegélygyűrű hozzáadása — a vastagság PIXELBEN.
+
+    #317: korábban a vastagságot a rövidebb oldal SZÁZALÉKÁNAK vettük, ezért
+    egy 2560×1702-es fotón az alapértelmezett Museum Matte 1447 px-es (!)
+    keretet rakott 65 helyett — a kimenet 5454×4596-ra hízott. A
+    `referencia/museummatte/` hét exportja pixelre eldöntötte a kérdést: a
+    hozzáadott keret oldalanként PONTOSAN `Outer + Inner` pixel
+    (0/50/100-as külső és 0/100-as belső állásokon egyaránt).
     """
     validate_image(image)
-    height, width = image.shape[:2]
-    px = thickness_px(height, width, thickness_percent)
+    px = max(0, int(round(thickness)))
     if px == 0:
         return image.copy()
     return cv2.copyMakeBorder(image, px, px, px, px, cv2.BORDER_CONSTANT, value=color)
@@ -91,8 +101,8 @@ def draw_border(
     image: np.ndarray,
     outer_color: tuple[int, int, int],
     inner_color: tuple[int, int, int],
-    outer_thickness_pct: float,
-    inner_thickness_pct: float,
+    outer_thickness: float,
+    inner_thickness: float,
     corner_radius_px: float = 0.0,
     caption_height_px: float = 0.0,
 ) -> np.ndarray:
@@ -100,8 +110,8 @@ def draw_border(
     sarok-lekerekítés → felirat-sáv, ebben a sorrendben (a Border/
     RoundedEdges/MuseumMatte/Sixties közös implementációja).
     """
-    ring = add_ring(image, inner_thickness_pct, inner_color)
-    ring = add_ring(ring, outer_thickness_pct, outer_color)
+    ring = add_ring(image, inner_thickness, inner_color)
+    ring = add_ring(ring, outer_thickness, outer_color)
     ring = round_corners(ring, corner_radius_px, outer_color)
     return add_caption(ring, caption_height_px, outer_color)
 
