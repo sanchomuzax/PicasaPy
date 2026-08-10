@@ -473,6 +473,49 @@ vagy `Pillow` beépített ICC-támogatás a színkezeléshez).
 
 ---
 
+### 6.1 A licencfájlok mellett: egy harmadik, licenc nélküli komponens
+
+A `licenses/` csak kettőt sorol fel (XMP Toolkit, Little CMS), de a
+`Picasa3.exe` sztringjei egy harmadikat is elárulnak:
+
+```
+dcraw v9.19
+```
+
+A **dcraw** (Dave Coffin nyers-dekódere) közkincs jellegű, ezért nem igényelt
+licencfájlt — de ott van a binárisban, és ez adja a Picasa RAW-támogatását.
+A binárisból kiolvasható a kezelt formátumkészlet:
+
+`.arw` · `.cr2` · `.dng` · `.mrw` · `.nef` · `.orf` · `.pef` · `.raf` ·
+`.rw2` · `.srw` · `.x3f`
+
+valamint tömörítés-változatok („Nikon NEF Compressed", „Sony ARW Compressed",
+„Pentax PEF Compressed"), a `DNG Version:` mező és a
+`Number of raw images: %d` (egy nyers fájl **több** képet is tartalmazhat).
+
+**A színkezelés a Little CMS-en át teljes**: a binárisban ott a leképezési
+szándékok teljes készlete — `Perceptual`, `Relative colorimetric`,
+`Absolute colorimetric`, valamint a „preserving black ink/plane" változatok —,
+továbbá `Embedded ICC profile: %s` és `AdobeRGB 1998 built-in` /
+`AdobeRGB 1998 virtual profile`. A felületen ehhez tartozik a
+„Színkezelés használata (ICC)" kapcsoló (`ui-audit-menus.md`).
+
+Ez a két dolog összetartozik: a nyers fájlban **nincs** beégetett színtér, a
+dekóder nyers RGB-t ad, amit profilozni kell — a Picasa erre használta az
+lcms-t és a beépített AdobeRGB profilt.
+
+**Objektív-adatbázis:** a binárisban **265 objektívnév** van (Canon EF…,
+Sigma, Tamron, Tokina) — a Picasa a MakerNote objektív-azonosítóját emberi
+névre oldotta fel a tulajdonságok panelen.
+
+> **Következmény a PicasaPy-ra (#528):** a `scanner/filetypes.py` ma
+> felismeri a nyers kiterjesztéseket, de a betöltés `cv2.imdecode`, aminek
+> nincs RAW-dekódere — a nyers fájlok bekerülnek az indexbe, de nem jelenik
+> meg belőlük kép. A dcraw utódja a **LibRaw** (`rawpy`); a bélyegképhez a
+> beágyazott JPEG-előnézet (`extract_thumb`) elég.
+
+---
+
 ## 7. Egyéb fájlok — egysoros jegyzetek
 
 | Fájl | Típus | Szerep |
