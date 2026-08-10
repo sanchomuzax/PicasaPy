@@ -3,9 +3,19 @@
 Minden függvény TISZTA: RGB `uint8` numpy tömböt (H, W, 3 alakú) kap, és
 ÚJ tömböt ad vissza — a bemenetet sosem mutálja (immutabilitás).
 
-Az autolight/enhance a golden-elemzésben megfejtett algoritmus
-(`docs/specs/filters-decoded.md`, 3. kör); az autocolor csillapítási
-szabálya még nyitott, ott dokumentált közelítést használunk.
+Az `autolight` (Auto Contrast), `autocolor` (Auto Colour) és `enhance` (Jó
+napom van) mindhárom a #535/#540 mérésekben megfejtett, hisztogram-
+darabszám alapú lineáris szinthúzás egy-egy változata — de HÁROM KÜLÖN
+modell (#540, 12-12 referencia-képpáron mérve):
+
+- `autolight`: KÖZÖS (mindhárom csatornán azonos) vágás — nincs
+  fehéregyensúly-hatása.
+- `autocolor`: csatornánként KÜLÖN vágás, de a csatornák egy KÖZÖS
+  (a csatornánkénti vágópontok átlagából számolt) kimeneti tartományra
+  simulnak — nem nyújtja mindegyiket önállóan 0..255-re (az a modell
+  a mérésen jóval rosszabbul illeszkedett, ld. #540).
+- `enhance` ("Jó napom van"): csatornánként KÜLÖN vágás, ÉS mindegyik
+  önállóan a teljes 0..255 tartományra nyúlik (#535).
 """
 
 from __future__ import annotations
@@ -24,17 +34,16 @@ from picasapy.render.curves import (
 _REDEYE_DOMINANCE_RATIO = 1.4
 _REDEYE_MIN_RED = 60
 
-# Autocolor: a mért gainek a teljes szürkevilág-korrekció ~60–90%-a
-# (golden 3–4. kör); a pontos csillapítási szabály még nyitott kérdés.
-_AUTOCOLOR_DAMPING = 0.75
-
-# „Jó napom van" / AutoFix vágási arányok — a valódi Picasa a hisztogramban
-# DARABSZÁM-küszöbbel keresi a fekete/fehér pontot (#535), nem fix
-# percentilissel; ez a két konstans egy MÉRÉSSEL igazolt közelítés (12
-# referencia-képpáron: átlagos csatorna-eltérés 5,47/5,48 — ld.
-# `sanchomuzax/picasapy-agent` privát repó `referencia/imfeellucky/`).
-_ENHANCE_LOW_FRACTION = 0.005
-_ENHANCE_HIGH_FRACTION = 0.002
+# Vágási arányok az autolight/autocolor/enhance hisztogram-darabszám alapú
+# szinthúzásához — a valódi Picasa a hisztogramban DARABSZÁM-küszöbbel
+# keresi a fekete/fehér pontot (#535), nem fix percentilissel; ez a két
+# konstans egy MÉRÉSSEL igazolt közelítés, és a #540 szerint MINDHÁROM
+# művelet ugyanezt használja (az összemérhetőség kedvéért — a pontos
+# küszöbérték finomítása a #539 dolga). Ld. `sanchomuzax/picasapy-agent`
+# privát repó `referencia/imfeellucky/`, `referencia/autocontrast/`,
+# `referencia/autocolor/`.
+_LEVELS_LOW_FRACTION = 0.005
+_LEVELS_HIGH_FRACTION = 0.002
 
 _validate_image = validate_image
 
@@ -86,44 +95,49 @@ def apply_tilt(image: np.ndarray, angle: float, scale: float) -> np.ndarray:
     )
 
 
+def _common_black_white_point(
+    image: np.ndarray, low_fraction: float, high_fraction: float
+) -> tuple[int, int]:
+    """KÖZÖS (mindhárom csatornára egyenlő) fekete-/fehérpont a hisztogram
+    DARABSZÁMA alapján — a három csatorna képpontjait EGY közös
+    hisztogramba összeöntve (#540: az Auto Contrast mind a 12 referencia-
+    képen azonos meredekséget adott mindhárom csatornán, szórás 0,001).
+    Ha nem lenne érdemi tartomány, `(0, 255)` (azonosság-eset).
+    """
+    total_values = image.size
+    low_count = total_values * low_fraction
+    high_count = total_values * high_fraction
+    histogram, _ = np.histogram(image, bins=256, range=(0, 256))
+    cumulative_low = np.cumsum(histogram)
+    low = int(np.searchsorted(cumulative_low, low_count))
+    cumulative_high = np.cumsum(histogram[::-1])
+    high_from_top = int(np.searchsorted(cumulative_high, high_count))
+    high = 255 - high_from_top
+    if high <= low:
+        low, high = 0, 255
+    return low, high
+
+
 def apply_autolight(image: np.ndarray) -> np.ndarray:
-    """Auto kontraszt — megfejtett algoritmus (golden 3. kör).
+    """Auto Contrast — megfejtett algoritmus (#540).
 
-    Globális min–max lineáris széthúzás, minden csatornára KÖZÖS
-    transzformációval (a színegyensúly megmarad):
-    `ki = clip((be − gmin)·255/(gmax − gmin))`.
+    KÖZÖS (mindhárom csatornára azonos) lineáris szinthúzás, a fekete-/
+    fehérpontot a hisztogram DARABSZÁMA alapján keresve (ugyanaz a
+    közelítés, mint a #535 „Jó napom van"-nál, `_LEVELS_LOW_FRACTION`/
+    `_LEVELS_HIGH_FRACTION` küszöbbel): `ki = (be − lo)·255/(hi − lo)`,
+    egyetlen `lo`/`hi` az egész képre. **Azonosság-eset:** ha a kép már
+    kihasználja a teljes tartományt (`lo == 0` és `hi == 255`), a kimenet
+    bájtra azonos a bemenettel.
     """
     _validate_image(image)
-    global_min = int(image.min())
-    global_max = int(image.max())
-    if global_max <= global_min:
+    low, high = _common_black_white_point(
+        image, _LEVELS_LOW_FRACTION, _LEVELS_HIGH_FRACTION
+    )
+    if low == 0 and high == 255:
         return image.copy()
-    scale = 255.0 / (global_max - global_min)
+    scale = 255.0 / (high - low)
     # pontonkénti lineáris széthúzás → 256 elemű LUT (#140): képméret-független
-    return apply_lut(image, (lut_ramp() - global_min) * scale)
-
-
-def apply_autocolor(image: np.ndarray) -> np.ndarray:
-    """Auto fehéregyensúly — csillapított szürkevilág-korrekció.
-
-    Mérés szerint (golden 3–4. kör) a csatornákat a szürke felé húzza, de
-    nem teljesen; semleges bemeneten no-op. A csillapítás pontos szabálya
-    még nyitott — itt `_AUTOCOLOR_DAMPING` arányú lineáris korrekció fut.
-    """
-    _validate_image(image)
-    means = image.reshape(-1, 3).mean(axis=0)
-    gray = float(means.mean())
-    # csatornánkénti gain → csatornánkénti LUT (#140): képméret-független
-    ramp = lut_ramp()
-    luts = []
-    for channel in range(3):
-        channel_mean = float(means[channel])
-        if channel_mean <= 0.0:
-            luts.append(ramp)
-            continue
-        gain = 1.0 + _AUTOCOLOR_DAMPING * (gray / channel_mean - 1.0)
-        luts.append(ramp * gain)
-    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
+    return apply_lut(image, (lut_ramp() - low) * scale)
 
 
 def _channel_black_white_points(
@@ -154,10 +168,55 @@ def _channel_black_white_points(
     return points[0], points[1], points[2]
 
 
+def apply_autocolor(image: np.ndarray) -> np.ndarray:
+    """Auto Colour — **MUNKAHIPOTÉZIS, NEM megfejtett algoritmus** (#540).
+
+    ⚠️ **Őszinte állapot:** ez a modell a referenciakészleten **rosszabb,
+    mint ha meg sem csinálnánk az effektet.** Mért átlagos csatorna-
+    eltérés a valódi Picasa-kimenettől (12 kép, `referencia/autocolor/`):
+
+        az ÉRINTETLEN kép ...................... 5,29   ← a viszonyítás
+        a régi (szürkevilág) közelítés ......... 7,82
+        ez a változat .......................... 7,45
+
+    Vagyis a mostani a réginél kevéssel jobb, de **mindkettő rosszabb az
+    azonosságnál** — a valódi modell tehát NINCS megfejtve. Amit a mérés
+    kizárt: a csatornánként önállóan 0..255-re nyújtó (enhance-szerű)
+    modell **16,5**-öt ad, tehát az Auto Colour biztosan NEM fekete-/
+    fehérpontra vágó szinthúzás. Az illesztett meredekségek 1,0 közeliek
+    (0,78–1,47), és az illesztett `lo`/`hi` gyakran a [0,255] tartományon
+    KÍVÜLRE esik — ez finom, csatornánkénti erősítés/eltolás felé mutat,
+    nem vágásra. A megfejtés a #541 tárgya.
+
+    Ami itt fut: csatornánként KÜLÖN fekete-/fehérpont (hisztogram-
+    darabszám alapján, ugyanazokkal a küszöbökkel, mint az autolight/
+    enhance), de a három csatorna egy KÖZÖS kimeneti tartományra (a
+    vágópontok ÁTLAGÁRA) simul — ez tartja 7,45-nél a hibát.
+
+    **Azonosság-eset:** semleges (R=G=B mindenütt) vagy már teljes
+    tartományú bemeneten a három csatorna vágópontja (és így a célsáv is)
+    megegyezik → a kimenet bájtra azonos a bemenettel.
+    """
+    _validate_image(image)
+    points = _channel_black_white_points(
+        image, _LEVELS_LOW_FRACTION, _LEVELS_HIGH_FRACTION
+    )
+    target_low = sum(point[0] for point in points) / 3.0
+    target_high = sum(point[1] for point in points) / 3.0
+    ramp = lut_ramp()
+    luts = []
+    for low, high in points:
+        if high <= low or (low == target_low and high == target_high):
+            luts.append(ramp)
+        else:
+            luts.append((ramp - low) * (target_high - target_low) / (high - low) + target_low)
+    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
+
+
 def apply_channel_levels_stretch(
     image: np.ndarray,
-    low_fraction: float = _ENHANCE_LOW_FRACTION,
-    high_fraction: float = _ENHANCE_HIGH_FRACTION,
+    low_fraction: float = _LEVELS_LOW_FRACTION,
+    high_fraction: float = _LEVELS_HIGH_FRACTION,
 ) -> np.ndarray:
     """Csatornánként KÜLÖN lineáris szinthúzás: `ki = (be − lo)·255/(hi − lo)`.
 

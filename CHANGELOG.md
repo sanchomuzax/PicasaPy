@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.53] – 2026-08-10
+
+### Javítva
+- **Automatikus kontraszt (#540): mostantól gyakorlatilag pontos.** Az
+  eredeti Picasa kimenetéhez mérve az eltérés **4,54 → 0,62** (12 kép
+  közül **ötön bájtra azonos**). Kiderült, hogy ez a művelet **közösen**
+  vágja mind a három színcsatornát — ezért nincs fehéregyensúly-hatása,
+  tisztán a kontrasztot nyújtja.
+
+### Ismert korlát — őszintén
+- **Az automatikus szín (Auto Colour) modellje továbbra sem ismert.** A
+  mérés szerint a mostani változat (7,45) és a korábbi (7,82) **egyaránt
+  rosszabb, mintha a program meg sem csinálná az effektet** (5,29). A
+  mérés azt is kizárta, hogy egyszerű szinthúzásról volna szó. A kód ezt
+  kimondja, hogy senki ne hivatkozzon rá készként — a megfejtés külön
+  jegyen (#541).
+
 ## [0.6.52] – 2026-08-10
 
 ### Javítva
