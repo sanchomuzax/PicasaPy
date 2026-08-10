@@ -5,6 +5,26 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.52] – 2026-08-10
+
+### Javítva
+- **A „Jó napom van" gomb végre azt csinálja, amit az eredeti (#535):** a
+  felhasználó 12 kép-páros Picasa-exportjához mérve az eltérés
+  **17,59 → 5,48**. A képek nagy részén ennél is pontosabb: **11 képen az
+  átlagos eltérés 1,80**, egyetlen szélső eset húzza fel az átlagot.
+- **Mostantól felismeri, mikor NE nyúljon a képhez.** Ha a kép már
+  kihasználja a teljes világosság-tartományt, a gomb nem változtat semmit —
+  eddig azt is felvilágosította, aminek nem kellett volna.
+- **Ez az effekteken is átüt:** öt effekt (Holga, Éjjellátó, Ceruzarajz,
+  Hatvanas évek, Cinemascope) a lánca elején ezt az automatikus korrekciót
+  használja. A **Holga** eltérése az eredetitől **14,19 → 11,34**.
+
+### Megjegyzés
+- A modell a felhasználó referencia-exportjaiból lett megfejtve:
+  csatornánként külön, lineáris szinthúzás. A vágási pontokat egyelőre
+  rögzített százalékkal közelítjük — ez az egyetlen forrása a maradék
+  eltérésnek.
+
 ## [0.6.51] – 2026-08-10
 
 ### Hozzáadva

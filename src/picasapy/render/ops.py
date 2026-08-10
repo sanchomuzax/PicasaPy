@@ -17,7 +17,6 @@ from picasapy.ini.rect64 import Rect64
 from picasapy.render.curves import (
     apply_channel_luts,
     apply_lut,
-    curve_lut,
     lut_ramp,
     validate_image,
 )
@@ -29,17 +28,13 @@ _REDEYE_MIN_RED = 60
 # (golden 3–4. kör); a pontos csillapítási szabály még nyitott kérdés.
 _AUTOCOLOR_DAMPING = 0.75
 
-# Az enhance fix tónusgörbéjének (reziduál) mért pontjai (golden 3. kör).
-_ENHANCE_RESIDUAL_POINTS = (
-    (0.0, 0.0),
-    (16.0, 18.7),
-    (64.0, 71.3),
-    (128.0, 142.7),
-    (192.0, 214.0),
-    (240.0, 255.0),
-    (255.0, 255.0),
-)
-_ENHANCE_RESIDUAL_LUT = curve_lut(_ENHANCE_RESIDUAL_POINTS)
+# „Jó napom van" / AutoFix vágási arányok — a valódi Picasa a hisztogramban
+# DARABSZÁM-küszöbbel keresi a fekete/fehér pontot (#535), nem fix
+# percentilissel; ez a két konstans egy MÉRÉSSEL igazolt közelítés (12
+# referencia-képpáron: átlagos csatorna-eltérés 5,47/5,48 — ld.
+# `sanchomuzax/picasapy-agent` privát repó `referencia/imfeellucky/`).
+_ENHANCE_LOW_FRACTION = 0.005
+_ENHANCE_HIGH_FRACTION = 0.002
 
 _validate_image = validate_image
 
@@ -131,14 +126,69 @@ def apply_autocolor(image: np.ndarray) -> np.ndarray:
     return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 
-def apply_enhance(image: np.ndarray) -> np.ndarray:
-    """„Jó napom van" (I'm Feeling Lucky) — megfejtett szerkezet (golden 3. kör):
+def _channel_black_white_points(
+    image: np.ndarray, low_fraction: float, high_fraction: float
+) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+    """Csatornánkénti fekete-/fehérpont a hisztogram DARABSZÁMA alapján.
 
-    `enhance(kép) = fixLUT(autolight_stretch(autocolor(kép)))`, ahol a fix
-    tónusgörbe a mért reziduál (`_ENHANCE_RESIDUAL_POINTS`) interpolációja.
+    Csatornánként: a fekete pont az a legkisebb érték, aminél a kumulált
+    darabszám már eléri a `low_fraction`·(össz-képpont) küszöböt; a
+    fehérpont ugyanígy, felülről számolva `high_fraction`-nel. Ha ez üres
+    (nem lenne érdemi tartomány), a csatorna azonosság marad (`(0, 255)`).
+    """
+    height, width = image.shape[:2]
+    total_pixels = height * width
+    low_count = total_pixels * low_fraction
+    high_count = total_pixels * high_fraction
+    points = []
+    for channel in range(3):
+        histogram, _ = np.histogram(image[..., channel], bins=256, range=(0, 256))
+        cumulative_low = np.cumsum(histogram)
+        low = int(np.searchsorted(cumulative_low, low_count))
+        cumulative_high = np.cumsum(histogram[::-1])
+        high_from_top = int(np.searchsorted(cumulative_high, high_count))
+        high = 255 - high_from_top
+        if high <= low:
+            low, high = 0, 255
+        points.append((low, high))
+    return points[0], points[1], points[2]
+
+
+def apply_channel_levels_stretch(
+    image: np.ndarray,
+    low_fraction: float = _ENHANCE_LOW_FRACTION,
+    high_fraction: float = _ENHANCE_HIGH_FRACTION,
+) -> np.ndarray:
+    """Csatornánként KÜLÖN lineáris szinthúzás: `ki = (be − lo)·255/(hi − lo)`.
+
+    Ez a „Jó napom van" (I'm Feeling Lucky) és az `AutoFix` megfejtett
+    modellje (#535, 12 referencia-képpáron R² = 0,9995–1,0000 illesztéssel
+    igazolva). **Azonosság-eset:** ha egy csatorna `lo`/`hi`-je már `0`/`255`
+    (a csatorna kihasználja a teljes tartományt), azt a csatornát a Picasa
+    NEM módosítja — itt sem változik semmi (bájtra azonos marad).
     """
     _validate_image(image)
-    return apply_lut(apply_autolight(apply_autocolor(image)), _ENHANCE_RESIDUAL_LUT)
+    points = _channel_black_white_points(image, low_fraction, high_fraction)
+    ramp = lut_ramp()
+    luts = []
+    for low, high in points:
+        if low == 0 and high == 255:
+            luts.append(ramp)
+        else:
+            luts.append((ramp - low) * 255.0 / (high - low))
+    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
+
+
+def apply_enhance(image: np.ndarray) -> np.ndarray:
+    """„Jó napom van" (I'm Feeling Lucky) — megfejtett modell (#535):
+
+    csatornánként KÜLÖN, hisztogram-darabszám alapú lineáris szinthúzás
+    (`apply_channel_levels_stretch`) — nincs benne gamma, S-görbe, helyi
+    kontraszt vagy külön árnyék-/csúcsfény-emelés (ld. az adott függvény
+    docstringjét a bizonyítékért).
+    """
+    _validate_image(image)
+    return apply_channel_levels_stretch(image)
 
 
 def apply_redeye(

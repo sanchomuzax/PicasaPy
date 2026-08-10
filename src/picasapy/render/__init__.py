@@ -34,6 +34,7 @@ from picasapy.render.effects import (
 from picasapy.render.ops import (
     apply_autocolor,
     apply_autolight,
+    apply_channel_levels_stretch,
     apply_crop,
     apply_enhance,
     apply_redeye,
@@ -79,6 +80,7 @@ __all__ = [
     "apply_autocolor",
     "apply_autolight",
     "apply_bw",
+    "apply_channel_levels_stretch",
     "apply_color_temperature",
     "apply_crop",
     "apply_dir_tint",

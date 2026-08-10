@@ -371,6 +371,50 @@ Ami ebből közvetlenül ide tartozik:
   magyarázza a korábban rejtélyes „tizedesjegy nélküli `0`" paramétert
   (`Cinemascope`, `Sixties`).
 
+## 7. kör — `enhance`/`autofix` ÚJRAMEGFEJTVE, a 3. kör modellje ELVETVE (#535, 2026-08-10)
+
+A 3. körben leírt `enhance = fixLUT(autolight_stretch(autocolor(kép)))`
+szerkezet **tévesnek bizonyult**: egy 12 kép-páros, vegyes jellegű
+referenciakészleten (alul-/túlexponált, fakó, éjszakai, napfényes —
+`sanchomuzax/picasapy-agent` privát repó `referencia/imfeellucky/`) mérve
+az akkori `apply_enhance` átlagosan **17,59** csatorna-eltérésre volt a
+valódi Picasa-kimenettől.
+
+**A helyes modell** (mind a 36 csatornára — 12 kép × 3 — R² = 0,9995–1,0000
+illesztéssel igazolva): **csatornánként KÜLÖN** lineáris szinthúzás,
+**nem** a 3. körben feltételezett `autocolor`+`autolight`+reziduál-LUT
+lánc:
+
+```
+ki = (be − lo) · 255 / (hi − lo)        csatornánként külön lo/hi
+```
+
+Pontosan lineáris — nincs benne gamma, S-görbe, helyi kontraszt vagy
+árnyék-/csúcsfény-emelés (a 3. kör „enyhe, csúcsfény-súlyozott emelés"
+megfigyelése tehát a hibás modell műterméke volt, nem valódi Picasa-jegy).
+Fontos tulajdonságok:
+
+- **Azonosság-eset**: ha egy csatorna már kihasználja a teljes
+  tartományt (`lo=0`, `hi=255`), a Picasa NEM nyúl hozzá (mért: „Night
+  Seascape" mindhárom csatornája meredekség 1,000, eltolás 0,0).
+- A vágási pontok **nem** fix percentilek — a Picasa a hisztogramban
+  **darabszám-küszöbbel** keresi a fekete-/fehérpontot (a mért végpontok
+  0%-tól 16%-ig szóródnak). Az implementáció (`picasapy.render.ops`
+  `apply_channel_levels_stretch`) ezt fix **0,5% / 0,2%** percentillel
+  KÖZELÍTI — ezzel az átlagos csatorna-eltérés **5,47**-re csökken (a
+  pontos darabszám-küszöb valószínűleg tovább csökkentené, a JPEG-zaj
+  szintjére).
+- Az `AutoFix` (a Glimmer-effektek — Holga, NightVision, PencilSketch,
+  Sixties, Cinemascope — belső újrahasznált lépése) **ugyanezt a modellt**
+  kapta, az `autocolor`+`autolight` páros helyett.
+
+**Amit ez NEM érint:** az `autolight` (globális, KÖZÖS min-max
+széthúzás — „Auto Contrast" menüpont) és az `autocolor` (csillapított
+szürkevilág-korrekció — „Auto Color" menüpont) önálló szűrőkként
+VÁLTOZATLANOK maradtak; ezekhez továbbra sincs pontosabb mérés, mint a
+3–4. körben rögzített. Csak az `enhance`/`AutoFix` BELSŐ szerkezete
+(hogy micsoda a lánc) bizonyult tévesnek.
+
 ## Nyitva (5. kör / implementáció közben)
 
 1. autocolor pontos gain-képlete (célzott cast-sweep kellene)

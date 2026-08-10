@@ -90,6 +90,40 @@ class TestMaskedBlend:
         np.testing.assert_allclose(g.masked_blend(base, overlay, mask), overlay)
 
 
+class TestAutofix:
+    """#535: az `AutoFix` a `apply_enhance`-szel AZONOS megfejtett modellt
+    használ — csatornánkénti, hisztogram-darabszám alapú lineáris
+    szinthúzás. A hat érintett Glimmer-effekt (Holga, NightVision,
+    PencilSketch, Sixties, Cinemascope) ezen keresztül örökli a modellt."""
+
+    def _teljes_tartomanyu_kep(self, height: int = 40, width: int = 60) -> np.ndarray:
+        image = np.full((height, width, 3), 128, dtype=np.uint8)
+        body_rows = height - 8
+        ramp = np.linspace(10, 245, width, dtype=np.uint8)
+        image[:body_rows] = ramp[np.newaxis, :, np.newaxis]
+        image[body_rows : body_rows + 5] = 0
+        image[body_rows + 5 :] = 255
+        return image
+
+    def test_azonossag_teljes_tartomanyu_kepen(self):
+        image = self._teljes_tartomanyu_kep()
+        np.testing.assert_array_equal(g.autofix(image), image)
+
+    def test_szethuzza_a_nem_teljes_tartomanyu_kepet(self):
+        image = np.tile(np.linspace(60, 180, 50, dtype=np.uint8), (30, 1))
+        image = np.stack([image, image, image], axis=-1)
+        result = g.autofix(image)
+        assert result.min() == 0
+        assert result.max() == 255
+
+    def test_nem_mutalja_a_bemenetet(self):
+        image = np.tile(np.linspace(60, 180, 50, dtype=np.uint8), (30, 1))
+        image = np.stack([image, image, image], axis=-1)
+        original = image.copy()
+        g.autofix(image)
+        np.testing.assert_array_equal(image, original)
+
+
 class TestAdjustCurves:
     def test_azonossag_valtozatlan(self, image):
         result = g.adjust_curves(image, master=((0.0, 0.0), (255.0, 255.0)))

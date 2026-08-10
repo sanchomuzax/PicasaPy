@@ -144,23 +144,58 @@ class TestApplyAutocolor:
         assert result.max() <= 255
 
 
-class TestApplyEnhance:
-    def test_fix_tonusgorbe_a_semleges_rampan(self) -> None:
-        # megfejtve (golden 3. kör): enhance = fixLUT(stretch(autocolor(kép))).
-        # Teljes tartományú semleges rámpán a stretch és az autocolor no-op,
-        # így a kimenet maga a mért reziduál-görbe.
-        ramp = np.tile(np.arange(256, dtype=np.uint8), (2, 1))
-        image = np.stack([ramp, ramp, ramp], axis=-1)
-        result = apply_enhance(image)
-        mert_pontok = {16: 18.7, 64: 71.3, 128: 142.7, 192: 214.0, 240: 255.0}
-        for bemenet, vart in mert_pontok.items():
-            assert abs(int(result[0, bemenet, 0]) - vart) <= 1.0
+def _teljes_tartomanyu_kep(height: int = 40, width: int = 60) -> np.ndarray:
+    """Már full-range kép: a fekete/fehér pont mindhárom csatornán a
+    hisztogram-darabszám küszöb FÖLÖTT van (nem csak egy-egy szélső pixel) —
+    ez a Picasa „Night Seascape"-típusú, már kihasznált-tartományú fotója
+    (#535). A közép sáv egy folytonos, sima szürke gradiens."""
+    image = np.full((height, width, 3), 128, dtype=np.uint8)
+    body_rows = height - 8
+    ramp = np.linspace(10, 245, width, dtype=np.uint8)
+    image[:body_rows] = ramp[np.newaxis, :, np.newaxis]
+    # elég sok tiszta fekete/fehér sor ahhoz, hogy a darabszám-küszöböt
+    # (fix 0,5% / 0,2%) mindhárom csatornán átlépje
+    image[body_rows : body_rows + 5] = 0
+    image[body_rows + 5 :] = 255
+    return image
 
-    def test_vilagosit_kozeptonusban(self) -> None:
-        # a reziduál-görbe enyhén emel — az enhance nem sötétebb a stretchnél
-        image = _gradient_image()
+
+class TestApplyEnhance:
+    def test_azonossag_teljes_tartomanyu_kepen(self) -> None:
+        # megfejtve (#535): ha egy csatorna lo/hi-je már 0/255, a Picasa
+        # NEM nyúl hozzá — a kimenet bájtra azonos a bemenettel.
+        image = _teljes_tartomanyu_kep()
         result = apply_enhance(image)
-        assert result.mean() >= apply_autolight(image).mean()
+        np.testing.assert_array_equal(result, image)
+
+    def test_linearis_es_csatornankent_kulon_vag(self) -> None:
+        # megfejtve (#535): ki = (be − lo)·255/(hi − lo), csatornánként
+        # KÜLÖN lo/hi (fehéregyensúly-hatás). Építsünk képet, ahol a három
+        # csatorna eltérő tartományt használ ki, és ellenőrizzük a
+        # linearitást + hogy a csatornák tényleg különböző LUT-ot kapnak.
+        height, width = 50, 60
+        red = np.linspace(40, 200, width, dtype=np.uint8)
+        green = np.linspace(0, 255, width, dtype=np.uint8)
+        blue = np.linspace(80, 180, width, dtype=np.uint8)
+        # elég sok sor, hogy minden érték-darabszám a küszöb fölé kerüljön
+        image = np.tile(np.stack([red, green, blue], axis=-1), (height, 1, 1))
+
+        result = apply_enhance(image)
+
+        # a piros és a kék csatornát is széthúzta (nem full-range bemenet)
+        assert result[..., 0].min() == 0
+        assert result[..., 0].max() == 255
+        assert result[..., 2].min() == 0
+        assert result[..., 2].max() == 255
+        # a zöld már full-range volt → azonosság
+        np.testing.assert_array_equal(result[..., 1], image[..., 1])
+
+        # linearitás: a piros csatorna középső mintapontjára illik a
+        # (be − lo)·255/(hi − lo) képlet a mért lo/hi-vel
+        lo, hi = int(red.min()), int(red.max())
+        mid_input = int(red[width // 2])
+        expected = round((mid_input - lo) * 255.0 / (hi - lo))
+        assert abs(int(result[0, width // 2, 0]) - expected) <= 1
 
     def test_nem_mutalja_a_bemenetet(self) -> None:
         image = _gradient_image()
