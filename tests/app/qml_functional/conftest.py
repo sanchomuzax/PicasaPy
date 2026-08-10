@@ -75,6 +75,7 @@ def qml_app(qt_app, tmp_path):
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
     from picasapy.app.effect_thumbnails import EffectThumbnailProvider
+    from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.folder_tree_controller import FolderTreeController
@@ -135,6 +136,11 @@ def qml_app(qt_app, tmp_path):
     # arc-keretek (#147) — az application.py bekötésének tükre
     faces_helper = FacesHelper()
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
+    # #26 (3. lépcső) — az application.py bekötésének tükre
+    face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
+    engine.rootContext().setContextProperty(
+        "faceScanController", face_scan_controller
+    )
     # Időrend nézet (#24) — az application.py bekötésének tükre
     timeline_controller = TimelineController(db, provider)
     controller.syncFinished.connect(timeline_controller.reload)

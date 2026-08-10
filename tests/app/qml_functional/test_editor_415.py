@@ -53,6 +53,7 @@ def _build_app(qt_app, tmp_path, photo_size):
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
     from picasapy.app.effect_thumbnails import EffectThumbnailProvider
+    from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
     from picasapy.app.folder_tree_controller import FolderTreeController
@@ -99,6 +100,10 @@ def _build_app(qt_app, tmp_path, photo_size):
     )
     faces_helper = FacesHelper()
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
+    face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
+    engine.rootContext().setContextProperty(
+        "faceScanController", face_scan_controller
+    )
     timeline_controller = TimelineController(db, provider)
     controller.syncFinished.connect(timeline_controller.reload)
     engine.rootContext().setContextProperty("timelineController", timeline_controller)

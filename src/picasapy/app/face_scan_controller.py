@@ -25,7 +25,14 @@ csoportosítás KÜLÖN, ALACSONYABB PRIORITÁSÚ sora — a terv szerint „el�
 legyen meg minden arc HELYE, a felismerés ráér”. Ez a metódus SOHA nem fut
 automatikusan a `scanForFaces()` részeként — a hívó (a jövőbeli integráció)
 dönti el, mikor indítja (pl. a detektálás befejezése UTÁN, üresjáratban).
-Modell nélkül ugyanúgy tisztán kikapcsol (`embeddingModelUnavailable`)."""
+Modell nélkül ugyanúgy tisztán kikapcsol (`embeddingModelUnavailable`).
+
+#26 (3. lépcső, bekötés): `unnamedGroups()` adja a „Névtelenek" album
+CSOPORTOSÍTOTT nézetét (Picasa „Group by face"/„Expand groups"), az
+`assignNameToFaces()` pedig a tömeges névadást („Add a name") — a MEGLÉVŐ
+`FacesHelper.addFace()` úton, majd a sikeresen megírt arcokat `'named'`
+állapotba állítva (`index.mark_faces_named`), hogy se ez az album, se a
+jövőbeli csoportosítás ne értékelje újra."""
 
 from __future__ import annotations
 
@@ -34,7 +41,7 @@ import threading
 from pathlib import Path
 
 import cv2
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag
 from picasapy.faces.detector import FaceDetector
@@ -43,15 +50,19 @@ from picasapy.index import (
     all_photos,
     faces_missing_embedding,
     group_unnamed_faces,
+    mark_faces_named,
     open_index,
     replace_faces,
     store_embedding,
+    sync_tree,
     unnamed_album_photos,
+    unnamed_faces,
 )
 from picasapy.ini import load_document, parse_faces
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
+from .faces_helper import FacesHelper
 from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
@@ -65,6 +76,15 @@ _DETECT_MAX_DIMENSION = 960
 # Ennyi feldolgozott fotónként commitolunk — a dedup-hash-scan mintáját
 # követve (megszakított futás munkája sem vész el, ld. dedup_controller.py).
 _COMMIT_BATCH_SIZE = 50
+
+# #26 (3. lépcső): egy csoportban ennyi arcot mutatunk „Expand groups"
+# kikapcsolt állapotban — a teljes csoport a bekapcsolt állapotban látszik
+# (ld. `unnamedGroups()`). Csak megjelenítési korlát, a kijelölés/névadás
+# a NEM mutatott arcokat is eléri (a hívó a mutatott faceId-kat kapja meg,
+# tehát ez a korlát a gyakorlatban a kijelölhető halmazt is szűkíti —
+# szándékosan: „Expand groups" nélkül a felhasználó a reprezentatív
+# részhalmazt nevezi el, ami a Picasa csoport-előnézetének felel meg).
+_COLLAPSED_GROUP_PREVIEW = 12
 
 
 class FaceScanController(BackgroundWorkerMixin, QObject):
@@ -89,11 +109,17 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     embeddingFailed = Signal(str)
     embeddingModelUnavailable = Signal()
 
+    # #26 (3. lépcső): a „Névtelenek" album mérete változott (szkennelés,
+    # csoportosítás, vagy sikeres tömeges névadás után) — a bal hasáb
+    # sorának darabszáma ezt figyeli.
+    unnamedCountChanged = Signal()
+
     def __init__(
         self,
         db_path: str | Path,
         detector: FaceDetector | None = None,
         embedder: FaceEmbedder | None = None,
+        faces_helper: FacesHelper | None = None,
     ) -> None:
         super().__init__()
         self._db_path = Path(db_path)
@@ -102,6 +128,12 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         # YuNet/SFace-becsomagolás.
         self._detector = detector if detector is not None else FaceDetector()
         self._embedder = embedder if embedder is not None else FaceEmbedder()
+        # #26 (3. lépcső): a tömeges névadás EZEN keresztül írja a
+        # `faces=`/`[Contacts2]`-t — a MEGLÉVŐ `FacesHelper.addFace()` úton,
+        # nem új írási logikával (ld. jegy). `None`-nal is működik (pl. a
+        # `unnamedGroups`-ot önmagában tesztelő esetekben) — ekkor
+        # `assignNameToFaces` egyszerűen hamis eredményt ad, nem hibázik.
+        self._faces_helper = faces_helper
         self._stop_event: threading.Event | None = None
         self._embedding_stop_event: threading.Event | None = None
 
@@ -150,6 +182,120 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             {"path": str(Path(record.folder_path) / record.name), "name": record.name}
             for record in records
         ]
+
+    @Property(int, notify=unnamedCountChanged)
+    def unnamedCount(self) -> int:
+        """A „Névtelenek" album mérete — hány fotón van legalább egy még
+        névtelen SAJÁT találat. A bal hasáb sora ezt mutatja (0 esetén a
+        sor rejtve marad — modell nélkül ez a szám mindig 0, a szkennelés
+        el sem indul, ld. `scanForFaces`)."""
+        with open_index(self._db_path) as conn:
+            row = conn.execute(
+                "SELECT COUNT(DISTINCT photo_id) AS n FROM face WHERE state = 'unnamed'"
+            ).fetchone()
+        return int(row["n"]) if row is not None else 0
+
+    @Slot(bool, bool, result="QVariantList")
+    def unnamedGroups(self, group_by_face: bool, expand_groups: bool) -> list[dict]:
+        """A „Névtelenek" album QML-nek, CSOPORTOSÍTVA (issue #26, 3.
+        lépcső) — `[{label, faces: [{faceId, thumbUrl}, ...]}, ...]`.
+
+        `group_by_face=False`: egyetlen csoport, az összes névtelen arc (a
+        Picasa „Group by face" kikapcsolt állapota — nincs csoportosítás,
+        csak lista).
+
+        `group_by_face=True`: egy csoport a `face_group`-onként (`id`
+        szerint), plusz egy utolsó „még csoportosítatlan" csoport a
+        `group_id IS NULL` araoknak (pl. lenyomat-számítás előtt/modell
+        nélkül minden ide kerül). `expand_groups=False` esetén csoportonként
+        legfeljebb `_COLLAPSED_GROUP_PREVIEW` arc látszik (a Picasa
+        csoport-előnézete) — a lista maga is CSAK ennyi arcot ad vissza,
+        tehát a kijelölés/névadás is erre a részhalmazra korlátozódik,
+        amíg a felhasználó be nem kapcsolja a teljes listát.
+
+        Hiányzó fotóméret (width/height az indexben) esetén az adott arc
+        kimarad — `addFace()`-hez relatív (rect64) koordináta kell, amit
+        méret nélkül nem lehet számolni (ld. `UnnamedFace.rect`)."""
+        with open_index(self._db_path) as conn:
+            faces = [face for face in unnamed_faces(conn) if face.rect is not None]
+        if not group_by_face:
+            return [_group_payload(faces, self.tr("All unnamed faces ({0})").format(len(faces)))]
+        buckets: dict[int | None, list] = {}
+        order: list[int | None] = []
+        for face in faces:
+            if face.group_id not in buckets:
+                buckets[face.group_id] = []
+                order.append(face.group_id)
+            buckets[face.group_id].append(face)
+        ordered_keys = sorted(key for key in order if key is not None)
+        if None in buckets:
+            ordered_keys.append(None)
+        result = []
+        for key in ordered_keys:
+            members = buckets[key]
+            shown = members if expand_groups else members[:_COLLAPSED_GROUP_PREVIEW]
+            if key is None:
+                label = self.tr("Not yet grouped ({0})").format(len(members))
+            else:
+                label = self.tr("Group {0} ({1})").format(key, len(members))
+            if not expand_groups and len(shown) < len(members):
+                label = f"{label}…"
+            result.append(_group_payload(shown, label))
+        return result
+
+    @Slot("QVariantList", str, result=bool)
+    def assignNameToFaces(self, face_ids, name: str) -> bool:
+        """Tömeges névadás — a Picasa „Add a name" gombja: *„Assign a name
+        to all of the selected faces"*. A MEGLÉVŐ `FacesHelper.addFace()`
+        útján ír (nem új logika), majd a sikeresen megírt arcokat `'named'`
+        állapotba állítja (`mark_faces_named`), hogy se a „Névtelenek"
+        album, se a jövőbeli csoportosítás ne lássa többé — az ALAPSZABÁLY
+        (a Picasa döntései szentek) innentől erre a friss, EMBER által
+        adott névre is vonatkozik.
+
+        Üres névnél/arclistánál, vagy ha nincs bekötött `FacesHelper`,
+        hamis eredmény, írás nélkül. Igaz eredmény csak akkor, ha MINDEN
+        kért arcot sikerült megírni — részleges sikernél (pl. egy fájl
+        közben törlődött) a sikeres részt megtartjuk, de a visszatérési
+        érték hamis, hogy a hívó UI jelezhesse a hiányosságot."""
+        clean_name = (name or "").strip()
+        if self._faces_helper is None or not face_ids or not clean_name:
+            return False
+        ids = {int(face_id) for face_id in face_ids}
+        with open_index(self._db_path) as conn:
+            by_id = {face.id: face for face in unnamed_faces(conn) if face.rect is not None}
+        written_ids: list[int] = []
+        touched_folders: set[str] = set()
+        all_ok = True
+        for face_id in ids:
+            face = by_id.get(face_id)
+            if face is None:
+                all_ok = False
+                continue
+            left, top, right, bottom = face.rect
+            written = self._faces_helper.addFace(
+                str(face.photo_path), left, top, right, bottom, clean_name
+            )
+            if written:
+                written_ids.append(face_id)
+                touched_folders.add(str(face.photo_path.parent))
+            else:
+                all_ok = False
+        if written_ids:
+            with open_index(self._db_path) as conn:
+                mark_faces_named(conn, written_ids)
+                # a `people_in_index` a `folders.has_ini` alapján dönt,
+                # melyik mappa `.picasa.ini`-jét olvassa (ld.
+                # `index/people.py`) — az ÚJONNAN írt ini (első névadás egy
+                # eddig ini nélküli mappában) e nélkül csak a KÖVETKEZŐ
+                # háttér-szinkronnál látszana. A `photo_ops_controller`
+                # mintáját követve azonnal újraszinkronizáljuk az érintett
+                # mappákat, hogy az Emberek-gyűjtemény rögtön frissüljön.
+                for folder in touched_folders:
+                    sync_tree(conn, folder)
+                conn.commit()
+            self.unnamedCountChanged.emit()
+        return all_ok and bool(written_ids)
 
     @Slot()
     def computeEmbeddings(self) -> None:
@@ -212,6 +358,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         finally:
             if self._stop_event is stop_event:
                 self._stop_event = None
+        self.unnamedCountChanged.emit()
         self.scanFinished.emit(found, scanned)
 
     def _run_embedding(self, stop_event: threading.Event) -> None:
@@ -265,6 +412,20 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             return None
         flag = reduced_color_flag(payload, _DETECT_MAX_DIMENSION)
         return cv2.imdecode(payload, flag)
+
+
+def _group_payload(faces, label: str) -> dict:
+    """Egy `unnamedGroups()`-csoport QML-alakja — a bélyegkép ugyanazt a
+    `image://thumbs/<photo_id>` szolgáltatót használja, mint a fő rács
+    (ld. `app/models.py:_thumb_url`), forgatás-/szűrő-érzékeny cache-
+    buster NÉLKÜL (a Névtelenek albumban ez nem kritikus)."""
+    return {
+        "label": label,
+        "faces": [
+            {"faceId": face.id, "thumbUrl": f"image://thumbs/{face.photo_id}"}
+            for face in faces
+        ],
+    }
 
 
 def _has_named_face(photo_path: Path) -> bool:

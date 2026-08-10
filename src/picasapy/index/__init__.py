@@ -12,13 +12,16 @@ from .database import open_index
 from .face_groups import face_groups, group_unnamed_faces
 from .faces_detected import (
     PendingEmbeddingFace,
+    UnnamedFace,
     clear_faces,
     detected_face_count,
     face_embedding,
     faces_missing_embedding,
+    mark_faces_named,
     replace_faces,
     store_embedding,
     unnamed_album_photos,
+    unnamed_faces,
 )
 from .hashes import load_dhashes, save_dhashes
 from .queries import (
@@ -54,6 +57,7 @@ __all__ = [
     "SCHEMA_VERSION",
     "AlbumRecord",
     "PendingEmbeddingFace",
+    "UnnamedFace",
     "PersonRecord",
     "PhotoRecord",
     "RelocationCancelled",
@@ -74,6 +78,7 @@ __all__ = [
     "group_unnamed_faces",
     "load_color_tokens",
     "load_dhashes",
+    "mark_faces_named",
     "open_index",
     "paths_with_color",
     "people_in_index",
@@ -95,5 +100,6 @@ __all__ = [
     "store_embedding",
     "sync_folder",
     "sync_tree",
+    "unnamed_faces",
     "update_photo_fields",
 ]

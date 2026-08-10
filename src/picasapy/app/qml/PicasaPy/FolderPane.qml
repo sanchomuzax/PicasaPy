@@ -36,10 +36,17 @@ Rectangle {
     // albumsModel/selectedAlbumToken mintáját követi.
     property var peopleModel: []
     property string selectedPersonName: ""
+    // #26 (3. lépcső): a SAJÁT arcfelismerés „Névtelenek" sora — a
+    // People-gyűjteményben él (a Picasa is a személyek mellett mutatta),
+    // csak akkor látszik, ha van legalább egy szkennelt, még névtelen arc
+    // (modell nélkül ez a szám mindig 0 — a sor eleve rejtve marad).
+    property int unnamedFaceCount: 0
+    property bool unnamedFacesActive: false
     signal folderChosen(string path)
     signal starredChosen()
     signal albumChosen(string token)
     signal personChosen(string name)
+    signal unnamedFacesChosen()
 
     // #320: a controller friss gyűjtemény-listájának lekérése — a
     // Component.onCompleted-en kívül minden create/rename/delete/move
@@ -426,6 +433,43 @@ Rectangle {
                         pane.personChosen(personItem.modelData.name)
                     }
                 }
+            }
+        }
+
+        // #26 (3. lépcső): a „Névtelenek" sor — a személyek listája ALATT,
+        // ugyanabban az Emberek gyűjteményben (a personRepeater mintáját
+        // követi, de nincs saját modell-elem, csak egy darabszám).
+        Rectangle {
+            id: unnamedFacesItem
+            objectName: "unnamedFacesItem"
+            visible: !pane.peopleCollapsed && pane.unnamedFaceCount > 0
+            Layout.fillWidth: true
+            Layout.preferredHeight: 22
+            color: pane.unnamedFacesActive ? Theme.panelSelectionActive
+                   : (unnamedFacesMouse.containsMouse ? Theme.panelSelection : "transparent")
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: parent.left; anchors.leftMargin: 16
+                spacing: 5
+                Rectangle {
+                    width: 10; height: 10
+                    radius: 5
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Theme.textDark
+                    opacity: 0.45
+                }
+                Text {
+                    text: qsTr("Unnamed") + " (" + pane.unnamedFaceCount + ")"
+                    font.pixelSize: Theme.fontSize
+                    color: pane.unnamedFacesActive || unnamedFacesMouse.containsMouse
+                           ? Theme.panelSelectionText : Theme.textDark
+                }
+            }
+            MouseArea {
+                id: unnamedFacesMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                onClicked: pane.unnamedFacesChosen()
             }
         }
 
