@@ -471,6 +471,10 @@
         <translation>A kijelölt képek egyikét sem sikerült exportálni.</translation>
     </message>
     <message>
+        <source>Sorry, there is not enough free disk space to safely download pictures.</source>
+        <translation>Sajnáljuk, nincs elég szabad lemezhely a képek biztonságos letöltéséhez.</translation>
+    </message>
+    <message>
         <source>Unknown web export template: %1</source>
         <translation>Ismeretlen webexport-sablon: %1</translation>
     </message>
@@ -856,6 +860,10 @@
         <translation>A kijelölt képek egyike sem olvasható.</translation>
     </message>
     <message>
+        <source>Sorry, there is not enough free disk space to safely download pictures.</source>
+        <translation>Sajnáljuk, nincs elég szabad lemezhely a képek biztonságos letöltéséhez.</translation>
+    </message>
+    <message>
         <source>%1x%2 pixels</source>
         <translation>%1x%2 képpont</translation>
     </message>
@@ -979,6 +987,11 @@
 </context>
 <context>
     <name>EditorPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>The automatic copy is not available yet. To edit this picture, copy it to a writable folder yourself, or remove the write protection.</source>
+        <translation>Az automatikus másolás még nem érhető el. A kép szerkesztéséhez másold át egy írható mappába, vagy vedd le róla az írásvédelmet.</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="34"/>
         <source>Undo</source>
@@ -1648,6 +1661,16 @@
     <message>
         <source>Type your text, then click on the photo to place it.</source>
         <translation>Írja be a szöveget, majd kattintson a fotóra az elhelyezéséhez.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="2082"/>
+        <source>This file is read only. In order to edit this file, Picasa needs to copy the file's folder. Would you like to make a copy now?</source>
+        <translation>Ez a fájl csak olvasható. A szerkesztéshez a Picasának le kellene másolnia a fájl mappáját. Szeretné, ha most készítenénk egy másolatot?</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml" line="2088"/>
+        <source>Due to a disk error. The disk may be full or read-only.</source>
+        <translation>Lemezhiba történt. A lemez megtelt, vagy csak olvasható.</translation>
     </message>
 </context>
 <context>
@@ -2329,6 +2352,26 @@
     <message>
         <source>A modern, open Picasa successor.</source>
         <translation>Modern, nyílt Picasa-utód.</translation>
+    </message>
+    <message>
+        <location filename="Main.qml" line="967"/>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+    <message>
+        <location filename="Main.qml" line="1022"/>
+        <source>Hide Files</source>
+        <translation>Fájlok elrejtése</translation>
+    </message>
+    <message>
+        <location filename="Main.qml" line="1023"/>
+        <source>Don't Hide</source>
+        <translation>Ne rejtse el</translation>
+    </message>
+    <message>
+        <location filename="Main.qml" line="1037"/>
+        <source>Picasa had a problem loading this file(s). Would you like to hide the files on disk?</source>
+        <translation>A Picasa nem tudta betölteni ezt/ezeket a fájlt/fájlokat. Szeretné elrejteni a fájlokat a lemezen?</translation>
     </message>
 </context>
 <context>
@@ -3676,6 +3719,11 @@
         <location filename="../import_source_controller.py" line="142"/>
         <source>Choose a source folder first.</source>
         <translation>Előbb válassz forrásmappát.</translation>
+    </message>
+    <message>
+        <location filename="../import_source_controller.py" line="356"/>
+        <source>Sorry, there is not enough free disk space to safely download pictures.</source>
+        <translation>Sajnáljuk, nincs elég szabad lemezhely a képek biztonságos letöltéséhez.</translation>
     </message>
 </context>
 <context>

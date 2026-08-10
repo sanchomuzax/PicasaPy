@@ -1,8 +1,16 @@
 """EditController: EditSession + ini-perzisztencia + preview-regisztráció híd."""
 
+import os
+import sys
+
 import pytest
 
 from support.jpeg_factory import make_jpeg
+
+_SKIP_READONLY = pytest.mark.skipif(
+    sys.platform.startswith("win") or (hasattr(os, "geteuid") and os.geteuid() == 0),
+    reason="chmod-alapú read-only szimuláció POSIX-only, és root megkerüli a jogokat",
+)
 
 
 @pytest.fixture
@@ -139,6 +147,44 @@ class TestToggleTool:
     def test_without_active_edit_raises(self, controller):
         with pytest.raises(ValueError):
             controller.toggleTool("enhance")
+
+
+@_SKIP_READONLY
+class TestReadOnlySave:
+    """#459: a mentés (`_save`) csak-olvasható mappán NEM némán bukjon —
+    látható jelzést kell adnia, nem néma no-op / kivétel."""
+
+    def test_toggle_tool_on_readonly_folder_emits_signal_not_exception(
+        self, controller, photo
+    ):
+        os.chmod(photo.parent, 0o500)
+        try:
+            signals = []
+            controller.editSaveReadOnly.connect(lambda: signals.append(True))
+            controller.beginEdit("1", str(photo))
+            # nem szabad kivételt dobnia — a hívó (QML) egyébként sem
+            # kapná el, csendben ölné meg a slot-hívást
+            controller.toggleTool("redeye")
+            assert signals == [True]
+        finally:
+            os.chmod(photo.parent, 0o700)
+
+    def test_readonly_folder_does_not_write_ini(self, controller, photo):
+        os.chmod(photo.parent, 0o500)
+        try:
+            controller.beginEdit("1", str(photo))
+            controller.toggleTool("redeye")
+            assert not (photo.parent / ".picasa.ini").exists()
+        finally:
+            os.chmod(photo.parent, 0o700)
+
+    def test_writable_folder_still_saves_normally(self, controller, photo):
+        signals = []
+        controller.editSaveReadOnly.connect(lambda: signals.append(True))
+        controller.beginEdit("1", str(photo))
+        controller.toggleTool("redeye")
+        assert signals == []
+        assert (photo.parent / ".picasa.ini").exists()
 
 
 class TestOneShotLayering:

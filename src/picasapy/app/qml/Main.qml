@@ -945,6 +945,102 @@ ApplicationWindow {
         z: 95
     }
 
+    // #459: globális, látható hibasáv. AUDIT-lelet: a `syncFailed`
+    // (photoOpFailed IDE fut be, ld. photo_ops_controller.py
+    // `_on_photo_write_failed`), `albumWriteFailed`, `geoWriteFailed` és
+    // `faceWriteFailed` jelzések korábban SEHOVA nem voltak bekötve a
+    // QML-oldalon — a felhasználó néma bukást látott, a hiba csak a
+    // naplóba (`_log.exception`/hallgatólagos emit) került. Ez az
+    // egyetlen, közös felület mind a négy csatornának.
+    Rectangle {
+        id: errorBanner
+        objectName: "errorBanner"
+        z: 1000
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.topMargin: 8
+        radius: 4
+        color: "#c0392b"
+        visible: errorBannerText.text.length > 0
+        implicitWidth: errorBannerRow.implicitWidth + 16
+        implicitHeight: errorBannerRow.implicitHeight + 12
+
+        RowLayout {
+            id: errorBannerRow
+            anchors.centerIn: parent
+            spacing: 12
+            Text {
+                id: errorBannerText
+                objectName: "errorBannerText"
+                text: ""
+                color: "white"
+                font.pixelSize: Theme.fontSize
+                wrapMode: Text.WordWrap
+                Layout.maximumWidth: 480
+            }
+            PicasaButton {
+                objectName: "errorBannerCloseButton"
+                text: qsTr("Close")
+                onClicked: errorBannerText.text = ""
+            }
+        }
+
+        Timer {
+            interval: 8000
+            running: errorBannerText.text.length > 0
+            onTriggered: errorBannerText.text = ""
+        }
+    }
+
+    Connections {
+        target: controller
+        function onSyncFailed(message) { errorBannerText.text = message }
+        function onAlbumWriteFailed(message) { errorBannerText.text = message }
+        function onGeoWriteFailed(message) { errorBannerText.text = message }
+        function onBrokenPhotosDetected(items) {
+            var ids = brokenPhotoDialog.pendingIds.slice()
+            for (var i = 0; i < items.length; i++) ids.push(items[i].id)
+            brokenPhotoDialog.pendingIds = ids
+            // #459: rövid összegyűjtés — több törött kép is felbukkanhat
+            // egymás után görgetés közben, ezeket EGY dialógusba fűzzük
+            // ("this file(s)"), nem fotónként külön felugró ablakot.
+            brokenPhotoBatchTimer.restart()
+        }
+    }
+    Connections {
+        target: typeof facesHelper !== "undefined" ? facesHelper : null
+        function onFaceWriteFailed(message) { errorBannerText.text = message }
+    }
+
+    // #459: sérült/betölthetetlen kép — ELREJTÉS felajánlása (nem törlés),
+    // a felhasználó döntésével. A "Hide Files" a MEGLÉVŐ elrejtés-úton fut
+    // (`controller.hidePhotosByIds` → `_apply_batch`, a `toggleHiddenRows`
+    // mintája, `photo_ops_controller.py`) — itt NEM íródott újra.
+    ConfirmDialog {
+        id: brokenPhotoDialog
+        namePrefix: "brokenPhoto"
+        yesText: qsTr("Hide Files")
+        noText: qsTr("Don't Hide")
+        property var pendingIds: []
+        onConfirmed: {
+            controller.hidePhotosByIds(brokenPhotoDialog.pendingIds)
+            brokenPhotoDialog.pendingIds = []
+        }
+        onDenied: brokenPhotoDialog.pendingIds = []
+    }
+
+    Timer {
+        id: brokenPhotoBatchTimer
+        interval: 400
+        onTriggered: {
+            if (brokenPhotoDialog.pendingIds.length > 0) {
+                brokenPhotoDialog.ask("", qsTr(
+                    "Picasa had a problem loading this file(s). Would you "
+                    + "like to hide the files on disk?"))
+            }
+        }
+    }
+
     // alsó sáv: infó-sáv + kijelölés-tálca (TrayBar.qml, #150)
     footer: TrayBar {
         id: trayBar

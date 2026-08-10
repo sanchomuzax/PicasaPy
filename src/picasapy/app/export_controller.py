@@ -17,6 +17,7 @@ from picasapy.export import (
     export_photos,
     resolve_export_quality,
 )
+from picasapy.fileops import has_enough_free_space, required_bytes_for
 
 from .formatting import to_local_path
 from .worker_thread import BackgroundWorkerMixin
@@ -73,6 +74,19 @@ class ExportMixin(BackgroundWorkerMixin):
         target = to_local_path(target_dir)
         if not items or not target:
             self.exportFinished.emit(0, 0)
+            return
+        # #459: lemezhely-ellenőrzés ELŐRE — a forrásfájlok teljes méretét
+        # vetjük össze a céllal, hogy a művelet NE induljon el félbehagyva
+        # (ld. `picasapy.fileops.diskspace` docstringje a szorzó hiányáról).
+        required = required_bytes_for(item.source for item in items)
+        if not has_enough_free_space(Path(target), required):
+            self.exportFailedDetails.emit(
+                [self.tr(
+                    "Sorry, there is not enough free disk space to "
+                    "safely download pictures."
+                )]
+            )
+            self.exportFinished.emit(0, len(items))
             return
         settings = ExportSettings(
             max_dimension=max_dimension if max_dimension > 0 else None,

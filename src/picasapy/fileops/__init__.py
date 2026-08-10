@@ -5,6 +5,7 @@ A `.picasa.ini` érintett szekciói minden művelet után round-trip-hűen
 """
 
 from .copy import copy_photo
+from .diskspace import has_enough_free_space, required_bytes_for
 from .move import move_photo
 from .rename import RenameItem, preview_name, rename_photo, rename_photos_many
 from .reveal import open_folder_in_file_manager, reveal_in_file_manager
@@ -15,6 +16,7 @@ from .trash import (
     find_trash_dir,
     trash_available,
 )
+from .writable import is_folder_writable
 
 __all__ = [
     "RenameItem",
@@ -23,11 +25,14 @@ __all__ = [
     "delete_permanently",
     "delete_to_trash",
     "find_trash_dir",
+    "has_enough_free_space",
+    "is_folder_writable",
     "move_photo",
     "preview_name",
     "rename_photo",
     "rename_photos_many",
     "open_folder_in_file_manager",
+    "required_bytes_for",
     "reveal_in_file_manager",
     "trash_available",
 ]
