@@ -158,6 +158,77 @@ def face_embedding(conn: sqlite3.Connection, face_id: int) -> np.ndarray | None:
     return np.frombuffer(row["embedding"], dtype=np.float32)
 
 
+@dataclass(frozen=True)
+class UnnamedFace:
+    """Egy MÉG NÉVTELEN, detektált arc — a „Névtelenek" album csoportosított
+    megjelenítéséhez (issue #26, 3. lépcső: bekötés). `rect` a relatív
+    (rect64-stílusú, [0..1]) keret — a meglévő `FacesHelper.addFace()` úton
+    íráshoz kell EBBEN a formátumban, ld. `app/faces_helper.py`. `None`, ha a
+    fotó szélessége/magassága ismeretlen az indexben (ritka, hiányos
+    indexelés) — ilyenkor a hívó a nevet nem tudja megírni, ezért ezeket a
+    csoportosított listákból kihagyjuk (ld. `FaceScanController`)."""
+
+    id: int
+    photo_id: int
+    photo_path: Path
+    group_id: int | None
+    rect: tuple[float, float, float, float] | None
+
+
+def unnamed_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
+    """Minden `state = 'unnamed'` arc — csoport szerint rendezve (a
+    csoportosítatlanok, `group_id IS NULL`, a végén), majd `id` szerint
+    (determinisztikus). A már névvel ellátott (`state != 'unnamed'`) arcokat
+    ez a lekérdezés SOSEM adja vissza — az alapszabály (a Picasa döntései
+    szentek) itt is szerkezeti kizárás, a `group_unnamed_faces` mintájára."""
+    rows = conn.execute(
+        "SELECT f.id, f.photo_id, f.rect_left, f.rect_top, f.rect_right, "
+        "f.rect_bottom, f.group_id, fo.path AS folder_path, p.name AS name, "
+        "p.width AS width, p.height AS height "
+        "FROM face f "
+        "JOIN photos p ON p.id = f.photo_id "
+        "JOIN folders fo ON fo.id = p.folder_id "
+        "WHERE f.state = 'unnamed' "
+        "ORDER BY (f.group_id IS NULL), f.group_id, f.id"
+    )
+    result = []
+    for row in rows:
+        width, height = row["width"], row["height"]
+        rect = None
+        if width and height:
+            rect = (
+                row["rect_left"] / width,
+                row["rect_top"] / height,
+                row["rect_right"] / width,
+                row["rect_bottom"] / height,
+            )
+        result.append(
+            UnnamedFace(
+                id=row["id"],
+                photo_id=row["photo_id"],
+                photo_path=Path(row["folder_path"]) / row["name"],
+                group_id=row["group_id"],
+                rect=rect,
+            )
+        )
+    return tuple(result)
+
+
+def mark_faces_named(conn: sqlite3.Connection, face_ids: Iterable[int]) -> None:
+    """A megadott arcok `state`-jét `'named'`-re állítja — a tömeges
+    névadás (issue #26, 3. lépcső) sikeres `faces_helper.addFace()` írása
+    UTÁN hívandó. Innentől ezek az arcok SEM a „Névtelenek" albumban
+    (`unnamed_faces`), SEM a jövőbeli csoportosításban (`group_unnamed_
+    faces`, amely csak `state = 'unnamed'`-et néz) nem jelennek meg újra —
+    a friss emberi döntés éppúgy szent, mint az importált."""
+    ids = list(face_ids)
+    if not ids:
+        return
+    conn.executemany(
+        "UPDATE face SET state = 'named' WHERE id = ?", [(i,) for i in ids]
+    )
+
+
 def unnamed_album_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     """A „Névtelenek" album (issue #26, javasolt 1. lépcső): minden fotó,
     amelyen a SAJÁT detektorunk legalább egy arcot talált — csoportosítás

@@ -5,6 +5,29 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.51] – 2026-08-10
+
+### Hozzáadva
+- **Az arcfelismerés végre LÁTSZIK is (#26, 3. lépcső):** a bal hasábban az
+  Emberek gyűjteményben megjelent a **„Névtelenek"** sor, benne a program
+  által megtalált arcokkal, **arcok szerint csoportosítva**
+  („Csoportosítás arc szerint" / „Csoportok kibontása").
+- **Tömeges névadás:** jelöld ki a hozzád tartozó arcokat, és a **„Név
+  hozzáadása"** egyszerre mindnek nevet ad. Az első névadásnál a személy
+  megjelenik az **Emberek** gyűjteményben, a név pedig a kép melletti
+  `.picasa.ini`-be íródik — ugyanazon az úton, amit a kézi arccímkézés is
+  használ.
+
+### Fontos garancia
+- **A meglévő névcímkéidhez a program nem nyúl.** Az elnevezett arcok
+  szerkezetileg kimaradnak a csoportosításból és a tömeges névadásból is.
+
+### Ismert korlát
+- A „Névtelenek" nézetben egyelőre a **teljes fénykép** látszik, nem a
+  kivágott, szemvonalra igazított arc — ez külön munka.
+- Ha a felismerő modell hiányzik, a „Névtelenek" sor egyszerűen nem jelenik
+  meg; minden más változatlanul működik.
+
 ## [0.6.50] – 2026-08-10
 
 ### Hozzáadva

@@ -51,6 +51,7 @@ from .keywords_controller import KeywordsMixin
 from .library_controller import LibraryMixin
 from .collections import COLLECTIONS, DEFAULT_COLLAPSED, collection_setting_key
 from .models import FolderListModel, PhotoGridModel, folder_order
+from .people_controller import PeopleMixin
 from .perf_controller import PerfMonitorMixin
 from .photo_ops_controller import PhotoOpsMixin
 from .search_controller import SearchMixin
@@ -89,6 +90,10 @@ class AppController(
     CreateMixin,
     GeoMixin,
     LibraryMixin,
+    # #26 (3. lépcső): a bal hasáb Emberek gyűjteménye — a `PeopleMixin`
+    # (#397) MOSTANTÓL bekötve (korábban önállóan, host-osztályos teszttel
+    # élt, ld. `people_controller.py` modul-docstring és a jegy jelentése).
+    PeopleMixin,
     TrayMixin,
     QObject,
 ):
@@ -176,6 +181,10 @@ class AppController(
         # #28: sötét téma kapcsoló — alapból világos, QSettings-ből visszaáll
         self._init_appearance()
         self._init_language()
+        # #26 (3. lépcső): a bal hasáb Emberek gyűjteménye — a PeopleMixin
+        # saját kezdeti állapota (`people` property üres listával indul,
+        # a `_reload()` tölti fel az indexből)
+        self._init_people()
         # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
         # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
         # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
@@ -671,6 +680,8 @@ class AppController(
         elif mode == "album":
             with open_index(self._db_path) as conn:
                 self._show(album_photos(conn, param))
+        elif self._refresh_people_view(mode, param):
+            pass  # #26: a PeopleMixin saját ágon kezelte ("person" mód)
         elif mode == "geo":
             # #30: hely-szűrő — a friss geocímkék (ini-írás után is) látszanak
             with open_index(self._db_path) as conn:
@@ -678,6 +689,15 @@ class AppController(
         elif param:
             with open_index(self._db_path) as conn:
                 self._show(self._feed_records(conn))
+
+    @Slot()
+    def refreshCollections(self) -> None:
+        """#26 (3. lépcső): a bal hasáb gyűjteményeinek (Albumok/Emberek)
+        frissítése — a `faceScanController.assignNameToFaces()` sikeres
+        névadása után hívandó a QML-ből, hogy az első névadásnál keletkező
+        új Emberek-album azonnal megjelenjen (`_reload_after_sync` mintája:
+        a görgetési pozíció megmarad)."""
+        self._reload(preserve_scroll=True)
 
     @Slot()
     def _reload_after_sync(self) -> None:
@@ -700,6 +720,7 @@ class AppController(
             with open_index(self._db_path) as conn:
                 self._folders.load(conn)  # #321: a fa sorrendje rögzített
                 self._load_albums(conn)  # #9: a bal hasáb albumlistája
+                self._load_people(conn)  # #26: a bal hasáb Emberek gyűjteménye
         if mode != "folder":
             # #38: aktív keresés/szűrő a háttér-sync után is megmarad —
             # a selectFolder eldobná, ezért csak a nézetet frissítjük.

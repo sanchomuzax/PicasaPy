@@ -2084,6 +2084,37 @@
         <source>Remove this collection? The folders and files stay on disk.</source>
         <translation>Eltávolítja ezt a gyűjteményt? A mappák és a fájlok a lemezen maradnak.</translation>
     </message>
+    <message>
+        <source>Unnamed</source>
+        <translation>Névtelenek</translation>
+    </message>
+</context>
+<context>
+    <name>UnnamedFacesView</name>
+    <message>
+        <source>Group by face</source>
+        <translation>Csoportosítás arc szerint</translation>
+    </message>
+    <message>
+        <source>Expand groups</source>
+        <translation>Csoportok kibontása</translation>
+    </message>
+    <message>
+        <source>%1 selected</source>
+        <translation>%1 kijelölve</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Név</translation>
+    </message>
+    <message>
+        <source>Add a name</source>
+        <translation>Név hozzáadása</translation>
+    </message>
+    <message>
+        <source>Assign a name to all of the selected faces</source>
+        <translation>Név hozzárendelése az összes kijelölt archoz</translation>
+    </message>
 </context>
 <context>
     <name>HistogramBox</name>
@@ -3590,6 +3621,24 @@
         <location filename="../drop_import_controller.py" line="110"/>
         <source>Drop pictures or folders here to add them.</source>
         <translation>Húzz ide képeket vagy mappákat a hozzáadásukhoz.</translation>
+    </message>
+</context>
+<context>
+    <name>FaceScanController</name>
+    <message>
+        <location filename="../face_scan_controller.py"/>
+        <source>All unnamed faces ({0})</source>
+        <translation>Minden névtelen arc ({0})</translation>
+    </message>
+    <message>
+        <location filename="../face_scan_controller.py"/>
+        <source>Not yet grouped ({0})</source>
+        <translation>Még nincs csoportba rendezve ({0})</translation>
+    </message>
+    <message>
+        <location filename="../face_scan_controller.py"/>
+        <source>Group {0} ({1})</source>
+        <translation>{0}. csoport ({1})</translation>
     </message>
 </context>
 <context>

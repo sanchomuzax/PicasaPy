@@ -213,3 +213,216 @@ class TestComputeEmbeddings:
             groups = face_groups(conn)
         assert len(groups) == 1
         assert groups[0].face_count == 2
+
+
+class TestUnnamedGroups:
+    """#26 (3. lépcső): a „Névtelenek" album CSOPORTOSÍTOTT nézete és a
+    tömeges névadás — a bekötés QML-mentes, közvetlen szintje."""
+
+    def test_no_model_no_scan_gives_empty_groups(self, qt_app, tmp_path):
+        # (j)(1): modell hiányában a „Névtelenek" album ÜRES, nem hibázik
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl = _make_controller(
+            qt_app, tmp_path, root, detector=_FakeDetector(available=False)
+        )
+        assert ctl.unnamedGroups(True, True) == []
+        flat = ctl.unnamedGroups(False, False)
+        assert len(flat) == 1
+        assert flat[0]["faces"] == []
+        assert ctl.unnamedCount == 0
+
+    def test_flat_mode_returns_a_single_group_with_all_faces(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        make_jpeg(root / "b.jpg", size=(100, 100))
+        ctl = _make_controller(qt_app, tmp_path, root)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        groups = ctl.unnamedGroups(False, False)
+        assert len(groups) == 1
+        assert len(groups[0]["faces"]) == 2
+        assert ctl.unnamedCount == 2
+
+    def test_grouped_mode_after_clustering(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        make_jpeg(root / "b.jpg", size=(100, 100))
+        ctl = _make_controller(qt_app, tmp_path, root)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        _run(ctl.embeddingFinished, ctl.computeEmbeddings)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        # a fake embedder mindkét arcnak ugyanazt a lenyomatot adja → 1 csoport
+        groups = ctl.unnamedGroups(True, True)
+        assert len(groups) == 1
+        assert len(groups[0]["faces"]) == 2
+
+
+class TestAssignNameToFaces:
+    """(j)(2)+(3): a tömeges névadás a MEGLÉVŐ `FacesHelper.addFace()` úton
+    ír, minden kijelölt archoz — és az első névadás után a név megjelenik
+    az Emberek-gyűjteményben (PeopleMixin úton)."""
+
+    def _controller_with_faces_helper(self, qt_app, tmp_path, root):
+        from picasapy.app.face_scan_controller import FaceScanController
+        from picasapy.app.faces_helper import FacesHelper
+        from picasapy.index import open_index, sync_tree
+
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, root)
+        faces_helper = FacesHelper()
+        ctl = FaceScanController(
+            tmp_path / "index.db",
+            detector=_FakeDetector(),
+            embedder=_FakeEmbedder(),
+            faces_helper=faces_helper,
+        )
+        return ctl, faces_helper
+
+    def test_assigns_name_to_all_selected_faces_via_faces_helper(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        make_jpeg(root / "b.jpg", size=(100, 100))
+        ctl, _helper = self._controller_with_faces_helper(qt_app, tmp_path, root)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        groups = ctl.unnamedGroups(False, False)
+        face_ids = [face["faceId"] for face in groups[0]["faces"]]
+        assert len(face_ids) == 2
+
+        ok = ctl.assignNameToFaces(face_ids, "Roy Avery")
+        assert ok is True
+
+        # a .picasa.ini mindkét fotón megkapta a névcímkét
+        from picasapy.ini import load_document, parse_faces
+
+        document = load_document(root / ".picasa.ini")
+        names = {c.person_id.casefold(): c.name for c in _contacts(document)}
+        for photo_name in ("a.jpg", "b.jpg"):
+            section = document.section(photo_name)
+            faces = parse_faces(section.get("faces"))
+            assert len(faces) == 1
+            assert names.get(faces[0].contact_id.casefold()) == "Roy Avery"
+
+        # a megnevezett arcok eltűnnek a „Névtelenek" albumból
+        assert ctl.unnamedCount == 0
+        flat = ctl.unnamedGroups(False, False)
+        assert len(flat) == 1
+        assert flat[0]["faces"] == []
+
+    def test_first_naming_creates_a_people_entry(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl, helper = self._controller_with_faces_helper(qt_app, tmp_path, root)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        groups = ctl.unnamedGroups(False, False)
+        face_ids = [face["faceId"] for face in groups[0]["faces"]]
+
+        assert ctl.assignNameToFaces(face_ids, "Roy Avery") is True
+
+        # a `sync_tree` a névadás RÉSZE (ld. face_scan_controller.py) —
+        # a friss .picasa.ini-t külön szinkron nélkül is látja
+        from picasapy.index import open_index, people_in_index
+
+        with open_index(tmp_path / "index.db") as conn:
+            people = people_in_index(conn)
+        assert any(person.name == "Roy Avery" for person in people)
+
+    def test_empty_name_or_no_selection_is_a_no_op(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl, _helper = self._controller_with_faces_helper(qt_app, tmp_path, root)
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        groups = ctl.unnamedGroups(False, False)
+        face_ids = [face["faceId"] for face in groups[0]["faces"]]
+
+        assert ctl.assignNameToFaces([], "Roy Avery") is False
+        assert ctl.assignNameToFaces(face_ids, "") is False
+        assert ctl.assignNameToFaces(face_ids, "   ") is False
+        # egyik sem írt semmit — a fotó még mindig névtelen
+        assert ctl.unnamedCount == 1
+
+    def test_without_faces_helper_returns_false(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))
+        ctl = _make_controller(qt_app, tmp_path, root)  # faces_helper=None
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        groups = ctl.unnamedGroups(False, False)
+        face_ids = [face["faceId"] for face in groups[0]["faces"]]
+        assert ctl.assignNameToFaces(face_ids, "Roy Avery") is False
+
+
+class TestBaseRuleRegression:
+    """(j)(4): a már névcímkés arcok hozzárendelését SEM a csoportosítás,
+    SEM a tömeges névadás nem írja felül — a meglévő, ember által adott
+    névcímkék soha nem értékelődnek újra."""
+
+    def test_existing_named_face_is_untouched_by_scan_and_bulk_naming(
+        self, qt_app, tmp_path
+    ):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg", size=(100, 100))  # már névcímkés (Roy Avery)
+        make_jpeg(root / "b.jpg", size=(100, 100))  # névtelen, ezt fogja csoportosítani/elnevezni
+        contact_id = "b8e4117cf1d6615b"
+        rect = "3f840000c3509f84"
+        (root / ".picasa.ini").write_text(
+            f"[Contacts2]\n{contact_id}=Roy Avery;;\n"
+            f"[a.jpg]\nfaces=rect64({rect}),{contact_id};\n",
+            encoding="utf-8",
+        )
+        from picasapy.app.face_scan_controller import FaceScanController
+        from picasapy.app.faces_helper import FacesHelper
+        from picasapy.index import open_index, sync_tree
+
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, root)
+        faces_helper = FacesHelper()
+        ctl = FaceScanController(
+            tmp_path / "index.db",
+            detector=_FakeDetector(),
+            embedder=_FakeEmbedder(),
+            faces_helper=faces_helper,
+        )
+
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+        # a.jpg-t a scan ki sem hagyta — csak b.jpg-n talált arcot
+        groups = ctl.unnamedGroups(False, False)
+        assert len(groups) == 1
+        face_ids = [face["faceId"] for face in groups[0]["faces"]]
+        assert len(face_ids) == 1
+
+        assert ctl.assignNameToFaces(face_ids, "Someone Else") is True
+
+        from picasapy.ini import load_document, parse_faces
+
+        document = load_document(root / ".picasa.ini")
+        # Roy Avery hozzárendelése a.jpg-n VÁLTOZATLAN
+        section_a = document.section("a.jpg")
+        faces_a = parse_faces(section_a.get("faces"))
+        assert len(faces_a) == 1
+        names = {c.person_id.casefold(): c.name for c in _contacts(document)}
+        assert names.get(faces_a[0].contact_id.casefold()) == "Roy Avery"
+        # b.jpg megkapta az új nevet, a.jpg-t nem érintette
+        section_b = document.section("b.jpg")
+        faces_b = parse_faces(section_b.get("faces"))
+        assert len(faces_b) == 1
+        assert names.get(faces_b[0].contact_id.casefold()) == "Someone Else"
+
+
+def _contacts(document):
+    from picasapy.ini import contacts_of
+
+    return contacts_of(document)

@@ -49,6 +49,7 @@ from .drop_import_controller import DropImportController
 from .edit_controller import EditController
 from .edit_preview import EditPreviewProvider
 from .effect_thumbnails import EffectThumbnailProvider
+from .face_scan_controller import FaceScanController
 from .faces_helper import FacesHelper
 from .language_controller import (
     DEFAULT_LANGUAGE,
@@ -543,6 +544,16 @@ def run(argv: list[str]) -> int:
     # context property mögül idő előtt eltüntesse a QObject-et.
     faces_helper = FacesHelper()
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
+    # #26 (3. lépcső): a SAJÁT arcfelismerés bekötése — a `FaceScanController`
+    # (1–2. lépcső) eddig sehol nem volt elérve a QML-ből. A `faces_helper`
+    # átadása a tömeges névadáshoz kell (`assignNameToFaces` a MEGLÉVŐ
+    # `FacesHelper.addFace()` úton ír, ld. `face_scan_controller.py`).
+    face_scan_controller = FaceScanController(
+        data_dir / "index.db", faces_helper=faces_helper
+    )
+    engine.rootContext().setContextProperty(
+        "faceScanController", face_scan_controller
+    )
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().
     engine.rootContext().setContextProperty("appVersion", version_string())

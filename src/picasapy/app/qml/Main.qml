@@ -61,6 +61,9 @@ ApplicationWindow {
     property bool placesPanelOpen: false  // Helyek-panel (#30, térkép)
     // Tulajdonságok-panel (#13, Alt+Enter)
     property bool propertiesPanelOpen: false
+    // #26 (3. lépcső): a „Névtelenek" nézet — a fő rács helyén jelenik
+    // meg, amíg be van kapcsolva (ld. UnnamedFacesView.qml)
+    property bool unnamedFacesOpen: false
     // a jobbklikkelt kép sora (#15) — a kontextusmenü egyedi műveleteinek
     // (átnevezés, fájlkezelő) célpontja
     property int fileOpTargetRow: -1
@@ -616,8 +619,15 @@ ApplicationWindow {
             searchResultCount: controller ? controller.searchResultCount : 0
             albumsModel: controller ? controller.albums : []
             selectedAlbumToken: controller ? controller.currentAlbumToken : ""
+            // #26 (3. lépcső): az Emberek gyűjtemény + a „Névtelenek" sor
+            peopleModel: controller ? controller.people : []
+            selectedPersonName: controller ? controller.currentPersonName : ""
+            unnamedFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
+                               ? faceScanController.unnamedCount : 0
+            unnamedFacesActive: window.unnamedFacesOpen
             onFolderChosen: function(path) {
                 window.clearSelection()
+                window.unnamedFacesOpen = false
                 if (toolbar.searchText.trim().length > 0) {
                     // #45: aktív keresésnél a szűrés megmarad, a
                     // találatok a mappára szűkülnek (Picasa-viselkedés)
@@ -630,13 +640,27 @@ ApplicationWindow {
             onStarredChosen: {
                 toolbar.clearSearch()
                 window.clearSelection()
+                window.unnamedFacesOpen = false
                 controller.showStarred()
             }
             onAlbumChosen: function(token) {
                 if (!controller) return
                 toolbar.clearSearch()
                 window.clearSelection()
+                window.unnamedFacesOpen = false
                 controller.showAlbum(token)
+            }
+            onPersonChosen: function(name) {
+                if (!controller) return
+                toolbar.clearSearch()
+                window.clearSelection()
+                window.unnamedFacesOpen = false
+                controller.showPerson(name)
+            }
+            onUnnamedFacesChosen: {
+                toolbar.clearSearch()
+                window.clearSelection()
+                window.unnamedFacesOpen = true
             }
         }
 
@@ -704,9 +728,12 @@ ApplicationWindow {
                             id: grid
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            // kereséskor a #7-es csoportosított nézet fut
+                            // kereséskor a #7-es csoportosított nézet fut,
+                            // a „Névtelenek" nézetnél (#26) az UnnamedFacesView
                             // #305: null-őr
-                            visible: controller ? !controller.searchActive : true
+                            visible: controller
+                                ? (!controller.searchActive && !window.unnamedFacesOpen)
+                                : true
                             appWindow: window
                             onOpenRequested: function(row) {
                                 window.viewerOpen = true
@@ -728,7 +755,9 @@ ApplicationWindow {
                             Layout.fillHeight: true
                             clip: true
                             // #305: null-őr
-                            visible: controller ? controller.searchActive : false
+                            visible: controller
+                                ? (controller.searchActive && !window.unnamedFacesOpen)
+                                : false
                             model: controller ? controller.searchGroups : []
                             spacing: 0
 
@@ -814,6 +843,19 @@ ApplicationWindow {
                                 }
                             }
                             ScrollBar.vertical: PicasaScrollBar {}
+                        }
+
+                        // #26 (3. lépcső): a „Névtelenek" album — a bal
+                        // hasáb új sorára kattintva jelenik meg, a fő rács
+                        // helyén (ld. UnnamedFacesView.qml docstring)
+                        UnnamedFacesView {
+                            id: unnamedFacesView
+                            objectName: "unnamedFacesView"
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            visible: window.unnamedFacesOpen
+                            faceScanController: typeof faceScanController !== "undefined"
+                                                 ? faceScanController : null
                         }
                     }
                 }
