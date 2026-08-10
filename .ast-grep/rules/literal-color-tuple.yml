@@ -1,0 +1,32 @@
+id: literal-color-tuple
+language: python
+severity: hint
+message: >-
+  Beégetett szín-hármas — ellenőrizd a csatornasorrendet és a szemantikát.
+note: >-
+  A render/ réteg RGB-ben dolgozik (a be-/kilépési pontok explicit
+  cv2.COLOR_BGR2RGB / RGB2BGR átváltást végeznek), a lemezről olvasott
+  OpenCV-képek viszont BGR-ek. Két munkamenet vitatkozott arról, hogy a
+  Holga 0xff6666-os színe fel van-e cserélve (#510 / #515) — a valódi
+  válasz egyik sem volt: a Picasa kimenete TISZTA SZÜRKE, tehát a
+  filtercolor nem színez, hanem a szürkítés csatornasúlyait modulálja
+  (w_c = luma_c · szín_c / Σ). Beégetett szín láttán mindig kérdezd meg:
+  RGB vagy BGR, és tényleg SZÍNEZÉS-e a művelet?
+rule:
+  all:
+    - any:
+        - pattern: inner_glow($$$A, ($R, $G, $B), $$$C)
+        - pattern: bw_tint($$$A, ($R, $G, $B))
+        - pattern: tint_multiply($$$A, ($R, $G, $B), $$$C)
+        - pattern: draw_drop_shadow($$$A, ($R, $G, $B), $$$C)
+    - not:
+        any:
+          - pattern: $F($$$X, ($C, $C, $C), $$$Y)
+          - pattern: $F($$$X, ($C, $C, $C))
+constraints:
+  R:
+    regex: '^[0-9]+$'
+  G:
+    regex: '^[0-9]+$'
+  B:
+    regex: '^[0-9]+$'

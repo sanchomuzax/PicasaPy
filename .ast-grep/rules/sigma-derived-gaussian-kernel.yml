@@ -1,0 +1,13 @@
+id: sigma-derived-gaussian-kernel
+language: python
+severity: hint
+message: >-
+  A Gauss-kernel mérete a szigmából származik — ellenőrizd, hogy a szigma korlátos.
+note: >-
+  A cv2.GaussianBlur (0, 0) ksize-szal a szigmából számolja a kernelt
+  (float32-nél ~8σ+1), tehát a futásidő EGYENESEN ARÁNYOS a szigmával.
+  Mért érték egy 4000×3000-es képen, σ=1400 mellett: 168 másodperc egyetlen
+  lépésre (#504). Ha a szigma számított érték (csúszka vagy képméret),
+  gondoskodj felső korlátról, vagy moss el leskálázott rácson.
+rule:
+  pattern: cv2.GaussianBlur($IMG, (0, 0), $$$SIGMA)
