@@ -1,8 +1,28 @@
 """EditPreviewProvider: image://editpreview/<id> élő szerkesztési előnézet."""
 
+from PIL import Image
 from PySide6.QtCore import QSize
 
 from support.jpeg_factory import make_jpeg
+
+
+def _make_gradient_jpeg(path, size=(8, 6)):
+    """`make_jpeg` egyszínű (`"red"`) képe a #535-ös `enhance`-átírás után
+    NEM megfelelő fixture, ha a cél éppen az `enhance` HATÁSÁNAK mérése:
+    egy tökéletesen egyszínű képen minden csatorna hisztogramja egyetlen
+    tüske (lo==hi), a `apply_channel_levels_stretch` ezt (helyesen)
+    AZONOSSÁGNAK veszi (nincs mit széthúzni) — így a régi, mindig-módosító
+    modellel ellentétben itt a kimenet a forrással egyezne. Ehelyett egy
+    valódi (nem full-range, nem egyszínű) gradienst adunk, amin a
+    szinthúzásnak ténylegesen van dolga."""
+    image = Image.new("RGB", size)
+    width, height = size
+    for x in range(width):
+        for y in range(height):
+            value = 60 + round(x * 120 / max(width - 1, 1))
+            image.putpixel((x, y), (value, value // 2, 255 - value))
+    image.save(path, "JPEG")
+    return path
 
 
 def _make_provider():
@@ -417,7 +437,7 @@ class TestGpuPreviewImages:
     def test_gpu_prefix_ops_registers_prefix_image(self, qt_app, tmp_path):
         from picasapy.ini.filters import FilterOp
 
-        photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
+        photo = _make_gradient_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
         provider = _make_provider()
         provider.register(
             "1", photo, (FilterOp("enhance", ("1",)),),

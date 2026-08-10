@@ -199,15 +199,17 @@ def gaussian_blur_f(image_f: np.ndarray, xblur: float, yblur: float | None = Non
 
 def autofix(image: np.ndarray) -> np.ndarray:
     """`AutoFix`: a Picasa belső, effekt-csővezetékekben újrahasznált
-    automatikus javítása — a projekt már megfejtett `autocolor` (fehér-
-    egyensúly) + `autolight` (kontraszt-széthúzás) párosa, ugyanabban a
-    sorrendben, mint az `enhance` (I'm Feeling Lucky) belső lépése (a
-    reziduál-görbe NÉLKÜL, ami az `enhance`-re jellemző extra simítás).
+    automatikus javítása — megfejtett modell (#535): ugyanaz a csatornánként
+    KÜLÖN, hisztogram-darabszám alapú lineáris szinthúzás, mint a „Jó napom
+    van" (I'm Feeling Lucky) `apply_enhance`-e (`ki = (be − lo)·255/(hi − lo)`,
+    ld. `apply_channel_levels_stretch` docstringjét a bizonyítékért). Ez hat
+    Glimmer-effektet is érint (Holga, NightVision, PencilSketch, Sixties,
+    Cinemascope, HDR-család), amelyek belül `AutoFix`-et hívnak.
     """
-    from picasapy.render.ops import apply_autocolor, apply_autolight
+    from picasapy.render.ops import apply_channel_levels_stretch
 
     validate_image(image)
-    return apply_autolight(apply_autocolor(image))
+    return apply_channel_levels_stretch(image)
 
 
 def simple_color_matrix(
