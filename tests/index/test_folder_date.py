@@ -61,6 +61,11 @@ class TestMigrationV3:
         raw.execute("ALTER TABLE photos DROP COLUMN geotag_ini")
         raw.execute("ALTER TABLE photos DROP COLUMN exif_lat")
         raw.execute("ALTER TABLE photos DROP COLUMN exif_lon")
+        # #26: a face/face_group táblákat is eldobjuk, hogy a 8→9→10
+        # migrációs lánc (nem idempotens ALTER-t is tartalmaz) a valódi
+        # útvonalon fusson, ne a friss DDL-ből örökölt, már bővített táblán
+        raw.execute("DROP TABLE face_group")
+        raw.execute("DROP TABLE face")
         raw.execute("PRAGMA user_version=2")
         raw.commit()
         raw.close()
