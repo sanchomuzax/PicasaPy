@@ -331,6 +331,39 @@ jellegű belső könyvtár). Nem használható közvetlenül Qt/QML alatt — a
 PicasaPy-nak natív rendszerbetűtípusokat vagy szabvány TTF/OTF fájlokat kell
 használnia helyette.
 
+#### A fejléc megfejtve
+
+A korábbi „nem tudjuk, mi van benne" álláspont **túl óvatos volt**: a fejléc
+egyszerű, little-endian `uint32` mezőkből áll, és minden mezője
+**visszaellenőrizhető a fájlnévből** — ez adja a megfejtés bizonyítékát.
+
+| eltolás | típus | jelentés | ellenőrzés |
+|---|---|---|---|
+| `0x00` | u32 | `100` — formátumjelző (mind a 12 fájlban azonos) | — |
+| `0x04` | u32 | **pontméret** | = a fájlnév mérete (11/12/13/14/16/18/20/28) ✅ |
+| `0x08` | u32 | **súly** | = a fájlnév súlya (400 / 700) ✅ |
+| `0x0c` | u32 | **dőlt** (0 = nem) | = a fájlnév utolsó mezője ✅ |
+| `0x10` | u32 | 3–6, a mérettel nő (sorköz/alávágás?) | — |
+| `0x14` | f32 | **skála** (`1.0`) | = a fájlnév `1.000000` mezője ✅ |
+| `0x18` | u32 | eltolás a fájlon belül (mindig < fájlméret) | 44092 / 87722 / 164870 ✅ |
+| `0x1c` | u32 | `256` — a glyph-tábla mérete | — |
+| `0x20` | u32 | `256` | — |
+| `0x24` | u32 | családfüggő (125 / 173) — a két HelveticaNeue-változatnál azonos | — |
+| `0x28` | u32 | **a családnév hossza** | = a rákövetkező sztring hossza, bájtra ✅ |
+| `0x2c` | bájtok | **a családnév** (`"Praxis Semi Bold/Heavy"`, `"HelveticaNeue MediumCond"`) | — |
+
+A név után **4 × `int16` rekordok** táblája következik
+(pl. `(98, 44, −2, −1)`, `(121, 44, −4, −1)`, `(85, 46, −1, −1)`) — a
+mintázat egy glyph-atlasz koordinátáira és igazítási eltolásaira vall, de
+**ez még nem bizonyított**; a rekordszerkezet pontos jelentése nyitott.
+
+**Miért érdekes mégis:** a fájlkészlet önmagában megadja a Picasa felületének
+**hiteles tipográfiáját** — két család (`Praxis Semi Bold/Heavy` és
+`HelveticaNeue Condensed`/`MediumCond`), nyolc méret (11, 12, 13, 14, 16, 18,
+20, 28) és két súly (400, 700). Ez a `constants.ui` betűtípus-hivatkozásainak
+(`alabel_buttfont_win` = Praxis Semi Bold/Heavy 12) a **teljes** listája, és a
+felületi hűséghez a glyph-adatok megfejtése nélkül is használható.
+
 ### 3.6 Egyéb runtime-fájlok — rövid jegyzetek
 
 | Fájl | Típus | Megjegyzés |
@@ -382,6 +415,38 @@ megnyitható/visszaállítható.
 | `cdgo.tre` | **Sima szöveges UI-elrendezési fájl** (nem bináris) | Egy `#define`-alapú makrónyelv (`m_offsetLT`, `m_centerX`, `m_hidden` stb.), majd elem-per-elem `XConstraint`/`YConstraint`/`MaintainOffset`/`Property` direktívák (pl. `cdgo/grad: root`, `XConstraint 0, -0.1, 0`). Ez a Picasa saját, rugalmas (relatív/horgonyzott) UI-elrendezés-leíró nyelve — hasonló családba tartozik, mint a `.fen` dialógusformátum, de kifejezetten a `cdgo` (CD-autorun-képernyő) UI-fájának pozicionálására. A fájl végén `#i18n--` jelzés látható (a további tartalom valószínűleg nyelvi feliratokat vezet be — ezt a terminológiai ügynök dolgozza fel). |
 | `Download Picasa.url` | Windows internetes parancsikon (INI-szerű) | `URL=http://www.google.com/picasa` — egyszerű böngésző-hivatkozás a lemezről. |
 | (a `hu.lproj` és társai a `.app` csomagokon belül) | macOS lokalizációs `.xml`/`.strings` | Külön ügynök dolgozza fel (terminológia). |
+
+### 5.1 A `.lproj` lokalizáció — 37 nyelv, sima szövegben
+
+A `.app`-csomagokban nyelvenként egy `i18n/` mappa van, benne **egyszerű,
+UTF-8 XML** (nem `.strings`, a kiterjesztés ellenére):
+
+| fájl | tartalom |
+|---|---|
+| `cdgo.xml` | `<tooltips>` / `<action type= target=>` — a felületi feliratok |
+| `cdgo_stringres.xml` | `<resources>` / `<stringres id=>` — 88 sztring |
+| `cdgo_resexport.xml` | egyetlen `<Win32Res/>` elem (üres) |
+
+**Ez a séma bájtra ugyanaz, mint a `Picasa3i18n.dll`-be ágyazott két
+erőforrás-fajta** — vagyis a DLL megfejtését egy **független, sima szöveges
+forrás igazolja vissza.**
+
+A magyar készlet néhány közvetlenül hasznosítható eleme:
+
+| azonosító | magyar érték | megjegyzés |
+|---|---|---|
+| `il_FormatBigB` … `TB` | `%.0f bájt`, `%.0f KB`, `%.1f MB`, `%.1f GB` | a fájlméret-kiírás hiteles alakja: **„bájt"** kisbetűvel, MB-tól egy tizedes |
+| `WinSystemPaths::MyPictures` | `Képek` | |
+| `WinSystemPaths::MyVideos` | `Videók` | de a Mac-változat `Mozgófilmek` — a Picasa **önmagával sem volt következetes** |
+| `CDGo::advanceslide` | `%1$s (%3$d / %2$d)` | a diavetítés állapotsora |
+| `ytFileUtils::CopyProgress` | `%2$s / %1$s` | másolás-folyamat |
+
+> **Figyelemre méltó:** a dátum/idő formátumok a magyar fájlban **nincsenek
+> lefordítva** — `ytDateTime::Format1 = "%1$s %2$d, %3$d"` (hónap nap, év) és
+> `Format3 = "%1$d:%2$02d:%3$02d %4$cM"` (12 órás, AM/PM). Ez az **angol**
+> sorrend és óraformátum. A PicasaPy-ban ezt **nem kell másolni** — a helyes
+> magyar alak (`ÉÉÉÉ. hónap N.`, 24 órás idő) a jó; ezt tudatos eltérésként
+> érdemes kezelni, nem hűtlenségként.
 
 ---
 
