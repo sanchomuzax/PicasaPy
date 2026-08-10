@@ -156,6 +156,10 @@ class TestAlbumsMigration:
         raw.executescript(
             "DROP TABLE IF EXISTS photo_albums;"
             "DROP TABLE IF EXISTS albums;"
+            # a v7 séma a face táblát (v9-ben jött) és az embedding/csoport-
+            # bővítést (v10) sem ismerte — hiteles v7 fixture ezek nélkül.
+            "DROP TABLE IF EXISTS face;"
+            "DROP TABLE IF EXISTS face_group;"
             "PRAGMA user_version = 7;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -231,3 +235,70 @@ class TestFaceMigration:
         path = self._v8_database(tmp_path)
         with open_index(path) as conn:
             assert unnamed_album_photos(conn) == ()
+
+
+class TestFaceEmbeddingMigration:
+    """#26 (séma v10): az `embedding`/`group_id` oszlop és a `face_group`
+    tábla a MEGLÉVŐ (v9) indexekhez is hozzájön, a `face` sorok tartalma és
+    a fotók érintetlenül maradnak — adatvesztés nélkül."""
+
+    def _v9_database(self, tmp_path):
+        path = tmp_path / "regi.db"
+        raw = sqlite3.connect(path)
+        raw.executescript(DDL)
+        raw.executescript(
+            "DROP TABLE IF EXISTS face_group;\n"
+            "DROP INDEX IF EXISTS idx_face_group;\n"
+            "ALTER TABLE face DROP COLUMN embedding;\n"
+            "ALTER TABLE face DROP COLUMN group_id;\n"
+            "PRAGMA user_version = 9;"
+        )
+        raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
+        raw.execute(
+            "INSERT INTO photos (id, folder_id, name, kind, size, mtime_ns)"
+            " VALUES (1, 1, 'a.jpg', 'image', 10, 1)"
+        )
+        raw.execute(
+            "INSERT INTO face (id, photo_id, rect_left, rect_top, rect_right,"
+            " rect_bottom, det_conf, right_eye_x, right_eye_y, left_eye_x,"
+            " left_eye_y, nose_x, nose_y, mouth_right_x, mouth_right_y,"
+            " mouth_left_x, mouth_left_y, state)"
+            " VALUES (1, 1, 5, 10, 40, 50, 0.9, 10, 20, 30, 20, 20, 30, 15, 40,"
+            " 25, 40, 'unnamed')"
+        )
+        raw.commit()
+        raw.close()
+        return path
+
+    def test_columns_and_table_appear_data_survives(self, tmp_path):
+        path = self._v9_database(tmp_path)
+        with open_index(path) as conn:
+            assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            assert "face_group" in tables
+            face_columns = {row[1] for row in conn.execute("PRAGMA table_info(face)")}
+            assert {"embedding", "group_id"} <= face_columns
+            # a meglévő arc-sor tartalma érintetlen
+            row = conn.execute("SELECT * FROM face WHERE id = 1").fetchone()
+            assert row["rect_left"] == 5
+            assert row["state"] == "unnamed"
+            assert row["embedding"] is None
+            assert row["group_id"] is None
+
+    def test_fresh_database_has_embedding_columns_too(self, tmp_path):
+        # a friss (nem migrált) telepítés is rendelkezik a v10 oszlopokkal
+        with open_index(tmp_path / "friss.db") as conn:
+            face_columns = {row[1] for row in conn.execute("PRAGMA table_info(face)")}
+            assert {"embedding", "group_id"} <= face_columns
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+            assert "face_group" in tables

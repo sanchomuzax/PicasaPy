@@ -11,8 +11,9 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
-        # v9: saját arc-detektálás (#26, 1. lépcső) — a `face` tábla
-        assert SCHEMA_VERSION == 9
+        # v10: SFace-lenyomat + csoportosítás (#26, 2. lépcső) — a
+        # `face.embedding`/`group_id` oszlop és a `face_group` tábla
+        assert SCHEMA_VERSION == 10
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
@@ -33,6 +34,12 @@ class TestSchema:
             conn.execute("ALTER TABLE photos DROP COLUMN geotag_ini")
             conn.execute("ALTER TABLE photos DROP COLUMN exif_lat")
             conn.execute("ALTER TABLE photos DROP COLUMN exif_lon")
+            # #26: a face/face_group táblákat is eldobjuk, hogy a 8→9→10
+            # migrációs lánc a valódi (nem idempotens ALTER-t is tartalmazó)
+            # útvonalon fusson végig, ne a friss DDL-ből örökölt, már
+            # bővített face táblán
+            conn.execute("DROP TABLE face_group")
+            conn.execute("DROP TABLE face")
             conn.commit()
         with open_index(db) as conn:
             assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION

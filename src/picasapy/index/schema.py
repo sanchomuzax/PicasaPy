@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -137,6 +137,48 @@ CREATE INDEX IF NOT EXISTS idx_face_photo ON face(photo_id);
 CREATE INDEX IF NOT EXISTS idx_face_state ON face(state);
 """
 
+# #26 (2. lépcső): SFace-lenyomat + inkrementális csoportosítás
+# (`picasapy.faces.clustering`, `picasapy.index.face_groups`).
+#
+# `face_group`: egy „Névtelenek”-csoport centroidja — SZÁNDÉKOSAN külön
+# tábla (nem a `face` bővítése), mert egy csoportnak TÖBB arca van, a
+# centroid pedig a csoport tulajdonsága, nem egyetlen arcé. `face_count`
+# a súlyozott centroid-frissítéshez kell (`clustering._weighted_centroid`)
+# — anélkül minden új tag egyformán mozgatná el a centroidot, függetlenül
+# attól, hogy a csoportnak már 2 vagy 200 tagja van.
+#
+# `face.embedding`: 128 float32 (SFace, `EMBEDDING_DIM`) kis-endian bájtsor
+# (`numpy.tobytes()`/`numpy.frombuffer(..., dtype=float32)`), NULL amíg a
+# lenyomat-számítás (alacsonyabb prioritású, a detektálás UTÁN futó sor,
+# ld. `faces/embedder.py` modul-docstringje) még nem érte el az arcot.
+#
+# `face.group_id`: melyik `face_group`-hoz tartozik — NULL, amíg nincs
+# lenyomat VAGY amíg a csoportosítás még nem futott le rá. A `group_unnamed_
+# faces` (`index/face_groups.py`) KIZÁRÓLAG a `state = 'unnamed'` sorokon
+# dolgozik — a már névvel ellátott arcok hozzárendelését SOHA nem
+# értékeli újra (issue #26 alapszabálya, „a Picasa döntései szentek”).
+#
+# Mindkettő ALTER TABLE-lel jön (nem a `_FACE_DDL` CREATE TABLE-jének
+# bővítésével!), hogy a régi migrációs lépés (8: `_FACE_DDL`) VÁLTOZATLAN
+# maradjon — az már production-ben lefutott v8→v9 migrációkat ír le, a
+# szövegét utólag módosítani a már migrált (v9) indexeket és az újonnan
+# migrálókat összezavarná (kettős oszlop-hozzáadás). Ehelyett ez a blokk a
+# saját migrációs lépéseként (9) ÉS a friss telepítés `DDL`-jébe ágyazva is
+# szerepel — mindkét esetben a `face` tábla már létezik (CREATE TABLE IF
+# NOT EXISTS a `_FACE_DDL`-ben), az ALTER csak a hiányzó oszlopokat pótolja.
+_FACE_EMBEDDING_DDL = """
+CREATE TABLE IF NOT EXISTS face_group (
+    id INTEGER PRIMARY KEY,
+    centroid BLOB NOT NULL,
+    face_count INTEGER NOT NULL DEFAULT 0
+);
+
+ALTER TABLE face ADD COLUMN embedding BLOB;
+ALTER TABLE face ADD COLUMN group_id INTEGER REFERENCES face_group(id);
+
+CREATE INDEX IF NOT EXISTS idx_face_group ON face(group_id);
+"""
+
 DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
     id INTEGER PRIMARY KEY,
@@ -177,6 +219,8 @@ CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 
 {_ALBUMS_DDL}
 
 {_FACE_DDL}
+
+{_FACE_EMBEDDING_DDL}
 
 {_FTS_DDL}
 """
@@ -234,4 +278,9 @@ ALTER TABLE photos ADD COLUMN exif_lon REAL;
     # a meglévő indexekhez nem kell újraindexelés; a következő arc-scan
     # (`FaceScanController`, opcionális háttérfolyamat) tölti fel.
     8: _FACE_DDL,
+    # #26 (2. lépcső): SFace-lenyomat oszlop + a `face_group` tábla. Üresen
+    # jön létre / NULL-lal jön a meglévő sorokra — a következő lenyomat-
+    # számítás (alacsonyabb prioritású sor, ld. `faces/embedder.py`) tölti
+    # fel; a meglévő `face` sorok (keret, 5 pont, állapot) érintetlenek.
+    9: _FACE_EMBEDDING_DDL,
 }

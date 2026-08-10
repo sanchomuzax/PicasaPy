@@ -5,6 +5,28 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.50] – 2026-08-10
+
+### Hozzáadva
+- **Arcfelismerés — 2. lépcső (#26): a program mostantól felismeri, hogy két
+  arc ugyanazé az emberé.** A megtalált arcokhoz „lenyomat" készül, és az
+  ismeretlen arcok **maguktól csoportokba rendeződnek** — ez lesz később a
+  névadás alapja. Új futásidejű függőség nélkül, az OpenCV-be épített
+  motorral.
+- A csoportosítás **inkrementális**: egy új kép érkezésekor néhány
+  összehasonlítás fut, nem éjszakai újraszámolás.
+
+### Fontos garancia
+- **A meglévő névcímkéidhez a program nem nyúl.** A gépi csoportosítás
+  kizárólag a **névtelen** arcokon dolgozik — a Picasában felépített
+  arccímkéket soha nem értékeli újra, és nem írja felül.
+
+### Megjegyzés
+- Ez a lépcső **még nem jelenik meg a felületen**; a névadás, az Emberek-
+  albumok és a javaslatok a következő lépcsők. A felismerő modell fájlja
+  nincs a programban — ha hiányzik, a lenyomat-számítás csendben kimarad,
+  minden más változatlanul működik.
+
 ## [0.6.49] – 2026-08-10
 
 ### Javítva

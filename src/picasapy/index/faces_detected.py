@@ -15,8 +15,12 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Iterable
+from dataclasses import dataclass
+from pathlib import Path
 
-from picasapy.faces.detector import FaceDetection
+import numpy as np
+
+from picasapy.faces.detector import FaceDetection, FaceLandmarks
 
 from .queries import _SELECT, PhotoRecord, _records
 
@@ -78,6 +82,80 @@ def detected_face_count(conn: sqlite3.Connection, photo_id: int) -> int:
         "SELECT COUNT(*) AS n FROM face WHERE photo_id = ?", (photo_id,)
     ).fetchone()
     return int(row["n"]) if row is not None else 0
+
+
+@dataclass(frozen=True)
+class PendingEmbeddingFace:
+    """Egy DETEKTÁLT, de MÉG LENYOMAT NÉLKÜLI arc — pontosan annyi adattal,
+    amennyi a `FaceEmbedder.compute()`-hoz kell (kép + `FaceDetection`).
+    A `faces_missing_embedding` adja vissza, a lenyomat-számítás (issue
+    #26, 2. lépcső, a detektálásnál alacsonyabb prioritású sor) ezen megy
+    végig."""
+
+    id: int
+    photo_path: Path
+    detection: FaceDetection
+
+
+def faces_missing_embedding(conn: sqlite3.Connection) -> tuple[PendingEmbeddingFace, ...]:
+    """A még lenyomat nélküli arcok — a fotó útvonalával és a tárolt
+    kerettel/5 ponttal együtt, hogy a lenyomat-számítás ne kelljen újra
+    detektáljon. `id` szerint rendezve (determinisztikus feldolgozási
+    sorrend a csoportosításhoz, ld. `index.face_groups`)."""
+    rows = conn.execute(
+        "SELECT f.id, f.rect_left, f.rect_top, f.rect_right, f.rect_bottom, "
+        "f.det_conf, f.right_eye_x, f.right_eye_y, f.left_eye_x, f.left_eye_y, "
+        "f.nose_x, f.nose_y, f.mouth_right_x, f.mouth_right_y, "
+        "f.mouth_left_x, f.mouth_left_y, fo.path AS folder_path, p.name AS name "
+        "FROM face f "
+        "JOIN photos p ON p.id = f.photo_id "
+        "JOIN folders fo ON fo.id = p.folder_id "
+        "WHERE f.embedding IS NULL "
+        "ORDER BY f.id"
+    )
+    result = []
+    for row in rows:
+        detection = FaceDetection(
+            left=row["rect_left"],
+            top=row["rect_top"],
+            right=row["rect_right"],
+            bottom=row["rect_bottom"],
+            score=row["det_conf"],
+            landmarks=FaceLandmarks(
+                right_eye=(row["right_eye_x"], row["right_eye_y"]),
+                left_eye=(row["left_eye_x"], row["left_eye_y"]),
+                nose=(row["nose_x"], row["nose_y"]),
+                mouth_right=(row["mouth_right_x"], row["mouth_right_y"]),
+                mouth_left=(row["mouth_left_x"], row["mouth_left_y"]),
+            ),
+        )
+        result.append(
+            PendingEmbeddingFace(
+                id=row["id"],
+                photo_path=Path(row["folder_path"]) / row["name"],
+                detection=detection,
+            )
+        )
+    return tuple(result)
+
+
+def store_embedding(
+    conn: sqlite3.Connection, face_id: int, embedding: np.ndarray | None
+) -> None:
+    """A `face_id` sor lenyomatának mentése — `None` esetén NULL marad
+    (modell nélküli/sikertelen számítás, ld. `FaceEmbedder.compute`), nem
+    hiba. `float32` bájtsorként tárolva (`numpy.frombuffer` olvassa
+    vissza, ld. `face_embedding`)."""
+    blob = np.asarray(embedding, dtype=np.float32).tobytes() if embedding is not None else None
+    conn.execute("UPDATE face SET embedding = ? WHERE id = ?", (blob, face_id))
+
+
+def face_embedding(conn: sqlite3.Connection, face_id: int) -> np.ndarray | None:
+    """A `face_id` sor lenyomata, vagy `None`, ha még nincs kiszámolva."""
+    row = conn.execute("SELECT embedding FROM face WHERE id = ?", (face_id,)).fetchone()
+    if row is None or row["embedding"] is None:
+        return None
+    return np.frombuffer(row["embedding"], dtype=np.float32)
 
 
 def unnamed_album_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:

@@ -18,7 +18,14 @@ hálózat és a modellfájl nincs jelen).
 
 IMPORTNÁL A PICASA DÖNTÉSEI SZENTEK: a saját detektorunk KIHAGYJA azokat a
 fotókat, amelyeken már van EMBER ÁLTAL adott névcímke (`faces=` legalább
-egy azonosított bejegyzéssel) — ezeket SOHA nem értékeljük újra."""
+egy azonosított bejegyzéssel) — ezeket SOHA nem értékeljük újra.
+
+#26 (2. lépcső): a `computeEmbeddings()` a lenyomat-számítás (SFace) +
+csoportosítás KÜLÖN, ALACSONYABB PRIORITÁSÚ sora — a terv szerint „előbb
+legyen meg minden arc HELYE, a felismerés ráér”. Ez a metódus SOHA nem fut
+automatikusan a `scanForFaces()` részeként — a hívó (a jövőbeli integráció)
+dönti el, mikor indítja (pl. a detektálás befejezése UTÁN, üresjáratban).
+Modell nélkül ugyanúgy tisztán kikapcsol (`embeddingModelUnavailable`)."""
 
 from __future__ import annotations
 
@@ -31,10 +38,14 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag
 from picasapy.faces.detector import FaceDetector
+from picasapy.faces.embedder import FaceEmbedder
 from picasapy.index import (
     all_photos,
+    faces_missing_embedding,
+    group_unnamed_faces,
     open_index,
     replace_faces,
+    store_embedding,
     unnamed_album_photos,
 )
 from picasapy.ini import load_document, parse_faces
@@ -69,18 +80,40 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # NEM hiba (a funkció tervezett, hiánytűrő kikapcsolása).
     modelUnavailable = Signal()
 
-    def __init__(self, db_path: str | Path, detector: FaceDetector | None = None) -> None:
+    # #26 (2. lépcső): lenyomat-számítás + csoportosítás — a detektálásnál
+    # ALACSONYABB PRIORITÁSÚ, KÜLÖN indítható sor (ld. osztály-docstring).
+    embeddingStarted = Signal()
+    embeddingProgress = Signal(int, int)  # (kész, összes)
+    embeddingFinished = Signal(int, int)  # (lenyomatolt arc, csoportba került arc)
+    embeddingCancelled = Signal()
+    embeddingFailed = Signal(str)
+    embeddingModelUnavailable = Signal()
+
+    def __init__(
+        self,
+        db_path: str | Path,
+        detector: FaceDetector | None = None,
+        embedder: FaceEmbedder | None = None,
+    ) -> None:
         super().__init__()
         self._db_path = Path(db_path)
-        # Tesztben/CI-ben injektálható helyettesítő detektor is lehet —
-        # alapból a valódi (modell nélkül önmagát kikapcsoló) YuNet-becsomagolás.
+        # Tesztben/CI-ben injektálható helyettesítő detektor/embedder is
+        # lehet — alapból a valódi (modell nélkül önmagát kikapcsoló)
+        # YuNet/SFace-becsomagolás.
         self._detector = detector if detector is not None else FaceDetector()
+        self._embedder = embedder if embedder is not None else FaceEmbedder()
         self._stop_event: threading.Event | None = None
+        self._embedding_stop_event: threading.Event | None = None
 
     @Slot(result=bool)
     def isAvailable(self) -> bool:
         """Igaz, ha a modell betöltve, tehát a szkennelés ténylegesen futna."""
         return self._detector.available
+
+    @Slot(result=bool)
+    def isEmbeddingAvailable(self) -> bool:
+        """Igaz, ha a lenyomat-modell (SFace) betöltve."""
+        return self._embedder.available
 
     @Slot()
     def scanForFaces(self) -> None:
@@ -117,6 +150,30 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             {"path": str(Path(record.folder_path) / record.name), "name": record.name}
             for record in records
         ]
+
+    @Slot()
+    def computeEmbeddings(self) -> None:
+        """Lenyomat-számítás (SFace) a még lenyomat nélküli arcokon, majd a
+        névtelen arcok inkrementális csoportosítása — KÜLÖN, a detektálásnál
+        alacsonyabb prioritású sor (ld. osztály-docstring). Modell hiányában
+        azonnal `embeddingModelUnavailable`-t ad és nem indít szálat."""
+        if not self._embedder.available:
+            self.embeddingModelUnavailable.emit()
+            return
+        self.cancelEmbedding()
+        stop_event = threading.Event()
+        self._embedding_stop_event = stop_event
+        self.embeddingStarted.emit()
+        self._start_background(
+            self._run_embedding, args=(stop_event,), name="picasapy-face-embed"
+        )
+
+    @Slot()
+    def cancelEmbedding(self) -> None:
+        """A folyamatban lévő lenyomat-számítás megszakítása arc-határon —
+        a már elmentett lenyomatok/csoportok az indexben maradnak."""
+        if self._embedding_stop_event is not None:
+            self._embedding_stop_event.set()
 
     # -- worker-szál törzse -------------------------------------------------
 
@@ -156,6 +213,41 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             if self._stop_event is stop_event:
                 self._stop_event = None
         self.scanFinished.emit(found, scanned)
+
+    def _run_embedding(self, stop_event: threading.Event) -> None:
+        try:
+            with open_index(self._db_path) as conn:
+                pending = faces_missing_embedding(conn)
+                total = len(pending)
+                embedded = 0
+                for done, face in enumerate(pending, start=1):
+                    if stop_event.is_set():
+                        conn.commit()
+                        self.embeddingCancelled.emit()
+                        return
+                    image = self._decode(face.photo_path)
+                    embedding = (
+                        self._embedder.compute(image, face.detection)
+                        if image is not None
+                        else None
+                    )
+                    if embedding is not None:
+                        store_embedding(conn, face.id, embedding)
+                        embedded += 1
+                    if done % _COMMIT_BATCH_SIZE == 0:
+                        conn.commit()
+                    self.embeddingProgress.emit(done, total)
+                conn.commit()
+                grouped = group_unnamed_faces(conn)
+                conn.commit()
+        except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
+            _log.exception("arc-lenyomat/csoportosítás hiba: %s", self._db_path)
+            self.embeddingFailed.emit(str(error))
+            return
+        finally:
+            if self._embedding_stop_event is stop_event:
+                self._embedding_stop_event = None
+        self.embeddingFinished.emit(embedded, grouped)
 
     def _detect(self, photo_path: Path):
         image = self._decode(photo_path)
