@@ -114,6 +114,14 @@ class EditPreviewProvider(QQuickImageProvider):
         self._gpu_prefix_images: OrderedDict[str, QImage] = OrderedDict()
         self._gpu_lut_images: OrderedDict[str, QImage] = OrderedDict()
         self._lock = threading.Lock()
+        # #514: a `register()` renderelése MÁR NEM csak a GUI-szálon fut (a
+        # lassú effekteket az EditController háttérszálra teszi), a
+        # dekód-/prefix-gyorsítótárak viszont sima dict/tuple mezők — két
+        # egyidejű render egymás alól húzná ki őket. Ez a zár a TELJES
+        # `register()`-t sorosítja; a fenti `self._lock` marad a (rövid)
+        # kép-/hisztogram-tárolás védelme, és MINDIG ezen BELÜL kerül sorra
+        # (egyirányú zár-sorrend, nincs holtpont).
+        self._render_lock = threading.RLock()
 
     def register(
         self,
@@ -137,7 +145,32 @@ class EditPreviewProvider(QQuickImageProvider):
         eltároljuk a `gpuprefix=1`/`gpulut=1` jelzős `requestImage`-
         kéréshez — a köztes kép a `_cached_prefix()`-fel MEGOSZTOTT
         gyorsítótárból jön (nem duplikált munka), ha `ops[:-1] ==
-        gpu_prefix_ops` (a szokásos eset: finetune2-húzás alatt)."""
+        gpu_prefix_ops` (a szokásos eset: finetune2-húzás alatt).
+
+        #514: a hívó GUI- ÉS háttérszálról is hívhatja (a lassú effektek
+        renderelése a szerkesztőben háttérszálra került) — a `_render_lock`
+        sorosítja a két utat, hogy a dekód-/prefix-gyorsítótárak ne
+        keveredjenek."""
+        with self._render_lock:
+            self._register_locked(
+                photo_id,
+                path,
+                ops,
+                text=text,
+                gpu_prefix_ops=gpu_prefix_ops,
+                gpu_lut=gpu_lut,
+            )
+
+    def _register_locked(
+        self,
+        photo_id: str,
+        path: Path,
+        ops: tuple[FilterOp, ...],
+        text: TextOverlaySpec | None = None,
+        gpu_prefix_ops: tuple[FilterOp, ...] | None = None,
+        gpu_lut: np.ndarray | None = None,
+    ) -> None:
+        """A `register()` törzse — CSAK a `_render_lock` birtokában hívható."""
         key = str(photo_id)
         path = Path(path)
         mtime = path.stat().st_mtime if path.exists() else None

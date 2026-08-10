@@ -34,6 +34,7 @@ from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
 from .edit_preview import EditPreviewProvider, TextOverlaySpec
 from .histogram_helper import EMPTY_HISTOGRAM
+from .worker_thread import BackgroundWorkerMixin
 
 # #459: a csillag/album-írás mintája (photo_ops_controller.py) — a tartós
 # ütközés/lemezhiba is kezelt hiba, nem néma adatvesztés/kivétel.
@@ -205,7 +206,7 @@ def _raw_to_relative(raw: int) -> float:
     return _clamp01(raw / _TEXT_COORD_SCALE)
 
 
-class EditController(QObject):
+class EditController(QObject, BackgroundWorkerMixin):
     """A QML szerkesztő-panelhez tervezett híd: EditSession + ini-perzisztencia
     + EditPreviewProvider-regisztráció egy helyen.
 
@@ -238,10 +239,24 @@ class EditController(QObject):
     # mappa-másolás NEM készült el, ld. a `_save()` docstringjét).
     editSaveReadOnly = Signal()
     editSaveFailed = Signal(str)
+    # #514: a háttérszálon befejezett előnézet-renderelés jelzése. A
+    # `Signal` szálak közötti átadása Qt-ben sorba állított (queued), így a
+    # rákötött `_on_preview_rendered` MÁR a GUI-szálon fut — a
+    # `revisionChanged` (és vele a QML kép-újrakérése) sosem a
+    # háttérszálról indul.
+    _previewRendered = Signal()
 
     def __init__(self, provider: EditPreviewProvider, parent=None) -> None:
         super().__init__(parent)
         self._provider = provider
+        # #514: az előnézet-renderelések sorszáma. Minden új kérés növeli;
+        # a háttérszálra tett (lassú) renderelés a saját sorszámát
+        # összeveti az aktuálissal, és ELAVULTKÉNT kihagyja magát, ha
+        # időközben újabb kérés érkezett — így egy gyors kattintás-sorozat
+        # csak az UTOLSÓ állapotot rendereli ki, és sosem írhat vissza egy
+        # régebbi képet a frissebb fölé.
+        self._preview_job = 0
+        self._previewRendered.connect(self._on_preview_rendered)
         self._photo_id = ""
         self._image_path: Path | None = None
         # #516: a képfüggő effekt-tartományok (pl. `CornerRadius` 0..
@@ -1348,7 +1363,11 @@ class EditController(QObject):
         except _WRITE_ERRORS as error:
             self.editSaveFailed.emit(str(error))
             return
-        self._register_preview()
+        # #514: a mentett lánc újrarenderelése HÁTTÉRSZÁLON — ez az a hely,
+        # ahol egy lassú effekt (Lomo, Polaroid…) korábban befagyasztotta a
+        # felületet. A csúszka-húzás alatti élő előnézet ettől független
+        # (`_register_preview`, szinkron).
+        self._register_preview_async()
 
     def _save_text(self) -> None:
         """A `text=`/`textactive=` kulcsok írása/törlése (#148) — külön az
@@ -1396,20 +1415,66 @@ class EditController(QObject):
         self.editSaveReadOnly.emit()
         return False
 
-    def _register_preview(self, session: EditSession | None = None) -> None:
+    def _preview_request(self, session: EditSession | None = None) -> dict:
+        """A `provider.register()` argumentumai a MOSTANI állapotból.
+
+        Külön lépés, mert a háttérszálas út (#514) a kérést még a hívó
+        (GUI-) szálán állítja össze: a háttérszál így nem olvassa a
+        controller közben változó mezőit."""
         assert self._image_path is not None
         active_session = session if session is not None else self._session
         gpu_prefix_ops = active_session.gpu_finetune_prefix()
         gpu_lut = self._gpu_lut_for(active_session) if gpu_prefix_ops is not None else None
-        self._provider.register(
-            self._photo_id,
-            self._image_path,
-            active_session.ops,
-            text=self._current_text_spec(),
-            gpu_prefix_ops=gpu_prefix_ops,
-            gpu_lut=gpu_lut,
-        )
+        return {
+            "photo_id": self._photo_id,
+            "path": self._image_path,
+            "ops": active_session.ops,
+            "text": self._current_text_spec(),
+            "gpu_prefix_ops": gpu_prefix_ops,
+            "gpu_lut": gpu_lut,
+        }
+
+    def _register_preview(self, session: EditSession | None = None) -> None:
+        """SZINKRON renderelés — az élő (csúszka-húzás alatti) előnézeté.
+
+        Ezek az utak eleve a gyors, gyorsítótárazott lánc-prefixre épülnek
+        (#140), és a húzás minden lépésénél friss képet kell adniuk: a
+        háttérszálra tolásuk csak késleltetést és villogást hozna."""
+        self._preview_job += 1
+        self._provider.register(**self._preview_request(session))
         self._bump_gpu_revision()
+
+    def _register_preview_async(self, session: EditSession | None = None) -> None:
+        """#514: a MENTETT állapot újrarenderelése HÁTTÉRSZÁLON.
+
+        Ide a lassú, egykattintásos műveletek tartoznak (effekt hozzáadása,
+        vágás, visszavonás…). Korábban a GUI szálán futottak, ezért egy
+        percekig számoló effekt (#504: Lomo) alatt a felület befagyottnak
+        látszott, és a közös haladásjelző csík (#505) sem tudott animálni —
+        ugyanaz a szál számolt, ami rajzol. A `BackgroundWorkerMixin`-en át
+        indítva a csík MAGÁTÓL pörög (a busy-nyilvántartás a
+        `_start_background`-ben jelentkezik be).
+
+        A kép csak a renderelés VÉGÉN frissül: addig a korábbi előnézet
+        látszik, ami így is jobb, mint a befagyott felület."""
+        self._preview_job += 1
+        job = self._preview_job
+        request = self._preview_request(session)
+
+        def worker() -> None:
+            if job != self._preview_job:
+                return  # időközben újabb kérés jött — ez már elavult
+            self._provider.register(**request)
+            if job == self._preview_job:
+                self._previewRendered.emit()
+
+        self._start_background(worker, name="picasapy-editpreview")
+
+    def _on_preview_rendered(self) -> None:
+        """A háttérszálas renderelés kész — a GUI-szálon frissítjük a
+        képet (`revisionChanged` = cache-buster) és a GPU-rétegeket."""
+        self._bump_gpu_revision()
+        self._bump_revision()
 
     @staticmethod
     def _gpu_lut_for(session: EditSession) -> np.ndarray:

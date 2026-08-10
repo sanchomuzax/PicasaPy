@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.55] – 2026-08-10
+
+### Javítva
+- **A szerkesztő nem fagy be lassú effekt alatt (#514).** A mentett
+  szerkesztési lánc újrarenderelése (effekt hozzáadása, vágás,
+  visszavonás…) eddig a felület szálán futott: egy percekig számoló
+  effekt alatt a program befagyottnak látszott, és az alsó kék
+  haladásjelző csík sem tudott animálni. Mostantól háttérszálon fut, így
+  a csík **magától** pörög, a felület pedig végig kezelhető marad. A
+  csúszkák élő előnézete szándékosan azonnali (szinkron) maradt.
+
+### Megjegyzés
+- A **nyomtatásra készítés** (#514 másik fele) továbbra is a felület
+  szálán fut — a Qt nyomtató-rajzolása nem tehető át háttérszálra
+  ugyanezzel a mintával, ezért az külön jegyen folytatódik.
+
 ## [0.6.54] – 2026-08-10
 
 ### Javítva
