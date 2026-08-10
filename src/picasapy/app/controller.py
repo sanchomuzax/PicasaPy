@@ -125,6 +125,11 @@ class AppController(
         self._exclude_file = exclude_file
         self._face_excluded_roots = list(face_excluded)
         self._provider = provider
+        # #459: sérült/betölthetetlen kép — elrejtés-felajánlás bekötése
+        # MÁR itt (nem lusta, első-íráskor), mert a detektálás böngészés
+        # közben, bármilyen szerkesztés NÉLKÜL is bekövetkezhet
+        # (PhotoOpsMixin, `_ensure_broken_photo_wired`).
+        self._ensure_broken_photo_wired()
         self._folders = FolderListModel(self)
         self._photos = PhotoGridModel(self)
         self._albums: list = []  # #9: a bal hasáb Albumok gyűjteménye

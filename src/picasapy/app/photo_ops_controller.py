@@ -68,6 +68,55 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # háttérszálon fut; ez a jelzés tereli a resync/refresh-t vissza a
     # GUI-szálra, a `_photoFieldUpdated` mintája szerint.
     _renameBatchDone = Signal(list)  # [érintett mappák]
+    # #459: sérült/betölthetetlen kép(ek) — a QML ebből építi az eredeti
+    # Picasa szövege szerinti elrejtés-felajánlást ("...Would you like to
+    # hide the files on disk?"). Elemek: {"id": int, "name": str}.
+    brokenPhotosDetected = Signal(list)
+
+    def _ensure_broken_photo_wired(self) -> None:
+        """#459: a ThumbnailProvider `brokenImageDetected`-jét a photo-id
+        alapján a REGISZTRÁLT (jelenleg betöltött) fotóra oldja fel, és
+        — fotónként EGYSZER — továbbítja a QML-nek. Külön a
+        `_ensure_photo_ops_wired`-től: ez böngészés közben, bármilyen
+        szerkesztés NÉLKÜL is bekövetkezhet, ezért a controller
+        konstruktora hívja MÁR a `self._provider` beállítása után, nem
+        lustán az első íráskor."""
+        if getattr(self, "_broken_photo_wired", False):
+            return
+        self._broken_photo_wired = True
+        self._broken_photo_ids: set[int] = set()
+        self._provider.brokenImageDetected.connect(self._on_broken_image_detected)
+
+    @Slot(str)
+    def _on_broken_image_detected(self, photo_id: str) -> None:
+        try:
+            pid = int(photo_id.split("?", 1)[0])
+        except ValueError:
+            return
+        if pid in self._broken_photo_ids:
+            return
+        photo = next((p for p in self._photos.photos if p.id == pid), None)
+        if photo is None:
+            return
+        self._broken_photo_ids.add(pid)
+        self.brokenPhotosDetected.emit([{"id": pid, "name": photo.name}])
+
+    @Slot(list)
+    def hidePhotosByIds(self, ids) -> None:
+        """#459: a sérült-kép ajánlat "Hide Files" válasza — a MEGLÉVŐ
+        elrejtés-úton (`_apply_batch`, a `toggleHiddenRows` mintája) fut,
+        csak nem a rács aktuális sorindexeiből, hanem közvetlenül az
+        id-kból dolgozik (a törött kép ekkorra már ki is görgethetett a
+        nézetből)."""
+        id_set = {int(i) for i in ids}
+        photos = [p for p in self._photos.photos if p.id in id_set]
+        if not photos:
+            return
+
+        def mutate(document, photo):
+            return document.with_value(photo.name, "hidden", "yes")
+
+        self._apply_batch(photos, mutate)
 
     def _ensure_photo_ops_wired(self) -> None:
         """A jelzések bekötése lusta, egyszeri — így a controller.py

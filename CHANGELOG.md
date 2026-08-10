@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.49] – 2026-08-10
+
+### Javítva
+- **A hibák eddig CSENDBEN eltűntek (#459):** a szinkron-, album-,
+  helyadat- és arccímke-írás hibajelzései léteztek a programban, de
+  **egyikük sem volt a felülethez kötve** — így a felhasználó soha nem
+  értesült róluk. Mostantól közös hibasáv jelzi őket.
+
+### Hozzáadva
+- **Csak-olvasható fájl (#459):** a mentés előtt kiderül, ha a mappa nem
+  írható, és a program az eredeti Picasa szövegével szól. *(Az automatikus
+  mappa-másolás még nem érhető el — a párbeszéd ezt is kimondja, hogy ne
+  maradjon megválaszolhatatlan kérdés.)*
+- **Sérült kép (#459):** ha egy fájl nem tölthető be, a program felajánlja
+  az **elrejtését** — nem törli, és a döntés a felhasználóé.
+- **Kevés lemezhely (#459):** az export, a webexport és az importálás
+  **indulás előtt** ellenőrzi a szabad helyet, és szól, ha kevés — így nem
+  áll meg félúton.
+
 ## [0.6.48] – 2026-08-10
 
 ### Javítva

@@ -161,6 +161,14 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
     # jelezve; a controller busy-állapota köt rá (a Qt queued kézbesítéssel
     # a főszálra sorolja, polling nincs)
     activeCountChanged = Signal(int)
+    # #459: a forrás nem dekódolható (sérült/betölthetetlen fájl) — az
+    # eredeti Picasa itt ajánlotta fel az elrejtést ("Picasa had a problem
+    # loading this file(s). Would you like to hide the files on disk?").
+    # A pool-szálról jön, a Qt queued kézbesítéssel a főszálra sorolja
+    # (az `activeCountChanged` mintája). Csak akkor emittálódik, ha a
+    # fotó REGISZTRÁLT (nem lapozás/törlés miatti eltűnés) és a dekódolás
+    # ténylegesen elbukott.
+    brokenImageDetected = Signal(str)
 
     def __init__(self, cache: ThumbnailCache, max_threads: int | None = None):
         super().__init__()
@@ -313,10 +321,12 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
             thumb = self._cache.get_or_create(path, mtime_ns, size_bytes)
         if thumb is None:
             _log.warning("thumbnail nem készült el: %s", path)
+            self.brokenImageDetected.emit(str(photo.id))
             return QImage()
         image = QImage(str(thumb))
         if image.isNull():
             _log.warning("cache-elt thumbnail nem olvasható: %s", thumb)
+            self.brokenImageDetected.emit(str(photo.id))
             return image
         if rotate:
             # nem-destruktív ini-forgatás (a cache-elt thumb forgatatlan)

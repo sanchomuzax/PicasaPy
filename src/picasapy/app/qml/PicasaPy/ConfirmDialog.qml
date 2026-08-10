@@ -33,6 +33,17 @@ Dialog {
     // a ténylegesen megjelenő kérdés szövege — a hívó tölti fel (a FEN
     // `label name="message"` placeholderének felel meg)
     property string message: ""
+    // #459: némelyik hívó az eredeti Picasa KÉRDÉS-szövegét jeleníti meg
+    // úgy, hogy az "Igen" ág (pl. mappa-másolás) MÉG nincs megvalósítva —
+    // ilyenkor a hívó `false`-ra állítja, hogy a gomb LÁTHATÓAN tiltott
+    // legyen, ne egy néma no-op (CLAUDE.md #459 feladat, (j) szabály).
+    property bool yesEnabled: true
+    // #459: az eredeti Picasa némely dialógusán a gombfelirat NEM
+    // "Yes"/"No" (pl. sérült kép: "Hide Files" / "Don't Hide") — a
+    // gombok viselkedése (accept/deny) változatlan, csak a felirat hívó-
+    // testreszabható.
+    property string yesText: qsTr("Yes")
+    property string noText: qsTr("No")
 
     // Igen (accept) — akkor is kibocsátva, ha a dialógus meg sem nyílt,
     // mert a kulcs már el volt nyomva
@@ -89,13 +100,14 @@ Dialog {
 
             PicasaButton {
                 objectName: root.namePrefix + "YesButton"
-                text: qsTr("Yes")
+                text: root.yesText
                 accent: Theme.picasaGreen
+                enabled: root.yesEnabled
                 onClicked: root.accept()
             }
             PicasaButton {
                 objectName: root.namePrefix + "NoButton"
-                text: qsTr("No")
+                text: root.noText
                 onClicked: {
                     root.close()
                     root.denied()

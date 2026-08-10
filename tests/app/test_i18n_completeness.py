@@ -45,6 +45,13 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
     ("CreateMixin", "No target file was chosen."): "AppController",
     ("CreateMixin", "Unknown collage type."): "AppController",
     ("CreateMixin", "None of the selected pictures could be read."): "AppController",
+    # #459: az `ExportMixin` (export_controller.py) ugyanígy a mixin-
+    # kontextus fölé kevert `AppController` — a lemezhely-ellenőrzés
+    # hibaszövege futásidőben ott van lefordítva.
+    (
+        "ExportMixin",
+        "Sorry, there is not enough free disk space to safely download pictures.",
+    ): "AppController",
 }
 
 
@@ -183,19 +190,22 @@ class TestI18nCompleteness:
         app.installTranslator(translator)
         try:
             from picasapy.app.create_controller import CreateMixin
+            from picasapy.app.export_controller import ExportMixin
 
             # A self.tr() futásidejű kontextusa a KONKRÉT (Python) osztály
-            # neve — nem a lexikai (mixin) osztályé. Ezért a próba-osztályt
+            # neve — nem a lexikai (mixin) osztályé, FÜGGETLENÜL attól,
+            # melyik mixin metódusa hívja. Ezért a próba-osztályt
             # szándékosan "AppController" néven hozzuk létre (type(), a
             # valódi controller.py importja nélkül — az sok más függőséget
-            # vonna be), hogy pontosan azt a felbontást reprodukáljuk, amit
-            # a valódi AppController(QObject, ..., CreateMixin, ...) csinál.
-            probe_cls = type("AppController", (QObject, CreateMixin), {})
+            # vonna be), MINDEN dokumentált kivétel mixinjével összefűzve,
+            # hogy pontosan azt a felbontást reprodukáljuk, amit a valódi
+            # AppController(QObject, ..., CreateMixin, ExportMixin, ...) csinál.
+            probe_cls = type("AppController", (QObject, CreateMixin, ExportMixin), {})
             probe = probe_cls()
-            for (wrong_context, source), _real in (
+            for (_wrong_context, source), real_context in (
                 _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS.items()
             ):
-                assert wrong_context == "CreateMixin"  # a jelenlegi egyetlen eset
+                assert real_context == "AppController"  # a jelenlegi egyetlen cél
                 translated = probe.tr(source)
                 assert translated != source, (
                     f"{source!r} angolul jelenik meg — a mixin self.tr() "

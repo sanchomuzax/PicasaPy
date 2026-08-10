@@ -39,7 +39,7 @@ from typing import Callable
 
 from PySide6.QtCore import Property, QObject, QSettings, Signal, Slot
 
-from picasapy.fileops import copy_photo
+from picasapy.fileops import copy_photo, has_enough_free_space, required_bytes_for
 from picasapy.importsource import (
     NAMING_BY_DATE,
     NAMING_MANUAL,
@@ -352,6 +352,20 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         def worker() -> None:
             copied_paths: list[Path] = []
             failed_details: list[str] = []
+            # #459: lemezhely-ellenőrzés ELŐRE (a forrás mérete a NAS-on
+            # lassú lehet, ezért itt, a szálon, a másolás ELŐTT — nem a
+            # GUI-szálat blokkoló main-thread stat-tal) — a művelet NE
+            # induljon el félbehagyva, ha úgyis biztosan elfogyna a hely.
+            required = required_bytes_for(candidate.path for candidate in included)
+            if not has_enough_free_space(dest_root, required):
+                self.importFailedDetails.emit(
+                    [self.tr(
+                        "Sorry, there is not enough free disk space to "
+                        "safely download pictures."
+                    )]
+                )
+                self.importFinished.emit(0, total)
+                return
             for done, candidate in enumerate(included, start=1):
                 try:
                     subdir = dest_root / destination_subpath_for_mode(

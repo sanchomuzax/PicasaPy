@@ -15,7 +15,8 @@ from picasapy.app.effect_params import (
     resolve_effect_params,
 )
 from picasapy.edit.session import EditSession
-from picasapy.ini import load_document, update_document
+from picasapy.fileops import is_folder_writable
+from picasapy.ini import IniConflictError, IniSaveError, load_document, update_document
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.ini.retouch import RetouchPatch
 from picasapy.ini.text_overlay import (
@@ -33,6 +34,10 @@ from picasapy.scanner import PICASA_INI_NAME
 from . import formatting
 from .edit_preview import EditPreviewProvider, TextOverlaySpec
 from .histogram_helper import EMPTY_HISTOGRAM
+
+# #459: a csillag/album-írás mintája (photo_ops_controller.py) — a tartós
+# ütközés/lemezhiba is kezelt hiba, nem néma adatvesztés/kivétel.
+_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
 
 # redeye: teljes képes kapcsoló a régió-alapú eszközig (#116)
 _TOGGLE_NAMES = ("redeye",)
@@ -226,6 +231,13 @@ class EditController(QObject):
     # GPU-réteg elkerülni hivatott). A gpuPrefixSource/gpuLutSource ezt a
     # jelet figyeli.
     gpuRevisionChanged = Signal()
+    # #459: a szerkesztés mentése (minden effekt/vágás/felirat-módosítás
+    # a `_save()`/`_save_text()`-en át azonnal lemezre ír) csak-olvasható
+    # mappán vagy egyéb lemezhibán elbukhat — az eredeti Picasa szövege
+    # szerinti kérdés/üzenet a QML-oldalon jelenik meg (a tényleges
+    # mappa-másolás NEM készült el, ld. a `_save()` docstringjét).
+    editSaveReadOnly = Signal()
+    editSaveFailed = Signal(str)
 
     def __init__(self, provider: EditPreviewProvider, parent=None) -> None:
         super().__init__(parent)
@@ -1308,6 +1320,8 @@ class EditController(QObject):
 
     def _save(self) -> None:
         assert self._ini_path is not None
+        if not self._check_writable_before_save():
+            return
 
         def mutate(document):
             if self._session.is_empty():
@@ -1329,7 +1343,11 @@ class EditController(QObject):
 
         # #137: ütközésbiztos mentés — ha a párhuzamosan futó eredeti Picasa
         # időközben más kulcsot írt ugyanabba az iniben, az nem vész el.
-        update_document(self._ini_path, mutate, backup=True)
+        try:
+            update_document(self._ini_path, mutate, backup=True)
+        except _WRITE_ERRORS as error:
+            self.editSaveFailed.emit(str(error))
+            return
         self._register_preview()
 
     def _save_text(self) -> None:
@@ -1337,6 +1355,8 @@ class EditController(QObject):
         `_save()`-től, mert ezek NEM a `filters=` láncba tartoznak, hanem
         önálló, szekció-szintű kulcsok (ld. `picasapy.ini.text_overlay`)."""
         assert self._ini_path is not None
+        if not self._check_writable_before_save():
+            return
 
         def mutate(document):
             if self._text_overlay is None or not self._text_overlay.content:
@@ -1353,8 +1373,28 @@ class EditController(QObject):
                 )
             return document
 
-        update_document(self._ini_path, mutate, backup=True)
+        try:
+            update_document(self._ini_path, mutate, backup=True)
+        except _WRITE_ERRORS as error:
+            self.editSaveFailed.emit(str(error))
+            return
         self._register_preview()
+
+    def _check_writable_before_save(self) -> bool:
+        """#459: a mentés ELŐTTI, gyors csak-olvasható-ellenőrzés — az
+        eredeti Picasa itt ajánlotta fel a mappa-másolást (*"This file is
+        read only. In order to edit this file, Picasa needs to copy the
+        file's folder. Would you like to make a copy now?"*). A tényleges
+        másolás NEM készült el (a jegy szerint külön, nagyobb munka) — csak
+        a FELISMERÉS és a látható jelzés (`editSaveReadOnly`), hogy a
+        felhasználó NE néma bukást lásson. Visszaadja, hogy folytatható-e
+        a mentés."""
+        assert self._ini_path is not None
+        folder = self._ini_path.parent
+        if is_folder_writable(folder):
+            return True
+        self.editSaveReadOnly.emit()
+        return False
 
     def _register_preview(self, session: EditSession | None = None) -> None:
         assert self._image_path is not None

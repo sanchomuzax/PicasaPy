@@ -36,6 +36,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from picasapy.fileops import has_enough_free_space, required_bytes_for
 from picasapy.index import PhotoRecord
 from picasapy.webexport import (
     AlbumExportData,
@@ -132,6 +133,17 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             return
         if not photos:
             self.webExportFailed.emit(self.tr("No pictures to export."))
+            return
+        # #459: lemezhely-ellenőrzés ELŐRE — a forrásfájlok teljes méretét
+        # vetjük össze a céllal, hogy a generálás NE induljon el félbehagyva.
+        required = required_bytes_for(
+            Path(photo.folder_path) / photo.name for photo in photos
+        )
+        if not has_enough_free_space(Path(target), required):
+            self.webExportFailed.emit(self.tr(
+                "Sorry, there is not enough free disk space to safely "
+                "download pictures."
+            ))
             return
 
         settings = WebExportSettings(
