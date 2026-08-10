@@ -312,3 +312,183 @@ class TestEditedThumbnail:
     def test_edited_missing_source_returns_none(self, cache, tmp_path):
         ops = (_crop_op(0.1, 0.1, 0.9, 0.9),)
         assert cache.get_or_create_edited(tmp_path / "nincs.jpg", 1, 7, ops) is None
+
+
+def _holga_op():
+    from picasapy.ini.filters import FilterOp
+
+    # blur=70, grain=30, fade=0 — a katalógus alapértéke (glimmer_creative.apply_holga)
+    return FilterOp("holga", ("1", "70", "30", "0"))
+
+
+def _large_gradient_jpeg(path, size=(2400, 1600)):
+    """A méret-egyezési teszthez elég nagy, "fotószerű" kép — a
+    Glimmer-effektek (Holga/Lomo) sugárképletei csak nagy méretnél
+    telítődnek (#525), a kis 320-400px-es gyári JPEG-ek nem mutatnák meg
+    a hibát."""
+    import numpy as np
+    from PIL import Image
+
+    width, height = size
+    ramp = np.linspace(0, 255, width, dtype=np.uint8)
+    array = np.repeat(ramp[np.newaxis, :], height, axis=0)
+    blue = np.full_like(array, 128)
+    rgb = np.stack([array, array[::-1], blue], axis=-1)
+    Image.fromarray(rgb, "RGB").save(path, "JPEG", quality=95)
+    return path
+
+
+def _mean_and_black_ratio(image_rgb):
+    import numpy as np
+
+    gray = image_rgb.astype(np.float32).mean(axis=2)
+    return float(gray.mean()), float((gray < 1.0).mean() * 100.0)
+
+
+class TestEditedThumbnailSizeParity:
+    """#525: a `filters=` láncot (itt: Holga) tartalmazó bélyegkép ne
+    legyen a nagy méretű (natív felbontáson renderelt) képhez képest
+    feltűnően sötétebb — a Glimmer-effektek 255-ös abszolút sugárkorlátja
+    korábban a MÁR kicsinyített képen futott, ami relatíve jóval szélesebb
+    (és sötétebb) vignettát adott. A teszt NEM függ referencia-képektől
+    (szintetikus gradienst renderel), csak a `render.apply_filters`
+    ugyanazon láncát futtatja nagyban és a `ThumbnailCache`
+    bélyegkép-útján, és összeveti a fényesség-statisztikát."""
+
+    def test_thumbnail_close_to_full_size_render(self, tmp_path):
+        import cv2
+
+        from picasapy.cvimage import scale_down
+        from picasapy.render import apply_filters
+
+        photo = _large_gradient_jpeg(tmp_path / "nagy_holga.jpg")
+        ops = (_holga_op(),)
+        target_size = 96
+
+        cache = ThumbnailCache(tmp_path / "cache", size=target_size)
+        thumb_path = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        assert thumb_path is not None
+        thumb_rgb = cv2.cvtColor(cv2.imread(str(thumb_path)), cv2.COLOR_BGR2RGB)
+
+        # "nagyban": a natív képre alkalmazott lánc, utólag kicsinyítve —
+        # ez a cél VIZUÁLIS eredmény (amit az eredeti Picasa is ad).
+        full_rgb = cv2.cvtColor(cv2.imread(str(photo)), cv2.COLOR_BGR2RGB)
+        full_rendered, _skipped = apply_filters(full_rgb, ops)
+        full_thumb = scale_down(full_rendered, target_size)
+
+        # a "régi" (hibás) út bizonyítékul: kicsinyít, ÚTÁN effektez —
+        # ennél kell KÖZELEBB kerülnünk a nagyban-renderelt célhoz.
+        naive_small = scale_down(full_rgb, target_size)
+        naive_rendered, _skipped2 = apply_filters(naive_small, ops)
+
+        mean_thumb, black_thumb = _mean_and_black_ratio(thumb_rgb)
+        mean_full, black_full = _mean_and_black_ratio(full_thumb)
+        mean_naive, black_naive = _mean_and_black_ratio(naive_rendered)
+
+        thumb_gap = abs(mean_thumb - mean_full)
+        naive_gap = abs(mean_naive - mean_full)
+        assert thumb_gap < naive_gap, (
+            f"a bélyegkép ({mean_thumb:.1f}) nem került közelebb a nagyban "
+            f"renderelt célhoz ({mean_full:.1f}), mint a naiv (kicsinyít-"
+            f"utána-effektez) út ({mean_naive:.1f})"
+        )
+        # a fennmaradó eltérés néhány (nem sok) tíz-egységnyi lehet — a
+        # bázisméret-korlát (_EDIT_BASE_CAP, teljesítmény miatt) nem a
+        # teljes natív felbontás, de messze nem a régi ~2x-es eltérés.
+        assert thumb_gap < 30.0
+        assert abs(black_thumb - black_full) < 15.0
+
+    def test_two_thumbnail_sizes_below_floor_agree(self, tmp_path):
+        """Két, a `_EDIT_BASE_MIN`-nél kisebb bélyegkép-cél (pl. rácsnézet
+        96px és 256px) UGYANARRA a bázisra esik — a fényesség-statisztika
+        gyakorlatilag megegyezzen (méret-egyezési regresszió)."""
+        import cv2
+
+        photo = _large_gradient_jpeg(tmp_path / "ket_meret.jpg")
+        ops = (_holga_op(),)
+
+        small_cache = ThumbnailCache(tmp_path / "c96", size=96)
+        big_cache = ThumbnailCache(tmp_path / "c256", size=256)
+        small_path = small_cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        big_path = big_cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+
+        small_rgb = cv2.cvtColor(cv2.imread(str(small_path)), cv2.COLOR_BGR2RGB)
+        big_rgb = cv2.cvtColor(cv2.imread(str(big_path)), cv2.COLOR_BGR2RGB)
+        mean_small, black_small = _mean_and_black_ratio(small_rgb)
+        mean_big, black_big = _mean_and_black_ratio(big_rgb)
+
+        assert abs(mean_small - mean_big) < 5.0
+        assert abs(black_small - black_big) < 5.0
+
+
+class TestEditBaseSizeFormula:
+    """#525: a bázisméret-képlet önmagában (alsó/felső korlát, szorzó)."""
+
+    def test_small_target_gets_floor(self):
+        from picasapy.thumbs.cache import _edit_base_size
+
+        assert _edit_base_size(64) == 1536
+        assert _edit_base_size(96) == 1536
+
+    def test_target_below_cap_uses_factor(self):
+        from picasapy.thumbs.cache import _edit_base_size
+
+        # 384*4 = 1536 = éppen a padló
+        assert _edit_base_size(384) == 1536
+        # 480*4 = 1920, a padló és a plafon között
+        assert _edit_base_size(480) == 1920
+
+    def test_large_target_gets_capped(self):
+        from picasapy.thumbs.cache import _edit_base_size
+
+        assert _edit_base_size(512) == 2048
+        assert _edit_base_size(4000) == 2048
+
+
+class TestEditedThumbnailCacheInvalidation:
+    """#525: ha a bázisméret-képlet (vagy a hozzá tartozó verziószám)
+    változik, a régi — a méretfüggő sötétedés miatt hibás — lemez-cache-
+    bejegyzés NE ragadjon be: a kulcs a verziószámmal együtt változzon,
+    és a hívó a régi fájl helyett egy ÚJ, újraszámolt bejegyzést kapjon."""
+
+    def test_version_bump_produces_new_cache_entry(self, cache, tmp_path, monkeypatch):
+        import picasapy.thumbs.cache as cache_module
+
+        photo = _gradient_jpeg(tmp_path / "verzio.jpg", size=(400, 400))
+        ops = (_crop_op(0.1, 0.1, 0.9, 0.9),)
+
+        old = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        assert old is not None and old.exists()
+
+        monkeypatch.setattr(cache_module, "_EDIT_CACHE_VERSION", 999)
+        new = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+
+        assert new is not None and new.exists()
+        assert new != old
+        # a régi fájl a lemezen marad (a takarítás a #144 LRU-jáé), de a
+        # hívó a MOSTANI képletnek megfelelő, friss bejegyzést kapja
+        assert old.exists()
+
+    def test_base_size_change_bypasses_stale_dark_entry(
+        self, cache, tmp_path, monkeypatch
+    ):
+        """Konkrétan a #525 forgatókönyve: a régi (kisebb) bázisméretre
+        épült, meglévő cache-fájl NE adódjon vissza azután, hogy a
+        bázisméret-képlet (itt: a padló-konstans) megváltozott."""
+        import picasapy.thumbs.cache as cache_module
+
+        photo = _large_gradient_jpeg(tmp_path / "regi_bazis.jpg")
+        ops = (_holga_op(),)
+
+        monkeypatch.setattr(cache_module, "_EDIT_BASE_MIN", 200)
+        monkeypatch.setattr(cache_module, "_EDIT_BASE_CAP", 200)
+        stale = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+        assert stale is not None
+
+        monkeypatch.setattr(cache_module, "_EDIT_BASE_MIN", 1536)
+        monkeypatch.setattr(cache_module, "_EDIT_BASE_CAP", 2048)
+        monkeypatch.setattr(cache_module, "_EDIT_CACHE_VERSION", 3)
+        fresh = cache.get_or_create_edited(photo, *_stat_key(photo), ops)
+
+        assert fresh is not None
+        assert fresh != stale

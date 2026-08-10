@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.48] – 2026-08-10
+
+### Javítva
+- **A szerkesztett képek kisképe sötétebb volt a nagy képnél (#525):** a
+  program az effektet a **már kicsinyített** képre számolta, az eredeti
+  Picasa viszont nagyban számolt, és csak utána kicsinyített. Mivel a
+  vignetta sugarának felső korlátja rögzített képpontszám, kicsiben ugyanaz
+  az effekt jóval szélesebb sötét karikát rajzolt. Mostantól a bélyegkép is
+  nagyobb alapméreten készül. Az eredeti Picasa kimenetéhez mérve az
+  eltérés **48,3 → 14,1** (Holga), illetve **55,0 → 8,3** (Lomo).
+- A korábbi, hibásan sötét bélyegképek **maguktól frissülnek** — nem kell
+  kézzel üríteni a gyorsítótárat.
+
+### Megjegyzés
+- A szerkesztett képek bélyegképe ezzel kb. **kétszer lassabban** készül el.
+  Ez csak a szerkesztett fotókat érinti, háttérben fut, és egyszeri: a
+  könyvtár böngészése nem lassul.
+
 ## [0.6.47] – 2026-08-08
 
 ### Javítva

@@ -34,6 +34,45 @@ _JPEG_QUALITY = 85
 # célméret; ennél erősebb vágásnál is jóval élesebb a naiv útnál.
 _EDIT_BASE_FACTOR = 4
 
+# #525: a Glimmer-effektek (Holga, Lomo, Vignette, ...) sugár-/elmosás-
+# képletei RÉSZBEN abszolút képpontszámban vannak megadva (a Flash
+# `blurX`/`blurY` 255-ös korlátjának öröksége, ld. `glimmer_ops.
+# clamp_glow_radius`) — ha a láncot a MÁR kicsinyített (pl. 96–256px-es)
+# thumbnailra futtatjuk, ez a sugár relatíve sokszorosan szélesebb
+# vignettát rajzol, mint amit Picasa nagy (2560px-es) exportján látni
+# (mérve: #525 jegy, `referencia/holga` és `referencia/lomo`). A puszta
+# `_EDIT_BASE_FACTOR` (kis thumbnail-méretnél 96×4=384, 256×4=1024) ezt
+# NEM oldja meg — a mérés szerint a torzulás csak kb. 1500–2000px-es
+# bázisnál kezd belapulni. Ezért a bázis egy ALSÓ KORLÁTOT is kap
+# (`_EDIT_BASE_MIN`) a puszta szorzat mellé, felül pedig egy teljesítmény-
+# korlátot (`_EDIT_BASE_CAP`) — 2560px-es (natív méretű) bázison a Holga
+# ~1 mp/kép, ami a bélyegkép-gyorsítótár (egyszeri, háttérszálas) útjára
+# nézve nagyságrendi lassulás lenne. A mért kompromisszum (2560×1702-es
+# referenciafotón, Holga): bázis 1536px → átlagfény-eltérés a Picasa
+# kimenetétől 33,2 (a "kicsinyít-majd-effektez" út 47,9-éhez képest),
+# 0,57 mp/kép; bázis 2048px → 21,2, 1,08 mp/kép; teljes (2560px) → 14,1,
+# 2,65 mp/kép. Az 1536–2048-as sáv adja a legjobb arányt — jelentős
+# javulás, a lassulás pedig még mindig kevesebb, mint egy nagyságrend a
+# korábbi (384–1024px-es) bázishoz képest.
+_EDIT_BASE_MIN = 1536
+_EDIT_BASE_CAP = 2048
+
+# #525: a bázisméret-képlet fenti változása miatt a RÉGI (a bug miatt
+# sötét) szerkesztett bélyegképeket el kell avultatni — a cache-kulcs a
+# forrás/mtime/méret/lánc mellé ezt a verziószámot is beleszámítja, így a
+# meglévő lemez-cache-ben ragadt sötét bejegyzések nem találatot adnak,
+# hanem újragenerálódnak az új bázismérettel. Csak a #163 SZERKESZTETT
+# (`filters=` láncos) bélyegképeket érinti — a sima `get_or_create` út
+# (a könyvtár nagy része) változatlan, nem kell újragenerálódnia.
+_EDIT_CACHE_VERSION = 2
+
+
+def _edit_base_size(target_size: int) -> int:
+    """A szerkesztett bélyegkép rendereléséhez használt bázisméret (#525):
+    legalább `_EDIT_BASE_MIN`, legfeljebb `_EDIT_BASE_CAP`, a kettő között
+    a célméret `_EDIT_BASE_FACTOR`-szorosa."""
+    return min(_EDIT_BASE_CAP, max(target_size * _EDIT_BASE_FACTOR, _EDIT_BASE_MIN))
+
 
 class ThumbnailCache:
     def __init__(
@@ -97,7 +136,8 @@ class ThumbnailCache:
         ops: tuple[FilterOp, ...],
     ) -> Path | None:
         """Szerkesztett bélyegkép: a `filters=` láncot nagy felbontású
-        bázison alkalmazza, majd a végeredményt kicsinyíti a célméretre (#163).
+        bázison alkalmazza, majd a végeredményt kicsinyíti a célméretre
+        (#163, a bázisméret pontos meghatározása #525: `_edit_base_size`).
 
         Lánc nélkül a szűretlen thumbnailra esik vissza. A forgatás nem itt
         történik (a hívó a kész — kicsi — bélyegképen forgat, ami veszteség-
@@ -111,10 +151,11 @@ class ThumbnailCache:
         )
         if target.exists():
             return target
-        base = self._decode_source(source, self._size * _EDIT_BASE_FACTOR)
+        base_size = _edit_base_size(self._size)
+        base = self._decode_source(source, base_size)
         if base is None:
             return None
-        rgb = cv2.cvtColor(scale_down(base, self._size * _EDIT_BASE_FACTOR),
+        rgb = cv2.cvtColor(scale_down(base, base_size),
                            cv2.COLOR_BGR2RGB)
         # #301: a hibás/idegen lánc-bejegyzést az apply_filters saját maga
         # hagyja ki (kivétel nem szökik ki innen) — a lánc többi tagja lefut,
@@ -136,7 +177,14 @@ class ThumbnailCache:
     def edited_thumbnail_path(
         self, photo_path: Path, mtime_ns: int, size_bytes: int, chain: str
     ) -> Path:
-        key = f"{photo_path}\x00{mtime_ns}\x00{size_bytes}\x00{self._size}\x00e\x00{chain}"
+        # #525: a kulcsban az _EDIT_CACHE_VERSION is szerepel — ha a
+        # bázisméret-képlet változik, a régi (esetleg hibásan sötét)
+        # lemez-cache-bejegyzések automatikusan érvénytelenné válnak,
+        # ahelyett hogy örökre beragadnának.
+        key = (
+            f"{photo_path}\x00{mtime_ns}\x00{size_bytes}\x00{self._size}"
+            f"\x00e{_EDIT_CACHE_VERSION}\x00{chain}"
+        )
         digest = hashlib.sha1(key.encode("utf-8")).hexdigest()
         return self._root / digest[:2] / f"{digest}.jpg"
 
