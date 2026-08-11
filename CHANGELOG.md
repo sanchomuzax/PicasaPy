@@ -10,9 +10,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ### Belső
 - **A szerkesztő-panel forrása felbontva (#496).** A 2367 soros
   `EditorPanel.qml`-ből önálló fájlba került a három újrafelhasználható
-  vezérlő (eszköz-csempe, panel-gomb, szín-választó) és a teljes „Fotó
-  vágása" panel — 2367 → 1918 sor. A felület viselkedése és a
-  megjelenése változatlan.
+  vezérlő (eszköz-csempe, panel-gomb, szín-választó), valamint a „Fotó
+  vágása", a „Retusálás" és a „Szöveg" panel — **2367 → 1665 sor**. A
+  felület viselkedése és a megjelenése változatlan.
 
 ## [0.6.68] – 2026-08-11
 

@@ -71,3 +71,5 @@ ToolTile 1.0 ToolTile.qml
 PanelButton 1.0 PanelButton.qml
 TextColorSwatches 1.0 TextColorSwatches.qml
 EditorCropPanel 1.0 EditorCropPanel.qml
+EditorTextPanel 1.0 EditorTextPanel.qml
+EditorRetouchPanel 1.0 EditorRetouchPanel.qml
