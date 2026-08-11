@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import threading
 from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -113,15 +114,13 @@ class EditPreviewProvider(QQuickImageProvider):
         # QML-nek, a réteg nem jelenik meg.
         self._gpu_prefix_images: OrderedDict[str, QImage] = OrderedDict()
         self._gpu_lut_images: OrderedDict[str, QImage] = OrderedDict()
+        # #546: EGYETLEN zár, és csak a (rövid) kép-/hisztogram-tárolásra.
+        # A dekód-/prefix-gyorsítótárakat (`_sources`, `_prefix_cache`,
+        # `_gpu_prefix_cache`) KIZÁRÓLAG a GUI-szál írja: a háttérszálas
+        # render (`shared_cache=False`) lokálisan dekódol és renderel.
+        # Így nincs olyan zár, amin a GUI-szál render-hosszan állhatna —
+        # a #514 első változata épp ezt hozta vissza egy másik ajtón.
         self._lock = threading.Lock()
-        # #514: a `register()` renderelése MÁR NEM csak a GUI-szálon fut (a
-        # lassú effekteket az EditController háttérszálra teszi), a
-        # dekód-/prefix-gyorsítótárak viszont sima dict/tuple mezők — két
-        # egyidejű render egymás alól húzná ki őket. Ez a zár a TELJES
-        # `register()`-t sorosítja; a fenti `self._lock` marad a (rövid)
-        # kép-/hisztogram-tárolás védelme, és MINDIG ezen BELÜL kerül sorra
-        # (egyirányú zár-sorrend, nincs holtpont).
-        self._render_lock = threading.RLock()
 
     def register(
         self,
@@ -131,10 +130,11 @@ class EditPreviewProvider(QQuickImageProvider):
         text: TextOverlaySpec | None = None,
         gpu_prefix_ops: tuple[FilterOp, ...] | None = None,
         gpu_lut: np.ndarray | None = None,
+        shared_cache: bool = True,
+        is_current: Callable[[], bool] | None = None,
     ) -> None:
         """Az aktuálisan szerkesztett fotó renderelése és eltárolása.
 
-        A hívó (GUI) szálán fut — a provider-szálra nem jut Python-munka.
         A `text` (ha van) a `filters=` lánc UTÁN, a végeredményre kerül —
         ez PicasaPy-saját szöveg-eszköz (#148) élő előnézete, a `text=`
         ini-kulcs önálló (nem a lánc része, ld. `TextOverlaySpec`).
@@ -147,21 +147,24 @@ class EditPreviewProvider(QQuickImageProvider):
         gyorsítótárból jön (nem duplikált munka), ha `ops[:-1] ==
         gpu_prefix_ops` (a szokásos eset: finetune2-húzás alatt).
 
-        #514: a hívó GUI- ÉS háttérszálról is hívhatja (a lassú effektek
-        renderelése a szerkesztőben háttérszálra került) — a `_render_lock`
-        sorosítja a két utat, hogy a dekód-/prefix-gyorsítótárak ne
-        keveredjenek."""
-        with self._render_lock:
-            self._register_locked(
-                photo_id,
-                path,
-                ops,
-                text=text,
-                gpu_prefix_ops=gpu_prefix_ops,
-                gpu_lut=gpu_lut,
-            )
+        #546: a hívó GUI- ÉS háttérszálról is hívhatja. A háttér-út
+        `shared_cache=False`-szal jön: lokálisan dekódol/renderel, a
+        megosztott gyorsítótárakhoz hozzá sem nyúl. Az `is_current`
+        visszahívás (ha van) közvetlenül a TÁROLÁS előtt fut le, a `_lock`
+        alatt — az időközben túlhaladott render így nem írhatja felül a
+        frissebb képet."""
+        self._register_impl(
+            photo_id,
+            path,
+            ops,
+            text=text,
+            gpu_prefix_ops=gpu_prefix_ops,
+            gpu_lut=gpu_lut,
+            shared_cache=shared_cache,
+            is_current=is_current,
+        )
 
-    def _register_locked(
+    def _register_impl(
         self,
         photo_id: str,
         path: Path,
@@ -169,27 +172,31 @@ class EditPreviewProvider(QQuickImageProvider):
         text: TextOverlaySpec | None = None,
         gpu_prefix_ops: tuple[FilterOp, ...] | None = None,
         gpu_lut: np.ndarray | None = None,
+        shared_cache: bool = True,
+        is_current: Callable[[], bool] | None = None,
     ) -> None:
-        """A `register()` törzse — CSAK a `_render_lock` birtokában hívható."""
+        """A `register()` törzse (#546)."""
         key = str(photo_id)
         path = Path(path)
-        mtime = path.stat().st_mtime if path.exists() else None
-        cached = self._sources.get(key)
-        if cached is not None and cached[0] == path and cached[1] == mtime:
-            source_array = cached[2]
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            # #548: NAS-on a fájl az ellenőrzés és a `stat()` közt eltűnhet
+            # (TOCTOU), és a jogosultsági hiba is ide fut. A `None` azt
+            # jelenti: „nincs érvényes időbélyeg" — a forrás-gyorsítótár
+            # ilyenkor egyszerűen nem talál, és újra dekódolunk (a dekóder
+            # a hiányzó fájlra `None`-nal, azaz helyőrzővel felel).
+            mtime = None
+        source_array = self._resolve_source(key, path, mtime, shared_cache)
+        # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó
+        # op fut. A háttér-úton (#546) nincs gyorsítótár — cserébe nincs
+        # megosztott állapot sem, amit sorosítani kellene.
+        if shared_cache:
+            result_array = self._render_cached(key, source_array, tuple(ops))
+        elif source_array is None or not ops:
+            result_array = source_array
         else:
-            source_array = _decode_source(path)
-        # LRU-frissítés (#128): az aktuális kulcs a sor végére kerül, és a
-        # kapacitáson túli legrégebbi bejegyzések felszabadulnak — az
-        # előző kép még bent marad (gyors visszalapozás), a régebbiek nem.
-        # A forrás-referencia (source_array) azonossága megmarad, így a
-        # lánc-prefix gyorsítótár (#140) találata a re-store után is érvényes.
-        self._sources[key] = (path, mtime, source_array)
-        self._sources.move_to_end(key)
-        while len(self._sources) > _LRU_CAPACITY:
-            self._sources.popitem(last=False)
-        # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó op fut
-        result_array = self._render_cached(key, source_array, tuple(ops))
+            result_array, _skipped = apply_filters(source_array, tuple(ops))
         if text is not None and result_array is not None and text.content:
             # a szöveg a filters-lánc UTÁN kerül a képre — a hisztogram (lent)
             # így is a TÉNYLEGESEN megjelenített (szöveggel együtt renderelt)
@@ -212,11 +219,21 @@ class EditPreviewProvider(QQuickImageProvider):
             else EMPTY_HISTOGRAM
         )
         gpu_prefix_image = None
-        if gpu_prefix_ops is not None:
-            prefix_array = self._cached_gpu_prefix(key, source_array, gpu_prefix_ops)
+        if gpu_prefix_ops is not None and source_array is not None:
+            if shared_cache:
+                prefix_array = self._cached_gpu_prefix(key, source_array, gpu_prefix_ops)
+            elif gpu_prefix_ops:
+                prefix_array, _skipped = apply_filters(source_array, gpu_prefix_ops)
+            else:
+                prefix_array = source_array
             gpu_prefix_image = _rgb_array_to_qimage(prefix_array)
         gpu_lut_image = _lut_array_to_qimage(gpu_lut) if gpu_lut is not None else None
         with self._lock:
+            # #546: az elavultság-ellenőrzés ITT, a tárolással EGY zár alatt
+            # — a régebbi render így tárolás ELŐTT bukik el, nem csak az
+            # értesítésnél (különben felülírná a frissebb képet).
+            if is_current is not None and not is_current():
+                return
             self._images[key] = image
             self._images.move_to_end(key)
             while len(self._images) > _LRU_CAPACITY:
@@ -239,7 +256,14 @@ class EditPreviewProvider(QQuickImageProvider):
             self._store_gpu_image(self._gpu_lut_images, key, _lut_array_to_qimage(lut))
 
     def unregister(self, photo_id: str) -> None:
-        """A fotó eltávolítása (szerkesztés vége)."""
+        """A fotó eltávolítása (szerkesztés vége).
+
+        #546: a `_sources`/`_prefix_cache`/`_gpu_prefix_cache` mezőket csak
+        a GUI-szál írja (a háttér-render `shared_cache=False`-szal fut),
+        ezért ez a metódus is CSAK a GUI-szálról hívható — a hívó
+        (`EditController.endEdit`) a `_preview_job` léptetésével gondoskodik
+        arról, hogy a futó háttér-render ne regisztrálhassa vissza a
+        lezárt fotót."""
         key = str(photo_id)
         self._sources.pop(key, None)
         if self._prefix_cache is not None and self._prefix_cache[0] == key:
@@ -271,6 +295,33 @@ class EditPreviewProvider(QQuickImageProvider):
         store.move_to_end(key)
         while len(store) > _LRU_CAPACITY:
             store.popitem(last=False)
+
+    def _resolve_source(
+        self, key: str, path: Path, mtime: float | None, shared_cache: bool
+    ) -> np.ndarray | None:
+        """A dekódolt forráskép — a GUI-úton gyorsítótárazva, háttéren nem.
+
+        #546: a `_sources` LRU-t KIZÁRÓLAG a GUI-szál írja. A háttér-render
+        inkább újra dekódol (ez a lassú effektek mellett elhanyagolható),
+        cserébe a két szál között nincs megosztott, zárral védendő állapot.
+        """
+        if not shared_cache:
+            return _decode_source(path)
+        cached = self._sources.get(key)
+        if cached is not None and cached[0] == path and cached[1] == mtime:
+            source_array = cached[2]
+        else:
+            source_array = _decode_source(path)
+        # LRU-frissítés (#128): az aktuális kulcs a sor végére kerül, és a
+        # kapacitáson túli legrégebbi bejegyzések felszabadulnak — az
+        # előző kép még bent marad (gyors visszalapozás), a régebbiek nem.
+        # A forrás-referencia (source_array) azonossága megmarad, így a
+        # lánc-prefix gyorsítótár (#140) találata a re-store után is érvényes.
+        self._sources[key] = (path, mtime, source_array)
+        self._sources.move_to_end(key)
+        while len(self._sources) > _LRU_CAPACITY:
+            self._sources.popitem(last=False)
+        return source_array
 
     # -- lánc-prefix gyorsítótár (#140) ------------------------------------
 

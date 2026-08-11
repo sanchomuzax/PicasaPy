@@ -162,3 +162,24 @@ class TestThreshold:
         # közvetlenül a végeztetés után MÉG látszania kell (min-láthatóság)
         assert registry.visible is True
         assert _wait_until(qt_app, lambda: registry.visible is False)
+
+
+class TestThreadStartFailure:
+    """#550: ha a `thread.start()` elbukik, a `begin()` párja is kell."""
+
+    def test_a_szamlalo_visszaall_ha_a_szal_nem_indul(self, qt_app, monkeypatch):
+        registry = get_app_busy_registry()
+        qt_app.processEvents()
+        before = registry.activeCount
+
+        def boom(self):
+            raise RuntimeError("can't start new thread")
+
+        monkeypatch.setattr(threading.Thread, "start", boom)
+        worker = _Worker()
+        with pytest.raises(RuntimeError):
+            worker._start_background(lambda: None)
+
+        qt_app.processEvents()
+        assert registry.activeCount == before, "a csík örökre pörögne"
+        assert not worker.backgroundWorkersRunning()

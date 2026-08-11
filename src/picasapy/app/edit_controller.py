@@ -3,6 +3,7 @@ közti híd. A bekötést (QML-regisztráció, jelzések) az integrátor végzi.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -35,6 +36,8 @@ from . import formatting
 from .edit_preview import EditPreviewProvider, TextOverlaySpec
 from .histogram_helper import EMPTY_HISTOGRAM
 from .worker_thread import BackgroundWorkerMixin
+
+_log = logging.getLogger(__name__)
 
 # #459: a csillag/album-írás mintája (photo_ops_controller.py) — a tartós
 # ütközés/lemezhiba is kezelt hiba, nem néma adatvesztés/kivétel.
@@ -613,6 +616,9 @@ class EditController(QObject, BackgroundWorkerMixin):
     def beginEdit(self, photo_id: str, image_path: str) -> None:
         """Szerkesztés indítása: a filters= betöltése az iniből (hiányzó
         ini/szekció/kulcs esetén üres lánc), regisztráció a previewnél."""
+        # #546: a képváltás érvényteleníti a futó háttér-rendert — az az
+        # ELŐZŐ fotó képét tárolná el (és emitálna rá revíziót)
+        self._preview_job += 1
         path = Path(image_path)
         self._photo_id = photo_id
         self._image_path = path
@@ -650,7 +656,13 @@ class EditController(QObject, BackgroundWorkerMixin):
 
     @Slot()
     def endEdit(self) -> None:
-        """Szerkesztés lezárása: leregisztrálás a previewnél, állapot ürítése."""
+        """Szerkesztés lezárása: leregisztrálás a previewnél, állapot ürítése.
+
+        #546: a `_preview_job` léptetése érvényteleníti a futó háttér-
+        rendert. Enélkül az a lezárt fotót a végén ÚJRA beregisztrálná (a
+        10–30 MB-os dekódolt forrás visszakerülne az LRU-ba), és utólagos
+        `revisionChanged`-et emitálna egy már üres szerkesztő-állapotra."""
+        self._preview_job += 1
         if self._photo_id:
             self._provider.unregister(self._photo_id)
         self._photo_id = ""
@@ -1461,14 +1473,44 @@ class EditController(QObject, BackgroundWorkerMixin):
         job = self._preview_job
         request = self._preview_request(session)
 
+        def still_current() -> bool:
+            return job == self._preview_job
+
         def worker() -> None:
-            if job != self._preview_job:
-                return  # időközben újabb kérés jött — ez már elavult
-            self._provider.register(**request)
-            if job == self._preview_job:
+            # #546: az elavultság-ellenőrzés a providerben, a TÁROLÁSSAL egy
+            # zár alatt fut le (`is_current`) — ha itt kívül néznénk meg,
+            # a régebbi render a zárért állva utóbb végezne, és felülírná a
+            # frissebb képet. A `shared_cache=False` miatt a háttér-render
+            # lokálisan dekódol: a GUI-szál soha nem vár rá záron.
+            try:
+                self._provider.register(
+                    **request, shared_cache=False, is_current=still_current
+                )
+            except Exception as error:  # noqa: BLE001 — ld. lent
+                # #548: a háttérszálban elhaló kivétel NÉMA lenne (a
+                # `threading` excepthookja csak stderr-re ír): a kép
+                # magyarázat nélkül maradna a régi. A mentés maga már
+                # sikerült, ezért nem hibaüzenetet állítunk elő, hanem a
+                # meglévő, szálhatáron át sorba állított jelzést használjuk
+                # — és naplózunk, hogy a hiba nyomozható legyen.
+                _log.exception("Az előnézet háttérszálas renderelése elbukott")
+                self.editSaveFailed.emit(str(error))
+                return
+            if still_current():
                 self._previewRendered.emit()
 
         self._start_background(worker, name="picasapy-editpreview")
+
+    @Slot()
+    def cancelPendingPreview(self) -> None:  # noqa: N802 — QML-stílusú név
+        """A folyamatban lévő háttér-render érvénytelenítése (#547).
+
+        A `_preview_job` léptetése után a futó worker sem eltárolni, sem
+        jelzést emitálni nem fog. Kilépéskor ez zárja be a #430-as
+        SIGSEGV-ablakot: a daemon-szál az interpreter leépítése közben
+        NEM emitálhat egy közben megsemmisült QObject-nek.
+        """
+        self._preview_job += 1
 
     def _on_preview_rendered(self) -> None:
         """A háttérszálas renderelés kész — a GUI-szálon frissítjük a

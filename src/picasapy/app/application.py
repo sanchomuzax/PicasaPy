@@ -602,4 +602,11 @@ def run(argv: list[str]) -> int:
     QTimer.singleShot(1000, _on_first_frame)
     exit_code = app.exec()
     controller.shutdown()
+    # #547: a szerkesztő háttér-renderét külön kell lezárni — az
+    # `edit_controller` önálló objektum, nem része a `controller.shutdown()`
+    # láncának. Előbb ÉRVÉNYTELENÍTÜNK (a worker így a végén sem emitál egy
+    # közben megsemmisülő QObject-nek, ld. #430), utána rövid ideig várunk:
+    # a perces rendert nem kell végigvárni, a daemon-szál emit nélkül fut ki.
+    edit_controller.cancelPendingPreview()
+    edit_controller.waitForBackgroundWorkers(2.0)
     return exit_code
