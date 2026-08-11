@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.59] – 2026-08-11
+
+### Javítva
+- **A HDR-ish végre azt csinálja, amit az eredeti (#545).** Az eltérés a
+  valódi Picasa-kimenettől **11,2 → 2,45** (kilenc export; az érintetlen kép
+  20,85 — vagyis a korábbi változat alig volt jobb a semminél). Két dolog
+  hiányzott: az elmosás mértéke a `Sugár` csúszka **fele** (ezt a négy
+  sugár-állás egymástól függetlenül ugyanígy adta), és a helyi kontraszt
+  mellett az erősséggel arányos **világosítás** is fut. Ugyanez a motor
+  hajtja a *Helyi kontraszt* effektet is, az is pontosabb lett.
+
 ## [0.6.58] – 2026-08-11
 
 ### Javítva
