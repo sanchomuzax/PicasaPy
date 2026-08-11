@@ -393,3 +393,79 @@ class TestRevertIniFailureRollsBackImage:
         assert image_path.read_bytes() == edited_bytes
         section = load_document(image_path.parent / _INI_NAME).section("IMG_0001.png")
         assert section.get("redo") is not None  # a nyilvántartás változatlan
+
+
+class TestNumberedSnapshotsAndUndoSave:
+    """#444: a Picasa NÉGY mentés-műveletet ismer; ezek közül az „Utolsó
+    mentés visszavonása" a köztes fokozat — visszavonja a lemezre írást, de
+    a SZERKESZTÉSEKET MEGTARTJA.
+    """
+
+    @staticmethod
+    def _photo(tmp_path: Path) -> Path:
+        path = tmp_path / "kep.png"
+        path.write_bytes(_encode_png(_solid_image((10, 20, 30))))
+        return path
+
+    def test_every_save_leaves_a_numbered_snapshot(self, tmp_path):
+        from picasapy.edit.save import ORIGINALS_DIR_NAME as originals
+
+        path = self._photo(tmp_path)
+        session = EditSession().append_effect("bw", ("1",))
+        save_edited(path, _solid_image((1, 2, 3)), session)
+        save_edited(path, _solid_image((4, 5, 6)), session)
+
+        names = sorted(p.name for p in (tmp_path / originals).iterdir())
+        # a „szent" eredeti + két, mentésenkénti sorszámozott pillanatkép
+        assert names == ["kep.1.png", "kep.2.png", "kep.png"]
+
+    def test_undo_save_restores_the_pixels_and_keeps_the_edits(self, tmp_path):
+        from picasapy.edit.save import undo_save
+
+        path = self._photo(tmp_path)
+        before = path.read_bytes()
+        session = EditSession().append_effect("bw", ("1",))
+        save_edited(path, _solid_image((200, 200, 200)), session)
+        assert path.read_bytes() != before
+
+        result = undo_save(path)
+
+        # a képpontok visszaálltak…
+        assert path.read_bytes() == before
+        # …a szerkesztés viszont MEGMARADT (a redo=-ból vissza a filters=-be)
+        document = load_document(tmp_path / _INI_NAME)
+        stored = document.section("kep.png")
+        assert stored.get("filters") == session.to_value()
+        assert stored.get("redo") is None
+        assert result.restored_filters == session.to_value()
+
+    def test_undo_save_steps_back_one_save_at_a_time(self, tmp_path):
+        from picasapy.edit.save import undo_save
+
+        path = self._photo(tmp_path)
+        session = EditSession().append_effect("bw", ("1",))
+        save_edited(path, _solid_image((100, 100, 100)), session)
+        after_first = path.read_bytes()
+        save_edited(path, _solid_image((200, 200, 200)), session)
+
+        undo_save(path)
+        assert path.read_bytes() == after_first
+
+    def test_undo_save_without_a_save_is_refused(self, tmp_path):
+        from picasapy.edit.save import undo_save
+
+        path = self._photo(tmp_path)
+        with pytest.raises(SaveError):
+            undo_save(path)
+
+    def test_revert_still_reaches_the_untouched_original(self, tmp_path):
+        """A `revert` továbbra is a „szent" eredetihez visz vissza — az
+        `undo_save` csak egy lépést lép, a `revert` az egészet."""
+        path = self._photo(tmp_path)
+        original = path.read_bytes()
+        session = EditSession().append_effect("bw", ("1",))
+        save_edited(path, _solid_image((100, 100, 100)), session)
+        save_edited(path, _solid_image((200, 200, 200)), session)
+
+        revert(path)
+        assert path.read_bytes() == original
