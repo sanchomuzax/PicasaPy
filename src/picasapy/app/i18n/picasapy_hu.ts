@@ -1960,6 +1960,49 @@
 <context>
     <name>FolderManagerDialog</name>
     <message>
+        <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
+        <source>Watching an entire drive can slow down the system. It would be better to select several sub-folders.</source>
+        <translation>Egy teljes meghajtó figyelése lelassíthatja a rendszert. Érdemesebb néhány almappát kiválasztani.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
+        <source>If you remove this folder, new items that you add to that folder on disk will not be automatically added to your library.</source>
+        <translation>Ha eltávolítja ezt a mappát, a lemezen később bele tett új képek nem kerülnek automatikusan a könyvtárba.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
+        <source>Help</source>
+        <translation>Súgó</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
+        <source>Folder Manager — Help</source>
+        <translation>Mappakezelő — Súgó</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
+        <source>Scan Always keeps watching the folder: pictures you add to it later show up on their own.
+
+Scan Once takes the pictures that are in the folder now and then forgets about it.
+
+Remove from Picasa takes the folder out of your library. The pictures stay on your disk.
+
+Face detection is separate: you can watch a folder and still keep faces in it out of the library.</source>
+        <translation>A „Keresés mindig" tovább figyeli a mappát: a később bele tett képek maguktól megjelennek.
+
+A „Keresés egyszer" a most a mappában lévő képeket veszi át, utána elfelejti a mappát.
+
+Az „Eltávolítás a Picasából" kiveszi a mappát a könyvtárból. A képek a lemezen maradnak.
+
+Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az arcokat kihagyja a könyvtárból.</translation>
+    </message>
+
+    <message>
         <location filename="../qml/PicasaPy/FolderManagerDialog.qml" line="13"/>
         <source>Folder Manager</source>
         <translation>Mappakezelő</translation>
@@ -2027,6 +2070,21 @@
         <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
         <source>Watched folders</source>
         <translation>Figyelt mappák</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
+        <source>For the current folder:</source>
+        <translation>A jelenlegi mappára:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
+        <source>Face Detection On</source>
+        <translation>Arcfelismerés bekapcsolva</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>
+        <source>Face Detection Off</source>
+        <translation>Arcfelismerés kikapcsolva</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/FolderStatePanel.qml"/>

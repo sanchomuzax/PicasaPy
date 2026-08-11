@@ -109,3 +109,35 @@ class TestFaceDetectionToggle:
         assert controller.faceDetectionEnabledFor(str(lib)) is True
         confirm_dialog = _child(window, "faceDetectionConfirmDialog")
         assert confirm_dialog.property("visible") is False
+
+
+class TestFaceToggleLabelAndEnablement:
+    """#543: a `stringres` szerint a kapcsoló FELIRATA is vált
+    (`CFolderMgrDialog::hasfr` / `::nofr`), és „Remove from Picasa"
+    állapotú mappán a kapcsoló szürke (nincs mihez arcadatot rendelni)."""
+
+    def test_a_felirat_valt_a_kizartsaggal(self, qml_app, qt_app):
+        window, controller, lib, _engine = qml_app
+        dialog = _child(window, "folderManagerDialog")
+        dialog.setProperty("selectedPath", str(lib))
+        qt_app.processEvents()
+
+        label = _child(window, "faceDetectionToggleLabel")
+        assert label is not None
+        assert "On" in label.property("text")
+
+        controller.setFaceDetectionEnabled(str(lib), False)
+        qt_app.processEvents()
+        assert "Off" in label.property("text")
+
+    def test_remove_allapotu_mappan_a_kapcsolo_szurke(self, qml_app, qt_app, tmp_path):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "folderManagerDialog")
+        unwatched = tmp_path / "nem-figyelt"
+        unwatched.mkdir()
+        dialog.setProperty("selectedPath", str(unwatched))
+        qt_app.processEvents()
+
+        toggle = _child(window, "faceDetectionToggle")
+        assert toggle is not None
+        assert toggle.property("enabled") is False

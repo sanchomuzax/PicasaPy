@@ -76,16 +76,60 @@ Window {
         return "none"
     }
 
-    // a fa-sorok állapot-ikonjához (FolderTreeItem.qml hívja)
-    function stateGlyph(path) {
-        var state = folderManagerWindow.stateFor(path)
-        if (state === "always") return "●"   // teli kör — figyelt
-        if (state === "once") return "◐"     // fél kör — egyszeri
-        return ""
+    // #543: az arcfelismerésből való kizártság — a fa-jelvényhez ÉS a
+    // jobb oldali kapcsolóhoz is kell, ezért itt, a közös helyen él (a
+    // `FolderStatePanel` innen hívja). Az ős-mappákra is kiterjedő
+    // egyezés a Python `faceDetectionEnabledFor` tükre.
+    function facesExcludedFor(path) {
+        if (!path || typeof controller === "undefined" || !controller) return false
+        var roots = controller.faceExcludedFolders
+        for (var i = 0; i < roots.length; i++) {
+            var root = roots[i]
+            if (path === root) return true
+            if (path.indexOf(root + "/") === 0) return true
+            if (path.indexOf(root + "\\") === 0) return true
+        }
+        return false
     }
 
-    // a jobb oldali rádiógomb-szerű sorok hívják (FolderStatePanel.qml)
+    // #543: teljes meghajtó-e az útvonal? Az eredeti Picasa ilyenkor
+    // figyelmeztet („Watching an entire drive can slow down the system"),
+    // mielőtt figyelésre állítaná.
+    function isWholeDrive(path) {
+        if (!path) return false
+        if (path === "/") return true
+        if (/^[A-Za-z]:[\\/]?$/.test(path)) return true
+        return false
+    }
+
+    // a jobb oldali rádiógomb-szerű sorok hívják (FolderStatePanel.qml).
+    // #543: két megerősítés ékelődik közé, a `stringres` eredeti szövegeivel
+    // — teljes meghajtó figyelése, illetve figyelt mappa eltávolítása.
     function setState(path, state) {
+        if (!path) return
+        if (state === "always" && folderManagerWindow.isWholeDrive(path)) {
+            driveWarning.pendingPath = path
+            driveWarning.ask(
+                "watchWholeDrive",
+                qsTr("Watching an entire drive can slow down the system. "
+                     + "It would be better to select several sub-folders."))
+            return
+        }
+        if (state === "none"
+                && controller && controller.watchedFolders.indexOf(path) !== -1) {
+            removeWatchedConfirm.pendingPath = path
+            removeWatchedConfirm.ask(
+                "removeWatchedFolder",
+                qsTr("If you remove this folder, new items that you add to "
+                     + "that folder on disk will not be automatically added "
+                     + "to your library."))
+            return
+        }
+        folderManagerWindow.applyState(path, state)
+    }
+
+    // a tényleges állapotváltás — a megerősítő párbeszédek is ezt hívják
+    function applyState(path, state) {
         if (!path) return
         var next = {}
         for (var key in folderManagerWindow.onceScanned)
@@ -119,8 +163,10 @@ Window {
             spacing: 10
 
             // bal oldal: a helyi fájlrendszer mappafája, lusta betöltéssel
+            // #543: az eredeti `foldermgr.tre` PONTOSAN fele-fele oszt
+            // (`XConstraint 1, .5, 0`) — nem fix 320/260 px
             Rectangle {
-                Layout.preferredWidth: 320
+                Layout.preferredWidth: 1
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 color: Theme.contentPanel
@@ -158,7 +204,8 @@ Window {
 
             // jobb oldal: állapot-választó + figyelt mappák összegzése
             FolderStatePanel {
-                Layout.preferredWidth: 260
+                Layout.preferredWidth: 1
+                Layout.fillWidth: true
                 Layout.fillHeight: true
                 manager: folderManagerWindow
                 selectedPath: folderManagerWindow.selectedPath
@@ -196,6 +243,73 @@ Window {
                 objectName: "folderManagerCancelButton"
                 text: qsTr("Cancel")
                 onClicked: folderManagerWindow.visible = false
+            }
+            // #543: az eredeti `foldermgr.tre` jobb alsó sarkában OK /
+            // Cancel MELLETT Help gomb is van
+            PicasaButton {
+                objectName: "folderManagerHelpButton"
+                text: qsTr("Help")
+                onClicked: folderManagerHelp.visible = true
+            }
+        }
+    }
+
+    // #543: „Watching an entire drive can slow down the system…"
+    ConfirmDialog {
+        id: driveWarning
+        namePrefix: "folderManagerDriveWarning"
+        property string pendingPath: ""
+        onConfirmed: folderManagerWindow.applyState(driveWarning.pendingPath, "always")
+    }
+
+    // #543: IDS_HOTFOLDER_CONFIRM — figyelt mappa eltávolítása
+    ConfirmDialog {
+        id: removeWatchedConfirm
+        namePrefix: "folderManagerRemoveWatchedConfirm"
+        property string pendingPath: ""
+        onConfirmed: folderManagerWindow.applyState(
+                         removeWatchedConfirm.pendingPath, "none")
+    }
+
+    // #543: a Súgó gomb tartalma — az eredeti súgó weboldala nincs meg,
+    // ezért a dialógus SAJÁT, rövid magyarázatát mutatjuk (az eredeti
+    // `instructions_text` bővebb változata), nem hivatkozunk kifelé.
+    Window {
+        id: folderManagerHelp
+        objectName: "folderManagerHelpWindow"
+        title: qsTr("Folder Manager — Help")
+        modality: Qt.ApplicationModal
+        width: 420
+        height: 240
+        color: Theme.canvasBg
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 10
+            Text {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+                text: qsTr(
+                    "Scan Always keeps watching the folder: pictures you add "
+                    + "to it later show up on their own.\n\n"
+                    + "Scan Once takes the pictures that are in the folder now "
+                    + "and then forgets about it.\n\n"
+                    + "Remove from Picasa takes the folder out of your library. "
+                    + "The pictures stay on your disk.\n\n"
+                    + "Face detection is separate: you can watch a folder and "
+                    + "still keep faces in it out of the library.")
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                PicasaButton {
+                    objectName: "folderManagerHelpCloseButton"
+                    text: qsTr("Close")
+                    onClicked: folderManagerHelp.visible = false
+                }
             }
         }
     }

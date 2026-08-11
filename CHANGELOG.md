@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.61] – 2026-08-11
+
+### Javítva
+- **Mappakezelő: az eredeti elrendezés és két hiányzó figyelmeztetés (#543).**
+  A dialógus mostantól pontosan fele-fele oszt (mint az eredeti), az
+  állapot-választó süllyesztett keretbe került „A jelenlegi mappára:"
+  felirattal, és van **Súgó** gomb is. A fában szöveges karakter helyett
+  **rajzolt jelvény** mutatja az állapotot, és külön jelvény azt, ha a mappa
+  az arcfelismerésből ki van hagyva. Az arcfelismerés-kapcsoló felirata
+  vált (be/ki), és „Eltávolítás a Picasából" állapotú mappán szürke.
+  Új figyelmeztetések: **teljes meghajtó figyelése** lassíthatja a
+  rendszert, illetve **figyelt mappa eltávolításakor** a program
+  figyelmeztet, hogy az oda később tett képek már nem kerülnek be maguktól.
+
 ## [0.6.60] – 2026-08-11
 
 ### Javítva
