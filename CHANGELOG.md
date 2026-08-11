@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.63] – 2026-08-11
+
+### Javítva
+- **Összeomlás-veszély a haladásjelzés cseréjekor (#519/#430).** A
+  nyilvántartás lecserélésekor a régi példány felszabadulhatott, miközben
+  egy korábban indított háttérszál még jelzett neki — ez Windowson
+  hozzáférési hibával (0xC0000005), Linuxon szegmentálási hibával omlik
+  össze. A régi példány mostantól életben marad, és leáll.
+
 ## [0.6.62] – 2026-08-11
 
 ### Javítva
