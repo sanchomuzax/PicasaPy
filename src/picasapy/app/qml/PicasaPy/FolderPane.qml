@@ -846,9 +846,16 @@ Rectangle {
             newCollectionDialog.initialName = collectionContextMenu.collectionName
             newCollectionDialog.open()
         }
+        // #461: az eredeti Picasa szövege kimondja, hogy a mappák NEM
+        // vesznek el — az alapértelmezett gyűjteménybe kerülnek. Ez a
+        // megnyugtató mondat a lényeg, ezért szó szerint átvesszük.
         onRemoveRequested: removeCollectionConfirm.ask(
             "removeCollection",
-            qsTr("Remove this collection? The folders and files stay on disk."))
+            qsTr("Are you sure you want to remove the collection \u201c%1\u201d? "
+                 + "All folders in it will be moved to the collection "
+                 + "\u201c%2\u201d.")
+                .replace("%1", collectionContextMenu.collectionName)
+                .replace("%2", qsTr("Folders on Disk")))
     }
 
     // „Gyűjtemény eltávolítása" megerősítése (#422) — egyedi namePrefix,

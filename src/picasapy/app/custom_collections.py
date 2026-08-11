@@ -70,6 +70,40 @@ def serialize_custom_collections(collections: tuple[CustomCollection, ...]) -> s
     )
 
 
+#: A gyűjtemény-név ellenőrzésének eredménye: `""` = rendben, különben a
+#: hiba fajtája (a hívó UI ehhez rendeli az eredeti Picasa üzenetét, #461).
+NAME_OK = ""
+NAME_INVALID = "invalid"
+NAME_DUPLICATE = "duplicate"
+
+
+def validate_collection_name(
+    collections: tuple[CustomCollection, ...],
+    name: str,
+    *,
+    existing_name: str = "",
+) -> str:
+    """A gyűjtemény-név ellenőrzése (#461).
+
+    Az eredeti Picasa két hibát különböztet meg — „»%s« is not a valid
+    collection name" és „You already have a collection named »%s«." —, ezért
+    a réteg is kettőt ad vissza, nem egy csendes elutasítást.
+
+    Az `existing_name` az ÁTNEVEZÉS esete: a saját (változatlan) nevét ne
+    jelentse ütközésnek.
+    """
+    stripped = name.strip()
+    if not stripped:
+        return NAME_INVALID
+    folded = stripped.casefold()
+    if any(
+        c.name.casefold() == folded and c.name != existing_name
+        for c in collections
+    ):
+        return NAME_DUPLICATE
+    return NAME_OK
+
+
 def create_collection(
     collections: tuple[CustomCollection, ...], name: str
 ) -> tuple[CustomCollection, ...]:

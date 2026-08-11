@@ -572,7 +572,17 @@
         <source>New Collection</source>
         <translation>Új gyűjtemény</translation>
     </message>
+        <message>
+        <location filename="../qml/PicasaPy/NewCollectionDialog.qml"/>
+        <source>“%1” is not a valid collection name</source>
+        <translation>A(z) „%1” nem érvényes gyűjteménynév</translation>
+    </message>
     <message>
+        <location filename="../qml/PicasaPy/NewCollectionDialog.qml"/>
+        <source>You already have a collection named “%1”.</source>
+        <translation>Már van „%1” nevű gyűjteményed.</translation>
+    </message>
+<message>
         <source>Collection name:</source>
         <translation>Gyűjtemény neve:</translation>
     </message>
@@ -2423,9 +2433,15 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <source>Remove this folder from PicasaPy? The files stay on disk.</source>
         <translation>Eltávolítja ezt a mappát a PicasaPy-ból? A fájlok a lemezen maradnak.</translation>
     </message>
+        <message>
+        <location filename="../qml/PicasaPy/FolderPane.qml"/>
+        <source>Are you sure you want to remove the collection “%1”? All folders in it will be moved to the collection “%2”.</source>
+        <translation>Biztosan eltávolítod a(z) „%1” gyűjteményt? A benne lévő mappák a(z) „%2” gyűjteménybe kerülnek.</translation>
+    </message>
     <message>
-        <source>Remove this collection? The folders and files stay on disk.</source>
-        <translation>Eltávolítja ezt a gyűjteményt? A mappák és a fájlok a lemezen maradnak.</translation>
+        <location filename="../qml/PicasaPy/FolderPane.qml"/>
+        <source>Folders on Disk</source>
+        <translation>Mappák a lemezen</translation>
     </message>
     <message>
         <source>Unnamed</source>

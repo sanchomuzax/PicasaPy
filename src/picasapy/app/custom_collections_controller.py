@@ -22,6 +22,7 @@ from .custom_collections import (
     parse_custom_collections,
     rename_collection,
     serialize_custom_collections,
+    validate_collection_name,
 )
 
 
@@ -50,6 +51,20 @@ class CustomCollectionsMixin:
             CUSTOM_COLLECTIONS_SETTING_KEY, serialize_custom_collections(collections)
         )
         self.customCollectionsChanged.emit()
+
+    @Slot(str, str, result=str)
+    def validateCollectionName(  # noqa: N802 — QML-stílusú név
+        self, name: str, existing_name: str = ""
+    ) -> str:
+        """`""` = rendben; `"invalid"` / `"duplicate"` = a két Picasa-hiba.
+
+        #461: a névbekérő ezt kérdezi meg, mielőtt elfogadná a nevet — a
+        csendes elutasítás helyett a felhasználó megkapja az eredeti
+        üzenetet.
+        """
+        return validate_collection_name(
+            self._load_custom_collections(), name, existing_name=existing_name
+        )
 
     @Slot(str)
     def createCollection(self, name: str) -> None:

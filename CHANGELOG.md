@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.68] – 2026-08-11
+
+### Javítva
+- **Gyűjtemény-nevek: hibaüzenet a néma elutasítás helyett (#461).** Üres vagy
+  már foglalt névnél eddig egyszerűen nem történt semmi; most a névbekérő
+  nyitva marad, és megmondja, mi a baj — az eredeti Picasa két külön
+  üzenetével.
+- **A gyűjtemény törlésének kérdése megnyugtatóan fogalmaz (#461):** kimondja,
+  hogy a benne lévő mappák nem vesznek el, hanem a „Mappák a lemezen"
+  gyűjteménybe kerülnek — ahogy az eredetiben.
+
 ## [0.6.67] – 2026-08-11
 
 ### Hozzáadva
