@@ -33,6 +33,12 @@ from picasapy.render.curves import (
 
 _REDEYE_DOMINANCE_RATIO = 1.4
 _REDEYE_MIN_RED = 60
+#: A `count_redeye_spots` zajszűrése: ennél kevesebb ÖSSZEFÜGGŐ pixelből
+#: álló folt nem számít külön „szemnek". Szándékosan ABSZOLÚT (nem a
+#: képmérethez arányosított) küszöb: a szűrendő jelenség — a JPEG-tömörítés
+#: néhány pixeles vörös szórványa — szintén abszolút méretű, egy arányos
+#: küszöb pedig nagy képen a távolabbi arcok valódi pupilláit is kidobná.
+_REDEYE_MIN_SPOT_PIXELS = 6
 
 # Vágási arányok az autolight/autocolor/enhance hisztogram-darabszám alapú
 # szinthúzásához — a valódi Picasa a hisztogramban DARABSZÁM-küszöbbel
@@ -334,16 +340,44 @@ def apply_redeye(
     else:
         mask = np.ones((height, width), dtype=bool)
 
-    red = image[..., 0].astype(np.int32)
     green = image[..., 1].astype(np.int32)
     blue = image[..., 2].astype(np.int32)
-    red_eye_mask = (
-        mask
-        & (red >= _REDEYE_MIN_RED)
-        & (red > _REDEYE_DOMINANCE_RATIO * green)
-        & (red > _REDEYE_DOMINANCE_RATIO * blue)
-    )
+    red_eye_mask = mask & _redeye_pixel_mask(image)
 
     average_green_blue = ((green + blue) / 2).astype(np.uint8)
     result[..., 0] = np.where(red_eye_mask, average_green_blue, result[..., 0])
     return result
+
+
+def _redeye_pixel_mask(image: np.ndarray) -> np.ndarray:
+    """A vörösszem-színküszöb bool maszkja (ld. `apply_redeye` docsztring)."""
+    red = image[..., 0].astype(np.int32)
+    green = image[..., 1].astype(np.int32)
+    blue = image[..., 2].astype(np.int32)
+    return (
+        (red >= _REDEYE_MIN_RED)
+        & (red > _REDEYE_DOMINANCE_RATIO * green)
+        & (red > _REDEYE_DOMINANCE_RATIO * blue)
+    )
+
+
+def count_redeye_spots(image: np.ndarray) -> int:
+    """Hány KÜLÖNÁLLÓ vörösszem-folt van a képen (#445).
+
+    Az `apply_redeye` maszkjának összefüggő komponensei, a
+    `_REDEYE_MIN_SPOT_PIXELS`-nél kisebb (jellemzően zaj- vagy tömörítési
+    eredetű) foltok kihagyásával. Csak a felhasználói
+    visszajelzéshez („Picasa has found and corrected red eye(s)") kell — a
+    javítás maga továbbra is pixel-maszkkal dolgozik, nem foltonként.
+    """
+    _validate_image(image)
+    mask = _redeye_pixel_mask(image).astype(np.uint8)
+    count, _, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    # a 0. komponens a háttér (a maszkon kívüli pixelek) — kihagyva
+    return int(
+        sum(
+            1
+            for i in range(1, count)
+            if stats[i, cv2.CC_STAT_AREA] >= _REDEYE_MIN_SPOT_PIXELS
+        )
+    )

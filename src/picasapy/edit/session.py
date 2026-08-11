@@ -7,6 +7,11 @@ from dataclasses import dataclass
 
 from picasapy.ini.filters import FilterOp, parse_filters, serialize_filters
 from picasapy.ini.rect64 import Rect64, decode_rect64, encode_rect64
+from picasapy.ini.redeye import (
+    REDEYE_FILTER_NAME,
+    build_redeye_op,
+    parse_redeye_regions,
+)
 from picasapy.ini.retouch import (
     RETOUCH_FILTER_NAME,
     RetouchPatch,
@@ -445,6 +450,47 @@ class EditSession:
             if op.matches(RETOUCH_FILTER_NAME):
                 try:
                     return parse_retouch_patches(op)
+                except ValueError:
+                    return ()
+        return ()
+
+    def set_redeye_regions(self, regions: tuple[Rect64, ...]) -> EditSession:
+        """A KÉZZEL megjelölt vörösszem-régiók beállítása/cseréje (#445).
+
+        A `redeye` bejegyzésből — a crop64/tilt/retouch mintájára — legfeljebb
+        egy réteg lehet a láncban, a helyén cserélve. Üres `regions` esetén a
+        bejegyzés megmarad, de paraméter nélkül (`redeye=1`), azaz bájtra a
+        valódi Picasa alakjában: a vörösszem-eszköz automatikája ilyenkor is
+        aktív. A réteg teljes levételére a `clear_redeye()` (vagy a
+        `toggle("redeye")`) való.
+
+        Args:
+            regions: A kézzel megjelölt szemek relatív [0..1] téglalapjai.
+
+        Returns:
+            Új EditSession.
+        """
+        return self._with_single_layer(
+            lambda op: op.matches(REDEYE_FILTER_NAME), build_redeye_op(regions)
+        )
+
+    def clear_redeye(self) -> EditSession:
+        """A vörösszem-réteg eltávolítása (minden előfordulása)."""
+        return EditSession(
+            ops=tuple(op for op in self.ops if not op.matches(REDEYE_FILTER_NAME))
+        )
+
+    def redeye_regions(self) -> tuple[Rect64, ...]:
+        """A jelenlegi, kézzel megjelölt vörösszem-régiók (#445).
+
+        Adat nélküli (`redeye=1;`, valódi Picasa-eredetű) bejegyzésnél üres
+        tuple-t ad — a render-lánc ilyenkor is fut, az egész képen. Hibás
+        kódolásnál is üres tuple (nem dob), a #301-elv szerint.
+        """
+        for op in self.ops:
+            if op.matches(REDEYE_FILTER_NAME):
+                try:
+                    return parse_redeye_regions(op)
                 except ValueError:
                     return ()
         return ()

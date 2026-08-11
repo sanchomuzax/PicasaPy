@@ -918,3 +918,45 @@ class TestCopyPasteEffects:
         restored = EditSession.from_value(previous_value)
         assert action == "paste_effects"
         assert restored.to_value() == "sepia=1;"
+
+
+class TestRedeyeRegions:
+    """#445: a vörösszem AUTOMATIKUS ÉS KÉZI — a kézzel megjelölt szemek
+    téglalapjai a `redeye=` bejegyzés paramétereiként élnek."""
+
+    def test_empty_regions_write_plain_picasa_entry(self):
+        session = EditSession.from_value("").set_redeye_regions(())
+        assert session.to_value() == "redeye=1;"
+
+    def test_regions_round_trip(self):
+        rect = Rect64(left=0.25, top=0.25, right=0.5, bottom=0.5)
+        session = EditSession.from_value("").set_redeye_regions((rect,))
+        reloaded = EditSession.from_value(session.to_value())
+        (result,) = reloaded.redeye_regions()
+        assert result.left == pytest.approx(0.25, abs=1e-4)
+        assert result.bottom == pytest.approx(0.5, abs=1e-4)
+
+    def test_replaces_in_place_like_crop(self):
+        """Legfeljebb EGY redeye réteg lehet, és a HELYÉN cserélődik."""
+        session = EditSession.from_value("redeye=1;autolight=1;")
+        rect = Rect64(left=0.1, top=0.1, right=0.2, bottom=0.2)
+        session = session.set_redeye_regions((rect,))
+        parts = [p for p in session.to_value().split(";") if p]
+        assert len(parts) == 2
+        assert parts[0].startswith("redeye=1,")
+        assert parts[1] == "autolight=1"
+
+    def test_plain_entry_reads_back_as_no_regions(self):
+        """A valódi Picasa `redeye=1;` bejegyzése kézi régió NÉLKÜLI."""
+        assert EditSession.from_value("redeye=1;").redeye_regions() == ()
+
+    def test_invalid_encoding_reads_as_empty(self):
+        """Sérült/idegen kódolás nem szökik ki kivétellel (#301-elv)."""
+        session = EditSession.from_value("redeye=1,nem-rect64;")
+        assert session.redeye_regions() == ()
+
+    def test_clear_removes_every_occurrence(self):
+        session = EditSession.from_value("redeye=1;autolight=1;redeye=1;")
+        session = session.clear_redeye()
+        assert not session.has("redeye")
+        assert session.has("autolight")

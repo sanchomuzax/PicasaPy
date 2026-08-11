@@ -25,7 +25,7 @@ from PySide6.QtGui import QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.ini.filters import FilterOp
-from picasapy.render import apply_filters
+from picasapy.render import apply_filters, count_redeye_spots
 from picasapy.render.text_overlay import apply_text_overlay
 
 from .histogram_helper import EMPTY_HISTOGRAM, compute_rgb_histogram
@@ -294,6 +294,35 @@ class EditPreviewProvider(QQuickImageProvider):
             return None
         colour = image.pixelColor(x, y)
         return (colour.red(), colour.green(), colour.blue())
+
+    def redeye_spot_count(
+        self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]
+    ) -> int:
+        """Hány vörösszem-foltot TALÁL az automatika (#445).
+
+        Az `ops` a jelenlegi lánc a `redeye` réteg NÉLKÜL — így a számolás
+        azon a képen fut, amit a felhasználó a javítás előtt lát (a vágás,
+        forgatás és a színműveletek már rajta vannak), nem a nyers forráson.
+        Csak a „Picasa has found and corrected red eye(s)" visszajelzéshez
+        kell; a javítást változatlanul a render-lánc végzi.
+
+        A GUI-szálról hívandó (a `_sources`/prefix gyorsítótárat használja,
+        ld. `_resolve_source` #546-os megjegyzését). Ha a forrás nem
+        dekódolható, 0-t ad.
+        """
+        key = str(photo_id)
+        path = Path(path)
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            mtime = None
+        source_array = self._resolve_source(key, path, mtime, shared_cache=True)
+        if source_array is None:
+            return 0
+        rendered = self._render_cached(key, source_array, tuple(ops))
+        if rendered is None:
+            return 0
+        return count_redeye_spots(rendered)
 
     def histogram_for(self, photo_id: str) -> dict:
         """Az utoljára renderelt előnézet RGB-hisztogramja (#25), vagy üres

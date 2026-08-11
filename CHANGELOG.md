@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.73] – 2026-08-11
+
+### Hozzáadva
+- **Vörösszem-eszköz: automatikus ÉS kézi, egyszerre (#445).** Az eszköz
+  megnyitásakor az automatika azonnal lefut az előnézeten, és kiírja, talált-e
+  vörös szemet. Amit a gép kihagyott, azt a felhasználó a képre húzott
+  négyzettel pótolhatja — tetszőleges számút, egyenkénti visszavonással és
+  Alaphelyzet gombbal. A „Előnézet a kijelölő négyzetek nélkül" jelölőnégyzet
+  csak a keretek rajzát tünteti el, a javításon nem változtat. Az Alkalmaz
+  gomb ír csak lemezre, egyetlen visszavonható lépésként; Mégse esetén a
+  mentett állapot érintetlen marad.
+- A kézi négyzetek a `filters=` láncban a `redeye=1,<rect64>…` alakban élnek
+  (PicasaPy-saját kiterjesztés, a retusálás bevált mintája szerint). Kézi
+  négyzet nélkül a bejegyzés **bájtra a valódi Picasa `redeye=1;` alakja**,
+  tehát a kétirányú kompatibilitás sértetlen.
+
 ## [0.6.69] – 2026-08-11
 
 ### Belső

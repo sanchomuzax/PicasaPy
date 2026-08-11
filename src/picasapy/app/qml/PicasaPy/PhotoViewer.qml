@@ -210,7 +210,10 @@ Rectangle {
         editorPanel.straightenActive = editController.tiltParam !== 0
     }
     function syncPanelFromController() {
-        editorPanel.redeyeActive = editController.redeyeActive
+        // #445: a `redeyeActive` a Vágás/Retusálás mintájára ESZKÖZ-nyitást
+        // jelent (nem a `redeye` réteg meglétét) — ezért NEM a
+        // controller.redeyeActive tükre; azt onnan felülírni becsukná/
+        // kinyitná a panelt a mentett lánc alapján.
         // #448: a tilt-szűrő a láncban változhatott (pl. a felhasználó
         // épp most alkalmazta a Kiegyenesítést) — a figyelmeztetés kövesse
         editorPanel.straightenActive = editController.tiltParam !== 0
@@ -246,6 +249,7 @@ Rectangle {
             editorPanel.tiltActive = false
             editorPanel.retouchActive = false
             editorPanel.textActive = false
+            editorPanel.redeyeActive = false
             editController.endEdit()
         }
     }
@@ -270,6 +274,8 @@ Rectangle {
             // mentett állapotával indul, a Vágás mintáját követve)
             if (editorPanel.retouchActive)
                 editController.enterRetouchTool()
+            if (editorPanel.redeyeActive)
+                editController.enterRedeyeTool()
             if (editorPanel.textActive) {
                 editController.enterTextTool()
                 editorPanel.textDraftContent = editController.textDraft
@@ -302,6 +308,15 @@ Rectangle {
                 editController.enterRetouchTool()
             else
                 editController.exitRetouchTool()
+        }
+        // #445: a Vörösszem eszköz nyitása/zárása — nyitáskor az automatika
+        // AZONNAL lefut az előnézeten (enterRedeyeTool), a kézi téglalapok
+        // pedig az Alkalmazásig csak a pufferben élnek.
+        function onRedeyeActiveChanged() {
+            if (editorPanel.redeyeActive)
+                editController.enterRedeyeTool()
+            else
+                editController.exitRedeyeTool()
         }
         function onTextActiveChanged() {
             if (editorPanel.textActive) {
@@ -544,7 +559,7 @@ Rectangle {
                             if (editorPanel.tiltActive)
                                 viewer.syncTiltSlider()
                         } else if (tool === "crop" || tool === "retouch"
-                                   || tool === "text") {
+                                   || tool === "text" || tool === "redeye") {
                             // az enter/exit a Connections{target: editorPanel}
                             // blokk onXActiveChanged kezelőiben történik
                         } else {
@@ -596,6 +611,22 @@ Rectangle {
                         editorPanel.retouchActive = false
                     }
                     onRetouchCancelRequested: editorPanel.retouchActive = false
+                    // #445: Vörösszem — a kézi régió-puffer és az automatika
+                    // találat-száma a kontrollerből
+                    redeyeRegionCount: viewer.editCtl
+                        ? viewer.editCtl.redeyeRegionCount : 0
+                    canUndoRedeyeRegion: viewer.editCtl
+                        ? viewer.editCtl.canUndoRedeyeRegion : false
+                    redeyeFoundCount: viewer.editCtl
+                        ? viewer.editCtl.redeyeFoundCount : -1
+                    onRedeyeAutoRequested: editController.runRedeyeAuto()
+                    onRedeyeUndoRegionRequested: editController.undoRedeyeRegion()
+                    onRedeyeResetRequested: editController.resetRedeyeRegions()
+                    onRedeyeApplyRequested: {
+                        editController.applyRedeye()
+                        editorPanel.redeyeActive = false
+                    }
+                    onRedeyeCancelRequested: editorPanel.redeyeActive = false
                     // #148: a szöveg-eszköz Alkalmaz-gombja csak akkor
                     // engedélyezett, ha már van kattintott pozíció
                     textPlacementPending: viewer.editCtl
@@ -985,6 +1016,89 @@ Rectangle {
                             else
                                 editController.beginRetouchPatch(
                                     mouse.x / width, mouse.y / height)
+                        }
+                    }
+                    // #445: Vörösszem — kézi kijelölés téglalap-húzással
+                    // („Click, hold, and drag the mouse around each eye
+                    // separately to select it. A selection box appears over
+                    // the area."). A már felvett régiókat a kontroller adja
+                    // vissza normált [0..1] alakban, ezért a nagyítástól/
+                    // illesztéstől függetlenül rajzolhatók. A
+                    // `redeyeHideOutlines` a jegy „Preview changes without
+                    // square outlines" jelölőnégyzete: csak a RAJZOT tünteti
+                    // el, a javítást nem.
+                    Item {
+                        id: redeyeOverlay
+                        objectName: "redeyeOverlay"
+                        parent: photo
+                        visible: editorPanel.redeyeActive
+                        x: (photo.width - photo.paintedWidth) / 2
+                        y: (photo.height - photo.paintedHeight) / 2
+                        width: photo.paintedWidth
+                        height: photo.paintedHeight
+
+                        Repeater {
+                            model: editorPanel.redeyeHideOutlines
+                                   ? []
+                                   : (viewer.editCtl
+                                      ? viewer.editCtl.redeyeRegions : [])
+                            delegate: Rectangle {
+                                required property var modelData
+                                x: modelData.x * redeyeOverlay.width
+                                y: modelData.y * redeyeOverlay.height
+                                width: modelData.w * redeyeOverlay.width
+                                height: modelData.h * redeyeOverlay.height
+                                color: "transparent"
+                                border.width: 1
+                                border.color: Theme.selectionBlue
+                            }
+                        }
+
+                        // az ÉPP húzott téglalap (még nincs a pufferben)
+                        Rectangle {
+                            objectName: "redeyeDragRect"
+                            visible: redeyeDragArea.dragging
+                                     && !editorPanel.redeyeHideOutlines
+                            x: Math.min(redeyeDragArea.startX, redeyeDragArea.lastX)
+                            y: Math.min(redeyeDragArea.startY, redeyeDragArea.lastY)
+                            width: Math.abs(redeyeDragArea.lastX - redeyeDragArea.startX)
+                            height: Math.abs(redeyeDragArea.lastY - redeyeDragArea.startY)
+                            color: "transparent"
+                            border.width: 1
+                            border.color: Theme.selectionBlue
+                        }
+
+                        MouseArea {
+                            id: redeyeDragArea
+                            objectName: "redeyeDragArea"
+                            anchors.fill: parent
+                            enabled: editorPanel.redeyeActive
+                            cursorShape: Qt.CrossCursor
+                            property bool dragging: false
+                            property real startX: 0
+                            property real startY: 0
+                            property real lastX: 0
+                            property real lastY: 0
+                            onPressed: function(mouse) {
+                                dragging = true
+                                startX = mouse.x; startY = mouse.y
+                                lastX = mouse.x; lastY = mouse.y
+                            }
+                            onPositionChanged: function(mouse) {
+                                if (!dragging) return
+                                lastX = mouse.x; lastY = mouse.y
+                            }
+                            onReleased: function(mouse) {
+                                dragging = false
+                                if (width <= 0 || height <= 0) return
+                                // a puszta kattintás (nulla méretű téglalap)
+                                // a kontrollerben néma no-op
+                                editController.addRedeyeRegion(
+                                    Math.min(startX, mouse.x) / width,
+                                    Math.min(startY, mouse.y) / height,
+                                    Math.abs(mouse.x - startX) / width,
+                                    Math.abs(mouse.y - startY) / height)
+                            }
                         }
                     }
                     MouseArea {

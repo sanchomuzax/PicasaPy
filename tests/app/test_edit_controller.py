@@ -1541,3 +1541,131 @@ class TestNeutralColorPicker:
     def test_point_outside_the_image_is_refused(self, controller, photo):
         controller.beginEdit("1", str(photo))
         assert controller.pickNeutralColor(5.0, 5.0) is False
+
+
+class TestRedeyeTool:
+    """#445: a vörösszem-eszköz AUTOMATIKUS ÉS KÉZI — a megnyitáskor az
+    automatika azonnal fut az előnézeten, a kézzel húzott téglalapok pedig
+    az Alkalmazásig csak a pufferben élnek (a Vágás/Retusálás mintája)."""
+
+    def test_enter_runs_auto_without_writing_ini(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists() or "redeye" not in ini.read_text(encoding="utf-8")
+        # az automatika lefutott (a találat-szám már nem a -1 kezdőérték)
+        assert controller.redeyeFoundCount >= 0
+        assert controller.redeyeRegionCount == 0
+
+    def test_add_region_buffers_without_writing_ini(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists() or "redeye" not in ini.read_text(encoding="utf-8")
+        assert controller.redeyeRegionCount == 1
+        assert len(controller.redeyeRegions) == 1
+
+    def test_zero_sized_region_is_noop(self, controller, photo):
+        """Puszta kattintás (nem húzás) nem vesz fel régiót."""
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        controller.addRedeyeRegion(0.5, 0.5, 0.0, 0.0)
+        assert controller.redeyeRegionCount == 0
+
+    def test_negative_size_region_is_normalized(self, controller, photo):
+        """Jobbról balra húzás is érvényes téglalap."""
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        controller.addRedeyeRegion(0.5, 0.5, -0.2, -0.2)
+        assert controller.redeyeRegionCount == 1
+        region = controller.redeyeRegions[0]
+        assert region["x"] == pytest.approx(0.3, abs=1e-3)
+        assert region["w"] == pytest.approx(0.2, abs=1e-3)
+
+    def test_undo_region_removes_last(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
+        controller.addRedeyeRegion(0.5, 0.5, 0.1, 0.1)
+        assert controller.canUndoRedeyeRegion is True
+        controller.undoRedeyeRegion()
+        assert controller.redeyeRegionCount == 1
+
+    def test_reset_clears_regions_and_is_undoable(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
+        controller.resetRedeyeRegions()
+        assert controller.redeyeRegionCount == 0
+        controller.undoRedeyeRegion()
+        assert controller.redeyeRegionCount == 1
+
+    def test_cancel_discards_buffer(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
+        controller.exitRedeyeTool()
+        ini = photo.parent / ".picasa.ini"
+        assert not ini.exists() or "redeye" not in ini.read_text(encoding="utf-8")
+        assert controller.redeyeRegionCount == 0
+
+    def test_apply_writes_regions(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
+        controller.applyRedeye()
+        text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert text.startswith("[IMG_0001.jpg]\nfilters=redeye=1,")
+        assert controller.redeyeActive is True
+        assert controller.redeyeRegionCount == 0
+
+    def test_apply_without_regions_writes_plain_picasa_entry(self, controller, photo):
+        """Kézi régió nélkül a bejegyzés bájtra a valódi Picasa alakja."""
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        controller.applyRedeye()
+        text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "filters=redeye=1;" in text
+
+    def test_reenter_loads_saved_regions(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
+        controller.applyRedeye()
+        controller.enterRedeyeTool()
+        assert controller.redeyeRegionCount == 1
+
+    def test_apply_is_undoable(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.enterRedeyeTool()
+        controller.addRedeyeRegion(0.2, 0.2, 0.1, 0.1)
+        controller.applyRedeye()
+        controller.undo()
+        assert controller.redeyeActive is False
+
+    def test_auto_reports_found_spots(self, controller, tmp_path):
+        """A sikerüzenet a TÉNYLEGESEN talált foltokból jön."""
+        import numpy as np
+        from PIL import Image
+
+        array = np.full((60, 60, 3), 120, dtype=np.uint8)
+        array[20:30, 10:20] = (220, 40, 40)
+        array[20:30, 40:50] = (220, 40, 40)
+        path = tmp_path / "eyes.jpg"
+        Image.fromarray(array).save(path, quality=100)
+        controller.beginEdit("2", str(path))
+        controller.enterRedeyeTool()
+        assert controller.redeyeFoundCount == 2
+
+    def test_auto_reports_zero_on_clean_photo(self, controller, tmp_path):
+        """Semleges szürke képen az automatika nem talál semmit (a
+        `make_jpeg` fixture VÉGIG PIROS, azon egyetlen nagy foltot találna)."""
+        import numpy as np
+        from PIL import Image
+
+        path = tmp_path / "gray.jpg"
+        Image.fromarray(np.full((40, 40, 3), 120, dtype=np.uint8)).save(path)
+        controller.beginEdit("3", str(path))
+        controller.enterRedeyeTool()
+        assert controller.redeyeFoundCount == 0
