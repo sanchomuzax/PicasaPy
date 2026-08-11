@@ -169,7 +169,7 @@ class TestPanelButtonDarkThemeContrast:
             "import QtQuick\nimport QtQuick.Layouts\nimport PicasaPy 1.0\n"
             "ColumnLayout {\n"
             f"    Component.onCompleted: Theme.dark = {str(dark).lower()}\n"
-            "    EditorPanel.PanelButton {\n"
+            "    PanelButton {\n"  # #496: önálló típus lett
             '        id: btn\n'
             '        objectName: "btn"\n'
             "        Layout.fillWidth: true\n"
@@ -208,7 +208,7 @@ class TestPanelButtonLabelWrapping:
             engine,
             "import QtQuick\nimport QtQuick.Layouts\nimport PicasaPy 1.0\n"
             f"ColumnLayout {{\n    width: {width}\n"
-            "    EditorPanel.PanelButton {\n"
+            "    PanelButton {\n"  # #496: önálló típus lett
             '        id: btn\n'
             '        objectName: "btn"\n'
             "        Layout.fillWidth: true\n"

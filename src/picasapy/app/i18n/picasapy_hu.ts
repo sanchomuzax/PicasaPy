@@ -4594,4 +4594,72 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <translation>Kijelölés törlése</translation>
     </message>
 </context>
+<context>
+    <name>EditorCropPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>This image's orientation has been modified by the Straighten tool and might not crop accurately… try undoing the Straighten fix, then recrop, and Straighten again if necessary.</source>
+        <translation>A kép tájolását a Kiegyenesítés eszköz módosította, ezért a vágás pontatlan lehet… próbálja meg visszavonni a Kiegyenesítés javítást, végezze el a vágást, majd szükség esetén alkalmazza újra a Kiegyenesítést.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Add Custom Aspect Ratio…</source>
+        <translation>Egyéni képarány hozzáadása…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Apply</source>
+        <translation>Alkalmaz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Choose a size below, then drag on the picture to select the area you want to keep.</source>
+        <translation>Válasszon az alábbi méretek közül, majd a fogd és húzd módszerrel jelölje ki a képnek azt a részét, amelyiket meg szeretné tartani.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Crop Photo</source>
+        <translation>Fotó vágása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Delete this custom aspect ratio?</source>
+        <translation>Törli ezt az egyéni képarányt?</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Landscape</source>
+        <translation>Fekvő</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Portrait</source>
+        <translation>Álló</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Preview</source>
+        <translation>Előnézet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Reset</source>
+        <translation>Alaphelyzet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Rotate</source>
+        <translation>Forgatás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Top left</source>
+        <translation>Bal felső</translation>
+    </message>
+</context>
 </TS>

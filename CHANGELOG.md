@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.69] – 2026-08-11
+
+### Belső
+- **A szerkesztő-panel forrása felbontva (#496).** A 2367 soros
+  `EditorPanel.qml`-ből önálló fájlba került a három újrafelhasználható
+  vezérlő (eszköz-csempe, panel-gomb, szín-választó) és a teljes „Fotó
+  vágása" panel — 2367 → 1918 sor. A felület viselkedése és a
+  megjelenése változatlan.
+
 ## [0.6.68] – 2026-08-11
 
 ### Javítva
