@@ -3,6 +3,7 @@ dHash-gyorsítótára — valódi ideiglenes könyvtárfán/indexen, mock nélk�
 
 from __future__ import annotations
 
+import os
 import threading
 
 import pytest
@@ -238,6 +239,13 @@ class TestHashCache:
 
         changed = lib / "tel" / "tel.jpg"
         make_jpeg(changed, size=(60, 30))
+        # #519: a hash-gyorsítótár kulcsa (útvonal, mtime_ns, méret) — ha az
+        # újraírt fájl VÉLETLENÜL ugyanakkora, és a fájlrendszer időbélyege
+        # sem mozdul (Windowson a runner alatt ez előfordul), a kulcs
+        # azonos maradna, és a teszt a saját környezetén bukna el, nem a
+        # vizsgált viselkedésen. Az időbélyeget ezért kézzel léptetjük.
+        stamp = changed.stat().st_mtime + 10
+        os.utime(changed, (stamp, stamp))
         with open_index(db) as conn:
             sync_tree(conn, lib)
 
