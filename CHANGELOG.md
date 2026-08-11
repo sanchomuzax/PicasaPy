@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.57] – 2026-08-11
+
+### Javítva — a háttérszálas szerkesztő-render kódátvizsgálásának találatai
+- **A lassú effekt már nem blokkolja a csúszkákat (#546).** A 0.6.55-ös
+  megoldás egy közös záron sorosított: ha egy perces effekt renderelése
+  közben a felhasználó csúszkát húzott vagy képet váltott, a felület megint
+  megállt — csak most egy másik ajtón. A háttér-render mostantól saját,
+  lokális munkaterületen dolgozik, közös zár nélkül.
+- **Gyors kattintás-sorozat után az UTOLSÓ állapot látszik (#546).** Eddig a
+  lemaradó, régebbi renderelés felülírhatta a frissebb képet.
+- **A szerkesztő bezárása után a futó renderelés nem éled újra (#546):** a
+  lezárt kép nem kerül vissza a gyorsítótárba, és nem frissíti a felületet.
+- **Kilépés lassú effekt alatt (#547):** a program most érvényteleníti és
+  megvárja a futó renderelést, így nem omolhat össze kilépéskor.
+- **A renderelés hibája nem néma többé (#548):** naplózódik, és a felhasználó
+  is kap jelzést róla (NAS-on a fájl a művelet közben eltűnhet).
+- **A kék csík nem pöröghet örökre (#550):** ha a háttérszál elindítása
+  elbukik, a jelzés is lezárul.
+
 ## [0.6.56] – 2026-08-10
 
 ### Javítva — öt effekt a valódi Picasa-kimenethez kalibrálva (#317)

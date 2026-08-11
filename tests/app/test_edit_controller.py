@@ -5,6 +5,7 @@ import sys
 
 import pytest
 
+from picasapy.app.histogram_helper import EMPTY_HISTOGRAM
 from support.jpeg_factory import make_jpeg
 
 _SKIP_READONLY = pytest.mark.skipif(
@@ -1353,3 +1354,156 @@ class TestEffectRenderRunsOffTheUiThread:
         # háttérszál el sem indult — a kép már most a helyén van
         image = provider.requestImage("1", None, None)
         assert (image.width(), image.height()) == (8, 6)
+
+
+class TestBackgroundRenderRaces:
+    """#546: a #514 háttérszálas renderének három versenyhelyzete."""
+
+    @staticmethod
+    def _blocking_register(provider, entered, release):
+        """A provider `register()`-e beragad, amíg a teszt el nem engedi."""
+        original = provider.register
+
+        def slow(*args, **kwargs):
+            entered.set()
+            assert release.wait(10.0), "a lassú render nem kapott elengedést"
+            return original(*args, **kwargs)
+
+        return slow
+
+    def test_a_csuszka_elonezet_nem_var_a_hatter_renderre(
+        self, controller, provider, photo, monkeypatch
+    ):
+        """1. pont: lassú háttér-render ALATT a csúszka-húzás azonnali.
+
+        Ha a szinkron út ugyanarra a zárra várna, mint a háttér-render, a
+        `previewEffect` csak a `release` után térne vissza — a teszt
+        holtpontra futna (a `release`-t csak utána állítjuk be).
+        """
+        import threading
+
+        controller.beginEdit("1", str(photo))
+        entered, release = threading.Event(), threading.Event()
+        monkeypatch.setattr(
+            provider, "register", self._blocking_register(provider, entered, release)
+        )
+        controller.applyEffect("bw")
+        assert entered.wait(10.0), "a háttér-render el sem indult"
+
+        monkeypatch.undo()  # a szinkron út a VALÓDI register()-t hívja
+        controller.previewEffect("sat", [2.0])  # ← itt nem szabad várnia
+        image = provider.requestImage("1", None, None)
+        assert (image.width(), image.height()) == (8, 6)
+
+        release.set()
+        assert controller.waitForBackgroundWorkers(10.0)
+
+    def test_az_elavult_render_nem_irja_felul_a_frissebbet(
+        self, controller, provider, photo, monkeypatch
+    ):
+        """2. pont: a késleltetett, RÉGEBBI render nem kerülhet a tárba.
+
+        Az első (lassú) rendert mesterségesen a második UTÁNIG tartjuk;
+        a végeredménynek a másodiknak kell lennie.
+        """
+        import threading
+
+        from picasapy.app.edit_preview import EditPreviewProvider
+        from picasapy.edit.session import EditSession
+
+        controller.beginEdit("1", str(photo))
+        entered, release = threading.Event(), threading.Event()
+        monkeypatch.setattr(
+            provider, "register", self._blocking_register(provider, entered, release)
+        )
+        controller.applyEffect("bw")
+        assert entered.wait(10.0)
+
+        monkeypatch.undo()
+        controller.applyEffect("sepia")  # az ÚJABB kérés
+        release.set()  # …és csak most engedjük végig a régebbit
+        assert controller.waitForBackgroundWorkers(10.0)
+
+        reference = EditPreviewProvider()
+        session = EditSession().append_effect("bw", ("1",)).append_effect(
+            "sepia", ("1",)
+        )
+        reference.register("1", photo, session.ops)
+        expected = reference.requestImage("1", None, None)
+        image = provider.requestImage("1", None, None)
+        mismatched = [
+            (x, y)
+            for y in range(expected.height())
+            for x in range(expected.width())
+            if image.pixelColor(x, y) != expected.pixelColor(x, y)
+        ]
+        assert mismatched == [], "az elavult render felülírta a frissebb képet"
+
+    def test_end_edit_utan_a_hatter_render_nem_regisztral_vissza(
+        self, controller, provider, photo, monkeypatch
+    ):
+        """3. pont: a lezárt fotót a futó render nem teheti vissza a tárba."""
+        import threading
+
+        controller.beginEdit("1", str(photo))
+        entered, release = threading.Event(), threading.Event()
+        monkeypatch.setattr(
+            provider, "register", self._blocking_register(provider, entered, release)
+        )
+        controller.applyEffect("bw")
+        assert entered.wait(10.0)
+
+        monkeypatch.undo()
+        controller.endEdit()
+        release.set()
+        assert controller.waitForBackgroundWorkers(10.0)
+
+        assert provider.histogram_for("1") == EMPTY_HISTOGRAM, (
+            "a lezárt fotó visszakerült a preview-tárba"
+        )
+
+    def test_a_render_hibaja_nem_nema(
+        self, qt_app, controller, provider, photo, monkeypatch
+    ):
+        """#548: a háttérszálban elhaló kivétel eddig NÉMA volt (a
+        `threading` excepthookja csak stderr-re ír) — a kép magyarázat
+        nélkül maradt a régi. Most naplózódik, jelzést küld, és a
+        busy-számláló is visszaáll."""
+
+        def boom(*args, **kwargs):
+            raise OSError("a NAS eltűnt a stat() alól")
+
+        controller.beginEdit("1", str(photo))
+        failures = []
+        controller.editSaveFailed.connect(lambda message: failures.append(message))
+        monkeypatch.setattr(provider, "register", boom)
+
+        controller.applyEffect("bw")
+        assert controller.waitForBackgroundWorkers(10.0)
+        # a jelzés szálhatáron át, sorba állítva érkezik
+        qt_app.processEvents()
+        assert failures and "NAS" in failures[0]
+
+    def test_cancel_pending_preview_utan_nincs_ertesites(
+        self, qt_app, controller, provider, photo, monkeypatch
+    ):
+        """#547: kilépéskor a folyamatban lévő render se ne tároljon, se ne
+        emitáljon — különben a daemon-szál egy közben megsemmisülő
+        QObject-nek jelezne (a #430-as SIGSEGV-osztály)."""
+        import threading
+
+        controller.beginEdit("1", str(photo))
+        entered, release = threading.Event(), threading.Event()
+        monkeypatch.setattr(
+            provider, "register", self._blocking_register(provider, entered, release)
+        )
+        controller.applyEffect("bw")
+        assert entered.wait(10.0)
+
+        revisions = []
+        controller.revisionChanged.connect(lambda: revisions.append(controller.revision))
+        controller.cancelPendingPreview()
+        release.set()
+        assert controller.waitForBackgroundWorkers(10.0)
+        qt_app.processEvents()
+        assert revisions == [], "az érvénytelenített render mégis értesített"

@@ -91,7 +91,16 @@ class BackgroundWorkerMixin:
 
         thread = threading.Thread(target=_run, name=name, daemon=True)
         workers.add(thread)
-        thread.start()
+        try:
+            thread.start()
+        except BaseException:
+            # #550: ha a `start()` elbukik (pl. `RuntimeError: can't start new
+            # thread`), a `_run` — és vele a `finally` ága — SOSEM fut le. A
+            # `begin()` párját ilyenkor itt kell megadni, különben a kék csík
+            # örökre pörögne, a halmazban pedig egy halott szál ragadna bent.
+            workers.discard(thread)
+            registry.end()
+            raise
         return thread
 
     def backgroundWorkersRunning(self) -> bool:  # noqa: N802 — a webexport_controller QML-stílusú elnevezését követi
