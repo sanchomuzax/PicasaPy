@@ -1247,6 +1247,13 @@ class EditController(QObject, BackgroundWorkerMixin):
         `previewSource`/`photo` Image-nek a húzás alatt NEM szabad
         újratöltődnie) — csak a `gpuRevisionChanged`-et."""
         self._require_active()
+        if fill != 0.0:
+            # #551: a Derítőfény mért modellje világosság-vezérelt, tehát
+            # nem fejezhető ki csatornánkénti LUT-tal — a GPU-út ilyenkor
+            # más képet adna, mint a mentés. A hívó (QML) ezt már tudja és
+            # nem is kéri, ez a védőkorlát a nem-UI hívók ellen.
+            self.previewFinetune(fill, highlights, shadows, temperature)
+            return
         prefix_ops = self._session.gpu_finetune_prefix()
         if prefix_ops is None:
             # a lánc időközben (pl. párhuzamos ini-módosítás) GPU-

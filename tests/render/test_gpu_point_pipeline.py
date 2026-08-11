@@ -35,7 +35,7 @@ def _apply_channel_lut(image: np.ndarray, lut: np.ndarray) -> np.ndarray:
 
 class TestBuildFinetune2Lut:
     def test_lut_shape_and_dtype(self):
-        lut = build_finetune2_lut(fill=0.3, highlights=0.1, shadows=0.1, temperature=0.2)
+        lut = build_finetune2_lut(highlights=0.1, shadows=0.1, temperature=0.2)
         assert lut.shape == (LUT_SIZE, 3)
         assert lut.dtype == np.uint8
 
@@ -49,12 +49,11 @@ class TestBuildFinetune2Lut:
     @pytest.mark.parametrize(
         "kwargs",
         [
-            {"fill": 0.5},
             {"highlights": 0.4},
             {"shadows": 0.3},
             {"temperature": -0.6},
             {"temperature": 0.8},
-            {"fill": 0.25, "highlights": 0.1, "shadows": 0.1, "temperature": -0.3},
+            {"highlights": 0.1, "shadows": 0.1, "temperature": -0.3},
             {"neutral": (200, 190, 150), "temperature": 0.1},
         ],
     )
@@ -75,6 +74,13 @@ class TestBuildFinetune2Lut:
             temperature=kwargs.get("temperature", 0.0),
         )
         np.testing.assert_array_equal(via_lut, direct)
+
+    @pytest.mark.parametrize("fill", [0.25, 1.0])
+    def test_nonzero_fill_is_rejected(self, fill):
+        """#551: a Derítőfény világosság-vezérelt, tehát nem LUT-osítható —
+        a GPU-út ilyenkor a CPU-tól ELTÉRŐ képet adna, ezért tiltott."""
+        with pytest.raises(ValueError, match="fill"):
+            build_finetune2_lut(fill=fill)
 
 
 class TestSaturationGain:

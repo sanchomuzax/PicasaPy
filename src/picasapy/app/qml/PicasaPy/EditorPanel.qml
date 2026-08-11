@@ -978,7 +978,12 @@ Rectangle {
             id: finetuneHighlightsSlider
             objectName: "finetuneHighlightsSlider"
             Layout.fillWidth: true
-            from: 0; to: 1; value: 0
+            // #551: a `filterdesc.xml` szerinti nyers paraméter-tartomány
+            // [0..0.48] — a mérés is pontosan ezt igazolta (a felső állás
+            // fehér-/feketepontja 0,48-cal mozdul). A csúszka számot nem
+            // mutat, tehát ez csak a mentett ini-értéket teszi
+            // Picasa-azonossá.
+            from: 0; to: 0.48; value: 0
             onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
             onPressedChanged: if (!pressed)
                 panel.finetuneCommit(finetuneFillSlider.value,
@@ -996,7 +1001,12 @@ Rectangle {
             id: finetuneShadowsSlider
             objectName: "finetuneShadowsSlider"
             Layout.fillWidth: true
-            from: 0; to: 1; value: 0
+            // #551: a `filterdesc.xml` szerinti nyers paraméter-tartomány
+            // [0..0.48] — a mérés is pontosan ezt igazolta (a felső állás
+            // fehér-/feketepontja 0,48-cal mozdul). A csúszka számot nem
+            // mutat, tehát ez csak a mentett ini-értéket teszi
+            // Picasa-azonossá.
+            from: 0; to: 0.48; value: 0
             onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
             onPressedChanged: if (!pressed)
                 panel.finetuneCommit(finetuneFillSlider.value,

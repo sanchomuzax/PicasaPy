@@ -415,6 +415,93 @@ VÁLTOZATLANOK maradtak; ezekhez továbbra sincs pontosabb mérés, mint a
 3–4. körben rögzített. Csak az `enhance`/`AutoFix` BELSŐ szerkezete
 (hogy micsoda a lánc) bizonyult tévesnek.
 
+## 8. kör — a négy Finomhangolás-csúszka VALÓDI fotón újramérve (#551, 2026-08-11)
+
+Forrás: a tulajdonos referencia-készletei (`sanchomuzax/picasapy-agent`:
+`referencia/deritofeny/`, `referencia/szinhomerseklet/`,
+`referencia/finomhangolas/`) — **egy valódi fotó**, csúszkánként több
+állásban, a valódi Picasa 3.9 kimenetével. Ez döntő különbség a korábbi
+körökhöz képest, ahol a mérés SZINTETIKUS SZÜRKE RÁMPÁKON folyt: szürke
+rámpán a pixel világossága megegyezik a csatorna-értékkel, így egy
+világosság-vezérelt művelet **csatornánkénti tónusgörbének látszik**. Ez
+vezetett félre a `fill` 2D-LUT modelljénél (3. kör).
+
+Átlagos csatorna-eltérés a Picasa kimenetétől (a JPEG-zaj szintje ~1):
+
+| csúszka | korábbi modell | mért modell |
+|---|---|---|
+| Kiemelések (max) | 23,15 | **1,06** |
+| Kiemelések (fél) | 10,77 | **1,11** |
+| Árnyékok (max) | 19,41 | **0,76** |
+| Árnyékok (fél) | 11,76 | **0,92** |
+| Derítőfény (max) | 18,10 | **5,89** |
+| Derítőfény (50%) | 6,65 | **3,64** |
+| Színhőmérséklet (leghidegebb) | 20,94 | **5,08** |
+| Színhőmérséklet (legmelegebb) | 4,43 | **1,17** |
+
+### Kiemelések / Árnyékok — zárt képlet
+
+A nevük félrevezető: egyik sem csúcsfény-mentés vagy árnyék-emelés, hanem a
+**fehér- illetve feketepont mozgatása**. A mért meredekség 0,48-as állásnál
+1,9235 / 1,9244; a képlet 1/(1−0,48) = 1,9231.
+
+```
+Kiemelések(h): ki = clip( be / (1 − h) )
+Árnyékok(s):   ki = clip( (be − 255·s) / (1 − s) )
+```
+
+Ez egyben megmagyarázza a `filterdesc.xml` furcsa **`[0..0.48]`**
+paramétertartományát mindkét csúszkánál: a paraméter azt mondja meg, a
+szélső pont a skála hány százalékával mozdul el. A PicasaPy csúszkái is
+eddig futnak, hogy a mentett ini-érték Picasa-azonos legyen.
+
+### Derítőfény — világosság-vezérelt hozzáadás, NEM tónusgörbe
+
+`ki = clip( be + d(világosság) )`, ahol a világosság a három csatorna
+**számtani átlaga**, és `d` a mért görbe. Bizonyíték: egy-egy
+világosság-sávon belül a három csatorna szorzója gyakorlatilag megegyezik
+(max állásban 11,12 / 11,54 / 11,41 a legsötétebb sávban, 1,31 / 1,35 /
+1,43 a világosban) — az azonos bemeneti szinthez tartozó csatornánkénti
+eltérés csak abból ered, hogy ott más-más világosságú pixelek keverednek.
+
+Modell-választás mérve (max állás, átlagos eltérés): additív világosság-görbe
+**5,56** · multiplikatív világosság-görbe 11,95 · a korábbi csatornánkénti
+tónusgörbe 18,10. Világosság-definíciók: számtani átlag **5,56** ·
+0,30/0,59/0,11 5,95 · Rec.709 6,21 · max 9,38 · min 11,04.
+
+**Következmény a GPU-útra (#22):** a Derítőfény így NEM fejezhető ki
+csatornánkénti LUT-tal, ezért nem nulla `fill` mellett a `finetune2` GPU
+pontonkénti előnézete tilos — `EditSession.gpu_finetune_prefix()` ilyenkor
+`None`-t ad, és a `build_finetune2_lut()` kivételt dob.
+
+### Színhőmérséklet — csatornánkénti KONSTANS szorzás
+
+A világosság-függő változat nem javított rajta (5,00 vs 5,09 a leghidegebb
+állásban), tehát egyszerű szorzás. A hűtés jóval erősebb, mint a melegítés —
+épp ezt hibázta el a korábbi (szimmetrikusnak vett) közelítés.
+
+| p5 | R | G | B |
+|---|---|---|---|
+| −1,0 | 0,6580 | 1,1102 | 1,8713 |
+| −0,8 | 0,7843 | 1,0574 | 1,4740 |
+| −0,5 | 0,8956 | 1,0225 | 1,1739 |
+| 0,0 | 1,0000 | 1,0000 | 1,0000 |
+| +0,5 | 1,0298 | 1,0010 | 0,8929 |
+| +0,8 | 1,0455 | 0,9966 | 0,8550 |
+| +1,0 | 1,0546 | 0,9974 | 0,8430 |
+
+(A szorzók a nem túlvezérelt pixelekre illesztve; a leghidegebb állás
+maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
+
+### Ami ebből a körből nyitva maradt
+
+- A **pipetta** (p4) modellje változatlan közelítés — a `referencia/
+  finomhangolas/alapszínválasztás példa.jpg` egyetlen mintája a szabályt
+  (mi választja a három szorzót) nem dönti el.
+- A **két varázspálca** és az **Automatikus kontraszt/szín** gomb egyetlen
+  fotón mért — a szabály (nem a modell) további, eltérő színezetű fotókat
+  igényel; ld. a #551 jegy kommentjeit.
+
 ## Nyitva (5. kör / implementáció közben)
 
 1. autocolor pontos gain-képlete (célzott cast-sweep kellene)

@@ -55,7 +55,19 @@ def build_finetune2_lut(
     csatornát KÜLÖN mintavételezi (`texture(lut, vec2(r, 0.5)).r`, …) — a
     három lekérdezés együtt pontosan a `apply_channel_luts`-alapú CPU-utat
     adja vissza, mert a lánc (ld. modul-docsztring) csatornánként független.
+
+    **Nem nulla `fill` esetén `ValueError`.** A #551 mérése kimondta, hogy a
+    Derítőfény a pixel VILÁGOSSÁGÁTÓL függő hozzáadás, nem csatornánkénti
+    tónusgörbe — LUT-tá alakítva a rámpa-képen még helyesnek LÁTSZANA, de
+    valódi (nem szürke) képen más eredményt adna, mint a CPU-út. A
+    csatorna-függetlenség tehát csak `fill == 0`-nál áll fenn; a hívó
+    (`EditController.previewFinetuneGpu`) ilyenkor a CPU-útra esik vissza.
     """
+    if fill != 0.0:
+        raise ValueError(
+            "A finetune2 GPU-LUT csak fill == 0 mellett érvényes (#551): "
+            f"fill={fill!r}"
+        )
     ramp = np.arange(LUT_SIZE, dtype=np.uint8)
     ramp_image = np.tile(ramp[np.newaxis, :, np.newaxis], (1, 1, 3))
     result = apply_finetune2(

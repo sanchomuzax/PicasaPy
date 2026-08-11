@@ -156,10 +156,13 @@ class TestGpuPreviewMeretKiugras415:
         panel = window.findChild(QObject, "viewerEditorPanel")
         photo = window.findChild(QObject, "viewerImage")
         gpu_layer = window.findChild(QObject, "gpuFinetunePreview")
-        slider = panel.findChild(QObject, "fixesFillSlider")
-        assert panel.property("activeTab") == 0, (
-            "a Derítőfény a 0. (Gyakori javítások) fülön él"
-        )
+        # #551: a GPU pontonkénti út csak nulla Derítőfénynél érvényes (a
+        # Derítőfény világosság-vezérelt, tehát nem LUT-osítható) — ezért a
+        # GPU-réteg geometriáját a Kiemelések csúszkájával mérjük, ami
+        # továbbra is a gyors úton fut. A csúszka a Finomhangolás fülön él.
+        panel.setProperty("activeTab", 1)
+        qt_app.processEvents()
+        slider = panel.findChild(QObject, "finetuneHighlightsSlider")
 
         box_width = photo.property("width")
         painted_width = photo.property("paintedWidth")
@@ -188,7 +191,7 @@ class TestGpuPreviewMeretKiugras415:
         qt_app.processEvents()
         assert_matches_painted("megfogva")
 
-        for value in (0.2, 0.55, 0.9):
+        for value in (0.1, 0.25, 0.45):
             slider.setProperty("value", value)
             qt_app.processEvents()
             assert viewer.property("gpuFinetuneActive") is True
@@ -198,6 +201,30 @@ class TestGpuPreviewMeretKiugras415:
         qt_app.processEvents()
         assert viewer.property("gpuFinetuneActive") is False
         assert_matches_painted("elengedés után")
+
+    def test_nem_nulla_deritofenynel_a_gpu_reteg_rejtve_marad(
+        self, qml_app_portrait, qt_app
+    ):
+        """#551: a Derítőfény világosság-vezérelt, tehát nem LUT-osítható —
+        húzás közben a GPU-réteg meg sem jelenhet, mert a CPU-tól eltérő
+        képet mutatna. (A `gpuFinetuneActive` továbbra is igaz: húzás VAN,
+        csak nem a pontonkénti gyors úton.)"""
+        window, _controller, _engine = qml_app_portrait
+        viewer = _open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        gpu_layer = window.findChild(QObject, "gpuFinetunePreview")
+        slider = panel.findChild(QObject, "fixesFillSlider")
+
+        slider.setProperty("pressed", True)
+        slider.setProperty("value", 0.5)
+        qt_app.processEvents()
+        assert viewer.property("gpuFinetuneActive") is True
+        assert viewer.property("gpuFinetunePointSafe") is False
+        assert gpu_layer.property("visible") is False
+
+        slider.setProperty("value", 0.0)
+        qt_app.processEvents()
+        assert viewer.property("gpuFinetunePointSafe") is True
 
     def test_allo_kep_szelessege_nem_ugrik_ki(self, qml_app_portrait, qt_app):
         self._run(qml_app_portrait, qt_app, expect_letterbox_width=True)

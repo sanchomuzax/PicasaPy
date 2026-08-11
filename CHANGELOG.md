@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.74] – 2026-08-11
+
+### Javítva
+- **A négy Finomhangolás-csúszka újramérve valódi fotón (#551).** Eddig
+  szintetikus szürke rámpákon mértünk, és ezért három csúszka modellje hibás
+  volt. Az átlagos eltérés a Picasa saját kimenetétől (a JPEG-zaj szintje ~1):
+  Kiemelések **23,15 → 1,06**, Árnyékok **19,41 → 0,76**, Derítőfény
+  **18,10 → 5,89**, Színhőmérséklet (hideg irány) **20,94 → 5,08**.
+- A **Kiemelések** és az **Árnyékok** valójában a fehér- illetve feketepontot
+  mozgatja, nem csúcsfényt ment és árnyékot emel — a csúszkák felső határa
+  ezért 0,48, a Picasa saját paramétertartománya szerint.
+- A **Derítőfény** a pixel világosságától függ, nem a csatorna értékétől: két
+  azonos világosságú, eltérő színű képpont ugyanazt a világosítást kapja.
+  Emiatt a finomhangolás GPU-gyorsított élő előnézete nem nulla derítőfénynél
+  a rendes (pontos) útra vált — a kép így mindig azt mutatja, ami mentődni fog.
+
 ## [0.6.73] – 2026-08-11
 
 ### Hozzáadva

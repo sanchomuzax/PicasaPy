@@ -778,7 +778,7 @@ class TestGpuFinetunePrefix:
     def test_finetune_last_returns_prefix_before_it(self):
         """Ha a finetune2 a lánc UTOLSÓ eleme, az előtte álló ops a prefix."""
         session = EditSession.from_value(
-            "enhance=1;finetune2=1,0.5,0,0,00000000,0;"
+            "enhance=1;finetune2=1,0,0.2,0,00000000,0;"
         )
         prefix = session.gpu_finetune_prefix()
         assert prefix is not None
@@ -794,8 +794,14 @@ class TestGpuFinetunePrefix:
 
     def test_v1_finetune_last_also_eligible(self):
         """A v1 `finetune` névvel is működik (ugyanaz a réteg)."""
-        session = EditSession.from_value("finetune=1,0.5,0,0,00000000,0;")
+        session = EditSession.from_value("finetune=1,0,0.2,0,00000000,0;")
         assert session.gpu_finetune_prefix() == ()
+
+    def test_nonzero_fill_is_not_eligible(self):
+        """#551: a Derítőfény világosság-vezérelt, tehát nem LUT-osítható —
+        a GPU pontonkénti út ilyenkor a CPU-tól ELTÉRŐ képet adna."""
+        session = EditSession.from_value("finetune2=1,0.5,0,0,00000000,0;")
+        assert session.gpu_finetune_prefix() is None
 
 
 class TestEditSessionEffects:

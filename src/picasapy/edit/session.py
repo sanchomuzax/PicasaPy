@@ -243,10 +243,15 @@ class EditSession:
           réteget, tehát ez felel meg ugyanannak a helyzetnek);
         - egyébként (finetune2 a lánc közepén) `None` — a hívó ilyenkor a
           normál CPU-előnézetre esik vissza, GPU-gyorsítás nélkül.
+
+        **#551: nem nulla Derítőfénynél is `None`.** A mérés kimondta, hogy
+        a Derítőfény a pixel VILÁGOSSÁGÁTÓL függő hozzáadás, nem
+        csatornánkénti tónusgörbe — a GPU pontonkénti (LUT-textúrás) útja
+        ilyenkor a CPU-tól eltérő képet adna, ezért nem alkalmazható.
         """
         for index, op in enumerate(self.ops):
             if op.name.casefold() in _FINETUNE_NAMES:
-                if index == len(self.ops) - 1:
+                if index == len(self.ops) - 1 and _finetune_float(op, 1) == 0.0:
                     return self.ops[:index]
                 return None
         return self.ops
