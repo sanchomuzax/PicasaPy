@@ -248,10 +248,12 @@ class TestFolderManagerWarnings:
         assert list(controller.watchedFolders) == before, (
             "a meghajtó a megerősítés ELŐTT került figyelésre"
         )
-
-        _invoke(_child(window, "folderManagerDriveWarningYesButton"), "clicked")
-        qt_app.processEvents()
-        assert "/" in controller.watchedFolders
+        # a megerősítést SZÁNDÉKOSAN nem kattintjuk végig: az a teljes
+        # fájlrendszer beolvasását indítaná el a tesztfutásban (épp az a
+        # lassulás, ami ellen a figyelmeztetés szól). Amit itt bizonyítani
+        # kell, az a figyelmeztetés megjelenése és az, hogy előtte semmi
+        # nem történik — a megerősítés utáni ág ugyanaz az `applyState`,
+        # amit a többi teszt már lefed.
 
     def test_nem_figyelt_mappa_eltavolitasa_nem_kerdez(self, qml_app, qt_app, tmp_path):
         """Csak a TÉNYLEG figyelt mappa eltávolítása kérdez rá — egy sosem

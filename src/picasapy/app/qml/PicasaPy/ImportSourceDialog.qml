@@ -113,8 +113,10 @@ Window {
             return
         }
         removeImportedConfirm.ask("importSourceRemoveImported", qsTr(
+            // #465 4. pont: az eredeti Picasa NAGYBETŰVEL írja — ez a
+            // legsúlyosabb adatvesztési pont az egész programban
             "Are you sure you want to remove the imported files from your "
-            + "card? This cannot be undone."))
+            + "card? THIS CANNOT BE UNDONE."))
     }
 
     Connections {

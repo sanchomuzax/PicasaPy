@@ -2616,6 +2616,12 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>PhotoViewer</name>
     <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
+        <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
+        <translation>A felirat felülírja a beírt szöveget. (Ez a művelet nem vonható vissza.)</translation>
+    </message>
+
+    <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml" line="299"/>
         <source>Back to Library</source>
         <translation>Vissza a könyvtárhoz</translation>
@@ -3957,7 +3963,7 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     </message>
     <message>
         <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="115"/>
-        <source>Are you sure you want to remove the imported files from your card? This cannot be undone.</source>
+        <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
         <translation>Biztosan eltávolítod az importált fájlokat a kártyáról? Ez nem vonható vissza.</translation>
     </message>
     <message>

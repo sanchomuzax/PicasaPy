@@ -614,8 +614,22 @@ Rectangle {
                     }
                     onTextCancelRequested: editorPanel.textActive = false
                     // #450: a kép feliratát tölti a szövegmezőbe
+                    // #465 4. pont: a felirat BEMÁSOLÁSA felülírja a
+                    // szövegmező tartalmát — az eredeti Picasa erre
+                    // kimondottan figyelmeztet („(This operation is not
+                    // undoable)"), mert a beírt szöveg nem szerezhető
+                    // vissza. Üres mezőnél nincs mit elveszíteni, ott
+                    // szándékosan NEM kérdezünk (a jegy elve: csak ott
+                    // ijesztgess, ahol tényleg végleges).
                     onTextCopyCaptionRequested: {
-                        editorPanel.textDraftContent = editorPanel.captionText
+                        if (editorPanel.textDraftContent.length === 0) {
+                            editorPanel.textDraftContent = editorPanel.captionText
+                            return
+                        }
+                        copyCaptionConfirm.ask(
+                            "copyCaptionOverwrite",
+                            qsTr("The caption will replace the text you have "
+                                 + "typed. (This operation is not undoable)"))
                     }
                     // #450: az összes (ma: az egyetlen) szövegelem törlése —
                     // a meglévő clearText útvonalon, a szerkesztőeszköz is zárul
@@ -1244,4 +1258,13 @@ Rectangle {
             viewer.openContextMenu(point.position.x, point.position.y)
         }
     }
+
+    // #465 4. pont: a felirat-bemásolás megerősítése (ld.
+    // `onTextCopyCaptionRequested`)
+    ConfirmDialog {
+        id: copyCaptionConfirm
+        namePrefix: "copyCaptionConfirm"
+        onConfirmed: editorPanel.textDraftContent = editorPanel.captionText
+    }
+
 }

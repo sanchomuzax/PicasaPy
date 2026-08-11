@@ -428,6 +428,47 @@ class TestEditorWiring:
         field = window.findChild(QObject, "textContentField")
         assert field.property("text") == "Nyári kirándulás"
 
+    def test_copy_caption_asks_before_overwriting_typed_text(
+        self, qml_app, qt_app
+    ):
+        """#465 4. pont: a felirat bemásolása FELÜLÍRJA a beírt szöveget —
+        az eredeti Picasa erre kimondottan figyelmeztet („This operation is
+        not undoable"), mert a beírt szöveg nem szerezhető vissza."""
+        from support.qt_wait import wait_for_photo_op
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, controller, _ = qml_app
+        wait_for_photo_op(
+            controller, lambda: controller.setCaption(0, "Nyári kirándulás"),
+            qt_app=qt_app,
+        )
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("textActive", True)
+        panel.setProperty("textDraftContent", "Kézzel írt szöveg")
+        qt_app.processEvents()
+
+        QMetaObject.invokeMethod(
+            window.findChild(QObject, "textCopyCaptionButton"),
+            "buttonClicked",
+            Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+
+        confirm = window.findChild(QObject, "copyCaptionConfirmDialog")
+        assert confirm is not None and confirm.property("visible") is True
+        assert panel.property("textDraftContent") == "Kézzel írt szöveg", (
+            "a szöveg a megerősítés ELŐTT íródott felül"
+        )
+
+        QMetaObject.invokeMethod(
+            window.findChild(QObject, "copyCaptionConfirmYesButton"),
+            "clicked",
+            Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+        assert panel.property("textDraftContent") == "Nyári kirándulás"
+
     def test_remove_all_text_button_clears_saved_overlay(
         self, qml_app, qt_app, tmp_path
     ):

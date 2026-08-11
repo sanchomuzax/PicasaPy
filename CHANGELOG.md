@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.62] – 2026-08-11
+
+### Javítva
+- **Figyelmeztetés csak ott, ahol tényleg nincs visszaút (#465 4. pont).**
+  A felirat bemásolása a szövegmezőbe eddig szó nélkül felülírta a beírt
+  szöveget — mostantól rákérdez (üres mezőnél nem, ott nincs mit
+  elveszíteni). A kártya kiürítésének figyelmeztetése az eredeti Picasa
+  szerint **nagybetűs**. A Kukába helyezés továbbra sem ijesztget: az
+  valóban visszafordítható.
+
 ## [0.6.61] – 2026-08-11
 
 ### Javítva
