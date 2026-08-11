@@ -91,16 +91,33 @@ class TestApplyAnsel:
         mid = int(result[0, 0, 0])
         assert 128 < mid <= 150
 
-    def test_vegpontok_helyben_maradnak(self) -> None:
+    def test_vegpontok_kozel_helyben_maradnak(self) -> None:
+        """#317: a mért görbe a feketét pontosan tartja, a fehéret viszont
+        épphogy visszafogja (254) — a `referencia/filteredbw/` exportján a
+        kvázi-fehér bemenet átlagosan 251,4-re jön ki, tehát ez a
+        Picasa valódi viselkedése, nem a modellünk pontatlansága."""
         black = apply_ansel(_uniform_image(0), color=(0xFF, 0xFF, 0xFF))
         white = apply_ansel(_uniform_image(255), color=(0xFF, 0xFF, 0xFF))
         assert int(black[0, 0, 0]) == 0
-        assert int(white[0, 0, 0]) == 255
+        assert 250 <= int(white[0, 0, 0]) <= 255
 
-    def test_szines_ansel_szinez(self) -> None:
-        image = _uniform_image(128)
-        result = apply_ansel(image, color=(0xFF, 0xCC, 0x99))
-        assert int(result[0, 0, 0]) > int(result[0, 0, 1]) > int(result[0, 0, 2])
+    def test_a_szin_szuro_nem_festek(self) -> None:
+        """#317: a Filtered B&W színe fényképészeti SZŰRŐ — a kimenet
+        semleges marad, a szín csak azt dönti el, melyik csatorna számít
+        bele a szürkébe (a Picasa palettája sárga/narancs/vörös/zöld
+        szűrőkből áll, ld. `referencia/filteredbw/panel-screenshot-2.png`).
+        """
+        red_patch = _uniform_image((200, 40, 40))
+        through_red = apply_ansel(red_patch, color=(0xFF, 0x00, 0x00))
+        through_blue = apply_ansel(red_patch, color=(0x00, 0x00, 0xFF))
+
+        for result in (through_red, through_blue):
+            pixel = result[0, 0]
+            assert int(pixel[0]) == int(pixel[1]) == int(pixel[2]), (
+                "a Filtered B&W kimenete nem lehet színes"
+            )
+        # vörös szűrőn át a vörös folt VILÁGOS, kék szűrőn át sötét
+        assert int(through_red[0, 0, 0]) > int(through_blue[0, 0, 0]) + 100
 
     def test_nem_mutalja_a_bemenetet(self) -> None:
         image = _uniform_image((90, 20, 250))

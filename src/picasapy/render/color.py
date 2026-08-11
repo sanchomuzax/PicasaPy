@@ -14,8 +14,29 @@ from picasapy.render.curves import apply_channel_luts, lut_ramp, validate_image
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
 
-# Mért lineáris közelítések szürke bemenetre: (meredekség, eltolás) / csatorna.
-_SEPIA_LINEAR = ((0.82, 58.0), (0.86, 35.0), (0.90, 15.0))
+#: A szépia luma-súlyai. #317: a `referencia/sepia/` exportján a
+#: Flash-örökségű (0,3 / 0,59 / 0,11) súlyozás adta a legkisebb szórást a
+#: luma-vödrökön belül (1,21) — a Rec.601 (1,26) és a Rec.709 (2,29)
+#: rosszabb. A különbség kicsi, de következetes.
+_SEPIA_LUMA_WEIGHTS = (0.3, 0.59, 0.11)
+
+#: A szépia MÉRT tónusgörbéi (`referencia/sepia/`, 2560×1702-es export a
+#: `filterdesc.xml`-en kívülről): luma 0, 16, 32 … 240, 255 → kimenő
+#: csatornaérték. A korábbi lineáris közelítés (meredekség/eltolás
+#: csatornánként) átlagosan **4,40**-gyel tért el a valódi Picasa-
+#: kimenettől; ezekkel a horgonypontokkal **0,86** (viszonyításul: az
+#: érintetlen kép eltérése 30,16). A görbe erősen nemlineáris — a kék
+#: csatorna a sötét felén lapos, a világos felén meredek —, ezért nem
+#: lehetett egyenessel eltalálni.
+_SEPIA_ANCHOR_INPUTS = tuple(range(0, 256, 16)) + (255,)
+_SEPIA_ANCHOR_CURVES = (
+    (46.0, 61.9, 79.1, 95.1, 111.6, 128.1, 144.3, 160.4, 171.1, 181.6,
+     192.2, 202.8, 213.6, 224.4, 234.6, 246.4, 254.8),
+    (36.7, 49.2, 63.2, 77.2, 89.5, 103.1, 116.9, 132.5, 146.0, 159.5,
+     173.3, 186.8, 201.4, 215.0, 228.7, 242.5, 254.8),
+    (27.7, 39.4, 49.9, 61.0, 71.0, 81.2, 92.6, 108.1, 123.6, 140.0,
+     157.4, 173.2, 190.1, 206.2, 222.7, 239.4, 254.4),
+)
 _WARM_LINEAR = ((0.89, 19.0), (0.88, 1.0), (0.93, -16.0))
 
 # A sat mért gain-táblája (nem 1+s!); s=−1 → teljes telítetlenítés.
@@ -57,8 +78,25 @@ def _monochrome_tone(image: np.ndarray, linear: tuple) -> np.ndarray:
 
 
 def apply_sepia(image: np.ndarray) -> np.ndarray:
-    """Szépia: monokróm tónus a mért R/G/B görbék lineáris közelítésével."""
-    return _monochrome_tone(image, _SEPIA_LINEAR)
+    """Szépia: luma → a MÉRT R/G/B tónusgörbék (#317).
+
+    A valódi Picasa-kimenettől való átlagos csatorna-eltérés **0,86**
+    (a korábbi lineáris közelítésé 4,40; az érintetlen képé 30,16).
+    """
+    validate_image(image)
+    red_w, green_w, blue_w = _SEPIA_LUMA_WEIGHTS
+    gray = (
+        np.float32(red_w) * image[..., 0].astype(np.float32)
+        + np.float32(green_w) * image[..., 1].astype(np.float32)
+        + np.float32(blue_w) * image[..., 2].astype(np.float32)
+    )
+    ramp = lut_ramp()
+    luts = tuple(
+        np.interp(ramp, _SEPIA_ANCHOR_INPUTS, curve).astype(np.float32)
+        for curve in _SEPIA_ANCHOR_CURVES
+    )
+    index = np.clip(np.rint(gray), 0, 255).astype(np.uint8)
+    return _to_uint8(np.stack([lut[index] for lut in luts], axis=-1))
 
 
 def apply_warm(image: np.ndarray) -> np.ndarray:

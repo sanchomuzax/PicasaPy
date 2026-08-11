@@ -51,6 +51,48 @@ class TestVignetteMatte:
         result = t.apply_vignette(white)
         assert int(result[30, 40, 0]) >= int(result[0, 40, 0])
 
+    # a VALÓDI Picasa-kimenetből (`referencia/vignette/Vignette default`,
+    # 2560×1702) mért maszk: a középtől mért, a fél-hosszabbik-oldallal
+    # normált sugár → a sötétítés szorzója (a képpontok medián-aránya az
+    # effekt nélküli exporthoz). A 0,45 alatti sávban a maszk 1,000.
+    _PICASA_VIGNETTE_PROFILE = ((0.45, 0.973), (0.65, 0.895), (0.85, 0.746), (1.05, 0.336))
+
+    def test_vignette_maszkja_a_picasa_mert_profiljat_adja(self):
+        """#317: a `Blur=35` (alapértelmezett) maszk a VALÓDI Picasa-kimenetből
+        mért profilt követi.
+
+        Ez a mérés adta a `sugár = Blur·0,02·max(W,H)/8` képletet is: a
+        `filterdesc.xml` `/4`-es képlete (és a rá tett 255-ös Flash-korlát)
+        ennél a profilnál mérhetően beljebb kezdi a sötétítést.
+        """
+        height, width = 851, 1280  # a referencia-fotó fele, arányhelyesen
+        white = np.full((height, width, 3), 255, dtype=np.uint8)
+        mask = t.apply_vignette(white, blur=35.0)[..., 0].astype(float) / 255.0
+        rows, cols = np.mgrid[0:height, 0:width]
+        radius = np.hypot(
+            (rows - height / 2) / (max(height, width) / 2),
+            (cols - width / 2) / (max(height, width) / 2),
+        )
+        for centre, expected in self._PICASA_VIGNETTE_PROFILE:
+            band = (radius >= centre - 0.05) & (radius < centre + 0.05)
+            measured = float(np.median(mask[band]))
+            assert measured == pytest.approx(expected, abs=0.06), (
+                f"r={centre}: {measured:.3f} a Picasa mért {expected:.3f} helyett"
+            )
+
+    def test_vignette_nagy_kepen_sem_vagodik_le_a_sugar(self):
+        """A 255-ös Flash-korlát (#518, Lomo/Holga) itt NEM érvényes: a
+        `referencia/vignette/` Blur=50-es exportja 310–320-as szigmát kíván,
+        a 255-re vágott sugár mérhetően rosszabb. Ha valaki visszatenné a
+        korlátot, a Blur=35 és a Blur=50 kimenete AZONOSSÁ válna egy nagy
+        képen (mindkettő 255-re vágódna) — ez a teszt épp ezt buktatja.
+        """
+        photo = _real_photo_rgb(1200, 1800, seed=5)
+        mid = t.apply_vignette(photo, blur=35.0)
+        wide = t.apply_vignette(photo, blur=50.0)
+        difference = float(np.abs(mid.astype(float) - wide.astype(float)).mean())
+        assert difference > 1.0, "a Blur csúszka nem hat — visszakerült a 255-ös korlát?"
+
 
 class TestHdrLocalContrast:
     @pytest.mark.parametrize("radius,strength", [(1.3, 1.0), (20.0, 3.0), (80.0, 7.0)])
