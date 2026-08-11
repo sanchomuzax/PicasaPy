@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- #463: „van rajta felismert arc" jelvény. Az eredeti méretaránya 14×20
+     (magas, keskeny) — sziluett-fej + váll, a Picasa „emberek" ikonjának
+     mintájára. Saját rajz (az eredeti grafika nem szállítható). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="20" viewBox="0 0 14 20">
+  <g fill="#ffffff" stroke="#00000070" stroke-width="1">
+    <circle cx="7" cy="6" r="4"/>
+    <path d="M1 19c0-3.6 2.7-6 6-6s6 2.4 6 6z"/>
+  </g>
+</svg>

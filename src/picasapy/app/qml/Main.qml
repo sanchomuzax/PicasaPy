@@ -811,6 +811,10 @@ ApplicationWindow {
                                         isVideo: modelData.isVideo
                                         hasEdits: modelData.hasEdits
                                         hasGeo: modelData.hasGeo === true
+                                        // #463: arc-jelvények
+                                        hasFaces: modelData.hasFaces === true
+                                        hasFaceSuggestion:
+                                            modelData.hasFaceSuggestion === true
                                         // #455: a tálcán tartott kép
                                         // jelvénye — a `heldCount` a
                                         // reaktív trigger (a `photos.

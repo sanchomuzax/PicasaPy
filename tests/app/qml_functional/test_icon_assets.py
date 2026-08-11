@@ -44,6 +44,9 @@ _EXPECTED_ICONS = (
     # #455 képtálca: a megtartott kép jelvénye a rácsban, és a tálca
     # ürítés-gombja az alsó sávon
     "hold-pin.svg",
+    # #463: bélyegkép arc-jelvények
+    "faces-badge.svg",
+    "face-suggestion-badge.svg",
     "tray-clear.svg",
 )
 
@@ -73,6 +76,11 @@ def _settle(qt_app, rounds=3):
         pause.exec()
 
 
+#: #463: a bélyegkép sarkába kerülő jelvények — az eredeti Picasa
+#: réteg-adataiból vett, SZÁNDÉKOSAN nem négyzetes méretarányokkal.
+_CORNER_BADGES = frozenset({"faces-badge.svg", "face-suggestion-badge.svg"})
+
+
 class TestIconFilesExist:
     @pytest.mark.parametrize("name", _ALL_ICONS)
     def test_icon_file_exists(self, name):
@@ -93,6 +101,12 @@ class TestIconFilesExist:
         parts = [float(v) for v in view_box.replace(",", " ").split()]
         assert len(parts) == 4, f"hibás viewBox: {view_box!r}"
         arany = parts[2] / parts[3]
+        if name in _CORNER_BADGES:
+            # #463: a bélyegkép-sarok jelvényei NEM eszköz-ikonok: a
+            # méretarányuk az eredeti Picasa réteg-adataiból származik
+            # (pl. „emberek" 14×20), ezért nem a 3:2/négyzetes szabály
+            # vonatkozik rájuk — a vászonnak viszont itt is ki kell töltenie.
+            return
         assert 0.95 <= arany <= 1.05 or 1.4 <= arany <= 1.6, (
             f"{name}: a viewBox aránya se nem négyzetes, se nem 3:2 ({arany:.2f})"
         )
@@ -213,3 +227,81 @@ class TestIconsAvoidUnsupportedSvgFeatures:
             assert not elem.getAttribute("clip-path"), (
                 f"{name}: clip-path attribútum — a Qt figyelmen kívül hagyja"
             )
+
+
+#: a QML-ből létrehozott objektumok életben tartása (a GC különben
+#: elviheti őket a teszt alatt)
+_KEEPALIVE: list = []
+
+
+class TestFaceBadges:
+    """#463: a bélyegkép arc-jelvényei — „van rajta arc" és a KÜLÖN
+    „jóváhagyásra váró névjavaslat", az eredeti méretarányokkal."""
+
+    @staticmethod
+    def _delegate(qt_app):
+        """Önálló ThumbDelegate-példány (a rács nélkül) — a jelvények
+        láthatóságát a delegate saját property-in állítjuk."""
+        from PySide6.QtCore import QUrl
+        from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+        import picasapy.app.application as app_module
+
+        engine = QQmlEngine()
+        engine.addImportPath(str(app_module._APP_DIR / "qml"))
+        component = QQmlComponent(engine)
+        component.setData(
+            b"""
+            import QtQuick
+            import PicasaPy 1.0
+            ThumbDelegate {
+                index: 0; name: "a.jpg"; thumbUrl: ""; star: false
+                caption: ""; isVideo: false; keywords: ""; resolution: ""
+            }
+            """,
+            QUrl(),
+        )
+        obj = component.create()
+        assert obj is not None, [e.toString() for e in component.errors()]
+        QQmlEngine.setObjectOwnership(obj, QQmlEngine.ObjectOwnership.CppOwnership)
+        _KEEPALIVE.extend((engine, component, obj))
+        qt_app.processEvents()
+        return obj
+
+    def test_badges_use_the_original_proportions(self, qt_app):
+        delegate = self._delegate(qt_app)
+        faces = delegate.findChild(QObject, "facesMark")
+        suggestion = delegate.findChild(QObject, "faceSuggestionMark")
+        assert faces is not None and suggestion is not None
+        # a jegy réteg-adatokból kiolvasott méretei
+        assert (faces.property("width"), faces.property("height")) == (14, 20)
+        assert (suggestion.property("width"), suggestion.property("height")) == (20, 20)
+
+    def test_badges_are_hidden_without_faces(self, qt_app):
+        delegate = self._delegate(qt_app)
+        assert delegate.findChild(QObject, "facesMark").property("visible") is False
+        assert (
+            delegate.findChild(QObject, "faceSuggestionMark").property("visible")
+            is False
+        )
+
+    def test_suggestion_badge_is_independent_of_the_faces_badge(self, qt_app):
+        """A két állapot FÜGGETLEN: egy képen lehet már elnevezett arc úgy is,
+        hogy nincs több jóváhagyandó javaslat — és fordítva."""
+        delegate = self._delegate(qt_app)
+        delegate.setProperty("hasFaces", True)
+        qt_app.processEvents()
+        assert delegate.findChild(QObject, "facesMark").property("visible") is True
+        assert (
+            delegate.findChild(QObject, "faceSuggestionMark").property("visible")
+            is False
+        )
+
+        delegate.setProperty("hasFaces", False)
+        delegate.setProperty("hasFaceSuggestion", True)
+        qt_app.processEvents()
+        assert delegate.findChild(QObject, "facesMark").property("visible") is False
+        assert (
+            delegate.findChild(QObject, "faceSuggestionMark").property("visible")
+            is True
+        )
