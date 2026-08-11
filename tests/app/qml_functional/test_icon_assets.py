@@ -44,6 +44,7 @@ _EXPECTED_ICONS = (
     # #455 képtálca: a megtartott kép jelvénye a rácsban, és a tálca
     # ürítés-gombja az alsó sávon
     "hold-pin.svg",
+    "pipetta.svg",              # #464: „semleges szín" pipetta
     # #463: bélyegkép arc-jelvények
     "faces-badge.svg",
     "face-suggestion-badge.svg",

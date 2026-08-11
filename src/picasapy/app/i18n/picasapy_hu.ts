@@ -1455,7 +1455,12 @@
         <source>Remove all existing text</source>
         <translation>Minden meglévő szöveg törlése</translation>
     </message>
-    <message>
+        <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Neutral Color Picker</source>
+        <translation>Semleges szín választása</translation>
+    </message>
+<message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="409"/>
         <source>Fill Light</source>
         <translation>Derítőfény</translation>

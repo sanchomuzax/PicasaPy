@@ -211,8 +211,12 @@ class TestEffectThumbSourceWiring:
         fake = _FakeEditController(preview_source="image://editpreview/1?rev=1")
         panel = _make_panel(qml_engine, fake_controller=fake, active_tab=2)
         qt_app.processEvents()
-        button = panel.findChild(QObject, "effectsUndoButton")
+        # #464: a Visszavonás/Újra már GLOBÁLIS (a panel alján, egyetlen
+        # példányban) — nem fülönként ismételve
+        button = panel.findChild(QObject, "editUndoButton")
+        assert button is not None, "a globális Visszavonás gomb hiányzik"
         assert button.property("thumbSource") == ""
+        assert panel.findChild(QObject, "effectsUndoButton") is None
 
     def test_all_36_effect_buttons_reference_a_known_effect_key(self):
         """Regresszió-őr: a `panel.effectThumbSource("<kulcs>")` hívások

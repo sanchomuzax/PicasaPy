@@ -762,3 +762,76 @@ class TestViewerFolderBoundedNavigation:
         prev_button = window.findChild(QObject, "viewerPrevButton")
         assert prev_button is not None, "viewerPrevButton nem található"
         assert prev_button.property("enabled") is False
+
+
+class _ViewerOpenMixin:
+    """Az `_open_viewer` segédet a #464-es tesztek is használják."""
+
+    def _open_viewer(self, window, qt_app, index=0):
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", index)
+        qt_app.processEvents()
+        return viewer
+
+
+class TestFinetuneTabQuickFixesAndPicker(_ViewerOpenMixin):
+    """#464: a 2. fülön ott van a két egykattintásos gomb (szándékos
+    ismétlés az 1. fülről) és a „semleges szín" pipetta."""
+
+    def test_quick_fix_tiles_present_on_the_finetune_tab(self, qml_app, qt_app):
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("activeTab", 1)
+        qt_app.processEvents()
+
+        for name in ("finetuneAutocolor", "finetuneAutolight", "finetuneNeutralPicker"):
+            assert window.findChild(QObject, name) is not None, name
+
+    def test_picker_toggle_arms_the_sampling_area(self, qml_app, qt_app):
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("activeTab", 1)
+        qt_app.processEvents()
+
+        area = window.findChild(QObject, "neutralPickArea")
+        assert area is not None
+        assert area.property("enabled") is False
+
+        QMetaObject.invokeMethod(
+            panel, "neutralPickerToggled", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+        assert panel.property("neutralPickerActive") is True
+        assert area.property("enabled") is True
+
+
+class TestGlobalUndoRedoRow(_ViewerOpenMixin):
+    """#464: a Visszavonás/Újra a panel alján, GLOBÁLISAN — nem fülönként
+    ismételve (az eredetiben sem volt fülhöz kötve)."""
+
+    def test_single_row_shared_by_every_tab(self, qml_app, qt_app):
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+
+        row = window.findChild(QObject, "editorGlobalUndoRow")
+        assert row is not None
+        for tab in range(5):
+            panel.setProperty("activeTab", tab)
+            qt_app.processEvents()
+            assert row.property("visible") is True, f"{tab}. fülön eltűnt"
+
+    def test_the_old_per_tab_buttons_are_gone(self, qml_app, qt_app):
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        for name in (
+            "finetuneUndoButton", "effectsUndoButton",
+            "effects2UndoButton", "effects3UndoButton",
+        ):
+            assert window.findChild(QObject, name) is None, name
+

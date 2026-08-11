@@ -638,6 +638,10 @@ Rectangle {
                         editorPanel.textDraftContent = ""
                         editorPanel.textActive = false
                     }
+                    // #464: a pipetta be/ki kapcsolása — a mintavétel a
+                    // `neutralPickArea`-ban történik (a kép fölött)
+                    onNeutralPickerToggled: editorPanel.neutralPickerActive =
+                        !editorPanel.neutralPickerActive
                     onTextFillColorEdited: (hex) => editController.setTextFillColor(hex)
                     onTextOutlineColorEdited: (hex) => editController.setTextOutlineColor(hex)
                     onTextOutlineThicknessEdited: (value) =>
@@ -911,6 +915,30 @@ Rectangle {
                     // `clampPan()`, ld. lent a `viewerPanArea`-t) állapotára
                     // ül rá, hogy zoomolt nézetben kattintás nélkül lehessen
                     // odébb húzni a képet.
+                    // #464: a „semleges szín" pipetta — amíg aktív, a képre
+                    // kattintás színmintát vesz (nem navigál). A kattintás
+                    // helyét a KIRAJZOLT képhez képest normálva adjuk át, így
+                    // a nagyítástól/illesztéstől független.
+                    MouseArea {
+                        id: neutralPickArea
+                        objectName: "neutralPickArea"
+                        parent: photo
+                        visible: editorPanel.neutralPickerActive
+                        enabled: editorPanel.neutralPickerActive
+                        x: (photo.width - photo.paintedWidth) / 2
+                        y: (photo.height - photo.paintedHeight) / 2
+                        width: photo.paintedWidth
+                        height: photo.paintedHeight
+                        cursorShape: Qt.CrossCursor
+                        onClicked: function(mouse) {
+                            if (!editController) return
+                            editController.pickNeutralColor(
+                                mouse.x / Math.max(1, width),
+                                mouse.y / Math.max(1, height))
+                            editorPanel.neutralPickerActive = false
+                        }
+                    }
+
                     MouseArea {
                         id: retouchClickArea
                         objectName: "retouchClickArea"

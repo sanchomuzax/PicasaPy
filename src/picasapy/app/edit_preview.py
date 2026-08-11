@@ -276,6 +276,25 @@ class EditPreviewProvider(QQuickImageProvider):
             self._gpu_prefix_images.pop(key, None)
             self._gpu_lut_images.pop(key, None)
 
+    def sample_color(self, photo_id: str, nx: float, ny: float):
+        """A MEGJELENÍTETT előnézet színe a (nx, ny) normált ponton (#464).
+
+        A pipetta („semleges szín") ezt kérdezi: a felhasználó a képre
+        kattint, a hívó a kattintás helyét normált [0..1] koordinátaként
+        adja át. `None`, ha a fotó nincs (már) regisztrálva, vagy a pont a
+        képen kívülre esik.
+        """
+        with self._lock:
+            image = self._images.get(str(photo_id))
+        if image is None or image.isNull():
+            return None
+        x = int(round(nx * (image.width() - 1)))
+        y = int(round(ny * (image.height() - 1)))
+        if not (0 <= x < image.width() and 0 <= y < image.height()):
+            return None
+        colour = image.pixelColor(x, y)
+        return (colour.red(), colour.green(), colour.blue())
+
     def histogram_for(self, photo_id: str) -> dict:
         """Az utoljára renderelt előnézet RGB-hisztogramja (#25), vagy üres
         hisztogram, ha a fotó nincs (már) regisztrálva."""
