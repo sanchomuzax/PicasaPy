@@ -169,9 +169,27 @@ def get_app_busy_registry() -> AppBusyRegistry:
     return _registry
 
 
+#: A LECSERÉLT regisztrátum-példányok (#519/#430). Lásd `reset_app_busy_registry`.
+_retired_registries: list[AppBusyRegistry] = []
+
+
 def reset_app_busy_registry() -> None:
     """Csak teszteknek: friss példányt kényszerít a következő
     `get_app_busy_registry()` hívásra, hogy egyik teszt maradék állapota
-    (aktív számláló, futó időzítő) ne szivárogjon át a következőbe."""
+    (aktív számláló, futó időzítő) ne szivárogjon át a következőbe.
+
+    #519/#430: a régi példányt NEM engedjük felszabadulni. A `begin()`/
+    `end()` szálhatáron át, SORBA ÁLLÍTVA (queued) érkezik — ha egy korábbi
+    teszt háttérszála a csere után jelez, a jelzés egy már felszabadított
+    QObject-nek szólna: az a Windowson `0xC0000005` (access violation),
+    Linuxon SIGSEGV. A példányt ezért életben tartjuk (a memória
+    elhanyagolható: csak a tesztfuttatásban keletkezik belőle több), és
+    leállítjuk az időzítőit, hogy ne dolgozzon tovább.
+    """
     global _registry
+    if _registry is not None:
+        _registry.blockSignals(True)
+        _registry._show_timer.stop()
+        _registry._min_visible_timer.stop()
+        _retired_registries.append(_registry)
     _registry = None

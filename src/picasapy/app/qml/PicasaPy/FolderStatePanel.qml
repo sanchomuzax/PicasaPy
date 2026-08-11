@@ -39,16 +39,10 @@ ColumnLayout {
     // binding automatikusan újraértékelődjön a lista változásakor (a
     // Python `faceDetectionEnabledFor` a tényleges, ős-mappát is kezelő
     // igazságforrás, ezt tükrözi vissza itt egyszerű előtag-egyezéssel).
+    // #543: a kizártság-eldöntés a FolderManagerDialogba került (a fa
+    // jelvénye is ugyanezt használja) — itt csak továbbhívunk rá.
     function facesExcludedFor(path) {
-        if (!path || typeof controller === "undefined" || !controller) return false
-        var roots = controller.faceExcludedFolders
-        for (var i = 0; i < roots.length; i++) {
-            var root = roots[i]
-            if (path === root) return true
-            if (path.indexOf(root + "/") === 0) return true
-            if (path.indexOf(root + "\\") === 0) return true
-        }
-        return false
+        return panel.manager ? panel.manager.facesExcludedFor(path) : false
     }
 
     Text {
@@ -63,6 +57,30 @@ ColumnLayout {
         font.bold: true
         color: Theme.ink
     }
+
+    // #543: az eredeti `foldermgr.tre` SÜLLYESZTETT keretbe
+    // (`decrect softbevel/flatbevel`) zárja az állapot-választót, a
+    // „For the current folder:" felirattal.
+    Text {
+        text: qsTr("For the current folder:")
+        font.pixelSize: Theme.fontSize
+        color: Theme.ink
+    }
+
+    Rectangle {
+        id: statusFrame
+        Layout.fillWidth: true
+        implicitHeight: statusColumn.implicitHeight + 16
+        color: Theme.contentPanel
+        border.width: 1
+        border.color: Theme.chromeBorder
+        radius: 2
+
+        ColumnLayout {
+            id: statusColumn
+            anchors.fill: parent
+            anchors.margins: 8
+            spacing: 6
 
     ColumnLayout {
         Layout.fillWidth: true
@@ -137,7 +155,13 @@ ColumnLayout {
         objectName: "faceDetectionToggle"
         Layout.fillWidth: true
         implicitHeight: faceDetectionLayout.implicitHeight
+        // #543: az arcfelismerés-kapcsoló csak BEOLVASOTT mappán él — ha a
+        // mappa „Remove from Picasa" állapotban van, az eredetiben is
+        // szürke (nincs mihez arcadatot rendelni).
         enabled: panel.selectedPath.length > 0
+                 && panel.manager
+                 && panel.manager.stateFor(panel.selectedPath) !== "none"
+        opacity: faceDetectionRow.enabled ? 1.0 : 0.4
 
         readonly property bool enabledForSelection:
             !panel.facesExcludedFor(panel.selectedPath)
@@ -177,8 +201,13 @@ ColumnLayout {
                     visible: faceDetectionRow.enabledForSelection
                 }
             }
+            // #543: a `stringres` szerint a FELIRAT IS vált
+            // (`CFolderMgrDialog::hasfr` / `::nofr`), nem csak a pipa
             Text {
-                text: qsTr("Face detection")
+                objectName: "faceDetectionToggleLabel"
+                text: faceDetectionRow.enabledForSelection
+                      ? qsTr("Face Detection On")
+                      : qsTr("Face Detection Off")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
@@ -203,6 +232,9 @@ ColumnLayout {
                           && faceDetectionConfirm.pendingPath !== "")
                          controller.setFaceDetectionEnabled(
                              faceDetectionConfirm.pendingPath, false)
+    }
+
+        }
     }
 
     Text {

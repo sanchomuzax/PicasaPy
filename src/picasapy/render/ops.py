@@ -168,49 +168,105 @@ def _channel_black_white_points(
     return points[0], points[1], points[2]
 
 
+#: Az Auto Colour „semleges pixel"-szűrője (#541): csak azok a képpontok
+#: számítanak bele a fehéregyensúlyba, ahol a telítettség
+#: (`(max−min)/max`) ez alatt marad. A `referencia/autocolor/` 12 képén
+#: mért optimum — a hiba 0,36-nál 2,89, 0,40-nél **2,35**, 0,44-nél 2,53,
+#: 0,8-nál már 8,3 (ott a telített képrészletek elhúzzák a becslést).
+_AUTOCOLOR_MAX_SATURATION = 0.40
+
+#: A túl sötét képpontok kizárása: ott a csatorna-arányok a JPEG-zajtól
+#: bizonytalanok. A pontos érték alig számít (0/15/30/60 mellett a hiba
+#: 2,37 / 2,36 / 2,35 / 2,34), ezért a középső, józan értéket használjuk.
+_AUTOCOLOR_MIN_LEVEL = 30.0
+
+#: Ennyi semleges képpont alatt nincs mire alapozni a becslést — a kép
+#: változatlan marad.
+_AUTOCOLOR_MIN_PIXELS = 1000
+
+
+def autocolor_gains(image: np.ndarray) -> tuple[float, float, float]:
+    """Az Auto Colour csatorna-erősítései (#541).
+
+    A SEMLEGES képpontokra (telítettség < `_AUTOCOLOR_MAX_SATURATION`,
+    világosság > `_AUTOCOLOR_MIN_LEVEL`) számolt szürkevilág-becslés: a
+    három csatorna átlaga a saját átlagához viszonyítva. Ezek a képpontok
+    az eredetiben is szürkék lennének, tehát az eltérésük tiszta
+    színinger — a telített képrészletek (virág, égbolt) viszont nem, ezért
+    maradnak ki.
+    """
+    values = image.astype(np.float32)
+    maximum = values.max(axis=2)
+    minimum = values.min(axis=2)
+    saturation = (maximum - minimum) / np.maximum(maximum, 1.0)
+    mask = (saturation < _AUTOCOLOR_MAX_SATURATION) & (maximum > _AUTOCOLOR_MIN_LEVEL)
+    if int(mask.sum()) < _AUTOCOLOR_MIN_PIXELS:
+        return (1.0, 1.0, 1.0)
+    channel_means = np.array(
+        [float(values[..., channel][mask].mean()) for channel in range(3)]
+    )
+    if float(channel_means.min()) <= 0.0:
+        return (1.0, 1.0, 1.0)
+    gains = channel_means.mean() / channel_means
+    return (float(gains[0]), float(gains[1]), float(gains[2]))
+
+
 def apply_autocolor(image: np.ndarray) -> np.ndarray:
-    """Auto Colour — **MUNKAHIPOTÉZIS, NEM megfejtett algoritmus** (#540).
+    """Auto Colour — csatornánkénti ERŐSÍTÉS a semleges képpontokra
+    számolt szürkevilág-becslés szerint (#541).
 
-    ⚠️ **Őszinte állapot:** ez a modell a referenciakészleten **rosszabb,
-    mint ha meg sem csinálnánk az effektet.** Mért átlagos csatorna-
-    eltérés a valódi Picasa-kimenettől (12 kép, `referencia/autocolor/`):
+    A `referencia/autocolor/` 12 kép-párja három dolgot mondott ki:
 
-        az ÉRINTETLEN kép ...................... 5,29   ← a viszonyítás
-        a régi (szürkevilág) közelítés ......... 7,82
-        ez a változat .......................... 7,45
+    1. **Tiszta csatornánkénti LINEÁRIS leképezés.** A bemeneti értékek
+       vödrein belül a kimenet szórása 0,7–3,7 — vagyis JPEG-zaj, semmi
+       más: nincs se térbeli, se kereszt-csatornás összetevő.
+    2. **A feketepont NEM mozdul.** Mind a 36 csatorna-esetben az
+       illesztett `lo` 0 körül van (−4,5 … +4,2), tehát ez NEM
+       szinthúzás, hanem tiszta erősítés: `ki = be · gain`.
+    3. **Az erősítés a semleges képpontok szürkevilág-becslése.** A
+       telített képrészleteket kizárva a becslés a 12 képen jól illeszkedik.
 
-    Vagyis a mostani a réginél kevéssel jobb, de **mindkettő rosszabb az
-    azonosságnál** — a valódi modell tehát NINCS megfejtve. Amit a mérés
-    kizárt: a csatornánként önállóan 0..255-re nyújtó (enhance-szerű)
-    modell **16,5**-öt ad, tehát az Auto Colour biztosan NEM fekete-/
-    fehérpontra vágó szinthúzás. Az illesztett meredekségek 1,0 közeliek
-    (0,78–1,47), és az illesztett `lo`/`hi` gyakran a [0,255] tartományon
-    KÍVÜLRE esik — ez finom, csatornánkénti erősítés/eltolás felé mutat,
-    nem vágásra. A megfejtés a #541 tárgya.
+    Mért átlagos csatorna-eltérés a valódi Picasa-kimenettől:
 
-    Ami itt fut: csatornánként KÜLÖN fekete-/fehérpont (hisztogram-
-    darabszám alapján, ugyanazokkal a küszöbökkel, mint az autolight/
-    enhance), de a három csatorna egy KÖZÖS kimeneti tartományra (a
-    vágópontok ÁTLAGÁRA) simul — ez tartja 7,45-nél a hibát.
+        a korábbi (közös célsávra simító) modell ....... 7,45
+        az ÉRINTETLEN kép ............................. 5,29
+        EZ a modell ................................... 2,35
+        a MÉRT erősítésekkel (elméleti alsó korlát) ... 1,08
 
-    **Azonosság-eset:** semleges (R=G=B mindenütt) vagy már teljes
-    tartományú bemeneten a három csatorna vágópontja (és így a célsáv is)
-    megegyezik → a kimenet bájtra azonos a bemenettel.
+    Vagyis a modell alakja bizonyítottan helyes (az „orákulum" 1,08 a
+    JPEG-újratömörítés zaja), és a becslő is a felét hozza a maradéknak.
+    A pontos becslő-képlet (miért épp ennyire tér el 12 képből 3-nál)
+    továbbra is nyitott — de a modell már **kétszer jobb az azonosságnál**,
+    nem rosszabb nála.
+
+    **Azonosság-eset:** szürkeárnyalatos képen a három csatorna-átlag
+    megegyezik, így mindhárom erősítés pontosan 1,0 — a kimenet bájtra
+    azonos a bemenettel (a mérésben két ilyen kép van, mindkettőt a Picasa
+    is változatlanul hagyta).
     """
     _validate_image(image)
-    points = _channel_black_white_points(
-        image, _LEVELS_LOW_FRACTION, _LEVELS_HIGH_FRACTION
-    )
-    target_low = sum(point[0] for point in points) / 3.0
-    target_high = sum(point[1] for point in points) / 3.0
+    gains = autocolor_gains(image)
+    if gains == (1.0, 1.0, 1.0):
+        return image.copy()
     ramp = lut_ramp()
-    luts = []
-    for low, high in points:
-        if high <= low or (low == target_low and high == target_high):
-            luts.append(ramp)
-        else:
-            luts.append((ramp - low) * (target_high - target_low) / (high - low) + target_low)
+    luts = tuple(ramp * gain for gain in gains)
     return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
+
+
+#: A szinthúzás legkisebb bemeneti tartománya (#539). Egy nagyon szűk
+#: hisztogramú csatornát a Picasa NEM feszít ki a teljes 0..255-re: a
+#: `referencia/imfeellucky/` „Utopic Unicorn" képén (az egyetlen szélső eset
+#: a 12-ből) a két szűk csatorna kimért bemeneti tartománya **58,1** és
+#: **59,2** — gyakorlatilag ugyanaz a szám, holott a nyers tartományuk 35 és
+#: 41 volt. A korlát a FEKETEPONTOT tartja és a fehérpontot tolja feljebb
+#: (`lo`-hoz horgonyozva): a három lehetséges horgony közül ez illeszkedik,
+#: a középre igazítás 5,30-at, a fehérponthoz igazítás 8,4-et adna.
+#:
+#: Hatás a 12 referencia-páron: az átlagos eltérés **5,48 → 2,68**, és
+#: kizárólag a kiugró kép változik (46,0 → 12,4) — a többi tizenegy kép
+#: eltérése bájtra ugyanaz marad. A pontos érték széles optimum (52-nél
+#: 2,65, 64-nél 2,70), ezért a KÖZVETLENÜL MÉRT 58-at használjuk.
+_MIN_STRETCH_SPAN = 58.0
 
 
 def apply_channel_levels_stretch(
@@ -225,6 +281,9 @@ def apply_channel_levels_stretch(
     igazolva). **Azonosság-eset:** ha egy csatorna `lo`/`hi`-je már `0`/`255`
     (a csatorna kihasználja a teljes tartományt), azt a csatornát a Picasa
     NEM módosítja — itt sem változik semmi (bájtra azonos marad).
+
+    #539: a nagyon szűk hisztogramú csatornát a Picasa nem feszíti ki
+    teljesen — a bemeneti tartomány alsó korlátja `_MIN_STRETCH_SPAN`.
     """
     _validate_image(image)
     points = _channel_black_white_points(image, low_fraction, high_fraction)
@@ -233,8 +292,9 @@ def apply_channel_levels_stretch(
     for low, high in points:
         if low == 0 and high == 255:
             luts.append(ramp)
-        else:
-            luts.append((ramp - low) * 255.0 / (high - low))
+            continue
+        span = max(float(high - low), _MIN_STRETCH_SPAN)
+        luts.append((ramp - low) * 255.0 / span)
     return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 

@@ -5,6 +5,72 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.63] – 2026-08-11
+
+### Javítva
+- **Összeomlás-veszély a haladásjelzés cseréjekor (#519/#430).** A
+  nyilvántartás lecserélésekor a régi példány felszabadulhatott, miközben
+  egy korábban indított háttérszál még jelzett neki — ez Windowson
+  hozzáférési hibával (0xC0000005), Linuxon szegmentálási hibával omlik
+  össze. A régi példány mostantól életben marad, és leáll.
+
+## [0.6.62] – 2026-08-11
+
+### Javítva
+- **Figyelmeztetés csak ott, ahol tényleg nincs visszaút (#465 4. pont).**
+  A felirat bemásolása a szövegmezőbe eddig szó nélkül felülírta a beírt
+  szöveget — mostantól rákérdez (üres mezőnél nem, ott nincs mit
+  elveszíteni). A kártya kiürítésének figyelmeztetése az eredeti Picasa
+  szerint **nagybetűs**. A Kukába helyezés továbbra sem ijesztget: az
+  valóban visszafordítható.
+
+## [0.6.61] – 2026-08-11
+
+### Javítva
+- **Mappakezelő: az eredeti elrendezés és két hiányzó figyelmeztetés (#543).**
+  A dialógus mostantól pontosan fele-fele oszt (mint az eredeti), az
+  állapot-választó süllyesztett keretbe került „A jelenlegi mappára:"
+  felirattal, és van **Súgó** gomb is. A fában szöveges karakter helyett
+  **rajzolt jelvény** mutatja az állapotot, és külön jelvény azt, ha a mappa
+  az arcfelismerésből ki van hagyva. Az arcfelismerés-kapcsoló felirata
+  vált (be/ki), és „Eltávolítás a Picasából" állapotú mappán szürke.
+  Új figyelmeztetések: **teljes meghajtó figyelése** lassíthatja a
+  rendszert, illetve **figyelt mappa eltávolításakor** a program
+  figyelmeztet, hogy az oda később tett képek már nem kerülnek be maguktól.
+
+## [0.6.60] – 2026-08-11
+
+### Javítva
+- **A „Jó napom van" szélső eseteken is pontosabb (#539).** A nagyon szűk
+  hisztogramú (egyszínű, alacsony kontrasztú) képeket eddig túl agresszíven
+  feszítettük ki. A mérés szerint a Picasa ilyenkor korlátozza a nyújtást —
+  a 12 referencia-páron az eltérés **5,48 → 2,68**, és ebből a kiugró kép
+  hibája **46,0 → 12,4**. A többi tizenegy kép kimenete bájtra változatlan.
+
+## [0.6.59] – 2026-08-11
+
+### Javítva
+- **A HDR-ish végre azt csinálja, amit az eredeti (#545).** Az eltérés a
+  valódi Picasa-kimenettől **11,2 → 2,45** (kilenc export; az érintetlen kép
+  20,85 — vagyis a korábbi változat alig volt jobb a semminél). Két dolog
+  hiányzott: az elmosás mértéke a `Sugár` csúszka **fele** (ezt a négy
+  sugár-állás egymástól függetlenül ugyanígy adta), és a helyi kontraszt
+  mellett az erősséggel arányos **világosítás** is fut. Ugyanez a motor
+  hajtja a *Helyi kontraszt* effektet is, az is pontosabb lett.
+
+## [0.6.58] – 2026-08-11
+
+### Javítva
+- **Az automatikus szín (Auto Colour) modellje megvan (#541).** A 12 képes
+  mérőkészlet három dolgot mondott ki: az effekt tiszta csatornánkénti
+  **erősítés** (a feketepont nem mozdul), és az erősítést a kép **semleges**
+  (kevéssé telített) képpontjaiból számolt fehéregyensúly adja — a telített
+  részletek (virág, égbolt) nem számítanak bele. Az eltérés a valódi
+  Picasa-kimenettől **7,45 → 2,35**; az érintetlen kép 5,29, a mért
+  erősítésekkel elérhető elméleti alsó korlát 1,08. A korábbi változat tehát
+  rosszabb volt, mintha meg sem csináltuk volna az effektet — most a felére
+  csökkent a hiba.
+
 ## [0.6.57] – 2026-08-11
 
 ### Javítva — a háttérszálas szerkesztő-render kódátvizsgálásának találatai

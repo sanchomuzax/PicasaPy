@@ -238,13 +238,40 @@ def simple_color_matrix(
     return to_uint8(image_f)
 
 
+#: A `LocalContrast` Gauss-szigmája a `Radius` csúszka FELE (#545). A
+#: `referencia/hdrish/` négy Radius-állása egymástól függetlenül ezt adta
+#: (a 2560 széles képen mérve, a legkisebb vödrön-belüli szórásra
+#: illesztve):
+#:
+#:     Radius =  1,3 (min)  ->  szigma  1,6
+#:     Radius = 20   (alap) ->  szigma  9,6
+#:     Radius = 40   (mid)  ->  szigma 19,2
+#:     Radius = 80   (max)  ->  szigma 38,4
+#:
+#: Ugyanaz a 2-es szorzó, mint a Vignette/MuseumMatte/Orton elmosásainál
+#: (#317) — a Flash-örökségű sugár-paraméter és a Gauss-szigma között.
+LOCAL_CONTRAST_RADIUS_FACTOR = 0.5
+
+#: A művelet fényerő-tagja `Strength`-egységenként (#545). A mérés szerint
+#: a lokális kontraszt mellett egy ezzel arányos világosítás is fut: a
+#: `referencia/hdrish/` exportjain a legjobb közös érték 2,9 (az
+#: exportonként illesztett eltolás 1,3–2,5 · Strength között szór).
+LOCAL_CONTRAST_BRIGHTNESS_PER_STRENGTH = 2.9
+
+
 def local_contrast(image_f: np.ndarray, radius: float, strength: float) -> np.ndarray:
-    """`LocalContrastImageOperation`: `ki = be + (be − elmosott(be, r))·strength`
-    — a `HDR`/`LocalContrast` effektek referencia-implementációja
-    (`filterdesc-registry.md` 4.3).
+    """`LocalContrastImageOperation`: `ki = be + (be − elmosott)·strength +
+    2,9·strength` — a `HDR`/`LocalContrast` effektek implementációja.
+
+    #545: a `filterdesc.xml` a `Radius`-t adja meg, a MÉRÉS szerint viszont
+    a tényleges Gauss-szigma ennek a fele, és a művelethez egy
+    `Strength`-arányos világosítás is tartozik. A `referencia/hdrish/` hét
+    exportján a modell átlagos eltérése a valódi Picasa-kimenettől **2,58**
+    (a korábbi változaté 12,6, az érintetlen képé 25,3).
     """
-    blurred = gaussian_blur_f(image_f, radius)
-    return image_f + (image_f - blurred) * np.float32(strength)
+    blurred = gaussian_blur_f(image_f, max(radius * LOCAL_CONTRAST_RADIUS_FACTOR, 0.3))
+    brightened = np.float32(LOCAL_CONTRAST_BRIGHTNESS_PER_STRENGTH * strength)
+    return image_f + (image_f - blurred) * np.float32(strength) + brightened
 
 
 # --- Ragyogás-sugár korlátozása (Flash blurX/blurY limit, #504) ------------

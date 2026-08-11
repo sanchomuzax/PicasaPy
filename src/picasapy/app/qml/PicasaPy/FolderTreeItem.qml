@@ -72,11 +72,17 @@ Column {
                 color: root.isSelected ? "#ffffff" : Theme.ink
             }
 
-            Text {
+            // #543: az eredeti `foldermgr.tre` KÉP-ikonokat használ
+            // (`icon_once`/`icon_always`), és külön, átfedő jelvényt az
+            // arcfelismerés kikapcsolt állapotára (`nofr_on`/`nofr_off`) —
+            // a korábbi egyetlen szöveges karakter helyett.
+            FolderStateBadge {
                 objectName: "folderTreeGlyph:" + root.path
-                text: root.manager ? root.manager.stateGlyph(root.path) : ""
-                font.pixelSize: Theme.fontSize - 1
-                color: root.isSelected ? "#ffffff" : Theme.selectionBlue
+                anchors.verticalCenter: parent.verticalCenter
+                folderState: root.manager ? root.manager.stateFor(root.path) : "none"
+                faceExcluded: root.manager
+                              ? root.manager.facesExcludedFor(root.path) : false
+                tint: root.isSelected ? "#ffffff" : Theme.selectionBlue
             }
         }
 

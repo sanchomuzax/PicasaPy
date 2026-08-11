@@ -219,9 +219,66 @@ class TestFolderStateSelection:
 
         _invoke(dialog, "setState", str(lib), "none")
         qt_app.processEvents()
+        # #543: figyelt mappa eltávolítása MEGERŐSÍTÉST kér
+        # (IDS_HOTFOLDER_CONFIRM) — a mappa addig figyelt marad
+        assert str(lib) in controller.watchedFolders
+        confirm = _child(window, "folderManagerRemoveWatchedConfirmDialog")
+        assert confirm is not None and confirm.property("visible") is True
+
+        _invoke(_child(window, "folderManagerRemoveWatchedConfirmYesButton"), "clicked")
+        qt_app.processEvents()
 
         assert str(lib) not in controller.watchedFolders
         assert dialog.property("selectedState") == "none"
+
+
+class TestFolderManagerWarnings:
+    """#543: a `foldermgr` szövegkészletének két hiányzó figyelmeztetése."""
+
+    def test_teljes_meghajto_figyelese_figyelmeztet(self, qml_app, qt_app):
+        window, controller, _lib, _engine = qml_app
+        dialog = _child(window, "folderManagerDialog")
+        before = list(controller.watchedFolders)
+
+        _invoke(dialog, "setState", "/", "always")
+        qt_app.processEvents()
+
+        warning = _child(window, "folderManagerDriveWarningDialog")
+        assert warning is not None and warning.property("visible") is True
+        assert list(controller.watchedFolders) == before, (
+            "a meghajtó a megerősítés ELŐTT került figyelésre"
+        )
+        # a megerősítést SZÁNDÉKOSAN nem kattintjuk végig: az a teljes
+        # fájlrendszer beolvasását indítaná el a tesztfutásban (épp az a
+        # lassulás, ami ellen a figyelmeztetés szól). Amit itt bizonyítani
+        # kell, az a figyelmeztetés megjelenése és az, hogy előtte semmi
+        # nem történik — a megerősítés utáni ág ugyanaz az `applyState`,
+        # amit a többi teszt már lefed.
+
+    def test_nem_figyelt_mappa_eltavolitasa_nem_kerdez(self, qml_app, qt_app, tmp_path):
+        """Csak a TÉNYLEG figyelt mappa eltávolítása kérdez rá — egy sosem
+        figyelt mappánál a kérdés fölösleges zaj lenne."""
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "folderManagerDialog")
+        other = tmp_path / "sosem-figyelt"
+        other.mkdir()
+
+        _invoke(dialog, "setState", str(other), "none")
+        qt_app.processEvents()
+
+        confirm = _child(window, "folderManagerRemoveWatchedConfirmDialog")
+        assert confirm is None or confirm.property("visible") is False
+
+    def test_a_sugo_gomb_megnyitja_a_sugo_ablakot(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        # a súgó-ablak modális a Mappakezelőre — az csak nyitott
+        # szülőablak mellett jelenhet meg
+        _invoke(_child(window, "folderManagerDialog"), "open")
+        qt_app.processEvents()
+        _invoke(_child(window, "folderManagerHelpButton"), "clicked")
+        qt_app.processEvents()
+        help_window = _child(window, "folderManagerHelpWindow")
+        assert help_window is not None and help_window.property("visible") is True
 
     def test_watched_folders_summary_list_still_shown(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app

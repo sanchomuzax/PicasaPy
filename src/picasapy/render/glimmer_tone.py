@@ -91,8 +91,13 @@ def apply_matte(
 
 
 def apply_local_contrast(image, radius: float = 15.0, strength: float = 1.5):
-    """`LocalContrast=1,Radius,Contrast` — `ki = be + (be−elmosott)·Strength`,
-    Radius `[1,3..40]` (alap 15), Strength `[1..3]` (alap 1,5). Nincs Fade.
+    """`LocalContrast=1,Radius,Contrast` — a `HDR`-rel AZONOS motor, Fade
+    nélkül. Radius `[1,3..40]` (alap 15), Strength `[1..3]` (alap 1,5).
+
+    #545: a Gauss-szigma a `Radius` FELE, és a művelethez `Strength`-arányos
+    világosítás is tartozik (ld. `glimmer_ops.local_contrast`). A mérés a
+    `HDR` exportjain történt; a `LocalContrast`-hoz nincs külön
+    referencia-készlet, de ugyanaz a motor hajtja.
     """
     validate_image(image)
     return to_uint8(local_contrast(to_float(image), radius, strength))
@@ -101,6 +106,13 @@ def apply_local_contrast(image, radius: float = 15.0, strength: float = 1.5):
 def apply_hdr(image, radius: float = 20.0, strength: float = 3.0, fade: float = 0.0):
     """`HDR=1,Radius,Contrast,Fade` — ugyanaz, mint `LocalContrast`, majd
     Fade-keverés. Radius `[1,3..80]` (alap 20), Strength `[1..7]` (alap 3).
+
+    #545: a `referencia/hdrish/` kilenc exportján mérve a modell átlagos
+    eltérése a valódi Picasa-kimenettől **2,45** (az érintetlen képé 20,85;
+    a korábbi változaté 11,2 — vagyis az alig volt jobb a semminél). A
+    mérés két dolgot javított: a Gauss-szigma a `Radius` FELE (a négy
+    Radius-állás egymástól függetlenül ugyanezt adta), és a lokális
+    kontraszt mellett `Strength`-arányos világosítás is fut.
     """
     validate_image(image)
     image_f = to_float(image)

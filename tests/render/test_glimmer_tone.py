@@ -225,3 +225,40 @@ class TestQuantizePalette:
 
     def test_fade_100_valtozatlan(self, image):
         np.testing.assert_array_equal(t.apply_quantizepalette(image, fade=100.0), image)
+
+
+class TestHdrMeasuredModel:
+    """#545: a HDR/LocalContrast mért modellje (`referencia/hdrish/`)."""
+
+    def test_a_szigma_a_radius_fele(self):
+        """A négy Radius-állás egymástól függetlenül a felét adta.
+
+        Közvetlenül nem tudjuk kiolvasni a szigmát, ezért az
+        EGYENÉRTÉKŰSÉGET mérjük: a `Radius=20`-as HDR ugyanazt adja, mint a
+        `local_contrast` primitív σ=10-zel — ha valaki visszaállítaná a
+        `Radius`-t közvetlen szigmának, ez a teszt bukik.
+        """
+        from picasapy.render import glimmer_ops as ops
+
+        photo = _real_photo_rgb(200, 300, seed=3)
+        through_hdr = t.apply_hdr(photo, radius=20.0, strength=3.0, fade=0.0)
+
+        image_f = ops.to_float(photo)
+        blurred = ops.gaussian_blur_f(image_f, 10.0)
+        expected = ops.to_uint8(image_f + (image_f - blurred) * 3.0 + 2.9 * 3.0)
+
+        np.testing.assert_array_equal(through_hdr, expected)
+
+    def test_a_vilagositas_a_strengthtel_aranyos(self):
+        """A lokális kontraszt mellett `Strength`-arányos világosítás is fut
+        — sík (részletmentes) képen csak ez látszik, ezért ott mérhető."""
+        flat = np.full((40, 50, 3), 100, dtype=np.uint8)
+        for strength, expected in ((1.0, 100 + 2.9), (3.0, 100 + 8.7), (7.0, 100 + 20.3)):
+            result = t.apply_hdr(flat, radius=20.0, strength=strength, fade=0.0)
+            assert int(result[20, 25, 0]) == round(expected)
+
+    def test_fade_100_valtozatlan_marad(self):
+        photo = _real_photo_rgb(60, 80, seed=9)
+        np.testing.assert_array_equal(
+            t.apply_hdr(photo, radius=20.0, strength=3.0, fade=100.0), photo
+        )
