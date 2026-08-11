@@ -39,6 +39,7 @@ from picasapy.render.ops import (
     apply_enhance,
     apply_redeye,
     apply_tilt,
+    count_redeye_spots,
 )
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
 from picasapy.render.tinting import (
@@ -106,6 +107,7 @@ __all__ = [
     "build_finetune2_lut",
     "build_point_pipeline_uniforms",
     "chain_flags",
+    "count_redeye_spots",
     "clamp_slider_value",
     "get_filter_spec",
     "parse_neutral_argb",

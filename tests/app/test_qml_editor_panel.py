@@ -740,6 +740,99 @@ class TestRetouchTool:
         assert edited == [77]
 
 
+class TestRedeyeTool:
+    """#445: a Vörösszem-eszköz Vágás-mintájú mód-panelja — automatika +
+    kézi téglalapok, „Preview changes without square outlines" nézet-
+    kapcsolóval."""
+
+    def _make_panel(self, qml_engine):
+        return _load(
+            qml_engine,
+            'import QtQuick\nimport PicasaPy 1.0\nEditorPanel { objectName: "panel" }\n',
+        )
+
+    def test_redeye_click_shows_redeye_column_and_hides_tools(
+        self, qml_engine, qt_app
+    ):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        QMetaObject.invokeMethod(
+            panel, "handleToolClick", Qt.ConnectionType.DirectConnection,
+            *_string_arg("redeye"),
+        )
+        qt_app.processEvents()
+        assert panel.property("redeyeActive") is True
+        assert panel.findChild(QObject, "redeyeColumn").property("visible") is True
+        assert panel.findChild(QObject, "toolsColumn").property("visible") is False
+
+    def test_apply_is_enabled_without_manual_regions(self, qml_engine, qt_app):
+        """Az Alkalmaz kézi régió NÉLKÜL is érvényes: az automatika
+        önmagában is elmenthető (`redeye=1;`)."""
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("redeyeActive", True)
+        qt_app.processEvents()
+        assert panel.findChild(QObject, "redeyeApplyButton").property("enabled") is True
+
+    def test_reset_disabled_without_manual_regions(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("redeyeActive", True)
+        qt_app.processEvents()
+        reset_button = panel.findChild(QObject, "redeyeResetButton")
+        assert reset_button.property("enabled") is False
+        panel.setProperty("redeyeRegionCount", 2)
+        qt_app.processEvents()
+        assert reset_button.property("enabled") is True
+
+    def test_auto_result_label_hidden_before_first_run(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("redeyeActive", True)
+        qt_app.processEvents()
+        label = panel.findChild(QObject, "redeyeAutoResultLabel")
+        assert label.property("visible") is False
+        panel.setProperty("redeyeFoundCount", 2)
+        qt_app.processEvents()
+        assert label.property("visible") is True
+
+    def test_buttons_emit_signals(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("redeyeActive", True)
+        panel.setProperty("redeyeRegionCount", 1)
+        panel.setProperty("canUndoRedeyeRegion", True)
+        qt_app.processEvents()
+        seen = []
+        panel.redeyeAutoRequested.connect(lambda: seen.append("auto"))
+        panel.redeyeUndoRegionRequested.connect(lambda: seen.append("undo"))
+        panel.redeyeResetRequested.connect(lambda: seen.append("reset"))
+        panel.redeyeApplyRequested.connect(lambda: seen.append("apply"))
+        panel.redeyeCancelRequested.connect(lambda: seen.append("cancel"))
+        for name in (
+            "redeyeAutoButton", "redeyeUndoRegionButton", "redeyeResetButton",
+            "redeyeApplyButton", "redeyeCancelButton",
+        ):
+            QMetaObject.invokeMethod(
+                panel.findChild(QObject, name),
+                "buttonClicked", Qt.ConnectionType.DirectConnection,
+            )
+        qt_app.processEvents()
+        assert seen == ["auto", "undo", "reset", "apply", "cancel"]
+
+    def test_hide_outlines_checkbox_toggles_panel_property(self, qml_engine, qt_app):
+        panel = self._make_panel(qml_engine)
+        qt_app.processEvents()
+        panel.setProperty("redeyeActive", True)
+        qt_app.processEvents()
+        check = panel.findChild(QObject, "redeyeHideOutlinesCheck")
+        assert panel.property("redeyeHideOutlines") is False
+        check.setProperty("checked", True)
+        QMetaObject.invokeMethod(check, "toggled", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+        assert panel.property("redeyeHideOutlines") is True
+
+
 class TestTextTool:
     """#148: a Szöveg-eszköz Vágás-mintájú mód-panelja."""
 

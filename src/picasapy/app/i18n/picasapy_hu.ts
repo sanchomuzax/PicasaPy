@@ -4663,6 +4663,64 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     </message>
 </context>
 <context>
+    <name>EditorRedeyePanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>Apply</source>
+        <translation>Alkalmaz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>Auto</source>
+        <translation>Automatikus</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>No red eye was found automatically.</source>
+        <translation>Az automatika nem talált vörös szemet.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>Picasa has found and corrected red eye(s).</source>
+        <translation>A vörösszem-hatás megtalálva és javítva.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>Preview changes without square outlines</source>
+        <translation>Előnézet a kijelölő négyzetek nélkül</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>Redeye</source>
+        <translation>Vörösszem</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>Regions selected: %1</source>
+        <translation>Kijelölt területek: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>Reset</source>
+        <translation>Alaphelyzet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>Undo</source>
+        <translation>Visszavonás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>
+        <source>You can also draw a square around any red eye that Picasa may have missed. Click, hold, and drag the mouse around each eye separately to select it. A selection box appears over the area.</source>
+        <translation>A kihagyott vörös szemek köré Ön is húzhat négyzetet. Kattintson, tartsa nyomva, és húzza az egeret külön-külön minden szem köré a kijelöléshez. A terület fölött megjelenik a kijelölő négyzet.</translation>
+    </message>
+</context>
+<context>
     <name>EditorRetouchPanel</name>
     <message>
         <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>

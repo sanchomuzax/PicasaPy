@@ -43,7 +43,8 @@ _log = logging.getLogger(__name__)
 # ütközés/lemezhiba is kezelt hiba, nem néma adatvesztés/kivétel.
 _WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
 
-# redeye: teljes képes kapcsoló a régió-alapú eszközig (#116)
+# redeye: a réteg LEVÉTELE (#116) — a felvitel/kézi régiók a #445-ös
+# Vörösszem eszközön át mennek (enterRedeyeTool/applyRedeye).
 _TOGGLE_NAMES = ("redeye",)
 # egygombos javítások: append-only rétegezés, levétel csak Visszavonással
 _ONE_SHOT_NAMES = ("enhance", "autolight", "autocolor")
@@ -292,6 +293,16 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._retouch_target: tuple[float, float] | None = None
         self._retouch_patch_undo: list[tuple[RetouchPatch, ...]] = []
         self._retouch_patch_redo: list[tuple[RetouchPatch, ...]] = []
+        # vörösszem (#445): a Retusáláséval azonos szerkezetű, MÉG NEM mentett
+        # puffer — de itt az eszköz megnyitása önmagában is hatásos, mert az
+        # AUTOMATIKA azonnal lefut az egész képen (a súgó szerint: „Picasa
+        # automatically detects and fixes red eye"), a puffer pedig csak a
+        # KÉZZEL pótolt („any red eye that Picasa may have missed") szemeket
+        # tartalmazza.
+        self._redeye_regions: tuple[Rect64, ...] = ()
+        self._redeye_region_undo: list[tuple[Rect64, ...]] = []
+        # az automatika utolsó futásának találat-száma (-1: még nem futott)
+        self._redeye_found = -1
         # kör alakú ecset mérete (#445) — munkamenet-szintű állapot (a
         # szöveg-stílushoz hasonlóan NEM kerül a `.picasa.ini`-be), minden
         # szerkesztés-nyitáskor alapértékre áll.
@@ -638,6 +649,9 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._retouch_target = None
         self._retouch_patch_undo = []
         self._retouch_patch_redo = []
+        self._redeye_regions = ()
+        self._redeye_region_undo = []
+        self._redeye_found = -1
         self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = self._read_text_overlay()
         self._text_active = (
@@ -678,6 +692,9 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._retouch_target = None
         self._retouch_patch_undo = []
         self._retouch_patch_redo = []
+        self._redeye_regions = ()
+        self._redeye_region_undo = []
+        self._redeye_found = -1
         self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = None
         self._text_active = False
@@ -942,6 +959,146 @@ class EditController(QObject, BackgroundWorkerMixin):
 
     def _session_with_retouch_pending(self) -> EditSession:
         return self._session.set_retouch_patches(self._retouch_patches)
+
+    # -- vörösszem (#445): a súgószöveg szerint az eszköz AUTOMATIKUS ÉS
+    # KÉZI — a megnyitáskor az automatika azonnal lefut az egész képen, a
+    # felhasználó pedig utólag téglalapot húz a kihagyott szemek köré
+    # („You can also draw a square around any red eye that Picasa may have
+    # missed"). A Vágás/Retusálás mintáját követő enter/exit + Alkalmaz/
+    # Mégse eszköz; a puffer csak az élő előnézetet érinti az Alkalmazásig.
+
+    @Property(int, notify=revisionChanged)
+    def redeyeRegionCount(self) -> int:
+        """A kézzel megjelölt, MÉG NEM alkalmazott vörösszem-régiók száma."""
+        return len(self._redeye_regions)
+
+    @Property(bool, notify=revisionChanged)
+    def canUndoRedeyeRegion(self) -> bool:
+        """Van-e régiónkénti visszavonható lépés a vörösszem-pufferben (NEM
+        a globális Visszavonás-verem, ld. `undoRedeyeRegion`)."""
+        return bool(self._redeye_region_undo)
+
+    @Property("QVariant", notify=revisionChanged)
+    def redeyeRegions(self):
+        """A puffer régiói relatív [0..1] `{x, y, w, h}` szótárakként — a QML
+        overlay ebből rajzolja a kijelölő-négyzeteket."""
+        return [
+            {
+                "x": rect.left,
+                "y": rect.top,
+                "w": rect.right - rect.left,
+                "h": rect.bottom - rect.top,
+            }
+            for rect in self._redeye_regions
+        ]
+
+    @Property(int, notify=revisionChanged)
+    def redeyeFoundCount(self) -> int:
+        """Az automatika utolsó futásának találat-száma, vagy -1, ha még nem
+        futott. A panel ebből írja ki a Picasa sikerüzenetét („Picasa has
+        found and corrected red eye(s)"), illetve a talált-nulla esetet."""
+        return self._redeye_found
+
+    @Slot()
+    def runRedeyeAuto(self) -> None:
+        """„Auto": az automatikus felismerés (újra)futtatása.
+
+        A javítást magát a render-lánc végzi (a `redeye` réteg mindig az
+        egész képen dolgozik) — ez a hívás a VISSZAJELZÉSHEZ számolja meg a
+        talált foltokat, a `redeye` réteg NÉLKÜLI láncon, és frissíti az
+        előnézetet. Újrafuttatható (a jegy szerint az „Auto" gomb az)."""
+        self._require_active()
+        self._redeye_found = self._provider.redeye_spot_count(
+            self._photo_id, self._image_path, self._session.clear_redeye().ops
+        )
+        self._register_preview(self._session_with_redeye_pending())
+        self._bump_revision()
+
+    @Slot()
+    def enterRedeyeTool(self) -> None:
+        """A Vörösszem eszköz megnyitása: a puffer a MENTETT kézi régiókkal
+        indul, és az előnézeten AZONNAL lefut az automatikus vörösszem-
+        eltávolítás is (akkor is, ha eddig nem volt `redeye` a láncban) —
+        nem ír inibe, nem tol undo-lépést."""
+        self._require_active()
+        self._redeye_regions = self._session.redeye_regions()
+        self._redeye_region_undo = []
+        self.runRedeyeAuto()
+
+    @Slot()
+    def exitRedeyeTool(self) -> None:
+        """A Vörösszem eszköz bezárása (Mégse): a puffer eldobása, visszaáll
+        a ténylegesen mentett előnézet — a mentett állapot érintetlen."""
+        self._require_active()
+        self._redeye_regions = ()
+        self._redeye_region_undo = []
+        self._redeye_found = -1
+        self._register_preview()
+        self._bump_revision()
+
+    @Slot(float, float, float, float)
+    def addRedeyeRegion(self, x: float, y: float, w: float, h: float) -> None:
+        """Egy kézzel húzott téglalap hozzáadása a pufferhez (relatív [0..1]).
+
+        A UI-ról érkező határhibákat [0..1]-re clampeljük; a nulla méretű
+        (puszta kattintás) kijelölés néma no-op — nem hiba, a felhasználó
+        egyszerűen nem húzott téglalapot."""
+        self._require_active()
+        left = _clamp01(min(x, x + w))
+        top = _clamp01(min(y, y + h))
+        right = _clamp01(max(x, x + w))
+        bottom = _clamp01(max(y, y + h))
+        if right <= left or bottom <= top:
+            return
+        self._redeye_region_undo.append(self._redeye_regions)
+        self._redeye_regions = (
+            *self._redeye_regions,
+            Rect64(left=left, top=top, right=right, bottom=bottom),
+        )
+        self._register_preview(self._session_with_redeye_pending())
+        self._bump_revision()
+
+    @Slot()
+    def undoRedeyeRegion(self) -> None:
+        """Az utoljára húzott téglalap visszavonása a pufferben."""
+        if not self._redeye_region_undo:
+            return
+        self._require_active()
+        self._redeye_regions = self._redeye_region_undo.pop()
+        self._register_preview(self._session_with_redeye_pending())
+        self._bump_revision()
+
+    @Slot()
+    def resetRedeyeRegions(self) -> None:
+        """A puffer minden kézi régiójának törlése — régiónkénti undo-lépéssel
+        (`undoRedeyeRegion` visszaállíthatja). Az automatika ettől még fut az
+        előnézeten. Üres pufferen néma no-op."""
+        if not self._redeye_regions:
+            return
+        self._require_active()
+        self._redeye_region_undo.append(self._redeye_regions)
+        self._redeye_regions = ()
+        self._register_preview(self._session_with_redeye_pending())
+        self._bump_revision()
+
+    @Slot()
+    def applyRedeye(self) -> None:
+        """Alkalmaz: a vörösszem-réteg mentése a láncba (undo + ini-írás).
+
+        Kézi régió nélkül is érvényes művelet — ilyenkor a bejegyzés bájtra a
+        valódi Picasa `redeye=1` alakja, azaz csak az automatika."""
+        self._require_active()
+        self._push_undo("redeye")
+        self._session = self._session.set_redeye_regions(self._redeye_regions)
+        self._redeye_regions = ()
+        self._redeye_region_undo = []
+        self._redeye_found = -1
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+
+    def _session_with_redeye_pending(self) -> EditSession:
+        return self._session.set_redeye_regions(self._redeye_regions)
 
     # -- szöveg-overlay (#148): a `text=`/`textactive=` külön ini-kulcs (NEM
     # a filters= lánc része), ezért a piszkozat/pozíció ide, az

@@ -15,6 +15,7 @@ from picasapy.render.ops import (
     apply_crop,
     apply_enhance,
     apply_redeye,
+    count_redeye_spots,
     apply_tilt,
 )
 from tests.support.realistic_photo import make_realistic_photo
@@ -339,6 +340,31 @@ class TestApplyRedeye:
         original = image.copy()
         apply_redeye(image)
         np.testing.assert_array_equal(image, original)
+
+
+class TestCountRedeyeSpots:
+    """#445: a felhasználói visszajelzéshez („Picasa has found and corrected
+    red eye(s)") az automatika KÜLÖNÁLLÓ foltjait számoljuk meg."""
+
+    def test_ket_kulon_pupilla_ket_folt(self) -> None:
+        image = np.full((60, 60, 3), 120, dtype=np.uint8)
+        image[20:30, 10:20] = (220, 40, 40)
+        image[20:30, 40:50] = (220, 40, 40)
+        assert count_redeye_spots(image) == 2
+
+    def test_tiszta_kepen_nulla(self) -> None:
+        image = np.full((60, 60, 3), 120, dtype=np.uint8)
+        assert count_redeye_spots(image) == 0
+
+    def test_bortonust_nem_szamol(self) -> None:
+        image = np.full((60, 60, 3), (180, 140, 120), dtype=np.uint8)
+        assert count_redeye_spots(image) == 0
+
+    def test_nehany_pixeles_szorvany_kiszurve(self) -> None:
+        """A tömörítési eredetű, néhány pixeles vörös szórvány nem „szem"."""
+        image = np.full((600, 600, 3), 120, dtype=np.uint8)
+        image[10:12, 10:12] = (220, 40, 40)
+        assert count_redeye_spots(image) == 0
 
 
 class TestMinStretchSpan:

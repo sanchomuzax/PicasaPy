@@ -54,6 +54,20 @@ Rectangle {
     signal retouchUndoPatchRequested()
     signal retouchRedoPatchRequested()
     signal retouchResetRequested()
+    // #445: Vörösszem — a hívó (PhotoViewer) tölti a controllerből a kézi
+    // régiók számát, a régiónkénti Visszavonás elérhetőségét és az
+    // automatika találat-számát (-1: még nem futott). A
+    // `redeyeHideOutlines` tisztán NÉZET-állapot: csak a kijelölő-
+    // négyzetek rajzát kapcsolja ki, a javításon nem változtat.
+    property int redeyeRegionCount: 0
+    property bool canUndoRedeyeRegion: false
+    property int redeyeFoundCount: -1
+    property bool redeyeHideOutlines: false
+    signal redeyeAutoRequested()
+    signal redeyeUndoRegionRequested()
+    signal redeyeResetRequested()
+    signal redeyeApplyRequested()
+    signal redeyeCancelRequested()
     // a szövegmező kezdő tartalma (eszköz-nyitáskor a hívó tölti a
     // controller mentett/piszkozat tartalmával); onTextDraftChanged jelzi
     // vissza a felhasználói gépelést
@@ -77,7 +91,7 @@ Rectangle {
     // közös őr: crop/retouch/text bármelyike a fülsáv+rács helyett a saját
     // teljes-panelnyi tartalmát mutatja (a cropColumn mintáját folytatva)
     readonly property bool modeToolActive: panel.cropActive || panel.retouchActive
-                                            || panel.textActive
+                                            || panel.textActive || panel.redeyeActive
     signal retouchApplyRequested()
     signal retouchCancelRequested()
     signal textDraftEdited(string content)
@@ -1268,6 +1282,17 @@ Rectangle {
     // végzi a képen (ez a fájl nem ismeri a kép geometriáját), a puffer
     // méretét (retouchRegionCount) és az Alkalmaz/Mégse gombokat mutatja.
     EditorRetouchPanel {
+        panel: panel
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+    }
+
+    // ---------------- "redeye" mód: Vörösszem (#445) ----------------
+    // Az automatika a panel megnyitásakor lefut; a kézzel húzott
+    // téglalapokat — a Retusálás mintájára — a hívó (PhotoViewer) veszi fel
+    // a képen, ez a fájl a puffer-állapotot és a gombokat mutatja.
+    EditorRedeyePanel {
         panel: panel
         anchors.top: parent.top
         anchors.left: parent.left
