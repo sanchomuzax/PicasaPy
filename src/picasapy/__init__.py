@@ -1,3 +1,3 @@
 """PicasaPy — modern, nyílt Picasa-utód."""
 
-__version__ = "0.6.74"
+__version__ = "0.6.75"

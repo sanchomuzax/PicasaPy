@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.75] – 2026-08-11
+
+### Belső
+- **A hisztogram-vágópont számítása egyetlen helyre került (#549).** Az
+  Automatikus kontraszt (közös) és a „Jó napom van"/csatornánkénti út eddig
+  sorról sorra ugyanazt a lépéssort tartalmazta; a #539-es küszöb-finomítás
+  így két helyen kényszerült volna módosításra. A viselkedés bájtra
+  változatlan. (A jegy 2. és 3. pontja tárgytalanná vált: az ott leírt halott
+  ág és float-egyenlőség az Auto Colour #541-es újraírásával eltűnt.)
+
 ## [0.6.74] – 2026-08-11
 
 ### Javítva

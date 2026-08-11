@@ -9,14 +9,17 @@ import pytest
 
 from picasapy.ini.rect64 import Rect64
 from picasapy.render.ops import (
+    _channel_black_white_points,
+    _common_black_white_point,
+    _histogram_black_white_point,
     apply_autocolor,
     apply_autolight,
     apply_channel_levels_stretch,
     apply_crop,
     apply_enhance,
     apply_redeye,
-    count_redeye_spots,
     apply_tilt,
+    count_redeye_spots,
 )
 from tests.support.realistic_photo import make_realistic_photo
 
@@ -340,6 +343,46 @@ class TestApplyRedeye:
         original = image.copy()
         apply_redeye(image)
         np.testing.assert_array_equal(image, original)
+
+
+class TestHistogramBlackWhitePoint:
+    """#549: a vágópont-számítás EGY helyen — a közös és a csatornánkénti
+    út ugyanazt a segédet hívja, és a `low < high` invariáns garantált."""
+
+    def test_nulla_kuszob_a_teljes_tartomanyt_adja(self) -> None:
+        """Nulla küszöbnél a vágópont a tényleges szélső érték — egyenletes
+        rámpán tehát a teljes 0..255."""
+        image = np.arange(256, dtype=np.uint8).reshape(16, 16)
+        assert _histogram_black_white_point(image, image.size, 0.0, 0.0) == (0, 255)
+
+    def test_a_kuszob_a_szelso_szinteket_levagja(self) -> None:
+        """Rámpán szintenként EGY képpont van, tehát a 0,5%-os alsó küszöb
+        (1,28 képpont) az első szintet már levágja."""
+        image = np.arange(256, dtype=np.uint8).reshape(16, 16)
+        assert _histogram_black_white_point(image, image.size, 0.005, 0.002) == (1, 255)
+
+    def test_egyszinu_kepen_is_low_kisebb_mint_high(self) -> None:
+        """Degenerált eset: egyetlen szint — a küszöbök nem hagynának
+        tartományt, tehát az azonosság-eset jön (nem fordított pár)."""
+        image = np.full((32, 32), 120, dtype=np.uint8)
+        low, high = _histogram_black_white_point(image, image.size, 0.005, 0.002)
+        assert (low, high) == (0, 255)
+
+    def test_szuk_hisztogram_vagopontjai(self) -> None:
+        image = np.full((100, 100), 100, dtype=np.uint8)
+        image[:50] = 150
+        low, high = _histogram_black_white_point(image, image.size, 0.005, 0.002)
+        assert low < high
+        assert (low, high) == (100, 150)
+
+    def test_a_ket_ut_ugyanazt_adja_szurke_kepen(self) -> None:
+        """Szürkeárnyalatos képen a közös és a csatornánkénti vágópont
+        egybeesik — ez mutatja, hogy tényleg egy szabály fut."""
+        gray = np.random.default_rng(7).integers(40, 200, size=(40, 40), dtype=np.uint8)
+        image = np.stack([gray] * 3, axis=-1)
+        kozos = _common_black_white_point(image, 0.005, 0.002)
+        csatornankent = _channel_black_white_points(image, 0.005, 0.002)
+        assert csatornankent == (kozos, kozos, kozos)
 
 
 class TestCountRedeyeSpots:
