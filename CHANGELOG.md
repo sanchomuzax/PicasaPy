@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.65] – 2026-08-11
+
+### Javítva
+- **Fájlméret az eredeti Picasa magyar formátumai szerint (#526).** Eddig 1 MB
+  alatt mindig KB-ban írtuk ki — egy 300 bájtos fájl így „0 KB" volt. Most a
+  Picasa saját fokozatait követjük: **bájt és KB egész számra, MB-tól egy
+  tizedes**, és megvan a GB/TB fokozat is.
+
+### Megjegyzés
+- A Picasa **teljes betűkészlete** (méret- és súlylétra) bekerült a
+  stíluskonstansok közé (#526). Maguk a betűtípusok kereskedelmiek, nem
+  szállíthatók; a szabad helyettesítő kiválasztása méréssel tartozik eldőlni,
+  ezért egyelőre a rendszer alapértelmezése marad.
+- A **dátum/idő magyar alakja tudatosan eltér** az eredetitől: a Picasa magyar
+  szövegkészletében a dátumformátumok lefordítatlanul maradtak (angol
+  sorrend, 12 órás idő) — ez fordítási hiányosság, nem szándékos alak.
+
 ## [0.6.64] – 2026-08-11
 
 ### Hozzáadva

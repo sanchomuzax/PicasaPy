@@ -100,7 +100,37 @@ QtObject {
     // mert a felület, amin ül, maga sem az.
     readonly property color iconInk: dark ? "#2b2b2b" : "#2b2b2b"
 
+    // --- Tipográfia (#526) -------------------------------------------
+    //
+    // A Picasa `runtime/` mappájában 12 előre renderelt betűtípus-
+    // gyorsítótár (`.ytf`) van; a fájlnevek és a fejléceik együtt megadják
+    // a felület TELJES betűkészletét:
+    //
+    //     Praxis Semi Bold / Heavy .......  11 12 13 14 16 18   (400, 700)
+    //     HelveticaNeue MediumCond .......  14 28               (400)
+    //     HelveticaNeue Condensed ........  20                  (400)
+    //
+    // A méret- és súlylétra ÁTVEHETŐ (ettől lesznek a felirat-magasságok és
+    // a sorközök felismerhetően „picasásak"), a betűtípusok viszont
+    // kereskedelmiek (Linotype), nem szállíthatók.
+    readonly property var fontSizeLadder: [11, 12, 13, 14, 16, 18]
+    readonly property int fontWeightNormal: 400
+    readonly property int fontWeightBold: 700
+    //: a nagy, KESKENY feliratokhoz (fejlécek/címsorok) — a Picasában
+    //: HelveticaNeue Condensed 20 és MediumCond 28
+    readonly property int headlineSize: 20
+    readonly property int headlineLargeSize: 28
+
     readonly property int fontSize: 12              // felület: 11–13 px
     readonly property int folderTitleSize: 16         // csoport-fejléc / 600
     readonly property string monoFamily: "IBM Plex Mono, monospace"
+
+    // #526 2. pont: a szabad HELYETTESÍTŐ betűtípus kiválasztása MÉRÉSSEL
+    // tartozik eldőlni (felirat-szélességek összevetése), és ahhoz a `.ytf`
+    // glyph-táblája kellene — az még nincs megfejtve. Amíg nincs mérés,
+    // SZÁNDÉKOSAN a rendszer alapértelmezett sans-serifjét használjuk (üres
+    // családnév = a Qt alapértelmezése): egy találomra választott család
+    // rosszabb, mint a semleges alap, és nehezebb is később cserélni.
+    readonly property string uiFamily: ""
+    readonly property string condensedFamily: ""
 }
