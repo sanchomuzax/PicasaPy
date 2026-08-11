@@ -19,7 +19,15 @@ SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
        p.star, p.hidden, COALESCE(p.caption_file, p.caption_ini) AS caption,
        COALESCE(p.keywords_file, p.keywords_ini) AS keywords,
        p.rotate_steps, p.filters, p.taken_at, p.orientation, p.width, p.height,
-       p.geotag_ini, p.exif_lat, p.exif_lon
+       p.geotag_ini, p.exif_lat, p.exif_lon,
+       -- #463: a bélyegkép arc-jelvényeihez — hány felismert arc van a
+       -- képen, és hány vár még névadásra. A `face` tábla származtatott
+       -- adat (index/faces_detected.py); LEFT JOIN, hogy az arc-szkennelés
+       -- előtti (üres táblás) állapot is működjön.
+       (SELECT COUNT(*) FROM face WHERE face.photo_id = p.id) AS face_count,
+       (SELECT COUNT(*) FROM face
+         WHERE face.photo_id = p.id AND face.state = 'unnamed'
+       ) AS unnamed_face_count
 FROM photos p JOIN folders f ON f.id = p.folder_id
 """
 
@@ -49,6 +57,11 @@ class PhotoRecord:
     geotag: str | None = None
     exif_lat: float | None = None
     exif_lon: float | None = None
+    # #463: arc-jelvények a bélyegképen — a saját (YuNet) felismerés
+    # eredménye (`face` tábla). A `face_count` az összes találat, az
+    # `unnamed_face_count` a még névre váró (jóváhagyandó) arcoké.
+    face_count: int = 0
+    unnamed_face_count: int = 0
 
     @property
     def location(self):
@@ -278,6 +291,19 @@ def _album_suggestions(
     )
 
 
+def _optional_count(row: sqlite3.Row, key: str) -> int:
+    """Számláló-oszlop, ha a lekérdezés adta — különben 0.
+
+    Nem minden hívó a `_SELECT`-et használja (pl. a duplikátum-kereső saját,
+    szűkebb oszloplistával dolgozik), ezért a hiányzó oszlop nem hiba.
+    """
+    try:
+        value = row[key]
+    except (IndexError, KeyError):
+        return 0
+    return int(value or 0)
+
+
 def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
     return tuple(
         PhotoRecord(
@@ -300,6 +326,8 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
             geotag=row["geotag_ini"],
             exif_lat=row["exif_lat"],
             exif_lon=row["exif_lon"],
+            face_count=_optional_count(row, "face_count"),
+            unnamed_face_count=_optional_count(row, "unnamed_face_count"),
         )
         for row in rows
     )

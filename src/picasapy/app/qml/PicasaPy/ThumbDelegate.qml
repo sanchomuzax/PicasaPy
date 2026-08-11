@@ -11,6 +11,10 @@ Item {
     required property bool star
     required property string caption
     required property bool isVideo
+    // #463: arc-jelvények — nem `required`, hogy a régebbi (jelvény nélküli)
+    // hívók (pl. a tálca-előnézet) változatlanul működjenek
+    property bool hasFaces: false
+    property bool hasFaceSuggestion: false
     required property int index
     required property string keywords
     required property string resolution
@@ -166,6 +170,36 @@ Item {
                 font.pixelSize: 15
                 style: Text.Outline; styleColor: "#00000060"
                 anchors.bottom: parent.bottom
+            }
+        }
+
+        // #463: arc-jelvények a BAL FELSŐ sarokban (a jobb alsó a
+        // csillag/geo soré, a jobb felső a szerkesztés-visszahajtásé, a bal
+        // alsó a tálca-jelvényé). Az eredeti méretarányok: „emberek" 14×20,
+        // „arc-javaslat" 20×20 a rácsban.
+        Row {
+            objectName: "thumbFaceBadges"
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.margins: 3
+            spacing: 2
+
+            // „van rajta felismert arc"
+            Image {
+                objectName: "facesMark"
+                visible: cell.hasFaces
+                source: "icons/faces-badge.svg"
+                width: 14; height: 20
+                sourceSize.width: 14; sourceSize.height: 20
+            }
+            // „jóváhagyásra váró névjavaslat" — KÜLÖN jelvény: azt jelzi,
+            // hogy elintézetlen dolgod van a képpel (#26 javaslat-folyamat)
+            Image {
+                objectName: "faceSuggestionMark"
+                visible: cell.hasFaceSuggestion
+                source: "icons/face-suggestion-badge.svg"
+                width: 20; height: 20
+                sourceSize.width: 20; sourceSize.height: 20
             }
         }
 

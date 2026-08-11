@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- #463: „jóváhagyásra váró névjavaslat" jelvény (20×20 a rácsban). KÜLÖN
+     jelvény a sima arc-jelvénytől: azt jelzi, hogy elintézetlen dolgod van a
+     képpel — ezért kérdőjel a fej mellett, és figyelemfelkeltő sárga alap. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+  <circle cx="10" cy="10" r="9" fill="#f5c518" stroke="#00000070"/>
+  <g fill="#3a2f00">
+    <circle cx="8" cy="7.5" r="2.6"/>
+    <path d="M3.6 16c0-2.4 2-4 4.4-4s4.4 1.6 4.4 4z"/>
+  </g>
+  <text x="14.5" y="9" font-family="sans-serif" font-size="9" font-weight="bold"
+        fill="#3a2f00" text-anchor="middle">?</text>
+</svg>

@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.66] – 2026-08-11
+
+### Hozzáadva
+- **Arc-jelvények a bélyegképeken (#463).** A bal felső sarokban jelvény
+  mutatja, ha a képen **felismert arc** van, és egy **külön** jelvény azt, ha
+  **jóváhagyásra váró névjavaslat** vár rajta — vagyis elintézetlen dolgod van
+  a képpel. A két állapot független egymástól, ahogy az eredetiben is. A
+  méretarányok az eredeti Picasa réteg-adataiból (14×20 és 20×20).
+
 ## [0.6.65] – 2026-08-11
 
 ### Javítva

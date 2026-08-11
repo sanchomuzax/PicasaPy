@@ -368,6 +368,12 @@ class PhotoGridModel(QAbstractListModel):
             # ini `geotag=` és az EXIF GPS-t is feloldja (ld. metadata/gps.py),
             # itt csak a meglétét kérdezzük.
             "hasGeo": photo.location is not None,
+            # #463: arc-jelvények — „van rajta felismert arc", illetve
+            # „van jóváhagyásra váró névjavaslat". A kettő KÜLÖN jelvény
+            # volt az eredetiben is: az utóbbi azt jelzi, hogy elintézetlen
+            # dolgod van a képpel.
+            "hasFaces": photo.face_count > 0,
+            "hasFaceSuggestion": photo.unnamed_face_count > 0,
         }
 
     @Slot(int, result=bool)
