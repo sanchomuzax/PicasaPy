@@ -18,6 +18,23 @@ def _rows(text):
     return [line.split("\t") for line in text.split("\n")]
 
 
+def _photo(folder, name, *, width, height, size=1024, kind="photo"):
+    """Minimál PhotoRecord-utánzat a Tulajdonságok-panel formázójához."""
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        name=name,
+        folder_path=str(folder),
+        size=size,
+        width=width,
+        height=height,
+        taken_at=None,
+        kind=kind,
+        keywords=(),
+    )
+
+
+
 class TestCameraSummaryText:
     def test_all_fields_in_two_labeled_columns(self):
         details = ExifDetails(
@@ -61,3 +78,98 @@ class TestCameraSummaryText:
         text = camera_summary_text(details, QLocale(), _tr)
         assert "equivalent" not in text
         assert "Focal length: 6.72 mm" in text
+
+
+class TestPropertiesOrderFollowsPicasa:
+    """#529: a mezők sorrendje és felirata a Picasa `runtime/properties.xml`
+    szerinti — EXIF-gazdag képen rögzítve."""
+
+    @staticmethod
+    def _rich_jpeg(path):
+        import piexif
+        from PIL import Image
+
+        Image.new("RGB", (12, 8), "blue").save(path, "JPEG")
+        piexif.insert(
+            piexif.dump({
+                "0th": {
+                    piexif.ImageIFD.Make: b"NIKON CORPORATION",
+                    piexif.ImageIFD.Model: b"NIKON D40",
+                    piexif.ImageIFD.Orientation: 6,
+                    piexif.ImageIFD.DateTime: b"2020:01:02 03:04:05",
+                },
+                "Exif": {
+                    piexif.ExifIFD.DateTimeOriginal: b"2019:05:06 07:08:09",
+                    piexif.ExifIFD.DateTimeDigitized: b"2019:05:06 07:08:10",
+                    piexif.ExifIFD.ExposureTime: (1, 250),
+                    piexif.ExifIFD.FNumber: (56, 10),
+                    piexif.ExifIFD.ISOSpeedRatings: 800,
+                    piexif.ExifIFD.FocalLength: (50, 1),
+                    piexif.ExifIFD.FocalLengthIn35mmFilm: 75,
+                    piexif.ExifIFD.Flash: 1,
+                    piexif.ExifIFD.WhiteBalance: 0,
+                    piexif.ExifIFD.MeteringMode: 2,
+                    piexif.ExifIFD.ExposureProgram: 3,
+                    piexif.ExifIFD.ColorSpace: 1,
+                    piexif.ExifIFD.LensModel: b"AF-S 18-55",
+                    piexif.ExifIFD.SubjectDistance: (3, 1),
+                    piexif.ExifIFD.ImageUniqueID: b"abc123",
+                },
+            }),
+            str(path),
+        )
+
+    def test_field_order_matches_properties_xml(self, tmp_path):
+        from picasapy.app.formatting import properties_entries
+
+        path = tmp_path / "gazdag.jpg"
+        self._rich_jpeg(path)
+        photo = _photo(tmp_path, "gazdag.jpg", width=12, height=8)
+        labels = [
+            label
+            for label, _ in properties_entries(photo, QLocale("en"), lambda t: t)
+        ]
+
+        expected_order = [
+            "File Path", "File Size", "Dimensions",
+            "Camera Make", "Camera Model",
+            "Camera Date", "Digitized Date", "Modified Date",
+            "Orientation", "Flash", "Lens",
+            "Focal Length", "Focal Length in 35mm Film",
+            "Exposure Time", "F Number", "Subject Distance", "ISO",
+            "White Balance", "Metering Mode", "Exposure Program",
+            "Color Space", "Unique ID",
+        ]
+        present = [label for label in expected_order if label in labels]
+        assert [label for label in labels if label in expected_order] == present
+        # a sorrend a properties.xml-é: minden várt mező meg is jelenik
+        assert present == expected_order
+
+    def test_enum_values_are_labels_not_raw_exif_keys(self, tmp_path):
+        from picasapy.app.formatting import properties_entries
+
+        path = tmp_path / "gazdag.jpg"
+        self._rich_jpeg(path)
+        photo = _photo(tmp_path, "gazdag.jpg", width=12, height=8)
+        values = dict(properties_entries(photo, QLocale("en"), lambda t: t))
+
+        assert values["Metering Mode"] == "Center Weight"
+        assert values["Exposure Program"] == "Aperture Priority"
+        assert values["Color Space"] == "sRGB"
+        assert values["Orientation"] == "Rotated 90° CW"
+        assert values["Flash"] == "Fired"
+        assert values["White Balance"] == "Auto"
+
+    def test_missing_fields_are_skipped(self, tmp_path):
+        """Adat nélküli mező KIMARAD — nem üres sorként jelenik meg."""
+        from PIL import Image
+
+        from picasapy.app.formatting import properties_entries
+
+        path = tmp_path / "csupasz.jpg"
+        Image.new("RGB", (4, 4), "red").save(path, "JPEG")
+        photo = _photo(tmp_path, "csupasz.jpg", width=4, height=4)
+        entries = properties_entries(photo, QLocale("en"), lambda t: t)
+
+        assert all(value not in (None, "") for _, value in entries)
+        assert "Lens" not in dict(entries)

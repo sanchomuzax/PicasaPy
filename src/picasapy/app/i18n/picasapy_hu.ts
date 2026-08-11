@@ -687,7 +687,272 @@
 </context>
 <context>
     <name></name>
+            <message>
+        <location filename="../formatting.py"/>
+        <source>Yes</source>
+        <translation>Igen</translation>
+    </message>
+<message>
+        <location filename="../formatting.py"/>
+        <source>File Path</source>
+        <translation>Fájl útvonala</translation>
+    </message>
     <message>
+        <location filename="../formatting.py"/>
+        <source>File Size</source>
+        <translation>Fájlméret</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Camera Make</source>
+        <translation>Fényképezőgép gyártmánya</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Camera Model</source>
+        <translation>Fényképezőgép típusa</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Camera Date</source>
+        <translation>Fényképezőgép dátuma</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Digitized Date</source>
+        <translation>Digitalizálás dátuma</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Modified Date</source>
+        <translation>Módosítás dátuma</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Orientation</source>
+        <translation>Tájolás</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Lens</source>
+        <translation>Objektív</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Focal Length</source>
+        <translation>Fókusztávolság</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Focal Length in 35mm Film</source>
+        <translation>Fókusztávolság 35 mm-es filmen</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Exposure Time</source>
+        <translation>Exponálási idő</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>F Number</source>
+        <translation>F-érték</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Subject Distance</source>
+        <translation>Téma távolsága</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>White Balance</source>
+        <translation>Fehéregyensúly</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Metering Mode</source>
+        <translation>Fénymérés módja</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Exposure Program</source>
+        <translation>Exponálási program</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Compression</source>
+        <translation>Tömörítés</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Color Space</source>
+        <translation>Színtér</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>ICC Profile</source>
+        <translation>ICC-profil</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Embedded Thumbnail</source>
+        <translation>Beágyazott bélyegkép</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Keywords</source>
+        <translation>Kulcsszavak</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>GPS Latitude</source>
+        <translation>GPS - földrajzi szélesség</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>GPS Longitude</source>
+        <translation>GPS - földrajzi hosszúság</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>GPS Altitude</source>
+        <translation>GPS - magasság</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Unique ID</source>
+        <translation>Egyedi azonosító</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Unknown</source>
+        <translation>Ismeretlen</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Average</source>
+        <translation>Átlag</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Center Weight</source>
+        <translation>Középsúlyos</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Spot</source>
+        <translation>Pontszerű</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Multi-spot</source>
+        <translation>Többpontos</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Pattern</source>
+        <translation>Mátrix</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Partial</source>
+        <translation>Részleges</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Not Defined</source>
+        <translation>Nincs megadva</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Normal Program</source>
+        <translation>Normál program</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Aperture Priority</source>
+        <translation>Rekesz-előválasztásos mód</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Shutter Priority</source>
+        <translation>Záridő-előválasztásos mód</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Action Program</source>
+        <translation>Akció program</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>sRGB</source>
+        <translation>sRGB</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Uncalibrated</source>
+        <translation>Kalibrálatlan</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Uncompressed</source>
+        <translation>Tömörítetlen</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Adobe Deflate</source>
+        <translation>Adobe Deflate</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Auto</source>
+        <translation>Automatikus</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Embedded</source>
+        <translation>Beágyazott</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>%1 m</source>
+        <translation>%1 m</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Mirrored</source>
+        <translation>Tükrözött</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Rotated 180°</source>
+        <translation>180°-kal forgatva</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Mirrored and rotated 180°</source>
+        <translation>Tükrözve és 180°-kal forgatva</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Mirrored and rotated 90° CCW</source>
+        <translation>Tükrözve és 90°-kal balra forgatva</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Rotated 90° CW</source>
+        <translation>90°-kal jobbra forgatva</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Mirrored and rotated 90° CW</source>
+        <translation>Tükrözve és 90°-kal jobbra forgatva</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>Rotated 90° CCW</source>
+        <translation>90°-kal balra forgatva</translation>
+    </message>
+<message>
         <location filename="../formatting.py" line="39"/>
         <source>%1 KB</source>
         <translation>%1 KB</translation>

@@ -442,12 +442,11 @@ class TestPropertiesOf:
         entries = controller.propertiesOf(0)
         labels = self._labels(entries)
         values = {e["label"]: e["value"] for e in entries}
-        assert "File name" in labels
-        assert values["File name"] == "IMG_0001.jpg"
-        assert values["Folder"] == str(library / "nyaralas")
-        assert "File size" in labels
-        assert "Dimensions" in labels
-        assert "Date taken" in labels  # a fixture taken_at-ot ír
+        # #529: a mezőnevek és a SORREND a Picasa `runtime/properties.xml`-jét
+        # követik — az első három mindig FilePath / FileSize / Dimensions
+        assert labels[:3] == ["File Path", "File Size", "Dimensions"]
+        assert values["File Path"] == str(library / "nyaralas" / "IMG_0001.jpg")
+        assert "Camera Date" in labels  # a fixture taken_at-ot ír
 
     def test_exif_camera_fields(self, controller, library, tmp_path):
         import piexif
@@ -475,11 +474,13 @@ class TestPropertiesOf:
             if p.name == "gep.jpg"
         )
         values = {e["label"]: e["value"] for e in controller.propertiesOf(row)}
-        assert values["Camera"] == "Canon EOS 550D"
-        assert values["Exposure"] == "1/125 s"
-        assert values["Aperture"] == "f/2.8"
+        # #529: a Picasa saját mezőnevei, gyártó és típus KÜLÖN sorban
+        assert values["Camera Make"] == "Canon"
+        assert values["Camera Model"] == "EOS 550D"
+        assert values["Exposure Time"] == "1/125 s"
+        assert values["F Number"] == "f/2.8"
         assert values["ISO"] == "400"
-        assert values["White balance"] == "Automatic"
+        assert values["White Balance"] == "Auto"
 
     def test_invalid_row_empty(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))

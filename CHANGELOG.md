@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.64] – 2026-08-11
+
+### Hozzáadva
+- **Tulajdonságok-panel: 11 mező helyett a Picasa teljes mezőkészlete (#529).**
+  A sorrend az eredeti Picasa saját beállítófájlját követi, és minden mező a
+  Picasa magyar feliratát kapta (a program saját szótárából): fényképezőgép
+  gyártmánya és típusa külön, **három külön dátum** (fényképezőgép,
+  digitalizálás, módosítás), tájolás, vaku, objektív, 35 mm-es
+  fókusztávolság, téma távolsága, fehéregyensúly, **fénymérés módja**,
+  **exponálási program**, tömörítés, **színtér**, ICC-profil, beágyazott
+  bélyegkép, kulcsszavak, **GPS-hármas** és egyedi azonosító. A felsorolt
+  értékek is magyarul jelennek meg („Középsúlyos", „Rekesz-előválasztásos
+  mód"), nem nyers EXIF-kulcsként. Az adat nélküli mező kimarad.
+
 ## [0.6.63] – 2026-08-11
 
 ### Javítva

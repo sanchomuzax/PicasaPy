@@ -83,68 +83,171 @@ def photo_info_text(photo, locale: QLocale, tr) -> str:
     return "   ".join(parts)
 
 
-def properties_entries(photo, locale: QLocale, tr) -> list:
-    """A Tulajdonságok-panel (#13) sorai: (címke, érték) párok.
+#: A `Flash` EXIF-mező és a többi felsorolt érték Picasa-kulcsszavai →
+#: angol felirat. A magyar a `picasapy_hu.ts`-ben él, a
+#: `Picasa3i18n.dll`-ből kinyert szótár szerint (#529,
+#: `referencia/exif-cimkek-en-hu.tsv`) — így a nyers EXIF-kulcs SOSEM
+#: kerül a felületre.
+_ENUM_LABELS = {
+    "Unknown": "Unknown",
+    "Average": "Average",
+    "CenterWeight": "Center Weight",
+    "Spot": "Spot",
+    "MultiSpot": "Multi-spot",
+    "Pattern": "Pattern",
+    "Partial": "Partial",
+    "Other": "Other",
+    "NotDefined": "Not Defined",
+    "Manual": "Manual",
+    "NormalProgram": "Normal Program",
+    "AperturePriority": "Aperture Priority",
+    "ShutterPriority": "Shutter Priority",
+    "Creative": "Creative",
+    "Action": "Action Program",
+    "Portrait": "Portrait",
+    "Landscape": "Landscape",
+    "sRGB": "sRGB",
+    "Uncalibrated": "Uncalibrated",
+    "Uncompressed": "Uncompressed",
+    "JPEG": "JPEG",
+    "AdobeDeflate": "Adobe Deflate",
+}
 
-    Az alap-adatok az indexből jönnek; az expozíciós EXIF-mezők
-    igény szerinti fájl-olvasással (csak a panel megnyitásakor fut,
-    griden sosem). Üres mezők kimaradnak — csak olvasás."""
-    entries = [
-        (tr("File name"), photo.name),
-        (tr("Folder"), photo.folder_path),
-        (tr("File size"), format_size(photo.size, locale, tr)),
+#: Az EXIF-tájolás nyolc értéke — a Picasa is szöveggel írja ki.
+_ORIENTATION_LABELS = {
+    1: "Normal",
+    2: "Mirrored",
+    3: "Rotated 180°",
+    4: "Mirrored and rotated 180°",
+    5: "Mirrored and rotated 90° CCW",
+    6: "Rotated 90° CW",
+    7: "Mirrored and rotated 90° CW",
+    8: "Rotated 90° CCW",
+}
+
+
+def properties_entries(photo, locale: QLocale, tr) -> list:
+    """A Tulajdonságok-panel (#13/#529) sorai: (címke, érték) párok.
+
+    A sorrend a Picasa saját `runtime/properties.xml`-jét követi (#529) — a
+    38 LÁTHATÓ mezőt, abban a sorrendben. Az adat nélküli mezők KIMARADNAK
+    (nem üres sorként jelennek meg), ahogy az eredetiben is.
+
+    Az alap-adatok az indexből jönnek; az EXIF-mezők igény szerinti
+    fájl-olvasással (csak a panel megnyitásakor fut, griden sosem).
+    """
+    entries: list = [
+        (tr("File Path"), str(Path(photo.folder_path) / photo.name)),
+        (tr("File Size"), format_size(photo.size, locale, tr)),
     ]
     if photo.width and photo.height:
         entries.append((tr("Dimensions"), _dimensions_text(photo, tr)))
-    if photo.taken_at:
-        taken = QDateTime.fromString(photo.taken_at, "yyyy-MM-ddTHH:mm:ss")
-        entries.append((
-            tr("Date taken"),
-            locale.toString(taken, QLocale.FormatType.ShortFormat),
-        ))
-    if photo.kind == "photo":
-        entries.extend(exif_entries(photo, locale, tr))
+    if photo.kind != "photo":
+        entries.extend(_movie_entries(photo, locale, tr))
+        return entries
+    entries.extend(exif_entries(photo, locale, tr))
     return entries
+
+
+def _movie_entries(photo, locale: QLocale, tr) -> list:
+    """A `properties.xml` videó-mezői (`MovieLength`, `MovieRate`).
+
+    ŐSZINTESÉG: az indexben ma NINCS videó-hossz/képsebesség (a
+    `PhotoRecord`-ban nem szerepel), és a projektben nincs videó-dekóder,
+    amiből kiolvashatnánk. Amíg ez nincs meg, a videó ugyanazt a három
+    alapsort kapja, mint a kép — a mezők HELYE viszont rögzített, hogy az
+    adat megjelenésekor csak az olvasót kelljen bekötni.
+    """
+    del locale, tr
+    return []
+
+
+def _enum_entry(value, tr) -> str | None:
+    """Felsorolt EXIF-érték → lefordított felirat (ismeretlenre: None)."""
+    label = _ENUM_LABELS.get(value)
+    return tr(label) if label else None
 
 
 def exif_entries(photo, locale: QLocale, tr) -> list:
-    """Fényképezőgép-adatok a Tulajdonságok-panelre (üresek kihagyva)."""
+    """A `properties.xml` EXIF-eredetű mezői, EREDETI SORRENDBEN (#529).
+
+    Az adat nélküli mező kimarad. A felsorolt értékek (fénymérés,
+    expozíciós program, színtér…) a `Picasa3i18n.dll`-ből kinyert szótár
+    szerinti feliratot kapják, nem a nyers EXIF-kulcsot.
+    """
     details = read_exif_details(Path(photo.folder_path) / photo.name)
-    entries = []
-    if details.camera:
-        entries.append((tr("Camera"), details.camera))
-    if details.exposure_seconds:
-        entries.append((
-            tr("Exposure"),
-            format_exposure(details.exposure_seconds, locale),
-        ))
-    if details.f_number:
-        entries.append((
-            tr("Aperture"),
-            f"f/{locale.toString(details.f_number, 'g', 3)}",
-        ))
-    if details.iso:
-        entries.append((tr("ISO"), str(details.iso)))
-    if details.focal_mm:
-        entries.append((
-            tr("Focal length"),
-            tr("%1 mm").replace(
-                "%1", locale.toString(details.focal_mm, "g", 4)
-            ),
-        ))
+    entries: list = []
+
+    def add(label: str, value) -> None:
+        if value not in (None, "", False):
+            entries.append((tr(label), value))
+
+    def date(value) -> str | None:
+        if not value:
+            return None
+        stamp = QDateTime.fromString(value, "yyyy-MM-ddTHH:mm:ss")
+        return locale.toString(stamp, QLocale.FormatType.ShortFormat)
+
+    add("Camera Make", details.make)
+    add("Camera Model", details.model)
+    add("Camera Date", date(details.datetime_original))
+    add("Digitized Date", date(details.datetime_digitized))
+    add("Modified Date", date(details.datetime_modified))
+    if details.orientation in _ORIENTATION_LABELS:
+        add("Orientation", tr(_ORIENTATION_LABELS[details.orientation]))
     if details.flash_fired is not None:
-        entries.append((
-            tr("Flash"),
-            tr("Fired") if details.flash_fired else tr("Did not fire"),
-        ))
+        add("Flash", tr("Fired") if details.flash_fired else tr("Did not fire"))
+    add("Lens", details.lens)
+    if details.focal_mm:
+        add("Focal Length", _millimetres(details.focal_mm, locale, tr))
+    if details.focal_35mm:
+        add(
+            "Focal Length in 35mm Film",
+            _millimetres(float(details.focal_35mm), locale, tr),
+        )
+    if details.exposure_seconds:
+        add("Exposure Time", format_exposure(details.exposure_seconds, locale))
+    if details.f_number:
+        add("F Number", f"f/{locale.toString(details.f_number, 'g', 3)}")
+    if details.subject_distance_m:
+        add(
+            "Subject Distance",
+            tr("%1 m").replace(
+                "%1", locale.toString(details.subject_distance_m, "g", 3)
+            ),
+        )
+    if details.iso:
+        add("ISO", str(details.iso))
     if details.white_balance:
-        entries.append((
-            tr("White balance"),
-            tr("Automatic") if details.white_balance == "auto"
-            else tr("Manual"),
-        ))
+        add(
+            "White Balance",
+            tr("Auto") if details.white_balance == "auto" else tr("Manual"),
+        )
+    add("Metering Mode", _enum_entry(details.metering_mode, tr))
+    add("Exposure Program", _enum_entry(details.exposure_program, tr))
+    add("Compression", _enum_entry(details.compression, tr))
+    add("Color Space", _enum_entry(details.color_space, tr))
+    if details.has_icc_profile:
+        add("ICC Profile", tr("Embedded"))
+    if details.has_embedded_thumbnail:
+        add("Embedded Thumbnail", tr("Yes"))
+    if photo.keywords:
+        add("Keywords", ", ".join(photo.keywords))
+    if details.latitude is not None:
+        add("GPS Latitude", locale.toString(details.latitude, "f", 6))
+    if details.longitude is not None:
+        add("GPS Longitude", locale.toString(details.longitude, "f", 6))
+    if details.altitude_m is not None:
+        add(
+            "GPS Altitude",
+            tr("%1 m").replace("%1", locale.toString(details.altitude_m, "g", 5)),
+        )
+    add("Unique ID", details.image_unique_id)
     return entries
 
+
+def _millimetres(value: float, locale: QLocale, tr) -> str:
+    return tr("%1 mm").replace("%1", locale.toString(value, "g", 4))
 
 def camera_summary_text(details, locale: QLocale, tr) -> str:
     """Picasa-mintájú, KÉToszlopos fényképezőgép-összefoglaló a hisztogram-
