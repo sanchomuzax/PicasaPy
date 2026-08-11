@@ -26,10 +26,18 @@ from PySide6.QtQml import QQmlComponent, QQmlEngine, QQmlProperty
 # (test_editor_effects.py mintája).
 _KEEPALIVE = []
 
-_QML_SOURCE = (
-    Path(__file__).resolve().parents[3]
-    / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "EditorPanel.qml"
-).read_text(encoding="utf-8")
+#: #496: a panel forrása több fájlra bomlott (effekt-fülek, vágás, retus,
+#: szöveg) — az effekt-gombokat kereső őrök ezért a MODUL összes QML-jét
+#: nézik, nem csak az `EditorPanel.qml`-t.
+_QML_SOURCE = "\n".join(
+    path.read_text(encoding="utf-8")
+    for path in sorted(
+        (
+            Path(__file__).resolve().parents[3]
+            / "src" / "picasapy" / "app" / "qml" / "PicasaPy"
+        ).glob("*.qml")
+    )
+)
 
 _TAB_NAMES = (
     "editTabFixes",

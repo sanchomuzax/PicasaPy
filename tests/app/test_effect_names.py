@@ -16,21 +16,29 @@ from picasapy.app.edit_controller import _EFFECT_INI_NAMES, _EFFECT_NAMES
 from picasapy.edit.session import EditSession
 from picasapy.render.chain import _HANDLERS
 
-_QML_PATH = (
+#: #496: az effekt-fülek önálló fájlokba kerültek az `EditorPanel.qml`-ből —
+#: a gombokat ezért a MODUL EGÉSZÉBEN keressük, nem egyetlen fájlban.
+_QML_DIR = (
     Path(__file__).resolve().parents[2]
     / "src"
     / "picasapy"
     / "app"
     / "qml"
     / "PicasaPy"
-    / "EditorPanel.qml"
 )
 
 
 def _effects_requested_by_the_ui() -> set[str]:
-    """Az Effektek fül gombjai által küldött nevek, a QML-ből kiolvasva."""
-    source = _QML_PATH.read_text(encoding="utf-8")
-    return set(re.findall(r'panel\.effectRequested\("([^"]+)"\)', source))
+    """Az effekt-fülek gombjai által küldött nevek, a QML-ből kiolvasva."""
+    found: set[str] = set()
+    for path in _QML_DIR.glob("*.qml"):
+        found.update(
+            re.findall(
+                r'panel\.effectRequested\("([^"]+)"\)',
+                path.read_text(encoding="utf-8"),
+            )
+        )
+    return found
 
 
 class TestEffectNameCoverage:
