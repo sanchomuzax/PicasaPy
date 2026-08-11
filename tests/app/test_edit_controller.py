@@ -1507,3 +1507,37 @@ class TestBackgroundRenderRaces:
         assert controller.waitForBackgroundWorkers(10.0)
         qt_app.processEvents()
         assert revisions == [], "az érvénytelenített render mégis értesített"
+
+
+class TestNeutralColorPicker:
+    """#464: a 2. fül pipettája — a képre kattintott pont színe lesz a
+    finetune2 „semleges szín" paramétere (a lánc 4. paramétere)."""
+
+    def test_picked_color_lands_in_the_finetune_layer(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        assert controller.pickNeutralColor(0.5, 0.5) is True
+
+        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
+        assert "finetune2=" in ini_text
+        # a negyedik paraméter az AARRGGBB szín — a semleges alapérték
+        # (00000000) helyett most valódi, ff-fel kezdődő érték áll ott
+        finetune = next(
+            line for line in ini_text.splitlines() if "finetune2=" in line
+        )
+        neutral = finetune.split("finetune2=")[1].split(";")[0].split(",")[4]
+        assert neutral.startswith("ff"), finetune
+
+    def test_sliders_are_left_alone(self, controller, photo):
+        """A pipetta CSAK a semleges színt írja át — a négy csúszka marad."""
+        controller.beginEdit("1", str(photo))
+        controller.setFinetune(0.25, 0.5, 0.125, -0.5)
+        controller.pickNeutralColor(0.25, 0.75)
+
+        assert controller.fillLight == 0.25
+        assert controller.highlights == 0.5
+        assert controller.shadows == 0.125
+        assert controller.colorTemp == -0.5
+
+    def test_point_outside_the_image_is_refused(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        assert controller.pickNeutralColor(5.0, 5.0) is False

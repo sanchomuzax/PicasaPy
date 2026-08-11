@@ -100,6 +100,11 @@ Rectangle {
     // Visszavonás/Újra (jelenleg a vágásra): a hívó (PhotoViewer) tölti
     property bool undoAvailable: false
     property bool redoAvailable: false
+    // #464: a pipetta („semleges szín") aktív-e — a néző ilyenkor a
+    // kattintást színmintavételként adja tovább, nem navigációként
+    property bool neutralPickerActive: false
+    signal neutralPickerToggled()
+
     property string undoLabel: qsTr("Undo")
     property string redoLabel: qsTr("Redo")
 
@@ -938,6 +943,8 @@ Rectangle {
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
         anchors.margins: 10
         spacing: 8
 
@@ -1078,25 +1085,6 @@ Rectangle {
             }
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            PanelButton {
-                objectName: "editUndoButton"
-                label: panel.undoLabel
-                buttonEnabled: panel.undoAvailable
-                onButtonClicked: panel.undoRequested()
-            }
-            PanelButton {
-                objectName: "editRedoButton"
-                label: panel.redoLabel
-                buttonEnabled: panel.redoAvailable
-                // #405: a Visszavonás/Újra az eredetiben egyenlő szélességű
-                // pár a panel alján (nem egy keskeny + egy kitöltő) — mindkét
-                // gomb fillWidth-del osztozik a helyen.
-                onButtonClicked: panel.redoRequested()
-            }
-        }
     }
 
     // ---------------- "finetune" mód: Finomhangolás (#20) ----------------
@@ -1107,6 +1095,8 @@ Rectangle {
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
         anchors.margins: 10
         spacing: 8
 
@@ -1122,6 +1112,40 @@ Rectangle {
                 font.pixelSize: Theme.fontSize
                 font.bold: true
                 color: Theme.panelHeaderText
+            }
+        }
+
+        // #464: az eredeti 2. fülön az Automatikus szín és az Automatikus
+        // kontraszt egykattintásos gombja is ott van — SZÁNDÉKOS ismétlés
+        // az 1. fülről, hogy a finomhangolás közben kéznél legyen. Mellettük
+        // a pipetta („Neutral Color Picker"): a képre kattintva a kijelölt
+        // pont lesz a semleges szín (a finetune2 4. paramétere).
+        GridLayout {
+            objectName: "finetuneQuickFixes"
+            columns: 3
+            columnSpacing: 4
+            rowSpacing: 6
+            Layout.fillWidth: true
+
+            ToolTile {
+                objectName: "finetuneAutocolor"
+                toolName: "autocolor"; label: qsTr("Auto Color")
+                iconFile: "auto-szin"
+                onActivated: (tool) => panel.handleToolClick(tool)
+            }
+            ToolTile {
+                objectName: "finetuneAutolight"
+                toolName: "autolight"; label: qsTr("Auto Contrast")
+                iconFile: "auto-kontraszt"
+                onActivated: (tool) => panel.handleToolClick(tool)
+            }
+            ToolTile {
+                objectName: "finetuneNeutralPicker"
+                toolName: "neutralpicker"
+                label: qsTr("Neutral Color Picker")
+                iconFile: "pipetta"
+                active: panel.neutralPickerActive
+                onActivated: panel.neutralPickerToggled()
             }
         }
 
@@ -1194,25 +1218,6 @@ Rectangle {
                                       finetuneTempSlider.value)
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            PanelButton {
-                objectName: "finetuneUndoButton"
-                label: panel.undoLabel
-                buttonEnabled: panel.undoAvailable
-                onButtonClicked: panel.undoRequested()
-            }
-            PanelButton {
-                objectName: "finetuneRedoButton"
-                label: panel.redoLabel
-                buttonEnabled: panel.redoAvailable
-                // #405: a Visszavonás/Újra az eredetiben egyenlő szélességű
-                // pár a panel alján (nem egy keskeny + egy kitöltő) — mindkét
-                // gomb fillWidth-del osztozik a helyen.
-                onButtonClicked: panel.redoRequested()
-            }
-        }
     }
 
     // ---------------- "effects" mód: Effektek (#20) ----------------
@@ -1223,6 +1228,8 @@ Rectangle {
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
         anchors.margins: 10
         spacing: 8
 
@@ -1336,25 +1343,6 @@ Rectangle {
             }
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            PanelButton {
-                objectName: "effectsUndoButton"
-                label: panel.undoLabel
-                buttonEnabled: panel.undoAvailable
-                onButtonClicked: panel.undoRequested()
-            }
-            PanelButton {
-                objectName: "effectsRedoButton"
-                label: panel.redoLabel
-                buttonEnabled: panel.redoAvailable
-                // #405: a Visszavonás/Újra az eredetiben egyenlő szélességű
-                // pár a panel alján (nem egy keskeny + egy kitöltő) — mindkét
-                // gomb fillWidth-del osztozik a helyen.
-                onButtonClicked: panel.redoRequested()
-            }
-        }
     }
 
     // ---------------- "effects2" mód: 4. effekt-fül — zöld ecset,
@@ -1366,6 +1354,8 @@ Rectangle {
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
         anchors.margins: 10
         spacing: 8
 
@@ -1486,25 +1476,6 @@ Rectangle {
             }
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            PanelButton {
-                objectName: "effects2UndoButton"
-                label: panel.undoLabel
-                buttonEnabled: panel.undoAvailable
-                onButtonClicked: panel.undoRequested()
-            }
-            PanelButton {
-                objectName: "effects2RedoButton"
-                label: panel.redoLabel
-                buttonEnabled: panel.redoAvailable
-                // #405: a Visszavonás/Újra az eredetiben egyenlő szélességű
-                // pár a panel alján (nem egy keskeny + egy kitöltő) — mindkét
-                // gomb fillWidth-del osztozik a helyen.
-                onButtonClicked: panel.redoRequested()
-            }
-        }
     }
 
     // ---------------- "effects3" mód: 5. effekt-fül — kék ecset,
@@ -1516,6 +1487,8 @@ Rectangle {
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
         anchors.margins: 10
         spacing: 8
 
@@ -1624,25 +1597,6 @@ Rectangle {
             }
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            PanelButton {
-                objectName: "effects3UndoButton"
-                label: panel.undoLabel
-                buttonEnabled: panel.undoAvailable
-                onButtonClicked: panel.undoRequested()
-            }
-            PanelButton {
-                objectName: "effects3RedoButton"
-                label: panel.redoLabel
-                buttonEnabled: panel.redoAvailable
-                // #405: a Visszavonás/Újra az eredetiben egyenlő szélességű
-                // pár a panel alján (nem egy keskeny + egy kitöltő) — mindkét
-                // gomb fillWidth-del osztozik a helyen.
-                onButtonClicked: panel.redoRequested()
-            }
-        }
     }
 
     // ---------------- effekt-paraméter alpanel (#316) ----------------
@@ -2377,6 +2331,37 @@ Rectangle {
             label: qsTr("Remove all existing text")
             buttonEnabled: panel.hasTextOverlay
             onButtonClicked: panel.textRemoveAllRequested()
+        }
+    }
+
+    // ---------------- #464: GLOBÁLIS Visszavonás/Újra ----------------
+    //
+    // Az eredeti Picasában a pár a panel ALJÁN ül, és NEM fülhöz kötött —
+    // minden eszközben elérhető. Korábban mind az öt fül saját (azonos)
+    // gombpárt rajzolt; most egyetlen, a panel aljához horgonyzott sor van,
+    // és a fül-oszlopok EFÖLÖTT érnek véget (`anchors.bottom`).
+    RowLayout {
+        id: globalUndoRow
+        objectName: "editorGlobalUndoRow"
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: 10
+        spacing: 6
+        opacity: panel.enabled ? 1 : 0.45
+
+        PanelButton {
+            objectName: "editUndoButton"
+            label: panel.undoLabel
+            buttonEnabled: panel.undoAvailable
+            onButtonClicked: panel.undoRequested()
+        }
+        PanelButton {
+            objectName: "editRedoButton"
+            label: panel.redoLabel
+            buttonEnabled: panel.redoAvailable
+            // #405: egyenlő szélességű pár (nem egy keskeny + egy kitöltő)
+            onButtonClicked: panel.redoRequested()
         }
     }
 }

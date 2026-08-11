@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.67] – 2026-08-11
+
+### Hozzáadva
+- **Semleges szín pipetta a Finomhangolás fülön (#464).** A képre kattintva a
+  kijelölt pont lesz a semleges szín — a négy csúszka érintetlen marad.
+- A **Finomhangolás fülre visszakerült** az Automatikus szín és az
+  Automatikus kontraszt gombja, ahogy az eredetiben is ott volt (szándékos
+  ismétlés az első fülről, hogy hangolás közben kéznél legyen).
+
+### Változott
+- **A Visszavonás/Újra a panel alján, egyetlen példányban (#464).** Eddig
+  mind az öt fül a saját (azonos) gombpárját rajzolta; az eredetiben a pár
+  globális, nincs fülhöz kötve.
+
 ## [0.6.66] – 2026-08-11
 
 ### Hozzáadva

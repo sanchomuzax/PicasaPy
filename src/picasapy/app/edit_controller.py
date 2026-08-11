@@ -1501,6 +1501,34 @@ class EditController(QObject, BackgroundWorkerMixin):
 
         self._start_background(worker, name="picasapy-editpreview")
 
+    @Slot(float, float, result=bool)
+    def pickNeutralColor(self, nx: float, ny: float) -> bool:  # noqa: N802
+        """A pipetta (#464): a képre kattintott pont színe lesz a
+        finetune2 „semleges szín" paramétere (a lánc 4. paramétere).
+
+        A `finetune2` négy csúszkája változatlan marad — a pipetta csak a
+        semleges színt írja át. `False`, ha a pont nem mintavételezhető
+        (nincs regisztrált előnézet, vagy a pont a képen kívül esik).
+        """
+        self._require_active()
+        sample = self._provider.sample_color(self._photo_id, nx, ny)
+        if sample is None:
+            return False
+        red, green, blue = sample
+        values = self._session.finetune_values()
+        self._push_undo("finetune")
+        self._session = self._session.set_finetune(
+            fill=values.fill if values else 0.0,
+            highlights=values.highlights if values else 0.0,
+            shadows=values.shadows if values else 0.0,
+            temperature=values.temperature if values else 0.0,
+            neutral=f"ff{red:02x}{green:02x}{blue:02x}",
+        )
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+        return True
+
     @Slot()
     def cancelPendingPreview(self) -> None:  # noqa: N802 — QML-stílusú név
         """A folyamatban lévő háttér-render érvénytelenítése (#547).
