@@ -48,6 +48,17 @@ _FLASH_TAG = 37385
 _FOCAL_LENGTH_TAG = 37386
 _FOCAL_35MM_TAG = 41989  # FocalLengthIn35mmFilm (#235)
 _WHITE_BALANCE_TAG = 41987
+# #529: a `properties.xml` további látható mezői
+_DATETIME_DIGITIZED_TAG = 36868
+_LENS_MODEL_TAG = 42036
+_SUBJECT_DISTANCE_TAG = 37382
+_METERING_MODE_TAG = 37383
+_EXPOSURE_PROGRAM_TAG = 34850
+_COLOR_SPACE_TAG = 40961
+_COMPRESSION_TAG = 259
+_IMAGE_UNIQUE_ID_TAG = 42016
+_GPS_IFD = 0x8825
+_GPS_ALTITUDE_TAG = 6
 _IPTC_KEYWORDS = (2, 25)
 _IPTC_CAPTION = (2, 120)
 _IPTC_CHARSET = (1, 90)
@@ -118,6 +129,29 @@ class ExifDetails:
     focal_35mm: int | None = None  # 35 mm-egyenérték (#235)
     flash_fired: bool | None = None
     white_balance: str | None = None  # "auto" | "manual"
+    # #529: a Picasa `runtime/properties.xml` további látható mezői. Az
+    # ENUM-értékek a Picasa saját (angol) kulcsszavaival térnek vissza
+    # (`Average`, `AperturePriority`, `sRGB`…) — a magyar feliratot a
+    # `formatting.py` fordítja, a `Picasa3i18n.dll`-ből kinyert szótár
+    # szerint (`referencia/exif-cimkek-en-hu.tsv`).
+    make: str | None = None
+    model: str | None = None
+    datetime_original: str | None = None
+    datetime_digitized: str | None = None
+    datetime_modified: str | None = None
+    orientation: int | None = None
+    lens: str | None = None
+    subject_distance_m: float | None = None
+    metering_mode: str | None = None
+    exposure_program: str | None = None
+    color_space: str | None = None
+    compression: str | None = None
+    has_icc_profile: bool = False
+    has_embedded_thumbnail: bool = False
+    image_unique_id: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    altitude_m: float | None = None
 
 
 EMPTY_EXIF_DETAILS = ExifDetails()
@@ -135,6 +169,7 @@ def read_exif_details(path: str | Path) -> ExifDetails:
     except _BOMB_EXCEPTIONS:
         return EMPTY_EXIF_DETAILS
     flash = ifd.get(_FLASH_TAG)
+    extra = _properties_extra(exif, ifd, path)
     white_balance = ifd.get(_WHITE_BALANCE_TAG)
     iso = ifd.get(_ISO_TAG)
     focal_35mm = ifd.get(_FOCAL_35MM_TAG)
@@ -156,7 +191,94 @@ def read_exif_details(path: str | Path) -> ExifDetails:
             if isinstance(white_balance, int)
             else None
         ),
+        **extra,
     )
+
+
+#: EXIF-enumok → a Picasa saját (angol) kulcsszavai. A számértékek az
+#: EXIF 2.3 szabványból, a kulcsszavak a `Picasa3i18n.dll`-ből kinyert
+#: szótárból (#529) — a magyar felirat a `formatting.py`-ban készül.
+_METERING_MODES = {
+    0: "Unknown", 1: "Average", 2: "CenterWeight", 3: "Spot",
+    4: "MultiSpot", 5: "Pattern", 6: "Partial", 255: "Other",
+}
+_EXPOSURE_PROGRAMS = {
+    0: "NotDefined", 1: "Manual", 2: "NormalProgram", 3: "AperturePriority",
+    4: "ShutterPriority", 5: "Creative", 6: "Action", 7: "Portrait",
+    8: "Landscape",
+}
+_COLOR_SPACES = {1: "sRGB", 0xFFFF: "Uncalibrated"}
+_COMPRESSIONS = {1: "Uncompressed", 6: "JPEG", 7: "JPEG", 8: "AdobeDeflate"}
+
+
+def _properties_extra(exif, ifd, path: str | Path) -> dict:
+    """A #529-es Tulajdonságok-panel többi mezője egyetlen szótárban.
+
+    Külön függvény, hogy a `read_exif_details` törzse olvasható maradjon —
+    a mezők túlnyomó része egyszerű címke-kiolvasás.
+    """
+    from PIL import Image as _Image
+
+    def enum(value, table):
+        return table.get(value) if isinstance(value, int) else None
+
+    def text(value):
+        value = value.strip() if isinstance(value, str) else ""
+        return value or None
+
+    point = gps_from_exif(exif)
+    altitude = _rational(exif.get_ifd(_GPS_IFD).get(_GPS_ALTITUDE_TAG))
+    icc = False
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", _Image.DecompressionBombWarning)
+            with _Image.open(path) as image:
+                icc = bool(image.info.get("icc_profile"))
+    except _BOMB_EXCEPTIONS:
+        pass
+    # a beágyazott bélyegkép az EXIF 1. IFD-jében (thumbnail) él — a Pillow
+    # ezt nem adja ki egyszerűen, a piexif (a projekt meglévő függősége) igen
+    thumbnail = False
+    try:
+        import piexif
+
+        thumbnail = piexif.load(str(path)).get("thumbnail") is not None
+    except Exception:  # noqa: BLE001 — bármilyen hibás EXIF-re: "nincs bélyegkép"
+        thumbnail = False
+    return {
+        "make": text(exif.get(_MAKE_TAG)),
+        "model": text(exif.get(_MODEL_TAG)),
+        "datetime_original": _exif_datetime(ifd.get(_DATETIME_ORIGINAL_TAG)),
+        "datetime_digitized": _exif_datetime(ifd.get(_DATETIME_DIGITIZED_TAG)),
+        "datetime_modified": _exif_datetime(exif.get(_DATETIME_TAG)),
+        "orientation": (
+            exif.get(_ORIENTATION_TAG)
+            if isinstance(exif.get(_ORIENTATION_TAG), int)
+            else None
+        ),
+        "lens": text(ifd.get(_LENS_MODEL_TAG)),
+        "subject_distance_m": _rational(ifd.get(_SUBJECT_DISTANCE_TAG)),
+        "metering_mode": enum(ifd.get(_METERING_MODE_TAG), _METERING_MODES),
+        "exposure_program": enum(ifd.get(_EXPOSURE_PROGRAM_TAG), _EXPOSURE_PROGRAMS),
+        "color_space": enum(ifd.get(_COLOR_SPACE_TAG), _COLOR_SPACES),
+        "compression": enum(exif.get(_COMPRESSION_TAG), _COMPRESSIONS),
+        "has_icc_profile": icc,
+        "has_embedded_thumbnail": thumbnail,
+        "image_unique_id": text(ifd.get(_IMAGE_UNIQUE_ID_TAG)),
+        "latitude": point.latitude if point else None,
+        "longitude": point.longitude if point else None,
+        "altitude_m": altitude,
+    }
+
+
+def _exif_datetime(raw) -> str | None:
+    """EXIF-dátum (`YYYY:MM:DD hh:mm:ss`) → ISO-szöveg; hibásra None."""
+    if not isinstance(raw, str):
+        return None
+    try:
+        return datetime.strptime(raw.strip(), _EXIF_DATE_FORMAT).isoformat()
+    except ValueError:
+        return None
 
 
 # #429: a Picasa `.exe`-jéből előkerült, gyártói EXIF-szemetet takarító

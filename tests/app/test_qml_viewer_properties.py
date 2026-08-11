@@ -44,7 +44,7 @@ class TestViewerPropertiesPanel:
         panel = _panel(window)
         assert panel.property("visible") is True
         assert panel.property("hasSelection") is True
-        assert _entries(panel).get("File name") == "a.jpg"
+        assert _entries(panel).get("File Path", "").endswith("a.jpg")
 
     def test_entries_follow_navigation(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
@@ -53,7 +53,7 @@ class TestViewerPropertiesPanel:
         qt_app.processEvents()
         viewer.setProperty("currentIndex", 1)
         qt_app.processEvents()
-        assert _entries(_panel(window)).get("File name") == "b.jpg"
+        assert _entries(_panel(window)).get("File Path", "").endswith("b.jpg")
 
     def test_close_clears_shared_state(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app

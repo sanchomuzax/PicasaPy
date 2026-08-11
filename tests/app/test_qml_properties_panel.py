@@ -47,8 +47,8 @@ class TestPropertiesPanelInMain:
         assert panel.property("hasSelection") is True
         entries = _entries(panel)
         values = {e["label"]: e["value"] for e in entries}
-        assert values.get("File name") == "a.jpg"
-        assert "File size" in values
+        assert values.get("File Path", "").endswith("a.jpg")
+        assert "File Size" in values
         assert "Dimensions" in values
 
     def test_no_selection_empty_entries(self, qml_app, qt_app):
