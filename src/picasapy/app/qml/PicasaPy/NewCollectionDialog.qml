@@ -24,7 +24,26 @@ Dialog {
     // a beírt gyűjtemény-név — üresen (csak szóköz is) nem fogadható el
     signal created(string name)
 
+    // #461: az eredeti Picasa KÉT hibát különböztet meg — „»%s« is not a
+    // valid collection name" és „You already have a collection named »%s«."
+    // —, ezért a névbekérő is kettőt mutat, a csendes elutasítás helyett.
+    // A választ a controller adja (`validateCollectionName`).
+    property string errorText: ""
+
+    function _errorFor(name) {
+        if (typeof controller === "undefined" || !controller) return ""
+        var code = controller.validateCollectionName(name, root.initialName)
+        if (code === "invalid")
+            return qsTr("\u201c%1\u201d is not a valid collection name")
+                   .replace("%1", name)
+        if (code === "duplicate")
+            return qsTr("You already have a collection named \u201c%1\u201d.")
+                   .replace("%1", name)
+        return ""
+    }
+
     onOpened: {
+        root.errorText = ""
         nameField.text = root.initialName
         nameField.forceActiveFocus()
         standardButton(Dialog.Ok).enabled = Qt.binding(
@@ -35,7 +54,14 @@ Dialog {
         // is közvetlenül accept()-et hív — a védelem itt is fusson, ne csak
         // a gomb enabled-jén.
         var trimmed = nameField.text.trim()
-        if (trimmed.length > 0) root.created(trimmed)
+        if (trimmed.length === 0) return
+        root.errorText = root._errorFor(trimmed)
+        if (root.errorText !== "") {
+            // hibás név: a dialógus NYITVA marad, a hiba a mező alatt
+            root.open()
+            return
+        }
+        root.created(trimmed)
     }
 
     ColumnLayout {
@@ -50,6 +76,18 @@ Dialog {
             objectName: "newCollectionNameField"
             Layout.preferredWidth: 260
             onAccepted: if (text.trim().length > 0) root.accept()
+            onTextChanged: root.errorText = ""
+        }
+        Text {
+            objectName: "newCollectionErrorText"
+            visible: root.errorText !== ""
+            Layout.preferredWidth: 260
+            wrapMode: Text.WordWrap
+            text: root.errorText
+            font.pixelSize: Theme.fontSize - 1
+            // a Theme-ben nincs hiba-token (hot file) — helyi, mindkét
+            // témán olvasható vörös
+            color: "#c0392b"
         }
     }
 }

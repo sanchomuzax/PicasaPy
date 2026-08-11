@@ -249,7 +249,8 @@ class TestPanelButtonThumbnailPlaceholder:
             engine,
             "import QtQuick\nimport QtQuick.Layouts\nimport PicasaPy 1.0\n"
             f"ColumnLayout {{\n    width: {width}\n"
-            "    EditorPanel.PanelButton {\n"
+            # #496: a PanelButton önálló típus lett (kiemelve az EditorPanel.qml-ből)
+            "    PanelButton {\n"
             '        id: btn\n'
             '        objectName: "btn"\n'
             "        Layout.fillWidth: true\n"

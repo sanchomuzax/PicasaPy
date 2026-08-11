@@ -572,7 +572,17 @@
         <source>New Collection</source>
         <translation>Új gyűjtemény</translation>
     </message>
+        <message>
+        <location filename="../qml/PicasaPy/NewCollectionDialog.qml"/>
+        <source>“%1” is not a valid collection name</source>
+        <translation>A(z) „%1” nem érvényes gyűjteménynév</translation>
+    </message>
     <message>
+        <location filename="../qml/PicasaPy/NewCollectionDialog.qml"/>
+        <source>You already have a collection named “%1”.</source>
+        <translation>Már van „%1” nevű gyűjteményed.</translation>
+    </message>
+<message>
         <source>Collection name:</source>
         <translation>Gyűjtemény neve:</translation>
     </message>
@@ -2423,9 +2433,15 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <source>Remove this folder from PicasaPy? The files stay on disk.</source>
         <translation>Eltávolítja ezt a mappát a PicasaPy-ból? A fájlok a lemezen maradnak.</translation>
     </message>
+        <message>
+        <location filename="../qml/PicasaPy/FolderPane.qml"/>
+        <source>Are you sure you want to remove the collection “%1”? All folders in it will be moved to the collection “%2”.</source>
+        <translation>Biztosan eltávolítod a(z) „%1” gyűjteményt? A benne lévő mappák a(z) „%2” gyűjteménybe kerülnek.</translation>
+    </message>
     <message>
-        <source>Remove this collection? The folders and files stay on disk.</source>
-        <translation>Eltávolítja ezt a gyűjteményt? A mappák és a fájlok a lemezen maradnak.</translation>
+        <location filename="../qml/PicasaPy/FolderPane.qml"/>
+        <source>Folders on Disk</source>
+        <translation>Mappák a lemezen</translation>
     </message>
     <message>
         <source>Unnamed</source>
@@ -4576,6 +4592,190 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     <message>
         <source>Clear Selection</source>
         <translation>Kijelölés törlése</translation>
+    </message>
+</context>
+<context>
+    <name>EditorCropPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>This image's orientation has been modified by the Straighten tool and might not crop accurately… try undoing the Straighten fix, then recrop, and Straighten again if necessary.</source>
+        <translation>A kép tájolását a Kiegyenesítés eszköz módosította, ezért a vágás pontatlan lehet… próbálja meg visszavonni a Kiegyenesítés javítást, végezze el a vágást, majd szükség esetén alkalmazza újra a Kiegyenesítést.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Add Custom Aspect Ratio…</source>
+        <translation>Egyéni képarány hozzáadása…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Apply</source>
+        <translation>Alkalmaz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Choose a size below, then drag on the picture to select the area you want to keep.</source>
+        <translation>Válasszon az alábbi méretek közül, majd a fogd és húzd módszerrel jelölje ki a képnek azt a részét, amelyiket meg szeretné tartani.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Crop Photo</source>
+        <translation>Fotó vágása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Delete this custom aspect ratio?</source>
+        <translation>Törli ezt az egyéni képarányt?</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Landscape</source>
+        <translation>Fekvő</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Portrait</source>
+        <translation>Álló</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Preview</source>
+        <translation>Előnézet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Reset</source>
+        <translation>Alaphelyzet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Rotate</source>
+        <translation>Forgatás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Top left</source>
+        <translation>Bal felső</translation>
+    </message>
+</context>
+<context>
+    <name>EditorRetouchPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Apply</source>
+        <translation>Alkalmaz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Brush Size</source>
+        <translation>Ecset mérete</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Click to select the area to fix. Then, move the mouse to see a preview of the replacement area. Click on the image again to finalize. Lather, rinse, repeat.</source>
+        <translation>Kattintson a javítandó terület kijelöléséhez. Ezután mozgassa az egeret a csereterület előnézetének megtekintéséhez. Kattintson újra a képre a véglegesítéshez. Ismételje a folt eltüntetéséig.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Redo Patch</source>
+        <translation>Folt újra</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Refining…</source>
+        <translation>Finomítás…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Regions selected: %1</source>
+        <translation>Kijelölt területek: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Reset</source>
+        <translation>Alaphelyzet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Retouch</source>
+        <translation>Retusálás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorRetouchPanel.qml"/>
+        <source>Undo Patch</source>
+        <translation>Folt visszavonása</translation>
+    </message>
+</context>
+<context>
+    <name>EditorTextPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Add text based on the picture's caption</source>
+        <translation>Szöveg hozzáadása a kép felirata alapján</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Don't show the solid fill color (show outline only)</source>
+        <translation>Ne jelenjen meg a kitöltőszín (csak körvonal)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Apply</source>
+        <translation>Alkalmaz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Copy Caption</source>
+        <translation>Felirat átvétele</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Opacity</source>
+        <translation>Átlátszatlanság</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Outline color</source>
+        <translation>Körvonal színe</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Outline thickness</source>
+        <translation>Körvonal vastagsága</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Remove all existing text</source>
+        <translation>Minden meglévő szöveg törlése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Text color</source>
+        <translation>Szöveg színe</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Text</source>
+        <translation>Szöveg</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTextPanel.qml"/>
+        <source>Type your text, then click on the photo to place it.</source>
+        <translation>Írja be a szöveget, majd kattintson a fotóra az elhelyezéséhez.</translation>
     </message>
 </context>
 </TS>
