@@ -5,8 +5,10 @@ from picasapy.edit.save import (
     RevertResult,
     SaveError,
     SaveResult,
+    UndoSaveResult,
     revert,
     save_edited,
+    undo_save,
 )
 from picasapy.edit.session import EditSession
 
@@ -16,6 +18,8 @@ __all__ = [
     "RevertResult",
     "SaveError",
     "SaveResult",
+    "UndoSaveResult",
     "revert",
     "save_edited",
+    "undo_save",
 ]

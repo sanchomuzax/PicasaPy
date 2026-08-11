@@ -69,7 +69,13 @@ import cv2
 import numpy as np
 
 from picasapy.edit.session import EditSession
-from picasapy.ini import IniConflictError, IniSaveError, update_document
+from picasapy.ini import (
+    IniConflictError,
+    IniSaveError,
+    load_document,
+    update_document,
+)
+from picasapy.scanner import PICASA_INI_NAME
 from picasapy.ioutil import write_atomic
 
 #: A rejtett almappa neve, ahová az érintetlen eredeti kerül (spec + UX #3).
@@ -179,6 +185,16 @@ def save_edited(
     if backup_created_now:
         write_atomic(backup_path, bytes_before_write, make_parents=True)
 
+    # (a2) #444: MENTÉSENKÉNTI, sorszámozott pillanatkép a mentés ELŐTTI
+    # bájtokról — ez teszi visszavonhatóvá az utolsó mentést a szerkesztések
+    # elvesztése nélkül (`undo_save`). A „szent" eredeti (fent) ettől
+    # függetlenül megmarad a Visszaállításhoz.
+    snapshots = _existing_snapshots(image_path)
+    next_number = (snapshots[-1][0] + 1) if snapshots else 1
+    write_atomic(
+        _snapshot_path(image_path, next_number), bytes_before_write, make_parents=True
+    )
+
     # (b) A renderelt kép az eredeti HELYÉRE.
     payload = _encode_image(image_path.suffix, rendered_image, jpeg_quality)
     write_atomic(image_path, payload)
@@ -209,6 +225,80 @@ def save_edited(
         backup_created_now=backup_created_now,
         redo_value=redo_value,
         originhash=originhash,
+    )
+
+
+@dataclass(frozen=True)
+class UndoSaveResult:
+    """Az `undo_save` eredménye (#444)."""
+
+    image_path: Path
+    restored_from: Path
+    #: a visszaadott szerkesztési lánc (a `redo=`-ból a `filters=`-be)
+    restored_filters: str
+
+
+def undo_save(image_path: str | Path) -> UndoSaveResult:
+    """„Utolsó mentés visszavonása" — a SZERKESZTÉSEK MEGMARADNAK (#444).
+
+    Ez a Picasa négy mentés-műveletéből a köztes fokozat, és élesen KÜLÖNBÖZIK
+    a `revert`-től:
+
+    * `revert` — a kép visszaáll a „szent" eredetire, és a szerkesztési
+      könyvelés is törlődik: *„This cannot be undone and all changes will be
+      lost."*
+    * `undo_save` — csak az UTOLSÓ lemezre írást vonja vissza: a kép a mentés
+      előtti bájtjait kapja vissza, a mentéskor `redo=`-ba tett lánc pedig
+      visszakerül `filters=`-be. Az eredeti szavakkal: *„To undo the last
+      save and keep edits click 'Undo Save'."*
+
+    A mentés előtti bájtok a mentésenként készülő, sorszámozott
+    pillanatképből jönnek (`_snapshot_path`); a felhasznált pillanatkép a
+    művelet végén törlődik, így többszöri hívás lépésenként halad visszafelé.
+
+    Raises:
+        SaveError: ha nincs visszavonható mentés (nincs pillanatkép).
+    """
+    image_path = Path(image_path)
+    snapshots = _existing_snapshots(image_path)
+    if not snapshots:
+        raise SaveError(
+            f"Nincs visszavonható mentés: {image_path.name} "
+            f"({ORIGINALS_DIR_NAME} üres vagy hiányzik)"
+        )
+    number, snapshot = snapshots[-1]
+    del number
+
+    section = _section_name(image_path)
+    document = load_document(image_path.parent / PICASA_INI_NAME)
+    stored = document.section(section)
+    restored_filters = (stored.get(_REDO_KEY) or "") if stored else ""
+
+    bytes_before = image_path.read_bytes()
+    write_atomic(image_path, snapshot.read_bytes())
+    try:
+        _update_ini_document(
+            image_path,
+            lambda doc: (
+                doc.with_value(section, _FILTERS_KEY, restored_filters)
+                if restored_filters
+                else doc.with_removed(section, _FILTERS_KEY)
+            )
+            .with_removed(section, _REDO_KEY)
+            .with_removed(section, _ORIGINHASH_KEY),
+        )
+    except _INI_WRITE_ERRORS as error:
+        # #297 mintája: ha a könyvelés elbukik, a képfájl is álljon vissza —
+        # különben a kép a mentés ELŐTTI állapotban lenne, de az ini a
+        # mentés utánit hinné (a lánc kétszer futna a következő nyitáskor).
+        _restore_image_or_raise(image_path, bytes_before, snapshot, error)
+        raise
+
+    snapshot.unlink(missing_ok=True)
+    return UndoSaveResult(
+        image_path=image_path,
+        restored_from=snapshot,
+        restored_filters=restored_filters,
     )
 
 
@@ -299,6 +389,33 @@ def _restore_image_or_raise(
 def _backup_path_for(image_path: Path) -> Path:
     """A kép `.picasaoriginals`-beli, várt biztonsági-mentés útja."""
     return image_path.parent / ORIGINALS_DIR_NAME / image_path.name
+
+
+def _snapshot_path(image_path: Path, number: int) -> Path:
+    """A `<név>.<N><kiterjesztés>` alakú, MENTÉSENKÉNTI pillanatkép útja.
+
+    #444: a Picasa binárisában a `.picasaoriginals` névmintája `%s.%d.jpg`
+    (`.mov`, `.wmv`) — vagyis a „szent" eredeti MELLETT mentésenként külön,
+    SORSZÁMOZOTT másolat is készül. Ez teszi lehetővé az „Utolsó mentés
+    visszavonása" parancsot (`undo_save`): az utolsó mentés visszavonható
+    úgy, hogy a SZERKESZTÉSEK MEGMARADNAK.
+    """
+    directory = image_path.parent / ORIGINALS_DIR_NAME
+    return directory / f"{image_path.stem}.{number}{image_path.suffix}"
+
+
+def _existing_snapshots(image_path: Path) -> list[tuple[int, Path]]:
+    """A meglévő sorszámozott pillanatképek `(N, útvonal)` párjai, növekvő
+    sorrendben. Hibás (nem szám) sorszámú fájlt figyelmen kívül hagy."""
+    directory = image_path.parent / ORIGINALS_DIR_NAME
+    if not directory.is_dir():
+        return []
+    found: list[tuple[int, Path]] = []
+    for path in directory.glob(f"{image_path.stem}.*{image_path.suffix}"):
+        middle = path.name[len(image_path.stem) + 1 : -len(image_path.suffix)]
+        if middle.isdigit():
+            found.append((int(middle), path))
+    return sorted(found)
 
 
 def _section_name(image_path: Path) -> str:
