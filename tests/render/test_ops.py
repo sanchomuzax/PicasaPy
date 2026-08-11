@@ -11,6 +11,7 @@ from picasapy.ini.rect64 import Rect64
 from picasapy.render.ops import (
     apply_autocolor,
     apply_autolight,
+    apply_channel_levels_stretch,
     apply_crop,
     apply_enhance,
     apply_redeye,
@@ -338,3 +339,36 @@ class TestApplyRedeye:
         original = image.copy()
         apply_redeye(image)
         np.testing.assert_array_equal(image, original)
+
+
+class TestMinStretchSpan:
+    """#539: a nagyon szűk hisztogramú csatornát a szinthúzás nem feszíti
+    ki a teljes tartományra.
+
+    A `referencia/imfeellucky/` „Utopic Unicorn" képén — a 12-ből az
+    egyetlen szélső eset — a két szűk csatorna kimért bemeneti tartománya
+    58,1 és 59,2, holott a nyers tartományuk 35 és 41 volt. A korlát a
+    feketepontot tartja, a fehérpontot tolja feljebb.
+    """
+
+    def test_szuk_csatorna_nem_feszul_a_teljes_tartomanyra(self) -> None:
+        # 30 szintnyi tartomány (100..130): a naiv nyújtás 0..255-re vinné
+        narrow = np.tile(
+            np.linspace(100, 130, 64, dtype=np.uint8)[:, np.newaxis, np.newaxis],
+            (1, 64, 3),
+        )
+        result = apply_channel_levels_stretch(narrow)
+        spread = int(result.max()) - int(result.min())
+        assert spread < 200, f"a szűk csatorna teljesen kifeszült ({spread})"
+        # a feketepont a horgony: a legsötétebb képpont marad a legsötétebb
+        assert int(result.min()) == 0
+
+    def test_szeles_csatorna_tovabbra_is_kifeszul(self) -> None:
+        """A korlát csak a szűk esetre vonatkozik — a szokásos képeken a
+        szinthúzás változatlanul a teljes tartományra visz."""
+        wide = np.tile(
+            np.linspace(40, 200, 64, dtype=np.uint8)[:, np.newaxis, np.newaxis],
+            (1, 64, 3),
+        )
+        result = apply_channel_levels_stretch(wide)
+        assert int(result.max()) - int(result.min()) > 240

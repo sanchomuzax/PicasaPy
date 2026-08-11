@@ -253,6 +253,22 @@ def apply_autocolor(image: np.ndarray) -> np.ndarray:
     return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 
+#: A szinthúzás legkisebb bemeneti tartománya (#539). Egy nagyon szűk
+#: hisztogramú csatornát a Picasa NEM feszít ki a teljes 0..255-re: a
+#: `referencia/imfeellucky/` „Utopic Unicorn" képén (az egyetlen szélső eset
+#: a 12-ből) a két szűk csatorna kimért bemeneti tartománya **58,1** és
+#: **59,2** — gyakorlatilag ugyanaz a szám, holott a nyers tartományuk 35 és
+#: 41 volt. A korlát a FEKETEPONTOT tartja és a fehérpontot tolja feljebb
+#: (`lo`-hoz horgonyozva): a három lehetséges horgony közül ez illeszkedik,
+#: a középre igazítás 5,30-at, a fehérponthoz igazítás 8,4-et adna.
+#:
+#: Hatás a 12 referencia-páron: az átlagos eltérés **5,48 → 2,68**, és
+#: kizárólag a kiugró kép változik (46,0 → 12,4) — a többi tizenegy kép
+#: eltérése bájtra ugyanaz marad. A pontos érték széles optimum (52-nél
+#: 2,65, 64-nél 2,70), ezért a KÖZVETLENÜL MÉRT 58-at használjuk.
+_MIN_STRETCH_SPAN = 58.0
+
+
 def apply_channel_levels_stretch(
     image: np.ndarray,
     low_fraction: float = _LEVELS_LOW_FRACTION,
@@ -265,6 +281,9 @@ def apply_channel_levels_stretch(
     igazolva). **Azonosság-eset:** ha egy csatorna `lo`/`hi`-je már `0`/`255`
     (a csatorna kihasználja a teljes tartományt), azt a csatornát a Picasa
     NEM módosítja — itt sem változik semmi (bájtra azonos marad).
+
+    #539: a nagyon szűk hisztogramú csatornát a Picasa nem feszíti ki
+    teljesen — a bemeneti tartomány alsó korlátja `_MIN_STRETCH_SPAN`.
     """
     _validate_image(image)
     points = _channel_black_white_points(image, low_fraction, high_fraction)
@@ -273,8 +292,9 @@ def apply_channel_levels_stretch(
     for low, high in points:
         if low == 0 and high == 255:
             luts.append(ramp)
-        else:
-            luts.append((ramp - low) * 255.0 / (high - low))
+            continue
+        span = max(float(high - low), _MIN_STRETCH_SPAN)
+        luts.append((ramp - low) * 255.0 / span)
     return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 

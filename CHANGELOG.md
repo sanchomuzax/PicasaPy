@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.60] – 2026-08-11
+
+### Javítva
+- **A „Jó napom van" szélső eseteken is pontosabb (#539).** A nagyon szűk
+  hisztogramú (egyszínű, alacsony kontrasztú) képeket eddig túl agresszíven
+  feszítettük ki. A mérés szerint a Picasa ilyenkor korlátozza a nyújtást —
+  a 12 referencia-páron az eltérés **5,48 → 2,68**, és ebből a kiugró kép
+  hibája **46,0 → 12,4**. A többi tizenegy kép kimenete bájtra változatlan.
+
 ## [0.6.59] – 2026-08-11
 
 ### Javítva
