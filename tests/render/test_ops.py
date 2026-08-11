@@ -177,44 +177,56 @@ class TestApplyAutolight:
 
 
 class TestApplyAutocolor:
-    """Auto Colour — megfejtve #540-ben: csatornánként KÜLÖN hisztogram-
-    darabszám alapú vágás (fehéregyensúly-hatás) — de a három csatorna egy
-    KÖZÖS kimeneti sávra (a vágópontok átlagára) simul, nem mindegyik
-    önállóan 0..255-re (az utóbbi a méréskor rosszabbul illeszkedett)."""
+    """Auto Colour — #541: csatornánkénti ERŐSÍTÉS (`ki = be · gain`), az
+    erősítés a SEMLEGES képpontokra számolt szürkevilág-becslésből. A
+    feketepont nem mozdul; a 12 referencia-képen az eltérés 2,35 (az
+    érintetlen képé 5,29, a mért erősítésekkel elérhető alsó korlát 1,08)."""
 
     def test_semleges_kepen_no_op(self) -> None:
         # megfejtve: semleges (szürke) bemeneten az autocolor nem csinál semmit
         image = _gradient_image()
         np.testing.assert_array_equal(apply_autocolor(image), image)
 
-    def test_csatornankent_kulon_vagas_kozos_celsavra_simul(self) -> None:
-        # megfejtve (#540): mindhárom csatorna a MAGA lo/hi-jét kapja
-        # (fehéregyensúly-hatás), de a kimenetük egy KÖZÖS sávra simul —
-        # ettől lesz az Auto Colour különböző az Auto Contrasttól ÉS a
-        # "Jó napom van"-tól (ami mindegyiket önállóan 0..255-re nyújtja).
-        height, width = 50, 60
-        red = np.linspace(40, 200, width, dtype=np.uint8)
-        green = np.linspace(0, 255, width, dtype=np.uint8)
-        blue = np.linspace(80, 180, width, dtype=np.uint8)
-        image = np.tile(np.stack([red, green, blue], axis=-1), (height, 1, 1))
+    def test_csatornankent_kulon_erosites_a_semleges_pixelekbol(self) -> None:
+        """#541: az Auto Colour tiszta csatorna-ERŐSÍTÉS (a feketepont nem
+        mozdul), és az erősítést a SEMLEGES képpontok szürkevilág-becslése
+        adja — a telített részletek kimaradnak.
+
+        Itt egy kékes árnyalatú, semleges-közeli felület mellé teszünk egy
+        erősen telített (tiszta vörös) foltot: a becslésnek a kék elhajlást
+        kell kiegyenlítenie, a vörös foltnak pedig NEM szabad elhúznia.
+        """
+        image = np.zeros((80, 80, 3), dtype=np.uint8)
+        image[:, :] = (110, 120, 150)  # semleges-közeli, kékes
+        image[:, 60:] = (230, 10, 10)  # erősen telített vörös folt
 
         result = apply_autocolor(image)
 
-        # a harom csatorna UGYANARRA a kimeneti tartomanyra simul (kozos celsav)
-        mins = [int(result[..., c].min()) for c in range(3)]
-        maxs = [int(result[..., c].max()) for c in range(3)]
-        assert max(mins) - min(mins) <= 1
-        assert max(maxs) - min(maxs) <= 1
-        # ...de a meredekseguk KULONBOZO, mert a bemeneti tartomanyuk mas volt
-        # (piros: 40..200, zold: 0..255, kek: 80..180) — ez a fehéregyensúly-hatás
-        def slope(channel: int) -> float:
-            lo_in, hi_in = int(image[0, 0, channel]), int(image[0, -1, channel])
-            lo_out, hi_out = int(result[0, 0, channel]), int(result[0, -1, channel])
-            return (hi_out - lo_out) / (hi_in - lo_in)
+        neutral_before = image[0, 0].astype(int)
+        neutral_after = result[0, 0].astype(int)
+        # a kékes elhajlás csökken: a csatornák közelebb kerülnek egymáshoz
+        assert max(neutral_after) - min(neutral_after) < max(neutral_before) - min(
+            neutral_before
+        )
+        # a feketepont nem mozdul: a 0 marad 0 (tiszta erősítés, nem szinthúzás)
+        black = apply_autocolor(
+            np.concatenate([image, np.zeros((10, 80, 3), dtype=np.uint8)], axis=0)
+        )
+        assert int(black[-1, 0, 0]) == 0
 
-        slopes = [slope(0), slope(1), slope(2)]
-        assert len({round(s, 2) for s in slopes}) == 3
+    def test_a_telitett_kepreszlet_nem_huzza_el_a_becslest(self) -> None:
+        """A telített folt színe nem számít bele: ha csak a folt színét
+        cseréljük (vörösről zöldre), a semleges felület kimenete ugyanaz."""
+        base = np.zeros((80, 80, 3), dtype=np.uint8)
+        base[:, :] = (110, 120, 150)
+        red_patch = base.copy()
+        red_patch[:, 60:] = (230, 10, 10)
+        green_patch = base.copy()
+        green_patch[:, 60:] = (10, 230, 10)
 
+        assert list(apply_autocolor(red_patch)[0, 0]) == list(
+            apply_autocolor(green_patch)[0, 0]
+        )
     def test_elethu_fotoval_szinesitett_kepen_kulonbozo_csatorna_lut(self) -> None:
         # élethű, térben strukturált szintetikus fotó (#504 tanulsága: sík
         # zaj nem elég), mesterséges színezettel ellátva

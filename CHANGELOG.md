@@ -5,6 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.58] – 2026-08-11
+
+### Javítva
+- **Az automatikus szín (Auto Colour) modellje megvan (#541).** A 12 képes
+  mérőkészlet három dolgot mondott ki: az effekt tiszta csatornánkénti
+  **erősítés** (a feketepont nem mozdul), és az erősítést a kép **semleges**
+  (kevéssé telített) képpontjaiból számolt fehéregyensúly adja — a telített
+  részletek (virág, égbolt) nem számítanak bele. Az eltérés a valódi
+  Picasa-kimenettől **7,45 → 2,35**; az érintetlen kép 5,29, a mért
+  erősítésekkel elérhető elméleti alsó korlát 1,08. A korábbi változat tehát
+  rosszabb volt, mintha meg sem csináltuk volna az effektet — most a felére
+  csökkent a hiba.
+
 ## [0.6.57] – 2026-08-11
 
 ### Javítva — a háttérszálas szerkesztő-render kódátvizsgálásának találatai
