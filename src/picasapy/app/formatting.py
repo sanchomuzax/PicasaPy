@@ -33,17 +33,49 @@ def to_local_path(path_or_url: str) -> str:
     return str(Path(text)) if text else ""
 
 
+#: A Picasa MAGYAR méretformátumai (#526), a CD-diavetítő 37 nyelvű
+#: szövegkészletéből (ugyanaz a séma, mint a `Picasa3i18n.dll`-é):
+#:
+#:     il_FormatBigB  = "%.0f bájt"   il_FormatBigKB = "%.0f KB"
+#:     il_FormatBigMB = "%.1f MB"     il_FormatBigGB = "%.1f GB"
+#:     il_FormatBigTB = "%.1f TB"
+#:
+#: Vagyis: „bájt" KISBETŰVEL, bájt és KB EGÉSZ számra, MB-tól EGY tizedes.
+#: (küszöb, felirat, tizedesjegyek)
+_SIZE_TIERS = (
+    (1024, "%1 bytes", 0),
+    (1024**2, "%1 KB", 0),
+    (1024**3, "%1 MB", 1),
+    (1024**4, "%1 GB", 1),
+)
+
+
 def format_size(size_bytes: int, locale: QLocale, tr) -> str:
-    """Fájlméret Picasa-stílusban: 1 MB alatt KB-ban, fölötte MB-ban."""
-    if size_bytes < 1024 * 1024:
-        return tr("%1 KB").replace("%1", str(round(size_bytes / 1024)))
-    return tr("%1 MB").replace(
-        "%1", locale.toString(size_bytes / (1024 * 1024), "f", 1)
+    """Fájlméret a Picasa magyar formátumai szerint (#526).
+
+    A korábbi változat 1 MB alatt MINDIG KB-ot írt (egy 300 bájtos fájl így
+    „0 KB" volt) és a GB/TB fokozatot nem ismerte.
+    """
+    for limit, label, decimals in _SIZE_TIERS:
+        if size_bytes < limit:
+            unit = limit // 1024
+            value = size_bytes / unit if unit > 1 else float(size_bytes)
+            return tr(label).replace("%1", locale.toString(value, "f", decimals))
+    return tr("%1 TB").replace(
+        "%1", locale.toString(size_bytes / 1024**4, "f", 1)
     )
 
 
 def long_date(iso: str, locale: QLocale) -> str:
-    """Picasa-stílusú hosszú dátum: `2026. január 2., péntek`."""
+    """Picasa-stílusú hosszú dátum: `2026. január 2., péntek`.
+
+    #526 — TUDATOS ELTÉRÉS: az eredeti Picasa magyar szövegkészletében a
+    dátum/idő formátumok LEFORDÍTATLANUL maradtak (`ytDateTime::Format1 =
+    "%1$s %2$d, %3$d"`, azaz „hónap nap, év", és 12 órás AM/PM-es idő). Az
+    a NEM magyar sorrend és óraformátum — egy fordítási hiányosság, nem
+    szándékos alak. Nálunk a helyes magyar alak marad (`ÉÉÉÉ. hónap N.`,
+    24 órás idő); ezt egy későbbi „hűségjavítás" NE rontsa vissza.
+    """
     date = QDate.fromString(iso[:10], "yyyy-MM-dd")
     return locale.toString(date, QLocale.FormatType.LongFormat)
 

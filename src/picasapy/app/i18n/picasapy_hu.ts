@@ -952,6 +952,21 @@
         <source>Rotated 90° CCW</source>
         <translation>90°-kal balra forgatva</translation>
     </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>%1 bytes</source>
+        <translation>%1 bájt</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>%1 GB</source>
+        <translation>%1 GB</translation>
+    </message>
+    <message>
+        <location filename="../formatting.py"/>
+        <source>%1 TB</source>
+        <translation>%1 TB</translation>
+    </message>
 <message>
         <location filename="../formatting.py" line="39"/>
         <source>%1 KB</source>

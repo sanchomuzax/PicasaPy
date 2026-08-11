@@ -173,3 +173,33 @@ class TestPropertiesOrderFollowsPicasa:
 
         assert all(value not in (None, "") for _, value in entries)
         assert "Lens" not in dict(entries)
+
+
+class TestPicasaSizeFormats:
+    """#526: a Picasa MAGYAR méretformátumai a CD-diavetítő szövegkészletéből
+    (`il_FormatBigB/KB/MB/GB/TB`): bájt és KB egész számra, MB-tól egy
+    tizedes, és „bájt" kisbetűvel."""
+
+    def _size(self, value):
+        from picasapy.app.formatting import format_size
+
+        return format_size(value, QLocale("en"), lambda t: t)
+
+    def test_bytes_tier_is_not_rounded_to_zero_kb(self):
+        """A korábbi változat 1 MB alatt MINDIG KB-ot írt — egy 300 bájtos
+        fájl így „0 KB" volt."""
+        assert self._size(300) == "300 bytes"
+
+    def test_kilobytes_are_whole_numbers(self):
+        assert self._size(900 * 1024) == "900 KB"
+
+    def test_megabytes_and_up_get_one_decimal(self):
+        assert self._size(5 * 1024**2) == "5.0 MB"
+        assert self._size(3 * 1024**3) == "3.0 GB"
+        assert self._size(2 * 1024**4) == "2.0 TB"
+
+    def test_tier_boundaries(self):
+        assert self._size(1024 - 1).endswith("bytes")
+        assert self._size(1024).endswith("KB")
+        assert self._size(1024**2).endswith("MB")
+        assert self._size(1024**3).endswith("GB")
