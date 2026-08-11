@@ -4778,4 +4778,233 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <translation>Írja be a szöveget, majd kattintson a fotóra az elhelyezéséhez.</translation>
     </message>
 </context>
+<context>
+    <name>EditorEffectsTab1</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>B&amp;W</source>
+        <translation>Fekete-fehér</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Effects</source>
+        <translation>Effektek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Film Grain</source>
+        <translation>Filmszemcse</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Filtered B&amp;W</source>
+        <translation>Szűrt FF</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Focal Saturation</source>
+        <translation>Fókuszos FF</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Glow</source>
+        <translation>Ragyogás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Graduated Tint</source>
+        <translation>Színátmenet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Saturation</source>
+        <translation>Telítettség</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Sepia</source>
+        <translation>Szépia</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Sharpen</source>
+        <translation>Élesítés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Soft Focus</source>
+        <translation>Lágy fókusz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Tint</source>
+        <translation>Árnyalás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Vignette</source>
+        <translation>Vignetta</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab1.qml"/>
+        <source>Warmify</source>
+        <translation>Melegítés</translation>
+    </message>
+</context>
+<context>
+    <name>EditorEffectsTab2</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>1960s</source>
+        <translation>60-as évek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Cinemascope</source>
+        <translation>Kinemaszkóp</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Creative</source>
+        <translation>Kreatív</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Cross Process</source>
+        <translation>Áttűnés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Duo-Tone</source>
+        <translation>Kéttónusú</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>HDR-ish</source>
+        <translation>HDR-szerű</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Heat Map</source>
+        <translation>Hőtérkép</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Holga-ish</source>
+        <translation>Holga-szerű</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Infrared Film</source>
+        <translation>Infravörös film</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Invert Colors</source>
+        <translation>Színinvertálás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Local Contrast</source>
+        <translation>Helyi kontraszt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Lomo-ish</source>
+        <translation>Lomo-szerű</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Matte</source>
+        <translation>Matt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Night Vision</source>
+        <translation>Éjjellátó</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Orton-ish</source>
+        <translation>Orton-szerű</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab2.qml"/>
+        <source>Posterize</source>
+        <translation>Poszterizálás</translation>
+    </message>
+</context>
+<context>
+    <name>EditorEffectsTab3</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Artistic</source>
+        <translation>Művészi</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Boost</source>
+        <translation>Felpörgetés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Border</source>
+        <translation>Szegély</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Comicize</source>
+        <translation>Képregény</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Drop Shadow</source>
+        <translation>Árnyékvetés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Film Grain (Fine)</source>
+        <translation>Filmszemcse (finom)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Focal Zoom</source>
+        <translation>Fókusznagyítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Museum Matte</source>
+        <translation>Múzeumi matt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Neon</source>
+        <translation>Neon</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Pencil Sketch</source>
+        <translation>Ceruzarajz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Pixelate</source>
+        <translation>Képpontnagyítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Polaroid</source>
+        <translation>Polaroid</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Rounded Edges</source>
+        <translation>Lekerekített sarkok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Soft Focus</source>
+        <translation>Lágy fókusz</translation>
+    </message>
+</context>
 </TS>
