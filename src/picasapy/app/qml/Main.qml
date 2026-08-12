@@ -1160,6 +1160,57 @@ ApplicationWindow {
                     window.selectedRows(), controller.currentAlbumToken)
         }
         onNewAlbumRequested: fileOpsDialogs.openNewAlbum(window.selectedRows())
+        // #422 4. lépcső: az Emberek-album kép-szintű parancsai. A tételek
+        // csak személy-albumban látszanak (üres `personName` = rejtve).
+        personName: controller ? controller.currentPersonName : ""
+        onRemoveFromPeopleAlbumRequested: {
+            if (controller) removePeopleFacesDialog.openFor(
+                window.selectedRows(), controller.currentPersonName)
+        }
+        onMoveToNewPersonRequested: {
+            if (controller) moveToNewPersonDialog.openFor(
+                window.selectedRows(), controller.currentPersonName)
+        }
+    }
+
+    // #422: „Eltávolítás az Emberek albumból" — a kijelölt képekről leveszi
+    // az ADOTT személy arc-címkéjét (a régió is eltűnik: a Picasa is az
+    // arcot veszi le, nem csak a nevet). Megerősítéssel: a névcímke
+    // visszaállítása csak újbóli felismeréssel/kézi felvétellel lehetséges.
+    ConfirmDialog {
+        id: removePeopleFacesDialog
+        objectName: "removePeopleFacesDialog"
+        namePrefix: "removePeopleFaces"
+        title: qsTr("Remove from People Album")
+        property var rows: []
+        property string person: ""
+        function openFor(rowList, name) {
+            if (rowList.length === 0 || name.length === 0) return
+            rows = rowList
+            person = name
+            ask("removePeopleFaces", qsTr(
+                "The face tag \"%1\" will be removed from %n selected"
+                + " picture(s).", "", rowList.length).arg(name))
+        }
+        onConfirmed: controller.removePersonFromRows(rows, person)
+    }
+
+    // #422: „Áthelyezés új személyhez…" — az adott személy arc-címkéje a
+    // kijelölt képeken ÁTKERÜL egy másik névre (a régió marad).
+    NameInputDialog {
+        id: moveToNewPersonDialog
+        objectName: "moveToNewPersonDialog"
+        title: qsTr("Move to New Person")
+        prompt: qsTr("New person's name:")
+        property var rows: []
+        property string person: ""
+        function openFor(rowList, name) {
+            if (rowList.length === 0 || name.length === 0) return
+            rows = rowList
+            person = name
+            openEmpty()
+        }
+        onAccepted: controller.movePersonOnRows(rows, person, enteredName)
     }
 
     // átnevezés / áthelyezés / törlés / hiba (FileOpsDialogs.qml, #150)

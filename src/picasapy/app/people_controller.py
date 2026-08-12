@@ -7,20 +7,39 @@ nézetmód-ág felvétele a `controller.py`-ban — FORRÓ fájl, az integrátor
 dolga, ld. jelentés). A személy-választás a `showAlbum` mintáját követi:
 szűrt nézet, a mappa-kontextus megmarad a `clearFilter`-es visszaváltáshoz.
 
-Írás (arc-régió hozzárendelése/törlése egy névhez) ebben a körben NINCS —
-ld. `docs/specs` és az issue-jelentés: a #26 1. köre csak a meglévő
-`faces=`/`[Contacts2]` adatok OLVASÁSÁRA épül."""
+A #26 1. köre csak OLVASOTT; a #422 4. lépcsőjével két KÖTEGELT írás is
+ide került (az Emberek-album kép-szintű parancsai): egy személy arc-
+címkéjének levétele, illetve átvitele másik névre a kijelölt képeken. Az
+írás a `faces_helper.py` mintáját követi (ütközésbiztos `update_document`,
+atomikus, backuppal), csak több képre, mappánként egy ini-írással."""
 
 from __future__ import annotations
 
+import secrets
 import time
+from pathlib import Path
 
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
 from picasapy.index import open_index
 from picasapy.index.people import people_in_index, person_photos
+from picasapy.ini import (
+    IniConflictError,
+    IniSaveError,
+    ensure_contact,
+    find_contact_id,
+    parse_faces,
+    update_document,
+    with_reassigned_face,
+    without_face_at_rect,
+)
+from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
+
+# a csillag/album-írás mintája (photo_ops_controller.py): a tartós ütközés
+# és a lemezhiba is KEZELT hiba, nem néma adatvesztés
+_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
 
 
 class PeopleMixin:
@@ -80,3 +99,101 @@ class PeopleMixin:
         with open_index(self._db_path) as conn:
             self._show(person_photos(conn, param))
         return True
+
+    # -- #422 4. lépcső: az Emberek-album kép-szintű parancsai -------------
+
+    #: a kötegelt arc-írás hibája (a `albumWriteFailed` mintája) — a hívó
+    #: réteg ezt köti hibaüzenetre
+    personWriteFailed = Signal(str)
+
+    @staticmethod
+    def _person_faces(document, photo_name: str, contact_id: str):
+        """Az adott kontakthoz tartozó arc-régiók egy fotón.
+
+        Hiányzó/sérült `faces=`-nél üres — a #301-elv szerint idegen adat nem
+        szökhet ki kivétellel."""
+        section = document.section(photo_name)
+        raw = section.get("faces") if section is not None else None
+        if not raw:
+            return ()
+        try:
+            faces = parse_faces(raw)
+        except ValueError:
+            return ()
+        wanted = contact_id.casefold()
+        return tuple(
+            face.rect
+            for face in faces
+            if face.is_identified and face.contact_id.casefold() == wanted
+        )
+
+    def _rewrite_person_faces(self, rows, person: str, new_name: str | None) -> bool:
+        """Az adott személy arc-címkéinek átírása a kijelölt képeken.
+
+        `new_name is None` esetén a régió TÖRLŐDIK (az eredeti „Eltávolítás
+        az Emberek albumból" is az arcot veszi le, nem csak a nevet);
+        egyébként a régió marad, csak másik névhez kerül.
+
+        Mappánként EGY ini-írás (a `clearAllEffectsMany` mintája), így egy
+        nagy kijelölés sem ír fájlonként újra és újra.
+        """
+        if not person:
+            return False
+        by_folder: dict[str, list[str]] = {}
+        for photo in self._rows_to_photos(rows):
+            by_folder.setdefault(photo.folder_path, []).append(photo.name)
+        if not by_folder:
+            return False
+
+        for folder, names in by_folder.items():
+            def mutate(document, names=names, person=person, new_name=new_name):
+                # a forrás-kontakt EBBEN a dokumentumban (mappánként más
+                # azonosító tartozhat ugyanahhoz a névhez — a Picasa is így
+                # tárol); ha nincs, ebben a mappában nincs mit átírni
+                source_id = find_contact_id(document, person)
+                if source_id is None:
+                    return document
+                target_id = None
+                if new_name:
+                    target_id = find_contact_id(document, new_name)
+                    if target_id is None:
+                        target_id = secrets.token_hex(8)
+                        document = ensure_contact(document, target_id, new_name)
+                for photo_name in names:
+                    for rect in self._person_faces(document, photo_name, source_id):
+                        if target_id is not None:
+                            document = with_reassigned_face(
+                                document, photo_name, rect, target_id
+                            )
+                        else:
+                            document = without_face_at_rect(
+                                document, photo_name, rect
+                            )
+                return document
+
+            try:
+                update_document(
+                    Path(folder) / PICASA_INI_NAME, mutate, backup=True
+                )
+            except _WRITE_ERRORS as error:
+                self.personWriteFailed.emit(str(error))
+                return False
+        self._refresh_view()
+        return True
+
+    @Slot(list, str, result=bool)
+    def removePersonFromRows(self, rows, person: str) -> bool:
+        """„Eltávolítás az Emberek albumból" (#422): az adott személy
+        arc-címkéje (a régióval együtt) lekerül a kijelölt képekről."""
+        return self._rewrite_person_faces(rows, person, None)
+
+    @Slot(list, str, str, result=bool)
+    def movePersonOnRows(self, rows, person: str, new_name: str) -> bool:
+        """„Áthelyezés új személyhez…" (#422): az adott személy arc-címkéje
+        a kijelölt képeken ÁTKERÜL a megadott névre — a régió változatlan.
+
+        Üres új névnél no-op (a hívó dialógus üres nevet nem enged; ez a
+        nem-UI hívók védőkorlátja)."""
+        if not new_name.strip():
+            return False
+        return self._rewrite_person_faces(rows, person, new_name.strip())

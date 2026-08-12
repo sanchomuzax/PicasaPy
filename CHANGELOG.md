@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.84] – 2026-08-12
+
+### Hozzáadva
+- **Az Emberek-album kép-parancsai a jobbklikk-menüben (#422).** Személy
+  albumában a képre jobbklikkelve mostantól elérhető az „Eltávolítás az
+  Emberek albumból" (megerősítéssel — a névcímke csak újbóli felismeréssel
+  vagy kézzel állítható vissza) és az „Áthelyezés új személyhez…". Mindkettő
+  a teljes kijelölésre hat, mappánként egyetlen írással.
+- Új, általános névbekérő párbeszéd, amit a további átnevező parancsok is
+  használhatnak.
+
 ## [0.6.83] – 2026-08-12
 
 ### Javítva

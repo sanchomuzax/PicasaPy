@@ -28,9 +28,17 @@ Rectangle {
     // csempék képe pedig felnagyult. A bélyegképes gomb ezért MINDIG két
     // sornyi feliratot foglal: a rács így egyenletes, és a hosszabb nevek
     // sem vágódnak/nem lógnak a képre.
-    readonly property int labelLineHeight: Math.ceil(Theme.fontSize * 1.35)
+    //
+    // A két sor magasságát a TÉNYLEGES betű-metrikából vesszük, nem
+    // becslésből: a Windows CI megbukott egy `fontSize * 1.35`-ös
+    // közelítésen (a felirat 105 px-re nőtt egy 102 px-es gombban), mert a
+    // sormagasság platformonként más.
+    FontMetrics {
+        id: pbtnLabelMetrics
+        font: pbtnLabel.font
+    }
     Layout.preferredHeight: pbtn.thumbSource !== ""
-        ? pbtnThumbBox.height + 2 * pbtn.labelLineHeight + 12
+        ? pbtnThumbBox.height + 2 * pbtnLabelMetrics.height + 12
         : Math.max(24, pbtnLabel.implicitHeight + 10)
     radius: 3
     border.width: 1

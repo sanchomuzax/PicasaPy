@@ -34,10 +34,17 @@ Menu {
     // és az aktív album tokent (#305 null-őr, ld. ott).
     property var albums: []
     property string currentAlbumToken: ""
+    //: a jelenleg mutatott személy neve (üres, ha nem személy-album)
+    property string personName: ""
 
     signal openRequested()
     signal addToAlbumRequested(string token)
     signal removeFromAlbumRequested()
+    // #422: az Emberek-album kép-szintű parancsai — a hívó (Main.qml) tölti
+    // a `personName`-et a `peopleController.currentPersonName`-ből; üres
+    // string = a rács nem személy-albumot mutat, a tételek rejtve maradnak
+    signal removeFromPeopleAlbumRequested()
+    signal moveToNewPersonRequested()
     signal newAlbumRequested()
     signal rotateRightRequested()
     signal rotateLeftRequested()
@@ -90,6 +97,31 @@ Menu {
         // mutatja, ott van értelme a kijelölés kivételének
         visible: menu.currentAlbumToken !== ""
         onTriggered: menu.removeFromAlbumRequested()
+    }
+
+    // #422 4. lépcső: az Emberek-album KÉP-szintű parancsai (`PplAlbumPhoto`,
+    // ld. `ui-audit-context-menus.md` A.2). Csak akkor látszanak, ha a rács
+    // épp egy személy albumát mutatja — ott van értelmük.
+    MenuItem {
+        objectName: "contextMenuRemoveFromPeopleAlbum"
+        text: qsTr("Remove from People Album")
+        visible: menu.personName !== ""
+        onTriggered: menu.removeFromPeopleAlbumRequested()
+    }
+    MenuItem {
+        objectName: "contextMenuMoveToNewPerson"
+        text: qsTr("Move to New Person...")
+        visible: menu.personName !== ""
+        onTriggered: menu.moveToNewPersonRequested()
+    }
+    // A negyedik `PplAlbumPhoto` parancs („Beállítás az Emberek album
+    // indexképeként") HELYŐRZŐ: a személyenkénti indexkép-választásnak nincs
+    // tárolója (sem a `.picasa.ini`-ben, sem az indexünkben), tehát a
+    // bekötése nem UI-, hanem adatmodell-kérdés (#26).
+    PicasaMenuItem {
+        objectName: "contextMenuSetAsPeopleAlbumThumbnail"
+        text: qsTr("Set as People Album Thumbnail")
+        visible: menu.personName !== ""
     }
     MenuSeparator {}
 
