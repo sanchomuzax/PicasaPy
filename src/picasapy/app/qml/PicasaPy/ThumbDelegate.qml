@@ -57,6 +57,10 @@ Item {
     // jobbklikk (#15): fájlműveletek kontextusmenüje — a pozíció a cella
     // saját koordináta-rendszerében, a hívó nyitja meg ott a menüt
     signal contextMenuRequested(int index, real x, real y)
+    // #455: fogd-és-vidd — a húzás MÁR KIJELÖLT képről indul (a ki nem
+    // jelölt területről továbbra is lasszó lesz, különben elveszne a
+    // rács legfontosabb kijelölő gesztusa)
+    signal photoDragStarted(int index)
 
     readonly property string captionText: {
         switch (cell.captionMode) {
@@ -269,6 +273,36 @@ Item {
     // MouseArea kell (nem TapHandler): a Ctrl/Shift módosítókat is
     // továbbadjuk, és innen indul a lasszós kijelölés is (az egér-grab a
     // lenyomó cellánál marad, így cellahatárokon át is követjük a húzást).
+    // #455: a húzás „teste" — a DropArea ezt látja `drag.source`-ként, és
+    // ebből olvassa ki, hogy fotók érkeznek. Külön, láthatatlan Item kell
+    // hozzá: a Drag csatolt tulajdonságai csak Itemre élnek, és a
+    // találat-vizsgálat ennek a JELENET-beli helyzetét nézi — ezért követi
+    // az egeret húzás közben.
+    Item {
+        id: dragProxy
+        objectName: "thumbDragProxy"
+        width: 1; height: 1
+        readonly property string payload: "photos"
+        Drag.active: mouse.dragging
+        Drag.hotSpot.x: 0
+        Drag.hotSpot.y: 0
+    }
+
+    // A húzás indítása/vége külön, hívható függvényben (a `handleClicked`
+    // mintája): így a teszt valódi egéresemény szintetizálása nélkül is
+    // végigjátszhatja.
+    function beginPhotoDrag() {
+        if (!cell.selected) return false
+        mouse.dragging = true
+        cell.photoDragStarted(cell.index)
+        return true
+    }
+    function endPhotoDrag() {
+        if (!mouse.dragging) return
+        dragProxy.Drag.drop()
+        mouse.dragging = false
+    }
+
     MouseArea {
         id: mouse
         objectName: "thumbMouseArea"
@@ -278,22 +312,36 @@ Item {
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         property bool lassoing: false
         property bool didLasso: false
+        property bool dragging: false
         property real pressX: 0
         property real pressY: 0
         onPressed: function(event) {
             if (event.button !== Qt.LeftButton) return
             pressX = event.x; pressY = event.y
-            lassoing = false; didLasso = false
+            lassoing = false; didLasso = false; dragging = false
         }
         onPositionChanged: function(event) {
             if (!pressed) return
-            if (!lassoing
-                && Math.abs(event.x - pressX) + Math.abs(event.y - pressY) > 8)
-                lassoing = true
+            var moved =
+                Math.abs(event.x - pressX) + Math.abs(event.y - pressY) > 8
+            // #455: kijelölt képről indulva a kijelölés UTAZIK (fogd-és-
+            // vidd), egyébként marad a lasszó
+            if (dragging || (moved && !lassoing && cell.selected)) {
+                if (!dragging) cell.beginPhotoDrag()
+                dragProxy.x = event.x
+                dragProxy.y = event.y
+                return
+            }
+            if (!lassoing && moved) lassoing = true
             if (lassoing)
                 cell.lassoDragged(pressX, pressY, event.x, event.y)
         }
         onReleased: function(event) {
+            if (dragging) {
+                cell.endPhotoDrag()
+                didLasso = true   // a rákövetkező clicked ne váltson kijelölést
+                return
+            }
             if (lassoing) {
                 cell.lassoFinished(
                     pressX, pressY, event.x, event.y, event.modifiers)
