@@ -83,3 +83,9 @@ EditorEffectsTab2 1.0 EditorEffectsTab2.qml
 EditorEffectsTab3 1.0 EditorEffectsTab3.qml
 EditorEffectsTab4 1.0 EditorEffectsTab4.qml
 EditorLegacyTab 1.0 EditorLegacyTab.qml
+EditTabButton 1.0 EditTabButton.qml
+EditTabIcon 1.0 EditTabIcon.qml
+EditorDialogs 1.0 EditorDialogs.qml
+EditorParamPanel 1.0 EditorParamPanel.qml
+EditorTabBar 1.0 EditorTabBar.qml
+EditorTabCommonFixes 1.0 EditorTabCommonFixes.qml

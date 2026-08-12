@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.94] – 2026-08-12
+
+### Karbantartás
+- **A szerkesztőpanel szétbontva (#496).** Az `EditorPanel.qml` 1367 sorról
+  **786-ra** fogyott, a projekt 800 soros korlátja alá. A tartalom fülenként
+  és blokkonként önálló fájlokba került (fülsáv, fülgomb és ikonja, 1. fül,
+  csúszkás effekt-alpanel, párbeszédek), a gazda pedig a közös állapotot és a
+  fül-váltást tartja. **Viselkedés-változás nincs**: a meglévő szerkesztő-
+  tesztek változtatás nélkül zöldek — ez a bizonyíték. Ettől a párhuzamos
+  munkában is kevesebb az ütközés: egy fül módosítása már nem írja ugyanazt a
+  fájlt, mint a többi.
+
 ## [0.6.93] – 2026-08-12
 
 ### Javítva

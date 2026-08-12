@@ -5442,4 +5442,369 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <translation>Képpontnövelés fókuszban (örökölt)</translation>
     </message>
 </context>
+<context>
+    <name>EditorTabBar</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabBar.qml"/>
+        <source>Common Fixes</source>
+        <translation>Gyakori javítások</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabBar.qml"/>
+        <source>Fine Tuning</source>
+        <translation>Finomhangolás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabBar.qml"/>
+        <source>Effects</source>
+        <translation>Effektek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabBar.qml"/>
+        <source>Creative</source>
+        <translation>Kreatív</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabBar.qml"/>
+        <source>Artistic</source>
+        <translation>Művészi</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabBar.qml"/>
+        <source>More Effects</source>
+        <translation>További effektek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabBar.qml"/>
+        <source>Legacy Effects</source>
+        <translation>Régi effektek</translation>
+    </message>
+</context>
+<context>
+    <name>EditorTabCommonFixes</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>Crop</source>
+        <translation>Vágás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>Straighten</source>
+        <translation>Kiegyenesítés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>Redeye</source>
+        <translation>Vörösszem</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>I&apos;m Feeling Lucky</source>
+        <translation>Jó napom van</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>Auto Contrast</source>
+        <translation>Automatikus kontraszt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>Auto Color</source>
+        <translation>Automatikus szín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>Retouch</source>
+        <translation>Retusálás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>Text</source>
+        <translation>Szöveg</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorTabCommonFixes.qml"/>
+        <source>Fill Light</source>
+        <translation>Derítőfény</translation>
+    </message>
+</context>
+<context>
+    <name>EditorParamPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Apply</source>
+        <translation>Alkalmaz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+</context>
+<context>
+    <name>EditorDialogs</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorDialogs.qml"/>
+        <source>This file is read only. In order to edit this file, Picasa needs to copy the file&apos;s folder. Would you like to make a copy now?</source>
+        <translation>Ez a fájl csak olvasható. A szerkesztéshez a Picasának le kellene másolnia a fájl mappáját. Szeretné, ha most készítenénk egy másolatot?</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorDialogs.qml"/>
+        <source>The automatic copy is not available yet. To edit this picture, copy it to a writable folder yourself, or remove the write protection.</source>
+        <translation>Az automatikus másolás még nem érhető el. A kép szerkesztéséhez másold át egy írható mappába, vagy vedd le róla az írásvédelmet.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorDialogs.qml"/>
+        <source>Due to a disk error. The disk may be full or read-only.</source>
+        <translation>Lemezhiba történt. A lemez megtelt, vagy csak olvasható.</translation>
+    </message>
+</context>
+<context>
+    <name>EditorParamPanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Amount</source>
+        <translation>Mennyiség</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Saturation</source>
+        <translation>Telítettség</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Inner Radius</source>
+        <translation>Belső sugár</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Strength</source>
+        <translation>Erősség</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Intensity</source>
+        <translation>Intenzitás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Radius</source>
+        <translation>Sugár</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Center X</source>
+        <translation>Középpont X</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Center Y</source>
+        <translation>Középpont Y</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Size</source>
+        <translation>Méret</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Sharpness</source>
+        <translation>Élesség</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Preserve Color</source>
+        <translation>Szín megőrzése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Gradient</source>
+        <translation>Átmenet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Shade</source>
+        <translation>Árnyék</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Block Size</source>
+        <translation>Blokkméret</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Blur Radius</source>
+        <translation>Elmosás sugara</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Brightness</source>
+        <translation>Fényerő</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Color Mix</source>
+        <translation>Színkeverés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Edge Strength</source>
+        <translation>Élerősség</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Posterize</source>
+        <translation>Poszterizálás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Smoothness</source>
+        <translation>Simítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Width</source>
+        <translation>Szélesség</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Border Width</source>
+        <translation>Keretszélesség</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Angle</source>
+        <translation>Szög</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Blur</source>
+        <translation>Elhomályosítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Line Position</source>
+        <translation>Vonal helye</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Grain</source>
+        <translation>Szemcse</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Contrast</source>
+        <translation>Kontraszt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Bloom</source>
+        <translation>Ragyogás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Steps</source>
+        <translation>Lépcsők</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Smoothing</source>
+        <translation>Simítás (fokozat)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Impact</source>
+        <translation>Hatás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Blend Mode</source>
+        <translation>Keverési mód</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Hue</source>
+        <translation>Árnyalat</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Rotate</source>
+        <translation>Forgatás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Fade</source>
+        <translation>Elhalványítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Color</source>
+        <translation>Szín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Outer Color</source>
+        <translation>Külső szín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Inner Color</source>
+        <translation>Belső szín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Black Color</source>
+        <translation>Fekete szín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>White Color</source>
+        <translation>Fehér szín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Outer Thickness</source>
+        <translation>Külső vastagság</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Inner Thickness</source>
+        <translation>Belső vastagság</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Corner Radius</source>
+        <translation>Sarok-sugár</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Caption Height</source>
+        <translation>Felirat-magasság</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Distance</source>
+        <translation>Távolság</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Shadow Color</source>
+        <translation>Árnyék színe</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Background Color</source>
+        <translation>Háttérszín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Rounded</source>
+        <translation>Lekerekített</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Lighten</source>
+        <translation>Fényesítés</translation>
+    </message>
+</context>
 </TS>
