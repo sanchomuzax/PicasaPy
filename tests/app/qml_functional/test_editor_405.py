@@ -22,10 +22,18 @@ from PySide6.QtQml import QQmlComponent, QQmlEngine
 
 _KEEPALIVE = []
 
-_QML_SOURCE = (
+# #496: az 1. fül tartalma az `EditorPanel.qml`-ből az
+# `EditorTabCommonFixes.qml`-be került (a fájl a 800 soros korlát fölé nőtt).
+# A forrás-szöveges ellenőrzések ezért MINDKÉT fájlt nézik — a szerződés
+# (sorrend, feliratok, hiányzó csempék) változatlan, csak a hely más.
+_QML_DIR = (
     Path(__file__).resolve().parents[3]
-    / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "EditorPanel.qml"
-).read_text(encoding="utf-8")
+    / "src" / "picasapy" / "app" / "qml" / "PicasaPy"
+)
+_QML_SOURCE = "\n".join(
+    (_QML_DIR / name).read_text(encoding="utf-8")
+    for name in ("EditorPanel.qml", "EditorTabCommonFixes.qml")
+)
 
 
 @pytest.fixture

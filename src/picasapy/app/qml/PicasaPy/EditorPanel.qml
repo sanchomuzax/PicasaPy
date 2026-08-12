@@ -2,33 +2,38 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// Szerkesztő eszközpanel — a néző bal oldali "Gyakori javítások" füle,
-// Picasa-hű ikonos csempékkel (#51). Két mód:
-//  - "tools": ikonrács + Derítőfény + Visszavonás/Újra
-//  - "crop":  "Fotó vágása" — arány-lista, gyorsvágások, gombok
+// Szerkesztő eszközpanel — a néző bal oldali panelje, Picasa-hű ikonos
+// csempékkel (#51). Két mód:
+//  - "tools": fülsáv + a kiválasztott fül tartalma + Visszavonás/Újra
+//  - eszköz-mód: vágás / retusálás / vörösszem / szöveg — teljes panelt foglal
 // Csak UI + állapot: a kép-feldolgozás a render/edit rétegben él.
+//
+// #496: ez a fájl a KÖZÖS ÁLLAPOT és a FÜL-VÁLTÓ gazdája; a tartalom
+// önálló fájlokban él (a projekt bevett mintája, ahogy az `OptionsTab*.qml`
+// fájlok is): `EditorTabBar` + `EditTabButton`/`EditTabIcon` a fülsáv,
+// `EditorTabCommonFixes`/`EditorFinetunePanel`/`EditorEffectsTab1–4`/
+// `EditorLegacyTab` a fülek, `EditorParamPanel` a csúszkás alpanel (#316),
+// `EditorCrop`/`Retouch`/`Redeye`/`TextPanel` az eszköz-módok,
+// `EditorDialogs` a párbeszédek (#448, #459).
+//
+// A gyerekek a `panel` tulajdonságon át érik el az állapotot és a jelzéseket;
+// a láthatóságot és a horgonyokat MINDIG a gazda adja meg a használat helyén,
+// hogy a fülek egymáshoz képest ne csússzanak el.
 Rectangle {
     id: panel
     objectName: "editorPanel"
     color: Theme.chromeBg
-    // #411: FIX pixelszélesség — az eredeti Picasa szerkesztő-eszközpanelje
-    // NEM skálázódik az ablakmérettel (ellentétben pl. a mappapanellel,
-    // ahol az arányos levetítés helyénvaló). A #405-ös kör TÉVESEN
-    // ablakarányosan skálázta le a design-guide screenshot-mért ~280px-es
-    // referenciáját 1280px-es ablakra (280 × 1280/1920 ≈ 187 → 190) — a
-    // felhasználó screenshot-összevetése bizonyította a hibát: ~955px
-    // széles ablaknál az eredeti panel ~275px, a miénk csak ~195px volt,
-    // AZONOS ablakméret mellett. A helyes érték tehát fix 280px, bármilyen
-    // ablakszélességnél (ld. docs/specs/design-guide.md "Néző eszközpanel"
-    // sorát — kifejezetten NEM skálázandó). A PhotoViewer.qml
-    // `Layout.preferredWidth`-jét is EZZEL összhangban kell tartani (ott
-    // állítva, nem itt).
+    // #411: FIX pixelszélesség — az eredeti panel NEM skálázódik az
+    // ablakmérettel (a #405 tévesen levetítette; a felhasználó
+    // screenshot-összevetése bizonyította a hibát). Ld.
+    // docs/specs/design-guide.md „Néző eszközpanel" sorát. A
+    // PhotoViewer.qml `Layout.preferredWidth`-jét EZZEL összhangban kell
+    // tartani (ott állítva, nem itt).
     implicitWidth: 280
 
-    // aktív fül: 0 = Gyakori javítások, 1 = Finomhangolás, 2 = Effektek,
-    // 3 = 4. effekt-fül (zöld ecset), 4 = 5. effekt-fül (kék ecset) — #328,
-    // az eredeti Picasa 5 ikonos füle (docs/specs/ui-audit-editor.md, 1. szak.)
-    // (a vágó-mód a fülsávtól függetlenül, a cropColumn-on át él)
+    // aktív fül: 0 = Gyakori javítások, 1 = Finomhangolás, 2–4 = a három
+    // eredeti effekt-fül (#328), 5 = további effektek (#422), 6 = Régi
+    // effektek (#571). Az eszköz-módok a fülsávtól függetlenül élnek.
     property int activeTab: 0
 
     // kapcsoló-állapotok — az aktív eszköz csempéje "benyomva" jelenik meg
@@ -292,65 +297,11 @@ Rectangle {
         panel.paramEffectValues = []
     }
 
-    // a csúszka-feliratok fordítása (#316): a `label` a Pythonból (
-    // app/effect_params.py) angol kulcsszöveg jön — a lupdate ezt nem látja,
-    // ezért itt statikus qsTr(...) hívásokkal soroljuk fel az ÖSSZES
-    // lehetséges feliratot; az ismeretlent változatlanul adjuk vissza.
+    // #496: a csúszka-felirat-fordító switch (#316) az EditorParamPanel.qml-be
+    // került, az egyetlen hívója mellé; ez a vékony átjáró tartja meg a
+    // panel-szintű felületet (a meglévő tesztek a panelen hívják).
     function paramLabel(key) {
-        switch (key) {
-        case "Amount": return qsTr("Amount")
-        case "Saturation": return qsTr("Saturation")
-        case "Inner Radius": return qsTr("Inner Radius")
-        case "Strength": return qsTr("Strength")
-        case "Intensity": return qsTr("Intensity")
-        case "Radius": return qsTr("Radius")
-        case "Center X": return qsTr("Center X")
-        case "Center Y": return qsTr("Center Y")
-        case "Size": return qsTr("Size")
-        case "Sharpness": return qsTr("Sharpness")
-        case "Preserve Color": return qsTr("Preserve Color")
-        case "Gradient": return qsTr("Gradient")
-        case "Shade": return qsTr("Shade")
-        case "Block Size": return qsTr("Block Size")
-        case "Blur Radius": return qsTr("Blur Radius")
-        case "Brightness": return qsTr("Brightness")
-        case "Color Mix": return qsTr("Color Mix")
-        case "Edge Strength": return qsTr("Edge Strength")
-        case "Posterize": return qsTr("Posterize")
-        case "Smoothness": return qsTr("Smoothness")
-        case "Width": return qsTr("Width")
-        case "Border Width": return qsTr("Border Width")
-        case "Angle": return qsTr("Angle")
-        case "Blur": return qsTr("Blur")
-        case "Line Position": return qsTr("Line Position")
-        // #516: a filterdesc-registry.md 4.2 táblázatából átvezetett
-        // vezérlők feliratai
-        case "Grain": return qsTr("Grain")
-        case "Contrast": return qsTr("Contrast")
-        case "Bloom": return qsTr("Bloom")
-        case "Steps": return qsTr("Steps")
-        case "Smoothing": return qsTr("Smoothing")
-        case "Impact": return qsTr("Impact")
-        case "Blend Mode": return qsTr("Blend Mode")
-        case "Hue": return qsTr("Hue")
-        case "Rotate": return qsTr("Rotate")
-        case "Fade": return qsTr("Fade")
-        case "Color": return qsTr("Color")
-        case "Outer Color": return qsTr("Outer Color")
-        case "Inner Color": return qsTr("Inner Color")
-        case "Black Color": return qsTr("Black Color")
-        case "White Color": return qsTr("White Color")
-        case "Outer Thickness": return qsTr("Outer Thickness")
-        case "Inner Thickness": return qsTr("Inner Thickness")
-        case "Corner Radius": return qsTr("Corner Radius")
-        case "Caption Height": return qsTr("Caption Height")
-        case "Distance": return qsTr("Distance")
-        case "Shadow Color": return qsTr("Shadow Color")
-        case "Background Color": return qsTr("Background Color")
-        case "Rounded": return qsTr("Rounded")
-        case "Lighten": return qsTr("Lighten")
-        default: return key
-        }
+        return effectParamScroll.paramLabel(key)
     }
 
     // tool: "crop"|"tilt"|"redeye"|"enhance"|"autolight"|"autocolor"
@@ -395,7 +346,7 @@ Rectangle {
     function syncFinetuneSliders() {
         panel.suppressFinetune = true
         finetunePanel.fillSlider.value = panel.fillLight
-        fixesFillSlider.value = panel.fillLight   // #337: a másik fül párja
+        fixesTab.fillSlider.value = panel.fillLight   // #337: a másik fül párja
         finetunePanel.highlightsSlider.value = panel.highlights
         finetunePanel.shadowsSlider.value = panel.shadows
         finetunePanel.tempSlider.value = panel.colorTemp
@@ -411,7 +362,7 @@ Rectangle {
             return
         panel.suppressFinetune = true
         finetunePanel.fillSlider.value = value
-        fixesFillSlider.value = value
+        fixesTab.fillSlider.value = value
         panel.suppressFinetune = false
         panel.emitFinetunePreview()
     }
@@ -568,385 +519,33 @@ Rectangle {
     // a controller mentett/piszkozat értékét tükrözi, `colorPicked` viszi
     // vissza a kattintást a hívóhoz.
 
-    // #338: a fülsáv ikonja — Canvas-szal rajzolt egyszerű sziluett (nem
-    // rendszer-emoji: a Linux-first célplatformon, ld. CLAUDE.md, nincs
-    // garancia színes emoji-betűkészletre — RPi5 minimál-telepítésen a
-    // csavarkulcs/nap/ecset glyph simán "tofu"-dobozként jelenhetne meg;
-    // a saját rajz mindig ugyanúgy néz ki, és a színe is szabályozható —
-    // ez adja a 3 ecset-fül "színben megkülönböztetve" követelményét is,
-    // amit egy fix színű emoji-glyph nem tudna).
-    component EditTabIcon: Canvas {
-        id: icon
-        property string kind: "wrench"   // "wrench" | "sun" | "brush"
-        property color strokeColor: Theme.iconInk
-        // ecset-füleknél a sörte színe (a 3./4./5. fül megkülönböztetése)
-        property color accentColor: strokeColor
-        // apró minta-pötty a sörtén (zöld/kék fülnél "levél"/"felhő" folt);
-        // "transparent" = nincs
-        property color fleckColor: "transparent"
-        onKindChanged: requestPaint()
-        onStrokeColorChanged: requestPaint()
-        onAccentColorChanged: requestPaint()
-        onFleckColorChanged: requestPaint()
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
-        onPaint: {
-            var ctx = getContext("2d")
-            ctx.reset()
-            ctx.clearRect(0, 0, width, height)
-            ctx.lineCap = "round"
-            ctx.lineJoin = "round"
-            var w = width, h = height
-            if (icon.kind === "wrench") {
-                // nyél: bal-alsó → jobb-felső átló
-                ctx.strokeStyle = icon.strokeColor
-                ctx.lineWidth = Math.max(2, w * 0.14)
-                ctx.beginPath()
-                ctx.moveTo(w * 0.20, h * 0.85)
-                ctx.lineTo(w * 0.58, h * 0.45)
-                ctx.stroke()
-                // fej: nyitott gyűrű (csavarkulcs-száj) a nyél végén
-                ctx.beginPath()
-                ctx.arc(w * 0.68, h * 0.32, w * 0.20, Math.PI * 0.15, Math.PI * 1.65)
-                ctx.lineWidth = Math.max(2, w * 0.12)
-                ctx.stroke()
-            } else if (icon.kind === "sun") {
-                ctx.fillStyle = icon.strokeColor
-                ctx.beginPath()
-                ctx.arc(w * 0.5, h * 0.5, w * 0.20, 0, Math.PI * 2)
-                ctx.fill()
-                ctx.strokeStyle = icon.strokeColor
-                ctx.lineWidth = Math.max(1.5, w * 0.08)
-                var rays = 8
-                for (var i = 0; i < rays; i++) {
-                    var a = (Math.PI * 2 * i) / rays
-                    var innerR = w * 0.30
-                    var outerR = w * 0.46
-                    ctx.beginPath()
-                    ctx.moveTo(w * 0.5 + Math.cos(a) * innerR, h * 0.5 + Math.sin(a) * innerR)
-                    ctx.lineTo(w * 0.5 + Math.cos(a) * outerR, h * 0.5 + Math.sin(a) * outerR)
-                    ctx.stroke()
-                }
-            } else if (icon.kind === "brush") {
-                // nyél
-                ctx.strokeStyle = icon.strokeColor
-                ctx.lineWidth = Math.max(2, w * 0.12)
-                ctx.beginPath()
-                ctx.moveTo(w * 0.28, h * 0.14)
-                ctx.lineTo(w * 0.56, h * 0.48)
-                ctx.stroke()
-                // sörte (ékalakú folt, a fül szín-tokenjével — plain/zöld/kék)
-                ctx.fillStyle = icon.accentColor
-                ctx.beginPath()
-                ctx.moveTo(w * 0.56, h * 0.50)
-                ctx.lineTo(w * 0.82, h * 0.60)
-                ctx.lineTo(w * 0.86, h * 0.82)
-                ctx.lineTo(w * 0.66, h * 0.90)
-                ctx.lineTo(w * 0.50, h * 0.68)
-                ctx.closePath()
-                ctx.fill()
-                if (icon.fleckColor.toString() !== "#00000000"
-                        && icon.fleckColor.toString() !== "transparent") {
-                    ctx.fillStyle = icon.fleckColor
-                    ctx.beginPath()
-                    ctx.arc(w * 0.70, h * 0.74, w * 0.06, 0, Math.PI * 2)
-                    ctx.fill()
-                }
-            }
-        }
-    }
-
-    // egy fülgomb (Gyakori javítások / Finomhangolás / Effektek / 4. / 5.
-    // effekt-fül, #20, #328, #338): kattintásra panel.activeTab vált, az
-    // aktív fül vastagabb kerettel/eltérő háttérrel emelkedik ki.
-    //
-    // #338: a szöveges fülcímkék a szűk (230px-es) panelen összeszorultak
-    // ("Gyakori javítások" két sorba tört, "Finomhangol…" levágódott) — az
-    // eredeti Picasa is 5 IKONOS fület használ (csavarkulcs / nap / 3×
-    // ecset, ld. docs/specs/ui-audit-editor.md 1. szak.). A jelentést a
-    // fenti EditTabIcon adja (saját Canvas-rajz, nem rendszer-glyph); a
-    // teljes nevet a ToolTip mutatja hoverre. A `tbtnLabel` Text a
-    // korábbi #318-as tördelés-teszt (test_editor_tabs.py) és a
-    // hozzáférhetőség kedvéért MEGMARAD, de rejtve (`visible: false`) —
-    // a bélyegkép-gomb (PanelButton) is hasonlóan viselkedik a felirata
-    // alatt, csak ott a felirat látszik is, itt a hely a szűk fülsávon
-    // nem engedi meg mindkettőt.
-    component EditTabButton: Rectangle {
-        id: tbtn
-        required property int tabIndex
-        required property string label
-        // "wrench" | "sun" | "brush" — melyik ikont rajzolja az EditTabIcon
-        required property string iconKind
-        property color iconAccent: Theme.iconInk
-        property color iconFleck: "transparent"
-        // #571: jelzőpont a fülön — a megnyitott kép láncában van olyan
-        // effekt, ami erre a fülre tartozik; a felhasználónak tudnia kell,
-        // hol nézze meg
-        property bool marked: false
-        Layout.fillWidth: true
-        Layout.preferredHeight: 38
-        color: panel.activeTab === tabIndex ? Theme.contentPanel : Theme.panelHeaderBg
-        border.width: 1
-        border.color: panel.activeTab === tabIndex ? Theme.selectionBlue : Theme.chromeBorder
-
-        EditTabIcon {
-            objectName: tbtn.objectName ? tbtn.objectName + "Icon" : ""
-            anchors.centerIn: parent
-            width: 22; height: 22
-            kind: tbtn.iconKind
-            strokeColor: Theme.iconInk
-            accentColor: tbtn.iconAccent
-            fleckColor: tbtn.iconFleck
-        }
-        Rectangle {
-            objectName: tbtn.objectName ? tbtn.objectName + "Mark" : ""
-            visible: tbtn.marked
-            width: 6; height: 6; radius: 3
-            color: Theme.picasaGreen
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.margins: 3
-        }
-        // #318 kompatibilitás: rejtett, de a régi tördelés-logikával
-        // számolt felirat-Text — a `truncated` így sosem igaz, mert a
-        // szélessége nem szorítja a fülgomb keskeny sávjához.
-        Text {
-            id: tbtnLabel
-            objectName: tbtn.objectName ? tbtn.objectName + "Label" : ""
-            visible: false
-            text: tbtn.label
-            font.pixelSize: Theme.fontSize - 3
-            wrapMode: Text.WordWrap
-            maximumLineCount: 2
-            width: Math.max(120, implicitWidth)
-        }
-        MouseArea {
-            id: tabMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            onClicked: panel.activeTab = tbtn.tabIndex
-        }
-        ToolTip.text: tbtn.label
-        ToolTip.visible: tabMouse.containsMouse
-        ToolTip.delay: 400
-    }
-
     // ---------------- fülsáv: Gyakori javítások / Finomhangolás / Effektek /
     // 4. effekt-fül / 5. effekt-fül (#20, #328) — csak "tools" módban,
     // vágásnál (cropColumn) nincs értelme. Öt egyenlő szélességű fül fér el
     // a panel szélességében (Layout.fillWidth mindegyiken, ld. #328 4. pont).
-    RowLayout {
+    EditorTabBar {
         id: tabBar
         objectName: "editTabBar"
+        panel: panel
         visible: !panel.modeToolActive
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.margins: 10
-        spacing: 0
-
-        // #338: csavarkulcs — az eredeti Picasa 1. füle
-        EditTabButton {
-            objectName: "editTabFixes"
-            tabIndex: 0
-            label: qsTr("Common Fixes")
-            iconKind: "wrench"
-        }
-        // #338: nap — az eredeti Picasa 2. füle
-        EditTabButton {
-            objectName: "editTabFinetune"
-            tabIndex: 1
-            label: qsTr("Fine Tuning")
-            iconKind: "sun"
-        }
-        // #338: sima ecset — a törzs-effektek (3. fül, nincs szín-minta)
-        EditTabButton {
-            objectName: "editTabEffects"
-            tabIndex: 2
-            label: qsTr("Effects")
-            iconKind: "brush"
-            iconAccent: Theme.iconInk
-        }
-        // #328/#338: 4. fül — ZÖLD ecset ("kreatív effektek"), a docs/specs/
-        // ui-audit-editor.md leírása szerint zöld táj-mintával megkülönböztetve.
-        EditTabButton {
-            objectName: "editTabEffects2"
-            tabIndex: 3
-            label: qsTr("Creative")
-            iconKind: "brush"
-            iconAccent: Theme.picasaGreen
-            iconFleck: Qt.darker(Theme.picasaGreen, 1.4)
-        }
-        // #328/#338: 5. fül — KÉK ecset ("művészi effektek"), kék ég-mintával.
-        EditTabButton {
-            objectName: "editTabEffects3"
-            tabIndex: 4
-            label: qsTr("Artistic")
-            iconKind: "brush"
-            iconAccent: Theme.brandBlue
-            iconFleck: Qt.lighter(Theme.brandBlue, 1.6)
-        }
-        // #422 (felhasználói döntés): 6. fül — azok a Glimmer-effektek,
-        // amelyek NEM szerepelnek a 3–5. fül igazolt listáján. Külön fülön,
-        // hogy a három ismert fül pontosan az eredeti gombkészletét
-        // tartalmazza (és görgetés nélkül kiférjen).
-        EditTabButton {
-            objectName: "editTabEffects4"
-            tabIndex: 5
-            label: qsTr("More Effects")
-            iconKind: "brush"
-            iconAccent: Theme.textGray
-        }
-        // #571 (felhasználói döntés: „Régi effektek"): 7. fül — a Picasa
-        // motorjában benne maradt, de a 3.9 felületén NEM elérhető szűrők.
-        // TUDATOS eltérés az eredetitől, ld. EditorLegacyTab.qml.
-        EditTabButton {
-            objectName: "editTabLegacy"
-            tabIndex: 6
-            label: qsTr("Legacy Effects")
-            iconKind: "brush"
-            iconAccent: Theme.chromeBorder
-            marked: panel.legacyEffectsPresent
-        }
     }
 
-    // ---------------- "tools" mód: ikonrács ----------------
-    ColumnLayout {
-        objectName: "toolsColumn"
+    // ---------------- 1. fül: "Gyakori javítások" ikonrács ----------------
+    // #496: a fül tartalma önálló fájlban (EditorTabCommonFixes.qml) — a
+    // láthatóság és a horgonyok itt, a testvér-fülek mintája szerint.
+    EditorTabCommonFixes {
+        id: fixesTab
+        panel: panel
         visible: !panel.modeToolActive && panel.activeTab === 0
-        // tiltott panel (videó a nézőben, #103): az egész oszlop halvány
-        opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: globalUndoRow.top
         anchors.bottomMargin: 6
-        anchors.margins: 10
-        spacing: 8
-
-        // #405: a szöveges "Common Fixes"/"Gyakori javítások" fejléc TÖRÖLVE
-        // — az eredeti Picasán a fül alatt NINCS ilyen felirat, a csempék
-        // rögtön a fülsáv alatt kezdődnek (ld. #405 issue 4. pontja).
-
-        // #464: a gombkészlet és a sorrend a tulajdonos KÉPERNYŐKÉPÉRŐL
-        // (Picasa 3.9, „Gyakori javítások" fül) — ez FELÜLÍRJA a jegy
-        // szövegében szereplő korábbi sorrendet, ami feljegyzésből készült:
-        //
-        //     Vágás · Kiegyenesítés · Vörösszem
-        //     Jó napom van · Automatikus kontraszt · Automatikus szín
-        //     Retusálás · Szöveg
-        //     [kis kép] Derítőfény-csúszka
-        //
-        // A képen NINCS „Kreatív Kit" csempe (a jegy tévesen sorolta fel), a
-        // Derítőfény pedig NEM a gombok közé ékelődik, hanem MINDEGYIK alatt
-        // ül. Az egygombos javítás lenyomás után elhalványul (tiltottá
-        // válik) — a csempe képe nem változik, csak áttetsző lesz.
-        GridLayout {
-            columns: 3
-            columnSpacing: 4
-            rowSpacing: 10
-            Layout.fillWidth: true
-
-            ToolTile {
-                objectName: "editToolCrop"
-                toolName: "crop"; label: qsTr("Crop"); iconFile: "vagas"
-                active: panel.cropActive
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "editToolTilt"
-                toolName: "tilt"; label: qsTr("Straighten")
-                iconFile: "kiegyenesites"
-                active: panel.tiltActive
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "editToolRedeye"
-                toolName: "redeye"; label: qsTr("Redeye"); iconFile: "vorosszem"
-                active: panel.redeyeActive
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            // egygombos javítások (#116): nincs "benyomva" állapot — a gomb
-            // tiltott (halvány), amíg ugyanez a szűrő a lánc utolsó eleme
-            ToolTile {
-                objectName: "editToolEnhance"
-                toolName: "enhance"; label: qsTr("I'm Feeling Lucky")
-                iconFile: "jo-napom-van"
-                tileEnabled: panel.enhanceEnabled
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "editToolAutolight"
-                toolName: "autolight"; label: qsTr("Auto Contrast")
-                iconFile: "auto-kontraszt"
-                tileEnabled: panel.autolightEnabled
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "editToolAutocolor"
-                toolName: "autocolor"; label: qsTr("Auto Color")
-                iconFile: "auto-szin"
-                tileEnabled: panel.autocolorEnabled
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "editToolRetouch"
-                toolName: "retouch"; label: qsTr("Retouch")
-                iconFile: "retusalas"
-                active: panel.retouchActive
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "editToolText"
-                toolName: "text"; label: qsTr("Text"); iconFile: "szoveg"
-                active: panel.textActive
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-        }
-
-        // #337/#405/#411: Kitöltő fény — az eredeti Picasa Alapvető
-        // javítások fülén az ikonrács alatt EZ AZ EGYETLEN csúszka, és a
-        // napi használat egyik legfontosabb eszköze. Ugyanaz a beállítás,
-        // mint a Finomhangolás fülén: a két csúszka egymást követi
-        // (fillLightMoved). A címke a csúszka FÖLÖTT, kompakt (#405 6.
-        // pont), a saját ikonnal kiegészítve (#411 9. ikonja: deritofeny).
-        // #411 (felhasználói visszajelzés): az eredetiben az ikon és a
-        // csúszka EGY EGYSÉG — a képecske közvetlenül a csúszka mellett,
-        // azonos sorban ül, a felirat a csúszka fölött. Korábban nálunk a
-        // 16x16-os ikon a felirat mellé volt tűzve, a csúszka pedig külön
-        // sorban futott — az összetartozás nem látszott.
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            Image {
-                objectName: "fixesFillLightIcon"
-                source: "icons/deritofeny.svg"
-                fillMode: Image.PreserveAspectFit
-                sourceSize: Qt.size(108, 72)
-                Layout.preferredWidth: 54
-                Layout.preferredHeight: 36
-            }
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 2
-                Label {
-                    Layout.fillWidth: true
-                    horizontalAlignment: Text.AlignHCenter
-                    text: qsTr("Fill Light")
-                    font.pixelSize: Theme.fontSize - 1
-                    color: Theme.textGray
-                }
-                PicasaSlider {
-                    id: fixesFillSlider
-                    objectName: "fixesFillSlider"
-                    Layout.fillWidth: true
-                    from: 0; to: 1; value: 0
-                    onValueChanged: panel.fillLightMoved(value)
-                    onPressedChanged: if (!pressed) panel.fillLightCommitted()
-                }
-            }
-        }
-
     }
 
     // ---------------- "finetune" mód: Finomhangolás (#20/#464) ----------
@@ -996,139 +595,17 @@ Rectangle {
     }
 
     // ---------------- effekt-paraméter alpanel (#316) ----------------
-    // Bármelyik effekt-fülön (2./3./4.) megnyílhat — az adott fül rácsát
-    // fedi el ugyanazon a helyen (tabBar.bottom-tól), a visszatérés
-    // ugyanarra a fülre történik, mert az activeTab változatlan marad.
-    // #464 (ugyanaz a túlcsordulás-osztály, mint az effekt-füleknél): a
-    // sok paraméteres effektek (pl. Vignetta) alpanelje magasabb lehet a
-    // rendelkezésre álló helynél — vágás/görgetés nélkül rálógna a panel
-    // alján ülő, globális Visszavonás/Újra sorra.
-    Flickable {
+    // #496: a tartalom önálló fájlban (EditorParamPanel.qml).
+    EditorParamPanel {
         id: effectParamScroll
         objectName: "editorEffectParamScroll"
+        panel: panel
         visible: !panel.modeToolActive && panel.paramPanelActive
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: globalUndoRow.top
         anchors.bottomMargin: 6
-        clip: true
-        contentWidth: width
-        contentHeight: effectParamColumn.implicitHeight + 20
-        boundsBehavior: Flickable.StopAtBounds
-        ScrollBar.vertical: PicasaScrollBar {}
-
-        ColumnLayout {
-            id: effectParamColumn
-            objectName: "effectParamColumn"
-            opacity: panel.enabled ? 1 : 0.45
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.margins: 10
-            spacing: 8
-
-            Rectangle {
-                Layout.fillWidth: true
-                height: 22
-                color: Theme.panelHeaderBg
-                Text {
-                    objectName: "effectParamTitle"
-                    anchors.left: parent.left
-                    anchors.leftMargin: 6
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: panel.paramEffectName
-                    font.pixelSize: Theme.fontSize
-                    font.bold: true
-                    color: Theme.panelHeaderText
-                }
-            }
-
-            Repeater {
-                objectName: "effectParamRepeater"
-                model: panel.paramEffectParams
-
-                // #516: a katalógus 3 vezérlő-fajtát ismer — "slider" (számtar-
-                // tomány), "checkbox" (jelölőnégyzet) és "color" (színválasztó,
-                // a #450 szöveg-eszköz `TextColorSwatches`-ának mintájára). Egy
-                // delegate-en belül mindhárom ág megvan, csak a `kind` szerint
-                // látszik az egyik — így a Repeater indexelése (és vele a
-                // `panel.updateParamValue(index, …)` pozíció-egyeztetés)
-                // változatlan marad, akármilyen a vezérlő-keverék.
-                delegate: ColumnLayout {
-                    id: paramRow
-                    required property var modelData
-                    required property int index
-                    Layout.fillWidth: true
-                    spacing: 2
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        visible: paramRow.modelData.kind !== "checkbox"
-                        Label {
-                            objectName: "effectParamLabel" + paramRow.index
-                            Layout.fillWidth: true
-                            text: panel.paramLabel(paramRow.modelData.label)
-                            font.pixelSize: Theme.fontSize - 1
-                            color: Theme.textGray
-                        }
-                        Label {
-                            objectName: "effectParamValue" + paramRow.index
-                            visible: paramRow.modelData.kind === "slider"
-                            text: paramSlider.value.toFixed(2)
-                            font.pixelSize: Theme.fontSize - 1
-                            color: Theme.textGray
-                        }
-                    }
-                    PicasaSlider {
-                        id: paramSlider
-                        objectName: "effectParamSlider" + paramRow.index
-                        visible: paramRow.modelData.kind === "slider"
-                        Layout.fillWidth: true
-                        from: paramRow.modelData.minimum
-                        to: paramRow.modelData.maximum
-                        stepSize: paramRow.modelData.step
-                        value: paramRow.modelData.default
-                        // húzás/kattintás közben élő előnézet (#316) — a
-                        // programozott kezdőérték-beállítás NEM vált ki `moved`
-                        // jelet, csak a valódi felhasználói interakció
-                        onMoved: panel.updateParamValue(paramRow.index, paramSlider.value)
-                    }
-                    CheckBox {
-                        id: paramCheckbox
-                        objectName: "effectParamCheckbox" + paramRow.index
-                        visible: paramRow.modelData.kind === "checkbox"
-                        text: panel.paramLabel(paramRow.modelData.label)
-                        checked: paramRow.modelData.default !== 0
-                        onToggled: panel.updateParamValue(paramRow.index, paramCheckbox.checked ? 1 : 0)
-                    }
-                    TextColorSwatches {
-                        id: paramColorSwatches
-                        objectName: "effectParamColor" + paramRow.index
-                        visible: paramRow.modelData.kind === "color"
-                        // #305 null-őr: régebbi/fake vezérlők (pl. teszt-dupla)
-                        // "color" mező nélküli payloadot is küldhetnek
-                        currentColor: paramRow.modelData.color ? paramRow.modelData.color : "#000000"
-                        onColorPicked: (hex) => panel.updateParamValue(paramRow.index, hex)
-                    }
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 6
-                PanelButton {
-                    objectName: "effectParamApplyButton"
-                    label: qsTr("Apply")
-                    onButtonClicked: panel.applyParamPanel()
-                }
-                PanelButton {
-                    objectName: "effectParamCancelButton"
-                    label: qsTr("Cancel")
-                    onButtonClicked: panel.cancelParamPanel()
-                }
-            }
-        }
     }
 
     // #316: húzás közben az egyes csúszka-változásokat nem küldjük azonnal
@@ -1233,69 +710,11 @@ Rectangle {
         }
     }
 
-    // #448: az egyéni arány törlésének megerősítése (a jegy szerint az
-    // egyéni tételek törölhetők) — #422 mintája szerint EGYEDI namePrefix.
-    ConfirmDialog {
-        id: deleteCustomAspectConfirm
-        namePrefix: "deleteCustomAspectConfirm"
-        property string pendingName: ""
-        property real pendingWidth: 0
-        property real pendingHeight: 0
-        onConfirmed: {
-            if (typeof controller !== "undefined" && controller
-                    && deleteCustomAspectConfirm.pendingName !== "") {
-                controller.deleteCustomAspectRatio(
-                    deleteCustomAspectConfirm.pendingName,
-                    deleteCustomAspectConfirm.pendingWidth,
-                    deleteCustomAspectConfirm.pendingHeight)
-                // törlés után a kiválasztás védetten (selectedPreset)
-                // tartományon belülre esik — nincs teendő itt
-            }
-        }
-    }
-
-    // #459: csak-olvasható mappa/fájl felismerése mentéskor — az eredeti
-    // Picasa szövege szerinti kérdés, DE az "Igen" (mappa-másolás) ág nem
-    // készült el, ezért a gomb láthatóan TILTOTT (yesEnabled: false),
-    // hogy ne tegyünk úgy, mintha másolna. Egyedi namePrefix (#367/(c) szabály).
-    ConfirmDialog {
-        id: editReadOnlyDialog
-        namePrefix: "editReadOnly"
-        yesEnabled: false
-    }
-
-    // #459: minden egyéb mentési hiba (pl. lemez megtelt, tartós ütközés)
-    // — az importálás/mentés eredeti szövege szerint ("...due to a disk
-    // error. The disk may be full or read-only."). Egyedi namePrefix.
-    ConfirmDialog {
-        id: editSaveErrorDialog
-        namePrefix: "editSaveError"
-        yesEnabled: false
-    }
-
-    Connections {
-        target: typeof editController !== "undefined" ? editController : null
-        function onEditSaveReadOnly() {
-            // #459: az ELSŐ bekezdés az eredeti Picasa szó szerinti
-            // szövege. A második a MIÉNK, és azért kell, mert a
-            // mappa-másolás még nincs megvalósítva: az "Igen" gomb
-            // tiltott (`yesEnabled: false`), és megválaszolhatatlan
-            // kérdést feltenni indoklás nélkül rosszabb, mint világosan
-            // megmondani, hogy ez a kiút még nem elérhető.
-            editReadOnlyDialog.ask("", qsTr(
-                "This file is read only. In order to edit this file, "
-                + "Picasa needs to copy the file's folder. Would you "
-                + "like to make a copy now?")
-                + "\n\n" + qsTr(
-                "The automatic copy is not available yet. To edit this "
-                + "picture, copy it to a writable folder yourself, or "
-                + "remove the write protection."))
-        }
-        function onEditSaveFailed(message) {
-            editSaveErrorDialog.ask("", qsTr(
-                "Due to a disk error. The disk may be full or read-only.")
-                + "\n" + message)
-        }
+    // ---------------- párbeszédek (#448, #459) ----------------
+    // #496: külön fájlban (EditorDialogs.qml).
+    EditorDialogs {
+        id: editorDialogs
+        panel: panel
     }
 
     // ---------------- "retouch" mód: Retusálás (#148) ----------------
