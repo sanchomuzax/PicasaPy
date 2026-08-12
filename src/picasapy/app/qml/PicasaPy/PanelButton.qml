@@ -112,6 +112,14 @@ Rectangle {
         wrapMode: Text.WordWrap
         width: parent.width - 8
         horizontalAlignment: Text.AlignHCenter
+        // #422: a bélyegképes csempénél a felirat LEGFELJEBB két sor lehet
+        // — pontosan annyi, amennyit a gomb magassága fenntart neki. Enélkül
+        // egy hosszabb név (vagy egy szélesebb betűkép: a Windows CI-n
+        // ugyanaz a szöveg HÁROM sorra tört) kilógna a gombból. A sima
+        // (bélyegkép nélküli) gombokon nincs korlát: ott a #318 elve marad,
+        // a felirat sosem vágódik.
+        maximumLineCount: pbtn.thumbSource !== "" ? 2 : 2147483647
+        elide: pbtn.thumbSource !== "" ? Text.ElideRight : Text.ElideNone
     }
     MouseArea {
         id: pbtnMouse

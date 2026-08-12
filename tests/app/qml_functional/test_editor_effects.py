@@ -280,6 +280,15 @@ class TestEffectTileHeightsAreUniform:
             long_label.property("height")
         ), "a hosszabb feliratú effekt-csempe magasabb lett"
 
+    def test_label_is_capped_at_two_lines(self, qml_engine, qt_app):
+        """A gomb két sornyi feliratot tart fenn — a felirat ezért LEGFELJEBB
+        két sor lehet. A Windows CI-n ugyanaz a szöveg három sorra tört
+        (szélesebb betűkép), és kilógott a gombból."""
+        column = _load(qml_engine, self._QML)
+        qt_app.processEvents()
+        label = column.findChild(QObject, "hosszuLabel")
+        assert label.property("lineCount") <= 2
+
     def test_two_line_label_stays_inside_the_button(self, qml_engine, qt_app):
         column = _load(qml_engine, self._QML)
         qt_app.processEvents()
