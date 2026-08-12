@@ -164,3 +164,48 @@ class TestDialogUsesTheTray:
         controller.holdRows([0])
         qt_app.processEvents()
         assert dialog.property("useTray") is True
+
+
+class TestCollageAndMovieUseTheTray:
+    """#455: a kollázs és a film ugyanúgy a tálca tartalmán dolgozik."""
+
+    def _sources(self, controller, rows):
+        return [str(p) for p in controller._sources_for(rows)]
+
+    def test_the_tray_wins_over_the_selection(
+        self, controller, qt_app, library
+    ):
+        _, first, second, _db = library
+        _load_grid(controller, qt_app, first)
+        controller.holdRows([_row_of(controller, first)])
+        qt_app.processEvents()
+
+        # a kijelölés a MÁSIK mappa képére mutat — a forrás mégis a tálca
+        other = _row_of(controller, second)
+        sources = self._sources(controller, [other])
+
+        assert [Path(p).name for p in sources] == ["a.jpg"]
+
+    def test_an_empty_tray_falls_back_to_the_selection(
+        self, controller, qt_app, library
+    ):
+        _, first, second, _db = library
+        _load_grid(controller, qt_app, first)
+
+        sources = self._sources(controller, [_row_of(controller, second)])
+
+        assert [Path(p).name for p in sources] == ["b.jpg"]
+
+    def test_the_tray_order_is_the_insertion_order(
+        self, controller, qt_app, library
+    ):
+        _, first, second, _db = library
+        _load_grid(controller, qt_app, first)
+        # előbb a MÁSODIK mappa képe kerül a tálcára, utána az elsőé
+        controller.holdRows([_row_of(controller, second)])
+        controller.holdRows([_row_of(controller, first)])
+        qt_app.processEvents()
+
+        sources = self._sources(controller, [])
+
+        assert [Path(p).name for p in sources] == ["b.jpg", "a.jpg"]

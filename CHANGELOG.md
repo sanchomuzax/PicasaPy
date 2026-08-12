@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.3] – 2026-08-12
+
+### Hozzáadva
+- **A kollázs és a film is a képtálca tartalmán dolgozik (#455).** Az
+  exportálás után most a másik két gyűjtő-művelet is a tálcára tett képekből
+  készül — több mappából összeválogatva —, és a párbeszédek rács-kijelölés
+  nélkül is megnyílnak, ha a tálcán van kép. Üres tálcánál minden marad a
+  régiben: a kijelölés a forrás.
+
 ## [0.7.2] – 2026-08-12
 
 ### Hozzáadva
