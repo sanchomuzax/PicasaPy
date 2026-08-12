@@ -90,3 +90,61 @@ független úton ugyanaz**.
 A **munkafüggvények** dekompilálása (a fenti nyolc + az egyszűrősök). Ott van
 a tényleges pixel-matematika; a mostani réteg csak a paraméterátadást
 mutatja.
+
+---
+
+## MEGFEJTVE: `0x0090ac20` — a Derítőfény (Fill Light)
+
+A dekompilált kódból (a nyers C: `referencia/dekompilalt/munkafuggvenyek.c`):
+
+```python
+g = 1.0 / ((1.0 - fill) * 0.7 + 0.3)
+
+# 256 elemu LUT
+for x in range(256):
+    v = ((x * g) / 255.0) ** (1.0 / (g * 0.7 + 0.3))
+    LUT[x] = round(255.0 * min(v, 256.0))
+
+# keppontonkent (BGR sorrendben a memoriaban)
+luma4 = (B + 2*G + R) >> 2            # sulyozott atlag, negyeddel osztva
+w     = 0xff00 - luma4 * round(alpha * 256)     # alpha = 1.0 a hivoban
+out_c = clamp(c + (((LUT[c] - c) * w) >> 16), 0, 255)
+```
+
+**A lényeg a `w` súly:** a LUT-ot nem egyszerűen alkalmazza, hanem a képpont
+**világosságával fordítottan arányos** súllyal keveri be. Sötét képpontnál
+`w ≈ 65280` (teljes hatás), világosnál `w → 0` (semmi hatás). Ezért nem
+írható le egyetlen gamma-görbével — **két hatás van egymáson**: egy
+gamma-jellegű LUT és egy árnyék-súlyozott keverés.
+
+`fill = 0` esetén `g = 1`, a kitevő is 1, tehát a LUT azonosság — a művelet
+**nem csinál semmit**, ahogy kell.
+
+### Ellenőrzés a mérőkészleten
+
+Átlagos csatorna-eltérés a Picasa saját kimenetétől (`referencia/deritofeny/`,
+hat csúszkaállás):
+
+| állás | **binárisból levezetve** | korábbi gamma-közelítés | a mai kódunk |
+|---|---|---|---|
+| 10 % | **0,82** | 1,53 | 0,97 |
+| 25 % | **1,41** | 2,46 | 2,06 |
+| 50 % | **0,93** | 4,71 | 3,64 |
+| 75 % | **4,52** | 9,96 | 5,36 |
+| 100 % | **1,21** | 10,38 | 5,89 |
+
+A JPEG saját zaja kb. 1,0 — vagyis ez **a pontos algoritmus**, nem közelítés.
+(A 75 %-os sor magasabb értéke valószínűleg abból jön, hogy a csúszka kézzel
+lett beállítva, tehát nem pontosan 0,75.)
+
+## A Glimmer-oldal még nyitva
+
+A `glimmer::GlowImageOperation` / `BlurImageOperation` / `AutoFixImageOperation`
+/ `BWImageOperation` vtable-jének **első három** bejegyzése nem a
+képfeldolgozás: destruktor, felszabadítás és az XML-attribútumok beolvasása
+(nyolc egymásba ágyazott `FUN_008f1500` hívás = nyolc attribútum). A tényleges
+`apply` metódus a vtable-ben **hátrébb** van.
+
+Ezért a 255-ös elmosás-korlát (Lomo/Holga) **továbbra is csak méréssel
+igazolt**, binárisan nem. Következő kör: a vtable teljes kiolvasása és a
+helyes slot dekompilálása.
