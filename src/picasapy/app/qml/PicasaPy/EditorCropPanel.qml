@@ -109,10 +109,8 @@ ColumnLayout {
                     color: aspectRowHover.hovered ? Theme.panelSelection
                            : "transparent"
                     Text {
+                        id: aspectRowLabel
                         anchors.left: parent.left; anchors.leftMargin: 6
-                        anchors.right: aspectDeleteBtn.visible
-                            ? aspectDeleteBtn.left : parent.right
-                        anchors.rightMargin: 4
                         anchors.verticalCenter: parent.verticalCenter
                         elide: Text.ElideRight
                         text: aspectRow.modelData.label
@@ -121,6 +119,26 @@ ColumnLayout {
                         // szándékosan téma-független fehér a token
                         // (Theme.panelSelectionText) — nem új hardkód
                         color: aspectRowHover.hovered ? Theme.panelSelectionText : Theme.ink
+                    }
+                    // #448: MAGYARÁZÓ ALCÍM — a Picasa legördülőjében nem
+                    // csak a szám állt („Kisméretű nyomat", „CD-borító"),
+                    // és ez segíti a felismerést. Halványan, a sor jobb
+                    // oldalán; ha nincs leírás, nem foglal helyet.
+                    Text {
+                        objectName: "cropAspectNote" + aspectRow.index
+                        visible: text.length > 0
+                        anchors.left: aspectRowLabel.right
+                        anchors.leftMargin: 8
+                        anchors.right: aspectDeleteBtn.visible
+                            ? aspectDeleteBtn.left : parent.right
+                        anchors.rightMargin: 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignRight
+                        elide: Text.ElideRight
+                        text: aspectRow.modelData.note || ""
+                        font.pixelSize: Theme.fontSize - 1
+                        color: aspectRowHover.hovered
+                               ? Theme.panelSelectionText : Theme.textGray
                     }
                     // #448: az EGYÉNI (felhasználó felvette) arányok
                     // törölhetők — a beépített preset-eknek nincs "×".

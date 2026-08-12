@@ -30,17 +30,22 @@ def _list_property(obj, name):
 
 
 class TestAspectPresetKeys:
-    """A #448 jegy javító kommentje szerinti kulcskészlet — a KIHAGYOTT
-    (CurrentDisplay/WideFrame/Widescreen/Other) kulcsok NEM szerepelhetnek."""
+    """A #448 kulcskészlete. A `Picasa3i18n.dll` teljes listája (a jegy
+    2026-08-10-i kommentje) feloldotta a korábban kihagyott kulcsokat is:
+    `Widescreen` = 16:10, `WideFrame` = 5:3, `CurrentDisplay` = a KÉPERNYŐ
+    aránya — így ezek már nem találgatások. A `8.5x11` (Letter méretű papír)
+    ugyanabból a forrásból került be."""
 
     _EXPECTED_KEYS = [
         "Manual",
         "CurrentRatio",
+        "CurrentDisplay",
         "4x4",
         "Desktop4x3",
         "4x6",
         "5x7",
         "8x10",
+        "8.5x11",
         "5x3",
         "9x13",
         "10x15",
@@ -62,14 +67,34 @@ class TestAspectPresetKeys:
         keys = [item["key"] for item in presets]
         assert keys == self._EXPECTED_KEYS
 
-    def test_excluded_keys_are_not_present(self, qml_app, qt_app):
-        """A jegy kommentje szerint az arányuk nem vezethető le egyértelműen
-        a kulcsnévből — találgatás helyett kimaradtak (ld. task-jelentés)."""
+    def test_the_resolved_keys_carry_the_documented_ratio(self, qml_app, qt_app):
+        """A `Picasa3i18n.dll` feloldotta a korábban kihagyott kulcsokat:
+        a `Widescreen` a 16:10, a `WideFrame` az 5:3 felirata — ezért ezek
+        NEM külön tételek, hanem a meglévő arányok magyarázó alcímei."""
         window, _, _ = qml_app
         _open_viewer(window, qt_app)
         panel = window.findChild(QObject, "viewerEditorPanel")
-        keys = {item["key"] for item in _list_property(panel, "aspectPresets")}
-        assert keys.isdisjoint({"CurrentDisplay", "WideFrame", "Widescreen", "Other"})
+        presets = {
+            item["key"]: item for item in _list_property(panel, "aspectPresets")
+        }
+        assert presets["16x10"]["note"] == "Widescreen monitor"
+        assert presets["5x3"]["note"] == "Widescreen Photo Frame"
+        assert presets["Square"]["note"] == "CD Cover"
+        assert presets["8.5x11"]["note"] == "Letter paper"
+        # az `Other` továbbra sem tétel: nálunk az egyéni arány felvétele
+        # tölti be ezt a szerepet (AddCustomAspectRatio)
+        assert "Other" not in presets
+
+    def test_the_display_ratio_is_dynamic(self, qml_app, qt_app):
+        """A „Jelenlegi megjelenítés" a képernyő arányát veszi át — a
+        listában külön jelzés (-2) áll, nem bebetonozott szám."""
+        window, _, _ = qml_app
+        _open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        presets = {
+            item["key"]: item for item in _list_property(panel, "aspectPresets")
+        }
+        assert presets["CurrentDisplay"]["ratio"] == -2
 
     def test_full_list_starts_with_the_builtin_presets(self, qml_app, qt_app):
         window, _, _ = qml_app
