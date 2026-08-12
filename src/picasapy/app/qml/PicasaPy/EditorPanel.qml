@@ -378,7 +378,16 @@ Rectangle {
     }
     function fillLightCommitted() { panel.emitFinetuneCommit() }
     onFillLightChanged: panel.syncFinetuneSliders()
-    onActiveTabChanged: panel.syncFinetuneSliders()
+    onActiveTabChanged: {
+        panel.syncFinetuneSliders()
+        // #583: fülváltáskor a nyitott effekt-paraméter alpanel BEZÁRUL, és
+        // az élő előnézete elvész (a mentett lánc érintetlen marad — ez a
+        // Mégse ága). Enélkül nyitva maradt, és mivel a láthatósága csak a
+        // `paramPanelActive`-tól függött, RÁRAJZOLÓDOTT a másik fül
+        // tartalmára (a felhasználó képernyőképén a vignette-panel a
+        // „Gyakori javítások" csúszkái közé keveredve).
+        if (panel.paramPanelActive) panel.cancelParamPanel()
+    }
     // #448: a vágó-eszköz megnyitásakor a legutóbb használt arány töltődik
     // vissza (lastCropRatio)
     onCropActiveChanged: if (panel.cropActive) panel.restoreLastCropRatio()
@@ -541,6 +550,7 @@ Rectangle {
         id: fixesTab
         panel: panel
         visible: !panel.modeToolActive && panel.activeTab === 0
+                 && !panel.paramPanelActive  // #583
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
@@ -555,6 +565,7 @@ Rectangle {
         id: finetunePanel
         panel: panel
         visible: !panel.modeToolActive && panel.activeTab === 1
+                 && !panel.paramPanelActive  // #583
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right

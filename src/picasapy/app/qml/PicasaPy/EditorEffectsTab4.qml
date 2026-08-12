@@ -19,6 +19,8 @@ ColumnLayout {
     required property var panel
 
     objectName: "effectsColumn4"
+    // #583: a nyitott paraméter-alpanel alatt a fül elrejtőzik — enélkül
+    // a kettő EGYMÁSRA rajzolódott (a testvér effekt-fülek mintája)
     visible: !panel.modeToolActive && panel.activeTab === 5
              && !panel.paramPanelActive
     opacity: panel.enabled ? 1 : 0.45

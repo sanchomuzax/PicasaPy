@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.97] – 2026-08-12
+
+### Javítva
+- **A „Régi effektek" fül gombjai végre működnek (#582).** Eddig minden
+  gombja hibaüzenetbe futott („Érvénytelen effekt"), mert a fül olyan
+  szűrőneveket kínált, amilyeneket a szerkesztő nem fogadott el. Mostantól a
+  Derítőfény, az egykattintásos Derítőfény és a Radiális színezés
+  alkalmazható is — a Picasa saját alapértékeivel (25%-os derítés, középre
+  tett fókuszpont).
+- **A szerkesztő effekt-paneljei nem ragadnak be (#583).** Ha egy effekt
+  csúszkás panelje nyitva volt, fülváltás után **ott maradt**, és
+  rárajzolódott a másik fül csúszkáira. Mostantól fülváltáskor bezárul (a
+  beállítás elvész, a mentett kép változatlan), és a „További effektek" meg
+  a „Régi effektek" fül sem lóg többé egymásra a nyitott panellel.
+
 ## [0.6.96] – 2026-08-12
 
 ### Hozzáadva
