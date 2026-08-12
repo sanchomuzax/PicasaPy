@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.0] – 2026-08-12
+
+### Hozzáadva
+- **Működik a szín-varázspálca a Finomhangolás fülön (#551).** A gomb eddig
+  az „Automatikus szín" szűrőt fűzte a képre; a Picasa saját mentései
+  viszont elárulták, hogy a pálca valójában az **Alapszínválasztás** színét
+  állítja be automatikusan. Mostantól nálunk is ezt teszi: a program a
+  kevéssé telített („szürke-közeli") képpontokból választ viszonyítási
+  színt, és azzal veszi ki a színezetet. A tulajdonos 11 mérőképén a
+  választott szín a Picasáétól átlagosan ~3 egységgel tér el (0–255-ös
+  skálán).
+
 ## [0.6.99] – 2026-08-12
 
 ### Javítva

@@ -562,6 +562,8 @@ Rectangle {
                         editController.setFinetune(f, h, s, t)
                     }
                     onEffectRequested: (name) => editController.applyEffect(name)
+                    // #551: a szín-varázspálca a finetune2 p4 mezőjét írja
+                    onColorWandRequested: editController.applyColorWand()
                     onToolActivated: function(tool) {
                         // crop/tilt/retouch/text helyi mód (overlay/
                         // csúszka/kattintás-puffer); a többi azonnali

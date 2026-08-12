@@ -126,6 +126,11 @@ Rectangle {
     // semleges színe `#rrggbb` alakban, üres string = nincs kijelölve
     property string neutralColor: ""
     signal neutralPickerToggled()
+    // #551: a szín-varázspálca NEM az autocolor szűrőt teszi a láncra: a
+    // finetune2 „semleges szín" (p4) mezőjét állítja be automatikusan
+    // választott színnel — a Picasa saját .picasa.ini-je bizonyítja
+    // (finetune2=1,0,0,0,006b8088,0). Ezért külön jelzés, nem toolActivated.
+    signal colorWandRequested()
 
     property string undoLabel: qsTr("Undo")
     property string redoLabel: qsTr("Redo")

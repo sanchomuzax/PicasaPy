@@ -46,7 +46,7 @@ from picasapy.render.chain import DEAD_LEGACY_OPS, can_render_filter
 from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
 from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
-from picasapy.render.tone import parse_neutral_argb
+from picasapy.render.tone import estimate_neutral_color, parse_neutral_argb
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
@@ -1853,6 +1853,39 @@ class EditController(QObject, BackgroundWorkerMixin):
         if sample is None:
             return False
         red, green, blue = sample
+        values = self._session.finetune_values()
+        self._push_undo("finetune")
+        self._session = self._session.set_finetune(
+            fill=values.fill if values else 0.0,
+            highlights=values.highlights if values else 0.0,
+            shadows=values.shadows if values else 0.0,
+            temperature=values.temperature if values else 0.0,
+            neutral=f"ff{red:02x}{green:02x}{blue:02x}",
+        )
+        self._save()
+        self._bump_revision()
+        self.toolsChanged.emit()
+        return True
+
+    @Slot(result=bool)
+    def applyColorWand(self) -> bool:  # noqa: N802 — QML-stílusú név
+        """A szín-varázspálca (#551): a viszonyítási színt a PROGRAM választja.
+
+        A mérés kimondta, hogy a pálca nem külön szűrő: ugyanabba a
+        `finetune2` p4 mezőbe ír, mint a kézi pipetta — a Picasa saját
+        `.picasa.ini`-je bizonyítja (`finetune2=1,0,0,0,006b8088,0`). A
+        színt a kevéssé telített képpontok átlagából becsüljük
+        (`estimate_neutral_color`), a zöldre normálva.
+
+        `False`, ha a forráskép nem olvasható — ilyenkor a lánc érintetlen.
+        """
+        self._require_active()
+        if self._image_path is None:
+            return False
+        source = self._provider.source_image(self._photo_id, self._image_path)
+        if source is None:
+            return False
+        red, green, blue = estimate_neutral_color(source)
         values = self._session.finetune_values()
         self._push_undo("finetune")
         self._session = self._session.set_finetune(

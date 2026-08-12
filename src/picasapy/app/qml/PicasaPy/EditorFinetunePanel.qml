@@ -199,7 +199,9 @@ ColumnLayout {
             //: az eredeti buboréksúgója a képernyőképről
             tooltip: qsTr("One-click color fix")
             Layout.alignment: Qt.AlignVCenter
-            onClicked: panel.handleToolClick("autocolor")
+            // #551: a semleges színt (finetune2 p4) állítja, nem az
+            // autocolor szűrőt fűzi a láncra — ld. a panel jelzésénél
+            onClicked: panel.colorWandRequested()
         }
     }
 
