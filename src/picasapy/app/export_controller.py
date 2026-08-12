@@ -19,8 +19,21 @@ from picasapy.export import (
 )
 from picasapy.fileops import has_enough_free_space, required_bytes_for
 
+from picasapy.index import open_index, photo_by_id
+
 from .formatting import to_local_path
 from .worker_thread import BackgroundWorkerMixin
+
+
+def _export_item(record) -> ExportItem:
+    """Egy fotó-rekord export-elemmé — a forgatás és a szerkesztési lánc
+    beleég a célfájlba (#136), hogy a rács képe és az exportált fájl
+    megegyezzen."""
+    return ExportItem(
+        source=Path(record.folder_path) / record.name,
+        rotate_steps=record.rotate_steps,
+        filters=record.filters,
+    )
 
 
 class ExportMixin(BackgroundWorkerMixin):
@@ -63,14 +76,48 @@ class ExportMixin(BackgroundWorkerMixin):
         exportFailedDetails(["fájlnév: ok", ...])."""
         photos = self._photos.photos
         items = tuple(
-            ExportItem(
-                source=Path(photos[int(r)].folder_path) / photos[int(r)].name,
-                rotate_steps=photos[int(r)].rotate_steps,
-                filters=photos[int(r)].filters,
-            )
+            _export_item(photos[int(r)])
             for r in rows
             if 0 <= int(r) < len(photos)
         )
+        self._export_items(items, target_dir, max_dimension, jpeg_quality,
+                           add_numbers, watermark_text)
+
+    @Slot(str, int, int, bool, str)
+    def exportHeld(self, target_dir: str, max_dimension: int,
+                   jpeg_quality: int, add_numbers: bool = False,
+                   watermark_text: str = "") -> None:
+        """A KÉPTÁLCA tartalmának exportja célmappába (#455, 3. teendő).
+
+        Az eredetiben a tálca alatti műveletsor a **tálca tartalmán**
+        dolgozott, nem a pillanatnyi kijelölésen — a Picasa buboréksúgói is
+        végig „a képtálca képeire" hivatkoznak. A tálca mappákon átnyúlik,
+        ezért itt nem rács-sorokkal, hanem a globális indexből felolvasott
+        fotó-rekordokkal dolgozunk (a forgatás és a `filters=` lánc így
+        ugyanúgy beleég, mint a kijelölés-alapú úton).
+        """
+        self._export_items(
+            self._held_export_items(), target_dir, max_dimension,
+            jpeg_quality, add_numbers, watermark_text,
+        )
+
+    def _held_export_items(self) -> tuple[ExportItem, ...]:
+        held = list(getattr(self, "_held_ids", ()) or ())
+        if not held:
+            return ()
+        items = []
+        with open_index(self._db_path) as conn:
+            for photo_id in held:
+                record = photo_by_id(conn, photo_id)
+                # az időközben eltűnt kép egyszerűen kimarad (a heldPaths
+                # ugyanezt teszi) — nem hiba, és nem is akaszt meg semmit
+                if record is not None:
+                    items.append(_export_item(record))
+        return tuple(items)
+
+    def _export_items(self, items, target_dir: str, max_dimension: int,
+                      jpeg_quality: int, add_numbers: bool,
+                      watermark_text: str) -> None:
         target = to_local_path(target_dir)
         if not items or not target:
             self.exportFinished.emit(0, 0)

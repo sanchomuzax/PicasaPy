@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.2] – 2026-08-12
+
+### Hozzáadva
+- **A mappába exportálás a képtálca tartalmán dolgozik (#455).** Az eredeti
+  Picasában az alsó sáv gombjai nem a pillanatnyi kijelölésre, hanem a
+  **tálcára gyűjtött** képekre hatottak — ez a tálca értelme: több mappából
+  összeszedni, amit együtt akarunk kezelni. Mostantól nálunk is: ha van
+  tartott kép, az exportálás azokat viszi (bármelyik mappából), üres
+  tálcánál marad a kijelölés.
+
 ## [0.7.1] – 2026-08-12
 
 ### Hozzáadva

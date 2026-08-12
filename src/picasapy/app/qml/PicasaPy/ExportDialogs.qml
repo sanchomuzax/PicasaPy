@@ -30,7 +30,10 @@ Item {
         // a méret-lista indexei → leghosszabb oldal px-ben (0 = eredeti)
         readonly property var sizeOptions: [0, 2048, 1600, 1024, 800]
         function openForSelection() {
-            if (dialogs.appWindow.selectedIndexes.length === 0) return
+            // #455: tartott képekkel a tálca a forrás — ilyenkor a rácsban
+            // nem is kell kijelölésnek lennie
+            if (!exportDialog.useTray
+                    && dialogs.appWindow.selectedIndexes.length === 0) return
             open()
         }
         // tesztelhetőség: ld. renameDialog.acceptButtonText() megjegyzése
@@ -59,14 +62,30 @@ Item {
         // a logika így nem törik el, ha a szöveg egyszer lefordítódik.
         readonly property var qualityPresetKeys:
             ["automatic", "normal", "maximum", "minimum", "custom"]
-        onAccepted: controller.exportRows(
-            dialogs.appWindow.selectedIndexes, resolvedTargetFolder(),
-            sizeOptions[exportSizeBox.currentIndex],
-            controller.resolveExportQuality(
+        // #455 (3. teendő): ha a KÉPTÁLCÁN van tartott kép, a művelet a
+        // TÁLCA tartalmán fut, nem a pillanatnyi kijelölésen — az eredeti
+        // Picasa buboréksúgói is végig „a képtálca képeire" hivatkoznak.
+        // Üres tálcánál marad a kijelölés (a mai viselkedés).
+        readonly property bool useTray:
+            (typeof controller !== "undefined" && controller)
+                ? controller.heldCount > 0 : false
+        onAccepted: {
+            var quality = controller.resolveExportQuality(
                 qualityPresetKeys[exportQualityPreset.currentIndex],
-                exportQuality.value),
-            exportAddNumbersCheck.checked,
-            exportWatermarkCheck.checked ? exportWatermarkField.text : "")
+                exportQuality.value)
+            var watermark =
+                exportWatermarkCheck.checked ? exportWatermarkField.text : ""
+            if (exportDialog.useTray)
+                controller.exportHeld(
+                    resolvedTargetFolder(),
+                    sizeOptions[exportSizeBox.currentIndex], quality,
+                    exportAddNumbersCheck.checked, watermark)
+            else
+                controller.exportRows(
+                    dialogs.appWindow.selectedIndexes, resolvedTargetFolder(),
+                    sizeOptions[exportSizeBox.currentIndex], quality,
+                    exportAddNumbersCheck.checked, watermark)
+        }
         ColumnLayout {
             spacing: 10
             RowLayout {
