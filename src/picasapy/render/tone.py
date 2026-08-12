@@ -82,9 +82,25 @@ _TEMPERATURE_GAINS = (
     (1.0546, 0.9974, 0.8430),
 )
 
-# Semleges-szín pipetta: csillapított fehéregyensúly (mérve: a korrekció a
-# teljes szürkevilág-korrekció ~50–75%-a).
-_NEUTRAL_DAMPING = 0.6
+#: **Semleges-szín pipetta / szín-varázspálca (#551).** A `finetune2` p4
+#: mezője a viszonyítási szín, `AARRGGBB` hexában — és a Picasa maga
+#: NORMALIZÁLJA: a középső bájt MINDIG 0x80 = 128, vagyis a ZÖLD a
+#: viszonyítási alap. A csatorna-erősítés ebből:
+#:
+#:     k_c = p4_zöld / p4_c        (a zöldé így mindig 1,0)
+#:
+#: Hat próbaképen ellenőrizve (`referencia/szinpalca-proba2/`, a p4-eket
+#: maga a Picasa írta a `.picasa.ini`-be): a jósolt és a mért csatorna-
+#: szorzók eltérése végig ~3 %. A korábbi, csillapított szürkevilág-
+#: közelítés ennél lényegesen messzebb járt (pl. 1,09 a mért 1,16 helyett).
+#:
+#: A zöldre normálás egyben azt is adja, hogy egy tényleg semleges (R=G=B)
+#: viszonyítási szín azonosság — ahogy kell.
+#:
+#: Ugyanez a mag (`0x0090eda0`) szolgálja ki a kézi pipettát és az
+#: automatikus szín-varázspálcát is: egy implementáció, két belépési pont.
+#: Azt, hogy az AUTOMATIKA milyen szabállyal választja a színt, még nem
+#: tudjuk (szürke-képpont becslés — ld. a #551 jegyet).
 
 _ARGB_PATTERN = re.compile(r"^[0-9a-fA-F]{8}$")
 
@@ -192,26 +208,22 @@ def parse_neutral_argb(value: str) -> tuple[int, int, int] | None:
 def apply_neutral_pipette(
     image: np.ndarray, neutral: tuple[int, int, int]
 ) -> np.ndarray:
-    """Fehéregyensúly a kijelölt semlegesnek szánt szín alapján, csillapítva.
+    """Fehéregyensúly a semlegesnek jelölt szín alapján (#551).
 
-    A csatorna-erősítések a színt a saját szürkeátlaga felé húznák; a mért
-    viselkedés szerint csak a korrekció egy része érvényesül
-    (`_NEUTRAL_DAMPING`).
+    A csatorna-erősítés a ZÖLDHÖZ viszonyít (`k_c = p4_zöld / p4_c`), mert a
+    Picasa a p4-et így normalizálja: a középső bájt mindig 0x80 = 128.
+    Semleges (R=G=B) viszonyítási színnél ez azonosság.
     """
     validate_image(image)
     red, green, blue = neutral
-    gray = (red + green + blue) / 3.0
-    if gray <= 0.0:
+    if green <= 0:
         return image.copy()
     # csatornánkénti gain → csatornánkénti LUT (#140): képméret-független
     ramp = lut_ramp()
-    luts = []
-    for value in (red, green, blue):
-        if value <= 0:
-            luts.append(ramp)
-            continue
-        gain = 1.0 + _NEUTRAL_DAMPING * (gray / value - 1.0)
-        luts.append(ramp * gain)
+    luts = [
+        ramp if value <= 0 else ramp * (float(green) / float(value))
+        for value in (red, green, blue)
+    ]
     return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 
