@@ -5,6 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.77] – 2026-08-12
+
+### Javítva
+- **Az effekt-fülek gombjai nem lógnak rá a Visszavonás sorra (#464).** Mindhárom
+  effekt-fül rácsa több gombot tartalmaz, mint amennyi a panel magasságába fér;
+  eddig a csempék átfedtek a panel alján ülő Visszavonás/Újra gombsorral, és a
+  fül alja levágódott. A rács mostantól saját, vágott görgethető területen ül.
+- **A „Gyakori javítások" fül gombjai az eredeti sorrendjében (#464).** A
+  tulajdonos képernyőképe alapján: Vágás · Kiegyenesítés · Vörösszem /
+  Jó napom van · Automatikus kontraszt · Automatikus szín / Retusálás · Szöveg,
+  és mindegyik alatt a Derítőfény-csúszka. A „Kreatív Kit" csempe **eltűnt** —
+  az eredeti fülön nincs ilyen gomb (a jegy szövege tévesen sorolta fel).
+
 ## [0.6.76] – 2026-08-12
 
 ### Javítva

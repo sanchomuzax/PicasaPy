@@ -840,6 +840,52 @@ class TestFinetuneTabQuickFixesAndPicker(_ViewerOpenMixin):
         assert area.property("enabled") is True
 
 
+class TestEffectTabsDoNotOverflow(_ViewerOpenMixin):
+    """#464 (felhasználói hibajelentés): a három effekt-fül rácsa több
+    gombot tartalmaz, mint amennyi a panel magasságába fér. Vágás/görgetés
+    nélkül a csempék RÁLÓGTAK a panel alján ülő, globális Visszavonás/Újra
+    sorra, és a fül alja levágódott."""
+
+    SCROLLS = {
+        2: "editorEffectsTab1Scroll",
+        3: "editorEffectsTab2Scroll",
+        4: "editorEffectsTab3Scroll",
+    }
+
+    def test_every_effect_tab_clips_and_stays_above_the_undo_row(
+        self, qml_app, qt_app
+    ):
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        row = window.findChild(QObject, "editorGlobalUndoRow")
+
+        for tab, scroll_name in self.SCROLLS.items():
+            panel.setProperty("activeTab", tab)
+            qt_app.processEvents()
+            scroll = window.findChild(QObject, scroll_name)
+            assert scroll is not None, scroll_name
+            assert scroll.property("clip") is True, f"{scroll_name} nem vág"
+
+            scroll_bottom = scroll.mapToItem(panel, 0, scroll.property("height"))
+            row_top = row.mapToItem(panel, 0, 0)
+            assert scroll_bottom.y() <= row_top.y() + 1, (
+                f"{scroll_name} alja ({scroll_bottom.y()}) a Visszavonás-sor "
+                f"teteje ({row_top.y()}) ALÁ nyúlik"
+            )
+
+    def test_the_whole_grid_is_reachable_by_scrolling(self, qml_app, qt_app):
+        """A ki nem férő gombok nem vesznek el: a görgethető tartalom
+        legalább akkora, mint a látható terület."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("activeTab", 2)
+        qt_app.processEvents()
+        scroll = window.findChild(QObject, "editorEffectsTab1Scroll")
+        assert scroll.property("contentHeight") >= scroll.property("height")
+
+
 class TestGlobalUndoRedoRow(_ViewerOpenMixin):
     """#464: a Visszavonás/Újra a panel alján, GLOBÁLISAN — nem fülönként
     ismételve (az eredetiben sem volt fülhöz kötve)."""

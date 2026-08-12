@@ -67,54 +67,46 @@ def _make_panel(engine, active_tab=0):
     )
 
 
-# a #464 jegy sorrendje, a forrásban szereplő azonosítókkal
+# #464: az 1. fül sorrendje a tulajdonos KÉPERNYŐKÉPÉRŐL (Picasa 3.9,
+# „Gyakori javítások"). Ez FELÜLÍRJA a jegy szövegében szereplő korábbi
+# sorrendet, ami feljegyzésből készült — a képen három sorban:
+#     Vágás · Kiegyenesítés · Vörösszem
+#     Jó napom van · Automatikus kontraszt · Automatikus szín
+#     Retusálás · Szöveg
+# és MINDEGYIK ALATT a Derítőfény-csúszka.
 _EXPECTED_ORDER = [
     'objectName: "editToolCrop"',
+    'objectName: "editToolTilt"',
     'objectName: "editToolRedeye"',
     'objectName: "editToolEnhance"',
-    'objectName: "editToolCreativeKit"',
-    'objectName: "editToolAutocolor"',
     'objectName: "editToolAutolight"',
-    "id: fixesFillSlider",
-    'objectName: "editToolTilt"',
-    'objectName: "editToolText"',
+    'objectName: "editToolAutocolor"',
     'objectName: "editToolRetouch"',
+    'objectName: "editToolText"',
+    "id: fixesFillSlider",
 ]
 
 
 class TestTab1ButtonOrder:
-    """#464 1. fül: a fentiek szerinti sorrend a forrásban."""
+    """#464 1. fül: a képernyőkép szerinti sorrend a forrásban."""
 
-    def test_source_order_matches_the_issue(self):
+    def test_source_order_matches_the_screenshot(self):
         positions = [_QML_SOURCE.index(marker) for marker in _EXPECTED_ORDER]
         assert positions == sorted(positions), (
             "az 1. fül gombjainak/csúszkájának sorrendje nem egyezik a "
-            "#464 jegyben rögzített sorrenddel"
+            "tulajdonos képernyőképén látható sorrenddel"
         )
 
 
-class TestCreativeKitTile:
-    """#464: a "Kreatív Kit" (Picnik külső szerkesztő) gomb — nincs valódi
-    háttere (nincs külső-szerkesztő integráció a projektben), ezért
-    helyőrzőként, letiltva jelenik meg (a helye megvan, a bekötés nyitott)."""
+class TestNoCreativeKitTile:
+    """#464: a képernyőképen NINCS „Kreatív Kit" csempe — a jegy szövege
+    tévesen sorolta fel (a Picnik külső szerkesztő gombja nem szerepel a
+    „Gyakori javítások" fülön). A helyőrző csempét ezért levettük."""
 
-    def test_tile_exists(self, qml_engine, qt_app):
+    def test_tile_is_gone(self, qml_engine, qt_app):
         panel = _make_panel(qml_engine)
         qt_app.processEvents()
-        tile = panel.findChild(QObject, "editToolCreativeKit")
-        assert tile is not None
+        assert panel.findChild(QObject, "editToolCreativeKit") is None
 
-    def test_tile_is_disabled_placeholder(self, qml_engine, qt_app):
-        panel = _make_panel(qml_engine)
-        qt_app.processEvents()
-        tile = panel.findChild(QObject, "editToolCreativeKit")
-        assert tile.property("tileEnabled") is False
-
-    def test_tile_icon_points_to_its_own_svg(self, qml_engine, qt_app):
-        panel = _make_panel(qml_engine)
-        qt_app.processEvents()
-        icon = panel.findChild(QObject, "editToolCreativeKitIcon")
-        assert icon is not None
-        source = str(icon.property("source").toString())
-        assert source.endswith("icons/kreativ-kit.svg")
-        assert (_ICONS_DIR / "kreativ-kit.svg").is_file()
+    def test_source_has_no_creative_kit_marker(self):
+        assert 'objectName: "editToolCreativeKit"' not in _QML_SOURCE
