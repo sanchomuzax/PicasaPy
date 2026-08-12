@@ -13,6 +13,13 @@ Item {
     // a főablak (a kijelölt sorok forrása)
     required property var appWindow
 
+    // #455: van-e a KÉPTÁLCÁN tartott kép — ilyenkor a műveletek a tálca
+    // tartalmán futnak (a vezérlő dönt, ld. `_sources_for`), és a
+    // párbeszédek kijelölés nélkül is megnyílnak
+    readonly property bool trayHasPictures:
+        (typeof controller !== "undefined" && controller)
+            ? controller.heldCount > 0 : false
+
     // a kollázs-típusok sorrendje a ComboBox-szal egyezik
     readonly property var collageKinds: ["grid", "contact_sheet", "mosaic", "pile"]
 
@@ -28,7 +35,10 @@ Item {
         standardButtons: Dialog.Ok | Dialog.Cancel
         property string targetFile: ""
         function openForSelection() {
-            if (dialogs.appWindow.selectedIndexes.length === 0) return
+            // #455: tartott képekkel a tálca a forrás — ilyenkor a
+            // rácsban nem is kell kijelölésnek lennie
+            if (!dialogs.trayHasPictures
+                    && dialogs.appWindow.selectedIndexes.length === 0) return
             open()
         }
         onOpened: standardButton(Dialog.Ok).enabled = Qt.binding(
@@ -106,7 +116,10 @@ Item {
         // a felbontás-lista indexei → videó-magasság
         readonly property var heightOptions: [720, 1080]
         function openForSelection() {
-            if (dialogs.appWindow.selectedIndexes.length === 0) return
+            // #455: tartott képekkel a tálca a forrás — ilyenkor a
+            // rácsban nem is kell kijelölésnek lennie
+            if (!dialogs.trayHasPictures
+                    && dialogs.appWindow.selectedIndexes.length === 0) return
             open()
         }
         onOpened: standardButton(Dialog.Ok).enabled = Qt.binding(

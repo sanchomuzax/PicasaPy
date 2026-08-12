@@ -53,12 +53,29 @@ class CreateMixin(BackgroundWorkerMixin):
             if 0 <= int(r) < len(photos)
         )
 
+    def _tray_sources(self) -> tuple[Path, ...]:
+        """A KÉPTÁLCA tartalma forrás-útvonalként, beszúrási sorrendben
+        (#455, 3. teendő).
+
+        Az eredetiben a tálca alatti műveletsor a tálca tartalmán futott,
+        nem a pillanatnyi kijelölésen. A tálca mappákon átnyúlik, ezért itt
+        nem rács-sorokból, hanem a `heldPaths`-ből dolgozunk — az a globális
+        indexből olvas, és az időközben eltűnt képeket kihagyja.
+        """
+        return tuple(Path(path) for path in (self.heldPaths or ()))
+
+    def _sources_for(self, rows) -> tuple[Path, ...]:
+        """A művelet forrása: a TÁLCA, ha van benne kép; egyébként a
+        kijelölés (így az üres tálcás, mai viselkedés nem romlik el)."""
+        tray = self._tray_sources()
+        return tray if tray else self._selected_sources(rows)
+
     @Slot(list, str, str)
     def makeCollage(self, rows, kind: str, target_url: str) -> None:
         """Kollázs a kijelölt képekből a megadott célfájlba (JPEG).
 
         `kind`: a `picasapy.collage.COLLAGE_KINDS` egyike."""
-        sources = self._selected_sources(rows)[:_MAX_ITEMS]
+        sources = self._sources_for(rows)[:_MAX_ITEMS]
         target = to_local_path(target_url)
         if not sources:
             self.collageFailed.emit(self.tr("No pictures are selected."))
@@ -103,7 +120,7 @@ class CreateMixin(BackgroundWorkerMixin):
         """Diavetítés-videó a kijelölt képekből (MP4).
 
         `height`: a videó magassága (720/1080); a szélesség 16:9-ből jön."""
-        sources = self._selected_sources(rows)[:_MAX_ITEMS]
+        sources = self._sources_for(rows)[:_MAX_ITEMS]
         target = to_local_path(target_url)
         if not sources:
             self.movieFailed.emit(self.tr("No pictures are selected."))
