@@ -892,6 +892,25 @@ class TestModeToolPanelsDoNotOverflow(_ViewerOpenMixin):
     magasabb lehet a rendelkezésre álló helynél, és rálógna a panel alján
     ülő, globális Visszavonás/Újra sorra."""
 
+    def test_effect_param_panel_is_clipped_above_the_undo_row(
+        self, qml_app, qt_app
+    ):
+        """A sok paraméteres effektek alpanelje (pl. Vignetta) is
+        magasabb lehet a helynél."""
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        row = window.findChild(QObject, "editorGlobalUndoRow")
+        scroll = window.findChild(QObject, "editorEffectParamScroll")
+        assert scroll is not None
+        assert scroll.property("clip") is True
+
+        panel.setProperty("paramPanelActive", True)
+        qt_app.processEvents()
+        assert scroll.property("visible") is True
+        bottom = scroll.mapToItem(panel, 0, scroll.property("height"))
+        assert bottom.y() <= row.mapToItem(panel, 0, 0).y() + 1
+
     def test_mode_panels_are_clipped_above_the_undo_row(self, qml_app, qt_app):
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)

@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.80] – 2026-08-12
+
+### Javítva
+- **Az effekt-beállítások alpanelje sem lóghat rá a Visszavonás sorra (#464).**
+  A sok paraméteres effektek (például a Vignetta) beállító-panelje magasabb
+  lehet a rendelkezésre álló helynél; ez is vágott, görgethető területre került.
+  Ezzel a szerkesztőpanel minden nézete — az öt fül, a négy mód-eszköz és az
+  effekt-beállítások — a gombsor fölött ér véget.
+
 ## [0.6.79] – 2026-08-12
 
 ### Javítva

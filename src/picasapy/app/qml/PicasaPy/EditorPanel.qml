@@ -935,114 +935,134 @@ Rectangle {
     // Bármelyik effekt-fülön (2./3./4.) megnyílhat — az adott fül rácsát
     // fedi el ugyanazon a helyen (tabBar.bottom-tól), a visszatérés
     // ugyanarra a fülre történik, mert az activeTab változatlan marad.
-    ColumnLayout {
-        objectName: "effectParamColumn"
+    // #464 (ugyanaz a túlcsordulás-osztály, mint az effekt-füleknél): a
+    // sok paraméteres effektek (pl. Vignetta) alpanelje magasabb lehet a
+    // rendelkezésre álló helynél — vágás/görgetés nélkül rálógna a panel
+    // alján ülő, globális Visszavonás/Újra sorra.
+    Flickable {
+        id: effectParamScroll
+        objectName: "editorEffectParamScroll"
         visible: !panel.modeToolActive && panel.paramPanelActive
-        opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.margins: 10
-        spacing: 8
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
+        clip: true
+        contentWidth: width
+        contentHeight: effectParamColumn.implicitHeight + 20
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: PicasaScrollBar {}
 
-        Rectangle {
-            Layout.fillWidth: true
-            height: 22
-            color: Theme.panelHeaderBg
-            Text {
-                objectName: "effectParamTitle"
-                anchors.left: parent.left
-                anchors.leftMargin: 6
-                anchors.verticalCenter: parent.verticalCenter
-                text: panel.paramEffectName
-                font.pixelSize: Theme.fontSize
-                font.bold: true
-                color: Theme.panelHeaderText
-            }
-        }
+        ColumnLayout {
+            id: effectParamColumn
+            objectName: "effectParamColumn"
+            opacity: panel.enabled ? 1 : 0.45
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: 10
+            spacing: 8
 
-        Repeater {
-            objectName: "effectParamRepeater"
-            model: panel.paramEffectParams
-
-            // #516: a katalógus 3 vezérlő-fajtát ismer — "slider" (számtar-
-            // tomány), "checkbox" (jelölőnégyzet) és "color" (színválasztó,
-            // a #450 szöveg-eszköz `TextColorSwatches`-ának mintájára). Egy
-            // delegate-en belül mindhárom ág megvan, csak a `kind` szerint
-            // látszik az egyik — így a Repeater indexelése (és vele a
-            // `panel.updateParamValue(index, …)` pozíció-egyeztetés)
-            // változatlan marad, akármilyen a vezérlő-keverék.
-            delegate: ColumnLayout {
-                id: paramRow
-                required property var modelData
-                required property int index
+            Rectangle {
                 Layout.fillWidth: true
-                spacing: 2
+                height: 22
+                color: Theme.panelHeaderBg
+                Text {
+                    objectName: "effectParamTitle"
+                    anchors.left: parent.left
+                    anchors.leftMargin: 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: panel.paramEffectName
+                    font.pixelSize: Theme.fontSize
+                    font.bold: true
+                    color: Theme.panelHeaderText
+                }
+            }
 
-                RowLayout {
+            Repeater {
+                objectName: "effectParamRepeater"
+                model: panel.paramEffectParams
+
+                // #516: a katalógus 3 vezérlő-fajtát ismer — "slider" (számtar-
+                // tomány), "checkbox" (jelölőnégyzet) és "color" (színválasztó,
+                // a #450 szöveg-eszköz `TextColorSwatches`-ának mintájára). Egy
+                // delegate-en belül mindhárom ág megvan, csak a `kind` szerint
+                // látszik az egyik — így a Repeater indexelése (és vele a
+                // `panel.updateParamValue(index, …)` pozíció-egyeztetés)
+                // változatlan marad, akármilyen a vezérlő-keverék.
+                delegate: ColumnLayout {
+                    id: paramRow
+                    required property var modelData
+                    required property int index
                     Layout.fillWidth: true
-                    visible: paramRow.modelData.kind !== "checkbox"
-                    Label {
-                        objectName: "effectParamLabel" + paramRow.index
+                    spacing: 2
+
+                    RowLayout {
                         Layout.fillWidth: true
-                        text: panel.paramLabel(paramRow.modelData.label)
-                        font.pixelSize: Theme.fontSize - 1
-                        color: Theme.textGray
+                        visible: paramRow.modelData.kind !== "checkbox"
+                        Label {
+                            objectName: "effectParamLabel" + paramRow.index
+                            Layout.fillWidth: true
+                            text: panel.paramLabel(paramRow.modelData.label)
+                            font.pixelSize: Theme.fontSize - 1
+                            color: Theme.textGray
+                        }
+                        Label {
+                            objectName: "effectParamValue" + paramRow.index
+                            visible: paramRow.modelData.kind === "slider"
+                            text: paramSlider.value.toFixed(2)
+                            font.pixelSize: Theme.fontSize - 1
+                            color: Theme.textGray
+                        }
                     }
-                    Label {
-                        objectName: "effectParamValue" + paramRow.index
+                    PicasaSlider {
+                        id: paramSlider
+                        objectName: "effectParamSlider" + paramRow.index
                         visible: paramRow.modelData.kind === "slider"
-                        text: paramSlider.value.toFixed(2)
-                        font.pixelSize: Theme.fontSize - 1
-                        color: Theme.textGray
+                        Layout.fillWidth: true
+                        from: paramRow.modelData.minimum
+                        to: paramRow.modelData.maximum
+                        stepSize: paramRow.modelData.step
+                        value: paramRow.modelData.default
+                        // húzás/kattintás közben élő előnézet (#316) — a
+                        // programozott kezdőérték-beállítás NEM vált ki `moved`
+                        // jelet, csak a valódi felhasználói interakció
+                        onMoved: panel.updateParamValue(paramRow.index, paramSlider.value)
+                    }
+                    CheckBox {
+                        id: paramCheckbox
+                        objectName: "effectParamCheckbox" + paramRow.index
+                        visible: paramRow.modelData.kind === "checkbox"
+                        text: panel.paramLabel(paramRow.modelData.label)
+                        checked: paramRow.modelData.default !== 0
+                        onToggled: panel.updateParamValue(paramRow.index, paramCheckbox.checked ? 1 : 0)
+                    }
+                    TextColorSwatches {
+                        id: paramColorSwatches
+                        objectName: "effectParamColor" + paramRow.index
+                        visible: paramRow.modelData.kind === "color"
+                        // #305 null-őr: régebbi/fake vezérlők (pl. teszt-dupla)
+                        // "color" mező nélküli payloadot is küldhetnek
+                        currentColor: paramRow.modelData.color ? paramRow.modelData.color : "#000000"
+                        onColorPicked: (hex) => panel.updateParamValue(paramRow.index, hex)
                     }
                 }
-                PicasaSlider {
-                    id: paramSlider
-                    objectName: "effectParamSlider" + paramRow.index
-                    visible: paramRow.modelData.kind === "slider"
-                    Layout.fillWidth: true
-                    from: paramRow.modelData.minimum
-                    to: paramRow.modelData.maximum
-                    stepSize: paramRow.modelData.step
-                    value: paramRow.modelData.default
-                    // húzás/kattintás közben élő előnézet (#316) — a
-                    // programozott kezdőérték-beállítás NEM vált ki `moved`
-                    // jelet, csak a valódi felhasználói interakció
-                    onMoved: panel.updateParamValue(paramRow.index, paramSlider.value)
-                }
-                CheckBox {
-                    id: paramCheckbox
-                    objectName: "effectParamCheckbox" + paramRow.index
-                    visible: paramRow.modelData.kind === "checkbox"
-                    text: panel.paramLabel(paramRow.modelData.label)
-                    checked: paramRow.modelData.default !== 0
-                    onToggled: panel.updateParamValue(paramRow.index, paramCheckbox.checked ? 1 : 0)
-                }
-                TextColorSwatches {
-                    id: paramColorSwatches
-                    objectName: "effectParamColor" + paramRow.index
-                    visible: paramRow.modelData.kind === "color"
-                    // #305 null-őr: régebbi/fake vezérlők (pl. teszt-dupla)
-                    // "color" mező nélküli payloadot is küldhetnek
-                    currentColor: paramRow.modelData.color ? paramRow.modelData.color : "#000000"
-                    onColorPicked: (hex) => panel.updateParamValue(paramRow.index, hex)
-                }
             }
-        }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            PanelButton {
-                objectName: "effectParamApplyButton"
-                label: qsTr("Apply")
-                onButtonClicked: panel.applyParamPanel()
-            }
-            PanelButton {
-                objectName: "effectParamCancelButton"
-                label: qsTr("Cancel")
-                onButtonClicked: panel.cancelParamPanel()
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 6
+                PanelButton {
+                    objectName: "effectParamApplyButton"
+                    label: qsTr("Apply")
+                    onButtonClicked: panel.applyParamPanel()
+                }
+                PanelButton {
+                    objectName: "effectParamCancelButton"
+                    label: qsTr("Cancel")
+                    onButtonClicked: panel.cancelParamPanel()
+                }
             }
         }
     }
