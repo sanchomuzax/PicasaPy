@@ -2001,6 +2001,11 @@
 <context>
     <name>CreateDialogs</name>
     <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="266"/>
+        <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
+        <translation>%1 kép nem található, ezért nem jelenik meg. (A hiányzó fájlokat bizonyára elmozdították, átnevezték vagy törölték.)</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="24"/>
         <source>Picture Collage...</source>
         <translation>Képkollázs…</translation>
@@ -2425,6 +2430,11 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>FolderPane</name>
     <message>
+        <location filename="../qml/PicasaPy/FolderPane.qml" line="586"/>
+        <source>Currently unavailable — the folder stays in the database, thumbnails come from the cache.</source>
+        <translation>Jelenleg nem elérhető — a mappa az adatbázisban marad, a bélyegképek a gyorsítótárból látszanak.</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/FolderPane.qml" line="67"/>
         <source>Albums</source>
         <translation>Albumok</translation>
@@ -2578,6 +2588,11 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 </context>
 <context>
     <name>Main</name>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
+        <translation>Ez a mappa jelenleg nem elérhető (például lecsatolt meghajtó vagy hálózati megosztás). A képei az adatbázisban maradnak, a bélyegképek a gyorsítótárból látszanak, de az eredeti fájlok most nem nyithatók meg és nem szerkeszthetők.</translation>
+    </message>
     <message>
         <location filename="../qml/Main.qml"/>
         <source>Move to New Person</source>

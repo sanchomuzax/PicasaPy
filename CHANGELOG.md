@@ -5,6 +5,44 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.89] – 2026-08-12
+
+### Javítva
+- **Az IR (infravörös film) effekt az EREDETI csővezetékét kapta (#566).** A
+  korábbi modell a paraméternevekből következtetett, és három ponton tévedett:
+  SCREEN-t kevert LIGHTEN helyett, a zöld izzást a már monokrómmá tett képre
+  tette (nem az eredetire), és a **kék csatorna negatív súlyát** teljesen
+  figyelmen kívül hagyta. A natív kernel visszafejtése után a záró mátrix
+  `Y = −0,5·R + 2,0·G − 0,5·B`; a kék tehát sötétít, ahogy a valódi
+  infravörös filmen is.
+
+## [0.6.88] – 2026-08-12
+
+### Hozzáadva
+- **`radtint` (Sugaras árnyalás) effekt (#565).** Az utolsó „exe-ből ismert,
+  de renderelhetetlen" szűrőnév is megkapta a modelljét — nem találgatásból,
+  hanem a natív kód visszafejtéséből: a fókuszpont körül a kép változatlan,
+  kifelé egy köbös smoothstep maszk szerint erősödő **szorzó**-színezés fut
+  (`forrás × szín / 256`), ami lényegében különbözik a `dir_tint` „szín felé
+  keverésétől". Egyetlen paraméter, a Feather csúszka affin leképezése maradt
+  feltételezés — ez dokumentáltan jelölve van, golden-párral pontosítható.
+
+## [0.6.87] – 2026-08-12
+
+### Hozzáadva
+- **Offline mappa kezelése (#459/5).** A levált NAS-mount vagy kihúzott lemez
+  mappája mostantól **bennmarad az indexben** a fotóival együtt — eddig némán
+  kiestek belőle. A mappa „jelenleg nem elérhető" jelölést kap a bal hasábon
+  (halvány, dőlt sor + súgószöveg), a rá lépéskor pedig a program kimondja,
+  mi a helyzet, hibaüzenet-szerű pánik nélkül. A jelölés a mount visszatérése
+  után magától elmúlik, újraépítés nélkül. A felismerés szabályát és a
+  vállalt tévedés-irányt a `docs/decisions/offline-folders.md` rögzíti.
+- **Hiányzó fájlok a kollázsban és a mozgófilmben (#459/3).** A nem található
+  kép mostantól **külön mondatot** kap az eredeti Picasa szövegével — az
+  megmondja, mi történhetett (elmozdítás, átnevezés, törlés) —, a csupán
+  olvashatatlan fájlok pedig a semleges „kihagyva" számban maradnak. A munka
+  ezután is a maradékkal készül el, nem áll le.
+
 ## [0.6.86] – 2026-08-12
 
 ### Hozzáadva

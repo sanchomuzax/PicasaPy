@@ -11,9 +11,8 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
-        # v10: SFace-lenyomat + csoportosítás (#26, 2. lépcső) — a
-        # `face.embedding`/`group_id` oszlop és a `face_group` tábla
-        assert SCHEMA_VERSION == 10
+        # v11: offline mappa-jelölés (#459/5) — a `folders.offline` oszlop
+        assert SCHEMA_VERSION == 11
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
@@ -40,6 +39,8 @@ class TestSchema:
             # bővített face táblán
             conn.execute("DROP TABLE face_group")
             conn.execute("DROP TABLE face")
+            # #459/5: az offline oszlop a v11-ben érkezik
+            conn.execute("ALTER TABLE folders DROP COLUMN offline")
             conn.commit()
         with open_index(db) as conn:
             assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION

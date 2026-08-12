@@ -255,19 +255,27 @@ Item {
         }
     }
 
-    function _skippedSuffix(skipped) {
-        return skipped > 0
-               ? "\n" + qsTr("%1 pictures were skipped.").arg(skipped)
-               : ""
+    // #459/3: a hiányzó fájl KÜLÖN mondatot kap az eredeti Picasa
+    // szövegével — az megmondja, mi történhetett, és a munka a maradékkal
+    // elkészül. Az olvashatatlan (de meglévő) fájlok a régi, semleges
+    // „kihagyva" mondatban maradnak.
+    function _skippedSuffix(skipped, missing) {
+        var text = ""
+        if (missing > 0)
+            text += "\n" + qsTr("%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)").arg(missing)
+        var unreadable = skipped - missing
+        if (unreadable > 0)
+            text += "\n" + qsTr("%1 pictures were skipped.").arg(unreadable)
+        return text
     }
 
     Connections {
         target: controller
-        function onCollageFinished(path, used, skipped) {
+        function onCollageFinished(path, used, skipped, missing) {
             createResultDialog.message =
                 qsTr("Collage saved: %1").arg(path)
                 + "\n" + qsTr("%1 pictures used.").arg(used)
-                + dialogs._skippedSuffix(skipped)
+                + dialogs._skippedSuffix(skipped, missing)
             createResultDialog.open()
         }
         function onCollageFailed(message) {
@@ -279,12 +287,12 @@ Item {
             movieProgressDialog.done = done
             movieProgressDialog.total = total
         }
-        function onMovieFinished(path, used, skipped) {
+        function onMovieFinished(path, used, skipped, missing) {
             movieProgressDialog.close()
             createResultDialog.message =
                 qsTr("Movie saved: %1").arg(path)
                 + "\n" + qsTr("%1 pictures used.").arg(used)
-                + dialogs._skippedSuffix(skipped)
+                + dialogs._skippedSuffix(skipped, missing)
             createResultDialog.open()
         }
         function onMovieFailed(message) {

@@ -105,6 +105,10 @@ class AppController(
     descriptionsChanged = Signal()
     # #9: az albumlista változott (szinkron után, a mappalistával együtt)
     albumsChanged = Signal()
+    # #459/5: a választott mappa jelenleg nem elérhető (levált NAS-mount,
+    # kihúzott lemez). NEM hiba — tájékoztatás: a mappa és a bélyegképei
+    # megmaradnak, csak az eredeti fájlok nem érhetők el most.
+    folderUnavailable = Signal(str)
 
     def __init__(
         self,
@@ -465,6 +469,11 @@ class AppController(
         self._restore_full_folder_pane()
         self._get_settings().setValue("session/lastFolder", folder_path)
         self._folder_description = self._read_folder_description(folder_path)
+        if folder_path in self._folders.offline_paths():
+            # #459/5: néma bukás helyett kimondjuk, mi a helyzet — a mappa
+            # megnyitható marad (a bélyegképek a gyorsítótárból jönnek), de
+            # az eredeti fájlok most nem érhetők el.
+            self.folderUnavailable.emit(folder_path)
         if already_in_feed:
             # currentFolder/folderDescription frissült — jelzés a QML-nek
             self.statusChanged.emit()

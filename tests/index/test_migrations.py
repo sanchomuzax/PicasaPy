@@ -97,6 +97,17 @@ class TestMigrationV4Hidden:
             assert photo.hidden is False
 
 
+class TestMigrationV11Offline:
+    def test_v1_upgrade_gains_offline_column_default_zero(self, tmp_path):
+        # #459/5: az offline oszlop a 11-es sémában érkezik, minden meglévő
+        # mappa elérhetőnek (0) indul — nem kell újraindexelés
+        db = tmp_path / "index.db"
+        _make_v1_db(db)
+        with open_index(db) as conn:
+            rows = conn.execute("SELECT path, offline FROM folders").fetchall()
+            assert rows and all(row["offline"] == 0 for row in rows)
+
+
 class TestMigrationSafety:
     def test_failed_migration_rolls_back_completely(self, tmp_path, monkeypatch):
         # Félbeszakadó migráció nem hagyhat félig átalakított sémát:
@@ -160,6 +171,8 @@ class TestAlbumsMigration:
             # bővítést (v10) sem ismerte — hiteles v7 fixture ezek nélkül.
             "DROP TABLE IF EXISTS face;"
             "DROP TABLE IF EXISTS face_group;"
+            # #459/5: az offline oszlop a v11-ben érkezik
+            "ALTER TABLE folders DROP COLUMN offline;"
             "PRAGMA user_version = 7;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
@@ -205,7 +218,12 @@ class TestFaceMigration:
         path = tmp_path / "regi.db"
         raw = sqlite3.connect(path)
         raw.executescript(DDL)
-        raw.executescript("DROP TABLE IF EXISTS face;\nPRAGMA user_version = 8;")
+        raw.executescript(
+            "DROP TABLE IF EXISTS face;\n"
+            # #459/5: az offline oszlop a v11-ben érkezik
+            "ALTER TABLE folders DROP COLUMN offline;\n"
+            "PRAGMA user_version = 8;"
+        )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")
         raw.execute(
             "INSERT INTO photos (id, folder_id, name, kind, size, mtime_ns)"
@@ -251,6 +269,8 @@ class TestFaceEmbeddingMigration:
             "DROP INDEX IF EXISTS idx_face_group;\n"
             "ALTER TABLE face DROP COLUMN embedding;\n"
             "ALTER TABLE face DROP COLUMN group_id;\n"
+            # #459/5: az offline oszlop a v11-ben érkezik
+            "ALTER TABLE folders DROP COLUMN offline;\n"
             "PRAGMA user_version = 9;"
         )
         raw.execute("INSERT INTO folders (id, path) VALUES (1, '/kepek')")

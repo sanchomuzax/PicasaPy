@@ -32,16 +32,16 @@ _ROOT_INDEX = QModelIndex()
 
 def sorted_folder_rows(
     conn: sqlite3.Connection, sort_mode: str = "date", reverse: bool = False
-) -> list[tuple[str, str, int, str, int, int]]:
-    """A mappák (név, útvonal, darabszám, dátum, méret, változás) sorai a kért
-    rendezésben.
+) -> list[tuple[str, str, int, str, int, int, bool]]:
+    """A mappák (név, útvonal, darabszám, dátum, méret, változás, offline)
+    sorai a kért rendezésben.
 
     Külön függvény, mert két, egymástól FÜGGETLEN sorrendet kell kiszolgálnia
     (#321): a bal hasáb a saját, rögzített Picasa-sorrendjében áll, a rács
     (feed) viszont a Nézet ▸ Mappanézet beállítását követi.
     """
     db_rows = conn.execute(
-        "SELECT f.path, f.date, count(p.id) AS n,"
+        "SELECT f.path, f.date, f.offline, count(p.id) AS n,"
         " COALESCE(SUM(p.size), 0) AS total_size,"
         " COALESCE(MAX(p.mtime_ns), 0) AS last_change"
         " FROM folders f LEFT JOIN photos p ON p.folder_id = f.id"
@@ -55,6 +55,9 @@ def sorted_folder_rows(
             row["date"],
             row["total_size"],
             row["last_change"],
+            # #459/5: a jelenleg nem elérhető mappa jelölése — a sor
+            # bennmarad a listában, csak külön jelzést kap.
+            bool(row["offline"]),
         )
         for row in db_rows
     ]
@@ -82,12 +85,14 @@ class FolderListModel(QAbstractListModel):
     NameRole = Qt.ItemDataRole.UserRole + 2
     PathRole = Qt.ItemDataRole.UserRole + 3
     CountRole = Qt.ItemDataRole.UserRole + 4
+    # #459/5: „jelenleg nem elérhető" (levált NAS-mount, kihúzott lemez)
+    OfflineRole = Qt.ItemDataRole.UserRole + 5
 
     folderCountChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._rows: tuple[tuple[str, str, str, int], ...] = ()
+        self._rows: tuple[tuple[str, str, str, int, bool], ...] = ()
 
     def load(
         self,
@@ -104,8 +109,8 @@ class FolderListModel(QAbstractListModel):
         folders = sorted_folder_rows(conn, sort_mode, reverse)
         self._set_rows(
             _with_year_separators(
-                (name, path, count, date)
-                for name, path, count, date, _size, _change in folders
+                (name, path, count, date, offline)
+                for name, path, count, date, _size, _change, offline in folders
             )
         )
 
@@ -115,12 +120,12 @@ class FolderListModel(QAbstractListModel):
         a Picasa találati mappalistája is sima felsorolás."""
         self._set_rows(
             tuple(
-                ("folder", g.folder_name, g.folder_path, len(g.photos))
+                ("folder", g.folder_name, g.folder_path, len(g.photos), False)
                 for g in groups
             )
         )
 
-    def _set_rows(self, rows: tuple[tuple[str, str, str, int], ...]) -> None:
+    def _set_rows(self, rows: tuple[tuple[str, str, str, int, bool], ...]) -> None:
         # Változatlan adatnál nincs reset: a reset eldobná a delegate-eket
         # és nullázná a görgetést, így a lista minden háttér-szinkronnál
         # a tetejére ugrana (#10).
@@ -138,6 +143,14 @@ class FolderListModel(QAbstractListModel):
     def folderCount(self) -> int:
         """Csak a valódi mappák száma (az évszám-elválasztók nélkül)."""
         return sum(1 for row in self._rows if row[0] == "folder")
+
+    def offline_paths(self) -> frozenset[str]:
+        """A jelenleg nem elérhető mappák útvonalai (#459/5) — ebből tudja a
+        vezérlő, hogy a mappára irányuló műveletnél értelmes üzenetet
+        adjon néma bukás helyett."""
+        return frozenset(
+            row[2] for row in self._rows if row[0] == "folder" and row[4]
+        )
 
     def folder_paths(self) -> tuple[str, ...]:
         """A hasáb mappa-sorrendje (évszám-elválasztók nélkül) — a rács-feed
@@ -172,7 +185,7 @@ class FolderListModel(QAbstractListModel):
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid() or not 0 <= index.row() < len(self._rows):
             return None
-        kind, name, path, count = self._rows[index.row()]
+        kind, name, path, count, offline = self._rows[index.row()]
         if role == self.KindRole:
             return kind
         if role in (self.NameRole, Qt.ItemDataRole.DisplayRole):
@@ -181,6 +194,8 @@ class FolderListModel(QAbstractListModel):
             return path
         if role == self.CountRole:
             return count
+        if role == self.OfflineRole:
+            return offline
         return None
 
     def roleNames(self):
@@ -189,6 +204,7 @@ class FolderListModel(QAbstractListModel):
             self.NameRole: b"name",
             self.PathRole: b"path",
             self.CountRole: b"count",
+            self.OfflineRole: b"offline",
         }
 
 
@@ -222,7 +238,7 @@ def _descending(sort_mode: str) -> bool:
     return sort_mode != "name"
 
 
-def _with_year_separators(folders) -> tuple[tuple[str, str, str, int], ...]:
+def _with_year_separators(folders) -> tuple[tuple[str, str, str, int, bool], ...]:
     """Évszám-elválasztók a mappa-dátum évéből (fallback: név-prefix).
 
     Audit (`docs/specs/ui-audit-mainwindow.md`, 1.1 pont): ha a listában
@@ -233,20 +249,23 @@ def _with_year_separators(folders) -> tuple[tuple[str, str, str, int], ...]:
     szokásos módon jelennek meg).
     """
     folders = list(folders)
-    years = [_folder_year(name, date) for name, _path, _count, date in folders]
+    years = [
+        _folder_year(name, date) for name, _path, _count, date, _offline in folders
+    ]
     distinct_years = {year for year in years if year}
     if years and len(distinct_years) <= 1 and all(years):
         return tuple(
-            ("folder", name, path, count) for name, path, count, _date in folders
+            ("folder", name, path, count, offline)
+            for name, path, count, _date, offline in folders
         )
 
     rows = []
     last_year = None
-    for (name, path, count, _date), year in zip(folders, years, strict=True):
+    for (name, path, count, _date, offline), year in zip(folders, years, strict=True):
         if year and year != last_year:
-            rows.append(("year", year, "", 0))
+            rows.append(("year", year, "", 0, False))
         last_year = year
-        rows.append(("folder", name, path, count))
+        rows.append(("folder", name, path, count, offline))
     return tuple(rows)
 
 

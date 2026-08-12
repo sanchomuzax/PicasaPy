@@ -77,6 +77,9 @@ class MovieReport:
     skipped: tuple[Path, ...]
     reasons: tuple[str, ...]
     frames: int
+    # #459/3: a kihagyottak közül a NEM LÉTEZŐ fájlok (elmozdítva,
+    # átnevezve, törölve) — külön üzenetet érdemelnek
+    missing: tuple[Path, ...] = ()
 
 
 _DEFAULT_SETTINGS = MovieSettings()
@@ -141,11 +144,18 @@ def export_movie(
     used: list[Path] = []
     skipped: list[Path] = []
     reasons: list[str] = []
+    missing: list[Path] = []
     target = Path(target)
     target.parent.mkdir(parents=True, exist_ok=True)
 
     decoded: list[tuple[Path, np.ndarray]] = []
     for path in paths:
+        if not path.exists():
+            # #459/3: hiányzó fájl — a film a maradékkal elkészül
+            missing.append(path)
+            skipped.append(path)
+            reasons.append("a fájl nem található")
+            continue
         try:
             image = _decode(path)
         except (ValueError, OSError) as error:
@@ -163,6 +173,7 @@ def export_movie(
             skipped=tuple(skipped),
             reasons=tuple(reasons),
             frames=0,
+            missing=tuple(missing),
         )
 
     writer = cv2.VideoWriter(
@@ -199,6 +210,7 @@ def export_movie(
         target=target,
         used=tuple(used),
         skipped=tuple(skipped),
+        missing=tuple(missing),
         reasons=tuple(reasons),
         frames=frames_written,
     )

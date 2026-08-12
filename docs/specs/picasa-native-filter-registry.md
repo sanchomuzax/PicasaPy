@@ -35,7 +35,7 @@ rekordokból** áll:
 | `unsharp2` | `0x008f8f30` | — | — |
 | `tint` | `0x008f9630` | — | — |
 | `dir_tint` | `0x008f9880` | `0x008f9bf0` | — |
-| `radtint` | `0x008f8730` | `0x008f9bf0` | — |
+| `radtint` | `0x008f8730` | `0x008f9bf0` | mag `0x90b370`, maszk-LUT `0x90aeb0` — **implementálva (#565)** |
 | `sat` | `0x008f8ff0` | — | — |
 | `grain` | `0x008f88e0` | — | — |
 | `grain2` | `0x008f88e0` | — | — |

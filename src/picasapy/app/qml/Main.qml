@@ -1019,7 +1019,11 @@ ApplicationWindow {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.topMargin: 8
         radius: 4
-        color: "#c0392b"
+        // #459/5: az „offline mappa" NEM hiba, hanem tájékoztatás — ugyanaz
+        // a sáv, de borostyán tónussal, hogy ne keveredjen az írás- és
+        // szinkron-hibákkal.
+        property bool notice: false
+        color: errorBanner.notice ? "#b7791f" : "#c0392b"
         visible: errorBannerText.text.length > 0
         implicitWidth: errorBannerRow.implicitWidth + 16
         implicitHeight: errorBannerRow.implicitHeight + 12
@@ -1053,9 +1057,23 @@ ApplicationWindow {
 
     Connections {
         target: controller
-        function onSyncFailed(message) { errorBannerText.text = message }
-        function onAlbumWriteFailed(message) { errorBannerText.text = message }
-        function onGeoWriteFailed(message) { errorBannerText.text = message }
+        function onSyncFailed(message) {
+            errorBanner.notice = false
+            errorBannerText.text = message
+        }
+        function onAlbumWriteFailed(message) {
+            errorBanner.notice = false
+            errorBannerText.text = message
+        }
+        function onGeoWriteFailed(message) {
+            errorBanner.notice = false
+            errorBannerText.text = message
+        }
+        // #459/5: nem elérhető mappa — tájékoztató üzenet néma bukás helyett
+        function onFolderUnavailable(path) {
+            errorBanner.notice = true
+            errorBannerText.text = qsTr("This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.")
+        }
         function onBrokenPhotosDetected(items) {
             var ids = brokenPhotoDialog.pendingIds.slice()
             for (var i = 0; i < items.length; i++) ids.push(items[i].id)
@@ -1068,7 +1086,10 @@ ApplicationWindow {
     }
     Connections {
         target: typeof facesHelper !== "undefined" ? facesHelper : null
-        function onFaceWriteFailed(message) { errorBannerText.text = message }
+        function onFaceWriteFailed(message) {
+            errorBanner.notice = false
+            errorBannerText.text = message
+        }
     }
 
     // #459: sérült/betölthetetlen kép — ELREJTÉS felajánlása (nem törlés),

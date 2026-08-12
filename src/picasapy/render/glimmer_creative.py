@@ -4,10 +4,10 @@
 Ld. `glimmer_tone.py` modul-docstringjét az egzaktság-elvről: a lépéssorrend
 és a számértékek a `filterdesc-registry.md` 4. fejezetéből jönnek, az
 alacsony szintű kernelek (Gauss-elmosás, LERP) a szokásos megfelelőik. Az
-`IR` kivétel: a Picasa `IRImageOperation`-jének BELSŐ képlete a
-`filterdesc.xml`-ben SEM publikus (csak a három paraméternév és fix érték
-adott) — ott a pixel-modell dokumentáltan INTERPRETÁCIÓ, ld. az `apply_ir`
-docstringjét.
+Az `IR` a #566 óta már NEM interpretáció: a `filterdesc.xml` valóban csak a
+három paraméternevet és fix értéket adja, de a `Picasa3.exe` statikus
+visszafejtése (`glimmer::IRImageOperation`) a teljes csővezetéket feltárta —
+ld. az `apply_ir` docstringjét.
 
 Bemenet/kimenet: `uint8` RGB `numpy.ndarray` (H, W, 3). Minden függvény
 TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
@@ -176,31 +176,63 @@ def apply_lomo(image, blur: float = 50.0, fade: float = 0.0):
 
 # --- IR ------------------------------------------------------------------
 
+#: Az `IRImageOperation` fix paraméterei a natív visszafejtésből (#566).
+#: A `greenglow = 5` a blur szigmája (x és y egyaránt), a `greenglowalpha`
+#: a LIGHTEN-keverés súlya, a záró monokróm mátrix súlyai pedig
+#: `(−0,5, +2,0, −0,5)` — a KÉK súlya is negatív (ezt hagyta ki a korábbi,
+#: paraméternevekből következtetett modell).
+_IR_GLOW_BLUR = 5.0
+_IR_GLOW_ALPHA = 0.25
+_IR_RED_WEIGHT = np.float32(-0.5)
+_IR_GREEN_WEIGHT = np.float32(2.0)
+_IR_BLUE_WEIGHT = np.float32(-0.5)
+
 
 def apply_ir(image, fade: float = 0.0):
-    """`IR=1,Fade` — `IRImageOperation(greenglow=5, greenglowalpha=0,25,
-    redweight=−0,5)`.
+    """`IR=1,Fade` — `glimmer::IRImageOperation` (RTTI/vtable `0xcf0a14`,
+    konstruktor `0xbc3d80`, feldolgozás `0xbc3f50`).
 
-    **RÉSZBEN MEGFEJTVE:** a `filterdesc.xml` a három paraméter NEVÉT és
-    FIX ÉRTÉKÉT adja (ezek nem csúszkafüggők — a `IR` effektnek csak
-    `Fade` a szabad paramétere), de a `IRImageOperation` BELSŐ pixel-
-    képletét (hogyan kombinálja a csatornákat) a fájl NEM közli — az a
-    Picasa C++ motorjában van, nem publikus. Az itt implementált modell
-    (`greenweight`-tel súlyozott zöld-dominancia + a zöld csatorna elmosott
-    izzása `greenglow` sugárral, `greenglowalpha` súllyal `screen`-ezve)
-    INTERPRETÁCIÓ a paraméterNEVEK alapján, nem bizonyított pixel-hű
-    reprodukció.
+    **MEGFEJTVE (#566)** — a `Picasa3.exe` statikus visszafejtéséből, nem a
+    paraméternevek értelmezéséből. A csővezeték:
+
+    1. **színmátrix**: csak a ZÖLD csatorna (és az alfa) marad meg — a
+       glow-réteg `(0, G, 0)`;
+    2. **elmosás**: `x = 5`, `y = 5` (quality 3 — a minőségfok a natív
+       Gauss-közelítés lépésszáma, a mi `cv2.GaussianBlur`-ünkkel nem
+       paraméterezhető és a kimenetet nem is befolyásolja érdemben);
+    3. a zöld glow **LIGHTEN** módban kerül az EREDETI képre, `alpha = 0,25`;
+    4. záró monokróm színmátrix:
+       `Y = clamp(−0,5·R + 2,0·G − 0,5·B)`, majd `RGB = (Y, Y, Y)`;
+    5. végül a Glimmer-közös Fade-keverés (`1 − Fade/100`).
+
+    A korábbi modell három ponton tért el: SCREEN-t kevert LIGHTEN helyett,
+    a glow-t a már monokrómmá tett képre tette (nem az eredetire), és a KÉK
+    csatorna negatív súlyát teljesen figyelmen kívül hagyta.
+
+    A LIGHTEN-azonosítást a `PicnikGrain` deklarációja is megerősíti: ott a
+    7-es blend-mód LIGHTEN, az 5-ös MULTIPLY.
     """
     validate_image(image)
     image_f = to_float(image)
-    red = image_f[..., 0]
+    # 1. színmátrix: csak a zöld marad
     green = image_f[..., 1]
-    ir_base = np.clip(green * 1.5 + red * -0.5, 0.0, 255.0)
-    ir_gray = np.stack([ir_base, ir_base, ir_base], axis=-1)
-    green_layer = np.stack([green, green, green], axis=-1)
-    glow_blur = gaussian_blur_f(green_layer, 5.0)
-    glowed = apply_blend_mode(ir_gray, glow_blur, "screen", 0.25)
-    return to_uint8(alpha_blend(image_f, glowed, fade_alpha(fade)))
+    zeros = np.zeros_like(green)
+    green_layer = np.stack([zeros, green, zeros], axis=-1)
+    # 2. elmosás (x = y = 5)
+    glow = gaussian_blur_f(green_layer, _IR_GLOW_BLUR)
+    # 3. LIGHTEN az EREDETI képre, 0,25 súllyal
+    lightened = apply_blend_mode(image_f, glow, "lighten", _IR_GLOW_ALPHA)
+    # 4. záró monokróm mátrix — a kék súlya is negatív
+    luma_ir = np.clip(
+        _IR_RED_WEIGHT * lightened[..., 0]
+        + _IR_GREEN_WEIGHT * lightened[..., 1]
+        + _IR_BLUE_WEIGHT * lightened[..., 2],
+        0.0,
+        255.0,
+    )
+    ir = np.stack([luma_ir, luma_ir, luma_ir], axis=-1)
+    # 5. Fade
+    return to_uint8(alpha_blend(image_f, ir, fade_alpha(fade)))
 
 
 # --- Neon ------------------------------------------------------------------

@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -179,12 +179,19 @@ ALTER TABLE face ADD COLUMN group_id INTEGER REFERENCES face_group(id);
 CREATE INDEX IF NOT EXISTS idx_face_group ON face(group_id);
 """
 
+# A `folders.offline` (#459/5): a mappa jelenleg nem elérhető (levált
+# NAS-mount, kihúzott lemez). Ilyenkor a mappa és a fotói BENNMARADNAK az
+# indexben — a takarítás kihagyja őket —, csak jelölést kapnak; a következő
+# sikeres scan magától nullázza. A magyarázat SZÁNDÉKOSAN itt, Python-
+# kommentben áll: az SQLite az `ALTER TABLE … DROP COLUMN`-nál újraparse-olja
+# a tárolt DDL-szöveget, és a benne maradó `--` sorkommenttől elhasal.
 DDL = f"""
 CREATE TABLE IF NOT EXISTS folders (
     id INTEGER PRIMARY KEY,
     path TEXT NOT NULL UNIQUE,
     has_ini INTEGER NOT NULL DEFAULT 0,
-    date TEXT
+    date TEXT,
+    offline INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS photos (
@@ -283,4 +290,10 @@ ALTER TABLE photos ADD COLUMN exif_lon REAL;
     # számítás (alacsonyabb prioritású sor, ld. `faces/embedder.py`) tölti
     # fel; a meglévő `face` sorok (keret, 5 pont, állapot) érintetlenek.
     9: _FACE_EMBEDDING_DDL,
+    # #459/5: offline (jelenleg nem elérhető) mappa jelölése. Minden
+    # meglévő mappa 0-val (elérhető) indul — a következő szinkron állítja
+    # be, ha kell; újraindexelés nem szükséges.
+    10: """
+ALTER TABLE folders ADD COLUMN offline INTEGER NOT NULL DEFAULT 0;
+""",
 }
