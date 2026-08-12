@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.78] – 2026-08-12
+
+### Javítva
+- **Az indexkép-jelvények végre látszanak is (#463).** A hely-tű és a két
+  arc-jelvény („van rajta felismert arc", „névjavaslat vár jóváhagyásra") a
+  bélyegkép-kártyában rég készen álltak, és az adat is megvolt a modellben —
+  a fő rács viszont nem kötötte be őket, így sosem jelentek meg. Mostantól
+  megjelennek; új teszt őrzi, hogy egyetlen jelvény se maradhasson bekötetlenül.
+
 ## [0.6.77] – 2026-08-12
 
 ### Javítva
