@@ -84,6 +84,8 @@ class TestMissingEffectButtons:
     "vignette" render-opokat, de az Effektek fülön nem volt hozzájuk gomb."""
 
     def test_sharpen_and_vignette_buttons_exist(self, qml_engine, qt_app):
+        """#422: a Vignette a 6. („További effektek") fülre került — a
+        gombja megvan, csak nem a 3. fülön."""
         panel = _make_panel(qml_engine)
         qt_app.processEvents()
         assert panel.findChild(QObject, "effectUnsharp") is not None, (
@@ -93,25 +95,25 @@ class TestMissingEffectButtons:
             "hiányzik a Vignette gomb"
         )
 
-    def test_effects_grid_has_thirteen_buttons(self, qml_engine, qt_app):
-        """A korábbi 11 + a két új (#315) = 13."""
+    def test_effects_grid_has_the_spec_button_count(self, qml_engine, qt_app):
+        """A 3. fül PONTOSAN a spec 12 gombját tartalmazza (#422): a
+        Vignette a 6. fülre került."""
         panel = _make_panel(qml_engine)
         qt_app.processEvents()
         grid = panel.findChild(QObject, "effectsGrid")
         assert grid is not None
         buttons = [c for c in grid.children() if c.objectName().startswith("effect")]
-        assert len(buttons) == 13
+        assert len(buttons) == 12
 
-    def test_sharpen_is_first_and_vignette_is_last(self, qml_engine, qt_app):
-        """Az eredeti Picasa Effektek fülén az Élesítés az ELSŐ gomb; a
-        Vignette a rács végére kerül, a Graduated Tint (dir_tint) után."""
+    def test_sharpen_is_first_and_dir_tint_is_last(self, qml_engine, qt_app):
+        """Az eredeti Picasa Effektek fülén az Élesítés az ELSŐ gomb, és a
+        Graduated Tint (dir_tint) az utolsó."""
         panel = _make_panel(qml_engine)
         qt_app.processEvents()
         grid = panel.findChild(QObject, "effectsGrid")
         buttons = [c for c in grid.children() if c.objectName().startswith("effect")]
         assert buttons[0].objectName() == "effectUnsharp"
-        assert buttons[-1].objectName() == "effectVignette"
-        assert buttons[-2].objectName() == "effectDirTint"
+        assert buttons[-1].objectName() == "effectDirTint"
 
     @pytest.mark.parametrize(
         "object_name,key",

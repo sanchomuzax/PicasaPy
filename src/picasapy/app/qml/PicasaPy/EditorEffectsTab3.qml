@@ -32,118 +32,79 @@ ColumnLayout {
         }
     }
 
-    // #464 (felhasználói hibajelentés): a rács TÖBB gombot tartalmaz,
-    // mint amennyi a panel magasságába fér — vágás/görgetés nélkül a
-    // csempék RÁLÓGTAK a panel alján ülő, globális Visszavonás/Újra sorra,
-    // és a fül alja levágódott. A rács ezért saját, VÁGOTT görgethető
-    // területbe került: ami nem fér ki, az elgörgethető, és semmi nem
-    // csúszik a gombsor alá.
-    Flickable {
-        id: effectsScroll
-        objectName: "editorEffectsTab3Scroll"
+    GridLayout {
+        objectName: "effectsGrid3"
+        // #537: HÁROM oszlop, mint az eredeti Picasa effekt-fülein
+        columns: 3
+        columnSpacing: 6
+        rowSpacing: 6
         Layout.fillWidth: true
-        Layout.fillHeight: true
-        clip: true
-        contentWidth: width
-        contentHeight: effectsGridHolder.implicitHeight
-        boundsBehavior: Flickable.StopAtBounds
-        ScrollBar.vertical: PicasaScrollBar {}
 
-        Item {
-            id: effectsGridHolder
-            width: effectsScroll.width
-            implicitHeight: childrenRect.height
-
-        GridLayout {
-            objectName: "effectsGrid3"
-            // #537: HÁROM oszlop, mint az eredeti Picasa effekt-fülein
-            columns: 3
-            columnSpacing: 6
-            rowSpacing: 6
-            width: effectsScroll.width
-
-            PanelButton {
-                objectName: "effectBoost"
-                label: qsTr("Boost")
-                onButtonClicked: if (!panel.tryOpenParamPanel("boost")) panel.effectRequested("boost")
-                thumbSource: panel.effectThumbSource("boost")
-            }
-            PanelButton {
-                objectName: "effectSoften"
-                label: qsTr("Soft Focus")
-                onButtonClicked: if (!panel.tryOpenParamPanel("soften")) panel.effectRequested("soften")
-                thumbSource: panel.effectThumbSource("soften")
-            }
-            PanelButton {
-                objectName: "effectPixelate"
-                label: qsTr("Pixelate")
-                onButtonClicked: if (!panel.tryOpenParamPanel("pixelate")) panel.effectRequested("pixelate")
-                thumbSource: panel.effectThumbSource("pixelate")
-            }
-            PanelButton {
-                objectName: "effectFocalZoom"
-                label: qsTr("Focal Zoom")
-                onButtonClicked: if (!panel.tryOpenParamPanel("focalzoom")) panel.effectRequested("focalzoom")
-                thumbSource: panel.effectThumbSource("focalzoom")
-            }
-            PanelButton {
-                objectName: "effectPencilSketch"
-                label: qsTr("Pencil Sketch")
-                onButtonClicked: if (!panel.tryOpenParamPanel("pencilsketch")) panel.effectRequested("pencilsketch")
-                thumbSource: panel.effectThumbSource("pencilsketch")
-            }
-            PanelButton {
-                objectName: "effectNeon"
-                label: qsTr("Neon")
-                onButtonClicked: if (!panel.tryOpenParamPanel("neon")) panel.effectRequested("neon")
-                thumbSource: panel.effectThumbSource("neon")
-            }
-            PanelButton {
-                objectName: "effectComicize"
-                label: qsTr("Comicize")
-                onButtonClicked: if (!panel.tryOpenParamPanel("comicize")) panel.effectRequested("comicize")
-                thumbSource: panel.effectThumbSource("comicize")
-            }
-            PanelButton {
-                objectName: "effectBorder"
-                label: qsTr("Border")
-                onButtonClicked: if (!panel.tryOpenParamPanel("border")) panel.effectRequested("border")
-                thumbSource: panel.effectThumbSource("border")
-            }
-            PanelButton {
-                objectName: "effectDropShadow"
-                label: qsTr("Drop Shadow")
-                onButtonClicked: if (!panel.tryOpenParamPanel("dropshadow")) panel.effectRequested("dropshadow")
-                thumbSource: panel.effectThumbSource("dropshadow")
-            }
-            PanelButton {
-                objectName: "effectMuseumMatte"
-                label: qsTr("Museum Matte")
-                onButtonClicked: if (!panel.tryOpenParamPanel("museummatte")) panel.effectRequested("museummatte")
-                thumbSource: panel.effectThumbSource("museummatte")
-            }
-            PanelButton {
-                objectName: "effectPolaroid"
-                label: qsTr("Polaroid")
-                onButtonClicked: if (!panel.tryOpenParamPanel("polaroid")) panel.effectRequested("polaroid")
-                thumbSource: panel.effectThumbSource("polaroid")
-            }
-            // #516: eddig vezérlő és gomb NÉLKÜLI, de a render/ rétegben
-            // MÁR bekötött (chain._HANDLERS) effektek
-            PanelButton {
-                objectName: "effectRoundedEdges"
-                label: qsTr("Rounded Edges")
-                onButtonClicked: if (!panel.tryOpenParamPanel("roundededges")) panel.effectRequested("roundededges")
-                thumbSource: panel.effectThumbSource("roundededges")
-            }
-            PanelButton {
-                objectName: "effectPicnikGrain"
-                label: qsTr("Film Grain (Fine)")
-                onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain")) panel.effectRequested("picnikgrain")
-                thumbSource: panel.effectThumbSource("picnikgrain")
-            }
+        PanelButton {
+            objectName: "effectBoost"
+            label: qsTr("Boost")
+            onButtonClicked: if (!panel.tryOpenParamPanel("boost")) panel.effectRequested("boost")
+            thumbSource: panel.effectThumbSource("boost")
+        }
+        PanelButton {
+            objectName: "effectSoften"
+            label: qsTr("Soft Focus")
+            onButtonClicked: if (!panel.tryOpenParamPanel("soften")) panel.effectRequested("soften")
+            thumbSource: panel.effectThumbSource("soften")
+        }
+        PanelButton {
+            objectName: "effectPixelate"
+            label: qsTr("Pixelate")
+            onButtonClicked: if (!panel.tryOpenParamPanel("pixelate")) panel.effectRequested("pixelate")
+            thumbSource: panel.effectThumbSource("pixelate")
+        }
+        PanelButton {
+            objectName: "effectFocalZoom"
+            label: qsTr("Focal Zoom")
+            onButtonClicked: if (!panel.tryOpenParamPanel("focalzoom")) panel.effectRequested("focalzoom")
+            thumbSource: panel.effectThumbSource("focalzoom")
+        }
+        PanelButton {
+            objectName: "effectPencilSketch"
+            label: qsTr("Pencil Sketch")
+            onButtonClicked: if (!panel.tryOpenParamPanel("pencilsketch")) panel.effectRequested("pencilsketch")
+            thumbSource: panel.effectThumbSource("pencilsketch")
+        }
+        PanelButton {
+            objectName: "effectNeon"
+            label: qsTr("Neon")
+            onButtonClicked: if (!panel.tryOpenParamPanel("neon")) panel.effectRequested("neon")
+            thumbSource: panel.effectThumbSource("neon")
+        }
+        PanelButton {
+            objectName: "effectComicize"
+            label: qsTr("Comicize")
+            onButtonClicked: if (!panel.tryOpenParamPanel("comicize")) panel.effectRequested("comicize")
+            thumbSource: panel.effectThumbSource("comicize")
+        }
+        PanelButton {
+            objectName: "effectBorder"
+            label: qsTr("Border")
+            onButtonClicked: if (!panel.tryOpenParamPanel("border")) panel.effectRequested("border")
+            thumbSource: panel.effectThumbSource("border")
+        }
+        PanelButton {
+            objectName: "effectDropShadow"
+            label: qsTr("Drop Shadow")
+            onButtonClicked: if (!panel.tryOpenParamPanel("dropshadow")) panel.effectRequested("dropshadow")
+            thumbSource: panel.effectThumbSource("dropshadow")
+        }
+        PanelButton {
+            objectName: "effectMuseumMatte"
+            label: qsTr("Museum Matte")
+            onButtonClicked: if (!panel.tryOpenParamPanel("museummatte")) panel.effectRequested("museummatte")
+            thumbSource: panel.effectThumbSource("museummatte")
+        }
+        PanelButton {
+            objectName: "effectPolaroid"
+            label: qsTr("Polaroid")
+            onButtonClicked: if (!panel.tryOpenParamPanel("polaroid")) panel.effectRequested("polaroid")
+            thumbSource: panel.effectThumbSource("polaroid")
         }
     }
-    }
-
 }

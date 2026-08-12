@@ -255,6 +255,34 @@ Column {
                     opacity: trayClearBtn.enabled ? 1.0 : 0.5
                 }
             }
+            // #455: „Add to" — a TÁLCA TARTALMA egyenesen albumhoz adható.
+            // Az eredetiben felfelé nyíló menüből választható az album; itt
+            // a meglévő album-listát (`controller.albums`) kínáljuk fel,
+            // ugyanabban a sorrendben, mint a kép-kontextusmenü.
+            PicasaButton {
+                id: trayAddToBtn
+                objectName: "trayAddToButton"
+                text: qsTr("Add to")
+                enabled: trayPreview.heldCount > 0
+                         && tray.ctl && tray.ctl.albums.length > 0
+                onClicked: trayAddToMenu.popup()
+                ToolTip.text: qsTr("Add the pictures in the tray to an album")
+                ToolTip.visible: trayAddToBtn.hovered
+                ToolTip.delay: 500
+            }
+            Menu {
+                id: trayAddToMenu
+                objectName: "trayAddToMenu"
+                Repeater {
+                    model: tray.ctl ? tray.ctl.albums : []
+                    delegate: MenuItem {
+                        required property var modelData
+                        text: modelData.name
+                        onTriggered: tray.ctl.addHeldToAlbum(modelData.token)
+                    }
+                }
+            }
+
             // #455: a Picasa saját szövegű rákérdezése ürítéskor —
             // „Would you like to clear your old held items from the
             // tray?" → „Clear Tray" / „Don't Clear" (az issue kutatása

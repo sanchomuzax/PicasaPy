@@ -5,6 +5,30 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.86] – 2026-08-12
+
+### Hozzáadva
+- **„Hozzáadás" gomb a képtálcán (#455).** A böngészés közben, mappákon
+  átnyúlóan gyűjtött képek egy lépésben albumba tehetők — az eredeti Picasa
+  tálcáján is külön gomb kínálta ezt.
+
+## [0.6.85] – 2026-08-12
+
+### Javítva
+- **Visszavontam a görgethető keretet az effekt-fülekről (#422).** Rossz válasz
+  volt a tünetre, és nem is kérte senki. A valódi ok az volt, hogy a három
+  ismert effekt-fülre olyan effektek is odakerültek, amelyek az eredetin nincsenek
+  ott — ezek mostantól **külön, „További effektek" fülön** vannak, a 3–5. fül
+  pedig pontosan az eredeti gombkészletét tartalmazza (12 · 12 · 11).
+
+### Hozzáadva
+- **Három automatikus vágás-javaslat a Vágás eszközben (#448).** Az eredeti
+  Picasa is három kész vágást ajánlott fel; a stratégiák a nevük szerint: szoros
+  vágás az arcokra, kompozíció az arcok köré, illetve arc nélkül a
+  legrészletgazdagabb terület, a horizontvonal és a szín-domináns terület. A
+  javaslat a kijelölésbe kerül, tehát még igazítható rajta az Alkalmaz előtt, és
+  a kiválasztott képarányt követi.
+
 ## [0.6.84] – 2026-08-12
 
 ### Hozzáadva

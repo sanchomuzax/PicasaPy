@@ -295,6 +295,20 @@ class EditPreviewProvider(QQuickImageProvider):
         colour = image.pixelColor(x, y)
         return (colour.red(), colour.green(), colour.blue())
 
+    def source_image(self, photo_id: str, path: Path):
+        """A dekódolt FORRÁSKÉP (RGB uint8), vagy `None`.
+
+        A vágás-javaslatok (#448) elemzik — a `redeye_spot_count` mintájára a
+        GUI-szálról hívandó, mert a megosztott dekód-gyorsítótárat használja.
+        """
+        try:
+            mtime = Path(path).stat().st_mtime
+        except OSError:
+            mtime = None
+        return self._resolve_source(
+            str(photo_id), Path(path), mtime, shared_cache=True
+        )
+
     def redeye_spot_count(
         self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]
     ) -> int:

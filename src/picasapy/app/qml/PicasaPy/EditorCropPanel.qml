@@ -188,6 +188,45 @@ ColumnLayout {
         }
     }
 
+    // #448: HÁROM automatikus vágás-JAVASLAT. Az eredeti panelen is három
+    // javaslat-gomb ült; a mögöttük álló stratégiák a binárisban nevesítve
+    // vannak (arcokra szorosan · kompozíció az arcok köré · horizont ·
+    // szín-dominancia · variancia). Melyik három jelenik meg, azt a kép
+    // dönti el: ha van rajta mentett arc, az arc-stratégiák előznek.
+    //
+    // A feliratok kulcsból oldódnak fel (`panel.cropSuggestionLabel`), mert
+    // a stratégiát a kontroller választja, nem a felület.
+    Text {
+        Layout.fillWidth: true
+        visible: panel.cropSuggestions.length > 0
+        text: qsTr("Suggested crops")
+        font.pixelSize: Theme.fontSize - 1
+        color: Theme.textGray
+    }
+    RowLayout {
+        objectName: "cropSuggestionRow"
+        Layout.fillWidth: true
+        spacing: 6
+        visible: panel.cropSuggestions.length > 0
+
+        // A javaslatok száma FIX három (az eredeti panelen is annyi volt),
+        // ezért a három gomb kiírva áll, nem Repeaterrel: így mindegyiknek
+        // állandó `objectName`-je van (a Repeater-delegátumok a
+        // findChild-nek nem látszanak), és a kód is olvashatóbb.
+        component SuggestionButton: PanelButton {
+            property int slot: 0
+            readonly property var suggestion: panel.cropSuggestions.length > slot
+                ? panel.cropSuggestions[slot] : null
+            visible: suggestion !== null
+            label: suggestion ? panel.cropSuggestionLabel(suggestion.key) : ""
+            onButtonClicked: if (suggestion) panel.cropSuggestionChosen(
+                suggestion.x, suggestion.y, suggestion.w, suggestion.h)
+        }
+        SuggestionButton { objectName: "cropSuggestion0"; slot: 0 }
+        SuggestionButton { objectName: "cropSuggestion1"; slot: 1 }
+        SuggestionButton { objectName: "cropSuggestion2"; slot: 2 }
+    }
+
     // gyorsvágások: bal-felső / fekvő / álló (Picasa három bélyegképe)
     RowLayout {
         Layout.fillWidth: true

@@ -17,7 +17,14 @@ from picasapy.app.effect_params import (
 )
 from picasapy.edit.session import EditSession
 from picasapy.fileops import is_folder_writable
-from picasapy.ini import IniConflictError, IniSaveError, load_document, update_document
+from picasapy.ini import (
+    IniConflictError,
+    IniSaveError,
+    load_document,
+    load_or_empty,
+    parse_faces,
+    update_document,
+)
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.ini.retouch import RetouchPatch
 from picasapy.ini.text_overlay import (
@@ -28,6 +35,7 @@ from picasapy.ini.text_overlay import (
     serialize_text_active,
 )
 from picasapy.metadata import read_exif_details
+from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
 from picasapy.render.tone import parse_neutral_argb
 from picasapy.scanner import PICASA_INI_NAME
@@ -303,6 +311,9 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._redeye_region_undo: list[tuple[Rect64, ...]] = []
         # az automatika utolsó futásának találat-száma (-1: még nem futott)
         self._redeye_found = -1
+        # #448: a vágás-javaslatokhoz kért képarány (None = a forráskép
+        # arányát tartjuk); a vágó-panel arány-választója állítja
+        self._crop_aspect: float | None = None
         # kör alakú ecset mérete (#445) — munkamenet-szintű állapot (a
         # szöveg-stílushoz hasonlóan NEM kerül a `.picasa.ini`-be), minden
         # szerkesztés-nyitáskor alapértékre áll.
@@ -670,6 +681,9 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_found = -1
+        # #448: a vágás-javaslatokhoz kért képarány (None = a
+        # forráskép arányát tartjuk)
+        self._crop_aspect: float | None = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = self._read_text_overlay()
         self._text_active = (
@@ -713,6 +727,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._redeye_regions = ()
         self._redeye_region_undo = []
         self._redeye_found = -1
+        self._crop_aspect = None
         self._brush_size = _DEFAULT_BRUSH_SIZE
         self._text_overlay = None
         self._text_active = False
@@ -785,6 +800,63 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._save()
         self._bump_revision()
         self.toolsChanged.emit()
+
+    @Property("QVariant", notify=revisionChanged)
+    def cropSuggestions(self):
+        """A vágás-panel HÁROM automatikus javaslata (#448).
+
+        Minden elem `{key, x, y, w, h}` — a `key` a felirat-kulcsa (a
+        fordítás a QML dolga), a többi közvetlenül az `applyCrop`-nak adható.
+        Aktív szerkesztés nélkül üres lista.
+
+        A javaslatok a MENTETT lánc nélküli, nyers forrásképből számolnak: a
+        Vágás eszköz is a vágatlan képet mutatja (`enterCropTool`), tehát a
+        javaslat arra a képre vonatkozik, amit a felhasználó épp lát.
+        """
+        if not self._photo_id or self._image_path is None:
+            return []
+        image = self._provider.source_image(self._photo_id, self._image_path)
+        if image is None:
+            return []
+        faces = self._saved_face_rects()
+        suggestions = suggest_crops(image, faces=faces, aspect=self._crop_aspect)
+        return [
+            {
+                "key": suggestion.key,
+                "x": suggestion.rect.left,
+                "y": suggestion.rect.top,
+                "w": suggestion.rect.right - suggestion.rect.left,
+                "h": suggestion.rect.bottom - suggestion.rect.top,
+            }
+            for suggestion in suggestions
+        ]
+
+    @Slot(float)
+    def setCropAspect(self, aspect: float) -> None:
+        """A javaslatokhoz használt képarány (szélesség/magasság); 0 = a
+        forráskép arányát tartjuk (#448). A vágó-panel arány-választója
+        hívja, hogy a javaslatok a KIVÁLASZTOTT arányban szülessenek."""
+        self._crop_aspect = aspect if aspect and aspect > 0 else None
+        self._bump_revision()
+
+    def _saved_face_rects(self) -> tuple[Rect64, ...]:
+        """A fotóhoz mentett arc-régiók (#448 javaslatok bemenete).
+
+        A `.picasa.ini` `faces=` kulcsából, közvetlenül — hiányzó/sérült
+        adatnál üres tuple (a #301-elv szerint idegen adat nem szökhet ki
+        kivétellel, és arc nélkül a javaslatok a tartalom-alapú ágra esnek).
+        """
+        if self._ini_path is None:
+            return ()
+        try:
+            document = load_or_empty(self._ini_path)
+            section = document.section(self._section_name)
+            raw = section.get("faces") if section is not None else None
+            if not raw:
+                return ()
+            return tuple(face.rect for face in parse_faces(raw))
+        except (OSError, ValueError):
+            return ()
 
     @Slot()
     def enterCropTool(self) -> None:

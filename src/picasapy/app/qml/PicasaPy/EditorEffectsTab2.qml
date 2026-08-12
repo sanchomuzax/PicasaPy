@@ -32,130 +32,85 @@ ColumnLayout {
         }
     }
 
-    // #464 (felhasználói hibajelentés): a rács TÖBB gombot tartalmaz,
-    // mint amennyi a panel magasságába fér — vágás/görgetés nélkül a
-    // csempék RÁLÓGTAK a panel alján ülő, globális Visszavonás/Újra sorra,
-    // és a fül alja levágódott. A rács ezért saját, VÁGOTT görgethető
-    // területbe került: ami nem fér ki, az elgörgethető, és semmi nem
-    // csúszik a gombsor alá.
-    Flickable {
-        id: effectsScroll
-        objectName: "editorEffectsTab2Scroll"
+    GridLayout {
+        objectName: "effectsGrid2"
+        // #537: HÁROM oszlop, mint az eredeti Picasa effekt-fülein
+        columns: 3
+        columnSpacing: 6
+        rowSpacing: 6
         Layout.fillWidth: true
-        Layout.fillHeight: true
-        clip: true
-        contentWidth: width
-        contentHeight: effectsGridHolder.implicitHeight
-        boundsBehavior: Flickable.StopAtBounds
-        ScrollBar.vertical: PicasaScrollBar {}
 
-        Item {
-            id: effectsGridHolder
-            width: effectsScroll.width
-            implicitHeight: childrenRect.height
-
-        GridLayout {
-            objectName: "effectsGrid2"
-            // #537: HÁROM oszlop, mint az eredeti Picasa effekt-fülein
-            columns: 3
-            columnSpacing: 6
-            rowSpacing: 6
-            width: effectsScroll.width
-
-            PanelButton {
-                objectName: "effectIr"
-                label: qsTr("Infrared Film")
-                onButtonClicked: if (!panel.tryOpenParamPanel("ir")) panel.effectRequested("ir")
-                thumbSource: panel.effectThumbSource("ir")
-            }
-            PanelButton {
-                objectName: "effectLomo"
-                label: qsTr("Lomo-ish")
-                onButtonClicked: if (!panel.tryOpenParamPanel("lomo")) panel.effectRequested("lomo")
-                thumbSource: panel.effectThumbSource("lomo")
-            }
-            PanelButton {
-                objectName: "effectHolga"
-                label: qsTr("Holga-ish")
-                onButtonClicked: if (!panel.tryOpenParamPanel("holga")) panel.effectRequested("holga")
-                thumbSource: panel.effectThumbSource("holga")
-            }
-            PanelButton {
-                objectName: "effectHdr"
-                label: qsTr("HDR-ish")
-                onButtonClicked: if (!panel.tryOpenParamPanel("hdr")) panel.effectRequested("hdr")
-                thumbSource: panel.effectThumbSource("hdr")
-            }
-            PanelButton {
-                objectName: "effectCinemascope"
-                label: qsTr("Cinemascope")
-                onButtonClicked: if (!panel.tryOpenParamPanel("cinemascope")) panel.effectRequested("cinemascope")
-                thumbSource: panel.effectThumbSource("cinemascope")
-            }
-            PanelButton {
-                objectName: "effectOrton"
-                label: qsTr("Orton-ish")
-                onButtonClicked: if (!panel.tryOpenParamPanel("orton")) panel.effectRequested("orton")
-                thumbSource: panel.effectThumbSource("orton")
-            }
-            PanelButton {
-                objectName: "effectSixties"
-                label: qsTr("1960s")
-                onButtonClicked: if (!panel.tryOpenParamPanel("sixties")) panel.effectRequested("sixties")
-                thumbSource: panel.effectThumbSource("sixties")
-            }
-            PanelButton {
-                objectName: "effectInvert"
-                label: qsTr("Invert Colors")
-                onButtonClicked: if (!panel.tryOpenParamPanel("invert")) panel.effectRequested("invert")
-                thumbSource: panel.effectThumbSource("invert")
-            }
-            PanelButton {
-                objectName: "effectHeatMap"
-                label: qsTr("Heat Map")
-                onButtonClicked: if (!panel.tryOpenParamPanel("heatmap")) panel.effectRequested("heatmap")
-                thumbSource: panel.effectThumbSource("heatmap")
-            }
-            PanelButton {
-                objectName: "effectCrossProcess"
-                label: qsTr("Cross Process")
-                onButtonClicked: if (!panel.tryOpenParamPanel("crossprocess")) panel.effectRequested("crossprocess")
-                thumbSource: panel.effectThumbSource("crossprocess")
-            }
-            PanelButton {
-                objectName: "effectQuantizePalette"
-                label: qsTr("Posterize")
-                onButtonClicked: if (!panel.tryOpenParamPanel("quantizepalette")) panel.effectRequested("quantizepalette")
-                thumbSource: panel.effectThumbSource("quantizepalette")
-            }
-            PanelButton {
-                objectName: "effectTwoTone"
-                label: qsTr("Duo-Tone")
-                onButtonClicked: if (!panel.tryOpenParamPanel("twotone")) panel.effectRequested("twotone")
-                thumbSource: panel.effectThumbSource("twotone")
-            }
-            // #516: eddig vezérlő és gomb NÉLKÜLI, de a render/ rétegben
-            // MÁR bekötött (chain._HANDLERS) effektek
-            PanelButton {
-                objectName: "effectMatte"
-                label: qsTr("Matte")
-                onButtonClicked: if (!panel.tryOpenParamPanel("matte")) panel.effectRequested("matte")
-                thumbSource: panel.effectThumbSource("matte")
-            }
-            PanelButton {
-                objectName: "effectNightVision"
-                label: qsTr("Night Vision")
-                onButtonClicked: if (!panel.tryOpenParamPanel("nightvision")) panel.effectRequested("nightvision")
-                thumbSource: panel.effectThumbSource("nightvision")
-            }
-            PanelButton {
-                objectName: "effectLocalContrast"
-                label: qsTr("Local Contrast")
-                onButtonClicked: if (!panel.tryOpenParamPanel("localcontrast")) panel.effectRequested("localcontrast")
-                thumbSource: panel.effectThumbSource("localcontrast")
-            }
+        PanelButton {
+            objectName: "effectIr"
+            label: qsTr("Infrared Film")
+            onButtonClicked: if (!panel.tryOpenParamPanel("ir")) panel.effectRequested("ir")
+            thumbSource: panel.effectThumbSource("ir")
+        }
+        PanelButton {
+            objectName: "effectLomo"
+            label: qsTr("Lomo-ish")
+            onButtonClicked: if (!panel.tryOpenParamPanel("lomo")) panel.effectRequested("lomo")
+            thumbSource: panel.effectThumbSource("lomo")
+        }
+        PanelButton {
+            objectName: "effectHolga"
+            label: qsTr("Holga-ish")
+            onButtonClicked: if (!panel.tryOpenParamPanel("holga")) panel.effectRequested("holga")
+            thumbSource: panel.effectThumbSource("holga")
+        }
+        PanelButton {
+            objectName: "effectHdr"
+            label: qsTr("HDR-ish")
+            onButtonClicked: if (!panel.tryOpenParamPanel("hdr")) panel.effectRequested("hdr")
+            thumbSource: panel.effectThumbSource("hdr")
+        }
+        PanelButton {
+            objectName: "effectCinemascope"
+            label: qsTr("Cinemascope")
+            onButtonClicked: if (!panel.tryOpenParamPanel("cinemascope")) panel.effectRequested("cinemascope")
+            thumbSource: panel.effectThumbSource("cinemascope")
+        }
+        PanelButton {
+            objectName: "effectOrton"
+            label: qsTr("Orton-ish")
+            onButtonClicked: if (!panel.tryOpenParamPanel("orton")) panel.effectRequested("orton")
+            thumbSource: panel.effectThumbSource("orton")
+        }
+        PanelButton {
+            objectName: "effectSixties"
+            label: qsTr("1960s")
+            onButtonClicked: if (!panel.tryOpenParamPanel("sixties")) panel.effectRequested("sixties")
+            thumbSource: panel.effectThumbSource("sixties")
+        }
+        PanelButton {
+            objectName: "effectInvert"
+            label: qsTr("Invert Colors")
+            onButtonClicked: if (!panel.tryOpenParamPanel("invert")) panel.effectRequested("invert")
+            thumbSource: panel.effectThumbSource("invert")
+        }
+        PanelButton {
+            objectName: "effectHeatMap"
+            label: qsTr("Heat Map")
+            onButtonClicked: if (!panel.tryOpenParamPanel("heatmap")) panel.effectRequested("heatmap")
+            thumbSource: panel.effectThumbSource("heatmap")
+        }
+        PanelButton {
+            objectName: "effectCrossProcess"
+            label: qsTr("Cross Process")
+            onButtonClicked: if (!panel.tryOpenParamPanel("crossprocess")) panel.effectRequested("crossprocess")
+            thumbSource: panel.effectThumbSource("crossprocess")
+        }
+        PanelButton {
+            objectName: "effectQuantizePalette"
+            label: qsTr("Posterize")
+            onButtonClicked: if (!panel.tryOpenParamPanel("quantizepalette")) panel.effectRequested("quantizepalette")
+            thumbSource: panel.effectThumbSource("quantizepalette")
+        }
+        PanelButton {
+            objectName: "effectTwoTone"
+            label: qsTr("Duo-Tone")
+            onButtonClicked: if (!panel.tryOpenParamPanel("twotone")) panel.effectRequested("twotone")
+            thumbSource: panel.effectThumbSource("twotone")
         }
     }
-    }
-
 }
