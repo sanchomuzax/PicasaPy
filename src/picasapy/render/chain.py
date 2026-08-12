@@ -90,7 +90,6 @@ KNOWN_UNRENDERED_OPS = frozenset(
         "triple2",
         "triple3",
         "colorfix",
-        "autobacklight",
         "autocontrast",
         "rainbow",
         "linblur",
@@ -104,9 +103,31 @@ KNOWN_UNRENDERED_OPS = frozenset(
         "dir_sat",
         "dir_brite",
         "dir_sharp",
-        "focalpixelate",
         "debug",
     }
+)
+
+#: #567 — HALOTT (legacy) szűrőnevek: a `filterdesc.xml`-ben még ott állnak,
+#: de a 3.9.141.259 build natív regisztrációs táblájában NINCS hozzájuk sem
+#: render-callback, sem névregisztráció. Ezek tehát nem „még nem
+#: implementált" effektek: maga a Picasa sem futtatta már őket, konfigurációs
+#: maradványok. A lánc kihagyja őket (a `skipped`-ben megjelennek), és a
+#: `ChainReport.legacy_warnings` külön, egyértelműen kimondja, hogy halott
+#: bejegyzésről van szó.
+#:
+#: A kisbetűs `focalpixelate` NEM azonos az élő `PicnikFocalPixelate`
+#: Glimmer-effekttel: az utóbbi saját néven, saját callbackkel regisztrált,
+#: és a saját handlerén fut. A kettőt szándékosan nem vezetjük egy kulcsra.
+DEAD_LEGACY_OPS = frozenset({"focalpixelate"})
+
+#: A halott bejegyzésre adott, felhasználónak szóló magyar üzenet (#567).
+#: #567: az `autobacklight` fix derítőfény-erőssége a natív hívás
+#: argumentumából (0,25) — nem csúszka, nem képfüggő.
+_AUTOBACKLIGHT_FILL = 0.25
+
+DEAD_LEGACY_WARNING_TEMPLATE = (
+    "{name}: halott (legacy) szűrőnév — a Picasa 3.9 natív regiszterében "
+    "sincs hozzá feldolgozó, ezért a kép változatlan marad."
 )
 
 #: Boolean jelző-tokenek a láncban (`<név>=1;`, param nélkül), amik NEM
@@ -291,6 +312,20 @@ def _apply_radsat_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+def _apply_autobacklight_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`autobacklight=1;` — FIX 25%-os derítőfény (#567).
+
+    A natív regiszter szerint a render callback (`0x8f7cc0`) ugyanazt a
+    feldolgozó magot (`0x90ac20`) hívja, mint a `backlight`/`fill`, fix
+    `0.25` és `1.0` argumentumokkal. Vagyis ez NEM adaptív képelemzés — a
+    kikommentezett UI-súgó is ezt mondja: „Increases ambient lighting by
+    25%." Nincs benne hisztogram- vagy fényesség-vizsgálat, a paraméterei
+    nem is olvasottak.
+    """
+    del op  # nincs szabad paramétere — a 25% fix
+    return apply_fill(image, _AUTOBACKLIGHT_FILL)
+
+
 def _apply_radtint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # Élő alak: `radtint=1,x,y,feather[,szín]` — a filterdesc szerint EGY
     # csúszkája van (Feather), mellette puck (fókuszpont) és színkerék; a
@@ -340,12 +375,14 @@ def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def _apply_comicize_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Comicize=1,élerősség,poszterizálás,simítás
+    # #569: `Comicize=1,BlurXY,DotContrast,DotFade` — a filterdesc szerinti
+    # HÁROM csúszka (a korábbi „élerősség/poszterizálás/simítás" elnevezés a
+    # Canny-közelítés maradványa volt, ld. apply_comicize docstringjét)
     return apply_comicize(
         image,
-        edge_strength=_effect_float(op, 0, 20.0),
-        posterize=_effect_float(op, 1, 50.0),
-        smoothness=_effect_float(op, 2, 50.0),
+        blur_xy=_effect_float(op, 0, 20.0),
+        dot_contrast=_effect_float(op, 1, 50.0),
+        dot_fade=_effect_float(op, 2, 50.0),
     )
 
 
@@ -390,13 +427,15 @@ _HANDLERS = {
     "radsat": _apply_radsat_op,
     "dir_tint": _apply_dir_tint_op,
     "radtint": _apply_radtint_op,
+    "autobacklight": _apply_autobacklight_op,
     # --- Glimmer-effektek: EGZAKT csővezetékek a filterdesc.xml szerint
     # (#381, `chain_glimmer_handlers.py` + `glimmer_*` modulok). Az `IR`
     # kivétel: a `IRImageOperation` belső kernele a filterdesc.xml-ben sem
     # publikus, ott a modell dokumentáltan INTERPRETÁCIÓ (ld.
     # `glimmer_creative.apply_ir` docstringjét). `FocalZoom`/
-    # `PicnikFocalPixelate`/`Comicize` egyelőre KÖZELÍTŐ maradt (#381
-    # hátralévő munka, ld. a jegy jelentését).
+    # `PicnikFocalPixelate` egyelőre KÖZELÍTŐ maradt (#381 hátralévő
+    # munka); a `Comicize` a #569-ben megkapta az eredeti féltónusos
+    # raszter-csővezetéket.
     "vignette": glimmer.apply_vignette_op,  # az ini-ben nagybetűs: Vignette
     "matte": glimmer.apply_matte_op,
     "hdr": glimmer.apply_hdr_op,
@@ -444,6 +483,18 @@ _HANDLERS = {
 _FRAME_EFFECTS = frozenset(
     key for key, spec in FILTER_REGISTRY.items() if spec.resizes
 ) & _HANDLERS.keys()
+
+def can_render_filter(name: str) -> bool:
+    """Van-e a `name` szűrőnévhez VALÓDI vizuális modellünk (#571)?
+
+    Az igazságforrás maga a renderelő: a kereten (`_FRAME_EFFECTS`) és a
+    vágáson kívül a `_HANDLERS` regiszter dönt. A no-op jelzők (`picnik`,
+    `redeye`…) NEM effektek, ezért hamisat adnak — a felületen nincs is
+    gombjuk.
+    """
+    key = name.casefold()
+    return key in _HANDLERS or key in _FRAME_EFFECTS or key == "crop64"
+
 
 def apply_filters(
     image: np.ndarray, ops: tuple[FilterOp, ...]
@@ -495,6 +546,7 @@ def apply_filters(
     result = image
     skipped: list[str] = []
     range_warnings: list[str] = []
+    legacy_warnings: list[str] = []
     crop_op: FilterOp | None = None
     frame_ops: list[FilterOp] = []
     for op in ops:
@@ -513,6 +565,12 @@ def apply_filters(
             continue
         handler = _HANDLERS.get(key)
         if handler is None:
+            if key in DEAD_LEGACY_OPS:
+                # #567: nem „még nincs modellünk", hanem a Picasa maga sem
+                # futtatta már — ezt ki is mondjuk, nem csak kihagyjuk
+                legacy_warnings.append(
+                    DEAD_LEGACY_WARNING_TEMPLATE.format(name=op.name)
+                )
             skipped.append(op.name)
             continue
         if key in glimmer.PAINTABLE_MASK_OPS:
@@ -555,4 +613,5 @@ def apply_filters(
         slow=slow,
         resizes=resizes,
         range_warnings=tuple(range_warnings),
+        legacy_warnings=tuple(legacy_warnings),
     )

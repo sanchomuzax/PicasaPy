@@ -159,6 +159,18 @@ Rectangle {
     // az alpanel, élő előnézettel, Apply/Cancel gombbal. A paraméter nélküli
     // effektek (Sepia, B&W, Warmify, Film Grain, Invert…) VÁLTOZATLANUL egy
     // kattintással, azonnal az effectRequested jelen át alkalmazódnak.
+    // #571: van-e a megnyitott kép láncában örökölt (a 7. fülre tartozó)
+    // effekt — ettől kap jelzőpontot a fül. Controller nélkül (izolált
+    // QML-tesztek) mindig hamis.
+    // #305 null-őr: a QML-tesztek egy része CSONK editControllert ad, amin
+    // ez a property nem is létezik — az `undefined.length` szkripthibát
+    // dobna, amit a #305-ös figyelő hibának vesz.
+    readonly property bool legacyEffectsPresent: {
+        if (!panel.hasEffectController()) return false
+        var inChain = editController.legacyEffectsInChain
+        return inChain !== undefined && inChain !== null && inChain.length > 0
+    }
+
     property bool paramPanelActive: false
     property string paramEffectName: ""
     property var paramEffectParams: []   // editController.effectParams(name)
@@ -667,6 +679,10 @@ Rectangle {
         required property string iconKind
         property color iconAccent: Theme.iconInk
         property color iconFleck: "transparent"
+        // #571: jelzőpont a fülön — a megnyitott kép láncában van olyan
+        // effekt, ami erre a fülre tartozik; a felhasználónak tudnia kell,
+        // hol nézze meg
+        property bool marked: false
         Layout.fillWidth: true
         Layout.preferredHeight: 38
         color: panel.activeTab === tabIndex ? Theme.contentPanel : Theme.panelHeaderBg
@@ -681,6 +697,15 @@ Rectangle {
             strokeColor: Theme.iconInk
             accentColor: tbtn.iconAccent
             fleckColor: tbtn.iconFleck
+        }
+        Rectangle {
+            objectName: tbtn.objectName ? tbtn.objectName + "Mark" : ""
+            visible: tbtn.marked
+            width: 6; height: 6; radius: 3
+            color: Theme.picasaGreen
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: 3
         }
         // #318 kompatibilitás: rejtett, de a régi tördelés-logikával
         // számolt felirat-Text — a `truncated` így sosem igaz, mert a
@@ -771,6 +796,17 @@ Rectangle {
             label: qsTr("More Effects")
             iconKind: "brush"
             iconAccent: Theme.textGray
+        }
+        // #571 (felhasználói döntés: „Régi effektek"): 7. fül — a Picasa
+        // motorjában benne maradt, de a 3.9 felületén NEM elérhető szűrők.
+        // TUDATOS eltérés az eredetitől, ld. EditorLegacyTab.qml.
+        EditTabButton {
+            objectName: "editTabLegacy"
+            tabIndex: 6
+            label: qsTr("Legacy Effects")
+            iconKind: "brush"
+            iconAccent: Theme.chromeBorder
+            marked: panel.legacyEffectsPresent
         }
     }
 
@@ -1280,6 +1316,16 @@ Rectangle {
 
     // ---------------- 6. fül: a további Glimmer-effektek (#422) --------
     EditorEffectsTab4 {
+        panel: panel
+        anchors.top: tabBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
+    }
+
+    // ---------------- 7. fül: örökölt, felület nélküli szűrők (#571) ---
+    EditorLegacyTab {
         panel: panel
         anchors.top: tabBar.bottom
         anchors.left: parent.left

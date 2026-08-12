@@ -316,7 +316,8 @@ Picasa-hű lenne.
 | **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Neon`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
 | **MEGFEJTVE A BINÁRISBÓL (#566)** | a `filterdesc.xml` csak a paraméterNEVEKET és a FIX konstansokat adja, de a `Picasa3.exe` statikus visszafejtése a teljes belső kernelt feltárta (`glimmer::IRImageOperation`, RTTI/vtable `0xcf0a14`, ctor `0xbc3d80`, feldolgozás `0xbc3f50`) | `IR` |
 | **MEGFEJTVE, DE ECSET-MASZK NÉLKÜL (#381)** | a csővezeték/paraméterezés egzakt, de a Picasa ecsettel kijelölt régióra hatna — a PicasaPy-nak nincs ecset-eszköze, ezért a TELJES KÉPRE fut (jelezve a `ChainReport.range_warnings`-ban) | `PicnikTint`, `ReanimatedEyeColor` |
-| **KÖZELÍTŐ (mérés nélkül) — #381 után is maradt** | a hatás jellege alapján, szakirodalomból — sem golden-mérés, sem filterdesc-pontosítás nincs még bekötve | `FocalZoom`, `PicnikFocalPixelate`, `Comicize` |
+| **KÖZELÍTŐ (mérés nélkül) — #381 után is maradt** | a hatás jellege alapján, szakirodalomból — sem golden-mérés, sem filterdesc-pontosítás nincs még bekötve | `FocalZoom`, `PicnikFocalPixelate` |
+| **MEGFEJTVE A FILTERDESC + NATÍV KÓDBÓL, EGY RÉSZLET NYITVA (#569)** | a csővezeték (lépések, csempeméret-képlet, keverési módok) egzakt; egyedül a pontmaszk antialiasingja/peremkerekítése vár golden-összevetésre | `Comicize` |
 | **KÖZELÍTŐ (másik, mért v2-modell újrahasznosítva) — #347 lezáró audit (2026-08-06)** | a filterdesc szerint a v1/v2 pár paraméter nélküli, azonos "oneclick" család (nincs csúszka/szín, ami megkülönböztetné őket) — a v1-re önmagára nincs golden-mérés, ezért a már mért v2-modellt futtatjuk rá | `grain` (v1, a `grain2` modelljét használja) |
 | **PONTOS** | matematikailag egyértelmű, mérés sem kell | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át) |
 | **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
@@ -325,7 +326,7 @@ Picasa-hű lenne.
 Vagyis a Glimmer-effektek (33) többsége #381 óta a `filterdesc.xml` EGZAKT
 csővezetékén fut — a `RoundedEdges`, `Matte`, `NightVision` a korábbi
 „exe-ből ismert, nincs mérés" kategóriából ide léptek elő. Három effekt
-(`FocalZoom`, `PicnikFocalPixelate`, `Comicize`) maradt KÖZELÍTŐ (a
+(`FocalZoom`, `PicnikFocalPixelate`) maradt KÖZELÍTŐ (a
 `fullResImageWidth/Height`-explicit radiális elmosás, ill. a többágú
 pontraszter-csővezeték #381 hatókörén kívül esett — ld. a jegy jelentését).
 Az `IR` a **#566** óta MEGFEJTVE — nem a paraméternevekből következtetve,
@@ -347,6 +348,55 @@ renderel. A hetedik, `radtint` a **#565**-ben rendeződött: nem golden-mérésb
 hanem a natív kód visszafejtéséből (regisztrációs render callback `0x8f8730`,
 feldolgozó mag `0x90b370`, maszk-LUT segédfüggvény `0x90aeb0`). Ezzel a #347
 mind a hét neve renderel.
+
+### `Comicize` — nyomdai féltónusos raszter (#569)
+
+A korábbi modell **posterizálással és Canny-élkereséssel** közelítette. Ez
+tévedés volt: a Picasa `Comicize`-a **nem** élkiemelő képregényszűrő, hanem
+**két, egymáshoz képest fél csempével eltolt pontmaszkból** épített nyomdai
+raszter (`filterdesc.xml` + a natív `glimmer::TiledImageMask`).
+
+A csővezeték:
+
+1. `dotSize = round(imageWidth / 70) + 1` — a csempeméret a kép
+   **szélességéből** (nem a rövidebb oldalból);
+2. elő-elmosás `radius = 1 + 20·BlurXY/100`, `quality = 3`, **DARKEN** módban
+   visszakeverve;
+3. küszöbgörbe, amelynek a **felső kontrollpontját** a `DotContrast` mozgatja:
+   `90 + DotContrast·1,5`;
+4. pixelesítés a csempeméretre + BW — ez adja a pontonkénti festéksűrűséget;
+5. két csempézett pontmaszk-ág, `(0, 0)` és `(dotSize/2, dotSize/2)`
+   eltolással; az ágak **DARKEN**-nel egyesülnek;
+6. blokk-alfa: `0,5 − DotFade/200`;
+7. a kész raszter **DARKEN** jelleggel az eredeti képre.
+
+A pont sugara a tónussal nő: fekete területen a csempe tömören fedett (a
+sarkokat a másik, fél csempével eltolt ág fedi le), fehéren nincs festék.
+
+**Nyitott:** a natív pontmaszk pontos antialiasingja és peremkerekítése — a
+PicasaPy egy pixelnyi lineáris átmenetet használ (`halftone._EDGE_SOFTNESS_PX`).
+Ez a raszter jellegét nem befolyásolja, de a pixelhű egyezéshez
+golden-összevetés kell (#317).
+
+### `autobacklight` és a kisbetűs `focalpixelate` (#567)
+
+Az effekt-regisztrációs tábla visszafejtése két korábbi feltételezést
+pontosít:
+
+- **`autobacklight`** — a render callback (`0x8f7cc0`) ugyanazt a
+  Derítőfény-magot (`0x90ac20`) hívja, mint a `backlight`/`fill`, **fix**
+  `0.25` és `1.0` argumentummal. Ez tehát **nem** adaptív automatikus
+  képelemzés, hanem rögzített 25%-os derítőfény — a kikommentezett UI-súgó
+  is ezt mondja: „Increases ambient lighting by 25%." A PicasaPy ezért a
+  meglévő `apply_fill` primitívet hívja fix 0,25-tel; semmilyen hisztogram-
+  vagy fényesség-vizsgálat nem fut.
+- **kisbetűs `focalpixelate`** — a pre-Glimmer `filterdesc`-bejegyzéshez a
+  3.9.141.259 build natív regisztrációs táblájában **nincs render callback
+  és nincs névregisztráció**. Halott, konfigurációs maradvány, ami **nem
+  azonos** az élő `PicnikFocalPixelate` Glimmer-effekttel. A lánc külön
+  kulcson tartja a kettőt, a kisbetűs nevet pedig a
+  `ChainReport.legacy_warnings` kimondottan halottként jelenti — ez más ok,
+  mint a „még nincs modellünk".
 
 ### `radtint` — radiális szorzó-tint (#565)
 

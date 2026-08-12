@@ -76,8 +76,16 @@ class ChainReport(tuple):
 
     VISSZAFELÉ KOMPATIBILIS 2-elemű tuple: `kép, kihagyott = apply_filters(...)`
     változatlanul működik — a jelentés csak egy `(kép, kihagyott_nevek)`
-    tuple, ami emellett `.full_res`/`.slow`/`.resizes`/`.range_warnings`
-    attribútumokat is hordoz a hívóknak, akiknek ez kell (#382 3. pont).
+    tuple, ami emellett `.full_res`/`.slow`/`.resizes`/`.range_warnings`/
+    `.legacy_warnings` attribútumokat is hordoz a hívóknak, akiknek ez kell
+    (#382 3. pont).
+
+    A `.legacy_warnings` (#567) a HALOTT, csak konfigurációs maradékként
+    létező szűrőnevekről szól: ezek a 3.9.141.259 natív regiszterében sem
+    render-callbackkel, sem névregisztrációval NEM szerepelnek — nem
+    „még nem implementált" effektek, hanem olyanok, amelyeket maga a Picasa
+    sem futtatott már. A `skipped`-be is bekerülnek (a lánc kihagyja őket),
+    de a külön lista megkülönbözteti a két, gyökeresen eltérő okot.
     """
 
     # (Nincs `__slots__`: a `tuple` már változó hosszú C-szintű tárolást
@@ -93,12 +101,14 @@ class ChainReport(tuple):
         slow: bool,
         resizes: bool,
         range_warnings: tuple[str, ...],
+        legacy_warnings: tuple[str, ...] = (),
     ) -> "ChainReport":
         obj = super().__new__(cls, (image, skipped))
         obj.full_res = full_res
         obj.slow = slow
         obj.resizes = resizes
         obj.range_warnings = range_warnings
+        obj.legacy_warnings = legacy_warnings
         return obj
 
     @property

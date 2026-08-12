@@ -295,18 +295,14 @@ class TestApplyNeon:
 
 
 class TestApplyComicize:
-    def test_szinszam_csokken(self) -> None:
-        image = _random_image(height=32, width=32, seed=12)
-        result = apply_comicize(image, posterize=90.0)
-        unique_before = len(np.unique(image.reshape(-1, 3), axis=0))
-        unique_after = len(np.unique(result.reshape(-1, 3), axis=0))
-        assert unique_after < unique_before
-
-    def test_kontrasztos_elen_fekete_kontur_jelenik_meg(self) -> None:
-        image = _checkerboard()
-        result = apply_comicize(image, edge_strength=100.0, smoothness=0.0)
-        has_black = np.any(np.all(result == 0, axis=-1))
-        assert has_black
+    # #569: a Comicize NEM poszterizál és NEM keres élt — féltónusos
+    # rasztert nyom a képre. A régi két teszt (színszám-csökkenés, fekete
+    # kontúr az élen) a Canny-közelítés szerződése volt; a mostani modell
+    # szerződéseit a tests/render/test_comicize_569.py méri.
+    def test_a_raszter_sotetit_de_nem_vilagosit(self) -> None:
+        image = _random_image(height=32, width=48, seed=12)
+        result = apply_comicize(image)
+        assert np.all(result <= image)
 
     def test_alak_es_dtype_megmarad(self) -> None:
         image = _random_image(height=24, width=28, seed=13)
@@ -322,11 +318,11 @@ class TestApplyComicize:
 
     def test_negativ_parameter_value_error(self) -> None:
         with pytest.raises(ValueError):
-            apply_comicize(_random_image(), edge_strength=-1.0)
+            apply_comicize(_random_image(), blur_xy=-1.0)
         with pytest.raises(ValueError):
-            apply_comicize(_random_image(), posterize=-1.0)
+            apply_comicize(_random_image(), dot_contrast=-1.0)
         with pytest.raises(ValueError):
-            apply_comicize(_random_image(), smoothness=-1.0)
+            apply_comicize(_random_image(), dot_fade=-1.0)
 
     def test_fekete_feher_szelso_bemenet_nem_dob(self) -> None:
         apply_comicize(_uniform_image(0))

@@ -306,10 +306,12 @@ Csak a beszédesebbek, teljesség igénye nélkül:
   fotó-import küszöbértékek
 - `ConfirmThresholdCount` — "sok kép megnyitása" megerősítő párbeszéd
   küszöbe
-- `autobacklight` (`editpanel/autobacklight`) — ez egy önálló effekt-
-  gomb/opció, ami **nem** egyezik az `autolight`-tal, és nincs a specben
-  (lehet, hogy csak UI-kapcsoló az `autolight` egy módjához, de érdemes
-  tisztázni)
+- `autobacklight` (`editpanel/autobacklight`) — önálló effekt-gomb/opció,
+  ami **nem** egyezik az `autolight`-tal. **#567-ben tisztázva:** a natív
+  render callback (`0x8f7cc0`) ugyanazt a Derítőfény-magot (`0x90ac20`)
+  hívja, mint a `backlight`/`fill`, **fix 0,25** argumentummal — tehát nem
+  adaptív képelemzés, hanem rögzített 25%-os derítőfény („Increases ambient
+  lighting by 25%.", a kikommentezett UI-súgó szerint)
 - `Preferences\HotFolders`, `ID_FILE_HOTFOLDERS_m` — "figyelt mappák"
   (watched folders) beállításai
 - `ShowHidden`, `usefileloadcache`, `disposepreviews`,

@@ -8,7 +8,14 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError
-from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
+from PySide6.QtCore import (
+    Property,
+    QCoreApplication,
+    QLocale,
+    QObject,
+    Signal,
+    Slot,
+)
 
 from picasapy.app.effect_params import (
     format_param_values,
@@ -35,6 +42,8 @@ from picasapy.ini.text_overlay import (
     serialize_text_active,
 )
 from picasapy.metadata import read_exif_details
+from picasapy.render.chain import DEAD_LEGACY_OPS, can_render_filter
+from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
 from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
 from picasapy.render.tone import parse_neutral_argb
@@ -385,6 +394,39 @@ class EditController(QObject, BackgroundWorkerMixin):
         """Picasa-stílusú, egysoros gép-összefoglaló (#25) a hisztogram
         alatt — a forrásfájl EXIF-jéből, beginEdit-kor gyorsítótárazva."""
         return self._camera_summary
+
+    @Property("QVariant", constant=True)
+    def legacyEffects(self):
+        """Az „Régi effektek" fül gombjai (#571) — a katalógusból, nem
+        kézzel a QML-be írva.
+
+        Minden elem: `key` (belső szűrőnév), `label` (angol felirat, a
+        fordítás a szokásos `.ts` úton), `enabled` (van-e VALÓDI vizuális
+        modellünk — a renderelő dönti el), `dead` (halott legacy név, #567:
+        a Picasa natív regiszterében sincs hozzá feldolgozó).
+        """
+        return [
+            {
+                "key": effect.key,
+                # a felirat MÁR fordítva megy a QML-nek: a katalógus adat,
+                # nem forráskód, ezért `qsTr()` nem tudná kigyűjteni —
+                # a `.ts`-ben a "LegacyEffects" kontextus tartja őket
+                "label": QCoreApplication.translate("LegacyEffects", effect.label),
+                "enabled": can_render_filter(effect.key),
+                "dead": effect.key in DEAD_LEGACY_OPS,
+            }
+            for effect in LEGACY_EFFECTS
+        ]
+
+    @Property("QVariant", notify=revisionChanged)
+    def legacyEffectsInChain(self):
+        """A szerkesztési láncban szereplő ÖRÖKÖLT szűrőnevek (#571).
+
+        Ebből teszi ki a szerkesztő az „Régi effektek" fülre a jelzést: a
+        felhasználó egy régi képen ott találhat olyan effektet, amit a mai
+        Picasa felülete nem is mutat — tudnia kell, hol nézze meg."""
+        names = {op.name.casefold() for op in self._session.ops}
+        return sorted(names & LEGACY_EFFECT_KEYS)
 
     @Property(bool, notify=toolsChanged)
     def redeyeActive(self) -> bool:
@@ -1425,6 +1467,24 @@ class EditController(QObject, BackgroundWorkerMixin):
         self.toolsChanged.emit()
 
     # -- csúszkás effekt-alpanel (#316) --------------------------------------
+
+    @Slot(str, result=bool)
+    def canRenderEffect(self, name: str) -> bool:
+        """Van-e VALÓDI vizuális modellünk erre az effektre (#571)?
+
+        Az „Örökség" fül gombjai ebből tudják, hogy engedélyezettek-e. A
+        válasz a RENDERELŐBŐL jön (`chain._HANDLERS`), nem kézzel karban
+        tartott listából — így egy effekt bekötése automatikusan élővé teszi
+        a gombját, és nem maradhat hazug (aktív, de mégsem ható) gomb.
+        """
+        return can_render_filter(name)
+
+    @Slot(str, result=bool)
+    def isDeadLegacyEffect(self, name: str) -> bool:
+        """Halott (legacy) szűrőnév-e (#567)? A Picasa natív regiszterében
+        sincs hozzá feldolgozó — ez MÁS ok, mint a „még nincs modellünk",
+        ezért a felületen is más magyarázatot kap."""
+        return name.casefold() in DEAD_LEGACY_OPS
 
     @Slot(str, result=bool)
     def effectHasParams(self, name: str) -> bool:

@@ -1279,6 +1279,11 @@
     <name>EditorPanel</name>
     <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Legacy Effects</source>
+        <translation>Régi effektek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
         <source>Close crop to faces</source>
         <translation>Szorosan az arcokra</translation>
     </message>
@@ -5304,6 +5309,137 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
         <source>Soft Focus</source>
         <translation>Lágy fókusz</translation>
+    </message>
+</context>
+<context>
+    <name>EditorLegacyTab</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorLegacyTab.qml"/>
+        <source>Legacy Effects</source>
+        <translation>Régi effektek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorLegacyTab.qml"/>
+        <source>These filters come from older versions of Picasa. They are not available in today&apos;s Picasa, but your old edits may contain them.</source>
+        <translation>Ezek a szűrők a Picasa régebbi verzióiból származnak. A mai Picasában nem érhetők el, de a régi szerkesztéseidben előfordulhatnak.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorLegacyTab.qml"/>
+        <source>This name is a leftover from an old configuration. Picasa 3.9 has no processor for it either, so it cannot be applied.</source>
+        <translation>Ez a név egy régi beállítás maradványa. A Picasa 3.9-ben sincs hozzá feldolgozó, ezért nem alkalmazható.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorLegacyTab.qml"/>
+        <source>Picasa can read this filter from an old .picasa.ini, but its exact pixel operation has not been decoded yet, so it cannot be applied.</source>
+        <translation>Ezt a szűrőt a Picasa el tudja olvasni egy régi .picasa.ini-ből, de a pontos képi működése még nincs megfejtve, ezért nem alkalmazható.</translation>
+    </message>
+</context>
+<context>
+    <name>LegacyEffects</name>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Radial Tint</source>
+        <translation>Sugaras árnyalás</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Fill Light (one-click)</source>
+        <translation>Derítőfény (egykattintásos)</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Fill Light (slider)</source>
+        <translation>Derítőfény (csúszka)</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Linear Blur</source>
+        <translation>Lineáris homályosítás</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Directional Saturation</source>
+        <translation>Irányított telítettség</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Directional Brightness</source>
+        <translation>Irányított fényesség</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Directional Sharpening</source>
+        <translation>Irányított élesítés</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Lighting Fixes (v1)</source>
+        <translation>Megvilágítási javítások (v1)</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Lighting Fixes (v2)</source>
+        <translation>Megvilágítási javítások (v2)</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Lighting Fixes (v3)</source>
+        <translation>Megvilágítási javítások (v3)</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Color Fixes</source>
+        <translation>Színjavítások</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Shadow and Highlight</source>
+        <translation>Árnyék és kiemelés</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>White Point</source>
+        <translation>Fehérpont</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Gamma Correction</source>
+        <translation>Gammakorrekció</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Contrast</source>
+        <translation>Kontraszt</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Color Temperature</source>
+        <translation>Színhőmérséklet</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Softening</source>
+        <translation>Elhomályosítás</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Backlight Fix</source>
+        <translation>Háttérfényjavítás</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Rainbow</source>
+        <translation>Szivárvány</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Auto Contrast</source>
+        <translation>Automatikus kontraszt</translation>
+    </message>
+    <message>
+        <location filename="../../render/legacy_effects.py"/>
+        <source>Focal Pixelate (legacy)</source>
+        <translation>Képpontnövelés fókuszban (örökölt)</translation>
     </message>
 </context>
 </TS>

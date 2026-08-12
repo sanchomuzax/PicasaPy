@@ -55,14 +55,21 @@ _NOOP_NAMES = ("save", "rot", "crop", "moviestart", "movieend")
 
 #: A 26-ból azok, amelyek azóta MEGKAPTÁK a vizuális modelljüket — ezek már
 #: nem a `KNOWN_UNRENDERED_OPS` tagjai. `radtint`: #565 (natív visszafejtés,
-#: ld. tests/render/test_radtint_565.py).
-_NOW_RENDERED_NAMES = ("radtint",)
+#: ld. tests/render/test_radtint_565.py). `autobacklight`: #567 (a natív
+#: regiszter szerint fix 25%-os derítőfény, nem adaptív elemzés).
+_NOW_RENDERED_NAMES = ("radtint", "autobacklight")
+
+#: A 26-ból az, amelyik HALOTT legacy névnek bizonyult (#567): a natív
+#: regiszterben nincs hozzá se callback, se névregisztráció.
+_DEAD_LEGACY_KEYS = ("focalpixelate",)
 
 #: A maradék 21, ami a `KNOWN_UNRENDERED_OPS`-ba tartozik.
 _UNRENDERED_NAMES = tuple(
     name
     for name in _ALL_26_NAMES
-    if name not in _NOOP_NAMES and name not in _NOW_RENDERED_NAMES
+    if name not in _NOOP_NAMES
+    and name not in _NOW_RENDERED_NAMES
+    and name not in _DEAD_LEGACY_KEYS
 )
 
 
@@ -79,12 +86,18 @@ class TestAll26NamesCovered:
 
     def test_noop_rendered_unrendered_partitio(self):
         # az eredeti felosztás 5 no-op + 21 renderelhetetlen volt; azóta a
-        # `radtint` (#565) átkerült a renderelők közé
+        # `radtint` (#565), majd az `autobacklight` (#567) átkerült a
+        # renderelők közé, a `focalpixelate` pedig halott legacy névnek
+        # bizonyult (#567)
         assert len(_NOOP_NAMES) == 5
-        assert len(_NOW_RENDERED_NAMES) == 1
-        assert len(_UNRENDERED_NAMES) == 20
+        assert len(_NOW_RENDERED_NAMES) == 2
+        assert len(_DEAD_LEGACY_KEYS) == 1
+        assert len(_UNRENDERED_NAMES) == 18
         assert (
-            set(_NOOP_NAMES) | set(_NOW_RENDERED_NAMES) | set(_UNRENDERED_NAMES)
+            set(_NOOP_NAMES)
+            | set(_NOW_RENDERED_NAMES)
+            | set(_DEAD_LEGACY_KEYS)
+            | set(_UNRENDERED_NAMES)
             == set(_ALL_26_NAMES)
         )
 
