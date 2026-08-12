@@ -30,9 +30,14 @@ class TestFolderListMenuWiring:
         handler = _child(window, "folderPaneContextMenuHandler")
         assert handler.property("acceptedButtons") == Qt.MouseButton.RightButton
 
+    # #461/3: a bal panel SAJÁT menüje a PANELT rendezi (az eredeti
+    # `AlbumList` menüje is ezt tette — ui-audit-context-menus.md A.2), a
+    # felső Nézet ▸ Mappanézet pedig a RÁCSOT (#321). A kettő külön
+    # beállítás; korábban mindkét menü a rács-rendezést írta, ezért a panel
+    # menüjének pipái hazudtak.
     def test_opening_the_menu_takes_the_current_sort_state(self, qml_app, qt_app):
         window, controller, _engine = qml_app
-        controller.setFolderSort("size")
+        controller.setPaneSort("size")
         qt_app.processEvents()
         pane = _child(window, "folderPane")
         QMetaObject.invokeMethod(
@@ -43,18 +48,20 @@ class TestFolderListMenuWiring:
 
     def test_sort_request_reaches_the_controller(self, qml_app, qt_app):
         window, controller, _engine = qml_app
+        grid_before = controller.folderSort
         menu = _child(window, "folderListContextMenu")
         menu.sortModeRequested.emit("name")
         qt_app.processEvents()
-        assert controller.folderSort == "name"
+        assert controller.paneSort == "name"
+        assert controller.folderSort == grid_before  # a rácsot NEM piszkálja
 
     def test_reverse_request_flips_the_controller_state(self, qml_app, qt_app):
         window, controller, _engine = qml_app
-        before = controller.folderSortReverse
+        before = controller.paneSortReverse
         menu = _child(window, "folderListContextMenu")
         menu.sortReverseRequested.emit()
         qt_app.processEvents()
-        assert controller.folderSortReverse is not before
+        assert controller.paneSortReverse is not before
 
 
 class TestTagMenuWiring:
