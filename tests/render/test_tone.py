@@ -14,6 +14,7 @@ import pytest
 from picasapy.render.tone import (
     apply_color_temperature,
     apply_fill,
+    fill_lut,
     apply_finetune2,
     apply_highlights,
     apply_neutral_pipette,
@@ -34,8 +35,10 @@ class TestApplyFill:
     @pytest.mark.parametrize(
         ("strength", "bemenet", "vart"),
         [
-            # #551: a mért d(világosság) görbék horgonyértékei — egyenletes
-            # szürke képen a világosság maga a bemeneti szint
+            # #551: a MÉRT d(világosság) görbék horgonyértékei — egyenletes
+            # szürke képen a világosság maga a bemeneti szint. A #575-ös
+            # natív modell ezekhez képest 2–3 egységen belül marad, miközben
+            # a teljes mérőkészleten kisebb a hibája: a tűrés ezért 3, nem 1.
             (0.10, 32, 32 + 4.1),
             (0.10, 128, 128 + 5.3),
             (0.25, 32, 32 + 15.9),
@@ -52,17 +55,27 @@ class TestApplyFill:
     ) -> None:
         image = _uniform_image(bemenet)
         result = apply_fill(image, strength)
-        assert abs(int(result[0, 0, 0]) - vart) <= 1.0
+        assert abs(int(result[0, 0, 0]) - vart) <= 3.0
 
-    def test_a_hozzaadas_a_VILAGOSSAGTOL_fugg_nem_a_csatornatol(self) -> None:
-        """#551: két azonos világosságú, de eltérő színű pixel UGYANAZT a
-        hozzáadást kapja — ez a mért modell lényege (nem csatornánkénti
-        tónusgörbe)."""
-        semleges = apply_fill(_uniform_image(90), 0.5)
-        szines = apply_fill(_uniform_image((60, 90, 120)), 0.5)
-        delta_semleges = int(semleges[0, 0, 0]) - 90
-        assert int(szines[0, 0, 0]) - 60 == delta_semleges
-        assert int(szines[0, 0, 2]) - 120 == delta_semleges
+    def test_a_lut_azonossag_nulla_eroseggnel(self) -> None:
+        """#575: `fill = 0`-nál `g = 1`, a kitevő is 1 — a LUT azonosság."""
+        np.testing.assert_array_equal(fill_lut(0.0), np.arange(256))
+
+    def test_a_sotet_keppont_tobbet_kap_mint_a_vilagos(self) -> None:
+        """#575: a natív kód a LUT-ot a világossággal FORDÍTOTTAN arányos
+        súllyal keveri be — sötétben teljes hatás, világosban semmi."""
+        sotet = int(apply_fill(_uniform_image(40), 0.5)[0, 0, 0]) - 40
+        kozepes = int(apply_fill(_uniform_image(128), 0.5)[0, 0, 0]) - 128
+        vilagos = int(apply_fill(_uniform_image(220), 0.5)[0, 0, 0]) - 220
+        assert sotet > kozepes > vilagos >= 0
+
+    def test_a_csatorna_sorrend_nem_szamit(self) -> None:
+        """#575: a `luma4 = (B + 2G + R) >> 2` súly szimmetrikus az R-re és
+        a B-re, ezért az RGB/BGR sorrend nem befolyásolja az eredményt."""
+        rgb = apply_fill(_uniform_image((60, 90, 120)), 0.5)
+        bgr = apply_fill(_uniform_image((120, 90, 60)), 0.5)
+        assert int(rgb[0, 0, 0]) == int(bgr[0, 0, 2])
+        assert int(rgb[0, 0, 2]) == int(bgr[0, 0, 0])
 
     def test_feherpont_kozel_tarto(self) -> None:
         """A mért görbe a csúcsfényeknél ~0 (max állásban −1,8): a fehér
