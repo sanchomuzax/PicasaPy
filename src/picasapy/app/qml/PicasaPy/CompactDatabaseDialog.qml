@@ -27,17 +27,30 @@ Window {
     property string lastError: ""
     property bool lastCancelled: false
     property bool finished: false
+    property bool nothingToDo: false
     property int savedBytes: 0
 
+    // Az eredeti Picasa NEM tömörített minden alkalommal: volt egy
+    // `compactpercentage` küszöb, ami alatt a művelet meg sem indult. Ezt
+    // átvesszük — percekig tartó munkát nem indítunk el azért, hogy a
+    // végén „0 bájt megtakarítva" legyen az eredmény.
     function open() {
         compactWindow.lastError = ""
         compactWindow.lastCancelled = false
         compactWindow.finished = false
+        compactWindow.nothingToDo = false
         compactWindow.savedBytes = 0
         compactWindow.visible = true
-        if (typeof compactController !== "undefined" && compactController)
+        if (typeof compactController === "undefined" || !compactController) return
+        if (compactController.isWorthCompacting())
             compactController.startCompact()
+        else
+            compactWindow.nothingToDo = true
     }
+
+    // az ablak bezárása futás közben = megszakítás (nem hagyunk gazdátlan
+    // munkát a háttérben, amiről a felhasználó már nem lát semmit)
+    onClosing: if (compactWindow.running) compactController.cancelCompact()
 
     Connections {
         target: typeof compactController !== "undefined" ? compactController : null
@@ -72,11 +85,13 @@ Window {
             wrapMode: Text.WordWrap
             text: compactWindow.lastError.length > 0
                   ? compactWindow.lastError
-                  : compactWindow.lastCancelled
-                    ? qsTr("Compacting cancelled. Your database is unchanged.")
-                    : compactWindow.finished
-                      ? qsTr("Done.")
-                      : qsTr("Compacting...")
+                  : compactWindow.nothingToDo
+                    ? qsTr("The database is already compact — nothing to do.")
+                    : compactWindow.lastCancelled
+                      ? qsTr("Compacting cancelled. Your database is unchanged.")
+                      : compactWindow.finished
+                        ? qsTr("Done.")
+                        : qsTr("Compacting...")
             font.pixelSize: Theme.fontSize
             color: compactWindow.lastError.length > 0
                    ? Theme.brandRed : Theme.textGray

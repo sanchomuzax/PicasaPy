@@ -624,6 +624,10 @@
         <translation>Tömörítés…</translation>
     </message>
     <message>
+        <source>The database is already compact — nothing to do.</source>
+        <translation>Az adatbázis már tömör — nincs teendő.</translation>
+    </message>
+    <message>
         <source>Compacting cancelled. Your database is unchanged.</source>
         <translation>A tömörítés megszakítva. Az adatbázis változatlan.</translation>
     </message>

@@ -54,3 +54,14 @@ class TestCompactDialog:
         _trigger(window, qt_app)
 
         assert _child(window, "compactProgressBar").property("indeterminate") is True
+
+    def test_a_compact_database_is_not_vacuumed_for_nothing(self, qml_app, qt_app):
+        """Az eredeti `compactpercentage` küszöbe: egy amúgy is tömör
+        adatbázison meg sem indul a percekig tartó munka."""
+        window, _controller, _engine = qml_app
+
+        _trigger(window, qt_app)
+
+        dialog = _child(window, "compactDatabaseDialog")
+        assert dialog.property("nothingToDo") is True
+        assert _child(window, "compactProgressBar").property("visible") is False
