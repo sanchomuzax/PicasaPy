@@ -13,6 +13,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ahogy az eredeti Picasa import-képernyőjén is —, így a képeket még a
   bemásolás előtt ki lehet egyenesíteni és megjelölni. A jelölés a
   **másolatra** kerül; a kártyán lévő eredeti fájlokhoz a program nem nyúl.
+- **Sebesség az import haladásjelzőjén (#441).** A csík mellett mostantól az
+  is látszik, milyen gyorsan halad a másolás — ebből lehet megbecsülni,
+  mennyi van hátra.
+- **Fájltípus-szűrő és korábbi források az importnál (#441).** Beállítható,
+  hogy a beolvasás kép- és filmfájlokat, csak képeket, vagy mindent
+  keressen; a forrásválasztó pedig felkínálja a **legutóbb használt
+  forrásokat**, ahogy az eredeti Picasa is tette.
 
 ## [0.7.5] – 2026-08-12
 

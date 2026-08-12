@@ -806,3 +806,44 @@ class TestImportSpeed:
         loop.exec()
 
         assert speeds == [0.0]
+
+
+class TestRecentSources:
+    """#441: a forrásválasztó legördülője a KORÁBBI importok listáját is
+    kínálta (`LastImport…`) — a rendszeresen használt kártya/mappa így egy
+    kattintással újra elérhető."""
+
+    def _scan_folder(self, controller, tmp_path, name):
+        source = tmp_path / name
+        source.mkdir()
+        make_jpeg(source / "a.jpg")
+        _scan(controller, str(source))
+        return source
+
+    def test_the_list_starts_empty(self, controller):
+        assert list(controller.recentSources) == []
+
+    def test_a_scanned_source_is_remembered(self, controller, tmp_path):
+        source = self._scan_folder(controller, tmp_path, "kartya")
+
+        assert list(controller.recentSources) == [str(source)]
+
+    def test_the_newest_comes_first_without_repeats(self, controller, tmp_path):
+        first = self._scan_folder(controller, tmp_path, "egy")
+        second = self._scan_folder(controller, tmp_path, "ketto")
+        _scan(controller, str(first))  # újra az elsőt
+
+        assert list(controller.recentSources) == [str(first), str(second)]
+
+    def test_a_failed_scan_is_not_remembered(self, controller, tmp_path):
+        _scan(controller, str(tmp_path / "nincs-ilyen"))
+
+        assert list(controller.recentSources) == []
+
+    def test_the_list_is_capped(self, controller, tmp_path):
+        from picasapy.app.import_source_controller import MAX_RECENT_SOURCES
+
+        for index in range(MAX_RECENT_SOURCES + 3):
+            self._scan_folder(controller, tmp_path, f"kartya{index}")
+
+        assert len(list(controller.recentSources)) == MAX_RECENT_SOURCES

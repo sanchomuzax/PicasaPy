@@ -4596,6 +4596,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <source>All Files</source>
         <translation>Minden fájl</translation>
     </message>
+    <message>
+        <source>Recent sources</source>
+        <translation>Korábbi források</translation>
+    </message>
 </context>
 <context>
     <name>TimelineController</name>

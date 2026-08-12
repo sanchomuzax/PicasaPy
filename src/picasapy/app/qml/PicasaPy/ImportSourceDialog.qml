@@ -202,6 +202,21 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
+            // #441: a korábbi importok listája — az eredeti legördülője is
+            // ezt kínálta a „Choose…" mellett (`LastImport…`)
+            ComboBox {
+                objectName: "importSourceRecentBox"
+                Layout.preferredWidth: 180
+                visible: model.length > 0
+                model: (typeof importSourceController !== "undefined"
+                        && importSourceController)
+                       ? importSourceController.recentSources : []
+                displayText: qsTr("Recent sources")
+                onActivated: {
+                    importSourceWindow.sourceFolder = model[currentIndex]
+                    importSourceWindow.scanCurrentSource()
+                }
+            }
             PicasaButton {
                 objectName: "importSourceChooseSourceButton"
                 text: qsTr("Browse...")

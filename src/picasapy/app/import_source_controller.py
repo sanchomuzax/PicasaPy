@@ -76,6 +76,14 @@ _VALID_AFTER_COPYING = (AFTER_COPY_LEAVE, AFTER_COPY_DELETE_COPIED, AFTER_COPY_D
 # megfelelő beállítás-nevét követve, ld. `docs/specs/picasa-fen-dialogs.md`).
 AUTOEXCLUDE_SETTINGS_KEY = "import/autoexclude"
 
+# #441: a forrásválasztó legördülőjében az eredeti a KORÁBBI importok
+# listáját kínálta (`LastImport…`) a „Choose…" mellett — így a rendszeresen
+# használt kártya/mappa egy kattintással újra elérhető. A lista a
+# legutóbbi elöl, ismétlés nélkül; ennél többet nem tartunk meg, hogy a
+# legördülő ne hízzon el.
+RECENT_SOURCES_SETTINGS_KEY = "import/recentsources"
+MAX_RECENT_SOURCES = 8
+
 
 def _thumb_url(photo_id: int) -> str:
     return f"image://thumbs/{photo_id}"
@@ -143,6 +151,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     selectionChanged = Signal(list)
     autoExcludeChanged = Signal()
     mediaFilterChanged = Signal()
+    recentSourcesChanged = Signal()
 
     importStarted = Signal(int)  # összes importálandó (beválogatott) darab
     importProgress = Signal(int, int)  # (kész, összes)
@@ -214,6 +223,31 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         """"Exclude Duplicates" — "Exclude photos that are already
         imported into Picasa"."""
         return self._auto_exclude
+
+    @Property("QVariant", notify=recentSourcesChanged)
+    def recentSources(self):  # noqa: N802 — QML property-konvenció
+        """A korábbi import-források (#441), a legutóbbi elöl.
+
+        A `LastImport…` legördülő adata: a felhasználó egy kattintással
+        visszatérhet a rendszeresen használt kártyához/mappához."""
+        return self._read_recent_sources()
+
+    def _read_recent_sources(self) -> list[str]:
+        stored = self._get_settings().value(RECENT_SOURCES_SETTINGS_KEY, [])
+        if isinstance(stored, str):
+            stored = [stored] if stored else []
+        return [str(item) for item in (stored or [])]
+
+    def _remember_source(self, folder: str) -> None:
+        """A most beolvasott forrás a lista ELEJÉRE; ismétlés nélkül."""
+        if not folder:
+            return
+        recent = [item for item in self._read_recent_sources() if item != folder]
+        recent.insert(0, folder)
+        self._get_settings().setValue(
+            RECENT_SOURCES_SETTINGS_KEY, recent[:MAX_RECENT_SOURCES]
+        )
+        self.recentSourcesChanged.emit()
 
     @Property(str, notify=mediaFilterChanged)
     def mediaFilter(self) -> str:  # noqa: N802 — QML property-konvenció
@@ -380,6 +414,9 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
             self._preview_ids = tuple(str(record.id) for record in records)
 
             items = self._preview_items()
+            # #441: a SIKERES beolvasás után jegyezzük meg a forrást — a
+            # hibás/nem létező mappa ne kerüljön a legördülőbe
+            self._remember_source(target)
             self.sourceScanFinished.emit(items, len(candidates))
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
