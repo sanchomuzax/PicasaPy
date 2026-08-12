@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.82] – 2026-08-12
+
+### Hozzáadva
+- **Figyelmeztetés a visszavonás adatvesztéses eseteire (#465).** A retusálás
+  és a vörösszem-javítás területadatot hordoz: a visszavonás eldobja, és az
+  „Újra" nem hozza vissza. Az eredeti Picasához hasonlóan ezek visszavonása
+  mostantól rákérdez — a többi lépésé továbbra sem, hiszen ott van visszaút.
+- Az **„Összes szerkesztés visszavonása"** az eredeti két külön szövegét
+  használja egy, illetve több kijelölt képre, és **külön figyelmeztet**, ha a
+  kijelölésben vörösszem-javítás van.
+
 ## [0.6.81] – 2026-08-12
 
 ### Hozzáadva
