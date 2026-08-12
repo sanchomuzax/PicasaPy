@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.5] – 2026-08-12
+
+### Hozzáadva
+- **Igazi betűtípusok a szöveg-eszközben (#450).** A feliratok eddig egy
+  vonalas, „rajzolt" betűkészlettel készültek, amiben nincs betűcsalád,
+  félkövér, dőlt vagy aláhúzás. Mostantól valódi TrueType-betűkkel
+  rajzolunk: **Arial · Times New Roman · Courier New**, félkövéren, dőlten,
+  aláhúzva, és a sorok **balra / középre / jobbra** igazíthatók. Ha a gépen
+  nem található megfelelő betű, a felirat a régi módon jelenik meg — a
+  szöveg-eszköz sosem esik ki.
+
 ## [0.7.4] – 2026-08-12
 
 ### Hozzáadva
