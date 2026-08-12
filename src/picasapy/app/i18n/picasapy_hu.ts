@@ -1343,6 +1343,42 @@
         <translation>Jelenlegi arány</translation>
     </message>
     <message>
+        <source>Current display</source>
+        <translation>Jelenlegi megjelenítés</translation>
+    </message>
+    <message>
+        <source>Small print</source>
+        <translation>Kisméretű nyomat</translation>
+    </message>
+    <message>
+        <source>Large print</source>
+        <translation>Nagyméretű nyomat</translation>
+    </message>
+    <message>
+        <source>Letter paper</source>
+        <translation>Letter méretű papír</translation>
+    </message>
+    <message>
+        <source>Standard screen</source>
+        <translation>Normál képernyő</translation>
+    </message>
+    <message>
+        <source>Widescreen monitor</source>
+        <translation>Szélesvásznú képernyő</translation>
+    </message>
+    <message>
+        <source>Widescreen Photo Frame</source>
+        <translation>Szélesvásznú képkocka</translation>
+    </message>
+    <message>
+        <source>CD Cover</source>
+        <translation>CD-borító</translation>
+    </message>
+    <message>
+        <source>Full page</source>
+        <translation>Teljes oldal</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="104"/>
         <source>A4: Full page</source>
         <translation>A4: Teljes oldal</translation>

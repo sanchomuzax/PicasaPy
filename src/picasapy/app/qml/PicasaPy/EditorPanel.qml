@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 
 // Szerkesztő eszközpanel — a néző bal oldali panelje, Picasa-hű ikonos
 // csempékkel (#51). Két mód:
@@ -404,33 +405,44 @@ Rectangle {
     // hoz); `label` = megjelenő felirat, a kulcsnevet követve (pl. "4x6"),
     // KIVÉVE ahol a kulcs maga nem arány-pár (Manual/CurrentRatio/Square/
     // FullPage) — ott a korábbi, leíró feliratot tartottuk meg.
-    // ratio = szélesség/magasság fekvő tájolásban; 0 = kézi (szabad),
-    // -1 = a kép jelenlegi aránya.
     //
-    // KIHAGYVA (a jegy kommentje szerint az arányuk NEM vezethető le
-    // egyértelműen a kulcsnévből, találgatás helyett kimaradtak — ld. a
-    // feladat jelentése): `CurrentDisplay`, `WideFrame`, `Widescreen`, `Other`.
-    // A `20x25` a MEGLÉVŐ listában volt, de a javított kulcslistában NEM
-    // szerepel — nem törölve (a felhasználó dönt róla), csak jelezve.
+    // #448: a listaelemek MAGYARÁZÓ ALCÍMET is kapnak — a `Picasa3i18n.dll`
+    // szerint a legördülőben nem csak a szám állt, hanem a felismerést
+    // segítő leírás is („Kisméretű nyomat", „CD-borító", „Letter méretű
+    // papír"). A korábban kihagyott kulcsok arányát ugyanez a forrás
+    // oldotta fel: `Widescreen` = 16:10, `WideFrame` = 5:3,
+    // `CurrentDisplay` = a KÉPERNYŐ aktuális aránya.
+    //
+    // ratio = szélesség/magasság fekvő tájolásban; 0 = kézi (szabad),
+    // -1 = a kép jelenlegi aránya, -2 = a képernyő aktuális aránya.
     readonly property var aspectPresets: [
-        { key: "Manual", label: qsTr("Manual"), ratio: 0 },
-        { key: "CurrentRatio", label: qsTr("Current ratio"), ratio: -1 },
-        { key: "4x4", label: "4x4", ratio: 1 },
-        { key: "Desktop4x3", label: "4x3", ratio: 4 / 3 },
-        { key: "4x6", label: "4x6", ratio: 6 / 4 },
-        { key: "5x7", label: "5x7", ratio: 7 / 5 },
-        { key: "8x10", label: "8x10", ratio: 10 / 8 },
-        { key: "5x3", label: "5x3", ratio: 5 / 3 },
-        { key: "9x13", label: "9x13", ratio: 13 / 9 },
-        { key: "10x15", label: "10x15", ratio: 15 / 10 },
-        { key: "13x18", label: "13x18", ratio: 18 / 13 },
-        // ld. fent: nincs a #448 javított kulcslistában, megtartva
-        { key: "20x25", label: "20x25", ratio: 25 / 20 },
-        { key: "5x8", label: "5x8", ratio: 8 / 5 },
-        { key: "16x10", label: "16x10", ratio: 16 / 10 },
-        { key: "HDTV16x9", label: "16x9", ratio: 16 / 9 },
-        { key: "Square", label: qsTr("Square"), ratio: 1 },
-        { key: "FullPage", label: qsTr("Full page (A4)"), ratio: 297 / 210 }
+        { key: "Manual", label: qsTr("Manual"), note: "", ratio: 0 },
+        { key: "CurrentRatio", label: qsTr("Current ratio"), note: "", ratio: -1 },
+        { key: "CurrentDisplay", label: qsTr("Current display"), note: "",
+          ratio: -2 },
+        { key: "4x4", label: "4x4", note: "", ratio: 1 },
+        { key: "Desktop4x3", label: "4x3", note: qsTr("Standard screen"),
+          ratio: 4 / 3 },
+        { key: "4x6", label: "4x6", note: qsTr("Small print"), ratio: 6 / 4 },
+        { key: "5x7", label: "5x7", note: qsTr("Large print"), ratio: 7 / 5 },
+        { key: "8x10", label: "8x10", note: "", ratio: 10 / 8 },
+        { key: "8.5x11", label: "8.5x11", note: qsTr("Letter paper"),
+          ratio: 11 / 8.5 },
+        { key: "5x3", label: "5x3", note: qsTr("Widescreen Photo Frame"),
+          ratio: 5 / 3 },
+        { key: "9x13", label: "9x13", note: qsTr("Small print"), ratio: 13 / 9 },
+        { key: "10x15", label: "10x15", note: qsTr("Large print"),
+          ratio: 15 / 10 },
+        { key: "13x18", label: "13x18", note: "", ratio: 18 / 13 },
+        { key: "20x25", label: "20x25", note: "", ratio: 25 / 20 },
+        { key: "5x8", label: "5x8", note: "", ratio: 8 / 5 },
+        { key: "16x10", label: "16x10", note: qsTr("Widescreen monitor"),
+          ratio: 16 / 10 },
+        { key: "HDTV16x9", label: "16x9", note: "HDTV", ratio: 16 / 9 },
+        { key: "Square", label: qsTr("Square"), note: qsTr("CD Cover"),
+          ratio: 1 },
+        { key: "FullPage", label: qsTr("Full page (A4)"), note: qsTr("Full page"),
+          ratio: 297 / 210 }
     ]
 
     // #448: a beépített lista + a felhasználó egyéni arányai (QSettings-en
@@ -468,6 +480,11 @@ Rectangle {
         var base = panel.selectedPreset.ratio
         if (base === 0) return 0
         if (base === -1) base = panel.imageAspect
+        // #448 „Jelenlegi megjelenítés": a KÉPERNYŐ aránya (a Picasa
+        // ugyanezt a dinamikus tételt kínálta a kép aránya mellett)
+        if (base === -2)
+            base = (Screen.height > 0) ? Screen.width / Screen.height
+                                       : panel.imageAspect
         if (base < 1) base = 1 / base   // fekvő alapállás
         return panel.aspectRotated ? 1 / base : base
     }

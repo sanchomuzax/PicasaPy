@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.1] – 2026-08-12
+
+### Hozzáadva
+- **A vágás képarány-listája teljes lett (#448).** A legördülőben mostantól
+  ott a **magyarázó alcím** is, ahogy az eredeti Picasában — „Kisméretű
+  nyomat", „Letter méretű papír", „CD-borító", „Szélesvásznú képernyő" —,
+  bekerült a hiányzó **8.5x11** (Letter) arány, és él a **Jelenlegi
+  megjelenítés** tétel is, ami a képernyő arányát veszi át.
+
 ## [0.7.0] – 2026-08-12
 
 ### Hozzáadva
