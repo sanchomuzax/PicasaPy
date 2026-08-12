@@ -4580,6 +4580,22 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <source>bytes</source>
         <translation>bájt</translation>
     </message>
+    <message>
+        <source>File types:</source>
+        <translation>Fájltípusok:</translation>
+    </message>
+    <message>
+        <source>Picture and Movie Files</source>
+        <translation>Kép- és filmfájlok</translation>
+    </message>
+    <message>
+        <source>Picture Files</source>
+        <translation>Képfájlok</translation>
+    </message>
+    <message>
+        <source>All Files</source>
+        <translation>Minden fájl</translation>
+    </message>
 </context>
 <context>
     <name>TimelineController</name>

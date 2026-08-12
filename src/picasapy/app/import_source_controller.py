@@ -42,6 +42,7 @@ from PySide6.QtCore import Property, QObject, QSettings, Signal, Slot
 
 from picasapy.fileops import copy_photo, has_enough_free_space, required_bytes_for
 from picasapy.importsource import (
+    MEDIA_FILTER_PICTURES_AND_MOVIES,
     NAMING_BY_DATE,
     NAMING_MANUAL,
     NAMING_TODAY,
@@ -141,6 +142,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     # sourceScanFinished items paramétere), rescan nélkül
     selectionChanged = Signal(list)
     autoExcludeChanged = Signal()
+    mediaFilterChanged = Signal()
 
     importStarted = Signal(int)  # összes importálandó (beválogatott) darab
     importProgress = Signal(int, int)  # (kész, összes)
@@ -186,6 +188,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         self._excluded_paths: set[str] = set()
         # #441: import ELŐTTI forgatás (negyed fordulatok, 0..3) és
         # csillagozás, forrás-útvonal szerint
+        self._media_filter: str = MEDIA_FILTER_PICTURES_AND_MOVIES
         self._rotations: dict[str, int] = {}
         self._starred: set[str] = set()
         # a legutóbb regisztrált előnézeti (negatív) id-k — új szkennelés
@@ -211,6 +214,20 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         """"Exclude Duplicates" — "Exclude photos that are already
         imported into Picasa"."""
         return self._auto_exclude
+
+    @Property(str, notify=mediaFilterChanged)
+    def mediaFilter(self) -> str:  # noqa: N802 — QML property-konvenció
+        """A forrás-beolvasás fájltípus-szűrője (#441) — az eredeti
+        tallózó három fokozatának megfelelője."""
+        return self._media_filter
+
+    @Slot(str)
+    def setMediaFilter(self, value: str) -> None:  # noqa: N802
+        """A szűrő beállítása; a következő beolvasásra érvényes."""
+        if value == self._media_filter:
+            return
+        self._media_filter = value
+        self.mediaFilterChanged.emit()
 
     @Slot(bool)
     def setAutoExclude(self, value: bool) -> None:  # noqa: N802
@@ -312,7 +329,8 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     # -- forrás-szkennelés ---------------------------------------------------
 
     @Slot(str)
-    def scanSource(self, folder: str) -> None:
+    @Slot(str, str)
+    def scanSource(self, folder: str, media_filter: str = "") -> None:
         """A forrás-mappa (rekurzív) beolvasása HÁTTÉRSZÁLON — kártyák
         gyakori DCIM/100XXXX szerkezete miatt a `picasapy.importsource.
         scan_source` az almappákba is belenéz. `folder` `file://` URL is
@@ -324,6 +342,10 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         kapnak, és — ha `autoExclude` be van kapcsolva — alapból ki is
         maradnak a válogatásból."""
         self.sourceScanStarted.emit()
+        # #441: a tallózó fájltípus-szűrőjének megfelelője — üres értéknél
+        # a legutóbbi (vagy az alapértelmezett) fokozat marad érvényben
+        if media_filter:
+            self._media_filter = media_filter
         target = to_local_path(folder)
         if not target:
             self.sourceScanFailed.emit(
@@ -333,7 +355,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
 
         def worker() -> None:
             try:
-                candidates = scan_source(target)
+                candidates = scan_source(target, self._media_filter)
             except (FileNotFoundError, NotADirectoryError) as error:
                 self.sourceScanFailed.emit(str(error))
                 return

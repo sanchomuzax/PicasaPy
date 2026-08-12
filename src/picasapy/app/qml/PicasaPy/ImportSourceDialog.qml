@@ -209,6 +209,42 @@ Window {
             }
         }
 
+        // #441: fájltípus-szűrő — az eredeti tallózó három szűrőt kínált
+        // („Picture and Movie Files" / „Picture Files" / „All Files").
+        // Nálunk a forrás mindig MAPPA, ezért ugyanez a három fokozat a
+        // BEOLVASÁSRA vonatkozik: mi számítson importálandó jelöltnek.
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            Text {
+                text: qsTr("File types:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            ComboBox {
+                objectName: "importSourceMediaFilterBox"
+                Layout.preferredWidth: 220
+                readonly property var filterKeys:
+                    ["pictures_and_movies", "pictures", "all"]
+                model: [qsTr("Picture and Movie Files"),
+                        qsTr("Picture Files"),
+                        qsTr("All Files")]
+                currentIndex: {
+                    if (typeof importSourceController === "undefined"
+                            || !importSourceController) return 0
+                    var i = filterKeys.indexOf(importSourceController.mediaFilter)
+                    return i < 0 ? 0 : i
+                }
+                onActivated: {
+                    importSourceController.setMediaFilter(filterKeys[currentIndex])
+                    // a szűrő a KÖVETKEZŐ beolvasásra érvényes — ha már van
+                    // kiválasztott forrás, azonnal újraolvassuk
+                    if (importSourceWindow.sourceFolder.length > 0)
+                        importSourceWindow.scanCurrentSource()
+                }
+            }
+        }
+
         // #441: "Exclude Duplicates" — "Exclude photos that are already
         // imported into Picasa" (autoexclude QSettings-kulcs, a
         // controller property-je).

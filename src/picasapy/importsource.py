@@ -30,7 +30,7 @@ from typing import Iterable, Sequence
 
 from picasapy.dedup.exact import file_content_hash
 from picasapy.metadata.reader import read_file_metadata
-from picasapy.scanner import scan_tree
+from picasapy.scanner import media_kind_of, scan_tree
 from picasapy.timeline import resolve_date
 
 # józan alapértelmezés: "év/év-hónap-nap" mappaszervezés — a Picasa
@@ -69,14 +69,39 @@ class ImportCandidate:
     date: date | None
 
 
-def scan_source(folder: str | Path) -> tuple[ImportCandidate, ...]:
+#: A forrás-tallózó fájltípus-szűrői (#441). Az eredeti tallózó három
+#: szűrőt kínált — „Picture and Movie Files" / „Picture Files" / „All
+#: Files" —, nálunk a forrás mindig MAPPA, ezért ugyanez a három fokozat a
+#: BEOLVASÁSRA vonatkozik: mi számítson importálandó jelöltnek.
+MEDIA_FILTER_ALL = "all"
+MEDIA_FILTER_PICTURES_AND_MOVIES = "pictures_and_movies"
+MEDIA_FILTER_PICTURES = "pictures"
+
+#: Az egyes fokozatokhoz tartozó média-fajták (`scanner.media_kind_of`).
+#: Az „all" nálunk sem jelent tetszőleges fájlt: a beolvasás továbbra is
+#: csak médiát ad vissza (a `scan_tree` eleve azt gyűjt) — a különbség a
+#: NYERS (RAW) fájlok beszámítása.
+_FILTER_KINDS: dict[str, frozenset[str]] = {
+    MEDIA_FILTER_ALL: frozenset({"photo", "raw", "video"}),
+    MEDIA_FILTER_PICTURES_AND_MOVIES: frozenset({"photo", "raw", "video"}),
+    MEDIA_FILTER_PICTURES: frozenset({"photo", "raw"}),
+}
+
+
+def scan_source(
+    folder: str | Path, media_filter: str = MEDIA_FILTER_PICTURES_AND_MOVIES
+) -> tuple[ImportCandidate, ...]:
     """A forrás-mappa (és almappái — kártyák gyakori DCIM/100XXXX
     szerkezete miatt rekurzívan) médiafájljai, útvonal szerint rendezve.
+
+    `media_filter` (#441): a tallózó fájltípus-szűrőjének megfelelője —
+    ismeretlen érték esetén a „képek és filmek" fokozat (az alapértelmezés).
 
     Raises:
         FileNotFoundError: Ha a forrás nem létezik vagy nem mappa.
     """
     folder = Path(folder)
+    kinds = _FILTER_KINDS.get(media_filter, _FILTER_KINDS[MEDIA_FILTER_PICTURES_AND_MOVIES])
     scans = scan_tree(folder)
     candidates = [
         ImportCandidate(
@@ -85,6 +110,7 @@ def scan_source(folder: str | Path) -> tuple[ImportCandidate, ...]:
         )
         for scan in scans
         for media in scan.files
+        if media_kind_of(media.name) in kinds
     ]
     return tuple(sorted(candidates, key=lambda candidate: str(candidate.path)))
 
