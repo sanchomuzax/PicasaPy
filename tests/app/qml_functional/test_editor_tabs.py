@@ -131,8 +131,11 @@ class TestFiveColumnsExclusive:
             assert column.property("visible") is (index == active_tab)
 
 
-# 4. fül (zöld ecset, "kreatív effektek") — 15 gomb (#516 óta), docs/specs/
-# ui-audit-editor.md 4. fülének kulcsai.
+# 4. fül (zöld ecset, "kreatív effektek") — PONTOSAN a docs/specs/
+# ui-audit-editor.md 4. fülének 12 kulcsa. A #516-ban ideiglenesen ide tett
+# további effektek (Matte · NightVision · LocalContrast) a #422 felhasználói
+# döntése nyomán a 6., „További effektek" fülre kerültek — az eredeti fülön
+# nincs helyük, és tőlük a rács ki sem fért.
 TAB4_BUTTONS = [
     ("effectIr", "ir"),
     ("effectLomo", "lomo"),
@@ -146,14 +149,10 @@ TAB4_BUTTONS = [
     ("effectCrossProcess", "crossprocess"),
     ("effectQuantizePalette", "quantizepalette"),
     ("effectTwoTone", "twotone"),
-    # #516: eddig gomb nélküli, de a render/ rétegben már bekötött effektek
-    ("effectMatte", "matte"),
-    ("effectNightVision", "nightvision"),
-    ("effectLocalContrast", "localcontrast"),
 ]
 
-# 5. fül (kék ecset, "művészi effektek") — 13 gomb (#516: +RoundedEdges,
-# +PicnikGrain).
+# 5. fül (kék ecset, "művészi effektek") — PONTOSAN a spec 11 kulcsa; a
+# RoundedEdges és a PicnikGrain a 6. fülre került (ld. a 4. fül megjegyzését).
 TAB5_BUTTONS = [
     ("effectBoost", "boost"),
     ("effectSoften", "soften"),
@@ -166,21 +165,31 @@ TAB5_BUTTONS = [
     ("effectDropShadow", "dropshadow"),
     ("effectMuseumMatte", "museummatte"),
     ("effectPolaroid", "polaroid"),
+]
+
+# 6. fül („További effektek", #422): azok a Glimmer-effektek, amelyek nem
+# szerepelnek a 3–5. fül igazolt listáján. Amint előkerül egy képernyőkép a
+# Picasa 3. effekt-füléről (#464 4. pont), a helyükre kerülhetnek.
+TAB6_BUTTONS = [
+    ("effectVignette", "vignette"),
+    ("effectMatte", "matte"),
+    ("effectNightVision", "nightvision"),
+    ("effectLocalContrast", "localcontrast"),
     ("effectRoundedEdges", "roundededges"),
     ("effectPicnikGrain", "picnikgrain"),
 ]
 
 
 class TestTab4CreativeEffects:
-    """#329/#516: a 4. effekt-fül (zöld ecset) 15 gombja."""
+    """#329: a 4. effekt-fül (zöld ecset) — a spec szerinti 12 gomb."""
 
-    def test_grid_has_fifteen_buttons(self, qml_engine, qt_app):
+    def test_grid_has_the_spec_button_count(self, qml_engine, qt_app):
         panel = _make_panel(qml_engine, active_tab=3)
         qt_app.processEvents()
         grid = panel.findChild(QObject, "effectsGrid2")
         assert grid is not None
         buttons = [c for c in grid.children() if c.objectName().startswith("effect")]
-        assert len(buttons) == len(TAB4_BUTTONS) == 15
+        assert len(buttons) == len(TAB4_BUTTONS) == 12
 
     @pytest.mark.parametrize("object_name,key", TAB4_BUTTONS)
     def test_button_exists_on_tab4(self, qml_engine, qt_app, object_name, key):
@@ -207,15 +216,15 @@ class TestTab4CreativeEffects:
 
 
 class TestTab5ArtisticEffects:
-    """#330/#516: az 5. effekt-fül (kék ecset) 13 gombja."""
+    """#330: az 5. effekt-fül (kék ecset) — a spec szerinti 11 gomb."""
 
-    def test_grid_has_thirteen_buttons(self, qml_engine, qt_app):
+    def test_grid_has_the_spec_button_count(self, qml_engine, qt_app):
         panel = _make_panel(qml_engine, active_tab=4)
         qt_app.processEvents()
         grid = panel.findChild(QObject, "effectsGrid3")
         assert grid is not None
         buttons = [c for c in grid.children() if c.objectName().startswith("effect")]
-        assert len(buttons) == len(TAB5_BUTTONS) == 13
+        assert len(buttons) == len(TAB5_BUTTONS) == 11
 
     @pytest.mark.parametrize("object_name,key", TAB5_BUTTONS)
     def test_button_exists_on_tab5(self, qml_engine, qt_app, object_name, key):
@@ -284,3 +293,55 @@ class TestEffectGridsHaveThreeColumns:
         assert grid.property("columns") == 3, (
             f"{grid_name}: {grid.property('columns')} oszlop 3 helyett"
         )
+
+
+class TestTab6MoreEffects:
+    """#422 (felhasználói döntés): a 3–5. fül igazolt listáján kívüli
+    effektek KÜLÖN fülön — így a három ismert fül pontosan az eredeti
+    gombkészletét tartalmazza, és görgetés nélkül kifér."""
+
+    def test_grid_has_the_moved_buttons(self, qml_engine, qt_app):
+        panel = _make_panel(qml_engine, active_tab=5)
+        qt_app.processEvents()
+        grid = panel.findChild(QObject, "effectsGrid4")
+        assert grid is not None
+        buttons = [c for c in grid.children() if c.objectName().startswith("effect")]
+        assert len(buttons) == len(TAB6_BUTTONS) == 6
+
+    @pytest.mark.parametrize("object_name,key", TAB6_BUTTONS)
+    def test_button_exists_on_tab6(self, qml_engine, qt_app, object_name, key):
+        panel = _make_panel(qml_engine, active_tab=5)
+        qt_app.processEvents()
+        grid = panel.findChild(QObject, "effectsGrid4")
+        assert grid.findChild(QObject, object_name) is not None, (
+            f"{object_name} hiányzik a 6. fülről"
+        )
+
+    @pytest.mark.parametrize("object_name,key", TAB6_BUTTONS)
+    def test_click_emits_effect_requested_with_lowercase_key(
+        self, qml_engine, qt_app, object_name, key
+    ):
+        panel = _make_panel(qml_engine, active_tab=5)
+        qt_app.processEvents()
+        requested = []
+        panel.effectRequested.connect(lambda name: requested.append(name))
+        QMetaObject.invokeMethod(
+            panel.findChild(QObject, object_name),
+            "buttonClicked", Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+        assert requested == [key]
+
+    def test_the_moved_effects_are_gone_from_the_original_tabs(
+        self, qml_engine, qt_app
+    ):
+        """A hat effekt CSAK a 6. fülön van — nem duplikálva."""
+        panel = _make_panel(qml_engine, active_tab=5)
+        qt_app.processEvents()
+        for grid_name in ("effectsGrid", "effectsGrid2", "effectsGrid3"):
+            grid = panel.findChild(QObject, grid_name)
+            names = {c.objectName() for c in grid.children()}
+            for object_name, _key in TAB6_BUTTONS:
+                assert object_name not in names, (
+                    f"{object_name} még mindig a(z) {grid_name} rácson van"
+                )

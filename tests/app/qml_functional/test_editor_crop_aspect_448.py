@@ -153,3 +153,51 @@ class TestCustomAspectRatioDelete:
         qt_app.processEvents()
 
         assert controller.customAspectRatios == []
+
+
+class TestCropSuggestionButtons:
+    """#448: a vágás-panel HÁROM automatikus javaslat-gombja."""
+
+    def _open_crop(self, window, qt_app):
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", 0)
+        qt_app.processEvents()
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("cropActive", True)
+        qt_app.processEvents()
+        return viewer, panel
+
+    def test_three_buttons_appear_with_labels(self, qml_app, qt_app):
+        window, _, _ = qml_app
+        _viewer, panel = self._open_crop(window, qt_app)
+        row = window.findChild(QObject, "cropSuggestionRow")
+        assert row is not None
+        assert row.property("visible") is True
+        for index in range(3):
+            button = window.findChild(QObject, f"cropSuggestion{index}")
+            assert button is not None, index
+            assert str(button.property("label")), f"{index}. javaslat felirat nélkül"
+
+    def test_choosing_a_suggestion_fills_the_selection(self, qml_app, qt_app):
+        """A javaslat a KIJELÖLÉSBE kerül — nem alkalmazódik azonnal, hogy a
+        felhasználó még igazíthasson rajta (Alkalmaz/Mégse változatlan)."""
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, _, _ = qml_app
+        _viewer, panel = self._open_crop(window, qt_app)
+        overlay = window.findChild(QObject, "cropOverlay")
+        assert overlay.property("hasSelection") is False
+
+        QMetaObject.invokeMethod(
+            window.findChild(QObject, "cropSuggestion0"),
+            "buttonClicked", Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+        assert overlay.property("hasSelection") is True
+
+    def test_unknown_key_falls_back_to_the_key_itself(self, qml_app, qt_app):
+        """A felirat-feloldás sosem ad üres gombot."""
+        window, _, _ = qml_app
+        _viewer, panel = self._open_crop(window, qt_app)
+        assert panel.property("cropSuggestions") is not None

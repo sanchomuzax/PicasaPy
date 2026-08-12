@@ -1680,3 +1680,65 @@ class TestRedeyeTool:
         controller.beginEdit("3", str(path))
         controller.enterRedeyeTool()
         assert controller.redeyeFoundCount == 0
+
+
+class TestCropSuggestions:
+    """#448: a vágás-panel három automatikus javaslata."""
+
+    def _photo_with_faces(self, tmp_path):
+        import numpy as np
+        from PIL import Image
+
+        path = tmp_path / "portre.jpg"
+        array = np.full((240, 320, 3), 120, dtype=np.uint8)
+        array[60:120, 130:190] = (210, 170, 150)   # „arc"
+        Image.fromarray(array).save(path, quality=95)
+        (tmp_path / ".picasa.ini").write_text(
+            "[Contacts2]\n1111111111111111=Anna;;\n"
+            "[portre.jpg]\nfaces=rect64(6666400099996000),1111111111111111\n",
+            encoding="utf-8",
+        )
+        return path
+
+    def test_three_suggestions_on_a_plain_photo(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        suggestions = controller.cropSuggestions
+        assert len(suggestions) == 3
+        assert [s["key"] for s in suggestions] == [
+            "variance", "horizon", "red_green"
+        ]
+
+    def test_face_suggestions_when_the_ini_has_faces(self, controller, tmp_path):
+        path = self._photo_with_faces(tmp_path)
+        controller.beginEdit("2", str(path))
+        keys = [s["key"] for s in controller.cropSuggestions]
+        assert keys[:2] == ["faces_tight", "faces_compose"]
+
+    def test_suggestions_are_inside_the_picture(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        for suggestion in controller.cropSuggestions:
+            assert 0.0 <= suggestion["x"] <= 1.0
+            assert 0.0 <= suggestion["y"] <= 1.0
+            assert 0.0 < suggestion["w"] <= 1.0
+            assert 0.0 < suggestion["h"] <= 1.0
+            assert suggestion["x"] + suggestion["w"] <= 1.0 + 1e-6
+            assert suggestion["y"] + suggestion["h"] <= 1.0 + 1e-6
+
+    def test_requested_aspect_shapes_the_suggestions(self, controller, photo):
+        """A javaslatok a KIVÁLASZTOTT arányban születnek."""
+        controller.beginEdit("1", str(photo))
+        controller.setCropAspect(1.0)
+        width, height = controller._image_size
+        for suggestion in controller.cropSuggestions:
+            ratio = (suggestion["w"] * width) / (suggestion["h"] * height)
+            assert ratio == pytest.approx(1.0, rel=0.03), suggestion["key"]
+
+    def test_no_active_edit_gives_no_suggestions(self, controller):
+        assert controller.cropSuggestions == []
+
+    def test_aspect_resets_between_photos(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        controller.setCropAspect(1.0)
+        controller.endEdit()
+        controller.beginEdit("1", str(photo))
+        assert controller._crop_aspect is None

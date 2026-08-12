@@ -607,15 +607,29 @@ Rectangle {
                         else
                             cropOverlay.swapSelectionOrientation()
                     }
-                    // arány-választás/Forgatás: a meglévő kijelölés kövesse
+                    // arány-választás/Forgatás: a meglévő kijelölés kövesse,
+                    // és a #448-as javaslatok is a KIVÁLASZTOTT arányban
+                    // szülessenek (egyetlen kezelő — a QML-ben nem lehet
+                    // két azonos nevű jel-kezelő ugyanazon az objektumon)
                     onCurrentAspectChanged: {
                         if (cropOverlay.hasSelection
                             && editorPanel.currentAspect > 0)
                             cropOverlay.applyAspect(editorPanel.currentAspect)
+                        if (viewer.editCtl)
+                            viewer.editCtl.setCropAspect(editorPanel.currentAspect)
                     }
                     onQuickCropRequested: (kind) => cropOverlay.selectPreset(kind)
                     onCropPreviewHold: (held) => cropOverlay.previewHold = held
                     onCropResetRequested: cropOverlay.resetSelection()
+                    // #448: a három automatikus javaslat — a választott
+                    // téglalap a KIJELÖLÉSBE kerül (nem alkalmazódik
+                    // azonnal), hogy a felhasználó még igazíthasson rajta,
+                    // és az Alkalmaz/Mégse útja változatlan maradjon.
+                    cropSuggestions: viewer.editCtl
+                        ? viewer.editCtl.cropSuggestions : []
+                    onCropSuggestionChosen: (x, y, w, h) =>
+                        cropOverlay.loadSelection(
+                            { "x": x, "y": y, "width": w, "height": h })
                     onCropApplyRequested: viewer.applyCrop(false)
                     onCropCancelRequested: {
                         cropOverlay.resetSelection()

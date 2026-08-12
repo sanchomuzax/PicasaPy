@@ -1279,6 +1279,36 @@
     <name>EditorPanel</name>
     <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Close crop to faces</source>
+        <translation>Szorosan az arcokra</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Compose around faces</source>
+        <translation>Kompozíció az arcok köré</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Crop by color</source>
+        <translation>Vágás szín szerint</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Crop by detail</source>
+        <translation>Vágás a részletek szerint</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>Crop by horizon</source>
+        <translation>Vágás a horizont mentén</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
+        <source>More Effects</source>
+        <translation>További effektek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorPanel.qml"/>
         <source>The automatic copy is not available yet. To edit this picture, copy it to a writable folder yourself, or remove the write protection.</source>
         <translation>Az automatikus másolás még nem érhető el. A kép szerkesztéséhez másold át egy írható mappába, vagy vedd le róla az írásvédelmet.</translation>
     </message>
@@ -4660,6 +4690,11 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     <name>EditorCropPanel</name>
     <message>
         <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
+        <source>Suggested crops</source>
+        <translation>Javasolt vágások</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
         <source>This image's orientation has been modified by the Straighten tool and might not crop accurately… try undoing the Straighten fix, then recrop, and Straighten again if necessary.</source>
         <translation>A kép tájolását a Kiegyenesítés eszköz módosította, ezért a vágás pontatlan lehet… próbálja meg visszavonni a Kiegyenesítés javítást, végezze el a vágást, majd szükség esetén alkalmazza újra a Kiegyenesítést.</translation>
     </message>
@@ -4760,6 +4795,44 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
         <source>Undo</source>
         <translation>Visszavonás</translation>
+    </message>
+</context>
+<context>
+    <name>EditorEffectsTab4</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
+        <source>Film Grain (Fine)</source>
+        <translation>Filmszemcse (finom)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
+        <source>Local Contrast</source>
+        <translation>Helyi kontraszt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
+        <source>Matte</source>
+        <translation>Matt</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
+        <source>More Effects</source>
+        <translation>További effektek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
+        <source>Night Vision</source>
+        <translation>Éjjellátó</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
+        <source>Rounded Edges</source>
+        <translation>Lekerekített sarkok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab4.qml"/>
+        <source>Vignette</source>
+        <translation>Vignetta</translation>
     </message>
 </context>
 <context>

@@ -352,6 +352,23 @@ Rectangle {
     signal cropRotateRequested()
     signal cropPreviewHold(bool held)
     signal cropResetRequested()
+    // #448: automatikus vágás-javaslatok — a hívó (PhotoViewer) tölti a
+    // kontrollerből (`{key, x, y, w, h}` elemek), és a `cropSuggestionChosen`
+    // jelre alkalmazza a kijelölést.
+    property var cropSuggestions: []
+    signal cropSuggestionChosen(real x, real y, real w, real h)
+    // a javaslat felirata a stratégia kulcsából — a stratégiát a kontroller
+    // választja (a képtől függ), ezért a felület csak feloldja a nevét
+    function cropSuggestionLabel(key) {
+        switch (key) {
+        case "faces_tight": return qsTr("Close crop to faces")
+        case "faces_compose": return qsTr("Compose around faces")
+        case "horizon": return qsTr("Crop by horizon")
+        case "red_green": return qsTr("Crop by color")
+        case "variance": return qsTr("Crop by detail")
+        default: return key
+        }
+    }
     signal cropApplyRequested()
     signal cropCancelRequested()
 
@@ -743,6 +760,17 @@ Rectangle {
             iconKind: "brush"
             iconAccent: Theme.brandBlue
             iconFleck: Qt.lighter(Theme.brandBlue, 1.6)
+        }
+        // #422 (felhasználói döntés): 6. fül — azok a Glimmer-effektek,
+        // amelyek NEM szerepelnek a 3–5. fül igazolt listáján. Külön fülön,
+        // hogy a három ismert fül pontosan az eredeti gombkészletét
+        // tartalmazza (és görgetés nélkül kiférjen).
+        EditTabButton {
+            objectName: "editTabEffects4"
+            tabIndex: 5
+            label: qsTr("More Effects")
+            iconKind: "brush"
+            iconAccent: Theme.textGray
         }
     }
 
@@ -1249,6 +1277,16 @@ Rectangle {
     // A pozicionálás is kattintással történik a képen (a hívó feladata,
     // ld. retouchColumn megjegyzése) — a szövegmező itt él, a tartalom
     // gépelését a textDraftEdited jel viszi a controllerhez.
+
+    // ---------------- 6. fül: a további Glimmer-effektek (#422) --------
+    EditorEffectsTab4 {
+        panel: panel
+        anchors.top: tabBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
+    }
 
     // ---------------- #464: GLOBÁLIS Visszavonás/Újra ----------------
     //

@@ -840,50 +840,54 @@ class TestFinetuneTabQuickFixesAndPicker(_ViewerOpenMixin):
         assert area.property("enabled") is True
 
 
-class TestEffectTabsDoNotOverflow(_ViewerOpenMixin):
-    """#464 (felhasználói hibajelentés): a három effekt-fül rácsa több
-    gombot tartalmaz, mint amennyi a panel magasságába fér. Vágás/görgetés
-    nélkül a csempék RÁLÓGTAK a panel alján ülő, globális Visszavonás/Újra
-    sorra, és a fül alja levágódott."""
+class TestEffectTabsFitWithoutScrolling(_ViewerOpenMixin):
+    """#422 (felhasználói döntés): az effekt-füleknek KERET/GÖRGETÉS NÉLKÜL
+    ki kell férniük.
 
-    SCROLLS = {
-        2: "editorEffectsTab1Scroll",
-        3: "editorEffectsTab2Scroll",
-        4: "editorEffectsTab3Scroll",
-    }
+    A rács azért lógott ki eredetileg, mert a három ismert fülre a spec
+    listáján KÍVÜLI effektek is odakerültek; azok a 6., „További effektek"
+    fülre kerültek. A görgethető keret (az én korábbi megoldásom) rossz
+    válasz volt a tünetre — ez a teszt őrzi, hogy ne kerüljön vissza, és
+    hogy a rács tényleg elférjen a gombsor fölött."""
 
-    def test_every_effect_tab_clips_and_stays_above_the_undo_row(
-        self, qml_app, qt_app
-    ):
+    GRIDS = {2: "effectsGrid", 3: "effectsGrid2", 4: "effectsGrid3",
+             5: "effectsGrid4"}
+
+    def test_no_scroll_frame_on_the_effect_tabs(self, qml_app, qt_app):
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
-        panel = window.findChild(QObject, "viewerEditorPanel")
-        row = window.findChild(QObject, "editorGlobalUndoRow")
-
-        for tab, scroll_name in self.SCROLLS.items():
-            panel.setProperty("activeTab", tab)
-            qt_app.processEvents()
-            scroll = window.findChild(QObject, scroll_name)
-            assert scroll is not None, scroll_name
-            assert scroll.property("clip") is True, f"{scroll_name} nem vág"
-
-            scroll_bottom = scroll.mapToItem(panel, 0, scroll.property("height"))
-            row_top = row.mapToItem(panel, 0, 0)
-            assert scroll_bottom.y() <= row_top.y() + 1, (
-                f"{scroll_name} alja ({scroll_bottom.y()}) a Visszavonás-sor "
-                f"teteje ({row_top.y()}) ALÁ nyúlik"
+        for name in (
+            "editorEffectsTab1Scroll",
+            "editorEffectsTab2Scroll",
+            "editorEffectsTab3Scroll",
+        ):
+            assert window.findChild(QObject, name) is None, (
+                f"visszakerült a görgethető keret: {name}"
             )
 
-    def test_the_whole_grid_is_reachable_by_scrolling(self, qml_app, qt_app):
-        """A ki nem férő gombok nem vesznek el: a görgethető tartalom
-        legalább akkora, mint a látható terület."""
+    def test_every_effect_tab_has_the_spec_button_count(self, qml_app, qt_app):
+        """A fülek gombszáma az, ami az eredetin — ettől férnek ki.
+
+        A tényleges GEOMETRIÁT szándékosan nem mérjük: a teszt-ablak
+        panelje jóval alacsonyabb a valódinál, ott a legjobb elrendezés sem
+        férne ki. A hiba forrása nem a magasság volt, hanem az, hogy a
+        három ismert fülre a spec listáján kívüli effektek is odakerültek."""
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
         panel = window.findChild(QObject, "viewerEditorPanel")
-        panel.setProperty("activeTab", 2)
-        qt_app.processEvents()
-        scroll = window.findChild(QObject, "editorEffectsTab1Scroll")
-        assert scroll.property("contentHeight") >= scroll.property("height")
+        expected = {2: 12, 3: 12, 4: 11, 5: 6}
+        for tab, grid_name in self.GRIDS.items():
+            panel.setProperty("activeTab", tab)
+            qt_app.processEvents()
+            grid = window.findChild(QObject, grid_name)
+            assert grid is not None, grid_name
+            buttons = [
+                child for child in grid.children()
+                if str(child.objectName()).startswith("effect")
+            ]
+            assert len(buttons) == expected[tab], (
+                f"{tab}. fül: {len(buttons)} gomb, várt {expected[tab]}"
+            )
 
 
 class TestModeToolPanelsDoNotOverflow(_ViewerOpenMixin):
