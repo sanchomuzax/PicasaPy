@@ -1,7 +1,9 @@
 """A `picasapy.render.tone` tónus-műveletek tesztjei.
 
-A várt értékek a golden-elemzés dokumentált mérési pontjai
-(`docs/specs/filters-decoded.md`), ±1/255 toleranciával.
+A négy Finomhangolás-csúszka várt értékei a #551 REFERENCIA-MÉRÉSÉBŐL
+származnak (`sanchomuzax/picasapy-agent`: `referencia/deritofeny/`,
+`referencia/szinhomerseklet/`, `referencia/finomhangolas/` — ugyanaz a
+fotó, csúszkánként több állásban, a valódi Picasa 3.9 kimenetével).
 """
 
 from __future__ import annotations
@@ -32,29 +34,41 @@ class TestApplyFill:
     @pytest.mark.parametrize(
         ("strength", "bemenet", "vart"),
         [
-            # docs/specs/filters-decoded.md — fill görbecsalád mérési pontjai
-            (0.25, 32, 45.7),
-            (0.25, 128, 145.6),
-            (0.25, 224, 228.6),
-            (0.50, 32, 69.7),
-            (0.50, 128, 168.6),
-            (0.75, 128, 194.0),
-            (1.00, 32, 162.7),
-            (1.00, 128, 218.0),
-            (1.00, 224, 243.0),
+            # #551: a mért d(világosság) görbék horgonyértékei — egyenletes
+            # szürke képen a világosság maga a bemeneti szint
+            (0.10, 32, 32 + 4.1),
+            (0.10, 128, 128 + 5.3),
+            (0.25, 32, 32 + 15.9),
+            (0.25, 128, 128 + 19.1),
+            (0.50, 32, 32 + 38.5),
+            (0.50, 128, 128 + 39.7),
+            (0.75, 128, 128 + 68.3),
+            (1.00, 32, 32 + 128.8),
+            (1.00, 128, 128 + 87.9),
         ],
     )
-    def test_dokumentalt_meresi_pontok(
+    def test_mert_gorbe_pontjai(
         self, strength: float, bemenet: int, vart: float
     ) -> None:
         image = _uniform_image(bemenet)
         result = apply_fill(image, strength)
         assert abs(int(result[0, 0, 0]) - vart) <= 1.0
 
-    def test_feherpont_tarto(self) -> None:
-        image = _uniform_image(255)
-        result = apply_fill(image, 1.0)
-        assert result[0, 0, 0] == 255
+    def test_a_hozzaadas_a_VILAGOSSAGTOL_fugg_nem_a_csatornatol(self) -> None:
+        """#551: két azonos világosságú, de eltérő színű pixel UGYANAZT a
+        hozzáadást kapja — ez a mért modell lényege (nem csatornánkénti
+        tónusgörbe)."""
+        semleges = apply_fill(_uniform_image(90), 0.5)
+        szines = apply_fill(_uniform_image((60, 90, 120)), 0.5)
+        delta_semleges = int(semleges[0, 0, 0]) - 90
+        assert int(szines[0, 0, 0]) - 60 == delta_semleges
+        assert int(szines[0, 0, 2]) - 120 == delta_semleges
+
+    def test_feherpont_kozel_tarto(self) -> None:
+        """A mért görbe a csúcsfényeknél ~0 (max állásban −1,8): a fehér
+        nem világosodik tovább."""
+        result = apply_fill(_uniform_image(255), 1.0)
+        assert int(result[0, 0, 0]) >= 250
 
     def test_kozbulso_erosseg_a_szomszedos_gorbek_koze_esik(self) -> None:
         image = _uniform_image(128)
@@ -79,15 +93,23 @@ class TestApplyHighlights:
         image = _uniform_image(120)
         np.testing.assert_array_equal(apply_highlights(image, 0.0), image)
 
-    def test_dokumentalt_pont_h040(self) -> None:
-        # mérve: h=0,40-nél a 192-es bemenet fehérbe húzódik (192→255)
-        image = _uniform_image(192)
-        result = apply_highlights(image, 0.4)
-        assert result[0, 0, 0] == 255
+    def test_mert_meredekseg_max_allasban(self) -> None:
+        """#551: h=0,48-nál a mért meredekség 1,9235; a képlet 1/(1−h)."""
+        image = _uniform_image(100)
+        result = apply_highlights(image, 0.48)
+        assert abs(int(result[0, 0, 0]) - 100 / (1 - 0.48)) <= 1
+
+    def test_a_parameter_048_ra_van_vagva(self) -> None:
+        """A `filterdesc.xml` tartománya [0..0.48] — a fölötte lévő érték
+        (idegen/sérült lánc) nem robbanthatja fel a képletet."""
+        image = _uniform_image(100)
+        assert np.array_equal(
+            apply_highlights(image, 1.0), apply_highlights(image, 0.48)
+        )
 
     def test_vilagosit(self) -> None:
         image = _uniform_image(100)
-        result = apply_highlights(image, 0.5)
+        result = apply_highlights(image, 0.4)
         assert int(result[0, 0, 0]) > 100
 
 
@@ -96,12 +118,19 @@ class TestApplyShadows:
         image = _uniform_image(120)
         np.testing.assert_array_equal(apply_shadows(image, 0.0), image)
 
+    def test_mert_feketepont_max_allasban(self) -> None:
+        """#551: s=0,48-nál a feketepont 255·0,48 = 122,4-re ugrik, a
+        meredekség 1/(1−s)."""
+        image = _uniform_image(200)
+        result = apply_shadows(image, 0.48)
+        assert abs(int(result[0, 0, 0]) - (200 - 255 * 0.48) / (1 - 0.48)) <= 1
+
     def test_sotetit_es_feherpontot_tart(self) -> None:
         image = _uniform_image(120)
-        result = apply_shadows(image, 0.5)
+        result = apply_shadows(image, 0.4)
         assert int(result[0, 0, 0]) < 120
         white = _uniform_image(255)
-        assert apply_shadows(white, 0.5)[0, 0, 0] == 255
+        assert apply_shadows(white, 0.4)[0, 0, 0] == 255
 
 
 class TestApplyColorTemperature:
@@ -109,20 +138,26 @@ class TestApplyColorTemperature:
         image = _uniform_image(128)
         np.testing.assert_array_equal(apply_color_temperature(image, 0.0), image)
 
-    def test_hutes_dokumentalt_pont(self) -> None:
-        # mérve (finetune2 p5=−0,5): ΔB +20, ΔR −16, G változatlan
-        image = _uniform_image(128)
-        result = apply_color_temperature(image, -0.5)
-        assert abs(int(result[0, 0, 2]) - 148) <= 1
-        assert abs(int(result[0, 0, 0]) - 112) <= 1
-        assert result[0, 0, 1] == 128
+    def test_hutes_mert_szorzoi(self) -> None:
+        # #551, p5=−0,5: R 0,8956 · G 1,0225 · B 1,1739 (csatornánkénti
+        # KONSTANS szorzás, nem eltolás)
+        result = apply_color_temperature(_uniform_image(128), -0.5)
+        assert abs(int(result[0, 0, 0]) - 128 * 0.8956) <= 1
+        assert abs(int(result[0, 0, 1]) - 128 * 1.0225) <= 1
+        assert abs(int(result[0, 0, 2]) - 128 * 1.1739) <= 1
 
-    def test_melegites_dokumentalt_pont(self) -> None:
-        # mérve (p5=+1,0): ΔB −20, ΔR +8 — a melegítés jóval gyengébb
-        image = _uniform_image(128)
-        result = apply_color_temperature(image, 1.0)
-        assert abs(int(result[0, 0, 2]) - 108) <= 1
-        assert abs(int(result[0, 0, 0]) - 136) <= 1
+    def test_melegites_mert_szorzoi(self) -> None:
+        # #551, p5=+1,0: R 1,0546 · G 0,9974 · B 0,8430 — a melegítés
+        # lényegesen gyengébb, mint a hűtés
+        result = apply_color_temperature(_uniform_image(128), 1.0)
+        assert abs(int(result[0, 0, 0]) - 128 * 1.0546) <= 1
+        assert abs(int(result[0, 0, 2]) - 128 * 0.8430) <= 1
+
+    def test_a_hutes_erosebb_mint_a_melegites(self) -> None:
+        """#551 kulcsmegfigyelése: a két irány NEM tükörképe egymásnak."""
+        hideg = apply_color_temperature(_uniform_image(128), -1.0)
+        meleg = apply_color_temperature(_uniform_image(128), 1.0)
+        assert int(hideg[0, 0, 2]) - 128 > 128 - int(meleg[0, 0, 2])
 
     def test_clip_a_hatarokon(self) -> None:
         image = _uniform_image(250)

@@ -4663,6 +4663,49 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     </message>
 </context>
 <context>
+    <name>EditorFinetunePanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/EditorFinetunePanel.qml"/>
+        <source>Color Temperature</source>
+        <translation>Színhőmérséklet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorFinetunePanel.qml"/>
+        <source>Fill Light</source>
+        <translation>Derítőfény</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorFinetunePanel.qml"/>
+        <source>Highlights</source>
+        <translation>Kiemelések</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorFinetunePanel.qml"/>
+        <source>Neutral Color Picker</source>
+        <translation>Alapszínválasztás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorFinetunePanel.qml"/>
+        <source>One-click color fix</source>
+        <translation>Egy gombnyomásos javítás a színhez</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorFinetunePanel.qml"/>
+        <source>One-click lighting fix</source>
+        <translation>Egy gombnyomásos javítás a megvilágításhoz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorFinetunePanel.qml"/>
+        <source>Pick a neutral gray or white area of the photo to remove an unwanted color cast.</source>
+        <translation>Ezzel kiválaszthatja a fotó egyik semleges szürke vagy fehér részét a túlzott színárnyalat eltávolításához.</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorFinetunePanel.qml"/>
+        <source>Shadows</source>
+        <translation>Árnyékok</translation>
+    </message>
+</context>
+<context>
     <name>EditorRedeyePanel</name>
     <message>
         <location filename="../qml/PicasaPy/EditorRedeyePanel.qml"/>

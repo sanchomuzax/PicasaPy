@@ -326,10 +326,12 @@ class TestFinetuneSliders:
     (finetunePreview), a syncFinetuneSliders() viszont NEM vált ki előnézetet
     (a tiltSlider mintáját követve, #131)."""
 
+    # #551: a Kiemelések/Árnyékok nyers paramétertartománya a
+    # `filterdesc.xml` (és a mérés) szerint [0..0.48], nem [0..1]
     SLIDERS = {
         "finetuneFillSlider": (0.0, 1.0),
-        "finetuneHighlightsSlider": (0.0, 1.0),
-        "finetuneShadowsSlider": (0.0, 1.0),
+        "finetuneHighlightsSlider": (0.0, 0.48),
+        "finetuneShadowsSlider": (0.0, 0.48),
         "finetuneTempSlider": (-1.0, 1.0),
     }
 

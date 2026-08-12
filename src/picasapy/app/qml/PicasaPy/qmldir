@@ -74,6 +74,7 @@ EditorCropPanel 1.0 EditorCropPanel.qml
 EditorTextPanel 1.0 EditorTextPanel.qml
 EditorRetouchPanel 1.0 EditorRetouchPanel.qml
 EditorRedeyePanel 1.0 EditorRedeyePanel.qml
+EditorFinetunePanel 1.0 EditorFinetunePanel.qml
 EditorEffectsTab1 1.0 EditorEffectsTab1.qml
 EditorEffectsTab2 1.0 EditorEffectsTab2.qml
 EditorEffectsTab3 1.0 EditorEffectsTab3.qml

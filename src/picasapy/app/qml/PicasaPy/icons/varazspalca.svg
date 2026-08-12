@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- #464: „egy gombnyomásos javítás" varázspálca a Finomhangolás fülön —
+     kettő van belőle: a megvilágításhoz (a Kiemelések/Árnyékok mellett) és
+     a színhez (az Alapszínválasztás mellett), ld. a
+     `referencia/finomhangolas/shot1..4.png` képernyőképeket. A többi
+     szerkesztő-eszköz ikonjával azonos, FEKVŐ (3:2) vászon (#411). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="29" viewBox="0 0 44 29">
+  <g fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round"
+     stroke-linejoin="round">
+    <!-- a pálca nyele -->
+    <path d="M9 25L26 8"/>
+    <!-- a pálca feje -->
+    <path d="M25.5 3.5l4.5 4.5-4 4-4.5-4.5z"/>
+  </g>
+  <!-- szikrák a fej körül -->
+  <g fill="#2b2b2b">
+    <path d="M34 4l1 2.6 2.6 1-2.6 1-1 2.6-1-2.6-2.6-1 2.6-1z"/>
+    <path d="M38.5 13l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>
+    <path d="M21 2l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z"/>
+  </g>
+</svg>

@@ -713,19 +713,19 @@ class TestGpuFinetunePreview:
         controller.beginEdit("1", str(photo))
         preview_before = controller.previewSource
         lut_before = controller.gpuLutSource
-        controller.previewFinetuneGpu(0.5, 0.1, 0.2, -0.3)
+        controller.previewFinetuneGpu(0.0, 0.1, 0.2, -0.3)
         assert controller.previewSource == preview_before
         assert controller.gpuLutSource != lut_before
 
     def test_preview_finetune_gpu_does_not_write_ini_or_undo(self, controller, photo):
         controller.beginEdit("1", str(photo))
-        controller.previewFinetuneGpu(0.5, 0, 0, 0)
+        controller.previewFinetuneGpu(0.0, 0.2, 0, 0)
         assert self._filters(photo) == ""
         assert controller.canUndo is False
 
     def test_preview_finetune_gpu_updates_provider_lut(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
-        controller.previewFinetuneGpu(0.5, 0, 0, 0)
+        controller.previewFinetuneGpu(0.0, 0.2, 0, 0)
         lut_image = provider.requestImage(
             f"1?gpulut=1&rev={controller._gpu_revision}", None, None
         )
@@ -734,7 +734,18 @@ class TestGpuFinetunePreview:
 
     def test_preview_finetune_gpu_without_active_edit_raises(self, controller):
         with pytest.raises(ValueError):
-            controller.previewFinetuneGpu(0.5, 0, 0, 0)
+            controller.previewFinetuneGpu(0.0, 0.2, 0, 0)
+
+    def test_preview_finetune_gpu_falls_back_to_cpu_on_nonzero_fill(
+        self, controller, photo
+    ):
+        """#551: nem nulla Derítőfénynél a GPU-út tilos — a kontroller a
+        rendes CPU-előnézetre esik vissza: a `previewSource` bumpol — a
+        GPU-úton épp ez NEM történne meg."""
+        controller.beginEdit("1", str(photo))
+        preview_before = controller.previewSource
+        controller.previewFinetuneGpu(0.5, 0, 0, 0)
+        assert controller.previewSource != preview_before
 
     def test_preview_finetune_gpu_noop_when_chain_not_eligible(self, controller, photo):
         """Ha a mentett lánc közben GPU-alkalmatlanná vált, a hívás néma

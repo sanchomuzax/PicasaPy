@@ -101,27 +101,47 @@ def apply_tilt(image: np.ndarray, angle: float, scale: float) -> np.ndarray:
     )
 
 
+def _histogram_black_white_point(
+    values: np.ndarray, total: int, low_fraction: float, high_fraction: float
+) -> tuple[int, int]:
+    """Fekete-/fehérpont a hisztogram DARABSZÁMA alapján (#549).
+
+    A fekete pont az a legkisebb érték, aminél a kumulált darabszám már
+    eléri a `low_fraction`·`total` küszöböt; a fehérpont ugyanígy, felülről
+    számolva `high_fraction`-nel.
+
+    **Invariáns: a visszaadott párra MINDIG `low < high`.** Ha a küszöbök
+    nem hagynának érdemi tartományt, `(0, 255)` — az azonosság-eset. A hívók
+    erre a garanciára építenek (nem ellenőrzik újra).
+
+    Args:
+        values: A hisztogramba öntendő értékek (a teljes kép vagy egy
+            csatorna) — az alakja közömbös.
+        total: A küszöbök viszonyítási darabszáma. Csatornánkénti hívásnál
+            a képpontok száma, közösnél a csatorna-értékeké (`image.size`).
+    """
+    low_count = total * low_fraction
+    high_count = total * high_fraction
+    histogram, _ = np.histogram(values, bins=256, range=(0, 256))
+    low = int(np.searchsorted(np.cumsum(histogram), low_count))
+    high_from_top = int(np.searchsorted(np.cumsum(histogram[::-1]), high_count))
+    high = 255 - high_from_top
+    if high <= low:
+        return 0, 255
+    return low, high
+
+
 def _common_black_white_point(
     image: np.ndarray, low_fraction: float, high_fraction: float
 ) -> tuple[int, int]:
-    """KÖZÖS (mindhárom csatornára egyenlő) fekete-/fehérpont a hisztogram
-    DARABSZÁMA alapján — a három csatorna képpontjait EGY közös
-    hisztogramba összeöntve (#540: az Auto Contrast mind a 12 referencia-
-    képen azonos meredekséget adott mindhárom csatornán, szórás 0,001).
-    Ha nem lenne érdemi tartomány, `(0, 255)` (azonosság-eset).
+    """KÖZÖS (mindhárom csatornára egyenlő) fekete-/fehérpont — a három
+    csatorna képpontjait EGY közös hisztogramba összeöntve (#540: az Auto
+    Contrast mind a 12 referencia-képen azonos meredekséget adott
+    mindhárom csatornán, szórás 0,001).
     """
-    total_values = image.size
-    low_count = total_values * low_fraction
-    high_count = total_values * high_fraction
-    histogram, _ = np.histogram(image, bins=256, range=(0, 256))
-    cumulative_low = np.cumsum(histogram)
-    low = int(np.searchsorted(cumulative_low, low_count))
-    cumulative_high = np.cumsum(histogram[::-1])
-    high_from_top = int(np.searchsorted(cumulative_high, high_count))
-    high = 255 - high_from_top
-    if high <= low:
-        low, high = 0, 255
-    return low, high
+    return _histogram_black_white_point(
+        image, image.size, low_fraction, high_fraction
+    )
 
 
 def apply_autolight(image: np.ndarray) -> np.ndarray:
@@ -151,26 +171,18 @@ def _channel_black_white_points(
 ) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
     """Csatornánkénti fekete-/fehérpont a hisztogram DARABSZÁMA alapján.
 
-    Csatornánként: a fekete pont az a legkisebb érték, aminél a kumulált
-    darabszám már eléri a `low_fraction`·(össz-képpont) küszöböt; a
-    fehérpont ugyanígy, felülről számolva `high_fraction`-nel. Ha ez üres
-    (nem lenne érdemi tartomány), a csatorna azonosság marad (`(0, 255)`).
+    Csatornánként ugyanaz a szabály, mint a `_histogram_black_white_point`-
+    ban — az azonosság-esetet (nincs érdemi tartomány) is az adja `(0, 255)`
+    alakban.
     """
     height, width = image.shape[:2]
     total_pixels = height * width
-    low_count = total_pixels * low_fraction
-    high_count = total_pixels * high_fraction
-    points = []
-    for channel in range(3):
-        histogram, _ = np.histogram(image[..., channel], bins=256, range=(0, 256))
-        cumulative_low = np.cumsum(histogram)
-        low = int(np.searchsorted(cumulative_low, low_count))
-        cumulative_high = np.cumsum(histogram[::-1])
-        high_from_top = int(np.searchsorted(cumulative_high, high_count))
-        high = 255 - high_from_top
-        if high <= low:
-            low, high = 0, 255
-        points.append((low, high))
+    points = tuple(
+        _histogram_black_white_point(
+            image[..., channel], total_pixels, low_fraction, high_fraction
+        )
+        for channel in range(3)
+    )
     return points[0], points[1], points[2]
 
 

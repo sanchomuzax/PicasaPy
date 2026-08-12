@@ -45,6 +45,7 @@ _EXPECTED_ICONS = (
     # ürítés-gombja az alsó sávon
     "hold-pin.svg",
     "pipetta.svg",              # #464: „semleges szín" pipetta
+    "varazspalca.svg",          # #464: „egy gombnyomásos javítás" pálca
     # #463: bélyegkép arc-jelvények
     "faces-badge.svg",
     "face-suggestion-badge.svg",

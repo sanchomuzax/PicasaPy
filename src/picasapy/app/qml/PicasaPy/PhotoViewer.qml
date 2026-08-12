@@ -26,6 +26,11 @@ Rectangle {
     // (b) a jelenlegi szerkesztési lánc GPU-alkalmas
     // (`EditController.gpuPrefixSource` nem üres — ld. ott a feltételt).
     property bool gpuFinetuneActive: false
+    // #551: a húzás alatti derítőfény-érték nulla-e. Nem nullánál a
+    // finomhangolás nem fejezhető ki csatornánkénti LUT-tal (a Derítőfény
+    // világosság-vezérelt), ezért a GPU-réteg ilyenkor NEM jelenhet meg —
+    // a CPU-előnézet fut helyette, változatlanul.
+    property bool gpuFinetunePointSafe: true
     readonly property bool gpuCapable: GraphicsInfo.api !== GraphicsInfo.Software
                                         && GraphicsInfo.api !== GraphicsInfo.Unknown
                                         && GraphicsInfo.api !== GraphicsInfo.Null
@@ -230,6 +235,8 @@ Rectangle {
         editorPanel.hasTextOverlay = editController.hasTextOverlay
         // #450: szöveg-stílus — kitöltés+körvonal szín, körvonal-vastagság,
         // kitöltés ki/be, átlátszóság
+        // #464: a Finomhangolás fül pipettája melletti színminta
+        editorPanel.neutralColor = editController.neutralColor
         editorPanel.textFillColor = editController.textFillColor
         editorPanel.textOutlineColor = editController.textOutlineColor
         editorPanel.textOutlineThickness = editController.textOutlineThickness
@@ -536,8 +543,13 @@ Rectangle {
                     // GPU-alkalmas) a rendes, teljes CPU-előnézet fut,
                     // változatlanul.
                     onFinetunePreview: (f, h, s, t) => {
+                        // #551: a Derítőfény MÉRT modellje a pixel
+                        // VILÁGOSSÁGÁTÓL függ, tehát nem csatornánkénti
+                        // LUT — a GPU pontonkénti útja csak f === 0 esetén
+                        // adja pontosan ugyanazt a képet, mint a CPU.
                         viewer.gpuFinetuneActive = true
-                        if (viewer.gpuFinetuneEligible)
+                        viewer.gpuFinetunePointSafe = (f === 0)
+                        if (viewer.gpuFinetuneEligible && f === 0)
                             editController.previewFinetuneGpu(f, h, s, t)
                         else
                             editController.previewFinetune(f, h, s, t)
@@ -546,6 +558,7 @@ Rectangle {
                         // a húzás végén MINDIG a normál CPU-út menti — az
                         // igazságforrás sosem a GPU-réteg (ld. #22 jegy)
                         viewer.gpuFinetuneActive = false
+                        viewer.gpuFinetunePointSafe = true
                         editController.setFinetune(f, h, s, t)
                     }
                     onEffectRequested: (name) => editController.applyEffect(name)
@@ -854,6 +867,7 @@ Rectangle {
                         // #402: shader-hibánál (shaderOk=false) némán a
                         // CPU-előnézet marad
                         visible: viewer.gpuFinetuneActive && viewer.gpuFinetuneEligible
+                                 && viewer.gpuFinetunePointSafe
                                  && gpuFinetunePreview.shaderOk
                         sourceItem: gpuPrefixImage
                         lutItem: gpuLutImage

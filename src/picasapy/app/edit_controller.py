@@ -579,6 +579,24 @@ class EditController(QObject, BackgroundWorkerMixin):
     def colorTemp(self) -> float:
         return self._finetune_field("temperature")
 
+    @Property(str, notify=toolsChanged)
+    def neutralColor(self) -> str:
+        """A kijelölt semleges szín `#rrggbb` alakban, vagy üres string, ha
+        nincs kijelölve (#464).
+
+        Az eredeti Finomhangolás fülén az „Alapszínválasztás" pipettája
+        MELLETT egy színminta-korong ül, ami a kijelölt színt mutatja (ld. a
+        `referencia/finomhangolas/shot1.png` képernyőképet) — ez a
+        tulajdonság tölti azt.
+        """
+        values = self._session.finetune_values()
+        if values is None:
+            return ""
+        neutral = parse_neutral_argb(values.neutral)
+        if neutral is None:
+            return ""
+        return "#{:02x}{:02x}{:02x}".format(*neutral)
+
     @Property(bool, notify=toolsChanged)
     def hasFinetune(self) -> bool:
         """Van-e finomhangolás a láncban — a „Visszavonás" felirathoz."""
@@ -1247,6 +1265,13 @@ class EditController(QObject, BackgroundWorkerMixin):
         `previewSource`/`photo` Image-nek a húzás alatt NEM szabad
         újratöltődnie) — csak a `gpuRevisionChanged`-et."""
         self._require_active()
+        if fill != 0.0:
+            # #551: a Derítőfény mért modellje világosság-vezérelt, tehát
+            # nem fejezhető ki csatornánkénti LUT-tal — a GPU-út ilyenkor
+            # más képet adna, mint a mentés. A hívó (QML) ezt már tudja és
+            # nem is kéri, ez a védőkorlát a nem-UI hívók ellen.
+            self.previewFinetune(fill, highlights, shadows, temperature)
+            return
         prefix_ops = self._session.gpu_finetune_prefix()
         if prefix_ops is None:
             # a lánc időközben (pl. párhuzamos ini-módosítás) GPU-
