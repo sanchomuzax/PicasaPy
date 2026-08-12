@@ -189,6 +189,13 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+A"; onActivated: window.selectAll() }
     Shortcut { sequence: "Ctrl+D"; onActivated: window.clearSelection() }
     Shortcut { sequence: "Ctrl+I"; onActivated: window.invertSelection() }
+    // #444: „Mentés" — a Fájl menü ígéri a Ctrl+S-t, tehát élnie is kell
+    // (a menü-audit teszt épp ezt kéri számon). Kijelölés nélkül nem tesz
+    // semmit: a `openSave` üres listára visszatér.
+    Shortcut {
+        sequence: "Ctrl+S"
+        onActivated: saveDialogs.openSave(window.selectedIndexes)
+    }
 
     // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
     // Diavetítés közben (#8) a vetített kép a célpont, nem a rács-kijelölés.
