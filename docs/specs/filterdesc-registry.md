@@ -373,7 +373,21 @@ Ebből következik két dolog, amit a fájl **nem** közöl, és amit ezért
    PicasaPy jelenleg figyelmen kívül hagyja.
 2. **Az `xblur`/`yblur` pixel-jelentése.** Flashben a `blurX` **nem
    Gauss-σ**, hanem elmosás-szélesség, és **0–255-re korlátozott**.
-   **A natív port átvette a korlátot — ez mérésből bizonyított.** Eredeti
+   **A natív port átvette a korlátot — ez MÉRÉSBŐL ÉS A BINÁRISBÓL IS
+   bizonyított.** A `glimmer::BlurImageOperation` `apply` metódusában
+   (`0x00bb4de0`, dekompilálva) ott áll szó szerint, **tengelyenként külön**:
+
+   ```c
+   local_a0 = 1.0;
+   iVar2 = FUN_008ef520(param_2, &local_98);   // az xblur attribútum
+   if (iVar2 == 0) local_a0 = (float)local_98;
+   if (local_a0 <= 255.0) { fVar3 = FUN_00bb5050(); }
+   else                   { fVar3 = 255.0; }    // <-- A KORLÁT
+   // ugyanez megismételve az yblur-re
+   ```
+
+   Ez megmagyarázza a mérést is: a `255/255` illeszkedett jobban, mint az
+   arányt megtartó `255/204` — mert a két tengelyt **függetlenül** vágja. Eredeti
    windowsos Picasa-exportokból (Lomo, 2560×1702) visszafejtve a ragyogás
    súlytérképét, az illeszkedés optimuma **σ ≈ 255–340**, miközben a nyers
    képlet 896-ot adna; a teljes láncon a Picasa kimenetétől való átlagos
