@@ -388,6 +388,8 @@ Window {
                 enabled: importSourceWindow.namingMode === "manual"
                 text: importSourceWindow.manualFolderName
                 onEditingFinished: importSourceWindow.manualFolderName = text
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
             RadioButton {
                 objectName: "importSourceNamingByDateRadio"

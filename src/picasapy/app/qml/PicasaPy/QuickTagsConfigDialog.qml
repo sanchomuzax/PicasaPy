@@ -45,6 +45,8 @@ Dialog {
         enabled: !(reserveCheck.checked && field.slot < 2)
         placeholderText: field.enabled ? qsTr("Tag") : qsTr("(automatic)")
         onEditingFinished: controller.setQuickTagLabel(field.slot, field.text)
+        // #422: jobbklikk-menü (Picasa `Address`)
+        TextFieldContextArea {}
     }
 
     ColumnLayout {

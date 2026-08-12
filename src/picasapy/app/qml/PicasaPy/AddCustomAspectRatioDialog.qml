@@ -54,6 +54,8 @@ Dialog {
                     notation: DoubleValidator.StandardNotation
                 }
                 onAccepted: if (root.canAccept()) root.accept()
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
             Text {
                 text: "x"
@@ -69,6 +71,8 @@ Dialog {
                     notation: DoubleValidator.StandardNotation
                 }
                 onAccepted: if (root.canAccept()) root.accept()
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
         }
         RowLayout {
@@ -83,6 +87,8 @@ Dialog {
                 objectName: "customAspectNameField"
                 Layout.preferredWidth: 160
                 onAccepted: if (root.canAccept()) root.accept()
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
         }
     }

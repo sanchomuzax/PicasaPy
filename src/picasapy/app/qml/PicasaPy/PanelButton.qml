@@ -21,8 +21,24 @@ Rectangle {
     // #318: a felirat teljesen olvasható kell legyen. Bélyegképes
     // gombnál a kép + felirat együttes magassága számít, sima gombnál
     // (a régi mintát megtartva) csak a feliraté, 24px alsó korláttal.
+    //
+    // #422 (felhasználói hibajelentés): az effekt-fülek rácsa SZÉTCSÚSZOTT,
+    // mert a kétsoros feliratú gomb (pl. „Infravörös film") magasabb lett a
+    // többinél, és a rács sora hozzá igazodott — a szomszédos, egysoros
+    // csempék képe pedig felnagyult. A bélyegképes gomb ezért MINDIG két
+    // sornyi feliratot foglal: a rács így egyenletes, és a hosszabb nevek
+    // sem vágódnak/nem lógnak a képre.
+    //
+    // A két sor magasságát a TÉNYLEGES betű-metrikából vesszük, nem
+    // becslésből: a Windows CI megbukott egy `fontSize * 1.35`-ös
+    // közelítésen (a felirat 105 px-re nőtt egy 102 px-es gombban), mert a
+    // sormagasság platformonként más.
+    FontMetrics {
+        id: pbtnLabelMetrics
+        font: pbtnLabel.font
+    }
     Layout.preferredHeight: pbtn.thumbSource !== ""
-        ? pbtnThumbBox.height + pbtnLabel.implicitHeight + 12
+        ? pbtnThumbBox.height + 2 * pbtnLabelMetrics.height + 12
         : Math.max(24, pbtnLabel.implicitHeight + 10)
     radius: 3
     border.width: 1
@@ -85,7 +101,10 @@ Rectangle {
         anchors.topMargin: pbtn.thumbSource !== "" ? 4 : 3
         anchors.horizontalCenter: parent.horizontalCenter
         text: pbtn.label
-        font.pixelSize: Theme.fontSize
+        // #422 (felhasználói visszajelzés): az effekt-csempék felirata
+        // NAGYOBB volt, mint az 1. fül eszköz-csempéié — a kisebb a helyes,
+        // ezért a `ToolTile`-lel azonos fokozatra állítva.
+        font.pixelSize: Theme.fontSize - 2
         color: pbtn.enabled ? Theme.textDark : Theme.textGray
         // #318: elide helyett tördelés — a panel szélessége nem nőhet,
         // de a szöveg soha nem vágódik "…"-ra; a Qt WordWrap szó-
@@ -93,6 +112,14 @@ Rectangle {
         wrapMode: Text.WordWrap
         width: parent.width - 8
         horizontalAlignment: Text.AlignHCenter
+        // #422: a bélyegképes csempénél a felirat LEGFELJEBB két sor lehet
+        // — pontosan annyi, amennyit a gomb magassága fenntart neki. Enélkül
+        // egy hosszabb név (vagy egy szélesebb betűkép: a Windows CI-n
+        // ugyanaz a szöveg HÁROM sorra tört) kilógna a gombból. A sima
+        // (bélyegkép nélküli) gombokon nincs korlát: ott a #318 elve marad,
+        // a felirat sosem vágódik.
+        maximumLineCount: pbtn.thumbSource !== "" ? 2 : 2147483647
+        elide: pbtn.thumbSource !== "" ? Text.ElideRight : Text.ElideNone
     }
     MouseArea {
         id: pbtnMouse

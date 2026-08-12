@@ -39,7 +39,10 @@ ColumnLayout {
     }
     CheckBox { objectName: "optionsWebUploadNameTagsCheck"; text: qsTr("Upload name tags") }
     CheckBox { objectName: "optionsWebWatermarkCheck"; text: qsTr("Add a watermark to all photo uploads:") }
-    TextField { objectName: "optionsWebWatermarkTextField"; Layout.fillWidth: true }
+    TextField { objectName: "optionsWebWatermarkTextField"; Layout.fillWidth: true 
+        // #422: jobbklikk-menü (Picasa `Address`)
+        TextFieldContextArea {}
+    }
 
     Item { Layout.fillHeight: true }
 }

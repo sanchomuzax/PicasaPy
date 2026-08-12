@@ -90,6 +90,8 @@ Rectangle {
                 font.pixelSize: Theme.fontSize
                 placeholderText: qsTr("Add a tag...")
                 onAccepted: panel.submit()
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
             PicasaButton {
                 objectName: "tagAddButton"

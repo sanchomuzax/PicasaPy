@@ -2550,6 +2550,28 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     <name>Main</name>
     <message>
         <location filename="../qml/Main.qml"/>
+        <source>Move to New Person</source>
+        <translation>Áthelyezés új személyhez</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>New person's name:</source>
+        <translation>Az új személy neve:</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Remove from People Album</source>
+        <translation>Eltávolítás az Emberek albumból</translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../qml/Main.qml"/>
+        <source>The face tag &quot;%1&quot; will be removed from %n selected picture(s).</source>
+        <translation>
+            <numerusform>A(z) „%1” névcímke lekerül %n kijelölt képről.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
         <source>Red eye fixes have been applied. If you remove all edits, your red eye fixes cannot be recovered.</source>
         <translation>A képen vörösszem-javítás van. Ha eltávolítja az összes szerkesztést, a vörösszem-javítás nem állítható vissza.</translation>
     </message>
@@ -2827,6 +2849,21 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 </context>
 <context>
     <name>PhotoContextMenu</name>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
+        <source>Move to New Person...</source>
+        <translation>Áthelyezés új személyhez…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
+        <source>Remove from People Album</source>
+        <translation>Eltávolítás az Emberek albumból</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
+        <source>Set as People Album Thumbnail</source>
+        <translation>Beállítás az Emberek album indexképeként</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="23"/>
         <source>Rename...</source>
@@ -4685,6 +4722,44 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
         <source>Top left</source>
         <translation>Bal felső</translation>
+    </message>
+</context>
+<context>
+    <name>TextFieldContextMenu</name>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Auto-Complete</source>
+        <translation>Automatikus kitöltés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Copy</source>
+        <translation>Másolás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Cut</source>
+        <translation>Kivágás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Delete</source>
+        <translation>Törlés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Paste</source>
+        <translation>Beillesztés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Select All</source>
+        <translation>Az összes kijelölése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Undo</source>
+        <translation>Visszavonás</translation>
     </message>
 </context>
 <context>

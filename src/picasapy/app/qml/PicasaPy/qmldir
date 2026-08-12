@@ -74,6 +74,9 @@ EditorCropPanel 1.0 EditorCropPanel.qml
 EditorTextPanel 1.0 EditorTextPanel.qml
 EditorRetouchPanel 1.0 EditorRetouchPanel.qml
 EditorRedeyePanel 1.0 EditorRedeyePanel.qml
+TextFieldContextMenu 1.0 TextFieldContextMenu.qml
+NameInputDialog 1.0 NameInputDialog.qml
+TextFieldContextArea 1.0 TextFieldContextArea.qml
 EditorFinetunePanel 1.0 EditorFinetunePanel.qml
 EditorEffectsTab1 1.0 EditorEffectsTab1.qml
 EditorEffectsTab2 1.0 EditorEffectsTab2.qml

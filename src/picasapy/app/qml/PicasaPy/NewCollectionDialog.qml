@@ -77,6 +77,8 @@ Dialog {
             Layout.preferredWidth: 260
             onAccepted: if (text.trim().length > 0) root.accept()
             onTextChanged: root.errorText = ""
+            // #422: jobbklikk-menü (Picasa `Address`)
+            TextFieldContextArea {}
         }
         Text {
             objectName: "newCollectionErrorText"

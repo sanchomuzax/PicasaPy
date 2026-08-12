@@ -94,6 +94,8 @@ Item {
                 objectName: "renameField"
                 width: 300
                 font.pixelSize: Theme.fontSize
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
         }
     }
@@ -162,6 +164,8 @@ Item {
                 width: 300
                 font.pixelSize: Theme.fontSize
                 onTextChanged: renameManyDialog.updatePreview()
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
             RowLayout {
                 objectName: "renameManyIncludeRow"
@@ -216,6 +220,8 @@ Item {
             objectName: "newAlbumField"
             width: 300
             font.pixelSize: Theme.fontSize
+            // #422: jobbklikk-menü (Picasa `Address`)
+            TextFieldContextArea {}
         }
     }
 

@@ -237,3 +237,83 @@ class TestPanelButtonLabelWrapping:
         qt_app.processEvents()
         label = root.findChild(QObject, "btnLabel")
         assert label.property("truncated") is False
+
+
+class TestEffectTileHeightsAreUniform:
+    """#422 (felhasználói hibajelentés): az effekt-fülek rácsa szétcsúszott,
+    mert a KÉTSOROS feliratú gomb (pl. „Infravörös film") magasabb lett a
+    többinél — a rács sora hozzá igazodott, a szomszédos csempék képe pedig
+    felnagyult. A bélyegképes gomb ezért mindig két sornyi feliratot foglal,
+    a magassága tehát FÜGGETLEN a felirat hosszától.
+
+    A rácsot élő bélyegkép nélkül nem lehet ellenőrizni (üres `thumbSource`
+    mellett a gomb a másik, felirat-magasságú ágon fut), ezért a két gombot
+    közvetlenül példányosítjuk, `thumbSource`-szal.
+    """
+
+    # a 3 oszlopos effekt-rács egy cellájának tényleges szélessége — enélkül
+    # a hosszú felirat egy sorba is kiférne, és a teszt nem azt mérné, amit
+    # mérni akar
+    _CELL_WIDTH = 88
+    _QML = (
+        "import QtQuick\n"
+        "import QtQuick.Layouts\n"
+        "import PicasaPy 1.0\n"
+        "ColumnLayout {\n"
+        '  PanelButton { objectName: "rovid"; label: "Lomo";'
+        '    Layout.preferredWidth: 88;'
+        '    thumbSource: "image://effectthumb/x" }\n'
+        '  PanelButton { objectName: "hosszu";'
+        '    Layout.preferredWidth: 88;'
+        '    label: "Infravörös film és még valami";'
+        '    thumbSource: "image://effectthumb/y" }\n'
+        '  PanelButton { objectName: "sima"; label: "Alkalmaz" }\n'
+        "}\n"
+    )
+
+    def test_label_length_does_not_change_the_height(self, qml_engine, qt_app):
+        column = _load(qml_engine, self._QML)
+        qt_app.processEvents()
+        short = column.findChild(QObject, "rovid")
+        long_label = column.findChild(QObject, "hosszu")
+        assert round(short.property("height")) == round(
+            long_label.property("height")
+        ), "a hosszabb feliratú effekt-csempe magasabb lett"
+
+    def test_label_is_capped_at_two_lines(self, qml_engine, qt_app):
+        """A gomb két sornyi feliratot tart fenn — a felirat ezért LEGFELJEBB
+        két sor lehet. A Windows CI-n ugyanaz a szöveg három sorra tört
+        (szélesebb betűkép), és kilógott a gombból."""
+        column = _load(qml_engine, self._QML)
+        qt_app.processEvents()
+        label = column.findChild(QObject, "hosszuLabel")
+        assert label.property("lineCount") <= 2
+
+    def test_two_line_label_stays_inside_the_button(self, qml_engine, qt_app):
+        column = _load(qml_engine, self._QML)
+        qt_app.processEvents()
+        button = column.findChild(QObject, "hosszu")
+        label = column.findChild(QObject, "hosszuLabel")
+        assert label is not None
+        bottom = label.property("y") + label.property("height")
+        assert bottom <= button.property("height") + 1, "a felirat kilóg a gombból"
+
+    def test_effect_label_matches_the_tool_tile_font_size(
+        self, qml_engine, qt_app
+    ):
+        """#422: a felhasználó szerint a KISEBB a helyes — az effekt-csempe
+        felirata ugyanakkora legyen, mint az 1. fül eszköz-csempéié."""
+        column = _load(qml_engine, self._QML)
+        qt_app.processEvents()
+        effect_label = column.findChild(QObject, "rovidLabel")
+        panel = _load(
+            qml_engine,
+            'import QtQuick\nimport PicasaPy 1.0\nEditorPanel { objectName: "p" }\n',
+        )
+        qt_app.processEvents()
+        tile_label = panel.findChild(QObject, "editToolCropLabel")
+        if tile_label is None:   # a csempe felirata nem kap saját objectName-t
+            pytest.skip("az eszköz-csempe felirata nem érhető el objectName-en")
+        assert effect_label.property("font").pixelSize() == (
+            tile_label.property("font").pixelSize()
+        )

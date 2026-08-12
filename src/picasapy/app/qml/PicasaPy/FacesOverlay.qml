@@ -239,6 +239,8 @@ Item {
                 font.pixelSize: Theme.fontSize - 1
                 Keys.onReturnPressed: overlay.commitEditor()
                 Keys.onEscapePressed: overlay.closeEditor()
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
             Button {
                 objectName: "faceNameOk"
