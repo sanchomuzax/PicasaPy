@@ -798,9 +798,11 @@ class TestFinetuneTabQuickFixesAndPicker(_ViewerOpenMixin):
         ):
             assert window.findChild(QObject, name) is not None, name
 
-    def test_wands_apply_autolight_and_autocolor(self, qml_app, qt_app):
-        """A két pálca az Automatikus kontraszt / Automatikus szín
-        műveletét indítja (a `referencia/varazspalcak/` mérése szerint)."""
+    def test_a_ket_palca_KULON_utat_indit(self, qml_app, qt_app):
+        """A megvilágítás-pálca az Automatikus kontraszt műveletét indítja
+        (a `referencia/varazspalcak/` mérése szerint), a SZÍN-pálca viszont
+        NEM szűrőt fűz a láncra: a `finetune2` semleges szín (p4) mezőjét
+        állítja be — a Picasa saját `.picasa.ini`-je bizonyítja (#551)."""
         from PySide6.QtCore import QMetaObject, Qt
 
         window, _, _ = qml_app
@@ -809,15 +811,17 @@ class TestFinetuneTabQuickFixesAndPicker(_ViewerOpenMixin):
         panel.setProperty("activeTab", 1)
         qt_app.processEvents()
 
-        seen = []
-        panel.toolActivated.connect(seen.append)
+        tools, wand = [], []
+        panel.toolActivated.connect(tools.append)
+        panel.colorWandRequested.connect(lambda: wand.append("color"))
         for name in ("finetuneLightingWand", "finetuneColorWand"):
             QMetaObject.invokeMethod(
                 window.findChild(QObject, name),
                 "clicked", Qt.ConnectionType.DirectConnection,
             )
         qt_app.processEvents()
-        assert seen == ["autolight", "autocolor"]
+        assert tools == ["autolight"]
+        assert wand == ["color"]
 
     def test_picker_toggle_arms_the_sampling_area(self, qml_app, qt_app):
         from PySide6.QtCore import QMetaObject, Qt
