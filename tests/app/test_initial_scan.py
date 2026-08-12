@@ -6,6 +6,8 @@ OK gombbal. A linuxos leképezés: a „teljes gép" a **home-könyvtár** (nem 
 teljes fájlrendszer), a szűk halmaz pedig az XDG szerinti három mappa.
 """
 
+from pathlib import Path
+
 import pytest
 
 from picasapy.app.initial_scan import (
@@ -29,8 +31,13 @@ def home(tmp_path, monkeypatch):
     ):
         monkeypatch.delenv(variable, raising=False)
     # a vezérlő a VALÓDI home-ot kérdezi (`Path.home()`), ami a HOME-ból
-    # jön — a teszt így a saját, ideiglenes home-jában marad
+    # jön — a teszt így a saját, ideiglenes home-jában marad. Windowson a
+    # `Path.home()` a USERPROFILE-t nézi, nem a HOME-ot: mindkettőt át kell
+    # állítani, különben a futtató valódi profilja szólna bele.
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    monkeypatch.delenv("HOMEDRIVE", raising=False)
+    monkeypatch.delenv("HOMEPATH", raising=False)
     return tmp_path
 
 
@@ -38,7 +45,7 @@ class TestNarrowChoice:
     def test_the_three_folders_are_offered(self, home):
         found = narrow_folders(home)
 
-        assert {p.rsplit("/", 1)[-1] for p in found} == {
+        assert {Path(p).name for p in found} == {
             "Documents",
             "Pictures",
             "Desktop",
@@ -49,7 +56,7 @@ class TestNarrowChoice:
 
         found = narrow_folders(home)
 
-        assert all(not p.endswith("/Desktop") for p in found)
+        assert all(Path(p).name != "Desktop" for p in found)
 
     def test_the_xdg_variable_wins(self, home, monkeypatch, tmp_path):
         custom = tmp_path / "Kepek"
