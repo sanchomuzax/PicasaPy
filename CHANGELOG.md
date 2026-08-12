@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.93] – 2026-08-12
+
+### Javítva
+- **A FocalZoom és a Focal Pixelate csúszkái eddig fel voltak cserélve
+  (#570).** A natív visszafejtés kimutatta, hogy a fókuszpont után az
+  **Impact** következik, nem a **Radius** — a program a harmadik mezőt
+  olvasta sugárként, így a két csúszka egymás hatását fejtette ki. Mindkét
+  effekt mostantól mind a **hat** paraméterét helyes helyről olvassa, közös
+  körmaszkot használ (a Hardness szabja a perem lágyságát), és a Fade a
+  szokásos módon zár.
+
+### Hozzáadva
+- **A Focal Pixelate (fókuszált képpontnövelés) effekt megjelent (#570).**
+  Eddig felismertük, de nem rendereltük. Az eredeti recept szerint készül:
+  lekicsinyítés, majd **legközelebbi-szomszéd** visszanagyítás — ettől élesek
+  a blokkjai, nem elmosódottak.
+
 ## [0.6.92] – 2026-08-12
 
 ### Javítva

@@ -30,7 +30,8 @@ from picasapy.render.effects import (
     apply_radblur,
     apply_radsat,
 )
-from picasapy.render.effects_artistic import apply_comicize, apply_focal_zoom
+from picasapy.render.effects_artistic import apply_comicize
+from picasapy.render.focal import apply_focal_pixelate, apply_focal_zoom
 from picasapy.render.effects_creative_tone import apply_invert
 from picasapy.render import chain_glimmer_handlers as glimmer
 from picasapy.render.ops import (
@@ -363,14 +364,39 @@ def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # FocalZoom=1,x,y,sugár,erősség,?,? — KÖZELÍTŐ modell maradt (#381: a
-    # PicasaPy nem implementálja még a fullres-explicit radiális elmosást).
+    """`FocalZoom=1,x,y,Impact,Radius,Hardness,Fade` (#570).
+
+    A paramétersorrendet a natív `glimmer::RadialBlurImageOperation`
+    visszafejtése adta meg: a fókuszpont UTÁN az `Impact` jön — a korábbi
+    kód a harmadik mezőt Radius-ként olvasta, ezért a két csúszka hatása
+    fel volt cserélve.
+    """
     return apply_focal_zoom(
         image,
         x=_effect_float(op, 0, 0.5),
         y=_effect_float(op, 1, 0.5),
-        radius=_effect_float(op, 2, 50.0),
-        strength=_effect_float(op, 3, 50.0),
+        impact=_effect_float(op, 2, 50.0),
+        radius=_effect_float(op, 3, 10.0),
+        hardness=_effect_float(op, 4, 50.0),
+        fade=_effect_float(op, 5, 0.0),
+    )
+
+
+def _apply_focal_pixelate_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`PicnikFocalPixelate=1,x,y,Impact,Radius,Hardness,Fade` (#570).
+
+    Ugyanaz a paraméter-sorrend és ugyanaz a körmaszk, mint a
+    `FocalZoom`-nál; a hatás lekicsinyítés + legközelebbi-szomszéd
+    visszanagyítás (`smoothing = false`).
+    """
+    return apply_focal_pixelate(
+        image,
+        x=_effect_float(op, 0, 0.5),
+        y=_effect_float(op, 1, 0.5),
+        impact=_effect_float(op, 2, 20.0),
+        radius=_effect_float(op, 3, 10.0),
+        hardness=_effect_float(op, 4, 50.0),
+        fade=_effect_float(op, 5, 0.0),
     )
 
 
@@ -433,9 +459,8 @@ _HANDLERS = {
     # kivétel: a `IRImageOperation` belső kernele a filterdesc.xml-ben sem
     # publikus, ott a modell dokumentáltan INTERPRETÁCIÓ (ld.
     # `glimmer_creative.apply_ir` docstringjét). `FocalZoom`/
-    # `PicnikFocalPixelate` egyelőre KÖZELÍTŐ maradt (#381 hátralévő
-    # munka); a `Comicize` a #569-ben megkapta az eredeti féltónusos
-    # raszter-csővezetéket.
+    # A `Comicize` a #569-ben, a `FocalZoom`/`PicnikFocalPixelate` pedig a
+    # #570-ben megkapta a natív visszafejtésből származó csővezetékét.
     "vignette": glimmer.apply_vignette_op,  # az ini-ben nagybetűs: Vignette
     "matte": glimmer.apply_matte_op,
     "hdr": glimmer.apply_hdr_op,
@@ -456,7 +481,10 @@ _HANDLERS = {
     "soften": glimmer.apply_soften_op,
     "pixelate": glimmer.apply_pixelate_op,
     "picnikgrain": glimmer.apply_picnik_grain_op,
-    "focalzoom": _apply_focal_zoom_op,  # KÖZELÍTŐ maradt (ld. fent)
+    # #570: mindkét fókusz-effekt a natív paraméter-sorrendet és a közös
+    # körmaszkot használja (render/focal.py)
+    "focalzoom": _apply_focal_zoom_op,
+    "picnikfocalpixelate": _apply_focal_pixelate_op,
     "pencilsketch": glimmer.apply_pencil_sketch_op,
     "neon": glimmer.apply_neon_op,
     "comicize": _apply_comicize_op,  # KÖZELÍTŐ maradt (ld. fent)

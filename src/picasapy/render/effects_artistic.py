@@ -1,5 +1,10 @@
 """A Picasa 5. fülének (kék ecset) művészi effektjei — I. rész: Boost, Soften,
-Pixelate, FocalZoom, PencilSketch, Neon, Comicize.
+Pixelate, PencilSketch, Neon, Comicize.
+
+A `FocalZoom` (és a `PicnikFocalPixelate`) a #570-ben átkerült a
+`render/focal.py`-ba: azok a natív `glimmer::RadialBlurImageOperation`
+visszafejtett paraméterezését és közös körmaszkját használják, nem a hatás
+jellegének közelítését.
 
 A `Comicize` a #569 óta KIVÉTEL a lenti őszinteség-megjegyzés alól: annak a
 csővezetéke a `filterdesc.xml`-ből és a natív `glimmer::TiledImageMask`
@@ -126,58 +131,6 @@ def apply_pixelate(image: np.ndarray, block_size: float = 20.0) -> np.ndarray:
     small_w = max(1, round(width / block_px))
     small = cv2.resize(image, (small_w, small_h), interpolation=cv2.INTER_AREA)
     return cv2.resize(small, (width, height), interpolation=cv2.INTER_NEAREST)
-
-
-def apply_focal_zoom(
-    image: np.ndarray,
-    x: float = 0.5,
-    y: float = 0.5,
-    radius: float = 50.0,
-    strength: float = 50.0,
-) -> np.ndarray:
-    """Fókusznagyítás (FocalZoom): sugárirányú (zoom) elmosás a fókuszpont
-    körül, középen éles.
-
-    KÖZELÍTŐ MODELL (#330, kalibráció: #317). `x, y` a fókuszpont relatív
-    [0..1] koordinátája (alapból a kép közepe, a `FocalZoom=1,0.5,0.5,...`
-    mintának megfelelően), `radius` 0..100 az éles zóna sugara (a kép
-    normált átlójának százalékában), `strength` 0..100 a zoom-elmosás
-    mértéke. A fókuszponton belül a kép éles marad; kifelé a képnek az
-    (x, y) középpontra egyre nagyobb léptékben nagyított másolatainak
-    átlaga (zoom-blur) keveredik be, a középponttól mért távolsággal
-    arányos súllyal.
-    """
-    validate_image(image)
-    if not 0.0 <= x <= 1.0 or not 0.0 <= y <= 1.0:
-        raise ValueError(f"Az (x, y) fókuszpont 0..1 tartományba kell essen: ({x}, {y})")
-    if radius < 0:
-        raise ValueError(f"A sugár nem lehet negatív: {radius}")
-    if strength < 0:
-        raise ValueError(f"A zoom-elmosás erőssége nem lehet negatív: {strength}")
-    if strength == 0:
-        return image.copy()
-    height, width = image.shape[:2]
-    center = (x * width, y * height)
-    max_scale = 1.0 + 0.3 * min(strength, 100.0) / 100.0
-    accum = np.zeros((height, width, 3), dtype=np.float32)
-    for step in range(_FOCAL_ZOOM_STEPS):
-        scale = 1.0 + (max_scale - 1.0) * step / (_FOCAL_ZOOM_STEPS - 1)
-        matrix = cv2.getRotationMatrix2D(center, 0.0, scale)
-        warped = cv2.warpAffine(
-            image,
-            matrix,
-            (width, height),
-            flags=cv2.INTER_LINEAR,
-            borderMode=cv2.BORDER_REPLICATE,
-        )
-        accum += warped.astype(np.float32)
-    zoom_blurred = accum / np.float32(_FOCAL_ZOOM_STEPS)
-    radii = _radius_grid(height, width, x, y)
-    span = max(1.0 - radius / 100.0, 1e-6)
-    weight = np.clip((radii - np.float32(radius / 100.0)) / np.float32(span), 0.0, 1.0)
-    image_f = image.astype(np.float32)
-    result = image_f + weight[..., np.newaxis] * (zoom_blurred - image_f)
-    return _to_uint8(result)
 
 
 def apply_pencil_sketch(

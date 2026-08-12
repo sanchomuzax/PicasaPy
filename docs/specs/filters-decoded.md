@@ -316,8 +316,8 @@ Picasa-hű lenne.
 | **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Neon`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
 | **MEGFEJTVE A BINÁRISBÓL (#566)** | a `filterdesc.xml` csak a paraméterNEVEKET és a FIX konstansokat adja, de a `Picasa3.exe` statikus visszafejtése a teljes belső kernelt feltárta (`glimmer::IRImageOperation`, RTTI/vtable `0xcf0a14`, ctor `0xbc3d80`, feldolgozás `0xbc3f50`) | `IR` |
 | **MEGFEJTVE, DE ECSET-MASZK NÉLKÜL (#381)** | a csővezeték/paraméterezés egzakt, de a Picasa ecsettel kijelölt régióra hatna — a PicasaPy-nak nincs ecset-eszköze, ezért a TELJES KÉPRE fut (jelezve a `ChainReport.range_warnings`-ban) | `PicnikTint`, `ReanimatedEyeColor` |
-| **KÖZELÍTŐ (mérés nélkül) — #381 után is maradt** | a hatás jellege alapján, szakirodalomból — sem golden-mérés, sem filterdesc-pontosítás nincs még bekötve | `FocalZoom`, `PicnikFocalPixelate` |
-| **MEGFEJTVE A FILTERDESC + NATÍV KÓDBÓL, EGY RÉSZLET NYITVA (#569)** | a csővezeték (lépések, csempeméret-képlet, keverési módok) egzakt; egyedül a pontmaszk antialiasingja/peremkerekítése vár golden-összevetésre | `Comicize` |
+| **KÖZELÍTŐ (mérés nélkül) — #381 után is maradt** | a hatás jellege alapján, szakirodalomból — sem golden-mérés, sem filterdesc-pontosítás nincs még bekötve | — |
+| **MEGFEJTVE A FILTERDESC + NATÍV KÓDBÓL, EGY RÉSZLET NYITVA (#569, #570)** | a csővezeték (lépések, paraméter-sorrend, képletek, keverési módok) egzakt; egyedül a mintavételezés perem-/interpolációs szabálya vár golden-összevetésre | `Comicize`, `FocalZoom`, `PicnikFocalPixelate` |
 | **KÖZELÍTŐ (másik, mért v2-modell újrahasznosítva) — #347 lezáró audit (2026-08-06)** | a filterdesc szerint a v1/v2 pár paraméter nélküli, azonos "oneclick" család (nincs csúszka/szín, ami megkülönböztetné őket) — a v1-re önmagára nincs golden-mérés, ezért a már mért v2-modellt futtatjuk rá | `grain` (v1, a `grain2` modelljét használja) |
 | **PONTOS** | matematikailag egyértelmű, mérés sem kell | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át) |
 | **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
@@ -326,7 +326,7 @@ Picasa-hű lenne.
 Vagyis a Glimmer-effektek (33) többsége #381 óta a `filterdesc.xml` EGZAKT
 csővezetékén fut — a `RoundedEdges`, `Matte`, `NightVision` a korábbi
 „exe-ből ismert, nincs mérés" kategóriából ide léptek elő. Három effekt
-(`FocalZoom`, `PicnikFocalPixelate`) maradt KÖZELÍTŐ (a
+(egy sem) maradt KÖZELÍTŐ (a
 `fullResImageWidth/Height`-explicit radiális elmosás, ill. a többágú
 pontraszter-csővezeték #381 hatókörén kívül esett — ld. a jegy jelentését).
 Az `IR` a **#566** óta MEGFEJTVE — nem a paraméternevekből következtetve,
@@ -348,6 +348,40 @@ renderel. A hetedik, `radtint` a **#565**-ben rendeződött: nem golden-mérésb
 hanem a natív kód visszafejtéséből (regisztrációs render callback `0x8f8730`,
 feldolgozó mag `0x90b370`, maszk-LUT segédfüggvény `0x90aeb0`). Ezzel a #347
 mind a hét neve renderel.
+
+### `FocalZoom` és `PicnikFocalPixelate` (#570)
+
+A #381 az XML-csővezetéket rögzítette; a natív
+`glimmer::RadialBlurImageOperation` (vtable `0xcf07fc`, wrapper `0xbc24e0`,
+mag `0xbcf4b0`) visszafejtése adta hozzá a hiányzó részleteket — köztük egy
+VALÓDI HIBÁT is.
+
+**Paramétersorrend:** `x, y, Impact, Radius, Hardness, Fade`. A fókuszpont
+után tehát az **Impact** jön, a `Radius` **nem** a harmadik numerikus mező —
+a korábbi kód innen olvasta, ezért a két csúszka hatása fel volt cserélve.
+
+**Közös körmaszk** (mindkét effekt ugyanazt használja), teljes felbontásra
+visszaskálázott sugárral:
+
+    inner = Radius · (imageWidth / fullResWidth) · Hardness/101
+    outer = Radius · (imageWidth / fullResWidth) · (2 − Hardness/101)
+
+Belül alfa 0 (a hatás nem éri el: éles marad), kívül 1. A 101-es osztó
+szándékos: `Hardness = 100` mellett is marad egy hajszálnyi átmenet. Záró
+keverés: `1 − Fade/100`.
+
+**`FocalZoom` natív kernel:** `N = min(trunc(Impact) + 5, 30)` zoomminta, a
+legnagyobb zoomeltolás `floor(width · Impact / 200)` pixel.
+
+**`PicnikFocalPixelate`:** lekicsinyítés `W/Impact × H/Impact` méretre, majd
+visszanagyítás `W × H`-ra **`smoothing = false`** módban (legközelebbi
+szomszéd, nem interpoláció) — ettől élesek a blokkok.
+
+A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
+natív regisztráció (#567).
+
+**Nyitott:** a pontos perem-/interpolációs szabály a mintavételezésnél —
+golden-összevetéssel rögzíthető (#317).
 
 ### `Comicize` — nyomdai féltónusos raszter (#569)
 

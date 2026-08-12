@@ -1,6 +1,10 @@
 """A `picasapy.render.effects_artistic` (a Picasa 5. fülének, kék ecsetnek,
 MÉRETTARTÓ effektjei) tesztjei.
 
+A `FocalZoom` a #570-ben átkerült a `render/focal.py`-ba (a natív
+paraméterezéssel és a közös körmaszkkal együtt) — a tesztjei ezért a
+`tests/render/test_focal_570.py`-ban élnek.
+
 **ŐSZINTESÉG:** nincs golden-mérés ezekhez az effektekhez (#330) — a
 tesztek a MEGFIGYELHETŐ kimenetet ellenőrzik (blokkosítás, méret-
 tartás, monoton viselkedés stb.), NEM azt, hogy a kimenet pixelhűen
@@ -15,7 +19,6 @@ import pytest
 from picasapy.render.effects_artistic import (
     apply_boost,
     apply_comicize,
-    apply_focal_zoom,
     apply_neon,
     apply_pencil_sketch,
     apply_pixelate,
@@ -162,53 +165,6 @@ class TestApplyPixelate:
     def test_fekete_feher_szelso_bemenet_nem_dob(self) -> None:
         apply_pixelate(_uniform_image(0))
         apply_pixelate(_uniform_image(255))
-
-
-class TestApplyFocalZoom:
-    def test_kozeppont_eles_marad(self) -> None:
-        image = _random_image(height=40, width=40, seed=5)
-        result = apply_focal_zoom(image, x=0.5, y=0.5, radius=30.0, strength=100.0)
-        np.testing.assert_array_equal(result[20, 20], image[20, 20])
-
-    def test_szel_elmosodik(self) -> None:
-        image = _checkerboard()
-        result = apply_focal_zoom(image, x=0.5, y=0.5, radius=5.0, strength=100.0)
-        corner_before = float(np.std(image[0:4, 0:4, 0].astype(np.float64)))
-        corner_after = float(np.std(result[0:4, 0:4, 0].astype(np.float64)))
-        assert corner_after < corner_before
-
-    def test_erosseg_nulla_identitas(self) -> None:
-        image = _checkerboard()
-        result = apply_focal_zoom(image, strength=0.0)
-        np.testing.assert_array_equal(result, image)
-
-    def test_alak_es_dtype_megmarad(self) -> None:
-        image = _random_image(height=30, width=36, seed=6)
-        result = apply_focal_zoom(image)
-        assert result.shape == image.shape
-        assert result.dtype == np.uint8
-
-    def test_nem_mutalja_a_bemenetet(self) -> None:
-        image = _checkerboard()
-        original = image.copy()
-        apply_focal_zoom(image, strength=80.0)
-        np.testing.assert_array_equal(image, original)
-
-    def test_ervenytelen_fokuszpont_value_error(self) -> None:
-        with pytest.raises(ValueError):
-            apply_focal_zoom(_random_image(), x=1.5)
-        with pytest.raises(ValueError):
-            apply_focal_zoom(_random_image(), y=-0.1)
-
-    def test_negativ_parameter_value_error(self) -> None:
-        with pytest.raises(ValueError):
-            apply_focal_zoom(_random_image(), radius=-1.0)
-        with pytest.raises(ValueError):
-            apply_focal_zoom(_random_image(), strength=-1.0)
-
-    def test_fekete_feher_szelso_bemenet_nem_dob(self) -> None:
-        apply_focal_zoom(_uniform_image(0))
-        apply_focal_zoom(_uniform_image(255))
 
 
 class TestApplyPencilSketch:
