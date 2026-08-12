@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.6] – 2026-08-12
+
+### Hozzáadva
+- **Forgatás és csillagozás már az importálás előtt (#441).** Az
+  import-előnézet bélyegképein megjelent két forgató nyíl és egy csillag —
+  ahogy az eredeti Picasa import-képernyőjén is —, így a képeket még a
+  bemásolás előtt ki lehet egyenesíteni és megjelölni. A jelölés a
+  **másolatra** kerül; a kártyán lévő eredeti fájlokhoz a program nem nyúl.
+
 ## [0.7.5] – 2026-08-12
 
 ### Hozzáadva

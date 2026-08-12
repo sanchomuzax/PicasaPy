@@ -50,7 +50,7 @@ from picasapy.importsource import (
     scan_source,
 )
 from picasapy.index import PhotoRecord, all_photos, open_index
-from picasapy.ini import load_document, save_document
+from picasapy.ini import load_document, save_document, update_document
 from picasapy.scanner import PICASA_INI_NAME, media_kind_of
 
 from .formatting import to_local_path
@@ -177,6 +177,10 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         # a felhasználó (vagy az autoExclude) által kizárt jelöltek —
         # útvonal-stringek, mert a QML felől is stringgel érkeznek
         self._excluded_paths: set[str] = set()
+        # #441: import ELŐTTI forgatás (negyed fordulatok, 0..3) és
+        # csillagozás, forrás-útvonal szerint
+        self._rotations: dict[str, int] = {}
+        self._starred: set[str] = set()
         # a legutóbb regisztrált előnézeti (negatív) id-k — új szkennelés
         # előtt ezeket távolítjuk el, hogy a registry ne halmozódjon
         self._preview_ids: tuple[str, ...] = ()
@@ -219,6 +223,43 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
 
     # -- #441: egyenkénti válogatás -----------------------------------------
 
+    # -- #441: forgatás és csillagozás MÁR AZ IMPORT ELŐTT ------------------
+    #
+    # Az eredeti import-képernyőn az előnézeti képen ott volt a „Rotate
+    # Right"/„Rotate Left" gomb és a csillagozás (`startoggle`) — a
+    # felhasználó még a bemásolás előtt kiegyenesíthette és megjelölhette a
+    # képeket. Nálunk ugyanez: az állapotot forrás-útvonalanként tartjuk, és
+    # a MÁSOLAT `.picasa.ini`-jébe írjuk (nem a kártyán lévő eredetibe —
+    # az érintetlen marad, ahogy a „Leave card alone" ág elvárja).
+
+    @Slot(str, int)
+    def rotateFile(self, path: str, delta: int) -> None:  # noqa: N802
+        """Az adott jelölt forgatása negyed fordulatokkal (+1 jobbra, −1
+        balra). Az érték 0..3 között körbeér; 0 = nincs forgatás."""
+        if path not in {str(c.path) for c in self._candidates}:
+            return
+        self._rotations[path] = (self._rotations.get(path, 0) + int(delta)) % 4
+        self.selectionChanged.emit(self._preview_items())
+
+    @Slot(str)
+    def toggleStar(self, path: str) -> None:  # noqa: N802
+        """Csillagozás ki/be az adott jelöltre (`startoggle`)."""
+        if path not in {str(c.path) for c in self._candidates}:
+            return
+        if path in self._starred:
+            self._starred.discard(path)
+        else:
+            self._starred.add(path)
+        self.selectionChanged.emit(self._preview_items())
+
+    def _mark_imported(self, target: Path, source_path: str) -> None:
+        """A jelölt import ELŐTT beállított forgatása/csillaga a másolatra."""
+        _mark_imported_ini(
+            target,
+            self._rotations.get(source_path, 0),
+            source_path in self._starred,
+        )
+
     @Slot(str)
     def excludeFile(self, path: str) -> None:
         self._excluded_paths.add(path)
@@ -254,6 +295,9 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                     else "",
                     "duplicate": candidate.path in self._duplicate_paths,
                     "excluded": path_text in self._excluded_paths,
+                    # #441: import előtti forgatás/csillagozás
+                    "rotation": self._rotations.get(path_text, 0),
+                    "starred": path_text in self._starred,
                 }
             )
         return items
@@ -290,6 +334,9 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
             duplicates = duplicate_paths(candidates, _library_paths(self._index_path))
 
             self._candidates = candidates
+            # #441: új forrás → a korábbi forgatások/csillagok nem élnek
+            self._rotations = {}
+            self._starred = set()
             self._duplicate_paths = duplicates
             self._excluded_paths = (
                 {str(path) for path in duplicates} if self._auto_exclude else set()
@@ -372,7 +419,8 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                         candidate.date, naming_mode, manual_name=manual_name
                     )
                     subdir.mkdir(parents=True, exist_ok=True)
-                    copy_photo(candidate.path, subdir)
+                    target = copy_photo(candidate.path, subdir)
+                    self._mark_imported(target, str(candidate.path))
                     copied_paths.append(candidate.path)
                 except OSError as error:
                     failed_details.append(f"{candidate.path.name}: {error}")
@@ -407,6 +455,29 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-importsource-run")
+
+
+def _mark_imported_ini(
+    target: Path, rotation: int, starred: bool
+) -> None:
+    """A forgatás/csillag beírása a MÁSOLAT `.picasa.ini`-jébe (#441).
+
+    Nem-destruktív, ahogy a rács forgatása is: `rotate=rotate(n)` és
+    `star=yes`. A kártyán lévő eredetihez NEM nyúlunk — a „Leave card
+    alone" ág épp azt várja el, hogy a forrás érintetlen maradjon.
+    """
+    if not rotation and not starred:
+        return
+
+    def _mutate(document):
+        result = document
+        if rotation:
+            result = result.with_value(target.name, "rotate", f"rotate({rotation})")
+        if starred:
+            result = result.with_value(target.name, "star", "yes")
+        return result
+
+    update_document(target.parent / PICASA_INI_NAME, _mutate, backup=True)
 
 
 def _remove_source_file(path: Path) -> None:

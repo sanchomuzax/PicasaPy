@@ -44,7 +44,7 @@ Window {
 
     property bool scanning: false
     // előnézeti elemek — dict-ek listája: {path, thumbUrl, duplicate,
-    // excluded}; a controller MINDIG listát ad (soha tuple-t, ld.
+    // excluded, rotation, starred}; a controller MINDIG listát ad (ld.
     // MEMORY.md-tanulság)
     property var previewItems: []
     property int previewCount: 0
@@ -311,6 +311,63 @@ Window {
                         source: thumbFrame.modelData.thumbUrl
                         fillMode: Image.PreserveAspectFit
                         asynchronous: Qt.platform.pluginName !== "offscreen"
+                        // #441: az előnézet a beállított forgatással mutat —
+                        // az eredetiben is a MÁR kiegyenesített kép látszott
+                        rotation: 90 * (thumbFrame.modelData.rotation || 0)
+                    }
+
+                    // #441: forgatás és csillagozás MÁR AZ IMPORT ELŐTT — az
+                    // eredeti import-képernyőn ugyanígy ott volt a két
+                    // forgató gomb és a csillagozás (`startoggle`).
+                    Row {
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 2
+                        spacing: 2
+                        Text {
+                            objectName: "importRotateLeft:" + thumbFrame.index
+                            text: "\u21ba"
+                            font.pixelSize: Theme.fontSize
+                            color: Theme.brandBlue
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -3
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: importSourceController.rotateFile(
+                                    thumbFrame.modelData.path, -1)
+                            }
+                        }
+                        Text {
+                            objectName: "importRotateRight:" + thumbFrame.index
+                            text: "\u21bb"
+                            font.pixelSize: Theme.fontSize
+                            color: Theme.brandBlue
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -3
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: importSourceController.rotateFile(
+                                    thumbFrame.modelData.path, 1)
+                            }
+                        }
+                    }
+                    Text {
+                        objectName: "importStar:" + thumbFrame.index
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.margins: 2
+                        text: "\u2605"
+                        font.pixelSize: Theme.fontSize
+                        color: thumbFrame.modelData.starred
+                               ? Theme.starYellow : Theme.textGray
+                        opacity: thumbFrame.modelData.starred ? 1.0 : 0.5
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -3
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: importSourceController.toggleStar(
+                                thumbFrame.modelData.path)
+                        }
                     }
 
                     Text {
