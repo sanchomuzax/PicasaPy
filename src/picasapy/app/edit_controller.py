@@ -71,7 +71,27 @@ _ONE_SHOT_NAMES = ("enhance", "autolight", "autocolor")
 # csúszkázás követő feladat.
 _EFFECT_PARAMS: dict[str, tuple[str, ...]] = {
     "sat": ("1", "0.500000"),
+    # --- „Régi effektek" fül (#571, #582) ---------------------------------
+    # A `fill` renderelője KÖTELEZŐ erősség-paramétert vár (`chain.
+    # _apply_fill_op`), paraméter nélkül kivételt dobna. Az alapérték a
+    # natív `autobacklight` fix 25%-a (#567: a render callback ugyanazt a
+    # magot hívja `0.25`-tel) — ez a Picasából származó szám, nem tipp.
+    "fill": ("1", "0.250000"),
+    # A `radtint` alakja `radtint=1,x,y,feather[,szín]` (#565): középre tett
+    # fókuszpont + a filterdesc.xml Feather-alapértéke (0.25). A szín
+    # elhagyható — a renderelő ilyenkor a dokumentált alapszínt használja.
+    "radtint": ("1", "0.500000", "0.500000", "0.250000"),
 }
+
+#: A „Régi effektek" fül gombjai közül azok, amelyeket ALKALMAZNI is lehet
+#: (#582). A fülön minden örökölt név látszik, de csak ezekhez van valódi
+#: renderelőnk; a többi gombja letiltva jelenik meg, és ide sem juthat el.
+#: Az igazságforrás itt is a renderelő (`can_render_filter`), nem kézzel
+#: karbantartott lista — így a fül soha nem kínálhat olyan effektet,
+#: amelyik utána kivételbe futna.
+_LEGACY_EFFECT_NAMES = tuple(
+    sorted(key for key in LEGACY_EFFECT_KEYS if can_render_filter(key))
+)
 _EFFECT_NAMES = (
     "unsharp",
     "sepia",
@@ -117,6 +137,10 @@ _EFFECT_NAMES = (
     "roundededges",
     "picnikgrain",
 )
+
+#: Amit a szerkesztő ténylegesen a láncra tehet: a felület fülein szereplő
+#: effektek ÉS a „Régi effektek" fül alkalmazható gombjai (#582).
+_APPLICABLE_EFFECTS = frozenset(_EFFECT_NAMES) | frozenset(_LEGACY_EFFECT_NAMES)
 
 #: A `.picasa.ini`-be írandó betűzés, ahol az eltér a belső kulcstól. A
 #: Picasa a vignette-et NAGYBETŰVEL írja (`Vignette=1,...`); a round-trip
@@ -1430,7 +1454,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         dokumentált alapértékkel kerülnek be (`_EFFECT_PARAMS`)."""
         self._require_active()
         key = name.casefold()
-        if key not in _EFFECT_NAMES:
+        if key not in _APPLICABLE_EFFECTS:
             raise ValueError(f"Érvénytelen effekt: {name!r}")
         self._push_undo(key)
         self._session = self._session.append_effect(
@@ -1563,7 +1587,7 @@ class EditController(QObject, BackgroundWorkerMixin):
         if not isinstance(name, str):
             return None
         key = name.casefold()
-        if key not in _EFFECT_NAMES:
+        if key not in _APPLICABLE_EFFECTS:
             return None
         width, height = self._image_size if self._image_size else (None, None)
         catalogue = resolve_effect_params(key, width, height)
