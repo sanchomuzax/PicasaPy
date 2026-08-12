@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.99] – 2026-08-12
+
+### Javítva
+- **Az Alapszínválasztás (pipetta) a Picasa saját arányaival dolgozik
+  (#551).** Eddig egy csillapított közelítés futott, ami a színezetnek csak
+  a felét-háromnegyedét vette ki. A Picasa a viszonyítási színt a **zöldhöz**
+  méri (a mentett érték középső bájtja mindig 128), és a program mostantól
+  ugyanígy: a semlegesnek jelölt pontból számolt korrekció a valódi Picasa
+  eredményétől ~3 %-on belül van. Tényleg szürke pontot kijelölve a kép
+  változatlan marad, ahogy eddig is.
+
 ## [0.6.98] – 2026-08-12
 
 ### Javítva

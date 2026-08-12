@@ -201,6 +201,25 @@ class TestNeutralPipette:
         result = apply_neutral_pipette(image, (200, 200, 200))
         np.testing.assert_array_equal(result, image)
 
+    @pytest.mark.parametrize(
+        ("p4", "vart_r", "vart_b"),
+        [
+            # #551: a Picasa maga írta ki ezeket a p4-eket a .picasa.ini-be
+            # (referencia/szinpalca-proba2/); a szorzók a ZÖLDRE normálva
+            ((107, 128, 136), 128 / 107, 128 / 136),
+            ((132, 128, 128), 128 / 132, 1.0),
+            ((93, 128, 120), 128 / 93, 128 / 120),
+        ],
+    )
+    def test_a_szorzok_a_zoldhoz_viszonyitanak(
+        self, p4: tuple[int, int, int], vart_r: float, vart_b: float
+    ) -> None:
+        image = _uniform_image(100)
+        result = apply_neutral_pipette(image, p4)
+        assert abs(int(result[0, 0, 0]) - 100 * vart_r) <= 1.0
+        assert int(result[0, 0, 1]) == 100  # a zöld a viszonyítási alap
+        assert abs(int(result[0, 0, 2]) - 100 * vart_b) <= 1.0
+
 
 class TestApplyFinetune2:
     def test_minden_parameter_semleges_identitas(self) -> None:
