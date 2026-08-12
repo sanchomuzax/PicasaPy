@@ -5,6 +5,13 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.86] – 2026-08-12
+
+### Hozzáadva
+- **„Hozzáadás" gomb a képtálcán (#455).** A böngészés közben, mappákon
+  átnyúlóan gyűjtött képek egy lépésben albumba tehetők — az eredeti Picasa
+  tálcáján is külön gomb kínálta ezt.
+
 ## [0.6.85] – 2026-08-12
 
 ### Javítva

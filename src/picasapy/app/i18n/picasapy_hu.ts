@@ -3991,6 +3991,16 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>TrayBar</name>
     <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Add the pictures in the tray to an album</source>
+        <translation>A tálcán lévő képek hozzáadása egy albumhoz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Add to</source>
+        <translation>Hozzáadás</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/TrayBar.qml" line="102"/>
         <source>Selection</source>
         <translation>Kijelölés</translation>

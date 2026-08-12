@@ -28,13 +28,21 @@ NINCS ebben a lépcsőben (a jegyben nyitva marad):
       Clear") — a mai `ConfirmDialog` Igen/Nem/Mégse gombfelirata NEM
       egyezik ezekkel, egyedi dialógus kellene hozzá;
     - fogd-és-vidd (albumlistára ejtés → új album, kétértelműség-menü).
+
+A #422-es körben elkészült: az „Add to" gomb (`addHeldToAlbum`) és a
+tálca-tartalom útvonal-listája (`heldPaths`) — utóbbi az a bemenet, amire a
+műveletsor (nyomtatás/e-mail/export) átállítható, amikor az érintett
+controller-szeletek útvonalat is elfogadnak.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.index import open_index, photo_by_id
+from picasapy.ini.albums import with_album
 from picasapy.app.models import _thumb_url
 
 
@@ -94,6 +102,66 @@ class TrayMixin:
         if self._held_ids:
             self._held_ids = []
             self.heldChanged.emit()
+
+    @Property("QVariant", notify=heldChanged)
+    def heldPaths(self):
+        """A tálcán tartott képek fájl-útvonalai, beszúrási sorrendben.
+
+        **Ez a #455 lényegi pontja (3. teendő):** a tálca alatti műveletsor
+        (nyomtatás · e-mail · exportálás · kollázs · film · feltöltés) az
+        eredetiben a TÁLCA TARTALMÁN dolgozott, nem a pillanatnyi
+        kijelölésen — a Picasa buboréksúgói is végig „a képtálca képeire"
+        hivatkoznak. Útvonalat adunk vissza (nem rács-sort), mert a tartott
+        kép lehet, hogy nem a jelenleg megnyitott mappában van.
+
+        A globális indexből olvas; az időközben eltűnt (törölt/áthelyezett)
+        képek egyszerűen kimaradnak — nem hiba, és nem is akaszt meg egy
+        műveletet.
+        """
+        self._ensure_tray_wired()
+        if not self._held_ids:
+            return []
+        paths = []
+        with open_index(self._db_path) as conn:
+            for photo_id in self._held_ids:
+                record = photo_by_id(conn, photo_id)
+                if record is not None:
+                    paths.append(
+                        str(Path(record.folder_path) / record.name)
+                    )
+        return paths
+
+    @Slot(str, result=bool)
+    def addHeldToAlbum(self, token: str) -> bool:
+        """„Add to" (#455): a TÁLCA TARTALMA egy meglévő albumba.
+
+        Az eredetiben a tálcán külön gomb kínálta ezt — a gyűjtött képek
+        egyenesen albumhoz adhatók, felfelé nyíló menüből. A tálca
+        mappákon átnyúlik, ezért az `addRowsToAlbum` (rács-sor alapú)
+        útja itt nem járható: a tartott fotókat a GLOBÁLIS indexből
+        oldjuk fel, és mappánként egyetlen ini-írással írjuk (ugyanaz a
+        `_write_album_batch`, mint a sor-alapú úton).
+
+        Üres tálcánál/tokennél `False` (nincs mit tenni), egyébként az
+        írás sikerét adja vissza.
+        """
+        self._ensure_tray_wired()
+        token = (token or "").strip()
+        if not token or not self._held_ids:
+            return False
+        with open_index(self._db_path) as conn:
+            photos = [
+                record
+                for record in (
+                    photo_by_id(conn, photo_id) for photo_id in self._held_ids
+                )
+                if record is not None
+            ]
+        if not photos:
+            return False
+        return self._write_album_batch(
+            photos, lambda document, photo: with_album(document, photo.name, token)
+        )
 
     @Slot(int, result=str)
     def heldThumbUrlAt(self, index: int) -> str:
