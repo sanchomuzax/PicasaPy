@@ -24,7 +24,7 @@ from PySide6.QtCore import (
     QTimer,
     QTranslator,
 )
-from PySide6.QtGui import QGuiApplication, QIcon
+from PySide6.QtGui import QFontDatabase, QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 
@@ -183,6 +183,53 @@ def _acquire_instance_lock(data_dir: Path) -> QLockFile | None:
     if lock.tryLock(100):
         return lock
     return None
+
+
+
+#: #526: a felület betűtípusa. Az eredeti Picasa a **Praxis** (Linotype)
+#: családot használta — kereskedelmi, nem szállítható. A helyettesítőt a jegy
+#: előírása szerint MÉRÉSSEL választottuk, nem ránézésre: a tulajdonos két
+#: Picasa-képernyőképéről (a „Gyakori javítások" és a „Finomhangolás" fül)
+#: leolvasott TÍZ magyar felirat képpont-szélességét vetettük össze az öt
+#: jelölt ugyanazon szövegeivel, közös legkisebb-négyzetes skálázás mellett:
+#:
+#:     Open Sans ......... 0,92 %   (legrosszabb szó: 2,92 %)
+#:     Source Sans 3 ..... 1,15 %   (4,33 %)
+#:     Fira Sans ......... 1,29 %   (3,43 %)
+#:     Roboto Condensed .. 2,05 %   (4,38 %)
+#:     Archivo Narrow .... 2,52 %   (8,97 %)
+#:
+#: A mérés a betűtípus SAJÁT arányait fogja meg (szóhosszak egymáshoz mért
+#: viszonyát), ezért a képernyőkép nagyítása/DPI-je nem befolyásolja. A
+#: keskenyített jelöltek egyértelműen rosszabbak — a panel-feliratok tehát
+#: NEM keskenyítettek, összhangban azzal, hogy a Praxis sem az.
+#:
+#: A betűtípus SIL Open Font License 1.1 alatt áll (`assets/fonts/OFL.txt`).
+_UI_FONT_FILES = ("OpenSans-Regular.ttf", "OpenSans-Bold.ttf")
+_UI_FONT_FAMILY = "Open Sans"
+
+
+def _install_ui_font(app: QGuiApplication) -> None:
+    """A csomagolt felület-betűtípus betöltése és beállítása (#526).
+
+    Ha a betöltés bármiért nem sikerül (hiányzó fájl egy csonka
+    telepítésben, vagy a platform elutasítja), NÉMÁN a rendszer alapértelmezett
+    betűtípusánál maradunk — a felület ettől még használható, csak nem
+    Picasa-arányos.
+    """
+    families: list[str] = []
+    for name in _UI_FONT_FILES:
+        path = _APP_DIR / "assets" / "fonts" / name
+        if not path.is_file():
+            continue
+        font_id = QFontDatabase.addApplicationFont(str(path))
+        if font_id >= 0:
+            families.extend(QFontDatabase.applicationFontFamilies(font_id))
+    if _UI_FONT_FAMILY not in families:
+        return
+    font = app.font()
+    font.setFamily(_UI_FONT_FAMILY)
+    app.setFont(font)
 
 
 def _set_windows_app_id() -> None:
@@ -376,6 +423,7 @@ def run(argv: list[str]) -> int:
         pass  # régebbi Qt: a paletta (Main.qml) így is világost kényszerít
     app.setDesktopFileName("picasapy")  # Wayland app_id → tálca-ikon
     app.setWindowIcon(QIcon(str(_window_icon_path())))
+    _install_ui_font(app)
     _install_translator(app)
 
     # Indítóképernyő-híd (#189): korán jön létre, hogy az első állapot-

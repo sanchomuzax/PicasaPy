@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "picasapy"
-version = "0.6.80"
+version = "0.6.81"
 description = "Modern, open, cross-platform successor to Google Picasa"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
@@ -38,6 +38,8 @@ where = ["src"]
     "assets/*.ico",
     "assets/*.svg",
     "assets/tools/*.png",
+    "assets/fonts/*.ttf",
+    "assets/fonts/OFL.txt",
     "qml/*.qml",
     "qml/*.js",
     "qml/PicasaPy/*.qml",

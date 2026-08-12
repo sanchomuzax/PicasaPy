@@ -413,3 +413,44 @@ class TestRemainingSplashMs:
 
     def test_exact_boundary(self):
         assert application._remaining_splash_ms(1500, minimum_ms=1500) == 0
+
+
+class TestEditControllerShutdownOnExit:
+    """#547/#430: kilépéskor a szerkesztő háttér-renderét ÉRVÉNYTELENÍTENI
+    kell, majd rövid ideig bevárni — különben a daemon-szál az interpreter
+    leépítése közben emitálna egy már megsemmisült QObject-nek (SIGSEGV).
+
+    A teljes kilépési út tesztből nem futtatható (valódi `app.exec()` kell
+    hozzá), ezért a forrást ellenőrizzük: a két hívásnak az `app.exec()`
+    UTÁN, a `return` ELŐTT kell állnia, ebben a sorrendben."""
+
+    def _source(self) -> str:
+        from pathlib import Path
+
+        import picasapy.app.application as app_module
+
+        return Path(app_module.__file__).read_text(encoding="utf-8")
+
+    def test_invalidate_then_wait_after_exec(self):
+        source = self._source()
+        exec_at = source.index("exit_code = app.exec()")
+        cancel_at = source.index("edit_controller.cancelPendingPreview()")
+        wait_at = source.index("edit_controller.waitForBackgroundWorkers(")
+        return_at = source.index("return exit_code")
+        assert exec_at < cancel_at < wait_at < return_at, (
+            "a szerkesztő háttér-renderének érvénytelenítése/bevárása nem a "
+            "kilépési úton, helyes sorrendben áll"
+        )
+
+    def test_wait_has_a_bounded_timeout(self):
+        """A perces rendert NEM várjuk végig — az emit-ág már érvénytelen,
+        elég egy rövid, KORLÁTOS várakozás."""
+        import re
+
+        match = re.search(
+            r"edit_controller\.waitForBackgroundWorkers\(([^)]*)\)", self._source()
+        )
+        assert match is not None
+        timeout = match.group(1).strip()
+        assert timeout not in ("", "None"), "korlátlan várakozás a kilépési úton"
+        assert 0 < float(timeout) <= 5.0, f"eltúlzott kilépési várakozás: {timeout}"
