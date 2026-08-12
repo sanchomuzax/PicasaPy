@@ -2385,6 +2385,53 @@ Would you like to rename or skip these files?</source>
     </message>
 </context>
 <context>
+    <name>SaveDialogs</name>
+    <message>
+        <source>Save</source>
+        <translation>Mentés</translation>
+    </message>
+    <message>
+        <source>Save changes to disk?</source>
+        <translation>Menti a változtatásokat a lemezre?</translation>
+    </message>
+    <message>
+        <source>A backup of these files will be made.</source>
+        <translation>A fájlokról biztonsági másolat készül.</translation>
+    </message>
+    <message>
+        <source>These pictures contain edits PicasaPy cannot render yet: %1</source>
+        <translation>Ezeken a képeken olyan szerkesztés van, amit a PicasaPy még nem tud megjeleníteni: %1</translation>
+    </message>
+    <message>
+        <source>Saving writes the picture without them, and the settings are lost. This cannot be undone.</source>
+        <translation>A mentés ezek nélkül írja ki a képet, és a beállítások elvesznek. Ez nem vonható vissza.</translation>
+    </message>
+    <message>
+        <source>Revert</source>
+        <translation>Visszaállítás</translation>
+    </message>
+    <message>
+        <source>Revert to original version of these file(s)?</source>
+        <translation>Visszaállítja ezeket a fájlokat az eredeti változatra?</translation>
+    </message>
+    <message>
+        <source>This cannot be undone and all changes will be lost.</source>
+        <translation>Ez nem vonható vissza, és minden változtatás elvész.</translation>
+    </message>
+    <message>
+        <source>Undo Save</source>
+        <translation>Utolsó mentés visszavonása</translation>
+    </message>
+    <message>
+        <source>To undo the last save and keep edits click 'Undo Save'.</source>
+        <translation>Az utolsó mentés visszavonásához a szerkesztések megtartásával kattintson az „Utolsó mentés visszavonása” gombra.</translation>
+    </message>
+    <message>
+        <source>File operation failed</source>
+        <translation>A fájlművelet nem sikerült</translation>
+    </message>
+</context>
+<context>
     <name>FolderManagerDialog</name>
     <message>
         <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
@@ -3970,6 +4017,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     <message>
         <source>Move Database...</source>
         <translation>Adatbázis áthelyezése…</translation>
+    </message>
+    <message>
+        <source>Undo Save</source>
+        <translation>Utolsó mentés visszavonása</translation>
     </message>
 </context>
 <context>

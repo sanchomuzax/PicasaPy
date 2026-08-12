@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.4] – 2026-08-12
+
+### Hozzáadva
+- **Végre menthetők a szerkesztések a fájlokba (#444).** A Fájl menü
+  **Mentés** (Ctrl+S) pontja eddig szürke helyfoglaló volt — a motor kész
+  volt, csak nem lehetett elindítani. Mostantól él, és vele a másik két
+  fokozat is: a **Visszaállítás** (az eredeti jön vissza, a szerkesztések
+  elvesznek) és az **Utolsó mentés visszavonása** (a fájl áll vissza, de a
+  szerkesztések megmaradnak). Minden mentés előtt biztonsági másolat
+  készül.
+- **Figyelmeztetés mentés előtt**, ha a képen olyan szerkesztés van, amit a
+  program még nem tud megjeleníteni: a mentés azt véglegesen eldobná, ezért
+  a program felsorolja őket, és külön rákérdez.
+
 ## [0.7.3] – 2026-08-12
 
 ### Hozzáadva
