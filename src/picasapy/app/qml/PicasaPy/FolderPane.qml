@@ -76,8 +76,10 @@ Rectangle {
     // nyitásakor veszik át a vezérlő friss rendezés-állapotát
     function openFolderListContextMenu() {
         if (controller) {
-            folderListContextMenu.sortMode = controller.folderSort
-            folderListContextMenu.sortReverse = controller.folderSortReverse
+            // #461/3: a BAL HASÁB saját rendezése — az eredetiben ez a
+            // menü (`AlbumList`) a hasábot rendezte, nem a rácsot
+            folderListContextMenu.sortMode = controller.paneSort
+            folderListContextMenu.sortReverse = controller.paneSortReverse
         }
         folderListContextMenu.popup()
     }
@@ -744,9 +746,9 @@ Rectangle {
     FolderListContextMenu {
         id: folderListContextMenu
         onSortModeRequested: function(mode) {
-            if (controller) controller.setFolderSort(mode)
+            if (controller) controller.setPaneSort(mode)
         }
-        onSortReverseRequested: if (controller) controller.toggleFolderSortReverse()
+        onSortReverseRequested: if (controller) controller.togglePaneSortReverse()
     }
 
     FolderContextMenu {

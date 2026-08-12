@@ -319,14 +319,44 @@ class AppController(
         value = self._get_settings().value("view/folderSortReverse", "false")
         return value in (True, "true", "1")
 
+    @Property(str, notify=statusChanged)
+    def paneSort(self):
+        """A BAL HASÁB rendezése (#461/3) — a rácsétól FÜGGETLEN beállítás.
+
+        Az eredeti Picasában a bal panel saját jobbklikk-menüje
+        (`AlbumList`, ld. `ui-audit-context-menus.md` A.2) tartalmazta a
+        „Rendezés dátum / név / méret / legutóbbi változtatás alapján"
+        tételeket — vagyis az a HASÁBOT rendezte. A felső Nézet ▸ Mappanézet
+        ettől külön, a RÁCSOT állítja (#321). Két parancs, két cél."""
+        return self._get_settings().value("view/paneSort", "date")
+
+    @Property(bool, notify=statusChanged)
+    def paneSortReverse(self):
+        value = self._get_settings().value("view/paneSortReverse", "false")
+        return value in (True, "true", "1")
+
+    @Slot(str)
+    def setPaneSort(self, mode: str) -> None:
+        """A bal hasáb rendezésének váltása (#461/3)."""
+        if mode not in ("date", "changed", "size", "name"):
+            return
+        self._get_settings().setValue("view/paneSort", mode)
+        self._reload_folders()
+
+    @Slot()
+    def togglePaneSortReverse(self) -> None:
+        self._get_settings().setValue(
+            "view/paneSortReverse", not self.paneSortReverse
+        )
+        self._reload_folders()
+
     @Slot(str)
     def setFolderSort(self, mode: str) -> None:
-        """Mappalista-rendezés (Nézet → Mappanézet): date/changed/size/name."""
+        """A RÁCS rendezése (Nézet → Mappanézet): date/changed/size/name."""
         if mode not in ("date", "changed", "size", "name"):
             return
         self._get_settings().setValue("view/folderSort", mode)
-        self._reload_folders()
-        self._refresh_view()  # a feed sorrendje követi a hasábot (#64)
+        self._refresh_view()
 
     @Slot()
     def toggleFolderSortReverse(self) -> None:
@@ -337,11 +367,12 @@ class AppController(
         self._refresh_view()  # a feed sorrendje követi a hasábot (#64)
 
     def _reload_folders(self) -> None:
-        # #321: a bal hasáb a SAJÁT, rögzített Picasa-sorrendjében áll (dátum
-        # szerint, évszám-elválasztókkal) — a Nézet ▸ Mappanézet beállítása
-        # csak a rácsot rendezi át, a fát soha.
+        # #321 + #461/3: a bal hasábnak SAJÁT rendezése van — a felső
+        # Nézet ▸ Mappanézet (folderSort) továbbra sem nyúl hozzá, azt csak a
+        # rács követi. A hasáb sorrendjét a saját jobbklikk-menüje állítja
+        # (`paneSort`), ahogy az eredeti Picasa `AlbumList` menüje tette.
         with open_index(self._db_path) as conn:
-            self._folders.load(conn)
+            self._folders.load(conn, self.paneSort, self.paneSortReverse)
         self.statusChanged.emit()
 
     # -- gyűjtemények a bal hasábon (#320) -----------------------------------
