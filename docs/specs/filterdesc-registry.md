@@ -394,6 +394,41 @@ Ebből következik két dolog, amit a fájl **nem** közöl, és amit ezért
    csatorna-eltérés korlát nélkül 41,8, **255-ös korláttal 9,0**. Vagyis:
    a méretfüggő képletek eredményét **255-re kell vágni** (#504, #317).
 
+#### A 255-ös korlát KÉT külön mechanizmussal valósul meg
+
+**`BlurImageOperation`** (`0x00bb4de0`) — nyílt vágás, tengelyenként:
+
+```c
+if (xblur <= 255.0) { r = FUN_00bb5050(xblur); }   // kvantálás
+else                { r = 255.0; }                  // vágás
+```
+
+A `0x00bb5050` **sugár-kvantáló**: 1 alatt 0-t ad (nincs elmosás), és a
+2/3/4/5-ös egészeket felfelé igazítja (2,065 · 3,0625 · 4,13 · 5,13) — a
+Flash `BlurFilter` diszkrét viselkedésének átvétele.
+
+**`GlowImageOperation`** (`0x00bb8f70` → `0x00bb89b0`) — **skálázó
+tényezővel**, nem `min()`-nel:
+
+```c
+float sugar_skala(float blur, float size) {
+    if (blur <= 0) blur = 1e-05;
+    scale = 1.0;
+    if (blur > 255.0) { scale = 255.0 / blur; blur = 255.0; }
+    v = (100.0 + size - scale*size) / blur;
+    return (v >= 3.0) ? scale : (v / 3.0) * scale;
+}
+```
+
+A hívó ezt **megszorozza** a sugárral (`local_188 * xblur`), tehát 255 fölött
+az eredmény **pontosan 255** — vagyis effektíve ugyanaz a korlát, csak más
+úton. (A `v < 3` ág tovább csökkenti a skálát; ez a minőség/méret
+kompromisszum ága.)
+
+**Következmény:** a Lomo/Holga vignettájára (ami Glow) és a maszkolt
+elmosásra (ami Blur) **egyaránt 255 a felső határ** — a mérés, a
+Flash-örökségből vett következtetés és a natív kód **mind egyezik**.
+
 #### Méretfüggő elmosás-sugarak — a hét érintett szűrő
 
 Ezek a képletek a képmérethez skálázódnak, hogy az effekt **arányos**
