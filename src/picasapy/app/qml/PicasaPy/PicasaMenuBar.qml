@@ -45,6 +45,9 @@ MenuBar {
     }
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
     property bool photoActionsEnabled: false
+    // #444: van-e a kijelölésben MÁR mentett kép — enélkül a
+    // „Visszaállítás" és az „Utolsó mentés visszavonása" értelmetlen
+    property bool hasSavedBackup: false
     signal rescanRequested()
     signal aboutRequested()
     signal thumbSizePreset(int size)
@@ -68,6 +71,11 @@ MenuBar {
     signal movieRequested()
     signal locateRequested()
     signal deleteRequested()
+    // #444: a NÉGY mentés-művelet közül három (a negyedik, az „Összes
+    // szerkesztés visszavonása" a Kép menüben él, #465)
+    signal saveRequested()
+    signal revertRequested()
+    signal undoSaveRequested()
     signal slideshowRequested()
     // #24: Időrend nézet (Ctrl+5)
     signal timelineRequested()
@@ -154,8 +162,30 @@ MenuBar {
             enabled: bar.photoActionsEnabled
             onTriggered: bar.renameRequested()
         }
-        PicasaMenuItem { text: qsTr("Save") + "\tCtrl+S"; placeholder: true }
-        PicasaMenuItem { text: qsTr("Revert"); placeholder: true }
+        // #444: a nem-destruktív mentés HÁROM fokozata. A „Mentés" beégeti
+        // a szerkesztéseket a fájlba (előtte biztonsági másolattal), a
+        // „Visszaállítás" az eredetit hozza vissza (a szerkesztések
+        // elvesznek), az „Utolsó mentés visszavonása" pedig a köztes
+        // fokozat: a fájl visszaáll, de a szerkesztések MEGMARADNAK.
+        MenuItem {
+            objectName: "menuFileSave"
+            text: qsTr("Save") + "\tCtrl+S"
+            enabled: bar.photoActionsEnabled
+            onTriggered: bar.saveRequested()
+        }
+        MenuItem {
+            objectName: "menuFileRevert"
+            text: qsTr("Revert")
+            // csak akkor van mit visszaállítani, ha a kép már volt mentve
+            enabled: bar.photoActionsEnabled && bar.hasSavedBackup
+            onTriggered: bar.revertRequested()
+        }
+        MenuItem {
+            objectName: "menuFileUndoSave"
+            text: qsTr("Undo Save")
+            enabled: bar.photoActionsEnabled && bar.hasSavedBackup
+            onTriggered: bar.undoSaveRequested()
+        }
         MenuSeparator {}
         // hiányzott (#324 audit): eltérő mentés-változatok
         PicasaMenuItem { text: qsTr("Save As..."); placeholder: true }

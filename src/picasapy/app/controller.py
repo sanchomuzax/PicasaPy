@@ -44,6 +44,7 @@ from .custom_collections_controller import CustomCollectionsMixin
 from .folder_date_controller import FolderDateMixin
 from .effects_controller import EffectsClipboardMixin
 from .export_controller import ExportMixin
+from .save_controller import SaveMixin
 from .geo_controller import GeoMixin
 from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
 # fileops_controller kompatibilis import-útja (#150 előtt itt élt a függvény)
@@ -83,6 +84,9 @@ class AppController(
     PhotoOpsMixin,
     BatchEffectMixin,
     ExportMixin,
+    # #444: Mentés / Visszaállítás / Utolsó mentés visszavonása — a mag
+    # (`picasapy.edit.save`) régóta kész volt, csak felület nem volt hozzá
+    SaveMixin,
     EffectsClipboardMixin,
     PerfMonitorMixin,
     AppearanceMixin,

@@ -350,6 +350,13 @@ ApplicationWindow {
             if (p.length > 0) fileOpsController.revealPhoto(p)
         }
         onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())
+        // #444: a nem-destruktív mentés három fokozata — a megerősítések és
+        // a nem renderelhető láncelem figyelmeztetése a SaveDialogs-ban
+        hasSavedBackup: controller
+            ? controller.hasSavedBackup(window.selectedIndexes) : false
+        onSaveRequested: saveDialogs.openSave(window.selectedIndexes)
+        onRevertRequested: saveDialogs.openRevert(window.selectedIndexes)
+        onUndoSaveRequested: saveDialogs.openUndoSave(window.selectedIndexes)
         onSlideshowRequested: window.startSlideshow(-1)
         onTimelineRequested: window.toggleTimeline()
         tagsPanelOpen: window.tagsPanelOpen
@@ -1232,6 +1239,13 @@ ApplicationWindow {
             openEmpty()
         }
         onAccepted: controller.movePersonOnRows(rows, person, enteredName)
+    }
+
+    // #444: Mentés / Visszaállítás / Utolsó mentés visszavonása
+    SaveDialogs {
+        id: saveDialogs
+        objectName: "saveDialogs"
+        appWindow: window
     }
 
     // átnevezés / áthelyezés / törlés / hiba (FileOpsDialogs.qml, #150)
