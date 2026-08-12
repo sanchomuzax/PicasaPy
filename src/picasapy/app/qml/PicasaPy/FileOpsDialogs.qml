@@ -33,6 +33,23 @@ Item {
     function openDelete(paths) {
         deleteConfirmDialog.openFor(paths)
     }
+    // #457/2: a köteg indítása — előbb MEGNÉZZÜK, van-e névütközés, és csak
+    // akkor kérdezünk (az eredeti sem kérdezett fölöslegesen); ütközés nélkül
+    // az „átnevezés" ág fut, de az ott nem nevez át semmit.
+    function startBatch(operation, paths, dest) {
+        if (fileOpsController.conflictCountFor(paths, dest) > 0)
+            duplicateNamesDialog.openFor(operation, paths, dest)
+        else
+            runBatch(operation, paths, dest, "rename")
+    }
+    function runBatch(operation, paths, dest, policy) {
+        if (operation === "copy")
+            fileOpsController.copyPhotos(paths, dest, policy)
+        else
+            fileOpsController.movePhotos(paths, dest, policy)
+        dialogs.appWindow.clearSelection()
+    }
+
     // #9 (2. lépés): új album neve — a rows a kijelölés sorindexei, amelyek
     // a controller.createAlbum(name, rows) hívásba kerülnek elfogadáskor
     function openNewAlbum(rows) {
@@ -230,11 +247,95 @@ Item {
         objectName: "moveFolderDialog"
         title: qsTr("Move to Folder...")
         property var paths: []
-        onAccepted: {
-            var dest = selectedFolder.toString()
-            for (var i = 0; i < paths.length; ++i)
-                fileOpsController.movePhoto(paths[i], dest)
-            dialogs.appWindow.clearSelection()
+        onAccepted: moveConfirmDialog.openFor(paths, selectedFolder.toString())
+    }
+
+    // #457/2: az eredeti a célmappa kiválasztása UTÁN még rákérdezett
+    // (`CThumbUI::MoveFilesToAlbumFolder::6`, elfogadó gomb: „Fájlok
+    // áthelyezése" — `MoveYesButton`). Csak ezután jött a névütközés
+    // kérdése, ha volt egyáltalán ütközés.
+    Dialog {
+        id: moveConfirmDialog
+        objectName: "moveConfirmDialog"
+        title: qsTr("Confirm Move")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        property var paths: []
+        property string dest: ""
+        onOpened: standardButton(Dialog.Ok).text = qsTr("Move Files")
+        function acceptButtonText() {
+            return standardButton(Dialog.Ok) ? standardButton(Dialog.Ok).text : ""
+        }
+        function openFor(pathList, destFolder) {
+            if (!pathList || pathList.length === 0) return
+            paths = pathList
+            dest = destFolder
+            open()
+        }
+        onAccepted: dialogs.startBatch("move", paths, dest)
+        Text {
+            width: 380
+            text: qsTr("Are you sure you want to move the file(s) to\n%1 ?").arg(
+                      moveConfirmDialog.dest)
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+    }
+
+    // #457/2: névütközéskor az eredeti NEM döntött a felhasználó helyett —
+    // ugyanezt a párbeszédet adta másolásra és áthelyezésre is
+    // (`CThumbUI::MoveFilesToAlbumFolder::2` és `::5`), két gombbal:
+    // „Másodpéldányok átnevezése" / „Másodpéldányok kihagyása".
+    Dialog {
+        id: duplicateNamesDialog
+        objectName: "duplicateNamesDialog"
+        title: moveConfirmDialog.title
+        modal: true
+        anchors.centerIn: parent
+        property string operation: "move"
+        property var paths: []
+        property string dest: ""
+        function openFor(op, pathList, destFolder) {
+            operation = op
+            paths = pathList
+            dest = destFolder
+            open()
+        }
+        Text {
+            width: 380
+            text: qsTr("This folder already contains files with the same name.\n\nWould you like to rename or skip these files?")
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+        footer: DialogButtonBox {
+            Button {
+                objectName: "duplicateRenameButton"
+                text: qsTr("Rename Duplicates")
+                onClicked: {
+                    duplicateNamesDialog.close()
+                    dialogs.runBatch(duplicateNamesDialog.operation,
+                                     duplicateNamesDialog.paths,
+                                     duplicateNamesDialog.dest, "rename")
+                }
+            }
+            Button {
+                objectName: "duplicateSkipButton"
+                text: qsTr("Skip Duplicates")
+                onClicked: {
+                    duplicateNamesDialog.close()
+                    dialogs.runBatch(duplicateNamesDialog.operation,
+                                     duplicateNamesDialog.paths,
+                                     duplicateNamesDialog.dest, "skip")
+                }
+            }
+            Button {
+                objectName: "duplicateCancelButton"
+                text: qsTr("Cancel")
+                onClicked: duplicateNamesDialog.close()
+            }
         }
     }
 
@@ -297,8 +398,40 @@ Item {
         }
     }
 
+    // #457/2 + #459: a köteg végén EGYETLEN összegzés (nem fájlonkénti ablak).
+    // Ha minden gond nélkül átment, nem zavarjuk a felhasználót ablakkal.
+    Dialog {
+        id: batchSummaryDialog
+        objectName: "batchSummaryDialog"
+        title: qsTr("File operation finished")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok
+        property string message: ""
+        function showFor(operation, done, skipped, failed) {
+            if (skipped === 0 && failed === 0) return
+            var lines = [qsTr("%n file(s) done.", "", done)]
+            if (skipped > 0)
+                lines.push(qsTr("%n file(s) skipped (a file with the same name already exists).", "", skipped))
+            if (failed > 0)
+                lines.push(qsTr("%n file(s) could not be processed.", "", failed))
+            message = lines.join("\n")
+            open()
+        }
+        Text {
+            width: 380
+            text: batchSummaryDialog.message
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+    }
+
     Connections {
         target: fileOpsController
+        function onBatchFinished(operation, done, skipped, failed) {
+            batchSummaryDialog.showFor(operation, done, skipped, failed)
+        }
         function onOperationFailed(operation, message) {
             fileOpsErrorDialog.message = message
             fileOpsErrorDialog.open()

@@ -4,6 +4,14 @@ A `.picasa.ini` érintett szekciói minden művelet után round-trip-hűen
 (bitre pontosan, a nem értelmezett sorokkal együtt) követik a fájlt.
 """
 
+from .batch import (
+    RENAME,
+    SKIP,
+    BatchResult,
+    conflicting_names,
+    copy_photos,
+    move_photos,
+)
 from .copy import copy_photo
 from .diskspace import has_enough_free_space, required_bytes_for
 from .move import move_photo
@@ -19,15 +27,21 @@ from .trash import (
 from .writable import is_folder_writable
 
 __all__ = [
+    "RENAME",
+    "SKIP",
+    "BatchResult",
     "RenameItem",
     "TrashUnavailableError",
+    "conflicting_names",
     "copy_photo",
+    "copy_photos",
     "delete_permanently",
     "delete_to_trash",
     "find_trash_dir",
     "has_enough_free_space",
     "is_folder_writable",
     "move_photo",
+    "move_photos",
     "preview_name",
     "rename_photo",
     "rename_photos_many",

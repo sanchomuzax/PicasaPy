@@ -1237,6 +1237,7 @@ ApplicationWindow {
     // átnevezés / áthelyezés / törlés / hiba (FileOpsDialogs.qml, #150)
     FileOpsDialogs {
         id: fileOpsDialogs
+        objectName: "fileOpsDialogs"
         appWindow: window
     }
 
