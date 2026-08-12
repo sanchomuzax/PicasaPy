@@ -1,4 +1,4 @@
-"""Szöveg-overlay rajzolása képre (#148) — cv2.putText alapú KÖZELÍTÉS.
+"""Szöveg-overlay rajzolása képre (#148/#450).
 
 **Szándékosan ELVÁLASZTVA** a `picasapy.ini.text_overlay` nyers `text=`
 mezőitől: a valódi Picasa `text=` kulcs `raw_x`/`raw_y` számpárjának
@@ -8,21 +8,109 @@ koordinátákat ad át. Ez PicasaPy-saját, dokumentált konvenció: amíg nincs
 golden-minta a valódi `text=` mezők jelentésére, ez az egyetlen módja, hogy
 a szöveg-eszköz determinisztikusan, találgatás nélkül működjön.
 
-A betűtípus-leképezés is közelítés: OpenCV a Hershey-fontkészletet
-használja, ami vizuálisan NEM egyezik a Picasa TrueType-betűtípusaival
-(pl. `Aharoni`) — a `font` mező jelenleg csak MEGŐRZŐDIK (round-trip), a
-rajzoláshoz egységes Hershey-alapfontot használunk.
+**A rajzoló (#450, 2. lépcső): TrueType, ha van.** A Pillow FreeType-útján
+rajzolunk — ez adja a betűcsaládot, a félkövéret/dőltet, az aláhúzást és a
+sorok igazítását, amit az OpenCV Hershey-készlete nem tud. Ha a gépen
+egyetlen használható TrueType sincs, a régi Hershey-út fut tovább, hogy a
+szöveg-eszköz sose essen ki — ilyenkor a stílus-vezérlők hatástalanok, a
+szöveg viszont megjelenik.
+
+A betűcsaládok leképezése (Arial → Liberation Sans stb.) a
+`render.text_fonts` dolga; a `font` ini-mező továbbra is csak MEGŐRZŐDIK
+(round-trip), mert a `text=` kulcs betűtípus-mezőjének pontos jelentése
+nincs igazolva (#371).
 """
 
 from __future__ import annotations
 
 import cv2
 import numpy as np
+from PIL import Image, ImageDraw
 
 from picasapy.render.curves import validate_image
+from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
 
 _FONT = cv2.FONT_HERSHEY_SIMPLEX
 _LINE_TYPE = cv2.LINE_AA
+
+
+#: A `font_scale` (a Hershey-út egysége) és a TrueType-pontméret közti
+#: leképezés. A Hershey `SIMPLEX` nagybetű-magassága `font_scale`-enként
+#: kb. 22 képpont, ezért ez a szorzó tartja meg a MEGLÉVŐ hívók látszólagos
+#: méretét a rajzoló cseréje után is.
+_SCALE_TO_PIXELS = 30
+
+#: A sorok igazítása — a Picasa szöveg-eszközének három gombja.
+_ALIGNMENTS = ("left", "center", "right")
+
+
+def _size_px_for(font_scale: float) -> int:
+    return max(1, round(font_scale * _SCALE_TO_PIXELS))
+
+
+def _draw_hershey(
+    base, content, origin, font_scale, color, thickness,
+    outline_color, outline_thickness, fill_enabled, has_outline,
+):
+    """A RÉGI út: OpenCV Hershey-fontkészlet — akkor fut, ha a gépen nincs
+    használható TrueType. A stílus-vezérlők ilyenkor hatástalanok."""
+    layer = base.copy()
+    if has_outline:
+        cv2.putText(
+            layer, content, origin, _FONT, font_scale, outline_color,
+            thickness + 2 * outline_thickness, _LINE_TYPE,
+        )
+    if fill_enabled:
+        cv2.putText(
+            layer, content, origin, _FONT, font_scale, color, thickness, _LINE_TYPE
+        )
+    return layer
+
+
+def _draw_truetype(
+    base, content, origin, font, color, outline_color, outline_thickness,
+    fill_enabled, has_outline, underline, align,
+):
+    """A TrueType-út (#450): betűcsalád, félkövér/dőlt, aláhúzás, igazítás.
+
+    A Pillow RGB-ben dolgozik, a lánc viszont a projekt konvenciója szerint
+    a hívó színrendjében kap képet — a színeket ezért NEM forgatjuk meg, a
+    tömböt viszont igen, hogy a Pillow ugyanazokat a csatornákat lássa.
+    """
+    pil = Image.fromarray(base)
+    draw = ImageDraw.Draw(pil)
+    # a `putText` a bal ALSÓ sarokra rajzol, a Pillow a bal FELSŐRE — az
+    # `ls` horgonnyal a két konvenció egybeesik (ld. Pillow anchor-doksi)
+    anchor = {"left": "ls", "center": "ms", "right": "rs"}[align]
+    if has_outline:
+        draw.text(
+            origin, content, font=font, fill=tuple(outline_color),
+            anchor=anchor, align=align,
+            stroke_width=outline_thickness, stroke_fill=tuple(outline_color),
+        )
+    if fill_enabled:
+        draw.text(
+            origin, content, font=font, fill=tuple(color),
+            anchor=anchor, align=align,
+        )
+    if underline:
+        _draw_underline(draw, origin, content, font, anchor,
+                        color if fill_enabled else outline_color)
+    return np.array(pil)
+
+
+def _draw_underline(draw, origin, content, font, anchor, colour) -> None:
+    """Aláhúzás: a TrueType-ben ez nem külön betűváltozat, hanem rajzolt
+    vonal — a szöveg tényleges dobozának alján, a betűvastagsághoz mért
+    magassággal."""
+    left, _top, right, bottom = draw.textbbox(
+        origin, content, font=font, anchor=anchor
+    )
+    # a vonal vastagsága a betűmérethez skálázódik (a szokásos tipográfiai
+    # arány), és legalább egy képpont
+    line_height = max(1, round(font.size / 14))
+    y = bottom + line_height
+    draw.rectangle((left, y, right, y + line_height - 1), fill=tuple(colour))
 
 
 def apply_text_overlay(
@@ -38,6 +126,11 @@ def apply_text_overlay(
     outline_thickness: int = 0,
     fill_enabled: bool = True,
     opacity: float = 1.0,
+    font_family: str = DEFAULT_FAMILY,
+    bold: bool = False,
+    italic: bool = False,
+    underline: bool = False,
+    align: str = "left",
 ) -> np.ndarray:
     """Szöveg ráírása a képre — kitöltés + opcionális körvonal (#450).
 
@@ -83,23 +176,22 @@ def apply_text_overlay(
     if not fill_enabled and not has_outline:
         # se kitöltés, se körvonal — nincs mit rajzolni
         return result
+    if align not in _ALIGNMENTS:
+        raise ValueError(f"Ismeretlen igazítás: {align!r}")
     height, width = image.shape[:2]
     origin = (round(x * width), round(y * height))
-    layer = result.copy()
-    if has_outline:
-        cv2.putText(
-            layer,
-            content,
-            origin,
-            _FONT,
-            font_scale,
-            outline_color,
-            thickness + 2 * outline_thickness,
-            _LINE_TYPE,
+    font = load_font(
+        font_family, _size_px_for(font_scale), bold=bold, italic=italic
+    )
+    if font is None:
+        layer = _draw_hershey(
+            result, content, origin, font_scale, color, thickness,
+            outline_color, outline_thickness, fill_enabled, has_outline,
         )
-    if fill_enabled:
-        cv2.putText(
-            layer, content, origin, _FONT, font_scale, color, thickness, _LINE_TYPE
+    else:
+        layer = _draw_truetype(
+            result, content, origin, font, color, outline_color,
+            outline_thickness, fill_enabled, has_outline, underline, align,
         )
     changed = np.any(layer != result, axis=-1)
     if not changed.any():

@@ -242,6 +242,14 @@ Rectangle {
         editorPanel.textOutlineThickness = editController.textOutlineThickness
         editorPanel.textFillEnabled = editController.textFillEnabled
         editorPanel.textOpacity = editController.textOpacity
+        // #450 (2. lépcső): tipográfia — betűcsalád, méret, B/I/U, igazítás
+        editorPanel.fontFamilyCatalogue = editController.textFontFamilies
+        editorPanel.textFontFamily = editController.textFontFamily
+        editorPanel.textFontScale = editController.textFontScale
+        editorPanel.textBold = editController.textBold
+        editorPanel.textItalic = editController.textItalic
+        editorPanel.textUnderline = editController.textUnderline
+        editorPanel.textAlign = editController.textAlign
     }
     onVisibleChanged: {
         if (visible) {
@@ -724,6 +732,18 @@ Rectangle {
                         editController.setTextOutlineThickness(Math.round(value))
                     onTextFillEnabledEdited: (value) => editController.setTextFillEnabled(value)
                     onTextOpacityEdited: (value) => editController.setTextOpacity(value)
+                    // #450 (2. lépcső): tipográfia — az ÉRTÉKEKET a
+                    // syncEditorPanel() tölti (a többi szöveg-stílus
+                    // mintájára), itt csak a jelzések mennek vissza
+                    onTextFontFamilyEdited: (key) =>
+                        editController.setTextFontFamily(key)
+                    onTextFontScaleEdited: (value) =>
+                        editController.setTextFontScale(value)
+                    onTextBoldEdited: (value) => editController.setTextBold(value)
+                    onTextItalicEdited: (value) => editController.setTextItalic(value)
+                    onTextUnderlineEdited: (value) =>
+                        editController.setTextUnderline(value)
+                    onTextAlignEdited: (value) => editController.setTextAlign(value)
                 }
 
                 ColumnLayout {

@@ -110,6 +110,25 @@ Rectangle {
     signal textOutlineThicknessEdited(real value)
     signal textFillEnabledEdited(bool value)
     signal textOpacityEdited(real value)
+    // #450 (2. lépcső): tipográfia — a hívó (PhotoViewer) tölti a
+    // controller mentett értékeivel, az *Edited jelek viszik vissza
+    property var fontFamilyCatalogue: []
+    readonly property var fontFamilyKeys:
+        panel.fontFamilyCatalogue.map(function(f) { return f.key })
+    readonly property var fontFamilyLabels:
+        panel.fontFamilyCatalogue.map(function(f) { return f.label })
+    property string textFontFamily: ""
+    property real textFontScale: 1
+    property bool textBold: false
+    property bool textItalic: false
+    property bool textUnderline: false
+    property string textAlign: "left"
+    signal textFontFamilyEdited(string key)
+    signal textFontScaleEdited(real value)
+    signal textBoldEdited(bool value)
+    signal textItalicEdited(bool value)
+    signal textUnderlineEdited(bool value)
+    signal textAlignEdited(string value)
     // egygombos javítások (#116): nem módkapcsolók — a gomb mindig új
     // réteget fűz a láncra, és csak akkor tiltott, ha ugyanez a szűrő a
     // lánc utolsó eleme (a hívó/EditController tölti)

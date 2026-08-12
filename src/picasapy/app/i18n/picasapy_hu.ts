@@ -5224,6 +5224,46 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <source>Type your text, then click on the photo to place it.</source>
         <translation>Írja be a szöveget, majd kattintson a fotóra az elhelyezéséhez.</translation>
     </message>
+    <message>
+        <source>Font</source>
+        <translation>Betűtípus</translation>
+    </message>
+    <message>
+        <source>Bold</source>
+        <translation>Félkövér</translation>
+    </message>
+    <message>
+        <source>Italic</source>
+        <translation>Dőlt</translation>
+    </message>
+    <message>
+        <source>Underline</source>
+        <translation>Aláhúzott</translation>
+    </message>
+    <message>
+        <source>Align left</source>
+        <translation>Balra igazítás</translation>
+    </message>
+    <message>
+        <source>Align center</source>
+        <translation>Középre igazítás</translation>
+    </message>
+    <message>
+        <source>Align right</source>
+        <translation>Jobbra igazítás</translation>
+    </message>
+    <message>
+        <source>B</source>
+        <translation>F</translation>
+    </message>
+    <message>
+        <source>I</source>
+        <translation>D</translation>
+    </message>
+    <message>
+        <source>U</source>
+        <translation>A</translation>
+    </message>
 </context>
 <context>
     <name>EditorEffectsTab1</name>

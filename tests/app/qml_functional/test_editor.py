@@ -965,3 +965,57 @@ class TestGlobalUndoRedoRow(_ViewerOpenMixin):
         ):
             assert window.findChild(QObject, name) is None, name
 
+
+
+class TestTextToolTypography:
+    """#450 (2. lépcső): a szöveg-eszköz tipográfia-vezérlői a panelen —
+    betűcsalád, méret, félkövér/dőlt/aláhúzott, igazítás."""
+
+    def _open_text_tool(self, window, qt_app):
+        # a néző megnyitása indítja a beginEdit-et — enélkül a stílus-slotok
+        # jogosan tiltakoznak („Nincs aktív szerkesztés")
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", 0)
+        qt_app.processEvents()
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("textActive", True)
+        qt_app.processEvents()
+        return panel
+
+    def test_every_control_is_present(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        self._open_text_tool(window, qt_app)
+        for name in (
+            "textFontFamilyBox", "textFontSizeBox", "textBoldButton",
+            "textItalicButton", "textUnderlineButton",
+            "textAlign_left", "textAlign_center", "textAlign_right",
+        ):
+            assert window.findChild(QObject, name) is not None, name
+
+    def test_the_family_list_comes_from_the_catalogue(self, qml_app, qt_app):
+        from picasapy.render.text_fonts import FONT_FAMILIES
+
+        window, _controller, _engine = qml_app
+        panel = self._open_text_tool(window, qt_app)
+        keys = panel.property("fontFamilyKeys")
+        keys = keys.toVariant() if hasattr(keys, "toVariant") else list(keys)
+        assert keys == [family.key for family in FONT_FAMILIES]
+
+    def test_the_style_buttons_reach_the_controller(self, qml_app, qt_app):
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, _controller, _engine = qml_app
+        panel = self._open_text_tool(window, qt_app)
+        seen = []
+        panel.textBoldEdited.connect(seen.append)
+        panel.textAlignEdited.connect(seen.append)
+
+        for name in ("textBoldButton", "textAlign_center"):
+            QMetaObject.invokeMethod(
+                window.findChild(QObject, name), "buttonClicked",
+                Qt.ConnectionType.DirectConnection,
+            )
+        qt_app.processEvents()
+
+        assert seen == [True, "center"]
