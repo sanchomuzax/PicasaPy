@@ -351,6 +351,8 @@ ApplicationWindow {
             : fileOpsDialogs.openRename(window.selectedIndex)
         // #368: adatbázis-áthelyezés a Kísérleti menüből
         onMoveDatabaseRequested: moveDatabaseDialog.open()
+        // #449: adatbázis-tömörítés (`compacting.fen`)
+        onCompactDatabaseRequested: compactDatabaseDialog.open()
         onExportRequested: exportDialogs.openForSelection()
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.selectedIndex)
@@ -1292,6 +1294,7 @@ ApplicationWindow {
 
     // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
     MoveDatabaseDialog { id: moveDatabaseDialog }
+    CompactDatabaseDialog { id: compactDatabaseDialog }
 
     // Indítóképernyő (#189): a legfelső rétegen ül, a startupStatus hídból
     // kapja az állapotot, és ready-re magától kifakul/eltűnik.

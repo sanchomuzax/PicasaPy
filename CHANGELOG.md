@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.8] – 2026-08-12
+
+### Hozzáadva
+- **Adatbázis tömörítése (#449).** Az Eszközök → Kísérleti menüből
+  elindítható a fotóindex tömörítése (SQLite `VACUUM`), az eredeti Picasa
+  „Compacting" ablakának mintájára: megmondja, hogy percekig tarthat, és
+  **bármikor megszakítható** — megszakításkor az adatbázis érintetlen
+  marad. A haladásjelző szándékosan határozatlan: a `VACUUM` nem mond
+  százalékot, kitalálni pedig félrevezetés lenne.
+
 ## [0.7.7] – 2026-08-12
 
 ### Változott

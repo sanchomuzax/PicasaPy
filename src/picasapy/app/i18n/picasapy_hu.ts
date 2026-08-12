@@ -610,6 +610,37 @@
     </message>
 </context>
 <context>
+    <name>CompactDatabaseDialog</name>
+    <message>
+        <source>Compacting</source>
+        <translation>Tömörítés</translation>
+    </message>
+    <message>
+        <source>PicasaPy is compacting its database to save disk space. This may take several minutes.</source>
+        <translation>A PicasaPy tömöríti az adatbázisát, hogy lemezhelyet szabadítson fel. Ez több percig is eltarthat.</translation>
+    </message>
+    <message>
+        <source>Compacting...</source>
+        <translation>Tömörítés…</translation>
+    </message>
+    <message>
+        <source>Compacting cancelled. Your database is unchanged.</source>
+        <translation>A tömörítés megszakítva. Az adatbázis változatlan.</translation>
+    </message>
+    <message>
+        <source>Done.</source>
+        <translation>Kész.</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+</context>
+<context>
     <name>MoveDatabaseDialog</name>
     <message>
         <source>Move Database</source>
@@ -4040,6 +4071,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     <message>
         <source>Move Database...</source>
         <translation>Adatbázis áthelyezése…</translation>
+    </message>
+    <message>
+        <source>Compact Database...</source>
+        <translation>Adatbázis tömörítése…</translation>
     </message>
     <message>
         <source>Undo Save</source>

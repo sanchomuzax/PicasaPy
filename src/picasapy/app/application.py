@@ -45,6 +45,7 @@ from .confirm_settings_bridge import ConfirmSettingsBridge
 from .controller import AppController
 from .data_location import read_data_root
 from .error_log import error_log_path, install_error_log
+from .compact_controller import CompactController
 from .relocate_controller import RelocateController
 from .dedup_controller import DedupController
 from .discovery_controller import DiscoveryController
@@ -621,6 +622,9 @@ def run(argv: list[str]) -> int:
     engine.rootContext().setContextProperty(
         "relocateController", relocate_controller
     )
+    # #449: adatbázis-tömörítés — a CompactDatabaseDialog.qml hídja
+    compact_controller = CompactController(data_dir / "index.db")
+    engine.rootContext().setContextProperty("compactController", compact_controller)
     engine.rootContext().setContextProperty(
         "importSourceController", import_source_controller
     )
