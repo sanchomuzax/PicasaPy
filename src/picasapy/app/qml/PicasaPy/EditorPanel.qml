@@ -117,6 +117,9 @@ Rectangle {
     // #464: a pipetta („semleges szín") aktív-e — a néző ilyenkor a
     // kattintást színmintavételként adja tovább, nem navigációként
     property bool neutralPickerActive: false
+    // #464: a pipetta melletti korong színe — a kontroller mentett
+    // semleges színe `#rrggbb` alakban, üres string = nincs kijelölve
+    property string neutralColor: ""
     signal neutralPickerToggled()
 
     property string undoLabel: qsTr("Undo")
@@ -354,19 +357,19 @@ Rectangle {
 
     // a négy csúszka aktuális értékét egyben küldi (élő előnézet)
     function emitFinetunePreview() {
-        panel.finetunePreview(finetuneFillSlider.value,
-                               finetuneHighlightsSlider.value,
-                               finetuneShadowsSlider.value,
-                               finetuneTempSlider.value)
+        panel.finetunePreview(finetunePanel.fillSlider.value,
+                               finetunePanel.highlightsSlider.value,
+                               finetunePanel.shadowsSlider.value,
+                               finetunePanel.tempSlider.value)
     }
     // a csúszkák a mentett (kontroller) értékekre állnak — előnézet nélkül
     function syncFinetuneSliders() {
         panel.suppressFinetune = true
-        finetuneFillSlider.value = panel.fillLight
+        finetunePanel.fillSlider.value = panel.fillLight
         fixesFillSlider.value = panel.fillLight   // #337: a másik fül párja
-        finetuneHighlightsSlider.value = panel.highlights
-        finetuneShadowsSlider.value = panel.shadows
-        finetuneTempSlider.value = panel.colorTemp
+        finetunePanel.highlightsSlider.value = panel.highlights
+        finetunePanel.shadowsSlider.value = panel.shadows
+        finetunePanel.tempSlider.value = panel.colorTemp
         panel.suppressFinetune = false
     }
 
@@ -378,18 +381,22 @@ Rectangle {
         if (panel.suppressFinetune)
             return
         panel.suppressFinetune = true
-        finetuneFillSlider.value = value
+        finetunePanel.fillSlider.value = value
         fixesFillSlider.value = value
         panel.suppressFinetune = false
         panel.emitFinetunePreview()
     }
 
-    function fillLightCommitted() {
-        panel.finetuneCommit(finetuneFillSlider.value,
-                             finetuneHighlightsSlider.value,
-                             finetuneShadowsSlider.value,
-                             finetuneTempSlider.value)
+    // a négy csúszka aktuális értékének MENTÉSE (a húzás végén) — a
+    // Finomhangolás fül minden csúszkája és a Gyakori javítások fülön lévő
+    // Derítőfény-párja is ezen az egy ponton megy ki
+    function emitFinetuneCommit() {
+        panel.finetuneCommit(finetunePanel.fillSlider.value,
+                             finetunePanel.highlightsSlider.value,
+                             finetunePanel.shadowsSlider.value,
+                             finetunePanel.tempSlider.value)
     }
+    function fillLightCommitted() { panel.emitFinetuneCommit() }
     onFillLightChanged: panel.syncFinetuneSliders()
     onActiveTabChanged: panel.syncFinetuneSliders()
     // #448: a vágó-eszköz megnyitásakor a legutóbb használt arány töltődik
@@ -892,147 +899,18 @@ Rectangle {
 
     }
 
-    // ---------------- "finetune" mód: Finomhangolás (#20) ----------------
-    ColumnLayout {
-        objectName: "finetuneColumn"
+    // ---------------- "finetune" mód: Finomhangolás (#20/#464) ----------
+    // #464/#496: a fül tartalma önálló fájlban, a tulajdonos négy
+    // képernyőképe szerinti elrendezéssel (ld. ott).
+    EditorFinetunePanel {
+        id: finetunePanel
+        panel: panel
         visible: !panel.modeToolActive && panel.activeTab === 1
-        opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: globalUndoRow.top
         anchors.bottomMargin: 6
-        anchors.margins: 10
-        spacing: 8
-
-        Rectangle {
-            Layout.fillWidth: true
-            height: 22
-            color: Theme.panelHeaderBg
-            Text {
-                anchors.left: parent.left
-                anchors.leftMargin: 6
-                anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("Fine Tuning")
-                font.pixelSize: Theme.fontSize
-                font.bold: true
-                color: Theme.panelHeaderText
-            }
-        }
-
-        // #464: az eredeti 2. fülön az Automatikus szín és az Automatikus
-        // kontraszt egykattintásos gombja is ott van — SZÁNDÉKOS ismétlés
-        // az 1. fülről, hogy a finomhangolás közben kéznél legyen. Mellettük
-        // a pipetta („Neutral Color Picker"): a képre kattintva a kijelölt
-        // pont lesz a semleges szín (a finetune2 4. paramétere).
-        GridLayout {
-            objectName: "finetuneQuickFixes"
-            columns: 3
-            columnSpacing: 4
-            rowSpacing: 6
-            Layout.fillWidth: true
-
-            ToolTile {
-                objectName: "finetuneAutocolor"
-                toolName: "autocolor"; label: qsTr("Auto Color")
-                iconFile: "auto-szin"
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "finetuneAutolight"
-                toolName: "autolight"; label: qsTr("Auto Contrast")
-                iconFile: "auto-kontraszt"
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "finetuneNeutralPicker"
-                toolName: "neutralpicker"
-                label: qsTr("Neutral Color Picker")
-                iconFile: "pipetta"
-                active: panel.neutralPickerActive
-                onActivated: panel.neutralPickerToggled()
-            }
-        }
-
-        Label {
-            text: qsTr("Fill Light")
-            font.pixelSize: Theme.fontSize - 1
-            color: Theme.textGray
-        }
-        PicasaSlider {
-            id: finetuneFillSlider
-            objectName: "finetuneFillSlider"
-            Layout.fillWidth: true
-            from: 0; to: 1; value: 0
-            // #337: a Gyakori javítások fülön lévő párjával közös állapot
-            onValueChanged: panel.fillLightMoved(value)
-            onPressedChanged: if (!pressed) panel.fillLightCommitted()
-        }
-
-        Label {
-            text: qsTr("Highlights")
-            font.pixelSize: Theme.fontSize - 1
-            color: Theme.textGray
-        }
-        PicasaSlider {
-            id: finetuneHighlightsSlider
-            objectName: "finetuneHighlightsSlider"
-            Layout.fillWidth: true
-            // #551: a `filterdesc.xml` szerinti nyers paraméter-tartomány
-            // [0..0.48] — a mérés is pontosan ezt igazolta (a felső állás
-            // fehér-/feketepontja 0,48-cal mozdul). A csúszka számot nem
-            // mutat, tehát ez csak a mentett ini-értéket teszi
-            // Picasa-azonossá.
-            from: 0; to: 0.48; value: 0
-            onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
-            onPressedChanged: if (!pressed)
-                panel.finetuneCommit(finetuneFillSlider.value,
-                                      finetuneHighlightsSlider.value,
-                                      finetuneShadowsSlider.value,
-                                      finetuneTempSlider.value)
-        }
-
-        Label {
-            text: qsTr("Shadows")
-            font.pixelSize: Theme.fontSize - 1
-            color: Theme.textGray
-        }
-        PicasaSlider {
-            id: finetuneShadowsSlider
-            objectName: "finetuneShadowsSlider"
-            Layout.fillWidth: true
-            // #551: a `filterdesc.xml` szerinti nyers paraméter-tartomány
-            // [0..0.48] — a mérés is pontosan ezt igazolta (a felső állás
-            // fehér-/feketepontja 0,48-cal mozdul). A csúszka számot nem
-            // mutat, tehát ez csak a mentett ini-értéket teszi
-            // Picasa-azonossá.
-            from: 0; to: 0.48; value: 0
-            onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
-            onPressedChanged: if (!pressed)
-                panel.finetuneCommit(finetuneFillSlider.value,
-                                      finetuneHighlightsSlider.value,
-                                      finetuneShadowsSlider.value,
-                                      finetuneTempSlider.value)
-        }
-
-        Label {
-            text: qsTr("Color Temperature")
-            font.pixelSize: Theme.fontSize - 1
-            color: Theme.textGray
-        }
-        PicasaSlider {
-            id: finetuneTempSlider
-            objectName: "finetuneTempSlider"
-            Layout.fillWidth: true
-            from: -1; to: 1; value: 0
-            onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
-            onPressedChanged: if (!pressed)
-                panel.finetuneCommit(finetuneFillSlider.value,
-                                      finetuneHighlightsSlider.value,
-                                      finetuneShadowsSlider.value,
-                                      finetuneTempSlider.value)
-        }
-
     }
 
     // ---------------- "effects" mód: Effektek (#20) ----------------

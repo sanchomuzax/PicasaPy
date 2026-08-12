@@ -235,6 +235,8 @@ Rectangle {
         editorPanel.hasTextOverlay = editController.hasTextOverlay
         // #450: szöveg-stílus — kitöltés+körvonal szín, körvonal-vastagság,
         // kitöltés ki/be, átlátszóság
+        // #464: a Finomhangolás fül pipettája melletti színminta
+        editorPanel.neutralColor = editController.neutralColor
         editorPanel.textFillColor = editController.textFillColor
         editorPanel.textOutlineColor = editController.textOutlineColor
         editorPanel.textOutlineThickness = editController.textOutlineThickness

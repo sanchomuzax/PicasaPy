@@ -579,6 +579,24 @@ class EditController(QObject, BackgroundWorkerMixin):
     def colorTemp(self) -> float:
         return self._finetune_field("temperature")
 
+    @Property(str, notify=toolsChanged)
+    def neutralColor(self) -> str:
+        """A kijelölt semleges szín `#rrggbb` alakban, vagy üres string, ha
+        nincs kijelölve (#464).
+
+        Az eredeti Finomhangolás fülén az „Alapszínválasztás" pipettája
+        MELLETT egy színminta-korong ül, ami a kijelölt színt mutatja (ld. a
+        `referencia/finomhangolas/shot1.png` képernyőképet) — ez a
+        tulajdonság tölti azt.
+        """
+        values = self._session.finetune_values()
+        if values is None:
+            return ""
+        neutral = parse_neutral_argb(values.neutral)
+        if neutral is None:
+            return ""
+        return "#{:02x}{:02x}{:02x}".format(*neutral)
+
     @Property(bool, notify=toolsChanged)
     def hasFinetune(self) -> bool:
         """Van-e finomhangolás a láncban — a „Visszavonás" felirathoz."""

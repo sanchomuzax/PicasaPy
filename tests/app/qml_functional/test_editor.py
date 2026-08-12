@@ -776,18 +776,48 @@ class _ViewerOpenMixin:
 
 
 class TestFinetuneTabQuickFixesAndPicker(_ViewerOpenMixin):
-    """#464: a 2. fülön ott van a két egykattintásos gomb (szándékos
-    ismétlés az 1. fülről) és a „semleges szín" pipetta."""
+    """#464: a 2. fülön ott van a két egykattintásos javítás és a
+    „semleges szín" pipetta.
 
-    def test_quick_fix_tiles_present_on_the_finetune_tab(self, qml_app, qt_app):
+    A tulajdonos képernyőképei (`referencia/finomhangolas/shot1..4.png`)
+    pontosították a formát: a két egykattintásos javítás nem szöveges
+    csempe, hanem KÉT VARÁZSPÁLCA-GOMB a csúszka-oszlop jobb szélén — az
+    egyik a Kiemelések/Árnyékok párnál („…a megvilágításhoz"), a másik az
+    Alapszínválasztás sorában („…a színhez")."""
+
+    def test_wands_and_picker_present_on_the_finetune_tab(self, qml_app, qt_app):
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
         panel = window.findChild(QObject, "viewerEditorPanel")
         panel.setProperty("activeTab", 1)
         qt_app.processEvents()
 
-        for name in ("finetuneAutocolor", "finetuneAutolight", "finetuneNeutralPicker"):
+        for name in (
+            "finetuneLightingWand", "finetuneColorWand",
+            "finetuneNeutralPicker", "finetuneNeutralSwatch",
+        ):
             assert window.findChild(QObject, name) is not None, name
+
+    def test_wands_apply_autolight_and_autocolor(self, qml_app, qt_app):
+        """A két pálca az Automatikus kontraszt / Automatikus szín
+        műveletét indítja (a `referencia/varazspalcak/` mérése szerint)."""
+        from PySide6.QtCore import QMetaObject, Qt
+
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("activeTab", 1)
+        qt_app.processEvents()
+
+        seen = []
+        panel.toolActivated.connect(seen.append)
+        for name in ("finetuneLightingWand", "finetuneColorWand"):
+            QMetaObject.invokeMethod(
+                window.findChild(QObject, name),
+                "clicked", Qt.ConnectionType.DirectConnection,
+            )
+        qt_app.processEvents()
+        assert seen == ["autolight", "autocolor"]
 
     def test_picker_toggle_arms_the_sampling_area(self, qml_app, qt_app):
         from PySide6.QtCore import QMetaObject, Qt

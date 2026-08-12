@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.76] – 2026-08-12
+
+### Javítva
+- **A Finomhangolás fül elrendezése az eredeti szerint (#464).** A tulajdonos
+  négy képernyőképéről kiderült, hogy a fülön nincs szöveges fejléc, a
+  csúszka-feliratok középen állnak, és az „egy gombnyomásos javítás" nem két
+  nagy szöveges csempe a csúszkák fölött, hanem **két kis varázspálca-gomb**
+  a csúszka-oszlop jobb szélén: az egyik a Kiemelések/Árnyékok párnál (a
+  megvilágításhoz), a másik az „Alapszínválasztás" sorában (a színhez).
+- Az **Alapszínválasztás** pipettája mellé bekerült a **kijelölt semleges
+  színt mutató korong**, ahogy az eredetin is.
+
 ## [0.6.75] – 2026-08-11
 
 ### Belső
