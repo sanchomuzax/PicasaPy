@@ -463,6 +463,14 @@ ListView {
                         caption: slot.info.caption || ""
                         isVideo: slot.info.isVideo === true
                         hasEdits: slot.info.hasEdits === true
+                        // #463: a jelvények a ThumbDelegate-ben már
+                        // megvoltak, de a FŐ RÁCS nem kötötte be őket —
+                        // a geo-pin és a két arc-jelvény ezért sosem
+                        // jelent meg. A mezőket a modell adja
+                        // (models.py: hasGeo/hasFaces/hasFaceSuggestion).
+                        hasGeo: slot.info.hasGeo === true
+                        hasFaces: slot.info.hasFaces === true
+                        hasFaceSuggestion: slot.info.hasFaceSuggestion === true
                         // #455: a tálcán tartott kép jelvénye — a
                         // `heldCount` a reaktív trigger (a `photos.
                         // revision` fenti mintája szerint), mert a

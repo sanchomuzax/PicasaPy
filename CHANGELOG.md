@@ -5,6 +5,46 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.80] – 2026-08-12
+
+### Javítva
+- **Az effekt-beállítások alpanelje sem lóghat rá a Visszavonás sorra (#464).**
+  A sok paraméteres effektek (például a Vignetta) beállító-panelje magasabb
+  lehet a rendelkezésre álló helynél; ez is vágott, görgethető területre került.
+  Ezzel a szerkesztőpanel minden nézete — az öt fül, a négy mód-eszköz és az
+  effekt-beállítások — a gombsor fölött ér véget.
+
+## [0.6.79] – 2026-08-12
+
+### Javítva
+- **A mód-eszközök panelje sem lóghat rá a Visszavonás sorra (#464).** A vágás,
+  a retusálás, a vörösszem és a szöveg panelje ugyanabba a hibába futhatott,
+  mint az effekt-fülek: ha a tartalom magasabb a rendelkezésre álló helynél,
+  ráúszott a panel alján ülő gombsorra. Mind a négy mostantól közös, vágott
+  görgethető területen ül, ami pontosan a gombsorig ér.
+
+## [0.6.78] – 2026-08-12
+
+### Javítva
+- **Az indexkép-jelvények végre látszanak is (#463).** A hely-tű és a két
+  arc-jelvény („van rajta felismert arc", „névjavaslat vár jóváhagyásra") a
+  bélyegkép-kártyában rég készen álltak, és az adat is megvolt a modellben —
+  a fő rács viszont nem kötötte be őket, így sosem jelentek meg. Mostantól
+  megjelennek; új teszt őrzi, hogy egyetlen jelvény se maradhasson bekötetlenül.
+
+## [0.6.77] – 2026-08-12
+
+### Javítva
+- **Az effekt-fülek gombjai nem lógnak rá a Visszavonás sorra (#464).** Mindhárom
+  effekt-fül rácsa több gombot tartalmaz, mint amennyi a panel magasságába fér;
+  eddig a csempék átfedtek a panel alján ülő Visszavonás/Újra gombsorral, és a
+  fül alja levágódott. A rács mostantól saját, vágott görgethető területen ül.
+- **A „Gyakori javítások" fül gombjai az eredeti sorrendjében (#464).** A
+  tulajdonos képernyőképe alapján: Vágás · Kiegyenesítés · Vörösszem /
+  Jó napom van · Automatikus kontraszt · Automatikus szín / Retusálás · Szöveg,
+  és mindegyik alatt a Derítőfény-csúszka. A „Kreatív Kit" csempe **eltűnt** —
+  az eredeti fülön nincs ilyen gomb (a jegy szövege tévesen sorolta fel).
+
 ## [0.6.76] – 2026-08-12
 
 ### Javítva

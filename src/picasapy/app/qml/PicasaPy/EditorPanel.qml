@@ -764,12 +764,19 @@ Rectangle {
         // — az eredeti Picasán a fül alatt NINCS ilyen felirat, a csempék
         // rögtön a fülsáv alatt kezdődnek (ld. #405 issue 4. pontja).
 
-        // #464: a gombkészlet és a sorrend a jegy szövegéből (a tulajdonos
-        // eredeti Picasa 3.9-en olvasta le): Kivágás -> Vörösszem -> Jó
-        // napom van -> Kreatív Kit -> Automatikus szín -> Automatikus
-        // kontraszt -> [Derítőfény-csúszka] -> Kiegyenesítés -> Szöveg ->
-        // Retusálás. A Derítőfény a gombok KÖZÖTT ül (nem külön fülön),
-        // ezért a rács két részre bomlik, a csúszka sora közéjük ékelve.
+        // #464: a gombkészlet és a sorrend a tulajdonos KÉPERNYŐKÉPÉRŐL
+        // (Picasa 3.9, „Gyakori javítások" fül) — ez FELÜLÍRJA a jegy
+        // szövegében szereplő korábbi sorrendet, ami feljegyzésből készült:
+        //
+        //     Vágás · Kiegyenesítés · Vörösszem
+        //     Jó napom van · Automatikus kontraszt · Automatikus szín
+        //     Retusálás · Szöveg
+        //     [kis kép] Derítőfény-csúszka
+        //
+        // A képen NINCS „Kreatív Kit" csempe (a jegy tévesen sorolta fel), a
+        // Derítőfény pedig NEM a gombok közé ékelődik, hanem MINDEGYIK alatt
+        // ül. Az egygombos javítás lenyomás után elhalványul (tiltottá
+        // válik) — a csempe képe nem változik, csak áttetsző lesz.
         GridLayout {
             columns: 3
             columnSpacing: 4
@@ -783,13 +790,20 @@ Rectangle {
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
+                objectName: "editToolTilt"
+                toolName: "tilt"; label: qsTr("Straighten")
+                iconFile: "kiegyenesites"
+                active: panel.tiltActive
+                onActivated: (tool) => panel.handleToolClick(tool)
+            }
+            ToolTile {
                 objectName: "editToolRedeye"
                 toolName: "redeye"; label: qsTr("Redeye"); iconFile: "vorosszem"
                 active: panel.redeyeActive
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             // egygombos javítások (#116): nincs "benyomva" állapot — a gomb
-            // tiltott, amíg ugyanez a szűrő a lánc utolsó eleme
+            // tiltott (halvány), amíg ugyanez a szűrő a lánc utolsó eleme
             ToolTile {
                 objectName: "editToolEnhance"
                 toolName: "enhance"; label: qsTr("I'm Feeling Lucky")
@@ -797,17 +811,11 @@ Rectangle {
                 tileEnabled: panel.enhanceEnabled
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
-            // #464: „Kreatív Kit" — a Picasa a Picnik külső szerkesztőt
-            // első osztályú polgárként kezelte, negyedik helyen. A
-            // projektnek nincs külső-szerkesztő integrációja (nincs
-            // háttere), ezért a gomb egyelőre HELYŐRZŐ: a helye megvan,
-            // letiltva jelenik meg (a PicasaMenuItem-placeholder mintát
-            // követve, ToolTile-lel — nincs saját "placeholder" property).
             ToolTile {
-                objectName: "editToolCreativeKit"
-                toolName: "creativekit"; label: qsTr("Creative Kit")
-                iconFile: "kreativ-kit"
-                tileEnabled: false
+                objectName: "editToolAutolight"
+                toolName: "autolight"; label: qsTr("Auto Contrast")
+                iconFile: "auto-kontraszt"
+                tileEnabled: panel.autolightEnabled
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
@@ -818,10 +826,16 @@ Rectangle {
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
             ToolTile {
-                objectName: "editToolAutolight"
-                toolName: "autolight"; label: qsTr("Auto Contrast")
-                iconFile: "auto-kontraszt"
-                tileEnabled: panel.autolightEnabled
+                objectName: "editToolRetouch"
+                toolName: "retouch"; label: qsTr("Retouch")
+                iconFile: "retusalas"
+                active: panel.retouchActive
+                onActivated: (tool) => panel.handleToolClick(tool)
+            }
+            ToolTile {
+                objectName: "editToolText"
+                toolName: "text"; label: qsTr("Text"); iconFile: "szoveg"
+                active: panel.textActive
                 onActivated: (tool) => panel.handleToolClick(tool)
             }
         }
@@ -866,34 +880,6 @@ Rectangle {
                     onValueChanged: panel.fillLightMoved(value)
                     onPressedChanged: if (!pressed) panel.fillLightCommitted()
                 }
-            }
-        }
-
-        // #464: a sorrend maradék három gombja a Derítőfény-csúszka UTÁN —
-        // Kiegyenesítés -> Szöveg -> Retusálás.
-        GridLayout {
-            columns: 3
-            columnSpacing: 4
-            rowSpacing: 10
-            Layout.fillWidth: true
-
-            ToolTile {
-                objectName: "editToolTilt"
-                toolName: "tilt"; label: qsTr("Straighten"); iconFile: "kiegyenesites"
-                active: panel.tiltActive
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "editToolText"
-                toolName: "text"; label: qsTr("Text"); iconFile: "szoveg"
-                active: panel.textActive
-                onActivated: (tool) => panel.handleToolClick(tool)
-            }
-            ToolTile {
-                objectName: "editToolRetouch"
-                toolName: "retouch"; label: qsTr("Retouch"); iconFile: "retusalas"
-                active: panel.retouchActive
-                onActivated: (tool) => panel.handleToolClick(tool)
             }
         }
 
@@ -949,114 +935,134 @@ Rectangle {
     // Bármelyik effekt-fülön (2./3./4.) megnyílhat — az adott fül rácsát
     // fedi el ugyanazon a helyen (tabBar.bottom-tól), a visszatérés
     // ugyanarra a fülre történik, mert az activeTab változatlan marad.
-    ColumnLayout {
-        objectName: "effectParamColumn"
+    // #464 (ugyanaz a túlcsordulás-osztály, mint az effekt-füleknél): a
+    // sok paraméteres effektek (pl. Vignetta) alpanelje magasabb lehet a
+    // rendelkezésre álló helynél — vágás/görgetés nélkül rálógna a panel
+    // alján ülő, globális Visszavonás/Újra sorra.
+    Flickable {
+        id: effectParamScroll
+        objectName: "editorEffectParamScroll"
         visible: !panel.modeToolActive && panel.paramPanelActive
-        opacity: panel.enabled ? 1 : 0.45
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.margins: 10
-        spacing: 8
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
+        clip: true
+        contentWidth: width
+        contentHeight: effectParamColumn.implicitHeight + 20
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: PicasaScrollBar {}
 
-        Rectangle {
-            Layout.fillWidth: true
-            height: 22
-            color: Theme.panelHeaderBg
-            Text {
-                objectName: "effectParamTitle"
-                anchors.left: parent.left
-                anchors.leftMargin: 6
-                anchors.verticalCenter: parent.verticalCenter
-                text: panel.paramEffectName
-                font.pixelSize: Theme.fontSize
-                font.bold: true
-                color: Theme.panelHeaderText
-            }
-        }
+        ColumnLayout {
+            id: effectParamColumn
+            objectName: "effectParamColumn"
+            opacity: panel.enabled ? 1 : 0.45
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: 10
+            spacing: 8
 
-        Repeater {
-            objectName: "effectParamRepeater"
-            model: panel.paramEffectParams
-
-            // #516: a katalógus 3 vezérlő-fajtát ismer — "slider" (számtar-
-            // tomány), "checkbox" (jelölőnégyzet) és "color" (színválasztó,
-            // a #450 szöveg-eszköz `TextColorSwatches`-ának mintájára). Egy
-            // delegate-en belül mindhárom ág megvan, csak a `kind` szerint
-            // látszik az egyik — így a Repeater indexelése (és vele a
-            // `panel.updateParamValue(index, …)` pozíció-egyeztetés)
-            // változatlan marad, akármilyen a vezérlő-keverék.
-            delegate: ColumnLayout {
-                id: paramRow
-                required property var modelData
-                required property int index
+            Rectangle {
                 Layout.fillWidth: true
-                spacing: 2
+                height: 22
+                color: Theme.panelHeaderBg
+                Text {
+                    objectName: "effectParamTitle"
+                    anchors.left: parent.left
+                    anchors.leftMargin: 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: panel.paramEffectName
+                    font.pixelSize: Theme.fontSize
+                    font.bold: true
+                    color: Theme.panelHeaderText
+                }
+            }
 
-                RowLayout {
+            Repeater {
+                objectName: "effectParamRepeater"
+                model: panel.paramEffectParams
+
+                // #516: a katalógus 3 vezérlő-fajtát ismer — "slider" (számtar-
+                // tomány), "checkbox" (jelölőnégyzet) és "color" (színválasztó,
+                // a #450 szöveg-eszköz `TextColorSwatches`-ának mintájára). Egy
+                // delegate-en belül mindhárom ág megvan, csak a `kind` szerint
+                // látszik az egyik — így a Repeater indexelése (és vele a
+                // `panel.updateParamValue(index, …)` pozíció-egyeztetés)
+                // változatlan marad, akármilyen a vezérlő-keverék.
+                delegate: ColumnLayout {
+                    id: paramRow
+                    required property var modelData
+                    required property int index
                     Layout.fillWidth: true
-                    visible: paramRow.modelData.kind !== "checkbox"
-                    Label {
-                        objectName: "effectParamLabel" + paramRow.index
+                    spacing: 2
+
+                    RowLayout {
                         Layout.fillWidth: true
-                        text: panel.paramLabel(paramRow.modelData.label)
-                        font.pixelSize: Theme.fontSize - 1
-                        color: Theme.textGray
+                        visible: paramRow.modelData.kind !== "checkbox"
+                        Label {
+                            objectName: "effectParamLabel" + paramRow.index
+                            Layout.fillWidth: true
+                            text: panel.paramLabel(paramRow.modelData.label)
+                            font.pixelSize: Theme.fontSize - 1
+                            color: Theme.textGray
+                        }
+                        Label {
+                            objectName: "effectParamValue" + paramRow.index
+                            visible: paramRow.modelData.kind === "slider"
+                            text: paramSlider.value.toFixed(2)
+                            font.pixelSize: Theme.fontSize - 1
+                            color: Theme.textGray
+                        }
                     }
-                    Label {
-                        objectName: "effectParamValue" + paramRow.index
+                    PicasaSlider {
+                        id: paramSlider
+                        objectName: "effectParamSlider" + paramRow.index
                         visible: paramRow.modelData.kind === "slider"
-                        text: paramSlider.value.toFixed(2)
-                        font.pixelSize: Theme.fontSize - 1
-                        color: Theme.textGray
+                        Layout.fillWidth: true
+                        from: paramRow.modelData.minimum
+                        to: paramRow.modelData.maximum
+                        stepSize: paramRow.modelData.step
+                        value: paramRow.modelData.default
+                        // húzás/kattintás közben élő előnézet (#316) — a
+                        // programozott kezdőérték-beállítás NEM vált ki `moved`
+                        // jelet, csak a valódi felhasználói interakció
+                        onMoved: panel.updateParamValue(paramRow.index, paramSlider.value)
+                    }
+                    CheckBox {
+                        id: paramCheckbox
+                        objectName: "effectParamCheckbox" + paramRow.index
+                        visible: paramRow.modelData.kind === "checkbox"
+                        text: panel.paramLabel(paramRow.modelData.label)
+                        checked: paramRow.modelData.default !== 0
+                        onToggled: panel.updateParamValue(paramRow.index, paramCheckbox.checked ? 1 : 0)
+                    }
+                    TextColorSwatches {
+                        id: paramColorSwatches
+                        objectName: "effectParamColor" + paramRow.index
+                        visible: paramRow.modelData.kind === "color"
+                        // #305 null-őr: régebbi/fake vezérlők (pl. teszt-dupla)
+                        // "color" mező nélküli payloadot is küldhetnek
+                        currentColor: paramRow.modelData.color ? paramRow.modelData.color : "#000000"
+                        onColorPicked: (hex) => panel.updateParamValue(paramRow.index, hex)
                     }
                 }
-                PicasaSlider {
-                    id: paramSlider
-                    objectName: "effectParamSlider" + paramRow.index
-                    visible: paramRow.modelData.kind === "slider"
-                    Layout.fillWidth: true
-                    from: paramRow.modelData.minimum
-                    to: paramRow.modelData.maximum
-                    stepSize: paramRow.modelData.step
-                    value: paramRow.modelData.default
-                    // húzás/kattintás közben élő előnézet (#316) — a
-                    // programozott kezdőérték-beállítás NEM vált ki `moved`
-                    // jelet, csak a valódi felhasználói interakció
-                    onMoved: panel.updateParamValue(paramRow.index, paramSlider.value)
-                }
-                CheckBox {
-                    id: paramCheckbox
-                    objectName: "effectParamCheckbox" + paramRow.index
-                    visible: paramRow.modelData.kind === "checkbox"
-                    text: panel.paramLabel(paramRow.modelData.label)
-                    checked: paramRow.modelData.default !== 0
-                    onToggled: panel.updateParamValue(paramRow.index, paramCheckbox.checked ? 1 : 0)
-                }
-                TextColorSwatches {
-                    id: paramColorSwatches
-                    objectName: "effectParamColor" + paramRow.index
-                    visible: paramRow.modelData.kind === "color"
-                    // #305 null-őr: régebbi/fake vezérlők (pl. teszt-dupla)
-                    // "color" mező nélküli payloadot is küldhetnek
-                    currentColor: paramRow.modelData.color ? paramRow.modelData.color : "#000000"
-                    onColorPicked: (hex) => panel.updateParamValue(paramRow.index, hex)
-                }
             }
-        }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            PanelButton {
-                objectName: "effectParamApplyButton"
-                label: qsTr("Apply")
-                onButtonClicked: panel.applyParamPanel()
-            }
-            PanelButton {
-                objectName: "effectParamCancelButton"
-                label: qsTr("Cancel")
-                onButtonClicked: panel.cancelParamPanel()
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 6
+                PanelButton {
+                    objectName: "effectParamApplyButton"
+                    label: qsTr("Apply")
+                    onButtonClicked: panel.applyParamPanel()
+                }
+                PanelButton {
+                    objectName: "effectParamCancelButton"
+                    label: qsTr("Cancel")
+                    onButtonClicked: panel.cancelParamPanel()
+                }
             }
         }
     }
@@ -1074,12 +1080,76 @@ Rectangle {
                                           panel.paramEffectValues)
     }
 
-    // ---------------- "crop" mód: Fotó vágása ----------------
-    EditorCropPanel {
-        panel: panel
+    // ---------------- mód-eszközök (vágás/retusálás/vörösszem/szöveg) ----
+    //
+    // #464 (felhasználói hibajelentés az effekt-fülekről, ugyanaz az
+    // osztály): ezek a panelek a tartalmuktól függően MAGASABBAK lehetnek,
+    // mint a rendelkezésre álló hely — vágás/görgetés nélkül rálógnának a
+    // panel alján ülő, globális Visszavonás/Újra sorra. Ezért mind a négy
+    // EGY közös, vágott görgethető területen ül, ami pontosan a gombsorig
+    // ér. Egyszerre mindig legfeljebb egy látszik (a saját `visible`
+    // kötése szerint), a görgethető magasság ezért a LÁTHATÓÉ.
+    Flickable {
+        id: modeToolScroll
+        objectName: "editorModeToolScroll"
+        visible: panel.modeToolActive
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
+        clip: true
+        contentWidth: width
+        contentHeight: Math.max(
+            cropModePanel.visible ? cropModePanel.implicitHeight : 0,
+            retouchModePanel.visible ? retouchModePanel.implicitHeight : 0,
+            redeyeModePanel.visible ? redeyeModePanel.implicitHeight : 0,
+            textModePanel.visible ? textModePanel.implicitHeight : 0)
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: PicasaScrollBar {}
+
+        // ---- "crop" mód: Fotó vágása ----
+        EditorCropPanel {
+            id: cropModePanel
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---- "retouch" mód: Retusálás (#148) ----
+        // A kattintások kezelését a hívó (PhotoViewer) végzi a képen (ez a
+        // fájl nem ismeri a kép geometriáját); a panel a puffer méretét és
+        // az Alkalmaz/Mégse gombokat mutatja.
+        EditorRetouchPanel {
+            id: retouchModePanel
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---- "redeye" mód: Vörösszem (#445) ----
+        // Az automatika a panel megnyitásakor lefut; a kézzel húzott
+        // téglalapokat a hívó (PhotoViewer) veszi fel a képen.
+        EditorRedeyePanel {
+            id: redeyeModePanel
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---- "text" mód: Szöveg-overlay (#148) ----
+        // A pozicionálás is kattintással történik a képen; a szövegmező itt
+        // él, a gépelést a textDraftEdited jel viszi a controllerhez.
+        EditorTextPanel {
+            id: textModePanel
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
     }
 
     // #448: "AddCustomAspectRatio" — szélesség × magasság + név bekérő; a
@@ -1169,34 +1239,16 @@ Rectangle {
     // fülsáv/rács helyett; a kattintások kezelését a hívó (PhotoViewer)
     // végzi a képen (ez a fájl nem ismeri a kép geometriáját), a puffer
     // méretét (retouchRegionCount) és az Alkalmaz/Mégse gombokat mutatja.
-    EditorRetouchPanel {
-        panel: panel
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-    }
 
     // ---------------- "redeye" mód: Vörösszem (#445) ----------------
     // Az automatika a panel megnyitásakor lefut; a kézzel húzott
     // téglalapokat — a Retusálás mintájára — a hívó (PhotoViewer) veszi fel
     // a képen, ez a fájl a puffer-állapotot és a gombokat mutatja.
-    EditorRedeyePanel {
-        panel: panel
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-    }
 
     // ---------------- "text" mód: Szöveg-overlay (#148) ----------------
     // A pozicionálás is kattintással történik a képen (a hívó feladata,
     // ld. retouchColumn megjegyzése) — a szövegmező itt él, a tartalom
     // gépelését a textDraftEdited jel viszi a controllerhez.
-    EditorTextPanel {
-        panel: panel
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-    }
 
     // ---------------- #464: GLOBÁLIS Visszavonás/Újra ----------------
     //
