@@ -399,12 +399,25 @@ ApplicationWindow {
         namePrefix: "undoAllEdits"
         title: qsTr("Undo All Edits")
         property var rows: []
+        // #465: az eredeti Picasa KÉT külön szöveget használ egy, illetve
+        // több képre (IDS_CONFIRMREVERT / IDS_CONFIRMREVERT_MULTIPLE) — a
+        // többesszámúban a „MINDEGYIK" nagybetűs. Ha a kijelölésben van
+        // vörösszem-javítás, az eredeti KÜLÖN is figyelmeztet rá
+        // (IDS_CONFIRM_REDEYE_REVERT): az régió-adat, és a törléssel
+        // véglegesen elvész.
         function openFor(rowList) {
             if (rowList.length === 0) return
             rows = rowList
-            ask("undoAllEdits", qsTr(
-                "All edits will be removed from %n selected picture(s).",
-                "", rowList.length))
+            var text = rowList.length === 1
+                ? qsTr("This will remove all edits you have made to the"
+                       + " current picture.")
+                : qsTr("This will remove all edits you have made to ALL of"
+                       + " the selected pictures.")
+            if (controller.selectionHasRedeye(rowList))
+                text += "\n\n" + qsTr("Red eye fixes have been applied. If you"
+                                      + " remove all edits, your red eye fixes"
+                                      + " cannot be recovered.")
+            ask("undoAllEdits", text)
         }
         onConfirmed: controller.clearAllEffectsMany(rows)
     }

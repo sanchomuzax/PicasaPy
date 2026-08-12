@@ -5,6 +5,33 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.82] – 2026-08-12
+
+### Hozzáadva
+- **Figyelmeztetés a visszavonás adatvesztéses eseteire (#465).** A retusálás
+  és a vörösszem-javítás területadatot hordoz: a visszavonás eldobja, és az
+  „Újra" nem hozza vissza. Az eredeti Picasához hasonlóan ezek visszavonása
+  mostantól rákérdez — a többi lépésé továbbra sem, hiszen ott van visszaút.
+- Az **„Összes szerkesztés visszavonása"** az eredeti két külön szövegét
+  használja egy, illetve több kijelölt képre, és **külön figyelmeztet**, ha a
+  kijelölésben vörösszem-javítás van.
+
+## [0.6.81] – 2026-08-12
+
+### Hozzáadva
+- **A felület betűtípusa az eredeti arányaival (#526).** Az eredeti Picasa a
+  kereskedelmi Praxis családot használta, ezt nem szállíthatjuk; a
+  helyettesítőt **méréssel** választottuk, nem ránézésre: a két Picasa-
+  képernyőképről leolvasott tíz magyar felirat képpont-szélességét vetettük
+  össze az öt jelölttel. Az **Open Sans** illeszkedik a legjobban (átlagos
+  eltérés 0,92%, a következő jelölt 1,15%), ezért ez került a programba
+  (SIL Open Font License 1.1, a licenc mellékelve).
+
+### Belső
+- Teszt őrzi, hogy a kilépéskor a szerkesztő háttér-renderelése előbb
+  érvénytelenítve, majd korlátos ideig bevárva legyen (#547/#430) — enélkül a
+  háttérszál a program leállása közben összeomlást okozhatott.
+
 ## [0.6.80] – 2026-08-12
 
 ### Javítva

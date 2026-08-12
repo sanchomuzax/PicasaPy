@@ -48,7 +48,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.edit.session import EditSession
-from picasapy.ini import update_document
+from picasapy.ini import load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 
 from .photo_ops_controller import _WRITE_ERRORS
@@ -232,6 +232,35 @@ class BatchEffectMixin(BackgroundWorkerMixin):
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-batcheffect")
+
+    @Slot(list, result=bool)
+    def selectionHasRedeye(self, rows) -> bool:
+        """Van-e a kijelölésben vörösszem-javítás (#465)?
+
+        Az eredeti Picasa a teljes visszaállítás előtt KÜLÖN figyelmeztet
+        rá (`IDS_CONFIRM_REDEYE_REVERT`), mert a vörösszem régió-adatot
+        hordoz: a törléssel véglegesen elvész, az „Újra" nem hozza vissza.
+
+        A megerősítő dialógus hívja, tehát a GUI-szálon fut — ezért csak a
+        `.picasa.ini` fájlokat olvassa (mappánként egyszer), képet nem nyit
+        meg. Olvashatatlan ini-nél `False` (a #301-elv szerint: idegen/sérült
+        adat nem szökhet ki kivétellel, és a hiánya nem hazudik javítást).
+        """
+        by_folder: dict[str, set[str]] = {}
+        for photo in self._rows_to_photos(rows):
+            by_folder.setdefault(photo.folder_path, set()).add(photo.name)
+        for folder, names in by_folder.items():
+            try:
+                document = load_or_empty(Path(folder) / PICASA_INI_NAME)
+            except OSError:
+                continue
+            for name in names:
+                section = document.section(name)
+                if section is None:
+                    continue
+                if EditSession.from_value(section.get("filters")).has("redeye"):
+                    return True
+        return False
 
     @Slot(list)
     def clearAllEffectsMany(self, rows) -> None:

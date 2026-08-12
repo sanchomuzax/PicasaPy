@@ -579,7 +579,23 @@ Rectangle {
                             editController.toggleTool(tool)
                         }
                     }
-                    onUndoRequested: editController.undo()
+                    // #465: a retus és a vörösszem RÉGIÓ-ADATOT hordoz, és a
+                    // visszavonás eldobja — az „Újra" nem hozza vissza.
+                    // Az eredeti Picasa ezért külön rákérdez
+                    // (IDS_CONFIRM_UNDO_RETOUCH / IDS_CONFIRM_UNDO_REDEYE).
+                    onUndoRequested: {
+                        var action = editController.undoAction
+                        if (action === "retouch")
+                            undoDataLossDialog.askFor("retouch", qsTr(
+                                "Retouch fixes cannot be recovered with redo."
+                                + " Are you sure you want to undo?"))
+                        else if (action === "redeye")
+                            undoDataLossDialog.askFor("redeye", qsTr(
+                                "Redeye fixes cannot be recovered with redo."
+                                + " Are you sure you want to undo?"))
+                        else
+                            editController.undo()
+                    }
                     onRedoRequested: editController.redo()
                     onCropRotateRequested: {
                         // rögzített aránynál a fekvő↔álló kapcsoló forgat
@@ -1421,6 +1437,18 @@ Rectangle {
         id: copyCaptionConfirm
         namePrefix: "copyCaptionConfirm"
         onConfirmed: editorPanel.textDraftContent = editorPanel.captionText
+    }
+
+    // #465: a retus/vörösszem visszavonása ADATOT dob el (nincs „Újra") —
+    // az eredeti Picasa két külön szövegével kérdez rá. A döntés-kulcs
+    // eszközönként külön, hogy a „Ne kérdezze újra" a másikra ne hasson.
+    ConfirmDialog {
+        id: undoDataLossDialog
+        objectName: "undoDataLossDialog"
+        namePrefix: "undoDataLoss"
+        title: qsTr("Undo")
+        function askFor(key, text) { ask("undo-" + key, text) }
+        onConfirmed: editController.undo()
     }
 
 }

@@ -2549,6 +2549,21 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>Main</name>
     <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Red eye fixes have been applied. If you remove all edits, your red eye fixes cannot be recovered.</source>
+        <translation>A képen vörösszem-javítás van. Ha eltávolítja az összes szerkesztést, a vörösszem-javítás nem állítható vissza.</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>This will remove all edits you have made to ALL of the selected pictures.</source>
+        <translation>Ezzel az ÖSSZES kijelölt képen eltávolít minden szerkesztést.</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>This will remove all edits you have made to the current picture.</source>
+        <translation>Ezzel a jelenlegi képen eltávolít minden szerkesztést.</translation>
+    </message>
+    <message>
         <source>&amp;File</source>
         <translation>&amp;Fájl</translation>
     </message>
@@ -2916,6 +2931,16 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 </context>
 <context>
     <name>PhotoViewer</name>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
+        <source>Redeye fixes cannot be recovered with redo. Are you sure you want to undo?</source>
+        <translation>A vörösszem-javítás az Újra paranccsal nem állítható vissza. Biztosan visszavonja?</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
+        <source>Retouch fixes cannot be recovered with redo. Are you sure you want to undo?</source>
+        <translation>A retusálás az Újra paranccsal nem állítható vissza. Biztosan visszavonja?</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
         <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
