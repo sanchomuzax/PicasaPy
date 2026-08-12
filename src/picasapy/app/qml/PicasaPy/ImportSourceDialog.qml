@@ -66,6 +66,17 @@ Window {
     property bool importing: false
     property int importDone: 0
     property int importTotal: 0
+    // #441: a másolás sebessége bájt/mp-ben (0 = még nem mérhető)
+    property real importBytesPerSecond: 0
+    // a sebesség emberi alakja — a méret-formázás mintáját követve
+    // (bájt és KB egészre, MB-tól egy tizedesre)
+    function formatSpeed(bytesPerSecond) {
+        if (bytesPerSecond >= 1024 * 1024)
+            return (bytesPerSecond / (1024 * 1024)).toFixed(1) + " MB"
+        if (bytesPerSecond >= 1024)
+            return Math.round(bytesPerSecond / 1024) + " KB"
+        return Math.round(bytesPerSecond) + " " + qsTr("bytes")
+    }
     // -1: még nem futott import ebben a munkamenetben (az eredmény-sor rejtve)
     property int lastCopiedCount: -1
     property int lastFailedCount: -1
@@ -138,10 +149,14 @@ Window {
             importSourceWindow.importing = true
             importSourceWindow.importDone = 0
             importSourceWindow.importTotal = total
+            importSourceWindow.importBytesPerSecond = 0
         }
         function onImportProgress(done, total) {
             importSourceWindow.importDone = done
             importSourceWindow.importTotal = total
+        }
+        function onImportSpeed(bytesPerSecond) {
+            importSourceWindow.importBytesPerSecond = bytesPerSecond
         }
         function onImportFailedDetails(details) {
             importSourceWindow.lastError = details.join("\n")
@@ -524,9 +539,18 @@ Window {
         Text {
             objectName: "importSourceProgressText"
             visible: importSourceWindow.importing
-            text: qsTr("%1 / %2 imported")
-                  .arg(importSourceWindow.importDone)
-                  .arg(importSourceWindow.importTotal)
+            // #441: az eredeti haladásjelzője a SEBESSÉGET is kiírta
+            // („Copying %d of %d files at %s/sec") — amíg nincs mérhető
+            // adat, a sebesség-rész egyszerűen kimarad
+            text: importSourceWindow.importBytesPerSecond > 0
+                  ? qsTr("%1 / %2 imported at %3/sec")
+                        .arg(importSourceWindow.importDone)
+                        .arg(importSourceWindow.importTotal)
+                        .arg(importSourceWindow.formatSpeed(
+                                 importSourceWindow.importBytesPerSecond))
+                  : qsTr("%1 / %2 imported")
+                        .arg(importSourceWindow.importDone)
+                        .arg(importSourceWindow.importTotal)
             font.pixelSize: Theme.fontSize
             color: Theme.textGray
         }

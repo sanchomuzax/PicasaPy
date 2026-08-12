@@ -763,3 +763,46 @@ class TestRotateAndStarBeforeImport:
 
         assert (dest / "2024-03-05" / "a.jpg").exists()
         assert not (dest / "2024-03-05" / ".picasa.ini").exists()
+
+
+class TestImportSpeed:
+    """#441: az eredeti haladásjelzője a SEBESSÉGET is kiírta
+    („Copying %d of %d files at %s/sec")."""
+
+    def test_the_speed_is_reported_during_the_copy(self, controller, tmp_path):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg")
+        make_jpeg(source / "b.jpg")
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+        _scan(controller, str(source))
+        speeds = []
+        controller.importSpeed.connect(speeds.append)
+
+        loop = _quit_on(controller.importFinished)
+        controller.runImport(str(dest), "today", "", "leave")
+        loop.exec()
+
+        # fájlonként egy jelzés, és a sebesség sosem negatív
+        assert len(speeds) == 2
+        assert all(speed >= 0 for speed in speeds)
+
+    def test_a_failed_file_does_not_break_the_measurement(
+        self, controller, tmp_path
+    ):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg")
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+        _scan(controller, str(source))
+        (source / "a.jpg").unlink()  # a másolás el fog bukni
+        speeds = []
+        controller.importSpeed.connect(speeds.append)
+
+        loop = _quit_on(controller.importFinished)
+        controller.runImport(str(dest), "today", "", "leave")
+        loop.exec()
+
+        assert speeds == [0.0]

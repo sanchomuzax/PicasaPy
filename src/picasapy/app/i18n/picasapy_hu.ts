@@ -4572,6 +4572,14 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <source>Choose destination folder...</source>
         <translation>Célmappa kiválasztása…</translation>
     </message>
+    <message>
+        <source>%1 / %2 imported at %3/sec</source>
+        <translation>%1 / %2 importálva, %3/mp</translation>
+    </message>
+    <message>
+        <source>bytes</source>
+        <translation>bájt</translation>
+    </message>
 </context>
 <context>
     <name>TimelineController</name>

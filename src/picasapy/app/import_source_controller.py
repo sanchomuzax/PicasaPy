@@ -34,6 +34,7 @@ rácsban, ahogy a valódi Picasa importja is tenné."""
 from __future__ import annotations
 
 import sqlite3
+import time
 from pathlib import Path
 from typing import Callable
 
@@ -143,6 +144,12 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
 
     importStarted = Signal(int)  # összes importálandó (beválogatott) darab
     importProgress = Signal(int, int)  # (kész, összes)
+    # #441: a másolás SEBESSÉGE bájt/másodpercben — az eredeti
+    # haladásjelzője is kiírta („Copying %d of %d files at %s/sec"), és ez
+    # az egyetlen jel, amiből a felhasználó megbecsülheti, mennyi van hátra.
+    # Külön jelzés (nem az importProgress harmadik argumentuma), hogy a
+    # meglévő hívók/tesztek szerződése ne törjön el.
+    importSpeed = Signal(float)  # bájt/másodperc; 0 = még nem mérhető
     # az első néhány sikertelen fájl neve + oka — MINDIG az importFinished előtt
     importFailedDetails = Signal(list)
     importFinished = Signal(int, int)  # (importált, sikertelen)
@@ -413,6 +420,8 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                 )
                 self.importFinished.emit(0, total)
                 return
+            started_at = time.monotonic()
+            copied_bytes = 0
             for done, candidate in enumerate(included, start=1):
                 try:
                     subdir = dest_root / destination_subpath_for_mode(
@@ -422,9 +431,12 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                     target = copy_photo(candidate.path, subdir)
                     self._mark_imported(target, str(candidate.path))
                     copied_paths.append(candidate.path)
+                    copied_bytes += _size_of(target)
                 except OSError as error:
                     failed_details.append(f"{candidate.path.name}: {error}")
                 self.importProgress.emit(done, total)
+                elapsed = time.monotonic() - started_at
+                self.importSpeed.emit(copied_bytes / elapsed if elapsed > 0 else 0.0)
             if failed_details:
                 self.importFailedDetails.emit(
                     failed_details[:_IMPORT_FAILED_DETAILS_LIMIT]
@@ -455,6 +467,15 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-importsource-run")
+
+
+def _size_of(path: Path) -> int:
+    """A fájl mérete bájtban; olvashatatlan fájlnál 0 — a sebesség-becslés
+    sosem akaszthatja meg az importot."""
+    try:
+        return path.stat().st_size
+    except OSError:
+        return 0
 
 
 def _mark_imported_ini(
