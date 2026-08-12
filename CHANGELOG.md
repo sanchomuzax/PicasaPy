@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.98] – 2026-08-12
+
+### Javítva
+- **A Derítőfény mostantól a Picasa saját algoritmusa (#551, #575).** Eddig a
+  mérésekre illesztett közelítés futott; most a Picasa natív kódjából
+  visszafejtett, pontos művelet: egy gamma-görbe, amit a program a képpont
+  világosságával **fordítottan arányos** súllyal kever az eredetihez — ezért
+  derít a sötét részeken anélkül, hogy a világosakat kimosná. Ugyanez a mag
+  hajtja a Derítőfény csúszkát, a „Régi effektek" fülön a két derítő-gombot
+  és a `finetune` láncot is.
+
 ## [0.6.97] – 2026-08-12
 
 ### Javítva

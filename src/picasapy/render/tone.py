@@ -1,13 +1,18 @@
 """Tónus-műveletek: fill light, highlights/shadows, színhőmérséklet,
 semleges-szín pipetta és a `finetune2` kompozit.
 
-**#551: a négy Finomhangolás-csúszka mind mérésből származik** — a
-`sanchomuzax/picasapy-agent` privát repó `referencia/deritofeny/`,
-`referencia/szinhomerseklet/` és `referencia/finomhangolas/` készleteiből
-(ugyanaz a fotó, csúszkánként több állásban, a valódi Picasa 3.9
-kimenetével). A korábbi közelítések átlagos csatorna-eltérése a Picasa
-kimenetétől 18–23 volt; a mérésből kapott modelleké 0,8–5,9 (a JPEG-zaj
-szintje ~1). A pipetta modellje egyelőre változatlan közelítés.
+**#551/#575: a Finomhangolás-csúszkák modelljei.** A Kiemelések, az
+Árnyékok és a Színhőmérséklet a `sanchomuzax/picasapy-agent` privát repó
+mérőkészleteiből (`referencia/deritofeny/`, `referencia/szinhomerseklet/`,
+`referencia/finomhangolas/`: ugyanaz a fotó, csúszkánként több állásban, a
+valódi Picasa 3.9 kimenetével). A **Derítőfény** ennél erősebb forrásból: a
+natív `0x0090ac20` munkafüggvény DEKOMPILÁLT kódjából (#575) — nem
+illesztés, hanem a Picasa saját algoritmusa.
+
+A korábbi közelítések átlagos csatorna-eltérése a Picasa kimenetétől 18–23
+volt; a mérésből kapott modelleké 0,8–5,9, a Derítőfény natív modelljéé
+0,8–4,5 (a JPEG-zaj szintje ~1). A pipetta modellje egyelőre változatlan
+közelítés.
 """
 
 from __future__ import annotations
@@ -23,35 +28,31 @@ from picasapy.render.curves import (
     validate_image,
 )
 
-#: **Derítőfény (#551).** A mérés kimondta a modell alakját: a művelet
-#: NEM csatornánkénti tónusgörbe, hanem a pixel VILÁGOSSÁGÁTÓL függő,
-#: mindhárom csatornára AZONOS hozzáadás — `ki = be + d(világosság)`. A
-#: bizonyíték: egy-egy világosság-sávon belül a három csatorna szorzója
-#: gyakorlatilag megegyezik (pl. max állásban 11,12 / 11,54 / 11,41), a
-#: csatornánkénti görbék látszólagos eltérése csak abból ered, hogy azonos
-#: bemeneti szinten más-más világosságú pixelek keverednek. A világosság a
-#: három csatorna SZÁMTANI ÁTLAGA (a mérésen ez adta a legkisebb hibát:
-#: 5,56 — a 0,30/0,59/0,11 súlyozás 5,95, a Rec.709 6,21, a max 9,38).
-_FILL_LUMA_ANCHORS = (
-    0, 4, 8, 16, 24, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208,
-    224, 240, 255,
-)
-#: A mért csúszka-állások és a hozzájuk tartozó `d(világosság)` görbék.
-#: A közbenső állásokra a szomszédos görbék lineáris keveréke.
-_FILL_STRENGTHS = (0.0, 0.10, 0.25, 0.50, 0.75, 1.00)
-_FILL_DELTAS = (
-    (0.0,) * 20,
-    (0.2, 0.1, 1.0, 2.1, 3.2, 4.1, 4.8, 5.5, 5.9, 5.9, 5.7, 5.3, 4.7, 4.3,
-     3.7, 3.0, 2.1, 1.2, 0.3, -0.4),
-    (1.3, 3.4, 6.5, 11.0, 13.7, 15.9, 18.9, 20.6, 21.3, 20.9, 20.2, 19.1,
-     17.1, 15.1, 13.1, 10.7, 8.3, 5.4, 2.3, -0.8),
-    (2.6, 11.4, 19.0, 27.9, 34.0, 38.5, 43.8, 46.2, 46.8, 45.0, 42.7, 39.7,
-     35.2, 31.0, 26.5, 21.6, 16.5, 10.9, 4.8, -1.2),
-    (7.9, 35.5, 50.2, 66.6, 76.1, 82.3, 87.9, 88.7, 86.7, 81.1, 75.2, 68.3,
-     59.7, 51.5, 43.5, 34.6, 25.8, 16.6, 7.3, -2.1),
-    (16.7, 74.8, 95.0, 114.1, 123.7, 128.8, 129.9, 126.1, 119.6, 108.9, 98.8,
-     87.9, 75.4, 63.9, 52.7, 41.0, 29.8, 19.0, 8.1, -1.8),
-)
+#: **Derítőfény (#575/#551).** A modell a NATÍV KÓDBÓL való, nem mérésből
+#: illesztve: a `0x0090ac20` munkafüggvény dekompilálva (ld.
+#: `docs/specs/picasa-native-filter-workers.md`). Ugyanezt a magot hívja a
+#: `fill`, a `backlight`, az `autobacklight`, a `triple*` és a
+#: `finetune`/`finetune2` — nyolc szűrő, EGY implementáció.
+#:
+#: Két hatás van egymáson, ezért nem lehetett egyetlen görbével leírni:
+#:
+#:     g      = 1 / ((1 − fill)·0,7 + 0,3)
+#:     LUT[x] = round(255 · min(((x·g)/255)^(1/(g·0,7+0,3)), 256))
+#:     luma4  = (B + 2·G + R) >> 2            # a súlyozott világosság
+#:     w      = 0xff00 − luma4·256            # alpha = 1,0 a hívóban
+#:     ki     = clip(be + ((LUT[be] − be)·w >> 16))
+#:
+#: A `w` súly a képpont világosságával FORDÍTOTTAN arányos: sötétben teljes
+#: a hatás, világosban semmi. `fill = 0`-nál `g = 1`, a kitevő is 1, a LUT
+#: azonosság — a művelet nem csinál semmit, ahogy kell.
+#:
+#: A mérőkészleten (`referencia/deritofeny/`, hat csúszkaállás) az átlagos
+#: csatorna-eltérés a Picasa kimenetétől 0,8–4,5, a JPEG saját zaja ~1,0 —
+#: vagyis ez a PONTOS algoritmus, nem közelítés (a korábbi, mérésre
+#: illesztett világosság-görbéé 0,97–5,89 volt).
+_FILL_GAMMA_BASE = 0.7
+_FILL_GAMMA_OFFSET = 0.3
+_FILL_WEIGHT_FULL = 0xFF00
 
 #: **Kiemelések / Árnyékok (#551).** A mérés megcáfolta a nevüket: egyik sem
 #: csúcsfény-mentés vagy árnyék-emelés, hanem a FEHÉR- illetve FEKETEPONT
@@ -92,39 +93,42 @@ def _clamp(value: float, low: float, high: float) -> float:
     return min(max(value, low), high)
 
 
-def _fill_delta_curve(strength: float) -> np.ndarray:
-    """A `d(világosság)` görbe (256 elem) tetszőleges s∈[0..1] erősségre."""
+def fill_lut(strength: float) -> np.ndarray:
+    """A Derítőfény 256 elemű gamma-LUT-ja (#575) — a natív kód szerint.
+
+    Önállóan is használható (teszt, dokumentáció); a képpontonkénti
+    árnyék-súlyozott keverést az `apply_fill` végzi rá.
+    """
     clamped = _clamp(strength, 0.0, 1.0)
-    anchors = np.asarray(_FILL_LUMA_ANCHORS, dtype=np.float32)
-    levels = np.arange(256, dtype=np.float32)
-    # strict=False: szándékosan szomszédos-pár (pairwise) iteráció — az
-    # eltolt lista eggyel rövidebb, ez a felépítés lényege, nem hiba.
-    for index, (low_s, high_s) in enumerate(
-        zip(_FILL_STRENGTHS, _FILL_STRENGTHS[1:], strict=False)
-    ):
-        if low_s <= clamped <= high_s:
-            weight = (clamped - low_s) / (high_s - low_s)
-            low = np.asarray(_FILL_DELTAS[index], dtype=np.float32)
-            high = np.asarray(_FILL_DELTAS[index + 1], dtype=np.float32)
-            return np.interp(levels, anchors, low + (high - low) * weight)
-    return np.interp(levels, anchors, np.asarray(_FILL_DELTAS[-1], dtype=np.float32))
+    gamma = 1.0 / ((1.0 - clamped) * _FILL_GAMMA_BASE + _FILL_GAMMA_OFFSET)
+    exponent = 1.0 / (gamma * _FILL_GAMMA_BASE + _FILL_GAMMA_OFFSET)
+    levels = np.arange(256, dtype=np.float64)
+    values = np.power(levels * gamma / 255.0, exponent)
+    # a natív kód 256,0-nál vág (a 255-ös kimenet fölött nincs értelme)
+    return np.rint(255.0 * np.minimum(values, 256.0)).astype(np.int32)
 
 
 def apply_fill(image: np.ndarray, strength: float) -> np.ndarray:
-    """Derítőfény (#551): világosság-vezérelt, csatorna-független hozzáadás.
+    """Derítőfény (#575): gamma-LUT + ÁRNYÉK-SÚLYOZOTT keverés.
 
-    A pixel világossága (a három csatorna számtani átlaga) választja ki a
-    hozzáadandó értéket a mért `d(világosság)` görbéből; ugyanaz az érték
-    kerül mindhárom csatornára. Ez NEM csatornánkénti tónusgörbe — ld. a
-    `_FILL_LUMA_ANCHORS` melletti indoklást.
+    A natív `0x0090ac20` munkafüggvény pontos mása: a LUT-ot nem közvetlenül
+    alkalmazza, hanem a képpont világosságával fordítottan arányos súllyal
+    keveri az eredetihez — sötétben teljes hatás, világosban semmi.
+
+    A `luma4` súlyozása szimmetrikus az R-re és a B-re, ezért a csatorna-
+    sorrend (RGB/BGR) nem számít.
     """
     validate_image(image)
     if _clamp(strength, 0.0, 1.0) == 0.0:
         return image.copy()
-    values = image.astype(np.float32)
-    luma = np.clip(values.mean(axis=-1), 0.0, 255.0)
-    delta = _fill_delta_curve(strength)[np.round(luma).astype(np.int32)]
-    return np.clip(values + delta[..., None], 0.0, 255.0).astype(np.uint8)
+    values = image.astype(np.int32)
+    outer = values[..., 0] + values[..., 2]
+    luma4 = (outer + 2 * values[..., 1]) >> 2
+    weight = (_FILL_WEIGHT_FULL - luma4 * 256)[..., None]
+    mapped = fill_lut(strength)[values]
+    return np.clip(
+        values + (((mapped - values) * weight) >> 16), 0, 255
+    ).astype(np.uint8)
 
 
 def apply_highlights(image: np.ndarray, strength: float) -> np.ndarray:
