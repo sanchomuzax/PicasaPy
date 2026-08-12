@@ -39,6 +39,11 @@ from picasapy.scanner import (
 
 from .busy_registry import get_app_busy_registry
 from .formatting import to_local_path
+from .initial_scan import (
+    SKIP_INITIAL_SCAN_KEY,
+    folders_for_choice,
+    needs_initial_scan,
+)
 from .worker_thread import BackgroundWorkerMixin
 
 logger = logging.getLogger(__name__)
@@ -66,6 +71,8 @@ class LibraryMixin(BackgroundWorkerMixin):
     syncProgress = Signal(str, int, int, int)
     # #209: a lebegő „Importálás" panel állapota változott
     importChanged = Signal()
+    # #449: az első indítás kérdésének állapota (figyelt mappa lett/nem lett)
+    initialScanChanged = Signal()
 
     # -- busy-állapot (#70, #505) --------------------------------------------
 
@@ -300,6 +307,35 @@ class LibraryMixin(BackgroundWorkerMixin):
             if path_key(root) == key:
                 return root
         return None
+
+    # -- #449: első indítás — egyetlen kérdés, egyetlen OK gomb -----------
+
+    @Property(bool, notify=initialScanChanged)
+    def needsInitialScan(self) -> bool:  # noqa: N802 — QML property-konvenció
+        """Fel kell-e tenni az első indítás kérdését?
+
+        Csak akkor, ha MÉG NINCS figyelt mappa (a program ilyenkor üres
+        lenne), és a felhasználó nem kérte a varázsló kihagyását
+        (`skipinitialscan` — az eredetiben is volt erre kulcs)."""
+        skip = str(
+            self._get_settings().value(SKIP_INITIAL_SCAN_KEY, "false")
+        ).lower() in ("true", "1", "yes")
+        return needs_initial_scan(tuple(self._roots), skip)
+
+    @Slot(str, result="QVariant")
+    def initialScanFolders(self, choice: str):  # noqa: N802
+        """A választáshoz tartozó mappák — a párbeszéd ebből mutatja meg
+        ELŐRE, mit fog beolvasni (az eredeti is kiírta a hatókört)."""
+        return list(folders_for_choice(choice))
+
+    @Slot(str)
+    def applyInitialScan(self, choice: str) -> None:  # noqa: N802
+        """Az első indítás választásának végrehajtása: a mappák felvétele
+        figyelt gyökérként. A varázsló ezután nem jön elő többé."""
+        for folder in folders_for_choice(choice):
+            self.addWatchedFolder(folder)
+        self._get_settings().setValue(SKIP_INITIAL_SCAN_KEY, "true")
+        self.initialScanChanged.emit()
 
     @Slot(str)
     def addWatchedFolder(self, path_or_url: str) -> None:

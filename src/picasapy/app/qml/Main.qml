@@ -458,10 +458,11 @@ ApplicationWindow {
     ImportSourceDialog { id: importSourceDialog }
 
     // első indítás: nincs még figyelt mappa → Mappakezelő felajánlása
-    Component.onCompleted: {
-        if (controller.watchedFolders.length === 0)
-            folderManager.open()
-    }
+    // #449: első indítás — az eredeti EGYETLEN kérdést tett fel (teljes gép
+    // vs. Dokumentumok/Képek/Asztal), és nem nyitott mappalistát. Eddig
+    // nálunk üres könyvtárnál rögtön a Mappakezelő nyílt ki: az egy fát és
+    // egy jóval nagyobb döntést tett a felhasználó elé az első percben.
+    Component.onCompleted: initialScanDialog.openIfNeeded()
 
     // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
     header: MainToolbar {
@@ -1246,6 +1247,13 @@ ApplicationWindow {
             openEmpty()
         }
         onAccepted: controller.movePersonOnRows(rows, person, enteredName)
+    }
+
+    // #449: első indítás — a kérdés az ablak megjelenése UTÁN jön elő, hogy
+    // a felhasználó lássa, mibe kerül bele
+    InitialScanDialog {
+        id: initialScanDialog
+        objectName: "initialScanDialog"
     }
 
     // #444: Mentés / Visszaállítás / Utolsó mentés visszavonása

@@ -2432,6 +2432,29 @@ Would you like to rename or skip these files?</source>
     </message>
 </context>
 <context>
+    <name>InitialScanDialog</name>
+    <message>
+        <source>Welcome to PicasaPy</source>
+        <translation>Üdvözli a PicasaPy</translation>
+    </message>
+    <message>
+        <source>Where should PicasaPy look for your pictures?</source>
+        <translation>Hol keresse a PicasaPy a képeit?</translation>
+    </message>
+    <message>
+        <source>Only search Documents, Pictures, and the Desktop</source>
+        <translation>Keresés csak a Dokumentumok és a Képek mappában, valamint az asztalon</translation>
+    </message>
+    <message>
+        <source>Search my whole home folder for pictures</source>
+        <translation>Keresés a teljes saját mappában</translation>
+    </message>
+    <message>
+        <source>Searching never moves or copies your files. You can change these folders later in the Folder Manager.</source>
+        <translation>A keresés soha nem mozgat és nem másol fájlt. A mappák később bármikor módosíthatók a Mappakezelőben.</translation>
+    </message>
+</context>
+<context>
     <name>FolderManagerDialog</name>
     <message>
         <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>

@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.7] – 2026-08-12
+
+### Változott
+- **Barátságosabb első indítás (#449).** Üres könyvtárnál eddig rögtön a
+  Mappakezelő fája nyílt ki — egy nagy döntés az első percben. Mostantól az
+  eredeti Picasa mintáját követjük: **egyetlen kérdés** két választással
+  (csak a Dokumentumok, a Képek és az asztal, vagy a teljes saját mappa),
+  egyetlen OK gombbal. A program előre megmutatja, mely mappákat fogja
+  átnézni, és — ahogy az eredeti is tette — kiírja, hogy **a keresés soha
+  nem mozgat és nem másol fájlt**. A mappák később bármikor módosíthatók a
+  Mappakezelőben.
+
 ## [0.7.6] – 2026-08-12
 
 ### Hozzáadva
