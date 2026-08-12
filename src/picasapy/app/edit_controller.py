@@ -46,6 +46,8 @@ from picasapy.render.chain import DEAD_LEGACY_OPS, can_render_filter
 from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
 from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
+from picasapy.render.text_fonts import DEFAULT_FAMILY as DEFAULT_TEXT_FAMILY
+from picasapy.render.text_fonts import family_labels
 from picasapy.render.tone import estimate_neutral_color, parse_neutral_argb
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -201,6 +203,17 @@ _BRUSH_SIZE_TO_RELATIVE_DIVISOR = 1000.0
 #: réteg (`picasapy.render.text_overlay`) amúgy is egységes Hershey-fontot
 #: használ — betűtípus-választó ezért nincs a UI-ban.
 _DEFAULT_TEXT_FONT = "Arial"
+
+#: #450 (2. lépcső): tipográfia — a rajzoló (`render.text_fonts`) családja,
+#: méret-szorzója és stílusai. PicasaPy-saját, MUNKAMENET-szintű állapot: a
+#: `.picasa.ini`-be nem kerül, mert a `text=` kulcs betűtípus-mezőjének
+#: pontos jelentése nincs igazolva (#371).
+_DEFAULT_TEXT_FAMILY = DEFAULT_TEXT_FAMILY
+_DEFAULT_TEXT_SCALE = 1.0
+_DEFAULT_TEXT_BOLD = False
+_DEFAULT_TEXT_ITALIC = False
+_DEFAULT_TEXT_UNDERLINE = False
+_DEFAULT_TEXT_ALIGN = "left"
 
 #: A `text=` kulcs `raw_x`/`raw_y` mezőinek JELENTÉSE ismeretlen (ld. az
 #: `picasapy.ini.text_overlay` modul docsztringje) — ezért a PicasaPy a
@@ -368,6 +381,12 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_outline_thickness: int = _DEFAULT_TEXT_OUTLINE_THICKNESS
         self._text_fill_enabled: bool = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity: float = _DEFAULT_TEXT_OPACITY
+        self._text_family: str = _DEFAULT_TEXT_FAMILY
+        self._text_scale: float = _DEFAULT_TEXT_SCALE
+        self._text_bold: bool = _DEFAULT_TEXT_BOLD
+        self._text_italic: bool = _DEFAULT_TEXT_ITALIC
+        self._text_underline: bool = _DEFAULT_TEXT_UNDERLINE
+        self._text_align: str = _DEFAULT_TEXT_ALIGN
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
 
@@ -564,6 +583,94 @@ class EditController(QObject, BackgroundWorkerMixin):
         """A szöveg-réteg átlátszósága [0..1] — `1.0` (alapérték) a
         teljesen fedő, korábbi viselkedés."""
         return self._text_opacity
+
+    # -- #450 (2. lépcső): tipográfia ---------------------------------------
+
+    @Property("QVariant", constant=True)
+    def textFontFamilies(self):
+        """A betűtípus-lenyíló adata: `key` + megjelenő `label`.
+
+        A katalógus a `render.text_fonts`-ból jön (Arial · Times New Roman ·
+        Courier New), nem kézzel a QML-be írva."""
+        return family_labels()
+
+    @Property(str, notify=toolsChanged)
+    def textFontFamily(self) -> str:
+        return self._text_family
+
+    @Property(float, notify=toolsChanged)
+    def textFontScale(self) -> float:
+        """A betűméret szorzója — 1,0 az alapérték."""
+        return self._text_scale
+
+    @Property(bool, notify=toolsChanged)
+    def textBold(self) -> bool:
+        return self._text_bold
+
+    @Property(bool, notify=toolsChanged)
+    def textItalic(self) -> bool:
+        return self._text_italic
+
+    @Property(bool, notify=toolsChanged)
+    def textUnderline(self) -> bool:
+        return self._text_underline
+
+    @Property(str, notify=toolsChanged)
+    def textAlign(self) -> str:
+        """`left` · `center` · `right` — a Picasa három igazítás-gombja."""
+        return self._text_align
+
+    @Slot(str)
+    def setTextFontFamily(self, value: str) -> None:
+        """A betűcsalád beállítása; élő előnézettel. Ismeretlen kulcsnál a
+        rajzoló az alapértelmezett családra esik vissza."""
+        self._require_active()
+        self._text_family = value or _DEFAULT_TEXT_FAMILY
+        self._refresh_text_preview()
+
+    @Slot(float)
+    def setTextFontScale(self, value: float) -> None:
+        """A betűméret-szorzó beállítása (pozitív); élő előnézettel."""
+        self._require_active()
+        if value <= 0:
+            raise ValueError(f"A textFontScale pozitív kell legyen: {value}")
+        self._text_scale = float(value)
+        self._refresh_text_preview()
+
+    @Slot(bool)
+    def setTextBold(self, value: bool) -> None:
+        self._require_active()
+        self._text_bold = bool(value)
+        self._refresh_text_preview()
+
+    @Slot(bool)
+    def setTextItalic(self, value: bool) -> None:
+        self._require_active()
+        self._text_italic = bool(value)
+        self._refresh_text_preview()
+
+    @Slot(bool)
+    def setTextUnderline(self, value: bool) -> None:
+        self._require_active()
+        self._text_underline = bool(value)
+        self._refresh_text_preview()
+
+    @Slot(str)
+    def setTextAlign(self, value: str) -> None:
+        """A sorok igazítása; ismeretlen érték elutasítva (a rajzoló is
+        azt tenné, csak később és zavarosabb hibával)."""
+        self._require_active()
+        if value not in ("left", "center", "right"):
+            raise ValueError(f"Ismeretlen szöveg-igazítás: {value!r}")
+        self._text_align = value
+        self._refresh_text_preview()
+
+    def _refresh_text_preview(self) -> None:
+        """A szöveg-stílus változása utáni közös lezárás — élő előnézet,
+        revízió-léptetés, jelzés (a stílus-slotok mind ezt hívják)."""
+        self._register_preview()
+        self._bump_revision()
+        self.toolsChanged.emit()
 
     @Slot(str)
     def setTextFillColor(self, value: str) -> None:
@@ -762,6 +869,12 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
         self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity = _DEFAULT_TEXT_OPACITY
+        self._text_family = _DEFAULT_TEXT_FAMILY
+        self._text_scale = _DEFAULT_TEXT_SCALE
+        self._text_bold = _DEFAULT_TEXT_BOLD
+        self._text_italic = _DEFAULT_TEXT_ITALIC
+        self._text_underline = _DEFAULT_TEXT_UNDERLINE
+        self._text_align = _DEFAULT_TEXT_ALIGN
         self._register_preview()
         self._bump_revision()
         self.toolsChanged.emit()
@@ -804,6 +917,12 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
         self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity = _DEFAULT_TEXT_OPACITY
+        self._text_family = _DEFAULT_TEXT_FAMILY
+        self._text_scale = _DEFAULT_TEXT_SCALE
+        self._text_bold = _DEFAULT_TEXT_BOLD
+        self._text_italic = _DEFAULT_TEXT_ITALIC
+        self._text_underline = _DEFAULT_TEXT_UNDERLINE
+        self._text_align = _DEFAULT_TEXT_ALIGN
         self._bump_revision()
         self._bump_gpu_revision()
         self.toolsChanged.emit()
@@ -1972,6 +2091,12 @@ class EditController(QObject, BackgroundWorkerMixin):
             "outline_thickness": self._text_outline_thickness,
             "fill_enabled": self._text_fill_enabled,
             "opacity": self._text_opacity,
+            "font_family": self._text_family,
+            "font_scale": self._text_scale,
+            "bold": self._text_bold,
+            "italic": self._text_italic,
+            "underline": self._text_underline,
+            "align": self._text_align,
         }
 
     def _bump_revision(self) -> None:

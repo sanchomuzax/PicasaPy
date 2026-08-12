@@ -16,6 +16,10 @@ Rectangle {
     // #450: opcionális hover-buboréksúgó (pl. "Copy Caption" gomb) —
     // üres stringnél nincs tooltip (a legtöbb PanelButton-hívó)
     property string tooltip: ""
+    // #450: opcionális KAPCSOLÓ-állapot (félkövér/dőlt/aláhúzott,
+    // igazítás) — a `ToolTile` „benyomott" mintáját követi, ugyanabból a
+    // jelző-kék tokenből, hogy sötét témában is olvasható maradjon
+    property bool active: false
     signal buttonClicked()
     Layout.fillWidth: true
     // #318: a felirat teljesen olvasható kell legyen. Bélyegképes
@@ -49,7 +53,10 @@ Rectangle {
     // téma-tokenekből — sötét témában a gomb is sötétedik, így a
     // (szintén témafüggő) Theme.textDark felirat olvasható marad rajta.
     color: !pbtn.enabled ? Theme.chromeBg
-           : (pbtnMouse.pressed ? Qt.darker(Theme.buttonBg, 1.15) : Theme.buttonBg)
+           : pbtnMouse.pressed ? Qt.darker(Theme.buttonBg, 1.15)
+           : pbtn.active ? Qt.rgba(Theme.selectionBlue.r, Theme.selectionBlue.g,
+                                   Theme.selectionBlue.b, 0.45)
+           : Theme.buttonBg
 
     // #338: a bélyegkép-terület — csak akkor foglal helyet, ha van
     // thumbSource. A KÉSZ bélyegképig (Image.status !== Ready) a

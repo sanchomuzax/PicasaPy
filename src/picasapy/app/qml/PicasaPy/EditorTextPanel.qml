@@ -63,10 +63,85 @@ ColumnLayout {
         onButtonClicked: panel.textCopyCaptionRequested()
     }
 
-    // #450: kitöltés-szín ÉS körvonal-szín, egymástól függetlenül — a
-    // betűtípus-lista/méret/félkövér-dőlt-aláhúzott/igazítás ehhez a
-    // lépcsőhöz NEM tartozik (valódi TrueType-rajzolót igényelne, ma
-    // Hershey-fonttal rajzolunk — ld. #450 jegy).
+    // #450 (2. lépcső): tipográfia — betűcsalád, méret, félkövér/dőlt/
+    // aláhúzott és igazítás. A rajzoló ehhez már TrueType-ot használ
+    // (`render.text_fonts`); ha a gépen nincs ilyen betű, a vezérlők
+    // hatástalanok maradnak, de a szöveg akkor is megjelenik.
+    Text {
+        text: qsTr("Font")
+        font.pixelSize: Theme.fontSize
+        color: Theme.ink
+    }
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 6
+        ComboBox {
+            id: textFontBox
+            objectName: "textFontFamilyBox"
+            Layout.fillWidth: true
+            model: panel.fontFamilyLabels
+            currentIndex: Math.max(0, panel.fontFamilyKeys.indexOf(panel.textFontFamily))
+            onActivated: panel.textFontFamilyEdited(panel.fontFamilyKeys[currentIndex])
+        }
+        SpinBox {
+            objectName: "textFontSizeBox"
+            //: a betűméret a rajzoló méret-szorzójának SZÁZALÉKA
+            from: 20; to: 400; stepSize: 10
+            value: Math.round(panel.textFontScale * 100)
+            onValueModified: panel.textFontScaleEdited(value / 100)
+        }
+    }
+    RowLayout {
+        Layout.fillWidth: true
+        spacing: 6
+        PanelButton {
+            objectName: "textBoldButton"
+            label: qsTr("B")
+            tooltip: qsTr("Bold")
+            active: panel.textBold
+            onButtonClicked: panel.textBoldEdited(!panel.textBold)
+        }
+        PanelButton {
+            objectName: "textItalicButton"
+            label: qsTr("I")
+            tooltip: qsTr("Italic")
+            active: panel.textItalic
+            onButtonClicked: panel.textItalicEdited(!panel.textItalic)
+        }
+        PanelButton {
+            objectName: "textUnderlineButton"
+            label: qsTr("U")
+            tooltip: qsTr("Underline")
+            active: panel.textUnderline
+            onButtonClicked: panel.textUnderlineEdited(!panel.textUnderline)
+        }
+        Item { Layout.fillWidth: true }
+        // a három igazítás-gomb: fix készlet, ezért kiírva (a Repeater
+        // delegáltjai a funkcionális tesztekből nem érhetők el)
+        PanelButton {
+            objectName: "textAlign_left"
+            label: "\u2261"
+            tooltip: qsTr("Align left")
+            active: panel.textAlign === "left"
+            onButtonClicked: panel.textAlignEdited("left")
+        }
+        PanelButton {
+            objectName: "textAlign_center"
+            label: "\u2261"
+            tooltip: qsTr("Align center")
+            active: panel.textAlign === "center"
+            onButtonClicked: panel.textAlignEdited("center")
+        }
+        PanelButton {
+            objectName: "textAlign_right"
+            label: "\u2261"
+            tooltip: qsTr("Align right")
+            active: panel.textAlign === "right"
+            onButtonClicked: panel.textAlignEdited("right")
+        }
+    }
+
+    // #450: kitöltés-szín ÉS körvonal-szín, egymástól függetlenül
     RowLayout {
         Layout.fillWidth: true
         spacing: 10

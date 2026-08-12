@@ -26,6 +26,7 @@ from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.ini.filters import FilterOp
 from picasapy.render import apply_filters, count_redeye_spots
+from picasapy.render.text_fonts import DEFAULT_FAMILY
 from picasapy.render.text_overlay import apply_text_overlay
 
 from .histogram_helper import EMPTY_HISTOGRAM, compute_rgb_histogram
@@ -62,6 +63,15 @@ class TextOverlaySpec:
     outline_thickness: int = 0
     fill_enabled: bool = True
     opacity: float = 1.0
+    #: #450 (2. lépcső): tipográfia — betűcsalád, méret-szorzó, stílusok és
+    #: a sorok igazítása. Az alapértékek a rajzolóéval egyeznek, ezért a
+    #: régi hívók kimenete változatlan marad.
+    font_family: str = DEFAULT_FAMILY
+    font_scale: float = 1.0
+    bold: bool = False
+    italic: bool = False
+    underline: bool = False
+    align: str = "left"
 
 
 class EditPreviewProvider(QQuickImageProvider):
@@ -211,6 +221,12 @@ class EditPreviewProvider(QQuickImageProvider):
                 outline_thickness=text.outline_thickness,
                 fill_enabled=text.fill_enabled,
                 opacity=text.opacity,
+                font_family=text.font_family,
+                font_scale=text.font_scale,
+                bold=text.bold,
+                italic=text.italic,
+                underline=text.underline,
+                align=text.align,
             )
         image = _rgb_array_to_qimage(result_array) if result_array is not None else QImage()
         histogram = (

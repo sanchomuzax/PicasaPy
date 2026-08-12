@@ -12,9 +12,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   vonalas, „rajzolt" betűkészlettel készültek, amiben nincs betűcsalád,
   félkövér, dőlt vagy aláhúzás. Mostantól valódi TrueType-betűkkel
   rajzolunk: **Arial · Times New Roman · Courier New**, félkövéren, dőlten,
-  aláhúzva, és a sorok **balra / középre / jobbra** igazíthatók. Ha a gépen
-  nem található megfelelő betű, a felirat a régi módon jelenik meg — a
-  szöveg-eszköz sosem esik ki.
+  aláhúzva, és a sorok **balra / középre / jobbra** igazíthatók. A vezérlők
+  ott vannak a Szöveg eszköz panelján: betűtípus-lista, méret, F/D/A gombok
+  és a három igazítás-gomb. Ha a gépen nem található megfelelő betű, a
+  felirat a régi módon jelenik meg — a szöveg-eszköz sosem esik ki.
 
 ## [0.7.4] – 2026-08-12
 
