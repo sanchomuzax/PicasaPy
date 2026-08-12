@@ -8,6 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.7.8] – 2026-08-12
 
 ### Hozzáadva
+- **Az arcbeolvasás haladása az albumlistában (#449).** Az eredeti Picasa
+  nem modális ablakban mutatta a háttérmunkát, hanem a bal hasáb
+  albumlistájában („Arcok keresése… 42% kész"), és közben semmi nem
+  blokkolta a felhasználót. A sor magától megjelenik és eltűnik.
 - **Adatbázis tömörítése (#449).** Az Eszközök → Kísérleti menüből
   elindítható a fotóindex tömörítése (SQLite `VACUUM`), az eredeti Picasa
   „Compacting" ablakának mintájára: megmondja, hogy percekig tarthat, és

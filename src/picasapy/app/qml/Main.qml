@@ -655,6 +655,9 @@ ApplicationWindow {
             unnamedFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
                                ? faceScanController.unnamedCount : 0
             unnamedFacesActive: window.unnamedFacesOpen
+            // #449: a háttér-beolvasás haladása az albumlistában
+            faceScanPercent: (typeof faceScanController !== "undefined" && faceScanController)
+                              ? faceScanController.scanPercent : -1
             onFolderChosen: function(path) {
                 window.clearSelection()
                 window.unnamedFacesOpen = false

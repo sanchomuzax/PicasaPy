@@ -426,3 +426,50 @@ def _contacts(document):
     from picasapy.ini import contacts_of
 
     return contacts_of(document)
+
+
+class TestScanPercent:
+    """#449: a haladás az ALBUMLISTÁBAN jelenik meg — ehhez a vezérlőnek
+    deklaratívan kötött százalékot kell adnia, nem csak jelzést."""
+
+    def test_it_is_idle_before_and_after_the_scan(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        ctl = _make_controller(qt_app, tmp_path, root)
+
+        assert ctl.scanPercent == -1
+
+        arrived, _args = _run(ctl.scanFinished, ctl.scanForFaces)
+
+        assert arrived is True
+        assert ctl.waitForBackgroundWorkers(5.0)
+        # a sor magától eltűnik a bal hasábból
+        assert ctl.scanPercent == -1
+
+    def test_it_reaches_a_hundred_while_scanning(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        for name in ("a.jpg", "b.jpg", "c.jpg"):
+            make_jpeg(root / name)
+        ctl = _make_controller(qt_app, tmp_path, root)
+        seen = []
+        ctl.scanPercentChanged.connect(lambda: seen.append(ctl.scanPercent))
+
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+
+        assert 100 in seen
+        assert seen == sorted(seen[: seen.index(100) + 1]) + seen[seen.index(100) + 1 :]
+
+    def test_a_scan_that_never_starts_leaves_it_idle(self, qt_app, tmp_path):
+        root = tmp_path / "kepek"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        ctl = _make_controller(
+            qt_app, tmp_path, root, detector=_FakeDetector(available=False)
+        )
+
+        _run(ctl.modelUnavailable, ctl.scanForFaces)
+
+        assert ctl.scanPercent == -1

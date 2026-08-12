@@ -2682,6 +2682,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <translation>Mappák a lemezen</translation>
     </message>
     <message>
+        <source>Scanning for faces... %1% complete</source>
+        <translation>Arcok keresése… %1% kész</translation>
+    </message>
+    <message>
         <source>Unnamed</source>
         <translation>Névtelenek</translation>
     </message>
