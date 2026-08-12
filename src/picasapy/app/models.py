@@ -107,12 +107,23 @@ class FolderListModel(QAbstractListModel):
         A reverse a kiválasztott rendezést fordítja meg.
         """
         folders = sorted_folder_rows(conn, sort_mode, reverse)
-        self._set_rows(
-            _with_year_separators(
-                (name, path, count, date, offline)
-                for name, path, count, date, _size, _change, offline in folders
-            )
+        rows = (
+            (name, path, count, date, offline)
+            for name, path, count, date, _size, _change, offline in folders
         )
+        # #461/3: az ÉVSZÁM-csoportok a DÁTUM-nézethez tartoznak. Név vagy
+        # méret szerinti rendezésnél a fejlécek értelmüket vesztenék (egy
+        # évszám többször, összevissza sorrendben bukkanna fel), ezért ott
+        # sima felsorolás áll — ahogy az eredetiben is.
+        if sort_mode in ("date", "changed"):
+            self._set_rows(_with_year_separators(rows))
+        else:
+            self._set_rows(
+                tuple(
+                    ("folder", name, path, count, offline)
+                    for name, path, count, _date, offline in rows
+                )
+            )
 
     def load_matches(self, groups) -> None:
         """Keresési találatok mappái (#49): csak a találatos mappák

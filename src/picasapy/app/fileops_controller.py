@@ -15,9 +15,12 @@ from PySide6.QtCore import QObject, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 
 from picasapy.fileops import (
+    conflicting_names,
+    copy_photos,
     delete_permanently,
     delete_to_trash,
     move_photo,
+    move_photos,
     open_folder_in_file_manager,
     rename_photo,
     reveal_in_file_manager,
@@ -42,6 +45,8 @@ class FileOpsController(QObject):
     photoMoved = Signal(str, str)  # (régi_út, új_út)
     photoDeleted = Signal(str)  # (törölt_út)
     operationFailed = Signal(str, str)  # (művelet, hibaüzenet)
+    # (művelet, kész, kihagyott, hibás) — a köteg EGYETLEN összegzése (#457/2)
+    batchFinished = Signal(str, int, int, int)
 
     @Slot(str, str)
     def renamePhoto(self, path: str, new_name: str) -> None:
@@ -64,6 +69,46 @@ class FileOpsController(QObject):
             self.operationFailed.emit("move", str(error))
             return
         self.photoMoved.emit(path, str(new_path))
+
+    @Slot(list, str, result=int)
+    def conflictCountFor(self, paths: list, dest_folder: str) -> int:
+        """Hány kijelölt fájl neve foglalt már a célmappában (#457/2).
+
+        A felület CSAK akkor kérdez rá az átnevezés/kihagyás választásra, ha
+        ez nem nulla — az eredeti Picasa sem kérdezett fölöslegesen."""
+        if not paths:
+            return 0
+        dest = Path(_to_local_path(dest_folder))
+        return len(conflicting_names([Path(path) for path in paths], dest))
+
+    @Slot(list, str, str)
+    def copyPhotos(self, paths: list, dest_folder: str, policy: str) -> None:
+        """Kijelölés másolása a célmappába (#457/2), `policy` = rename|skip."""
+        self._run_batch("copy", copy_photos, paths, dest_folder, policy)
+
+    @Slot(list, str, str)
+    def movePhotos(self, paths: list, dest_folder: str, policy: str) -> None:
+        """Kijelölés áthelyezése a célmappába (#457/2).
+
+        Az eredeti a KÉPEK áthelyezésére ugyanazt a rename/skip párbeszédet
+        adta, mint a másolásra — ezért fut a kettő ugyanazon a magon."""
+        self._run_batch("move", move_photos, paths, dest_folder, policy)
+
+    def _run_batch(self, operation, function, paths, dest_folder, policy) -> None:
+        dest = Path(_to_local_path(dest_folder))
+        try:
+            result = function([Path(path) for path in paths], dest, policy)
+        except _OPERATION_ERRORS as error:
+            self.operationFailed.emit(operation, str(error))
+            return
+        if operation == "move":
+            # a rács csak így tudja levenni az elmozdított elemeket
+            for source, target in result.done:
+                self.photoMoved.emit(str(source), str(target))
+        # #459: EGY összegzés a köteg végén, nem fájlonkénti ablak
+        self.batchFinished.emit(
+            operation, len(result.done), len(result.skipped), len(result.failed)
+        )
 
     @Slot(str)
     def deletePhoto(self, path: str) -> None:

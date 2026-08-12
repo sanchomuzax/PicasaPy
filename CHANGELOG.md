@@ -5,6 +5,33 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.96] – 2026-08-12
+
+### Hozzáadva
+- **Névütközéskor megkérdezzük, mi legyen (#457/2).** Ha a célmappában már
+  van azonos nevű fájl, a program – ahogy az eredeti Picasa – rákérdez:
+  **„Másodpéldányok átnevezése"** vagy **„Másodpéldányok kihagyása"**. Ha
+  nincs ütközés, nincs kérdés sem. Az áthelyezést a célmappa kiválasztása
+  után egy **„Fájlok áthelyezése"** jóváhagyás előzi meg, ugyanúgy, mint
+  régen.
+- Egy hibás fájl többé nem állítja meg az egész köteget: a többi átmegy, a
+  végén pedig **egyetlen** összegzés jön (és az is csak akkor, ha volt
+  kihagyott vagy hibás fájl).
+
+## [0.6.95] – 2026-08-12
+
+### Javítva
+- **A bal panel rendezése végre a bal panelt rendezi (#461/3).** Az eredeti
+  Picasában a bal hasáb **saját jobbklikk-menüje** tartalmazta a „Rendezés
+  dátum / név / méret / legutóbbi változtatás alapján" tételeket — vagyis az
+  a **hasábot** rendezte. Nálunk ez a menü eddig a **rácsot** állította, a
+  hasáb pedig mozdíthatatlan volt. Mostantól két, egymástól független
+  beállítás van, ahogy az eredetiben: a **panel saját menüje a panelt**, a
+  felső **Nézet ▸ Mappanézet a rácsot** rendezi.
+- **Az évszám-fejlécek csak a dátum-nézetben jelennek meg (#461/3).** Név
+  vagy méret szerinti rendezésnél ugyanaz az évszám többször, összevissza
+  sorrendben bukkant volna fel; ott most sima felsorolás áll.
+
 ## [0.6.94] – 2026-08-12
 
 ### Karbantartás

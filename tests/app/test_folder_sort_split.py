@@ -88,3 +88,85 @@ class TestSortAffectsOnlyTheFeed:
         forward = _feed_folder_order(controller)
         controller.toggleFolderSortReverse()
         assert _feed_folder_order(controller) == tuple(reversed(forward))
+
+
+class TestPaneHasItsOwnSort:
+    """#461/3: a bal hasábnak SAJÁT rendezése van — az eredeti Picasában a
+    hasáb jobbklikk-menüje (`AlbumList`, ld. ui-audit-context-menus.md A.2)
+    tartalmazta a „Rendezés dátum / név / méret / legutóbbi változtatás
+    alapján" tételeket, vagyis az a HASÁBOT rendezte.
+
+    A #321 szerződése ettől érintetlen: a felső Nézet ▸ Mappanézet
+    (`setFolderSort`) továbbra is CSAK a rácsot rendezi."""
+
+    def test_pane_sort_reorders_the_pane(self, controller):
+        controller.setPaneSort("name")
+        by_name = [Path(p).name for p in controller.folders.folder_paths()]
+        assert by_name == ["alma", "mokus", "zebra"]
+
+        controller.setPaneSort("date")
+        by_date = [Path(p).name for p in controller.folders.folder_paths()]
+        assert by_date == ["mokus", "zebra", "alma"], "legújabb mappa elöl"
+
+    def test_pane_reverse_flips_the_pane(self, controller):
+        controller.setPaneSort("name")
+        forward = controller.folders.folder_paths()
+        controller.togglePaneSortReverse()
+        assert controller.folders.folder_paths() == tuple(reversed(forward))
+
+    def test_pane_sort_does_not_touch_the_feed(self, controller):
+        """A két beállítás FÜGGETLEN: a hasáb átrendezése a rácsot nem
+        mozdítja meg."""
+        controller.setFolderSort("date")
+        before = _feed_folder_order(controller)
+        controller.setPaneSort("name")
+        assert _feed_folder_order(controller) == before
+
+    def test_feed_sort_does_not_touch_the_pane(self, controller):
+        """És fordítva — ez a #321 eredeti szerződése."""
+        controller.setPaneSort("date")
+        before = controller.folders.folder_paths()
+        controller.setFolderSort("name")
+        assert controller.folders.folder_paths() == before
+
+    def test_unknown_mode_is_ignored(self, controller):
+        before = controller.folders.folder_paths()
+        controller.setPaneSort("mandala")
+        assert controller.folders.folder_paths() == before
+
+    def test_default_is_the_picasa_date_order(self, controller):
+        # alapértéken (dátum, legújabb elöl) áll, ahogy eddig is
+        by_date = [Path(p).name for p in controller.folders.folder_paths()]
+        assert by_date == ["mokus", "zebra", "alma"]
+
+
+class TestYearHeadersBelongToTheDateView:
+    """#461/3: az évszám-csoportok a DÁTUM-nézet sajátjai. Név/méret szerinti
+    rendezésnél egy évszám többször, összevissza sorrendben bukkanna fel —
+    ott sima felsorolás áll."""
+
+    def _kinds(self, controller):
+        from picasapy.app.models import FolderListModel
+
+        model = controller.folders
+        return [
+            model.data(model.index(i, 0), FolderListModel.KindRole)
+            for i in range(model.rowCount())
+        ]
+
+    def test_date_view_has_year_headers(self, controller):
+        controller.setPaneSort("date")
+        assert "year" in self._kinds(controller)
+
+    def test_name_view_has_none(self, controller):
+        controller.setPaneSort("name")
+        assert "year" not in self._kinds(controller)
+
+    def test_size_view_has_none(self, controller):
+        controller.setPaneSort("size")
+        assert "year" not in self._kinds(controller)
+
+    def test_changed_view_keeps_them(self, controller):
+        # a „legutóbbi változtatás" is dátum-alapú nézet
+        controller.setPaneSort("changed")
+        assert "year" in self._kinds(controller)

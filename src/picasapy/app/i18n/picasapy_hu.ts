@@ -2291,6 +2291,62 @@
         <source>Example:</source>
         <translation>Példa:</translation>
     </message>
+    <message>
+        <source>Confirm Move</source>
+        <translation>Áthelyezés jóváhagyása</translation>
+    </message>
+    <message>
+        <source>Move Files</source>
+        <translation>Fájlok áthelyezése</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to move the file(s) to
+%1 ?</source>
+        <translation>Biztosan áthelyezi a fájl(oka)t ide:
+%1?</translation>
+    </message>
+    <message>
+        <source>This folder already contains files with the same name.
+
+Would you like to rename or skip these files?</source>
+        <translation>Ez a mappa már tartalmaz azonos nevű fájlokat.
+
+Átnevezi vagy átugorja ezeket?</translation>
+    </message>
+    <message>
+        <source>Rename Duplicates</source>
+        <translation>Másodpéldányok átnevezése</translation>
+    </message>
+    <message>
+        <source>Skip Duplicates</source>
+        <translation>Másodpéldányok kihagyása</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>File operation finished</source>
+        <translation>A fájlművelet befejeződött</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n file(s) done.</source>
+        <translation>
+            <numerusform>%n fájl kész.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n file(s) skipped (a file with the same name already exists).</source>
+        <translation>
+            <numerusform>%n fájl kimaradt (a célmappában már van ilyen nevű fájl).</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n file(s) could not be processed.</source>
+        <translation>
+            <numerusform>%n fájlt nem sikerült feldolgozni.</numerusform>
+        </translation>
+    </message>
 </context>
 <context>
     <name>FolderManagerDialog</name>
