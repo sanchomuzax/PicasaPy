@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.87] – 2026-08-12
+
+### Hozzáadva
+- **Offline mappa kezelése (#459/5).** A levált NAS-mount vagy kihúzott lemez
+  mappája mostantól **bennmarad az indexben** a fotóival együtt — eddig némán
+  kiestek belőle. A mappa „jelenleg nem elérhető" jelölést kap a bal hasábon
+  (halvány, dőlt sor + súgószöveg), a rá lépéskor pedig a program kimondja,
+  mi a helyzet, hibaüzenet-szerű pánik nélkül. A jelölés a mount visszatérése
+  után magától elmúlik, újraépítés nélkül. A felismerés szabályát és a
+  vállalt tévedés-irányt a `docs/decisions/offline-folders.md` rögzíti.
+- **Hiányzó fájlok a kollázsban és a mozgófilmben (#459/3).** A nem található
+  kép mostantól **külön mondatot** kap az eredeti Picasa szövegével — az
+  megmondja, mi történhetett (elmozdítás, átnevezés, törlés) —, a csupán
+  olvashatatlan fájlok pedig a semleges „kihagyva" számban maradnak. A munka
+  ezután is a maradékkal készül el, nem áll le.
+
 ## [0.6.86] – 2026-08-12
 
 ### Hozzáadva

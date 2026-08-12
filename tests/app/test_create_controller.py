@@ -82,9 +82,9 @@ class TestMakeCollage:
             lambda: controller.makeCollage([0, 1, 2], "grid", str(target)),
         )
         assert arrived, "nem érkezett collageFinished"
-        path, used, skipped = args
+        path, used, skipped, missing = args
         assert target.exists()
-        assert used == 3 and skipped == 0
+        assert used == 3 and skipped == 0 and missing == 0
         decoded = cv2.imdecode(
             np.frombuffer(target.read_bytes(), np.uint8), cv2.IMREAD_COLOR
         )
@@ -137,9 +137,9 @@ class TestExportMovie:
             lambda: controller.exportMovie([0, 1, 2], str(target), 720, 0.5), 20000,
         )
         assert arrived, "nem érkezett movieFinished"
-        path, used, skipped = args
+        path, used, skipped, missing = args
         assert target.exists() and target.stat().st_size > 0
-        assert used == 3 and skipped == 0
+        assert used == 3 and skipped == 0 and missing == 0
 
     def test_progress_is_emitted(self, controller, tmp_path):
         _skip_without_codec(tmp_path / "proba.mp4")

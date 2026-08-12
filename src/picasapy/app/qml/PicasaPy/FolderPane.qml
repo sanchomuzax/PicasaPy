@@ -536,6 +536,9 @@ Rectangle {
                 required property string name
                 required property string path
                 required property int count
+                // #459/5: „jelenleg nem elérhető" mappa (levált NAS-mount,
+                // kihúzott lemez) — a sor bennmarad, csak jelölést kap.
+                required property bool offline
                 width: folderList.width; height: 22
                 // #9: album-nézetben a mappa-kijelölés szűnjön meg — a
                 // hasábon csak az aktív album sora legyen kiemelve.
@@ -578,14 +581,28 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left; anchors.leftMargin: 12
                     spacing: 5
-                    FolderIcon { size: 13; anchors.verticalCenter: parent.verticalCenter }
+                    FolderIcon {
+                        size: 13
+                        anchors.verticalCenter: parent.verticalCenter
+                        // az elérhetetlen mappa ikonja halvány (#459/5)
+                        opacity: offline ? 0.45 : 1.0
+                    }
                     Text {
+                        objectName: "folderRowLabel"
                         text: name + " (" + count + ")"
                         font.pixelSize: Theme.fontSize
+                        // #459/5: a nem elérhető mappa dőlt és halvány —
+                        // a sor kattintható marad (a bélyegképek a
+                        // gyorsítótárból még látszanak), csak jelzi az
+                        // állapotot; a részletet a súgószöveg mondja el.
+                        font.italic: offline
+                        opacity: offline ? 0.55 : 1.0
                         color: isSelectedFolder || folderRowMouse.containsMouse
                                ? Theme.panelSelectionText : Theme.ink
                     }
                 }
+                ToolTip.visible: offline && folderRowMouse.containsMouse
+                ToolTip.text: qsTr("Currently unavailable — the folder stays in the database, thumbnails come from the cache.")
                 MouseArea {
                     id: folderRowMouse
                     enabled: kind === "folder"

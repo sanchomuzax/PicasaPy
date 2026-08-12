@@ -211,11 +211,79 @@ def sync_folder(
     )
     scan = None if excluded else scan_folder(folder_path)
     if scan is None:
-        _remove_folder(conn, folder_path)
+        # #459/5: a `scan_folder` a nem elérhető mappára is None-t ad — a
+        # törlés előtt megkérdezzük, hogy tényleg eltűnt-e. A kizárt mappa
+        # (#145) ettől függetlenül kikerül: ott nem elérhetőségről van szó.
+        row = None if excluded else conn.execute(
+            "SELECT id FROM folders WHERE path = ?", (str(folder_path),)
+        ).fetchone()
+        if (
+            row is not None
+            and _has_photos(conn, row["id"])
+            and folder_looks_offline(folder_path)
+        ):
+            _set_folder_offline(conn, row["id"], True)
+            logger.warning(
+                "A mappa jelenleg nem elérhető, az indexben marad: %s",
+                folder_path,
+            )
+        else:
+            _remove_folder(conn, folder_path)
     else:
         _sync_folder(conn, scan)
         _store_scan_state(conn, scan)
     conn.commit()
+
+
+def folder_looks_offline(folder_path: Path) -> bool:
+    """Igaz, ha a mappa jelenleg NEM ELÉRHETŐNEK látszik (#459/5).
+
+    A #132 gyökér-szintű védelmének mappa-szintű párja. A megkülönböztetés
+    szándékosan szűk, hogy a „a felhasználó kiürítette a mappát" eset NE
+    minősüljön offline-nak:
+
+    - a `scandir` hibára fut (ESTALE/EIO/EACCES/ENOTCONN — levált mount,
+      megszűnt hálózati megosztás, elvett jog) → offline;
+    - a mappa létezik, de TELJESEN üres (nulla bejegyzés) → offline: a
+      levált NAS-mount pontosan így néz ki (üres könyvtárként ott marad),
+      míg a kiürített fotómappában rendszerint ott marad legalább a
+      `.picasa.ini` vagy más fájl;
+    - a mappa nem létezik, vagy létezik és van benne bármi (csak épp
+      média nincs) → NEM offline, a takarítás futhat.
+
+    A tévedés iránya tudatos: inkább maradjon egy ideig egy „jelenleg nem
+    elérhető" jelölésű üres mappa a listában, mint hogy egy levált NAS
+    fotói (és a stabil rekord-id-k) elvesszenek. A jelölés a következő
+    sikeres scannel magától eltűnik, a végleges eltávolítás pedig explicit
+    (Mappakezelő → „Eltávolítás a Picasából").
+    """
+    try:
+        with os.scandir(folder_path) as it:
+            return next(iter(it), None) is None
+    except FileNotFoundError:
+        return False  # ténylegesen eltűnt mappa — nem offline, takarítható
+    except NotADirectoryError:
+        return False
+    except OSError:
+        return True  # elérhetetlen (levált mount, jogosultság, I/O hiba)
+
+
+def _has_photos(conn: sqlite3.Connection, folder_id: int) -> bool:
+    return (
+        conn.execute(
+            "SELECT 1 FROM photos WHERE folder_id = ? LIMIT 1", (folder_id,)
+        ).fetchone()
+        is not None
+    )
+
+
+def _set_folder_offline(conn: sqlite3.Connection, folder_id: int, offline: bool) -> None:
+    """Az offline jelölés írása — csak tényleges változásnál (a fölösleges
+    UPDATE-ek WAL-hízást okoznának minden szinkronban)."""
+    conn.execute(
+        "UPDATE folders SET offline = ? WHERE id = ? AND offline IS NOT ?",
+        (int(offline), folder_id, int(offline)),
+    )
 
 
 def _remove_folder(conn: sqlite3.Connection, folder_path: Path) -> None:
@@ -277,9 +345,12 @@ def _store_scan_state(conn: sqlite3.Connection, scan: FolderScan) -> None:
 def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> int:
     """Egy mappa szinkronja; a visszatérési érték az ÚJ (az indexben eddig
     nem szereplő) fotók száma (#209, a haladás-jelzéshez)."""
+    # #459/5: a sikeres scan bizonyítja, hogy a mappa elérhető — az esetleges
+    # offline jelölés magától elmúlik (a NAS visszatérése után nincs teendő).
     folder_id = conn.execute(
-        "INSERT INTO folders(path, has_ini) VALUES (?, ?) "
-        "ON CONFLICT(path) DO UPDATE SET has_ini = excluded.has_ini "
+        "INSERT INTO folders(path, has_ini, offline) VALUES (?, ?, 0) "
+        "ON CONFLICT(path) DO UPDATE SET has_ini = excluded.has_ini,"
+        " offline = 0 "
         "RETURNING id",
         (str(scan.path), int(scan.has_ini)),
     ).fetchone()[0]
@@ -555,6 +626,11 @@ def _prune_folders(
     Pythonban az összes mappán iterálva. Explicit photos-törlés a folders
     előtt, hogy az FTS-triggerek biztosan lefussanak (az FK-cascade nem
     minden konfigurációban futtat triggert).
+
+    #459/5: a nem látott mappa nem feltétlenül eltűnt mappa — lehet, hogy
+    csak épp nem elérhető (levált NAS-mount). Az ilyen mappa a fotóival
+    EGYÜTT bennmarad az indexben, `offline = 1` jelöléssel; a takarítás
+    csak a bizonyítottan eltűnt mappákra fut. Ld. `folder_looks_offline`.
     """
     stale = [
         (row["id"], row["path"])
@@ -562,6 +638,14 @@ def _prune_folders(
         if row["path"] not in seen_paths
     ]
     for folder_id, path in stale:
+        # Óvni csak azt érdemes, amiben van is mit veszíteni: fotó nélküli
+        # sor eltávolítása nem jár adatvesztéssel, ott a takarítás mehet.
+        if _has_photos(conn, folder_id) and folder_looks_offline(Path(path)):
+            _set_folder_offline(conn, folder_id, True)
+            logger.warning(
+                "A mappa jelenleg nem elérhető, az indexben marad: %s", path
+            )
+            continue
         conn.execute("DELETE FROM photos WHERE folder_id = ?", (folder_id,))
         conn.execute("DELETE FROM folders WHERE id = ?", (folder_id,))
         conn.execute("DELETE FROM folder_scan_state WHERE path = ?", (path,))

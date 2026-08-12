@@ -71,6 +71,10 @@ class CollageReport:
     used: tuple[Path, ...]
     skipped: tuple[Path, ...] = ()
     reasons: tuple[str, ...] = ()
+    # #459/3: a kihagyottak közül azok, amelyek NEM LÉTEZNEK (elmozdítva,
+    # átnevezve, törölve). Az eredeti Picasa külön mondatot adott rájuk —
+    # a „nem található" más eset, mint a „nem dekódolható".
+    missing: tuple[Path, ...] = ()
 
 
 _DEFAULT_SETTINGS = CollageSettings()
@@ -179,7 +183,15 @@ def make_collage(
     decoded: list[tuple[Path, np.ndarray]] = []
     skipped: list[Path] = []
     reasons: list[str] = []
+    missing: list[Path] = []
     for path in paths:
+        if not path.exists():
+            # #459/3: a hiányzó fájl külön kategória — a munka a maradékkal
+            # folytatódik, a hívó pedig meg tudja mondani, mi történhetett
+            missing.append(path)
+            skipped.append(path)
+            reasons.append("a fájl nem található")
+            continue
         try:
             decoded.append((path, _decode(path)))
         except (ValueError, OSError) as error:
@@ -193,7 +205,11 @@ def make_collage(
     )
     if not decoded:
         return CollageReport(
-            image=canvas, used=(), skipped=tuple(skipped), reasons=tuple(reasons)
+            image=canvas,
+            used=(),
+            skipped=tuple(skipped),
+            reasons=tuple(reasons),
+            missing=tuple(missing),
         )
 
     places = layout_for(
@@ -226,6 +242,7 @@ def make_collage(
         used=tuple(path for path, _ in decoded),
         skipped=tuple(skipped),
         reasons=tuple(reasons),
+        missing=tuple(missing),
     )
 
 

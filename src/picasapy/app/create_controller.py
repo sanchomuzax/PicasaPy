@@ -36,10 +36,12 @@ _MAX_TRANSITION_S = 0.5
 class CreateMixin(BackgroundWorkerMixin):
     """Kollázs- és mozgófilm-készítés a kijelölésből, háttérszálon."""
 
-    collageFinished = Signal(str, int, int)
+    # (célfájl, felhasznált, kihagyott, ebből NEM TALÁLHATÓ) — #459/3: a
+    # hiányzó fájl más eset, mint az olvashatatlan, külön mondatot kap
+    collageFinished = Signal(str, int, int, int)
     collageFailed = Signal(str)
     movieProgress = Signal(int, int)
-    movieFinished = Signal(str, int, int)
+    movieFinished = Signal(str, int, int, int)
     movieFailed = Signal(str)
 
     def _selected_sources(self, rows) -> tuple[Path, ...]:
@@ -85,7 +87,10 @@ class CreateMixin(BackgroundWorkerMixin):
                 self.collageFailed.emit(str(error))
                 return
             self.collageFinished.emit(
-                str(path), len(report.used), len(report.skipped)
+                str(path),
+                len(report.used),
+                len(report.skipped),
+                len(report.missing),
             )
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
@@ -137,7 +142,10 @@ class CreateMixin(BackgroundWorkerMixin):
                 )
                 return
             self.movieFinished.emit(
-                str(report.target), len(report.used), len(report.skipped)
+                str(report.target),
+                len(report.used),
+                len(report.skipped),
+                len(report.missing),
             )
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)

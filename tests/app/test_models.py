@@ -41,6 +41,30 @@ class TestFolderListModel:
         assert model.data(first, FolderListModel.CountRole) == 2
         assert model.data(first, FolderListModel.PathRole).endswith("nyaralas")
 
+    def test_offline_role_and_paths(self, qt_app, conn, library):
+        # #459/5: a nem elérhető mappa jelölése kijut a modellig — ebből
+        # rajzolja a hasáb a halvány/dőlt sort, és ebből tudja a vezérlő,
+        # hogy tájékoztató üzenetet adjon néma bukás helyett.
+        from picasapy.app.models import FolderListModel
+
+        conn.execute(
+            "UPDATE folders SET offline = 1 WHERE path LIKE '%nyaralas'"
+        )
+        model = FolderListModel()
+        model.load(conn)
+        rows = {
+            model.data(model.index(i, 0), FolderListModel.NameRole): model.data(
+                model.index(i, 0), FolderListModel.OfflineRole
+            )
+            for i in range(model.rowCount())
+            if model.data(model.index(i, 0), FolderListModel.KindRole) == "folder"
+        }
+        assert rows["nyaralas"] is True
+        assert rows["telek"] is False
+        assert [p for p in model.offline_paths()] == [
+            p for p in model.folder_paths() if p.endswith("nyaralas")
+        ]
+
     def test_year_separator_rows(self, qt_app, conn):
         # Picasa: évszám-elválasztó sorok az év-prefixű mappák előtt.
         from picasapy.app.models import FolderListModel

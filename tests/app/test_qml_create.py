@@ -101,6 +101,29 @@ class TestResultDialog:
         assert result.property("visible") is True
         assert str(target) in result.property("message")
 
+    def test_missing_files_get_their_own_sentence(self, qml_app, qt_app):
+        # #459/3: a hiányzó fájl KÜLÖN mondatot kap (megmondja, mi
+        # történhetett), a csak olvashatatlan képek a semleges „kihagyva"
+        # számban maradnak — a kettő nem folyhat össze.
+        window, controller, lib, engine = qml_app
+        # 3 kihagyott, ebből 2 nem található → 1 olvashatatlan
+        controller.collageFinished.emit("/tmp/k.jpg", 5, 3, 2)
+        _settle(qt_app, 2)
+        result = window.findChild(QObject, "createResultDialog")
+        lines = result.property("message").splitlines()
+        missing_lines = [line for line in lines if "2" in line]
+        unreadable_lines = [line for line in lines if "1" in line]
+        assert missing_lines, lines
+        assert unreadable_lines, lines
+        assert missing_lines != unreadable_lines
+
+    def test_no_missing_sentence_when_all_files_exist(self, qml_app, qt_app):
+        window, controller, lib, engine = qml_app
+        controller.collageFinished.emit("/tmp/k.jpg", 5, 0, 0)
+        _settle(qt_app, 2)
+        result = window.findChild(QObject, "createResultDialog")
+        assert len(result.property("message").splitlines()) == 2
+
     def test_collage_failure_is_shown(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
         controller.makeCollage([], "grid", "")
