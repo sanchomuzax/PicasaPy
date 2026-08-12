@@ -102,6 +102,8 @@ Item {
                     id: exportFolderNameField
                     objectName: "exportFolderNameField"
                     Layout.preferredWidth: 180
+                    // #422: jobbklikk-menü (Picasa `Address`)
+                    TextFieldContextArea {}
                 }
             }
             CheckBox {
@@ -164,6 +166,8 @@ Item {
                         objectName: "exportWatermarkField"
                         Layout.preferredWidth: 200
                         enabled: exportWatermarkCheck.checked
+                        // #422: jobbklikk-menü (Picasa `Address`)
+                        TextFieldContextArea {}
                     }
                 }
             }

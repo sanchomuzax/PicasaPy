@@ -21,8 +21,16 @@ Rectangle {
     // #318: a felirat teljesen olvasható kell legyen. Bélyegképes
     // gombnál a kép + felirat együttes magassága számít, sima gombnál
     // (a régi mintát megtartva) csak a feliraté, 24px alsó korláttal.
+    //
+    // #422 (felhasználói hibajelentés): az effekt-fülek rácsa SZÉTCSÚSZOTT,
+    // mert a kétsoros feliratú gomb (pl. „Infravörös film") magasabb lett a
+    // többinél, és a rács sora hozzá igazodott — a szomszédos, egysoros
+    // csempék képe pedig felnagyult. A bélyegképes gomb ezért MINDIG két
+    // sornyi feliratot foglal: a rács így egyenletes, és a hosszabb nevek
+    // sem vágódnak/nem lógnak a képre.
+    readonly property int labelLineHeight: Math.ceil(Theme.fontSize * 1.35)
     Layout.preferredHeight: pbtn.thumbSource !== ""
-        ? pbtnThumbBox.height + pbtnLabel.implicitHeight + 12
+        ? pbtnThumbBox.height + 2 * pbtn.labelLineHeight + 12
         : Math.max(24, pbtnLabel.implicitHeight + 10)
     radius: 3
     border.width: 1
@@ -85,7 +93,10 @@ Rectangle {
         anchors.topMargin: pbtn.thumbSource !== "" ? 4 : 3
         anchors.horizontalCenter: parent.horizontalCenter
         text: pbtn.label
-        font.pixelSize: Theme.fontSize
+        // #422 (felhasználói visszajelzés): az effekt-csempék felirata
+        // NAGYOBB volt, mint az 1. fül eszköz-csempéié — a kisebb a helyes,
+        // ezért a `ToolTile`-lel azonos fokozatra állítva.
+        font.pixelSize: Theme.fontSize - 2
         color: pbtn.enabled ? Theme.textDark : Theme.textGray
         // #318: elide helyett tördelés — a panel szélessége nem nőhet,
         // de a szöveg soha nem vágódik "…"-ra; a Qt WordWrap szó-

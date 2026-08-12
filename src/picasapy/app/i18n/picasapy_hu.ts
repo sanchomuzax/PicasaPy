@@ -4688,6 +4688,44 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     </message>
 </context>
 <context>
+    <name>TextFieldContextMenu</name>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Auto-Complete</source>
+        <translation>Automatikus kitöltés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Copy</source>
+        <translation>Másolás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Cut</source>
+        <translation>Kivágás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Delete</source>
+        <translation>Törlés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Paste</source>
+        <translation>Beillesztés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Select All</source>
+        <translation>Az összes kijelölése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TextFieldContextMenu.qml"/>
+        <source>Undo</source>
+        <translation>Visszavonás</translation>
+    </message>
+</context>
+<context>
     <name>EditorFinetunePanel</name>
     <message>
         <location filename="../qml/PicasaPy/EditorFinetunePanel.qml"/>

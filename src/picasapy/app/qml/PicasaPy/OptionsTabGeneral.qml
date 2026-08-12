@@ -209,6 +209,8 @@ ColumnLayout {
             objectName: "optionsImportDestField"
             Layout.fillWidth: true
             readOnly: true
+            // #422: jobbklikk-menü (Picasa `Address`)
+            TextFieldContextArea {}
         }
         Button {
             objectName: "optionsImportDestBrowseButton"

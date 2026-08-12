@@ -79,6 +79,8 @@ Dialog {
             Layout.preferredWidth: 320
             // a mappa átnevezése (fájlrendszer-művelet) még nincs bekötve
             enabled: false
+            // #422: jobbklikk-menü (Picasa `Address`)
+            TextFieldContextArea {}
         }
 
         // -- Date: ---------------------------------------------------------
@@ -94,6 +96,8 @@ Dialog {
                 objectName: "folderPropertiesDateField"
                 Layout.preferredWidth: 160
                 placeholderText: "2020-01-15"
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
             PicasaButton {
                 // az eredeti „Automatic date" gombja: törli a kézi
@@ -128,6 +132,8 @@ Dialog {
                 Layout.preferredWidth: 240
                 // az eredeti `<bind attr="enabled" source="usemusic">`
                 enabled: musicCheck.checked
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
         }
 
@@ -142,6 +148,8 @@ Dialog {
             Layout.preferredWidth: 320
             // a mappa-szintű helyszín még nincs bekötve
             enabled: false
+            // #422: jobbklikk-menü (Picasa `Address`)
+            TextFieldContextArea {}
         }
 
         // -- Description (optional): ---------------------------------------
@@ -158,6 +166,8 @@ Dialog {
                 id: descriptionField
                 objectName: "folderPropertiesDescription"
                 wrapMode: TextEdit.Wrap
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
         }
     }

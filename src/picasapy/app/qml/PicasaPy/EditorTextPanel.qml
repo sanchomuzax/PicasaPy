@@ -48,6 +48,8 @@ ColumnLayout {
         Layout.fillWidth: true
         text: panel.textDraftContent
         onTextChanged: panel.textDraftEdited(text)
+        // #422: jobbklikk-menü (Picasa `Address`)
+        TextFieldContextArea {}
     }
 
     // #450: a kép meglévő feliratát tölti a szövegmezőbe — feliratozatlan

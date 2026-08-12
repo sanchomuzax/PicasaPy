@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.83] – 2026-08-12
+
+### Javítva
+- **Az effekt-fülek csempéi nem csúsznak szét (#422).** A kétsoros feliratú
+  gomb (például „Infravörös film") magasabb lett a többinél, a rács sora
+  hozzá igazodott, a szomszédos csempék képe pedig felnagyult. A bélyegképes
+  gomb mostantól mindig két sornyi feliratot foglal, így a rács egyenletes.
+- **Az effekt-csempék felirata a többi csempéével azonos méretű** — eddig
+  nagyobb volt.
+
+### Hozzáadva
+- **Jobbklikk-menü a szövegmezőkben (#422).** Az eredeti Picasa minden
+  szövegmezője alatt ott van a hét tételes menü (Visszavonás · Kivágás ·
+  Másolás · Beillesztés · Törlés · Az összes kijelölése · Automatikus
+  kitöltés); nálunk eddig egyetlen mezőben sem volt. Az inaktív tételek —
+  az eredetihez hasonlóan — szürkén látszanak, nem tűnnek el. A
+  jelszó-mezőben szándékosan nincs menü.
+
 ## [0.6.82] – 2026-08-12
 
 ### Hozzáadva

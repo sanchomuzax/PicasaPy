@@ -28,7 +28,10 @@ ColumnLayout {
         enabled: playMusicCheck.checked
         spacing: 8
         Text { text: qsTr("Select a music folder:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
-        TextField { objectName: "optionsSlideshowMusicPathField"; Layout.fillWidth: true; readOnly: true }
+        TextField { objectName: "optionsSlideshowMusicPathField"; Layout.fillWidth: true; readOnly: true 
+            // #422: jobbklikk-menü (Picasa `Address`)
+            TextFieldContextArea {}
+        }
         Button { objectName: "optionsSlideshowMusicBrowseButton"; text: qsTr("Browse...") }
     }
 

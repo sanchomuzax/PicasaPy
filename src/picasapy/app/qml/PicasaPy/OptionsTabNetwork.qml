@@ -15,7 +15,10 @@ ColumnLayout {
         font.pixelSize: Theme.fontSize
         color: Theme.ink
     }
-    TextField { objectName: "optionsNetworkProxyUserField"; Layout.fillWidth: true }
+    TextField { objectName: "optionsNetworkProxyUserField"; Layout.fillWidth: true 
+        // #422: jobbklikk-menü (Picasa `Address`)
+        TextFieldContextArea {}
+    }
 
     Text {
         text: qsTr("Proxy password:")
@@ -44,7 +47,10 @@ ColumnLayout {
     RowLayout {
         spacing: 8
         Text { text: qsTr("Log file:"); font.pixelSize: Theme.fontSize; color: Theme.ink }
-        TextField { objectName: "optionsNetworkLogPathField"; Layout.fillWidth: true; readOnly: true }
+        TextField { objectName: "optionsNetworkLogPathField"; Layout.fillWidth: true; readOnly: true 
+            // #422: jobbklikk-menü (Picasa `Address`)
+            TextFieldContextArea {}
+        }
         Button { objectName: "optionsNetworkLogBrowseButton"; text: qsTr("Browse...") }
     }
 

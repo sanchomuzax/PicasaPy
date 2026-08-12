@@ -84,6 +84,8 @@ ColumnLayout {
             objectName: "unnamedNameField"
             Layout.preferredWidth: 180
             placeholderText: qsTr("Name")
+            // #422: jobbklikk-menü (Picasa `Address`)
+            TextFieldContextArea {}
         }
         Button {
             id: addNameButton

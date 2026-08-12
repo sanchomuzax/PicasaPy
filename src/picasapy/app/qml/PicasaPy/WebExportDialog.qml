@@ -109,6 +109,8 @@ Window {
                 Layout.fillWidth: true
                 text: webExportWindow.albumTitle
                 onTextEdited: webExportWindow.albumTitle = text
+                // #422: jobbklikk-menü (Picasa `Address`)
+                TextFieldContextArea {}
             }
         }
 
