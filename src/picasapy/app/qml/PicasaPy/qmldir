@@ -31,6 +31,7 @@ MainToolbar 1.0 MainToolbar.qml
 TrayBar 1.0 TrayBar.qml
 FileOpsDialogs 1.0 FileOpsDialogs.qml
 SaveDialogs 1.0 SaveDialogs.qml
+InitialScanDialog 1.0 InitialScanDialog.qml
 ExportDialogs 1.0 ExportDialogs.qml
 CreateDialogs 1.0 CreateDialogs.qml
 PlacesPanel 1.0 PlacesPanel.qml
@@ -47,6 +48,7 @@ DedupDialog 1.0 DedupDialog.qml
 ImportSourceDialog 1.0 ImportSourceDialog.qml
 ConfirmDialog 1.0 ConfirmDialog.qml
 MoveDatabaseDialog 1.0 MoveDatabaseDialog.qml
+CompactDatabaseDialog 1.0 CompactDatabaseDialog.qml
 FolderContextMenu 1.0 FolderContextMenu.qml
 AlbumContextMenu 1.0 AlbumContextMenu.qml
 PeopleAlbumContextMenu 1.0 PeopleAlbumContextMenu.qml

@@ -479,3 +479,40 @@ class TestRotateAndStarInThePreview:
     # A gombok MEGLÉTÉT nem findChild-dal ellenőrizzük: a GridView
     # delegáltjai onnan nem érhetők el (MEMORY 2026-07-31) — a fájl többi
     # tesztje is a controller-úton méri a delegált viselkedését.
+
+
+class TestInitialScanDialog:
+    """#449: az első indítás EGYETLEN kérdése — a Mappakezelő fája helyett."""
+
+    def test_the_dialog_exists_with_both_choices(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "initialScanDialog")
+
+        assert dialog is not None
+        assert _child(window, "initialScanNarrow") is not None
+        assert _child(window, "initialScanWide") is not None
+
+    def test_it_stays_closed_when_a_folder_is_already_watched(
+        self, qml_app, qt_app
+    ):
+        # a fixture könyvtára már figyelt — ilyenkor nincs mit kérdezni
+        window, controller, _lib, _engine = qml_app
+        assert controller.needsInitialScan is False
+        assert _child(window, "initialScanDialog").property("visible") is False
+
+    def test_the_scope_is_shown_in_advance(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "initialScanDialog")
+
+        dialog.setProperty("choice", "wide")
+        qt_app.processEvents()
+
+        assert _child(window, "initialScanScopeText").property("text") != ""
+
+    def test_the_reassurance_is_on_the_screen(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+
+        text = _child(window, "initialScanReassuranceText").property("text")
+
+        # az eredeti mindkét képernyőjén ott volt: a keresés SOHA nem mozgat
+        assert "never moves" in text or "nem mozgat" in text

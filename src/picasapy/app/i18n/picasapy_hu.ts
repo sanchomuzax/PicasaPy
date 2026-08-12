@@ -610,6 +610,41 @@
     </message>
 </context>
 <context>
+    <name>CompactDatabaseDialog</name>
+    <message>
+        <source>Compacting</source>
+        <translation>Tömörítés</translation>
+    </message>
+    <message>
+        <source>PicasaPy is compacting its database to save disk space. This may take several minutes.</source>
+        <translation>A PicasaPy tömöríti az adatbázisát, hogy lemezhelyet szabadítson fel. Ez több percig is eltarthat.</translation>
+    </message>
+    <message>
+        <source>Compacting...</source>
+        <translation>Tömörítés…</translation>
+    </message>
+    <message>
+        <source>The database is already compact — nothing to do.</source>
+        <translation>Az adatbázis már tömör — nincs teendő.</translation>
+    </message>
+    <message>
+        <source>Compacting cancelled. Your database is unchanged.</source>
+        <translation>A tömörítés megszakítva. Az adatbázis változatlan.</translation>
+    </message>
+    <message>
+        <source>Done.</source>
+        <translation>Kész.</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+</context>
+<context>
     <name>MoveDatabaseDialog</name>
     <message>
         <source>Move Database</source>
@@ -2432,6 +2467,29 @@ Would you like to rename or skip these files?</source>
     </message>
 </context>
 <context>
+    <name>InitialScanDialog</name>
+    <message>
+        <source>Welcome to PicasaPy</source>
+        <translation>Üdvözli a PicasaPy</translation>
+    </message>
+    <message>
+        <source>Where should PicasaPy look for your pictures?</source>
+        <translation>Hol keresse a PicasaPy a képeit?</translation>
+    </message>
+    <message>
+        <source>Only search Documents, Pictures, and the Desktop</source>
+        <translation>Keresés csak a Dokumentumok és a Képek mappában, valamint az asztalon</translation>
+    </message>
+    <message>
+        <source>Search my whole home folder for pictures</source>
+        <translation>Keresés a teljes saját mappában</translation>
+    </message>
+    <message>
+        <source>Searching never moves or copies your files. You can change these folders later in the Folder Manager.</source>
+        <translation>A keresés soha nem mozgat és nem másol fájlt. A mappák később bármikor módosíthatók a Mappakezelőben.</translation>
+    </message>
+</context>
+<context>
     <name>FolderManagerDialog</name>
     <message>
         <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
@@ -2626,6 +2684,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <location filename="../qml/PicasaPy/FolderPane.qml"/>
         <source>Folders on Disk</source>
         <translation>Mappák a lemezen</translation>
+    </message>
+    <message>
+        <source>Scanning for faces... %1% complete</source>
+        <translation>Arcok keresése… %1% kész</translation>
     </message>
     <message>
         <source>Unnamed</source>
@@ -4019,6 +4081,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <translation>Adatbázis áthelyezése…</translation>
     </message>
     <message>
+        <source>Compact Database...</source>
+        <translation>Adatbázis tömörítése…</translation>
+    </message>
+    <message>
         <source>Undo Save</source>
         <translation>Utolsó mentés visszavonása</translation>
     </message>
@@ -4238,6 +4304,14 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <location filename="../application.py" line="416"/>
         <source>Scanning folders…</source>
         <translation>Mappák beolvasása…</translation>
+    </message>
+    <message>
+        <source>There were errors loading the PicasaPy database. Would you like to view the error log?</source>
+        <translation>A PicasaPy adatbázisának betöltése hibákba ütközött. Megnézi a hibanaplót?</translation>
+    </message>
+    <message>
+        <source>Database error</source>
+        <translation>Adatbázis-hiba</translation>
     </message>
 </context>
 <context>

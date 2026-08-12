@@ -7,8 +7,10 @@ Könyvtár-gyökerek: parancssori argumentumok, vagy a Picasa-paritású
 from __future__ import annotations
 
 import ctypes
+import logging
 import math
 import os
+import sqlite3
 import sys
 import time
 from pathlib import Path
@@ -42,6 +44,8 @@ from picasapy.version import version_string
 from .confirm_settings_bridge import ConfirmSettingsBridge
 from .controller import AppController
 from .data_location import read_data_root
+from .error_log import error_log_path, install_error_log
+from .compact_controller import CompactController
 from .relocate_controller import RelocateController
 from .dedup_controller import DedupController
 from .discovery_controller import DiscoveryController
@@ -170,6 +174,30 @@ def _resolve_roots(argv: list[str]) -> tuple[str, ...]:
     if len(argv) > 1:
         return tuple(argv[1:])
     return read_watched_folders(_watched_folders_path())
+
+
+def _offer_error_log(path: Path) -> None:
+    """Adatbázis-hiba után felajánlja a napló megtekintését (#449).
+
+    Az eredeti szövege: „There were errors loading the Picasa database.
+    Would you like to view the error log?" — a megnyitás a rendszer
+    társított alkalmazásával megy. A program a válasz után elindul: az
+    index a következő beolvasáskor újraépül.
+    """
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QDesktopServices
+    from PySide6.QtWidgets import QMessageBox
+
+    text = QCoreApplication.translate(
+        "startup",
+        "There were errors loading the PicasaPy database. "
+        "Would you like to view the error log?",
+    )
+    answer = QMessageBox.question(
+        None, QCoreApplication.translate("startup", "Database error"), text
+    )
+    if answer == QMessageBox.StandardButton.Yes and path.exists():
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
 
 
 def _acquire_instance_lock(data_dir: Path) -> QLockFile | None:
@@ -439,6 +467,9 @@ def run(argv: list[str]) -> int:
     roots = _resolve_roots(argv)
     data_dir = _data_dir()
     data_dir.mkdir(parents=True, exist_ok=True)
+    # #449: hibanapló — a WARNING és súlyosabb üzenetek fájlba is mennek,
+    # hogy adatbázis-hiba esetén legyen mit felajánlani megtekintésre
+    error_log = install_error_log(data_dir) or error_log_path(data_dir)
 
     instance_lock = _acquire_instance_lock(data_dir)
     if instance_lock is None:
@@ -455,8 +486,16 @@ def run(argv: list[str]) -> int:
     startup_status.report(
         QCoreApplication.translate("startup", "Preparing index…")
     )
-    with open_index(data_dir / "index.db") as conn:
-        prune_foreign_folders(conn, roots)
+    try:
+        with open_index(data_dir / "index.db") as conn:
+            prune_foreign_folders(conn, roots)
+    except sqlite3.DatabaseError:
+        # #449: az eredeti sem omlott össze némán és nem javított titokban —
+        # FELAJÁNLOTTA a hibanaplót („There were errors loading the Picasa
+        # database. Would you like to view the error log?"). A program ezután
+        # elindul: az index önmagát újraépíti a következő beolvasáskor.
+        logging.getLogger(__name__).exception("az index megnyitása hibára futott")
+        _offer_error_log(error_log)
 
     # #83: a cache-méretet a képernyő DPR-jéhez igazítjuk, hogy a rács
     # legnagyobb fokozata (256px) se legyen homályos HiDPI kijelzőn.
@@ -583,6 +622,9 @@ def run(argv: list[str]) -> int:
     engine.rootContext().setContextProperty(
         "relocateController", relocate_controller
     )
+    # #449: adatbázis-tömörítés — a CompactDatabaseDialog.qml hídja
+    compact_controller = CompactController(data_dir / "index.db")
+    engine.rootContext().setContextProperty("compactController", compact_controller)
     engine.rootContext().setContextProperty(
         "importSourceController", import_source_controller
     )

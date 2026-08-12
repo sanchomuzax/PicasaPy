@@ -114,6 +114,13 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # sorának darabszáma ezt figyeli.
     unnamedCountChanged = Signal()
 
+    # #449: a háttér-beolvasás haladása az ALBUMLISTÁBAN jelenik meg
+    # („Scanning for faces… %d%% complete"), nem modális ablakban — semmi
+    # nem blokkolja a felhasználót. A `scanProgress` jelzés erre kevés: a
+    # bal hasáb sorának DEKLARATÍV kötés kell, ezért a százalék NOTIFY-
+    # property is (−1 = épp nem fut).
+    scanPercentChanged = Signal()
+
     def __init__(
         self,
         db_path: str | Path,
@@ -136,6 +143,8 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._faces_helper = faces_helper
         self._stop_event: threading.Event | None = None
         self._embedding_stop_event: threading.Event | None = None
+        #: #449: a futó szkennelés haladása százalékban, −1 ha nem fut
+        self._scan_percent = -1
 
     @Slot(result=bool)
     def isAvailable(self) -> bool:
@@ -146,6 +155,19 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def isEmbeddingAvailable(self) -> bool:
         """Igaz, ha a lenyomat-modell (SFace) betöltve."""
         return self._embedder.available
+
+    @Property(int, notify=scanPercentChanged)
+    def scanPercent(self) -> int:  # noqa: N802 — QML-property-stílus
+        """A futó arc-beolvasás haladása (0–100), vagy −1, ha nem fut.
+
+        A bal hasáb „Scanning for faces…" sora ezt köti (#449) — modális
+        ablak SEHOL, a munka a háttérben marad."""
+        return self._scan_percent
+
+    def _set_scan_percent(self, percent: int) -> None:
+        if percent != self._scan_percent:
+            self._scan_percent = percent
+            self.scanPercentChanged.emit()
 
     @Slot()
     def scanForFaces(self) -> None:
@@ -160,6 +182,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self.cancelScan()
         stop_event = threading.Event()
         self._stop_event = stop_event
+        self._set_scan_percent(0)
         self.scanStarted.emit()
         self._start_background(
             self._run_scan, args=(stop_event,), name="picasapy-face-scan"
@@ -338,10 +361,10 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     photo_path = Path(photo.folder_path) / photo.name
                     if _has_named_face(photo_path):
                         # a Picasa döntése szent — nem értékeljük újra
-                        self.scanProgress.emit(done, total)
+                        self._report_scan(done, total)
                         continue
                     if photo_path.suffix.lower() in VIDEO_EXTENSIONS:
-                        self.scanProgress.emit(done, total)
+                        self._report_scan(done, total)
                         continue
                     faces = self._detect(photo_path)
                     replace_faces(conn, photo.id, faces)
@@ -349,7 +372,7 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                     scanned += 1
                     if scanned % _COMMIT_BATCH_SIZE == 0:
                         conn.commit()
-                    self.scanProgress.emit(done, total)
+                    self._report_scan(done, total)
                 conn.commit()
         except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
             _log.exception("arc-detektálás hiba: %s", self._db_path)
@@ -358,8 +381,16 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         finally:
             if self._stop_event is stop_event:
                 self._stop_event = None
+            # a sor eltűnik a bal hasábból — akkor is, ha megszakadt vagy
+            # hibára futott (#449)
+            self._set_scan_percent(-1)
         self.unnamedCountChanged.emit()
         self.scanFinished.emit(found, scanned)
+
+    def _report_scan(self, done: int, total: int) -> None:
+        """Haladás-jelzés + a bal hasáb sorának százaléka (#449)."""
+        self._set_scan_percent(round(100 * done / total) if total else 100)
+        self.scanProgress.emit(done, total)
 
     def _run_embedding(self, stop_event: threading.Event) -> None:
         try:

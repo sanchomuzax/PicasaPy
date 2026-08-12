@@ -154,6 +154,11 @@ def qml_app(qt_app, tmp_path):
     engine.rootContext().setContextProperty(
         "importSourceController", import_source_controller
     )
+    # adatbázis-tömörítés (#449) — az application.py bekötésének tükre
+    from picasapy.app.compact_controller import CompactController
+
+    compact_controller = CompactController(db)
+    engine.rootContext().setContextProperty("compactController", compact_controller)
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
@@ -173,6 +178,7 @@ def qml_app(qt_app, tmp_path):
         discovery_controller,
         folder_tree_controller,
         import_source_controller,
+        compact_controller,
     ):
         assert bg_controller.waitForBackgroundWorkers(30.0), (
             "háttérszál nem állt le a qml_functional teardownban (#430/#438)"

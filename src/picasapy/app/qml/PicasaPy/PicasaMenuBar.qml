@@ -62,6 +62,7 @@ MenuBar {
     signal dedupRequested()
     // #368: Eszközök → Kísérleti → Adatbázis áthelyezése
     signal moveDatabaseRequested()
+    signal compactDatabaseRequested()
     signal renameRequested()
     signal exportRequested()
     // #351: Mappa → Exportálás weboldalként… (webexport.fen)
@@ -644,6 +645,13 @@ MenuBar {
                 objectName: "menuToolsMoveDatabase"
                 text: qsTr("Move Database...")
                 onTriggered: bar.moveDatabaseRequested()
+            }
+            // #449: adatbázis-tömörítés (`compacting.fen`) — az eredetiben
+            // is a Kísérleti almenüben lakott, az áthelyezés mellett
+            MenuItem {
+                objectName: "menuToolsCompactDatabase"
+                text: qsTr("Compact Database...")
+                onTriggered: bar.compactDatabaseRequested()
             }
         }
         MenuSeparator {}

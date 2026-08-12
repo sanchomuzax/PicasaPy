@@ -41,6 +41,10 @@ Rectangle {
     // csak akkor látszik, ha van legalább egy szkennelt, még névtelen arc
     // (modell nélkül ez a szám mindig 0 — a sor eleve rejtve marad).
     property int unnamedFaceCount: 0
+    // #449: a háttérben futó arc-beolvasás haladása (−1 = nem fut). Az
+    // eredeti Picasa ezt AZ ALBUMLISTÁBAN mutatta, nem modális ablakban —
+    // a felhasználót semmi nem blokkolta közben.
+    property int faceScanPercent: -1
     property bool unnamedFacesActive: false
     signal folderChosen(string path)
     signal starredChosen()
@@ -473,6 +477,22 @@ Rectangle {
                 hoverEnabled: true
                 onClicked: pane.unnamedFacesChosen()
             }
+        }
+
+        // #449: „Scanning for faces… %d%% complete" — a haladás HELYE az
+        // albumlista, nem egy modális ablak. A sor magától eltűnik, amikor
+        // a beolvasás véget ér (a vezérlő −1-et ad).
+        Text {
+            objectName: "faceScanProgressText"
+            visible: !pane.peopleCollapsed && pane.faceScanPercent >= 0
+            Layout.fillWidth: true
+            Layout.leftMargin: 16
+            elide: Text.ElideRight
+            text: qsTr("Scanning for faces... %1% complete")
+                  .arg(pane.faceScanPercent)
+            font.pixelSize: Theme.fontSize
+            font.italic: true
+            color: Theme.textGray
         }
 
         CollectionHeader {

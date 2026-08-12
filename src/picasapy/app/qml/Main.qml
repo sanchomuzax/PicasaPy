@@ -351,6 +351,8 @@ ApplicationWindow {
             : fileOpsDialogs.openRename(window.selectedIndex)
         // #368: adatbázis-áthelyezés a Kísérleti menüből
         onMoveDatabaseRequested: moveDatabaseDialog.open()
+        // #449: adatbázis-tömörítés (`compacting.fen`)
+        onCompactDatabaseRequested: compactDatabaseDialog.open()
         onExportRequested: exportDialogs.openForSelection()
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.selectedIndex)
@@ -458,10 +460,11 @@ ApplicationWindow {
     ImportSourceDialog { id: importSourceDialog }
 
     // első indítás: nincs még figyelt mappa → Mappakezelő felajánlása
-    Component.onCompleted: {
-        if (controller.watchedFolders.length === 0)
-            folderManager.open()
-    }
+    // #449: első indítás — az eredeti EGYETLEN kérdést tett fel (teljes gép
+    // vs. Dokumentumok/Képek/Asztal), és nem nyitott mappalistát. Eddig
+    // nálunk üres könyvtárnál rögtön a Mappakezelő nyílt ki: az egy fát és
+    // egy jóval nagyobb döntést tett a felhasználó elé az első percben.
+    Component.onCompleted: initialScanDialog.openIfNeeded()
 
     // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
     header: MainToolbar {
@@ -652,6 +655,9 @@ ApplicationWindow {
             unnamedFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
                                ? faceScanController.unnamedCount : 0
             unnamedFacesActive: window.unnamedFacesOpen
+            // #449: a háttér-beolvasás haladása az albumlistában
+            faceScanPercent: (typeof faceScanController !== "undefined" && faceScanController)
+                              ? faceScanController.scanPercent : -1
             onFolderChosen: function(path) {
                 window.clearSelection()
                 window.unnamedFacesOpen = false
@@ -1248,6 +1254,13 @@ ApplicationWindow {
         onAccepted: controller.movePersonOnRows(rows, person, enteredName)
     }
 
+    // #449: első indítás — a kérdés az ablak megjelenése UTÁN jön elő, hogy
+    // a felhasználó lássa, mibe kerül bele
+    InitialScanDialog {
+        id: initialScanDialog
+        objectName: "initialScanDialog"
+    }
+
     // #444: Mentés / Visszaállítás / Utolsó mentés visszavonása
     SaveDialogs {
         id: saveDialogs
@@ -1284,6 +1297,7 @@ ApplicationWindow {
 
     // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
     MoveDatabaseDialog { id: moveDatabaseDialog }
+    CompactDatabaseDialog { id: compactDatabaseDialog }
 
     // Indítóképernyő (#189): a legfelső rétegen ül, a startupStatus hídból
     // kapja az állapotot, és ready-re magától kifakul/eltűnik.

@@ -5,6 +5,40 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.8] – 2026-08-12
+
+### Hozzáadva
+- **Az arcbeolvasás haladása az albumlistában (#449).** Az eredeti Picasa
+  nem modális ablakban mutatta a háttérmunkát, hanem a bal hasáb
+  albumlistájában („Arcok keresése… 42% kész"), és közben semmi nem
+  blokkolta a felhasználót. A sor magától megjelenik és eltűnik.
+- **Adatbázis tömörítése (#449).** Az Eszközök → Kísérleti menüből
+  elindítható a fotóindex tömörítése (SQLite `VACUUM`), az eredeti Picasa
+  „Compacting" ablakának mintájára: megmondja, hogy percekig tarthat, és
+  **bármikor megszakítható** — megszakításkor az adatbázis érintetlen
+  marad. A haladásjelző szándékosan határozatlan: a `VACUUM` nem mond
+  százalékot, kitalálni pedig félrevezetés lenne.
+
+## [0.7.7] – 2026-08-12
+
+### Változott
+- **Barátságosabb első indítás (#449).** Üres könyvtárnál eddig rögtön a
+  Mappakezelő fája nyílt ki — egy nagy döntés az első percben. Mostantól az
+  eredeti Picasa mintáját követjük: **egyetlen kérdés** két választással
+  (csak a Dokumentumok, a Képek és az asztal, vagy a teljes saját mappa),
+  egyetlen OK gombbal. A program előre megmutatja, mely mappákat fogja
+  átnézni, és — ahogy az eredeti is tette — kiírja, hogy **a keresés soha
+  nem mozgat és nem másol fájlt**. A mappák később bármikor módosíthatók a
+  Mappakezelőben.
+
+### Hozzáadva
+- **Hibanapló (#449).** A figyelmeztetések és hibák mostantól fájlba is
+  kerülnek (`errorlog.txt` az adatkönyvtárban), és ha az adatbázis
+  betöltése hibára fut, a program – ahogy az eredeti Picasa – **felajánlja
+  a napló megtekintését**, ahelyett hogy némán összeomlana vagy titokban
+  javítana. A napló nem nő korlátlanul: méret fölött indításkor
+  elforgatjuk.
+
 ## [0.7.6] – 2026-08-12
 
 ### Hozzáadva
