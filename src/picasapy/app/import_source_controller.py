@@ -34,6 +34,7 @@ rácsban, ahogy a valódi Picasa importja is tenné."""
 from __future__ import annotations
 
 import sqlite3
+import time
 from pathlib import Path
 from typing import Callable
 
@@ -41,6 +42,7 @@ from PySide6.QtCore import Property, QObject, QSettings, Signal, Slot
 
 from picasapy.fileops import copy_photo, has_enough_free_space, required_bytes_for
 from picasapy.importsource import (
+    MEDIA_FILTER_PICTURES_AND_MOVIES,
     NAMING_BY_DATE,
     NAMING_MANUAL,
     NAMING_TODAY,
@@ -50,7 +52,7 @@ from picasapy.importsource import (
     scan_source,
 )
 from picasapy.index import PhotoRecord, all_photos, open_index
-from picasapy.ini import load_document, save_document
+from picasapy.ini import load_document, save_document, update_document
 from picasapy.scanner import PICASA_INI_NAME, media_kind_of
 
 from .formatting import to_local_path
@@ -73,6 +75,14 @@ _VALID_AFTER_COPYING = (AFTER_COPY_LEAVE, AFTER_COPY_DELETE_COPIED, AFTER_COPY_D
 # "autoexclude", a Picasa eredeti `options.fen`/`General` lapjának
 # megfelelő beállítás-nevét követve, ld. `docs/specs/picasa-fen-dialogs.md`).
 AUTOEXCLUDE_SETTINGS_KEY = "import/autoexclude"
+
+# #441: a forrásválasztó legördülőjében az eredeti a KORÁBBI importok
+# listáját kínálta (`LastImport…`) a „Choose…" mellett — így a rendszeresen
+# használt kártya/mappa egy kattintással újra elérhető. A lista a
+# legutóbbi elöl, ismétlés nélkül; ennél többet nem tartunk meg, hogy a
+# legördülő ne hízzon el.
+RECENT_SOURCES_SETTINGS_KEY = "import/recentsources"
+MAX_RECENT_SOURCES = 8
 
 
 def _thumb_url(photo_id: int) -> str:
@@ -140,9 +150,17 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     # sourceScanFinished items paramétere), rescan nélkül
     selectionChanged = Signal(list)
     autoExcludeChanged = Signal()
+    mediaFilterChanged = Signal()
+    recentSourcesChanged = Signal()
 
     importStarted = Signal(int)  # összes importálandó (beválogatott) darab
     importProgress = Signal(int, int)  # (kész, összes)
+    # #441: a másolás SEBESSÉGE bájt/másodpercben — az eredeti
+    # haladásjelzője is kiírta („Copying %d of %d files at %s/sec"), és ez
+    # az egyetlen jel, amiből a felhasználó megbecsülheti, mennyi van hátra.
+    # Külön jelzés (nem az importProgress harmadik argumentuma), hogy a
+    # meglévő hívók/tesztek szerződése ne törjön el.
+    importSpeed = Signal(float)  # bájt/másodperc; 0 = még nem mérhető
     # az első néhány sikertelen fájl neve + oka — MINDIG az importFinished előtt
     importFailedDetails = Signal(list)
     importFinished = Signal(int, int)  # (importált, sikertelen)
@@ -177,6 +195,11 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         # a felhasználó (vagy az autoExclude) által kizárt jelöltek —
         # útvonal-stringek, mert a QML felől is stringgel érkeznek
         self._excluded_paths: set[str] = set()
+        # #441: import ELŐTTI forgatás (negyed fordulatok, 0..3) és
+        # csillagozás, forrás-útvonal szerint
+        self._media_filter: str = MEDIA_FILTER_PICTURES_AND_MOVIES
+        self._rotations: dict[str, int] = {}
+        self._starred: set[str] = set()
         # a legutóbb regisztrált előnézeti (negatív) id-k — új szkennelés
         # előtt ezeket távolítjuk el, hogy a registry ne halmozódjon
         self._preview_ids: tuple[str, ...] = ()
@@ -201,6 +224,45 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         imported into Picasa"."""
         return self._auto_exclude
 
+    @Property("QVariant", notify=recentSourcesChanged)
+    def recentSources(self):  # noqa: N802 — QML property-konvenció
+        """A korábbi import-források (#441), a legutóbbi elöl.
+
+        A `LastImport…` legördülő adata: a felhasználó egy kattintással
+        visszatérhet a rendszeresen használt kártyához/mappához."""
+        return self._read_recent_sources()
+
+    def _read_recent_sources(self) -> list[str]:
+        stored = self._get_settings().value(RECENT_SOURCES_SETTINGS_KEY, [])
+        if isinstance(stored, str):
+            stored = [stored] if stored else []
+        return [str(item) for item in (stored or [])]
+
+    def _remember_source(self, folder: str) -> None:
+        """A most beolvasott forrás a lista ELEJÉRE; ismétlés nélkül."""
+        if not folder:
+            return
+        recent = [item for item in self._read_recent_sources() if item != folder]
+        recent.insert(0, folder)
+        self._get_settings().setValue(
+            RECENT_SOURCES_SETTINGS_KEY, recent[:MAX_RECENT_SOURCES]
+        )
+        self.recentSourcesChanged.emit()
+
+    @Property(str, notify=mediaFilterChanged)
+    def mediaFilter(self) -> str:  # noqa: N802 — QML property-konvenció
+        """A forrás-beolvasás fájltípus-szűrője (#441) — az eredeti
+        tallózó három fokozatának megfelelője."""
+        return self._media_filter
+
+    @Slot(str)
+    def setMediaFilter(self, value: str) -> None:  # noqa: N802
+        """A szűrő beállítása; a következő beolvasásra érvényes."""
+        if value == self._media_filter:
+            return
+        self._media_filter = value
+        self.mediaFilterChanged.emit()
+
     @Slot(bool)
     def setAutoExclude(self, value: bool) -> None:  # noqa: N802
         value = bool(value)
@@ -218,6 +280,43 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         self.selectionChanged.emit(self._preview_items())
 
     # -- #441: egyenkénti válogatás -----------------------------------------
+
+    # -- #441: forgatás és csillagozás MÁR AZ IMPORT ELŐTT ------------------
+    #
+    # Az eredeti import-képernyőn az előnézeti képen ott volt a „Rotate
+    # Right"/„Rotate Left" gomb és a csillagozás (`startoggle`) — a
+    # felhasználó még a bemásolás előtt kiegyenesíthette és megjelölhette a
+    # képeket. Nálunk ugyanez: az állapotot forrás-útvonalanként tartjuk, és
+    # a MÁSOLAT `.picasa.ini`-jébe írjuk (nem a kártyán lévő eredetibe —
+    # az érintetlen marad, ahogy a „Leave card alone" ág elvárja).
+
+    @Slot(str, int)
+    def rotateFile(self, path: str, delta: int) -> None:  # noqa: N802
+        """Az adott jelölt forgatása negyed fordulatokkal (+1 jobbra, −1
+        balra). Az érték 0..3 között körbeér; 0 = nincs forgatás."""
+        if path not in {str(c.path) for c in self._candidates}:
+            return
+        self._rotations[path] = (self._rotations.get(path, 0) + int(delta)) % 4
+        self.selectionChanged.emit(self._preview_items())
+
+    @Slot(str)
+    def toggleStar(self, path: str) -> None:  # noqa: N802
+        """Csillagozás ki/be az adott jelöltre (`startoggle`)."""
+        if path not in {str(c.path) for c in self._candidates}:
+            return
+        if path in self._starred:
+            self._starred.discard(path)
+        else:
+            self._starred.add(path)
+        self.selectionChanged.emit(self._preview_items())
+
+    def _mark_imported(self, target: Path, source_path: str) -> None:
+        """A jelölt import ELŐTT beállított forgatása/csillaga a másolatra."""
+        _mark_imported_ini(
+            target,
+            self._rotations.get(source_path, 0),
+            source_path in self._starred,
+        )
 
     @Slot(str)
     def excludeFile(self, path: str) -> None:
@@ -254,6 +353,9 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                     else "",
                     "duplicate": candidate.path in self._duplicate_paths,
                     "excluded": path_text in self._excluded_paths,
+                    # #441: import előtti forgatás/csillagozás
+                    "rotation": self._rotations.get(path_text, 0),
+                    "starred": path_text in self._starred,
                 }
             )
         return items
@@ -261,7 +363,8 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
     # -- forrás-szkennelés ---------------------------------------------------
 
     @Slot(str)
-    def scanSource(self, folder: str) -> None:
+    @Slot(str, str)
+    def scanSource(self, folder: str, media_filter: str = "") -> None:
         """A forrás-mappa (rekurzív) beolvasása HÁTTÉRSZÁLON — kártyák
         gyakori DCIM/100XXXX szerkezete miatt a `picasapy.importsource.
         scan_source` az almappákba is belenéz. `folder` `file://` URL is
@@ -273,6 +376,10 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
         kapnak, és — ha `autoExclude` be van kapcsolva — alapból ki is
         maradnak a válogatásból."""
         self.sourceScanStarted.emit()
+        # #441: a tallózó fájltípus-szűrőjének megfelelője — üres értéknél
+        # a legutóbbi (vagy az alapértelmezett) fokozat marad érvényben
+        if media_filter:
+            self._media_filter = media_filter
         target = to_local_path(folder)
         if not target:
             self.sourceScanFailed.emit(
@@ -282,7 +389,7 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
 
         def worker() -> None:
             try:
-                candidates = scan_source(target)
+                candidates = scan_source(target, self._media_filter)
             except (FileNotFoundError, NotADirectoryError) as error:
                 self.sourceScanFailed.emit(str(error))
                 return
@@ -290,6 +397,9 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
             duplicates = duplicate_paths(candidates, _library_paths(self._index_path))
 
             self._candidates = candidates
+            # #441: új forrás → a korábbi forgatások/csillagok nem élnek
+            self._rotations = {}
+            self._starred = set()
             self._duplicate_paths = duplicates
             self._excluded_paths = (
                 {str(path) for path in duplicates} if self._auto_exclude else set()
@@ -304,6 +414,9 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
             self._preview_ids = tuple(str(record.id) for record in records)
 
             items = self._preview_items()
+            # #441: a SIKERES beolvasás után jegyezzük meg a forrást — a
+            # hibás/nem létező mappa ne kerüljön a legördülőbe
+            self._remember_source(target)
             self.sourceScanFinished.emit(items, len(candidates))
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
@@ -366,17 +479,23 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
                 )
                 self.importFinished.emit(0, total)
                 return
+            started_at = time.monotonic()
+            copied_bytes = 0
             for done, candidate in enumerate(included, start=1):
                 try:
                     subdir = dest_root / destination_subpath_for_mode(
                         candidate.date, naming_mode, manual_name=manual_name
                     )
                     subdir.mkdir(parents=True, exist_ok=True)
-                    copy_photo(candidate.path, subdir)
+                    target = copy_photo(candidate.path, subdir)
+                    self._mark_imported(target, str(candidate.path))
                     copied_paths.append(candidate.path)
+                    copied_bytes += _size_of(target)
                 except OSError as error:
                     failed_details.append(f"{candidate.path.name}: {error}")
                 self.importProgress.emit(done, total)
+                elapsed = time.monotonic() - started_at
+                self.importSpeed.emit(copied_bytes / elapsed if elapsed > 0 else 0.0)
             if failed_details:
                 self.importFailedDetails.emit(
                     failed_details[:_IMPORT_FAILED_DETAILS_LIMIT]
@@ -407,6 +526,38 @@ class ImportSourceController(BackgroundWorkerMixin, QObject):
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-importsource-run")
+
+
+def _size_of(path: Path) -> int:
+    """A fájl mérete bájtban; olvashatatlan fájlnál 0 — a sebesség-becslés
+    sosem akaszthatja meg az importot."""
+    try:
+        return path.stat().st_size
+    except OSError:
+        return 0
+
+
+def _mark_imported_ini(
+    target: Path, rotation: int, starred: bool
+) -> None:
+    """A forgatás/csillag beírása a MÁSOLAT `.picasa.ini`-jébe (#441).
+
+    Nem-destruktív, ahogy a rács forgatása is: `rotate=rotate(n)` és
+    `star=yes`. A kártyán lévő eredetihez NEM nyúlunk — a „Leave card
+    alone" ág épp azt várja el, hogy a forrás érintetlen maradjon.
+    """
+    if not rotation and not starred:
+        return
+
+    def _mutate(document):
+        result = document
+        if rotation:
+            result = result.with_value(target.name, "rotate", f"rotate({rotation})")
+        if starred:
+            result = result.with_value(target.name, "star", "yes")
+        return result
+
+    update_document(target.parent / PICASA_INI_NAME, _mutate, backup=True)
 
 
 def _remove_source_file(path: Path) -> None:

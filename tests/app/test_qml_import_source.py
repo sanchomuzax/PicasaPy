@@ -448,3 +448,34 @@ class TestAfterCopyingConfirmation:
 
         assert (source / "a.jpg").exists()
         assert (dest / "2024-03-05" / "a.jpg").exists()
+
+
+class TestRotateAndStarInThePreview:
+    """#441: az előnézeten forgatni és csillagozni lehet MÁR az import
+    előtt — az eredeti import-képernyőjén ugyanígy ott volt a két forgató
+    gomb és a csillagozás."""
+
+    def test_the_preview_reflects_the_marks(self, qml_app, qt_app, tmp_path):
+        window, _controller, _lib, engine = qml_app
+        dialog = _dialog_window(window)
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg")
+        _scan(dialog, source, engine, qt_app)
+
+        items = _preview_items(dialog)
+        assert items[0]["rotation"] == 0
+        assert items[0]["starred"] is False
+
+        controller = _import_source_controller(engine)
+        controller.rotateFile(str(source / "a.jpg"), 1)
+        controller.toggleStar(str(source / "a.jpg"))
+        qt_app.processEvents()
+
+        items = _preview_items(dialog)
+        assert items[0]["rotation"] == 1
+        assert items[0]["starred"] is True
+
+    # A gombok MEGLÉTÉT nem findChild-dal ellenőrizzük: a GridView
+    # delegáltjai onnan nem érhetők el (MEMORY 2026-07-31) — a fájl többi
+    # tesztje is a controller-úton méri a delegált viselkedését.

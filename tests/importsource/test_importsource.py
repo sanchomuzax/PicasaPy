@@ -14,6 +14,9 @@ import pytest
 
 from picasapy.importsource import (
     DEFAULT_TEMPLATE,
+    MEDIA_FILTER_ALL,
+    MEDIA_FILTER_PICTURES,
+    MEDIA_FILTER_PICTURES_AND_MOVIES,
     NAMING_BY_DATE,
     NAMING_MANUAL,
     NAMING_TODAY,
@@ -210,3 +213,52 @@ class TestDuplicatePaths:
         result = duplicate_paths(candidates, [library / "a.jpg"])
 
         assert result == frozenset({source / "a.jpg"})
+
+
+class TestMediaFilter:
+    """#441: a forrás-tallózó három fájltípus-szűrője — nálunk a forrás
+    mindig mappa, ezért a fokozatok a BEOLVASÁSRA vonatkoznak."""
+
+    def _source(self, tmp_path):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        (source / "kep.jpg").write_bytes(b"\xff\xd8\xff")
+        (source / "film.avi").write_bytes(b"RIFF")
+        (source / "nyers.cr2").write_bytes(b"II*")
+        (source / "szoveg.txt").write_text("nem media", encoding="utf-8")
+        return source
+
+    def test_pictures_and_movies_is_the_default(self, tmp_path):
+        source = self._source(tmp_path)
+
+        names = {c.path.name for c in scan_source(str(source))}
+
+        assert names == {"kep.jpg", "film.avi", "nyers.cr2"}
+
+    def test_pictures_only_leaves_the_movie_out(self, tmp_path):
+        source = self._source(tmp_path)
+
+        names = {
+            c.path.name
+            for c in scan_source(str(source), MEDIA_FILTER_PICTURES)
+        }
+
+        assert names == {"kep.jpg", "nyers.cr2"}
+
+    def test_a_non_media_file_is_never_a_candidate(self, tmp_path):
+        source = self._source(tmp_path)
+
+        for mode in (
+            MEDIA_FILTER_ALL,
+            MEDIA_FILTER_PICTURES_AND_MOVIES,
+            MEDIA_FILTER_PICTURES,
+        ):
+            names = {c.path.name for c in scan_source(str(source), mode)}
+            assert "szoveg.txt" not in names
+
+    def test_an_unknown_filter_falls_back_to_the_default(self, tmp_path):
+        source = self._source(tmp_path)
+
+        names = {c.path.name for c in scan_source(str(source), "nincs-ilyen")}
+
+        assert names == {"kep.jpg", "film.avi", "nyers.cr2"}

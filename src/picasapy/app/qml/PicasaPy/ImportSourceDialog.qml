@@ -44,7 +44,7 @@ Window {
 
     property bool scanning: false
     // előnézeti elemek — dict-ek listája: {path, thumbUrl, duplicate,
-    // excluded}; a controller MINDIG listát ad (soha tuple-t, ld.
+    // excluded, rotation, starred}; a controller MINDIG listát ad (ld.
     // MEMORY.md-tanulság)
     property var previewItems: []
     property int previewCount: 0
@@ -66,6 +66,17 @@ Window {
     property bool importing: false
     property int importDone: 0
     property int importTotal: 0
+    // #441: a másolás sebessége bájt/mp-ben (0 = még nem mérhető)
+    property real importBytesPerSecond: 0
+    // a sebesség emberi alakja — a méret-formázás mintáját követve
+    // (bájt és KB egészre, MB-tól egy tizedesre)
+    function formatSpeed(bytesPerSecond) {
+        if (bytesPerSecond >= 1024 * 1024)
+            return (bytesPerSecond / (1024 * 1024)).toFixed(1) + " MB"
+        if (bytesPerSecond >= 1024)
+            return Math.round(bytesPerSecond / 1024) + " KB"
+        return Math.round(bytesPerSecond) + " " + qsTr("bytes")
+    }
     // -1: még nem futott import ebben a munkamenetben (az eredmény-sor rejtve)
     property int lastCopiedCount: -1
     property int lastFailedCount: -1
@@ -138,10 +149,14 @@ Window {
             importSourceWindow.importing = true
             importSourceWindow.importDone = 0
             importSourceWindow.importTotal = total
+            importSourceWindow.importBytesPerSecond = 0
         }
         function onImportProgress(done, total) {
             importSourceWindow.importDone = done
             importSourceWindow.importTotal = total
+        }
+        function onImportSpeed(bytesPerSecond) {
+            importSourceWindow.importBytesPerSecond = bytesPerSecond
         }
         function onImportFailedDetails(details) {
             importSourceWindow.lastError = details.join("\n")
@@ -187,10 +202,61 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
+            // #441: a korábbi importok listája — az eredeti legördülője is
+            // ezt kínálta a „Choose…" mellett (`LastImport…`)
+            ComboBox {
+                objectName: "importSourceRecentBox"
+                Layout.preferredWidth: 180
+                visible: model.length > 0
+                model: (typeof importSourceController !== "undefined"
+                        && importSourceController)
+                       ? importSourceController.recentSources : []
+                displayText: qsTr("Recent sources")
+                onActivated: {
+                    importSourceWindow.sourceFolder = model[currentIndex]
+                    importSourceWindow.scanCurrentSource()
+                }
+            }
             PicasaButton {
                 objectName: "importSourceChooseSourceButton"
                 text: qsTr("Browse...")
                 onClicked: sourceFolderDialog.open()
+            }
+        }
+
+        // #441: fájltípus-szűrő — az eredeti tallózó három szűrőt kínált
+        // („Picture and Movie Files" / „Picture Files" / „All Files").
+        // Nálunk a forrás mindig MAPPA, ezért ugyanez a három fokozat a
+        // BEOLVASÁSRA vonatkozik: mi számítson importálandó jelöltnek.
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            Text {
+                text: qsTr("File types:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            ComboBox {
+                objectName: "importSourceMediaFilterBox"
+                Layout.preferredWidth: 220
+                readonly property var filterKeys:
+                    ["pictures_and_movies", "pictures", "all"]
+                model: [qsTr("Picture and Movie Files"),
+                        qsTr("Picture Files"),
+                        qsTr("All Files")]
+                currentIndex: {
+                    if (typeof importSourceController === "undefined"
+                            || !importSourceController) return 0
+                    var i = filterKeys.indexOf(importSourceController.mediaFilter)
+                    return i < 0 ? 0 : i
+                }
+                onActivated: {
+                    importSourceController.setMediaFilter(filterKeys[currentIndex])
+                    // a szűrő a KÖVETKEZŐ beolvasásra érvényes — ha már van
+                    // kiválasztott forrás, azonnal újraolvassuk
+                    if (importSourceWindow.sourceFolder.length > 0)
+                        importSourceWindow.scanCurrentSource()
+                }
             }
         }
 
@@ -311,6 +377,63 @@ Window {
                         source: thumbFrame.modelData.thumbUrl
                         fillMode: Image.PreserveAspectFit
                         asynchronous: Qt.platform.pluginName !== "offscreen"
+                        // #441: az előnézet a beállított forgatással mutat —
+                        // az eredetiben is a MÁR kiegyenesített kép látszott
+                        rotation: 90 * (thumbFrame.modelData.rotation || 0)
+                    }
+
+                    // #441: forgatás és csillagozás MÁR AZ IMPORT ELŐTT — az
+                    // eredeti import-képernyőn ugyanígy ott volt a két
+                    // forgató gomb és a csillagozás (`startoggle`).
+                    Row {
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 2
+                        spacing: 2
+                        Text {
+                            objectName: "importRotateLeft:" + thumbFrame.index
+                            text: "\u21ba"
+                            font.pixelSize: Theme.fontSize
+                            color: Theme.brandBlue
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -3
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: importSourceController.rotateFile(
+                                    thumbFrame.modelData.path, -1)
+                            }
+                        }
+                        Text {
+                            objectName: "importRotateRight:" + thumbFrame.index
+                            text: "\u21bb"
+                            font.pixelSize: Theme.fontSize
+                            color: Theme.brandBlue
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -3
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: importSourceController.rotateFile(
+                                    thumbFrame.modelData.path, 1)
+                            }
+                        }
+                    }
+                    Text {
+                        objectName: "importStar:" + thumbFrame.index
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.margins: 2
+                        text: "\u2605"
+                        font.pixelSize: Theme.fontSize
+                        color: thumbFrame.modelData.starred
+                               ? Theme.starYellow : Theme.textGray
+                        opacity: thumbFrame.modelData.starred ? 1.0 : 0.5
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -3
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: importSourceController.toggleStar(
+                                thumbFrame.modelData.path)
+                        }
                     }
 
                     Text {
@@ -467,9 +590,18 @@ Window {
         Text {
             objectName: "importSourceProgressText"
             visible: importSourceWindow.importing
-            text: qsTr("%1 / %2 imported")
-                  .arg(importSourceWindow.importDone)
-                  .arg(importSourceWindow.importTotal)
+            // #441: az eredeti haladásjelzője a SEBESSÉGET is kiírta
+            // („Copying %d of %d files at %s/sec") — amíg nincs mérhető
+            // adat, a sebesség-rész egyszerűen kimarad
+            text: importSourceWindow.importBytesPerSecond > 0
+                  ? qsTr("%1 / %2 imported at %3/sec")
+                        .arg(importSourceWindow.importDone)
+                        .arg(importSourceWindow.importTotal)
+                        .arg(importSourceWindow.formatSpeed(
+                                 importSourceWindow.importBytesPerSecond))
+                  : qsTr("%1 / %2 imported")
+                        .arg(importSourceWindow.importDone)
+                        .arg(importSourceWindow.importTotal)
             font.pixelSize: Theme.fontSize
             color: Theme.textGray
         }

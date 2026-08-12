@@ -657,3 +657,193 @@ class TestBackgroundThreadTeardown:
 
         assert controller.waitForBackgroundWorkers(30.0)
         assert not controller.backgroundWorkersRunning()
+
+
+class TestRotateAndStarBeforeImport:
+    """#441: az eredeti import-képernyőn az előnézeten forgatni és
+    csillagozni lehetett MÁR A BEMÁSOLÁS ELŐTT — a jelölés a MÁSOLAT
+    `.picasa.ini`-jébe kerül, a kártyán lévő eredeti érintetlen marad."""
+
+    def _scan_source(self, controller, tmp_path):
+        source = tmp_path / "kartya"
+        source.mkdir(exist_ok=True)
+        make_jpeg(source / "a.jpg")
+        items, _count = _scan(controller, str(source))
+        return source, items
+
+    def test_the_preview_carries_the_marks(self, controller, tmp_path):
+        _source, items = self._scan_source(controller, tmp_path)
+        path = items[0]["path"]
+        assert items[0]["rotation"] == 0
+        assert items[0]["starred"] is False
+
+        seen = []
+        controller.selectionChanged.connect(seen.append)
+        controller.rotateFile(path, 1)
+        controller.toggleStar(path)
+
+        assert seen[-1][0]["rotation"] == 1
+        assert seen[-1][0]["starred"] is True
+
+    def test_the_rotation_wraps_around(self, controller, tmp_path):
+        _source, items = self._scan_source(controller, tmp_path)
+        path = items[0]["path"]
+        seen = []
+        controller.selectionChanged.connect(seen.append)
+
+        for _ in range(4):
+            controller.rotateFile(path, 1)
+
+        assert seen[-1][0]["rotation"] == 0
+
+    def test_rotating_left_goes_the_other_way(self, controller, tmp_path):
+        _source, items = self._scan_source(controller, tmp_path)
+        seen = []
+        controller.selectionChanged.connect(seen.append)
+
+        controller.rotateFile(items[0]["path"], -1)
+
+        assert seen[-1][0]["rotation"] == 3
+
+    def test_an_unknown_path_is_ignored(self, controller, tmp_path):
+        self._scan_source(controller, tmp_path)
+        seen = []
+        controller.selectionChanged.connect(seen.append)
+
+        controller.rotateFile("/nincs/ilyen.jpg", 1)
+        controller.toggleStar("/nincs/ilyen.jpg")
+
+        assert seen == []
+
+    def test_a_new_scan_clears_the_marks(self, controller, tmp_path):
+        _source, items = self._scan_source(controller, tmp_path)
+        controller.rotateFile(items[0]["path"], 1)
+        controller.toggleStar(items[0]["path"])
+
+        _source, items = self._scan_source(controller, tmp_path)
+
+        assert items[0]["rotation"] == 0
+        assert items[0]["starred"] is False
+
+    def test_the_marks_land_in_the_copy_not_the_card(
+        self, controller, tmp_path
+    ):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+        items, _count = _scan(controller, str(source))
+        controller.rotateFile(items[0]["path"], 1)
+        controller.toggleStar(items[0]["path"])
+
+        loop = _quit_on(controller.importFinished)
+        controller.runImport(str(dest), "date", "", "leave")
+        loop.exec()
+
+        copied_ini = dest / "2024-03-05" / ".picasa.ini"
+        assert copied_ini.exists()
+        text = copied_ini.read_text(encoding="utf-8")
+        assert "rotate=rotate(1)" in text
+        assert "star=yes" in text
+        # a kártyán lévő eredetihez NEM nyúlunk
+        assert not (source / ".picasa.ini").exists()
+
+    def test_without_marks_no_ini_is_written(self, controller, tmp_path):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg", taken_at="2024:03:05 10:00:00")
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+        _scan(controller, str(source))
+
+        loop = _quit_on(controller.importFinished)
+        controller.runImport(str(dest), "date", "", "leave")
+        loop.exec()
+
+        assert (dest / "2024-03-05" / "a.jpg").exists()
+        assert not (dest / "2024-03-05" / ".picasa.ini").exists()
+
+
+class TestImportSpeed:
+    """#441: az eredeti haladásjelzője a SEBESSÉGET is kiírta
+    („Copying %d of %d files at %s/sec")."""
+
+    def test_the_speed_is_reported_during_the_copy(self, controller, tmp_path):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg")
+        make_jpeg(source / "b.jpg")
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+        _scan(controller, str(source))
+        speeds = []
+        controller.importSpeed.connect(speeds.append)
+
+        loop = _quit_on(controller.importFinished)
+        controller.runImport(str(dest), "today", "", "leave")
+        loop.exec()
+
+        # fájlonként egy jelzés, és a sebesség sosem negatív
+        assert len(speeds) == 2
+        assert all(speed >= 0 for speed in speeds)
+
+    def test_a_failed_file_does_not_break_the_measurement(
+        self, controller, tmp_path
+    ):
+        source = tmp_path / "kartya"
+        source.mkdir()
+        make_jpeg(source / "a.jpg")
+        dest = tmp_path / "konyvtar"
+        dest.mkdir()
+        _scan(controller, str(source))
+        (source / "a.jpg").unlink()  # a másolás el fog bukni
+        speeds = []
+        controller.importSpeed.connect(speeds.append)
+
+        loop = _quit_on(controller.importFinished)
+        controller.runImport(str(dest), "today", "", "leave")
+        loop.exec()
+
+        assert speeds == [0.0]
+
+
+class TestRecentSources:
+    """#441: a forrásválasztó legördülője a KORÁBBI importok listáját is
+    kínálta (`LastImport…`) — a rendszeresen használt kártya/mappa így egy
+    kattintással újra elérhető."""
+
+    def _scan_folder(self, controller, tmp_path, name):
+        source = tmp_path / name
+        source.mkdir()
+        make_jpeg(source / "a.jpg")
+        _scan(controller, str(source))
+        return source
+
+    def test_the_list_starts_empty(self, controller):
+        assert list(controller.recentSources) == []
+
+    def test_a_scanned_source_is_remembered(self, controller, tmp_path):
+        source = self._scan_folder(controller, tmp_path, "kartya")
+
+        assert list(controller.recentSources) == [str(source)]
+
+    def test_the_newest_comes_first_without_repeats(self, controller, tmp_path):
+        first = self._scan_folder(controller, tmp_path, "egy")
+        second = self._scan_folder(controller, tmp_path, "ketto")
+        _scan(controller, str(first))  # újra az elsőt
+
+        assert list(controller.recentSources) == [str(first), str(second)]
+
+    def test_a_failed_scan_is_not_remembered(self, controller, tmp_path):
+        _scan(controller, str(tmp_path / "nincs-ilyen"))
+
+        assert list(controller.recentSources) == []
+
+    def test_the_list_is_capped(self, controller, tmp_path):
+        from picasapy.app.import_source_controller import MAX_RECENT_SOURCES
+
+        for index in range(MAX_RECENT_SOURCES + 3):
+            self._scan_folder(controller, tmp_path, f"kartya{index}")
+
+        assert len(list(controller.recentSources)) == MAX_RECENT_SOURCES
