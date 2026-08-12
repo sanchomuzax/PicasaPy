@@ -53,8 +53,17 @@ _ALL_26_NAMES = (
 #: Ebből a history/mozi-jelölő öt, ami NÉMA no-op (nem kihagyott effekt).
 _NOOP_NAMES = ("save", "rot", "crop", "moviestart", "movieend")
 
+#: A 26-ból azok, amelyek azóta MEGKAPTÁK a vizuális modelljüket — ezek már
+#: nem a `KNOWN_UNRENDERED_OPS` tagjai. `radtint`: #565 (natív visszafejtés,
+#: ld. tests/render/test_radtint_565.py).
+_NOW_RENDERED_NAMES = ("radtint",)
+
 #: A maradék 21, ami a `KNOWN_UNRENDERED_OPS`-ba tartozik.
-_UNRENDERED_NAMES = tuple(name for name in _ALL_26_NAMES if name not in _NOOP_NAMES)
+_UNRENDERED_NAMES = tuple(
+    name
+    for name in _ALL_26_NAMES
+    if name not in _NOOP_NAMES and name not in _NOW_RENDERED_NAMES
+)
 
 
 @pytest.fixture
@@ -68,10 +77,20 @@ class TestAll26NamesCovered:
         assert len(_ALL_26_NAMES) == 26
         assert len(set(_ALL_26_NAMES)) == 26
 
-    def test_5_noop_es_21_unrendered_partitio(self):
+    def test_noop_rendered_unrendered_partitio(self):
+        # az eredeti felosztás 5 no-op + 21 renderelhetetlen volt; azóta a
+        # `radtint` (#565) átkerült a renderelők közé
         assert len(_NOOP_NAMES) == 5
-        assert len(_UNRENDERED_NAMES) == 21
-        assert set(_NOOP_NAMES) | set(_UNRENDERED_NAMES) == set(_ALL_26_NAMES)
+        assert len(_NOW_RENDERED_NAMES) == 1
+        assert len(_UNRENDERED_NAMES) == 20
+        assert (
+            set(_NOOP_NAMES) | set(_NOW_RENDERED_NAMES) | set(_UNRENDERED_NAMES)
+            == set(_ALL_26_NAMES)
+        )
+
+    @pytest.mark.parametrize("key", _NOW_RENDERED_NAMES)
+    def test_a_mar_modellezett_nev_nincs_a_kihagyott_regiszterben(self, key):
+        assert key not in KNOWN_UNRENDERED_OPS
 
 
 class TestUnrenderedNamesRecognised:

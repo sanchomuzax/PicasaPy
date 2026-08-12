@@ -5,6 +5,28 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.89] – 2026-08-12
+
+### Javítva
+- **Az IR (infravörös film) effekt az EREDETI csővezetékét kapta (#566).** A
+  korábbi modell a paraméternevekből következtetett, és három ponton tévedett:
+  SCREEN-t kevert LIGHTEN helyett, a zöld izzást a már monokrómmá tett képre
+  tette (nem az eredetire), és a **kék csatorna negatív súlyát** teljesen
+  figyelmen kívül hagyta. A natív kernel visszafejtése után a záró mátrix
+  `Y = −0,5·R + 2,0·G − 0,5·B`; a kék tehát sötétít, ahogy a valódi
+  infravörös filmen is.
+
+## [0.6.88] – 2026-08-12
+
+### Hozzáadva
+- **`radtint` (Sugaras árnyalás) effekt (#565).** Az utolsó „exe-ből ismert,
+  de renderelhetetlen" szűrőnév is megkapta a modelljét — nem találgatásból,
+  hanem a natív kód visszafejtéséből: a fókuszpont körül a kép változatlan,
+  kifelé egy köbös smoothstep maszk szerint erősödő **szorzó**-színezés fut
+  (`forrás × szín / 256`), ami lényegében különbözik a `dir_tint` „szín felé
+  keverésétől". Egyetlen paraméter, a Feather csúszka affin leképezése maradt
+  feltételezés — ez dokumentáltan jelölve van, golden-párral pontosítható.
+
 ## [0.6.87] – 2026-08-12
 
 ### Hozzáadva

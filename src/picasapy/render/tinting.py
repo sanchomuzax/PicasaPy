@@ -30,6 +30,7 @@ import re
 import numpy as np
 
 from picasapy.render.curves import validate_image
+from picasapy.render.effects import _radius_grid
 
 _HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{1,8}$")
 
@@ -162,3 +163,85 @@ def apply_dir_tint(
     target = np.array(color, dtype=np.float32)
     blend = weight[:, np.newaxis, np.newaxis] * np.float32(strength)
     return _to_uint8(image_f + blend * (target - image_f))
+
+
+#: A `radtint` maszk-LUT mérete a natív kódban (`0x90aeb0`, #565). A méret
+#: önmagában nem befolyásolja a képet (a smoothstep folytonos), de a
+#: visszafejtett szerkezettel való egyezés kedvéért itt is 1024 elem.
+_RADTINT_LUT_SIZE = 1024
+
+#: A `radtint` szorzó-tint osztója a natív magban (`0x90b370`):
+#: `tinted = source * tint / 256`.
+_RADTINT_TINT_DIVISOR = 256.0
+
+
+def radtint_lut(size: int = _RADTINT_LUT_SIZE) -> np.ndarray:
+    """A `radtint` maszk-LUT-ja: köbös smoothstep, `t*t*(3-2*t)` (#565).
+
+    A natív segédfüggvény (`0x90aeb0`) egy `size` elemű táblát tölt fel a
+    0..1 tartományon egyenletesen mintavételezett smoothstep-értékekkel; a
+    feldolgozó mag (`0x90b370`) ebből olvassa ki a keverési súlyt.
+    """
+    if size < 2:
+        raise ValueError(f"Érvénytelen LUT-méret: {size}")
+    t = np.linspace(0.0, 1.0, size, dtype=np.float32)
+    return (t * t * (np.float32(3.0) - np.float32(2.0) * t)).astype(np.float32)
+
+
+def apply_radtint(
+    image: np.ndarray,
+    x: float,
+    y: float,
+    feather: float,
+    color: tuple[int, int, int],
+) -> np.ndarray:
+    """Sugaras árnyalás (`radtint`) — radiális **szorzó** színezés (#565).
+
+    A visszafejtett natív viselkedés (regisztráció `0x8f8730`, mag
+    `0x90b370`, maszk-LUT `0x90aeb0`):
+
+    - az (x, y) fókuszpont körül normalizált (a két tengelyen külön
+      normált, tehát elliptikus) távolság számolódik,
+    - a fókuszpont környékén a kép **változatlan**,
+    - kifelé haladva a színezés egy 1024 elemű, köbös smoothstep LUT
+      szerint erősödik,
+    - a teljes tint csatornánként `tinted = source * tint / 256` (szorzás,
+      nem keverés a szín FELÉ — ez a lényegi különbség a `dir_tint`-hez
+      képest), az alfa érintetlen,
+    - az átmeneti sávban lineáris keverés fut az eredeti és a szorzott kép
+      között.
+
+    A `feather` **affin leképezése FELTÉTELEZÉS**, golden-mérés még nincs
+    rá (ld. #565 „Nyitott kalibráció"): a `filterdesc.xml` szerint a csúszka
+    0..1 tartományú, alapértéke 0,25. Itt a feather az átmeneti sáv
+    SZÉLESSÉGE, a fókuszponttól mért legnagyobb távolság (`r_max`) felénél
+    KÖZÉPPONTOSAN: a sáv a `(0,5 − feather/2) · r_max` sugárnál kezdődik és
+    a `(0,5 + feather/2) · r_max` sugárnál ér véget. Így `feather = 0` éles
+    határt ad a fél sugárnál (belül érintetlen, kívül teljes tint),
+    `feather = 1` pedig a fókuszponttól a legtávolabbi sarokig húzódó, végig
+    lágy átmenetet. Minden feather-értéknél igaz marad a két rögzített pont:
+    a fókuszpont érintetlen, a legtávolabbi sarok teljes tintet kap. A mérés
+    a leképezést pontosíthatja — a pixelművelet és az algoritmuscsalád
+    viszont már nem kérdéses.
+    """
+    validate_image(image)
+    height, width = image.shape[:2]
+    radii = _radius_grid(height, width, x, y)
+    # a normáláshoz a fókuszponttól MÉRT legnagyobb távolság kell (a kép
+    # legtávolabbi sarka) — enélkül a nem középre tett fókuszpontnál a
+    # maszk egy része sosem érné el a teljes erősséget
+    max_radius = float(radii.max())
+    if max_radius <= 0.0:
+        return image.copy()
+    width = float(np.clip(feather, 0.0, 1.0))
+    start = np.float32((0.5 - width / 2.0) * max_radius)
+    span = np.float32(max(width * max_radius, 1e-6))
+    t = np.clip((radii - start) / span, 0.0, 1.0)
+    lut = radtint_lut()
+    weight = lut[np.rint(t * np.float32(len(lut) - 1)).astype(np.int32)]
+
+    image_f = image.astype(np.float32)
+    tint = np.array(color, dtype=np.float32) / np.float32(_RADTINT_TINT_DIVISOR)
+    tinted = image_f * tint
+    blend = weight[..., np.newaxis]
+    return _to_uint8(image_f + blend * (tinted - image_f))

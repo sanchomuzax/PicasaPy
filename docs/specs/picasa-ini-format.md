@@ -148,7 +148,7 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 | `dir_tint` | `1,!x,!y,!gradiens,!árnyék[,#szín]` | irányított színátmenet — a szín OPCIONÁLIS: élő ini-ben megerősítve (#357) |
 | `glow` (v1) | ismeretlen | ragyogás v1 (a `glow2` mellett) — token az exe string-táblájában megerősítve, paraméterezése dekódolatlan |
 | `grain` (v1) | ismeretlen | filmszemcse v1 (a `grain2` mellett) — token az exe string-táblájában megerősítve, paraméterezése dekódolatlan |
-| `radtint` | ismeretlen | feltehetően a `dir_tint` radiális testvére (`rad`- előtag mint `radsat`/`radblur`) — exe-ből azonosított, paraméterezése dekódolatlan |
+| `radtint` | `1,!x,!y,!feather[,!szín]` | radiális **szorzó**-tint (#565): a fókuszpont körül változatlan, kifelé `forrás × szín / 256`, köbös smoothstep maszkkal; a Feather affin leképezése még kalibrálatlan |
 | `RoundedEdges` | ismeretlen | önálló szűrő-token (a `Border`/`DropShadow` mellett) — exe-ből azonosított, paraméterezése dekódolatlan |
 | `Matte` | ismeretlen | önálló szűrő-token (a `MuseumMatte` és `Vignette` között) — exe-ből azonosított, paraméterezése dekódolatlan |
 | `NightVision` | ismeretlen | önálló szűrő-token (a `HeatMap`/`Invert` mellett) — exe-ből azonosított, paraméterezése dekódolatlan |
@@ -159,7 +159,10 @@ Forrás a fenti (`glow` v1, `grain` v1, `radtint`, `RoundedEdges`, `Matte`,
 `docs/specs/picasa-exe-strings.md` (1. pont). Ezek egyike sem szerepelt eddig
 a mért/golden-elemzésben (`filters-decoded.md`), ezért státuszuk
 undecoded/uncalibrated: valódi ini-export teszttel kell megerősíteni, hogy
-ténylegesen `filters=` tokenként fordulnak-e elő.
+ténylegesen `filters=` tokenként fordulnak-e elő. Kivétel a `radtint`: annak
+paraméterezése és csővezetéke a #565-ben a natív kód visszafejtéséből
+megvan (ld. `filters-decoded.md`), csak a Feather csúszka affin leképezése
+vár még golden-párra.
 
 Szöveg-overlay (külön kulcs): `text=1; 136;11;sample text;Aharoni;...` + `textactive=`.
 

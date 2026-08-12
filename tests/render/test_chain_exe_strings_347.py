@@ -16,10 +16,11 @@ jelzőként nyelődik el, és `grain` (v1) is renderel (ld. lent,
 `TestGrainV1NowRendered`) — ez a `filterdesc-registry.md` szerint a
 `grain2`-vel MEGEGYEZŐ, paraméter nélküli "Film Grain" oneclick család régi
 tagja, ezért a már golden-mért `grain2`-modellt (`apply_grain`) használja
-KÖZELÍTÉSKÉNT (a `grain` v1-re önmagára nincs külön golden-mérés). Egyedül
-`radtint` maradt ISMERETLEN: a `filterdesc.xml` csak a `Feather` csúszkát és
-a színkerék-paramétert dokumentálja, a tényleges csővezetéket (a `glow`
-logaritmikus sugarához hasonlóan) nem — ehhez golden-mérés kell (#317).
+KÖZELÍTÉSKÉNT (a `grain` v1-re önmagára nincs külön golden-mérés). A hetedik,
+`radtint` a #565-ben rendeződött: a natív regisztráció, a feldolgozó mag és a
+maszk-LUT visszafejtésével megvan a csővezeték (radiális szorzó-tint, köbös
+smoothstep maszk) — ld. `TestRadtintNowRendered` lent. Ezzel a #347 mind a
+hét neve renderel.
 """
 
 from __future__ import annotations
@@ -30,12 +31,12 @@ import pytest
 from picasapy.ini.filters import parse_filters
 from picasapy.render.chain import KNOWN_UNRENDERED_OPS, apply_filters
 
-#: `roundededges`, `matte`, `nightvision` az #381-ben, `grain` (v1) a
-#: #347-es lezáró auditban (2026-08-06) MEGKAPTA az egzakt/közelítő
-#: csővezetéket — kikerültek a listáról, ld. `TestGlimmerNowRendered` és
-#: `TestGrainV1NowRendered` lent. Egyedül `radtint` maradt: a
-#: `filterdesc.xml` nem közöl hozzá csővezetéket, golden-mérés kell (#317).
-_NEW_UNRENDERED_KEYS = ("radtint",)
+#: A #347 mind a hét neve renderel: `roundededges`/`matte`/`nightvision` az
+#: #381-ben, `grain` (v1) és `picnik` a lezáró auditban (2026-08-06),
+#: `radtint` a #565-ben. A regiszter viszont NEM ürült ki — a #382-es
+#: filterdesc-nevek még benne állnak, azokon marad a szerződés (felismerés +
+#: jelentés vizuális modell nélkül).
+_STILL_UNRENDERED_KEYS = ("triple", "colorfix", "rainbow")
 
 
 @pytest.fixture
@@ -46,10 +47,10 @@ def sample() -> np.ndarray:
 
 class TestKnownUnrenderedRegistry:
     def test_uj_nevek_mind_a_regiszterben_vannak(self):
-        for key in _NEW_UNRENDERED_KEYS:
+        for key in _STILL_UNRENDERED_KEYS:
             assert key in KNOWN_UNRENDERED_OPS
 
-    @pytest.mark.parametrize("key", _NEW_UNRENDERED_KEYS)
+    @pytest.mark.parametrize("key", _STILL_UNRENDERED_KEYS)
     def test_lanc_felismeri_de_nem_renderel_es_jelenti(self, key, sample):
         # a lánc nem dob kivételt, a kép változatlan marad (nincs vizuális
         # modell), de a nevet a kihagyott-listában jelenti — nem csendben
@@ -58,26 +59,14 @@ class TestKnownUnrenderedRegistry:
         assert np.array_equal(result, sample)
         assert key in [name.casefold() for name in skipped]
 
-    @pytest.mark.parametrize(
-        ("spelled", "key"),
-        [
-            ("radtint", "radtint"),
-        ],
-    )
-    def test_picasa_eredeti_iras_is_felismert(self, spelled, key, sample):
-        result, skipped = apply_filters(sample, parse_filters(f"{spelled}=1;"))
-        assert np.array_equal(result, sample)
-        assert spelled in skipped
-
     def test_vegyes_lanc_a_tobbi_effekt_azert_lefut(self, sample):
-        # egy ismert (renderelt) effekt + egy #347-es felismert-de-
-        # renderelhetetlen egy láncban: az ismert effekt hasson, a másik
-        # csak jelentve legyen
+        # egy ismert (renderelt) effekt + egy felismert-de-renderelhetetlen
+        # egy láncban: az ismert effekt hasson, a másik csak jelentve legyen
         result, skipped = apply_filters(
-            sample, parse_filters("Invert=1;radtint=1;")
+            sample, parse_filters("Invert=1;triple=1;")
         )
         assert not np.array_equal(result, sample), "az Invert lefutott"
-        assert skipped == ("radtint",)
+        assert skipped == ("triple",)
 
 
 class TestGlimmerNowRendered:
@@ -130,11 +119,11 @@ class TestPicnikNoopMarker:
         # KNOWN_UNRENDERED_OPS regiszter felelős ezért a downstream
         # jelentésben
         result, skipped = apply_filters(
-            sample, parse_filters("totallyunknownfilter=1;radtint=1;")
+            sample, parse_filters("totallyunknownfilter=1;triple=1;")
         )
         assert np.array_equal(result, sample)
-        assert skipped == ("totallyunknownfilter", "radtint")
-        assert "radtint" in KNOWN_UNRENDERED_OPS
+        assert skipped == ("totallyunknownfilter", "triple")
+        assert "triple" in KNOWN_UNRENDERED_OPS
         assert "totallyunknownfilter" not in KNOWN_UNRENDERED_OPS
 
 
@@ -165,3 +154,17 @@ class TestGrainV1NowRendered:
         grain_result, _ = apply_filters(sample, parse_filters("grain=1;"))
         grain2_result, _ = apply_filters(sample, parse_filters("grain2=1;"))
         assert np.array_equal(grain_result, grain2_result)
+
+
+class TestRadtintNowRendered:
+    """#565: a `radtint` a natív visszafejtés (regisztráció `0x8f8730`,
+    mag `0x90b370`, maszk-LUT `0x90aeb0`) alapján renderel — radiális
+    SZORZÓ-tint köbös smoothstep maszkkal."""
+
+    def test_mar_nem_a_kihagyott_regiszterben(self):
+        assert "radtint" not in KNOWN_UNRENDERED_OPS
+
+    def test_a_lanc_tenylegesen_renderel(self, sample):
+        result, skipped = apply_filters(sample, parse_filters("radtint=1;"))
+        assert skipped == ()
+        assert not np.array_equal(result, sample)

@@ -48,6 +48,7 @@ from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
 from picasapy.render.tinting import (
     apply_ansel,
     apply_dir_tint,
+    apply_radtint,
     apply_tint,
     parse_rgb_hex,
 )
@@ -75,10 +76,11 @@ KNOWN_UNRENDERED_OPS = frozenset(
         # paraméter nélküli "Film Grain" oneclick család régi tagja, ezért
         # a `grain2` golden-mért modelljét (`_apply_grain_op`) használja
         # (ld. lent a `_HANDLERS`-ben).
-        "radtint",  # feltehetően a dir_tint radiális testvére (rad- előtag);
-        # a filterdesc csak a Feather csúszkát/színkereket dokumentálja, a
-        # tényleges csővezetéket nem (mint a glow logaritmikus sugara) —
-        # ehhez golden-mérés kell (#317).
+        # `radtint` a #565-ben KIKERÜLT innen: a natív regisztráció
+        # (0x8f8730), a feldolgozó mag (0x90b370) és a maszk-LUT (0x90aeb0)
+        # visszafejtésével az algoritmuscsalád és a pixelművelet (radiális
+        # szorzó-tint, köbös smoothstep maszk) rögzített — egyedül a Feather
+        # csúszka affin leképezése maradt feltételezés (ld. apply_radtint).
         # --- a filterdesc-regiszter (#382) által azonosított 21 további,
         # eddig sehol nem dokumentált szűrőnév — a filterdesc.xml-ben
         # léteznek, tehát régi könyvtárak `filters=` láncában előfordulhatnak.
@@ -289,6 +291,20 @@ def _apply_radsat_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+def _apply_radtint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Élő alak: `radtint=1,x,y,feather[,szín]` — a filterdesc szerint EGY
+    # csúszkája van (Feather), mellette puck (fókuszpont) és színkerék; a
+    # szín a #357 mintája szerint opcionális.
+    color = parse_rgb_hex(op.params[4]) if len(op.params) > 4 else _DEFAULT_TINT_COLOR
+    return apply_radtint(
+        image,
+        x=_effect_float(op, 0, 0.5),
+        y=_effect_float(op, 1, 0.5),
+        feather=_effect_float(op, 2, 0.25),
+        color=color,
+    )
+
+
 def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # Élő alak: `dir_tint=1,x,y,gradiens,árnyalás[,szín]` — a szín
     # opcionális (#357), hiányában az alapértelmezett színnel futunk.
@@ -373,6 +389,7 @@ _HANDLERS = {
     "radblur": _apply_radblur_op,
     "radsat": _apply_radsat_op,
     "dir_tint": _apply_dir_tint_op,
+    "radtint": _apply_radtint_op,
     # --- Glimmer-effektek: EGZAKT csővezetékek a filterdesc.xml szerint
     # (#381, `chain_glimmer_handlers.py` + `glimmer_*` modulok). Az `IR`
     # kivétel: a `IRImageOperation` belső kernele a filterdesc.xml-ben sem
@@ -434,7 +451,7 @@ def apply_filters(
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, retouch,
     enhance, autolight, autocolor, fill, finetune/finetune2, bw, sepia, warm,
     sat, unsharp/unsharp2, grain2, Vignette, glow/glow2, tint, ansel, radblur,
-    radsat, dir_tint).
+    radsat, dir_tint, radtint).
 
     A `retouch` régió-adata PicasaPy-saját kiterjesztés (ld.
     `picasapy.ini.retouch` docsztring) — valódi Picasa-eredetű, régió nélküli

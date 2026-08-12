@@ -314,13 +314,13 @@ Picasa-hű lenne.
 | **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `warm`, `sat`, `grain2` (statisztikai), `glow` (v1, ΔE 1,85 — ld. Golden-verdiktek fent) |
 | **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `ansel` (5,6), `radblur` (3,2), `glow2` (2,7) |
 | **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Neon`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
-| **RÉSZBEN MEGFEJTVE (#381)** | a paraméterNEVEK és FIX konstansok a filterdesc.xml-ből jönnek, de a belső pixel-kernel (`IRImageOperation`) a fájlban SEM publikus — a pixel-modell dokumentáltan interpretáció | `IR` |
+| **MEGFEJTVE A BINÁRISBÓL (#566)** | a `filterdesc.xml` csak a paraméterNEVEKET és a FIX konstansokat adja, de a `Picasa3.exe` statikus visszafejtése a teljes belső kernelt feltárta (`glimmer::IRImageOperation`, RTTI/vtable `0xcf0a14`, ctor `0xbc3d80`, feldolgozás `0xbc3f50`) | `IR` |
 | **MEGFEJTVE, DE ECSET-MASZK NÉLKÜL (#381)** | a csővezeték/paraméterezés egzakt, de a Picasa ecsettel kijelölt régióra hatna — a PicasaPy-nak nincs ecset-eszköze, ezért a TELJES KÉPRE fut (jelezve a `ChainReport.range_warnings`-ban) | `PicnikTint`, `ReanimatedEyeColor` |
 | **KÖZELÍTŐ (mérés nélkül) — #381 után is maradt** | a hatás jellege alapján, szakirodalomból — sem golden-mérés, sem filterdesc-pontosítás nincs még bekötve | `FocalZoom`, `PicnikFocalPixelate`, `Comicize` |
 | **KÖZELÍTŐ (másik, mért v2-modell újrahasznosítva) — #347 lezáró audit (2026-08-06)** | a filterdesc szerint a v1/v2 pár paraméter nélküli, azonos "oneclick" család (nincs csúszka/szín, ami megkülönböztetné őket) — a v1-re önmagára nincs golden-mérés, ezért a már mért v2-modellt futtatjuk rá | `grain` (v1, a `grain2` modelljét használja) |
 | **PONTOS** | matematikailag egyértelmű, mérés sem kell | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át) |
 | **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
-| **ISMERETLEN (exe-ből azonosított, nincs mérés)** | csak a `Picasa3.exe` string-táblájából ismert token (ld. `docs/specs/picasa-exe-strings.md`), golden-mérés még nem volt, élő ini-előfordulása sem megerősített | `radtint` (a filterdesc csak a Feather csúszkát/színkereket adja meg, csővezetéket nem — ehhez golden-mérés kell, #317) |
+| **MEGFEJTVE A BINÁRISBÓL, EGY PARAMÉTER KALIBRÁLATLAN (#565)** | az algoritmuscsalád és a pixelművelet a natív kód visszafejtéséből egzakt, egyetlen csúszka affin leképezése maradt feltételezés | `radtint` (radiális **szorzó**-tint köbös smoothstep maszkkal; a Feather affin leképezéséhez golden-pár kell) |
 
 Vagyis a Glimmer-effektek (33) többsége #381 óta a `filterdesc.xml` EGZAKT
 csővezetékén fut — a `RoundedEdges`, `Matte`, `NightVision` a korábbi
@@ -328,7 +328,13 @@ csővezetékén fut — a `RoundedEdges`, `Matte`, `NightVision` a korábbi
 (`FocalZoom`, `PicnikFocalPixelate`, `Comicize`) maradt KÖZELÍTŐ (a
 `fullResImageWidth/Height`-explicit radiális elmosás, ill. a többágú
 pontraszter-csővezeték #381 hatókörén kívül esett — ld. a jegy jelentését).
-Az `IR` RÉSZBEN MEGFEJTVE (a paraméterek ismertek, a kernel nem). A
+Az `IR` a **#566** óta MEGFEJTVE — nem a paraméternevekből következtetve,
+hanem a natív kernel visszafejtéséből. A csővezeték: (1) színmátrix, amely
+csak a ZÖLD csatornát (és az alfát) hagyja meg, (2) `x = y = 5` elmosás,
+(3) a zöld glow **LIGHTEN** módban (nem SCREEN!) az EREDETI képre,
+`alpha = 0,25`, (4) záró monokróm mátrix
+`Y = clamp(−0,5·R + 2,0·G − 0,5·B)` — a KÉK súlya is negatív —, végül
+(5) a közös Fade-keverés. A
 `PicnikTint`/`ReanimatedEyeColor` egzakt csővezetéket kapott, de ecset-
 eszköz híján a TELJES KÉPRE fut. A kalibráció (a maradék KÖZELÍTŐ effektekhez
 és a golden-pixel-összevetéshez) a **#317**-es jegyben fut tovább.
@@ -337,10 +343,33 @@ eszköz híján a TELJES KÉPRE fut. A kalibráció (a maradék KÖZELÍTŐ effe
 mostanra rendezett — `glow` (v1) golden-mérve MÉRT, `RoundedEdges`/`Matte`/
 `NightVision` a #381 filterdesc-csővezetéken MEGFEJTVE, `picnik` no-op
 jelzőként azonosítva, `grain` (v1) a `grain2` mért modelljét újrahasznosítva
-renderel. Egyedül `radtint` maradt ISMERETLEN — ehhez a `filterdesc.xml` nem
-közöl csővezetéket (csak a Feather csúszkát és a színkereket), a `glow`
-logaritmikus sugarához hasonlóan golden-mérés kell. A jegy emiatt SZŰKÍTVE,
-`blocked` marad kizárólag a `radtint` kalibrációjára (#317 golden-kör).
+renderel. A hetedik, `radtint` a **#565**-ben rendeződött: nem golden-mérésből,
+hanem a natív kód visszafejtéséből (regisztrációs render callback `0x8f8730`,
+feldolgozó mag `0x90b370`, maszk-LUT segédfüggvény `0x90aeb0`). Ezzel a #347
+mind a hét neve renderel.
+
+### `radtint` — radiális szorzó-tint (#565)
+
+A visszafejtett csővezeték:
+
+1. a puck-kal megadott fókuszpont körül **normalizált** (tengelyenként külön
+   normált, tehát elliptikus) távolság számolódik minden pixelre;
+2. a fókuszpont környékén a kép **változatlan**;
+3. kifelé haladva egy **1024 elemű LUT** adja a keverési súlyt; a LUT köbös
+   smoothstep: `t*t*(3-2*t)`;
+4. a teljes tint csatornánként `tinted = source * tint / 256` — **szorzás**,
+   nem a szín FELÉ keverés (ez a lényegi különbség a `dir_tint`-hez képest),
+   az alfa érintetlen;
+5. az átmeneti sávban lineáris keverés fut az eredeti és a szorzott kép
+   között.
+
+**Nyitva:** a Feather csúszka pontos affin leképezése. A PicasaPy jelenlegi,
+DOKUMENTÁLT feltételezése: a feather az átmeneti sáv szélessége, a
+fókuszponttól mért legnagyobb távolság (`r_max`) felénél középpontosan — a
+sáv `(0,5 − feather/2)·r_max`-nál kezdődik és `(0,5 + feather/2)·r_max`-nál
+ér véget. Így `feather = 0` éles határt ad a fél sugárnál, `feather = 1`
+végig lágy átmenetet; a fókuszpont mindig érintetlen, a legtávolabbi sarok
+mindig teljes tintet kap. A pontosításhoz golden-pár kell (#317).
 
 ## 6. kör — a Picasa SAJÁT szűrő-definíciója előkerült ✅ (2026-08-06)
 
