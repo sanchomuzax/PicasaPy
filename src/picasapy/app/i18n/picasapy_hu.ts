@@ -4262,6 +4262,14 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <source>Scanning folders…</source>
         <translation>Mappák beolvasása…</translation>
     </message>
+    <message>
+        <source>There were errors loading the PicasaPy database. Would you like to view the error log?</source>
+        <translation>A PicasaPy adatbázisának betöltése hibákba ütközött. Megnézi a hibanaplót?</translation>
+    </message>
+    <message>
+        <source>Database error</source>
+        <translation>Adatbázis-hiba</translation>
+    </message>
 </context>
 <context>
     <name>DropImportController</name>

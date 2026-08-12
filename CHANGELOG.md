@@ -17,6 +17,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   nem mozgat és nem másol fájlt**. A mappák később bármikor módosíthatók a
   Mappakezelőben.
 
+### Hozzáadva
+- **Hibanapló (#449).** A figyelmeztetések és hibák mostantól fájlba is
+  kerülnek (`errorlog.txt` az adatkönyvtárban), és ha az adatbázis
+  betöltése hibára fut, a program – ahogy az eredeti Picasa – **felajánlja
+  a napló megtekintését**, ahelyett hogy némán összeomlana vagy titokban
+  javítana. A napló nem nő korlátlanul: méret fölött indításkor
+  elforgatjuk.
+
 ## [0.7.6] – 2026-08-12
 
 ### Hozzáadva
