@@ -1,5 +1,14 @@
 """A Picasa 5. fülének (kék ecset) művészi effektjei — I. rész: Boost, Soften,
-Pixelate, FocalZoom, PencilSketch, Neon, Comicize.
+Pixelate, PencilSketch, Neon, Comicize.
+
+A `FocalZoom` (és a `PicnikFocalPixelate`) a #570-ben átkerült a
+`render/focal.py`-ba: azok a natív `glimmer::RadialBlurImageOperation`
+visszafejtett paraméterezését és közös körmaszkját használják, nem a hatás
+jellegének közelítését.
+
+A `Comicize` a #569 óta KIVÉTEL a lenti őszinteség-megjegyzés alól: annak a
+csővezetéke a `filterdesc.xml`-ből és a natív `glimmer::TiledImageMask`
+kódjából való, nem a hatás jellegének közelítése.
 
 **ŐSZINTESÉG (#330):** a Picasa e 11 effektjének pontos algoritmusa NEM
 publikus, és ehhez NINCS golden-mérés (szemben a `docs/specs/filters-decoded.md`
@@ -25,6 +34,7 @@ import cv2
 import numpy as np
 
 from picasapy.render.curves import validate_image
+from picasapy.render.halftone import dot_size_for, halftone_branch
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
 
@@ -123,58 +133,6 @@ def apply_pixelate(image: np.ndarray, block_size: float = 20.0) -> np.ndarray:
     return cv2.resize(small, (width, height), interpolation=cv2.INTER_NEAREST)
 
 
-def apply_focal_zoom(
-    image: np.ndarray,
-    x: float = 0.5,
-    y: float = 0.5,
-    radius: float = 50.0,
-    strength: float = 50.0,
-) -> np.ndarray:
-    """Fókusznagyítás (FocalZoom): sugárirányú (zoom) elmosás a fókuszpont
-    körül, középen éles.
-
-    KÖZELÍTŐ MODELL (#330, kalibráció: #317). `x, y` a fókuszpont relatív
-    [0..1] koordinátája (alapból a kép közepe, a `FocalZoom=1,0.5,0.5,...`
-    mintának megfelelően), `radius` 0..100 az éles zóna sugara (a kép
-    normált átlójának százalékában), `strength` 0..100 a zoom-elmosás
-    mértéke. A fókuszponton belül a kép éles marad; kifelé a képnek az
-    (x, y) középpontra egyre nagyobb léptékben nagyított másolatainak
-    átlaga (zoom-blur) keveredik be, a középponttól mért távolsággal
-    arányos súllyal.
-    """
-    validate_image(image)
-    if not 0.0 <= x <= 1.0 or not 0.0 <= y <= 1.0:
-        raise ValueError(f"Az (x, y) fókuszpont 0..1 tartományba kell essen: ({x}, {y})")
-    if radius < 0:
-        raise ValueError(f"A sugár nem lehet negatív: {radius}")
-    if strength < 0:
-        raise ValueError(f"A zoom-elmosás erőssége nem lehet negatív: {strength}")
-    if strength == 0:
-        return image.copy()
-    height, width = image.shape[:2]
-    center = (x * width, y * height)
-    max_scale = 1.0 + 0.3 * min(strength, 100.0) / 100.0
-    accum = np.zeros((height, width, 3), dtype=np.float32)
-    for step in range(_FOCAL_ZOOM_STEPS):
-        scale = 1.0 + (max_scale - 1.0) * step / (_FOCAL_ZOOM_STEPS - 1)
-        matrix = cv2.getRotationMatrix2D(center, 0.0, scale)
-        warped = cv2.warpAffine(
-            image,
-            matrix,
-            (width, height),
-            flags=cv2.INTER_LINEAR,
-            borderMode=cv2.BORDER_REPLICATE,
-        )
-        accum += warped.astype(np.float32)
-    zoom_blurred = accum / np.float32(_FOCAL_ZOOM_STEPS)
-    radii = _radius_grid(height, width, x, y)
-    span = max(1.0 - radius / 100.0, 1e-6)
-    weight = np.clip((radii - np.float32(radius / 100.0)) / np.float32(span), 0.0, 1.0)
-    image_f = image.astype(np.float32)
-    result = image_f + weight[..., np.newaxis] * (zoom_blurred - image_f)
-    return _to_uint8(result)
-
-
 def apply_pencil_sketch(
     image: np.ndarray,
     blur_radius: float = 2.0,
@@ -243,42 +201,77 @@ def apply_neon(
 
 def apply_comicize(
     image: np.ndarray,
-    edge_strength: float = 20.0,
-    posterize: float = 50.0,
-    smoothness: float = 50.0,
+    blur_xy: float = 20.0,
+    dot_contrast: float = 50.0,
+    dot_fade: float = 50.0,
 ) -> np.ndarray:
-    """Képregény (Comicize): színposzterizálás + erős fekete élkontúr.
+    """Képregény (Comicize) — nyomdai FÉLTÓNUSOS raszter (#569).
 
-    KÖZELÍTŐ MODELL (#330, kalibráció: #317). `edge_strength` 0..100 a
-    kontúrvonal vastagsága, `posterize` 0..100 a színposzterizálás
-    erőssége (nagyobb érték = kevesebb színszint), `smoothness` 0..100 az
-    éldetektálás előtti simítás mértéke — az alapértékek a
-    `Comicize=1,20.000000,50.000000,50.000000;` mintát követik (a
-    paraméterek pontos jelentése nem dekódolt). A poszterizált színekre
-    fekete kontúrvonalat rajzolunk a (simított) szürkeárnyalatos képen
-    talált élek mentén.
+    A korábbi modell posterizálással és **Canny-élkereséssel** közelítette; a
+    Picasa effektje viszont nem élkiemelő képregényszűrő, hanem **két,
+    egymáshoz képest fél csempével eltolt pontmaszkból** épített nyomdai
+    raszter (`filterdesc.xml` + a natív `glimmer::TiledImageMask`).
+
+    A csővezeték:
+
+    1. `dotSize = round(W / 70) + 1` — a raszter csempemérete a kép
+       SZÉLESSÉGÉBŐL (ld. `halftone.dot_size_for`);
+    2. elő-elmosás `radius = 1 + 20·BlurXY/100` szigmával, **DARKEN** módban
+       visszakeverve — ettől a sötét vonalak vastagodnak, a világosak nem;
+    3. küszöbgörbe, amelynek a FELSŐ kontrollpontját a `DotContrast` mozgatja:
+       `90 + DotContrast·1,5`;
+    4. pixelesítés a csempeméretre, majd szürkeárnyalatos (BW) átalakítás —
+       innen jön a pontonkénti „festéksűrűség";
+    5. **két ág**, csempézett pontmaszkkal: az első eltolása `(0, 0)`, a
+       másodiké `(dotSize/2, dotSize/2)`; az ágak **DARKEN**-nel egyesülnek;
+    6. a blokk alfája `0,5 − DotFade/200`;
+    7. a kész raszter **DARKEN** jelleggel kerül az eredeti képre.
+
+    **Nyitott részlet** (a #569 elfogadási feltétele szerint is): a natív
+    pontmaszk pontos antialiasingja és peremkerekítése — ehhez golden-
+    összevetés kell (#317). A raszter szerkezete, a csempeméret képlete és a
+    keverési módok viszont a `filterdesc.xml`-ből és a natív kódból valók.
     """
     validate_image(image)
-    if edge_strength < 0:
-        raise ValueError(f"A kontúr erőssége nem lehet negatív: {edge_strength}")
-    if posterize < 0:
-        raise ValueError(f"A poszterizálás erőssége nem lehet negatív: {posterize}")
-    if smoothness < 0:
-        raise ValueError(f"A simítás erőssége nem lehet negatív: {smoothness}")
+    for name, value in (
+        ("BlurXY", blur_xy),
+        ("DotContrast", dot_contrast),
+        ("DotFade", dot_fade),
+    ):
+        if value < 0:
+            raise ValueError(f"A(z) {name} nem lehet negatív: {value}")
+
+    height, width = image.shape[:2]
+    dot = dot_size_for(width)
     image_f = image.astype(np.float32)
-    num_levels = max(2, round(12.0 - min(posterize, 100.0) / 100.0 * 10.0))
-    step = 256.0 / num_levels
-    posterized = np.clip(np.floor(image_f / step) * step + step / 2.0, 0.0, 255.0)
 
-    blur_sigma = max(smoothness / 100.0 * 3.0, 0.1)
-    smooth_gray = cv2.GaussianBlur(
-        _to_uint8(_luma(image_f)), (0, 0), blur_sigma
+    # 2. elő-elmosás DARKEN módban (a sötétebb nyer)
+    sigma = 1.0 + 20.0 * min(blur_xy, 100.0) / 100.0
+    blurred = cv2.GaussianBlur(image_f, (0, 0), sigmaX=sigma, sigmaY=sigma)
+    darkened = np.minimum(image_f, blurred)
+
+    # 3. küszöbgörbe — a felső kontrollpont a DotContrast-tól függ
+    upper = float(np.clip(90.0 + min(dot_contrast, 100.0) * 1.5, 1.0, 255.0))
+    curved = np.clip(darkened * (255.0 / upper), 0.0, 255.0)
+
+    # 4. pixelesítés a csempeméretre + szürkeárnyalat
+    small = cv2.resize(
+        curved,
+        (max(1, width // dot), max(1, height // dot)),
+        interpolation=cv2.INTER_AREA,
     )
-    edges = cv2.Canny(smooth_gray, 50, 150)
-    thickness = max(1, round(1 + min(edge_strength, 100.0) / 100.0 * 3.0))
-    kernel = np.ones((thickness, thickness), dtype=np.uint8)
-    edge_mask = cv2.dilate(edges, kernel) > 0
+    pixelated = cv2.resize(
+        small, (width, height), interpolation=cv2.INTER_NEAREST
+    )
+    ink = _luma(pixelated)
 
-    result = posterized.copy()
-    result[edge_mask] = 0.0
-    return _to_uint8(result)
+    # 5. két ág, fél csempével eltolva; az ágak DARKEN-nel egyesülnek
+    branch_a = halftone_branch(ink, dot, 0.0, 0.0)
+    branch_b = halftone_branch(ink, dot, dot / 2.0, dot / 2.0)
+    raster = np.minimum(branch_a, branch_b)
+
+    # 6-7. a blokk alfájával, DARKEN jelleggel az EREDETI képre
+    alpha = float(np.clip(0.5 - min(dot_fade, 100.0) / 200.0, 0.0, 1.0))
+    raster_rgb = np.repeat(raster[..., np.newaxis], 3, axis=-1)
+    combined = np.minimum(image_f, raster_rgb)
+    return _to_uint8(image_f + alpha * (combined - image_f))

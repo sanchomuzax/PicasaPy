@@ -1,6 +1,10 @@
 """A `picasapy.render.effects_artistic` (a Picasa 5. fülének, kék ecsetnek,
 MÉRETTARTÓ effektjei) tesztjei.
 
+A `FocalZoom` a #570-ben átkerült a `render/focal.py`-ba (a natív
+paraméterezéssel és a közös körmaszkkal együtt) — a tesztjei ezért a
+`tests/render/test_focal_570.py`-ban élnek.
+
 **ŐSZINTESÉG:** nincs golden-mérés ezekhez az effektekhez (#330) — a
 tesztek a MEGFIGYELHETŐ kimenetet ellenőrzik (blokkosítás, méret-
 tartás, monoton viselkedés stb.), NEM azt, hogy a kimenet pixelhűen
@@ -15,7 +19,6 @@ import pytest
 from picasapy.render.effects_artistic import (
     apply_boost,
     apply_comicize,
-    apply_focal_zoom,
     apply_neon,
     apply_pencil_sketch,
     apply_pixelate,
@@ -164,53 +167,6 @@ class TestApplyPixelate:
         apply_pixelate(_uniform_image(255))
 
 
-class TestApplyFocalZoom:
-    def test_kozeppont_eles_marad(self) -> None:
-        image = _random_image(height=40, width=40, seed=5)
-        result = apply_focal_zoom(image, x=0.5, y=0.5, radius=30.0, strength=100.0)
-        np.testing.assert_array_equal(result[20, 20], image[20, 20])
-
-    def test_szel_elmosodik(self) -> None:
-        image = _checkerboard()
-        result = apply_focal_zoom(image, x=0.5, y=0.5, radius=5.0, strength=100.0)
-        corner_before = float(np.std(image[0:4, 0:4, 0].astype(np.float64)))
-        corner_after = float(np.std(result[0:4, 0:4, 0].astype(np.float64)))
-        assert corner_after < corner_before
-
-    def test_erosseg_nulla_identitas(self) -> None:
-        image = _checkerboard()
-        result = apply_focal_zoom(image, strength=0.0)
-        np.testing.assert_array_equal(result, image)
-
-    def test_alak_es_dtype_megmarad(self) -> None:
-        image = _random_image(height=30, width=36, seed=6)
-        result = apply_focal_zoom(image)
-        assert result.shape == image.shape
-        assert result.dtype == np.uint8
-
-    def test_nem_mutalja_a_bemenetet(self) -> None:
-        image = _checkerboard()
-        original = image.copy()
-        apply_focal_zoom(image, strength=80.0)
-        np.testing.assert_array_equal(image, original)
-
-    def test_ervenytelen_fokuszpont_value_error(self) -> None:
-        with pytest.raises(ValueError):
-            apply_focal_zoom(_random_image(), x=1.5)
-        with pytest.raises(ValueError):
-            apply_focal_zoom(_random_image(), y=-0.1)
-
-    def test_negativ_parameter_value_error(self) -> None:
-        with pytest.raises(ValueError):
-            apply_focal_zoom(_random_image(), radius=-1.0)
-        with pytest.raises(ValueError):
-            apply_focal_zoom(_random_image(), strength=-1.0)
-
-    def test_fekete_feher_szelso_bemenet_nem_dob(self) -> None:
-        apply_focal_zoom(_uniform_image(0))
-        apply_focal_zoom(_uniform_image(255))
-
-
 class TestApplyPencilSketch:
     def test_alapertelmezesnel_szurke_marad(self) -> None:
         # color_mix=0 alapértéknél R=G=B mindenütt (tiszta szürkeárnyalat)
@@ -295,18 +251,14 @@ class TestApplyNeon:
 
 
 class TestApplyComicize:
-    def test_szinszam_csokken(self) -> None:
-        image = _random_image(height=32, width=32, seed=12)
-        result = apply_comicize(image, posterize=90.0)
-        unique_before = len(np.unique(image.reshape(-1, 3), axis=0))
-        unique_after = len(np.unique(result.reshape(-1, 3), axis=0))
-        assert unique_after < unique_before
-
-    def test_kontrasztos_elen_fekete_kontur_jelenik_meg(self) -> None:
-        image = _checkerboard()
-        result = apply_comicize(image, edge_strength=100.0, smoothness=0.0)
-        has_black = np.any(np.all(result == 0, axis=-1))
-        assert has_black
+    # #569: a Comicize NEM poszterizál és NEM keres élt — féltónusos
+    # rasztert nyom a képre. A régi két teszt (színszám-csökkenés, fekete
+    # kontúr az élen) a Canny-közelítés szerződése volt; a mostani modell
+    # szerződéseit a tests/render/test_comicize_569.py méri.
+    def test_a_raszter_sotetit_de_nem_vilagosit(self) -> None:
+        image = _random_image(height=32, width=48, seed=12)
+        result = apply_comicize(image)
+        assert np.all(result <= image)
 
     def test_alak_es_dtype_megmarad(self) -> None:
         image = _random_image(height=24, width=28, seed=13)
@@ -322,11 +274,11 @@ class TestApplyComicize:
 
     def test_negativ_parameter_value_error(self) -> None:
         with pytest.raises(ValueError):
-            apply_comicize(_random_image(), edge_strength=-1.0)
+            apply_comicize(_random_image(), blur_xy=-1.0)
         with pytest.raises(ValueError):
-            apply_comicize(_random_image(), posterize=-1.0)
+            apply_comicize(_random_image(), dot_contrast=-1.0)
         with pytest.raises(ValueError):
-            apply_comicize(_random_image(), smoothness=-1.0)
+            apply_comicize(_random_image(), dot_fade=-1.0)
 
     def test_fekete_feher_szelso_bemenet_nem_dob(self) -> None:
         apply_comicize(_uniform_image(0))

@@ -1742,3 +1742,58 @@ class TestCropSuggestions:
         controller.endEdit()
         controller.beginEdit("1", str(photo))
         assert controller._crop_aspect is None
+
+
+class TestLegacyEffectsCatalogue:
+    """#571: az „Régi effektek" fül adatai a vezérlőből, a renderelőhöz
+    kötve — a QML nem tart kézzel írt engedélyezett-listát."""
+
+    def test_catalogue_is_exposed_to_qml(self, controller):
+        effects = controller.legacyEffects
+        assert effects, "üres örökség-katalógus"
+        keys = [item["key"] for item in effects]
+        assert "radtint" in keys and "triple" in keys
+        # a `debug` fejlesztői eszköz volt — szándékosan nincs a fülön
+        assert "debug" not in keys
+
+    def test_enabled_flag_follows_the_renderer(self, controller):
+        by_key = {item["key"]: item for item in controller.legacyEffects}
+        # #565/#567 után ezek renderelnek
+        assert by_key["radtint"]["enabled"] is True
+        assert by_key["autobacklight"]["enabled"] is True
+        # ezek a natív kernelük megfejtéséig (#568) szürkék
+        assert by_key["dir_sat"]["enabled"] is False
+        assert by_key["triple"]["enabled"] is False
+
+    def test_dead_legacy_name_is_flagged(self, controller):
+        by_key = {item["key"]: item for item in controller.legacyEffects}
+        # #567: halott bejegyzés — más magyarázatot kap a felületen, mint a
+        # „még nincs megfejtve"
+        assert by_key["focalpixelate"]["dead"] is True
+        assert by_key["dir_sat"]["dead"] is False
+
+    def test_every_entry_has_a_label(self, controller):
+        assert all(item["label"] for item in controller.legacyEffects)
+
+
+class TestLegacyEffectsInChain:
+    """#571 5. pont: ha a megnyitott kép láncában örökölt effekt van, a fül
+    jelzést kap — ehhez a vezérlő megmondja, mi van a láncban."""
+
+    def test_empty_chain_reports_nothing(self, controller, photo):
+        controller.beginEdit("1", str(photo))
+        assert list(controller.legacyEffectsInChain) == []
+
+    def test_legacy_filter_in_the_ini_is_reported(self, controller, photo):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            f"[{photo.name}]\nfilters=radtint=1,0.5,0.5,0.25;\n", encoding="utf-8"
+        )
+        controller.beginEdit("1", str(photo))
+        assert list(controller.legacyEffectsInChain) == ["radtint"]
+
+    def test_ordinary_filter_is_not_reported(self, controller, photo):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(f"[{photo.name}]\nfilters=bw=1;\n", encoding="utf-8")
+        controller.beginEdit("1", str(photo))
+        assert list(controller.legacyEffectsInChain) == []

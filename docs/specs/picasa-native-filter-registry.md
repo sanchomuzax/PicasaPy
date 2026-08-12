@@ -12,7 +12,7 @@ rekordokból** áll:
 | szűrő | fő callback | segéd | 2. segéd |
 |---|---|---|---|
 | `debug` | `0x008f8360` | `0x008f9bf0` | — |
-| `autobacklight` | `0x008f7cc0` | — | — |
+| `autobacklight` | `0x008f7cc0` | — | mag `0x90ac20` fix 0,25/1,0 argumentummal — **implementálva (#567)** |
 | `finetune` | `0x008f7cf0` | — | — |
 | `finetune2` | `0x008f7ee0` | — | — |
 | `autolight` | `0x008f80c0` | — | — |

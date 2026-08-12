@@ -5,6 +5,67 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.93] – 2026-08-12
+
+### Javítva
+- **A FocalZoom és a Focal Pixelate csúszkái eddig fel voltak cserélve
+  (#570).** A natív visszafejtés kimutatta, hogy a fókuszpont után az
+  **Impact** következik, nem a **Radius** — a program a harmadik mezőt
+  olvasta sugárként, így a két csúszka egymás hatását fejtette ki. Mindkét
+  effekt mostantól mind a **hat** paraméterét helyes helyről olvassa, közös
+  körmaszkot használ (a Hardness szabja a perem lágyságát), és a Fade a
+  szokásos módon zár.
+
+### Hozzáadva
+- **A Focal Pixelate (fókuszált képpontnövelés) effekt megjelent (#570).**
+  Eddig felismertük, de nem rendereltük. Az eredeti recept szerint készül:
+  lekicsinyítés, majd **legközelebbi-szomszéd** visszanagyítás — ettől élesek
+  a blokkjai, nem elmosódottak.
+
+## [0.6.92] – 2026-08-12
+
+### Javítva
+- **A Comicize (Képregény) effekt az eredeti féltónusos rasztert kapta
+  (#569).** A korábbi megvalósítás posterizálással és élkereséssel közelítette
+  — de a Picasa effektje nem élkiemelő képregényszűrő, hanem **nyomdai
+  raszter**: két, egymáshoz képest fél csempével eltolt pontrács. A pont a
+  sötét területeken nagyra nő, a világosokon elfogy, ahogy a valódi
+  nyomdatechnikában. A három csúszka (BlurXY, DotContrast, DotFade) mostantól
+  a `filterdesc.xml` szerinti szerepét tölti be; a `DotFade = 100` pontosan
+  érintetlen képet ad.
+
+## [0.6.91] – 2026-08-12
+
+### Hozzáadva
+- **„Régi effektek" fül a szerkesztőben (#571).** A Picasa motorjában benne
+  maradt egy csomó szűrő, aminek a 3.9-es felületén **nincs kezelőfelülete**:
+  régebbi verziókból örökölt darabok. A motor egy régi `.picasa.ini`-ből még
+  alkalmazza őket, de a felhasználó nem tudja előhívni — mostantól nálunk
+  igen. **Ez tudatos eltérés az eredetitől**, szándékosan többet adunk.
+  - Amelyik effektnek van valódi modellje (`radtint`, `autobacklight`,
+    `fill`), az **működik**; a többi **látszik, de szürke** — mert egy régi
+    képen ott lehet, és tudni kell róla. A letiltott gombok megmondják, miért
+    nem használhatók, és a *halott* név (`focalpixelate`) más magyarázatot kap,
+    mint a *még megfejtetlen*.
+  - Hogy melyik gomb él, azt a **renderelő** dönti el, nem kézzel írt lista —
+    így nem lehet aktívnak látszó, de nem ható gomb.
+  - Ha a megnyitott kép láncában ilyen effekt van, a **fül jelzést kap**.
+
+## [0.6.90] – 2026-08-12
+
+### Hozzáadva
+- **`autobacklight` effekt (#567).** A régi `.picasa.ini`-láncokban előforduló
+  név mostantól renderel: a natív regiszter szerint ez **nem** adaptív
+  képelemzés, hanem **fix 25%-os derítőfény** — ugyanaz a mag, mint a
+  `backlight`/`fill`, rögzített argumentummal. Külön gombot nem kap a
+  felületen, ahogy az eredetiben sem volt.
+
+### Javítva
+- **A kisbetűs `focalpixelate` halott bejegyzésként jelenik meg (#567).** A
+  Picasa 3.9 natív regiszterében sincs hozzá feldolgozó — konfigurációs
+  maradvány, nem „még hiányzó" effekt. A renderjelentés ezt ki is mondja, és
+  a név semmiképp nem keveredhet az élő `PicnikFocalPixelate` effekttel.
+
 ## [0.6.89] – 2026-08-12
 
 ### Javítva
