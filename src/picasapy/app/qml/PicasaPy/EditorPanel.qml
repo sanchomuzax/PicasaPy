@@ -1060,12 +1060,76 @@ Rectangle {
                                           panel.paramEffectValues)
     }
 
-    // ---------------- "crop" mód: Fotó vágása ----------------
-    EditorCropPanel {
-        panel: panel
+    // ---------------- mód-eszközök (vágás/retusálás/vörösszem/szöveg) ----
+    //
+    // #464 (felhasználói hibajelentés az effekt-fülekről, ugyanaz az
+    // osztály): ezek a panelek a tartalmuktól függően MAGASABBAK lehetnek,
+    // mint a rendelkezésre álló hely — vágás/görgetés nélkül rálógnának a
+    // panel alján ülő, globális Visszavonás/Újra sorra. Ezért mind a négy
+    // EGY közös, vágott görgethető területen ül, ami pontosan a gombsorig
+    // ér. Egyszerre mindig legfeljebb egy látszik (a saját `visible`
+    // kötése szerint), a görgethető magasság ezért a LÁTHATÓÉ.
+    Flickable {
+        id: modeToolScroll
+        objectName: "editorModeToolScroll"
+        visible: panel.modeToolActive
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
+        clip: true
+        contentWidth: width
+        contentHeight: Math.max(
+            cropModePanel.visible ? cropModePanel.implicitHeight : 0,
+            retouchModePanel.visible ? retouchModePanel.implicitHeight : 0,
+            redeyeModePanel.visible ? redeyeModePanel.implicitHeight : 0,
+            textModePanel.visible ? textModePanel.implicitHeight : 0)
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: PicasaScrollBar {}
+
+        // ---- "crop" mód: Fotó vágása ----
+        EditorCropPanel {
+            id: cropModePanel
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---- "retouch" mód: Retusálás (#148) ----
+        // A kattintások kezelését a hívó (PhotoViewer) végzi a képen (ez a
+        // fájl nem ismeri a kép geometriáját); a panel a puffer méretét és
+        // az Alkalmaz/Mégse gombokat mutatja.
+        EditorRetouchPanel {
+            id: retouchModePanel
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---- "redeye" mód: Vörösszem (#445) ----
+        // Az automatika a panel megnyitásakor lefut; a kézzel húzott
+        // téglalapokat a hívó (PhotoViewer) veszi fel a képen.
+        EditorRedeyePanel {
+            id: redeyeModePanel
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---- "text" mód: Szöveg-overlay (#148) ----
+        // A pozicionálás is kattintással történik a képen; a szövegmező itt
+        // él, a gépelést a textDraftEdited jel viszi a controllerhez.
+        EditorTextPanel {
+            id: textModePanel
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
     }
 
     // #448: "AddCustomAspectRatio" — szélesség × magasság + név bekérő; a
@@ -1155,34 +1219,16 @@ Rectangle {
     // fülsáv/rács helyett; a kattintások kezelését a hívó (PhotoViewer)
     // végzi a képen (ez a fájl nem ismeri a kép geometriáját), a puffer
     // méretét (retouchRegionCount) és az Alkalmaz/Mégse gombokat mutatja.
-    EditorRetouchPanel {
-        panel: panel
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-    }
 
     // ---------------- "redeye" mód: Vörösszem (#445) ----------------
     // Az automatika a panel megnyitásakor lefut; a kézzel húzott
     // téglalapokat — a Retusálás mintájára — a hívó (PhotoViewer) veszi fel
     // a képen, ez a fájl a puffer-állapotot és a gombokat mutatja.
-    EditorRedeyePanel {
-        panel: panel
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-    }
 
     // ---------------- "text" mód: Szöveg-overlay (#148) ----------------
     // A pozicionálás is kattintással történik a képen (a hívó feladata,
     // ld. retouchColumn megjegyzése) — a szövegmező itt él, a tartalom
     // gépelését a textDraftEdited jel viszi a controllerhez.
-    EditorTextPanel {
-        panel: panel
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-    }
 
     // ---------------- #464: GLOBÁLIS Visszavonás/Újra ----------------
     //

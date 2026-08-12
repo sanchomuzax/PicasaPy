@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.6.79] – 2026-08-12
+
+### Javítva
+- **A mód-eszközök panelje sem lóghat rá a Visszavonás sorra (#464).** A vágás,
+  a retusálás, a vörösszem és a szöveg panelje ugyanabba a hibába futhatott,
+  mint az effekt-fülek: ha a tartalom magasabb a rendelkezésre álló helynél,
+  ráúszott a panel alján ülő gombsorra. Mind a négy mostantól közös, vágott
+  görgethető területen ül, ami pontosan a gombsorig ér.
+
 ## [0.6.78] – 2026-08-12
 
 ### Javítva

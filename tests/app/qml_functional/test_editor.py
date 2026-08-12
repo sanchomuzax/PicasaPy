@@ -886,6 +886,33 @@ class TestEffectTabsDoNotOverflow(_ViewerOpenMixin):
         assert scroll.property("contentHeight") >= scroll.property("height")
 
 
+class TestModeToolPanelsDoNotOverflow(_ViewerOpenMixin):
+    """#464: ugyanaz a hibaosztály, mint az effekt-füleknél — a mód-eszközök
+    (vágás/retusálás/vörösszem/szöveg) panelje a tartalmától függően
+    magasabb lehet a rendelkezésre álló helynél, és rálógna a panel alján
+    ülő, globális Visszavonás/Újra sorra."""
+
+    def test_mode_panels_are_clipped_above_the_undo_row(self, qml_app, qt_app):
+        window, _, _ = qml_app
+        self._open_viewer(window, qt_app)
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        row = window.findChild(QObject, "editorGlobalUndoRow")
+        scroll = window.findChild(QObject, "editorModeToolScroll")
+        assert scroll is not None
+        assert scroll.property("clip") is True
+
+        for prop in ("cropActive", "retouchActive", "redeyeActive", "textActive"):
+            panel.setProperty(prop, True)
+            qt_app.processEvents()
+            assert scroll.property("visible") is True, prop
+            bottom = scroll.mapToItem(panel, 0, scroll.property("height"))
+            assert bottom.y() <= row.mapToItem(panel, 0, 0).y() + 1, (
+                f"{prop}: a mód-panel területe a Visszavonás-sor alá nyúlik"
+            )
+            panel.setProperty(prop, False)
+            qt_app.processEvents()
+
+
 class TestGlobalUndoRedoRow(_ViewerOpenMixin):
     """#464: a Visszavonás/Újra a panel alján, GLOBÁLISAN — nem fülönként
     ismételve (az eredetiben sem volt fülhöz kötve)."""
