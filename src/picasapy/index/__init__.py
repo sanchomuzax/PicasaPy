@@ -17,10 +17,13 @@ from .faces_detected import (
     detected_face_count,
     face_embedding,
     faces_missing_embedding,
+    ignored_faces,
+    mark_faces_ignored,
     mark_faces_named,
     replace_faces,
     store_embedding,
     unnamed_album_photos,
+    unignore_faces,
     unnamed_faces,
 )
 from .hashes import load_dhashes, save_dhashes
@@ -36,7 +39,12 @@ from .queries import (
     search_suggestions,
     starred_photos,
 )
-from .people import PersonRecord, people_in_index, person_photos
+from .people import (
+    PersonRecord,
+    people_in_index,
+    people_with,
+    person_photos,
+)
 from .relocate import (
     RelocationCancelled,
     RelocationError,
@@ -78,10 +86,13 @@ __all__ = [
     "group_unnamed_faces",
     "load_color_tokens",
     "load_dhashes",
+    "ignored_faces",
+    "mark_faces_ignored",
     "mark_faces_named",
     "open_index",
     "paths_with_color",
     "people_in_index",
+    "people_with",
     "person_photos",
     "photo_by_id",
     "unnamed_album_photos",
@@ -100,6 +111,7 @@ __all__ = [
     "store_embedding",
     "sync_folder",
     "sync_tree",
+    "unignore_faces",
     "unnamed_faces",
     "update_photo_fields",
 ]

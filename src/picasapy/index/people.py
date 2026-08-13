@@ -60,6 +60,41 @@ def people_in_index(conn: sqlite3.Connection) -> tuple[PersonRecord, ...]:
     )
 
 
+def people_with(conn: sqlite3.Connection, name: str) -> tuple[PersonRecord, ...]:
+    """Akik EGYÜTT szerepelnek a megadott személlyel — közös fotók száma
+    szerint csökkenően, azonos darabszámnál név szerint.
+
+    Az eredeti Picasa Emberek-panelének negyedik állapota: *„Named People
+    who appear WITH the currently selected person will be listed here."*
+    Ez a családi/baráti gyűjtemények természetes navigációja — „ki van még
+    rajta ezeken a képeken?" —, és onnan egy kattintással át a másik
+    személy albumába.
+
+    A keresett személy MAGA nincs benne a listában. Üres/ismeretlen névre
+    üres eredmény (nem hiba), a `person_photos` mintáját követve.
+    """
+    if not name:
+        return ()
+    counts: dict[str, int] = {}
+    for _folder_path, names, faces_by_file in _iter_face_data(conn):
+        for faces in faces_by_file.values():
+            on_photo = {
+                resolved
+                for resolved in (_resolve_name(face, names) for face in faces)
+                if resolved is not None
+            }
+            if name not in on_photo:
+                continue
+            for other in on_photo - {name}:
+                counts[other] = counts.get(other, 0) + 1
+    return tuple(
+        PersonRecord(name=other, photo_count=count)
+        for other, count in sorted(
+            counts.items(), key=lambda kv: (-kv[1], kv[0].casefold())
+        )
+    )
+
+
 def person_photos(conn: sqlite3.Connection, name: str) -> tuple[PhotoRecord, ...]:
     """Egy megnevezett személyre kitaggelt fotók — a `album_photos` mintáját
     követő szűrt nézet. Ismeretlen/üres név esetén üres eredmény (nem hiba)."""

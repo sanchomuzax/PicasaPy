@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from picasapy.index import open_index, sync_tree
-from picasapy.index.people import people_in_index, person_photos
+from picasapy.index.people import people_in_index, people_with, person_photos
 from support.jpeg_factory import make_jpeg
 
 _ROY = "b8e4117cf1d6615b"
@@ -138,3 +138,44 @@ class TestResync:
         _sync(conn, library, incremental=False)
         names = sorted(p.name for p in person_photos(conn, "Roy Avery"))
         assert names == ["d.jpg"]
+
+
+class TestPeopleWith:
+    """#26: „Named People who appear WITH the currently selected person
+    will be listed here." — az Emberek-panel negyedik állapota."""
+
+    @pytest.fixture
+    def shared_photo(self, library):
+        """Roy és Anna EGYÜTT a c.jpg-n — a többi fotón külön-külön."""
+        ini = library / "nyaralas" / ".picasa.ini"
+        ini.write_text(
+            ini.read_text(encoding="utf-8").replace(
+                "[c.jpg]\nstar=yes\n",
+                f"[c.jpg]\nfaces=rect64({_RECT}),{_ROY};"
+                f"rect64({_RECT}),{_ANNA};\n",
+            ),
+            encoding="utf-8",
+        )
+        return library
+
+    def test_it_lists_who_appears_together(self, tmp_path, shared_photo):
+        with open_index(tmp_path / "egyutt.db") as conn:
+            sync_tree(conn, shared_photo)
+            together = people_with(conn, "Roy Avery")
+
+        assert [(p.name, p.photo_count) for p in together] == [("Anna Kis", 1)]
+
+    def test_the_person_is_not_listed_with_themselves(self, tmp_path, shared_photo):
+        with open_index(tmp_path / "egyutt.db") as conn:
+            sync_tree(conn, shared_photo)
+            together = people_with(conn, "Roy Avery")
+
+        assert all(p.name != "Roy Avery" for p in together)
+
+    def test_someone_who_is_always_alone_has_nobody(self, conn):
+        # az alap-könyvtárban Roy és Anna sosem szerepel közös fotón
+        assert people_with(conn, "Roy Avery") == ()
+
+    def test_an_unknown_name_is_not_an_error(self, conn):
+        assert people_with(conn, "Nincs Ilyen") == ()
+        assert people_with(conn, "") == ()

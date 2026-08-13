@@ -5,6 +5,36 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.11] – 2026-08-13
+
+### Hozzáadva
+- **Mellőzött emberek (#26).** A „Névtelenek" nézetben a kijelölt arcok
+  **mellőzhetők** — és a mellőzés nem törlés: ahogy az eredeti Picasában,
+  a személy egy külön albumba kerül, tehát vissza is vehető. A program
+  előbb rákérdez, az eredeti szövegével: *„Biztosan áthelyezi ezt a
+  személyt a Mellőzött emberek albumba?"*
+
+## [0.7.10] – 2026-08-13
+
+### Változott
+- **Az arcbeolvasás haladása a „Névtelenek" album tételén (#26).** Eddig
+  külön sorban jelent meg; az eredeti Picasa magán az album tételén
+  mutatta („While scanning, progress information appears in the Unnamed
+  album item"). A tétel az első beolvasáskor is látszik, amikor még nulla
+  névtelen arc van.
+
+### Hozzáadva
+- **Emberek-panel (#26).** A Nézet → Emberek menüpont mostantól valódi
+  panelt nyit a jobb oldalon, a Címkék, a Helyek és a Tulajdonságok
+  mellett — az eredeti Picasa is ide tette (a binárisban a
+  `rightdrawerpanel/peoplepanel` pont e három mellett áll). Két szakasza
+  van, az eredeti szövegeivel: **„Ezen a fotón:"** (a kijelölt képeken
+  névvel szereplő emberek) és **„Szintén ezeken a fotókon:"** — ez utóbbi
+  azt mutatja, hogy a nézett személlyel kik szerepelnek együtt, és egy
+  kattintással át lehet lépni a másik személy albumára. Ez a családi
+  gyűjtemények természetes navigációja: „ki van még rajta ezeken a
+  képeken?"
+
 ## [0.7.9] – 2026-08-12
 
 ### Hozzáadva
