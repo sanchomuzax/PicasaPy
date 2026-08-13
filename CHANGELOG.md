@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.11] – 2026-08-13
+
+### Hozzáadva
+- **Mellőzött emberek (#26).** A „Névtelenek" nézetben a kijelölt arcok
+  **mellőzhetők** — és a mellőzés nem törlés: ahogy az eredeti Picasában,
+  a személy egy külön albumba kerül, tehát vissza is vehető. A program
+  előbb rákérdez, az eredeti szövegével: *„Biztosan áthelyezi ezt a
+  személyt a Mellőzött emberek albumba?"*
+
 ## [0.7.10] – 2026-08-13
 
 ### Változott
