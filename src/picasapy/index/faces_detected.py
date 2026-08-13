@@ -173,6 +173,10 @@ class UnnamedFace:
     photo_path: Path
     group_id: int | None
     rect: tuple[float, float, float, float] | None
+    #: #26 (4. lépcső): a MÉG EL NEM DÖNTÖTT név-javaslat, ha van. Az
+    #: eredeti kérdésként vetette fel („Anna?"), pipa/x gombbal — a
+    #: javaslat nem döntés, az arc állapota `'unnamed'` marad.
+    suggested_name: str | None = None
 
 
 def unnamed_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
@@ -189,7 +193,8 @@ def _faces_in_state(conn: sqlite3.Connection, state: str) -> tuple[UnnamedFace, 
     ÉRTÉKKÉNT (paraméterként) megy be, nem szövegbe fűzve."""
     rows = conn.execute(
         "SELECT f.id, f.photo_id, f.rect_left, f.rect_top, f.rect_right, "
-        "f.rect_bottom, f.group_id, fo.path AS folder_path, p.name AS name, "
+        "f.rect_bottom, f.group_id, f.suggested_name, "
+        "fo.path AS folder_path, p.name AS name, "
         "p.width AS width, p.height AS height "
         "FROM face f "
         "JOIN photos p ON p.id = f.photo_id "
@@ -216,12 +221,15 @@ def _faces_in_state(conn: sqlite3.Connection, state: str) -> tuple[UnnamedFace, 
                 photo_path=Path(row["folder_path"]) / row["name"],
                 group_id=row["group_id"],
                 rect=rect,
+                suggested_name=row["suggested_name"],
             )
         )
     return tuple(result)
 
 
-def mark_faces_named(conn: sqlite3.Connection, face_ids: Iterable[int]) -> None:
+def mark_faces_named(
+    conn: sqlite3.Connection, face_ids: Iterable[int], name: str | None = None
+) -> None:
     """A megadott arcok `state`-jét `'named'`-re állítja — a tömeges
     névadás (issue #26, 3. lépcső) sikeres `faces_helper.addFace()` írása
     UTÁN hívandó. Innentől ezek az arcok SEM a „Névtelenek" albumban
@@ -231,8 +239,14 @@ def mark_faces_named(conn: sqlite3.Connection, face_ids: Iterable[int]) -> None:
     ids = list(face_ids)
     if not ids:
         return
+    # #26 (4. lépcső): a NEVET is eltesszük. Enélkül a lenyomatot semmi nem
+    # kötné névhez, és a javaslat-ág (`named_centroids`) sosem működhetne —
+    # ez volt a `face_groups.group_unnamed_faces` dokumentált hiánya.
+    # A javaslat ilyenkor tárgytalan, ezért törlődik.
     conn.executemany(
-        "UPDATE face SET state = 'named' WHERE id = ?", [(i,) for i in ids]
+        "UPDATE face SET state = 'named', person_name = ?, "
+        "suggested_name = NULL WHERE id = ?",
+        [(name, i) for i in ids],
     )
 
 
@@ -274,6 +288,58 @@ def unignore_faces(conn: sqlite3.Connection, face_ids: Iterable[int]) -> None:
 def ignored_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
     """A mellőzött arcok — a „Mellőzött emberek" album tartalma."""
     return _faces_in_state(conn, "ignored")
+
+
+def named_centroids(conn: sqlite3.Connection) -> dict[str, "np.ndarray"]:
+    """Személynév → a hozzá tartozó arcok ÁTLAGOS lenyomata.
+
+    Ez a javaslat-ág bemenete (`faces.clustering.assign_face`): egy új,
+    névtelen archoz ehhez mérjük a hasonlóságot. Csak azok a nevek
+    szerepelnek, amelyeknél van legalább egy lenyomatolt, névvel ellátott
+    arc — modell/lenyomat nélkül üres, tehát a javaslat-ág egyszerűen nem
+    talál el (nem hibázik).
+    """
+    import numpy as np
+
+    sums: dict[str, tuple[np.ndarray, int]] = {}
+    rows = conn.execute(
+        "SELECT person_name, embedding FROM face "
+        "WHERE state = 'named' AND person_name IS NOT NULL "
+        "AND embedding IS NOT NULL"
+    )
+    for row in rows:
+        vector = np.frombuffer(row["embedding"], dtype=np.float32)
+        name = row["person_name"]
+        if name in sums:
+            total, count = sums[name]
+            sums[name] = (total + vector, count + 1)
+        else:
+            sums[name] = (vector.astype(np.float32), 1)
+    return {
+        name: (total / count).astype(np.float32) for name, (total, count) in sums.items()
+    }
+
+
+def set_suggested_name(
+    conn: sqlite3.Connection, face_id: int, name: str | None
+) -> None:
+    """Javaslat rögzítése (vagy törlése) egy arcra.
+
+    A javaslat NEM döntés: az arc állapota `'unnamed'` marad, csak kap egy
+    kérdőjeles nevet — az eredeti is kérdésként vetette fel
+    (`PeoplePanel::SuggestionFmt` = „%s?"), pipa/x gombbal."""
+    conn.execute(
+        "UPDATE face SET suggested_name = ? WHERE id = ?", (name, face_id)
+    )
+
+
+def suggested_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
+    """Azok a névtelen arcok, amelyekre van még el nem döntött javaslat."""
+    return tuple(
+        face
+        for face in _faces_in_state(conn, "unnamed")
+        if face.suggested_name
+    )
 
 
 def unnamed_album_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:

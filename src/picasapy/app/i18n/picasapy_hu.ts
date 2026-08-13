@@ -2701,6 +2701,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>UnnamedFacesView</name>
     <message>
+        <source>%1?</source>
+        <translation>%1?</translation>
+    </message>
+    <message>
         <source>Ignore</source>
         <translation>Mellőzés</translation>
     </message>

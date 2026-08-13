@@ -7,7 +7,7 @@ Repeater/GridView delegate-jei nem érhetők el findChild-dal)."""
 
 from __future__ import annotations
 
-from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl, Slot
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QUrl, Slot
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 
 _KEEPALIVE = []
@@ -91,6 +91,15 @@ class _StubFaceScanController(QObject):
     def ignoreFaces(self, face_ids):
         self.calls.append(("ignoreFaces", list(face_ids)))
         return len(list(face_ids))
+
+    @Slot(int, result=bool)
+    def acceptSuggestion(self, face_id):
+        self.calls.append(("acceptSuggestion", face_id))
+        return True
+
+    @Slot(int)
+    def rejectSuggestion(self, face_id):
+        self.calls.append(("rejectSuggestion", face_id))
 
 
 def _make_view(qt_app, controller=None):
@@ -224,3 +233,38 @@ class TestIgnorePeople:
         message = view.findChild(QObject, "ignoreFacesMessage").property("text")
 
         assert "ignored people album" in message
+
+
+class TestNameSuggestion:
+    """#26: az eredeti KÉRDÉSKÉNT vetette fel a nevet („Anna?"), pipa/x
+    gombbal — sosem döntött a felhasználó helyett."""
+
+    def test_accepting_writes_the_suggested_name(self, qt_app):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+
+        QMetaObject.invokeMethod(
+            view,
+            "acceptSuggestion",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 12),
+        )
+        qt_app.processEvents()
+
+        assert ("acceptSuggestion", 12) in stub.calls
+
+    def test_rejecting_only_drops_the_suggestion(self, qt_app):
+        """Az elvetés NEM mellőzi az arcot — az külön döntés."""
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+
+        QMetaObject.invokeMethod(
+            view,
+            "rejectSuggestion",
+            Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 12),
+        )
+        qt_app.processEvents()
+
+        assert ("rejectSuggestion", 12) in stub.calls
+        assert [c for c in stub.calls if c[0] == "ignoreFaces"] == []
