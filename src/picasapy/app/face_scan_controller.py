@@ -53,6 +53,7 @@ from picasapy.index import (
     group_unnamed_faces,
     mark_faces_ignored,
     set_suggested_name,
+    unignore_faces,
     mark_faces_named,
     open_index,
     replace_faces,
@@ -369,6 +370,37 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         """Hány arc van a „Mellőzött emberek" albumban."""
         with open_index(self._db_path) as conn:
             return len(ignored_faces(conn))
+
+    @Slot(result="QVariantList")
+    def ignoredGroups(self) -> list[dict]:  # noqa: N802 — QML-slot-stílus
+        """A „Mellőzött emberek" album tartalma — az `unnamedGroups()`
+        alakjában, egyetlen csoportban.
+
+        Az eredetiben ez egy ALBUM volt (`CAlbumLabel::Ignored` =
+        „Ignored people"), nem egy elrejtett szemetes: meg lehetett nézni,
+        tehát vissza is lehetett venni belőle."""
+        with open_index(self._db_path) as conn:
+            faces = [face for face in ignored_faces(conn) if face.rect is not None]
+        if not faces:
+            return []
+        return [
+            _group_payload(
+                faces, self.tr("Ignored people ({0})").format(len(faces))
+            )
+        ]
+
+    @Slot(list, result=int)
+    def unignoreFaces(self, face_ids) -> int:  # noqa: N802 — QML-slot-stílus
+        """A mellőzés VISSZAVONÁSA: az arcok újra a „Névtelenek" albumba
+        kerülnek."""
+        ids = [int(face_id) for face_id in face_ids]
+        if not ids:
+            return 0
+        with open_index(self._db_path) as conn:
+            unignore_faces(conn, ids)
+            conn.commit()
+        self.unnamedCountChanged.emit()
+        return len(ids)
 
     @Slot()
     def computeEmbeddings(self) -> None:

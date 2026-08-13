@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [0.7.14] – 2026-08-13
+## [0.7.19] – 2026-08-13
 
 ### Változott
 - **Kézi arc-hozzáadás az eredeti kétlépéses módján (#26).** Eddig a
@@ -15,6 +15,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   nevet pedig a négyszög alatti **„Név hozzáadása"** felirattal lehet
   megadni. Szerkesztő módban ott az útmutató szöveg is: a gesztus
   önmagában nem felfedezhető.
+
+## [0.7.16] – 2026-08-13
+
+### Hozzáadva
+- **Haladásjelzés a másoláshoz és az áthelyezéshez (#457).** Sok fájl
+  mozgatásakor eddig „nem történt semmi", amíg a művelet le nem futott.
+  Mostantól látszik, **hova** megy, és **hol tart** — az eredeti Picasa
+  szövegeivel („Fájlok másolása", „%2 / %1 fájl másolása"). Egyetlen
+  fájlnál nem nyílik ablak.
+
+## [0.7.13] – 2026-08-13
+
+### Hozzáadva
+- **„Mellőzött emberek" album (#26).** A mellőzött arcok mostantól meg is
+  nézhetők: a bal hasáb Emberek gyűjteményében megjelenik a *Mellőzött
+  emberek* sor, és onnan a **mellőzés visszavonható**. Az eredeti Picasában
+  ez is album volt, nem egyirányú szemetes — most nálunk sem az.
 
 ## [0.7.12] – 2026-08-13
 

@@ -2306,6 +2306,30 @@
 <context>
     <name>FileOpsDialogs</name>
     <message>
+        <source>Copying Files</source>
+        <translation>Fájlok másolása</translation>
+    </message>
+    <message>
+        <source>Moving Files</source>
+        <translation>Fájlok áthelyezése</translation>
+    </message>
+    <message>
+        <source>Copying file(s) to %1</source>
+        <translation>Fájlok másolása ide: %1</translation>
+    </message>
+    <message>
+        <source>Moving file(s) to %1</source>
+        <translation>Fájlok áthelyezése ide: %1</translation>
+    </message>
+    <message>
+        <source>Copying %1 of %2 files</source>
+        <translation>%2 / %1 fájl másolása</translation>
+    </message>
+    <message>
+        <source>Moving %1 of %2 files</source>
+        <translation>%2 / %1 fájl áthelyezése</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="32"/>
         <source>Rename...</source>
         <translation>Átnevezés…</translation>
@@ -2640,6 +2664,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>FolderPane</name>
     <message>
+        <source>Ignored people</source>
+        <translation>Mellőzött emberek</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/FolderPane.qml" line="586"/>
         <source>Currently unavailable — the folder stays in the database, thumbnails come from the cache.</source>
         <translation>Jelenleg nem elérhető — a mappa az adatbázisban marad, a bélyegképek a gyorsítótárból látszanak.</translation>
@@ -2708,6 +2736,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 </context>
 <context>
     <name>UnnamedFacesView</name>
+    <message>
+        <source>Stop ignoring</source>
+        <translation>Mellőzés visszavonása</translation>
+    </message>
     <message>
         <source>%1?</source>
         <translation>%1?</translation>
@@ -4399,6 +4431,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 </context>
 <context>
     <name>FaceScanController</name>
+    <message>
+        <source>Ignored people ({0})</source>
+        <translation>Mellőzött emberek ({0})</translation>
+    </message>
     <message>
         <location filename="../face_scan_controller.py"/>
         <source>All unnamed faces ({0})</source>
