@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.export import (
     ExportItem,
@@ -22,6 +22,11 @@ from picasapy.fileops import has_enough_free_space, required_bytes_for
 from picasapy.index import open_index, photo_by_id
 
 from .formatting import to_local_path
+from .exported_folders import (
+    EXPORTED_FOLDERS_SETTINGS_KEY,
+    existing_exported_folders,
+    remember_exported_folder,
+)
 from .worker_thread import BackgroundWorkerMixin
 
 
@@ -42,6 +47,10 @@ class ExportMixin(BackgroundWorkerMixin):
     # #16: export kész — (exportált darab, sikertelen darab); háttérszálból
     # érkezik, a Qt automatikusan a főszálra sorolja
     exportFinished = Signal(int, int)
+    # #457: „Exportált képek" — az exportált célmappák listája változott.
+    # Az eredeti külön csomópont alá gyűjtötte őket a navigációban: az
+    # export így NYOMON KÖVETHETŐ maradt, nem tűnt el a fájlrendszerben.
+    exportedFoldersChanged = Signal()
     # #136: az első néhány sikertelen fájl neve + oka ("fájlnév: hiba") —
     # az exportFinished előtt megy ki, hogy a UI-dialógus a számmal együtt
     # a konkrét okot is megjeleníthesse.
@@ -142,6 +151,11 @@ class ExportMixin(BackgroundWorkerMixin):
             watermark_text=watermark_text or None,
         )
 
+        # #457: a célmappa a „Exportált képek" nyilvántartásba kerül —
+        # MÉG az export előtt, hogy egy félbeszakadt művelet célja se
+        # vesszen el a felhasználó szeme elől
+        self._remember_exported_folder(target)
+
         def worker():
             report = export_photos(items, Path(target), settings)
             if report.failed:
@@ -156,3 +170,27 @@ class ExportMixin(BackgroundWorkerMixin):
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-export")
+
+    # -- „Exportált képek" (#457) --------------------------------------------
+
+    def _remember_exported_folder(self, folder: str) -> None:
+        settings = self._get_settings()
+        updated = remember_exported_folder(
+            settings.value(EXPORTED_FOLDERS_SETTINGS_KEY), folder
+        )
+        settings.setValue(EXPORTED_FOLDERS_SETTINGS_KEY, updated)
+        self.exportedFoldersChanged.emit()
+
+    @Property("QVariantList", notify=exportedFoldersChanged)
+    def exportedFolders(self):  # noqa: N802 — QML-property-stílus
+        """A létező exportált mappák, legutóbbi elöl — `[{path, name}]`.
+
+        A már törölt/átnevezett mappákat kiszűrjük: a navigációban nincs
+        értelme halott csomópontot mutatni."""
+        settings = self._get_settings()
+        return [
+            {"path": path, "name": Path(path).name or path}
+            for path in existing_exported_folders(
+                settings.value(EXPORTED_FOLDERS_SETTINGS_KEY)
+            )
+        ]
