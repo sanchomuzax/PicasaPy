@@ -2701,6 +2701,30 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>UnnamedFacesView</name>
     <message>
+        <source>Ignore</source>
+        <translation>Mellőzés</translation>
+    </message>
+    <message>
+        <source>Move the selected people to the ignored people album</source>
+        <translation>A kijelölt személyek áthelyezése a Mellőzött emberek albumba</translation>
+    </message>
+    <message>
+        <source>Ignore People</source>
+        <translation>Személyek mellőzése</translation>
+    </message>
+    <message>
+        <source>Ignore Person</source>
+        <translation>Személy mellőzése</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to move this person to the ignored people album?</source>
+        <translation>Biztosan áthelyezi ezt a személyt a Mellőzött emberek albumba?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to move the %1 selected people to the ignored people album?</source>
+        <translation>Biztosan áthelyezi a(z) %1 kijelölt személyt a Mellőzött emberek albumba?</translation>
+    </message>
+    <message>
         <source>Group by face</source>
         <translation>Csoportosítás arc szerint</translation>
     </message>

@@ -49,7 +49,9 @@ from picasapy.faces.embedder import FaceEmbedder
 from picasapy.index import (
     all_photos,
     faces_missing_embedding,
+    ignored_faces,
     group_unnamed_faces,
+    mark_faces_ignored,
     mark_faces_named,
     open_index,
     replace_faces,
@@ -319,6 +321,32 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
                 conn.commit()
             self.unnamedCountChanged.emit()
         return all_ok and bool(written_ids)
+
+    @Slot(list, result=int)
+    def ignoreFaces(self, face_ids) -> int:  # noqa: N802 — QML-slot-stílus
+        """A kijelölt arcok MELLŐZÉSE — a „Mellőzött emberek" album (#26).
+
+        Az eredetiben ez nem törlés volt: *„Are you sure you want to move
+        this person to the ignored people album?"* — a személy egy külön
+        albumba került, tehát visszavehető. Nálunk ugyanez: az arc-sor
+        megmarad, csak `state = 'ignored'` lesz, így sem a „Névtelenek"
+        albumban, sem a csoportosításban nem bukkan fel újra.
+
+        A mellőzött arcok száma a visszatérési érték."""
+        ids = [int(face_id) for face_id in face_ids]
+        if not ids:
+            return 0
+        with open_index(self._db_path) as conn:
+            mark_faces_ignored(conn, ids)
+            conn.commit()
+        self.unnamedCountChanged.emit()
+        return len(ids)
+
+    @Slot(result=int)
+    def ignoredCount(self) -> int:  # noqa: N802 — QML-slot-stílus
+        """Hány arc van a „Mellőzött emberek" albumban."""
+        with open_index(self._db_path) as conn:
+            return len(ignored_faces(conn))
 
     @Slot()
     def computeEmbeddings(self) -> None:
