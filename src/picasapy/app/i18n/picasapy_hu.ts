@@ -3514,6 +3514,18 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>PeoplePanel</name>
     <message>
+        <source>Named people who appear with the currently selected person will be listed here.</source>
+        <translation>Itt jelennek meg azok az elnevezett emberek, akik a kiválasztott személlyel együtt szerepelnek.</translation>
+    </message>
+    <message>
+        <source>People who appear in the currently selected photos will be listed here.</source>
+        <translation>Itt jelennek meg azok az emberek, akik a kijelölt fotókon szerepelnek.</translation>
+    </message>
+    <message>
+        <source>No people have been found yet. As faces are found and grouped, they will appear in the Unnamed album.</source>
+        <translation>Még nem találtunk embereket. Ahogy az arcok előkerülnek és csoportba rendeződnek, megjelennek a Névtelenek albumban.</translation>
+    </message>
+    <message>
         <source>People</source>
         <translation>Emberek</translation>
     </message>

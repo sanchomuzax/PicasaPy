@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [0.7.23] – 2026-08-13
+## [0.7.25] – 2026-08-13
 
 ### Hozzáadva
 - **Arcok alaphelyzetbe állítása (#422).** A rács jobbklikk-menüjéből
@@ -24,6 +24,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   Ha nincs mit menteni vagy visszavonni, a tétel **szürke, de látszik**:
   az eredeti Picasa sem tüntette el, hogy a menü magassága állandó
   maradjon.
+## [0.7.22] – 2026-08-13
+
+### Változott
+- **Az Emberek-panel megmondja, mire számíthatsz (#26).** Üres listánál
+  eddig egyetlen általános mondat állt ott; az eredeti Picasa panelje
+  viszont **aszerint** magyarázott, mit néz éppen a felhasználó. Most
+  nálunk is: személy albumát nézve „…akik a kiválasztott személlyel együtt
+  szerepelnek", kijelölt fotóknál „…akik a kijelölt fotókon szerepelnek",
+  egyébként pedig az, hogy még nem találtunk embereket.
 ## [0.7.19] – 2026-08-13
 
 ### Változott

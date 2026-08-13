@@ -107,14 +107,28 @@ Rectangle {
             }
         }
 
-        // -- üres állapot: az eredeti sem hagyott üres listát -------------
+        // -- üres állapot: az eredetinek ÖT külön szövege volt aszerint,
+        // mit néz éppen a felhasználó (`peoplepanel_text.tre`) — üres
+        // listát sosem hagyott. Hármat tudunk értelmezni a mai nézeteinkre:
+        //
+        //   3. „No people have been found yet…"     — nincs még találat
+        //   4. „Named People who appear WITH…"      — személy albuma nyitva
+        //   5. „People who appear in the currently
+        //       selected photos will be listed here." — van kijelölés
         Text {
             objectName: "peoplePanelEmptyText"
             visible: panel.peopleHere.length === 0 && panel.peopleWith.length === 0
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
-            //: az eredeti üres állapota (peoplepanel)
-            text: qsTr("Select a folder to display faces")
+            text: panel.currentPerson.length > 0
+                  ? qsTr("Named people who appear with the currently "
+                         + "selected person will be listed here.")
+                  : panel.selectionCount > 0
+                    ? qsTr("People who appear in the currently selected "
+                           + "photos will be listed here.")
+                    : qsTr("No people have been found yet. As faces are "
+                           + "found and grouped, they will appear in the "
+                           + "Unnamed album.")
             font.pixelSize: Theme.fontSize - 1
             font.italic: true
             color: Theme.textGray
