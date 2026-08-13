@@ -695,6 +695,15 @@ ApplicationWindow {
                 window.clearSelection()
                 window.unnamedFacesOpen = true
             }
+            // #455: fogd-és-vidd — a húzott KIJELÖLÉS kerül albumba. Az új
+            // album ugyanazt a névkérő párbeszédet kapja, mint a menüből
+            // indított (Fájl → Új album), hogy ne legyen két, kicsit
+            // másképp viselkedő út ugyanarra.
+            onNewAlbumDropped: fileOpsDialogs.openNewAlbum(window.selectedIndexes)
+            onPhotosDroppedOnAlbum: function(token) {
+                if (controller && window.selectedIndexes.length > 0)
+                    controller.addRowsToAlbum(window.selectedIndexes, token)
+            }
         }
 
         Rectangle {

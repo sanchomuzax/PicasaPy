@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.9] – 2026-08-12
+
+### Hozzáadva
+- **Fogd-és-vidd az albumlistára (#455).** A kijelölt képek a bal hasáb
+  albumlistájára húzhatók: a hívogató sorra ejtve **új album** készül
+  (ugyanazzal a névkérő ablakkal, mint a menüből), egy meglévő album
+  sorára ejtve pedig a képek **abba az albumba** kerülnek. A húzás csak
+  már kijelölt képről indul — a ki nem jelölt területen marad a lasszós
+  kijelölés.
+
 ## [0.7.8] – 2026-08-12
 
 ### Hozzáadva

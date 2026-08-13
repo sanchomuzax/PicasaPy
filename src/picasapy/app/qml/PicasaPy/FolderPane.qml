@@ -51,6 +51,17 @@ Rectangle {
     signal albumChosen(string token)
     signal personChosen(string name)
     signal unnamedFacesChosen()
+    // #455: fogd-és-vidd az albumlistára — új album, illetve meglévőbe
+    // sorolás. A tényleges munkát a gazda végzi (a névkérő párbeszéd és a
+    // kijelölés is ott van).
+    signal newAlbumDropped()
+    signal photosDroppedOnAlbum(string token)
+
+    // Csak SAJÁT fotó-húzást fogadunk el: a külső fájlok ejtése az
+    // ImportDropArea dolga (#146), azt nem szabad elorozni.
+    function acceptsPhotoDrag(drop) {
+        return !!drop && !!drop.source && drop.source.payload === "photos"
+    }
 
     // #320: a controller friss gyűjtemény-listájának lekérése — a
     // Component.onCompleted-en kívül minden create/rename/delete/move
@@ -295,6 +306,36 @@ Rectangle {
             onToggled: pane.toggleCollection("albums")
         }
 
+        // #455: „You can drag and drop pictures here to make a new album."
+        // — az eredeti Picasa üres albumlistáján ez a mondat állt. Nálunk
+        // mindig látszik (a lista sosem üres: ott a csillagozott sor),
+        // csak halványan: ez a felfedezhetőség, nem dísz.
+        Text {
+            objectName: "albumDropHintText"
+            visible: !pane.albumsCollapsed
+            Layout.fillWidth: true
+            Layout.leftMargin: 16
+            Layout.rightMargin: 8
+            wrapMode: Text.WordWrap
+            text: qsTr("You can drag and drop pictures here to make a new album.")
+            font.pixelSize: Theme.fontSize - 1
+            font.italic: true
+            color: albumDropArea.containsDrag ? Theme.picasaGreen : Theme.textGray
+            topPadding: 4
+            bottomPadding: 6
+
+            DropArea {
+                id: albumDropArea
+                objectName: "albumDropArea"
+                anchors.fill: parent
+                onDropped: function(drop) {
+                    if (!pane.acceptsPhotoDrag(drop)) return
+                    drop.accept()
+                    pane.newAlbumDropped()
+                }
+            }
+        }
+
         Rectangle {
             id: starredItem
             objectName: "starredItem"
@@ -358,6 +399,18 @@ Rectangle {
                         font.pixelSize: Theme.fontSize
                         color: albumItem.isSelectedAlbum || albumMouse.containsMouse
                                ? Theme.panelSelectionText : Theme.textDark
+                    }
+                }
+                // #455: meglévő album sorára ejtve a képek ABBA az albumba
+                // kerülnek (a „drag pictures here" a listán ÚJ albumot
+                // csinál — a kettő nem ugyanaz)
+                DropArea {
+                    objectName: "albumDropArea_" + albumItem.modelData.token
+                    anchors.fill: parent
+                    onDropped: function(drop) {
+                        if (!pane.acceptsPhotoDrag(drop)) return
+                        drop.accept()
+                        pane.photosDroppedOnAlbum(albumItem.modelData.token)
                     }
                 }
                 MouseArea {
