@@ -96,7 +96,6 @@ class TestFolderContextMenu:
             "folderMenuHideFolder",
             "folderMenuLocate",
             "folderMenuRemoveFromPicasa",
-            "folderMenuMoveFolder",
             "folderMenuDeleteFolder",
             "folderMenuUploadToGooglePhotos",
             "folderMenuExportAsHtml",
@@ -121,7 +120,6 @@ class TestFolderContextMenu:
         menu = self._make_menu(qml_engine)
         for name in (
             "folderMenuHideFolder",
-            "folderMenuMoveFolder",
             "folderMenuDeleteFolder",
             "folderMenuUploadToGooglePhotos",
             "folderMenuAddNameTags",
