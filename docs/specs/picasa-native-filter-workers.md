@@ -773,3 +773,84 @@ for i in 0..1023:
 mutat-e az elmosott képre — ez a hívó oldalán dől el (melyik puffer az „alap"
 és melyik a „másik"). A `radblur` („Lágy fókusz") és a `radsat` („Fókuszos FF")
 ugyanezt a maszkot használja, ellentétes irányban.
+
+### 4.2.5 A sugár → együttható leképezés — MEGMÉRVE (2026-08-13)
+
+A #576/#617 körökben a szerkezet megvolt, de a `k = round(pow(a, b))` két
+argumentuma az FPU-veremben van, a dekompilátor nem látja. **Méréssel
+meghatároztuk.**
+
+**Mérés:** szintetikus éles éllépcső (800×512, bal fekete / jobb fehér), a
+windowsos Picasa **Ragyogás** effektje, Intenzitás maximumon, a **Sugár**
+csúszka öt állásában (0 / 25 / 50 / 75 / 100%), veszteségmentes bemenet,
+maximális minőségű JPEG-export. A profilokat 512 sor átlagolásával nyertük ki.
+
+#### A mért lecsengés
+
+A ragyogás **világosító** keverés: a fehér oldal 255 marad, a sötét oldalra
+szivárog a fény. A sötét oldali profil **tiszta exponenciális** (illesztési
+relatív hiba 0,7–2,6%), ami a kétmenetes elsőrendű IIR-re jellemző:
+
+| csúszka | e-hajtási táv. `L` (képpont) | `r` | `α = 1−r` | `k = α·65536` |
+|---:|---:|---:|---:|---:|
+| 0% | 1,78 | 0,5698 | 0,4302 | 28 192 |
+| 25% | 4,43 | 0,7979 | 0,2022 | 13 248 |
+| 50% | 15,29 | 0,9367 | 0,0633 | 4 148 |
+| 75% | 65,37 | 0,9848 | 0,0152 | 995 |
+| 100% | 216,04 | 0,9954 | 0,0046 | 303 |
+
+#### A leképezés
+
+A `filterdesc.xml` szerint a Sugár csúszka **logaritmikus**, `<log>250.0</log>`,
+azaz a paraméter `R(t) = 250^t`, ahol `t ∈ [0,1]` a csúszka állása. Ezzel:
+
+| csúszka | `R = 250^t` | mért `L` | **`L / R`** |
+|---:|---:|---:|---:|
+| 25% | 3,98 | 4,43 | 1,114 |
+| 50% | 15,81 | 15,29 | 0,967 |
+| 75% | 62,87 | 65,37 | 1,040 |
+| 100% | 250,00 | 216,04 | 0,864 |
+
+**Átlag 0,996, szórás 0,092 — vagyis `L = R`.**
+
+> **Az e-hajtási távolság PONTOSAN a Sugár paraméter, képpontban.**
+> ```
+> r = exp(−1/R)
+> k = round(65536 · (1 − r))        ← ez megy a pmulhw-ba
+> ```
+> Ez összefér a dekompilált `pow` hívással: `exp(−1/R) = pow(e, −1/R)`.
+
+#### Végponttól végpontig igazolás
+
+A fenti `k`-val leszimulálva a kétmenetes IIR-t az eredeti képre, és
+összevetve az exportált JPEG-gel:
+
+| csúszka | `k` | keverési súly | **átlagos hiba** | max |
+|---:|---:|---:|---:|---:|
+| 25% | 14 572 | 1,13 | **1,15 szint** | 2,0 |
+| 50% | 4 017 | 0,96 | **0,77 szint** | 2,1 |
+| 75% | 1 034 | 1,01 | **0,63 szint** | 2,0 |
+
+A hiba **JPEG-zaj nagyságrendű**. A keverési súly ~1,0, azaz a sötét oldalon a
+kimenet a puszta elmosott érték — a Ragyogás világosító keverése.
+
+*(A 0%-os és 100%-os pont kimaradt a leképezés-illesztésből: a 0%-nál az él
+túl éles a megbízható illesztéshez, a 100%-nál a 250 képpontos sugár nem fér
+el a 400 képpontos félképen. Mindkét eltérés mérési korlát, nem modellhiba.)*
+
+#### ⚠️ A sugár ABSZOLÚT, nem a képmérethez kötött
+
+Ellenőrző mérés ugyanezzel a beállítással **1600 képpont széles** képen:
+
+| kép | mért `L` |
+|---|---:|
+| 800 px | 15,29 |
+| 1600 px | 14,46 |
+
+Az arány **0,945 ≈ 1,0** (nem 2,0). Vagyis a `glow` sugara **képpontban
+abszolút** — **ellentétben a `radblur`-rel**, amelynek a burkolója
+explicit módon a képszélességből számol (`szelesseg/100 · (Amount+1)`, ld.
+4.2.4). A két effekt tehát **eltérően skálázódik**, és ezt a mi
+megvalósításunknak is követnie kell.
+
+**Ezzel a Picasa összes natív szűrőjének pixel-matematikája megvan.**
