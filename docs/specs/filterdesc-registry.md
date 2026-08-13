@@ -640,3 +640,100 @@ import re, xml.etree.ElementTree as ET
 src = open("runtime/filterdesc.xml", encoding="utf8").read()
 root = ET.fromstring(re.sub(r"<effect>.*?</effect>", "", src, flags=re.S))
 ```
+
+### 4.8 A Glimmer-műveletek magja — az `apply` slot szabálya és az `AdjustCurves` (#626)
+
+**Futás:** 2026-08-13, Ghidra 12.1.2, ugyanaz a bináris. 20 gyökér, 3 szint,
+**223 dekompilált függvény**. Nyers kimenet: `referencia/dekompilalt-626/`.
+
+#### A vtable-szabály — pontosítva
+
+A korábbi kör megállapítása („az `apply` a 6. slot") **csak a 8 slotos
+osztályokra igaz**. A vtable-ek két családra oszlanak:
+
+| | slot 0–2 | slot 3–5, 7 | **slot 6** | **slot 8** |
+|---|---|---|---|---|
+| **8 slotos** | dtor / free / attribútum-olvasás | közös alaposztály | **saját `apply`** | — |
+| **9 slotos** | ugyanaz | közös alaposztály | **KÖZÖS alkalmazó** | **saját mag** |
+
+A 9 slotos család két közös alkalmazón osztozik:
+
+- **`0x00bb7c80`** — LUT-alkalmazó: `AutoFix`, `AdjustCurves`, `TwoTone`,
+  `Exposure`, `HSVGradientMap`, `GradientMap`, `PaletteMap`
+- **`0x00bc16b0`** — színmátrix-alkalmazó: `BW`, `SimpleColorMatrix`,
+  `ColorMatrix`, `MultiplyColorMatrix`
+
+> **Helyesbítés:** a `referencia/dekompilalt/glimmer-apply.c`-ben
+> `GLIMMER_AutoFix_APPLY` és `GLIMMER_BW_APPLY` néven szereplő két függvény
+> **nem** az AutoFix, illetve a BW saját magja, hanem ez a két **megosztott
+> alkalmazó**. Az osztályspecifikus rész a 8. slotban van.
+
+A szabály mind a 10 korábban dekompilált művelet címére illeszkedik (ellenőrizve).
+
+#### `AdjustCurves` — **természetes köbös spline** (9 effekt)
+
+A LUT-építő (`0x00bcd1e0`) minden `i ∈ 0…255` értékre:
+
+```c
+v = MasterCurve(i);                 // előbb a MESTER görbe
+R = clamp(round(RedCurve(v)));      // majd a CSATORNA-görbe ANNAK az eredményén
+G = clamp(round(GreenCurve(v)));
+B = clamp(round(BlueCurve(v)));
+LUT_R[i] = R << 16 | 0xff000000;    // eltolva a csatorna helyére, hogy az
+LUT_G[i] = G << 8;                  // alkalmazó csak OR-ozni tudjon
+LUT_B[i] = B;
+```
+
+**Két dolog, ami eddig nem volt tudva:**
+
+1. **A mester- és a csatorna-görbe kompozíció**, nem összeadás:
+   `out_R = RedCurve(MasterCurve(i))`.
+2. **A görbe kiértékelése természetes köbös spline** (`0x008f3290`), nem
+   lineáris interpoláció. A képlet szó szerint a Numerical Recipes `splint`:
+
+```
+h = x[j+1] − x[j]
+A = (x[j+1] − x)/h        B = (x − x[j])/h
+y = A·y[j] + B·y[j+1] + ((A³−A)·y2[j] + (B³−B)·y2[j+1]) · h²/6
+```
+
+ahol `y2[]` a második deriváltak tömbje, amit a `0x008f33b0` számol ki
+(a klasszikus tridiagonális megoldás `2.0`-s főátlóval és a `6.0`-s
+osztott differenciával — **természetes** spline, azaz `y2[0] = y2[n−1] = 0`).
+A töréspont-keresés **bináris keresés**.
+
+> ⚠️ **Ez mérhető eltérés.** A `filterdesc.xml` görbéire lineáris és spline
+> interpolációval számolva:
+>
+> | effekt | pont | max eltérés | átlagos |
+> |---|---:|---:|---:|
+> | **Sixties** | 3 | **21,6 szint** | 8,4 |
+> | **Cinemascope** | 5 | **17,5 szint** | 6,8 |
+>
+> Ez **hússzorosa** a ditherelés ±1-es tűrésének — szemmel látható.
+> A kétpontos görbéknél (Invert, Neon, PencilSketch) a kettő azonos.
+
+#### `SimpleColorMatrix` — a `ContrastAndBrightnessLinked` jelentése (8 effekt)
+
+A mag (`0x00bb6400`) öt attribútumot olvas, majd **a jelzőtől függően más
+sorrendben** fűzi a mátrixokat:
+
+```c
+telítettség(m, Saturation);
+if (ContrastAndBrightnessLinked)  egyuttes(m, Brightness, Contrast);   // EGY lépés
+else                            { kontraszt(m, Contrast); fenyero(m, Brightness); }
+otodik_op(m, param5);
+```
+
+Vagyis a jelző **nem** finomhangolás: **külön kódutat** választ. Az egyes
+mátrixok pontos együtthatói a `0x008f1d00` / `0x008f1bd0` / `0x008f1af0` /
+`0x008f2040` / `0x008f1e70` függvényekben vannak — ezek dekompilálva a nyers
+kimenetben, de számszerű feldolgozásuk még hátravan.
+
+#### A kör többi eredménye
+
+Dekompilálva és archiválva: `Border`, `DropShadow`, `Rotate`, `SimpleBorder`,
+`Crop`, `Resize`, `QuantizePalette`, `IR`, `EdgeDetectionB`, `Tiled`,
+`Sharpen`, `TwoTone`, `ColorMatrix`, `MultiplyColorMatrix`, `HSVGradientMap`,
+`Exposure`. Ezek számszerű feldolgozása a következő kör tárgya — a **Polaroid**
+két érzékeny művelete (`DropShadow`, `Rotate`) is köztük van.
