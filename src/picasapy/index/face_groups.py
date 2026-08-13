@@ -25,6 +25,9 @@ from picasapy.faces.clustering import (
     assign_face,
 )
 
+from .faces_detected import named_centroids as _named_centroids
+from .faces_detected import set_suggested_name
+
 
 def group_unnamed_faces(
     conn: sqlite3.Connection,
@@ -49,7 +52,11 @@ def group_unnamed_faces(
     csoportba) — a javaslatok NEM számítanak bele, mert azokhoz a
     jelenlegi lépcső nem ír semmit (a javaslat elfogadása/DB-perzisztenciája
     a terv 4. lépcsője)."""
-    named_centroids = named_centroids or {}
+    # #26 (4. lépcső): ha a hívó nem ad névhez kötött centroidokat, MOST
+    # MÁR magunk össze tudjuk állítani őket (`face.person_name`) — a
+    # korábbi „nincs forrás, amiből ez automatikusan összeállna" megszűnt.
+    if named_centroids is None:
+        named_centroids = _named_centroids(conn)
     groups = _load_groups(conn)
     rows = conn.execute(
         "SELECT id, embedding FROM face "
@@ -61,6 +68,10 @@ def group_unnamed_faces(
         embedding = np.frombuffer(row["embedding"], dtype=np.float32)
         result = assign_face(embedding, named_centroids, groups, suggest_threshold, cluster_threshold)
         if result.kind == "suggestion":
+            # A javaslat NEM döntés: rögzítjük az arcon, az állapot
+            # 'unnamed' marad, és a felhasználó erősíti meg vagy veti el
+            # (pipa/x). Így nem "vész el", és nem is dönt helyette senki.
+            set_suggested_name(conn, row["id"], result.suggested_name)
             # A javaslat-munkafolyamat (megerősítés/elutasítás öt gombbal)
             # a terv 4. lépcsője — itt csak a döntést hoztuk meg, DB-írás
             # nélkül. A face sor `state`-je 'unnamed' marad, tehát a

@@ -11,8 +11,9 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
-        # v11: offline mappa-jelölés (#459/5) — a `folders.offline` oszlop
-        assert SCHEMA_VERSION == 11
+        # v12: a név-javaslat oszlopai (#26) — `face.person_name` és
+        # `face.suggested_name`
+        assert SCHEMA_VERSION == 12
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:

@@ -573,6 +573,44 @@ felhasználó **ecsettel jelöli ki**, hol hasson az effekt.
 > shader-bájtkód vagy `d3dx`/`glsl` nyom (keresve: 0 találat). Az osztály
 > létezik, a használatára nincs bizonyíték.
 
+### 4.7 A motor TÖBBET tud, mint amit a 32 szűrő használ (2026-08-13)
+
+A `filterdesc.xml` attribútum-nevei mellett a bináris **Glimmer-attribútum-elemzője**
+további neveket ismer, amelyek **egyetlen kiadott szűrőben sem fordulnak elő**.
+Az elemző címtartományában (`0x00bb0000`–`0x00bd0000`) 140 attribútum-jelölt
+szerepel; ebből **103 megvan a `filterdesc.xml`-ben, 37 nincs**.
+
+**A figyelemre méltó hiányzók:**
+
+| név | mire utal | hol áll a binárisban |
+|---|---|---|
+| **`Hardlight`, `Softlight`** | **két további keverési mód** — a kiadott szűrők csak ADD/OVERLAY/SCREEN/LIGHTEN-t használnak | egy függvényben együtt, `green` mellett (keverési mód-tábla) |
+| **`_clsVibrance`** | **Vibrance (élénkség) művelet** — a felirat-táblában is van hozzá név (`ImageFilters::Vibrance` = „Vibrálás"), de **egyetlen szűrő sem használja** | `HexCells` mellett |
+| **`HexCells`** | **hatszöges cellamozaik** művelet | ugyanott |
+| **`ColorMaps`** | színleképezés-tábla | `BlendModeMath.` mellett |
+| **`TiledImageTileMask`** | a `TiledImageMask` csempézett változata | — |
+| **`ExposureAdjustmentStops`**, `exposure`, `brightness`, `blacks`, `sharpness`, `grayscale`, `multiplier` | képállítási paraméterek — az **expozíció rekeszértékben** (stop) különösen | a `MasterCurve`/`RedCurve`/… mellett |
+| `flipH`, `flipV`, `radAngle`, `direction`, `horizontal`, `normalized` | geometriai paraméterek | — |
+| `scaleWidth`, `scaleHeight`, `aspectRatio`, `paddingLeft/Right/Top/Bottom` | elrendezés | — |
+| **`Script`**, **`bytecode`**, `params` | a csővezeték **köztes, lefordított alakja** | `imageOperations:` mellett |
+
+**Mit jelent ez:**
+
+1. A Glimmer **általános képfeldolgozó motor** volt, nem a 32 effekthez szabott
+   kód. A kiadott szűrők a képességeinek egy **részhalmazát** használják.
+2. A **`bytecode` + `params`** arra utal, hogy a deklaratív `<effect>` leírás
+   **lefordítódott** egy belső alakra, és a végrehajtó azt futtatta — ez
+   magyarázza a `dynamicParamsCachePriority` / `dynamicAlphaCachePriority`
+   attribútumokat (a lefordított alak gyorstárazását).
+3. **Nekünk ez lehetőség, nem kötelezettség:** ha egyszer saját effekteket
+   akarunk (a Picasa-készleten túl), a **Vibrance**, a **Hardlight/Softlight**
+   keverés és az **expozíció stopban** olyan építőkövek, amiket az eredeti
+   motor is tudott — tehát a formátum kiterjesztése nem idegen tőle.
+
+**Bizonyítottsági szint:** ezek **az elemző által ismert nevek**. Hogy mindegyikhez
+tartozik-e működő végrehajtó, **nem bizonyított** — ehhez célzott dekompilálás
+kellene (#576 köre).
+
 ## 5. Következmények a PicasaPy-ra
 
 1. A `.picasa.ini` **paraméter-validáció** most már tartomány-alapú lehet
