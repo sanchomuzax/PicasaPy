@@ -152,16 +152,13 @@ Item {
         onReleased: function(event) {
             if (!creating) return
             creating = false
+            // #26: az eredeti KÉTLÉPÉSES volt („1) a négyszöget alakítsa
+            // úgy, hogy illeszkedjen… 2) kattintson a négyszög alatt
+            // látható »Név hozzáadása« feliratra") — a húzás után a
+            // téglalap MEGMARAD és igazítható, a név külön lépés.
             if (overlay.draftRect.width < overlay.minSelectionPx
-                || overlay.draftRect.height < overlay.minSelectionPx) {
+                || overlay.draftRect.height < overlay.minSelectionPx)
                 overlay.draftRect = Qt.rect(0, 0, 0, 0)
-                return
-            }
-            var r = overlay.draftRect
-            overlay.openEditorFor(
-                r.x / overlay.width, r.y / overlay.height,
-                (r.x + r.width) / overlay.width, (r.y + r.height) / overlay.height,
-                "", true)
         }
     }
     // a húzás közbeni draft-téglalap (pixel-koordináták)
@@ -173,6 +170,118 @@ Item {
         width: overlay.draftRect.width; height: overlay.draftRect.height
         color: "#ffd34e33"
         border.color: "#ffd34e"; border.width: 1
+    }
+
+    readonly property bool hasDraft:
+        overlay.draftRect.width >= overlay.minSelectionPx
+        && overlay.draftRect.height >= overlay.minSelectionPx
+
+    // #26: a draft-téglalap oldalai/sarkai húzhatók — az eredeti utasítása
+    // szerint („oldalainak mozgatásával pedig pontosíthatja az alakját").
+    // A CropOverlay fogantyú-mintáját követi.
+    Repeater {
+        model: ["nw", "n", "ne", "w", "e", "sw", "s", "se"]
+        delegate: Rectangle {
+            id: faceHandle
+            required property string modelData
+            objectName: "faceDraftHandle_" + modelData
+            visible: overlay.editMode && overlay.hasDraft
+            width: 10; height: 10
+            radius: 5
+            color: "#ffffff"
+            border.width: 1; border.color: "#333333"
+            x: overlay.draftHandleX(modelData) - width / 2
+            y: overlay.draftHandleY(modelData) - height / 2
+
+            MouseArea {
+                anchors.fill: parent
+                drag.target: faceHandle
+                onPositionChanged: if (drag.active)
+                    overlay.resizeDraft(faceHandle.modelData,
+                                        faceHandle.x + faceHandle.width / 2,
+                                        faceHandle.y + faceHandle.height / 2)
+            }
+        }
+    }
+
+    function draftHandleX(pos) {
+        if (pos.indexOf("w") >= 0) return overlay.draftRect.x
+        if (pos.indexOf("e") >= 0) return overlay.draftRect.x + overlay.draftRect.width
+        return overlay.draftRect.x + overlay.draftRect.width / 2
+    }
+    function draftHandleY(pos) {
+        if (pos.indexOf("n") >= 0) return overlay.draftRect.y
+        if (pos.indexOf("s") >= 0) return overlay.draftRect.y + overlay.draftRect.height
+        return overlay.draftRect.y + overlay.draftRect.height / 2
+    }
+    function clampTo(value, low, high) {
+        return Math.max(low, Math.min(high, value))
+    }
+    function resizeDraft(pos, mouseX, mouseY) {
+        var left = overlay.draftRect.x
+        var top = overlay.draftRect.y
+        var right = left + overlay.draftRect.width
+        var bottom = top + overlay.draftRect.height
+        if (pos.indexOf("w") >= 0)
+            left = overlay.clampTo(mouseX, 0, right - overlay.minSelectionPx)
+        if (pos.indexOf("e") >= 0)
+            right = overlay.clampTo(mouseX, left + overlay.minSelectionPx, overlay.width)
+        if (pos.indexOf("n") >= 0)
+            top = overlay.clampTo(mouseY, 0, bottom - overlay.minSelectionPx)
+        if (pos.indexOf("s") >= 0)
+            bottom = overlay.clampTo(mouseY, top + overlay.minSelectionPx, overlay.height)
+        overlay.draftRect = Qt.rect(left, top, right - left, bottom - top)
+    }
+
+    // „Név hozzáadása" a téglalap ALATT — szó szerint az eredeti
+    // utasításának 2. lépése (`peoplepanel/addname` = „Add a name")
+    Rectangle {
+        objectName: "faceDraftAddName"
+        visible: overlay.editMode && overlay.hasDraft
+        x: overlay.draftRect.x
+        y: Math.min(overlay.height - height,
+                    overlay.draftRect.y + overlay.draftRect.height + 4)
+        width: Math.max(96, overlay.draftRect.width)
+        height: 22
+        color: Theme.infoBar
+        Text {
+            anchors.centerIn: parent
+            text: qsTr("Add a name")
+            font.pixelSize: Theme.fontSize
+            color: Theme.infoBarText
+        }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: overlay.openDraftEditor()
+        }
+    }
+
+    function openDraftEditor() {
+        if (!overlay.hasDraft) return
+        var r = overlay.draftRect
+        overlay.openEditorFor(
+            r.x / overlay.width, r.y / overlay.height,
+            (r.x + r.width) / overlay.width, (r.y + r.height) / overlay.height,
+            "", true)
+    }
+
+    // Az eredeti utasítása (`manual_add::instructions`) — a gesztus
+    // önmagában nem felfedezhető, ezért ki kell írni.
+    Text {
+        objectName: "faceEditInstructions"
+        visible: overlay.editMode && !overlay.hasDraft
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: 8
+        wrapMode: Text.WordWrap
+        text: qsTr("Drag a rectangle over the face you want to add, then "
+                   + "adjust its sides. Click \"Add a name\" under the "
+                   + "rectangle and type the person's name.")
+        font.pixelSize: Theme.fontSize
+        color: "#ffffff"
+        style: Text.Outline
+        styleColor: "#000000"
     }
 
     // -- névhozzárendelő popup: közös az új régióhoz és az átnevezéshez --
