@@ -312,6 +312,8 @@ class TestProgressSpeed:
         qt_app.processEvents()
 
         assert [(d, t) for d, t, _s in seen] == [(1, 2), (2, 2)]
-        # a sebesség nem lehet negatív, és a végére van mit mérni
+        # A sebesség sosem negatív. Nullát viszont KAPHATUNK: Windowson a
+        # `time.monotonic()` felbontása ~15 ms, két apró fájl másolása
+        # ennél gyorsabb — ilyenkor a mért idő pontosan nulla, és a
+        # vezérlő (helyesen) 0-t jelent osztási hiba helyett.
         assert all(speed >= 0 for _d, _t, speed in seen)
-        assert seen[-1][2] > 0
