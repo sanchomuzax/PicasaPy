@@ -267,6 +267,11 @@ class TestFaceEmbeddingMigration:
         raw.executescript(
             "DROP TABLE IF EXISTS face_group;\n"
             "DROP INDEX IF EXISTS idx_face_group;\n"
+            # #26 (v12): a név-oszlopok — az indexüket ELŐBB kell eldobni,
+            # különben a DROP COLUMN a tárolt DDL újraparse-olásán elhasal
+            "DROP INDEX IF EXISTS idx_face_person;\n"
+            "ALTER TABLE face DROP COLUMN person_name;\n"
+            "ALTER TABLE face DROP COLUMN suggested_name;\n"
             "ALTER TABLE face DROP COLUMN embedding;\n"
             "ALTER TABLE face DROP COLUMN group_id;\n"
             # #459/5: az offline oszlop a v11-ben érkezik

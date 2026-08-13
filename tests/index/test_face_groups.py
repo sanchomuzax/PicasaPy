@@ -16,9 +16,13 @@ from picasapy.index import (
     face_groups,
     faces_missing_embedding,
     group_unnamed_faces,
+    mark_faces_named,
+    named_centroids,
     open_index,
     replace_faces,
+    set_suggested_name,
     store_embedding,
+    suggested_faces,
     sync_tree,
 )
 from support.jpeg_factory import make_jpeg
@@ -203,3 +207,95 @@ class TestNamedFacesNeverReclustered:
         assert unnamed_row["group_id"] is not None
         assert len(groups) == 1
         assert groups[0].face_count == 1
+
+
+class TestNameSuggestion:
+    """#26 (4. lépcső): a név-javaslat. A csővezeték eddig azért nem
+    működhetett, mert a lenyomatot semmi nem kötötte névhez — ezt pótolja
+    a `face.person_name` oszlop és a `named_centroids`."""
+
+    def _embedded_face(self, conn, photo_id, vector):
+        replace_faces(conn, photo_id, [_face()])
+        face_id = faces_missing_embedding(conn)[-1].id
+        store_embedding(conn, face_id, np.asarray(vector, dtype=np.float32))
+        return face_id
+
+    def _vector(self, first):
+        vector = np.zeros(128, dtype=np.float32)
+        vector[0] = first
+        vector[1] = 1.0 - abs(first)
+        return vector
+
+    def test_a_named_face_becomes_a_centroid(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path, names=("a.jpg",))
+        with open_index(db_path) as conn:
+            face_id = self._embedded_face(conn, photo_ids["a.jpg"], self._vector(1.0))
+            mark_faces_named(conn, [face_id], "Roy Avery")
+            conn.commit()
+
+            centroids = named_centroids(conn)
+
+        assert list(centroids) == ["Roy Avery"]
+
+    def test_a_similar_face_gets_a_suggestion_not_a_decision(self, tmp_path):
+        """A javaslat NEM dönt: az arc `unnamed` marad, csak kap egy nevet
+        kérdőjellel — az eredeti is pipa/x gombbal kérdezett rá."""
+        db_path, photo_ids = _library(tmp_path, names=("a.jpg", "b.jpg"))
+        with open_index(db_path) as conn:
+            known = self._embedded_face(conn, photo_ids["a.jpg"], self._vector(1.0))
+            mark_faces_named(conn, [known], "Roy Avery")
+            self._embedded_face(conn, photo_ids["b.jpg"], self._vector(0.99))
+            conn.commit()
+
+            group_unnamed_faces(conn)
+            conn.commit()
+
+            pending = suggested_faces(conn)
+
+        assert [f.suggested_name for f in pending] == ["Roy Avery"]
+
+    def test_a_different_face_gets_no_suggestion(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path, names=("a.jpg", "b.jpg"))
+        with open_index(db_path) as conn:
+            known = self._embedded_face(conn, photo_ids["a.jpg"], self._vector(1.0))
+            mark_faces_named(conn, [known], "Roy Avery")
+            self._embedded_face(conn, photo_ids["b.jpg"], self._vector(-1.0))
+            conn.commit()
+
+            group_unnamed_faces(conn)
+            conn.commit()
+
+            assert suggested_faces(conn) == ()
+
+    def test_accepting_the_suggestion_clears_it(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path, names=("a.jpg", "b.jpg"))
+        with open_index(db_path) as conn:
+            known = self._embedded_face(conn, photo_ids["a.jpg"], self._vector(1.0))
+            mark_faces_named(conn, [known], "Roy Avery")
+            candidate = self._embedded_face(
+                conn, photo_ids["b.jpg"], self._vector(0.99)
+            )
+            conn.commit()
+            group_unnamed_faces(conn)
+
+            mark_faces_named(conn, [candidate], "Roy Avery")
+            conn.commit()
+
+            assert suggested_faces(conn) == ()
+            assert set(named_centroids(conn)) == {"Roy Avery"}
+
+    def test_rejecting_the_suggestion_clears_it_too(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path, names=("a.jpg", "b.jpg"))
+        with open_index(db_path) as conn:
+            known = self._embedded_face(conn, photo_ids["a.jpg"], self._vector(1.0))
+            mark_faces_named(conn, [known], "Roy Avery")
+            candidate = self._embedded_face(
+                conn, photo_ids["b.jpg"], self._vector(0.99)
+            )
+            conn.commit()
+            group_unnamed_faces(conn)
+
+            set_suggested_name(conn, candidate, None)
+            conn.commit()
+
+            assert suggested_faces(conn) == ()

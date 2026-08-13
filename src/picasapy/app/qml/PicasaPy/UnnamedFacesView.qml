@@ -189,6 +189,65 @@ ColumnLayout {
                         anchors.fill: parent
                         onClicked: root.toggleFace(faceTile.modelData.faceId)
                     }
+
+                    // #26: név-javaslat — az eredeti KÉRDÉSKÉNT vetette
+                    // fel („Anna?", `PeoplePanel::SuggestionFmt` = „%s?"),
+                    // és a felhasználó pipával erősítette meg, x-szel
+                    // vetette el (`PeopleAlbum::ConfirmText`). Sosem
+                    // döntött helyette.
+                    Rectangle {
+                        objectName: "suggestionBar_" + faceTile.modelData.faceId
+                        visible: (faceTile.modelData.suggestedName || "") !== ""
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.margins: 3
+                        height: 20
+                        color: Theme.infoBar
+
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 4
+                            spacing: 4
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: parent.width - 44
+                                elide: Text.ElideRight
+                                //: a javasolt név kérdésként — az eredeti
+                                //: formátuma egyszerűen „%s?"
+                                text: qsTr("%1?").arg(
+                                    faceTile.modelData.suggestedName || "")
+                                font.pixelSize: Theme.fontSize - 1
+                                color: Theme.infoBarText
+                            }
+                            Text {
+                                objectName: "suggestionYes_"
+                                            + faceTile.modelData.faceId
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "✓"
+                                color: Theme.infoBarText
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    onClicked: root.acceptSuggestion(
+                                        faceTile.modelData.faceId)
+                                }
+                            }
+                            Text {
+                                objectName: "suggestionNo_"
+                                            + faceTile.modelData.faceId
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "✕"
+                                color: Theme.infoBarText
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    onClicked: root.rejectSuggestion(
+                                        faceTile.modelData.faceId)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -222,6 +281,24 @@ ColumnLayout {
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }
+    }
+
+    // #26: a javaslat elfogadása/elvetése — külön, hívható függvényben
+    // (tesztelhetőség: a GridView delegate-jei nem érhetők el findChild-dal)
+    function acceptSuggestion(faceId) {
+        if (!root.faceScanController) return false
+        var ok = root.faceScanController.acceptSuggestion(faceId)
+        if (ok) {
+            root.reload()
+            if (typeof controller !== "undefined" && controller)
+                controller.refreshCollections()
+        }
+        return ok
+    }
+    function rejectSuggestion(faceId) {
+        if (!root.faceScanController) return
+        root.faceScanController.rejectSuggestion(faceId)
+        root.reload()
     }
 
     // a tényleges mellőzés — külön, hívható függvényben (tesztelhetőség)
