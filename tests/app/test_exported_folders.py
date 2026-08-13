@@ -13,34 +13,44 @@ from picasapy.app.exported_folders import (
 )
 
 
+def _p(name: str) -> str:
+    """Platformfüggetlen abszolút út a teszthez.
+
+    A `remember_exported_folder` a `Path`-on át NORMALIZÁL: Windowson a
+    „/a" alakból „\\a" lesz, ezért a nyers POSIX-literálokkal a Windows-CI
+    elbukott. A várt értéket ugyanazon az úton képezzük, mint a kód.
+    """
+    return str(Path("/") / name)
+
+
 class TestRemember:
     def test_the_newest_goes_first(self):
-        result = remember_exported_folder(["/a", "/b"], "/c")
+        result = remember_exported_folder([_p("a"), _p("b")], _p("c"))
 
-        assert result == ["/c", "/a", "/b"]
+        assert result == [_p("c"), _p("a"), _p("b")]
 
     def test_a_repeat_moves_to_the_front_without_duplicating(self):
-        result = remember_exported_folder(["/a", "/b"], "/b")
+        result = remember_exported_folder([_p("a"), _p("b")], _p("b"))
 
-        assert result == ["/b", "/a"]
+        assert result == [_p("b"), _p("a")]
 
     def test_the_list_is_bounded(self):
-        existing = [f"/mappa{i}" for i in range(MAX_EXPORTED_FOLDERS + 5)]
+        existing = [_p(f"mappa{i}") for i in range(MAX_EXPORTED_FOLDERS + 5)]
 
-        result = remember_exported_folder(existing, "/uj")
+        result = remember_exported_folder(existing, _p("uj"))
 
         assert len(result) == MAX_EXPORTED_FOLDERS
-        assert result[0] == "/uj"
+        assert result[0] == _p("uj")
 
     def test_a_single_string_from_qsettings_is_accepted(self):
         """A Qt egyetlen elemnél stringet ad vissza, nem listát."""
-        assert remember_exported_folder("/a", "/b") == ["/b", "/a"]
+        assert remember_exported_folder(_p("a"), _p("b")) == [_p("b"), _p("a")]
 
     def test_an_empty_folder_is_ignored(self):
-        assert remember_exported_folder(["/a"], "  ") == ["/a"]
+        assert remember_exported_folder([_p("a")], "  ") == [_p("a")]
 
     def test_nothing_stored_yet_is_not_an_error(self):
-        assert remember_exported_folder(None, "/a") == ["/a"]
+        assert remember_exported_folder(None, _p("a")) == [_p("a")]
 
 
 class TestExisting:

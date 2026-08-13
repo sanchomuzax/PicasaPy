@@ -17,10 +17,20 @@ jobs:
   test:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    # Egészséges futás ~5 perc; korlát nélkül egy beragadt (#53 GIL-deadlock)
-    # pytest 6 órán át foglalná a runnert, és eldugítaná a teljes Actions-sort
-    # (2026-07-19-en 19 beragadt futás állította le a release-automatikát).
-    timeout-minutes: 20
+    # Korlát nélkül egy beragadt (#53 GIL-deadlock) pytest 6 órán át
+    # foglalná a runnert, és eldugítaná a teljes Actions-sort (2026-07-19-en
+    # 19 beragadt futás állította le a release-automatikát).
+    #
+    # 2026-08-13: 20 percről 40-re emelve. A készlet azóta jelentősen nőtt:
+    # az Ubuntu-futás ~12–13 perc, a Windows ~1,6-szorosa — az a 20 percbe
+    # SZÁMÍTÁSSAL futott bele, és a rendszer levágta (két mért futás:
+    # 20:04 és 20:06). Ez nem elméleti kockázat: a Windows-ág aznap három
+    # valódi, Windows-specifikus hibát fogott meg (Path.home() a
+    # USERPROFILE-t olvassa; a rendszermappa-védelem POSIX-utakra épült;
+    # a time.monotonic() ~15 ms-os felbontása) — ha az ág levágódik, az
+    # ilyenek átcsúsznak. A korlát célja a BERAGADT futás elvágása marad,
+    # nem az egészségesé.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
