@@ -46,6 +46,7 @@ Menu {
     signal sortReverseRequested()
     signal locateRequested()
     signal removeFromPicasaRequested()
+    signal moveFolderRequested()
     signal exportAsHtmlRequested()
 
     // -- 1. blokk: mappaleírás ---------------------------------------------
@@ -167,10 +168,13 @@ Menu {
 
     // -- 6. blokk: áthelyezés / törlés ----------------------------------------
 
-    PicasaMenuItem {
+    // #457: az eredeti `Folder::ID_MOVEFOLDER` — a mappa a
+    // KÍSÉRŐFÁJLOKKAL (`.picasa.ini`) együtt költözik, különben a képek
+    // elveszítenék a feliratukat és a címkéiket
+    MenuItem {
         objectName: "folderMenuMoveFolder"
         text: qsTr("Move Folder...")
-        placeholder: true
+        onTriggered: menu.moveFolderRequested()
     }
     PicasaMenuItem {
         objectName: "folderMenuDeleteFolder"

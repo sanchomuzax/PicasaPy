@@ -15,6 +15,7 @@ from .batch import (
 from .copy import copy_photo
 from .diskspace import has_enough_free_space, required_bytes_for
 from .move import move_photo
+from .move_folder import FolderMoveError, move_folder
 from .rename import RenameItem, preview_name, rename_photo, rename_photos_many
 from .reveal import open_folder_in_file_manager, reveal_in_file_manager
 from .trash import (
@@ -40,6 +41,8 @@ __all__ = [
     "find_trash_dir",
     "has_enough_free_space",
     "is_folder_writable",
+    "FolderMoveError",
+    "move_folder",
     "move_photo",
     "move_photos",
     "preview_name",

@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.24] – 2026-08-13
+
+### Hozzáadva
+- **Mappa áthelyezése (#457).** A mappa jobbklikk-menüjében eddig
+  helyfoglaló volt a „Mappa áthelyezése…" — most működik, és a mappa a
+  **kísérőfájlokkal együtt** költözik. Ez nálunk több, mint kényelem: a
+  `.picasa.ini` az igazságforrás, enélkül a képek elveszítenék a
+  feliratukat, a címkéiket és az arc-hozzárendeléseiket. A program
+  megtagadja a rendszermappák mozgatását, és nem enged olyan célt, ahol
+  már van azonos nevű mappa — mindkét esetben a forrás érintetlen marad.
+
 ## [0.7.19] – 2026-08-13
 
 ### Változott

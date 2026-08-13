@@ -19,6 +19,7 @@ from picasapy.fileops import (
     copy_photos,
     delete_permanently,
     delete_to_trash,
+    move_folder,
     move_photo,
     move_photos,
     open_folder_in_file_manager,
@@ -26,6 +27,7 @@ from picasapy.fileops import (
     reveal_in_file_manager,
     trash_available,
 )
+from picasapy.fileops.move_folder import FolderMoveError
 from picasapy.ini import IniConflictError, IniSaveError
 
 from .controller import _to_local_path
@@ -52,6 +54,9 @@ class FileOpsController(QObject):
     # (`CAcquireUI::copying` = „Copying %1$d of %2$d files"), nem csak egy
     # pörgő sávot; a címe `CThumbUI::CopyProgress`/`::MoveProgress`.
     batchProgress = Signal(str, str, int, int)
+    # #457: mappa áthelyezve — (régi út, új út); a hívó ebből frissíti az
+    # indexet és a bal hasábot
+    folderMoved = Signal(str, str)
 
     @Slot(str, str)
     def renamePhoto(self, path: str, new_name: str) -> None:
@@ -120,6 +125,30 @@ class FileOpsController(QObject):
         self.batchFinished.emit(
             operation, len(result.done), len(result.skipped), len(result.failed)
         )
+
+    @Slot(str, str)
+    def moveFolder(self, folder: str, dest_parent: str) -> None:  # noqa: N802
+        """Mappa áthelyezése a KÍSÉRŐFÁJLOKKAL együtt (#457).
+
+        Az eredeti `Folder::ID_MOVEFOLDER` parancsa. Nálunk ez több, mint
+        kényelem: a `.picasa.ini` az igazságforrás, tehát a mappával
+        együtt kell mennie — enélkül a képek elveszítenék a feliratukat, a
+        címkéiket és az arc-hozzárendeléseiket.
+
+        Hiba esetén `operationFailed` megy ki emberi üzenettel, a forrás
+        érintetlen marad."""
+        target_text = _to_local_path(dest_parent)
+        if not target_text:
+            self.operationFailed.emit(
+                "move_folder", self.tr("Choose a destination folder first.")
+            )
+            return
+        try:
+            moved = move_folder(Path(_to_local_path(folder) or folder), Path(target_text))
+        except FolderMoveError as error:
+            self.operationFailed.emit("move_folder", str(error))
+            return
+        self.folderMoved.emit(str(folder), str(moved))
 
     @Slot(str)
     def deletePhoto(self, path: str) -> None:
