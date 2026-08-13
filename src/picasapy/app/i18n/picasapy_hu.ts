@@ -2662,7 +2662,18 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     </message>
 </context>
 <context>
+    <name>FileOpsController</name>
+    <message>
+        <source>Choose a destination folder first.</source>
+        <translation>Előbb válassza ki a célmappát.</translation>
+    </message>
+</context>
+<context>
     <name>FolderPane</name>
+    <message>
+        <source>Move Folder</source>
+        <translation>Mappa áthelyezése</translation>
+    </message>
     <message>
         <source>Exported Pictures</source>
         <translation>Exportált képek</translation>

@@ -228,3 +228,92 @@ class TestQmlWiring:
         question = _child(window, "duplicateNamesDialog")
         assert question.property("visible") is False  # nincs mit kérdezni
         assert (dest / "b.jpg").exists()
+
+
+class TestMoveFolder:
+    """#457: mappa áthelyezése a kísérőfájlokkal — a `.picasa.ini` nálunk
+    az igazságforrás, tehát vele kell mennie."""
+
+    def _controller(self):
+        from picasapy.app.fileops_controller import FileOpsController
+
+        return FileOpsController()
+
+    def test_it_reports_the_new_location(self, qt_app, tmp_path):
+        source = tmp_path / "innen" / "kepek"
+        source.mkdir(parents=True)
+        (source / "a.jpg").write_bytes(b"kep")
+        (source / ".picasa.ini").write_text("[a.jpg]\ncaption=X\n", encoding="utf-8")
+        dest = tmp_path / "ide"
+        dest.mkdir()
+        controller = self._controller()
+        moved = []
+        controller.folderMoved.connect(lambda old, new: moved.append((old, new)))
+
+        controller.moveFolder(str(source), str(dest))
+        qt_app.processEvents()
+
+        assert moved and moved[0][1] == str(dest / "kepek")
+        assert (dest / "kepek" / ".picasa.ini").exists()
+
+    def test_a_failure_is_a_human_message_not_a_crash(self, qt_app, tmp_path):
+        source = tmp_path / "innen" / "kepek"
+        source.mkdir(parents=True)
+        dest = tmp_path / "ide"
+        (dest / "kepek").mkdir(parents=True)
+        controller = self._controller()
+        failures = []
+        controller.operationFailed.connect(
+            lambda operation, message: failures.append((operation, message))
+        )
+
+        controller.moveFolder(str(source), str(dest))
+        qt_app.processEvents()
+
+        assert failures and failures[0][0] == "move_folder"
+        assert source.exists()
+
+    def test_an_empty_destination_is_refused(self, qt_app, tmp_path):
+        controller = self._controller()
+        failures = []
+        controller.operationFailed.connect(
+            lambda operation, message: failures.append(operation)
+        )
+
+        controller.moveFolder(str(tmp_path), "")
+        qt_app.processEvents()
+
+        assert failures == ["move_folder"]
+
+
+class TestProgressSpeed:
+    """#457: az eredeti a SEBESSÉGET is kiírta („Moving %d of %d (%s/s)") —
+    egy nagy köteg alatt ez mondja meg, érdemes-e várni."""
+
+    def test_the_progress_carries_a_speed(self, qt_app, tmp_path):
+        from picasapy.app.fileops_controller import FileOpsController
+
+        source = tmp_path / "innen"
+        source.mkdir()
+        paths = []
+        for name in ("a.jpg", "b.jpg"):
+            path = source / name
+            path.write_bytes(b"x" * 4096)
+            paths.append(str(path))
+        dest = tmp_path / "ide"
+        dest.mkdir()
+        controller = FileOpsController()
+        seen = []
+        controller.batchProgress.connect(
+            lambda op, target, done, total, speed: seen.append((done, total, speed))
+        )
+
+        controller.copyPhotos(paths, str(dest), "rename")
+        qt_app.processEvents()
+
+        assert [(d, t) for d, t, _s in seen] == [(1, 2), (2, 2)]
+        # A sebesség sosem negatív. Nullát viszont KAPHATUNK: Windowson a
+        # `time.monotonic()` felbontása ~15 ms, két apró fájl másolása
+        # ennél gyorsabb — ilyenkor a mért idő pontosan nulla, és a
+        # vezérlő (helyesen) 0-t jelent osztási hiba helyett.
+        assert all(speed >= 0 for _d, _t, speed in seen)

@@ -443,8 +443,15 @@ Item {
         property string destination: ""
         property int done: 0
         property int total: 0
+        property real speed: 0        // bájt/mp
 
-        function report(op, dest, doneCount, totalCount) {
+        // „%s/s" — az eredeti a sebességet is kiírta; MB/s-ban mutatjuk,
+        // mert ezen a nagyságrenden ez a beszédes
+        readonly property string speedText:
+            speed > 0 ? (speed / (1024 * 1024)).toFixed(1) + " MB/s" : ""
+
+        function report(op, dest, doneCount, totalCount, bytesPerSec) {
+            batchProgressDialog.speed = bytesPerSec || 0
             batchProgressDialog.operation = op
             batchProgressDialog.destination = dest
             batchProgressDialog.done = doneCount
@@ -471,11 +478,13 @@ Item {
             Text {
                 objectName: "batchProgressCount"
                 Layout.preferredWidth: 360
-                text: batchProgressDialog.operation === "move"
-                      ? qsTr("Moving %1 of %2 files")
-                        .arg(batchProgressDialog.done).arg(batchProgressDialog.total)
-                      : qsTr("Copying %1 of %2 files")
-                        .arg(batchProgressDialog.done).arg(batchProgressDialog.total)
+                text: (batchProgressDialog.operation === "move"
+                       ? qsTr("Moving %1 of %2 files")
+                         .arg(batchProgressDialog.done).arg(batchProgressDialog.total)
+                       : qsTr("Copying %1 of %2 files")
+                         .arg(batchProgressDialog.done).arg(batchProgressDialog.total))
+                      + (batchProgressDialog.speedText.length > 0
+                         ? "  (" + batchProgressDialog.speedText + ")" : "")
                 font.pixelSize: Theme.fontSize
                 color: Theme.textGray
             }
@@ -491,8 +500,8 @@ Item {
 
     Connections {
         target: fileOpsController
-        function onBatchProgress(operation, destination, done, total) {
-            batchProgressDialog.report(operation, destination, done, total)
+        function onBatchProgress(operation, destination, done, total, speed) {
+            batchProgressDialog.report(operation, destination, done, total, speed)
         }
         function onBatchFinished(operation, done, skipped, failed) {
             batchProgressDialog.close()

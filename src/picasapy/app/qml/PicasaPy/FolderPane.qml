@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtQuick.Window
 
@@ -915,8 +916,33 @@ Rectangle {
         onSortReverseRequested: if (controller) controller.togglePaneSortReverse()
     }
 
+    // #457: melyik mappát mozgatjuk épp (a dialógus elfogadásakor kell)
+    property string _movingFolder: ""
+
+    FolderDialog {
+        id: moveFolderDialog
+        objectName: "moveFolderDialog"
+        title: qsTr("Move Folder")
+        onAccepted: {
+            if (pane._movingFolder.length > 0
+                    && typeof fileOpsController !== "undefined"
+                    && fileOpsController)
+                fileOpsController.moveFolder(
+                    pane._movingFolder, moveFolderDialog.selectedFolder)
+            pane._movingFolder = ""
+        }
+    }
+
     FolderContextMenu {
         id: folderContextMenu
+        // #457: „Mappa áthelyezése…" — a célmappát a rendszer
+        // mappaválasztójával kérjük be, a mozgatás a kísérőfájlokkal
+        // együtt megy (a `.picasa.ini` nálunk az igazságforrás)
+        onMoveFolderRequested: {
+            pane._movingFolder = folderContextMenu.folderPath
+            moveFolderDialog.open()
+        }
+
         onMoveToCollectionRequested: function(collectionName) {
             if (controller) controller.moveFolderToCollection(
                 folderContextMenu.folderPath, collectionName)
