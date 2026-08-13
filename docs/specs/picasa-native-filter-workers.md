@@ -416,3 +416,139 @@ maga a specifikáció.
 | a `dir_sharp` konvolúciós magja | a hívási lánc mélyebb, mint 2 szint |
 | a `glow` / `blur` sugár-kezelése | nagy függvények, külön kör kell rájuk |
 | a `s` és `t` ×256-os skálázása (2.5) | egyetlen méréssel igazolható |
+
+---
+
+# 3. dekompilálási kör (#612) — a maradék öt kérdés
+
+**Futás:** 2026-08-13, ugyanaz a környezet és bináris, mint a 2. körnél. 15 gyökér,
+**4 szint** mélységű követés, `MAX_CHILD_BYTES = 20000`, **139 dekompilált
+függvény**. Nyers kimenet: `referencia/dekompilalt-612/` (privát repó).
+
+## 3.1 MEGOLDVA: a három automatikus ág szétválasztása
+
+A #576-ban nyitva maradt, hogy a mérésben látott **azonos-csatornás** szinthúzás
+honnan jön. A válasz: **három különböző szűrő van, három különböző viselkedéssel.**
+
+| szűrő | felületi név | mit hív | eredmény |
+|---|---|---|---|
+| **`autolight`** (`0x008f80c0`) | „Automatikus kontraszt" (1 kattintás) | a **kézi** szinthúzót (`0x0090c3b0`) | **EGY közös LUT mindhárom csatornára** → a színegyensúly nem változik |
+| **`autocontrast`** (`0x008f89d0`) | „Automatikus kontraszt" | `0x009db610`, **flag = 0** | **csatornánként külön** nyújtás, felső határ **255** |
+| **`enhance`** (`0x008f8840`) | „Jó napom van" | `0x009db610`, **flag = a `CarefulEnhance` beállítás** | csatornánként, felső határ **252 vagy 255** |
+
+### `autolight` — az azonos-csatornás ág
+
+```c
+FUN_00a4bfd0(0.005f, &white, &black);      // 0x3ba3d70a = 0.005 → 0,5% levágás
+if (black == white) black += 1;
+b = black / 255.0;  w = white / 255.0;
+if (w <= 0.001) w = 0.001;
+else if (w == 1.0 && b == 0.0) return;     // már teljes a kitérés: nincs teendő
+FUN_0090c3b0(dst, b, w, /*gamma=*/1.0f);   // EGY LUT, mind a három csatornára
+```
+
+Vagyis a fekete- és fehérpont **egyetlen, összevont statisztikából** jön (nem
+csatornánként), a gamma **pontosan 1.0**, és a kimenet a **ditherelő**
+LUT-alkalmazón megy át (#576 2.2).
+
+> **Ez zárja le a #539 nyitott kérdését.** A mérésben látott két viselkedés nem
+> ágválasztás egy függvényen belül, hanem **két külön szűrő**: `autolight` az
+> azonos-csatornás, `autocontrast` a csatornánkénti.
+
+### `enhance` — a „Jó napom van" a rejtett beállítástól függ
+
+```c
+FUN_00407a20(&tmp, "Preferences", "CarefulEnhance");   // beolvassa a beállítást
+FUN_009aabf0(img, -1, -1, -1, -1);
+flag = FUN_004019b0(-1.0f);                            // a beállítás értéke (alap: -1.0)
+FUN_009db610(img, flag);                               // ez adja a 252/255 felső határt
+```
+
+> ⚠️ **Ez közvetlenül érinti a golden-mérést (#317).** A „Jó napom van"
+> eredménye **függ a felhasználó gépén beállított `CarefulEnhance` értéktől**.
+> Ha az eltér, a mi kimenetünk sosem fog egyezni — nem a mi hibánkból. A mérés
+> előtt ezt tisztázni kell.
+
+## 3.2 `dir_sharp` — irányított **unsharp mask**, nem konvolúció
+
+A `0x0090d600` **három** képpuffert kap: cél, forrás, és egy **harmadik, előre
+elmosott** változat.
+
+```c
+a = clamp(param_4, -1, 1);   b = clamp(param_5, -1, 1);      // a két tengely
+k = round(...);                                              // globális szint
+// képpontonként:
+amount = (k - round(rámpa(x,y))) * 2;
+if (amount > 0)
+    out_c = clamp(c + (((c - blurred_c) * amount) >> 8), 0, 255);
+```
+
+Vagyis **klasszikus unsharp mask** (`éles = eredeti + a·(eredeti − elmosott)`),
+ahol az `a` erősség **képpontonként** jön a lineáris rámpából (#576 2.7).
+
+**Nincs konvolúciós mag ebben a függvényben** — az elmosás külön menetben
+készül. A megvalósításunkhoz tehát: elmosás → irányított unsharp-összevonás.
+
+## 3.3 `linblur` — köbös B-spline súlytábla + csomagolt keverés
+
+A `0x0090de10` egy **384 elemű súlytáblát** épít explicit köbös polinomokból
+(a `t` 0-tól 1,5-ig lép, 1/256-os lépésekben):
+
+```
+|t| > 1.5           → f = 0
+t < -1.5            → f = 1
+-0.5 < t <= 0.5     → f = 1/2 − (3t/4 − t³/3)
+t <= -0.5           → f = −t³/6 − 3t²/4 − 9t/8 + 7/16
+t > 0.5             → f = 9/16 − (9t/8 + (t³/6 − 3t²/4))
+tábla[i] = round((1 − 2f) · 255.9999)
+```
+
+Az 1/6, 3/4, 9/8, 7/16, 9/16 együtthatók a **köbös B-spline** szakaszai — a
+tábla tehát egy sima, −1…+1 tartományú átmenet-súly.
+
+A keverés **csomagolt aritmetikával** megy (`x >> 8 & 0x00ff00ff` és
+`x & 0x00ff00ff`), azaz **két csatorna egyszerre** egy 32 bites regiszterben —
+korabeli SIMD-helyettesítő.
+
+```c
+idx   = akkumulátor >> 8;            // ±0x180 közé vágva
+w     = (idx < 0) ? -tábla[-idx] : tábla[idx];
+alpha = (w + 255) / 2;
+out   = lerp(cél, forrás, alpha);    // csomagoltan, két csatornánként
+```
+
+## 3.4 A `puck` vezérlő két közös segítője
+
+A sugaras és irányított család `cb2`/`cb3` visszahívásai **nem képfeldolgozók**,
+hanem a felületi korong (`puck`) kezelői:
+
+| cím | mit csinál |
+|---|---|
+| `0x008f9bf0` (cb2) | a korong `(x, y)` helyét **2×3 affin mátrixon** viszi át (`p+0x6c`…`p+0x80`), majd a `+0x34`/`+0x38` mezőbe írja — így a korong a **vágott/forgatott** képen is a helyén marad |
+| `0x008f9cf0` (cb3) | a **sugár**: `min(szélesség, magasság) / 2 · (paraméter + 1)` |
+
+Vagyis a sugaras effektek (`radblur`, `radsat`, `radtint`) hatósugara **a kép
+rövidebb oldalához kötött**, nem abszolút képpontban — ezért néz ki ugyanúgy
+kicsi és nagy képen.
+
+## 3.5 NEGATÍV EREDMÉNY: a `sepia` magja nem dekompilálható így
+
+A `sepia` burkolója (`0x008f8950`) **valóban hív** egy címet: `0x0090a120`.
+A #576-beli megállapítás („nem hív semmit a `0x9x` tartományból") **téves volt**.
+
+A Ghidra viszont **nem hozott létre függvényt** ezen a címen: az index
+`CALL_TARGET_0090a120` néven, **0 mérettel** ismeri, a `.text` szakaszban. Ez
+azt jelenti, hogy az autoanalízis a hívási célt felismerte, de a törzset nem
+diszasszemblálta.
+
+**A következő kör teendője:** a szkriptben `disassemble(addr)` +
+`createFunction(addr, null)` hívással kikényszeríteni, és csak utána
+dekompilálni. Ez néhány sor a meglévő szkriptben.
+
+## 3.6 Amit ez a kör NEM ért el
+
+- a `glow` és a `blur` sugár-kezelése: a függvények nagyok, a 4 szintű követés
+  a peremüket érte el, de a mag-ciklusuk külön elemzést kíván;
+- a `radblur`/`radsat` **pixelműveletei** (a burkolók és a `puck`-kezelés
+  megvan, a magok nem);
+- a `sepia` mátrixa (ld. 3.5).
