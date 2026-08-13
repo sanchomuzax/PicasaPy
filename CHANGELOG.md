@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.34] – 2026-08-13
+
+### Javítva
+- **A „Jó napom van" szinthúzása mostantól az eredeti Picasa geometriáját
+  futtatja (#539).** A vágópontokat eddig fix 0,5% / 0,2% percentillel
+  közelítettük; helyette a natív algoritmus fut: a hisztogram a kép középső
+  90% × 90%-áról készül (a perem kimarad), a vágási küszöb pedig a teljes
+  képpontszám 1/200-a, mindkét végén azonosan. A 12 referencia-képpáron az
+  átlagos eltérés 2,68-ról 2,61-re csökkent, és a vágópontok maguk is a
+  mérttel egyeznek. Külön mérés igazolta, hogy a nagyon szűk csatornákra
+  vonatkozó 58 szintes alsó korlát nem illesztési fogás, hanem valódi
+  Picasa-viselkedés: a 36 kimért csatornán a ténylegesen alkalmazott
+  tartomány sosem ment 58,1 alá.
+
 ## [0.7.33] – 2026-08-13
 
 ### Javítva

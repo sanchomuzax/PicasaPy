@@ -512,11 +512,18 @@ Fontos tulajdonságok:
   Seascape" mindhárom csatornája meredekség 1,000, eltolás 0,0).
 - A vágási pontok **nem** fix percentilek — a Picasa a hisztogramban
   **darabszám-küszöbbel** keresi a fekete-/fehérpontot (a mért végpontok
-  0%-tól 16%-ig szóródnak). Az implementáció (`picasapy.render.ops`
-  `apply_channel_levels_stretch`) ezt fix **0,5% / 0,2%** percentillel
-  KÖZELÍTI — ezzel az átlagos csatorna-eltérés **5,47**-re csökken (a
-  pontos darabszám-küszöb valószínűleg tovább csökkentené, a JPEG-zaj
-  szintjére).
+  0%-tól 16%-ig szóródnak). A #539 óta az implementáció
+  (`picasapy.render.ops` `apply_channel_levels_stretch`) a natív
+  `0x009db610` geometriáját futtatja:
+  - a hisztogram a kép **középső 90% × 90%**-áról készül (a perem kimarad),
+  - a vágási küszöb a **teljes kép képpontszámának 1/200-a**, mindkét
+    végén **azonosan** (az aszimmetrikus változatok a mérésen rosszabbak),
+  - a nyújtás bemeneti tartománya nem mehet **58 szint alá**
+    (`_MIN_STRETCH_SPAN`) — ez a natív `gain` felső korlátja.
+
+  A 12 referencia-páron ez **2,68 → 2,61**-re viszi az átlagos eltérést;
+  a vágópontok maguk pedig a mérttel egyeznek (fehérpont-eltérés átlaga
+  3,85, feketeponté 2,05 szint, 36 csatornán).
 - Az `AutoFix` (a Glimmer-effektek — Holga, NightVision, PencilSketch,
   Sixties, Cinemascope — belső újrahasznált lépése) **ugyanezt a modellt**
   kapta, az `autocolor`+`autolight` páros helyett.

@@ -281,10 +281,15 @@ class TestApplyEnhance:
         # KÜLÖN lo/hi (fehéregyensúly-hatás). Építsünk képet, ahol a három
         # csatorna eltérő tartományt használ ki, és ellenőrizzük a
         # linearitást + hogy a csatornák tényleg különböző LUT-ot kapnak.
-        height, width = 50, 60
-        red = np.linspace(40, 200, width, dtype=np.uint8)
-        green = np.linspace(0, 255, width, dtype=np.uint8)
-        blue = np.linspace(80, 180, width, dtype=np.uint8)
+        # #539: az elemzés a kép középső 90%-áról készül, ezért a színátmenetet
+        # a KÖZÉPSŐ sávra építjük, a peremet pedig a szélső értékkel töltjük —
+        # így a vizsgált terület pontosan a teljes átmenetet fogja át.
+        height, width, margin = 50, 60, 3
+        span = width - 2 * margin
+        pad = ((margin, margin),)
+        red = np.pad(np.linspace(40, 200, span, dtype=np.uint8), pad, mode="edge")
+        green = np.pad(np.linspace(0, 255, span, dtype=np.uint8), pad, mode="edge")
+        blue = np.pad(np.linspace(80, 180, span, dtype=np.uint8), pad, mode="edge")
         # elég sok sor, hogy minden érték-darabszám a küszöb fölé kerüljön
         image = np.tile(np.stack([red, green, blue], axis=-1), (height, 1, 1))
 
@@ -375,14 +380,55 @@ class TestHistogramBlackWhitePoint:
         assert low < high
         assert (low, high) == (100, 150)
 
-    def test_a_ket_ut_ugyanazt_adja_szurke_kepen(self) -> None:
-        """Szürkeárnyalatos képen a közös és a csatornánkénti vágópont
-        egybeesik — ez mutatja, hogy tényleg egy szabály fut."""
+    def test_a_harom_csatorna_egybeesik_szurke_kepen(self) -> None:
+        """Szürkeárnyalatos képen a három csatorna vágópontja azonos —
+        ez mutatja, hogy tényleg egy szabály fut mindhármon."""
         gray = np.random.default_rng(7).integers(40, 200, size=(40, 40), dtype=np.uint8)
         image = np.stack([gray] * 3, axis=-1)
-        kozos = _common_black_white_point(image, 0.005, 0.002)
-        csatornankent = _channel_black_white_points(image, 0.005, 0.002)
-        assert csatornankent == (kozos, kozos, kozos)
+        piros, zold, kek = _channel_black_white_points(image)
+        assert piros == zold == kek
+
+    def test_a_kozos_ut_tovabbra_is_a_frakciokkal_dolgozik(self) -> None:
+        """Az Auto Contrast (közös) útja külön mérésen nyugszik (#540),
+        ezért a #539 natív geometriája nem érinti."""
+        gray = np.random.default_rng(9).integers(40, 200, size=(40, 40), dtype=np.uint8)
+        image = np.stack([gray] * 3, axis=-1)
+        low, high = _common_black_white_point(image, 0.005, 0.002)
+        assert 0 <= low < high <= 255
+
+
+class TestNativLevelsGeometria:
+    """#539: a `0x009db610` natív geometriája — a hisztogram a kép középső
+    90% × 90%-áról készül, a vágási küszöb pedig a TELJES kép
+    képpontszámának 1/200-a, mindkét végén azonosan.
+
+    Mindkettőt a `referencia/imfeellucky/` 12 képpárján mértük ki: a
+    csatornánként kiolvasott fehérpontok átlagos eltérése 3,85, a
+    feketepontoké 2,05, és minden aszimmetrikus vágás rosszabbnak bizonyult.
+    """
+
+    def test_a_perem_kimarad_az_elemzesbol(self) -> None:
+        """A kép szélén ülő szélsőérték nem mozdítja el a vágópontot."""
+        image = np.full((200, 200, 3), 120, dtype=np.uint8)
+        image[0:6, :] = 0  # a felső 3% — pont a kihagyott peremben
+        image[:, 0:6] = 0
+        tiszta = np.full((200, 200, 3), 120, dtype=np.uint8)
+        assert _channel_black_white_points(image) == _channel_black_white_points(tiszta)
+
+    def test_a_kuszob_darabszam_es_nem_percentilis(self) -> None:
+        """A vágás a teljes képpontszám 1/200-a: az ez alatti tüske eltűnik,
+        a fölötte lévő megmarad."""
+        # 200×200 = 40 000 képpont → a küszöb 200 darab
+        alap = np.tile(
+            np.repeat(np.linspace(150, 199, 50, dtype=np.uint8), 4)[:, None, None],
+            (1, 200, 3),
+        )
+        keves = alap.copy()
+        keves[100:105, 100:120] = 20  # 100 képpont < 200 → beleesik a vágásba
+        sok = alap.copy()
+        sok[100:120, 100:130] = 20  # 600 képpont > 200 → nem vágódik le
+        assert _channel_black_white_points(keves)[0][0] > 20
+        assert _channel_black_white_points(sok)[0][0] == 20
 
 
 class TestCountRedeyeSpots:
