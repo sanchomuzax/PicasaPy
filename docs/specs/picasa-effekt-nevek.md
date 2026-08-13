@@ -23,6 +23,25 @@ A saját elnevezéseink több helyen eltérnek. Néhány példa a mai kódunkbó
 | „Lighting Fixes (v1/v2/v3)" | mindhárom neve **Lighting Fixes** — „Megvilágítási javítások"; a **paramétereik** különböznek, nem a nevük |
 | „Focal Pixelate (legacy)" | **Focal Pixelate** — „Képpontnövelés" |
 
+## ⚠️ Az eredeti magyar fordítás NEM mindenhol jó
+
+A szótár értékes, de **nem szentírás** — négy helyen egyértelműen hibás vagy
+félrevezető, és ezeket nem szabad átvenni:
+
+| kulcs | az eredeti magyar | mi a baj | javaslat |
+|---|---|---|---|
+| `CrossProcess` | „Áttűnés" | **félrefordítás**: a cross processing sötétkamrai eljárás (fordított hívó), nem áttűnés | **„Keresztelőhívás"** |
+| `radsat` | „Telítetlen egy középpont körül" | **nem mondat** (az angol ige főnévnek fordítva) | **„Telítetlenít egy középpont körül"** |
+| `Pixelate` / `PicnikFocalPixelate` | „Képpontnagyítás" / „Képpontnövelés" | a kettő **felcserélhetően hangzik**, pedig más effekt | **„Kockásítás"** és **„Kockásítás fókuszban"** |
+| `ReanimatedEyeColor` | „Vámpírszem" | maga a név rendben, de a súgója („nem valódi megjelenésűvé") semmitmondó | súgó: **„Természetellenes színt ad a szemeknek"** |
+
+Máshol a fordítás pontos és idiomatikus (pl. „Lágy fókusz", „Sugaras árnyalás",
+„Fokozatos szűrő, hasznos az egeknél") — azokat érdemes szó szerint átvenni,
+mert a felhasználó ezeket ismeri a régi programból.
+
+**Szabály:** a szótárból átvett magyar szöveget **olvasd át**, mielőtt a
+felületre kerül. Az eredeti fordítás minősége szűrőnként változik.
+
 ## A teljes táblázat
 
 | szűrő | név (magyar) | angol | vezérlők |
