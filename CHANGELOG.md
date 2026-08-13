@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.36] – 2026-08-13
+
+### Hozzáadva
+- **A Finomhangolás-csúszkák modelljei mostantól a VALÓDI Picasa-kimenethez
+  vannak mérve a tesztkészletben (#551).** Eddig csak néhány kézzel kiírt
+  horgonyérték őrizte őket; innentől a Kiemelések, az Árnyékok, a
+  Színhőmérséklet mind a hat állása és a szín-varázspálca teljes görbéje
+  össze van vetve azzal, amit a Picasa 3.9 ténylegesen kiad. A mérés a
+  referencia-fotókból desztillált átlaggörbékből dolgozik (a fotók maguk nem
+  kerültek a repóba), a hibakorlátok a mai, mért pontosságból származnak.
+  A próba szerint ez elkapja azt a fajta csendes rontást, ami a jegyben
+  egyszer már majdnem bekövetkezett: a Színhőmérséklet elutasított natív
+  képlete a legkedvezőbb paraméterrel is a korlát 4–19-szeresét hozza.
+
 ## [0.7.35] – 2026-08-13
 
 ### Hozzáadva
