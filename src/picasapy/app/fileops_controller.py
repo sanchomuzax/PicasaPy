@@ -47,6 +47,11 @@ class FileOpsController(QObject):
     operationFailed = Signal(str, str)  # (művelet, hibaüzenet)
     # (művelet, kész, kihagyott, hibás) — a köteg EGYETLEN összegzése (#457/2)
     batchFinished = Signal(str, int, int, int)
+    # #457: haladás a kötegelt másolás/áthelyezés alatt — (művelet, cél,
+    # kész, összes). Az eredeti is SZÁMLÁLÓT mutatott
+    # (`CAcquireUI::copying` = „Copying %1$d of %2$d files"), nem csak egy
+    # pörgő sávot; a címe `CThumbUI::CopyProgress`/`::MoveProgress`.
+    batchProgress = Signal(str, str, int, int)
 
     @Slot(str, str)
     def renamePhoto(self, path: str, new_name: str) -> None:
@@ -96,8 +101,14 @@ class FileOpsController(QObject):
 
     def _run_batch(self, operation, function, paths, dest_folder, policy) -> None:
         dest = Path(_to_local_path(dest_folder))
+
+        def report(done: int, total: int) -> None:
+            self.batchProgress.emit(operation, str(dest), done, total)
+
         try:
-            result = function([Path(path) for path in paths], dest, policy)
+            result = function(
+                [Path(path) for path in paths], dest, policy, report
+            )
         except _OPERATION_ERRORS as error:
             self.operationFailed.emit(operation, str(error))
             return
