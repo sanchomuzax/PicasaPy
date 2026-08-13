@@ -109,7 +109,16 @@ def apply_dir_brite(
     """
     validate_image(image)
     height, width = image.shape[:2]
-    ramp = directional_ramp(height, width, horizontal, vertical)
+    # A rámpa `|a| + |b| > 1` esetén ±1-en TÚL is futna. A natív mag ott
+    # ELŐJEL NÉLKÜL és VÁGATLANUL számol, és csak az alsó bájtot tárolja —
+    # vagyis körbefordul. Ezt a viselkedést a dekompilátum nem igazolja
+    # egyértelműen (a rámpa skálázása is nyitott kérdés a specifikációban),
+    # ezért itt a bizonyíthatóan bájtra egyező tartományra vágunk: a
+    # `[-1, 1]`-en belül a mi kimenetünk a natív egész aritmetikával
+    # KÉPPONTRA azonos (#623, hurkos referencia-újraírással mérve).
+    # A `dir_sat` NEM kap ilyen vágást: ott a natív ág `|s| > 1`-nél is
+    # jól definiált, vágott eredményt ad.
+    ramp = np.clip(directional_ramp(height, width, horizontal, vertical), -1.0, 1.0)
     amount = np.abs(np.round(ramp * np.float32(_WEIGHT_SCALE)))
     lighten = (ramp >= 0)[..., np.newaxis]
 

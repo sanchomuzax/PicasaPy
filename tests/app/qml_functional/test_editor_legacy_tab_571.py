@@ -121,14 +121,16 @@ class TestLegacyCatalogue:
         # #565 és #567 után ezeknek élniük KELL a fülön
         from picasapy.render.chain import can_render_filter
 
-        for key in ("radtint", "autobacklight", "fill"):
+        for key in ("radtint", "autobacklight", "fill", "dir_sat", "dir_brite"):
             assert can_render_filter(key)
 
     def test_the_undecoded_ones_are_not_renderable(self):
-        # ezek addig szürkék, amíg a natív kernelük nincs megfejtve (#568)
+        # ezek addig szürkék, amíg a hiányzó együtthatójuk nincs kimérve:
+        # a `dir_sharp`-nál a rámpa horgonya, a `linblur`-nél a „Mennyiség"
+        # csúszka → elmosás-sugár leképezés (#623)
         from picasapy.render.chain import can_render_filter
 
-        for key in ("linblur", "dir_sat", "dir_brite", "dir_sharp", "triple"):
+        for key in ("linblur", "dir_sharp", "triple"):
             assert not can_render_filter(key)
 
     def test_debug_is_deliberately_absent(self):

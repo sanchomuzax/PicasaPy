@@ -109,3 +109,75 @@ class TestDirBrite:
     def test_monoton_a_rampa_menten(self) -> None:
         result = apply_dir_brite(_egyszinu(), 1.0, 0.0)[0, :, 0].astype(int)
         assert np.all(np.diff(result) >= 0)
+
+
+class TestBajtraEgyezikANativval:
+    """#623: a numpy-implementáció a natív EGÉSZ aritmetika lassú, hurkos
+    újraírásával vetve — képpontra azonos, nem „közel".
+
+    Ez az a teszt, ami a float/egész kerekítés elcsúszását elkapja: a natív
+    magok `>> 8`-cal (padló) dolgoznak, nem kerekítéssel.
+    """
+
+    @staticmethod
+    def _ramp(h: int, w: int, a: float, b: float, x: int, y: int, clamp: bool) -> float:
+        a = max(-1.0, min(1.0, a))
+        b = max(-1.0, min(1.0, b))
+        s = a * (2.0 * x / w - 1.0) + b * (2.0 * y / h - 1.0)
+        return max(-1.0, min(1.0, s)) if clamp else s
+
+    @classmethod
+    def _ref_dir_sat(cls, img: np.ndarray, a: float, b: float) -> np.ndarray:
+        h, w = img.shape[:2]
+        out = np.empty_like(img)
+        for y in range(h):
+            for x in range(w):
+                weight = int(np.round(cls._ramp(h, w, a, b, x, y, False) * 256))
+                r, g, bl = (int(v) for v in img[y, x])
+                luma = (2 * r + 5 * g + bl) >> 3
+                out[y, x] = [
+                    max(0, min(255, c + ((c - luma) * weight) // 256))
+                    for c in (r, g, bl)
+                ]
+        return out
+
+    @classmethod
+    def _ref_dir_brite(cls, img: np.ndarray, a: float, b: float) -> np.ndarray:
+        h, w = img.shape[:2]
+        out = np.empty_like(img)
+        for y in range(h):
+            for x in range(w):
+                s = cls._ramp(h, w, a, b, x, y, True)
+                amount = abs(int(np.round(s * 256)))
+                rest = 256 - amount
+                pixel = []
+                for c in (int(img[y, x, 0]), int(img[y, x, 1]), int(img[y, x, 2])):
+                    v = c ^ 0xFF if s >= 0 else c
+                    v = (((v * v * v) >> 16) * amount + rest * v) >> 8
+                    if s >= 0:
+                        v ^= 0xFF
+                    pixel.append(max(0, min(255, v)))
+                out[y, x] = pixel
+        return out
+
+    @pytest.mark.parametrize(
+        "horizontal,vertical",
+        [(1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.6, -0.4), (0.0, 0.0), (1.0, 1.0)],
+    )
+    def test_dir_sat_bajtra(self, horizontal: float, vertical: float) -> None:
+        image = np.random.default_rng(5).integers(0, 256, size=(12, 16, 3), dtype=np.uint8)
+        np.testing.assert_array_equal(
+            apply_dir_sat(image, horizontal, vertical),
+            self._ref_dir_sat(image, horizontal, vertical),
+        )
+
+    @pytest.mark.parametrize(
+        "horizontal,vertical",
+        [(1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.6, -0.4), (0.0, 0.0), (1.0, 1.0)],
+    )
+    def test_dir_brite_bajtra(self, horizontal: float, vertical: float) -> None:
+        image = np.random.default_rng(5).integers(0, 256, size=(12, 16, 3), dtype=np.uint8)
+        np.testing.assert_array_equal(
+            apply_dir_brite(image, horizontal, vertical),
+            self._ref_dir_brite(image, horizontal, vertical),
+        )
