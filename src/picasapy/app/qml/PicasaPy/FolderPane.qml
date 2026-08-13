@@ -46,11 +46,16 @@ Rectangle {
     // a felhasználót semmi nem blokkolta közben.
     property int faceScanPercent: -1
     property bool unnamedFacesActive: false
+    // #26: a „Mellőzött emberek" album (`CAlbumLabel::Ignored`) — az
+    // eredetiben is ALBUM volt, tehát látszania kell, ha van tartalma
+    property int ignoredFaceCount: 0
+    property bool ignoredFacesActive: false
     signal folderChosen(string path)
     signal starredChosen()
     signal albumChosen(string token)
     signal personChosen(string name)
     signal unnamedFacesChosen()
+    signal ignoredFacesChosen()
     // #455: fogd-és-vidd az albumlistára — új album, illetve meglévőbe
     // sorolás. A tényleges munkát a gazda végzi (a névkérő párbeszéd és a
     // kijelölés is ott van).
@@ -542,6 +547,43 @@ Rectangle {
                 anchors.fill: parent
                 hoverEnabled: true
                 onClicked: pane.unnamedFacesChosen()
+            }
+        }
+
+        // #26: „Mellőzött emberek" — a Névtelenek sora ALATT, ugyanabban a
+        // gyűjteményben. Csak akkor látszik, ha van benne valami: üres
+        // albummal nem foglaljuk a helyet.
+        Rectangle {
+            objectName: "ignoredFacesItem"
+            visible: !pane.peopleCollapsed && pane.ignoredFaceCount > 0
+            Layout.fillWidth: true
+            Layout.preferredHeight: 22
+            color: pane.ignoredFacesActive ? Theme.panelSelectionActive
+                   : (ignoredFacesMouse.containsMouse ? Theme.panelSelection : "transparent")
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: parent.left; anchors.leftMargin: 16
+                spacing: 5
+                Rectangle {
+                    width: 10; height: 10
+                    radius: 5
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Theme.textDark
+                    opacity: 0.25
+                }
+                Text {
+                    objectName: "ignoredFacesLabel"
+                    text: qsTr("Ignored people") + " (" + pane.ignoredFaceCount + ")"
+                    font.pixelSize: Theme.fontSize
+                    color: pane.ignoredFacesActive || ignoredFacesMouse.containsMouse
+                           ? Theme.panelSelectionText : Theme.textDark
+                }
+            }
+            MouseArea {
+                id: ignoredFacesMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                onClicked: pane.ignoredFacesChosen()
             }
         }
 
