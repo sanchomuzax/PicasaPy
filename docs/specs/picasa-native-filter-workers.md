@@ -624,11 +624,141 @@ JPEG). A képlet gyakorlatilag pontos.
 > a legerősebb: a dekompilálás adta a pontos egészaritmetikát, a mérés pedig
 > **igazolta**.
 
-## 4.2 Ami ebben a körben sem oldódott meg
+## 4.3 A `glow`, a `blur` és a sugaras család — kézi elemzéssel MEGFEJTVE
 
-A `glow`, a `blur` és a `radblur`/`radsat` magjai a 6 szintű követéssel sem
-bomlottak ki érdemben: ezek **nagy, erősen optimalizált** függvények, sok
-soron belüli SIMD-szerű csomagolt aritmetikával. Ezekhez nem mélységi
-követés kell, hanem **egyenkénti, kézi elemzés** — külön kör, szűrőnként.
+A #617 első jelentésében azt írtam, hogy ezek „nem bomlottak ki" a mélységi
+követéssel. Ez **nem a kód hibája volt, hanem a módszeré**: a függvények
+kibomlottak, csak MMX-es, csomagolt aritmetikájú kódként, amit soronként kell
+olvasni. Az alábbi az eredmény.
 
-Ez nem sürgős: mindhárom a ritkán használt örökölt szűrők közé tartozik (#571).
+### 4.3.1 A közös elmosó mag — `0x009dd0d0`
+
+Ez a Picasa **általános elmosója**; a `glow` és a sugaras család egyaránt ezt hívja.
+
+```c
+FUN_009dd0d0(kep, blurX, blurY, x0, y0, x1, y1);
+```
+
+**Nem konvolúció, hanem elsőrendű IIR (exponenciális) szűrő, oda-vissza futtatva.**
+
+```
+állapot s: négy 16 bites sáv (BGRA), 9.7 fixpontban  (érték << 7)
+együttható k: 16 bites, pow(...) eredménye egészre kerekítve
+
+előre:   s += ((x[i]   − s) · k) >> 16 ;   y[i] = s >> 7   (0..255-re vágva)
+vissza:  s += ((y[i]   − s) · k) >> 16 ;   y[i] = s >> 7
+```
+
+- a szorzás **`pmulhw`** (előjeles 16×16 → felső 16 bit), tehát az együttható
+  `α = k / 65536`, és mivel `k` előjeles 16 bites, **`α < 0,5`**;
+- **két menet tengelyenként** (előre + vissza) → fázistorzítás-mentes, szimmetrikus
+  átvitel, ami két elsőrendű szűrőből közel Gauss-alakot ad;
+- **vízszintes menet soronként**, **függőleges menet egyszerre négy oszlopon**
+  (MMX);
+- a művelet **O(1) képpontonként**, a sugártól függetlenül — ezért volt a Picasa
+  elmosása interaktív már 2005-ben.
+
+**Ami nem derül ki:** a `k = round(pow(a, b))` kifejezés két argumentuma az FPU
+veremben van, a dekompilátor nem látja. Vagyis a **sugár → α leképezés** még
+hiányzik — **egyetlen méréssel** meghatározható (egy éles lépcső elmosása ismert
+sugárral, majd α illesztése).
+
+### 4.3.2 `glow` — `0x0090d4b0`
+
+Nem saját pixelművelet, hanem **összeállítás**:
+
+```c
+a = clamp(|round(param)|, 0, 256);
+FUN_009aabf0(kep, ...);              // alfa előkészítés
+FUN_00aa40a0(0.5f, 0);               // 0.5-ös arány beállítása
+FUN_009dd0d0(...);                   // ELMOSÁS (4.3.1)
+FUN_009ac3f0(kep, 256 - a, forras);  // visszakeverés az eredetivel, súly = 256 − a
+FUN_009a99c0(...);                   // alfa visszaállítás
+```
+
+Vagyis **glow = elmosás + visszakeverés az eredetivel**, ahol a csúszka a
+keverési arányt adja (`256 − a`).
+
+### 4.3.3 `blur` („Elhomályosítás", Küszöbérték) — NEM Gauss-elmosás
+
+Ez a legmeglepőbb eredmény: a `0x0090cf60` **élmegőrző, többléptékű simítás**.
+
+```c
+// 1) (szélesség+1) × (magasság+1) méretű, 2 bit/cella navigációs rács
+//    (RTTI: CGrNavT<unsigned_short,1>, CGrNavT<unsigned_long,1>)
+//    a peremek előre bejelölve: 0x5555 (függőleges) / 0xaaaa (vízszintes)
+
+// 2) HÁROM lépték: 1, 2, 4
+for n in (1, 2, 4):
+    // élek jelölése: ahol a szomszédos képpontok színkülönbsége nagy
+    for minden vízszintes és függőleges szomszédpár:
+        d² = ΔR² + ΔG² + ΔB²
+        if (d² > kuszob / n²)  jelöld be az élt a rácsban   // ezt nem szabad átlépni
+    // simítás a régiókon belül, csatornánként (maszk 1, 2, 4 = B, G, R)
+
+// 3) végül halványítás:
+if (fade != 1.0)  kimenet = keveres(eredeti, simitott, round(fade*256));
+```
+
+Vagyis: **a küszöbnél nagyobb színugrások „falak"**, és a simítás csak azokon
+belül dolgozik — **anizotróp / bilaterális jellegű simítás**, három léptéken.
+A küszöb `n²`-tel osztódik, mert a különbségek `n × n` blokkokra összegződnek.
+
+> ⚠️ **Ha ezt Gauss-elmosásként valósítanánk meg, alapvetően más eredményt adna.**
+> A `blur` a Picasában **megőrzi az éleket** — ezért van egyáltalán
+> „Küszöbérték" csúszkája.
+
+### 4.3.4 `radblur` / `radsat` — a sugaras maszk
+
+A burkoló (`0x008f8520`) két lépést végez:
+
+```c
+// 1) elmosás — UGYANAZZAL a maggal (4.3.1)
+sugar = szelesseg * 0.01 * Amount + 0.001 + szelesseg * 0.01;
+      // = szelesseg/100 · (Amount + 1) + 0.001
+FUN_009dd0d0(kep, sugar, sugar, ...);
+
+// 2) sugaras keverés
+FUN_0090b050(&rect, cel, puckX, puckY, Size, Sharpness, ...);
+```
+
+**Az elmosás sugara a kép szélességének századához kötött** — ezért néz ki
+ugyanúgy kicsi és nagy képen. (Ugyanaz az elv, mint a `puck` sugaránál,
+#612 3.4.)
+
+#### A sugaras maszk — `0x0090b050`
+
+```c
+cx = round(szelesseg * puckX);   cy = round(magassag * puckY);
+// 1024 elemű, bájtos súlytábla, a NÉGYZETES távolsággal indexelve (nincs gyökvonás!)
+for y, x:
+    idx = (dx² + dy²) >> shift;
+    if (idx < 1024)  kimenet = alap + (masik - alap) * tabla[idx] / 256;   // csomagolt
+    else             kimenet = alap;                                        // érintetlen
+```
+
+#### A súlytábla — `0x0090aeb0`
+
+```c
+r  = min(szelesseg, magassag) / 2 * (Size + 1.0);
+r2 = r*r;  shift = 0;
+while (r2 > 1024) { r2 *= 0.5; shift++; }      // a négyzetes távolság léptéke
+
+for i in 0..1023:
+    d = sqrt( (i/1024) * (1024/r2) );                    // normalizált sugár
+    v = clamp( 0.5 + (d - 0.5) / (1 - Sharpness*0.99), 0, 1 );
+    u = 1 - v;
+    tabla[i] = round( (3 - 2u) * u * u * 255 );          // SMOOTHSTEP
+```
+
+- a **`Sharpness`** (a „Élesség"/„Lágy perem" csúszka) az átmenet meredekségét
+  adja: 0-nál lineáris, 1 felé `1/(1−0,99) = 100`-szoros meredekség, azaz éles
+  körvonal;
+- az átmenet **smoothstep** (`3u² − 2u³`), nem lineáris — ez adja a lágy peremet;
+- a **négyzetes távolsággal indexelt tábla** miatt nincs gyökvonás a
+  képpont-ciklusban.
+
+**Amit nem lehet ebből eldönteni:** hogy a súly a *közép* vagy a *perem* felé
+mutat-e az elmosott képre — ez a hívó oldalán dől el (melyik puffer az „alap"
+és melyik a „másik"). A `radblur` („Lágy fókusz") és a `radsat` („Fókuszos FF")
+ugyanezt a maszkot használja, ellentétes irányban.
