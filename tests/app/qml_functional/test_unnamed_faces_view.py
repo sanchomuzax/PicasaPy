@@ -101,6 +101,16 @@ class _StubFaceScanController(QObject):
     def rejectSuggestion(self, face_id):
         self.calls.append(("rejectSuggestion", face_id))
 
+    @Slot(result="QVariantList")
+    def ignoredGroups(self):
+        self.calls.append(("ignoredGroups",))
+        return []
+
+    @Slot("QVariantList", result=int)
+    def unignoreFaces(self, face_ids):
+        self.calls.append(("unignoreFaces", list(face_ids)))
+        return len(list(face_ids))
+
 
 def _make_view(qt_app, controller=None):
     import picasapy.app.application as app_module
@@ -268,3 +278,45 @@ class TestNameSuggestion:
 
         assert ("rejectSuggestion", 12) in stub.calls
         assert [c for c in stub.calls if c[0] == "ignoreFaces"] == []
+
+
+class TestIgnoredAlbum:
+    """#26: a mellőzés az eredetiben ALBUM volt (`CAlbumLabel::Ignored` =
+    „Ignored people"), nem egyirányú szemetes — meg lehetett nézni, tehát
+    vissza is lehetett venni belőle."""
+
+    def test_the_ignored_mode_loads_the_ignored_album(self, qt_app):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        stub.calls.clear()
+
+        view.setProperty("mode", "ignored")
+        qt_app.processEvents()
+
+        assert ("ignoredGroups",) in stub.calls
+
+    def test_naming_is_not_offered_among_ignored_people(self, qt_app):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        view.setProperty("mode", "ignored")
+        qt_app.processEvents()
+
+        assert view.findChild(QObject, "addNameButton").property("visible") is False
+        assert view.findChild(QObject, "ignoreFacesButton").property("visible") is False
+        assert view.findChild(QObject, "unignoreFacesButton").property("visible") is True
+
+    def test_unignoring_gives_the_faces_back(self, qt_app):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        view.setProperty("mode", "ignored")
+        view.setProperty("selectedFaceIds", {"3": True})
+        view.setProperty("selectedCount", 1)
+
+        QMetaObject.invokeMethod(
+            view, "unignoreSelected", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        calls = [c for c in stub.calls if c[0] == "unignoreFaces"]
+        assert len(calls) == 1
+        assert list(calls[0][1]) == [3]

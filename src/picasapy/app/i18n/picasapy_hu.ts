@@ -2656,6 +2656,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>FolderPane</name>
     <message>
+        <source>Ignored people</source>
+        <translation>Mellőzött emberek</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/FolderPane.qml" line="586"/>
         <source>Currently unavailable — the folder stays in the database, thumbnails come from the cache.</source>
         <translation>Jelenleg nem elérhető — a mappa az adatbázisban marad, a bélyegképek a gyorsítótárból látszanak.</translation>
@@ -2724,6 +2728,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 </context>
 <context>
     <name>UnnamedFacesView</name>
+    <message>
+        <source>Stop ignoring</source>
+        <translation>Mellőzés visszavonása</translation>
+    </message>
     <message>
         <source>%1?</source>
         <translation>%1?</translation>
@@ -4415,6 +4423,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 </context>
 <context>
     <name>FaceScanController</name>
+    <message>
+        <source>Ignored people ({0})</source>
+        <translation>Mellőzött emberek ({0})</translation>
+    </message>
     <message>
         <location filename="../face_scan_controller.py"/>
         <source>All unnamed faces ({0})</source>
