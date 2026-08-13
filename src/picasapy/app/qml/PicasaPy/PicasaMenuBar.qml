@@ -86,6 +86,9 @@ MenuBar {
     // #30: Helyek-panel (térkép)
     property bool placesPanelOpen: false
     signal placesPanelRequested()
+    // #26: Emberek-panel (a jobb fiók negyedik panelje)
+    property bool peoplePanelOpen: false
+    signal peoplePanelRequested()
     // #17: Kép → Elrejtés a kijelölésre
     signal hideToggleRequested()
     // #13: Tulajdonságok-panel
@@ -289,7 +292,14 @@ MenuBar {
             checked: bar.tagsPanelOpen
             onTriggered: bar.tagsPanelRequested()
         }
-        PicasaMenuItem { text: qsTr("People"); placeholder: true }
+        // #26: az Emberek-panel — a jobb fiók negyedik panelje
+        MenuItem {
+            objectName: "menuViewPeople"
+            text: qsTr("People")
+            checkable: true
+            checked: bar.peoplePanelOpen
+            onTriggered: bar.peoplePanelRequested()
+        }
         MenuItem {
             objectName: "menuViewPlaces"
             text: qsTr("Places")

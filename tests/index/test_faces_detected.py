@@ -7,10 +7,15 @@ from picasapy.faces.detector import FaceDetection, FaceLandmarks
 from picasapy.index import (
     clear_faces,
     detected_face_count,
+    ignored_faces,
+    mark_faces_ignored,
+    mark_faces_named,
     open_index,
     replace_faces,
     sync_tree,
+    unignore_faces,
     unnamed_album_photos,
+    unnamed_faces,
 )
 from support.jpeg_factory import make_jpeg
 
@@ -103,3 +108,51 @@ class TestUnnamedAlbum:
             conn.commit()
             album = unnamed_album_photos(conn)
         assert len(album) == 1
+
+
+class TestIgnoredFaces:
+    """#26: a mellőzés NEM törlés — az eredetiben a személy a „Mellőzött
+    emberek" albumba került (`CAlbumLabel::Ignored`), tehát visszavehető."""
+
+    def test_an_ignored_face_leaves_the_unnamed_album(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path)
+        with open_index(db_path) as conn:
+            replace_faces(conn, photo_ids["a.jpg"], [_face()])
+            face_id = unnamed_faces(conn)[0].id
+
+            mark_faces_ignored(conn, [face_id])
+
+            assert unnamed_faces(conn) == ()
+            assert [f.id for f in ignored_faces(conn)] == [face_id]
+
+    def test_the_row_survives_so_it_can_come_back(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path)
+        with open_index(db_path) as conn:
+            replace_faces(conn, photo_ids["a.jpg"], [_face()])
+            face_id = unnamed_faces(conn)[0].id
+            mark_faces_ignored(conn, [face_id])
+
+            unignore_faces(conn, [face_id])
+
+            assert [f.id for f in unnamed_faces(conn)] == [face_id]
+            assert ignored_faces(conn) == ()
+
+    def test_unignoring_does_not_resurrect_a_named_face(self, tmp_path):
+        """A névadás a mellőzésnél erősebb döntés — a visszavétel CSAK a
+        mellőzött arcokat érinti."""
+        db_path, photo_ids = _library(tmp_path)
+        with open_index(db_path) as conn:
+            replace_faces(conn, photo_ids["a.jpg"], [_face()])
+            face_id = unnamed_faces(conn)[0].id
+            mark_faces_named(conn, [face_id])
+
+            unignore_faces(conn, [face_id])
+
+            assert unnamed_faces(conn) == ()
+
+    def test_an_empty_list_is_a_no_op(self, tmp_path):
+        db_path, _photo_ids = _library(tmp_path)
+        with open_index(db_path) as conn:
+            mark_faces_ignored(conn, [])
+            unignore_faces(conn, [])
+            assert ignored_faces(conn) == ()
