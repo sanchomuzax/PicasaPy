@@ -166,21 +166,45 @@ def apply_autolight(image: np.ndarray) -> np.ndarray:
     return apply_lut(image, (lut_ramp() - low) * scale)
 
 
-def _channel_black_white_points(
-    image: np.ndarray, low_fraction: float, high_fraction: float
-) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
-    """Csatornánkénti fekete-/fehérpont a hisztogram DARABSZÁMA alapján.
+#: A natív elemzés a kép SZÉLEIT kihagyja: a hisztogram csak a középső
+#: 90% × 90%-ról készül (`0x009db610`, #576 dekompiláció, #539 méréssel
+#: igazolva). Keretes, vignettált vagy sötét szélű képnél ez érdemben más
+#: fekete-/fehérpontot ad, mint a teljes képes elemzés.
+_LEVELS_MARGIN_PERCENT = 5
 
-    Csatornánként ugyanaz a szabály, mint a `_histogram_black_white_point`-
-    ban — az azonosság-esetet (nincs érdemi tartomány) is az adja `(0, 255)`
-    alakban.
+#: A vágási küszöb DARABSZÁM, nem percentilis: a TELJES kép képpontszámának
+#: 1/200-a (0,5%), és — a natív kód szerint — mindkét végén UGYANANNYI.
+#: A #539 mérése ezt megerősítette: az aszimmetrikus (alul 0,5% / felül
+#: 0,2%) közelítésnél minden aszimmetrikus variáns rosszabb lett.
+_LEVELS_CLIP_DIVISOR = 200
+
+
+def _analysis_region(image: np.ndarray) -> np.ndarray:
+    """A hisztogram-elemzés területe: a kép középső 90% × 90%-a."""
+    height, width = image.shape[:2]
+    margin = _LEVELS_MARGIN_PERCENT
+    top = height * margin // 100
+    left = width * margin // 100
+    return image[top : height * (100 - margin) // 100, left : width * (100 - margin) // 100]
+
+
+def _channel_black_white_points(
+    image: np.ndarray,
+) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+    """Csatornánkénti fekete-/fehérpont a natív algoritmus szerint (#539).
+
+    A `0x009db610` natív függvény geometriája: a hisztogram a kép középső
+    90% × 90%-áról készül, a vágási küszöb pedig a TELJES kép
+    képpontszámának `1/_LEVELS_CLIP_DIVISOR`-a, mindkét végén azonosan.
+    Az azonosság-esetet (nincs érdemi tartomány) `(0, 255)` jelzi.
     """
     height, width = image.shape[:2]
-    total_pixels = height * width
+    clip = max(1, (height * width) // _LEVELS_CLIP_DIVISOR)
+    region = _analysis_region(image)
+    # a `total`-nak magát a vágási darabszámot adjuk 1,0-s aránnyal: így a
+    # küszöb pontosan `clip`, kerekítési hiba nélkül
     points = tuple(
-        _histogram_black_white_point(
-            image[..., channel], total_pixels, low_fraction, high_fraction
-        )
+        _histogram_black_white_point(region[..., channel], clip, 1.0, 1.0)
         for channel in range(3)
     )
     return points[0], points[1], points[2]
@@ -284,14 +308,15 @@ def apply_autocolor(image: np.ndarray) -> np.ndarray:
 #: kizárólag a kiugró kép változik (46,0 → 12,4) — a többi tizenegy kép
 #: eltérése bájtra ugyanaz marad. A pontos érték széles optimum (52-nél
 #: 2,65, 64-nél 2,70), ezért a KÖZVETLENÜL MÉRT 58-at használjuk.
+#:
+#: #539 megerősítés: mind a 36 csatornán (12 kép × 3) kimérve a Picasa
+#: által ALKALMAZOTT bemeneti tartomány LEGKISEBB értéke **58,1** — soha
+#: nem megy alá, holott a nyers vágópontok 26-ig lemennek. A korlát tehát
+#: nem illesztési fogás, hanem a natív viselkedés (a `gain` felső korlátja).
 _MIN_STRETCH_SPAN = 58.0
 
 
-def apply_channel_levels_stretch(
-    image: np.ndarray,
-    low_fraction: float = _LEVELS_LOW_FRACTION,
-    high_fraction: float = _LEVELS_HIGH_FRACTION,
-) -> np.ndarray:
+def apply_channel_levels_stretch(image: np.ndarray) -> np.ndarray:
     """Csatornánként KÜLÖN lineáris szinthúzás: `ki = (be − lo)·255/(hi − lo)`.
 
     Ez a „Jó napom van" (I'm Feeling Lucky) és az `AutoFix` megfejtett
@@ -300,11 +325,13 @@ def apply_channel_levels_stretch(
     (a csatorna kihasználja a teljes tartományt), azt a csatornát a Picasa
     NEM módosítja — itt sem változik semmi (bájtra azonos marad).
 
-    #539: a nagyon szűk hisztogramú csatornát a Picasa nem feszíti ki
-    teljesen — a bemeneti tartomány alsó korlátja `_MIN_STRETCH_SPAN`.
+    #539: a vágópontok a natív geometriával készülnek
+    (`_channel_black_white_points`), a nagyon szűk hisztogramú csatornát
+    pedig a Picasa nem feszíti ki teljesen — a bemeneti tartomány alsó
+    korlátja `_MIN_STRETCH_SPAN`.
     """
     _validate_image(image)
-    points = _channel_black_white_points(image, low_fraction, high_fraction)
+    points = _channel_black_white_points(image)
     ramp = lut_ramp()
     luts = []
     for low, high in points:
