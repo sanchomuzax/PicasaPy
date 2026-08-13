@@ -284,3 +284,34 @@ class TestMoveFolder:
         qt_app.processEvents()
 
         assert failures == ["move_folder"]
+
+
+class TestProgressSpeed:
+    """#457: az eredeti a SEBESSÉGET is kiírta („Moving %d of %d (%s/s)") —
+    egy nagy köteg alatt ez mondja meg, érdemes-e várni."""
+
+    def test_the_progress_carries_a_speed(self, qt_app, tmp_path):
+        from picasapy.app.fileops_controller import FileOpsController
+
+        source = tmp_path / "innen"
+        source.mkdir()
+        paths = []
+        for name in ("a.jpg", "b.jpg"):
+            path = source / name
+            path.write_bytes(b"x" * 4096)
+            paths.append(str(path))
+        dest = tmp_path / "ide"
+        dest.mkdir()
+        controller = FileOpsController()
+        seen = []
+        controller.batchProgress.connect(
+            lambda op, target, done, total, speed: seen.append((done, total, speed))
+        )
+
+        controller.copyPhotos(paths, str(dest), "rename")
+        qt_app.processEvents()
+
+        assert [(d, t) for d, t, _s in seen] == [(1, 2), (2, 2)]
+        # a sebesség nem lehet negatív, és a végére van mit mérni
+        assert all(speed >= 0 for _d, _t, speed in seen)
+        assert seen[-1][2] > 0

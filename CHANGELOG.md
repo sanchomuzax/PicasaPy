@@ -8,6 +8,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.7.24] – 2026-08-13
 
 ### Hozzáadva
+- **Sebesség a másolás/áthelyezés haladásjelzőjén (#457).** A számláló
+  mellett most már az is látszik, milyen gyorsan halad („12,3 MB/s") —
+  ahogy az eredeti Picasa is mutatta. Egy nagy kötegnél ez mondja meg,
+  érdemes-e megvárni.
 - **Mappa áthelyezése (#457).** A mappa jobbklikk-menüjében eddig
   helyfoglaló volt a „Mappa áthelyezése…" — most működik, és a mappa a
   **kísérőfájlokkal együtt** költözik. Ez nálunk több, mint kényelem: a
