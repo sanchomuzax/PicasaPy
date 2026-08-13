@@ -57,6 +57,7 @@ from picasapy.index import (
     mark_faces_named,
     open_index,
     replace_faces,
+    reset_all_faces,
     store_embedding,
     sync_tree,
     unnamed_album_photos,
@@ -364,6 +365,21 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             conn.commit()
         self.unnamedCountChanged.emit()
         return len(ids)
+
+    @Slot(result=int)
+    def resetAllFaces(self) -> int:  # noqa: N802 — QML-slot-stílus
+        """„Arcok alaphelyzetbe állítása" (#422) — az INDEX oldala.
+
+        Minden arc visszakerül a „Névtelenek" albumba: az állapot, a
+        névhez kötés, a javaslat és a csoportosítás nullázódik. A
+        `.picasa.ini` ember által adott névcímkéihez NEM nyúlunk — az
+        eredeti is KÜLÖN kérdezte meg (`CThumbUI::ResetAll`), és nálunk a
+        Picasa döntései szentek."""
+        with open_index(self._db_path) as conn:
+            affected = reset_all_faces(conn)
+            conn.commit()
+        self.unnamedCountChanged.emit()
+        return affected
 
     @Slot(result=int)
     def ignoredCount(self) -> int:  # noqa: N802 — QML-slot-stílus

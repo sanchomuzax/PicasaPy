@@ -2878,6 +2878,14 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>Main</name>
     <message>
+        <source>Reset Faces</source>
+        <translation>Arcok alaphelyzetbe állítása</translation>
+    </message>
+    <message>
+        <source>WARNING! This will move all the faces back to the unnamed album and delete the face groups. Name tags you have written into the photos are NOT touched. Do you want to do this?</source>
+        <translation>FIGYELMEZTETÉS! Ez a művelet minden arcot visszahelyez a Névtelenek albumba, és törli az arc-csoportokat. A fotókba írt névcímkékhez NEM nyúl. Ezt szeretné tenni?</translation>
+    </message>
+    <message>
         <location filename="../qml/Main.qml"/>
         <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
         <translation>Ez a mappa jelenleg nem elérhető (például lecsatolt meghajtó vagy hálózati megosztás). A képei az adatbázisban maradnak, a bélyegképek a gyorsítótárból látszanak, de az eredeti fájlok most nem nyithatók meg és nem szerkeszthetők.</translation>

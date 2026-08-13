@@ -75,6 +75,35 @@ def clear_faces(conn: sqlite3.Connection, photo_id: int) -> None:
     conn.execute("DELETE FROM face WHERE photo_id = ?", (photo_id,))
 
 
+def reset_all_faces(conn: sqlite3.Connection) -> int:
+    """A SAJÁT arc-találatok alaphelyzetbe állítása — az eredeti „Arcok
+    alaphelyzetbe állítása" INDEX-oldali fele (#422).
+
+    Az eredeti figyelmeztetése (`CThumbUI::ResetAllFaces`) szerint ez
+    „törli az összes személyi albumot, és a Név nélküliek albumba helyezi
+    át az arcokat". Nálunk pontosan ennyi történik: minden arc `'unnamed'`
+    állapotba kerül, a névhez kötés és a javaslat törlődik, a csoportok
+    pedig eltűnnek (a következő csoportosítás újraépíti őket).
+
+    **Amit NEM csinál:** nem nyúl a `.picasa.ini` `faces=`/`[Contacts2]`
+    tartalmához. Az eredeti ezt KÜLÖN kérdésként tette fel
+    (`CThumbUI::ResetAll`: „Szeretné eltávolítani az arcokkal kapcsolatos
+    összes adatot az INI fájlokból?") — az ember által adott névcímke a
+    projekt alapszabálya szerint szent, azt csak külön, kifejezett kérésre
+    szabad bántani.
+
+    A visszatérési érték az érintett arcok száma.
+    """
+    row = conn.execute("SELECT COUNT(*) AS n FROM face").fetchone()
+    affected = int(row["n"]) if row is not None else 0
+    conn.execute(
+        "UPDATE face SET state = 'unnamed', person_name = NULL, "
+        "suggested_name = NULL, group_id = NULL"
+    )
+    conn.execute("DELETE FROM face_group")
+    return affected
+
+
 def detected_face_count(conn: sqlite3.Connection, photo_id: int) -> int:
     """Hány SAJÁT arc-találat tartozik a fotóhoz (a néző overlay-jének
     később hasznos lekérdezés — 1. lépcsőben csak a teszteké)."""
