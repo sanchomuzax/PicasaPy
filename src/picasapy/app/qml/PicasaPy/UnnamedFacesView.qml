@@ -17,6 +17,12 @@ import QtQuick.Layouts
 ColumnLayout {
     id: root
     property var faceScanController: null
+    // #26: „unnamed" = a Névtelenek album, „ignored" = a Mellőzött emberek
+    // album (`CAlbumLabel::Ignored`). Az eredetiben ez két ALBUM volt
+    // ugyanabban a listában, ezért ugyanaz a nézet szolgálja ki — csak a
+    // tartalom és a művelet-gombok mások.
+    property string mode: "unnamed"
+    readonly property bool ignoredMode: root.mode === "ignored"
     property bool groupByFace: true
     property bool expandGroups: false
     property var groupsModel: []
@@ -29,8 +35,10 @@ ColumnLayout {
             root.groupsModel = []
             return
         }
-        root.groupsModel = faceScanController.unnamedGroups(
-            root.groupByFace, root.expandGroups)
+        root.groupsModel = (root.mode === "ignored")
+            ? faceScanController.ignoredGroups()
+            : faceScanController.unnamedGroups(
+                root.groupByFace, root.expandGroups)
     }
 
     function toggleFace(faceId) {
@@ -50,6 +58,7 @@ ColumnLayout {
     }
 
     Component.onCompleted: reload()
+    onModeChanged: root.reload()
     onGroupByFaceChanged: { clearSelection(); reload() }
     onExpandGroupsChanged: { clearSelection(); reload() }
     onVisibleChanged: if (visible) reload()
@@ -61,6 +70,7 @@ ColumnLayout {
         CheckBox {
             id: groupByFaceCheck
             objectName: "groupByFaceCheck"
+            visible: !root.ignoredMode
             text: qsTr("Group by face")
             checked: root.groupByFace
             onToggled: root.groupByFace = checked
@@ -68,6 +78,7 @@ ColumnLayout {
         CheckBox {
             id: expandGroupsCheck
             objectName: "expandGroupsCheck"
+            visible: !root.ignoredMode
             text: qsTr("Expand groups")
             checked: root.expandGroups
             onToggled: root.expandGroups = checked
@@ -82,6 +93,7 @@ ColumnLayout {
         TextField {
             id: nameField
             objectName: "unnamedNameField"
+            visible: !root.ignoredMode
             Layout.preferredWidth: 180
             placeholderText: qsTr("Name")
             // #422: jobbklikk-menü (Picasa `Address`)
@@ -90,9 +102,20 @@ ColumnLayout {
         // #26: „Ignore" — az eredetiben a mellőzés NEM törlés volt: a
         // személy a „Mellőzött emberek" albumba került
         // (`DeleteMessage::RemoveSingleUnknown`), külön megerősítéssel.
+        // #26: a Mellőzött emberek albumban a mellőzés VISSZAVONÁSA a
+        // művelet — az eredetiben is album volt, tehát vissza lehetett
+        // nyúlni belőle, nem egyirányú szemetes
+        Button {
+            objectName: "unignoreFacesButton"
+            visible: root.ignoredMode
+            text: qsTr("Stop ignoring")
+            enabled: root.selectedCount > 0 && !!root.faceScanController
+            onClicked: root.unignoreSelected()
+        }
         Button {
             id: ignoreButton
             objectName: "ignoreFacesButton"
+            visible: !root.ignoredMode
             text: qsTr("Ignore")
             enabled: root.selectedCount > 0 && !!root.faceScanController
             ToolTip.visible: hovered
@@ -103,6 +126,7 @@ ColumnLayout {
         Button {
             id: addNameButton
             objectName: "addNameButton"
+            visible: !root.ignoredMode
             text: qsTr("Add a name")
             enabled: root.selectedCount > 0
                      && nameField.text.trim().length > 0
@@ -299,6 +323,18 @@ ColumnLayout {
         if (!root.faceScanController) return
         root.faceScanController.rejectSuggestion(faceId)
         root.reload()
+    }
+
+    // a mellőzés visszavonása — külön, hívható függvényben
+    function unignoreSelected() {
+        if (!root.faceScanController) return 0
+        var ids = []
+        for (var key in root.selectedFaceIds) ids.push(parseInt(key))
+        if (ids.length === 0) return 0
+        var count = root.faceScanController.unignoreFaces(ids)
+        root.clearSelection()
+        root.reload()
+        return count
     }
 
     // a tényleges mellőzés — külön, hívható függvényben (tesztelhetőség)

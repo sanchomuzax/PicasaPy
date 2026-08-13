@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [0.7.15] – 2026-08-13
+## [0.7.17] – 2026-08-13
 
 ### Változott
 - **Az Emberek-panel megmondja, mire számíthatsz (#26).** Üres listánál
@@ -14,6 +14,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   nálunk is: személy albumát nézve „…akik a kiválasztott személlyel együtt
   szerepelnek", kijelölt fotóknál „…akik a kijelölt fotókon szerepelnek",
   egyébként pedig az, hogy még nem találtunk embereket.
+
+## [0.7.13] – 2026-08-13
+
+### Hozzáadva
+- **„Mellőzött emberek" album (#26).** A mellőzött arcok mostantól meg is
+  nézhetők: a bal hasáb Emberek gyűjteményében megjelenik a *Mellőzött
+  emberek* sor, és onnan a **mellőzés visszavonható**. Az eredeti Picasában
+  ez is album volt, nem egyirányú szemetes — most nálunk sem az.
 
 ## [0.7.12] – 2026-08-13
 
