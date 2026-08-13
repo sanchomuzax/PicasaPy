@@ -36,6 +36,10 @@ Menu {
     // igaz, ha a nézett kép rejtett — az Elrejtés/Megjelenítés tétel
     // UGYANAZON a helyen vált feliratot (spec A.2), nem külön tétel
     property bool hidden: false
+    // #422: van-e szerkesztés a képen, illetve mentés-előtti másolat — az
+    // inaktív tétel LÁTSZIK, csak szürke (az eredeti szabálya)
+    property bool hasEdits: false
+    property bool hasBackup: false
     // a felhasználó albumai: {token, name} elemek (a PhotoContextMenu
     // `albums` tulajdonságának mintája)
     property var albums: []
@@ -52,6 +56,13 @@ Menu {
     signal deleteRequested()
     signal copyFullPathRequested()
     signal propertiesRequested()
+    // #422: a mentés-szemantika három parancsa a NÉZŐBEN is — ugyanaz a
+    // motor (#444/#465), mint a rácsban és a menüsávban. Egy parancs, egy
+    // út: nem lehet, hogy ugyanaz a menüpont máshol mást csinál.
+    signal saveRequested()
+    signal revertRequested()
+    signal undoAllEditsRequested()
+    signal resetFacesRequested()
 
     // -- teszt-/billentyű-belépők ----------------------------------------
     // A funkcionális teszt a menütételt nem tudja „megkattintani" offscreen,
@@ -110,10 +121,11 @@ Menu {
 
     // -- 4. blokk: szerkesztés visszavonása --------------------------------
 
-    PicasaMenuItem {
+    MenuItem {
         objectName: "viewerMenuUndoAllEdits"
         text: qsTr("Undo All Edits")
-        placeholder: true
+        enabled: menu.hasEdits
+        onTriggered: menu.undoAllEditsRequested()
     }
     MenuSeparator {}
 
@@ -144,15 +156,17 @@ Menu {
 
     // -- 7. blokk: mentés / visszaállítás ----------------------------------
 
-    PicasaMenuItem {
+    MenuItem {
         objectName: "viewerMenuSave"
-        text: qsTr("Save") + "\tCtrl+S"
-        placeholder: true
+        text: qsTr("Save") + "	Ctrl+S"
+        enabled: menu.hasEdits
+        onTriggered: menu.saveRequested()
     }
-    PicasaMenuItem {
+    MenuItem {
         objectName: "viewerMenuRevert"
         text: qsTr("Revert")
-        placeholder: true
+        enabled: menu.hasBackup
+        onTriggered: menu.revertRequested()
     }
     MenuSeparator {}
 
@@ -192,10 +206,11 @@ Menu {
 
     // -- 10. blokk: arcok ----------------------------------------------------
 
-    PicasaMenuItem {
+    MenuItem {
         objectName: "viewerMenuResetFaces"
         text: qsTr("Reset Faces")
-        placeholder: true
+        enabled: true
+        onTriggered: menu.resetFacesRequested()
     }
     MenuSeparator {}
 
