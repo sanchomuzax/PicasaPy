@@ -26,6 +26,8 @@ SlideshowView 1.0 SlideshowView.qml
 TagsPanel 1.0 TagsPanel.qml
 QuickTagsConfigDialog 1.0 QuickTagsConfigDialog.qml
 PropertiesPanel 1.0 PropertiesPanel.qml
+PeoplePanel 1.0 PeoplePanel.qml
+PeoplePanelRow 1.0 PeoplePanelRow.qml
 LightboxFeed 1.0 LightboxFeed.qml
 MainToolbar 1.0 MainToolbar.qml
 TrayBar 1.0 TrayBar.qml

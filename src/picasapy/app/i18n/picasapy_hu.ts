@@ -3436,6 +3436,36 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
     </message>
 </context>
 <context>
+    <name>PeoplePanel</name>
+    <message>
+        <source>People</source>
+        <translation>Emberek</translation>
+    </message>
+    <message>
+        <source>In this photo:</source>
+        <translation>Ezen a fotón:</translation>
+    </message>
+    <message>
+        <source>People in these photos:</source>
+        <translation>Személyek ezeken a fotókon:</translation>
+    </message>
+    <message>
+        <source>Also in these photos:</source>
+        <translation>Szintén ezeken a fotókon:</translation>
+    </message>
+    <message>
+        <source>Select a folder to display faces</source>
+        <translation>Válasszon mappát az arcok megjelenítéséhez</translation>
+    </message>
+</context>
+<context>
+    <name>PeoplePanelRow</name>
+    <message>
+        <source>%1 photos</source>
+        <translation>%1 fotó</translation>
+    </message>
+</context>
+<context>
     <name>PicasaMenuBar</name>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>

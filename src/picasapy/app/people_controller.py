@@ -26,8 +26,10 @@ from picasapy.index.people import people_in_index, people_with, person_photos
 from picasapy.ini import (
     IniConflictError,
     IniSaveError,
+    contacts_of,
     ensure_contact,
     find_contact_id,
+    load_document,
     parse_faces,
     update_document,
     with_reassigned_face,
@@ -105,6 +107,47 @@ class PeopleMixin:
                 {"name": person.name, "count": person.photo_count}
                 for person in people_with(conn, name)
             ]
+
+    @Slot(list, result="QVariantList")
+    def peopleOfRows(self, rows):  # noqa: N802 — QML-slot-stílus
+        """A megadott sorokon NÉVVEL szereplő emberek: `[{name, count}]`.
+
+        Az eredeti Emberek-paneljének első szakasza („In this photo:" egy
+        képnél, „People in these photos:" többnél). A darabszám itt azt
+        mondja, a kijelölés HÁNY képén szerepel az illető."""
+        counts: dict[str, int] = {}
+        for photo in self._rows_to_photos(rows):
+            folder = Path(photo.folder_path)
+            try:
+                document = load_document(folder / PICASA_INI_NAME)
+            except OSError:
+                continue
+            names = {
+                contact.person_id.casefold(): contact.name
+                for contact in contacts_of(document)
+                if contact.name
+            }
+            section = document.section(photo.name)
+            raw = section.get("faces") if section is not None else None
+            if not raw:
+                continue
+            try:
+                faces = parse_faces(raw)
+            except ValueError:
+                continue
+            on_photo = {
+                names[face.contact_id.casefold()]
+                for face in faces
+                if face.is_identified and face.contact_id.casefold() in names
+            }
+            for name in on_photo:
+                counts[name] = counts.get(name, 0) + 1
+        return [
+            {"name": name, "count": count}
+            for name, count in sorted(
+                counts.items(), key=lambda kv: (-kv[1], kv[0].casefold())
+            )
+        ]
 
     def _refresh_people_view(self, mode: str, param: str) -> bool:
         """A `_refresh_view()` "person" ágának kiszervezett teste — igazat ad

@@ -15,10 +15,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   névtelen arc van.
 
 ### Hozzáadva
-- **Együtt szereplő emberek (#26).** Lekérdezhető, hogy egy személlyel kik
-  szerepelnek együtt a képeken, közös fotók száma szerint — ez a családi
-  gyűjtemények természetes navigációja („ki van még rajta ezeken a
-  képeken?"). A felület, ahol ez megjelenik, még nyitott kérdés.
+- **Emberek-panel (#26).** A Nézet → Emberek menüpont mostantól valódi
+  panelt nyit a jobb oldalon, a Címkék, a Helyek és a Tulajdonságok
+  mellett — az eredeti Picasa is ide tette (a binárisban a
+  `rightdrawerpanel/peoplepanel` pont e három mellett áll). Két szakasza
+  van, az eredeti szövegeivel: **„Ezen a fotón:"** (a kijelölt képeken
+  névvel szereplő emberek) és **„Szintén ezeken a fotókon:"** — ez utóbbi
+  azt mutatja, hogy a nézett személlyel kik szerepelnek együtt, és egy
+  kattintással át lehet lépni a másik személy albumára. Ez a családi
+  gyűjtemények természetes navigációja: „ki van még rajta ezeken a
+  képeken?"
 
 ## [0.7.9] – 2026-08-12
 

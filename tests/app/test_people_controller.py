@@ -164,3 +164,57 @@ class TestPeopleWith:
     def test_an_unknown_name_gives_an_empty_list(self, host_together):
         assert host_together.peopleWith("Nincs Ilyen") == []
         assert host_together.peopleWith("") == []
+
+
+class TestPeopleOfRows:
+    """#26: az Emberek-panel első szakasza — „In this photo:"."""
+
+    @pytest.fixture
+    def host_rows(self, qt_app, tmp_path, library):
+        _ANNA = "a1a2a3a4a5a6a7a8"
+        (library / ".picasa.ini").write_text(
+            f"[Contacts2]\n{_ROY}=Roy Avery;;\n{_ANNA}=Anna Kis;;\n"
+            f"[a.jpg]\nfaces=rect64({_RECT}),{_ROY};"
+            f"rect64({_RECT}),{_ANNA};\n"
+            f"[b.jpg]\nfaces=rect64({_RECT}),{_ROY};\n",
+            encoding="utf-8",
+        )
+        from picasapy.app.people_controller import PeopleMixin
+        from picasapy.index import all_photos, open_index, sync_tree
+
+        db = tmp_path / "sorok.db"
+        with open_index(db) as conn:
+            sync_tree(conn, library)
+            photos = all_photos(conn)
+
+        class _Host(PeopleMixin, QObject):
+            def __init__(self, db_path):
+                super().__init__()
+                self._db_path = db_path
+                self._view_mode = ("folder", "")
+                self._init_people()
+
+            def _rows_to_photos(self, rows):
+                return [photos[int(r)] for r in rows if 0 <= int(r) < len(photos)]
+
+        return _Host(db), photos
+
+    def test_it_lists_the_named_people_on_the_selection(self, host_rows):
+        host, photos = host_rows
+        rows = list(range(len(photos)))
+
+        found = {p["name"]: p["count"] for p in host.peopleOfRows(rows)}
+
+        assert found == {"Roy Avery": 2, "Anna Kis": 1}
+
+    def test_a_single_photo_lists_only_its_own_people(self, host_rows):
+        host, photos = host_rows
+        row = [i for i, p in enumerate(photos) if p.name == "b.jpg"]
+
+        found = {p["name"] for p in host.peopleOfRows(row)}
+
+        assert found == {"Roy Avery"}
+
+    def test_an_empty_selection_is_not_an_error(self, host_rows):
+        host, _photos = host_rows
+        assert host.peopleOfRows([]) == []

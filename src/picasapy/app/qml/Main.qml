@@ -61,6 +61,9 @@ ApplicationWindow {
     property bool placesPanelOpen: false  // Helyek-panel (#30, térkép)
     // Tulajdonságok-panel (#13, Alt+Enter)
     property bool propertiesPanelOpen: false
+    // Emberek-panel (#26) — a jobb fiók negyedik panelje
+    // (`rightdrawerpanel/peoplepanel`), a Címkék/Helyek/Tulajdonságok mellett
+    property bool peoplePanelOpen: false
     // #26 (3. lépcső): a „Névtelenek" nézet — a fő rács helyén jelenik
     // meg, amíg be van kapcsolva (ld. UnnamedFacesView.qml)
     property bool unnamedFacesOpen: false
@@ -370,6 +373,8 @@ ApplicationWindow {
         onTimelineRequested: window.toggleTimeline()
         tagsPanelOpen: window.tagsPanelOpen
         onTagsPanelRequested: window.tagsPanelOpen = !window.tagsPanelOpen
+        peoplePanelOpen: window.peoplePanelOpen
+        onPeoplePanelRequested: window.peoplePanelOpen = !window.peoplePanelOpen
         placesPanelOpen: window.placesPanelOpen
         onPlacesPanelRequested:
             window.placesPanelOpen = !window.placesPanelOpen
@@ -968,6 +973,35 @@ ApplicationWindow {
                    controller.propertiesOf(window.selectedIndex))
                 : []
             onCloseRequested: window.propertiesPanelOpen = false
+        }
+
+        // Emberek-panel (#26): a jobb fiók negyedik panelje. Két szakasza
+        // az eredeti szövegforrásából jön — „In this photo:" (a kijelölt
+        // képek nevesített emberei) és „Also in these photos:" (akik a
+        // nézett SZEMÉLLYEL együtt szerepelnek).
+        PeoplePanel {
+            objectName: "peoplePanel"
+            visible: window.peoplePanelOpen
+            SplitView.preferredWidth: 200
+            SplitView.minimumWidth: 160
+            selectionCount: window.selectedRows().length
+            currentPerson: controller ? controller.currentPersonName : ""
+            // a photos.revision-nel együtt kötve: arc-írás után frissül
+            peopleHere: controller
+                ? (controller.photos.revision,
+                   controller.peopleOfRows(window.selectedRows()))
+                : []
+            peopleWith: controller && controller.currentPersonName.length > 0
+                ? (controller.photos.revision,
+                   controller.peopleWith(controller.currentPersonName))
+                : []
+            onPersonChosen: function(name) {
+                if (!controller) return
+                window.clearSelection()
+                window.unnamedFacesOpen = false
+                controller.showPerson(name)
+            }
+            onCloseRequested: window.peoplePanelOpen = false
         }
     }
 
