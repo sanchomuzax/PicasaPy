@@ -404,14 +404,39 @@ lebegőpontos bitminták), hogy a rátett képek olvashatók maradjanak.
 **Keret nélküli illeszkedés** (`0x00889ce0`): a hosszabbik oldal kapja a
 megadott célméretet, a rövidebbet arányosan számolja.
 
-#### 1.9.6 Ami ebből a körből nyitott maradt
+#### 1.9.6 A vtable-slotok jelentése (mind a hat témára ellenőrizve)
 
-- A **Mozaik pakolója**: hogyan darabolódik az egységnégyzet cellákra, és
-  mi dönti el a képek cellához rendelését (1.9.3).
-- A **Rács** sor/oszlop-számának képlete.
-- A `CPileTheme` **kezdeti (x, y) szórása** — a fenti képletek a *már
-  kiszámolt* pozícióból dolgoznak; magát a szórást előállító lépés a
-  `0x0087dcd0` egy másik ágában van.
+A kör egyik mellékeredménye, hogy a téma-osztályok slotkiosztása kiderült —
+ez korábban félrevezetett minket, mert a „3. slot" nem elrendezés:
+
+| slot | mit csinál |
+|---|---|
+| 0 | **elrendezés/rajzolás** — a dokumentum téglalapjaiból képpontot számol |
+| 1–2 | méret- és oldalarány-lekérdezés |
+| **3** | **a sorrend/elhelyezés összekeverése** (`rand_order` / `rand_placement`) — minden témában `_rand()` kulcsokkal rendez, **nem** elrendezés |
+| 6–8 | a téma neve, ikonja, leírása (erőforráskulcsok) |
+
+Az osztályok és a vtable-jeik (RTTI-ből): `CPileTheme` `0x00cbf5ac`,
+`CGridTheme` `0x00cbf5dc`, `CRegularGridTheme` `0x00cbf610`,
+`CMultiExposureTheme` `0x00cbf640`, `CContactSheetTheme` `0x00cbf670`,
+`CFrameGridTheme` `0x00cbf6a0`; keretek: `PolaroidBitmapTheme` `0x00cbf91c`,
+`WhiteBorderTheme` `0x00cbf928`, `NoBorderTheme` `0x00cbf934`,
+`DimmedBitmapTheme` `0x00cbf940`.
+
+#### 1.9.7 Ami ebből a körből nyitott maradt
+
+- A **Mozaik pakolója.** Kiderült, hol *nincs*: a `CGridTheme` 0. slotja már
+  **kész téglalapokat olvas** a dokumentumból (a képnódusok 56 bájtos
+  rekordjaiból, a `+0x18…+0x24` mezőkből), tehát a pakolás **korábban**, egy
+  külön lépésben történik. A `collage::refining_format` („Kollázs létrehozása
+  – %d%%") felirat arra utal, hogy ez egy **iteratív, háttérszálon futó
+  optimalizálás**, nem zárt képlet — ezért nem is bukkant elő a téma-osztályok
+  alatt. A következő kör gyökerei ehhez: `CCollageUI` 5. slot (`0x0082d570`)
+  és 4. slot (`0x0082cb50`), valamint a `CHeadlessCollageUI` előrehaladás-hívója
+  (`0x0088a340`) hívói.
+- A **Rács** (`regulargrid`) sor/oszlop-számának képlete.
+- A Képkupac **kezdeti (x, y) szórása** — az 1.9.2 képletei a *már kiszámolt*
+  pozícióból dolgoznak.
 - Az `AnimPlacementHandler` további mezői (mi animálódik még a 0,8 s alatt).
 
 ## 2. Film készítése (`ID_MAKEMOVIE`, `eMenuCreateMovie`)
