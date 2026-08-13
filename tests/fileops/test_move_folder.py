@@ -11,6 +11,9 @@ elveszítenék a feliratukat, a címkéiket és az arc-hozzárendeléseiket.
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 import pytest
 
 from picasapy.fileops.move_folder import (
@@ -98,7 +101,8 @@ class TestRefusals:
 
         assert (source / "a.jpg").exists()
 
-    def test_a_system_path_is_refused(self):
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX-utak")
+    def test_a_posix_system_path_is_refused(self):
         """Az eredeti külön hibaüzenetet adott rá — nem hagyta, hogy a
         felhasználó lábon lője magát."""
         assert is_system_path("/etc") is True
@@ -106,6 +110,17 @@ class TestRefusals:
 
         with pytest.raises(FolderMoveError, match="Rendszermappa"):
             move_folder("/etc", "/tmp")
+
+    def test_the_drive_root_is_refused_everywhere(self, tmp_path):
+        """A meghajtó gyökere platformtól függetlenül védett — linuxon a
+        „/", Windowson a „C:\\"."""
+        root = Path(tmp_path.anchor)
+
+        assert is_system_path(root) is True
+
+    def test_the_home_folder_itself_is_refused(self):
+        """A home-ban lévő mappák mozgathatók, maga a home nem."""
+        assert is_system_path(Path.home()) is True
 
     def test_an_ordinary_folder_is_not_a_system_path(self, tmp_path):
         assert is_system_path(_folder_with_photo(tmp_path / "innen")) is False

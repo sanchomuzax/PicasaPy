@@ -26,6 +26,10 @@ from pathlib import Path
 #: A rendszer-könyvtárak, amiket sosem mozgatunk. Az eredeti is külön
 #: hibaüzenetet adott rá („Unable to Move a System Path") — nem hagyta,
 #: hogy a felhasználó lábon lője magát.
+#:
+#: A lista MINDKÉT platformot fedi: a program Windowson is fut, és ott a
+#: `/etc`-hez hasonló POSIX-utak nem léteznek — a `C:\Windows` viszont
+#: éppúgy védendő, mint linuxon a `/usr`.
 _SYSTEM_PATHS = (
     "/",
     "/bin",
@@ -44,6 +48,13 @@ _SYSTEM_PATHS = (
     "/tmp",
     "/usr",
     "/var",
+    # Windows
+    "C:\\",
+    "C:\\Windows",
+    "C:\\Program Files",
+    "C:\\Program Files (x86)",
+    "C:\\Users",
+    "C:\\ProgramData",
 )
 
 
@@ -57,7 +68,13 @@ def is_system_path(folder: Path) -> bool:
     A felhasználó saját home-ja NEM az: azt szabad mozgatni-e, arról a
     szülője dönt. A `/home` maga viszont igen."""
     resolved = Path(folder).resolve()
-    if str(resolved) in _SYSTEM_PATHS:
+    # a meghajtó gyökere (linuxon "/", windowson "C:\\") sosem mozgatható
+    if resolved == resolved.parent:
+        return True
+    known = {item.casefold() for item in _SYSTEM_PATHS}
+    if str(resolved).casefold().rstrip("\\/") in {
+        item.rstrip("\\/") for item in known
+    }:
         return True
     # a home-könyvtár maga sem mozgatható (a benne lévő mappák igen)
     return resolved == Path.home().resolve()
