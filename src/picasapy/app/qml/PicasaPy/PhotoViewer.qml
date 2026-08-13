@@ -54,6 +54,12 @@ Rectangle {
     // megerősítő dialógus a Main.qml-ben él (FileOpsDialogs), ezért a
     // kérés jelként megy kifelé
     signal deleteRequested(string path)
+    // #422: a mentés-szemantika parancsai a nézőből — a gazda (Main.qml)
+    // ugyanazokat a megerősítéseket nyitja, mint a rácsban
+    signal saveRequested(int row)
+    signal revertRequested(int row)
+    signal undoAllEditsRequested(int row)
+    signal resetFacesRequested()
 
     // #192: a Tulajdonságok-panel a nézőben is — a könyvtár-nézet közös
     // kapcsolóját (Main.qml: window.propertiesPanelOpen) követi. A fő
@@ -1409,6 +1415,20 @@ Rectangle {
         // #305: null-őr — a controller a leépítéskor átmenetileg null lehet
         albums: typeof controller !== "undefined" && controller
             ? controller.albums : []
+
+        // #422: a mentés-parancsok aktív állapota a NÉZETT képre
+        hasEdits: viewer.photosModel && viewer.currentIndex >= 0
+            ? (viewer.photosModel.revision,
+               viewer.photosModel.itemAt(viewer.currentIndex).hasEdits === true)
+            : false
+        hasBackup: typeof controller !== "undefined" && controller
+                   && viewer.currentIndex >= 0
+            ? controller.hasSavedBackup([viewer.currentIndex]) : false
+
+        onSaveRequested: viewer.saveRequested(viewer.currentIndex)
+        onRevertRequested: viewer.revertRequested(viewer.currentIndex)
+        onUndoAllEditsRequested: viewer.undoAllEditsRequested(viewer.currentIndex)
+        onResetFacesRequested: viewer.resetFacesRequested()
 
         onBackToLibraryRequested: viewer.closed()
         onAddToAlbumRequested: function(token) {

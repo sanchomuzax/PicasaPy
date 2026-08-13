@@ -546,6 +546,16 @@ ApplicationWindow {
         visible: window.viewerOpen
         // #305: null-őr
         photosModel: controller ? controller.photos : null
+        // #422: a mentés-parancsok a nézőből — ugyanazok a megerősítések,
+        // mint a rácsból (egy parancs, egy út)
+        onSaveRequested: function(row) { saveDialogs.openSave([row]) }
+        onRevertRequested: function(row) { saveDialogs.openRevert([row]) }
+        onUndoAllEditsRequested: function(row) {
+            if (typeof batchEffectController !== "undefined"
+                    && batchEffectController)
+                batchEffectController.clearAllEffectsMany([row])
+        }
+        onResetFacesRequested: resetFacesConfirm.open()
         onPlayRequested: window.startSlideshow(currentIndex)
         onClosed: {
             window.viewerOpen = false
