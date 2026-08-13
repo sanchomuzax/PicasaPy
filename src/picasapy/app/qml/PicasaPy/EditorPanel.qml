@@ -605,7 +605,8 @@ Rectangle {
     Flickable {
         id: tabScroll
         objectName: "editorTabScroll"
-        visible: !panel.modeToolActive
+        // a csúszkás alpanel a fülek HELYETT jelenik meg (nem föléjük)
+        visible: !panel.modeToolActive && !panel.paramPanelActive
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
@@ -678,18 +679,6 @@ Rectangle {
             anchors.right: parent.right
         }
 
-        // ---------------- effekt-paraméter alpanel (#316) ----------------
-        // #496: a tartalom önálló fájlban (EditorParamPanel.qml).
-        EditorParamPanel {
-            id: effectParamScroll
-            objectName: "editorEffectParamScroll"
-            panel: panel
-            visible: !panel.modeToolActive && panel.paramPanelActive
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-        }
-
         // ---------------- "retouch" mód: Retusálás (#148) ----------------
         // A Vágás mintáját követi: a kép TELJES panel-területét foglalja el a
         // fülsáv/rács helyett; a kattintások kezelését a hívó (PhotoViewer)
@@ -729,6 +718,25 @@ Rectangle {
 
 
 
+
+
+    // #616: a csúszkás alpanel a fülek görgethető területén KÍVÜL
+    // marad: maga is Flickable (saját vágással és görgetéssel), és egy
+    // Flickable implicit magassága 0 — becsomagolva nulla magasságot
+    // kapna, azaz eltűnne. A gombsorig érő horgony itt is megvan.
+    // ---------------- effekt-paraméter alpanel (#316) ----------------
+    // #496: a tartalom önálló fájlban (EditorParamPanel.qml).
+    EditorParamPanel {
+        id: effectParamScroll
+        objectName: "editorEffectParamScroll"
+        panel: panel
+        visible: !panel.modeToolActive && panel.paramPanelActive
+        anchors.top: tabBar.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
+    }
 
     // #316: húzás közben az egyes csúszka-változásokat nem küldjük azonnal
     // (élő előnézetenként) az editControllernek — kis késleltetéssel

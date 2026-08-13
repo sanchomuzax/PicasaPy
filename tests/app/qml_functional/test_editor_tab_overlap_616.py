@@ -109,3 +109,43 @@ class TestTabsNeverOverlapTheUndoRow:
         scroll = _child(panel, "editorTabScroll")
 
         assert scroll.property("contentHeight") <= scroll.property("height")
+
+
+class TestParamPanelStaysUsable:
+    """#616 mellékhatás-őr: a csúszkás alpanel MAGA IS Flickable, és egy
+    Flickable implicit magassága 0 — ha a fülek görgethető területébe
+    csomagolnánk, nulla magasságot kapna, azaz eltűnne. Ezért kívül marad,
+    saját horgonnyal a gombsorig."""
+
+    def _with_param_panel(self, qml_engine):
+        # a `paramPanelActive` futásidőben kapcsolódik (a panel a
+        # létrehozáskori értéket felülírja), ezért UTÓLAG állítjuk
+        panel = _panel(qml_engine, height=600)
+        panel.setProperty("paramEffectName", "sepia")
+        panel.setProperty("paramPanelActive", True)
+        return panel
+
+    def test_the_param_panel_has_a_real_height(self, qml_engine):
+        panel = self._with_param_panel(qml_engine)
+
+        param = _child(panel, "editorEffectParamScroll")
+
+        assert param.property("height") > 0, "az alpanel eltűnt"
+        assert param.property("clip") is True
+
+    def test_the_param_panel_replaces_the_tabs(self, qml_engine):
+        """Az alpanel a fülek HELYETT jelenik meg, nem föléjük."""
+        panel = self._with_param_panel(qml_engine)
+
+        assert _child(panel, "editorTabScroll").property("visible") is False
+
+    def test_the_param_panel_stops_above_the_undo_row(self, qml_engine):
+        panel = self._with_param_panel(qml_engine)
+
+        param = _child(panel, "editorEffectParamScroll")
+        undo_row = _child(panel, "editorGlobalUndoRow")
+
+        assert (
+            param.property("y") + param.property("height")
+            <= undo_row.property("y") + 1
+        )
