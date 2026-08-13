@@ -100,3 +100,43 @@ class TestSections:
 
         assert _child(window, "peoplePanelEmptyText").property("visible") is True
         assert _child(window, "peoplePanelEmptyText").property("text")
+
+
+class TestEmptyStates:
+    """#26: az eredeti panelnek ÖT külön magyarázó szövege volt aszerint,
+    mit néz éppen a felhasználó (`peoplepanel_text.tre`) — üres listát
+    sosem hagyott."""
+
+    def test_nothing_selected_says_no_people_yet(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        _open(window, qt_app)
+        panel = _child(window, "peoplePanel")
+        panel.setProperty("selectionCount", 0)
+        panel.setProperty("currentPerson", "")
+        qt_app.processEvents()
+
+        assert "No people have been found yet" in _child(
+            window, "peoplePanelEmptyText"
+        ).property("text")
+
+    def test_a_selection_promises_the_people_on_it(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        _open(window, qt_app)
+        panel = _child(window, "peoplePanel")
+        panel.setProperty("selectionCount", 2)
+        qt_app.processEvents()
+
+        assert "currently selected photos" in _child(
+            window, "peoplePanelEmptyText"
+        ).property("text")
+
+    def test_a_person_album_promises_who_appears_with_them(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        _open(window, qt_app)
+        panel = _child(window, "peoplePanel")
+        panel.setProperty("currentPerson", "Roy Avery")
+        qt_app.processEvents()
+
+        assert "appear with" in _child(
+            window, "peoplePanelEmptyText"
+        ).property("text")
