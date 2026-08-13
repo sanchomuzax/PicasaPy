@@ -22,7 +22,7 @@ programon belül kétféle séma zavaróbb lenne, mint az eredetitől való elt�
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -64,18 +64,28 @@ def conflicting_names(paths: Iterable[Path], dest_folder: Path) -> tuple[Path, .
 
 
 def copy_photos(
-    paths: Sequence[Path], dest_folder: Path, policy: str = RENAME
+    paths: Sequence[Path],
+    dest_folder: Path,
+    policy: str = RENAME,
+    progress: Callable[[int, int], None] | None = None,
 ) -> BatchResult:
     """Fotók másolása a célmappába, a `policy` szerint (#457).
 
     `RENAME`: az ütköző nevek új nevet kapnak (`copy_photo` intézi);
     `SKIP`: az ütköző fájlok kimaradnak, a többi átmegy.
+
+    `progress(kész, összes)`: fájlonként hívódik — az eredeti is számlálót
+    mutatott (`CAcquireUI::copying` = „Copying %1$d of %2$d files"), nem
+    csak egy pörgő sávot.
     """
-    return _run(paths, dest_folder, policy, copy_photo)
+    return _run(paths, dest_folder, policy, copy_photo, progress)
 
 
 def move_photos(
-    paths: Sequence[Path], dest_folder: Path, policy: str = RENAME
+    paths: Sequence[Path],
+    dest_folder: Path,
+    policy: str = RENAME,
+    progress: Callable[[int, int], None] | None = None,
 ) -> BatchResult:
     """Fotók áthelyezése a célmappába, a `policy` szerint (#457).
 
@@ -83,7 +93,7 @@ def move_photos(
     másolásnál (`::5`); a MAPPA áthelyezését viszont ütközéskor elutasította
     (`CThumbUI::MoveFolderExists`) — az más művelet, nem ez.
     """
-    return _run(paths, dest_folder, policy, _move_with_rename)
+    return _run(paths, dest_folder, policy, _move_with_rename, progress)
 
 
 def _move_with_rename(path: Path, dest_folder: Path) -> Path:
@@ -116,24 +126,29 @@ def _free_name(path: Path, dest_folder: Path) -> str:
         counter += 1
 
 
-def _run(paths, dest_folder, policy, operation) -> BatchResult:
+def _run(paths, dest_folder, policy, operation, progress=None) -> BatchResult:
     if policy not in (RENAME, SKIP):
         raise ValueError(f"Ismeretlen ütközés-házirend: {policy!r}")
     dest = Path(dest_folder)
     done: list[tuple[Path, Path]] = []
     skipped: list[Path] = []
     failed: list[tuple[Path, str]] = []
-    for raw in paths:
-        path = Path(raw)
+    items = [Path(raw) for raw in paths]
+    total = len(items)
+    for index, path in enumerate(items, start=1):
         if policy == SKIP and (dest / path.name).exists():
             skipped.append(path)
-            continue
-        try:
-            done.append((path, operation(path, dest)))
-        except (OSError, ValueError, IniSaveError, IniConflictError) as error:
-            # #301/#459: egy hibás fájl nem állíthatja meg a köteget — a
-            # hívó a végén EGY összegzést mutat, nem fájlonkénti ablakot
-            failed.append((path, str(error)))
+        else:
+            try:
+                done.append((path, operation(path, dest)))
+            except (OSError, ValueError, IniSaveError, IniConflictError) as error:
+                # #301/#459: egy hibás fájl nem állíthatja meg a köteget — a
+                # hívó a végén EGY összegzést mutat, nem fájlonkénti ablakot
+                failed.append((path, str(error)))
+        # a kihagyott és a hibás fájl is HALAD: a felhasználó a számlálóból
+        # azt akarja tudni, hol tart a művelet, nem azt, hány sikerült
+        if progress is not None:
+            progress(index, total)
     return BatchResult(tuple(done), tuple(skipped), tuple(failed))
 
 
