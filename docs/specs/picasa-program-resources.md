@@ -529,13 +529,13 @@ névre oldotta fel a tulajdonságok panelen.
 
 ---
 
-## 7.5 A `Picasa3i18n.dll` lokalizációs erőforrásai — ⚠️ **KÉT különböző XML-formátum**
+## 7.5 A `Picasa3i18n.dll` lokalizációs erőforrásai — ⚠️ **NÉGY különböző XML-formátum**
 
 A honosítás nem egyetlen nagy táblában él, hanem **panelenként külön XML-erőforrásban**.
 Az erőforrás-leltár szerint **3084 `XMLF` erőforrás** van, 483 névtípusban, 41 nyelven;
 ebből **75 a magyar** (`Rsrc_XMLF_<PANEL>_HU.XML_409`).
 
-### ⚠️ A buktató: a fájlok KÉT, egymással nem kompatibilis alakot használnak
+### ⚠️ A buktató: a fájlok NÉGY, egymással nem kompatibilis alakot használnak
 
 Ez a szakasz azért van itt, mert **egy csak az egyik alakot ismerő feldolgozó
 némán a szöveg ~15%-át találja meg** — hibaüzenet nélkül, látszólag sikeresen.
