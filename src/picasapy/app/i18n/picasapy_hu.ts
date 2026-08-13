@@ -2675,6 +2675,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
         <translation>Mappa áthelyezése</translation>
     </message>
     <message>
+        <source>Exported Pictures</source>
+        <translation>Exportált képek</translation>
+    </message>
+    <message>
         <source>Ignored people</source>
         <translation>Mellőzött emberek</translation>
     </message>
