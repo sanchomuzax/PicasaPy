@@ -1,7 +1,11 @@
 # Az effektek nevei és buboréksúgói — a Picasa saját szótára
 
 A `Picasa3i18n.dll` `filter_<szűrő>_label<N>` és `filter_<szűrő>_tooltip<N>`
-kulcsai. **84 szűrő**, mind a 41 nyelven — itt az angol és az eredeti magyar.
+kulcsai. **83 szűrő**, mind a 41 nyelven — itt az angol és az eredeti magyar.
+
+*(A `filterdesc.xml` 84 szűrőt sorol; a felirat-táblában 83-nak van neve. A
+kettő nem ugyanaz a halmaz: a `filterdesc` belső segéd-bejegyzéseket is
+tartalmaz, a felirat-tábla viszont csak azt, aminek a felületen neve van.)*
 
 - `label0` = **a szűrő neve** a felületen,
 - `label1…N` = **a vezérlői**, a `filters=` láncbeli sorrendben,
