@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [0.7.21] – 2026-08-13
+## [0.7.23] – 2026-08-13
 
 ### Változott
 - **Mentés, Visszaállítás és „Összes szerkesztés visszavonása" a rács
@@ -15,6 +15,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   Ha nincs mit menteni vagy visszavonni, a tétel **szürke, de látszik**:
   az eredeti Picasa sem tüntette el, hogy a menü magassága állandó
   maradjon.
+## [0.7.19] – 2026-08-13
+
+### Változott
+- **Kézi arc-hozzáadás az eredeti kétlépéses módján (#26).** Eddig a
+  téglalap felhúzása után azonnal felugrott a névkérő, és a téglalapon
+  utólag nem lehetett igazítani. Mostantól — ahogy az eredeti Picasa
+  utasítása leírta — a **négyszög megmarad és az oldalai húzhatók**, a
+  nevet pedig a négyszög alatti **„Név hozzáadása"** felirattal lehet
+  megadni. Szerkesztő módban ott az útmutató szöveg is: a gesztus
+  önmagában nem felfedezhető.
+
 ## [0.7.16] – 2026-08-13
 
 ### Hozzáadva

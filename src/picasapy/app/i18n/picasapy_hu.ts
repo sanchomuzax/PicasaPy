@@ -34,6 +34,14 @@
 <context>
     <name>FacesOverlay</name>
     <message>
+        <source>Add a name</source>
+        <translation>Név hozzáadása</translation>
+    </message>
+    <message>
+        <source>Drag a rectangle over the face you want to add, then adjust its sides. Click "Add a name" under the rectangle and type the person&apos;s name.</source>
+        <translation>Húzzon négyszöget a hozzáadni kívánt arc fölé, majd az oldalaival pontosítsa az alakját. Kattintson a négyszög alatti „Név hozzáadása" feliratra, és írja be a személy nevét.</translation>
+    </message>
+    <message>
         <source>Name</source>
         <translation>Név</translation>
     </message>
