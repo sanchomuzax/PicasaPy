@@ -39,15 +39,14 @@ _EXPECTED_ITEMS = [
     "viewerMenuProperties",
 ]
 
-# amiknek még nincs háttere — a Picasa ezeket is MEGJELENÍTI, szürkén
+# amiknek MA sincs háttere — a Picasa ezeket is MEGJELENÍTI, szürkén.
+# A Mentés / Visszaállítás / Összes szerkesztés visszavonása alapból
+# szintén szürke, de NEM helyfoglaló: állapotfüggő (#422), ezért a saját
+# tesztjük fedi őket lentebb.
 _EXPECTED_DISABLED = [
-    "viewerMenuUndoAllEdits",
     "viewerMenuOpenWith",
-    "viewerMenuSave",
-    "viewerMenuRevert",
     "viewerMenuQuickUpload",
     "viewerMenuBlockUpload",
-    "viewerMenuResetFaces",
 ]
 
 
@@ -194,3 +193,37 @@ class TestViewerContextMenuBehaviour:
         )
         qt_app.processEvents()
         assert window.property("viewerOpen") is False
+
+
+class TestSaveCommandsInTheViewer:
+    """#422: a mentés-szemantika a nézőben is elérhető — ugyanaz a motor,
+    mint a rácsban és a menüsávban. Egy parancs, egy út."""
+
+    def test_they_are_state_dependent_not_placeholders(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        menu = _child(window, "viewerContextMenu")
+
+        menu.setProperty("hasEdits", False)
+        qt_app.processEvents()
+        assert _child(window, "viewerMenuSave").property("enabled") is False
+
+        menu.setProperty("hasEdits", True)
+        qt_app.processEvents()
+        assert _child(window, "viewerMenuSave").property("enabled") is True
+        assert (
+            _child(window, "viewerMenuUndoAllEdits").property("enabled") is True
+        )
+
+    def test_revert_follows_the_backup(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        menu = _child(window, "viewerContextMenu")
+
+        menu.setProperty("hasBackup", True)
+        qt_app.processEvents()
+
+        assert _child(window, "viewerMenuRevert").property("enabled") is True
+
+    def test_reset_faces_is_live(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+
+        assert _child(window, "viewerMenuResetFaces").property("enabled") is True

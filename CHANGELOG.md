@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [0.7.30] – 2026-08-13
+## [0.7.32] – 2026-08-13
 
 ### Hozzáadva
 - **Sebesség a másolás/áthelyezés haladásjelzőjén (#457).** A számláló
@@ -19,6 +19,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   feliratukat, a címkéiket és az arc-hozzárendeléseiket. A program
   megtagadja a rendszermappák mozgatását, és nem enged olyan célt, ahol
   már van azonos nevű mappa — mindkét esetben a forrás érintetlen marad.
+## [0.7.31] – 2026-08-13
+
+### Változott
+- **A mentés-parancsok a nézőben is működnek (#422).** A Mentés, a
+  Visszaállítás, az „Összes szerkesztés visszavonása" és az „Arcok
+  alaphelyzetbe állítása" eddig helyfoglaló volt a néző jobbklikk-
+  menüjében — most ugyanazt teszik, mint a rácsban és a menüsávban.
+  Ugyanaz a parancs nem viselkedhet máshol másképp.
 ## [0.7.27] – 2026-08-13
 
 ### Hozzáadva
