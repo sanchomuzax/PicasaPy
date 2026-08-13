@@ -156,21 +156,54 @@ felhasználásra kerül).
 | `Philipp91/picasa2digikam` | Python | ini + contacts.xml → digiKam SQLite; tanulság: duplikált arcok üres célnál kerülhetők el |
 | `bufemc/picasa2xmp` | Python | arcok → XMP MWG-RS sidecar; exiv2 + exiftool függőség |
 
-## Lábjegyzet: a „.pmp" elnevezés eredete és további ismert fájlnevek
+## A `thumblab` modul: a tárolási réteg első kézből (2026-08-13)
 
-A `.pmp` kiterjesztés **szó szerint nem fordul elő** a `Picasa3.exe`
-string-tábláiban (ld. `docs/specs/picasa-exe-strings.md`, 3. pont) — ez tehát
-nem hivatalos Google-terminológia, hanem a közösségi visszafejtés (pl.
-`skisoo/PicasaDBReader`) elnevezés-konvenciója. Nem ellentmond a fenti
-leírásnak, csak jelzi az elnevezés eredetét.
+A binárisban benne maradtak a fordító **forrásfájl-nevei**, és ezek megnevezik
+a tárolási réteg három összetevőjét:
 
-Ugyanott az exe-ben további, e specben eddig nem szereplő adatbázis-/
-gyorsítótár-fájlnevek kerültek elő: `distims.db`, `profilephotos.db`,
-`thumbindex.tid` — valamint `index-thumbs.db`, `makemoviecache.db`,
-`thumbs_index.db`, `repository.dat`, `usernames.dat`, `starlist.txt`,
-`saverlist.txt`, `badfiles.txt`. Szerepük egyelőre a fájlnévből
-sejthető (pl. duplikátum-index, profilkép-cache, thumbindex-lock), tételes
-tisztázásuk nem történt meg.
+| forrásfájl | szerep | a bizonyíték ugyanabból a függvényből |
+|---|---|---|
+| `.\thumblab\CPropertyMap.cpp` | **tulajdonság-térkép** (oszlopalapú tár) | a **`%s_%s.%s`** fájlnév-minta |
+| `.\thumblab\CBlockFile.cpp` | **blokkos fájltár** | `CBlockFile::Restore err=%d, %s` |
+| `.\thumblab\CIndexer.cpp` | **kereső-index** | `wordhash.dat` + három hibaüzenete |
+
+**A `.pmp` elnevezés kérdése ezzel lezárható.** A `%s_%s.%s` minta pontosan a
+`<tábla>_<oszlop>.<kiterjesztés>` képzés, a modul valódi neve pedig
+**PropertyMap** — a közösségi „.pmp" rövidítés tehát nem véletlen egybeesés,
+hanem ráillik. A fájlnév-séma **első kézből igazolt**; csak maga a betűszó
+származik a közösségtől (`skisoo/PicasaDBReader`), a `.pmp` szó szerint
+valóban nem szerepel a string-táblákban.
+
+### `wordhash.dat` — a szöveges keresés fordított indexe
+
+A `CIndexer` írja. A három hibaüzenete megadja a szerkezetét:
+
+- „Inconsistent dictionary.PoolSize()" → a szótár **pool-allokált**, a
+  fejlécbeli méretnek egyeznie kell a tartalommal,
+- „wordhash.dat: incorrect entity count" → a fejlécben **bejegyzés-számláló**,
+- „wordhash.dat file: excess data" → a fájl hossza **pontosan meghatározott**.
+
+Nem importálandó (újraépíthető). A tanulság: a szöveges keresés **előre épített
+indexből** menjen, ne futásidejű szűréssel — nálunk ez az SQLite FTS5.
+
+### A segédfájlok szerepe
+
+| fájl | szerep |
+|---|---|
+| `albums.db` | album-nyilvántartás |
+| `thumbs.db` · `thumbs2.db` · `bigthumbs.db` · `thumbs_index.db` · `index-thumbs.db` · `thumbindex.db` · `thumbindex.tid` | bélyegkép-gyorstárak több méretben és generációban |
+| `previews.db` | nagyobb előnézetek |
+| `facetemplates_0.db` · **`facetemplatesV2.db`** · `facetemplates_index.db` | **arc-sablonok, két generációban** — egybevág az `imagedata` `personalbumrecs` / `personalbumrecs2` mezőpárjával, és megmagyarázza a „Frissíteni kell az arcokkal kapcsolatos adatokat" migrációs kérdést |
+| `distims.db` | hasonlósági ujjlenyomatok (a ki nem adott hasonlósági kereséshez) |
+| `makemoviecache.db` | film-előnézeti gyorstár |
+| `wordhash.dat` | szöveges kereső-index (ld. fent) |
+| `repository.dat` | a tár fő nyilvántartása |
+| `profilephotos.db` · `usernames.dat` | a megszűnt online szolgáltatáshoz |
+| `starlist.txt` · `saverlist.txt` | az adatbázisból generált **egyszerű listák** a kísérőprogramoknak (csillagozott, illetve képernyővédő-album) |
+
+**Importálás szempontjából mind eldobható.** Az arc-sablonok bináris
+modell-adatok, a mi felismerőnkkel nem használhatók — ami átvehető, az a
+**név–arc hozzárendelés**, nem a sablon.
 
 ## PicasaPy saját tárolási terve (munkahipotézis)
 
