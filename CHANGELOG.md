@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [0.7.24] – 2026-08-13
+## [0.7.26] – 2026-08-13
 
 ### Hozzáadva
 - **Sebesség a másolás/áthelyezés haladásjelzőjén (#457).** A számláló
@@ -20,6 +20,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   megtagadja a rendszermappák mozgatását, és nem enged olyan célt, ahol
   már van azonos nevű mappa — mindkét esetben a forrás érintetlen marad.
 
+## [0.7.22] – 2026-08-13
+
+### Változott
+- **Az Emberek-panel megmondja, mire számíthatsz (#26).** Üres listánál
+  eddig egyetlen általános mondat állt ott; az eredeti Picasa panelje
+  viszont **aszerint** magyarázott, mit néz éppen a felhasználó. Most
+  nálunk is: személy albumát nézve „…akik a kiválasztott személlyel együtt
+  szerepelnek", kijelölt fotóknál „…akik a kijelölt fotókon szerepelnek",
+  egyébként pedig az, hogy még nem találtunk embereket.
 ## [0.7.19] – 2026-08-13
 
 ### Változott
