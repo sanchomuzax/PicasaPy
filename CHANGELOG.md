@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.19] – 2026-08-13
+
+### Változott
+- **Kézi arc-hozzáadás az eredeti kétlépéses módján (#26).** Eddig a
+  téglalap felhúzása után azonnal felugrott a névkérő, és a téglalapon
+  utólag nem lehetett igazítani. Mostantól — ahogy az eredeti Picasa
+  utasítása leírta — a **négyszög megmarad és az oldalai húzhatók**, a
+  nevet pedig a négyszög alatti **„Név hozzáadása"** felirattal lehet
+  megadni. Szerkesztő módban ott az útmutató szöveg is: a gesztus
+  önmagában nem felfedezhető.
+
 ## [0.7.16] – 2026-08-13
 
 ### Hozzáadva
