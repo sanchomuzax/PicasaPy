@@ -155,3 +155,38 @@ def test_empty_selection_is_a_no_op(tmp_path):
 
     assert copy_photos([], dest).done == ()
     assert move_photos([], dest).skipped == ()
+
+
+class TestProgressReporting:
+    """#457: az eredeti SZÁMLÁLÓT mutatott a hosszú műveletek alatt
+    („Copying %1$d of %2$d files"), nem csak egy pörgő sávot."""
+
+    def test_it_counts_every_file(self, tmp_path):
+        src, dest = tmp_path / "src", tmp_path / "dest"
+        paths = [_photo(src, name) for name in ("a.jpg", "b.jpg", "c.jpg")]
+        dest.mkdir()
+        seen = []
+
+        copy_photos(paths, dest, RENAME, lambda d, t: seen.append((d, t)))
+
+        assert seen == [(1, 3), (2, 3), (3, 3)]
+
+    def test_a_skipped_file_still_advances_the_counter(self, tmp_path):
+        """A felhasználó azt akarja tudni, hol tart a művelet — nem azt,
+        hány fájl sikerült."""
+        src, dest = tmp_path / "src", tmp_path / "dest"
+        paths = [_photo(src, name) for name in ("a.jpg", "b.jpg")]
+        _photo(dest, "a.jpg")
+        seen = []
+
+        result = copy_photos(paths, dest, SKIP, lambda d, t: seen.append((d, t)))
+
+        assert len(result.skipped) == 1
+        assert seen == [(1, 2), (2, 2)]
+
+    def test_progress_is_optional(self, tmp_path):
+        src, dest = tmp_path / "src", tmp_path / "dest"
+        paths = [_photo(src, "a.jpg")]
+        dest.mkdir()
+
+        assert len(copy_photos(paths, dest, RENAME).done) == 1

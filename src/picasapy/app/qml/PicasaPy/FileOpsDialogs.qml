@@ -427,9 +427,75 @@ Item {
         }
     }
 
+    // #457: haladásjelző a kötegelt másoláshoz/áthelyezéshez. Az eredeti
+    // címei: `CThumbUI::CopyProgress` = „Copying Files" és
+    // `CThumbUI::MoveProgress` = „Moving Files"; a törzse megmondta, HOVA
+    // megy (`MoveFilesToAlbumFolder::1`/`::4`), a számláló pedig azt, hol
+    // tart (`CAcquireUI::copying` = „Copying %1$d of %2$d files").
+    Dialog {
+        id: batchProgressDialog
+        objectName: "batchProgressDialog"
+        title: operation === "move" ? qsTr("Moving Files") : qsTr("Copying Files")
+        modal: true
+        anchors.centerIn: parent
+        closePolicy: Popup.NoAutoClose
+        property string operation: "copy"
+        property string destination: ""
+        property int done: 0
+        property int total: 0
+
+        function report(op, dest, doneCount, totalCount) {
+            batchProgressDialog.operation = op
+            batchProgressDialog.destination = dest
+            batchProgressDialog.done = doneCount
+            batchProgressDialog.total = totalCount
+            // egyetlen fájlnál nincs mit nézni rajta
+            if (totalCount > 1 && doneCount < totalCount)
+                batchProgressDialog.open()
+            else
+                batchProgressDialog.close()
+        }
+
+        ColumnLayout {
+            spacing: 8
+            Text {
+                objectName: "batchProgressTarget"
+                Layout.preferredWidth: 360
+                wrapMode: Text.WrapAnywhere
+                text: batchProgressDialog.operation === "move"
+                      ? qsTr("Moving file(s) to %1").arg(batchProgressDialog.destination)
+                      : qsTr("Copying file(s) to %1").arg(batchProgressDialog.destination)
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            Text {
+                objectName: "batchProgressCount"
+                Layout.preferredWidth: 360
+                text: batchProgressDialog.operation === "move"
+                      ? qsTr("Moving %1 of %2 files")
+                        .arg(batchProgressDialog.done).arg(batchProgressDialog.total)
+                      : qsTr("Copying %1 of %2 files")
+                        .arg(batchProgressDialog.done).arg(batchProgressDialog.total)
+                font.pixelSize: Theme.fontSize
+                color: Theme.textGray
+            }
+            ProgressBar {
+                objectName: "batchProgressBar"
+                Layout.preferredWidth: 360
+                from: 0
+                to: Math.max(1, batchProgressDialog.total)
+                value: batchProgressDialog.done
+            }
+        }
+    }
+
     Connections {
         target: fileOpsController
+        function onBatchProgress(operation, destination, done, total) {
+            batchProgressDialog.report(operation, destination, done, total)
+        }
         function onBatchFinished(operation, done, skipped, failed) {
+            batchProgressDialog.close()
             batchSummaryDialog.showFor(operation, done, skipped, failed)
         }
         function onOperationFailed(operation, message) {

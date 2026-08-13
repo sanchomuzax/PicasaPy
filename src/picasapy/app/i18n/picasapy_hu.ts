@@ -2298,6 +2298,30 @@
 <context>
     <name>FileOpsDialogs</name>
     <message>
+        <source>Copying Files</source>
+        <translation>Fájlok másolása</translation>
+    </message>
+    <message>
+        <source>Moving Files</source>
+        <translation>Fájlok áthelyezése</translation>
+    </message>
+    <message>
+        <source>Copying file(s) to %1</source>
+        <translation>Fájlok másolása ide: %1</translation>
+    </message>
+    <message>
+        <source>Moving file(s) to %1</source>
+        <translation>Fájlok áthelyezése ide: %1</translation>
+    </message>
+    <message>
+        <source>Copying %1 of %2 files</source>
+        <translation>%2 / %1 fájl másolása</translation>
+    </message>
+    <message>
+        <source>Moving %1 of %2 files</source>
+        <translation>%2 / %1 fájl áthelyezése</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="32"/>
         <source>Rename...</source>
         <translation>Átnevezés…</translation>
