@@ -67,6 +67,9 @@ ApplicationWindow {
     // #26 (3. lépcső): a „Névtelenek" nézet — a fő rács helyén jelenik
     // meg, amíg be van kapcsolva (ld. UnnamedFacesView.qml)
     property bool unnamedFacesOpen: false
+    // #26: melyik arc-album van nyitva — „unnamed" vagy „ignored"
+    // (`CAlbumLabel::Ignored` = „Mellőzött emberek")
+    property string facesAlbumMode: "unnamed"
     // a jobbklikkelt kép sora (#15) — a kontextusmenü egyedi műveleteinek
     // (átnevezés, fájlkezelő) célpontja
     property int fileOpTargetRow: -1
@@ -660,6 +663,7 @@ ApplicationWindow {
             unnamedFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
                                ? faceScanController.unnamedCount : 0
             unnamedFacesActive: window.unnamedFacesOpen
+                                && window.facesAlbumMode === "unnamed"
             // #449: a háttér-beolvasás haladása az albumlistában
             faceScanPercent: (typeof faceScanController !== "undefined" && faceScanController)
                               ? faceScanController.scanPercent : -1
@@ -698,8 +702,23 @@ ApplicationWindow {
             onUnnamedFacesChosen: {
                 toolbar.clearSearch()
                 window.clearSelection()
+                window.facesAlbumMode = "unnamed"
                 window.unnamedFacesOpen = true
             }
+            // #26: a „Mellőzött emberek" album — ugyanaz a nézet, más
+            // tartalommal és művelettel (a mellőzés visszavonása)
+            onIgnoredFacesChosen: {
+                toolbar.clearSearch()
+                window.clearSelection()
+                window.facesAlbumMode = "ignored"
+                window.unnamedFacesOpen = true
+            }
+            ignoredFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
+                               ? (controller ? controller.photos.revision : 0,
+                                  faceScanController.ignoredCount())
+                               : 0
+            ignoredFacesActive: window.unnamedFacesOpen
+                                && window.facesAlbumMode === "ignored"
             // #455: fogd-és-vidd — a húzott KIJELÖLÉS kerül albumba. Az új
             // album ugyanazt a névkérő párbeszédet kapja, mint a menüből
             // indított (Fájl → Új album), hogy ne legyen két, kicsit
@@ -905,6 +924,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             visible: window.unnamedFacesOpen
+                            mode: window.facesAlbumMode
                             faceScanController: typeof faceScanController !== "undefined"
                                                  ? faceScanController : null
                         }
