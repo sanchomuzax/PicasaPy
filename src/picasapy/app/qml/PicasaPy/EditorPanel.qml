@@ -584,68 +584,146 @@ Rectangle {
         anchors.margins: 10
     }
 
-    // ---------------- 1. fül: "Gyakori javítások" ikonrács ----------------
-    // #496: a fül tartalma önálló fájlban (EditorTabCommonFixes.qml) — a
-    // láthatóság és a horgonyok itt, a testvér-fülek mintája szerint.
-    EditorTabCommonFixes {
-        id: fixesTab
-        panel: panel
-        visible: !panel.modeToolActive && panel.activeTab === 0
-                 && !panel.paramPanelActive  // #583
+    // ---------------- a FÜLEK közös, vágott görgethető területe --------
+    //
+    // #464 UTÓÉLETE (felhasználói hibajelentés, 2026-08-13): a mód-eszközök
+    // (vágás/retusálás/vörösszem/szöveg) MÁR egy vágott Flickable-ben ültek,
+    // a FÜLEK viszont közvetlenül a panelre voltak horgonyozva. Egy 12
+    // csempés effekt-fül (3×4) a rövidebb ablakban MAGASABB, mint a hely: a
+    // rácsnak nem volt hova rövidülnie, ezért túlnyúlt, és a panel alján
+    // ülő Visszavonás/Újra sor RÁLÓGOTT a csempékre (a hibajelentés
+    // képernyőképén a gombsor a 3. és a 4. csempesor között lebeg).
+    //
+    // Az eredeti Picasa ugyanígy KÜLÖNVÁLASZTJA a kettőt: a csempék a
+    // `editpanel/fxthumbs` (`gridtilecont`) konténerben élnek, a
+    // Visszavonás/Újra pedig a sajátjában — `editpanel/filter_status_
+    // container`, benne `filter_undo`/`filter_redo` és `filter_undo_status`/
+    // `filter_redo_status` (a feliratok: CFilterStackUI::undoname =
+    // „Visszavonás: ", ::redolabel = „Újra"). A kettő tehát sosem keveredik.
+    // Nálunk a görgetés adja azt, amit az eredetinél a fix panelméret: a
+    // csempék SOSEM érnek a gombsor alá.
+    Flickable {
+        id: tabScroll
+        objectName: "editorTabScroll"
+        // a csúszkás alpanel a fülek HELYETT jelenik meg (nem föléjük)
+        visible: !panel.modeToolActive && !panel.paramPanelActive
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: globalUndoRow.top
         anchors.bottomMargin: 6
+        clip: true
+        contentWidth: width
+        // a görgethető magasság a LÁTHATÓ fülé — egyszerre legfeljebb egy az
+        contentHeight: {
+            var tallest = 0
+            var kids = tabScroll.contentItem.children
+            for (var i = 0; i < kids.length; ++i)
+                if (kids[i].visible && kids[i].implicitHeight > tallest)
+                    tallest = kids[i].implicitHeight
+            return tallest
+        }
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: PicasaScrollBar {}
+
+
+        // ---------------- 1. fül: "Gyakori javítások" ikonrács ----------------
+        // #496: a fül tartalma önálló fájlban (EditorTabCommonFixes.qml) — a
+        // láthatóság és a horgonyok itt, a testvér-fülek mintája szerint.
+        EditorTabCommonFixes {
+            id: fixesTab
+            panel: panel
+            visible: !panel.modeToolActive && panel.activeTab === 0
+                     && !panel.paramPanelActive  // #583
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---------------- "finetune" mód: Finomhangolás (#20/#464) ----------
+        // #464/#496: a fül tartalma önálló fájlban, a tulajdonos négy
+        // képernyőképe szerinti elrendezéssel (ld. ott).
+        EditorFinetunePanel {
+            id: finetunePanel
+            panel: panel
+            visible: !panel.modeToolActive && panel.activeTab === 1
+                     && !panel.paramPanelActive  // #583
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---------------- "effects" mód: Effektek (#20) ----------------
+        EditorEffectsTab1 {
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---------------- "effects2" mód: 4. effekt-fül — zöld ecset,
+        // "kreatív effektek" (#328, docs/specs/ui-audit-editor.md 4. fül) ------
+        EditorEffectsTab2 {
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---------------- "effects3" mód: 5. effekt-fül — kék ecset,
+        // "művészi effektek" (#328, docs/specs/ui-audit-editor.md 5. fül) ------
+        EditorEffectsTab3 {
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---------------- "retouch" mód: Retusálás (#148) ----------------
+        // A Vágás mintáját követi: a kép TELJES panel-területét foglalja el a
+        // fülsáv/rács helyett; a kattintások kezelését a hívó (PhotoViewer)
+        // végzi a képen (ez a fájl nem ismeri a kép geometriáját), a puffer
+        // méretét (retouchRegionCount) és az Alkalmaz/Mégse gombokat mutatja.
+
+        // ---------------- "redeye" mód: Vörösszem (#445) ----------------
+        // Az automatika a panel megnyitásakor lefut; a kézzel húzott
+        // téglalapokat — a Retusálás mintájára — a hívó (PhotoViewer) veszi fel
+        // a képen, ez a fájl a puffer-állapotot és a gombokat mutatja.
+
+        // ---------------- "text" mód: Szöveg-overlay (#148) ----------------
+        // A pozicionálás is kattintással történik a képen (a hívó feladata,
+        // ld. retouchColumn megjegyzése) — a szövegmező itt él, a tartalom
+        // gépelését a textDraftEdited jel viszi a controllerhez.
+
+        // ---------------- 6. fül: a további Glimmer-effektek (#422) --------
+        EditorEffectsTab4 {
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
+        // ---------------- 7. fül: örökölt, felület nélküli szűrők (#571) ---
+        EditorLegacyTab {
+            panel: panel
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+        }
+
     }
 
-    // ---------------- "finetune" mód: Finomhangolás (#20/#464) ----------
-    // #464/#496: a fül tartalma önálló fájlban, a tulajdonos négy
-    // képernyőképe szerinti elrendezéssel (ld. ott).
-    EditorFinetunePanel {
-        id: finetunePanel
-        panel: panel
-        visible: !panel.modeToolActive && panel.activeTab === 1
-                 && !panel.paramPanelActive  // #583
-        anchors.top: tabBar.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: globalUndoRow.top
-        anchors.bottomMargin: 6
-    }
 
-    // ---------------- "effects" mód: Effektek (#20) ----------------
-    EditorEffectsTab1 {
-        panel: panel
-        anchors.top: tabBar.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: globalUndoRow.top
-        anchors.bottomMargin: 6
-    }
 
-    // ---------------- "effects2" mód: 4. effekt-fül — zöld ecset,
-    // "kreatív effektek" (#328, docs/specs/ui-audit-editor.md 4. fül) ------
-    EditorEffectsTab2 {
-        panel: panel
-        anchors.top: tabBar.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: globalUndoRow.top
-        anchors.bottomMargin: 6
-    }
 
-    // ---------------- "effects3" mód: 5. effekt-fül — kék ecset,
-    // "művészi effektek" (#328, docs/specs/ui-audit-editor.md 5. fül) ------
-    EditorEffectsTab3 {
-        panel: panel
-        anchors.top: tabBar.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: globalUndoRow.top
-        anchors.bottomMargin: 6
-    }
 
+
+
+
+    // #616: a csúszkás alpanel a fülek görgethető területén KÍVÜL
+    // marad: maga is Flickable (saját vágással és görgetéssel), és egy
+    // Flickable implicit magassága 0 — becsomagolva nulla magasságot
+    // kapna, azaz eltűnne. A gombsorig érő horgony itt is megvan.
     // ---------------- effekt-paraméter alpanel (#316) ----------------
     // #496: a tartalom önálló fájlban (EditorParamPanel.qml).
     EditorParamPanel {
@@ -769,41 +847,7 @@ Rectangle {
         panel: panel
     }
 
-    // ---------------- "retouch" mód: Retusálás (#148) ----------------
-    // A Vágás mintáját követi: a kép TELJES panel-területét foglalja el a
-    // fülsáv/rács helyett; a kattintások kezelését a hívó (PhotoViewer)
-    // végzi a képen (ez a fájl nem ismeri a kép geometriáját), a puffer
-    // méretét (retouchRegionCount) és az Alkalmaz/Mégse gombokat mutatja.
 
-    // ---------------- "redeye" mód: Vörösszem (#445) ----------------
-    // Az automatika a panel megnyitásakor lefut; a kézzel húzott
-    // téglalapokat — a Retusálás mintájára — a hívó (PhotoViewer) veszi fel
-    // a képen, ez a fájl a puffer-állapotot és a gombokat mutatja.
-
-    // ---------------- "text" mód: Szöveg-overlay (#148) ----------------
-    // A pozicionálás is kattintással történik a képen (a hívó feladata,
-    // ld. retouchColumn megjegyzése) — a szövegmező itt él, a tartalom
-    // gépelését a textDraftEdited jel viszi a controllerhez.
-
-    // ---------------- 6. fül: a további Glimmer-effektek (#422) --------
-    EditorEffectsTab4 {
-        panel: panel
-        anchors.top: tabBar.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: globalUndoRow.top
-        anchors.bottomMargin: 6
-    }
-
-    // ---------------- 7. fül: örökölt, felület nélküli szűrők (#571) ---
-    EditorLegacyTab {
-        panel: panel
-        anchors.top: tabBar.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: globalUndoRow.top
-        anchors.bottomMargin: 6
-    }
 
     // ---------------- #464: GLOBÁLIS Visszavonás/Újra ----------------
     //

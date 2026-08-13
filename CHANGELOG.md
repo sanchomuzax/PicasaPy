@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.33] – 2026-08-13
+
+### Javítva
+- **Az effekt-fülön a Visszavonás/Újra gombsor rálógott a csempékre
+  (#616).** Rövidebb ablakban a 12 csempés rács magasabb volt, mint a hely,
+  és a panel alján ülő gombsor ráfeküdt a képekre. A fülek mostantól — a
+  mód-eszközökhöz hasonlóan — egy vágott, görgethető területen ülnek, ami
+  pontosan a gombsorig ér: a csempék **sosem** érnek a gombok alá. Az
+  eredeti Picasa is külön konténerben tartotta a kettőt.
+
 ## [0.7.32] – 2026-08-13
 
 ### Hozzáadva
