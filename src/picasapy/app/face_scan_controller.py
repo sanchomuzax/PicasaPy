@@ -52,6 +52,7 @@ from picasapy.index import (
     ignored_faces,
     group_unnamed_faces,
     mark_faces_ignored,
+    set_suggested_name,
     mark_faces_named,
     open_index,
     replace_faces,
@@ -322,6 +323,27 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
             self.unnamedCountChanged.emit()
         return all_ok and bool(written_ids)
 
+    @Slot(int, result=bool)
+    def acceptSuggestion(self, face_id: int) -> bool:  # noqa: N802
+        """A név-javaslat ELFOGADÁSA (pipa): a javasolt nevet ténylegesen
+        ráírjuk az arcra — ugyanazon az úton, mint a kézi névadás."""
+        with open_index(self._db_path) as conn:
+            row = conn.execute(
+                "SELECT suggested_name FROM face WHERE id = ?", (int(face_id),)
+            ).fetchone()
+            name = row["suggested_name"] if row is not None else None
+        if not name:
+            return False
+        return self.assignNameToFaces([int(face_id)], name)
+
+    @Slot(int)
+    def rejectSuggestion(self, face_id: int) -> None:  # noqa: N802
+        """A név-javaslat ELVETÉSE (x): a javaslat eltűnik, az arc marad
+        névtelen. Az arcot magát NEM mellőzzük — az külön döntés."""
+        with open_index(self._db_path) as conn:
+            set_suggested_name(conn, int(face_id), None)
+            conn.commit()
+
     @Slot(list, result=int)
     def ignoreFaces(self, face_ids) -> int:  # noqa: N802 — QML-slot-stílus
         """A kijelölt arcok MELLŐZÉSE — a „Mellőzött emberek" album (#26).
@@ -481,7 +503,14 @@ def _group_payload(faces, label: str) -> dict:
     return {
         "label": label,
         "faces": [
-            {"faceId": face.id, "thumbUrl": f"image://thumbs/{face.photo_id}"}
+            {
+                "faceId": face.id,
+                "thumbUrl": f"image://thumbs/{face.photo_id}",
+                # #26 (4. lépcső): a MÉG EL NEM DÖNTÖTT név-javaslat. Az
+                # eredeti kérdésként vetette fel (`PeoplePanel::
+                # SuggestionFmt` = „%s?"), pipa/x gombbal.
+                "suggestedName": face.suggested_name or "",
+            }
             for face in faces
         ],
     }

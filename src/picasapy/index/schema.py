@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -179,6 +179,26 @@ ALTER TABLE face ADD COLUMN group_id INTEGER REFERENCES face_group(id);
 CREATE INDEX IF NOT EXISTS idx_face_group ON face(group_id);
 """
 
+# #26 (4. lépcső): a név-javaslathoz KÉT oszlop hiányzott. A `person_name`
+# köti a lenyomatot a névhez (`state = 'named'` soroknál) — enélkül a
+# javaslat-ágnak nincs miből centroidot számolnia, ez volt a
+# `face_groups.group_unnamed_faces` dokumentált hiánya („NINCS forrás,
+# amiből ez automatikusan összeállna"). A `suggested_name` a MÉG EL NEM
+# DÖNTÖTT javaslatot hordozza; az arc állapota ilyenkor `'unnamed'` marad,
+# mert a javaslat nem döntés — a felhasználó erősíti meg vagy veti el
+# (`PeopleAlbum::ConfirmText`: „Press checkmark to confirm match, press
+# »x« to ignore.").
+#
+# A `_FACE_EMBEDDING_DDL` mintáját követi: ALTER TABLE-lel jön, hogy a
+# korábbi migrációs lépések SZÖVEGE VÁLTOZATLAN maradjon, és ugyanez a
+# blokk szerepel a friss telepítés `DDL`-jében is.
+_FACE_NAME_DDL = """
+ALTER TABLE face ADD COLUMN person_name TEXT;
+ALTER TABLE face ADD COLUMN suggested_name TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_face_person ON face(person_name);
+"""
+
 # A `folders.offline` (#459/5): a mappa jelenleg nem elérhető (levált
 # NAS-mount, kihúzott lemez). Ilyenkor a mappa és a fotói BENNMARADNAK az
 # indexben — a takarítás kihagyja őket —, csak jelölést kapnak; a következő
@@ -228,6 +248,7 @@ CREATE INDEX IF NOT EXISTS idx_photos_starred ON photos(folder_id) WHERE star = 
 {_FACE_DDL}
 
 {_FACE_EMBEDDING_DDL}
+{_FACE_NAME_DDL}
 
 {_FTS_DDL}
 """
@@ -296,4 +317,8 @@ ALTER TABLE photos ADD COLUMN exif_lon REAL;
     10: """
 ALTER TABLE folders ADD COLUMN offline INTEGER NOT NULL DEFAULT 0;
 """,
+    # #26 (4. lépcső): a név-javaslat két hiányzó oszlopa (ld.
+    # `_FACE_NAME_DDL`). NULL-lal jön a meglévő sorokra: a következő
+    # névadás/csoportosítás tölti fel, újraindexelés nem kell.
+    11: _FACE_NAME_DDL,
 }

@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.12] – 2026-08-13
+
+### Hozzáadva
+- **Név-javaslat az arcokra (#26).** Ha egy névtelen arc eléggé hasonlít
+  egy már elnevezett személyre, a program **megkérdezi**: a bélyegképen
+  megjelenik a név kérdőjellel, pipa és ✕ gombbal — pontosan úgy, ahogy az
+  eredeti Picasa tette. A javaslat soha nem dönt a felhasználó helyett: az
+  arc addig névtelen marad, az elvetés pedig csak a javaslatot törli, az
+  arcot nem mellőzi.
+
+  Ehhez a hiányzó láncszem is elkészült: eddig semmi nem kötötte a
+  felismerési lenyomatot a névhez, ezért a javaslat-ág — bár a matematika
+  megvolt — sosem talált el. Az index mostantól eltárolja, melyik arc
+  melyik névhez tartozik (séma v12, meglévő indexeknél újraindexelés
+  nélkül).
+
 ## [0.7.11] – 2026-08-13
 
 ### Hozzáadva
