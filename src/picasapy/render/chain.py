@@ -43,6 +43,7 @@ from picasapy.render.ops import (
     apply_tilt,
 )
 from picasapy.render.chain_report import ChainReport, validate_and_clamp_op
+from picasapy.render.directional import apply_dir_brite, apply_dir_sat
 from picasapy.render.registry import FILTER_REGISTRY, chain_flags
 from picasapy.render.retouch import apply_retouch, apply_retouch_patches
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
@@ -101,8 +102,6 @@ KNOWN_UNRENDERED_OPS = frozenset(
         "gamma",
         "backlight",
         "whitept",
-        "dir_sat",
-        "dir_brite",
         "dir_sharp",
         "debug",
     }
@@ -341,6 +340,26 @@ def _apply_radtint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+def _apply_dir_sat_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Élő alak: `dir_sat=1,balról-jobbra,felülről-lefelé` — a natív burkoló
+    # (`0x008f8fb0`) a két csúszkát KÖZVETLENÜL adja tovább, a korong
+    # (`puck`) csak beállítja őket, külön paraméterként nem jelenik meg.
+    return apply_dir_sat(
+        image,
+        horizontal=_effect_float(op, 0, 0.0),
+        vertical=_effect_float(op, 1, 0.0),
+    )
+
+
+def _apply_dir_brite_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Ugyanaz a paraméter-alak, mint a `dir_sat`-nál (`0x008f9050`).
+    return apply_dir_brite(
+        image,
+        horizontal=_effect_float(op, 0, 0.0),
+        vertical=_effect_float(op, 1, 0.0),
+    )
+
+
 def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # Élő alak: `dir_tint=1,x,y,gradiens,árnyalás[,szín]` — a szín
     # opcionális (#357), hiányában az alapértelmezett színnel futunk.
@@ -452,6 +471,8 @@ _HANDLERS = {
     "radblur": _apply_radblur_op,
     "radsat": _apply_radsat_op,
     "dir_tint": _apply_dir_tint_op,
+    "dir_sat": _apply_dir_sat_op,
+    "dir_brite": _apply_dir_brite_op,
     "radtint": _apply_radtint_op,
     "autobacklight": _apply_autobacklight_op,
     # --- Glimmer-effektek: EGZAKT csővezetékek a filterdesc.xml szerint

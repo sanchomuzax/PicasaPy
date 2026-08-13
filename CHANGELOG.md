@@ -5,6 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.35] – 2026-08-13
+
+### Hozzáadva
+- **Két irányított effekt a natív magokból: „Irányított telítettség" és
+  „Irányított fényesség" (#623).** Mindkettő a Picasa saját, dekompilált
+  pixelképletét futtatja, nem közelítést: közös lineáris rámpa a két
+  csúszkából („Balról jobbra", „Felülről lefelé"), rá a `dir_sat`
+  luma-interpolációja, illetve a `dir_brite` köbös tónusgörbéje. A régi
+  könyvtárak `filters=` lánca ezentúl ezt a két nevet is megjeleníti,
+  kihagyás helyett. A család harmadik tagja (`dir_sharp`) és a `linblur`
+  szándékosan kimaradt: ott a dekompilátum nem adja meg a hiányzó
+  együtthatót, azt előbb ki kell mérni.
+
 ## [0.7.34] – 2026-08-13
 
 ### Javítva
