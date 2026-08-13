@@ -57,7 +57,11 @@ _NOOP_NAMES = ("save", "rot", "crop", "moviestart", "movieend")
 #: nem a `KNOWN_UNRENDERED_OPS` tagjai. `radtint`: #565 (natív visszafejtés,
 #: ld. tests/render/test_radtint_565.py). `autobacklight`: #567 (a natív
 #: regiszter szerint fix 25%-os derítőfény, nem adaptív elemzés).
-_NOW_RENDERED_NAMES = ("radtint", "autobacklight")
+#: `dir_sat` / `dir_brite`: #623 (a natív magok — `0x0090dbb0`, `0x0090d8b0` —
+#: dekompilálva, ld. tests/render/test_directional.py). A család harmadik
+#: tagja (`dir_sharp`) SZÁNDÉKOSAN maradt kihagyott: a rámpa-horgonya a
+#: dekompilátumból nem olvasható ki, méréssel kell rögzíteni.
+_NOW_RENDERED_NAMES = ("radtint", "autobacklight", "dir_sat", "dir_brite")
 
 #: A 26-ból az, amelyik HALOTT legacy névnek bizonyult (#567): a natív
 #: regiszterben nincs hozzá se callback, se névregisztráció.
@@ -90,9 +94,9 @@ class TestAll26NamesCovered:
         # renderelők közé, a `focalpixelate` pedig halott legacy névnek
         # bizonyult (#567)
         assert len(_NOOP_NAMES) == 5
-        assert len(_NOW_RENDERED_NAMES) == 2
+        assert len(_NOW_RENDERED_NAMES) == 4
         assert len(_DEAD_LEGACY_KEYS) == 1
-        assert len(_UNRENDERED_NAMES) == 18
+        assert len(_UNRENDERED_NAMES) == 16
         assert (
             set(_NOOP_NAMES)
             | set(_NOW_RENDERED_NAMES)

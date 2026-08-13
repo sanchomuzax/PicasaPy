@@ -377,6 +377,17 @@ Vagyis: **köbös tónusgörbe** (sötétítés), és a világosítás ugyanez *
 tartományon**. A rámpa azt szabja meg, hogy képpontonként mennyit keverünk a
 köbös görbéből — 0-nál változatlan, 256-nál teljes köbös.
 
+> **Megvalósítva (#623).** A `dir_sat` és a `dir_brite` a
+> `picasapy.render.directional` modulban él, a `filters=` láncból elérhető
+> (`dir_sat=1,a,b`, `dir_brite=1,a,b` — a natív burkolók a két csúszkát
+> KÖZVETLENÜL adják tovább, a korong csak beállítja őket). A `dir_brite`
+> burkolója a középtónus-parabola erősségét **0**-nak adja, tehát az
+> előkorrekciós LUT azonosság.
+>
+> A `dir_sharp` és a `linblur` **szándékosan nem** került be: az előbbinél a
+> rámpa horgonya, az utóbbinál a második pont származtatása nem olvasható ki
+> a dekompilátumból — mindkettő méréssel rögzítendő.
+
 ## 2.8 Melegítés (`warm` / „Melegítés") — beégetett tábla, KINYERVE
 
 A `0x0090c040` nem számol: egy **256 × 4 bájtos, beégetett táblát** olvas
