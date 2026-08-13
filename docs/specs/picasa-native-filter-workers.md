@@ -624,14 +624,14 @@ JPEG). A képlet gyakorlatilag pontos.
 > a legerősebb: a dekompilálás adta a pontos egészaritmetikát, a mérés pedig
 > **igazolta**.
 
-## 4.3 A `glow`, a `blur` és a sugaras család — kézi elemzéssel MEGFEJTVE
+## 4.2 A `glow`, a `blur` és a sugaras család — kézi elemzéssel MEGFEJTVE
 
 A #617 első jelentésében azt írtam, hogy ezek „nem bomlottak ki" a mélységi
 követéssel. Ez **nem a kód hibája volt, hanem a módszeré**: a függvények
 kibomlottak, csak MMX-es, csomagolt aritmetikájú kódként, amit soronként kell
 olvasni. Az alábbi az eredmény.
 
-### 4.3.1 A közös elmosó mag — `0x009dd0d0`
+### 4.2.1 A közös elmosó mag — `0x009dd0d0`
 
 Ez a Picasa **általános elmosója**; a `glow` és a sugaras család egyaránt ezt hívja.
 
@@ -663,7 +663,7 @@ veremben van, a dekompilátor nem látja. Vagyis a **sugár → α leképezés**
 hiányzik — **egyetlen méréssel** meghatározható (egy éles lépcső elmosása ismert
 sugárral, majd α illesztése).
 
-### 4.3.2 `glow` — `0x0090d4b0`
+### 4.2.2 `glow` — `0x0090d4b0`
 
 Nem saját pixelművelet, hanem **összeállítás**:
 
@@ -679,7 +679,7 @@ FUN_009a99c0(...);                   // alfa visszaállítás
 Vagyis **glow = elmosás + visszakeverés az eredetivel**, ahol a csúszka a
 keverési arányt adja (`256 − a`).
 
-### 4.3.3 `blur` („Elhomályosítás", Küszöbérték) — NEM Gauss-elmosás
+### 4.2.3 `blur` („Elhomályosítás", Küszöbérték) — NEM Gauss-elmosás
 
 Ez a legmeglepőbb eredmény: a `0x0090cf60` **élmegőrző, többléptékű simítás**.
 
@@ -708,7 +708,7 @@ A küszöb `n²`-tel osztódik, mert a különbségek `n × n` blokkokra összeg
 > A `blur` a Picasában **megőrzi az éleket** — ezért van egyáltalán
 > „Küszöbérték" csúszkája.
 
-### 4.3.4 `radblur` / `radsat` — a sugaras maszk
+### 4.2.4 `radblur` / `radsat` — a sugaras maszk
 
 A burkoló (`0x008f8520`) két lépést végez:
 
