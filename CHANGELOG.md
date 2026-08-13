@@ -5,7 +5,6 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-<<<<<<< HEAD
 ## [0.7.16] – 2026-08-13
 
 ### Hozzáadva
@@ -14,7 +13,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   Mostantól látszik, **hova** megy, és **hol tart** — az eredeti Picasa
   szövegeivel („Fájlok másolása", „%2 / %1 fájl másolása"). Egyetlen
   fájlnál nem nyílik ablak.
-=======
+
 ## [0.7.13] – 2026-08-13
 
 ### Hozzáadva
@@ -22,7 +21,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   nézhetők: a bal hasáb Emberek gyűjteményében megjelenik a *Mellőzött
   emberek* sor, és onnan a **mellőzés visszavonható**. Az eredeti Picasában
   ez is album volt, nem egyirányú szemetes — most nálunk sem az.
->>>>>>> origin/main
 
 ## [0.7.12] – 2026-08-13
 
