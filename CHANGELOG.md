@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.27] – 2026-08-13
+
+### Hozzáadva
+- **„Exportált képek" a bal hasábon (#457).** Az exportált célmappák
+  mostantól megjelennek a Projektek gyűjtemény alatt, legutóbbi elöl — az
+  eredeti Picasa is külön csomópont alá gyűjtötte őket, hogy az export
+  **nyomon követhető** maradjon, ne tűnjön el a fájlrendszerben. A már
+  törölt mappák maguktól eltűnnek a listából.
+
 ## [0.7.25] – 2026-08-13
 
 ### Hozzáadva

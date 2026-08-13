@@ -2664,6 +2664,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>FolderPane</name>
     <message>
+        <source>Exported Pictures</source>
+        <translation>Exportált képek</translation>
+    </message>
+    <message>
         <source>Ignored people</source>
         <translation>Mellőzött emberek</translation>
     </message>

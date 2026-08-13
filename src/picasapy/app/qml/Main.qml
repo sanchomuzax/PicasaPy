@@ -713,6 +713,8 @@ ApplicationWindow {
                 window.facesAlbumMode = "ignored"
                 window.unnamedFacesOpen = true
             }
+            // #457: „Exportált képek" — a Projektek gyűjtemény alatt
+            exportedFolders: controller ? controller.exportedFolders : []
             ignoredFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
                                ? (controller ? controller.photos.revision : 0,
                                   faceScanController.ignoredCount())

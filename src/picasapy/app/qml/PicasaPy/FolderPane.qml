@@ -49,6 +49,8 @@ Rectangle {
     // #26: a „Mellőzött emberek" album (`CAlbumLabel::Ignored`) — az
     // eredetiben is ALBUM volt, tehát látszania kell, ha van tartalma
     property int ignoredFaceCount: 0
+    // #457: „Exportált képek" — `[{path, name}]`, az exportált célmappák
+    property var exportedFolders: []
     property bool ignoredFacesActive: false
     signal folderChosen(string path)
     signal starredChosen()
@@ -590,11 +592,61 @@ Rectangle {
         CollectionHeader {
             Layout.fillWidth: true
             label: qsTr("Projects")
-            // #320: a tartalom forrása még kutatás alatt — egyelőre üres.
-            itemCount: 0
+            // #457: az „Exportált képek" az eredetiben is külön csomópont
+            // volt a navigációban — az export így NYOMON KÖVETHETŐ maradt,
+            // nem tűnt el a fájlrendszerben. A Projektek gyűjtemény alá
+            // kerül, mert ez a felhasználó SAJÁT munkájának eredménye,
+            // nem beolvasott könyvtár.
+            itemCount: pane.exportedFolders.length
             labelObjectName: "projectsHeader"
             collapsed: pane.projectsCollapsed
             onToggled: pane.toggleCollection("projects")
+        }
+
+        Text {
+            objectName: "exportedPicturesLabel"
+            visible: !pane.projectsCollapsed && pane.exportedFolders.length > 0
+            Layout.fillWidth: true
+            Layout.leftMargin: 12
+            text: qsTr("Exported Pictures")
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.textGray
+        }
+
+        Repeater {
+            objectName: "exportedFolderRepeater"
+            model: pane.exportedFolders
+            delegate: Rectangle {
+                id: exportedItem
+                required property var modelData
+                objectName: "exportedFolderItem_" + modelData.name
+                visible: !pane.projectsCollapsed
+                Layout.fillWidth: true
+                Layout.preferredHeight: 22
+                color: pane.selectedPath === modelData.path
+                       ? Theme.panelSelectionActive
+                       : (exportedMouse.containsMouse ? Theme.panelSelection
+                                                      : "transparent")
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left; anchors.leftMargin: 20
+                    spacing: 5
+                    FolderIcon { anchors.verticalCenter: parent.verticalCenter }
+                    Text {
+                        text: exportedItem.modelData.name
+                        font.pixelSize: Theme.fontSize
+                        color: pane.selectedPath === exportedItem.modelData.path
+                               || exportedMouse.containsMouse
+                               ? Theme.panelSelectionText : Theme.textDark
+                    }
+                }
+                MouseArea {
+                    id: exportedMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: pane.folderChosen(exportedItem.modelData.path)
+                }
+            }
         }
 
         CollectionHeader {
