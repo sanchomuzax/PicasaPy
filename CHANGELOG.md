@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.38] – 2026-08-13
+
+### Javítva
+- **A töréspontos görbék mostantól úgy hajlanak, ahogy az eredetiben (#629).**
+  A Picasa a görbe-töréspontok között sima, köbös átmenetet használ, nálunk
+  eddig egyenes szakaszok voltak. Kilenc effektet érintett; a **60-as évek**
+  és a **Kinemaszkóp** képén ez akár **21 világossági szint** eltérést jelentett
+  — szemmel látható különbség, nem kerekítési zaj. A kétpontos görbét használó
+  effektek (Színinvertálás, Neon, Ceruzarajz) kimenete bájtra változatlan.
+
 ## [0.7.36] – 2026-08-13
 
 ### Hozzáadva
