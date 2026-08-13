@@ -1228,6 +1228,23 @@ ApplicationWindow {
                (controller.photos.itemAt(window.fileOpTargetRow)
                     .hidden === true))
             : false
+        // #422: a mentés-parancsok aktív állapota — a jobbklikkelt képen
+        // van-e szerkesztés, illetve van-e mentés-előtti másolat
+        hasEdits: controller
+            ? (controller.photos.revision,
+               (controller.photos.itemAt(window.fileOpTargetRow)
+                    .hasEdits === true))
+            : false
+        hasBackup: controller
+            ? controller.hasSavedBackup(window.selectedRows()) : false
+        onSaveRequested: saveDialogs.openSave(window.selectedRows())
+        onRevertRequested: saveDialogs.openRevert(window.selectedRows())
+        onUndoAllEditsRequested: {
+            if (typeof batchEffectController !== "undefined"
+                    && batchEffectController)
+                batchEffectController.clearAllEffectsMany(window.selectedRows())
+        }
+        onResetFacesRequested: resetFacesConfirm.open()   // mindig kérdez
         onHideToggleRequested: window.toggleHiddenSelection()
         onMoveRequested: fileOpsDialogs.openMove(window.selectedPaths())
         onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())
@@ -1359,6 +1376,25 @@ ApplicationWindow {
     WebExportDialog { id: webExportDialog }
 
     // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
+    // #422: „Arcok alaphelyzetbe állítása" — az eredeti szó szerinti
+    // figyelmeztetésével (`CThumbUI::ResetAllFaces`). A `.picasa.ini`
+    // névcímkéihez NEM nyúlunk: azt az eredeti is KÜLÖN kérdezte meg, és
+    // az ember által adott név nálunk szent.
+    ConfirmDialog {
+        id: resetFacesConfirm
+        objectName: "resetFacesConfirm"
+        namePrefix: "resetFaces"
+        title: qsTr("Reset Faces")
+        message: qsTr("WARNING! This will move all the faces back to the "
+                      + "unnamed album and delete the face groups. Name tags "
+                      + "you have written into the photos are NOT touched. "
+                      + "Do you want to do this?")
+        onConfirmed: {
+            if (typeof faceScanController !== "undefined" && faceScanController)
+                faceScanController.resetAllFaces()
+        }
+    }
+
     MoveDatabaseDialog { id: moveDatabaseDialog }
     CompactDatabaseDialog { id: compactDatabaseDialog }
 

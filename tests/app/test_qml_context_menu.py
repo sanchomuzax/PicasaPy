@@ -80,15 +80,15 @@ class TestPhotoContextMenu:
     ]
 
     # amiknek még nincs háttere — a Picasa ezeket is MEGJELENÍTI, szürkén
+    # Ezeknek MA sincs mögöttük működés — látszanak, de szürkék. A
+    # Mentés / Visszaállítás / Összes szerkesztés visszavonása alapból
+    # szintén szürke, de NEM helyfoglaló: állapotfüggő (#422), ezért a
+    # saját tesztjük fedi őket (test_photo_menu_commands.py).
     EXPECTED_DISABLED = [
-        "contextMenuUndoAllEdits",
         "contextMenuSplitFolder",
         "contextMenuOpenWith",
-        "contextMenuSave",
-        "contextMenuRevert",
         "contextMenuUploadToWebAlbums",
         "contextMenuBlockUpload",
-        "contextMenuResetFaces",
     ]
 
     def _make_menu(self, qml_engine):
@@ -144,6 +144,14 @@ class TestPhotoContextMenu:
         """Paritás: az eredetiben az átnevezés a Fájl menüben van (F2)."""
         menu = self._make_menu(qml_engine)
         assert menu.findChild(QObject, "contextMenuRename") is None
+
+    def test_reset_faces_is_live(self, qml_engine):
+        """#422: az „Arcok alaphelyzetbe állítása" már működik — nem
+        helyfoglaló többé."""
+        menu = self._make_menu(qml_engine)
+        item = menu.findChild(QObject, "contextMenuResetFaces")
+        assert item is not None
+        assert item.property("enabled") is True
 
     def test_unbacked_commands_are_shown_but_disabled(self, qml_engine):
         """Az inaktív tétel is tétel: LÁTSZIK, de szürke (spec 5.1.)."""

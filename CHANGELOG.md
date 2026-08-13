@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.25] – 2026-08-13
+
+### Hozzáadva
+- **Arcok alaphelyzetbe állítása (#422).** A rács jobbklikk-menüjéből
+  minden arc visszahelyezhető a Névtelenek albumba (az arc-csoportok
+  törlődnek, a felismerési lenyomatok megmaradnak, tehát nem kell újra
+  átnézni a könyvtárat). Az eredetihez hasonlóan **figyelmeztetéssel**
+  kérdez rá. Egy dolgot szándékosan **nem** csinál: a fotókba írt
+  névcímkékhez nem nyúl — azt az eredeti is külön kérdésként tette fel, és
+  az ember által adott név nálunk szent.
+
+### Változott
+- **Mentés, Visszaállítás és „Összes szerkesztés visszavonása" a rács
+  jobbklikk-menüjéből is (#422).** Eddig ez a három pont helyfoglaló volt
+  a menüben, pedig a működésük a Fájl menüből már elérhető volt. Mostantól
+  ugyanaz a megerősítés nyílik, mint a menüsávból — egy parancs, egy út.
+  Ha nincs mit menteni vagy visszavonni, a tétel **szürke, de látszik**:
+  az eredeti Picasa sem tüntette el, hogy a menü magassága állandó
+  maradjon.
 ## [0.7.22] – 2026-08-13
 
 ### Változott

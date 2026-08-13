@@ -20,10 +20,12 @@ from picasapy.index import (
     named_centroids,
     open_index,
     replace_faces,
+    reset_all_faces,
     set_suggested_name,
     store_embedding,
     suggested_faces,
     sync_tree,
+    unnamed_faces,
 )
 from support.jpeg_factory import make_jpeg
 
@@ -299,3 +301,62 @@ class TestNameSuggestion:
             conn.commit()
 
             assert suggested_faces(conn) == ()
+
+
+class TestResetAllFaces:
+    """#422: „Arcok alaphelyzetbe állítása" — az eredeti figyelmeztetése
+    szerint minden arc a Névtelenek albumba kerül vissza, a személyi
+    albumok pedig eltűnnek. A `.picasa.ini` névcímkéihez NEM nyúlunk: azt
+    az eredeti is KÜLÖN kérdezte meg."""
+
+    def test_everything_goes_back_to_unnamed(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path, names=("a.jpg",))
+        with open_index(db_path) as conn:
+            replace_faces(conn, photo_ids["a.jpg"], [_face()])
+            face_id = faces_missing_embedding(conn)[0].id
+            store_embedding(conn, face_id, np.ones(128, dtype=np.float32))
+            mark_faces_named(conn, [face_id], "Roy Avery")
+            conn.commit()
+
+            affected = reset_all_faces(conn)
+            conn.commit()
+
+            assert affected == 1
+            assert [f.id for f in unnamed_faces(conn)] == [face_id]
+            assert named_centroids(conn) == {}
+
+    def test_the_groups_are_gone(self, tmp_path):
+        db_path, photo_ids = _library(tmp_path, names=("a.jpg",))
+        with open_index(db_path) as conn:
+            replace_faces(conn, photo_ids["a.jpg"], [_face()])
+            face_id = faces_missing_embedding(conn)[0].id
+            store_embedding(conn, face_id, np.ones(128, dtype=np.float32))
+            conn.commit()
+            group_unnamed_faces(conn)
+            conn.commit()
+            assert face_groups(conn)
+
+            reset_all_faces(conn)
+            conn.commit()
+
+            assert face_groups(conn) == ()
+
+    def test_the_embedding_survives_so_no_rescan_is_needed(self, tmp_path):
+        """A lenyomat drága (modell + minden kép) — az alaphelyzet nem
+        dobja el, csak a RÁÉPÜLŐ döntéseket."""
+        db_path, photo_ids = _library(tmp_path, names=("a.jpg",))
+        with open_index(db_path) as conn:
+            replace_faces(conn, photo_ids["a.jpg"], [_face()])
+            face_id = faces_missing_embedding(conn)[0].id
+            store_embedding(conn, face_id, np.ones(128, dtype=np.float32))
+            conn.commit()
+
+            reset_all_faces(conn)
+            conn.commit()
+
+            assert faces_missing_embedding(conn) == ()
+
+    def test_an_empty_index_is_not_an_error(self, tmp_path):
+        db_path, _photo_ids = _library(tmp_path, names=("a.jpg",))
+        with open_index(db_path) as conn:
+            assert reset_all_faces(conn) == 0
