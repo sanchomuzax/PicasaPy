@@ -32,6 +32,20 @@ Rectangle {
     // tartani (ott állítva, nem itt).
     implicitWidth: 280
 
+    // #628: „mindig elfér" garancia. Az eredetiben a panel FIX méretű, és a
+    // kényszer-alapú elrendezésben a tartalom mindig kifér — görgetésre
+    // nincs szükség. Átméretezhető ablakban ennek a megfelelője a panel
+    // implicit magassága: fülsáv + a LEGMAGASABB fül + a Visszavonás/Újra
+    // sor. Nem az AKTÍV fülé, hogy a panel magassága fülváltáskor ne
+    // ugráljon. A néző ezt a magasságot kapja meg alsó korlátként.
+    readonly property real tallestTabHeight: Math.max(
+        fixesTab.implicitHeight, finetunePanel.implicitHeight,
+        effectsTab1.implicitHeight, effectsTab2.implicitHeight,
+        effectsTab3.implicitHeight, effectsTab4.implicitHeight,
+        legacyTab.implicitHeight)
+    implicitHeight: 10 + tabBar.height + panel.tallestTabHeight
+                    + 6 + globalUndoRow.height + 10
+
     // aktív fül: 0 = Gyakori javítások, 1 = Finomhangolás, 2–4 = a három
     // eredeti effekt-fül (#328), 5 = további effektek (#422), 6 = Régi
     // effektek (#571). Az eszköz-módok a fülsávtól függetlenül élnek.
@@ -584,47 +598,41 @@ Rectangle {
         anchors.margins: 10
     }
 
-    // ---------------- a FÜLEK közös, vágott görgethető területe --------
+    // ---------------- a FÜLEK közös területe (NEM görgethető) ----------
     //
-    // #464 UTÓÉLETE (felhasználói hibajelentés, 2026-08-13): a mód-eszközök
-    // (vágás/retusálás/vörösszem/szöveg) MÁR egy vágott Flickable-ben ültek,
-    // a FÜLEK viszont közvetlenül a panelre voltak horgonyozva. Egy 12
-    // csempés effekt-fül (3×4) a rövidebb ablakban MAGASABB, mint a hely: a
-    // rácsnak nem volt hova rövidülnie, ezért túlnyúlt, és a panel alján
-    // ülő Visszavonás/Újra sor RÁLÓGOTT a csempékre (a hibajelentés
-    // képernyőképén a gombsor a 3. és a 4. csempesor között lebeg).
+    // #628 — a #616 visszavonása. A #422 a felhasználó nyomatékos kérésére
+    // levette a görgethető keretet az effekt-fülekről; a #616 aztán, a
+    // kilógó gombsort orvosolva, VISSZATETTE. A valódi ok azonban nem a
+    // fülek mérete volt, hanem egy beégetett szám: a PhotoViewer.qml fix
+    // 420 képpontot adott a panelnek, akármekkora az ablak. A 3. fül 12
+    // bélyegképes csempéje (3×4 ≈ 450 px) ennél MINDIG magasabb, ezért a
+    // görgetés nem szélsőséges eset volt, hanem az alapállapot.
     //
-    // Az eredeti Picasa ugyanígy KÜLÖNVÁLASZTJA a kettőt: a csempék a
-    // `editpanel/fxthumbs` (`gridtilecont`) konténerben élnek, a
-    // Visszavonás/Újra pedig a sajátjában — `editpanel/filter_status_
-    // container`, benne `filter_undo`/`filter_redo` és `filter_undo_status`/
-    // `filter_redo_status` (a feliratok: CFilterStackUI::undoname =
-    // „Visszavonás: ", ::redolabel = „Újra"). A kettő tehát sosem keveredik.
-    // Nálunk a görgetés adja azt, amit az eredetinél a fix panelméret: a
-    // csempék SOSEM érnek a gombsor alá.
-    Flickable {
-        id: tabScroll
-        objectName: "editorTabScroll"
+    // Az eredetiben a panel FIX méretű, és a kényszer-alapú (.tre)
+    // elrendezésben a rács mindig kifér — görgetés nincs. Nálunk ezt a
+    // garanciát a panel `implicitHeight`-je adja (ld. lent): az a
+    // LEGMAGASABB fület is elbírja, a gombsor pedig a tartalmat követi,
+    // nem fix magasságon ül.
+    Item {
+        id: tabArea
+        objectName: "editorTabArea"
         // a csúszkás alpanel a fülek HELYETT jelenik meg (nem föléjük)
         visible: !panel.modeToolActive && !panel.paramPanelActive
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: globalUndoRow.top
-        anchors.bottomMargin: 6
-        clip: true
-        contentWidth: width
-        // a görgethető magasság a LÁTHATÓ fülé — egyszerre legfeljebb egy az
-        contentHeight: {
+        // a terület magassága a LÁTHATÓ fülé — egyszerre legfeljebb egy az.
+        // NINCS `clip` és nincs görgetősáv: a tartalomnak el KELL férnie.
+        height: {
+            if (!tabArea.visible)
+                return 0
             var tallest = 0
-            var kids = tabScroll.contentItem.children
+            var kids = tabArea.children
             for (var i = 0; i < kids.length; ++i)
                 if (kids[i].visible && kids[i].implicitHeight > tallest)
                     tallest = kids[i].implicitHeight
             return tallest
         }
-        boundsBehavior: Flickable.StopAtBounds
-        ScrollBar.vertical: PicasaScrollBar {}
 
 
         // ---------------- 1. fül: "Gyakori javítások" ikonrács ----------------
@@ -655,6 +663,7 @@ Rectangle {
 
         // ---------------- "effects" mód: Effektek (#20) ----------------
         EditorEffectsTab1 {
+            id: effectsTab1
             panel: panel
             anchors.top: parent.top
             anchors.left: parent.left
@@ -664,6 +673,7 @@ Rectangle {
         // ---------------- "effects2" mód: 4. effekt-fül — zöld ecset,
         // "kreatív effektek" (#328, docs/specs/ui-audit-editor.md 4. fül) ------
         EditorEffectsTab2 {
+            id: effectsTab2
             panel: panel
             anchors.top: parent.top
             anchors.left: parent.left
@@ -673,6 +683,7 @@ Rectangle {
         // ---------------- "effects3" mód: 5. effekt-fül — kék ecset,
         // "művészi effektek" (#328, docs/specs/ui-audit-editor.md 5. fül) ------
         EditorEffectsTab3 {
+            id: effectsTab3
             panel: panel
             anchors.top: parent.top
             anchors.left: parent.left
@@ -697,6 +708,7 @@ Rectangle {
 
         // ---------------- 6. fül: a további Glimmer-effektek (#422) --------
         EditorEffectsTab4 {
+            id: effectsTab4
             panel: panel
             anchors.top: parent.top
             anchors.left: parent.left
@@ -705,6 +717,7 @@ Rectangle {
 
         // ---------------- 7. fül: örökölt, felület nélküli szűrők (#571) ---
         EditorLegacyTab {
+            id: legacyTab
             panel: panel
             anchors.top: parent.top
             anchors.left: parent.left
@@ -855,13 +868,20 @@ Rectangle {
     // minden eszközben elérhető. Korábban mind az öt fül saját (azonos)
     // gombpárt rajzolt; most egyetlen, a panel aljához horgonyzott sor van,
     // és a fül-oszlopok EFÖLÖTT érnek véget (`anchors.bottom`).
+    // #628: a sor NINCS a panel aljához horgonyozva — a TARTALMAT követi.
+    // Bő helyen (a szokásos eset) a panel alján ül, ahogy az eredetiben;
+    // ha a fül tartalma nem férne el, inkább lejjebb tolódik, de a
+    // csempékre SOSEM kerül rá. Hogy a „lejjebb tolódik" ág a gyakorlatban
+    // ne forduljon elő, a panel `implicitHeight`-je elbírja a legmagasabb
+    // fület is (ld. fent) — ez az eredeti fix panelméretének megfelelője.
     RowLayout {
         id: globalUndoRow
         objectName: "editorGlobalUndoRow"
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: parent.bottom
         anchors.margins: 10
+        y: Math.max(panel.height - height - 10,
+                    tabArea.visible ? tabArea.y + tabArea.height + 6 : 0)
         spacing: 6
         opacity: panel.enabled ? 1 : 0.45
 
