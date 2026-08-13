@@ -29,6 +29,12 @@ Menu {
     // #17: igaz, ha a jobbklikkelt kép rejtett — a tétel felirata VÁLT
     // (Elrejtés ↔ Megjelenítés), nem pipát kap (spec A.2)
     property bool hideChecked: false
+    // #422: van-e a kijelölésen Picasa-szerkesztés (`filters=`), illetve
+    // van-e mentés-előtti biztonsági másolat — ezektől függ, hogy a
+    // Mentés / Visszaállítás / Összes szerkesztés visszavonása aktív-e.
+    // Az inaktív tétel LÁTSZIK, csak szürke (az eredeti szabálya).
+    property bool hasEdits: false
+    property bool hasBackup: false
 
     // #9: albumtagság — a Main.qml köti be a `controller.albums` listáját
     // és az aktív album tokent (#305 null-őr, ld. ott).
@@ -55,6 +61,12 @@ Menu {
     signal deleteRequested()
     signal copyFullPathRequested()
     signal propertiesRequested()
+    // #422 (2. lépcső): a mentés-szemantika három parancsa a rács
+    // jobbklikk-menüjéből is elérhető — a motorjuk a #444-ben elkészült,
+    // csak a menü maradt helyfoglaló
+    signal saveRequested()
+    signal revertRequested()
+    signal undoAllEditsRequested()
 
     // -- 1. blokk: az alapértelmezett művelet (félkövér) + album ----------
 
@@ -141,10 +153,15 @@ Menu {
 
     // -- 3. blokk: szerkesztés visszavonása --------------------------------
 
-    PicasaMenuItem {
+    // #422/#465: „Összes szerkesztés visszavonása" — a `filters=` teljes
+    // törlése a kijelölésen. Csak akkor aktív, ha van mit visszavonni:
+    // az eredeti a tételt SOSEM tüntette el, csak szürkítette (a menü
+    // magassága állandó, az izommemória működik).
+    MenuItem {
         objectName: "contextMenuUndoAllEdits"
         text: qsTr("Undo All Edits")
-        placeholder: true
+        enabled: menu.hasEdits
+        onTriggered: menu.undoAllEditsRequested()
     }
     MenuSeparator {}
 
@@ -190,15 +207,17 @@ Menu {
 
     // -- 7. blokk: mentés / visszaállítás -------------------------------------
 
-    PicasaMenuItem {
+    MenuItem {
         objectName: "contextMenuSave"
         text: qsTr("Save") + "\tCtrl+S"
-        placeholder: true
+        enabled: menu.hasEdits
+        onTriggered: menu.saveRequested()
     }
-    PicasaMenuItem {
+    MenuItem {
         objectName: "contextMenuRevert"
         text: qsTr("Revert")
-        placeholder: true
+        enabled: menu.hasBackup
+        onTriggered: menu.revertRequested()
     }
     MenuSeparator {}
 

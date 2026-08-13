@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.18] – 2026-08-13
+
+### Változott
+- **Mentés, Visszaállítás és „Összes szerkesztés visszavonása" a rács
+  jobbklikk-menüjéből is (#422).** Eddig ez a három pont helyfoglaló volt
+  a menüben, pedig a működésük a Fájl menüből már elérhető volt. Mostantól
+  ugyanaz a megerősítés nyílik, mint a menüsávból — egy parancs, egy út.
+  Ha nincs mit menteni vagy visszavonni, a tétel **szürke, de látszik**:
+  az eredeti Picasa sem tüntette el, hogy a menü magassága állandó
+  maradjon.
+
 ## [0.7.13] – 2026-08-13
 
 ### Hozzáadva

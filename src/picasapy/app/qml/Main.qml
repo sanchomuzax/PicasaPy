@@ -1228,6 +1228,22 @@ ApplicationWindow {
                (controller.photos.itemAt(window.fileOpTargetRow)
                     .hidden === true))
             : false
+        // #422: a mentés-parancsok aktív állapota — a jobbklikkelt képen
+        // van-e szerkesztés, illetve van-e mentés-előtti másolat
+        hasEdits: controller
+            ? (controller.photos.revision,
+               (controller.photos.itemAt(window.fileOpTargetRow)
+                    .hasEdits === true))
+            : false
+        hasBackup: controller
+            ? controller.hasSavedBackup(window.selectedRows()) : false
+        onSaveRequested: saveDialogs.openSave(window.selectedRows())
+        onRevertRequested: saveDialogs.openRevert(window.selectedRows())
+        onUndoAllEditsRequested: {
+            if (typeof batchEffectController !== "undefined"
+                    && batchEffectController)
+                batchEffectController.clearAllEffectsMany(window.selectedRows())
+        }
         onHideToggleRequested: window.toggleHiddenSelection()
         onMoveRequested: fileOpsDialogs.openMove(window.selectedPaths())
         onDeleteRequested: fileOpsDialogs.openDelete(window.selectedPaths())

@@ -119,3 +119,62 @@ class TestDeleteShortcutsAreContextDependent:
         qt_app.processEvents()
         assert grid_shortcut.property("enabled") is False
         assert viewer_shortcut.property("enabled") is True
+
+
+class TestSaveCommandsInTheGridMenu:
+    """#422: a mentés-szemantika három parancsa a rács jobbklikk-menüjéből
+    is elérhető — a motorjuk a #444-ben elkészült, csak a menü maradt
+    helyfoglaló. Az inaktív tétel LÁTSZIK, csak szürke (az eredeti
+    szabálya: a menü magassága állandó, az izommemória működik)."""
+
+    def test_they_are_present_with_their_labels(self, qml_app, qt_app):
+        """A láthatóságot itt nem mérjük: zárt menüben a QML minden tételt
+        rejtettnek mutat (a `visible` a szülőtől öröklődik)."""
+        window, _controller, _engine = qml_app
+
+        for name in (
+            "contextMenuSave",
+            "contextMenuRevert",
+            "contextMenuUndoAllEdits",
+        ):
+            item = window.findChild(QObject, name)
+            assert item is not None, f"{name} nem található"
+            assert item.property("text")
+
+    def test_save_is_disabled_without_edits(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        menu = window.findChild(QObject, "photoContextMenu")
+        menu.setProperty("hasEdits", False)
+        qt_app.processEvents()
+
+        assert window.findChild(QObject, "contextMenuSave").property("enabled") is False
+        assert (
+            window.findChild(QObject, "contextMenuUndoAllEdits").property("enabled")
+            is False
+        )
+
+    def test_save_becomes_available_with_edits(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+        menu = window.findChild(QObject, "photoContextMenu")
+        menu.setProperty("hasEdits", True)
+        qt_app.processEvents()
+
+        assert window.findChild(QObject, "contextMenuSave").property("enabled") is True
+
+    def test_save_opens_the_same_confirmation_as_the_file_menu(
+        self, qml_app, qt_app
+    ):
+        """Egy parancs, egy megerősítés — nem két, kicsit másképp
+        viselkedő út ugyanarra."""
+        window, _controller, _engine = qml_app
+        window.setProperty("selectedIndexes", [0])
+        window.setProperty("selectedIndex", 0)
+
+        QMetaObject.invokeMethod(
+            window.findChild(QObject, "photoContextMenu"),
+            "saveRequested",
+            Qt.ConnectionType.DirectConnection,
+        )
+        qt_app.processEvents()
+
+        assert window.findChild(QObject, "saveConfirmDialog").property("visible")
