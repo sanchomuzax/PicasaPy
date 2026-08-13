@@ -7,7 +7,7 @@ Repeater/GridView delegate-jei nem érhetők el findChild-dal)."""
 
 from __future__ import annotations
 
-from PySide6.QtCore import QObject, QUrl, Slot
+from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl, Slot
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 
 _KEEPALIVE = []
@@ -87,6 +87,11 @@ class _StubFaceScanController(QObject):
         self.calls.append(("assignNameToFaces", list(face_ids), name))
         return self._assign_result
 
+    @Slot("QVariantList", result=int)
+    def ignoreFaces(self, face_ids):
+        self.calls.append(("ignoreFaces", list(face_ids)))
+        return len(list(face_ids))
+
 
 def _make_view(qt_app, controller=None):
     import picasapy.app.application as app_module
@@ -160,3 +165,62 @@ class TestUnnamedFacesViewWiring:
         name_field.setProperty("text", "Roy Avery")
         button = view.findChild(QObject, "addNameButton")
         assert button.property("enabled") is False
+
+
+class TestIgnorePeople:
+    """#26: a mellőzés NEM törlés — az eredetiben a személy a „Mellőzött
+    emberek" albumba került, és a program külön rákérdezett rá."""
+
+    def test_the_button_needs_a_selection(self, qt_app):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        button = view.findChild(QObject, "ignoreFacesButton")
+
+        assert button.property("enabled") is False
+
+        view.setProperty("selectedCount", 1)
+        qt_app.processEvents()
+        assert button.property("enabled") is True
+
+    def test_it_asks_before_ignoring(self, qt_app):
+        """A gomb NEM mellőz azonnal — előbb megerősítést kér."""
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        view.setProperty("selectedFaceIds", {"4": True})
+        view.setProperty("selectedCount", 1)
+
+        view.findChild(QObject, "ignoreFacesButton").clicked.emit()
+        qt_app.processEvents()
+
+        # a megerősítő ablak létezik, és a gomb NEM mellőzött azonnal
+        # (a Popup önálló, ablak nélküli komponens-tesztben nem tud
+        # megjelenni, ezért a `visible` itt nem mérvadó)
+        assert view.findChild(QObject, "ignoreFacesDialog") is not None
+        assert [c for c in stub.calls if c[0] == "ignoreFaces"] == []
+
+    def test_confirming_ignores_the_selected_faces(self, qt_app):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        view.setProperty("selectedFaceIds", {"4": True, "5": True})
+        view.setProperty("selectedCount", 2)
+
+        QMetaObject.invokeMethod(
+            view, "ignoreSelected", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        calls = [c for c in stub.calls if c[0] == "ignoreFaces"]
+        assert len(calls) == 1
+        assert sorted(calls[0][1]) == [4, 5]
+
+    def test_the_message_names_the_ignored_people_album(self, qt_app):
+        """Az eredeti szövege: „…move this person to the ignored people
+        album?" — ez mondja meg, hogy a mellőzés visszavehető."""
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        view.setProperty("selectedCount", 1)
+        qt_app.processEvents()
+
+        message = view.findChild(QObject, "ignoreFacesMessage").property("text")
+
+        assert "ignored people album" in message

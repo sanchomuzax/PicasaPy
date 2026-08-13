@@ -87,6 +87,19 @@ ColumnLayout {
             // #422: jobbklikk-menü (Picasa `Address`)
             TextFieldContextArea {}
         }
+        // #26: „Ignore" — az eredetiben a mellőzés NEM törlés volt: a
+        // személy a „Mellőzött emberek" albumba került
+        // (`DeleteMessage::RemoveSingleUnknown`), külön megerősítéssel.
+        Button {
+            id: ignoreButton
+            objectName: "ignoreFacesButton"
+            text: qsTr("Ignore")
+            enabled: root.selectedCount > 0 && !!root.faceScanController
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("Move the selected people to the ignored "
+                               + "people album")
+            onClicked: ignoreConfirm.open()
+        }
         Button {
             id: addNameButton
             objectName: "addNameButton"
@@ -179,5 +192,47 @@ ColumnLayout {
                 }
             }
         }
+    }
+
+    // Az eredeti megerősítés — szó szerinti szövegekkel
+    // (`DeleteMessage::IgnorePeopleTitle` / `RemoveSingleUnknown` /
+    // `RemoveMultipleUnknown` / `RemoveSingleYesButtonUnknown`).
+    Dialog {
+        id: ignoreConfirm
+        objectName: "ignoreFacesDialog"
+        title: qsTr("Ignore People")
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.Yes | Dialog.Cancel
+        onOpened: standardButton(Dialog.Yes).text =
+            root.selectedCount > 1 ? qsTr("Ignore People")
+                                   : qsTr("Ignore Person")
+        onAccepted: root.ignoreSelected()
+
+        Text {
+            objectName: "ignoreFacesMessage"
+            width: 380
+            wrapMode: Text.WordWrap
+            text: root.selectedCount > 1
+                  ? qsTr("Are you sure you want to move the %1 selected "
+                         + "people to the ignored people album?")
+                    .arg(root.selectedCount)
+                  : qsTr("Are you sure you want to move this person to the "
+                         + "ignored people album?")
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+    }
+
+    // a tényleges mellőzés — külön, hívható függvényben (tesztelhetőség)
+    function ignoreSelected() {
+        if (!root.faceScanController) return 0
+        var ids = []
+        for (var key in root.selectedFaceIds) ids.push(parseInt(key))
+        if (ids.length === 0) return 0
+        var count = root.faceScanController.ignoreFaces(ids)
+        root.clearSelection()
+        root.reload()
+        return count
     }
 }

@@ -181,6 +181,12 @@ def unnamed_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
     (determinisztikus). A már névvel ellátott (`state != 'unnamed'`) arcokat
     ez a lekérdezés SOSEM adja vissza — az alapszabály (a Picasa döntései
     szentek) itt is szerkezeti kizárás, a `group_unnamed_faces` mintájára."""
+    return _faces_in_state(conn, "unnamed")
+
+
+def _faces_in_state(conn: sqlite3.Connection, state: str) -> tuple[UnnamedFace, ...]:
+    """A közös test: egy adott állapotú arcok kiolvasása. A `state`
+    ÉRTÉKKÉNT (paraméterként) megy be, nem szövegbe fűzve."""
     rows = conn.execute(
         "SELECT f.id, f.photo_id, f.rect_left, f.rect_top, f.rect_right, "
         "f.rect_bottom, f.group_id, fo.path AS folder_path, p.name AS name, "
@@ -188,8 +194,9 @@ def unnamed_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
         "FROM face f "
         "JOIN photos p ON p.id = f.photo_id "
         "JOIN folders fo ON fo.id = p.folder_id "
-        "WHERE f.state = 'unnamed' "
-        "ORDER BY (f.group_id IS NULL), f.group_id, f.id"
+        "WHERE f.state = ? "
+        "ORDER BY (f.group_id IS NULL), f.group_id, f.id",
+        (state,),
     )
     result = []
     for row in rows:
@@ -227,6 +234,46 @@ def mark_faces_named(conn: sqlite3.Connection, face_ids: Iterable[int]) -> None:
     conn.executemany(
         "UPDATE face SET state = 'named' WHERE id = ?", [(i,) for i in ids]
     )
+
+
+def mark_faces_ignored(conn: sqlite3.Connection, face_ids: Iterable[int]) -> None:
+    """A megadott arcok `state`-jét `'ignored'`-ra állítja — a „Mellőzött
+    emberek" album (#26).
+
+    Az eredeti Picasában a mellőzés NEM törlés: a személy a *Mellőzött
+    emberek* albumba került (`CAlbumLabel::Ignored`, `CThumbDB::
+    ignorefacealbum`), és a program külön rákérdezett rá
+    (`DeleteMessage::RemoveSingleUnknown`). Ugyanez itt: az arc-sor
+    megmarad, csak az állapota változik — így sem a „Névtelenek" albumban,
+    sem a csoportosításban nem bukkan fel újra, de vissza is vehető.
+
+    A `state` oszlop ezt az értéket a séma óta várja (ld. `schema.py`: a
+    javaslat/elnevezés/ignorálás hármasa)."""
+    ids = list(face_ids)
+    if not ids:
+        return
+    conn.executemany(
+        "UPDATE face SET state = 'ignored' WHERE id = ?", [(i,) for i in ids]
+    )
+
+
+def unignore_faces(conn: sqlite3.Connection, face_ids: Iterable[int]) -> None:
+    """A mellőzés visszavonása — az arc újra a „Névtelenek" albumba kerül.
+
+    A mellőzés az eredetiben sem volt végleges (az album ott van, tehát
+    vissza lehet nyúlni) — nálunk sem az."""
+    ids = list(face_ids)
+    if not ids:
+        return
+    conn.executemany(
+        "UPDATE face SET state = 'unnamed' WHERE id = ? AND state = 'ignored'",
+        [(i,) for i in ids],
+    )
+
+
+def ignored_faces(conn: sqlite3.Connection) -> tuple[UnnamedFace, ...]:
+    """A mellőzött arcok — a „Mellőzött emberek" album tartalma."""
+    return _faces_in_state(conn, "ignored")
 
 
 def unnamed_album_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
