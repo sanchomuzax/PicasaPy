@@ -529,6 +529,90 @@ névre oldotta fel a tulajdonságok panelen.
 
 ---
 
+## 7.5 A `Picasa3i18n.dll` lokalizációs erőforrásai — ⚠️ **KÉT különböző XML-formátum**
+
+A honosítás nem egyetlen nagy táblában él, hanem **panelenként külön XML-erőforrásban**.
+Az erőforrás-leltár szerint **3084 `XMLF` erőforrás** van, 483 névtípusban, 41 nyelven;
+ebből **75 a magyar** (`Rsrc_XMLF_<PANEL>_HU.XML_409`).
+
+### ⚠️ A buktató: a fájlok KÉT, egymással nem kompatibilis alakot használnak
+
+Ez a szakasz azért van itt, mert **egy csak az egyik alakot ismerő feldolgozó
+némán a szöveg ~15%-át találja meg** — hibaüzenet nélkül, látszólag sikeresen.
+
+**A) `<tooltips>` / `<action>` alak** — a `.tre`-vel leírt panelekhez
+(`foldermgr_text`, `printoptionstext`, `peoplepanel_text`, `collagepaneltext`, …):
+
+```xml
+<tooltips>
+ <action type="Label" target="foldermgr/folder_list_label"
+         xmbdesc="Label(foldermgr/folder_list_label)">
+  <xmbtext>Mappalista</xmbtext>
+ </action>
+ <action type="Tooltip" target="printoptions/apply" …>
+```
+
+A `type` értékei: `Label`, `Tooltip`, `Text`, `Text1`…`Text7`, `WebTarget`.
+
+**B) `<resources>` / `<stringres>` alak** — a `.fen`-nel leírt párbeszédekhez
+(`options`, `imageproperties`, `rename`, `offsettime`, `poster`, …):
+
+```xml
+<resources>
+ <stringres id="options/window1.win_title">
+  <xmbtext>Opciók</xmbtext>
+ </stringres>
+</resources>
+```
+
+Itt **nincs `type` attribútum**, és az azonosító `id=`, nem `target=`.
+
+**C) `<Win32Res>` / `<RT_DIALOG>` alak** — a natív Windows-párbeszédekhez
+(csak a `resexport` erőforrásban, 4 párbeszéd: Névjegy, adatbázis-tömörítés,
+replikáció, használati statisztika). Elrendezés-téglalapokat is tartalmaz:
+
+```xml
+<res resid="#145">
+  <dtitle><xmbtext>A Picasa névjegye</xmbtext></dtitle>
+  <dlayout>rect(0 0 435 293)</dlayout>
+  <item itemid="1" itemtype="Button" layout="rect(…)"><xmbtext>OK</xmbtext></item>
+```
+
+### Mennyiségi bizonyíték a buktatóra
+
+| feldolgozó | talált sor |
+|---|---:|
+| csak az **A** alakot ismeri | **784** |
+| **A + B** | **5273** |
+
+A különbség **6,7-szeres**, és az elsőre semmi nem hívja fel a figyelmet: a
+kimenet létezik, értelmes, és minden panelhez tartozik *néhány* sor. A hiba
+csak akkor derül ki, ha valaki egy konkrét párbeszédet (pl. a Beállításokat)
+keres, és nem találja benne.
+
+**Ellenőrző szabály:** kinyerés után nézd meg, van-e **0 soros** erőforrás.
+Ha egy 14 kB-os XML-ből nulla sor jön ki, a formátum nem illeszkedik.
+
+### Kinyerés a helyi DLL-ből
+
+Az erőforrások a `.rsrc` szakaszban vannak; a címet a bináris-index
+`data_symbols` táblája adja, a fájloffszetet a PE-szakasztáblából kell
+számolni (image base `0x10000000`):
+
+```python
+# name, address, size  ←  data_symbols, ahol name GLOB '*_HU.XML_409'
+offset = rawptr + (address - imagebase - virtual_address)
+blob   = dll_bytes[offset : offset + size]        # kész UTF-8 XML
+```
+
+**Eredmény a repóban:** `referencia/i18n-hu/` (75 XML) és
+`referencia/panel-feliratok-hu.tsv` (5273 sor: erőforrás · típus · azonosító ·
+magyar) — mindkettő a privát agent-repóban.
+
+> A `SHORTCUTS.XML` ugyanitt él, és **nem** a fenti három alak egyike: saját
+> `<shortcuts><keymap><item srckey=… ctrl=… shift=… alt=…>` szerkezete van.
+> Ez a negyedik formátum — ezért maradt sokáig észrevétlen (#442).
+
 ## 8. Összegzés — mi hasznosítható közvetlenül a PicasaPy-ban
 
 1. **`buttons/*.pbz` formátum** — egyszerűen portolható deklaratív
