@@ -552,3 +552,83 @@ dekompilálni. Ez néhány sor a meglévő szkriptben.
 - a `radblur`/`radsat` **pixelműveletei** (a burkolók és a `puck`-kezelés
   megvan, a magok nem);
 - a `sepia` mátrixa (ld. 3.5).
+
+---
+
+# 4. dekompilálási kör (#617) — a `sepia` MEGFEJTVE
+
+**Futás:** 2026-08-13, ugyanaz a környezet és bináris. 6 gyökér, 6 szint
+mélység, **137 dekompilált függvény**. Nyers kimenet:
+`referencia/dekompilalt-617/` (privát repó).
+
+## 4.1 A `sepia` — a kikényszerített diszasszemblálás bevált
+
+A #612-ben rögzített negatív eredmény oka az volt, hogy a Ghidra a
+`0x0090a120` címen **nem hozott létre függvényt** (csak hívási célként ismerte).
+A szkriptbe tett `disassemble(addr)` + `createFunction(addr, null)` megoldotta:
+a mag **434 bájt**, és teljesen kibomlott.
+
+### A teljes algoritmus
+
+```c
+// képpontonként, BGRA pufferben:
+
+// 1) szürkeárnyalat — ITU-R BT.601 egészaritmetikával
+gray = (77*R + 151*G + 28*B) >> 8;          // 0x4d, 0x97, 0x1c — összegük pontosan 256
+
+// 2) halványítás: invertálás → 218/256 szorzás → visszainvertálás
+base = 255 - (((255 - gray) * 218) >> 8);    // 0xda = 218
+                                             // g=0 → base=38  (a feketék megemelve)
+                                             // g=255 → base=255
+
+// 3) színezés OVERLAY-keveréssel, fix tintával
+//    tint = (R,G,B) = (0x9b, 0x7d, 0x63) = (155, 125, 99)
+for c in (R, G, B):
+    if (base < 128)  out_c = (2 * base * tint_c) >> 8;                       // multiply
+    else             out_c = 255 - ((2 * (255 - base) * (255 - tint_c)) >> 8); // screen
+alfa = 0xFF
+```
+
+A binárisban a 3. lépés **ágmentesen** van megírva: egy `(v >> 7) & 0x010101`
+maszk állítja elő csatornánként a 0x00/0xff választót, és az XOR-ok végzik a
+feltételes invertálást. Ez a klasszikus **Overlay** keverés, elágazás nélkül.
+
+**Mivel a `base` mindhárom csatornán ugyanaz (szürkeárnyalat), a szépia egyetlen
+256 → RGB leképezés.** A teljes tábla kiszámolva:
+`referencia/dekompilalt-617/sepia-lut.csv`.
+
+| gray | base | R | G | B |
+|---:|---:|---:|---:|---:|
+| 0 | 38 | 46 | 37 | 29 |
+| 64 | 93 | 112 | 90 | 71 |
+| 128 | 147 | 171 | 146 | 124 |
+| 192 | 202 | 214 | 202 | 191 |
+| 255 | 255 | 255 | 255 | 255 |
+
+### Ellenőrzés a felhasználó referencia-exportján
+
+A visszafejtett képletet ráengedtem az eredeti képre, és összevetettem a
+windowsos Picasából exportált szépia változattal (`referencia/sepia/`):
+
+| mérőszám | érték |
+|---|---|
+| átlagos abszolút hiba (R, G, B) | **0,92 / 0,60 / 1,07** |
+| a képpontok **±1**-en belül | **82,6%** |
+| a képpontok **±2**-n belül | **95,5%** |
+
+A maradék eltérés a **JPEG-újrakódolásból** ered (a referencia is, a bemenet is
+JPEG). A képlet gyakorlatilag pontos.
+
+> **Módszertani tanulság:** a szépiát „egyetlen méréssel is meg lehetne fogni"
+> — de a mérés **közelítés**, a visszafejtés **maga a képlet**. A kettő együtt
+> a legerősebb: a dekompilálás adta a pontos egészaritmetikát, a mérés pedig
+> **igazolta**.
+
+## 4.2 Ami ebben a körben sem oldódott meg
+
+A `glow`, a `blur` és a `radblur`/`radsat` magjai a 6 szintű követéssel sem
+bomlottak ki érdemben: ezek **nagy, erősen optimalizált** függvények, sok
+soron belüli SIMD-szerű csomagolt aritmetikával. Ezekhez nem mélységi
+követés kell, hanem **egyenkénti, kézi elemzés** — külön kör, szűrőnként.
+
+Ez nem sürgős: mindhárom a ritkán használt örökölt szűrők közé tartozik (#571).
