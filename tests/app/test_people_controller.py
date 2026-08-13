@@ -123,3 +123,44 @@ class TestRefreshPeopleView:
     def test_refresh_ignores_other_modes(self, host):
         handled = host._refresh_people_view("folder", "")
         assert handled is False
+
+
+class TestPeopleWith:
+    """#26: az Emberek-panel negyedik állapota — akik EGYÜTT szerepelnek a
+    kiválasztott személlyel."""
+
+    @pytest.fixture
+    def host_together(self, qt_app, tmp_path, library):
+        _ANNA = "a1a2a3a4a5a6a7a8"
+        ini = library / ".picasa.ini"
+        ini.write_text(
+            f"[Contacts2]\n{_ROY}=Roy Avery;;\n{_ANNA}=Anna Kis;;\n"
+            f"[a.jpg]\nfaces=rect64({_RECT}),{_ROY};"
+            f"rect64({_RECT}),{_ANNA};\n"
+            f"[b.jpg]\nfaces=rect64({_RECT}),{_ROY};\n",
+            encoding="utf-8",
+        )
+        from picasapy.app.people_controller import PeopleMixin
+        from picasapy.index import open_index, sync_tree
+
+        db = tmp_path / "egyutt.db"
+        with open_index(db) as conn:
+            sync_tree(conn, library)
+
+        class _Host(PeopleMixin, QObject):
+            def __init__(self, db_path):
+                super().__init__()
+                self._db_path = db_path
+                self._view_mode = ("folder", "")
+                self._init_people()
+
+        return _Host(db)
+
+    def test_it_is_a_list_of_names_and_counts(self, host_together):
+        together = host_together.peopleWith("Roy Avery")
+
+        assert together == [{"name": "Anna Kis", "count": 1}]
+
+    def test_an_unknown_name_gives_an_empty_list(self, host_together):
+        assert host_together.peopleWith("Nincs Ilyen") == []
+        assert host_together.peopleWith("") == []

@@ -501,7 +501,10 @@ Rectangle {
         Rectangle {
             id: unnamedFacesItem
             objectName: "unnamedFacesItem"
-            visible: !pane.peopleCollapsed && pane.unnamedFaceCount > 0
+            // #26: beolvasás közben a sor AKKOR IS látszik, ha még nulla
+            // névtelen arc van — a haladás helye maga ez a tétel
+            visible: !pane.peopleCollapsed
+                     && (pane.unnamedFaceCount > 0 || pane.faceScanPercent >= 0)
             Layout.fillWidth: true
             Layout.preferredHeight: 22
             color: pane.unnamedFacesActive ? Theme.panelSelectionActive
@@ -517,9 +520,19 @@ Rectangle {
                     color: Theme.textDark
                     opacity: 0.45
                 }
+                // #26/#449: az eredeti Picasa a beolvasás haladását MAGÁN
+                // a „Névtelenek" album tételén mutatta („While scanning,
+                // progress information appears in the Unnamed album item"),
+                // nem külön sávban vagy állapotsorban — a hosszú háttérmunka
+                // ott mutatkozik, ahol az eredménye lesz.
                 Text {
-                    text: qsTr("Unnamed") + " (" + pane.unnamedFaceCount + ")"
+                    objectName: "unnamedFacesLabel"
+                    text: pane.faceScanPercent >= 0
+                          ? qsTr("Scanning for faces... %1% complete")
+                            .arg(pane.faceScanPercent)
+                          : qsTr("Unnamed") + " (" + pane.unnamedFaceCount + ")"
                     font.pixelSize: Theme.fontSize
+                    font.italic: pane.faceScanPercent >= 0
                     color: pane.unnamedFacesActive || unnamedFacesMouse.containsMouse
                            ? Theme.panelSelectionText : Theme.textDark
                 }
@@ -530,22 +543,6 @@ Rectangle {
                 hoverEnabled: true
                 onClicked: pane.unnamedFacesChosen()
             }
-        }
-
-        // #449: „Scanning for faces… %d%% complete" — a haladás HELYE az
-        // albumlista, nem egy modális ablak. A sor magától eltűnik, amikor
-        // a beolvasás véget ér (a vezérlő −1-et ad).
-        Text {
-            objectName: "faceScanProgressText"
-            visible: !pane.peopleCollapsed && pane.faceScanPercent >= 0
-            Layout.fillWidth: true
-            Layout.leftMargin: 16
-            elide: Text.ElideRight
-            text: qsTr("Scanning for faces... %1% complete")
-                  .arg(pane.faceScanPercent)
-            font.pixelSize: Theme.fontSize
-            font.italic: true
-            color: Theme.textGray
         }
 
         CollectionHeader {

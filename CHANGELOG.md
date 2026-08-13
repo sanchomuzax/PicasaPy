@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.10] – 2026-08-13
+
+### Változott
+- **Az arcbeolvasás haladása a „Névtelenek" album tételén (#26).** Eddig
+  külön sorban jelent meg; az eredeti Picasa magán az album tételén
+  mutatta („While scanning, progress information appears in the Unnamed
+  album item"). A tétel az első beolvasáskor is látszik, amikor még nulla
+  névtelen arc van.
+
+### Hozzáadva
+- **Együtt szereplő emberek (#26).** Lekérdezhető, hogy egy személlyel kik
+  szerepelnek együtt a képeken, közös fotók száma szerint — ez a családi
+  gyűjtemények természetes navigációja („ki van még rajta ezeken a
+  képeken?"). A felület, ahol ez megjelenik, még nyitott kérdés.
+
 ## [0.7.9] – 2026-08-12
 
 ### Hozzáadva

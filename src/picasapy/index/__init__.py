@@ -36,7 +36,12 @@ from .queries import (
     search_suggestions,
     starred_photos,
 )
-from .people import PersonRecord, people_in_index, person_photos
+from .people import (
+    PersonRecord,
+    people_in_index,
+    people_with,
+    person_photos,
+)
 from .relocate import (
     RelocationCancelled,
     RelocationError,
@@ -82,6 +87,7 @@ __all__ = [
     "open_index",
     "paths_with_color",
     "people_in_index",
+    "people_with",
     "person_photos",
     "photo_by_id",
     "unnamed_album_photos",

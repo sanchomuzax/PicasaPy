@@ -22,7 +22,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, QLocale, Signal, Slot
 
 from picasapy.index import open_index
-from picasapy.index.people import people_in_index, person_photos
+from picasapy.index.people import people_in_index, people_with, person_photos
 from picasapy.ini import (
     IniConflictError,
     IniSaveError,
@@ -90,6 +90,21 @@ class PeopleMixin:
             records, elapsed, QLocale(), self.tr
         )
         self._show(records)
+
+    @Slot(str, result="QVariantList")
+    def peopleWith(self, name: str):  # noqa: N802 — QML-slot-stílus
+        """Akik EGYÜTT szerepelnek a megadott személlyel: `[{name, count}]`.
+
+        Az eredeti Emberek-panel negyedik állapota: *„Named People who
+        appear WITH the currently selected person will be listed here."* —
+        a családi gyűjtemények természetes navigációja („ki van még rajta
+        ezeken a képeken?"), onnan egy kattintással a másik személy
+        albumába. LISTA, nem tuple (a `people` property mintája)."""
+        with open_index(self._db_path) as conn:
+            return [
+                {"name": person.name, "count": person.photo_count}
+                for person in people_with(conn, name)
+            ]
 
     def _refresh_people_view(self, mode: str, param: str) -> bool:
         """A `_refresh_view()` "person" ágának kiszervezett teste — igazat ad
