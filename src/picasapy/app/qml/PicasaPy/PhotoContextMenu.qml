@@ -67,6 +67,7 @@ Menu {
     signal saveRequested()
     signal revertRequested()
     signal undoAllEditsRequested()
+    signal resetFacesRequested()
 
     // -- 1. blokk: az alapértelmezett művelet (félkövér) + album ----------
 
@@ -257,10 +258,13 @@ Menu {
 
     // -- 10. blokk: arcok ---------------------------------------------------------
 
-    PicasaMenuItem {
+    // #422: „Arcok alaphelyzetbe állítása" — az eredeti FIGYELMEZTETÉSSEL
+    // kérdezett rá (`CThumbUI::ResetAllFaces`), mert a művelet az egész
+    // könyvtárra hat, nem csak a kijelölésre.
+    MenuItem {
         objectName: "contextMenuResetFaces"
         text: qsTr("Reset Faces")
-        placeholder: true
+        onTriggered: menu.resetFacesRequested()
     }
     MenuSeparator {}
 

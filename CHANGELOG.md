@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.7.23] – 2026-08-13
 
+### Hozzáadva
+- **Arcok alaphelyzetbe állítása (#422).** A rács jobbklikk-menüjéből
+  minden arc visszahelyezhető a Névtelenek albumba (az arc-csoportok
+  törlődnek, a felismerési lenyomatok megmaradnak, tehát nem kell újra
+  átnézni a könyvtárat). Az eredetihez hasonlóan **figyelmeztetéssel**
+  kérdez rá. Egy dolgot szándékosan **nem** csinál: a fotókba írt
+  névcímkékhez nem nyúl — azt az eredeti is külön kérdésként tette fel, és
+  az ember által adott név nálunk szent.
+
 ### Változott
 - **Mentés, Visszaállítás és „Összes szerkesztés visszavonása" a rács
   jobbklikk-menüjéből is (#422).** Eddig ez a három pont helyfoglaló volt
