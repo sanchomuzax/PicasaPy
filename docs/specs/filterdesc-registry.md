@@ -852,3 +852,79 @@ R' = k*R + t;   G' = k*G + t;   B' = k*B + t;
 > (szögkorlát, fok→radián, sin/cos) biztos; a konkrét együtthatók
 > **feltételesek** — a Haeberli-féle hue-rotation a valószínű, de ez még nincs
 > bizonyítva.
+
+### 4.10 `Sharpen` és `Exposure` — a kernel, amit a `filterdesc.xml` NEM ad meg (2026-08-14, #626)
+
+A 4.9-hez hasonlóan ez is a meglévő `referencia/dekompilalt-626/` kimenetből
+került elő, új futtatás nélkül. Ez a két művelet azért fontos, mert a
+`filterdesc.xml` csak a **paraméternevet** adja meg — a tényleges pixelműveletet
+nem.
+
+#### `Sharpen` (`0x00bbf9e0`) — 3×3 konvolúció, teljesen megvan
+
+```c
+a = clamp(amount, 0, 100);       // a csúszka értéke
+w = a / -100.0f;                 // NEGATÍV súly a nyolc szomszédra
+c = 1.0f - w * 8.0f;             // = 1 + 8*a/100  — a középső súly
+
+kernel =  [ w  w  w ]
+          [ w  c  w ]
+          [ w  w  w ]
+```
+
+**Energiamegőrző:** `8w + c = 1,0` minden `a`-ra, tehát egyenletes felületen
+nincs fényerő-eltolás. A csúszka végén (`a = 100`) `w = −1`, `c = 9` — ez a
+klasszikus erős Laplace-élesítő.
+
+#### `Exposure` (`0x00bc1ba0` → `0x00bc1c80`) — négy csúszka, négy görbe
+
+A művelet egy 256 elemű LUT-ot épít, és **négy külön tónusgörbét fűz egymás
+után**, mindegyiket a 4.8-ból ismert **természetes köbös spline-nal**
+(`0x008f3290`) kiértékelve. A csúszkák sorrendje a `.picasa.ini`-beli sorrend
+(4.1). A töréspontok (x, y), `p` = az adott csúszka értéke:
+
+**3. csúszka — árnyékok** (`0x008f2b30` egy ötpontos görbét kap):
+
+| x | y |
+|---:|---|
+| 0 | 0 |
+| 6 | `42·p + 6` |
+| 36 | `112·p + 36` |
+| 126 | `72·p + 126` |
+| 255 | 255 |
+
+> Figyeld meg, hogy az `y` konstans tagja **pontosan az `x`** — `p = 0`-nál a
+> görbe az identitás. Ez erős jel arra, hogy jól olvastuk ki a pontokat.
+
+**4. csúszka — csúcsfények** (pontonként, `0x008f2c70`):
+
+```
+(0, 0)
+ha (68·p > 1):        (68·p, 0)                    // a fekete pont eltolása
+ha (p > 0.5):  t = 2·p − 1
+               (127, 118 − 41·t)
+               (188, 192 − 12·t)
+egyébként:     (127, 127 − 4.5·p)
+               (188, 188 + 2·p)
+(255, 255)
+```
+
+**2. csúszka — S-görbés kontraszt**, a 128 körül forgatva:
+
+| x | y |
+|---:|---|
+| 0 | 0 |
+| 64 | `64 − 23·p` |
+| 128 | 128 |
+| 192 | `192 + 27·p` |
+| 255 | 255 |
+
+**1. csúszka — expozíció**: nem görbe, hanem **eltolás a görbék előtt**:
+`v = f(26·p + i)`, ahol `f` a `0x008f2e00`. A `26`-os szorzó biztos; az `f`
+függvény pontos alakja **még nincs kibontva** — ez a művelet egyetlen nyitott
+része.
+
+A záró lépés minden `i ∈ 0…255`-re: a négy görbe egymás utáni kiértékelése,
+`clamp(0, 255)`, kerekítés, majd a LUT három csatorna-változatba tárolása
+(`<<16`, `<<8`, `<<0`) — ugyanaz a „csak OR-ozni kell" minta, mint az
+`AdjustCurves`-nél (4.8).
