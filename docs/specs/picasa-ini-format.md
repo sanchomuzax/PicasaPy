@@ -83,7 +83,7 @@ számlálók, jelentésük tisztázatlan, de round-trip-ben megőrzendők.)
 | `geotag` | `33.770556,-84.293055` | GPS — szélesség,hosszúság tizedes fokban; a PicasaPy olvassa ÉS írja (#30). A kép helye: `geotag=` > EXIF GPS-IFD; törléskor csak a kulcs tűnik el, a fájl EXIF-je érintetlen. |
 | `width`,`height` | `5184`, `3456` | képméret cache |
 | `moddate` | `8094e2826277cd01` | módosítási idő (bináris FILETIME jellegű) |
-| `backuphash` | `36003` | dekódolatlan — változatlanul visszaírandó. NEM ez okozza a #643-as beolvasási hibát (ld. a beolvasás életciklusát). |
+| `backuphash` | `36003` | **MEGFEJTVE (#643)**: az ÍRÁS IDŐPONTJÁBÓL képzett 16 bites érték, nem tartalom-hash — ld. lent |
 | `originhash` | `033f1132c874...` | szerkesztési verem integritás-hash |
 | `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID |
 | `screensaver` | `yes` | képernyővédőben szerepel |
@@ -346,6 +346,34 @@ Az „Other Pictures" pedig ott van a mai beépített gyűjtemény-nevek listáj
 `[LifeScape]` szekciójú ini-fájlok. A parszernek ezt **nem kell értenie**, de a
 round-trip elv szerint **változatlanul meg kell őriznie** — importnál pedig a
 `name`/`category` kiolvasható belőle.
+
+### A `backuphash` — MEGFEJTVE (#643, 2026-08-14)
+
+Eddig „dekódolatlan, változatlanul visszaírandó" volt. A visszafejtés
+(`0x00454770` → `0x0098b6e0` → `0x0098b550`) megmutatta, hogy **nem a fájl
+tartalmának hash-e**, hanem az **írás időpontjából** képzett érték:
+
+```c
+double d = OLE_DATE(most);          // az aktuális helyi idő OLE Automation DATE-ként
+uint16_t w[4];  memcpy(w, &d, 8);   // a double négy 16 bites szava
+backuphash = w[0] ^ w[1] ^ w[2] ^ w[3];
+sprintf(buf, "%d", backuphash);
+```
+
+Az OLE-dátum a szokásos képlettel készül, `693703` (`0xa96c7`) alapnappal —
+azaz az **1899-12-30 = 0.0** referenciával. Ezt ellenőriztük: a kinyert képlet
+erre a dátumra pontosan `0.0`-t ad.
+
+**Miért nem sikerült eddig dekódolni:** mert nincs mit dekódolni a *tartalomból*.
+Ugyanaz a fájl két különböző időpontban írva más `backuphash`-t kap.
+
+**Következmények:**
+
+- Az érték **előállítható** — a PicasaPy is tud érvényeset írni.
+- Az értéktartomány 0…65535, ami egyezik a megfigyelt `23764` / `36003`
+  mintákkal (szimulációval 2015–2026 közötti időpontokra 16 298…62 695).
+- **Nem ez okozza a #643-as beolvasási hibát** — a Picasa a szakaszunkat
+  akkor sem olvasná be, ha volna benne `backuphash`.
 
 ## ⚠️ A beolvasás életciklusa — mikor BEMENET és mikor KIMENET (#643, 2026-08-14)
 
