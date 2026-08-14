@@ -83,7 +83,7 @@ számlálók, jelentésük tisztázatlan, de round-trip-ben megőrzendők.)
 | `geotag` | `33.770556,-84.293055` | GPS — szélesség,hosszúság tizedes fokban; a PicasaPy olvassa ÉS írja (#30). A kép helye: `geotag=` > EXIF GPS-IFD; törléskor csak a kulcs tűnik el, a fájl EXIF-je érintetlen. |
 | `width`,`height` | `5184`, `3456` | képméret cache |
 | `moddate` | `8094e2826277cd01` | módosítási idő (bináris FILETIME jellegű) |
-| `backuphash` | `36003` | dekódolatlan — változatlanul visszaírandó |
+| `backuphash` | `36003` | dekódolatlan — változatlanul visszaírandó. NEM ez okozza a #643-as beolvasási hibát (ld. a beolvasás életciklusát). |
 | `originhash` | `033f1132c874...` | szerkesztési verem integritás-hash |
 | `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID |
 | `screensaver` | `yes` | képernyővédőben szerepel |
@@ -346,6 +346,56 @@ Az „Other Pictures" pedig ott van a mai beépített gyűjtemény-nevek listáj
 `[LifeScape]` szekciójú ini-fájlok. A parszernek ezt **nem kell értenie**, de a
 round-trip elv szerint **változatlanul meg kell őriznie** — importnál pedig a
 `name`/`category` kiolvasható belőle.
+
+## ⚠️ A beolvasás életciklusa — mikor BEMENET és mikor KIMENET (#643, 2026-08-14)
+
+Ez a szakasz azért van itt, mert a hiánya engedte, hogy a #643-as hiba idáig
+jusson: a spec eddig **egy szót sem szólt arról, mikor olvassa be a futó
+Picasa a `.picasa.ini`-t.** A formátum ismerete önmagában nem elég — a
+round-trip ígérete ezen a ponton dől el.
+
+A megállapítások a `Picasa3.exe` visszafejtéséből származnak (a nyers
+dekompilátum és a címek a privát kutatási repóban).
+
+### A `.picasa.ini` NEM figyelt fájl
+
+A Picasa nem figyeli a `.picasa.ini` változásait, és **nem is olvassa újra
+csak azért, mert a fájl megváltozott.** Sem a mappára lépés, sem a program
+újraindítása nem váltja ki az újraolvasást egy már indexelt fotónál.
+
+### Az ini → rekord olvasót csak SZERKESZTÉS/MENTÉS hívja
+
+Az ini-szakaszt rekordba olvasó rutin (`0x00463270`) mind a **48 kulcsot**
+beolvassa — a `filters`-t is —, de **pontosan egy hívója van**: az ini ↔
+adatbázis szinkron (`0x00467ca0`). Annak a hat hívója pedig kivétel nélkül
+szerkesztő/mentő útvonal: retusálás, a szerkesztőpanel alkalmaz/mégse gombja,
+filmmentés, a fájlmentő szál. **Mappapásztázó vagy fájlfigyelő hívó nincs
+köztük.**
+
+### A betöltő ágon a 2. fázis a KÉPFÁJLHOZ van kötve
+
+A fotó-betöltő képenként előbb egyszer feldolgozza az ini-szakaszt, majd a
+**képfájlt** (EXIF, bélyegkép, átlagszín), és a **második ini-alkalmazás csak
+akkor fut le, ha a képfájl-feldolgozás változást jelez.** Külső író, aki csak
+az ini-t írja, ezt a feltételt sosem teljesíti.
+
+### Mit jelent ez a gyakorlatban
+
+| irány | működik? | miért |
+|---|---|---|
+| Picasa **ír** → külső olvasó | ✅ | az ini a Picasa kimenete, mindig naprakész |
+| külső **ír** → futó Picasa **olvassa** | ❌ | nincs olyan hívási út, ami a képfájl érintése nélkül kiváltaná |
+| külső ír → Picasa **legközelebbi saját írása** | ⚠️ **adatvesztés** | a szinkron a saját adatbázis-rekordjából írja ki a szakaszt egészben, így a külső kulcsokat felülírja |
+
+> **A round-trip ígéretét ehhez kell igazítani.** A `.picasa.ini` a futó
+> Picasa felé **kimenet**, nem bemenet; bemenetté csak az első indexeléskor,
+> illetve a képfájl megváltozásakor válik. Egy külső szerkesztő szerkesztései
+> **némán elveszhetnek**, ha közben fut a Picasa és hozzáír ugyanahhoz a
+> képhez.
+
+**Ami még nyitott:** melyik betöltési fázis viszi konkrétan a `filters`
+kulcsot, és mi pontosan a „változás" feltétele a képfájl-feldolgozásban. Ez a
+#643 kutatási ága.
 
 ## Írási szabályok (PicasaPy, kétirányú kompatibilitáshoz)
 
