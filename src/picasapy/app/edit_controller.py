@@ -304,6 +304,11 @@ class EditController(QObject, BackgroundWorkerMixin):
     # háttérszálról indul.
     _previewRendered = Signal()
 
+    # #644: minden SIKERES lánc-mentés után — a hívó (application.py) ezt köti
+    # a szerkesztés-naplóhoz. Azért jel és nem közvetlen hívás, mert az
+    # EditController nem ismeri az adatgyökeret (a napló ott él).
+    chainSaved = Signal(str, str)
+
     def __init__(self, provider: EditPreviewProvider, parent=None) -> None:
         super().__init__(parent)
         self._provider = provider
@@ -1832,6 +1837,13 @@ class EditController(QObject, BackgroundWorkerMixin):
         except _WRITE_ERRORS as error:
             self.editSaveFailed.emit(str(error))
             return
+        # #644: a kiírt láncot a saját, TARTÓS naplónkba is felvesszük — ez az
+        # egyetlen nyomunk, ha a párhuzamosan futó Picasa később felülírja az
+        # init a saját adatbázis-rekordjával.
+        if self._image_path is not None:
+            self.chainSaved.emit(
+                str(self._image_path), self._session.to_value()
+            )
         # #514: a mentett lánc újrarenderelése HÁTTÉRSZÁLON — ez az a hely,
         # ahol egy lassú effekt (Lomo, Polaroid…) korábban befagyasztotta a
         # felületet. A csúszka-húzás alatti élő előnézet ettől független

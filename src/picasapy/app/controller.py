@@ -41,6 +41,7 @@ from .language_controller import LanguageMixin
 from .create_controller import CreateMixin
 from .custom_aspect_ratios_controller import CustomAspectRatiosMixin
 from .custom_collections_controller import CustomCollectionsMixin
+from .edit_journal_controller import EditJournalMixin
 from .folder_date_controller import FolderDateMixin
 from .effects_controller import EffectsClipboardMixin
 from .export_controller import ExportMixin
@@ -78,6 +79,9 @@ def _clamp_folder_pane_width(width: int) -> int:
 class AppController(
     CustomAspectRatiosMixin,
     CustomCollectionsMixin,
+    # #644: a saját szerkesztések védelme a párhuzamosan futó Picasa
+    # felülírása ellen (észlelés + figyelmeztetés + helyreállítás)
+    EditJournalMixin,
     FolderDateMixin,
     SearchMixin,
     KeywordsMixin,
@@ -801,6 +805,11 @@ class AppController(
         self._feed_stamp = (
             self._index_stamp() if self._view_mode[0] == "folder" else None
         )
+        # #644: itt látjuk először a friss ini-állapotot — ha egy külső
+        # program (a párhuzamosan futó Picasa) letörölte a mi mentett
+        # láncunkat, ez az a pont, ahol észrevehetjük. Képenként egyszer
+        # jelzünk; a néma eltűnés a legrosszabb változat.
+        self._check_external_overwrites(records)
         self._provider.register_photos(records)
         self._photos.set_photos(records)
         self._update_feed_groups(records)
