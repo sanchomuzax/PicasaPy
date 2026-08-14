@@ -13,6 +13,12 @@ névlistáját, és minden nem-Python forrásfájlra megköveteli, hogy benne
 legyen. Ami szándékosan marad ki, azt itt, NÉVVEL kell felsorolni — így a
 kihagyás tudatos döntés, nem véletlen elmaradás.
 
+#655: a mérés maga is szennyezett bemenetből dolgozhat — egy korábbi
+`build/` könyvtár vagy `*.egg-info` a setuptoolst arra veszi rá, hogy régi
+adatokat is bemásoljon a wheelbe, és a csonka minta emiatt HAMISAN zöld
+lehet. Ezt a szkript NEM tudja kijavítani (az az érintett fát törli), de
+FIGYELMEZTET rá, ha a wheel vizsgálata előtt ilyet talál.
+
 Használat:
 
     python scripts/check_package_contents.py dist/picasapy-*.whl
@@ -70,6 +76,28 @@ def wheel_entries(wheel: Path) -> set[str]:
         }
 
 
+def stale_build_artifacts(root: Path = _REPO_ROOT) -> list[str]:
+    """A korábbi buildből maradt `build/` és `*.egg-info` könyvtárak — #655.
+
+    A setuptools a `build/lib/…`-ba bemásolt adatfájlokból és az
+    `*.egg-info/SOURCES.txt`-ből ÚJRAHASZNOSÍT — egy szennyezett forrásfán
+    ezért hibás mintákkal is TELJES wheel készülhet, és ez a szkript hamisan
+    zöldet ad, pont akkor, amikor a legjobban számítana. A visszaadott
+    útvonalak a `root`-hoz képest relatívak, záró `/`-vel.
+    """
+    found: list[str] = []
+    build_dir = root / "build"
+    if build_dir.is_dir():
+        found.append("build/")
+    for candidate_parent in (root, root / "src"):
+        if not candidate_parent.is_dir():
+            continue
+        for entry in candidate_parent.iterdir():
+            if entry.is_dir() and entry.name.endswith(".egg-info"):
+                found.append(f"{entry.relative_to(root).as_posix()}/")
+    return sorted(found)
+
+
 def is_intentionally_excluded(name: str) -> str | None:
     """A kivétel indoklása, vagy None ha nem szándékos kihagyás."""
     for pattern, reason in INTENTIONALLY_EXCLUDED:
@@ -96,6 +124,17 @@ def main(argv: list[str] | None = None) -> int:
     if not args.wheel.is_file():
         print(f"HIBA: nincs ilyen fájl: {args.wheel}", file=sys.stderr)
         return 1
+
+    stale = stale_build_artifacts()
+    if stale:
+        print(
+            "FIGYELEM: korábbi build-melléktermék van a forrásfában: "
+            + ", ".join(stale)
+            + " — ezek szennyezett wheelt eredményezhetnek, ami hamisan "
+            "zöldre veszi ezt az ellenőrzést (#655). Törlés előtte: "
+            "`rm -rf " + " ".join(stale) + "`",
+            file=sys.stderr,
+        )
 
     missing = missing_from_wheel(args.wheel)
     if missing:

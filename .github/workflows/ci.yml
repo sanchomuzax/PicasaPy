@@ -106,6 +106,14 @@ jobs:
       - name: Build eszközök
         run: python -m pip install --upgrade pip build
 
+      - name: A deklarált setuptools-minimum valódi próbája (#652 őre)
+        # A rendes build LEJJEBB build-izolációval fut, ami mindig a
+        # legfrissebb setuptoolst húzza be — ez a lépés a pyproject.toml
+        # [build-system] requires-ében deklarált MINIMUMOT telepíti és
+        # azzal, --no-build-isolation-nel épít. Ez az egyetlen ellenőrzés,
+        # ami a deklarációt a valósághoz méri, nem önmagához (#652).
+        run: python scripts/check_declared_setuptools_minimum.py
+
       - name: Wheel build
         run: python -m build --wheel --outdir dist .
 
@@ -116,11 +124,13 @@ jobs:
         # Nem a forrásfából: a telepített csomagban dől el, hogy a belépési
         # pont betölthető-e és az erőforrások a helyükön vannak-e. A
         # szkript maga is elutasítja, ha forrásfából futtatnák.
+        # --no-cache-dir (#655): pip gyorsítótárazott wheelje régi/hibás
+        # csomagot szolgálhatna ki a frissen épített helyett.
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
           python -m venv /tmp/smoke
-          /tmp/smoke/bin/pip install --quiet dist/*.whl
+          /tmp/smoke/bin/pip install --no-cache-dir --quiet dist/*.whl
           test -x /tmp/smoke/bin/picasapy
           /tmp/smoke/bin/python scripts/check_installed_package.py
 

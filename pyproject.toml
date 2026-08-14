@@ -1,5 +1,11 @@
+# #652: a `[project] license` mező PEP 639 string-alakja csak setuptools
+# 77.0.0-tól működik — 68 mellett build-izoláció NÉLKÜL (`--no-build-
+# isolation`) a build `project.license must be valid exactly by one
+# definition` hibával elbukik. Az őr: tests/test_package_contents.py és a
+# CI `package` job "A deklarált setuptools-minimum valódi próbája" lépése
+# (scripts/check_declared_setuptools_minimum.py).
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
