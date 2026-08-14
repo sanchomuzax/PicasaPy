@@ -519,6 +519,11 @@ Rectangle {
                 // FIX 280px, nem ablakarányos (ld. az ottani kommentet)
                 Layout.preferredWidth: 280
                 Layout.fillHeight: true
+                // #628: a panelnek annyi hely KELL, amennyit a legmagasabb
+                // füle kér — ez az eredeti FIX panelméretének megfelelője
+                // átméretezhető ablakban. Enélkül a rövid ablakban a
+                // Visszavonás/Újra sor a látható terület alá csúszna.
+                Layout.minimumHeight: editorPanel.implicitHeight
                 color: Theme.chromeBg
 
                 EditorPanel {
@@ -526,9 +531,16 @@ Rectangle {
                     objectName: "viewerEditorPanel"
                     // videónál a szerkesztő-eszközök nem értelmezettek (#14)
                     enabled: !viewer.isCurrentVideo
+                    // #628: a panel a RENDELKEZÉSRE ÁLLÓ magasságot kapja.
+                    // Korábban itt fix 420 képpont állt, akármekkora az
+                    // ablak — a 3. fül 12 bélyegképes csempéje (3×4, ≈450
+                    // px) ebbe soha nem fért bele, ezért lett a görgetés az
+                    // alapállapot, és ezért lógott rá a gombsor a
+                    // csempékre. A szülő `Layout.fillHeight: true`, tehát a
+                    // hely rendelkezésre áll.
                     anchors.top: parent.top
+                    anchors.bottom: parent.bottom
                     anchors.left: parent.left; anchors.right: parent.right
-                    height: 420
                     imageAspect: photo.paintedHeight > 0
                                  ? photo.paintedWidth / photo.paintedHeight
                                  : 4 / 3

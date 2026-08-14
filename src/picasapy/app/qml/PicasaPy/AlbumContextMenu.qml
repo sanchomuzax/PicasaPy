@@ -84,12 +84,16 @@ Menu {
     PicasaMenuItem {
         objectName: "albumMenuOnlineActions"
         text: qsTr("Online Actions")
-        placeholder: true
+        placeholder: false
+        // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
+        retired: true
     }
     PicasaMenuItem {
         objectName: "albumMenuUploadToGooglePhotos"
         text: qsTr("Upload to Google Photos...")
-        placeholder: true
+        placeholder: false
+        // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
+        retired: true
     }
     MenuItem {
         objectName: "albumMenuExportAsHtml"

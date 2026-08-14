@@ -5,7 +5,7 @@
 
 Ez a fájl **a Picasa saját, gépi olvasásra szánt szűrő-definíciója**: mind a
 **84 szűrő** azonosítója, UI-neve, üzemmódja, csúszkáinak *neve,
-tartománya, eltolása és alapértéke*, valamint a 33 „Glimmer" (Picnik-örökös)
+tartománya, eltolása és alapértéke*, valamint a 32 „Glimmer" (Picnik-örökös)
 effekt **teljes képfeldolgozó-csővezetéke** — görbékkel, keverési módokkal és
 csúszka→paraméter képletekkel együtt.
 
@@ -226,7 +226,7 @@ elfogadnia.
 
 ## 4. Glimmer-effektek — a teljes csővezeték
 
-A 33 „Glimmer" effekt (a Picnik-felvásárlásból örökölt réteg) `<effect>`
+A 32 „Glimmer" effekt (a Picnik-felvásárlásból örökölt réteg) `<effect>`
 blokkja **deklaratív képfeldolgozó-gráf**: vezérlők (csúszka, színválasztó,
 jelölőnégyzet) + `imageOperations:` műveletek, adatkötés-kifejezésekkel
 (`{_sldrImpact.value * 20 / 50}`). Ez gyakorlatilag **az effektek
@@ -573,43 +573,58 @@ felhasználó **ecsettel jelöli ki**, hol hasson az effekt.
 > shader-bájtkód vagy `d3dx`/`glsl` nyom (keresve: 0 találat). Az osztály
 > létezik, a használatára nincs bizonyíték.
 
-### 4.7 A motor TÖBBET tud, mint amit a 32 szűrő használ (2026-08-13)
+### 4.7 A 37 token cáfoló auditja és a két rejtett keverési mód (2026-08-14)
 
-A `filterdesc.xml` attribútum-nevei mellett a bináris **Glimmer-attribútum-elemzője**
-további neveket ismer, amelyek **egyetlen kiadott szűrőben sem fordulnak elő**.
-Az elemző címtartományában (`0x00bb0000`–`0x00bd0000`) 140 attribútum-jelölt
-szerepel; ebből **103 megvan a `filterdesc.xml`-ben, 37 nincs**.
+> **Helyesbítés:** a korábbi „37 nem használt attribútum” nem valódi
+> attribútumleltár volt. Egy széles címtartomány azonosítószerű szövegeit
+> hasonlította a nyers XML-hez kis-/nagybetűérzékenyen. Így XMP-mezők,
+> vezérlőtípusok, enumértékek és belső factory-nevek is bekerültek.
 
-**A figyelemre méltó hiányzók:**
+A natív attribútumkereső (`0x008eb160`) ASCII-kis-/nagybetűfüggetlen. Ezért a
+`brightness/Brightness`, `grayscale/grayScale` és `multiplier/Multiplier`
+párok ugyanazok az **élő, kiadott mezők**, nem három rejtett képesség.
+Biztos hamis pozitív például a `Rating`, `RegionInfo`, `Regions`, `normalized`
+(XMP), a `Number`, `NumberPlus`, `ResizingCheckbox` (vezérlőtípus), valamint a
+`False`, `MEDIUM`, `horizontal` (érték). A `Script` elemtípus, a
+`TiledImageTileMask` belső factory/cache-típus.
 
-| név | mire utal | hol áll a binárisban |
-|---|---|---|
-| **`Hardlight`, `Softlight`** | **két további keverési mód** — a kiadott szűrők csak ADD/OVERLAY/SCREEN/LIGHTEN-t használnak | egy függvényben együtt, `green` mellett (keverési mód-tábla) |
-| **`_clsVibrance`** | **Vibrance (élénkség) művelet** — a felirat-táblában is van hozzá név (`ImageFilters::Vibrance` = „Vibrálás"), de **egyetlen szűrő sem használja** | `HexCells` mellett |
-| **`HexCells`** | **hatszöges cellamozaik** művelet | ugyanott |
-| **`ColorMaps`** | színleképezés-tábla | `BlendModeMath.` mellett |
-| **`TiledImageTileMask`** | a `TiledImageMask` csempézett változata | — |
-| **`ExposureAdjustmentStops`**, `exposure`, `brightness`, `blacks`, `sharpness`, `grayscale`, `multiplier` | képállítási paraméterek — az **expozíció rekeszértékben** (stop) különösen | a `MasterCurve`/`RedCurve`/… mellett |
-| `flipH`, `flipV`, `radAngle`, `direction`, `horizontal`, `normalized` | geometriai paraméterek | — |
-| `scaleWidth`, `scaleHeight`, `aspectRatio`, `paddingLeft/Right/Top/Bottom` | elrendezés | — |
-| **`Script`**, **`bytecode`**, `params` | a csővezeték **köztes, lefordított alakja** | `imageOperations:` mellett |
+Valódi, működő, de kiadott receptben nem használt mezők többek között:
+`ColorMaps`, `ExposureAdjustmentStops`, `alphaMax`, `aspectRatio`, `blacks`,
+`bytecode`, `direction`, `exposure`, `flipH`, `flipV`, `padding*`, `params`,
+`radAngle`, `scaleWidth`, `scaleHeight`, `sharpness`. Ezek parserében nincs
+felhasználói min/max tartomány; recept vagy valós adat nélkül nem indokolnak
+új felületet. `_clsVibrance` és `HexCells` működő shader-selector, de egyik
+kiadott effekt sem hivatkozza őket.
 
-**Mit jelent ez:**
+#### `PaletteMapImageOperation`: Picasa-pontos keverések
 
-1. A Glimmer **általános képfeldolgozó motor** volt, nem a 32 effekthez szabott
-   kód. A kiadott szűrők a képességeinek egy **részhalmazát** használják.
-2. A **`bytecode` + `params`** arra utal, hogy a deklaratív `<effect>` leírás
-   **lefordítódott** egy belső alakra, és a végrehajtó azt futtatta — ez
-   magyarázza a `dynamicParamsCachePriority` / `dynamicAlphaCachePriority`
-   attribútumokat (a lefordított alak gyorstárazását).
-3. **Nekünk ez lehetőség, nem kötelezettség:** ha egyszer saját effekteket
-   akarunk (a Picasa-készleten túl), a **Vibrance**, a **Hardlight/Softlight**
-   keverés és az **expozíció stopban** olyan építőkövek, amiket az eredeti
-   motor is tudott — tehát a formátum kiterjesztése nem idegen tőle.
+A `0x00bb7e40` fogyasztó öt végrehajtót választ. Jelölje `x` a 0–255
+LUT-bemenetet, `c` a térképszín csatornáját, `a` az alfát:
 
-**Bizonyítottsági szint:** ezek **az elemző által ismert nevek**. Hogy mindegyikhez
-tartozik-e működő végrehajtó, **nem bizonyított** — ehhez célzott dekompilálás
-kellene (#576 köre).
+```text
+Softlight: q=c&0xfe
+  x<128  -> x*(q+128)/255
+  x>=128 -> (65025-(382-q)*(255-x))/255
+
+Hardlight:
+  x<=127 -> 2*x*c/255
+  x>127  -> 2*(32512-(255-x)*(255-c))/255
+  x=c=255 -> pontosan 255
+
+Multiply = x*c/255
+Screen   = (65025-(255-x)*(255-c))/255
+Normal   = ((255-a)*c+a*x)/255
+```
+
+Az eredményt 0–255 közé vágja, majd `+0,5` után egészre alakítja. A két első
+képlet **nem** a szokásos Photoshop/CSS-változat. A főprogram öt címe rendre
+`0x00bb82b0`, `0x00bb8330`, `0x00bb83b0`, `0x00bb83d0`, `0x00bb8400`;
+a külön PhotoViewer utasításszinten azonos megvalósítása független kontroll.
+
+**Fejlesztési következmény:** a közös Glimmer-primitívekhez a két Picasa-pontos
+mód kell, teljes LUT-határteszttel. Általános filterdesc-parserben az
+attribútumnév ASCII-case-insensitive legyen. Kiadatlan motorparaméterhez ne
+készüljön UI kiadott recept vagy valós adat nélkül.
 
 ## 5. Következmények a PicasaPy-ra
 
@@ -640,3 +655,348 @@ import re, xml.etree.ElementTree as ET
 src = open("runtime/filterdesc.xml", encoding="utf8").read()
 root = ET.fromstring(re.sub(r"<effect>.*?</effect>", "", src, flags=re.S))
 ```
+
+### 4.8 A Glimmer-műveletek magja — az `apply` slot szabálya és az `AdjustCurves` (#626)
+
+**Futás:** 2026-08-13, Ghidra 12.1.2, ugyanaz a bináris. 20 gyökér, 3 szint,
+**223 dekompilált függvény**. Nyers kimenet: `referencia/dekompilalt-626/`.
+
+#### A vtable-szabály — pontosítva
+
+A korábbi kör megállapítása („az `apply` a 6. slot") **csak a 8 slotos
+osztályokra igaz**. A vtable-ek két családra oszlanak:
+
+| | slot 0–2 | slot 3–5, 7 | **slot 6** | **slot 8** |
+|---|---|---|---|---|
+| **8 slotos** | dtor / free / attribútum-olvasás | közös alaposztály | **saját `apply`** | — |
+| **9 slotos** | ugyanaz | közös alaposztály | **KÖZÖS alkalmazó** | **saját mag** |
+
+A 9 slotos család két közös alkalmazón osztozik:
+
+- **`0x00bb7c80`** — LUT-alkalmazó: `AutoFix`, `AdjustCurves`, `TwoTone`,
+  `Exposure`, `HSVGradientMap`, `GradientMap`, `PaletteMap`
+- **`0x00bc16b0`** — színmátrix-alkalmazó: `BW`, `SimpleColorMatrix`,
+  `ColorMatrix`, `MultiplyColorMatrix`
+
+> **Helyesbítés:** a `referencia/dekompilalt/glimmer-apply.c`-ben
+> `GLIMMER_AutoFix_APPLY` és `GLIMMER_BW_APPLY` néven szereplő két függvény
+> **nem** az AutoFix, illetve a BW saját magja, hanem ez a két **megosztott
+> alkalmazó**. Az osztályspecifikus rész a 8. slotban van.
+
+A szabály mind a 10 korábban dekompilált művelet címére illeszkedik (ellenőrizve).
+
+#### `AdjustCurves` — **természetes köbös spline** (9 effekt)
+
+A LUT-építő (`0x00bcd1e0`) minden `i ∈ 0…255` értékre:
+
+```c
+v = MasterCurve(i);                 // előbb a MESTER görbe
+R = clamp(round(RedCurve(v)));      // majd a CSATORNA-görbe ANNAK az eredményén
+G = clamp(round(GreenCurve(v)));
+B = clamp(round(BlueCurve(v)));
+LUT_R[i] = R << 16 | 0xff000000;    // eltolva a csatorna helyére, hogy az
+LUT_G[i] = G << 8;                  // alkalmazó csak OR-ozni tudjon
+LUT_B[i] = B;
+```
+
+**Két dolog, ami eddig nem volt tudva:**
+
+1. **A mester- és a csatorna-görbe kompozíció**, nem összeadás:
+   `out_R = RedCurve(MasterCurve(i))`.
+2. **A görbe kiértékelése természetes köbös spline** (`0x008f3290`), nem
+   lineáris interpoláció. A képlet szó szerint a Numerical Recipes `splint`:
+
+```
+h = x[j+1] − x[j]
+A = (x[j+1] − x)/h        B = (x − x[j])/h
+y = A·y[j] + B·y[j+1] + ((A³−A)·y2[j] + (B³−B)·y2[j+1]) · h²/6
+```
+
+ahol `y2[]` a második deriváltak tömbje, amit a `0x008f33b0` számol ki
+(a klasszikus tridiagonális megoldás `2.0`-s főátlóval és a `6.0`-s
+osztott differenciával — **természetes** spline, azaz `y2[0] = y2[n−1] = 0`).
+A töréspont-keresés **bináris keresés**.
+
+> ⚠️ **Ez mérhető eltérés.** A `filterdesc.xml` görbéire lineáris és spline
+> interpolációval számolva:
+>
+> | effekt | pont | max eltérés | átlagos |
+> |---|---:|---:|---:|
+> | **Sixties** | 3 | **21,6 szint** | 8,4 |
+> | **Cinemascope** | 5 | **17,5 szint** | 6,8 |
+>
+> Ez **hússzorosa** a ditherelés ±1-es tűrésének — szemmel látható.
+> A kétpontos görbéknél (Invert, Neon, PencilSketch) a kettő azonos.
+
+#### `SimpleColorMatrix` — a `ContrastAndBrightnessLinked` jelentése (8 effekt)
+
+A mag (`0x00bb6400`) öt attribútumot olvas, majd **a jelzőtől függően más
+sorrendben** fűzi a mátrixokat:
+
+```c
+telítettség(m, Saturation);
+if (ContrastAndBrightnessLinked)  egyuttes(m, Brightness, Contrast);   // EGY lépés
+else                            { kontraszt(m, Contrast); fenyero(m, Brightness); }
+otodik_op(m, param5);
+```
+
+Vagyis a jelző **nem** finomhangolás: **külön kódutat** választ. Az egyes
+mátrixok pontos együtthatói a `0x008f1d00` / `0x008f1bd0` / `0x008f1af0` /
+`0x008f2040` / `0x008f1e70` függvényekben vannak — ezek dekompilálva a nyers
+kimenetben, de számszerű feldolgozásuk még hátravan.
+
+#### A kör többi eredménye
+
+Dekompilálva és archiválva: `Border`, `DropShadow`, `Rotate`, `SimpleBorder`,
+`Crop`, `Resize`, `QuantizePalette`, `IR`, `EdgeDetectionB`, `Tiled`,
+`Sharpen`, `TwoTone`, `ColorMatrix`, `MultiplyColorMatrix`, `HSVGradientMap`,
+`Exposure`. Ezek számszerű feldolgozása a következő kör tárgya — a **Polaroid**
+két érzékeny művelete (`DropShadow`, `Rotate`) is köztük van.
+
+### 4.9 A `SimpleColorMatrix` öt mátrixa — SZÁMSZERŰEN (2026-08-14, #626)
+
+A 4.8 még csak a függvénycímeket adta meg. Az akkori kimenetből
+(`referencia/dekompilalt-626/`) most kiolvasva mind az öt mátrix-építő. A közös
+alkalmazó (`0x008f28d0`) egy **5×5 affin színmátrixot** szoroz az akkumulálthoz;
+a mátrix a 0…255 skálán működik (a negyedik oszlop az eltolás).
+
+Ez **nyolc effektet** érint, amelyek a `SimpleColorMatrix` műveletet használják.
+
+#### Telítettség (`0x008f1d00`)
+
+```c
+if (s > 0)  k = 1.0f + (s * 3.0f) / 100.0f;    // +100 -> k = 4.0
+else        k = 1.0f + s / 100.0f;             // -100 -> k = 0.0 (szürke)
+w  = 1.0f - k;
+rw = w * 0.3086f;  gw = w * 0.6094f;  bw = w * 0.0820f;
+
+R' = (k + rw)*R +      gw *G +      bw *B
+G' =      rw *R + (k + gw)*G +      bw *B
+B' =      rw *R +      gw *G + (k + bw)*B
+```
+
+> ⚠️ **Két buktató.** (1) A csúszka **aszimmetrikus**: a pozitív oldal
+> háromszoros skálázást kap, a negatív nem. (2) A luminancia-súlyok
+> **0,3086 / 0,6094 / 0,0820** — ez a Haeberli-féle klasszikus készlet, **nem**
+> a Rec.601 (0,299/0,587/0,114) és **nem** a Rec.709 (0,2126/0,7152/0,0722).
+> Rec.601-gyel megvalósítva látható színeltolás keletkezik.
+
+#### Fényerő (`0x008f1af0`) — tisztán additív
+
+```c
+b = clamp(b, -100, 100);
+R' = R + b;   G' = G + b;   B' = B + b;
+```
+
+#### Kontraszt (`0x008f1bd0`) — TÁBLÁZATOS, nincs rá képlet
+
+```c
+c = clamp(c, -100, 100);
+k = 1.0f + kontraszt_gorbe(c);      // 0x008f2990
+if (|k - 1.0f| < eps) return;       // nincs teendő
+t = (1.0f - k) * 127.0f * 0.5f;     // = (1-k) * 63.5
+R' = k*R + t;  G' = k*G + t;  B' = k*B + t;
+```
+
+ahol a görbe:
+
+```c
+float kontraszt_gorbe(float c) {
+    if (c == 0)  return 0.0f;
+    if (c <  0)  return c / 100.0f;             // ZÁRT: -100 -> -1 (k = 0, teljes szürke)
+    // c > 0: 101 elemű TÁBLÁZAT lineáris interpolációval
+    i = (int)floorf(c);  f = c - i;
+    return (f < eps) ? T[i] : (1-f)*T[i] + f*T[i+1];
+}
+```
+
+A `T[]` tábla a `0x00c7d688` címen (fájloffszet `0x87d688`), **101 darab
+`float`**, 0,0-tól 10,0-ig, **kézzel hangolt, szakaszonként más lépésközzel**:
+
+| csúszka | 0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `T` | 0,00 | 0,12 | 0,25 | 0,44 | 0,71 | 1,00 | 1,60 | 2,37 | 4,00 | 7,30 | 10,00 |
+
+A lépésköz 0,01-ről (0–16) 0,015-re (16–23), 0,02-re (23–33), 0,03-ra (33–50),
+0,06-ra (50–67), 0,125-re (67–75), majd egyre nagyobbra nő. **Semmilyen zárt
+képlet nem illeszkedik rá** (a legjobb exponenciális illesztés 0,64-gyel téved),
+tehát a táblát **át kell venni**. Teljes lista:
+`referencia/kontraszt-tabla.csv` (privát repó).
+
+#### Együttes fényerő + kontraszt (`0x008f2040`) — a `ContrastAndBrightnessLinked` ág
+
+```c
+k = 1.0f + kontraszt_gorbe(kontraszt);           // ugyanaz a tábla
+t = ((k + 1.0f) * 127.5f * fenyero) / 100.0f  +  (127.5f - k * 127.5f);
+R' = k*R + t;   G' = k*G + t;   B' = k*B + t;
+```
+
+> ⚠️ **A két kódút tényleg különböző eredményt ad**, ahogy a 4.8 sejtette — és
+> most már számszerűen látszik, miben: a **külön** kontraszt a `63,5` érték
+> körül forgat (`t = (1−k)·63,5`), az **együttes** viszont a valódi középszürke,
+> `127,5` körül (`t = (1−k)·127,5 + …`). A fényerő-tag súlya `127,5·(k+1)/100`,
+> vagyis **erős kontraszt mellett a fényerő is erősebben hat**.
+>
+> A `63,5`-ös fixpont meglepő (a középszürke fele). A dekompilátorban
+> `(1.0 - k) * 127.0 * 0.5` alakban áll; a másik ágban viszont explicit
+> `127.5 - k*127.5` szerepel, tehát nem fordítási artefaktum. **Referencia-
+> exporttal érdemes ellenőrizni**, mielőtt véglegesítjük.
+
+#### Színárnyalat-forgatás (`0x008f1e70`)
+
+`h = clamp(h, -180, 180)`, majd `szog = h/180 · π`, és `sin`/`cos`
+(`0x00c29d20`, `0x00c285f0`) alapján a szokásos hue-rotation mátrix.
+
+> A mátrix együtthatói **nem olvashatók ki** a dekompilátumból: az FPU-veremben
+> mennek át, a `FUN_008f28d0` argumentumlistája üresen látszik. A szerkezet
+> (szögkorlát, fok→radián, sin/cos) biztos; a konkrét együtthatók
+> **feltételesek** — a Haeberli-féle hue-rotation a valószínű, de ez még nincs
+> bizonyítva.
+
+### 4.10 `Sharpen` és `Exposure` — a kernel, amit a `filterdesc.xml` NEM ad meg (2026-08-14, #626)
+
+A 4.9-hez hasonlóan ez is a meglévő `referencia/dekompilalt-626/` kimenetből
+került elő, új futtatás nélkül. Ez a két művelet azért fontos, mert a
+`filterdesc.xml` csak a **paraméternevet** adja meg — a tényleges pixelműveletet
+nem.
+
+#### `Sharpen` (`0x00bbf9e0`) — 3×3 konvolúció, teljesen megvan
+
+```c
+a = clamp(amount, 0, 100);       // a csúszka értéke
+w = a / -100.0f;                 // NEGATÍV súly a nyolc szomszédra
+c = 1.0f - w * 8.0f;             // = 1 + 8*a/100  — a középső súly
+
+kernel =  [ w  w  w ]
+          [ w  c  w ]
+          [ w  w  w ]
+```
+
+**Energiamegőrző:** `8w + c = 1,0` minden `a`-ra, tehát egyenletes felületen
+nincs fényerő-eltolás. A csúszka végén (`a = 100`) `w = −1`, `c = 9` — ez a
+klasszikus erős Laplace-élesítő.
+
+#### `Exposure` (`0x00bc1ba0` → `0x00bc1c80`) — négy csúszka, négy görbe
+
+A művelet egy 256 elemű LUT-ot épít, és **négy külön tónusgörbét fűz egymás
+után**, mindegyiket a 4.8-ból ismert **természetes köbös spline-nal**
+(`0x008f3290`) kiértékelve. A csúszkák sorrendje a `.picasa.ini`-beli sorrend
+(4.1). A töréspontok (x, y), `p` = az adott csúszka értéke:
+
+**3. csúszka — árnyékok** (`0x008f2b30` egy ötpontos görbét kap):
+
+| x | y |
+|---:|---|
+| 0 | 0 |
+| 6 | `42·p + 6` |
+| 36 | `112·p + 36` |
+| 126 | `72·p + 126` |
+| 255 | 255 |
+
+> Figyeld meg, hogy az `y` konstans tagja **pontosan az `x`** — `p = 0`-nál a
+> görbe az identitás. Ez erős jel arra, hogy jól olvastuk ki a pontokat.
+
+**4. csúszka — csúcsfények** (pontonként, `0x008f2c70`):
+
+```
+(0, 0)
+ha (68·p > 1):        (68·p, 0)                    // a fekete pont eltolása
+ha (p > 0.5):  t = 2·p − 1
+               (127, 118 − 41·t)
+               (188, 192 − 12·t)
+egyébként:     (127, 127 − 4.5·p)
+               (188, 188 + 2·p)
+(255, 255)
+```
+
+**2. csúszka — S-görbés kontraszt**, a 128 körül forgatva:
+
+| x | y |
+|---:|---|
+| 0 | 0 |
+| 64 | `64 − 23·p` |
+| 128 | 128 |
+| 192 | `192 + 27·p` |
+| 255 | 255 |
+
+**1. csúszka — expozíció**: nem görbe, hanem **eltolás görbe-térben**:
+
+```c
+v = gorbe0(i);                 // 0x008f3290 — spline-kiértékelés
+v = gorbe0_inverz(26*p + v);   // 0x008f2e00
+// majd a maradék három görbe egymás után
+```
+
+A `0x008f2e00` (1168 b) **a görbe inverzét** keresi: végigmegy a spline-on
+egész lépésekben, minden `[x, x+1]` szakaszra eltárolja a `[min, max]`
+kimeneti tartományt, és ebből egy visszakereső táblát épít (`+0x10`), amiben
+lineárisan interpolál. Vagyis az expozíció-csúszka **a görbe kimeneti terében
+tol el `26·p`-vel, majd visszatér a képpont-térbe** — ez a klasszikus
+„expozíció perceptuális térben" megoldás, nem egyszerű szorzás vagy összeadás.
+
+> A `26`-os szorzó és az inverz-tábla szerkezete biztos. Az, hogy melyik
+> görbének az inverzét használja (a négy közül), a dekompilátumból nem
+> egyértelmű — ez **feltételes**.
+
+A záró lépés minden `i ∈ 0…255`-re: a négy görbe egymás utáni kiértékelése,
+`clamp(0, 255)`, kerekítés, majd a LUT három csatorna-változatba tárolása
+(`<<16`, `<<8`, `<<0`) — ugyanaz a „csak OR-ozni kell" minta, mint az
+`AdjustCurves`-nél (4.8).
+
+### 4.11 `Tiled`, `EdgeDetectionB` és a Sobel-változat (2026-08-14, #626)
+
+Két célzott kör futott ezekre párhuzamosan (nyers kimenet:
+`referencia/dekompilalt-pakolo/script-DecompileTiled.log`, `-Edge.log`).
+
+#### `Tiled` — **maszk**, nem képművelet
+
+Az osztály neve `glimmer::TiledImageMask`, nem `…ImageOperation`. A csempézés
+(`0x00bba670`):
+
+```c
+oszlopok = kepSzelesseg / csempeSzelesseg;     // EGÉSZ osztás
+sorok    = kepMagassag  / csempeMagassag;
+ox = round(param[10]);   oy = round(param[11]);   // eltolás
+
+for (r = 0; r <= sorok; r++)
+  for (c = 0; c <= oszlopok; c++) {
+      x = csempeSzelesseg * c + (kepSzelesseg - rajzoltSzelesseg)/2 + ox;
+      y = csempeMagassag  * r + (kepMagassag  - rajzoltMagassag )/2 + oy;
+      rajzol(csempe, x, y);
+  }
+```
+
+Két részlet, ami nélkül nem stimmel: a ciklus **`<=`**, tehát mindkét irányban
+**eggyel több** csempe készül, mint amennyi elférne (ez fedi le a jobb és alsó
+peremet), és a csempe a rendelkezésre álló területhez képest **középre
+igazítva** indul, nem a bal felső sarokból.
+
+#### `EdgeDetectionSobel` — a kernel teljesen megvan
+
+A `glimmer::EdgeDetectionSobelImageOperation` 6. slotja (`0x00bb6620`) egy
+jelzőtől függően két 3×3 kernel közül választ:
+
+```
+függőleges élek:            vízszintes élek:
+  [ -2   0   2 ]              [  2   4   2 ]
+  [ -4   0   4 ]              [  0   0   0 ]
+  [ -2   0   2 ]              [ -2  -4  -2 ]
+```
+
+Ez a **klasszikus Sobel kétszeres súlyokkal** (a szokásos ±1/±2 helyett ±2/±4).
+A konvolúciót ugyanaz a 3×3 mag futtatja, mint a `Sharpen`-nél (`0x00bbfca0`) —
+ott a szomszéd-eltolások (`±1`, `±sor`, `±sor±1`) a dekompilátumban közvetlenül
+látszanak, ami a 4.10-es `Sharpen`-kernel olvasatát is megerősíti.
+
+#### `EdgeDetectionB` — NEM konvolúció
+
+> ⚠️ **Helyesbítés a korábbi feltevéshez.** A 6. slot (`0x00bbcdd0`) egyetlen
+> értéket (`100 − csúszka`) tesz egy egyelemű paraméterlistába, majd a
+> `0x009a8ca0`-t hívja. Ez **nem szűrő-diszpécser**, hanem egy 40 bájtos,
+> hivatkozásszámlált rajzoló-objektum **értékadó operátora** — vagyis a
+> `Sharpen`-nél és mindenhol máshol is csak másol. A `EdgeDetectionB` tényleges
+> élkiemelése tehát **nem a művelet-osztályban van**, és ebből a körből sem
+> került elő.
+>
+> Amíg nincs meg, a `filterdesc.xml`-ből ismert csővezeték az érvényes; a
+> `EdgeDetectionSobel` viszont **teljesen implementálható** a fenti kernelekkel.

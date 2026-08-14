@@ -351,6 +351,8 @@ ApplicationWindow {
         onOptionsRequested: optionsDialog.open()
         // #351: Exportálás weboldalként
         onWebExportRequested: webExportDialog.open()
+        // #530: Google Earth-export — a folyamat az ExportDialogs-ban él
+        onEarthExportRequested: exportDialogs.openGoogleEarth()
         // #366: több kijelölt képnél a tömeges átnevezés-dialógus nyílik
         onRenameRequested: window.selectedIndexes.length > 1
             ? fileOpsDialogs.openRenameMany(window.selectedIndexes)

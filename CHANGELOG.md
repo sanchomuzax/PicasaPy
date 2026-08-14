@@ -5,6 +5,96 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.44] – 2026-08-14
+
+### Hozzáadva
+- **A Google Earth-export elérhető a menüből (#530).** Eszközök → Geocímke →
+  „Exportálás Google Earth-fájlba": a kijelölt képek közül a helyadattal
+  rendelkezők térképre kerülnek. A program megmondja, hány kép került ki, és
+  hány maradt ki helyadat híján; ha egyiken sincs helyadat, nem készít üres
+  fájlt.
+
+## [0.7.43] – 2026-08-14
+
+### Hozzáadva
+- **Google Earth-export: a geocímkézett képek kiírása térképre (#530).** A
+  program elkészíti a `doc.kml` fájlt és mellé a bélyegképeket, így a
+  fotógyűjtemény megnyitható a Google Earthben: minden kép a saját helyén
+  jelenik meg, az ikon fölé érve megnő, rákattintva pedig egy buborékban
+  látszik a bélyegkép, a felirat és a dátum. A koordináta nélküli képek
+  kimaradnak — a program megmondja, hányan. *(A motor és a hívható művelet
+  készen van; a menüpont bekötése külön lépés.)*
+
+## [0.7.42] – 2026-08-14
+
+### Hozzáadva
+- **A gyűjtemények bezárhatók (#461).** A bal hasábon minden saját gyűjtemény
+  neve mellett ott egy kis jelző: rákattintva a gyűjtemény **bezárul**, és a
+  benne lévő mappák képei eltűnnek a rácsból, a keresésből és a
+  csillag-szűrőből is. Ez nem törlés és nem is összecsukás — a mappák a
+  helyükön maradnak, a gyűjtemény bármikor visszanyitható (a jelzőre vagy a
+  nevére duplán kattintva). Így a régi archívumok, az exportált képek és a
+  ritkán használt források egy kattintással eltehetők az útból. Ha a bezárás
+  után egyetlen kép sem maradna látható, a program — az eredeti Picasa
+  szövegével — előbb rákérdez.
+
+## [0.7.41] – 2026-08-14
+
+### Javítva
+- **A diavetítés windowsos tesztje nem mér félkész állapotot (#519).** A
+  vetítés közbeni csillagozás/forgatás háttérszálon fut; a teszt eddig 2
+  másodperc után akkor is továbbment, ha a művelet még nem fejeződött be — a
+  lassabb windowsos futtatón emiatt ingadozott a CI, és a bukás valódi hibának
+  látszott. Mostantól a teszt a művelet befejeződését várja meg, hibaágon
+  pedig a tényleges hibaüzenetet írja ki, nem egy félreérthető állítást.
+
+## [0.7.40] – 2026-08-14
+
+### Változott
+- **A megszűnt online szolgáltatások menüpontjai véglegesen szürkék (#422).**
+  A jobbklikk-menűkben hét olyan tétel volt (Feltöltés Google Fotókba / Picasa
+  Webalbumba, Gyorsfeltöltés, Feltöltés tiltása, Online műveletek), ami eddig
+  „még nincs bekötve" jelöléssel szerepelt — pedig ezek soha nem lesznek
+  bekötve, mert maga a szolgáltatás szűnt meg. A tételek a helyükön maradnak,
+  hogy a menük szerkezete egyezzen az eredetivel, de már nem ígérik, hogy
+  egyszer működni fognak, és nem számítanak bele a hátralévő munkába.
+
+## [0.7.39] – 2026-08-13
+
+### Javítva
+- **Az effekt-fülekről végleg lekerült a görgethető keret (#628).** A
+  szerkesztő bal oldali paneljén újra megjelent egy keret, amiben görgetni
+  kellett az effektekért — pedig ez a keret egyszer már le lett véve. A hibát
+  most nem a tünetnél orvosoltuk: a panel eddig **fix 420 képpont** magas volt,
+  akármekkora az ablak, és a 12 effekt-csempe ebbe soha nem fért bele. Mostantól
+  a panel az ablakkal együtt nő, a Visszavonás/Újra gombsor a tartalmat követi,
+  és a csempékre nem kerülhet rá. Ha az ablak alacsony, a panel kikényszeríti a
+  neki szükséges helyet, ahelyett hogy elvágná a tartalmát.
+
+## [0.7.38] – 2026-08-13
+
+### Javítva
+- **A töréspontos görbék mostantól úgy hajlanak, ahogy az eredetiben (#629).**
+  A Picasa a görbe-töréspontok között sima, köbös átmenetet használ, nálunk
+  eddig egyenes szakaszok voltak. Kilenc effektet érintett; a **60-as évek**
+  és a **Kinemaszkóp** képén ez akár **21 világossági szint** eltérést jelentett
+  — szemmel látható különbség, nem kerekítési zaj. A kétpontos görbét használó
+  effektek (Színinvertálás, Neon, Ceruzarajz) kimenete bájtra változatlan.
+
+## [0.7.36] – 2026-08-13
+
+### Hozzáadva
+- **A Finomhangolás-csúszkák modelljei mostantól a VALÓDI Picasa-kimenethez
+  vannak mérve a tesztkészletben (#551).** Eddig csak néhány kézzel kiírt
+  horgonyérték őrizte őket; innentől a Kiemelések, az Árnyékok, a
+  Színhőmérséklet mind a hat állása és a szín-varázspálca teljes görbéje
+  össze van vetve azzal, amit a Picasa 3.9 ténylegesen kiad. A mérés a
+  referencia-fotókból desztillált átlaggörbékből dolgozik (a fotók maguk nem
+  kerültek a repóba), a hibakorlátok a mai, mért pontosságból származnak.
+  A próba szerint ez elkapja azt a fajta csendes rontást, ami a jegyben
+  egyszer már majdnem bekövetkezett: a Színhőmérséklet elutasított natív
+  képlete a legkedvezőbb paraméterrel is a korlát 4–19-szeresét hozza.
+
 ## [0.7.35] – 2026-08-13
 
 ### Hozzáadva

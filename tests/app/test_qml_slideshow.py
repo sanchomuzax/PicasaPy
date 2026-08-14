@@ -34,15 +34,65 @@ def _wait_ms(qt_app, ms):
     qt_app.processEvents()
 
 
+#: A háttérművelet befejeződésére szánt türelem. Bőven a mért futásidő fölött:
+#: nem a teszt sebességét szabja meg (a jelzés érkezésekor azonnal továbbmegyünk),
+#: csak azt, mennyi idő után mondjuk ki, hogy a művelet BERAGADT (#519).
+_PHOTO_OP_TIMEOUT_MS = 30_000
+
+
 def _invoke_photo_op(qt_app, controller, obj, name, *args):
     """#141: a vetítés közbeni forgatás/csillag háttérszálon fut (NAS-írás
     + célzott index-UPDATE) — az _invoke utáni processEvents nem elég,
-    meg kell várni a `photoOpFinished` jelzést."""
+    meg kell várni a `photoOpFinished` jelzést.
+
+    **#519: a várakozás nem futhat ki némán.** Korábban 2000 ms után a
+    ciklus egyszerűen továbbment, és a hívó AZONNAL állított — a lassú
+    windows-CI-n (fájlírás + SQLite-frissítés, vírusirtóval) ez a művelet
+    BEFEJEZŐDÉSE ELŐTT mért. A bukás `assert False is True` alakban jött, ami
+    valódi hibának látszott, holott versenyhelyzet volt; emiatt ingadozott a
+    windows-láb.
+
+    Most a jelzés megérkezését KÜLÖN nyilvántartjuk: ha a türelmi idő letelt
+    anélkül, hogy megjött volna, a teszt beszédes üzenettel bukik — nem pedig
+    egy félkész állapotot mér le. Ha a jelzés már az `_invoke` alatt
+    megérkezik (szinkron ág), el sem indítjuk az eseményhurkot.
+    """
+    allapot: dict[str, object] = {"megjott": False, "hiba": None}
     loop = QEventLoop()
-    controller.photoOpFinished.connect(loop.quit)
-    _invoke(qt_app, obj, name, *args)
-    QTimer.singleShot(2000, loop.quit)
-    loop.exec()
+
+    def _kesz(*_args) -> None:
+        allapot["megjott"] = True
+        loop.quit()
+
+    def _hiba(uzenet: str) -> None:
+        # a háttérszál hibaágon `photoOpFailed`-et küld, és `photoOpFinished`
+        # NÉLKÜL tér vissza — enélkül a várakozás csak kifutna, és a valódi ok
+        # (jogosultság, fájlzár) rejtve maradna
+        allapot["hiba"] = uzenet
+        loop.quit()
+
+    controller.photoOpFinished.connect(_kesz)
+    controller.photoOpFailed.connect(_hiba)
+    try:
+        _invoke(qt_app, obj, name, *args)
+        if not allapot["megjott"] and allapot["hiba"] is None:
+            QTimer.singleShot(_PHOTO_OP_TIMEOUT_MS, loop.quit)
+            loop.exec()
+    finally:
+        # a korábbi változat a `loop.quit`-et rákötve hagyta a jelzésre —
+        # hívásonként egy halott ciklussal többre
+        controller.photoOpFinished.disconnect(_kesz)
+        controller.photoOpFailed.disconnect(_hiba)
+
+    assert allapot["hiba"] is None, (
+        f"a(z) {name!r} művelet HIBÁRA futott: {allapot['hiba']}"
+    )
+    assert allapot["megjott"], (
+        f"a(z) {name!r} művelet `photoOpFinished` jelzése "
+        f"{_PHOTO_OP_TIMEOUT_MS} ms alatt sem érkezett meg (hibajelzés sem) — "
+        "a háttérszál beragadt; a teszt így a művelet befejeződése ELŐTT mérne"
+    )
+    qt_app.processEvents()
 
 
 class TestSlideshowBasics:

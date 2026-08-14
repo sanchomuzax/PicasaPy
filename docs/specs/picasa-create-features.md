@@ -173,12 +173,32 @@ Vagyis a **Projektek gyűjteménybe sorolást a `P2category` kulcs végzi** —
 ezt a `picasa-ini-format.md` eddig csak „webalbumból letöltött album"
 jelentéssel ismerte. Ez a kulcs tehát általánosabb: **gyűjtemény-hovatartozás**.
 
-### 1.6/b Ami még nyitott a `.cxf`-ben
+### 1.6/b A `theme` és a szegély azonosítói — MEGVANNAK a binárisból (2026-08-13)
 
-- A **többi öt kollázs-típus** `theme` értéke (a minta `picturepile`) — egy-egy
-  mentés típusonként megadná.
-- A `<background type=…>` további értékei (kép, „átlagszín", „dimmed").
-- Az `$My Pictures` mellett milyen további **útvonal-változók** léteznek.
+A `.cxf` `theme` attribútum hat lehetséges értéke egy tömbben áll az `.exe`-ben
+(`0x00829df0`, `0x0082e8b0`, `0x00841550` — mindhárom ugyanazt a sorrendet
+használja, tehát ez a **kanonikus sorrend** is):
+
+| `theme=` | magyar név | leírás (`collage::*_desc`) |
+|---|---|---|
+| `picturepile` | Képkupac | szétszórt képek hatását kelti |
+| `picturegrid` | Mozaik | a képek automatikus illesztése az oldalra |
+| `regulargrid` | Rács | szabályos sorokba és oszlopokba rendezés |
+| `multiexp` | Többszörös exponálás | képek egymás tetejére helyezése |
+| `contactsheet` | Indexkép | miniatűr tájékoztató fejléccel |
+| `framegrid` | Képkockamozaik | mozaik hangsúlyos központi képpel |
+
+Az **alapértelmezés `picturepile`** (`0x008342b0`, ugyanott a cím
+alapértelmezése `CollageSpec::Untitled` → „Névtelen").
+
+A szegély-azonosítók a `0x00835610` leképezőben: **`noborder` · `whiteborder`
+· `polaroid` · `dimmed`**. (A `dimmed` a felületen nem választható külön
+stílusként — a háttérként használt képre alkalmazza a program, ld. 1.9.5.)
+
+A háttérnél a `solid` érték a writer (`0x008347b0`) szótárában szerepel.
+
+Még nyitott: az `$My Pictures` mellett milyen további **útvonal-változók**
+léteznek, és a képi háttér pontos attribútumai.
 
 ### 1.6/c Az eredeti mezőnév-lista (az `.exe`-ből, összevetésül)
 
@@ -193,7 +213,10 @@ albumTitle · albumDate
 Olvasat: a specifikáció **képenként** tárolja a `theta` (forgatás) és
 `scale` (méret) értéket — ezért tud a „kupac" típus pontosan visszaállni —,
 album-szinten pedig a témát, tájolást, árnyékot, feliratot, hátteret és
-térközt. A `%d:%d:%d:%d` formátum a háttérszínhez tartozik.
+térközt. A `%d:%d` formátum **az oldalarányé** (`format="15:10"`), nem a
+háttérszíné — az ARGB hexaként megy ki. A `CollageSpec` alapértelmezései a
+binárisból (`0x008342b0`): cím „Névtelen", téma `picturepile`, oldalarány
+**4:3**, háttér **`0xFF000000` (átlátszatlan fekete**).
 
 ### 1.7 Figyelmeztetések (átvehető viselkedés)
 
@@ -215,6 +238,535 @@ háttérként · Beállítás képkockaközéppontként · Eltávolítás · Meg
 szerkesztés. `CollageD` (vászon): Képek összekeverése · Képek szétszórása ·
 Az összes kijelölése / kijelölés megszüntetése. `Border`: Egyik sem · Fehér
 szegély · Polaroid fényképezőgép. (Ld. `ui-audit-menus.md` K.9.)
+
+### 1.9 Az elrendezés-algoritmusok — DEKOMPILÁLVA (2026-08-13)
+
+**Futás:** Ghidra 12.1.2, `Picasa3.exe` (SHA-256-kötött index), 35 gyökér
+(a téma-osztályok vtable-slotjai), 2 szint, **237 dekompilált függvény**.
+Nyers kimenet: `referencia/dekompilalt-kollazs/` (privát repó).
+
+Eddig ez a szakasz csak a felületet írta le; a hat elrendezés **matematikája**
+most került elő. A megbízhatósági szintek jelölve.
+
+#### 1.9.1 Közös építőelemek
+
+**Illeszkedés a kereten belülre** (`0x009b4aa0`) — mindenütt ez adja a
+képméretet:
+
+```c
+s  = min((dstW + 0.499f) / srcW, (dstH + 0.499f) / srcH);
+w  = round(s * srcW + 1e-5f);
+h  = round(s * srcH + 1e-5f);
+```
+
+A `+0.499` és a `+1e-5` nem elírás: a Picasa így kerekít **felfelé** a
+határesetben, ezért egy képpontnyi eltérés adódhat a naiv `round(s*w)`-hez
+képest.
+
+**Véletlenszám** — az MSVC `_rand()` (a `holdrand * 0x343fd + 0x269ec3` LCG,
+0…32767). Egyenletes lebegőpontos értékre a bináris a klasszikus bittrükköt
+használja, a dekompilátor ezt írja ki `((rand + 0x3f8000) * 0x100) - 1.0`
+alakban; ez valójában:
+
+```c
+u = bitcast_float(0x3f800000 | (rand() << 8)) - 1.0f;   // u ∈ [0,1)
+```
+
+**A szórás vezérlése:** a „Képek összekeverése" (`rand_order`) egy külön
+lépés — az elemekhez `rand()` kulcsot rendel, majd kulcs szerint rendez
+(`CPileTheme` 3. slot, `0x0087d410`); a „Véletlenszerű kollázs"
+(`rand_placement`) az elrendezést futtatja újra más maggal.
+
+#### 1.9.2 Képkupac (`picturepile`) — a magja megvan
+
+**Méret.** A képek nem egyformák: a **sorrendben hátrébb lévő kisebb**.
+Az `i`-edik kép (1-alapú) alapmérete a lap szélességének 33%-a, egy
+lecsengő szorzóval (`0x0087bcb0`):
+
+```c
+float pile_scale(int i) {              // i = 1, 2, 3, …
+    if (i <= 1) return 1.0f;
+    float s = 1.0f / sqrtf(sqrtf((float)i) - 1.0f);
+    return s > 1.0f ? 1.0f : s;        // felül 1.0-ra vágva
+}
+meret_i = round(pile_scale(i) * 0.33f * lapSzelesseg);
+```
+
+| `i` | 1–4 | 5 | 10 | 20 | 50 | 100 |
+|---|---|---|---|---|---|---|
+| szorzó | 1,00 | 0,90 | 0,68 | 0,54 | 0,41 | 0,33 |
+
+> ✅ **A képletet a felhasználó valódi `.cxf`-mintája igazolja** (1.6). Az ott
+> szereplő `scale` értékek — 337 / 303 / 280 / 263 / 249 / 238 képpont —
+> a 337-hez viszonyítva 1,0000 / 0,8991 / 0,8309 / 0,7804 / 0,7389 / 0,7062,
+> a képlet pedig `i = 1…4` / 5 / 6 / 7 / 8 / 9-re 1,0000 / 0,8995 / 0,8306 /
+> 0,7795 / 0,7395 / 0,7071. A legnagyobb eltérés **0,31 képpont** — kerekítési
+> nagyságrend, öt egymást követő indexen. Ezzel a belső `sqrt` is megerősített:
+> más függvény nem adná vissza ezt a sorozatot. (A hívott CRT-függvénynek —
+> `0x00c0b310`, 20 bájt — továbbra sincs neve a binárisban.)
+>
+> A mintában `337 = 0,33 · lapszélesség`, tehát a lap ≈ 1021 képpont széles volt.
+
+**Forgatás.** Képenként egy véletlen szög, amit a kép **vízszintes helyzete
+modulál** (`0x0087dcd0`):
+
+```c
+u  = uniform01();                          // ld. 1.9.1
+x  = kep_kozeppont_x / teruletSzelesseg;   // 0…1
+fok = -36.0f * u * (0.1f - (x - 0.5f) * 0.5f);   // = u * (18*x - 12.6)
+theta = fok * 0.017453292f;                       // RADIÁNBAN tárolva
+```
+
+Vagyis a szög **balra nagyobb** (a bal szélen 0…−12,6°, kb. 70%-nál nulla,
+a jobb szélen 0…+5,4°) — nem szimmetrikus szórás, hanem enyhe legyezőhatás.
+A `.cxf` `theta` mezője radiánban van; a felület a `collage::angle_format`
+(„Szög: %d") felirathoz `theta * 57.29578` (= 180/π) átváltással jut.
+
+**Pozíció.** A számított hely a kép **közepére** hivatkozik, és a lap
+koordinátáira normalizálódik:
+
+```c
+X = (lap.jobb - lap.bal) * (x - kepSzelesseg * skala * 0.5f) / teruletSzelesseg;
+Y = (lap.also - lap.felso) * (y - kepMagassag * skala * 0.5f) / teruletMagassag;
+```
+
+Animált átrendezéskor ugyanez az `AnimPlacementHandler` objektumba kerül
+(pozíció, szög, méret; a `0x3f4ccccd` = **0,8 s** animációhossz).
+
+#### 1.9.3 Mozaik (`picturegrid`) és Képkockamozaik (`framegrid`) — a térköz szabálya
+
+A `CGridTheme` **normalizált téglalapokban** dolgozik: minden képnek egy
+`(x0, y0, x1, y1)` négyese van a `[0,1]²` egységnégyzetben; a pakolás ezeket
+állítja elő, a rajzolás pedig ebből számol képpontot. A „Rács vastagsága"
+csúszka (`spacing`, 0…1) így hat (`0x00880e30`):
+
+```c
+m   = min{ minden téglalap szélessége és magassága };
+hez = spacing * 0.45f * m;      // teljes hézag, normalizált egységben
+fel = hez * 0.5f;
+a   = lapSzelesseg / lapMagassag;
+
+x0px = round((r.x0 + (r.x0 == 0.0f ? hez : fel)) * W);
+x1px = round((r.x1 - (r.x1 == 1.0f ? hez : fel)) * W);
+y0px = round((r.y0 + a * (r.y0 == 0.0f ? hez : fel)) * H);
+y1px = round((r.y1 - a * (r.y1 == 1.0f ? hez : fel)) * H);
+```
+
+Két nem nyilvánvaló következmény, amit át kell venni:
+
+1. **A lap szélét érintő él a TELJES hézagot kapja, a belső élek felet-felet.**
+   Így két szomszédos kép között is pontosan egy hézagnyi rés lesz, és a
+   külső margó ugyanakkora, mint a belső rés — ettől néz ki egyenletesnek.
+2. **A függőleges hézagot a lap oldalaránya szorozza** (`a = W/H`), tehát a
+   rés **képpontban négyzetes**, nem a normalizált térben.
+
+A `framegrid` ugyanezt a rajzolót örökli, csak a pakolót írja felül
+(`0x00888e60`) — a kijelölt kép kerül a hangsúlyos középső cellába.
+
+> A pakoló algoritmus maga (mely kép melyik cellát kapja, hogyan darabolódik
+> a négyzet) **még nincs megfejtve** — ez a következő kör tárgya.
+
+#### 1.9.4 Rács (`regulargrid`), Indexkép (`contactsheet`), Többszörös exponálás (`multiexp`)
+
+- **`regulargrid`** — szabályos sorok/oszlopok (**a sor/oszlop-szám képlete az
+  1.9.8-ban**); a 3. slot
+  (`0x00885750` → `0x008857a0`) **nem** elrendezés, hanem a sorrend
+  megfordítása/keverése (két indextömb rendezése, majd páronkénti csere).
+- **`contactsheet`** — a fejléc két sorból áll, a szövegek a
+  `collage/contactsheet/title` és `.../subtitle` erőforrásokból, az alsó sor
+  formátuma a `CContactSheetTheme::subtitle_format` mintából. A címsor
+  betűmérete `round(f * 0.04 * lapMagassag)`, ahol `f = 1,0`, ha a panel
+  méretaránya nagyobb 1-nél, különben **0,75**. A fejléc jobbról-balra író
+  nyelveken tükröződik (a kód a `DAT_00d678d4` jelzőre előjelet vált).
+- **`multiexp`** — minden kép a **teljes lapra** kerül, oldalarányhoz
+  igazítva (`0x00841860`), és egymásra keveredik (`0x00409ea0` `1.0f, 1.0f`
+  súlyokkal). Nincs pozíciószámítás.
+
+#### 1.9.5 A három képkeret — teljesen megvan
+
+**Polaroid** (`0x00889790` / `0x00889820`). A keret a fotóhoz képest:
+
+```
+kulsoSzelesseg = round(fotoSzelesseg * 1.145)
+kulsoMagassag  = round(fotoMagassag  * 1.374)
+margo          = round(fotoSzelesseg * 0.0725)      // (1.145 - 1) / 2
+papirszin      = 0xFFD9D9D9                          // RGB(217, 217, 217)
+```
+
+A fotó a keretben `margo` távolságra van balról, jobbról és **felülről** —
+a maradék alul jelenik meg vastag sávként, ahová a képfelirat kerül. Ezek a
+számok a valódi Polaroid-arányok (3,5×4,25 hüvelykes lap, 3,1×3,1 hüvelykes
+képmező → 1,129 és 1,371) másfél ezreléken belüli közelítései.
+
+**Fehér szegély** (`0x00889a20`):
+
+```
+b   = round(min(szelesseg, magassag) * 0.05)   // a RÖVIDEBB oldal 5%-a
+szin = 0xFFEEEEEE                               // RGB(238, 238, 238) — nem tiszta fehér
+```
+
+**Nincs szegély** (`0x00889bc0`) — csak a kép, semmilyen díszítés.
+
+**Dimmed** (`0x00889da0`) — a háttérként használt képre alkalmazott
+sötétítés: fényerő **−0,15**, kontraszt **1,0** (`0xbe19999a` és `0x3f800000`
+lebegőpontos bitminták), hogy a rátett képek olvashatók maradjanak.
+
+**Keret nélküli illeszkedés** (`0x00889ce0`): a hosszabbik oldal kapja a
+megadott célméretet, a rövidebbet arányosan számolja.
+
+#### 1.9.6 A vtable-slotok jelentése (mind a hat témára ellenőrizve)
+
+A kör egyik mellékeredménye, hogy a téma-osztályok slotkiosztása kiderült —
+ez korábban félrevezetett minket, mert a „3. slot" nem elrendezés:
+
+| slot | mit csinál |
+|---|---|
+| 0 | **elrendezés/rajzolás** — a dokumentum téglalapjaiból képpontot számol |
+| 1–2 | méret- és oldalarány-lekérdezés |
+| **3** | **a sorrend/elhelyezés összekeverése** (`rand_order` / `rand_placement`) — minden témában `_rand()` kulcsokkal rendez, **nem** elrendezés |
+| 6–8 | a téma neve, ikonja, leírása (erőforráskulcsok) |
+| **11** | **a pakolás** — a `CGridTheme`-nél (`0x00882100`) ez hívja a pakolófát (1.9.7) |
+
+Az osztályok és a vtable-jeik (RTTI-ből): `CPileTheme` `0x00cbf5ac`,
+`CGridTheme` `0x00cbf5dc`, `CRegularGridTheme` `0x00cbf610`,
+`CMultiExposureTheme` `0x00cbf640`, `CContactSheetTheme` `0x00cbf670`,
+`CFrameGridTheme` `0x00cbf6a0`; keretek: `PolaroidBitmapTheme` `0x00cbf91c`,
+`WhiteBorderTheme` `0x00cbf928`, `NoBorderTheme` `0x00cbf934`,
+`DimmedBitmapTheme` `0x00cbf940`.
+
+#### 1.9.7 A Mozaik pakolója — MEGFEJTVE (2026-08-14)
+
+**Futás:** három további Ghidra-kör (170 + 132 + 89 = **391 dekompilált
+függvény**), nyers kimenet: `referencia/dekompilalt-pakolo/` (privát repó).
+
+Az 1.9.6-ban leírt keresés helyes volt: a pakolás nem a téma-osztályokban van.
+A `CGridTheme::Layout` (`0x00880e30`) a **11. vtable-slotot** hívja
+(`0x00882100`), az pedig egy külön, ~15 kB-os könyvtárat a `0x0088c1a0` és
+`0x0088ff70` között. Ez a könyvtár RTTI-vel azonosított osztályokból áll:
+
+```
+CPackingTree            ← alaposztály        vtable 0x00cc51ac
+ ├─ CFullSearchTree                          vtable 0x00cc51fc
+ ├─ CGravityTree                             vtable 0x00cc522c
+ └─ CLocationTree                            vtable 0x00cc525c
+CBinaryTree<CImageLocation*> / CPackingTreeNode / CGravityTreeNode / CLocationTreeNode
+```
+
+Vagyis a Mozaik egy **bináris pakolófa** (guillotine-felosztás): a lapot
+rekurzívan két részre vágja, a levelek a képek cellái.
+
+##### Melyik stratégia fut
+
+A `0x0088e2b0` választ (a `filterdesc`-hez hasonló, de kódba égetve):
+
+| feltétel | osztály |
+|---|---|
+| **14-nél kevesebb kép** és nincs kényszerített mód | `CFullSearchTree` |
+| mód = 1 | `CGravityTree` |
+| mód = 2 | `CLocationTree` |
+
+Utána minden példány ugyanazt a két paramétert kapja:
+
+```c
+tree.limit     = 3000;      // +0x28 — a keresési ág képszám-küszöbe
+tree.timeLimit = 0.5f;      // +0x30 — MÁSODPERCBEN
+```
+
+Ha a Képkockamozaik középső képe ki van jelölve, annak téglalapja
+kényszerként kerül a fába (`+0x18…+0x24`), különben mind a négy mező `-1`.
+
+##### A keresés — időkorlátos, véletlen sorrendekkel
+
+A `CPackingTree::Pack` (`0x0088e9d0`) magja:
+
+```c
+best     = FaEpites(lapArany, kepek_eredeti_sorrendben);
+bestKtsg = Koltseg(best);
+t0 = QueryPerformanceCounter();
+while ((QueryPerformanceCounter() - t0) / frekvencia < 0.5f) {   // 0,5 másodperc
+    sorrend = VeletlenKeveres(kepek);        // rand() % n, Fisher–Yates (0x0088fcf0)
+    jelolt  = FaEpites(lapArany, sorrend);
+    if (Koltseg(jelolt) < bestKtsg) { best = jelolt; bestKtsg = Koltseg(jelolt); }
+}
+return best;
+```
+
+> ⚠️ **Ebből következik, hogy a Mozaik nem determinisztikus.** Ugyanaz a
+> képhalmaz ugyanazokkal a beállításokkal **kétszer futtatva más elrendezést
+> adhat** — a keresés valós időhöz kötött (`QueryPerformanceCounter`), és
+> `_rand()`-ot használ. Ezért menti a Picasa a végeredményt képenként a
+> `.cxf`-be, és ezért mutat százalékos előrehaladást
+> („Kollázs létrehozása – %d%%"). A mi megvalósításunknak **nem szabad** ezt
+> reprodukálhatónak ígérnie, viszont a `.cxf`-ből visszatöltésnek pontosnak
+> kell lennie.
+
+A `CFullSearchTree` ágán (kevés kép) egy második, finomító kör is fut
+(`0x0088ed40`): 100 véletlen **csere-jelöltet** értékel ki (két csomópont
+képének felcserélése), rendezi őket költség szerint, és a legjobbat tartja
+meg, ha jobb a kiindulónál.
+
+##### A költségfüggvény — a kihasználatlan terület
+
+`CPackingTreeNode` 9. slot (`0x00893570`), rekurzívan a fán:
+
+```c
+double Koltseg(csomopont, kenyszerTeglalap) {
+    if (csomopont.bal == NULL && csomopont.jobb == NULL) {      // LEVÉL = egy kép
+        w = cella.x1 - cella.x0;
+        h = cella.y1 - cella.y0;
+        if (kenyszerTeglalap ervenyes) {          // a FrameGrid középső területe
+            w *= (kenyszer.x1 - kenyszer.x0);
+            h *= (kenyszer.y1 - kenyszer.y0);
+        }
+        a = kep.szelesseg / kep.magassag;         // a kép oldalaránya (0x0088e650)
+        if (w / a <= h) { illW = w;      illH = w / a; }   // szélességre illeszt
+        else            { illW = a * h;  illH = h;     }   // magasságra illeszt
+        veszteseg = |w*h - illW*illH|;            // A CELLÁBAN ÜRESEN MARADÓ TERÜLET
+        return veszteseg < 1e-5 ? 0.0 : veszteseg;
+    }
+    return Koltseg(bal, kenyszer) + Koltseg(jobb, kenyszer);
+}
+```
+
+**Olvasat:** a pakoló azt minimalizálja, hogy összesen mennyi terület vész el,
+amikor minden képet a saját oldalarányával a neki jutott cellába illesztünk.
+Ez pontosan az, amit a súgó ígér: *„Mozaik: a képek automatikus illesztése az
+oldalra."* A képek tehát **nem torzulnak** — a cella marad üres, és ezt az
+ürességet bünteti a költség.
+
+##### Megbízhatóság
+
+Az osztálynevek **RTTI-ből** származnak, nem következtetés. A költségfüggvény,
+az időkorlát (0,5 s), a küszöb (3000) és a 14-es határ közvetlenül a
+dekompilált kódból van. Ami **következtetés**: a `CGravityTree` és a
+`CLocationTree` pontos szerepe (mikor kapcsol rájuk a program) — a módválasztó
+mező írója még nincs megtalálva; az alapértelmezés a `CFullSearchTree`.
+
+#### 1.9.8 A Rács sor- és oszlopszáma — MEGFEJTVE (2026-08-14)
+
+A `regulargrid` nem a pakolófát használja: saját, zárt képlettel választ
+sor/oszlop-osztást (`0x00885b00`, a `CRegularGridTheme::Layout` alatt).
+
+```c
+// N = a képek száma, lapSzel/lapMag a rendelkezésre álló terület
+atlagArany = 0;
+for (kep : kepek) atlagArany += kep.szelesseg / kep.magassag;
+atlagArany /= N;                                  // ÁTLAGOS oldalarány
+
+legjobbSor = -1;  legjobbKtsg = +FLT_MAX;
+for (sor = 1; sor <= N && sor < 1000; sor++) {
+    oszlop = ceil(N / sor);                        // felfelé kerekítő egész osztás
+    if (oszlop == 0) break;
+    cellaArany = (lapSzel / oszlop) / (lapMag / sor);
+    q = cellaArany / atlagArany;
+    if (q < 1.0f) q = 1.0f / q;                    // szimmetrikus eltérés, mindig >= 1
+    ktsg = q * 1.7f + (float)(sor * oszlop - N);   // + az ÜRESEN MARADÓ CELLÁK száma
+    if (ktsg <= legjobbKtsg) { legjobbSor = sor; legjobbKtsg = ktsg; }
+}
+sorok   = legjobbSor;
+oszlopok = ceil(N / legjobbSor);
+```
+
+**Olvasat:** két dolgot mérlegel egymás ellen — mennyire tér el a cella
+oldalaránya a képek átlagos oldalarányától (`q`, `1.7`-es súllyal), és hány
+cella marad üresen (`sor·oszlop − N`, súly 1). Vagyis **egy üresen maradó cella
+körülbelül annyit „ér", mint 0,59-nyi relatív oldalarány-eltérés.**
+
+Két apróság, ami különben eltérést okoz:
+
+- Az összehasonlítás `<=`, tehát **döntetlennél a NAGYOBB sorszám nyer**.
+- A ciklus 1000 sornál megáll (a fordító háromszorosan kibontotta, de a
+  logika ez).
+
+#### 1.9.9 A pakolófa építése — MEGFEJTVE (2026-08-14)
+
+A negyedik kör (`referencia/dekompilalt-pakolo/script-DecompilePacker4.log`)
+lezárta az utolsó darabot is. A `CPackingTreeNode` 13. slotja (`0x00891fc0`),
+amit a keresés minden sorrendre meghív, **négy különböző faépítőt futtat le, és
+a legkisebb költségűt tartja meg**:
+
+```c
+legjobbKtsg = 1000000.0f;
+for (epito : { 0x00894470, 0x00894940, 0x00893da0, 0x00894bd0 }) {
+    fa = epito(lapArany, kepek, kenyszer);
+    if (Koltseg(fa) < legjobbKtsg) { legjobb = fa; legjobbKtsg = Koltseg(fa); }
+}
+```
+
+Vagyis a Mozaik **két szinten keres**: kívül 0,5 másodpercig véletlen
+sorrendeket próbál (1.9.7), belül minden sorrendre négyféle felosztást.
+
+##### A négy faépítő
+
+Mind a négy ugyanabból a képlistából épít fát; a különbség az **összevonás
+sorrendje**. A kiválasztás mindig a költség (1.9.7) alapján történik.
+
+| # | cím | stratégia |
+|---|---|---|
+| 1 | `0x00894470` | **cikcakk páros összevonás**: minden szinten a szomszédos elemeket párosítja — az egyik szinten elölről, a következőn hátulról, váltakozva. Páratlan elemszámnál az utolsó változatlanul lép a következő szintre. |
+| 2 | `0x00894940` | **költségvezérelt páros összevonás**: szintenként párosít, de négynél több elemnél mind a **16 vágásirány-kombinációt** kipróbálja (2⁴), költséget számol mindegyikre, és a legolcsóbbat választja (`0x00894d50`). |
+| 3 | `0x00893da0` | **kettőhatványra igazítás**: addig von össze párokat, amíg a szint elemszáma pontosan `2^k` nem lesz, onnantól tökéletesen kiegyensúlyozott bináris fa. |
+| 4 | `0x00894bd0` | **rekurzív guillotine** (lent részletesen) — a legtisztább, önmagában is működő megvalósítás. |
+
+##### A rekurzív guillotine-építő (`0x00894bd0`)
+
+```c
+Csomopont* Epit(celArany, lista, lo, hi) {
+    if (lo >= hi) return NULL;
+    n = hi - lo;
+    if (n == 1) return Level(lista[lo]);            // egy kép
+
+    kozep = lo + n/2;
+    if ((kozep & 1) != 0 && n > 2) kozep++;          // PÁROS határra igazít
+
+    a1 = AtlagArany(lista, lo,    kozep);            // a bal/felső fél átlagos oldalaránya
+    a2 = AtlagArany(lista, kozep, hi);               // a jobb/alsó félé
+
+    irany = VagasIrany(celArany, a1 + a2, a1*a2/(a1+a2));
+    t     = Kiigazitas(celArany, a1, a2, irany);
+
+    csomopont.bal   = Epit(a1 + t, lista, lo,    kozep);
+    csomopont.jobb  = Epit(a2 + t, lista, kozep, hi);
+    return csomopont;
+}
+```
+
+##### A vágásirány (`0x00893b10` + `0x00893c20`)
+
+Két jelöltet hasonlít össze — ez a két érték a geometria alapazonossága:
+
+| ha a két blokkot… | a keletkező blokk oldalaránya |
+|---|---|
+| **egymás mellé** tesszük (azonos magasság) | `a1 + a2` |
+| **egymás alá** tesszük (azonos szélesség) | `a1·a2 / (a1 + a2)` |
+
+**Az alapszabály: azt az irányt választja, amelyik oldalaránya közelebb esik a
+cella kívánt arányához** (`|jelolt − celArany|` minimuma).
+
+Ezt egészíti ki négy peremeset-ág: ha az egyik jelölt „átbillenne" az 1,0-s
+határon — vagyis álló cellából fekvő blokkot vagy fordítva csinálna —, akkor
+a **tájolást megőrző** jelölt nyer, akkor is, ha numerikusan távolabb van.
+
+> ⚠️ A négy peremeset-ág olvasata részben **következtetés**: a dekompilátor
+> ezen a helyen FPU-jelzőbit-manipulációként adja vissza a `bool` értéket
+> (`(ushort)(x<y)<<8 | …`), ami nehezen olvasható. Az általános ág (a
+> minimális eltérés) és a két jelölt képlete viszont egyértelmű.
+
+##### A kiigazítás (`0x00893b80`) — másodfokú egyenlet
+
+A gyerekek nem a nyers `a1`, `a2` célaránnyal épülnek tovább, hanem `a1 + t`,
+`a2 + t` értékkel, ahol `t` az a korrekció, amivel a két gyerek **együtt
+pontosan a kívánt `A` arányt adná ki**:
+
+```c
+// VÍZSZINTES vágás:  (a1+t) + (a2+t) = A
+t = ((A - a1) - a2) * 0.5f;
+
+// FÜGGŐLEGES vágás:  (a1+t)(a2+t) / ((a1+t)+(a2+t)) = A
+b = (a1 + a2) - 2*A;
+t = ( sqrtf(b*b - 4*(a1*a2 - A*a2 - A*a1)) - b ) * 0.5f;
+```
+
+A második eset a szokásos másodfokú megoldóképlet a fenti egyenletre.
+
+> ✅ **Ez egyben a `0x00c0b310 = sqrt` azonosítás második, független
+> megerősítése**: egy másodfokú megoldóképlet diszkriminánsán csak
+> négyzetgyök állhat. (Az első a Képkupac-képlet illesztése a valódi
+> `.cxf`-mintára, ld. 1.9.2.)
+
+#### 1.9.10 Melyik pakolóstratégia mikor fut — LEZÁRVA (2026-08-14)
+
+Az 1.9.7 még nyitva hagyta, mikor lép be a `CGravityTree` és a
+`CLocationTree`. A módmező (`+0x24`) íróit végigkövetve a válasz egyértelmű:
+
+| mód | osztály | mikor | ki állítja be |
+|---:|---|---|---|
+| 0 | **`CFullSearchTree`** | Mozaik, **14-nél kevesebb** kép | alapállapot (`0x0088d860` minden pakolás előtt nullázza) |
+| 0 | **`CPackingTree`** (alaposztály) | Mozaik, **14 vagy több** kép | ugyanaz az ág, más konstruktor (`0x0088d7b0`) |
+| 2 | **`CLocationTree`** | **Képkockamozaik** (`framegrid`) | `CFrameGridTheme` 11. slot (`0x00888ec0` → `0x0088db10`) |
+| 1 | `CGravityTree` | **soha** | a beállítója (`0x0088d990`) **halott kód** — a binárisban egyetlen hivatkozás sem mutat rá |
+
+**Két átvehető következtetés:**
+
+1. A **`CLocationTree` a Képkockamozaik pakolója** — a neve is beszédes: ez az,
+   ami a kijelölt képet a megadott *helyre* (a hangsúlyos középső cellába)
+   kényszeríti, és a többit köré rendezi. Ezért kerül a kényszer-téglalap a fa
+   `+0x18…+0x24` mezőibe (1.9.7).
+2. A **`CGravityTree` sosem fut** a Picasa 3.9-ben. Egy megvalósításnak nem
+   kell foglalkoznia vele; nyilván egy korábbi vagy tervezett elrendezés maradt
+   a kódban.
+
+#### 1.9.11 A kollázs megőrzött beállításai (`Preferences`)
+
+A kollázs-munkamenet indításakor (`0x0087dcd0`) a program a `Preferences`
+szekcióból tölti vissza az előző beállításokat:
+
+| kulcs | mit őriz |
+|---|---|
+| `collage::theme` | az utolsó kollázs-típus (alapértelmezés `picturepile`) |
+| `collage::format` | az oldalformátum (alapértelmezés 4:3) |
+| `collage::orientation` | álló / fekvő |
+| `collage::bgcolor` | a háttérszín |
+| `collage::avgcolor` | a háttér „a képek átlagszíne" kapcsolója |
+| `collage::shadows` | árnyékok rajzolása |
+| `collage::showcaptions` | képfeliratok megjelenítése |
+
+> A `collage::avgcolor` **megválaszolja az 1.6/b nyitott kérdését**: a
+> `<background>` harmadik módja az **átlagszín**, és a képenkénti átlagszínt a
+> program az adatbázisból veszi (`avgcolor` mező, ld. `0x00880580` — minden
+> kollázs-csomópont eltárolja a saját képének átlagszínét).
+
+#### 1.9.12 A Képkupac kezdeti szórása — MEGFEJTVE (2026-08-14)
+
+Ez volt az utolsó hiányzó darab. A szórás a `0x0087cb70`-ben van (a `CPileTheme`
+0. slotja alatt), és **nem egyszerű egyenletes véletlen**: a Picasa
+**„legjobb jelölt" mintavételezést** (Mitchell best-candidate) használ.
+
+```c
+N = a kollázsban lévő képek száma;
+s = pile_scale(N);                    // ugyanaz, mint a méretnél: min(1, 1/sqrt(sqrt(N)-1))
+sav    = 1.0f - s * 0.495f;           // a hasznos tartomány szélessége (0…1-ben)
+eltol  = (1.0f - sav) * 0.5f;         // középre igazítás — a szélektől tartott margó
+
+for (kep : kepek) {
+    legjobbTav = 0.0f;
+    for (probal = 0; probal < 5; probal++) {          // ÖT jelölt képenként
+        x = (sav * uniform01() + eltol) * teruletSzelesseg;
+        y = (eltol + uniform01() * sav) * teruletMagassag;
+
+        d2 = +1e6f;
+        for (p : mar_elhelyezett_pontok)              // a LEGKÖZELEBBI szomszéd
+            d2 = min(d2, (x-p.x)*(x-p.x) + (y-p.y)*(y-p.y));
+
+        if (d2 > legjobbTav) { legjobbTav = d2; legjobbX = x; legjobbY = y; }
+    }
+    elhelyez(legjobbX, legjobbY);       // a legmesszebb eső jelölt nyer
+    mar_elhelyezett_pontok.push(legjobbX, legjobbY);
+}
+```
+
+**Miért fontos ez?** Tiszta egyenletes véletlennel a kupac csomós lenne — egyes
+képek egymásra torlódnának, máshol lyukak maradnának. Az öt jelöltből a
+legtávolabbi kiválasztása **kvázi-egyenletes, „kék zajos" eloszlást** ad: a
+képek lazán, de szabályosság nélkül töltik ki a lapot. Ez a Képkupac
+jellegzetes megjelenésének a kulcsa, és egy naiv `rand()`-alapú megvalósítás
+**szemmel láthatóan másképp néz ki**.
+
+A margó a képszámmal együtt szűkül: sok képnél `s` kicsi, így a `sav` közel 1,0
+— vagyis a szórás majdnem a teljes lapra kiterjed. Kevés képnél (`s = 1`) a sáv
+`0,505`, a középpontok tehát a lap középső felében maradnak.
+
+A pozíció innen megy tovább az 1.9.2 képleteibe (középre igazítás és a lap
+koordinátáira normalizálás), a forgatás pedig a vízszintes helyzetből számolódik.
+
+**Ezzel a Képkollázs mind a hat elrendezése, mindhárom kerete, a `.cxf`
+formátum és a megőrzött beállítások teljesen feltárva.**
+
+#### 1.9.13 Ami még nyitott
+
+
+- A **Képkupac kezdeti (x, y) szórása** — az 1.9.2 képletei a már kiszámolt
+  pozícióból dolgoznak. Ez az egyetlen darab, ami a hat elrendezésből hiányzik.
 
 ## 2. Film készítése (`ID_MAKEMOVIE`, `eMenuCreateMovie`)
 

@@ -2208,6 +2208,22 @@
 <context>
     <name>ExportDialogs</name>
     <message>
+        <source>Export to Google Earth File</source>
+        <translation>Exportálás Google Earth-fájlba</translation>
+    </message>
+    <message>
+        <source>%1 pictures written to the Google Earth file.</source>
+        <translation>%1 kép került a Google Earth-fájlba.</translation>
+    </message>
+    <message>
+        <source>None of the selected pictures has a location, so no Google Earth file was written.</source>
+        <translation>A kijelölt képek egyikén sincs helyadat, ezért nem készült Google Earth-fájl.</translation>
+    </message>
+    <message>
+        <source>%1 pictures were left out: they have no location.</source>
+        <translation>%1 kép kimaradt: nincs rajtuk helyadat.</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/ExportDialogs.qml" line="23"/>
         <location filename="../qml/PicasaPy/ExportDialogs.qml" line="96"/>
         <source>Export Picture to Folder...</source>
@@ -2670,6 +2686,22 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 </context>
 <context>
     <name>FolderPane</name>
+    <message>
+        <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
+
+To open a collection, double-click its name or click the icon next to it.</source>
+        <translation>Az utolsó gyűjteményének bezárására készül. Az indexképek területén egyetlen kép sem lesz látható. Folytatja?
+
+Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a mellette lévő ikonra.</translation>
+    </message>
+    <message>
+        <source>Close Last Collection?</source>
+        <translation>Bezárja a legutóbbi gyűjteményt?</translation>
+    </message>
+    <message>
+        <source>Close Collection</source>
+        <translation>Gyűjtemény bezárása</translation>
+    </message>
     <message>
         <source>Move Folder</source>
         <translation>Mappa áthelyezése</translation>
@@ -3570,6 +3602,10 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 </context>
 <context>
     <name>PicasaMenuBar</name>
+    <message>
+        <source>Export to Google Earth File</source>
+        <translation>Exportálás Google Earth-fájlba</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
         <source>Sign in with your Google Account</source>
