@@ -2208,6 +2208,22 @@
 <context>
     <name>ExportDialogs</name>
     <message>
+        <source>Export to Google Earth File</source>
+        <translation>Exportálás Google Earth-fájlba</translation>
+    </message>
+    <message>
+        <source>%1 pictures written to the Google Earth file.</source>
+        <translation>%1 kép került a Google Earth-fájlba.</translation>
+    </message>
+    <message>
+        <source>None of the selected pictures has a location, so no Google Earth file was written.</source>
+        <translation>A kijelölt képek egyikén sincs helyadat, ezért nem készült Google Earth-fájl.</translation>
+    </message>
+    <message>
+        <source>%1 pictures were left out: they have no location.</source>
+        <translation>%1 kép kimaradt: nincs rajtuk helyadat.</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/ExportDialogs.qml" line="23"/>
         <location filename="../qml/PicasaPy/ExportDialogs.qml" line="96"/>
         <source>Export Picture to Folder...</source>
@@ -3586,6 +3602,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>PicasaMenuBar</name>
+    <message>
+        <source>Export to Google Earth File</source>
+        <translation>Exportálás Google Earth-fájlba</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
         <source>Sign in with your Google Account</source>
