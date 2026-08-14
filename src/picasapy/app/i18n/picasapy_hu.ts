@@ -2671,6 +2671,22 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>FolderPane</name>
     <message>
+        <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
+
+To open a collection, double-click its name or click the icon next to it.</source>
+        <translation>Az utolsó gyűjteményének bezárására készül. Az indexképek területén egyetlen kép sem lesz látható. Folytatja?
+
+Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a mellette lévő ikonra.</translation>
+    </message>
+    <message>
+        <source>Close Last Collection?</source>
+        <translation>Bezárja a legutóbbi gyűjteményt?</translation>
+    </message>
+    <message>
+        <source>Close Collection</source>
+        <translation>Gyűjtemény bezárása</translation>
+    </message>
+    <message>
         <source>Move Folder</source>
         <translation>Mappa áthelyezése</translation>
     </message>

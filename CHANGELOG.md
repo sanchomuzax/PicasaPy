@@ -5,6 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.42] – 2026-08-14
+
+### Hozzáadva
+- **A gyűjtemények bezárhatók (#461).** A bal hasábon minden saját gyűjtemény
+  neve mellett ott egy kis jelző: rákattintva a gyűjtemény **bezárul**, és a
+  benne lévő mappák képei eltűnnek a rácsból, a keresésből és a
+  csillag-szűrőből is. Ez nem törlés és nem is összecsukás — a mappák a
+  helyükön maradnak, a gyűjtemény bármikor visszanyitható (a jelzőre vagy a
+  nevére duplán kattintva). Így a régi archívumok, az exportált képek és a
+  ritkán használt források egy kattintással eltehetők az útból. Ha a bezárás
+  után egyetlen kép sem maradna látható, a program — az eredeti Picasa
+  szövegével — előbb rákérdez.
+
 ## [0.7.41] – 2026-08-14
 
 ### Javítva

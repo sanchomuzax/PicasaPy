@@ -163,6 +163,29 @@ Rectangle {
         pane.collapsedCollections = next
     }
 
+    // #461: a gyűjtemény bezárása/megnyitása. A megnyitás mindig azonnali;
+    // a BEZÁRÁS előtt viszont — ha utána egyetlen kép sem maradna a rácsban
+    // — az eredeti figyelmeztetése jön, „ne kérdezze újra" kapcsolóval
+    // (a bináris `DoNotAskOnLastCollectionClose` kulcsának megfelelője).
+    function requestCollectionCloseToggle(name, currentlyClosed) {
+        if (typeof controller === "undefined" || !controller) return
+        if (currentlyClosed) {
+            controller.setCollectionClosed(name, false)
+            return
+        }
+        if (controller.closingHidesEverything(name)) {
+            closeCollectionConfirm.pendingName = name
+            // a szöveg EGY darabban: a `qsTr` kulcsa a teljes string, és a
+            // QML-beli összefűzés (`"a" + "b"`) miatt a kulcs nem egyezne a
+            // fordításfájl forrásával (a test_i18n_completeness ezt fogja meg)
+            closeCollectionConfirm.ask(
+                "view/dontAskOnLastCollectionClose",
+                qsTr("You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?\n\nTo open a collection, double-click its name or click the icon next to it."))
+            return
+        }
+        controller.setCollectionClosed(name, true)
+    }
+
     Component.onCompleted: {
         // #305: null-őr — a controller a QML-engine leépítésekor
         // átmenetileg null lehet (itt: induláskor még nem biztos, hogy
@@ -250,6 +273,15 @@ Rectangle {
         property string labelObjectName: ""
         property bool collapsed: false
         signal toggled()
+        // #461: BEZÁRHATÓ gyűjtemény (csak a felhasználói gyűjteményeknél).
+        // Az eredeti figyelmeztetése mondja meg, hol a kapcsoló: „Egy
+        // gyűjtemény megnyitásához kattintson duplán a nevére, vagy
+        // kattintson a MELLETTE LÉVŐ IKONRA."
+        // (IDS_CLOSING_LAST_COLLECTION_MSG) — ezért ül a jelző közvetlenül
+        // a név mellett, és ezért nyit a néven a duplakattintás is.
+        property bool closable: false
+        property bool closed: false
+        signal closeToggled()
         // #422: a felhasználói gyűjtemény-fejléc jobbklikk-menüjéhez — a
         // beépített öt gyűjtemény fejléce (Albumok/Emberek/…) nem köti be,
         // csak a customCollectionsRepeater-beli példány (ld. lent).
@@ -285,10 +317,28 @@ Rectangle {
                 font.pixelSize: Theme.fontSize; font.bold: true
                 color: Theme.panelHeaderText
             }
+            // #461: nyitott/zárt jelző — a NÉV MELLETT, ahogy az eredeti
+            // üzenete leírja. Szándékosan más jelalak, mint a bal oldali
+            // összecsukó háromszög: a kettő két külön művelet (az egyik a
+            // fát hajtja össze, a másik a képeket veszi ki a rácsból).
+            Text {
+                objectName: header.labelObjectName !== ""
+                            ? header.labelObjectName + "CloseToggle" : ""
+                visible: header.closable
+                text: header.closed ? "○" : "●"
+                font.pixelSize: 9
+                color: Theme.panelHeaderText
+                TapHandler {
+                    gesturePolicy: TapHandler.ReleaseWithinBounds
+                    onTapped: header.closeToggled()
+                }
+            }
         }
         MouseArea {
             anchors.fill: parent
             onClicked: header.toggled()
+            // #461: a BEZÁRT gyűjtemény a nevére duplán kattintva is nyílik
+            onDoubleClicked: if (header.closed) header.closeToggled()
         }
         // #422: jobbklikk a gyűjtemény-menühöz — a mappasor/albumsor
         // mintáját követve TapHandler-rel (ReleaseWithinBounds), hogy a
@@ -811,6 +861,11 @@ Rectangle {
                     itemCount: customCollectionItem.modelData.folders.length
                     labelObjectName: "customCollection_" + customCollectionItem.modelData.name
                     collapsed: pane.isCustomCollectionCollapsed(customCollectionItem.modelData.name)
+                    closable: true
+                    closed: customCollectionItem.modelData.closed === true
+                    onCloseToggled: pane.requestCollectionCloseToggle(
+                        customCollectionItem.modelData.name,
+                        customCollectionItem.modelData.closed === true)
                     onToggled: pane.toggleCustomCollection(customCollectionItem.modelData.name)
                     onRightClicked: pane.openCollectionContextMenu(
                         customCollectionItem.modelData.name)
@@ -826,7 +881,11 @@ Rectangle {
                         readonly property bool isSelectedFolder:
                             pane.selectedPath === customFolderItem.modelData
                             && pane.selectedAlbumToken === ""
+                        // #461: a bezárt gyűjtemény tartalma sem a fában, sem a
+                        // rácsban nem látszik — a fejléce viszont marad, hogy
+                        // vissza lehessen nyitni
                         visible: !pane.isCustomCollectionCollapsed(customCollectionItem.modelData.name)
+                                 && customCollectionItem.modelData.closed !== true
                         width: customCollectionItem.width
                         height: 22
                         color: customFolderItem.isSelectedFolder ? Theme.panelSelectionActive
@@ -1008,6 +1067,24 @@ Rectangle {
             if (controller && folderContextMenu.folderPath !== "")
                 controller.removeWatchedFolder(folderContextMenu.folderPath)
         }
+    }
+
+    // #461: az utolsó gyűjtemény bezárásának figyelmeztetése — a címe és a
+    // gombfelirata is az eredetiből (IDS_CLOSING_LAST_COLLECTION_TITLE,
+    // CloseCollection::YesButon).
+    ConfirmDialog {
+        id: closeCollectionConfirm
+        namePrefix: "closeCollectionConfirm"
+        property string pendingName: ""
+        title: qsTr("Close Last Collection?")
+        yesText: qsTr("Close Collection")
+        onConfirmed: {
+            if (controller && closeCollectionConfirm.pendingName !== "")
+                controller.setCollectionClosed(closeCollectionConfirm.pendingName, true)
+            closeCollectionConfirm.pendingName = ""
+        }
+        onDenied: closeCollectionConfirm.pendingName = ""
+        onCanceled: closeCollectionConfirm.pendingName = ""
     }
 
     FolderPropertiesDialog {

@@ -35,7 +35,7 @@ class TestEmptyState:
 class TestCreateCollection:
     def test_creates_and_lists(self, host):
         host.createCollection("Nyaralások")
-        assert host.customCollections == [{"name": "Nyaralások", "folders": []}]
+        assert host.customCollections == [{"name": "Nyaralások", "folders": [], "closed": False}]
 
     def test_persisted_across_instances(self, host, tmp_path):
         from picasapy.app.custom_collections_controller import CustomCollectionsMixin
@@ -54,7 +54,7 @@ class TestCreateCollection:
             str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
         )
         other = _Host2(same_settings)
-        assert other.customCollections == [{"name": "Munka", "folders": []}]
+        assert other.customCollections == [{"name": "Munka", "folders": [], "closed": False}]
 
     def test_blank_name_creates_nothing(self, host):
         host.createCollection("   ")
@@ -71,7 +71,7 @@ class TestRenameAndDelete:
     def test_rename_updates_listing(self, host):
         host.createCollection("Régi")
         host.renameCollection("Régi", "Új")
-        assert host.customCollections == [{"name": "Új", "folders": []}]
+        assert host.customCollections == [{"name": "Új", "folders": [], "closed": False}]
 
     def test_delete_removes_entry(self, host):
         host.createCollection("Munka")
@@ -84,7 +84,7 @@ class TestMoveFolderToCollection:
         host.createCollection("Nyaralások")
         host.moveFolderToCollection("/kepek/balaton", "Nyaralások")
         assert host.customCollections == [
-            {"name": "Nyaralások", "folders": ["/kepek/balaton"]}
+            {"name": "Nyaralások", "folders": ["/kepek/balaton"], "closed": False}
         ]
 
     def test_move_between_collections_is_exclusive(self, host):
@@ -93,12 +93,12 @@ class TestMoveFolderToCollection:
         host.moveFolderToCollection("/kepek/balaton", "Régi")
         host.moveFolderToCollection("/kepek/balaton", "Új")
         assert host.customCollections == [
-            {"name": "Régi", "folders": []},
-            {"name": "Új", "folders": ["/kepek/balaton"]},
+            {"name": "Régi", "folders": [], "closed": False},
+            {"name": "Új", "folders": ["/kepek/balaton"], "closed": False},
         ]
 
     def test_move_to_empty_target_clears_membership(self, host):
         host.createCollection("Nyaralások")
         host.moveFolderToCollection("/kepek/balaton", "Nyaralások")
         host.moveFolderToCollection("/kepek/balaton", "")
-        assert host.customCollections == [{"name": "Nyaralások", "folders": []}]
+        assert host.customCollections == [{"name": "Nyaralások", "folders": [], "closed": False}]
