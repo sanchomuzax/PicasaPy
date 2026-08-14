@@ -11,7 +11,9 @@ Két réteg:
   (ini `filters=`) tényleges tartalmát ellenőrzi.
 """
 
+import re
 import time
+from pathlib import Path
 
 import pytest
 from PySide6.QtCore import Q_ARG, Q_RETURN_ARG, QMetaObject, QObject, Qt, QUrl, Slot
@@ -340,66 +342,22 @@ class TestParamLabelTranslationHelper:
             assert result == param.label
 
     def test_all_catalogue_labels_are_covered_by_the_switch(self):
-        """A #316 feladatleírás 5. pontjának teljes kulcslistája — ha az
-        `effect_params.py` katalógusa bővül egy itt nem szereplő felirattal,
-        ez a teszt figyelmeztet, hogy a QML `paramLabel` switch-e is bővüljön."""
-        known = {
-            "Amount",
-            "Saturation",
-            "Inner Radius",
-            "Strength",
-            "Intensity",
-            "Radius",
-            "Center X",
-            "Center Y",
-            "Size",
-            "Sharpness",
-            "Preserve Color",
-            "Gradient",
-            "Shade",
-            "Block Size",
-            "Blur Radius",
-            "Brightness",
-            "Color Mix",
-            "Edge Strength",
-            "Posterize",
-            "Smoothness",
-            "Width",
-            "Border Width",
-            "Angle",
-            "Blur",
-            "Line Position",
-            # #516: a filterdesc-registry.md 4.2 táblázatából átvezetett
-            # vezérlők feliratai
-            "Grain",
-            "Contrast",
-            "Bloom",
-            "Steps",
-            "Smoothing",
-            "Impact",
-            "Blend Mode",
-            "Hue",
-            "Rotate",
-            "Fade",
-            "Color",
-            "Outer Color",
-            "Inner Color",
-            "Black Color",
-            "White Color",
-            "Outer Thickness",
-            "Inner Thickness",
-            "Corner Radius",
-            "Caption Height",
-            "Distance",
-            "Shadow Color",
-            "Background Color",
-            "Rounded",
-            "Lighten",
-        }
+        """A katalógus minden felirata kapjon `qsTr`-ágat a QML-segédben.
+
+        #600: korábban itt egy KÉZZEL karbantartott kulcslista állt, ami
+        a QML switch másolata volt — és el is csúszott tőle. Az őr azóta a
+        VALÓDI forrást olvassa (`EditorParamPanel.qml`), tehát nem lehet
+        úgy zöld, hogy a felirat közben angolul szivárog ki a felületre.
+        """
         from picasapy.app.effect_params import _CATALOGUE
 
+        qml = (
+            Path(__file__).resolve().parents[3]
+            / "src/picasapy/app/qml/PicasaPy/EditorParamPanel.qml"
+        ).read_text(encoding="utf-8")
+        agak = set(re.findall(r'case "([^"]+)": return qsTr\("[^"]+"\)', qml))
         used = {p.label for params in _CATALOGUE.values() for p in params}
-        assert used <= known, f"ismeretlen felirat(ok): {used - known}"
+        assert used <= agak, f"nincs qsTr-ág ezekre a feliratokra: {sorted(used - agak)}"
 
 
 class TestParamSubpanelIntegration:
