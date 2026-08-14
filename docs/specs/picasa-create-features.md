@@ -596,7 +596,19 @@ for (epito : { 0x00894470, 0x00894940, 0x00893da0, 0x00894bd0 }) {
 Vagyis a Mozaik **két szinten keres**: kívül 0,5 másodpercig véletlen
 sorrendeket próbál (1.9.7), belül minden sorrendre négyféle felosztást.
 
-##### A rekurzív guillotine-építő (`0x00894bd0`) — a legtisztább a négyből
+##### A négy faépítő
+
+Mind a négy ugyanabból a képlistából épít fát; a különbség az **összevonás
+sorrendje**. A kiválasztás mindig a költség (1.9.7) alapján történik.
+
+| # | cím | stratégia |
+|---|---|---|
+| 1 | `0x00894470` | **cikcakk páros összevonás**: minden szinten a szomszédos elemeket párosítja — az egyik szinten elölről, a következőn hátulról, váltakozva. Páratlan elemszámnál az utolsó változatlanul lép a következő szintre. |
+| 2 | `0x00894940` | **költségvezérelt páros összevonás**: szintenként párosít, de négynél több elemnél mind a **16 vágásirány-kombinációt** kipróbálja (2⁴), költséget számol mindegyikre, és a legolcsóbbat választja (`0x00894d50`). |
+| 3 | `0x00893da0` | **kettőhatványra igazítás**: addig von össze párokat, amíg a szint elemszáma pontosan `2^k` nem lesz, onnantól tökéletesen kiegyensúlyozott bináris fa. |
+| 4 | `0x00894bd0` | **rekurzív guillotine** (lent részletesen) — a legtisztább, önmagában is működő megvalósítás. |
+
+##### A rekurzív guillotine-építő (`0x00894bd0`)
 
 ```c
 Csomopont* Epit(celArany, lista, lo, hi) {
@@ -662,15 +674,52 @@ A második eset a szokásos másodfokú megoldóképlet a fenti egyenletre.
 > négyzetgyök állhat. (Az első a Képkupac-képlet illesztése a valódi
 > `.cxf`-mintára, ld. 1.9.2.)
 
-#### 1.9.10 Ami még nyitott
+#### 1.9.10 Melyik pakolóstratégia mikor fut — LEZÁRVA (2026-08-14)
 
-- A másik három faépítő (`0x00894470`, `0x00894940`, `0x00893da0`) belső
-  szabálya. A negyedik — a fenti rekurzív guillotine — önmagában is működő
-  megvalósítást ad; a másik három csak jobb jelöltet adhat ugyanabban a
-  keretben.
-- A `CGravityTree` / `CLocationTree` bekapcsolásának feltétele (a módválasztó
-  mező írója).
-- A Képkupac kezdeti (x, y) szórása.
+Az 1.9.7 még nyitva hagyta, mikor lép be a `CGravityTree` és a
+`CLocationTree`. A módmező (`+0x24`) íróit végigkövetve a válasz egyértelmű:
+
+| mód | osztály | mikor | ki állítja be |
+|---:|---|---|---|
+| 0 | **`CFullSearchTree`** | Mozaik, **14-nél kevesebb** kép | alapállapot (`0x0088d860` minden pakolás előtt nullázza) |
+| 0 | **`CPackingTree`** (alaposztály) | Mozaik, **14 vagy több** kép | ugyanaz az ág, más konstruktor (`0x0088d7b0`) |
+| 2 | **`CLocationTree`** | **Képkockamozaik** (`framegrid`) | `CFrameGridTheme` 11. slot (`0x00888ec0` → `0x0088db10`) |
+| 1 | `CGravityTree` | **soha** | a beállítója (`0x0088d990`) **halott kód** — a binárisban egyetlen hivatkozás sem mutat rá |
+
+**Két átvehető következtetés:**
+
+1. A **`CLocationTree` a Képkockamozaik pakolója** — a neve is beszédes: ez az,
+   ami a kijelölt képet a megadott *helyre* (a hangsúlyos középső cellába)
+   kényszeríti, és a többit köré rendezi. Ezért kerül a kényszer-téglalap a fa
+   `+0x18…+0x24` mezőibe (1.9.7).
+2. A **`CGravityTree` sosem fut** a Picasa 3.9-ben. Egy megvalósításnak nem
+   kell foglalkoznia vele; nyilván egy korábbi vagy tervezett elrendezés maradt
+   a kódban.
+
+#### 1.9.11 A kollázs megőrzött beállításai (`Preferences`)
+
+A kollázs-munkamenet indításakor (`0x0087dcd0`) a program a `Preferences`
+szekcióból tölti vissza az előző beállításokat:
+
+| kulcs | mit őriz |
+|---|---|
+| `collage::theme` | az utolsó kollázs-típus (alapértelmezés `picturepile`) |
+| `collage::format` | az oldalformátum (alapértelmezés 4:3) |
+| `collage::orientation` | álló / fekvő |
+| `collage::bgcolor` | a háttérszín |
+| `collage::avgcolor` | a háttér „a képek átlagszíne" kapcsolója |
+| `collage::shadows` | árnyékok rajzolása |
+| `collage::showcaptions` | képfeliratok megjelenítése |
+
+> A `collage::avgcolor` **megválaszolja az 1.6/b nyitott kérdését**: a
+> `<background>` harmadik módja az **átlagszín**, és a képenkénti átlagszínt a
+> program az adatbázisból veszi (`avgcolor` mező, ld. `0x00880580` — minden
+> kollázs-csomópont eltárolja a saját képének átlagszínét).
+
+#### 1.9.12 Ami még nyitott
+
+- A **Képkupac kezdeti (x, y) szórása** — az 1.9.2 képletei a már kiszámolt
+  pozícióból dolgoznak. Ez az egyetlen darab, ami a hat elrendezésből hiányzik.
 
 ## 2. Film készítése (`ID_MAKEMOVIE`, `eMenuCreateMovie`)
 
