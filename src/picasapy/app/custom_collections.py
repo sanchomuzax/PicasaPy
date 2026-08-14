@@ -27,6 +27,12 @@ class CustomCollection:
 
     name: str
     folders: tuple[str, ...] = ()
+    #: #461: BEZÁRT gyűjtemény — a tartalma nem jelenik meg a rácsban és a
+    #: keresésben sem. Ez NEM az összecsukás (az csak a fát hajtja össze):
+    #: az eredeti figyelmeztetése szerint bezárásnál „az indexképek területén
+    #: egyetlen kép sem lesz látható". A mappák a gyűjteményben maradnak, a
+    #: művelet visszafordítható.
+    closed: bool = False
 
 
 def parse_custom_collections(raw: str | None) -> tuple[CustomCollection, ...]:
@@ -53,10 +59,15 @@ def parse_custom_collections(raw: str | None) -> tuple[CustomCollection, ...]:
         folders = item.get("folders")
         if not isinstance(folders, list):
             folders = []
+        # #461: a `closed` hiánya (korábbi verzióval mentett lista) és a
+        # sérült érték is NYITOTTAT jelent — egy hibás beállítás-fájl nem
+        # rejtheti el némán a felhasználó képeit
+        closed = item.get("closed")
         result.append(
             CustomCollection(
                 name=name,
                 folders=tuple(f for f in folders if isinstance(f, str)),
+                closed=closed is True,
             )
         )
     return tuple(result)
@@ -65,7 +76,10 @@ def parse_custom_collections(raw: str | None) -> tuple[CustomCollection, ...]:
 def serialize_custom_collections(collections: tuple[CustomCollection, ...]) -> str:
     """A gyűjtemény-lista JSON-szerializálása a QSettings-be íráshoz."""
     return json.dumps(
-        [{"name": c.name, "folders": list(c.folders)} for c in collections],
+        [
+            {"name": c.name, "folders": list(c.folders), "closed": c.closed}
+            for c in collections
+        ],
         ensure_ascii=False,
     )
 
@@ -135,7 +149,8 @@ def rename_collection(
     ):
         return collections
     return tuple(
-        CustomCollection(name=stripped, folders=c.folders)
+        # #461: a `closed` állapot az átnevezést is túléli
+        CustomCollection(name=stripped, folders=c.folders, closed=c.closed)
         if c.name == old_name
         else c
         for c in collections
@@ -164,14 +179,45 @@ def move_folder_to_collection(
         CustomCollection(
             name=c.name,
             folders=tuple(f for f in c.folders if f != folder_path),
+            closed=c.closed,  # #461
         )
         for c in collections
     )
     if not target_name:
         return without
     return tuple(
-        CustomCollection(name=c.name, folders=c.folders + (folder_path,))
+        CustomCollection(
+            name=c.name, folders=c.folders + (folder_path,), closed=c.closed
+        )
         if c.name == target_name and folder_path not in c.folders
         else c
         for c in without
+    )
+
+
+def set_collection_closed(
+    collections: tuple[CustomCollection, ...], name: str, closed: bool
+) -> tuple[CustomCollection, ...]:
+    """A gyűjtemény bezárása/megnyitása (#461).
+
+    A bezárás NEM törlés és nem is összecsukás: a tagmappák a helyükön
+    maradnak, csak a tartalmuk nem jelenik meg a rácsban és a keresésben.
+    A művelet bármikor visszafordítható. Ismeretlen névnél nincs teendő."""
+    return tuple(
+        CustomCollection(name=c.name, folders=c.folders, closed=bool(closed))
+        if c.name == name
+        else c
+        for c in collections
+    )
+
+
+def closed_collection_folders(
+    collections: tuple[CustomCollection, ...],
+) -> frozenset[str]:
+    """A BEZÁRT gyűjtemények tagmappái — a nézet-szűrés bemenete (#461).
+
+    A hívó ezzel egyetlen helyen (a rács feltöltésénél) hagyja ki a bezárt
+    gyűjtemények képeit, minden nézetmódban egyszerre."""
+    return frozenset(
+        folder for c in collections if c.closed for folder in c.folders
     )

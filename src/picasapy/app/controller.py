@@ -787,6 +787,15 @@ class AppController(
         # csillag-szűrő) — a Nézet → Rejtett képek kapcsolóval igen
         if not self.showHidden:
             records = tuple(r for r in records if not r.hidden)
+        # #461: a BEZÁRT gyűjtemények képei sehol nem látszanak — rácsban,
+        # keresésben, csillag-szűrőben sem. Ez az EGY pont, ahol minden
+        # nézetmód átmegy, ezért a szűrés itt van (a rejtett képek mintája).
+        # A bezárás nem törlés: a mappák a gyűjteményben maradnak.
+        closed_folders = self._closed_collection_folders()
+        if closed_folders:
+            records = tuple(
+                r for r in records if r.folder_path not in closed_folders
+            )
         # #142: a mappaváltás-gyorsút pecsétje — csak a teljes feedet
         # mutató mappa-nézet érvényes hozzá (szűrt/keresett nézet nem)
         self._feed_stamp = (
