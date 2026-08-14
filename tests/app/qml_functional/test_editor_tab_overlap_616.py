@@ -196,17 +196,23 @@ class TestAGombsorSosemKerulATartalomra:
             f"a(z) {tab}. fülön a gombsor rálóg a tartalomra"
         )
 
-    def test_szuk_panelen_is_a_tartalom_ala_kerul(self, qml_engine):
-        """A hibajelentés esete: a sor NEM maradhat fix magasságon, ha a
-        tartalom nem fér el — inkább lejjebb tolódik."""
+    def test_szuk_panelen_a_sor_marad_lathato(self, qml_engine):
+        """**#641-gyel MEGVÁLTOZOTT szerződés.**
+
+        A #628 itt még azt állította, hogy szűk panelen a sor a tartalom ALÁ
+        tolódik. Élesben ez azt eredményezte, hogy a sor kicsúszott a
+        képernyőről, és a felhasználó egyáltalán nem látta a Visszavonás/Újra
+        gombokat.
+
+        Az új szabály: a sor a LÁTHATÓ terület alján marad, és szűkösnél a
+        fül TARTALMA veszít. A visszavonás a szerkesztés visszacsinálásának
+        egyetlen útja; egy levágott csempesor ennél sokkal kisebb baj."""
         panel = _panel(qml_engine, height=160, active_tab=2)
 
-        area = _child(panel, "editorTabArea")
         undo_row = _child(panel, "editorGlobalUndoRow")
 
-        assert undo_row.property("y") >= _also(area) - 1, (
-            "szűk panelen a gombsor a csempékre feküdt (a #616 hibája)"
-        )
+        assert _also(undo_row) <= 160, "a gombsor kilóg a panelből"
+        assert undo_row.property("y") >= 0
 
     def test_bo_helyen_a_panel_aljan_ul(self, qml_engine):
         """Bő helyen az eredeti látványa: a sor a panel alján."""

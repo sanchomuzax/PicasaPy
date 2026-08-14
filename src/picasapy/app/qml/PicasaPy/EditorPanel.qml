@@ -46,6 +46,20 @@ Rectangle {
     implicitHeight: 10 + tabBar.height + panel.tallestTabHeight
                     + 6 + globalUndoRow.height + 10
 
+    // #641: a panel TÉNYLEGES és LÁTHATÓ magassága eltérhet. A szülő
+    // `Layout.minimumHeight`-je csak KÉRÉS: ha az ablak kisebb, a layout nem
+    // zsugorítja a panelt, hanem hagyja túlnyúlni a celláján. A gombsor
+    // ezért nem a `height`-hez, hanem ehhez igazodik — különben a látható
+    // terület alá csúszik, és a felhasználó egyáltalán nem látja
+    // (a #628 javítása pontosan itt állt meg egy szinttel feljebb).
+    readonly property real visibleHeight:
+        panel.parent ? Math.min(panel.height, panel.parent.height) : panel.height
+
+    // #641: a gombsor alja a panelen belül — az őr-teszt ebből számolja ki,
+    // hogy a sor a néző LÁTHATÓ területén belül maradt-e. (A sor a panel
+    // gyereke, kívülről id-vel nem érhető el.)
+    readonly property real undoRowBottom: globalUndoRow.y + globalUndoRow.height
+
     // aktív fül: 0 = Gyakori javítások, 1 = Finomhangolás, 2–4 = a három
     // eredeti effekt-fül (#328), 5 = további effektek (#422), 6 = Régi
     // effektek (#571). Az eszköz-módok a fülsávtól függetlenül élnek.
@@ -868,20 +882,23 @@ Rectangle {
     // minden eszközben elérhető. Korábban mind az öt fül saját (azonos)
     // gombpárt rajzolt; most egyetlen, a panel aljához horgonyzott sor van,
     // és a fül-oszlopok EFÖLÖTT érnek véget (`anchors.bottom`).
-    // #628: a sor NINCS a panel aljához horgonyozva — a TARTALMAT követi.
-    // Bő helyen (a szokásos eset) a panel alján ül, ahogy az eredetiben;
-    // ha a fül tartalma nem férne el, inkább lejjebb tolódik, de a
-    // csempékre SOSEM kerül rá. Hogy a „lejjebb tolódik" ág a gyakorlatban
-    // ne forduljon elő, a panel `implicitHeight`-je elbírja a legmagasabb
-    // fület is (ld. fent) — ez az eredeti fix panelméretének megfelelője.
+    // #641: a sor a LÁTHATÓ terület alján ül, mindig. A #628 „lejjebb
+    // tolódik, ha nem fér el" ága MEGSZŰNT: az eredetiben nincs ilyen, és a
+    // gyakorlatban azt eredményezte, hogy a sor kicsúszott a képernyőről —
+    // a felhasználó egyáltalán nem látta a Visszavonás/Újra gombokat.
+    //
+    // Ha szűkös a hely, a FÜL TARTALMA veszít, nem a gombsor: a
+    // Visszavonás/Újra a szerkesztés visszacsinálásának egyetlen útja, egy
+    // levágott csempesor ennél sokkal kisebb baj. Hogy ez az ág egyáltalán
+    // ne forduljon elő, az ablak minimális magassága elbírja a panel
+    // `implicitHeight`-jét (Main.qml).
     RowLayout {
         id: globalUndoRow
         objectName: "editorGlobalUndoRow"
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.margins: 10
-        y: Math.max(panel.height - height - 10,
-                    tabArea.visible ? tabArea.y + tabArea.height + 6 : 0)
+        y: Math.max(0, panel.visibleHeight - height - 10)
         spacing: 6
         opacity: panel.enabled ? 1 : 0.45
 

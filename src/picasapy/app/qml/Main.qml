@@ -12,6 +12,14 @@ ApplicationWindow {
     id: window
     width: 1280
     height: 800
+    // #641: az ablak nem mehet olyan kicsire, hogy a szerkesztő bal panelje
+    // ne férjen el — különben a Visszavonás/Újra sor kicsúszik a látható
+    // területről, és a felhasználó egyáltalán nem látja. A #628 a panel
+    // `implicitHeight`-jét már kiszámolta, de a garanciát egy
+    // `Layout.minimumHeight`-re bízta, amit semmi nem érvényesít az ablak
+    // szintjén — ez az a hely, ahol érvényesíteni kell.
+    minimumHeight: photoViewer.requiredHeight
+                   + (window.menuBar ? window.menuBar.height : 0)
     visible: true
     title: "PicasaPy"
     color: Theme.lightboxBg
