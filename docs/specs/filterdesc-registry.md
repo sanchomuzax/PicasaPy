@@ -1000,3 +1000,76 @@ látszanak, ami a 4.10-es `Sharpen`-kernel olvasatát is megerősíti.
 >
 > Amíg nincs meg, a `filterdesc.xml`-ből ismert csővezeték az érvényes; a
 > `EdgeDetectionSobel` viszont **teljesen implementálható** a fenti kernelekkel.
+
+### 4.12 A Polaroid / Múzeumi matt műveletcsaládja (2026-08-14, agent-#21)
+
+A privát `picasapy-agent` #21 második prioritása. Célzott kör:
+`referencia/dekompilalt-pakolo/script-DecompileOps21.log`.
+
+#### `SimpleBorderImageOperation` (`0x00bbf4a0`)
+
+```c
+kimenetSzelesseg = kepSzelesseg + bal + jobb;
+kimenetMagassag  = kepMagassag  + felso + also;
+szin = 0xff000000 | color;          // az alfa mindig teljesen átlátszatlan
+```
+
+A kép a `(bal, felso)` pozícióba kerül. Ennyi — nincs lekerekítés, nincs
+árnyék.
+
+#### `BorderImageOperation` (`0x00bbe320` → `0x00bbe570`)
+
+```c
+t = innerthickness + outerthickness;
+kimenetSzelesseg = kepSzelesseg + 2*t;
+kimenetMagassag  = kepMagassag  + 2*t + extraAlso;
+```
+
+Vagyis a belső és a külső vastagság **összeadódik** és **mind a négy oldalra**
+jut, plusz egy külön alsó ráadás — ez adja a paszpartu jellegzetes, alul
+szélesebb arányát. A Múzeumi matt ezt kétszer használja (belső világos, külső
+sötét keret), közéjük két belső ragyogással — a csővezetéket a `filterdesc.xml`
+adja (`0x1a0e03` külső, `0xf0eae4` belső, 25 és 40 alapvastagság).
+
+#### `DropShadowImageOperation` (`0x00bbb720`)
+
+**Az árnyék eltolása** — polárkoordinátából, apró kerekítési igazítással:
+
+```c
+dx = round( (cosf(szog * π/180) + 6.7e-06f) * tavolsag + 0.001825f );
+dy = round( (sinf(szog * π/180) + 6.7e-06f) * tavolsag + 0.001825f );
+```
+
+A `6,7e−06` és a `0,001825` nem paraméter, hanem **döntetlen-eldöntő eltolás**:
+enélkül a 0°/90°/180°/270° körüli egész értékeknél a kerekítés platformfüggően
+billenne. Át kell venni őket, ha képpontra pontos egyezést akarunk.
+
+**A paraméterek vágása** (`0x00bcd640`):
+
+| paraméter | tartomány |
+|---|---|
+| `shadowAlpha` | `clamp(0, 1)` |
+| `blurX`, `blurY` | `clamp(1, 255)` |
+| `strength` | `clamp(0, 255)` |
+| `quality` | negatívnál 0, egyébként **15** (a maximum) |
+
+Az alapértékek a burkolóból (`0x00bbb8d0`): `shadowAlpha = 1`, `angle = 45`,
+`shadowColor` = fekete, `distance = 4`, `strength = 1`, `blurX = blurY = 4`.
+A Polaroid-recept ezeket írja felül (`alpha = .4`, `distance = 3`, `blur = 8`,
+`angle = 90 − forgatás`).
+
+#### `RotateImageOperation` (`0x00bb5640` → `0x00bc8060`)
+
+A transzformáció a szokásos hármas: eltolás a kép közepére (`−W/2`, `−H/2`),
+forgatás, majd vissza. A **simítás (élsimított mintavételezés) be van
+kapcsolva**, és a `padBorder` esetén a keletkező üres sarkokat a `borderColor`
+tölti ki (`0x009a91a0`).
+
+> A pontos újramintavételezési magot (bilineáris vagy jobb) a dekompilátum nem
+> mondja meg — a rajzoló réteg végzi. Ez **nyitott**, és képpontra pontos
+> egyezésnél számíthat; golden-összevetéssel dönthető el (#317).
+
+#### `CropImageOperation` (`0x00bbdbd0`)
+
+Egyszerű kivágás; a Polaroid a `min(szélesség, magasság)` méretű, **középre
+igazított négyzetet** kéri (a képlet a `filterdesc.xml`-ben van).
