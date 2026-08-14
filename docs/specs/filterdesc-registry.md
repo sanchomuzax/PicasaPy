@@ -1015,15 +1015,29 @@ látszanak, ami a 4.10-es `Sharpen`-kernel olvasatát is megerősíti.
 > élkiemelése tehát **nem a művelet-osztályban van**, és ebből a körből sem
 > került elő.
 >
-> **Lezárva negatív eredményként (2026-08-14).** A művelet a konstruktorában
-> létrehozott szűrő-objektumot tartja a `+0x34` mezőben, és a 6. slot csak
-> beleteszi a `100 − csúszka` értéket. A vtable 0. slotja a destruktor, a 7.
-> slot a **közös** `0x00bc51d0` — vagyis a kernel sehol nincs a művelet-
-> osztályban. A következő lépés a `+0x34`-es objektum típusának azonosítása a
-> konstruktorból (ami nem vtable-slot, ezért az RTTI-ből kell visszakeresni).
+> ✅ **MEGFEJTVE (2026-08-14, második nekifutás).** Nincs rejtett kernel:
+> az `EdgeDetectionBImageOperation` a **`NestedImageOperation`-ből származik**,
+> vagyis **összetett művelet**, amely a gyerekeit **kódban** építi fel (nem az
+> XML-ből — a `filterdesc.xml` csak egyetlen `detail="50"` attribútumot ad neki).
 >
-> Amíg ez nincs meg, a `filterdesc.xml`-ből ismert csővezeték az érvényes; a
-> `EdgeDetectionSobel` viszont **teljesen implementálható** a fenti kernelekkel.
+> A belső csővezeték az 1. slotban (`0x00bbca60`) épül fel, ebben a sorrendben:
+>
+> | # | osztály | megjegyzés |
+> |---|---|---|
+> | 1 | `BlurImageOperation(2.0f, 2.0f)` | 2×2 elmosás |
+> | 2 | `SimpleColorMatrixImageOperation` | **ez a `+0x34` mező** — ide megy a `100 − detail` |
+> | 3 | `SetVar("edgedetectimgop_orig")` | a köztes kép elmentése |
+> | 4 | **`EdgeDetectionSobelImageOperation(0)`** | Sobel, első irány |
+> | 5 | `…` + `"horizontal"` | Sobel, második irány |
+> | 6 | `SetVar` / `GetVar` + kompozíció | a két irány egyesítése az eredetivel |
+>
+> **Minden komponens ismert:** a Sobel-kernelek fent, a `SimpleColorMatrix`
+> matematikája a 4.9-ben, a `Blur` a `picasa-native-filter-workers.md` 4.2-ben.
+> A `detail` csúszka a `SimpleColorMatrix` egyetlen paraméterébe megy
+> `100 − detail` alakban.
+>
+> **Ami maradt:** a `SimpleColorMatrix` melyik paramétere ez (telítettség /
+> kontraszt / fényerő). Egy golden-összevetés eldönti.
 
 ### 4.12 A Polaroid / Múzeumi matt műveletcsaládja (2026-08-14, agent-#21)
 
