@@ -12,6 +12,13 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+  # #651: kézi indítás. Az automatikus `pull_request` futás elmarad, ha a
+  # PR-t/pusht a GitHub-integráció tokenje váltja ki — a GitHub az ilyen
+  # eseményekre szándékosan nem indít workflow-t (ugyanaz a
+  # rekurzióvédelem, amit a `package.yml` fejléce is leír a release-nél).
+  # Ilyenkor ez az ág adja meg a lehetőséget, hogy az ágon MÉGIS legyen
+  # valódi CI-bizonyíték, ne csak helyi futás.
+  workflow_dispatch: {}
 
 jobs:
   test:
