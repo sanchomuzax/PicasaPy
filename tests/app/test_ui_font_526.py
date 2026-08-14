@@ -32,12 +32,31 @@ class TestBundledFontFiles:
 
     def test_package_data_includes_the_fonts(self) -> None:
         """A telepített csomagba is bekerüljön — enélkül a felület a
-        rendszer-betűtípusra esne vissza egy `pip install` után."""
-        pyproject = (
-            Path(app_module.__file__).parents[3] / "pyproject.toml"
-        ).read_text(encoding="utf-8")
-        assert '"assets/fonts/*.ttf"' in pyproject
-        assert '"assets/fonts/OFL.txt"' in pyproject
+        rendszer-betűtípusra esne vissza egy `pip install` után.
+
+        **#646: a KIMENETET nézzük, nem a mintát.** Korábban ez a teszt egy
+        szó szerinti `pyproject.toml`-mintára (`"assets/fonts/*.ttf"`)
+        illesztett — vagyis a szándékot mérte, nem az eredményt. A mintákat
+        azóta rekurzívra cseréltük, és a betűtípusok ettől is (sőt,
+        biztosabban) bekerülnek; a régi állítás mégis pirosra váltott volna.
+
+        Azt ellenőrizzük, hogy a `package-data` mintái LEFEDIK a
+        betűtípus-fájlokat. Hogy tényleg a wheelbe is bekerülnek, azt a
+        `tests/test_package_data_646.py` méri — az valódi csomagot épít."""
+        import fnmatch
+        import tomllib
+
+        gyoker = Path(app_module.__file__).parents[3]
+        mintak = tomllib.loads(
+            (gyoker / "pyproject.toml").read_text(encoding="utf-8")
+        )["tool"]["setuptools"]["package-data"]["picasapy.app"]
+
+        csomag_gyoker = Path(app_module.__file__).parent
+        for fajl in (*_FONT_DIR.glob("*.ttf"), _FONT_DIR / "OFL.txt"):
+            relativ = str(fajl.relative_to(csomag_gyoker))
+            assert any(
+                fnmatch.fnmatch(relativ, minta) for minta in mintak
+            ), f"{relativ} nincs lefedve a package-data mintáival"
 
 
 class TestFontRegistration:
