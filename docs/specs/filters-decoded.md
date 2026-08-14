@@ -787,3 +787,45 @@ figyelembe veszi a `Preferences/CarefulEnhance` beállítást.
 
 **Ezekhez már nem a felhasználó Picasája kell**, hanem a meglévő
 dekompilátum feldolgozása vagy egy tetszőleges mintaképes ellenőrzés.
+
+## A szinthúzás vágási pontjai — MEGFEJTVE (#539, 2026-08-14)
+
+A `autolight` (`0x008f80c0`) a vágási pontokat **hisztogram-darabszám
+küszöbbel** keresi, nem percentilissel:
+
+```c
+N = szelesseg * magassag;
+if (lepes != 0) N = N / (lepes * lepes);   // a MINTAVÉTELEZETT képpontszám
+kuszob = (int)roundf((float)N * 0.005f);   // a 0.005 a hívási helyen: 0x3ba3d70a
+if (kuszob == 0) kuszob = 1;
+
+// alsó vágás csatornánként
+i = 0; sum = 0;
+do { sum += hist[i]; i++; } while (i <= 255 && sum < kuszob);
+lo = i - 1;
+
+// felső vágás csatornánként
+i = 255; sum = 0;
+do { sum += hist[i]; i--; } while (i >= 0 && sum < kuszob);
+hi = i + 1;
+
+// a globális vágás a három csatorna UNIÓJA:
+lo = min(lo_R, lo_G, lo_B);
+hi = max(hi_R, hi_G, hi_B);
+```
+
+**Miért nem percentilis:** a küszöb abszolút darabszám. Erős, egyenetlen
+hisztogramnál egyetlen szint már átlépi, ezért a tényleges vágási pont
+0%-tól 16%-ig szóródhat — ezt a #535 mérése is kimutatta, és fix
+százalékkal elvileg sem reprodukálható.
+
+**Három részlet, ami számít:**
+
+1. **Off-by-one:** a ciklus a léptetés *után* ellenőriz, ezért `lo = i − 1`
+   és `hi = i + 1`.
+2. **A küszöb a képmérettel skálázódik** (`N / lepes²`), nem abszolút.
+3. **A globális vágás a csatornák uniója** (min/max) — a csatornánkénti
+   értékek külön is rendelkezésre állnak.
+
+Címek: `0x008f80c0` → `0x00a4bfd0` → `0x00a4be40`. Nyers kimenet:
+`referencia/dekompilalt-612/` (privát repó).
