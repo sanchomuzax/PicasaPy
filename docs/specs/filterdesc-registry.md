@@ -1089,9 +1089,22 @@ forgatás, majd vissza. A **simítás (élsimított mintavételezés) be van
 kapcsolva**, és a `padBorder` esetén a keletkező üres sarkokat a `borderColor`
 tölti ki (`0x009a91a0`).
 
-> A pontos újramintavételezési magot (bilineáris vagy jobb) a dekompilátum nem
-> mondja meg — a rajzoló réteg végzi. Ez **nyitott**, és képpontra pontos
-> egyezésnél számíthat; golden-összevetéssel dönthető el (#317).
+> **A mintavételező a Skia** — nem a Picasa saját kódja (2026-08-14). A hívási
+> lánc `RotateImageOperation` slot6 → `0x00bc8060` (transzform) → `0x00bcb5e0`
+> → `0x00a42c20` a rajzoló rétegbe fut, és az RTTI-tábla szerint a binárisba
+> **46 Skia-osztály** van statikusan befordítva, köztük a
+> **`SkBitmapProcShader`** — pontosan az, ami a bitmap-mintavételezést végzi
+> (mellette `SkShaderBlitter`, `SkARGB32_Shader_Blitter`, `SkFilterShader`).
+>
+> **Ez jó hír:** a Skia nyílt forráskódú, tehát az algoritmust **nem kell
+> visszafejteni és nem kell megmérni** — a korabeli Skia forrásából szó szerint
+> kiolvasható. Ott a `SkBitmapProcState` a szűrési szinttől függően vagy
+> legközelebbi-szomszéd, vagy **bilineáris 4 bites (16 lépcsős) részpixel-
+> súlyokkal** — ez utóbbi mérhetően eltér a naiv, lebegőpontos bilineáristól.
+>
+> **Ami a mi oldalunkon maradt eldöntendő:** melyik szűrési szintet kéri a
+> `Rotate` (a `0x00bc8060`-ban két eltérő festék-beállítás van). Ez egy
+> jelzőbit, nem algoritmus — és golden-összevetéssel is ellenőrizhető.
 
 #### `CropImageOperation` (`0x00bbdbd0`)
 
