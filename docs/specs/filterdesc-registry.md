@@ -942,3 +942,61 @@ A záró lépés minden `i ∈ 0…255`-re: a négy görbe egymás utáni kiért
 `clamp(0, 255)`, kerekítés, majd a LUT három csatorna-változatba tárolása
 (`<<16`, `<<8`, `<<0`) — ugyanaz a „csak OR-ozni kell" minta, mint az
 `AdjustCurves`-nél (4.8).
+
+### 4.11 `Tiled`, `EdgeDetectionB` és a Sobel-változat (2026-08-14, #626)
+
+Két célzott kör futott ezekre párhuzamosan (nyers kimenet:
+`referencia/dekompilalt-pakolo/script-DecompileTiled.log`, `-Edge.log`).
+
+#### `Tiled` — **maszk**, nem képművelet
+
+Az osztály neve `glimmer::TiledImageMask`, nem `…ImageOperation`. A csempézés
+(`0x00bba670`):
+
+```c
+oszlopok = kepSzelesseg / csempeSzelesseg;     // EGÉSZ osztás
+sorok    = kepMagassag  / csempeMagassag;
+ox = round(param[10]);   oy = round(param[11]);   // eltolás
+
+for (r = 0; r <= sorok; r++)
+  for (c = 0; c <= oszlopok; c++) {
+      x = csempeSzelesseg * c + (kepSzelesseg - rajzoltSzelesseg)/2 + ox;
+      y = csempeMagassag  * r + (kepMagassag  - rajzoltMagassag )/2 + oy;
+      rajzol(csempe, x, y);
+  }
+```
+
+Két részlet, ami nélkül nem stimmel: a ciklus **`<=`**, tehát mindkét irányban
+**eggyel több** csempe készül, mint amennyi elférne (ez fedi le a jobb és alsó
+peremet), és a csempe a rendelkezésre álló területhez képest **középre
+igazítva** indul, nem a bal felső sarokból.
+
+#### `EdgeDetectionSobel` — a kernel teljesen megvan
+
+A `glimmer::EdgeDetectionSobelImageOperation` 6. slotja (`0x00bb6620`) egy
+jelzőtől függően két 3×3 kernel közül választ:
+
+```
+függőleges élek:            vízszintes élek:
+  [ -2   0   2 ]              [  2   4   2 ]
+  [ -4   0   4 ]              [  0   0   0 ]
+  [ -2   0   2 ]              [ -2  -4  -2 ]
+```
+
+Ez a **klasszikus Sobel kétszeres súlyokkal** (a szokásos ±1/±2 helyett ±2/±4).
+A konvolúciót ugyanaz a 3×3 mag futtatja, mint a `Sharpen`-nél (`0x00bbfca0`) —
+ott a szomszéd-eltolások (`±1`, `±sor`, `±sor±1`) a dekompilátumban közvetlenül
+látszanak, ami a 4.10-es `Sharpen`-kernel olvasatát is megerősíti.
+
+#### `EdgeDetectionB` — NEM konvolúció
+
+> ⚠️ **Helyesbítés a korábbi feltevéshez.** A 6. slot (`0x00bbcdd0`) egyetlen
+> értéket (`100 − csúszka`) tesz egy egyelemű paraméterlistába, majd a
+> `0x009a8ca0`-t hívja. Ez **nem szűrő-diszpécser**, hanem egy 40 bájtos,
+> hivatkozásszámlált rajzoló-objektum **értékadó operátora** — vagyis a
+> `Sharpen`-nél és mindenhol máshol is csak másol. A `EdgeDetectionB` tényleges
+> élkiemelése tehát **nem a művelet-osztályban van**, és ebből a körből sem
+> került elő.
+>
+> Amíg nincs meg, a `filterdesc.xml`-ből ismert csővezeték az érvényes; a
+> `EdgeDetectionSobel` viszont **teljesen implementálható** a fenti kernelekkel.
