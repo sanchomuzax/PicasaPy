@@ -16,6 +16,14 @@ from picasapy.render.color import (
     apply_warm,
     saturation_gain,
 )
+from picasapy.render.directional import (
+    apply_dir_brite,
+    apply_dir_sat,
+    apply_dir_sharp,
+    directional_ramp,
+)
+from picasapy.render.iir_blur import apply_picasa_blur, blur_coefficient
+from picasapy.render.linear_blur import apply_linblur
 from picasapy.render.gpu_point_pipeline import (
     LUT_SIZE,
     PointPipelineUniforms,
@@ -89,7 +97,11 @@ __all__ = [
     "apply_dir_tint",
     "apply_dir_brite",
     "apply_dir_sat",
+    "apply_dir_sharp",
+    "apply_linblur",
+    "apply_picasa_blur",
     "apply_radtint",
+    "blur_coefficient",
     "directional_ramp",
     "apply_enhance",
     "apply_fill",

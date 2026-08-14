@@ -384,9 +384,14 @@ köbös görbéből — 0-nál változatlan, 256-nál teljes köbös.
 > burkolója a középtónus-parabola erősségét **0**-nak adja, tehát az
 > előkorrekciós LUT azonosság.
 >
-> A `dir_sharp` és a `linblur` **szándékosan nem** került be: az előbbinél a
-> rámpa horgonya, az utóbbinál a második pont származtatása nem olvasható ki
-> a dekompilátumból — mindkettő méréssel rögzítendő.
+> **A `dir_sharp` és a `linblur` is bekerült** (ugyanabban a jegyben, a
+> lenti 3.2/3.3 alapján): `picasapy.render.directional.apply_dir_sharp`,
+> illetve `picasapy.render.linear_blur.apply_linblur`, a közös elmosó
+> maggal (`picasapy.render.iir_blur`). A `linblur` második pontja a #623
+> kutatási frissítésében tisztázódott (a **kép közepe**), a `dir_sharp`
+> rámpa-horgonya és a `linblur` sugár-leképezése pedig indokolt
+> FELTEVÉSSEL fut — ld. a két `apply_*` docstringjét és a
+> `filters-decoded.md` státusz-tábláját. A kalibráció a #317-ben fut.
 
 ## 2.8 Melegítés (`warm` / „Melegítés") — beégetett tábla, KINYERVE
 
@@ -500,6 +505,26 @@ ahol az `a` erősség **képpontonként** jön a lineáris rámpából (#576 2.7
 **Nincs konvolúciós mag ebben a függvényben** — az elmosás külön menetben
 készül. A megvalósításunkhoz tehát: elmosás → irányított unsharp-összevonás.
 
+> **Megvalósítva (#623) — az elmosás sugarával együtt.** A burkoló
+> (`0x008f9090`) így készíti elő a harmadik puffert:
+>
+> ```c
+> uVar1 = min(szélesség, magasság) >> 3;
+> if (uVar1 == 0) uVar1 = 1;
+> FUN_009dd0d0(&másolat, (float)uVar1, (float)uVar1, ...);   // a KÖZÖS elmosó
+> ```
+>
+> Vagyis a sugár a **rövidebb oldal nyolcada** — nagyon nagy sugár, tehát ez
+> **helyi kontraszt** („clarity") jellegű hatás, nem finom élesítés.
+>
+> A globális `k` horgony a burkolóban két `ABS` hívás (`0x0049f5c0`) UTÁN
+> áll össze az x87-veremen, ezért a dekompilátum nem őrizte meg. A
+> megvalósítás `k = round((|a| + |b|) · 256)`-tal fut: pontosan ehhez kell a
+> két `ABS` (a rámpa maximuma `|a| + |b|`), így az `amount` a képen
+> nemnegatív, a rámpa legpozitívabb sarkában nullára fut ki, és `a = b = 0`
+> mellett a kép változatlan. **Erős következtetés, nem mérés** — a
+> kalibráció a #317-ben.
+
 ## 3.3 `linblur` — köbös B-spline súlytábla + csomagolt keverés
 
 A `0x0090de10` egy **384 elemű súlytáblát** épít explicit köbös polinomokból
@@ -527,6 +552,20 @@ w     = (idx < 0) ? -tábla[-idx] : tábla[idx];
 alpha = (w + 255) / 2;
 out   = lerp(cél, forrás, alpha);    // csomagoltan, két csatornánként
 ```
+
+> **Megvalósítva (#623).** A „cél" a **helyben elmosott** puffer, a „forrás"
+> a nyers, éles kép — a burkoló a közös elmosó magot (`0x009dd0d0`)
+> **kétszer egymás után** futtatja rá. Két részlet a megvalósításban
+> FELTEVÉS (a docstring is kimondja):
+>
+> 1. **A „Mennyiség" → sugár leképezés.** A burkoló ezt az x87-veremen adja
+>    át. A testvér `radblur` burkolójának alakját vettük át
+>    (`W/100 · (Amount + 1) + 0,001`, ld. 4.2.4).
+> 2. **A súlytábla utolsó rekeszei.** A `round((1 − 2f) · 255,9999)` egy
+>    **bájtba** kerül; `f → 0` közelében (`i ≥ 338`) ez 256 lenne, ami 0-ra
+>    fordul körbe — a teljesen ÉLES tartomány egy sávjában 50%-os homályt
+>    adna. A 255,9999-es szorzó a **csonkolás** klasszikus idiómája, ezért a
+>    megvalósítás 255-re vág. Referencia-export döntheti el.
 
 ## 3.4 A `puck` vezérlő két közös segítője
 
@@ -673,6 +712,12 @@ vissza:  s += ((y[i]   − s) · k) >> 16 ;   y[i] = s >> 7
 veremben van, a dekompilátor nem látja. Vagyis a **sugár → α leképezés** még
 hiányzik — **egyetlen méréssel** meghatározható (egy éles lépcső elmosása ismert
 sugárral, majd α illesztése).
+
+> **Megmérve (4.2.5) és megvalósítva (#623):** `picasapy.render.iir_blur`.
+> Ez a modul most már a `dir_sharp` és a `linblur` közös elmosója; a
+> `glow`/`radblur` régebbi, Gauss-alapú KÖZELÍTÉSE (`render/effects.py`)
+> szándékosan érintetlen maradt — az átállításuk külön jegy, mert a
+> golden-verdiktjük is ahhoz van kalibrálva.
 
 ### 4.2.2 `glow` — `0x0090d4b0`
 
