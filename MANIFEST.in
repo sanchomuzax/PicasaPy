@@ -1,0 +1,24 @@
+# A csomagba kerülő NEM-Python fájlok — #646, #651/2.
+#
+# Miért itt és miért `graft`: korábban a `pyproject.toml`
+# `[tool.setuptools.package-data]` blokkja TÉTELESEN sorolta fel a
+# mintákat (`qml/PicasaPy/*.qml`, `assets/*.png`, …). Egy ilyen whitelist
+# csendben kihagy minden új alkönyvtárat és minden új kiterjesztést: így
+# esett ki a teljes `qml/PicasaPy/icons/` ikonkészlet (23 SVG, #411), a
+# `Gpu/*.frag`, és a `webexport/templates/**` teljes sablonja — összesen
+# 40 fájl. Forrásból minden működött, ezért hónapokig észrevétlen maradt.
+#
+# A `graft` a fordítottja: MINDENT bevesz a csomagfa alól, és csak azt
+# hagyjuk ki, amit kifejezetten felsorolunk. Egy új alkönyvtár tehát
+# MAGÁTÓL bekerül. Amit ez mégis elszalasztana, azt a
+# `tests/test_package_contents.py` őr fogja meg a felépített csomagon.
+
+graft src/picasapy
+
+# Fordítási FORRÁS (a `.qm` a lefordított, futásidejű pár — az kell csak)
+exclude src/picasapy/app/i18n/*.ts
+
+# Python-melléktermékek
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.orig *.rej
