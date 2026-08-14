@@ -130,8 +130,26 @@ Flickable {
                 Layout.fillWidth: true
                 spacing: 2
 
+                // #650: a `kind` szerinti láthatóság. A delegate mindhárom
+                // ágat TARTALMAZZA (ez adja a Repeater stabil indexelését),
+                // de egyszerre pontosan EGY látszik. A kötés korábban
+                // hiányzott: minden csúszkás paraméter alatt megjelent egy
+                // oda nem való jelölőnégyzet ÉS egy színpaletta is — és mivel
+                // mindhárom ugyanarra az indexre ír, a színpalettára
+                // kattintva egy hex STRING került a numerikus paraméter
+                // helyére, egészen a `filters=` láncig.
+                //
+                // Az ismeretlen/hiányzó `kind` a csúszkára esik vissza: ez a
+                // katalógus túlnyomó többsége, és így egy jövőbeli, még nem
+                // ismert fajta sem tünteti el a vezérlőt nyomtalanul.
+                readonly property string controlKind:
+                    paramRow.modelData.kind === "checkbox"
+                    || paramRow.modelData.kind === "color"
+                        ? paramRow.modelData.kind : "slider"
+
                 RowLayout {
                     Layout.fillWidth: true
+                    visible: paramRow.controlKind === "slider"
                     Label {
                         objectName: "effectParamLabel" + paramRow.index
                         Layout.fillWidth: true
@@ -149,6 +167,7 @@ Flickable {
                 PicasaSlider {
                     id: paramSlider
                     objectName: "effectParamSlider" + paramRow.index
+                    visible: paramRow.controlKind === "slider"
                     Layout.fillWidth: true
                     from: paramRow.modelData.minimum
                     to: paramRow.modelData.maximum
@@ -162,6 +181,7 @@ Flickable {
                 CheckBox {
                     id: paramCheckbox
                     objectName: "effectParamCheckbox" + paramRow.index
+                    visible: paramRow.controlKind === "checkbox"
                     text: panel.paramLabel(paramRow.modelData.label)
                     checked: paramRow.modelData.default !== 0
                     onToggled: panel.updateParamValue(paramRow.index, paramCheckbox.checked ? 1 : 0)
@@ -169,6 +189,7 @@ Flickable {
                 TextColorSwatches {
                     id: paramColorSwatches
                     objectName: "effectParamColor" + paramRow.index
+                    visible: paramRow.controlKind === "color"
                     // #305 null-őr: régebbi/fake vezérlők (pl. teszt-dupla)
                     // "color" mező nélküli payloadot is küldhetnek
                     currentColor: paramRow.modelData.color ? paramRow.modelData.color : "#000000"
