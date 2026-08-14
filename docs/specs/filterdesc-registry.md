@@ -948,10 +948,27 @@ A záró lépés minden `i ∈ 0…255`-re: a négy görbe egymás utáni kiért
 Két célzott kör futott ezekre párhuzamosan (nyers kimenet:
 `referencia/dekompilalt-pakolo/script-DecompileTiled.log`, `-Edge.log`).
 
-#### `Tiled` — **maszk**, nem képművelet
+#### `Tiled` — **maszk**, nem képművelet (TELJES, 2026-08-14)
 
-Az osztály neve `glimmer::TiledImageMask`, nem `…ImageOperation`. A csempézés
-(`0x00bba670`):
+Az osztály neve `glimmer::TiledImageMask`, nem `…ImageOperation`.
+
+**A csempe előállítása** (`0x00bbaa90`). A maszk nyolc paramétert tárol —
+négy egész margót (`+0x18` bal, `+0x1c` felső, `+0x20` jobb, `+0x24` alsó) és
+két skálát (`+0x10` x, `+0x14` y; alapérték **0,8**):
+
+```c
+w0 = kepSzelesseg - jobb  - bal;      // a margókkal levágott belső terület
+h0 = kepMagassag  - also  - felso;
+w  = w0 * xSkala;                     // a méretezett csempe
+h  = h0 * ySkala;
+x  = bal   - (w - w0) * 0.5f;         // a méretezés a KÖZÉPPONT körül történik
+y  = felso - (h - h0) * 0.5f;
+```
+
+A gyorsítótár-kulcsot ugyanez a nyolc érték adja
+(`"-%d-%d-%d-%d-%g-%g-%g-%g"`, `0x00bba980`), tehát a paraméterkészlet teljes.
+
+**A csempézés** (`0x00bba670`):
 
 ```c
 oszlopok = kepSzelesseg / csempeSzelesseg;     // EGÉSZ osztás
@@ -998,7 +1015,14 @@ látszanak, ami a 4.10-es `Sharpen`-kernel olvasatát is megerősíti.
 > élkiemelése tehát **nem a művelet-osztályban van**, és ebből a körből sem
 > került elő.
 >
-> Amíg nincs meg, a `filterdesc.xml`-ből ismert csővezeték az érvényes; a
+> **Lezárva negatív eredményként (2026-08-14).** A művelet a konstruktorában
+> létrehozott szűrő-objektumot tartja a `+0x34` mezőben, és a 6. slot csak
+> beleteszi a `100 − csúszka` értéket. A vtable 0. slotja a destruktor, a 7.
+> slot a **közös** `0x00bc51d0` — vagyis a kernel sehol nincs a művelet-
+> osztályban. A következő lépés a `+0x34`-es objektum típusának azonosítása a
+> konstruktorból (ami nem vtable-slot, ezért az RTTI-ből kell visszakeresni).
+>
+> Amíg ez nincs meg, a `filterdesc.xml`-ből ismert csővezeték az érvényes; a
 > `EdgeDetectionSobel` viszont **teljesen implementálható** a fenti kernelekkel.
 
 ### 4.12 A Polaroid / Múzeumi matt műveletcsaládja (2026-08-14, agent-#21)
