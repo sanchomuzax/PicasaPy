@@ -155,7 +155,7 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Add File to Picasa...") + "\tCtrl+O"; placeholder: true }
         PicasaMenuItem { text: qsTr("Import From...") + "\tCtrl+M"; placeholder: true }
         // hiányzott (#324 audit): a Google Fotókból importálás menüpontja
-        PicasaMenuItem { text: qsTr("Import From Google Photos..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Import From Google Photos..."); placeholder: false; retired: true }  // #638
         MenuSeparator {}
         // hiányzott (#324 audit): fájl(ok) megnyitása a szerkesztőben
         PicasaMenuItem { text: qsTr("Open File(s) in Editor") + "\tCtrl+Shift+O"; placeholder: true }
@@ -220,7 +220,7 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Print...") + "\tCtrl+P"; placeholder: true }
         PicasaMenuItem { text: qsTr("E-Mail...") + "\tCtrl+E"; placeholder: true }
         // hiányzott (#324 audit): nyomtatott képek online rendelése
-        PicasaMenuItem { text: qsTr("Order Prints..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Order Prints..."); placeholder: false; retired: true }  // #638
         MenuSeparator {}
         MenuItem { text: qsTr("E&xit"); onTriggered: Qt.quit() }
     }
@@ -621,7 +621,7 @@ MenuBar {
             }
         }
         // hiányzott (#324 audit)
-        PicasaMenuItem { text: qsTr("Publish to Blogger..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Publish to Blogger..."); placeholder: false; retired: true }  // #638
     }
     Menu {
         title: qsTr("&Tools")
@@ -631,7 +631,7 @@ MenuBar {
         }
         // hiányzott (#324 audit) — az auditban jelzett screenshot-időpontban
         // az eredetiben is inaktív volt
-        PicasaMenuItem { text: qsTr("Upload Manager..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Upload Manager..."); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("People Manager..."); placeholder: true }
         MenuSeparator {}
         MenuItem {
@@ -644,7 +644,7 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Configure Photo Viewer..."); placeholder: true }
         PicasaMenuItem { text: qsTr("Configure Screensaver..."); placeholder: true }
         PicasaMenuItem { text: qsTr("Back Up Pictures..."); placeholder: true }
-        PicasaMenuItem { text: qsTr("Batch Upload..."); placeholder: true }
+        PicasaMenuItem { text: qsTr("Batch Upload..."); placeholder: false; retired: true }  // #638
         PicasaMenuItem { text: qsTr("Adjust Date and Time..."); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
@@ -717,12 +717,12 @@ MenuBar {
         PicasaMenuItem { text: qsTr("Keyboard Shortcuts"); placeholder: true }
         MenuSeparator {}
         // hiányzott (#324 audit): web-linkek
-        PicasaMenuItem { text: qsTr("Picasa Forums"); placeholder: true }
-        PicasaMenuItem { text: qsTr("Online Information"); placeholder: true }
-        PicasaMenuItem { text: qsTr("Product Release Notes"); placeholder: true }
+        PicasaMenuItem { text: qsTr("Picasa Forums"); placeholder: false; retired: true }  // #638
+        PicasaMenuItem { text: qsTr("Online Information"); placeholder: false; retired: true }  // #638
+        PicasaMenuItem { text: qsTr("Product Release Notes"); placeholder: false; retired: true }  // #638
         MenuSeparator {}
-        PicasaMenuItem { text: qsTr("Privacy Policy"); placeholder: true }
-        PicasaMenuItem { text: qsTr("Terms of Service"); placeholder: true }
+        PicasaMenuItem { text: qsTr("Privacy Policy"); placeholder: false; retired: true }  // #638
+        PicasaMenuItem { text: qsTr("Terms of Service"); placeholder: false; retired: true }  // #638
         MenuSeparator {}
         PicasaMenuItem { text: qsTr("Check for Updates"); placeholder: true }
         MenuSeparator {}

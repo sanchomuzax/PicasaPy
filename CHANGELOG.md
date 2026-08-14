@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.45] – 2026-08-14
+
+### Változott
+- **A felső menüsáv megszűnt webes tételei is véglegesen szürkék (#638).** Tíz
+  menüpont (Feltöltéskezelő, Kötegelt feltöltés, Picasa fórumok, Online
+  információk, Terméskiadási megjegyzések, Adatvédelmi irányelvek,
+  Szolgáltatási feltételek, Közzététel a Bloggeren, Nyomat rendelése,
+  Importálás a Google Fotókból) eddig „még nincs bekötve" jelöléssel állt —
+  pedig a szolgáltatásuk megszűnt. Mostantól a menüsáv ugyanazt mondja
+  róluk, mint a jobbklikk-menü. Ami nálunk megvalósítható maradna (például a
+  Frissítések keresése vagy a Súgó), az továbbra is „még jöhet".
+
 ## [0.7.44] – 2026-08-14
 
 ### Hozzáadva
