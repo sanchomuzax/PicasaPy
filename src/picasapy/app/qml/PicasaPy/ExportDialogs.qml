@@ -17,6 +17,14 @@ Item {
         exportDialog.openForSelection()
     }
 
+    // #530: Google Earth-export — a kijelölt képek közül a GEOCÍMKÉZETTEK
+    // kerülnek térképre. A célmappa-választón kívül nincs beállítás: az
+    // eredetiben sem volt, a bélyegkép-méretet a buborék szabja meg.
+    function openGoogleEarth() {
+        if (dialogs.appWindow.selectedIndexes.length === 0) return
+        earthTargetDialog.open()
+    }
+
     Dialog {
         id: exportDialog
         objectName: "exportDialog"
@@ -216,6 +224,35 @@ Item {
         }
     }
 
+    // #530: a célmappa választása után azonnal indul az export (háttérszálon)
+    FolderDialog {
+        id: earthTargetDialog
+        objectName: "earthTargetDialog"
+        title: qsTr("Export to Google Earth File")
+        onAccepted: {
+            if (typeof controller === "undefined" || !controller) return
+            var mappa = selectedFolder.toString().replace(/^file:\/\//, "")
+            controller.exportGoogleEarth(
+                dialogs.appWindow.selectedIndexes, mappa, "")
+        }
+    }
+
+    Dialog {
+        id: earthResultDialog
+        objectName: "earthResultDialog"
+        title: qsTr("Export to Google Earth File")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok
+        property string message: ""
+        Text {
+            objectName: "earthResultText"
+            text: earthResultDialog.message
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+    }
+
     Connections {
         target: controller
         // #136: a sikertelen fájlok neve/oka a számszerű összegzés ELŐTT
@@ -233,6 +270,20 @@ Item {
             exportResultDialog.message = message
             exportResultDialog.failedDetails = []
             exportResultDialog.open()
+        }
+        // #530: a Google Earth-export vége. A KIHAGYOTTAKAT is kiírjuk: a
+        // felhasználónak tudnia kell, miért kevesebb a helyjelző, mint a
+        // kijelölés (koordináta nélküli képet nincs hova tenni a térképen).
+        function onEarthExportFinished(kmlPath, placemarks, skipped) {
+            var message = kmlPath.length > 0
+                ? qsTr("%1 pictures written to the Google Earth file.")
+                    .arg(placemarks)
+                : qsTr("None of the selected pictures has a location, so no Google Earth file was written.")
+            if (skipped > 0 && kmlPath.length > 0)
+                message += "\n" + qsTr("%1 pictures were left out: they have no location.")
+                    .arg(skipped)
+            earthResultDialog.message = message
+            earthResultDialog.open()
         }
     }
 }

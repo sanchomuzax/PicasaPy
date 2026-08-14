@@ -67,6 +67,8 @@ MenuBar {
     signal exportRequested()
     // #351: Mappa → Exportálás weboldalként… (webexport.fen)
     signal webExportRequested()
+    // #530: Google Earth-export a kijelölt (geocímkézett) képekből
+    signal earthExportRequested()
     // #29: Létrehozás → Képkollázs / Mozgófilm a kijelölésből
     signal collageRequested()
     signal movieRequested()
@@ -647,7 +649,18 @@ MenuBar {
         MenuSeparator {}
         // hiányzott (#324 audit): a tartalma a screenshotokból nem derül ki
         Menu { title: qsTr("Upload"); enabled: false }
-        Menu { title: qsTr("Geotag"); enabled: false }
+        // #530: a Geocímke almenü élesedett — az export motorja kész
+        // (export/kml.py + earth.py). A feliratok a bináris index szerint:
+        // eMenuTools::Geotag = "&Geotag", ID_EXPORT_EARTH =
+        // "Export to Google Earth File".
+        Menu {
+            title: qsTr("Geotag")
+            MenuItem {
+                objectName: "menuToolsExportEarth"
+                text: qsTr("Export to Google Earth File")
+                onTriggered: bar.earthExportRequested()
+            }
+        }
         Menu {
             title: qsTr("Experimental")
             // #368: az eredeti Picasa is a Kísérleti almenüből nyitotta

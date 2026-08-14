@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.44] – 2026-08-14
+
+### Hozzáadva
+- **A Google Earth-export elérhető a menüből (#530).** Eszközök → Geocímke →
+  „Exportálás Google Earth-fájlba": a kijelölt képek közül a helyadattal
+  rendelkezők térképre kerülnek. A program megmondja, hány kép került ki, és
+  hány maradt ki helyadat híján; ha egyiken sincs helyadat, nem készít üres
+  fájlt.
+
 ## [0.7.43] – 2026-08-14
 
 ### Hozzáadva
