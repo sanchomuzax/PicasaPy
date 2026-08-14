@@ -400,7 +400,17 @@ szerkesztő/mentő útvonal: retusálás, a szerkesztőpanel alkalmaz/mégse gom
 filmmentés, a fájlmentő szál. **Mappapásztázó vagy fájlfigyelő hívó nincs
 köztük.**
 
-### A betöltő ágon a 2. fázis a KÉPFÁJLHOZ van kötve
+### A kulcsok KÉT csoportra válnak, külön életciklussal
+
+Az ini-feldolgozó (`0x00456610`) egy jelzőbites kapcsolón dönt, és a szakasz
+kulcsait két, egymástól független csoportként kezeli:
+
+| bit | csoport | kulcsok |
+|---|---|---|
+| `flags & 2` | **szerkesztések** | `filters` · `crop` · `rotate` · `bw` · `fix` · `text` · `textactive` · `backuphash` |
+| `flags & 1` | **metaadatok** | `rating` · `star` · `caption` · `keywords` · `faces` · `geotag` · `albumlist` · `hidden` · `screensaver` · `suppress` · `onlinechecksum` |
+
+### A betöltő ágon a metaadat-fázis a KÉPFÁJLHOZ van kötve
 
 A fotó-betöltő képenként előbb egyszer feldolgozza az ini-szakaszt, majd a
 **képfájlt** (EXIF, bélyegkép, átlagszín), és a **második ini-alkalmazás csak
