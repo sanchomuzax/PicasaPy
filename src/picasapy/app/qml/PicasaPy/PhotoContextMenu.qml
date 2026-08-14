@@ -247,12 +247,16 @@ Menu {
     PicasaMenuItem {
         objectName: "contextMenuUploadToWebAlbums"
         text: qsTr("Upload to Picasa Web Albums...")
-        placeholder: true
+        placeholder: false
+        // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
+        retired: true
     }
     PicasaMenuItem {
         objectName: "contextMenuBlockUpload"
         text: qsTr("Block Upload")
-        placeholder: true
+        placeholder: false
+        // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
+        retired: true
     }
     MenuSeparator {}
 

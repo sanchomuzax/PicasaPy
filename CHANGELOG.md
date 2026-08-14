@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.40] – 2026-08-14
+
+### Változott
+- **A megszűnt online szolgáltatások menüpontjai véglegesen szürkék (#422).**
+  A jobbklikk-menűkben hét olyan tétel volt (Feltöltés Google Fotókba / Picasa
+  Webalbumba, Gyorsfeltöltés, Feltöltés tiltása, Online műveletek), ami eddig
+  „még nincs bekötve" jelöléssel szerepelt — pedig ezek soha nem lesznek
+  bekötve, mert maga a szolgáltatás szűnt meg. A tételek a helyükön maradnak,
+  hogy a menük szerkezete egyezzen az eredetivel, de már nem ígérik, hogy
+  egyszer működni fognak, és nem számítanak bele a hátralévő munkába.
+
 ## [0.7.39] – 2026-08-13
 
 ### Javítva
