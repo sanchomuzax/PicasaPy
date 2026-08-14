@@ -6269,4 +6269,27 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Fényesítés</translation>
     </message>
 </context>
+<context>
+    <name>EditOverwriteDialog</name>
+    <message>
+        <source>Edits overwritten by another program</source>
+        <translation>A szerkesztéseket egy másik program felülírta</translation>
+    </message>
+    <message>
+        <source>Another program changed these pictures and removed the edits you made here:</source>
+        <translation>Egy másik program módosította ezeket a képeket, és eltávolította az itt készített szerkesztéseket:</translation>
+    </message>
+    <message>
+        <source>While the same folder is open in Picasa, its changes overwrite the edits made here. Restoring writes your edits back.</source>
+        <translation>Amíg ugyanaz a mappa nyitva van a Picasában, annak írásai felülírják az itt készített szerkesztéseket. A visszaállítás újra kiírja a tiédet.</translation>
+    </message>
+    <message>
+        <source>Restore edits</source>
+        <translation>Szerkesztések visszaállítása</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+</context>
 </TS>

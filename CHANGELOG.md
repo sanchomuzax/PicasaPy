@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.46] – 2026-08-14
+
+### Javítva
+- **Nem tűnik el többé némán a szerkesztés, ha közben a Picasa is dolgozik a
+  mappán (#644).** Eddig, ha ugyanarra a képre a párhuzamosan futó eredeti
+  Picasa is írt, az a PicasaPy-ban készített effektet **nyomtalanul
+  letörölte** — a `.picasa.ini` az egyetlen helye volt. Mostantól minden
+  mentett szerkesztés bekerül egy saját, tartós naplóba is: ha egy másik
+  program felülírja, a program **szól, megmondja melyik képről van szó, és
+  egy kattintással visszaállítja**. A napló nem a fotók mappájában él, hanem
+  az adatbázis mellett — oda egy másik program nem ír bele.
+
 ## [0.7.45] – 2026-08-14
 
 ### Változott

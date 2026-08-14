@@ -1410,6 +1410,12 @@ ApplicationWindow {
     }
 
     MoveDatabaseDialog { id: moveDatabaseDialog }
+    // #644: figyelmeztetés, ha egy másik program felülírta a szerkesztéseinket
+    EditOverwriteDialog { id: editOverwriteDialog }
+    Connections {
+        target: controller
+        function onEditsOverwritten(lost) { editOverwriteDialog.show(lost) }
+    }
     CompactDatabaseDialog { id: compactDatabaseDialog }
 
     // Indítóképernyő (#189): a legfelső rétegen ül, a startupStatus hídból

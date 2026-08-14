@@ -523,6 +523,10 @@ def run(argv: list[str]) -> int:
     # rendereli a képet; a hidat az EditController adja a QML-nek
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
+    # #644: minden mentett szerkesztési lánc a TARTÓS naplóba is bekerül — ez
+    # az egyetlen nyomunk, ha a párhuzamosan futó Picasa később felülírja a
+    # `.picasa.ini`-t a saját adatbázis-rekordjával.
+    edit_controller.chainSaved.connect(controller.recordSavedChain)
 
     # effekt-gomb bélyegképek (#338): a meglévő thumbnail-provider
     # regisztrációját (a teljes könyvtár fotóit) használja fel útvonal-
