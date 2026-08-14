@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.47] – 2026-08-14
+
+### Javítva
+- **Újra látszik a Visszavonás/Újra gombpár a szerkesztő bal panelján
+  (#641).** Kisebb ablakban — laptopon a tipikus esetben — a gombsor
+  lecsúszott a képernyőről, és egyáltalán nem lehetett hozzáférni. Mostantól
+  az ablak nem mehet olyan kicsire, hogy a panel ne férjen el; ha mégis
+  szűkös a hely, a **gombsor marad látható**, és a csempék közül vész el egy
+  sor — a visszavonás fontosabb. *(A 0.7.39 óta állt fenn.)*
+
 ## [0.7.46] – 2026-08-14
 
 ### Javítva

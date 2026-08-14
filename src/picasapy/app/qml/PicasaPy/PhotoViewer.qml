@@ -9,6 +9,15 @@ import PicasaPy.Gpu
 // Balra: előző, Esc: vissza a könyvtárba.
 Rectangle {
     id: viewer
+
+    // #641: mekkora magasság kell ahhoz, hogy a bal panel TELJESEN elférjen
+    // — a felső sáv plusz a panel saját igénye. Az ablak minimális magassága
+    // ebből számol (Main.qml); enélkül a `Layout.minimumHeight` csak KÉRÉS
+    // marad, a panel túlnyúlik a celláján, és a Visszavonás/Újra sor
+    // kicsúszik a képernyőről. Beégetett szám nincs benne: mindkét tag a
+    // saját elemétől jön.
+    readonly property real requiredHeight:
+        viewerTopBar.height + editorPanel.implicitHeight
     color: Theme.viewerBg
 
     property var photosModel: null
@@ -428,6 +437,7 @@ Rectangle {
 
         // felső sáv: vissza gomb + filmszalag nyilakkal
         Rectangle {
+            id: viewerTopBar
             Layout.fillWidth: true
             height: 46
             color: Theme.chromeBg
@@ -519,11 +529,14 @@ Rectangle {
                 // FIX 280px, nem ablakarányos (ld. az ottani kommentet)
                 Layout.preferredWidth: 280
                 Layout.fillHeight: true
-                // #628: a panelnek annyi hely KELL, amennyit a legmagasabb
-                // füle kér — ez az eredeti FIX panelméretének megfelelője
-                // átméretezhető ablakban. Enélkül a rövid ablakban a
-                // Visszavonás/Újra sor a látható terület alá csúszna.
-                Layout.minimumHeight: editorPanel.implicitHeight
+                // #641: itt NINCS `Layout.minimumHeight`. A #628 azt tette ide,
+                // de az visszafelé sült el: a doboz nem zsugorodott a cellára,
+                // hanem TÚLNYÚLT rajta, és a panel aljához igazodó
+                // Visszavonás/Újra sor kicsúszott a képernyőről. A „mindig
+                // elfér" garanciát az ABLAK minimális magassága adja
+                // (`Main.qml`, a `viewer.requiredHeight`-ből) — ha az mégsem
+                // tartható, a doboz zsugorodik, és a fül TARTALMA veszít, nem
+                // a gombsor.
                 color: Theme.chromeBg
 
                 EditorPanel {
