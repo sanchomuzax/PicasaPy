@@ -752,3 +752,103 @@ Dekompilálva és archiválva: `Border`, `DropShadow`, `Rotate`, `SimpleBorder`,
 `Sharpen`, `TwoTone`, `ColorMatrix`, `MultiplyColorMatrix`, `HSVGradientMap`,
 `Exposure`. Ezek számszerű feldolgozása a következő kör tárgya — a **Polaroid**
 két érzékeny művelete (`DropShadow`, `Rotate`) is köztük van.
+
+### 4.9 A `SimpleColorMatrix` öt mátrixa — SZÁMSZERŰEN (2026-08-14, #626)
+
+A 4.8 még csak a függvénycímeket adta meg. Az akkori kimenetből
+(`referencia/dekompilalt-626/`) most kiolvasva mind az öt mátrix-építő. A közös
+alkalmazó (`0x008f28d0`) egy **5×5 affin színmátrixot** szoroz az akkumulálthoz;
+a mátrix a 0…255 skálán működik (a negyedik oszlop az eltolás).
+
+Ez **nyolc effektet** érint, amelyek a `SimpleColorMatrix` műveletet használják.
+
+#### Telítettség (`0x008f1d00`)
+
+```c
+if (s > 0)  k = 1.0f + (s * 3.0f) / 100.0f;    // +100 -> k = 4.0
+else        k = 1.0f + s / 100.0f;             // -100 -> k = 0.0 (szürke)
+w  = 1.0f - k;
+rw = w * 0.3086f;  gw = w * 0.6094f;  bw = w * 0.0820f;
+
+R' = (k + rw)*R +      gw *G +      bw *B
+G' =      rw *R + (k + gw)*G +      bw *B
+B' =      rw *R +      gw *G + (k + bw)*B
+```
+
+> ⚠️ **Két buktató.** (1) A csúszka **aszimmetrikus**: a pozitív oldal
+> háromszoros skálázást kap, a negatív nem. (2) A luminancia-súlyok
+> **0,3086 / 0,6094 / 0,0820** — ez a Haeberli-féle klasszikus készlet, **nem**
+> a Rec.601 (0,299/0,587/0,114) és **nem** a Rec.709 (0,2126/0,7152/0,0722).
+> Rec.601-gyel megvalósítva látható színeltolás keletkezik.
+
+#### Fényerő (`0x008f1af0`) — tisztán additív
+
+```c
+b = clamp(b, -100, 100);
+R' = R + b;   G' = G + b;   B' = B + b;
+```
+
+#### Kontraszt (`0x008f1bd0`) — TÁBLÁZATOS, nincs rá képlet
+
+```c
+c = clamp(c, -100, 100);
+k = 1.0f + kontraszt_gorbe(c);      // 0x008f2990
+if (|k - 1.0f| < eps) return;       // nincs teendő
+t = (1.0f - k) * 127.0f * 0.5f;     // = (1-k) * 63.5
+R' = k*R + t;  G' = k*G + t;  B' = k*B + t;
+```
+
+ahol a görbe:
+
+```c
+float kontraszt_gorbe(float c) {
+    if (c == 0)  return 0.0f;
+    if (c <  0)  return c / 100.0f;             // ZÁRT: -100 -> -1 (k = 0, teljes szürke)
+    // c > 0: 101 elemű TÁBLÁZAT lineáris interpolációval
+    i = (int)floorf(c);  f = c - i;
+    return (f < eps) ? T[i] : (1-f)*T[i] + f*T[i+1];
+}
+```
+
+A `T[]` tábla a `0x00c7d688` címen (fájloffszet `0x87d688`), **101 darab
+`float`**, 0,0-tól 10,0-ig, **kézzel hangolt, szakaszonként más lépésközzel**:
+
+| csúszka | 0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `T` | 0,00 | 0,12 | 0,25 | 0,44 | 0,71 | 1,00 | 1,60 | 2,37 | 4,00 | 7,30 | 10,00 |
+
+A lépésköz 0,01-ről (0–16) 0,015-re (16–23), 0,02-re (23–33), 0,03-ra (33–50),
+0,06-ra (50–67), 0,125-re (67–75), majd egyre nagyobbra nő. **Semmilyen zárt
+képlet nem illeszkedik rá** (a legjobb exponenciális illesztés 0,64-gyel téved),
+tehát a táblát **át kell venni**. Teljes lista:
+`referencia/kontraszt-tabla.csv` (privát repó).
+
+#### Együttes fényerő + kontraszt (`0x008f2040`) — a `ContrastAndBrightnessLinked` ág
+
+```c
+k = 1.0f + kontraszt_gorbe(kontraszt);           // ugyanaz a tábla
+t = ((k + 1.0f) * 127.5f * fenyero) / 100.0f  +  (127.5f - k * 127.5f);
+R' = k*R + t;   G' = k*G + t;   B' = k*B + t;
+```
+
+> ⚠️ **A két kódút tényleg különböző eredményt ad**, ahogy a 4.8 sejtette — és
+> most már számszerűen látszik, miben: a **külön** kontraszt a `63,5` érték
+> körül forgat (`t = (1−k)·63,5`), az **együttes** viszont a valódi középszürke,
+> `127,5` körül (`t = (1−k)·127,5 + …`). A fényerő-tag súlya `127,5·(k+1)/100`,
+> vagyis **erős kontraszt mellett a fényerő is erősebben hat**.
+>
+> A `63,5`-ös fixpont meglepő (a középszürke fele). A dekompilátorban
+> `(1.0 - k) * 127.0 * 0.5` alakban áll; a másik ágban viszont explicit
+> `127.5 - k*127.5` szerepel, tehát nem fordítási artefaktum. **Referencia-
+> exporttal érdemes ellenőrizni**, mielőtt véglegesítjük.
+
+#### Színárnyalat-forgatás (`0x008f1e70`)
+
+`h = clamp(h, -180, 180)`, majd `szog = h/180 · π`, és `sin`/`cos`
+(`0x00c29d20`, `0x00c285f0`) alapján a szokásos hue-rotation mátrix.
+
+> A mátrix együtthatói **nem olvashatók ki** a dekompilátumból: az FPU-veremben
+> mennek át, a `FUN_008f28d0` argumentumlistája üresen látszik. A szerkezet
+> (szögkorlát, fok→radián, sin/cos) biztos; a konkrét együtthatók
+> **feltételesek** — a Haeberli-féle hue-rotation a valószínű, de ez még nincs
+> bizonyítva.
