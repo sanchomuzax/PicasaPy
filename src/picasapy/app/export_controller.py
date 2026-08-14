@@ -11,6 +11,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
 
+from picasapy.export.earth import export_google_earth
 from picasapy.export import (
     ExportItem,
     ExportSettings,
@@ -47,6 +48,10 @@ class ExportMixin(BackgroundWorkerMixin):
     # #16: export kész — (exportált darab, sikertelen darab); háttérszálból
     # érkezik, a Qt automatikusan a főszálra sorolja
     exportFinished = Signal(int, int)
+    # #530: Google Earth-export vége — a kiírt KML útvonala (üres string, ha
+    # nem készült), a térképre került képek száma, és hány maradt ki
+    # koordináta híján (ezt a felhasználónak meg kell tudni mondani).
+    earthExportFinished = Signal(str, int, int)
     # #457: „Exportált képek" — az exportált célmappák listája változott.
     # Az eredeti külön csomópont alá gyűjtötte őket a navigációban: az
     # export így NYOMON KÖVETHETŐ maradt, nem tűnt el a fájlrendszerben.
@@ -170,6 +175,43 @@ class ExportMixin(BackgroundWorkerMixin):
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-export")
+
+    # -- Google Earth-export (#530) ------------------------------------------
+
+    @Slot(list, str, str)
+    def exportGoogleEarth(self, rows, target_dir: str, folder_name: str = "") -> None:
+        """A kijelölt képek kiírása Google Earth-höz: `doc.kml` + `thumbs/`.
+
+        Csak a GEOCÍMKÉZETT képek kerülnek a térképre; a többit a jelentés
+        `skipped` mezője számolja, hogy a felület meg tudja mondani, miért
+        kevesebb a helyjelző a kijelölésnél. Egyetlen geocímkézett kép nélkül
+        nem írunk fájlt — üres térkép félrevezető lenne.
+
+        Háttérszálon fut (a bélyegképek NAS-on percekig tarthatnak), a végén
+        `earthExportFinished(kmlPath, helyjelzők, kihagyottak)`.
+        """
+        target = to_local_path(target_dir)
+        photos = self._photos.photos
+        records = tuple(
+            photos[int(r)] for r in rows if 0 <= int(r) < len(photos)
+        )
+        if not records or not target:
+            self.earthExportFinished.emit("", 0, 0)
+            return
+
+        cel = Path(target)
+        nev = folder_name or cel.name
+
+        def worker():
+            report = export_google_earth(records, cel, folder_name=nev)
+            self.earthExportFinished.emit(
+                str(report.kml_path) if report.kml_path else "",
+                report.placemarks,
+                report.skipped_without_location,
+            )
+
+        # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-earth-export")
 
     # -- „Exportált képek" (#457) --------------------------------------------
 
