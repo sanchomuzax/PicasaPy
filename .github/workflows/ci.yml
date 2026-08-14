@@ -94,6 +94,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Qt futtatókörnyezet
+        # A füst-teszt IMPORTÁLJA a belépési pontot, az pedig a PySide6-ot
+        # húzza be — enélkül `libEGL.so.1: cannot open shared object file`.
+        # Ugyanaz a lista, mint a `test` jobé; a libpulse0 itt nem kell,
+        # mert nem indítunk multimédiát.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxkbcommon0
+
       - name: Build eszközök
         run: python -m pip install --upgrade pip build
 
