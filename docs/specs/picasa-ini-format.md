@@ -412,10 +412,16 @@ kulcsait két, egymástól független csoportként kezeli:
 
 ### A betöltő ágon a metaadat-fázis a KÉPFÁJLHOZ van kötve
 
-A fotó-betöltő képenként előbb egyszer feldolgozza az ini-szakaszt, majd a
-**képfájlt** (EXIF, bélyegkép, átlagszín), és a **második ini-alkalmazás csak
-akkor fut le, ha a képfájl-feldolgozás változást jelez.** Külső író, aki csak
-az ini-t írja, ezt a feltételt sosem teljesíti.
+A fotó-betöltő képenként előbb a **szerkesztés-csoportot** alkalmazza
+(`flags = 2`, **feltétel nélkül**), majd feldolgozza a **képfájlt** (EXIF,
+bélyegkép, átlagszín), és a **metaadat-csoportot** (`flags = 1`) csak akkor,
+ha ez a lépés változást jelez.
+
+> ⚠️ Ebből következik, hogy **ha a Picasa egyáltalán betölti a képet, a
+> `filters=`-t beolvassa.** A #643-as hiba oka tehát **nem** tartalmi
+> feltétel, hanem az, hogy a betöltő egy **már indexelt** fotóra nem fut le
+> újra — az újraindítás sem futtatja végig, mert az adatbázis-gyorsítótárból
+> dolgozik. (Hogy mi kényszerítene újraindexelést, az még nyitott.)
 
 ### Mit jelent ez a gyakorlatban
 
