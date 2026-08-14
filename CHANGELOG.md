@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.41] – 2026-08-14
+
+### Javítva
+- **A diavetítés windowsos tesztje nem mér félkész állapotot (#519).** A
+  vetítés közbeni csillagozás/forgatás háttérszálon fut; a teszt eddig 2
+  másodperc után akkor is továbbment, ha a művelet még nem fejeződött be — a
+  lassabb windowsos futtatón emiatt ingadozott a CI, és a bukás valódi hibának
+  látszott. Mostantól a teszt a művelet befejeződését várja meg, hibaágon
+  pedig a tényleges hibaüzenetet írja ki, nem egy félreérthető állítást.
+
 ## [0.7.40] – 2026-08-14
 
 ### Változott
