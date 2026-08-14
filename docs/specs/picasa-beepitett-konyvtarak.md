@@ -25,9 +25,15 @@ A megállapítások a `Picasa3.exe` RTTI- és string-táblájából származnak
    `SkBitmapProcState`-je. Egyszer, **központilag** kell megfeleltetni —
    nem effektenként. A Skia bilineárisa 4 bites (16 lépcsős) részpixel-
    súlyokkal dolgozik, ami mérhetően eltér a naiv lebegőpontostól.
-2. **Keverési módok**: a `SkProcCoeffXfermode` együtthatós módjai. A korábban
-   kézzel megfejtett `Softlight`/`Hardlight` képleteket érdemes ehhez
-   igazítani.
+2. **Keverési módok — vigyázat, KÉT külön készlet van.** A Skia
+   `SkProcCoeffXfermode`-ja a *rajzoló réteg* keverése. A Glimmer-effektek
+   viszont **saját** implementációt használnak a LUT-úton
+   (`Softlight` `0x00bb82b0`, `Hardlight` `0x00bb8330`, `Multiply`
+   `0x00bb83b0`, `Screen` `0x00bb83d0`, `Normal` `0x00bb8400`), amelyek
+   utasításszinten azonosak a PhotoViewer párjaikkal. **A már megfejtett
+   `Softlight`/`Hardlight` képletek ezekre vonatkoznak, és érvényesek** — nem
+   kell őket a Skiához igazítani. Csak azt kell tudni, melyik úton fut az
+   adott művelet.
 3. **RAW** (#528): a feladat nem dekóder-visszafejtés, hanem **dcraw/LibRaw
    bekötése**. A Picasa is ezt tette.
 4. **JPEG-mentés**: ha a kimeneti fájlnak bájtra hasonlítania kell, a
