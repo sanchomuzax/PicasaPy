@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.43] – 2026-08-14
+
+### Hozzáadva
+- **Google Earth-export: a geocímkézett képek kiírása térképre (#530).** A
+  program elkészíti a `doc.kml` fájlt és mellé a bélyegképeket, így a
+  fotógyűjtemény megnyitható a Google Earthben: minden kép a saját helyén
+  jelenik meg, az ikon fölé érve megnő, rákattintva pedig egy buborékban
+  látszik a bélyegkép, a felirat és a dátum. A koordináta nélküli képek
+  kimaradnak — a program megmondja, hányan. *(A motor és a hívható művelet
+  készen van; a menüpont bekötése külön lépés.)*
+
 ## [0.7.42] – 2026-08-14
 
 ### Hozzáadva
