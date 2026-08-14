@@ -919,10 +919,24 @@ egyébként:     (127, 127 − 4.5·p)
 | 192 | `192 + 27·p` |
 | 255 | 255 |
 
-**1. csúszka — expozíció**: nem görbe, hanem **eltolás a görbék előtt**:
-`v = f(26·p + i)`, ahol `f` a `0x008f2e00`. A `26`-os szorzó biztos; az `f`
-függvény pontos alakja **még nincs kibontva** — ez a művelet egyetlen nyitott
-része.
+**1. csúszka — expozíció**: nem görbe, hanem **eltolás görbe-térben**:
+
+```c
+v = gorbe0(i);                 // 0x008f3290 — spline-kiértékelés
+v = gorbe0_inverz(26*p + v);   // 0x008f2e00
+// majd a maradék három görbe egymás után
+```
+
+A `0x008f2e00` (1168 b) **a görbe inverzét** keresi: végigmegy a spline-on
+egész lépésekben, minden `[x, x+1]` szakaszra eltárolja a `[min, max]`
+kimeneti tartományt, és ebből egy visszakereső táblát épít (`+0x10`), amiben
+lineárisan interpolál. Vagyis az expozíció-csúszka **a görbe kimeneti terében
+tol el `26·p`-vel, majd visszatér a képpont-térbe** — ez a klasszikus
+„expozíció perceptuális térben" megoldás, nem egyszerű szorzás vagy összeadás.
+
+> A `26`-os szorzó és az inverz-tábla szerkezete biztos. Az, hogy melyik
+> görbének az inverzét használja (a négy közül), a dekompilátumból nem
+> egyértelmű — ez **feltételes**.
 
 A záró lépés minden `i ∈ 0…255`-re: a négy görbe egymás utáni kiértékelése,
 `clamp(0, 255)`, kerekítés, majd a LUT három csatorna-változatba tárolása
