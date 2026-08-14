@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.48] – 2026-08-14
+
+### Javítva
+- **A Névjegyben újra a valódi verzió látszik (#642).** A program hónapokig
+  `v0.6.86`-ot mutatott, miközben a friss kiadás 0.7.4x volt — a szám két
+  helyen élt, és csak az egyiket emeltük. Ez nem szépséghiba: a
+  hibabejelentésekben a kijelzett verzió az egyetlen közös fogódzó, és a
+  rossz szám rossz nyomra visz. Mostantól egyetlen forrásból származik, és
+  teszt őrzi, hogy ne csúszhasson szét újra.
+
 ## [0.7.47] – 2026-08-14
 
 ### Javítva
