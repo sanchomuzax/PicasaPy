@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.39] – 2026-08-13
+
+### Javítva
+- **Az effekt-fülekről végleg lekerült a görgethető keret (#628).** A
+  szerkesztő bal oldali paneljén újra megjelent egy keret, amiben görgetni
+  kellett az effektekért — pedig ez a keret egyszer már le lett véve. A hibát
+  most nem a tünetnél orvosoltuk: a panel eddig **fix 420 képpont** magas volt,
+  akármekkora az ablak, és a 12 effekt-csempe ebbe soha nem fért bele. Mostantól
+  a panel az ablakkal együtt nő, a Visszavonás/Újra gombsor a tartalmat követi,
+  és a csempékre nem kerülhet rá. Ha az ablak alacsony, a panel kikényszeríti a
+  neki szükséges helyet, ahelyett hogy elvágná a tartalmát.
+
 ## [0.7.38] – 2026-08-13
 
 ### Javítva
