@@ -577,12 +577,98 @@ Két apróság, ami különben eltérést okoz:
 - A ciklus 1000 sornál megáll (a fordító háromszorosan kibontotta, de a
   logika ez).
 
-#### 1.9.9 Ami még nyitott
+#### 1.9.9 A pakolófa építése — MEGFEJTVE (2026-08-14)
 
-- A **fa építése** (`slot 0x34`): milyen szabály szerint választ vágásirányt és
-  vágási arányt egy adott sorrendhez. A keresés és a költség megvan, ez a
-  harmadik darab.
-- A `CGravityTree` / `CLocationTree` bekapcsolásának feltétele.
+A negyedik kör (`referencia/dekompilalt-pakolo/script-DecompilePacker4.log`)
+lezárta az utolsó darabot is. A `CPackingTreeNode` 13. slotja (`0x00891fc0`),
+amit a keresés minden sorrendre meghív, **négy különböző faépítőt futtat le, és
+a legkisebb költségűt tartja meg**:
+
+```c
+legjobbKtsg = 1000000.0f;
+for (epito : { 0x00894470, 0x00894940, 0x00893da0, 0x00894bd0 }) {
+    fa = epito(lapArany, kepek, kenyszer);
+    if (Koltseg(fa) < legjobbKtsg) { legjobb = fa; legjobbKtsg = Koltseg(fa); }
+}
+```
+
+Vagyis a Mozaik **két szinten keres**: kívül 0,5 másodpercig véletlen
+sorrendeket próbál (1.9.7), belül minden sorrendre négyféle felosztást.
+
+##### A rekurzív guillotine-építő (`0x00894bd0`) — a legtisztább a négyből
+
+```c
+Csomopont* Epit(celArany, lista, lo, hi) {
+    if (lo >= hi) return NULL;
+    n = hi - lo;
+    if (n == 1) return Level(lista[lo]);            // egy kép
+
+    kozep = lo + n/2;
+    if ((kozep & 1) != 0 && n > 2) kozep++;          // PÁROS határra igazít
+
+    a1 = AtlagArany(lista, lo,    kozep);            // a bal/felső fél átlagos oldalaránya
+    a2 = AtlagArany(lista, kozep, hi);               // a jobb/alsó félé
+
+    irany = VagasIrany(celArany, a1 + a2, a1*a2/(a1+a2));
+    t     = Kiigazitas(celArany, a1, a2, irany);
+
+    csomopont.bal   = Epit(a1 + t, lista, lo,    kozep);
+    csomopont.jobb  = Epit(a2 + t, lista, kozep, hi);
+    return csomopont;
+}
+```
+
+##### A vágásirány (`0x00893b10` + `0x00893c20`)
+
+Két jelöltet hasonlít össze — ez a két érték a geometria alapazonossága:
+
+| ha a két blokkot… | a keletkező blokk oldalaránya |
+|---|---|
+| **egymás mellé** tesszük (azonos magasság) | `a1 + a2` |
+| **egymás alá** tesszük (azonos szélesség) | `a1·a2 / (a1 + a2)` |
+
+**Az alapszabály: azt az irányt választja, amelyik oldalaránya közelebb esik a
+cella kívánt arányához** (`|jelolt − celArany|` minimuma).
+
+Ezt egészíti ki négy peremeset-ág: ha az egyik jelölt „átbillenne" az 1,0-s
+határon — vagyis álló cellából fekvő blokkot vagy fordítva csinálna —, akkor
+a **tájolást megőrző** jelölt nyer, akkor is, ha numerikusan távolabb van.
+
+> ⚠️ A négy peremeset-ág olvasata részben **következtetés**: a dekompilátor
+> ezen a helyen FPU-jelzőbit-manipulációként adja vissza a `bool` értéket
+> (`(ushort)(x<y)<<8 | …`), ami nehezen olvasható. Az általános ág (a
+> minimális eltérés) és a két jelölt képlete viszont egyértelmű.
+
+##### A kiigazítás (`0x00893b80`) — másodfokú egyenlet
+
+A gyerekek nem a nyers `a1`, `a2` célaránnyal épülnek tovább, hanem `a1 + t`,
+`a2 + t` értékkel, ahol `t` az a korrekció, amivel a két gyerek **együtt
+pontosan a kívánt `A` arányt adná ki**:
+
+```c
+// VÍZSZINTES vágás:  (a1+t) + (a2+t) = A
+t = ((A - a1) - a2) * 0.5f;
+
+// FÜGGŐLEGES vágás:  (a1+t)(a2+t) / ((a1+t)+(a2+t)) = A
+b = (a1 + a2) - 2*A;
+t = ( sqrtf(b*b - 4*(a1*a2 - A*a2 - A*a1)) - b ) * 0.5f;
+```
+
+A második eset a szokásos másodfokú megoldóképlet a fenti egyenletre.
+
+> ✅ **Ez egyben a `0x00c0b310 = sqrt` azonosítás második, független
+> megerősítése**: egy másodfokú megoldóképlet diszkriminánsán csak
+> négyzetgyök állhat. (Az első a Képkupac-képlet illesztése a valódi
+> `.cxf`-mintára, ld. 1.9.2.)
+
+#### 1.9.10 Ami még nyitott
+
+- A másik három faépítő (`0x00894470`, `0x00894940`, `0x00893da0`) belső
+  szabálya. A negyedik — a fenti rekurzív guillotine — önmagában is működő
+  megvalósítást ad; a másik három csak jobb jelöltet adhat ugyanabban a
+  keretben.
+- A `CGravityTree` / `CLocationTree` bekapcsolásának feltétele (a módválasztó
+  mező írója).
 - A Képkupac kezdeti (x, y) szórása.
 
 ## 2. Film készítése (`ID_MAKEMOVIE`, `eMenuCreateMovie`)
