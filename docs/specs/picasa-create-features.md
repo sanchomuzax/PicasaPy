@@ -368,7 +368,8 @@ A `framegrid` ugyanezt a rajzolót örökli, csak a pakolót írja felül
 
 #### 1.9.4 Rács (`regulargrid`), Indexkép (`contactsheet`), Többszörös exponálás (`multiexp`)
 
-- **`regulargrid`** — szabályos sorok/oszlopok; a 3. slot
+- **`regulargrid`** — szabályos sorok/oszlopok (**a sor/oszlop-szám képlete az
+  1.9.8-ban**); a 3. slot
   (`0x00885750` → `0x008857a0`) **nem** elrendezés, hanem a sorrend
   megfordítása/keverése (két indextömb rendezése, majd páronkénti csere).
 - **`contactsheet`** — a fejléc két sorból áll, a szövegek a
