@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.49] – 2026-08-14
+
+### Javítva
+- **A telepített változatból hiányzott 40 fájl (#646).** A `pip`-pel
+  telepített PicasaPy-ból kimaradt a **23 ikon** a Gyakori javítások
+  csempéiről, a GPU-s szűrő egyik fájlja, és a **webexport teljes
+  sablonja** — vagyis a HTML-export telepítve nem is működhetett.
+  Forrásból futtatva minden rendben volt, ezért maradhatott sokáig
+  észrevétlen. Mostantól a csomagolás rekurzív, tehát egy új alkönyvtár
+  magától a helyére kerül, és teszt is őrzi: ha bármi kimaradna a
+  telepítésből, a CI pirosra vált.
+
 ## [0.7.48] – 2026-08-14
 
 ### Javítva

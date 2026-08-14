@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "picasapy"
-version = "0.7.48"
+version = "0.7.49"
 description = "Modern, open, cross-platform successor to Google Picasa"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
@@ -29,25 +29,24 @@ picasapy = "picasapy.app.__main__:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# A GUI-hoz szükséges nem-Python fájlok (QML, ikonok, fordítás) a
+# A GUI-hoz szükséges nem-Python fájlok (QML, ikonok, sablonok, fordítás) a
 # telepített csomagba is bekerüljenek — enélkül a telepített picasapy
 # induláskor nem találná a Main.qml-t / ikonokat.
+#
+# #646: a minták REKURZÍVAK, nem tételesek. A korábbi, kézzel karbantartott
+# whitelist két teljes ágat kihagyott (a 23 ikon a `qml/PicasaPy/icons/`-ból
+# és a webexport teljes sablonja), mert egy ÚJ alkönyvtár felvételekor senki
+# nem gondolt a pyproject.toml-ra. A `**/*` mintával az új alkönyvtár magától
+# a helyére kerül; a `tests/test_package_data_646.py` őrzi, hogy tényleg
+# minden nem-Python fájl bekerüljön.
 [tool.setuptools.package-data]
 "picasapy.app" = [
-    "assets/*.png",
-    "assets/*.ico",
-    "assets/*.svg",
-    "assets/tools/*.png",
-    "assets/fonts/*.ttf",
-    "assets/fonts/OFL.txt",
-    "qml/*.qml",
-    "qml/*.js",
-    "qml/PicasaPy/*.qml",
-    "qml/PicasaPy/qmldir",
-    "qml/PicasaPy/Gpu/*.qml",
-    "qml/PicasaPy/Gpu/*.qsb",
-    "qml/PicasaPy/Gpu/qmldir",
-    "i18n/*.qm",
+    "assets/**/*",
+    "qml/**/*",
+    "i18n/**/*",
+]
+"picasapy.webexport" = [
+    "templates/**/*",
 ]
 
 [tool.pytest.ini_options]
