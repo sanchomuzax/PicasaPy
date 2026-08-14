@@ -716,7 +716,54 @@ szekcióból tölti vissza az előző beállításokat:
 > program az adatbázisból veszi (`avgcolor` mező, ld. `0x00880580` — minden
 > kollázs-csomópont eltárolja a saját képének átlagszínét).
 
-#### 1.9.12 Ami még nyitott
+#### 1.9.12 A Képkupac kezdeti szórása — MEGFEJTVE (2026-08-14)
+
+Ez volt az utolsó hiányzó darab. A szórás a `0x0087cb70`-ben van (a `CPileTheme`
+0. slotja alatt), és **nem egyszerű egyenletes véletlen**: a Picasa
+**„legjobb jelölt" mintavételezést** (Mitchell best-candidate) használ.
+
+```c
+N = a kollázsban lévő képek száma;
+s = pile_scale(N);                    // ugyanaz, mint a méretnél: min(1, 1/sqrt(sqrt(N)-1))
+sav    = 1.0f - s * 0.495f;           // a hasznos tartomány szélessége (0…1-ben)
+eltol  = (1.0f - sav) * 0.5f;         // középre igazítás — a szélektől tartott margó
+
+for (kep : kepek) {
+    legjobbTav = 0.0f;
+    for (probal = 0; probal < 5; probal++) {          // ÖT jelölt képenként
+        x = (sav * uniform01() + eltol) * teruletSzelesseg;
+        y = (eltol + uniform01() * sav) * teruletMagassag;
+
+        d2 = +1e6f;
+        for (p : mar_elhelyezett_pontok)              // a LEGKÖZELEBBI szomszéd
+            d2 = min(d2, (x-p.x)*(x-p.x) + (y-p.y)*(y-p.y));
+
+        if (d2 > legjobbTav) { legjobbTav = d2; legjobbX = x; legjobbY = y; }
+    }
+    elhelyez(legjobbX, legjobbY);       // a legmesszebb eső jelölt nyer
+    mar_elhelyezett_pontok.push(legjobbX, legjobbY);
+}
+```
+
+**Miért fontos ez?** Tiszta egyenletes véletlennel a kupac csomós lenne — egyes
+képek egymásra torlódnának, máshol lyukak maradnának. Az öt jelöltből a
+legtávolabbi kiválasztása **kvázi-egyenletes, „kék zajos" eloszlást** ad: a
+képek lazán, de szabályosság nélkül töltik ki a lapot. Ez a Képkupac
+jellegzetes megjelenésének a kulcsa, és egy naiv `rand()`-alapú megvalósítás
+**szemmel láthatóan másképp néz ki**.
+
+A margó a képszámmal együtt szűkül: sok képnél `s` kicsi, így a `sav` közel 1,0
+— vagyis a szórás majdnem a teljes lapra kiterjed. Kevés képnél (`s = 1`) a sáv
+`0,505`, a középpontok tehát a lap középső felében maradnak.
+
+A pozíció innen megy tovább az 1.9.2 képleteibe (középre igazítás és a lap
+koordinátáira normalizálás), a forgatás pedig a vízszintes helyzetből számolódik.
+
+**Ezzel a Képkollázs mind a hat elrendezése, mindhárom kerete, a `.cxf`
+formátum és a megőrzött beállítások teljesen feltárva.**
+
+#### 1.9.13 Ami még nyitott
+
 
 - A **Képkupac kezdeti (x, y) szórása** — az 1.9.2 képletei a már kiszámolt
   pozícióból dolgoznak. Ez az egyetlen darab, ami a hat elrendezésből hiányzik.
