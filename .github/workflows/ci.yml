@@ -128,4 +128,9 @@ jobs:
         run: python -m pip install --upgrade pip ruff
 
       - name: Run ruff
-        run: ruff check src/ tests/
+        # #651: a `scripts/` is bekerült — a csomag- és
+        # telepítés-ellenőrzők (`check_package_contents.py`,
+        # `check_installed_package.py`) itt élnek, és a CI ezekre épít.
+        # Amíg a lint nem látta őket, a rájuk épülő garancia maga volt
+        # ellenőrizetlen.
+        run: ruff check src/ tests/ scripts/
