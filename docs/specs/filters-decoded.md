@@ -714,3 +714,76 @@ a mért 2D fill-LUT és a h/s/temp LUT-ok a beépített közelítések HELYETT
 futnak (`fill`, `finetune/finetune2`); hiányuk tiszta kihagyás, sosem hiba.
 A harness logikája szintetikus adatokkal tesztelt
 (`tests/golden/test_compare_render.py`), golden-kitek nélkül is fut.
+
+## A kalibrálatlan natív szűrők — VISSZAFEJTVE (2026-08-14, #317)
+
+A #317 abból indult, hogy ezekhez **golden-mérés kell a felhasználó
+Picasájával**. Kiderült, hogy nem: a natív szűrő-regiszter minden szűrőhöz
+megad egy callback-címet, és onnan a pixelmatematika kibontható. Egy kör
+(9 gyökér, 3 szint) a legtöbbet megadta.
+
+### `sat` — ez magyarázza a legnagyobb ismert hibát
+
+A golden-verdikt szerint a `sat` a pozitív oldalon **12,7 ΔE-ig** romlott. Most
+látszik, miért: **nem lineáris keverés a szürkével**, hanem **csatornánként
+eltérő kitevőjű hatványfüggvény**.
+
+```c
+s = amount * 3.0f;                       // a csúszka HÁROMSZOROSA
+for (i = 0; i < 2048; i++) {
+    x = i / 256.0f;                      // 0…8 tartomány
+    LUT_R[i] = round(powf(x, s*0.3f + 1.0f) * 256);
+    LUT_G[i] = round(powf(x, s*0.7f + 1.0f) * 256);
+    LUT_B[i] = round(powf(x, s*0.9f + 1.0f) * 256);
+}
+```
+
+Behelyettesítve (`a` = a csúszka): a kitevők **R: 1 + 0,9·a**, **G: 1 + 2,1·a**,
+**B: 1 + 2,7·a**. A három csatorna tehát **eltérő erősséggel** telítődik — egy
+lineáris modell ezt sosem adja vissza, és a hiba a csúszka végén nő meg.
+
+Negatív csúszkánál egy külön előlépés fut (`0x0090e200`, `amount + 1.0`).
+
+A luminancia súlyozása 5 : 1 : 2 / 8 alakú egész szorzás
+(`(x*5 + y + z*2) >> 3`); a csatorna-hozzárendelés a dekompilátumból nem
+egyértelmű, **golden-ellenőrzést érdemel**.
+
+### `unsharp` / `unsharp2` — a sugár FIX
+
+```c
+FUN_0090c4a0(dst, src, 1.5f, amount);
+```
+
+A `0x3fc00000` = **1,5** — vagyis az élesítés sugara/szórása **állandó**, csak
+az erősség jön a csúszkáról. Ez eddig „a kernel pontos alakja" néven nyitott volt.
+
+### `grain` / `grain2` — fix erősség
+
+```c
+FUN_0090a2e0(dst, 0.5f);
+```
+
+A szemcse erőssége **beégetett 0,5**; a `grain` és a `grain2` **ugyanaz a
+callback** (`0x008f88e0`), tehát a két token azonos hatású. Ez megerősíti a
+korábbi feltevést, hogy a v1/v2 pár paraméter nélküli.
+
+### `ansel` — szűrős fekete-fehér
+
+A `+0x50` mezőből vett **szűrőszínt** bontja három 0…1 súlyra
+(`r/255`, `g/255`, `b/255`), és ezekkel készít **súlyozott szürkeárnyalatot**
+16 bites fixpontban (`Y = w_r·R + w_g·G + w_b·B`, `0…0xffff`-re vágva), majd
+**256 rekeszes hisztogramot** épít belőle a további feldolgozáshoz.
+
+### `tint`
+
+A `+0x50`-es színt használja, a keverési arány `256 − round(amount)`, és
+figyelembe veszi a `Preferences/CarefulEnhance` beállítást.
+
+### Ami maradt
+
+- a `sat` luminancia-súlyainak csatorna-hozzárendelése (5:1:2);
+- az `ansel` hisztogram utáni lépése;
+- `dir_tint`, `radsat` számszerű feldolgozása (a nyers kimenet megvan).
+
+**Ezekhez már nem a felhasználó Picasája kell**, hanem a meglévő
+dekompilátum feldolgozása vagy egy tetszőleges mintaképes ellenőrzés.

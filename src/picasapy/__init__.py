@@ -1,77 +1,63 @@
 """PicasaPy — modern, nyílt Picasa-utód.
 
-A verzió EGYETLEN igazságforrása a `pyproject.toml` — a kiadási automatika
-(`.github/workflows/release.yml`) is azt olvassa szövegesen, ezért ott kell
-maradnia a szó szerinti számnak. Itt SEMMILYEN körülmények között nem
-tárolunk másolatot: #642-ben pontosan az okozta a hibát, hogy a két hely
-kézzel volt egyeztetve, és 26 kiadásnyira csúszott szét — a program
-hónapokig hamis verziót írt ki, ami a hibabejelentéseket vitte rossz
-nyomra.
+**A verzió egyetlen igazságforrása a `pyproject.toml` (#642).** Korábban a
+szám itt is le volt írva, és csak a `pyproject.toml`-t emelték kiadáskor — a
+kettő 26 kiadásnyira szétcsúszott, a program `v0.6.86`-ot mutatott 0.7.35
+helyett. Ez nem kozmetikai hiba: a felhasználó jóhiszeműen a kijelzett
+verziót jelenti a hibabejelentésben, és az rossz nyomra viszi a keresést.
 
-A származtatás két úton, ebben a sorrendben:
+A feloldás sorrendje szándékosan a FORRÁSSAL kezd:
 
-1. a csomag fölött megtalált `pyproject.toml` (`tomllib`, 3.11 óta stdlib)
-   — ez a forrásból futtatott fejlesztői checkout esete, és AZÉRT áll
-   elöl, mert ilyenkor a futó kód a forrásfáé: egy régebbi, párhuzamosan
-   telepített csomag metaadata félrevezetne (pontosan ez a #642 tünete);
-2. `importlib.metadata` — a telepített csomagnál ez pontosan a
-   `pyproject.toml`-ból bekerült verzió.
+1. **`pyproject.toml`**, ha a forrásfából futunk — így a kijelzett szám azt
+   azonosítja, ami TÉNYLEG fut, nem azt, amit legutóbb telepítettek;
+2. **`importlib.metadata`** a telepített csomagnál (wheel, pipx);
+3. végső esetben `"0.0.0+ismeretlen"` — jobb egy nyilvánvalóan hamis szám,
+   mint egy hihető, de rossz.
 
-A `tests/test_version_single_source.py` őrzi, hogy a két út ugyanazt adja,
-mint a `pyproject.toml`.
+A `pyproject.toml` a `release.yml`-ben SZÖVEGESEN olvasódik (`grep`), ezért
+ott marad a szó szerinti szám; a `dynamic = ["version"]` irányba fordítás
+elrontaná a kiadási munkafolyamatot.
 """
 
 from __future__ import annotations
 
-import tomllib
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version as _installed_version
 from pathlib import Path
 
-#: Végső visszaesés: sem telepítve, sem a pyproject.toml mellől futtatva.
-#: Nem szám, hanem beszédes jelölés — egy hamis verziószám rosszabb a
-#: semminél (#642), mert azt a felhasználó jóhiszeműen továbbadja.
-_UNKNOWN = "0+unknown"
+_ISMERETLEN = "0.0.0+ismeretlen"
 
 
-def _version_from_pyproject() -> str | None:
-    """A PicasaPy `pyproject.toml`-jának `[project] version`-je, vagy None.
+def _verzio_a_forrasbol() -> str | None:
+    """A `pyproject.toml` verziója, ha a forrásfából futunk.
 
-    A fájlt a csomag helyéből keressük visszafelé (`src/picasapy/` →
-    a repó gyökere). A `[project] name` ellenőrzése kötelező: telepített
-    csomagnál a `site-packages` fölött is állhat egy IDEGEN
-    `pyproject.toml` (a felhasználó munkakönyvtárában), annak a verziója
-    pedig katasztrofálisan félrevezetne.
-
-    Hibatűrő: ha nincs meg vagy nem olvasható, a hívó a következő útra
-    esik vissza — a verzió-kiolvasás SOHA nem akadályozhatja az indulást.
+    A csomag a `src/picasapy/`-ban él, tehát a `pyproject.toml` két szinttel
+    feljebb van. Telepített csomagnál ez a fájl nincs meg — ilyenkor None.
     """
-    for parent in Path(__file__).resolve().parents:
-        candidate = parent / "pyproject.toml"
-        if not candidate.is_file():
-            continue
-        try:
-            with candidate.open("rb") as handle:
-                data = tomllib.load(handle)
-        except (OSError, tomllib.TOMLDecodeError):
-            continue
-        project = data.get("project", {})
-        if project.get("name") != "picasapy":
-            continue
-        value = project.get("version")
-        if isinstance(value, str):
-            return value
-    return None
-
-
-def _resolve_version() -> str:
-    from_source = _version_from_pyproject()
-    if from_source is not None:
-        return from_source
+    pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
     try:
-        return _installed_version("picasapy")
+        nyers = pyproject.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    try:
+        import tomllib  # stdlib 3.11+ — nincs új függőség
+    except ImportError:  # pragma: no cover — a projekt 3.12+-t kér
+        return None
+    try:
+        adat = tomllib.loads(nyers)
+    except ValueError:
+        return None
+    ertek = adat.get("project", {}).get("version")
+    return ertek if isinstance(ertek, str) and ertek else None
+
+
+def _verzio_a_telepitesbol() -> str | None:
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("picasapy")
     except PackageNotFoundError:
-        return _UNKNOWN
+        return None
 
 
-__version__ = _resolve_version()
+__version__ = _verzio_a_forrasbol() or _verzio_a_telepitesbol() or _ISMERETLEN
+
+__all__ = ["__version__"]

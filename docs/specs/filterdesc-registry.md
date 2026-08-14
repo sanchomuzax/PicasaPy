@@ -948,10 +948,27 @@ A záró lépés minden `i ∈ 0…255`-re: a négy görbe egymás utáni kiért
 Két célzott kör futott ezekre párhuzamosan (nyers kimenet:
 `referencia/dekompilalt-pakolo/script-DecompileTiled.log`, `-Edge.log`).
 
-#### `Tiled` — **maszk**, nem képművelet
+#### `Tiled` — **maszk**, nem képművelet (TELJES, 2026-08-14)
 
-Az osztály neve `glimmer::TiledImageMask`, nem `…ImageOperation`. A csempézés
-(`0x00bba670`):
+Az osztály neve `glimmer::TiledImageMask`, nem `…ImageOperation`.
+
+**A csempe előállítása** (`0x00bbaa90`). A maszk nyolc paramétert tárol —
+négy egész margót (`+0x18` bal, `+0x1c` felső, `+0x20` jobb, `+0x24` alsó) és
+két skálát (`+0x10` x, `+0x14` y; alapérték **0,8**):
+
+```c
+w0 = kepSzelesseg - jobb  - bal;      // a margókkal levágott belső terület
+h0 = kepMagassag  - also  - felso;
+w  = w0 * xSkala;                     // a méretezett csempe
+h  = h0 * ySkala;
+x  = bal   - (w - w0) * 0.5f;         // a méretezés a KÖZÉPPONT körül történik
+y  = felso - (h - h0) * 0.5f;
+```
+
+A gyorsítótár-kulcsot ugyanez a nyolc érték adja
+(`"-%d-%d-%d-%d-%g-%g-%g-%g"`, `0x00bba980`), tehát a paraméterkészlet teljes.
+
+**A csempézés** (`0x00bba670`):
 
 ```c
 oszlopok = kepSzelesseg / csempeSzelesseg;     // EGÉSZ osztás
@@ -998,5 +1015,112 @@ látszanak, ami a 4.10-es `Sharpen`-kernel olvasatát is megerősíti.
 > élkiemelése tehát **nem a művelet-osztályban van**, és ebből a körből sem
 > került elő.
 >
-> Amíg nincs meg, a `filterdesc.xml`-ből ismert csővezeték az érvényes; a
-> `EdgeDetectionSobel` viszont **teljesen implementálható** a fenti kernelekkel.
+> ✅ **MEGFEJTVE (2026-08-14, második nekifutás).** Nincs rejtett kernel:
+> az `EdgeDetectionBImageOperation` a **`NestedImageOperation`-ből származik**,
+> vagyis **összetett művelet**, amely a gyerekeit **kódban** építi fel (nem az
+> XML-ből — a `filterdesc.xml` csak egyetlen `detail="50"` attribútumot ad neki).
+>
+> A belső csővezeték az 1. slotban (`0x00bbca60`) épül fel, ebben a sorrendben:
+>
+> | # | osztály | megjegyzés |
+> |---|---|---|
+> | 1 | `BlurImageOperation(2.0f, 2.0f)` | 2×2 elmosás |
+> | 2 | `SimpleColorMatrixImageOperation` | **ez a `+0x34` mező** — ide megy a `100 − detail` |
+> | 3 | `SetVar("edgedetectimgop_orig")` | a köztes kép elmentése |
+> | 4 | **`EdgeDetectionSobelImageOperation(0)`** | Sobel, első irány |
+> | 5 | `…` + `"horizontal"` | Sobel, második irány |
+> | 6 | `SetVar` / `GetVar` + kompozíció | a két irány egyesítése az eredetivel |
+>
+> **Minden komponens ismert:** a Sobel-kernelek fent, a `SimpleColorMatrix`
+> matematikája a 4.9-ben, a `Blur` a `picasa-native-filter-workers.md` 4.2-ben.
+> A `detail` csúszka a `SimpleColorMatrix` egyetlen paraméterébe megy
+> `100 − detail` alakban.
+>
+> **Ami maradt:** a `SimpleColorMatrix` melyik paramétere ez (telítettség /
+> kontraszt / fényerő). Egy golden-összevetés eldönti.
+
+### 4.12 A Polaroid / Múzeumi matt műveletcsaládja (2026-08-14, agent-#21)
+
+A privát `picasapy-agent` #21 második prioritása. Célzott kör:
+`referencia/dekompilalt-pakolo/script-DecompileOps21.log`.
+
+#### `SimpleBorderImageOperation` (`0x00bbf4a0`)
+
+```c
+kimenetSzelesseg = kepSzelesseg + bal + jobb;
+kimenetMagassag  = kepMagassag  + felso + also;
+szin = 0xff000000 | color;          // az alfa mindig teljesen átlátszatlan
+```
+
+A kép a `(bal, felso)` pozícióba kerül. Ennyi — nincs lekerekítés, nincs
+árnyék.
+
+#### `BorderImageOperation` (`0x00bbe320` → `0x00bbe570`)
+
+```c
+t = innerthickness + outerthickness;
+kimenetSzelesseg = kepSzelesseg + 2*t;
+kimenetMagassag  = kepMagassag  + 2*t + extraAlso;
+```
+
+Vagyis a belső és a külső vastagság **összeadódik** és **mind a négy oldalra**
+jut, plusz egy külön alsó ráadás — ez adja a paszpartu jellegzetes, alul
+szélesebb arányát. A Múzeumi matt ezt kétszer használja (belső világos, külső
+sötét keret), közéjük két belső ragyogással — a csővezetéket a `filterdesc.xml`
+adja (`0x1a0e03` külső, `0xf0eae4` belső, 25 és 40 alapvastagság).
+
+#### `DropShadowImageOperation` (`0x00bbb720`)
+
+**Az árnyék eltolása** — polárkoordinátából, apró kerekítési igazítással:
+
+```c
+dx = round( (cosf(szog * π/180) + 6.7e-06f) * tavolsag + 0.001825f );
+dy = round( (sinf(szog * π/180) + 6.7e-06f) * tavolsag + 0.001825f );
+```
+
+A `6,7e−06` és a `0,001825` nem paraméter, hanem **döntetlen-eldöntő eltolás**:
+enélkül a 0°/90°/180°/270° körüli egész értékeknél a kerekítés platformfüggően
+billenne. Át kell venni őket, ha képpontra pontos egyezést akarunk.
+
+**A paraméterek vágása** (`0x00bcd640`):
+
+| paraméter | tartomány |
+|---|---|
+| `shadowAlpha` | `clamp(0, 1)` |
+| `blurX`, `blurY` | `clamp(1, 255)` |
+| `strength` | `clamp(0, 255)` |
+| `quality` | negatívnál 0, egyébként **15** (a maximum) |
+
+Az alapértékek a burkolóból (`0x00bbb8d0`): `shadowAlpha = 1`, `angle = 45`,
+`shadowColor` = fekete, `distance = 4`, `strength = 1`, `blurX = blurY = 4`.
+A Polaroid-recept ezeket írja felül (`alpha = .4`, `distance = 3`, `blur = 8`,
+`angle = 90 − forgatás`).
+
+#### `RotateImageOperation` (`0x00bb5640` → `0x00bc8060`)
+
+A transzformáció a szokásos hármas: eltolás a kép közepére (`−W/2`, `−H/2`),
+forgatás, majd vissza. A **simítás (élsimított mintavételezés) be van
+kapcsolva**, és a `padBorder` esetén a keletkező üres sarkokat a `borderColor`
+tölti ki (`0x009a91a0`).
+
+> **A mintavételező a Skia** — nem a Picasa saját kódja (2026-08-14). A hívási
+> lánc `RotateImageOperation` slot6 → `0x00bc8060` (transzform) → `0x00bcb5e0`
+> → `0x00a42c20` a rajzoló rétegbe fut, és az RTTI-tábla szerint a binárisba
+> **46 Skia-osztály** van statikusan befordítva, köztük a
+> **`SkBitmapProcShader`** — pontosan az, ami a bitmap-mintavételezést végzi
+> (mellette `SkShaderBlitter`, `SkARGB32_Shader_Blitter`, `SkFilterShader`).
+>
+> **Ez jó hír:** a Skia nyílt forráskódú, tehát az algoritmust **nem kell
+> visszafejteni és nem kell megmérni** — a korabeli Skia forrásából szó szerint
+> kiolvasható. Ott a `SkBitmapProcState` a szűrési szinttől függően vagy
+> legközelebbi-szomszéd, vagy **bilineáris 4 bites (16 lépcsős) részpixel-
+> súlyokkal** — ez utóbbi mérhetően eltér a naiv, lebegőpontos bilineáristól.
+>
+> **Ami a mi oldalunkon maradt eldöntendő:** melyik szűrési szintet kéri a
+> `Rotate` (a `0x00bc8060`-ban két eltérő festék-beállítás van). Ez egy
+> jelzőbit, nem algoritmus — és golden-összevetéssel is ellenőrizhető.
+
+#### `CropImageOperation` (`0x00bbdbd0`)
+
+Egyszerű kivágás; a Polaroid a `min(szélesség, magasság)` méretű, **középre
+igazított négyzetet** kéri (a képlet a `filterdesc.xml`-ben van).

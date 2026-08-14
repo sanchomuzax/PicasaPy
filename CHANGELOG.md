@@ -5,6 +5,50 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.48] – 2026-08-14
+
+### Javítva
+- **A Névjegyben újra a valódi verzió látszik (#642).** A program hónapokig
+  `v0.6.86`-ot mutatott, miközben a friss kiadás 0.7.4x volt — a szám két
+  helyen élt, és csak az egyiket emeltük. Ez nem szépséghiba: a
+  hibabejelentésekben a kijelzett verzió az egyetlen közös fogódzó, és a
+  rossz szám rossz nyomra visz. Mostantól egyetlen forrásból származik, és
+  teszt őrzi, hogy ne csúszhasson szét újra.
+
+## [0.7.47] – 2026-08-14
+
+### Javítva
+- **Újra látszik a Visszavonás/Újra gombpár a szerkesztő bal panelján
+  (#641).** Kisebb ablakban — laptopon a tipikus esetben — a gombsor
+  lecsúszott a képernyőről, és egyáltalán nem lehetett hozzáférni. Mostantól
+  az ablak nem mehet olyan kicsire, hogy a panel ne férjen el; ha mégis
+  szűkös a hely, a **gombsor marad látható**, és a csempék közül vész el egy
+  sor — a visszavonás fontosabb. *(A 0.7.39 óta állt fenn.)*
+
+## [0.7.46] – 2026-08-14
+
+### Javítva
+- **Nem tűnik el többé némán a szerkesztés, ha közben a Picasa is dolgozik a
+  mappán (#644).** Eddig, ha ugyanarra a képre a párhuzamosan futó eredeti
+  Picasa is írt, az a PicasaPy-ban készített effektet **nyomtalanul
+  letörölte** — a `.picasa.ini` az egyetlen helye volt. Mostantól minden
+  mentett szerkesztés bekerül egy saját, tartós naplóba is: ha egy másik
+  program felülírja, a program **szól, megmondja melyik képről van szó, és
+  egy kattintással visszaállítja**. A napló nem a fotók mappájában él, hanem
+  az adatbázis mellett — oda egy másik program nem ír bele.
+
+## [0.7.45] – 2026-08-14
+
+### Változott
+- **A felső menüsáv megszűnt webes tételei is véglegesen szürkék (#638).** Tíz
+  menüpont (Feltöltéskezelő, Kötegelt feltöltés, Picasa fórumok, Online
+  információk, Terméskiadási megjegyzések, Adatvédelmi irányelvek,
+  Szolgáltatási feltételek, Közzététel a Bloggeren, Nyomat rendelése,
+  Importálás a Google Fotókból) eddig „még nincs bekötve" jelöléssel állt —
+  pedig a szolgáltatásuk megszűnt. Mostantól a menüsáv ugyanazt mondja
+  róluk, mint a jobbklikk-menü. Ami nálunk megvalósítható maradna (például a
+  Frissítések keresése vagy a Súgó), az továbbra is „még jöhet".
+
 ## [0.7.44] – 2026-08-14
 
 ### Hozzáadva

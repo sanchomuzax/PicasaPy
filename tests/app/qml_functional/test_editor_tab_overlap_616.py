@@ -196,40 +196,23 @@ class TestAGombsorSosemKerulATartalomra:
             f"a(z) {tab}. fülön a gombsor rálóg a tartalomra"
         )
 
-    def test_a_panel_sajat_igenyen_minden_elfer(self, qml_engine):
-        """#641: a helyes szerződés — a panel SAJÁT igényén semmi nem ütközik.
+    def test_szuk_panelen_a_sor_marad_lathato(self, qml_engine):
+        """**#641-gyel MEGVÁLTOZOTT szerződés.**
 
-        Itt korábban egy másik állítás állt: hogy szűk (160 px-es) panelen
-        a gombsor „lejjebb tolódik" a tartalom alá. Ez a viselkedés
-        IDEGEN az eredetitől — a `Picasa3.exe` `editpanel/` névterének 186
-        eleme közt egyetlen görgető elem sincs, a `filter_status_container`
-        pedig a csempe-rács kényszerekkel elhelyezett TESTVÉRE, amit nem
-        tol el semmi. A csúszó ág ráadásul maga okozta a #641-et: a panel
-        a szülő túlnyúlásakor magával vitte a gombsort a képernyőn kívülre.
+        A #628 itt még azt állította, hogy szűk panelen a sor a tartalom ALÁ
+        tolódik. Élesben ez azt eredményezte, hogy a sor kicsúszott a
+        képernyőről, és a felhasználó egyáltalán nem látta a Visszavonás/Újra
+        gombokat.
 
-        A garancia helye ezért az ablak minimális magassága (Main.qml),
-        ami a panel `implicitHeight`-jéből számol. Ez az állítás azt
-        rögzíti, hogy ez a magasság TÉNYLEG elég — ha nem lenne, a
-        minimum számítása hibás.
+        Az új szabály: a sor a LÁTHATÓ terület alján marad, és szűkösnél a
+        fül TARTALMA veszít. A visszavonás a szerkesztés visszacsinálásának
+        egyetlen útja; egy levágott csempesor ennél sokkal kisebb baj."""
+        panel = _panel(qml_engine, height=160, active_tab=2)
 
-        Az ablakhoz mért, KIRAJZOLT ellenőrzés a
-        `test_editor_panel_rendered_651.py`-ban él.
-        """
-        panel = _panel(qml_engine, height=900, active_tab=2)
-        required = panel.property("implicitHeight")
-
-        panel = _panel(qml_engine, height=int(required), active_tab=2)
-
-        area = _child(panel, "editorTabArea")
         undo_row = _child(panel, "editorGlobalUndoRow")
 
-        assert undo_row.property("y") >= _also(area) - 1, (
-            "a panel saját igényén sem fér el a tartalom a gombsor fölött"
-        )
-        assert (
-            undo_row.property("y") + undo_row.property("height")
-            <= required + 1
-        ), "a gombsor kilóg a panel saját igényén"
+        assert _also(undo_row) <= 160, "a gombsor kilóg a panelből"
+        assert undo_row.property("y") >= 0
 
     def test_bo_helyen_a_panel_aljan_ul(self, qml_engine):
         """Bő helyen az eredeti látványa: a sor a panel alján."""

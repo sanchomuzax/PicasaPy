@@ -9,6 +9,15 @@ import PicasaPy.Gpu
 // Balra: előző, Esc: vissza a könyvtárba.
 Rectangle {
     id: viewer
+
+    // #641: mekkora magasság kell ahhoz, hogy a bal panel TELJESEN elférjen
+    // — a felső sáv plusz a panel saját igénye. Az ablak minimális magassága
+    // ebből számol (Main.qml); enélkül a `Layout.minimumHeight` csak KÉRÉS
+    // marad, a panel túlnyúlik a celláján, és a Visszavonás/Újra sor
+    // kicsúszik a képernyőről. Beégetett szám nincs benne: mindkét tag a
+    // saját elemétől jön.
+    readonly property real requiredHeight:
+        viewerTopBar.height + editorPanel.implicitHeight
     color: Theme.viewerBg
 
     property var photosModel: null
@@ -422,17 +431,6 @@ Rectangle {
         }
     }
 
-    // #641: a néző legkisebb HASZNÁLHATÓ magassága — a felső sáv és a bal
-    // eszközpanel igénye. Az eredeti Picasa panelje FIX méretű, és a
-    // kényszer-alapú elrendezésében a tartalom mindig kifér; átméretezhető
-    // ablakban ennek a megfelelője ez a minimum. A hívó (Main.qml) az
-    // ablak `minimumHeight`-jébe köti, így a panel SOHA nem kap kevesebb
-    // helyet, mint amennyit a legnagyobb füle kér — enélkül a panel
-    // túlnyúlik az ablakon, és a Visszavonás/Újra sor lecsúszik a
-    // képernyőről (a felhasználó ezt „eltűntek a gombok"-ként jelentette).
-    readonly property real minimumUsableHeight:
-        viewerTopBar.height + editorPanel.implicitHeight
-
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -531,20 +529,14 @@ Rectangle {
                 // FIX 280px, nem ablakarányos (ld. az ottani kommentet)
                 Layout.preferredWidth: 280
                 Layout.fillHeight: true
-                // #641: itt korábban `Layout.minimumHeight:
-                // editorPanel.implicitHeight` állt. A szándék jó volt (a
-                // panel kapja meg, amennyit kér), a hatás viszont az
-                // ELLENKEZŐJE: a layout nem zsugorítja a dobozt az alá,
-                // hanem KILÓGATJA az ablakból — a panel aljához kötött
-                // Visszavonás/Újra sorral együtt. A felhasználó így azt
-                // látta, hogy a gombok eltűntek.
-                //
-                // A garancia helye ezért egy szinttel feljebb került: az
-                // ablak `minimumHeight`-je (Main.qml) nem engedi, hogy a
-                // panel az igényénél kevesebb helyet kapjon. A doboz
-                // viszont SOSEM nyúlhat túl a rendelkezésre álló helyen —
-                // ha valami mégis kisebbre kényszerítené az ablakot, a
-                // gombsor akkor is a látható területen marad.
+                // #641: itt NINCS `Layout.minimumHeight`. A #628 azt tette ide,
+                // de az visszafelé sült el: a doboz nem zsugorodott a cellára,
+                // hanem TÚLNYÚLT rajta, és a panel aljához igazodó
+                // Visszavonás/Újra sor kicsúszott a képernyőről. A „mindig
+                // elfér" garanciát az ABLAK minimális magassága adja
+                // (`Main.qml`, a `viewer.requiredHeight`-ből) — ha az mégsem
+                // tartható, a doboz zsugorodik, és a fül TARTALMA veszít, nem
+                // a gombsor.
                 color: Theme.chromeBg
 
                 EditorPanel {
