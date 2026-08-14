@@ -541,13 +541,48 @@ dekompilált kódból van. Ami **következtetés**: a `CGravityTree` és a
 `CLocationTree` pontos szerepe (mikor kapcsol rájuk a program) — a módválasztó
 mező írója még nincs megtalálva; az alapértelmezés a `CFullSearchTree`.
 
-#### 1.9.8 Ami még nyitott
+#### 1.9.8 A Rács sor- és oszlopszáma — MEGFEJTVE (2026-08-14)
+
+A `regulargrid` nem a pakolófát használja: saját, zárt képlettel választ
+sor/oszlop-osztást (`0x00885b00`, a `CRegularGridTheme::Layout` alatt).
+
+```c
+// N = a képek száma, lapSzel/lapMag a rendelkezésre álló terület
+atlagArany = 0;
+for (kep : kepek) atlagArany += kep.szelesseg / kep.magassag;
+atlagArany /= N;                                  // ÁTLAGOS oldalarány
+
+legjobbSor = -1;  legjobbKtsg = +FLT_MAX;
+for (sor = 1; sor <= N && sor < 1000; sor++) {
+    oszlop = ceil(N / sor);                        // felfelé kerekítő egész osztás
+    if (oszlop == 0) break;
+    cellaArany = (lapSzel / oszlop) / (lapMag / sor);
+    q = cellaArany / atlagArany;
+    if (q < 1.0f) q = 1.0f / q;                    // szimmetrikus eltérés, mindig >= 1
+    ktsg = q * 1.7f + (float)(sor * oszlop - N);   // + az ÜRESEN MARADÓ CELLÁK száma
+    if (ktsg <= legjobbKtsg) { legjobbSor = sor; legjobbKtsg = ktsg; }
+}
+sorok   = legjobbSor;
+oszlopok = ceil(N / legjobbSor);
+```
+
+**Olvasat:** két dolgot mérlegel egymás ellen — mennyire tér el a cella
+oldalaránya a képek átlagos oldalarányától (`q`, `1.7`-es súllyal), és hány
+cella marad üresen (`sor·oszlop − N`, súly 1). Vagyis **egy üresen maradó cella
+körülbelül annyit „ér", mint 0,59-nyi relatív oldalarány-eltérés.**
+
+Két apróság, ami különben eltérést okoz:
+
+- Az összehasonlítás `<=`, tehát **döntetlennél a NAGYOBB sorszám nyer**.
+- A ciklus 1000 sornál megáll (a fordító háromszorosan kibontotta, de a
+  logika ez).
+
+#### 1.9.9 Ami még nyitott
 
 - A **fa építése** (`slot 0x34`): milyen szabály szerint választ vágásirányt és
   vágási arányt egy adott sorrendhez. A keresés és a költség megvan, ez a
   harmadik darab.
 - A `CGravityTree` / `CLocationTree` bekapcsolásának feltétele.
-- A **Rács** (`regulargrid`) sor/oszlop-számának képlete.
 - A Képkupac kezdeti (x, y) szórása.
 
 ## 2. Film készítése (`ID_MAKEMOVIE`, `eMenuCreateMovie`)
