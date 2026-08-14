@@ -12,6 +12,18 @@ ApplicationWindow {
     id: window
     width: 1280
     height: 800
+    // #641: az ablak nem mehet az alá, amennyit a néző bal eszközpanelje
+    // kér. Ez az egyetlen hely, ahol az „elfér" garanciát érvényesíteni
+    // kell — ha megvan, a panelen sem görgetésre, sem átfedés-kezelésre,
+    // sem csúszó gombsorra nincs szükség (az eredeti Picasa egyiket sem
+    // ismeri: a `editpanel/*` névtér 186 eleme közt egyetlen görgető elem
+    // sincs). A menüsor/eszköztár/tálca a tartalom FÖLÖTT és ALATT ül,
+    // ezért a magasságuk hozzáadódik. Ezek egyike sem az ablak
+    // magasságából számol, tehát nincs kötési kör.
+    minimumHeight: photoViewer.minimumUsableHeight
+                   + (menuBar && menuBar.visible ? menuBar.height : 0)
+                   + (header && header.visible ? header.height : 0)
+                   + (footer && footer.visible ? footer.height : 0)
     visible: true
     title: "PicasaPy"
     color: Theme.lightboxBg

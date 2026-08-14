@@ -422,12 +422,24 @@ Rectangle {
         }
     }
 
+    // #641: a néző legkisebb HASZNÁLHATÓ magassága — a felső sáv és a bal
+    // eszközpanel igénye. Az eredeti Picasa panelje FIX méretű, és a
+    // kényszer-alapú elrendezésében a tartalom mindig kifér; átméretezhető
+    // ablakban ennek a megfelelője ez a minimum. A hívó (Main.qml) az
+    // ablak `minimumHeight`-jébe köti, így a panel SOHA nem kap kevesebb
+    // helyet, mint amennyit a legnagyobb füle kér — enélkül a panel
+    // túlnyúlik az ablakon, és a Visszavonás/Újra sor lecsúszik a
+    // képernyőről (a felhasználó ezt „eltűntek a gombok"-ként jelentette).
+    readonly property real minimumUsableHeight:
+        viewerTopBar.height + editorPanel.implicitHeight
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
         // felső sáv: vissza gomb + filmszalag nyilakkal
         Rectangle {
+            id: viewerTopBar
             Layout.fillWidth: true
             height: 46
             color: Theme.chromeBg
@@ -519,11 +531,20 @@ Rectangle {
                 // FIX 280px, nem ablakarányos (ld. az ottani kommentet)
                 Layout.preferredWidth: 280
                 Layout.fillHeight: true
-                // #628: a panelnek annyi hely KELL, amennyit a legmagasabb
-                // füle kér — ez az eredeti FIX panelméretének megfelelője
-                // átméretezhető ablakban. Enélkül a rövid ablakban a
-                // Visszavonás/Újra sor a látható terület alá csúszna.
-                Layout.minimumHeight: editorPanel.implicitHeight
+                // #641: itt korábban `Layout.minimumHeight:
+                // editorPanel.implicitHeight` állt. A szándék jó volt (a
+                // panel kapja meg, amennyit kér), a hatás viszont az
+                // ELLENKEZŐJE: a layout nem zsugorítja a dobozt az alá,
+                // hanem KILÓGATJA az ablakból — a panel aljához kötött
+                // Visszavonás/Újra sorral együtt. A felhasználó így azt
+                // látta, hogy a gombok eltűntek.
+                //
+                // A garancia helye ezért egy szinttel feljebb került: az
+                // ablak `minimumHeight`-je (Main.qml) nem engedi, hogy a
+                // panel az igényénél kevesebb helyet kapjon. A doboz
+                // viszont SOSEM nyúlhat túl a rendelkezésre álló helyen —
+                // ha valami mégis kisebbre kényszerítené az ablakot, a
+                // gombsor akkor is a látható területen marad.
                 color: Theme.chromeBg
 
                 EditorPanel {
