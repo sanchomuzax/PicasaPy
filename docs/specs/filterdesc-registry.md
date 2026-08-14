@@ -5,7 +5,7 @@
 
 Ez a fájl **a Picasa saját, gépi olvasásra szánt szűrő-definíciója**: mind a
 **84 szűrő** azonosítója, UI-neve, üzemmódja, csúszkáinak *neve,
-tartománya, eltolása és alapértéke*, valamint a 33 „Glimmer" (Picnik-örökös)
+tartománya, eltolása és alapértéke*, valamint a 32 „Glimmer" (Picnik-örökös)
 effekt **teljes képfeldolgozó-csővezetéke** — görbékkel, keverési módokkal és
 csúszka→paraméter képletekkel együtt.
 
@@ -226,7 +226,7 @@ elfogadnia.
 
 ## 4. Glimmer-effektek — a teljes csővezeték
 
-A 33 „Glimmer" effekt (a Picnik-felvásárlásból örökölt réteg) `<effect>`
+A 32 „Glimmer" effekt (a Picnik-felvásárlásból örökölt réteg) `<effect>`
 blokkja **deklaratív képfeldolgozó-gráf**: vezérlők (csúszka, színválasztó,
 jelölőnégyzet) + `imageOperations:` műveletek, adatkötés-kifejezésekkel
 (`{_sldrImpact.value * 20 / 50}`). Ez gyakorlatilag **az effektek
@@ -573,43 +573,58 @@ felhasználó **ecsettel jelöli ki**, hol hasson az effekt.
 > shader-bájtkód vagy `d3dx`/`glsl` nyom (keresve: 0 találat). Az osztály
 > létezik, a használatára nincs bizonyíték.
 
-### 4.7 A motor TÖBBET tud, mint amit a 32 szűrő használ (2026-08-13)
+### 4.7 A 37 token cáfoló auditja és a két rejtett keverési mód (2026-08-14)
 
-A `filterdesc.xml` attribútum-nevei mellett a bináris **Glimmer-attribútum-elemzője**
-további neveket ismer, amelyek **egyetlen kiadott szűrőben sem fordulnak elő**.
-Az elemző címtartományában (`0x00bb0000`–`0x00bd0000`) 140 attribútum-jelölt
-szerepel; ebből **103 megvan a `filterdesc.xml`-ben, 37 nincs**.
+> **Helyesbítés:** a korábbi „37 nem használt attribútum” nem valódi
+> attribútumleltár volt. Egy széles címtartomány azonosítószerű szövegeit
+> hasonlította a nyers XML-hez kis-/nagybetűérzékenyen. Így XMP-mezők,
+> vezérlőtípusok, enumértékek és belső factory-nevek is bekerültek.
 
-**A figyelemre méltó hiányzók:**
+A natív attribútumkereső (`0x008eb160`) ASCII-kis-/nagybetűfüggetlen. Ezért a
+`brightness/Brightness`, `grayscale/grayScale` és `multiplier/Multiplier`
+párok ugyanazok az **élő, kiadott mezők**, nem három rejtett képesség.
+Biztos hamis pozitív például a `Rating`, `RegionInfo`, `Regions`, `normalized`
+(XMP), a `Number`, `NumberPlus`, `ResizingCheckbox` (vezérlőtípus), valamint a
+`False`, `MEDIUM`, `horizontal` (érték). A `Script` elemtípus, a
+`TiledImageTileMask` belső factory/cache-típus.
 
-| név | mire utal | hol áll a binárisban |
-|---|---|---|
-| **`Hardlight`, `Softlight`** | **két további keverési mód** — a kiadott szűrők csak ADD/OVERLAY/SCREEN/LIGHTEN-t használnak | egy függvényben együtt, `green` mellett (keverési mód-tábla) |
-| **`_clsVibrance`** | **Vibrance (élénkség) művelet** — a felirat-táblában is van hozzá név (`ImageFilters::Vibrance` = „Vibrálás"), de **egyetlen szűrő sem használja** | `HexCells` mellett |
-| **`HexCells`** | **hatszöges cellamozaik** művelet | ugyanott |
-| **`ColorMaps`** | színleképezés-tábla | `BlendModeMath.` mellett |
-| **`TiledImageTileMask`** | a `TiledImageMask` csempézett változata | — |
-| **`ExposureAdjustmentStops`**, `exposure`, `brightness`, `blacks`, `sharpness`, `grayscale`, `multiplier` | képállítási paraméterek — az **expozíció rekeszértékben** (stop) különösen | a `MasterCurve`/`RedCurve`/… mellett |
-| `flipH`, `flipV`, `radAngle`, `direction`, `horizontal`, `normalized` | geometriai paraméterek | — |
-| `scaleWidth`, `scaleHeight`, `aspectRatio`, `paddingLeft/Right/Top/Bottom` | elrendezés | — |
-| **`Script`**, **`bytecode`**, `params` | a csővezeték **köztes, lefordított alakja** | `imageOperations:` mellett |
+Valódi, működő, de kiadott receptben nem használt mezők többek között:
+`ColorMaps`, `ExposureAdjustmentStops`, `alphaMax`, `aspectRatio`, `blacks`,
+`bytecode`, `direction`, `exposure`, `flipH`, `flipV`, `padding*`, `params`,
+`radAngle`, `scaleWidth`, `scaleHeight`, `sharpness`. Ezek parserében nincs
+felhasználói min/max tartomány; recept vagy valós adat nélkül nem indokolnak
+új felületet. `_clsVibrance` és `HexCells` működő shader-selector, de egyik
+kiadott effekt sem hivatkozza őket.
 
-**Mit jelent ez:**
+#### `PaletteMapImageOperation`: Picasa-pontos keverések
 
-1. A Glimmer **általános képfeldolgozó motor** volt, nem a 32 effekthez szabott
-   kód. A kiadott szűrők a képességeinek egy **részhalmazát** használják.
-2. A **`bytecode` + `params`** arra utal, hogy a deklaratív `<effect>` leírás
-   **lefordítódott** egy belső alakra, és a végrehajtó azt futtatta — ez
-   magyarázza a `dynamicParamsCachePriority` / `dynamicAlphaCachePriority`
-   attribútumokat (a lefordított alak gyorstárazását).
-3. **Nekünk ez lehetőség, nem kötelezettség:** ha egyszer saját effekteket
-   akarunk (a Picasa-készleten túl), a **Vibrance**, a **Hardlight/Softlight**
-   keverés és az **expozíció stopban** olyan építőkövek, amiket az eredeti
-   motor is tudott — tehát a formátum kiterjesztése nem idegen tőle.
+A `0x00bb7e40` fogyasztó öt végrehajtót választ. Jelölje `x` a 0–255
+LUT-bemenetet, `c` a térképszín csatornáját, `a` az alfát:
 
-**Bizonyítottsági szint:** ezek **az elemző által ismert nevek**. Hogy mindegyikhez
-tartozik-e működő végrehajtó, **nem bizonyított** — ehhez célzott dekompilálás
-kellene (#576 köre).
+```text
+Softlight: q=c&0xfe
+  x<128  -> x*(q+128)/255
+  x>=128 -> (65025-(382-q)*(255-x))/255
+
+Hardlight:
+  x<=127 -> 2*x*c/255
+  x>127  -> 2*(32512-(255-x)*(255-c))/255
+  x=c=255 -> pontosan 255
+
+Multiply = x*c/255
+Screen   = (65025-(255-x)*(255-c))/255
+Normal   = ((255-a)*c+a*x)/255
+```
+
+Az eredményt 0–255 közé vágja, majd `+0,5` után egészre alakítja. A két első
+képlet **nem** a szokásos Photoshop/CSS-változat. A főprogram öt címe rendre
+`0x00bb82b0`, `0x00bb8330`, `0x00bb83b0`, `0x00bb83d0`, `0x00bb8400`;
+a külön PhotoViewer utasításszinten azonos megvalósítása független kontroll.
+
+**Fejlesztési következmény:** a közös Glimmer-primitívekhez a két Picasa-pontos
+mód kell, teljes LUT-határteszttel. Általános filterdesc-parserben az
+attribútumnév ASCII-case-insensitive legyen. Kiadatlan motorparaméterhez ne
+készüljön UI kiadott recept vagy valós adat nélkül.
 
 ## 5. Következmények a PicasaPy-ra
 
