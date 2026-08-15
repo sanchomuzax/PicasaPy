@@ -15,6 +15,57 @@ def qt_app():
     yield app
 
 
+@pytest.fixture(autouse=True)
+def qml_warnings():
+    """#718: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler), és a
+    teszt VÉGÉN hibát dob, ha QML-SZKRIPTHIBA jelent meg (pl. „Cannot read
+    property … of null"). Eredetileg csak a `tests/app/qml_functional/`
+    alatt futott (#305/#309) — a #718 kiterjeszti a `tests/app/` alatt
+    KÖZVETLENÜL élő `test_qml_*.py` fájlokra is, mert ott is QML-t töltő
+    tesztek vannak, és őr nélkül a hibák némán a stderr-re mentek.
+
+    A szűrésről (mire hasal el és mire nem, és miért) ld. a
+    `support/qml_warning_filter.py` modul-docstringjét (#309).
+
+    A `tests/app/qml_functional/conftest.py` UGYANEZEN A NÉVEN definiál
+    saját `qml_warnings` fixture-t — pytest a közelebbi (alkönyvtárbeli)
+    definíciót használja, ez a szülőbeli teljesen ÁRNYÉKOLVA van ott, tehát
+    az őr nem fut le kétszer egyazon teszten.
+
+    `autouse=True`, ezért minden e könyvtárbeli teszthez automatikusan
+    társul, `qml_app`-ot használóhoz és nem-használóhoz egyaránt — nem kell
+    minden tesztfüggvény szignatúráját módosítani.
+
+    A fixture-sorrend a lényeg: mivel ez a fixture ELSŐKÉNT áll fel (a
+    pytest a szignatúrában/autouse-ban elsőként szereplőt előbb állítja
+    fel), a lebontása UTOLSÓKÉNT történik (LIFO) — vagyis a handler még
+    aktív, amikor a `qml_app` fixture a tesztek végén elvégzi az
+    `engine.deleteLater()` + `processEvents()` hívást, ami a null-őrök
+    nélkül a fenti figyelmeztetéseket generálná."""
+    from PySide6.QtCore import QtMsgType, qInstallMessageHandler
+
+    from support.qml_warning_filter import is_qml_script_error
+
+    messages: list[str] = []
+
+    def _handler(msg_type, context, message):
+        if msg_type in (
+            QtMsgType.QtWarningMsg,
+            QtMsgType.QtCriticalMsg,
+            QtMsgType.QtFatalMsg,
+        ) and is_qml_script_error(message):
+            messages.append(message)
+
+    previous = qInstallMessageHandler(_handler)
+    yield messages
+    qInstallMessageHandler(previous)
+    assert not messages, (
+        "QML-szkripthiba jelent meg a teszt során (#718/#305) — "
+        "valószínűleg hiányzó null-őr egy `controller`-kötésben:\n"
+        + "\n".join(messages)
+    )
+
+
 @pytest.fixture
 def qml_app(qt_app, tmp_path):
     """Teljes app betöltve offscreen: (window, controller, lib, engine) —

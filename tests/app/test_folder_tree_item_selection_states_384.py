@@ -16,9 +16,17 @@ _SELECTION_HOVER = "#83a7bd"  # constants.ui alist_hicolor_win (Theme.selectionB
 
 
 class _StubManager(QObject):
-    """A FolderManagerDialog felszínének minimális tükre — csak a
-    kijelöléshez (`selectedPath`) és az állapot-glifhez (`stateGlyph`)
-    szükséges rész."""
+    """A FolderManagerDialog felszínének minimális tükre — a kijelöléshez
+    (`selectedPath`) és az állapot-jelvényhez szükséges rész.
+
+    #718: a `stateGlyph` egy RÉGI felszín; a `FolderTreeItem.qml` ma
+    `stateFor()`-t és `facesExcludedFor()`-t hív (`FolderStateBadge`). Ezek
+    hiánya miatt a QML minden sor kirajzolásakor „Property … is not a
+    function" TypeError-t dobott — a teszt mégis zöld volt, mert a
+    QML-szkripthiba-őr eddig nem futott a `tests/app/` alatt. A csonka
+    stub tehát nem a valódi felszínt mérte. Az alapértékek a
+    `FolderManagerDialog.qml` üres állapotát tükrözik: nincs figyelt
+    mappa és nincs arc-kizárás."""
 
     selectedPathChanged = Signal()
 
@@ -39,6 +47,16 @@ class _StubManager(QObject):
     @Slot(str, result=str)
     def stateGlyph(self, _path):
         return ""
+
+    @Slot(str, result=str)
+    def stateFor(self, _path):
+        """Nincs figyelt mappa — a valódi dialógus ilyenkor „none"-t ad."""
+        return "none"
+
+    @Slot(str, result=bool)
+    def facesExcludedFor(self, _path):
+        """Nincs arc-kizárás a próbában."""
+        return False
 
 
 @pytest.fixture
