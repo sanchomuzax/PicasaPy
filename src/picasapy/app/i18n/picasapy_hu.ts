@@ -5772,6 +5772,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Soft Focus</source>
         <translation>Lágy fókusz</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorEffectsTab3.qml"/>
+        <source>Vignette</source>
+        <translation>Vignetta</translation>
+    </message>
 </context>
 <context>
     <name>EditorLegacyTab</name>
