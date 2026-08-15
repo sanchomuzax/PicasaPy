@@ -1066,9 +1066,15 @@ a mért eltérés átlaga `+1,6`, szórása `11,0` — a szórást a foltszél
 lágyítása és a JPEG-zaj magyarázza; a folt belsejében a közelítés szoros.
 
 *Bizonyítottsági fok: erős* (három kép, 575 képpont; a szélek keveredése és
-a JPEG-veszteség miatt a pontos vágás/keverés még nem különíthető el).
-**Nyitva:** a folt alakja és a szélek lágyítása, illetve hogy a művelet
-`min(R, max(G,B))` vagy súlyozott keverés-e.
+a JPEG-veszteség miatt a pontos vágás/keverés nem különíthető el).
+
+> **Nem érdemes tovább mérni.** A folt szélének pontos alakja (kemény vágás
+> vagy lágy keverés) **nem befolyásol semmit**: a `redeye=1;` bejegyzést
+> azonosságként rendereljük (ld. fentebb), tehát ezt a műveletet a
+> renderelés során **el sem végezzük**. Csak akkor válna érdekessé, ha saját
+> vörösszem-eszközt írnánk — ahhoz viszont a fenti `R' ≈ max(G, B)` leírás
+> elegendő kiindulás. Veszteségmentes (PNG) mintát kérni ezért fölösleges
+> munka lenne a tulajdonosnak.
 
 ### Mit jelent ez a PicasaPy-nak
 
