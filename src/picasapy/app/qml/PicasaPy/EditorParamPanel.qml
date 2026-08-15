@@ -82,6 +82,12 @@ Flickable {
         case "First Color": return qsTr("First Color")
         case "Second Color": return qsTr("Second Color")
         case "Rounded Corners": return qsTr("Rounded Corners")
+        case "Edge Hardness": return qsTr("Edge Hardness")
+        // #717: az `ansel`/`tint`/`dir_tint`/`radtint` (és a `finetune*`/
+        // `colorfix`) közös natív színkerekének felirata MINDIG „Pick
+        // Color" — mérve, nem kitalálva (ld. `effect_params.py`
+        // modul-docsztringje)
+        case "Pick Color": return qsTr("Pick Color")
         default: return key
         }
     }
