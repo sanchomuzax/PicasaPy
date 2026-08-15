@@ -32,7 +32,11 @@ Column {
     // token (hot file, ld. jelentés: Theme.panelSelectionActive) — amíg
     // az integrátor fel nem veszi, itt helyi állandóként él; a csere csak
     // ezt a sort érinti.
-    readonly property bool isSelected: root.manager
+    // #718: a `&&` a BAL OLDAL értékét adja vissza, ha az hamis — nem
+    // logikai hamisat. Ha a `manager` még nincs beállítva, ez `undefined`,
+    // amit egy `bool` tulajdonság nem tud felvenni („Unable to assign
+    // [undefined] to bool"). A `!!` logikai értékre kényszeríti.
+    readonly property bool isSelected: !!root.manager
                                         && root.manager.selectedPath === root.path
 
     Rectangle {
