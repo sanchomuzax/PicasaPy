@@ -86,20 +86,33 @@ class TestApplySaturation:
         result = apply_saturation(image, -1.0)
         assert result[0, 0, 0] == result[0, 0, 1] == result[0, 0, 2]
 
-    def test_dokumentalt_gain_pont(self) -> None:
-        # mért gain-tábla: s=+0,5 → 1,729× króma-erősítés
+    def test_pozitiv_ag_a_nativ_kepletbol(self) -> None:
+        """#693: a pozitív ág NEM luma-keverés, hanem csatornánkénti gamma.
+
+        A várt értékek a `filters-decoded.md` natív képletéből, KÉZZEL
+        számolva (nem a saját kódunkból — az körkörös volna):
+
+            s = 0,5·3 = 1,5;  Y = (2·200 + 5·100 + 1·100) >> 3 = 125
+            k = 65535 // 125 = 524
+            C' = (round((idx·8/2048)^(1+e·s)·256) · Y) >> 8
+            majd maxnormálás, mert a piros 255 fölé megy
+
+        A korábbi modell (`luma + 1,729·(be − luma)`) 233-at adott a pirosra;
+        a mérőszet szerint az 13,3 szintnyit tévedett. Ez a teszt azt őrzi,
+        hogy a natív ág maradjon.
+        """
         image = _uniform_image((200, 100, 100))
         result = apply_saturation(image, 0.5)
-        luma = 0.299 * 200 + 0.587 * 100 + 0.114 * 100
-        expected_r = luma + 1.729 * (200 - luma)
-        assert abs(int(result[0, 0, 0]) - expected_r) <= 1
+        assert tuple(int(v) for v in result[0, 0]) == (246, 78, 73)
 
     def test_csokkentes_dokumentalt_gain(self) -> None:
-        # mért: s=−0,333 → 0,683× gain
+        # #693: a negatív ág erősítése PONTOSAN `1 + amount` — a natív
+        # callback ezt adja át (`FUN_0090e200(dst, amount + 1.0f)`), és a
+        # mérés is ezt igazolja. Korábban 0,683 állt itt (interpolált tábla).
         image = _uniform_image((200, 100, 100))
         result = apply_saturation(image, -0.333)
         luma = 0.299 * 200 + 0.587 * 100 + 0.114 * 100
-        expected_r = luma + 0.683 * (200 - luma)
+        expected_r = luma + (1.0 - 0.333) * (200 - luma)
         assert abs(int(result[0, 0, 0]) - expected_r) <= 1
 
     def test_clip_255(self) -> None:
