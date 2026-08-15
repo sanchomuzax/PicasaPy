@@ -573,7 +573,8 @@ Fontos tulajdonságok:
   0%-tól 16%-ig szóródnak). A #539 óta az implementáció
   (`picasapy.render.ops` `apply_channel_levels_stretch`) a natív
   `0x009db610` geometriáját futtatja:
-  - a hisztogram a kép **középső 90% × 90%**-áról készül (a perem kimarad),
+  - a hisztogram a kép **90% × 90%-os, vízszintesen BALRA IGAZÍTOTT**
+    ablakáról készül (#721 pontosította — ld. lent az `enhance` szakaszt),
   - a vágási küszöb a **teljes kép képpontszámának 1/200-a**, mindkét
     végén **azonosan** (az aszimmetrikus változatok a mérésen rosszabbak),
   - a nyújtás bemeneti tartománya nem mehet **58 szint alá**
@@ -948,8 +949,8 @@ automatikára érvényes. A natív szűrő-regiszter
 | ini-név | belépő | vágás | elemzett terület |
 |---|---|---|---|
 | `autolight` (Auto Contrast gomb) | `0x008f80c0` → `0x00a4bfd0` | a csatornánkénti pontok **UNIÓJA**, egyetlen közös `lo`/`hi` | a **teljes** kép |
-| `autocontrast` | `0x008f89d0` → `0x009db610` | **csatornánként külön** | a középső 90 % × 90 % |
-| `enhance` („Jó napom van") | `0x008f8840` → `0x009db610` | **csatornánként külön** | a középső 90 % × 90 % |
+| `autocontrast` | `0x008f89d0` → `0x009db610` | **csatornánként külön** | 90 % × 90 %, balra igazítva (#721) |
+| `enhance` („Jó napom van") | `0x008f8840` → `0x009db610` | **csatornánként külön** | 90 % × 90 %, balra igazítva (#721) |
 
 A `0x009db610` a küszöböt `(W·H)/200` egész osztással számolja (ugyanaz a
 0,5 %), és a leképezést **fixpontosan** végzi:
@@ -1675,14 +1676,60 @@ szórással). **Feltételes** a konkrét számok általánosíthatósága: a vá
 pontok hisztogram-függők, tehát képenként mások — a mérés azt bizonyítja,
 hogy **azonos bemeneten eltérünk**, nem azt, hogy a vágás mindig 6,5.
 
-### A javítás iránya
+### MEGOLDVA: nem a küszöb más, hanem az elemzőABLAK helye (#721)
 
-A [`filters-decoded.md`](filters-decoded.md) korábbi köre visszafejtette a
-natív szinthúzás **küszöbképletét** (`küszöb = round(N/lépés² · 0,005)`).
-Az `autolight` nálunk ezt helyesen alkalmazza. Az `enhance`-nél valami más
-küszöb vagy más hisztogram-forrás fut — a különbség mértéke (12 szint az
-árnyékban) arra utal, hogy **nagyobb százalékot vágunk le** a sötét oldalon.
+Az eredeti gyanú — hogy nagyobb százalékot vágunk a sötét oldalon —
+**téves volt**: a küszöb (`(W·H)/200`) jó. Ami eltért: **hol van a
+hisztogram-elemzés ablaka.**
 
-**Mérési recept a javítás ellenőrzéséhez:** ugyanez a rámpa-illesztés; a cél,
-hogy a fekete- és fehér-vágás a Picasáétól **1 szinten belül** legyen, ahogy
-az `autolight`-nál már sikerült.
+**1. Amit maga a rámpa-mérés kimond.** Az `autolight` ugyanezen a képen
+4,5-től 251,5-ig lát — ez a rámpa két vége, mert az `autolight` a TELJES
+képet elemzi. A Picasa `enhance`-e viszont 6,5-nél vág feketét: a rámpa
+hosszának **~1 %-ánál**. Egy vízszintesen KÖZÉPRE igazított, 90 %-os ablak
+a rámpa 5 %-ánál kezdődik, tehát a fekete-vágása geometriailag nem lehet
+12,75 alatt — a miénk pontosan ott, **18,4**-nél volt. **Az ablak
+vízszintesen tehát nem középre igazított.** A fehér végén ugyanez fordítva
+látszik: a Picasa 235,4-nél vág, mi 240,4-nél — a Picasa ablaka a világos
+oldalon rövidebb.
+
+**2. Amit a dekompilátum mond.** A `0x009db610` hisztogram-ciklusa
+függőlegesen tényleg beljebb kezd, a VÍZSZINTES eltolás viszont hiányzik
+belőle — a vízszintes peremet csak a képpontok DARABSZÁMÁHOZ használja:
+
+```c
+uVar12 = (W * 5) / 100;   uVar10 = (W * 95) / 100;   // csak a DARABHOZ
+pbVar11 = base + stride * ((H * 5) / 100) * 4;       // sor-eltolás: megvan
+do {
+  iVar8  = uVar10 - uVar12;   // 0,9·W képpont…
+  pbVar2 = pbVar11;           // …de a sor ELEJÉRŐL, nem a peremtől
+```
+
+Az ablak tehát `[0 .. 0,9·W)` × `[0,05·H .. 0,95·H)`: a bal perem **benne
+van**, a jobb 10 % marad ki. Ez a Picasa saját, elejtett eltolása.
+
+**3. Amit a 12 valódi képpár mond.** A `referencia/imfeellucky/` készleten
+négy ablak-változatot végigmérve, átlagos abszolút csatorna-eltérés a
+valódi Picasa-kimenettől:
+
+| elemzőablak | átlagos eltérés | legrosszabb kép |
+|---|---:|---:|
+| **balra igazított 90 % × 90 %** (ez lett a megvalósítás) | **2,48** | 13,03 |
+| középre igazított 90 % × 90 % (a korábbi) | 2,61 | 13,34 |
+| teljes kép | 2,68 | 12,53 |
+| bal felső 90 % × 90 % | 2,74 | 13,35 |
+| *az érintetlen kép* | *10,35* | *38,10* |
+
+A három bizonyíték **egy irányba mutat**, és egyik sem illesztés: a
+dekompilátum betű szerinti olvasata egyben a mérésen is a legjobb.
+
+*Bizonyítottsági fok: megerősített* az ablak vízszintes horgonya (a
+rámpa-mérés geometriai érve + a 12 képpár + a dekompilált
+mutató-aritmetika). **Nyitva marad** az ablak pontos SZÉLESSÉGE: a
+`0,9·W` a dekompilátumból jön, a rámpa fehér vége (235,4) viszont egy
+hajszálnyival szélesebb ablakhoz (~0,94·W) illene jobban. Ehhez maga a
+#685 mérőrámpa kellene — valódi fotókon a különbség a mérési zaj alatt van.
+
+Megvalósítás: `picasapy.render.ops._analysis_region`; regressziós őr:
+`tests/render/test_ops.py::TestEnhanceVagasiPontok721`. Ugyanez hat az
+`autocontrast`-ra és a Glimmer-effektek belső `AutoFix` lépésére is (közös
+mag: `apply_channel_levels_stretch`).

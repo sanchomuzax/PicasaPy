@@ -303,12 +303,13 @@ class TestApplyEnhance:
         # KÜLÖN lo/hi (fehéregyensúly-hatás). Építsünk képet, ahol a három
         # csatorna eltérő tartományt használ ki, és ellenőrizzük a
         # linearitást + hogy a csatornák tényleg különböző LUT-ot kapnak.
-        # #539: az elemzés a kép középső 90%-áról készül, ezért a színátmenetet
-        # a KÖZÉPSŐ sávra építjük, a peremet pedig a szélső értékkel töltjük —
-        # így a vizsgált terület pontosan a teljes átmenetet fogja át.
-        height, width, margin = 50, 60, 3
-        span = width - 2 * margin
-        pad = ((margin, margin),)
+        # #539/#721: az elemzés a kép 90% × 90%-os, vízszintesen BALRA
+        # igazított ablakáról készül, ezért a színátmenetet a BAL oldali
+        # sávra építjük, a maradékot pedig a szélső értékkel töltjük — így
+        # a vizsgált terület pontosan a teljes átmenetet fogja át.
+        height, width = 50, 60
+        span = width * 95 // 100 - width * 5 // 100  # az ablak szélessége
+        pad = ((0, width - span),)
         red = np.pad(np.linspace(40, 200, span, dtype=np.uint8), pad, mode="edge")
         green = np.pad(np.linspace(0, 255, span, dtype=np.uint8), pad, mode="edge")
         blue = np.pad(np.linspace(80, 180, span, dtype=np.uint8), pad, mode="edge")
@@ -330,9 +331,9 @@ class TestApplyEnhance:
         # linearitás: a piros csatorna középső mintapontjára illik a
         # (be − lo)·255/(hi − lo) képlet a mért lo/hi-vel
         lo, hi = int(red.min()), int(red.max())
-        mid_input = int(red[width // 2])
+        mid_input = int(red[span // 2])
         expected = round((mid_input - lo) * 255.0 / (hi - lo))
-        assert abs(int(result[0, width // 2, 0]) - expected) <= 1
+        assert abs(int(result[0, span // 2, 0]) - expected) <= 1
 
     def test_nem_mutalja_a_bemenetet(self) -> None:
         image = _gradient_image()
@@ -477,22 +478,38 @@ class TestNativSzinthuzoAtvitel:
 
 
 class TestNativLevelsGeometria:
-    """#539: a `0x009db610` natív geometriája — a hisztogram a kép középső
-    90% × 90%-áról készül, a vágási küszöb pedig a TELJES kép
-    képpontszámának 1/200-a, mindkét végén azonosan.
+    """#539/#721: a `0x009db610` natív geometriája — a hisztogram a kép
+    90% × 90%-os, vízszintesen BALRA IGAZÍTOTT ablakáról készül, a vágási
+    küszöb pedig a TELJES kép képpontszámának 1/200-a, mindkét végén
+    azonosan.
 
     Mindkettőt a `referencia/imfeellucky/` 12 képpárján mértük ki: a
     csatornánként kiolvasott fehérpontok átlagos eltérése 3,85, a
-    feketepontoké 2,05, és minden aszimmetrikus vágás rosszabbnak bizonyult.
+    feketepontoké 2,05, és minden aszimmetrikus VÁGÁS rosszabbnak bizonyult.
+    Az ablak vízszintes horgonyát a #721 döntötte el (ld. `_analysis_region`):
+    a négy változat közül a balra igazított a legpontosabb (2,48 a középre
+    igazított 2,61-ével szemben).
     """
 
     def test_a_perem_kimarad_az_elemzesbol(self) -> None:
-        """A kép szélén ülő szélsőérték nem mozdítja el a vágópontot."""
+        """A kihagyott peremen ülő szélsőérték nem mozdítja el a vágópontot.
+
+        Az ablak függőlegesen mindkét oldalon 5%-ot hagy ki, vízszintesen
+        viszont a JOBB 10%-ot (a bal perem benne van).
+        """
         image = np.full((200, 200, 3), 120, dtype=np.uint8)
-        image[0:6, :] = 0  # a felső 3% — pont a kihagyott peremben
-        image[:, 0:6] = 0
+        image[0:6, :] = 0  # a felső perem (az ablak a 10. sortól indul)
+        image[194:, :] = 0  # az alsó perem (az ablak a 190. sorig tart)
+        image[:, 185:] = 0  # a kimaradó jobb sáv (az ablak a 180. oszlopig)
         tiszta = np.full((200, 200, 3), 120, dtype=np.uint8)
         assert _channel_black_white_points(image) == _channel_black_white_points(tiszta)
+
+    def test_a_bal_perem_BENNE_van_az_ablakban(self) -> None:
+        """#721: a natív ablak vízszintesen balra igazított, ezért a bal
+        szélen ülő sötét sáv IGENIS elmozdítja a feketepontot."""
+        image = np.full((200, 200, 3), 120, dtype=np.uint8)
+        image[:, 0:6] = 0  # 6 oszlop × 180 ablaksor = 1080 kp > a 200-as küszöb
+        assert _channel_black_white_points(image)[0][0] == 0
 
     def test_a_kuszob_darabszam_es_nem_percentilis(self) -> None:
         """A vágás a teljes képpontszám 1/200-a: az ez alatti tüske eltűnik,
@@ -508,6 +525,87 @@ class TestNativLevelsGeometria:
         sok[100:120, 100:130] = 20  # 600 képpont > 200 → nem vágódik le
         assert _channel_black_white_points(keves)[0][0] > 20
         assert _channel_black_white_points(sok)[0][0] == 20
+
+
+def _szurke_rampa(width: int = 1000, height: int = 200) -> np.ndarray:
+    """Determinisztikus, VÍZSZINTES szürke rámpa: balról 0, jobbról 255.
+
+    Ez a #685 mérőszettjének mérőképe szintetikus alakban: az egyetlen
+    képfajta, amelyen a hisztogram-elemzés ABLAKÁNAK a helye közvetlenül
+    leolvasható a kimenetből, mert a szint és a vízszintes hely egy az
+    egyben megfelel egymásnak.
+    """
+    ramp = (np.arange(width) * 255 // (width - 1)).astype(np.uint8)
+    return np.repeat(np.tile(ramp, (height, 1))[..., np.newaxis], 3, axis=2)
+
+
+def _mert_vagasi_pontok(image: np.ndarray, result: np.ndarray) -> tuple[int, int]:
+    """A ténylegesen ALKALMAZOTT fekete-/fehér-vágás, a kimenetből visszaolvasva.
+
+    A fekete-vágás a legnagyobb bemeneti szint, amit a szűrő még 0-ra vitt;
+    a fehér-vágás a legkisebb, amit már 255-re. Így nem a belső segédeket
+    tapogatjuk, hanem ugyanazt mérjük, amit a jegy (#721) a valódi
+    Picasa-exportból mért.
+    """
+    levels = image[..., 0].reshape(-1)
+    output = result[..., 0].reshape(-1)
+    fekete = int(levels[output == 0].max()) if bool((output == 0).any()) else -1
+    feher = int(levels[output == 255].min()) if bool((output == 255).any()) else 256
+    return fekete, feher
+
+
+class TestEnhanceVagasiPontok721:
+    """#721: az `enhance` VÁGÁSI PONTJAI a valódi Picasáéhoz mérve.
+
+    A #685 mérőszettjének szürke rámpáján, azonos bemeneten, valódi
+    Picasa-exporthoz illesztve (`filters-decoded.md`, „`enhance`" szakasz):
+
+    | szűrő | forrás | fekete-vágás | fehér-vágás |
+    |---|---|---:|---:|
+    | `autolight` | Picasa | 4,5 | 251,5 |
+    | `enhance` | **Picasa** | **6,5** | **235,4** |
+    | `enhance` | **mi (a javítás előtt)** | **18,4** | **240,4** |
+
+    Az `autolight` sora mondja meg, hol van a rámpa két vége: a Picasa
+    onnan a teljes képet elemzi, tehát a rámpa nagyjából **4,5-től
+    251,5-ig** tart. A Picasa `enhance`-ének fekete-vágása (6,5) így a
+    rámpa hosszának **~1 %-ánál** van.
+
+    Ebből következik a teszt állítása, és ez FÜGGETLEN attól, hogy a
+    rámpa pontosan milyen: egy vízszintesen KÖZÉPRE igazított, 90 %-os
+    elemzőablak a rámpa 5 %-ánál kezdődik, tehát a fekete-vágása
+    geometriailag **nem lehet a rámpa 5 %-a alatt** — a Picasáé viszont
+    1 %-nál van. Az ablak vízszintesen tehát nem középre igazított; a
+    fehér végén ugyanez fordítva látszik (a Picasa 235,4-nél vág, mi
+    240,4-nél — vagyis a Picasa ablaka a világos oldalon RÖVIDEBB).
+    """
+
+    def test_a_fekete_vagas_nem_vagja_le_az_arnyekokat(self) -> None:
+        """A fekete-vágás a rámpa SÖTÉT VÉGÉN van, nem 5 %-kal beljebb.
+
+        A javítás előtt ez 14 volt (a rámpa 5,5 %-a) — pontosan az a
+        ~12 szintnyi fölösleges árnyékvágás, amit a jegy mért.
+        """
+        rampa = _szurke_rampa()
+        fekete, _ = _mert_vagasi_pontok(rampa, apply_enhance(rampa))
+        assert fekete <= 5, f"a fekete-vágás {fekete} — a rámpa 2 %-a fölött"
+
+    def test_a_feher_vagas_nem_enyhebb_a_picasaenal(self) -> None:
+        """A fehér végén a Picasa AGRESSZÍVABB nálunk (235,4 vs 240,4).
+
+        Az elemzőablak a világos oldalon rövidebb, mint a miénk volt.
+        """
+        rampa = _szurke_rampa()
+        _, feher = _mert_vagasi_pontok(rampa, apply_enhance(rampa))
+        assert feher <= 236, f"a fehér-vágás {feher} — a Picasa 235,4-e fölött"
+
+    def test_az_autolight_a_teljes_rampat_latja(self) -> None:
+        """Regresszió-őr: az `autolight` MÉRT állapota pontos (4,5 / 251,5),
+        vagyis a TELJES képet elemzi — ehhez a jegy nem nyúlhat hozzá."""
+        rampa = _szurke_rampa()
+        fekete, feher = _mert_vagasi_pontok(rampa, apply_autolight(rampa))
+        assert fekete <= 2, f"az autolight fekete-vágása elmozdult ({fekete})"
+        assert feher >= 253, f"az autolight fehér-vágása elmozdult ({feher})"
 
 
 class TestCountRedeyeSpots:
