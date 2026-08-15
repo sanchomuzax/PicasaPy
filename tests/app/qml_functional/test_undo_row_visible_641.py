@@ -133,9 +133,19 @@ class TestANezoKozliAzIgenyet:
 
         assert panel.property("implicitHeight") > 0
 
-    def test_bo_helyen_a_panel_aljan_ul(self, engine) -> None:
+    def test_bo_helyen_a_tartalom_alatt_ul(self, engine) -> None:
+        """#616: bő helyen a sor a TARTALOM alatt ül, nem a panel alján.
+
+        A korábbi állítás (a sor alja a panel látható aljához közel) nagy
+        képernyőn a hibát rögzítette: a gombsor több száz képponttal a fül
+        tartalma alá került. Az eredeti fix méretű panelén a sor mindig
+        közvetlenül a tartalom alatt van — ez az irányadó. A „sosem lóg ki
+        a látható területből" garancia változatlanul él, azt a szűk ablakos
+        testvér-tesztek őrzik."""
         gyoker = _nezo(engine, 900)
         panel = gyoker.findChild(QObject, "editorPanel")
 
-        # a sor alja a panel látható aljához közel (a 10 px-es margón belül)
-        assert panel.property("undoRowBottom") >= panel.property("visibleHeight") - 12
+        # a látható területen belül marad
+        assert panel.property("undoRowBottom") <= panel.property("visibleHeight")
+        # és NEM a panel aljára van szegezve: bő helyen jóval fölötte ül
+        assert panel.property("undoRowBottom") < panel.property("visibleHeight") - 100

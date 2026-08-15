@@ -992,7 +992,31 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.margins: 10
-        y: Math.max(0, panel.visibleHeight - height - 10)
+        // #616: a sor a FÜL TARTALMA ALATT ül, nem a panel aljára szegezve.
+        //
+        // A #628/#641/#703 kör azt érte el, hogy a sor mindig a LÁTHATÓ
+        // terület alján legyen — ez megakadályozta, hogy kicsússzon a
+        // képernyőről, de egy nagy képernyőn (1920×1080, maximalizált ablak)
+        // a panel 832 képpont magas, a „Gyakori javítások" fül tartalma
+        // viszont csak ~300: a gombsor így **több száz képponttal a tartalom
+        // alatt**, egy nagy üres szürke mező túloldalán jelent meg. A
+        // felhasználó ezt joggal olvasta úgy, hogy „nincsenek is ott a
+        // gombok" — a képernyőképén a fül alatt csak üres terület látszik.
+        //
+        // Az eredeti Picasában a panel FIX méretű, ezért a gombsor mindig
+        // közvetlenül a tartalom alatt van. Nálunk az ablak átméretezhető,
+        // ezért a kettő közül a KISEBBIK helyre tesszük:
+        //   - a tartalom alja + egy kis rés (ez az eredeti viselkedés), de
+        //   - sosem lejjebb, mint a látható terület alja (ez a #641 garancia).
+        // Így a gombsor ott van, ahol a felhasználó keresi, és szűk ablakban
+        // sem csúszik ki.
+        y: {
+            var lathatoAlja = panel.visibleHeight - height - 10
+            if (!tabArea.visible)
+                return Math.max(0, lathatoAlja)
+            var tartalomAlatt = tabArea.y + panel.tabContentHeight + 8
+            return Math.max(0, Math.min(lathatoAlja, tartalomAlatt))
+        }
         spacing: 6
         opacity: panel.enabled ? 1 : 0.45
 
