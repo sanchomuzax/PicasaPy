@@ -636,7 +636,35 @@ paraméterszám, hiányzó `=`), akkor az eredeti Picasában **nem az az egy eff
 vész el, hanem az összes utána következő is** — némán. A felhasználó
 szerkesztésének a fele tűnik el, hibaüzenet nélkül. Ld. #695.
 
-### A maradék bizonytalanság (mérésre)
+### A mérés megerősítette — valódi Picasa-export, 7 kép (2026-08-15)
+
+A kódból tett jóslatot méréssel ellenőriztük (`tools/golden/make_validation_kit3.py`).
+Jelzőeffekt a `bw`, mert a mérőkép szürke sávjait nem, a színfoltokat viszont
+látványosan mozdítja.
+
+| kép | lánc | mért ΔE | mi történt |
+|---|---|---|---|
+| A | `sepia=1;bw=1;` | 17,238 | **mindkettő lefutott** (kontroll) |
+| B | `nincsilyen=1;bw=1;` | **0,181** | semmi — a `bw` sem futott le |
+| C | `sepia=1;nincsilyen=1;` | 21,251 | **csak a `sepia`** |
+| D | `grain2=1,0.5;bw=1;` | **0,181** | semmi |
+| E | `sepia;bw=1;` (nincs `=`) | **0,181** | semmi |
+| F | `bw=1;` | 10,132 | referencia |
+| G | `sepia=1;` | 21,251 | referencia |
+
+Két szigorú azonosság dönti el a kérdést:
+
+* **C ≡ G bájtra** (`max|Δ| = 0`): az ismeretlen **záró** tag a már feldolgozott
+  `sepia`-t érintetlenül hagyja — az előtte lévők tényleg megmaradnak.
+* **B ≡ D ≡ E bájtra** (ΔE 0,0 páronként), és mindhárom **eltér** az `F`-től
+  (ΔE 10,12): egyikben sem futott le a `bw`. A három hibamód — **ismeretlen
+  név**, **rossz paraméterszám**, **hiányzó `=`** — tehát **azonosan**
+  viselkedik: a lánc feldolgozása ott megáll.
+
+*Bizonyítottsági fok: megerősített, kódból és mérésből egyaránt.* A jóslat a
+natív kód olvasásából született, a mérés utólag igazolta — nem fordítva.
+
+### A maradék bizonytalanság
 
 **Egy fel nem ismert bejegyzés csak önmagát viszi, vagy a lánc hátralévő
 részét is?** Ez a #643 3. hipotézise, és ez dönti el, hogy egy hibás sor
