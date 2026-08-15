@@ -1150,3 +1150,62 @@ korábbi olvasatot.
 > effektcsaládtól függően.
 
 **Bizonyítottsági fok: megerősített.**
+
+### `dir_tint` (irányított színezés) — TELJES (2026-08-15, #317)
+
+Lineáris színátmenet mentén színez, adott irányban. Callback `0x008f9880`,
+mag `0x0090f470`, a lecsengés-tábla ugyanott épül.
+
+#### A csúszkák leképezése (a callbackből)
+
+```c
+szelesseg = clampf(*(float*)(p + 0x28), 0.001f, ...);   // alsó korlát 0.001
+szog_fok  = (poz - 0.5f) * 30.0f;                        // ±15° tartomány
+halvanyitas = 1.0f - *(float*)(p + 0x2c);
+irany = (p[0xc4] == -1) ? 0 : p[0xc4] - kep_forgatas;    // 0…3, a képforgatással korrigálva
+```
+
+Az `irany` alsó két bitje adja a négy fő irányt: a `& 1` felcseréli a
+vízszintes/függőleges tengelyt (és a `sin`/`cos` szerepét), a `& 3 == 2`
+illetve `== 3` pedig előjelet vált. **A képforgatás beleszámít** — az irány a
+megjelenített képhez igazodik, nem a fájlhoz.
+
+#### A lecsengés-tábla — 384 elem, szakaszos harmadfokú
+
+A magban `w = 1/szelesseg` (a `szelesseg` előbb `[0,01 … 99,9]`-re vágva),
+majd `t` `1/256`-os lépésekkel:
+
+```c
+if      (t >  1.5f)  f = 0.0f;
+else if (t < -1.5f)  f = 1.0f;
+else if (t >  0.5f)  f = 0.5625f - (t*1.125f + (t³/6 - 0.75f*t²));
+else if (t > -0.5f)  f = 0.5f    - (t*0.75f  - t³/3);
+else                 f = (-t³/6 - 0.75f*t²) - t*1.125f + 0.4375f;
+
+tabla[i] = lroundf((1.0f - 2.0f*f) * 255.9999f);     // i = 0 … 383
+```
+
+> **Az együtthatók pontosak** (a dekompilátumból). Az alak egy **harmadfokú
+> B-spline-integrál** jellegű S-görbe; ezt az azonosítást **erősnek** jelölöm,
+> nem megerősítettnek — a képlet viszont szó szerint átvehető, azonosítás
+> nélkül is.
+
+#### Képpontonként
+
+A vetület `p = (dy·sin + dx·cos)` inkrementálisan halmozódik 8 bites
+fixpontban, és `p >> 8` indexeli a táblát (0…383 tartományra vágva). A tábla
+értéke a színezés erőssége az adott képpontban.
+
+#### Miben tér el a `radsat`-tól
+
+| | `radsat` | `dir_tint` |
+|---|---|---|
+| geometria | **sugárirányú** (r² alapján) | **lineáris** vetület adott irányban |
+| lecsengés | **smoothstep** (`3v²−2v³`) | **szakaszos harmadfokú** S-görbe |
+| tábla | 1024 elem | 384 elem |
+
+**A két effekt tehát NEM közös segédfüggvényre épül** — külön geometria, külön
+átmenetgörbe. Aki egy közös „gradiens-modult" ír alájuk, mindkettőt elrontja.
+
+**Bizonyítottsági fok: megerősített** (a leképezések és az együtthatók),
+**erős** (a görbe B-spline-ként való azonosítása).
