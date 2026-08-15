@@ -1,16 +1,26 @@
 #!/bin/bash
-# PicasaPy SessionStart hook — Claude Code on the web.
-# A teszt-/futtatókörnyezet függőségeit telepíti, hogy a `pytest` MINDIG
-# fusson (ne kelljen sessionönként újra felfedezni a hiányzó csomagokat).
-# A lista a .github/workflows/ci.yml-lel szinkronban tartandó.
+# PicasaPy SessionStart hook — CODEX.
 #
-# Ezen felül szinkronban tartja a privát agent-kontextus repót
-# (sanchomuzax/picasapy-agent): a CLAUDE.md onnan importálja a fejlesztői
-# szabálykönyvet, a skilleket pedig ide másoljuk a checkoutba.
+# A Claude-változat (.claude/hooks/session-start.sh) párja. Két dolgot csinál:
+#  1. szinkronban tartja a privát agent-kontextus repót (picasapy-agent), és
+#     bemásolja a skilleket a checkout `.agents/skills/` mappájába;
+#  2. a távoli (web) környezetben telepíti a teszt-futtatáshoz kellő
+#     függőségeket, hogy a `pytest` mindig fusson.
+#
+# A projekt gyökerét a szkript a SAJÁT helyéből számolja, nem környezeti
+# változóból — így nem függ attól, melyik agent milyen néven exportálja azt.
 set -euo pipefail
 
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
 # --- Privát agent-kontextus (mindkét környezetben fut) ---------------------
-if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
+# Az a példány nyer, amelyik már klónozva van; ha egyik sincs, a /workspace
+# léte dönt (felhős session), különben a home.
+if [ -d "$HOME/picasapy-agent/.git" ]; then
+  AGENT_DIR="$HOME/picasapy-agent"
+elif [ -d /workspace/picasapy-agent/.git ]; then
+  AGENT_DIR=/workspace/picasapy-agent
+elif [ -d /workspace ]; then
   AGENT_DIR=/workspace/picasapy-agent
 else
   AGENT_DIR="$HOME/picasapy-agent"
@@ -25,16 +35,17 @@ else
 fi
 
 if [ -d "$AGENT_DIR/skills" ]; then
-  mkdir -p "$CLAUDE_PROJECT_DIR/.claude/skills"
-  cp -r "$AGENT_DIR"/skills/. "$CLAUDE_PROJECT_DIR/.claude/skills/" || true
+  mkdir -p "$PROJECT_DIR/.agents/skills"
+  cp -r "$AGENT_DIR"/skills/. "$PROJECT_DIR/.agents/skills/" || true
 else
   echo "FIGYELEM: a privát agent-kontextus ($AGENT_DIR) nincs meg." \
-       "A munka megkezdése ELŐTT: add_repo sanchomuzax/picasapy-agent," \
-       "majd git clone a fenti útvonalra — ld. CLAUDE.md."
+       "A munka megkezdése ELŐTT: git clone" \
+       "https://github.com/sanchomuzax/picasapy-agent — ld. AGENTS.md."
 fi
 
 # --- Innentől csak a távoli (web) környezet: futtatókörnyezet -------------
-if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+# Helyi gépen a függőségek már megvannak; ott ne nyúljunk a rendszerhez.
+if [ ! -d /workspace ]; then
   exit 0
 fi
 
@@ -52,5 +63,9 @@ python -m pip install --upgrade pip || true
 python -m pip install \
   PySide6 opencv-python-headless pillow piexif watchdog pytest pytest-cov
 
-# Az offscreen Qt-platform a fejléc/QML-teszteknek is kell.
-echo 'export QT_QPA_PLATFORM=offscreen' >> "$CLAUDE_ENV_FILE"
+# Az offscreen Qt-platform a fejléc/QML-teszteknek is kell. A környezetfájl
+# neve agentfüggő; ha egyik sem ismert, a beállítás kimarad (nem hiba).
+ENV_FILE="${CODEX_ENV_FILE:-${CLAUDE_ENV_FILE:-}}"
+if [ -n "$ENV_FILE" ]; then
+  echo 'export QT_QPA_PLATFORM=offscreen' >> "$ENV_FILE"
+fi

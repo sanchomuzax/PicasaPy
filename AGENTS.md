@@ -13,7 +13,7 @@ skillek) **nem ebben a repóban** élnek, hanem a privát
 
 **Kötelező, még az első fájlmódosítás előtt:**
 
-1. Ha a klón nincs meg (a `.Codex/hooks/session-start.sh` figyelmeztet rá),
+1. Ha a klón nincs meg (a `.codex/hooks/session-start.sh` figyelmeztet rá),
    felhős sessionben:
    - `add_repo` a `sanchomuzax/picasapy-agent`-re,
    - `git clone https://github.com/sanchomuzax/picasapy-agent /workspace/picasapy-agent`,
