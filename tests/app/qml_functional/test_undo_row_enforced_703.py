@@ -126,15 +126,33 @@ class TestAzAblakMinimumaKiadhato:
             f"{_bottom_in_window(sor):.0f} px-nél van (#703)"
         )
 
-    def test_a_sor_a_lathato_terulet_aljan_ul(self, qml_app, qt_app) -> None:
-        """Ellenpróba: ne is ugorjon fel a panel tetejére."""
+    def test_a_sor_a_ful_tartalma_alatt_ul(self, qml_app, qt_app) -> None:
+        """Ellenpróba: ne ugorjon fel a panel tetejére — de ne is szakadjon
+        el a tartalomtól.
+
+        #616 (a korábbi állítás FELÜLÍRVA, szándékosan): ez a teszt eredetileg
+        azt követelte, hogy a sor a PANEL ALJÁN legyen. Nagy képernyőn ez
+        éppen a hibát rögzítette szerződésként: 1920×1080-as, maximalizált
+        ablakban a panel 832 képpont magas, a „Gyakori javítások" fül
+        tartalma ~300 — a gombsor így több száz képponttal a tartalom alatt,
+        egy üres szürke mező túloldalán jelent meg, és a tulajdonos
+        képernyőképe alapján joggal hitte, hogy a gombok nincsenek is ott.
+
+        Az eredeti Picasában a panel FIX méretű, ezért a sor mindig
+        közvetlenül a tartalom alatt van — ez az igazságforrás, nem a
+        „panel alja". Az új szerződés: a sor a fül tartalma alatt ül,
+        ésszerű résen belül, és sosem a panel teteje."""
         window, _controller, _engine = qml_app
         _open_viewer(window, qt_app)
 
         sor = _child(window.contentItem(), "editorGlobalUndoRow")
         panel = _child(window.contentItem(), "viewerEditorPanel")
 
-        assert _bottom_in_window(sor) >= _bottom_in_window(panel) - 12
+        # nem ugrik a panel tetejére
+        assert sor.property("y") > 0
+        # és nem szakad el a tartalomtól: a tartalom alja alatt, 40 px-en belül
+        tartalom_alja = panel.property("tabContentHeight")
+        assert sor.property("y") >= tartalom_alja - 40
 
 
 # ==========================================================================
