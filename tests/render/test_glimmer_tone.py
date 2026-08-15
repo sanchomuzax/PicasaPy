@@ -5,7 +5,6 @@ határeset-tesztjei, a `filterdesc-registry.md` 4.2 tartományai szerint.
 
 from __future__ import annotations
 
-import time
 
 import cv2
 import numpy as np
@@ -200,11 +199,10 @@ class TestVignetteMatteNightVisionRealPhoto504510:
         (nagyvonalú korlát, hogy lassú CI-n se legyen ingatag — a
         javítás előtt a Vignette 124 s, a Matte 89 s volt egy
         4000×3000-es fotón, ld. a #504 utolsó kommentje)."""
+        from support.perf_baseline import merd_es_ellenorizd
+
         photo_rgb = _real_photo_rgb(1500, 2000)
-        t0 = time.perf_counter()
-        apply_fn(photo_rgb)
-        elapsed = time.perf_counter() - t0
-        assert elapsed < 20.0, f"{effect_name}(2000x1500) túl lassú: {elapsed:.2f}s"
+        merd_es_ellenorizd(f"{effect_name}(2000x1500)", photo_rgb, apply_fn)
 
 
 class TestTwoTone:

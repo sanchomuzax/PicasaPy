@@ -4,7 +4,6 @@ Neon min/alap/max határeset-tesztjei.
 
 from __future__ import annotations
 
-import time
 
 import cv2
 import numpy as np
@@ -115,14 +114,11 @@ class TestLomo:
         CI-n se legyen ingatag (a mért érték ~1-1,5 s volt fejlesztői
         gépen, a régi kód ~37 s-ot vett igénybe ugyanitt).
         """
-        import time
+        from support.perf_baseline import merd_es_ellenorizd
 
         rng = np.random.default_rng(11)
         img = rng.integers(20, 235, size=(1500, 2000, 3), dtype=np.uint8)
-        t0 = time.perf_counter()
-        c.apply_lomo(img)
-        elapsed = time.perf_counter() - t0
-        assert elapsed < 10.0, f"apply_lomo(2000x1500) túl lassú: {elapsed:.2f}s"
+        merd_es_ellenorizd("apply_lomo(2000x1500)", img, c.apply_lomo)
 
 
 def _black_pct(img: np.ndarray) -> float:
@@ -204,11 +200,10 @@ class TestHolgaRealPhoto504510:
         """j5: a ragyogás-lépés (közös `_border_glow`) nagy képen is
         gyors maradjon (a javítás előtt egy 4000×3000-es fotón egyetlen
         ragyogás-lépés 168 s volt — nagyvonalú korlát a lassú CI miatt)."""
+        from support.perf_baseline import merd_es_ellenorizd
+
         photo_rgb = _real_photo_rgb(1500, 2000)
-        t0 = time.perf_counter()
-        c.apply_holga(photo_rgb)
-        elapsed = time.perf_counter() - t0
-        assert elapsed < 20.0, f"apply_holga(2000x1500) túl lassú: {elapsed:.2f}s"
+        merd_es_ellenorizd("apply_holga(2000x1500)", photo_rgb, c.apply_holga)
 
 
 class TestIr:
