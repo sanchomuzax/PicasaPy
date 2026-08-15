@@ -545,3 +545,71 @@ csoportonként egyetlen mozgatott változóval.
    RAW és egyéb formátumnál az ini-be.
 4. `redo=` és `originhash` érintetlenül hagyása, ha a szerkesztési lánc nem változott.
 5. Fájl-lock / ütközésdetektálás arra az esetre, ha az eredeti Picasa is fut.
+
+## A `filters=` név-feloldás a natív kódban — a mérés kódbeli megerősítése (#643, 2026-08-15)
+
+A [mért szigorúságot](#-a-filters-lánc-beolvasása-szigorú--mérve-2026-08-15-685)
+a bináris is alátámasztja, két független helyen.
+
+### A szűrő-nyilvántartás táblája
+
+A 42 bejegyzésű regiszter a `.data`-ban, **16 bájtos rekordokban**:
+
+```
+0x00cd0720 …            [ segéd-callback | 2. segéd | név-mutató | fő callback ]
+```
+
+A nevek a rekordokból kiolvasva pontosan a
+[`picasa-native-filter-registry.md`](picasa-native-filter-registry.md)
+sorrendjében állnak (`triple`, `triple2`, … `sepia`, … `shadow`). A `.text`
+**nem a tábla kezdetére** hivatkozik, hanem a két szélére (`0x00cd0644`,
+`0x00cd0968`) — a bejárás láncolt, nem indexelt.
+
+### A névkeresés bájtonként hasonlít — nincs kisbetűsítés
+
+`FUN_008f9fe0` (`0x008f9fe0`) a konténer virtuális keresőjét hívja a névvel,
+majd a nem-talált ágon két beégetett nevet próbál. Minden összehasonlítás
+**nyers bájt-egyenlőség**:
+
+```c
+bVar15 = *pcVar9 == *pcVar4;      // se tolower, se _stricmp
+```
+
+Ugyanez a minta a lánc **írójában** (`FUN_008fac40`, `0x008fac40`) is, ahol a
+`crop64` és a `rot` ágat választja ki. Vagyis a kis-nagybetű-érzékenység nem
+egyetlen hely sajátja, hanem a formátum kezelésének módja.
+
+**Ez a mért eredmény független megerősítése**: a `Tint=` / `vignette=` /
+`Sepia=` azért veszett el némán, mert a keresés bájtra hasonlít.
+*Bizonyítottsági fok: megerősített (mérés + kód).*
+
+### Nem talált név → `-1`, két beégetett alias után
+
+A nem-talált ág visszatérése `-1`, előtte azonban két név külön kezelést kap:
+**`crop`** (a `crop64` felé irányítva) és **`desat`**. A `desat` a binárisban
+**pontosan egyszer** fordul elő, épp itt — a nyilvántartásban nincs benne, és
+a PicasaPy sem ismeri.
+*Bizonyítottsági fok: erős* (a karakterlánc és a hely egyértelmű; hogy
+pontosan mire képezi le, még nem visszakövetett).
+
+### ⚠️ Ami NYITVA maradt — és miért nem erőltettük tovább
+
+**Egy fel nem ismert bejegyzés csak önmagát viszi, vagy a lánc hátralévő
+részét is?** Ez a #643 3. hipotézise, és ez dönti el, hogy egy hibás sor
+egyetlen effektet ront-e el vagy az egész szerkesztést.
+
+A hívó (`0x0050e460`, 144 bájt) a `-1`-et kapja, őt viszont **függvénymutató-
+táblán át** hívják (`.rdata` `0x00c7f728`), így a lánc statikus visszakövetése
+innen aránytalanul drága lenne.
+
+**Olcsóbb és biztosabb út: mérés.** Négy kép a következő export-körben:
+
+| kép | lánc | mit dönt el |
+|---|---|---|
+| A | `sepia=1;bw=1;` | a kétlépéses lánc alapesete |
+| B | `nincsilyen=1;bw=1;` | ismeretlen ELSŐ tag — a `bw` átjön-e |
+| C | `sepia=1;nincsilyen=1;` | ismeretlen UTOLSÓ tag |
+| D | `grain2=1,0.5;bw=1;` | rossz paraméterszám — ugyanaz-e a viselkedés |
+
+Ha B-ben és C-ben is látszik a `bw`, a hibás bejegyzés **csak önmagát viszi**;
+ha B-ben nem, a lánc **megszakad** — és akkor a #643 fő gyanúja igazolódik.
