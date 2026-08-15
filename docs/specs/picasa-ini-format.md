@@ -592,7 +592,51 @@ a PicasaPy sem ismeri.
 *Bizonyítottsági fok: erős* (a karakterlánc és a hely egyértelmű; hogy
 pontosan mire képezi le, még nem visszakövetett).
 
-### ⚠️ Ami NYITVA maradt — és miért nem erőltettük tovább
+### ⚠️ MEGFEJTVE: egy hibás bejegyzés MEGSZAKÍTJA a lánc hátralévő részét
+
+A bejáró (`FUN_00907740`, `0x00907740`) így fut:
+
+```c
+do {
+    ... a kovetkezo ';'-ig tarto darab kivagasa (FUN_009863f0(0x3b)) ...
+    local_4 = FUN_00908360(&local_8);      // EGY bejegyzes feldolgozasa
+    if (local_4 != 0) goto LAB_00907995;   // <-- HIBA: AZONNALI KILEPES
+    ... a kesz szuro-objektum hozzafuzese a listahoz ...
+} while (true);
+
+LAB_009079_95:  return local_4;            // a lanc TOBBI resze sosem fut le
+```
+
+Az egy-bejegyzés feldolgozó (`FUN_00908360`, `0x00908360`) **nem nullát** ad:
+
+* ha a darabban **nincs `=`** → `return -1`;
+* ha a globális gyár (`DAT_00d67f68`, virtuális 1. rekesz) nem tudja
+  előállítani a szűrőt — **ide fut be az ismeretlen név**, mert a
+  `FUN_008f9fe0` névkeresés nem-talált ága `-1`-et ad —, akkor az objektumot
+  eldobja és a hibakódot adja vissza.
+
+**Következmény, betűre:**
+
+> Egy fel nem ismert nevű vagy hibás bejegyzés **nem csak önmagát viszi**: a
+> lánc **utána következő** szűrői sem futnak le. Az **előtte** lévők
+> megmaradnak, mert azok már a listába kerültek.
+
+Ez pontosan a #643 3. hipotézise, és **egybevág a méréssel**: a
+`grain2=1,0.5;` (fölösleges paraméter) és a `Tint=…` (rossz írásmód) egyaránt
+hatástalan maradt — egyelemű láncban a megszakadás és az „elejtés"
+megkülönböztethetetlen.
+
+*Bizonyítottsági fok: megerősített* (a ciklus, a hibaág és a `-1` visszatérés
+is visszakövetve; a mérés független megerősítés).
+
+### ⚠️ Amit ez az ÍRÁS oldalán jelent — kritikus
+
+Ha a PicasaPy egyetlen bejegyzést rosszul ír ki (rossz írásmód, rossz
+paraméterszám, hiányzó `=`), akkor az eredeti Picasában **nem az az egy effekt
+vész el, hanem az összes utána következő is** — némán. A felhasználó
+szerkesztésének a fele tűnik el, hibaüzenet nélkül. Ld. #695.
+
+### A maradék bizonytalanság (mérésre)
 
 **Egy fel nem ismert bejegyzés csak önmagát viszi, vagy a lánc hátralévő
 részét is?** Ez a #643 3. hipotézise, és ez dönti el, hogy egy hibás sor
