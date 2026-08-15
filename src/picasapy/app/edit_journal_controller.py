@@ -19,6 +19,7 @@ is felülírhatja. Ugyanezért nem elég a `.picasa.ini.bak` sem — az a MI
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -30,6 +31,7 @@ from picasapy.edit.edit_journal import (
     record_saved_chain,
     save_journal,
 )
+from picasapy.index.queries import PhotoRecord, full_path
 from picasapy.ini.io import update_document
 
 #: A napló fájlneve az adatgyökérben (az index-SQLite mellett).
@@ -62,7 +64,9 @@ class EditJournalMixin:
         )
         save_journal(journal, self._journal_file())
 
-    def _check_external_overwrites(self, records) -> None:
+    def _check_external_overwrites(
+        self, records: "Sequence[PhotoRecord]"
+    ) -> None:
         """A nézetbe került képek láncainak összevetése a naplóval.
 
         Képenként **egyszer** jelzünk (ugyanarra a veszteségre nem szólunk
@@ -72,7 +76,11 @@ class EditJournalMixin:
         journal = self._load_journal()
         if not journal:
             return
-        current = {str(r.path): (r.filters or "") for r in records}
+        # #699: a rekord `index.queries.PhotoRecord` — NINCS `path` mezője.
+        # A kulcsot a KÖZÖS `full_path()` képzi, ugyanazzal a szabállyal,
+        # amivel a napló írója (`recordSavedChain`) dolgozik. Harmadik
+        # útvonal-szabály írása némán kiütné a védelmet.
+        current = {full_path(r): (r.filters or "") for r in records}
         lost = detect_lost_edits(journal, current)
         if not lost:
             return

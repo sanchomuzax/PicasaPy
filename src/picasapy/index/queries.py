@@ -199,10 +199,21 @@ def _text_search(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ...
     return _records(rows)
 
 
-def _full_path(record: PhotoRecord) -> str:
+def full_path(record: PhotoRecord) -> str:
     """A fotó teljes útvonala — ugyanaz a képzési szabály, mint a
-    `photo_colors`/`photo_hashes` kulcsánál (`str(Path(folder) / name)`)."""
+    `photo_colors`/`photo_hashes` kulcsánál (`str(Path(folder) / name)`).
+
+    #699: PUBLIKUS, mert a szerkesztés-napló (`app/edit_journal_controller`)
+    is ezt hívja. A napló írás/olvasás kulcsának bájtra egyeznie kell —
+    harmadik útvonal-szabályt írni tilos: ha a két oldal másképp képezné,
+    a `detect_lost_edits` némán soha nem találna egyezést, és a #644
+    védelme CSENDBEN hatástalan maradna.
+    """
     return str(Path(record.folder_path) / record.name)
+
+
+#: A régi, modulon belüli név — a meglévő hívások miatt marad.
+_full_path = full_path
 
 
 @dataclass(frozen=True)
