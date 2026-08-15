@@ -402,6 +402,22 @@ def apply_enhance(image: np.ndarray) -> np.ndarray:
     return apply_channel_levels_stretch(image)
 
 
+def apply_autocontrast(image: np.ndarray) -> np.ndarray:
+    """`autocontrast` („Automatikus kontraszt") — csatornánkénti szinthúzás.
+
+    A #612 3.1 pontja szerint ez a szűrő (`0x008f89d0`) UGYANAZT a natív
+    hisztogram-elemzőt hívja, mint a „Jó napom van" (`0x009db610`), csak a
+    felső határt vezérlő jelzőt FIXEN 0-nak adja — vagyis a kimenet mindig a
+    teljes 0..255 tartományra nyúlik, míg az `enhance` ugyanezt a
+    `CarefulEnhance` beállítástól függően 252-re is korlátozhatja. Mivel mi az
+    `enhance`-t is a 255-ös ággal futtatjuk (a beállítás a felhasználó gépén
+    él, nem az ini-ben), a két szűrő ma AZONOS kimenetet ad — a #685
+    mérőszettjén maga a Picasa is bájtra ugyanazt adta a kettőre.
+    """
+    _validate_image(image)
+    return apply_channel_levels_stretch(image)
+
+
 def apply_redeye(
     image: np.ndarray, regions: tuple[Rect64, ...] = ()
 ) -> np.ndarray:

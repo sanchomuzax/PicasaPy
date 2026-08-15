@@ -36,7 +36,9 @@ from picasapy.render.chain import KNOWN_UNRENDERED_OPS, apply_filters
 #: `radtint` a #565-ben. A regiszter viszont NEM ürült ki — a #382-es
 #: filterdesc-nevek még benne állnak, azokon marad a szerződés (felismerés +
 #: jelentés vizuális modell nélkül).
-_STILL_UNRENDERED_KEYS = ("triple", "colorfix", "rainbow")
+#: #687: a `triple` is renderel (Derítőfény + kontraszt, a dekompilált
+#: burkolóból) — helyette a `shadow` a harmadik, még modell nélküli név.
+_STILL_UNRENDERED_KEYS = ("shadow", "colorfix", "rainbow")
 
 
 @pytest.fixture
@@ -63,10 +65,10 @@ class TestKnownUnrenderedRegistry:
         # egy ismert (renderelt) effekt + egy felismert-de-renderelhetetlen
         # egy láncban: az ismert effekt hasson, a másik csak jelentve legyen
         result, skipped = apply_filters(
-            sample, parse_filters("Invert=1;triple=1;")
+            sample, parse_filters("Invert=1;rainbow=1;")
         )
         assert not np.array_equal(result, sample), "az Invert lefutott"
-        assert skipped == ("triple",)
+        assert skipped == ("rainbow",)
 
 
 class TestGlimmerNowRendered:
@@ -119,11 +121,11 @@ class TestPicnikNoopMarker:
         # KNOWN_UNRENDERED_OPS regiszter felelős ezért a downstream
         # jelentésben
         result, skipped = apply_filters(
-            sample, parse_filters("totallyunknownfilter=1;triple=1;")
+            sample, parse_filters("totallyunknownfilter=1;rainbow=1;")
         )
         assert np.array_equal(result, sample)
-        assert skipped == ("totallyunknownfilter", "triple")
-        assert "triple" in KNOWN_UNRENDERED_OPS
+        assert skipped == ("totallyunknownfilter", "rainbow")
+        assert "rainbow" in KNOWN_UNRENDERED_OPS
         assert "totallyunknownfilter" not in KNOWN_UNRENDERED_OPS
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from picasapy.render.chain import (
     KNOWN_UNRENDERED_OPS,
+    MEASURED_IDLE_OPS,
     ChainReport,
     apply_filters,
     tilt_cover_scale,
@@ -41,6 +42,7 @@ from picasapy.render.effects import (
 )
 from picasapy.render.ops import (
     apply_autocolor,
+    apply_autocontrast,
     apply_autolight,
     apply_channel_levels_stretch,
     apply_crop,
@@ -48,6 +50,12 @@ from picasapy.render.ops import (
     apply_redeye,
     apply_tilt,
     count_redeye_spots,
+)
+from picasapy.render.native_colortemp import apply_native_colortemp
+from picasapy.render.native_tone import (
+    apply_gamma,
+    apply_native_contrast,
+    apply_native_levels,
 )
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
 from picasapy.render.tinting import (
@@ -82,6 +90,7 @@ __all__ = [
     "GLOW_V1_RADIUS",
     "KNOWN_UNRENDERED_OPS",
     "LUT_SIZE",
+    "MEASURED_IDLE_OPS",
     "ChainReport",
     "FilterSpec",
     "PointPipelineUniforms",
@@ -89,6 +98,7 @@ __all__ = [
     "UNSHARP_V1_STRENGTH",
     "apply_ansel",
     "apply_autocolor",
+    "apply_autocontrast",
     "apply_autolight",
     "apply_bw",
     "apply_channel_levels_stretch",
@@ -107,9 +117,13 @@ __all__ = [
     "apply_fill",
     "apply_filters",
     "apply_finetune2",
+    "apply_gamma",
     "apply_glow",
     "apply_grain",
     "apply_highlights",
+    "apply_native_colortemp",
+    "apply_native_contrast",
+    "apply_native_levels",
     "apply_neutral_pipette",
     "apply_radblur",
     "apply_radsat",

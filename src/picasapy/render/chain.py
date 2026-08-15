@@ -34,6 +34,7 @@ from picasapy.render.effects_artistic import apply_comicize
 from picasapy.render.focal import apply_focal_pixelate, apply_focal_zoom
 from picasapy.render.effects_creative_tone import apply_invert
 from picasapy.render import chain_glimmer_handlers as glimmer
+from picasapy.render import chain_native_handlers as native
 from picasapy.render.ops import (
     apply_autocolor,
     apply_autolight,
@@ -93,11 +94,15 @@ KNOWN_UNRENDERED_OPS = frozenset(
         # léteznek, tehát régi könyvtárak `filters=` láncában előfordulhatnak.
         # A regiszterben (`registry.py`) megvan a leírásuk, de vizuális
         # modellt (golden-mérés híján) még nem futtatunk rájuk.
-        "triple",
-        "triple2",
-        "triple3",
+        # `triple`, `triple2`, `triple3`, `autocontrast`, `colortemp`,
+        # `contrast`, `gamma`, `backlight` a #687-ben KIKERÜLT innen: a
+        # dekompilált burkolóikból (`natív-szűrők.c`) a csúszka →
+        # munkafüggvény-argumentum leképezés egyértelmű, a munkafüggvények
+        # pedig már megvoltak. A #685 mérőszettje mindegyiket igazolta
+        # (ld. a `chain_native_handlers` docstringjeit) — a `triple`
+        # kivételével, aminek az egyetlen mérőesete paraméter nélküli
+        # (tehát azonosság) volt.
         "colorfix",
-        "autocontrast",
         "rainbow",
         # `linblur` és `dir_sharp` a #623-ban KIKERÜLT innen: a natív magok
         # (`0x0090de10`, `0x0090d600`), a burkolóik és a közös elmosó
@@ -105,12 +110,8 @@ KNOWN_UNRENDERED_OPS = frozenset(
         # pixel-matematika rögzített. A `linblur` sugár-leképezése és a
         # `dir_sharp` rámpa-horgonya KÖZELÍTÉS — ld. a két `apply_*`
         # docstringjét; a kalibráció a #317-ben fut.
-        "colortemp",
-        "shadow",
         "blur",
-        "contrast",
-        "gamma",
-        "backlight",
+        "shadow",
         "whitept",
         "debug",
     }
@@ -128,6 +129,29 @@ KNOWN_UNRENDERED_OPS = frozenset(
 #: Glimmer-effekttel: az utóbbi saját néven, saját callbackkel regisztrált,
 #: és a saját handlerén fut. A kettőt szándékosan nem vezetjük egy kulcsra.
 DEAD_LEGACY_OPS = frozenset({"focalpixelate"})
+
+#: #687 — MÉRTEN TÉTLEN szűrőnevek: a #685 mérőszettjében (178 kép, egyetlen
+#: valódi Picasa-export) maga a Picasa sem változtatott rajtuk (átlagos
+#: ΔE ≤ 1,0, ami a JPEG-újratömörítés szintje), holott a lánc a
+#: `filterdesc.xml` szerinti alap-, felső és alsó csúszkaállásokat is
+#: tartalmazta.
+#:
+#: **Ez NEM azonos a `DEAD_LEGACY_OPS`-szal.** Ezeknek a natív regiszterben
+#: VAN feldolgozójuk (a `blur` magja `0x0090cf60`, a `colorfix`/`whitept`
+#: a `0x0090eda0` fehérpont-magot hívja) — csak a mérésben nem hatottak.
+#: Két magyarázat áll nyitva, és a mérés egyik mellett sem dönt:
+#: vagy tényleg tétlenek a 3.9.141.259-ben, vagy a mérőszett által
+#: generált paraméter-alak nem az, amit a Picasa olvas (a `colorfix` és a
+#: `whitept` PIPETTA-színt vár, amit a szett a lánc végére írt). Ezért a
+#: bejegyzés célja pusztán annyi, hogy a következő mérés ne HIÁNYNAK
+#: olvassa őket: a felhasználó a lánc kihagyásakor megkapja az okot is.
+MEASURED_IDLE_OPS = frozenset({"blur", "colorfix", "whitept"})
+
+#: A mérten tétlen bejegyzésre adott, felhasználónak szóló magyar üzenet.
+MEASURED_IDLE_WARNING_TEMPLATE = (
+    "{name}: a mérésben (#685) maga a Picasa sem változtatott vele a képen, "
+    "ezért nem futtatunk rá modellt — a kép változatlan marad."
+)
 
 #: A halott bejegyzésre adott, felhasználónak szóló magyar üzenet (#567).
 #: #567: az `autobacklight` fix derítőfény-erőssége a natív hívás
@@ -513,6 +537,18 @@ _HANDLERS = {
     "linblur": _apply_linblur_op,
     "radtint": _apply_radtint_op,
     "autobacklight": _apply_autobacklight_op,
+    # --- a #687-ben bekötött natív szűrők (törzsük:
+    # `chain_native_handlers.py`, a magok a `native_tone`/`native_colortemp`/
+    # `ops` modulokban). A paraméter-leképezés a dekompilált burkolókból,
+    # a hitelesítés a #685 mérőszettjéből.
+    "contrast": native.apply_contrast_op,
+    "gamma": native.apply_gamma_op,
+    "colortemp": native.apply_colortemp_op,
+    "backlight": native.apply_backlight_op,
+    "autocontrast": native.apply_autocontrast_op,
+    "triple": native.apply_triple_op,
+    "triple2": native.apply_triple2_op,
+    "triple3": native.apply_triple3_op,
     # --- Glimmer-effektek: EGZAKT csővezetékek a filterdesc.xml szerint
     # (#381, `chain_glimmer_handlers.py` + `glimmer_*` modulok). Az `IR`
     # kivétel: a `IRImageOperation` belső kernele a filterdesc.xml-ben sem
@@ -587,9 +623,10 @@ def apply_filters(
     image: np.ndarray, ops: tuple[FilterOp, ...]
 ) -> ChainReport:
     """Sorban alkalmazza a támogatott szűrőket (crop64, tilt, redeye, retouch,
-    enhance, autolight, autocolor, fill, finetune/finetune2, bw, sepia, warm,
-    sat, unsharp/unsharp2, grain2, Vignette, glow/glow2, tint, ansel, radblur,
-    radsat, dir_tint, radtint).
+    enhance, autolight, autocolor, autocontrast, fill, backlight,
+    finetune/finetune2, triple/triple2/triple3, contrast, gamma, colortemp,
+    bw, sepia, warm, sat, unsharp/unsharp2, grain2, Vignette, glow/glow2,
+    tint, ansel, radblur, radsat, dir_tint, radtint).
 
     A `retouch` régió-adata PicasaPy-saját kiterjesztés (ld.
     `picasapy.ini.retouch` docsztring) — valódi Picasa-eredetű, régió nélküli
@@ -608,7 +645,9 @@ def apply_filters(
     `KNOWN_UNRENDERED_OPS` (#347) tagjai ugyanide, a kihagyott-listába
     kerülnek — FELISMERT, de kalibráció híján még vizuális modell nélküli
     nevek; a `_NOOP_MARKERS` (pl. `picnik=1;`) viszont NEM effekt, ezért
-    nem is jelenik meg a kihagyott-listában, csendben elnyelődik.
+    nem is jelenik meg a kihagyott-listában, csendben elnyelődik. Ahol a
+    kihagyás OKA ismert — halott legacy név (#567) vagy mérten tétlen
+    bejegyzés (#687) —, ott a `ChainReport.legacy_warnings` ki is mondja.
 
     A `crop64` a láncban csak szerkesztési TÖRTÉNET — önmagában NEM vág
     (spec: `docs/specs/filters-decoded.md`). A tényleges vágást a képszekció
@@ -620,7 +659,9 @@ def apply_filters(
     **Tartomány-validáció (#382, #669):** néhány ismert szűrőnél (`sat`,
     `tilt`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, az irányított
     család — `dir_sat`/`dir_brite`/`dir_sharp`/`dir_tint`, `linblur`,
-    `radblur`, `radsat`, `radtint`, `glow`/`glow2`, `tint`, `fill`) a
+    `radblur`, `radsat`, `radtint`, `glow`/`glow2`, `tint`, `fill`, valamint
+    a #687-ben bekötött `contrast`/`gamma`/`colortemp`/`backlight`/
+    `triple`/`triple2`/`triple3`) a
     paraméter a `registry` modul `[minimum, maximum]` tartományára VÁGVA
     fut le, ha az ini-beli érték kilóg belőle — a kivágott figyelmeztetést
     a visszaadott `ChainReport.range_warnings` hordozza. A `.picasa.ini`
@@ -661,6 +702,12 @@ def apply_filters(
                 # futtatta már — ezt ki is mondjuk, nem csak kihagyjuk
                 legacy_warnings.append(
                     DEAD_LEGACY_WARNING_TEMPLATE.format(name=op.name)
+                )
+            elif key in MEASURED_IDLE_OPS:
+                # #687: van natív feldolgozója, de a mérésben nem hatott —
+                # a két ok külön üzenetet kap (ld. MEASURED_IDLE_OPS)
+                legacy_warnings.append(
+                    MEASURED_IDLE_WARNING_TEMPLATE.format(name=op.name)
                 )
             skipped.append(op.name)
             continue

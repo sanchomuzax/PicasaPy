@@ -88,8 +88,8 @@ class TestDeadLegacyFocalPixelate:
         """A „még nincs modellünk" és a „halott bejegyzés" két külön ok — a
         `skipped` mindkettőt tartalmazza, a `legacy_warnings` csak az
         utóbbit."""
-        report = apply_filters(sample, parse_filters("triple=1;"))
-        assert report.skipped == ("triple",)
+        report = apply_filters(sample, parse_filters("rainbow=1;"))
+        assert report.skipped == ("rainbow",)
         assert report.legacy_warnings == ()
 
 

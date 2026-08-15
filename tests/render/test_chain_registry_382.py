@@ -64,6 +64,12 @@ _NOOP_NAMES = ("save", "rot", "crop", "moviestart", "movieend")
 #: `linblur` sugár-leképezése KÖZELÍTÉS maradt (az x87-veremen mentek, a
 #: dekompilátum nem őrizte meg őket) — a hatás JELLEGE és a pixel-matematika
 #: viszont egzakt, ezért rendereljük; a kalibráció a #317-ben fut.
+#: #687: a `triple`/`triple2`/`triple3`, az `autocontrast`, a `colortemp`, a
+#: `contrast`, a `gamma` és a `backlight` is átkerült — a #685 mérőszettje
+#: kimutatta, hogy az eredeti Picasa ténylegesen végrehajtja őket, a
+#: dekompilált burkolóikból pedig egyértelmű a csúszka-leképezés (a
+#: munkafüggvények már megvoltak). A `triple` az egyetlen, aminek a
+#: mérőesete paraméter nélküli volt, tehát a bekötése méréssel nem igazolt.
 _NOW_RENDERED_NAMES = (
     "radtint",
     "autobacklight",
@@ -71,6 +77,14 @@ _NOW_RENDERED_NAMES = (
     "dir_brite",
     "dir_sharp",
     "linblur",
+    "triple",
+    "triple2",
+    "triple3",
+    "autocontrast",
+    "colortemp",
+    "contrast",
+    "gamma",
+    "backlight",
 )
 
 #: A 26-ból az, amelyik HALOTT legacy névnek bizonyult (#567): a natív
@@ -100,13 +114,14 @@ class TestAll26NamesCovered:
 
     def test_noop_rendered_unrendered_partitio(self):
         # az eredeti felosztás 5 no-op + 21 renderelhetetlen volt; azóta a
-        # `radtint` (#565), az `autobacklight` (#567), majd az irányított
-        # család négy tagja (#623) átkerült a renderelők közé, a
-        # `focalpixelate` pedig halott legacy névnek bizonyult (#567)
+        # `radtint` (#565), az `autobacklight` (#567), az irányított család
+        # négy tagja (#623), majd a natív tónus-/szín-szűrők nyolcasa (#687)
+        # átkerült a renderelők közé, a `focalpixelate` pedig halott legacy
+        # névnek bizonyult (#567)
         assert len(_NOOP_NAMES) == 5
-        assert len(_NOW_RENDERED_NAMES) == 6
+        assert len(_NOW_RENDERED_NAMES) == 14
         assert len(_DEAD_LEGACY_KEYS) == 1
-        assert len(_UNRENDERED_NAMES) == 14
+        assert len(_UNRENDERED_NAMES) == 6
         assert (
             set(_NOOP_NAMES)
             | set(_NOW_RENDERED_NAMES)

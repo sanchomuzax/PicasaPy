@@ -130,6 +130,15 @@ class TestLegacyCatalogue:
             "dir_brite",
             "dir_sharp",
             "linblur",
+            # #687: a natív tónus-/szín-szűrők
+            "contrast",
+            "gamma",
+            "colortemp",
+            "backlight",
+            "triple",
+            "triple2",
+            "triple3",
+            "autocontrast",
         ):
             assert can_render_filter(key)
 
@@ -138,7 +147,7 @@ class TestLegacyCatalogue:
         # felületen nem lehet aktívnak látszó, de nem ható gomb
         from picasapy.render.chain import can_render_filter
 
-        for key in ("triple", "colorfix", "gamma"):
+        for key in ("shadow", "colorfix", "rainbow"):
             assert not can_render_filter(key)
 
     def test_debug_is_deliberately_absent(self):
