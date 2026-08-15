@@ -32,6 +32,18 @@ Column {
     // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
     readonly property var ctl: controller
 
+    // #718: a kijelölés VÉDETT olvasata. A leépítésnek van egy köztes
+    // állapota, amikor az `appWindow` már létezik, a `selectedIndexes`
+    // viszont még/már `undefined` — a `.length` olvasása ilyenkor
+    // TypeError. Az olvasó kötések ezért ezen a tulajdonságon át kérik a
+    // kijelölést; az ÍRÁS (a kijelölés módosítása) marad közvetlenül az
+    // `appWindow`-on, mert az csak felhasználói művelet közben fut, amikor
+    // az ablak biztosan él.
+    readonly property var selectedIndexesOrEmpty:
+        (tray.appWindow && tray.appWindow.selectedIndexes)
+            ? tray.appWindow.selectedIndexes
+            : []
+
     // tömör acélkék infó-sáv; kijelöléskor a kép adatai
     Rectangle {
         id: infoBar
@@ -192,9 +204,16 @@ Column {
                         // `window`-ja) az engine-leépítés közben átmenetileg
                         // null lehet, miközben ez a kötés utoljára
                         // kiértékelődik (ld. a fenti `ctl` docstringje).
+                        // NEM elég csak az appWindow-t vizsgálni: a
+                        // leépítés egy köztes állapotában az ablak MÁR
+                        // létezik, a `selectedIndexes` viszont még
+                        // `undefined` — ezt a `.length` olvasása
+                        // TypeError-ral bünteti. (Ez a maradék hiba a
+                        // teszt lefutása UTÁN, a késleltetett törlési sor
+                        // ürítésekor jelentkezett, ezért az őr sem látta.)
                         model: trayPreview.heldCount > 0
                             ? trayPreview.heldCount
-                            : (tray.appWindow ? tray.appWindow.selectedIndexes.length : 0)
+                            : tray.selectedIndexesOrEmpty.length
                         delegate: Image {
                             objectName: "trayPreviewThumb"
                             required property int index
@@ -213,7 +232,7 @@ Column {
                     // #718: ld. a Repeater fenti null-őrét — ugyanaz a
                     // teardown-ablak érinti ezt a kötést is.
                     visible: trayPreview.heldCount === 0
-                             && (!tray.appWindow || tray.appWindow.selectedIndexes.length === 0)
+                             && tray.selectedIndexesOrEmpty.length === 0
                     anchors.centerIn: parent
                     text: qsTr("Selection")
                     color: Theme.placeholderText
