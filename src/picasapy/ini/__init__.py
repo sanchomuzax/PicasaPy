@@ -27,7 +27,22 @@ from .faces import (
     without_face,
     without_face_at_rect,
 )
-from .filters import FilterOp, parse_filters, serialize_filters
+from .filter_registry import (
+    CANONICAL_FILTER_NAMES,
+    MAX_PARAM_COUNTS,
+    FilterWriteError,
+    canonical_filter_name,
+    canonicalize_filter_name,
+    max_param_count,
+)
+from .filters import (
+    FilterOp,
+    canonicalize_op,
+    parse_filters,
+    serialize_filters,
+    serialize_filters_for_write,
+    validate_op_for_write,
+)
 from .folder_date import (
     is_valid_folder_date,
     read_folder_date_override,
@@ -45,11 +60,14 @@ from .io import (
 from .rect64 import Rect64, decode_rect64, encode_rect64
 
 __all__ = [
+    "CANONICAL_FILTER_NAMES",
+    "MAX_PARAM_COUNTS",
     "Album",
     "Contact",
     "ContactXmlEntry",
     "Face",
     "FilterOp",
+    "FilterWriteError",
     "IniConflictError",
     "IniDocument",
     "IniSaveError",
@@ -62,6 +80,9 @@ __all__ = [
     "UNIDENTIFIED_CONTACT",
     "albums_of",
     "apply_contacts_xml",
+    "canonical_filter_name",
+    "canonicalize_filter_name",
+    "canonicalize_op",
     "contacts_of",
     "decode_rect64",
     "encode_rect64",
@@ -71,6 +92,7 @@ __all__ = [
     "load_contacts_xml",
     "load_document",
     "load_or_empty",
+    "max_param_count",
     "parse_album_refs",
     "parse_contacts_xml",
     "parse_document",
@@ -81,7 +103,9 @@ __all__ = [
     "serialize_album_refs",
     "serialize_faces",
     "serialize_filters",
+    "serialize_filters_for_write",
     "update_document",
+    "validate_op_for_write",
     "with_face",
     "with_folder_date_override",
     "with_reassigned_face",

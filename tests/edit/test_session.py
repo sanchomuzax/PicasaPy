@@ -637,13 +637,26 @@ class TestEdgeCases:
         session = session.toggle("redeye")
         assert session.has("redeye")
 
-    def test_mixed_case_filter_names_preserved(self):
-        """FilterOp név megőrzése az eredeti alak szerint."""
-        value = "Enhance=1;AutoLight=1;Redeye=1;"
-        session = EditSession.from_value(value)
+    def test_mixed_case_filter_names_canonicalized_on_write_695(self):
+        """#695: a kevert írásmódú név KIÍRÁSKOR a kanonikus alakra áll be.
 
-        # Round-trip: az eredeti nevek megmaradnak
-        assert session.to_value() == value
+        Ez a teszt korábban az eredeti írásmód megőrzését várta el. A #685
+        mérése kimutatta, hogy ez adatvesztés: az eredeti Picasa bájtra
+        illeszti a szűrőnevet, és az `Enhance=`/`AutoLight=`/`Redeye=`
+        bejegyzést NÉMÁN elejti — a felhasználó szerkesztése a windowsos
+        Picasában eltűnne. A round-trip elv a NEM módosított láncra
+        vonatkozik, azt a document-réteg nyersen őrzi meg; ide csak az
+        általunk módosított lánc jut el (ld. `EditSession.to_value` és
+        `docs/specs/picasa-ini-format.md`).
+        """
+        session = EditSession.from_value("Enhance=1;AutoLight=1;Redeye=1;")
+
+        assert session.to_value() == "enhance=1;autolight=1;redeye=1;"
+
+    def test_ismeretlen_nev_irasmodja_valtozatlan_695(self):
+        """Amit a regiszter nem ismer, ahhoz nem nyúlunk (round-trip elv)."""
+        value = "FutureFilter=1,2;"
+        assert EditSession.from_value(value).to_value() == value
 
     def test_crop_placement_not_affected_by_modification(self):
         """crop64 helye: ha van, a helyén marad; ha nincs, a végén kerül."""

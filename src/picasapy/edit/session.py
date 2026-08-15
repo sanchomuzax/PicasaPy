@@ -5,7 +5,13 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from picasapy.ini.filters import FilterOp, parse_filters, serialize_filters
+from picasapy.ini.filters import (
+    FilterOp,
+    canonicalize_op,
+    parse_filters,
+    serialize_filters,
+    validate_op_for_write,
+)
 from picasapy.ini.rect64 import Rect64, decode_rect64, encode_rect64
 from picasapy.ini.redeye import (
     REDEYE_FILTER_NAME,
@@ -69,12 +75,27 @@ class EditSession:
         return cls(ops=ops)
 
     def to_value(self) -> str:
-        """Stringgé konvertál (serialize).
+        """Stringgé konvertál (serialize) — a `.picasa.ini`-be írható alakban.
+
+        **#695:** a regiszterbeli szűrők neve itt a KANONIKUS (Picasa által
+        várt) alakra áll be. Az eredeti Picasa bájtra illeszti a nevet, és a
+        nem egyező bejegyzést némán elejti — ha a saját írásmódunkkal írnánk
+        vissza a láncot, a felhasználó szerkesztése a windowsos Picasában
+        eltűnne. Ez nem sérti a round-trip elvet: a NEM módosított
+        `filters=` érték soha nem jön erre (a document-réteg nyersen tárolja),
+        ide csak az általunk módosított lánc jut el.
+
+        Az ismeretlen (idegen/jövőbeli) szűrőnevek változatlanul mennek ki.
+        A paraméterszám ellenőrzése SZÁNDÉKOSAN nincs itt: a láncban
+        maradhatnak idegen eredetű, hibás elemek, azokat bájtra meg kell
+        őriznünk (#301). Az író-oldali kapu ott zár, ahol az elem
+        KELETKEZIK (`append_effect`, `apply`, `set_*`), illetve explicit
+        igény esetén a `serialize_filters_for_write`-ban.
 
         Returns:
             A filters= érték stringje.
         """
-        return serialize_filters(self.ops)
+        return serialize_filters(tuple(canonicalize_op(op) for op in self.ops))
 
     def set_crop(self, rect: Rect64) -> EditSession:
         """Crop64 beállítása vagy cseréje: a láncban legfeljebb egy lehet.
@@ -85,7 +106,7 @@ class EditSession:
         Returns:
             Új EditSession.
         """
-        new_op = FilterOp("crop64", ("1", encode_rect64(rect)))
+        new_op = _new_op("crop64", ("1", encode_rect64(rect)))
         return self._with_single_layer(lambda op: op.matches("crop64"), new_op)
 
     def clear_crop(self) -> EditSession:
@@ -121,7 +142,7 @@ class EditSession:
         Returns:
             Új EditSession.
         """
-        new_op = FilterOp("tilt", ("1", f"{param:.6f}", f"{scale:.6f}"))
+        new_op = _new_op("tilt", ("1", f"{param:.6f}", f"{scale:.6f}"))
         return self._with_single_layer(lambda op: op.matches("tilt"), new_op)
 
     def clear_tilt(self) -> EditSession:
@@ -177,7 +198,7 @@ class EditSession:
         if neutral is None:
             existing = self.finetune_values()
             neutral = existing.neutral if existing is not None else _NEUTRAL_DEFAULT
-        new_op = FilterOp(
+        new_op = _new_op(
             _FINETUNE_CANONICAL,
             (
                 "1",
@@ -276,7 +297,7 @@ class EditSession:
         """
         if not name:
             raise ValueError("Az effekt neve nem lehet üres")
-        return EditSession(ops=self.ops + (FilterOp(name, params),))
+        return EditSession(ops=self.ops + (_new_op(name, params),))
 
     def apply(self, name: str) -> EditSession:
         """Egygombos javítás rétegként a lánc VÉGÉRE fűzése (append-only, #116).
@@ -302,7 +323,7 @@ class EditSession:
                 f"Érvénytelen egygombos javítás: {name!r}. "
                 f"Érvényes: {valid_one_shots}"
             )
-        return EditSession(ops=self.ops + (FilterOp(name, ("1",)),))
+        return EditSession(ops=self.ops + (_new_op(name, ("1",)),))
 
     def last_is(self, name: str) -> bool:
         """Az utolsó lánc-elem a megadott szűrő-e (case-insensitive, #116)."""
@@ -336,7 +357,7 @@ class EditSession:
         if self.has(name):
             new_ops = tuple(op for op in self.ops if not op.matches(name))
         else:
-            new_ops = self.ops + (FilterOp(name, ("1",)),)
+            new_ops = self.ops + (_new_op(name, ("1",)),)
         return EditSession(ops=new_ops)
 
     def has(self, name: str) -> bool:
@@ -537,6 +558,28 @@ class EditSession:
             Új EditSession, a másolt lánccal (a cél korábbi lánca eldobva).
         """
         return cls(ops=tuple(ops))
+
+
+def _new_op(name: str, params: tuple[str, ...]) -> FilterOp:
+    """Új lánc-elem az ÍRÓ kapun át (#695).
+
+    Minden itt keletkező bejegyzés a regiszterbeli (Picasa által várt)
+    írásmóddal és megengedett paraméterszámmal jön létre — így soha nem
+    írunk ki olyan elemet, amit az eredeti Picasa némán elejtene.
+
+    Args:
+        name: A szűrő neve (bármilyen írásmódban).
+        params: A paraméterek; a `params[0]` az engedélyező flag.
+
+    Returns:
+        A kanonikus nevű, ellenőrzött `FilterOp`.
+
+    Raises:
+        FilterWriteError: Ha a paraméterszám kilóg a regiszterbeliből.
+    """
+    op = canonicalize_op(FilterOp(name, params))
+    validate_op_for_write(op)
+    return op
 
 
 def _finetune_float(op: FilterOp, index: int) -> float:
