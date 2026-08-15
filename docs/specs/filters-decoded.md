@@ -1253,6 +1253,47 @@ a szín telítettségével növekvő eltérést okoz, ami illeszkedik a mért 20
 **Bizonyítottsági fok:** megerősített (a fenti képletek és a hívási sorrend) ·
 **nyitott** (a virtuális átalakítás tartalma és a wheel-verzió jelentése).
 
-**Következő lépés, ha valaki folytatja:** célzott dekompilálás az
-`ytColorWheelNode` vtable 2. és 8. slotjára (`0x009c2eb0` a vtable kezdete), és
-a `0x00aa40a0` igazító függvényre.
+#### A TELJES csővezeték (2026-08-15, kiegészítés)
+
+A három segédfüggvény is előkerült a meglévő naplókból, és ezzel a `tint`
+**öt lépésből** áll — a mai megvalósításunk jó eséllyel csak az utolsót
+csinálja:
+
+```c
+// 1) SZÍNMEGŐRZÉS: telítetlenítés szürke felé      (0x009a9550)
+w = 256 - szinmegorzes;
+Y = (77*R + 151*G + 28*B) >> 8;
+C = C + (((Y - C) * w) >> 8);
+
+// 2) a színezőszín átvezetése a virtuális átalakításon   (még NYITOTT)
+
+// 3) telítettségfüggő tényező
+mx  = max(tR, tG, tB);
+sum = (tR + tG + tB) * 85;
+k   = ((mx * 255.0f) / sum - 1.0f) * 0.5f + 1.0f;
+
+// 4) GAMMA-LUT, kitevő 1/k                          (0x00aa40a0)
+for (i = 0; i < 256; i++) LUT[i] = lroundf(powf(i/255.0f, 1.0f/k) * 255.0f);
+// (a 0,0 és 2,2 kitevőjű táblák gyorsítótárazva vannak)
+
+// 5) SZORZÓ keverés, a legnagyobb komponensre normalizálva   (0x009db4f0)
+skala = 65536 / mx;
+C' = min(255, (C * tC * skala) >> 16);        // ≈ C * tC / mx
+```
+
+> **Ez magyarázza a 20,63 ΔE-t.** Egy naiv „szorozd meg a színnel" megoldásból
+> hiányzik a szín­megőrzés-lépés, a telítettségfüggő **gamma**, és a
+> `mx`-normalizálás. Mindhárom a szín telítettségével arányos hibát okoz.
+
+#### A luma-súlyok — HARMADIK független megerősítés
+
+`Y = (77·R + 151·G + 28·B) >> 8` — ugyanaz a három együttható, mint a
+**szépiánál** (#619) és a **`radsat`-nál**. Három, egymástól függetlenül
+visszafejtett effekt ugyanazt a képletet használja.
+
+#### Ami továbbra is nyitott
+
+Csak a **2. lépés**: mi a virtuális színátalakítás (`ctx->vtbl[2]`), és mit
+jelent a `colorwheel version="0"` vs `="1"`. Következő lépés: célzott
+dekompilálás az `ytColorWheelNode` vtable 2. és 8. slotjára (a vtable kezdete
+`0x009c2eb0`).
