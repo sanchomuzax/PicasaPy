@@ -637,14 +637,25 @@ Rectangle {
         anchors.right: parent.right
         // a terület magassága a LÁTHATÓ fülé — egyszerre legfeljebb egy az.
         // NINCS `clip` és nincs görgetősáv: a tartalomnak el KELL férnie.
+        //
+        // #659: a fülek egy része FELSŐ MARGÓVAL ül (`anchors.margins`),
+        // ezért a puszta `implicitHeight` kevesebb, mint a tényleges alsó
+        // szél — a „Gyakori javítások" oszlopa pontosan ennyivel, 10
+        // képponttal lógott ki. A gyerek `y`-ját is bele kell számolni.
+        // Az `implicitHeight`-et (és nem a `height`-et) használjuk, mert az
+        // nem függ a szülő magasságától — így nincs kötési hurok.
         height: {
             if (!tabArea.visible)
                 return 0
             var tallest = 0
             var kids = tabArea.children
-            for (var i = 0; i < kids.length; ++i)
-                if (kids[i].visible && kids[i].implicitHeight > tallest)
-                    tallest = kids[i].implicitHeight
+            for (var i = 0; i < kids.length; ++i) {
+                if (!kids[i].visible)
+                    continue
+                var also = kids[i].y + kids[i].implicitHeight
+                if (also > tallest)
+                    tallest = also
+            }
             return tallest
         }
 
