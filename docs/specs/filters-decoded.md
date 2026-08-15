@@ -1478,10 +1478,15 @@ tehát valójában három, egymásba fésült csatorna-LUT. Csúszkája nincs: a
 mind a három ugyanennek a ciklusnak az **olvasása** — írója nincs; a tábla a
 lemezen nem nulla, monoton tartalommal áll.
 
-A kinyert tábla (256×3 érték) a privát repóban: `referencia/warm-lut.md`,
-a kinyerés módszerével együtt. **Ezzel a `warm` kalibrációt nem igényel** —
-a táblát szó szerint kell használni, nem illeszteni rá görbét.
-*Bizonyítottsági fok: megerősített.*
+> **Ezt a táblát a projekt már ismerte.** A #611 ugyanezt kinyerte, és
+> `src/picasapy/render/warmify_lut.py` néven **be is került a kódba**. A mai
+> kör független újrakinyerése **bájtra azonos** eredményt adott (256×3 érték),
+> tehát ez nem új felfedezés, hanem a meglévő tábla **független
+> megerősítése** — ami önmagában is ér annyit, hogy a `warm` biztosan nem
+> szorul kalibrációra. A privát repóban `referencia/warm-lut.md` a kinyerés
+> módszerével; a #611-es forrás-CSV ugyanott
+> `referencia/dekompilalt-576/warmify-lut.csv`.
+*Bizonyítottsági fok: megerősített, két független kinyeréssel.*
 
 ### `unsharp` / `unsharp2` — a sugár BEÉGETETT 1,5 ✅
 
