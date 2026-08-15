@@ -90,17 +90,43 @@ def apply_matte(
 # --- HDR / LocalContrast: LocalContrastImageOperation -----------------------
 
 
+#: #688: a `LocalContrast` `Contrast` csúszkája `[1..3]`, és az ALSÓ vége a
+#: NULLA-ÁLLAPOT — a natív műveletnek átadott `Strength` tehát `Contrast − 1`.
+#: A `HDR` ugyanezt a motort hajtja, de a `Strength`-et KÖZVETLENÜL adja
+#: tovább; a két effekt csővezetéke nem azonos (a `filterdesc-registry.md`
+#: szerint a `LocalContrast` `SetVar`/`GetVar` párokra bontva építi fel).
+#:
+#: Bizonyíték — a #685 mérőszettje (valódi Picasa-export; a modell eltérése
+#: a Picasa kimenetétől, ΔE CIE76 átlag):
+#:
+#:     eset                     Picasa Δ   s=Contrast   s=Contrast−1
+#:     min  (R=1,3  C=1,0)         0,18       1,85          0,18
+#:     alap (R=15   C=1,5)         3,08       2,24          0,37
+#:     max  (R=40   C=3,0)         9,43       2,77          0,87
+#:
+#: (A 0,18 a mérőszett JPEG-zajszintje, azaz a `min` esetben a Picasa és az
+#: eltolt modell EGYARÁNT tétlen.) Ugyanez az eltolás a `HDR`-en ROSSZABB
+#: illeszkedést ad (alap: 1,71 vele, 1,24 nélküle), ezért KIZÁRÓLAG a
+#: `LocalContrast`-é.
+LOCAL_CONTRAST_STRENGTH_OFFSET = 1.0
+
+
 def apply_local_contrast(image, radius: float = 15.0, strength: float = 1.5):
-    """`LocalContrast=1,Radius,Contrast` — a `HDR`-rel AZONOS motor, Fade
-    nélkül. Radius `[1,3..40]` (alap 15), Strength `[1..3]` (alap 1,5).
+    """`LocalContrast=1,Radius,Contrast` — a `HDR`-ével AZONOS motor, Fade
+    nélkül. Radius `[1,3..40]` (alap 15), Contrast `[1..3]` (alap 1,5).
 
     #545: a Gauss-szigma a `Radius` FELE, és a művelethez `Strength`-arányos
-    világosítás is tartozik (ld. `glimmer_ops.local_contrast`). A mérés a
-    `HDR` exportjain történt; a `LocalContrast`-hoz nincs külön
-    referencia-készlet, de ugyanaz a motor hajtja.
+    világosítás is tartozik (ld. `glimmer_ops.local_contrast`).
+
+    #688: a csúszka ALSÓ vége (`Contrast = 1`) a nulla-állapot, ezért a
+    motornak `Contrast − 1` megy át — `Contrast = 1`-nél a kimenet bitre
+    azonos a bemenettel (ld. `LOCAL_CONTRAST_STRENGTH_OFFSET`).
     """
     validate_image(image)
-    return to_uint8(local_contrast(to_float(image), radius, strength))
+    effective = max(strength - LOCAL_CONTRAST_STRENGTH_OFFSET, 0.0)
+    if effective == 0.0:
+        return image.copy()
+    return to_uint8(local_contrast(to_float(image), radius, effective))
 
 
 def apply_hdr(image, radius: float = 20.0, strength: float = 3.0, fade: float = 0.0):
