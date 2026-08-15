@@ -1761,12 +1761,12 @@ class TestLegacyEffectsCatalogue:
         # #565/#567 után ezek renderelnek
         assert by_key["radtint"]["enabled"] is True
         assert by_key["autobacklight"]["enabled"] is True
-        # #623 után a család két megfejtett tagja is él
+        # #623 után az irányított család MIND A NÉGY tagja él
         assert by_key["dir_sat"]["enabled"] is True
         assert by_key["dir_brite"]["enabled"] is True
-        # ezek a natív kernelük megfejtéséig szürkék: a `dir_sharp`-nál a
-        # rámpa horgonya, a `linblur`-nél a sugár-leképezés hiányzik
-        assert by_key["dir_sharp"]["enabled"] is False
+        assert by_key["dir_sharp"]["enabled"] is True
+        assert by_key["linblur"]["enabled"] is True
+        # ez a natív kernele megfejtéséig szürke
         assert by_key["triple"]["enabled"] is False
 
     def test_dead_legacy_name_is_flagged(self, controller):

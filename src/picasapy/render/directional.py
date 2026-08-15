@@ -23,10 +23,15 @@ from __future__ import annotations
 import numpy as np
 
 from picasapy.render.curves import validate_image
+from picasapy.render.iir_blur import apply_picasa_blur
 
 #: A natív magok a rámpa-súlyt 8.8 fixpontban használják (`round(s * 256)`),
 #: és `>> 8`-cal osztanak vissza.
 _WEIGHT_SCALE = 256.0
+
+#: A `dir_sharp` burkolója (`0x008f9090`) ezzel az osztóval számol
+#: elmosási sugarat a rövidebb oldalból: `min(W, H) >> 3`.
+_DIR_SHARP_RADIUS_DIVISOR = 8
 
 
 def directional_ramp(
@@ -131,3 +136,82 @@ def apply_dir_brite(
     )
     result = np.where(lighten, np.float32(255.0) - blended, blended)
     return np.clip(result, 0.0, 255.0).astype(np.uint8)
+
+
+def dir_sharp_blur_radius(height: int, width: int) -> int:
+    """A `dir_sharp` elmosási sugara a burkolóból (`0x008f9090`).
+
+    ```c
+    uVar1 = min(szélesség, magasság) >> 3;
+    if (uVar1 == 0) uVar1 = 1;
+    FUN_009dd0d0(&másolat, (float)uVar1, (float)uVar1, ...);
+    ```
+
+    Vagyis a rövidebb oldal nyolcada — NAGY sugár: ez tehát nem finom
+    részlet-élesítés, hanem **helyi kontraszt** („clarity") jellegű hatás.
+    """
+    if height <= 0 or width <= 0:
+        raise ValueError(f"Érvénytelen képméret: {width}×{height}")
+    return max(1, min(height, width) // _DIR_SHARP_RADIUS_DIVISOR)
+
+
+def apply_dir_sharp(
+    image: np.ndarray, horizontal: float, vertical: float
+) -> np.ndarray:
+    """Irányított unsharp mask — a natív `0x0090d600` mag.
+
+    ```c
+    k = round(...);                       // GLOBÁLIS horgony (x87-veremen)
+    amount = (k − round(rámpa(x,y))) * 2;
+    if (amount > 0)
+        out_c = clamp(c + (((c − elmosott_c) * amount) >> 8), 0, 255);
+    ```
+
+    A mag maga **nem konvolvál**: az elmosott puffert a burkoló készíti el,
+    `min(W, H) / 8` sugárral, a közös IIR-maggal (`iir_blur`).
+
+    ## KÖZELÍTÉS — a horgony (`k`) értéke
+
+    A `k`-t a natív kód a két csúszka **abszolút értékéből** számolja
+    (`FUN_0049f5c0(a); FUN_0049f5c0(b);` majd egy kerekítés), de a művelet
+    maga az x87-veremen történik, ezért a dekompilátor elvesztette. Itt a
+    `k = round((|a| + |b|) · 256)` feltevéssel élünk, mert:
+
+    - a két `ABS` hívás pontosan ahhoz kell, hogy a horgony a csúszkák
+      ELŐJELÉTŐL függetlenül a rámpa maximumára (`max s = |a| + |b|`)
+      essen;
+    - így az `amount` a teljes képen nemnegatív (a natív `if (0 < amount)`
+      ág értelmet nyer), a rámpa legpozitívabb sarkában pontosan nullára
+      fut ki, a szemközti sarokban maximális;
+    - `a = b = 0` mellett a hatás azonosság — a csúszkák alapállásában a
+      kép nem változhat.
+
+    Ez **erős következtetés, nem mérés**: a horgony skáláját (és így a
+    hatás abszolút erősségét) egy referencia-export döntheti el. A
+    kalibráció a #317-es jegyben fut.
+    """
+    validate_image(image)
+    height, width = image.shape[:2]
+    radius = float(dir_sharp_blur_radius(height, width))
+    blurred = apply_picasa_blur(image, radius, radius).astype(np.float32)
+
+    ramp = directional_ramp(height, width, horizontal, vertical)
+    weight = np.round(ramp * np.float32(_WEIGHT_SCALE))
+    anchor = float(
+        np.round(
+            (min(abs(float(horizontal)), 1.0) + min(abs(float(vertical)), 1.0))
+            * _WEIGHT_SCALE
+        )
+    )
+    amount = (np.float32(anchor) - weight) * np.float32(2.0)
+
+    values = image.astype(np.float32)
+    # a natív `>> 8` PADLÓ (nem kerekítés), és csak a pozitív erősségű
+    # képpontokra fut le — a többit érintetlenül másolja
+    sharpened = values + np.floor(
+        (values - blurred) * amount[..., np.newaxis] / np.float32(_WEIGHT_SCALE)
+    )
+    result = np.where(
+        (amount > 0.0)[..., np.newaxis], np.clip(sharpened, 0.0, 255.0), values
+    )
+    return result.astype(np.uint8)

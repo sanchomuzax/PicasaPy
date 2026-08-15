@@ -330,6 +330,8 @@ Picasa-hű lenne.
 | **PONTOS** | matematikailag egyértelmű, mérés sem kell, vagy a natív kódból kinyert beégetett tábla | `Invert` (255−x, #381 óta a `glimmer_ops.invert_curve`-ön át), `warm` (256×3 beégetett tábla a `0x0090c040`/`0x00d33b70`-ből kinyerve, #611 — ld. `docs/specs/picasa-native-filter-workers.md` 2.8) |
 | **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
 | **MEGFEJTVE A BINÁRISBÓL, EGY PARAMÉTER KALIBRÁLATLAN (#565)** | az algoritmuscsalád és a pixelművelet a natív kód visszafejtéséből egzakt, egyetlen csúszka affin leképezése maradt feltételezés | `radtint` (radiális **szorzó**-tint köbös smoothstep maszkkal; a Feather affin leképezéséhez golden-pár kell) |
+| **MEGFEJTVE A BINÁRISBÓL (#623)** | a natív mag EGÉSZ aritmetikája képpontra reprodukálva (hurkos referencia-újraírással hitelesítve) — nincs benne feltételezett skalár | `dir_sat` (`0x0090dbb0`), `dir_brite` (`0x0090d8b0`) |
+| **MEGFEJTVE A BINÁRISBÓL, EGY SKALÁR KALIBRÁLATLAN (#623)** | a pixelművelet, a geometria és a súlytáblák a natív kódból egzaktak; egyetlen skalár az x87-veremen ment át, ezért a dekompilátum nem őrizte meg — a helyére INDOKOLT feltevés került, mérés írja majd felül (#317) | `dir_sharp` (`0x0090d600`; a rámpa horgonya `k = round((\|a\|+\|b\|)·256)` — a két natív `ABS` hívásból következtetve), `linblur` (`0x0090de10`; a „Mennyiség" → elmosási sugár leképezés a testvér `radblur` burkolójának mintájára) |
 
 Vagyis a Glimmer-effektek (33) többsége #381 óta a `filterdesc.xml` EGZAKT
 csővezetékén fut — a `RoundedEdges`, `Matte`, `NightVision` a korábbi
@@ -888,3 +890,43 @@ a `_MIN_STRETCH_SPAN = 58` továbbra is **mért**, nem visszafejtett viselkedés
 Amit ez a kör kizárt: az `autolight`+`enhance` bármely sorrendű összetétele
 (5,97–6,07), az azonossággal való erősség-keverés, a 252-es korlát, és minden
 1/100–1/400 közötti vágási osztó (a legjobb így is 2,56).
+## Az irányított család megvalósítva — `dir_sat`, `dir_brite`, `dir_sharp`, `linblur` (#623)
+
+A #568 visszafejtésének eredménye kódba került. Modulok:
+`render/directional.py` (a közös rámpa + a három `dir_*`),
+`render/linear_blur.py` (`linblur`), `render/iir_blur.py` (a KÖZÖS elmosó
+mag, `0x009dd0d0`). Mind a négy elérhető a `filters=` láncból, és a
+„Régi effektek" fülön (#571) is aktív.
+
+**Paraméter-alakok:**
+
+| szűrő | ini-alak | honnan |
+|---|---|---|
+| `dir_sat` | `dir_sat=1,balról-jobbra,felülről-lefelé` | a burkolók (`0x008f8fb0`, `0x008f9050`, `0x008f9090`) a két csúszkát KÖZVETLENÜL adják tovább; a korong csak beállítja őket (közös `0x008f9bc0` visszahívás) |
+| `dir_brite` | `dir_brite=1,balról-jobbra,felülről-lefelé` | ” |
+| `dir_sharp` | `dir_sharp=1,balról-jobbra,felülről-lefelé` | ” |
+| `linblur` | `linblur=1,korong-x,korong-y,Mennyiség` | itt a korong VALÓDI pozíció (`0x008f9bf0`), ezért a puck-os szűrők általános sorrendje érvényes (`filterdesc-registry.md` 3. pont) — valódi ini-mintánk nincs rá |
+
+**A közös elmosó mag (`0x009dd0d0`)** most kapott először megvalósítást:
+kétmenetes, elsőrendű IIR, 9.7 fixpontos állapottal, a 4.2.5-ben MÉRT
+`k = round(65536·(1 − exp(−1/R)))` együtthatóval. A `dir_sharp` burkolója
+`min(W, H)/8` sugárral hívja (tehát a hatás **helyi kontraszt**, nem finom
+részlet-élesítés), a `linblur` burkolója pedig **kétszer** futtatja le.
+
+**Ami közelítés maradt** (a docstringek is kimondják):
+
+1. `dir_sharp` — a globális horgony (`k`). A natív kód a két csúszka
+   abszolút értékéből számolja, de x87-veremen; a `k = round((|a|+|b|)·256)`
+   feltevés mellett szól, hogy a két `ABS` hívás pontosan a rámpa
+   maximumához (`max s = |a|+|b|`) kell, hogy az `amount` a képen
+   nemnegatív legyen, és hogy 0 csúszkaállásnál a kép változatlan.
+2. `linblur` — a „Mennyiség" → sugár leképezés (a testvér `radblur`
+   burkolójának alakjával: `W/100·(Amount+1) + 0,001`).
+3. `linblur` — a súlytábla utolsó rekeszei. A natív
+   `round((1−2f)·255,9999)` **bájtba** kerül, így `i ≥ 338`-tól 256-ot
+   tárolna, ami 0-ra fordul körbe: a teljesen éles tartomány egy sávjában
+   50%-os homályt adna. A 255,9999-es szorzó a **csonkolás** klasszikus
+   idiómája, ezért 255-re vágunk — referencia-export döntheti el.
+
+Mindhármat a **#317** (effekt-kalibráció) írhatja felül; a hatás JELLEGE
+(hol erős, milyen irányú, milyen az átmenet) ettől függetlenül egzakt.
