@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.54] – 2026-08-15
+
+### Javítva
+- **A program újra elindul (#699).** A 0.7.53 nem indult el: az
+  indítóképernyő végtelen ciklusban maradt, ha volt már saját mentett
+  szerkesztésed. **Ha a 0.7.53-at telepítetted, frissíts erre a kiadásra.**
+  Elnézést kérünk — a hiba azért juthatott ki, mert az ellenőrzéseink egyike
+  sem indította el ténylegesen a programot. Mostantól a kiadás előtti
+  ellenőrzés **elindítja**, és megbukik, ha az indulás elszáll.
+
 ## [0.7.53] – 2026-08-15
 
 ### Javítva
