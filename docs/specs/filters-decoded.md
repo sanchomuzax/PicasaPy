@@ -1536,8 +1536,64 @@ uj = (3 * kovetkezo + jelenlegi) >> 2;     // csatornankent
 Ez adja a szemcse „csomós" jellegét — fehér zajból nem jönne ki.
 *Bizonyítottsági fok: erős* (a `rand()` azonosítása megerősített; a simítás
 iránya és a 128-as keverés a dekompilátumból olvasva).
-**Nyitva:** a mag beültetése (`_srand` hívási helye) — ettől függ, hogy a
-szemcse képenként azonos-e vagy sem.
+
+#### A mag kérdése LEZÁRVA: a szemcse képenként MÁS (2026-08-15)
+
+**Ez volt a szakasz nyitott pontja, és eldőlt — méréssel és kódból is.**
+
+**A mérés a döntő.** Az öt `grain2=1;` golden-pár (`golden-kit/05-tone` →
+`golden-kit-result/export/05-tone`) különbségmezőit összevetve:
+
+| összevetés | korreláció |
+|---|---:|
+| `photo01` vs `photo04` (**mindkettő 1920×1080**) | **−0,0012** |
+| `chart_color` vs `chart_ramp` (**mindkettő 1600×1200**) | **+0,0019** |
+| a többi hét páros | −0,017 … +0,002 |
+
+**Az azonos méretű párok a döntők:** ott a zajmező elhelyezése is azonos
+lenne, tehát rögzített mag mellett a két különbségmezőnek **egyeznie kellene**.
+A korreláció nulla.
+
+Hogy ez nem mérési zaj, azt a kontroll adja: a `00-base` mappa
+**effekt nélküli** exportjain a puszta JPEG-újratömörítés szórása
+**0,27–1,35** szint, a `grain2`-párokén **4,0–5,4** — a szemcse tehát
+bőven kiemelkedik a zajból, mégsem korrelál.
+
+**A kód ugyanezt mondja.** Az MSVC `rand()` (`0x00c08221`) a magot a
+**szálankénti** CRT-blokkból veszi (`[ptd + 0x14]`, LCG:
+`mag = mag·0x343fd + 0x269ec3`, kimenet `(mag >> 16) & 0x7fff`). Az `srand`
+(`0x00c08214`: `_getptd(); ptd[0x14] = arg`) az egész binárisban **10 helyről**
+hívódik, és **egyik sem a szemcse-munkafüggvény** (`0x0090a2e0`) — az csak
+`_rand`-ot hív. A generátor tehát **nem áll vissza képenként**: a folyam megy
+tovább, és minden kép a sorozat más szakaszát kapja.
+
+*Bizonyítottsági fok: megerősített* (a mérés önmagában eldönti) · a pontos ok
+(folytatódó folyam vs. máshol beültetett mag) **erős**, de nem elkülönített.
+
+> ⚠️ **Következmény a tesztelésre: a `grain`/`grain2` kimenete elvileg sem
+> reprodukálható bájtra.** Golden-összevetésben ezeket **statisztikailag** kell
+> mérni (szórás, sávonkénti erősség), nem képpontonként. Aki képpont-egyezést
+> vár tőlük, olyan tesztet ír, ami sosem lesz zöld.
+
+#### A szemcse JELLEGE — amit utánozni kell (mérve, 5 golden-páron)
+
+| tulajdonság | mért érték |
+|---|---|
+| **monokróm** | ugyanaz az érték mindhárom csatornán: `σ(R,G,B)` = 4,81/5,00/4,77 (`chart_color`), a csatornák közti korreláció **0,75–1,00** |
+| **erősség** | teljes szórás **4,0–5,4** szint |
+| **világosságfüggés** | a középtónusban a legerősebb (σ ≈ 5–6,4), a két végén visszaesik (σ ≈ 3–3,8) |
+| **szomszéd-korreláció** | vízszintes **+0,23…+0,31**, függőleges **+0,24…+0,32** |
+
+⚠️ **Az utolsó sor ellentmond a dekompilátumból olvasott, csak vízszintes
+1:3 simításnak.** Egy soronként balról jobbra futó szűrőnek a vízszintes
+korrelációt érdemben a függőleges FÖLÉ kellene emelnie; a mérés szerint a
+kettő egyenlő (0,01-en belül). Lehetséges magyarázatok: a szemcse nem teljes
+felbontáson készül és skálázódik, vagy az export JPEG-je mossa el a
+különbséget. *Bizonyítottsági fok: feltételes* — ez a szakasz új nyitott
+pontja.
+
+Egy kilógó minta: a `chart_detail` szórása mindössze **1,31** (a többi 4–5),
+és nála a függőleges korreláció a nagyobb (0,46 vs 0,36). Nem magyarázott.
 
 ### Amit ez a négy jelent a #317-re
 
