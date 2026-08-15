@@ -291,6 +291,48 @@ explicitebb forrás, mint a szövegtábla (ld. 13. pont) — és nálunk 2026-08
 program; a képernyőkép azt, mit tud **most**. Funkció-állításhoz a második
 kell.
 
+## 14/c. A `respack.yt` rétegfejléce KÉPPONTRA megadja a felület geometriáját
+
+**Ne mérj képernyőképet, ha az elrendezés a csomagban van.** A `respack.yt`
+minden rétegrekordja 13 bájtos fejléccel indul, és abban ott a téglalap
+(`int16 x0, y0, x1, y1` — ld. 3. szakasz). Ez a Picasa **authorolt**
+elrendezése, nem mintavétel.
+
+```python
+import sys; sys.path.insert(0, "tools/picasa"); import respack
+adat = open("research/copy_Picasa_3_7/Picasa3/runtime/respack.yt", "rb").read()
+for e in respack.read_index(adat):
+    if not e.is_tre:
+        r = respack.decode_layer(adat, e)      # r.x0, r.y0, r.x1, r.y1
+```
+
+A bejegyzésnév alakja `layer:<névtér>/<típus>(<argumentumok>): <azonosító>` —
+az azonosító ugyanaz, amit a `.tre` használ, tehát a két forrás **közvetlenül
+összefésülhető**: a `.tre` a kötéseket adja, a csomag a méreteket.
+
+**Amit ez megoldott:** a szerkesztő bal paneljének teljes geometriája
+(`ui-audit-editor.md` 2.9) — csempeméret, oszlop- és sorköz, fülszélességek —,
+és a képtálca gombkészlete (`picasa-fo-ablak-elrendezes.md`).
+
+### ⚠️ A csapda: az ABSZOLÚT pozíció tervezőrajz, nem futásidő
+
+A csomag egy **tervezővászon** koordinátáit tárolja; futásidőben a `.tre`
+kényszerei újrahorgonyozzák az elemeket. A kettőt összekeverni téves számhoz
+vezet:
+
+| elem | a csomagban | futásidőben |
+|---|---|---|
+| `thumbui/listdecrect` (bal panel) | x 0..**210** | **`HLISTOFFSET2` = 240** (`thumbui.tre`) |
+| `thumbui/hlistsizer` (elválasztó) | x 210..218 | `HLISTOFFSET2 − 4`-től |
+
+**A szabály:** a **méretek** (szélesség, magasság) és az egymáshoz képesti
+elrendezés authorolt és átvehető; az **abszolút x/y csak akkor**, ha a `.tre`
+nem ír felül rá kényszert (`MaintainOffset`, `XConstraint`, `YConstraint`).
+Ahol van kényszer, az nyer — ld. a 13. szakaszt („Az explicitebb forrás nyer").
+
+Az elválasztó **8 képpont széles** (210..218) — ez viszont méret, tehát
+érvényes, függetlenül attól, hogy hol ül.
+
 ## Még fel nem emelt kövek
 
 | kő | mit adhat | költség |
