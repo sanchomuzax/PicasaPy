@@ -193,6 +193,9 @@ körben mérendő célzott próbákkal.
   színparaméter értelmezése tisztázandó.
 - `ansel`: semleges (B=G=R), enyhe középemelés — B/W + tónusgörbe.
 - `glow` v1/v2: középemelés (144/151) — térbeli komponens elemzése hátravan.
+  **Felülírva (#668):** a 144/151 a Gauss-modellhez tapadt; a `chart_color`
+  golden sík szürke foltjain a VALÓDI érték **128 → 141,9 (v1)** és
+  **128 → 148,9 (v2)**, és a térbeli komponens is megvan (natív IIR-mag).
 - `Vignette`: átlagos sötétedés a sávban — térbeli maszk elemzése hátravan.
 
 ## 4. kör — MEGFEJTVE ✅ (elemzés: `analyze_goldens4.py`)
@@ -289,13 +292,13 @@ végpontok felé tér el).
 |---|---|---|
 | `autocolor` | pixelhű→közelítés (0.00–1.55) | ✅ kész (színöntetnél kis eltérés → Nyitva 1) |
 | `autolight` | mind közelítés (0.20–0.74) | ✅ kész |
-| `glow` | közelítés (1.85) | ✅ jó |
+| `glow` | közelítés (1.85 → **0,15–1,06** #668) | ✅ kész |
 | `enhance` | közelítés, színöntetnél eltér (0.49–3.02) | ✅ jó (az autocolor-komponens húzza) |
 | `sat` | negatív jó, pozitív romlik (0.70–12.71) | ⚠️ pozitív telítés pontosítandó |
 | `finetune2` | h/s alacsony jó, hő-extrém eltér (0.94–24.9) | ⚠️ hőmérséklet-tengely pontosítandó |
 | `fill` | csak gyenge erősségnél jó (1.03–6.56) | ⚠️ 2D-LUT az erősséggel driftel |
-| `glow2` | eltér (2.68) | ❌ közelítő modell |
-| `radblur` | eltér (3.18) | ❌ |
+| `glow2` | eltér (2.68) → **közelítés (0,18–1,19)** (#668) | ✅ kész |
+| `radblur` | eltér (3.18) → **közelítés (0,09–0,68)** (#668) | ✅ kész |
 | `Vignette` | eltér (4.65) | ❌ analitikus modell (Nyitva 2) |
 | `ansel` | eltér (5.60) | ❌ |
 | `dir_tint` | eltér (9.36) | ❌ |
@@ -319,8 +322,8 @@ Picasa-hű lenne.
 
 | minőség | mit jelent | effektek |
 |---|---|---|
-| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `sat`, `grain2` (statisztikai), `glow` (v1, ΔE 1,85 — ld. Golden-verdiktek fent) |
-| **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `ansel` (5,6), `radblur` (3,2), `glow2` (2,7) |
+| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `sat`, `grain2` (statisztikai) |
+| **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `ansel` (5,6) |
 | **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Neon`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
 | **MEGFEJTVE A BINÁRISBÓL (#566)** | a `filterdesc.xml` csak a paraméterNEVEKET és a FIX konstansokat adja, de a `Picasa3.exe` statikus visszafejtése a teljes belső kernelt feltárta (`glimmer::IRImageOperation`, RTTI/vtable `0xcf0a14`, ctor `0xbc3d80`, feldolgozás `0xbc3f50`) | `IR` |
 | **MEGFEJTVE, DE ECSET-MASZK NÉLKÜL (#381)** | a csővezeték/paraméterezés egzakt, de a Picasa ecsettel kijelölt régióra hatna — a PicasaPy-nak nincs ecset-eszköze, ezért a TELJES KÉPRE fut (jelezve a `ChainReport.range_warnings`-ban) | `PicnikTint`, `ReanimatedEyeColor` |
@@ -331,6 +334,7 @@ Picasa-hű lenne.
 | **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
 | **MEGFEJTVE A BINÁRISBÓL, EGY PARAMÉTER KALIBRÁLATLAN (#565)** | az algoritmuscsalád és a pixelművelet a natív kód visszafejtéséből egzakt, egyetlen csúszka affin leképezése maradt feltételezés | `radtint` (radiális **szorzó**-tint köbös smoothstep maszkkal; a Feather affin leképezéséhez golden-pár kell) |
 | **MEGFEJTVE A BINÁRISBÓL (#623)** | a natív mag EGÉSZ aritmetikája képpontra reprodukálva (hurkos referencia-újraírással hitelesítve) — nincs benne feltételezett skalár | `dir_sat` (`0x0090dbb0`), `dir_brite` (`0x0090d8b0`) |
+| **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#668)** | a natív elmosó mag (`0x009dd0d0`) alá állítva, és MINDEN szabad skalár valódi Picasa-exportból mérve — 12 golden-párból 12 „közelítés", átlagos ΔE 0,09…1,19 | `glow`/`glow2` (`0x0090d4b0`: négyzetre emelő előgörbe → IIR-elmosás → screen, súly = Intenzitás), `radblur` (`0x008f8520`: IIR-elmosás + natív smoothstep sugaras maszk) |
 | **MEGFEJTVE A BINÁRISBÓL, EGY SKALÁR KALIBRÁLATLAN (#623)** | a pixelművelet, a geometria és a súlytáblák a natív kódból egzaktak; egyetlen skalár az x87-veremen ment át, ezért a dekompilátum nem őrizte meg — a helyére INDOKOLT feltevés került, mérés írja majd felül (#317) | `dir_sharp` (`0x0090d600`; a rámpa horgonya `k = round((\|a\|+\|b\|)·256)` — a két natív `ABS` hívásból következtetve), `linblur` (`0x0090de10`; a „Mennyiség" → elmosási sugár leképezés a testvér `radblur` burkolójának mintájára) |
 
 Vagyis a Glimmer-effektek (33) többsége #381 óta a `filterdesc.xml` EGZAKT
@@ -637,8 +641,10 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
 1. autocolor pontos gain-képlete (célzott cast-sweep kellene)
 2. ~~Vignette analitikus modell~~ — **MEGVAN** (`filterdesc-registry.md`
    4.3): belső ragyogás, `sugár = Blur·0,02·max(W,H)/4`. A `glow`/`radblur`
-   analitikus modellje továbbra is nyitott (a `glow` sugara logaritmikus
-   leképezésű: `<log>250.0</log>`).
+   analitikus modellje **is MEGVAN (#668)** — natív IIR-mag + mért
+   előgörbe/maszk, ld. lent a #668 szakaszt. (A `glow` sugara valóban a
+   logaritmikus leképezés eredménye: `<log>250.0</log>`, és képpontban
+   értendő.)
 3. unsharp kernel finomítás (dekonvolúciós illesztés)
 4. `tint` színparaméter-formátum (ffff → R=0 anomália) — **új nyom**: a
    `tint` `colorwheel version="0"`, az `ansel`/`dir_tint` `version="1"`,
@@ -670,7 +676,8 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
    `tint` (dE 20, formátum: Nyitva 4) → `dir_tint` (9) → `sat` pozitív
    ág (12) → `finetune2` hőmérséklet-tengely (25 extrémnél) → `fill` 2D-LUT
    erősség-drift (6.5) → `ansel` (5.6) → `Vignette` (4.6, Nyitva 2) →
-   `radblur` (3.2) → `glow2` (2.7).
+   ~~`radblur` (3.2)~~ → ~~`glow2` (2.7)~~ — mindkettő **KÉSZ (#668)**:
+   a natív elmosó magra állítva a 12 golden-párból mind a 12 „közelítés".
 9. **`finetune` v1 ↔ `finetune2` v2 hőmérséklet: 2× skála-hipotézis
    mérése.** A `filterdesc.xml` szerint a v1 tartománya `[−0,5..0,5]`, a
    v2-é `[−1..1]`; ha a görbe azonos, akkor `v2_érték = 2 · v1_érték`
@@ -930,3 +937,105 @@ részlet-élesítés), a `linblur` burkolója pedig **kétszer** futtatja le.
 
 Mindhármat a **#317** (effekt-kalibráció) írhatja felül; a hatás JELLEGE
 (hol erős, milyen irányú, milyen az átmenet) ettől függetlenül egzakt.
+
+## A `glow`/`glow2` és a `radblur` a natív magon — VÉGIGMÉRVE (#668)
+
+A #623 bevitte a közös elmosó magot, de a `glow`-t és a `radblur`-t
+szándékosan a régi Gauss-közelítésen hagyta, mert a golden-verdiktjük ahhoz
+volt kalibrálva. A #668 elvégezte a mérést, és a mérés **támogatta** a
+cserét: mind a 12 golden-pár javult, egy sem romlott.
+
+### A felhasznált referencia-anyag
+
+| forrás | mi van benne | mire jó |
+|---|---|---|
+| `referencia/blur-meres/export/…-sugar-percent-{0,25,50,75,100}` | szintetikus éllépcső + a windowsos Picasa **Ragyogás**-exportja öt sugárállásban, Intenzitás maximumon | a TÉRBELI komponens (a 4.2.5 mérés forrása) |
+| `golden-kit/09-effects` | `chart_color`, `photo01`, `photo04` × `glow1`, `glow2`, `radblur` — valódi Picasa-exportok | tónus + térbeli, fotón és mérőtáblán |
+| `golden-kit3/16-effects-ramp` | `chart_ramp` × `glow1`, `glow2`, `radblur` | tónus, sík szürke lépcsőfokokon |
+
+A `blur-meres/export/blur-meres-LagyFokusz_ellenorzes` **nem** Lágy fókusz
+(a neve félrevezető): a kimenete vízszintesen és függőlegesen is egyenletes,
+tehát a 4.2.5 „a sugár abszolút" ellenőrzésének 1600 képpontos `glow`-ja.
+**Valódi `radblur`-export tehát csak a két golden-kitben van** (négy pár,
+két Amount-értékkel) — több sugaras beállítást a #317 mérhet.
+
+### A `glow` megfejtett modellje
+
+```
+elő = be² / 255                                  ← MULTIPLY önmagával
+hom = iir_blur(elő, R, R)                        ← a natív mag (0x009dd0d0)
+ki  = be + Intenzitás · (255 − be) · hom / 255   ← SCREEN
+```
+
+- **Sugár:** a tárolt (log-leképezett) paraméter **képpontban**, változtatás
+  nélkül. A `blur-meres` öt csúszkaállásán az él-profil átlagos hibája
+  0,48–1,63 szint (a régi Gauss-modellé 0,68–10,19).
+- **Előgörbe:** a sík foltok tónusemelése `(255−c)·c²` alakú, nem
+  `(255−c)·c`. A kitevő illesztése **éles minimumot ad 2,0-nál** (1,9-nél és
+  2,1-nél az átlagos hiba a kétszeresére nő). Ez fedi a natív burkoló
+  puffer-előkészítő lépését (`FUN_009aabf0` + `FUN_00aa40a0`).
+- **Súly:** maga az Intenzitás — nincs illesztett szorzó. (A korábbi modell
+  0,565-ös konstansa a hibás előgörbét kompenzálta.)
+
+A sík szürke foltok mért és modellezett értéke (a `chart_color` goldenről,
+`glow1` = `1,0.432749,2.469705`, `glow2` = `1,0.65,3.0`):
+
+| bemenet | glow1 golden | glow1 modell | glow2 golden | glow2 modell |
+|---:|---:|---:|---:|---:|
+| 64 | 69,54 | 69,13 | 71,70 | 71,72 |
+| 96 | 105,69 | 105,76 | 110,57 | 110,62 |
+| 128 | **141,92** | 141,78 | **148,86** | 148,74 |
+| 160 | 175,95 | 176,20 | 184,03 | 184,17 |
+| 192 | 207,43 | 207,45 | 215,29 | 215,20 |
+
+> A 3. kör „128 → 144 / 151" horgonya tehát **téves volt** — a Gauss-modell
+> saját kimenetét rögzítette, nem a goldenét. A tesztek javítva.
+
+### A `radblur` megfejtett modellje
+
+Natív elmosó mag + a 4.2.4 sugaras smoothstep-maszkja
+(`render/radial_mask.py`), a korong közepén az EREDETI képpel, a peremen az
+elmosottal. Két illesztett skalár:
+
+- **`Sharpness = 0`** — a `radblur`-nak nincs „Élesség" csúszkája; a négy
+  golden-pár illesztési minimuma egybehangzóan a 0-nál van (0,1-től monoton
+  romlik).
+- **a sugár képszélesség-hányada `0,009`** — a 4.2.4 dekompilátum `0,01`-et
+  olvas, de mind a négy pár (két Amount-érték, három kép) minimuma
+  következetesen a `0,9 ×` értéknél van, és az `(Amount+1)` arányosság
+  pontosan teljesül. **Az eltérés oka nyitott** — a #317 dolga eldönteni,
+  hogy a dekompilált konstans olvasata pontatlan-e, vagy a natív hívás
+  máshonnan kapja a szélességet.
+
+> Az `Amount = 0` **NEM azonosság** — a korábbi kód annak vette. A
+> `golden-kit` `radblur=1,0.411585,0.611111,0,0` exportján a kép átlagosan
+> 12,5 (photo01) és 26,4 (photo04) szintnyit tér el a forrástól.
+
+### A mérés eredménye — régi vs. új
+
+Átlagos ΔE (CIE76) a teljes render-láncon, valódi Picasa-exportok ellen:
+
+| golden-pár | régi (Gauss) | **új (natív)** | ítélet |
+|---|---:|---:|---|
+| `chart_color` glow1 | 3,00 | **0,69** | eltér → közelítés |
+| `chart_color` glow2 | 4,25 | **0,62** | eltér → közelítés |
+| `chart_color` radblur | 1,92 | **0,50** | közelítés → közelítés |
+| `photo01` glow1 | 1,74 | **0,15** | közelítés → közelítés |
+| `photo01` glow2 | 2,54 | **0,18** | eltér → közelítés |
+| `photo01` radblur | 5,02 | **0,09** | eltér → közelítés |
+| `photo04` glow1 | 2,32 | **1,06** | eltér → közelítés |
+| `photo04` glow2 | 3,31 | **1,19** | eltér → közelítés |
+| `photo04` radblur | 11,88 | **0,68** | eltér → közelítés |
+| `chart_ramp` glow1 | 1,85 | **0,25** | közelítés → közelítés |
+| `chart_ramp` glow2 | 2,68 | **0,24** | eltér → közelítés |
+| `chart_ramp` radblur | 3,18 | **0,26** | eltér → közelítés |
+
+Összegzés: **4 közelítés + 8 eltér → 12 közelítés, 0 eltér.** A maradék hiba
+JPEG-zaj nagyságrendű; „pixelhű" ítélet veszteséges goldenen nem érhető el.
+
+### Ami NEM változott
+
+A **`radsat`** („Fókuszos FF") a régi közelítésen maradt: ugyanezt a natív
+maszkot használja, de **nincs hozzá egyetlen mért kimenet sem**, és a
+projekt szabálya szerint a natív mag megléte önmagában nem indok. A #317
+kalibrálhatja, ha készül hozzá referencia-export.

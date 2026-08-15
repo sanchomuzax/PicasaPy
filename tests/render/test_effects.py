@@ -98,17 +98,20 @@ class TestApplyVignette:
 
 
 class TestApplyGlow:
-    # Mért középemelés sík szürkén (golden 3. kör):
-    # glow=1,0.432749,2.469705 → 128→144 · glow2=1,0.65,3.0 → 128→151
+    # Mért középemelés sík szürkén. A 3. kör 144/151-es értékeit a #668
+    # ÚJRAMÉRTE a `golden-kit/09-effects` VALÓDI Picasa-exportjának sík
+    # szürke foltjain: 128 → 141,92 (v1) és 128 → 148,86 (v2). A régi
+    # számok a Gauss-modellhez tapadtak, nem a goldenhez.
+    # A teljes tónusválasz-sor: `test_glow_radblur_668.py`.
     def test_glow_v1_mert_kozepemeles(self) -> None:
         image = _uniform_image(128, height=32, width=32)
         result = apply_glow(image, GLOW_V1_INTENSITY, GLOW_V1_RADIUS)
-        assert abs(int(result[16, 16, 0]) - 144) <= 1
+        assert abs(int(result[16, 16, 0]) - 142) <= 1
 
     def test_glow2_mert_kozepemeles(self) -> None:
         image = _uniform_image(128, height=32, width=32)
         result = apply_glow(image, 0.65, 3.0)
-        assert abs(int(result[16, 16, 0]) - 151) <= 1
+        assert abs(int(result[16, 16, 0]) - 149) <= 1
 
     def test_nulla_intenzitas_identitas(self) -> None:
         image = _uniform_image((30, 90, 200))
@@ -135,19 +138,23 @@ class TestApplyGlow:
 
 
 class TestApplyRadblur:
-    def test_nulla_amount_identitas(self) -> None:
-        # a golden-kit radblur-ja (size=0, amount=0) mérten no-op
+    def test_nulla_amount_sem_azonossag(self) -> None:
+        # A korábbi modell az amount=0-t no-opnak vette; a #668 mérése ezt
+        # MEGCÁFOLTA (`golden-kit/09-effects`, `radblur=1,…,0,0`: a peremen
+        # a kép átlagosan 26 szintnyit változik). Részletek:
+        # `test_glow_radblur_668.py`.
         rng = np.random.default_rng(3)
-        image = rng.integers(0, 256, size=(20, 20, 3), dtype=np.uint8)
-        result = apply_radblur(image, 0.411585, 0.611111, 0.0, 0.0)
-        np.testing.assert_array_equal(result, image)
+        image = rng.integers(0, 256, size=(120, 160, 3), dtype=np.uint8)
+        result = apply_radblur(image, 0.5, 0.5, 0.0, 0.0)
+        assert not np.array_equal(result, image)
 
     def test_kozeppont_eles_marad(self) -> None:
         rng = np.random.default_rng(5)
         image = rng.integers(0, 256, size=(40, 40, 3), dtype=np.uint8)
         result = apply_radblur(image, 0.5, 0.5, 0.3, 0.8)
-        # a megadott középpont a védett zónán belül változatlan
-        np.testing.assert_array_equal(result[20, 20], image[20, 20])
+        # A megadott középpont a védett zónán belül gyakorlatilag változatlan
+        # — a natív súlytábla maximuma 255/256, ezért 1 szint eltérés belefér.
+        assert np.all(np.abs(result[20, 20].astype(int) - image[20, 20]) <= 1)
 
     def test_szel_elmosodik(self) -> None:
         # kontrasztos sakktáblán a szélső sáv szórása csökken

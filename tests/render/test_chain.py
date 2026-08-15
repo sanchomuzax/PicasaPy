@@ -283,12 +283,16 @@ class TestApplyFiltersEffects:
         assert result[0, 0, 0] == result[0, 0, 1] == result[0, 0, 2]
 
     def test_radblur_alkalmazasa(self) -> None:
-        # éles (golden-kit) alak — size=0, amount=0: mérten no-op
+        # Éles (golden-kit) alak. A size=0, amount=0 eset NEM no-op: a
+        # `golden-kit/09-effects` valódi Picasa-exportja szerint a kép
+        # pereme ilyenkor is elmosódik (#668) — a korong közepe marad éles.
         image = _gradient_image()
-        ops = (FilterOp("radblur", ("1", "0.411585", "0.611111", "0.000000", "0.000000")),)
+        ops = (FilterOp("radblur", ("1", "0.5", "0.5", "0.000000", "0.000000")),)
         result, skipped = apply_filters(image, ops)
         assert skipped == ()
-        np.testing.assert_array_equal(result, image)
+        center = (image.shape[0] // 2, image.shape[1] // 2)
+        assert np.all(np.abs(result[center].astype(int) - image[center]) <= 1)
+        assert not np.array_equal(result, image)
 
     def test_radsat_alkalmazasa(self) -> None:
         image = np.full((21, 21, 3), (200, 80, 80), dtype=np.uint8)
