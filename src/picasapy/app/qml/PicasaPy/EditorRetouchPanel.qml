@@ -17,6 +17,15 @@ ColumnLayout {
     anchors.margins: 10
     spacing: 8
 
+    // #741: a retusálás gombjai SZÉLESEBBEK a többi eszközénél — 118 × 28
+    // (`docs/specs/szerkeszto-panel-meretek.md` 6.3/7.), 7 képpont
+    // hézaggal (x 18 és 143). A `retouchreset` egyedül, középen áll (x 80).
+    component ActionButton: PanelButton {
+        Layout.fillWidth: false
+        Layout.preferredWidth: 118
+        Layout.preferredHeight: 28
+    }
+
     RowLayout {
         Layout.fillWidth: true
         spacing: 6
@@ -52,7 +61,11 @@ ColumnLayout {
     PicasaSlider {
         id: retouchBrushSizeSlider
         objectName: "retouchBrushSizeSlider"
-        Layout.fillWidth: true
+        // #741: `brushslider_container` — a mért 127 × 27, középen (x 74)
+        Layout.fillWidth: false
+        Layout.preferredWidth: 127
+        Layout.preferredHeight: 27
+        Layout.alignment: Qt.AlignHCenter
         from: 1; to: 100
         stepSize: 1
         value: panel.brushSize
@@ -80,39 +93,46 @@ ColumnLayout {
         color: Theme.textGray
     }
 
+    // #741: az eredetin a `retouchreset` EGYEDÜL, középen ül, a
+    // `retouchundo`/`retouchredo` pedig alatta párban — korábban mindhárom
+    // egy sorban szorongott, és egyik sem érte el a 118 képpontot.
+    ActionButton {
+        objectName: "retouchResetButton"
+        label: qsTr("Reset")
+        Layout.alignment: Qt.AlignHCenter
+        buttonEnabled: panel.retouchRegionCount > 0 || panel.retouchPatchPending
+        onButtonClicked: panel.retouchResetRequested()
+    }
+
     RowLayout {
-        Layout.fillWidth: true
-        spacing: 6
-        PanelButton {
+        Layout.fillWidth: false
+        Layout.alignment: Qt.AlignHCenter
+        spacing: 7
+        ActionButton {
             objectName: "retouchUndoPatchButton"
             label: qsTr("Undo Patch")
             buttonEnabled: panel.canUndoPatch
             onButtonClicked: panel.retouchUndoPatchRequested()
         }
-        PanelButton {
+        ActionButton {
             objectName: "retouchRedoPatchButton"
             label: qsTr("Redo Patch")
             buttonEnabled: panel.canRedoPatch
             onButtonClicked: panel.retouchRedoPatchRequested()
         }
-        PanelButton {
-            objectName: "retouchResetButton"
-            label: qsTr("Reset")
-            buttonEnabled: panel.retouchRegionCount > 0 || panel.retouchPatchPending
-            onButtonClicked: panel.retouchResetRequested()
-        }
     }
 
     RowLayout {
-        Layout.fillWidth: true
-        spacing: 6
-        PanelButton {
+        Layout.fillWidth: false
+        Layout.alignment: Qt.AlignHCenter
+        spacing: 7
+        ActionButton {
             objectName: "retouchApplyButton"
             label: qsTr("Apply") + " ✔"
             buttonEnabled: panel.retouchRegionCount > 0
             onButtonClicked: panel.retouchApplyRequested()
         }
-        PanelButton {
+        ActionButton {
             objectName: "retouchCancelButton"
             label: qsTr("Cancel") + " ✘"
             onButtonClicked: panel.retouchCancelRequested()

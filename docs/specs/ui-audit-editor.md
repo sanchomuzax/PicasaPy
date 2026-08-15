@@ -299,21 +299,52 @@ rétegtéglalapjai).
 
 ### Eltérés a PicasaPy-tól — a bal sáv „szétesésének" okai
 
-| # | jellemző | eredeti (bináris) | PicasaPy | hol |
-|---|---|---|---|---|
-| 1 | **fülek száma** | **5** | **7** | `EditorTabBar.qml` — 7 db `EditTabButton` |
-| 2 | **eszközcsempe sorköze** | **64–68 px** | **104 px** (94 + 10) | `ToolTile.qml:43` `preferredHeight: 94`, `EditorTabCommonFixes.qml` `rowSpacing: 10` |
-| 3 | csempe-kép mérete | **44 × 30** | 54 × 36 | `ToolTile.qml` |
-| 4 | oszlopköz | **81 px** | ≈ 82 px | — **ez stimmel** |
-| 5 | felső sáv a szerkesztőben | **nincs** (csak a 122 × 22-es „Vissza a könyvtárhoz") | a `MainToolbar` (Importálás + kereső) végig látszik | `Main.qml` `header: MainToolbar` |
+**Állapot: a #741 javítása után.** A „MOST" oszlop értékei a KIRAJZOLT
+fából mértek (`tests/app/qml_functional/test_editor_panel_geometry_741.py`),
+nem a forrásból olvasottak.
 
-**A függőleges nyúlás fő oka a 2. sor:** három csempesor × 40 px többlet
-≈ **120 képpont**, amit a panel aljáról vesz el — ezért csúszik szét a
-Derítőfény-sor és a gombok.
+| # | jellemző | eredeti (bináris) | #741 ELŐTT | MOST | hol |
+|---|---|---|---|---|---|
+| 1 | **fülek száma** | **5** | 7 | **7 — tudatos kivétel**, `39·39·40·39·40·39·40 = 276` | `EditorTabBar.qml` |
+| 2 | tartalom-oszlop | **276** | 260 | **276** | `EditorPanel.qml` (`tabBar`, `tabArea` margói) |
+| 3 | fülsáv magassága | **25** | 38 | **25** | `EditTabButton.qml` |
+| 4 | fülikon magassága | **16–19** | 22 | **18** | `EditTabButton.qml` |
+| 5 | **eszközcsempe sorköze** | **64** | **104** (94 + 10) | **64** | `ToolTile.qml`, `EditorTabCommonFixes.qml` |
+| 6 | csempe-kép mérete | **44 × 30** | 54 × 36 | **44 × 30** | `ToolTile.qml` |
+| 7 | csempe-oszlopköz | **81** | 88 | **81** (cella 80 + 1 térköz) | `EditorTabCommonFixes.qml` |
+| 8 | Derítőfény kis képe | **44 × 30**, x 37 | 54 × 36, a rácstól elcsúszva | **44 × 30**, a rács 1. oszlopával egy vonalban | `EditorTabCommonFixes.qml` |
+| 9 | Derítőfény-csúszka | **127 × 27** | 200 × 14 | **127 × 27** | `EditorTabCommonFixes.qml` |
+| 10 | Visszavonás / Újra | **132 × 28**, 5 px hézag | 127 × 24, 6 px | **132 × 28**, 5 px | `EditorPanel.qml` |
+| 11 | Finomhangolás csúszkái | **191 × 27**, ~53 osztásköz | 230–260 × 14, 42 | **191 × 27**, ~55 | `EditorFinetunePanel.qml` |
+| 12 | párban álló gombok | **98 × 28** | 127–151 × 24 | **98 × 28** | crop · redeye · szöveg panel |
+| 13 | retusálás gombjai | **118 × 28** | 82–127 × 24 | **118 × 28** | `EditorRetouchPanel.qml` |
+| 14 | legördülők magassága | **21** | 22 / 24 / 30 | **21** | crop · szöveg panel |
+| 15 | felső sáv a szerkesztőben | **nincs** (csak a 122 × 22-es „Vissza a könyvtárhoz") | a `MainToolbar` végig látszik | **NYITVA** | `Main.qml` `header: MainToolbar` |
 
-A 3–5. effekt-fül rácsa ezzel szemben **már jó** (`EditorEffectsTab1.qml`,
-`columnSpacing: 2`, `rowSpacing: 2`, csempe 86 — a #704-ben a mért értékekre
-állítva). Az 1. fül egyszerűen kimaradt abból a körből.
+**A függőleges nyúlás fő oka az 5. sor volt:** három csempesor × 40 px
+többlet ≈ **120 képpont**, amit a panel aljáról vett el — ezért csúszott
+szét a Derítőfény-sor és a gombok.
+
+A 3–5. effekt-fül rácsa ezzel szemben **már a #741 előtt is jó volt**
+(`EditorEffectsTab1.qml`, `columnSpacing: 2`, `rowSpacing: 2`, csempe 86 —
+a #704-ben a mért értékekre állítva). A 276-ra bővült tartalom-oszlop miatt
+a fülek margója igazodott (bal 5, jobb 9), hogy a rács továbbra is **88
+képpontos osztásközzel** álljon.
+
+> ⚠️ **A 15. sor NYITVA marad.** A felső sáv elrejtése a `Main.qml`-t
+> érinti, ami a #741 munkájából ki volt zárva — külön körben kell
+> elvégezni.
+
+#### A Visszavonás/Újra sor függőleges helye — TUDATOS eltérés
+
+A bináris szerint a gombsor a panel **aljához** van kötve. Ez az eredetire
+igaz, ahol a panel FIX méretű: ott „a panel alja" és „a tartalom alatt"
+ugyanaz a hely. Nálunk a panel NYÚLIK, és a #616 pontosan azt javította,
+hogy 1920 × 1080-as ablakban a 832 képpont magas panel alján a gombok több
+száz képponttal a tartalom alatt, egy üres mező túloldalán ültek. A #741
+ezért a gombok **méretét** (132 × 28) és a **hézagot** (5 px) veszi át, a
+függőleges helyet nem: a sor a tartalom alja + kis rés, de sosem lejjebb a
+látható terület aljánál (`EditorPanel.qml`, `globalUndoRow.y`).
 
 ## 3. Az effekt-csempe rács (3–5. fül) — pixelre mért felépítés
 

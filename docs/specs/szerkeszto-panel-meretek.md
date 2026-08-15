@@ -333,6 +333,28 @@ Ezt kell végigpipálni — mindegyik állítás **mérhető**:
 mintájára): a méreteket a **megjelenített** fán kell állítani, nem property-ből
 olvasva — és a javítás nélkül el kell buknia.
 
+### Állapot (#741)
+
+A fenti lista **a felső sáv kivételével teljesítve**; az őr-teszt
+`tests/app/qml_functional/test_editor_panel_geometry_741.py` (49 állítás, a
+javítás előtt 44 bukott el). Ami NYITVA maradt:
+
+- a `MainToolbar` elrejtése szerkesztő módban — a `Main.qml`-t érinti, ezért
+  külön körben (ld. [`ui-audit-editor.md`](ui-audit-editor.md) 2.9,
+  eltérés-táblázat 15. sora).
+
+Két helyen a megvalósítás **szándékosan** tér el a lap betűjétől, mindkettő
+indoklással:
+
+1. **A Visszavonás/Újra sor függőleges helye.** A méret (132 × 28) és a
+   hézag (5) átvéve, de a sor NEM a panel aljára van szegezve: nálunk a
+   panel nyúlik, és a #616 épp azt javította, hogy nagy ablakban a gombok
+   több száz képponttal a tartalom alatt jelentek meg. A sor a tartalom
+   alja + kis rés, de sosem lejjebb a látható terület aljánál.
+2. **A csempe-cella 80 + 1 képpont** a 81 + 0 helyett — így a 44 képpontos
+   csempekép egész számú eltolással ül a cella közepén, és nem csúszik el
+   fél képponttal a Derítőfény-sorhoz képest. Az OSZTÁSKÖZ változatlanul 81.
+
 ---
 
 *Bizonyítottsági fok: megerősített.* A `respack.yt` rétegtéglalapjai

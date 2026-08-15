@@ -702,7 +702,13 @@ Rectangle {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.margins: 10
+        // #741: a TARTALOM-OSZLOP a mért 276 képpont (x 3..279) — a
+        // korábbi 10-10 képpontos margó 260-at hagyott, ettől lett a
+        // fülsáv és minden alatta lévő rács keskenyebb az eredetinél.
+        // (`docs/specs/szerkeszto-panel-meretek.md` 1.)
+        anchors.leftMargin: 3
+        anchors.rightMargin: 1
+        anchors.topMargin: 10
     }
 
     // ---------------- a FÜLEK közös területe (NEM görgethető) ----------
@@ -728,6 +734,11 @@ Rectangle {
         anchors.top: tabBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
+        // #741: a fülterület a fülsávval AZONOS 276 képpontos
+        // tartalom-oszlop (x 3..279) — a fülek eddig a teljes 280-ból
+        // indultak, és a saját margóikkal együtt 260-ra szűkültek.
+        anchors.leftMargin: 3
+        anchors.rightMargin: 1
         // a terület magassága a LÁTHATÓ fülé — egyszerre legfeljebb egy az.
         // ALAPÁLLAPOTBAN nincs vágás és nincs görgetősáv: a tartalomnak el
         // KELL férnie (#422/#628 — a görgethető keret levételét a felhasználó
@@ -991,7 +1002,13 @@ Rectangle {
         objectName: "editorGlobalUndoRow"
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.margins: 10
+        // #741: a MÉRT geometria — a két gomb x 7..139 és x 144..276,
+        // vagyis 132 képpont széles mindkettő, 5 képpont hézaggal, és
+        // együtt kitöltik a 276-os tartalom-oszlopot
+        // (7 + 132 + 5 + 132 = 276). A sor szélessége ezért 269, a bal
+        // margó 7, a jobb 4 — a `fillWidth` innen PONTOSAN 132-t oszt.
+        anchors.leftMargin: 7
+        anchors.rightMargin: 4
         // #616: a sor a FÜL TARTALMA ALATT ül, nem a panel aljára szegezve.
         //
         // A #628/#641/#703 kör azt érte el, hogy a sor mindig a LÁTHATÓ
@@ -1017,13 +1034,15 @@ Rectangle {
             var tartalomAlatt = tabArea.y + panel.tabContentHeight + 8
             return Math.max(0, Math.min(lathatoAlja, tartalomAlatt))
         }
-        spacing: 6
+        spacing: 5
         opacity: panel.enabled ? 1 : 0.45
 
         PanelButton {
             objectName: "editUndoButton"
             label: panel.undoLabel
             buttonEnabled: panel.undoAvailable
+            //: #741: a mért gombmagasság (`filter_undo`, 132 × 28)
+            Layout.preferredHeight: 28
             onButtonClicked: panel.undoRequested()
         }
         PanelButton {
@@ -1031,6 +1050,8 @@ Rectangle {
             label: panel.redoLabel
             buttonEnabled: panel.redoAvailable
             // #405: egyenlő szélességű pár (nem egy keskeny + egy kitöltő)
+            //: #741: a mért gombmagasság (`filter_redo`, 132 × 28)
+            Layout.preferredHeight: 28
             onButtonClicked: panel.redoRequested()
         }
     }
