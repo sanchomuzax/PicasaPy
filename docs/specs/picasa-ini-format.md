@@ -932,8 +932,42 @@ szerepel — de **mindig paraméter nélkül** (`redeye=1;`), és a képszekció
 rögzíti, hogy a művelet szerepel a láncban.
 
 Ez ellentmond a #371 kiinduló feltevésének (miszerint a régió-formátum az
-ini-ből dekódolható lesz), és **átirányítja a kutatást a `db3` felé**.
-*Bizonyítottsági fok: megerősített* (310 valós előfordulás, kivétel nélkül).
+ini-ből dekódolható lesz). *Bizonyítottsági fok: megerősített* (310 valós
+előfordulás, kivétel nélkül).
+
+### …és a `db3`-ban sincs — kimerítő keresés (2026-08-15)
+
+A feltevés az volt, hogy a régiók az adatbázisba kerülnek. **Ez sem igaz.**
+A tulajdonos valódi `db3`-ának mind a **36 `imagedata_*` oszlopát**
+átvizsgáltuk:
+
+| keresett | hol fordul elő |
+|---|---|
+| `rect64(` | **kizárólag** `imagedata_deferredface` és `imagedata_deferredregion` — mindkettő **arc**-régió (`rect64(…),<név>` párok) |
+| `retouch` / `redeye` | **kizárólag** `imagedata_filters`, és ott is **paraméter nélkül** (544 lánc, `redeye=1,…` alakú **nulla**) |
+
+Megnéztük a `.picasaoriginals/.picasa.ini`-t is (az eredeti kép mellé írt
+lenyomatot): ott is csak `filters=autolight=1;redeye=1;` áll, régió nélkül.
+
+**Következtetés (erős hipotézis):** a Picasa a retus-ecsetvonások és a
+vörösszem-foltok koordinátáit **egyáltalán nem őrzi meg**. A `redeye=1;` /
+`retouch=1;` csak **jelölő**: a mentett/renderelt változat eltér az
+eredetitől. Ezt támogatja a `revertable`, `originfast` és `originslow`
+oszlopok léte — a visszaállítás az **eredeti fájlból** történik, nem a
+műveletek visszajátszásából.
+
+*Bizonyítottsági fok: erős* (kimerítő negatív keresés három tárolóban);
+**megerősítéshez** egy célzott próba kell: vörösszem-javítás után az
+exportált kép pixelei megváltoznak-e, miközben az ini `redeye=1;` marad.
+
+### Mit jelent ez a PicasaPy-nak
+
+A `retouch=1,<rect64>…` **saját kiterjesztésünk** így nem ütközik semmivel —
+a Picasa ezt a mezőt úgysem írja. **Viszont a Picasa nem is fogja
+értelmezni**: egy általunk retusált kép a Picasában retusálatlan marad
+(illetve a lánc ott megszakad, ld. a lánc-viselkedést fentebb, #643).
+Ez **elvi korlát**, nem hiba — a doksiban kimondva, hogy a fejlesztés ne
+próbálja „megjavítani".
 
 ## Az eredeti képek mentése — KÉT elnevezés, verzióváltással
 
