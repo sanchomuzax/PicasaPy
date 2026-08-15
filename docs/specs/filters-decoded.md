@@ -1449,3 +1449,90 @@ kontrasztemelés**, aminek az erősségét a 2. lépésben mért `k` adja.
 >
 > **Ez méréssel olcsón pótolható:** két-három golden-pár elég a `k` arányának
 > illesztéséhez, mert a görbe alakja már ismert.
+
+## `warm`, `grain`, `unsharp`, `blur` — natív visszafejtés (2026-08-15, #317)
+
+Egy kör (`DecompileKalibralatlan.java`, gyökerek a natív callback-regiszterből:
+`0x008f8930` warm, `0x008f88e0` grain, `0x008f8520`/`0x008f9bf0` radblur,
+`0x008f8f70` glow, `0x008f8f30` unsharp, `0x008f89a0` blur; mélység 2).
+
+### `warm` (Melegítés) — PIXELPONTOS, beégetett LUT ✅
+
+A `warm` **nem képlet, hanem egy fordítási idejű, 256 elemű tábla**
+(`DAT_00d33b70`, RVA `0x933b70`, a `.data` szekcióban). A ciklus
+(`FUN_0090c040`):
+
+```c
+out.B = (tabla[in.B]      ) & 0xff;
+out.G = (tabla[in.G] >>  8) & 0xff;
+out.R = (tabla[in.R] >> 16) & 0xff;
+out.A = 0xff;                          // az alfa mindig telitodik
+```
+
+Mindhárom csatorna **ugyanabból** a táblából olvas, csak más bájtot vesz ki —
+tehát valójában három, egymásba fésült csatorna-LUT. Csúszkája nincs: a
+`warm` fix transzformáció.
+
+**Hogy ez tényleg konstans, és nem futásidőben épül:** a `.text`-ben pontosan
+**három** hivatkozás mutat rá (`0x0090c0ab`, `0x0090c0b2`, `0x0090c0cb`),
+mind a három ugyanennek a ciklusnak az **olvasása** — írója nincs; a tábla a
+lemezen nem nulla, monoton tartalommal áll.
+
+A kinyert tábla (256×3 érték) a privát repóban: `referencia/warm-lut.md`,
+a kinyerés módszerével együtt. **Ezzel a `warm` kalibrációt nem igényel** —
+a táblát szó szerint kell használni, nem illeszteni rá görbét.
+*Bizonyítottsági fok: megerősített.*
+
+### `unsharp` / `unsharp2` — a sugár BEÉGETETT 1,5 ✅
+
+```c
+FUN_0090c4a0(dst, src, /*sigma*/ 1.5f, /*amount*/ *(p + 0x28));
+// 1) elmosas ugyanabba a cel-pufferbe (a kozos elmosomotor, 2-es mod)
+// 2) pixelenkent:
+out.A = src.A;
+out.C = clamp0_255( ((src.C - blur.C) * k >> 8) + src.C );
+```
+
+Vagyis a klasszikus életlen maszk: **`ki = be + erősség · (be − elmosott)`**.
+A sugár (`0x3fc00000` = `1.5f`) **argumentumként beégetve** érkezik — nem
+csúszka, nem képarányfüggő. Az `unsharp` és az `unsharp2` **ugyanaz a
+callback**; a `filterdesc.xml` szerint csak az Amount felső korlátja tér el
+(1,0 vs 3,0), ami ezzel a képlettel konzisztens.
+*Bizonyítottsági fok: megerősített* (a képlet és az 1,5).
+**Nyitva:** magának az elmosómagnak a pontos alakja (a `FUN_00a42c20` mögötti
+objektum 2-es módja) — ehhez egy mélyebb kör kell.
+
+### `blur` — ugyanaz a motor, a csúszka a sugár
+
+```c
+FUN_0090cf60(dst, src, /*sugar*/ *(p + 0x28), /*skala*/ 1.0f);
+```
+
+A munkafüggvény `(h+1)·(w+1)` darab **16 bites** akkumulátort foglal — ez
+összegzőtábla/dobozszűrő-jellegű megvalósításra utal, nem Gauss-konvolúcióra.
+*Bizonyítottsági fok: erős (a foglalás alakjából), a mag pontos alakja nyitva.*
+
+### `grain` / `grain2` — MSVC `rand()`, majd vízszintes simítás
+
+A callback konstans `0.5f`-fel hív (`FUN_0090a2e0(dst, 0.5f)`), amiből
+`keveres = round(256 − 0,5·256) = 128`. A zajmező az **MSVC szabványos
+`rand()`-jából** jön (LCG: `seed = seed*0x343fd + 0x269ec3`, kimenet
+`(seed >> 16) & 0x7fff`), **három bemelegítő hívás** után. A nyers zajra
+ezután egy 1:3 súlyú, soronként balról jobbra futó simítás megy:
+
+```c
+uj = (3 * kovetkezo + jelenlegi) >> 2;     // csatornankent
+```
+
+Ez adja a szemcse „csomós" jellegét — fehér zajból nem jönne ki.
+*Bizonyítottsági fok: erős* (a `rand()` azonosítása megerősített; a simítás
+iránya és a 128-as keverés a dekompilátumból olvasva).
+**Nyitva:** a mag beültetése (`_srand` hívási helye) — ettől függ, hogy a
+szemcse képenként azonos-e vagy sem.
+
+### Amit ez a négy jelent a #317-re
+
+A `warm` **lezárult, pixelpontosan**, kalibráció nélkül. Az `unsharp` legfőbb
+ismeretlene (a sugár) eldőlt. A `blur` és a `grain` modellje a helyére került,
+mindkettőnél egyetlen, jól körülírt részlet maradt — és egyik sem igényel
+windowsos exportot a **megfejtéshez**, csak a validáláshoz (#684).
