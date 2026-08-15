@@ -32,6 +32,18 @@ Column {
     // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
     readonly property var ctl: controller
 
+    // #718: a kijelölés VÉDETT olvasata. A leépítésnek van egy köztes
+    // állapota, amikor az `appWindow` már létezik, a `selectedIndexes`
+    // viszont még/már `undefined` — a `.length` olvasása ilyenkor
+    // TypeError. Az olvasó kötések ezért ezen a tulajdonságon át kérik a
+    // kijelölést; az ÍRÁS (a kijelölés módosítása) marad közvetlenül az
+    // `appWindow`-on, mert az csak felhasználói művelet közben fut, amikor
+    // az ablak biztosan él.
+    readonly property var selectedIndexesOrEmpty:
+        (tray.appWindow && tray.appWindow.selectedIndexes)
+            ? tray.appWindow.selectedIndexes
+            : []
+
     // tömör acélkék infó-sáv; kijelöléskor a kép adatai
     Rectangle {
         id: infoBar
@@ -66,7 +78,9 @@ Column {
         }
         Text {
             anchors.centerIn: parent
-            text: !tray.ctl ? "" : (tray.appWindow.viewerOpen
+            // #718: null-őr — a `ctl` mellett az `appWindow` is
+            // átmenetileg null lehet az engine-leépítés utolsó kiértékelésekor.
+            text: (!tray.ctl || !tray.appWindow) ? "" : (tray.appWindow.viewerOpen
                   ? tray.ctl.viewerInfo(tray.viewerIndex)
                   : (tray.appWindow.selectedIndexes.length === 1
                      ? tray.ctl.photoInfo(tray.appWindow.selectedIndex)
@@ -186,14 +200,25 @@ Column {
                     clip: true
                     Repeater {
                         objectName: "trayPreviewRepeater"
+                        // #718: null-őr — az appWindow (a Main.qml
+                        // `window`-ja) az engine-leépítés közben átmenetileg
+                        // null lehet, miközben ez a kötés utoljára
+                        // kiértékelődik (ld. a fenti `ctl` docstringje).
+                        // NEM elég csak az appWindow-t vizsgálni: a
+                        // leépítés egy köztes állapotában az ablak MÁR
+                        // létezik, a `selectedIndexes` viszont még
+                        // `undefined` — ezt a `.length` olvasása
+                        // TypeError-ral bünteti. (Ez a maradék hiba a
+                        // teszt lefutása UTÁN, a késleltetett törlési sor
+                        // ürítésekor jelentkezett, ezért az őr sem látta.)
                         model: trayPreview.heldCount > 0
                             ? trayPreview.heldCount
-                            : tray.appWindow.selectedIndexes.length
+                            : tray.selectedIndexesOrEmpty.length
                         delegate: Image {
                             objectName: "trayPreviewThumb"
                             required property int index
                             width: 20; height: 20
-                            source: !tray.ctl ? ""
+                            source: !tray.ctl || !tray.appWindow ? ""
                                 : trayPreview.heldCount > 0
                                   ? tray.ctl.heldThumbUrlAt(index)
                                   : tray.ctl.photos.thumbUrlAt(
@@ -204,8 +229,10 @@ Column {
                     }
                 }
                 Text {
+                    // #718: ld. a Repeater fenti null-őrét — ugyanaz a
+                    // teardown-ablak érinti ezt a kötést is.
                     visible: trayPreview.heldCount === 0
-                             && tray.appWindow.selectedIndexes.length === 0
+                             && tray.selectedIndexesOrEmpty.length === 0
                     anchors.centerIn: parent
                     text: qsTr("Selection")
                     color: Theme.placeholderText
@@ -222,9 +249,12 @@ Column {
             PicasaButton {
                 id: trayHoldBtn
                 objectName: "trayHoldButton"
-                enabled: !tray.appWindow.viewerOpen
-                         && tray.appWindow.selectedIndexes.length > 0
-                onClicked: tray.ctl && tray.ctl.holdRows(
+                // #718: null-őr — ld. a fenti `ctl` docstringje.
+                enabled: tray.appWindow
+                         ? (!tray.appWindow.viewerOpen
+                            && tray.appWindow.selectedIndexes.length > 0)
+                         : false
+                onClicked: tray.ctl && tray.appWindow && tray.ctl.holdRows(
                     tray.appWindow.selectedIndexes)
                 Layout.preferredWidth: 26
                 ToolTip.text: qsTr("Hold Selection")
@@ -263,8 +293,14 @@ Column {
                 id: trayAddToBtn
                 objectName: "trayAddToButton"
                 text: qsTr("Add to")
-                enabled: trayPreview.heldCount > 0
-                         && tray.ctl && tray.ctl.albums.length > 0
+                // #718: null-őr — `tray.ctl` a leépítés végén lehet igaz úgy
+                // is, hogy az `albums` lista már nem érhető el (undefined).
+                // A `!!` a láncolt `&&` esetleges `undefined` eredményét
+                // valódi bool-lá kényszeríti (a `bool`-property-hez az
+                // `undefined` hozzárendelése önmagában is szkripthiba).
+                enabled: !!(trayPreview.heldCount > 0
+                         && tray.ctl && tray.ctl.albums
+                         && tray.ctl.albums.length > 0)
                 onClicked: trayAddToMenu.popup()
                 ToolTip.text: qsTr("Add the pictures in the tray to an album")
                 ToolTip.visible: trayAddToBtn.hovered
@@ -327,13 +363,20 @@ Column {
 
             PicasaButton {
                 id: trayStar
-                readonly property int targetRow: tray.appWindow.viewerOpen
-                    ? tray.viewerIndex : tray.appWindow.selectedIndex
-                readonly property bool multi:
-                    !tray.appWindow.viewerOpen
-                    && tray.appWindow.selectedIndexes.length > 1
-                enabled: tray.appWindow.viewerOpen
-                         || tray.appWindow.selectedIndex >= 0
+                // #718: null-őr — ld. a fenti `ctl` docstringje; appWindow
+                // hiányában a célsor -1 (nincs cél), a gomb letiltva.
+                readonly property int targetRow: tray.appWindow
+                    ? (tray.appWindow.viewerOpen
+                       ? tray.viewerIndex : tray.appWindow.selectedIndex)
+                    : -1
+                readonly property bool multi: tray.appWindow
+                    ? (!tray.appWindow.viewerOpen
+                       && tray.appWindow.selectedIndexes.length > 1)
+                    : false
+                enabled: tray.appWindow
+                         ? (tray.appWindow.viewerOpen
+                            || tray.appWindow.selectedIndex >= 0)
+                         : false
                 Layout.preferredWidth: 34
                 onClicked: multi
                            ? controller.toggleStarMany(
@@ -362,10 +405,15 @@ Column {
                 text: "↺"
                 // #103: csak-videó kijelölésnél tiltva (photos.revision:
                 // modell-frissüléskor újraértékelt kötés)
+                // #718: null-őr — az appWindow (`window`) az engine-
+                // leépítés közben átmenetileg null lehet (ld. a `ctl`
+                // docstringje); ilyenkor a gomb egyszerűen letiltva marad.
                 enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
-                          (tray.appWindow.viewerOpen
-                           || tray.appWindow.selectedIndex >= 0)
-                          && !tray.appWindow.rotateTargetsAllVideo())
+                          tray.appWindow
+                          ? ((tray.appWindow.viewerOpen
+                              || tray.appWindow.selectedIndex >= 0)
+                             && !tray.appWindow.rotateTargetsAllVideo())
+                          : false)
                 Layout.preferredWidth: 34
                 onClicked: trayStar.multi
                            ? controller.rotateLeftMany(
@@ -390,10 +438,13 @@ Column {
                 id: trayRotateRightBtn
                 objectName: "trayRotateRight"
                 text: "↻"
+                // #718: null-őr — ld. trayRotateLeftBtn indoklása fentebb.
                 enabled: (tray.ctl ? tray.ctl.photos.revision : 0,
-                          (tray.appWindow.viewerOpen
-                           || tray.appWindow.selectedIndex >= 0)
-                          && !tray.appWindow.rotateTargetsAllVideo())
+                          tray.appWindow
+                          ? ((tray.appWindow.viewerOpen
+                              || tray.appWindow.selectedIndex >= 0)
+                             && !tray.appWindow.rotateTargetsAllVideo())
+                          : false)
                 Layout.preferredWidth: 34
                 onClicked: trayStar.multi
                            ? controller.rotateRightMany(
@@ -416,9 +467,13 @@ Column {
             Text { text: "−"; color: Theme.textGray; font.pixelSize: 13 }
             PicasaSlider {
                 id: sizeSlider
-                from: 72; to: 256; value: tray.appWindow.thumbSize
+                // #718: null-őr — ld. a fenti `ctl` docstringje; appWindow
+                // hiányában egy tetszőleges, a [from, to] tartományba eső
+                // érték (a csúszka úgyis leépülőben van ekkor).
+                from: 72; to: 256
+                value: tray.appWindow ? tray.appWindow.thumbSize : 128
                 Layout.preferredWidth: trayMainBar.compact ? 90 : 140
-                onMoved: tray.appWindow.thumbSize = value
+                onMoved: tray.appWindow && (tray.appWindow.thumbSize = value)
             }
             Text { text: "+"; color: Theme.textGray; font.pixelSize: 13 }
             Item { width: trayMainBar.compact ? 4 : 10 }
@@ -433,9 +488,12 @@ Column {
                 text: qsTr("E-Mail")
                 // #32: kijelölés kell hozzá, néző-nézetben (egy kép) is
                 // elérhető — a trayExportBtn/trayCollageBtn mintája
-                enabled: tray.appWindow.viewerOpen
-                         ? tray.viewerIndex >= 0
-                         : tray.appWindow.selectedIndexes.length > 0
+                // #718: null-őr — ld. a fenti `ctl` docstringje.
+                enabled: tray.appWindow
+                         ? (tray.appWindow.viewerOpen
+                            ? tray.viewerIndex >= 0
+                            : tray.appWindow.selectedIndexes.length > 0)
+                         : false
                 onClicked: tray.emailRequested()
                 // #406: kompakt módban (szűk ablak) a felirat eltűnik,
                 // csak az ikon marad — a szöveg tooltipként érhető el
@@ -466,9 +524,12 @@ Column {
                 id: trayPrintBtn
                 objectName: "trayPrintButton"
                 text: qsTr("Print")
-                enabled: tray.appWindow.viewerOpen
-                         ? tray.viewerIndex >= 0
-                         : tray.appWindow.selectedIndexes.length > 0
+                // #718: null-őr — ld. a fenti `ctl` docstringje.
+                enabled: tray.appWindow
+                         ? (tray.appWindow.viewerOpen
+                            ? tray.viewerIndex >= 0
+                            : tray.appWindow.selectedIndexes.length > 0)
+                         : false
                 onClicked: tray.printRequested()
                 ToolTip.text: trayPrintBtn.text
                 ToolTip.visible: trayMainBar.compact && trayPrintBtn.hovered
@@ -495,8 +556,11 @@ Column {
                 id: trayExportBtn
                 objectName: "trayExportButton"
                 text: qsTr("Export")
-                enabled: !tray.appWindow.viewerOpen
-                         && tray.appWindow.selectedIndexes.length > 0
+                // #718: null-őr — ld. a fenti `ctl` docstringje.
+                enabled: tray.appWindow
+                         ? (!tray.appWindow.viewerOpen
+                            && tray.appWindow.selectedIndexes.length > 0)
+                         : false
                 onClicked: tray.exportRequested()
                 // #314: a PicasaButton alap-krómja nem témavezérelt (ld.
                 // trayRotateLeftBtn indoklása fentebb) — az ikon+felirat
@@ -537,8 +601,11 @@ Column {
             PicasaButton {
                 id: trayCollageBtn
                 objectName: "trayCollageButton"
-                enabled: !tray.appWindow.viewerOpen
-                         && tray.appWindow.selectedIndexes.length > 0
+                // #718: null-őr — ld. a fenti `ctl` docstringje.
+                enabled: tray.appWindow
+                         ? (!tray.appWindow.viewerOpen
+                            && tray.appWindow.selectedIndexes.length > 0)
+                         : false
                 onClicked: tray.collageRequested()
                 Layout.preferredWidth: 30
                 contentItem: Image {
@@ -552,8 +619,11 @@ Column {
             PicasaButton {
                 id: trayMovieBtn
                 objectName: "trayMovieButton"
-                enabled: !tray.appWindow.viewerOpen
-                         && tray.appWindow.selectedIndexes.length > 0
+                // #718: null-őr — ld. a fenti `ctl` docstringje.
+                enabled: tray.appWindow
+                         ? (!tray.appWindow.viewerOpen
+                            && tray.appWindow.selectedIndexes.length > 0)
+                         : false
                 onClicked: tray.movieRequested()
                 Layout.preferredWidth: 30
                 contentItem: Image {

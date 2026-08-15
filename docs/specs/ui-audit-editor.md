@@ -597,6 +597,26 @@ ugyanaz a két kép szolgálja ki a vágás-panelt is.
 retusáló ecset - `scaleslider`): sín 121x9, fogantyú 16x22. A paraméter-alpanel
 csúszkája tehát **szándékosan más arányú**, nem a közös vezérlő.
 
+### 4.y A csúszka-FELIRAT honnan jön — LEZÁRVA (2026-08-15)
+
+A #700 nyitva hagyta, hogy a Holga első csúszkája „Méret" vagy
+„Élhomályosítás": a `filterdesc.xml` azonosítója `_sldrBlur`, a szótár
+`ImageFilters::Blur`-je „Size"/**Méret**, a bejelentő képernyőképén viszont
+**Élhomályosítás** áll.
+
+**Mindkettő igaz.** A feliratot nem az azonosító önmagában dönti el: a
+`Picasa3.exe` `FUN_008fcfa0` (VA `0x008fcfa0`) **négy csúszkánál a szűrő
+azonosítójára is elágazik**, és felülírja az alapértelmezést —
+`Holga`/`Lomo` → *Blur Edges*, `Pixelate` → *Pixel Size*, `HDR` és
+`PencilSketch` → *Strength*, `FocalZoom` → *Zoominess* / *Focal Size*,
+`Soften` → *Softness*, `Boost` → *Strength*.
+
+A teljes tábla, a dekompilált bizonyíték és a Picasa saját elvarratlan szála
+(`FocalPixelate` vs. `PicnikFocalPixelate`):
+`docs/specs/picasa-effekt-feliratok.md` „Szűrőnkénti felülírás" szakasza.
+A PicasaPy oldalán az `app/effect_params.py` és a
+`tests/app/test_effect_param_labels_600.py` vezeti át.
+
 ## 5. A vágás-panel („Fotó vágása") pontos felépítése
 
 ▶**KÉP**, `…195113.png` (dropdown nyitva) és `…195123.png` (arány

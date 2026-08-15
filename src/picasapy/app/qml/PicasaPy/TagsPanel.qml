@@ -230,9 +230,16 @@ Rectangle {
                 id: quickTagButton
                 required property int slot
                 // #305: null-őr — a controller a QML-engine leépítésekor
-                // átmenetileg null lehet
+                // átmenetileg null lehet. #718: a `typeof` azt az esetet is
+                // fedi, amikor a panel ELSZIGETELT komponensként (a saját
+                // context property nélküli tesztje, ld.
+                // test_qml_tags_panel.py) töltődik be — ott a `controller`
+                // néven MEG SEM lévő globálisra a puszta `controller ? …`
+                // kiértékelés önmagában ReferenceError-t dobna (a `typeof`
+                // az egyetlen biztonságos módja egy esetleg nem is létező
+                // azonosító ellenőrzésének).
                 readonly property string label:
-                    (controller
+                    (typeof controller !== "undefined" && controller
                         ? controller.quickTagButtons[quickTagButton.slot]
                         : "") || ""
                 objectName: "quickTagButton" + quickTagButton.slot
