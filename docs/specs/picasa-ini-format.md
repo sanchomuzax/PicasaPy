@@ -545,6 +545,51 @@ csoportonként egyetlen mozgatott változóval.
    RAW és egyéb formátumnál az ini-be.
 4. `redo=` és `originhash` érintetlenül hagyása, ha a szerkesztési lánc nem változott.
 5. Fájl-lock / ütközésdetektálás arra az esetre, ha az eredeti Picasa is fut.
+6. **A `filters=` lánc szűrőneve kizárólag a KANONIKUS alakban mehet ki**
+   (#695) — soha nem a belső kulcsunk kisbetűs formájában. A kanonikus
+   alakok forrása a [`filterdesc-registry.md`](filterdesc-registry.md) 2.
+   szakaszának 84 bejegyzése; a kódban ez a
+   `src/picasapy/ini/filter_registry.py` `CANONICAL_FILTER_NAMES` listája.
+   Amit a regiszter nem ismer (idegen/jövőbeli szűrő), az **változatlanul**
+   megy vissza.
+7. **A paraméterszám felső korlátja íráskor kikényszerített** (#695): a
+   fölös paraméter [mérten](#-a-filters-lánc-beolvasása-szigorú--mérve-2026-08-15-685)
+   néma elejtést okoz, ezért a PicasaPy inkább HIBÁT ad
+   (`FilterWriteError`), mint hogy csendben kiírjon egy elveszőben lévő
+   bejegyzést. A korlát **felső** korlát, nem elvárt darabszám: a hiányzó
+   paraméter az eredetiben az alapértékre esik vissza (mérve: `unsharp=1`
+   ≡ `unsharp2=1,0.600000`), a záró üres mező (`grain=1,;`) pedig tolerált.
+
+### Az olvasás megengedő MARAD
+
+A szigorítás kizárólag az **író** oldalra vonatkozik. A beolvasás továbbra
+is kis-nagybetű-tűrő (`FilterOp.matches`, `casefold`) — a felhasználó
+ini-jében bármilyen írásmód előfordulhat (más eszközök, régi verziók), és
+azt meg kell értenünk. A két irány összekeverése régi könyvtárakat tenne
+olvashatatlanná.
+
+### Hol zár a kapu
+
+| réteg | viselkedés |
+|---|---|
+| `parse_filters` | változatlan: megőrzi a kapott írásmódot, nem validál |
+| `serialize_filters` | változatlan: bájtra pontos, nem kanonizál, nem dob (bélyegkép-kulcs, #301) |
+| `serialize_filters_for_write` | kanonizál **és** validál — ez az ini felé menő kapu |
+| `EditSession.to_value()` | kanonizál (nem dob): a MÓDOSÍTOTT lánc helyes írásmóddal megy vissza |
+| `EditSession.append_effect`/`apply`/`toggle`/`set_*` | kanonizál **és** validál: a saját kezűleg gyártott bejegyzés soha nem lehet néma elejtésű |
+
+A `to_value()` szándékosan nem dob: a láncban maradhatnak idegen eredetű,
+hibás paraméterszámú elemek, és azokat a round-trip elv szerint bájtra meg
+kell őriznünk (#301) — a validáció ott zár, ahol a bejegyzés keletkezik.
+
+**Amire szándékosan NINCS paraméterszám-korlát** (a regiszterből nem
+vezethető le, találgatni pedig tilos): `save`, `crop64`, `crop`, `rot`,
+`redeye`, `retouch`, `picnik` (adathordozó `history`/`persist` bejegyzések),
+`colorfix`, `whitept` (rejtett „Choose White Point" csúszka + külön
+`colorcircle` — nem dönthető el, hány mező ez a láncban),
+`PicnikFocalPixelate` (a `filterdesc-registry.md` 4.1 kimondja, hogy nincs
+rá valós mintánk), valamint `PicnikTint` és `ReanimatedEyeColor` (festhető
+maszkos effektek — nem igazolt, hogy a maszk foglal-e lánc-paramétert).
 
 ## A `filters=` név-feloldás a natív kódban — a mérés kódbeli megerősítése (#643, 2026-08-15)
 

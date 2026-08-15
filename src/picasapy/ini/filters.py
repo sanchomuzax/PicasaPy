@@ -10,11 +10,26 @@ Figyelem: a parse→serialize normalizál (üres bejegyzéseket elhagy, záró `
 pótol), ezért a byte-pontos round-trip garanciát a document-réteg nyers
 értéktárolása adja — íráskor a nem módosított filters= értékhez nem szabad
 ezen a modulon keresztülmenni.
+
+Két serialize-út van (#695):
+
+- `serialize_filters` — megengedő és bájtra pontos. A bélyegkép-kulcshoz és
+  a belső round-triphez való; idegen/sérült láncra sem dob (#301).
+- `serialize_filters_for_write` — az ÍRÓ kapu a `.picasa.ini` felé:
+  kanonizálja a regiszterbeli szűrőneveket, és visszautasítja a néma
+  elejtésbe futó paraméterszámot (ld. `picasapy.ini.filter_registry` és
+  `docs/specs/picasa-ini-format.md`).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+from picasapy.ini.filter_registry import (
+    FilterWriteError,
+    canonicalize_filter_name,
+    max_param_count,
+)
 
 
 @dataclass(frozen=True)
@@ -47,3 +62,83 @@ def parse_filters(value: str) -> tuple[FilterOp, ...]:
 
 def serialize_filters(ops: tuple[FilterOp, ...]) -> str:
     return "".join(f"{op.name}={','.join(op.params)};" for op in ops)
+
+
+def canonicalize_op(op: FilterOp) -> FilterOp:
+    """A szűrő nevét a regiszterbeli (Picasa által várt) alakra hozza (#695).
+
+    Ismeretlen nevet érintetlenül hagy — a round-trip elv szerint amit nem
+    ismerünk, ahhoz nem nyúlunk. Immutábilis: mindig ÚJ `FilterOp`-ot ad.
+
+    Args:
+        op: A lánc egy eleme.
+
+    Returns:
+        A kanonikus nevű `FilterOp` (vagy maga `op`, ha már az).
+    """
+    canonical = canonicalize_filter_name(op.name)
+    if canonical == op.name:
+        return op
+    return FilterOp(canonical, op.params)
+
+
+def validate_op_for_write(op: FilterOp) -> None:
+    """Az ini-be írás előtti ellenőrzés: nem lóg-e ki a paraméterszám (#695).
+
+    Mérve (#685): a FÖLÖSLEGES paramétert az eredeti Picasa néma elejtéssel
+    bünteti (`grain2=1,0.500000;`), a hiányzót viszont az alapértékkel
+    pótolja (`unsharp=1`), a záró üres mezőt (`grain=1,;`) pedig tolerálja.
+    Ezért csak a felső korlátot kérjük számon, és a záró üres mezőt nem
+    számoljuk paraméternek.
+
+    Args:
+        op: A lánc egy eleme (a `params[0]` az engedélyező flag).
+
+    Raises:
+        FilterWriteError: Ha a paraméterszám meghaladja a regiszterbelit.
+    """
+    limit = max_param_count(op.name)
+    if limit is None:
+        return
+    count = _effective_param_count(op.params)
+    if count > limit:
+        canonical = canonicalize_filter_name(op.name)
+        raise FilterWriteError(
+            f"A(z) {canonical!r} szűrő legfeljebb {limit} paramétert vár az "
+            f"engedélyező flag után, de {count} érkezett "
+            f"({serialize_filters((op,))!r}). Az eredeti Picasa a fölös "
+            f"paraméterű bejegyzést NÉMÁN elejti (#685), ezért nem írjuk ki."
+        )
+
+
+def serialize_filters_for_write(ops: tuple[FilterOp, ...]) -> str:
+    """A `.picasa.ini`-be szánt `filters=` érték: kanonizálva és ellenőrizve.
+
+    A sima `serialize_filters` bájtra pontos, de megengedő — az marad a
+    bélyegkép-kulcs és a belső round-trip útja. Ez a változat az ÍRÓ kapu:
+    a regiszterbeli szűrők nevét a Picasa által várt alakra hozza, és
+    visszautasítja a néma elejtésbe futó paraméterszámot.
+
+    Args:
+        ops: A kiírandó lánc.
+
+    Returns:
+        A `filters=` érték stringje.
+
+    Raises:
+        FilterWriteError: Ha valamelyik elem paraméterszáma kilóg.
+    """
+    canonical_ops = tuple(canonicalize_op(op) for op in ops)
+    for op in canonical_ops:
+        validate_op_for_write(op)
+    return serialize_filters(canonical_ops)
+
+
+def _effective_param_count(params: tuple[str, ...]) -> int:
+    """A flag utáni ÉRDEMI paraméterek száma.
+
+    A záró üres mező (`grain=1,;`) mérten tolerált, tehát nem paraméter."""
+    rest = list(params[1:])
+    while rest and rest[-1] == "":
+        rest.pop()
+    return len(rest)
