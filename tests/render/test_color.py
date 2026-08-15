@@ -63,12 +63,12 @@ class TestApplySepia:
 
 class TestApplyWarm:
     def test_dokumentalt_csatornagorbe_g128(self) -> None:
-        # mért közelítés: R≈0,89g+19 · G≈0,88g+1 · B≈0,93g−16
+        # #611: beégetett tábla, pixelpontos (nem közelítés) — g=128 -> 139/113/97
         image = _uniform_image(128)
         result = apply_warm(image)
-        assert abs(int(result[0, 0, 0]) - 133) <= 1
-        assert abs(int(result[0, 0, 1]) - 114) <= 1
-        assert abs(int(result[0, 0, 2]) - 103) <= 1
+        assert int(result[0, 0, 0]) == 139
+        assert int(result[0, 0, 1]) == 113
+        assert int(result[0, 0, 2]) == 97
 
     def test_melegit_szurke_kepen(self) -> None:
         image = _uniform_image(128)

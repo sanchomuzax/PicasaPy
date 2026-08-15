@@ -1,8 +1,9 @@
 """Szín-műveletek: bw, sepia, warm, sat.
 
 A számértékek a golden-elemzés mérési eredményei
-(`docs/specs/filters-decoded.md`): a bw pontosan Rec.601; a sepia/warm a mért
-csatornagörbék lineáris közelítése; a sat a mért gain-tábla interpolációja
+(`docs/specs/filters-decoded.md`): a bw pontosan Rec.601; a sepia a mért
+csatornagörbék lineáris közelítése; a warm a binárisból kinyert, beégetett
+tábla PONTOS leképezése (#611); a sat a mért gain-tábla interpolációja
 luma-tartó króma-erősítésként.
 """
 
@@ -11,6 +12,7 @@ from __future__ import annotations
 import numpy as np
 
 from picasapy.render.curves import apply_channel_luts, lut_ramp, validate_image
+from picasapy.render.warmify_lut import warmify_lut_array
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
 
@@ -37,7 +39,6 @@ _SEPIA_ANCHOR_CURVES = (
     (27.7, 39.4, 49.9, 61.0, 71.0, 81.2, 92.6, 108.1, 123.6, 140.0,
      157.4, 173.2, 190.1, 206.2, 222.7, 239.4, 254.4),
 )
-_WARM_LINEAR = ((0.89, 19.0), (0.88, 1.0), (0.93, -16.0))
 
 # A sat mért gain-táblája (nem 1+s!); s=−1 → teljes telítetlenítés.
 _SATURATION_KNOTS = (-1.0, -0.333, 0.0, 0.25, 0.5, 1.0)
@@ -100,17 +101,26 @@ def apply_sepia(image: np.ndarray) -> np.ndarray:
 
 
 def apply_warm(image: np.ndarray) -> np.ndarray:
-    """Melegítés: a mért csatornagörbék lineáris közelítése csatornánként.
+    """Melegítés: a natív `0x0090c040` munkafüggvény beégetett táblája (#611).
 
-    (A görbéket szürke rámpán mértük; színes képen csatornánként a saját
-    értékre alkalmazzuk — közelítés.)
+    A szűrő nem számol semmit — egyetlen, 256×3 elemű, csatornánkénti
+    táblából olvas (`0x00d33b70`, PE-fájloffszet `0x933b70`,
+    `docs/specs/picasa-native-filter-workers.md` 2.8. pont):
+
+        out_R = tábla[R][0];  out_G = tábla[G][1];  out_B = tábla[B][2]
+
+    Csatornánként a SAJÁT bemeneti értékével indexel (nem keresztbe), ezért
+    csatornánkénti LUT-ként pontosan alkalmazható (#140: uint8-natív,
+    képméret-független költség). PONTOS — nem közelítés.
     """
     validate_image(image)
-    # csatornánkénti lineáris görbe → csatornánkénti LUT (#140):
-    # uint8-natív, képméret-független költség
-    ramp = lut_ramp()
-    luts = tuple(slope * ramp + offset for slope, offset in _WARM_LINEAR)
-    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
+    table = warmify_lut_array()
+    luts = (
+        table[:, 0].astype(np.float64),
+        table[:, 1].astype(np.float64),
+        table[:, 2].astype(np.float64),
+    )
+    return apply_channel_luts(image, luts)
 
 
 #: Golden mérés (`docs/specs/filters-decoded.md`): meredekség ≈1,000,

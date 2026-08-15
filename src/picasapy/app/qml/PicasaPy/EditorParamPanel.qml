@@ -51,25 +51,19 @@ Flickable {
         case "Width": return qsTr("Width")
         case "Border Width": return qsTr("Border Width")
         case "Angle": return qsTr("Angle")
-        case "Blur": return qsTr("Blur")
         case "Line Position": return qsTr("Line Position")
         // #516: a filterdesc-registry.md 4.2 táblázatából átvezetett
         // vezérlők feliratai
         case "Grain": return qsTr("Grain")
         case "Contrast": return qsTr("Contrast")
         case "Bloom": return qsTr("Bloom")
-        case "Steps": return qsTr("Steps")
-        case "Smoothing": return qsTr("Smoothing")
         case "Impact": return qsTr("Impact")
         case "Blend Mode": return qsTr("Blend Mode")
         case "Hue": return qsTr("Hue")
         case "Rotate": return qsTr("Rotate")
         case "Fade": return qsTr("Fade")
-        case "Color": return qsTr("Color")
         case "Outer Color": return qsTr("Outer Color")
         case "Inner Color": return qsTr("Inner Color")
-        case "Black Color": return qsTr("Black Color")
-        case "White Color": return qsTr("White Color")
         case "Outer Thickness": return qsTr("Outer Thickness")
         case "Inner Thickness": return qsTr("Inner Thickness")
         case "Corner Radius": return qsTr("Corner Radius")
@@ -77,8 +71,17 @@ Flickable {
         case "Distance": return qsTr("Distance")
         case "Shadow Color": return qsTr("Shadow Color")
         case "Background Color": return qsTr("Background Color")
-        case "Rounded": return qsTr("Rounded")
         case "Lighten": return qsTr("Lighten")
+        // #600: a Picasa saját szótárából (`Picasa3i18n.dll`,
+        // `ImageFilters`) átvett feliratok — ld.
+        // `docs/specs/picasa-effekt-feliratok.md`
+        case "Vignette Color": return qsTr("Vignette Color")
+        case "Matte Color": return qsTr("Matte Color")
+        case "Number of Colors": return qsTr("Number of Colors")
+        case "Detail": return qsTr("Detail")
+        case "First Color": return qsTr("First Color")
+        case "Second Color": return qsTr("Second Color")
+        case "Rounded Corners": return qsTr("Rounded Corners")
         default: return key
         }
     }
