@@ -1297,3 +1297,47 @@ Csak a **2. lépés**: mi a virtuális színátalakítás (`ctx->vtbl[2]`), és 
 jelent a `colorwheel version="0"` vs `="1"`. Következő lépés: célzott
 dekompilálás az `ytColorWheelNode` vtable 2. és 8. slotjára (a vtable kezdete
 `0x009c2eb0`).
+
+### `ansel` (Szűrős fekete-fehér) — a hisztogram-lépés (2026-08-15, #317 utolsó szála)
+
+A callback (`0x008f8410`) a választott **szűrőszínt** bontja három 0…1 súlyra
+(`r/255`, `g/255`, `b/255`), és ezekkel készít súlyozott szürkeárnyalatot
+16 bitben (`0…0xffff`-re vágva) — ez már ismert volt. Ami most került elő: a
+mag (`0x0090e680`) **hisztogramot épít, és abból automatikus
+középtónus-kiemelést számol**.
+
+#### 1. Hisztogram
+
+A 16 bites szürkeértékből `Y >> 8` indexeli a **256 rekeszes** hisztogramot.
+
+#### 2. Súlyozott összeg — parabola-súlyokkal
+
+```c
+sum = 0;
+for (j = 0; j < 256; j++)
+    sum += hist[j] * (((255 - j) * j) >> 6);
+```
+
+A súly `(255−j)·j / 64` — **parabola, a középtónusnál (j ≈ 128) a legnagyobb,
+a két végén nulla**. Vagyis a `sum` azt méri, **mennyi középtónusos tartalom
+van a képen**.
+
+#### 3. Képpontonkénti kiemelés
+
+```c
+v = v + ((((0xffff - v) * v >> 14) * k) >> 8);   // v 16 bites
+v = clamp(v, 0, 0xffff);
+kimenet = v >> 8;
+```
+
+Az `(0xffff − v)·v` ismét **parabola**: a középtónusokat mozdítja a
+legjobban, a fekete és a fehér pontot nem. Vagyis ez egy **S-görbés
+kontrasztemelés**, aminek az erősségét a 2. lépésben mért `k` adja.
+
+> **Bizonyítottsági fok:** a **szerkezet megerősített** (mindkét parabola és a
+> hisztogram-építés a dekompilátumból). Ami **nyitott**: a `sum → k` közti
+> skálázás, mert a köztes számítás az FPU-veremben megy, és a dekompilátor
+> csak a záró `__ftol`-t (`0x00c29990`) látja.
+>
+> **Ez méréssel olcsón pótolható:** két-három golden-pár elég a `k` arányának
+> illesztéséhez, mert a görbe alakja már ismert.
