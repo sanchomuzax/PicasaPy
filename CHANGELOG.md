@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.57] – 2026-08-15
+
+### Javítva
+- **Végre ott vannak a Visszavonás/Újra gombok, ahol keresed őket (#616).**
+  A gombsor eddig a panel legaljára volt szegezve. Nagy képernyőn — ahol a
+  panel 832 képpont magas, a fül tartalma viszont csak ~300 — ez azt
+  jelentette, hogy a gombok **több száz képponttal a csempék alatt**, egy
+  nagy üres szürke mező túloldalán ültek: a gyakorlatban eltűntek. Mostantól
+  közvetlenül a fül tartalma alatt vannak, de szűk ablakban sem csúsznak ki a
+  képernyőről. (Az eredeti Picasa panelje fix méretű, ezért ott mindig a
+  tartalom alatt van a sor — a „panel aljára szegezve" a mi hibánk volt.)
+- **A GPU-előnézet telítettsége megegyezik a mentett képpel (#696).** A
+  pozitív oldalon eddig eltért az, amit a csúszka húzása közben láttál, attól,
+  amit a program mentett — átlagosan 3,5–19,3 szinttel; most 0,8–1,4.
+
 ## [0.7.56] – 2026-08-15
 
 ### Javítva
