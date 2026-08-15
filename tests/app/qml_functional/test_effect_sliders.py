@@ -146,7 +146,9 @@ class TestParamSubpanelIsolatedOpening:
             (2, "effectVignette", "vignette", 4),
             (2, "effectUnsharp", "unsharp", 1),
             (2, "effectRadblur", "radblur", 4),
-            (2, "effectDirTint", "dir_tint", 4),
+            # #717: a záró színparaméter felvétele óta 5 (x, y, gradiens,
+            # árnyalás, szín)
+            (2, "effectDirTint", "dir_tint", 5),
             (3, "effectBoost", "boost", 1),
             (4, "effectPixelate", "pixelate", 3),
             (4, "effectComicize", "comicize", 3),
