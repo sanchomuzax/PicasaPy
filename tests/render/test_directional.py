@@ -14,8 +14,11 @@ import pytest
 from picasapy.render.directional import (
     apply_dir_brite,
     apply_dir_sat,
+    apply_dir_sharp,
+    dir_sharp_blur_radius,
     directional_ramp,
 )
+from picasapy.render.iir_blur import apply_picasa_blur
 
 
 def _egyszinu(color: tuple[int, int, int] = (150, 100, 80)) -> np.ndarray:
@@ -111,6 +114,73 @@ class TestDirBrite:
         assert np.all(np.diff(result) >= 0)
 
 
+def _zajos(height: int = 40, width: int = 60) -> np.ndarray:
+    """Zajos kép: van rajta mit élesíteni MINDEN pozíción."""
+    rng = np.random.default_rng(7)
+    return rng.integers(40, 210, size=(height, width, 3), dtype=np.uint8)
+
+
+class TestDirSharp:
+    """#623: irányított unsharp mask — a natív `0x0090d600` mag.
+
+    A burkoló (`0x008f9090`) egy `min(W, H) / 8` sugarú, KÜLÖN menetben
+    készült elmosást ad a magnak; a mag maga csak összevon.
+    """
+
+    def test_a_burkolo_elmosasi_sugara(self) -> None:
+        """`uVar1 = min(W, H) >> 3; if (uVar1 == 0) uVar1 = 1;`"""
+        assert dir_sharp_blur_radius(400, 800) == 50
+        assert dir_sharp_blur_radius(800, 400) == 50
+        assert dir_sharp_blur_radius(4, 4) == 1  # a 0-t a natív kód 1-re emeli
+
+    def test_nulla_parameter_azonossag(self) -> None:
+        """`a = b = 0` → a horgony és a rámpa is 0, tehát `amount = 0`, és a
+        natív `if (0 < amount)` ág be sem lép."""
+        image = _zajos()
+        assert np.array_equal(apply_dir_sharp(image, 0.0, 0.0), image)
+
+    def test_egyszinu_kep_valtozatlan(self) -> None:
+        """Unsharp mask: `c − elmosott(c) = 0` egyszínű képen, bármekkora is
+        az erősség."""
+        image = _egyszinu()
+        assert np.array_equal(apply_dir_sharp(image, 1.0, 0.0), image)
+
+    def test_a_hatas_a_rampa_NEGATIV_vegen_a_legerosebb(self) -> None:
+        """A natív `amount = (k − rámpa) · 2` a rámpa legkisebb (leginkább
+        negatív) sarkában maximális, a legnagyobbnál pedig nullára fut ki.
+        """
+        image = _zajos()
+        result = apply_dir_sharp(image, 1.0, 0.0).astype(int)
+        elteres = np.abs(result - image.astype(int)).mean(axis=(0, 2))
+        assert elteres[:5].mean() > 5.0 * elteres[-5:].mean()
+
+    def test_az_elojel_megforditja_az_iranyt(self) -> None:
+        image = _zajos()
+        balra = np.abs(
+            apply_dir_sharp(image, -1.0, 0.0).astype(int) - image.astype(int)
+        ).mean(axis=(0, 2))
+        assert balra[-5:].mean() > 5.0 * balra[:5].mean()
+
+    def test_a_fuggoleges_tengely_kulon_hat(self) -> None:
+        image = _zajos()
+        result = apply_dir_sharp(image, 0.0, 1.0).astype(int)
+        elteres = np.abs(result - image.astype(int)).mean(axis=(1, 2))
+        assert elteres[:5].mean() > 5.0 * elteres[-5:].mean()
+
+    def test_a_bemenetet_nem_modositja(self) -> None:
+        image = _zajos()
+        eredeti = image.copy()
+        apply_dir_sharp(image, 0.7, -0.3)
+        assert np.array_equal(image, eredeti)
+
+    def test_elesit_es_nem_lagyit(self) -> None:
+        """Az unsharp mask NÖVELI a helyi kontrasztot: a kimenet szórása
+        nagyobb, mint a bemeneté."""
+        image = _zajos()
+        result = apply_dir_sharp(image, 1.0, 0.0)
+        assert float(result.std()) > float(image.std())
+
+
 class TestBajtraEgyezikANativval:
     """#623: a numpy-implementáció a natív EGÉSZ aritmetika lassú, hurkos
     újraírásával vetve — képpontra azonos, nem „közel".
@@ -180,4 +250,42 @@ class TestBajtraEgyezikANativval:
         np.testing.assert_array_equal(
             apply_dir_brite(image, horizontal, vertical),
             self._ref_dir_brite(image, horizontal, vertical),
+        )
+
+    @classmethod
+    def _ref_dir_sharp(cls, img: np.ndarray, a: float, b: float) -> np.ndarray:
+        """A `0x0090d600` képpont-ciklusa, egészben, hurokkal.
+
+        A horgony (`k`) a natív kódban két `ABS` hívás után az x87-veremen
+        áll össze, ezért itt a `|a| + |b|` feltevéssel él — ugyanazzal,
+        amivel az implementáció (ld. `apply_dir_sharp` docstringje). A teszt
+        tehát az EGÉSZ ARITMETIKÁT hitelesíti, a horgonyt nem.
+        """
+        h, w = img.shape[:2]
+        radius = float(dir_sharp_blur_radius(h, w))
+        blurred = apply_picasa_blur(img, radius, radius)
+        anchor = int(np.round((min(abs(a), 1.0) + min(abs(b), 1.0)) * 256))
+        out = np.empty_like(img)
+        for y in range(h):
+            for x in range(w):
+                weight = int(np.round(cls._ramp(h, w, a, b, x, y, False) * 256))
+                amount = (anchor - weight) * 2
+                pixel = []
+                for channel in range(3):
+                    c = int(img[y, x, channel])
+                    if amount > 0:
+                        c += ((c - int(blurred[y, x, channel])) * amount) >> 8
+                    pixel.append(max(0, min(255, c)))
+                out[y, x] = pixel
+        return out
+
+    @pytest.mark.parametrize(
+        "horizontal,vertical",
+        [(1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.6, -0.4), (0.0, 0.0), (1.0, 1.0)],
+    )
+    def test_dir_sharp_bajtra(self, horizontal: float, vertical: float) -> None:
+        image = np.random.default_rng(5).integers(0, 256, size=(12, 16, 3), dtype=np.uint8)
+        np.testing.assert_array_equal(
+            apply_dir_sharp(image, horizontal, vertical),
+            self._ref_dir_sharp(image, horizontal, vertical),
         )

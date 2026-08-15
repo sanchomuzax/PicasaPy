@@ -43,7 +43,12 @@ from picasapy.render.ops import (
     apply_tilt,
 )
 from picasapy.render.chain_report import ChainReport, validate_and_clamp_op
-from picasapy.render.directional import apply_dir_brite, apply_dir_sat
+from picasapy.render.directional import (
+    apply_dir_brite,
+    apply_dir_sat,
+    apply_dir_sharp,
+)
+from picasapy.render.linear_blur import apply_linblur
 from picasapy.render.registry import FILTER_REGISTRY, chain_flags
 from picasapy.render.retouch import apply_retouch, apply_retouch_patches
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
@@ -94,7 +99,12 @@ KNOWN_UNRENDERED_OPS = frozenset(
         "colorfix",
         "autocontrast",
         "rainbow",
-        "linblur",
+        # `linblur` és `dir_sharp` a #623-ban KIKERÜLT innen: a natív magok
+        # (`0x0090de10`, `0x0090d600`), a burkolóik és a közös elmosó
+        # (`0x009dd0d0`) visszafejtésével a hatás jellege és a
+        # pixel-matematika rögzített. A `linblur` sugár-leképezése és a
+        # `dir_sharp` rámpa-horgonya KÖZELÍTÉS — ld. a két `apply_*`
+        # docstringjét; a kalibráció a #317-ben fut.
         "colortemp",
         "shadow",
         "blur",
@@ -102,7 +112,6 @@ KNOWN_UNRENDERED_OPS = frozenset(
         "gamma",
         "backlight",
         "whitept",
-        "dir_sharp",
         "debug",
     }
 )
@@ -360,6 +369,33 @@ def _apply_dir_brite_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+def _apply_dir_sharp_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    # Ugyanaz a paraméter-alak, mint a `dir_sat`-nál (`0x008f9090`).
+    return apply_dir_sharp(
+        image,
+        horizontal=_effect_float(op, 0, 0.0),
+        vertical=_effect_float(op, 1, 0.0),
+    )
+
+
+def _apply_linblur_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`linblur=1,x,y,Mennyiség` — a korong itt VALÓDI pozíció.
+
+    A `dir_*` családdal ellentétben a `linblur` burkolója (`0x008f99c0`) a
+    korong koordinátáját olvassa (a közös `0x008f9bf0` visszahíváson át),
+    ezért a puck-os szűrők általános ini-sorrendje érvényes: `x, y` elöl,
+    utána a csúszka (`docs/specs/filterdesc-registry.md` 3. pont). Az
+    alapértékek a `filterdesc.xml`-ből: a korong a kép közepén, a
+    „Mennyiség" 2,0 — a középre tett korong azonosság.
+    """
+    return apply_linblur(
+        image,
+        x=_effect_float(op, 0, 0.5),
+        y=_effect_float(op, 1, 0.5),
+        amount=_effect_float(op, 2, 2.0),
+    )
+
+
 def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # Élő alak: `dir_tint=1,x,y,gradiens,árnyalás[,szín]` — a szín
     # opcionális (#357), hiányában az alapértelmezett színnel futunk.
@@ -473,6 +509,8 @@ _HANDLERS = {
     "dir_tint": _apply_dir_tint_op,
     "dir_sat": _apply_dir_sat_op,
     "dir_brite": _apply_dir_brite_op,
+    "dir_sharp": _apply_dir_sharp_op,
+    "linblur": _apply_linblur_op,
     "radtint": _apply_radtint_op,
     "autobacklight": _apply_autobacklight_op,
     # --- Glimmer-effektek: EGZAKT csővezetékek a filterdesc.xml szerint

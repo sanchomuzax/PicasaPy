@@ -118,19 +118,27 @@ class TestLegacyCatalogue:
             assert isinstance(can_render_filter(effect.key), bool)
 
     def test_the_decoded_ones_are_renderable(self):
-        # #565 és #567 után ezeknek élniük KELL a fülön
+        # #565, #567 és #623 után ezeknek élniük KELL a fülön — az
+        # irányított család MIND A NÉGY tagja renderel
         from picasapy.render.chain import can_render_filter
 
-        for key in ("radtint", "autobacklight", "fill", "dir_sat", "dir_brite"):
+        for key in (
+            "radtint",
+            "autobacklight",
+            "fill",
+            "dir_sat",
+            "dir_brite",
+            "dir_sharp",
+            "linblur",
+        ):
             assert can_render_filter(key)
 
     def test_the_undecoded_ones_are_not_renderable(self):
-        # ezek addig szürkék, amíg a hiányzó együtthatójuk nincs kimérve:
-        # a `dir_sharp`-nál a rámpa horgonya, a `linblur`-nél a „Mennyiség"
-        # csúszka → elmosás-sugár leképezés (#623)
+        # ezek addig szürkék, amíg a natív magjuk nincs megfejtve — a
+        # felületen nem lehet aktívnak látszó, de nem ható gomb
         from picasapy.render.chain import can_render_filter
 
-        for key in ("linblur", "dir_sharp", "triple"):
+        for key in ("triple", "colorfix", "gamma"):
             assert not can_render_filter(key)
 
     def test_debug_is_deliberately_absent(self):
