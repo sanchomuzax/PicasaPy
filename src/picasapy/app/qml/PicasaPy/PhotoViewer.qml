@@ -166,36 +166,6 @@ Rectangle {
         else editorPanel.cropActive = false
     }
 
-    // a művelet-kulcs magyar gombfelirata (Visszavonás: <művelet>, #59)
-    function toolLabel(action) {
-        switch (action) {
-        case "crop": return qsTr("Crop")
-        case "tilt": return qsTr("Straighten")
-        case "redeye": return qsTr("Redeye")
-        case "retouch": return qsTr("Retouch")
-        case "text": return qsTr("Text")
-        case "enhance": return qsTr("I'm Feeling Lucky")
-        case "autolight": return qsTr("Auto Contrast")
-        case "autocolor": return qsTr("Auto Color")
-        case "finetune": return qsTr("Fine Tuning")
-        // effekt-kulcsok (#20): a lánc bármely elemeként visszavonható
-        case "sepia": return qsTr("Sepia")
-        case "bw": return qsTr("B&W")
-        case "warm": return qsTr("Warmify")
-        case "grain2": return qsTr("Film Grain")
-        case "tint": return qsTr("Tint")
-        case "sat": return qsTr("Saturation")
-        case "radblur": return qsTr("Soft Focus")
-        case "glow2": return qsTr("Glow")
-        case "ansel": return qsTr("Filtered B&W")
-        case "radsat": return qsTr("Focal Saturation")
-        case "dir_tint": return qsTr("Graduated Tint")
-        // ismeretlen (pl. valódi Picasa által írt) szűrő: a nyers név is
-        // informatívabb, mint az üres felirat
-        default: return action
-        }
-    }
-
     // -- szerkesztés (#19): EditController-életciklus --------------------
     // A nézőbe lépés = szerkesztési munkamenet az aktuális képre; kilépéskor
     // a munkamenet zárul. A panel kapcsoló-állapotait az EditController
@@ -567,18 +537,17 @@ Rectangle {
                     imageAspect: photo.paintedHeight > 0
                                  ? photo.paintedWidth / photo.paintedHeight
                                  : 4 / 3
-                    // Visszavonás/Újra — a controller undo-verméből (#59)
+                    // Visszavonás/Újra — a controller undo-verméből (#59).
+                    // #465: a KÉSZ feliratot a controller adja
+                    // (`edit_action_names` névtár), hogy a lánc minden
+                    // eleme néven nevezhető legyen — a korábbi, itteni
+                    // `switch` csak egy tucat effektet ismert, a többinél a
+                    // nyers ini-kulcs került a gombra.
                     // #305: null-őr
                     undoAvailable: viewer.editCtl ? viewer.editCtl.canUndo : false
-                    undoLabel: viewer.editCtl && viewer.editCtl.canUndo
-                               ? qsTr("Undo") + ": "
-                                 + viewer.toolLabel(viewer.editCtl.undoAction)
-                               : qsTr("Undo")
+                    undoLabel: viewer.editCtl ? viewer.editCtl.undoLabel : qsTr("Undo")
                     redoAvailable: viewer.editCtl ? viewer.editCtl.canRedo : false
-                    redoLabel: viewer.editCtl && viewer.editCtl.canRedo
-                               ? qsTr("Redo") + ": "
-                                 + viewer.toolLabel(viewer.editCtl.redoAction)
-                               : qsTr("Redo")
+                    redoLabel: viewer.editCtl ? viewer.editCtl.redoLabel : qsTr("Redo")
                     // Finomhangolás (#20): a mentett értékek a kontrollerből —
                     // a syncFinetuneSliders() ezekből tölti a csúszkákat
                     fillLight: viewer.editCtl ? viewer.editCtl.fillLight : 0
