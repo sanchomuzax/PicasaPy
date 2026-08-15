@@ -73,17 +73,13 @@ def _insert(tree: dict, path: str, count: int) -> None:
     parts = _split(path)
     if not parts:
         return
-    # A POSIX-gyökér önálló szint: `/mnt/photo` → „/" → „mnt" → „photo".
-    prefix = "/" if path.startswith("/") else ""
     node = tree
-    current = ""
-    if prefix:
-        current = "/"
+    if path.startswith("/"):
+        # A POSIX-gyökér önálló szint: `/mnt/photo` → `/` → `mnt` → `photo`
         node = node.setdefault("/", {"name": "/", "own": 0, "children": {}})[
             "children"
         ]
     for index, part in enumerate(parts):
-        current = _join(current, part)
         child = node.setdefault(
             part, {"name": part, "own": 0, "children": {}}
         )
