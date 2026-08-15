@@ -461,13 +461,52 @@ A visszafejtett csővezeték:
 5. az átmeneti sávban lineáris keverés fut az eredeti és a szorzott kép
    között.
 
-**Nyitva:** a Feather csúszka pontos affin leképezése. A PicasaPy jelenlegi,
-DOKUMENTÁLT feltételezése: a feather az átmeneti sáv szélessége, a
-fókuszponttól mért legnagyobb távolság (`r_max`) felénél középpontosan — a
-sáv `(0,5 − feather/2)·r_max`-nál kezdődik és `(0,5 + feather/2)·r_max`-nál
-ér véget. Így `feather = 0` éles határt ad a fél sugárnál, `feather = 1`
-végig lágy átmenetet; a fókuszpont mindig érintetlen, a legtávolabbi sarok
-mindig teljes tintet kap. A pontosításhoz golden-pár kell (#317).
+#### A Feather affin leképezése — MEGFEJTVE A KÓDBÓL (2026-08-15, #317)
+
+**Nem kellett golden-pár.** A `radtint` callbackje (`0x008f8730`) a
+munkafüggvényt (`0x0090b370`) hívja, az pedig a **közös radiális
+maszképítőt** (`0x0090aeb0`) — ugyanazt, amit a `radsat` és a `radblur` is
+használ:
+
+```c
+// FUN_0090aeb0(elesseg, sugar_param), a maszktabla 1024 elemu
+r  = min((x1-x0)/2, (y1-y0)/2) * (sugar_param + 1.0f);
+r2 = r*r;  shift = 0;
+while (r2 > 1024.0f) { r2 *= 0.5f; shift++; }        // a shift a hivonak megy
+
+for (i = 0; i < 1024; i++) {
+    t = sqrtf(i * (1.0f/1024.0f) * (1024.0f/r2));
+    v = 0.5f + (1.0f/(1.0f - elesseg*0.99f)) * (t - 0.5f);
+    v = 1.0f - clampf(v, 0.0f, 1.0f);
+    tabla[i] = lroundf((3.0f - 2.0f*v) * v * v * 255.0f);   // smoothstep
+}
+```
+
+**A döntő részlet:** a `radtint` hívása szó szerint `FUN_0090aeb0(0, param_6)`
+— az **élesség argumentuma nulla, beégetve**. Nullánál `1/(1 − 0·0,99) = 1`,
+tehát `v = t`, és az élesség-tag **teljesen kiesik**. A `radsat`/`radblur`
+ugyanide nem nullát ad át (`FUN_0090aeb0(param_7, param_5)`, ill.
+`FUN_0090aeb0(fVar9, param_7)`), tehát ez nem a dekompiláló tévedése, hanem
+a `radtint` sajátja.
+
+Marad tehát **egyetlen** paraméter, és annak leképezése egyenes:
+
+> **`sugár = min(szélesség, magasság)/2 × (Feather + 1)`**
+
+A `filterdesc.xml` szerint a Feather tartománya `[0..1]`, alapértéke `0,25` —
+vagyis a sugár a fél-kisebbik-oldal **1,0-szeresétől 2,0-szereséig** megy,
+alapértelmezésben **1,25-szörös**. A `param_6` a paraméterblokk `+0x28`
+rekesze, ami a többi effektnél is az **első csúszka** (a `tint`-nél ugyanez a
+rekesz az erősség).
+
+**Ezzel elesik a korábbi, dokumentált feltételezésünk** (átmeneti sáv
+`(0,5 ± feather/2)·r_max` között): a valóságban nincs külön „sáv", a
+smoothstep a `sqrt`-tel skálázott sugáron fut végig, és a Feather **magát a
+sugarat** nyújtja.
+
+*Bizonyítottsági fok: megerősített* (a hívási hely és a táblaépítő is
+visszafejtve; a `sqrt` azonosítása `0x0049fe60 → 0x00c0b310` alapján erős).
+A golden-pár innentől **validáció**, nem felfedezés.
 
 ## 6. kör — a Picasa SAJÁT szűrő-definíciója előkerült ✅ (2026-08-06)
 
