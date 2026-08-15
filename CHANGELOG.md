@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.58] – 2026-08-15
+
+### Javítva
+- **A bal hasáb végre görgethető (#730).** Eddig semmi nem görgette: ha ~30-nál
+  több névvel ellátott személyed volt, a Mappák-lista magassága **nullára
+  esett**, az „Egyebek" fejléc pedig kicsúszott az ablakból — a tartalom
+  egyszerűen elérhetetlen lett. Mostantól saját, mindig látszó görgetősávja
+  van, ahogy az eredetiben.
+- **Az egérgörgő a bal hasáb fölött nem nyit meg véletlen mappát (#731).**
+  Eddig bárhol görgettél a hasábon, a rács átugrott egy másik mappára. Most a
+  hasáb görög; a mappalista fölött pedig — ahogy az eredetiben — lépteti a
+  kijelölést.
+- **Négy sor jobbklikkje a saját menüjét adja (#732).** A gyűjtemény-mappa, az
+  exportált mappa, a „Névtelenek" és a „Mellőzött emberek" sor eddig a hasáb
+  rendezés-menüjét nyitotta a sajátja helyett.
+- **A `desat` szerkesztés-kulcsot felismerjük és rendereljük (#711).** Egy régi
+  `.picasa.ini`-ben ez eddig ismeretlen volt; a Visszavonás gombon mostantól az
+  eredeti Picasa saját felirata jelenik meg („Szűrt FF").
+
 ## [0.7.57] – 2026-08-15
 
 ### Javítva

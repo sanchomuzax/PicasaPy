@@ -204,6 +204,12 @@ más jellegű — nem szerepel a fenti 36-os számban.)*
 
 ## 2.9 A szerkesztő bal panelje — a BINÁRISBÓL, képpontra (2026-08-15)
 
+> 📐 **A TELJES, kötelező méretlista külön lapon:**
+> [`szerkeszto-panel-meretek.md`](szerkeszto-panel-meretek.md) — mind a 201
+> bal-paneles elem (plusz a szöveg-eszköz 55 eleme), fülönként és
+> eszköz-panelenként, megvalósítási ellenőrzőlistával. Az alábbi szakasz a
+> rövid összefoglaló és az eltérés-táblázat.
+
 **Nem képernyőkép-mérés.** A `respack.yt` minden rétegrekordja 13 bájtos
 fejléccel indul, és abban ott a téglalap (`int16 x0, y0, x1, y1` —
 [`picasa-respack-format.md`](picasa-respack-format.md) 3. szakasz). Ez a

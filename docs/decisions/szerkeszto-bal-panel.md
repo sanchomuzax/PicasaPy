@@ -32,6 +32,13 @@ hanem a használhatóság része. A fülszám azért kivétel, mert ott a hűsé
 funkcióvesztéssel járna (a „Régi effektek" fül és a negyedik effekt-fül
 tartalma máshová szorulna).
 
+## A végrehajtandó méretek
+
+A döntés 1. pontjának teljes, kötelező számlistája:
+[`../specs/szerkeszto-panel-meretek.md`](../specs/szerkeszto-panel-meretek.md).
+Ott van levezetve a 2. pont (hét fül) számszerű következménye is:
+39 · 39 · 40 · 39 · 40 · 39 · 40 = 276 képpont.
+
 ## Következmények
 
 - A bal panel tartalom-oszlopa **276 px**, a fülsáv **25 px** magas.
