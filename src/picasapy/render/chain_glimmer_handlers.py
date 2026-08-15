@@ -245,7 +245,7 @@ def apply_polaroid_op(image, op: FilterOp):
     )
 
 
-# --- Festhető maszkos effektek (#381: ecset nélkül a TELJES KÉPRE) ---------
+# --- Festhető maszkos effektek (#381, #688) --------------------------------
 
 
 def apply_picnik_tint_op(image, op: FilterOp):
@@ -253,17 +253,43 @@ def apply_picnik_tint_op(image, op: FilterOp):
 
 
 def apply_reanimated_eye_color_op(image, op: FilterOp):
+    # #688: maszk nélkül AZONOSSÁG — a lánc nem tud ecset-maszkot adni, és
+    # az eredeti Picasa is érintetlenül hagyja a be nem festett képet.
     return focal.apply_reanimated_eye_color(image, blur=_float_at(op, 0, 6.0), fade=_float_at(op, 1, 20.0))
 
 
-#: Ecset-maszk nélkül a TELJES KÉPRE futó effektek — a `chain.py`
-#: `apply_filters`-e ezekhez külön magyar figyelmeztetést fűz.
+#: Festhető (ecset-)maszkos effektek — a `chain.py` `apply_filters`-e
+#: ezekhez külön magyar figyelmeztetést fűz.
 PAINTABLE_MASK_OPS = frozenset({"picniktint", "reanimatedeyecolor"})
+
+#: #688: azok a festhető-maszkos effektek, amelyek ÜRES maszkkal indulnak —
+#: befestés nélkül az eredeti Picasa sem változtat a képen. A #685
+#: mérőszettjének exportja szerint a `ReanimatedEyeColor` ilyen (Picasa
+#: ΔE 0,18 = JPEG-zaj), a `PicnikTint` (ΔE 36,9) és a `Soften` (ΔE 5,5)
+#: viszont NEM: azok befestés nélkül is a teljes képre futnak.
+EMPTY_MASK_DEFAULT_OPS = frozenset({"reanimatedeyecolor"})
 
 PAINTABLE_MASK_WARNING_TEMPLATE = (
     "{name}: a Picasa ecsettel kijelölt területre hatna, a PicasaPy-nak "
     "még nincs ecset-eszköze — a hatás egyelőre a TELJES KÉPRE fut (#381)."
 )
+
+EMPTY_MASK_WARNING_TEMPLATE = (
+    "{name}: a Picasa csak az ecsettel BEFESTETT területre viszi fel, és "
+    "befestés nélkül semmit nem változtat — a PicasaPy-nak még nincs "
+    "ecset-eszköze, ezért a kép változatlan marad (#688)."
+)
+
+
+def paintable_mask_warning(name: str) -> str:
+    """A festhető-maszkos effekt figyelmeztetése — attól függ, hogy az
+    effekt ÜRES vagy teljes maszkkal indul-e (#688)."""
+    template = (
+        EMPTY_MASK_WARNING_TEMPLATE
+        if name.casefold() in EMPTY_MASK_DEFAULT_OPS
+        else PAINTABLE_MASK_WARNING_TEMPLATE
+    )
+    return template.format(name=name)
 
 
 __all__ = [
@@ -297,4 +323,7 @@ __all__ = [
     "apply_reanimated_eye_color_op",
     "PAINTABLE_MASK_OPS",
     "PAINTABLE_MASK_WARNING_TEMPLATE",
+    "EMPTY_MASK_DEFAULT_OPS",
+    "EMPTY_MASK_WARNING_TEMPLATE",
+    "paintable_mask_warning",
 ]

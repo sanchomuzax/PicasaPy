@@ -287,7 +287,7 @@ Két nyitott részlet:
 | `Holga` | Blur 0–100 (70), Grain 0–100 (30), Fade 0–100 (0) |
 | `Invert` | — |
 | `IR` | Fade 0–100 (0) |
-| `LocalContrast` | Radius 1,3–40 (15), Contrast 1–3 (1,5) |
+| `LocalContrast` | Radius 1,3–40 (15), Contrast 1–3 (1,5) — a `Contrast = 1` a NULLA-ÁLLAPOT, a művelet `Strength`-je `Contrast − 1` (#688, ld. 4.3) |
 | `Lomo` | Blur 0–100 (50), Fade 0–100 (0) |
 | `Matte` | Blur 0–50 (40), Strength 1–2 (1,2), szín (#fff), Fade 0–100 (0) |
 | `MuseumMatte` | szín Outer (#1a0e03), OuterThickness 0–100 (25), szín Inner (#f0eae4), InnerThickness 0–100 (40) |
@@ -298,7 +298,7 @@ Két nyitott részlet:
 | `Pixelate` | Impact 2–150 (20), BlendMode 0–9 (9), Fade 0–100 (0) |
 | `Polaroid` | szín Outer (#E2E2E2), Rotate −10–10 (5) |
 | `QuantizePalette` | Steps 2–30 (8), Smoothing 0–100 (80), Fade 0–100 (0) |
-| `ReanimatedEyeColor` | Blur 0–30 (6), Fade 0–100 (20) + ecset (festhető maszk) |
+| `ReanimatedEyeColor` | Blur 0–30 (6), Fade 0–100 (20) + ecset (festhető maszk, **ÜRESEN indul** — befestés nélkül az effekt tétlen, #688) |
 | `RoundedEdges` | szín Outer (#fff), CornerRadius 0–min(W,H)/2 (min(W,H)/10) |
 | `Sixties` | Rounded jelölő (be), szín Outer (#fff), Fade 0–100 (20) |
 | `Soften` | Impact 0–100 (50), Fade 0–100 (50) + festhető maszk |
@@ -322,6 +322,21 @@ formában rakhat össze.
   A `LocalContrast` effekt ugyanezt bontja ki explicit lépésekre:
   `orig − blur(r)`, `× Strength`, visszaadás — klasszikus unsharp-jellegű
   helyi kontraszt.
+  **A két effekt `Strength`-je viszont NEM ugyanaz (#688).** A `HDR` a
+  csúszkát közvetlenül adja tovább; a `LocalContrast`-nál a csúszka `[1..3]`
+  tartományának ALSÓ vége a nulla-állapot, azaz `Strength = Contrast − 1`.
+  A #685 mérőszettjének valódi Picasa-exportján mérve (modell ↔ Picasa,
+  ΔE CIE76 átlag):
+
+  | eset | Picasa Δ az eredetitől | `s = Contrast` | `s = Contrast − 1` |
+  |---|---|---|---|
+  | `LocalContrast` min (R 1,3 / C 1,0) | 0,18 (= JPEG-zaj, tétlen) | 1,85 | **0,18** |
+  | `LocalContrast` alap (R 15 / C 1,5) | 3,08 | 2,24 | **0,37** |
+  | `LocalContrast` max (R 40 / C 3,0) | 9,43 | 2,77 | **0,87** |
+  | `HDR` alap (R 20 / C 3,0) | 7,48 | **1,24** | 1,71 |
+
+  Vagyis az eltolás a `LocalContrast`-on mindhárom állást megjavítja, a
+  `HDR`-en viszont ront — ezért kizárólag a `LocalContrast` kapja meg.
 - **`Invert`** = egyetlen mestergörbe `(0,255) → (255,0)`.
 - **`CrossProcess`**: fix csatornagörbék
   R `(0,0)(60,30)(210,255)(255,255)`, G `(0,0)(47,38)(101,111)(187,206)(255,255)`,
