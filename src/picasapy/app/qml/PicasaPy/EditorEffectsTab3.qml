@@ -63,7 +63,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectVignette"
             label: qsTr("Vignette")
-            onButtonClicked: if (!panel.tryOpenParamPanel("vignette")) panel.effectRequested("vignette")
+            onButtonClicked: if (!panel.tryOpenParamPanel("vignette", label)) panel.effectRequested("vignette")
             thumbSource: panel.effectThumbSource("vignette")
             appliedCount: panel.effectAppliedCount("vignette")
         }
