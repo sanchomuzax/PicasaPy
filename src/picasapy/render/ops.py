@@ -15,9 +15,10 @@ modell (#540, 12-12 referencia-képpáron mérve):
   (a csatornánkénti vágópontok átlagából számolt) kimeneti tartományra
   simulnak — nem nyújtja mindegyiket önállóan 0..255-re (az a modell
   a mérésen jóval rosszabbul illeszkedett, ld. #540).
-- `enhance` ("Jó napom van"): csatornánként KÜLÖN vágás, a kép középső
-  90% × 90%-áról készült hisztogramból, ÉS mindegyik csatorna önállóan a
-  teljes 0..255 tartományra nyúlik (#535, `0x008f8840` → `0x009db610`).
+- `enhance` ("Jó napom van"): csatornánként KÜLÖN vágás, a kép 90% × 90%-os,
+  vízszintesen BALRA IGAZÍTOTT ablakáról készült hisztogramból (#721,
+  `_analysis_region`), ÉS mindegyik csatorna önállóan a teljes 0..255
+  tartományra nyúlik (#535, `0x008f8840` → `0x009db610`).
 
 A vágópont-keresés és a leképezés mindkét úton a natív algoritmus szerint
 történik: darabszám-küszöb (`_levels_clip_threshold`), a natív keresőciklus
@@ -217,22 +218,53 @@ def apply_autolight(image: np.ndarray) -> np.ndarray:
     return apply_lut(image, _native_levels_lut(low, high))
 
 
-#: A natív CSATORNÁNKÉNTI elemzés a kép SZÉLEIT kihagyja: a hisztogram csak
-#: a középső 90% × 90%-ról készül (`0x009db610`, #576 dekompiláció, #539
-#: méréssel igazolva). Keretes, vignettált vagy sötét szélű képnél ez
-#: érdemben más fekete-/fehérpontot ad, mint a teljes képes elemzés.
+#: A natív CSATORNÁNKÉNTI elemzés nem a teljes képet nézi: az ablak
+#: 90% × 90% méretű (`0x009db610`, #576 dekompiláció). Keretes, vignettált
+#: vagy sötét szélű képnél ez érdemben más fekete-/fehérpontot ad, mint a
+#: teljes képes elemzés.
 _LEVELS_MARGIN_PERCENT = 5
 
 
 def _analysis_region(image: np.ndarray) -> np.ndarray:
-    """A hisztogram-elemzés területe: a kép középső 90% × 90%-a."""
+    """A hisztogram-elemzés ablaka: 90% magas, 90% széles — de BALRA IGAZÍTVA.
+
+    A natív ciklus (`0x009db610`) függőlegesen tényleg beljebb kezd, a
+    VÍZSZINTES eltolás viszont hiányzik belőle: a sor-mutatót a peremmel
+    lépteti, a soron BELÜL viszont a 0. oszlopról indul, és a vízszintes
+    peremet csak a képpontok DARABSZÁMÁHOZ használja:
+
+    ```c
+    uVar12 = (W * 5) / 100;   uVar10 = (W * 95) / 100;   // csak a darabhoz
+    pbVar11 = base + stride * ((H * 5) / 100) * 4;       // sor-eltolás: megvan
+    do {
+      iVar8  = uVar10 - uVar12;   // 0,9·W képpont…
+      pbVar2 = pbVar11;           // …de a sor ELEJÉRŐL, nem a peremtől
+    ```
+
+    Az ablak tehát `[0 .. 0,9·W)`: a bal perem BENNE van, a jobb 10% marad
+    ki. Ez a Picasa saját, elejtett eltolása, nem a mi egyszerűsítésünk —
+    a #721 két, egymástól független oldalról igazolja:
+
+    1. **A #685 szürke rámpája.** A Picasa `enhance`-e ott 6,5-nél vág
+       feketét, miközben a rámpa (az ugyanott mért `autolight` szerint)
+       4,5-től indul — vagyis a rámpa hosszának ~1%-ánál. Egy KÖZÉPRE
+       igazított 90%-os ablak az 5%-nál kezdődik, tehát ezt geometriailag
+       nem tudja kiadni; a mi mérésünk pontosan ott, **18,4**-nél vágott.
+       A fehér végén ugyanez fordítva: a Picasa 235,4-nél vág (az ablak a
+       világos oldalon rövidebb), mi 240,4-nél.
+    2. **A `referencia/imfeellucky/` 12 valódi Picasa-képpárja.** Négy
+       ablak-változatot végigmérve a valódi kimenethez vett átlagos
+       csatorna-eltérés: balra igazított **2,48**, középre igazított 2,61,
+       teljes kép 2,68, bal felső sarok 2,74 (az érintetlen kép 10,35).
+       A balra igazított a legjobb — és ez a dekompilátum betű szerinti
+       olvasata is.
+    """
     height, width = image.shape[:2]
     margin = _LEVELS_MARGIN_PERCENT
     top = height * margin // 100
-    left = width * margin // 100
-    return image[
-        top : height * (100 - margin) // 100, left : width * (100 - margin) // 100
-    ]
+    bottom = height * (100 - margin) // 100
+    columns = width * (100 - margin) // 100 - width * margin // 100
+    return image[top:bottom, 0:columns]
 
 
 def _channel_black_white_points(
@@ -240,9 +272,10 @@ def _channel_black_white_points(
 ) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
     """Csatornánkénti fekete-/fehérpont a natív algoritmus szerint (#539).
 
-    A `0x009db610` geometriája: a hisztogram a kép középső 90% × 90%-áról
-    készül, a vágási küszöb viszont a TELJES kép képpontszámának 0,5%-a,
-    mindkét végén azonosan (a natív kódban `(W·H)/200`).
+    A `0x009db610` geometriája: a hisztogram a kép 90% × 90%-os,
+    vízszintesen BALRA IGAZÍTOTT ablakáról készül (`_analysis_region`), a
+    vágási küszöb viszont a TELJES kép képpontszámának 0,5%-a, mindkét
+    végén azonosan (a natív kódban `(W·H)/200`).
     """
     height, width = image.shape[:2]
     threshold = _levels_clip_threshold(height * width)

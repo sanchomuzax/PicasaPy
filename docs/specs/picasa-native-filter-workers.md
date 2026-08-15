@@ -287,9 +287,12 @@ két csúszka `0 = Cool to Warm [-0.5..0.5]`, `1 = White Shift [0..1]`; a
 ```c
 ceiling = flag ? 252 : 255;                       // ← A KÉT ÁG
 
-// 1) hisztogram — a KÖZÉPSŐ 90% × 90%-ról, csatornánként külön
+// 1) hisztogram — 90% × 90%-nyi ablakról, csatornánként külön.
+//    FIGYELEM (#721): a VÍZSZINTES eltolás hiányzik a natív ciklusból —
+//    a sor-mutató a peremmel lép, a soron belül viszont a 0. oszlopról
+//    indul, és a `w*5/100` csak a képpontok DARABJÁHOZ kell.
 for y in [h*5/100 .. h*95/100):
-  for x in [w*5/100 .. w*95/100):
+  for x in [0 .. w*95/100 - w*5/100):        // BALRA igazítva!
       histR[R]++, histG[G]++, histB[B]++;
 
 // 2) vágási darabszám: a TELJES kép képpontszámának 0,5%-a
@@ -308,11 +311,16 @@ out_c  = clamp(((c - black_c) * gain_c) >> 16, 0, ceiling);
 
 1. **A vágási pont valóban DARABSZÁM-alapú** (`w·h/200`), nem a hisztogram fix
    százaléka — a jegy (#539) feltevése helyes.
-2. **A kép 5%-os pereme kimarad az elemzésből.** Ez eddig ismeretlen volt, és
-   önmagában okoz eltérést: keretes, vignettált vagy sötét szélű képnél a
-   Picasa más fekete-/fehérpontot választ, mint egy teljes képes elemzés.
-   *(A darabszám viszont a TELJES képméretből számolódik — tehát a küszöb
-   arányaiban szigorúbb, mint a mintavett terület 0,5%-a.)*
+2. **A kép pereme kimarad az elemzésből — de nem szimmetrikusan.** Ez eddig
+   ismeretlen volt, és önmagában okoz eltérést: keretes, vignettált vagy sötét
+   szélű képnél a Picasa más fekete-/fehérpontot választ, mint egy teljes képes
+   elemzés. Függőlegesen mindkét oldalon 5% marad ki; **vízszintesen viszont a
+   bal perem BENNE van, és a jobb 10% marad ki** — a mutató-aritmetikából
+   hiányzik az oszlop-eltolás (#721, három egymástól független bizonyítékkal:
+   a #685 rámpa-mérés geometriája, a 12 valódi képpár ΔE-je 2,61 → 2,48, és
+   maga a dekompilátum). *(A darabszám viszont a TELJES képméretből
+   számolódik — tehát a küszöb arányaiban szigorúbb, mint a mintavett terület
+   0,5%-a.)*
 3. **Két ág van: a felső határ 252 vagy 255.** A `252`-es ág enyhébb: nem húzza
    ki teljesen a fehéret. Ez a legvalószínűbb magyarázata a „Jó napom van" és az
    „Automatikus kontraszt" eltérő eredményének.

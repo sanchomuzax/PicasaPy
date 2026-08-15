@@ -6326,6 +6326,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Rounded Corners</source>
         <translation>Sarkok lekerekítése</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Edge Hardness</source>
+        <translation>Élkeménység</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Pick Color</source>
+        <translation>Színválasztás</translation>
+    </message>
 </context>
 <context>
     <name>EditOverwriteDialog</name>

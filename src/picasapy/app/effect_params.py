@@ -24,8 +24,16 @@ száma), ezért a feliratot kitalálni tilos: a felhasználó a régi programbó
 ezeket a szavakat ismeri. Ahol a vezérlő-KÉSZLETÜNK maga tér el az
 eredetitől (`pencilsketch`, `comicize`, `neon`, `soften`, `focalzoom`,
 illetve a nem-Glimmer örökölt szűrők: `radblur`, `radsat`, `dir_tint`,
-`tint`), ott a felirat sem vezethető le — ezek a #600 jegyben külön fel
-vannak sorolva, és saját munkára várnak.
+`tint`, `radtint`), ott a felirat sem vezethető le — ezek a #600 jegyben
+külön fel vannak sorolva, és saját munkára várnak.
+
+A négy „tint-szerű" örökölt szűrő (`ansel`, `tint`, `dir_tint`, `radtint`)
+és a `finetune`/`finetune2`/`colorfix` színválasztója UGYANAZT a natív
+`editpanel/colorwheel%d` vezérlőt használja — ennek felirata a
+`filterdesc.xml`-től függetlenül, mindig „Pick Color" (a szerkesztőpanel
+`editpaneltext.tre` erőforrásából mérve, ld. `docs/specs/filters-decoded.md`
+„A `colorwheel version=…`" szakasza) — ez NEM kitalált név, hanem a
+`PickColor` szótári kulcs (`picasa-effekt-feliratok.md`).
 
 Amit tudatosan KIHAGYUNK (ld. a #516 jegy jelentése):
 - a **festhető maszk / ecset** effektek (`ReanimatedEyeColor`, `Soften`,
@@ -35,9 +43,11 @@ Amit tudatosan KIHAGYUNK (ld. a #516 jegy jelentése):
   `focalpixelate` egy MÁSIK, `chain.KNOWN_UNRENDERED_OPS`-beli szűrő), így
   vezérlők hozzáadása egy nem-létező renderert kötne be — ez már nem
   "kicsi és egyértelmű" javítás (#516 jelentés).
-- `Boost`, `Cinemascope`, `Comicize`, `FocalZoom`, `Invert`, `Neon`,
-  `PencilSketch` — a #516 jegy szerint ezeknél a vezérlőszám MA MÁR egyezik
-  az eredetivel, nincs teendő.
+- `Boost`, `Cinemascope`, `Comicize`, `Invert`, `Neon`, `PencilSketch` — a
+  #516 jegy szerint ezeknél a vezérlőszám MA MÁR egyezik az eredetivel,
+  nincs teendő. (A `FocalZoom` ide korábban szintén be volt sorolva — ez
+  #717-ben TÉVESNEK bizonyult: a regiszter 6, a katalógusunk csak 4
+  paramétert tartott, ld. lent.)
 """
 
 from __future__ import annotations
@@ -125,14 +135,31 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("radius", "Radius", 0.0, 1.0, 0.3, 0.01),
         _p("sharpness", "Sharpness", 0.0, 1.0, 0.5, 0.01),
     ),
-    # tint=1,!!megőrzés,#szín — a szín egyelőre az alapértéken marad
-    "tint": (_p("preserve", "Preserve Color", 0.0, 1.0, 0.5, 0.01),),
-    # dir_tint=1,x,y,gradiens,árnyék,#szín
+    # tint=1,!!megőrzés,#szín (#717: a szín korábban hiányzott a láncból)
+    "tint": (
+        _p("preserve", "Preserve Color", 0.0, 1.0, 0.5, 0.01),
+        _color("color", "Pick Color", "#ffffff"),
+    ),
+    # ansel=1,#szín (#717: korábban egyáltalán nem volt katalógus-bejegyzése —
+    # a gomb egykattintásos alapértékkel, színválasztó nélkül alkalmazott)
+    "ansel": (_color("color", "Pick Color", "#ffffff"),),
+    # dir_tint=1,x,y,gradiens,árnyék,#szín (#717: a szín korábban hiányzott)
     "dir_tint": (
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
         _p("gradient", "Gradient", 0.0, 1.0, 0.5, 0.01),
         _p("shade", "Shade", 0.0, 1.0, 0.5, 0.01),
+        _color("color", "Pick Color", "#ffffff"),
+    ),
+    # radtint=1,x,y,feather,#szín (#565/#717: korábban egyáltalán nem volt
+    # katalógus-bejegyzése — a „Régi effektek" fül gombja egykattintásos,
+    # rögzített `edit_controller._EFFECT_PARAMS["radtint"]` alapértékkel
+    # alkalmazott, alpanel/színválasztó nélkül)
+    "radtint": (
+        _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
+        _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
+        _p("gradient", "Gradient", 0.0, 1.0, 0.25, 0.01),
+        _color("color", "Pick Color", "#ffffff"),
     ),
     # --- 5. fül: művészi effektek — egyezők (nincs teendő, #516) ------------
     "boost": (_p("strength", "Impact", 0.0, 100.0, 50.0),),
@@ -140,11 +167,20 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("amount", "Amount", 0.0, 100.0, 50.0),
         _p("radius", "Radius", 0.0, 100.0, 50.0),
     ),
+    # FocalZoom=1,x,y,Impact,Radius,Hardness,Fade (#570/#600/#717): a
+    # katalógus korábban csak az első két csúszkát tartotta, ÉS azokat
+    # tévesen "Radius"/"Strength" néven — a #600 táblázata szerint a
+    # helyes felirat-sorrend Impact → Radius → Edge Hardness → Fade
+    # (`docs/specs/filterdesc-registry.md` 4.2, ill. a #600 jegy „FocalZoom"
+    # sora); a #516 „nincs teendő" megjegyzése ezt a négy csúszkát
+    # kettőnek nézte, ez volt a #717 valódi oka.
     "focalzoom": (
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
         _p("y", "Center Y", 0.0, 1.0, 0.5, 0.01),
-        _p("radius", "Radius", 0.0, 100.0, 50.0),
-        _p("strength", "Strength", 0.0, 100.0, 50.0),
+        _p("impact", "Impact", 1.0, 100.0, 50.0),
+        _p("radius", "Radius", 10.0, 100.0, 50.0),
+        _p("hardness", "Edge Hardness", 0.0, 100.0, 50.0),
+        _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
     "pencilsketch": (
         _p("blur_radius", "Blur Radius", 0.5, 20.0, 2.0, 0.5),

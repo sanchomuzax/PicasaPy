@@ -1068,13 +1068,95 @@ lágyítása és a JPEG-zaj magyarázza; a folt belsejében a közelítés szoro
 *Bizonyítottsági fok: erős* (három kép, 575 képpont; a szélek keveredése és
 a JPEG-veszteség miatt a pontos vágás/keverés nem különíthető el).
 
-> **Nem érdemes tovább mérni.** A folt szélének pontos alakja (kemény vágás
-> vagy lágy keverés) **nem befolyásol semmit**: a `redeye=1;` bejegyzést
-> azonosságként rendereljük (ld. fentebb), tehát ezt a műveletet a
-> renderelés során **el sem végezzük**. Csak akkor válna érdekessé, ha saját
-> vörösszem-eszközt írnánk — ahhoz viszont a fenti `R' ≈ max(G, B)` leírás
-> elegendő kiindulás. Veszteségmentes (PNG) mintát kérni ezért fölösleges
-> munka lenne a tulajdonosnak.
+> ⚠️ **A `max(G, B)` alak MEGDŐLT** — ld. a következő szakaszt. Három képen
+> nem volt eldönthető, mert ott a zöld volt a nagyobb a két csatorna közül,
+> így `max(G, B) = G`. Huszonnyolc képen a kettő szétválik, és a mérés a
+> **kisebbiket** adja.
+
+### A kiválasztási feltétel — 28 kép, 11 952 képpont (#720)
+
+A fenti mérés kibővítve. A korpusz 113 vörösszem-párjából **57** olyan van,
+ahol a lánc **csak** `redeye=1;` (más effekt nem torzít); ebből **28** pár
+azonos méretű és a `.picasaoriginals` tényleg ugyanannak a képnek a
+szerkesztetlen változata. Ez a 28 pár adja a mérést.
+
+**Módszertani megjegyzés a küszöbökről.** A szerkesztett fájl újratömörített
+JPEG, ezért mindenhol van zaj. A foltokon kívül mérve ez **átlag 5,9 · 99%:
+27 · maximum 39** szint. Ezért számít „biztosan érintett"-nek a **≥ 40**
+szintű eltérés és „biztosan érintetlen"-nek a **≤ 8** — a köztes sáv kimarad
+az értékelésből.
+
+#### A feltétel egy ARÁNY, nem különbség
+
+A javított foltok köré vont dobozban minden képpontot besorolva, az EREDETI
+képpontértékből számolt jelöltmértékek találati aránya:
+
+| mérték | legjobb küszöb | egyezés |
+|---|---:|---:|
+| **`R / max(G, B)`** | **> 1,67** | **94,4 %** |
+| `R / (G + B)` | > 0,91 | 93,6 % |
+| HSV-telítettség | > 128 | 91,9 % |
+| `Cr` (YCbCr) | > 156 | 86,5 % |
+| `R − max(G, B)` | > 52 | 86,1 % |
+| `R − (G+B)/2` | > 62,5 | 84,3 % |
+| `R` önmagában | — | 70,4 % |
+
+Az **arány-alapú** mértékek nyolc százalékponttal verik a **különbség**-
+alapúakat, és tizenhat ponttal a puszta vörös szintet. A `Cr` — amire az
+irodalom épít — itt csak a középmezőny.
+
+#### Amit a mérés KIZÁRT
+
+- **Nincs külön csillanás-védelem.** Az érintett képpontok világossága
+  99. percentilisben 233, maximuma 255 — világos képpontokat is átír. A
+  csillanás mégis megmarad: a fehér fénypont **közel semleges**, tehát az
+  aránya ≈ 1, és már a fő feltételen fennakad. A foltokon belüli 87 közel
+  semleges, 200 fölötti világosságú képpontból a Picasa **kettőt** írt át
+  (2,3 %). Vagyis az `Y > 220` típusú külön szabály **fölösleges**, ha a
+  feltétel arány-alapú.
+- **Nem kitöltött korong.** Lyukkitöltés + morfológiai zárás után az egyezés
+  94,4 %-ról **90,1 %-ra romlik** — a javítás tehát valóban képpontonként
+  megy, nem egy összefüggő foltra.
+- **Nincs lágy szél.** A javítás erőssége (0 = érintetlen, 1 = teljesen a
+  célszintig) mediánban **1,03**, a képpontok **82 %-ánál 0,9 fölött**. Kemény
+  csere, nem alfa-keverés. (A szórást a JPEG magyarázza.)
+
+#### A kimenet: közel semleges szürke a KISEBBIK csatorna szintjén
+
+| | R | G | B |
+|---|---:|---:|---:|
+| **előtte** (átlag) | 119,5 | 41,4 | 46,7 |
+| **utána** (átlag) | 37,3 | 34,6 | 34,7 |
+
+A kimenet gyakorlatilag szürke: `|R'−G'|` átlaga **3,2**, `|G'−B'|` **2,1**
+(az eredetin ugyanez 78,1 és 10,4). **Mindhárom csatorna elmozdul**, nem csak
+a vörös.
+
+A szürke szintjének illesztése (|eltérés| átlaga, ugyanazon a képpont-
+halmazon):
+
+| jelölt | |eltérés| |
+|---|---:|
+| **`min(G, B)`** | **8,03** |
+| `G` | 8,78 |
+| `(G+B)/2` | 9,78 |
+| `B` | 13,54 |
+| `max(G, B)` | 14,30 |
+
+A `min(G, B)` és a `G` a JPEG-zajon (5,9) belül van egymáshoz képest — a
+korpuszban a képpontok **70 %-ánál `B > G`**, tehát a kettő legtöbbször
+egybeesik, és nem választható szét. A `max(G, B)` viszont **mérhetően rossz**:
+ugyanazon a halmazon 14,3 a 8,0-val szemben.
+
+```
+érintett, ha  R / max(G, B) > ~1,67
+akkor         R' = G' = B' ≈ min(G, B)
+```
+
+*Bizonyítottsági fok: erős.* 28 kép, 11 952 érintett képpont. Ami **nyitva
+marad**: a küszöb rögzített-e vagy adaptív — a képenkénti legjobb küszöb
+mediánja 1,57, szórása 0,27, tartománya 1,28–2,29, de ezt a szám a doboz
+peremének tartalma is befolyásolja, ezért nem dönthető el ebből.
 
 ### Mit jelent ez a PicasaPy-nak
 
