@@ -5,6 +5,29 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.59] – 2026-08-16
+
+### Javítva
+- **A szerkesztő bal panelje az eredeti méreteivel épül (#741).** A csempék
+  sorköze 104 képpont volt a mért **64** helyett — három sor × ~40 képpont,
+  amit a panel aljáról vett el, ezért csúszott lejjebb a Derítőfény és a
+  gombsor. Most a teljes panel a Picasa saját erőforrás-rétegeiből mért
+  geometriát követi: csempe 44 × 30, hét fül hézag nélkül kitöltve, a
+  csúszkák, gombok és legördülők az eredeti méretükön. **A felső eszköztár
+  a szerkesztőben nem látszik többé** — az eredetiben ott csak a „Vissza a
+  könyvtárhoz" van.
+- **A PicasaPy-ban végzett szerkesztés eljuthat a párhuzamosan futó
+  Picasához (#643).** Kiderült, hogy a Picasa a saját adatbázisát tekinti
+  igazságforrásnak, és egy már beolvasott fotót a `.picasa.ini` változása nem
+  tesz elavulttá — még újraindítás után sem. Mentés után ezért mostantól
+  megérintjük a **képfájl módosítási idejét**; a kép tartalma, mérete és
+  jogosultsága változatlan marad. (Kikapcsolható:
+  `PICASAPY_TOUCH_PHOTO_MTIME=0`.)
+- **Nem írható ki olyan szerkesztési lánc, amit az eredeti Picasa eldobna
+  (#643).** A Picasa az első hibás lépésnél megáll, és onnantól a lánc többi
+  részét sem hajtja végre. Az új ellenőrzés ezt lehetetlenné teszi — és
+  végigmérve mind az 57 effektünket: ma egyik sem ír ilyet.
+
 ## [0.7.58] – 2026-08-15
 
 ### Javítva
