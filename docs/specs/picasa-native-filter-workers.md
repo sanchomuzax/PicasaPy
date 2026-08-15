@@ -720,10 +720,12 @@ hiányzik — **egyetlen méréssel** meghatározható (egy éles lépcső elmos
 sugárral, majd α illesztése).
 
 > **Megmérve (4.2.5) és megvalósítva (#623):** `picasapy.render.iir_blur`.
-> Ez a modul most már a `dir_sharp` és a `linblur` közös elmosója; a
-> `glow`/`radblur` régebbi, Gauss-alapú KÖZELÍTÉSE (`render/effects.py`)
-> szándékosan érintetlen maradt — az átállításuk külön jegy, mert a
-> golden-verdiktjük is ahhoz van kalibrálva.
+> Ez a modul a `dir_sharp`, a `linblur`, és **#668 óta a `glow`/`glow2` és a
+> `radblur` közös elmosója is** — az átállítás mind a 12 golden-páron javított
+> (átlagos ΔE 1,74…11,88 helyett 0,09…1,19). A `glow` négyzetre emelő
+> előgörbéje és a `radblur` két illesztett skalárja a
+> `docs/specs/filters-decoded.md` „#668" szakaszában. A `radsat` továbbra is
+> a régi közelítésen fut: nincs hozzá mért kimenet.
 
 ### 4.2.2 `glow` — `0x0090d4b0`
 

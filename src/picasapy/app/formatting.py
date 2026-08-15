@@ -18,6 +18,23 @@ from picasapy.metadata import read_exif_details
 # útvonal-vég leválasztása mappa-névhez (per- és backslash-tűrő)
 PATH_TAIL = re.compile(r"[/\\]")
 
+#: A FÉNYKÉPEZŐGÉP számainak locale-ja: C, azaz PONT a tizedesjel — akkor
+#: is, ha a felhasználó rendszere magyar (#664, ADR-004:
+#: `docs/decisions/tizedesjel.md`).
+#:
+#: Az eredeti Picasa két külön úton írt ki számokat. A gép adatai (rekesz,
+#: fókusztávolság, záridő, tárgytávolság, GPS) nyers `printf`-fel készültek
+#: a lefordított formátumsztringből — a hivatalos MAGYAR szövegkészletben
+#: is `f/%3.1f` és `%2$3.1f mm` áll (ld. `docs/specs/histogram-reference.md`
+#: H.3) —, tehát mindig ponttal. A KÖNYVTÁR adatai (fájlméret, darabszám,
+#: dátum) ezzel szemben a Windows területi számformázóján mentek át, tehát
+#: magyar rendszeren vesszővel jelentek meg; azok nálunk is a hívótól kapott
+#: `locale`-t használják.
+#:
+#: NE cseréld vissza `QLocale()`-ra „következetességből": az `f/2,8` nem
+#: hűségjavítás, hanem hűség-rontás.
+_EXIF_LOCALE = QLocale.c()
+
 
 def to_local_path(path_or_url: str) -> str:
     """file:// URL vagy sima útvonal → OS-natív lokális útvonal.
@@ -230,22 +247,27 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
     if details.flash_fired is not None:
         add("Flash", tr("Fired") if details.flash_fired else tr("Did not fire"))
     add("Lens", details.lens)
+    # #664 / ADR-004: a gép saját számai C-locale-lal (PONT), a fájlé és a
+    # dátumé a hívó `locale`-jával — ld. az _EXIF_LOCALE megjegyzését
     if details.focal_mm:
-        add("Focal Length", _millimetres(details.focal_mm, locale, tr))
+        add("Focal Length", _millimetres(details.focal_mm, _EXIF_LOCALE, tr))
     if details.focal_35mm:
         add(
             "Focal Length in 35mm Film",
-            _millimetres(float(details.focal_35mm), locale, tr),
+            _millimetres(float(details.focal_35mm), _EXIF_LOCALE, tr),
         )
     if details.exposure_seconds:
-        add("Exposure Time", format_exposure(details.exposure_seconds, locale))
+        add(
+            "Exposure Time",
+            format_exposure(details.exposure_seconds, _EXIF_LOCALE),
+        )
     if details.f_number:
-        add("F Number", f"f/{locale.toString(details.f_number, 'g', 3)}")
+        add("F Number", f"f/{_EXIF_LOCALE.toString(details.f_number, 'g', 3)}")
     if details.subject_distance_m:
         add(
             "Subject Distance",
             tr("%1 m").replace(
-                "%1", locale.toString(details.subject_distance_m, "g", 3)
+                "%1", _EXIF_LOCALE.toString(details.subject_distance_m, "g", 3)
             ),
         )
     if details.iso:
@@ -265,14 +287,19 @@ def exif_entries(photo, locale: QLocale, tr) -> list:
         add("Embedded Thumbnail", tr("Yes"))
     if photo.keywords:
         add("Keywords", ", ".join(photo.keywords))
+    # a koordináta a Picasában is mindig pontos (`.picasa.ini`
+    # `geotag=33.770556,-84.293055`, KML `<longitude>%f`): vesszős
+    # tizedesjellel egy koordinátapár olvashatatlan volna
     if details.latitude is not None:
-        add("GPS Latitude", locale.toString(details.latitude, "f", 6))
+        add("GPS Latitude", _EXIF_LOCALE.toString(details.latitude, "f", 6))
     if details.longitude is not None:
-        add("GPS Longitude", locale.toString(details.longitude, "f", 6))
+        add("GPS Longitude", _EXIF_LOCALE.toString(details.longitude, "f", 6))
     if details.altitude_m is not None:
         add(
             "GPS Altitude",
-            tr("%1 m").replace("%1", locale.toString(details.altitude_m, "g", 5)),
+            tr("%1 m").replace(
+                "%1", _EXIF_LOCALE.toString(details.altitude_m, "g", 5)
+            ),
         )
     add("Unique ID", details.image_unique_id)
     return entries
@@ -293,6 +320,8 @@ def camera_summary_text(details, locale: QLocale, tr) -> str:
 
     Csak a kitöltött mezők kerülnek be; üres string, ha egy sincs (pl. EXIF
     nélküli fájl). `details` egy `ExifDetails` (ld. `metadata.reader`)."""
+    # #664 / ADR-004: itt MINDEN szám a gépé, tehát végig C-locale (PONT) —
+    # a `locale` paraméter a hívási lánc egységessége miatt marad meg
     left: list[str] = []
     right: list[str] = []
     if details.camera:
@@ -300,7 +329,7 @@ def camera_summary_text(details, locale: QLocale, tr) -> str:
     if details.focal_mm:
         left.append(
             tr("Focal length: %1 mm").replace(
-                "%1", locale.toString(details.focal_mm, "g", 4)
+                "%1", _EXIF_LOCALE.toString(details.focal_mm, "g", 4)
             )
         )
     if details.focal_35mm:
@@ -308,9 +337,9 @@ def camera_summary_text(details, locale: QLocale, tr) -> str:
             tr("(35 mm equivalent: %1 mm)").replace("%1", str(details.focal_35mm))
         )
     if details.exposure_seconds:
-        right.append(format_exposure(details.exposure_seconds, locale))
+        right.append(format_exposure(details.exposure_seconds, _EXIF_LOCALE))
     if details.f_number:
-        right.append(f"f/{locale.toString(details.f_number, 'g', 3)}")
+        right.append(f"f/{_EXIF_LOCALE.toString(details.f_number, 'g', 3)}")
     if details.iso:
         right.append(tr("ISO: %1").replace("%1", str(details.iso)))
     if details.flash_fired is not None:

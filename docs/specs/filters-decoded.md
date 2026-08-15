@@ -193,6 +193,9 @@ körben mérendő célzott próbákkal.
   színparaméter értelmezése tisztázandó.
 - `ansel`: semleges (B=G=R), enyhe középemelés — B/W + tónusgörbe.
 - `glow` v1/v2: középemelés (144/151) — térbeli komponens elemzése hátravan.
+  **Felülírva (#668):** a 144/151 a Gauss-modellhez tapadt; a `chart_color`
+  golden sík szürke foltjain a VALÓDI érték **128 → 141,9 (v1)** és
+  **128 → 148,9 (v2)**, és a térbeli komponens is megvan (natív IIR-mag).
 - `Vignette`: átlagos sötétedés a sávban — térbeli maszk elemzése hátravan.
 
 ## 4. kör — MEGFEJTVE ✅ (elemzés: `analyze_goldens4.py`)
@@ -289,13 +292,13 @@ végpontok felé tér el).
 |---|---|---|
 | `autocolor` | pixelhű→közelítés (0.00–1.55) | ✅ kész (színöntetnél kis eltérés → Nyitva 1) |
 | `autolight` | mind közelítés (0.20–0.74) | ✅ kész |
-| `glow` | közelítés (1.85) | ✅ jó |
+| `glow` | közelítés (1.85 → **0,15–1,06** #668) | ✅ kész |
 | `enhance` | közelítés, színöntetnél eltér (0.49–3.02) | ✅ jó (az autocolor-komponens húzza) |
 | `sat` | negatív jó, pozitív romlik (0.70–12.71) | ⚠️ pozitív telítés pontosítandó |
 | `finetune2` | h/s alacsony jó, hő-extrém eltér (0.94–24.9) | ⚠️ hőmérséklet-tengely pontosítandó |
 | `fill` | csak gyenge erősségnél jó (1.03–6.56) | ⚠️ 2D-LUT az erősséggel driftel |
-| `glow2` | eltér (2.68) | ❌ közelítő modell |
-| `radblur` | eltér (3.18) | ❌ |
+| `glow2` | eltér (2.68) → **közelítés (0,18–1,19)** (#668) | ✅ kész |
+| `radblur` | eltér (3.18) → **közelítés (0,09–0,68)** (#668) | ✅ kész |
 | `Vignette` | eltér (4.65) | ❌ analitikus modell (Nyitva 2) |
 | `ansel` | eltér (5.60) | ❌ |
 | `dir_tint` | eltér (9.36) | ❌ |
@@ -319,8 +322,8 @@ Picasa-hű lenne.
 
 | minőség | mit jelent | effektek |
 |---|---|---|
-| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `sat`, `grain2` (statisztikai), `glow` (v1, ΔE 1,85 — ld. Golden-verdiktek fent) |
-| **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `ansel` (5,6), `radblur` (3,2), `glow2` (2,7) |
+| **MÉRT** | golden-kitből mért LUT/paraméter, pixelhű vagy közelítés-verdikttel | `crop64`, `tilt`, `bw`, `enhance`, `autolight`, `autocolor` (részleges), `fill`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, `sepia`, `sat`, `grain2` (statisztikai) |
+| **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `ansel` (5,6) |
 | **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Neon`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
 | **MEGFEJTVE A BINÁRISBÓL (#566)** | a `filterdesc.xml` csak a paraméterNEVEKET és a FIX konstansokat adja, de a `Picasa3.exe` statikus visszafejtése a teljes belső kernelt feltárta (`glimmer::IRImageOperation`, RTTI/vtable `0xcf0a14`, ctor `0xbc3d80`, feldolgozás `0xbc3f50`) | `IR` |
 | **MEGFEJTVE, DE ECSET-MASZK NÉLKÜL (#381)** | a csővezeték/paraméterezés egzakt, de a Picasa ecsettel kijelölt régióra hatna — a PicasaPy-nak nincs ecset-eszköze, ezért a TELJES KÉPRE fut (jelezve a `ChainReport.range_warnings`-ban) | `PicnikTint`, `ReanimatedEyeColor` |
@@ -331,6 +334,7 @@ Picasa-hű lenne.
 | **NEM EFFEKT — no-op jelző-token** | a lánc érvényes tagja, de nem képi művelet, csak metaadat (szerkesztési előzmény/mozi-vágás), a `_NOOP_MARKERS`-en át csendben elnyelődik, round-trip megőrzött | `picnik=1;` (Creative Kit-szerkesztés jelölője), `redeye=1;`/`retouch=1;` (history-jelzők) |
 | **MEGFEJTVE A BINÁRISBÓL, EGY PARAMÉTER KALIBRÁLATLAN (#565)** | az algoritmuscsalád és a pixelművelet a natív kód visszafejtéséből egzakt, egyetlen csúszka affin leképezése maradt feltételezés | `radtint` (radiális **szorzó**-tint köbös smoothstep maszkkal; a Feather affin leképezéséhez golden-pár kell) |
 | **MEGFEJTVE A BINÁRISBÓL (#623)** | a natív mag EGÉSZ aritmetikája képpontra reprodukálva (hurkos referencia-újraírással hitelesítve) — nincs benne feltételezett skalár | `dir_sat` (`0x0090dbb0`), `dir_brite` (`0x0090d8b0`) |
+| **MEGFEJTVE A BINÁRISBÓL ÉS VÉGIGMÉRVE (#668)** | a natív elmosó mag (`0x009dd0d0`) alá állítva, és MINDEN szabad skalár valódi Picasa-exportból mérve — 12 golden-párból 12 „közelítés", átlagos ΔE 0,09…1,19 | `glow`/`glow2` (`0x0090d4b0`: négyzetre emelő előgörbe → IIR-elmosás → screen, súly = Intenzitás), `radblur` (`0x008f8520`: IIR-elmosás + natív smoothstep sugaras maszk) |
 | **MEGFEJTVE A BINÁRISBÓL, EGY SKALÁR KALIBRÁLATLAN (#623)** | a pixelművelet, a geometria és a súlytáblák a natív kódból egzaktak; egyetlen skalár az x87-veremen ment át, ezért a dekompilátum nem őrizte meg — a helyére INDOKOLT feltevés került, mérés írja majd felül (#317) | `dir_sharp` (`0x0090d600`; a rámpa horgonya `k = round((\|a\|+\|b\|)·256)` — a két natív `ABS` hívásból következtetve), `linblur` (`0x0090de10`; a „Mennyiség" → elmosási sugár leképezés a testvér `radblur` burkolójának mintájára) |
 
 Vagyis a Glimmer-effektek (33) többsége #381 óta a `filterdesc.xml` EGZAKT
@@ -637,8 +641,10 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
 1. autocolor pontos gain-képlete (célzott cast-sweep kellene)
 2. ~~Vignette analitikus modell~~ — **MEGVAN** (`filterdesc-registry.md`
    4.3): belső ragyogás, `sugár = Blur·0,02·max(W,H)/4`. A `glow`/`radblur`
-   analitikus modellje továbbra is nyitott (a `glow` sugara logaritmikus
-   leképezésű: `<log>250.0</log>`).
+   analitikus modellje **is MEGVAN (#668)** — natív IIR-mag + mért
+   előgörbe/maszk, ld. lent a #668 szakaszt. (A `glow` sugara valóban a
+   logaritmikus leképezés eredménye: `<log>250.0</log>`, és képpontban
+   értendő.)
 3. unsharp kernel finomítás (dekonvolúciós illesztés)
 4. `tint` színparaméter-formátum (ffff → R=0 anomália) — **új nyom**: a
    `tint` `colorwheel version="0"`, az `ansel`/`dir_tint` `version="1"`,
@@ -670,7 +676,8 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
    `tint` (dE 20, formátum: Nyitva 4) → `dir_tint` (9) → `sat` pozitív
    ág (12) → `finetune2` hőmérséklet-tengely (25 extrémnél) → `fill` 2D-LUT
    erősség-drift (6.5) → `ansel` (5.6) → `Vignette` (4.6, Nyitva 2) →
-   `radblur` (3.2) → `glow2` (2.7).
+   ~~`radblur` (3.2)~~ → ~~`glow2` (2.7)~~ — mindkettő **KÉSZ (#668)**:
+   a natív elmosó magra állítva a 12 golden-párból mind a 12 „közelítés".
 9. **`finetune` v1 ↔ `finetune2` v2 hőmérséklet: 2× skála-hipotézis
    mérése.** A `filterdesc.xml` szerint a v1 tartománya `[−0,5..0,5]`, a
    v2-é `[−1..1]`; ha a görbe azonos, akkor `v2_érték = 2 · v1_érték`
@@ -754,9 +761,56 @@ lineáris modell ezt sosem adja vissza, és a hiba a csúszka végén nő meg.
 
 Negatív csúszkánál egy külön előlépés fut (`0x0090e200`, `amount + 1.0`).
 
-A luminancia súlyozása 5 : 1 : 2 / 8 alakú egész szorzás
-(`(x*5 + y + z*2) >> 3`); a csatorna-hozzárendelés a dekompilátumból nem
-egyértelmű, **golden-ellenőrzést érdemel**.
+#### A `sat` TELJES algoritmusa (2026-08-15, a csatorna-hozzárendelés lezárva)
+
+A képpontok **BGRA** sorrendben állnak (`p[0]=B`, `p[1]=G`, `p[2]=R`), ezért a
+korábban bizonytalan `5:1:2` súlyozás egyértelműen feloldható:
+
+```c
+s = amount * 3.0f;                          // a csúszka HÁROMSZOROSA
+
+// három 2048 elemű LUT, csatornánként MÁS kitevővel:
+for (i = 0; i < 2048; i++) {
+    x = i / 256.0f;                         // 0…8
+    LUT_R[i] = lroundf(powf(x, 1.0f + 0.3f*s) * 256);
+    LUT_G[i] = lroundf(powf(x, 1.0f + 0.7f*s) * 256);
+    LUT_B[i] = lroundf(powf(x, 1.0f + 0.9f*s) * 256);
+}
+
+// képpontonként:
+B = p[0]; G = p[1]; R = p[2];
+Y = (5*G + 1*B + 2*R) >> 3;                 // gyors egész luma
+if (Y != 0) {
+    k = 65535 / Y;                          // (256*256 - 1) / Y
+    R2 = (LUT_R[min((k*R) >> 8, 2047)] * Y) >> 8;
+    G2 = (LUT_G[min((k*G) >> 8, 2047)] * Y) >> 8;
+    B2 = (LUT_B[min((k*B) >> 8, 2047)] * Y) >> 8;
+
+    // ZÁRÓ LÉPÉS: túlcsordulásnál ARÁNYOS visszaskálázás, nem vágás
+    m = max(R2, G2, B2);
+    if (m > 255) {
+        k2 = 65280 / m;                     // 0xff00 / m
+        R2 = (k2*R2) >> 8;  G2 = (k2*G2) >> 8;  B2 = (k2*B2) >> 8;
+    }
+}
+```
+
+**Három dolog, amit egy naiv megvalósítás elront:**
+
+1. **A telítés arány-térben történik**: minden csatornát elosztunk a
+   luminanciával, átvisszük a hatványgörbén, majd visszaszorozzuk vele. Ettől
+   luminancia-megőrző — egy szürkével keverő lineáris modell nem az.
+2. **A kitevők csatornánként mások** (`a` = a csúszka):
+   **R: 1 + 0,9a · G: 1 + 2,1a · B: 1 + 2,7a**.
+3. **Túlcsordulásnál mind a három csatorna arányosan skálázódik vissza**, nem
+   csatornánként vágódik. A vágás színárnyalatot tolna el.
+
+A luma-súlyok `R:2/8 · G:5/8 · B:1/8` — a Rec.601 (0,299/0,587/0,114) klasszikus
+egész közelítése.
+
+**Bizonyítottsági fok: megerősített.** Címek: `0x008f8ff0` (callback) →
+`0x0090b930` (mag), a skálázó állandó `DAT_00d3a148` = 256 (statikus, egyetlen
+hivatkozással).
 
 ### `unsharp` / `unsharp2` — a sugár FIX
 
@@ -930,3 +984,316 @@ részlet-élesítés), a `linblur` burkolója pedig **kétszer** futtatja le.
 
 Mindhármat a **#317** (effekt-kalibráció) írhatja felül; a hatás JELLEGE
 (hol erős, milyen irányú, milyen az átmenet) ettől függetlenül egzakt.
+
+## A `glow`/`glow2` és a `radblur` a natív magon — VÉGIGMÉRVE (#668)
+
+A #623 bevitte a közös elmosó magot, de a `glow`-t és a `radblur`-t
+szándékosan a régi Gauss-közelítésen hagyta, mert a golden-verdiktjük ahhoz
+volt kalibrálva. A #668 elvégezte a mérést, és a mérés **támogatta** a
+cserét: mind a 12 golden-pár javult, egy sem romlott.
+
+### A felhasznált referencia-anyag
+
+| forrás | mi van benne | mire jó |
+|---|---|---|
+| `referencia/blur-meres/export/…-sugar-percent-{0,25,50,75,100}` | szintetikus éllépcső + a windowsos Picasa **Ragyogás**-exportja öt sugárállásban, Intenzitás maximumon | a TÉRBELI komponens (a 4.2.5 mérés forrása) |
+| `golden-kit/09-effects` | `chart_color`, `photo01`, `photo04` × `glow1`, `glow2`, `radblur` — valódi Picasa-exportok | tónus + térbeli, fotón és mérőtáblán |
+| `golden-kit3/16-effects-ramp` | `chart_ramp` × `glow1`, `glow2`, `radblur` | tónus, sík szürke lépcsőfokokon |
+
+A `blur-meres/export/blur-meres-LagyFokusz_ellenorzes` **nem** Lágy fókusz
+(a neve félrevezető): a kimenete vízszintesen és függőlegesen is egyenletes,
+tehát a 4.2.5 „a sugár abszolút" ellenőrzésének 1600 képpontos `glow`-ja.
+**Valódi `radblur`-export tehát csak a két golden-kitben van** (négy pár,
+két Amount-értékkel) — több sugaras beállítást a #317 mérhet.
+
+### A `glow` megfejtett modellje
+
+```
+elő = be² / 255                                  ← MULTIPLY önmagával
+hom = iir_blur(elő, R, R)                        ← a natív mag (0x009dd0d0)
+ki  = be + Intenzitás · (255 − be) · hom / 255   ← SCREEN
+```
+
+- **Sugár:** a tárolt (log-leképezett) paraméter **képpontban**, változtatás
+  nélkül. A `blur-meres` öt csúszkaállásán az él-profil átlagos hibája
+  0,48–1,63 szint (a régi Gauss-modellé 0,68–10,19).
+- **Előgörbe:** a sík foltok tónusemelése `(255−c)·c²` alakú, nem
+  `(255−c)·c`. A kitevő illesztése **éles minimumot ad 2,0-nál** (1,9-nél és
+  2,1-nél az átlagos hiba a kétszeresére nő). Ez fedi a natív burkoló
+  puffer-előkészítő lépését (`FUN_009aabf0` + `FUN_00aa40a0`).
+- **Súly:** maga az Intenzitás — nincs illesztett szorzó. (A korábbi modell
+  0,565-ös konstansa a hibás előgörbét kompenzálta.)
+
+A sík szürke foltok mért és modellezett értéke (a `chart_color` goldenről,
+`glow1` = `1,0.432749,2.469705`, `glow2` = `1,0.65,3.0`):
+
+| bemenet | glow1 golden | glow1 modell | glow2 golden | glow2 modell |
+|---:|---:|---:|---:|---:|
+| 64 | 69,54 | 69,13 | 71,70 | 71,72 |
+| 96 | 105,69 | 105,76 | 110,57 | 110,62 |
+| 128 | **141,92** | 141,78 | **148,86** | 148,74 |
+| 160 | 175,95 | 176,20 | 184,03 | 184,17 |
+| 192 | 207,43 | 207,45 | 215,29 | 215,20 |
+
+> A 3. kör „128 → 144 / 151" horgonya tehát **téves volt** — a Gauss-modell
+> saját kimenetét rögzítette, nem a goldenét. A tesztek javítva.
+
+### A `radblur` megfejtett modellje
+
+Natív elmosó mag + a 4.2.4 sugaras smoothstep-maszkja
+(`render/radial_mask.py`), a korong közepén az EREDETI képpel, a peremen az
+elmosottal. Két illesztett skalár:
+
+- **`Sharpness = 0`** — a `radblur`-nak nincs „Élesség" csúszkája; a négy
+  golden-pár illesztési minimuma egybehangzóan a 0-nál van (0,1-től monoton
+  romlik).
+- **a sugár képszélesség-hányada `0,009`** — a 4.2.4 dekompilátum `0,01`-et
+  olvas, de mind a négy pár (két Amount-érték, három kép) minimuma
+  következetesen a `0,9 ×` értéknél van, és az `(Amount+1)` arányosság
+  pontosan teljesül. **Az eltérés oka nyitott** — a #317 dolga eldönteni,
+  hogy a dekompilált konstans olvasata pontatlan-e, vagy a natív hívás
+  máshonnan kapja a szélességet.
+
+> Az `Amount = 0` **NEM azonosság** — a korábbi kód annak vette. A
+> `golden-kit` `radblur=1,0.411585,0.611111,0,0` exportján a kép átlagosan
+> 12,5 (photo01) és 26,4 (photo04) szintnyit tér el a forrástól.
+
+### A mérés eredménye — régi vs. új
+
+Átlagos ΔE (CIE76) a teljes render-láncon, valódi Picasa-exportok ellen:
+
+| golden-pár | régi (Gauss) | **új (natív)** | ítélet |
+|---|---:|---:|---|
+| `chart_color` glow1 | 3,00 | **0,69** | eltér → közelítés |
+| `chart_color` glow2 | 4,25 | **0,62** | eltér → közelítés |
+| `chart_color` radblur | 1,92 | **0,50** | közelítés → közelítés |
+| `photo01` glow1 | 1,74 | **0,15** | közelítés → közelítés |
+| `photo01` glow2 | 2,54 | **0,18** | eltér → közelítés |
+| `photo01` radblur | 5,02 | **0,09** | eltér → közelítés |
+| `photo04` glow1 | 2,32 | **1,06** | eltér → közelítés |
+| `photo04` glow2 | 3,31 | **1,19** | eltér → közelítés |
+| `photo04` radblur | 11,88 | **0,68** | eltér → közelítés |
+| `chart_ramp` glow1 | 1,85 | **0,25** | közelítés → közelítés |
+| `chart_ramp` glow2 | 2,68 | **0,24** | eltér → közelítés |
+| `chart_ramp` radblur | 3,18 | **0,26** | eltér → közelítés |
+
+Összegzés: **4 közelítés + 8 eltér → 12 közelítés, 0 eltér.** A maradék hiba
+JPEG-zaj nagyságrendű; „pixelhű" ítélet veszteséges goldenen nem érhető el.
+
+### Ami NEM változott
+
+A **`radsat`** („Fókuszos FF") a régi közelítésen maradt: ugyanezt a natív
+maszkot használja, de **nincs hozzá egyetlen mért kimenet sem**, és a
+projekt szabálya szerint a natív mag megléte önmagában nem indok. A #317
+kalibrálhatja, ha készül hozzá referencia-export.
+
+### `radsat` („Telítetlenít egy középpont körül") — TELJES (2026-08-15, #317)
+
+Sugárirányban telítetlenítő effekt: a középpont közelében megmarad a szín,
+kifelé haladva szürkébe megy át. Callback `0x008f8680`, mag `0x0090b660`,
+a lecsengés-tábla építője `0x0090aeb0`.
+
+#### Előkészítés — 1024 elemű lecsengés-tábla
+
+```c
+// a téglalap a hatásterület (a callback a +0x94 mezőből olvassa)
+r  = min((jobb - bal)/2.0f, (also - felso)/2.0f) * (sugar + 1.0f);
+r2 = r * r;
+shift = 0;
+while (r2 > 1024.0f) { r2 *= 0.5f; shift++; }   // hogy a sugárnégyzet beférjen
+
+k = 1.0f / (1.0f - 0.99f * sqrtf(elesseg));      // az él meredeksége
+
+for (i = 0; i < 1024; i++) {
+    t = sqrtf(i / r2);                           // normalizált sugár (0…1)
+    v = clampf(0.5f + k * (t - 0.5f), 0.0f, 1.0f);
+    v = 1.0f - v;
+    tabla[i] = (uint8_t)lroundf((3.0f - 2.0f*v) * v * v * 255.0f);   // SMOOTHSTEP
+}
+```
+
+#### Képpontonként
+
+```c
+idx = ((x - cx)*(x - cx) + (y - cy)*(y - cy)) >> shift;
+Y   = (77*R + 151*G + 28*B) >> 8;                // ld. lent
+if (idx < 1024) {
+    w = 256 - tabla[idx];
+    R' = R + (((Y - R) * w) >> 8);               // lineáris keverés a szürke felé
+    G' = G + (((Y - G) * w) >> 8);
+    B' = B + (((Y - B) * w) >> 8);
+} else {
+    R' = G' = B' = Y;                            // a körön KÍVÜL teljesen szürke
+}
+```
+
+A középpont `cx = round(W · px)`, `cy = round(H · py)` — a két csúszka
+**képarányos** koordinátát ad, nem képpontot.
+
+#### Három részlet, ami számít
+
+1. **A lecsengés SMOOTHSTEP** (`3v² − 2v³`), nem lineáris és nem koszinuszos.
+2. **Az él meredekségét `k = 1/(1 − 0,99·√élesség)` adja** — az élesség
+   csúszka végén `k = 100`, azaz gyakorlatilag éles körvonal; nullánál `k = 1`,
+   azaz egyenletes átmenet.
+3. **A körön kívül nincs keverés, hanem teljes szürke** — külön kódág.
+
+#### A luma-súlyok: KERESZT-MEGERŐSÍTÉS
+
+`Y = (77·R + 151·G + 28·B) >> 8` — **pontosan ugyanaz a három együttható**,
+amit a szépia algoritmusánál (#619) mértünk ki. Két, egymástól független
+effekt ugyanazt a szürkeárnyalat-képletet használja; ez megerősíti mindkét
+korábbi olvasatot.
+
+> Figyelem: ez **nem** azonos a `sat` luma-súlyaival (ott `R:2/8 · G:5/8 ·
+> B:1/8` egész közelítés). A Picasa **két különböző** luma-képletet használ,
+> effektcsaládtól függően.
+
+**Bizonyítottsági fok: megerősített.**
+
+### `dir_tint` (irányított színezés) — TELJES (2026-08-15, #317)
+
+Lineáris színátmenet mentén színez, adott irányban. Callback `0x008f9880`,
+mag `0x0090f470`, a lecsengés-tábla ugyanott épül.
+
+#### A csúszkák leképezése (a callbackből)
+
+```c
+szelesseg = clampf(*(float*)(p + 0x28), 0.001f, ...);   // alsó korlát 0.001
+szog_fok  = (poz - 0.5f) * 30.0f;                        // ±15° tartomány
+halvanyitas = 1.0f - *(float*)(p + 0x2c);
+irany = (p[0xc4] == -1) ? 0 : p[0xc4] - kep_forgatas;    // 0…3, a képforgatással korrigálva
+```
+
+Az `irany` alsó két bitje adja a négy fő irányt: a `& 1` felcseréli a
+vízszintes/függőleges tengelyt (és a `sin`/`cos` szerepét), a `& 3 == 2`
+illetve `== 3` pedig előjelet vált. **A képforgatás beleszámít** — az irány a
+megjelenített képhez igazodik, nem a fájlhoz.
+
+#### A lecsengés-tábla — 384 elem, szakaszos harmadfokú
+
+A magban `w = 1/szelesseg` (a `szelesseg` előbb `[0,01 … 99,9]`-re vágva),
+majd `t` `1/256`-os lépésekkel:
+
+```c
+if      (t >  1.5f)  f = 0.0f;
+else if (t < -1.5f)  f = 1.0f;
+else if (t >  0.5f)  f = 0.5625f - (t*1.125f + (t³/6 - 0.75f*t²));
+else if (t > -0.5f)  f = 0.5f    - (t*0.75f  - t³/3);
+else                 f = (-t³/6 - 0.75f*t²) - t*1.125f + 0.4375f;
+
+tabla[i] = lroundf((1.0f - 2.0f*f) * 255.9999f);     // i = 0 … 383
+```
+
+> **Az együtthatók pontosak** (a dekompilátumból). Az alak egy **harmadfokú
+> B-spline-integrál** jellegű S-görbe; ezt az azonosítást **erősnek** jelölöm,
+> nem megerősítettnek — a képlet viszont szó szerint átvehető, azonosítás
+> nélkül is.
+
+#### Képpontonként
+
+A vetület `p = (dy·sin + dx·cos)` inkrementálisan halmozódik 8 bites
+fixpontban, és `p >> 8` indexeli a táblát (0…383 tartományra vágva). A tábla
+értéke a színezés erőssége az adott képpontban.
+
+#### Miben tér el a `radsat`-tól
+
+| | `radsat` | `dir_tint` |
+|---|---|---|
+| geometria | **sugárirányú** (r² alapján) | **lineáris** vetület adott irányban |
+| lecsengés | **smoothstep** (`3v²−2v³`) | **szakaszos harmadfokú** S-görbe |
+| tábla | 1024 elem | 384 elem |
+
+**A két effekt tehát NEM közös segédfüggvényre épül** — külön geometria, külön
+átmenetgörbe. Aki egy közös „gradiens-modult" ír alájuk, mindkettőt elrontja.
+
+**Bizonyítottsági fok: megerősített** (a leképezések és az együtthatók),
+**erős** (a görbe B-spline-ként való azonosítása).
+
+### `tint` — a színparaméter feldolgozása (2026-08-15, a „Nyitva 4" részleges megoldása)
+
+A `tint` a **legnagyobb mért eltérésű** effekt (20,63 ΔE). A callback
+(`0x008f9630`) visszafejtése megmutatta, hogy a színt **nem nyersen** használja:
+
+```c
+szin = *(uint*)(p + 0x50);
+
+// 1) VIRTUÁLIS SZÍNÁTALAKÍTÁS, ha van kontextus
+ctx = *(int*)(param_4 + 8);
+if (ctx) (*(void(**)(void*,uint*,uint*,int))(*(int*)ctx + 8))(ctx, &szin, &szin, 1);
+
+// 2) normalizálás a legnagyobb komponensre
+R = szin & 0xff;  G = (szin>>8) & 0xff;  B = (szin>>16) & 0xff;
+mx  = max(R, G, B);
+sum = (R + G + B) * 85;                  // 85*3 = 255 → sum = 255 * átlag
+k   = ((mx * 255.0f) / sum - 1.0f) * 0.5f + 1.0f;
+skala = lround(16711680.0 / (mx * 255.0));   // 0xFF0000 / (mx*255)
+
+if (k != 1.0f) <extra igazítás: 0x00aa40a0>(k, 0);
+<színezés a feldolgozott színnel>(dst, szin, …);
+```
+
+#### Amit ez megmagyaráz
+
+A `k` tényező **a szín telítettségétől függ**: szürke árnyalatnál
+`mx == átlag`, tehát `k = 1` és nincs korrekció; erősen telített színnél
+`k > 1`. **A nyers RGB-vel színezve ez a korrekció kimarad** — szisztematikus,
+a szín telítettségével növekvő eltérést okoz, ami illeszkedik a mért 20,63-hoz.
+
+#### Ami NYITVA maradt
+
+1. **Mi a virtuális átalakítás** (`ctx->vtbl[2]`). A `ctx` a callback 4.
+   argumentumából jön; statikusan nem követtük vissza. Ugyanezt a mintát
+   használja az `ansel` is (`0x008f8410`) — tehát **közös** lépés.
+2. **A `colorwheel version="0"` vs `="1"` különbsége.** A `filterdesc.xml`
+   szerint `tint`/`dir_tint`/`radtint` = v0, `ansel` = v1. Az RTTI-ben van
+   `ytColorWheelNode` osztály; a verzió szerinti eltérés feltehetően a
+   kerék-koordináta → RGB leképezésben van, de ezt **nem igazoltuk**.
+
+**Bizonyítottsági fok:** megerősített (a fenti képletek és a hívási sorrend) ·
+**nyitott** (a virtuális átalakítás tartalma és a wheel-verzió jelentése).
+
+#### A TELJES csővezeték (2026-08-15, kiegészítés)
+
+A három segédfüggvény is előkerült a meglévő naplókból, és ezzel a `tint`
+**öt lépésből** áll — a mai megvalósításunk jó eséllyel csak az utolsót
+csinálja:
+
+```c
+// 1) SZÍNMEGŐRZÉS: telítetlenítés szürke felé      (0x009a9550)
+w = 256 - szinmegorzes;
+Y = (77*R + 151*G + 28*B) >> 8;
+C = C + (((Y - C) * w) >> 8);
+
+// 2) a színezőszín átvezetése a virtuális átalakításon   (még NYITOTT)
+
+// 3) telítettségfüggő tényező
+mx  = max(tR, tG, tB);
+sum = (tR + tG + tB) * 85;
+k   = ((mx * 255.0f) / sum - 1.0f) * 0.5f + 1.0f;
+
+// 4) GAMMA-LUT, kitevő 1/k                          (0x00aa40a0)
+for (i = 0; i < 256; i++) LUT[i] = lroundf(powf(i/255.0f, 1.0f/k) * 255.0f);
+// (a 0,0 és 2,2 kitevőjű táblák gyorsítótárazva vannak)
+
+// 5) SZORZÓ keverés, a legnagyobb komponensre normalizálva   (0x009db4f0)
+skala = 65536 / mx;
+C' = min(255, (C * tC * skala) >> 16);        // ≈ C * tC / mx
+```
+
+> **Ez magyarázza a 20,63 ΔE-t.** Egy naiv „szorozd meg a színnel" megoldásból
+> hiányzik a szín­megőrzés-lépés, a telítettségfüggő **gamma**, és a
+> `mx`-normalizálás. Mindhárom a szín telítettségével arányos hibát okoz.
+
+#### A luma-súlyok — HARMADIK független megerősítés
+
+`Y = (77·R + 151·G + 28·B) >> 8` — ugyanaz a három együttható, mint a
+**szépiánál** (#619) és a **`radsat`-nál**. Három, egymástól függetlenül
+visszafejtett effekt ugyanazt a képletet használja.
+
+#### Ami továbbra is nyitott
+
+Csak a **2. lépés**: mi a virtuális színátalakítás (`ctx->vtbl[2]`), és mit
+jelent a `colorwheel version="0"` vs `="1"`. Következő lépés: célzott
+dekompilálás az `ytColorWheelNode` vtable 2. és 8. slotjára (a vtable kezdete
+`0x009c2eb0`).
