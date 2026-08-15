@@ -89,13 +89,31 @@ class TestScrollAnchorOnHide:
 
     @pytest.fixture
     def scroll_app(self, qt_app, tmp_path):
-        """Több mappás, görgethető könyvtár a Main.qml-lel."""
+        """Több mappás, görgethető könyvtár a Main.qml-lel.
+
+        #718: a Main.qml időközben (a `qml_app`/conftest.py mintája szerint)
+        további context property-ket vár (discoveryController,
+        timelineController, folderTreeController, dedupController,
+        importSourceController, facesHelper, faceScanController,
+        confirmSettings, startupStatus) — ez a helyi fixture ezekkel
+        korábban NEM lett szinkronban tartva, ezért a kiterjesztett
+        QML-szkripthiba-őr `ReferenceError`-t fogott a hiányzó globálisokra
+        (a hiba korábban is megvolt, csak néma maradt, ld. a #718 jegy)."""
         import picasapy.app.application as app_module
         from picasapy.app.controller import AppController
+        from picasapy.app.dedup_controller import DedupController
+        from picasapy.app.discovery_controller import DiscoveryController
+        from picasapy.app.drop_import_controller import DropImportController
         from picasapy.app.edit_controller import EditController
         from picasapy.app.edit_preview import EditPreviewProvider
+        from picasapy.app.effect_thumbnails import EffectThumbnailProvider
+        from picasapy.app.face_scan_controller import FaceScanController
+        from picasapy.app.faces_helper import FacesHelper
         from picasapy.app.fileops_controller import FileOpsController
+        from picasapy.app.folder_tree_controller import FolderTreeController
+        from picasapy.app.import_source_controller import ImportSourceController
         from picasapy.app.thumbnail_provider import ThumbnailProvider
+        from picasapy.app.timeline_controller import TimelineController
         from picasapy.index import open_index, sync_tree
         from picasapy.thumbs import ThumbnailCache
         from picasapy.version import version_string
@@ -119,20 +137,73 @@ class TestScrollAnchorOnHide:
             ThumbnailCache(tmp_path / "thumbs", size=32)
         )
         controller = AppController(db, (str(lib),), provider, settings=settings)
+        # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — ugyanaz
+        # az elszigetelt settings, mint a controlleré
+        from picasapy.app.confirm_settings_bridge import ConfirmSettingsBridge
+
+        confirm_settings = ConfirmSettingsBridge(settings=settings)
         edit_preview = EditPreviewProvider()
         edit_controller = EditController(edit_preview)
+        effect_thumb_provider = EffectThumbnailProvider(provider.photo_record)
         fileops_controller = FileOpsController()
         app_module.wire_fileops(fileops_controller, controller)
+        discovery_controller = DiscoveryController(
+            add_folder=controller.addWatchedFolder
+        )
+        drop_import_controller = DropImportController(
+            add_folder=controller.addWatchedFolder
+        )
+        folder_tree_controller = FolderTreeController()
+        dedup_controller = DedupController(db, provider)
+        import_source_controller = ImportSourceController(
+            provider,
+            add_folder=controller.addWatchedFolder,
+            index_path=db,
+            settings=settings,
+        )
+        faces_helper = FacesHelper()
+        face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
+        timeline_controller = TimelineController(db, provider)
+        controller.syncFinished.connect(timeline_controller.reload)
         engine = QQmlApplicationEngine()
         engine.addImageProvider("thumbs", provider)
         engine.addImageProvider("editpreview", edit_preview)
+        engine.addImageProvider("effectthumb", effect_thumb_provider)
         engine.addImportPath(str(app_module._APP_DIR / "qml"))
         engine.rootContext().setContextProperty("controller", controller)
         engine.rootContext().setContextProperty("editController", edit_controller)
         engine.rootContext().setContextProperty(
             "fileOpsController", fileops_controller
         )
+        engine.rootContext().setContextProperty(
+            "discoveryController", discovery_controller
+        )
+        engine.rootContext().setContextProperty(
+            "dropImportController", drop_import_controller
+        )
+        engine.rootContext().setContextProperty(
+            "folderTreeController", folder_tree_controller
+        )
+        engine.rootContext().setContextProperty("dedupController", dedup_controller)
+        engine.rootContext().setContextProperty(
+            "importSourceController", import_source_controller
+        )
+        engine.rootContext().setContextProperty("facesHelper", faces_helper)
+        engine.rootContext().setContextProperty(
+            "faceScanController", face_scan_controller
+        )
+        engine.rootContext().setContextProperty(
+            "timelineController", timeline_controller
+        )
         engine.rootContext().setContextProperty("appVersion", version_string())
+        engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
+        # #189: a splash-híd — a funkcionális tesztek kész (ready) állapotból
+        # indulnak, hogy a splash-overlay ne takarjon semmit
+        from picasapy.app.startup_status import StartupStatus
+
+        startup_status = StartupStatus()
+        startup_status.finish()
+        engine.rootContext().setContextProperty("startupStatus", startup_status)
         engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
         assert engine.rootObjects(), "Main.qml betöltése sikertelen"
         window = engine.rootObjects()[0]
@@ -142,6 +213,19 @@ class TestScrollAnchorOnHide:
         yield window, controller, engine
         engine.deleteLater()
         qt_app.processEvents()
+        # #438: minden nyilvántartott daemon-szál bevárása, AMÍG a
+        # controllerek még élnek — a #430 SIGSEGV-osztály elkerülése (ld.
+        # picasapy.app.worker_thread.BackgroundWorkerMixin).
+        for bg_controller in (
+            controller,
+            discovery_controller,
+            dedup_controller,
+            folder_tree_controller,
+            import_source_controller,
+        ):
+            assert bg_controller.waitForBackgroundWorkers(30.0), (
+                "háttérszál nem állt le a scroll_app teardownban (#430/#438)"
+            )
 
     def _scrollable_grid(self, window, qt_app):
         grid = window.findChild(QObject, "photoGrid")
