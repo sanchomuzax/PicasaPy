@@ -6151,7 +6151,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Grain</source>
-        <translation>Szemcse</translation>
+        <translation>Szemcsésség</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
@@ -6161,7 +6161,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Bloom</source>
-        <translation>Ragyogás</translation>
+        <translation>Hamvasság</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
@@ -6186,7 +6186,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Hue</source>
-        <translation>Árnyalat</translation>
+        <translation>Színezet</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
@@ -6196,7 +6196,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Fade</source>
-        <translation>Elhalványítás</translation>
+        <translation>Fokozat</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
@@ -6226,22 +6226,22 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Outer Thickness</source>
-        <translation>Külső vastagság</translation>
+        <translation>Külső keret</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Inner Thickness</source>
-        <translation>Belső vastagság</translation>
+        <translation>Belső keret</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Corner Radius</source>
-        <translation>Sarok-sugár</translation>
+        <translation>Sarok sugara</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Caption Height</source>
-        <translation>Felirat-magasság</translation>
+        <translation>Képfelirat magassága</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
@@ -6251,7 +6251,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Shadow Color</source>
-        <translation>Árnyék színe</translation>
+        <translation>Árnyékszín</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
@@ -6266,7 +6266,42 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
         <source>Lighten</source>
-        <translation>Fényesítés</translation>
+        <translation>Világosítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Vignette Color</source>
+        <translation>Vignetta színe</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Matte Color</source>
+        <translation>Matt szín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Number of Colors</source>
+        <translation>Színek száma</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Detail</source>
+        <translation>Részletek</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>First Color</source>
+        <translation>Első szín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Second Color</source>
+        <translation>Második szín</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Rounded Corners</source>
+        <translation>Sarkok lekerekítése</translation>
     </message>
 </context>
 <context>

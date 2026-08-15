@@ -393,7 +393,7 @@ köbös görbéből — 0-nál változatlan, 256-nál teljes köbös.
 > FELTEVÉSSEL fut — ld. a két `apply_*` docstringjét és a
 > `filters-decoded.md` státusz-tábláját. A kalibráció a #317-ben fut.
 
-## 2.8 Melegítés (`warm` / „Melegítés") — beégetett tábla, KINYERVE
+## 2.8 Melegítés (`warm` / „Melegítés") — beégetett tábla, MEGVALÓSÍTVA (#611)
 
 A `0x0090c040` nem számol: egy **256 × 4 bájtos, beégetett táblát** olvas
 (`0x00d33b70`, `.data`), amelyben csatornánként külön leképezés van
@@ -415,13 +415,19 @@ A táblát a helyi binárisból kinyertem (PE-szakasztábla szerinti fájloffsze
 | 224 | 214 | 200 | 198 | +14 | +16 |
 | 255 | 242 | 232 | 234 | +10 | +8 |
 
-Mindhárom görbe szigorúan monoton. A hatás a **negyed- és középtónusban a
-legerősebb** (max `R−B = +43` a 96 körül), a szélek felé elhal, és a fehérpontot
-enyhén **lehúzza** (255 → 242/232/234). Ez a „bőrtónus-javítás", amit a
-buboréksúgó ígér (*„Improves skintones by boosting warm tones"*).
+Mindhárom görbe (gyengén, nem szigorúan) monoton nő — a fenti 32-es
+mintavételezésen ez szigorúnak látszik, de a teljes 256 elemű táblában 8
+bites kvantálás miatt csatornánként néhány szomszédos bemenet ugyanarra a
+kimenetre képez, csökkenés viszont sehol nincs. A hatás a **negyed- és
+középtónusban a legerősebb** (max `R−B = +43` a 96 körül), a szélek felé
+elhal, és a fehérpontot enyhén **lehúzza** (255 → 242/232/234). Ez a
+„bőrtónus-javítás", amit a buboréksúgó ígér (*„Improves skintones by
+boosting warm tones"*).
 
-**Ez a szűrő ezzel 100%-ban reprodukálható** — nem kell modellezni, a tábla
-maga a specifikáció.
+**Ez a szűrő 100%-ban reprodukálható** — nem kell modellezni, a tábla maga a
+specifikáció. **#611: megvalósítva** — a tábla beágyazva a
+`src/picasapy/render/warmify_lut.py` modulban, alkalmazása a
+`picasapy.render.color.apply_warm`-ban.
 
 ## 2.9 Ami ebben a körben NEM oldódott meg
 
