@@ -159,8 +159,44 @@ Elnyomható: **`DoNotAskFileSave`** beállításkulcs.
 - Az `exit_nag` kapcsoló pontos hatása (a jelzőtáblát megtaláltuk, a
   felhasználóját nem).
 - Él-e még az `IDS_WARNCLOSEEDIT` (nincs rá kereszthivatkozás).
-- Zárja-e a főablak a háttérfolyamatokat (arcfelismerés, mappafigyelés) — ez
-  élő megfigyeléssel dönthető el olcsóbban.
+*(Ez a szakasz kiürült — mindkét kérdés lezárult, ld. lent.)*
+
+## ✅ A főablak bezárása MEGSZÜNTETI a háttérszálakat
+
+Három, egymást megerősítő tény:
+
+**1. Nincs „rejtve tovább fut" út.** A főablaknak nincs tálcaikonja
+(bizonyítva lent), tehát nincs hova elrejtőznie.
+
+**2. A program egyetlen, lineáris fő függvényből fut** (`0x004051b0`,
+2533 bájt): előkészítés → futás → leállás. Ez írja a `CleanExit`
+beállításkulcsot is (`0x00403fc0` induláskor, `0x00404070` kilépéskor) —
+ebből tudja a következő indítás, hogy előzőleg összeomlás volt-e.
+
+**3. A szálak bontása erőszakos.** A `ytBaseThread` bontó útja
+(`0x0097b420`, a vtable 0. slotjából) pontosan ezt a három API-t hívja,
+ebben a sorrendben:
+
+```
+WaitForSingleObject   →   TerminateThread   →   CloseHandle
+```
+
+Vagyis: megvárja a szálat, és **ha nem áll le, kilövi**.
+
+> ⚠️ **Ezt a mintát NE vegyük át.** A `TerminateThread` a Windows egyik
+> legdurvább API-ja: nem futtat takarítást, és nyitva hagyhat zárolásokat
+> vagy félbeírt fájlt. Ez magyarázhatja a Picasa ismert, kilépéskori
+> adatbázis-sérüléseit. A `.picasa.ini`-t és az indexet nálunk **rendezett
+> leállítással** kell menteni.
+
+Ez egyben megmagyarázza a feltöltés-figyelmeztetést is (3/a pont): a kilépés
+tényleg megszakítaná a feltöltő szálat, ezért kérdez rá a program.
+
+## Mellékes lelet: Wine-felismerés
+
+A `0x00403640` a `kernel32`-ben a `wine_get_unix_file_name` függvényt keresi,
+és ettől teszi függővé a `BgFaceDetectThread` beállítást — vagyis a Picasa
+**felismeri, ha Wine alatt fut**, és a háttér-arcfelismerést másképp kezeli.
 
 ## ✅ A főablaknak NINCS tálcaikonja — bizonyított negatív eredmény
 
