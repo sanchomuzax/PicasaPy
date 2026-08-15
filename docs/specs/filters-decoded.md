@@ -754,9 +754,56 @@ lineáris modell ezt sosem adja vissza, és a hiba a csúszka végén nő meg.
 
 Negatív csúszkánál egy külön előlépés fut (`0x0090e200`, `amount + 1.0`).
 
-A luminancia súlyozása 5 : 1 : 2 / 8 alakú egész szorzás
-(`(x*5 + y + z*2) >> 3`); a csatorna-hozzárendelés a dekompilátumból nem
-egyértelmű, **golden-ellenőrzést érdemel**.
+#### A `sat` TELJES algoritmusa (2026-08-15, a csatorna-hozzárendelés lezárva)
+
+A képpontok **BGRA** sorrendben állnak (`p[0]=B`, `p[1]=G`, `p[2]=R`), ezért a
+korábban bizonytalan `5:1:2` súlyozás egyértelműen feloldható:
+
+```c
+s = amount * 3.0f;                          // a csúszka HÁROMSZOROSA
+
+// három 2048 elemű LUT, csatornánként MÁS kitevővel:
+for (i = 0; i < 2048; i++) {
+    x = i / 256.0f;                         // 0…8
+    LUT_R[i] = lroundf(powf(x, 1.0f + 0.3f*s) * 256);
+    LUT_G[i] = lroundf(powf(x, 1.0f + 0.7f*s) * 256);
+    LUT_B[i] = lroundf(powf(x, 1.0f + 0.9f*s) * 256);
+}
+
+// képpontonként:
+B = p[0]; G = p[1]; R = p[2];
+Y = (5*G + 1*B + 2*R) >> 3;                 // gyors egész luma
+if (Y != 0) {
+    k = 65535 / Y;                          // (256*256 - 1) / Y
+    R2 = (LUT_R[min((k*R) >> 8, 2047)] * Y) >> 8;
+    G2 = (LUT_G[min((k*G) >> 8, 2047)] * Y) >> 8;
+    B2 = (LUT_B[min((k*B) >> 8, 2047)] * Y) >> 8;
+
+    // ZÁRÓ LÉPÉS: túlcsordulásnál ARÁNYOS visszaskálázás, nem vágás
+    m = max(R2, G2, B2);
+    if (m > 255) {
+        k2 = 65280 / m;                     // 0xff00 / m
+        R2 = (k2*R2) >> 8;  G2 = (k2*G2) >> 8;  B2 = (k2*B2) >> 8;
+    }
+}
+```
+
+**Három dolog, amit egy naiv megvalósítás elront:**
+
+1. **A telítés arány-térben történik**: minden csatornát elosztunk a
+   luminanciával, átvisszük a hatványgörbén, majd visszaszorozzuk vele. Ettől
+   luminancia-megőrző — egy szürkével keverő lineáris modell nem az.
+2. **A kitevők csatornánként mások** (`a` = a csúszka):
+   **R: 1 + 0,9a · G: 1 + 2,1a · B: 1 + 2,7a**.
+3. **Túlcsordulásnál mind a három csatorna arányosan skálázódik vissza**, nem
+   csatornánként vágódik. A vágás színárnyalatot tolna el.
+
+A luma-súlyok `R:2/8 · G:5/8 · B:1/8` — a Rec.601 (0,299/0,587/0,114) klasszikus
+egész közelítése.
+
+**Bizonyítottsági fok: megerősített.** Címek: `0x008f8ff0` (callback) →
+`0x0090b930` (mag), a skálázó állandó `DAT_00d3a148` = 256 (statikus, egyetlen
+hivatkozással).
 
 ### `unsharp` / `unsharp2` — a sugár FIX
 
