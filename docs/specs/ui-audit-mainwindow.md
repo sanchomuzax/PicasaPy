@@ -398,16 +398,18 @@ Mindkettő a `Preferences` szomszédságában áll a string-táblában, a
 kulcsok között (`LastViewRoot` RVA 0x00880238, `SimplifiedHierarchy`
 RVA 0x0088fd00) — vagyis valódi, tárolt beállítások.
 
-**Csapda:** a `Hierarchy_p` (RVA 0x008835d0) **NEM** beállítás. Egyetlen
-hivatkozója (0x004b9d80) a `StarredPhotosTotal`, `HiddenPhotosTotal`,
-`GeotaggedPhotosTotal` mezőket is írja — ez a `ReportStats`
-használatstatisztika egyik számlálója. Aki a névből következtet, rossz
-helyre köti a nézetmódot.
+**Csapda:** a `Hierarchy_p` (RVA 0x008835d0) **NEM** nézetmód-beállítás.
+Egyetlen hivatkozó rutinja (0x004b9d80) összesen négy sztringet érint:
+`StarredPhotosTotal`, `HiddenPhotosTotal`, `GeotaggedPhotosTotal` és
+`Hierarchy_p` — vagyis darabszám-mezők társaságában áll, nem a
+`Preferences` kulcsok között. Aki pusztán a névből következtet, a
+nézetmódot rossz helyre köti.
 
 *Bizonyítottsági fok: megerősített* (string-szomszédság + hivatkozó
-rutinok). **Nyitva:** a `SimplifiedHierarchy` és a `LastViewRoot`
+rutinok). **Nyitva:** (a) a `SimplifiedHierarchy` és a `LastViewRoot`
 alapértéke friss telepítésen — ehhez a Picasa első indítás utáni
-registry-állapota kellene.
+registry-állapota kellene; (b) mire szolgál pontosan a `Hierarchy_p`
+számláló (a fenti csak annyit mond ki, hogy NEM a nézetmód kulcsa).
 
 ### Amit ebből a PicasaPy megvalósít (#702, első szelet)
 
