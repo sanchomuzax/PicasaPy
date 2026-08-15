@@ -16,8 +16,16 @@ Slider {
     readonly property real grooveThickness: 4
     readonly property real handleSize: 14
 
-    implicitWidth: isHorizontal ? 120 : grooveThickness + leftPadding + rightPadding
-    implicitHeight: isHorizontal ? grooveThickness + topPadding + bottomPadding : 120
+    // #659: a méret a FOGANTYÚVAL együtt értendő. Korábban csak a sín
+    // vastagsága számított, ezért a vezérlő doboza 4 képpont magas volt, a
+    // 14 képpontos, KÖZÉPRE igazított fogantyú pedig alul-felül 5-5
+    // képponttal kilógott belőle — a gépi elrendezés-ellenőr (#656) pontosan
+    // ennyit mért. A fogantyú látszólag eddig is ott volt; csak az
+    // elrendezés nem foglalta le neki a helyet, ezért a szomszédjaira lógott.
+    readonly property real vastagsag: Math.max(handleSize, grooveThickness)
+
+    implicitWidth: isHorizontal ? 120 : vastagsag + leftPadding + rightPadding
+    implicitHeight: isHorizontal ? vastagsag + topPadding + bottomPadding : 120
 
     background: Rectangle {
         x: control.leftPadding + (control.isHorizontal

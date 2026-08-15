@@ -21,8 +21,26 @@ Item {
 
     Layout.fillWidth: true
     // #405/#411: nagyobb csempe — az ikon a Picasa-mintát követve
-    // jóval nagyobb helyet foglal, mint a korábbi 40×30-as PNG-ikon
-    Layout.preferredHeight: 84
+    // jóval nagyobb helyet foglal, mint a korábbi 40×30-as PNG-ikon.
+    //
+    // #659: a magasság nem lehet BEÉGETVE 84, mert a felirat szűk
+    // oszlopban KÉT sorba törik (`wrapMode` + `maximumLineCount: 2`), és
+    // akkor kilóg a csempéből — 260 képpontos oszlopnál a gépi ellenőr
+    // (#656) 4,2 képpontot mért a „Jó napom van" csempén. A 84 innentől
+    // ALSÓ KORLÁT: egysoros feliratnál a csempe pontosan ugyanakkora, mint
+    // eddig, kétsorosnál pedig annyival nő, amennyi tényleg kell.
+    // A csempe az eredetiben FIX méretű, és nálunk is az marad — a
+    // magasságot viszont a KÉTSOROS felirathoz kell szabni: 4 (felső margó)
+    // + 54 (ikondoboz) + 4 (köz) + 26,2 (két sor a legszűkebb, 260 képpontos
+    // oszlopban) + 4 (alsó levegő) = 92,2 → 92 fölfelé kerekítve nem elég,
+    // ezért 94. Korábban 84 állt itt, és a „Jó napom van" felirata 4,2
+    // képponttal kilógott a csempéből (#656 gépi ellenőr, #659).
+    //
+    // Számított magassággal is próbáltam (`implicitHeight` a felirat
+    // tényleges méretéből): a `GridLayout` NEM követte — a sor magassága
+    // 84 maradt, miközben az `implicitHeight` már 92,2 volt. A fix méret
+    // itt nemcsak egyszerűbb, hanem az eredeti viselkedése is.
+    Layout.preferredHeight: 94
     // az öröklött enabled is számít (#103): videónál a PhotoViewer az
     // egész panelt tiltja — a csempe ilyenkor vizuálisan is szürkül
     enabled: tile.tileEnabled
@@ -71,6 +89,7 @@ Item {
         }
     }
     Text {
+        id: tileLabel
         anchors.top: tileThumbBox.bottom
         anchors.topMargin: 4
         anchors.horizontalCenter: parent.horizontalCenter
