@@ -1,5 +1,10 @@
 # A Picasa fő ablakának elrendezése — a forrásból
 
+> 📐 **A KÖTELEZŐ, teljes méretlista külön lapon:**
+> [`konyvtar-ablak-meretek.md`](konyvtar-ablak-meretek.md) — mind a 156
+> `thumbui`-elem, sávonként, megvalósítási ellenőrzőlistával. Ez a lap a
+> szerkezetet és a levezetést adja, az pedig a számokat.
+
 A `respack.yt`-ből kinyert **140 `.tre` elrendezés-forrásfájl** alapján. Ezek
 a Picasa saját, kényszer-alapú (constraint) UI-leíró nyelvén íródtak, és nem
 képernyőkép-mintavételből származnak — a számok **pontosak**.

@@ -1,5 +1,9 @@
 # UI-audit — főablak (mappafa, eszköztár, tálca, görgetősáv, arányok)
 
+> 📐 A **méretek** kötelező listája:
+> [`konyvtar-ablak-meretek.md`](konyvtar-ablak-meretek.md). Ez a lap
+> képernyőkép-alapú audit; ahol a kettő eltér, **a méretlap az igazság**.
+
 **Dátum:** 2026-07-30
 **Forrás (eredeti):** a felhasználó Picasa 3.9 magyar felületéről készült
 screenshotjai, `research/testdata/screenshot/` alá tartozó gépen —
