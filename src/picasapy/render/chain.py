@@ -712,9 +712,10 @@ def apply_filters(
             skipped.append(op.name)
             continue
         if key in glimmer.PAINTABLE_MASK_OPS:
-            # #381: PicnikTint/ReanimatedEyeColor ecset-maszkja hiányzik —
-            # a hatás a TELJES KÉPRE fut, ezt jelezni kell.
-            range_warnings.append(glimmer.PAINTABLE_MASK_WARNING_TEMPLATE.format(name=op.name))
+            # #381/#688: a PicnikTint/ReanimatedEyeColor ecset-maszkja
+            # hiányzik — az előbbi ilyenkor a TELJES KÉPRE fut, az utóbbi
+            # (üres maszkkal indul) változatlanul hagyja a képet.
+            range_warnings.append(glimmer.paintable_mask_warning(op.name))
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
         try:

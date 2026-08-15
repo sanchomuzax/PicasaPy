@@ -326,7 +326,8 @@ Picasa-hű lenne.
 | **MÉRT, DE ELTÉR** | van mérés, de a verdikt „eltér" — javítandó | `tint` (ΔE 20,6), `dir_tint` (9), `ansel` (5,6) |
 | **MEGFEJTVE a filterdesc.xml-ből (#381)** | a lépéssorrend és a számértékek a Picasa saját `filterdesc.xml` `<effect>` csővezetékéből jönnek — nem golden-méréssel „visszafejtett" közelítés, hanem a Picasa TÉNYLEGES lépéssora (az alacsony szintű kernelek, pl. Gauss-elmosás, a szokásos megfelelőjükkel) | `Vignette`, `Matte`, `HDR`, `LocalContrast`, `Invert`, `CrossProcess`, `Sixties`, `Cinemascope`, `Orton`, `PencilSketch`, `HeatMap`, `NightVision`, `Holga`, `Lomo`, `Neon`, `Boost`, `Soften`, `Pixelate`, `QuantizePalette`, `TwoTone`, `Border`, `RoundedEdges`, `DropShadow`, `MuseumMatte`, `Polaroid`, `PicnikGrain` |
 | **MEGFEJTVE A BINÁRISBÓL (#566)** | a `filterdesc.xml` csak a paraméterNEVEKET és a FIX konstansokat adja, de a `Picasa3.exe` statikus visszafejtése a teljes belső kernelt feltárta (`glimmer::IRImageOperation`, RTTI/vtable `0xcf0a14`, ctor `0xbc3d80`, feldolgozás `0xbc3f50`) | `IR` |
-| **MEGFEJTVE, DE ECSET-MASZK NÉLKÜL (#381)** | a csővezeték/paraméterezés egzakt, de a Picasa ecsettel kijelölt régióra hatna — a PicasaPy-nak nincs ecset-eszköze, ezért a TELJES KÉPRE fut (jelezve a `ChainReport.range_warnings`-ban) | `PicnikTint`, `ReanimatedEyeColor` |
+| **MEGFEJTVE, DE ECSET-MASZK NÉLKÜL (#381)** | a csővezeték/paraméterezés egzakt, és az effekt TELI maszkkal indul: a #685 exportján a Picasa maga is a teljes mérőképre vitte fel (`PicnikTint` ΔE 36,9, `Soften` ΔE 5,5), ezért nálunk is a TELJES KÉPRE fut (jelezve a `ChainReport.range_warnings`-ban) | `PicnikTint`, `Soften` |
+| **MEGFEJTVE, DE ÜRES ECSET-MASZKKAL INDUL (#688)** | a pixel-matematika egzakt, de az effekt **befestés nélkül nem csinál semmit**: a #685 exportján a Picasa a `min` és az `alap` álláson egyaránt érintetlenül hagyta a mérőképet (ΔE 0,18 = JPEG-zaj), miközben a korábbi, teljes képes modellünk ΔE 57,5 / 54,6 mértékben átfestette. Maszk nélkül tehát AZONOSSÁG; a `mask` paraméterrel a visszafejtett csővezeték lefut | `ReanimatedEyeColor` |
 | **KÖZELÍTŐ (mérés nélkül) — #381 után is maradt** | a hatás jellege alapján, szakirodalomból — sem golden-mérés, sem filterdesc-pontosítás nincs még bekötve | — |
 | **MEGFEJTVE A FILTERDESC + NATÍV KÓDBÓL, EGY RÉSZLET NYITVA (#569, #570)** | a csővezeték (lépések, paraméter-sorrend, képletek, keverési módok) egzakt; egyedül a mintavételezés perem-/interpolációs szabálya vár golden-összevetésre | `Comicize`, `FocalZoom`, `PicnikFocalPixelate` |
 | **KÖZELÍTŐ (másik, mért v2-modell újrahasznosítva) — #347 lezáró audit (2026-08-06)** | a filterdesc szerint a v1/v2 pár paraméter nélküli, azonos "oneclick" család (nincs csúszka/szín, ami megkülönböztetné őket) — a v1-re önmagára nincs golden-mérés, ezért a már mért v2-modellt futtatjuk rá | `grain` (v1, a `grain2` modelljét használja) |
@@ -351,7 +352,9 @@ csak a ZÖLD csatornát (és az alfát) hagyja meg, (2) `x = y = 5` elmosás,
 `Y = clamp(−0,5·R + 2,0·G − 0,5·B)` — a KÉK súlya is negatív —, végül
 (5) a közös Fade-keverés. A
 `PicnikTint`/`ReanimatedEyeColor` egzakt csővezetéket kapott, de ecset-
-eszköz híján a TELJES KÉPRE fut. A kalibráció (a maradék KÖZELÍTŐ effektekhez
+eszköz híján a `PicnikTint` a TELJES KÉPRE fut, a `ReanimatedEyeColor`
+pedig — **#688 óta** — változatlanul hagyja a képet (üres maszkkal indul).
+A kalibráció (a maradék KÖZELÍTŐ effektekhez
 és a golden-pixel-összevetéshez) a **#317**-es jegyben fut tovább.
 
 **#347 lezáró audit (2026-08-06):** a jegy eredeti hét neve közül HAT
