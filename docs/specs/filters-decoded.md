@@ -491,8 +491,10 @@ Ami ebből közvetlenül ide tartozik:
 - A `Vignette` (és a vele azonos motorú `Matte`) modellje: **belső ragyogás**
   (`GlowImageOperation innerglow`), `sugár = Blur·0,02·max(W,H)/4`,
   `strength` = a 2. paraméter, `alfa = 1 − Fade/100`.
-- A `tint` `colorwheel version="0"`, az `ansel` `version="1"` — **két külön
-  színkódolás**, ez a legerősebb nyom a `tint` `ffff`-anomáliára.
+- ~~A `tint` `colorwheel version="0"`, az `ansel` `version="1"` — két külön
+  színkódolás~~ — **MEGCÁFOLVA (2026-08-15)**: a `version` a szerkesztőpanel
+  **színválasztó kerekének sorszáma** (`editpanel/colorwheel0` / `…1`), nem
+  színkódolás. Ld. lent a `tint` szakaszt.
 - A Glimmer-effektek ini-sorrendje: **numerikusok (max 3) → színek →
   maradék numerikus → jelölőnégyzetek egész számként**; a jelölőnégyzet
   magyarázza a korábban rejtélyes „tizedesjegy nélküli `0`" paramétert
@@ -646,10 +648,11 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
    logaritmikus leképezés eredménye: `<log>250.0</log>`, és képpontban
    értendő.)
 3. unsharp kernel finomítás (dekonvolúciós illesztés)
-4. `tint` színparaméter-formátum (ffff → R=0 anomália) — **új nyom**: a
-   `tint` `colorwheel version="0"`, az `ansel`/`dir_tint` `version="1"`,
-   és valós adatban a `tint` 4 hex jegyet ír (`ffff`), a másik kettő 8-at
-   (`ffffffff`). A parszernek változó hosszú hex-színt kell tűrnie.
+4. `tint` színparaméter-formátum (ffff → R=0 anomália): valós adatban a
+   `tint` 4 hex jegyet ír (`ffff`), a másik kettő 8-at (`ffffffff`). A
+   parszernek változó hosszú hex-színt kell tűrnie. **A korábbi „két külön
+   színkódolás" nyom (colorwheel version) 2026-08-15-én megdőlt**; a
+   render-oldal viszont teljes, és a szín `0x00RRGGBB` sorrendű.
 5. retouch/redeye régió-adatok, text overlay — régió-alapúak, 2. fázisban
 6. ~~**Összehasonlító harness** (PicasaPy render vs golden, SSIM/ΔE)~~ —
    KÉSZ (#115): `tools/golden/compare_render.py`, ld. lent.
@@ -1291,12 +1294,70 @@ C' = min(255, (C * tC * skala) >> 16);        // ≈ C * tC / mx
 **szépiánál** (#619) és a **`radsat`-nál**. Három, egymástól függetlenül
 visszafejtett effekt ugyanazt a képletet használja.
 
+#### A 2. lépés MEGFEJTVE: színkezelés (ICC), nem az algoritmus része (2026-08-15)
+
+Célzott dekompilálás (`DecompileTint.java`; gyökerek: `0x008f9630` tint,
+`0x008f8410` ansel, `0x008f8730` radtint, mélység 2) mindhárom callbackben
+**szó szerint ugyanazt a két sort** hozta:
+
+```c
+if ((*(uint*)(param_4 + 4) & 0xfffffffe) != 0) FUN_00a3f2f0();   // 0x00a3f2f0
+ctx = *(int*)(param_4 + 8);
+if (ctx) (**(code**)(ctx + 8))(ctx, &szin, &szin, 1);            // EGYETLEN pixel
+```
+
+`FUN_00a3f2f0` (`0x00a3f2f0`) egy **ICC-profillánc** alapján épít/gyorsítótáraz
+transzformot: `in_EAX[0]` a profilmutatók tömbje, `in_EAX[1] >> 1` a darabszám,
+és ha **kevesebb mint 2 profil van, vagy a lánc két vége azonos**, meghívja a
+felszabadítót (`FUN_00a3f110`) és **`ctx` marad 0**.
+
+**Következtetés:** ez nem a `tint` algoritmusának lépése, hanem a felhasználó
+által választott **színezőszín átvezetése a színkezelésen** (monitor-/munkatér-
+profil), pontosan 1 pixelnyi adaton. Alapértelmezett konfigurációban (nincs
+külön profil, vagy forrás == cél) **identitás**. A PicasaPy tehát a kiválasztott
+színt nyersen használhatja; ez nem forrása a 20,63 ΔE-nek.
+*Bizonyítottsági fok: megerősített* (a `ctx == 0` ág explicit a kódban).
+
+#### Bájtsorrend: a színparaméter `0x00RRGGBB` — a korábbi olvasat javítva
+
+A fenti pszeudokód `R = szin & 0xff` sora **fordítva volt**. Két független
+bizonyíték:
+
+- az `ansel` (`0x008f8410`) a `(szin>>16)&0xff` értéket adja át **első**
+  float-argumentumként, a `&0xff`-et harmadikként;
+- a szorzó keverés (`0x009db4f0`) a `szin & 0xff`-et a pixelpuffer **0. bájtjára**
+  szorozza, a `>>16`-ot a 2.-ra — a Windows 32 bites pufferben az a **B**, ill.
+  az **R**.
+
+Tehát: **R = (szin>>16)&0xff, G = (szin>>8)&0xff, B = szin&0xff.** A `mx`/`sum`
+képletekre ez nem hat (szimmetrikusak), az ini-beolvasásra viszont igen.
+
+#### A `colorwheel version="0"` vs `="1"` — NEM verzió, hanem sorszám
+
+Az `editpanel.tre` elrendezés-erőforrás és az `editpaneltext.tre` feliratai
+eldöntik: a szerkesztőpanelen **két színválasztó kerék** van,
+`editpanel/colorwheel0` és `editpanel/colorwheel1`, közös
+`editpanel/colorwheel_container`-ben, mindkettőhöz saját `slidercircle{0,1}`
+körkörös csúszka (`Property buddy`) és saját felirat — **mindkettő szövege
+„Pick Color"**. A kódban a névsablon `editpanel/colorwheel%d`
+(`0x00c86f2c`, hivatkozók közt `0x007518e0`, `0x005fa770`).
+
+A `filterdesc.xml` `version` attribútuma tehát azt mondja meg, **melyik
+kerékhez** kötődik a paraméter, nem azt, hogy más a szín kódolása. Az
+`ytColorWheelNode` visszafejtett slotjai (`0x00a63280`, `0x00a63340`,
+`0x00a64c20`, `0x00a61f90`) mind **elrendezés és találatvizsgálat**, sehol
+nincs kerék-koordináta → RGB leképezés — összhangban ezzel.
+
+**Ezzel elesik a korábbi legerősebb nyomunk a `tint` `ffff`-anomáliájára**
+(fentebb, a „két külön színkódolás" feltevés): a `version` nem színkódolás.
+A négy hex jegy magyarázatát máshol kell keresni (valószínűbb: rövidebb,
+16 bites írásformátum az ini-ben).
+*Bizonyítottsági fok: megerősített* (erőforrás-szöveg + kódbeli névsablon).
+
 #### Ami továbbra is nyitott
 
-Csak a **2. lépés**: mi a virtuális színátalakítás (`ctx->vtbl[2]`), és mit
-jelent a `colorwheel version="0"` vs `="1"`. Következő lépés: célzott
-dekompilálás az `ytColorWheelNode` vtable 2. és 8. slotjára (a vtable kezdete
-`0x009c2eb0`).
+Csak a `tint` ini-beli `ffff` (4 jegy) vs. 8 jegyű írásmód. A render-oldali
+csővezeték öt lépése ezzel **teljes**.
 
 ### `ansel` (Szűrős fekete-fehér) — a hisztogram-lépés (2026-08-15, #317 utolsó szála)
 
