@@ -11,6 +11,7 @@ EXIF-orientációt, ezért a thumbnail már helyesen forgatott.
 from __future__ import annotations
 
 import hashlib
+import logging
 import threading
 from pathlib import Path
 
@@ -24,7 +25,45 @@ from picasapy.render import apply_filters
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from picasapy.thumbs.prune import prune_cache_dir, prune_in_background
 
+_log = logging.getLogger(__name__)
+
 _JPEG_QUALITY = 85
+
+# #673: a videó-megnyitás háttere KÉNYSZERÍTETTEN FFMPEG.
+#
+# A `ThumbnailProvider` négy pool-szálról hívja a `_decode_video_frame`-et.
+# Háttér-megjelölés nélkül az OpenCV a saját prioritási sorát követi
+# (FFMPEG=1900, majd GSTREAMER=1800): ha a fájlt az FFMPEG nem tudja
+# megnyitni — sérült vagy csonka videó —, VISSZAESIK a GStreamerre, az
+# pedig több szálból egyszerre hívva SIGSEGV-vel viszi el az EGÉSZ
+# processzt. Elég egy sérült videó a megnyitott mappában.
+#
+# Mérve (64 bájtos szemét-.mp4, 4 szál × 5 kör, 15 futás):
+#   * mai állapot (automatikus háttérválasztás): 12 összeomlás / 15
+#   * globális zárral sorosítva:                  5 összeomlás / 15
+#   * cv2.CAP_FFMPEG-re kényszerítve:             0 összeomlás / 15
+#
+# A ZÁR TEHÁT NEM JAVÍTÁS: a GStreamer a saját (Python elől láthatatlan)
+# csővezeték-szálain omlik össze, azok pedig túlélik a `release()`-t, így
+# a Python-szintű sorosítás nem éri el őket — a faulthandler-kimeneten
+# három szál a záron várt, mégis szegmentálási hiba lett. Ráadásul a zár
+# az ÉP videókat is lassítja (24 × 640×480-as klip, 4 szál, medián:
+# 0,196 s → 0,233 s, +19% — a `_decode_video_frame` teljes törzse a záron
+# belül van, tehát a négyszálas párhuzamosság videóknál teljesen elveszne).
+#
+# Amit a kényszerítéssel VESZTÜNK: ha egy videót az FFMPEG nem nyit meg, a
+# GStreamer már nem kap esélyt — az ilyen fájl bélyegkép nélkül marad. Ez a
+# helyes viselkedés (a sérült fájl bélyegkép nélküli, de a program él), és a
+# gyakorlatban nem jár tényleges veszteséggel: a `VIDEO_EXTENSIONS` minden
+# konténerét (mp4/mov/avi/mkv/wmv/3gp/mts…) az avformat kezeli.
+#
+# Ha a telepített OpenCV FFMPEG NÉLKÜL épült, nincs mire kényszeríteni —
+# ilyenkor marad az automatikus választás, de a zárral (5/15 rosszabb, mint
+# a 0/15, viszont lényegesen jobb, mint a 12/15).
+_FFMPEG_AVAILABLE = cv2.CAP_FFMPEG in cv2.videoio_registry.getStreamBackends()
+
+# Csak az FFMPEG-telen tartaléknál használt sorosító zár (ld. fent).
+_VIDEO_FALLBACK_LOCK = threading.Lock()
 
 # #163: a szerkesztett (filters=) bélyegkép bázisa a célméret többszöröse —
 # a lánc (jellemzően crop64) a nagy bázison fut, és csak a VÉGEREDMÉNYT
@@ -225,6 +264,18 @@ class ThumbnailCache:
         )
 
 
+def _open_video(source: Path) -> cv2.VideoCapture:
+    """A videó megnyitása a #673 szerint rögzített háttérrel.
+
+    FFMPEG-es OpenCV-n kényszerítetten `cv2.CAP_FFMPEG` (nincs visszaesés a
+    GStreamerre); FFMPEG nélküli buildben marad az automatikus választás, de
+    sorosítva — a részletes indoklás és a mérési számok a modul tetején."""
+    if _FFMPEG_AVAILABLE:
+        return cv2.VideoCapture(str(source), cv2.CAP_FFMPEG)
+    with _VIDEO_FALLBACK_LOCK:
+        return cv2.VideoCapture(str(source))
+
+
 def _decode_video_frame(source: Path):
     """Az első dekódolható képkocka a videóból, vagy None.
 
@@ -232,16 +283,37 @@ def _decode_video_frame(source: Path):
     lehet, hálózati mappán a teljes beolvasás percekre akasztaná a
     thumbnail-szálat — a VideoCapture streamelve csak a képkockához
     szükséges részt olvassa.
+
+    A sikertelenség SOHA nem néma: a hívó (`ThumbnailProvider`) a hiányzó
+    bélyegképet placeholderrel és `brokenImageDetected` jelzéssel mutatja
+    meg, itt pedig naplóba kerül a fájl neve és a bukás pontos oka is —
+    enélkül a sérült videó csak egy megmagyarázhatatlan üres cella lenne.
     """
-    capture = cv2.VideoCapture(str(source))
+    capture = _open_video(source)
     try:
         if not capture.isOpened():
+            _log.warning(
+                "a videó nem nyitható meg (sérült vagy nem támogatott "
+                "kódek), bélyegkép nélkül marad: %s",
+                source,
+            )
             return None
         ok, frame = capture.read()
         if not ok or frame is None:
+            _log.warning(
+                "a videóból nem olvasható képkocka, bélyegkép nélkül "
+                "marad: %s",
+                source,
+            )
             return None
         return frame
     except cv2.error:
+        _log.warning(
+            "a videó dekódolása OpenCV-hibával elbukott, bélyegkép nélkül "
+            "marad: %s",
+            source,
+            exc_info=True,
+        )
         return None
     finally:
         capture.release()
