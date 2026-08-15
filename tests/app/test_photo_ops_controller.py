@@ -243,3 +243,44 @@ class TestPasteAllEffectsWriteFailure:
             loop.exec()
 
         assert received.get("message") == "szimulált írási hiba"
+
+
+class TestGuardRejectionIsHandled:
+    """#643/2: a round-trip őr visszautasítása a fotóműveleteknél is kezelt
+    hiba — a hibasávban olvasható magyar üzenetként jelenik meg, nem néma
+    bukásként a háttérszálon."""
+
+    def test_filter_write_error_is_a_handled_write_error(self):
+        from picasapy.app.photo_ops_controller import _WRITE_ERRORS
+        from picasapy.ini import FilterWriteError
+
+        assert FilterWriteError in _WRITE_ERRORS
+
+    def test_rejected_paste_emits_photo_op_failed(
+        self, controller, library, monkeypatch
+    ):
+        import picasapy.app.photo_ops_controller as photo_ops_mod
+        from picasapy.ini import FilterWriteError
+
+        controller.copyAllEffects(_rows_by_name(controller, "a.jpg"))
+
+        def failing_update_document(path, mutate, backup=True):
+            raise FilterWriteError("A szerkesztés nem menthető: teszt.")
+
+        loop = QEventLoop()
+        received = {}
+
+        def _on_failed(message):
+            received["message"] = message
+            loop.quit()
+
+        controller.photoOpFailed.connect(_on_failed)
+        monkeypatch.setattr(
+            photo_ops_mod, "update_document", failing_update_document
+        )
+        controller.pasteAllEffects(_rows_by_name(controller, "b.jpg"))
+        if "message" not in received:
+            QTimer.singleShot(2000, loop.quit)
+            loop.exec()
+
+        assert received.get("message") == "A szerkesztés nem menthető: teszt."

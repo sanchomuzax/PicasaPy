@@ -72,5 +72,13 @@ Item {
                 "Due to a disk error. The disk may be full or read-only.")
                 + "\n" + message)
         }
+        // #643: a round-trip őr visszautasítása. Ugyanaz a párbeszéd, de a
+        // "disk error" keret NÉLKÜL: itt a lemezzel semmi baj, a fájlt meg
+        // sem érintettük. Az üzenet a kivételből jön, és önmagában teljes,
+        // magyar mondat (`ini/filter_guard.py::_write_error_message`) —
+        // ezért nincs itt új qsTr() forrásszöveg, amit fordítani kellene.
+        function onEditChainRejected(message) {
+            editSaveErrorDialog.ask("", message)
+        }
     }
 }

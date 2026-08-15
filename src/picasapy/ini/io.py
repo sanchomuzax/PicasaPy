@@ -2,6 +2,12 @@
 
 Írási szabályok a specből: temp fájl + rename (atomikus), opcionális backup
 írás előtt, BOM és kódolás megőrzése a byte-pontos round-triphez.
+
+#643: az `update_document` a sikeres mentés után megérinti azoknak a
+fotóknak a MTIME-ját, amelyeknek a szakasza változott — enélkül a
+párhuzamosan futó eredeti Picasa (amely a saját `db3`-át tekinti
+igazságforrásnak) sosem olvasná be a mi írásunkat. Az érintés a
+`photo_touch` modulban él, ott van az indoklása és a kikapcsolása is.
 """
 
 from __future__ import annotations
@@ -14,6 +20,7 @@ from typing import Callable
 from picasapy.ioutil import write_atomic
 
 from .document import NO_SOURCE_FILE, IniDocument, SourceFingerprint, parse_document
+from .photo_touch import notify_picasa_after_ini_write
 
 _BOM = b"\xef\xbb\xbf"
 
@@ -170,6 +177,12 @@ def update_document(
         # (A tartalom-hash a döntő; az mtime önmagában nem megbízható.)
         if _fingerprint_of(target) == document.source_fingerprint:
             save_document(mutated, target, backup=backup)
+            # #643: a Picasa a fotó rekordjának érvényességét a KÉPFÁJLHOZ
+            # méri (`moddate`/`onlinechecksum`), ezért a puszta ini-írás nem
+            # teszi elavulttá — a változott szakaszok képfájljának mtime-ját
+            # is meg kell érinteni. Sosem dob: az érintés kudarca (írásvédett
+            # kép, hálózati megosztás) nem boríthatja a kész mentést.
+            notify_picasa_after_ini_write(target, document, mutated)
             return mutated
         # Ütközés: egy párhuzamos író közbeírt — friss újratöltés + újrajátszás.
     raise IniConflictError(

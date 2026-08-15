@@ -1777,7 +1777,11 @@ class TestCopyPasteEffects:
 
         ini_path = library / "nyaralas" / ".picasa.ini"
         document = load_document(ini_path) if ini_path.exists() else parse_document("")
-        document = document.with_value(name, "filters", value)
+        # #643: a fixture azt szimulálja, hogy a láncot a VALÓDI Picasa (vagy
+        # egy újabb verziója) írta a fájlba — idegen szűrőnévvel. Ez nem a mi
+        # írói utunk, ezért `carried`: a round-trip őr így nem utasítja vissza,
+        # csak naplózza (ld. `picasapy.ini.filter_guard`).
+        document = document.with_value(name, "filters", value, carried=True)
         save_document(document, ini_path, backup=False)
 
     def test_no_clipboard_by_default(self, controller):

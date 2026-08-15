@@ -109,7 +109,10 @@ class EffectsClipboardMixin:
                             section.get("crop") if section else None,
                         ))
                         document = _write_session(
-                            document, photo.name, EditSession(ops=pasted_ops)
+                            document,
+                            photo.name,
+                            EditSession(ops=pasted_ops),
+                            carried=True,  # #643: átvitt lánc, nem szerzőség
                         )
                     entries[:] = fresh
                     return document
@@ -139,7 +142,11 @@ class EffectsClipboardMixin:
                 def mutate(document, entries=entries):
                     for name, prev_filters, prev_crop in entries:
                         document = (
-                            document.with_value(name, "filters", prev_filters)
+                            # #643: a beillesztés ELŐTTI, nyers érték
+                            # visszaírása — átvitt tartalom, nem szerzőség.
+                            document.with_value(
+                                name, "filters", prev_filters, carried=True
+                            )
                             if prev_filters is not None
                             else document.with_removed(name, "filters")
                         )
@@ -156,13 +163,21 @@ class EffectsClipboardMixin:
         self._refresh_view()
 
 
-def _write_session(document, section_name: str, session: EditSession):
+def _write_session(
+    document, section_name: str, session: EditSession, *, carried: bool = False
+):
     """A `session` filters=/crop= kulcsainak beírása (a `EditController._save`
-    mintájával megegyezően, hogy a két bekötés ne térjen el egymástól)."""
+    mintájával megegyezően, hogy a két bekötés ne térjen el egymástól).
+
+    A `carried` a #643-as round-trip őr átviteli csatornája: a MÁSIK képről
+    másolt lánc idegen tagjai nem most keletkeznek, ezért nem utasítjuk
+    vissza őket (ld. `picasapy.ini.filter_guard`)."""
     if session.is_empty():
         document = document.with_removed(section_name, "filters")
     else:
-        document = document.with_value(section_name, "filters", session.to_value())
+        document = document.with_value(
+            section_name, "filters", session.to_value(), carried=carried
+        )
     crop = session.crop()
     if crop is not None:
         document = document.with_value(

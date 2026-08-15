@@ -1805,3 +1805,45 @@ class TestLegacyEffectsInChain:
         ini.write_text(f"[{photo.name}]\nfilters=bw=1;\n", encoding="utf-8")
         controller.beginEdit("1", str(photo))
         assert list(controller.legacyEffectsInChain) == []
+
+
+class TestChainRejectionReachesTheUser:
+    """#643/2: a round-trip őr visszautasítása KEZELT hiba, és a felhasználó
+    a VALÓDI okot olvassa.
+
+    Két külön állítás: (a) a `FilterWriteError` benne van a kezelt írási
+    hibákban, tehát nem szökhet ki nyers kivételként a QML-slotból (ott
+    senki nem kapná el, a szerkesztés némán elmaradna); (b) NEM az
+    `editSaveFailed` csatornán megy ki, mert azt a felület a „Lemezhiba. A
+    lemez tele lehet vagy írásvédett." mondattal keretezi — a lemezzel
+    viszont semmi baj, a fájlt meg sem érintettük.
+    """
+
+    def test_filter_write_error_is_a_handled_write_error(self):
+        from picasapy.app.edit_controller import _WRITE_ERRORS
+        from picasapy.ini import FilterWriteError
+
+        assert FilterWriteError in _WRITE_ERRORS
+
+    def test_rejected_chain_uses_its_own_channel(self, controller, photo, monkeypatch):
+        import picasapy.app.edit_controller as edit_mod
+        from picasapy.ini import FilterWriteError
+
+        controller.beginEdit("1", str(photo))
+
+        def failing_update_document(path, mutate, backup=True):
+            raise FilterWriteError("A szerkesztés nem menthető: teszt.")
+
+        rejected: list[str] = []
+        failed: list[str] = []
+        # ELŐBB a feliratkozás — a mentés hibaútja szinkron.
+        controller.editChainRejected.connect(rejected.append)
+        controller.editSaveFailed.connect(failed.append)
+        monkeypatch.setattr(edit_mod, "update_document", failing_update_document)
+
+        # Nem szabad kivételt dobnia: a QML-slotból kiszökő kivételt senki
+        # nem kapná el, a felhasználó néma bukást látna.
+        controller.toggleTool("redeye")
+
+        assert rejected == ["A szerkesztés nem menthető: teszt."]
+        assert failed == []

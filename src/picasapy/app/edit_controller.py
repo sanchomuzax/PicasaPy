@@ -25,6 +25,7 @@ from picasapy.app.effect_params import (
 from picasapy.edit.session import EditSession
 from picasapy.fileops import is_folder_writable
 from picasapy.ini import (
+    FilterWriteError,
     IniConflictError,
     IniSaveError,
     load_document,
@@ -61,7 +62,12 @@ _log = logging.getLogger(__name__)
 
 # #459: a csillag/album-írás mintája (photo_ops_controller.py) — a tartós
 # ütközés/lemezhiba is kezelt hiba, nem néma adatvesztés/kivétel.
-_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
+# #643: a round-trip őr visszautasítása is ide tartozik. A `_save()` KÜLÖN
+# ágon kezeli (`editChainRejected`), mert az `editSaveFailed` párbeszéde a
+# „lemezhiba, a lemez tele lehet" mondattal keretezi az üzenetet — ez itt
+# félrevezető lenne. A tuple attól még tartalmazza, hogy az őr semelyik
+# másik mentési útvonalon se szökhessen ki nyers kivételként.
+_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError, FilterWriteError)
 
 # redeye: a réteg LEVÉTELE (#116) — a felvitel/kézi régiók a #445-ös
 # Vörösszem eszközön át mennek (enterRedeyeTool/applyRedeye).
@@ -298,6 +304,14 @@ class EditController(QObject, BackgroundWorkerMixin):
     # mappa-másolás NEM készült el, ld. a `_save()` docstringjét).
     editSaveReadOnly = Signal()
     editSaveFailed = Signal(str)
+    # #643: a round-trip őr visszautasította a szerkesztési lánc kiírását.
+    # Azért KÜLÖN jelzés az `editSaveFailed` helyett, mert annak a
+    # párbeszédét a felület a „Lemezhiba. A lemez tele lehet vagy
+    # írásvédett." mondattal keretezi — ez itt tényszerűen hamis lenne, és a
+    # felhasználó a lemezét kezdené vizsgálni a szerkesztés helyett. A
+    # kivétel szövege önmagában teljes, magyar mondat (`ini/filter_guard.py`),
+    # ezért a párbeszéd változtatás nélkül megjeleníti.
+    editChainRejected = Signal(str)
     # #514: a háttérszálon befejezett előnézet-renderelés jelzése. A
     # `Signal` szálak közötti átadása Qt-ben sorba állított (queued), így a
     # rákötött `_on_preview_rendered` MÁR a GUI-szálon fut — a
@@ -1874,6 +1888,13 @@ class EditController(QObject, BackgroundWorkerMixin):
         # időközben más kulcsot írt ugyanabba az iniben, az nem vész el.
         try:
             update_document(self._ini_path, mutate, backup=True)
+        except FilterWriteError as error:
+            # #643: NEM lemezhiba — az őr utasította vissza a láncot, a fájl
+            # hozzá sem lett érintve. Saját csatornán megy ki, hogy a
+            # felhasználó a valódi okot olvassa (ld. `editChainRejected`).
+            _log.warning("A szerkesztési lánc kiírását az őr visszautasította: %s", error)
+            self.editChainRejected.emit(str(error))
+            return
         except _WRITE_ERRORS as error:
             self.editSaveFailed.emit(str(error))
             return
