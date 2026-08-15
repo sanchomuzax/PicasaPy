@@ -324,6 +324,32 @@ def _apply_ansel_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     return apply_ansel(image, color=color)
 
 
+def _apply_desat_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`desat=<jelző>,r,g,b` — az `ansel` (Filtered B&W) örökölt ini-kulcsa
+    (#711).
+
+    A natív dekompiláció (konstruktor `0x0050bd70`, vtable-hívás
+    `0x0050ce70`) szerint a `CDesaturateFilter` a `0x0090e680` munkafüggvényt
+    hívja — UGYANAZT, amit az `ansel` callbackje (`0x008f8410`) is. A
+    különbség kizárólag a szín útjában van: az `ansel` pakolt hexet bont
+    `/255.0` osztással három floattá, a `desat` a három floatot KÖZVETLENÜL
+    kapja (0..1 tartomány). Az átváltás egzakt (ld.
+    `docs/specs/picasa-ini-format.md`, „A `desat`" szakasz):
+
+        desat(r, g, b) == ansel( round(r*255)<<16 | round(g*255)<<8 | round(b*255) )
+
+    Hiányzó paraméterre a natív konstruktor alapértéke fut (mindhárom
+    csatorna `0,333` — semleges szürke).
+    """
+    channels = tuple(
+        _effect_float(op, index, 1.0 / 3.0) for index in range(3)
+    )
+    color = tuple(
+        max(0, min(255, round(channel * 255.0))) for channel in channels
+    )
+    return apply_ansel(image, color=color)
+
+
 def _apply_radblur_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     return apply_radblur(
         image,
@@ -527,6 +553,7 @@ _HANDLERS = {
     "glow2": _apply_glow_op,
     "tint": _apply_tint_op,
     "ansel": _apply_ansel_op,
+    "desat": _apply_desat_op,  # #711: az ansel örökölt ini-kulcsa
     "radblur": _apply_radblur_op,
     "radsat": _apply_radsat_op,
     "dir_tint": _apply_dir_tint_op,
@@ -626,7 +653,7 @@ def apply_filters(
     enhance, autolight, autocolor, autocontrast, fill, backlight,
     finetune/finetune2, triple/triple2/triple3, contrast, gamma, colortemp,
     bw, sepia, warm, sat, unsharp/unsharp2, grain2, Vignette, glow/glow2,
-    tint, ansel, radblur, radsat, dir_tint, radtint).
+    tint, ansel, desat, radblur, radsat, dir_tint, radtint).
 
     A `retouch` régió-adata PicasaPy-saját kiterjesztés (ld.
     `picasapy.ini.retouch` docsztring) — valódi Picasa-eredetű, régió nélküli

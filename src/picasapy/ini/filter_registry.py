@@ -274,6 +274,21 @@ MAX_PARAM_COUNTS: Mapping[str, int] = MappingProxyType(
     {**_SAMPLED_PARAM_COUNTS, **_DERIVED_PARAM_COUNTS}
 )
 
+#: #711 — a `desat`: a `CDesaturateFilter` saját, Picasa 2-korabeli
+#: ini-kulcsa. Szándékosan NEM tagja a `CANONICAL_FILTER_NAMES`/
+#: `MAX_PARAM_COUNTS` pároshoz — azok a `filterdesc-registry.md` 2.
+#: szakaszának 84 szűrőjét tükrözik VERBATIM (ld. a modul docsztringjét és
+#: `tests/ini/test_filter_registry_695.py::TestRegiszterTeljesseg`), a
+#: `desat` viszont bizonyítottan NINCS abban a táblában — külön, hardcode-olt
+#: ágon kezeli a natív névfeloldás (`FUN_008f9fe0`, ld.
+#: `docs/specs/picasa-ini-format.md`, „A `desat`" szakasz). Ezért egy
+#: KÜLÖN, kis rétegben él: a kanonikus alak és a paraméterszám a normál
+#: 84-es regiszter után, EZT is megnézi.
+_LEGACY_ALIAS_MAX_PARAM_COUNTS: Mapping[str, int] = MappingProxyType({"desat": 3})
+_LEGACY_ALIAS_BY_CASEFOLD: Mapping[str, str] = MappingProxyType(
+    {name.casefold(): name for name in _LEGACY_ALIAS_MAX_PARAM_COUNTS}
+)
+
 
 class FilterWriteError(ValueError):
     """A `filters=` láncba írás visszautasítása — a bejegyzést az eredeti
@@ -288,9 +303,12 @@ def canonical_filter_name(name: str) -> str | None:
 
     Returns:
         A kanonikus alak, vagy `None`, ha a név nincs a regiszterben (idegen
-        vagy jövőbeli szűrő — ilyet nem alakítunk át).
+        vagy jövőbeli szűrő — ilyet nem alakítunk át). A `desat` (#711) a
+        84-es táblán KÍVÜLI, dokumentált kivétel — ld.
+        `_LEGACY_ALIAS_BY_CASEFOLD`.
     """
-    return _CANONICAL_BY_CASEFOLD.get(name.casefold())
+    folded = name.casefold()
+    return _CANONICAL_BY_CASEFOLD.get(folded) or _LEGACY_ALIAS_BY_CASEFOLD.get(folded)
 
 
 def canonicalize_filter_name(name: str) -> str:
@@ -311,4 +329,6 @@ def max_param_count(name: str) -> int | None:
     canonical = canonical_filter_name(name)
     if canonical is None:
         return None
+    if canonical in _LEGACY_ALIAS_MAX_PARAM_COUNTS:
+        return _LEGACY_ALIAS_MAX_PARAM_COUNTS[canonical]
     return MAX_PARAM_COUNTS.get(canonical)

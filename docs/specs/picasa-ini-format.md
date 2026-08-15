@@ -818,6 +818,26 @@ ez nem egy effekt elvesztése:
 
 Régi Picasa-telepítésből örökölt mappáknál ez valós kockázat.
 
+### MEGVALÓSÍTVA (#711) — és egy pontosítás a „lánc elveszne" állításhoz
+
+A `desat` regisztrálva lett (`picasapy.ini.filter_registry.CANONICAL_FILTER_NAMES`
++ `MAX_PARAM_COUNTS["desat"] = 3`) és a renderelő oldalon az `ansel`
+egzakt megfelelőjeként fut (`picasapy.render.chain._apply_desat_op`, a
+fenti `desat(r,g,b) == ansel(...)` átváltással).
+
+**Pontosítás:** a fenti idézet a natív Picasa OLVASÓ oldalára vonatkozó
+mérésből (#643) lett átvezetve a PicasaPy-ra, de a saját `apply_filters`
+lánc-feldolgozónk a `desat` regisztrálása ELŐTT sem viselkedett így — a
+`#301` óta minden ismeretlen nevű bejegyzést némán kihagy, és a lánc TÖBBI
+tagját (pl. az utána következő `bw`-t) továbbra is lefuttatja; az
+író-oldali kapu (`serialize_filters_for_write`) ugyanígy bájtra megőrizte
+az ismeretlen `desat=` bejegyzést és a mögötte állókat. A tesztekkel
+(`tests/render/test_desat_711.py`, `TestDesatRoundTrip`) igazolva: ez a
+két eset a javítás ELŐTT is zöld volt. Amit a javítás pótolt, az kizárólag
+maga a `desat` EFFEKT renderelése (korábban a kép a `desat` szemszögéből
+változatlan maradt, csak a `bw` futott le utána) — nem egy lánc-vesztési
+hiba.
+
 ## Valódi korpusz: 859 `.picasa.ini` egy 43 éves fotógyűjteményből (2026-08-15)
 
 A tulajdonos NAS-án lévő fotómegosztás **csak olvasásra** felcsatolva
