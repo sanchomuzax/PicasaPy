@@ -1544,3 +1544,91 @@ A `warm` **lezárult, pixelpontosan**, kalibráció nélkül. Az `unsharp` legf�
 ismeretlene (a sugár) eldőlt. A `blur` és a `grain` modellje a helyére került,
 mindkettőnél egyetlen, jól körülírt részlet maradt — és egyik sem igényel
 windowsos exportot a **megfejtéshez**, csak a validáláshoz (#684).
+
+### `sat` pozitív ág — a natív mag teljesen visszafejtve (2026-08-15, #693)
+
+**Nem kellett új Ghidra-kör**: mindkét cím megvolt a korábbi naplókban
+(`referencia/dekompilalt-pakolo/script-Decompile317.log`).
+
+**Elsőként egy ágtévesztés javítása.** A callback (`0x008f8ff0`) így ágazik:
+
+```c
+if (*(float *)(param_1 + 0x28) < 0.0)
+    FUN_0090e200(dst, amount + 1.0f);   // NEGATÍV ág (telítetlenítés)
+else
+    FUN_0090b930(dst, src, amount);     // POZITÍV ág
+```
+
+Tehát a pozitív ág magja a **`0x0090b930`**; a `0x0090e200` a negatívé.
+
+#### A teljes algoritmus
+
+```c
+s = amount * 3.0f;
+
+// harom KULON, 2048 elemu tabla — csatornankent MAS kitevovel
+for (i = 0; i < 2048; i++) {
+    x = i * 8.0f / 2048.0f;                      // 0 .. 8
+    LUT_R[i] = lround(powf(x, 1.0f + 0.3f*s) * 256);
+    LUT_G[i] = lround(powf(x, 1.0f + 0.7f*s) * 256);
+    LUT_B[i] = lround(powf(x, 1.0f + 0.9f*s) * 256);
+}
+
+// pixelenkent
+Y = (5*G + 1*B + 2*R) >> 3;                      // NEM a szokasos suly
+if (Y != 0) {
+    k = (256*256 - 1) / Y;                       // DAT_00d3a148 = 256 → 65535/Y
+    R' = (LUT_R[min((k*R) >> 8, 2047)] * Y) >> 8;
+    G' = (LUT_G[min((k*G) >> 8, 2047)] * Y) >> 8;
+    B' = (LUT_B[min((k*B) >> 8, 2047)] * Y) >> 8;
+}
+m = max(R', G', B');
+if (m > 255) { f = 65280 / m; R'|=..., mindharom: C'' = (f * C') >> 8; }
+```
+
+A `DAT_00d3a148 = 256` a binárisból kiolvasva (fájloffszet `0x93a148`), és a
+`.text`-ben **egyetlen** hivatkozás mutat rá (`0x0090bb1a`) — a fenti sor.
+
+#### Miért telítődik a mért erősítés — a #693 kulcskérdése
+
+A művelet **nem erősítés**, hanem a `csatorna / luma` aránynak adott
+**csatornánkénti gamma**:
+
+```
+C' ≈ Y · pow( C/Y , 1 + e·s )        e ∈ {0,3 · 0,7 · 0,9}
+```
+
+Ez **önmagában korlátozó**: ahol a csatorna a lumához közeli (`C/Y ≈ 1`), ott
+`pow(1, bármi) = 1`, tehát a csúszka **akármekkora is, nem mozdít**. Csak a
+lumától távoli csatornák mozdulnak, és azok is egyre kisebb hozadékkal. Ezért
+fut a mért erősítés 1,15 → 1,95 helyett a lineáris modell 3,6-jáig.
+
+**Ablációval ellenőrizve** (szintetikus színfoltokon, a fenti algoritmus
+Python-mása): a telítődést **sem** a `2047`-es indexvágás, **sem** a záró
+`65280/m` maxnormálás okozza — mindkettőt kikapcsolva a görbe alakja
+gyakorlatilag változatlan. A telítődés a hatványgörbe sajátja.
+
+| csúszka | teljes | maxnorm nélkül | indexvágás nélkül |
+|---|---|---|---|
+| 0,100 | 1,071 | 1,070 | 1,071 |
+| 0,375 | 1,194 | 1,172 | 1,194 |
+| 0,625 | 1,254 | 1,225 | 1,254 |
+| 0,875 | 1,288 | 1,259 | 1,288 |
+
+*(A saját telítettség-metrikám és a #693 mért „erősítése" nem ugyanaz a szám,
+ezért az abszolút értékek nem vethetők össze — a **görbe alakja** igen.)*
+
+#### Amit ez a modellezésről kimond
+
+- **Egyetlen skalár erősítés semmilyen luma-súllyal nem illeszthető rá** —
+  összhangban azzal, amit a #693 mérése már kizárt.
+- A három kitevő **különbözik**, tehát a hatás **színárnyalat-függő**: a piros
+  felé eső csatorna a leggyengébben (0,3), a kék a legerősebben (0,9) mozdul.
+  Egy csatornafüggetlen modell ezt sem tudja visszaadni.
+- A luma súlyai itt **`(2·R + 5·G + 1·B)/8`**, ami eltér a `sepia`/`radsat`/
+  `tint` `(77·R + 151·G + 28·B) >> 8` képletétől — **közös segédfüggvényt
+  kivonni tilos**.
+
+*Bizonyítottsági fok: megerősített* (a teljes ciklus és a konstans is
+visszakeresve). A golden-kit3 `12-sat-sweep` kilenc csúszkaállása innentől
+**validáció**: a fenti algoritmus közvetlenül visszamérhető rá.
