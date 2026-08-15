@@ -5,6 +5,31 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.51] – 2026-08-15
+
+### Javítva
+- **A Ragyogás és a sugaras elmosás mostantól a Picasa saját motorjával
+  dolgozik (#668).** Eddig közelítéssel mostunk, és ez látszott is: a
+  mérőtáblán és a fotókon egyaránt eltért az eredetitől. A tizenkét
+  összehasonlító mintán **mindegyik közelebb került** az eredeti Picasa
+  kimenetéhez, egy sem romlott — a sugaras elmosásnál a legnagyobb eltérés
+  11,9-ről 0,7 szintre esett.
+- **A hibás csúszkaérték nem megy át némán (#669).** Ha egy `.picasa.ini`-ben
+  a megengedettnél nagyobb vagy kisebb érték szerepel, a program eddig az
+  irányított és a sugaras effekteknél szó nélkül elfogadta. Mostantól ezekre is
+  figyelmeztet, és az érték a megengedett tartományra vágva rajzol — a fájl
+  maga változatlan marad.
+
+### Belső
+- **A fejlesztői gépen újra használható a teljes tesztkészlet (#664).** Nyolc
+  bukó részfutásból nulla lett. Ebből a munkából jött elő egy valódi, a
+  felhasználót is érintő hiba: egy sérült videó a mappában összeomlaszthatja
+  a programot (#673, javítás alatt).
+- A fényképezőgép adatai (rekesz, fókusztávolság, GPS) mostantól **ponttal**
+  jelennek meg, a fájlméret és a darabszámok viszont a rendszer területi
+  beállítása szerint — pontosan úgy, ahogy az eredeti magyar Picasa csinálta
+  (`docs/decisions/tizedesjel.md`).
+
 ## [0.7.50] – 2026-08-15
 
 ### Hozzáadva
