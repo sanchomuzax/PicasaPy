@@ -36,8 +36,16 @@ A vezérlő-azonosítóból a `Picasa3i18n` erőforráskulcsot **nem** a
 
 A kódot megelőző adatblokk hármasokban áll (`0x00cd09b8`-tól):
 **vezérlő-azonosító · angol tartalék-felirat · erőforráskulcs**. Ahol egy
-azonosítóhoz több hármas tartozik, ott a függvény **az effekt `filterdesc.xml`-beli
-`id`-jére hasonlít rá** (`repe cmpsb`), és annak alapján választ.
+azonosítóhoz több hármas tartozik, ott a függvény **az effekt nevére is
+ráhasonlít** (`repe cmpsb`, teljes egyezés a lezáró nullával együtt), és annak
+alapján választ.
+
+Az összehasonlított név a `filterdesc.xml` `filter id`-je **a `Picnik` előtag
+nélkül** (`PicnikTint` → `Tint`, `PicnikFocalPixelate` → `FocalPixelate`);
+minden más effektnél maga az `id`. Ez a Glimmer-effektek betöltési neve is —
+a szomszédos `%s%sEffect.mxml` formátumsztring ezt fűzi össze.
+*Bizonyítottsági fok: erős* (a névalak minden ágon egyezik; a név előállítását
+nem követtük vissza).
 
 ### A négy effektfüggő csúszka
 
@@ -49,12 +57,12 @@ azonosítóhoz több hármas tartozik, ott a függvény **az effekt `filterdesc.
 | `_sldrContrast` | **HDR** | Strength | **Erősség** | `0x008fd8ff` → `0x008fd8ed` |
 | `_sldrContrast` | **PencilSketch** | Strength | **Erősség** | `0x008fd96d` → `0x008fd95b` |
 | `_sldrContrast` | *minden más* (LocalContrast, NightVision, TwoTone) | Contrast | **Kontraszt** | `0x008fd97d` |
-| `_sldrImpact` | **PicnikFocalPixelate**, **Pixelate** | Pixel Size | **Képpontméret** | `0x008fdeda`, `0x008fdf30` → `0x008fdf6d` |
+| `_sldrImpact` | **PicnikFocalPixelate** (`FocalPixelate`), **Pixelate** | Pixel Size | **Képpontméret** | `0x008fdeda`, `0x008fdf30` → `0x008fdf6d` |
 | `_sldrImpact` | **FocalZoom** | Zoominess | **Suhanás** | `0x008fdfbb` → `0x008fe02a` |
 | `_sldrImpact` | **Soften** | Softness | **Lágyítás** | `0x008fe00a` → `0x008fe098` |
 | `_sldrImpact` | **Boost** | Strength | **Erősség** | `0x008fe078` → `0x008fe0f2` |
 | `_sldrImpact` | *minden más* | Impact | **Hatás** | `0x008fe0d4` |
-| `_sldrRadius` | **PicnikFocalPixelate**, **FocalZoom** | Focal Size | **Fókuszméret** | `0x008fe38b`, `0x008fe3de` → `0x008fe3e7` |
+| `_sldrRadius` | **PicnikFocalPixelate** (`FocalPixelate`), **FocalZoom** | Focal Size | **Fókuszméret** | `0x008fe38b`, `0x008fe3de` → `0x008fe3e7` |
 | `_sldrRadius` | *minden más* (HDR, LocalContrast, PencilSketch) | Radius | **Sugár** | `0x008fe405` |
 
 ### Az effektfüggő színminta (`_clrsw`)
@@ -82,8 +90,22 @@ A `_cpkr*` színválasztók ezzel szemben feltétel nélküliek
 Egy eltérés a puszta névegyezéstől: `_sldrHardness` → `EdgeHardness`
 (**Élkeménység**).
 
+### Független keresztellenőrzés
+
+A döntési fát nem csak a kód igazolja. A `filterdesc.xml` **régi**,
+Glimmer előtti `focalpixelate` szűrője (674. sor) még kézzel írt
+`<slider><label>` elemeket használ — és a feliratai betűre azok, amiket a
+bináris az utódjának (`PicnikFocalPixelate`) oszt ki:
+
+| csúszka | régi `focalpixelate` felirata | amit a bináris a `PicnikFocalPixelate`-nek ad |
+|---|---|---|
+| 0. | Pixel Size | `_sldrImpact` → **Pixel Size** |
+| 1. | Focal Size | `_sldrRadius` → **Focal Size** |
+| 2. | Edge Hardness | `_sldrHardness` → **Edge Hardness** |
+
 *Bizonyítottsági fok: megerősített* — a döntési ágak visszakereshető címmel,
-a `Picasa3.exe` diszasszemblált `0x008fcfa0` / `0x008fee80` függvényeiből.
+a `Picasa3.exe` diszasszemblált `0x008fcfa0` / `0x008fee80` függvényeiből,
+a régi szűrő feliratai pedig ettől független forrásból erősítik meg.
 
 ## A teljes szótár
 
