@@ -40,84 +40,84 @@ ColumnLayout {
         PanelButton {
             objectName: "effectIr"
             label: qsTr("Infrared Film")
-            onButtonClicked: if (!panel.tryOpenParamPanel("ir")) panel.effectRequested("ir")
+            onButtonClicked: if (!panel.tryOpenParamPanel("ir", label)) panel.effectRequested("ir")
             thumbSource: panel.effectThumbSource("ir")
             appliedCount: panel.effectAppliedCount("ir")
         }
         PanelButton {
             objectName: "effectLomo"
             label: qsTr("Lomo-ish")
-            onButtonClicked: if (!panel.tryOpenParamPanel("lomo")) panel.effectRequested("lomo")
+            onButtonClicked: if (!panel.tryOpenParamPanel("lomo", label)) panel.effectRequested("lomo")
             thumbSource: panel.effectThumbSource("lomo")
             appliedCount: panel.effectAppliedCount("lomo")
         }
         PanelButton {
             objectName: "effectHolga"
             label: qsTr("Holga-ish")
-            onButtonClicked: if (!panel.tryOpenParamPanel("holga")) panel.effectRequested("holga")
+            onButtonClicked: if (!panel.tryOpenParamPanel("holga", label)) panel.effectRequested("holga")
             thumbSource: panel.effectThumbSource("holga")
             appliedCount: panel.effectAppliedCount("holga")
         }
         PanelButton {
             objectName: "effectHdr"
             label: qsTr("HDR-ish")
-            onButtonClicked: if (!panel.tryOpenParamPanel("hdr")) panel.effectRequested("hdr")
+            onButtonClicked: if (!panel.tryOpenParamPanel("hdr", label)) panel.effectRequested("hdr")
             thumbSource: panel.effectThumbSource("hdr")
             appliedCount: panel.effectAppliedCount("hdr")
         }
         PanelButton {
             objectName: "effectCinemascope"
             label: qsTr("Cinemascope")
-            onButtonClicked: if (!panel.tryOpenParamPanel("cinemascope")) panel.effectRequested("cinemascope")
+            onButtonClicked: if (!panel.tryOpenParamPanel("cinemascope", label)) panel.effectRequested("cinemascope")
             thumbSource: panel.effectThumbSource("cinemascope")
             appliedCount: panel.effectAppliedCount("cinemascope")
         }
         PanelButton {
             objectName: "effectOrton"
             label: qsTr("Orton-ish")
-            onButtonClicked: if (!panel.tryOpenParamPanel("orton")) panel.effectRequested("orton")
+            onButtonClicked: if (!panel.tryOpenParamPanel("orton", label)) panel.effectRequested("orton")
             thumbSource: panel.effectThumbSource("orton")
             appliedCount: panel.effectAppliedCount("orton")
         }
         PanelButton {
             objectName: "effectSixties"
             label: qsTr("1960s")
-            onButtonClicked: if (!panel.tryOpenParamPanel("sixties")) panel.effectRequested("sixties")
+            onButtonClicked: if (!panel.tryOpenParamPanel("sixties", label)) panel.effectRequested("sixties")
             thumbSource: panel.effectThumbSource("sixties")
             appliedCount: panel.effectAppliedCount("sixties")
         }
         PanelButton {
             objectName: "effectInvert"
             label: qsTr("Invert Colors")
-            onButtonClicked: if (!panel.tryOpenParamPanel("invert")) panel.effectRequested("invert")
+            onButtonClicked: if (!panel.tryOpenParamPanel("invert", label)) panel.effectRequested("invert")
             thumbSource: panel.effectThumbSource("invert")
             appliedCount: panel.effectAppliedCount("invert")
         }
         PanelButton {
             objectName: "effectHeatMap"
             label: qsTr("Heat Map")
-            onButtonClicked: if (!panel.tryOpenParamPanel("heatmap")) panel.effectRequested("heatmap")
+            onButtonClicked: if (!panel.tryOpenParamPanel("heatmap", label)) panel.effectRequested("heatmap")
             thumbSource: panel.effectThumbSource("heatmap")
             appliedCount: panel.effectAppliedCount("heatmap")
         }
         PanelButton {
             objectName: "effectCrossProcess"
             label: qsTr("Cross Process")
-            onButtonClicked: if (!panel.tryOpenParamPanel("crossprocess")) panel.effectRequested("crossprocess")
+            onButtonClicked: if (!panel.tryOpenParamPanel("crossprocess", label)) panel.effectRequested("crossprocess")
             thumbSource: panel.effectThumbSource("crossprocess")
             appliedCount: panel.effectAppliedCount("crossprocess")
         }
         PanelButton {
             objectName: "effectQuantizePalette"
             label: qsTr("Posterize")
-            onButtonClicked: if (!panel.tryOpenParamPanel("quantizepalette")) panel.effectRequested("quantizepalette")
+            onButtonClicked: if (!panel.tryOpenParamPanel("quantizepalette", label)) panel.effectRequested("quantizepalette")
             thumbSource: panel.effectThumbSource("quantizepalette")
             appliedCount: panel.effectAppliedCount("quantizepalette")
         }
         PanelButton {
             objectName: "effectTwoTone"
             label: qsTr("Duo-Tone")
-            onButtonClicked: if (!panel.tryOpenParamPanel("twotone")) panel.effectRequested("twotone")
+            onButtonClicked: if (!panel.tryOpenParamPanel("twotone", label)) panel.effectRequested("twotone")
             thumbSource: panel.effectThumbSource("twotone")
             appliedCount: panel.effectAppliedCount("twotone")
         }

@@ -76,7 +76,10 @@ ColumnLayout {
                 thumbSource: modelData.enabled
                              ? panel.effectThumbSource(modelData.key) : ""
                 onButtonClicked: {
-                    if (!panel.tryOpenParamPanel(modelData.key))
+                    // #700: a csúszkás alpanel a gomb SAJÁT feliratát kapja
+                    // címnek — itt a katalógusból már fordítva jövő
+                    // `modelData.label`-t, nem a belső kulcsot
+                    if (!panel.tryOpenParamPanel(modelData.key, modelData.label))
                         panel.effectRequested(modelData.key)
                 }
                 // a letiltott gombok megmondják, MIÉRT nem használhatók —

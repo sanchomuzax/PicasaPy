@@ -266,6 +266,31 @@ retus-régiók kódolása. Mind a négy **méréssel** oldható meg, kutatással
 
 ---
 
+## 14/b. Az erőforrás-kulcs NEM bizonyítja, hogy a vezérlő meg is jelenik
+
+Egy `.tre`/stringres kulcs attól még ott lehet a binárisban, hogy a hozzá
+tartozó vezérlőt a **kiadott** verzió már nem rajzolja ki. A szövegtáblák
+konzervatívak: a régi implementációk feliratai bennmaradnak.
+
+**Bizonyíték (2026-08-15, #711).** A `stringres-en-hu.tsv` három kulcsot ad a
+Filtered B&W szűrőhöz: `::name`, `::pickcolor` és **`::strength`**
+(magyarul „Erősség"). Ebből azt a következtetést vontam le, hogy a szűrőnek
+van erősség-csúszkája, és nálunk hiányzik — jegy-kommentben ki is mondtam.
+
+**Tévedés volt.** A `referencia/filteredbw/panel-screenshot-1.png` (eredeti
+Picasa 3.9) a teljes panelt mutatja: cím, „Pick Colour" színkorong,
+Apply/Cancel — **és semmilyen csúszka**. A `::strength` a régi `desat`
+panelhez tartozó, örökölt felirat. A saját nyilvántartásunk végig helyes volt.
+
+**A szabály:** ha egy erőforrás-kulcs alapján UI-elem meglétére akarsz
+következtetni, **előbb nézd meg a meglévő panel-képet**. A képernyőkép
+explicitebb forrás, mint a szövegtábla (ld. 13. pont) — és nálunk 2026-08-10
+óta ott feküdt a bizonyíték, csak nem néztem meg.
+
+**Általánosítva:** a szövegtábla azt mondja meg, mit tudott **valaha** a
+program; a képernyőkép azt, mit tud **most**. Funkció-állításhoz a második
+kell.
+
 ## Még fel nem emelt kövek
 
 | kő | mit adhat | költség |

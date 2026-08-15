@@ -212,3 +212,61 @@ modell-adatok, a mi felismerőnkkel nem használhatók — ami átvehető, az a
 - Igazságforrás (source of truth): a `.picasa.ini` + kép-metaadat (kétirányú kompat).
 - Szinkron-modul: fájlrendszer-figyelés; külső ini-változás → db-frissítés,
   app-beli változás → azonnali ini-írás.
+
+## A bélyegkép-gyorsítótár NÉGY szintje — mérve valódi adatbázison (#598, 2026-08-15)
+
+### A szintek és a fájljaik
+
+A `Picasa2/db3/` mappában négy, egymástól független bélyegkép-tár él, mind
+`<nev>_0.db` (adat) + `<nev>_index.db` (index) párban, plusz egy közös
+`thumbindex.db`. A binárisban a szintek tagnevei egyetlen függvényből
+(`0x00415790`) olvashatók ki:
+
+```
+m_pinkyThumbs · m_thumbs · m_bigThumbs · m_previewThumbs
+```
+és ugyanitt a fájlnevek: `thumbs.db`, `thumbs2.db`, `bigthumbs.db`,
+`previews.db` (mellettük `albums.db`, `facetemplatesV2.db`).
+
+### A méretek — VALÓDI adatbázisból mérve
+
+A tulajdonos 2025-12-24-i Picasa-mentése (`picasa-app-settings-backup`,
+110 fájl, ~2 GB) mind a négy tárat tartalmazza. A tárolt JPEG-ek
+`SOF`-fejlécéből kiolvasott képméretek:
+
+| szint | fájl | adatméret | **leghosszabb oldal** | minta |
+|---|---|---:|---:|---:|
+| apró („pinky") | `thumbs2_0.db` | 279 MB | **72 px** | 4000 |
+| normál | `thumbs_0.db` | 806 MB | **144 px** | 4000 + 3000 |
+| nagy | `bigthumbs_0.db` | 208 MB | **288 px** | 2989 + 2219 |
+| előnézet | `previews_0.db` | 711 MB | **640 px** | 1396 + 736 |
+
+**A szabály: a hosszabb oldal fixen kötött, a képarány megmarad.** Egy
+2:3 arányú álló fotó a normál szinten `96×144`, a nagy szinten `192×288`.
+
+A három bélyegkép-szint **pontosan duplázódik: 72 → 144 → 288.** Az előnézet
+kilóg ebből (640), mert az már megjelenítésre készül, nem rácsba.
+
+**Ellenőrzés mélységben:** a méréseket nem csak a fájlok elején végeztük — a
+`previews_0.db`-t a 400. MB-tól, a `bigthumbs_0.db`-t a 150.-től, a
+`thumbs_0.db`-t a 600.-tól újramintáztuk, és a leghosszabb oldal
+**mindenhol ugyanaz** (640 / 288 / 144). Egyetlen kilógó méret sem fordult elő.
+
+*Bizonyítottsági fok: megerősített* (valódi felhasználói adatbázis, két
+független mintavételi ponton, több ezer elemű mintákkal).
+
+> **Adatvédelmi megjegyzés:** a mérés kizárólag a JPEG-fejlécek
+> **méretadatait** olvasta ki, képtartalmat nem bontott ki és nem mentett.
+> Az adatbázis a felhasználó saját fotóiról készült — a repóba nem kerül.
+
+### Amit ez a #598-ra mond
+
+Ma **egyetlen** bélyegkép-szintünk van. Az eredeti négyet használ, és a
+méretek nem önkényesek: a 72/144/288 duplázás azt jelenti, hogy a kisebb
+szint a nagyobbikból **pontos felezéssel** előállítható — ez a szintek közti
+generálást is olcsóvá teszi.
+
+**Nyitva marad:** melyik nézet melyik szintet kéri (a rács kicsi/nagy
+bélyegkép-kapcsolója, a tálca, a szerkesztő szalagja), és mi a szintek
+közötti visszaesési sorrend, ha egy szint hiányzik. Ehhez a bélyegkép-kérő
+út visszakövetése kell — a jelen körben nem érintettük.

@@ -40,14 +40,14 @@ ColumnLayout {
         PanelButton {
             objectName: "effectBoost"
             label: qsTr("Boost")
-            onButtonClicked: if (!panel.tryOpenParamPanel("boost")) panel.effectRequested("boost")
+            onButtonClicked: if (!panel.tryOpenParamPanel("boost", label)) panel.effectRequested("boost")
             thumbSource: panel.effectThumbSource("boost")
             appliedCount: panel.effectAppliedCount("boost")
         }
         PanelButton {
             objectName: "effectSoften"
             label: qsTr("Soft Focus")
-            onButtonClicked: if (!panel.tryOpenParamPanel("soften")) panel.effectRequested("soften")
+            onButtonClicked: if (!panel.tryOpenParamPanel("soften", label)) panel.effectRequested("soften")
             thumbSource: panel.effectThumbSource("soften")
             appliedCount: panel.effectAppliedCount("soften")
         }
@@ -70,63 +70,63 @@ ColumnLayout {
         PanelButton {
             objectName: "effectPixelate"
             label: qsTr("Pixelate")
-            onButtonClicked: if (!panel.tryOpenParamPanel("pixelate")) panel.effectRequested("pixelate")
+            onButtonClicked: if (!panel.tryOpenParamPanel("pixelate", label)) panel.effectRequested("pixelate")
             thumbSource: panel.effectThumbSource("pixelate")
             appliedCount: panel.effectAppliedCount("pixelate")
         }
         PanelButton {
             objectName: "effectFocalZoom"
             label: qsTr("Focal Zoom")
-            onButtonClicked: if (!panel.tryOpenParamPanel("focalzoom")) panel.effectRequested("focalzoom")
+            onButtonClicked: if (!panel.tryOpenParamPanel("focalzoom", label)) panel.effectRequested("focalzoom")
             thumbSource: panel.effectThumbSource("focalzoom")
             appliedCount: panel.effectAppliedCount("focalzoom")
         }
         PanelButton {
             objectName: "effectPencilSketch"
             label: qsTr("Pencil Sketch")
-            onButtonClicked: if (!panel.tryOpenParamPanel("pencilsketch")) panel.effectRequested("pencilsketch")
+            onButtonClicked: if (!panel.tryOpenParamPanel("pencilsketch", label)) panel.effectRequested("pencilsketch")
             thumbSource: panel.effectThumbSource("pencilsketch")
             appliedCount: panel.effectAppliedCount("pencilsketch")
         }
         PanelButton {
             objectName: "effectNeon"
             label: qsTr("Neon")
-            onButtonClicked: if (!panel.tryOpenParamPanel("neon")) panel.effectRequested("neon")
+            onButtonClicked: if (!panel.tryOpenParamPanel("neon", label)) panel.effectRequested("neon")
             thumbSource: panel.effectThumbSource("neon")
             appliedCount: panel.effectAppliedCount("neon")
         }
         PanelButton {
             objectName: "effectComicize"
             label: qsTr("Comicize")
-            onButtonClicked: if (!panel.tryOpenParamPanel("comicize")) panel.effectRequested("comicize")
+            onButtonClicked: if (!panel.tryOpenParamPanel("comicize", label)) panel.effectRequested("comicize")
             thumbSource: panel.effectThumbSource("comicize")
             appliedCount: panel.effectAppliedCount("comicize")
         }
         PanelButton {
             objectName: "effectBorder"
             label: qsTr("Border")
-            onButtonClicked: if (!panel.tryOpenParamPanel("border")) panel.effectRequested("border")
+            onButtonClicked: if (!panel.tryOpenParamPanel("border", label)) panel.effectRequested("border")
             thumbSource: panel.effectThumbSource("border")
             appliedCount: panel.effectAppliedCount("border")
         }
         PanelButton {
             objectName: "effectDropShadow"
             label: qsTr("Drop Shadow")
-            onButtonClicked: if (!panel.tryOpenParamPanel("dropshadow")) panel.effectRequested("dropshadow")
+            onButtonClicked: if (!panel.tryOpenParamPanel("dropshadow", label)) panel.effectRequested("dropshadow")
             thumbSource: panel.effectThumbSource("dropshadow")
             appliedCount: panel.effectAppliedCount("dropshadow")
         }
         PanelButton {
             objectName: "effectMuseumMatte"
             label: qsTr("Museum Matte")
-            onButtonClicked: if (!panel.tryOpenParamPanel("museummatte")) panel.effectRequested("museummatte")
+            onButtonClicked: if (!panel.tryOpenParamPanel("museummatte", label)) panel.effectRequested("museummatte")
             thumbSource: panel.effectThumbSource("museummatte")
             appliedCount: panel.effectAppliedCount("museummatte")
         }
         PanelButton {
             objectName: "effectPolaroid"
             label: qsTr("Polaroid")
-            onButtonClicked: if (!panel.tryOpenParamPanel("polaroid")) panel.effectRequested("polaroid")
+            onButtonClicked: if (!panel.tryOpenParamPanel("polaroid", label)) panel.effectRequested("polaroid")
             thumbSource: panel.effectThumbSource("polaroid")
             appliedCount: panel.effectAppliedCount("polaroid")
         }

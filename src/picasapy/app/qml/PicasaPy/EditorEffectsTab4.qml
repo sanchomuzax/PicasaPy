@@ -51,21 +51,21 @@ ColumnLayout {
         PanelButton {
             objectName: "effectMatte"
             label: qsTr("Matte")
-            onButtonClicked: if (!panel.tryOpenParamPanel("matte")) panel.effectRequested("matte")
+            onButtonClicked: if (!panel.tryOpenParamPanel("matte", label)) panel.effectRequested("matte")
             thumbSource: panel.effectThumbSource("matte")
             appliedCount: panel.effectAppliedCount("matte")
         }
         PanelButton {
             objectName: "effectNightVision"
             label: qsTr("Night Vision")
-            onButtonClicked: if (!panel.tryOpenParamPanel("nightvision")) panel.effectRequested("nightvision")
+            onButtonClicked: if (!panel.tryOpenParamPanel("nightvision", label)) panel.effectRequested("nightvision")
             thumbSource: panel.effectThumbSource("nightvision")
             appliedCount: panel.effectAppliedCount("nightvision")
         }
         PanelButton {
             objectName: "effectLocalContrast"
             label: qsTr("Local Contrast")
-            onButtonClicked: if (!panel.tryOpenParamPanel("localcontrast")) panel.effectRequested("localcontrast")
+            onButtonClicked: if (!panel.tryOpenParamPanel("localcontrast", label)) panel.effectRequested("localcontrast")
             thumbSource: panel.effectThumbSource("localcontrast")
             appliedCount: panel.effectAppliedCount("localcontrast")
         }
@@ -74,14 +74,14 @@ ColumnLayout {
         PanelButton {
             objectName: "effectRoundedEdges"
             label: qsTr("Rounded Edges")
-            onButtonClicked: if (!panel.tryOpenParamPanel("roundededges")) panel.effectRequested("roundededges")
+            onButtonClicked: if (!panel.tryOpenParamPanel("roundededges", label)) panel.effectRequested("roundededges")
             thumbSource: panel.effectThumbSource("roundededges")
             appliedCount: panel.effectAppliedCount("roundededges")
         }
         PanelButton {
             objectName: "effectPicnikGrain"
             label: qsTr("Film Grain (Fine)")
-            onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain")) panel.effectRequested("picnikgrain")
+            onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain", label)) panel.effectRequested("picnikgrain")
             thumbSource: panel.effectThumbSource("picnikgrain")
             appliedCount: panel.effectAppliedCount("picnikgrain")
         }

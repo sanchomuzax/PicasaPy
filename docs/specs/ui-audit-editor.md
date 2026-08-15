@@ -577,6 +577,26 @@ Unicode-karakter, és a **felirat jobb oldalán**, a gomb jobb szélétől 9
 px-re ül — ugyanúgy a vágás-panelen és a paraméter-alpanelen. A két helyen
 **egyetlen közös gombkomponenst** érdemes bevezetni.
 
+### 4.x Kicsomagolt bitkép-mérések (#700)
+
+A #700 megvalósítási köre a `respack.py`-vel **ki is csomagolta** az érintett
+rétegeket; három számszerű adat innen való, és egy korábbi állítást helyesbít:
+
+| réteg | kép | mért adat |
+|---|---|---|
+| `editpanel/ok_icon` | tömör kör, fehér pipa | domináns szín **`#4E904A`** (zöld) |
+| `editpanel/cancel_icon` | tömör kör, fehér X | domináns szín **`#524BA1`** (**indigó**) |
+| `editslider/sliderbase` | 191x27 | a vájat a 8.-16. képpontsorban fut -> **9 képpont magas sín** |
+| `editslider/thumb` | **16x26** | **álló, magas téglalap** fogantyú (nem kör) |
+
+FIGYELEM - **helyesbítés:** a dokumentum máshol "sötétvörös X-ikon"-t ír - az
+képernyőképről olvasott benyomás. A kicsomagolt bitkép szerint **indigó**, és
+ugyanaz a két kép szolgálja ki a vágás-panelt is.
+
+Összehasonlításul a felület MÁSIK csúszka-sablonja (nagyítás, derítőfény,
+retusáló ecset - `scaleslider`): sín 121x9, fogantyú 16x22. A paraméter-alpanel
+csúszkája tehát **szándékosan más arányú**, nem a közös vezérlő.
+
 ## 5. A vágás-panel („Fotó vágása") pontos felépítése
 
 ▶**KÉP**, `…195113.png` (dropdown nyitva) és `…195123.png` (arány
