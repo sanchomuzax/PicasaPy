@@ -840,6 +840,56 @@ százalékkal elvileg sem reprodukálható.
 Címek: `0x008f80c0` → `0x00a4bfd0` → `0x00a4be40`. Nyers kimenet:
 `referencia/dekompilalt-612/` (privát repó).
 
+### KÉT KÜLÖN ÚT: az unió az `autolight`-é, az `enhance` csatornánként vág
+
+A #539 megvalósítási köre kiderítette, hogy a fenti uniós kód **nem** minden
+automatikára érvényes. A natív szűrő-regiszter
+(`referencia/native-filter-registry.json`) címei alapján:
+
+| ini-név | belépő | vágás | elemzett terület |
+|---|---|---|---|
+| `autolight` (Auto Contrast gomb) | `0x008f80c0` → `0x00a4bfd0` | a csatornánkénti pontok **UNIÓJA**, egyetlen közös `lo`/`hi` | a **teljes** kép |
+| `autocontrast` | `0x008f89d0` → `0x009db610` | **csatornánként külön** | a középső 90 % × 90 % |
+| `enhance` („Jó napom van") | `0x008f8840` → `0x009db610` | **csatornánként külön** | a középső 90 % × 90 % |
+
+A `0x009db610` a küszöböt `(W·H)/200` egész osztással számolja (ugyanaz a
+0,5 %), és a leképezést **fixpontosan** végzi:
+
+```c
+gain = (max << 16) / (hi - lo);      // egész osztás, LEFELÉ kerekít
+ki   = ((be - lo) * gain) >> 16;     // aritmetikai eltolás
+ki   = min(max, max(0, ki));         // max = 255, „CarefulEnhance"-nél 252
+```
+
+Két bájtra látszó következménye van: a felezőpont lefelé kerekedik, és maga a
+fehérpont sem feltétlenül éri el a 255-öt (100 széles sávnál 254 lesz).
+`lo = 0`, `hi = 255` esetén viszont a gain pontosan 65536, tehát az
+**azonosság-eset bájtra pontos**.
+
+### Mérés a 12-12 referencia-páron (privát repó)
+
+Csatornánkénti átlagos abszolút eltérés a valódi Picasa-kimenettől:
+
+| művelet | készlet | régi modell | **#539** | érintetlen kép |
+|---|---|---|---|---|
+| `autolight` | `referencia/autocontrast/` | 0,62 | **0,41** | 7,49 |
+| `enhance` | `referencia/imfeellucky/` | 2,61 | **2,61** | 10,35 |
+
+Az `autolight` javulása az uniós vágópontból (a korábbi, három csatornát EGY
+hisztogramba öntő közelítés helyett) és a fixpontos átvitelből jön; a 12
+képből 5 azonosság-esete bájtra pontos maradt. A `CarefulEnhance` 252-es
+kimeneti korlátja **kizárva**: mérve 3,41 a 2,61 helyett.
+
+**NYITVA marad az `enhance` kiugró képe** („Utopic Unicorn", 13,3): ott a
+Picasa által ténylegesen alkalmazott bemeneti tartomány két csatornán
+**szélesebb, mint magának a csatornának a teljes értékkészlete** (zöld:
+12–47 helyett 18,2–76,3), tehát *semmilyen* darabszám-küszöb nem adhatja ki.
+A natív gain-korlát léte ezzel bizonyított, de a dekompilátumban még nem
+találtuk meg (a Ghidra a `0x009db610` két float paraméterét elveszti), ezért
+a `_MIN_STRETCH_SPAN = 58` továbbra is **mért**, nem visszafejtett viselkedés.
+Amit ez a kör kizárt: az `autolight`+`enhance` bármely sorrendű összetétele
+(5,97–6,07), az azonossággal való erősség-keverés, a 252-es korlát, és minden
+1/100–1/400 közötti vágási osztó (a legjobb így is 2,56).
 ## Az irányított család megvalósítva — `dir_sat`, `dir_brite`, `dir_sharp`, `linblur` (#623)
 
 A #568 visszafejtésének eredménye kódba került. Modulok:

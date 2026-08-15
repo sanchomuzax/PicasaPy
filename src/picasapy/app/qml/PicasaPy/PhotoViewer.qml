@@ -401,15 +401,25 @@ Rectangle {
     }
 
     focus: visible
-    // #445: Esc a retusálás-eszköz félbehagyott foltját dobja el ELŐSZÖR
-    // (a Picasa súgószövege szerinti irányított klónozás megszakítása) —
-    // csak ennek hiányában zárja a nézőt (a korábbi, egyértelmű viselkedés).
-    Keys.onEscapePressed: {
+    // Az Esc az AKTÍV mód-eszközt szakítja meg, és csak ha nincs ilyen,
+    // akkor zárja a nézőt — ez az eredeti Picasa viselkedése.
+    //
+    // #445: a retusálás félbehagyott foltját dobja el (a súgószöveg
+    // szerinti irányított klónozás megszakítása).
+    // #666: a vágást ugyanúgy meg kell szakítania, mint a panel Mégse
+    // gombjának — korábban a néző BEZÁRULT, és a megkezdett vágás elveszett.
+    //
+    // A logika külön függvényben él, hogy tesztelhető legyen; a billentyű-
+    // kötés csak továbbhív (a `test_viewer_escape_666.py` mindkettőt őrzi).
+    function handleEscape() {
         if (editorPanel.retouchActive && editorPanel.retouchPatchPending)
             editController.cancelRetouchPatch()
+        else if (editorPanel.cropActive)
+            editorPanel.cropCancelRequested()
         else
             viewer.closed()
     }
+    Keys.onEscapePressed: viewer.handleEscape()
     Keys.onRightPressed: next()
     Keys.onReturnPressed: next()
     Keys.onLeftPressed: previous()

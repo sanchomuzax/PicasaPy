@@ -9,13 +9,19 @@ darabszám alapú lineáris szinthúzás egy-egy változata — de HÁROM KÜLÖ
 modell (#540, 12-12 referencia-képpáron mérve):
 
 - `autolight`: KÖZÖS (mindhárom csatornán azonos) vágás — nincs
-  fehéregyensúly-hatása.
+  fehéregyensúly-hatása. A közös vágópont a csatornánkénti pontok UNIÓJA,
+  a TELJES kép hisztogramjából (#539, `0x008f80c0` → `0x00a4bfd0`).
 - `autocolor`: csatornánként KÜLÖN vágás, de a csatornák egy KÖZÖS
   (a csatornánkénti vágópontok átlagából számolt) kimeneti tartományra
   simulnak — nem nyújtja mindegyiket önállóan 0..255-re (az a modell
   a mérésen jóval rosszabbul illeszkedett, ld. #540).
-- `enhance` ("Jó napom van"): csatornánként KÜLÖN vágás, ÉS mindegyik
-  önállóan a teljes 0..255 tartományra nyúlik (#535).
+- `enhance` ("Jó napom van"): csatornánként KÜLÖN vágás, a kép középső
+  90% × 90%-áról készült hisztogramból, ÉS mindegyik csatorna önállóan a
+  teljes 0..255 tartományra nyúlik (#535, `0x008f8840` → `0x009db610`).
+
+A vágópont-keresés és a leképezés mindkét úton a natív algoritmus szerint
+történik: darabszám-küszöb (`_levels_clip_threshold`), a natív keresőciklus
+(`_native_clip_points`) és a natív fixpontos átvitel (`_native_levels_lut`).
 """
 
 from __future__ import annotations
@@ -40,16 +46,11 @@ _REDEYE_MIN_RED = 60
 #: küszöb pedig nagy képen a távolabbi arcok valódi pupilláit is kidobná.
 _REDEYE_MIN_SPOT_PIXELS = 6
 
-# Vágási arányok az autolight/autocolor/enhance hisztogram-darabszám alapú
-# szinthúzásához — a valódi Picasa a hisztogramban DARABSZÁM-küszöbbel
-# keresi a fekete/fehér pontot (#535), nem fix percentilissel; ez a két
-# konstans egy MÉRÉSSEL igazolt közelítés, és a #540 szerint MINDHÁROM
-# művelet ugyanezt használja (az összemérhetőség kedvéért — a pontos
-# küszöbérték finomítása a #539 dolga). Ld. `sanchomuzax/picasapy-agent`
-# privát repó `referencia/imfeellucky/`, `referencia/autocontrast/`,
-# `referencia/autocolor/`.
-_LEVELS_LOW_FRACTION = 0.005
-_LEVELS_HIGH_FRACTION = 0.002
+#: A szinthúzás vágási ARÁNYA: a képpontszám fél százaléka, MINDKÉT végén
+#: azonosan (#539). A natív kód két helyen mondja ki ugyanezt: a
+#: `FUN_00a4be40` a hívási helyről kapott `0.005f` konstanssal
+#: (`0x3ba3d70a`), a `0x009db610` pedig egész osztásként, `/200`-zal.
+_LEVELS_CLIP_RATIO = 0.005
 
 _validate_image = validate_image
 
@@ -101,82 +102,126 @@ def apply_tilt(image: np.ndarray, angle: float, scale: float) -> np.ndarray:
     )
 
 
-def _histogram_black_white_point(
-    values: np.ndarray, total: int, low_fraction: float, high_fraction: float
-) -> tuple[int, int]:
-    """Fekete-/fehérpont a hisztogram DARABSZÁMA alapján (#549).
+def _levels_clip_threshold(pixel_count: int) -> int:
+    """A vágási DARABSZÁM-küszöb: `round(N · 0,005)`, de legalább 1 (#539).
 
-    A fekete pont az a legkisebb érték, aminél a kumulált darabszám már
-    eléri a `low_fraction`·`total` küszöböt; a fehérpont ugyanígy, felülről
-    számolva `high_fraction`-nel.
+    `N` a MINTAVÉTELEZETT képpontszám: a natív kód a hisztogramot `lépés`
+    ritkítással is építheti, ilyenkor `N = W·H / lépés²`. Teljes felbontású
+    hisztogramnál `lépés = 1`, tehát `N = W·H`. A küszöb így a képmérettel
+    skálázódik — nem abszolút darabszám és nem is percentilis.
 
-    **Invariáns: a visszaadott párra MINDIG `low < high`.** Ha a küszöbök
-    nem hagynának érdemi tartományt, `(0, 255)` — az azonosság-eset. A hívók
-    erre a garanciára építenek (nem ellenőrzik újra).
-
-    Args:
-        values: A hisztogramba öntendő értékek (a teljes kép vagy egy
-            csatorna) — az alakja közömbös.
-        total: A küszöbök viszonyítási darabszáma. Csatornánkénti hívásnál
-            a képpontok száma, közösnél a csatorna-értékeké (`image.size`).
+    (A két natív helyen a kerekítés csak árnyalatnyit tér el: a
+    `FUN_00a4be40` `roundf`-ol, a `0x009db610` egészben oszt `200`-zal —
+    egyetlen darabnyi különbség, ezért egy közös segédet használunk.)
     """
-    low_count = total * low_fraction
-    high_count = total * high_fraction
-    histogram, _ = np.histogram(values, bins=256, range=(0, 256))
-    low = int(np.searchsorted(np.cumsum(histogram), low_count))
-    high_from_top = int(np.searchsorted(np.cumsum(histogram[::-1]), high_count))
-    high = 255 - high_from_top
+    return max(1, int(round(pixel_count * _LEVELS_CLIP_RATIO)))
+
+
+def _channel_histogram(values: np.ndarray) -> np.ndarray:
+    """Egy csatorna 256 rekeszes hisztogramja (uint8 értékekből)."""
+    return np.bincount(values.reshape(-1), minlength=256)
+
+
+def _native_clip_points(histogram: np.ndarray, threshold: int) -> tuple[int, int]:
+    """Fekete-/fehérpont a natív ciklusokkal, BETŰ SZERINT (#539).
+
+    ```c
+    i = 0;   sum = 0;  do { sum += hist[i]; i++; } while (i <= 255 && sum < kuszob);
+    lo = i - 1;
+    i = 255; sum = 0;  do { sum += hist[i]; i--; } while (i >= 0  && sum < kuszob);
+    hi = i + 1;
+    ```
+
+    A ciklus a léptetés UTÁN ellenőriz, ezért a `−1` / `+1`: a vágópont AZ a
+    szint, amelyiknél a kumulált darabszám ELÉRI a küszöböt. Ha az egész
+    hisztogram kevesebb a küszöbnél, a ciklus a `break`-re fut: `lo = 255`,
+    `hi = 0`. A pár tehát lehet fordított is (`hi <= lo`) — a hívó dolga
+    eldönteni, mit kezd vele; itt nem szépítjük meg.
+    """
+    low = int(np.searchsorted(np.cumsum(histogram), threshold))
+    high_from_top = int(np.searchsorted(np.cumsum(histogram[::-1]), threshold))
+    return min(low, 255), 255 - min(high_from_top, 255)
+
+
+def _native_levels_lut(low: int, high: int, max_out: int = 255) -> np.ndarray:
+    """A natív szinthúzó átvitel 256 elemű LUT-ként — FIXPONTOSAN (#539).
+
+    A `0x009db610` egész aritmetikával dolgozik, nem lebegőponttal:
+
+    ```c
+    gain = (max << 16) / (hi - lo);            // egész osztás, lefelé kerekít
+    ki   = ((be - lo) * gain) >> 16;           // aritmetikai eltolás
+    ki   = min(max, max(0, ki));
+    ```
+
+    Két következménye van, ami bájtra számít: a felezőpont lefelé kerekedik
+    (a lebegőpontos `rint` fölfelé vinné), és `lo = 0`, `hi = 255` esetén a
+    gain pontosan 65536, tehát a leképezés **bájtra azonosság**.
+
+    Degenerált (`hi <= lo`) párnál azonosságot adunk vissza. A natív kód
+    ilyenkor 0 gaint számol (fekete képet ad) — ez a szinthúzás értelmét
+    vesztett határesete, amit szándékosan nem veszünk át.
+    """
     if high <= low:
-        return 0, 255
-    return low, high
+        return lut_ramp()
+    gain = (max_out << 16) // (high - low)
+    values = ((np.arange(256, dtype=np.int64) - low) * gain) >> 16
+    return np.clip(values, 0, max_out).astype(np.float64)
 
 
-def _common_black_white_point(
-    image: np.ndarray, low_fraction: float, high_fraction: float
-) -> tuple[int, int]:
-    """KÖZÖS (mindhárom csatornára egyenlő) fekete-/fehérpont — a három
-    csatorna képpontjait EGY közös hisztogramba összeöntve (#540: az Auto
-    Contrast mind a 12 referencia-képen azonos meredekséget adott
-    mindhárom csatornán, szórás 0,001).
+def _union_black_white_point(image: np.ndarray) -> tuple[int, int]:
+    """Az `autolight` GLOBÁLIS vágópontja: a csatornánkénti vágópontok
+    UNIÓJA (#539, `FUN_00a4bfd0`).
+
+    ```c
+    lo = min(lo_R, lo_G, lo_B);   hi = max(hi_R, hi_G, hi_B);
+    ```
+
+    A hisztogram itt a TELJES képről készül (a hívott `FUN_00a4be40` a
+    képméretet és a lépésközt kapja, elemzési peremet nem — szemben a
+    csatornánként vágó `0x009db610`-zel). Ezt a 12 referencia-páron a mérés
+    is megerősíti: teljes képpel 0,41, a középső 90%-kal 0,76 az átlagos
+    eltérés.
     """
-    return _histogram_black_white_point(
-        image, image.size, low_fraction, high_fraction
-    )
+    height, width = image.shape[:2]
+    threshold = _levels_clip_threshold(height * width)
+    points = [
+        _native_clip_points(_channel_histogram(image[..., channel]), threshold)
+        for channel in range(3)
+    ]
+    return min(point[0] for point in points), max(point[1] for point in points)
 
 
 def apply_autolight(image: np.ndarray) -> np.ndarray:
-    """Auto Contrast — megfejtett algoritmus (#540).
+    """Auto Contrast — KÖZÖS (mindhárom csatornára azonos) lineáris
+    szinthúzás (#540), a natív vágópontokkal (#539).
 
-    KÖZÖS (mindhárom csatornára azonos) lineáris szinthúzás, a fekete-/
-    fehérpontot a hisztogram DARABSZÁMA alapján keresve (ugyanaz a
-    közelítés, mint a #535 „Jó napom van"-nál, `_LEVELS_LOW_FRACTION`/
-    `_LEVELS_HIGH_FRACTION` küszöbbel): `ki = (be − lo)·255/(hi − lo)`,
-    egyetlen `lo`/`hi` az egész képre. **Azonosság-eset:** ha a kép már
-    kihasználja a teljes tartományt (`lo == 0` és `hi == 255`), a kimenet
-    bájtra azonos a bemenettel.
+    A közös `lo`/`hi` a csatornánkénti, darabszám-küszöbös vágópontok
+    UNIÓJA (`_union_black_white_point`), a leképezés pedig a natív
+    fixpontos átvitel. Mivel egyetlen `lo`/`hi` fut mindhárom csatornán,
+    a műveletnek nincs fehéregyensúly-hatása — ez különbözteti meg a
+    csatornánként vágó Auto Colourtól.
+
+    **Azonosság-eset:** ha a kép már kihasználja a teljes tartományt
+    (`lo == 0` és `hi == 255`), a kimenet bájtra azonos a bemenettel.
+
+    Mért átlagos eltérés a valódi Picasa-kimenettől a `referencia/
+    autocontrast/` 12 képpárján: **0,41** (a korábbi, összeöntött
+    hisztogramú közelítés 0,62; az érintetlen kép 7,49).
     """
     _validate_image(image)
-    low, high = _common_black_white_point(
-        image, _LEVELS_LOW_FRACTION, _LEVELS_HIGH_FRACTION
-    )
-    if low == 0 and high == 255:
+    low, high = _union_black_white_point(image)
+    if high <= low or (low == 0 and high == 255):
         return image.copy()
-    scale = 255.0 / (high - low)
     # pontonkénti lineáris széthúzás → 256 elemű LUT (#140): képméret-független
-    return apply_lut(image, (lut_ramp() - low) * scale)
+    return apply_lut(image, _native_levels_lut(low, high))
 
 
-#: A natív elemzés a kép SZÉLEIT kihagyja: a hisztogram csak a középső
-#: 90% × 90%-ról készül (`0x009db610`, #576 dekompiláció, #539 méréssel
-#: igazolva). Keretes, vignettált vagy sötét szélű képnél ez érdemben más
-#: fekete-/fehérpontot ad, mint a teljes képes elemzés.
+#: A natív CSATORNÁNKÉNTI elemzés a kép SZÉLEIT kihagyja: a hisztogram csak
+#: a középső 90% × 90%-ról készül (`0x009db610`, #576 dekompiláció, #539
+#: méréssel igazolva). Keretes, vignettált vagy sötét szélű képnél ez
+#: érdemben más fekete-/fehérpontot ad, mint a teljes képes elemzés.
 _LEVELS_MARGIN_PERCENT = 5
-
-#: A vágási küszöb DARABSZÁM, nem percentilis: a TELJES kép képpontszámának
-#: 1/200-a (0,5%), és — a natív kód szerint — mindkét végén UGYANANNYI.
-#: A #539 mérése ezt megerősítette: az aszimmetrikus (alul 0,5% / felül
-#: 0,2%) közelítésnél minden aszimmetrikus variáns rosszabb lett.
-_LEVELS_CLIP_DIVISOR = 200
 
 
 def _analysis_region(image: np.ndarray) -> np.ndarray:
@@ -185,7 +230,9 @@ def _analysis_region(image: np.ndarray) -> np.ndarray:
     margin = _LEVELS_MARGIN_PERCENT
     top = height * margin // 100
     left = width * margin // 100
-    return image[top : height * (100 - margin) // 100, left : width * (100 - margin) // 100]
+    return image[
+        top : height * (100 - margin) // 100, left : width * (100 - margin) // 100
+    ]
 
 
 def _channel_black_white_points(
@@ -193,18 +240,15 @@ def _channel_black_white_points(
 ) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
     """Csatornánkénti fekete-/fehérpont a natív algoritmus szerint (#539).
 
-    A `0x009db610` natív függvény geometriája: a hisztogram a kép középső
-    90% × 90%-áról készül, a vágási küszöb pedig a TELJES kép
-    képpontszámának `1/_LEVELS_CLIP_DIVISOR`-a, mindkét végén azonosan.
-    Az azonosság-esetet (nincs érdemi tartomány) `(0, 255)` jelzi.
+    A `0x009db610` geometriája: a hisztogram a kép középső 90% × 90%-áról
+    készül, a vágási küszöb viszont a TELJES kép képpontszámának 0,5%-a,
+    mindkét végén azonosan (a natív kódban `(W·H)/200`).
     """
     height, width = image.shape[:2]
-    clip = max(1, (height * width) // _LEVELS_CLIP_DIVISOR)
+    threshold = _levels_clip_threshold(height * width)
     region = _analysis_region(image)
-    # a `total`-nak magát a vágási darabszámot adjuk 1,0-s aránnyal: így a
-    # küszöb pontosan `clip`, kerekítési hiba nélkül
     points = tuple(
-        _histogram_black_white_point(region[..., channel], clip, 1.0, 1.0)
+        _native_clip_points(_channel_histogram(region[..., channel]), threshold)
         for channel in range(3)
     )
     return points[0], points[1], points[2]
@@ -312,8 +356,11 @@ def apply_autocolor(image: np.ndarray) -> np.ndarray:
 #: #539 megerősítés: mind a 36 csatornán (12 kép × 3) kimérve a Picasa
 #: által ALKALMAZOTT bemeneti tartomány LEGKISEBB értéke **58,1** — soha
 #: nem megy alá, holott a nyers vágópontok 26-ig lemennek. A korlát tehát
-#: nem illesztési fogás, hanem a natív viselkedés (a `gain` felső korlátja).
-_MIN_STRETCH_SPAN = 58.0
+#: nem illesztési fogás, hanem a natív viselkedés (a `gain` felső korlátja)
+#: — a natív kódban viszont MÉG NEM TALÁLTUK MEG, hol dől el (a `0x009db610`
+#: dekompilátumából a Ghidra két float paramétert elveszít; ld. a #539
+#: jegyet). Amíg ez nyitva van, a korlát MÉRT viselkedés, nem visszafejtett.
+_MIN_STRETCH_SPAN = 58
 
 
 def apply_channel_levels_stretch(image: np.ndarray) -> np.ndarray:
@@ -323,23 +370,23 @@ def apply_channel_levels_stretch(image: np.ndarray) -> np.ndarray:
     modellje (#535, 12 referencia-képpáron R² = 0,9995–1,0000 illesztéssel
     igazolva). **Azonosság-eset:** ha egy csatorna `lo`/`hi`-je már `0`/`255`
     (a csatorna kihasználja a teljes tartományt), azt a csatornát a Picasa
-    NEM módosítja — itt sem változik semmi (bájtra azonos marad).
+    NEM módosítja — a natív fixpontos átvitel ilyenkor pontosan 65536-os
+    gaint ad, tehát a kimenet magától bájtra azonos.
 
-    #539: a vágópontok a natív geometriával készülnek
-    (`_channel_black_white_points`), a nagyon szűk hisztogramú csatornát
-    pedig a Picasa nem feszíti ki teljesen — a bemeneti tartomány alsó
-    korlátja `_MIN_STRETCH_SPAN`.
+    #539: a vágópontok a natív geometriával és a natív keresőciklussal
+    készülnek (`_channel_black_white_points`), a leképezés pedig a natív
+    fixpontos átvitel (`_native_levels_lut`). A nagyon szűk hisztogramú
+    csatornát a Picasa nem feszíti ki teljesen — a bemeneti tartomány alsó
+    korlátja `_MIN_STRETCH_SPAN`, a feketeponthoz horgonyozva.
     """
     _validate_image(image)
     points = _channel_black_white_points(image)
-    ramp = lut_ramp()
     luts = []
     for low, high in points:
-        if low == 0 and high == 255:
-            luts.append(ramp)
-            continue
-        span = max(float(high - low), _MIN_STRETCH_SPAN)
-        luts.append((ramp - low) * 255.0 / span)
+        if 0 < high - low < _MIN_STRETCH_SPAN:
+            # a korlát a FEKETEPONTOT tartja, a fehérpontot tolja feljebb
+            high = low + _MIN_STRETCH_SPAN
+        luts.append(_native_levels_lut(low, high))
     return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 
