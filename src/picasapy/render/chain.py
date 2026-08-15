@@ -617,12 +617,16 @@ def apply_filters(
     EREDETI képméretre vonatkozó koordinátákkal (a tilt méret-tartó). Így a
     több crop64-et tartalmazó valódi Picasa-láncok sem kaszkádolnak (#130).
 
-    **Tartomány-validáció (#382):** néhány ismert szűrőnél (`sat`, `tilt`,
-    `finetune`/`finetune2`, `unsharp`/`unsharp2`) a paraméter a `registry`
-    modul `[minimum, maximum]` tartományára VÁGVA fut le, ha az ini-beli
-    érték kilóg belőle — a kivágott figyelmeztetést a visszaadott
-    `ChainReport.range_warnings` hordozza. A `.picasa.ini` maga NEM
-    módosul (a parszer szintjén nincs szigorítás, a round-trip elv szent).
+    **Tartomány-validáció (#382, #669):** néhány ismert szűrőnél (`sat`,
+    `tilt`, `finetune`/`finetune2`, `unsharp`/`unsharp2`, az irányított
+    család — `dir_sat`/`dir_brite`/`dir_sharp`/`dir_tint`, `linblur`,
+    `radblur`, `radsat`, `radtint`, `glow`/`glow2`, `tint`, `fill`) a
+    paraméter a `registry` modul `[minimum, maximum]` tartományára VÁGVA
+    fut le, ha az ini-beli érték kilóg belőle — a kivágott figyelmeztetést
+    a visszaadott `ChainReport.range_warnings` hordozza. A `.picasa.ini`
+    maga NEM módosul (a parszer szintjén nincs szigorítás, a round-trip
+    elv szent). A teljes lista a `chain_report._RANGE_VALIDATED_PARAM_POSITIONS`
+    táblában van.
 
     **Sáv-jelzők (#382):** a visszaadott `ChainReport.full_res`/`.slow`/
     `.resizes` jelzi, hogy a lánc tartalmaz-e olyan szűrőt, ami csak teljes

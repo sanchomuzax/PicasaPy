@@ -20,7 +20,23 @@ from picasapy.render.registry import FILTER_REGISTRY, clamp_slider_value
 #: `_apply_unsharp_op`). Az 5./4. fül Glimmer-effektjeinél a numerikus és
 #: szín-paraméterek KEVEREDNEK (ld. `filterdesc-registry.md` 4.1 pontja) —
 #: ott a pozíció-leképezés általánosan nem triviális, ezért egyelőre nincs
-#: bekötve (jövőbeli finomítás, nem #382 hatóköre).
+#: bekötve (jövőbeli finomítás, nem #382 hatóköre). Ugyanezért marad ki a
+#: `FocalZoom`/`PicnikFocalPixelate`/`Comicize` (#570/#569): a
+#: `registry_data.py`-ban nincs hozzájuk csúszka-bejegyzés (a `filterdesc.xml`
+#: e résztét a Glimmer-csővezeték, nem ez a tábla írja le), tehát
+#: `FILTER_REGISTRY.get(...)` `None`-t adna vissza.
+#:
+#: #669: felvéve az irányított család (`dir_sat`/`dir_brite`/`dir_sharp`/
+#: `dir_tint`) és a `linblur` — a pozíciókat a `directional.py`/
+#: `linear_blur.py` handlerei (`_apply_dir_sat_op` és társai, `chain.py`)
+#: adják: a `dir_*` triónál a korong (puck) a `filters=` láncban NEM
+#: jelenik meg (ld. `directional.py` modul-docsztring), a két csúszka
+#: közvetlenül az 1./2. pozíción áll; a `dir_tint`/`linblur` viszont VALÓDI
+#: korong-pozíciót visel, ezért a csúszkák a korong (x, y) UTÁN jönnek.
+#: Ugyanezen az alapon (pozíció ≡ regiszterbeli csúszka-sorrend, nincs
+#: `log_base`) felvéve még: `radblur`, `radsat`, `radtint`, `glow`/`glow2`
+#: (a `log_base`-es Radius csúszkájuk KIMARADT — softclamp-kivétel),
+#: `tint`, `fill`.
 _RANGE_VALIDATED_PARAM_POSITIONS: dict[str, tuple[tuple[int, int], ...]] = {
     "sat": ((0, 1),),
     "tilt": ((0, 1),),
@@ -28,6 +44,18 @@ _RANGE_VALIDATED_PARAM_POSITIONS: dict[str, tuple[tuple[int, int], ...]] = {
     "unsharp2": ((0, 1),),
     "finetune": ((0, 1), (1, 2), (2, 3), (3, 5)),
     "finetune2": ((0, 1), (1, 2), (2, 3), (3, 5)),
+    "dir_sat": ((0, 1), (1, 2)),
+    "dir_brite": ((0, 1), (1, 2)),
+    "dir_sharp": ((0, 1), (1, 2)),
+    "dir_tint": ((0, 3), (1, 4)),
+    "linblur": ((0, 3),),
+    "radblur": ((0, 3), (1, 4)),
+    "radsat": ((0, 3), (1, 4)),
+    "radtint": ((0, 3),),
+    "glow": ((0, 1),),
+    "glow2": ((0, 1),),
+    "tint": ((0, 1),),
+    "fill": ((0, 1),),
 }
 
 
