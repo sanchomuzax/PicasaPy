@@ -27,25 +27,50 @@ részfutás külön processz, a `pytest-cov` sima `--cov` kapcsolója önmagába
 nem összesítene — helyette minden részfutás `coverage run -p` alá kerül
 (ez processzenként egyedi nevű `.coverage.*` adatfájlt ír), a végén pedig
 egy `coverage combine` + `coverage report` fésüli össze és írja ki az
-eredményt. A `--cov` NÉLKÜLI viselkedés változatlan."""
+eredményt. A `--cov` NÉLKÜLI viselkedés változatlan.
+
+#677: minden részfutás UGYANAZT a, futásonként egyedi `--basetemp`-et kapja.
+A pytest a „tartsd meg az utolsó hármat" takarítást basetemp-enként végzi —
+részfutásonként külön könyvtárral egyetlen teljes futás tucatnyit hagyott
+maga után (mérve 4,2 GB egy 8 GB-os tmpfs-en). Közös basetemppel a következő
+részfutás induláskor felszabadítja az előzőét, tehát a csúcsigény egyetlen
+részfutásnyi; a futás végén az egész eltűnik. A kár nem is a futásé volt: a
+betelt tmpfs a PÁRHUZAMOSAN futó másik munkamenet parancsait törte el, némán,
+félrevezető ENOSPC-hibával."""
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
+import tempfile
+import time
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[1]
 _NON_APP_TIMEOUT_S = 300
 _APP_FILE_TIMEOUT_S = 180
 
+#: A saját ideiglenes könyvtáraink gyökere és előtagja (#677). Az előtag azért
+#: kell, hogy a takarítás CSAK a sajátunkhoz nyúljon.
+_TEMP_GYOKER = Path(tempfile.gettempdir())
+_TEMP_ELOTAG = "picasapy-tests-"
 
-def _run_pytest(args: list[str], timeout_s: int, *, cov: bool) -> int:
+#: Ennél régebbi saját maradékot takarítunk induláskor. Kor szerint szűrünk,
+#: mert egy PÁRHUZAMOS munkamenet friss könyvtárát elvinni rosszabb, mint
+#: helyet pazarolni.
+_MARADEK_KOR_S = 3 * 3600
+
+
+def _run_pytest(
+    args: list[str], timeout_s: int, *, cov: bool, basetemp: Path
+) -> int:
     """Egy pytest-részfutás saját processzben; timeoutnál 124-gyel tér vissza.
 
     cov=True esetén a pytest a `coverage run -p` alá fut (ld. a modul
-    docstringjét) — a `--cov` nélküli híváshoz képest ez az egyetlen
-    különbség, a pytest-argumentumok változatlanok."""
+    docstringjét). A `basetemp` minden részfutásra AZONOS (#677): a pytest a
+    könyvtárat induláskor kiüríti, így az előző részfutás helye felszabadul,
+    és nem gyűlik tucatnyi könyvtár egymás mellé."""
     pytest_args = [
         "-m",
         "pytest",
@@ -59,6 +84,7 @@ def _run_pytest(args: list[str], timeout_s: int, *, cov: bool) -> int:
         "-rs",
         "-p",
         "no:cacheprovider",
+        f"--basetemp={basetemp}",
         *args,
     ]
     if cov:
@@ -71,6 +97,25 @@ def _run_pytest(args: list[str], timeout_s: int, *, cov: bool) -> int:
     except subprocess.TimeoutExpired:
         print(f"TIMEOUT ({timeout_s}s): {' '.join(args)}", flush=True)
         return 124
+
+
+def _takarits_regi_maradekot() -> None:
+    """Korábbi (megszakadt) futások saját maradékainak eltakarítása.
+
+    KOR SZERINT szűrünk, és CSAK a saját előtagunkra: egy párhuzamosan futó
+    munkamenet friss könyvtárát elvinni rosszabb, mint helyet pazarolni.
+    """
+    hatarido = time.time() - _MARADEK_KOR_S
+    for konyvtar in _TEMP_GYOKER.glob(f"{_TEMP_ELOTAG}*"):
+        if not konyvtar.is_dir():
+            continue
+        try:
+            if konyvtar.stat().st_mtime > hatarido:
+                continue
+            shutil.rmtree(konyvtar, ignore_errors=True)
+        except OSError:
+            # más munkamenet épp törli, vagy nincs jogunk — nem baj
+            continue
 
 
 def _report_coverage() -> None:
@@ -98,9 +143,23 @@ def main(argv: list[str] | None = None) -> int:
             [sys.executable, "-m", "coverage", "erase"], cwd=_ROOT, check=False
         )
 
+    _takarits_regi_maradekot()
+    basetemp = Path(tempfile.mkdtemp(prefix=_TEMP_ELOTAG, dir=_TEMP_GYOKER))
+    try:
+        return _futtat(cov, basetemp)
+    finally:
+        # a takarítás nem függhet attól, zöld volt-e a futás, és attól sem,
+        # hogy megszakították-e (#677)
+        shutil.rmtree(basetemp, ignore_errors=True)
+
+
+def _futtat(cov: bool, basetemp: Path) -> int:
+    """A tényleges részfutás-sorozat; a basetemp életciklusa a hívóé."""
     failures: list[tuple[str, int]] = []
 
-    returncode = _run_pytest(["tests", "--ignore=tests/app"], _NON_APP_TIMEOUT_S, cov=cov)
+    returncode = _run_pytest(
+        ["tests", "--ignore=tests/app"], _NON_APP_TIMEOUT_S, cov=cov, basetemp=basetemp
+    )
     if returncode != 0:
         failures.append(("tests (tests/app nélkül)", returncode))
 
@@ -114,12 +173,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     for test_file in app_test_files:
         relative = test_file.relative_to(_ROOT)
-        returncode = _run_pytest([str(relative)], _APP_FILE_TIMEOUT_S, cov=cov)
+        returncode = _run_pytest(
+            [str(relative)], _APP_FILE_TIMEOUT_S, cov=cov, basetemp=basetemp
+        )
         if returncode == 124:
             # alkalmi beragadás (#53): egyszeri újrapróbálás friss
             # processzben — a tartósan beragadó fájl így is kibukik
             print(f"ÚJRAPRÓBÁLÁS (timeout után): {relative}", flush=True)
-            returncode = _run_pytest([str(relative)], _APP_FILE_TIMEOUT_S, cov=cov)
+            returncode = _run_pytest(
+                [str(relative)], _APP_FILE_TIMEOUT_S, cov=cov, basetemp=basetemp
+            )
         if returncode != 0:
             failures.append((str(relative), returncode))
 
