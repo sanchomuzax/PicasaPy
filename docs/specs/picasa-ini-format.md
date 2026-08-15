@@ -772,3 +772,74 @@ ez nem egy effekt elvesztése:
 > amit a #643 leírt, csak fordított irányban.
 
 Régi Picasa-telepítésből örökölt mappáknál ez valós kockázat.
+
+## Valódi korpusz: 859 `.picasa.ini` egy 43 éves fotógyűjteményből (2026-08-15)
+
+A tulajdonos NAS-án lévő fotómegosztás **csak olvasásra** felcsatolva
+végigleltározva. A számok a formátum-ismeretünk **kontrollmintája**:
+
+| | darab |
+|---|---:|
+| `.picasa.ini` fájl | **859** |
+| szekció összesen | 18 801 |
+| ebből képfájl-szekció | 17 791 |
+| `[Picasa]` / `[Contacts2]` / album-szekció | 733 / 244 / 33 |
+| **`filters=` lánc** | **5 658** |
+| különböző kulcsfajta | 31 |
+
+### Kulcs-lefedettség: 31-ből 30 dokumentált volt
+
+Gépi összevetés a jelen laphoz: a korpusz **egyetlen** olyan kulcsot
+tartalmaz, ami eddig nem szerepelt itt.
+
+**`link=`** — az album `[Picasa]` szekciójában, 16 előfordulás. Értéke egy
+**Picasa Web Albums feed-URL**:
+
+```
+https://<aldomain>.google.com/data/feed/<projekció>/user/<felhasználó>/albumid/<albumazonosító>?<paraméterek>
+```
+
+Ez a megszűnt webalbum-szolgáltatás szinkron-hivatkozása. Adatot nem hordoz a
+képről; olvasáskor **változatlanul meg kell őrizni**, írni nem kell.
+*Bizonyítottsági fok: megerősített* (16 valós előfordulás, azonos szerkezet;
+http és https alak is előfordul).
+
+A többi 30 kulcs mind dokumentált volt — a formátum-leírásunk tehát **valós
+adaton is hiánytalan**. (A felhasználó-specifikus `IIDLIST_<fiók>_lh` és
+`<fiók>_lh` kulcsok a fiók nevét hordozzák, ezért a példákban általánosítva.)
+
+### Melyik szűrőt használják VALÓBAN — 5 658 lánc alapján
+
+Ez a legfontosabb kimenet: a fejlesztési sorrendet nem a szűrők száma, hanem
+a **tényleges használat** kell vezesse.
+
+| szűrő | előfordulás | | szűrő | előfordulás |
+|---|---:|---|---|---:|
+| `enhance` | **3 045** | | `autocolor` | 54 |
+| `autolight` | **2 612** | | `unsharp2` | 27 |
+| `fill` | **1 089** | | `Boost` | 22 |
+| `crop64` | 801 | | `radblur` | 18 |
+| `finetune2` | 561 | | `sepia` | 14 |
+| `redeye` | 228 | | `bw` | 10 |
+| `Vignette` | 219 | | `dir_tint` | 10 |
+| `warm` | 118 | | `Lomo` | 6 |
+| `sat` | 110 | | `HDR`, `glow2` | 4–4 |
+| `tilt` | 102 | | `tint`, `Holga`, film-jelölők | 2–2 |
+| `retouch` | 82 | | `Cinemascope`, `CrossProcess`, `Sixties` | 1–1 |
+
+**Amit ez kimond:** a lánchasználat **erősen a tónus-javítók felé húz**. Az
+első három (`enhance`, `autolight`, `fill`) a láncok **több mint felét** adja,
+miközben a látványos effektek (`Lomo`, `Holga`, `HDR`, `Sixties`) együtt sem
+érik el a 20 előfordulást.
+
+### Negatív eredmény: a `desat` egyszer sem fordul elő
+
+Az 5 658 láncban **nulla** `desat=` bejegyzés van. A #711 kockázata tehát
+ezen a gyűjteményen **nem realizálódik** — a kulcs valószínűleg jóval régebbi
+(Picasa 2 korabeli) mappákban élne. A javítás ettől még indokolt (a lánc-
+megszakadás miatt), de a **prioritása csökkenthető**.
+
+> **Adatvédelem:** a leltár kizárólag **kulcsneveket és darabszámokat**
+> összesített. Feliratok, arcnevek, e-mail-címek, fiók- és albumazonosítók
+> nem kerültek sem a dokumentációba, sem a repóba. A megosztás
+> **csak olvasásra** volt felcsatolva.
