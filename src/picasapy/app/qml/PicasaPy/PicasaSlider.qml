@@ -13,8 +13,20 @@ Slider {
     id: control
 
     readonly property bool isHorizontal: orientation === Qt.Horizontal
-    readonly property real grooveThickness: 4
-    readonly property real handleSize: 14
+
+    // #700: a sín vastagsága és a fogantyú mérete a HÍVÓ helyen felülírható.
+    // Az alapértékek változatlanok (kerek, 14 px-es fogantyú, 4 px-es sín),
+    // ezért minden meglévő csúszka ugyanúgy néz ki, mint eddig; az
+    // effekt-paraméter alpanel viszont az eredeti Picasa arányait kéri
+    // (9 px-es sín, 16×26-os álló fogantyú — `docs/specs/ui-audit-editor.md`
+    // 7.5). A `handleRadius` teszi kerekké vagy szögletessé a fogantyút.
+    property real grooveThickness: 4
+    property real handleWidth: 14
+    property real handleHeight: 14
+    property real handleRadius: Math.min(handleWidth, handleHeight) / 2
+
+    // visszafelé kompatibilis alias a NÉGYZETES fogantyú méretére
+    readonly property real handleSize: Math.max(handleWidth, handleHeight)
 
     // #659: a méret a FOGANTYÚVAL együtt értendő. Korábban csak a sín
     // vastagsága számított, ezért a vezérlő doboza 4 képpont magas volt, a
@@ -22,7 +34,9 @@ Slider {
     // képponttal kilógott belőle — a gépi elrendezés-ellenőr (#656) pontosan
     // ennyit mért. A fogantyú látszólag eddig is ott volt; csak az
     // elrendezés nem foglalta le neki a helyet, ezért a szomszédjaira lógott.
-    readonly property real vastagsag: Math.max(handleSize, grooveThickness)
+    readonly property real vastagsag: Math.max(
+        control.isHorizontal ? control.handleHeight : control.handleWidth,
+        control.grooveThickness)
 
     implicitWidth: isHorizontal ? 120 : vastagsag + leftPadding + rightPadding
     implicitHeight: isHorizontal ? vastagsag + topPadding + bottomPadding : 120
@@ -60,9 +74,9 @@ Slider {
         y: control.topPadding + (control.isHorizontal
                ? (control.availableHeight - height) / 2
                : (1 - control.visualPosition) * (control.availableHeight - height))
-        implicitWidth: control.handleSize
-        implicitHeight: control.handleSize
-        radius: width / 2
+        implicitWidth: control.handleWidth
+        implicitHeight: control.handleHeight
+        radius: control.handleRadius
         border.width: 1
         border.color: control.pressed ? "#8f8f8f" : "#b5b5b5"
         gradient: Gradient {

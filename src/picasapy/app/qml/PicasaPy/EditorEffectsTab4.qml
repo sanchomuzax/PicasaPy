@@ -56,7 +56,7 @@ ColumnLayout {
         PanelButton {
             objectName: "effectVignette"
             label: qsTr("Vignette")
-            onButtonClicked: if (!panel.tryOpenParamPanel("vignette")) panel.effectRequested("vignette")
+            onButtonClicked: if (!panel.tryOpenParamPanel("vignette", label)) panel.effectRequested("vignette")
             thumbSource: panel.effectThumbSource("vignette")
         }
         // #516: eddig vezérlő és gomb NÉLKÜLI, de a render/ rétegben
@@ -64,19 +64,19 @@ ColumnLayout {
         PanelButton {
             objectName: "effectMatte"
             label: qsTr("Matte")
-            onButtonClicked: if (!panel.tryOpenParamPanel("matte")) panel.effectRequested("matte")
+            onButtonClicked: if (!panel.tryOpenParamPanel("matte", label)) panel.effectRequested("matte")
             thumbSource: panel.effectThumbSource("matte")
         }
         PanelButton {
             objectName: "effectNightVision"
             label: qsTr("Night Vision")
-            onButtonClicked: if (!panel.tryOpenParamPanel("nightvision")) panel.effectRequested("nightvision")
+            onButtonClicked: if (!panel.tryOpenParamPanel("nightvision", label)) panel.effectRequested("nightvision")
             thumbSource: panel.effectThumbSource("nightvision")
         }
         PanelButton {
             objectName: "effectLocalContrast"
             label: qsTr("Local Contrast")
-            onButtonClicked: if (!panel.tryOpenParamPanel("localcontrast")) panel.effectRequested("localcontrast")
+            onButtonClicked: if (!panel.tryOpenParamPanel("localcontrast", label)) panel.effectRequested("localcontrast")
             thumbSource: panel.effectThumbSource("localcontrast")
         }
         // #516: eddig vezérlő és gomb NÉLKÜLI, de a render/ rétegben
@@ -84,13 +84,13 @@ ColumnLayout {
         PanelButton {
             objectName: "effectRoundedEdges"
             label: qsTr("Rounded Edges")
-            onButtonClicked: if (!panel.tryOpenParamPanel("roundededges")) panel.effectRequested("roundededges")
+            onButtonClicked: if (!panel.tryOpenParamPanel("roundededges", label)) panel.effectRequested("roundededges")
             thumbSource: panel.effectThumbSource("roundededges")
         }
         PanelButton {
             objectName: "effectPicnikGrain"
             label: qsTr("Film Grain (Fine)")
-            onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain")) panel.effectRequested("picnikgrain")
+            onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain", label)) panel.effectRequested("picnikgrain")
             thumbSource: panel.effectThumbSource("picnikgrain")
         }
     }

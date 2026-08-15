@@ -234,6 +234,19 @@ Rectangle {
     property var paramEffectParams: []   // editController.effectParams(name)
     property var paramEffectValues: []   // a csúszkák pillanatnyi értékei
 
+    // #700: az alpanel CÍME — az effekt emberi, lefordított neve, nem a
+    // `filters=` lánc kulcsa (`editpanel/filter_name`, ld.
+    // `docs/specs/ui-audit-editor.md` 7.1). Nem külön névtábla: a CSEMPE
+    // adja át a saját feliratát (`tryOpenParamPanel(kulcs, felirat)`), így a
+    // kettő nem tud elcsúszni. A regiszter (`registry_data.py`) neve erre
+    // NEM jó: 7 effektnél eltér a fülön használttól (`unsharp` ott
+    // „Sharpen (Old)", a csempén „Sharpen"). Üresen — felirat nélküli,
+    // programozott megnyitásnál — a kulcsra esik vissza.
+    property string paramEffectLabel: ""
+    readonly property string paramEffectTitle:
+        panel.paramEffectLabel !== "" ? panel.paramEffectLabel
+                                      : panel.paramEffectName
+
     // #305 null-őr — de ITT szigorúbb annál: az EditorPanel-t önállóan (a
     // `PicasaPy 1.0` modulon át) betöltő tesztek (test_editor_tabs.py,
     // test_editor_effects.py, test_qml_editor_panel.py) az editController
@@ -292,9 +305,13 @@ Rectangle {
     // minden gombnál megmarad, csak feltételesen fut le — a
     // test_effect_names.py #315-ös regex-alapú lefedettség-ellenőrzése
     // erre épít.
-    function tryOpenParamPanel(name) {
+    //
+    // #700: a második paraméter a megnyitó csempe SAJÁT felirata — ebből
+    // lesz az alpanel címe (ld. `paramEffectLabel`). Elhagyható: régi,
+    // felirat nélküli hívónál a cím a belső kulcsra esik vissza.
+    function tryOpenParamPanel(name, displayLabel) {
         if (panel.hasEffectController() && editController.effectHasParams(name)) {
-            panel.openParamPanel(name)
+            panel.openParamPanel(name, displayLabel)
             return true
         }
         return false
@@ -302,7 +319,7 @@ Rectangle {
 
     // az alpanel megnyitása: csúszkák a katalógus alapértékein, azonnali
     // élő előnézettel.
-    function openParamPanel(name) {
+    function openParamPanel(name, displayLabel) {
         if (!panel.hasEffectController()) return
         var params = editController.effectParams(name)
         // #516: a "color" vezérlők kezdőértéke a katalógus hex-alapértéke,
@@ -311,6 +328,7 @@ Rectangle {
         for (var i = 0; i < params.length; i++)
             values.push(params[i].kind === "color" ? params[i].color : params[i].default)
         panel.paramEffectName = name
+        panel.paramEffectLabel = displayLabel ? displayLabel : ""
         panel.paramEffectParams = params
         panel.paramEffectValues = values
         panel.paramPanelActive = true
@@ -346,6 +364,7 @@ Rectangle {
     function closeParamPanel() {
         panel.paramPanelActive = false
         panel.paramEffectName = ""
+        panel.paramEffectLabel = ""
         panel.paramEffectParams = []
         panel.paramEffectValues = []
     }
