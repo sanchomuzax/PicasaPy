@@ -32,7 +32,28 @@ from PySide6.QtCore import (
 )
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtQuick import QQuickItem, QQuickView
-from PySide6.QtTest import QTest
+
+# #664: a QtTest ugyanaz az eset, mint a QtPrintSupport a
+# `test_print_controller.py`-ban — a pip-es PySide6 wheel (CI) hozza, a
+# Debian/Ubuntu-féle rendszercsomag külön modulra bontja. Hiányában a fájl
+# gyűjtési hibával dőlt el (exit 2), és valódi bukásnak látszott.
+try:
+    from PySide6.QtTest import QTest
+
+    _QTTEST_VAN = True
+except ImportError:  # pragma: no cover — csak a hiányos telepítésen fut
+    QTest = None
+    _QTTEST_VAN = False
+
+pytestmark = pytest.mark.skipif(
+    not _QTTEST_VAN,
+    reason=(
+        "a PySide6.QtTest modul hiányzik ezen a gépen, ezért a "
+        "mappa-gyűjtemények egérszimulációs tesztjei kimaradnak. "
+        "Debian/Ubuntu alatt így pótolható: "
+        "sudo apt install python3-pyside6.qttest"
+    ),
+)
 
 _KEEPALIVE = []
 
