@@ -67,10 +67,16 @@ Egyebek (1)                      ◀ gyűjtemény-fejléc
   mappák közvetlenül a gyűjtemény-fejléc alá kerülnek (ez látszik a
   `145027.png`/`144904.png` teljes „Mappák (67)" listáján: az összes
   teszt-mappa azonos dátumú, nincs évszám-sor).
-- **Mappasor**: sárga mappaikon + név + `(darabszám)`, **nincs saját
-  nyitó-nyíl** (a Mappák-lista lapos, nem rekurzív fa — egy mappa alatt
-  nincsenek almappa-sorok). Kijelölt sor: teljes szélességű acélkék
+- **Mappasor**: sárga mappaikon + név + `(darabszám)`, ebben a nézetben
+  **nincs saját nyitó-nyíl**. Kijelölt sor: teljes szélességű acélkék
   háttér (`#83a7bd`), fehér felirat.
+
+  > ⚠️ **HELYESBÍTÉS (2026-08-15).** A korábbi szöveg azt állította, hogy „a
+  > Mappák-lista lapos, nem rekurzív fa". **Ez téves általánosítás volt:** a
+  > lapos lista csak az EGYIK a két nézetmód közül. A Picasának van valódi,
+  > kibontható **fanézete** is — ld. a lenti 1.4 szakaszt. A tévedés oka,
+  > hogy az akkor rendelkezésre álló képernyőképek mind lapos nézetben
+  > készültek.
 - Egy adott gyűjteményen belüli, dátum nélküli elem (pl. `HS logo` a
   150933-as mintában) közvetlenül a gyűjtemény-fejléc alá kerül, évszám-
   csoport NÉLKÜL — tehát az évszám-sor csak a ténylegesen dátumozott
@@ -138,6 +144,161 @@ Egyebek (1)                      ◀ gyűjtemény-fejléc
 | 9 | `FolderTreeItem.qml` viszonya a főablakhoz | — | ez a Mappakezelő dialógusé, NEM a főablak fájáé | (tisztázás, nem hiba) |
 
 ---
+
+## 1.4 A MÁSIK nézetmód: valódi mappafa (2026-08-15)
+
+A panelnek **két, egymást kizáró nézetmódja** van, és eddig csak az egyiket
+auditáltuk. Az elrendezés-erőforrás egyértelmű (`thumbui.tre`, „listview
+toggle group"):
+
+```
+thumbui/folderview: thumbui/hviewtoggle
+thumbui/flatview:   thumbui/hviewtoggle
+thumbui/hviewtoggle: thumbui/buttonbarsets
+```
+
+A `thumbui_text.tre` buboréksúgói mondják meg, melyik mit csinál:
+
+| elem | buboréksúgó |
+|---|---|
+| `thumbui/flatview` | „Set view to show **flat** folder structure" |
+| `thumbui/folderview` | „Set view to show folder **tree** structure" |
+| `thumbui/folderviewpopup` | „View options" |
+
+Mivel közös `hviewtoggle` szülő alatt ülnek, **egyszerre csak az egyik
+aktív** — ez a két lapos ikon a keresőmező bal oldalán.
+
+### Amit a fanézet mutat (a tulajdonos képernyőképéről)
+
+A fanézet **nem** ugyanaz a lista más rendezésben, hanem **valódi
+fájlrendszer-hierarchia**:
+
+```
+Mappák (53)
+  Sajátgép (1 072)
+    ▷ DS215j (227)
+    ▲ Képek (842)
+        ▷ Picasa (691)
+        ▷ AI (92)
+        ▲ wallpapers (51)
+             space (7)
+             LEGO (5)
+             Star Trek (4)      ◀ kijelölve
+             sailing (5)
+             Ubuntu 14.10 (12)
+        lake (8)
+    Videók (3)
+```
+
+Megfigyelt eltérések a lapos nézethez képest:
+
+- **behúzás szintenként**, kibontó háromszöggel (`▷` csukott, `▲` nyitott);
+- a mappaikon helyett a bejegyzett almappáknál **bélyegkép-ikon** jelenhet meg
+  (a képen a `space`, `LEGO`, `Star Trek`, `sailing` sorok ikonja a mappa egy
+  fotójának kicsinyítése, nem sárga mappa);
+- **nincs évszám-tagolás** — az csak a lapos nézet sajátja;
+- a gyűjtemény-fejléc darabszáma a fában az **összes** mappát számolja
+  (`Mappák (53)`), nem csak a legfelső szintűeket;
+- a kijelölt soron jobb oldalt kis **görgető-fogantyú** jelenik meg.
+
+*Bizonyítottsági fok: megerősített* (elrendezés-erőforrás + buboréksúgó +
+képernyőkép). **Nyitva:** a behúzás és a sormagasság pontos képpontértéke —
+ehhez ismert nagyítású képernyőkép kell.
+
+## 1.5 A „View options" legördülő — teljes tartalom a binárisból
+
+A `thumbui/folderviewpopup` gomb (a két nézetváltó ikon melletti nyíl) nyitja.
+A menü **teljes tétellistája** a felépítő rutinból (`0x00733480`, 1311 bájt)
+kiolvasva — nem képernyőképről:
+
+| tétel | parancsazonosító |
+|---|---|
+| `Sort by &Date` | `AlbumList::ID_VIEWBYDATE` |
+| `Sort by &Recent Changes` | `AlbumList::ID_VIEWBYRECENT` |
+| `Sort by &Size` | `AlbumList::ID_VIEWBYSIZE` |
+| `Sort by &Name` | `AlbumList::ID_VIEWBYNAME` |
+| `Re&verse sort` | `AlbumList::ID_VIEWREVERSE` |
+| `Sort &People by Name` | `AlbumList::ID_PEOPLEBYNAME` |
+| `Sort People by &Amount` | `AlbumList::ID_PEOPLEBYAMOUNT` |
+| `Sort People by Top &10` | `AlbumList::ID_PEOPLEBYAMOUNTTOP10` |
+| `&Shortcuts` (almenü) | `AlbumList::Shortcuts` |
+| `Show &Thumbnails in Library` | `AlbumList::ID_VIEW_THUMBNAILS` |
+| `&Simplified Tree View` | (a `SimplifiedHierarchy` beállításkulcs) |
+
+A `Shortcuts` almenü tételei ugyanebből a rutinból: `My &Computer`
+(`ID_VIEW_ALL`), `My &Pictures` (`ID_VIEW_MYPICTURES`), `My Do&cuments`
+(`ID_VIEW_MYDOCS`), `&Desktop` (`ID_VIEW_DESKTOP`) — plusz egy
+`AlbumList::ID_VIEW_WATCHED` azonosító, aminek a felirata nem ebben a
+rutinban van.
+
+**Két, egymástól független kapcsoló, amit ne keverjünk össze:**
+
+- **`Simplified Tree View`** — a `SimplifiedHierarchy` beállításkulcsot
+  állítja (hivatkozók: `0x00574b70`, `0x00575130`, `0x005cb990`,
+  `0x005e2000`). Ez a fanézeten belül **rövidíti a láncot**: az egygyermekes,
+  köztes mappaszinteket összevonja.
+- **`Show Thumbnails in Library`** — a listasorok ikonját cseréli
+  mappaikonról bélyegképre. Ez magyarázza a fanézeti képernyőképen látott
+  fotó-ikonokat.
+
+A rendezés-tételek elé a Picasa **pipát** rajzol az aktív állapotnál (a képen
+`Sort by Date` és `Sort People by Name`), a `Sort People by Top 10` pedig
+**szürkített** — vagyis a People-rendezés tételei kontextusfüggően tilthatók.
+
+*Bizonyítottsági fok: megerősített* (a feliratok és azonosítók egyetlen
+rutinból; a pipa/szürkítés képernyőképről).
+
+## 1.6 Teljes UI-leltár — 2020 elem, 74 panel
+
+A `.tre` erőforrások **deklaratívan** írják le az eredeti teljes felületét.
+Az `eszkozok/tre_leltar.py` (privát repó) ebből gépi leltárt épít:
+elem → panel → szülő → felirat → buboréksúgó → makrók → tulajdonságok.
+Kimenet: `referencia/ui-leltar.csv` (privát repó).
+
+Ez **2020 UI-elem 74 panelen** — vagyis az audit innentől nem
+képernyőkép-vadászat, hanem egy zárt lista végigdolgozása.
+
+| panel | elem | ebből feliratos |
+|---|---:|---:|
+| `editpanel` | 312 | 78 |
+| `thumbui` | 140 | 35 |
+| `publish` | 125 | 27 |
+| `makemoviepanel` | 111 | 39 |
+| `collagepanel` | 108 | 47 |
+| `printpanel` | 73 | 31 |
+| `acquirepanel` | 67 | 16 |
+| `upload` | 61 | 7 |
+| `buzzupload` | 55 | 7 |
+| `compose_share` | 49 | 12 |
+| `printoptions` | 49 | 23 |
+| `canoncapturemoviepanelpopup` | 45 | 1 |
+| `capturemoviepanelpopup` | 45 | 10 |
+| `edittextpanel` | 45 | 17 |
+| `compose_mail` | 41 | 8 |
+| `faceheaderpanel` | 39 | 13 |
+| `editoneup` | 34 | 2 |
+| `oneup` | 33 | 2 |
+| `quicktagconfig` | 33 | 3 |
+| `foldermgr` | 32 | 10 |
+| `outputlayout` | 31 | 9 |
+| `headerpanel` | 30 | 11 |
+| `buttonmgr` | 29 | 9 |
+| `searchcontainer` | 25 | 8 |
+| `choose_mail` | 24 | 9 |
+| `tagpanel` | 24 | 4 |
+| `video_control_bar` | 24 | 3 |
+| `collab` | 23 | 3 |
+| *(további 46 panel)* | 313 | — |
+
+
+**Amiért ez fontos:** eddig minden UI-hiba **felhasználói szemrevételezéssel**
+derült ki. A leltárral megfordítható a sorrend: minden panelre kikereshető,
+hány eleme van az eredetinek, és abból mi hiányzik nálunk. A `PicasaPy` ma
+99 QML-fájlt tartalmaz — a fenti 74 panelhez képest ez önmagában is megmutatja,
+hol lesznek fehér foltok.
+
+**Következő lépés (jegyre való):** panelenkénti lefedettség-tábla, az
+`ui-leltar.csv` és a QML-fák összevetéséből, gépi úton.
 
 ## 2. Bal panel ↔ rács elválasztó (splitter)
 

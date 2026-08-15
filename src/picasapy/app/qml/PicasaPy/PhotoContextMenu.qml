@@ -2,10 +2,14 @@ import QtQuick
 import QtQuick.Controls
 
 // Az indexkép (rács) jobbklikk-menüje — a Picasa `AlbumPhoto` menüosztálya,
-// 19 tétellel (#15 kezdte 7 tétellel, #422 tölti fel a teljes listára).
+// kiegészítve a mappában lévő képre vonatkozó `FolderPhoto` többlet-
+// tételekkel és a személy-album `PplAlbumPhoto` parancsaival. (#15 kezdte
+// 7 tétellel, #422 töltötte fel a teljes listára.)
 //
 // A tételsort, a csoportbontást és a hivatalos magyar feliratokat a
-// `docs/specs/ui-audit-context-menus.md` 2. szakasza rögzíti.
+// `docs/specs/ui-audit-context-menus.md` 2. szakasza rögzíti. A
+// képernyőképen NEM látszó tételeket — amiket az eredeti csak album- vagy
+// személy-nézetben mutat — az A.4 szakasz vezeti végig.
 //
 // PARITÁS: az „Átnevezés…" KIKERÜLT ebből a menüből — az eredetiben nincs
 // itt, hanem a Fájl menüben (`F2`), ahol nálunk is megvan és működik.
@@ -121,6 +125,22 @@ Menu {
         visible: menu.personName !== ""
         onTriggered: menu.removeFromPeopleAlbumRequested()
     }
+    // #422: `PplAlbumPhoto::ID_PEOPLEALBUMS` — a MEGLÉVŐ személyek közé
+    // sorolás. A magyar felirat „Hozzáadás az Emberek albumhoz" (az angol
+    // forrás `Move to People Album`, a magyar honosítás mondja másképp; a
+    // felhasználó a magyart látja). A spec A.2 négy `PplAlbumPhoto`-
+    // parancsot említ, de a felsorolásában ez összemosódott az „Áthelyezés
+    // új személyhez…"-zel — a string-tábla választja szét a kettőt.
+    //
+    // HELYFOGLALÓ: az eredetiben ez a MEGLÉVŐ személyek almenüje, a
+    // személylistát viszont a menü nem látja — a hívónak kellene betöltenie,
+    // ahogy az `albums`-ot is teszi. Ld. a jegy integrációs igényeit.
+    PicasaMenuItem {
+        objectName: "contextMenuAddToPeopleAlbum"
+        text: qsTr("Add to People Album")
+        visible: menu.personName !== ""
+        placeholder: true
+    }
     MenuItem {
         objectName: "contextMenuMoveToNewPerson"
         text: qsTr("Move to New Person...")
@@ -224,6 +244,22 @@ Menu {
 
     // -- 8. blokk: lemez --------------------------------------------------------
 
+    // #422: `AlbumPhoto::ID_FILE_LOCATEINPICASA` — a „Keresés a lemezen"
+    // párja BEFELÉ: album-nézetből a kép SAJÁT mappájára ugrik a
+    // könyvtárban. A spec 2. szakaszának képernyőképe mappa-nézetben
+    // készült, ahol ennek nincs értelme (már ott vagyunk) — ezért maradt
+    // ki onnan; a string-tábla viszont az `AlbumPhoto` osztályban hozza.
+    // Ugyanaz a kapu, mint az „Eltávolítás az albumból"-nál.
+    //
+    // HELYFOGLALÓ: a réteg megvan (`controller.selectFolder(mappa)`), de a
+    // bekötés a Main.qml-ben lakik (forró fájl) — ld. az integrációs
+    // igényeket a jegyben.
+    PicasaMenuItem {
+        objectName: "contextMenuLocateInPicasa"
+        text: qsTr("Locate in Picasa")
+        visible: menu.currentAlbumToken !== ""
+        placeholder: true
+    }
     MenuItem {
         objectName: "contextMenuLocate"
         text: qsTr("Locate on Disk") + "\tCtrl+Enter"

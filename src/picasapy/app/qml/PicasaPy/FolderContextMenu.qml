@@ -34,6 +34,19 @@ Menu {
     // „Mappa rendezésének alapja ▸" almenü pipáihoz
     property string sortMode: "date"
     property bool sortReverse: false
+    // #422: rejtett-e a jobbklikkelt mappa. A spec A.2 kimondja, hogy a
+    // `Folder::ID_HIDEENTIREALBUM` „Mappa elrejtése" és a
+    // `Folder::ID_UNHIDEENTIREALBUM` „Mappa megjelenítése" NEM két külön
+    // tétel, hanem UGYANANNAK a sornak a két állapota — pontosan úgy, ahogy
+    // a kép-szintű Elrejtés ↔ Megjelenítés már működik (PhotoContextMenu,
+    // ViewerContextMenu).
+    //
+    // A mappa-szintű rejtés mögött nálunk MÉG NINCS réteg: az indexben csak
+    // a képnek van `hidden` oszlopa, a mappának nincs. Ezért a tétel
+    // helyfoglaló marad, és ez a tulajdonság az a varrat, amit a rejtett-
+    // mappa réteg elkészültekor a hívó feltölt — a felirat-váltás magától
+    // helyes lesz.
+    property bool folderHidden: false
 
     signal editDescriptionRequested()
     signal selectAllRequested()
@@ -147,7 +160,9 @@ Menu {
 
     PicasaMenuItem {
         objectName: "folderMenuHideFolder"
-        text: qsTr("Hide Folder")
+        // állapotfüggő felirat-váltás UGYANAZON a helyen (spec A.2) — nem
+        // külön tétel, ezért nincs `folderMenuUnhideFolder`
+        text: menu.folderHidden ? qsTr("Unhide Folder") : qsTr("Hide Folder")
         placeholder: true
     }
     MenuSeparator {}

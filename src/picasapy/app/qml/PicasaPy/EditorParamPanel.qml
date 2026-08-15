@@ -93,26 +93,101 @@ Flickable {
     boundsBehavior: Flickable.StopAtBounds
     ScrollBar.vertical: PicasaScrollBar {}
 
+    // #700: az Apply/Cancel gomb kör alakú ikonja. Az eredetiben ez két
+    // 15×15 képpontos bitkép (`editpanel/ok_icon`, `editpanel/cancel_icon`),
+    // tömör kör fehér pipával, illetve fehér X-szel; a színek a
+    // kicsomagolt képekből mérve (`docs/specs/ui-audit-editor.md` 7.4).
+    //
+    // A jelet SZÁNDÉKOSAN nem Unicode-karakter rajzolja: a vágás-panel
+    // „✔"/„✘" megoldása betűtípusfüggő, és hiányzó glifánál nyomtalanul
+    // eltűnik. Két elforgatott téglalap mindig ugyanazt adja.
+    component ActionBadge: Rectangle {
+        id: badge
+
+        // igaz = zöld pipa (Alkalmaz), hamis = indigó X (Mégse)
+        property bool tick: true
+
+        implicitWidth: 15
+        implicitHeight: 15
+        radius: 7.5
+        antialiasing: true
+        color: badge.tick ? "#4e904a" : "#524ba1"
+
+        // a pipa rövid, lefelé tartó szára
+        Rectangle {
+            visible: badge.tick
+            x: 4; y: 7
+            width: 3.9; height: 2
+            radius: 1
+            color: "white"
+            antialiasing: true
+            transformOrigin: Item.Left
+            rotation: 50
+        }
+        // a pipa hosszú, felfelé tartó szára
+        Rectangle {
+            visible: badge.tick
+            x: 6.5; y: 10
+            width: 8.2; height: 2
+            radius: 1
+            color: "white"
+            antialiasing: true
+            transformOrigin: Item.Left
+            rotation: -52
+        }
+        // az X két szára
+        Rectangle {
+            visible: !badge.tick
+            anchors.centerIn: parent
+            width: 9; height: 2
+            radius: 1
+            color: "white"
+            antialiasing: true
+            rotation: 45
+        }
+        Rectangle {
+            visible: !badge.tick
+            anchors.centerIn: parent
+            width: 9; height: 2
+            radius: 1
+            color: "white"
+            antialiasing: true
+            rotation: -45
+        }
+    }
+
     ColumnLayout {
         id: effectParamColumn
         objectName: "effectParamColumn"
         opacity: panel.enabled ? 1 : 0.45
+        // #700: a tartalom a panel TELJES szélességét kapja. Korábban az
+        // oszlopnak nem volt horgonya, ezért a Flickable tartalom-elemében
+        // a saját implicit szélességére zsugorodott, és minden a bal
+        // szélre tapadt — a bejelentő ezt látta („a bal szélére szorul a
+        // területnek"). A többi fül (pl. EditorFinetunePanel) azért volt
+        // rendben, mert azoknak a GAZDA adja a bal/jobb horgonyt.
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
         anchors.margins: 10
         spacing: 8
 
-        Rectangle {
+        // #700: a panel címe az effekt EMBERI, lefordított neve — ugyanaz,
+        // ami a megnyitó csempén áll (`panel.paramEffectTitle`). Az
+        // eredetiben ez az `editpanel/filter_name` réteg: balra igazított,
+        // 18 képpontos REGULAR (nem félkövér) szedés a panel hátterén,
+        // kiemelt fejléc-sáv nélkül — ld. az audit 7.1 pontját.
+        Label {
+            objectName: "effectParamTitle"
             Layout.fillWidth: true
-            height: 22
-            color: Theme.panelHeaderBg
-            Text {
-                objectName: "effectParamTitle"
-                anchors.leftMargin: 6
-                anchors.verticalCenter: parent.verticalCenter
-                text: panel.paramEffectName
-                font.pixelSize: Theme.fontSize
-                font.bold: true
-                color: Theme.panelHeaderText
-            }
+            Layout.topMargin: 2
+            Layout.bottomMargin: 2
+            text: panel.paramEffectTitle
+            horizontalAlignment: Text.AlignLeft
+            elide: Text.ElideRight
+            font.pixelSize: Math.round(Theme.fontSize * 1.5)
+            font.bold: false
+            color: Theme.textGray
         }
 
         Repeater {
@@ -150,28 +225,46 @@ Flickable {
                     || paramRow.modelData.kind === "color"
                         ? paramRow.modelData.kind : "slider"
 
-                RowLayout {
-                    Layout.fillWidth: true
+                // #700: a felirat a csúszka FÖLÖTT, KÖZÉPRE igazítva áll —
+                // az eredeti `editlabel1..4` rétegek stílusa (`m_fxlabel2`)
+                // kimondottan `textalign center`. A korábbi megoldás a
+                // csúszka MELLÉ tette, balra, és jobbról odaírta a nyers
+                // értéket is; az eredeti panel teljes rétegleltárában
+                // NINCS érték-kijelző (audit 7.2–7.3), ezért az a Label
+                // megszűnt — nem elrejtve, hanem elhagyva.
+                //
+                // A felirat DOBOZA a szövegére zsugorodik, és a doboz kerül
+                // középre (`Layout.alignment`) — nem teljes szélességű doboz
+                // belsejében igazítjuk a szöveget. Így a középre igazítás a
+                // kirajzolt geometriából mérhető: a doboz középpontja a
+                // panel középvonalán van. Hosszú felirat a rendelkezésre
+                // álló szélességig nőhet és tördelődik.
+                Label {
+                    objectName: "effectParamLabel" + paramRow.index
+                    Layout.fillWidth: false
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.maximumWidth: paramRow.width
                     visible: paramRow.controlKind === "slider"
-                    Label {
-                        objectName: "effectParamLabel" + paramRow.index
-                        Layout.fillWidth: true
-                        text: panel.paramLabel(paramRow.modelData.label)
-                        font.pixelSize: Theme.fontSize - 1
-                        color: Theme.textGray
-                    }
-                    Label {
-                        objectName: "effectParamValue" + paramRow.index
-                        text: paramSlider.value.toFixed(2)
-                        font.pixelSize: Theme.fontSize - 1
-                        color: Theme.textGray
-                    }
+                    text: panel.paramLabel(paramRow.modelData.label)
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSize - 1
+                    color: Theme.textGray
                 }
                 PicasaSlider {
                     id: paramSlider
                     objectName: "effectParamSlider" + paramRow.index
                     visible: paramRow.controlKind === "slider"
                     Layout.fillWidth: true
+                    // #700: az eredeti `editslider` arányai — 9 képpontos
+                    // sín, 16×26-os ÁLLÓ, enyhén lekerekített fogantyú
+                    // (a bitképekből mérve, audit 7.5). A közös
+                    // `PicasaSlider` alapértéke (4 px-es sín, 14 px-es kerek
+                    // fogantyú) változatlan marad a többi csúszkánál.
+                    grooveThickness: 9
+                    handleWidth: 16
+                    handleHeight: 26
+                    handleRadius: 3
                     from: paramRow.modelData.minimum
                     to: paramRow.modelData.maximum
                     stepSize: paramRow.modelData.step
@@ -201,18 +294,44 @@ Flickable {
             }
         }
 
+        // #700: a gombsor KÖZÉPRE igazítva, az eredeti ikonjaival. Az
+        // eredetiben a két gomb a terület vízszintes közepéhez van kötve,
+        // szimmetrikusan ±52 képponttal (`XConstraint 0.5, 0.5, ∓52`) —
+        // vagyis nem a panel szélességére feszülnek, hanem középen ülnek,
+        // egymástól 104 képpontnyi középpont-távolságra. Innen a 100
+        // képpontos gombszélesség és a 4 képpontos köz.
         RowLayout {
-            Layout.fillWidth: true
-            spacing: 6
+            objectName: "effectParamButtonRow"
+            Layout.alignment: Qt.AlignHCenter
+            Layout.topMargin: 4
+            spacing: 4
             PanelButton {
                 objectName: "effectParamApplyButton"
                 label: qsTr("Apply")
+                Layout.fillWidth: false
+                Layout.preferredWidth: 100
                 onButtonClicked: panel.applyParamPanel()
+                ActionBadge {
+                    objectName: "effectParamApplyIcon"
+                    tick: true
+                    anchors.right: parent.right
+                    anchors.rightMargin: 9
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
             PanelButton {
                 objectName: "effectParamCancelButton"
                 label: qsTr("Cancel")
+                Layout.fillWidth: false
+                Layout.preferredWidth: 100
                 onButtonClicked: panel.cancelParamPanel()
+                ActionBadge {
+                    objectName: "effectParamCancelIcon"
+                    tick: false
+                    anchors.right: parent.right
+                    anchors.rightMargin: 9
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
         }
     }

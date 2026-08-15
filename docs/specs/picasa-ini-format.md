@@ -545,3 +545,189 @@ csoportonként egyetlen mozgatott változóval.
    RAW és egyéb formátumnál az ini-be.
 4. `redo=` és `originhash` érintetlenül hagyása, ha a szerkesztési lánc nem változott.
 5. Fájl-lock / ütközésdetektálás arra az esetre, ha az eredeti Picasa is fut.
+
+## A `filters=` név-feloldás a natív kódban — a mérés kódbeli megerősítése (#643, 2026-08-15)
+
+A [mért szigorúságot](#-a-filters-lánc-beolvasása-szigorú--mérve-2026-08-15-685)
+a bináris is alátámasztja, két független helyen.
+
+### A szűrő-nyilvántartás táblája
+
+A 42 bejegyzésű regiszter a `.data`-ban, **16 bájtos rekordokban**:
+
+```
+0x00cd0720 …            [ segéd-callback | 2. segéd | név-mutató | fő callback ]
+```
+
+A nevek a rekordokból kiolvasva pontosan a
+[`picasa-native-filter-registry.md`](picasa-native-filter-registry.md)
+sorrendjében állnak (`triple`, `triple2`, … `sepia`, … `shadow`). A `.text`
+**nem a tábla kezdetére** hivatkozik, hanem a két szélére (`0x00cd0644`,
+`0x00cd0968`) — a bejárás láncolt, nem indexelt.
+
+### A névkeresés bájtonként hasonlít — nincs kisbetűsítés
+
+`FUN_008f9fe0` (`0x008f9fe0`) a konténer virtuális keresőjét hívja a névvel,
+majd a nem-talált ágon két beégetett nevet próbál. Minden összehasonlítás
+**nyers bájt-egyenlőség**:
+
+```c
+bVar15 = *pcVar9 == *pcVar4;      // se tolower, se _stricmp
+```
+
+Ugyanez a minta a lánc **írójában** (`FUN_008fac40`, `0x008fac40`) is, ahol a
+`crop64` és a `rot` ágat választja ki. Vagyis a kis-nagybetű-érzékenység nem
+egyetlen hely sajátja, hanem a formátum kezelésének módja.
+
+**Ez a mért eredmény független megerősítése**: a `Tint=` / `vignette=` /
+`Sepia=` azért veszett el némán, mert a keresés bájtra hasonlít.
+*Bizonyítottsági fok: megerősített (mérés + kód).*
+
+### Nem talált név → `-1`, két beégetett alias után
+
+A nem-talált ág visszatérése `-1`, előtte azonban két név külön kezelést kap:
+**`crop`** (a `crop64` felé irányítva) és **`desat`**. A `desat` a binárisban
+**pontosan egyszer** fordul elő, épp itt — a nyilvántartásban nincs benne, és
+a PicasaPy sem ismeri.
+*Bizonyítottsági fok: erős* (a karakterlánc és a hely egyértelmű; hogy
+pontosan mire képezi le, még nem visszakövetett).
+
+### ⚠️ MEGFEJTVE: egy hibás bejegyzés MEGSZAKÍTJA a lánc hátralévő részét
+
+A bejáró (`FUN_00907740`, `0x00907740`) így fut:
+
+```c
+do {
+    ... a kovetkezo ';'-ig tarto darab kivagasa (FUN_009863f0(0x3b)) ...
+    local_4 = FUN_00908360(&local_8);      // EGY bejegyzes feldolgozasa
+    if (local_4 != 0) goto LAB_00907995;   // <-- HIBA: AZONNALI KILEPES
+    ... a kesz szuro-objektum hozzafuzese a listahoz ...
+} while (true);
+
+LAB_009079_95:  return local_4;            // a lanc TOBBI resze sosem fut le
+```
+
+Az egy-bejegyzés feldolgozó (`FUN_00908360`, `0x00908360`) **nem nullát** ad:
+
+* ha a darabban **nincs `=`** → `return -1`;
+* ha a globális gyár (`DAT_00d67f68`, virtuális 1. rekesz) nem tudja
+  előállítani a szűrőt — **ide fut be az ismeretlen név**, mert a
+  `FUN_008f9fe0` névkeresés nem-talált ága `-1`-et ad —, akkor az objektumot
+  eldobja és a hibakódot adja vissza.
+
+**Következmény, betűre:**
+
+> Egy fel nem ismert nevű vagy hibás bejegyzés **nem csak önmagát viszi**: a
+> lánc **utána következő** szűrői sem futnak le. Az **előtte** lévők
+> megmaradnak, mert azok már a listába kerültek.
+
+Ez pontosan a #643 3. hipotézise, és **egybevág a méréssel**: a
+`grain2=1,0.5;` (fölösleges paraméter) és a `Tint=…` (rossz írásmód) egyaránt
+hatástalan maradt — egyelemű láncban a megszakadás és az „elejtés"
+megkülönböztethetetlen.
+
+*Bizonyítottsági fok: megerősített* (a ciklus, a hibaág és a `-1` visszatérés
+is visszakövetve; a mérés független megerősítés).
+
+### ⚠️ Amit ez az ÍRÁS oldalán jelent — kritikus
+
+Ha a PicasaPy egyetlen bejegyzést rosszul ír ki (rossz írásmód, rossz
+paraméterszám, hiányzó `=`), akkor az eredeti Picasában **nem az az egy effekt
+vész el, hanem az összes utána következő is** — némán. A felhasználó
+szerkesztésének a fele tűnik el, hibaüzenet nélkül. Ld. #695.
+
+### A mérés megerősítette — valódi Picasa-export, 7 kép (2026-08-15)
+
+A kódból tett jóslatot méréssel ellenőriztük (`tools/golden/make_validation_kit3.py`).
+Jelzőeffekt a `bw`, mert a mérőkép szürke sávjait nem, a színfoltokat viszont
+látványosan mozdítja.
+
+| kép | lánc | mért ΔE | mi történt |
+|---|---|---|---|
+| A | `sepia=1;bw=1;` | 17,238 | **mindkettő lefutott** (kontroll) |
+| B | `nincsilyen=1;bw=1;` | **0,181** | semmi — a `bw` sem futott le |
+| C | `sepia=1;nincsilyen=1;` | 21,251 | **csak a `sepia`** |
+| D | `grain2=1,0.5;bw=1;` | **0,181** | semmi |
+| E | `sepia;bw=1;` (nincs `=`) | **0,181** | semmi |
+| F | `bw=1;` | 10,132 | referencia |
+| G | `sepia=1;` | 21,251 | referencia |
+
+Két szigorú azonosság dönti el a kérdést:
+
+* **C ≡ G bájtra** (`max|Δ| = 0`): az ismeretlen **záró** tag a már feldolgozott
+  `sepia`-t érintetlenül hagyja — az előtte lévők tényleg megmaradnak.
+* **B ≡ D ≡ E bájtra** (ΔE 0,0 páronként), és mindhárom **eltér** az `F`-től
+  (ΔE 10,12): egyikben sem futott le a `bw`. A három hibamód — **ismeretlen
+  név**, **rossz paraméterszám**, **hiányzó `=`** — tehát **azonosan**
+  viselkedik: a lánc feldolgozása ott megáll.
+
+*Bizonyítottsági fok: megerősített, kódból és mérésből egyaránt.* A jóslat a
+natív kód olvasásából született, a mérés utólag igazolta — nem fordítva.
+
+### A maradék bizonytalanság
+
+**Egy fel nem ismert bejegyzés csak önmagát viszi, vagy a lánc hátralévő
+részét is?** Ez a #643 3. hipotézise, és ez dönti el, hogy egy hibás sor
+egyetlen effektet ront-e el vagy az egész szerkesztést.
+
+A hívó (`0x0050e460`, 144 bájt) a `-1`-et kapja, őt viszont **függvénymutató-
+táblán át** hívják (`.rdata` `0x00c7f728`), így a lánc statikus visszakövetése
+innen aránytalanul drága lenne.
+
+**Olcsóbb és biztosabb út: mérés.** Négy kép a következő export-körben:
+
+| kép | lánc | mit dönt el |
+|---|---|---|
+| A | `sepia=1;bw=1;` | a kétlépéses lánc alapesete |
+| B | `nincsilyen=1;bw=1;` | ismeretlen ELSŐ tag — a `bw` átjön-e |
+| C | `sepia=1;nincsilyen=1;` | ismeretlen UTOLSÓ tag |
+| D | `grain2=1,0.5;bw=1;` | rossz paraméterszám — ugyanaz-e a viselkedés |
+
+Ha B-ben és C-ben is látszik a `bw`, a hibás bejegyzés **csak önmagát viszi**;
+ha B-ben nem, a lánc **megszakad** — és akkor a #643 fő gyanúja igazolódik.
+
+## A `desat` — egy szűrőnév, amit nem ismertünk (#643 mellékága, 2026-08-15)
+
+A név-feloldás (`FUN_008f9fe0`) nem-talált ága **két** nevet kezel külön:
+`crop` (a `crop64` felé) és **`desat`**. A `desat` a binárisban pontosan
+egyszer szerepel karakterláncként (`0x00c86f24`), és négy függvény hivatkozik
+rá: `0x0050bd70`, `0x0050be10`, `0x0050e460`, `0x008f9fe0`.
+
+### Mi ez
+
+A `0x0050bd70` (146 bájt) egy **konstruktor**, és mindent elárul:
+
+```c
+FUN_00985ff0("%c,%f,%f,%f");                 // a szerializalasi formatum
+FUN_00985ff0("desat");                       // az ini-kulcs
+FUN_009ae560("CDesaturateFilter::name", …);  // az eroforras-kulcs a felirathoz
+*in_EAX = CDesaturateFilter::vftable;
+in_EAX[7] = in_EAX[8] = in_EAX[9] = in_EAX[0xc] = 0x3eaa7efa;   // = 0.333f
+```
+
+A `0x0050bd70`-hez tartozó szövegek közt ott a **`Filtered B&W`** felirat is —
+ez pedig a mi `ansel` szűrőnk emberi neve
+([`filterdesc-registry.md`](filterdesc-registry.md)).
+
+**Következtetés:** a `desat` a **Filtered B&W** (`CDesaturateFilter`)
+szűrő **másik, örökölt ini-kulcsa**. A paraméterformátuma is más:
+`%c,%f,%f,%f` — jelzőkarakter + **három float**, vagyis a szín három
+lebegőpontos csatornaként, nem a mai `ansel=1,ffffffff` pakolt hexként.
+Az alapértékek négy helyen `0,333` — a három csatorna egyenlő súlya.
+
+*Bizonyítottsági fok: erős.* A konstruktor tartalma és a nevek egyértelműek;
+ami **nincs** visszakövetve: hogy a `desat` és az `ansel` futásidőben
+ugyanarra a rendererre fut-e, vagy csak rokon.
+
+### ⚠️ Miért sürgős ez nekünk
+
+A `desat` **nincs a `FILTER_REGISTRY`-nkben**, tehát a parszerünk ismeretlen
+névként kezelné. A ma bizonyított lánc-viselkedés miatt
+([lásd fentebb](#-megfejtve-egy-hibás-bejegyzés-megszakítja-a-lánc-hátralévő-részét))
+ez nem egy effekt elvesztése:
+
+> Egy `desat=` bejegyzést tartalmazó `.picasa.ini`-nél **a lánc utána
+> következő összes szűrője is elveszne** nálunk — pontosan az a hibaosztály,
+> amit a #643 leírt, csak fordított irányban.
+
+Régi Picasa-telepítésből örökölt mappáknál ez valós kockázat.
