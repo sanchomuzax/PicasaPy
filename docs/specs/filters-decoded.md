@@ -1086,3 +1086,67 @@ A **`radsat`** („Fókuszos FF") a régi közelítésen maradt: ugyanezt a nat�
 maszkot használja, de **nincs hozzá egyetlen mért kimenet sem**, és a
 projekt szabálya szerint a natív mag megléte önmagában nem indok. A #317
 kalibrálhatja, ha készül hozzá referencia-export.
+
+### `radsat` („Telítetlenít egy középpont körül") — TELJES (2026-08-15, #317)
+
+Sugárirányban telítetlenítő effekt: a középpont közelében megmarad a szín,
+kifelé haladva szürkébe megy át. Callback `0x008f8680`, mag `0x0090b660`,
+a lecsengés-tábla építője `0x0090aeb0`.
+
+#### Előkészítés — 1024 elemű lecsengés-tábla
+
+```c
+// a téglalap a hatásterület (a callback a +0x94 mezőből olvassa)
+r  = min((jobb - bal)/2.0f, (also - felso)/2.0f) * (sugar + 1.0f);
+r2 = r * r;
+shift = 0;
+while (r2 > 1024.0f) { r2 *= 0.5f; shift++; }   // hogy a sugárnégyzet beférjen
+
+k = 1.0f / (1.0f - 0.99f * sqrtf(elesseg));      // az él meredeksége
+
+for (i = 0; i < 1024; i++) {
+    t = sqrtf(i / r2);                           // normalizált sugár (0…1)
+    v = clampf(0.5f + k * (t - 0.5f), 0.0f, 1.0f);
+    v = 1.0f - v;
+    tabla[i] = (uint8_t)lroundf((3.0f - 2.0f*v) * v * v * 255.0f);   // SMOOTHSTEP
+}
+```
+
+#### Képpontonként
+
+```c
+idx = ((x - cx)*(x - cx) + (y - cy)*(y - cy)) >> shift;
+Y   = (77*R + 151*G + 28*B) >> 8;                // ld. lent
+if (idx < 1024) {
+    w = 256 - tabla[idx];
+    R' = R + (((Y - R) * w) >> 8);               // lineáris keverés a szürke felé
+    G' = G + (((Y - G) * w) >> 8);
+    B' = B + (((Y - B) * w) >> 8);
+} else {
+    R' = G' = B' = Y;                            // a körön KÍVÜL teljesen szürke
+}
+```
+
+A középpont `cx = round(W · px)`, `cy = round(H · py)` — a két csúszka
+**képarányos** koordinátát ad, nem képpontot.
+
+#### Három részlet, ami számít
+
+1. **A lecsengés SMOOTHSTEP** (`3v² − 2v³`), nem lineáris és nem koszinuszos.
+2. **Az él meredekségét `k = 1/(1 − 0,99·√élesség)` adja** — az élesség
+   csúszka végén `k = 100`, azaz gyakorlatilag éles körvonal; nullánál `k = 1`,
+   azaz egyenletes átmenet.
+3. **A körön kívül nincs keverés, hanem teljes szürke** — külön kódág.
+
+#### A luma-súlyok: KERESZT-MEGERŐSÍTÉS
+
+`Y = (77·R + 151·G + 28·B) >> 8` — **pontosan ugyanaz a három együttható**,
+amit a szépia algoritmusánál (#619) mértünk ki. Két, egymástól független
+effekt ugyanazt a szürkeárnyalat-képletet használja; ez megerősíti mindkét
+korábbi olvasatot.
+
+> Figyelem: ez **nem** azonos a `sat` luma-súlyaival (ott `R:2/8 · G:5/8 ·
+> B:1/8` egész közelítés). A Picasa **két különböző** luma-képletet használ,
+> effektcsaládtól függően.
+
+**Bizonyítottsági fok: megerősített.**
