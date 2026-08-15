@@ -59,11 +59,14 @@ _RANGE_VALIDATED_PARAM_POSITIONS: dict[str, tuple[tuple[int, int], ...]] = {
     # #687: a natív burkolókból bekötött szűrők. A csúszkák a `filters=`
     # láncban közvetlenül az engedélyező flag után, a regiszterbeli
     # sorrendjükben állnak (ld. `chain_native_handlers`), és egyiküknek
-    # sincs `log_base`-e — a `shadow` Sugár csúszkája épp ezért nincs itt.
+    # sincs `log_base`-e, a `shadow` Sugár csúszkáját kivéve — az ezért
+    # marad ki a táblából (softclamp-kivétel).
     "contrast": ((0, 1),),
     "gamma": ((0, 1),),
     "colortemp": ((0, 1), (1, 2)),
     "backlight": ((0, 1),),
+    # a `shadow` Sugár csúszkája `log_base`-es → softclamp-kivétel, kimarad
+    "shadow": ((1, 2), (2, 3)),
     "triple": ((0, 1), (1, 2), (2, 3)),
     "triple2": ((0, 1), (1, 2), (2, 3)),
     "triple3": ((0, 1), (1, 2), (2, 3)),

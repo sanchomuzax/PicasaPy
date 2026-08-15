@@ -57,6 +57,7 @@ from picasapy.render.native_tone import (
     apply_native_contrast,
     apply_native_levels,
 )
+from picasapy.render.shadow_highlight import apply_shadow_highlight
 from picasapy.render.sharpen import UNSHARP_V1_STRENGTH, apply_unsharp
 from picasapy.render.tinting import (
     apply_ansel,
@@ -130,6 +131,7 @@ __all__ = [
     "apply_redeye",
     "apply_saturation",
     "apply_sepia",
+    "apply_shadow_highlight",
     "apply_shadows",
     "estimate_neutral_color",
     "apply_tilt",

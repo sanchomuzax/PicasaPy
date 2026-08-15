@@ -980,19 +980,48 @@ csatorna-hiba a mért görbéhez):
 Vagyis a burkoló által számolt `exp(szint)` a **gamma**, és a LUT-építő
 `1/gamma`-val emel hatványra (2.3) — pozitív csúszka világosít.
 
-## 5.4 Ami a nyolcból NEM készült el, és ami nyitva maradt
+## 5.4 MEGOLDVA: az `shadow` súly-skálája
 
-- **`shadow` (Árnyék és kiemelés)** — a munkafüggvénye (`0x0090d3e0`) nem
-  pontonkénti: HÁROM elmosást futtat (`0x009dd0d0` ×3), és a
-  `0x0090d170` mag a képpont saját és az ELMOSOTT kép világosságából számol
-  súlyt (`L = 2R + 5G + B + 4`, külön árnyék- és csúcsfény-ág, a súly
-  `0x500`-ra vágva). Az elmosás sugara és a két százalék-csúszka egészre
-  skálázása az x87-veremen megy, tehát ismét mérés kérdése — a mérőszetten
-  viszont ennek a szűrőnek a legkisebb a hatása (max ΔE 5,0), ezért a
-  #687-ben nem került sorra.
+A `shadow` munkafüggvénye (`0x0090d3e0`) **három** elmosás-menetet futtat
+(`0x009dd0d0` ×3), majd a `0x0090d170` magot hívja. A mag dekompilált: a
+képpont SAJÁT és az ELMOSOTT kép világosságából (`L = 2R + 5G + B + 4`)
+számol súlyt, külön árnyék- és csúcsfény-ággal, a felezőponton (`0x400`)
+kapuzva. A két százalék-csúszka egészre skálázása viszont ismét az
+x87-veremen megy át — a mérés adta meg:
+
+| szorzó | „alap" (0,5/0,5) | „max" (1,0/1,0) |
+|---:|---:|---:|
+| ×128 | 2,9 | 5,6 |
+| **×256** | **0,52** | **0,53** |
+| ×384 | 2,75 | 5,11 |
+| ×512 | 4,0 | 7,4 |
+
+*(átlagos abszolút csatorna-eltérés; az érintetlen kép 5,61 és 11,25)*
+
+Vagyis **`súly = round(csúszka · 256)`**, ugyanaz a szorzó, mint a
+`colortemp` hideg↔meleg tengelyén. Végponttól végpontig a modell ΔE-je
+**0,58** és **0,59** a valódi Picasa-kimenethez.
+
+**Ami KÖZELÍTÉS marad: a Sugár csúszka leképezése.** A `filterdesc.xml`
+logaritmikusnak jelöli (`<log>250.0</log>`), de a mérés ezt **kizárja**: a 16
+képpontos és afölötti sugarak 5–10-szer rosszabbul illeszkednek. A tárolt
+értéket vesszük sugárnak (a `glow` mért mintája szerint, 4.2.5) — a szett két
+esete (0,5 és 1,0 tárolt sugár) viszont **ugyanott, egy közös ~1,6 képpontos
+optimum körül** illeszkedik legjobban, tehát a mérés a pontos leképezést nem
+dönti el. A különbség (ΔE 0,58 vs 0,27) a JPEG-zaj alatt van. A kalibráció a
+#317-ben fut.
+
+## 5.5 Ami nyitva maradt
+
 - **`triple`** — a bekötése a dekompilált burkolóból egyértelmű, de a
   mérőszett egyetlen esete paraméter nélküli (`triple=1,`), tehát azonosság:
   a leképezés **méréssel nincs igazolva**.
+- **`autocontrast`** — a modell a már meglévő csatornánkénti szinthúzás
+  (ugyanaz a natív mag, mint az `enhance`-é: a mérőszetten a Picasa bájtra
+  ugyanazt adta a kettőre). A mért illeszkedés **KÖZELÍTŐ** (ΔE 3,48 az
+  érintetlen 4,05-höz képest): a vágópontjaink nem pontosan azok, amiket a
+  Picasa választ. Ez viszont az `enhance` régi, önálló hiánya — nem a #687
+  hozta.
 - **`blur`, `colorfix`, `whitept`** — a mérőszetten maga a Picasa sem
   változtatott velük (ΔE ≤ 1,0). Ez NEM bizonyítja, hogy halottak: mindhármuk
   natív magja megvan (`0x0090cf60`, illetve `0x0090eda0`), és a `colorfix`/

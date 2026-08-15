@@ -85,6 +85,7 @@ _NOW_RENDERED_NAMES = (
     "contrast",
     "gamma",
     "backlight",
+    "shadow",
 )
 
 #: A 26-ból az, amelyik HALOTT legacy névnek bizonyult (#567): a natív
@@ -119,9 +120,9 @@ class TestAll26NamesCovered:
         # átkerült a renderelők közé, a `focalpixelate` pedig halott legacy
         # névnek bizonyult (#567)
         assert len(_NOOP_NAMES) == 5
-        assert len(_NOW_RENDERED_NAMES) == 14
+        assert len(_NOW_RENDERED_NAMES) == 15
         assert len(_DEAD_LEGACY_KEYS) == 1
-        assert len(_UNRENDERED_NAMES) == 6
+        assert len(_UNRENDERED_NAMES) == 5
         assert (
             set(_NOOP_NAMES)
             | set(_NOW_RENDERED_NAMES)

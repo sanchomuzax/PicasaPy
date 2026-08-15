@@ -2,8 +2,9 @@
 
 A #685 mérőszettje kimutatta, hogy nyolc olyan szűrőt, amit az eredeti
 Picasa ténylegesen végrehajt, mi NÉMÁN kihagytunk. Ezek a tesztek azt
-őrzik, hogy (a) a lánc immár renderel rájuk, (b) a paraméter-leképezés a
-dekompilált burkolókat követi, és (c) az öt tétlen bejegyzés jelölve van.
+őrzik, hogy (a) a lánc mind a nyolcra renderel, (b) a paraméter-leképezés a
+dekompilált burkolókat követi, és (c) a mérten tétlen bejegyzések jelölve
+vannak.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from picasapy.render.chain import (
 )
 from picasapy.render.native_colortemp import apply_native_colortemp
 from picasapy.render.native_tone import apply_native_contrast, apply_native_levels
+from picasapy.render.shadow_highlight import apply_shadow_highlight
 from picasapy.render.tone import apply_fill
 
 #: A #685-ben mérten ÉLŐ, de renderelő nélküli nyolc szűrő.
@@ -30,6 +32,7 @@ ELO_SZUROK = (
     "backlight=1,0.250000;",
     "gamma=1,0.161800;",
     "contrast=1,0.100000;",
+    "shadow=1,0.500000,0.500000,0.500000;",
     "autocontrast=1;",
 )
 
@@ -93,6 +96,15 @@ class TestParameterLekepezes:
         expected = apply_native_levels(apply_fill(sample, 0.5), 0.1, 0.76)
         assert np.array_equal(report.image, expected)
 
+    def test_shadow_csuszkai_a_regiszterbeli_sorrendben(self, sample):
+        report = apply_filters(
+            sample, parse_filters("shadow=1,0.500000,0.600000,0.300000;")
+        )
+        expected = apply_shadow_highlight(
+            sample, radius=0.5, shadow=0.6, highlight=0.3
+        )
+        assert np.array_equal(report.image, expected)
+
     def test_triple_deritofeny_majd_kontraszt(self, sample):
         # p0 = Fényerő, p1 = Kontraszt, p2 = Derítőfény
         report = apply_filters(
@@ -116,6 +128,10 @@ class TestAzonossagEsetek:
 
     def test_triple_csupa_nulla_valtozatlan(self, sample):
         report = apply_filters(sample, parse_filters("triple=1,0,0,0;"))
+        assert np.array_equal(report.image, sample)
+
+    def test_shadow_csupa_nulla_valtozatlan(self, sample):
+        report = apply_filters(sample, parse_filters("shadow=1,0,0,0;"))
         assert np.array_equal(report.image, sample)
 
     def test_backlight_nullan_valtozatlan(self, sample):

@@ -36,9 +36,9 @@ from picasapy.render.chain import KNOWN_UNRENDERED_OPS, apply_filters
 #: `radtint` a #565-ben. A regiszter viszont NEM ürült ki — a #382-es
 #: filterdesc-nevek még benne állnak, azokon marad a szerződés (felismerés +
 #: jelentés vizuális modell nélkül).
-#: #687: a `triple` is renderel (Derítőfény + kontraszt, a dekompilált
-#: burkolóból) — helyette a `shadow` a harmadik, még modell nélküli név.
-_STILL_UNRENDERED_KEYS = ("shadow", "colorfix", "rainbow")
+#: #687: a `triple` (és a `shadow`) is renderel — a még modell nélküli
+#: nevek a `colorfix`, a `rainbow`, a `blur` és a `whitept`.
+_STILL_UNRENDERED_KEYS = ("blur", "colorfix", "rainbow")
 
 
 @pytest.fixture

@@ -24,6 +24,7 @@ from picasapy.render.native_tone import (
     apply_native_levels,
 )
 from picasapy.render.ops import apply_autocontrast
+from picasapy.render.shadow_highlight import apply_shadow_highlight
 from picasapy.render.tone import apply_fill
 
 #: A `triple2` Fehérpont csúszkájának alapértéke a `filterdesc.xml` szerint.
@@ -83,6 +84,21 @@ def apply_backlight_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     implementáció, három belépési pont.
     """
     return apply_fill(image, _slider(op, 0))
+
+
+def apply_shadow_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`shadow=1,Sugár,Árnyék%,Kiemelés%` — `0x008f8ee0`.
+
+    `FUN_0090d3e0(csúszka0, csúszka1, csúszka2)`, vagyis a három csúszka a
+    regiszterbeli sorrendjében megy át. A Sugár leképezése KÖZELÍTÉS — ld.
+    `shadow_highlight.apply_shadow_highlight` docstringjét.
+    """
+    return apply_shadow_highlight(
+        image,
+        radius=_slider(op, 0),
+        shadow=_slider(op, 1),
+        highlight=_slider(op, 2),
+    )
 
 
 def apply_autocontrast_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
@@ -161,6 +177,7 @@ __all__ = [
     "apply_colortemp_op",
     "apply_contrast_op",
     "apply_gamma_op",
+    "apply_shadow_op",
     "apply_triple2_op",
     "apply_triple3_op",
     "apply_triple_op",

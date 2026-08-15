@@ -95,7 +95,7 @@ KNOWN_UNRENDERED_OPS = frozenset(
         # A regiszterben (`registry.py`) megvan a leírásuk, de vizuális
         # modellt (golden-mérés híján) még nem futtatunk rájuk.
         # `triple`, `triple2`, `triple3`, `autocontrast`, `colortemp`,
-        # `contrast`, `gamma`, `backlight` a #687-ben KIKERÜLT innen: a
+        # `contrast`, `gamma`, `backlight`, `shadow` a #687-ben KIKERÜLT innen: a
         # dekompilált burkolóikból (`natív-szűrők.c`) a csúszka →
         # munkafüggvény-argumentum leképezés egyértelmű, a munkafüggvények
         # pedig már megvoltak. A #685 mérőszettje mindegyiket igazolta
@@ -111,7 +111,6 @@ KNOWN_UNRENDERED_OPS = frozenset(
         # `dir_sharp` rámpa-horgonya KÖZELÍTÉS — ld. a két `apply_*`
         # docstringjét; a kalibráció a #317-ben fut.
         "blur",
-        "shadow",
         "whitept",
         "debug",
     }
@@ -545,6 +544,7 @@ _HANDLERS = {
     "gamma": native.apply_gamma_op,
     "colortemp": native.apply_colortemp_op,
     "backlight": native.apply_backlight_op,
+    "shadow": native.apply_shadow_op,
     "autocontrast": native.apply_autocontrast_op,
     "triple": native.apply_triple_op,
     "triple2": native.apply_triple2_op,
