@@ -487,6 +487,15 @@ ApplicationWindow {
     // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
     header: MainToolbar {
         id: toolbar
+        // #741/4: a nézőben (és így a szerkesztőben) NINCS alkalmazás-szintű
+        // eszköztár. A binárisban a szerkesztő felső 40 képpontos sávjában
+        // egyetlen elem van, az `editpanel/albumview` („Vissza a
+        // könyvtárhoz", 122 × 22) — az nálunk már megvan a
+        // `PhotoViewer.qml`-ben. Az Importálás+kereső sáv itt csak lefelé
+        // tolta az egész panelt, és ezzel a mért geometria sem jöhetett ki.
+        // A tulajdonosi döntés (`docs/decisions/szerkeszto-bal-panel.md`):
+        // a felület PONTOSAN az eredetit kövesse.
+        visible: !window.viewerOpen
         onSearchEdited: function(text) {
             window.clearSelection()
             controller.search(text)
