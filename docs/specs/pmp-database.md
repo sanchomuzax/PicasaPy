@@ -228,6 +228,10 @@ m_pinkyThumbs · m_thumbs · m_bigThumbs · m_previewThumbs
 és ugyanitt a fájlnevek: `thumbs.db`, `thumbs2.db`, `bigthumbs.db`,
 `previews.db` (mellettük `albums.db`, `facetemplatesV2.db`).
 
+> ⚠️ **A két felsorolás sorrendje NEM ugyanaz** — a tagnév↔fájlnév párosítást
+> az objektum-eltolásokból kell venni, ld. lent („A visszaesési sorrend").
+> A `thumbs2.db` a **legkisebb** szint (`m_pinkyThumbs`, 72 px).
+
 ### A méretek — VALÓDI adatbázisból mérve
 
 A tulajdonos 2025-12-24-i Picasa-mentése (`picasa-app-settings-backup`,
@@ -266,7 +270,75 @@ méretek nem önkényesek: a 72/144/288 duplázás azt jelenti, hogy a kisebb
 szint a nagyobbikból **pontos felezéssel** előállítható — ez a szintek közti
 generálást is olcsóvá teszi.
 
-**Nyitva marad:** melyik nézet melyik szintet kéri (a rács kicsi/nagy
-bélyegkép-kapcsolója, a tálca, a szerkesztő szalagja), és mi a szintek
-közötti visszaesési sorrend, ha egy szint hiányzik. Ehhez a bélyegkép-kérő
-út visszakövetése kell — a jelen körben nem érintettük.
+### A visszaesési sorrend — a kérő útvonalról (2026-08-15)
+
+A négy tároló az adatbázis-objektum **fix eltolásain** ül. A párosítást két,
+egymástól független hely adja meg a `0x00415790`-en belül: a konstruktorhívások
+sora köti az eltolást a **fájlnévhez**, a nyomkövető címkék pedig ugyanazt az
+eltolást a **tagnévhez**.
+
+| eltolás | tagnév (címke) | fájl | méret | a címkézés címe |
+|---|---|---|---|---|
+| `+0x2178` | `m_thumbs` | `thumbs.db` | 144 px | `0x00416ea2` |
+| `+0x2224` | `m_pinkyThumbs` | `thumbs2.db` | **72 px** | `0x0041731d` |
+| `+0x22d0` | `m_bigThumbs` | `bigthumbs.db` | 288 px | `0x00416fc1` |
+| `+0x237c` | `m_previewThumbs` | `previews.db` | 640 px | `0x004170e0` |
+
+A konstruktorhívások: `0x00415ab1`–`0x00415ae6` (mind a négy a `0x006b5d40`-et
+hívja, csak a nevet átadva). Figyelem: a **`thumbs2.db` a KISEBB** („pinky",
+72 px), nem a második legnagyobb — a fájlnév sorszáma nem a szint sorrendje.
+
+**A négy tagot mindössze 8 függvény érinti** az egész binárisban (a
+`.text` teljes végigdiszasszemblálásával, az eltolásokra keresve).
+
+#### Két, egymástól független visszaesési lánc
+
+**Kis szintek** (`0x00425f60`, a bélyegkép-kérő fő munkafüggvénye):
+
+```
+m_thumbs (144)          0x00428340 — ha megvan, kész (jne 0x428399)
+  → köztes lépés        0x00428382 (azonosítatlan, nem a négy tár egyike)
+  → m_pinkyThumbs (72)  0x0042840d — a je 0x428403 ágon
+```
+
+**Nagy szintek** (`0x00425df0`, 355 bájt — ez a teljes függvény):
+
+```
+m_bigThumbs (288)       0x00425e2b — ha megvan, kész
+  → m_previewThumbs     0x00425e80 — a 640-es szint
+  → forrásból dekódolás 0x00425eae ([obj+0xf8] → 0x00506830)
+```
+
+Az aszimmetria valós: a **nagy** ág fölfelé esik vissza (a 288 hiányában a
+640-ből kicsinyít, végül az eredeti fájlból dekódol), a **kis** ág lefelé
+(a 144 hiányában a 72-t nagyítja). A nagy ág bemenetére a `0x00428754`-en
+tartomány-ellenőrzés is fut a previews-tár indexére.
+
+#### A 72 vs. 144 választás egy logikai kapcsoló
+
+A `0x004290e0` **harmadik argumentuma** dönti el, melyik kis szint kell —
+nem a kért képpontméret:
+
+```asm
+0x00429123  cmp  byte ptr [esp + 0xa54], al   ; a 3. argumentum
+0x0042912d  lea  ecx, [ebp + 0x2224]          ; pinky (72)
+0x00429133  jne  0x42913b
+0x00429135  lea  ecx, [ebp + 0x2178]          ; thumbs (144)
+0x0042913b  call 0x6b6a50
+```
+
+*Bizonyítottsági fok: megerősített* (az eltolás↔fájlnév↔tagnév párosítás és
+a két elágazás-lánc közvetlenül visszakövetve) · **nyitott**: hogy a fenti
+kapcsolót MELYIK felületi vezérlő állítja. A jelző a hívón (`0x004246e9`) is
+csak továbbadott paraméter (`[ebp+0x10]`), nem itt születik. A főablak
+elrendezésében ott van a `largethumbs` / `smallthumbs` gombpár
+([`picasa-fo-ablak-elrendezes.md`](picasa-fo-ablak-elrendezes.md)), ami
+kézenfekvő jelölt, de **ezt nem igazoltuk**.
+
+#### Módszertani megjegyzés
+
+A „ki nyúl ehhez a tagmezőhöz?" kérdésre a bináris-index nem válaszol (az
+`xrefs` függvényhívásokat és adathivatkozásokat tart nyilván, nem
+struktúra-eltolásokat). A `.text` teljes végigdiszasszemblálása az eltolásokra
+keresve viszont **1,4 másodperc** helyben (`capstone` + `pefile`), és
+mind a 8 érintett függvényt megadja. Általánosan használható fogás.
