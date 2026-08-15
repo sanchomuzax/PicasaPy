@@ -202,6 +202,113 @@ megvan 4 csúszkával (`finetuneColumn`, `EditorPanel.qml` 404–520. sor),
 csak a pipetta-eszköz hiányzik. Ez a fül tehát nem effekt-hiány, hanem
 más jellegű — nem szerepel a fenti 36-os számban.)*
 
+## 2.9 A szerkesztő bal panelje — a BINÁRISBÓL, képpontra (2026-08-15)
+
+**Nem képernyőkép-mérés.** A `respack.yt` minden rétegrekordja 13 bájtos
+fejléccel indul, és abban ott a téglalap (`int16 x0, y0, x1, y1` —
+[`picasa-respack-format.md`](picasa-respack-format.md) 3. szakasz). Ez a
+Picasa saját, beégetett elrendezése. Kinyerés:
+
+```python
+import sys; sys.path.insert(0, "tools/picasa"); import respack
+adat = open("research/copy_Picasa_3_7/Picasa3/runtime/respack.yt", "rb").read()
+for e in respack.read_index(adat):
+    if not e.is_tre:
+        r = respack.decode_layer(adat, e)   # r.x0, r.y0, r.x1, r.y1
+```
+
+### A panel váza
+
+| elem | téglalap | méret |
+|---|---|---|
+| `editpanel/albumview` („Vissza a könyvtárhoz") | x 10..132, y **9..31** | 122 × 22 |
+| `editpanel/tabs` (a fülsáv) | x 3..279, y **45..70** | 276 × **25** |
+| `editpanel/edittabbase` · `editcontrols` · `fxthumbs` | x **3..279**, y 40..391 | **276** × 351 |
+| `editpanel/tabpanel1` (az 1. fül lapja) | x 3..276, y 79..356 | 273 × 277 |
+| `editpanel/insetleft` (a képnézet bal széle) | x **280**..800 | — |
+
+**A bal panel tartalom-oszlopa tehát 276 képpont, a képnézet x = 280-nál
+kezdődik.** Ez egybevág a `.tre` `LEFTDRAWEROFFSET` alapértékével (**279**,
+`editpanel.tre` `toggle_left_drawer` és `insetleft`).
+
+> A „Vissza a könyvtárhoz" gomb a felső **0–40 px**-es sávban ül, és
+> **rajta kívül semmi más nincs ott**. A szerkesztőben az eredeti Picasa
+> nem tart fenn alkalmazás-szintű eszköztárat.
+
+### ÖT fül, amik pontosan kitöltik a panelt
+
+| fül | x | szélesség |
+|---|---|---|
+| `tab1` | 3..58 | 55 |
+| `tab2` | 58..113 | 55 |
+| `tab3` | 113..169 | 56 |
+| `tab4` | 169..224 | 55 |
+| `tab5` | 224..279 | 55 |
+
+**5 × 55 = 275 ≈ a 276 px-es sáv.** A fülek hézag nélkül, pontosan
+kitöltik a panelt — a fülek száma tehát nem szabadon bővíthető: hatodik
+fültől vagy a fülek zsugorodnak, vagy a panel szélesedik.
+
+### Az 1. fül („Gyakori javítások") csempe-rácsa
+
+Mind a nyolc eszközgomb **44 × 30 képpont**:
+
+| sor | y | elemek (x = 37 · 118 · 198) |
+|---|---|---|
+| 1. | **91..121** | `crop` · `horizonadjust` · `redeye` |
+| 2. | **155..186** | `enhance` · `autolighting` · `autocolor` |
+| 3. | **223..253** | `retouch` · `edittext` · `picnik` |
+
+- **oszlopköz: 81 px** (37 → 118 → 198)
+- **sorköz: 64, illetve 68 px** (91 → 155 → 223)
+- a felirat külön elem, a csempe ALATT (`m_buttonfontCbelow`,
+  `YConstraint 0, 1, 0`)
+
+### A Derítőfény-sor
+
+| elem | téglalap | méret |
+|---|---|---|
+| `filllight_icon` | x 37..81, y **290..320** | 44 × 30 |
+| `filllightlabel` | x 94..235, y **283..297** | 141 × 14 |
+| `backlight_container` (a csúszka) | x 101..228, y **294..321** | **127** × 27 |
+
+A kis kép **ugyanakkora, mint egy eszközcsempe** (44 × 30), és a
+csempe-rács első oszlopával **azonos x-en** áll (37). A felirat és a csúszka
+tőle jobbra, egymás alatt.
+
+### Visszavonás / Újra
+
+`filter_undo` x 7..139, `filter_redo` x 144..276, mindkettő y **361..389** —
+**132 × 28** képpont, 5 px hézaggal, a panel teljes szélességét kitöltve.
+
+### Keresztellenőrzés: a 3–5. fül rácsa
+
+A bináris ugyanazt adja, amit a 3.2 szakasz képernyőképből mért:
+`fxlabel1..12` x = 9 / 97 / 185 (**szélesség 86, osztásköz 88**),
+y = 158 / 229 / 300 / 371 (**osztásköz 71**). A két, egymástól független
+módszer **betűre egyezik** — a 3.2 mérés ezzel megerősítve.
+
+*Bizonyítottsági fok: megerősített* (a bináris erőforráscsomag
+rétegtéglalapjai).
+
+### Eltérés a PicasaPy-tól — a bal sáv „szétesésének" okai
+
+| # | jellemző | eredeti (bináris) | PicasaPy | hol |
+|---|---|---|---|---|
+| 1 | **fülek száma** | **5** | **7** | `EditorTabBar.qml` — 7 db `EditTabButton` |
+| 2 | **eszközcsempe sorköze** | **64–68 px** | **104 px** (94 + 10) | `ToolTile.qml:43` `preferredHeight: 94`, `EditorTabCommonFixes.qml` `rowSpacing: 10` |
+| 3 | csempe-kép mérete | **44 × 30** | 54 × 36 | `ToolTile.qml` |
+| 4 | oszlopköz | **81 px** | ≈ 82 px | — **ez stimmel** |
+| 5 | felső sáv a szerkesztőben | **nincs** (csak a 122 × 22-es „Vissza a könyvtárhoz") | a `MainToolbar` (Importálás + kereső) végig látszik | `Main.qml` `header: MainToolbar` |
+
+**A függőleges nyúlás fő oka a 2. sor:** három csempesor × 40 px többlet
+≈ **120 képpont**, amit a panel aljáról vesz el — ezért csúszik szét a
+Derítőfény-sor és a gombok.
+
+A 3–5. effekt-fül rácsa ezzel szemben **már jó** (`EditorEffectsTab1.qml`,
+`columnSpacing: 2`, `rowSpacing: 2`, csempe 86 — a #704-ben a mért értékekre
+állítva). Az 1. fül egyszerűen kimaradt abból a körből.
+
 ## 3. Az effekt-csempe rács (3–5. fül) — pixelre mért felépítés
 
 Forrás: `research/testdata/screenshot/2026-07-17 20 56 45.png` (3. fül),
