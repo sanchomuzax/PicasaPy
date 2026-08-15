@@ -1,0 +1,29 @@
+{
+ "_megjegyzes": "Ismert, MÉG NEM JAVÍTOTT elrendezés-sértések (#656/1). Az őr csak az ÚJAKRA bukik el, hogy bevezethető legyen a meglévő hibák javítása nélkül. Minden bejegyzéshez tartozzon jegyszám; ha a jegy lezárul, a bejegyzést innen TÖRÖLNI kell, különben a regressziót elnyeli.",
+ "sertesek": [
+  {
+   "kind": "overflow",
+   "item": "toolsColumn",
+   "parent": "editorTabArea",
+   "other": null,
+   "jegy": "#659",
+   "megjegyzes": "10 képponttal lóg le a fül-területről, mindhárom mért oszlopszélességnél (260/280/340)"
+  },
+  {
+   "kind": "overflow",
+   "item": "<QQuickRectangle>",
+   "parent": "fixesFillSlider",
+   "other": null,
+   "jegy": "#659",
+   "megjegyzes": "a csúszka belső eleme 5 képponttal lelóg, mindhárom szélességnél"
+  },
+  {
+   "kind": "overflow",
+   "item": "<QQuickText>",
+   "parent": "editToolEnhance",
+   "other": null,
+   "jegy": "#659",
+   "megjegyzes": "a gomb felirata 4,2 képponttal lelóg 260 képpontos oszlopnál (szélesebbnél nem)"
+  }
+ ]
+}

@@ -1,4 +1,4 @@
-"""Effekt-paraméterek a csúszkás alpanelhez (#316, #516).
+"""Effekt-paraméterek a csúszkás alpanelhez (#316, #516, #600).
 
 Az eredeti Picasában a paraméteres effekt gombja nem alkalmaz azonnal: egy
 alpanel nyílik, ahol csúszkákkal/jelölőnégyzetekkel/színválasztókkal
@@ -14,6 +14,18 @@ a `filters=` lánc tényleges POZÍCIÓ-sorrendje (`chain_glimmer_handlers.py`
 "numerikusok max 3 → színek → maradék numerikus → jelölők" szabálya szerint
 gyakran ELTÉR a 4.2 deklarációs sorrendtől (pl. `Sixties`: a 4.2-ben
 "Rounded, Outer, Fade", az ini-ben "Fade, Outer, Rounded").
+
+A vezérlők FELIRATA (#600) a Picasa saját szótárából való: a
+`Picasa3i18n.dll` `ImageFilters` osztálya 69 vezérlő-feliratot tartalmaz, 41
+nyelven — a leképezés a `docs/specs/picasa-effekt-feliratok.md`. Több eredeti
+elnevezés NEM magától értetődő (a `Blur` kulcs felirata „Size" = Méret, a
+`Smoothing`-é „Detail" = Részletek, a `Steps`-é „Number of Colors" = Színek
+száma), ezért a feliratot kitalálni tilos: a felhasználó a régi programból
+ezeket a szavakat ismeri. Ahol a vezérlő-KÉSZLETÜNK maga tér el az
+eredetitől (`pencilsketch`, `comicize`, `neon`, `soften`, `focalzoom`,
+illetve a nem-Glimmer örökölt szűrők: `radblur`, `radsat`, `dir_tint`,
+`tint`), ott a felirat sem vezethető le — ezek a #600 jegyben külön fel
+vannak sorolva, és saját munkára várnak.
 
 Amit tudatosan KIHAGYUNK (ld. a #516 jegy jelentése):
 - a **festhető maszk / ecset** effektek (`ReanimatedEyeColor`, `Soften`,
@@ -123,7 +135,7 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("shade", "Shade", 0.0, 1.0, 0.5, 0.01),
     ),
     # --- 5. fül: művészi effektek — egyezők (nincs teendő, #516) ------------
-    "boost": (_p("strength", "Strength", 0.0, 100.0, 50.0),),
+    "boost": (_p("strength", "Impact", 0.0, 100.0, 50.0),),
     "soften": (
         _p("amount", "Amount", 0.0, 100.0, 50.0),
         _p("radius", "Radius", 0.0, 100.0, 50.0),
@@ -160,7 +172,7 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     "dropshadow": (
         _p("distance", "Distance", 0.0, 30.0, 4.0),
         _p("angle", "Angle", 0.0, 360.0, 90.0),
-        _p("blur", "Blur", 0.0, 100.0, 10.0),
+        _p("blur", "Size", 0.0, 100.0, 10.0),
         _color("shadow_color", "Shadow Color", "#000000"),
         _color("background_color", "Background Color", "#ffffff"),
         _p("fade", "Fade", 0.0, 100.0, 30.0),
@@ -186,17 +198,17 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     ),
     # Vignette: Blur, Strength, Fade, Color
     "vignette": (
-        _p("blur", "Blur", 0.0, 50.0, 35.0),
+        _p("blur", "Size", 0.0, 50.0, 35.0),
         _p("strength", "Strength", 1.0, 2.0, 1.4, 0.05),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
-        _color("color", "Color", "#000000"),
+        _color("color", "Vignette Color", "#000000"),
     ),
     # Matte: Blur, Strength, Fade, Color — a Vignette motorja fehér színnel
     "matte": (
-        _p("blur", "Blur", 0.0, 50.0, 40.0),
+        _p("blur", "Size", 0.0, 50.0, 40.0),
         _p("strength", "Strength", 1.0, 2.0, 1.2, 0.05),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
-        _color("color", "Color", "#ffffff"),
+        _color("color", "Matte Color", "#ffffff"),
     ),
     # HDR: Radius, Contrast, Fade
     "hdr": (
@@ -217,13 +229,13 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     ),
     # Holga: Blur, Grain, Fade
     "holga": (
-        _p("blur", "Blur", 0.0, 100.0, 70.0),
+        _p("blur", "Size", 0.0, 100.0, 70.0),
         _p("grain", "Grain", 0.0, 100.0, 30.0),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
     # Lomo: Blur, Fade
     "lomo": (
-        _p("blur", "Blur", 0.0, 100.0, 50.0),
+        _p("blur", "Size", 0.0, 100.0, 50.0),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
     # IR: Fade
@@ -243,8 +255,8 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     ),
     # QuantizePalette: Steps, Smoothing, Fade
     "quantizepalette": (
-        _p("steps", "Steps", 2.0, 30.0, 8.0),
-        _p("smoothing", "Smoothing", 0.0, 100.0, 80.0),
+        _p("steps", "Number of Colors", 2.0, 30.0, 8.0),
+        _p("smoothing", "Detail", 0.0, 100.0, 80.0),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
     # TwoTone: Brightness, Contrast, Fade, BlackColor, WhiteColor
@@ -252,8 +264,8 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("brightness", "Brightness", -95.0, 95.0, 0.0),
         _p("contrast", "Contrast", 0.0, 100.0, 20.0),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
-        _color("black_color", "Black Color", "#004488"),
-        _color("white_color", "White Color", "#ffff00"),
+        _color("black_color", "First Color", "#004488"),
+        _color("white_color", "Second Color", "#ffff00"),
     ),
     # RoundedEdges: CornerRadius, OuterColor
     "roundededges": (
@@ -265,7 +277,7 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     "sixties": (
         _p("fade", "Fade", 0.0, 100.0, 20.0),
         _color("outer_color", "Outer Color", "#ffffff"),
-        _checkbox("rounded", "Rounded", default=True),
+        _checkbox("rounded", "Rounded Corners", default=True),
     ),
     # PicnikGrain: Grain, Lighten (checkbox)
     "picnikgrain": (

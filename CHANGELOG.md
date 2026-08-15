@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.49] – 2026-08-15
+
+### Javítva
+- **A Melegítés effekt mostantól pixelpontosan az eredeti (#611).** Eddig egy
+  közelítő görbe adta a meleg tónust; kiderült, hogy az eredeti program itt
+  nem számol semmit, hanem egy beégetett, 256 elemű táblából olvas. A táblát
+  kinyertük a programból, így a Melegítés eredménye **bitre azonos** azzal,
+  amit a régi Picasa ad — a hatás a negyed- és középtónusban a legerősebb, a
+  fehérpontot pedig enyhén lehúzza, ettől filmes és nem rikító.
+
 ## [0.7.48] – 2026-08-14
 
 ### Javítva
