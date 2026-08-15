@@ -24,7 +24,7 @@ Eddig ezt a fájlt csak „létezik" szinten említette a
 | `unsharp` v1 ↔ `unsharp2` | ugyanaz az „Amount", csak a v1 felső korlátja **1,0**, a v2-é **3,0** |
 | `tilt` 2. paramétere | a v1-kompatibilitás miatt fenntartott, **letiltott** (`enable="0"`) csúszka |
 | miért ír a Picasa néha tizedesjegy nélküli `0`-t | a **jelölőnégyzetek** egész számként szerializálódnak |
-| `tint` színparaméter-anomália (Nyitva 4) | `tint` = `colorwheel version="0"`, `ansel` = `version="1"` — **két külön színkódolás** |
+| `tint` színparaméter-anomália (Nyitva 4) | ~~`colorwheel version` = két külön színkódolás~~ — **MEGCÁFOLVA (2026-08-15)**: a `dir_tint`/`radtint` is `version="0"`, mégis 8 hex jegyet ír |
 
 ## 1. Fájlszerkezet
 
@@ -218,11 +218,15 @@ alapértékei (0,25 / 0,25) pontosan a `filterdesc.xml` `default` értékei —
 a csúszkanevek tehát ezzel a sorrenddel egyeznek.
 
 **Színformátum-figyelmeztetés:** a `tint` `ffff` (4 hex), az `ansel` és a
-`dir_tint` `ffffffff` (8 hex). A két szűrő `colorwheel` **verziója
-különbözik** (`version="0"` vs `version="1"`) — ez a legerősebb eddigi nyom
-a `filters-decoded.md` „Nyitva 4" (tint R=0 anomália) ügyében: a v0-s
-színkerék más kódolással ír. A parszernek **változó hosszú** hex-színt kell
+`dir_tint` `ffffffff` (8 hex). A parszernek **változó hosszú** hex-színt kell
 elfogadnia.
+
+> ~~A `colorwheel` verziókülönbsége (v0 vs v1) magyarázza a hex-hosszt.~~
+> **MEGCÁFOLVA (2026-08-15):** a fenti táblázat szerint a `dir_tint` és a
+> `radtint` **is `version="0"`**, mégis 8 jegyet ír. A `version` és a
+> hex-hossz nem korrelál. A legvalószínűbb magyarázat prózai: az író
+> **elhagyja a vezető nullákat**. Részletek és a színkezelés-lelet:
+> [`filters-decoded.md`](filters-decoded.md), `tint` szakasz.
 
 ## 4. Glimmer-effektek — a teljes csővezeték
 

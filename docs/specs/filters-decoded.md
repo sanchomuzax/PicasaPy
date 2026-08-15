@@ -1332,7 +1332,7 @@ bizonyíték:
 Tehát: **R = (szin>>16)&0xff, G = (szin>>8)&0xff, B = szin&0xff.** A `mx`/`sum`
 képletekre ez nem hat (szimmetrikusak), az ini-beolvasásra viszont igen.
 
-#### A `colorwheel version="0"` vs `="1"` — NEM verzió, hanem sorszám
+#### A `colorwheel version="0"` vs `="1"` — nem a színkódolás különbsége
 
 Az `editpanel.tre` elrendezés-erőforrás és az `editpaneltext.tre` feliratai
 eldöntik: a szerkesztőpanelen **két színválasztó kerék** van,
@@ -1342,17 +1342,25 @@ körkörös csúszka (`Property buddy`) és saját felirat — **mindkettő szö
 „Pick Color"**. A kódban a névsablon `editpanel/colorwheel%d`
 (`0x00c86f2c`, hivatkozók közt `0x007518e0`, `0x005fa770`).
 
-A `filterdesc.xml` `version` attribútuma tehát azt mondja meg, **melyik
-kerékhez** kötődik a paraméter, nem azt, hogy más a szín kódolása. Az
-`ytColorWheelNode` visszafejtett slotjai (`0x00a63280`, `0x00a63340`,
-`0x00a64c20`, `0x00a61f90`) mind **elrendezés és találatvizsgálat**, sehol
-nincs kerék-koordináta → RGB leképezés — összhangban ezzel.
+**A döntő cáfolat viszont a saját adatunkból jön**, nem a keresésből: a
+[`filterdesc-registry.md`](filterdesc-registry.md) 3. táblázata szerint a
+`dir_tint` és a `radtint` **szintén `version="0"`**, és mindkettő **8 hex
+jegyet** ír (`ffffffff`) — ugyanúgy, mint a v1-es `ansel`. A `version` és a
+hex-hossz tehát **nem korrelál**; a „v0 = más színkódolás" feltevés a saját
+mérési adatunkon bukik el. *Bizonyítottsági fok: megerősített (cáfolat).*
 
-**Ezzel elesik a korábbi legerősebb nyomunk a `tint` `ffff`-anomáliájára**
-(fentebb, a „két külön színkódolás" feltevés): a `version` nem színkódolás.
-A négy hex jegy magyarázatát máshol kell keresni (valószínűbb: rövidebb,
-16 bites írásformátum az ini-ben).
-*Bizonyítottsági fok: megerősített* (erőforrás-szöveg + kódbeli névsablon).
+Amit **helyette** valószínűsítünk, de nem bizonyítottunk: a `version` a
+**vezérlő-példány sorszáma** (0 vagy 1) — ezt támogatja, hogy a panelen
+pontosan két kerék van, a `filterdesc` külön elemtípust használ a
+színkorongra (`<colorcircle id="0"/>`), és hogy az `ytColorWheelNode`
+visszafejtett slotjai (`0x00a63280`, `0x00a63340`, `0x00a64c20`,
+`0x00a61f90`) mind **elrendezés és találatvizsgálat** — sehol nincs
+kerék-koordináta → RGB leképezés. *Bizonyítottsági fok: feltételes.*
+
+**Következmény:** a `ffff` magyarázatát máshol kell keresni. A legvalószínűbb
+prózai ok: az író **elhagyja a vezető nullákat** (`0x0000ffff` → `ffff`), és
+a `tint` alapértelmezett színe tényleg R=0 (ciános). Ezt **golden-párral**
+kell eldönteni, nem kódolvasással (#679).
 
 #### Ami továbbra is nyitott
 
