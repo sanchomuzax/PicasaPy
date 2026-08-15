@@ -421,6 +421,16 @@ jobbra:
 
 ## 5. Alsó tálca (kijelölés-tálca)
 
+> 📐 **Az alábbi 5.1 képernyőképből készült, és a kép 1030 px-nél levágva —
+> a tálca alsó pereme nem látszik.** A pontos geometriát azóta a Picasa saját
+> elrendezés-forrása adja meg:
+> [`picasa-fo-ablak-elrendezes.md`](picasa-fo-ablak-elrendezes.md) →
+> „Az alsó sáv — `basecontrolset`" (#455). Ahol a kettő eltér, **a forrás az
+> igazság**. A legfontosabb, amit a képernyőkép nem adott meg:
+> a sáv a **36,5 %-os osztópontnál** válik ketté (bal oldalt a tálca), a
+> bélyegképsor jobbján **50 px** van fenntartva a három gombnak, és a zöld
+> feltöltés-gomb **fix 145 px**.
+
 ### 5.1 Eredeti
 
 Két rétegű sáv a rács alatt (`145027.png`, y≈930-tól a kép aljáig, a
