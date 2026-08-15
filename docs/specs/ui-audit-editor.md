@@ -316,3 +316,205 @@ külön auditot érdemel, itt csak jelzésként szerepel.
    kulcsnevekről). Egy következő screenshot-kör, amely mind az 5 fület
    megnyitva mutatja (különösen a 4–5. effekt-fül gombrácsát és a
    Finomhangolás csúszkáit), tovább pontosítaná ezt a dokumentumot.
+
+## 7. Az effekt-paraméter alpanel (csúszkás alpanel) — #700
+
+**Utólagos kiegészítés (2026-08-15, #700).** Az 1–6. szakasz erre a panelre
+**nem terjedt ki**: a fülrendszer, az effekt-leltár és a vágás-panel után a
+csúszkás alpanelről egyetlen sor sem volt itt. Emiatt az eltéréseit csak
+felhasználói szemrevételezés találta meg. Ez a szakasz pótolja a hiányt.
+
+**A forrás itt más és jobb, mint az 1–6. szakaszban.** Az eredeti felület
+elrendezése nem képernyőképről olvasva, hanem a telepítés saját
+erőforrásaiból nyerhető ki:
+
+| Jelölés | Forrás |
+|---|---|
+| ▶**ERŐFORRÁS** | `runtime/respack.yt` rétegleltára és kicsomagolt bitképei (`tools/picasa/respack.py`), a benne lévő `tre:editpanel` / `tre:editpaneltext` / `tre:macros` / `tre:fontmacros_win` elrendezés-források, valamint `runtime/filterdesc.xml` |
+| ▶**SZÓTÁR** | a `Picasa3i18n.dll` szövegkorpusza (`referencia/stringres-en-hu.tsv`, ld. `docs/specs/picasa-effekt-feliratok.md`) |
+| ▶**KÉP** | a bejelentő #700-as képernyőképe az eredeti magyar Picasa Holga-paneléről (a repóban nincs benne — személyes tartalom) |
+
+### 7.1 A panel címe (`editpanel/filter_name`)
+
+▶**ERŐFORRÁS.** A `tre:editpanel` a címet önálló szövegrétegként veszi fel:
+
+```
+editpanel/filter_name: editpanel/edittabbase
+m_offsetLT
+m_hidden
+m_displayfont18_Reg
+```
+
+Amit ez kimond:
+
+- a szülő az `editpanel/edittabbase`, ami a rétegleltárban sima
+  `layer:editpanel/rect` — tehát a cím a panel háttere **fölött** ül,
+  nincs alatta külön kiemelt fejléc-sáv;
+- `m_offsetLT` (`tre:macros`) = bal-felső horgony → a cím **balra
+  igazított**;
+- `m_displayfont18_Reg` (`tre:fontmacros_win`) = *Praxis LT Regular*,
+  **18 képpont, fontweight 400** → nagyobb, de **nem félkövér** szedés.
+
+A cím SZÖVEGE a szűrő `filterdesc.xml`-beli `<label>`-je, honosítva:
+
+```xml
+<filter id="Holga" mode="effect" zerostate="none" fullres="1" slow="1">
+  <label>Holga-ish</label>
+```
+
+▶**SZÓTÁR:** `filter_Holga_label0` → `Holga-ish` / **`Holga-szerű`**. Vagyis
+a panel címe ugyanaz az emberi név, ami az effekt csempéjén is szerepel —
+és **soha nem** a `filters=` lánc belső kulcsa (`holga`).
+
+### 7.2 A vezérlő-terület (`editpanel/editcontrol_well`) leltára
+
+▶**ERŐFORRÁS.** A `respack.yt` rétegleltárában az `editcontrol_well` alatt
+pontosan ez a készlet szerepel:
+
+| Réteg | Darab | Mi ez |
+|---|---|---|
+| `editslider1..4_container` | 4 | a csúszkák (legfeljebb négy) |
+| `editlabel1..4` | 4 | a csúszkák feliratai |
+| `editcheckbox1..2` + `editlabel5..6` | 2+2 | jelölőnégyzetek és feliratuk |
+| `colorwheel0..1` + `colorwheel_label0..1` + `slidercircle0..1` | 2+2+2 | színválasztók |
+| `eraserbutton` | 1 | radír (retusálás) |
+
+**Numerikus érték-kijelző réteg NINCS** — sem `editvalue*`, sem hasonló. Ez
+nem szemrevételezés, hanem a teljes rétegleltár: az eredeti panel a
+csúszka melletti **számot egyáltalán nem jeleníti meg**.
+
+### 7.3 A csúszka-feliratok igazítása
+
+▶**ERŐFORRÁS.** Az `editlabel1..4` stílusa `m_fxlabel2`, ami a
+`tre:fontmacros_win`-ben:
+
+```
+#define m_fxlabel2
+Property fontname Praxis Semi Bold/Heavy
+Property fonttrack -1
+Property fontsize 12
+Property fontweight 400
+Property textalign center
+```
+
+A `textalign center` **kimondott bizonyíték**: a csúszka-feliratok
+**középre igazítottak**, nem balra.
+
+▶**KÉP + ERŐFORRÁS.** A felirat a csúszka **fölött** áll. A képernyőkép ezt
+mutatja; erőforrás-oldali megerősítés a szomszédos vezérlő-fajta, ahol a
+címke-pozíció explicit is szerepel — a színválasztó felirata 15 képponttal
+a vezérlő fölé kerül:
+
+```
+editpanel/colorwheel_label0: editpanel/colorwheel0
+m_fxlabel2
+m_centerX
+YConstraint 0, 0, -15
+```
+
+A csúszka maga vízszintesen **középre** ül a területben
+(`editpanel/editslider1_container: … m_centerXY`).
+
+### 7.4 A gombsor: „Apply" / „Cancel"
+
+▶**ERŐFORRÁS.** A két gomb helye számszerűen adott a `tre:editpanel`-ben:
+
+```
+editpanel/ok: editpanel/editcontrol_well
+m_buttontypecolor
+XConstraint 0.5, 0.5, -52
+…
+editpanel/cancel: editpanel/editcontrol_well
+m_buttontypecolor
+XConstraint 0.5, 0.5, 52
+```
+
+Az `XConstraint 0.5, 0.5, ±52` a terület vízszintes **közepéhez** köti
+mindkét gombot, szimmetrikusan ±52 képponttal — a gombsor tehát
+**középre igazított**, nem a bal szélhez tapasztott.
+
+A feliratok a `tre:editpaneltext`-ből (angol forrásszöveg):
+
+```
+Label editpanel/ok            → Apply
+Tooltip editpanel/ok          → Apply Changes
+Label editpanel/cancel        → Cancel
+Tooltip editpanel/cancel      → Cancel Changes
+```
+
+A gomb-sablon `button_text_LC` (`m_buttonfontLC`: *Praxis Semi
+Bold/Heavy* 12 px, függőlegesen középen; szövegszín `CC000000`), az ikon
+pedig `m_buttoniconright` = a gomb **jobb széléhez** −9 képpontra,
+függőlegesen középen.
+
+**Az ikonok kicsomagolva** (`respack.py png`), 15×15 képpont mindkettő:
+
+| Réteg | Kép | Domináns szín |
+|---|---|---|
+| `editpanel/ok_icon` | tömör kör, benne fehér **pipa** | **`#4E904A`** zöld |
+| `editpanel/cancel_icon` | tömör kör, benne fehér **X** | **`#524BA1`** indigó |
+
+**Helyesbítés a 3. szakaszhoz.** A vágás-panelről a 3. szakasz „sötétvörös
+X-ikon"-t írt — az képernyőképről olvasott benyomás. Az erőforrás szerint
+az ikon **kékes-lila (indigó)**, nem vörös; és ugyanaz a két bitkép
+szolgálja ki a vágás-, retusálás- és vörösszem-panelt is (a
+`cropapply_icon`/`cropcancel_icon`, `retouchapply_icon`/`retouchcancel_icon`,
+`redeyeapply_icon`/`redeyecancel_icon` rétegek bájtmérete azonos az
+`ok_icon`/`cancel_icon`-éval: 858 és 973). A #700 képernyőképének „piros X"
+megfogalmazása ugyanennek a kis, sötét körnek a félreolvasása.
+
+### 7.5 A csúszka arányai
+
+▶**ERŐFORRÁS.** A kicsomagolt bitképek:
+
+| Réteg | Méret | Amit kimond |
+|---|---|---|
+| `editslider/sliderbase` | 191×27 | a vájat a 8.–16. képpontsorban fut → **9 képpont magas sín**, függőlegesen középen, a panel `#E8E8E8` hátterén |
+| `editslider/thumb` | **16×26** | **álló, magas téglalap** fogantyú (nem kör), a sáv magasságát végigéri |
+
+Összehasonlításul a felület MÁSIK csúszka-sablonja (nagyítás,
+derítőfény, retusáló ecset — `scaleslider`): sín 121×9, fogantyú 16×22.
+Tehát az eredetiben **mindkét** csúszkafajta 9 képpontos sínt és 16 képpont
+széles, magas téglalap-fogantyút használ.
+
+### 7.6 A PicasaPy eltérései és a #700 hatóköre
+
+| | Eredeti (forrás) | PicasaPy a #700 előtt | #700 javítja |
+|---|---|---|---|
+| Panel címe | az effekt honosított neve (`Holga-szerű`), balra, 18 px Regular, fejléc-sáv nélkül | a `filters=` kulcs (`holga`), félkövér, kiemelt fejléc-sávon | igen |
+| Csúszka-felirat | a csúszka fölött, **középre** | a csúszka mellett, balra | igen |
+| Számérték | **nincs** | ott áll, két tizedessel | igen |
+| Gombsor | a terület közepén, szimmetrikusan | balra, a panel szélességére feszítve | igen |
+| Gomb-ikon | 15×15 kör, zöld pipa / indigó X, a gomb jobb szélén | nincs ikon | igen |
+| Csúszka-sín / fogantyú | 9 px sín, 16×26 álló téglalap | 4 px sín, 14 px kerek | igen (csak ebben a panelben) |
+
+**Nyitva marad (nem a #700 hatóköre).**
+
+1. **A Holga első csúszkájának FELIRATA.** A #700 képernyőképén az eredeti
+   `Blur Edges` (▶**SZÓTÁR:** `ImageFilters::BlurEdges` → „Élhomályosítás"),
+   a PicasaPy-ban `Size` („Méret"). A `filterdesc.xml`-ben a vezérlő
+   azonosítója `_sldrBlur`, amihez a szótár `ImageFilters::Blur` →
+   „Size"/„Méret" tartozik — és a #600 kutatás pontosan ezért választotta a
+   „Size"-t (`tests/app/test_effect_param_labels_600.py` állítja is). A két
+   megállapítás **ellentmond egymásnak**: a szűrő-azonosító → felirat
+   leképezés eszerint nem egységes, hanem szűrőnként eltérhet, és ezt a
+   binárisból kell eldönteni. Amíg ez nincs visszafejtve, a #700 nem nyúl
+   hozzá — egy találgatásból származó felirat rosszabb, mint a mai,
+   dokumentáltan levezetett.
+2. **A többi csúszka arányai** (finomhangolás, nagyítás, retusáló ecset):
+   az eredetiben ezek is 9 képpontos sínt és magas téglalap-fogantyút
+   használnak (`scaleslider`), a PicasaPy közös `PicasaSlider`-e viszont
+   4 képpontos sínt és kerek fogantyút rajzol. A #700 csak a
+   paraméter-alpanel csúszkáit igazítja, hogy a változás mérhető és
+   visszavonható maradjon.
+3. **A gombfelirat igazítása a gombon belül.** Az eredeti sablon
+   (`button_text_LC`) a feliratot **balra**, függőlegesen középre teszi, az
+   ikont pedig a gomb jobb szélére. A PicasaPy közös `PanelButton`-je a
+   feliratot középre igazítja, és ezt a komponenst sok más hely is
+   használja (effekt-csempék, vágás-panel), ezért a #700 nem nyúlt hozzá —
+   az ikon így is a gomb jobb szélére került, ahogy az eredetiben.
+4. **A gombok buboréksúgója** („Apply Changes" / „Cancel Changes"): az
+   eredetiben megvan, a magyar megfelelője a szótárban csak részben
+   szerepel („Apply Changes" → „Módosítások alkalmazása"; a „Cancel
+   Changes" párja hiányzik), ezért kitalált szöveg helyett inkább nem
+   került be.
