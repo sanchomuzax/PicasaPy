@@ -12,6 +12,7 @@ from __future__ import annotations
 import numpy as np
 
 from picasapy.render.curves import apply_channel_luts, lut_ramp, validate_image
+from picasapy.render.saturation_positive import apply_positive_saturation
 from picasapy.render.warmify_lut import warmify_lut_array
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
@@ -153,24 +154,50 @@ def apply_grain(
 
 
 def apply_saturation(image: np.ndarray, strength: float) -> np.ndarray:
-    """Telítettség: luma-tartó króma-erősítés a mért gain-táblával.
+    """Telítettség — a natív `sat` KÉT külön ága (#693).
 
-    `ki = luma + gain(s)·(be − luma)`; a gain a mért pontok közti lineáris
-    interpoláció, s∈[−1..1]-re szorítva.
+    A callback (`0x008f8ff0`) az előjel szerint két külön magra ágazik:
+
+    - **negatív** (`0x0090e200`): luma-keverés `1 + amount` erősítéssel,
+      `ki = luma + gain·(be − luma)`;
+    - **pozitív** (`0x0090b930`): NEM erősítés, hanem a `csatorna / luma`
+      aránynak adott, csatornánként MÁS kitevőjű gamma
+      (`saturation_positive`).
+
+    A kettő nem vonható össze egyetlen képletbe: a pozitív ágra semmilyen
+    skalár erősítés nem illeszthető (mérve, #693).
     """
     validate_image(image)
-    gain = saturation_gain(strength)
-    if gain == 1.0:
+    clamped = min(max(float(strength), -1.0), 1.0)
+    if clamped == 0.0:
         return image.copy()
+    if clamped > 0.0:
+        # #693: a POZITÍV ág nem erősítés, hanem csatornánkénti gamma a
+        # `C/Y` arányon — ld. `saturation_positive`. A mérőszetten
+        # (`golden-kit3/12-sat-sweep`) a hiba 13,34 → 0,74 szintre esett.
+        return apply_positive_saturation(image, clamped)
+    # A NEGATÍV ág luma-keverés, pontosan `1 + amount` erősítéssel: a natív
+    # callback ezt adja át (`FUN_0090e200(dst, amount + 1.0f)`), és a mérés
+    # is ezt igazolja (a korábbi interpolált tábla mindenhol azonos vagy
+    # kicsit rosszabb volt).
+    gain = 1.0 + clamped
     luma = _luma(image)[..., np.newaxis]
     # float32 munkatér (#140): a ±1/255 tűrésen belül azonos eredmény
     return _to_uint8(luma + np.float32(gain) * (image.astype(np.float32) - luma))
 
 
 def saturation_gain(strength: float) -> float:
-    """A `sat` mért erősítés-táblájának (`_SATURATION_KNOTS`/`_GAINS`)
-    interpolációja önmagában — a GPU-pipeline (#22, `gpu_point_pipeline.py`)
-    ezt a skalárt kapja `satGain` uniformként, hogy a shaderben ugyanazt a
-    `luma + gain·(be − luma)` képletet futtassa, mint a CPU-út."""
+    """A `sat` erősítés-skalárja a GPU-előnézethez (#22).
+
+    ⚠️ **A NEGATÍV ágon pontos, a POZITÍVON KÖZELÍTÉS (#693).** A CPU-út
+    (`apply_saturation`) a pozitív oldalon már a natív, csatornánkénti
+    gamma-modellt futtatja, amire **semmilyen skalár erősítés nem
+    illeszthető**. A GPU-shader viszont ezt az egyetlen uniformot kapja,
+    ezért élő csúszka-húzás közben az előnézet a pozitív oldalon eltér a
+    véglegestől (a mérőszetten a különbség 13,3 vs. 0,7 szint). A tábla
+    értékei ezért maradnak: ezek a MÉRT legjobb egy-skalár illesztések,
+    tehát az előnézet így áll a legközelebb a végleges képhez.
+
+    A GPU-oldal rendes lefedése külön jegy."""
     clamped = min(max(strength, -1.0), 1.0)
     return float(np.interp(clamped, _SATURATION_KNOTS, _SATURATION_GAINS))
