@@ -817,3 +817,179 @@ ez nem egy effekt elvesztése:
 > amit a #643 leírt, csak fordított irányban.
 
 Régi Picasa-telepítésből örökölt mappáknál ez valós kockázat.
+
+## Valódi korpusz: 859 `.picasa.ini` egy 43 éves fotógyűjteményből (2026-08-15)
+
+A tulajdonos NAS-án lévő fotómegosztás **csak olvasásra** felcsatolva
+végigleltározva. A számok a formátum-ismeretünk **kontrollmintája**:
+
+| | darab |
+|---|---:|
+| `.picasa.ini` fájl | **859** |
+| szekció összesen | 18 801 |
+| ebből képfájl-szekció | 17 791 |
+| `[Picasa]` / `[Contacts2]` / album-szekció | 733 / 244 / 33 |
+| **`filters=` lánc** | **5 658** |
+| különböző kulcsfajta | 31 |
+
+### Kulcs-lefedettség: 31-ből 30 dokumentált volt
+
+Gépi összevetés a jelen laphoz: a korpusz **egyetlen** olyan kulcsot
+tartalmaz, ami eddig nem szerepelt itt.
+
+**`link=`** — az album `[Picasa]` szekciójában, 16 előfordulás. Értéke egy
+**Picasa Web Albums feed-URL**:
+
+```
+https://<aldomain>.google.com/data/feed/<projekció>/user/<felhasználó>/albumid/<albumazonosító>?<paraméterek>
+```
+
+Ez a megszűnt webalbum-szolgáltatás szinkron-hivatkozása. Adatot nem hordoz a
+képről; olvasáskor **változatlanul meg kell őrizni**, írni nem kell.
+*Bizonyítottsági fok: megerősített* (16 valós előfordulás, azonos szerkezet;
+http és https alak is előfordul).
+
+A többi 30 kulcs mind dokumentált volt — a formátum-leírásunk tehát **valós
+adaton is hiánytalan**. (A felhasználó-specifikus `IIDLIST_<fiók>_lh` és
+`<fiók>_lh` kulcsok a fiók nevét hordozzák, ezért a példákban általánosítva.)
+
+### Melyik szűrőt használják VALÓBAN — 5 658 lánc alapján
+
+Ez a legfontosabb kimenet: a fejlesztési sorrendet nem a szűrők száma, hanem
+a **tényleges használat** kell vezesse.
+
+| szűrő | előfordulás | | szűrő | előfordulás |
+|---|---:|---|---|---:|
+| `enhance` | **3 045** | | `autocolor` | 54 |
+| `autolight` | **2 612** | | `unsharp2` | 27 |
+| `fill` | **1 089** | | `Boost` | 22 |
+| `crop64` | 801 | | `radblur` | 18 |
+| `finetune2` | 561 | | `sepia` | 14 |
+| `redeye` | 228 | | `bw` | 10 |
+| `Vignette` | 219 | | `dir_tint` | 10 |
+| `warm` | 118 | | `Lomo` | 6 |
+| `sat` | 110 | | `HDR`, `glow2` | 4–4 |
+| `tilt` | 102 | | `tint`, `Holga`, film-jelölők | 2–2 |
+| `retouch` | 82 | | `Cinemascope`, `CrossProcess`, `Sixties` | 1–1 |
+
+**Amit ez kimond:** a lánchasználat **erősen a tónus-javítók felé húz**. Az
+első három (`enhance`, `autolight`, `fill`) a láncok **több mint felét** adja,
+miközben a látványos effektek (`Lomo`, `Holga`, `HDR`, `Sixties`) együtt sem
+érik el a 20 előfordulást.
+
+### Negatív eredmény: a `desat` egyszer sem fordul elő
+
+Az 5 658 láncban **nulla** `desat=` bejegyzés van. A #711 kockázata tehát
+ezen a gyűjteményen **nem realizálódik** — a kulcs valószínűleg jóval régebbi
+(Picasa 2 korabeli) mappákban élne. A javítás ettől még indokolt (a lánc-
+megszakadás miatt), de a **prioritása csökkenthető**.
+
+> **Adatvédelem:** a leltár kizárólag **kulcsneveket és darabszámokat**
+> összesített. Feliratok, arcnevek, e-mail-címek, fiók- és albumazonosítók
+> nem kerültek sem a dokumentációba, sem a repóba. A megosztás
+> **csak olvasásra** volt felcsatolva.
+
+## A `text=` sor formátuma — MEGFEJTVE valódi mintából (#371, 2026-08-15)
+
+A jegy eddig **a tulajdonosra várt** („RÁD VÁR"): valódi Picasa-szerkesztés
+ini-lenyomata kellett. A 859 fájlos korpuszban **két valódi `text=` sor** van
+(egy egyblokkos és egy kétblokkos) — ez elég volt a formátum megfejtéséhez.
+
+### Szerkezet: HOSSZ-ELŐTAGOS, nem sima `;`-vel tagolt
+
+```
+text=<blokkok száma>;<blokkhossz>;<szöveghossz>;<szöveg>;<betűtípus>;<geometria>;<stílus>;;<blokkhossz>;…
+```
+
+Blokkonként hét mező, majd **két** záró pontosvessző.
+
+| mező | jelentés |
+|---|---|
+| blokkhossz | a blokk hossza (a szöveghossz-mezőtől a `;;`-ig) |
+| **szöveghossz** | a **DEKÓDOLT** szöveg **UTF-8 bájthossza** (ld. lent) |
+| szöveg | a felirat, entitásokkal kódolt vezérlőkarakterekkel |
+| betűtípus | a betűtípus teljes neve (pl. `Arial`, `Bickham Script Pro Regular`) |
+| geometria | `x,y,méret,forgatás` — négy float |
+| stílus | `v1,<kitöltő>,<körvonal>,…` — ld. lent |
+
+### ⚠️ A csapda: a szöveg PONTOSVESSZŐT tartalmazhat
+
+A sortörés `&#010;` alakban szerepel — **és ez maga is pontosvesszőre
+végződik**. Egy naiv `;`-szerinti szétvágás tehát **elrontja a feliratot**.
+Pontosan ezért van a formátumban hossz-előtag: a helyes parszer a
+`szöveghossz` alapján lépi át a mezőt, nem elválasztót keres.
+
+**A hossz a dekódolt szövegre vonatkozik.** A valós mintán:
+a tárolt alak `&#010;`-t tartalmaz (6 bájt), a bejegyzett hossz viszont az
+**újsorra cserélt** változaté — a két mintán 63 és 19 bájt, mindkettő
+pontosan egyezik a dekódolt UTF-8 hosszal.
+*Bizonyítottsági fok: megerősített* (két független minta, mindkettő stimmel).
+
+A `blokkhossz` az egyblokkos mintán pontosan a tárolt maradék hossza (161);
+a kétblokkos mintán **egy karakterrel** eltért a kézi számolásomtól, ezért
+ez a mező *erős*, nem *megerősített* — egy harmadik minta eldöntené. A
+parszernek amúgy sincs rá szüksége, mert a `szöveghossz` elég.
+
+### Geometria — normalizált hely, RADIÁNBAN mért forgatás
+
+```
+x, y      0..1 normalizált pozíció a képen
+méret     0..1, a kép rövidebb oldalához mérve
+forgatás  RADIÁN
+```
+
+A forgatás radián voltát a valós adat bizonyítja: a három előforduló érték
+`0.000000`, `1.308997` és `-4.712389` — azaz pontosan **0°, 75,000° és
+−270,000°**. Kerek fokértékek radiánban; véletlen egybeesés kizárt.
+*Bizonyítottsági fok: megerősített.*
+
+### Stílus — két szín `0xAARRGGBB`-ben
+
+```
+v1,<kitöltőszín>,<körvonalszín>,128.0,1.0,<a>,1.0,<vastagság>,<b>,49152
+```
+
+| minta | kitöltő | körvonal |
+|---|---|---|
+| egyblokkos | `4294899423` = `0xFFFEF6DF` (krémfehér) | `4278190080` = `0xFF000000` (fekete) |
+| kétblokkos | `4292215592` = `0xFFD60328` (bíbor) | `4293454056` = `0xFFE8E8E8` (világosszürke) |
+
+A `<vastagság>` mindkét mintán `700` — ez a **szabványos CSS/GDI félkövér
+súly**. A `49152` (`0xC000`) állandó; a `<b>` mező `0` és `258` (`0x102`)
+értéket vett fel. *Bizonyítottsági fok: a színek és a súly megerősített;
+a `128.0`, az `<a>` és a `<b>` mező jelentése **nyitva**.*
+
+### `textactive=`
+
+Külön kulcs a képszekcióban, 173 előfordulással; a korpuszban **mindenhol
+`0`**. Ez a felirat-réteg láthatóságát kapcsolja. Az `1` értékre nincs
+mintánk. *Bizonyítottsági fok: erős (a szerep), a `0`/`1` szemantika
+feltételes.*
+
+## A retus és a vörösszem régió-adata NINCS az ini-ben (#371, negatív eredmény)
+
+A korpusz 5 658 láncában a `redeye` **228-szor**, a `retouch` **82-szer**
+szerepel — de **mindig paraméter nélkül** (`redeye=1;`), és a képszekciókban
+**nincs** `redeye=` vagy `retouch=` kulcs a régiókhoz.
+
+**Következtetés:** a Picasa a foltok/régiók koordinátáit **nem a
+`.picasa.ini`-be** írja, hanem az adatbázisba (`db3`). Az ini csak azt
+rögzíti, hogy a művelet szerepel a láncban.
+
+Ez ellentmond a #371 kiinduló feltevésének (miszerint a régió-formátum az
+ini-ből dekódolható lesz), és **átirányítja a kutatást a `db3` felé**.
+*Bizonyítottsági fok: megerősített* (310 valós előfordulás, kivétel nélkül).
+
+## Az eredeti képek mentése — KÉT elnevezés, verzióváltással
+
+A Picasa a módosítás előtti eredetit külön mappába menti. A korpuszban
+**mindkét** elnevezés előfordul, és élesen elválik időben:
+
+| mappanév | darab | évek |
+|---|---:|---|
+| `Originals` (látható) | 127 | **2005–2009** |
+| `.picasaoriginals` (rejtett) | 54 | **2009–2016** |
+
+A váltás **2009-ben** történt (az egyetlen átfedő év). Egy ini-t olvasó
+implementációnak **mindkettőt** ismernie kell, ha a „vissza az eredetihez"
+funkciót támogatja. *Bizonyítottsági fok: megerősített* (181 valós mappa).
