@@ -51,6 +51,12 @@ def _run_pytest(args: list[str], timeout_s: int, *, cov: bool) -> int:
         "pytest",
         "-q",
         "--tb=short",
+        # #664: a KIHAGYÁS SOSE LEGYEN NÉMA. A `-q` önmagában csak egy `s`
+        # betűt ír a kimaradt tesztre. Ha valami a gépen hiányzó Qt-modul,
+        # képformátum-bővítmény vagy ismert összeomlás miatt marad ki, azt a
+        # futtatónak LÁTNIA kell — különben a „minden részfutás zöld" hamis
+        # biztonság. A `-rs` a záró összegzésbe kiírja a kihagyás INDOKÁT is.
+        "-rs",
         "-p",
         "no:cacheprovider",
         *args,

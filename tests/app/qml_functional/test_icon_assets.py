@@ -25,6 +25,26 @@ from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QEventLoop, QObject, QTimer
+from PySide6.QtGui import QImageReader
+
+#: #664: tud-e a Qt egyáltalán SVG-t RAJZOLNI ezen a gépen.
+#:
+#: Az SVG nem beépített képformátum: külön Qt-bővítmény (`libqsvg.so` az
+#: `imageformats` mappában) dekódolja. A pip-es PySide6 wheel (így a CI is)
+#: magával hozza; a Debian/Ubuntu-féle rendszercsomagnál a `qt6-svg-plugins`
+#: külön telepítendő, és nélküle MINDEN `.svg`-t betöltő `Image` némán üres
+#: marad (`paintedWidth == 0`) — hibaüzenet nélkül.
+#:
+#: A KÉPESSÉGRE szűrünk, nem a platformra: ahol a bővítmény ott van, ott a
+#: kirajzolást ellenőrző teszt fut (a CI-ban tehát változatlanul).
+_SVG_TAMOGATOTT = b"svg" in QImageReader.supportedImageFormats()
+
+_SVG_HIANY_INDOK = (
+    "a Qt SVG-képformátum-bővítménye hiányzik ezen a gépen, ezért egyetlen "
+    "ikon sem rajzolódik ki; csak a KIRAJZOLÁST ellenőrző teszt marad ki, a "
+    "bekötést ellenőrzők futnak. Debian/Ubuntu alatt így pótolható: "
+    "sudo apt install qt6-svg-plugins"
+)
 
 _ICONS_DIR = (
     Path(__file__).resolve().parents[3]
@@ -181,7 +201,11 @@ class TestTrayBarIconWiring:
 
 
 class TestToolbarGeoIconWiring:
-    def test_geo_filter_icon_present_and_not_broken(self, qml_app, qt_app):
+    def test_geo_filter_icon_present_and_wired(self, qml_app, qt_app):
+        """A geo-szűrő ikonja létezik és a helyes fájlra mutat.
+
+        Ez a rész SVG-bővítmény nélkül is értelmes: a QML-bekötést és az
+        ikonfájl meglétét méri, nem a kirajzolást."""
         window, _controller, _engine = qml_app
         _settle(qt_app)
         icon = window.findChild(QObject, "geoFilterIcon")
@@ -189,9 +213,19 @@ class TestToolbarGeoIconWiring:
         source = str(icon.property("source").toString())
         assert source.endswith("geo-pin.svg")
         assert (_ICONS_DIR / "geo-pin.svg").is_file()
-        # nincs Python-oldali enum-konverter a QQuickImageBase::Status-hoz
-        # (Qt-korlát) — helyette a ténylegesen kirajzolt méretet nézzük:
-        # egy törött/hiányzó kép paintedWidth/Height 0 maradna.
+
+    @pytest.mark.skipif(not _SVG_TAMOGATOTT, reason=_SVG_HIANY_INDOK)
+    def test_geo_filter_icon_is_actually_painted(self, qml_app, qt_app):
+        """A geo-szűrő ikonja tényleg KI IS RAJZOLÓDIK (#664: külön teszt).
+
+        Nincs Python-oldali enum-konverter a QQuickImageBase::Status-hoz
+        (Qt-korlát) — helyette a ténylegesen kirajzolt méretet nézzük: egy
+        törött/hiányzó kép paintedWidth/Height 0 maradna. Ehhez viszont a
+        Qt SVG-képformátum-bővítménye kell, ezért a fenti kihagyás-őr."""
+        window, _controller, _engine = qml_app
+        _settle(qt_app)
+        icon = window.findChild(QObject, "geoFilterIcon")
+        assert icon is not None
         assert icon.property("paintedWidth") > 0
         assert icon.property("paintedHeight") > 0
 

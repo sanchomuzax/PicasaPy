@@ -11,10 +11,36 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 from PySide6.QtGui import QGuiApplication
-from PySide6.QtPrintSupport import QPrinterInfo
 
-from picasapy.app.print_controller import PrintController
 from support.jpeg_factory import make_jpeg
+
+# #664: a QtPrintSupport nem minden PySide6-telepítésben van benne. A
+# pip-es PySide6 wheel (így a CI is) MINDENT hoz, a Debian/Ubuntu-féle
+# rendszercsomag viszont modulokra bontja, és a QtPrintSupport külön
+# telepítendő. Ilyenkor a fájl KORÁBBAN gyűjtési hibával dőlt el (exit 2),
+# ami a push előtti tesztkapun valódi bukásnak látszott.
+#
+# Kihagyás a MODUL MEGLÉTÉHEZ kötve (nem a platformhoz): ahol a modul ott
+# van, ott a teszt fut — a CI-ban tehát változatlanul.
+try:
+    from PySide6.QtPrintSupport import QPrinterInfo
+
+    from picasapy.app.print_controller import PrintController
+
+    _QTPRINTSUPPORT_VAN = True
+except ImportError:  # pragma: no cover — csak a hiányos telepítésen fut
+    QPrinterInfo = None
+    PrintController = None
+    _QTPRINTSUPPORT_VAN = False
+
+pytestmark = pytest.mark.skipif(
+    not _QTPRINTSUPPORT_VAN,
+    reason=(
+        "a PySide6.QtPrintSupport modul hiányzik ezen a gépen, ezért a "
+        "nyomtatás-vezérlő tesztjei kimaradnak. Debian/Ubuntu alatt így "
+        "pótolható: sudo apt install python3-pyside6.qtprintsupport"
+    ),
+)
 
 
 @pytest.fixture(scope="module")

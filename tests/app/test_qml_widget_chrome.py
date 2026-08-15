@@ -170,7 +170,14 @@ class TestPicasaSlider:
             app_module,
             qt_app,
             "PicasaSlider.qml",
-            {"orientation": Qt.Orientation.Vertical},
+            # #664: `.value`, nem maga az enum-tag. A `Qt.Orientation` a
+            # PySide6-ban `enum.Flag` (mert van hozzá `QFlags` alak), és a
+            # Flag NEM konvertálódik int-té. A `createWithInitialProperties`
+            # emiatt PySide6 6.8-on némán elhasal ("Could not set initial
+            # property orientation"), a csúszka a vízszintes alapértéken
+            # marad, és a teszt úgy bukik, mintha a QML volna rossz. A
+            # `.value` minden PySide6-változaton (Flag és IntEnum) működik.
+            {"orientation": Qt.Orientation.Vertical.value},
         )
         assert item.property("orientation") == Qt.Orientation.Vertical
         assert item.property("isHorizontal") is False

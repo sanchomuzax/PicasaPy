@@ -6,6 +6,18 @@ from PySide6.QtCore import QObject
 from PySide6.QtGui import QColor
 
 
+def _ertek(value):
+    """QML `var` property → Python-érték (#664).
+
+    A QML `var` tulajdonságot a PySide6 verziójától függően vagy kész
+    Python-szótárként adja vissza, vagy becsomagolva, `QJSValue`-ként. A
+    második esetben a `["r"]` indexelés `TypeError`-t dob, ami valódi
+    kötés-hibának látszik, holott csak konverzió hiányzik. Ugyanez a
+    `hasattr(..., "toVariant")` minta él már a `test_qml_hidden.py`-ban és
+    a `test_qml_viewer_properties.py`-ban is."""
+    return value.toVariant() if hasattr(value, "toVariant") else value
+
+
 class TestHistogramBoxWiring:
     """#25: a bal alsó placeholder-doboz élesítése — HistogramBox.qml."""
 
@@ -27,9 +39,11 @@ class TestHistogramBoxWiring:
         self._open_viewer(window, qt_app)
         box = window.findChild(QObject, "viewerHistogramBox")
         edit = engine.rootContext().contextProperty("editController")
-        histogram = box.property("histogramData")
+        histogram = _ertek(box.property("histogramData"))
         assert set(histogram.keys()) == {"r", "g", "b"}
-        assert list(histogram["r"]) == list(edit.property("histogram")["r"])
+        assert list(histogram["r"]) == list(
+            _ertek(edit.property("histogram"))["r"]
+        )
 
     def test_camera_summary_bound_from_edit_controller(self, qml_app, qt_app):
         window, _, engine = qml_app
@@ -58,8 +72,8 @@ class TestHistogramBoxWiring:
         viewer.setProperty("currentIndex", 1)
         qt_app.processEvents()
 
-        assert list(box.property("histogramData")["r"]) == list(
-            edit.property("histogram")["r"]
+        assert list(_ertek(box.property("histogramData"))["r"]) == list(
+            _ertek(edit.property("histogram"))["r"]
         )
 
     def test_histogram_curve_is_populated_immediately_on_open(self, qml_app, qt_app):
@@ -67,7 +81,7 @@ class TestHistogramBoxWiring:
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
         box = window.findChild(QObject, "viewerHistogramBox")
-        histogram = box.property("histogramData")
+        histogram = _ertek(box.property("histogramData"))
         assert any(v > 0.0 for v in histogram["r"]), "hisztogram üres megnyitáskor"
 
     def test_histogram_bars_render_with_nonzero_height(self, qml_app, qt_app):
