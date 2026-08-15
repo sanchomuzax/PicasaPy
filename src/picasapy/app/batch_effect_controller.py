@@ -393,7 +393,7 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                     for name, prev_filters, prev_crop in entries:
                         if prev_filters is not None:
                             document = document.with_value(
-                                name, "filters", prev_filters
+                                name, "filters", prev_filters, carried=True  # #643
                             )
                         else:
                             document = document.with_removed(name, "filters")

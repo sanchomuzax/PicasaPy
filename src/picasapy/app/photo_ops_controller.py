@@ -591,8 +591,10 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                         prev = section.get("filters") if section else None
                         fresh.append((folder, photo.name, prev))
                         if new_value:
+                            # #643: a vágólapról ÁTVITT lánc — az idegen tag
+                            # nem most keletkezik, ezért nem utasítjuk vissza.
                             document = document.with_value(
-                                photo.name, "filters", new_value
+                                photo.name, "filters", new_value, carried=True
                             )
                         else:
                             document = document.with_removed(photo.name, "filters")
@@ -634,7 +636,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     for name, prev_filters in entries:
                         if prev_filters is not None:
                             document = document.with_value(
-                                name, "filters", prev_filters
+                                name, "filters", prev_filters, carried=True  # #643
                             )
                         else:
                             document = document.with_removed(name, "filters")

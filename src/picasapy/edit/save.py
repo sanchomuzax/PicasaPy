@@ -207,7 +207,11 @@ def save_edited(
             image_path,
             lambda document: (
                 document.with_removed(_section_name(image_path), _FILTERS_KEY)
-                .with_value(_section_name(image_path), _REDO_KEY, redo_value)
+                # #643: a `filters=` lánc ÁTFORGATÁSA a `redo=`-ba — átvitt
+                # tartalom, nem most keletkező tag (ld. `ini.filter_guard`).
+                .with_value(
+                    _section_name(image_path), _REDO_KEY, redo_value, carried=True
+                )
                 .with_value(_section_name(image_path), _ORIGINHASH_KEY, originhash)
             ),
         )
@@ -280,7 +284,8 @@ def undo_save(image_path: str | Path) -> UndoSaveResult:
         _update_ini_document(
             image_path,
             lambda doc: (
-                doc.with_value(section, _FILTERS_KEY, restored_filters)
+                # #643: a `redo=`-ból VISSZAforgatott lánc — átvitt tartalom.
+                doc.with_value(section, _FILTERS_KEY, restored_filters, carried=True)
                 if restored_filters
                 else doc.with_removed(section, _FILTERS_KEY)
             )

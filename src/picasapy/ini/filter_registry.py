@@ -298,6 +298,25 @@ def canonicalize_filter_name(name: str) -> str:
     return canonical_filter_name(name) or name
 
 
+def effective_param_count(params: tuple[str, ...]) -> int:
+    """A flag utáni ÉRDEMI paraméterek száma egy lánc-tag mezőiből.
+
+    A `params[0]` az engedélyező flag, ezt nem számoljuk. A ZÁRÓ ÜRES mező
+    (`grain=1,;`) mérten tolerált (ld. a modul docstringjét), ezért az sem
+    paraméter.
+
+    Args:
+        params: A tag `,` mentén tagolt mezői, a flaggel együtt.
+
+    Returns:
+        Az érdemi paraméterek száma.
+    """
+    rest = list(params[1:])
+    while rest and rest[-1] == "":
+        rest.pop()
+    return len(rest)
+
+
 def max_param_count(name: str) -> int | None:
     """A szűrő megengedett legnagyobb paraméterszáma a flag után.
 
