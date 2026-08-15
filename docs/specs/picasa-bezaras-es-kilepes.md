@@ -159,9 +159,38 @@ Elnyomható: **`DoNotAskFileSave`** beállításkulcs.
 - Az `exit_nag` kapcsoló pontos hatása (a jelzőtáblát megtaláltuk, a
   felhasználóját nem).
 - Él-e még az `IDS_WARNCLOSEEDIT` (nincs rá kereszthivatkozás).
-- **Zárja-e a főablak a háttérfolyamatokat.** A `Shell_NotifyIconW` burkolója
-  (`0x009b2d00`) megvan, de **hívója statikusan nem azonosítható**: a címe
-  egyetlen helyen szerepel, függvénymutató-táblában — ugyanaz a közvetett
-  diszpécser-minta, ami a mappafigyelőnél is megállított (#643). A tálcaikont
-  a `PicasaPhotoViewer.exe` és a `MovieThumb.exe` is használja, tehát a
-  főablak bezárása után is maradhat futó Picasa-komponens.
+- Zárja-e a főablak a háttérfolyamatokat (arcfelismerés, mappafigyelés) — ez
+  élő megfigyeléssel dönthető el olcsóbban.
+
+## ✅ A főablaknak NINCS tálcaikonja — bizonyított negatív eredmény
+
+A `Picasa3.exe` **feloldja** a tálcaikon-API-t, de **soha nem hívja meg**.
+
+A feloldó csonk (`0x00c33c22`) a `GetVersion` alapján választ ágat — ez a
+Windows 9x/NT korszak öröksége:
+
+```asm
+call [0x00c40450]                       ; GetVersion
+mov  [0x00d6fc58], eax
+cmp  dword [0x00d6fc58], 0x80000000
+jae  9x_ag
+mov  dword [0x00d695c4], 0x009b2d00     ; NT: ANSI→wide burkoló
+ret
+9x_ag:
+mov  eax, [0x00c405fc]                  ; Shell_NotifyIconA
+mov  [0x00d695c4], eax
+ret
+```
+
+**A bizonyíték:** a `0x00d695c4` globális a teljes binárisban **pontosan
+kétszer** fordul elő — mindkétszer a fenti csonkban, ahol *beállítják*.
+`call [0x00d695c4]` **sehol nincs**, és a `Shell_NotifyIconA`
+IAT-bejegyzésére (`0x00c405fc`) sincs közvetlen hívás.
+
+> **Következtetés:** ez egy közös operációsrendszer-absztrakciós réteg
+> maradványa (ugyanaz a csonk-minta, ami a mappafigyelő burkolóját is
+> feloldja) — a főprogram nem használja. **A Picasa főablaka nem tesz ikont a
+> tálcára.** A tálcaikon a `PicasaPhotoViewer.exe` és a `MovieThumb.exe`
+> sajátja.
+>
+> **A PicasaPy-nak tehát nem kell tálcaikon** a főablak-paritáshoz.
