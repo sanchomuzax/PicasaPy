@@ -685,3 +685,49 @@ innen aránytalanul drága lenne.
 
 Ha B-ben és C-ben is látszik a `bw`, a hibás bejegyzés **csak önmagát viszi**;
 ha B-ben nem, a lánc **megszakad** — és akkor a #643 fő gyanúja igazolódik.
+
+## A `desat` — egy szűrőnév, amit nem ismertünk (#643 mellékága, 2026-08-15)
+
+A név-feloldás (`FUN_008f9fe0`) nem-talált ága **két** nevet kezel külön:
+`crop` (a `crop64` felé) és **`desat`**. A `desat` a binárisban pontosan
+egyszer szerepel karakterláncként (`0x00c86f24`), és négy függvény hivatkozik
+rá: `0x0050bd70`, `0x0050be10`, `0x0050e460`, `0x008f9fe0`.
+
+### Mi ez
+
+A `0x0050bd70` (146 bájt) egy **konstruktor**, és mindent elárul:
+
+```c
+FUN_00985ff0("%c,%f,%f,%f");                 // a szerializalasi formatum
+FUN_00985ff0("desat");                       // az ini-kulcs
+FUN_009ae560("CDesaturateFilter::name", …);  // az eroforras-kulcs a felirathoz
+*in_EAX = CDesaturateFilter::vftable;
+in_EAX[7] = in_EAX[8] = in_EAX[9] = in_EAX[0xc] = 0x3eaa7efa;   // = 0.333f
+```
+
+A `0x0050bd70`-hez tartozó szövegek közt ott a **`Filtered B&W`** felirat is —
+ez pedig a mi `ansel` szűrőnk emberi neve
+([`filterdesc-registry.md`](filterdesc-registry.md)).
+
+**Következtetés:** a `desat` a **Filtered B&W** (`CDesaturateFilter`)
+szűrő **másik, örökölt ini-kulcsa**. A paraméterformátuma is más:
+`%c,%f,%f,%f` — jelzőkarakter + **három float**, vagyis a szín három
+lebegőpontos csatornaként, nem a mai `ansel=1,ffffffff` pakolt hexként.
+Az alapértékek négy helyen `0,333` — a három csatorna egyenlő súlya.
+
+*Bizonyítottsági fok: erős.* A konstruktor tartalma és a nevek egyértelműek;
+ami **nincs** visszakövetve: hogy a `desat` és az `ansel` futásidőben
+ugyanarra a rendererre fut-e, vagy csak rokon.
+
+### ⚠️ Miért sürgős ez nekünk
+
+A `desat` **nincs a `FILTER_REGISTRY`-nkben**, tehát a parszerünk ismeretlen
+névként kezelné. A ma bizonyított lánc-viselkedés miatt
+([lásd fentebb](#-megfejtve-egy-hibás-bejegyzés-megszakítja-a-lánc-hátralévő-részét))
+ez nem egy effekt elvesztése:
+
+> Egy `desat=` bejegyzést tartalmazó `.picasa.ini`-nél **a lánc utána
+> következő összes szűrője is elveszne** nálunk — pontosan az a hibaosztály,
+> amit a #643 leírt, csak fordított irányban.
+
+Régi Picasa-telepítésből örökölt mappáknál ez valós kockázat.
