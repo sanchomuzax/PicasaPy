@@ -98,3 +98,66 @@ implementációval mind a négy belépési pont megvan.
 A 32 bites, nem-PIE PE-nél a kódba beégetett abszolút címek miatt ez
 megbízható. Nem helyettesíti a dekompilálást, de **a belépési pontokat
 ingyen megadja**.
+
+## Két hiány a nyilvántartásban (2026-08-15, #711 köre)
+
+### 1. A `desat` — a 43. szűrő, ami nincs a 42 elemű táblában
+
+A fenti tábla a `CGenericFilter` által kezelt szűrőket sorolja. Az RTTI-ben
+azonban **két** érdemi kép-szűrő osztály van: a `CGenericFilter` és a
+**`CDesaturateFilter`**. Utóbbi saját ini-kulccsal (`desat`), saját
+paraméterformátummal (`%c,%f,%f,%f`) él, és **nincs benne a táblában** —
+ezért maradt ki a nyilvántartásból.
+
+Renderelése azonos az `ansel`-lel: mindkettő a `0x0090e680` munkafüggvényt
+hívja, és annak az egész binárisban **pontosan ez a két hívója van**
+(`0x008f8410` = ansel, `0x0050ce70` = desat). Részletek és az egzakt
+átváltás: [`picasa-ini-format.md`](picasa-ini-format.md), „A `desat`" szakasz.
+
+### 2. A Filtered B&W-nek VAN erősség-csúszkája — nálunk nincs
+
+A szövegforrások (`referencia/stringres-en-hu.tsv`) három erőforráskulcsot
+adnak ehhez a szűrőhöz:
+
+| kulcs | angol | magyar |
+|---|---|---|
+| `CDesaturateFilter::name` | Filtered B&W | **Szűrt FF** |
+| `CDesaturateFilter::strength` | Strength | **Erősség** |
+| `CDesaturateFilter::pickcolor` | Pick Color | **Színválasztás** |
+
+Mindkettőt a `0x0050cf90` (899 bájt) hivatkozza — vagyis a szűrő panelje egy
+**erősség-csúszkát** és egy **színválasztót** épít.
+
+A mi `FILTER_REGISTRY`-nkben az `ansel` **csúszka nélkül** szerepel
+(`sliders=()`), és az ini-alakja is csak színt hordoz (`ansel=1,ffffffff`).
+Ez ellentmondás: vagy a csúszka az `ansel` ini-alakjában is megjelenik
+valahol, vagy csak a `desat` négy float-mezőjének egyike hordozza.
+
+A `desat` konstruktora **négy** mezőt állít `0,333`-ra (`0x3eaa7efa`), miközben
+a renderelő csak **hármat** vesz át (R, G, B) — a negyedik mező jó eséllyel az
+erősség. *Bizonyítottsági fok: feltételes* (a mezőszám és a szerepük
+összepárosítása nincs visszakövetve).
+
+**Következő lépés:** a `0x0050cf90` és a `0x0050ce70` dekompilálása — ez
+mondja meg, melyik mező az erősség, és hogyan hat a `0x0090e680` hívására.
+
+### 3. Egy 34. Glimmer-művelet, ami eddig nem szerepelt nálunk
+
+A `docs/specs/` 33 `glimmer::*ImageOperation` osztályt dokumentál, és ez a 33
+hiánytalanul megvan. Az RTTI-ben azonban van egy **34.**, névtelen
+névtérben:
+
+```
+_anon_BEC5211C::ResaturateImageOperation::vftable   @ 0x00cf0578
+```
+
+- fő képpont-metódusa: `0x00bc4ae0` (1660 bájt);
+- egyetlen létrehozója a `0x00bbd630` (588 bájt), ami két attribútumot olvas:
+  **`color`** és **`dynamicColorCachePriority`** (utóbbi sem szerepel a
+  dokumentációnkban);
+- **név szerint sehol nem hivatkozott** — a `Resaturate` karakterlánc nincs a
+  binárisban, tehát effekt-XML-ből nem példányosítható; belső segédművelet.
+
+*Bizonyítottsági fok: megerősített* (a létezés és a hívási lánc);
+**nyitva**, hogy mit csinál és melyik effekt használja — ehhez a `0x00bbd630`
+és a `0x00bc4ae0` dekompilálása kell.
