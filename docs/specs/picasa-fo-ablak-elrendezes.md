@@ -71,6 +71,90 @@ mainuipanel
 Ezek **nem a panelhierarchia része** — közvetlenül a `root`-hoz kötöttek,
 tehát a panelváltás nem érinti őket.
 
+## Az alsó sáv — `basecontrolset` (2026-08-15, #455)
+
+Az `ui-audit-mainwindow.md` 5. fejezete ezt a sávot **képernyőképből** írta
+le, és ott is kimondja, hogy a kép **1030 px-nél levágva**, tehát a tálca alsó
+pereme nem mérhető. A forrás ezt kiváltja: a `thumbui.tre` a teljes sávot
+megadja.
+
+A sáv gyökere `thumbui/basecontrolset` (a `mainuipanel` gyereke,
+`m_offsetLRB` — balra, jobbra, alulra kifeszítve), magassága a `publishbottom`
+szerint **105 px**.
+
+### A szerkezeti kulcs: a 36,5 %-os osztópont
+
+A sáv **két részre oszlik**, és az osztópont az ablakszélesség
+**0,365-szöröse**. Ez a szám a fájlban **öt különböző elemnél** ismétlődik —
+nem véletlen, hanem a sáv tartószerkezete:
+
+| elem | X-kényszer | jelentés |
+|---|---|---|
+| `scratchback` (**a képtálca**) | `0, 0, 5` … `1, .365, -15` | bal széltől 5 px → 36,5 % − 15 px |
+| `webupload_rect` (zöld feltöltés-gomb) | `0, .365, -5` … `1, .365, 140` | az osztóponttól **145 px széles** sáv |
+| `outputs` (a műveletsor) | `0, .365, 140` … `1, 1, -10` | a zöld gomb után → jobb szél − 10 px |
+| `separator` | `0, .365, -3` … `1, 1, -17` | y **50–52** px: 2 px vonal, csak a jobb oldalon |
+| `bcenterright` | `0, .365, 0` | ugyanaz az osztópont |
+
+**Vagyis a képtálca az alsó sáv bal harmadát kapja**, a maradékban pedig
+először a zöld feltöltés-gomb ül (fix 145 px), és csak utána jön a
+Nyomtatás/E-mail/Exportálás sor.
+
+### A képtálcán belül
+
+```
+thumbui/scratchback                     a tálca kerete
+├── thumbui/scratch                     a bélyegképsor
+│      XConstraint 0, 0, 5              5 px belső margó balról
+│      XConstraint 1, 1, -50            ← JOBBRÓL 50 px SZABADON MARAD
+│      YConstraint 0, 0, 5 · 1, 1, -5   5-5 px fent és lent
+├── thumbui/scratchpadbase
+│   └── thumbui/scratchlabel            „Selection” — m_centerXY (KÖZÉPRE)
+├── thumbui/scratchhold      (+ _icon)  m_offsetRT
+├── thumbui/scratchclear     (+ _icon)  m_offsetRT
+└── thumbui/addtobuttcon                m_offsetRT
+       + dropup_icon + addto_arrow
+       Property customwidth 200 · maxrows 0
+```
+
+A bélyegképsor jobb oldalán **50 képpont van fenntartva** a három gombnak —
+ez a képernyőképen látott „3-gombos oszlop", és a forrás megadja a
+szélességét is.
+
+### A három gomb — IKON, felirat nélkül
+
+A `thumbui_text.tre`-ben mindhárom gomb `Label` sora **ki van kommentelve**
+(`#Label thumbui/scratchhold` / `#Hold`), csak a `Tooltip` él. A gombok tehát
+az eredetiben is **csak ikonok**, buboréksúgóval:
+
+| elem | buboréksúgó (angol) | funkció |
+|---|---|---|
+| `scratchhold` | *Hold selected items* | a kijelölés rögzítése (ne söpörje el a következő) |
+| `scratchclear` | *Clear items from the selection* | a tálca ürítése |
+| `addtobuttcon` | *Add selected items to an Album* | felfelé nyíló menü (`dropup_icon` + `addto_arrow`) |
+
+A `scratchlabel` szövege **`Selection`**, és `m_centerXY` — vagyis üres
+tálcánál a felirat **a tálca közepén** áll, nem a bal szélén.
+
+### A jobb szél — `metadata_group` és `scale_group`
+
+Mindkettő `m_offsetRT` a `basecontrolset`-en (jobb felső sarokhoz kötve):
+
+- **`metadata_group`** — a négy kerek kapcsoló. A kötésekből a sorrend
+  balról jobbra: **`people_toggle` · `places_toggle` · `tags_toggle`**
+  (mind `m_offsetLT`), és jobbra zárva a **`properties_toggle`**
+  (`m_offsetRT`). Ez pontosan a képernyőképen látott személy / hely /
+  címke / infó négyes.
+- **`scale_group`** — `loupehit` (nagyító) + `scalecontainer`
+  (nagyítás-csúszka).
+
+*Bizonyítottsági fok: megerősített* — a `thumbui.tre` 300–350. és 620–700.
+sorai, a feliratok a `thumbui_text.tre` 94–121. soraiból. A `m_offset*`
+makrók jelentése (a kötési oldal) a kényszerekből egyértelmű, a hozzájuk
+tartozó **alapértelmezett margók számértéke viszont nem szerepel a
+`.tre`-ben** — ahol számot írok fent, az mind explicit `XConstraint`/
+`YConstraint`.
+
 ## Eltérés a PicasaPy-tól
 
 | | eredeti | nálunk | teendő |

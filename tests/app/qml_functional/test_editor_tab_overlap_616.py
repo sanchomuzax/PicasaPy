@@ -214,14 +214,23 @@ class TestAGombsorSosemKerulATartalomra:
         assert _also(undo_row) <= 160, "a gombsor kilóg a panelből"
         assert undo_row.property("y") >= 0
 
-    def test_bo_helyen_a_panel_aljan_ul(self, qml_engine):
-        """Bő helyen az eredeti látványa: a sor a panel alján."""
+    def test_bo_helyen_a_tartalom_alatt_ul(self, qml_engine):
+        """Bő helyen az eredeti látványa: a sor a TARTALOM alatt.
+
+        #616 (FELÜLÍRJA a korábbi állítást): ez a teszt eddig azt követelte,
+        hogy bő helyen a sor a panel alján legyen. Az eredeti Picasa panelje
+        FIX méretű, ezért ott a kettő ugyanaz — a mi átméretezhető
+        panelünkben viszont nem: 832 képpontos panelben a ~300 képpontos fül
+        alatt így félméternyi üres hely maradt, a gombok pedig gyakorlatilag
+        eltűntek a felhasználó szeme elől (2026-08-15-i hibajelentés,
+        képernyőképpel)."""
         panel = _panel(qml_engine, height=900, active_tab=2)
 
         undo_row = _child(panel, "editorGlobalUndoRow")
 
-        assert _also(undo_row) >= panel.property("height") - 20, (
-            "bő helyen a gombsornak a panel alján kell ülnie"
+        assert _also(undo_row) < panel.property("height") - 100, (
+            "bő helyen a gombsornak a fül tartalma alatt kell ülnie, nem a "
+            "panel aljára szegezve"
         )
 
 
