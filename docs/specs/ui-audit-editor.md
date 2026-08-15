@@ -746,3 +746,27 @@ külön auditot érdemel, itt csak jelzésként szerepel.
 | N3 | A csempék elemleírása (tooltip) megjelenik-e a rácsban, és a `filter_<Kulcs>_tooltip0` szövege-e | feltételes | egérrel egy csempe fölött készített felvétel |
 | N4 | A csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés) | nincs adat | felvétel egérmutatóval a csempe fölött |
 | N5 | A rács **görgethető-e** 12 csempénél többnél (a `fx1…fx12` fix — de a `picnik_fx` gomb létezik a rács alján, rejtetten) | feltételes | `editpanel/picnik_fx` szerepének tisztázása |
+
+### Amit a #704 ebből megvalósított, és hol tér el TUDATOSAN
+
+| Jellemző | Eredeti (mért) | PicasaPy a #704 után | Megjegyzés |
+|---|---|---|---|
+| Szekciófejléc | nincs | **nincs** | a 22 px-es „Effektek" / „Kreatív" / „Művészi" / „További effektek" / „Régi effektek" sáv törölve mind az öt fülről |
+| Rács | 3 × 4 = 12 | 3 oszlop, fülenként 12 csempe | a `Vignette` a #704 óta az 5. fülön (a #422 tévesen a gyűjtőfülre tette) |
+| Térköz | 2 px | **2 px** | korábban 6 |
+| Bélyegkép | 78 × 48 | doboz-magasság **48** (szélesség a rácsból) | korábban 56 |
+| Csempe | 86 × 69 | ~86 széles, **~90 magas** | ⚠️ TUDATOS ELTÉRÉS: a felirat nálunk KÉT sort foglal (`PanelButton.qml`), amit a **#422** kért kifejezetten — a hosszabb nevek nem vágódhatnak, és a rács sorai nem csúszhatnak szét. Az eredeti egysoros, 18 px-es feliratsávjához visszatérni csak a #422 visszavonásával lehetne; az külön döntés |
+| Felirat | 11 px, félkövér, középre zárt, #333333 | félkövér, középre zárt, `Theme.textDark` | a fix #333333 helyett témafüggő token, hogy sötét témában is olvasható legyen |
+| Jelvény helye / mérete / színe / alakja | bélyegkép jobb alsó sarka, 13 × 12, #379FFD, negyed-korong | **ugyanaz** | a `PanelButton.qml` `appliedCount` tulajdonsága vezérli; a kék ma fix hexa a komponensben — `Theme.badgeBlue` néven a témába való (integrációs igény) |
+| Jelvény **száma** | jelentése NYITOTT (N1) | a szűrő előfordulásainak száma a láncban (`EditController.effectChainCounts`) | ⚠️ IDEIGLENES olvasat. Semmilyen viselkedés nem épül rá; az N1 lezárása után felülvizsgálandó |
+
+Az őrök: `tests/app/qml_functional/test_effect_tile_grid_704.py` (fejléc,
+jelvény-geometria, csempeszám, egységes feliratszín).
+
+**Amit a #704 NEM oldott meg:** a bejelentésben szereplő „kék és narancs
+csempe-feliratok". A kódban egyetlen feliratszín van (`PanelButton.qml`,
+`Theme.textDark`, tiltottnál `Theme.textGray`); effektenkénti szín sehol
+nincs, tehát a jelenség a mai forrásból nem állítható elő. A legvalószínűbb
+magyarázat, hogy a megfigyelés a színezett effekt-ELŐNÉZETEKRE vonatkozott
+(a Szépia melegbarna, a Színezés kék bélyegképe). Ha a jelenség tényleg a
+feliratokon van, új képernyőkép kell hozzá.

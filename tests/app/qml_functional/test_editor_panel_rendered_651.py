@@ -244,16 +244,21 @@ class TestTheUndoRowIsAlwaysOnScreen:
         )
 
     def test_the_thumbnailed_tiles_drive_the_requirement(self, qt_app):
-        """A bélyegképes csempe ~98 px — enélkül a mérés hamisan megnyugtat.
+        """A bélyegképes csempe ~90 px — enélkül a mérés hamisan megnyugtat.
 
         Ez az állítás azt őrzi, hogy a STUB tényleg bekapcsolja a
         bélyegképeket; ha elromlik, a fenti tesztek észrevétlenül
-        elveszítik az élüket."""
+        elveszítik az élüket.
+
+        #704: a küszöb 450-ről 350-re csökkent, mert a csempe bélyegkép-
+        doboza a MÉRT 48 px-re állt (korábban 56 volt) és a rács térköze
+        2 px-re (korábban 6). Bélyegkép nélkül a panel igénye ~246 px, vele
+        ~446 — a 350 továbbra is bőven elkülöníti a két esetet."""
         view, root = _view(qt_app, _viewer_qml(2), 1200, 900)
 
         panel = _child(root, "viewerEditorPanel")
 
-        assert panel.property("implicitHeight") > 450, (
+        assert panel.property("implicitHeight") > 350, (
             "a csempék bélyegkép nélkül alacsonyak — a stub nem ér el a "
             "panelig, és a küszöb-tesztek elvesztették az értelmüket"
         )

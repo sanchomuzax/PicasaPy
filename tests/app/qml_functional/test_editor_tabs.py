@@ -153,9 +153,14 @@ TAB4_BUTTONS = [
 
 # 5. fül (kék ecset, "művészi effektek") — PONTOSAN a spec 11 kulcsa; a
 # RoundedEdges és a PicnikGrain a 6. fülre került (ld. a 4. fül megjegyzését).
+# #704 HELYESBÍTÉS (2026-08-15, ▶KÉP `2026-07-17 20 56 55.png`): ez a fül
+# is 12 effektet tartalmaz — a `Vignette` („Vignetta") a lista 3. eleme, a
+# Lágyítás után és a Képpontnagyítás előtt. A #422 tévesen a „További
+# effektek" gyűjtőfülre tette.
 TAB5_BUTTONS = [
     ("effectBoost", "boost"),
     ("effectSoften", "soften"),
+    ("effectVignette", "vignette"),
     ("effectPixelate", "pixelate"),
     ("effectFocalZoom", "focalzoom"),
     ("effectPencilSketch", "pencilsketch"),
@@ -171,7 +176,6 @@ TAB5_BUTTONS = [
 # szerepelnek a 3–5. fül igazolt listáján. Amint előkerül egy képernyőkép a
 # Picasa 3. effekt-füléről (#464 4. pont), a helyükre kerülhetnek.
 TAB6_BUTTONS = [
-    ("effectVignette", "vignette"),
     ("effectMatte", "matte"),
     ("effectNightVision", "nightvision"),
     ("effectLocalContrast", "localcontrast"),
@@ -216,7 +220,12 @@ class TestTab4CreativeEffects:
 
 
 class TestTab5ArtisticEffects:
-    """#330: az 5. effekt-fül (kék ecset) — a spec szerinti 11 gomb."""
+    """#330/#704: az 5. effekt-fül (kék ecset) — 12 gomb.
+
+    A 11-es szám a #704 auditja szerint téves volt: a Vignetta is
+    ide tartozik (`docs/specs/ui-audit-editor.md` 2. szakasz
+    helyesbítése).
+    """
 
     def test_grid_has_the_spec_button_count(self, qml_engine, qt_app):
         panel = _make_panel(qml_engine, active_tab=4)
@@ -224,7 +233,7 @@ class TestTab5ArtisticEffects:
         grid = panel.findChild(QObject, "effectsGrid3")
         assert grid is not None
         buttons = [c for c in grid.children() if c.objectName().startswith("effect")]
-        assert len(buttons) == len(TAB5_BUTTONS) == 11
+        assert len(buttons) == len(TAB5_BUTTONS) == 12
 
     @pytest.mark.parametrize("object_name,key", TAB5_BUTTONS)
     def test_button_exists_on_tab5(self, qml_engine, qt_app, object_name, key):
@@ -306,7 +315,7 @@ class TestTab6MoreEffects:
         grid = panel.findChild(QObject, "effectsGrid4")
         assert grid is not None
         buttons = [c for c in grid.children() if c.objectName().startswith("effect")]
-        assert len(buttons) == len(TAB6_BUTTONS) == 6
+        assert len(buttons) == len(TAB6_BUTTONS) == 5
 
     @pytest.mark.parametrize("object_name,key", TAB6_BUTTONS)
     def test_button_exists_on_tab6(self, qml_engine, qt_app, object_name, key):

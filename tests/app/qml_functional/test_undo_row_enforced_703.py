@@ -274,11 +274,17 @@ class TestASzuksegAgMerheto:
         """A csonk tényleg bekapcsolja a bélyegképeket — az őrnek foga van.
 
         Ha ez elromlik, a fenti szűk-panel-állítások észrevétlenül
-        elveszítik az élüket (24 px-es csempékkel minden „elfér")."""
+        elveszítik az élüket (24 px-es csempékkel minden „elfér").
+
+        A küszöb 300: bélyegkép NÉLKÜL a legmagasabb fül ~158 px, VELE
+        pedig ~358 (a #704 óta — előtte 432 volt, mert a bélyegkép-doboz
+        56 px magas volt a mért 48 helyett). A 300 mindkét irányban jó
+        távolságra van, tehát a csempeméret finomhangolása nem teszi némává
+        az őrt, egy elveszett csonk viszont megbuktatja."""
         gyoker = _render(qt_app, _SZUK_PANEL_QML, 280, 900)
         panel = _child(gyoker, "panel")
 
-        assert panel.property("tallestTabHeight") > 400, (
+        assert panel.property("tallestTabHeight") > 300, (
             "a csempék bélyegkép nélkül alacsonyak — a csonk nem ér el a "
             "panelig, és a szűk-panel-tesztek értelmüket vesztették"
         )

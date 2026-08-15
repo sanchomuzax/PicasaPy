@@ -20,6 +20,16 @@ Rectangle {
     // igazítás) — a `ToolTile` „benyomott" mintáját követi, ugyanabból a
     // jelző-kék tokenből, hogy sötét témában is olvasható maradjon
     property bool active: false
+    // #704: „alkalmazva" jelvény — hányszor szerepel ez az effekt a
+    // szerkesztési láncban. 0 = nincs jelvény (a legtöbb PanelButton-hívó:
+    // az Undo/Redo/Apply/Cancel/vágás-gombok sose adnak meg ilyet).
+    property int appliedCount: 0
+    // A jelvény kékje az EREDETI felvételen MÉRT érték (#379FFD,
+    // `ui-audit-editor.md` 3.3), nem a témapaletta valamelyik közelítése.
+    // Nem téma-token, mert a `Theme.qml` bővítése ehhez a körhöz nem
+    // tartozott — INTEGRÁCIÓS IGÉNY: ennek `Theme.badgeBlue` néven a helye
+    // a témában van (sötét témára is kell egy párja).
+    readonly property color badgeBlue: "#379ffd"
     signal buttonClicked()
     Layout.fillWidth: true
     // #318: a felirat teljesen olvasható kell legyen. Bélyegképes
@@ -75,7 +85,14 @@ Rectangle {
         anchors.topMargin: 5
         anchors.horizontalCenter: parent.horizontalCenter
         width: parent.width - 10
-        height: pbtn.thumbSource !== "" ? 56 : 0
+        // #704: az eredetin MÉRT bélyegkép 78 × 48 px egy 86 × 69 px-es
+        // csempében (`ui-audit-editor.md` 3.2) — a korábbi 56 túl magas
+        // volt. A csempe teljes magassága nálunk így is több a 69-nél,
+        // mert a felirat KÉT sort foglal: azt a #422 kérte kifejezetten
+        // (a hosszabb nevek nem vágódhatnak, és a rács sorai nem
+        // csúszhatnak szét), az eredeti egysoros, 18 px-es feliratsávjával
+        // szemben. Ez tudatos eltérés, nem tévedés.
+        height: pbtn.thumbSource !== "" ? 48 : 0
 
         Rectangle {
             // helyőrző, amíg a bélyegkép még nem érkezett meg
@@ -119,6 +136,11 @@ Rectangle {
         // NAGYOBB volt, mint az 1. fül eszköz-csempéié — a kisebb a helyes,
         // ezért a `ToolTile`-lel azonos fokozatra állítva.
         font.pixelSize: Theme.fontSize - 2
+        // #704: az eredeti csempe-felirat FÉLKÖVÉR (`fontmacros_win.tre`
+        // `#define m_fxlabel` → `fontweight 700`), középre zárva. A színe
+        // ott #333333; nálunk a témafüggő `Theme.textDark` marad, hogy
+        // sötét témában is olvasható legyen (a fix hexa ott elveszne).
+        font.bold: pbtn.thumbSource !== ""
         color: pbtn.enabled ? Theme.textDark : Theme.textGray
         // #318: elide helyett tördelés — a panel szélessége nem nőhet,
         // de a szöveg soha nem vágódik "…"-ra; a Qt WordWrap szó-
@@ -135,6 +157,80 @@ Rectangle {
         maximumLineCount: pbtn.thumbSource !== "" ? 2 : 2147483647
         elide: pbtn.thumbSource !== "" ? Text.ElideRight : Text.ElideNone
     }
+    // #704: „alkalmazva" jelvény — a BÉLYEGKÉP jobb alsó sarkában.
+    //
+    // Miért kell: a felhasználó a rácsról eddig egyáltalán nem tudta
+    // megállapítani, mely effektek vannak már a képen — ez nem díszítés,
+    // hanem a szerkesztő egyik alapvető visszajelzése.
+    //
+    // A HELYE, MÉRETE, ALAKJA és SZÍNE megerősített, nem becslés
+    // (`docs/specs/ui-audit-editor.md` 3.3): az `macros.tre:301`
+    // `#define m_fxadorner` szerint `XConstraint 1, 1, -6` /
+    // `YConstraint 1, 1, -19`, azaz a jelvény jobb széle a csempe jobb
+    // szélétől 6 px-re, az alja a csempe aljától 19 px-re van — mivel a
+    // feliratsáv a csempe alsó 18 px-e, ez pontosan a BÉLYEGKÉP alsó élére
+    // simul. Az 1920×1080-as felvételen mérve: 13 × 12 px, kitöltés
+    // #379FFD, negyed-korong alak (CSAK a bal felső sarka lekerekített),
+    // benne fehér, félkövér szám. Ezért horgonyozzuk a bélyegkép-doboz
+    // jobb alsó sarkához, nem a gomb sarkához.
+    //
+    // ⚠️ A SZÁM JELENTÉSE NYITOTT KÉRDÉS (spec 3.4). Cáfolva, hogy a lánc
+    // sorszáma lenne (egy felvételen három csempén egyszerre áll „1"), de a
+    // „hányszor alkalmazták" olvasat sem áll össze: azon a felvételen a fotó
+    // szerkesztetlen (a Visszavonás/Újra egyaránt letiltott). A kiírt érték
+    // ezért EGYELŐRE a legvédhetőbb olvasat — a szűrő előfordulásainak száma
+    // a láncban —, és a spec 3.4 N1 pontja szerint felülvizsgálandó
+    // (célzott képernyőkép-kérés, illetve a `FUN_005d7c20` dekompilálása).
+    // A jelvény SZÁMÁRA semmilyen viselkedés nem épül.
+    Item {
+        id: pbtnBadge
+        objectName: pbtn.objectName ? pbtn.objectName + "Badge" : ""
+        visible: pbtn.appliedCount > 0 && pbtn.thumbSource !== ""
+        anchors.right: pbtnThumbBox.right
+        anchors.bottom: pbtnThumbBox.bottom
+        width: 13
+        height: 12
+
+        // negyed-korong: a lekerekítés CSAK a bal felső sarkon marad. A
+        // két takaró-téglalap ugyanabból a színből dolgozik, ezért a
+        // három alakzat egyetlen foltnak látszik. (Per-sarok `radius`-t
+        // nem használunk: az Qt 6.7 fölött van csak meg, a projekt viszont
+        // nem köti a Qt-verziót.)
+        Rectangle {
+            anchors.fill: parent
+            radius: 6
+            color: pbtn.badgeBlue
+        }
+        Rectangle {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: 6
+            color: pbtn.badgeBlue
+        }
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: 6
+            color: pbtn.badgeBlue
+        }
+
+        Text {
+            id: pbtnBadgeText
+            objectName: pbtn.objectName ? pbtn.objectName + "BadgeText" : ""
+            // a felvételen a szám a jelvény JOBB oldalán ül (a lekerekített
+            // bal felső sarok elől kihúzódva)
+            anchors.right: parent.right
+            anchors.rightMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+            text: pbtn.appliedCount > 0 ? pbtn.appliedCount.toString() : ""
+            font.pixelSize: Theme.fontSize - 3
+            font.bold: true
+            color: Theme.panelSelectionText
+        }
+    }
+
     MouseArea {
         id: pbtnMouse
         anchors.fill: parent

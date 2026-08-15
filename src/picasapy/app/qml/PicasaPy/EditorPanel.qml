@@ -330,6 +330,24 @@ Rectangle {
         return "image://effectthumb/" + panel.effectThumbPhotoId + "/" + effectName
     }
 
+    // #704: melyik szűrő HÁNYSZOR szerepel a szerkesztési láncban — ebből
+    // kapja a csempe az „alkalmazva" jelvényt. A `revision`-re frissül (a
+    // kontroller `revisionChanged` jele köti), tehát minden lánc-módosítás
+    // után újraszámolódik.
+    //
+    // #305 null-őr: a QML-tesztek egy része CSONK editControllert ad, amin
+    // ez a property nem is létezik — üres objektumra esünk vissza.
+    readonly property var effectChainCounts: {
+        if (!panel.hasEffectController()) return ({})
+        var counts = editController.effectChainCounts
+        return (counts === undefined || counts === null) ? ({}) : counts
+    }
+
+    function effectAppliedCount(effectName) {
+        var count = panel.effectChainCounts[effectName]
+        return count === undefined ? 0 : count
+    }
+
     // #411: a "Gyakori javítások" fül csempéi a #405 óta a felhasználó
     // fotójának bélyegképét/effekt-előnézetét mutatták — sötét képnél ez
     // egyforma sötét foltokká olvadt, nem lehetett a csempéket ránézésre

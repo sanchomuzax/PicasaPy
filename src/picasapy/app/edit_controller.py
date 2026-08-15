@@ -476,6 +476,29 @@ class EditController(QObject, BackgroundWorkerMixin):
         names = {op.name.casefold() for op in self._session.ops}
         return sorted(names & LEGACY_EFFECT_KEYS)
 
+    @Property("QVariant", notify=revisionChanged)
+    def effectChainCounts(self):
+        """Melyik szűrő HÁNYSZOR szerepel a szerkesztési láncban (#704).
+
+        Ebből teszi ki a szerkesztő az „alkalmazva" jelvényt a csempékre: a
+        felhasználó a rácsról ma egyáltalán nem tudja megállapítani, mely
+        effektek vannak már a képen. Ez nem díszítés, hanem a szerkesztő
+        egyik alapvető visszajelzése.
+
+        DARABSZÁM, nem lánc-pozíció: a bejelentő képernyőképén az eredeti
+        Picasa a Sepia és a Warmify csempéjén EGYARÁNT `1`-et mutat, holott
+        a láncban a kettő nem lehet ugyanazon a helyen — vagyis a szám az
+        adott szűrő előfordulásainak száma.
+
+        A kulcsok a szűrőnév kisbetűs (casefold) alakjai, ahogy a QML-oldal
+        is küldi őket (`effectRequested`, `applyEffectWithParams`).
+        """
+        counts: dict[str, int] = {}
+        for op in self._session.ops:
+            key = op.name.casefold()
+            counts[key] = counts.get(key, 0) + 1
+        return counts
+
     @Property(bool, notify=toolsChanged)
     def redeyeActive(self) -> bool:
         return self._session.has("redeye")
