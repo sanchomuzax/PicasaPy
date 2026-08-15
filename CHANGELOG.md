@@ -5,6 +5,35 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.50] – 2026-08-15
+
+### Hozzáadva
+- **A négy irányított effekt megjelent (#623).** A `dir_sat`, `dir_brite`,
+  `dir_sharp` és a `linblur` eddig némán kimaradt a renderelésből — az így
+  szerkesztett képeket a program *effekt nélkül* mutatta. Mostantól
+  ténylegesen rajzolnak. Velük együtt bekerült a Picasa **közös elmosó
+  motorja** is, amit eddig csak közelítettünk.
+- **Az effekt-csúszkák feliratai a Picasa saját szótárából (#600).** Eddig
+  részben kitalált nevek álltak rajtuk. Ami a legjobban látszik: a legtöbb
+  effekt erősség-csúszkája mostantól **„Fokozat"**, ahogy az eredetiben —
+  nem „Elhalványítás".
+
+### Javítva
+- **A Melegítés effekt pixelpontos lett (#611).** Eddig közelítő görbe adta a
+  meleg tónust; kiderült, hogy az eredeti nem számol semmit, hanem egy
+  beégetett táblából olvas. A táblát kinyertük a programból, így a Melegítés
+  eredménye **bitre azonos** a régi Picasáéval.
+- **Az Esc a vágást szakítja meg, nem a nézőt zárja be (#666).** Vágás
+  közben az Esc eddig kidobott a fotónézőből, és a megkezdett vágás elveszett.
+- **Az automatikus szinthúzás a natív algoritmust követi (#539).** Az „Auto
+  kontraszt" eredménye érezhetően közelebb került az eredetihez; a teljes
+  tartományú képek érintetlenül maradnak.
+
+### Belső
+- A csomagépítés hibás setuptools-minimuma javítva, és két olyan csapda
+  lezárva, amitől a csomag-ellenőrzés helyben **hamisan zöldet** mutathatott
+  (#652, #655).
+
 ## [0.7.49] – 2026-08-15
 
 ### Javítva
