@@ -200,3 +200,41 @@ class TestLemezreNemJutKi:
 
         assert ini_path.read_bytes() == eredeti
         assert load_document(ini_path).section(_SECTION).get("filters") == "sepia=1;"
+
+
+class TestFelhasznaloiUzenet:
+    """#643/2 — a visszautasítás a FELHASZNÁLÓHOZ is eljut, magyarul.
+
+    A kivétel szövege nem fejlesztői napló: a szerkesztő hibapárbeszéde és a
+    fotóművelet-hibasáv szó szerint ezt mutatja meg. Ezért az első mondat
+    hétköznapi nyelvű, és nincs benne jegyszám, forrásfájl-út vagy angol
+    kulcsszó.
+    """
+
+    def _uzenet(self) -> str:
+        with pytest.raises(FilterWriteError) as hiba:
+            guard_chain_write("filters", "nincsilyen=1;bw=1;", None, where="[kep.jpg]")
+        return str(hiba.value)
+
+    def test_hetkoznapi_nyelvu_bevezeto(self):
+        uzenet = self._uzenet()
+        assert uzenet.startswith("A szerkesztés nem menthető")
+        # A felhasználó legfontosabb kérdése: elveszett-e a munkája.
+        assert "érintetlen maradt" in uzenet
+
+    def test_nincs_benne_fejlesztoi_zsargon(self):
+        uzenet = self._uzenet()
+        for zsargon in ("#643", ".py", "lánc-bejáró", "tag ("):
+            assert zsargon not in uzenet, f"fejlesztői zsargon a felületen: {zsargon}"
+
+    def test_megnevezi_az_erintett_lepest_es_a_kepet(self):
+        uzenet = self._uzenet()
+        assert "nincsilyen=1" in uzenet
+        assert "kep.jpg" in uzenet
+        # A #643 lényege: nem csak a hibás lépés vész el, hanem az utána
+        # következők is — ezt ki kell mondani.
+        assert "'bw=1'" in uzenet
+
+    def test_a_technikai_reszlet_a_vegen_all(self):
+        uzenet = self._uzenet()
+        assert uzenet.rstrip().endswith("(Technikai részlet: filters='nincsilyen=1;bw=1;')")

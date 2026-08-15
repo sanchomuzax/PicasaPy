@@ -138,8 +138,15 @@ class ChainDefect:
     lost_entries: tuple[str, ...] = ()
 
     def describe(self) -> str:
-        """A hiba egysoros, magyar leírása — hibaüzenetbe és naplóba."""
-        text = f"{self.index + 1}. tag ({self.entry!r}): {self.kind.value} — {self.detail}"
+        """A hiba egysoros, magyar leírása — hibaüzenetbe és naplóba.
+
+        A szóhasználat szándékosan „lépés" és nem „tag": ez a szöveg a
+        felhasználó elé is kikerül (a mentés hibaüzenetében), ő pedig a
+        láncot egymás után alkalmazott szerkesztési lépésekként ismeri."""
+        text = (
+            f"{self.index + 1}. lépés ({self.entry!r}): "
+            f"{self.kind.value} — {self.detail}"
+        )
         if self.lost_entries:
             elveszo = ", ".join(repr(entry) for entry in self.lost_entries)
             text += f"; emiatt a Picasában NEM fut le utána: {elveszo}"
@@ -255,8 +262,8 @@ def _defect_of(entry: str) -> tuple[DefectKind, str] | None:
     if canonical is None:
         return (
             DefectKind.UNKNOWN_NAME,
-            f"a(z) {name!r} nincs a kanonikus szűrőnév-táblában "
-            f"(`ini/filter_registry.py`)",
+            f"a(z) {name!r} nevű szerkesztést az eredeti Picasa nem ismeri "
+            f"(nincs a kanonikus szűrőnév-táblában)",
         )
 
     limit = max_param_count(name)
@@ -280,11 +287,29 @@ def _defect_of(entry: str) -> tuple[DefectKind, str] | None:
 def _write_error_message(
     key: str, value: str, introduced: tuple[ChainDefect, ...], where: str
 ) -> str:
-    """A visszautasítás magyar, cselekvésre fordítható indoklása."""
-    hely = f" {where}" if where else ""
-    sorok = "\n".join(f"  - {defect.describe()}" for defect in introduced)
+    """A visszautasítás magyar, cselekvésre fordítható indoklása.
+
+    Ez a szöveg **a felhasználó elé kerül** (a szerkesztő mentési hibája és
+    a fotóművelet-hibasáv is ezt mutatja), ezért az első két mondat
+    hétköznapi nyelvű: mi történt, és mi lett a következménye. A gépi
+    részlet (kulcs, nyers lánc) a végére kerül, hogy a hibajelentésbe
+    bemásolható legyen, de ne az legyen az első, amit elolvas.
+
+    Új `qsTr()`/`tr()` forrásszöveget SZÁNDÉKOSAN nem vezetünk be: a
+    projekt hibaüzenetei (`IniConflictError`, `SaveError`) is magyarul, a
+    kivétel szövegében élnek, és egy új fordítandó szöveg a `.ts`
+    újragenerálása nélkül pirosra vinné a `test_i18n_completeness`-t.
+    """
+    hely = f" ({where})" if where else ""
+    sorok = "\n".join(f"  • {defect.describe()}" for defect in introduced)
     return (
-        f"A(z) {key}={value!r} lánc{hely} nem írható ki: az eredeti Picasa "
-        f"lánc-bejárója az első hibás tagnál MEGÁLL, és onnantól a lánc "
-        f"hátralévő része sem fut le (#643, mérve).\n{sorok}"
+        f"A szerkesztés nem menthető{hely}: olyan lépés került a "
+        f"szerkesztési sorba, amelyet az eredeti Picasa nem tud feldolgozni. "
+        f"A Picasa az ilyen lépésnél megáll, ezért nála az utána következő "
+        f"szerkesztések sem futnának le — a kép egészen máshogy nézne ki, "
+        f"mint itt.\n"
+        f"Ezért a mentést visszautasítottuk: a kép korábbi, működő "
+        f"szerkesztése érintetlen maradt.\n"
+        f"{sorok}\n"
+        f"(Technikai részlet: {key}={value!r})"
     )

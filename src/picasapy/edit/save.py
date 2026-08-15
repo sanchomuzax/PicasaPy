@@ -70,6 +70,7 @@ import numpy as np
 
 from picasapy.edit.session import EditSession
 from picasapy.ini import (
+    FilterWriteError,
     IniConflictError,
     IniSaveError,
     load_document,
@@ -94,7 +95,14 @@ _INI_FILENAME = ".picasa.ini"
 # Az ini-könyvelés kezelt hibái (#297): a fájlrendszeré (`OSError`: tele
 # lemez, zárolt fájl), a kódolásé (`IniSaveError`) és a párhuzamosan futó
 # eredeti Picasa tartós ütközése (`IniConflictError`).
-_INI_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
+#
+# #643: a round-trip őr visszautasítása (`FilterWriteError`) itt NEM csak
+# üzenet-kérdés, hanem ADATVÉDELEM. Ha a `redo=`/`filters=` átforgatása
+# elbukik, a képfájl ekkor MÁR a beégetett szerkesztést tartalmazza, az
+# ini viszont a régi állapotot — a következő megnyitáskor a lánc másodszor
+# is lefutna (dupla-szerkesztés, #297). Enélkül a kivétel a `_restore_
+# image_or_raise` MELLETT szökött volna ki, visszaállítás nélkül.
+_INI_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError, FilterWriteError)
 
 # JPEG-nél a mentés-minőség alapértéke magas (a felhasználó explicit
 # "Mentés" szándékát tükrözi — a nem-destruktív elv ELLENÉRE ez a pillanat
