@@ -10,8 +10,10 @@ import pytest
 from picasapy.ini.rect64 import Rect64
 from picasapy.render.ops import (
     _channel_black_white_points,
-    _common_black_white_point,
-    _histogram_black_white_point,
+    _levels_clip_threshold,
+    _native_clip_points,
+    _native_levels_lut,
+    _union_black_white_point,
     apply_autocolor,
     apply_autolight,
     apply_channel_levels_stretch,
@@ -95,15 +97,35 @@ class TestApplyTilt:
 
 
 class TestApplyAutolight:
-    """Auto Contrast — megfejtve #540-ben: KÖZÖS (mindhárom csatornán azonos)
-    hisztogram-darabszám alapú vágás — ez a megkülönböztető tulajdonsága a
-    csatornánként külön vágó Auto Colourtól."""
+    """Auto Contrast — KÖZÖS (mindhárom csatornán azonos) vágás; ez a
+    megkülönböztető tulajdonsága a csatornánként külön vágó Auto Colourtól
+    (#540). A közös vágópont a #539 óta a csatornánkénti vágópontok
+    UNIÓJA (`FUN_00a4bfd0`), nem az összeöntött hisztogramé."""
+
+    def test_a_kozos_vagas_a_csatornak_unioja_nem_az_osszeontott_hisztogram(
+        self,
+    ) -> None:
+        """A megkülönböztető eset: a piros csatorna képpontjainak 0,6%-a ül a
+        nullán — a SAJÁT hisztogramjában ez átlépi a küszöböt (feketepont 0),
+        az összeöntött, háromszor akkora hisztogramban viszont csak 0,2%,
+        ott tehát nem lépné át. Az uniós szabály szerint a globális
+        feketepont 0, az összeöntött szerint 100 lenne."""
+        image = np.full((200, 200, 3), 100, dtype=np.uint8)
+        image[0, :, 0] = 0  # 200 képpont = a 40 000 0,5%-a (a küszöb)
+        image[1:3] = 200  # 400 képpont: a fehérpont mindhárom csatornán 200
+
+        result = apply_autolight(image)
+
+        # lo = 0, hi = 200 → gain = (255 << 16) // 200 = 83558
+        assert int(result[50, 50, 1]) == (100 * 83558) >> 16
+        assert int(result[50, 50, 1]) > 0
 
     def test_szethuzza_a_hisztogramot(self) -> None:
         image = _gradient_image()
         result = apply_autolight(image)
         assert result.min() == 0
-        assert result.max() == 255
+        # #539: a natív egész osztás csonkolása miatt a fehérpont 254 is lehet
+        assert result.max() >= 254
 
     def test_globalis_kozos_vagas_linearis(self) -> None:
         # megfejtve (#540): ki = (be − lo)·255/(hi − lo), egyetlen KÖZÖS
@@ -115,7 +137,7 @@ class TestApplyAutolight:
         result = apply_autolight(image)
         assert result[0, 0, 0] == 0
         assert abs(int(result[0, 1, 0]) - 128) <= 1
-        assert result[0, 2, 0] == 255
+        assert result[0, 2, 0] >= 254
 
     def test_kozos_csatorna_transzformacio(self) -> None:
         # a stretch KÖZÖS mindhárom csatornára — a színegyensúly megmarad
@@ -295,11 +317,13 @@ class TestApplyEnhance:
 
         result = apply_enhance(image)
 
-        # a piros és a kék csatornát is széthúzta (nem full-range bemenet)
+        # a piros és a kék csatornát is széthúzta (nem full-range bemenet).
+        # #539: a fehérpont a natív EGÉSZ osztás csonkolása miatt 254-re is
+        # eshet — a gain `(255 << 16) // (hi − lo)` lefelé kerekít.
         assert result[..., 0].min() == 0
-        assert result[..., 0].max() == 255
+        assert result[..., 0].max() >= 254
         assert result[..., 2].min() == 0
-        assert result[..., 2].max() == 255
+        assert result[..., 2].max() >= 254
         # a zöld már full-range volt → azonosság
         np.testing.assert_array_equal(result[..., 1], image[..., 1])
 
@@ -350,35 +374,55 @@ class TestApplyRedeye:
         np.testing.assert_array_equal(image, original)
 
 
-class TestHistogramBlackWhitePoint:
-    """#549: a vágópont-számítás EGY helyen — a közös és a csatornánkénti
-    út ugyanazt a segédet hívja, és a `low < high` invariáns garantált."""
+class TestNativVagopontKereses:
+    """#539: a natív vágópont-keresés BETŰ SZERINT (`FUN_00a4be40`,
+    `0x009db610`).
 
-    def test_nulla_kuszob_a_teljes_tartomanyt_adja(self) -> None:
-        """Nulla küszöbnél a vágópont a tényleges szélső érték — egyenletes
-        rámpán tehát a teljes 0..255."""
-        image = np.arange(256, dtype=np.uint8).reshape(16, 16)
-        assert _histogram_black_white_point(image, image.size, 0.0, 0.0) == (0, 255)
+    ```c
+    kuszob = round(N * 0.005);  if (kuszob == 0) kuszob = 1;
+    i = 0;   sum = 0;  do { sum += hist[i]; i++; } while (i <= 255 && sum < kuszob);
+    lo = i - 1;
+    i = 255; sum = 0;  do { sum += hist[i]; i--; } while (i >= 0  && sum < kuszob);
+    hi = i + 1;
+    ```
+    """
 
-    def test_a_kuszob_a_szelso_szinteket_levagja(self) -> None:
-        """Rámpán szintenként EGY képpont van, tehát a 0,5%-os alsó küszöb
-        (1,28 képpont) az első szintet már levágja."""
-        image = np.arange(256, dtype=np.uint8).reshape(16, 16)
-        assert _histogram_black_white_point(image, image.size, 0.005, 0.002) == (1, 255)
+    def test_a_kuszob_a_keppontszam_fel_szazaleka(self) -> None:
+        assert _levels_clip_threshold(200 * 200) == 200
+        assert _levels_clip_threshold(2560 * 1600) == 20480
 
-    def test_egyszinu_kepen_is_low_kisebb_mint_high(self) -> None:
-        """Degenerált eset: egyetlen szint — a küszöbök nem hagynának
-        tartományt, tehát az azonosság-eset jön (nem fordított pár)."""
-        image = np.full((32, 32), 120, dtype=np.uint8)
-        low, high = _histogram_black_white_point(image, image.size, 0.005, 0.002)
-        assert (low, high) == (0, 255)
+    def test_a_kuszob_legalabb_egy(self) -> None:
+        """A natív `if (kuszob == 0) kuszob = 1` — apró képen is van vágás."""
+        assert _levels_clip_threshold(10 * 10) == 1
+        assert _levels_clip_threshold(0) == 1
 
-    def test_szuk_hisztogram_vagopontjai(self) -> None:
-        image = np.full((100, 100), 100, dtype=np.uint8)
-        image[:50] = 150
-        low, high = _histogram_black_white_point(image, image.size, 0.005, 0.002)
-        assert low < high
-        assert (low, high) == (100, 150)
+    def test_a_kuszob_a_MINTAVETELEZETT_keppontszamra_vonatkozik(self) -> None:
+        """`N = W·H / lépés²` — ritkított hisztogramnál a küszöb is ritkul."""
+        assert _levels_clip_threshold((2560 * 1600) // (2 * 2)) == 5120
+
+    def test_a_ciklus_a_noveles_UTAN_ellenoriz(self) -> None:
+        """`lo = i − 1` / `hi = i + 1`: a vágópont AZ a szint, amelyiknél a
+        kumulált darabszám eléri a küszöböt — nem a következő."""
+        histogram = np.zeros(256, dtype=np.int64)
+        histogram[10] = 5
+        histogram[200] = 5
+        assert _native_clip_points(histogram, 1) == (10, 200)
+        assert _native_clip_points(histogram, 5) == (10, 200)
+
+    def test_a_kuszob_folott_atlep_a_masik_tuskere(self) -> None:
+        """Hat darabhoz már a MÁSIK tüske is kell — a natív ciklus ilyenkor
+        fordított párt ad vissza, és ezt nem szépítjük meg."""
+        histogram = np.zeros(256, dtype=np.int64)
+        histogram[10] = 5
+        histogram[200] = 5
+        assert _native_clip_points(histogram, 6) == (200, 10)
+
+    def test_a_kuszobot_el_nem_ero_hisztogram_a_szelekre_fut(self) -> None:
+        """Ha az egész hisztogram kevesebb a küszöbnél, a ciklus kifut a
+        `break`-re: `lo = 255`, `hi = 0`."""
+        histogram = np.zeros(256, dtype=np.int64)
+        histogram[100] = 3
+        assert _native_clip_points(histogram, 10) == (255, 0)
 
     def test_a_harom_csatorna_egybeesik_szurke_kepen(self) -> None:
         """Szürkeárnyalatos képen a három csatorna vágópontja azonos —
@@ -388,13 +432,48 @@ class TestHistogramBlackWhitePoint:
         piros, zold, kek = _channel_black_white_points(image)
         assert piros == zold == kek
 
-    def test_a_kozos_ut_tovabbra_is_a_frakciokkal_dolgozik(self) -> None:
-        """Az Auto Contrast (közös) útja külön mérésen nyugszik (#540),
-        ezért a #539 natív geometriája nem érinti."""
-        gray = np.random.default_rng(9).integers(40, 200, size=(40, 40), dtype=np.uint8)
-        image = np.stack([gray] * 3, axis=-1)
-        low, high = _common_black_white_point(image, 0.005, 0.002)
-        assert 0 <= low < high <= 255
+
+class TestUnioVagopont:
+    """#539: az `autolight` (Auto Contrast) GLOBÁLIS vágása a három csatorna
+    UNIÓJA — `FUN_00a4bfd0`: `lo = min(lo_R, lo_G, lo_B)`,
+    `hi = max(hi_R, hi_G, hi_B)`."""
+
+    def test_a_legszelesebb_tartomanyt_veszi(self) -> None:
+        columns = 100
+        image = np.zeros((100, columns, 3), dtype=np.uint8)
+        for channel, (start, stop) in enumerate(((40, 200), (20, 150), (80, 240))):
+            ramp = np.linspace(start, stop, columns, dtype=np.uint8)
+            image[..., channel] = ramp[np.newaxis, :]
+        # lo = min(40, 20, 80) = 20 · hi = max(200, 150, 240) = 240
+        assert _union_black_white_point(image) == (20, 240)
+
+
+class TestNativSzinthuzoAtvitel:
+    """#539: a natív átvitel FIXPONTOS (`0x009db610`):
+    `gain = (255 << 16) / (hi − lo)` egész osztással, majd
+    `ki = ((be − lo) · gain) >> 16`, végül vágás [0, 255]-re."""
+
+    def test_teljes_tartomany_bajtra_azonossag(self) -> None:
+        """`lo = 0`, `hi = 255` esetén a gain pontosan 65536 — a leképezés
+        bájtra azonosság, kerekítési hiba nélkül."""
+        np.testing.assert_array_equal(_native_levels_lut(0, 255), np.arange(256))
+
+    def test_a_gain_egesz_osztas_lefele_kerekit(self) -> None:
+        """(255 << 16) // 100 = 167116, tehát a 100..200 sáv felezőpontja
+        127 lesz, nem a lebegőpontos 127,5-ből kerekített 128."""
+        assert int(_native_levels_lut(100, 200)[150]) == 127
+
+    def test_a_tartomanyon_kivul_vag(self) -> None:
+        lut = _native_levels_lut(100, 200)
+        assert int(lut[0]) == 0
+        assert int(lut[99]) == 0
+        assert int(lut[255]) == 255
+
+    def test_a_feherpont_a_csonkolas_miatt_254_is_lehet(self) -> None:
+        """A gain lefelé kerekítése miatt maga a fehérpont sem feltétlenül
+        éri el a 255-öt: 100 széles sávnál a gain 167116, és
+        `(100 · 167116) >> 16 = 254`. A natív kód nem korrigálja."""
+        assert int(_native_levels_lut(100, 200)[200]) == 254
 
 
 class TestNativLevelsGeometria:
