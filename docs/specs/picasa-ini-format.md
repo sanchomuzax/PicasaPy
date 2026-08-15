@@ -1027,6 +1027,49 @@ a művelet visszajátszásából.
 *Bizonyítottsági fok: **megerősített*** (kimerítő negatív keresés három
 tárolóban + közvetlen pixelösszevetés valódi eredeti/szerkesztett párokon).
 
+### Az export sem alkalmazza újra — és ez implementációs szabály
+
+A tulajdonos ugyanezekről a képekről **exportot** is készített. Az exportált
+és a mappában lévő (már javított) fájl különbsége: átlag `|Δ| < 0,5`,
+maximum 24, és **egyetlen olyan képpont sincs, ahol az eltérés > 30** — ez
+tiszta JPEG-újratömörítési zaj. Az exporttól az **eredetihez** képest viszont
+ugyanaz a néhány száz képpont tér el, mint a mentett fájlnál.
+
+**Vagyis a Picasa exportkor nem alkalmazza újra a vörösszem-javítást** — nem
+is tudná, koordináta híján —, hanem a már javított képet rendereli tovább.
+
+> **Szabály a PicasaPy-nak:** a `redeye=1;` (és a `retouch=1;`) bejegyzést
+> **azonosságként** kell renderelni, ha a bemenet a mappában lévő fájl.
+> Ha saját vörösszem-algoritmust futtatnánk rá, **kétszer javítanánk** —
+> a Picasa-kimenettől eltérnénk olyan képeken, amiket ő már javított.
+
+### A javítás képpont-művelete — a delta-pixelekből visszafejtve
+
+Három kép 575 megváltozott képpontján, eredeti → javított:
+
+| | R | G | B |
+|---|---:|---:|---:|
+| **előtte** (átlag) | 108,0 | 51,8 | 40,4 |
+| **utána** (átlag) | 54,3 | 45,6 | 41,9 |
+
+- a **vörös csatorna esik** (átlag −53,6, medián −44, maximum −156);
+- a zöld alig (−6,1), a kék gyakorlatilag nem változik (+1,5);
+- a színesség eltűnik: `|R−G|` átlaga **56,3 → 9,1**.
+
+A leképezés a kimeneti vörösre:
+
+```
+R' ≈ max(G, B)
+```
+
+a mért eltérés átlaga `+1,6`, szórása `11,0` — a szórást a foltszél
+lágyítása és a JPEG-zaj magyarázza; a folt belsejében a közelítés szoros.
+
+*Bizonyítottsági fok: erős* (három kép, 575 képpont; a szélek keveredése és
+a JPEG-veszteség miatt a pontos vágás/keverés még nem különíthető el).
+**Nyitva:** a folt alakja és a szélek lágyítása, illetve hogy a művelet
+`min(R, max(G,B))` vagy súlyozott keverés-e.
+
 ### Mit jelent ez a PicasaPy-nak
 
 A `retouch=1,<rect64>…` **saját kiterjesztésünk** így nem ütközik semmivel —
