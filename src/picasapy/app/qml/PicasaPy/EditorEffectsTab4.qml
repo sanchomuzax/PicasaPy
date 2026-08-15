@@ -27,38 +27,25 @@ ColumnLayout {
     anchors.margins: 10
     spacing: 8
 
-    Rectangle {
-        Layout.fillWidth: true
-        height: 22
-        color: Theme.panelHeaderBg
-        Text {
-            anchors.left: parent.left
-            anchors.leftMargin: 6
-            anchors.verticalCenter: parent.verticalCenter
-            text: qsTr("More Effects")
-            font.pixelSize: Theme.fontSize
-            font.bold: true
-            color: Theme.panelHeaderText
-        }
-    }
+    // #704: NINCS fejlécsáv a rács fölött. Az eredeti Picasa
+    // elrendezés-forrásában (`editpanel.tre:428`) az effekt-fül panelének
+    // (`editpanel/tabpanel3`) PONTOSAN EGY gyereke van: a rács konténere
+    // (`editpanel/fxthumbs`). Szekciócím, fejlécsáv, cím-felirat az `fx*`
+    // névtérben nincs — a fülre váltva azonnal a csempék jönnek. A korábbi
+    // 22 képpontos, kiemelt hátterű sáv ráadásul abból a panelmagasságból
+    // vett el, ami a #703 szerint amúgy is szűkös.
 
     GridLayout {
         objectName: "effectsGrid4"
         columns: 3
-        columnSpacing: 6
-        rowSpacing: 6
+        // #704: a csempék közti térköz az eredetin MÉRT 2 px
+        // (`ui-audit-editor.md` 3.2: osztásköz 88 px, csempe 86 px), nem a
+        // korábbi 6. A 3 × 86 + 2 × 2 = 262 px pontosan kiadja a panel
+        // 261 képpontos tartalom-oszlopát.
+        columnSpacing: 2
+        rowSpacing: 2
         Layout.fillWidth: true
 
-        // #315: a render/chain.py "vignette" kulcsot vár (kisbetűs,
-        // casefold), noha az ini-ben a szűrő neve nagybetűs "Vignette"
-        // — az EditController.applyEffect is casefold-ol, ezért itt is
-        // kisbetűvel küldjük az effectRequested jelet.
-        PanelButton {
-            objectName: "effectVignette"
-            label: qsTr("Vignette")
-            onButtonClicked: if (!panel.tryOpenParamPanel("vignette", label)) panel.effectRequested("vignette")
-            thumbSource: panel.effectThumbSource("vignette")
-        }
         // #516: eddig vezérlő és gomb NÉLKÜLI, de a render/ rétegben
         // MÁR bekötött (chain._HANDLERS) effektek
         PanelButton {
@@ -66,18 +53,21 @@ ColumnLayout {
             label: qsTr("Matte")
             onButtonClicked: if (!panel.tryOpenParamPanel("matte", label)) panel.effectRequested("matte")
             thumbSource: panel.effectThumbSource("matte")
+            appliedCount: panel.effectAppliedCount("matte")
         }
         PanelButton {
             objectName: "effectNightVision"
             label: qsTr("Night Vision")
             onButtonClicked: if (!panel.tryOpenParamPanel("nightvision", label)) panel.effectRequested("nightvision")
             thumbSource: panel.effectThumbSource("nightvision")
+            appliedCount: panel.effectAppliedCount("nightvision")
         }
         PanelButton {
             objectName: "effectLocalContrast"
             label: qsTr("Local Contrast")
             onButtonClicked: if (!panel.tryOpenParamPanel("localcontrast", label)) panel.effectRequested("localcontrast")
             thumbSource: panel.effectThumbSource("localcontrast")
+            appliedCount: panel.effectAppliedCount("localcontrast")
         }
         // #516: eddig vezérlő és gomb NÉLKÜLI, de a render/ rétegben
         // MÁR bekötött (chain._HANDLERS) effektek
@@ -86,12 +76,14 @@ ColumnLayout {
             label: qsTr("Rounded Edges")
             onButtonClicked: if (!panel.tryOpenParamPanel("roundededges", label)) panel.effectRequested("roundededges")
             thumbSource: panel.effectThumbSource("roundededges")
+            appliedCount: panel.effectAppliedCount("roundededges")
         }
         PanelButton {
             objectName: "effectPicnikGrain"
             label: qsTr("Film Grain (Fine)")
             onButtonClicked: if (!panel.tryOpenParamPanel("picnikgrain", label)) panel.effectRequested("picnikgrain")
             thumbSource: panel.effectThumbSource("picnikgrain")
+            appliedCount: panel.effectAppliedCount("picnikgrain")
         }
     }
 

@@ -879,7 +879,10 @@ class TestEffectTabsFitWithoutScrolling(_ViewerOpenMixin):
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
         panel = window.findChild(QObject, "viewerEditorPanel")
-        expected = {2: 12, 3: 12, 4: 11, 5: 6}
+        # #704 HELYESBÍTÉS (▶KÉP, `ui-audit-editor.md` 2. szakasz):
+        # mindhárom effekt-fül 12 csempés — a Vignetta az 5. fülre
+        # tartozik, nem a #422-es „További effektek" gyűjtőre.
+        expected = {2: 12, 3: 12, 4: 12, 5: 5}
         for tab, grid_name in self.GRIDS.items():
             panel.setProperty("activeTab", tab)
             qt_app.processEvents()

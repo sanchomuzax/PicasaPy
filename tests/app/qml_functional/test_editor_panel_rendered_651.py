@@ -204,34 +204,61 @@ class TestTheUndoRowIsAlwaysOnScreen:
             "ablakban — túlnyúlik, és a gombsort magával viszi (#641)"
         )
 
-    def test_an_overflowing_parent_is_what_the_bug_looked_like(self, qt_app):
-        """A hibás alak MÉG MINDIG hibás — az őrnek van foga.
+    def test_an_overflowing_parent_still_overflows(self, qt_app):
+        """A hibás beágyazási ALAK még mindig hibás — az őrnek van foga.
 
-        Ha ez a teszt egyszer elbukik (azaz a túlnyúló szülő mellett is
-        minden rendben lenne), akkor a fenti őr elvesztette az értelmét,
-        és felül kell vizsgálni. Egy néma őr rosszabb a semminél."""
+        #703 (felülvizsgálat, ahogy ez a teszt korábbi változata előírta):
+        eredetileg azt állította, hogy a túlnyúló szülő mellett a GOMBSOR is
+        kicsúszik. Ez már nem igaz, és ez a javítás lényege: az
+        `EditorPanel.visibleHeight` a #703 óta a TELJES ős-láncot végigjárja,
+        nem csak a közvetlen szülőt, ezért a sort a túlnyúló ős sem viszi
+        magával.
+
+        Amit ez az őr azóta mér: a hibás alak maga (a `Layout.minimumHeight`
+        miatt túlnyúló panel-doboz) VÁLTOZATLANUL előáll — vagyis a fenti
+        `test_the_panel_box_never_overflows_the_window` nem azért zöld, mert
+        a mérés elromlott, hanem mert a `PhotoViewer` nem használja ezt az
+        alakot."""
+        view, root = _view(
+            qt_app, _viewer_qml(2, overflowing_parent=True), 1200, 320
+        )
+
+        box = _child(root, "panelBox")
+
+        assert _bottom_in_window(box) > 320, (
+            "a túlnyúló szülő már nem idézi elő a túlnyúlást — az őr "
+            "feltételezései elavultak, vizsgáld felül"
+        )
+
+    def test_the_row_survives_even_an_overflowing_parent(self, qt_app):
+        """#703: a túlnyúló ős alatt is az ablakon belül marad a sor."""
         view, root = _view(
             qt_app, _viewer_qml(2, overflowing_parent=True), 1200, 320
         )
 
         row = _child(root, "editorGlobalUndoRow")
 
-        assert _bottom_in_window(row) > 320, (
-            "a túlnyúló szülő már nem idézi elő a hibát — az őr "
-            "feltételezései elavultak, vizsgáld felül"
+        assert _bottom_in_window(row) <= 320.5, (
+            f"túlnyúló szülő mellett a gombsor alja {_bottom_in_window(row):.0f} "
+            "px-nél van egy 320 px magas ablakban (#703)"
         )
 
     def test_the_thumbnailed_tiles_drive_the_requirement(self, qt_app):
-        """A bélyegképes csempe ~98 px — enélkül a mérés hamisan megnyugtat.
+        """A bélyegképes csempe ~90 px — enélkül a mérés hamisan megnyugtat.
 
         Ez az állítás azt őrzi, hogy a STUB tényleg bekapcsolja a
         bélyegképeket; ha elromlik, a fenti tesztek észrevétlenül
-        elveszítik az élüket."""
+        elveszítik az élüket.
+
+        #704: a küszöb 450-ről 350-re csökkent, mert a csempe bélyegkép-
+        doboza a MÉRT 48 px-re állt (korábban 56 volt) és a rács térköze
+        2 px-re (korábban 6). Bélyegkép nélkül a panel igénye ~246 px, vele
+        ~446 — a 350 továbbra is bőven elkülöníti a két esetet."""
         view, root = _view(qt_app, _viewer_qml(2), 1200, 900)
 
         panel = _child(root, "viewerEditorPanel")
 
-        assert panel.property("implicitHeight") > 450, (
+        assert panel.property("implicitHeight") > 350, (
             "a csempék bélyegkép nélkül alacsonyak — a stub nem ér el a "
             "panelig, és a küszöb-tesztek elvesztették az értelmüket"
         )

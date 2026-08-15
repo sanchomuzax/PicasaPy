@@ -35,20 +35,13 @@ ColumnLayout {
     readonly property var effects:
         panel.hasEffectController() ? editController.legacyEffects : []
 
-    Rectangle {
-        Layout.fillWidth: true
-        height: 22
-        color: Theme.panelHeaderBg
-        Text {
-            anchors.left: parent.left
-            anchors.leftMargin: 6
-            anchors.verticalCenter: parent.verticalCenter
-            text: qsTr("Legacy Effects")
-            font.pixelSize: Theme.fontSize
-            font.bold: true
-            color: Theme.panelHeaderText
-        }
-    }
+    // #704: NINCS fejlécsáv a rács fölött. Az eredeti Picasa
+    // elrendezés-forrásában (`editpanel.tre:428`) az effekt-fül panelének
+    // (`editpanel/tabpanel3`) PONTOSAN EGY gyereke van: a rács konténere
+    // (`editpanel/fxthumbs`). Szekciócím, fejlécsáv, cím-felirat az `fx*`
+    // névtérben nincs — a fülre váltva azonnal a csempék jönnek. A korábbi
+    // 22 képpontos, kiemelt hátterű sáv ráadásul abból a panelmagasságból
+    // vett el, ami a #703 szerint amúgy is szűkös.
 
     // #571 2. pont: a fül teteje egy sorban mondja ki, mi ez a készlet
     Text {
