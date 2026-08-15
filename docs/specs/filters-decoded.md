@@ -1209,3 +1209,50 @@ fixpontban, és `p >> 8` indexeli a táblát (0…383 tartományra vágva). A t�
 
 **Bizonyítottsági fok: megerősített** (a leképezések és az együtthatók),
 **erős** (a görbe B-spline-ként való azonosítása).
+
+### `tint` — a színparaméter feldolgozása (2026-08-15, a „Nyitva 4" részleges megoldása)
+
+A `tint` a **legnagyobb mért eltérésű** effekt (20,63 ΔE). A callback
+(`0x008f9630`) visszafejtése megmutatta, hogy a színt **nem nyersen** használja:
+
+```c
+szin = *(uint*)(p + 0x50);
+
+// 1) VIRTUÁLIS SZÍNÁTALAKÍTÁS, ha van kontextus
+ctx = *(int*)(param_4 + 8);
+if (ctx) (*(void(**)(void*,uint*,uint*,int))(*(int*)ctx + 8))(ctx, &szin, &szin, 1);
+
+// 2) normalizálás a legnagyobb komponensre
+R = szin & 0xff;  G = (szin>>8) & 0xff;  B = (szin>>16) & 0xff;
+mx  = max(R, G, B);
+sum = (R + G + B) * 85;                  // 85*3 = 255 → sum = 255 * átlag
+k   = ((mx * 255.0f) / sum - 1.0f) * 0.5f + 1.0f;
+skala = lround(16711680.0 / (mx * 255.0));   // 0xFF0000 / (mx*255)
+
+if (k != 1.0f) <extra igazítás: 0x00aa40a0>(k, 0);
+<színezés a feldolgozott színnel>(dst, szin, …);
+```
+
+#### Amit ez megmagyaráz
+
+A `k` tényező **a szín telítettségétől függ**: szürke árnyalatnál
+`mx == átlag`, tehát `k = 1` és nincs korrekció; erősen telített színnél
+`k > 1`. **A nyers RGB-vel színezve ez a korrekció kimarad** — szisztematikus,
+a szín telítettségével növekvő eltérést okoz, ami illeszkedik a mért 20,63-hoz.
+
+#### Ami NYITVA maradt
+
+1. **Mi a virtuális átalakítás** (`ctx->vtbl[2]`). A `ctx` a callback 4.
+   argumentumából jön; statikusan nem követtük vissza. Ugyanezt a mintát
+   használja az `ansel` is (`0x008f8410`) — tehát **közös** lépés.
+2. **A `colorwheel version="0"` vs `="1"` különbsége.** A `filterdesc.xml`
+   szerint `tint`/`dir_tint`/`radtint` = v0, `ansel` = v1. Az RTTI-ben van
+   `ytColorWheelNode` osztály; a verzió szerinti eltérés feltehetően a
+   kerék-koordináta → RGB leképezésben van, de ezt **nem igazoltuk**.
+
+**Bizonyítottsági fok:** megerősített (a fenti képletek és a hívási sorrend) ·
+**nyitott** (a virtuális átalakítás tartalma és a wheel-verzió jelentése).
+
+**Következő lépés, ha valaki folytatja:** célzott dekompilálás az
+`ytColorWheelNode` vtable 2. és 8. slotjára (`0x009c2eb0` a vtable kezdete), és
+a `0x00aa40a0` igazító függvényre.
