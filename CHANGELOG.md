@@ -5,6 +5,37 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.56] – 2026-08-15
+
+### Javítva
+- **A szerkesztő effekt-füleiről eltűnt a Visszavonás/Újra gombsor (#703).**
+  Két oka volt: a program akkora ablakmagasságot kért, amit egy laptop-kijelző
+  ki sem tud adni — **és** a tiltott gombok kitöltése pontosan a panel
+  háttérszíne volt, tehát két láthatatlan folt volt ott, ahol a gombokat
+  kerested. Mindkettő javítva.
+- **Az effekt-csempék az eredetit követik (#704).** Eltűnt a fölösleges
+  fejlécsáv (az eredetin nincs ilyen), és megjelent az „alkalmazva" jelvény a
+  bélyegkép sarkában. A Vignetta a helyére, az 5. fülre került.
+- **A paraméter-panel az eredeti elrendezését követi (#700).** A panel címe
+  mostantól az effekt **neve** („Holga-szerű"), nem a belső kulcs; a feliratok
+  a csúszka fölött, középen, szám nélkül; a gombsor középen, pipa és X ikonnal.
+- **A szerkesztésed nem veszhet el a Picasában (#695).** A szűrő nevét eddig
+  kisbetűsen írtuk vissza, amit az eredeti Picasa **szó nélkül eldob** — a
+  szerkesztés egyszerűen nem történt meg. Mostantól pontosan abban az
+  írásmódban írjuk, amit a Picasa vár.
+- **A szerkesztés-védelem Windowson némán hatástalan volt (#699).** A napló
+  írása és olvasása másképp képezte a fájl útvonalát, ezért soha nem talált
+  egyezést.
+- Mind a 43 effekt **nevén** nevezve jelenik meg a Visszavonás gombon (#465) —
+  eddig 12-nél a belső kulcs látszott („Visszavonás: crossprocess").
+- Négy hiányzó tétel a jobbklikk-menükben, a Picasa saját parancstáblája
+  szerint (#422).
+
+### Belső
+- Gépi UI-lefedettségi tábla: 2020 elem, 74 panel (#707). Eddig minden
+  felületi hiba szemrevételezéssel derült ki; innentől lista mondja meg, hol
+  vannak a hiányok.
+
 ## [0.7.55] – 2026-08-15
 
 ### Javítva
