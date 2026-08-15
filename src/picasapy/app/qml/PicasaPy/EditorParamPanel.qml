@@ -88,6 +88,10 @@ Flickable {
         // Color" — mérve, nem kitalálva (ld. `effect_params.py`
         // modul-docsztringje)
         case "Pick Color": return qsTr("Pick Color")
+        // #700/#709: szűrőnkénti felülírások (`FUN_008fcfa0`) — a Holga/Lomo
+        // homályosító csúszkája és a Pixelate képpontmérete
+        case "Blur Edges": return qsTr("Blur Edges")
+        case "Pixel Size": return qsTr("Pixel Size")
         default: return key
         }
     }
