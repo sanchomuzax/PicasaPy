@@ -1766,8 +1766,12 @@ class TestLegacyEffectsCatalogue:
         assert by_key["dir_brite"]["enabled"] is True
         assert by_key["dir_sharp"]["enabled"] is True
         assert by_key["linblur"]["enabled"] is True
+        # #687 után a natív tónus-/szín-szűrők is élnek
+        assert by_key["triple"]["enabled"] is True
+        assert by_key["contrast"]["enabled"] is True
+        assert by_key["colortemp"]["enabled"] is True
         # ez a natív kernele megfejtéséig szürke
-        assert by_key["triple"]["enabled"] is False
+        assert by_key["colorfix"]["enabled"] is False
 
     def test_dead_legacy_name_is_flagged(self, controller):
         by_key = {item["key"]: item for item in controller.legacyEffects}

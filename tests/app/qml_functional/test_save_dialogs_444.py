@@ -66,7 +66,7 @@ class TestSaveDialogs:
         folder = Path(first).parent
         name = Path(first).name
         (folder / ".picasa.ini").write_text(
-            f"[{name}]\nfilters=gamma=1,0.5;\n", encoding="utf-8"
+            f"[{name}]\nfilters=rainbow=1,0.5;\n", encoding="utf-8"
         )
         # az indexbe a `sync_tree` viszi be az ini tartalmát; az adatbázis a
         # könyvtár mellett, a fixture tmp_path-jában él
@@ -78,10 +78,11 @@ class TestSaveDialogs:
         _open(window, qt_app, "openSave", [0])
 
         # a szokásos kérdés HELYETT a hangsúlyos figyelmeztetés jön
+        # (#687: korábban `gamma` volt a példa — az azóta renderelhető)
         assert _child(window, "saveConfirmDialog").property("visible") is False
         warning = _child(window, "unrenderableFiltersDialog")
         assert warning.property("visible") is True
-        assert "gamma" in warning.property("names")
+        assert "rainbow" in warning.property("names")
 
 
 class TestMenuWiring:
