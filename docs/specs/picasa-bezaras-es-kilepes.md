@@ -66,8 +66,10 @@ nélkül.
 
 ## 3. szint — kilépés az alkalmazásból
 
-A kilépés **alapesetben nem kérdez**. Egyetlen ismert feltételes
-figyelmeztetés van (`0x0067fee0`, `CUploadManagerThread`):
+A kilépés **alapesetben nem kérdez**, de **három feltételes figyelmeztetés**
+létezik (2026-08-15-i kiegészítés).
+
+### (a) Folyamatban lévő feltöltés (`0x0067fee0`, `CUploadManagerThread`):
 
 > Uploads are in progress. Would you like to exit now?
 > (Uploads will resume next time you run Picasa.)
@@ -75,10 +77,61 @@ figyelmeztetés van (`0x0067fee0`, `CUploadManagerThread`):
 **Gombok:** `Exit Now` · `Keep Going`. Vagyis a feltöltés **nem blokkolja** a
 kilépést, és a következő indításkor folytatódik.
 
-Létezik továbbá egy `exit_nag` **beállításkulcs** (a `hosting`,
-`auto_update`, `new_album`, `watermark` társaságában, `0x004092e0`) — a
-kilépéskori figyelmeztetés kapcsolója. A konkrét szövegét ez a kör nem
-azonosította.
+### (b) Folyamatban lévő IMPORT (`IDS_WARNCLOSEACQUIRE`, `0x005e45c0`)
+
+> **A Picasa bezárása előtt importálja a képeket?**
+
+**Gombok:** `Képek importálása` · `Kilépés`.
+
+Vagyis az importálás sem blokkolja a kilépést — csak felajánlja a
+befejezését.
+
+### (c) Nem alkalmazott szerkesztés (`IDS_WARNCLOSEEDIT`)
+
+> **Kilépés előtt alkalmazza a módosításokat a jelenlegi képre?**
+
+> ⚠️ **Bizonytalan, hogy él-e.** Ez az egyetlen a három közül, amelyre a
+> string-kereszthivatkozási tábla **nulla hívót** ad. Vagy közvetett úton
+> hivatkozzák, vagy megírt, de már nem használt szöveg. Megvalósítás előtt
+> érdemes élő Picasán ellenőrizni.
+
+### Az `exit_nag` kulcs
+
+Egy `exit_nag` beállításkulcs a `hosting`, `auto_update`, `new_album`,
+`watermark` társaságában él (`0x004092e0`, 93 bájt) — ez egy **induláskor
+felépített jelzőtábla**, amit az alkalmazás-inicializálás tölt fel
+(`0x00409250` ← `0x004039f0`). Nem tartozik hozzá saját szöveg, tehát nem
+párbeszéd, hanem **kapcsoló**. A pontos hatását ez a kör nem azonosította.
+
+## A „Ne kérdezzen újra." KÖZÖS jelölőnégyzet
+
+Az `IDS_CLOSE_LAST_CHECK` (**„Ne kérdezzen újra."**) **négy különböző
+párbeszédben** ugyanaz az erőforrás:
+
+| cím | mi ez |
+|---|---|
+| `0x0053a790` | „Lemezre menti a módosításokat?" |
+| `0x005d2ad0` | az utolsó gyűjtemény bezárása |
+| `0x005ee2a0` | a „Rejtett mappák" jelszó-felajánlása |
+| `0x0053b2e0` | (azonosítatlan) |
+
+Vagyis a Picasában az „elnyomható megerősítés" **egységes minta**, nem
+dialógusonként külön megoldás. Ezt érdemes nálunk is közös komponensként
+megvalósítani.
+
+## Az utolsó gyűjtemény bezárása
+
+Külön megerősítés (`IDS_CLOSING_LAST_COLLECTION_*`):
+
+> **Bezárja a legutóbbi gyűjteményt?**
+> Az utolsó gyűjteményének bezárására készül. Az indexképek területén
+> egyetlen kép sem lesz látható. Folytatja?
+>
+> Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
+> mellette lévő ikonra.
+
+Figyelemre méltó, hogy a szöveg **megmondja, hogyan lehet visszacsinálni** —
+nem csak figyelmeztet.
 
 ## Külön mechanizmus: „Lemezre menti a módosításokat?"
 
@@ -103,7 +156,41 @@ Elnyomható: **`DoNotAskFileSave`** beállításkulcs.
 
 ## Ami nyitva maradt
 
-- Az `exit_nag` pontos szövege és kiváltó feltétele.
-- Zárja-e a főablak „X"-e a háttérfolyamatokat (arcfelismerés, mappafigyelés),
-  vagy azok külön élnek — a `Shell_NotifyIconW` (`0x009b2d00`) tálcaikon-
-  kezelés jelen van, de a tulajdonosát ez a kör nem azonosította.
+- Az `exit_nag` kapcsoló pontos hatása (a jelzőtáblát megtaláltuk, a
+  felhasználóját nem).
+- Él-e még az `IDS_WARNCLOSEEDIT` (nincs rá kereszthivatkozás).
+- Zárja-e a főablak a háttérfolyamatokat (arcfelismerés, mappafigyelés) — ez
+  élő megfigyeléssel dönthető el olcsóbban.
+
+## ✅ A főablaknak NINCS tálcaikonja — bizonyított negatív eredmény
+
+A `Picasa3.exe` **feloldja** a tálcaikon-API-t, de **soha nem hívja meg**.
+
+A feloldó csonk (`0x00c33c22`) a `GetVersion` alapján választ ágat — ez a
+Windows 9x/NT korszak öröksége:
+
+```asm
+call [0x00c40450]                       ; GetVersion
+mov  [0x00d6fc58], eax
+cmp  dword [0x00d6fc58], 0x80000000
+jae  9x_ag
+mov  dword [0x00d695c4], 0x009b2d00     ; NT: ANSI→wide burkoló
+ret
+9x_ag:
+mov  eax, [0x00c405fc]                  ; Shell_NotifyIconA
+mov  [0x00d695c4], eax
+ret
+```
+
+**A bizonyíték:** a `0x00d695c4` globális a teljes binárisban **pontosan
+kétszer** fordul elő — mindkétszer a fenti csonkban, ahol *beállítják*.
+`call [0x00d695c4]` **sehol nincs**, és a `Shell_NotifyIconA`
+IAT-bejegyzésére (`0x00c405fc`) sincs közvetlen hívás.
+
+> **Következtetés:** ez egy közös operációsrendszer-absztrakciós réteg
+> maradványa (ugyanaz a csonk-minta, ami a mappafigyelő burkolóját is
+> feloldja) — a főprogram nem használja. **A Picasa főablaka nem tesz ikont a
+> tálcára.** A tálcaikon a `PicasaPhotoViewer.exe` és a `MovieThumb.exe`
+> sajátja.
+>
+> **A PicasaPy-nak tehát nem kell tálcaikon** a főablak-paritáshoz.

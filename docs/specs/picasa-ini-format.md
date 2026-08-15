@@ -385,11 +385,44 @@ round-trip ígérete ezen a ponton dől el.
 A megállapítások a `Picasa3.exe` visszafejtéséből származnak (a nyers
 dekompilátum és a címek a privát kutatási repóban).
 
-### A `.picasa.ini` NEM figyelt fájl
+### ⚠️ A Picasa IGENIS figyeli a mappát — helyesbítés (2026-08-15)
 
-A Picasa nem figyeli a `.picasa.ini` változásait, és **nem is olvassa újra
-csak azért, mert a fájl megváltozott.** Sem a mappára lépés, sem a program
-újraindítása nem váltja ki az újraolvasást egy már indexelt fotónál.
+Korábban itt az állt, hogy „a `.picasa.ini` nem figyelt fájl". **Ez téves
+volt.** A visszafejtés megmutatta, hogy a Picasa `FindFirstChangeNotificationW`
+hívással figyeli a mappákat, és a szűrő:
+
+```
+push 0x17        ; dwNotifyFilter
+push 1           ; bWatchSubtree = TRUE  (REKURZÍV)
+push eax         ; az útvonal
+call [0x00d694fc]
+```
+
+`0x17` = `FILE_NAME | DIR_NAME | ATTRIBUTES | **LAST_WRITE**`.
+
+**A `LAST_WRITE` bit benne van**, és a figyelés rekurzív. Vagyis egy
+`.picasa.ini` tartalmi módosítása **kivált operációs rendszer szintű
+értesítést** a Picasa felé.
+
+> **Hogyan került elő:** a hívó sokáig nem volt azonosítható, mert a
+> `FindFirstChangeNotificationW` burkolóját (`0x009b3000`) egy **futásidőben
+> feltöltött függvénymutató-globálon** (`0x00d694fc`) át hívják — a globált
+> egy inicializáló csonk tölti fel (`0xc32faa`:
+> `mov dword [0x00d694fc], 0x009b3000`). A kereszthivatkozási tábla ezért
+> üres volt. A globált olvasó valódi használó: **`0x007061c0`**.
+
+### De az értesítés önmagában nem elég
+
+Az értesítés megérkezik, a `filters=`-ünk mégsem jelenik meg. A rés tehát
+**az értesítés után** van: a mappa újrapásztázása **fotónként** dolgozik, és
+az egyes fotók újrafeldolgozása a **képfájlhoz** kötött (ld. lent a
+betöltő-ágat). A `.picasa.ini` megváltozása értesítést ad, de nem tesz egy
+már indexelt fotót „elavulttá".
+
+**Ebből egy megkerülési út is következik, amit érdemes kipróbálni:** ha a
+külső író a **képfájl** módosítási idejét is megérinti, a fotó bekerülhet az
+újrafeldolgozandók közé — és akkor az ini-t is beolvassa. Ez egy mérhető
+kísérlet, nem elmélet.
 
 ### Az ini → rekord olvasót csak SZERKESZTÉS/MENTÉS hívja
 
