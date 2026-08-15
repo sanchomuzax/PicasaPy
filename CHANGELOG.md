@@ -5,6 +5,29 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.53] – 2026-08-15
+
+### Javítva
+- **Nyolc szűrő eddig némán elveszett (#687).** Ha a képet a Picasában a
+  Kontraszt, a Gamma, a Színhőmérséklet, az Árnyék, a Derítőfény vagy az
+  Automatikus kontraszt csúszkájával szerkesztetted, nálunk a kép
+  **szerkesztetlenül** jelent meg. Mind a nyolc rendereli mostantól, a
+  mérőtáblán az eredetitől alig megkülönböztethetően.
+- **A telítettség csúszkájának pozitív fele félreszámolt (#693).** Kiderült,
+  hogy az eredeti ott nem egyszerű erősítést végez, hanem színárnyalat-függő
+  görbét — ezért is „lassul be" a hatás a csúszka vége felé. Az eltérés a
+  mérőképen **13,3-ról 0,7 szintre** esett, vagyis a JPEG-tömörítés zajába.
+- **A Ghoul Eye effekt nem festi át többé az egész képet (#688).** Szem-régió
+  nélkül eddig ΔE 57 mértékben elrontott bármilyen fotót; az eredeti ilyenkor
+  nem csinál semmit.
+- **A szerkesztő-panel három eleme kilógott a helyéről (#659)** — köztük a
+  Derítőfény csúszkája, aminek a fogantyúja a szomszédjaira lógott.
+
+### Belső
+- A teljesítmény-őrök viszonyítanak, nem stopperolnak (#660): a korábbi
+  abszolút határ a gép terheltségét mérte, és hamis hibát jelzett.
+- A tartomány-ellenőrzés az irányított és a sugaras szűrőkre is figyel (#669).
+
 ## [0.7.52] – 2026-08-15
 
 ### Javítva
