@@ -27,6 +27,7 @@ from PySide6.QtCore import Signal, Slot
 
 from picasapy.edit.edit_journal import (
     detect_lost_edits,
+    naplo_kulcs,
     load_journal,
     record_saved_chain,
     save_journal,
@@ -80,7 +81,7 @@ class EditJournalMixin:
         # A kulcsot a KÖZÖS `full_path()` képzi, ugyanazzal a szabállyal,
         # amivel a napló írója (`recordSavedChain`) dolgozik. Harmadik
         # útvonal-szabály írása némán kiütné a védelmet.
-        current = {full_path(r): (r.filters or "") for r in records}
+        current = {naplo_kulcs(full_path(r)): (r.filters or "") for r in records}
         lost = detect_lost_edits(journal, current)
         if not lost:
             return
@@ -113,7 +114,8 @@ class EditJournalMixin:
         Igaz, ha sikerült. A művelet a `filters=` kulcsot állítja vissza; a
         képfájlt nem érinti (a lánc nem beégetett szerkesztés).
         """
-        entry = self._load_journal().get(str(image_path))
+        # #699: a helyreállítás is a KÖZÖS kulcsszabállyal keres
+        entry = self._load_journal().get(naplo_kulcs(image_path))
         if entry is None or not entry.chain.strip():
             return False
         target = Path(image_path)

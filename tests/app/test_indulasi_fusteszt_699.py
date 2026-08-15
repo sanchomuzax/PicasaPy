@@ -137,3 +137,30 @@ def test_a_naplo_utvonalszabalya_egyetlen_helyen_el():
     ).read_text(encoding="utf-8")
     assert "full_path(" in forras, "a közös útvonal-képzést kell használni"
     assert ".path)" not in forras.split("def _check_external_overwrites")[1][:400]
+
+
+def test_a_naplo_kulcsa_platformfuggetlenul_egyezik():
+    """#699 utókövetés: az író és az olvasó oldal ugyanazt a kulcsot képzi.
+
+    A windows-CI-láb fogta meg, hogy a `full_path()` visszaperjelre
+    normalizál (`\\k\\a.jpg`), a mentési út viszont előreperjeles alakot is
+    átadhat (`/k/a.jpg`) — a napló ilyenkor **némán** nem talál egyezést, és
+    a #644 védelme csendben hatástalan marad.
+
+    Ez a teszt Linuxon is futtatható: a `PureWindowsPath`-szal utánozzuk a
+    windowsos normalizálást, és azt állítjuk, hogy a KÖZÖS kulcsszabály a
+    kétféle alakot azonosra hozza.
+    """
+    from pathlib import PureWindowsPath
+
+    from picasapy.edit.edit_journal import naplo_kulcs
+
+    # ahogy a `full_path()` képezné Windowson (folder_path + name)
+    rekord_alak = str(PureWindowsPath("/k") / "a.jpg")
+    # ahogy a mentési út átadhatja
+    mentesi_alak = "/k/a.jpg"
+
+    assert rekord_alak != mentesi_alak, "a próba csak akkor érdemi, ha eltérnek"
+    assert naplo_kulcs(PureWindowsPath(rekord_alak)) == naplo_kulcs(
+        PureWindowsPath(mentesi_alak)
+    ), "a közös kulcsszabálynak azonosra kell hoznia a két alakot"
