@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 import PicasaPy.Gpu
 
 // Egyképes néző — a Picasa 3.9 "Megjelenítés és szerkesztés" képernyője
@@ -11,13 +12,61 @@ Rectangle {
     id: viewer
 
     // #641: mekkora magasság kell ahhoz, hogy a bal panel TELJESEN elférjen
-    // — a felső sáv plusz a panel saját igénye. Az ablak minimális magassága
-    // ebből számol (Main.qml); enélkül a `Layout.minimumHeight` csak KÉRÉS
-    // marad, a panel túlnyúlik a celláján, és a Visszavonás/Újra sor
-    // kicsúszik a képernyőről. Beégetett szám nincs benne: mindkét tag a
-    // saját elemétől jön.
-    readonly property real requiredHeight:
+    // — a felső sáv plusz a panel saját igénye. Beégetett szám nincs benne:
+    // mindkét tag a saját elemétől jön.
+    readonly property real panelPreferredHeight:
         viewerTopBar.height + editorPanel.implicitHeight
+
+    // #703: ennyi kell ahhoz, hogy a Visszavonás/Újra sornak MINDIG legyen
+    // helye — a fülek tartalma nélkül. Ez a garancia alsó korlátja: a
+    // képernyőhöz igazítás sem mehet ez alá.
+    readonly property real minimumUsableHeight:
+        viewerTopBar.height + editorPanel.chromeHeight
+
+    // #703: a főablak azon sávjai, amelyek a nézőn KÍVÜL esnek (menüsor,
+    // eszköztár-fejléc, alsó tálca) — a néző csak a maradékot kapja meg.
+    // A `Main.qml` a menüsort külön hozzáadja az ablak minimumához, ezért
+    // itt mindhármat le kell vonni a képernyő-költségvetésből.
+    readonly property var hostWindow: viewer.Window.window
+    readonly property real windowChromeHeight: {
+        var w = viewer.hostWindow
+        if (!w) return 0
+        var extra = 0
+        if (w.menuBar) extra += w.menuBar.height
+        if (w.header) extra += w.header.height
+        if (w.footer) extra += w.footer.height
+        return extra
+    }
+    // Az ablakkeret és a címsor magassága: a Qt ezt az ablak megjelenése
+    // ELŐTT nem közli, márpedig a minimumot már akkor be kell jelenteni.
+    // Ezért fenntartott keret. Bőkezűen mérve: inkább vágódjon egy csempesor
+    // egy alacsony kijelzőn, mint hogy olyan ablak-minimumot kérjünk, amit a
+    // kijelző nem tud kiadni — abból a felhasználó a gombsort egyáltalán nem
+    // látja (#703).
+    readonly property real windowDecorationAllowance: 56
+
+    // #703: A #641 az ablak minimális magasságára tette a „mindig elfér"
+    // garanciát (Main.qml) — csakhogy ezt a bejelentést az ablakkezelő csak
+    // akkor tudja teljesíteni, ha a kijelzőre ráfér. Élesben, bélyegképes
+    // csempékkel a panel igénye 887 px (a legmagasabb fül, a #571 „Régi
+    // effektek", egymaga 799), az ablak minimuma ebből 962 — ez egy 768 vagy
+    // 900 képpontos laptop-kijelzőn KIADHATATLAN. Ilyenkor a garancia nem
+    // „majdnem" teljesül, hanem sehogy.
+    //
+    // Ezért a kérés a képernyőhöz igazodik: sosem kérünk többet, mint amennyi
+    // ténylegesen van, és sosem kevesebbet, mint amennyi a gombsorhoz kell.
+    // Ha emiatt a fül tartalma nem fér ki, azt az EditorPanel a
+    // `tabContentTruncated` ágán, vágással kezeli — a gombsor soha nem veszít.
+    //
+    // Property (nem readonly): a teszt felül tudja írni, hogy a „kicsi
+    // kijelző" esetet a futtató gép képernyőjétől függetlenül lehessen mérni.
+    property real screenHeightBudget:
+        Screen.desktopAvailableHeight - viewer.windowChromeHeight
+        - viewer.windowDecorationAllowance
+
+    readonly property real requiredHeight:
+        Math.min(viewer.panelPreferredHeight,
+                 Math.max(viewer.minimumUsableHeight, viewer.screenHeightBudget))
     color: Theme.viewerBg
 
     property var photosModel: null

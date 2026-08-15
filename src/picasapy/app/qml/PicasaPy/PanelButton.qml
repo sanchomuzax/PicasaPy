@@ -52,8 +52,15 @@ Rectangle {
     // #314: fix világos hexák ("#fdfdfd"/"#d8d8d8"/"#ececec") helyett
     // téma-tokenekből — sötét témában a gomb is sötétedik, így a
     // (szintén témafüggő) Theme.textDark felirat olvasható marad rajta.
-    color: !pbtn.enabled ? Theme.chromeBg
-           : pbtnMouse.pressed ? Qt.darker(Theme.buttonBg, 1.15)
+    //
+    // #703: a tiltott gomb kitöltése KORÁBBAN `Theme.chromeBg` volt — vagyis
+    // pontosan a panel háttérszíne (`EditorPanel.color`). Frissen megnyitott
+    // képen (nincs mit visszavonni és nincs mit újrázni) a Visszavonás/Újra
+    // sor helyén így két, a háttértől megkülönböztethetetlen folt maradt: a
+    // felhasználó teljes joggal jelentette, hogy „az effektek alatt nincsenek
+    // gombok". A tiltottságot a felirat szürkéje jelzi (ld. lent), nem a gomb
+    // eltüntetése — ez az eredeti Picasa (és minden natív eszköztár) módja is.
+    color: pbtnMouse.pressed ? Qt.darker(Theme.buttonBg, 1.15)
            : pbtn.active ? Qt.rgba(Theme.selectionBlue.r, Theme.selectionBlue.g,
                                    Theme.selectionBlue.b, 0.45)
            : Theme.buttonBg

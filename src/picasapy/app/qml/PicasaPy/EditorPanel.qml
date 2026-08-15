@@ -43,17 +43,73 @@ Rectangle {
         effectsTab1.implicitHeight, effectsTab2.implicitHeight,
         effectsTab3.implicitHeight, effectsTab4.implicitHeight,
         legacyTab.implicitHeight)
-    implicitHeight: 10 + tabBar.height + panel.tallestTabHeight
-                    + 6 + globalUndoRow.height + 10
 
-    // #641: a panel TÉNYLEGES és LÁTHATÓ magassága eltérhet. A szülő
-    // `Layout.minimumHeight`-je csak KÉRÉS: ha az ablak kisebb, a layout nem
-    // zsugorítja a panelt, hanem hagyja túlnyúlni a celláján. A gombsor
-    // ezért nem a `height`-hez, hanem ehhez igazodik — különben a látható
-    // terület alá csúszik, és a felhasználó egyáltalán nem látja
-    // (a #628 javítása pontosan itt állt meg egy szinttel feljebb).
-    readonly property real visibleHeight:
-        panel.parent ? Math.min(panel.height, panel.parent.height) : panel.height
+    // #703: a panel magasság-igénye a fülek tartalma NÉLKÜL — fülsáv,
+    // gombsor és a margók. Ez az a magasság, ami alá menni már azt jelenti,
+    // hogy a Visszavonás/Újra sornak sincs helye. A hívó (PhotoViewer) ezt
+    // használja alsó korlátnak, amikor a képernyőhöz igazítja az ablak
+    // minimumát — beégetett szám nélkül.
+    readonly property real chromeHeight:
+        10 + tabBar.height + 6 + globalUndoRow.height + 10
+    implicitHeight: panel.chromeHeight + panel.tallestTabHeight
+
+    // #641/#703: a panel TÉNYLEGES és LÁTHATÓ magassága eltérhet. Egy
+    // layout-cella nem zsugorít a kért méret alá, hanem hagyja túlnyúlni a
+    // gyereket — a panel aljához igazodó gombsor pedig vele együtt csúszik
+    // ki a képernyőről.
+    //
+    // #641 ezt a KÖZVETLEN szülővel korlátozta. Az kevés: ha a túlnyúlás egy
+    // távolabbi ősnél történik, a panel a saját dobozán belül rendben van, a
+    // doboz viszont már az ablakon kívül. Ezért végigmegyünk a TELJES
+    // ős-láncon a jelenetgyökérig, és minden szinten megnézzük, mennyi
+    // maradt a panelnek — ez lényegében az ABLAK koordinátarendszerében mért
+    // korlát. A ciklus a `y`/`height` tulajdonságokat olvassa, ezért a QML
+    // mindegyikre kötés-függőséget vesz fel: ha bármelyik ős elmozdul vagy
+    // átméreteződik, ez újraszámolódik.
+    readonly property real visibleHeight: {
+        var limit = panel.height
+        var item = panel
+        var offset = 0
+        while (item.parent) {
+            offset += item.y
+            // A NULLA magasságú őst kihagyjuk: az nem szűk hely, hanem
+            // „még nincs elrendezve" (a jelenetgyökér a megjelenítésig 0).
+            // Ha egy ős tényleg nulla magas, a panelből úgysem látszik
+            // semmi — a korlátozásnak ott nincs mit megvédenie.
+            if (item.parent.height > 0)
+                limit = Math.min(limit, item.parent.height - offset)
+            item = item.parent
+        }
+        return Math.max(0, limit)
+    }
+
+    // #703: a látható fül tartalmának TELJES igénye (vágás nélkül), és
+    // amennyi hely ebből ténylegesen jut neki a gombsor fölött. A kettő
+    // eltérése a SZÜKSÉG-ÁG: ilyenkor — és kizárólag ilyenkor — vágunk.
+    // Külön, olvasható állapotként, hogy a teszt tudja állítani, és ne csak
+    // „valahogy" működjön (#703/4).
+    //
+    // #659: a fülek egy része FELSŐ MARGÓVAL ül (`anchors.margins`), ezért a
+    // puszta `implicitHeight` kevesebb, mint a tényleges alsó szél — a
+    // gyerek `y`-ját is bele kell számolni. Az `implicitHeight`-et (és nem a
+    // `height`-et) használjuk, mert az nem függ a szülő magasságától — így
+    // nincs kötési hurok.
+    readonly property real tabContentHeight: {
+        var tallest = 0
+        var kids = tabArea.children
+        for (var i = 0; i < kids.length; ++i) {
+            if (!kids[i].visible)
+                continue
+            var also = kids[i].y + kids[i].implicitHeight
+            if (also > tallest)
+                tallest = also
+        }
+        return tallest
+    }
+    readonly property real tabAreaAvailable:
+        Math.max(0, globalUndoRow.y - 6 - tabArea.y)
+    readonly property bool tabContentTruncated:
+        tabArea.visible && panel.tabContentHeight > panel.tabAreaAvailable + 0.5
 
     // #641: a gombsor alja a panelen belül — az őr-teszt ebből számolja ki,
     // hogy a sor a néző LÁTHATÓ területén belül maradt-e. (A sor a panel
@@ -636,28 +692,18 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         // a terület magassága a LÁTHATÓ fülé — egyszerre legfeljebb egy az.
-        // NINCS `clip` és nincs görgetősáv: a tartalomnak el KELL férnie.
+        // ALAPÁLLAPOTBAN nincs vágás és nincs görgetősáv: a tartalomnak el
+        // KELL férnie (#422/#628 — a görgethető keret levételét a felhasználó
+        // nyomatékosan kérte, és a #616 visszahozta; nem harmadszor is).
         //
-        // #659: a fülek egy része FELSŐ MARGÓVAL ül (`anchors.margins`),
-        // ezért a puszta `implicitHeight` kevesebb, mint a tényleges alsó
-        // szél — a „Gyakori javítások" oszlopa pontosan ennyivel, 10
-        // képponttal lógott ki. A gyerek `y`-ját is bele kell számolni.
-        // Az `implicitHeight`-et (és nem a `height`-et) használjuk, mert az
-        // nem függ a szülő magasságától — így nincs kötési hurok.
-        height: {
-            if (!tabArea.visible)
-                return 0
-            var tallest = 0
-            var kids = tabArea.children
-            for (var i = 0; i < kids.length; ++i) {
-                if (!kids[i].visible)
-                    continue
-                var also = kids[i].y + kids[i].implicitHeight
-                if (also > tallest)
-                    tallest = also
-            }
-            return tallest
-        }
+        // #703: EGYETLEN kivétel, a szükség-ág. Ha a kijelző annyira alacsony,
+        // hogy a panel nem kaphatja meg az igényét (az ablak minimuma nem
+        // lehet nagyobb a képernyőnél), akkor a fül tartalma veszít — soha nem
+        // a gombsor. A vágás ilyenkor és csak ilyenkor kapcsol be, és a
+        // `panel.tabContentTruncated`-en át MÉRHETŐ, hogy melyik ágon vagyunk.
+        height: tabArea.visible
+                ? Math.min(panel.tabContentHeight, panel.tabAreaAvailable) : 0
+        clip: panel.tabContentTruncated
 
 
         // ---------------- 1. fül: "Gyakori javítások" ikonrács ----------------
