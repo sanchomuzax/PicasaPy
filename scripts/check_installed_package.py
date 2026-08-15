@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
-"""Füst-teszt a TELEPÍTETT csomagon — #646, #651/2.
+"""Füst-teszt a TELEPÍTETT csomagon — #646, #651/2, #699.
 
 A `check_package_contents.py` a wheel névlistáját nézi; ez azt, hogy a
 telepített csomag ténylegesen használható-e: betölthető-e a belépési pont,
 és a helyükön vannak-e az erőforrások, amiket a program induláskor keres.
+
+**#699: és hogy ELINDUL-E.** A v0.7.53 nem indult el (`AttributeError` a
+`start()` → `restoreSession()` → `selectFolder()` → `_show()` láncon), és
+EZ AZ ELLENŐRZÉS SEM FOGTA MEG, mert csak importálásig ment. Egy telepített
+csomag, ami betöltődik, de a `start()`-on elszáll, a felhasználó számára
+pontosan olyan használhatatlan, mint egy hiányzó erőforrás. Ezért a
+`check_startup()` valódi könyvtárat, valódi indexet és NEM ÜRES
+szerkesztés-naplót állít elő, és végigfuttatja az indulási utat.
 
 A telepített csomag Pythonjával kell futtatni — NEM a forrásfáéval:
 
@@ -71,6 +79,54 @@ def check() -> list[str]:
     return problems
 
 
+def check_startup() -> list[str]:
+    """Elindul-e a program: valódi index + mentett munkamenet + napló (#699).
+
+    A napló **nem lehet üres**: a külső-felülírás-ellenőrzés üres naplóval
+    azonnal visszatér, tehát üresen ez a próba a HIBÁS kódon is átmenne —
+    pontosan ez a hiányosság engedte ki a v0.7.53-at.
+    """
+    import os
+    import tempfile
+
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+    import numpy as np
+    from PySide6.QtCore import QSettings
+
+    import cv2
+
+    from picasapy.app.controller import AppController
+    from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.index import open_index, sync_tree
+    from picasapy.thumbs import ThumbnailCache
+
+    with tempfile.TemporaryDirectory(prefix="picasapy-startup-") as munkafa:
+        gyoker = Path(munkafa)
+        mappa = gyoker / "kepek"
+        mappa.mkdir()
+        kep = mappa / "a.jpg"
+        cv2.imwrite(str(kep), np.full((48, 64, 3), 128, np.uint8))
+        db = gyoker / "index.sqlite"
+        with open_index(db) as conn:
+            sync_tree(conn, mappa)
+
+        settings = QSettings(str(gyoker / "settings.ini"), QSettings.Format.IniFormat)
+        settings.setValue("session/lastFolder", str(mappa))
+        settings.sync()
+        provider = ThumbnailProvider(ThumbnailCache(gyoker / "thumbs", size=32))
+        controller = AppController(db, (str(mappa),), provider, settings=settings)
+        controller.recordSavedChain(str(kep), "holga=1;")
+
+        try:
+            controller.start()
+        except Exception as hiba:  # noqa: BLE001 — bármi az indulási úton bukás
+            return [f"a program nem indul el: {type(hiba).__name__}: {hiba}"]
+        if controller.photos.rowCount() < 1:
+            return ["az indulás lefutott, de a mentett mappa képei nem jelentek meg"]
+    return []
+
+
 def main(argv: list[str] | None = None) -> int:
     if _running_from_source_tree():
         print(
@@ -80,7 +136,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    problems = check()
+    problems = check() + check_startup()
     if problems:
         print("HIBA: a telepített csomag sérült:", file=sys.stderr)
         for problem in problems:
@@ -89,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
 
     import picasapy
 
-    print(f"OK — a telepített PicasaPy {picasapy.__version__} használható.")
+    print(f"OK — a telepített PicasaPy {picasapy.__version__} elindul és használható.")
     return 0
 
 

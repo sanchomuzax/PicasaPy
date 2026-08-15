@@ -10,23 +10,46 @@ mintája). A hangsúly két dolgon van:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QObject
 
 from picasapy.edit.edit_journal import load_journal
+from picasapy.index.queries import PhotoRecord
 from picasapy.ini.io import load_document
 
 HOLGA = "holga=1;"
 LUCKY = "enhance=1;"
 
 
-@dataclass
-class _Rekord:
-    path: str
-    filters: str | None = None
+def _Rekord(path: str, filters: str | None = None) -> PhotoRecord:
+    """VALÓDI `index.queries.PhotoRecord` a megadott útvonalra.
+
+    #699: itt korábban egy csonk dataclass állt `path` mezővel — olyan
+    szerződést rögzített, amit a valóságban EGYIK `PhotoRecord` sem
+    teljesít (`folder_path` + `name` van). Emiatt a #644 tesztje végig zöld
+    volt, miközben a termékkód az első valódi rekordon elszállt, és a
+    v0.7.53 EL SEM INDULT. A csonk visszavezetése tilos.
+    """
+    cel = Path(path)
+    return PhotoRecord(
+        id=0,
+        folder_path=str(cel.parent),
+        name=cel.name,
+        kind="image",
+        size=0,
+        mtime_ns=0,
+        star=False,
+        caption=None,
+        keywords=None,
+        rotate_steps=0,
+        filters=filters,
+        taken_at=None,
+        orientation=1,
+        width=None,
+        height=None,
+    )
 
 
 @pytest.fixture
