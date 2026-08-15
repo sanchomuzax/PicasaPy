@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.52] – 2026-08-15
+
+### Javítva
+- **Egy sérült videó a mappában többé nem omlasztja össze a programot (#673).**
+  Eddig elég volt egyetlen hibás videófájl: a bélyegképek készítése közben a
+  program hibaüzenet nélkül kilépett. A videók dekódolása mostantól egyetlen,
+  megbízható úton történik; ha egy videó tényleg olvashatatlan, egyszerűen
+  nem kap bélyegképet — és ezt a napló meg is mondja, nem hallgatja el.
+
+### Belső
+- A darabolt tesztfutás nem hagy több gigabájtot az ideiglenes könyvtárban
+  (#677). Ez nem a futást bukatta el, hanem a párhuzamosan dolgozó másik
+  munkamenetet — némán, félrevezető hibával.
+
 ## [0.7.51] – 2026-08-15
 
 ### Javítva
