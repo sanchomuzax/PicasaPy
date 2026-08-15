@@ -1,0 +1,157 @@
+"""A fa-mappanézet vezérlője — #702.
+
+Itt az ÁLLAPOT viselkedését mérjük (mely ágak nyitottak, mikor szól a
+jelzés), a kirajzolást a
+`tests/app/qml_functional/test_folder_hierarchy_view_702.py` méri.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from picasapy.app.folder_hierarchy_controller import FolderHierarchyController
+
+_FOLDERS = [
+    {"path": "/mnt/photo/Kepek/wallpapers", "count": 18},
+    {"path": "/mnt/photo/Kepek/AI", "count": 92},
+    {"path": "/mnt/photo/Videok", "count": 3},
+]
+
+
+@pytest.fixture
+def controller(qt_app):
+    ctrl = FolderHierarchyController()
+    ctrl.setFolders(_FOLDERS)
+    return ctrl
+
+
+def _paths(controller) -> list[str]:
+    return [row["path"] for row in controller.rows]
+
+
+class TestTheInitialState:
+    def test_only_the_view_root_is_listed(self, controller):
+        assert _paths(controller) == [""]
+
+    def test_the_root_knows_it_can_be_opened(self, controller):
+        assert controller.rows[0]["hasChildren"] is True
+
+
+class TestToggling:
+    def test_toggle_opens_then_closes(self, controller):
+        controller.toggle("")
+        assert _paths(controller) == ["", "/"]
+
+        controller.toggle("")
+        assert _paths(controller) == [""]
+
+    def test_expand_is_idempotent(self, controller):
+        controller.expand("")
+        before = _paths(controller)
+        controller.expand("")
+
+        assert _paths(controller) == before
+
+
+class TestTheTwoHierFolderCommands:
+    """`Folder::ID_HIER_FOLDER_EXPAND` / `..._COLLAPSE`."""
+
+    def test_expand_all_lists_every_folder(self, controller):
+        controller.expandAll()
+
+        for folder in _FOLDERS:
+            assert folder["path"] in _paths(controller)
+
+    def test_collapse_all_returns_to_the_root(self, controller):
+        controller.expandAll()
+        controller.collapseAll()
+
+        assert _paths(controller) == [""]
+
+
+class TestRevealPath:
+    """Máshonnan (keresés, rács) érkező kijelölésnél a fa nyisson odáig."""
+
+    def test_every_ancestor_of_the_target_opens(self, controller):
+        controller.revealPath("/mnt/photo/Kepek/AI")
+
+        assert "/mnt/photo/Kepek/AI" in _paths(controller)
+
+    def test_the_siblings_along_the_way_become_visible(self, controller):
+        # a kinyitott ősök testvérei is látszanak — ez a fa természetes
+        # következménye, nem hiba (a felhasználó látja, hova nyílt ki)
+        controller.revealPath("/mnt/photo/Kepek/AI")
+
+        assert "/mnt/photo/Videok" in _paths(controller)
+        assert "/mnt/photo/Kepek/wallpapers" in _paths(controller)
+
+
+class TestTheSimplifiedSwitch:
+    """`eMenuView::ID_VIEW_WATCHED` — a `SimplifiedHierarchy` kulcs."""
+
+    def test_it_is_off_by_default(self, controller):
+        assert controller.simplified is False
+
+    def test_switching_it_on_shortens_the_chain(self, controller):
+        controller.setSimplified(True)
+        controller.toggle("")
+
+        assert _paths(controller) == ["", "/mnt/photo"]
+
+    def test_setting_the_same_value_emits_nothing(self, controller):
+        seen: list[int] = []
+        controller.simplifiedChanged.connect(lambda: seen.append(1))
+
+        controller.setSimplified(False)
+
+        assert seen == []
+
+
+class TestSignals:
+    def test_reloading_identical_folders_emits_nothing(self, controller):
+        seen: list[int] = []
+        controller.rowsChanged.connect(lambda: seen.append(1))
+
+        controller.setFolders(_FOLDERS)
+
+        assert seen == [], (
+            "azonos adatnál a jelzés fölösleges lista-újraépítést és "
+            "görgetés-ugrást okozna (a FolderListModel is ezért hallgat)"
+        )
+
+    def test_a_new_folder_emits_once(self, controller):
+        seen: list[int] = []
+        controller.rowsChanged.connect(lambda: seen.append(1))
+
+        controller.setFolders([*_FOLDERS, {"path": "/mnt/photo/Uj", "count": 1}])
+
+        assert seen == [1]
+
+    def test_open_branches_survive_a_reload(self, controller):
+        controller.expandAll()
+        opened = _paths(controller)
+
+        controller.setFolders([*_FOLDERS, {"path": "/mnt/photo/Uj", "count": 1}])
+
+        assert set(opened) <= set(_paths(controller)), (
+            "szinkron után a fa ott legyen, ahol a felhasználó hagyta"
+        )
+
+
+class TestAncestorMatching:
+    """Az előtag-egyezés nem elég: a határon elválasztónak kell állnia."""
+
+    def test_a_similarly_named_sibling_is_not_an_ancestor(self, qt_app):
+        ctrl = FolderHierarchyController()
+        ctrl.setFolders(
+            [
+                {"path": "/mnt/photoXYZ/mely", "count": 1},
+                {"path": "/mnt/photo/Kepek", "count": 1},
+            ]
+        )
+
+        ctrl.revealPath("/mnt/photoXYZ/mely")
+
+        assert "/mnt/photo/Kepek" not in _paths(ctrl), (
+            "a /mnt/photo ág nyílt ki, pedig a cél a /mnt/photoXYZ alatt van"
+        )

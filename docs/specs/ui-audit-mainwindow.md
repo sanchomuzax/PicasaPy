@@ -226,10 +226,17 @@ kiolvasva — nem képernyőképről:
 | `&Simplified Tree View` | (a `SimplifiedHierarchy` beállításkulcs) |
 
 A `Shortcuts` almenü tételei ugyanebből a rutinból: `My &Computer`
-(`ID_VIEW_ALL`), `My &Pictures` (`ID_VIEW_MYPICTURES`), `My Do&cuments`
-(`ID_VIEW_MYDOCS`), `&Desktop` (`ID_VIEW_DESKTOP`) — plusz egy
-`AlbumList::ID_VIEW_WATCHED` azonosító, aminek a felirata nem ebben a
-rutinban van.
+(`AlbumListWin::ID_VIEW_ALL`), `My &Pictures` (`…::ID_VIEW_MYPICTURES`),
+`My Do&cuments` (`…::ID_VIEW_MYDOCS`), `&Desktop`
+(`AlbumList::ID_VIEW_DESKTOP`).
+
+> **KIEGÉSZÍTÉS (2026-08-15, #702).** A korábbi szöveg úgy zárult, hogy az
+> `AlbumList::ID_VIEW_WATCHED` felirata „nem ebben a rutinban van".
+> Megvan: a `Picasa3i18n.dll` string-táblájában
+> `AlbumList::ID_VIEW_WATCHED` = `&Simplified Tree View` /
+> `&Egyszerűsített fanézet` (a fenti táblázat utolsó sora) — a rutin a
+> feliratot és az azonosítót külön sztringként hivatkozza, ezért tűnt
+> párosítatlannak. A teljes kifejtés az 1.7 szakaszban.
 
 **Két, egymástól független kapcsoló, amit ne keverjünk össze:**
 
@@ -299,6 +306,118 @@ hol lesznek fehér foltok.
 
 **Következő lépés (jegyre való):** panelenkénti lefedettség-tábla, az
 `ui-leltar.csv` és a QML-fák összevetéséből, gépi úton.
+
+## 1.7 A fanézet parancsai és beállításkulcsa — a #702 három kérdése
+
+A #702 három kérdést nevezett meg, amit kódírás előtt meg kellett
+válaszolni. Mindhárom a `Picasa3i18n.dll` string-táblájából és a
+`Picasa3.exe` bináris indexéből válaszolható, felhasználói mérés nélkül.
+A hivatkozott függvénycímek a `Picasa3.exe` image-base 0x00400000-hoz
+tartozó abszolút címei (`referencia/binary-index/picasa3-index.sqlite`,
+`meta.json`: SHA-256 `644b7bec…93ddc96`).
+
+### (1) Külön nézet, vagy a laposat váltja fel? → **váltja**, HÁROM módban
+
+A **`View ▸ Folder View`** almenü (`eMenuView::FolderView` = „&Folder View" /
+„&Mappanézet") a menüsort felépítő `FUN_00559150` (0x00559150, 15 495 bájt)
+rutinból, a szomszédos tételekkel együtt kiolvasva:
+
+| parancsazonosító | angol felirat | magyar felirat |
+|---|---|---|
+| `eMenuView::ID_VIEW_FOLDERS` | `&Flat Folder View` | `&Egyszerű mappanézet` |
+| `eMenuView::ID_VIEW_ALL` | `&Tree View` | `&Fanézet` |
+| `eMenuView::ID_VIEW_WATCHED` | `&Simplified Tree View` | `&Egyszerűsített fanézet` |
+
+Ugyanez a tételkészlet ül a `thumbui/folderviewpopup` legördülőben is
+(`FUN_00733480`, ld. 1.5) — csak ott a „Tree View"/„Flat Folder View"
+pár nem menütétel, hanem a mellette álló **két váltógomb**
+(`thumbui/folderview` / `thumbui/flatview`, közös `thumbui/hviewtoggle`
+szülő alatt, ld. 1.4). Vagyis: **a fa nem külön nézet, hanem a bal hasáb
+egyik megjelenítési módja**, és a menüsorból ugyanúgy elérhető, mint az
+eszköztárból.
+
+Fontos részlet: az `ID_VIEW_ALL` azonosító **két feliratot** visel a
+felület két helyén — a Nézet menüben „&Tree View", a `Shortcuts`
+almenüben `AlbumListWin::ID_VIEW_ALL` = „My &Computer". Ez nem
+ellentmondás: a fanézet gyökere maga a Sajátgép. Megerősíti a két
+gyökér-felirat is:
+
+| azonosító | angol | magyar |
+|---|---|---|
+| `ViewRoot::AllFolders` | `Default View` | `Alapértelmezett nézet` |
+| `ViewRoot::All` | `My Computer` | `Sajátgép` |
+
+Az 1.4 képernyőképén a fa gyökérsora tényleg `Sajátgép (1 072)`.
+
+*Bizonyítottsági fok: megerősített* (string-tábla + két menüépítő rutin +
+képernyőkép).
+
+### (2) A `HierFolder` menüosztály teljes tételsora → **egyetlen tétel**
+
+A string-tábla teljes `HierFolder::` névtere **egy** bejegyzés:
+
+| azonosító | angol | magyar | mnemonik |
+|---|---|---|---|
+| `HierFolder::ID_MOVEHIERFOLDER` | `&Move Folder...` | `&Mappa áthelyezése...` | M |
+
+A két kinyitó/összecsukó parancs **nem** a `HierFolder`, hanem a `Folder`
+osztályba tartozik:
+
+| azonosító | angol | magyar |
+|---|---|---|
+| `Folder::ID_HIER_FOLDER_EXPAND` | `Expand All` | `Az összes részletes nézete` |
+| `Folder::ID_HIER_FOLDER_COLLAPSE` | `Collapse All` | `Az összes kicsinyítése` |
+
+A menü, amit a `HierFolder` név takar, a **fa KÖZTES csomópontjának**
+csökkentett helyi menüje — a `FUN_00733a40` (0x00733a40, 548 bájt) rutin
+pontosan öt tételt épít:
+
+1. `Expand All` — `Folder::ID_HIER_FOLDER_EXPAND`
+2. `Collapse All` — `Folder::ID_HIER_FOLDER_COLLAPSE`
+3. `&Locate on Disk` — `FolderWin::ID_ALBUM_LOCATEONDISK`
+4. `&Remove from Picasa...` — `Folder::ID_MANAGE_ALBUM`
+5. `&Move Folder...` — `HierFolder::ID_MOVEHIERFOLDER`
+
+Összevetésül a TELJES mappa-menü (`FUN_007319f0`, 1 900 bájt) 20+ tételes,
+és ott a mozgatás a `Folder::ID_MOVEFOLDER` (azonos felirattal) — a
+`HierFolder` tehát a `Folder` menü szűkített változata, nem külön funkció.
+A két `HIER_FOLDER` parancs **mindkét** menüben szerepel.
+
+*Bizonyítottsági fok: megerősített* (a teljes tételsor egy-egy rutinból;
+a feliratok a string-táblából).
+
+### (3) Van-e beállításkulcs? → **igen, kettő, és egy csapda**
+
+| kulcs | mi | hivatkozó rutinok |
+|---|---|---|
+| `SimplifiedHierarchy` | az „Egyszerűsített fanézet" állapota | 0x00574b70, 0x00575130, 0x005cb990, 0x005e2000 |
+| `LastViewRoot`, `LastViewRoot2` | melyik gyökérből néz a hasáb (Alapértelmezett nézet / Sajátgép / Képek / Dokumentumok / Asztal) | 0x0040d3c0, 0x00576660 |
+
+Mindkettő a `Preferences` szomszédságában áll a string-táblában, a
+`LastAlbumSelected`, `RIGHTDRAWEROFFSET`, `mainwinpos`, `Thumbscale`
+kulcsok között (`LastViewRoot` RVA 0x00880238, `SimplifiedHierarchy`
+RVA 0x0088fd00) — vagyis valódi, tárolt beállítások.
+
+**Csapda:** a `Hierarchy_p` (RVA 0x008835d0) **NEM** beállítás. Egyetlen
+hivatkozója (0x004b9d80) a `StarredPhotosTotal`, `HiddenPhotosTotal`,
+`GeotaggedPhotosTotal` mezőket is írja — ez a `ReportStats`
+használatstatisztika egyik számlálója. Aki a névből következtet, rossz
+helyre köti a nézetmódot.
+
+*Bizonyítottsági fok: megerősített* (string-szomszédság + hivatkozó
+rutinok). **Nyitva:** a `SimplifiedHierarchy` és a `LastViewRoot`
+alapértéke friss telepítésen — ehhez a Picasa első indítás utáni
+registry-állapota kellene.
+
+### Amit ebből a PicasaPy megvalósít (#702, első szelet)
+
+`src/picasapy/app/folder_hierarchy.py` (tiszta fa-építés),
+`folder_hierarchy_controller.py` (állapot: nyitott ágak, egyszerűsítés) és
+`qml/PicasaPy/FolderHierarchyView.qml` (a kirajzolt fa + a fenti ötös
+helyi menü). A darabszám a részfa összege, a gyökérsor felirata
+`qsTr("My Computer")`. A **nézetmód-váltó** (a két `hviewtoggle` gomb, a
+`View ▸ Folder View` almenü és a `LastViewRoot` megőrzése) **még nincs
+meg** — az a `Main.qml`/`FolderPane.qml` bekötésével jár, külön jegy.
 
 ## 2. Bal panel ↔ rács elválasztó (splitter)
 
