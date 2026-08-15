@@ -1632,3 +1632,57 @@ ezért az abszolút értékek nem vethetők össze — a **görbe alakja** igen.
 *Bizonyítottsági fok: megerősített* (a teljes ciklus és a konstans is
 visszakeresve). A golden-kit3 `12-sat-sweep` kilenc csúszkaállása innentől
 **validáció**: a fenti algoritmus közvetlenül visszamérhető rá.
+
+## `enhance` — a LEGGYAKRABBAN használt szűrő, és eltér (mérve, 2026-08-15)
+
+A valódi ini-korpusz szerint az `enhance` a **leggyakoribb** szerkesztés:
+**3 045 lánc** az 5 658-ból tartalmazza
+([`picasa-ini-format.md`](picasa-ini-format.md), korpusz-szakasz). Ezért
+minden más effektnél többet számít a pontossága.
+
+### A mérés
+
+A #685 mérőszettjének szürke rámpáján (0…255, teljes tartomány) az
+eredeti Picasa-export és a mi renderünk átviteli görbéje illesztve:
+
+| szűrő | forrás | átvitel | fekete-vágás | fehér-vágás | illesztés szórása |
+|---|---|---|---:|---:|---:|
+| `autolight` | Picasa | `1,0325·be − 4,64` | **4,5** | **251,5** | 0,11 |
+| `autolight` | mi | `1,0321·be − 4,59` | **4,4** | **251,5** | 0,28 |
+| `autocolor` | Picasa | `1,0000·be + 0,00` | — | — | 0,00 |
+| `autocolor` | mi | `0,9997·be + 0,00` | — | — | 0,11 |
+| **`enhance`** | **Picasa** | **`1,1136·be − 7,19`** | **6,5** | **235,4** | 0,29 |
+| **`enhance`** | **mi** | **`1,1487·be − 21,19`** | **18,4** | **240,4** | 0,29 |
+
+### Amit ez kimond
+
+1. **Mindkét oldal tiszta lineáris szinthúzást végez.** A Picasa görbéje
+   gyakorlatilag hibátlan egyenes (illesztési szórás 0,29 a 0–255
+   tartományon) — nincs benne gamma, nincs S-görbe.
+2. **Az `autolight` és az `autocolor` nálunk PONTOS.** A vágási pontok
+   tizedre egyeznek. Ezeken nincs mit javítani.
+3. **Az `enhance` viszont eltér, és a hiba az ÁRNYÉKOKBAN a legnagyobb:**
+   a fekete-vágásunk **18,4**, a Picasáé **6,5** — közel **12 szint**
+   árnyékrészletet vágunk le fölöslegesen. A fehér végén 240,4 vs 235,4,
+   itt mi vagyunk a kevésbé agresszívak.
+4. **Az `enhance` NEM az `autolight` és az `autocolor` egyszerű
+   összefűzése.** A Picasa `enhance`-e ugyanazon a képen jóval erősebben húz
+   (6,5…235,4), mint az `autolight` (4,5…251,5) — más küszöbbel dolgozik.
+
+*Bizonyítottsági fok: megerősített* az eltérés ténye és iránya (azonos
+bemenet, valódi Picasa-export, két független illesztés 0,3 alatti
+szórással). **Feltételes** a konkrét számok általánosíthatósága: a vágási
+pontok hisztogram-függők, tehát képenként mások — a mérés azt bizonyítja,
+hogy **azonos bemeneten eltérünk**, nem azt, hogy a vágás mindig 6,5.
+
+### A javítás iránya
+
+A [`filters-decoded.md`](filters-decoded.md) korábbi köre visszafejtette a
+natív szinthúzás **küszöbképletét** (`küszöb = round(N/lépés² · 0,005)`).
+Az `autolight` nálunk ezt helyesen alkalmazza. Az `enhance`-nél valami más
+küszöb vagy más hisztogram-forrás fut — a különbség mértéke (12 szint az
+árnyékban) arra utal, hogy **nagyobb százalékot vágunk le** a sötét oldalon.
+
+**Mérési recept a javítás ellenőrzéséhez:** ugyanez a rámpa-illesztés; a cél,
+hogy a fekete- és fehér-vágás a Picasáétól **1 szinten belül** legyen, ahogy
+az `autolight`-nál már sikerült.
