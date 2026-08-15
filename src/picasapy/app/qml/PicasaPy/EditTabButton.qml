@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
 
 // Egy fülgomb a szerkesztő fülsávjában (#338): saját rajzolású ikon,
 // buboréksúgó, és a #318 kompatibilitási okból megtartott (de rejtett)
@@ -33,8 +32,12 @@ Rectangle {
     // effekt, ami erre a fülre tartozik; a felhasználónak tudnia kell,
     // hol nézze meg
     property bool marked: false
-    Layout.fillWidth: true
-    Layout.preferredHeight: 38
+    // #741: a fülsáv MÉRT magassága 25 képpont (`respack.yt`: a fülgombok
+    // y 45..70). A tényleges `x`/`width`/`height` a gazda `EditorTabBar`-tól
+    // jön, amely hézag nélkül osztja szét a tartalom-oszlopot — ezért itt
+    // nincs layout-kötés, csak implicit alapérték.
+    implicitHeight: 25
+    implicitWidth: 39
     color: panel.activeTab === tabIndex ? Theme.contentPanel : Theme.panelHeaderBg
     border.width: 1
     border.color: panel.activeTab === tabIndex ? Theme.selectionBlue : Theme.chromeBorder
@@ -42,7 +45,10 @@ Rectangle {
     EditTabIcon {
         objectName: tbtn.objectName ? tbtn.objectName + "Icon" : ""
         anchors.centerIn: parent
-        width: 22; height: 22
+        // #741: az eredeti fülikonok y 49..68 a 25 képpontos sávban, azaz
+        // 16–19 képpont magasak (fülönként 15 × 16 … 25 × 19). A korábbi
+        // 22 × 22 nem fért volna a sávba.
+        width: 20; height: 18
         kind: tbtn.iconKind
         strokeColor: Theme.iconInk
         accentColor: tbtn.iconAccent

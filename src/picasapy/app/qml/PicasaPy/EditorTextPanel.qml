@@ -75,10 +75,19 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         spacing: 6
+        // #741: a legördülők MÉRT magassága 21 képpont (`fontfamily`
+        // 202 × 21, `sizelist` 48 × 21 —
+        // `docs/specs/szerkeszto-panel-meretek.md` 6.4/7.). A belső
+        // térközöket is nullázni kell, különben a vezérlő tartalma
+        // kilógna a 21 képpontos dobozból.
         ComboBox {
             id: textFontBox
             objectName: "textFontFamilyBox"
             Layout.fillWidth: true
+            Layout.preferredHeight: 21
+            topPadding: 0
+            bottomPadding: 0
+            font.pixelSize: Theme.fontSize - 1
             model: panel.fontFamilyLabels
             currentIndex: Math.max(0, panel.fontFamilyKeys.indexOf(panel.textFontFamily))
             onActivated: panel.textFontFamilyEdited(panel.fontFamilyKeys[currentIndex])
@@ -87,6 +96,17 @@ ColumnLayout {
             objectName: "textFontSizeBox"
             //: a betűméret a rajzoló méret-szorzójának SZÁZALÉKA
             from: 20; to: 400; stepSize: 10
+            // A `sizelist` az eredetiben 48 × 21-es LEGÖRDÜLŐ; nálunk
+            // léptethető mező, aminek a két nyílgombbal együtt ennél több
+            // kell. A 90 az implicit 120 helyett — a panel ettől még nem
+            // lesz keskenyebb (a szöveg-panel túlcsordulása régebbi és más
+            // okú, ld. a jelentést), de ez a rész már a mérethez igazodik.
+            Layout.fillWidth: false
+            Layout.preferredWidth: 90
+            Layout.preferredHeight: 21
+            topPadding: 0
+            bottomPadding: 0
+            font.pixelSize: Theme.fontSize - 1
             value: Math.round(panel.textFontScale * 100)
             onValueModified: panel.textFontScaleEdited(value / 100)
         }
@@ -211,12 +231,18 @@ ColumnLayout {
         onMoved: panel.textOpacityEdited(value)
     }
 
+    // #741: `edittextapply`/`edittextcancel` — párban álló, 98 × 28-as
+    // gombok (x 38 és 141), nem a teljes oszlopot kitöltve
     RowLayout {
-        Layout.fillWidth: true
+        Layout.fillWidth: false
+        Layout.alignment: Qt.AlignHCenter
         spacing: 6
         PanelButton {
             objectName: "textApplyButton"
             label: qsTr("Apply") + " ✔"
+            Layout.fillWidth: false
+            Layout.preferredWidth: 98
+            Layout.preferredHeight: 28
             buttonEnabled: panel.textPlacementPending
                           && textContentField.text.length > 0
             onButtonClicked: panel.textApplyRequested()
@@ -224,6 +250,9 @@ ColumnLayout {
         PanelButton {
             objectName: "textCancelButton"
             label: qsTr("Cancel") + " ✘"
+            Layout.fillWidth: false
+            Layout.preferredWidth: 98
+            Layout.preferredHeight: 28
             onButtonClicked: panel.textCancelRequested()
         }
     }

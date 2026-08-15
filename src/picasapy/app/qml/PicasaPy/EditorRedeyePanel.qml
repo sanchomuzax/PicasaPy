@@ -26,6 +26,16 @@ ColumnLayout {
     anchors.margins: 10
     spacing: 8
 
+    // #741: a MÉRT gombgeometria (`docs/specs/szerkeszto-panel-meretek.md`
+    // 6.2/7.): `redeyeauto`/`redeyepreview`, `redeyeapply`/`redeyecancel`
+    // párban, 98 × 28-as gombokkal (x 38 és 144); a `redeyediscard`
+    // („Reset") EGYEDÜL, középen (x 91).
+    component ActionButton: PanelButton {
+        Layout.fillWidth: false
+        Layout.preferredWidth: 98
+        Layout.preferredHeight: 28
+    }
+
     RowLayout {
         Layout.fillWidth: true
         spacing: 6
@@ -83,36 +93,41 @@ ColumnLayout {
     }
 
     RowLayout {
-        Layout.fillWidth: true
+        Layout.fillWidth: false
+        Layout.alignment: Qt.AlignHCenter
         spacing: 6
-        PanelButton {
+        ActionButton {
             objectName: "redeyeAutoButton"
             label: qsTr("Auto")
             onButtonClicked: panel.redeyeAutoRequested()
         }
-        PanelButton {
+        ActionButton {
             objectName: "redeyeUndoRegionButton"
             label: qsTr("Undo")
             buttonEnabled: panel.canUndoRedeyeRegion
             onButtonClicked: panel.redeyeUndoRegionRequested()
         }
-        PanelButton {
-            objectName: "redeyeResetButton"
-            label: qsTr("Reset")
-            buttonEnabled: panel.redeyeRegionCount > 0
-            onButtonClicked: panel.redeyeResetRequested()
-        }
+    }
+
+    // #741: a „Reset" az eredetin egyedül, középen áll (`redeyediscard`)
+    ActionButton {
+        objectName: "redeyeResetButton"
+        label: qsTr("Reset")
+        Layout.alignment: Qt.AlignHCenter
+        buttonEnabled: panel.redeyeRegionCount > 0
+        onButtonClicked: panel.redeyeResetRequested()
     }
 
     RowLayout {
-        Layout.fillWidth: true
+        Layout.fillWidth: false
+        Layout.alignment: Qt.AlignHCenter
         spacing: 6
-        PanelButton {
+        ActionButton {
             objectName: "redeyeApplyButton"
             label: qsTr("Apply") + " ✔"
             onButtonClicked: panel.redeyeApplyRequested()
         }
-        PanelButton {
+        ActionButton {
             objectName: "redeyeCancelButton"
             label: qsTr("Cancel") + " ✘"
             onButtonClicked: panel.redeyeCancelRequested()

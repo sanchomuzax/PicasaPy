@@ -43,9 +43,20 @@ ColumnLayout {
     anchors.margins: 10
     spacing: 6
 
+    // #741: a MÉRT geometria (`docs/specs/szerkeszto-panel-meretek.md` 4.):
+    // a négy csúszka 191 × 27 képpont, mind az x 30-on, ~53 képpontos
+    // osztásközzel; a feliratuk (151 × 12) a csúszka FÖLÖTT, középre zárva.
+    // A fül 10 képpontos bal margójához képest az x 30 = 17 képpont eltolás
+    // (13 + 17 = 30) — ezt a `csuszkaEltolas` tartja egy helyen.
+    readonly property int csuszkaSzelesseg: 191
+    readonly property int csuszkaMagassag: 27
+    readonly property int csuszkaEltolas: 17
+
     // középre igazított csúszka-felirat (az eredetin is középen áll)
     component SliderCaption: Label {
-        Layout.fillWidth: true
+        Layout.fillWidth: false
+        Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
+        Layout.leftMargin: finetunePanel.csuszkaEltolas
         horizontalAlignment: Text.AlignHCenter
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
@@ -95,7 +106,10 @@ ColumnLayout {
     PicasaSlider {
         id: finetuneFillSlider
         objectName: "finetuneFillSlider"
-        Layout.fillWidth: true
+        Layout.fillWidth: false
+        Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
+        Layout.preferredHeight: finetunePanel.csuszkaMagassag
+        Layout.leftMargin: finetunePanel.csuszkaEltolas
         from: 0; to: 1; value: 0
         // #337: a Gyakori javítások fülön lévő párjával közös állapot
         onValueChanged: panel.fillLightMoved(value)
@@ -115,7 +129,10 @@ ColumnLayout {
             PicasaSlider {
                 id: finetuneHighlightsSlider
                 objectName: "finetuneHighlightsSlider"
-                Layout.fillWidth: true
+                Layout.fillWidth: false
+                Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
+                Layout.preferredHeight: finetunePanel.csuszkaMagassag
+                Layout.leftMargin: finetunePanel.csuszkaEltolas
                 // #551: a `filterdesc.xml` szerinti nyers paraméter-
                 // tartomány [0..0.48] — a mérés is pontosan ezt igazolta (a
                 // felső állásban a FEHÉRPONT 0,48-cal mozdul). A csúszka
@@ -131,7 +148,10 @@ ColumnLayout {
             PicasaSlider {
                 id: finetuneShadowsSlider
                 objectName: "finetuneShadowsSlider"
-                Layout.fillWidth: true
+                Layout.fillWidth: false
+                Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
+                Layout.preferredHeight: finetunePanel.csuszkaMagassag
+                Layout.leftMargin: finetunePanel.csuszkaEltolas
                 // #551: ld. a Kiemelések megjegyzését — itt a FEKETEPONT
                 // mozdul ugyanennyivel.
                 from: 0; to: 0.48; value: 0
@@ -156,7 +176,10 @@ ColumnLayout {
     PicasaSlider {
         id: finetuneTempSlider
         objectName: "finetuneTempSlider"
-        Layout.fillWidth: true
+        Layout.fillWidth: false
+        Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
+        Layout.preferredHeight: finetunePanel.csuszkaMagassag
+        Layout.leftMargin: finetunePanel.csuszkaEltolas
         from: -1; to: 1; value: 0
         onValueChanged: if (!panel.suppressFinetune) panel.emitFinetunePreview()
         onPressedChanged: if (!pressed) panel.emitFinetuneCommit()

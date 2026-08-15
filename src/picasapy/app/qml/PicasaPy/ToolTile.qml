@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 
 // Egy eszköz-csempe a szerkesztő 1. fülén (#405/#411): nagy, saját rajzú
 // SVG-ikon + felirat, „benyomott" (aktív) állapottal.
@@ -19,35 +18,34 @@ Item {
     property bool tileEnabled: true
     signal activated(string tool)
 
-    Layout.fillWidth: true
-    // #405/#411: nagyobb csempe — az ikon a Picasa-mintát követve
-    // jóval nagyobb helyet foglal, mint a korábbi 40×30-as PNG-ikon.
+    // #741: a MÉRT geometria (`docs/specs/szerkeszto-panel-meretek.md` 3.):
+    // a csempekép PONTOSAN 44 × 30 képpont, az oszlopköz 81, a sorköz 64.
     //
-    // #659: a magasság nem lehet BEÉGETVE 84, mert a felirat szűk
-    // oszlopban KÉT sorba törik (`wrapMode` + `maximumLineCount: 2`), és
-    // akkor kilóg a csempéből — 260 képpontos oszlopnál a gépi ellenőr
-    // (#656) 4,2 képpontot mért a „Jó napom van" csempén. A 84 innentől
-    // ALSÓ KORLÁT: egysoros feliratnál a csempe pontosan ugyanakkora, mint
-    // eddig, kétsorosnál pedig annyival nő, amennyi tényleg kell.
-    // A csempe az eredetiben FIX méretű, és nálunk is az marad — a
-    // magasságot viszont a KÉTSOROS felirathoz kell szabni: 4 (felső margó)
-    // + 54 (ikondoboz) + 4 (köz) + 26,2 (két sor a legszűkebb, 260 képpontos
-    // oszlopban) + 4 (alsó levegő) = 92,2 → 92 fölfelé kerekítve nem elég,
-    // ezért 94. Korábban 84 állt itt, és a „Jó napom van" felirata 4,2
-    // képponttal kilógott a csempéből (#656 gépi ellenőr, #659).
+    // A 64 a bináris felbontásában: 30 (csempekép) + 14 (felirat) + 20
+    // (hézag a következő sorig). Korábban a cella 94 képpont magas volt, és
+    // a `rowSpacing: 10`-zel együtt 104 képpontos sorközt adott a 64
+    // helyett — három sor × ~40 képpont többlet, ez tolta le a panel alját
+    // (#741).
     //
-    // Számított magassággal is próbáltam (`implicitHeight` a felirat
-    // tényleges méretéből): a `GridLayout` NEM követte — a sor magassága
-    // 84 maradt, miközben az `implicitHeight` már 92,2 volt. A fix méret
-    // itt nemcsak egyszerűbb, hanem az eredeti viselkedése is.
-    Layout.preferredHeight: 94
+    // A cellát a gazda rács méretezi és helyezi el (`EditorTabCommonFixes`),
+    // ezért itt csak az implicit alapérték áll.
+    //: a csempekép mérete — `respack.yt` rétegtéglalap (44 × 30)
+    readonly property int kepSzelesseg: 44
+    readonly property int kepMagassag: 30
+
+    implicitWidth: 80
+    implicitHeight: 64
     // az öröklött enabled is számít (#103): videónál a PhotoViewer az
     // egész panelt tiltja — a csempe ilyenkor vizuálisan is szürkül
     enabled: tile.tileEnabled
     opacity: tile.enabled ? 1 : 0.4
 
+    // #741: a kiemelés a CSEMPEKÉP dobozát fedi, nem az egész cellát — az
+    // eredetiben a kattintható réteg maga a 44 × 30-as kép, a felirat külön
+    // elem alatta. (Kattintani ettől függetlenül a felirattal együtt a
+    // teljes cellán lehet, ld. a MouseArea-t lent.)
     Rectangle {
-        anchors.fill: parent
+        anchors.fill: tileThumbBox
         radius: 3
         // #314: sem "#cfe4f7", sem "#e8eef4" nem olvasható sötét
         // témában (fix világos árnyalatok) — a jelző-kék tokenből
@@ -69,31 +67,34 @@ Item {
     Item {
         id: tileThumbBox
         anchors.top: parent.top
-        anchors.topMargin: 4
         anchors.horizontalCenter: parent.horizontalCenter
-        width: parent.width - 8
-        height: 54
+        // #741: a csempekép doboza PONTOSAN akkora, mint a kép — a mérés
+        // ebből olvassa ki az oszlop- és sorközt (a cella körülötte áll).
+        width: tile.kepSzelesseg
+        height: tile.kepMagassag
 
         Image {
             id: tileIconImg
             objectName: tile.objectName ? tile.objectName + "Icon" : ""
-            anchors.centerIn: parent
-            // #411: az ikonok FEKVŐ (3:2) arányúak, mint az eredeti
-            // Picasa 44x29-es gombképei — négyzetes dobozban a rajz
-            // zsugorodna/torzulna, ezért 3:2 méret + PreserveAspectFit.
-            width: 54; height: 36
+            anchors.fill: parent
+            // #411/#741: az ikonok FEKVŐ arányúak, mint az eredeti Picasa
+            // 44 × 30-as gombképei — négyzetes dobozban a rajz zsugorodna
+            // vagy torzulna, ezért fekvő méret + PreserveAspectFit.
             fillMode: Image.PreserveAspectFit
             source: "icons/" + tile.iconFile + ".svg"
-            sourceSize: Qt.size(108, 72)
+            sourceSize: Qt.size(88, 60)
             smooth: true
         }
     }
     Text {
         id: tileLabel
+        objectName: tile.objectName ? tile.objectName + "Label" : ""
+        // #741: a felirat a csempekép ALATT, középre zárva
+        // (`m_buttonfontCbelow` → `YConstraint 0, 1, 0`).
         anchors.top: tileThumbBox.bottom
-        anchors.topMargin: 4
+        anchors.topMargin: 2
         anchors.horizontalCenter: parent.horizontalCenter
-        width: parent.width - 2
+        width: parent.width
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
         maximumLineCount: 2

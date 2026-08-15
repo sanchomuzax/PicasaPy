@@ -81,8 +81,12 @@ class TestFiveTabBar:
         assert panel.property("activeTab") == expected_tab
 
     def test_tab_bar_fits_panel_width(self, qml_engine, qt_app):
-        """#328 4. pont: az öt fülnek a panel szélességében kell elférnie —
-        a RowLayout minden EditTabButton-ja Layout.fillWidth-öt használ."""
+        """#328 4. pont: a füleknek a panel szélességében kell elférniük.
+
+        #741: a sáv kumulált, egészre csonkított határok mentén osztja szét
+        a szélességét (`EditorTabBar.tabHatar`), nem `fillWidth`-tel. A
+        pontos, hézagmentes kitöltést a `test_editor_panel_geometry_741.py`
+        méri; ez itt a „nem lóg ki" alsó korlát marad."""
         panel = _make_panel(qml_engine)
         qt_app.processEvents()
         tab_bar = panel.findChild(QObject, "editTabBar")
