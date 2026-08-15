@@ -267,3 +267,61 @@ az Intézőből is elérhető volt — nálunk nincs megfelelője.
    (pl. `ID_FILE_LOCATEONDISK` négy helyen) — ez a modell ezt természetesen
    kezeli.
 3. A `&` gyorsjelölések átvehetők, így az Alt-navigáció is egyezik.
+
+## A.4 A tételsor végigvezetése menünként (2026-08-15)
+
+A #422 elfogadási feltétele — „menünként a tételsor hiánytalanul megvan" —
+menüosztályonként végigvezetve, **a string-táblához**, nem a
+képernyőképekhez mérve. A képernyőkép csak azt mutatja, ami az adott
+nézetben épp látszott; a string-tábla a teljes parancskészletet hozza.
+
+| menüosztály | eredeti | nálunk | állapot |
+|---|---|---|---|
+| `Folder` + `FolderWin` | 12 | 12 | **teljes** (a fanézet két parancsa nélkül, ld. lent) |
+| `AlbumPhoto` + `…Win` | 18 | 18 | **teljes** |
+| `FolderPhoto` + `…Win` | 5 | 5 | **teljes** |
+| `OneUp` | 6 | 6 | **teljes** |
+| `Album` | 13 azonosító / 11 felirat | 11 | **teljes** |
+| `AlbumList` | 11 | 11 | **teljes** (a Win/Mac gyökérváltók nélkül) |
+| `Collection` · `Sort` · `Tags` · `Tray` · `Address` | 3 · 4 · 3 · 2 · 7 | ua. | **teljes** |
+| `PplAlbum` · `PplAlbumPhoto` | 4 · 4 | 4 · 4 | **teljes** |
+
+A végigvezetés **négy** olyan tételt talált, amit sem a képernyőképek, sem
+a fenti szöveges felsorolások nem hoztak elő:
+
+1. **`AlbumPhoto::ID_FILE_LOCATEINPICASA` — „Keresés a Picasában".** A
+   „Keresés a lemezen" párja *befelé*: album-nézetből a kép saját mappájára
+   ugrik a könyvtárban. A 2. szakasz képernyőképe mappa-nézetben készült,
+   ahol nincs értelme — ezért maradt ki onnan.
+2. **`PplAlbumPhoto::ID_PEOPLEALBUMS` — „Hozzáadás az Emberek albumhoz".**
+   Az A.2 négy `PplAlbumPhoto`-parancsot említ, de a felsorolásában ez
+   összemosódott az „Áthelyezés új személyhez…"-zel. Az angol forrás `Move
+   to People Album`, a hivatalos magyar viszont „Hozzáadás…" — a két nyelv
+   itt szándékosan mást mond.
+3. **`Album::ID_UPLOAD_TO_LIGHTHOUSE` — „Feltöltés a Picasa
+   Webalbumokba…".** Ez oldja fel az A.2 „13 tétel, de csak 11 nevesítve"
+   ellentmondását: a 13-ból **négy** feltöltés-azonosító
+   (`ID_UPLOAD_ALBUM_TO_GOOGLE_PLUS_PHOTOS`, `ID_UPLOAD_ALBUM_TO_LIGHTHOUSE`,
+   `ID_UPLOAD_TO_GOOGLE_PLUS_PHOTOS`, `ID_UPLOAD_TO_LIGHTHOUSE`), és ezek
+   mindössze **két** különböző feliratot adnak. Vagyis 11 különböző felirat
+   van, nem 13 — nincs két „elveszett" tétel.
+4. **`Folder::ID_UNHIDEENTIREALBUM` — „Mappa megjelenítése".** Az A.2
+   kimondja, hogy ez *nem külön tétel*, hanem a „Mappa elrejtése"
+   állapotfüggő felirat-váltása. Nálunk a sor addig egyetlen, rögzített
+   feliratú helyfoglaló volt.
+
+### Ami szándékosan kimaradt
+
+- **`Folder::ID_HIER_FOLDER_EXPAND` / `ID_HIER_FOLDER_COLLAPSE`** („Az
+  összes részletes nézete" / „Az összes kicsinyítése") és a `HierFolder`
+  osztály: ezek a **hierarchikus (fa) mappanézethez** tartoznak. A bal
+  panelen a Mappák-lista nálunk — az eredetihez hűen, ld.
+  `ui-audit-mainwindow.md` 1.3/8 — **lapos**, almappa-szint és nyílglif
+  nélkül; fanézet csak a Mappakezelő dialógusban van. Amíg nincs
+  fa-mappanézet a bal panelen, ezeknek a parancsoknak nincs hova
+  kerülniük. Nem kontextusmenü-hiány, hanem hiányzó nézet.
+- **`AlbumListWin` / `AlbumListMac`** (Sajátgép · Dokumentumok · Képek ·
+  Dokumentumok): platformspecifikus gyökérváltók, a PicasaPy Linux-first.
+- **`Slingshot`** (Intéző héj-menü), **`Import`/`ImportGroups`**,
+  **`CollageS`/`CollageD`/`Border`/`MMFilm`/`Dev`/`SyncOpts`/`BtnConf`**: a
+  hozzájuk tartozó panel/integráció megvalósításakor esedékesek.

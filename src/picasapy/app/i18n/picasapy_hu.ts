@@ -546,6 +546,10 @@
         <translation>Mappa elrejtése</translation>
     </message>
     <message>
+        <source>Unhide Folder</source>
+        <translation>Mappa megjelenítése</translation>
+    </message>
+    <message>
         <source>Locate on Disk</source>
         <translation>Keresés a lemezen</translation>
     </message>
@@ -3243,6 +3247,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Beállítás az Emberek album indexképeként</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
+        <source>Add to People Album</source>
+        <translation>Hozzáadás az Emberek albumhoz</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PhotoContextMenu.qml"/>
+        <source>Locate in Picasa</source>
+        <translation>Keresés a Picasában</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/PhotoContextMenu.qml" line="23"/>
         <source>Rename...</source>
         <translation>Átnevezés…</translation>
@@ -5098,6 +5112,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <source>Upload to Google Photos...</source>
         <translation>Feltöltés a Google Fotókba…</translation>
+    </message>
+    <message>
+        <source>Upload to Picasa Web Albums...</source>
+        <translation>Feltöltés a Picasa Webalbumokba…</translation>
     </message>
     <message>
         <source>Export as HTML Page...</source>
