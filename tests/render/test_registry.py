@@ -62,9 +62,19 @@ class TestSliderConsistency:
 
 
 class TestHandlersExistInRegistry:
+    #: #711 — a `desat` az EGYETLEN dokumentált kivétel: a `CDesaturateFilter`
+    #: saját, Picasa 2-korabeli ini-kulcsa, ami bizonyítottan NINCS a
+    #: filterdesc.xml 84 szűrőjében (ld. `docs/specs/
+    #: picasa-native-filter-registry.md` 1. pontja), ezért a `registry_data.py`
+    #: nyers táblájában sem szerepel — a `chain._HANDLERS`-ben viszont igen,
+    #: mert renderelése az `ansel` egzakt megfelelője (`_apply_desat_op`).
+    _LEGACY_ALIAS_EXCEPTIONS = frozenset({"desat"})
+
     def test_minden_kezelt_kulcs_a_regiszterben_van(self):
-        missing = sorted(set(_HANDLERS) - set(FILTER_REGISTRY))
-        assert not missing, f"a _HANDLERS kulcsai hiányoznak a regiszterből: {missing}"
+        missing = (
+            set(_HANDLERS) - set(FILTER_REGISTRY) - self._LEGACY_ALIAS_EXCEPTIONS
+        )
+        assert not missing, f"a _HANDLERS kulcsai hiányoznak a regiszterből: {sorted(missing)}"
 
 
 class TestClampSliderValue:

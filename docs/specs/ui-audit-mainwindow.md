@@ -202,8 +202,43 @@ Megfigyelt eltérések a lapos nézethez képest:
 - a kijelölt soron jobb oldalt kis **görgető-fogantyú** jelenik meg.
 
 *Bizonyítottsági fok: megerősített* (elrendezés-erőforrás + buboréksúgó +
-képernyőkép). **Nyitva:** a behúzás és a sormagasság pontos képpontértéke —
-ehhez ismert nagyítású képernyőkép kell.
+képernyőkép).
+
+### A sormagasság és a behúzás — NEGATÍV eredmény (2026-08-15)
+
+A `respack.yt` rétegtéglalapjai a felület nagy részére képpontra megadják a
+geometriát (`binaris-regeszet-modszertan.md` 14/c). **A mappafa sorára
+NEM.** Végignézve a csomagot:
+
+- a bal panel listája `thumbui/albums_win` / `albums_mac`, típusa **`listbox`**
+  (x 9..205, y 75..412 a tervezővásznon) — csak a **keret**, sorsablon nélkül;
+- az egész csomagban **egyetlen** `proto` (sorsablon) van,
+  `thumbui/headerproto` (199 × 17), és az a **rács** fejlécsora, nem a fa;
+- a `scratch.tre` `scratch/album*` elemei a **képtálca** elemsablonját adják
+  (a fájl saját kommentje mondja ki: „the tray can get so small that there's
+  no room for text"), nem a mappafáét.
+
+**Következtetés:** a `listbox` a sorait **kódból** rajzolja, a sormagasság és
+a behúzás nem elrendezés-erőforrás. Ahhoz a rajzoló rutint kellene
+visszakövetni — ez a kérdés árához képest drága, és a sor magassága a
+`design-guide.md`-ből amúgy is szabadon választható (a mi listánk működik).
+
+*Bizonyítottsági fok: elvetve* — nem cáfolva, hanem **nem ebből a forrásból
+kideríthető**. A következő körnek ne kelljen újra végigjárnia.
+
+### Amit a csomag viszont megad — a bal panel fejléc-elemei
+
+Ezek **méretek**, tehát a tervezővászon-csapda (14/c) nem érinti őket:
+
+| elem | méret | mi ez |
+|---|---|---|
+| `albumview` | **132 × 29** | „Vissza a könyvtárhoz" |
+| `newalbum` | **29 × 22** | új album |
+| `newfolder` | **29 × 22** | új mappa |
+| `folderview` | **30 × 22** | nézetváltó (fa/lapos) |
+| `folderviewpopup` | **22 × 22** | a nézet-legördülő nyila |
+| `listbox_title` | 80 × 14 | a „Könyvtár" felirat |
+| `hlistsizer` | **8** széles | a húzható elválasztó |
 
 ## 1.5 A „View options" legördülő — teljes tartalom a binárisból
 
