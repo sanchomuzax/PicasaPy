@@ -1,0 +1,7 @@
+elem,allapot,bizonyitek,megjegyzes
+searchcontainer/starsearch,megvan,PicasaPy/MainToolbar.qml,"Csillag-szűrő: nálunk a ★ jel a keresősáv mellett (controller.showStarred), felirat nélkül"
+searchcontainer/geotagsearch,megvan,PicasaPy/MainToolbar.qml,"Geo-szűrő: objectName geoFilter + icons/geo-pin.svg (controller.showGeotagged)"
+searchcontainer/searchclr,megvan,PicasaPy/MainToolbar.qml,"Keresés törlése: objectName searchClear (a ✕ gomb a mezőben)"
+outputlayout/ebutton,megvan,PicasaPy/TrayBar.qml,"Nálunk „E-Mail” a felirata, az eredetiben „Email” — kötőjel miatt nem egyezik szó szerint"
+outputlayout/folderbutton,megvan,PicasaPy/TrayBar.qml;PicasaPy/ExportDialogs.qml,"Az „Export” tálcagomb az Exportálás párbeszédet nyitja"
+throttle/throttlethumb,megvan,PicasaPy/PicasaScrollBar.qml,"A görgetősáv fogantyúja — nálunk névtelen Rectangle a PicasaScrollBar-ban"
