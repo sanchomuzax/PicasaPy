@@ -147,6 +147,24 @@ class TestAzonossagEsetek:
         assert np.array_equal(report.image, sample)
 
 
+class TestUresParameter:
+    """A Picasa a csúszka nélküli állapotot `név=1,;` alakban írja (a #685
+    mérőszettjében a `triple=1,;` pontosan így áll). Ez NEM hibás
+    paraméter: az alapértékkel kell futni, nem a kihagyott-listára kerülni."""
+
+    @pytest.mark.parametrize(
+        "chain", ["triple=1,;", "shadow=1,;", "contrast=1,;", "colortemp=1,;"]
+    )
+    def test_az_ures_parameter_az_alapertekkel_fut(self, sample, chain):
+        report = apply_filters(sample, parse_filters(chain))
+        assert report.skipped == ()
+        assert np.array_equal(report.image, sample)
+
+    def test_a_valoban_hibas_parameter_tovabbra_is_kimarad(self, sample):
+        report = apply_filters(sample, parse_filters("contrast=1,zzz;"))
+        assert report.skipped == ("contrast",)
+
+
 class TestTartomanyValidacio:
     def test_kilogo_kontraszt_vagva_fut(self, sample):
         report = apply_filters(sample, parse_filters("contrast=1,5.000000;"))

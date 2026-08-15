@@ -43,11 +43,17 @@ def _slider(op: FilterOp, index: int, default: float = 0.0) -> float:
     POZÍCIÓ szerint konvertál (a `chain._effect_float` mintájára): ha az adott
     helyen értelmezhetetlen érték áll, a kivétel FELSZÁLL, és a lánc ezt az
     egy bejegyzést hagyja ki (#301).
+
+    Az ÜRES paraméter viszont nem hiba, hanem a „nincs érték" jelölése: a
+    Picasa csúszka nélküli állapotban `név=1,;` alakot ír (a #685
+    mérőszettjében a `triple=1,;` és a `focalpixelate=1,;` pontosan így áll).
+    Ilyenkor az alapértékkel futunk, ahogy a hiányzó paraméternél.
     """
     absolute = index + 1  # a 0. paraméter az engedélyező „1" flag
     if len(op.params) <= absolute:
         return default
-    return float(op.params[absolute])
+    raw = op.params[absolute].strip()
+    return default if not raw else float(raw)
 
 
 def apply_contrast_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
