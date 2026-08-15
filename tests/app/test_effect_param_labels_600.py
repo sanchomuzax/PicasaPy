@@ -6,18 +6,26 @@ volt erre: a `Picasa3i18n.dll` `ImageFilters` osztálya 69 vezérlő-feliratot
 tartalmaz, mind a 41 nyelven — magyarul is. A szótár a repóban:
 `docs/specs/picasa-effekt-feliratok.md`.
 
-Ez a teszt három dolgot őriz:
+Ez a teszt négy dolgot őriz:
 
 1. a katalógus (`app/effect_params.py`) az EREDETI angol feliratot használja
    ott, ahol a vezérlőnek van eredeti megfelelője;
 2. minden katalógus-felirathoz tartozik `case` ág a QML fordító-segédben
    (`EditorParamPanel.paramLabel`) — enélkül a felirat némán angolul
    maradna a magyar felületen is;
-3. a magyar fordítás a szótár SZERINTI szó, nem a mi találgatásunk.
+3. a magyar fordítás a szótár SZERINTI szó, nem a mi találgatásunk;
+4. a SZŰRŐNKÉNTI felülírások (#700) — mert a felirat nem csak a vezérlő
+   azonosításától függ.
 
 A 3. pont a lényeg: a felhasználó a régi programból ezeket a szavakat
 ismeri, és több eredeti elnevezés nem magától értetődő (`Fade` = „Fokozat",
 `Bloom` = „Hamvasság", `Blur` = „Méret").
+
+A 4. pont a #700 bejelentésből jött: a bejelentő a magyar Picasa
+Holga-paneljén **„Élhomályosítás"**-t látott, a szótár viszont a `Blur`
+kulcshoz „Méret"-et rendel. A binárisból (`Picasa3.exe` `FUN_008fcfa0`)
+kiderült, hogy mindkettő igaz: a függvény négy csúszkánál a SZŰRŐ nevére is
+elágazik. A tábla: `docs/specs/picasa-effekt-feliratok.md`.
 """
 
 from __future__ import annotations
@@ -52,19 +60,38 @@ _QML_CONTEXT = "EditorParamPanel"
 #: (pl. `pencilsketch`, `comicize`), ott a felirat sem vezethető le, azt a
 #: jegy külön rögzíti.
 _EREDETI_FELIRATOK: tuple[tuple[str, str, str], ...] = (
-    ("dropshadow", "blur", "Size"),
-    ("vignette", "blur", "Size"),
     ("vignette", "color", "Vignette Color"),
-    ("matte", "blur", "Size"),
     ("matte", "color", "Matte Color"),
-    ("holga", "blur", "Size"),
-    ("lomo", "blur", "Size"),
     ("quantizepalette", "steps", "Number of Colors"),
     ("quantizepalette", "smoothing", "Detail"),
     ("twotone", "black_color", "First Color"),
     ("twotone", "white_color", "Second Color"),
     ("sixties", "rounded", "Rounded Corners"),
-    ("boost", "strength", "Impact"),
+)
+
+#: A SZŰRŐNKÉNTI FELÜLÍRÁSOK (#700 nyomán, binárisból). A felirat nem csak a
+#: vezérlő azonosítójától függ: a `Picasa3.exe` `FUN_008fcfa0` négy csúszkánál
+#: a szűrő azonosítójára is elágazik. A tábla:
+#: `docs/specs/picasa-effekt-feliratok.md` „Szűrőnkénti felülírás".
+#: A párjuk az `_ALAPERTELMEZETT_FELIRATOK`-ban van — a kettő EGYÜTT őrzi,
+#: hogy a felülírás célzott maradjon, és ne kenődjön rá minden szűrőre.
+_FELULIRT_FELIRATOK: tuple[tuple[str, str, str], ...] = (
+    ("holga", "blur", "Blur Edges"),
+    ("lomo", "blur", "Blur Edges"),
+    ("pixelate", "impact", "Pixel Size"),
+    ("hdr", "contrast", "Strength"),
+    ("boost", "strength", "Strength"),
+)
+
+#: Ugyanaz a vezérlő-azonosító, felülírás NÉLKÜLI szűrőben — itt marad az
+#: alapértelmezett felirat.
+_ALAPERTELMEZETT_FELIRATOK: tuple[tuple[str, str, str], ...] = (
+    ("dropshadow", "blur", "Size"),
+    ("vignette", "blur", "Size"),
+    ("matte", "blur", "Size"),
+    ("localcontrast", "contrast", "Contrast"),
+    ("nightvision", "contrast", "Contrast"),
+    ("twotone", "contrast", "Contrast"),
 )
 
 #: A szótár magyar oldala — csak az általunk ténylegesen használt feliratok.
@@ -76,6 +103,7 @@ _EREDETI_MAGYAR: dict[str, str] = {
     "Angle": "Szög",
     "Background Color": "Háttérszín",
     "Blend Mode": "Keverési mód",
+    "Blur Edges": "Élhomályosítás",
     "Bloom": "Hamvasság",
     "Brightness": "Fényerő",
     "Caption Height": "Képfelirat magassága",
@@ -96,6 +124,7 @@ _EREDETI_MAGYAR: dict[str, str] = {
     "Number of Colors": "Színek száma",
     "Outer Color": "Külső szín",
     "Outer Thickness": "Külső keret",
+    "Pixel Size": "Képpontméret",
     "Radius": "Sugár",
     "Rotate": "Forgatás",
     "Rounded Corners": "Sarkok lekerekítése",
@@ -143,6 +172,22 @@ def _magyar_forditasok() -> dict[str, str]:
 @pytest.mark.parametrize(("effekt", "kulcs", "felirat"), _EREDETI_FELIRATOK)
 def test_a_katalogus_az_eredeti_feliratot_hasznalja(effekt, kulcs, felirat):
     """A kitalált angol nevek helyén az eredeti Picasa-felirat áll."""
+    vezerlok = {param.key: param for param in effect_params(effekt)}
+    assert kulcs in vezerlok, f"a(z) {effekt!r} effektnek nincs {kulcs!r} vezérlője"
+    assert vezerlok[kulcs].label == felirat
+
+
+@pytest.mark.parametrize(("effekt", "kulcs", "felirat"), _FELULIRT_FELIRATOK)
+def test_a_szuronkenti_felulirast_a_katalogus_koveti(effekt, kulcs, felirat):
+    """#700: ahol a Picasa a szűrő nevétől függően más feliratot ad."""
+    vezerlok = {param.key: param for param in effect_params(effekt)}
+    assert kulcs in vezerlok, f"a(z) {effekt!r} effektnek nincs {kulcs!r} vezérlője"
+    assert vezerlok[kulcs].label == felirat
+
+
+@pytest.mark.parametrize(("effekt", "kulcs", "felirat"), _ALAPERTELMEZETT_FELIRATOK)
+def test_a_felulirasban_nem_erintett_szuro_az_alapertelmezest_kapja(effekt, kulcs, felirat):
+    """A felülírás CÉLZOTT: ugyanaz a vezérlő máshol az alapértelmezést adja."""
     vezerlok = {param.key: param for param in effect_params(effekt)}
     assert kulcs in vezerlok, f"a(z) {effekt!r} effektnek nincs {kulcs!r} vezérlője"
     assert vezerlok[kulcs].label == felirat

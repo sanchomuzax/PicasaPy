@@ -6336,6 +6336,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <source>Pick Color</source>
         <translation>Színválasztás</translation>
     </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Blur Edges</source>
+        <translation>Élhomályosítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/EditorParamPanel.qml"/>
+        <source>Pixel Size</source>
+        <translation>Képpontméret</translation>
+    </message>
 </context>
 <context>
     <name>EditOverwriteDialog</name>

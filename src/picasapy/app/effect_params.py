@@ -35,6 +35,15 @@ A négy „tint-szerű" örökölt szűrő (`ansel`, `tint`, `dir_tint`, `radtin
 „A `colorwheel version=…`" szakasza) — ez NEM kitalált név, hanem a
 `PickColor` szótári kulcs (`picasa-effekt-feliratok.md`).
 
+FIGYELEM (#700 nyomán, binárisból igazolva): a felirat NEM csak a vezérlő
+azonosítójától függ. A `Picasa3.exe` `FUN_008fcfa0` négy csúszkánál a SZŰRŐ
+azonosítójára is elágazik, és felülírja az alapértelmezést — ezért van
+`Holga`/`Lomo` alatt „Blur Edges" (Élhomályosítás) a „Size" helyett,
+`Pixelate` alatt „Pixel Size", `HDR` alatt „Strength", `Boost` alatt szintén
+„Strength". A teljes felülíró tábla a
+`docs/specs/picasa-effekt-feliratok.md` „Szűrőnkénti felülírás" szakaszában
+van; új effekt felvételekor ELŐBB azt kell megnézni.
+
 Amit tudatosan KIHAGYUNK (ld. a #516 jegy jelentése):
 - a **festhető maszk / ecset** effektek (`ReanimatedEyeColor`, `Soften`,
   `PicnikTint`) — a Picasában ecsettel kijelölt területre hatnak, a
@@ -162,7 +171,8 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _color("color", "Pick Color", "#ffffff"),
     ),
     # --- 5. fül: művészi effektek — egyezők (nincs teendő, #516) ------------
-    "boost": (_p("strength", "Impact", 0.0, 100.0, 50.0),),
+    # Boost: Impact — a felirata viszont „Strength" (felülírás)
+    "boost": (_p("strength", "Strength", 0.0, 100.0, 50.0),),
     "soften": (
         _p("amount", "Amount", 0.0, 100.0, 50.0),
         _p("radius", "Radius", 0.0, 100.0, 50.0),
@@ -228,7 +238,7 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # Pixelate: Impact, BlendMode (renderer ma NEM használja — ld. jelentés),
     # Fade — a BlendMode vezérlőt a Fade pozíciója miatt kell tartani
     "pixelate": (
-        _p("impact", "Impact", 2.0, 150.0, 20.0),
+        _p("impact", "Pixel Size", 2.0, 150.0, 20.0),
         _p("blend_mode", "Blend Mode", 0.0, 9.0, 9.0),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
@@ -246,10 +256,10 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("fade", "Fade", 0.0, 100.0, 0.0),
         _color("color", "Matte Color", "#ffffff"),
     ),
-    # HDR: Radius, Contrast, Fade
+    # HDR: Radius, Contrast, Fade — a Contrast felirata „Strength" (felülírás)
     "hdr": (
         _p("radius", "Radius", 1.3, 80.0, 20.0, 0.1),
-        _p("contrast", "Contrast", 1.0, 7.0, 3.0, 0.1),
+        _p("contrast", "Strength", 1.0, 7.0, 3.0, 0.1),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
     # LocalContrast: Radius, Contrast — nincs Fade
@@ -263,15 +273,15 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
         _p("brightness", "Brightness", 0.0, 100.0, 50.0),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
-    # Holga: Blur, Grain, Fade
+    # Holga: Blur, Grain, Fade — a Blur felirata itt „Blur Edges" (felülírás)
     "holga": (
-        _p("blur", "Size", 0.0, 100.0, 70.0),
+        _p("blur", "Blur Edges", 0.0, 100.0, 70.0),
         _p("grain", "Grain", 0.0, 100.0, 30.0),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
-    # Lomo: Blur, Fade
+    # Lomo: Blur, Fade — a Blur felirata itt „Blur Edges" (felülírás)
     "lomo": (
-        _p("blur", "Size", 0.0, 100.0, 50.0),
+        _p("blur", "Blur Edges", 0.0, 100.0, 50.0),
         _p("fade", "Fade", 0.0, 100.0, 0.0),
     ),
     # IR: Fade
