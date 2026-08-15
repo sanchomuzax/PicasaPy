@@ -19,6 +19,11 @@ from picasapy.edit.edit_journal import load_journal
 from picasapy.index.queries import PhotoRecord
 from picasapy.ini.io import load_document
 
+#: #699: platformfüggetlen próba-útvonal. A nyers "/k/a.jpg" Windowson
+#: NEM egyezik a `full_path()` visszaperjeles alakjával — a windows-CI-láb
+#: pontosan ezt fogta meg. A napló kulcsát a KÖZÖS szabály adja.
+_UT = str(Path("/k/a.jpg"))
+
 HOLGA = "holga=1;"
 LUCKY = "enhance=1;"
 
@@ -76,24 +81,24 @@ def _jelzesek(host):
 
 class TestNaplozas:
     def test_a_mentett_lanc_bekerul(self, host, tmp_path) -> None:
-        host.recordSavedChain("/k/a.jpg", HOLGA)
+        host.recordSavedChain(_UT, HOLGA)
 
         naplo = load_journal(tmp_path / "edit-journal.json")
         assert naplo["/k/a.jpg"].chain == HOLGA
 
     def test_az_ures_lanc_torol(self, host) -> None:
-        host.recordSavedChain("/k/a.jpg", HOLGA)
-        host.recordSavedChain("/k/a.jpg", "")
+        host.recordSavedChain(_UT, HOLGA)
+        host.recordSavedChain(_UT, "")
 
         assert load_journal(host._journal_file()) == {}
 
 
 class TestEszleles:
     def test_a_letorolt_lanc_jelzest_ad(self, host) -> None:
-        host.recordSavedChain("/k/a.jpg", HOLGA)
+        host.recordSavedChain(_UT, HOLGA)
         kapott = _jelzesek(host)
 
-        host._check_external_overwrites([_Rekord("/k/a.jpg", "")])
+        host._check_external_overwrites([_Rekord(_UT, "")])
 
         assert len(kapott) == 1
         assert kapott[0][0]["path"] == "/k/a.jpg"
@@ -101,36 +106,36 @@ class TestEszleles:
         assert kapott[0][0]["chain"] == HOLGA
 
     def test_a_valtozatlan_lanc_nem_jelez(self, host) -> None:
-        host.recordSavedChain("/k/a.jpg", HOLGA)
+        host.recordSavedChain(_UT, HOLGA)
         kapott = _jelzesek(host)
 
-        host._check_external_overwrites([_Rekord("/k/a.jpg", HOLGA)])
+        host._check_external_overwrites([_Rekord(_UT, HOLGA)])
 
         assert kapott == []
 
     def test_a_hozzafuzes_nem_jelez(self, host) -> None:
         """Ami MINKET nem érint, az ne zajongjon."""
-        host.recordSavedChain("/k/a.jpg", HOLGA)
+        host.recordSavedChain(_UT, HOLGA)
         kapott = _jelzesek(host)
 
-        host._check_external_overwrites([_Rekord("/k/a.jpg", HOLGA + LUCKY)])
+        host._check_external_overwrites([_Rekord(_UT, HOLGA + LUCKY)])
 
         assert kapott == []
 
     def test_kepenkent_csak_egyszer_jelez(self, host) -> None:
         """A nézet sokszor frissül — a felhasználót nem riasztjuk újra."""
-        host.recordSavedChain("/k/a.jpg", HOLGA)
+        host.recordSavedChain(_UT, HOLGA)
         kapott = _jelzesek(host)
 
         for _ in range(5):
-            host._check_external_overwrites([_Rekord("/k/a.jpg", "")])
+            host._check_external_overwrites([_Rekord(_UT, "")])
 
         assert len(kapott) == 1
 
     def test_ures_naplonal_nem_csinal_semmit(self, host) -> None:
         kapott = _jelzesek(host)
 
-        host._check_external_overwrites([_Rekord("/k/a.jpg", "")])
+        host._check_external_overwrites([_Rekord(_UT, "")])
 
         assert kapott == []
 

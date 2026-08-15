@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.55] – 2026-08-15
+
+### Javítva
+- **A szerkesztés-védelem Windowson némán hatástalan volt.** A napló írása és
+  olvasása másképp képezte a fájl útvonalát (perjel kontra visszaperjel),
+  ezért soha nem talált egyezést — vagyis a program nem szólt volna, ha egy
+  másik program felülírja a szerkesztésedet. Mostantól egyetlen közös
+  szabály adja a kulcsot mindkét oldalon.
+
 ## [0.7.54] – 2026-08-15
 
 ### Javítva

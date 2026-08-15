@@ -31,6 +31,22 @@ from pathlib import Path
 from picasapy.ini.filters import parse_filters
 
 
+def naplo_kulcs(path: str | Path) -> str:
+    """A napló EGYETLEN kulcsképzési szabálya (#699).
+
+    Az író (`record_saved_chain`) és az olvasó oldal (`detect_lost_edits`,
+    a vezérlő `full_path()`-a) ugyanezt hívja. Ha a két oldal máshogy
+    képezné, a `detect_lost_edits` **némán soha nem találna egyezést**, és a
+    védelem csendben hatástalan maradna — ami rosszabb, mint egy hangos hiba.
+
+    Windowson ez nem elméleti: a `full_path()` visszaperjelre normalizál
+    (`\\k\\a.jpg`), miközben a mentési út előreperjeles alakot adhat át
+    (`/k/a.jpg`). A `Path` normalizálása a két alakot azonosra hozza — ezt a
+    windows-CI-láb fogta meg (#699 utókövetés).
+    """
+    return str(Path(path))
+
+
 @dataclass(frozen=True)
 class JournalEntry:
     """Egy kép utoljára ÁLTALUNK mentett szerkesztési lánca."""
@@ -57,6 +73,7 @@ def record_saved_chain(
     összes szerkesztést, nincs mit védeni — különben egy szándékos törlésre
     is riasztanánk.
     """
+    path = naplo_kulcs(path)
     frissitett = dict(journal)
     if not chain.strip():
         frissitett.pop(path, None)
