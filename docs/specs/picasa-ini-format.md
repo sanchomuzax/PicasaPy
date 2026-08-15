@@ -474,6 +474,69 @@ ha ez a lépés változást jelez.
 kulcsot, és mi pontosan a „változás" feltétele a képfájl-feldolgozásban. Ez a
 #643 kutatási ága.
 
+## ⚠️ A `filters=` lánc beolvasása SZIGORÚ — mérve (2026-08-15, #685)
+
+Két valódi Picasa-export (178 + 49 kép, 3.9.141.259) tételesen kimérte, hogy
+az eredeti **jóval szigorúbb**, mint a mi parszerünk. Minden alábbi esetben a
+Picasa **némán elejti a bejegyzést** — nem hibázik, nem jelez, csak a
+szerkesztés nem történik meg. Ez a legveszélyesebb hibaosztály: íráskor
+elveszíthetjük a felhasználó munkáját anélkül, hogy bármi jelezné.
+
+### 1. A szűrőnév kis-nagybetű-ÉRZÉKENY
+
+| lánc | hatás |
+|---|---|
+| `tint=1,79.842102,ffff;` | **lefut** (ΔE 37,6) |
+| `Tint=…` / `TINT=…` / `tInT=…` | **néma elejtés** (ΔE 0,18 = JPEG-zaj) |
+| `Vignette=1,35,1.4,0,00000000;` | **lefut** (ΔE 12,1) |
+| `vignette=…` / `VIGNETTE=…` | **néma elejtés** |
+| `sepia=1;` | **lefut** (ΔE 21,3) |
+| `Sepia=1;` | **néma elejtés** |
+
+Tehát nincs „natív kisbetűs / Glimmer nagybetűs" szabály sem: **minden szűrő
+pontosan a saját, regiszterbeli írásmódját várja**, bájtra. A kanonikus alakok
+forrása a [`filterdesc-registry.md`](filterdesc-registry.md) táblája.
+
+> **A mi parszerünk `casefold()`-dal illeszt** (`src/picasapy/ini/filters.py`,
+> `FilterOp.matches`). Olvasáskor ez megengedő — elfogadunk olyat, amit az
+> eredeti nem —, íráskor viszont **kötelező az eredeti alak megőrzése**.
+
+### 2. A felesleges paraméter is néma elejtést okoz
+
+| lánc | hatás |
+|---|---|
+| `grain2=1;` | **lefut** (ΔE 1,8) |
+| `grain2=1,0.500000;` | **néma elejtés** (ΔE 0,18) |
+| `grain=1,;` (üresen záró vessző) | **lefut** — ez tolerált |
+
+A `grain2` nem vár paramétert; egy fölösleges szám megöli a bejegyzést. A
+záró üres mező viszont nem zavarja. Vagyis a szigorúság a **paraméterek
+számára** vonatkozik, nem a szintaxis apró szennyeződéseire.
+
+### 3. A hex színmező: legfeljebb 8 jegy, elölről, vezető nullák nélkül is jó
+
+| lánc vége | eredmény |
+|---|---|
+| `ffff` | ΔE 37,601 |
+| `0000ffff` | ΔE 37,601 — **azonos** |
+| `00ffff` | ΔE 37,601 — **azonos** |
+| `000000ffff` (10 jegy) | ΔE 106,728 — **azonos a `0000ff`-fel** |
+| `ff0000` | ΔE 80,291 |
+| `00ff00` | ΔE 91,779 |
+| `0000ff` | ΔE 106,728 |
+
+Az első három egyezése bizonyítja, hogy a **vezető nullák elhagyhatók** — a
+rejtélyes négyjegyű `ffff` tehát egyszerűen `0x0000ffff`, nem külön kódolás
+(#679). A tízjegyű eset pedig azt mutatja, hogy a beolvasó **az első 8 jegyet
+veszi** (`000000ffff` → `000000ff` = kék), nem a végét és nem az egészet.
+
+A kontrollok (`ff0000`, `00ff00`, `0000ff`) külön ΔE-t adnak, tehát a mező
+tényleg csatornánként számít; a bájtsorrend a natív kódból **`0x00RRGGBB`**
+([`filters-decoded.md`](filters-decoded.md), `tint` szakasz).
+
+**Bizonyítottsági fok: mind a három megerősített** — valódi Picasa-export,
+csoportonként egyetlen mozgatott változóval.
+
 ## Írási szabályok (PicasaPy, kétirányú kompatibilitáshoz)
 
 1. Atomikus írás (temp fájl + rename), írás előtti backup.
