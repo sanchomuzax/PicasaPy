@@ -19,8 +19,8 @@ from picasapy.edit.edit_journal import load_journal
 from picasapy.index.queries import PhotoRecord
 from picasapy.ini.io import load_document
 
-#: #699: platformfüggetlen próba-útvonal. A nyers "/k/a.jpg" Windowson
-#: NEM egyezik a `full_path()` visszaperjeles alakjával — a windows-CI-láb
+#: #699: platformfüggetlen próba-útvonal. A nyers _UT Windowson
+#: A nyers "/k/a.jpg" NEM egyezik a `full_path()` visszaperjeles alakjával — a windows-CI-láb
 #: pontosan ezt fogta meg. A napló kulcsát a KÖZÖS szabály adja.
 _UT = str(Path("/k/a.jpg"))
 
@@ -84,7 +84,7 @@ class TestNaplozas:
         host.recordSavedChain(_UT, HOLGA)
 
         naplo = load_journal(tmp_path / "edit-journal.json")
-        assert naplo["/k/a.jpg"].chain == HOLGA
+        assert naplo[_UT].chain == HOLGA
 
     def test_az_ures_lanc_torol(self, host) -> None:
         host.recordSavedChain(_UT, HOLGA)
@@ -101,7 +101,7 @@ class TestEszleles:
         host._check_external_overwrites([_Rekord(_UT, "")])
 
         assert len(kapott) == 1
-        assert kapott[0][0]["path"] == "/k/a.jpg"
+        assert kapott[0][0]["path"] == _UT
         assert kapott[0][0]["name"] == "a.jpg"
         assert kapott[0][0]["chain"] == HOLGA
 

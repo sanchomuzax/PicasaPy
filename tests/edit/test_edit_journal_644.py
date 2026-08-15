@@ -35,6 +35,13 @@ LUCKY = "enhance=1;"
 HOLGA_ES_LUCKY = "holga=1;enhance=1;"
 
 
+#: #699: platformfüggetlen próba-útvonal. A napló kulcsát a KÖZÖS
+#: `naplo_kulcs()` szabály adja, ami Windowson visszaperjelre normalizál —
+#: a nyers "/k/a.jpg" ezért ott NEM egyezne. A windows-CI-láb fogta meg.
+_UT = str(Path("/k/a.jpg"))
+_UT2 = str(Path("/k/b.jpg"))
+
+
 def _naplo(**parok) -> dict[str, JournalEntry]:
     return {
         ut: JournalEntry(path=ut, chain=lanc, saved_at="2026-08-14T10:00:00")
@@ -44,102 +51,102 @@ def _naplo(**parok) -> dict[str, JournalEntry]:
 
 class TestFelvetel:
     def test_a_lancot_felirja(self) -> None:
-        naplo = record_saved_chain({}, "/k/a.jpg", HOLGA, saved_at="2026-08-14T10:00:00")
+        naplo = record_saved_chain({}, _UT, HOLGA, saved_at="2026-08-14T10:00:00")
 
-        assert naplo["/k/a.jpg"].chain == HOLGA
-        assert naplo["/k/a.jpg"].saved_at == "2026-08-14T10:00:00"
+        assert naplo[_UT].chain == HOLGA
+        assert naplo[_UT].saved_at == "2026-08-14T10:00:00"
 
     def test_az_ujabb_mentes_felulirja_a_regit(self) -> None:
-        naplo = _naplo(**{"/k/a.jpg": HOLGA})
+        naplo = _naplo(**{_UT: HOLGA})
 
-        uj = record_saved_chain(naplo, "/k/a.jpg", HOLGA_ES_LUCKY, saved_at="2026-08-14T11:00:00")
+        uj = record_saved_chain(naplo, _UT, HOLGA_ES_LUCKY, saved_at="2026-08-14T11:00:00")
 
-        assert uj["/k/a.jpg"].chain == HOLGA_ES_LUCKY
+        assert uj[_UT].chain == HOLGA_ES_LUCKY
 
     def test_az_ures_lanc_torli_a_bejegyzest(self) -> None:
         """Ha a felhasználó MAGA vonta vissza az összes szerkesztést, nincs
         mit védeni — különben örökre riasztanánk egy szándékos törlésre."""
-        naplo = _naplo(**{"/k/a.jpg": HOLGA})
+        naplo = _naplo(**{_UT: HOLGA})
 
-        uj = record_saved_chain(naplo, "/k/a.jpg", "", saved_at="2026-08-14T11:00:00")
+        uj = record_saved_chain(naplo, _UT, "", saved_at="2026-08-14T11:00:00")
 
-        assert "/k/a.jpg" not in uj
+        assert _UT not in uj
 
     def test_nem_mutalja_a_bemenetet(self) -> None:
-        naplo = _naplo(**{"/k/a.jpg": HOLGA})
+        naplo = _naplo(**{_UT: HOLGA})
 
-        record_saved_chain(naplo, "/k/b.jpg", LUCKY, saved_at="2026-08-14T11:00:00")
+        record_saved_chain(naplo, _UT2, LUCKY, saved_at="2026-08-14T11:00:00")
 
-        assert set(naplo) == {"/k/a.jpg"}
+        assert set(naplo) == {_UT}
 
 
 class TestEszleles:
     def test_a_teljesen_eltunt_lanc_veszteseg(self) -> None:
         """A bejelentett eset: a Picasa írása után a `filters=` eltűnt."""
-        naplo = _naplo(**{"/k/a.jpg": HOLGA})
+        naplo = _naplo(**{_UT: HOLGA})
 
-        veszteseg = detect_lost_edits(naplo, {"/k/a.jpg": ""})
+        veszteseg = detect_lost_edits(naplo, {_UT: ""})
 
-        assert [v.path for v in veszteseg] == ["/k/a.jpg"]
+        assert [v.path for v in veszteseg] == [_UT]
         assert veszteseg[0].chain == HOLGA
 
     def test_a_masik_effektre_cserelt_lanc_is_veszteseg(self) -> None:
         """A Picasa a SAJÁT effektjét írta a helyünkre — a miénk elveszett."""
-        naplo = _naplo(**{"/k/a.jpg": HOLGA})
+        naplo = _naplo(**{_UT: HOLGA})
 
-        veszteseg = detect_lost_edits(naplo, {"/k/a.jpg": LUCKY})
+        veszteseg = detect_lost_edits(naplo, {_UT: LUCKY})
 
-        assert [v.path for v in veszteseg] == ["/k/a.jpg"]
+        assert [v.path for v in veszteseg] == [_UT]
 
     def test_a_valtozatlan_lanc_nem_veszteseg(self) -> None:
-        naplo = _naplo(**{"/k/a.jpg": HOLGA})
+        naplo = _naplo(**{_UT: HOLGA})
 
-        assert detect_lost_edits(naplo, {"/k/a.jpg": HOLGA}) == ()
+        assert detect_lost_edits(naplo, {_UT: HOLGA}) == ()
 
     def test_a_hozzafuzes_nem_veszteseg(self) -> None:
         """A jegy kikötése: ami MINKET nem érint, az ne zajongjon. Ha a
         Picasa a mi láncunk MELLÉ írt, a miénk megvan — nincs mit jelenteni."""
-        naplo = _naplo(**{"/k/a.jpg": HOLGA})
+        naplo = _naplo(**{_UT: HOLGA})
 
-        assert detect_lost_edits(naplo, {"/k/a.jpg": HOLGA_ES_LUCKY}) == ()
+        assert detect_lost_edits(naplo, {_UT: HOLGA_ES_LUCKY}) == ()
 
     def test_a_sorrend_nem_szamit(self) -> None:
         """A Picasa a saját rekordjából más sorrendben írhatja ki a láncot —
         attól a mi effektünk még megvan."""
-        naplo = _naplo(**{"/k/a.jpg": HOLGA})
+        naplo = _naplo(**{_UT: HOLGA})
 
-        assert detect_lost_edits(naplo, {"/k/a.jpg": "enhance=1;holga=1;"}) == ()
+        assert detect_lost_edits(naplo, {_UT: "enhance=1;holga=1;"}) == ()
 
     def test_a_lancbol_egy_elem_elvesztese_is_veszteseg(self) -> None:
-        naplo = _naplo(**{"/k/a.jpg": HOLGA_ES_LUCKY})
+        naplo = _naplo(**{_UT: HOLGA_ES_LUCKY})
 
-        veszteseg = detect_lost_edits(naplo, {"/k/a.jpg": LUCKY})
+        veszteseg = detect_lost_edits(naplo, {_UT: LUCKY})
 
-        assert [v.path for v in veszteseg] == ["/k/a.jpg"]
+        assert [v.path for v in veszteseg] == [_UT]
 
     def test_a_nem_vizsgalt_kep_kimarad(self) -> None:
         """Csak arról nyilatkozunk, aminek a mai állapotát láttuk — egy be
         nem olvasott mappa nem jelent veszteséget."""
-        naplo = _naplo(**{"/k/a.jpg": HOLGA, "/mas/b.jpg": LUCKY})
+        naplo = _naplo(**{_UT: HOLGA, "/mas/b.jpg": LUCKY})
 
-        veszteseg = detect_lost_edits(naplo, {"/k/a.jpg": HOLGA})
+        veszteseg = detect_lost_edits(naplo, {_UT: HOLGA})
 
         assert veszteseg == ()
 
     def test_tobb_veszteseg_utvonal_szerint_rendezve(self) -> None:
         """Determinisztikus sorrend — a felhasználónak mutatott lista ne
         ugráljon futásonként."""
-        naplo = _naplo(**{"/k/b.jpg": HOLGA, "/k/a.jpg": HOLGA})
+        naplo = _naplo(**{_UT2: HOLGA, _UT: HOLGA})
 
-        veszteseg = detect_lost_edits(naplo, {"/k/a.jpg": "", "/k/b.jpg": ""})
+        veszteseg = detect_lost_edits(naplo, {_UT: "", _UT2: ""})
 
-        assert [v.path for v in veszteseg] == ["/k/a.jpg", "/k/b.jpg"]
+        assert [v.path for v in veszteseg] == [_UT, _UT2]
 
 
 class TestTarolas:
     def test_korbejar(self, tmp_path: Path) -> None:
         utvonal = tmp_path / "napló.json"
-        naplo = _naplo(**{"/k/a.jpg": HOLGA, "/k/b.jpg": LUCKY})
+        naplo = _naplo(**{_UT: HOLGA, _UT2: LUCKY})
 
         save_journal(naplo, utvonal)
 
@@ -159,7 +166,7 @@ class TestTarolas:
     def test_a_konyvtarat_letrehozza(self, tmp_path: Path) -> None:
         utvonal = tmp_path / "mely" / "abb" / "napló.json"
 
-        save_journal(_naplo(**{"/k/a.jpg": HOLGA}), utvonal)
+        save_journal(_naplo(**{_UT: HOLGA}), utvonal)
 
         assert utvonal.exists()
 
@@ -168,18 +175,18 @@ class TestHelyreallitas:
     def test_a_veszteseg_hordozza_a_visszairando_lancot(self) -> None:
         """A helyreállításhoz a jelzésnek magával kell hoznia a láncot —
         a napló időközben felülíródhat."""
-        naplo = _naplo(**{"/k/a.jpg": HOLGA_ES_LUCKY})
+        naplo = _naplo(**{_UT: HOLGA_ES_LUCKY})
 
-        veszteseg = detect_lost_edits(naplo, {"/k/a.jpg": ""})
+        veszteseg = detect_lost_edits(naplo, {_UT: ""})
 
         assert veszteseg[0].chain == HOLGA_ES_LUCKY
 
     @pytest.mark.parametrize("ervenytelen", ["", "   ", None])
     def test_az_ures_naplobejegyzes_nem_kepez_vesztesget(self, ervenytelen) -> None:
         naplo = {
-            "/k/a.jpg": JournalEntry(
-                path="/k/a.jpg", chain=ervenytelen or "", saved_at="2026-08-14T10:00:00"
+            _UT: JournalEntry(
+                path=_UT, chain=ervenytelen or "", saved_at="2026-08-14T10:00:00"
             )
         }
 
-        assert detect_lost_edits(naplo, {"/k/a.jpg": ""}) == ()
+        assert detect_lost_edits(naplo, {_UT: ""}) == ()

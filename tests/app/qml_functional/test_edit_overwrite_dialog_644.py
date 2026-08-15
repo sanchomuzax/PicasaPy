@@ -6,6 +6,8 @@ A párbeszéd ÖNÁLLÓAN betöltve. A `visible`-t szándékosan nem vizsgáljuk
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
@@ -47,7 +49,7 @@ def _tetelek(dialogus) -> list:
 
 
 VESZTESEG = [
-    {"path": "/k/a.jpg", "name": "a.jpg", "chain": "holga=1;"},
+    {"path": str(Path("/k/a.jpg")), "name": "a.jpg", "chain": "holga=1;"},
     {"path": "/k/b.jpg", "name": "b.jpg", "chain": "lomo=1;"},
 ]
 
