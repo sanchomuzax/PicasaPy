@@ -790,3 +790,80 @@ nincs, tehát a jelenség a mai forrásból nem állítható elő. A legvalósz�
 magyarázat, hogy a megfigyelés a színezett effekt-ELŐNÉZETEKRE vonatkozott
 (a Szépia melegbarna, a Színezés kék bélyegképe). Ha a jelenség tényleg a
 feliratokon van, új képernyőkép kell hozzá.
+
+## A Vörösszem-panel (Redeye Repair) — teljes felépítés (2026-08-15, #371)
+
+Forrás: a tulajdonos képernyőképe (angol felület), `editpanel.tre`,
+`editpaneltext.tre` és a `stringres-en-hu.tsv` magyar fordításai.
+
+### Elrendezés
+
+A panel a **1. fül** (Gyakori javítások) alpanelje, gyökere
+`editpanel/redeye_well`. Elemei:
+
+| elem | szerep |
+|---|---|
+| `redeye_icon2` + `redeye_label` | szem-ikon + cím: **„Redeye Repair"** |
+| `redeyetext` | állapotfüggő magyarázó szöveg (ld. lent) |
+| `redeyeauto` | **Auto** — „Reapply auto redeye corrections" |
+| `redeyepreview` | **Preview** — „Preview changes without square outlines" |
+| `redeyediscard` | **Reset** — „Undo Red-Eye changes" |
+| `redeyeapply` | **Apply** (zöld pipa) — „Apply effect and exit Red-Eye repair" |
+| `redeyecancel` | **Cancel** (piros X) — „Exit Red-Eye repair without applying effect" |
+
+A képernyőképen az **Auto letiltott** (szürke), mert az automatikus javítás
+épp lefutott — újra-alkalmazni nincs mit. A gombsor kiosztása:
+`Auto | Preview` egy sorban, alatta középen `Reset`, legalul
+`Apply | Cancel`.
+
+### A detektálás jelölése a képen
+
+A felismert szemek körül **négyzetes keret** jelenik meg a nagy előnézeten.
+A képernyőképen két keret látszik, eltérő állapotban (az egyik zöld, a másik
+halvány) — a **Preview** gomb súgója szerint a keretek elrejthetők
+(„Preview changes without square outlines"), tehát a keret **szerkesztési
+segédlet**, nem a kimenet része.
+
+### Három állapotüzenet, nem egy
+
+A `redeyetext` tartalma a helyzettől függ (erőforrás-kulcsokkal):
+
+| kulcs | mikor | magyar szöveg (rövidítve) |
+|---|---|---|
+| `RedEye::AutoFixedMessage` | az automatika **talált** javítanivalót | „A Picasa vörösszem-effektusokat talált a képen, és kijavította őket." |
+| `RedEye::DragToSelectMessage` | nincs automatikus találat | „Az egérgomb nyomva tartásával külön-külön jelölje ki a szemeket…" |
+| `RedEye::AutoFixRedoMessage` | Reset után | ugyanaz + „Az »Automatikus« gombra kattintva ismételten alkalmazhatja…" |
+
+Mindháromban ott a kulcsmondat: **a keretbe kattintva visszavonható az adott
+változás** — tehát a keretek a szerkesztés alatt **egyedileg törölhetők**.
+
+### ⚠️ Ez oldja fel a látszólagos ellentmondást a tárolással
+
+A [`picasa-ini-format.md`](picasa-ini-format.md) bizonyítja, hogy a
+vörösszem-foltok koordinátái **sehol nem őrződnek meg** (sem az ini-ben, sem
+a `db3` 36 oszlopában), és hogy a javítás a mentett képbe van égetve.
+
+A panel viszont **keretekkel dolgozik** — tehát a koordináták a **szerkesztési
+munkamenet alatt léteznek**, csak az `Apply` után eldobódnak.
+
+**A Picasa saját szövegei ezt ki is mondják:**
+
+- `IDS_CONFIRM_UNDO_REDEYE` — „A vörösszemjavítások **nem állíthatók helyre**
+  ismételt alkalmazással. Biztosan visszavonja a műveletet?"
+- `IDS_CONFIRM_REDEYE_REVERT` — „…Ha eltávolít minden szerkesztést, a
+  vörösszemjavításokat **később nem lehet újra alkalmazni**."
+- `IDS_UNABLETOREDEYEREADVOLUME` — „**Írásvédett meghajtókon** található
+  képeken nem lehet vörösszem-eltávolítást végezni." (Mert a művelethez
+  **írni kell a képet** — ez önmagában is a beleégetést bizonyítja.)
+
+*Bizonyítottsági fok: megerősített*, három egymástól független forrásból:
+pixelösszevetés, a tárolók kimerítő átvizsgálása, és a Picasa saját
+figyelmeztető szövegei.
+
+### Egy interakciós buktató, amit dokumentálni kell
+
+`IDS_WARN_REDEYE_ACCURACY`: ha a képet a **Kiegyenesítés** eszköz elforgatta,
+a vörösszem-keretek kijelölése pontatlan lehet. A Picasa ilyenkor azt
+javasolja, hogy a felhasználó vonja vissza a kiegyenesítést, végezze el a
+vörösszem-javítást, majd egyenesítsen újra. Ez **sorrendfüggőség** a láncban —
+a PicasaPy-nak legalább ismernie kell.
