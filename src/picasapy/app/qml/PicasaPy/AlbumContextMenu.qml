@@ -5,12 +5,16 @@ import QtQuick.Controls
 // 4. lépcső). Ez a mappa-menü album-változata: ugyanaz a szerep, más
 // parancsokkal.
 //
-// FIGYELEM a teljességről: a `docs/specs/ui-audit-context-menus.md` A.2
-// szakasza szerint az osztály **13 tételes**, de a dokumentum név szerint
-// csak **11-et** sorol fel. A hiányzó kettőt NEM találjuk ki — amíg elő
-// nem kerül (a string-táblából vagy képernyőképről), ez a menü a 11
-// dokumentált tételt tartalmazza, se többet, se kevesebbet. Ld. a jegyet
-// a hiányzó tételek felderítésére.
+// A TELJESSÉG kérdése MEGOLDVA (#422, a tételsor végigvezetése). A
+// `docs/specs/ui-audit-context-menus.md` A.2 szakasza 13 tételt említ, de
+// a felsorolásában csak 11 nevesített felirat van — ez korábban úgy
+// látszott, mintha két tétel hiányozna. A `Picasa3i18n.dll` string-táblája
+// feloldja az ellentmondást: a 13-ból NÉGY feltöltés-azonosító
+// (`ID_UPLOAD_ALBUM_TO_GOOGLE_PLUS_PHOTOS`, `ID_UPLOAD_ALBUM_TO_LIGHTHOUSE`,
+// `ID_UPLOAD_TO_GOOGLE_PLUS_PHOTOS`, `ID_UPLOAD_TO_LIGHTHOUSE`), és ezek
+// összesen KÉT különböző feliratot adnak: „Feltöltés a Google Fotókba…" és
+// „Feltöltés a Picasa Webalbumokba…". Vagyis 11 KÜLÖNBÖZŐ felirat van, és
+// a menü most mind a 11-et tartalmazza — kitalált tétel nélkül.
 //
 // A még be nem kötött parancsok `PicasaMenuItem { placeholder: true }`-ként
 // szürkén LÁTSZANAK (#416, spec 5.1.). Az album törlése/leírása mögött
@@ -93,6 +97,16 @@ Menu {
         text: qsTr("Upload to Google Photos...")
         placeholder: false
         // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
+        retired: true
+    }
+    // `Album::ID_UPLOAD_TO_LIGHTHOUSE` — a Picasa félbehagyott átnevezése
+    // miatt a régi felirat is ott maradt a menüben (spec 5.6.: a mappa-menü
+    // már „Google Fotók", ez még „Picasa Webalbumok"). Ugyanúgy megszűnt
+    // szolgáltatás, tehát véglegesen szürke.
+    PicasaMenuItem {
+        objectName: "albumMenuUploadToWebAlbums"
+        text: qsTr("Upload to Picasa Web Albums...")
+        placeholder: false
         retired: true
     }
     MenuItem {
