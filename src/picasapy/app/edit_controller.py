@@ -52,6 +52,7 @@ from picasapy.render.tone import estimate_neutral_color, parse_neutral_argb
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
+from .edit_action_names import redo_label, undo_label
 from .edit_preview import EditPreviewProvider, TextOverlaySpec
 from .histogram_helper import EMPTY_HISTOGRAM
 from .worker_thread import BackgroundWorkerMixin
@@ -827,6 +828,22 @@ class EditController(QObject, BackgroundWorkerMixin):
     @Property(str, notify=toolsChanged)
     def redoAction(self) -> str:
         return self._redo_stack[-1][1] if self._redo_stack else ""
+
+    @Property(str, notify=toolsChanged)
+    def undoLabel(self) -> str:
+        """A Visszavonás gomb KÉSZ felirata (#465).
+
+        Két állapota van, az eredeti `CFilterStackUI` szövegei szerint: üres
+        veremnél a puszta „Visszavonás", egyébként „Visszavonás: <lépés>" —
+        a felhasználó látja, mit fog visszavonni. A nevet az
+        `edit_action_names` névtára adja, tehát a lánc MINDEN eleme néven
+        nevezhető, nem csak egy kézzel gondozott tucat."""
+        return undo_label(self.undoAction)
+
+    @Property(str, notify=toolsChanged)
+    def redoLabel(self) -> str:
+        """Az Újra gomb kész felirata — az `undoLabel` párja (#465)."""
+        return redo_label(self.redoAction)
 
     # -- műveletek ------------------------------------------------------------
 
