@@ -907,3 +907,125 @@ explicit módon a képszélességből számol (`szelesseg/100 · (Amount+1)`, ld
 megvalósításunknak is követnie kell.
 
 **Ezzel a Picasa összes natív szűrőjének pixel-matematikája megvan.**
+
+---
+
+# 5. A burkolók bekötése — nyolc szűrő megvalósítva (#687)
+
+A #685 mérőszettje (178 kép, egyetlen valódi Picasa 3.9-export) kimutatta,
+hogy **nyolc olyan szűrőt hagytunk némán ki, amit az eredeti ténylegesen
+végrehajt**. A munkafüggvények ekkorra már megvoltak (2.3–2.6); ami hiányzott,
+az a **burkolók** paraméter-leképezése. Ezt a
+`referencia/dekompilalt/natív-szűrők.c` adta meg, szűrőnként pár sorban.
+
+## 5.1 A burkolók, betű szerint
+
+| szűrő | burkoló | mit hív, mivel |
+|---|---|---|
+| `contrast` | `0x008f8a20` | `FUN_0090c2c0(kép, csúszka0, 0, 1.0f)` — fényerő 0, gamma 1 |
+| `backlight` | `0x008f8970` | `FUN_0090ac20(cél, forrás, csúszka0, 1.0f)` — **bájtra a `fill` hívása** |
+| `colortemp` | `0x008f8ea0` | `FUN_0090ea10(cél, forrás, csúszka0, csúszka1)` |
+| `gamma` | `0x008f8e30` | `exp(csúszka0)` (`0x0040eac0`), és ezt adja **gammaként** a LUT-építőnek |
+| `autocontrast` | `0x008f89d0` | `FUN_009db610`, **flag = 0** (ld. 3.1) |
+| `triple` | `0x008f8a60` | Derítőfény(csúszka2) → kontraszt(**csúszka1** = kontraszt, **csúszka0** = fényerő) |
+| `triple2` | `0x008f8b90` | Derítőfény(csúszka0) → szinthúzás(fekete = csúszka1, fehér = csúszka2) |
+| `triple3` | `0x008f8ce0` | Derítőfény(csúszka0) → szinthúzás(fekete = csúszka2, **fehér = 1 − csúszka1**) |
+
+Három részlet, ami a mérésben látszik is:
+
+1. **A `triple2`/`triple3` fehérpontján nullaosztás-védés van**
+   (`if (w <= 0.001) w = 0.001;`). Ezért ad a `triple2=1,0,0,0` (fehérpont 0)
+   szinte teljesen fehér képet, nem azonosságot — a mérésben ΔE 51,5.
+2. **Mindkettőnek van „nincs teendő" ága**: `fehér == 1 && fekete == 0` esetén
+   a szinthúzás kimarad, Derítőfény 0-nál az is.
+3. **A `0x0090c430` és a `0x0090c340`** ugyanaz a két LUT-építő, csak a
+   HELYBEN dolgozó alkalmazóval (`0x0090be70`) — a Derítőfény utáni második
+   lépéshez. Nincs bennük külön matematika.
+
+## 5.2 MEGOLDVA: a `colortemp` két skálája (a 2.5 nyitott kérdése)
+
+A 2.5 pont a `s` és `t` ×256-os skálázását „erős következtetésként" jelölte.
+A mérőszett három `colortemp` esete eldöntötte — a rácskeresés optimuma
+mindhárom képen tiszta:
+
+| eset | Hideg↔meleg | Fehérváltás | illesztett `t` | illesztett `s` | ΔE |
+|---|---:|---:|---:|---:|---:|
+| alap | 0,125 | 0,5 | 32 | 64 | **0,89** |
+| max | 0,5 | 1,0 | 128 | 128 | **1,30** |
+| min | −0,5 | 0,0 | −128 | 0 | **0,63** |
+
+```
+t = round(HidegMeleg  · 256)      ← a 2.5 következtetése IGAZOLVA
+s = round(Fehérváltás · 128)      ← a FELE annak, amit vártunk
+```
+
+A ×128 azért fontos, mert a ×256 a csúszka felső állásán `256 − s = 0`-t adna,
+azaz nullaosztást — a mért fele viszont pont értelmes marad. Ez **mérés, nem
+visszafejtés**: a szorzás az x87-veremen megy át, a dekompilátum nem őrizte
+meg. (Az érintetlen kép ΔE-je ugyanezen a három képen 11,7 / 55,3 / 26,3 —
+vagyis a modell két nagyságrenddel pontosabb.)
+
+## 5.3 MEGOLDVA: a `gamma` kitevőjének iránya
+
+A burkoló `exp(csúszka)`-t számol, de a dekompilátumból nem derül ki, hogy ez
+a kitevő vagy annak reciproka. A mérés egyértelmű (súlyozott átlagos
+csatorna-hiba a mért görbéhez):
+
+| csúszka | `pow(i/255, exp(−szint))` | `pow(i/255, exp(+szint))` |
+|---:|---:|---:|
+| +0,1618 | **0,54** | 8,3 |
+| +1,0 | **0,50** | 45,7 |
+| −1,0 | **0,44** | 45,3 |
+
+Vagyis a burkoló által számolt `exp(szint)` a **gamma**, és a LUT-építő
+`1/gamma`-val emel hatványra (2.3) — pozitív csúszka világosít.
+
+## 5.4 MEGOLDVA: az `shadow` súly-skálája
+
+A `shadow` munkafüggvénye (`0x0090d3e0`) **három** elmosás-menetet futtat
+(`0x009dd0d0` ×3), majd a `0x0090d170` magot hívja. A mag dekompilált: a
+képpont SAJÁT és az ELMOSOTT kép világosságából (`L = 2R + 5G + B + 4`)
+számol súlyt, külön árnyék- és csúcsfény-ággal, a felezőponton (`0x400`)
+kapuzva. A két százalék-csúszka egészre skálázása viszont ismét az
+x87-veremen megy át — a mérés adta meg:
+
+| szorzó | „alap" (0,5/0,5) | „max" (1,0/1,0) |
+|---:|---:|---:|
+| ×128 | 2,9 | 5,6 |
+| **×256** | **0,52** | **0,53** |
+| ×384 | 2,75 | 5,11 |
+| ×512 | 4,0 | 7,4 |
+
+*(átlagos abszolút csatorna-eltérés; az érintetlen kép 5,61 és 11,25)*
+
+Vagyis **`súly = round(csúszka · 256)`**, ugyanaz a szorzó, mint a
+`colortemp` hideg↔meleg tengelyén. Végponttól végpontig a modell ΔE-je
+**0,58** és **0,59** a valódi Picasa-kimenethez.
+
+**Ami KÖZELÍTÉS marad: a Sugár csúszka leképezése.** A `filterdesc.xml`
+logaritmikusnak jelöli (`<log>250.0</log>`), de a mérés ezt **kizárja**: a 16
+képpontos és afölötti sugarak 5–10-szer rosszabbul illeszkednek. A tárolt
+értéket vesszük sugárnak (a `glow` mért mintája szerint, 4.2.5) — a szett két
+esete (0,5 és 1,0 tárolt sugár) viszont **ugyanott, egy közös ~1,6 képpontos
+optimum körül** illeszkedik legjobban, tehát a mérés a pontos leképezést nem
+dönti el. A különbség (ΔE 0,58 vs 0,27) a JPEG-zaj alatt van. A kalibráció a
+#317-ben fut.
+
+## 5.5 Ami nyitva maradt
+
+- **`triple`** — a bekötése a dekompilált burkolóból egyértelmű, de a
+  mérőszett egyetlen esete paraméter nélküli (`triple=1,`), tehát azonosság:
+  a leképezés **méréssel nincs igazolva**.
+- **`autocontrast`** — a modell a már meglévő csatornánkénti szinthúzás
+  (ugyanaz a natív mag, mint az `enhance`-é: a mérőszetten a Picasa bájtra
+  ugyanazt adta a kettőre). A mért illeszkedés **KÖZELÍTŐ** (ΔE 3,48 az
+  érintetlen 4,05-höz képest): a vágópontjaink nem pontosan azok, amiket a
+  Picasa választ. Ez viszont az `enhance` régi, önálló hiánya — nem a #687
+  hozta.
+- **`blur`, `colorfix`, `whitept`** — a mérőszetten maga a Picasa sem
+  változtatott velük (ΔE ≤ 1,0). Ez NEM bizonyítja, hogy halottak: mindhármuk
+  natív magja megvan (`0x0090cf60`, illetve `0x0090eda0`), és a `colorfix`/
+  `whitept` PIPETTA-színt vár, amit a szett a lánc végére írt — lehet, hogy
+  csak a paraméter-alak nem az, amit a Picasa olvas. A `chain.py` ezért külön
+  jelöli őket (`MEASURED_IDLE_OPS`), és mást mond róluk, mint a valóban
+  halott `focalpixelate`-ről.

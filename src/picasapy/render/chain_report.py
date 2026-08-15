@@ -56,6 +56,20 @@ _RANGE_VALIDATED_PARAM_POSITIONS: dict[str, tuple[tuple[int, int], ...]] = {
     "glow2": ((0, 1),),
     "tint": ((0, 1),),
     "fill": ((0, 1),),
+    # #687: a natív burkolókból bekötött szűrők. A csúszkák a `filters=`
+    # láncban közvetlenül az engedélyező flag után, a regiszterbeli
+    # sorrendjükben állnak (ld. `chain_native_handlers`), és egyiküknek
+    # sincs `log_base`-e, a `shadow` Sugár csúszkáját kivéve — az ezért
+    # marad ki a táblából (softclamp-kivétel).
+    "contrast": ((0, 1),),
+    "gamma": ((0, 1),),
+    "colortemp": ((0, 1), (1, 2)),
+    "backlight": ((0, 1),),
+    # a `shadow` Sugár csúszkája `log_base`-es → softclamp-kivétel, kimarad
+    "shadow": ((1, 2), (2, 3)),
+    "triple": ((0, 1), (1, 2), (2, 3)),
+    "triple2": ((0, 1), (1, 2), (2, 3)),
+    "triple3": ((0, 1), (1, 2), (2, 3)),
 }
 
 
@@ -108,12 +122,18 @@ class ChainReport(tuple):
     `.legacy_warnings` attribútumokat is hordoz a hívóknak, akiknek ez kell
     (#382 3. pont).
 
-    A `.legacy_warnings` (#567) a HALOTT, csak konfigurációs maradékként
-    létező szűrőnevekről szól: ezek a 3.9.141.259 natív regiszterében sem
-    render-callbackkel, sem névregisztrációval NEM szerepelnek — nem
-    „még nem implementált" effektek, hanem olyanok, amelyeket maga a Picasa
-    sem futtatott már. A `skipped`-be is bekerülnek (a lánc kihagyja őket),
-    de a külön lista megkülönbözteti a két, gyökeresen eltérő okot.
+    A `.legacy_warnings` (#567) azokat a kihagyott bejegyzéseket nevesíti,
+    amelyeknél MEGVAN az ok, és az nem „még nem implementált":
+
+    * **halott (legacy) név** — a 3.9.141.259 natív regiszterében sem
+      render-callbackkel, sem névregisztrációval nem szerepel, tehát maga a
+      Picasa sem futtatta már (`chain.DEAD_LEGACY_OPS`);
+    * **mérten tétlen név** (#687) — van natív feldolgozója, de a #685
+      mérőszettjén maga a Picasa sem változtatott vele a képen
+      (`chain.MEASURED_IDLE_OPS`).
+
+    Mindkettő a `skipped`-be is bekerül (a lánc kihagyja őket); a külön
+    lista a KÜLÖNBÖZŐ okokat mondja ki, szűrőnként a saját üzenetével.
     """
 
     # (Nincs `__slots__`: a `tuple` már változó hosszú C-szintű tárolást
