@@ -956,9 +956,31 @@ eredetitől. Ezt támogatja a `revertable`, `originfast` és `originslow`
 oszlopok léte — a visszaállítás az **eredeti fájlból** történik, nem a
 műveletek visszajátszásából.
 
-*Bizonyítottsági fok: erős* (kimerítő negatív keresés három tárolóban);
-**megerősítéshez** egy célzott próba kell: vörösszem-javítás után az
-exportált kép pixelei megváltoznak-e, miközben az ini `redeye=1;` marad.
+### MEGERŐSÍTVE: a javítás a MENTETT KÉPBE van beleégetve
+
+A korpuszban **113 olyan kép** van, amelynek a lánca vörösszem-javítást
+tartalmaz **és** megvan mellette a megőrzött eredeti (`.picasaoriginals/`).
+Ez lehetővé tette a közvetlen összevetést — felhasználói próba nélkül.
+
+Három, **kizárólag `redeye=1;`** láncú képen (1280×960) az eredeti és a
+mentett változat különbsége:
+
+| kép | eltérő képpont | arány | a foltok |
+|---|---:|---:|---|
+| A | 177 | 0,014% | 4 folt, 8–10 px, **két párban** (y≈510 és y≈355) |
+| B | 152 | 0,012% | 1 folt, 16×14 px |
+| C | 246 | 0,020% | 4 folt, 11–14 px, **két párban** (y≈728 és y≈608) |
+
+A foltok **azonos magasságban, párosával** állnak, egymástól 40–55 képpontra —
+ez pontosan a szemtávolság. A kép többi része **érintetlen**.
+
+**Következtetés:** a vörösszem-javítás a **mentett JPEG-be van beleégetve**,
+az ini pedig csak a csupasz `redeye=1;` jelölőt hordozza. A visszaállítás
+ezért az `.picasaoriginals/` (régebben `Originals/`) mappából történik, nem
+a művelet visszajátszásából.
+
+*Bizonyítottsági fok: **megerősített*** (kimerítő negatív keresés három
+tárolóban + közvetlen pixelösszevetés valódi eredeti/szerkesztett párokon).
 
 ### Mit jelent ez a PicasaPy-nak
 
