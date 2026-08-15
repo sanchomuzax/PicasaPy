@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/home/sancho/Documents/PicasaPy/.codex/hooks/session-start.sh'"
+          }
+        ]
+      }
+    ]
+  }
+}

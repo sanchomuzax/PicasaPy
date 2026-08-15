@@ -102,3 +102,4 @@ tools/histogram/out/
 # A skilleket a session-start hook másolja ide a privát repóból — nem a
 # publikus repó része. A klón maga a checkouton kívül van (/workspace/… ill. ~/…).
 .claude/skills/
+.agents/skills/
