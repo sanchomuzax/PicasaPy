@@ -715,9 +715,50 @@ szűrő **másik, örökölt ini-kulcsa**. A paraméterformátuma is más:
 lebegőpontos csatornaként, nem a mai `ansel=1,ffffffff` pakolt hexként.
 Az alapértékek négy helyen `0,333` — a három csatorna egyenlő súlya.
 
-*Bizonyítottsági fok: erős.* A konstruktor tartalma és a nevek egyértelműek;
-ami **nincs** visszakövetve: hogy a `desat` és az `ansel` futásidőben
-ugyanarra a rendererre fut-e, vagy csak rokon.
+### MEGERŐSÍTVE: a `desat` és az `ansel` UGYANAZT a renderelőt hívja
+
+A `CDesaturateFilter` vtable-jének egyik rekesze a **`0x0050ce70`** (53 bájt),
+és az egyetlen érdemi dolga, hogy meghívja a **`0x0090e680`** munkafüggvényt.
+
+Ugyanezt a munkafüggvényt hívja az `ansel` callbackje (`0x008f8410`) is:
+
+```c
+// FUN_008f8410 — az ansel callback
+FUN_0090e680(dst, (szin >> 16 & 0xff) / 255.0f,
+                  (szin >>  8 & 0xff) / 255.0f,
+                  (szin       & 0xff) / 255.0f);
+```
+
+A `0x0090e680`-nak az **egész binárisban pontosan két hívója van**:
+`0x008f8410` (ansel) és `0x0050ce70` (desat). Más nincs.
+
+**Vagyis a két kulcs ugyanaz az effekt, ugyanazzal a képpont-művelettel.**
+A különbség kizárólag abban van, hogyan érkezik a szín:
+
+| | ini-alak | a szín útja |
+|---|---|---|
+| `ansel` | `ansel=1,ffffffff` | pakolt hex → `/255.0` → három float |
+| `desat` | `desat=<jelző>,<f>,<f>,<f>` | három float **közvetlenül** |
+
+Az átváltás tehát egzakt:
+
+```
+desat(r, g, b)  ==  ansel( round(r*255)<<16 | round(g*255)<<8 | round(b*255) )
+```
+
+A `desat` alapértékei mindhárom csatornán `0,333` (`0x3eaa7efa`), ami a
+`0x555555` körüli semleges szürkének felel meg.
+
+*Bizonyítottsági fok: megerősített* (a közös munkafüggvény és annak
+kizárólagos két hívója az indexből visszakeresve).
+
+### Szerkezeti mellékeredmény: csak KÉT kép-szűrő osztály van
+
+Az RTTI-ben mindössze két érdemi kép-szűrő osztály szerepel:
+**`CGenericFilter`** (ez viszi a 42 elemű natív regiszter szűrőit, a
+callback-táblán át) és **`CDesaturateFilter`**. A `desat` tehát nem „alias",
+hanem a **saját osztállyal rendelkező, örökölt megvalósítás** — ezért van
+külön ini-kulcsa és külön paraméterformátuma.
 
 ### ⚠️ Miért sürgős ez nekünk
 
