@@ -6370,4 +6370,37 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Bezárás</translation>
     </message>
 </context>
+<context>
+    <name>FolderHierarchyView</name>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>My Computer</source>
+        <translation>Sajátgép</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>Expand All</source>
+        <translation>Az összes részletes nézete</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>Collapse All</source>
+        <translation>Az összes kicsinyítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>Locate on Disk</source>
+        <translation>Keresés a lemezen</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>Remove from Picasa...</source>
+        <translation>Eltávolítás a Picasából...</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>Move Folder...</source>
+        <translation>Mappa áthelyezése...</translation>
+    </message>
+</context>
 </TS>
