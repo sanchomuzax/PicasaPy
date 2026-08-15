@@ -47,6 +47,11 @@ NYUGDIJAZOTT = {
     "AlbumContextMenu.qml": (
         "albumMenuOnlineActions",
         "albumMenuUploadToGooglePhotos",
+        # #422 (a tételsor végigvezetése): az `Album` osztályban a Google
+        # Fotók MELLETT ott maradt a régi „Picasa Webalbumok" felirat is
+        # (a Google félbehagyott átnevezése, spec 5.6.) — ugyanaz a
+        # megszűnt szolgáltatás, ugyanúgy nyugdíjazva.
+        "albumMenuUploadToWebAlbums",
     ),
     "FolderContextMenu.qml": ("folderMenuUploadToGooglePhotos",),
 }
