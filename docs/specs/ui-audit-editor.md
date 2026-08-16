@@ -1600,3 +1600,70 @@ súgója kikereshető.
 *Bizonyítottsági fok:* **erős** — a vtable-index és az erőforrás-kulcs
 egyértelmű, és a kirakó mind a hármat meghívja. Megerősítetté egy
 egérmutatós képernyőkép tenné.
+
+### Az 1. fül `picnik` gombja: „Kreatív készlet" — halott online funkció (2026-08-16)
+
+Az `editpanel/picnik` a **szerkesztő 1. fülén** ül (`tabpanel1`), nem a
+rács alatt (az a `picnik_fx`, lásd fentebb). Ez zárja le az utolsó
+nyitott pontot az effekt-panelen.
+
+#### Az 1. fül teljes gombsorrendje (`editpanel.tre` 130–240)
+
+| # | elem | mi ez |
+|---:|---|---|
+| 1 | `editpanel/crop` | Vágás |
+| 2 | `editpanel/redeye` | Vörösszem |
+| 3 | `editpanel/enhance` | Kiegyenlítés |
+| **4** | **`editpanel/picnik`** | **Kreatív készlet** ← halott |
+| 5 | `editpanel/autocolor` | Automatikus szín |
+| 6 | `editpanel/autolighting` | Automatikus fény |
+| 7 | `editpanel/filllightlabel` + `backlight_container` | Derítőfény |
+| 8 | `editpanel/horizonadjust` | Vízszintbe állítás |
+| 9 | `editpanel/edittext` | Szöveg |
+| 10 | `editpanel/retouch` | Retusálás |
+| 11 | `editpanel/showtextlabel` + `showtextcheckbox` | „Szöveg megjelenítése" |
+
+A `picnik` gomb **stílusa a többivel azonos**: `m_buttontypecolor`,
+`m_offsetLT`, `Property hitchildren 1`, és a felirata alatta áll
+(`editpanel/picnik-label`, `m_buttonfontCbelow`).
+
+#### Mit csinált
+
+A **Picnik** (magyarul **„Kreatív készlet"**) a Google online
+fotószerkesztője volt. A gomb feltöltötte a fotót, és a szerkesztett
+változatot visszamentette.
+
+| erőforrás | HU |
+|---|---|
+| `PicnikWarn::Title` | **Szerkesztés a Kreatív készletben** |
+| `PicnikWarn::msg` | „Szerkeszti a fotó egy példányát a Kreatív készletben?\n\nA Kreatív készlet egy internetes fotószerkesztő csoda…" |
+| `PicnikWarn::YesButton` / `NoButton` | Igen / Nem |
+| `PicnikWarn::DontWarn` | A jövőben ne jelenjen meg ez a kérdés. |
+| `Picnik::UploadProgress` | Fotó átvitele a Kreatív készletbe… %d%% |
+| `Picnik::UploadError` | Hiba történt a Kreatív készlethez való csatlakozás során… hiba: %s |
+| `Picnik::SaveToPicasa` | Mentés a Picasába |
+| `Picnik::fileerr` | Lemezhiba miatt nem sikerült a fájl írása… |
+| `FilterListItem::ByPicnik` | **a Kreatív készlettől** |
+| `IDS_CONFIRM_UNDO_Picnik` | **A Kreatív készlet módosításai az Újra művelettel nem állíthatók vissza.** Visszavonja a műveletet? |
+
+Két érdekesség:
+
+1. A **szűrő-lista** külön megjelölte a Kreatív készlettől származó
+   módosításokat (`FilterListItem::ByPicnik`).
+2. A Kreatív készlet módosításai **nem voltak újra-alkalmazhatók** —
+   a visszavonás után elvesztek.
+
+#### A szolgáltatás 2012-ben megszűnt
+
+A gomb ma **működésképtelen**. A `picnik=1;` bejegyzés a `filters=`
+láncban ezért marad néma jelző (`chain.py` `_NOOP_MARKERS`), és a natív
+szűrő-táblában sincs képpont-kezelője (`picasa-native-filter-registry.md`).
+
+> **Javaslat (nem kérdés):** a gombot **hagyjuk ki** a mi 1. fülünkről —
+> egy nem létező szolgáltatás indítógombja. Ez a rács negyedik helyét
+> érinti; a többi tíz vezérlő sorrendje változatlan. Ha valaha mégis kell
+> a hely kitöltése, a helyettesítéséről külön döntés kell
+> (`docs/decisions/`).
+
+*Bizonyítottsági fok: megerősített* (a `.tre` gombsorrend és a tizenegy
+erőforrás-bejegyzés a hivatalos magyar fordítással).
