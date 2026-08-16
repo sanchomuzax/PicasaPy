@@ -17,11 +17,17 @@ kérdés).
 
 ### [filters-decoded.md](filters-decoded.md) — 5 kérdés
 
-1. **`autocolor` pontos gain-képlete** (Nyitva 1) — célzott mérés-sorozat kell
+1. ~~**`autocolor` pontos gain-képlete** (Nyitva 1)~~ — **MEGVAN** (#759):
+   `M · diag(g) · M⁻¹`, kimérve 1,37 (volt 2,35). Maradék: a **becslő**
+   (`0x0090f8f0`) egyetlen képen téved — az `Empty Space`-en
 2. **`unsharp` kernel finomítása** (Nyitva 3) — dekonvolúciós illesztés
 3. **Render-pontosítás a golden-verdiktek szerint** (Nyitva 8), súlyossági sorrendben: `tint` ΔE 20,6 → `sat` pozitív ág 12 → `dir_tint` 9 → `finetune2` hőmérséklet 25 (extrémnél) → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
 4. **A `tint` virtuális színátalakítása** — a `ctx` AZONOSÍTVA (a lánc-kontextus 3. függvénymutatója, `picasa-native-filter-registry.md`); nyitva marad, **mikor NEM `NULL`**, és mit csinál
-5. **A `ytResampler` utolsó, nem 2-hatvány lépése** — a felezőlépés már megvan (sima 2×2 doboz-átlag, `0x00a43230`); a maradék `0x009e6340` / `0x009e6df0` / `0x009e75a0`. *(A korábbi megfogalmazás tévesen „közös elmosómagnak" hívta — 2026-08-16-i helyesbítés.)*
+5. ~~**A `ytResampler` utolsó, nem 2-hatvány lépése**~~ — **MEGVAN** (#871,
+   #762): kilenc szűrőmag, a `ResampleFilter2` beállítás választ, alapérték
+   **6 = Lanczos-4**; az `unsharp` a 2-est (köbös B-spline) használja.
+   Maradék: a **4-es mód** pontos alakja (`0xa3fd25`) és a **10-es** mód
+   gyorsútja (`0x9e75a0`)
 
 ### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
 
