@@ -1481,6 +1481,52 @@ if (k != 1.0f) <extra igazítás: 0x00aa40a0>(k, 0);
 <színezés a feldolgozott színnel>(dst, szin, …);
 ```
 
+#### A `preserve` SKÁLÁJA: `w = 256 − p`, csonkítva (2026-08-16, #872)
+
+A „Color Preservation" csúszka tartománya a `filterdesc.xml` szerint
+**`[-1..255]`** — nem 0…100. A bináris ezt egészre **csonkítja**, és a
+telítetlenítés súlya `256 − p`:
+
+```asm
+0x008f96b2  fld   dword ptr [ecx + 0x28]   ; a preserve (float)
+0x008f96a9  or    eax, 0xc00                ; FPU: CSONKÍTÁS nulla felé
+0x008f96bc  fistp qword ptr [esp + 0x20]    ; egészre
+0x008f96c4  cmp   ecx, 0x100                ; == 256 ?
+0x008f96ce  je    0x8f96f7                  ;   → a lépés KIMARAD
+0x008f96e9  mov   edx, 0x100
+0x008f96ee  sub   edx, ecx                  ; w = 256 − preserve
+0x008f96f2  call  0x9a9550                  ; telítetlenítés
+```
+
+Vagyis **`p = 256` a tétlen eset**, `p = −1` a legerősebb (teljes szürke).
+Az éles `tint=1,79.842102,ffff` esetnél `w = 177` → **31 % króma marad**;
+a mai kódunk `keep = 0,798`-cal **80 %-ot** hagy meg, és 100 fölött vág,
+ezért nála a 127-es és a 255-ös beállítás **azonos** képet ad.
+
+*Bizonyítottsági fok: megerősített* (a bináris és a `filterdesc.xml`
+egymástól függetlenül).
+
+#### ÚJ nyitott kérdés: a `tint` lefuttatja a szinthúzó elemzőt
+
+A `0x008f9630` a telítetlenítés ELŐTT beolvassa a `"CarefulEnhance"`
+beállítást (`0x008f9661`), és `-1,0f`-fel — az „alapértelmezett keverés"
+jelzőjével (`0xcf3ed0`) — meghívja a **`0x009db610`**-et (`0x008f9698`),
+ugyanúgy, mint az `enhance`.
+
+A `0x009db610`-nek **öt** hívója van, ebből négy szűrő-callback:
+
+| hívó | szűrő |
+|---|---|
+| `0x008f8840` | `enhance` |
+| `0x008f89d0` | `autocontrast` |
+| `0x008f92d0` | `rainbow` |
+| **`0x008f9630`** | **`tint`** |
+| `0x00802180` | (nem szűrő) |
+
+**Nyitva:** felhasználja-e a `tint` az elemző eredményét, vagy csak
+statisztikát számol. Itt kell folytatni: a `0x008f9698` utáni kód és a
+`0x009db610` mellékhatása. A `rainbow`-t is érinti.
+
 #### Amit ez megmagyaráz
 
 A `k` tényező **a szín telítettségétől függ**: szürke árnyalatnál
