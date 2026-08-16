@@ -23,17 +23,13 @@ kérdés).
 4. **A `tint` virtuális színátalakítása** (1506. sor) — a `ctx` harmadik függvénymutatója
 5. **A `ytResampler` utolsó, nem 2-hatvány lépése** — a felezőlépés már megvan (sima 2×2 doboz-átlag, `0x00a43230`); a maradék `0x009e6340` / `0x009e6df0` / `0x009e75a0`. *(A korábbi megfogalmazás tévesen „közös elmosómagnak" hívta — 2026-08-16-i helyesbítés.)*
 
-### [ui-audit-editor.md](ui-audit-editor.md) — 1 kérdés
-
-1. **N4** — a csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés)
-
 ### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
 
 1. Mit tesz a Picasa, ha külső program **írja az inifájlt ÉS megérinti a kép `mtime`-ját** (537. sor) — ⚠️ **windowsos próbára vár**, gépi úton nem eldönthető
 
 ### Nincs nyitott kérdés
 
-`filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · **`picasa-native-filter-registry.md`** · és a lenti táblák
+`filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · `picasa-native-filter-registry.md` · **`ui-audit-editor.md`** · és a lenti táblák
 minden további lapja.
 
 ## Formátum-specifikációk (adatfájlok, erőforrások)

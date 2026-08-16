@@ -928,7 +928,7 @@ külön auditot érdemel, itt csak jelzésként szerepel.
 | N1 | Mit jelent a szám az „alkalmazva" jelvényen? A **lánc-sorszám olvasat elvetve**; a „hányszor van alkalmazva" olvasat viszont ellentmond annak, hogy a felvételen a fotón nincs szerkesztés (3.4) | feltételes | (a) célzott képernyőkép: ugyanazt az effektet **kétszer** alkalmazva mutat-e „2"-t; (b) fotóváltás után eltűnik-e a jelvény; (c) a `FUN_005d7c20` (VA `0x005d7c20`) dekompilálása |
 | N2 | Az effekt-paraméter alpanel **tényleges** képernyőképe | — | egy felvétel bármelyik paraméteres effekt (pl. Holga-szerű) megnyitott alpaneléről — a 4. szakasz jelenleg az erőforrásokból + a 2. fül azonos vezérlőiből következtet |
 | ~~N3~~ | ~~A csempék elemleírása (tooltip) megjelenik-e a rácsban, és a `filter_<Kulcs>_tooltip0` szövege-e~~ → **LEZÁRVA (2026-08-16): IGEN, mindkettő** — lásd „A csempe buboréksúgója a szűrő objektumból jön" alább | erős | — |
-| N4 | A csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés) | **részben LEZÁRVA (2026-08-16)**: a Picasa hármas `typecolor` állapotmodellje kiolvasva — lásd „A csempefelirat és a hármas állapotszín" alább. A csempe HÁTTERÉNEK állapotképei (respack) még nincsenek kimérve | felvétel egérmutatóval a csempe fölött |
+| ~~N4~~ | ~~A csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés)~~ → **LEZÁRVA (2026-08-16)**: a `typecolor` szövegszín-modell + a `respack.yt` háttérképei kimérve — lásd „A gombok állapotképei" alább | megerősített | — |
 | ~~N5~~ | ~~A rács **görgethető-e** 12 csempénél többnél~~ → **LEZÁRVA (2026-08-16)**: nem görgethető, és a `picnik_fx` nem rács-bővítő, hanem a megszűnt **Picnik** online szerkesztő indítógombja — lásd „A `picnik_fx` a megszűnt Picnik gombja" alább | megerősített | — |
 
 ### Amit a #704 ebből megvalósított, és hol tér el TUDATOSAN
@@ -1820,3 +1820,89 @@ együtt adja meg:
 > előbbi *kiegyenlítést* (kontraszt), az utóbbi *kiegyenesítést* (dőlés)
 > jelent. A Picasa a **`horizonadjust`**-ra használja a **Kiegyenesítés**
 > szót; a `enhance` neve **Jó napom van**.
+
+## A gombok állapotképei — mért színek (2026-08-16) — az N4 lezárva
+
+A `.tre` a gomb **három állapotképét** a nevében hordozza:
+
+```
+editpanel/button(,globalbuttons/fx_n,globalbuttons/fx_p,globalbuttons/fx_h): fx1
+                                ↑ normál        ↑ lenyomott      ↑ egér alatt
+```
+
+**A sorrend a deklarációban `n, p, h`** — normál, lenyomott, egér alatt.
+Mindhárom **teljes méretű háttérkép**, nem szín vagy átlátszóság.
+
+### `globalbuttons/fx` — az effekt-csempe (88 × 71)
+
+Függőleges metszet a csempe közepén, a tetejétől:
+
+| állapot | 0. sor | **1. sor (keret)** | 2. sor | kitöltés | alsó sor |
+|---|---|---|---|---|---|
+| **`fx_n`** normál | `#DEDEDE` | **`#BBBBBB`** | `#F2F2F2` | `#E9E9E9` | `#F8F8F8` |
+| **`fx_h`** egér alatt | `#DEDEDE` | **`#9E6757`** | `#CC8670` | `#E9E9E9` | `#F8F8F8` |
+| **`fx_p`** lenyomva | `#DEDEDE` | **`#9E6757`** | `#CC8670` | **`#E0BBAF`** | `#F8F8F8` |
+
+**A viselkedés:**
+
+1. **egér alatt** → az **1 képpontos keret** szürkéről (`#BBBBBB`)
+   **terrakottára** vált (`#9E6757`), és a mögötte lévő sor is
+   melegszik (`#F2F2F2` → `#CC8670`). **A kitöltés nem változik.**
+2. **lenyomva** → ugyanaz a keret, **plusz a kitöltés is melegre vált**
+   (`#E9E9E9` → `#E0BBAF`).
+
+A négy oldalon ugyanez: a keret **körbefut**, a sarokpont (`0,0`) mindkét
+állapotban `#DEDEDE` marad.
+
+### `globalbuttons/b38` — az általános gomb (40 × 28)
+
+| állapot | 0. sor | 1. sor | **2. sor** | kitöltés |
+|---|---|---|---|---|
+| **`b38_n`** | `#DEDEDE` | `#BBBBBB` | `#F9F9F9` | `#E8E8E8` |
+| **`b38_h`** | `#DEDEDE` | `#BBBBBB` | **`#D6D6D6`** | `#E8E8E8` |
+| **`b38_p`** | `#DEDEDE` | `#BBBBBB` | **`#A4A19D`** | **`#E3DED9`** |
+
+**Itt a keret NEM változik** — a belső csúcsfény sötétedik: egér alatt
+enyhén (`#F9F9F9` → `#D6D6D6`), lenyomva erősen (`#A4A19D`), és a kitöltés
+is melegszik. Ez a **besüllyedő** hatás.
+
+Ugyanez a minta a `globalbuttons/eb` (radír, 26 × 24) családnál.
+
+### A gombcsaládok és a méretük
+
+| család | méret | hol |
+|---|---|---|
+| `fx` | **88 × 71** | effekt-csempék, vágásjavaslat-csempék |
+| `af` | **44 × 30** | a Derítőfény ikonja |
+| `b32` | **32 × 28** | kis gomb |
+| `b38` | **40 × 28** | általános gomb |
+| `b38a` / `b38l` / `b38r` | **37 × 21** | csoportgomb (egyedi / bal / jobb vég) |
+| `b3_decrect` | **15 × 21** | a gyorscímke-gombok kerete |
+| `eb` | **26 × 24** | radír |
+
+> A `b38l` / `b38r` **bal- és jobbvégű** változata azt jelenti, hogy a
+> Picasa **összeragasztott gombpárokat** rajzol (pl. a nyomtatás
+> `fittoggle`/`croptoggle` párja, a kollázs `landscape`/`portrait`
+> párja) — a két gomb egyetlen kerettel néz ki.
+
+### ⚠️ A `filllight_icon` NEM változik állapottal
+
+Az `af_n` / `af_p` / `af_h` **mind a három azonos** — a Derítőfény ikonja
+egy beégetett kép, nem állapotfüggő keret. Az állapotot nála a
+`typecolor` szövegszín adja.
+
+### Amit ez a `typecolor`-hoz tesz hozzá
+
+A `Property typecolor <alap> <egér alatt> <lenyomva>` a **szöveg** színét
+adja meg, a `globalbuttons/*_n/_p/_h` a **hátteret**. A kettő együtt írja
+le a gomb állapotát:
+
+| állapot | háttér (`fx`) | szöveg (`m_buttontypecolor2`) |
+|---|---|---|
+| alap | szürke keret | `CC000000` (80 % fekete) |
+| egér alatt | **terrakotta keret** | **`FFFFFFFF`** (fehér) |
+| lenyomva | terrakotta keret + meleg kitöltés | `CC000000` |
+
+*Bizonyítottsági fok: megerősített* (a `respack.yt` rétegeinek
+képpont-szintű mérése; a nevekben a `_n`/`_p`/`_h` utótag a
+deklarációból).
