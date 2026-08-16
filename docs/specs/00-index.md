@@ -11,7 +11,7 @@ megválaszolt pontra — a gépi számlálás tehát háromszorosára fújta a
 képet (pl. `filterdesc-registry.md`: 6 találat, **0** valódi nyitott
 kérdés).
 
-*Utolsó átvilágítás: 2026-08-16.*
+*Utolsó átvilágítás: 2026-08-16 (a második, tízkörös menet után).*
 
 ## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
@@ -37,9 +37,10 @@ kérdés).
 
 1. A sugár-átváltótábla (`0xc7d5b8` = `[0, 1, 2, 5, 1, 2]`) hat bejegyzésének megfeleltetése: **melyik paraméter a sugár** az egyes esetekben
 
-### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
+### [picasa-ini-format.md](picasa-ini-format.md) — 2 kérdés
 
 1. Mit tesz a Picasa, ha külső program **írja az inifájlt ÉS megérinti a kép `mtime`-ját** (537. sor) — ⚠️ **windowsos próbára vár**, gépi úton nem eldönthető
+2. A videó **vágópontjainak skálája** (`moviestart` / `movieend`): a klip hosszának 32 bites törtrésze **vagy** 100 nanoszekundumos idő. A döntő mérés: egy 7 percnél hosszabb klip vágóponttal 429 másodperc után — a gyűjteményben ilyen nincs (#452)
 
 ### Nincs nyitott kérdés
 
