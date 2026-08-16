@@ -691,7 +691,8 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
    logaritmikus leképezés eredménye: `<log>250.0</log>`, és képpontban
    értendő.)
 3. unsharp kernel finomítás (dekonvolúciós illesztés)
-4. `tint` színparaméter-formátum (ffff → R=0 anomália): valós adatban a
+4. ~~`tint` színparaméter-formátum (ffff → R=0 anomália)~~ → **LEZÁRVA
+   (2026-08-16): saját tesztadat-artefaktum, ld. lent.** Az eredeti jegyzet: valós adatban a
    `tint` 4 hex jegyet ír (`ffff`), a másik kettő 8-at (`ffffffff`). A
    parszernek változó hosszú hex-színt kell tűrnie. **A korábbi „két külön
    színkódolás" nyom (colorwheel version) 2026-08-15-én megdőlt**; a
@@ -2174,3 +2175,64 @@ csúszka UTÁN jönnek, x majd y sorrendben.
 
 *Bizonyítottsági fok: megerősített* (két Glimmer-szűrő azonos alakja + a régi
 szűrő ellenpéldája).
+
+## A „`tint` 4 hex jegyet ír" — SAJÁT TESZTADAT-ARTEFAKTUM (2026-08-16)
+
+A „Nyitva 4" maradéka ez volt: *„valós adatban a `tint` 4 hex jegyet ír
+(`ffff`), a másik kettő 8-at. A parszernek változó hosszú hex-színt kell
+tűrnie."* **A `tint` valójában szintén 8-at ír.**
+
+### A binárisban EGYETLEN hex-darabka van
+
+A lánc-szerializáló darabkái egymás mellett állnak a `.rdata`-ban
+(`0x00c8d9c0` környéke, a `filter_%s_label0` előtt):
+
+```
+%c      ,%d      ,%f      ,%08x      :%d      :%g      |%g      %08x
+```
+
+**Nincs `,%04x` és nincs `,%x`** — a teljes binárison végigkeresve sem
+(`grep -abo`). A színparaméter tehát **mindig `%08x`**: nyolc jegy,
+nullákkal feltöltve.
+
+*(Kivétel a `desat`, aminek saját, bespoke formátuma van:
+`"%c,%f,%f,%f"` — abban nincs is szín.)*
+
+### A valós korpusz ezt igazolja
+
+A NAS 859 `.picasa.ini`-jéből kiszedve minden `tint`-szerű bejegyzést:
+
+```
+tint=1,0.000000,fffccc01
+tint=1,0.000000,ff1afe4a
+dir_tint=1,…,ffbba6a2      (9 db)
+```
+
+**Mind a tizenegy 8 jegyet ír**, a `tint` is.
+
+### Honnan jött akkor a `ffff`
+
+A **saját golden-kitünkből**:
+
+```
+research/golden-kit/…/.picasa.ini:   tint=1,79.842102,ffff
+```
+
+Ez egy **kézzel írt mérőfájl** — a `79.842102` a `tint` csúszkatartományán
+is kívül van. Vagyis a „4 jegyes szín" nem a Picasa viselkedése, hanem a mi
+tesztadatunk.
+
+**Ebből következik a 192. sor „R=0 anomáliája" is:** az `ffff` parszolva
+`0x0000FFFF`, tehát R=0, G=255, B=255 — pontosan az, amit egy 4 jegyes érték
+ad. Az anomáliát **mi állítottuk elő**, nem a Picasa.
+
+### Mit jelent ez a parszerre
+
+A változó hosszú hex tűrése **robusztussági kényelem**, nem
+Picasa-kompatibilitási követelmény — a Picasa sosem ír 8-nál kevesebbet.
+Megtartani nem hiba, de **nem szabad rá modellt építeni** (pl. „a `tint`
+16 bites színt használ").
+
+*Bizonyítottsági fok:* **megerősített** az író oldalra (a binárisban egyetlen
+hex-darabka van, `,%08x`) · **erős** a korpuszra (11 valós bejegyzés, mind
+8 jegyes — a `tint`-ből mindössze kettő van).
