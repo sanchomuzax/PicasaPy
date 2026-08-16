@@ -186,3 +186,153 @@ feldolgozva. További, közvetlenül hasznos források:
 `video_control_bar` · `propertiespanel` · `nav` · `rightdrawerpanel`
 
 Mindegyik ugyanígy pontos geometriát ad.
+
+## A beállítás-nyilvántartó és a 39 alapérték (`0x006e0cb0`, 2026-08-16)
+
+Egyetlen 590 bájtos függvény regisztrálja a Picasa **globális
+beállításait** az alapértékükkel együtt. A minta végig azonos:
+
+```asm
+push  <alapérték>
+push  esi                        ; a beállítás-nyilvántartó
+mov   eax, <"kulcs">
+call  0x006e0a70                 ; regisztrálás
+```
+
+Ez az **igazságforrás az alapértékekre**: ezek lépnek életbe, ha a
+registryben nincs érték.
+
+### Logikai beállítások
+
+| kulcs | alapérték | mit kapcsol |
+|---|:---:|---|
+| `AutoUpgradeCheck` | **1** | frissítés-ellenőrzés |
+| `AutoUpgradeAsk` | **0** | rákérdezés frissítés előtt |
+| `AutoInfoCheck` | **1** | információ-ellenőrzés |
+| `UITransitions` | **1** | felületi átmenetek (animáció) |
+| **`ShowTooltips`** | **1** | **buboréksúgók** |
+| `SingleClickExit` | **0** | egykattintásos kilépés |
+| `disposepreviews` | **0** | előnézetek eldobása |
+| `DoNotConfirmDeleteFromDisk` | **0** | „ne kérdezz lemezről törléskor" |
+| `DoNotConfirmRemoveFromAlbum` | **0** | „ne kérdezz albumból eltávolításkor" |
+| `autoexclude` | **1** | automatikus kizárás |
+| `PrintProxyPreview` | **1** | nyomtatási előnézet proxyval |
+| `PWAStarred` | **0** | webalbum: csillagozottak |
+| `PWASyncOrder` | **1** | webalbum: sorrend szinkronizálása |
+| `PWAStriped` | **0** | webalbum: csíkozott |
+| `PWAUseHiQualityJPEG` | **0** | webalbum: jó minőségű JPEG |
+| `LoopSlideshow` | **0** | diavetítés ismétlése |
+| `PlayMP3Tracks` | **1** | MP3-sávok lejátszása |
+| `BgFaceDetectThread` | **1** | háttér-arcfelismerés |
+| `FRAddSuggesetions` | **1** | arcjavaslatok *(a **név elgépelve** az eredetiben!)* |
+| `FREnableUploads` | **1** | arcfelismerés: feltöltés |
+
+### Támogatott fájltípusok
+
+| kulcs | alapérték |
+|---|:---:|
+| `SupportTIF` | **1** |
+| `SupportWEBP` | **1** |
+| `SupportBMP` | **1** |
+| `SupportPSD` | **1** |
+| `SupportRAW` | **1** |
+| **`SupportGIF`** | **0** |
+| **`SupportPNG`** | **0** |
+| `SupportTGA` | **0** |
+| `SupportAudio` | **0** |
+| `SupportMovies` | *(számított)* |
+| `SupportQuicktime` | *(számított)* — `0x006e0e1c`: egy vizsgálat eredménye (`setne al`), tehát **„van-e telepítve QuickTime"** |
+
+> ⚠️ **A PNG és a GIF alapból KI van kapcsolva.** Ez ellentmond a
+> megérzésnek, de a kód egyértelmű: `0x006e0e83 push 0` → `SupportPNG`,
+> `0x006e0e76 push 0` → `SupportGIF`.
+
+### Számértékek
+
+| kulcs | alapérték | cím |
+|---|---:|---|
+| `PWADefaultSize` | **1600** (`0x640`) | `0x006e0d7a` |
+| `PWADefaultSizeES` | **2048** (`0x800`) | `0x006e0d8d` |
+| `FRSuggestionThreshold` | **85** (`0x55`) | `0x006e0ed5` |
+| `FRSortThreshold` | **85** (`0x55`) | `0x006e0eed` |
+
+### Külön kezelt
+
+`ytHLocal::lang` (nyelv), `PrinterQuality`, `PrintResamplerQuality`,
+`PWAShareAccess` — ezek nem a logikai regisztrálón mennek át; az
+alapértékük külön ágban dől el.
+
+### Amit ebből a PicasaPy visz
+
+A **fájltípus-kapcsolók** és a **megerősítés-kihagyó** beállítások
+közvetlenül átvehetők. A webalbumos (`PWA*`) és a frissítés-ellenőrző
+kulcsok nálunk értelmezhetetlenek.
+
+*Bizonyítottsági fok: megerősített* (a regisztráló hívások mind a 39-re
+kiolvasva, az alapérték minden esetben a hívás előtti `push`).
+
+## A Beállítások párbeszéd kezelője és a kulcsai (`0x006e1100`, 2026-08-16)
+
+A 9 494 bájtos `0x006e1100` a **Beállítások (Opciók) párbeszéd** kezelője —
+az osztálynév a sztringjeiből azonosítható: `CGeneralPrefsPage`. A 79
+hivatkozott sztringje megadja, **melyik vezérlő melyik beállítás-kulcsot
+írja**.
+
+### A vezérlő-azonosítók (a `.fen`/`.tre` oldalról)
+
+`web_albums_tab` · `enablefruploads` · `tags_group` ·
+`uploadcontactphotos` · `usagestats` · `privacy` · `autoupdate` ·
+`importdest` · `mailprog` · `picsize` · `defaultmail` · `haswatermark` ·
+`enablefacedetection` · `enablefacesuggestions` · `persistfacetofile` ·
+`facethresh0` · `facethresh1` · `autoProxy` · `loglevel` · `print%d`
+
+### Tizenöt kulcs, ami a REGISZTRÁLÓBAN nincs benne
+
+A `0x006e0cb0` (az előző szakasz) 39 kulcsot regisztrál alapértékkel. A
+párbeszéd ezeken felül **további tizenötöt** ír:
+
+| kulcs | melyik fül |
+|---|---|
+| `ReportStats` | Általános — használati statisztika |
+| `PersistFaceToFile` | Névcímkék |
+| `confirmsync::disable` | Általános |
+| `MP3SlideshowPath` | Diavetítés |
+| `PWAWatermark` | Google Fotók |
+| `EmailSinglePicture` | E-mail |
+| `EmailMovie` | E-mail |
+| `UseHTMLMailer` | E-mail |
+| `EmailPrepType` | E-mail |
+| `DoNotPromptForEmailPref` | E-mail |
+| `EmailExportSize` | E-mail |
+| `ProxyUser` | Hálózat |
+| `ProxyPass` | Hálózat |
+| `Conn:ProxyMethod` | Hálózat |
+| `LogLevel` | Hálózat |
+
+> ⚠️ A `ProxyUser` / `ProxyPass` **jelszót tárol**. A PicasaPy-nak ezt nem
+> kell átvennie; ha valaha mégis, akkor **nem** a beállításfájlba.
+
+### A feltöltési méret öt választása — pontos feliratokkal
+
+| erőforrás-kulcs | EN | HU |
+|---|---|---|
+| `CGeneralPrefsPage::Original` | Original size (slowest upload) | **Eredeti méret (leglassabb feltöltés)** |
+| `CGeneralPrefsPage::2048` | Best for web sharing (2048px) | **Ideális internetes megosztáshoz (2048 képpont)** |
+| `CGeneralPrefsPage::1600` | Recommended: 1600 pixels (…) | **Ajánlott: 1600 képpont (nyomatokhoz, képernyővédőkhöz és megosztáshoz)** |
+| `CGeneralPrefsPage::1024` | Medium: 1024 pixels (for sharing) | **Közepes: 1024 képpont (megosztáshoz)** |
+| `CGeneralPrefsPage::800` | Small: 800 pixels (for blogs and webpages) | **Kicsi: 800 képpont (blogokhoz és weboldalakhoz)** |
+
+Az alapérték a `PWADefaultSize` = **1600** (az előző szakasz) — vagyis az
+**„Ajánlott"** tétel a kiválasztott.
+
+### Két járulékos lelet
+
+1. **A „Google Fotók" fül** (`CGeneralPrefsPage::WebAlbumsTabEs` → „Google
+   Photos" / **„Google Fotók"**) — a webalbum-fül a késői kiadásokban ezt a
+   nevet viseli, nem „Picasa Webalbumok".
+2. **Nyelvváltás megerősítése**: `CGeneralPrefsPage::LangChange` —
+   „Módosítja a Picasa kezelőfelületének nyelvét?\n\nA változás a program
+   következő megnyitásakor lép érvénybe."
+
+*Bizonyítottsági fok: megerősített* (a függvény mind a 79 hivatkozott
+sztringje, és a feliratok a `*text.tre` szövegforrásból).

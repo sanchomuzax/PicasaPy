@@ -452,8 +452,10 @@ friss telepítésen — ehhez a Picasa első indítás utáni registry-állapota
 kellene.~~ **MEGVÁLASZOLVA (2026-08-16)**, registry nélkül, a binárisból —
 lásd „A fanézet HÁROM beállítása és az alapértékük" alább.
 
-**Nyitva (b):** mire szolgál pontosan a `Hierarchy_p` számláló (a fenti
-csak annyit mond ki, hogy NEM a nézetmód kulcsa).
+~~**Nyitva (b):** mire szolgál pontosan a `Hierarchy_p` számláló (a fenti
+csak annyit mond ki, hogy NEM a nézetmód kulcsa).~~ **MEGVÁLASZOLVA
+(2026-08-16)**: névtelen **használati statisztika** (telemetria) — lásd
+„A `Hierarchy_p` telemetria, nem beállítás" alább.
 
 ### Amit ebből a PicasaPy megvalósít (#702, első szelet)
 
@@ -781,6 +783,172 @@ csomagban mentődik.
 csomagolására · **erős** a `SimplifiedHierarchy` alapértékére (mind a négy
 olvasóhely nullázza a helyi változót, és az üres-sztring ág 0-t hagy).
 
-**Nyitva marad:** honnan ugrik a `0x0040dc35` (`"flat"`) ág — vagyis mikor
-indul a program lapos nézetben; és mi a `LastViewRoot2` pontos szerepe
-(feltehetően nézetmódonként külön gyökér, de ezt nem igazoltuk).
+~~**Nyitva marad:** honnan ugrik a `0x0040dc35` (`"flat"`) ág — vagyis mikor
+indul a program lapos nézetben~~ — **MEGVÁLASZOLVA (2026-08-16)**, lásd
+„Indításkor a LAPOS nézet az alapértelmezés" alább. **Nyitva marad** a
+`LastViewRoot2` pontos szerepe (feltehetően nézetmódonként külön gyökér, de
+ezt nem igazoltuk).
+
+### A `Hierarchy_p` telemetria, nem beállítás (2026-08-16)
+
+A fenti „Nyitva (b)" azt kérdezte, mire szolgál a `Hierarchy_p`. A választ a
+hivatkozó rutin (`0x004b9d80`, 323 bájt) és **annak hívója** adja meg.
+
+#### A hívó azonosítja a szándékot
+
+A `0x004b9d80`-at egyetlen hely hívja: **`0x0057d460`**, és ez a függvény a
+`ScreenWidth`, `ScreenHeight`, `UniqueAccounts` mezőket is összeállítja.
+Vagyis ez a **névtelen használati statisztika** (a `Preferences ▸
+ReportStats` kapcsolóhoz tartozó jelentés) összeállítója.
+
+#### Mit gyűjt a `0x004b9d80`
+
+| mező | cím | hogyan |
+|---|---|---|
+| `StarredPhotosTotal` | `0x004b9dc8` | végigmegy egy bájttömbön, a nem-nulla elemeket számolja |
+| `HiddenPhotosTotal` | `0x004b9e10` | ugyanígy, másik tömbön |
+| `GeotaggedPhotosTotal` | `0x004b9e5b` előtt | ugyanígy, harmadik tömbön |
+| **`Hierarchy_p`** | `0x004b9e74` | **nem számol semmit** |
+
+A három `…Total` mező **darabszámot** küld (`0x0097a410(jelentés, db, 0)`).
+A `Hierarchy_p` viszont más úton megy:
+
+```asm
+0x004b9e5b  cmp   byte ptr [ebp + 0x9d], 0   ; a főablak egy logikai jelzője
+0x004b9e62  je    0x4b9ebc                   ; ha hamis → SEMMIT nem küld
+0x004b9e64  push  0x18
+0x004b9e66  call  0xc0769f                   ; 24 bájtos rekord foglalása
+0x004b9e74  mov   edi, 0xc835d0              ; "Hierarchy_p"
+0x004b9e87  mov   dword ptr [esi + 8], 4     ; TÍPUS = 4
+0x004b9eb0  mov   dword ptr [esi + 0x14], 1  ; az érték: 1
+```
+
+Vagyis **jelenlét-jelző**: ha a főablak logikai jelzője igaz, a jelentés egy
+`Hierarchy_p = 1` bejegyzést kap; ha hamis, a mező **ki sem kerül**. Se
+darabszám, se beállítás — egy „ez a felhasználó használja" ping.
+
+#### Amit ebből a PicasaPy csinál: SEMMIT
+
+A PicasaPy **nem küld telemetriát**. A `Hierarchy_p` tehát nem
+implementálandó, és nem is szabad összekeverni a nézetmód-beállításokkal
+(`SimplifiedHierarchy`, `LastViewRoot`, `LastViewRoot2`) — azok a
+`Preferences` alatt élnek, ez pedig soha nem íródik ki a gépre.
+
+*Bizonyítottsági fok: megerősített* (a gyűjtő rutin teljes egészében
+kiolvasva, és a hívója a `ScreenWidth`/`UniqueAccounts` mezőkkel azonosítja
+a jelentést).
+
+### Indításkor a LAPOS nézet az alapértelmezés (2026-08-16)
+
+Az előző szakasz nyitva hagyta, honnan ugrik a `0x0040dc35` (`"flat"`) ág.
+A `0x0040db85`–`0x0040dbb2` szakasz megadja:
+
+```asm
+0x0040db85  mov  edi, dword ptr [esp + 0xc]    ; az egyik mentett gyökér
+0x0040db89  mov  esi, dword ptr [esp + 0x14]   ; a másik
+0x0040db8d  test esi, esi
+0x0040db8f  je   0x40dc35                      ; NINCS      → "flat"
+0x0040db95  test dword ptr [esi], 0xffffff00
+0x0040db9b  je   0x40dc35                      ; ÜRES       → "flat"
+0x0040dba1  add  esi, 4                        ; a sztring a +4 eltoláson
+0x0040dba4  cmp  byte ptr [esi], 0
+0x0040dba7  je   0x40dc35                      ; ÜRES sztring → "flat"
+0x0040dbad  push 1
+0x0040dbaf  push esi
+0x0040dbb2  call 0x575130                      ; SetView(mentett, 1)
+```
+
+és a cél:
+
+```asm
+0x0040dc35  push 1
+0x0040dc37  push 0xc80258                      ; "flat"
+0x0040dc3e  call 0x575130                      ; SetView("flat", 1)
+```
+
+**Három ág vezet ugyanoda:** ha a mentett gyökér hiányzik, a hossza nulla,
+vagy a sztring üres — a program a **lapos mappanézettel** indul.
+
+> **Friss telepítésen tehát a lapos nézet az alapértelmezés**, mert a
+> beállítás még nem létezik.
+
+#### ⚠️ Helyesbítés: a második argumentum NEM „különleges nézet"
+
+Az előző kör azt írta, hogy a nézetbeállító (`0x00575130`) második
+argumentuma különbözteti meg a valódi útvonalat (`0`) a különleges nézettől
+(`1`). **Ez téves volt.** Itt a **mentett, valódi útvonal is `1`-gyel** megy
+(`0x0040dbad`), ugyanúgy, mint a `"flat"`.
+
+A helyes olvasat: a második argumentum azt választja ki, **melyik
+nézet-rekeszbe** kerül a gyökér — a két mentett gyökérnek (`LastViewRoot`,
+`LastViewRoot2`) két rekesze van. Az `1`-es ág az elsődleges.
+
+Ezt a `0x0040dc30` ága erősíti meg: ott `push 0; push <a másik gyökér>` áll,
+tehát a másik mentett útvonal a `0`-s rekeszbe megy.
+
+~~**Nyitva marad**, melyik `Preferences`-kulcs melyik rekeszbe tartozik~~ —
+**MEGVÁLASZOLVA (2026-08-16)**, lásd „Melyik kulcs melyik nézet-rekeszbe
+tartozik" alább.
+
+*Bizonyítottsági fok:* **megerősített** a lapos alapértelmezésre (mindhárom
+ág kiolvasva) és arra, hogy a második argumentum nem a „különleges nézetet"
+jelöli · **nyitott** a két rekesz és a két kulcs megfeleltetése.
+
+### Melyik kulcs melyik nézet-rekeszbe tartozik (2026-08-16)
+
+Az előző szakasz nyitva hagyta, hogy a `LastViewRoot` és a `LastViewRoot2`
+közül melyik kerül az `1`-es, melyik a `0`-s nézet-rekeszbe. **A verem
+végigkövetése eldönti.**
+
+#### A két olvasás célja
+
+```asm
+0x0040dabe  lea esi, [esp + 0x9c]   ; ← a LastViewRoot kimenete
+0x0040dac5  call 0x407630           ;   (a "LastViewRoot" kulccsal)
+
+0x0040daf5  lea esi, [esp + 0x2c]   ; ← a LastViewRoot2 kimenete
+0x0040daf9  call 0x407630           ;   (a "LastViewRoot2" kulccsal)
+```
+
+#### A két kicsomagolás
+
+```asm
+0x0040db03  lea  ecx, [esp + 0x94]  ; a LastViewRoot burkolója (a payload +8)
+0x0040db0a  call 0x4078e0
+0x0040db3c  lea  edi, [esp + 0x18]  ; → a sztring a [esp+0x14]-be kerül
+0x0040db40  call 0x985ff0
+
+0x0040db45  lea  ecx, [esp + 0x24]  ; a LastViewRoot2 burkolója
+0x0040db49  call 0x4078e0
+0x0040db7c  lea  edi, [esp + 0x10]  ; (push edx után → a [esp+0xc]-be)
+0x0040db80  call 0x985ff0
+```
+
+#### A hozzárendelés
+
+```asm
+0x0040db85  mov  edi, dword ptr [esp + 0xc]    ; edi = LastViewRoot2
+0x0040db89  mov  esi, dword ptr [esp + 0x14]   ; esi = LastViewRoot
+0x0040db8d  test esi, esi
+0x0040db8f  je   0x40dc35                       ; üres → SetView("flat", 1)
+0x0040dbad  push 1
+0x0040dbaf  push esi                            ; SetView(LastViewRoot, 1)
+0x0040dbb2  call 0x575130
+0x0040dbb7  test edi, edi                       ; …majd a LastViewRoot2
+0x0040dc30  push 0
+0x0040dc32  push edi                            ; SetView(LastViewRoot2, 0)
+```
+
+| kulcs | nézet-rekesz | mi történik, ha üres |
+|---|:---:|---|
+| **`LastViewRoot`** | **1** (elsődleges) | a `"flat"` lép a helyébe, szintén `1`-gyel |
+| **`LastViewRoot2`** | **0** (másodlagos) | **kimarad** — nincs helyettesítés |
+
+#### Amit ez jelent
+
+A program **két nézet-gyökeret** tart nyilván, és **csak az elsődlegesnek
+van tartaléka**. Ha a másodlagos hiányzik, a hozzá tartozó rekesz üresen
+marad — a program nem esik vissza semmire.
+
+*Bizonyítottsági fok: megerősített* (a két olvasás célcíme, a két
+kicsomagolás és a hozzárendelés végigkövetve).

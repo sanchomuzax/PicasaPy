@@ -927,9 +927,9 @@ külön auditot érdemel, itt csak jelzésként szerepel.
 |---|---|---|---|
 | N1 | Mit jelent a szám az „alkalmazva" jelvényen? A **lánc-sorszám olvasat elvetve**; a „hányszor van alkalmazva" olvasat viszont ellentmond annak, hogy a felvételen a fotón nincs szerkesztés (3.4) | feltételes | (a) célzott képernyőkép: ugyanazt az effektet **kétszer** alkalmazva mutat-e „2"-t; (b) fotóváltás után eltűnik-e a jelvény; (c) a `FUN_005d7c20` (VA `0x005d7c20`) dekompilálása |
 | N2 | Az effekt-paraméter alpanel **tényleges** képernyőképe | — | egy felvétel bármelyik paraméteres effekt (pl. Holga-szerű) megnyitott alpaneléről — a 4. szakasz jelenleg az erőforrásokból + a 2. fül azonos vezérlőiből következtet |
-| N3 | A csempék elemleírása (tooltip) megjelenik-e a rácsban, és a `filter_<Kulcs>_tooltip0` szövege-e | feltételes | egérrel egy csempe fölött készített felvétel |
-| N4 | A csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés) | nincs adat | felvétel egérmutatóval a csempe fölött |
-| N5 | A rács **görgethető-e** 12 csempénél többnél (a `fx1…fx12` fix — de a `picnik_fx` gomb létezik a rács alján, rejtetten) | feltételes | `editpanel/picnik_fx` szerepének tisztázása |
+| ~~N3~~ | ~~A csempék elemleírása (tooltip) megjelenik-e a rácsban, és a `filter_<Kulcs>_tooltip0` szövege-e~~ → **LEZÁRVA (2026-08-16): IGEN, mindkettő** — lásd „A csempe buboréksúgója a szűrő objektumból jön" alább | erős | — |
+| N4 | A csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés) | **részben LEZÁRVA (2026-08-16)**: a Picasa hármas `typecolor` állapotmodellje kiolvasva — lásd „A csempefelirat és a hármas állapotszín" alább. A csempe HÁTTERÉNEK állapotképei (respack) még nincsenek kimérve | felvétel egérmutatóval a csempe fölött |
+| ~~N5~~ | ~~A rács **görgethető-e** 12 csempénél többnél~~ → **LEZÁRVA (2026-08-16)**: nem görgethető, és a `picnik_fx` nem rács-bővítő, hanem a megszűnt **Picnik** online szerkesztő indítógombja — lásd „A `picnik_fx` a megszűnt Picnik gombja" alább | megerősített | — |
 
 ### Amit a #704 ebből megvalósított, és hol tér el TUDATOSAN
 
@@ -942,7 +942,7 @@ külön auditot érdemel, itt csak jelzésként szerepel.
 | Csempe | 86 × 69 | ~86 széles, **~90 magas** | ⚠️ TUDATOS ELTÉRÉS: a felirat nálunk KÉT sort foglal (`PanelButton.qml`), amit a **#422** kért kifejezetten — a hosszabb nevek nem vágódhatnak, és a rács sorai nem csúszhatnak szét. Az eredeti egysoros, 18 px-es feliratsávjához visszatérni csak a #422 visszavonásával lehetne; az külön döntés |
 | Felirat | 11 px, félkövér, középre zárt, #333333 | félkövér, középre zárt, `Theme.textDark` | a fix #333333 helyett témafüggő token, hogy sötét témában is olvasható legyen |
 | Jelvény helye / mérete / színe / alakja | bélyegkép jobb alsó sarka, 13 × 12, #379FFD, negyed-korong | **ugyanaz** | a `PanelButton.qml` `appliedCount` tulajdonsága vezérli; a kék ma fix hexa a komponensben — `Theme.badgeBlue` néven a témába való (integrációs igény) |
-| Jelvény **száma** | jelentése NYITOTT (N1) | a szűrő előfordulásainak száma a láncban (`EditController.effectChainCounts`) | ⚠️ IDEIGLENES olvasat. Semmilyen viselkedés nem épül rá; az N1 lezárása után felülvizsgálandó |
+| Jelvény **száma** | ~~jelentése NYITOTT (N1)~~ → **NINCS SZÁMA** (2026-08-16, lásd „A jelvényen nincs szám" alább) | a szűrő előfordulásainak száma a láncban (`EditController.effectChainCounts`) | ❌ **ELTÉRÉS**: az eredetiben a jelvény néma grafika, csak látszik vagy nem. A számot mi tettük rá |
 
 Az őrök: `tests/app/qml_functional/test_effect_tile_grid_704.py` (fejléc,
 jelvény-geometria, csempeszám, egységes feliratszín).
@@ -1196,3 +1196,474 @@ A csempe **felirata és bélyegképe is** ehhez igazodik: az erőforrás-nevet a
 
 *Bizonyítottsági fok: megerősített* (import feloldva, mindkét oldal
 — beállítás és olvasás — kiolvasva, címekkel).
+
+### A kilenc Shift-változat TELJES paraméterlistája (2026-08-16)
+
+Az előző kör „nyitva" hagyta négy Shift-változat csúszkáit. **Fölöslegesen:**
+mind a négy megvan a `filterdesc-registry.md` 4. pontjában. Ez a szakasz a
+kilenc párt **egymás mellé** teszi, hogy a paraméterpanel egy helyről
+építhető legyen.
+
+| # | csempe | alap változat + paraméterei | **Shift-változat + paraméterei** |
+|---:|---|---|---|
+| 1 | Élesítés | `unsharp2` — Mennyiség | **`unsharp`** — Mennyiség (fix 1,5-ös sugár) |
+| 2 | Filmszemcse | `PicnikGrain` — Grain 0–50 (10), Világosítás jelölő (ki) | **`grain`** — **nincs csúszkája** |
+| 3 | Árnyalás | `PicnikTint` — szín (#80cfff), Fade 0–100 (0) + festhető maszk | **`tint`** — Színek megőrzése |
+| 4 | Ragyogás | `glow2` — Intenzitás, Sugár | **`glow`** — Intenzitás, Sugár |
+| 5 | Színátmenet | `dir_tint` | **`radtint`** — Lágy perem |
+| 6 | Hőtérkép | `HeatMap` — Hue −180–180 (0), Fade 0–100 (0) | **`NightVision`** — Fényerő −50–50 (0), Kontraszt −50–50 (0), Fade 0–100 (0) |
+| 7 | Vignetta | `Vignette` — Blur 0–50 (**35**), Strength 1–2 (**1,4**), szín (**#000**), Fade 0–100 (0) | **`Matte`** — Blur 0–50 (**40**), Strength 1–2 (**1,2**), szín (**#fff**), Fade 0–100 (0) |
+| 8 | Képpontnagyítás | `Pixelate` — Impact 2–150 (20), BlendMode 0–9 (9), Fade 0–100 (0) | **`PicnikFocalPixelate`** — Impact 2–100 (20), Radius 10–min(W,H)/2 (közép), Hardness 0–100 (50), Fade 0–100 (0), Fordított jelölő (ki) |
+| 9 | Szegély | `Border` — szín Outer (#000), OuterThickness 0–100 (20), szín Inner (#fff), InnerThickness 0–100 (5), CornerRadius 0–min(W,H)/2 (0), CaptionHeight 0–H/6 (0) | **`RoundedEdges`** — szín Outer (**#fff**), CornerRadius 0–min(W,H)/2 (**min(W,H)/10**) |
+
+### Három szerkezeti tanulság
+
+**1. A `Vignette` és a `Matte` paraméterei BETŰRE azonos szerkezetűek** —
+négy mező ugyanabban a sorrendben, csak az alapértékek térnek el, és a szín
+fekete ↔ fehér. A `filterdesc-registry.md` 316. sora is ezt mondja: ugyanaz
+a művelet (`GlowImageOperation`). A Shift tehát itt **a sötétítést
+világosításra váltja**.
+
+**2. A Shift-változat NEM feltétlenül szegényebb.** A `NightVision` három
+csúszkát kap a `HeatMap` kettő helyett, a `PicnikFocalPixelate` ötöt a
+`Pixelate` háromja helyett. A paraméterpanelt tehát **újra kell építeni**
+váltáskor, nem elég átcímkézni.
+
+**3. A `RoundedEdges` a `Border` szűkített változata** — hat mező helyett
+kettő (külső szín + saroksugár), és a saroksugár alapértéke **nem nulla**
+(`min(W,H)/10`), szemben a `Border` nulla alapértékével.
+
+### Módszertani megjegyzés
+
+Ez a kör azért indult, mert az előző „nyitva" jelölést tett oda, ahol a
+válasz **egy másik spec-lapon** már megvolt. A `00-index.md` pont ezért
+készült — de az összekapcsolás csak akkor működik, ha a kör **átnézi a
+rokon lapot**, mielőtt nyitottnak jelöl valamit.
+
+*Bizonyítottsági fok: megerősített* (a `filterdesc.xml` a Picasa saját
+szűrő-regisztere; a nevek a `*text.tre` szövegforrásból).
+
+### A jelvényen NINCS szám (2026-08-16) — az N1 lezárva
+
+A csempe „alkalmazva" jelvényének (`editpanel/fx%d_adorn`) jelentése eddig
+nyitott volt (N1). **Két, egymástól független forrás zárja le.**
+
+#### 1. Az elrendezés-erőforrás: a jelvény néma
+
+`macros.tre` (a `#define m_fxadorner` blokk) a teljes definíció:
+
+```
+#define m_fxadorner
+XConstraint 1, 1, -6
+YConstraint 1, 1, -19
+```
+
+**Két megkötés, semmi más.** Nincs benne szövegkötés, nincs betűtípus,
+nincs tartalom-tulajdonság — pusztán elhelyezés a szülő csempe **jobb
+széléhez −6**, illetve **alsó széléhez −19** képponttal. Egy ilyen elem
+nem tud számot mutatni.
+
+#### 2. A felületkód: csak megmutatja vagy elrejti
+
+`0x005d7c20`, a csempe-kirakó:
+
+```asm
+0x005d7eb9  mov   edx, dword ptr [eax + 0x14]   ; vtbl[5]
+0x005d7ebc  call  edx                            ; állapot lekérdezése
+0x005d7ec2  cmp   eax, 1
+0x005d7eca  sete  byte ptr [esp + 0x64]          ; látszik-e a jelvény
+...
+0x005d80d4  push  0xc96304                       ; "editpanel/fx%d_adorn"
+0x005d8108  cmp   byte ptr [esp + 0x64], 0
+0x005d8111  mov   eax, dword ptr [edx + 0x6c]    ; vtbl[27]  (megmutat)
+0x005d8116  mov   eax, dword ptr [edx + 0x68]    ; vtbl[26]  (elrejt)
+0x005d8119  call  eax
+```
+
+A jelvényen **egyetlen művelet** történik: megmutatás vagy elrejtés. Semmi
+nem ír bele értéket.
+
+> A `vtbl[6]` (`[eax+0x18]`), amit közvetlenül utána hív, **sztringet** ad
+> vissza (a visszatérés `strlen`-nel és sztring-értékadással megy tovább,
+> `0x005d7ee0`–`0x005d7ef2`) — tehát az sem szám.
+
+#### A feltétel: `állapot == 1`
+
+A jelvény akkor látszik, ha a `vtbl[5]()` **pontosan 1-et** ad vissza.
+Ez állapotkód, nem darabszám: `0` = nincs alkalmazva, `1` = alkalmazva.
+
+#### ❌ Amiben eltérünk
+
+| | eredeti Picasa | PicasaPy ma |
+|---|---|---|
+| a jelvény tartalma | **néma grafika** | **szám** (`appliedCount.toString()`, `PanelButton.qml:227`) |
+| mikor látszik | `állapot == 1` | `appliedCount > 0` |
+| igazítás | a **csempéhez**: jobb −6, alsó −19 | a **bélyegkép-dobozhoz**, margó nélkül |
+
+A szám a mi hozzátételünk volt — a `#704` „ideiglenes olvasat"-ként jelölte
+is. Most bizonyított, hogy az eredetiben nincs ott.
+
+*Bizonyítottsági fok: megerősített* (a `macros.tre` teljes makródefiníciója
+és a felületkód mindkét ága kiolvasva).
+
+### A `picnik_fx` a megszűnt Picnik gombja — az N5 lezárva (2026-08-16)
+
+Az N5 azt kérdezte, görgethető-e az effekt-rács 12 csempénél többnél, és
+mi az a `picnik_fx` gomb a rács alján. **Mindkettőre megvan a válasz.**
+
+#### A gomb definíciója (`editpanel.tre` 412–426)
+
+```
+#--Picnik fx button
+editpanel/picnik_fx_label: editpanel/picnik_fx
+Property textalign right
+XConstraint 1, 0, -5
+YConstraint 0.5, 0.5, 0
+m_hidden
+editpanel/picnik_fx_icon: editpanel/picnik_fx
+XConstraint 0, 0, 10
+YConstraint 0.5, 0.5, 0
+m_hidden
+editpanel/picnik_fx: editpanel/fxthumbs
+m_buttontypecolor
+XConstraint 0.5, 0.5, 0
+m_offsetT
+m_hidden
+```
+
+Vízszintesen **középre igazított**, színes típusú gomb, bal oldalt ikonnal
+(+10), jobbra zárt felirattal (−5). Mindhárom elem **`m_hidden`**.
+
+#### A felirata megmondja, mi ez
+
+```
+filter_picnik_label0   Creative Kit   Kreatív készlet
+```
+
+A **Picnik** a Google online fotószerkesztője volt; a Picasa
+„Kreatív készlet" gombja oda töltötte fel a képet. A bináris tele van a
+kiszolgáló-oldali maradványaival: `picnikurl`,
+`http://www.picnik.com/service/`, `picnikdoneurl`, `Picnik::UploadProgress`,
+`Picnik::UploadError`, `Picnik::SaveToPicasa`, `PicnikWarn`,
+`editpanel/picnikwin`, `editpanel/picnikapply`, `editpanel/picnikcancel`,
+`runtime\picnik_effects\`.
+
+> A **Picnik 2012-ben megszűnt.** A gomb tehát halott funkció maradványa.
+
+#### Egy árulkodó nyom: a szabály KI VAN KOMMENTEZVE
+
+Az `editpanel.tre` 290. sora:
+
+```
+#Property hidetarget editpanel/picnik_fx
+```
+
+A `#` miatt ez **nem hatályos**. A fejlesztők tehát a gomb kezelését a
+kiadás előtt kivették — összhangban azzal, hogy a szolgáltatás megszűnt.
+
+#### A két válasz
+
+1. **A rács NEM görgethető.** Fülenként pontosan `fx1`…`fx12` van, és
+   tizenharmadik csempehely nincs definiálva.
+2. **A `picnik_fx` nem rács-bővítő**, hanem egy külső, ma már nem létező
+   szolgáltatás indítógombja.
+
+#### Amit ebből a PicasaPy csinál: SEMMIT
+
+A gombnak nincs értelmes megfelelője — a mögötte álló szolgáltatás nem
+létezik. A rács alján **nem kell** gomb.
+
+*Bizonyítottsági fok: megerősített* (az elrendezés-erőforrás teljes blokkja,
+a felirat szövegforrása, és a bináris tizennégy Picnik-hivatkozása).
+
+### A csempefelirat és a hármas állapotszín (2026-08-16)
+
+#### `Property typecolor` — a Picasa gombjainak állapotmodellje
+
+A `.tre` nyelvben egy gomb szövegszíne **három ARGB értékkel** van megadva,
+ebben a sorrendben:
+
+```
+Property typecolor <alap> <egér alatt> <lenyomva>
+```
+
+A binárisban mind a hét előfordulás:
+
+| makró / hely | alap | egér alatt | lenyomva | hol |
+|---|---|---|---|---|
+| `m_buttontypecolor` | `CC000000` | `CC000000` | `CC000000` | `macros.tre:134` |
+| `m_buttontypecolor2` | `CC000000` | **`FFFFFFFF`** | `CC000000` | `macros.tre:137` |
+| `m_buttontypecolor3` | `FFFFFFFF` | `CCFFFFFF` | `FFFFFFFF` | `macros.tre:140` |
+| `m_buttontypecolor4` | `99000000` | `99000000` | `99000000` | `macros.tre:143` |
+| `m_buttonfont12` | `FF000000` | **`FFFFFFFF`** | `FF000000` | `fontmacros_win.tre:104` |
+| (feltöltés-panel) | `FF0000FF` | `CC0000FF` | `FF0000FF` | `upload.tre:194` |
+| (kék/zöld chip-gomb) | `FFFFFFFF` | `FFFFFFFF` | `FFFFFFFF` | `chips_button_*.tre:5` |
+
+**A minta:** ahol van egér-alatti eltérés, ott a szöveg **fehérre vált**
+(`FFFFFFFF`) — a sötét kiemelő háttérhez. A **lenyomott** állapot mindenütt
+visszatér az alapszínre. Az alfa a leggyakoribb esetben `CC` (80%), nem
+teljesen átlátszatlan.
+
+#### Az effekt-csempe felirata: `m_fxlabel`
+
+`fontmacros_win.tre:281` (a `_mac` változat betűre azonos):
+
+```
+#define m_fxlabel
+YConstraint 0, 1, -18        # a feliratsáv a csempe alján, 18 px magas
+Property fonttrack -1        # betűköz −1
+Property fontsize 11
+Property fontweight 700      # félkövér
+Property fontleading 10      # sortávolság 10
+Property textalign center
+XConstraint 0, 0, 4          # 4 px behúzás balról
+XConstraint 1, 1, -4         # 4 px behúzás jobbról
+```
+
+> **Nincs `textwrap`.** A közvetlenül fölötte álló makró (`fontmacros_win.tre`
+> 270–279) tartalmaz `Property textwrap 1`-et — az `m_fxlabel` **nem**.
+> Vagyis az eredeti csempefelirat **egysoros**, és nem törik.
+
+Ez pontosan megerősíti a korábbi mérést: **18 px-es feliratsáv, 11 px-es
+félkövér, középre zárt szöveg**, oldalanként 4 px behúzással.
+
+#### ❌ Amiben eltérünk (tudatosan)
+
+| | eredeti | PicasaPy (`PanelButton.qml`) |
+|---|---|---|
+| sorok száma | **1** (nincs `textwrap`) | **2** (`wrapMode: WordWrap`, `maximumLineCount: 2`) |
+| betűméret | **11** | `Theme.fontSize − 2` |
+| vastagság | **700** (félkövér) | `font.bold` |
+| betűköz | **−1** | nincs beállítva |
+| oldalbehúzás | **4 px** | nincs beállítva |
+| egér-alatti szövegszín | **fehér** (a hármas modell szerint) | nincs állapotváltás |
+
+A kétsoros felirat **tudatos eltérés** (#422), az `ui-audit-editor.md` már
+rögzíti. A **betűköz**, az **oldalbehúzás** és az **egér-alatti fehér
+szövegszín** viszont pótolható hiány.
+
+*Bizonyítottsági fok: megerősített* (a makródefiníciók teljes szövege, és a
+`typecolor` mind a hét előfordulása).
+
+**Nyitva marad:** a csempe **hátterének** állapotképei (a `respack.yt`-ból) —
+a `typecolor` csak a szöveget írja le.
+
+## A videó vezérlősávja — teljes elemlista (2026-08-16)
+
+Az elrendezés önálló erőforrásfájlban él: **`video_control_bar.tre`**
+(150 sor), amit az `editpanel.tre` a 7. sorában `#include`-ol. A szerkesztő
+videót mutatva ezt a sávot teszi a kép alá.
+
+### Az elhelyezés a szerkesztőben
+
+```
+editpanel/movieparent_tracker: editpanel/preview
+m_scaleX
+YConstraint 0, 0, 0
+YConstraint 1, 1, movieparenty=-39      # a kép alja 39 px-szel feljebb
+
+editpanel/video_control_container: editpanel/movieparent_tracker
+XConstraint 0, 0, -6                     # 6 px-szel szélesebb balra
+XConstraint 1, 1, 6                      # …és jobbra
+YConstraint 1, 1, 42                     # a sáv 42 px magas
+m_hidden                                 # alapból rejtett
+```
+
+A `movieparenty` **változó**: `Handler varbutton movieparenty -39 0 0`
+(`editpanel.tre:1409`) — vagyis a kép alja **39 képponttal feljebb csúszik**,
+amikor a sáv megjelenik, és visszaáll `0`-ra, amikor eltűnik.
+
+### A sáv mind a 19 eleme
+
+**Vágó-csúszka (trim)**
+
+| elem | horgony |
+|---|---|
+| `video_control_bar/trimslider` | a görgető-tartályban, X: `+10 … −10` |
+| `video_control_bar/trimruler` | a `trimslider`-en, felül, X-re nyújtva |
+| `video_control_bar/lefttrim` | a `trimruler` **bal** széléhez, Y-ra nyújtva |
+| `video_control_bar/righttrim` | a `trimruler` **jobb** széléhez, Y-ra nyújtva |
+| `video_control_bar/startthumb` | a `trimslider` bal-alsó sarkához |
+| `video_control_bar/endthumb` | a `trimslider` jobb-alsó sarkához |
+
+**Idő-csúszka (scrub)**
+
+| elem | horgony |
+|---|---|
+| `video_control_bar/moviescrubslider_container` | a `controlbar`-on, balra-fent-jobbra |
+| `video_control_bar/time` | **szövegkijelző**, `m_systemfont11`, **középre zárt** |
+| `video_control_bar/sliderbaseL` | X: `+9` |
+| `video_control_bar/sliderbaseC` | X: `+10 … −10` |
+| `video_control_bar/sliderbaseR` | X: `−9` |
+| `video_control_bar/scaleslider` | X: `+10 … −10`, `Property slider 0` |
+| `video_control_bar/thumb` | a `scaleslider` bal-felső sarkához |
+
+**Hangerő**
+
+| elem | horgony |
+|---|---|
+| `video_control_bar/volumeslider_base` | a `controlbar` **jobb** felső sarkához |
+| `video_control_bar/volumeslider` | ugyanoda, `Property slider 0` |
+| `video_control_bar/volumethumb` | a `volumeslider` bal-felső sarkához |
+
+**Gombok (mind a `controlbar` JOBB oldalán)**
+
+| elem | ikon | buboréksúgó |
+|---|---|---|
+| `video_control_bar/setin` | `setin_icon` (X: közép **−2**) | „Create a new starting point" |
+| `video_control_bar/setout` | `setout_icon` (X: közép **+2**) | „Create a new ending point" |
+| `video_control_bar/moviemode1` | `fullscreen_icon` (középre) | „Play full screen" |
+
+**Alap**
+
+`video_control_bar/controlbar: root` — X-re nyújtva, felülre igazítva ·
+`video_control_bar/moviecontrolsclip` — a `controlbar` bal-felső sarkához
+
+### ⚠️ A buboréksúgók NINCSENEK lefordítva
+
+A három súgószöveg **közvetlenül a `.tre`-ben** áll, angolul, és a
+`video_control_bartext.tre` (a szokásos szövegfájl) **ugyanazt az angol
+szöveget** tartalmazza. A magyar erőforrásokban egyikük sem szerepel.
+
+A vágópontok **feliratai** viszont le vannak fordítva
+(`filter_moviestart_label0` → „Kezdőpont", `filter_movieend_label0` →
+„Végpont") — tehát a hiány a súgókra korlátozódik.
+
+> A PicasaPy-nak ezeket **le kell fordítania**: „Új kezdőpont
+> létrehozása", „Új végpont létrehozása", „Lejátszás teljes képernyőn".
+
+### Kikommentezett, elhagyott elemek
+
+A fájl négy blokkot tartalmaz `#`-mel kikommentezve: a `setin-label` és a
+`setout-label` **feliratszövege**, egy `1to1` gomb, és a `trimcontrolbar`.
+Vagyis a két vágópont-gomb eredetileg **feliratot is kapott volna** —
+a kiadott változatban csak ikon van rajtuk.
+
+*Bizonyítottsági fok: megerősített* (a `video_control_bar.tre` teljes
+tartalma és az `editpanel.tre` három hivatkozási pontja).
+
+### A csempe buboréksúgója a szűrő objektumból jön (2026-08-16) — az N3 lezárva
+
+Az N3 azt kérdezte, megjelenik-e a buboréksúgó a csempe-rácsban, és a
+`filter_<Kulcs>_tooltip0` szövege-e. **Mindkettőre igen.**
+
+#### A szűrő-objektum felülete: `CGenericFilter`
+
+Az RTTI szerint a `CGenericFilter::vftable` (`0x008d184c`) hetedik és
+nyolcadik bejegyzése a **felirat** és a **buboréksúgó** lekérdezője:
+
+| index | eltolás | cím | mit ad vissza |
+|---:|---|---|---|
+| 5 | `+0x14` | `0x008f6cc0` | **állapot** (egész) — a jelvényhez |
+| **6** | `+0x18` | **`0x008fc000`** | a **felirat** — `filter_%s_label0` |
+| **7** | `+0x1c` | **`0x008fc090`** | a **buboréksúgó** — `filter_%s_tooltip0` |
+
+A súgó-lekérdező magja (`0x008fc090`, 130 bájt):
+
+```asm
+0x008fc0af  push 0xcd09a4          ; "filter_%s_tooltip0"
+0x008fc0b4  lea  esi, [esp + 0x10]
+0x008fc0b8  call 0x40eab0          ; sprintf → "filter_<Kulcs>_tooltip0"
+```
+
+Vagyis a súgó **erőforrás-kulcsból** épül, a szűrő nevével behelyettesítve —
+pontosan úgy, ahogy a felirat.
+
+#### A csempe-kirakó MINDHÁRMAT lekérdezi
+
+`0x005d7c20`, csempénként:
+
+```asm
+0x005d7eb9  mov edx, [eax + 0x14]   ; vtbl[5] — állapot
+0x005d7ebc  call edx
+0x005d7ec7  mov edx, [eax + 0x18]   ; vtbl[6] — FELIRAT
+0x005d7ecf  call edx
+0x005d7f47  mov eax, [edx + 0x1c]   ; vtbl[7] — BUBORÉKSÚGÓ
+0x005d7f4a  call eax
+```
+
+A rács tehát **minden csempéhez lekéri a súgót**. Egy nem használt értéket
+nem kérdezne le tizenkétszer fülenként.
+
+#### Amit ez a fordításról mond
+
+A súgószövegek a `*text.tre` szövegforrásban **le vannak fordítva** — a
+kilenc Shift-változatét már összegyűjtöttük (`picasa-effekt-nevek.md`).
+A `filter_<Kulcs>_tooltip0` kulcsalak ismeretében **bármelyik** effekt
+súgója kikereshető.
+
+> ⚠️ Ellentétben a **videó vezérlősávjával**, ahol a három súgó
+> angolul, közvetlenül a `.tre`-ben áll (`picasa-linux-mod.md`
+> szomszédságában, `video_control_bar.tre`) — az effekt-csempéké
+> szabályos, fordítható erőforrás.
+
+*Bizonyítottsági fok:* **erős** — a vtable-index és az erőforrás-kulcs
+egyértelmű, és a kirakó mind a hármat meghívja. Megerősítetté egy
+egérmutatós képernyőkép tenné.
+
+### Az 1. fül `picnik` gombja: „Kreatív készlet" — halott online funkció (2026-08-16)
+
+Az `editpanel/picnik` a **szerkesztő 1. fülén** ül (`tabpanel1`), nem a
+rács alatt (az a `picnik_fx`, lásd fentebb). Ez zárja le az utolsó
+nyitott pontot az effekt-panelen.
+
+#### Az 1. fül teljes gombsorrendje (`editpanel.tre` 130–240)
+
+| # | elem | mi ez |
+|---:|---|---|
+| 1 | `editpanel/crop` | Vágás |
+| 2 | `editpanel/redeye` | Vörösszem |
+| 3 | `editpanel/enhance` | Kiegyenlítés |
+| **4** | **`editpanel/picnik`** | **Kreatív készlet** ← halott |
+| 5 | `editpanel/autocolor` | Automatikus szín |
+| 6 | `editpanel/autolighting` | Automatikus fény |
+| 7 | `editpanel/filllightlabel` + `backlight_container` | Derítőfény |
+| 8 | `editpanel/horizonadjust` | Vízszintbe állítás |
+| 9 | `editpanel/edittext` | Szöveg |
+| 10 | `editpanel/retouch` | Retusálás |
+| 11 | `editpanel/showtextlabel` + `showtextcheckbox` | „Szöveg megjelenítése" |
+
+A `picnik` gomb **stílusa a többivel azonos**: `m_buttontypecolor`,
+`m_offsetLT`, `Property hitchildren 1`, és a felirata alatta áll
+(`editpanel/picnik-label`, `m_buttonfontCbelow`).
+
+#### Mit csinált
+
+A **Picnik** (magyarul **„Kreatív készlet"**) a Google online
+fotószerkesztője volt. A gomb feltöltötte a fotót, és a szerkesztett
+változatot visszamentette.
+
+| erőforrás | HU |
+|---|---|
+| `PicnikWarn::Title` | **Szerkesztés a Kreatív készletben** |
+| `PicnikWarn::msg` | „Szerkeszti a fotó egy példányát a Kreatív készletben?\n\nA Kreatív készlet egy internetes fotószerkesztő csoda…" |
+| `PicnikWarn::YesButton` / `NoButton` | Igen / Nem |
+| `PicnikWarn::DontWarn` | A jövőben ne jelenjen meg ez a kérdés. |
+| `Picnik::UploadProgress` | Fotó átvitele a Kreatív készletbe… %d%% |
+| `Picnik::UploadError` | Hiba történt a Kreatív készlethez való csatlakozás során… hiba: %s |
+| `Picnik::SaveToPicasa` | Mentés a Picasába |
+| `Picnik::fileerr` | Lemezhiba miatt nem sikerült a fájl írása… |
+| `FilterListItem::ByPicnik` | **a Kreatív készlettől** |
+| `IDS_CONFIRM_UNDO_Picnik` | **A Kreatív készlet módosításai az Újra művelettel nem állíthatók vissza.** Visszavonja a műveletet? |
+
+Két érdekesség:
+
+1. A **szűrő-lista** külön megjelölte a Kreatív készlettől származó
+   módosításokat (`FilterListItem::ByPicnik`).
+2. A Kreatív készlet módosításai **nem voltak újra-alkalmazhatók** —
+   a visszavonás után elvesztek.
+
+#### A szolgáltatás 2012-ben megszűnt
+
+A gomb ma **működésképtelen**. A `picnik=1;` bejegyzés a `filters=`
+láncban ezért marad néma jelző (`chain.py` `_NOOP_MARKERS`), és a natív
+szűrő-táblában sincs képpont-kezelője (`picasa-native-filter-registry.md`).
+
+> **Javaslat (nem kérdés):** a gombot **hagyjuk ki** a mi 1. fülünkről —
+> egy nem létező szolgáltatás indítógombja. Ez a rács negyedik helyét
+> érinti; a többi tíz vezérlő sorrendje változatlan. Ha valaha mégis kell
+> a hely kitöltése, a helyettesítéséről külön döntés kell
+> (`docs/decisions/`).
+
+*Bizonyítottsági fok: megerősített* (a `.tre` gombsorrend és a tizenegy
+erőforrás-bejegyzés a hivatalos magyar fordítással).

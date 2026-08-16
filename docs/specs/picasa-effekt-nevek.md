@@ -185,3 +185,69 @@ felületre kerül. Az eredeti fordítás minősége szűrőnként változik.
 - `unsharp2` — A fotó széleinek élesítése *(Sharpens edges in your photo)*
 - `Vignette` — Besötétíti a fotó széleit *(Darken the edges of your photo)*
 - `warm` — A meleg tónusok erősítésével javítja a bőr tónusait *(Improves skintones by boosting warm tones)*
+
+## A kilenc SHIFT-változat neve és buboréksúgója (2026-08-16)
+
+A Shift lenyomva tartása kilenc effekt-csempét a másodlagos változatára vált
+(`ui-audit-editor.md` → „A második tokent a SHIFT billentyű kapcsolja").
+Mind a kilencnek **saját felirata és buboréksúgója** van a szövegforrásban —
+ez **független megerősítése** annak, hogy tényleg önálló effektek, nem
+ugyanannak a csempének a paraméterezései.
+
+### A négy „régi" változat
+
+A felirat maga mondja ki, hogy örökölt változatról van szó:
+
+| erőforrás | EN | HU |
+|---|---|---|
+| `filter_unsharp_label0` | Sharpen **(Old)** | Élesítés **(régi)** |
+| `filter_grain_label0` | Film Grain **(Old)** | **Régi** filmszemcse |
+| `filter_tint_label0` | Tint **(Old)** | Árnyalás **(régi)** |
+| `filter_glow_label0` | Glow **(Old)** | Ragyogás **(régi)** |
+
+Csúszkák és súgók:
+
+| erőforrás | EN | HU |
+|---|---|---|
+| `filter_unsharp_label1` | Amount | Mennyiség |
+| `filter_unsharp_tooltip0` | Sharpens edges in your photo | A fotó széleinek élesítése |
+| `filter_grain_tooltip0` | Adds film grain | Filmszemcse hozzáadása |
+| `filter_tint_label1` | Color Preservation | Színek megőrzése |
+| `filter_tint_tooltip0` | Makes a tinted look | Árnyalt megjelenést ad |
+| `filter_glow_label1` | Intensity | Intenzitás |
+| `filter_glow_label2` | Radius | Sugár |
+| `filter_glow_tooltip0` | Gives your photo a gauzy glow | Áttetsző ragyogást ad a fotónak |
+
+> A `filter_grain_*`-nak **nincs** `label1`-e — a régi filmszemcsének nincs
+> csúszkája, szemben a `grain2`-vel.
+
+### Az öt önálló nevű változat
+
+| erőforrás | EN | HU |
+|---|---|---|
+| `filter_radtint_label0` | Radial Tint | **Sugaras árnyalás** |
+| `filter_radtint_label1` | Feather | Lágy perem |
+| `filter_radtint_tooltip0` | Tints around a central point | Árnyalás egy középpont körül |
+| `filter_NightVision_label0` | Night Vision | **Éjjellátó** |
+| `filter_NightVision_tooltip0` | Mimics infrared night-vision cameras | Az infravörös éjjellátó kamerák képét utánzó hatás |
+| `filter_Matte_label0` | Matte | **Matt** |
+| `filter_Matte_tooltip0` | Add a light glow to the edges of your photo | A fotó széleinek világosítása |
+| `filter_PicnikFocalPixelate_label0` | Focal Pixelate | **Képpontnövelés** |
+| `filter_PicnikFocalPixelate_tooltip0` | Pixelate everything inside or outside a central area | Egy központi területen kívüli vagy belüli részek képpontnövelése |
+| `filter_RoundedEdges_label0` | Rounded Edges | **Kerekített élek** |
+| `filter_RoundedEdges_tooltip0` | Give your photo rounded corners | A fotó sarkainak lekerekítése |
+
+### Amit ez eldönt
+
+1. **A Shift-változat önálló effekt**, saját névvel és súgóval — nem
+   ugyanannak a hatásnak a másik beállítása.
+2. **A `Matte` valóban a Vignetta rokona**: a súgója szerint a fotó
+   *széleit világosítja*, míg a vignetta sötétíti. Ugyanaz a geometria,
+   fordított irány.
+3. **A `PicnikFocalPixelate` magyar neve „Képpontnövelés"** — a `Pixelate`
+   magyar neve az `ui-audit-editor.md` szerint szintén „Képpontnagyítás",
+   tehát a két név a magyar felületen **könnyen összetéveszthető**; a
+   különbséget a súgó mondja meg.
+
+*Bizonyítottsági fok: megerősített* (a `*text.tre` szövegforrásokból
+kinyert `stringres-en-hu.tsv`, mind a kilenc bejegyzés megvan).

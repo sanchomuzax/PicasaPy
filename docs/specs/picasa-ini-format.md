@@ -1510,3 +1510,189 @@ hivatkozás. Ha a kontakt-írás hibázik, a `faces=` sor sem íródik ki.
 > `rect64(…)` van. A `rect(...)` a naplóba megy.
 
 *Bizonyítottsági fok: megerősített* (diszasszemblált kód + 859 fájlos korpusz).
+
+## A videó vágópontjai: `moviestart` és `movieend` (2026-08-16)
+
+A `filters=` láncban két olyan kulcs is szerepelhet, ami **csak videóknál**
+értelmes. Eddig „paraméter nélküli jelzőként" tartottuk nyilván őket —
+**tévesen: hexadecimális értéket hordoznak.**
+
+### A valós korpusz mind a két esete
+
+859 fájlból kettőben szerepelnek:
+
+| fájl | a `filters=` lánc |
+|---|---|
+| `M4V01960.MP4` | `moviestart=bf0df826;` |
+| `M4V01962.MP4` | `movieend=b40728fd;moviestart=80252d;` |
+
+### Amit ez a két sor eldönt
+
+**1. Van paraméterük, és hexadecimális.** Nem jelzők.
+
+**2. A hex NINCS nullákkal feltöltve.** A `80252d` **hat** jegy, nem nyolc.
+Ez eltér a szín-paramétertől, ami mindig `%08x` (nyolc jegy) — a
+parszernek itt **változó hosszú** hexet kell tűrnie.
+
+**3. A sorrend itt sem kötött:** a `M4V01962.MP4`-nél a `movieend`
+**megelőzi** a `moviestart`-ot. (Összhangban a lánc-sorrendről szóló
+korábbi lelettel.)
+
+### A feliratuk
+
+| erőforrás | EN | HU |
+|---|---|---|
+| `filter_moviestart_label0` / `CTimeFilter::startname` | Start Point | **Kezdőpont** |
+| `filter_movieend_label0` / `CTimeFilter::endname` | End Point | **Végpont** |
+
+Az osztálynév — `CTimeFilter` — megerősíti, hogy **idő**-szűrőről van szó.
+
+### Mit jelent az érték? (feltételes)
+
+| érték | egész | `/ 2³²` |
+|---|---:|---:|
+| `bf0df826` | 3 204 604 966 | **0,7461** |
+| `80252d` | 8 398 637 | **0,0020** |
+| `b40728fd` | 3 020 530 941 | **0,7033** |
+
+A `M4V01962.MP4`-nél így **0,20 %-tól 70,3 %-ig** tart a megtartott
+szakasz — értelmes vágás. Időegységként viszont nem értelmezhető:
+ezredmásodpercként a kezdőpont 2,3 óra lenne egy családi videóban.
+
+> **Munkahipotézis:** a két érték a klip hosszának **32 bites törtrésze**
+> (érték / 2³²), a `rect64` szellemében, ami koordinátánként 16 bites
+> törtet használ.
+>
+> *Bizonyítottsági fok: feltételes* — lásd a következő szakaszt: a klipek
+> hosszát azóta kimértük, és ez **két** hipotézist hagyott állva.
+
+### ❌ Nálunk ma hibásan nulla paraméterű
+
+`src/picasapy/ini/filter_registry.py:237–238` — `moviestart: 0`,
+`movieend: 0`. A `render/chain.py:176` pedig a `_NOOP_MARKERS` közé sorolja
+őket. A round-trip emiatt nem sérül (a nyers sztringet megőrizzük), de a
+regiszter **téves adatot** állít, és erre későbbi validáció épülhet.
+
+*Bizonyítottsági fok: megerősített* arra, hogy van paraméterük és
+változó hosszú hex (a korpusz két esete) · **feltételes** a jelentésére.
+
+### A vágópontok MÉRÉSE — négyből kettő hipotézis maradt (2026-08-16)
+
+Az érintett klipek hossza `ffprobe`-bal kimérve:
+
+| fájl | hossz |
+|---|---:|
+| `M4V01960.MP4` | **374,374 s** (6:14) |
+| `M4V01962.MP4` | **385,886 s** (6:26) |
+
+*(A harmadik érintett klip — `M4V09238.MP4`, `movieend=e88a1626` — a
+gyűjteményben már nincs meg.)*
+
+#### A négy hipotézis a mért hosszakon
+
+| érték | egész | **tört** (`v/2³²·hossz`) | **100 ns** | **µs** | a klip hossza |
+|---|---:|---:|---:|---:|---:|
+| `bf0df826` (1960 start) | 3 204 604 966 | 279,3 s | 320,5 s | 3 204 s ❌ | 374,4 s |
+| `80252d` (1962 start) | 8 398 637 | 0,75 s | 0,84 s | 8,4 s | 385,9 s |
+| `b40728fd` (1962 end) | 3 020 530 941 | 271,3 s | 302,0 s | 3 020 s ❌ | 385,9 s |
+
+#### ❌ Kizárva
+
+- **Ezredmásodperc**: a legnagyobb érték 839 óra lenne.
+- **Mikroszekundum**: 3 020 s, illetve 3 204 s — **a klipek nyolcszorosa**.
+
+#### ✅ Ami állva maradt — KÉT hipotézis
+
+**(a) A hossz 32 bites törtrésze** (`érték / 2³²`). Mindhárom érték a klipen
+belülre esik, és a skála **klip-hossztól független** — nincs felső korlát.
+
+**(b) 100 nanoszekundumos egység** — a Windows `REFERENCE_TIME`, a
+DirectShow és a Media Foundation alapegysége. Mindhárom érték a klipen
+belülre esik. Egy DirectShow-korabeli Windows-alkalmazásnál (a Picasa az)
+ez a legkézenfekvőbb választás.
+
+Az egyetlen szerkezeti ellenérv a (b) ellen: **32 biten a 100 ns-os egység
+7 perc 9 másodpercnél elfogy** (`0xFFFFFFFF·10⁻⁷ = 429,5 s`). A két mért
+klip 6:14 és 6:26 — épphogy alatta. Ha a Picasa 64 bites mezőt ír `%x`-szel
+(a `80252d` hat jegye mutatja, hogy **nincs nullákkal feltöltve**), akkor
+nincs plafon, és az ellenérv elesik.
+
+#### A DÖNTŐ mérés, amit el kell végezni
+
+Kell **egy 7 percnél hosszabb klip vágóponttal**, aminek a vágópontja
+429 másodperc utánra esik:
+
+- ha az érték **meghaladja** a `0xFFFFFFFF`-et → **(b) igaz**, 100 ns-os idő;
+- ha az érték `0xFFFFFFFF` alatt marad, de a klipen belüli **aránya**
+  stimmel → **(a) igaz**, törtrész.
+
+A jelenlegi gyűjteményben ilyen klip nincs.
+
+*Bizonyítottsági fok:* **megerősített** a két kizárt hipotézisre (a mért
+hosszak nyolcszoros túllépése egyértelmű) · a maradék kettő között a
+következő szakasz dönt.
+
+### A vágópont 64 bites, `%I64x` alakban — a skála eldőlt (2026-08-16)
+
+A mérés két hipotézist hagyott állva. **A parszer maga dönti el.**
+
+#### A beolvasó út
+
+```asm
+0x0046470a  push 0xc81978          ; "moviestart="
+0x00464710  call 0xc07f40          ; strstr(lánc, "moviestart=")
+0x0046471e  lea  edx, [esi + 0xb]  ; +11 = a "moviestart=" hossza → az érték
+0x00464742  call 0x985ff0          ; a részsztring másolása
+0x0046474b  call 0x49fb50          ; ← az ÉRTELMEZŐ
+0x00464754  mov  ebx, eax          ; az eredmény ALSÓ 32 bitje
+0x00464756  mov  [esp+0x2c], edx   ; az eredmény FELSŐ 32 bitje
+```
+
+És az értelmező (`0x0049fb50`, 72 bájt) magja:
+
+```asm
+0x0049fb7e  push 0xc82fcc          ; "%I64x"
+0x0049fb84  call 0xc07eef          ; sscanf
+```
+
+**A vágópont tehát 64 bites, hexadecimálisan tárolt egész** (`%I64x`).
+
+#### Ez dönti el a skálát
+
+| érv | mit mond |
+|---|---|
+| a mező **64 bites** | a „32 biten a 100 ns 7 perc 9 mp-nél elfogy" ellenérv **elesik** |
+| a `%I64x` alak | ez a Windows `LONGLONG` szokásos kiírása; a **`REFERENCE_TIME`** (DirectShow, Media Foundation) pontosan `LONGLONG` **100 ns**-os egységben |
+| a törtrész-hipotézis | egy arányt **64 biten, `2³²`-es nevezővel** tárolni értelmetlen — az alsó 32 bit sosem lenne kihasználva |
+| a mért értékek | 100 ns-ként mindhárom a klipen **belülre** esik (320,5 s / 374,4 s; 0,84 s és 302,0 s / 385,9 s) |
+
+> **A vágópont 100 nanoszekundumos egységben mért abszolút idő** a klip
+> elejétől — a Windows `REFERENCE_TIME`.
+>
+> `másodperc = érték · 10⁻⁷`
+
+#### A nulla jelentése
+
+```asm
+0x00464766  cmp  dword ptr [esp+0x2c], 0   ; felső 32 bit
+0x0046476b  ja   0x464775
+0x0046476d  test ebx, ebx                   ; alsó 32 bit
+0x0046476f  jbe  0x4647fc                   ; nulla → ÁTUGRIK
+```
+
+A **0 érték azt jelenti, hogy nincs vágópont** — a szűrő ilyenkor létre sem
+jön.
+
+#### Miért nem lehetett méréssel eldönteni
+
+A gyűjteményben **86 videó** szerepel a `.picasa.ini`-kben, négy
+formátumban (`mp4` 52, `mpg` 29, `mov` 4, `m4v` 1) — de **mindössze
+háromnak** volt valaha vágópontja, és abból kettő maradt meg. Egy hosszabb
+videó vágópont nélkül nem mond semmit; a döntést a bináris hozta meg, nem a
+mérés.
+
+*Bizonyítottsági fok:* **erős** — a 64 bites `%I64x` alak és a
+`REFERENCE_TIME` egyezése, plusz mindhárom mért érték illeszkedése.
+Megerősítetté akkor válik, ha előkerül egy `0xFFFFFFFF`-nél nagyobb
+(kilenc vagy több jegyű) vágópont: azt a törtrész-hipotézis nem tudná
+előállítani.

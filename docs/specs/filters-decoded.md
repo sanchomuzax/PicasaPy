@@ -718,7 +718,10 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
    parszernek változó hosszú hex-színt kell tűrnie. **A korábbi „két külön
    színkódolás" nyom (colorwheel version) 2026-08-15-én megdőlt**; a
    render-oldal viszont teljes, és a szín `0x00RRGGBB` sorrendű.
-5. retouch/redeye régió-adatok, text overlay — régió-alapúak, 2. fázisban
+5. ~~retouch/redeye régió-adatok~~ — **LEZÁRVA (2026-08-16), NEGATÍV
+   eredménnyel: a `.picasa.ini` NEM tartalmaz régió-adatot hozzájuk**, lásd
+   „A `redeye` és a `retouch` sosem hordoz régiót" alább. A text overlay
+   (`text=`) formátuma a #371-ben megfejtve.
 6. ~~**Összehasonlító harness** (PicasaPy render vs golden, SSIM/ΔE)~~ —
    KÉSZ (#115): `tools/golden/compare_render.py`, ld. lent.
 7. ~~a 4–5. effekt-fül paraméter-jelentései (#190 2. kör)~~ — **MEGOLDVA
@@ -754,7 +757,11 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
    `0,25` vs v2 `0,5`) olcsón ellenőrizhető — igazolás esetén a v1-hez
    **nem kell külön LUT**, és a 8. pont „finetune2-hő" tétele is olcsóbb
    lesz.
-10. **`fullres` / `slow` / `resize` jelzők beépítése a renderelőbe.** A
+10. **`fullres` / `slow` / `resize` jelzők beépítése a renderelőbe.**
+    ⚠️ **RÉSZBEN KÉSZ (2026-08-16):** az ADAT megvan és ki is számoljuk
+    (`render/registry.py:156` `chain_flags`, a `ChainReport` hordozza), de
+    **egyetlen fogyasztója sincs** — lásd „A sáv-jelzőknek nincs
+    fogyasztója" alább. Az eredeti jegyzet: A
     `filterdesc.xml` minden szűrőnél megmondja, hogy csak teljes
     felbontáson helyes-e, drága-e, illetve **méretváltó-e** (`Border`,
     `MuseumMatte`, `Polaroid`, `Cinemascope`, `DropShadow`,
@@ -1700,8 +1707,16 @@ csúszka, nem képarányfüggő. Az `unsharp` és az `unsharp2` **ugyanaz a
 callback**; a `filterdesc.xml` szerint csak az Amount felső korlátja tér el
 (1,0 vs 3,0), ami ezzel a képlettel konzisztens.
 *Bizonyítottsági fok: megerősített* (a képlet és az 1,5).
-**Nyitva:** magának az elmosómagnak a pontos alakja (a `FUN_00a42c20` mögötti
-objektum 2-es módja) — ehhez egy mélyebb kör kell.
+~~**Nyitva:** magának az elmosómagnak a pontos alakja (a `FUN_00a42c20` mögötti
+objektum 2-es módja) — ehhez egy mélyebb kör kell.~~
+
+> ⚠️ **HELYESBÍTÉS (2026-08-16): a `FUN_00a42c20` NEM elmosómag.** Az RTTI
+> szerint ez a **`ytResampler::vftable` 9. bejegyzése**, vagyis egy
+> **átméretező** (resampler) virtuális metódusa — a binárisban **17**
+> egymástól független helyről hívják (indexkép, export, nyomtatás,
+> szerkesztő). Az `unsharp` elmosása tehát az **átméretezőn** keresztül
+> készül, nem a Picasa IIR-elmosóján. Részletek: „Az `unsharp` elmosása
+> az ÁTMÉRETEZŐBŐL jön" alább.
 
 ### `blur` — ugyanaz a motor, a csúszka a sugár
 
@@ -1977,10 +1992,11 @@ dekompilátum betű szerinti olvasata egyben a mérésen is a legjobb.
 
 *Bizonyítottsági fok: megerősített* az ablak vízszintes horgonya (a
 rámpa-mérés geometriai érve + a 12 képpár + a dekompilált
-mutató-aritmetika). **Nyitva marad** az ablak pontos SZÉLESSÉGE: a
-`0,9·W` a dekompilátumból jön, a rámpa fehér vége (235,4) viszont egy
-hajszálnyival szélesebb ablakhoz (~0,94·W) illene jobban. Ehhez maga a
-#685 mérőrámpa kellene — valódi fotókon a különbség a mérési zaj alatt van.
+mutató-aritmetika). ~~**Nyitva marad** az ablak pontos SZÉLESSÉGE~~ —
+**LEZÁRVA (2026-08-16)**, utasításszinten: lásd „Az elemzőablak szélessége
+utasításszinten" alább. Az eredeti jegyzet: a `0,9·W` a dekompilátumból
+jön, a rámpa fehér vége (235,4) viszont egy hajszálnyival szélesebb
+ablakhoz (~0,94·W) illene jobban.
 
 Megvalósítás: `picasapy.render.ops._analysis_region`; regressziós őr:
 `tests/render/test_ops.py::TestEnhanceVagasiPontok721`. Ugyanez hat az
@@ -2793,3 +2809,283 @@ nem az objektumban (a konstruktor mindent nulláz). Belépési pont a
 *Bizonyítottsági fok: megerősített* az attribútum-névsorra és arra, hogy a
 `filterdesc` egyszer sem állítja az `aspectRatio`-t · **nyitott** a tartalék
 értéke.
+
+## Az `unsharp` elmosása az ÁTMÉRETEZŐBŐL jön (2026-08-16)
+
+### A korábbi jelölés téves volt
+
+A lap eddig azt írta, hogy az `unsharp` elmosómagja a `FUN_00a42c20`
+mögötti objektum „2-es módja", és ezt nyitott kérdésként tartotta nyilván.
+**A `0x00a42c20` nem elmosómag.**
+
+| bizonyíték | mit mond |
+|---|---|
+| RTTI: `ytResampler::vftable` (`0x008e3fb4`) | a 9. bejegyzése **pontosan `0x00a42c20`** |
+| a hívói | **17** független hely a binárisban (`0x00425210`, `0x0042f430`, `0x00551b30`, `0x005550d0`, `0x005b0730`, `0x007e95f0`, `0x007ead60`, `0x007fb210`, `0x008cd360`, `0x0090c4a0`, `0x009ecdb0`, `0x00a50990`, `0x00a61040`, `0x00a61340`, `0x00a9f070`, `0x00bcb5e0`, `0x00425f60`) |
+| a hívottjai | `0x009a8a30`, `0x009a8bc0`, `0x009ae130`, `0x009e6340`, `0x009e6df0`, `0x009e75a0`, `0x00a40a50`, `0x00a43230` — **egyik sem** a Picasa elmosómagja |
+
+Egy elmosómagot nem hív a nyomtatás és az indexkép-készítés. Egy
+**átméretezőt** igen.
+
+### A Picasa elmosója MÁSHOL van, és már meg van fejtve
+
+A `0x009dd0d0` a Picasa általános elmosója (kétmenetes elsőrendű IIR) —
+`picasa-native-filter-workers.md` 4.2.1. Nyolc hely hívja:
+`0x0076f0f0`, `0x008f8520` (`radblur`), `0x008f9090` (`dir_sharp`),
+`0x0090b050` (sugaras maszk), `0x0090d3e0`, `0x0090d4b0` (`glow`),
+`0x0090de10`, `0x009e8c30`.
+
+**Az `unsharp` útvonala (`0x0090c4a0`) nincs köztük**, és a
+`0x00a42c20` hívottjai között sem szerepel a `0x009dd0d0`.
+
+### Amit ez jelent: két KÜLÖNBÖZŐ elmosás
+
+| szűrő | mivel mos el |
+|---|---|
+| `glow`, `glow2`, `radblur`, `dir_sharp`, sugaras maszk | `0x009dd0d0` — kétmenetes IIR |
+| **`unsharp`, `unsharp2`** | **`ytResampler`** (`0x00a42c20`), 2-es móddal |
+
+Az `unsharp` hívása (`0x0090c4a0`) 1,0/1,0 léptéket és 0/0 eltolást ad át
+(`fld1`/`fldz`, `0x0090c528`–`0x0090c53f`), a vizsgálati téglalap pedig a
+két kép **közös** metszete (`min(w₁,w₂)`, `min(h₁,h₂)`,
+`0x0090c4f2`–`0x0090c528`). Vagyis **1:1 arányú újramintavételezés**, aminek
+az egyetlen hatása a **szűrőmag elkenése** — a `1,5f` az így kapott mag
+szélessége.
+
+### ⚠️ Nálunk ez ma Gauss
+
+`src/picasapy/render/sharpen.py:31` — `cv2.GaussianBlur(kép, (0,0), 1.0)`,
+majd `erősség × 1,21`:
+
+| | eredeti Picasa | PicasaPy ma |
+|---|---|---|
+| az elmosás fajtája | **átméretező szűrőmag** (`ytResampler`, 2-es mód) | Gauss |
+| a mag szélessége | **1,5** | σ = **1,0** |
+| az erősség szorzója | nincs (nyersen a csúszka) | **× 1,21** |
+
+A `σ = 1,0` és az `1,21` **illesztett** értékek: a golden-párokra hangolt
+közelítései egy 1,5 szélességű, más alakú magnak. Ez magyarázza, miért
+maradt az `unsharp` a „finomítandó" listán.
+
+*Bizonyítottsági fok:* **megerősített** arra, hogy a `0x00a42c20` a
+`ytResampler` metódusa és nem elmosómag (RTTI + a hívói köre) ·
+**megerősített** arra, hogy az `unsharp` nem a `0x009dd0d0`-t használja
+(mindkét hívási lista kiolvasva) · **erős** az „1:1 újramintavételezés"
+olvasatra (a lépték- és eltolás-argumentumok a kódból).
+
+**Nyitva marad:** a `ytResampler` 2-es módjának **konkrét magja** (súlyok
+vagy analitikus alak). Ott folytassa, aki az `unsharp`-ot kalibrálja:
+`0x00a42c20` → `0x00a43230` (a súlytábla-építő, 336 bájt).
+
+### A `ytResampler` felezőlépése: sima 2×2 doboz-átlag (2026-08-16)
+
+Az előző szakasz nyitva hagyta a `ytResampler` magját. Az első lépés
+megvan: a `0x00a43230` (336 bájt) **kettes osztású kicsinyítés**, és a
+mag **sima 2×2 doboz-átlag** — se Gauss, se Lanczos, se súlyozás.
+
+#### A célméret
+
+```asm
+0x00a43243  mov  eax, dword ptr [ecx + 8]    ; forrás szélesség
+0x00a43255  sar  esi, 1                       ; /2
+0x00a43257  sar  eax, 1                       ; /2  (magasság)
+0x00a43259  cmp  ebp, esi                     ; min(cél_szél, forrás_szél/2)
+0x00a4326b  cmp  ebx, eax                     ; min(cél_mag,  forrás_mag/2)
+```
+
+#### A mag: négy képpont átlaga, SWAR-ral
+
+Négy szomszédos képpontot olvas (`[ebx]`, `[ebx+4]` — a felső sor;
+`[edi]`, `[edi+4]` — az alsó), és a két csatornapárt **külön** összegzi:
+
+```asm
+and  eax, 0xff00ff        ; a PÁROS csatornák (R és B)
+shr  ecx, 8
+and  ecx, 0xff00ff        ; a PÁRATLAN csatornák (G és A)
+...                        ; mind a négy képpont hozzáadva
+0x00a4332a  shl  ecx, 6    ; (páratlan összeg / 4) << 8
+0x00a4332d  shr  eax, 2    ; páros összeg / 4
+0x00a43330  xor  eax, ecx  ; a két mező diszjunkt → összefésülés
+```
+
+`shl ecx, 6` = `(összeg >> 2) << 8`, tehát **mindkét összeg néggyel
+osztódik**. A `xor` azért működik összefésülésként, mert a két mező nem
+fed át.
+
+> **Csonkoló osztás, nincs kerekítés.** A `shr` lefelé kerekít; a Picasa
+> nem ad hozzá 2-t a felezéshez.
+
+#### Amit ez jelent
+
+1. **Az `unsharp` elmosása doboz-átlagokból épül**, nem Gauss-magból. Ez
+   magyarázza, miért csak illesztéssel (σ = 1,0 és ×1,21) tudtuk közelíteni.
+2. **A Picasa kicsinyítése lépcsős**: ismételt 2× felezés, nem egyetlen
+   tetszőleges arányú újramintavételezés.
+3. **Nálunk a kicsinyítés `cv2.INTER_AREA`** (`src/picasapy/cvimage.py:87`).
+   Pontosan 2× arányban ez ugyanaz a doboz-átlag — de **kerekít**, míg a
+   Picasa csonkol; nem 2-hatvány arányban pedig egészen más utat jár be.
+
+*Bizonyítottsági fok: megerősített* (a teljes aritmetika kiolvasva, a
+maszkok és a két eltolás egyértelmű).
+
+**Nyitva marad:** a felezés utáni **utolsó** lépés (a nem 2-hatvány
+maradék kezelése) — `0x00a42c20` további hívottjai: `0x009e6340`,
+`0x009e6df0`, `0x009e75a0`.
+
+## A sáv-jelzőknek nincs fogyasztója (2026-08-16)
+
+A „Nyitva 10" pont a `filterdesc.xml` három jelzőjének beépítését kérte.
+**Az adat oldala kész, a viselkedés oldala nem.**
+
+### Ami megvan
+
+| réteg | állapot |
+|---|---|
+| a jelzők a regiszterben | ✅ `render/registry_data.py:41` — `full_res`, `slow`, `resizes` oszlop |
+| láncszintű összegzés | ✅ `render/registry.py:156` — `chain_flags(keys) → (full_res, slow, resizes)` |
+| a jelentésbe kerül | ✅ `render/chain.py:774`, a `ChainReport.full_res` / `.slow` / `.resizes` mezőben |
+
+Számokban: **19** szűrő `fullres`, **13** `slow`, és **6** `resizes`
+(`border`, `cinemascope`, `dropshadow`, `museummatte`, `polaroid`,
+`roundededges`).
+
+### Ami HIÁNYZIK
+
+A `render/` csomagon **kívül egyetlen hivatkozás sincs** a három mezőre.
+Az előnézet (`app/edit_preview.py:28`) meghívja az `apply_filters`-t, meg is
+kapja a `ChainReport`-ot, de a jelzőket **eldobja**.
+
+Három következmény:
+
+1. **19 szűrő csak teljes felbontáson helyes** (`fullres`), és mi mindegyiket
+   a kicsinyített előnézeten futtatjuk. A felhasználó ezeknél mást lát az
+   előnézetben, mint a mentett képen.
+2. **13 szűrő drága** (`slow`), és mind a felület szálán fut. Ezeknél
+   akadozik a szerkesztő.
+3. **6 szűrő megváltoztatja a kép méretét** (`resizes`), és a downstream
+   geometria — vágás, arckeretek, szövegréteg-pozíció — ezt nem veszi
+   figyelembe.
+
+> A #382 a jelzőket **adatként** vezette be, és ez helyes volt. A
+> viselkedés bekötése külön munka, amit a jelen kör nyitott jegyre tesz.
+
+*Bizonyítottsági fok: megerősített* (a hivatkozások teljes keresése a
+`src/picasapy/` alatt; a `full_res`/`.resizes` mezőre a `render/` csomagon
+kívül nulla találat).
+
+## A `redeye` és a `retouch` sosem hordoz régiót (2026-08-16)
+
+A „Nyitva 5" pont a `retouch`/`redeye` régió-adatait kereste. **Nincsenek
+a `.picasa.ini`-ben** — két, egymástól független bizonyíték zárja le.
+
+### 1. A valós korpusz: 310 bejegyzés, mind paraméter nélküli
+
+859 valós `.picasa.ini`-ben:
+
+| bejegyzés | előfordulás | változat |
+|---|---:|---|
+| `redeye=1` | **228** | **egyetlen** alak, paraméter nélkül |
+| `retouch=1` | **82** | **egyetlen** alak, paraméter nélkül |
+
+Nulla olyan bejegyzés, amiben bármi állna az `1` után.
+
+### 2. A bináris: a lánc-szerializáló LITERÁLKÉNT tartalmazza őket
+
+A `0x00463fd0` (2 495 bájt) a `filters=` lánc szerializálója. A hivatkozott
+sztringjei egy helyen:
+
+```
+moviestart   rotate(-1)   rotate(%d)   redeye=1;   retouch=1;   picnik=1;
+rotate(0)    rect64(      moviestart=  movieend=   rect64(%I64x)
+```
+
+**Ez a döntő.** Ugyanaz a függvény, ami a forgatást `rotate(%d)`-vel és a
+vágást `rect64(%I64x)`-szel **formázza**, a vörösszemet és a retusálást
+**kész sztringként** írja ki: `redeye=1;`, `retouch=1;`. Nincs bennük
+formátum-jel, tehát **nincs mit beléjük írni**.
+
+*(A `picnik=1;` ugyanígy literál — összhangban azzal, hogy jelző, nem adat.)*
+
+### Ami ebből következik
+
+A vörösszem-javítás és a retusálás **a képpontokba sül**, az eredeti fájl
+pedig a `.picasaoriginals` mappában marad meg. A `redeye=1` / `retouch=1`
+csak azt jelzi, **hogy** történt ilyen művelet — nem azt, **hol**.
+
+A régió-adat helye a központi adatbázis (`db3`), lásd **#371**.
+
+> ⚠️ **A PicasaPy `retouch` régió-kiterjesztése** (`ini/retouch.py`) ezért
+> **marad PicasaPy-saját**, és a Picasa sosem fogja értelmezni. Ez tudatos
+> döntés volt (#148, #445); most már bizonyított, hogy nem is lehetett
+> volna másképp.
+
+*Bizonyítottsági fok: megerősített* — a korpusz 310 bejegyzése és a
+szerializáló sztring-táblája egymástól függetlenül ugyanazt mondja.
+
+## Az elemzőablak szélessége utasításszinten (2026-08-16)
+
+A `0x009db610` elemzőablakának **szélessége** nyitott kérdés volt: a
+dekompilátum `0,9·W`-t adott, a #685 rámpa fehér vége viszont
+~`0,94·W`-hez illett volna jobban. **A nyers utasítások eldöntik.**
+
+### A négy határ kiszámítása
+
+A `0x51eb851f` a **100-zal osztás** bűvös konstansa (felső szorzat, majd
+`>> 5`):
+
+```asm
+0x009db6ac  lea  edx, [ecx + ecx*4]   ; 5·W
+0x009db6af  imul ecx, ecx, 0x5f       ; 95·W
+0x009db6b7  mul  edx                  ; ×0x51eb851f
+0x009db6e5  shr  edi, 5               ; edi = (5·W)/100    = 0,05·W
+0x009db6e8  shr  ebx, 5               ; ebx = (95·W)/100   = 0,95·W
+0x009db6dc  shr  ecx, 5               ; ecx = (95·H)/100   = 0,95·H
+0x009db6df  shr  edx, 5               ; edx = (5·H)/100    = 0,05·H
+```
+
+### A sorok: a peremet TÉNYLEG használja
+
+```asm
+0x009db6ef  mov  eax, dword ptr [ebp + 4]   ; sorlépés
+0x009db6f9  imul eax, edx                    ; × (5·H)/100
+0x009db705  lea  esi, [esi + eax*4]          ; a kezdő sor-mutató
+0x009db703  sub  ecx, edx                    ; sorok száma = 0,9·H
+```
+
+### Az oszlopok: a peremet ELEJTI
+
+```asm
+0x009db710  cmp  edi, ebx
+0x009db712  mov  eax, esi        ; ← a sor ELEJÉRŐL indul, NEM edi-től
+0x009db716  mov  edx, ebx
+0x009db718  sub  edx, edi        ; darabszám = (95·W)/100 − (5·W)/100
+0x009db720  …                    ; hisztogram, eax += 4, edx−−
+```
+
+Az `edi` (`0,05·W`) **kizárólag a darabszámban** szerepel; a mutató a
+`0.` oszlopról indul. Ez a Picasa saját, elejtett eltolása — nem
+egyszerűsítés a mi oldalunkon.
+
+### A pontos képlet — két KÜLÖN csonkítással
+
+```
+oszlopok = (95·W) // 100  −  (5·W) // 100
+```
+
+Ez **nem azonos** a `(90·W) // 100`-zal. Például `W = 13`:
+`(1235)//100 − (65)//100 = 12 − 0 = 12`, míg `(1170)//100 = 11`. A két
+külön egész osztás bizonyos szélességeknél **egy képpontnyi** többletet
+ad.
+
+> ✅ A megvalósításunk (`render/ops.py::_analysis_region`) betű szerint ezt
+> csinálja: `width * 95 // 100 - width * 5 // 100`.
+
+### Amit ez a rámpa-eltérésről mond
+
+A kód nem hagy szabadságot: **a szélesség pontosan a fenti képlet**. A
+#685 rámpa fehér végén mért ~`0,94·W`-nyi hatás tehát **nem** az ablak
+szélességéből jön — máshol kell keresni (a keverés, a küszöb vagy a
+rámpa saját peremhatása).
+
+*Bizonyítottsági fok: megerősített* (a négy határ kiszámítása és mindkét
+ciklus feje nyers utasításszinten).

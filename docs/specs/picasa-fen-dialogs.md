@@ -359,6 +359,43 @@ mintákra.
   - `group layout="column" width="fill"`: `edit name="watermark"` (**`<bind attr="enabled" source="usewatermark">`**) + kis magyarázó `label`
 - `buttongroup`: `button "Export" type="accept" name="export"`, `button "Cancel" type="cancel"`
 
+#### Melyik vezérlő melyik beállítást írja (2026-08-16)
+
+A párbeszéd kezelője a **`0x00738c00`** (3 035 bájt). A hivatkozott
+sztringjeiből a **teljes megfeleltetés** kiolvasható:
+
+| vezérlő (`.fen` név) | `Preferences`-kulcs |
+|---|---|
+| `location` (pathbox) | **`DefaultExportPath`** |
+| `sizeradio` (eredeti ↔ átméretezés) | **`FileExportSize`** |
+| `sizetext` / `size` csúszka | **`FileExportCustomSize`** |
+| `quality` (legördülő) | **`FileExportQualityType`** |
+| `qualslider` (egyéni minőség) | **`FileExportQuality`** |
+| `addnumbers` (jelölő) | **`ExportAddNumbers`** |
+| `usewatermark` (jelölő) | **`ExportWatermark`** |
+| `watermark` (szövegmező) | **`ExportWatermarkText`** |
+| `movies` (első kocka ↔ teljes film) | **`FileExportMovie`** |
+
+Az alapmappa neve erőforrásból jön:
+`CExportPrefsDialog::deffolder` → `Picasa\Exports\` /
+**`Picasa\Exportálások\`**.
+
+Az exportált mappa alapneve: `CExportPrefsDialog::exportname` → „export" /
+**„exportálás"**.
+
+Az „Egyéni" minőség felirata: `CExportPrefsDialog::qualcombo5` →
+„Custom (%d)" / **„Egyéni (%d)"**.
+
+A `size` csúszka 0–6 pozíciója a `.fen`-ben kötött listára képez:
+**320 · 480 · 640 · 800 · 1024 · 1200 · 1600** képpont.
+
+Ugyanez a kezelő olvassa a **`ShowUnixPaths`** kulcsot is (Wine alatt) —
+tehát az útvonal-megjelenítés az export-párbeszédben is követi a
+platformot (`picasa-linux-mod.md`).
+
+*Bizonyítottsági fok: megerősített* (a kezelő mind a 24 hivatkozott
+sztringje, és a feliratok a hivatalos magyar erőforrásból).
+
 ### 3.11 `options.fen` — Beállítások (V1/V2/V3, 9 fül)
 
 A legnagyobb `.fen` fájl (262 sor). Fülönként bontva:
