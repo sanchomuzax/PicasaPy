@@ -186,9 +186,52 @@ finetune (482), unsharp (469), warm (330), sat (266), Vignette (216).
 `finetune2` utolsó paramétere (`...,-0.578947;`). A parser fogadjon el
 tetszőleges előjeles floatot minden pozícióban.
 
-Nyitott kérdés: `finetune2` utolsó paramétere azonosítatlan; `enhance`/`autolight`/
-`autocolor` pontos algoritmusa nem publikus → pixelhű validálás szükséges
-(ld. research-plan.md).
+~~Nyitott kérdés: `finetune2` utolsó paramétere azonosítatlan~~ →
+**AZONOSÍTVA (2026-08-16), ld. lent.** Az `enhance`/`autolight`/`autocolor`
+algoritmusa azóta szintén visszafejtve
+([`filters-decoded.md`](filters-decoded.md)).
+
+### A `finetune2` paraméter-sora — mind az öt rekesz azonosítva
+
+A `filterdesc.xml` a szűrő négy csúszkáját és egy színkorongját adja meg;
+az ini-sorrend a 4.1 szabály szerint (*numerikusok max 3 → színek → maradék
+numerikus*) ebből egyértelműen levezethető:
+
+```
+finetune2=1, fill, highlights, shadows, SZÍN(8 hex), színhőmérséklet
+```
+
+| rekesz | vezérlő | `filterdesc` | tartomány |
+|---:|---|---|---|
+| 1 | `Fill Light` | `range 1.0` | `0 … 1` |
+| 2 | `Highlights` | `range 0.48` | `0 … 0,48` |
+| 3 | `Shadows` | `range 0.48` | `0 … 0,48` |
+| 4 | `colorcircle id="0"` | — | `00RRGGBB` (semleges-pipetta) |
+| **5** | **`Color Temperature`** | **`range 2.0`, `offset 1.0`** | **`−1 … +1`** |
+
+**Az „azonosítatlan, néha negatív" utolsó paraméter tehát a
+színhőmérséklet** — a negatív értékek a hidegebb oldal.
+
+#### Ellenőrzés a valós korpuszon (566 `finetune2` bejegyzés)
+
+| rekesz | mért minimum | mért maximum | medián | negatív |
+|---|---:|---:|---:|---:|
+| fill | +0,0000 | +0,4444 | 0 | 0 |
+| highlights | +0,0000 | **+0,2218** | 0 | 0 |
+| shadows | +0,0000 | **+0,3284** | 0 | 0 |
+| **színhőmérséklet** | **−0,5789** | **+1,0000** | 0 | **13** |
+
+A mért szélsőértékek **mind beleférnek** a `filterdesc` tartományaiba, és az
+5. rekesz az egyetlen, ami **negatívba megy** — pontosan az `offset 1.0`-s,
+`−1 … +1`-es tengely szerint.
+
+A 4. rekesz mért értékei a szürke `0x808080` körül szórnak
+(`00808080`, `007c8080`, `00848071`, `0084806e`, `00808071` …), ami
+megerősíti a **`0x00RRGGBB`** bájtsorrendet is: a `007c8080` kékesebb,
+a `00848071` melegebb semlegespont.
+
+*Bizonyítottsági fok: megerősített* (a `filterdesc.xml` deklarációja + 566
+valós bejegyzés).
 
 ## `rect64` kódolás (crop + arcok)
 
