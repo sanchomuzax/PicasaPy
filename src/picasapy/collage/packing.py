@@ -43,6 +43,7 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
+from .fitting import fisher_yates
 from .rects import NormRect
 
 # Egymás mellé (azonos magasság) — az oldalarányok összeadódnak.
@@ -352,15 +353,6 @@ def _best_tree(
     return (best_rects, best_cost)
 
 
-def _shuffle(order: Sequence[int], rng) -> list[int]:
-    """Fisher–Yates `rand() % n`-nel (`0x0088fcf0`)."""
-    items = list(order)
-    for i in range(len(items) - 1, 0, -1):
-        j = rng.rand() % (i + 1)
-        items[i], items[j] = items[j], items[i]
-    return items
-
-
 def pack(
     aspects: Sequence[float],
     page_aspect: float,
@@ -392,7 +384,7 @@ def pack(
 
     start = clock()
     while clock() - start < time_limit:
-        candidate = _shuffle(identity, rng)
+        candidate = fisher_yates(identity, rng)
         rects, cost = _evaluate(candidate, aspects, page_aspect, constraint)
         if cost < best_cost:
             best_rects, best_cost, best_order = rects, cost, candidate

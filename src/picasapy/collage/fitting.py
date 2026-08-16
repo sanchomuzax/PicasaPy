@@ -108,9 +108,23 @@ class MsvcRandom:
         return msvc_uniform01(self.rand())
 
 
+def fisher_yates(items, rng) -> list:
+    """Fisher–Yates keverés `rand() % n`-nel (`0x0088fcf0`).
+
+    Ugyanez a keverő szolgálja ki a Mozaik sorrend-keresését (`packing`) és
+    a „Képek összekeverése" parancsot (`canvas`) — az eredetiben is egy
+    rutin. ÚJ listát ad vissza, a bemenetet nem írja."""
+    result = list(items)
+    for i in range(len(result) - 1, 0, -1):
+        j = rng.rand() % (i + 1)
+        result[i], result[j] = result[j], result[i]
+    return result
+
+
 __all__ = [
     "MSVC_RAND_MAX",
     "MsvcRandom",
+    "fisher_yates",
     "fit_inside",
     "msvc_uniform01",
     "picasa_round",
