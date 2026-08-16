@@ -27,10 +27,6 @@ kérdés).
 
 1. **N4** — a csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés)
 
-### [ui-audit-mainwindow.md](ui-audit-mainwindow.md) — 1 kérdés
-
-1. Melyik `Preferences`-kulcs (`LastViewRoot` ↔ `LastViewRoot2`) melyik **nézet-rekeszbe** tartozik (889. sor)
-
 ### [picasa-native-filter-registry.md](picasa-native-filter-registry.md) — 1 kérdés
 
 1. A sugár-átváltótábla (`0xc7d5b8` = `[0, 1, 2, 5, 1, 2]`) hat bejegyzésének megfeleltetése: **melyik paraméter a sugár** az egyes esetekben
@@ -41,7 +37,7 @@ kérdés).
 
 ### Nincs nyitott kérdés
 
-`filterdesc-registry.md` · `ui-audit-context-menus.md` · és a lenti táblák
+`filterdesc-registry.md` · `ui-audit-context-menus.md` · **`ui-audit-mainwindow.md`** · és a lenti táblák
 minden további lapja.
 
 ## Formátum-specifikációk (adatfájlok, erőforrások)

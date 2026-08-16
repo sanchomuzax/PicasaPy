@@ -886,10 +886,69 @@ nézet-rekeszbe** kerül a gyökér — a két mentett gyökérnek (`LastViewRoo
 Ezt a `0x0040dc30` ága erősíti meg: ott `push 0; push <a másik gyökér>` áll,
 tehát a másik mentett útvonal a `0`-s rekeszbe megy.
 
-**Nyitva marad**, melyik `Preferences`-kulcs melyik rekeszbe tartozik: a két
-sztring a veremben (`[esp+0xc]` és `[esp+0x14]`) közvetve, több lépésen át
-kapja az értékét, és ezt nem követtük végig.
+~~**Nyitva marad**, melyik `Preferences`-kulcs melyik rekeszbe tartozik~~ —
+**MEGVÁLASZOLVA (2026-08-16)**, lásd „Melyik kulcs melyik nézet-rekeszbe
+tartozik" alább.
 
 *Bizonyítottsági fok:* **megerősített** a lapos alapértelmezésre (mindhárom
 ág kiolvasva) és arra, hogy a második argumentum nem a „különleges nézetet"
 jelöli · **nyitott** a két rekesz és a két kulcs megfeleltetése.
+
+### Melyik kulcs melyik nézet-rekeszbe tartozik (2026-08-16)
+
+Az előző szakasz nyitva hagyta, hogy a `LastViewRoot` és a `LastViewRoot2`
+közül melyik kerül az `1`-es, melyik a `0`-s nézet-rekeszbe. **A verem
+végigkövetése eldönti.**
+
+#### A két olvasás célja
+
+```asm
+0x0040dabe  lea esi, [esp + 0x9c]   ; ← a LastViewRoot kimenete
+0x0040dac5  call 0x407630           ;   (a "LastViewRoot" kulccsal)
+
+0x0040daf5  lea esi, [esp + 0x2c]   ; ← a LastViewRoot2 kimenete
+0x0040daf9  call 0x407630           ;   (a "LastViewRoot2" kulccsal)
+```
+
+#### A két kicsomagolás
+
+```asm
+0x0040db03  lea  ecx, [esp + 0x94]  ; a LastViewRoot burkolója (a payload +8)
+0x0040db0a  call 0x4078e0
+0x0040db3c  lea  edi, [esp + 0x18]  ; → a sztring a [esp+0x14]-be kerül
+0x0040db40  call 0x985ff0
+
+0x0040db45  lea  ecx, [esp + 0x24]  ; a LastViewRoot2 burkolója
+0x0040db49  call 0x4078e0
+0x0040db7c  lea  edi, [esp + 0x10]  ; (push edx után → a [esp+0xc]-be)
+0x0040db80  call 0x985ff0
+```
+
+#### A hozzárendelés
+
+```asm
+0x0040db85  mov  edi, dword ptr [esp + 0xc]    ; edi = LastViewRoot2
+0x0040db89  mov  esi, dword ptr [esp + 0x14]   ; esi = LastViewRoot
+0x0040db8d  test esi, esi
+0x0040db8f  je   0x40dc35                       ; üres → SetView("flat", 1)
+0x0040dbad  push 1
+0x0040dbaf  push esi                            ; SetView(LastViewRoot, 1)
+0x0040dbb2  call 0x575130
+0x0040dbb7  test edi, edi                       ; …majd a LastViewRoot2
+0x0040dc30  push 0
+0x0040dc32  push edi                            ; SetView(LastViewRoot2, 0)
+```
+
+| kulcs | nézet-rekesz | mi történik, ha üres |
+|---|:---:|---|
+| **`LastViewRoot`** | **1** (elsődleges) | a `"flat"` lép a helyébe, szintén `1`-gyel |
+| **`LastViewRoot2`** | **0** (másodlagos) | **kimarad** — nincs helyettesítés |
+
+#### Amit ez jelent
+
+A program **két nézet-gyökeret** tart nyilván, és **csak az elsődlegesnek
+van tartaléka**. Ha a másodlagos hiányzik, a hozzá tartozó rekesz üresen
+marad — a program nem esik vissza semmire.
+
+*Bizonyítottsági fok: megerősített* (a két olvasás célcíme, a két
+kicsomagolás és a hozzárendelés végigkövetve).
