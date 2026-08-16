@@ -1700,8 +1700,16 @@ csúszka, nem képarányfüggő. Az `unsharp` és az `unsharp2` **ugyanaz a
 callback**; a `filterdesc.xml` szerint csak az Amount felső korlátja tér el
 (1,0 vs 3,0), ami ezzel a képlettel konzisztens.
 *Bizonyítottsági fok: megerősített* (a képlet és az 1,5).
-**Nyitva:** magának az elmosómagnak a pontos alakja (a `FUN_00a42c20` mögötti
-objektum 2-es módja) — ehhez egy mélyebb kör kell.
+~~**Nyitva:** magának az elmosómagnak a pontos alakja (a `FUN_00a42c20` mögötti
+objektum 2-es módja) — ehhez egy mélyebb kör kell.~~
+
+> ⚠️ **HELYESBÍTÉS (2026-08-16): a `FUN_00a42c20` NEM elmosómag.** Az RTTI
+> szerint ez a **`ytResampler::vftable` 9. bejegyzése**, vagyis egy
+> **átméretező** (resampler) virtuális metódusa — a binárisban **17**
+> egymástól független helyről hívják (indexkép, export, nyomtatás,
+> szerkesztő). Az `unsharp` elmosása tehát az **átméretezőn** keresztül
+> készül, nem a Picasa IIR-elmosóján. Részletek: „Az `unsharp` elmosása
+> az ÁTMÉRETEZŐBŐL jön" alább.
 
 ### `blur` — ugyanaz a motor, a csúszka a sugár
 
@@ -2793,3 +2801,70 @@ nem az objektumban (a konstruktor mindent nulláz). Belépési pont a
 *Bizonyítottsági fok: megerősített* az attribútum-névsorra és arra, hogy a
 `filterdesc` egyszer sem állítja az `aspectRatio`-t · **nyitott** a tartalék
 értéke.
+
+## Az `unsharp` elmosása az ÁTMÉRETEZŐBŐL jön (2026-08-16)
+
+### A korábbi jelölés téves volt
+
+A lap eddig azt írta, hogy az `unsharp` elmosómagja a `FUN_00a42c20`
+mögötti objektum „2-es módja", és ezt nyitott kérdésként tartotta nyilván.
+**A `0x00a42c20` nem elmosómag.**
+
+| bizonyíték | mit mond |
+|---|---|
+| RTTI: `ytResampler::vftable` (`0x008e3fb4`) | a 9. bejegyzése **pontosan `0x00a42c20`** |
+| a hívói | **17** független hely a binárisban (`0x00425210`, `0x0042f430`, `0x00551b30`, `0x005550d0`, `0x005b0730`, `0x007e95f0`, `0x007ead60`, `0x007fb210`, `0x008cd360`, `0x0090c4a0`, `0x009ecdb0`, `0x00a50990`, `0x00a61040`, `0x00a61340`, `0x00a9f070`, `0x00bcb5e0`, `0x00425f60`) |
+| a hívottjai | `0x009a8a30`, `0x009a8bc0`, `0x009ae130`, `0x009e6340`, `0x009e6df0`, `0x009e75a0`, `0x00a40a50`, `0x00a43230` — **egyik sem** a Picasa elmosómagja |
+
+Egy elmosómagot nem hív a nyomtatás és az indexkép-készítés. Egy
+**átméretezőt** igen.
+
+### A Picasa elmosója MÁSHOL van, és már meg van fejtve
+
+A `0x009dd0d0` a Picasa általános elmosója (kétmenetes elsőrendű IIR) —
+`picasa-native-filter-workers.md` 4.2.1. Nyolc hely hívja:
+`0x0076f0f0`, `0x008f8520` (`radblur`), `0x008f9090` (`dir_sharp`),
+`0x0090b050` (sugaras maszk), `0x0090d3e0`, `0x0090d4b0` (`glow`),
+`0x0090de10`, `0x009e8c30`.
+
+**Az `unsharp` útvonala (`0x0090c4a0`) nincs köztük**, és a
+`0x00a42c20` hívottjai között sem szerepel a `0x009dd0d0`.
+
+### Amit ez jelent: két KÜLÖNBÖZŐ elmosás
+
+| szűrő | mivel mos el |
+|---|---|
+| `glow`, `glow2`, `radblur`, `dir_sharp`, sugaras maszk | `0x009dd0d0` — kétmenetes IIR |
+| **`unsharp`, `unsharp2`** | **`ytResampler`** (`0x00a42c20`), 2-es móddal |
+
+Az `unsharp` hívása (`0x0090c4a0`) 1,0/1,0 léptéket és 0/0 eltolást ad át
+(`fld1`/`fldz`, `0x0090c528`–`0x0090c53f`), a vizsgálati téglalap pedig a
+két kép **közös** metszete (`min(w₁,w₂)`, `min(h₁,h₂)`,
+`0x0090c4f2`–`0x0090c528`). Vagyis **1:1 arányú újramintavételezés**, aminek
+az egyetlen hatása a **szűrőmag elkenése** — a `1,5f` az így kapott mag
+szélessége.
+
+### ⚠️ Nálunk ez ma Gauss
+
+`src/picasapy/render/sharpen.py:31` — `cv2.GaussianBlur(kép, (0,0), 1.0)`,
+majd `erősség × 1,21`:
+
+| | eredeti Picasa | PicasaPy ma |
+|---|---|---|
+| az elmosás fajtája | **átméretező szűrőmag** (`ytResampler`, 2-es mód) | Gauss |
+| a mag szélessége | **1,5** | σ = **1,0** |
+| az erősség szorzója | nincs (nyersen a csúszka) | **× 1,21** |
+
+A `σ = 1,0` és az `1,21` **illesztett** értékek: a golden-párokra hangolt
+közelítései egy 1,5 szélességű, más alakú magnak. Ez magyarázza, miért
+maradt az `unsharp` a „finomítandó" listán.
+
+*Bizonyítottsági fok:* **megerősített** arra, hogy a `0x00a42c20` a
+`ytResampler` metódusa és nem elmosómag (RTTI + a hívói köre) ·
+**megerősített** arra, hogy az `unsharp` nem a `0x009dd0d0`-t használja
+(mindkét hívási lista kiolvasva) · **erős** az „1:1 újramintavételezés"
+olvasatra (a lépték- és eltolás-argumentumok a kódból).
+
+**Nyitva marad:** a `ytResampler` 2-es módjának **konkrét magja** (súlyok
+vagy analitikus alak). Ott folytassa, aki az `unsharp`-ot kalibrálja:
+`0x00a42c20` → `0x00a43230` (a súlytábla-építő, 336 bájt).
