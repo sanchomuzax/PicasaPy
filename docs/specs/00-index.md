@@ -20,7 +20,7 @@ kérdés).
 1. **`autocolor` pontos gain-képlete** (Nyitva 1) — célzott mérés-sorozat kell
 2. **`unsharp` kernel finomítása** (Nyitva 3) — dekonvolúciós illesztés
 3. **Render-pontosítás a golden-verdiktek szerint** (Nyitva 8), súlyossági sorrendben: `tint` ΔE 20,6 → `sat` pozitív ág 12 → `dir_tint` 9 → `finetune2` hőmérséklet 25 (extrémnél) → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
-4. **A `tint` virtuális színátalakítása** (1506. sor) — a `ctx` harmadik függvénymutatója
+4. **A `tint` virtuális színátalakítása** — a `ctx` AZONOSÍTVA (a lánc-kontextus 3. függvénymutatója, `picasa-native-filter-registry.md`); nyitva marad, **mikor NEM `NULL`**, és mit csinál
 5. **A `ytResampler` utolsó, nem 2-hatvány lépése** — a felezőlépés már megvan (sima 2×2 doboz-átlag, `0x00a43230`); a maradék `0x009e6340` / `0x009e6df0` / `0x009e75a0`. *(A korábbi megfogalmazás tévesen „közös elmosómagnak" hívta — 2026-08-16-i helyesbítés.)*
 
 ### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
