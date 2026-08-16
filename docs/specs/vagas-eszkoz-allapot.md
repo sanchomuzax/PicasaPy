@@ -32,9 +32,28 @@ HDTV16x9 · Square · FullPage
   vágó-eszköz megnyitásakor (`onCropActiveChanged`), a kulcs
   `LAST_CROP_RATIO_SETTING_KEY = "crop/lastRatioKey"`.
 
-**Nyitott, de nem fejlesztői döntés:** a `20x25` benne maradt, noha a javított
-bináris kulcslistában nem szerepel. A megtartásáról/törléséről a jegy
-2026-08-10 óta a felhasználó döntésére vár.
+### ✅ A `20x25` MARAD — eldőlt (2026-08-16)
+
+A korábbi jelölés szerint *„a `20x25` benne maradt, noha a javított bináris
+kulcslistában nem szerepel"*. **Ez téves volt: benne VAN a binárisban.**
+
+| bizonyíték | mit mond |
+|---|---|
+| `Picasa3.exe`, 9143556. fájloffszet | a `20 x 25` felirat, közvetlenül utána a kulcsa: `AspectRatioList::Crop20x25m` |
+| `stringres-en-hu.tsv` | `AspectRatioList::Crop20x25m` → EN `20 x 25` · **HU `20x25`** |
+| `ui-audit-editor.md` méretarány-táblája | a valódi Picasa képernyőképén a **7. sor** |
+
+Három, egymástól független forrás. A kulcsban a **kettős kettőspont**
+(`AspectRatioList::…`) a Picasa saját elgépelés-osztálya — négy kulcs viseli
+(`::A4`, `::A4Page:Description`, `::A4PageCollage`, `::Crop20x25m`,
+`::FullPage:Description`), és nem jelent külön névteret.
+
+### ⚠️ A lista viszont HAT tétellel hosszabb a kelleténél (#875)
+
+A `aspectPresets` 19 tétele közül a valódi Picasa vágó-legördülőjében
+**13** van (`ui-audit-editor.md` képernyőképe: Kézi + Jelenlegi méretarány +
+11 fix arány + a két egyéni sor). Részletek és a teljes hivatalos
+kulcs↔felirat tábla: **#876**.
 
 ## 2. Egyéni képarányok — KÉSZ
 
