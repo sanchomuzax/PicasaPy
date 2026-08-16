@@ -754,7 +754,11 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
    `0,25` vs v2 `0,5`) olcsón ellenőrizhető — igazolás esetén a v1-hez
    **nem kell külön LUT**, és a 8. pont „finetune2-hő" tétele is olcsóbb
    lesz.
-10. **`fullres` / `slow` / `resize` jelzők beépítése a renderelőbe.** A
+10. **`fullres` / `slow` / `resize` jelzők beépítése a renderelőbe.**
+    ⚠️ **RÉSZBEN KÉSZ (2026-08-16):** az ADAT megvan és ki is számoljuk
+    (`render/registry.py:156` `chain_flags`, a `ChainReport` hordozza), de
+    **egyetlen fogyasztója sincs** — lásd „A sáv-jelzőknek nincs
+    fogyasztója" alább. Az eredeti jegyzet: A
     `filterdesc.xml` minden szűrőnél megmondja, hogy csak teljes
     felbontáson helyes-e, drága-e, illetve **méretváltó-e** (`Border`,
     `MuseumMatte`, `Polaroid`, `Cinemascope`, `DropShadow`,
@@ -2923,3 +2927,44 @@ maszkok és a két eltolás egyértelmű).
 **Nyitva marad:** a felezés utáni **utolsó** lépés (a nem 2-hatvány
 maradék kezelése) — `0x00a42c20` további hívottjai: `0x009e6340`,
 `0x009e6df0`, `0x009e75a0`.
+
+## A sáv-jelzőknek nincs fogyasztója (2026-08-16)
+
+A „Nyitva 10" pont a `filterdesc.xml` három jelzőjének beépítését kérte.
+**Az adat oldala kész, a viselkedés oldala nem.**
+
+### Ami megvan
+
+| réteg | állapot |
+|---|---|
+| a jelzők a regiszterben | ✅ `render/registry_data.py:41` — `full_res`, `slow`, `resizes` oszlop |
+| láncszintű összegzés | ✅ `render/registry.py:156` — `chain_flags(keys) → (full_res, slow, resizes)` |
+| a jelentésbe kerül | ✅ `render/chain.py:774`, a `ChainReport.full_res` / `.slow` / `.resizes` mezőben |
+
+Számokban: **19** szűrő `fullres`, **13** `slow`, és **6** `resizes`
+(`border`, `cinemascope`, `dropshadow`, `museummatte`, `polaroid`,
+`roundededges`).
+
+### Ami HIÁNYZIK
+
+A `render/` csomagon **kívül egyetlen hivatkozás sincs** a három mezőre.
+Az előnézet (`app/edit_preview.py:28`) meghívja az `apply_filters`-t, meg is
+kapja a `ChainReport`-ot, de a jelzőket **eldobja**.
+
+Három következmény:
+
+1. **19 szűrő csak teljes felbontáson helyes** (`fullres`), és mi mindegyiket
+   a kicsinyített előnézeten futtatjuk. A felhasználó ezeknél mást lát az
+   előnézetben, mint a mentett képen.
+2. **13 szűrő drága** (`slow`), és mind a felület szálán fut. Ezeknél
+   akadozik a szerkesztő.
+3. **6 szűrő megváltoztatja a kép méretét** (`resizes`), és a downstream
+   geometria — vágás, arckeretek, szövegréteg-pozíció — ezt nem veszi
+   figyelembe.
+
+> A #382 a jelzőket **adatként** vezette be, és ez helyes volt. A
+> viselkedés bekötése külön munka, amit a jelen kör nyitott jegyre tesz.
+
+*Bizonyítottsági fok: megerősített* (a hivatkozások teljes keresése a
+`src/picasapy/` alatt; a `full_res`/`.resizes` mezőre a `render/` csomagon
+kívül nulla találat).
