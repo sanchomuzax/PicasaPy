@@ -3457,3 +3457,84 @@ rámpa saját peremhatása).
 
 *Bizonyítottsági fok: megerősített* (a négy határ kiszámítása és mindkét
 ciklus feje nyers utasításszinten).
+
+## A `dir_tint` (Graduated Tint) visszafejtve (2026-08-16, #874)
+
+**Az átmenet FORGATHATÓ, fokban megadott irányú** — nem függőleges. Ez a
+`dir_tint` ROSSZ verdiktjének (9,45 alap / **49,41 max**) a fő oka.
+
+### A callback (`0x008f9880`, 306 b) paraméter-térképe
+
+| mező | jelentés | cím |
+|---|---|---|
+| `[szűrő+0x28]` | **Feather** (0. csúszka), **minimum 0,001** | `0x008f990b`–`0x008f9929` (küszöb `0xcf3db0` = 0,001, pótérték `0xc7999c` = 0,001) |
+| `[szűrő+0x2c]` | **Shade** (1. csúszka) | `0x008f9958` |
+| `[szűrő+0x50]` | a szín (csomagolt dword) | `0x008f98dd` |
+| `[szűrő+0xc4]` | **az irány, FOKBAN**; `-1` → 0 | `0x008f992d`–`0x008f9938` |
+| `[ebp+0x10]+0x1c` | a kép **tájolása** — az irány ehhez képest relatív | `0x008f993f` |
+
+```asm
+0x008f9942  test al, 1                 ; az irány PARITÁSA választ:
+0x008f9946  fld  dword ptr [esp+0x18]  ;   páratlan → az y a középpont
+0x008f994c  fld  dword ptr [esp+0x14]  ;   páros    → az x
+0x008f9968  fsub qword ptr [0xc72150]  ; − 0,5
+0x008f9975  fmul qword ptr [0xcf3ed8]  ; × 30,0
+0x008f998b  fld1 / fsubrp              ; a magba 1 − Shade megy
+0x008f99a3  call 0x90f470              ; a munkafüggvény
+```
+
+### A munkafüggvény (`0x0090f470`, 1151 b)
+
+```asm
+0x0090f543  fmul qword ptr [0xcf48d0]  ; szög × π/180  → az irány FOKBAN
+0x0090f557  call 0xc285f0              ; sin
+0x0090f56f  call 0xc29d20              ; cos
+0x0090f5a5  fld  qword ptr [0xcf3cb0]  ; 65536,0 → 16.16 fixpontos lépésvektor
+0x0090f5c3  test ebx, ebx / xchg        ; páratlan negyed → x ↔ y csere
+0x0090f5d4  and  ecx, 3 / neg           ; negyed szerinti előjelváltás
+0x0090f623  call 0x90ecd0               ; a tónusgörbe-LUT feltöltése
+```
+
+### A tónusgörbe-LUT (`0x0090ecd0`, 200 b) — 256 × `uint16`
+
+```asm
+0x0090ecd0  fld  dword ptr [0xcf47d8]   ; a görbeparaméter felső korlátja 99,9
+0x0090ece9  fld  dword ptr [0xcf47d4]   ;   alsó korlátja 0,01
+0x0090ed2b  fmul qword ptr [0xcf4138]   ; i × 1/255
+0x0090ed3c  call 0x90ec40                ; az átmenet-görbe
+0x0090ed41  fmul qword ptr [0xcf3b78]   ; × 65535,0
+0x0090ed53  or   eax, 0xc00              ; CSONKÍTÁS nulla felé
+0x0090ed80  mov  word ptr [edi + esi*2], ax
+```
+
+A képpont-ciklus a LUT **felső bájtját** olvassa, csatornánként, a
+**forrásérték** szerint indexelve, majd **szoroz** a színnel:
+
+```asm
+0x0090f7da  movzx esi, byte ptr [ecx]                  ; forrás B
+0x0090f7e1  movzx esi, byte ptr [esp + esi*2 + 0x1c9]  ; LUT16[B] felső bájtja
+0x0090f810  movzx ebx, byte ptr [esp + 0x3ea]          ; a szín egy bájtja
+0x0090f818  imul  ebx, ecx                              ; SZORZÁS
+```
+
+Vagyis a `dir_tint` — a `radtint`-hez hasonlóan — **szorzó** színezés, nem
+lineáris keverés a szín felé.
+
+### Az átmenet-görbe (`0x0090ec40`, 134 b) — NYITVA
+
+```asm
+0x0090ec41  fld1
+0x0090ec47  fucom st(1)          ; ha a paraméter == 1,0
+0x0090ec54  fld  [esp+8] / ret   ;   → LINEÁRIS (azonosság)
+0x0090ec5c  fdivrp               ; egyébként 1/paraméter
+0x0090ec5e  call 0xc0b310        ; matematikai segédfüggvény — NEM azonosított
+0x0090ec6e  call 0x49fe60        ; matematikai segédfüggvény — NEM azonosított
+```
+
+Torzító (bias) görbe. **Itt kell folytatni:** a két segédfüggvény
+azonosítása, és hogy melyik csúszka adja a paraméterét.
+
+*Bizonyítottsági fok: megerősített* a paraméter-térképre, a fokos szögre, a
+`Feather` 0,001-es padlójára, az `1 − Shade`-re, a `× 30`-as
+középpont-skálára, a LUT felépítésére és a szorzó színezésre · **erős** a
+negyed-kezelés pontos szemantikájára · **nyitott** a görbe alakja.
