@@ -2611,3 +2611,50 @@ csúszkaállásán mért 0,48–1,63 szintes él-profil-hiba ezzel konzisztens.
 *Bizonyítottsági fok: megerősített* a két kizárásra és a kicsinyítő
 azonosítására · **feltételes** arra, hogy a teljes út piramis (a
 kicsinyítő létezése erősen valószínűsíti, de a szűrő-lépést még nem láttuk).
+
+### A `glimmer::TiledImageMask` vtable feltérképezve (a `Comicize` pontmaszkja, 2026-08-16)
+
+A `Comicize` nyitott pontja: *„a natív pontmaszk pontos antialiasingja és
+peremkerekítése"*. Ez a kör **térképet** ad hozzá, nem megfejtést — a
+raszterizáló mélyebben van, de innentől nem kell újra keresni.
+
+#### A két maszk-osztály vtable-je
+
+| osztály | vtable | rekeszek |
+|---|---|---:|
+| `glimmer::TiledImageMask` | `0x00cf02e8` | 8 |
+| `glimmer::CircularGradientImageMask` | `0x00cf0890` | 10 |
+
+#### A `TiledImageMask` rekeszei
+
+| # | cím | méret | mi ez |
+|---:|---|---:|---|
+| 0 | `0x00bba030` | 30 | konstruktor/pusztító körüli |
+| 1 | `0x00bba250` | 133 | |
+| 2 | `0x00bb9fc0` | 5 | triviális visszatérő |
+| 3–4 | `0x004bdeb0` | 3 | közös üres slot |
+| **5** | `0x00bba2e0` | 481 | **attribútum-olvasó** — **12** ismétlődő `call 0x8eb160` / `call 0x8eb520` pár |
+| **6** | `0x00bba4d0` | 169 | **12 × `call 0x8f1500`** — ugyanarra a 12 attribútumra |
+| **7** | `0x00bba580` | 234 | **a maszk előállításának belépője** → `0x00bba670` (762 b) |
+
+A tényleges raszterizálás még mélyebben: `0x00bba980`, `0x00bbb070`,
+`0x00bbace0` (763 b).
+
+#### Amit ez már most elárul
+
+**A maszknak 12 attribútuma van.** A `filterdesc.xml` `Comicize`-a ennél
+lényegesen kevesebbet állít be — a többi tehát **beégetett alapértékkel**
+működik, és épp ezek közt lesz az antialiasing/peremkerekítés kapcsolója.
+Ez magyarázza, miért nem lehetett a `filterdesc`-ből kiolvasni.
+
+#### Ami NYITVA marad — és hol folytassa a következő kör
+
+1. a 12 attribútum **neve**: a `0x00bba2e0`-ben a `call 0x8eb160` elé tolt
+   sztring-mutatókból (az annotált diszasszemblálás kiírja őket);
+2. a raszterizáló ciklus: `0x00bba670` → `0x00bba980` / `0x00bbb070`.
+
+*Bizonyítottsági fok: megerősített* a vtable-feloldásra és a rekeszek
+szerepére · **nyitott** az antialiasing szabályára.
+
+> A `CircularGradientImageMask` vtable-je ugyanígy fel van oldva — a
+> `Vignette` / `Focal*` család analitikus modelljéhez az lesz a belépő.
