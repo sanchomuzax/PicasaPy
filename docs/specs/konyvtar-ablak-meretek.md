@@ -5,8 +5,8 @@ A tulajdonos döntése (`../decisions/szerkeszto-bal-panel.md` 1. pontja
 általánosan érvényes): *a felület pontosan úgy nézzen ki, mint az eredeti
 Picasa.*
 
-Testvérlap a szerkesztőre:
-[`szerkeszto-panel-meretek.md`](szerkeszto-panel-meretek.md).
+Testvérlapok: [`szerkeszto-panel-meretek.md`](szerkeszto-panel-meretek.md) ·
+[`jobb-fiok-meretek.md`](jobb-fiok-meretek.md).
 
 ## 0. Forrás és módszer
 

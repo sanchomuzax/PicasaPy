@@ -9,6 +9,9 @@ A tulajdonos döntése (`../decisions/szerkeszto-bal-panel.md`):
 Aki ehhez a panelhez nyúl, ezt a lapot pipálja végig. Ahol a mai kódunk mást
 mond, **a kód a rossz**.
 
+Testvérlapok: [`konyvtar-ablak-meretek.md`](konyvtar-ablak-meretek.md) ·
+[`jobb-fiok-meretek.md`](jobb-fiok-meretek.md).
+
 ## 0. Forrás és módszer
 
 Minden szám a `respack.yt` **rétegtéglalapjaiból** való (`int16 x0, y0, x1, y1`
