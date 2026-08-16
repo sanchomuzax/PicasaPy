@@ -173,15 +173,61 @@ collection" (`CAlbumState::passprompt`), „Password Entry"
    Webalbumokba**…" — a Google félbehagyta az átnevezést. A PicasaPy-nak
    nem kell ezt a következetlenséget örökölnie.
 
-## 6. Nyitva
+## 6. ~~Nyitva~~ → LEZÁRVA a binárisból (2026-08-16)
 
-- Album-nézetben az indexkép-menü feltehetően bővül („Eltávolítás az
-  albumból"), és a mappa-menü Album-változatra vált — ehhez további
-  képernyőkép kell.
-- Több kijelölt képnél a menü feliratai többes számba válthatnak
-  („Tulajdonságok" vs „…"), ez sem ismert.
-- A „Társítás ▸" és a „Mappa rendezésének alapja ▸" almenük tartalma
-  nincs lefényképezve.
+Mindhárom pont **képernyőkép nélkül** eldőlt: a `Picasa3i18n.dll`
+szövegtáblája (`stringres-en-hu.tsv`) menüosztályonként tartalmazza a
+feliratokat, tehát nem kellett lefényképezni semmit.
+
+### 6.1 Album-nézet: MEGVAN, és pont az, amit vártunk
+
+Az `AlbumPhoto::` osztály **maga az album-nézeti indexkép-menü**, és
+tartalmazza:
+
+```
+AlbumPhoto::ID_FILE_DELETEFROMDISK   Remove from Album   Eltávolítás az albumból
+```
+
+A mappa-menü album-változata pedig az **`eMenuLabelFolder::`** osztály
+(„Törlés…", „Leírás szerkesztése…", „Áthelyezés…", „Eltávolítás a
+Picasából…", „Diavetítés megtekintése", „Exportálás HTML-oldalként…",
+„Indexképek nyomtatása…", „Indexképek frissítése").
+*Bizonyítottsági fok: megerősített.*
+
+### 6.2 Többes szám: NINCS — a feliratok változatlanok
+
+Az `AlbumPhoto::`, `Folder::` és `AlbumList::` osztályok **egyetlen**
+felirata sem tartalmaz `%d`-t, „pictures"-t vagy egyéb darabszám-helyőrzőt.
+A kontextusmenü szövege tehát **több kijelölt képnél sem változik**.
+*Bizonyítottsági fok: megerősített (negatív eredmény).*
+
+### 6.3 A két almenü
+
+**„Társítás ▸"** = `AlbumPhoto::ID_FILEOPENWITH` → **„Open With"**. A
+tartalmát a **Windows héj** tölti fel (a fájltípushoz társított
+alkalmazások), ezért **nincs és nem is lehet** az erőforrásban. Nincs mit
+lefényképezni. *Bizonyítottsági fok: megerősített.*
+
+**„Mappa rendezésének alapja ▸"** = `Folder::SortFolderBy`. A négy tétel
+csupasz felirata csak az `eMenuLabelFolder::` osztályban létezik:
+
+| parancs | angol | magyar |
+|---|---|---|
+| `ID_NAMESORT` | Name | **Név** |
+| `ID_DATESORT` | Date | **Dátum** |
+| `ID_SIZESORT` | Size | **Méret** |
+| `ID_REVERSESORT` | Reverse order | **Fordított sorrend** |
+
+*Bizonyítottsági fok: erős* — a szülő-felirat a `Folder::` osztályban van, a
+négy csupasz tétel viszont csak itt; más jelölt készletben („Rendezés a
+legutóbbi változtatások alapján" az `AlbumList::`/`eMenuView::` alatt) nincs
+„Fordított sorrend".
+
+> **Módszertani megjegyzés.** Mindhárom pont azt kérte, hogy „további
+> képernyőkép kell". A válasz mindhárom esetben a **szövegtáblában** volt —
+> érdemes ott kezdeni, mielőtt a tulajdonostól kérünk képet.
+> (Ld. [`binaris-regeszet-modszertan.md`](binaris-regeszet-modszertan.md) 1.
+> és 14/b.)
 
 ---
 
