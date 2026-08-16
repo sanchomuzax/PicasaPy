@@ -1287,9 +1287,10 @@ elmosottal. Két illesztett skalár:
 - **a sugár képszélesség-hányada `0,009`** — a 4.2.4 dekompilátum `0,01`-et
   olvas, de mind a négy pár (két Amount-érték, három kép) minimuma
   következetesen a `0,9 ×` értéknél van, és az `(Amount+1)` arányosság
-  pontosan teljesül. **Az eltérés oka nyitott** — a #317 dolga eldönteni,
+  pontosan teljesül. ~~**Az eltérés oka nyitott** — a #317 dolga eldönteni,
   hogy a dekompilált konstans olvasata pontatlan-e, vagy a natív hívás
-  máshonnan kapja a szélességet.
+  máshonnan kapja a szélességet.~~ → **A KÉT ÁG KÖZÜL AZ EGYIK LEZÁRVA
+  (2026-08-16), ld. lent.**
 
 > Az `Amount = 0` **NEM azonosság** — a korábbi kód annak vette. A
 > `golden-kit` `radblur=1,0.411585,0.611111,0,0` exportján a kép átlagosan
@@ -2443,3 +2444,53 @@ végigjárhatta volna ugyanazt. Ez az átvilágítás ezt zárja ki.
 > **A tanulság:** a „nyitott" jelölés **karbantartást igényel**. Ha egy kör
 > megválaszol valamit, a MÁSIK lapon lévő jelölést is le kell venni —
 > különben a bizonyíték megvan, de a következő kör nem találja meg.
+
+## A `radblur` sugár-konstansa: a dekompilátum olvasata PONTOS (2026-08-16)
+
+A nyitott kérdés két ágra oszlott: *„a dekompilált konstans olvasata
+pontatlan-e, VAGY a natív hívás máshonnan kapja a szélességet."*
+**Az első ág kizárva.**
+
+### A konstans bájtra kiolvasva
+
+A `radblur` callbackjében (`0x008f8520`):
+
+```asm
+0x008f85b0  fld  dword ptr [ebx + 0x2c]      ; a csúszka-paraméter
+0x008f85b9  call 0x9a8fe0                    ; (kép-másolás, a FPU-verem érintetlen)
+0x008f85ce  fmul qword ptr [0xcf40b8]        ; ← a konstans
+```
+
+A `.rdata`-ból:
+
+```
+0x00cf40b8 = 7b 14 ae 47 e1 7a 84 3f   →  double  0.01
+```
+
+**Pontosan `0,01`, és `double` pontosságon** (`fmul qword`, nem `dword`).
+A dekompilátum tehát jól olvasta; a mért `0,009`-es optimum **nem** a
+konstansból jön.
+
+### Ami ebből következik
+
+A `0,9 ×` eltérés forrása **az, amit a `0,01` szoroz** — vagyis a natív
+oldal olyan méret-mértéket használ, ami az általunk feltételezett
+képszélességnek kb. 0,9-szerese. Kézenfekvő jelöltek (mérésre, nem
+feltételezésre):
+
+| jelölt | 4:3 arányú képen a szélesség hányada |
+|---|---:|
+| `(W + H) / 2` | 0,875 |
+| `√(W · H)` | 0,866 |
+| a **teljes felbontású** kép mérete kicsinyített előnézet helyett | képfüggő |
+
+A `fmul qword` további részlete, hogy a **sugár-számítás dupla pontosságú** —
+ha a mi modellünk `float`-on számol, a kerekítés is eltérhet.
+
+*Bizonyítottsági fok: megerősített* a konstansra (a `.rdata` bájtjai) ·
+**nyitott** arra, hogy mit szoroz.
+
+**A #317 teendője ezzel szűkült:** nem a konstanst kell újraolvasni, hanem a
+`0x008f85e2`–`0x008f8617` közti szakaszt (`[esp+0x20]`, `[esp+0x24]`,
+`[esp+0x28]` feltöltését), illetve mérni a fenti három jelöltet a
+`referencia/blur-meres/` anyagon.
