@@ -146,8 +146,8 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 | `ansel` | `1[,#szín]` | művészi f/f színezéssel — a szín OPCIONÁLIS: élő ini-ben megerősítve (#357) |
 | `radsat` | `1,!x,!y,!sugár,!élesség` | radiális telítettség |
 | `dir_tint` | `1,!x,!y,!gradiens,!árnyék[,#szín]` | irányított színátmenet — a szín OPCIONÁLIS: élő ini-ben megerősítve (#357) |
-| `glow` (v1) | ismeretlen | ragyogás v1 (a `glow2` mellett) — token az exe string-táblájában megerősítve, paraméterezése dekódolatlan |
-| `grain` (v1) | ismeretlen | filmszemcse v1 (a `grain2` mellett) — token az exe string-táblájában megerősítve, paraméterezése dekódolatlan |
+| `glow` (v1) | **azonos a `glow2`-vel** | ragyogás v1 — a natív szűrő-tábla szerint (`0x00cd07d8`) **ugyanaz a kezelő** (`0x008f8f70`), mint a `glow2`-é; lásd `picasa-native-filter-registry.md` |
+| `grain` (v1) | **azonos a `grain2`-vel** | filmszemcse v1 — a natív szűrő-tábla szerint (`0x00cd0868`) **ugyanaz a kezelő** (`0x008f88e0`), mint a `grain2`-é; lásd `picasa-native-filter-registry.md` |
 | `radtint` | `1,!x,!y,!feather[,!szín]` | radiális **szorzó**-tint (#565): a fókuszpont körül változatlan, kifelé `forrás × szín / 256`, köbös smoothstep maszkkal; a Feather affin leképezése még kalibrálatlan |
 | `RoundedEdges` | ismeretlen | önálló szűrő-token (a `Border`/`DropShadow` mellett) — exe-ből azonosított, paraméterezése dekódolatlan |
 | `Matte` | ismeretlen | önálló szűrő-token (a `MuseumMatte` és `Vignette` között) — exe-ből azonosított, paraméterezése dekódolatlan |

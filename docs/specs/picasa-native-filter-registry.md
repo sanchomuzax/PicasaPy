@@ -231,3 +231,111 @@ elvégezhetők.
 
 *Bizonyítottsági fok: megerősített* (a konstruktor és a vtable-rekesz
 utasításszinten; a konstans `0x00cf4030 = 0.333f` a `.rdata`-ból kiolvasva).
+
+## A TELJES natív szűrő-tábla a binárisból (`0x00cd0658`–`0x00cd0958`, 2026-08-16)
+
+A `tint` kezelőjének (`0x008f9630`) visszakeresésekor kiderült, hogy a
+mutató egy **rendezett táblában** áll. A tábla **49 rekord**, rekordonként
+16 bájt:
+
+```
+struct FilterOp {           // 16 bájt
+    const char *nev;        // +0
+    void       *kezelo;     // +4   (0 = nincs képpont-művelet)
+    void       *segedA;     // +8   paraméter-/geometria-értelmező
+    void       *segedB;     // +12  csak a radiálisoknál
+};
+```
+
+**Ez a natív (klasszikus) szűrőmotor teljes névsora** — a `glimmer::`
+motor szűrői (`Polaroid`, `RoundedEdges`, `Matte`, `Sixties`, `Neon`,
+`NightVision`, `Vignette`…) **nincsenek** benne, azok külön regiszterben
+élnek.
+
+### Mind a 49 rekord
+
+| # | cím | név | kezelő | segédA | segédB |
+|---:|---|---|---|---|---|
+| 1 | `0x00cd0658` | `debug` | `0x008f8360` | `0x008f9bf0` | — |
+| 2 | `0x00cd0668` | `crop64` | **0** | — | — |
+| 3 | `0x00cd0678` | `crop` | **0** | — | — |
+| 4 | `0x00cd0688` | `autobacklight` | `0x008f7cc0` | — | — |
+| 5 | `0x00cd0698` | `finetune` | `0x008f7cf0` | — | — |
+| 6 | `0x00cd06a8` | `finetune2` | `0x008f7ee0` | — | — |
+| 7 | `0x00cd06b8` | `autolight` | `0x008f80c0` | — | — |
+| 8 | `0x00cd06c8` | `autocolor` | `0x008f82a0` | `0x008f9c60` | — |
+| 9 | `0x00cd06d8` | `rot` | **0** | — | — |
+| 10 | `0x00cd06e8` | `redeye` | **0** | — | — |
+| 11 | `0x00cd06f8` | `retouch` | **0** | — | — |
+| 12 | `0x00cd0708` | `save` | **0** | — | — |
+| 13 | `0x00cd0718` | `picnik` | **0** | — | — |
+| 14 | `0x00cd0728` | `triple` | `0x008f8a60` | — | — |
+| 15 | `0x00cd0738` | `triple2` | `0x008f8b90` | — | — |
+| 16 | `0x00cd0748` | `triple3` | `0x008f8ce0` | — | — |
+| 17 | `0x00cd0758` | `colorfix` | `0x008f9190` | `0x008f9c60` | — |
+| 18 | `0x00cd0768` | `ansel` | `0x008f8410` | — | — |
+| 19 | `0x00cd0778` | `bw` | `0x008f84c0` | — | — |
+| 20 | `0x00cd0788` | `whitept` | `0x008f9270` | `0x008f9c60` | — |
+| 21 | `0x00cd0798` | `enhance` | `0x008f8840` | — | — |
+| 22 | `0x00cd07a8` | `warm` | `0x008f8930` | — | — |
+| 23 | `0x00cd07b8` | `blur` | `0x008f89a0` | — | — |
+| 24 | `0x00cd07c8` | `tilt` | `0x008f8810` | `0x008f9bf0` | — |
+| 25 | `0x00cd07d8` | `glow` | **`0x008f8f70`** | — | — |
+| 26 | `0x00cd07e8` | `glow2` | **`0x008f8f70`** | — | — |
+| 27 | `0x00cd07f8` | `colortemp` | `0x008f8ea0` | — | — |
+| 28 | `0x00cd0808` | `unsharp` | **`0x008f8f30`** | — | — |
+| 29 | `0x00cd0818` | `unsharp2` | **`0x008f8f30`** | — | — |
+| 30 | `0x00cd0828` | `tint` | `0x008f9630` | — | — |
+| 31 | `0x00cd0838` | `dir_tint` | `0x008f9880` | `0x008f9bf0` | — |
+| 32 | `0x00cd0848` | `radtint` | `0x008f8730` | `0x008f9bf0` | — |
+| 33 | `0x00cd0858` | `sat` | `0x008f8ff0` | — | — |
+| 34 | `0x00cd0868` | `grain` | **`0x008f88e0`** | — | — |
+| 35 | `0x00cd0878` | `grain2` | **`0x008f88e0`** | — | — |
+| 36 | `0x00cd0888` | `sepia` | `0x008f8950` | — | — |
+| 37 | `0x00cd0898` | `rainbow` | `0x008f92d0` | — | — |
+| 38 | `0x00cd08a8` | `backlight` | **`0x008f8970`** | — | — |
+| 39 | `0x00cd08b8` | `fill` | **`0x008f8970`** | — | — |
+| 40 | `0x00cd08c8` | `autocontrast` | `0x008f89d0` | — | — |
+| 41 | `0x00cd08d8` | `radblur` | `0x008f8520` | `0x008f9bf0` | `0x008f9cf0` |
+| 42 | `0x00cd08e8` | `radsat` | `0x008f8680` | `0x008f9bf0` | `0x008f9cf0` |
+| 43 | `0x00cd08f8` | `linblur` | `0x008f99c0` | `0x008f9bf0` | — |
+| 44 | `0x00cd0908` | `dir_sat` | `0x008f8fb0` | `0x008f9bc0` | — |
+| 45 | `0x00cd0918` | `dir_brite` | `0x008f9050` | `0x008f9bc0` | — |
+| 46 | `0x00cd0928` | `dir_sharp` | `0x008f9090` | `0x008f9bc0` | — |
+| 47 | `0x00cd0938` | `gamma` | `0x008f8e30` | — | — |
+| 48 | `0x00cd0948` | `contrast` | `0x008f8a20` | — | — |
+| 49 | `0x00cd0958` | `shadow` | `0x008f8ee0` | — | — |
+
+### Négy pár OSZTOZIK a kezelőn — vagyis BETŰRE azonos kód
+
+| pár | közös kezelő | mit jelent |
+|---|---|---|
+| `glow` ↔ `glow2` | `0x008f8f70` | **ugyanaz a ragyogás**, csak más paraméter-verzió |
+| `grain` ↔ `grain2` | `0x008f88e0` | **ugyanaz a filmszemcse** |
+| `unsharp` ↔ `unsharp2` | `0x008f8f30` | ugyanaz az élesítés |
+| `backlight` ↔ `fill` | `0x008f8970` | ugyanaz a derítés (+ `autobacklight` fix 0,25-tel) |
+
+**Ez zárja le a `picasa-ini-format.md` „dekódolatlan" jelölését a `glow`
+(v1) és a `grain` (v1) tokenre**: nem külön, ismeretlen algoritmusok —
+**bájtra ugyanazt a függvényt** hívják, mint a `2`-es változatuk.
+
+### Hét név, aminek NINCS képpont-kezelője (`kezelő = 0`)
+
+`crop64`, `crop`, `rot`, `redeye`, `retouch`, `save`, `picnik`
+
+A tábla **ismeri** őket (tehát nem „ismeretlen token"), de a
+képpont-csővezeték nem csinál velük semmit: geometria- vagy jelző-tokenek,
+amiket máshol dolgoz fel a program. A mi `_NOOP_MARKERS` halmazunk ezt már
+helyesen tükrözi.
+
+### A két segédoszlop jelentése
+
+| segédA | mely szűrőknél | értelmezés |
+|---|---|---|
+| `0x008f9bf0` | `debug`, `tilt`, `dir_tint`, `radtint`, `radblur`, `radsat`, `linblur` | **irány/pozíció**-hordozó paraméterek |
+| `0x008f9bc0` | `dir_sat`, `dir_brite`, `dir_sharp` | a `dir_*` hármas saját alakja |
+| `0x008f9c60` | `autocolor`, `colorfix`, `whitept` | **pipetta-színt** hordozó paraméterek |
+| segédB `0x008f9cf0` | **csak** `radblur`, `radsat` | a sugaras kiterjedés |
+
+*Bizonyítottsági fok: megerősített* (a tábla nyersen kiolvasva a
+`.rdata`-ból, minden rekordhoz cím).
