@@ -15,13 +15,11 @@ kérdés).
 
 ## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
-### [filters-decoded.md](filters-decoded.md) — 8 kérdés
+### [filters-decoded.md](filters-decoded.md) — 6 kérdés
 
 1. **`autocolor` pontos gain-képlete** (Nyitva 1) — célzott mérés-sorozat kell
 2. **`unsharp` kernel finomítása** (Nyitva 3) — dekonvolúciós illesztés
-3. **`retouch` / `redeye` régió-adatai és a szövegréteg** (Nyitva 5) — régió-alapúak
 4. **Render-pontosítás a golden-verdiktek szerint** (Nyitva 8), súlyossági sorrendben: `tint` ΔE 20,6 → `sat` pozitív ág 12 → `dir_tint` 9 → `finetune2` hőmérséklet 25 (extrémnél) → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
-5. **`fullres` / `slow` / `resize` jelzők beépítése a renderelőbe** (Nyitva 10)
 6. **A `tint` virtuális színátalakítása** (1506. sor) — a `ctx` harmadik függvénymutatója
 7. **A `ytResampler` utolsó, nem 2-hatvány lépése** — a felezőlépés már megvan (sima 2×2 doboz-átlag, `0x00a43230`); a maradék `0x009e6340` / `0x009e6df0` / `0x009e75a0`. *(A korábbi megfogalmazás tévesen „közös elmosómagnak" hívta — 2026-08-16-i helyesbítés.)*
 8. **A vizsgálati ablak pontos SZÉLESSÉGE** (1980. sor)
