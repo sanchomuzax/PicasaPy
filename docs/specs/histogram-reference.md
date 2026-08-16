@@ -6,10 +6,15 @@ referencia-képkészlet segítségével.
 
 ## Miért kell ez?
 
+> ⛔ **HELYESBÍTÉS (2026-08-16):** az alábbi mondat — „Ez a Picasa mintája" —
+> **téves**. A Picasa **NEM a csúcshoz normalizál**, hanem az **átlaghoz**,
+> és **összeadó** keverést használ, nem átlátszóságot. A visszafejtett,
+> pixelpontos algoritmus: [`picasa-hisztogram.md`](picasa-hisztogram.md).
+
 A hisztogram a `src/picasapy/app/histogram_helper.py` `compute_rgb_histogram`
 függvényével készül. A normalizálás jelenleg **csatornánként a saját
 csúcsához** történik (#232) — vagyis mindhárom görbe (R, G, B) kitölti a doboz
-magasságát, egymástól függetlenül. Ez a Picasa mintája, de a pontos alakot
+magasságát, egymástól függetlenül. ~~Ez a Picasa mintája~~, de a pontos alakot
 gépi teszt nélkül nehéz garantálni. Ezért:
 
 1. előállítunk néhány képet, amelynek hisztogramja **előre, fejben ismert**;
