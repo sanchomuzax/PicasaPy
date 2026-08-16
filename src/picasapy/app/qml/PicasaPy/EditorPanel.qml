@@ -903,11 +903,23 @@ Rectangle {
         anchors.bottomMargin: 6
         clip: true
         contentWidth: width
+        // #778: a négy mód-panel FELSŐ MARGÓVAL ül (`anchors.margins: 10` a
+        // saját fájljaikban), ezért a puszta `implicitHeight` kevesebb, mint a
+        // tényleges alsó szél — a panel alja pontosan a margónyival lógott ki a
+        // görgethető terület aljából, mind a négy módban, minden szélességnél.
+        // A gyerek `y`-ját is bele kell számolni; ugyanaz a javítás, amit a
+        // fülek `tabContentHeight`-je a #659-ben kapott. Beégetett 10 helyett
+        // az `y`-t olvassuk, hogy a margó a panelek fájljaiban maradjon az
+        // egyetlen igazságforrás.
         contentHeight: Math.max(
-            cropModePanel.visible ? cropModePanel.implicitHeight : 0,
-            retouchModePanel.visible ? retouchModePanel.implicitHeight : 0,
-            redeyeModePanel.visible ? redeyeModePanel.implicitHeight : 0,
-            textModePanel.visible ? textModePanel.implicitHeight : 0)
+            cropModePanel.visible
+                ? cropModePanel.y + cropModePanel.implicitHeight : 0,
+            retouchModePanel.visible
+                ? retouchModePanel.y + retouchModePanel.implicitHeight : 0,
+            redeyeModePanel.visible
+                ? redeyeModePanel.y + redeyeModePanel.implicitHeight : 0,
+            textModePanel.visible
+                ? textModePanel.y + textModePanel.implicitHeight : 0)
         boundsBehavior: Flickable.StopAtBounds
         ScrollBar.vertical: PicasaScrollBar {}
 

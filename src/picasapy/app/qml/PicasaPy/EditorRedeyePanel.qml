@@ -84,8 +84,17 @@ ColumnLayout {
         color: Theme.textGray
     }
 
+    // #779: `Layout.fillWidth` NÉLKÜL a jelölőnégyzet a saját (a felirat
+    // hosszából adódó) szélességét KÖTELEZŐ minimumként adta az oszlopnak, és
+    // ezzel az EGÉSZ panelt szélesebbre feszítette a tartalom-oszlopnál —
+    // annál jobban, minél szélesebb a betűkészlet. (A CI tartalék betűjével
+    // 18–20, egy 1,5-szeresre nyújtott betűvel már 90 képponttal.) Kitöltővé
+    // téve a felirat a rendelkezésre álló helyhez igazodik, a panel
+    // minimumát pedig nem húzza föl — ugyanaz a megoldás, amit a szöveg-panel
+    // `textFillDisabledCheck`-je használ.
     CheckBox {
         objectName: "redeyeHideOutlinesCheck"
+        Layout.fillWidth: true
         text: qsTr("Preview changes without square outlines")
         font.pixelSize: Theme.fontSize - 1
         checked: panel.redeyeHideOutlines
