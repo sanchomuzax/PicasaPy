@@ -491,8 +491,18 @@ Rectangle {
     //
     // Üres, ha nincs aktív szerkesztés — ekkor a gombok a felirat-only
     // kinézetükre esnek vissza (a `thumbSource: ""` régi útja).
-    readonly property string cropSuggestionThumbSource:
-        panel.hasEffectController() ? editController.previewSource : ""
+    // #448: a `hasEffectController()` csak azt mondja meg, hogy VAN vezérlő —
+    // azt nem, hogy a `previewSource` már értelmezett. Próba-környezetben (és
+    // az indulás egy pillanatában) a vezérlő létezik, a tulajdonsága viszont
+    // még `undefined`, amit egy `string` tulajdonság nem tud felvenni
+    // („Unable to assign [undefined] to QString" — ezt a CI fogta el, helyben
+    // nem jött elő). A kifejezett üres-alapérték ezt zárja.
+    readonly property string cropSuggestionThumbSource: {
+        if (!panel.hasEffectController())
+            return ""
+        var forras = editController.previewSource
+        return forras ? String(forras) : ""
+    }
     signal cropApplyRequested()
     signal cropCancelRequested()
 
