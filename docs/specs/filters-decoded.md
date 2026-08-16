@@ -2700,3 +2700,40 @@ Vagyis a tizenkettőből **hármat**: `tileWidth`, `tileHeight`, `alphaMin`
 sztringjei az olvasó-hívások előtt) és arra, hogy a `Comicize` melyik hármat
 állítja · **nyitott**: a kilenc beégetett alapérték számszerű értéke — az a
 konstruktorban (`0x00bba030` / `0x00bba250`) lesz.
+
+#### ⚠️ A „kilenc beégetett alapérték" NEM az objektumban van (2026-08-16)
+
+Az előző kör azt írta, hogy a `Comicize` által nem állított kilenc
+`TiledImageMask`-attribútum „beégetett alapértékkel megy", és a következő
+lépésként a konstruktort jelölte meg. **A konstruktor viszont nem tartalmaz
+alapértéket.**
+
+`0x00bb9fd0` (96 bájt) — a teljes objektum nullázása:
+
+```asm
+xor ecx, ecx
+mov dword ptr [eax + 4], ecx      ; …és így tovább, 4-esével
+mov dword ptr [eax], 0xcf02e8     ; a vtable-mutató
+…
+mov dword ptr [eax + 0x74], ecx   ; a +0x04 … +0x74 tartomány MIND nulla
+```
+
+Egyetlen `fld` vagy numerikus konstans sincs benne.
+
+**A pusztító (`0x00bba050`, 510 b) elárulja, MIÉRT:** tizenkét
+**sztring-objektumot** szabadít fel (`+0x20`, `+0x28`, … `+0x70`, nyolcasával
+lépve, mindegyik „mutató + jelző" pár). Az attribútumok tehát **kifejezés-
+szövegként** tárolódnak (a `filterdesc.xml` `{...}` kötései), nem parszolt
+számként.
+
+**Következmény:** egy be nem állított attribútum **üres sztring**, és a
+tartalék értéket a **fogyasztó** adja — a raszterizáló, amikor üres
+kifejezést kap. Az alapértékek tehát **nem az osztályban**, hanem a
+maszk-előállító kódban vannak.
+
+*Bizonyítottsági fok: megerősített (cáfolat)* — a konstruktor teljes
+tartalma és a pusztító felszabadítási mintája.
+
+**A következő kör belépési pontja ezzel változik:** nem a konstruktor, hanem
+a raszterizáló (`0x00bba580` → `0x00bba670` → `0x00bba980` / `0x00bbb070`) —
+ott kell megnézni, mit tesz üres `padding*` / `alphaMax` / `scale*` esetén.
