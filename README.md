@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml"><img src="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License: GPL-3.0"></a>
-  <img src="https://img.shields.io/badge/version-0.6.1-orange.svg" alt="Version 0.6.1">
+  <a href="https://github.com/sanchomuzax/PicasaPy/releases"><img src="https://img.shields.io/github/v/release/sanchomuzax/PicasaPy?color=orange&label=version" alt="Legfrissebb kiadás"></a>
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+">
 </p>
 
@@ -51,19 +51,22 @@ fázisban (szerkesztő) jár. A ténylegesen kész funkciók fázisonként:
 - **Vágás (crop) átfedő eszközzel**, hisztogram, effekt-vágólap (másolás/beillesztés több képre).
 - **PMP/db3 olvasó réteg** (PMP-oszlopok, thumbindex, deferredregion, path-remap) — tesztelt, de a tényleges *indexbe* import még nyitott (#1).
 
+Azóta elkészült (a lista korábban ezeket még hiányzóként sorolta):
+
+- **Retusálás és szöveg-eszköz** a szerkesztőben (#148).
+- **Kollázs és mozgófilm készítés** (#29).
+- **Geocímke: térkép-nézet és szerkesztés** (#30).
+- **A Picasa 3.9-es effekt-fülei** dekódolva (#190).
+
 Amit **még nem** tud:
 
 - **Arcfelismerés** (#26) — a `.picasa.ini`-ben már meglévő arc-régiók (`faces=`) megjelennek a nézőben, de saját felismerést/`contacts.xml`-generálást a PicasaPy még nem végez.
-- **A Picasa teljes effekt-készlete** (#190) — néhány ritkábban használt effekt dekódolása még nyitott.
-- **Retusálás és szöveg** (#148) a szerkesztőben.
 - **PMP/db3-import az indexbe** (#1) — az olvasó réteg kész, a tényleges import még nem.
-- **Geotag-térkép nézet** (#30).
-- **Kollázs/film készítés** (#29).
-- **Sötét téma** (#28) — az app egyelőre mindig világos.
+- **Sötét téma**: az alkalmazás **mindig világos**, ez tudatos döntés — a sötét téma a 3. fázis (V3) feladata.
 
 ## Állapot
 
-⚠️ **Korai fejlesztési fázisban** van (verzió: `0.6.1`), messze az 1.0-tól. A projekt túl van az 1. fázis (kezelő + néző) MVP-jén, és mélyen a **2. fázisban** (nem-destruktív szerkesztő) jár. A formátum-kompatibilitás és az alapvető könyvtárkezelés stabil, de az API és a fájlformátum-részletek még változhatnak.
+⚠️ **Korai fejlesztési fázisban** van (a mindenkori verziót a fenti jelvény és a [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldal mutatja), messze az 1.0-tól. A projekt túl van az 1. fázis (kezelő + néző) MVP-jén, és mélyen a **2. fázisban** (nem-destruktív szerkesztő) jár. A formátum-kompatibilitás és az alapvető könyvtárkezelés stabil, de az API és a fájlformátum-részletek még változhatnak.
 
 ## Hogyan készült?
 
