@@ -24,8 +24,13 @@ ShaderEffect {
     // gpu_point_pipeline.build_finetune2_lut() eredményéből épített képpel
     property alias lutItem: lutProxy.sourceItem
 
-    // a picasapy.render.gpu_point_pipeline.PointPipelineUniforms mezői
+    // a picasapy.render.gpu_point_pipeline.PointPipelineUniforms mezői —
+    // #696: satGain a `sat` NEGATÍV ágának skalár erősítése,
+    // satPositiveStrength a POZITÍV ág gamma-modelljének erőssége
+    // (amount*3, 0.0 = a negatív ág aktív). A shader a kettő közül
+    // pontosan az egyiket alkalmazza (ld. PointFilter.frag).
     property real satGain: 1.0
+    property real satPositiveStrength: 0.0
     property real bwMix: 0.0
 
     ShaderEffectSource {

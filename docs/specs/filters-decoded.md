@@ -949,8 +949,8 @@ automatikára érvényes. A natív szűrő-regiszter
 | ini-név | belépő | vágás | elemzett terület |
 |---|---|---|---|
 | `autolight` (Auto Contrast gomb) | `0x008f80c0` → `0x00a4bfd0` | a csatornánkénti pontok **UNIÓJA**, egyetlen közös `lo`/`hi` | a **teljes** kép |
-| `autocontrast` | `0x008f89d0` → `0x009db610` | **csatornánként külön** | 90 % × 90 %, balra igazítva (#721) |
-| `enhance` („Jó napom van") | `0x008f8840` → `0x009db610` | **csatornánként külön** | 90 % × 90 %, balra igazítva (#721) |
+| `autocontrast` | `0x008f89d0` → `0x009db610` | **KÖZÖS** (`keverés = 1,0`) — ld. lent | 90 % × 90 %, balra igazítva (#721) |
+| `enhance` („Jó napom van") | `0x008f8840` → `0x009db610` | **30 %-ban közös** (`keverés = 0,30`) — ld. lent | 90 % × 90 %, balra igazítva (#721) |
 
 A `0x009db610` a küszöböt `(W·H)/200` egész osztással számolja (ugyanaz a
 0,5 %), és a leképezést **fixpontosan** végzi:
@@ -990,6 +990,144 @@ a `_MIN_STRETCH_SPAN = 58` továbbra is **mért**, nem visszafejtett viselkedés
 Amit ez a kör kizárt: az `autolight`+`enhance` bármely sorrendű összetétele
 (5,97–6,07), az azonossággal való erősség-keverés, a 252-es korlát, és minden
 1/100–1/400 közötti vágási osztó (a legjobb így is 2,56).
+
+### ⚠️ MEGVAN A KÉT ELVESZETT FLOAT — és megdől a „mindkettő csatornánként vág" (#721, 2026-08-16)
+
+A `0x009db610` **diszasszemblálva**, utasításszinten (nem dekompilátumból):
+a függvény **nem** „csatornánkénti", és nem is „uniós" — a kettő **között**
+áll, és a keverés mértékét a **hívó adja át float paraméterként**.
+
+#### A függvény valódi működése
+
+```c
+// 1) A KÉT PARAMÉTER (0x009db610 prológusa)
+float keveres = param_float;                    // [esp+0xc30]
+if (keveres == -1.0f) keveres = 0.30f;          // 0xcf3ed0 = -1.0f (jelző)
+                                                // 0xc7dcc8 = 0.30f (alapérték)
+if (param_bool /*[esp+0xc2c]*/) { skala = 0.5f; felso = 252; }   // 0xc7dafc = 0.5f
+else                            { skala = 1.0f; felso = 255; }
+
+// 2) AZ ELEMZŐ ABLAK  (0x009db6ac-0x009db714)
+y0 = 5*H/100;  y1 = 95*H/100;      // FÜGGŐLEGESEN középre  → 0,9·H sor
+x0 = 5*W/100;  x1 = 95*W/100;      // a DARABSZÁM 0,9·W ...
+// ...de a sor-mutató a SOR ELEJÉRŐL indul (`mov eax, esi`, 0x009db712),
+// az x0 eltolás SOHA nem kerül hozzá  →  az ablak [0 .. 0,9·W)
+
+// 3) HÁROM KÜLÖN hisztogram (3 × 256 × 4 bájt), BGRA sorrendben:
+//    [px+2]=R → 0x34, [px+1]=G → 0x434, [px+0]=B → 0x834
+
+// 4) A KÜSZÖB — a TELJES kép területére (0x009db765)
+kuszob = max(1, (W*H) / 200);      // előjeles imul 0x51eb851f + sar 6
+
+// 5) CSATORNÁNKÉNTI vágópontok
+lo_ch = az a szint, ahol alulról a kumulált szám eléri a küszöböt
+hi_ch = ugyanez felülről (255-től lefelé)
+
+// 6) A KÖZÖS pontok
+hiMax = max(hi_R, hi_G, hi_B);
+loMin = min(lo_R*skala, lo_G*skala, lo_B*skala);
+
+// 7) ⭐ A KEVERÉS — ez a lényeg (0x009db8b7-0x009db935)
+hi_ch' = hi_ch + keveres * (hiMax - hi_ch);
+lo_ch' = lo_ch + keveres * (loMin - lo_ch);
+
+// 8) fixpontos gain
+gain_ch = (felso << 16) / (hi_ch' - lo_ch');
+```
+
+`keveres = 0` → tiszta csatornánkénti · `keveres = 1` → teljesen közös (uniós).
+
+#### Amit a hívók átadnak — ez választja szét a két szűrőt
+
+| szűrő | belépő | float | bool | jelentés |
+|---|---|---|---|---|
+| **`enhance`** | `0x008f8840` | `-1.0` → **0,30** (`0x008f8892`) | a **`CarefulEnhance`** beállítás (`Preferences`-ből olvasva, `0x008f884b`) | **30 %-ban közös**, 70 %-ban csatornánkénti |
+| **`autocontrast`** | `0x008f89d0` | **`1.0`** (`fld1`, `0x008f89fd`) | fixen **0** (`push 0`, `0x008f8a03`) | **teljesen közös** vágópont |
+
+További három hívó (`0x00802180`, `0x008f92d0`, `0x008f9630` = `tint`)
+szintén a `-1.0` jelzőt adja át, tehát a **0,30-as alapértéket** használja.
+
+#### Következmény — két állításunk dől meg
+
+1. **Az `autocontrast` NEM csatornánként vág**, hanem **közös** `[loMin, hiMax]`
+   tartományra — vagyis megőrzi a színegyensúlyt. A fenti táblázat javítva.
+2. **Az `enhance` sem tisztán csatornánkénti**: a csatornánkénti pontokat
+   **30 %-kal a közös felé húzza**. A mai `apply_enhance` és
+   `apply_autocontrast` (`render/ops.py`) egyaránt **tiszta csatornánkéntit**
+   (`keveres = 0`) számol, és a kettőt **azonosnak** tekinti — a docstring ezt
+   ki is mondja. Ez a natív kód szerint téves.
+
+*Miért nem látszott a #685 szürke rámpáján:* ott mindhárom csatorna azonos,
+tehát `lo_ch = loMin` és `hi_ch = hiMax` — a keverés **bármilyen** értéknél
+ugyanazt adja. A rámpa a keverést elvileg sem tudja mérni; **valódi, színes
+képpár kell hozzá** (a `referencia/imfeellucky/` 12 párja pont ilyen).
+
+#### A `CarefulEnhance` hatása is megvan
+
+A bool ág **nem csak** a 252-es felső korlátot kapcsolja: a **feketepontokat
+0,5-tel szorozza** a közös minimum képzése előtt (`0x009db845`,
+`0xc7dafc = 0.5f`). A korábbi „252-es korlát kizárva" mérés tehát csak a
+felső korlátot vizsgálta, a felezést nem.
+
+*Bizonyítottsági fok: megerősített* — utasításszinten visszakövetve
+(`0x009db610` prológus, `0x009db6ac`–`0x009db714` geometria, `0x009db765`
+küszöb, `0x009db876`–`0x009db935` keverés), a konstansok a `.rdata`-ból
+kiolvasva (`0xcf3ed0 = -1.0f`, `0xc7dcc8 = 0.30f`, `0xc7dafc = 0.5f`), a
+hívók paraméterei a hívási helyekről.
+
+#### ✅ A modell MÉRVE — és a `_MIN_STRETCH_SPAN = 58` rejtélye megoldva
+
+A visszafejtett modellt lefuttattam a **12 golden-páron**
+(`referencia/imfeellucky/`, mérőszkript:
+`referencia/eszkozok/721-enhance/enhance_model.py`):
+
+| modell | átlagos eltérés |
+|---|---:|
+| tiszta csatornánkénti, korlát nélkül | 5,799 |
+| **a mai kódunk** (csatornánkénti + `_MIN_STRETCH_SPAN = 58`) | **2,480** |
+| **visszafejtett: keverés 0,30, korlát NÉLKÜL** | **0,727** |
+| teljesen közös (keverés 1,0) | 4,808 |
+
+**A keverés-söprésnek éles minimuma van pontosan a binárisból kiolvasott
+0,30-nál** — 0,25-nél 1,115, 0,30-nál **0,727**, 0,35-nél 1,131. A kódból
+olvasott konstanst tehát a mérés **függetlenül megerősíti**.
+
+Képenként **egyetlen kép sem romlik**, és a kiugró eset megszűnik:
+
+| kép | mai modell | visszafejtett |
+|---|---:|---:|
+| **Utopic Unicorn** | **13,03** | **0,72** |
+| Sunny Autumn | 4,90 | 1,27 |
+| Redes de hilo | 3,11 | 1,03 |
+| Music – tomasino.cz | 2,30 | 0,71 |
+| a többi nyolc | 0,20–1,49 | 0,20–0,97 |
+
+#### A `_MIN_STRETCH_SPAN = 58` NEM korlát — a keverés mellékhatása
+
+A #539 azt mérte, hogy „a ténylegesen alkalmazott bemeneti tartomány
+legkisebb értéke mind a 36 csatornán 58,1, és a Picasa sosem megy alá".
+Ebből egy beégetett gain-korlátra következtettünk. **Nincs ilyen korlát** —
+a `0x009db610` alkalmazó ciklusa (`0x009db9d0`–`0x009dba21`) csak a
+KIMENETET vágja `[0, felső]`-re, a gainre semmilyen felső határ nincs.
+
+A jelenség a keverésből jön. A kiugró képen a nyers csatorna-tartományok:
+
+```
+nyers:            [79, 26, 26]
+keverés 0,30 után [96, 59, 59]     ← innen a „soha nem megy 58 alá”
+keverés 1,0 után  [135, 135, 135]
+```
+
+A keverés minden csatornát a közös `[loMin, hiMax]` felé húz, ami a **szűk**
+csatornákat kiszélesíti. Az „58" tehát ennek a mérőkészletnek a véletlene,
+nem konstans. A modellben a korlát **fölösleges**: vele és nélküle a 12 páron
+bájtra azonos az eredmény (0,727 mindkettő).
+
+*Bizonyítottsági fok: megerősített* (kódból ÉS méréssel, egymástól
+függetlenül).
+
+**Ami ezzel lezárult:** a #539 „a `_MIN_STRETCH_SPAN` mért, nem visszafejtett
+viselkedés" megjegyzése tárgytalan — a konstans **elhagyható**.
 ## Az irányított család megvalósítva — `dir_sat`, `dir_brite`, `dir_sharp`, `linblur` (#623)
 
 A #568 visszafejtésének eredménye kódba került. Modulok:

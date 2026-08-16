@@ -469,3 +469,33 @@ class TestNumberedSnapshotsAndUndoSave:
 
         revert(path)
         assert path.read_bytes() == original
+
+
+class TestGuardRejectionRollsBackImage:
+    """#643: a round-trip őr visszautasítása (`FilterWriteError`) ugyanúgy
+    KEZELT ini-írási hiba, mint a lemezhiba vagy a párhuzamos Picasa-ütközés.
+
+    Ez nem stílus-kérdés, hanem adatvédelem: a kivétel a (c) lépésben, a
+    képfájl felülírása UTÁN keletkezne, tehát ha nem tartozna a kezelt hibák
+    közé, a kép a beégetett szerkesztéssel maradna, miközben a `filters=`
+    bent van az iniben — a következő megnyitáskor a lánc MÁSODSZOR is
+    lefutna (#297 dupla-szerkesztés).
+    """
+
+    def test_filter_write_error_restores_image_bytes(self, photo, monkeypatch):
+        from picasapy.ini import FilterWriteError
+
+        image_path, original_bytes = photo
+        _fail_ini_write(monkeypatch, FilterWriteError("teszt: elvetendő lánc"))
+
+        with pytest.raises(FilterWriteError):
+            save_edited(
+                image_path,
+                _solid_image((99, 88, 77)),
+                EditSession.from_value("enhance=1;"),
+            )
+
+        assert image_path.read_bytes() == original_bytes
+        section = load_document(image_path.parent / _INI_NAME).section("IMG_0001.png")
+        assert section.get("filters") == "enhance=1;"
+        assert section.get("redo") is None

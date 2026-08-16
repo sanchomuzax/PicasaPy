@@ -30,6 +30,7 @@ from picasapy.render.gpu_point_pipeline import (
     PointPipelineUniforms,
     build_finetune2_lut,
     build_point_pipeline_uniforms,
+    simulate_positive_saturation_shader,
 )
 from picasapy.render.effects import (
     GLOW_V1_INTENSITY,
@@ -148,6 +149,7 @@ __all__ = [
     "parse_neutral_argb",
     "parse_rgb_hex",
     "saturation_gain",
+    "simulate_positive_saturation_shader",
     "tilt_cover_scale",
     "vignette_gain",
 ]

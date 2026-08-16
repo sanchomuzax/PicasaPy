@@ -40,7 +40,12 @@ from PySide6.QtCore import Property, Signal, Slot
 from picasapy.edit.effect_clipboard import copy_all_effects, paste_all_effects
 from picasapy.fileops import RenameItem, preview_name, rename_photos_many
 from picasapy.index import open_index, photo_by_id, update_photo_fields
-from picasapy.ini import IniConflictError, IniSaveError, update_document
+from picasapy.ini import (
+    FilterWriteError,
+    IniConflictError,
+    IniSaveError,
+    update_document,
+)
 from picasapy.ini.albums import ensure_album, with_album, without_album
 from picasapy.metadata import write_iptc_caption
 from picasapy.scanner import PICASA_INI_NAME
@@ -49,7 +54,11 @@ from .worker_thread import BackgroundWorkerMixin
 
 # #137: a tartós ütközés (párhuzamos Picasa-írás) is kezelt írási hiba — a
 # felhasználó a megszokott hibacsatornán kap jelzést, nem néma adatvesztés.
-_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
+# #643: a round-trip őr visszautasítása (`FilterWriteError`) ugyanígy KEZELT
+# hiba — a szövege már magyar, felhasználónak szóló mondat (ld.
+# `ini/filter_guard.py`), tehát a hibasávban olvashatóan jelenik meg. Nélküle
+# nyers Python-kivételként bukna ki a háttérszálon: néma bukás a felületen.
+_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError, FilterWriteError)
 
 
 class PhotoOpsMixin(BackgroundWorkerMixin):
@@ -591,8 +600,10 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                         prev = section.get("filters") if section else None
                         fresh.append((folder, photo.name, prev))
                         if new_value:
+                            # #643: a vágólapról ÁTVITT lánc — az idegen tag
+                            # nem most keletkezik, ezért nem utasítjuk vissza.
                             document = document.with_value(
-                                photo.name, "filters", new_value
+                                photo.name, "filters", new_value, carried=True
                             )
                         else:
                             document = document.with_removed(photo.name, "filters")
@@ -634,7 +645,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     for name, prev_filters in entries:
                         if prev_filters is not None:
                             document = document.with_value(
-                                name, "filters", prev_filters
+                                name, "filters", prev_filters, carried=True  # #643
                             )
                         else:
                             document = document.with_removed(name, "filters")

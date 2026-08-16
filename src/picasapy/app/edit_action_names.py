@@ -90,6 +90,13 @@ def _effects() -> dict[str, str]:
         "radblur": "Soft Focus",
         "glow2": "Glow",
         "ansel": "Filtered B&W",
+        # #711: a `desat` UGYANEZ a szűrő egy régebbi kulcs alatt — a
+        # renderelése is az `apply_ansel`-re megy. A név nem találgatás: az
+        # eredeti `CDesaturateFilter::name` felirata bizonyítottan
+        # „Filtered B&W" / „Szűrt FF" (`referencia/stringres-en-hu.tsv`,
+        # 282. sor), tehát a felhasználó ugyanazt a nevet látja, mint a régi
+        # programban.
+        "desat": "Filtered B&W",
         "radsat": "Focal Saturation",
         "dir_tint": "Graduated Tint",
         # 2. fül — Kreatív

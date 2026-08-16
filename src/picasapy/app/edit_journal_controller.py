@@ -122,7 +122,11 @@ class EditJournalMixin:
         ini_path = target.parent / ".picasa.ini"
 
         def mutate(document):
-            return document.with_value(target.name, "filters", entry.chain)
+            # #643: a naplóból ÁTVITT lánc (korábban már kiírtuk) —
+            # a visszatöltés nem szerzőség, ezért `carried`.
+            return document.with_value(
+                target.name, "filters", entry.chain, carried=True
+            )
 
         try:
             update_document(ini_path, mutate, backup=True)

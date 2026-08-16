@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 
+from picasapy.ini.filter_guard import guard_chain_write
+
 _SPECIAL_NAMES = frozenset({"Picasa", "Contacts", "Contacts2", "encoding", "photoid"})
 ALBUM_SECTION_PREFIX = ".album:"
 
@@ -142,9 +144,41 @@ class IniDocument:
     def serialize(self) -> str:
         return "".join(line.text + line.ending for line in self._all_lines())
 
-    def with_value(self, section_name: str, key: str, value: str) -> IniDocument:
-        """Új dokumentum a beállított kulccsal; hiányzó szekciót létrehozza."""
+    def with_value(
+        self, section_name: str, key: str, value: str, *, carried: bool = False
+    ) -> IniDocument:
+        """Új dokumentum a beállított kulccsal; hiányzó szekciót létrehozza.
+
+        **#643 — round-trip őr.** Ez a `.picasa.ini` MINDEN kulcsírásának
+        közös kapuja (szerkesztő, csoportos effekt, effekt-vágólap,
+        fotóműveletek, mentés, napló-visszatöltés mind ide fut be), ezért
+        a szerkesztési lánc (`filters=`, `redo=`) ellenőrzése is itt ül —
+        így semmilyen hívó nem kerülheti meg. A szabályt és annak
+        indoklását a `picasapy.ini.filter_guard` modul docstringje írja le.
+
+        Args:
+            section_name: A cél szekció neve (a kép fájlneve).
+            key: Az írandó kulcs.
+            value: Az írandó érték.
+            carried: A `filters=`/`redo=` lánc máshonnan, VÁLTOZATLANUL átvitt
+                tartalom (beillesztés, annak visszavonása, `redo=` átforgatás,
+                napló-visszatöltés). Ilyenkor az őr csak naplóz, nem utasít
+                vissza — a hibás tag nem most keletkezik. Alapértelmezésben
+                (szerkesztő-útvonalak) SZIGORÚ.
+
+        Raises:
+            FilterWriteError: Ha a lánc olyan ÚJ hibás tagot tartalmazna,
+                amelynél az eredeti Picasa bejárója megáll (ismeretlen név,
+                túl sok paraméter, hiányzó `=`).
+        """
         target = self.section(section_name)
+        guard_chain_write(
+            key,
+            value,
+            target.get(key) if target is not None else None,
+            where=f"[{section_name}]",
+            carried=carried,
+        )
         if target is None:
             return self._with_new_section(section_name, key, value)
         updated = _section_with_value(target, key, value, self.newline)

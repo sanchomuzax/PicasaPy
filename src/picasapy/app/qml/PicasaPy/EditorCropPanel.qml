@@ -18,6 +18,16 @@ ColumnLayout {
     anchors.margins: 10
     spacing: 8
 
+    // #741: a MÉRT gombgeometria (`docs/specs/szerkeszto-panel-meretek.md`
+    // 6.1/7.): a párban álló művelet-gombok 98 × 28 képpontosak, 6 képpont
+    // hézaggal, a panelen VÍZSZINTESEN KÖZÉPRE (x 38 és 142) — nem a
+    // tartalom-oszlop teljes szélességét kitöltve.
+    component ActionButton: PanelButton {
+        Layout.fillWidth: false
+        Layout.preferredWidth: 98
+        Layout.preferredHeight: 28
+    }
+
     RowLayout {
         Layout.fillWidth: true
         spacing: 6
@@ -64,7 +74,8 @@ ColumnLayout {
     Rectangle {
         objectName: "cropAspectCombo"
         Layout.fillWidth: true
-        Layout.preferredHeight: 22
+        //: #741: a mért legördülő-magasság (`crop_aspect_menu`, 249 × 21)
+        Layout.preferredHeight: 21
         radius: 2
         color: Theme.contentPanel
         border.color: Theme.chromeBorder
@@ -267,14 +278,15 @@ ColumnLayout {
     }
 
     RowLayout {
-        Layout.fillWidth: true
+        Layout.fillWidth: false
+        Layout.alignment: Qt.AlignHCenter
         spacing: 6
-        PanelButton {
+        ActionButton {
             objectName: "cropRotateButton"
             label: qsTr("Rotate")
             onButtonClicked: panel.cropRotateRequested()
         }
-        PanelButton {
+        ActionButton {
             objectName: "cropPreviewButton"
             label: qsTr("Preview")
             // amíg nyomva tartják, a hívó a vágott képet mutatja
@@ -287,24 +299,24 @@ ColumnLayout {
         }
     }
 
-    PanelButton {
+    ActionButton {
         objectName: "cropResetButton"
         label: qsTr("Reset")
-        Layout.fillWidth: false
-        Layout.preferredWidth: 120
+        // #741: az eredetin a `cropdiscard` egyedül, KÖZÉPEN áll (x 90)
         Layout.alignment: Qt.AlignHCenter
         onButtonClicked: panel.cropResetRequested()
     }
 
     RowLayout {
-        Layout.fillWidth: true
+        Layout.fillWidth: false
+        Layout.alignment: Qt.AlignHCenter
         spacing: 6
-        PanelButton {
+        ActionButton {
             objectName: "cropApplyButton"
             label: qsTr("Apply") + " ✔"
             onButtonClicked: panel.cropApplyRequested()
         }
-        PanelButton {
+        ActionButton {
             objectName: "cropCancelButton"
             label: qsTr("Cancel") + " ✘"
             onButtonClicked: panel.cropCancelRequested()

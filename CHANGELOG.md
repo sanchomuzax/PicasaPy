@@ -5,6 +5,63 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.59] – 2026-08-16
+
+### Javítva
+- **A szerkesztő bal panelje az eredeti méreteivel épül (#741).** A csempék
+  sorköze 104 képpont volt a mért **64** helyett — három sor × ~40 képpont,
+  amit a panel aljáról vett el, ezért csúszott lejjebb a Derítőfény és a
+  gombsor. Most a teljes panel a Picasa saját erőforrás-rétegeiből mért
+  geometriát követi: csempe 44 × 30, hét fül hézag nélkül kitöltve, a
+  csúszkák, gombok és legördülők az eredeti méretükön. **A felső eszköztár
+  a szerkesztőben nem látszik többé** — az eredetiben ott csak a „Vissza a
+  könyvtárhoz" van.
+- **A PicasaPy-ban végzett szerkesztés eljuthat a párhuzamosan futó
+  Picasához (#643).** Kiderült, hogy a Picasa a saját adatbázisát tekinti
+  igazságforrásnak, és egy már beolvasott fotót a `.picasa.ini` változása nem
+  tesz elavulttá — még újraindítás után sem. Mentés után ezért mostantól
+  megérintjük a **képfájl módosítási idejét**; a kép tartalma, mérete és
+  jogosultsága változatlan marad. (Kikapcsolható:
+  `PICASAPY_TOUCH_PHOTO_MTIME=0`.)
+- **Nem írható ki olyan szerkesztési lánc, amit az eredeti Picasa eldobna
+  (#643).** A Picasa az első hibás lépésnél megáll, és onnantól a lánc többi
+  részét sem hajtja végre. Az új ellenőrzés ezt lehetetlenné teszi — és
+  végigmérve mind az 57 effektünket: ma egyik sem ír ilyet.
+
+## [0.7.58] – 2026-08-15
+
+### Javítva
+- **A bal hasáb végre görgethető (#730).** Eddig semmi nem görgette: ha ~30-nál
+  több névvel ellátott személyed volt, a Mappák-lista magassága **nullára
+  esett**, az „Egyebek" fejléc pedig kicsúszott az ablakból — a tartalom
+  egyszerűen elérhetetlen lett. Mostantól saját, mindig látszó görgetősávja
+  van, ahogy az eredetiben.
+- **Az egérgörgő a bal hasáb fölött nem nyit meg véletlen mappát (#731).**
+  Eddig bárhol görgettél a hasábon, a rács átugrott egy másik mappára. Most a
+  hasáb görög; a mappalista fölött pedig — ahogy az eredetiben — lépteti a
+  kijelölést.
+- **Négy sor jobbklikkje a saját menüjét adja (#732).** A gyűjtemény-mappa, az
+  exportált mappa, a „Névtelenek" és a „Mellőzött emberek" sor eddig a hasáb
+  rendezés-menüjét nyitotta a sajátja helyett.
+- **A `desat` szerkesztés-kulcsot felismerjük és rendereljük (#711).** Egy régi
+  `.picasa.ini`-ben ez eddig ismeretlen volt; a Visszavonás gombon mostantól az
+  eredeti Picasa saját felirata jelenik meg („Szűrt FF").
+
+## [0.7.57] – 2026-08-15
+
+### Javítva
+- **Végre ott vannak a Visszavonás/Újra gombok, ahol keresed őket (#616).**
+  A gombsor eddig a panel legaljára volt szegezve. Nagy képernyőn — ahol a
+  panel 832 képpont magas, a fül tartalma viszont csak ~300 — ez azt
+  jelentette, hogy a gombok **több száz képponttal a csempék alatt**, egy
+  nagy üres szürke mező túloldalán ültek: a gyakorlatban eltűntek. Mostantól
+  közvetlenül a fül tartalma alatt vannak, de szűk ablakban sem csúsznak ki a
+  képernyőről. (Az eredeti Picasa panelje fix méretű, ezért ott mindig a
+  tartalom alatt van a sor — a „panel aljára szegezve" a mi hibánk volt.)
+- **A GPU-előnézet telítettsége megegyezik a mentett képpel (#696).** A
+  pozitív oldalon eddig eltért az, amit a csúszka húzása közben láttál, attól,
+  amit a program mentett — átlagosan 3,5–19,3 szinttel; most 0,8–1,4.
+
 ## [0.7.56] – 2026-08-15
 
 ### Javítva

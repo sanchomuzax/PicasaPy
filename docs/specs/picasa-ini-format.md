@@ -424,6 +424,33 @@ külső író a **képfájl** módosítási idejét is megérinti, a fotó beker
 újrafeldolgozandók közé — és akkor az ini-t is beolvassa. Ez egy mérhető
 kísérlet, nem elmélet.
 
+### A PicasaPy ezt a megkerülési utat MEGVALÓSÍTJA (#643, 2026-08-15)
+
+Az `update_document` (`src/picasapy/ini/io.py`) a sikeres ini-mentés után
+megérinti azoknak a fotóknak a **módosítási idejét**, amelyeknek a szakasza
+ténylegesen változott. A logika egy helyen él
+(`src/picasapy/ini/photo_touch.py`), és mivel az `update_document` a projekt
+EGYETLEN ini-írási kapuja, minden író (szerkesztő, csillag, felirat, arcok,
+kulcsszavak, csoportos effekt, mentés) automatikusan részesül belőle.
+
+| kérdés | válasz |
+|---|---|
+| mit módosít | **kizárólag az időbélyeget** (`os.utime`) — a fájlt meg sem nyitja, a bájtjai, mérete és jogosultságai érintetlenek |
+| az `atime` | megőrizve: előbb `os.stat`, majd a régi `atime` visszaírása az új `mtime` mellé |
+| mikor fut | csak SIKERES ini-mentés után, és csak a ténylegesen változott **fotó**-szakaszokra (`[Picasa]`, `[Contacts2]`, `[.album:…]` kimarad) |
+| melyik fájlra | az ini MELLETTI, azonos nevű, LÉTEZŐ fájlra; hiányzó képet, alkönyvtárat, `..`-t kihagy |
+| milyen érték | „most"; ha a képfájl mtime-ja a jövőben van (NAS-óraeltérés), akkor a jelenleginél 1 másodperccel későbbre — hogy biztosan újabbnak látsszon |
+| hibatűrés | az `utime` bukása (írásvédett kép, hálózati megosztás) **naplózott figyelmeztetés**, a mentés érvényes marad |
+| kikapcsolás | `PICASAPY_TOUCH_PHOTO_MTIME=0` (`false`/`no`/`off`/`ki` is jó). Hiányában BE. Környezeti változó, mert az `ini` réteg szándékosan Qt-mentes, és a mtime-érzékeny felhasználónak (fájlkezelős rendezés, rsync-alapú mentés) ez egyszeri, tartós döntés. |
+
+> ⚠️ **Amit ez NEM állít.** Hogy a valódi, windowsos Picasa emiatt tényleg
+> újraindexeli-e a fotót, **Linuxon nem mérhető** — a fejlesztői gépen nincs
+> Picasa. A megvalósítás a saját oldalát garantálja (az érintés megtörténik,
+> a tartalom nem változik, ez tesztelt:
+> `tests/ini/test_photo_touch_643.py`); a Picasa-oldali hatás megerősítése a
+> felhasználó párhuzamos windowsos próbájára vár. Amíg az nincs meg, a
+> „valós idejű kétirányú átjárás futó Picasával" továbbra sem ígérhető.
+
 ### Az ini → rekord olvasót csak SZERKESZTÉS/MENTÉS hívja
 
 Az ini-szakaszt rekordba olvasó rutin (`0x00463270`) mind a **48 kulcsot**
@@ -454,7 +481,9 @@ ha ez a lépés változást jelez.
 > `filters=`-t beolvassa.** A #643-as hiba oka tehát **nem** tartalmi
 > feltétel, hanem az, hogy a betöltő egy **már indexelt** fotóra nem fut le
 > újra — az újraindítás sem futtatja végig, mert az adatbázis-gyorsítótárból
-> dolgozik. (Hogy mi kényszerítene újraindexelést, az még nyitott.)
+> dolgozik. (Hogy mi kényszerítene újraindexelést, arra a **képfájl
+> mtime-jának megérintése** az egyetlen ismert jelölt — fent; a hatása
+> Picasa-oldalon még nincs megmérve.)
 
 ### Mit jelent ez a gyakorlatban
 
@@ -462,7 +491,21 @@ ha ez a lépés változást jelez.
 |---|---|---|
 | Picasa **ír** → külső olvasó | ✅ | az ini a Picasa kimenete, mindig naprakész |
 | külső **ír** → futó Picasa **olvassa** | ❌ | nincs olyan hívási út, ami a képfájl érintése nélkül kiváltaná |
+| külső ír **+ a képfájl mtime-ját is megérinti** | ❓ **megmérendő** | ez a levezetett megkerülési út (fent); a PicasaPy már így ír, de a Picasa-oldali hatás windowsos próbára vár |
 | külső ír → Picasa **legközelebbi saját írása** | ⚠️ **adatvesztés** | a szinkron a saját adatbázis-rekordjából írja ki a szakaszt egészben, így a külső kulcsokat felülírja |
+
+> ⚠️ **A harmadik sor a legfontosabb, és két egyváltozós próba erősítette
+> meg.** (1) A Picasa **teljes újraindítása után sem** jelent meg a
+> PicasaPy-ban felvitt effekt — tehát nem arról van szó, hogy „nem veszi
+> észre a fájlváltozást". (2) Amikor a Picasa **maga írt** a képhez, a mi
+> effektünk eltűnt a PicasaPy-ból is — vagyis a szakaszt EGÉSZBEN írja ki a
+> `db3`-ból, nem kulcsonként fésüli össze. Ebből az is következik, hogy a
+> `backuphash` hiánya **tünet, nem ok**: a Picasa a saját írásakor adott is
+> `backuphash`-t, a mi láncunk mégis törlődött.
+>
+> A mtime-érintés tehát a **beolvastatásra** ad esélyt, a **felülírás elleni
+> védelmet** nem oldja meg — az továbbra is a #644-es szerkesztés-napló
+> hatásköre.
 
 > **A round-trip ígéretét ehhez kell igazítani.** A `.picasa.ini` a futó
 > Picasa felé **kimenet**, nem bemenet; bemenetté csak az első indexeléskor,
@@ -817,6 +860,26 @@ ez nem egy effekt elvesztése:
 > amit a #643 leírt, csak fordított irányban.
 
 Régi Picasa-telepítésből örökölt mappáknál ez valós kockázat.
+
+### MEGVALÓSÍTVA (#711) — és egy pontosítás a „lánc elveszne" állításhoz
+
+A `desat` regisztrálva lett (`picasapy.ini.filter_registry.CANONICAL_FILTER_NAMES`
++ `MAX_PARAM_COUNTS["desat"] = 3`) és a renderelő oldalon az `ansel`
+egzakt megfelelőjeként fut (`picasapy.render.chain._apply_desat_op`, a
+fenti `desat(r,g,b) == ansel(...)` átváltással).
+
+**Pontosítás:** a fenti idézet a natív Picasa OLVASÓ oldalára vonatkozó
+mérésből (#643) lett átvezetve a PicasaPy-ra, de a saját `apply_filters`
+lánc-feldolgozónk a `desat` regisztrálása ELŐTT sem viselkedett így — a
+`#301` óta minden ismeretlen nevű bejegyzést némán kihagy, és a lánc TÖBBI
+tagját (pl. az utána következő `bw`-t) továbbra is lefuttatja; az
+író-oldali kapu (`serialize_filters_for_write`) ugyanígy bájtra megőrizte
+az ismeretlen `desat=` bejegyzést és a mögötte állókat. A tesztekkel
+(`tests/render/test_desat_711.py`, `TestDesatRoundTrip`) igazolva: ez a
+két eset a javítás ELŐTT is zöld volt. Amit a javítás pótolt, az kizárólag
+maga a `desat` EFFEKT renderelése (korábban a kép a `desat` szemszögéből
+változatlan maradt, csak a `bw` futott le utána) — nem egy lánc-vesztési
+hiba.
 
 ## Valódi korpusz: 859 `.picasa.ini` egy 43 éves fotógyűjteményből (2026-08-15)
 

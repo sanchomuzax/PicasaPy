@@ -101,7 +101,7 @@ ingyen megadja**.
 
 ## Két hiány a nyilvántartásban (2026-08-15, #711 köre)
 
-### 1. A `desat` — a 43. szűrő, ami nincs a 42 elemű táblában
+### 1. A `desat` — a 43. szűrő, ami nincs a 42 elemű táblában (MEGVALÓSÍTVA, #711)
 
 A fenti tábla a `CGenericFilter` által kezelt szűrőket sorolja. Az RTTI-ben
 azonban **két** érdemi kép-szűrő osztály van: a `CGenericFilter` és a

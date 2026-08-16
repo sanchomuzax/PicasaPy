@@ -1,5 +1,9 @@
 # UI-audit — főablak (mappafa, eszköztár, tálca, görgetősáv, arányok)
 
+> 📐 A **méretek** kötelező listája:
+> [`konyvtar-ablak-meretek.md`](konyvtar-ablak-meretek.md). Ez a lap
+> képernyőkép-alapú audit; ahol a kettő eltér, **a méretlap az igazság**.
+
 **Dátum:** 2026-07-30
 **Forrás (eredeti):** a felhasználó Picasa 3.9 magyar felületéről készült
 screenshotjai, `research/testdata/screenshot/` alá tartozó gépen —
@@ -202,8 +206,43 @@ Megfigyelt eltérések a lapos nézethez képest:
 - a kijelölt soron jobb oldalt kis **görgető-fogantyú** jelenik meg.
 
 *Bizonyítottsági fok: megerősített* (elrendezés-erőforrás + buboréksúgó +
-képernyőkép). **Nyitva:** a behúzás és a sormagasság pontos képpontértéke —
-ehhez ismert nagyítású képernyőkép kell.
+képernyőkép).
+
+### A sormagasság és a behúzás — NEGATÍV eredmény (2026-08-15)
+
+A `respack.yt` rétegtéglalapjai a felület nagy részére képpontra megadják a
+geometriát (`binaris-regeszet-modszertan.md` 14/c). **A mappafa sorára
+NEM.** Végignézve a csomagot:
+
+- a bal panel listája `thumbui/albums_win` / `albums_mac`, típusa **`listbox`**
+  (x 9..205, y 75..412 a tervezővásznon) — csak a **keret**, sorsablon nélkül;
+- az egész csomagban **egyetlen** `proto` (sorsablon) van,
+  `thumbui/headerproto` (199 × 17), és az a **rács** fejlécsora, nem a fa;
+- a `scratch.tre` `scratch/album*` elemei a **képtálca** elemsablonját adják
+  (a fájl saját kommentje mondja ki: „the tray can get so small that there's
+  no room for text"), nem a mappafáét.
+
+**Következtetés:** a `listbox` a sorait **kódból** rajzolja, a sormagasság és
+a behúzás nem elrendezés-erőforrás. Ahhoz a rajzoló rutint kellene
+visszakövetni — ez a kérdés árához képest drága, és a sor magassága a
+`design-guide.md`-ből amúgy is szabadon választható (a mi listánk működik).
+
+*Bizonyítottsági fok: elvetve* — nem cáfolva, hanem **nem ebből a forrásból
+kideríthető**. A következő körnek ne kelljen újra végigjárnia.
+
+### Amit a csomag viszont megad — a bal panel fejléc-elemei
+
+Ezek **méretek**, tehát a tervezővászon-csapda (14/c) nem érinti őket:
+
+| elem | méret | mi ez |
+|---|---|---|
+| `albumview` | **132 × 29** | „Vissza a könyvtárhoz" |
+| `newalbum` | **29 × 22** | új album |
+| `newfolder` | **29 × 22** | új mappa |
+| `folderview` | **30 × 22** | nézetváltó (fa/lapos) |
+| `folderviewpopup` | **22 × 22** | a nézet-legördülő nyila |
+| `listbox_title` | 80 × 14 | a „Könyvtár" felirat |
+| `hlistsizer` | **8** széles | a húzható elválasztó |
 
 ## 1.5 A „View options" legördülő — teljes tartalom a binárisból
 
@@ -541,6 +580,16 @@ jobbra:
 ---
 
 ## 5. Alsó tálca (kijelölés-tálca)
+
+> 📐 **Az alábbi 5.1 képernyőképből készült, és a kép 1030 px-nél levágva —
+> a tálca alsó pereme nem látszik.** A pontos geometriát azóta a Picasa saját
+> elrendezés-forrása adja meg:
+> [`picasa-fo-ablak-elrendezes.md`](picasa-fo-ablak-elrendezes.md) →
+> „Az alsó sáv — `basecontrolset`" (#455). Ahol a kettő eltér, **a forrás az
+> igazság**. A legfontosabb, amit a képernyőkép nem adott meg:
+> a sáv a **36,5 %-os osztópontnál** válik ketté (bal oldalt a tálca), a
+> bélyegképsor jobbján **50 px** van fenntartva a három gombnak, és a zöld
+> feltöltés-gomb **fix 145 px**.
 
 ### 5.1 Eredeti
 

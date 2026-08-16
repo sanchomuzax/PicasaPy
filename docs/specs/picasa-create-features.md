@@ -833,6 +833,87 @@ dolgozik (`facemakemovieres` vs `makemovieres`).
 | Exportálás TiVo DVR-re… | `ID_TIVO` | a `plugins/ytITivo.yti` plugin (TiVo Desktop-integráció) |
 | Indexképek nyomtatása… | `ID_FILE_PRINTCONTACTSHEET` | a Contact Sheet kollázs-típus nyomtatási párja |
 
+## 2/b. A diavetítés vezérlősávja — teljes leltár a binárisból (#433, 2026-08-15)
+
+Forrás: `oneup.tre`, `oneuptext.tre`, `slideshowctrls.tre`, és a `respack.yt`
+rétegtéglalapjai (a módszer és a csapdája:
+[`binaris-regeszet-modszertan.md`](binaris-regeszet-modszertan.md) 14/c —
+a **méretek** authoroltak, az abszolút pozíciókat a `.tre` felülírhatja).
+
+### A sáv maga
+
+```
+oneup/stripback: root
+YConstraint 1, 1, -20      # az ablak aljától 20 képponttal feljebb
+m_centerX                  # vízszintesen középre
+```
+
+Mérete a csomagban **797 × 50** képpont; a fölötte lebegő felirat
+(`oneup/caption`) **550 × 10**, `YConstraint 1, 1, -100`.
+
+### A tíz vezérlő, balról jobbra
+
+| elem | méret | típus / szerep | felirat |
+|---|---|---|---|
+| `exit` | **74 × 35** | kilépés a diavetítőből, ikon + felirat | **Kilépés a diavetítőből** |
+| `timeline` | **157 × 35** | ugrás az idővonalra | **Időrend** |
+| `rotateleft` · `rotateright` | **26 × 34** | forgatás | — |
+| `prev` | **26 × 30** | előző kép | — |
+| `auto` (lejátszás) | **36 × 36** | indít/szünet | — |
+| `next` | **26 × 30** | következő kép | — |
+| `star` | **27 × 33** | csillagozás | — |
+| **`transtype`** | **143 × 21** | **`popuplist` = legördülő** | az átmenet neve |
+| `captionbutton` | **54 × 33** | **kétállású** felirat-kapcsoló | — |
+| `dtclip` | **103 × 44** | a diaidő csoportja | **Megjelenítési idő** |
+
+A `prev` · `auto` · `next` hármas külön konténerben ül
+(`oneup/centergroup`, 118 × 47, `m_centerX`) — vagyis **a lejátszás-vezérlők
+a sáv közepére vannak igazítva**, a többi elem tőlük balra/jobbra rendeződik.
+
+### A diaidő-csoport (`dtclip`)
+
+| elem | méret | mi ez |
+|---|---|---|
+| `tpslabel` | 103 × 11 | a **„Megjelenítési idő"** felirat, a csoport TETEJÉN |
+| `minusone` | **14 × 13** | −1 mp, `Property setautorepeat 1` (nyomva tartható) |
+| `tps` | 48 × 15 | a szám (középre igazítva) |
+| `plusone` | **14 × 13** | +1 mp, szintén auto-ismétlő |
+
+### ⚠️ A feliratmód KÉTÁLLÁSÚ, nem hármas
+
+A jegy 3. pontja azt feltételezte, hogy a feliratmód **három**állású
+(felirat / fájlnév / nincs), a nyomtatás-opciókkal azonos módon. **A forrás
+ezt nem támasztja alá:** a `captionbutton` egyetlen kapcsoló, ami két ikon
+között vált:
+
+```
+oneup/captionbutton: oneup/stripback
+Property showtarget oneup/caption_yesicon
+Property hidetarget oneup/caption_icon
+```
+
+Két ikon (`caption_icon` 17 × 19 és `caption_yesicon` 16 × 18), show/hide
+párban — vagyis **felirat BE / KI**. Hármas választó a diavetítés sávjában
+nincs.
+
+*Bizonyítottsági fok: erős* (a két ikon és a show/hide pár explicit; azt nem
+zártuk ki, hogy a mód máshol — pl. a Beállításokban — háromállású legyen).
+
+### Két külön sáv létezik
+
+| erőforrás | sáv mérete | tartalma |
+|---|---|---|
+| `oneup/*` | 797 × 50 | a **teljes** vezérlősor (a fenti tíz elem) |
+| `slideshowctrls/*` | **235 × 50** | **csak** a `transtype` legördülő (196 × 21) |
+
+Mindkettő ugyanúgy horgonyzott (`YConstraint 1,1,-20`, `m_centerX`), és az
+átmenet-választó mindkettőben `popuplist`, azonos
+`Property itempadding 2 2 22 2` beállítással (a jobb oldali 22 képpont a
+legördülő-nyílnak).
+
+*Bizonyítottsági fok: megerősített* (a `respack.yt` rétegtéglalapjai és a
+`.tre` kötések; a feliratok a `panel-feliratok-hu.tsv` magyar oszlopából).
+
 ## 4. Mit érdemes ebből átvenni
 
 1. A **hat kollázs-típus** és a **három keret** jól definiált, mind

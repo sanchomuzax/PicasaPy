@@ -14,7 +14,15 @@ ColumnLayout {
     objectName: "effectsColumn3"
     visible: !panel.modeToolActive && panel.activeTab === 4 && !panel.paramPanelActive
     opacity: panel.enabled ? 1 : 0.45
-    anchors.margins: 10
+    // #741: az effekt-rács MÉRT geometriája (`fx1..fx12`, x 8 / 96 / 184,
+    // osztásköz 88, látható csempe 86) a #704 óta helyes — a tartalom-
+    // oszlop 276-ra bővülésével ezért a fül margóit kell igazítani, hogy a
+    // rács továbbra is 262 képpont széles maradjon (3 × 86 + 2 × 2), az
+    // x 8-on kezdve. Szimmetrikus 10-10-es margóval a csempe 86-ról 84-re
+    // zsugorodott volna.
+    anchors.leftMargin: 5
+    anchors.rightMargin: 9
+    anchors.topMargin: 10
     spacing: 8
 
     // #704: NINCS fejlécsáv a rács fölött. Az eredeti Picasa
