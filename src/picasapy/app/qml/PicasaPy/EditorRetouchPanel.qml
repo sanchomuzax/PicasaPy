@@ -61,7 +61,10 @@ ColumnLayout {
         color: Theme.textGray
     }
 
+    // #779: kitöltő, hogy a felirat betűszélessége ne szabja meg a panel
+    // minimumát (ld. az EditorTextPanel.qml azonos okú megjegyzését).
     Label {
+        Layout.fillWidth: true
         text: qsTr("Brush Size")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray

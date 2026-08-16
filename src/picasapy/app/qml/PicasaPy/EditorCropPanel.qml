@@ -22,9 +22,15 @@ ColumnLayout {
     // 6.1/7.): a párban álló művelet-gombok 98 × 28 képpontosak, 6 képpont
     // hézaggal, a panelen VÍZSZINTESEN KÖZÉPRE (x 38 és 142) — nem a
     // tartalom-oszlop teljes szélességét kitöltve.
+    //
+    // #779: a 98 FELSŐ KORLÁT, nem fix méret — fixen a pár 98 + 6 + 98 = 202
+    // képpontot követelt az oszloptól, és ezzel a panel minimumát szabta meg.
+    // A `fillWidth` + `maximumWidth` a mért méretet adja, valahányszor van rá
+    // hely, és csak akkor zsugorít, amikor nincs.
     component ActionButton: PanelButton {
-        Layout.fillWidth: false
+        Layout.fillWidth: true
         Layout.preferredWidth: 98
+        Layout.maximumWidth: 98
         Layout.preferredHeight: 28
     }
 
@@ -278,7 +284,8 @@ ColumnLayout {
     }
 
     RowLayout {
-        Layout.fillWidth: false
+        Layout.fillWidth: true
+        Layout.maximumWidth: 98 + 6 + 98
         Layout.alignment: Qt.AlignHCenter
         spacing: 6
         ActionButton {
@@ -308,7 +315,8 @@ ColumnLayout {
     }
 
     RowLayout {
-        Layout.fillWidth: false
+        Layout.fillWidth: true
+        Layout.maximumWidth: 98 + 6 + 98
         Layout.alignment: Qt.AlignHCenter
         spacing: 6
         ActionButton {
