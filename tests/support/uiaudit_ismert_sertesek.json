@@ -91,6 +91,69 @@
       "parent": "<QQuickItem>",
       "other": null,
       "megjegyzes": "#778 — a #775 kiterjesztése tárta fel (szöveg eszköz-mód, mind a három szélességnél): ugyanaz a 10 px-es alsó túlcsordulás, mint a cropColumn-nál — a modeToolScroll contentHeight-je nem számolja a felső margót. A szöveg-panel VÍZSZINTES (308→260) túlcsordulását a #775 ebben a körben javította; ez a függőleges, 10 px-es, mind a négy módot érintő eset továbbra is nyitott."
+    },
+    {
+      "kind": "overflow",
+      "item": "<QQuickRowLayout>",
+      "parent": "textColumn",
+      "other": null,
+      "megjegyzes": "#779 — BETŰMETRIKA-FÜGGŐ: a fejlesztői gépen befér, a CI tartalék betűkészletével 18–20 képponttal kilóg. A kulcs szándékosan nem tartalmazza a mértéket (ld. Violation.key), ezért egy bejegyzés mindkét környezetre jó. A valódi javítás a #779-ben: a hosszú feliratok ne húzhassák föl a panel minimumát."
+    },
+    {
+      "kind": "overflow",
+      "item": "<QQuickText>",
+      "parent": "textColumn",
+      "other": null,
+      "megjegyzes": "#779 — BETŰMETRIKA-FÜGGŐ: a fejlesztői gépen befér, a CI tartalék betűkészletével 18–20 képponttal kilóg. A kulcs szándékosan nem tartalmazza a mértéket (ld. Violation.key), ezért egy bejegyzés mindkét környezetre jó. A valódi javítás a #779-ben: a hosszú feliratok ne húzhassák föl a panel minimumát."
+    },
+    {
+      "kind": "overflow",
+      "item": "textContentField",
+      "parent": "textColumn",
+      "other": null,
+      "megjegyzes": "#779 — BETŰMETRIKA-FÜGGŐ: a fejlesztői gépen befér, a CI tartalék betűkészletével 18–20 képponttal kilóg. A kulcs szándékosan nem tartalmazza a mértéket (ld. Violation.key), ezért egy bejegyzés mindkét környezetre jó. A valódi javítás a #779-ben: a hosszú feliratok ne húzhassák föl a panel minimumát."
+    },
+    {
+      "kind": "overflow",
+      "item": "textCopyCaptionButton",
+      "parent": "textColumn",
+      "other": null,
+      "megjegyzes": "#779 — BETŰMETRIKA-FÜGGŐ: a fejlesztői gépen befér, a CI tartalék betűkészletével 18–20 képponttal kilóg. A kulcs szándékosan nem tartalmazza a mértéket (ld. Violation.key), ezért egy bejegyzés mindkét környezetre jó. A valódi javítás a #779-ben: a hosszú feliratok ne húzhassák föl a panel minimumát."
+    },
+    {
+      "kind": "overflow",
+      "item": "textFillDisabledCheck",
+      "parent": "textColumn",
+      "other": null,
+      "megjegyzes": "#779 — BETŰMETRIKA-FÜGGŐ: a fejlesztői gépen befér, a CI tartalék betűkészletével 18–20 képponttal kilóg. A kulcs szándékosan nem tartalmazza a mértéket (ld. Violation.key), ezért egy bejegyzés mindkét környezetre jó. A valódi javítás a #779-ben: a hosszú feliratok ne húzhassák föl a panel minimumát."
+    },
+    {
+      "kind": "overflow",
+      "item": "textOpacitySlider",
+      "parent": "textColumn",
+      "other": null,
+      "megjegyzes": "#779 — BETŰMETRIKA-FÜGGŐ: a fejlesztői gépen befér, a CI tartalék betűkészletével 18–20 képponttal kilóg. A kulcs szándékosan nem tartalmazza a mértéket (ld. Violation.key), ezért egy bejegyzés mindkét környezetre jó. A valódi javítás a #779-ben: a hosszú feliratok ne húzhassák föl a panel minimumát."
+    },
+    {
+      "kind": "overflow",
+      "item": "textOutlineThicknessSlider",
+      "parent": "textColumn",
+      "other": null,
+      "megjegyzes": "#779 — BETŰMETRIKA-FÜGGŐ: a fejlesztői gépen befér, a CI tartalék betűkészletével 18–20 képponttal kilóg. A kulcs szándékosan nem tartalmazza a mértéket (ld. Violation.key), ezért egy bejegyzés mindkét környezetre jó. A valódi javítás a #779-ben: a hosszú feliratok ne húzhassák föl a panel minimumát."
+    },
+    {
+      "kind": "overflow",
+      "item": "textRemoveAllButton",
+      "parent": "textColumn",
+      "other": null,
+      "megjegyzes": "#779 — BETŰMETRIKA-FÜGGŐ: a fejlesztői gépen befér, a CI tartalék betűkészletével 18–20 képponttal kilóg. A kulcs szándékosan nem tartalmazza a mértéket (ld. Violation.key), ezért egy bejegyzés mindkét környezetre jó. A valódi javítás a #779-ben: a hosszú feliratok ne húzhassák föl a panel minimumát."
+    },
+    {
+      "kind": "overflow",
+      "item": "redeyeHideOutlinesCheck",
+      "parent": "redeyeColumn",
+      "other": null,
+      "megjegyzes": "#779 — BETŰMETRIKA-FÜGGŐ: a fejlesztői gépen befér, a CI tartalék betűkészletével 18–20 képponttal kilóg. A kulcs szándékosan nem tartalmazza a mértéket (ld. Violation.key), ezért egy bejegyzés mindkét környezetre jó. A valódi javítás a #779-ben: a hosszú feliratok ne húzhassák föl a panel minimumát."
     }
   ]
 }
