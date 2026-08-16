@@ -1506,7 +1506,7 @@ ezért nála a 127-es és a 255-ös beállítás **azonos** képet ad.
 *Bizonyítottsági fok: megerősített* (a bináris és a `filterdesc.xml`
 egymástól függetlenül).
 
-#### ÚJ nyitott kérdés: a `tint` lefuttatja a szinthúzó elemzőt
+#### A `tint` SZINTHÚZÁSSAL kezd — megerősítve (2026-08-16)
 
 A `0x008f9630` a telítetlenítés ELŐTT beolvassa a `"CarefulEnhance"`
 beállítást (`0x008f9661`), és `-1,0f`-fel — az „alapértelmezett keverés"
@@ -1523,9 +1523,39 @@ A `0x009db610`-nek **öt** hívója van, ebből négy szűrő-callback:
 | **`0x008f9630`** | **`tint`** |
 | `0x00802180` | (nem szűrő) |
 
-**Nyitva:** felhasználja-e a `tint` az elemző eredményét, vagy csak
-statisztikát számol. Itt kell folytatni: a `0x008f9698` utáni kód és a
-`0x009db610` mellékhatása. A `rainbow`-t is érinti.
+**És felhasználja: a `0x009db610` HELYBEN módosítja a képet.**
+
+```asm
+0x009dba0b  sub   ecx, dword ptr [esp + 0x2c] ; (be − feketepont)
+0x009dba0f  imul  ecx, dword ptr [esp + 0x24] ; × erősítés (16.16)
+0x009dba14  sar   ecx, 0x10
+0x009dba17  jns / xor ecx, ecx                 ; alsó vágás
+0x009dba1d  jle / mov ecx, ebx                 ; felső vágás
+0x009dba21  mov   byte ptr [edx], cl           ; ← VISSZAÍRÁS
+0x009dba3c  jb    0x9db9b0                      ; sor-ciklus
+```
+
+A függvény **1084 bájt, egyetlen kilépési ponttal** (`0x009dba4e`) — nincs
+korai visszatérés, tehát a szinthúzás **mindig lefut**; kimeneti mutatója
+nincs, a visszatérési értéke konstans 0 (`0x009dba45`). A két paramétere:
+a `CarefulEnhance` (BE → 0,5-ös tényező és 252-es fehérpont, KI → 1,0 és
+255) és a vágópont-keverés (`-1,0f` → az alapértelmezett **0,30**).
+
+Vagyis a `tint` **hat lépésből** áll:
+
+| # | lépés | cím |
+|---:|---|---|
+| 1 | előkészítés | `0x9aabf0` (`0x008f965b`) |
+| **2** | **szinthúzás helyben**, 0,30-as keveréssel | `0x9db610` (`0x008f9698`) |
+| 3 | telítetlenítés `w = 256 − preserve`-vel | `0x9a9550` (`0x008f96f2`) |
+| 4 | a szín ICC-átvezetése (rendszerint `NULL`) | `ctx->vtbl[2]` (`0x008f972d`) |
+| 5 | telítettségfüggő gamma-LUT, kitevő `1/k` | `0x00aa40a0` |
+| 6 | szorzó keverés, `max`-ra normálva | `0x009db4f0` |
+
+Ugyanez érvényes a **`rainbow`**-ra és az **`autocontrast`**-ra is (mindkettő
+hívja a `0x009db610`-et) — nálunk egyik sincs renderelve.
+
+*Bizonyítottsági fok: megerősített.*
 
 #### Amit ez megmagyaráz
 

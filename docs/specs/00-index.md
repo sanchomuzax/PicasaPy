@@ -22,7 +22,7 @@ kérdés).
    (`0x0090f8f0`) egyetlen képen téved — az `Empty Space`-en
 2. **`unsharp` kernel finomítása** (Nyitva 3) — dekonvolúciós illesztés
 3. **Render-pontosítás a golden-verdiktek szerint** (Nyitva 8), súlyossági sorrendben: ~~`tint`~~ → **a fő oka MEGVAN (#872): a `preserve` skálája −1…255, nem 0…100** → `sat` pozitív ág 12 → `dir_tint` 9 → `finetune2` hőmérséklet 25 (extrémnél) → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
-   - **ÚJ kérdés:** a `tint` (és a `rainbow`) lefuttatja a szinthúzó elemzőt (`0x009db610`, `CarefulEnhance`) — felhasználja-e az eredményét?
+   - **MEGVÁLASZOLVA ugyanebben a menetben:** a `tint` (és a `rainbow`, `autocontrast`) **szinthúzással kezd** — a `0x009db610` helyben módosítja a képet, nem csak elemez. A `tint` hat lépéséből három hiányzik/rossz nálunk (#872)
 4. **A `tint` virtuális színátalakítása** — a `ctx` AZONOSÍTVA (a lánc-kontextus 3. függvénymutatója, `picasa-native-filter-registry.md`); nyitva marad, **mikor NEM `NULL`**, és mit csinál
 5. ~~**A `ytResampler` utolsó, nem 2-hatvány lépése**~~ — **MEGVAN** (#871,
    #762): kilenc szűrőmag, a `ResampleFilter2` beállítás választ, alapérték
