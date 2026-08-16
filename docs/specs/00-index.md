@@ -59,6 +59,7 @@ minden további lapja.
 | [picasa-web-template-nyelv.md](picasa-web-template-nyelv.md) | A web-export sablonnyelve |
 | [picasa-exe-strings.md](picasa-exe-strings.md) | Bináris string-bányászat |
 | [picasa-beepitett-konyvtarak.md](picasa-beepitett-konyvtarak.md) | A Picasa beépített nyílt forráskódú könyvtárai |
+| [picasa-linux-mod.md](picasa-linux-mod.md) | **A Picasa Linux-módja** — mit tiltott le maga a Google Wine alatt, és miért |
 
 ## Képfeldolgozás (szűrők, render)
 
