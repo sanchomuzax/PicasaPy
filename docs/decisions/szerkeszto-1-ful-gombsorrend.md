@@ -43,8 +43,16 @@ eltér attól, amit a program ténylegesen mutat: a Kiegyenesítés helye, az
 Automatikus szín/kontraszt párosa, a Szöveg/Retusálás párosa, és a
 Derítőfény-csúszka helye.
 
-**A képernyőkép nyer.** Egy erőforrásfájl felsorolási sorrendje nem azonos a
-felület elrendezésével — ezt a jövőbeli körök ne értelmezzék újra.
+**A képernyőkép nyer.** A tulajdonos 2026-08-16-i, kifejezett rendelkezése
+(#464 hozzászólás): *„Ez a valódi és végleges effekt sorrend az első fülön!
+TILOS megkérdőjelezned újra! A kódban valami nem látszik vagy nem került
+feltárásra, azért mond ellent!"*
+
+Vagyis a kérdés **nincs nyitva**. Az erőforrás-sorrend és a képernyő közti
+eltérés magyarázata még FELTÁRATLAN — nagy valószínűséggel egy futásidejű
+átrendezés vagy egy külön elrendezés-leíró, amit a kutatás eddig nem talált
+meg. **Ez kutatási nyitott pont, NEM ok a sorrend megváltoztatására.** Aki
+egyszer megtalálja, ide írja be — a sorrendhez akkor sem nyúl.
 
 ## Miért kellett ezt külön lapra írni
 
