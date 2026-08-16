@@ -1,4 +1,96 @@
 {
  "_megjegyzes": "Ismert, MÉG NEM JAVÍTOTT elrendezés-sértések (#656/1). Az őr csak az ÚJAKRA bukik el, hogy bevezethető legyen a meglévő hibák javítása nélkül. Minden bejegyzéshez tartozzon jegyszám; ha a jegy lezárul, a bejegyzést innen TÖRÖLNI kell, különben a regressziót elnyeli.",
- "sertesek": []
+ "sertesek": [
+  {
+   "kind": "overflow",
+   "item": "cropColumn",
+   "parent": "<QQuickItem>",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (vágás eszköz-mód, mind a három szélességnél): a modeToolScroll Flickable contentHeight-je nem számolja hozzá a panel FELSŐ margóját (anchors.margins: 10 az EditorCropPanel/EditorPanel.qml gyerekein) — ezért a panel alja mindig pontosan 10 px-szel lóg ki a görgethető terület aljából. Közös okú a retouch/redeye/text módokkal; önálló jegy nyitása javasolt."
+  },
+  {
+   "kind": "overflow",
+   "item": "<QQuickRowLayout>",
+   "parent": "cropColumn",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (vágás, 260 px széles panelnél): a képarány-legördülő sora (cropAspectCombo-t tartalmazó RowLayout) 20 px-szel szélesebb a 240 px-es tartalom-oszlopnál. Önálló jegy nyitása javasolt."
+  },
+  {
+   "kind": "overflow",
+   "item": "<QQuickText>",
+   "parent": "cropColumn",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (vágás, 260 px széles panelnél): a magyarázó szöveg (croptext) 20 px-szel szélesebb a 240 px-es tartalom-oszlopnál. Önálló jegy nyitása javasolt."
+  },
+  {
+   "kind": "overflow",
+   "item": "cropAspectCombo",
+   "parent": "cropColumn",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (vágás, 260 px széles panelnél): a képarány-legördülő maga 20 px-szel szélesebb a 240 px-es tartalom-oszlopnál. Önálló jegy nyitása javasolt."
+  },
+  {
+   "kind": "overflow",
+   "item": "retouchColumn",
+   "parent": "<QQuickItem>",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (retusálás eszköz-mód, mind a három szélességnél): ugyanaz a 10 px-es alsó túlcsordulás, mint a cropColumn-nál — a modeToolScroll contentHeight-je nem számolja a felső margót. Közös okú javítás javasolt a négy eszköz-módra egyszerre."
+  },
+  {
+   "kind": "overflow",
+   "item": "<QQuickRowLayout>",
+   "parent": "retouchColumn",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (retusálás, 260 px széles panelnél): a Visszavonás/Újra és az Alkalmaz/Mégse gombpárok (118 + 7 + 118 = 243 px) szélesebbek a 240 px-es tartalom-oszlopnál (12 px-es túlnyúlás). Önálló jegy nyitása javasolt."
+  },
+  {
+   "kind": "overflow",
+   "item": "<QQuickText>",
+   "parent": "retouchColumn",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (retusálás, 260 px széles panelnél): a magyarázó szöveg (retouchtext) 20 px-szel szélesebb a 240 px-es tartalom-oszlopnál. Önálló jegy nyitása javasolt."
+  },
+  {
+   "kind": "overflow",
+   "item": "retouchRegionCountLabel",
+   "parent": "retouchColumn",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (retusálás, 260 px széles panelnél): a kijelölt foltok számát mutató felirat 20 px-szel szélesebb a 240 px-es tartalom-oszlopnál. Önálló jegy nyitása javasolt."
+  },
+  {
+   "kind": "overflow",
+   "item": "redeyeColumn",
+   "parent": "<QQuickItem>",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (vörösszem eszköz-mód, mind a három szélességnél): ugyanaz a 10 px-es alsó túlcsordulás, mint a cropColumn-nál. Közös okú javítás javasolt a négy eszköz-módra egyszerre."
+  },
+  {
+   "kind": "overflow",
+   "item": "<QQuickRowLayout>",
+   "parent": "redeyeColumn",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (vörösszem, 260 px széles panelnél): a cím-sor (ikon + „Redeye” felirat) 20 px-szel szélesebb a 240 px-es tartalom-oszlopnál. Önálló jegy nyitása javasolt."
+  },
+  {
+   "kind": "overflow",
+   "item": "<QQuickText>",
+   "parent": "redeyeColumn",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (vörösszem, 260 px széles panelnél): az állapotüzenet (redeyetext) 20 px-szel szélesebb a 240 px-es tartalom-oszlopnál. Önálló jegy nyitása javasolt."
+  },
+  {
+   "kind": "overflow",
+   "item": "redeyeRegionCountLabel",
+   "parent": "redeyeColumn",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (vörösszem, 260 px széles panelnél): a jelölt szempárok számát mutató felirat 20 px-szel szélesebb a 240 px-es tartalom-oszlopnál. Önálló jegy nyitása javasolt."
+  },
+  {
+   "kind": "overflow",
+   "item": "textColumn",
+   "parent": "<QQuickItem>",
+   "other": null,
+   "megjegyzes": "#775 kiterjesztés (szöveg eszköz-mód, mind a három szélességnél): ugyanaz a 10 px-es alsó túlcsordulás, mint a cropColumn-nál — a modeToolScroll contentHeight-je nem számolja a felső margót. A szöveg-panel VÍZSZINTES (308→260) túlcsordulását a #775 ebben a körben javította; ez a függőleges, 10 px-es, mind a négy módot érintő eset továbbra is nyitott."
+  }
+ ]
 }

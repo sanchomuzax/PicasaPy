@@ -5,7 +5,15 @@ import QtQuick.Layouts
 // kijelölt szín kék kerettel jelölt.
 //
 // #496: kiemelve az EditorPanel.qml-ből (ld. ott a `ToolTile` megjegyzését).
-RowLayout {
+//
+// #775: NÉGYOSZLOPOS rács (2 sor), nem egysoros. Egysorban a 8 mező
+// (8 × 16 + 7 × 3 = 149 px) két, egymás mellett álló példánnyal (kitöltés-
+// és körvonalszín) 308 px-et igényelt — ennyi a szerkesztő bal paneljének
+// SEHOL nem áll rendelkezésre (a tartalom-oszlop 260, a belső margókkal
+// 240). A 4×2-es elrendezés ugyanazt a 8 színt, ugyanakkora (16×16)
+// mezőkkel mutatja, de a szélesség-igénye 73 px-re esik — bőven elfér két
+// példánnyal is.
+GridLayout {
     id: swatches
     property string currentColor: "#ffffff"
     signal colorPicked(string hex)
@@ -16,7 +24,9 @@ RowLayout {
         "#ffffff", "#000000", "#ff0000", "#ffff00",
         "#00a651", "#0072bc", "#ff7f27", "#a349a4"
     ]
-    spacing: 3
+    columns: 4
+    rowSpacing: 3
+    columnSpacing: 3
     Repeater {
         model: swatches.swatchColors
         delegate: Rectangle {

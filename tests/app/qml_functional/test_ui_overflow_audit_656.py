@@ -217,3 +217,50 @@ class TestValosSzerkesztoPanel:
         sertesek = find_overflows(root)
         ujak = subtract_allowlist(sertesek, load_allowlist())
         assert ujak == [], format_report(ujak)
+
+
+@pytest.mark.parametrize("width", [260, 280, 340])
+@pytest.mark.parametrize(
+    "eszkoz_mod",
+    ["cropActive", "retouchActive", "redeyeActive", "textActive"],
+)
+class TestValosSzerkesztoPanelEszkozModban:
+    """A #775 kiterjesztése: a fenti osztály csak az ALAPÁLLAPOTBAN
+
+    (fülek nézete) látható paneleket mérte — a négy eszköz-mód (vágás,
+    retusálás, vörösszem, szöveg) alapból LÁTHATATLAN, ezért az eredeti
+    ellenőr sosem futott le rájuk. Éppen ez engedte át a #775 hibáját (a
+    szöveg-panel 308 képpontos belső elrendezése): a fül nélkül soha nem
+    rajzolódott ki, a régi teszt-mátrix meg sem próbálta.
+
+    Ugyanaz a mérés, csak a négy `*Active` kapcsoló valamelyikét
+    bekapcsolva — pontosan úgy, ahogy a felhasználó a panelen az adott
+    eszközre kattintva előhívja.
+    """
+
+    def test_nincs_uj_tulcsordulas_eszkoz_modban(
+        self, qt_app, width, eszkoz_mod
+    ) -> None:
+        from support.uiaudit_geometry import load_allowlist, subtract_allowlist
+
+        qml = f"""
+        import QtQuick
+        import QtQuick.Layouts
+        import PicasaPy 1.0
+        Item {{
+            objectName: "auditRoot"
+            Rectangle {{
+                objectName: "baloszlop"
+                anchors.fill: parent
+                EditorPanel {{
+                    objectName: "auditPanel"
+                    anchors.fill: parent
+                    {eszkoz_mod}: true
+                }}
+            }}
+        }}
+        """
+        root = _render(qt_app, qml, width, 900)
+        sertesek = find_overflows(root)
+        ujak = subtract_allowlist(sertesek, load_allowlist())
+        assert ujak == [], format_report(ujak)
