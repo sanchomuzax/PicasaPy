@@ -430,3 +430,60 @@ A **normalizált sugarat képpontra váltja** — ez rajzolja ki a `radblur` és
 
 *Bizonyítottsági fok: megerősített* (mind a négy függvény teljes egészében
 kiolvasva, mindegyik 200 bájt alatt van).
+
+### A sugár képlete kiolvasva — és egy BELSŐ ellentmondás nálunk (2026-08-16)
+
+Az előző szakasz nyitva hagyta, mi van a `0x008f9cf0` csúszka-indexében és a
+`0xc7d5b8` átváltótáblában. Mindkettő kiolvasva:
+
+| adat | cím | érték |
+|---|---|---|
+| átváltótábla | `0xc7d5b8` | **`[0, 1, 2, 5, 1, 2]`**, utána `0x00FF00FF` töltelék |
+| K1 (hozzáadás) | `0xc7e328` | **1,0** |
+| K2 (szorzó) | `0xc72150` | **0,5** |
+| előjel-javító | `0xcf3ac0` | 2³² (előjel nélküli `int` → `float`) |
+
+A választás `min`-re megy: a `fcom`/`test ah,5`/`jp` hármas **mindkét ágon
+a kisebbik** felet tartja meg (`0x008f9d58`–`0x008f9d7b`).
+
+```
+sugár_képpontban = (paraméter + 1,0) · 0,5 · min(szélesség, magasság)
+```
+
+Tehát a tárolt sugár-paraméter **−1 … +1** tartományú, és a kép **rövidebb**
+oldalához méretezve **izotróp** (kör alakú) — nem a szélességhez és a
+magassághoz külön.
+
+#### ✅ A `radblur` nálunk EGYEZIK
+
+`src/picasapy/render/radial_mask.py:58` — `radius = min(width, height) / 2.0
+* (size + 1.0)` — betűre ugyanez a képlet. A `0x0090b050` korábbi
+visszafejtéséből származik, és a mostani, **független** úton kiolvasott
+konstansok (1,0 és 0,5) megerősítik.
+
+#### ⚠️ A `radsat` nálunk NEM ezt használja
+
+`src/picasapy/render/effects.py:58` — a `_radius_grid()` **tengelyenként**
+normalizál:
+
+```python
+cols = (arange(width)  + 0.5) / width  - x
+rows = (arange(height) + 0.5) / height - y
+return hypot(rows[:, None], cols[None, :])
+```
+
+Ez **anizotróp**: nem szabályos kört rajzol, hanem a kép oldalarányához
+nyúlt ellipszist. Egy 4:3-as fotón a hatás zónája érezhetően más alakú,
+mint az eredetiben.
+
+A binárisban viszont a `radblur` és a `radsat` **ugyanazt** a `segédB`
+függvényt (`0x008f9cf0`) használja — vagyis **azonos, izotróp** sugárral
+dolgoznak.
+
+**Ez tehát nem csak eltérés a Picasától: a saját kódunkon belüli
+ellentmondás** — a `radblur` izotróp, a `radsat` (és a `vignette_gain`,
+`effects.py:100`) anizotróp, holott az eredetiben egyformák.
+
+*Bizonyítottsági fok:* **megerősített** a képletre (a tábla és mindhárom
+konstans nyersen kiolvasva, az ágválasztás elemezve) · **megerősített** az
+ellentmondásra (a két saját függvényünk kódja).
