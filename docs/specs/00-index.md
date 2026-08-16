@@ -1,26 +1,53 @@
 # A specifikációk tartalomjegyzéke
 
-**Ez a lap a belépési pont a `docs/specs/`-be.** Egy sor laponként: mi van
-benne, és **mennyi nyitott kérdés maradt** rajta. Egy kutatói kör innen
-válasszon témát — ne a teljes mappa végiggrepeléséből.
+**Ez a lap a belépési pont a `docs/specs/`-be.** Alább előbb a **valóban
+nyitott kérdések** listája (ebből válasszon témát egy kutatói kör), majd a
+34 spec-lap témakörönként.
 
-A „nyitott" oszlop a lapon található `Nyitva` / `NYITOTT` / `dekódolatlan` /
-`uncalibrated` jelölések száma. **A 0 nem azt jelenti, hogy a téma kész** —
-azt, hogy nincs rajta *megjelölt* nyitott kérdés.
+**A lenti „Nyitott kérdések" lista kézzel ellenőrzött**, nem gépi
+szó-számlálás. Egy 2026-08-16-i átvilágítás kimutatta, hogy a
+`Nyitva`/`dekódolatlan` szavak **kétharmada hivatkozás** egy máshol már
+megválaszolt pontra — a gépi számlálás tehát háromszorosára fújta a
+képet (pl. `filterdesc-registry.md`: 6 találat, **0** valódi nyitott
+kérdés).
 
-*Utolsó frissítés: 2026-08-16.*
+*Utolsó átvilágítás: 2026-08-16.*
 
-## Hol van nyitott kérdés (itt érdemes kutatni)
+## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
-| lap | nyitott | miről szól |
-|---|---:|---|
-| [filters-decoded.md](filters-decoded.md) | **17** | Szűrő-visszafejtés — a golden-mérések eredményei |
-| [ui-audit-editor.md](ui-audit-editor.md) | **4** | A szerkesztőpanel és dialógusai |
-| [filterdesc-registry.md](filterdesc-registry.md) | **6** | A `filterdesc.xml` hivatalos szűrő-regisztere |
-| [ui-audit-mainwindow.md](ui-audit-mainwindow.md) | **3** | Főablak: mappafa, eszköztár, tálca, arányok |
-| [picasa-ini-format.md](picasa-ini-format.md) | **2** | A `.picasa.ini` formátuma |
-| [picasa-native-filter-registry.md](picasa-native-filter-registry.md) | **1** | A natív szűrő-nyilvántartás (49 bejegyzés) |
-| [ui-audit-context-menus.md](ui-audit-context-menus.md) | **1** | Jobbklikkes helyi menük |
+### [filters-decoded.md](filters-decoded.md) — 8 kérdés
+
+1. **`autocolor` pontos gain-képlete** (Nyitva 1) — célzott mérés-sorozat kell
+2. **`unsharp` kernel finomítása** (Nyitva 3) — dekonvolúciós illesztés
+3. **`retouch` / `redeye` régió-adatai és a szövegréteg** (Nyitva 5) — régió-alapúak
+4. **Render-pontosítás a golden-verdiktek szerint** (Nyitva 8), súlyossági sorrendben: `tint` ΔE 20,6 → `sat` pozitív ág 12 → `dir_tint` 9 → `finetune2` hőmérséklet 25 (extrémnél) → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
+5. **`fullres` / `slow` / `resize` jelzők beépítése a renderelőbe** (Nyitva 10)
+6. **A `tint` virtuális színátalakítása** (1506. sor) — a `ctx` harmadik függvénymutatója
+7. **Az elmosómag pontos alakja** (1703. sor) — `FUN_00a42c20`, a `blur`/`glow`/`radblur`/`unsharp`/`Soften` közös motorja
+8. **A vizsgálati ablak pontos SZÉLESSÉGE** (1980. sor)
+
+### [ui-audit-editor.md](ui-audit-editor.md) — 3 kérdés
+
+1. **N3** — megjelenik-e a buboréksúgó a csempe-rácsban, és a `filter_<Kulcs>_tooltip0` szövege-e (képernyőkép kell egérrel a csempe fölött)
+2. **N4** — a csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés)
+3. **`editpanel/picnik`** — a fő eszköztár Picnik-gombja; a rács alatti párja már halott funkcióként azonosítva, ezt is jelölni kell
+
+### [ui-audit-mainwindow.md](ui-audit-mainwindow.md) — 1 kérdés
+
+1. Melyik `Preferences`-kulcs (`LastViewRoot` ↔ `LastViewRoot2`) melyik **nézet-rekeszbe** tartozik (889. sor)
+
+### [picasa-native-filter-registry.md](picasa-native-filter-registry.md) — 1 kérdés
+
+1. A sugár-átváltótábla (`0xc7d5b8` = `[0, 1, 2, 5, 1, 2]`) hat bejegyzésének megfeleltetése: **melyik paraméter a sugár** az egyes esetekben
+
+### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
+
+1. Mit tesz a Picasa, ha külső program **írja az inifájlt ÉS megérinti a kép `mtime`-ját** (537. sor) — ⚠️ **windowsos próbára vár**, gépi úton nem eldönthető
+
+### Nincs nyitott kérdés
+
+`filterdesc-registry.md` · `ui-audit-context-menus.md` · és a lenti táblák
+minden további lapja.
 
 ## Formátum-specifikációk (adatfájlok, erőforrások)
 
@@ -98,18 +125,22 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | mikor | mit |
 |---|---|
 | **Új spec-lap születik** | egy sor a témakör táblájába — **ugyanabban a PR-ban** |
-| **Egy lap nyitott kérdést zár le** | a „Hol van nyitott kérdés" táblában a szám csökken; ha 0-ra, a sor kikerül |
-| **Új nyitott kérdést jelölsz meg** | a szám nő; ha eddig nem szerepelt, a sor bekerül |
+| **Egy kör nyitott kérdést ZÁR LE** | a kérdés kikerül a „Nyitott kérdések" listáról; ha a lapon nem marad több, a lap fejléce is |
+| **Egy kör ÚJ nyitott kérdést talál** | egy sor a lap listájába, **egy mondatban megfogalmazva** — ne csak „Nyitva" szót írj a spec-lapra |
 | **Egy lap átnevezése/összevonása** | a hivatkozás javítása |
 | **Kutatói kör INDULÁSAKOR** | csak olvasod — innen választasz témát |
 
 **A frissítés nem külön kör.** Aki hozzányúl egy spec-laphoz, ugyanabban a
-PR-ban hozza rendbe ezt a sort is — így az index nem tud elavulni. A
-számokat ellenőrizni lehet:
+PR-ban hozza rendbe ezt a listát is — így az index nem tud elavulni.
+
+⚠️ **Ne gépi szó-számlálással tartsd karban.** A `Nyitva`/`dekódolatlan`
+szavak nagy része **hivatkozás** egy máshol megválaszolt pontra; a
+számlálás háromszorosára fújja a képet. A lista **kézzel írt kérdésekből**
+áll, mert egy kutatói kör kérdést választ, nem szót.
+
+A gyanús helyek gyors előkeresésére (ellenőrzésre, nem karbantartásra):
 
 ```bash
-for f in docs/specs/*.md; do
-  printf "%-45s %s\n" "$(basename "$f")" \
-    "$(grep -c 'Nyitva\|NYITOTT\|dekódolatlan\|uncalibrated' "$f")"
-done
+grep -n 'Nyitva\|NYITOTT\|dekódolatlan\|uncalibrated' docs/specs/*.md \
+  | grep -v '~~' | grep -v 'LEZÁRVA\|MEGVÁLASZOLVA\|MEGOLDVA\|MEGDŐLT'
 ```
