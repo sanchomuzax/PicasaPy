@@ -1510,3 +1510,68 @@ hivatkozás. Ha a kontakt-írás hibázik, a `faces=` sor sem íródik ki.
 > `rect64(…)` van. A `rect(...)` a naplóba megy.
 
 *Bizonyítottsági fok: megerősített* (diszasszemblált kód + 859 fájlos korpusz).
+
+## A videó vágópontjai: `moviestart` és `movieend` (2026-08-16)
+
+A `filters=` láncban két olyan kulcs is szerepelhet, ami **csak videóknál**
+értelmes. Eddig „paraméter nélküli jelzőként" tartottuk nyilván őket —
+**tévesen: hexadecimális értéket hordoznak.**
+
+### A valós korpusz mind a két esete
+
+859 fájlból kettőben szerepelnek:
+
+| fájl | a `filters=` lánc |
+|---|---|
+| `M4V01960.MP4` | `moviestart=bf0df826;` |
+| `M4V01962.MP4` | `movieend=b40728fd;moviestart=80252d;` |
+
+### Amit ez a két sor eldönt
+
+**1. Van paraméterük, és hexadecimális.** Nem jelzők.
+
+**2. A hex NINCS nullákkal feltöltve.** A `80252d` **hat** jegy, nem nyolc.
+Ez eltér a szín-paramétertől, ami mindig `%08x` (nyolc jegy) — a
+parszernek itt **változó hosszú** hexet kell tűrnie.
+
+**3. A sorrend itt sem kötött:** a `M4V01962.MP4`-nél a `movieend`
+**megelőzi** a `moviestart`-ot. (Összhangban a lánc-sorrendről szóló
+korábbi lelettel.)
+
+### A feliratuk
+
+| erőforrás | EN | HU |
+|---|---|---|
+| `filter_moviestart_label0` / `CTimeFilter::startname` | Start Point | **Kezdőpont** |
+| `filter_movieend_label0` / `CTimeFilter::endname` | End Point | **Végpont** |
+
+Az osztálynév — `CTimeFilter` — megerősíti, hogy **idő**-szűrőről van szó.
+
+### Mit jelent az érték? (feltételes)
+
+| érték | egész | `/ 2³²` |
+|---|---:|---:|
+| `bf0df826` | 3 204 604 966 | **0,7461** |
+| `80252d` | 8 398 637 | **0,0020** |
+| `b40728fd` | 3 020 530 941 | **0,7033** |
+
+A `M4V01962.MP4`-nél így **0,20 %-tól 70,3 %-ig** tart a megtartott
+szakasz — értelmes vágás. Időegységként viszont nem értelmezhető:
+ezredmásodpercként a kezdőpont 2,3 óra lenne egy családi videóban.
+
+> **Munkahipotézis:** a két érték a klip hosszának **32 bites törtrésze**
+> (érték / 2³²), a `rect64` szellemében, ami koordinátánként 16 bites
+> törtet használ.
+>
+> *Bizonyítottsági fok: feltételes* — két fájl, és nincs meg a klipek
+> hossza. Az „NEM időegység" rész **erős**.
+
+### ❌ Nálunk ma hibásan nulla paraméterű
+
+`src/picasapy/ini/filter_registry.py:237–238` — `moviestart: 0`,
+`movieend: 0`. A `render/chain.py:176` pedig a `_NOOP_MARKERS` közé sorolja
+őket. A round-trip emiatt nem sérül (a nyers sztringet megőrizzük), de a
+regiszter **téves adatot** állít, és erre későbbi validáció épülhet.
+
+*Bizonyítottsági fok: megerősített* arra, hogy van paraméterük és
+változó hosszú hex (a korpusz két esete) · **feltételes** a jelentésére.
