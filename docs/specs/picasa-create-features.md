@@ -218,6 +218,273 @@ háttérszíné — az ARGB hexaként megy ki. A `CollageSpec` alapértelmezése
 binárisból (`0x008342b0`): cím „Névtelen", téma `picturepile`, oldalarány
 **4:3**, háttér **`0xFF000000` (átlátszatlan fekete**).
 
+### 1.6/d A `.cxf` ÍRÓJA a binárisból — a mintát kiegészítve (2026-08-16)
+
+Az 1.6 egy valódi mintából olvasta ki a formátumot. A **writer**
+(`0x008347b0`, 3023 b) most utasításszinten is megvan, és ez **eldönti a
+mintából nem látszó eseteket**.
+
+**Három szerializáló hívás — ez adja meg, mi attribútum és mi gyerekelem:**
+
+| hívás | mit csinál | példa |
+|---|---|---|
+| `0x009bfed0(szülő, név)` | **gyerekelem** létrehozása | `collage`, `background`, `spacing`, `node` |
+| `0x009c0330(elem, név, érték)` | **attribútum**, formázott értékkel | `version`, `format`, `x`, `theta` |
+| `0x009c0640(elem, név, szöveg)` | **gyerekelem szöveges tartalommal** | `albumTitle`, `theme`, `src`, `uid` |
+
+A valódi minta (1.6) mind a három besorolást igazolja — a mintában pontosan
+azok az attribútumok, amiket a `0x009c0330` ír, és pontosan azok a
+szöveges gyerekelemek, amiket a `0x009c0640`.
+
+**Az írás sorrendje, ahogy a writer végigmegy:**
+
+```
+collage                                        ← 0x009bfed0
+  version    = "%d"        → 2                 ← 0x008347e8
+  format     = "%d:%d"     → SZ:M              ← 0x0083483c  (x1−x0 : y1−y0)
+  orientation = portrait | landscape           ← 0x0083487b  ([spec+0x20]==1 → portrait)
+  theme      = <a hat típus kulcsa>
+  shadows    = "%d"
+  captions   = "%d"
+  albumUID   = <32 hex>
+  <albumTitle>…</albumTitle>                   ← 0x009c0640
+  <albumDate>…</albumDate>                     ← 0x009c0640
+  background                                   ← 0x009bfed0
+     type  = "solid"   color = "%08X"          ← ARGB, nagybetűs hex
+     — VAGY —
+     type  = "image"   <src>…</src>            ← 0x009c0640
+  spacing                                      ← 0x009bfed0
+     value = …
+  node                            (képenként EGY)
+     x = "%f"  y = "%f"  w = "%f"  h = "%f"
+     theta = "%f"   scale = "%f"
+     <theme>…</theme>   <src>…</src>   <uid>…</uid>
+```
+
+**Amit ez az 1.6-hoz képest ÚJ:**
+
+1. **A képi háttér alakja megvan** — az 1.6 még azt írta, hogy *„a `type` más
+   értékei további mintából derülnek ki"*. Nem kell minta: a writer szótárában
+   **pontosan két érték** van, `solid` és `image`, és a képi ágban `color`
+   helyett egy **`<src>` szöveges gyerekelem** áll (`0x00834877`–`0x008348a8`).
+2. **Nincs harmadik háttértípus.** A felület „a képek átlagszíne" választása
+   (`collage::avgcolor`) **`solid`-ként** íródik ki, a kiszámolt színnel — a
+   fájlban nem marad nyoma, hogy átlagszínből jött.
+3. **A `format` a vászon két oldalának KÜLÖNBSÉGÉBŐL** számolódik
+   (`[spec+0x1c]−[spec+0x14]` és `[spec+0x18]−[spec+0x10]`), tehát a
+   specifikáció téglalapként tárolja, nem arányként.
+4. **A színformátum `%08X` — NAGYBETŰS** nyolc jegy, nullákkal feltöltve.
+
+*Bizonyítottsági fok: megerősített* (a writer utasításai + a valódi minta
+mint kereszt-ellenőrzés).
+
+### 1.10 A kollázs-panel TELJES felülete — 156 elem (2026-08-16)
+
+A `respack.yt` `collagepanel/*` bejegyzései a **tervezővászon tényleges
+koordinátáit** adják. A panel a főablak tartalomterületét tölti ki:
+`panelroot/collagepanel` **(0, 29) 800 × 505**, a fül a fülsávban
+`panelroot/…: collagetab` **(390, 8) 125 × 21**.
+
+⚠️ A `#`-tel kezdődő nevek a `respack`-ben **kikommentezett** rétegek —
+ezek a Picasa 3.9-ben **nem látszanak** (régi eszközsáv, ikonok, chiclet-ek).
+
+#### 1.10.1 A panel váza
+
+| elem | pozíció | méret |
+|---|---|---|
+| `docbounds` / `rect: base` | (0, 0) | 800 × 534 |
+| `rect: rightcontainer` | (289, 20) | 501 × 504 |
+| `decrect(tabbase): tabbase` | (3, 20) | 276 × 387 |
+| `buttcontainer: tabs` | (3, 25) | 276 × 25 |
+| `buttcon(tab1…)` — **Beállítások** | (3, 25) | 92 × 25 |
+| `buttcon(tab2…)` — **Képek** | (95, 25) | 92 × 25 |
+| `rect: tabpanel1` (Beállítások lap) | (13, 55) | 266 × 351 |
+| `rect: tabpanel2` (Képek lap) | (13, 55) | 256 × 352 |
+
+**A négy alsó gomb** (a bal hasáb alján, két sorban):
+
+| gomb | felirat (HU) | pozíció | méret |
+|---|---|---|---|
+| `makedesktop` | Asztali háttérkép | (10, 415) | 127 × 28 |
+| `sharebutton` | **Kollázs létrehozása** | (147, 415) | 133 × 28 |
+| `resetbutton` | Alaphelyzet | (10, 448) | 127 × 28 |
+| `cancelbutton` | Bezárás | (147, 448) | 133 × 28 |
+
+#### 1.10.2 „Beállítások" lap (`tabpanel1`)
+
+| elem | pozíció | méret | megjegyzés |
+|---|---|---|---|
+| `popuplist: theme_popup` | (13, 63) | 266 × 56 | a **hat kollázs-típus** választója |
+| `text(borders_label)` — **Képszegélyek** | (16, 122) | 239 × 15 | |
+| `clip: borders_group` | (13, 122) | 266 × 89 | |
+| `button: border0/1/2` | (47/116/185, 143) | 62 × 62 | három szegélygomb, **69 px osztás** |
+| `leftdivider` | (13, 209) | 256 × 3 | elválasztó vonal |
+| `text(bkg_settings_title)` — **Háttér beállításai** | (16, 214) | 239 × 15 | |
+| `buttcontainer: background_types` | (19, 233) | 127 × 55 | két rádiógomb |
+| rádió — **Egyszínű** | (19, 234) | 24 × 24 | felirat (44, 237) 101 × 24 |
+| rádió — **Kép használata** | (19, 261) | 24 × 24 | felirat (44, 264) 101 × 24 |
+| `decrect(insetbevel): bkg_decrect` | (147, 235) | 49 × 49 | a színminta kerete |
+| `current_background` | (153, 241) | 37 × 37 | a jelenlegi háttér mintája |
+| `bkg_from_selection` — **A kijelölt elemek használata** | (198, 241) | 71 × 37 | |
+| `colorpickerpanel(…, bkgcolorpick)` | (61, 64) | 218 × 178 | a **felugró** színválasztó |
+| `rect: colorcircle` + `dropper_icon` | (153, 241) / (193, 253) | 37 × 37 / 24 × 14 | pipetta |
+| `text(format_title)` — **Oldalformátum** | (16, 290) | 239 × 15 | |
+| `popuplist(format_menu)` | (16, 310) | 243 × 21 | a méretarány-lista (ld. #876) |
+| `button: delete_custom_aspect` | (262, 314) | 14 × 14 | **kuka**, az egyéni arány törlésére |
+| `buttcontainer: orientation_container` | (101, 335) | 74 × 22 | |
+| tájolás — fekvő / álló | (101 / 138, 335) | 37 × 22 | `landscape_icon` (109,340) 23×12 · `portrait_icon` (149,338) 11×16 |
+| `shadow_checkbox` — **Árnyékok rajzolása** | (18, 358) | 14 × 14 | felirat (35, 357) 109 × 24 |
+| `caption_checkbox` — **Képfeliratok megjelenítése** | (17, 383) | 14 × 14 | felirat (35, 382) 109 × 24 |
+| `set_frame_center` — **Beállítás képkockaközéppontként** | (150, 365) | 124 × 30 | csak `framegrid`-nél |
+
+**A „Rács vastagsága" csúszka** külön csoportban ül, és a szegély-csoporttal
+**azonos helyen** — vagyis a kettő **egymást váltja** a típus szerint:
+
+| elem | pozíció | méret |
+|---|---|---|
+| `clip: spacing_group` | (19, 123) | 250 × 81 |
+| `text(spacing_label)` — **Rács vastagsága** | (34, 131) | 225 × 21 |
+| `clip(bigslider, spacing_slider)` | (48, 153) | 191 × 27 |
+| `text(None)` — **Egyik sem** | (48, 180) | 83 × 14 |
+| `text(Max.)` — **Maximális** | (153, 180) | 86 × 14 |
+
+#### 1.10.3 „Képek" lap (`tabpanel2`)
+
+| elem | pozíció | méret | felirat (HU) |
+|---|---|---|---|
+| `solo` (a képtálca) | (17, 91) | 247 × 311 | |
+| `getmoreclips` | (19, 60) | 166 × 28 | **Továbbiak...** |
+| `back_icon` | (22, 67) | 17 × 15 | |
+| `addclips` (+) | (214, 60) | 28 × 28 | *rejtett* — a felirata `#`-es |
+| `deleteclips` (–) | (247, 60) | 28 × 28 | *rejtett* |
+
+#### 1.10.4 A vászon és a rajta lévő vezérlők
+
+| elem | pozíció | méret |
+|---|---|---|
+| `decrect(insetbevel): previewcontainer` | (280, 13) | 507 × 508 |
+| `clip/rect/srect: preview*` | (280, 61) | 475 × 349 |
+| `rect: action_group` | (318, 36) | 445 × 28 |
+| `select_all` — **Az összes kijelölése** | (319, 37) | 100 × 26 |
+| `select_none` — **Az összes kijelölés megszüntetése** | (422, 37) | 100 × 26 |
+| `remove_node` — **Eltávolítás** | (525, 37) | 100 × 26 |
+| `set_background` — **Beállítás háttérként** | (628, 37) | 134 × 26 |
+| `rect: rand_group` | (346, 475) | 354 × 28 |
+| `rand_placement` — **Véletlenszerű kollázs** | (347, 476) | 115 × 26 |
+| `rand_order` — **Képek összekeverése** | (465, 476) | 116 × 26 |
+| `view_and_edit` — **Megjelenítés és szerkesztés** | (584, 476) | 115 × 26 |
+
+**A forgatás-igazító gombsor** a vászon fölött lebeg, függőlegesen:
+
+| elem | pozíció | méret | jelentés |
+|---|---|---|---|
+| `rect: snap_rotation_group` | (383, 230) | 17 × 65 | |
+| `snap_3` | (384, 247) | 15 × 15 | 90° jobbra |
+| `snap_6` | (384, 263) | 15 × 15 | 180° jobbra |
+| `snap_9` | (384, 279) | 15 × 15 | 270° jobbra |
+
+*(A `snap_12` — „Forgatás igazítása egyenesre" — feliratként létezik, de a
+`respack`-ben nincs saját rétege: a csoport első, 231-es y-ján ül.)*
+
+**A folyamatjelző overlay** (kollázs készítése közben):
+
+| elem | pozíció | méret |
+|---|---|---|
+| `decrect(overlaydecrect): collageprog_base` | (409, 220) | 224 × 80 |
+| `text(collageprog_title)` | (414, 226) | 213 × 14 |
+| `collageprog_spinner` | (509, 244) | 29 × 31 |
+| `text(collageprog_status)` | (414, 280) | 213 × 14 |
+
+Szövegei (`stringres`): „Kollázs létrehozása... inicializálás" ·
+„Kollázs létrehozása - %d%%" · „Kollázs létrehozása... leállítás" ·
+**„A kollázs kész (kattintson ide)"**.
+
+#### 1.10.5 Belépési pontok a kollázsba
+
+| honnan | elem | pozíció | méret |
+|---|---|---|---|
+| fülsáv | `panelroot/…: collagetab` | (390, 8) | 125 × 21 |
+| fejléc-sáv | `headerpanel/…: create_collage` | (44, 53) | 29 × 27 |
+| arc-fejléc | `faceheaderpanel/…: create_collage` | (115, 55) | 29 × 27 |
+| szerkesztőpanel | `editpanel/…: editcollage` | (142, 9) | 128 × 22 |
+| kimeneti sáv | `outputlayout/button(collage)` | (2, 2) | 55 × 36 |
+
+#### 1.10.6 A feliratok és buboréksúgók — mind az 52, hivatalos magyarral
+
+Forrás: `respack.yt` `tre:collagepaneltext` (angol) +
+`referencia/i18n-hu/collagepaneltext.xml` (magyar).
+
+| kulcs | angol | **hivatalos magyar** |
+|---|---|---|
+| `tab1` | Settings | **Beállítások** |
+| `tab2` | Clips | **Képek** |
+| `getmoreclips` | Get more... | **Továbbiak...** |
+| `shadow_checkbox_label` | Draw Shadows | **Árnyékok rajzolása** |
+| `caption_checkbox_label` | Show Captions | **Képfeliratok megjelenítése** |
+| `set_frame_center-label` | Set as Frame Center | **Beállítás képkockaközéppontként** |
+| `spacing_label` | Grid Spacing | **Rács vastagsága** |
+| `min_spacing_label` | None | **Egyik sem** |
+| `max_spacing_label` | Max. | **Maximális** |
+| `bkg_settings_title` | Background Options | **Háttér beállításai** |
+| `borders_label` | Picture Borders | **Képszegélyek** |
+| `format_title` | Page Format | **Oldalformátum** |
+| `color_bg_label` | Solid Color | **Egyszínű** |
+| `bitmap_bg_label` | Use Image | **Kép használata** |
+| `bkg_from_selection` | Use selected | **A kijelölt elemek használata** |
+| `rand_order-label` | Shuffle Pictures | **Képek összekeverése** |
+| `rand_placement-label` | Scramble Collage | **Véletlenszerű kollázs** |
+| `view_and_edit-label` | View and Edit | **Megjelenítés és szerkesztés** |
+| `select_all` | Select All | **Az összes kijelölése** |
+| `select_none` | Select None | **Az összes kijelölés megszüntetése** |
+| `remove_node` | Remove | **Eltávolítás** |
+| `set_background` | Set as Background | **Beállítás háttérként** |
+| `cancelbutton-label` | Close | **Bezárás** |
+| `resetbutton-label` | Reset | **Alaphelyzet** |
+| `makedesktop-label` | Desktop Background | **Asztali háttérkép** |
+| `sharebutton-label` | Create Collage | **Kollázs létrehozása** |
+
+**Buboréksúgók:**
+
+| kulcs | **hivatalos magyar** |
+|---|---|
+| `addclips` | Kijelölt klipek felvétele a kollázsba |
+| `deleteclips` | A kijelölt képek eltávolítása a tálcáról |
+| `getmoreclips` | További képek beolvasása a könyvtárból |
+| `caption_checkbox` | Képfeliratok szövegként való megjelenítése „Polaroid fényképezőgép" szegélyű képeken |
+| `portrait` | Álló: A kollázs függőleges tájolása |
+| `landscape` | Fekvő: a kollázs vízszintes tájolása |
+| `format_menu` | Kijelölheti a kollázs viszonylagos szélességét és magasságát |
+| `delete_custom_aspect` | A jelenlegi méretarány törlése |
+| `cancelbutton` | A Kollázs lap bezárása |
+| `makedesktop` | JPG formátumban mentheti a képet a Kollázsok albumba, majd beállíthatja az asztalra háttérképként |
+| `resetbutton` | Az összes módosítás visszavonása |
+| `sharebutton` | Mentés JPG formátumban a Kollázsok albumba (a Projektek gyűjteménybe). |
+| `rand_order` | A képek sorrendjének véletlenszerűsítése |
+| `rand_placement` | A kollázs elrendezésének összekeverése |
+| `select_all` | Az összes kép kijelölése (Ctrl+A) |
+| `select_none` | Az összes kép kijelölésének megszüntetése (Ctrl+D) |
+| `remove_node` | Kijelölt elemek eltávolítása a kollázsból (Del) |
+| `set_background` | A kijelölt kép használata háttérként |
+| `move_top` | Kép elhelyezése a kupac tetején |
+| `move_up` | Kép feljebb helyezése a kupacban |
+| `move_down` | Kép lejjebb helyezése a kupacban |
+| `move_bottom` | Kép elhelyezése a kupac alján |
+| `snap_12` | Forgatás igazítása egyenesre |
+| `snap_3` | Forgatás igazítása 90 fokra (jobbra) |
+| `snap_6` | Forgatás igazítása 180 fokra (jobbra) |
+| `snap_9` | Forgatás igazítása 270 fokra (jobbra) |
+
+⚠️ **A „Scramble Collage" hivatalos magyarja „Véletlenszerű kollázs"** a
+panelen, de a **helyi menüben** ugyanez a parancs „Képek szétszórása"
+(`CollageD::ID_COLLAGE_RANDOMIZE_PLACEMENT`). A két felirat **szándékosan
+eltér** — mindkettőt úgy kell átvenni, ahogy van.
+
+#### 1.10.7 Vászon-visszajelzés vonszolás közben
+
+`collage::angle_format` = **„Szög: %d"** · `collage::scale_format` =
+**„Méretarány: %d%%"** (`stringres`). Ezek a kép húzása/forgatása közben
+jelennek meg.
+
 ### 1.7 Figyelmeztetések (átvehető viselkedés)
 
 - **„Format Mismatch Warning"** — ha az asztali háttérképnek mentesz, de a
@@ -363,8 +630,9 @@ Két nem nyilvánvaló következmény, amit át kell venni:
 A `framegrid` ugyanezt a rajzolót örökli, csak a pakolót írja felül
 (`0x00888e60`) — a kijelölt kép kerül a hangsúlyos középső cellába.
 
-> A pakoló algoritmus maga (mely kép melyik cellát kapja, hogyan darabolódik
-> a négyzet) **még nincs megfejtve** — ez a következő kör tárgya.
+> ~~A pakoló algoritmus maga (mely kép melyik cellát kapja, hogyan darabolódik
+> a négyzet) **még nincs megfejtve**~~ → a Mozaiké megvan (1.9.7–1.9.10), a
+> Képkockamozaik **helyre-kényszerítő** pakolója pedig az **1.9.14**-ben.
 
 #### 1.9.4 Rács (`regulargrid`), Indexkép (`contactsheet`), Többszörös exponálás (`multiexp`)
 
@@ -762,11 +1030,116 @@ koordinátáira normalizálás), a forgatás pedig a vízszintes helyzetből sz�
 **Ezzel a Képkollázs mind a hat elrendezése, mindhárom kerete, a `.cxf`
 formátum és a megőrzött beállítások teljesen feltárva.**
 
+#### 1.9.14 A Képkockamozaik helyre-kényszerítő pakolója (`CLocationTree`) — 2026-08-16
+
+A 1.9.10 megállapította, hogy a `framegrid` pakolója a **`CLocationTree`**,
+de az algoritmusa nem volt leírva. Most megvan a váza.
+
+##### Mi a „kényszer" adatszerkezete
+
+Minden képhez (a pakoló bemeneti tömbjében) tartozik:
+
+| eltolás | tartalom |
+|---|---|
+| `+0x38 … +0x44` | négy `float`: a kép **rögzített téglalapja** (`x0, y0, x1, y1`) |
+| **`+0x48`** | **1 bájt: „van már helye"** |
+
+Ha `+0x48 == 0`, a kép szabadon pakolható, és a kód egy
+`(−1, −1, −1, −1)` helyőrzővel dolgozik (`0x00890774`, `0x00890a4f`,
+`0x00890a9b`, … tíz helyen). Ha `+0x48 != 0`, a `+0x38`-as téglalap
+**kényszer**: a keresésnek olyan elrendezést kell adnia, amiben a kép oda
+kerül.
+
+A `CLocationTreeNode` gyártója (`0x008910b0`, a fa 8. vtable-slotja) egy
+**0x38 bájtos** csomópontot foglal, `0xcc5364` vtable-lel, és a
+`+0x20 … +0x2c` négy `float`-ot **−1,0-ra** állítja (`0xcf3ed0`) — ez a
+csomópont saját kényszer-téglalapja, alapban „nincs kényszer". A `+0x34`
+szintén −1,0.
+
+> ⚠️ **Helyesbítés az 1.9.7-hez:** ott a kényszer-téglalap `+0x18 … +0x24`
+> néven szerepel. A `CLocationTreeNode`-ban **`+0x20 … +0x2c`** — a
+> `0x008910b0` inicializálása egyértelmű.
+
+##### A keresés: időkorlátos, véletlen újrapróbálkozásokkal
+
+A pakoló belépési pontja a fa **7. vtable-slotja**: `0x008906e0` (2412 b).
+A ciklusa (`0x00890bf0`–`0x00890cf5`):
+
+```asm
+0x00890bf8  call [0xc40298]        ; QueryPerformanceCounter → most
+0x00890c0e  fld  qword [0xd678e8]  ; 1/frekvencia, gyorsítótárazva
+0x00890c29  call [0xc404a0]        ;   ha még nincs: QueryPerformanceFrequency
+0x00890c4b  fsub qword [esp+0x90]  ; most − kezdet
+0x00890c52  fmulp                  ; × (1/frekvencia)  → eltelt másodperc
+0x00890c54  fld  dword [ecx+0x30]  ; a fa IDŐKORLÁTJA
+0x00890c57  fcompp / jne 0x890f41  ;   ha túlléptük → kilép
+0x00890c88  call 0x8912b0          ; a legjobb csomópont KLÓNOZÁSA
+   …a +0x18 … +0x34 mezők átmásolása (a kényszer-téglalappal együtt)…
+0x00890ce1  call 0x88fcf0          ; fa-építés, 2-es móddal
+0x00890ce6  add  dword [esp+0x44], 1   ; próbálkozás-számláló
+```
+
+Ugyanaz a séma, mint a Mozaik teljes keresésénél (1.9.7): **véletlen
+sorrendekkel újrapróbálkozó, órára kötött keresés**, nem determinisztikus
+algoritmus. Az időkorlát a fa `+0x30` mezője.
+
+##### A zárás: mindenki „elhelyezett" lesz
+
+A ciklus után (`0x00890f50`–`0x00890f88`) a nyertes elrendezés téglalapjai
+**visszaíródnak** minden képbe, és a jelző bebillen:
+
+```asm
+0x00890f6a  mov  [eax+0x38], esi   ; x0
+0x00890f71  mov  [eax+0x3c], edi   ; y0
+0x00890f7e  mov  [eax+0x40], ebx   ; x1
+0x00890f81  mov  [eax+0x44], esi   ; y1
+0x00890f84  mov  byte ptr [eax+0x48], 1   ; ← "van már helye"
+```
+
+Ez magyarázza a **Beállítás képkockaközéppontként** gomb viselkedését: a
+kijelölt kép megkapja a hangsúlyos középső cellát `+0x48 = 1`-gyel, és
+onnantól minden újrapakolás megőrzi.
+
+##### Ha nem sikerül: visszaesés az alap pakolóra
+
+A függvény végén `0x00891032  call 0x88e9d0` — ez a **`CPackingTree` 7.
+slotja**, vagyis a szokásos (kényszer nélküli) pakoló. A `CLocationTree`
+tehát **nem helyettesíti**, hanem **kiegészíti** az alap algoritmust.
+
+##### Melyik metódusokat írja felül
+
+| slot | `CPackingTree(Node)` | **`CLocationTree(Node)`** |
+|---:|---|---|
+| fa 7 | `0x0088e9d0` | **`0x008906e0`** — a fenti keresés |
+| fa 8 | `0x0088ed00` | **`0x008910b0`** — csomópont-gyártó, −1-es kényszerrel |
+| csomópont 1 | `0x0088e720` | `0x0088e7e0` |
+| csomópont 5 | `0x00892f20` | `0x0089a5d0` (679 b) |
+| csomópont 6 | `0x00893010` | `0x0088e830` (20 b) — a `+0x20`-as téglalapot adja tovább a `0x89a880`-nak |
+| csomópont 10 | `0x008936c0` | `0x0089b160` (551 b) |
+| csomópont 12 | `0x00891f70` | **`0x00897af0` (8479 b)** |
+| csomópont 16 | `0x008938b0` | `0x0089a3d0` (504 b) |
+| csomópont 17 | — | `0x00899c40` (538 b) — ÚJ slot |
+
+##### Ami NYITVA marad
+
+**A `0x00897af0` (8479 bájt) a tényleges kényszeres guillotine-vágó** — ez
+dönti el, hogyan darabolódik a négyzet úgy, hogy a rögzített téglalap a
+helyén maradjon. Az eleje már olvasható: a `[kép+0x48]` szerint választ a
+kép saját téglalapja (`+0x38`) és egy `0x88e6c0`-ból jövő alapértelmezés
+között, majd **−1,0-val hasonlít** (`0x00897b6b`–`0x00897b7d`), hogy
+eldöntse, van-e egyáltalán kényszer. **Itt kell folytatni.**
+
+*Bizonyítottsági fok: **megerősített** az adatszerkezetre (`+0x38…+0x48`), a
+keresés időkorlátos szerkezetére, a visszaírásra és a vtable-eltérésekre ·
+**nyitott** a `0x00897af0` vágási szabálya.*
+
+
 #### 1.9.13 Ami még nyitott
 
-
 - A **Képkupac kezdeti (x, y) szórása** — az 1.9.2 képletei a már kiszámolt
-  pozícióból dolgoznak. Ez az egyetlen darab, ami a hat elrendezésből hiányzik.
+  pozícióból dolgoznak.
+- A **Képkockamozaik kényszeres vágási szabálya** — `0x00897af0` (8479 b),
+  ld. 1.9.14. A körülötte lévő adatszerkezet és keresés már megvan.
 
 ## 2. Film készítése (`ID_MAKEMOVIE`, `eMenuCreateMovie`)
 
@@ -813,6 +1186,84 @@ Caption – Typewriter (+ további kettő). Betűbeállítás: család, méret,
 
 `autosave.mxf` (`MakeMoviePanel::autosave` / `recoveredautosave`) — a
 kollázs `.cxf`-jének megfelelője a filmhez: **`.mxf` a film-projektfájl**.
+
+### 2.4/b Az `.mxf` formátum — MEGFEJTVE a binárisból (2026-08-16)
+
+Az `.mxf`-ről eddig **csak a fájlnév** volt meg. A projektfájlt ugyanaz a
+generikus XML-szerializáló írja, mint a `.cxf`-et (1.6/d), tehát a
+szerkezet a writerből **teljesen kiolvasható** — mintára nincs szükség.
+
+**Két író függvény:**
+
+| cím | mit ír |
+|---|---|
+| `0x00816b00` (1935 b) | a gyökér és az album-szintű beállítások |
+| `0x00816440` (1722 b) | **egy átmenet-bejegyzés** — a `defaulttrans`-ra és minden `trans`-ra meghívva |
+
+**A szerkezet:**
+
+```
+CTransTimeline                                  <- gyokerelem (0x00816b08)
+  <curresolution>%d</curresolution>
+  <musicfile>...</musicfile>
+  <audiooption>...</audiooption>
+  <facemovie>%d</facemovie>
+  <showcaption>%d</showcaption>
+  <cropfit>%d</cropfit>
+  <showdates>%d</showdates>
+  <removelowresfaces>%d</removelowresfaces>
+  <ordering>%d</ordering>
+  <burstmodethresh>%d</burstmodethresh>
+  <albumid>%d</albumid>
+  defaulttrans                                  <- az ALAPERTELMEZETT atmenet
+     ...ugyanaz a tartalom, mint lent...
+  trans                             (diankent EGY)
+     <transition>%d</transition>                <- az atmenet tipusa (2.1)
+     <advanceinterval>...</advanceinterval>     <- a dia ideje
+     <transitiontime>...</transitiontime>       <- az atmenet hossza
+     <blacktime>...</blacktime>                 <- fekete szunet
+     src                                        <- a dia forrasa (al-elem)
+        <type>%d</type>                         <- kep / szoveges dia / video
+        <bkcolor>%d</bkcolor>
+        <index>%d</index>
+        <text>...</text>                        <- a szoveges dia szovege
+        <filename>...</filename>
+        <showflags>%d</showflags>
+        textparm                                <- a szoveges dia betuparameterei
+           <fontname>...</fontname>
+           <size>%d</size>      <color>%d</color>
+           <weight>%d</weight>  <italic>...</italic>
+           <outline>...</outline> <styleid>%d</styleid>   <- a 11 stilus (2.3)
+           <facerectx0>%d</facerectx0>  <facerecty0>%d</facerecty0>
+           <facerectx1>%d</facerectx1>  <facerecty1>%d</facerecty1>
+           <facemoviesrc>%d</facemoviesrc>      <- az "Film arcokbol" adatai (2.5)
+```
+
+**Négy dolog, amit érdemes kiemelni:**
+
+1. **Minden mező gyerekelem, nem attribútum** — a writer végig a
+   `0x009c0640`-et hívja (a `.cxf`-fel ellentétben, ahol a geometria
+   attribútumként megy ki). A két formátum tehát **nem ugyanazt a stílust**
+   követi.
+2. **A `defaulttrans` és a `trans` UGYANAZT a szerkezetet írja** (közös író),
+   vagyis a diánkénti bejegyzés felül tudja írni az album-szintű
+   alapértelmezést. Ez magyarázza, hogy a Picasában a diaidő és az átmenet
+   képenként is állítható.
+3. **Az arc-téglalap (`facerect*`) minden dián ott van**, nem csak
+   arc-filmnél — az arc-film a szokásos dia-rekordot használja, és a
+   kivágást ezekkel a mezőkkel rögzíti.
+4. A `blacktime` **külön mező** az átmenet hossza mellett: a Picasa a
+   diák közé fekete szünetet is tud tenni.
+
+**A fájl helye:** `Movies/autosave.mxf` (`0x0068a4b0`: a mappa a
+`CMakeMoviePanel::SlideshowFolder` kulcsból = `Movies`, a fájlnév
+`autosave.mxf`, a kimenet `.wmv`).
+
+*Bizonyítottsági fok: **megerősített** a mezőnevekre, a sorrendre és a
+gyerekelem/attribútum besorolásra (a writer utasításai) · **erős** a
+fájl-szintű keretre (XML-fejléc, sorvégek) — azt a `.cxf` mintájából
+következtetjük, mert ugyanaz a szerializáló írja.*
+
 
 ### 2.5 „Film arcokból"
 
