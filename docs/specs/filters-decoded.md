@@ -1992,10 +1992,11 @@ dekompilátum betű szerinti olvasata egyben a mérésen is a legjobb.
 
 *Bizonyítottsági fok: megerősített* az ablak vízszintes horgonya (a
 rámpa-mérés geometriai érve + a 12 képpár + a dekompilált
-mutató-aritmetika). **Nyitva marad** az ablak pontos SZÉLESSÉGE: a
-`0,9·W` a dekompilátumból jön, a rámpa fehér vége (235,4) viszont egy
-hajszálnyival szélesebb ablakhoz (~0,94·W) illene jobban. Ehhez maga a
-#685 mérőrámpa kellene — valódi fotókon a különbség a mérési zaj alatt van.
+mutató-aritmetika). ~~**Nyitva marad** az ablak pontos SZÉLESSÉGE~~ —
+**LEZÁRVA (2026-08-16)**, utasításszinten: lásd „Az elemzőablak szélessége
+utasításszinten" alább. Az eredeti jegyzet: a `0,9·W` a dekompilátumból
+jön, a rámpa fehér vége (235,4) viszont egy hajszálnyival szélesebb
+ablakhoz (~0,94·W) illene jobban.
 
 Megvalósítás: `picasapy.render.ops._analysis_region`; regressziós őr:
 `tests/render/test_ops.py::TestEnhanceVagasiPontok721`. Ugyanez hat az
@@ -3020,3 +3021,71 @@ A régió-adat helye a központi adatbázis (`db3`), lásd **#371**.
 
 *Bizonyítottsági fok: megerősített* — a korpusz 310 bejegyzése és a
 szerializáló sztring-táblája egymástól függetlenül ugyanazt mondja.
+
+## Az elemzőablak szélessége utasításszinten (2026-08-16)
+
+A `0x009db610` elemzőablakának **szélessége** nyitott kérdés volt: a
+dekompilátum `0,9·W`-t adott, a #685 rámpa fehér vége viszont
+~`0,94·W`-hez illett volna jobban. **A nyers utasítások eldöntik.**
+
+### A négy határ kiszámítása
+
+A `0x51eb851f` a **100-zal osztás** bűvös konstansa (felső szorzat, majd
+`>> 5`):
+
+```asm
+0x009db6ac  lea  edx, [ecx + ecx*4]   ; 5·W
+0x009db6af  imul ecx, ecx, 0x5f       ; 95·W
+0x009db6b7  mul  edx                  ; ×0x51eb851f
+0x009db6e5  shr  edi, 5               ; edi = (5·W)/100    = 0,05·W
+0x009db6e8  shr  ebx, 5               ; ebx = (95·W)/100   = 0,95·W
+0x009db6dc  shr  ecx, 5               ; ecx = (95·H)/100   = 0,95·H
+0x009db6df  shr  edx, 5               ; edx = (5·H)/100    = 0,05·H
+```
+
+### A sorok: a peremet TÉNYLEG használja
+
+```asm
+0x009db6ef  mov  eax, dword ptr [ebp + 4]   ; sorlépés
+0x009db6f9  imul eax, edx                    ; × (5·H)/100
+0x009db705  lea  esi, [esi + eax*4]          ; a kezdő sor-mutató
+0x009db703  sub  ecx, edx                    ; sorok száma = 0,9·H
+```
+
+### Az oszlopok: a peremet ELEJTI
+
+```asm
+0x009db710  cmp  edi, ebx
+0x009db712  mov  eax, esi        ; ← a sor ELEJÉRŐL indul, NEM edi-től
+0x009db716  mov  edx, ebx
+0x009db718  sub  edx, edi        ; darabszám = (95·W)/100 − (5·W)/100
+0x009db720  …                    ; hisztogram, eax += 4, edx−−
+```
+
+Az `edi` (`0,05·W`) **kizárólag a darabszámban** szerepel; a mutató a
+`0.` oszlopról indul. Ez a Picasa saját, elejtett eltolása — nem
+egyszerűsítés a mi oldalunkon.
+
+### A pontos képlet — két KÜLÖN csonkítással
+
+```
+oszlopok = (95·W) // 100  −  (5·W) // 100
+```
+
+Ez **nem azonos** a `(90·W) // 100`-zal. Például `W = 13`:
+`(1235)//100 − (65)//100 = 12 − 0 = 12`, míg `(1170)//100 = 11`. A két
+külön egész osztás bizonyos szélességeknél **egy képpontnyi** többletet
+ad.
+
+> ✅ A megvalósításunk (`render/ops.py::_analysis_region`) betű szerint ezt
+> csinálja: `width * 95 // 100 - width * 5 // 100`.
+
+### Amit ez a rámpa-eltérésről mond
+
+A kód nem hagy szabadságot: **a szélesség pontosan a fenti képlet**. A
+#685 rámpa fehér végén mért ~`0,94·W`-nyi hatás tehát **nem** az ablak
+szélességéből jön — máshol kell keresni (a keverés, a küszöb vagy a
+rámpa saját peremhatása).
+
+*Bizonyítottsági fok: megerősített* (a négy határ kiszámítása és mindkét
+ciklus feje nyers utasításszinten).
