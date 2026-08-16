@@ -30,6 +30,21 @@ kérdés).
    Maradék: a **4-es mód** pontos alakja (`0xa3fd25`) és a **10-es** mód
    gyorsútja (`0x9e75a0`)
 
+### [picasa-create-features.md](picasa-create-features.md) — 2 kérdés
+
+1. **A Képkockamozaik kényszeres vágási szabálya** — `0x00897af0` (8479 b),
+   ld. 1.9.14. A körülötte lévő adatszerkezet, a keresés és a visszaírás
+   már megvan; a vágó eleje is olvasható (`0x00897b6b` a −1,0-s
+   „nincs kényszer" vizsgálat). **Itt kell folytatni.**
+2. **A Képkupac kezdeti (x, y) szórása** — az 1.9.2 képletei a már
+   kiszámolt pozícióból dolgoznak
+
+### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — 1 kérdés
+
+1. A **kollázs Oldalformátum** legördülőjének pontos sorrendje és
+   részhalmaza (a vágóé megvan, ld. #876) — ahhoz a
+   `collagepanel/format_menu` képernyőképe vagy a menüfeltöltő kód kell
+
 ### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
 
 1. Mit tesz a Picasa, ha külső program **írja az inifájlt ÉS megérinti a kép `mtime`-ját** (537. sor) — ⚠️ **windowsos próbára vár**, gépi úton nem eldönthető
