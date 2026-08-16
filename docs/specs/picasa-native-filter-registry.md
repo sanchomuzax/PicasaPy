@@ -172,3 +172,62 @@ _anon_BEC5211C::ResaturateImageOperation::vftable   @ 0x00cf0578
 *Bizonyítottsági fok: megerősített* (a létezés és a hívási lánc);
 **nyitva**, hogy mit csinál és melyik effekt használja — ehhez a `0x00bbd630`
 és a `0x00bc4ae0` dekompilálása kell.
+
+## A `desat` „negyedik mezője" — NEM LÉTEZIK (2026-08-16)
+
+A #711 egy köre azt írta: *„a `desat` konstruktora **négy** mezőt állít
+`0,333`-ra, miközben a renderelő csak **hármat** vesz át (R, G, B) — a
+negyedik jó eséllyel az erősség."* A konstruktort utasításszinten kiolvasva
+**ez téves**.
+
+### A konstruktor (`0x0050bd70`, 146 bájt) vége betű szerint
+
+```asm
+0x0050bdda  fld  dword ptr [0xcf4030]   ; = 0.333f  (fa 7e aa 3e)
+0x0050bde0  fst  dword ptr [esi + 0x1c] ; 1.
+0x0050bde4  fst  dword ptr [esi + 0x20] ; 2.
+0x0050bded  fst  dword ptr [esi + 0x24] ; 3.
+0x0050bdf2  fldz                        ; = 0.0
+0x0050bdf4  fst  dword ptr [esi + 0x28] ; 4.  ← NULLA
+0x0050bdf7  fstp dword ptr [esi + 0x2c] ; 5.  ← NULLA
+0x0050bdfa  fstp dword ptr [esi + 0x30] ; 6.  ← NULLA
+```
+
+**Három mező kapja a `0,333`-at, és három kapja a nullát.** Nincs negyedik
+`0,333`-as mező, tehát nincs mit „erősségként" azonosítani.
+
+### A renderelő pontosan ezt a hármat veszi át
+
+A vtable-rekesz (`0x0050ce70`, 53 bájt):
+
+```asm
+cmp byte ptr [ecx + 0x14], 0     ; ENGEDÉLYEZŐ jelző — ha 0, nem csinál semmit
+je  vege
+push [ecx + 0x24]                ; 3. argumentum
+push [ecx + 0x20]                ; 2.
+push [ecx + 0x1c]                ; 1.
+push eax                         ; a cél
+call 0x90e680
+```
+
+A `+0x28 … +0x30` nullák **nem kerülnek át** a renderelőnek.
+
+### Amit ez az ini-alakról mond
+
+```
+desat=<jelző>,<f>,<f>,<f>          (a szerializálás: "%c,%f,%f,%f")
+```
+
+| ini-rekesz | objektum-mező | szerep |
+|---|---|---|
+| `<jelző>` | `[+0x14]` | engedélyező (ha 0, a szűrő nem fut) |
+| 1. float | `[+0x1c]` | R-súly (alap 0,333) |
+| 2. float | `[+0x20]` | G-súly (alap 0,333) |
+| 3. float | `[+0x24]` | B-súly (alap 0,333) |
+
+**A `desat` átvétele tehát teljesen zárt** — nincs benne azonosítatlan
+paraméter. A #711 fejlesztői teendői ezzel a leírással hiánytalanul
+elvégezhetők.
+
+*Bizonyítottsági fok: megerősített* (a konstruktor és a vtable-rekesz
+utasításszinten; a konstans `0x00cf4030 = 0.333f` a `.rdata`-ból kiolvasva).
