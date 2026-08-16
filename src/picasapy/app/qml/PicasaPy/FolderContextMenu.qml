@@ -66,7 +66,7 @@ Menu {
 
     MenuItem {
         objectName: "folderMenuEditDescription"
-        text: qsTr("Edit Folder Description...")
+        text: qsTr("&Edit Folder Description...")
         onTriggered: menu.editDescriptionRequested()
     }
     MenuSeparator {}
@@ -75,22 +75,22 @@ Menu {
 
     MenuItem {
         objectName: "folderMenuSelectAll"
-        text: qsTr("Select All Pictures") + "\tCtrl+A"
+        text: qsTr("Select &All Pictures") + "\tCtrl+A"
         onTriggered: menu.selectAllRequested()
     }
     MenuItem {
         objectName: "folderMenuClearSelection"
-        text: qsTr("Clear Selection") + "\tCtrl+D"
+        text: qsTr("&Clear Selection") + "\tCtrl+D"
         onTriggered: menu.clearSelectionRequested()
     }
     MenuItem {
         objectName: "folderMenuInvertSelection"
-        text: qsTr("Invert Selection") + "\tCtrl+I"
+        text: qsTr("&Invert Selection") + "\tCtrl+I"
         onTriggered: menu.invertSelectionRequested()
     }
     Menu {
         objectName: "folderContextMenuMoveToCollection"
-        title: qsTr("Move to Collection...")
+        title: qsTr("Mo&ve to Collection")
 
         Repeater {
             objectName: "folderContextMenuMoveToCollectionRepeater"
@@ -115,32 +115,32 @@ Menu {
 
     MenuItem {
         objectName: "folderMenuRefreshThumbnails"
-        text: qsTr("Refresh Thumbnails")
+        text: qsTr("Refresh &Thumbnails")
         onTriggered: menu.refreshThumbnailsRequested()
     }
     Menu {
         objectName: "folderMenuSortBy"
         // az eredeti `Sort` menüosztálya: Dátum · Név · Méret · Fordított
         // sorrend (spec A.2)
-        title: qsTr("Sort Folder By")
+        title: qsTr("S&ort Folder By")
 
         MenuItem {
             objectName: "folderMenuSortByDate"
-            text: qsTr("Date")
+            text: qsTr("&Date")
             checkable: true
             checked: menu.sortMode === "date"
             onTriggered: menu.sortModeRequested("date")
         }
         MenuItem {
             objectName: "folderMenuSortByName"
-            text: qsTr("Name")
+            text: qsTr("&Name")
             checkable: true
             checked: menu.sortMode === "name"
             onTriggered: menu.sortModeRequested("name")
         }
         MenuItem {
             objectName: "folderMenuSortBySize"
-            text: qsTr("Size")
+            text: qsTr("&Size")
             checkable: true
             checked: menu.sortMode === "size"
             onTriggered: menu.sortModeRequested("size")
@@ -148,7 +148,7 @@ Menu {
         MenuSeparator {}
         MenuItem {
             objectName: "folderMenuSortReverse"
-            text: qsTr("Reverse Order")
+            text: qsTr("&Reverse order")
             checkable: true
             checked: menu.sortReverse
             onTriggered: menu.sortReverseRequested()
@@ -162,7 +162,7 @@ Menu {
         objectName: "folderMenuHideFolder"
         // állapotfüggő felirat-váltás UGYANAZON a helyen (spec A.2) — nem
         // külön tétel, ezért nincs `folderMenuUnhideFolder`
-        text: menu.folderHidden ? qsTr("Unhide Folder") : qsTr("Hide Folder")
+        text: menu.folderHidden ? qsTr("&Unhide Folder") : qsTr("&Hide Folder")
         placeholder: true
     }
     MenuSeparator {}
@@ -171,12 +171,12 @@ Menu {
 
     MenuItem {
         objectName: "folderMenuLocate"
-        text: qsTr("Locate on Disk") + "\tCtrl+Enter"
+        text: qsTr("&Locate on Disk") + "\tCtrl+Enter"
         onTriggered: menu.locateRequested()
     }
     MenuItem {
         objectName: "folderMenuRemoveFromPicasa"
-        text: qsTr("Remove from Picasa...")
+        text: qsTr("&Remove from Picasa...")
         onTriggered: menu.removeFromPicasaRequested()
     }
     MenuSeparator {}
@@ -188,12 +188,12 @@ Menu {
     // elveszítenék a feliratukat és a címkéiket
     MenuItem {
         objectName: "folderMenuMoveFolder"
-        text: qsTr("Move Folder...")
+        text: qsTr("&Move Folder...")
         onTriggered: menu.moveFolderRequested()
     }
     PicasaMenuItem {
         objectName: "folderMenuDeleteFolder"
-        text: qsTr("Delete Folder...")
+        text: qsTr("&Delete Folder...")
         placeholder: true
     }
     MenuSeparator {}
@@ -202,7 +202,7 @@ Menu {
 
     PicasaMenuItem {
         objectName: "folderMenuUploadToGooglePhotos"
-        text: qsTr("Upload to Google Photos...")
+        text: qsTr("Upload to Google &Photos...")
         placeholder: false
         // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
         retired: true
@@ -213,12 +213,12 @@ Menu {
 
     MenuItem {
         objectName: "folderMenuExportAsHtml"
-        text: qsTr("Export as HTML Page...")
+        text: qsTr("E&xport as HTML Page...")
         onTriggered: menu.exportAsHtmlRequested()
     }
     PicasaMenuItem {
         objectName: "folderMenuAddNameTags"
-        text: qsTr("Add Name Tags")
+        text: qsTr("&Add name tags")
         placeholder: true
     }
 }

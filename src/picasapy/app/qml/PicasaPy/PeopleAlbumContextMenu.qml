@@ -25,23 +25,23 @@ Menu {
 
     PicasaMenuItem {
         objectName: "peopleAlbumMenuDelete"
-        text: qsTr("Delete People Album")
+        text: qsTr("&Delete People Album")
         placeholder: true
     }
     PicasaMenuItem {
         objectName: "peopleAlbumMenuEdit"
-        text: qsTr("Edit People Album...")
+        text: qsTr("&Edit People Album...")
         placeholder: true
     }
     MenuSeparator {}
     MenuItem {
         objectName: "peopleAlbumMenuSelectAll"
-        text: qsTr("Select All")
+        text: qsTr("Select &All")
         onTriggered: menu.selectAllRequested()
     }
     MenuItem {
         objectName: "peopleAlbumMenuClearSelection"
-        text: qsTr("Clear Selection")
+        text: qsTr("&Clear Selection")
         onTriggered: menu.clearSelectionRequested()
     }
 }

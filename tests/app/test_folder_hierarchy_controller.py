@@ -155,3 +155,44 @@ class TestAncestorMatching:
         assert "/mnt/photo/Kepek" not in _paths(ctrl), (
             "a /mnt/photo ág nyílt ki, pedig a cél a /mnt/photoXYZ alatt van"
         )
+
+
+class TestTheIndexFeedsTheTree:
+    """A bekötés varrata (#702): a hasáb a fát az INDEX `folders` táblájából
+    tölti, a `sorted_folder_rows()` során át — ugyanabból a forrásból, mint
+    a lapos listát. Ezt a seamet külön meg kell mérni: a `setFolders()`
+    `{"path", "count"}` alakot vár, a `sorted_folder_rows()` viszont hét
+    mezős tuple-öket ad, és egy elcsúszott mező NÉMÁN üres fát okozna.
+    """
+
+    def test_a_valodi_index_soraibol_all_a_fa(self, qt_app, tmp_path):
+        from picasapy.app.models import sorted_folder_rows
+        from picasapy.index import open_index, sync_tree
+        from support.jpeg_factory import make_jpeg
+
+        gyoker = tmp_path / "kepek"
+        for nev, darab in (("nyar", 2), ("tel", 1)):
+            mappa = gyoker / nev
+            mappa.mkdir(parents=True)
+            for index in range(darab):
+                make_jpeg(mappa / f"{index}.jpg", size=(20, 20))
+
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, gyoker)
+            # pontosan az a kifejezés, amit az `application.py` bekötése használ
+            folders = [
+                {"path": path, "count": count}
+                for _name, path, count, *_rest in sorted_folder_rows(conn)
+            ]
+
+        ctrl = FolderHierarchyController()
+        ctrl.setFolders(folders)
+        ctrl.expandAll()
+        sorok = {row["path"]: row for row in ctrl.rows}
+
+        assert str(gyoker / "nyar") in sorok, (
+            f"a fa nem ismerte fel az indexelt mappákat: {sorted(sorok)}"
+        )
+        assert sorok[str(gyoker / "nyar")]["count"] == 2
+        # a nézet-gyökér a RÉSZFA összes fotóját összegzi
+        assert sorok[""]["count"] == 3

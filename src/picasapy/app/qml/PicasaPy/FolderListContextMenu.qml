@@ -2,11 +2,16 @@ import QtQuick
 import QtQuick.Controls
 
 // A bal panel SAJÁT jobbklikk-menüje — a Picasa `AlbumList` menüosztálya,
-// 11 tétellel (#422, 3. lépcső).
+// 12 tétellel (#422, 3. lépcső; a 12. a #757-ben került elő).
 //
 // Forrás: `docs/specs/ui-audit-context-menus.md` A.2 szakasza. Ez a menü a
 // képernyőképeken nem szerepelt: a `Picasa3i18n.dll` string-táblájából
 // derült ki, hogy létezik — nálunk eddig teljesen hiányzott.
+//
+// #757: a spec kétszer is „11 tétel"-t ír (A.1, A.4), a string-táblában
+// viszont TIZENKÉT `AlbumList::` sor van — a `Shortcuts` kimaradt a
+// számolásból. A feliratok azóta szó szerint (a `&`-mnemonikkal együtt) az
+// eredetiek.
 //
 // A rendezés-tételek ugyanarra a rétegre kötnek, mint a mappa-menü
 // „Mappa rendezésének alapja ▸" almenüje (`setFolderSort` /
@@ -35,35 +40,35 @@ Menu {
 
     MenuItem {
         objectName: "folderListMenuSortByDate"
-        text: qsTr("Sort by Date")
+        text: qsTr("Sort by &Date")
         checkable: true
         checked: menu.sortMode === "date"
         onTriggered: menu.sortModeRequested("date")
     }
     MenuItem {
         objectName: "folderListMenuSortByName"
-        text: qsTr("Sort by Name")
+        text: qsTr("Sort by &Name")
         checkable: true
         checked: menu.sortMode === "name"
         onTriggered: menu.sortModeRequested("name")
     }
     MenuItem {
         objectName: "folderListMenuSortBySize"
-        text: qsTr("Sort by Size")
+        text: qsTr("Sort by &Size")
         checkable: true
         checked: menu.sortMode === "size"
         onTriggered: menu.sortModeRequested("size")
     }
     MenuItem {
         objectName: "folderListMenuSortByChanged"
-        text: qsTr("Sort by Most Recent Changes")
+        text: qsTr("Sort by &Recent Changes")
         checkable: true
         checked: menu.sortMode === "changed"
         onTriggered: menu.sortModeRequested("changed")
     }
     MenuItem {
         objectName: "folderListMenuSortReverse"
-        text: qsTr("Reverse Sort Order")
+        text: qsTr("Re&verse sort")
         checkable: true
         checked: menu.sortReverse
         onTriggered: menu.sortReverseRequested()
@@ -74,17 +79,17 @@ Menu {
 
     PicasaMenuItem {
         objectName: "folderListMenuSortPeopleByName"
-        text: qsTr("Sort People by Name")
+        text: qsTr("Sort &People by Name")
         placeholder: true
     }
     PicasaMenuItem {
         objectName: "folderListMenuSortPeopleByCount"
-        text: qsTr("Sort People by Count")
+        text: qsTr("Sort People by &Amount")
         placeholder: true
     }
     PicasaMenuItem {
         objectName: "folderListMenuSortPeopleByTopList"
-        text: qsTr("Sort People by Top List")
+        text: qsTr("Sort People by Top &10")
         placeholder: true
     }
     MenuSeparator {}
@@ -93,21 +98,38 @@ Menu {
 
     PicasaMenuItem {
         objectName: "folderListMenuFlatView"
-        text: qsTr("Simplified Tree View")
+        text: qsTr("&Simplified Tree View")
         placeholder: true
     }
     PicasaMenuItem {
         objectName: "folderListMenuShowThumbnails"
-        text: qsTr("Show Thumbnails in Library")
+        text: qsTr("Show &Thumbnails in Library")
         placeholder: true
     }
     MenuSeparator {}
 
     // -- 4. blokk: gyors gyökér-váltás ----------------------------------------
 
+    // #757: az `AlbumList::Shortcuts` az eredetiben ALMENÜ CÍME, nem sor —
+    // a kulcsnak nincs `ID_` előtagja (mint a `Folder::SortFolderBy`-nak és
+    // az `Album::SortAlbumBy`-nak sem), a `ui-audit-mainwindow.md` 1.7 pedig
+    // ki is mondja: „a `Shortcuts` almenüben `AlbumListWin::ID_VIEW_ALL` =
+    // »My &Computer«". Alatta a gyökérváltók ültek: Asztal · Sajátgép ·
+    // Dokumentumok · Képek — utóbbi három Windows-specifikus, ezért nálunk
+    // kimarad, és egyedül az Asztal maradna benne.
+    //
+    // Amíg egyik gyökérváltó mögött sincs réteg, egy egytételes almenü csak
+    // üres kattintást adna, ezért mindkettő lapos, helyfoglaló sor — a
+    // felirat és a HELY viszont már az eredeti. A magyar felirata a Picasa
+    // saját fordítása: „Gyorsbillentyűk".
+    PicasaMenuItem {
+        objectName: "folderListMenuShortcuts"
+        text: qsTr("&Shortcuts")
+        placeholder: true
+    }
     PicasaMenuItem {
         objectName: "folderListMenuDesktop"
-        text: qsTr("Desktop")
+        text: qsTr("&Desktop")
         placeholder: true
     }
 }

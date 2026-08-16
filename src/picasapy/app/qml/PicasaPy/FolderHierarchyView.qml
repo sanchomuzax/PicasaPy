@@ -30,7 +30,9 @@ Item {
     property string selectedPath: ""
     // constants.ui `alist_indent` = 17 — a fa behúzása szintenként
     readonly property int indentStep: 17
-    readonly property int rowHeight: 22
+    // A gazda hasáb egységes sormagassága (#730) — a hasáb ebből számolja a
+    // komponens magasságát is, ezért felülírhatónak kell lennie.
+    property int rowHeight: 22
 
     signal folderChosen(string path)
     // A `HierFolder` menüosztály három olyan tétele, aminek a rétege a
@@ -75,6 +77,11 @@ Item {
         anchors.fill: parent
         clip: true
         boundsBehavior: Flickable.StopAtBounds
+        // #730/#702: a bal hasáb EGYETLEN görgetője a gazda `Flickable`-je.
+        // A gazda a teljes tartalommagasságot adja ennek a komponensnek,
+        // tehát itt nincs mit görgetni — ha viszont a lista `interactive`
+        // maradna, elnyelné a görgő-eseményt, és a hasáb nem mozdulna.
+        interactive: false
         // #305 null-őr: a vezérlő bekötése előtt is érvényes modell kell
         model: root.hierarchy ? root.hierarchy.rows : []
 
