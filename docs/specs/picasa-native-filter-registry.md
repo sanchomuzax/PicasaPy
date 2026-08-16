@@ -546,3 +546,84 @@ A táblázat a 2-es sorszámot **2-re** képezi. **Egyezik.**
 
 *Bizonyítottsági fok: megerősített* (a mező alapértéke, mindkét beállító
 hely, az átváltótábla nyers tartalma, és a két szűrő paraméter-sorrendje).
+
+## A szűrő-objektum gyára és térképe (2026-08-16)
+
+### A gyár: lineáris keresés a 49 rekordon — `0x008fa16d`
+
+```asm
+0x008fa17b  mov esi, 0xcd0658      ; ← a natív szűrő-tábla eleje
+0x008fa180  xor edi, edi           ; index
+...                                 ; sztring-összehasonlítás a kért névvel
+0x008fa23b  add edi, 0x10          ; egy rekord = 16 bájt
+0x008fa23e  add esi, 0x10
+0x008fa241  cmp edi, 0x310         ; ← 784 = 49 × 16
+0x008fa247  jb  0x8fa182
+```
+
+**A `0x310`-es korlát független megerősítés a tábla méretére: pontosan
+49 rekord.**
+
+### A konstruktor hívása
+
+```asm
+0x008fa1e6  push 0xcc              ; ← 204 bájtos objektum
+0x008fa1eb  call 0x97c5d0          ; foglalás
+0x008fa1f7  push [esi+0xc]         ; segédB      (a tábla +0xc mezője)
+0x008fa20b  push [ctx+0x1468]
+0x008fa20f  push [ctx+0x1464]
+0x008fa214  push [esi+8]           ; segédA      (a tábla +8 mezője)
+0x008fa215  mov  edx, [esi+4]      ; a KEZELŐ    (a tábla +4 mezője)
+0x008fa218  mov  esi, eax          ; this
+0x008fa21a  call 0x8f6ad0          ; a konstruktor (235 bájt)
+```
+
+### A 204 bájtos szűrő-objektum térképe
+
+`0x008f6ad0` alapján:
+
+| eltolás | tartalom |
+|---|---|
+| **`+0x00`** | vtable — **`0xcd184c`** |
+| `+0x04` | 0 |
+| **`+0x08`** | **a lánc-kontextus** (a hívótól) |
+| **`+0x0c`** | **a KEZELŐ** — a tábla `+4` mezője |
+| **`+0x10`** | **segédA** — a tábla `+8` mezője (a képen belüli vezérlő) |
+| `+0x14`, `+0x18` | 0 |
+| `+0x1c` | `[lánc-kontextus + 0x1464]` |
+| `+0x20` | `[lánc-kontextus + 0x1468]` |
+| **`+0x24`** | **segédB** — a tábla `+0xc` mezője (a sugár-számoló) |
+| `+0x28` … | **a `filters=` lánc paraméterei** (a `tint` a `+0x50`-t olvassa színként, `filters-decoded.md`) |
+| `+0x58`, `+0x59` | 1 (logikai jelzők) |
+| `+0x5c` … `+0x68` | 0 |
+| `+0x6c`, `+0x70` | 1.0f, 0.0f |
+| `+0x90` | 1 |
+| **`+0xe0`** | a **`_sldrRadius`** csúszka sorszáma, alapból `0xFF` |
+
+### Ebből következik: mi a `tint` „virtuális színátalakítása"
+
+A `filters-decoded.md` nyitva hagyta, mi a `ctx` a `tint` callbackjében:
+
+```asm
+0x008f96fa  mov  edi, dword ptr [ebp + 0x14]   ; ← MAGA A SZŰRŐ-OBJEKTUM
+0x008f9718  mov  eax, dword ptr [edi + 8]      ; → a LÁNC-KONTEXTUS
+0x008f971b  test eax, eax
+0x008f971d  je   0x8f9736                       ; ha nincs → kimarad
+0x008f972a  mov  eax, dword ptr [eax + 8]      ; a kontextus 3. függvénymutatója
+0x008f972d  call eax
+```
+
+Vagyis a virtuális színátalakítás **nem a szűrő tulajdonsága**, hanem a
+**lánc-kontextus** harmadik függvénymutatója — egy **renderelésenkénti
+horog**, ami lehet `NULL` is (ilyenkor a lépés kimarad).
+
+Ugyanezt a mintát használja az `ansel` (`0x008f8410`).
+
+**Következmény a mi oldalunkra:** ha a lánc-kontextusban nincs
+színátalakítás (a szokásos eset), a `tint` a **nyers** színnel dolgozik,
+és a `filters-decoded.md` szerinti öt lépés a teljes recept. A
+színátalakítás akkor lép be, ha a renderelés valamilyen külön
+színtér-kezelést kap.
+
+*Bizonyítottsági fok: megerősített* (a gyár ciklushatára, a konstruktor
+mind a hét mezőértéke, és a `tint` callback három utasítása).
