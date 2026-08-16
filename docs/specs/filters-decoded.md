@@ -2494,3 +2494,120 @@ ha a mi modellünk `float`-on számol, a kerekítés is eltérhet.
 `0x008f85e2`–`0x008f8617` közti szakaszt (`[esp+0x20]`, `[esp+0x24]`,
 `[esp+0x28]` feltöltését), illetve mérni a fenti három jelöltet a
 `referencia/blur-meres/` anyagon.
+
+### Az `autocolor` mátrix-építő SZERKEZETE: von Kries a C-térben (2026-08-16)
+
+#### ⚠️ Előbb egy önkorrekció: a „von Kries megdőlt" ELHAMARKODOTT volt
+
+A PR #760 és #770 összesen öt adaptációs alakot mért ki, és mind rosszabb
+volt a puszta átlósnál — ebből azt írtuk, hogy „a kilenc konstans nem
+adaptációs tér". **A kód szerint DE IGEN az** — csak mindegyik korábbi
+próba rossz *behelyettesítéssel* dolgozott. A **forma** von Kries; a
+cáfolat a *paraméterezésre* vonatkozott, nem a formára.
+
+#### A kód, amiből ez látszik
+
+```asm
+0x0090efb8  rep movsd (ecx=9)      ; a kilenc konstans → [esp+0xcc] (3×3 puffer)
+...                                 ; v2 = C · g2  →  [esp+0x60/0x64/0x68]
+0x0090f002  fld [esp+0x78] ; fdiv [esp+0x60] ; fstp [esp+0xcc]
+0x0090f011  fld [esp+0x7c] ; fdiv [esp+0x64] ; fstp [esp+0xdc]
+0x0090f020  fld [esp+0x80] ; fdiv [esp+0x68] ; fstp [esp+0xec]
+```
+
+- `[esp+0x78/0x7c/0x80]` = **`v1 = C · g1`** (az előző szakaszból);
+- `[esp+0x60/0x64/0x68]` = **`v2 = C · g2`** (egy második erősítés-vektorból);
+- a **hányadosuk** a `[esp+0xcc]`, `[esp+0xdc]`, `[esp+0xec]` rekeszekbe megy.
+
+**A három céloffszet a 9 dwordös puffer 0., 4. és 8. eleme — vagyis pontosan
+a 3 × 3 mátrix ÁTLÓJA.** Ez betű szerint a von Kries-alak:
+
+```
+d = (C · g1) / (C · g2)        elemenként
+M = C⁻¹ · diag(d) · C          (a záró összeállítás)
+```
+
+*Bizonyítottsági fok: megerősített* a szerkezetre (a három osztás és a
+célrekeszek offszetjei).
+
+#### Ami NYITVA marad: MELYIK két erősítés-vektor
+
+Három behelyettesítést mértem ki a 9 nem-triviális golden-páron:
+
+| modell | átlagos eltérés |
+|---|---:|
+| **orákulum** (a legjobb 3 × 3) | **0,974** |
+| puszta átlós `diag(128/g)` | 3,100 |
+| `diag((C·1)/(C·g))` | 3,718 |
+| `C⁻¹ · diag((C·1)/(C·g)) · C` | 3,786 |
+| `C⁻¹ · diag((C·g)/(C·1)) · C` | 13,419 |
+
+Egyik sem veri a puszta átlóst. **A `g1` és `g2` tehát nem az, aminek
+gondoltam** — a `0x0090eedf`–`0x0090ef96` közti szakasz **kétszer** tölti
+fel a `[esp+0x18/0x1c/0x20]` hármast, és a két feltöltés forrása eltér; ezt
+regiszter-szinten kell végigkövetni.
+
+**A következő kör pontosan itt folytassa:** `0x0090eedf`–`0x0090ef96`, a
+`[esp+0x18]`, `[esp+0x1c]`, `[esp+0x20]` két egymást követő feltöltésének
+forrása.
+
+#### Amit ez a kör KIZÁRT
+
+- `diag((C·1)/(C·g))` és mindkét `C⁻¹ diag(...) C` változata a fenti
+  behelyettesítéssel;
+- (a korábbi körökből) `C⁻¹ diag(1/v) C`, `C⁻¹ diag(v) C`,
+  `C⁻¹ diag(v₁/v) C`, `C⁻¹ D C`, `C D C⁻¹` — **összesen nyolc alak**.
+
+### Az elmosó út PIRAMIS-alapú — két jelölt kizárva (#762, 2026-08-16)
+
+#### A lelet
+
+A `0x00a42c20` diszpécser két, közvetlenül hívott függvénye **nem** a
+konvolúció: az egyik egy **felező kicsinyítő** (mipmap), a másik egy
+**2D affin transzformáció-összefűző**. Ebből viszont kiderül, hogy az elmosó
+út **képpiramison** dolgozik — ez magyarázza, miért csúszik el egy sima
+Gauss-modell nagy sugárnál.
+
+#### Bizonyíték
+
+**`0x00a43230` (336 b) — 2 × 2-es dobozkicsinyítő.** A cél mérete a forrás
+fele (`sar esi,1` / `sar eax,1`, `0x00a43255`), és két szomszédos sorból
+olvas (`lea ebx, [edi + edx*8]` = 2 sornyi lépés, `0x00a4329b`). A belső
+ciklus a klasszikus SWAR-trükkel átlagol négy képpontot:
+
+```asm
+0x00a432c8  and eax, 0xff00ff      ; a páros bájtok (B, R)
+0x00a432d7  shr ecx, 8
+0x00a432e4  and ecx, 0xff00ff      ; a páratlan bájtok (G, A)
+...                                 ; négy képpont összege csatornánként
+```
+
+**`0x009e6340` (321 b) — 2D affin transzformáció összefűzése.** Hat float
+mezőt szoroz-összegez (`[eax+0..0x20]` × `[ecx+8..0x14]`), az `a·e + b·f`
+mintában — ez `[a b c; d e f]` alakú transzformációk kompozíciója, nem
+képszűrés.
+
+#### Ami NYITVA marad — és hol folytassa a következő kör
+
+A tényleges konvolúció a diszpécser **virtuális hívásában** van
+(`mov eax,[edi]; mov edx,[eax+8]; call edx` — `0x00a42c38`, `0x00a42c5c`,
+`0x00a42c7c`), nem a közvetlen hívottak közt. **A vtable-t kell feloldani:**
+melyik osztály példánya érkezik a diszpécserbe az `unsharp`
+(`0x0090c556`) hívási helyén.
+
+#### Amit ez a kör KIZÁRT
+
+- `0x00a43230` mint elmosó mag — **kicsinyítő**;
+- `0x009e6340` mint elmosó mag — **transzformáció-összefűző**.
+
+#### Mit jelent a piramis a mi modellünkre
+
+Ha a natív út kicsinyít → szűr → nagyít, akkor **nagy sugárnál a mi
+egylépéses Gauss-unk elvileg sem tud egyezni**: a piramis a magas
+frekvenciákat a kicsinyítéskor levágja, és a visszanagyítás
+interpolációs jelleget visz a képbe. A `referencia/blur-meres/` öt
+csúszkaállásán mért 0,48–1,63 szintes él-profil-hiba ezzel konzisztens.
+
+*Bizonyítottsági fok: megerősített* a két kizárásra és a kicsinyítő
+azonosítására · **feltételes** arra, hogy a teljes út piramis (a
+kicsinyítő létezése erősen valószínűsíti, de a szűrő-lépést még nem láttuk).
