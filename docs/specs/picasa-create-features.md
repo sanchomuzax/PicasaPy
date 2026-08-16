@@ -1108,3 +1108,84 @@ korábbi jegyzet 18-at említett, és a felsorolásból hiányzott a **`rect`**
 
 *Bizonyítottsági fok: megerősített* (a beállítás-olvasó függvény, a
 `slideshowctrls.tre` teljes tartalma, és a 22 erőforrás-bejegyzés).
+
+### A diavetítés vezérlősávja — mind a 39 eleme (`oneup`, 2026-08-16)
+
+A korábbi szakasz a `slideshowctrls.tre`-t idézte (két elem). **Az igazi
+vezérlősáv az `oneup`** — a teljes képernyős nézet alsó sávja, **39
+elemmel** a `respack.yt`-ban.
+
+### A sáv
+
+| elem | pozíció | méret |
+|---|---|---|
+| `docbounds` / `rect: back` / `clip: base` | (0, 0) | **800 × 83** |
+| `vbutton: auto2` | (0, 0) | 800 × 14 | *(a teljes szélességű felső kattintósáv)* |
+| `caption: caption` | (**126**, 18) | **550 × 10** | a **felirat** a sáv fölött |
+| `stripback` | (3, **33**) | **797 × 50** | a látható sáv |
+
+### A vezérlők balról jobbra
+
+| # | elem | x | méret | mi ez |
+|---:|---|---:|---|---|
+| 1 | `exit` (+ ikon 17 × 15, felirat **„Exit"**) | **36** | **74 × 35** | kilépés |
+| 2 | `timeline` (+ ikon 26 × 9, felirat **„Timeline"**) | **107** | **157 × 35** | **Időrend** |
+| — | `sszoomsliderclip` | 114 | 157 × 27 | nagyító-csúszka *(a `timeline` helyén, váltakozva)* |
+| 3 | `rotateleft` | **276** | **26 × 34** | forgatás balra |
+| 4 | `rotateright` | **312** | **26 × 34** | forgatás jobbra |
+| — | `rect: centergroup` | 346 | **118 × 47** | a lejátszó-hármas kerete |
+| 5 | `prev` | **353** | **26 × 30** | előző |
+| 6 | **`auto`** (+ `auto_icon` 20 × 22) | **387** | **36 × 36** | **lejátszás/szünet** |
+| 7 | `next` | **431** | **26 × 30** | következő |
+| 8 | `star` | **458** | **27 × 33** | csillagozás |
+| 9 | **`transtype`** | **498** | **143 × 21** | **az átmenet-választó** (legördülő) |
+| 10 | **`captionbutton`** | **644** | **54 × 33** | **a feliratmód kapcsolója** |
+| — | `dtclip` | 691 | 103 × 44 | a diaidő-blokk |
+| 11 | `tpslabel` (**„Display Time"**) | 691 | 103 × 11 | |
+| 12 | `minusone` (+ ikon 6 × 2) | **704** | **14 × 13** | diaidő **−** |
+| 13 | `tps` (a szám) | 722 | 48 × 15 | |
+| 14 | `plusone` (+ ikon 5 × 6) | **774** | **14 × 13** | diaidő **+** |
+
+### A feliratmód: KÉT ikon, egy gomb
+
+```
+oneup/caption_icon      (677, 49)  17x19   ← felirat KI
+oneup/caption_yesicon   (678, 49)  16x18   ← felirat BE
+```
+
+A `captionbutton` **két ikonállapotot** vált — ez a jegy „feliratmód"
+tétele. A felirat maga a **`caption`** elem (126, 18, **550 × 10**), a sáv
+**fölött**, középre igazítva.
+
+### A diaidő ± gombokkal
+
+A `SlideshowEffectTime` (alapérték **3**) a sávon **`minusone`** /
+**`plusone`** gombbal állítható, a `tps` mező mutatja az értéket. A
+`globalbuttons/disp_n`/`_p`/`_h` képcsalád **14 × 13**.
+
+### Kikommentezett, elhagyott elemek
+
+```
+#button(Auto Play,oneupbuttons/autonormal,…): auto   (362, 15)  79x24
+#button: rotateleft                                  (270, 40)  38x35
+#button: rotateright                                 (310, 40)  36x35
+```
+
+Az „Auto Play" gombnak **feliratos** változata is készült (79 × 24), és a
+forgatógomboknak egy korábbi, nagyobb (38 × 35 / 36 × 35) verziója — mindet
+kivették.
+
+### ⚠️ A feliratok NINCSENEK lefordítva
+
+`oneuptext.tre` **három** szöveget tartalmaz, angolul:
+`tllabel` = „Timeline", `bcklabel` = „Exit", `tpslabel` = „Display Time".
+
+Ugyanez a helyzet az `editoneup` változatban (a **szerkesztő** teljes
+képernyős nézete), ami betűre ugyanezt a három szöveget hordozza.
+
+> A „Timeline" hivatalos magyar megfelelője **másutt** létezik:
+> `eMenuView::ID_VIEW_TIMELINE` → **„Időrend"**. A másik kettőre javasolt:
+> **„Kilépés"** és **„Megjelenítési idő"**.
+
+*Bizonyítottsági fok: megerősített* (a `respack.yt` 39 `oneup` rétege és az
+`oneuptext.tre` teljes tartalma).
