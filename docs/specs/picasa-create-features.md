@@ -1016,3 +1016,95 @@ Linux-változatnak sajátot kell használnia.
 
 *Bizonyítottsági fok: megerősített* (a 147 erőforrás-bejegyzés és a
 `PicasaManifest` két hivatkozása).
+
+## A diavetítés: három beállítás, három üzemmód, 22 átmenet (2026-08-16)
+
+### A három beállítás — alapértékkel
+
+A diavetítő konfigurációját egyetlen függvény olvassa be
+(**`0x007fa7f0`**, 1 690 bájt):
+
+| kulcs | alapérték | cím | mit szabályoz |
+|---|:---:|---|---|
+| **`SlideshowEffectTime`** | **3** | `0x007facd3` (`mov dword ptr [esp+0x3c], 3`) | **másodperc/dia** |
+| `LoopSlideshow` | **0** | `0x007fad0a` | ismétlés |
+| `PlayMP3Tracks` | **1** | `0x007fadbb` | háttérzene lejátszása |
+
+*(Az utóbbi kettő alapértéke a `0x006e0cb0` regisztrálójából, lásd
+`picasa-fo-ablak-elrendezes.md`.)*
+
+A zene forrása a **`MP3SlideshowPath`** kulcs (`0x005e8a70`, `0x006e1100`,
+`0x006e3990`, `0x0075cdc0`).
+
+### A kezelőfelület: egy lebegő sáv a képernyő alján
+
+`slideshowctrls.tre` — mindössze két elem:
+
+```
+slideshowctrls/stripback: root
+YConstraint 1, 1, -20        # a képernyő aljához, 20 px-szel feljebb
+m_centerX                    # vízszintesen KÖZÉPRE
+
+slideshowctrls/transtype: slideshowctrls/stripback
+m_offsetLT
+Property itempadding 2 2 22 2   # az átmenet-választó legördülő belső margói
+```
+
+Vagyis a diavetítés vezérlője **egyetlen, középre igazított sáv** a
+képernyő alján, benne az **átmenet-választóval**.
+
+### Három bemutató-üzemmód, nem egy
+
+A `0x005e8a70` (3 614 bájt) háromféle bemutatót indít:
+
+| belső név | folyamatjelző | HU |
+|---|---|---|
+| `BigSlideshow2` | — | **Diavetítés** |
+| `Flipbook` | `CThumbUI::MakeFlip` | **Lapozható könyv előkészítése…** |
+| (időrend) | `CThumbUI::MakeTimeline` | **Időrend előkészítése…** |
+
+A menütételek: `eMenuView::ID_VIEW_SLIDESHOW` → **„Diavetítés"**,
+`eMenuView::ID_VIEW_TIMELINE` → **„Időrend"**,
+`eMenuLabelFolder::ID_ALBUM_SLIDESHOW` → **„Diavetítés megtekintése"**.
+
+Mindháromhoz kell tálca-tartalom: „You must have images in the Picture Tray
+to do this."
+
+### ⚠️ Az átmenetek száma 22, nem 18
+
+A `CTransitions::*` erőforrás-család **22 bejegyzést** tartalmaz. A
+korábbi jegyzet 18-at említett, és a felsorolásból hiányzott a **`rect`**
+(**„Négyszög"**).
+
+| kulcs | EN | HU |
+|---|---|---|
+| `cut` | Cut | **Kivágás** |
+| `dissolve` | Dissolve | **Szétoszlás** |
+| `dissolveblack` | Dissolve through black | **Szétoszlás feketén át** |
+| `dissolvewhite` | Dissolve through white | **Szétoszlás fehéren át** |
+| `wipeleft` | Wipe - left | **Törlés - balra** |
+| `wiperight` | Wipe | **Törlés** |
+| `wipeup` | Wipe - top | **Törlés - felfelé** |
+| `wipedown` | Wipe - bottom | **Törlés - lefelé** |
+| `diagwipeul` | Wipe - up left | **Törlés - balra fel** |
+| `diagwipeur` | Wipe - up right | **Törlés - jobbra fel** |
+| `diagwipedl` | Wipe - down left | **Törlés - balra le** |
+| `diagwipedr` | Wipe - down right | **Törlés - jobbra le** |
+| `pushleft` | Push - left | **Tolás - balra** |
+| `pushright` | Push | **Tolás** |
+| `pushtop` | Push - top | **Tolás - felfelé** |
+| `pushdown` | Push - bottom | **Tolás - lefelé** |
+| `circlein` | Circle - inwards | **Kör - befelé** |
+| `circleout` | Circle | **Kör** |
+| **`rect`** | **Rectangle** | **Négyszög** |
+| `kenburns` | Pan and Zoom | **Pásztázás és nagyítás** |
+| `kenburnsaoi` | Pan and Zoom - face | **Pásztázás és nagyítás - arc** |
+| `timelapse` | Time Lapse | **Gyorsítás** |
+
+> Figyeld meg a **fordítási aszimmetriát**: a „sima" irány neve nem
+> tartalmaz irányjelzőt (`wiperight` = „Törlés", `pushright` = „Tolás",
+> `circleout` = „Kör"), a többi igen. Ez az eredeti Picasa saját
+> megoldása — ne „egységesítsük".
+
+*Bizonyítottsági fok: megerősített* (a beállítás-olvasó függvény, a
+`slideshowctrls.tre` teljes tartalma, és a 22 erőforrás-bejegyzés).
