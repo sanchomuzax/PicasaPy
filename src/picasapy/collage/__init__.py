@@ -13,6 +13,7 @@ Az újat mindig a saját moduljából kell behozni:
 `from picasapy.collage.pile import pile_layout`.
 """
 
+from .contact_sheet import header_font_size
 from .cxf import CxfBackground, CxfNode, CxfProject, read_cxf, write_cxf
 from .fitting import MsvcRandom, fit_inside, msvc_uniform01, picasa_round
 from .frames import (
@@ -37,6 +38,7 @@ from .layout import (
     pile_layout,
 )
 from .pile import PilePlacement, pile_scale, pile_size, scatter_centers
+from .multi_exposure import blend_multi_exposure, multi_exposure_size
 from .rects import NormRect, PixelRect, to_pixel_rects
 from .regular_grid import regular_grid_rects, regular_grid_shape
 from .render import (
@@ -62,6 +64,9 @@ from .themes import (
 
 __all__ = [
     "BORDER_THEMES",
+    "blend_multi_exposure",
+    "header_font_size",
+    "multi_exposure_size",
     "CxfBackground",
     "CxfNode",
     "CxfProject",
