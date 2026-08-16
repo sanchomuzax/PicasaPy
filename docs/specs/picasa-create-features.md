@@ -926,3 +926,93 @@ legördülő-nyílnak).
    specifikáció a filmkészítőhöz.
 5. A **Pan and Zoom – face** az arcfelismerés és a diavetítés
    összekapcsolása — ez a Picasa egyik legkedveltebb apró trükkje.
+
+## A biztonsági mentés (Back Up Pictures) — teljes üzenet-leltár (2026-08-16)
+
+A funkció a **`il_BurnPanel`** osztály körül él, és a magyar szövegforrásban
+**147 bejegyzése** van. A menütétel: `eMenuTools::ID_TOOLS_BACKUP` →
+**„Képek biztonsági mentése…"**.
+
+### Három célfajta
+
+| cél | vezérlő / erőforrás | magyar |
+|---|---|---|
+| **mappa** | `il_BurnPanel::bkbutton`, `bkfolder` | „Biztonsági mentés" |
+| **CD/DVD írás** | `il_BurnPanel::burnbutton` | „Írás" |
+| **ISO-fájl** | `ISOFilter`, `ISOFolder`, `ISONoWrite` | „ISO-fájlok", „ISO-k" |
+
+Ha nincs író meghajtó, a program **felajánlja az ISO-t**:
+
+> `nodrives` — „Nincs elérhető CD-meghajtó. … Esetleg inkább szeretne egy
+> .ISO-fájlt létrehozni?"
+
+### Alapértékek
+
+| erőforrás | EN | HU |
+|---|---|---|
+| `il_BurnPanel::bksetname` | My Backup Set | **Saját mentési készlet** |
+| `il_BurnPanel::DefBkFolder` | `\Picasa Backup\` | **`\Picasa biztonsági másolat\`** |
+| `il_BurnPanel::picfolder` | Pictures | **Képek** |
+| `il_BurnPanel::PicasaCDName` | Picasa CD | Picasa CD |
+| `il_NewBkDialogTitle` | Backup Set | **Mentési készlet** |
+
+### A készlet ÚJRAFUTTATHATÓ — külön üzenetcsoport az első és a további futásra
+
+| csoport | mikor | db |
+|---|---|---:|
+| `InitialCollect::*` | **első** mentés | 11 |
+| `UpdateCollect::*` | **ismételt** mentés (inkrementális) | 14 |
+| `UpdateCollectUpload::*` | ismételt, feltöltéssel | 1 |
+| `UpdateMedia::*` | a hordozó frissítése | 4 |
+| `InsertNext::*` | a következő lemez kérése | 13 |
+| `WriteProgress::*` | írás közbeni állapotok | **21** |
+| `BackgroundProc::*` | háttérfolyamat | 6 |
+| `BackupCopy::*` | másolás | 3 |
+| `debugmenu::*` | meghajtó- és lemezadatok | 18 |
+
+**Ez igazolja a jegy címét:** a mentési készlet valóban újrafuttatható, és a
+program külön szövegkészletet tart az **első** és a **további** futásokra.
+
+A készlet szerkeszthető és törölhető:
+`il_NewBkDialog::EditTitle` → **„Mentési készlet szerkesztése"**,
+`il_NewBkDialog::EditOKButton` → **„Módosítás"**,
+`il_NewBkDialog_delete` → **„Biztosan törli a(z) … mentési készletet?"**
+
+### A visszaállítás ÖNÁLLÓ program, jegyzékfájllal
+
+A `RestoreDialog::*` csoport mást ír le, mint a mentés:
+
+| erőforrás | HU |
+|---|---|
+| `RestoreDialog::open` | **Jegyzékfájl megnyitása…** |
+| `RestoreDialog::cantFind` | Nem található „%1$s" vagy „%2$s" nevű **jegyzékfájl** |
+| `RestoreDialog::cantcopy` | Nem sikerült **az alkalmazás átmeneti példányának** másolása |
+| `RestoreDialog::cantlaunch` | Nem lehet megnyitni az alkalmazást |
+| `RestoreDialog::changetitle` | Hely kijelölése a fájloknak |
+| `RestoreDialog::deflocation` | **a Picasa biztonsági mentésből\\** |
+| `RestoreDialog::finished` | %1$d fájl visszaállítása befejeződött; összesen %2$s. |
+| `RestoreDialog::quit` | Kilépés |
+
+**Két dolog derül ki:**
+
+1. A mentés **jegyzékfájlt** ír a hordozóra, és a visszaállítás abból
+   dolgozik. A fájl neve `%s.%s` mintával épül, a típusjelzője
+   **`PicasaManifest`** (`0x00843a90`, `0x00844e40`).
+2. A visszaállító **maga az alkalmazás**, amit a mentés **rámásol a
+   hordozóra** („az alkalmazás átmeneti példányának másolása") — vagyis a
+   mentés önhordó: Picasa nélkül is visszaállítható.
+
+### Webalbumba mentés
+
+`PWA_storage_needed`, `PWA_storage_total`, `PWA_no_storage_change`,
+`…_nolimit` — a mentés célja a **Picasa Webalbumok** is lehetett, és a
+program kiírta, mennyi további tárhely kell hozzá.
+
+### Ami Linuxon értelmetlen
+
+`imapierror` — „Nem sikerült csatlakozni a **Windows IMAPI2** CD-író
+motorhoz" + egy súgó-URL. A CD/DVD-írás Windows-specifikus API-ra épül; egy
+Linux-változatnak sajátot kell használnia.
+
+*Bizonyítottsági fok: megerősített* (a 147 erőforrás-bejegyzés és a
+`PicasaManifest` két hivatkozása).
