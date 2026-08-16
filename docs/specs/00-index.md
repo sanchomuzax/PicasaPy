@@ -27,17 +27,13 @@ kérdés).
 
 1. **N4** — a csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés)
 
-### [picasa-native-filter-registry.md](picasa-native-filter-registry.md) — 1 kérdés
-
-1. A sugár-átváltótábla (`0xc7d5b8` = `[0, 1, 2, 5, 1, 2]`) hat bejegyzésének megfeleltetése: **melyik paraméter a sugár** az egyes esetekben
-
 ### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
 
 1. Mit tesz a Picasa, ha külső program **írja az inifájlt ÉS megérinti a kép `mtime`-ját** (537. sor) — ⚠️ **windowsos próbára vár**, gépi úton nem eldönthető
 
 ### Nincs nyitott kérdés
 
-`filterdesc-registry.md` · `ui-audit-context-menus.md` · **`ui-audit-mainwindow.md`** · és a lenti táblák
+`filterdesc-registry.md` · `ui-audit-context-menus.md` · `ui-audit-mainwindow.md` · **`picasa-native-filter-registry.md`** · és a lenti táblák
 minden további lapja.
 
 ## Formátum-specifikációk (adatfájlok, erőforrások)
