@@ -927,7 +927,7 @@ külön auditot érdemel, itt csak jelzésként szerepel.
 |---|---|---|---|
 | N1 | Mit jelent a szám az „alkalmazva" jelvényen? A **lánc-sorszám olvasat elvetve**; a „hányszor van alkalmazva" olvasat viszont ellentmond annak, hogy a felvételen a fotón nincs szerkesztés (3.4) | feltételes | (a) célzott képernyőkép: ugyanazt az effektet **kétszer** alkalmazva mutat-e „2"-t; (b) fotóváltás után eltűnik-e a jelvény; (c) a `FUN_005d7c20` (VA `0x005d7c20`) dekompilálása |
 | N2 | Az effekt-paraméter alpanel **tényleges** képernyőképe | — | egy felvétel bármelyik paraméteres effekt (pl. Holga-szerű) megnyitott alpaneléről — a 4. szakasz jelenleg az erőforrásokból + a 2. fül azonos vezérlőiből következtet |
-| N3 | A csempék elemleírása (tooltip) megjelenik-e a rácsban, és a `filter_<Kulcs>_tooltip0` szövege-e | feltételes | egérrel egy csempe fölött készített felvétel |
+| ~~N3~~ | ~~A csempék elemleírása (tooltip) megjelenik-e a rácsban, és a `filter_<Kulcs>_tooltip0` szövege-e~~ → **LEZÁRVA (2026-08-16): IGEN, mindkettő** — lásd „A csempe buboréksúgója a szűrő objektumból jön" alább | erős | — |
 | N4 | A csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés) | **részben LEZÁRVA (2026-08-16)**: a Picasa hármas `typecolor` állapotmodellje kiolvasva — lásd „A csempefelirat és a hármas állapotszín" alább. A csempe HÁTTERÉNEK állapotképei (respack) még nincsenek kimérve | felvétel egérmutatóval a csempe fölött |
 | ~~N5~~ | ~~A rács **görgethető-e** 12 csempénél többnél~~ → **LEZÁRVA (2026-08-16)**: nem görgethető, és a `picnik_fx` nem rács-bővítő, hanem a megszűnt **Picnik** online szerkesztő indítógombja — lásd „A `picnik_fx` a megszűnt Picnik gombja" alább | megerősített | — |
 
@@ -1541,3 +1541,62 @@ a kiadott változatban csak ikon van rajtuk.
 
 *Bizonyítottsági fok: megerősített* (a `video_control_bar.tre` teljes
 tartalma és az `editpanel.tre` három hivatkozási pontja).
+
+### A csempe buboréksúgója a szűrő objektumból jön (2026-08-16) — az N3 lezárva
+
+Az N3 azt kérdezte, megjelenik-e a buboréksúgó a csempe-rácsban, és a
+`filter_<Kulcs>_tooltip0` szövege-e. **Mindkettőre igen.**
+
+#### A szűrő-objektum felülete: `CGenericFilter`
+
+Az RTTI szerint a `CGenericFilter::vftable` (`0x008d184c`) hetedik és
+nyolcadik bejegyzése a **felirat** és a **buboréksúgó** lekérdezője:
+
+| index | eltolás | cím | mit ad vissza |
+|---:|---|---|---|
+| 5 | `+0x14` | `0x008f6cc0` | **állapot** (egész) — a jelvényhez |
+| **6** | `+0x18` | **`0x008fc000`** | a **felirat** — `filter_%s_label0` |
+| **7** | `+0x1c` | **`0x008fc090`** | a **buboréksúgó** — `filter_%s_tooltip0` |
+
+A súgó-lekérdező magja (`0x008fc090`, 130 bájt):
+
+```asm
+0x008fc0af  push 0xcd09a4          ; "filter_%s_tooltip0"
+0x008fc0b4  lea  esi, [esp + 0x10]
+0x008fc0b8  call 0x40eab0          ; sprintf → "filter_<Kulcs>_tooltip0"
+```
+
+Vagyis a súgó **erőforrás-kulcsból** épül, a szűrő nevével behelyettesítve —
+pontosan úgy, ahogy a felirat.
+
+#### A csempe-kirakó MINDHÁRMAT lekérdezi
+
+`0x005d7c20`, csempénként:
+
+```asm
+0x005d7eb9  mov edx, [eax + 0x14]   ; vtbl[5] — állapot
+0x005d7ebc  call edx
+0x005d7ec7  mov edx, [eax + 0x18]   ; vtbl[6] — FELIRAT
+0x005d7ecf  call edx
+0x005d7f47  mov eax, [edx + 0x1c]   ; vtbl[7] — BUBORÉKSÚGÓ
+0x005d7f4a  call eax
+```
+
+A rács tehát **minden csempéhez lekéri a súgót**. Egy nem használt értéket
+nem kérdezne le tizenkétszer fülenként.
+
+#### Amit ez a fordításról mond
+
+A súgószövegek a `*text.tre` szövegforrásban **le vannak fordítva** — a
+kilenc Shift-változatét már összegyűjtöttük (`picasa-effekt-nevek.md`).
+A `filter_<Kulcs>_tooltip0` kulcsalak ismeretében **bármelyik** effekt
+súgója kikereshető.
+
+> ⚠️ Ellentétben a **videó vezérlősávjával**, ahol a három súgó
+> angolul, közvetlenül a `.tre`-ben áll (`picasa-linux-mod.md`
+> szomszédságában, `video_control_bar.tre`) — az effekt-csempéké
+> szabályos, fordítható erőforrás.
+
+*Bizonyítottsági fok:* **erős** — a vtable-index és az erőforrás-kulcs
+egyértelmű, és a kirakó mind a hármat meghívja. Megerősítetté egy
+egérmutatós képernyőkép tenné.

@@ -23,11 +23,10 @@ kérdés).
 4. **A `tint` virtuális színátalakítása** (1506. sor) — a `ctx` harmadik függvénymutatója
 5. **A `ytResampler` utolsó, nem 2-hatvány lépése** — a felezőlépés már megvan (sima 2×2 doboz-átlag, `0x00a43230`); a maradék `0x009e6340` / `0x009e6df0` / `0x009e75a0`. *(A korábbi megfogalmazás tévesen „közös elmosómagnak" hívta — 2026-08-16-i helyesbítés.)*
 
-### [ui-audit-editor.md](ui-audit-editor.md) — 3 kérdés
+### [ui-audit-editor.md](ui-audit-editor.md) — 2 kérdés
 
-1. **N3** — megjelenik-e a buboréksúgó a csempe-rácsban, és a `filter_<Kulcs>_tooltip0` szövege-e (képernyőkép kell egérrel a csempe fölött)
-2. **N4** — a csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés)
-3. **`editpanel/picnik`** — a fő eszköztár Picnik-gombja; a rács alatti párja már halott funkcióként azonosítva, ezt is jelölni kell
+1. **N4** — a csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés)
+2. **`editpanel/picnik`** — a fő eszköztár Picnik-gombja; a rács alatti párja már halott funkcióként azonosítva, ezt is jelölni kell
 
 ### [ui-audit-mainwindow.md](ui-audit-mainwindow.md) — 1 kérdés
 
