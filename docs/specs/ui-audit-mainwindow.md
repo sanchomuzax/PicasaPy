@@ -783,9 +783,11 @@ csomagban mentődik.
 csomagolására · **erős** a `SimplifiedHierarchy` alapértékére (mind a négy
 olvasóhely nullázza a helyi változót, és az üres-sztring ág 0-t hagy).
 
-**Nyitva marad:** honnan ugrik a `0x0040dc35` (`"flat"`) ág — vagyis mikor
-indul a program lapos nézetben; és mi a `LastViewRoot2` pontos szerepe
-(feltehetően nézetmódonként külön gyökér, de ezt nem igazoltuk).
+~~**Nyitva marad:** honnan ugrik a `0x0040dc35` (`"flat"`) ág — vagyis mikor
+indul a program lapos nézetben~~ — **MEGVÁLASZOLVA (2026-08-16)**, lásd
+„Indításkor a LAPOS nézet az alapértelmezés" alább. **Nyitva marad** a
+`LastViewRoot2` pontos szerepe (feltehetően nézetmódonként külön gyökér, de
+ezt nem igazoltuk).
 
 ### A `Hierarchy_p` telemetria, nem beállítás (2026-08-16)
 
@@ -835,3 +837,59 @@ implementálandó, és nem is szabad összekeverni a nézetmód-beállításokka
 *Bizonyítottsági fok: megerősített* (a gyűjtő rutin teljes egészében
 kiolvasva, és a hívója a `ScreenWidth`/`UniqueAccounts` mezőkkel azonosítja
 a jelentést).
+
+### Indításkor a LAPOS nézet az alapértelmezés (2026-08-16)
+
+Az előző szakasz nyitva hagyta, honnan ugrik a `0x0040dc35` (`"flat"`) ág.
+A `0x0040db85`–`0x0040dbb2` szakasz megadja:
+
+```asm
+0x0040db85  mov  edi, dword ptr [esp + 0xc]    ; az egyik mentett gyökér
+0x0040db89  mov  esi, dword ptr [esp + 0x14]   ; a másik
+0x0040db8d  test esi, esi
+0x0040db8f  je   0x40dc35                      ; NINCS      → "flat"
+0x0040db95  test dword ptr [esi], 0xffffff00
+0x0040db9b  je   0x40dc35                      ; ÜRES       → "flat"
+0x0040dba1  add  esi, 4                        ; a sztring a +4 eltoláson
+0x0040dba4  cmp  byte ptr [esi], 0
+0x0040dba7  je   0x40dc35                      ; ÜRES sztring → "flat"
+0x0040dbad  push 1
+0x0040dbaf  push esi
+0x0040dbb2  call 0x575130                      ; SetView(mentett, 1)
+```
+
+és a cél:
+
+```asm
+0x0040dc35  push 1
+0x0040dc37  push 0xc80258                      ; "flat"
+0x0040dc3e  call 0x575130                      ; SetView("flat", 1)
+```
+
+**Három ág vezet ugyanoda:** ha a mentett gyökér hiányzik, a hossza nulla,
+vagy a sztring üres — a program a **lapos mappanézettel** indul.
+
+> **Friss telepítésen tehát a lapos nézet az alapértelmezés**, mert a
+> beállítás még nem létezik.
+
+#### ⚠️ Helyesbítés: a második argumentum NEM „különleges nézet"
+
+Az előző kör azt írta, hogy a nézetbeállító (`0x00575130`) második
+argumentuma különbözteti meg a valódi útvonalat (`0`) a különleges nézettől
+(`1`). **Ez téves volt.** Itt a **mentett, valódi útvonal is `1`-gyel** megy
+(`0x0040dbad`), ugyanúgy, mint a `"flat"`.
+
+A helyes olvasat: a második argumentum azt választja ki, **melyik
+nézet-rekeszbe** kerül a gyökér — a két mentett gyökérnek (`LastViewRoot`,
+`LastViewRoot2`) két rekesze van. Az `1`-es ág az elsődleges.
+
+Ezt a `0x0040dc30` ága erősíti meg: ott `push 0; push <a másik gyökér>` áll,
+tehát a másik mentett útvonal a `0`-s rekeszbe megy.
+
+**Nyitva marad**, melyik `Preferences`-kulcs melyik rekeszbe tartozik: a két
+sztring a veremben (`[esp+0xc]` és `[esp+0x14]`) közvetve, több lépésen át
+kapja az értékét, és ezt nem követtük végig.
+
+*Bizonyítottsági fok:* **megerősített** a lapos alapértelmezésre (mindhárom
+ág kiolvasva) és arra, hogy a második argumentum nem a „különleges nézetet"
+jelöli · **nyitott** a két rekesz és a két kulcs megfeleltetése.
