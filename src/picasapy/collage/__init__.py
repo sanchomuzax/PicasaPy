@@ -2,9 +2,15 @@
 
 A #431 óta épül mellé a Picasa-hű réteg is: `themes` (a kilenc téma-kulcs),
 `fitting` (a közös illesztő és az MSVC-véletlen), `frames` (a három
-képkeret). Ezek a `docs/specs/picasa-create-features.md` 1.9 szakaszának
+képkeret), `rects` + `regular_grid` (a térköz és a Rács), `pile` (a
+Képkupac). Ezek a `docs/specs/picasa-create-features.md` 1.9 szakaszának
 dekompilált képleteit követik, míg a régi `layout`/`render` a #29-es, saját
 tervezésű változat — a kettő egyelőre párhuzamosan él.
+
+⚠️ A két réteg **névütközése** miatt a Picasa-hű Képkupac NEM látszik a
+csomag gyökerében: `layout.pile_layout` a régi, `pile.pile_layout` az új.
+Az újat mindig a saját moduljából kell behozni:
+`from picasapy.collage.pile import pile_layout`.
 """
 
 from .fitting import MsvcRandom, fit_inside, msvc_uniform01, picasa_round
@@ -29,6 +35,7 @@ from .layout import (
     mosaic_layout,
     pile_layout,
 )
+from .pile import PilePlacement, pile_scale, pile_size, scatter_centers
 from .rects import NormRect, PixelRect, to_pixel_rects
 from .regular_grid import regular_grid_rects, regular_grid_shape
 from .render import (
@@ -54,6 +61,10 @@ from .themes import (
 
 __all__ = [
     "BORDER_THEMES",
+    "PilePlacement",
+    "pile_scale",
+    "pile_size",
+    "scatter_centers",
     "NormRect",
     "PixelRect",
     "regular_grid_rects",
