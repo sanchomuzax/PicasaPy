@@ -1286,3 +1286,56 @@ A Picasa a módosítás előtti eredetit külön mappába menti. A korpuszban
 A váltás **2009-ben** történt (az egyetlen átfedő év). Egy ini-t olvasó
 implementációnak **mindkettőt** ismernie kell, ha a „vissza az eredetihez"
 funkciót támogatja. *Bizonyítottsági fok: megerősített* (181 valós mappa).
+
+## A `filterdesc` tartományai a VALÓS korpuszon ellenőrizve (2026-08-16)
+
+859 `.picasa.ini`, **5 658 `filters=` lánc**, **9 147 bejegyzés**, **28**
+különböző szűrő. Forrás: a korpusz helyi másolata
+(`referencia/ini-korpusz/korpusz.txt` — a NAS teljes bejárása tilos, ld. az
+ottani `README.md`-t).
+
+### Gyakoriság és mért paraméter-tartományok
+
+| szűrő | db | mért tartományok |
+|---|---:|---|
+| `enhance` | **3 045** | paraméter nélküli |
+| `autolight` | **2 612** | paraméter nélküli |
+| `fill` | 1 089 | p1 `+0,028 … +0,785` |
+| `crop64` | 801 | p1 = `rect64` hex |
+| `finetune2` | 561 | p1 `0…0,444` · p2 `0…0,222` · p3 `0…0,328` · **p4 = SZÍN** · p5 `−0,579…+1,000` |
+| `redeye` | 228 | paraméter nélküli |
+| `Vignette` | 219 | p1 `4,386…50,000` · p2 `1,000…1,573` · p3 `0…80,702` · p4 = SZÍN |
+| `warm` | 118 | paraméter nélküli |
+| `sat` | 110 | p1 `−0,708 … +0,848` |
+| `tilt` | 102 | p1 `−1,000 … +0,439` · **p2 mindig 0** |
+| `retouch` | 82 | paraméter nélküli |
+| `autocolor` | 54 | paraméter nélküli |
+| `unsharp2` | 27 | p1 `+0,600 … +3,000` |
+| `Boost` | 22 | p1 `9,942 … 50,000` |
+| `radblur` | 18 | p1 `0,354…0,799` · p2 `0,359…0,696` · p3 `0,404…1,000` · p4 `−1,000…+0,146` |
+| `dir_tint` | 10 | p1…p4 `0,008…1,000` · p5 = SZÍN |
+| `Lomo` | 6 | p1 `0…53,216` · p2 `0…47,368` |
+
+### Amit ez igazol
+
+1. **A `filterdesc.xml` tartományai a teljes valós korpuszt lefedik.** Egyetlen
+   mért érték sem lóg ki — sem alul, sem felül. A `filterdesc` tehát nem
+   „elméleti" dokumentáció, hanem a futásidejű igazságforrás; a
+   parser-validáció nyugodtan ráépíthető.
+2. **A `tilt` második paramétere a korpuszban MINDIG 0** — 102 előfordulásból
+   mind. Ez független megerősítése annak, amit a `filterdesc-registry.md` a
+   `filterdesc`-ből olvasott ki: a `tilt` 2. csúszkája **letiltott**
+   (`enable="0"`), csak a v1-kompatibilitás miatt van a láncban.
+3. **A `sat` a negatív oldalt is használja** (`−0,708`), a `radblur` 4.
+   paramétere szintén (`−1,000`) — a „`!` = 0..1 float" jelölés végleg
+   elvetendő, ahogy a lap fentebb már írja.
+4. **A `finetune2` 5. rekesze a színhőmérséklet** — a mért `−0,579 … +1,000`
+   pontosan az `offset 1.0`-s, `−1 … +1`-es tengely.
+
+*Bizonyítottsági fok: megerősített* (859 fájl, 9 147 bejegyzés, gépi
+összevetés a `filterdesc.xml` `range`/`offset` értékeivel).
+
+> **Módszertani megjegyzés.** Ez a kör **egyetlen NAS-hozzáférés nélkül**
+> futott le: a korpusz helyi másolatból jött. Korábban ugyanez a kérdéstípus
+> minden körben végigjárta a hálózati megosztást, és 2026-08-16-án
+> **390 napló/mp**-et generált a 200/mp-es korláttal szemben.
