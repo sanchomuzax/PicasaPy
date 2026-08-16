@@ -445,10 +445,15 @@ Egyetlen hivatkozó rutinja (0x004b9d80) összesen négy sztringet érint:
 nézetmódot rossz helyre köti.
 
 *Bizonyítottsági fok: megerősített* (string-szomszédság + hivatkozó
-rutinok). **Nyitva:** (a) a `SimplifiedHierarchy` és a `LastViewRoot`
-alapértéke friss telepítésen — ehhez a Picasa első indítás utáni
-registry-állapota kellene; (b) mire szolgál pontosan a `Hierarchy_p`
-számláló (a fenti csak annyit mond ki, hogy NEM a nézetmód kulcsa).
+rutinok).
+
+~~**Nyitva (a):** a `SimplifiedHierarchy` és a `LastViewRoot` alapértéke
+friss telepítésen — ehhez a Picasa első indítás utáni registry-állapota
+kellene.~~ **MEGVÁLASZOLVA (2026-08-16)**, registry nélkül, a binárisból —
+lásd „A fanézet HÁROM beállítása és az alapértékük" alább.
+
+**Nyitva (b):** mire szolgál pontosan a `Hierarchy_p` számláló (a fenti
+csak annyit mond ki, hogy NEM a nézetmód kulcsa).
 
 ### Amit ebből a PicasaPy megvalósít (#702, első szelet)
 
@@ -702,3 +707,80 @@ Nem talált hiba / megfelelő: a splitter (SplitView, húzható,
 implementálva), az évszám-elválasztó funkció megléte és helyes
 elhelyezése a Mappák-listában, a ★/↺/↻ gombok és a nagyítás-csúszka a
 tálcán.
+
+### A fanézet HÁROM beállítása és az alapértékük (2026-08-16)
+
+Az előző szakasz „Nyitva" pontja azt kérdezte, mi a `SimplifiedHierarchy` és
+a `LastViewRoot` **alapértéke friss telepítésen**, és úgy tűnt, ehhez a
+Picasa registry-állapota kellene. **Nem kell** — a bináris megadja.
+
+#### A beállítás-hármas
+
+| kulcs | cím | típus | mit tárol |
+|---|---|---|---|
+| `SimplifiedHierarchy` | `0x00c8fd00` | logikai | egyszerűsített ↔ teljes fa |
+| `LastViewRoot` | `0x00c80238` | szöveg | a legutóbbi nézet-gyökér |
+| **`LastViewRoot2`** | `0x00c80248` | szöveg | a **második** legutóbbi nézet-gyökér |
+
+Mindhárom a `Preferences` (`0x00c7eafc`) kulcs alatt él, azaz
+`HKEY_CURRENT_USER` (`0x00407a20` `0x80000001`-gyel nyitja).
+
+**A `LastViewRoot2` eddig sehol nem szerepelt a specjeinkben.**
+
+#### `SimplifiedHierarchy` — az alapérték: **kikapcsolva**
+
+Négy hely olvassa: `0x00574b70`, `0x00575130`, `0x005cb990`, `0x005e2000`.
+**Mind a négy azonos mintát használ:**
+
+```asm
+mov     dword ptr [esp + ...], 0    ; a helyi változó ELŐRE nullázva
+push    0xc8fd00                    ; "SimplifiedHierarchy"
+push    0xc7eafc                    ; "Preferences"
+xor     eax, eax
+call    0x407a20                    ; registry-olvasó
+call    0x4019b0                    ; sztring → logikai
+```
+
+Ha a registry-érték hiányzik vagy üres, a `0x004019b0` üres sztringet kap,
+és a helyi változó a **0**-n marad (`0x005751c5`: `mov byte ptr [esp+0x1f], 0`).
+
+**Vagyis friss telepítésen a fa NEM egyszerűsített, hanem teljes.**
+
+#### `"flat"` — foglalt gyökérnév
+
+A `0x00c80258`-on álló `"flat"` sztring **nem mappaútvonal**, hanem a lapos
+mappanézet foglalt gyökérneve. A nézetbeállító (`0x00575130`) második
+argumentuma különbözteti meg a kettőt:
+
+| hívás | 2. argumentum | jelentés |
+|---|---|---|
+| `push 0; push <mentett útvonal>` (`0x0040dc30`) | **0** | valódi mappa-útvonal |
+| `push 1; push "flat"` (`0x0040dc35`, `0x005cc62c`) | **1** | különleges (lapos) nézet |
+
+#### Indításkor mi történik
+
+```asm
+0x0040dab0  ; LastViewRoot   beolvasása
+0x0040dae7  ; LastViewRoot2  beolvasása
+...
+0x0040dc1e  test edi, edi
+0x0040dc1e  je   0x40dc43        ; nincs mentett gyökér → kihagyás
+0x0040dc20  cmp  byte ptr [edi], 0
+0x0040dc23  jne  0x40dc30        ; nem üres → visszaállítás
+0x0040dc25  jmp  0x40dc43        ; ÜRES → kihagyás, nincs visszaállítás
+```
+
+Tehát **üres `LastViewRoot` esetén a program nem állít be nézet-gyökeret** —
+nem esik vissza a `"flat"`-re. A `"flat"` ága máshonnan érkezik.
+
+A hármast a `0x00576660` **együtt írja ki** a `LastAlbumSelected` mellé
+(a `0x00407630` a registry-író) — vagyis a kilépéskori nézetállapot egy
+csomagban mentődik.
+
+*Bizonyítottsági fok:* **megerősített** a kulcsok létére, helyére és az írás
+csomagolására · **erős** a `SimplifiedHierarchy` alapértékére (mind a négy
+olvasóhely nullázza a helyi változót, és az üres-sztring ág 0-t hagy).
+
+**Nyitva marad:** honnan ugrik a `0x0040dc35` (`"flat"`) ág — vagyis mikor
+indul a program lapos nézetben; és mi a `LastViewRoot2` pontos szerepe
+(feltehetően nézetmódonként külön gyökér, de ezt nem igazoltuk).
