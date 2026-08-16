@@ -705,9 +705,10 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
    ini-sorrend mind a 8 valós mintán stimmel
    ([`filterdesc-registry.md`](filterdesc-registry.md) 4.1–4.2). A
    `make_param_sweep.py` találgatott tartományai lecserélhetők a pontos
-   értékekre; a sweep innentől **ellenőrzés**, nem felfedezés. Nyitva
-   maradt: a `Cinemascope` jelölőnégyzet polaritása és a
-   `PicnikFocalPixelate` puck-sorrendje. — az eredeti jegyzet:
+   értékekre; a sweep innentől **ellenőrzés**, nem felfedezés.
+   ~~Nyitva maradt: a `Cinemascope` jelölőnégyzet polaritása és a
+   `PicnikFocalPixelate` puck-sorrendje.~~ → **MINDKETTŐ LEZÁRVA
+   (2026-08-16)**, ld. lent. — az eredeti jegyzet:
    a generátor szkript ELKÉSZÜLT: `tools/golden/make_param_sweep.py` (teszt:
    `tests/golden/test_make_param_sweep.py`) minden paraméteres kulcshoz
    előre megírt `.picasa.ini`-variánsokat készít, a fő erősség-paramétert
@@ -2122,3 +2123,54 @@ tehát nem így épül be. *Bizonyítottsági fok: megerősített (cáfolat).*
    `[esp+0x30 … 0x50]` rekeszekbe.
 
 Mérőszkript: `referencia/eszkozok/721-enhance/autocolor_model.py`.
+
+## A „Nyitva 7" két maradéka LEZÁRVA (2026-08-16)
+
+### 1. A `Cinemascope` jelölőnégyzet polaritása — alapból BE
+
+```xml
+<mx:CheckBox id="cbLetterbox" selected="true"/>
+```
+
+A jelölő **alapértéke bekapcsolt**, és a bekapcsolt állapot jelenti a
+mozivászon-sávokat. A `filterdesc.xml` képletei ezt egyértelműsítik:
+
+| | `cbLetterbox` BE | `cbLetterbox` KI |
+|---|---|---|
+| vágási magasság | `min(round(W/1.7), H)` | `H` (a teljes kép) |
+| felső/alsó szegély | `round(cropHeight · 0,15)` | **0** |
+| átméretezés | `cropHeight · 0,95` | `cropHeight · 1,0` |
+
+Vagyis **bekapcsolva** 1,7 : 1-re vág, 15-15 %-os fekete sávot tesz alá-fölé,
+és 95 %-ra zsugorít; **kikapcsolva** csak a szín-/görbe-/zaj-lánc fut, geometria
+nélkül. A `Cinemascope`-nak **nincs `<presets>` blokkja** — a jelölő az egyetlen
+paramétere.
+
+**A mai kódunk helyes:** `render/glimmer_creative.py` `apply_cinemascope(image,
+letterbox: bool = True)` — az alapérték és a jelentés is egyezik.
+*Bizonyítottsági fok: megerősített.*
+
+### 2. A `PicnikFocalPixelate` (és a `FocalZoom`) puck-sorrendje
+
+A puck (a képre kattintva mozgatható fókuszpont) koordinátái a **preset-lista
+3. és 4. rekeszében** állnak, `0…1` közé normálva, alapértéken középen:
+
+| rekesz | `PicnikFocalPixelate` | `FocalZoom` | jelentés |
+|---:|---:|---:|---|
+| 0 | 8,0 | 99,0 | `_sldrImpact` |
+| 1 | 20,0 | 20,0 | `_sldrRadius` |
+| 2 | 90,0 | 99,0 | `_sldrHardness` |
+| **3** | **0,5** | **0,5** | **puck X** |
+| **4** | **0,5** | **0,5** | **puck Y** |
+
+A `_sldrFade` **nem szerepel** a preset-listában (az a lánc szokásos záró
+paramétere).
+
+**Keresztellenőrzés a régi szűrővel:** a Glimmer előtti `focalpixelate`
+(674. sor) szintén `cursor type="puck"`, de a **presetjei csak 0…3**
+(Pixel Size, Focal Size, Edge Hardness, Fade) — **puck-rekesz nincs bennük**.
+A puck-koordináták tehát a **Glimmer-változatok** sajátja, és ott a három
+csúszka UTÁN jönnek, x majd y sorrendben.
+
+*Bizonyítottsági fok: megerősített* (két Glimmer-szűrő azonos alakja + a régi
+szűrő ellenpéldája).
