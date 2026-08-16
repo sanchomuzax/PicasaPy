@@ -128,3 +128,71 @@ párbeszédpanel `.tre`-je ugyanígy kiolvasható:
 `acquirepanel` · `keywords` · `quicktagconfig` · `titledialog` ·
 `printoptions` · `printpanel` · `outputlayout` · `publish` ·
 `searchoptions` · `propertiespanel` · `peoplepanel` · `tagpanel`
+
+## A „Visszaállítás" párbeszéd — darabokból épül (2026-08-16)
+
+A visszaállítás megerősítő szövege **nem egyetlen sztring**, hanem
+**darabokból** áll össze, a fájl állapotától függően. A teljes összeállító
+a `0x0053b2e0` (3 372 bájt), és mind a tizenkét darab ott van a
+sztring-táblájában.
+
+### A darabok, összeállítási sorrendben
+
+| # | erőforrás | mikor kerül bele | HU |
+|---:|---|---|---|
+| 1a | `CThumbUI::FileRevert::message1` | **egy** fájl | Visszatér a fájl eredeti változatához? |
+| 1b | `CThumbUI::FileRevert::messageX` | **több** fájl | Visszatér a fájlok eredeti változatához? |
+| 2a | `CThumbUI::FileRevert::changed1` | ha a fájl **kívülről módosult** (egy) | Ez a fájl a Picasán kívül módosult. Ha a visszaállítást választja, a módosítások elvesznek. |
+| 2b | `CThumbUI::FileRevert::changedX` | ugyanez, több fájlra | Ezek a fájlok a Picasán kívül módosultak. … |
+| 3 | `CThumbUI::FileRevert::message2` | **mindig** | ⏎⏎Ez a művelet nem vonható vissza, és az összes módosítás elvész. |
+| 4 | `CThumbUI::FileRevert::message1undo` | ha van **visszavonható mentés** | ⏎⏎Az utolsó mentés visszavonásához és a szerkesztések megtartásához kattintson a „Mentés visszavonása" gombra. |
+| 5 | `CThumbUI::FileRevert::continue` | a „kívülről módosult" ág végén | ⏎⏎Vissza szeretne térni? |
+
+Az összeállító **két állapotjelzőt** használ a veremben — `[esp+0x22]` és
+`[esp+0x23]` (`0x0053b46a`, `0x0053b48d`, `0x0053b4c5`, `0x0053b4e3`) —, és
+mindkettő egy-egy feltételes darabot kapcsol. Ez pontosan a két feltételes
+szövegrésznek felel meg: a **„kívülről módosult"** és a **„van
+visszavonható mentés"**.
+
+### A gombok
+
+| erőforrás | HU | mikor |
+|---|---|---|
+| `CThumbUI::FileRevert::revert` | **Visszaállítás** | alap |
+| `CThumbUI::FileRevert::undosave` | **Mentés visszavonása** | ha van visszavonható mentés |
+| `CThumUI::FileRevert::yesbutton` | **Visszaállítás ennek ellenére** | a „kívülről módosult" ágon |
+| `CThumUI::FileRevert::nobutton` | **Mégse** | mindig |
+| `CThumbUI::FileRevert::title` | **Visszaállítás** | az ablak címe |
+
+> ⚠️ Két erőforrás-előtag van, és **elgépelt** az egyik:
+> `CThumbUI::FileRevert::*` (helyes) és **`CThumUI::FileRevert::*`**
+> (hiányzó `b`) a két gombnál. Aki az eredeti erőforrásokból dolgozik,
+> mindkettőt keresse.
+
+### Folyamat és hiba
+
+| erőforrás | HU |
+|---|---|
+| `CThumbUI::FileRevert::progress` | Fájlok visszaállítása |
+| `FileRevert::fileerr` | Lemezhiba miatt nem lehetséges az összes fájl visszaállítása. Lehet, hogy a lemez megtelt vagy írásvédett. |
+| `CEditRevertUpdate::progress` | Szerkesztések feljavítása |
+
+### A NÉGY művelet magyar neve — egy helyen
+
+| művelet | menü-erőforrás | HU |
+|---|---|---|
+| a **fájl** visszaállítása | `AlbumPhoto::ID_FILE_REVERT` | **Visszaállítás** |
+| az **összes szerkesztés** visszavonása | `AlbumPhoto::ID_PICTURE_REVERT`, `FolderPhoto::ID_PICTURE_REVERT` | **Összes szerkesztés visszavonása** |
+| az utolsó **mentés** visszavonása | `CThumbUI::FileRevert::undosave` | **Mentés visszavonása** |
+| a lánc utolsó **lépésének** visszavonása | (dinamikus felirat) | „Visszavonás: <lépés neve>" |
+
+### A „szerkesztések eltávolítása" külön megerősítés
+
+| erőforrás | HU |
+|---|---|
+| `IDS_CONFIRMREVERT` | Ezzel a művelettel eltávolít minden módosítást, amelyet eddig az aktuális képre alkalmazott. Folytatja? |
+| `IDS_CONFIRMREVERT_MULTIPLE` | …amelyet az **ÖSSZES** kijelölt képre alkalmazott. Folytatja? |
+| `IDS_CONFIRMREVERT_YES_BUTTON` és `_MULTIPLE_YES_BUTTON` | **Szerkesztések eltávolítása** |
+
+*Bizonyítottsági fok: megerősített* (a tizenkét darab egyetlen összeállító
+függvény sztring-táblájában, és a két állapotjelző a veremben).
