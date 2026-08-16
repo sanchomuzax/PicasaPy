@@ -952,3 +952,97 @@ marad — a program nem esik vissza semmire.
 
 *Bizonyítottsági fok: megerősített* (a két olvasás célcíme, a két
 kicsomagolás és a hozzárendelés végigkövetve).
+
+## A keresősáv teljes eleme-listája a forrásból (2026-08-16)
+
+A 4.1 szakasz a keresősávot **képernyőképről** olvasta ki. Most megvan a
+**forrásadat**: `searchcontainer.tre` (125 sor), és a felületkód
+(`0x00660c80`, 5 524 bájt; `0x005d47e0`) ugyanezt a hét azonosítót
+hivatkozza.
+
+### A sáv elemei
+
+| elem | horgony | megjegyzés |
+|---|---|---|
+| `searchcontainer/searchbase` | bal-fent-jobbra | a háttér |
+| `searchcontainer/search` | bal-fent-jobbra | a beviteli mező |
+| `searchcontainer/search_icon` | bal-fent | a nagyító |
+| `searchcontainer/searchclr` | **jobb**-fent | törlés — alapból **rejtett** |
+| `searchcontainer/searchautocomplete` | a mező alatt (X: `−25 … +28`, Y: `0 … 100`) | a javaslat-lista — alapból **rejtett** |
+| `searchcontainer/searchbutton` | **jobb**-fent | a keresési beállítások — alapból **rejtett** |
+| `searchcontainer/filter_label` | bal, Y `−4` | a **„Szűrők"** felirat, `m_displayfont12` |
+| `searchcontainer/filterbase` | bal-fent | az öt szűrőgomb alapja |
+| `searchcontainer/timecontainer_label` | bal-fent | a dátumsáv felirata |
+| `searchcontainer/timecontainer` | bal-fent | a **dátum-tartomány** csúszka |
+
+### Az ÖT szűrőgomb — sorrendben
+
+| # | azonosító | buboréksúgó (angolul a forrásban) |
+|---:|---|---|
+| 1 | `searchcontainer/starsearch` | Show starred photos only |
+| 2 | `searchcontainer/facesearch` | Show only photos with faces |
+| 3 | `searchcontainer/moviesearch` | Show movies only |
+| 4 | `searchcontainer/webview` | Show uploads to web albums only |
+| 5 | `searchcontainer/geotagsearch` | Show only photos with geotag |
+
+Mindegyik gomb **két ikont** tart: `<név>_icon_0` (kikapcsolt, látszik) és
+`<név>_icon_1` (bekapcsolt, alapból rejtett). A kattintás a `showtarget` /
+`hidetarget` párral cseréli őket — vagyis a be/ki állapot **két külön kép**,
+nem szín- vagy átlátszóság-váltás.
+
+Mind az öt `Property mousedown 1`, és mind az öt ugyanazt a
+`SharedHandler searchcontainer/tip hottip searchcontainer/filter_label`
+sort viseli: **egérrel fölé húzva a „Szűrők" felirat helyén jelenik meg a
+súgó** — nem lebegő buborékban.
+
+### ⚠️ A súgók NINCSENEK lefordítva — és a Google is tudta
+
+A fájl végén, közvetlenül a súgók előtt egy **fejlesztői megjegyzés** áll:
+
+```
+#-----------------------------------------------------------
+# Move below to external resource for i18n
+#-----------------------------------------------------------
+```
+
+Vagyis a keresősáv hét szövege (öt súgó + a „Filters" felirat + két további
+súgó) **soha nem került át** a fordítható erőforrásokba. Ugyanez a helyzet a
+videó vezérlősávjánál (`video_control_bar.tre`).
+
+| erőforrás | angol szöveg | javasolt magyar |
+|---|---|---|
+| `filter_label` (Label) | Filters | **Szűrők** |
+| `starsearch` | Show starred photos only | **Csak a csillagozott fotók** |
+| `facesearch` | Show only photos with faces | **Csak az arcot tartalmazó fotók** |
+| `moviesearch` | Show movies only | **Csak a videók** |
+| `webview` | Show uploads to web albums only | **Csak a webalbumba feltöltöttek** |
+| `geotagsearch` | Show only photos with geotag | **Csak a helyadattal ellátott fotók** |
+| `timecontainer_label` | Filter by date range | **Szűrés dátumtartomány szerint** |
+| `searchclr` | Clear your search | **Keresés törlése** |
+
+### A másodpéldány-keresés NEM ezek egyike
+
+A `searchoptions/dupesearch` a **keresési beállítások** felugró paneljében
+él (`thumbui/searchgroupcontainer`, amit a `searchbutton` nyit meg), nem a
+szűrő-ikonok között. A menütétele: `eMenuTools::ID_DUPES` → **„Fájlok
+másodpéldányainak megjelenítése"**.
+
+### A sáv magassága
+
+```
+Handler varbutton searchtop 62
+#Handler varbutton searchtop 114      ← kikommentezve
+```
+
+A `searchtop` változó a keresési beállítások panelének megnyitásakor
+**62**-re vált (a kikommentezett `114` egy korábbi, nagyobb panelé).
+
+### ❌ Nálunk négy szűrő van, nem öt
+
+A `MainToolbar.qml` négy ikont mutat (★, ☺, ⚲, ▤); a **`webview`**
+(webalbumba feltöltöttek) hiányzik. Ez védhető — a Picasa Webalbumok
+szolgáltatás halott —, de **a sorrend is más**: az eredeti
+★ · arc · videó · web · geo, nálunk ★ · arc · geo · méret.
+
+*Bizonyítottsági fok: megerősített* (a `searchcontainer.tre` teljes
+tartalma, és a felületkód két helyen ugyanezt a hét azonosítót hivatkozza).
