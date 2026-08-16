@@ -280,3 +280,79 @@ javítás nélkül el kell buknia.
 *Bizonyítottsági fok: megerősített* a méretekre (a `respack.yt` 156
 `thumbui`-eleme) és a négy konstansra (`thumbui.tre` 443–519. sor).
 **Nem** normatív az abszolút x/y — ott a `.tre` kényszerei nyernek.
+
+## A fő eszköztár — mért geometria (`respack.yt`, 2026-08-16)
+
+A `ui-audit-mainwindow.md` 4.1 szakasza az eszköztárat **képernyőképről**
+olvasta ki. Itt a `respack.yt` nyers koordinátái állnak — **normatív**.
+
+### A sáv
+
+| elem | pozíció | méret |
+|---|---|---|
+| `rect: buttonbarsets` | (0, **4**) | **800 × 37** |
+| `rect(0, searchcontainer): searchcontainer` | (**323**, 4) | **388 × 30** |
+| `clip(searchoptions): searchgroupcontainer` | (223, **38**) | **577 × 25** |
+
+### A KÖNYVTÁR-sor gombjai (y = 9, magasság 22)
+
+| # | elem | x | méret | felirat / súgó |
+|---:|---|---:|---|---|
+| 1 | `importbutton` (+ ikon 27 × 14) | **6** | **111 × 22** | **Import** — *Get photos from a camera, scanner, or other media* |
+| 2 | `newalbum` (+ ikon 19 × 14) | **124** | **29 × 22** | — *Create a new album* |
+| 3 | `hviewtoggle` (tartó) | **160** | 60 × 22 | |
+| 3a | ├ `flatview` | **160** | **30 × 22** | *Set view to show flat folder structure* |
+| 3b | └ `folderview` | **190** | **30 × 22** | *Set view to show folder tree structure* |
+| 4 | `folderviewpopup` (+ `folderview_arrow` 7 × 4) | **225** | **22 × 22** | *View options* |
+| 5 | `webcambutton` (+ ikon 24 × 17) | **254** | **36 × 22** | *Capture photos or video from a webcam or other video device* |
+
+A jobb szélen: `librarylabel_button` (**725**, 24 × 25) és a
+`gplushit` / `gplus` Google+-gomb (**733**, 26 × 26 / 22 × 22, y = 6).
+
+### A MÓD-sor gombjai (y = 5, magasság 28–29, mind 132 széles)
+
+| elem | x | méret | felirat | súgó |
+|---|---:|---|---|---|
+| `fullview` | **5** | **132 × 29** | **Edit photos** | *Edit your photos* |
+| `albumview` | **5** | **132 × 29** | — | *Return to organized thumbnails* |
+| `sbutton` (+ ikon 16 × 14) | **142** | **132 × 28** | **Slideshow** | *Watch a slideshow of photos in the selected Folder or Album* |
+| `timelinebutton` (+ ikon 26 × 9) | **279** | **132 × 28** | **Timeline** | *Timeline view of all your photos* |
+| `cdmode` (+ ikon 20 × 15) | **416** | **132 × 28** | **Gift CD** | *Create a CD with built-in slideshow for friends and family* |
+| `activitycontainer` | **760** | 35 × 28 | — | |
+
+A `fullview` és az `albumview` **ugyanazon a helyen** (x 5) van — a kettő
+egymást váltja. Mind a kettő a `globalbuttons/b132_*` képcsaládot használja
+(**132 × 29**).
+
+### Négy gomb, amit ELHAGYTAK
+
+A csomagban `#`-kal kikommentezve:
+
+| elem | pozíció | méret |
+|---|---|---|
+| `#navback` (+ ikon) | (145, 50) | 26 × 22 |
+| `#navfw` (+ ikon) | (173, 50) | 26 × 22 |
+| `#listbox_title` / `#listbox_title_button` | (16, 51) | 80 × 14 / 24 × 14 |
+
+Vagyis a mappalistának eredetileg **előre/vissza navigációja** és külön
+**„Library" felirata** lett volna. A kiadott változatban helyettük a
+`newfolder` gomb áll (**174**, 50, **29 × 22**).
+
+### ❌ Amiben eltérünk
+
+A `MainToolbar.qml` a `ui-audit-mainwindow.md` 4.2 szakasza szerint
+hiányolja a `newalbum`-ot és a nézetváltókat. A mért méretek most
+megvannak:
+
+| | eredeti | PicasaPy |
+|---|---|---|
+| sáv magassága | **37** (a `buttonbarsets`) | 34 |
+| Import gomb | **111 × 22**, x 6 | 100 × 24 |
+| új album (`newalbum`) | **29 × 22**, x 124 | **hiányzik** |
+| nézetváltó pár | **2 × 30 × 22**, x 160 és 190 | **hiányzik** |
+| nézet-beállítások (▾) | **22 × 22**, x 225 | **hiányzik** |
+| webkamera | **36 × 22**, x 254 | **hiányzik** |
+| keresősáv | **388 × 30**, x **323** | 300 × 24 |
+
+*Bizonyítottsági fok: megerősített* (a `respack.yt` nyers rectjei; a
+feliratok és súgók a `thumbui_text.tre`-ből).
