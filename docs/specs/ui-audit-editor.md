@@ -1619,12 +1619,12 @@ nyitott pontot az effekt-panelen.
 |---:|---|---|
 | 1 | `editpanel/crop` | Vágás |
 | 2 | `editpanel/redeye` | Vörösszem |
-| 3 | `editpanel/enhance` | Kiegyenlítés |
+| 3 | `editpanel/enhance` | **Jó napom van** *(javítva 2026-08-16: korábban tévesen „Kiegyenlítés")* |
 | **4** | **`editpanel/picnik`** | **Kreatív készlet** ← halott |
 | 5 | `editpanel/autocolor` | Automatikus szín |
-| 6 | `editpanel/autolighting` | Automatikus fény |
+| 6 | `editpanel/autolighting` | **Automatikus kontraszt** *(javítva: korábban „Automatikus fény")* |
 | 7 | `editpanel/filllightlabel` + `backlight_container` | Derítőfény |
-| 8 | `editpanel/horizonadjust` | Vízszintbe állítás |
+| 8 | `editpanel/horizonadjust` | **Kiegyenesítés** *(javítva: korábban „Vízszintbe állítás")* |
 | 9 | `editpanel/edittext` | Szöveg |
 | 10 | `editpanel/retouch` | Retusálás |
 | 11 | `editpanel/showtextlabel` + `showtextcheckbox` | „Szöveg megjelenítése" |
@@ -1701,7 +1701,7 @@ Ha ez volna a teljes elrendezés, **mind a tíz gomb egymáson ülne**. A
 | gomb | belső név | x0 | y0 | méret |
 |---|---|---:|---:|---|
 | Vágás | `button(crop): crop` | **37** | **91** | 44×30 |
-| Kiegyenlítés | `button(straighten): horizonadjust` | **118** | **91** | 44×29 |
+| **Kiegyenesítés** | `button(straighten): horizonadjust` | **118** | **91** | 44×29 |
 | Vörösszem | `button(redeye): redeye` | **198** | **91** | 44×29 |
 | Jó napom van | `button(enhance): enhance` | **37** | **155** | 44×31 |
 | Automatikus kontraszt | `button(autolighting): autolighting` | **118** | **156** | 44×30 |
@@ -1734,7 +1734,7 @@ Ez pontosan ugyanaz a rács, mint a `szerkeszto-panel-meretek.md`-ben mért
 ### A megjelenítési sorrend — VÉGLEGES
 
 ```
-1. sor:  Vágás          Kiegyenlítés          Vörösszem
+1. sor:  Vágás          Kiegyenesítés         Vörösszem
 2. sor:  Jó napom van   Automatikus kontraszt Automatikus szín
 3. sor:  Retusálás      Szöveg                (Kreatív készlet — rejtett)
 4. sor:  Derítőfény (ikon + felirat + csúszka)
@@ -1779,3 +1779,44 @@ abban a kiadásban nem jelenik meg.
 *Bizonyítottsági fok: megerősített* — **két, egymástól független forrás**:
 a tulajdonos képernyőképe (valódi, futó Picasa 3, magyar felület) és a
 `respack.yt` nyers koordinátái. A kettő minden gombra egyezik.
+
+### A fülsáv ikonjai — sorrend és méret (2026-08-16)
+
+A fülsáv öt füle és a hozzájuk tartozó ikonok a `respack.yt`-ból:
+
+| # | fül | x-sáv | szélesség | ikon | ikon mérete | ikon x |
+|---:|---|---|---:|---|---|---:|
+| 1 | `tab1` | 3 … 58 | **55** | `basic_icon` | **15 × 16** | 22 |
+| 2 | `tab2` | 58 … 113 | **55** | `tuning_icon` | **17 × 18** | 75 |
+| 3 | `tab3` | 113 … 169 | **56** | `tab3_icon` | **20 × 19** | 126 |
+| 4 | `tab4` | 169 … 224 | **55** | `tab4_icon` | **25 × 19** | 184 |
+| 5 | `tab5` | 224 … 279 | **55** | `tab5_icon` | **25 × 19** | 241 |
+| — | `movietab` | 187 … 222 | 35 | — | — | — |
+
+- a fülsáv (`buttcontainer: tabs`) **276 × 25**, y = **45**;
+- minden ikon **y = 49** (a fül tetejétől 4 px-re), tehát egy vonalban ülnek;
+- **az ikonok NEM azonos méretűek**: 15×16 · 17×18 · 20×19 · 25×19 · 25×19 —
+  a három effekt-fülé (3–5) a legnagyobb;
+- az ikon a fülön belül **középre** kerül (pl. `tab1` közepe 30,5, az ikoné
+  29,5).
+
+> A `movietab` (35 px) a videó-fül, alapból **rejtett** (`m_hidden`), és
+> beékelődik a `tab4` és a `tab5` közé — ezért nem szabad a fülek
+> x-sávjait folytonosnak feltételezni, ha a videó-fül látszik.
+
+### ⚠️ Három felirat-javítás (2026-08-16)
+
+A `.tre`-alapú deklarációs táblában három magyar felirat hibás volt. A
+helyes alakot a **hivatalos szövegforrás** és a tulajdonos képernyőképe
+együtt adja meg:
+
+| belső név | téves volt | **helyes** | forrás |
+|---|---|---|---|
+| `enhance` | ~~Kiegyenlítés~~ | **Jó napom van** | `CMakeMoviePanel::textstyle1` („I'm Feeling Lucky") + képernyőkép |
+| `horizonadjust` | ~~Vízszintbe állítás~~ / ~~Kiegyenlítés~~ | **Kiegyenesítés** | `filter_tilt_label0` („Straighten") + képernyőkép |
+| `autolighting` | ~~Automatikus fény~~ | **Automatikus kontraszt** | képernyőkép |
+
+> A „Kiegyenlítés" ↔ „Kiegyenesítés" a legkönnyebben elvéthető pár: az
+> előbbi *kiegyenlítést* (kontraszt), az utóbbi *kiegyenesítést* (dőlés)
+> jelent. A Picasa a **`horizonadjust`**-ra használja a **Kiegyenesítés**
+> szót; a `enhance` neve **Jó napom van**.
