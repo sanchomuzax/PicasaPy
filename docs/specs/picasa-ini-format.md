@@ -1390,3 +1390,66 @@ tanulság: a vágás nem „első lépés" a valós használatban.
 
 > **Módszertani megjegyzés:** ez a kör is **NAS-hozzáférés nélkül** futott, a
 > `referencia/ini-korpusz/korpusz.txt` helyi másolatból.
+
+## Teljes kulcs-leltár a valós korpuszból (2026-08-16)
+
+859 fájl, **46 893 kulcs-sor**, **1 178 különböző kulcsnév**, **14 622**
+szekció. Helyi korpusz-másolatból (NAS-hozzáférés nélkül).
+
+### A húsz leggyakoribb kulcs
+
+| kulcs | db | ismerjük? |
+|---|---:|---|
+| **`backuphash`** | **14 700** | specben ✅, a kódunk **nem írja** (megőrzi) |
+| `IIDLIST_<fiók>_lh` | 6 045 | specben említve, kódban nincs |
+| `filters` | 5 658 | ✅ teljesen |
+| `faces` | 4 973 | ✅ (írás: #26) |
+| `star` | 3 095 | ✅ |
+| `rotate` | 2 426 | ✅ |
+| **`originhash`** | **1 787** | specben **csak említve**, kódban nincs |
+| `crop` | 761 | ✅ (`rect64`) |
+| `name` | 713 | ✅ (`[contacts2]`) |
+| `albums` | 620 | ✅ |
+| **`P2category`** | 615 | Picasa 2-örökség, **nem kezeljük** |
+| `date` | 579 | ✅ |
+| `onlinechecksum` | 380 | ✅ |
+| `caption` | 208 | ✅ |
+| `moddate` | 181 | ✅ |
+| `category` | 179 | Picasa 2-örökség |
+| `textactive` | 173 | ✅ |
+| `width` / `height` | 172 / 172 | ✅ |
+| `geotag` | 84 | specben, kódban **nincs** |
+| `location` | 42 | 1 hely a kódban |
+
+A „hexadecimális nevű" kulcsok (`3e0c6b88a16df349` stb., 20–109 előfordulás)
+a `[contacts]` / `[contacts2]` szekciókban élnek: **arc-kapcsolat
+azonosítók**.
+
+### Szekciók
+
+| szekció | fájlok |
+|---|---:|
+| `[picasa]` | **733** (a 859-ből) |
+| `[contacts2]` | 244 |
+| `[contacts]` | 197 |
+| `[photoid]` | 17 |
+| `[<fájlnév>]` | a többi 14 000+ |
+
+### ⚠️ A `backuphash` a LEGGYAKORIBB kulcs — gyakoribb, mint a `filters`
+
+14 700 előfordulás 5 658 lánc mellett: **majdnem minden szerkesztett fotó
+kap egyet**, és a `[picasa]` szekcióban is megjelenik. A #643 kimutatta, hogy
+**előállítható** (az írás időpontjából képzett XOR), de a kódunk ma csak
+**megőrzi**, nem írja.
+
+**Ez a leltár azt mutatja, mekkora a tét:** ha egy jövőbeli kör úgy dönt,
+hogy írjuk, az a korpusz legsűrűbb kulcsát érinti.
+
+### Amit ez a parszerre mond
+
+**Az 1 178 különböző kulcsnév nagy része adat, nem séma** (arc-azonosítók,
+fiókfüggő `IIDLIST_*`). A parszernek tehát **kulcs-agnosztikusnak** kell
+lennie: amit nem ismer, azt bájtra megőrizze — ahogy a lap fentebb előírja.
+A „ismeretlen kulcs = hiba" megközelítés itt elvileg sem működne.
+
+*Bizonyítottsági fok: megerősített* (859 fájl, gépi leltár).
