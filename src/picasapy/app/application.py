@@ -528,6 +528,12 @@ def run(argv: list[str]) -> int:
     # #644: minden mentett szerkesztési lánc a TARTÓS naplóba is bekerül — ez
     # az egyetlen nyomunk, ha a párhuzamosan futó Picasa később felülírja a
     # `.picasa.ini`-t a saját adatbázis-rekordjával.
+    #
+    # #750: ez a JELZÉS-kötés csak a szerkesztőé, mert az `EditController`
+    # önálló QObject. A többi lánc-író (csoportos effekt, a két effekt-
+    # beillesztés, a lemezre mentés) maga is az `AppController` szelete,
+    # ezért közvetlenül a `recordSavedChains()`-t hívja — nincs második
+    # jelzés-út, amit itt el lehetne felejteni bekötni.
     edit_controller.chainSaved.connect(controller.recordSavedChain)
 
     # effekt-gomb bélyegképek (#338): a meglévő thumbnail-provider

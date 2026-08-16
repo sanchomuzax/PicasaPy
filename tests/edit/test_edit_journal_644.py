@@ -27,6 +27,7 @@ from picasapy.edit.edit_journal import (
     detect_lost_edits,
     load_journal,
     record_saved_chain,
+    record_saved_chains,
     save_journal,
 )
 
@@ -78,6 +79,54 @@ class TestFelvetel:
         record_saved_chain(naplo, _UT2, LUCKY, saved_at="2026-08-14T11:00:00")
 
         assert set(naplo) == {_UT}
+
+
+class TestKotegeltFelvetel:
+    """`record_saved_chains` — a kötegelt írók egyetlen menetben naplóznak.
+
+    #750: a csoportos effekt és a beillesztések mappánként több száz képet
+    írnak; ha a napló képenként töltődne be és íródna ki, a védelem lenne a
+    köteg szűk keresztmetszete.
+    """
+
+    def test_egyszerre_tobb_lancot_felvesz(self) -> None:
+        naplo = record_saved_chains(
+            {}, ((_UT, HOLGA), (_UT2, LUCKY)), saved_at="2026-08-14T11:00:00"
+        )
+
+        assert naplo[_UT].chain == HOLGA
+        assert naplo[_UT2].chain == LUCKY
+
+    def test_az_ures_lanc_a_kotegben_is_torol(self) -> None:
+        naplo = _naplo(**{_UT: HOLGA, _UT2: LUCKY})
+
+        uj = record_saved_chains(
+            naplo, ((_UT, ""), (_UT2, HOLGA)), saved_at="2026-08-14T11:00:00"
+        )
+
+        assert _UT not in uj
+        assert uj[_UT2].chain == HOLGA
+
+    def test_ugyanarra_az_utra_a_kesobbi_nyer(self) -> None:
+        naplo = record_saved_chains(
+            {}, ((_UT, HOLGA), (_UT, LUCKY)), saved_at="2026-08-14T11:00:00"
+        )
+
+        assert naplo[_UT].chain == LUCKY
+
+    def test_nem_mutalja_a_bemenetet(self) -> None:
+        naplo = _naplo(**{_UT: HOLGA})
+
+        record_saved_chains(naplo, ((_UT2, LUCKY),), saved_at="2026-08-14T11:00:00")
+
+        assert set(naplo) == {_UT}
+
+    def test_az_ures_koteg_valtozatlanul_hagyja(self) -> None:
+        naplo = _naplo(**{_UT: HOLGA})
+
+        uj = record_saved_chains(naplo, (), saved_at="2026-08-14T11:00:00")
+
+        assert uj == naplo
 
 
 class TestEszleles:

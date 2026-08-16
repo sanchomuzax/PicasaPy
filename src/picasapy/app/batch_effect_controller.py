@@ -200,14 +200,21 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                 ini_path = Path(folder) / PICASA_INI_NAME
                 entries: list[tuple[str, str, str | None, str | None]] = []
 
+                # #750: a mappa MOST kiírt láncai a naplóhoz — az `entries`
+                # mintájára a mutate-ben töltjük (ütközéskori újrajátszásnál
+                # a FRISS értékeket kell naplózni), és felülírással, hogy az
+                # újrajátszás ne duplikáljon.
+                naplo: list[tuple[str, str]] = []
+
                 # B023-minta (`effects_controller.pasteEffects`): az
                 # `entries` alapértelmezett argumentumként kötve, mert a
                 # mutate szinkron fut a ciklus adott körén belül.
                 def mutate(
                     document, folder=folder, folder_photos=folder_photos,
-                    entries=entries,
+                    entries=entries, naplo=naplo,
                 ):
                     fresh: list[tuple[str, str, str | None, str | None]] = []
+                    friss_naplo: list[tuple[str, str]] = []
                     for photo in folder_photos:
                         section = document.section(photo.name)
                         prev = section.get("filters") if section else None
@@ -215,7 +222,11 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                         fresh.append((folder, photo.name, prev, prev_crop))
                         session = _apply_one(EditSession.from_value(prev), effect_name)
                         document = _write_filters(document, photo.name, session)
+                        friss_naplo.append(
+                            (str(Path(folder) / photo.name), session.to_value())
+                        )
                     entries[:] = fresh
+                    naplo[:] = friss_naplo
                     return document
 
                 try:
@@ -224,6 +235,10 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                     self.photoOpFailed.emit(str(error))
                     break
                 undo_batch.extend(entries)
+                # #750: MAPPÁNKÉNT egy naplóírás — a Picasa felülírása ellen
+                # ez az egyetlen nyomunk ezen az úton is. Mappánként (és nem
+                # képenként) írunk, hogy a napló ne lassítsa a köteget.
+                self.recordSavedChains(naplo)
                 self._sync_tree_locked(folder)
                 done += 1
                 self._batchEditProgress.emit(folder, done, len(by_folder))
@@ -320,6 +335,12 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                     self.photoOpFailed.emit(str(error))
                     break
                 undo_batch.extend(entries)
+                # #750: a TÖRÖLT lánc üres bejegyzésként megy a naplóba, ami
+                # ott törlést jelent — a felhasználó maga vonta vissza a
+                # szerkesztéseit, nincs mit védeni (és riasztani sem szabad).
+                self.recordSavedChains(
+                    [(str(Path(folder) / photo.name), "") for photo in folder_photos]
+                )
                 self._sync_tree_locked(folder)
                 done += 1
                 self._batchEditProgress.emit(folder, done, len(by_folder))
@@ -410,6 +431,16 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                 except _WRITE_ERRORS as error:
                     self.photoOpFailed.emit(str(error))
                     return
+                # #750: a visszavonás is a MI írásunk — a napló ezután a
+                # visszaállított (köteg előtti) láncot védi. Enélkül a
+                # visszavonás után védtelenül maradna a kép, vagy — ha a
+                # köteg bejegyzése bent maradna — hamisan riasztanánk.
+                self.recordSavedChains(
+                    [
+                        (str(Path(folder) / name), prev_filters or "")
+                        for name, prev_filters, _prev_crop in entries
+                    ]
+                )
                 self._sync_tree(conn, folder)
 
         self.canUndoBatchEditChanged.emit()

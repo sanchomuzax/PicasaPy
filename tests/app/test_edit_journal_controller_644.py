@@ -92,6 +92,63 @@ class TestNaplozas:
 
         assert load_journal(host._journal_file()) == {}
 
+    def test_a_kotegelt_felvetel_egyszerre_ir(self, host, tmp_path) -> None:
+        """#750: a kötegelt írók egy hívással jelentenek több képről."""
+        host.recordSavedChains([(_UT, HOLGA), (str(Path("/k/b.jpg")), LUCKY)])
+
+        naplo = load_journal(tmp_path / "edit-journal.json")
+        assert naplo[_UT].chain == HOLGA
+        assert naplo[str(Path("/k/b.jpg"))].chain == LUCKY
+
+    def test_az_ures_koteg_nem_ir_fajlt(self, host) -> None:
+        host.recordSavedChains([])
+
+        assert not host._journal_file().exists()
+
+
+class TestGyorsitotar:
+    """#750: a napló beolvasása MINDEN nézetfrissítésnél lefut.
+
+    A kötegelt írók miatt a napló tízezres méretűre nőhet, és a beolvasás a
+    GUI-szálon fizetne (mérve 50 000 bejegyzésnél 490 ms). A gyorsítótár ezt
+    zárja ki — de csak akkor ér valamit, ha a fájl változását ÉSZREVESZI.
+    """
+
+    def test_valtozatlan_naplot_nem_olvassa_ujra(self, host) -> None:
+        host.recordSavedChain(_UT, HOLGA)
+
+        elso = host._load_journal()
+        masodik = host._load_journal()
+
+        assert elso is masodik
+
+    def test_a_sajat_iras_utan_friss(self, host) -> None:
+        host.recordSavedChain(_UT, HOLGA)
+        host.recordSavedChain(_UT, HOLGA + LUCKY)
+
+        assert host._load_journal()[_UT].chain == HOLGA + LUCKY
+
+    def test_a_kivulrol_modositott_naplot_ujraolvassa(self, host) -> None:
+        """A gyorsítótár nem szolgálhat ki elavult tartalmat."""
+        host.recordSavedChain(_UT, HOLGA)
+        host._load_journal()
+
+        host._journal_file().write_text(
+            '{"%s": {"chain": "%s", "saved_at": "2026-08-16T00:00:00"}}'
+            % (_UT.replace("\\", "\\\\"), LUCKY),
+            encoding="utf-8",
+        )
+
+        assert host._load_journal()[_UT].chain == LUCKY
+
+    def test_a_torolt_naplot_eszreveszi(self, host) -> None:
+        host.recordSavedChain(_UT, HOLGA)
+        host._load_journal()
+
+        host._journal_file().unlink()
+
+        assert host._load_journal() == {}
+
 
 class TestEszleles:
     def test_a_letorolt_lanc_jelzest_ad(self, host) -> None:

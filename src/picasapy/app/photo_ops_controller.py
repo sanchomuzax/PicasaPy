@@ -616,6 +616,16 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     self.photoOpFailed.emit(str(error))
                     return
                 undo_batch.extend(entries)
+                # #750: a beillesztett lánc a TARTÓS naplóba is — mappánként
+                # EGY naplóírással, hogy a köteget ne lassítsa. Üres
+                # `new_value`-nál a bejegyzés törlődik, ahogy a `filters=`
+                # kulcs is (ld. a mutate két ágát).
+                self.recordSavedChains(
+                    [
+                        (str(Path(folder) / photo.name), new_value)
+                        for photo in folder_photos
+                    ]
+                )
                 self._sync_tree(conn, folder)
 
         self._effect_clipboard_undo = undo_batch
@@ -656,6 +666,14 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                 except _WRITE_ERRORS as error:
                     self.photoOpFailed.emit(str(error))
                     return
+                # #750: a visszavonás is a MI írásunk — a napló a beillesztés
+                # ELŐTTI láncot védi tovább (üresnél törlődik a bejegyzés).
+                self.recordSavedChains(
+                    [
+                        (str(Path(folder) / name), prev_filters or "")
+                        for name, prev_filters in entries
+                    ]
+                )
                 self._sync_tree(conn, folder)
 
         self.allEffectsClipboardChanged.emit()

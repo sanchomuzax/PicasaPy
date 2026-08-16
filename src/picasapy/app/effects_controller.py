@@ -77,6 +77,9 @@ class EffectsClipboardMixin:
         if not valid:
             return
         pasted_ops = self._effects_clipboard.ops
+        # #750: a naplóba kerülő lánc — minden célképre UGYANAZ, ezért egyszer
+        # szerializáljuk (a `_write_session` ugyanezt az értéket írja ki).
+        beillesztett_lanc = EditSession(ops=pasted_ops).to_value()
         undo_batch: list[tuple[str, str, str | None, str | None]] = []
         by_folder: dict[str, list] = {}
         for photo in valid:
@@ -119,6 +122,16 @@ class EffectsClipboardMixin:
 
                 update_document(ini_path, mutate, backup=True)
                 undo_batch.extend(entries)
+                # #750: a beillesztett lánc a TARTÓS naplóba is — mappánként
+                # egyetlen naplóírással, hogy a köteget ne lassítsa. A lánc
+                # minden képre UGYANAZ (a vágólapé), a kulcs viszont képenként
+                # a `full_path()` szabályát követi.
+                self.recordSavedChains(
+                    [
+                        (str(Path(folder) / photo.name), beillesztett_lanc)
+                        for photo in folder_photos
+                    ]
+                )
                 self._sync_tree(conn, folder)
         self._effects_undo_stack.append(undo_batch)
         self.effectsClipboardChanged.emit()
@@ -158,6 +171,14 @@ class EffectsClipboardMixin:
                     return document
 
                 update_document(ini_path, mutate, backup=True)  # #137
+                # #750: a visszavonás is a MI írásunk — a napló a beillesztés
+                # ELŐTTI láncot védi tovább (üresnél törlődik a bejegyzés).
+                self.recordSavedChains(
+                    [
+                        (str(Path(folder) / name), prev_filters or "")
+                        for name, prev_filters, _prev_crop in entries
+                    ]
+                )
                 self._sync_tree(conn, folder)
         self.effectsClipboardChanged.emit()
         self._refresh_view()
