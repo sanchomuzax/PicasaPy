@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml"><img src="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License: GPL-3.0"></a>
-  <img src="https://img.shields.io/badge/version-0.6.1-orange.svg" alt="Version 0.6.1">
+  <a href="https://github.com/sanchomuzax/PicasaPy/releases"><img src="https://img.shields.io/github/v/release/sanchomuzax/PicasaPy?color=orange&label=version" alt="Legfrissebb kiadás"></a>
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+">
 </p>
 
@@ -49,21 +49,24 @@ fázisban (szerkesztő) jár. A ténylegesen kész funkciók fázisonként:
 - **Nem-destruktív szerkesztő munkamenet** (Visszaállítás, undo) a `.picasa.ini` `filters=` láncára építve.
 - **20+ szűrő/effekt** (pl. autolight, autocolor, fill, finetune, unsharp, grain, vignette, glow, tint, sepia, bw, radblur/radsat, irányított tónusozás) — a teljes lista a render-motor kapcsolótáblájában (`src/picasapy/render/chain.py`).
 - **Vágás (crop) átfedő eszközzel**, hisztogram, effekt-vágólap (másolás/beillesztés több képre).
-- **PMP/db3 olvasó réteg** (PMP-oszlopok, thumbindex, deferredregion, path-remap) — tesztelt, de a tényleges *indexbe* import még nyitott (#1).
+- **PMP/db3 olvasó réteg** (PMP-oszlopok, thumbindex, deferredregion, path-remap) — tesztelt, de a tényleges *indexbe* import még nyitott ([#1](https://github.com/sanchomuzax/PicasaPy/issues/1)).
+
+Azóta elkészült (a lista korábban ezeket még hiányzóként sorolta):
+
+- **Retusálás és szöveg-eszköz** a szerkesztőben ([#148](https://github.com/sanchomuzax/PicasaPy/issues/148)).
+- **Kollázs és mozgófilm készítés** ([#29](https://github.com/sanchomuzax/PicasaPy/issues/29)).
+- **Geocímke: térkép-nézet és szerkesztés** ([#30](https://github.com/sanchomuzax/PicasaPy/issues/30)).
+- **A Picasa 3.9-es effekt-fülei** dekódolva ([#190](https://github.com/sanchomuzax/PicasaPy/issues/190)).
 
 Amit **még nem** tud:
 
-- **Arcfelismerés** (#26) — a `.picasa.ini`-ben már meglévő arc-régiók (`faces=`) megjelennek a nézőben, de saját felismerést/`contacts.xml`-generálást a PicasaPy még nem végez.
-- **A Picasa teljes effekt-készlete** (#190) — néhány ritkábban használt effekt dekódolása még nyitott.
-- **Retusálás és szöveg** (#148) a szerkesztőben.
-- **PMP/db3-import az indexbe** (#1) — az olvasó réteg kész, a tényleges import még nem.
-- **Geotag-térkép nézet** (#30).
-- **Kollázs/film készítés** (#29).
-- **Sötét téma** (#28) — az app egyelőre mindig világos.
+- **Arcfelismerés** ([#26](https://github.com/sanchomuzax/PicasaPy/issues/26)) — a `.picasa.ini`-ben már meglévő arc-régiók (`faces=`) megjelennek a nézőben, de saját felismerést/`contacts.xml`-generálást a PicasaPy még nem végez.
+- **PMP/db3-import az indexbe** ([#1](https://github.com/sanchomuzax/PicasaPy/issues/1)) — az olvasó réteg kész, a tényleges import még nem.
+- **Sötét téma**: az alkalmazás **mindig világos**, ez tudatos döntés — a sötét téma a 3. fázis (V3) feladata.
 
 ## Állapot
 
-⚠️ **Korai fejlesztési fázisban** van (verzió: `0.6.1`), messze az 1.0-tól. A projekt túl van az 1. fázis (kezelő + néző) MVP-jén, és mélyen a **2. fázisban** (nem-destruktív szerkesztő) jár. A formátum-kompatibilitás és az alapvető könyvtárkezelés stabil, de az API és a fájlformátum-részletek még változhatnak.
+⚠️ **Korai fejlesztési fázisban** van (a mindenkori verziót a fenti jelvény és a [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldal mutatja), messze az 1.0-tól. A projekt túl van az 1. fázis (kezelő + néző) MVP-jén, és mélyen a **2. fázisban** (nem-destruktív szerkesztő) jár. A formátum-kompatibilitás és az alapvető könyvtárkezelés stabil, de az API és a fájlformátum-részletek még változhatnak.
 
 ## Hogyan készült?
 
@@ -84,7 +87,7 @@ sudo apt install \
   qml6-module-qtmultimedia
 ```
 
-> **Videó-lejátszás:** a nézőbeli lejátszáshoz (#14) a `qml6-module-qtmultimedia`
+> **Videó-lejátszás:** a nézőbeli lejátszáshoz ([#14](https://github.com/sanchomuzax/PicasaPy/issues/14)) a `qml6-module-qtmultimedia`
 > és a `python3-pyside6.qtmultimedia` csomag kell. Ha hiányzik, a PicasaPy
 > attól még fut — a videóknál egy figyelmeztető szöveg jelenik meg a néző
 > lejátszó-felülete helyett. (Pip-es telepítésnél a `PySide6` csomag ezt
@@ -118,7 +121,7 @@ Windows-os támogatás **kísérleti** — a fejlesztés Linuxon (RPi5) folyik, 
 ## Tesztek futtatása
 
 A teljes tesztkészlet **egyetlen** `pytest`-processzben futtatva Qt/GIL-
-deadlockba ragadhat (#53, #155) — ezért a darabolt `scripts/run_tests.py`
+deadlockba ragadhat ([#53](https://github.com/sanchomuzax/PicasaPy/issues/53), [#155](https://github.com/sanchomuzax/PicasaPy/issues/155)) — ezért a darabolt `scripts/run_tests.py`
 az elsődleges út: a nem-Qt teszteket egy processzben, a `tests/app` alatti
 QML-teszteket pedig fájlonként, külön processzben, kemény timeouttal
 futtatja, így egy beragadó fájl sem viszi el az egész futást.
@@ -130,7 +133,7 @@ pip install pytest pytest-cov
 python scripts/run_tests.py
 ```
 
-Lefedettség-összesítővel (#300):
+Lefedettség-összesítővel ([#300](https://github.com/sanchomuzax/PicasaPy/issues/300)):
 
 ```bash
 python scripts/run_tests.py --cov
@@ -190,7 +193,7 @@ A tesztkészlet Linuxon és Windowson is fut (CI: `ubuntu-latest` +
 - `src/picasapy/render/` — a `filters=` lánc szűrőinek/effektjeinek render-motorja.
 - `src/picasapy/export/` — export célmappába és XMP sidecar-export.
 - `src/picasapy/dedup/` — duplikátum-kereső (egzakt és hasonlósági).
-- `src/picasapy/pmpimport/` — PMP/db3 olvasó réteg (a tényleges indexbe-import nyitott, #1).
+- `src/picasapy/pmpimport/` — PMP/db3 olvasó réteg (a tényleges indexbe-import nyitott, [#1](https://github.com/sanchomuzax/PicasaPy/issues/1)).
 - `src/picasapy/app/` — PySide6/QML alkalmazás (kontroller, modellek, QML nézetek, lokalizáció).
 
 ## Kompatibilitás
@@ -198,7 +201,7 @@ A tesztkészlet Linuxon és Windowson is fut (CI: `ubuntu-latest` +
 - **`.picasa.ini`**: csillag, forgatás, felirat, szűrők (filters mátrix) és virtuális albumok round-trip olvasása és írása, Picasa 3.x formátumban.
 - **IPTC felirat**: JPEG fájlokba beírt IPTC caption mező kezelése.
 - **XMP**: fotónkénti sidecar-export (digiKam/Lightroom-kompatibilis).
-- **PMP/db3**: az olvasó réteg (PMP-oszlopok, thumbindex, deferredregion, path-remap) kész és tesztelt; a tényleges *indexbe* import még nyitott (#1).
+- **PMP/db3**: az olvasó réteg (PMP-oszlopok, thumbindex, deferredregion, path-remap) kész és tesztelt; a tényleges *indexbe* import még nyitott ([#1](https://github.com/sanchomuzax/PicasaPy/issues/1)).
 
 ## Verziózás
 
