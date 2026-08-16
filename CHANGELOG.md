@@ -5,6 +5,29 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.61] – 2026-08-16
+
+### Javítva
+- **A Picasa felülírása többé nem marad észrevétlen (#750).** Ha a program
+  ugyanazt a mappát a Picasával együtt használja, a Picasa a saját
+  adatbázisából **egészben** újraírhatja a képhez tartozó bejegyzést, és
+  ilyenkor a nálunk végzett szerkesztés eltűnik. Eddig ezt csak a szerkesztőben
+  vettük észre; mostantól a csoportos effektnél, az effekt-beillesztésnél és a
+  lemezre mentésnél is. Két rejtett hiba is javult közben: a napló írása nem
+  volt biztonságos megszakadás ellen, és nagy naplónál minden mappaváltás
+  fél másodpercet késett.
+- **A szöveg-eszköz vezérlői nem lógnak ki a panelből (#775).** A színpaletta
+  egyetlen hosszú sorban rajzolta a nyolc színmezőt, és ez az egész panelt
+  szélesebbre feszítette. Mostantól két sorban áll.
+- **A menüfeliratok betűre az eredeti Picasa magyar szövegét követik (#757).**
+  Tíz feliratnál a gyorsbillentyű rossz betűn állt, kettőnél pedig hiányzott a
+  szöveg.
+
+### Belső
+- A felület-ellenőr mostantól a **bekapcsolt eszköz-módokat** is méri (vágás,
+  retusálás, vörösszem, szöveg) — eddig sosem látta őket, mert alapból
+  láthatatlanok. Amit talált, az a #778-on és a #779-en fut.
+
 ## [0.7.60] – 2026-08-16
 
 ### Javítva
