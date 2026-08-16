@@ -929,7 +929,7 @@ külön auditot érdemel, itt csak jelzésként szerepel.
 | N2 | Az effekt-paraméter alpanel **tényleges** képernyőképe | — | egy felvétel bármelyik paraméteres effekt (pl. Holga-szerű) megnyitott alpaneléről — a 4. szakasz jelenleg az erőforrásokból + a 2. fül azonos vezérlőiből következtet |
 | N3 | A csempék elemleírása (tooltip) megjelenik-e a rácsban, és a `filter_<Kulcs>_tooltip0` szövege-e | feltételes | egérrel egy csempe fölött készített felvétel |
 | N4 | A csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés) | nincs adat | felvétel egérmutatóval a csempe fölött |
-| N5 | A rács **görgethető-e** 12 csempénél többnél (a `fx1…fx12` fix — de a `picnik_fx` gomb létezik a rács alján, rejtetten) | feltételes | `editpanel/picnik_fx` szerepének tisztázása |
+| ~~N5~~ | ~~A rács **görgethető-e** 12 csempénél többnél~~ → **LEZÁRVA (2026-08-16)**: nem görgethető, és a `picnik_fx` nem rács-bővítő, hanem a megszűnt **Picnik** online szerkesztő indítógombja — lásd „A `picnik_fx` a megszűnt Picnik gombja" alább | megerősített | — |
 
 ### Amit a #704 ebből megvalósított, és hol tér el TUDATOSAN
 
@@ -1305,3 +1305,73 @@ is. Most bizonyított, hogy az eredetiben nincs ott.
 
 *Bizonyítottsági fok: megerősített* (a `macros.tre` teljes makródefiníciója
 és a felületkód mindkét ága kiolvasva).
+
+### A `picnik_fx` a megszűnt Picnik gombja — az N5 lezárva (2026-08-16)
+
+Az N5 azt kérdezte, görgethető-e az effekt-rács 12 csempénél többnél, és
+mi az a `picnik_fx` gomb a rács alján. **Mindkettőre megvan a válasz.**
+
+#### A gomb definíciója (`editpanel.tre` 412–426)
+
+```
+#--Picnik fx button
+editpanel/picnik_fx_label: editpanel/picnik_fx
+Property textalign right
+XConstraint 1, 0, -5
+YConstraint 0.5, 0.5, 0
+m_hidden
+editpanel/picnik_fx_icon: editpanel/picnik_fx
+XConstraint 0, 0, 10
+YConstraint 0.5, 0.5, 0
+m_hidden
+editpanel/picnik_fx: editpanel/fxthumbs
+m_buttontypecolor
+XConstraint 0.5, 0.5, 0
+m_offsetT
+m_hidden
+```
+
+Vízszintesen **középre igazított**, színes típusú gomb, bal oldalt ikonnal
+(+10), jobbra zárt felirattal (−5). Mindhárom elem **`m_hidden`**.
+
+#### A felirata megmondja, mi ez
+
+```
+filter_picnik_label0   Creative Kit   Kreatív készlet
+```
+
+A **Picnik** a Google online fotószerkesztője volt; a Picasa
+„Kreatív készlet" gombja oda töltötte fel a képet. A bináris tele van a
+kiszolgáló-oldali maradványaival: `picnikurl`,
+`http://www.picnik.com/service/`, `picnikdoneurl`, `Picnik::UploadProgress`,
+`Picnik::UploadError`, `Picnik::SaveToPicasa`, `PicnikWarn`,
+`editpanel/picnikwin`, `editpanel/picnikapply`, `editpanel/picnikcancel`,
+`runtime\picnik_effects\`.
+
+> A **Picnik 2012-ben megszűnt.** A gomb tehát halott funkció maradványa.
+
+#### Egy árulkodó nyom: a szabály KI VAN KOMMENTEZVE
+
+Az `editpanel.tre` 290. sora:
+
+```
+#Property hidetarget editpanel/picnik_fx
+```
+
+A `#` miatt ez **nem hatályos**. A fejlesztők tehát a gomb kezelését a
+kiadás előtt kivették — összhangban azzal, hogy a szolgáltatás megszűnt.
+
+#### A két válasz
+
+1. **A rács NEM görgethető.** Fülenként pontosan `fx1`…`fx12` van, és
+   tizenharmadik csempehely nincs definiálva.
+2. **A `picnik_fx` nem rács-bővítő**, hanem egy külső, ma már nem létező
+   szolgáltatás indítógombja.
+
+#### Amit ebből a PicasaPy csinál: SEMMIT
+
+A gombnak nincs értelmes megfelelője — a mögötte álló szolgáltatás nem
+létezik. A rács alján **nem kell** gomb.
+
+*Bizonyítottsági fok: megerősített* (az elrendezés-erőforrás teljes blokkja,
+a felirat szövegforrása, és a bináris tizennégy Picnik-hivatkozása).

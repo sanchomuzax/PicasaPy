@@ -15,7 +15,7 @@ azt, hogy nincs rajta *megjelölt* nyitott kérdés.
 | lap | nyitott | miről szól |
 |---|---:|---|
 | [filters-decoded.md](filters-decoded.md) | **17** | Szűrő-visszafejtés — a golden-mérések eredményei |
-| [ui-audit-editor.md](ui-audit-editor.md) | **5** | A szerkesztőpanel és dialógusai |
+| [ui-audit-editor.md](ui-audit-editor.md) | **4** | A szerkesztőpanel és dialógusai |
 | [filterdesc-registry.md](filterdesc-registry.md) | **6** | A `filterdesc.xml` hivatalos szűrő-regisztere |
 | [ui-audit-mainwindow.md](ui-audit-mainwindow.md) | **3** | Főablak: mappafa, eszköztár, tálca, arányok |
 | [picasa-ini-format.md](picasa-ini-format.md) | **2** | A `.picasa.ini` formátuma |
