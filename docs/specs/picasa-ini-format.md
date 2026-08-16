@@ -1339,3 +1339,54 @@ ottani `README.md`-t).
 > futott le: a korpusz helyi másolatból jött. Korábban ugyanez a kérdéstípus
 > minden körben végigjárta a hálózati megosztást, és 2026-08-16-án
 > **390 napló/mp**-et generált a 200/mp-es korláttal szemben.
+
+## A `filters=` lánc SORRENDJE — nincs kényszer, de van szokás (2026-08-16)
+
+5 658 valós lánc a helyi korpusz-másolatból.
+
+### ❌ Szigorú sorrendi kényszer NINCS
+
+Minden olyan szűrő-pár, ami legalább **15**-ször fordul elő együtt, **mindkét
+sorrendben** előfordul. Egyetlen „X mindig Y előtt" szabály sincs.
+
+**Következmény az íróra és a parszerre:** a lánc sorrendje **a felhasználó
+szerkesztési sorrendje**, nem szabály. Az írónak nem szabad átrendeznie, a
+parszernek nem szabad sorrendet feltételeznie.
+
+*Bizonyítottsági fok: megerősített (negatív eredmény), 5 658 láncon.*
+
+### De a szokásos sorrend erősen kirajzolódik
+
+Átlagos relatív pozíció a láncban (0 = eleje, 1 = vége):
+
+| szűrő | átlagos pozíció | db |
+|---|---:|---:|
+| `enhance` | **0,126** | 3 045 |
+| `autolight` | **0,164** | 2 612 |
+| `retouch` | 0,244 | 82 |
+| `crop64` | 0,286 | 801 |
+| `tilt` | 0,294 | 102 |
+| `redeye` | 0,303 | 228 |
+| `autocolor` | 0,474 | 54 |
+| `warm` | 0,492 | 118 |
+| `sat` | 0,593 | 110 |
+| `Boost` | 0,667 | 22 |
+| `Vignette` | 0,683 | 219 |
+| `fill` | 0,712 | 1 089 |
+| `finetune2` | **0,813** | 561 |
+| `unsharp2` | **0,874** | 27 |
+
+Az **első** tag 45 %-ban `enhance`, 36 %-ban `autolight` — együtt a láncok
+**81 %-a** automatikus javítással kezdődik. Az **utolsó** tag leggyakrabban
+szintén `enhance`/`autolight` (a sok egyelemű lánc miatt), utána `fill`
+(11,6 %) és `finetune2` (6,7 %).
+
+### Egy meglepetés: a vágás NEM elöl van
+
+A `crop64` a láncoknak csak **8,9 %-ában** az első tag, az átlagos pozíciója
+**0,286** — vagyis a felhasználók tipikusan **előbb futtatnak egy
+automatikát, és utána vágnak**. Ez a mi felületünk sorrend-javaslataira is
+tanulság: a vágás nem „első lépés" a valós használatban.
+
+> **Módszertani megjegyzés:** ez a kör is **NAS-hozzáférés nélkül** futott, a
+> `referencia/ini-korpusz/korpusz.txt` helyi másolatból.
