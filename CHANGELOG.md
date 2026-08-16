@@ -5,6 +5,29 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.60] – 2026-08-16
+
+### Javítva
+- **A „Jó napom van" (enhance) négyszer pontosabban követi az eredetit
+  (#721).** Az eltérés 12 valódi Picasa-képpáron mérve **2,48-ról 0,57-re**
+  csökkent; a legrosszabb képen 13,03-ról 0,52-re. Kiderült, hogy az
+  `enhance` és az „Automatikus kontraszt" nálunk ugyanaz a művelet volt,
+  holott az eredetiben nem: az utóbbi közös tartományra vág (megőrzi a
+  színegyensúlyt), az előbbi 30%-kal afelé húz.
+
+### Új
+- **Fa-mappanézet a bal panelen (#702).** A mappák hierarchikusan is
+  megjeleníthetők, saját helyi menüvel (kinyitás, összecsukás, keresés a
+  lemezen, eltávolítás, áthelyezés). A nézetmód-váltó még hiányzik, addig a
+  lapos lista az alapállapot.
+- **Gyorsbillentyűk a bal hasáb menüiben (#757).** Eddig egyetlen `Alt`-os
+  gyorsbillentyű sem volt bennük; most mind az öt menü az eredeti betűivel
+  működik. Kilenc felirat is javult az eredeti szövegére, és bekerült két
+  hiányzó menütétel.
+- **Az „Új album" súgószöveg csak üres albumlistán jelenik meg (#757)** —
+  eddig mindig ott volt, és 230 képpontos hasábon 2,6 mappasornyi helyet vett
+  el.
+
 ## [0.7.59] – 2026-08-16
 
 ### Javítva
