@@ -25,10 +25,12 @@ fut az észlelés, az a hívóé.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
 from picasapy.ini.filters import parse_filters
+from picasapy.ioutil import write_atomic
 
 
 def naplo_kulcs(path: str | Path) -> str:
@@ -60,6 +62,41 @@ class JournalEntry:
     saved_at: str
 
 
+def record_saved_chains(
+    journal: dict[str, JournalEntry],
+    items: "Iterable[tuple[str, str]]",
+    *,
+    saved_at: str,
+) -> dict[str, JournalEntry]:
+    """Több kép láncának felvétele EGY menetben (immutábilis: új szótár).
+
+    #750: a csoportos effekt és a kötegelt beillesztés több száz képet ír
+    egyszerre. Ha a napló képenként töltődne be és íródna ki, a védelem a
+    köteg szűk keresztmetszete lenne (N teljes JSON-olvasás + -írás). Ez a
+    függvény a KÖTEG egészét egyetlen szótár-másolaton vezeti át; a hívó
+    egyszer olvas és egyszer ír.
+
+    Args:
+        items: `(útvonal, lánc)` párok. Ugyanarra az útvonalra több pár is
+            jöhet — a KÉSŐBBI nyer, ahogy az egyenkénti hívásoknál is.
+        saved_at: közös időbélyeg (a modul nem olvas órát, ld. `JournalEntry`).
+
+    **Üres lánc törli a bejegyzést:** ha a felhasználó maga vonta vissza az
+    összes szerkesztést, nincs mit védeni — különben egy szándékos törlésre
+    is riasztanánk.
+    """
+    frissitett = dict(journal)
+    for path, chain in items:
+        kulcs = naplo_kulcs(path)
+        if not (chain or "").strip():
+            frissitett.pop(kulcs, None)
+            continue
+        frissitett[kulcs] = JournalEntry(
+            path=kulcs, chain=chain, saved_at=saved_at
+        )
+    return frissitett
+
+
 def record_saved_chain(
     journal: dict[str, JournalEntry],
     path: str,
@@ -69,17 +106,12 @@ def record_saved_chain(
 ) -> dict[str, JournalEntry]:
     """A most kiírt lánc felvétele a naplóba (immutábilis: új szótár).
 
-    **Üres lánc törli a bejegyzést:** ha a felhasználó maga vonta vissza az
-    összes szerkesztést, nincs mit védeni — különben egy szándékos törlésre
-    is riasztanánk.
+    Az egy-elemű eset a `record_saved_chains`-re megy vissza, hogy a
+    kulcsképzés és az „üres lánc = törlés" szabály EGY helyen éljen — két
+    változat előbb-utóbb szétcsúszna, és a #699 tanulsága szerint az ilyen
+    csúszás NÉMÁN üti ki a védelmet.
     """
-    path = naplo_kulcs(path)
-    frissitett = dict(journal)
-    if not chain.strip():
-        frissitett.pop(path, None)
-        return frissitett
-    frissitett[path] = JournalEntry(path=path, chain=chain, saved_at=saved_at)
-    return frissitett
+    return record_saved_chains(journal, ((path, chain),), saved_at=saved_at)
 
 
 def _op_kulcsok(chain: str) -> set[tuple[str, tuple[str, ...]]]:
@@ -150,26 +182,34 @@ def load_journal(path: str | Path) -> dict[str, JournalEntry]:
 
 
 def save_journal(journal: dict[str, JournalEntry], path: str | Path) -> None:
-    """A napló kiírása (a könyvtárat is létrehozva)."""
+    """A napló ATOMIKUS kiírása (a könyvtárat is létrehozva).
+
+    #750: a naplót mostantól HÁTTÉRSZÁL is írja (a csoportos effekt), miközben
+    a GUI-szál olvashatja (`_check_external_overwrites`). A korábbi
+    `write_text` a célfájlt csonkolva kezdte írni, tehát az olvasó egy
+    félkész JSON-t is elkaphatott volna — a `load_journal` az ilyet
+    (helyesen) üres naplónak veszi, vagyis a védelem CSENDBEN elveszne.
+    A temp fájl + csere ezt a rést zárja: az olvasó vagy a régi, vagy az új
+    teljes tartalmat látja.
+    """
     target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(
-        json.dumps(
-            {
-                kulcs: {"chain": entry.chain, "saved_at": entry.saved_at}
-                for kulcs, entry in sorted(journal.items())
-            },
-            ensure_ascii=False,
-            indent=1,
-        ),
-        encoding="utf-8",
+    payload = json.dumps(
+        {
+            kulcs: {"chain": entry.chain, "saved_at": entry.saved_at}
+            for kulcs, entry in sorted(journal.items())
+        },
+        ensure_ascii=False,
+        indent=1,
     )
+    write_atomic(target, payload.encode("utf-8"), make_parents=True)
 
 
 __all__ = [
     "JournalEntry",
     "detect_lost_edits",
     "load_journal",
+    "naplo_kulcs",
     "record_saved_chain",
+    "record_saved_chains",
     "save_journal",
 ]

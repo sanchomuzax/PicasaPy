@@ -140,6 +140,7 @@ class SaveMixin(BackgroundWorkerMixin):
 
         def worker():
             done, failed, details = 0, 0, []
+            naplo: list[tuple[str, str]] = []
             for path, rotate_steps, filters in records:
                 try:
                     rendered = _render_for_save(path, rotate_steps, filters)
@@ -150,6 +151,11 @@ class SaveMixin(BackgroundWorkerMixin):
                         details.append(f"{path.name}: {error}")
                 else:
                     done += 1
+                    # #750: a sikeres mentés ÜRES lánccal jelent a naplónak,
+                    # ami ott a bejegyzés TÖRLÉSÉT jelenti. Ld. a `redo=`
+                    # döntést a `_record_saved_state` docstringjében.
+                    naplo.append((str(path), ""))
+            self._record_saved_state(naplo)
             if details:
                 self.saveFailedDetails.emit(details)
             self.saveFinished.emit(done, failed)
@@ -170,6 +176,49 @@ class SaveMixin(BackgroundWorkerMixin):
         köztes fokozata a Mentés és a Visszaállítás között."""
         self._run_restore(rows, undo_save, self.undoSaveFinished)
 
+    def _record_saved_state(self, items) -> None:
+        """A mentés-műveletek utáni ini-állapot átvezetése a #644-es naplóra.
+
+        ## Miért kell (a hamis riasztás ugyanolyan kár, mint a néma veszteség)
+
+        A napló azt őrzi, MI milyen `filters=` láncot írtunk ki utoljára, és
+        a nézet feltöltésekor riaszt, ha az eltűnt. A mentés viszont MAGA
+        veszi el a `filters=`-t: a láncot a pixelekbe égeti, a kulcsot törli,
+        a tartalmát a `redo=`-ba forgatja át (`edit/save.py`). Ha a naplót nem
+        vezetnénk át, a mentés utáni ELSŐ nézetfrissítés minden mentett képre
+        azt állítaná, hogy „a szerkesztésed eltűnt" — a felhasználó pedig egy
+        kattintással vissza is írhatná a láncot `filters=`-be, ami a már
+        beégetett effektet MÁSODSZOR is ráfuttatná. Az átvezetés tehát nem
+        kényelmi kérdés, hanem adatvédelem.
+
+        ## A `redo=` NEM kerül a naplóba láncként (#750 döntés)
+
+        Kézenfekvő lenne a `redo=` értékét is védeni — mégsem tesszük, két
+        okból, és mindkettő a kár irányáról szól:
+
+        1. **A detektor a `filters=`-t nézi.** A `detect_lost_edits` az index
+           `filters=` mezőihez hasonlít; mentés után az minden mentett képnél
+           üres. Egy `redo=`-t őrző bejegyzés így ÖRÖKKÉ veszteséget jelezne
+           — a védelem zajjá válna, és a felhasználó megtanulná elhessegetni.
+        2. **A helyreállítás célkulcsa rossz volna.** A
+           `restoreOverwrittenEdit` a `filters=`-be ír vissza. Egy beégetett
+           láncot oda visszatéve dupla-szerkesztés keletkezne (#297) — az
+           eredménye ROSSZABB, mint a `redo=` elvesztése, amiből legfeljebb
+           az „Utolsó mentés visszavonása" kényelme vész el, a pixelek nem: a
+           mentés előtti bájtok a `.picasaoriginals` sorszámozott
+           pillanatképében megvannak.
+
+        A `redo=` valódi védelme külön alakú mechanizmust kívánna (saját
+        bejegyzés-fajta, saját visszaírási cél és saját felületi üzenet) —
+        önálló jegyre való, nem erre.
+
+        Az „Utolsó mentés visszavonása" ellenben VISSZAÍRJA a láncot
+        `filters=`-be: onnantól megint van mit védeni, ezért ott a
+        visszakapott láncot naplózzuk.
+        """
+        if items:
+            self.recordSavedChains(items)
+
     def _run_restore(self, rows, operation, finished_signal) -> None:
         paths = [
             Path(r.folder_path) / r.name for r in self._selected_records(rows)
@@ -180,15 +229,23 @@ class SaveMixin(BackgroundWorkerMixin):
 
         def worker():
             done, failed, details = 0, 0, []
+            naplo: list[tuple[str, str]] = []
             for path in paths:
                 try:
-                    operation(path)
+                    result = operation(path)
                 except _SAVE_ERRORS as error:
                     failed += 1
                     if len(details) < _FAILED_DETAILS_LIMIT:
                         details.append(f"{path.name}: {error}")
                 else:
                     done += 1
+                    # #750: az „Utolsó mentés visszavonása" a `redo=`-ból
+                    # VISSZAÍRJA a láncot `filters=`-be (`restored_filters`)
+                    # — onnantól megint van mit védeni. A „Visszaállítás"
+                    # minden szerkesztés-könyvelést töröl, ott az üres lánc
+                    # (a `getattr` alapértéke) törli a bejegyzést.
+                    naplo.append((str(path), getattr(result, "restored_filters", "")))
+            self._record_saved_state(naplo)
             if details:
                 self.saveFailedDetails.emit(details)
             finished_signal.emit(done, failed)
