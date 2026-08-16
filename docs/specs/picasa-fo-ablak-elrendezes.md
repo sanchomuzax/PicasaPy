@@ -270,3 +270,69 @@ kulcsok nálunk értelmezhetetlenek.
 
 *Bizonyítottsági fok: megerősített* (a regisztráló hívások mind a 39-re
 kiolvasva, az alapérték minden esetben a hívás előtti `push`).
+
+## A Beállítások párbeszéd kezelője és a kulcsai (`0x006e1100`, 2026-08-16)
+
+A 9 494 bájtos `0x006e1100` a **Beállítások (Opciók) párbeszéd** kezelője —
+az osztálynév a sztringjeiből azonosítható: `CGeneralPrefsPage`. A 79
+hivatkozott sztringje megadja, **melyik vezérlő melyik beállítás-kulcsot
+írja**.
+
+### A vezérlő-azonosítók (a `.fen`/`.tre` oldalról)
+
+`web_albums_tab` · `enablefruploads` · `tags_group` ·
+`uploadcontactphotos` · `usagestats` · `privacy` · `autoupdate` ·
+`importdest` · `mailprog` · `picsize` · `defaultmail` · `haswatermark` ·
+`enablefacedetection` · `enablefacesuggestions` · `persistfacetofile` ·
+`facethresh0` · `facethresh1` · `autoProxy` · `loglevel` · `print%d`
+
+### Tizenöt kulcs, ami a REGISZTRÁLÓBAN nincs benne
+
+A `0x006e0cb0` (az előző szakasz) 39 kulcsot regisztrál alapértékkel. A
+párbeszéd ezeken felül **további tizenötöt** ír:
+
+| kulcs | melyik fül |
+|---|---|
+| `ReportStats` | Általános — használati statisztika |
+| `PersistFaceToFile` | Névcímkék |
+| `confirmsync::disable` | Általános |
+| `MP3SlideshowPath` | Diavetítés |
+| `PWAWatermark` | Google Fotók |
+| `EmailSinglePicture` | E-mail |
+| `EmailMovie` | E-mail |
+| `UseHTMLMailer` | E-mail |
+| `EmailPrepType` | E-mail |
+| `DoNotPromptForEmailPref` | E-mail |
+| `EmailExportSize` | E-mail |
+| `ProxyUser` | Hálózat |
+| `ProxyPass` | Hálózat |
+| `Conn:ProxyMethod` | Hálózat |
+| `LogLevel` | Hálózat |
+
+> ⚠️ A `ProxyUser` / `ProxyPass` **jelszót tárol**. A PicasaPy-nak ezt nem
+> kell átvennie; ha valaha mégis, akkor **nem** a beállításfájlba.
+
+### A feltöltési méret öt választása — pontos feliratokkal
+
+| erőforrás-kulcs | EN | HU |
+|---|---|---|
+| `CGeneralPrefsPage::Original` | Original size (slowest upload) | **Eredeti méret (leglassabb feltöltés)** |
+| `CGeneralPrefsPage::2048` | Best for web sharing (2048px) | **Ideális internetes megosztáshoz (2048 képpont)** |
+| `CGeneralPrefsPage::1600` | Recommended: 1600 pixels (…) | **Ajánlott: 1600 képpont (nyomatokhoz, képernyővédőkhöz és megosztáshoz)** |
+| `CGeneralPrefsPage::1024` | Medium: 1024 pixels (for sharing) | **Közepes: 1024 képpont (megosztáshoz)** |
+| `CGeneralPrefsPage::800` | Small: 800 pixels (for blogs and webpages) | **Kicsi: 800 képpont (blogokhoz és weboldalakhoz)** |
+
+Az alapérték a `PWADefaultSize` = **1600** (az előző szakasz) — vagyis az
+**„Ajánlott"** tétel a kiválasztott.
+
+### Két járulékos lelet
+
+1. **A „Google Fotók" fül** (`CGeneralPrefsPage::WebAlbumsTabEs` → „Google
+   Photos" / **„Google Fotók"**) — a webalbum-fül a késői kiadásokban ezt a
+   nevet viseli, nem „Picasa Webalbumok".
+2. **Nyelvváltás megerősítése**: `CGeneralPrefsPage::LangChange` —
+   „Módosítja a Picasa kezelőfelületének nyelvét?\n\nA változás a program
+   következő megnyitásakor lép érvénybe."
+
+*Bizonyítottsági fok: megerősített* (a függvény mind a 79 hivatkozott
+sztringje, és a feliratok a `*text.tre` szövegforrásból).
