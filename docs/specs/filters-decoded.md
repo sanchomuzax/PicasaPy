@@ -2737,3 +2737,59 @@ tartalma és a pusztító felszabadítási mintája.
 **A következő kör belépési pontja ezzel változik:** nem a konstruktor, hanem
 a raszterizáló (`0x00bba580` → `0x00bba670` → `0x00bba980` / `0x00bbb070`) —
 ott kell megnézni, mit tesz üres `padding*` / `alphaMax` / `scale*` esetén.
+
+### A `CircularGradientImageMask` HÉT attribútuma — és egy, amit sosem állítunk (2026-08-16)
+
+A radiális maszkot a `glimmer::CircularGradientImageMask` adja (vtable
+`0x00cf0890`). Ezt használja a **`Vignette`, `Holga`, `Lomo`,
+`PicnikFocalPixelate`, `FocalZoom`** — a teljes „körkörös" család.
+
+Az attribútum-olvasójából (`0x00bcfc70`, 291 b) a `.rdata`-sztringek:
+
+| attribútum | cím | mire való |
+|---|---|---|
+| **`aspectRatio`** | `0xcf0d9c` | **a gradiens kör vagy ellipszis alakja** |
+| `innerRadius` | `0xcf0da8` | a védett zóna sugara |
+| `outerRadius` | `0xcf0db4` | a teljes hatás sugara |
+| `innerAlpha` | `0xcf0dc0` | alfa a belső sugáron |
+| `outerAlpha` | `0xcf0dcc` | alfa a külső sugáron |
+| `xCenter` · `yCenter` | `0xcf0dd8/e0` | a középpont |
+
+#### ⚠️ Az `aspectRatio`-t a `filterdesc.xml` EGYSZER SEM állítja be
+
+A csomag mind a **négy** `CircularGradientImageMask` használata csak
+`width`, `height`, `xCenter`, `yCenter`, `innerRadius`, `outerRadius`,
+`innerAlpha`, `outerAlpha` attribútumokat ad meg. Az `aspectRatio` tehát
+**mindig a tartalék értékén** fut.
+
+**Ez fontos, mert épp ez dönti el, hogy a maszk nem négyzetes képen kör-e
+vagy ellipszis.** A mai `circular_gradient_mask()`
+(`render/glimmer_ops.py:475`) `np.hypot(x−cx, y−cy)`-t számol, azaz
+**képpont-egységben kört** — ha a natív tartalék az `aspectRatio`-t a
+kép oldalarányára állítja, akkor az eredeti **ellipszist** rajzol, és a
+sarkoknál mérhetően eltérünk.
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk |
+|---|---|---|
+| a gradiens alakja | `aspectRatio` attribútum (be nem állított → tartalék) | **fix kör** (`hypot`) |
+| `innerAlpha`/`outerAlpha` | külön attribútum, a `filterdesc` állítja | a maszk fixen 0→1 |
+
+Az `innerAlpha`/`outerAlpha` nálunk **nincs paraméterezve**: a
+`circular_gradient_mask` mindig 0-ból 1-be megy. A `filterdesc` viszont a
+`PicnikFocalPixelate`-nél megfordítja őket
+(`outerAlpha="{_chkReverse.selected?0:1}"`), tehát a **Fordított** jelölő
+ezen keresztül hat.
+
+#### Ami NYITVA marad
+
+Az `aspectRatio` **tartalék értéke** — ugyanaz a kérdés, mint a
+`TiledImageMask` kilenc be nem állított attribútumánál: a fogyasztóban van,
+nem az objektumban (a konstruktor mindent nulláz). Belépési pont a
+`CircularGradientImageMask` maszk-előállítója: `0x00bcfe10` (392 b) és
+`0x00bc2a50` (734 b).
+
+*Bizonyítottsági fok: megerősített* az attribútum-névsorra és arra, hogy a
+`filterdesc` egyszer sem állítja az `aspectRatio`-t · **nyitott** a tartalék
+értéke.
