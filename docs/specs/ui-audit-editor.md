@@ -942,7 +942,7 @@ külön auditot érdemel, itt csak jelzésként szerepel.
 | Csempe | 86 × 69 | ~86 széles, **~90 magas** | ⚠️ TUDATOS ELTÉRÉS: a felirat nálunk KÉT sort foglal (`PanelButton.qml`), amit a **#422** kért kifejezetten — a hosszabb nevek nem vágódhatnak, és a rács sorai nem csúszhatnak szét. Az eredeti egysoros, 18 px-es feliratsávjához visszatérni csak a #422 visszavonásával lehetne; az külön döntés |
 | Felirat | 11 px, félkövér, középre zárt, #333333 | félkövér, középre zárt, `Theme.textDark` | a fix #333333 helyett témafüggő token, hogy sötét témában is olvasható legyen |
 | Jelvény helye / mérete / színe / alakja | bélyegkép jobb alsó sarka, 13 × 12, #379FFD, negyed-korong | **ugyanaz** | a `PanelButton.qml` `appliedCount` tulajdonsága vezérli; a kék ma fix hexa a komponensben — `Theme.badgeBlue` néven a témába való (integrációs igény) |
-| Jelvény **száma** | jelentése NYITOTT (N1) | a szűrő előfordulásainak száma a láncban (`EditController.effectChainCounts`) | ⚠️ IDEIGLENES olvasat. Semmilyen viselkedés nem épül rá; az N1 lezárása után felülvizsgálandó |
+| Jelvény **száma** | ~~jelentése NYITOTT (N1)~~ → **NINCS SZÁMA** (2026-08-16, lásd „A jelvényen nincs szám" alább) | a szűrő előfordulásainak száma a láncban (`EditController.effectChainCounts`) | ❌ **ELTÉRÉS**: az eredetiben a jelvény néma grafika, csak látszik vagy nem. A számot mi tettük rá |
 
 Az őrök: `tests/app/qml_functional/test_effect_tile_grid_704.py` (fejléc,
 jelvény-geometria, csempeszám, egységes feliratszín).
@@ -1242,3 +1242,66 @@ rokon lapot**, mielőtt nyitottnak jelöl valamit.
 
 *Bizonyítottsági fok: megerősített* (a `filterdesc.xml` a Picasa saját
 szűrő-regisztere; a nevek a `*text.tre` szövegforrásból).
+
+### A jelvényen NINCS szám (2026-08-16) — az N1 lezárva
+
+A csempe „alkalmazva" jelvényének (`editpanel/fx%d_adorn`) jelentése eddig
+nyitott volt (N1). **Két, egymástól független forrás zárja le.**
+
+#### 1. Az elrendezés-erőforrás: a jelvény néma
+
+`macros.tre` (a `#define m_fxadorner` blokk) a teljes definíció:
+
+```
+#define m_fxadorner
+XConstraint 1, 1, -6
+YConstraint 1, 1, -19
+```
+
+**Két megkötés, semmi más.** Nincs benne szövegkötés, nincs betűtípus,
+nincs tartalom-tulajdonság — pusztán elhelyezés a szülő csempe **jobb
+széléhez −6**, illetve **alsó széléhez −19** képponttal. Egy ilyen elem
+nem tud számot mutatni.
+
+#### 2. A felületkód: csak megmutatja vagy elrejti
+
+`0x005d7c20`, a csempe-kirakó:
+
+```asm
+0x005d7eb9  mov   edx, dword ptr [eax + 0x14]   ; vtbl[5]
+0x005d7ebc  call  edx                            ; állapot lekérdezése
+0x005d7ec2  cmp   eax, 1
+0x005d7eca  sete  byte ptr [esp + 0x64]          ; látszik-e a jelvény
+...
+0x005d80d4  push  0xc96304                       ; "editpanel/fx%d_adorn"
+0x005d8108  cmp   byte ptr [esp + 0x64], 0
+0x005d8111  mov   eax, dword ptr [edx + 0x6c]    ; vtbl[27]  (megmutat)
+0x005d8116  mov   eax, dword ptr [edx + 0x68]    ; vtbl[26]  (elrejt)
+0x005d8119  call  eax
+```
+
+A jelvényen **egyetlen művelet** történik: megmutatás vagy elrejtés. Semmi
+nem ír bele értéket.
+
+> A `vtbl[6]` (`[eax+0x18]`), amit közvetlenül utána hív, **sztringet** ad
+> vissza (a visszatérés `strlen`-nel és sztring-értékadással megy tovább,
+> `0x005d7ee0`–`0x005d7ef2`) — tehát az sem szám.
+
+#### A feltétel: `állapot == 1`
+
+A jelvény akkor látszik, ha a `vtbl[5]()` **pontosan 1-et** ad vissza.
+Ez állapotkód, nem darabszám: `0` = nincs alkalmazva, `1` = alkalmazva.
+
+#### ❌ Amiben eltérünk
+
+| | eredeti Picasa | PicasaPy ma |
+|---|---|---|
+| a jelvény tartalma | **néma grafika** | **szám** (`appliedCount.toString()`, `PanelButton.qml:227`) |
+| mikor látszik | `állapot == 1` | `appliedCount > 0` |
+| igazítás | a **csempéhez**: jobb −6, alsó −19 | a **bélyegkép-dobozhoz**, margó nélkül |
+
+A szám a mi hozzátételünk volt — a `#704` „ideiglenes olvasat"-ként jelölte
+is. Most bizonyított, hogy az eredetiben nincs ott.
+
+*Bizonyítottsági fok: megerősített* (a `macros.tre` teljes makródefiníciója
+és a felületkód mindkét ága kiolvasva).
