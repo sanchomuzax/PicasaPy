@@ -480,3 +480,42 @@ az ügynök-briefben expliciten ki kell mondani.
 7. **Kereszt-hivatkozás** (10.) — folyamatosan, minden körben.
 8. **Hitelesítés valódi adaton** (11.) és **élő/holt szűrés** (12.) — a végén,
    mielőtt bármit jegybe írnál.
+
+## ⛔ A `.tre` és a `respack.yt` munkamegosztása (2026-08-16)
+
+**Ez a leggyakoribb, legdrágább félreolvasás a projektben** — két kutatói
+kör futott bele, és a tulajdonosnak kellett képernyőképpel megcáfolnia.
+
+| forrás | mit ad meg | mit NEM |
+|---|---|---|
+| **`.tre`** | szülő-gyerek viszony · viselkedés (`showtarget`, `hidetarget`, `mousedown`) · betűstílus-makrók · **explicit** `XConstraint`/`YConstraint` | a helyet, ha csak `m_offsetLT` áll ott |
+| **`respack.yt`** | **minden réteg pontos rectje** (13 bájtos fejléc, `int16 x0,y0,x1,y1`) · a méret · a rács-osztás | a futásidejű újrahorgonyzást |
+
+### A szabály
+
+1. Ha a `.tre`-sor **explicit megkötést** tartalmaz
+   (`XConstraint 1, 1, -6` és társai), **az a futásidejű igazság** — a
+   respack abszolút pozíciója csak tervezővászon.
+2. Ha a `.tre`-sor **csak `m_offsetLT`** (vagy más eltolás nélküli makró),
+   akkor a fájl a helyet **nem adja meg**, és a **respack rectje az
+   elrendezés**.
+3. **Méret és rács-osztás mindig a respackből.** Ezekre a `.tre` sosem
+   mond semmit.
+4. **Sorrendre SOHA ne következtess a `.tre` deklarációs sorrendjéből.**
+
+### A lekérdezés
+
+```bash
+python3 tools/picasa/respack.py list \
+    research/copy_Picasa_3_7/Picasa3/runtime/respack.yt | grep <panelnév>
+```
+
+majd a bejegyzés offsetjéről `struct.unpack_from('<hhhh', data, off)`.
+
+### Példa, ami eldöntötte
+
+A szerkesztő 1. füljén mind a tíz gomb `.tre`-sora azonos
+(`m_offsetLT`), a respack viszont pontos rácsot ad:
+x = **37 · 118 · 198**, y = **91 · 155 · 223 · 290**, gomb **44 × 30**.
+Ez betűre egyezik a tulajdonos valódi Picasa-képernyőképével — a `.tre`
+deklarációs sorrendje viszont **négy helyen** tért el tőle.

@@ -127,13 +127,30 @@ A fül lapja **273 × 277** (x 3..276).
 
 ### A nyolc eszközcsempe
 
+> ⛔ **EZ AZ EGYETLEN ÉRVÉNYES FORRÁS A SORRENDRE.** Az alábbi rács a
+> `respack.yt` nyers koordinátáiból származik, és a tulajdonos **valódi
+> Picasa-képernyőképe** (2026-08-16, #464) betűre igazolja.
+>
+> **Az `editpanel.tre` deklarációs sorrendje NEM használható**: ott minden
+> gomb `m_offsetLT`-vel él (a szülő bal-felső sarkához, eltolás nélkül),
+> tehát a fájl a helyüket **nem adja meg** — tíz ilyen gomb egymáson ülne.
+> Két kutatói kör csúszott el pontosan ezen; a részletes cáfolat:
+> [`ui-audit-editor.md`](ui-audit-editor.md) → „⛔ Az 1. fül VALÓDI
+> elrendezése".
+
 **Minden csempe 44 × 30 képpont.**
 
 | | 1. oszlop **x 37** | 2. oszlop **x 118** | 3. oszlop **x 198** |
 |---|---|---|---|
 | **1. sor** (y 91) | `crop` Vágás | `horizonadjust` Kiegyenesítés | `redeye` Vörösszem |
 | **2. sor** (y 155) | `enhance` Jó napom van | `autolighting` Auto. kontraszt | `autocolor` Auto. szín |
-| **3. sor** (y 223) | `retouch` Retusálás | `edittext` Szöveg | `picnik` Kreatív Kit |
+| **3. sor** (y 223) | `retouch` Retusálás | `edittext` Szöveg | ~~`picnik` Kreatív Kit~~ **REJTETT** |
+
+> A `picnik` (Kreatív készlet) csempéje a `respack.yt`-ban **kétszer**
+> szerepel, és az egyiket **`#` előzi meg** (kikommentezve):
+> `#button(picnik)` x0=187, 65×30 · `button(picnik)` x0=198, 44×30.
+> A tulajdonos képernyőképén a 3. sor **harmadik helye üres** — a
+> szolgáltatás 2012-ben megszűnt. **A mi felületünkön se legyen ott.**
 
 - **oszlopköz: 81 px** (37 → 118 → 198)
 - **sorköz: 64 px** az 1.→2. sor közt, **68 px** a 2.→3. közt
