@@ -30,9 +30,15 @@ ColumnLayout {
     // 6.2/7.): `redeyeauto`/`redeyepreview`, `redeyeapply`/`redeyecancel`
     // párban, 98 × 28-as gombokkal (x 38 és 144); a `redeyediscard`
     // („Reset") EGYEDÜL, középen (x 91).
+    //
+    // #779: a 98 FELSŐ KORLÁT, nem fix méret — fixen a pár 98 + 6 + 98 = 202
+    // képpontot követelt az oszloptól, és ezzel a panel minimumát szabta meg.
+    // A `fillWidth` + `maximumWidth` a mért méretet adja, valahányszor van rá
+    // hely, és csak akkor zsugorít, amikor nincs.
     component ActionButton: PanelButton {
-        Layout.fillWidth: false
+        Layout.fillWidth: true
         Layout.preferredWidth: 98
+        Layout.maximumWidth: 98
         Layout.preferredHeight: 28
     }
 
@@ -84,8 +90,17 @@ ColumnLayout {
         color: Theme.textGray
     }
 
+    // #779: `Layout.fillWidth` NÉLKÜL a jelölőnégyzet a saját (a felirat
+    // hosszából adódó) szélességét KÖTELEZŐ minimumként adta az oszlopnak, és
+    // ezzel az EGÉSZ panelt szélesebbre feszítette a tartalom-oszlopnál —
+    // annál jobban, minél szélesebb a betűkészlet. (A CI tartalék betűjével
+    // 18–20, egy 1,5-szeresre nyújtott betűvel már 90 képponttal.) Kitöltővé
+    // téve a felirat a rendelkezésre álló helyhez igazodik, a panel
+    // minimumát pedig nem húzza föl — ugyanaz a megoldás, amit a szöveg-panel
+    // `textFillDisabledCheck`-je használ.
     CheckBox {
         objectName: "redeyeHideOutlinesCheck"
+        Layout.fillWidth: true
         text: qsTr("Preview changes without square outlines")
         font.pixelSize: Theme.fontSize - 1
         checked: panel.redeyeHideOutlines
@@ -93,7 +108,8 @@ ColumnLayout {
     }
 
     RowLayout {
-        Layout.fillWidth: false
+        Layout.fillWidth: true
+        Layout.maximumWidth: 98 + 6 + 98
         Layout.alignment: Qt.AlignHCenter
         spacing: 6
         ActionButton {
@@ -119,7 +135,8 @@ ColumnLayout {
     }
 
     RowLayout {
-        Layout.fillWidth: false
+        Layout.fillWidth: true
+        Layout.maximumWidth: 98 + 6 + 98
         Layout.alignment: Qt.AlignHCenter
         spacing: 6
         ActionButton {

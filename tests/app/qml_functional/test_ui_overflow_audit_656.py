@@ -56,7 +56,17 @@ class _EditControllerStub(QObject):
 
 
 def _render(qt_app, qml: str, width: int, height: int):
-    """A QML valódi ablakban, adott mérettel — a layoutok tényleg lefutnak."""
+    """A QML valódi ablakban, adott mérettel — a layoutok tényleg lefutnak.
+
+    #779: a `view.show()` UTÁN kötelező egy `processEvents()`. A Qt Quick
+    layoutok az átméretezésre nem azonnal rendezik újra a gyerekeiket, hanem
+    „polish"-t kérnek, ami az eseményhurok következő körében fut le. Enélkül a
+    fa azt a geometriát őrzi, amit a KOMPONENS-ÉPÍTÉSKOR kapott — a panel
+    implicit 280 képpontos szélességével —, tehát 260-as ablaknál minden
+    kitöltő gyerek 20 képponttal szélesebbnek MÉRŐDIK, mint amilyen valójában
+    lesz. Ezek nem valódi hibák: az élő alkalmazásban az eseményhurok mindig
+    lefuttatja a polish-t. A #741 mért geometriája ugyanezért hívja meg.
+    """
     import picasapy.app.application as app_module
 
     view = QQuickView()
@@ -78,6 +88,7 @@ def _render(qt_app, qml: str, width: int, height: int):
     root.setHeight(height)
     _KEEPALIVE.extend((view, root, component, stub))
     view.show()
+    qt_app.processEvents()
     return root
 
 

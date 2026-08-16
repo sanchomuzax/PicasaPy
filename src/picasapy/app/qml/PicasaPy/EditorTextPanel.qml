@@ -67,7 +67,15 @@ ColumnLayout {
     // aláhúzott és igazítás. A rajzoló ehhez már TrueType-ot használ
     // (`render.text_fonts`); ha a gépen nincs ilyen betű, a vezérlők
     // hatástalanok maradnak, de a szöveg akkor is megjelenik.
+    // #779 (Windows CI): a `Layout.fillWidth` NÉLKÜLI felirat a saját — a
+    // betűkészlettől függő — szélességét KÖTELEZŐ minimumként adja az
+    // oszlopnak, és ezzel az EGÉSZ panelt szélesebbre feszítheti a
+    // tartalom-oszlopnál. A linuxos futáson ez befért, a szélesebb windowsos
+    // rendszerbetűvel (Segoe UI) nem. Kitöltővé téve a felirat a
+    // rendelkezésre álló helyhez igazodik, a panel minimumát nem húzza föl.
+    // Ugyanez az oka az alábbi `Label`-eknek és a szín-oszlopok feliratainak.
     Text {
+        Layout.fillWidth: true
         text: qsTr("Font")
         font.pixelSize: Theme.fontSize
         color: Theme.ink
@@ -168,6 +176,8 @@ ColumnLayout {
         ColumnLayout {
             spacing: 4
             Text {
+                Layout.fillWidth: true
+                elide: Text.ElideRight
                 text: qsTr("Text color")
                 font.pixelSize: Theme.fontSize - 1
                 color: Theme.textGray
@@ -181,6 +191,8 @@ ColumnLayout {
         ColumnLayout {
             spacing: 4
             Text {
+                Layout.fillWidth: true
+                elide: Text.ElideRight
                 text: qsTr("Outline color")
                 font.pixelSize: Theme.fontSize - 1
                 color: Theme.textGray
@@ -203,6 +215,7 @@ ColumnLayout {
     }
 
     Label {
+        Layout.fillWidth: true
         text: qsTr("Outline thickness")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
@@ -218,6 +231,7 @@ ColumnLayout {
     }
 
     Label {
+        Layout.fillWidth: true
         text: qsTr("Opacity")
         font.pixelSize: Theme.fontSize - 1
         color: Theme.textGray
@@ -233,15 +247,23 @@ ColumnLayout {
 
     // #741: `edittextapply`/`edittextcancel` — párban álló, 98 × 28-as
     // gombok (x 38 és 141), nem a teljes oszlopot kitöltve
+    //
+    // #779: a 98 FELSŐ KORLÁT, nem fix méret. Fixen a pár 98 + 6 + 98 = 202
+    // képpontot követelt az oszloptól, és ez volt a szöveg-panel mért
+    // MINIMUMA (ablációval igazolva: elrejtve a minimum 202-ről 156-ra esik).
+    // A `fillWidth` + `maximumWidth` a mért méretet adja, valahányszor van rá
+    // hely, és csak akkor zsugorít, amikor nincs.
     RowLayout {
-        Layout.fillWidth: false
+        Layout.fillWidth: true
+        Layout.maximumWidth: 98 + 6 + 98
         Layout.alignment: Qt.AlignHCenter
         spacing: 6
         PanelButton {
             objectName: "textApplyButton"
             label: qsTr("Apply") + " ✔"
-            Layout.fillWidth: false
+            Layout.fillWidth: true
             Layout.preferredWidth: 98
+            Layout.maximumWidth: 98
             Layout.preferredHeight: 28
             buttonEnabled: panel.textPlacementPending
                           && textContentField.text.length > 0
@@ -250,8 +272,9 @@ ColumnLayout {
         PanelButton {
             objectName: "textCancelButton"
             label: qsTr("Cancel") + " ✘"
-            Layout.fillWidth: false
+            Layout.fillWidth: true
             Layout.preferredWidth: 98
+            Layout.maximumWidth: 98
             Layout.preferredHeight: 28
             onButtonClicked: panel.textCancelRequested()
         }
