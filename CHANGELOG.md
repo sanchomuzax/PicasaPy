@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.62] – 2026-08-16
+
+### Javítva
+- **A szerkesztő eszköz-paneljei (vágás, retusálás, vörösszem, szöveg) minden
+  betűmérettel elférnek (#778, #779).** Két valódi hiba volt: a szöveg-panel
+  alsó 10 képpontja **görgetve sem volt elérhető**, a vörösszem-panel
+  jelölőnégyzete pedig a saját feliratának szélességét kényszerítette az egész
+  panelre — szélesebb betűvel ez 91 képpontos kilógást okozott. Windowson a
+  szöveg-panel 23 képponttal lógott ki; ez is javult. A panelek mérete
+  mostantól **nem függ a betűkészlettől**.
+
+### Belső
+- A felület-ellenőr eddig a **rendezés előtti** állapotot mérte, ezért
+  tizenhét nem létező hibát jelentett — és egy valódi javítást is elrontottnak
+  mutatott. Javítva; az „ismert hibák" listája kiürült.
+
 ## [0.7.61] – 2026-08-16
 
 ### Javítva
