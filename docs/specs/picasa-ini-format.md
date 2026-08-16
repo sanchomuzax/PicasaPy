@@ -1629,5 +1629,70 @@ Kell **egy 7 percnél hosszabb klip vágóponttal**, aminek a vágópontja
 A jelenlegi gyűjteményben ilyen klip nincs.
 
 *Bizonyítottsági fok:* **megerősített** a két kizárt hipotézisre (a mért
-hosszak nyolcszoros túllépése egyértelmű) · **nyitott** a maradék kettő
-között.
+hosszak nyolcszoros túllépése egyértelmű) · a maradék kettő között a
+következő szakasz dönt.
+
+### A vágópont 64 bites, `%I64x` alakban — a skála eldőlt (2026-08-16)
+
+A mérés két hipotézist hagyott állva. **A parszer maga dönti el.**
+
+#### A beolvasó út
+
+```asm
+0x0046470a  push 0xc81978          ; "moviestart="
+0x00464710  call 0xc07f40          ; strstr(lánc, "moviestart=")
+0x0046471e  lea  edx, [esi + 0xb]  ; +11 = a "moviestart=" hossza → az érték
+0x00464742  call 0x985ff0          ; a részsztring másolása
+0x0046474b  call 0x49fb50          ; ← az ÉRTELMEZŐ
+0x00464754  mov  ebx, eax          ; az eredmény ALSÓ 32 bitje
+0x00464756  mov  [esp+0x2c], edx   ; az eredmény FELSŐ 32 bitje
+```
+
+És az értelmező (`0x0049fb50`, 72 bájt) magja:
+
+```asm
+0x0049fb7e  push 0xc82fcc          ; "%I64x"
+0x0049fb84  call 0xc07eef          ; sscanf
+```
+
+**A vágópont tehát 64 bites, hexadecimálisan tárolt egész** (`%I64x`).
+
+#### Ez dönti el a skálát
+
+| érv | mit mond |
+|---|---|
+| a mező **64 bites** | a „32 biten a 100 ns 7 perc 9 mp-nél elfogy" ellenérv **elesik** |
+| a `%I64x` alak | ez a Windows `LONGLONG` szokásos kiírása; a **`REFERENCE_TIME`** (DirectShow, Media Foundation) pontosan `LONGLONG` **100 ns**-os egységben |
+| a törtrész-hipotézis | egy arányt **64 biten, `2³²`-es nevezővel** tárolni értelmetlen — az alsó 32 bit sosem lenne kihasználva |
+| a mért értékek | 100 ns-ként mindhárom a klipen **belülre** esik (320,5 s / 374,4 s; 0,84 s és 302,0 s / 385,9 s) |
+
+> **A vágópont 100 nanoszekundumos egységben mért abszolút idő** a klip
+> elejétől — a Windows `REFERENCE_TIME`.
+>
+> `másodperc = érték · 10⁻⁷`
+
+#### A nulla jelentése
+
+```asm
+0x00464766  cmp  dword ptr [esp+0x2c], 0   ; felső 32 bit
+0x0046476b  ja   0x464775
+0x0046476d  test ebx, ebx                   ; alsó 32 bit
+0x0046476f  jbe  0x4647fc                   ; nulla → ÁTUGRIK
+```
+
+A **0 érték azt jelenti, hogy nincs vágópont** — a szűrő ilyenkor létre sem
+jön.
+
+#### Miért nem lehetett méréssel eldönteni
+
+A gyűjteményben **86 videó** szerepel a `.picasa.ini`-kben, négy
+formátumban (`mp4` 52, `mpg` 29, `mov` 4, `m4v` 1) — de **mindössze
+háromnak** volt valaha vágópontja, és abból kettő maradt meg. Egy hosszabb
+videó vágópont nélkül nem mond semmit; a döntést a bináris hozta meg, nem a
+mérés.
+
+*Bizonyítottsági fok:* **erős** — a 64 bites `%I64x` alak és a
+`REFERENCE_TIME` egyezése, plusz mindhárom mért érték illeszkedése.
+Megerősítetté akkor válik, ha előkerül egy `0xFFFFFFFF`-nél nagyobb
+(kilenc vagy több jegyű) vágópont: azt a törtrész-hipotézis nem tudná
+előállítani.
