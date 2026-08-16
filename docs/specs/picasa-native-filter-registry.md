@@ -339,3 +339,94 @@ helyesen tükrözi.
 
 *Bizonyítottsági fok: megerősített* (a tábla nyersen kiolvasva a
 `.rdata`-ból, minden rekordhoz cím).
+
+## A két segédoszlop VALÓDI szerepe: a KÉPEN belüli vezérlők (2026-08-16)
+
+> ⚠️ **Helyesbítés.** A tábla első leírásában a `segédA`/`segédB` oszlopot
+> „paraméter-/geometria-**értelmezőnek**" neveztem, és a #317-be is így
+> került. **Ez téves volt.** A négy függvény visszafejtése szerint ezek
+> **nem** a `filters=` sztringet értelmezik, hanem azt írják le, **mi
+> történik, ha a felhasználó a KÉPRE kattint vagy húz**, miközben az adott
+> szűrő aktív.
+
+### `0x008f9bf0` — húzható pozíció-fogantyú (103 bájt)
+
+```c
+int Handle(Obj *this, POINT *pt, RECT *disp) {
+    int w = disp->right - disp->left;   if (!w) return -1;
+    int h = disp->bottom - disp->top;   if (!h) return -1;
+    float fx = (float)pt->x / w;        // 0..1
+    float fy = (float)pt->y / h;        // 0..1
+    SetPos(this, fx, fy);               // 0x008f6da0
+    this->vtbl[41]();                   // újrarajzolás
+    return 0;
+}
+```
+
+A kattintás helyét **a megjelenített kép méretére normalizálja** (0..1), és
+így tárolja. Ezt használja: `debug`, `tilt`, `dir_tint`, `radtint`,
+`radblur`, `radsat`, `linblur` — pontosan azok, amiknek **a képen látszó
+fogantyújuk** van.
+
+**Következmény a mi oldalunkra:** a `filters=`-ben tárolt pozíció
+**arányszám**, nem képpont — ezért marad helyén a hatás, ha a képet
+átméretezik. A `disp` a **megjelenített** terület, nem az eredeti kép: a
+fogantyút az előnézet méretéhez kell viszonyítani.
+
+### `0x008f9bc0` — a `dir_*` hármas változata (39 bájt)
+
+```c
+int Handle(Obj *this, POINT *pt, RECT *disp) {
+    if (disp->right == disp->left)   return -1;
+    if (disp->bottom == disp->top)   return -1;
+    this->vtbl[41]();                // CSAK újrarajzolás
+    return 0;
+}
+```
+
+Érvényes megjelenítési területet vár, de **nem tárol pozíciót** — csak
+újrarajzol. Ezt használja: `dir_sat`, `dir_brite`, `dir_sharp`.
+
+### `0x008f9c60` — a pipettás szűrők változata (17 bájt)
+
+```c
+int Handle(Obj *this, ...) { this->vtbl[41](); return 0; }
+```
+
+Feltétel nélkül újrarajzol. Ezt használja: `autocolor`, `colorfix`,
+`whitept` — a **pipettás** hármas. A színfelvétel maga máshol történik; itt
+csak a frissítés van.
+
+### `0x008f9cf0` — sugár képpontban (167 bájt), CSAK `radblur` és `radsat`
+
+Ez az egyetlen, ami **értéket ad vissza** (`float`), nem műveletet végez:
+
+```c
+float RadiusPx(Obj *this, Params *p) {
+    if (!p) return 0.0f;
+    int slot = this->[0xe0];                  // melyik csúszka
+    if (slot == -1) return 0.0f;
+    int idx  = tabla_0xc7d5b8[slot];
+    float r  = this->[0x28 + idx*4] + K1;     // K1 = [0xc7e328]
+    float w  = (float)p->width  (+2^32 ha negatív)
+    float h  = (float)p->height (+2^32 ha negatív)
+    return r * K2 * (w vagy h);               // K2 = [0xc72150]
+}
+```
+
+A **normalizált sugarat képpontra váltja** — ez rajzolja ki a `radblur` és a
+`radsat` képen látszó körét. A `segédB` oszlop tehát a **második fogantyú**
+(a sugáré), nem a paraméter-alak.
+
+### Összefoglaló táblázat
+
+| oszlop / függvény | mely szűrőknél | mit csinál |
+|---|---|---|
+| A `0x008f9bf0` | `debug`, `tilt`, `dir_tint`, `radtint`, `radblur`, `radsat`, `linblur` | húzható **pozíció-fogantyú**, 0..1-re normalizálva |
+| A `0x008f9bc0` | `dir_sat`, `dir_brite`, `dir_sharp` | csak újrarajzolás, érvényes területtel |
+| A `0x008f9c60` | `autocolor`, `colorfix`, `whitept` | csak újrarajzolás (pipettás hármas) |
+| B `0x008f9cf0` | `radblur`, `radsat` | **sugár képpontban** — a kör kirajzolásához |
+| — (üres) | a többi 35 | nincs képen belüli vezérlő |
+
+*Bizonyítottsági fok: megerősített* (mind a négy függvény teljes egészében
+kiolvasva, mindegyik 200 bájt alatt van).
