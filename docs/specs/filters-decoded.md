@@ -2335,3 +2335,60 @@ Ugyanezen a képen a v2 rendben lefutott (5,3–7,8).
 
 **A `chart_detail`-t v1-mérésből ki kell hagyni**, és a v1 golden-anyagot
 érdemes újraexportálni. *Bizonyítottsági fok: megerősített (mérés).*
+
+### Az `autocolor` mátrix-építője — struktúra megvan, három alak megdőlt (2026-08-16)
+
+#### ⚠️ Helyesbítés: a PR #760 önkorrekciója MAGA is téves volt
+
+A #758 azt írta, hogy az alkalmazó a kilenc konstansból építi a mátrixot; a
+#760 ezt „túlzásnak" minősítette azzal, hogy a konstansok egy **másik**
+pufferbe (`[esp+0xcc]`) mennek. **Ez a helyesbítés hibás volt.**
+
+A prológus a kilenc konstanst **`[esp+0x30] … [esp+0x50]`-be** teszi
+(`0x0090edcb`–`0x0090ee1b`), és a `rep movsd` innen **másolatot** készít
+`[esp+0xcc]`-be a `0xa4a140` számára. Az **eredetiek a helyükön maradnak**, és
+a képpont-ciklus később **ugyanezeket a rekeszeket** olvassa — de már
+**egészként** (`mov eax, dword ptr [esp+0x38]`, `0x0090f36c`).
+
+**Vagyis a rekeszkészletet a köztes float-szakasz írja felül a végleges,
+fixpontos mátrixszal.** A #758 eredeti állítása volt a helyes.
+
+#### Az első lépés: a fehérpont a C-térben
+
+A három becsült erősítés (`[esp+0xfe]` = kR, `bh` = 128, `bl` = kB) floattá
+alakul (`[esp+0x18]`, `[esp+0x1c]`, `[esp+0x20]`), majd
+`0x0090eefa`–`0x0090ef73`:
+
+```
+[esp+0x78] = C00*g0 + C01*g1 + C02*g2
+[esp+0x7c] = C10*g0 + C11*g1 + C12*g2
+[esp+0x80] = C20*g0 + C21*g1 + C22*g2
+```
+
+Vagyis **`v = C · g`** — az erősítés-vektor a kilenc konstans terébe
+transzformálva. Ez a klasszikus kromatikus adaptáció első lépése.
+
+Ezt követi egy **második menet** (`mov ecx, 9`, `0x0090efa2`), ami a végleges
+mátrixot állítja elő — **ez még nincs kiolvasva**.
+
+#### ❌ Három adaptációs alak megdőlt
+
+A 9 nem-triviális golden-páron (`referencia/autocolor/`):
+
+| modell | átlagos eltérés |
+|---|---:|
+| **orákulum** (a legjobb 3 × 3) | **0,974** |
+| puszta átlós `diag(128/k)` | 3,100 |
+| `C⁻¹ · diag(v₁/v) · C` | 9,661 |
+| `C⁻¹ · diag(1/v) · C` | 43,504 |
+| `C⁻¹ · diag(v) · C` | 52,976 |
+
+**Mindhárom rosszabb a puszta átlósnál** — a `v = C·g` nem így épül be.
+*Bizonyítottsági fok: megerősített (cáfolat).*
+
+#### A következő lépés pontosan
+
+A `0x0090efa2`-től induló **kilenc elemű ciklus** — az írja a végleges
+fixpontos mátrixot a `[esp+0x30 … 0x50]` rekeszekbe. Amíg ez nincs meg,
+minden „kézenfekvő" adaptációs alak **kimérendő, nem feltételezhető**: eddig
+öt jelöltet mért ki két kör, és mind rosszabb a puszta átlósnál.
