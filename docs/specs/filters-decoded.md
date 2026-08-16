@@ -729,8 +729,8 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
    erősség-drift (6.5) → `ansel` (5.6) → `Vignette` (4.6, Nyitva 2) →
    ~~`radblur` (3.2)~~ → ~~`glow2` (2.7)~~ — mindkettő **KÉSZ (#668)**:
    a natív elmosó magra állítva a 12 golden-párból mind a 12 „közelítés".
-9. **`finetune` v1 ↔ `finetune2` v2 hőmérséklet: 2× skála-hipotézis
-   mérése.** A `filterdesc.xml` szerint a v1 tartománya `[−0,5..0,5]`, a
+9. ~~**`finetune` v1 ↔ `finetune2` v2 hőmérséklet: 2× skála-hipotézis**~~ →
+   **MEGDŐLT (2026-08-16), ld. lent.** Az eredeti jegyzet: A `filterdesc.xml` szerint a v1 tartománya `[−0,5..0,5]`, a
    v2-é `[−1..1]`; ha a görbe azonos, akkor `v2_érték = 2 · v1_érték`
    pontosan reprodukálja a v1 kimenetét. Egy meglévő golden-párral (v1
    `0,25` vs v2 `0,5`) olcsón ellenőrizhető — igazolás esetén a v1-hez
@@ -2274,3 +2274,64 @@ Megtartani nem hiba, de **nem szabad rá modellt építeni** (pl. „a `tint`
 *Bizonyítottsági fok:* **megerősített** az író oldalra (a binárisban egyetlen
 hex-darabka van, `,%08x`) · **erős** a korpuszra (11 valós bejegyzés, mind
 8 jegyes — a `tint`-ből mindössze kettő van).
+
+## A `finetune` v1 ↔ v2 hőmérséklet 2×-skála hipotézise MEGDŐLT (2026-08-16)
+
+A „Nyitva" lista 9. pontja ezt vetette fel: *„a `filterdesc.xml` szerint a v1
+tartománya `[−0,5..0,5]`, a v2-é `[−1..1]`; ha a görbe azonos, akkor
+`v2_érték = 2 · v1_érték` pontosan reprodukálja a v1 kimenetét"* — és ha
+igazolódik, a v1-hez **nem kell külön LUT**.
+
+### A premissza helyes, a következtetés nem
+
+A `filterdesc.xml` szerint a két szűrő **ugyanaz a négy csúszka, azonos
+sorrendben**; egyedül a 3. (Color Temperature) tartománya tér el:
+
+| | `range` | `offset` | tengely |
+|---|---|---|---|
+| `finetune` (v1) | 1.0 | 0.5 | `−0,5 … +0,5` |
+| `finetune2` (v2) | 2.0 | 1.0 | `−1 … +1` |
+
+Tehát az 5. ini-rekesz **mindkettőben** a hőmérséklet — a hipotézis
+tesztelhető.
+
+### A mérés (golden-kit `04-finetune1` vs `03-finetune2`)
+
+| kép | **v1(+0,5) vs v2(+1,0)** | kontroll: v1(+0,5) vs v2(+0,5) | v1(+0,5) vs érintetlen |
+|---|---:|---:|---:|
+| chart_color | 23,09 | 26,26 | 32,40 |
+| chart_ramp | 16,70 | 17,78 | 20,64 |
+| **átlag** | **15,82** | 16,43 | 17,76 |
+
+**Ha a hipotézis igaz volna, az első oszlop ~0 lenne.** Ehelyett alig jobb a
+„azonos számérték" kontrollnál, és mindkettő közel az érintetlen képhez mért
+távolsághoz. *Bizonyítottsági fok: megerősített (cáfolat).*
+
+### És az ELLENKEZŐ irányba tér el
+
+Az érintetlen képhez mérve:
+
+| kép | v1 −0,5 | v1 +0,5 | v2 −0,5 | v2 +0,5 | v2 +1,0 |
+|---|---:|---:|---:|---:|---:|
+| chart_color | 29,66 | 32,40 | 15,35 | 6,45 | 9,97 |
+| chart_ramp | 18,82 | 20,64 | 8,46 | 3,82 | 6,13 |
+
+A **v1 a saját maximumán (±0,5) 3–5-ször erősebben hat, mint a v2 a saját
+maximumán (±1,0)**. Ez a 2× *tágítás* várakozásával ellentétes irányú: a
+tengely szélesebb lett, a hatás mégis gyengébb. A két változat **más görbét**
+használ, nem ugyanazt más skálán.
+
+**Következmény:** a v1-hez **saját LUT kell**; a 9. pont „olcsó nyereség"
+ígérete nem áll.
+
+### ⚠️ Mérőanyag-figyelmeztetés: a `chart_detail` a v1-hez használhatatlan
+
+A `chart_detail` képen a **teljes v1 lánc no-op**: az érintetlenhez mért
+eltérés `u−05` = 0,39 · `u+05` = 0,24 · **`b050` (Fill Light) = 0,26**, és a
+`u−05` ↔ `u+05` különbség **0,23**. Vagyis a Picasa ezen a képen a
+`finetune`-t **egyáltalán nem alkalmazta** — nem csak a hőmérsékletet.
+
+Ugyanezen a képen a v2 rendben lefutott (5,3–7,8).
+
+**A `chart_detail`-t v1-mérésből ki kell hagyni**, és a v1 golden-anyagot
+érdemes újraexportálni. *Bizonyítottsági fok: megerősített (mérés).*
