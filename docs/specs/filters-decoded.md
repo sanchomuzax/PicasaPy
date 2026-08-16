@@ -1481,6 +1481,82 @@ if (k != 1.0f) <extra igazítás: 0x00aa40a0>(k, 0);
 <színezés a feldolgozott színnel>(dst, szin, …);
 ```
 
+#### A `preserve` SKÁLÁJA: `w = 256 − p`, csonkítva (2026-08-16, #872)
+
+A „Color Preservation" csúszka tartománya a `filterdesc.xml` szerint
+**`[-1..255]`** — nem 0…100. A bináris ezt egészre **csonkítja**, és a
+telítetlenítés súlya `256 − p`:
+
+```asm
+0x008f96b2  fld   dword ptr [ecx + 0x28]   ; a preserve (float)
+0x008f96a9  or    eax, 0xc00                ; FPU: CSONKÍTÁS nulla felé
+0x008f96bc  fistp qword ptr [esp + 0x20]    ; egészre
+0x008f96c4  cmp   ecx, 0x100                ; == 256 ?
+0x008f96ce  je    0x8f96f7                  ;   → a lépés KIMARAD
+0x008f96e9  mov   edx, 0x100
+0x008f96ee  sub   edx, ecx                  ; w = 256 − preserve
+0x008f96f2  call  0x9a9550                  ; telítetlenítés
+```
+
+Vagyis **`p = 256` a tétlen eset**, `p = −1` a legerősebb (teljes szürke).
+Az éles `tint=1,79.842102,ffff` esetnél `w = 177` → **31 % króma marad**;
+a mai kódunk `keep = 0,798`-cal **80 %-ot** hagy meg, és 100 fölött vág,
+ezért nála a 127-es és a 255-ös beállítás **azonos** képet ad.
+
+*Bizonyítottsági fok: megerősített* (a bináris és a `filterdesc.xml`
+egymástól függetlenül).
+
+#### A `tint` SZINTHÚZÁSSAL kezd — megerősítve (2026-08-16)
+
+A `0x008f9630` a telítetlenítés ELŐTT beolvassa a `"CarefulEnhance"`
+beállítást (`0x008f9661`), és `-1,0f`-fel — az „alapértelmezett keverés"
+jelzőjével (`0xcf3ed0`) — meghívja a **`0x009db610`**-et (`0x008f9698`),
+ugyanúgy, mint az `enhance`.
+
+A `0x009db610`-nek **öt** hívója van, ebből négy szűrő-callback:
+
+| hívó | szűrő |
+|---|---|
+| `0x008f8840` | `enhance` |
+| `0x008f89d0` | `autocontrast` |
+| `0x008f92d0` | `rainbow` |
+| **`0x008f9630`** | **`tint`** |
+| `0x00802180` | (nem szűrő) |
+
+**És felhasználja: a `0x009db610` HELYBEN módosítja a képet.**
+
+```asm
+0x009dba0b  sub   ecx, dword ptr [esp + 0x2c] ; (be − feketepont)
+0x009dba0f  imul  ecx, dword ptr [esp + 0x24] ; × erősítés (16.16)
+0x009dba14  sar   ecx, 0x10
+0x009dba17  jns / xor ecx, ecx                 ; alsó vágás
+0x009dba1d  jle / mov ecx, ebx                 ; felső vágás
+0x009dba21  mov   byte ptr [edx], cl           ; ← VISSZAÍRÁS
+0x009dba3c  jb    0x9db9b0                      ; sor-ciklus
+```
+
+A függvény **1084 bájt, egyetlen kilépési ponttal** (`0x009dba4e`) — nincs
+korai visszatérés, tehát a szinthúzás **mindig lefut**; kimeneti mutatója
+nincs, a visszatérési értéke konstans 0 (`0x009dba45`). A két paramétere:
+a `CarefulEnhance` (BE → 0,5-ös tényező és 252-es fehérpont, KI → 1,0 és
+255) és a vágópont-keverés (`-1,0f` → az alapértelmezett **0,30**).
+
+Vagyis a `tint` **hat lépésből** áll:
+
+| # | lépés | cím |
+|---:|---|---|
+| 1 | előkészítés | `0x9aabf0` (`0x008f965b`) |
+| **2** | **szinthúzás helyben**, 0,30-as keveréssel | `0x9db610` (`0x008f9698`) |
+| 3 | telítetlenítés `w = 256 − preserve`-vel | `0x9a9550` (`0x008f96f2`) |
+| 4 | a szín ICC-átvezetése (rendszerint `NULL`) | `ctx->vtbl[2]` (`0x008f972d`) |
+| 5 | telítettségfüggő gamma-LUT, kitevő `1/k` | `0x00aa40a0` |
+| 6 | szorzó keverés, `max`-ra normálva | `0x009db4f0` |
+
+Ugyanez érvényes a **`rainbow`**-ra és az **`autocontrast`**-ra is (mindkettő
+hívja a `0x009db610`-et) — nálunk egyik sincs renderelve.
+
+*Bizonyítottsági fok: megerősített.*
+
 #### Amit ez megmagyaráz
 
 A `k` tényező **a szín telítettségétől függ**: szürke árnyalatnál
@@ -3381,3 +3457,84 @@ rámpa saját peremhatása).
 
 *Bizonyítottsági fok: megerősített* (a négy határ kiszámítása és mindkét
 ciklus feje nyers utasításszinten).
+
+## A `dir_tint` (Graduated Tint) visszafejtve (2026-08-16, #874)
+
+**Az átmenet FORGATHATÓ, fokban megadott irányú** — nem függőleges. Ez a
+`dir_tint` ROSSZ verdiktjének (9,45 alap / **49,41 max**) a fő oka.
+
+### A callback (`0x008f9880`, 306 b) paraméter-térképe
+
+| mező | jelentés | cím |
+|---|---|---|
+| `[szűrő+0x28]` | **Feather** (0. csúszka), **minimum 0,001** | `0x008f990b`–`0x008f9929` (küszöb `0xcf3db0` = 0,001, pótérték `0xc7999c` = 0,001) |
+| `[szűrő+0x2c]` | **Shade** (1. csúszka) | `0x008f9958` |
+| `[szűrő+0x50]` | a szín (csomagolt dword) | `0x008f98dd` |
+| `[szűrő+0xc4]` | **az irány, FOKBAN**; `-1` → 0 | `0x008f992d`–`0x008f9938` |
+| `[ebp+0x10]+0x1c` | a kép **tájolása** — az irány ehhez képest relatív | `0x008f993f` |
+
+```asm
+0x008f9942  test al, 1                 ; az irány PARITÁSA választ:
+0x008f9946  fld  dword ptr [esp+0x18]  ;   páratlan → az y a középpont
+0x008f994c  fld  dword ptr [esp+0x14]  ;   páros    → az x
+0x008f9968  fsub qword ptr [0xc72150]  ; − 0,5
+0x008f9975  fmul qword ptr [0xcf3ed8]  ; × 30,0
+0x008f998b  fld1 / fsubrp              ; a magba 1 − Shade megy
+0x008f99a3  call 0x90f470              ; a munkafüggvény
+```
+
+### A munkafüggvény (`0x0090f470`, 1151 b)
+
+```asm
+0x0090f543  fmul qword ptr [0xcf48d0]  ; szög × π/180  → az irány FOKBAN
+0x0090f557  call 0xc285f0              ; sin
+0x0090f56f  call 0xc29d20              ; cos
+0x0090f5a5  fld  qword ptr [0xcf3cb0]  ; 65536,0 → 16.16 fixpontos lépésvektor
+0x0090f5c3  test ebx, ebx / xchg        ; páratlan negyed → x ↔ y csere
+0x0090f5d4  and  ecx, 3 / neg           ; negyed szerinti előjelváltás
+0x0090f623  call 0x90ecd0               ; a tónusgörbe-LUT feltöltése
+```
+
+### A tónusgörbe-LUT (`0x0090ecd0`, 200 b) — 256 × `uint16`
+
+```asm
+0x0090ecd0  fld  dword ptr [0xcf47d8]   ; a görbeparaméter felső korlátja 99,9
+0x0090ece9  fld  dword ptr [0xcf47d4]   ;   alsó korlátja 0,01
+0x0090ed2b  fmul qword ptr [0xcf4138]   ; i × 1/255
+0x0090ed3c  call 0x90ec40                ; az átmenet-görbe
+0x0090ed41  fmul qword ptr [0xcf3b78]   ; × 65535,0
+0x0090ed53  or   eax, 0xc00              ; CSONKÍTÁS nulla felé
+0x0090ed80  mov  word ptr [edi + esi*2], ax
+```
+
+A képpont-ciklus a LUT **felső bájtját** olvassa, csatornánként, a
+**forrásérték** szerint indexelve, majd **szoroz** a színnel:
+
+```asm
+0x0090f7da  movzx esi, byte ptr [ecx]                  ; forrás B
+0x0090f7e1  movzx esi, byte ptr [esp + esi*2 + 0x1c9]  ; LUT16[B] felső bájtja
+0x0090f810  movzx ebx, byte ptr [esp + 0x3ea]          ; a szín egy bájtja
+0x0090f818  imul  ebx, ecx                              ; SZORZÁS
+```
+
+Vagyis a `dir_tint` — a `radtint`-hez hasonlóan — **szorzó** színezés, nem
+lineáris keverés a szín felé.
+
+### Az átmenet-görbe (`0x0090ec40`, 134 b) — NYITVA
+
+```asm
+0x0090ec41  fld1
+0x0090ec47  fucom st(1)          ; ha a paraméter == 1,0
+0x0090ec54  fld  [esp+8] / ret   ;   → LINEÁRIS (azonosság)
+0x0090ec5c  fdivrp               ; egyébként 1/paraméter
+0x0090ec5e  call 0xc0b310        ; matematikai segédfüggvény — NEM azonosított
+0x0090ec6e  call 0x49fe60        ; matematikai segédfüggvény — NEM azonosított
+```
+
+Torzító (bias) görbe. **Itt kell folytatni:** a két segédfüggvény
+azonosítása, és hogy melyik csúszka adja a paraméterét.
+
+*Bizonyítottsági fok: megerősített* a paraméter-térképre, a fokos szögre, a
+`Feather` 0,001-es padlójára, az `1 − Shade`-re, a `× 30`-as
+középpont-skálára, a LUT felépítésére és a szorzó színezésre · **erős** a
+negyed-kezelés pontos szemantikájára · **nyitott** a görbe alakja.
