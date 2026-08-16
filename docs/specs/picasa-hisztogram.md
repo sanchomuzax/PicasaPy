@@ -325,3 +325,73 @@ EXIF nélküli fájlnál a blokk helyén: **„Nincs elérhető EXIF-adat."**
 *Bizonyítottsági fok: megerősített* — a geometria a `respack.yt` rectjeiből,
 a betű a két `nerdviewdetail_*.tre`-ből, a hét formátum a hivatalos magyar
 szövegforrásból, és a hét sztringmező a `0x00567e10` másolójából.
+
+## 7. A panel elhelyezése és megjelenítése
+
+### 7.1 A horgonyzás
+
+```
+editpanel/nerdview_container: root
+XConstraint 0, 0, LEFTDRAWEROFFSET, 20
+YConstraint 1, 1, -95
+
+editpanel/nerdview: editpanel/nerdview_container
+m_scaleXY
+#m_hidden                          ← KIKOMMENTEZVE
+```
+
+| megkötés | jelentése |
+|---|---|
+| `XConstraint 0, 0, LEFTDRAWEROFFSET, 20` | a bal széle a **bal fiók jobb pereméhez**, **+20 px** |
+| `YConstraint 1, 1, -95` | az alsó széle a **képernyő aljához**, **−95 px** |
+| `m_scaleXY` | a panel a tartójával együtt nyúlik |
+
+A panel tehát **a szerkesztő bal alsó sarkában lebeg**, a bal fiók mellett
+20 képponttal, az alsó éltől 95 képpontra. Mérete **238 × 144**.
+
+> Az elvetett változat (`#editpanel/nerdview_container: editpanel/editbase`,
+> `YConstraint 0, 0, 400`) a **szerkesztőterületen belül**, fentről 400
+> képpontra tette volna.
+
+### 7.2 A megjelenítés — két kapcsoló, mindkettő rejtve
+
+| kapcsoló | hol | méret | állapot |
+|---|---|---|---|
+| **`thumbui/histogram`** | `root`, (375, 316) | **14 × 14** | **`m_hidden`** |
+| ~~`editpanel/histogram`~~ | `editpanel/editbase`, (756, 449) | 37 × 22 | **teljesen kikommentezve** |
+
+Mindkettő ugyanazt csinálná:
+
+```
+Property showtarget editpanel/nerdview
+```
+
+A `#editpanel/histogram` buboréksúgója (szintén kikommentezve):
+
+```
+#Tooltip editpanel/histogram
+#Show/Hide Histogram & Camera Information
+```
+
+**Vagyis a kiadott Picasában nincs látható hisztogram-gomb.** A
+`thumbui/histogram` egy **rejtett, 14 × 14-es kattintható terület**, amit a
+program programozottan jelenít meg — a panel maga viszont **nincs
+alapból elrejtve** (`#m_hidden` a `nerdview`-n ki van kommentezva).
+
+### 7.3 A fejléc szövege
+
+`editpaneltext.tre`:
+
+```
+Text nerdview/nvhead
+Histogram & Camera Information
+```
+
+**Nincs lefordítva** — ahogy a `detail1`/`detail2` formátumai közül is csak
+az `il_NerdView::*` család van magyarul (azok viszont hivatalos
+fordítással).
+
+> Javasolt magyar: **„Hisztogram és fényképezőgép-adatok"**.
+
+*Bizonyítottsági fok: megerősített* (az `editpanel.tre` 1018–1033. sora, a
+`thumbui.tre` 91–93. sora és az `editpaneltext.tre` 35–39. sora).
