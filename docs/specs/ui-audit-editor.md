@@ -1031,3 +1031,94 @@ a vörösszem-keretek kijelölése pontatlan lehet. A Picasa ilyenkor azt
 javasolja, hogy a felhasználó vonja vissza a kiegyenesítést, végezze el a
 vörösszem-javítást, majd egyenesítsen újra. Ez **sorrendfüggőség** a láncban —
 a PicasaPy-nak legalább ismernie kell.
+
+## Az effekt-csempék TÁBLÁJA a binárisból (`0x00c7e5a0`, 2026-08-16)
+
+A három effekt-fül rácsa eddig **képernyőképekből** volt kiolvasva. Most
+megvan a **forrásadat**: egy 36 rekordos tábla a `.rdata`-ban, amit a
+`editpanel/fx%d` / `editpanel/fxlabel%d` felületkód olvas
+(`0x005d7c20`, a `[esi+esi+0xc7e5a0]` indexeléssel — 12 bájtos rekordok).
+
+```
+struct FxTile {         // 12 bájt
+    const char *token;   // +0  az elsődleges filters= kulcs
+    const char *token2;  // +4  a MÁSODIK kulcs (mód/jelölőnégyzet), vagy 0
+    uint32_t    _0;      // +8  mindig 0
+};
+```
+
+**36 rekord = 3 fül × 12 csempe** — pontosan az `editpanel.tre`
+`fx1`…`fx12` csempehelyeivel egyezik.
+
+### 3. fül (rekord 1–12)
+
+| # | token | 2. token | magyar UI-név |
+|---:|---|---|---|
+| 1 | `unsharp2` | `unsharp` | Élesítés |
+| 2 | `sepia` | — | Szépia |
+| 3 | `bw` | — | Fekete-fehér |
+| 4 | `warm` | — | Melegítés |
+| 5 | `PicnikGrain` | `grain` | Filmszemcse |
+| 6 | `PicnikTint` | `tint` | Árnyalás |
+| 7 | `sat` | — | Telítettség |
+| 8 | `radblur` | — | Lágy fókusz |
+| 9 | `glow2` | `glow` | Ragyogás |
+| 10 | `ansel` | — | Szűrt FF |
+| 11 | `radsat` | — | Fókuszos FF |
+| 12 | `dir_tint` | `radtint` | Színátmenet |
+
+### 4. fül (rekord 13–24)
+
+`IR` · `Lomo` · `Holga` · `HDR` · `Cinemascope` · `Orton` · `Sixties` ·
+`Invert` · **`HeatMap`** (2. token: `NightVision`) · `CrossProcess` ·
+`QuantizePalette` · `TwoTone`
+
+### 5. fül (rekord 25–36)
+
+`Boost` · `Soften` · **`Vignette`** (2. token: `Matte`) · **`Pixelate`**
+(2. token: `PicnikFocalPixelate`) · `FocalZoom` · `PencilSketch` · `Neon` ·
+`Comicize` · **`Border`** (2. token: `RoundedEdges`) · `DropShadow` ·
+`MuseumMatte` · `Polaroid`
+
+### ✅ A képernyőképes audit MINDHÁROM fülön betűre igazolódott
+
+A fenti sorrend **független forrásból** ugyanaz, mint amit a 2026-07-17-i
+képernyőképekből olvastunk ki — beleértve a 2026-08-15-i helyesbítést is,
+hogy a **`Vignette` az 5. fül 3. eleme**, nem a 3. fülé. A tábla 27.
+rekordja pontosan ott áll.
+
+Ez az audit legjobban alátámasztott állítása: **kép + `.tre` + bináris
+tábla, három egymástól független forrás.**
+
+### 🔑 A MÁSODIK token megfejti a „dekódolatlan" szűrőneveket
+
+Kilenc csempének van második tokenje. Mindegyik pár **ugyanannak a
+csempének a másik üzemmódja** (jelölőnégyzet vagy választó), nem külön
+effekt:
+
+| csempe | alap token | 2. token | mit kapcsol |
+|---|---|---|---|
+| Élesítés | `unsharp2` | `unsharp` | régi/új változat |
+| Filmszemcse | `PicnikGrain` | `grain` | régi/új változat |
+| Árnyalás | `PicnikTint` | `tint` | régi/új változat |
+| Ragyogás | `glow2` | `glow` | régi/új változat |
+| Színátmenet | `dir_tint` | `radtint` | **lineáris ↔ sugaras** |
+| Hőtérkép | `HeatMap` | **`NightVision`** | színpaletta-választó |
+| Vignetta | `Vignette` | **`Matte`** | keret üzemmódja |
+| Képpontnagyítás | `Pixelate` | `PicnikFocalPixelate` | teljes ↔ fókuszos |
+| Szegély | `Border` | **`RoundedEdges`** | sarok lekerekítése |
+
+**Ez zárja le a `picasa-ini-format.md` „dekódolatlan" jelölését a
+`RoundedEdges`, a `Matte` és a `NightVision` tokenre**: nem önálló,
+ismeretlen szűrők, hanem egy meglévő csempe másik üzemmódja.
+
+A `dir_tint` ↔ `radtint` pár független megerősítést is kap: a natív
+szűrő-táblában (`picasa-native-filter-registry.md`) **mindkettőnek saját
+kezelője** van (`0x008f9880`, illetve `0x008f8730`), de **ugyanaz a
+paraméter-értelmezője** (`0x008f9bf0`) — vagyis tényleg egy csempe két
+üzemmódja.
+
+*Bizonyítottsági fok:* **megerősített** a tábla tartalmára és sorrendjére
+(nyers `.rdata`, minden rekordhoz cím; három forrás egyezik) · **erős** a
+második token „üzemmód" értelmezésére (mind a kilenc pár illeszkedik, és a
+`dir_tint`/`radtint` külön is igazolja).
