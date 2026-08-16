@@ -478,6 +478,21 @@ Rectangle {
         default: return key
         }
     }
+    // #448: a javaslat-gombok ELŐNÉZETI bélyegképének forrása — az eredetin
+    // mindegyik javaslatnak saját előnézete volt (`editpanel/cropsug_preview%d`).
+    //
+    // Nem kell hozzá új képszolgáltató: a vágó-eszközben a nagy előnézet
+    // (`editController.previewSource`) amúgy is a VÁGATLAN képet mutatja
+    // (`enterCropTool` a crop64 nélküli láncot regisztrálja), vagyis pontosan
+    // azt a képet, amire a javaslatok számoltak. A gombok ugyanezt az URL-t
+    // kérik — a Qt kép-gyorsítótára URL szerint kulcsol, tehát a bélyegképek
+    // a MÁR betöltött képet használják, újabb dekódolás és renderelés nélkül.
+    // A vágást a `PanelButton.thumbSourceRect` végzi, a megjelenítésben.
+    //
+    // Üres, ha nincs aktív szerkesztés — ekkor a gombok a felirat-only
+    // kinézetükre esnek vissza (a `thumbSource: ""` régi útja).
+    readonly property string cropSuggestionThumbSource:
+        panel.hasEffectController() ? editController.previewSource : ""
     signal cropApplyRequested()
     signal cropCancelRequested()
 

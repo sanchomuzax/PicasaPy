@@ -13,6 +13,20 @@ Rectangle {
     property bool buttonEnabled: true
     // "" = sima gomb (korábbi kinézet); egyébként image://effectthumb/…
     property string thumbSource: ""
+    // #448: a bélyegképnek megjelenítendő RÉSZE, relatív [0..1] téglalapként.
+    // Alapértéke a TELJES kép — az effekt-csempék (#338) így változatlanul a
+    // teljes bélyegképet mutatják, nekik nem kell tudniuk erről.
+    //
+    // A vágás-javaslat gombjai ezt a kép egészét ábrázoló előnézetből a
+    // JAVASOLT téglalapra szűkítik: így a három javaslat három KÜLÖNBÖZŐ
+    // képet mutat (az eredeti `cropsug_preview1..3`-ának megfelelője), új
+    // képszolgáltató és újabb renderelés nélkül.
+    property rect thumbSourceRect: Qt.rect(0, 0, 1, 1)
+    // igaz, ha a `thumbSourceRect` nem a teljes kép — ekkor a kivágott
+    // (számított geometriájú) bélyegkép-út fut a teljes képet mutató helyett
+    readonly property bool thumbCropped:
+        thumbSourceRect.x !== 0 || thumbSourceRect.y !== 0
+        || thumbSourceRect.width !== 1 || thumbSourceRect.height !== 1
     // #450: opcionális hover-buboréksúgó (pl. "Copy Caption" gomb) —
     // üres stringnél nincs tooltip (a legtöbb PanelButton-hívó)
     property string tooltip: ""
@@ -93,6 +107,11 @@ Rectangle {
         // csúszhatnak szét), az eredeti egysoros, 18 px-es feliratsávjával
         // szemben. Ez tudatos eltérés, nem tévedés.
         height: pbtn.thumbSource !== "" ? 48 : 0
+        // #448: a kivágott bélyegkép a dobozon TÚLNYÚLIK (a teljes kép
+        // nagyítva van, csak a kért része esik a dobozba) — ezt a doboz vágja
+        // le. Nem-vágott (alapértelmezett) bélyegképnél a kép pontosan
+        // illeszkedik, tehát nincs mit levágni: a régi megjelenés változatlan.
+        clip: true
 
         Rectangle {
             // helyőrző, amíg a bélyegkép még nem érkezett meg
@@ -101,18 +120,72 @@ Rectangle {
             color: Theme.chromeBg
             border.width: 1
             border.color: Theme.chromeBorder
-            visible: pbtnThumbImg.status !== Image.Ready
+            visible: !pbtnThumbImg.visible && !pbtnThumbCropImg.visible
         }
+        // A TELJES bélyegkép (#338) — a `thumbSourceRect` alapértékén, azaz
+        // minden eddigi hívónál (36 effekt-csempe, eszköz-gombok) ez az út
+        // fut, VÁLTOZATLANUL. A #704 „alkalmazva" jelvénye a doboz sarkához
+        // horgonyzott, és ez a kép tölti ki a dobozt — a mért elhelyezés
+        // ezen a bindingen áll, ezért nem nyúlunk hozzá.
         Image {
             id: pbtnThumbImg
             objectName: pbtn.objectName ? pbtn.objectName + "Thumb" : ""
             anchors.fill: parent
             fillMode: Image.PreserveAspectFit
             asynchronous: true
-            source: pbtn.thumbSource
+            source: pbtn.thumbCropped ? "" : pbtn.thumbSource
             smooth: true
             // amíg nem kész (Loading/Null/Error), nem rajzol semmit —
             // a fenti helyőrző-Rectangle látszik helyette, nem üres folt
+            visible: status === Image.Ready
+        }
+        // #448: a KIVÁGOTT előnézet — a kép a `thumbSourceRect` részét
+        // mutatja, a doboz arányába illesztve, a doboz `clip`-jével levágva:
+        //
+        //   kivágás pixelben  = (natSzél · rect.width, natMag · rect.height)
+        //   illesztő nagyítás = min(doboz / kivágás)  ← a KIVÁGÁS illeszkedik
+        //   a teljes képet ezzel a nagyítással méretezzük, majd annyit
+        //   tolunk rajta, hogy a kivágás kerüljön a doboz közepére.
+        //
+        // Miért KÜLÖN elem, és nem a fenti geometriájának általánosítása:
+        // a fenti kép a dobozt tölti ki, a kivágott viszont túlnyúlik rajta.
+        // A #704 jelvény-elhelyezés mérése (`test_effect_tile_grid_704.py`)
+        // a `<név>Thumb` elem széleit veszi a bélyegkép széleinek — ha ezt
+        // az elemet a rajzolt tartalomra zsugorítanánk, a mért geometria
+        // csendben elcsúszna. Két elem, két tiszta eset.
+        Image {
+            id: pbtnThumbCropImg
+            objectName: pbtn.objectName ? pbtn.objectName + "ThumbCrop" : ""
+            // A természetes képméret. Amíg nincs kész kép, 0 — ilyenkor
+            // 1-re esünk vissza, hogy SOHA ne osszunk nullával: a NaN
+            // geometria QML-figyelmeztetést adna (a #305/#338 elve).
+            readonly property real natWidth: implicitWidth > 0 ? implicitWidth : 1
+            readonly property real natHeight: implicitHeight > 0 ? implicitHeight : 1
+            readonly property real cropWidth:
+                natWidth * Math.max(pbtn.thumbSourceRect.width, 0.001)
+            readonly property real cropHeight:
+                natHeight * Math.max(pbtn.thumbSourceRect.height, 0.001)
+            // a doboz még lehet 0 méretű (elrendezés előtt) — a nagyítás
+            // sosem lehet negatív, különben negatív méretet adnánk az elemnek
+            readonly property real fitScale: Math.max(0, Math.min(
+                pbtnThumbBox.width / cropWidth, pbtnThumbBox.height / cropHeight))
+            // a méretet MI adjuk, egyenletes nagyítással — a Stretch itt nem
+            // torzít, mert mindkét tényező ugyanaz a `fitScale`
+            fillMode: Image.Stretch
+            width: natWidth * fitScale
+            height: natHeight * fitScale
+            x: (pbtnThumbBox.width - cropWidth * fitScale) / 2
+               - pbtn.thumbSourceRect.x * natWidth * fitScale
+            y: (pbtnThumbBox.height - cropHeight * fitScale) / 2
+               - pbtn.thumbSourceRect.y * natHeight * fitScale
+            asynchronous: true
+            source: pbtn.thumbCropped ? pbtn.thumbSource : ""
+            smooth: true
+            // A forrás a nagy szerkesztő-előnézet (több ezer pixel), amit
+            // ~48 px-re kicsinyítünk — sima bilineáris szűréssel ez erősen
+            // lépcsőzne. Csak ezen az úton kell: az effekt-bélyegkép 80 px-ről
+            // indul, ott 36 csempényi mipmap felesleges GPU-memória lenne.
+            mipmap: true
             visible: status === Image.Ready
         }
     }

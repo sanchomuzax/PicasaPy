@@ -254,6 +254,16 @@ ColumnLayout {
                 ? panel.cropSuggestions[slot] : null
             visible: suggestion !== null
             label: suggestion ? panel.cropSuggestionLabel(suggestion.key) : ""
+            // #448: SAJÁT ELŐNÉZET minden javaslathoz (az eredeti
+            // `cropsug_preview1..3`-a). A forrás mindháromnál ugyanaz a
+            // vágatlan kép; a `thumbSourceRect` szűkíti a JAVASOLT
+            // téglalapra — így a három gomb három KÜLÖNBÖZŐ képet mutat, és
+            // a felhasználó a kattintás előtt látja, mit kapna.
+            thumbSource: suggestion ? panel.cropSuggestionThumbSource : ""
+            thumbSourceRect: suggestion
+                ? Qt.rect(suggestion.x, suggestion.y,
+                          suggestion.w, suggestion.h)
+                : Qt.rect(0, 0, 1, 1)
             onButtonClicked: if (suggestion) panel.cropSuggestionChosen(
                 suggestion.x, suggestion.y, suggestion.w, suggestion.h)
         }

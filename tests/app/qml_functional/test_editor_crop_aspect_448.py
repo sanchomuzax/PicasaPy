@@ -226,3 +226,92 @@ class TestCropSuggestionButtons:
         window, _, _ = qml_app
         _viewer, panel = self._open_crop(window, qt_app)
         assert panel.property("cropSuggestions") is not None
+
+
+class TestCropSuggestionPreviews:
+    """#448: minden javaslat-gomb a SAJÁT előnézeti bélyegképét mutatja.
+
+    A bináris három javaslat-gombot ÉS három előnézetet ad
+    (`editpanel/cropsug1..3` + `editpanel/cropsug_preview%d`) — a jegy
+    2026-08-12-i kommentje szó szerint: „Három javaslat-gomb, mindegyikhez
+    saját előnézeti kép". Felirat nélkül a felhasználó a kattintás előtt nem
+    látja, mit kap; ez volt a #448 utolsó érdemi hiánya.
+
+    Az előnézet NEM új képszolgáltató: a vágó-eszközben az `editpreview`
+    amúgy is a VÁGATLAN képet mutatja (`enterCropTool` `clear_crop`-ot
+    regisztrál), tehát a nagy előnézet URL-je pontosan az a kép, amire a
+    javaslatok számoltak — a gomb ugyanezt az (URL szerint gyorsítótárazott)
+    képet vágja a javasolt téglalapra."""
+
+    def _open_crop(self, window, qt_app):
+        window.setProperty("viewerOpen", True)
+        viewer = window.findChild(QObject, "photoViewer")
+        viewer.setProperty("currentIndex", 0)
+        qt_app.processEvents()
+        panel = window.findChild(QObject, "viewerEditorPanel")
+        panel.setProperty("cropActive", True)
+        qt_app.processEvents()
+        return viewer, panel
+
+    def test_every_suggestion_button_has_a_thumbnail(self, qml_app, qt_app):
+        window, _, _ = qml_app
+        _viewer, panel = self._open_crop(window, qt_app)
+        suggestions = _list_property(panel, "cropSuggestions")
+        assert suggestions, "javaslat nélkül a teszt nem mond semmit"
+
+        for index in range(len(suggestions)):
+            button = window.findChild(QObject, f"cropSuggestion{index}")
+            assert button is not None, index
+            source = str(button.property("thumbSource"))
+            assert source.startswith("image://editpreview/"), (
+                f"{index}. javaslat-gomb bélyegkép nélkül: {source!r}"
+            )
+
+    def test_the_thumbnail_shows_the_suggested_region(self, qml_app, qt_app):
+        """A bélyegkép a JAVASOLT téglalapot mutatja, nem a teljes képet —
+        különben mindhárom gomb ugyanazt a képet mutatná, és az előnézet
+        semmit nem árulna el."""
+        window, _, _ = qml_app
+        _viewer, panel = self._open_crop(window, qt_app)
+        suggestions = _list_property(panel, "cropSuggestions")
+        assert suggestions
+
+        for index, suggestion in enumerate(suggestions):
+            button = window.findChild(QObject, f"cropSuggestion{index}")
+            rect = button.property("thumbSourceRect")
+            assert rect is not None, f"{index}. gombon nincs thumbSourceRect"
+            assert rect.x() == suggestion["x"], index
+            assert rect.y() == suggestion["y"], index
+            assert rect.width() == suggestion["w"], index
+            assert rect.height() == suggestion["h"], index
+
+    def test_the_full_image_element_stays_unloaded_when_cropped(
+        self, qml_app, qt_app
+    ):
+        """A vágott gombon a TELJES képet mutató elem nem tölt be semmit.
+
+        A két bélyegkép-elem (`…Thumb` / `…ThumbCrop`) közül mindig csak az
+        egyik kap forrást. Enélkül a több ezer pixeles szerkesztő-előnézet
+        gombonként KÉTSZER töltődne be — háromszor három helyett hatszor."""
+        window, _, _ = qml_app
+        _viewer, panel = self._open_crop(window, qt_app)
+        assert _list_property(panel, "cropSuggestions")
+
+        full = window.findChild(QObject, "cropSuggestion0Thumb")
+        cropped = window.findChild(QObject, "cropSuggestion0ThumbCrop")
+        assert full is not None and cropped is not None
+        # az Image.source egy QUrl, nem string — explicit toString() kell
+        assert full.property("source").toString() == ""
+        assert cropped.property("source").toString().startswith(
+            "image://editpreview/"
+        )
+
+    def test_plain_buttons_keep_the_whole_image(self, qml_app, qt_app):
+        """Visszalépés-védelem a 36 effekt-csempére (#338): a `thumbSourceRect`
+        alapértéke a TELJES kép, tehát minden más PanelButton-hívó útja
+        változatlan marad."""
+        window, _, _ = qml_app
+        self._open_crop(window, qt_app)
+        button = window.findChild(QObject, "cropRotateButton")
+        rect = button.property("thumbSourceRect")
+        assert (rect.x(), rect.y(), rect.width(), rect.height()) == (0, 0, 1, 1)
