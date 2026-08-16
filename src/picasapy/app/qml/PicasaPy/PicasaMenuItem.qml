@@ -1,5 +1,9 @@
 import QtQuick
 import QtQuick.Controls
+// #757: az `IconLabel` a Qt saját, MNEMONIK-TUDATOS címkéjét
+// (`QQuickMnemonicLabel`) hozza magával — pontosan azt, amit a sima
+// `MenuItem` alapértelmezése is használ.
+import QtQuick.Controls.impl
 
 // #416: helyfoglaló (még be nem kötött) menüpont — a menü HELYE megvan, de
 // funkció nincs mögötte. Ránézésre is látszódjon, mi működik és mi nem:
@@ -35,14 +39,20 @@ MenuItem {
     // sem a helyfoglaló, sem a nyugdíjazott tétel nem kattintható
     enabled: !placeholder && !control.retired
 
-    contentItem: Text {
+    // #757: NEM sima `Text`. Amióta a feliratok az eredeti `&`-mnemonikkal
+    // érkeznek (a `Picasa3i18n.dll` string-táblájából), egy sima `Text` az
+    // ampersandot NYERSEN mutatná („&Mappa elrejtése"). Az `IconLabel`
+    // belül `QQuickMnemonicLabel`-t rajzol — ugyanazt, amit a sima
+    // `MenuItem` alapértelmezése —, tehát az `&` az aláhúzás helyét jelöli,
+    // nem betűként látszik. A színezés és a jobb oldali térköz miatt kell
+    // saját `contentItem`; ezt az `IconLabel` ugyanúgy tudja.
+    contentItem: IconLabel {
         text: control.text
         font: control.font
         // a nyugdíjazott tétel ugyanúgy halvány, mint a helyfoglaló — a
         // különbség csak a sor végi pont (ld. lent)
         color: control.placeholder || control.retired ? Theme.textGray : Theme.ink
-        elide: Text.ElideRight
-        verticalAlignment: Text.AlignVCenter
+        alignment: Qt.AlignLeft | Qt.AlignVCenter
         // hely a jobb szélen a placeholder-pontnak, hogy ne fedjék egymást
         rightPadding: control.placeholder ? placeholderDot.width + 8 : 0
     }

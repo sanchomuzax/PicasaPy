@@ -57,6 +57,18 @@ Rectangle {
     // a sordarabszámból számoljuk (a lista a görgethető hasábban a teljes
     // tartalmát kirakja), ezért nem maradhat a delegate-be égetett szám.
     readonly property int rowHeight: 22
+    // #702: a Mappák gyűjtemény MÁSODIK nézetmódja — a hierarchikus fa. Az
+    // eredeti Picasa bal hasábjának két, egymást kizáró módja van
+    // (`thumbui/hviewtoggle`): a lapos lista (`eMenuView::ID_VIEW_FOLDERS`)
+    // és a fa (`eMenuView::ID_VIEW_ALL`) — ld. ui-audit-mainwindow.md 1.4/1.7.
+    // A `hierarchyController` a `FolderHierarchyController` példánya (a
+    // gazda köti be); nézetmód-váltó gomb még nincs, ezért a lapos lista az
+    // alapállapot — a váltó külön jegy.
+    property var hierarchyController: null
+    property bool treeViewMode: false
+    // a fa sorainak száma — a magasságszámításhoz (#305 null-őrrel)
+    readonly property int hierarchyRowCount:
+        pane.hierarchyController ? pane.hierarchyController.rows.length : 0
     signal folderChosen(string path)
     signal starredChosen()
     signal albumChosen(string token)
@@ -68,12 +80,6 @@ Rectangle {
     // kijelölés is ott van).
     signal newAlbumDropped()
     signal photosDroppedOnAlbum(string token)
-
-    // Csak SAJÁT fotó-húzást fogadunk el: a külső fájlok ejtése az
-    // ImportDropArea dolga (#146), azt nem szabad elorozni.
-    function acceptsPhotoDrag(drop) {
-        return !!drop && !!drop.source && drop.source.payload === "photos"
-    }
 
     // #320: a controller friss gyűjtemény-listájának lekérése — a
     // Component.onCompleted-en kívül minden create/rename/delete/move
@@ -258,6 +264,13 @@ Rectangle {
     // a kijelölt mappa maradjon látótérben (kívülről is változhat:
     // kereső-javaslat, feed-görgetés)
     onSelectedPathChanged: {
+        // #702: a fa is kövesse a kijelölést, és nyissa ki hozzá az őseit.
+        // A kötést NEM elég deklaratívan megadni: a `FolderHierarchyView`
+        // `choose()`-a maga is ír a `selectedPath`-ba, ami elszakítaná —
+        // utána a kívülről (kereső, rács) érkező váltás nem érne el a fáig.
+        folderHierarchyView.selectedPath = pane.selectedPath
+        if (pane.treeViewMode && pane.hierarchyController)
+            pane.hierarchyController.revealPath(pane.selectedPath)
         if (!folderList.model || !folderList.visible) return
         var row = folderList.model.rowOfPath(pane.selectedPath)
         if (row < 0) return
@@ -304,139 +317,24 @@ Rectangle {
             height: implicitHeight
             spacing: 0
 
-            CollectionHeader {
+            // Az Albumok gyűjtemény (fejléc + súgó + csillagozott sor +
+            // album-sorok) önálló komponensben él — ld. AlbumsSection.qml.
+            AlbumsSection {
                 Layout.fillWidth: true
-                label: qsTr("Albums")
-                // #9: 1 a csillagozott sorért + az összes virtuális album
-                itemCount: 1 + pane.albumsModel.length
-                labelObjectName: "albumsHeader"
                 collapsed: pane.albumsCollapsed
+                albumsModel: pane.albumsModel
+                selectedAlbumToken: pane.selectedAlbumToken
+                starredActive: pane.starredActive
+                rowHeight: pane.rowHeight
                 onToggled: pane.toggleCollection("albums")
-            }
-
-            // #455: „You can drag and drop pictures here to make a new album."
-            // — az eredeti Picasa üres albumlistáján ez a mondat állt. Nálunk
-            // mindig látszik (a lista sosem üres: ott a csillagozott sor),
-            // csak halványan: ez a felfedezhetőség, nem dísz.
-            Text {
-                objectName: "albumDropHintText"
-                visible: !pane.albumsCollapsed
-                Layout.fillWidth: true
-                Layout.leftMargin: 16
-                Layout.rightMargin: 8
-                wrapMode: Text.WordWrap
-                text: qsTr("You can drag and drop pictures here to make a new album.")
-                font.pixelSize: Theme.fontSize - 1
-                font.italic: true
-                color: albumDropArea.containsDrag ? Theme.picasaGreen : Theme.textGray
-                topPadding: 4
-                bottomPadding: 6
-
-                DropArea {
-                    id: albumDropArea
-                    objectName: "albumDropArea"
-                    anchors.fill: parent
-                    onDropped: function(drop) {
-                        if (!pane.acceptsPhotoDrag(drop)) return
-                        drop.accept()
-                        pane.newAlbumDropped()
-                    }
+                onStarredChosen: pane.starredChosen()
+                onAlbumChosen: function(token) { pane.albumChosen(token) }
+                onAlbumContextMenuRequested: function(token, name) {
+                    pane.openAlbumContextMenu(token, name)
                 }
-            }
-
-            Rectangle {
-                id: starredItem
-                objectName: "starredItem"
-                visible: !pane.albumsCollapsed
-                Layout.fillWidth: true
-                Layout.preferredHeight: 22
-                // #384: hover ≠ kijelölés — a hover a korábbi jelölő tónust
-                // kapja, a tényleges kijelölés a hitelesebb, sötétebb színt.
-                color: pane.starredActive ? Theme.panelSelectionActive
-                       : (starredMouse.containsMouse ? Theme.panelSelection : "transparent")
-                Row {
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left; anchors.leftMargin: 16
-                    spacing: 5
-                    Text { text: "★"; color: Theme.starYellow; font.pixelSize: Theme.fontSize }
-                    Text {
-                        text: qsTr("Starred photos")
-                        font.pixelSize: Theme.fontSize
-                        color: pane.starredActive || starredMouse.containsMouse
-                               ? Theme.panelSelectionText : Theme.textDark
-                    }
-                }
-                MouseArea {
-                    id: starredMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: pane.starredChosen()
-                }
-            }
-
-            // #9: a virtuális albumok a csillagozott sor ALATT, ugyanabban
-            // az Albumok gyűjteményben — mindegyik album név + darabszám sor.
-            Repeater {
-                id: albumRepeater
-                objectName: "albumRepeater"
-                model: pane.albumsModel
-                delegate: Rectangle {
-                    id: albumItem
-                    required property var modelData
-                    objectName: "albumItem_" + modelData.token
-                    readonly property bool isSelectedAlbum:
-                        pane.selectedAlbumToken === modelData.token
-                    visible: !pane.albumsCollapsed
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 22
-                    // #384: hover ≠ kijelölés (ld. starredItem fent)
-                    color: albumItem.isSelectedAlbum ? Theme.panelSelectionActive
-                           : (albumMouse.containsMouse ? Theme.panelSelection : "transparent")
-                    Row {
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left; anchors.leftMargin: 16
-                        spacing: 5
-                        Rectangle {
-                            width: 10; height: 8
-                            radius: 1
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: Theme.picasaGreen
-                        }
-                        Text {
-                            text: modelData.name + " (" + modelData.count + ")"
-                            font.pixelSize: Theme.fontSize
-                            color: albumItem.isSelectedAlbum || albumMouse.containsMouse
-                                   ? Theme.panelSelectionText : Theme.textDark
-                        }
-                    }
-                    // #455: meglévő album sorára ejtve a képek ABBA az albumba
-                    // kerülnek (a „drag pictures here" a listán ÚJ albumot
-                    // csinál — a kettő nem ugyanaz)
-                    DropArea {
-                        objectName: "albumDropArea_" + albumItem.modelData.token
-                        anchors.fill: parent
-                        onDropped: function(drop) {
-                            if (!pane.acceptsPhotoDrag(drop)) return
-                            drop.accept()
-                            pane.photosDroppedOnAlbum(albumItem.modelData.token)
-                        }
-                    }
-                    MouseArea {
-                        id: albumMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        onClicked: function(mouse) {
-                            // #422: jobbklikk = az album menüje; bal = megnyitás
-                            if (mouse.button === Qt.RightButton) {
-                                pane.openAlbumContextMenu(
-                                    albumItem.modelData.token,
-                                    albumItem.modelData.name)
-                                return
-                            }
-                            pane.albumChosen(albumItem.modelData.token)
-                        }
-                    }
+                onNewAlbumDropped: pane.newAlbumDropped()
+                onPhotosDroppedOnAlbum: function(token) {
+                    pane.photosDroppedOnAlbum(token)
                 }
             }
 
@@ -452,7 +350,8 @@ Rectangle {
                 onToggled: pane.toggleCollection("people")
             }
 
-            // #26: egy-egy sor személyenként — az albumRepeater mintáját követi.
+            // #26: egy-egy sor személyenként — az AlbumsSection.qml album-sorainak
+            // mintáját követi.
             Repeater {
                 id: peopleRepeater
                 objectName: "peopleRepeater"
@@ -645,8 +544,15 @@ Rectangle {
                     objectName: "exportedFolderItem_" + modelData.name
                     visible: !pane.projectsCollapsed
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 22
-                    color: pane.selectedPath === modelData.path
+                    Layout.preferredHeight: pane.rowHeight
+                    // #757/3: album-nézetben a mappa-kijelölés itt is
+                    // szűnjön meg — enélkül album megnyitásakor KÉT sor
+                    // látszott egyszerre kijelöltnek. Ugyanaz az őr, mint a
+                    // mappalista és a gyűjtemény-mappa során (#9).
+                    readonly property bool isSelectedFolder:
+                        pane.selectedPath === modelData.path
+                        && pane.selectedAlbumToken === ""
+                    color: exportedItem.isSelectedFolder
                            ? Theme.panelSelectionActive
                            : (exportedMouse.containsMouse ? Theme.panelSelection
                                                           : "transparent")
@@ -658,7 +564,7 @@ Rectangle {
                         Text {
                             text: exportedItem.modelData.name
                             font.pixelSize: Theme.fontSize
-                            color: pane.selectedPath === exportedItem.modelData.path
+                            color: exportedItem.isSelectedFolder
                                    || exportedMouse.containsMouse
                                    ? Theme.panelSelectionText : Theme.textDark
                         }
@@ -698,7 +604,9 @@ Rectangle {
             ListView {
                 id: folderList
                 objectName: "folderListView"
-                visible: !pane.foldersCollapsed
+                // #702: a lapos lista és a fa KIZÁRJA egymást — az eredeti
+                // `thumbui/hviewtoggle` is egyszerre csak az egyiket rajzolja
+                visible: !pane.foldersCollapsed && !pane.treeViewMode
                 Layout.fillWidth: true
                 // #730: a lista a TELJES tartalmát kirakja, a görgetés a
                 // hasáb közös `paneFlickable`-jéé. A korábbi
@@ -741,7 +649,9 @@ Rectangle {
                 }
                 onMovementEnded: savedY = contentY
                 Connections {
-                    target: folderList.model
+                    // #305 null-őr: fa-nézetben (és a komponens önálló
+                    // betöltésekor) a lapos listának nincs modellje
+                    target: folderList.model ? folderList.model : null
                     function onFolderCountChanged() {
                         folderList.restoring = true
                         folderList.contentY = Math.min(
@@ -765,7 +675,7 @@ Rectangle {
                     readonly property bool isSelectedFolder:
                         kind === "folder" && pane.selectedPath === path
                         && pane.selectedAlbumToken === ""
-                    // #384: hover ≠ kijelölés (ld. starredItem/albumItem) —
+                    // #384: hover ≠ kijelölés (ld. AlbumsSection.qml) —
                     // a "year" sorok nem kattinthatók, a MouseArea rájuk
                     // enabled: false, így containsMouse mindig false marad.
                     color: isSelectedFolder ? Theme.panelSelectionActive
@@ -844,10 +754,48 @@ Rectangle {
                 // eredetiben is egy sáv van a bal panelen).
             }
 
+            // #702: ugyanennek a gyűjteménynek a MÁSIK nézetmódja — a
+            // hierarchikus fa. A rajzolás a `FolderHierarchyView.qml`-ben
+            // van, az adat a `FolderHierarchyController`-ben; itt csak a
+            // hasábba illesztés és a jelzések bekötése történik.
+            FolderHierarchyView {
+                id: folderHierarchyView
+                objectName: "folderHierarchyView"
+                visible: !pane.foldersCollapsed && pane.treeViewMode
+                Layout.fillWidth: true
+                // #730: a fa is a TELJES tartalmát kirakja — a hasáb
+                // egyetlen görgetője a `paneFlickable` marad. A sorok
+                // számát a vezérlő adja (a csukott ágak gyermekei el sem
+                // jutnak ide), a sormagasság a hasábé.
+                Layout.preferredHeight: pane.hierarchyRowCount * pane.rowHeight
+                hierarchy: pane.hierarchyController
+                selectedPath: pane.selectedPath
+                rowHeight: pane.rowHeight
+                onFolderChosen: function(path) { pane.folderChosen(path) }
+
+                // A `HierFolder` menü három tétele, aminek a rétege a
+                // gazdában van — ugyanazokra a hívásokra kötve, mint a
+                // mappa-menü megfelelő parancsai (FolderContextMenu).
+                onLocateOnDiskRequested: function(path) {
+                    if (typeof fileOpsController !== "undefined" && fileOpsController)
+                        fileOpsController.revealFolder(path)
+                }
+                onRemoveFromPicasaRequested: function(path) {
+                    folderContextMenu.folderPath = path
+                    removeFolderConfirm.ask(
+                        "removeFolder",
+                        qsTr("Remove this folder from PicasaPy? The files stay on disk."))
+                }
+                onMoveFolderRequested: function(path) {
+                    pane._movingFolder = path
+                    moveFolderDialog.open()
+                }
+            }
+
             // #476: a felhasználói mappa-gyűjtemények (#320 óta léteznek, de
             // eddig sehol nem jelentek meg) — a beépített "Mappák" gyűjtemény
             // ALATT, az "Egyéb" fejléc ELŐTT, gyűjteményenként egy csukható
-            // fejléc + a hozzá sorolt mappák sorai (az albumRepeater/folderList
+            // fejléc + a hozzá sorolt mappák sorai (az AlbumsSection/folderList
             // sor-mintáját követve).
             Repeater {
                 id: customCollectionsRepeater

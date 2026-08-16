@@ -31,17 +31,17 @@ Menu {
 
     MenuItem {
         objectName: "collectionMenuRename"
-        text: qsTr("Rename Collection...")
+        text: qsTr("Rename &Collection...")
         onTriggered: menu.renameRequested()
     }
     MenuItem {
         objectName: "collectionMenuRemove"
-        text: qsTr("Remove Collection")
+        text: qsTr("&Remove Collection")
         onTriggered: menu.removeRequested()
     }
     PicasaMenuItem {
         objectName: "collectionMenuPassword"
-        text: qsTr("Set/Change Password...")
+        text: qsTr("&Add/Change a password...")
         placeholder: true
     }
 }

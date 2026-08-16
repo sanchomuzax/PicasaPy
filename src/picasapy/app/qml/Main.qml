@@ -679,6 +679,15 @@ ApplicationWindow {
             // átmenetileg null lehet, amikor ezek a kötések utoljára
             // kiértékelődnek
             foldersModel: controller ? controller.folders : null
+            // #702: a bal hasáb hierarchikus (fa) mappanézete. A `typeof`-őr
+            // NEM elhagyható: a `tests/app/qml_functional/conftest.py` nem
+            // regisztrálja a `folderHierarchyController`-t, és egy őrizetlen
+            // hivatkozás minden `qml_app`-os tesztet pirosra váltana.
+            hierarchyController: (typeof folderHierarchyController !== "undefined")
+                                 ? folderHierarchyController : null
+            // a nézetmód-váltó (Egyszerű / Fa / Egyszerűsített fa) még nincs
+            // meg — külön jegy; addig a lapos lista az alapállapot
+            treeViewMode: false
             selectedPath: controller ? controller.currentFolder : ""
             starredActive: controller ? controller.filterActive : false
             searchActive: controller ? controller.searchActive : false

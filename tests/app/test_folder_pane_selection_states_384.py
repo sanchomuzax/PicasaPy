@@ -156,7 +156,15 @@ class TestHoverToneWiringInSource:
 
     @pytest.fixture
     def source_text(self, qml_source):
-        return qml_source.read_text(encoding="utf-8")
+        # #757: az Albumok gyűjtemény (csillagozott sor + album-sorok) a
+        # `FolderPane.qml`-ből önálló `AlbumsSection.qml`-be került, amikor
+        # a hasáb fájlja túlnőtte a 800 soros határt — a hover-kötések
+        # onnan is számítanak.
+        albums_section = qml_source.with_name("AlbumsSection.qml")
+        return (
+            qml_source.read_text(encoding="utf-8")
+            + albums_section.read_text(encoding="utf-8")
+        )
 
     def test_starred_row_hover_uses_panel_selection(self, source_text):
         assert "starredMouse.containsMouse ? Theme.panelSelection" in source_text

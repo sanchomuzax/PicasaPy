@@ -249,7 +249,7 @@ feliratokban a billentyű-gyorsjelölés (Alt-aláhúzás) helye.
 | `Album` | 13 | **album-kontextus** (a mappa-menü album-változata) |
 | `OneUp` | 6 | **néző/szerkesztő-kontextus** (3. képernyőkép) |
 | `Collection` | 3 | **gyűjtemény-kontextus** (5. képernyőkép) |
-| `AlbumList` + `…Win`/`…Mac` | 11 + 3/3 | **a bal panel saját menüje** — eddig NEM ismertük |
+| `AlbumList` + `…Win`/`…Mac` | 12 + 3/3 | **a bal panel saját menüje** — eddig NEM ismertük |
 | `Sort` | 4 | a „Mappa rendezésének alapja ▸" **almenü** — eddig nem volt lefényképezve |
 | `Tags` | 3 | **címke-kontextus** (jobbklikk egy címkén) — eddig NEM ismertük |
 | `Tray` | 2 | **képtálca-kontextus** — eddig NEM ismertük |
@@ -327,8 +327,8 @@ nézetben épp látszott; a string-tábla a teljes parancskészletet hozza.
 | `AlbumPhoto` + `…Win` | 18 | 18 | **teljes** |
 | `FolderPhoto` + `…Win` | 5 | 5 | **teljes** |
 | `OneUp` | 6 | 6 | **teljes** |
-| `Album` | 13 azonosító / 11 felirat | 11 | **teljes** |
-| `AlbumList` | 11 | 11 | **teljes** (a Win/Mac gyökérváltók nélkül) |
+| `Album` | 13 azonosító / 12 felirat | 12 | **teljes** (a `SortAlbumBy`-jal, #757) |
+| `AlbumList` | 12 | 12 | **teljes** (a Win/Mac gyökérváltók nélkül; #757) |
 | `Collection` · `Sort` · `Tags` · `Tray` · `Address` | 3 · 4 · 3 · 2 · 7 | ua. | **teljes** |
 | `PplAlbum` · `PplAlbumPhoto` | 4 · 4 | 4 · 4 | **teljes** |
 
@@ -371,3 +371,31 @@ a fenti szöveges felsorolások nem hoztak elő:
 - **`Slingshot`** (Intéző héj-menü), **`Import`/`ImportGroups`**,
   **`CollageS`/`CollageD`/`Border`/`MMFilm`/`Dev`/`SyncOpts`/`BtnConf`**: a
   hozzájuk tartozó panel/integráció megvalósításakor esedékesek.
+
+
+## A.5 Utólagos helyesbítés (2026-08-16, #757)
+
+A bal hasáb mérő köre két hibát talált a fenti számokban, mindkettőt
+UGYANAZ az ok magyarázza: a végigvezetés csak az `ID_`-előtagú kulcsokat
+számolta meg, a string-táblában viszont **almenü-CÍMEK is vannak**, előtag
+nélkül (`Folder::SortFolderBy`, `Album::SortAlbumBy`, `AlbumList::Shortcuts`).
+
+1. **`AlbumList` = 12 tétel, nem 11.** A tizenkettedik az
+   `AlbumList::Shortcuts` = „&Shortcuts" / „&Gyorsbillentyűk", és az
+   `ui-audit-mainwindow.md` 1.7 szerint ez ALMENÜ CÍME: alatta ültek a
+   gyökérváltók („a `Shortcuts` almenüben `AlbumListWin::ID_VIEW_ALL` =
+   »My &Computer«"). Nálunk a három Windows-specifikus gyökérváltó kimarad,
+   egyedül az Asztal maradna — egy egytételes, réteg nélküli almenü csak
+   üres kattintást adna, ezért mindkettő lapos helyfoglaló sor. Az A.1 és az
+   A.4 táblázata javítva.
+2. **`Album` = 12 felirat, nem 11.** A tizenkettedik az `Album::SortAlbumBy`
+   = „Sort &Album By" / „&Album rendezésének alapja…" — a mappa-menü „Mappa
+   rendezésének alapja ▸" almenüjének album-párja.
+
+Harmadikként a **feliratok** kerültek szó szerinti alakra: a menük addig a
+saját, szabadon fogalmazott angol szövegüket használták (kilenc eltérés,
+pl. „Reverse Sort Order" vs. `Re&verse sort`), és az öt menüfájlban
+**egyetlen `&`-mnemonik sem** volt — vagyis az A.3 3. pontjában elvárt
+Alt-navigáció nem működött. A `PicasaMenuItem` saját `contentItem`-je emiatt
+sima `Text`-ről `IconLabel`-re cserélődött: az hozza a Qt mnemonik-tudatos
+címkéjét, különben az ampersand nyersen látszana a menüben.

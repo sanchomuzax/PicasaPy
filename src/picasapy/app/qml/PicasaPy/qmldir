@@ -9,6 +9,7 @@ PhotoViewer 1.0 PhotoViewer.qml
 FolderIcon 1.0 FolderIcon.qml
 FolderManagerDialog 1.0 FolderManagerDialog.qml
 FolderTreeItem 1.0 FolderTreeItem.qml
+FolderHierarchyView 1.0 FolderHierarchyView.qml
 FolderStatePanel 1.0 FolderStatePanel.qml
 FolderStateBadge 1.0 FolderStateBadge.qml
 PicasaButton 1.0 PicasaButton.qml
@@ -58,6 +59,7 @@ PeopleAlbumContextMenu 1.0 PeopleAlbumContextMenu.qml
 FolderListContextMenu 1.0 FolderListContextMenu.qml
 CollectionContextMenu 1.0 CollectionContextMenu.qml
 CollectionHeader 1.0 CollectionHeader.qml
+AlbumsSection 1.0 AlbumsSection.qml
 TagContextMenu 1.0 TagContextMenu.qml
 TrayContextMenu 1.0 TrayContextMenu.qml
 FolderPropertiesDialog 1.0 FolderPropertiesDialog.qml

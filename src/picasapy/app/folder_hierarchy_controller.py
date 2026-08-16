@@ -1,0 +1,150 @@
+"""FolderHierarchyController: a bal panel fa-mappanézetének híd-objektuma
+(#702).
+
+Szándékosan ÖNÁLLÓ QObject (a `folder_tree_controller.py` és a
+`discovery_controller.py` mintájára), NEM az `AppController` mixinje: a
+`controller.py` és a `Main.qml` forró fájlok (CONTRIBUTING.md), azok csak
+a végső bekötést kapják.
+
+A tényleges fa-építés a Qt nélküli `folder_hierarchy` modulban van; itt
+csak állapot (mely ágak nyitottak, egyszerűsített-e a lánc) és a QML felé
+mutató felület él. Az állapot IMMUTÁBILIS: minden változás új
+`frozenset`/tuple, sosem helyben módosítás.
+
+Nincs benne fájlrendszer-olvasás: a mappalistát a hívó adja át (az index
+`folders` táblájából), ezért nem kell háttérszál sem.
+"""
+
+from __future__ import annotations
+
+from PySide6.QtCore import Property, QObject, Signal, Slot
+
+from .folder_hierarchy import build_hierarchy, expandable_paths, flatten
+
+
+def _is_ancestor(candidate: str, target: str) -> bool:
+    """Őse-e a `candidate` útvonal a `target`-nek.
+
+    Nem elég a `startswith`: a `/mnt/photo` úgy is előtagja a
+    `/mnt/photoXYZ`-nek, hogy közben semmi köze hozzá — a határon
+    elválasztónak kell állnia.
+    """
+    if not candidate or candidate == target:
+        return False
+    if not target.startswith(candidate):
+        return False
+    return candidate.endswith(("/", "\\")) or target[len(candidate)] in "/\\"
+
+
+class FolderHierarchyController(QObject):
+    """A `FolderHierarchyView.qml` adatforrása."""
+
+    rowsChanged = Signal()
+    simplifiedChanged = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._folders: tuple[dict, ...] = ()
+        self._expanded: frozenset[str] = frozenset()
+        self._simplified = False
+        self._rows: tuple[dict, ...] = ()
+        self._rebuild()
+
+    # -- adatforrás -----------------------------------------------------
+
+    @Slot("QVariantList")
+    def setFolders(self, folders) -> None:
+        """A lapos mappalista átvétele — `{"path", "count"}` elemek.
+
+        A kinyitott ágak megmaradnak: szinkron után a felhasználó ott
+        találja a fát, ahol hagyta (a már nem létező útvonalak
+        egyszerűen hatástalanok maradnak a halmazban).
+        """
+        self._folders = tuple(dict(folder) for folder in folders or ())
+        self._rebuild()
+
+    # -- egyszerűsített fanézet (`SimplifiedHierarchy`) ------------------
+
+    @Property(bool, notify=simplifiedChanged)
+    def simplified(self) -> bool:
+        """Az „Egyszerűsített fanézet" (`eMenuView::ID_VIEW_WATCHED`)
+        állapota: az egygyermekes, fotó nélküli köztes szintek
+        összevonása."""
+        return self._simplified
+
+    @Slot(bool)
+    def setSimplified(self, value: bool) -> None:
+        if bool(value) == self._simplified:
+            return
+        self._simplified = bool(value)
+        self.simplifiedChanged.emit()
+        self._rebuild()
+
+    # -- sorok ----------------------------------------------------------
+
+    @Property("QVariantList", notify=rowsChanged)
+    def rows(self) -> list[dict]:
+        """A megjelenítendő sorok (a csukott ágak gyermekei nélkül)."""
+        return list(self._rows)
+
+    # -- kinyitás / összecsukás -----------------------------------------
+
+    @Slot(str)
+    def toggle(self, path: str) -> None:
+        """Egy ág átváltása — a fa nyitó-háromszögének kattintása."""
+        key = str(path)
+        if key in self._expanded:
+            self._expanded = self._expanded - {key}
+        else:
+            self._expanded = self._expanded | {key}
+        self._rebuild()
+
+    @Slot(str)
+    def expand(self, path: str) -> None:
+        self._set_expanded(self._expanded | {str(path)})
+
+    @Slot(str)
+    def collapse(self, path: str) -> None:
+        self._set_expanded(self._expanded - {str(path)})
+
+    @Slot()
+    def expandAll(self) -> None:
+        """`Folder::ID_HIER_FOLDER_EXPAND` — „Expand All"."""
+        self._set_expanded(expandable_paths(self._tree()))
+
+    @Slot()
+    def collapseAll(self) -> None:
+        """`Folder::ID_HIER_FOLDER_COLLAPSE` — „Collapse All"."""
+        self._set_expanded(frozenset())
+
+    @Slot(str)
+    def revealPath(self, path: str) -> None:
+        """A megadott mappáig minden ős kinyitása — a kijelölt mappa
+        akkor is látszódjon, ha máshonnan (keresés, rács) került
+        kiválasztásra."""
+        target = str(path)
+        tree = self._tree()
+        opened = set(self._expanded)
+        opened.add("")
+        for candidate in expandable_paths(tree):
+            if _is_ancestor(candidate, target):
+                opened.add(candidate)
+        self._set_expanded(frozenset(opened))
+
+    # -- belső ----------------------------------------------------------
+
+    def _tree(self):
+        return build_hierarchy(self._folders, simplified=self._simplified)
+
+    def _set_expanded(self, expanded: frozenset[str]) -> None:
+        if expanded == self._expanded:
+            return
+        self._expanded = expanded
+        self._rebuild()
+
+    def _rebuild(self) -> None:
+        rows = flatten(self._tree(), self._expanded)
+        if rows == self._rows:
+            return
+        self._rows = rows
+        self.rowsChanged.emit()

@@ -6370,4 +6370,267 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Bezárás</translation>
     </message>
 </context>
+<context>
+    <name>FolderHierarchyView</name>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>My Computer</source>
+        <translation>Sajátgép</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>Expand All</source>
+        <translation>Az összes részletes nézete</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>Collapse All</source>
+        <translation>Az összes kicsinyítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>Locate on Disk</source>
+        <translation>Keresés a lemezen</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>Remove from Picasa...</source>
+        <translation>Eltávolítás a Picasából...</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/FolderHierarchyView.qml"/>
+        <source>Move Folder...</source>
+        <translation>Mappa áthelyezése...</translation>
+    </message>
+</context>
+<context>
+    <name>AlbumContextMenu</name>
+    <message>
+        <source>&amp;Add name tags</source>
+        <translation>&amp;Névcímkék hozzáadása</translation>
+    </message>
+    <message>
+        <source>&amp;Clear Selection</source>
+        <translation>&amp;Kijelölés törlése</translation>
+    </message>
+    <message>
+        <source>&amp;Delete Album</source>
+        <translation>&amp;Album törlése</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Album Description...</source>
+        <translation>&amp;Albumleírás szerkesztése...</translation>
+    </message>
+    <message>
+        <source>&amp;Invert Selection</source>
+        <translation>Kiválasztás &amp;megfordítása</translation>
+    </message>
+    <message>
+        <source>&amp;Refresh Thumbnails</source>
+        <translation>Indexképek &amp;frissítése</translation>
+    </message>
+    <message>
+        <source>E&amp;xport as HTML Page...</source>
+        <translation>E&amp;xportálás HTML-oldalként...</translation>
+    </message>
+    <message>
+        <source>Select &amp;All Pictures</source>
+        <translation>&amp;Az összes kép kijelölése</translation>
+    </message>
+    <message>
+        <source>Sort &amp;Album By</source>
+        <translation>&amp;Album rendezésének alapja...</translation>
+    </message>
+    <message>
+        <source>Upload to &amp;Picasa Web Albums...</source>
+        <translation>Feltöltés a &amp;Picasa Webalbumokba...</translation>
+    </message>
+    <message>
+        <source>Upload to Google &amp;Photos...</source>
+        <translation>Feltöltés a Google &amp;Fotókba…</translation>
+    </message>
+</context>
+<context>
+    <name>AlbumsSection</name>
+    <message>
+        <source>Albums</source>
+        <translation>Albumok</translation>
+    </message>
+    <message>
+        <source>Starred photos</source>
+        <translation>Csillagozott képek</translation>
+    </message>
+    <message>
+        <source>You can drag and drop pictures here to make a new album.</source>
+        <translation>Képeket idehúzva új albumot hozhat létre.</translation>
+    </message>
+</context>
+<context>
+    <name>CollectionContextMenu</name>
+    <message>
+        <source>&amp;Add/Change a password...</source>
+        <translation>&amp;Jelszó megadása/módosítása...</translation>
+    </message>
+    <message>
+        <source>&amp;Remove Collection</source>
+        <translation>&amp;Gyűjtemény eltávolítása</translation>
+    </message>
+    <message>
+        <source>Rename &amp;Collection...</source>
+        <translation>&amp;Gyűjtemény átnevezése...</translation>
+    </message>
+</context>
+<context>
+    <name>FolderContextMenu</name>
+    <message>
+        <source>&amp;Add name tags</source>
+        <translation>&amp;Névcímkék hozzáadása</translation>
+    </message>
+    <message>
+        <source>&amp;Clear Selection</source>
+        <translation>&amp;Kijelölés törlése</translation>
+    </message>
+    <message>
+        <source>&amp;Date</source>
+        <translation>&amp;Dátum</translation>
+    </message>
+    <message>
+        <source>&amp;Delete Folder...</source>
+        <translation>&amp;Mappa törlése...</translation>
+    </message>
+    <message>
+        <source>&amp;Edit Folder Description...</source>
+        <translation>&amp;Mappaleírás szerkesztése...</translation>
+    </message>
+    <message>
+        <source>&amp;Hide Folder</source>
+        <translation>Mappa e&amp;lrejtése</translation>
+    </message>
+    <message>
+        <source>&amp;Invert Selection</source>
+        <translation>Kiválasztás &amp;megfordítása</translation>
+    </message>
+    <message>
+        <source>&amp;Locate on Disk</source>
+        <translation>Keresés a &amp;lemezen</translation>
+    </message>
+    <message>
+        <source>&amp;Move Folder...</source>
+        <translation>&amp;Mappa áthelyezése...</translation>
+    </message>
+    <message>
+        <source>&amp;Name</source>
+        <translation>&amp;Név</translation>
+    </message>
+    <message>
+        <source>&amp;Remove from Picasa...</source>
+        <translation>&amp;Eltávolítás a Picasából...</translation>
+    </message>
+    <message>
+        <source>&amp;Reverse order</source>
+        <translation>&amp;Fordított sorrend</translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation>&amp;Méret</translation>
+    </message>
+    <message>
+        <source>&amp;Unhide Folder</source>
+        <translation>Mappa m&amp;egjelenítése</translation>
+    </message>
+    <message>
+        <source>E&amp;xport as HTML Page...</source>
+        <translation>E&amp;xportálás HTML-oldalként...</translation>
+    </message>
+    <message>
+        <source>Mo&amp;ve to Collection</source>
+        <translation>Át&amp;helyezés gyűjteménybe</translation>
+    </message>
+    <message>
+        <source>Refresh &amp;Thumbnails</source>
+        <translation>Indexképek &amp;frissítése</translation>
+    </message>
+    <message>
+        <source>S&amp;ort Folder By</source>
+        <translation>Mappa r&amp;endezésének alapja</translation>
+    </message>
+    <message>
+        <source>Select &amp;All Pictures</source>
+        <translation>&amp;Az összes kép kijelölése</translation>
+    </message>
+    <message>
+        <source>Upload to Google &amp;Photos...</source>
+        <translation>Feltöltés a Google &amp;Fotókba…</translation>
+    </message>
+</context>
+<context>
+    <name>FolderListContextMenu</name>
+    <message>
+        <source>&amp;Desktop</source>
+        <translation>&amp;Asztal</translation>
+    </message>
+    <message>
+        <source>&amp;Shortcuts</source>
+        <translation>&amp;Gyorsbillentyűk</translation>
+    </message>
+    <message>
+        <source>&amp;Simplified Tree View</source>
+        <translation>&amp;Egyszerűsített fanézet</translation>
+    </message>
+    <message>
+        <source>Re&amp;verse sort</source>
+        <translation>Rendezés meg&amp;fordítása</translation>
+    </message>
+    <message>
+        <source>Show &amp;Thumbnails in Library</source>
+        <translation>Indexképek &amp;megjelenítése a könyvtárban</translation>
+    </message>
+    <message>
+        <source>Sort &amp;People by Name</source>
+        <translation>Személyek re&amp;ndezése név alapján</translation>
+    </message>
+    <message>
+        <source>Sort People by &amp;Amount</source>
+        <translation>Sze&amp;mélyek rendezése mennyiség alapján</translation>
+    </message>
+    <message>
+        <source>Sort People by Top &amp;10</source>
+        <translation>Személyek rendezése a topl&amp;ista alapján</translation>
+    </message>
+    <message>
+        <source>Sort by &amp;Date</source>
+        <translation>Ren&amp;dezés dátum alapján</translation>
+    </message>
+    <message>
+        <source>Sort by &amp;Name</source>
+        <translation>Re&amp;ndezés név alapján</translation>
+    </message>
+    <message>
+        <source>Sort by &amp;Recent Changes</source>
+        <translation>Rendezés a leg&amp;utóbbi változtatások alapján</translation>
+    </message>
+    <message>
+        <source>Sort by &amp;Size</source>
+        <translation>Rendezés &amp;méret alapján</translation>
+    </message>
+</context>
+<context>
+    <name>PeopleAlbumContextMenu</name>
+    <message>
+        <source>&amp;Clear Selection</source>
+        <translation>&amp;Kijelölés törlése</translation>
+    </message>
+    <message>
+        <source>&amp;Delete People Album</source>
+        <translation>Az Emberek &amp;album törlése</translation>
+    </message>
+    <message>
+        <source>&amp;Edit People Album...</source>
+        <translation>Az &amp;Emberek album szerkesztése...</translation>
+    </message>
+    <message>
+        <source>Select &amp;All</source>
+        <translation>Az ö&amp;sszes kijelölése</translation>
+    </message>
+</context>
 </TS>

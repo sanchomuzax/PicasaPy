@@ -53,7 +53,11 @@ def _trigger(menu, name):
 
 
 class TestFolderListContextMenu:
-    """A bal panel saját menüje — az `AlbumList` osztály 11 tétele."""
+    """A bal panel saját menüje — az `AlbumList` osztály 12 tétele.
+
+    #757: a spec kétszer is „11 tétel"-t írt, a `Picasa3i18n.dll`
+    string-táblájában viszont TIZENKÉT `AlbumList::` sor van — a
+    `Shortcuts` kimaradt a számolásból."""
 
     EXPECTED = [
         "folderListMenuSortByDate",
@@ -66,10 +70,11 @@ class TestFolderListContextMenu:
         "folderListMenuSortPeopleByTopList",
         "folderListMenuFlatView",
         "folderListMenuShowThumbnails",
+        "folderListMenuShortcuts",
         "folderListMenuDesktop",
     ]
 
-    def test_all_eleven_commands_are_present_in_order(self, qml_engine):
+    def test_all_twelve_commands_are_present_in_order(self, qml_engine):
         menu = _load(qml_engine, "FolderListContextMenu")
         found = [
             child.objectName()

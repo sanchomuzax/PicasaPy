@@ -92,6 +92,9 @@ TETELSOR: dict[str, dict[str, str]] = {
         "albumMenuClearSelection": "Kijelölés törlése",
         "albumMenuInvertSelection": "Kiválasztás megfordítása",
         "albumMenuRefreshThumbnails": "Indexképek frissítése",
+        # #757: az `Album::SortAlbumBy` — a #422-es végigvezetés az `ID_`
+        # előtag hiánya miatt hagyta ki a sorból
+        "albumMenuSortAlbumBy": "Album rendezésének alapja...",
         "albumMenuOnlineActions": "Online műveletek",
         "albumMenuUploadToGooglePhotos": "Feltöltés a Google Fotókba...",
         "albumMenuUploadToWebAlbums": "Feltöltés a Picasa Webalbumokba...",
@@ -166,14 +169,18 @@ class TestATetelsorHianytalan:
 
 class TestAMappaRejtesFeliratotValt:
     """`Folder::ID_HIDEENTIREALBUM` ↔ `ID_UNHIDEENTIREALBUM` — a spec A.2
-    szerint NEM külön tétel, hanem ugyanazon a helyen váltó felirat."""
+    szerint NEM külön tétel, hanem ugyanazon a helyen váltó felirat.
+
+    #757 óta a felirat az eredeti `&`-mnemonikot is hordozza; a
+    mnemonik-betű a két állapotban KÜLÖNBÖZŐ (`&Hide` / `&Unhide`), tehát
+    az sem hagyható el az összevetésből."""
 
     def test_alaphelyzetben_elrejtes(self, qml_engine) -> None:
         menu = _menu(qml_engine, "FolderContextMenu")
         tetel = menu.findChild(QObject, "folderMenuHideFolder")
         assert tetel is not None
 
-        assert tetel.property("text") == "Hide Folder"
+        assert tetel.property("text") == "&Hide Folder"
 
     def test_rejtett_mappan_megjelenites(self, qml_engine) -> None:
         menu = _menu(qml_engine, "FolderContextMenu")
@@ -181,7 +188,7 @@ class TestAMappaRejtesFeliratotValt:
         tetel = menu.findChild(QObject, "folderMenuHideFolder")
         assert tetel is not None
 
-        assert tetel.property("text") == "Unhide Folder", (
+        assert tetel.property("text") == "&Unhide Folder", (
             "rejtett mappán a felirat a Mappa megjelenítése alakra vált"
         )
 

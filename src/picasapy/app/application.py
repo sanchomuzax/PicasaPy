@@ -61,8 +61,10 @@ from .language_controller import (
     coerce_language,
 )
 from .fileops_controller import FileOpsController
+from .folder_hierarchy_controller import FolderHierarchyController
 from .folder_tree_controller import FolderTreeController
 from .import_source_controller import ImportSourceController
+from .models import sorted_folder_rows
 from .startup_status import StartupStatus
 from .thumbnail_provider import ThumbnailProvider
 from .timeline_controller import TimelineController
@@ -555,6 +557,39 @@ def run(argv: list[str]) -> int:
     # listázása — a FolderManagerDialog.qml hídja
     folder_tree_controller = FolderTreeController()
 
+    # A bal hasáb fa-mappanézete (#702): az INDEXELT mappák hierarchiája,
+    # részfa-összegzett darabszámmal — a FolderHierarchyView.qml hídja.
+    # Nem téveszthető össze a fenti `folder_tree_controller`-rel: az a
+    # Mappakezelő dialógus fájlrendszer-böngészője, ez az indexé.
+    folder_hierarchy_controller = FolderHierarchyController()
+
+    def _reload_folder_hierarchy() -> None:
+        """A fa-nézet mappalistájának újratöltése az indexből.
+
+        Ugyanaz az esemény frissíti, mint az időrendet (`syncFinished`): a
+        fa és a lapos lista UGYANABBÓL a `folders` táblából él, csak más
+        alakban. A vezérlő a kinyitott ágakat megőrzi, tehát a szinkron nem
+        csukja össze a felhasználó alatt a fát.
+        """
+        try:
+            with open_index(data_dir / "index.db") as conn:
+                folder_hierarchy_controller.setFolders(
+                    [
+                        {"path": path, "count": count}
+                        for _name, path, count, *_rest in sorted_folder_rows(conn)
+                    ]
+                )
+        except sqlite3.DatabaseError:
+            # a hasáb lapos listája külön úton frissül — egy sérült index
+            # miatt a fa maradjon a korábbi tartalmán, ne dőljön el a
+            # `syncFinished` jelzés kiszolgálása
+            logging.getLogger(__name__).exception(
+                "a fa-mappanézet frissítése hibára futott"
+            )
+
+    controller.syncFinished.connect(_reload_folder_hierarchy)
+    _reload_folder_hierarchy()
+
     # Időrend nézet (#24, Ctrl+5): a teljes könyvtár év/hónap szerinti
     # csoportosítása — a MEGLÉVŐ (AppControllerrel közös) thumbnail-
     # providert kapja, hogy a bélyegkép-URL-ek nála is regisztrálva
@@ -614,6 +649,9 @@ def run(argv: list[str]) -> int:
     )
     engine.rootContext().setContextProperty(
         "folderTreeController", folder_tree_controller
+    )
+    engine.rootContext().setContextProperty(
+        "folderHierarchyController", folder_hierarchy_controller
     )
     engine.rootContext().setContextProperty(
         "timelineController", timeline_controller
