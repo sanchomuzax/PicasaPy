@@ -39,6 +39,7 @@ from .layout import (
 )
 from .pile import PilePlacement, pile_scale, pile_size, scatter_centers
 from .multi_exposure import blend_multi_exposure, multi_exposure_size
+from .packing import PackNode, pack, packing_cost
 from .rects import NormRect, PixelRect, to_pixel_rects
 from .regular_grid import regular_grid_rects, regular_grid_shape
 from .render import (
@@ -64,6 +65,9 @@ from .themes import (
 
 __all__ = [
     "BORDER_THEMES",
+    "PackNode",
+    "pack",
+    "packing_cost",
     "blend_multi_exposure",
     "header_font_size",
     "multi_exposure_size",
