@@ -76,8 +76,18 @@ def _make_panel(engine, active_tab=0):
 
 
 # #464: az 1. fül sorrendje a tulajdonos KÉPERNYŐKÉPÉRŐL (Picasa 3.9,
-# „Gyakori javítások"). Ez FELÜLÍRJA a jegy szövegében szereplő korábbi
-# sorrendet, ami feljegyzésből készült — a képen három sorban:
+# „Gyakori javítások"). VÉGLEGES — a döntés lapja:
+#     docs/decisions/szerkeszto-1-ful-gombsorrend.md
+#
+# ⚠️ HA EZ A TESZT ELBUKIK, mert valaki „javítani" akarja a sorrendet:
+# OLVASD EL A DÖNTÉS LAPJÁT, ne írd át a tesztet. Az `editpanel.tre`
+# ERŐFORRÁS-sorrendje NEM a kirajzolási sorrend — négy ponton eltér attól,
+# amit a program mutat. A sorrend kétszer került már újra napirendre
+# (egyszer a jegy téves szövege, egyszer egy bináris-kutatás alapján), és a
+# tulajdonos húsznál többször adta meg. A KÉPERNYŐKÉP nyer.
+#
+# Ez FELÜLÍRJA a jegy szövegében szereplő korábbi sorrendet, ami
+# feljegyzésből készült — a képen három sorban:
 #     Vágás · Kiegyenesítés · Vörösszem
 #     Jó napom van · Automatikus kontraszt · Automatikus szín
 #     Retusálás · Szöveg
