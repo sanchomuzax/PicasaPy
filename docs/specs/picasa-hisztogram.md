@@ -226,3 +226,102 @@ klippelés és a három összeadó konstans (`0x55550000`, `0x55005500`,
 **Nyitva marad:** a ritkítás **lépésközének** kiszámítása (az objektum
 0. mezője) — hol és milyen képlettel áll elő. A hisztogram *alakját* nem
 befolyásolja érdemben, a *pontos* bin-értékeket igen.
+
+## 6. A hisztogram alatti EXIF-blokk — bitre pontosan
+
+A `nerdview` panel alsó része **két, fix szélességű szövegoszlop**.
+
+### 6.1 Geometria (`respack.yt`)
+
+| elem | pozíció | méret |
+|---|---|---|
+| **`nerdview/detail1`** (bal) | (**13**, **82**) | **138 × 41** |
+| **`nerdview/detail2`** (jobb) | (**157**, **82**) | **69 × 41** |
+
+Ebből következik:
+
+- a két oszlop közti **hézag: 6 px** (157 − 13 − 138);
+- a teljes szélesség **138 + 6 + 69 = 213** — **pontosan a hisztogram szélessége**;
+- a jobb oszlop **pontosan feleakkora**, mint a bal (69 vs 138);
+- mindkettő **41 px magas**, `y = 82`-től;
+- a hisztogram alja `25 + 59 = 84`, tehát a szövegblokk **2 képponttal
+  feljebb kezdődik** — enyhén rálóg.
+
+### 6.2 Tipográfia
+
+| platform | erőforrás | betű |
+|---|---|---|
+| **Windows** | `nerdviewdetail_win.tre` | **nincs betű-makró** → a rendszer alapértelmezett betűje |
+| **Mac** | `nerdviewdetail_mac.tre` | `m_displayfont11` = **Praxis Semi Bold/Heavy, 11 pt, súly 400, betűköz −1** |
+
+A panel fejléce (`nerdview/nvhead`, „Histogram & Camera Information",
+13, 4, 100 × 11) **`m_displayfont14`** — ugyanaz a család, **14 pt**.
+
+### 6.3 A HÉT formátum-erőforrás — `il_NerdView::1..7`
+
+A blokk pontosan hét erőforrásból épül. *(A `0x00567e10` másoló függvény
+ugyanennyi, **hét** sztringmezőt mozgat — `+0x0c`-től `+0x24`-ig.)*
+
+| # | EN | **HU** | hova |
+|---:|---|---|---|
+| 1 | `No EXIF data available.` | **`Nincs elérhető EXIF-adat.`** | üres állapot |
+| 2 | `%1$s\nFocal Length: %2$3.1fmm\n` | **`%1$s\nFókusztávolság: %2$3.1f mm\n`** | **bal** |
+| 3 | `(35mm equivalent: %3.0fmm)\n` | **`(35 milliméteressel egyenértékű: %3.0f mm)\n`** | **bal** |
+| 4 | `1/%ds\n` | **`1/%d s\n`** | **jobb** |
+| 5 | `%2.1fs\n` | **`%2.1f s\n`** | **jobb** |
+| 6 | `f/%3.1f\n` | **`f/%3.1f\n`** | **jobb** |
+| 7 | `ISO: %2d` | **`ISO: %2d`** | **jobb** |
+
+### 6.4 Amit a formátumok pontosan előírnak
+
+| mező | formátum | jelentése |
+|---|---|---|
+| fényképezőgép | `%1$s` | nyers szöveg, **a fókusztávolsággal EGY erőforrásban**, `\n`-nel elválasztva |
+| fókusztávolság | **`%3.1f`** | **egy tizedesjegy**, minimum 3 karakter szélesség |
+| 35 mm-egyenérték | **`%3.0f`** | **nulla tizedesjegy** |
+| exponálás < 1 s | **`1/%d s`** | egész nevező |
+| exponálás ≥ 1 s | **`%2.1f s`** | egy tizedesjegy |
+| rekesz | **`f/%3.1f`** | **egy tizedesjegy** |
+| ISO | **`ISO: %2d`** | egész, minimum 2 karakter, **`\n` NÉLKÜL** (ez az utolsó sor) |
+
+> ⚠️ **A magyar változatban SZÓKÖZ van a mértékegység előtt**, az angolban
+> nincs: `%2$3.1f mm` ↔ `%2$3.1fmm`, `1/%d s` ↔ `1/%ds`,
+> `%2.1f s` ↔ `%2.1fs`. Ezt **szó szerint** kell átvenni.
+
+> ⚠️ **Nincs vaku-sor.** A hét erőforrás között nem szerepel.
+
+### 6.5 A blokk felépítése
+
+```
+detail1 (bal, 138 px):          detail2 (jobb, 69 px):
+  <fényképezőgép neve>            1/125 s      ← #4 vagy #5
+  Fókusztávolság: 6,7 mm          f/1.7        ← #6
+  (35 milliméteressel             ISO: 3200    ← #7
+   egyenértékű: 24 mm)
+```
+
+EXIF nélküli fájlnál a blokk helyén: **„Nincs elérhető EXIF-adat."**
+
+### 6.6 ❌ Amiben a PicasaPy eltér
+
+`src/picasapy/app/formatting.py:311` (`camera_summary_text`):
+
+| | eredeti Picasa | PicasaPy | eltérés |
+|---|---|---|---|
+| fókusztávolság | **`%3.1f`** (1 tizedes) | `toString(v, "g", 4)` — **4 értékes jegy** | ⚠️ `6.7` vs `6,700` |
+| rekesz | **`f/%3.1f`** (1 tizedes) | `toString(v, "g", 3)` — 3 értékes jegy | ⚠️ `f/1.7` vs `f/1.70` |
+| 35 mm-egyenérték szövege | **„(35 milliméteressel egyenértékű: %3.0f mm)"** | „(35 mm-egyenérték: %1 mm)" | ⚠️ **más fordítás** |
+| exponálás | `1/%d s` vagy `%2.1f s` | `format_exposure(...)` | ellenőrizendő |
+| **vaku-sor** | **NINCS** | `Flash: Fired` / `Flash: Off` | ⚠️ **fölösleges sor** |
+| ISO | `ISO: %2d` | `ISO: %1` | a szélesség hiányzik |
+| üres állapot | **„Nincs elérhető EXIF-adat."** | üres sztring | ⚠️ hiányzó felirat |
+| oszlopszélesség | **138 / 69**, 6 px hézaggal | rugalmas | ⚠️ fix legyen |
+| oszlopmagasság | **41 px** mindkettő | rugalmas | ⚠️ fix legyen |
+
+> A Picasa **másik** helyen (`il_PrintExif::3`, a nyomtatási EXIF-blokk)
+> **harmadik** fordítást használ ugyanerre: „(35 mm-es ekvivalens:
+> %3.0f mm)". A hisztogram alá a **`il_NerdView::3`** való.
+
+*Bizonyítottsági fok: megerősített* — a geometria a `respack.yt` rectjeiből,
+a betű a két `nerdviewdetail_*.tre`-ből, a hét formátum a hivatalos magyar
+szövegforrásból, és a hét sztringmező a `0x00567e10` másolójából.
