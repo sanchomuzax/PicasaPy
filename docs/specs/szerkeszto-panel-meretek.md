@@ -127,13 +127,30 @@ A fül lapja **273 × 277** (x 3..276).
 
 ### A nyolc eszközcsempe
 
+> ⛔ **EZ AZ EGYETLEN ÉRVÉNYES FORRÁS A SORRENDRE.** Az alábbi rács a
+> `respack.yt` nyers koordinátáiból származik, és a tulajdonos **valódi
+> Picasa-képernyőképe** (2026-08-16, #464) betűre igazolja.
+>
+> **Az `editpanel.tre` deklarációs sorrendje NEM használható**: ott minden
+> gomb `m_offsetLT`-vel él (a szülő bal-felső sarkához, eltolás nélkül),
+> tehát a fájl a helyüket **nem adja meg** — tíz ilyen gomb egymáson ülne.
+> Két kutatói kör csúszott el pontosan ezen; a részletes cáfolat:
+> [`ui-audit-editor.md`](ui-audit-editor.md) → „⛔ Az 1. fül VALÓDI
+> elrendezése".
+
 **Minden csempe 44 × 30 képpont.**
 
 | | 1. oszlop **x 37** | 2. oszlop **x 118** | 3. oszlop **x 198** |
 |---|---|---|---|
 | **1. sor** (y 91) | `crop` Vágás | `horizonadjust` Kiegyenesítés | `redeye` Vörösszem |
 | **2. sor** (y 155) | `enhance` Jó napom van | `autolighting` Auto. kontraszt | `autocolor` Auto. szín |
-| **3. sor** (y 223) | `retouch` Retusálás | `edittext` Szöveg | `picnik` Kreatív Kit |
+| **3. sor** (y 223) | `retouch` Retusálás | `edittext` Szöveg | ~~`picnik` Kreatív Kit~~ **REJTETT** |
+
+> A `picnik` (Kreatív készlet) csempéje a `respack.yt`-ban **kétszer**
+> szerepel, és az egyiket **`#` előzi meg** (kikommentezve):
+> `#button(picnik)` x0=187, 65×30 · `button(picnik)` x0=198, 44×30.
+> A tulajdonos képernyőképén a 3. sor **harmadik helye üres** — a
+> szolgáltatás 2012-ben megszűnt. **A mi felületünkön se legyen ott.**
 
 - **oszlopköz: 81 px** (37 → 118 → 198)
 - **sorköz: 64 px** az 1.→2. sor közt, **68 px** a 2.→3. közt
@@ -365,3 +382,52 @@ indoklással:
 (`macros.tre`, `fontmacros_win.tre`). Az effekt-rács méretei független
 képernyőkép-méréssel is egyeznek ([`ui-audit-editor.md`](ui-audit-editor.md)
 3.2).
+
+## A csúszka- és színválasztó-komponensek mérete (`respack.yt`, 2026-08-16)
+
+A Picasa **öt különböző csúszka-változatot** használ, mindegyik önálló
+al-dokumentum a `respack.yt`-ban (saját `docbounds` origóval). Az alábbi
+méretek **normatívak**.
+
+| komponens | teljes | sáv (track) | fogantyú (thumb) | hol |
+|---|---|---|---|---|
+| **`bigslider`** | **191 × 27** | 171 × 27 (x 10) | **16 × 26** | nagy, panelszintű csúszka |
+| **`editslider`** | **191 × 27** | 171 × 27 (x 10) | **16 × 26** | a szerkesztő paraméter-csúszkái |
+| **`toolslider`** | **267 × 28** | 253 × 28 (x 7) | **16 × 24** | széles, eszköz-panelbeli |
+| **`scaleslider`** | **127 × 27** | alap 121 × 9 (3, 8) | **16 × 22** | rövid (pl. Derítőfény, hangerő) |
+| **`timeslider`** | **97 × 13** | alap 97 × 7 (0, 3) | **10 × 13** | a keresősáv dátumsávja |
+
+Két megfigyelés:
+
+1. **A fogantyú négy méretben van** (16×26 · 16×24 · 16×22 · 10×13) — a
+   csúszka magasságához igazodva. **Nem ugyanaz a kép nagyítva.**
+2. A `scaleslider` és a `timeslider` **vékony sávot** rajzol (9, illetve
+   7 képpont), a `bigslider`/`editslider`/`toolslider` **teljes magasságú
+   hátteret**.
+
+A Derítőfény-sor `backlight_container`-e **127 × 27** — pontosan egy
+`scaleslider`.
+
+## A színválasztó komponensei
+
+| komponens | méret | megjegyzés |
+|---|---|---|
+| `colorpicker` (dokumentum) | **225 × 140** | |
+| `colorpicker/spectrum_press` | 208 × 140 (x 17) | a **teljes** színskála |
+| `colorpicker/softerspectrum_press` | 208 × 140 | **lágyabb** skála-változat |
+| `colorpicker/fullspectrum_press copy` | 208 × 140 | harmadik változat |
+| `colorpicker/spectrum_normal` / `_hover` | **21 × 21** | a kis skála-gomb két állapota |
+| `pickerpanel` (dokumentum) | **225 × 225** | |
+| `pickerpanel/base` | 203 × 171 (12, 8) | a panel háttere |
+| `pickerpanel/bezels` | 183 × 28 (19, 14) | a felső sáv kerete |
+| `pickerpanel/palette_0` / `_1` | **181 × 147** (20, 15) | két paletta-változat |
+| `pickerpanel/mru_0` … `mru_4` | **26 × 26**, x = **51 · 82 · 113 · 144 · 175** | **öt** „legutóbb használt" szín, osztás **31** |
+| ~~`pickerpanel/#mru_5`~~ | 26 × 26 (206, 15) | **kikommentezve** — hatodik hely volt tervben |
+| `globalbuttons/dropper_n` / `_h` | **27 × 28** | a **pipetta** gomb (lenyomva 25 × 25) |
+
+> **Öt „legutóbb használt" szín**, nem hat: a hatodik rekesz megvan a
+> csomagban, de **`#`-kal kikommentezve**. A `31 px`-es osztás
+> (26 + 5 hézag) az öt rekeszre `51 … 201` sávot ad.
+
+*Bizonyítottsági fok: megerősített* (a `respack.yt` nyers rectjei; a
+`#` előtag a kikommentezés jelölése, ugyanúgy, mint a `.tre`-ben).

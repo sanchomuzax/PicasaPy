@@ -196,3 +196,88 @@ visszavonható mentés"**.
 
 *Bizonyítottsági fok: megerősített* (a tizenkét darab egyetlen összeállító
 függvény sztring-táblájában, és a két állapotjelző a veremben).
+
+## A Címkék panel és a tíz gyorscímke (2026-08-16)
+
+Négy erőforrás írja le: `tagpanel_text.tre`, `keywordstext.tre`,
+`quicktagconfig.tre` (**31 elem**) és `quicktagconfig_text.tre`.
+
+### A Címkék panel
+
+| elem | felirat / súgó |
+|---|---|
+| `tagpanel/add_tag_label` | **Type in a tag to add:** |
+| `tagpanel/addtag` (súgó) | Add tag to the currently selected items |
+| `tagpanel/quick_label` | **Quick Tags:** |
+| `tagpanel/quick_config` (súgó) | Configure Quick Tags |
+
+A panel fejlécei **le vannak fordítva** (`TagPanel::*`):
+
+| erőforrás | HU |
+|---|---|
+| `TagPanel::tags` | **Címkék** |
+| `TagPanel::tag_info_single` | **%s címkéi:** |
+| `TagPanel::tag_info_multiple` | **Címkék az aktuális kijelölésben:** |
+| `TagPanel::tag_info_whole_album` | **Címkék az aktuális kijelölésben (teljes album):** |
+| `TagPanel::tip_fmt` | **Címke hozzáadása: %s** |
+| `TagPanel::remove_tip` | **A címke eltávolítása a kijelölt elemekről** |
+| `TagPanel::emptytip` | **Ide kattintva konfigurálhatja a gyorscímkéket** |
+| `TagPanel::empty` | **?** *(az üres gyorscímke-gomb felirata)* |
+| `TagPanel::notify_some_errors` | **A beírt szöveg egy része nem adható hozzá címkeként.** |
+
+> **Három szövegváltozat** van a fejlécre: egy kép · több kép · teljes
+> album. Ezt érdemes szó szerint követni.
+
+### A „nincs beírt szöveg" súgó — a Picasa tanít
+
+`TagPanel::notify_notext`:
+
+> „Írjon be egy címkét (szót vagy kifejezést) a szövegmezőbe attól a
+> gombtól balra, amelyre az imént kattintott.⏎⏎Ezután ismét kattintson a
+> gombra, így hozzáadja a címkét a kijelölt elemekhez.⏎⏎**(TIPP: Ha
+> automatikusan, a gombra kattintás nélkül szeretné hozzáadni a megadott
+> címkét, nyomja le az `<ENTER>` billentyűt.)**"
+
+### A gyorscímke-beállító — pontosan TÍZ
+
+`quicktagconfig.tre`, 31 elem: `edit_0` … **`edit_9`** és `base_0` …
+**`base_9`**, plus `tag_group`, `tag_icon`, `divider`, `autofill`,
+`recent_checkbox`, `ok`, `cancel`, `instructions`, `base`.
+
+Az ablak címe: `QuickTagConfigDlg::title` → **„Gyorscímkék
+konfigurálása"**.
+
+#### A két viselkedési szabály
+
+`quicktagconfig/instructions` (angolul az erőforrásban):
+
+> „You can use Quick Tags to apply a tag with a single click. Type in tags
+> below that you want to have one-click access to. **By default, the top
+> two Quick Tags are used to track recently applied tags.** Uncheck the
+> checkbox below to manually set the top two tags."
+
+| vezérlő | felirat | jelentés |
+|---|---|---|
+| `recent_checkbox` | Reserve top two buttons for recently used tags | **alapból BE** — a felső két gomb a legutóbb használt címkéket követi |
+| `autofill` | Autofill empty boxes above with commonly used tags | az üres mezők feltöltése a gyakori címkékkel |
+
+> **A felső kettő tehát alapból automatikus**, és csak a jelölő
+> kikapcsolásával állítható be kézzel. Ez a Picasa saját, apró
+> ergonómiája — a tíz gombból nyolc a felhasználóé, kettő a rendszeré.
+
+### A Címkék párbeszéd (`keywords`)
+
+| elem | felirat |
+|---|---|
+| `keywords/keywords_label` | **Tags:** |
+| `keywords/addkeywords_label` | **Add Tag:** |
+| `keywords/addbutton` | Add |
+| `keywords/removebutton` | Remove |
+| `keywords/closebutton` | **Done** |
+| `keywords/readonly_label` | Tags cannot be modified because one or more items are read-only. |
+
+> A **csak olvasható** eset külön feliratot kap — ez NAS-on és
+> írásvédett köteten valós helyzet.
+
+*Bizonyítottsági fok: megerősített* (a négy erőforrásfájl teljes tartalma
+és a tizenkét `TagPanel::*` bejegyzés).
