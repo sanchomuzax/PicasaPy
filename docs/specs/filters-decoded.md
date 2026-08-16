@@ -1081,40 +1081,85 @@ küszöb, `0x009db876`–`0x009db935` keverés), a konstansok a `.rdata`-ból
 kiolvasva (`0xcf3ed0 = -1.0f`, `0xc7dcc8 = 0.30f`, `0xc7dafc = 0.5f`), a
 hívók paraméterei a hívási helyekről.
 
-#### ✅ MEGVALÓSÍTVA ÉS LEMÉRVE (#721, `render/ops.py`)
+#### ✅ A modell MÉRVE — és a `_MIN_STRETCH_SPAN = 58` rejtélye megoldva
+
+A visszafejtett modellt lefuttattam a **12 golden-páron**
+(`referencia/imfeellucky/`, mérőszkript:
+`referencia/eszkozok/721-enhance/enhance_model.py`):
+
+| modell | átlagos eltérés |
+|---|---:|
+| tiszta csatornánkénti, korlát nélkül | 5,799 |
+| **a mai kódunk** (csatornánkénti + `_MIN_STRETCH_SPAN = 58`) | **2,480** |
+| **visszafejtett: keverés 0,30, korlát NÉLKÜL** | **0,727** |
+| teljesen közös (keverés 1,0) | 4,808 |
+
+**A keverés-söprésnek éles minimuma van pontosan a binárisból kiolvasott
+0,30-nál** — 0,25-nél 1,115, 0,30-nál **0,727**, 0,35-nél 1,131. A kódból
+olvasott konstanst tehát a mérés **függetlenül megerősíti**.
+
+Képenként **egyetlen kép sem romlik**, és a kiugró eset megszűnik:
+
+| kép | mai modell | visszafejtett |
+|---|---:|---:|
+| **Utopic Unicorn** | **13,03** | **0,72** |
+| Sunny Autumn | 4,90 | 1,27 |
+| Redes de hilo | 3,11 | 1,03 |
+| Music – tomasino.cz | 2,30 | 0,71 |
+| a többi nyolc | 0,20–1,49 | 0,20–0,97 |
+
+#### A `_MIN_STRETCH_SPAN = 58` NEM korlát — a keverés mellékhatása
+
+A #539 azt mérte, hogy „a ténylegesen alkalmazott bemeneti tartomány
+legkisebb értéke mind a 36 csatornán 58,1, és a Picasa sosem megy alá".
+Ebből egy beégetett gain-korlátra következtettünk. **Nincs ilyen korlát** —
+a `0x009db610` alkalmazó ciklusa (`0x009db9d0`–`0x009dba21`) csak a
+KIMENETET vágja `[0, felső]`-re, a gainre semmilyen felső határ nincs.
+
+A jelenség a keverésből jön. A kiugró képen a nyers csatorna-tartományok:
+
+```
+nyers:            [79, 26, 26]
+keverés 0,30 után [96, 59, 59]     ← innen a „soha nem megy 58 alá”
+keverés 1,0 után  [135, 135, 135]
+```
+
+A keverés minden csatornát a közös `[loMin, hiMax]` felé húz, ami a **szűk**
+csatornákat kiszélesíti. Az „58" tehát ennek a mérőkészletnek a véletlene,
+nem konstans. A modellben a korlát **fölösleges**: vele és nélküle a 12 páron
+bájtra azonos az eredmény (0,727 mindkettő).
+
+*Bizonyítottsági fok: megerősített* (kódból ÉS méréssel, egymástól
+függetlenül).
+
+**Ami ezzel lezárult:** a #539 „a `_MIN_STRETCH_SPAN` mért, nem visszafejtett
+viselkedés" megjegyzése tárgytalan — a konstans **elhagyható**.
+
+#### ✅ MEGVALÓSÍTVA (#721, `render/ops.py`)
 
 A keverés `blend` paraméterként bekerült az `apply_channel_levels_stretch`-be
-(`_blend_clip_points`), az `enhance` 0,30-cal, az `autocontrast` 1,0-del
-hívja; a `careful` kapcsoló a felezett feketepontokat és a 252-es korlátot
-adja. Mérés a `referencia/imfeellucky/` **12 valódi Picasa-képpárján**
-(átlagos csatorna-eltérés):
+(`_blend_clip_points`); az `enhance` **0,30**-cal, az `autocontrast` **1,0**-del
+hívja — **a kettő ezzel szétvált**, korábban ugyanaz a függvény volt. A
+`careful` kapcsoló a felezett feketepontokat és a 252-es korlátot adja.
+A `_MIN_STRETCH_SPAN = 58` a kódból **törölve** (a fenti levezetés szerint
+fölösleges).
 
-| modell | eltérés |
+**A megvalósítás mérése pontosít egy részletet:** a kevert vágópontok egésszé
+alakítása **csonkolással** történik (a C `float → int` cast), nem kerekítéssel
+— és ez mérhető. Ugyanazon a 12 páron:
+
+| | átlagos eltérés |
 |---|---:|
-| érintetlen kép | 10,346 |
-| a #721 ELŐTTI kód (`keverés = 0` + `_MIN_STRETCH_SPAN = 58`) | 2,480 |
-| **`keverés = 0,30` (a natív alapérték)** | **0,572** |
-| `keverés = 0,30` + `CarefulEnhance` | 2,366 |
-| `keverés = 1,0` (ez az `autocontrast` ága) | 4,808 |
+| kerekítve | 0,727 |
+| **csonkolva (ez a megvalósított)** | **0,572** |
 
-A 0,30 a méréseken önállóan is optimum (0,25 → 0,795; 0,30 → 0,572;
-0,35 → 0,884), tehát a `.rdata`-ból kiolvasott konstansot a valódi képpárok
-függetlenül megerősítik. A `CarefulEnhance` ága ezzel **kizárva** a
-referencia-exportból (2,366 ≫ 0,572). A kevert pontok egésszé alakítása
-**csonkolással** történik (a C `float → int` cast): csonkolva 0,572,
-kerekítve 0,727.
+A fenti kutatói táblázat 0,727-es sora tehát a kerekített változaté; a
+kódban a csonkolt, 0,572-es modell fut. A kiugró kép (Utopic Unicorn)
+13,035 → **0,521**. A `CarefulEnhance` ága a referencia-exportból ezzel
+**kizárva** (2,366 ≫ 0,572).
 
-**A `_MIN_STRETCH_SPAN = 58` TÖRÖLVE — ez volt a keverés lenyomata.** A
-korlátot a „Utopic Unicorn" mért 58,1 / 59,2-es alkalmazott tartománya
-szülte; a kevert tartomány ugyanezen a képen **58,7** és **58,7**, a zöld
-kevert vágópontjai `18,0…76,7` (a Picasából mért `18,2…76,3`). A keveréssel
-a korlát a 12 páron egyetlen csatornán sem lépne működésbe (a mérés bájtra
-azonos vele és nélküle), a kiugró kép eltérése pedig **13,035 → 0,521**.
-A natív képletben nincs ilyen korlát, ezért a kódból is kikerült.
-
-**Ami NYITVA marad:** a fenti 0,572 maradékának forrása (JPEG-újratömörítés
-kontra modell-hiba) nincs szétválasztva; és az elemzőablak pontos SZÉLESSÉGE
-(`0,9·W` kontra ~`0,94·W`) továbbra is a mérési zaj alatt van.
+**Ami NYITVA marad:** a 0,572 maradékának forrása (JPEG-újratömörítés kontra
+modell-hiba) nincs szétválasztva.
 
 ## Az irányított család megvalósítva — `dir_sat`, `dir_brite`, `dir_sharp`, `linblur` (#623)
 
@@ -1920,3 +1965,125 @@ Megvalósítás: `picasapy.render.ops._analysis_region`; regressziós őr:
 `tests/render/test_ops.py::TestEnhanceVagasiPontok721`. Ugyanez hat az
 `autocontrast`-ra és a Glimmer-effektek belső `AutoFix` lépésére is (közös
 mag: `apply_channel_levels_stretch`).
+
+## Az `autocolor` becslője VISSZAFEJTVE (`0x0090f8f0`, 2026-08-16)
+
+Eddig az `autocolor` „szürkevilág-becslés a semleges képpontokra" modellel
+futott (#541), 2,35-ös mért eltéréssel a 12 páron, és a `render/ops.py`
+docstringje kimondta: *„a pontos becslő-képlet továbbra is nyitott"*.
+**Most megvan, utasításszinten.**
+
+### A hívási lánc
+
+```
+autocolor callback   0x008f82a0        (a natív regiszterből)
+   → 0x0090f8f0      a BECSLŐ  (965 b)   — visszaad három bájtnyi erősítést
+   → 0x0090eda0      az ALKALMAZÓ (1731 b)
+```
+
+Az `autocolor` tehát **nem** a szinthúzó elemzőt (`0x009db610`) használja —
+teljesen külön út, ezért ad a szürke rámpán azonosságot (nincs színöntet).
+
+### 1. Melyik képpont számít „semlegesnek"
+
+```c
+G = px.g;  R = px.r;  B = px.b;
+if (G < 32 || G > 224) skip;          // (G-32) unsigned > 192  → 0x0090f9b6
+if (2*R <= G) skip;                   // 0x0090f9c7
+if (2*G <= R) skip;                   // 0x0090f9d2
+if (2*B <= G) skip;                   // 0x0090f9de
+if (2*G <= B) skip;                   // 0x0090f9e6
+```
+
+Vagyis: **a zöld 32 és 224 közt van**, és **egyik csatorna sem több a másik
+kétszeresénél** (a zöldhöz viszonyítva). Nincs benne se telítettség-, se
+világosság-számítás — öt egész összehasonlítás.
+
+### 2. Egy 64 × 64-es KÉTDIMENZIÓS hisztogram
+
+```c
+rg = clamp(32*(R-G) / min(R,G) + 32, 0, 63);     // 0x0090f9ee-0x0090fa2c
+bg = clamp(32*(B-G) / min(B,G) + 32, 0, 63);
+H[bg][rg] += 1;                                   // 0x0090fa6b
+```
+
+A tengelyek a **vörös/zöld** és a **kék/zöld** kiegyensúlyozatlanság, 32-es
+fixponton, a semleges pont a `(32, 32)`.
+
+### 3. Köbös súlyozás a semleges pont köré
+
+```c
+tav = max(|x-32|, |y-32|);            // Csebisev-távolság
+w   = ((32 - tav)^3) >> 5;            // 0x0090fab5-0x0090faca
+H[y][x] = (w > 0) ? (H[y][x]*w) >> 8 : 0;
+```
+
+A **köbös** esés miatt a valóban semleges képpontok sokszorosan nyomnak
+többet; a 31-es távolságnál a vödör nullázódik.
+
+### 4. Súlypont → két erősítés
+
+```c
+dx = clamp(sum((x-32)*H) / sum(H), -32, 32);      // 0x0090fb08-0x0090fbf9
+dy = clamp(sum((y-32)*H) / sum(H), -32, 32);
+
+k(d) = (d >= 0) ? (32+d)*4 : 16384 / ((32-d)*4);  // k(0) = 128 = EGYSÉG
+csomag = (k(dx) << 16) | 0x8000 | k(dy);          // 0x0090fc8a-0x0090fc99
+```
+
+A csomagolt visszatérési érték **három bájt**: `kR`, **128** (a zöld fixen
+egység), `kB`. Az egység tehát **128**, a tartomány `[0 … 255]`, azaz
+kb. `0…2,0×`.
+
+### 5. Az irány: OSZTÁS — méréssel eldöntve
+
+A kódból nem dőlt el, hogy az alkalmazó szoroz vagy oszt (a `k` a **mért
+színöntettel nő**). A 12 golden-páron (`referencia/autocolor/AutoColor`)
+mindkét irányt kimérve:
+
+| | átlagos eltérés |
+|---|---:|
+| `ki = be · k/128` (szorzás) | **10,126** |
+| **`ki = be · 128/k` (osztás)** | **2,364** |
+| érintetlen kép | 5,287 |
+
+A szorzás **rosszabb az érintetlennél** — az osztás a helyes irány.
+*Bizonyítottsági fok: megerősített (mérés).*
+
+### 6. ⚠️ A becslő NEM a szűk keresztmetszet — negatív eredmény
+
+| modell | eltérés |
+|---|---:|
+| a mai kódunk (szürkevilág-becslés, #541) | 2,35 |
+| **a visszafejtett becslő** | **2,364** |
+| orákulum (a MÉRT erősítésekkel) | 1,08 |
+
+A kettő **gyakorlatilag azonos**, és ugyanazon a három képen tér el
+(Night Seascape, Sunny Autumn, Golden leaves). **A maradék hiba tehát nem a
+becslőben van** — a becslő cseréje önmagában semmit nem javítana.
+
+### 7. Ahol a maradék van: az alkalmazó egy 3 × 3-as SZÍNMÁTRIX
+
+A `0x0090eda0` a legelső dolgaként **kilenc float konstanst** másol egy
+kilenc elemű tömbbe (`rep movsd`, `ecx = 9`), majd meghívja a `0xa4a140`-et:
+
+|  |  |  |
+|---:|---:|---:|
+| **1,9044** | 0,4508 | −0,3826 |
+| −0,0532 | **1,8018** | 0,1995 |
+| 0,0491 | −0,3057 | **1,8576** |
+
+*(`0x00cf47d0` … `0x00cf47b0`, betöltési sorrendben)*
+
+Vagyis az `autocolor` **nem három független csatorna-erősítés**, hanem egy
+**3 × 3-as színmátrix**, amibe a becsült erősítések beépülnek. Ez magyarázza,
+miért nem megy 2,35 alá semmilyen csatornánkénti modell — a kereszt-tagok
+hiányoznak belőle.
+
+*Bizonyítottsági fok:* **megerősített** az 1–5. pontra (utasításszinten
+visszakövetve, a mérés az irányt eldönti) · **erős** a 7. pontra (a kilenc
+konstans és a `rep movsd ecx=9` egyértelmű, de a mátrix sorrendje és a
+becsült erősítések beépülésének módja a `0x0090eda0` alkalmazó ciklusából és
+a `0xa4a140`-ből derül ki — **ez a következő kör**).
+
+Mérőszkript: `referencia/eszkozok/721-enhance/autocolor_model.py` (privát repó).
