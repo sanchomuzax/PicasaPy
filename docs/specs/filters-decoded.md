@@ -577,8 +577,11 @@ Fontos tulajdonságok:
     ablakáról készül (#721 pontosította — ld. lent az `enhance` szakaszt),
   - a vágási küszöb a **teljes kép képpontszámának 1/200-a**, mindkét
     végén **azonosan** (az aszimmetrikus változatok a mérésen rosszabbak),
-  - a nyújtás bemeneti tartománya nem mehet **58 szint alá**
-    (`_MIN_STRETCH_SPAN`) — ez a natív `gain` felső korlátja.
+  - ~~a nyújtás bemeneti tartománya nem mehet **58 szint alá**
+    (`_MIN_STRETCH_SPAN`)~~ — **törölve a #721-ben**: az az 58 nem korlát
+    volt, hanem a vágópont-keverés lenyomata (ld. lent),
+  - a vágópontok **30%-ban a közös `[loMin, hiMax]` felé keverednek**
+    (`enhance`), illetve teljesen közösek (`autocontrast`) — #721.
 
   A 12 referencia-páron ez **2,68 → 2,61**-re viszi az átlagos eltérést;
   a vágópontok maguk pedig a mérttel egyeznek (fehérpont-eltérés átlaga
@@ -980,16 +983,19 @@ hisztogramba öntő közelítés helyett) és a fixpontos átvitelből jön; a 1
 képből 5 azonosság-esete bájtra pontos maradt. A `CarefulEnhance` 252-es
 kimeneti korlátja **kizárva**: mérve 3,41 a 2,61 helyett.
 
-**NYITVA marad az `enhance` kiugró képe** („Utopic Unicorn", 13,3): ott a
+*(Az `enhance` sora a #721 keverés-lelete ELŐTTI állapot; a bevezetés után
+**0,57** — ld. a következő szakasz végén a mérést.)*
+
+~~**NYITVA marad az `enhance` kiugró képe**~~ („Utopic Unicorn", 13,3): ott a
 Picasa által ténylegesen alkalmazott bemeneti tartomány két csatornán
 **szélesebb, mint magának a csatornának a teljes értékkészlete** (zöld:
 12–47 helyett 18,2–76,3), tehát *semmilyen* darabszám-küszöb nem adhatja ki.
-A natív gain-korlát léte ezzel bizonyított, de a dekompilátumban még nem
-találtuk meg (a Ghidra a `0x009db610` két float paraméterét elveszti), ezért
-a `_MIN_STRETCH_SPAN = 58` továbbra is **mért**, nem visszafejtett viselkedés.
-Amit ez a kör kizárt: az `autolight`+`enhance` bármely sorrendű összetétele
-(5,97–6,07), az azonossággal való erősség-keverés, a 252-es korlát, és minden
-1/100–1/400 közötti vágási osztó (a legjobb így is 2,56).
+Ebből született a `_MIN_STRETCH_SPAN = 58` mért korlát — **a #721 keverése
+zárta le: nem gain-korlát volt, hanem magának a keverésnek a lenyomata**
+(ld. a következő szakasz végét). Amit ez a kör kizárt: az
+`autolight`+`enhance` bármely sorrendű összetétele (5,97–6,07), az
+azonossággal való erősség-keverés, a 252-es korlát, és minden 1/100–1/400
+közötti vágási osztó (a legjobb így is 2,56).
 
 ### ⚠️ MEGVAN A KÉT ELVESZETT FLOAT — és megdől a „mindkettő csatornánként vág" (#721, 2026-08-16)
 
@@ -1075,9 +1081,41 @@ küszöb, `0x009db876`–`0x009db935` keverés), a konstansok a `.rdata`-ból
 kiolvasva (`0xcf3ed0 = -1.0f`, `0xc7dcc8 = 0.30f`, `0xc7dafc = 0.5f`), a
 hívók paraméterei a hívási helyekről.
 
-**Ami NYITVA marad:** a `_MIN_STRETCH_SPAN = 58` (a gain felső korlátja) — a
-fenti képletben nincs ilyen korlát, tehát vagy a hívó oldalán, vagy a
-fixpontos osztás telítésében van. Továbbra is **mért**, nem visszafejtett.
+#### ✅ MEGVALÓSÍTVA ÉS LEMÉRVE (#721, `render/ops.py`)
+
+A keverés `blend` paraméterként bekerült az `apply_channel_levels_stretch`-be
+(`_blend_clip_points`), az `enhance` 0,30-cal, az `autocontrast` 1,0-del
+hívja; a `careful` kapcsoló a felezett feketepontokat és a 252-es korlátot
+adja. Mérés a `referencia/imfeellucky/` **12 valódi Picasa-képpárján**
+(átlagos csatorna-eltérés):
+
+| modell | eltérés |
+|---|---:|
+| érintetlen kép | 10,346 |
+| a #721 ELŐTTI kód (`keverés = 0` + `_MIN_STRETCH_SPAN = 58`) | 2,480 |
+| **`keverés = 0,30` (a natív alapérték)** | **0,572** |
+| `keverés = 0,30` + `CarefulEnhance` | 2,366 |
+| `keverés = 1,0` (ez az `autocontrast` ága) | 4,808 |
+
+A 0,30 a méréseken önállóan is optimum (0,25 → 0,795; 0,30 → 0,572;
+0,35 → 0,884), tehát a `.rdata`-ból kiolvasott konstansot a valódi képpárok
+függetlenül megerősítik. A `CarefulEnhance` ága ezzel **kizárva** a
+referencia-exportból (2,366 ≫ 0,572). A kevert pontok egésszé alakítása
+**csonkolással** történik (a C `float → int` cast): csonkolva 0,572,
+kerekítve 0,727.
+
+**A `_MIN_STRETCH_SPAN = 58` TÖRÖLVE — ez volt a keverés lenyomata.** A
+korlátot a „Utopic Unicorn" mért 58,1 / 59,2-es alkalmazott tartománya
+szülte; a kevert tartomány ugyanezen a képen **58,7** és **58,7**, a zöld
+kevert vágópontjai `18,0…76,7` (a Picasából mért `18,2…76,3`). A keveréssel
+a korlát a 12 páron egyetlen csatornán sem lépne működésbe (a mérés bájtra
+azonos vele és nélküle), a kiugró kép eltérése pedig **13,035 → 0,521**.
+A natív képletben nincs ilyen korlát, ezért a kódból is kikerült.
+
+**Ami NYITVA marad:** a fenti 0,572 maradékának forrása (JPEG-újratömörítés
+kontra modell-hiba) nincs szétválasztva; és az elemzőablak pontos SZÉLESSÉGE
+(`0,9·W` kontra ~`0,94·W`) továbbra is a mérési zaj alatt van.
+
 ## Az irányított család megvalósítva — `dir_sat`, `dir_brite`, `dir_sharp`, `linblur` (#623)
 
 A #568 visszafejtésének eredménye kódba került. Modulok:
@@ -1862,6 +1900,11 @@ valódi Picasa-kimenettől:
 | teljes kép | 2,68 | 12,53 |
 | bal felső 90 % × 90 % | 2,74 | 13,35 |
 | *az érintetlen kép* | *10,35* | *38,10* |
+
+*(Ez a táblázat a vágópont-KEVERÉS bevezetése előtti modellel készült.
+A kevert (mai) modellel újramérve a döntés nemhogy áll, hanem sokkal
+élesebb: balra igazított **0,572**, bal felső 0,782, középre igazított
+0,964, teljes kép 1,730.)*
 
 A három bizonyíték **egy irányba mutat**, és egyik sem illesztés: a
 dekompilátum betű szerinti olvasata egyben a mérésen is a legjobb.

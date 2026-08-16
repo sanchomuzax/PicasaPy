@@ -15,6 +15,7 @@ from picasapy.render.ops import (
     _native_levels_lut,
     _union_black_white_point,
     apply_autocolor,
+    apply_autocontrast,
     apply_autolight,
     apply_channel_levels_stretch,
     apply_crop,
@@ -300,7 +301,8 @@ class TestApplyEnhance:
 
     def test_linearis_es_csatornankent_kulon_vag(self) -> None:
         # megfejtve (#535): ki = (be − lo)·255/(hi − lo), csatornánként
-        # KÜLÖN lo/hi (fehéregyensúly-hatás). Építsünk képet, ahol a három
+        # KÜLÖN lo/hi (fehéregyensúly-hatás) — #721 óta a vágópontokat
+        # 30%-ban a KÖZÖS érték felé keverve. Építsünk képet, ahol a három
         # csatorna eltérő tartományt használ ki, és ellenőrizzük a
         # linearitást + hogy a csatornák tényleg különböző LUT-ot kapnak.
         # #539/#721: az elemzés a kép 90% × 90%-os, vízszintesen BALRA
@@ -318,19 +320,22 @@ class TestApplyEnhance:
 
         result = apply_enhance(image)
 
-        # a piros és a kék csatornát is széthúzta (nem full-range bemenet).
-        # #539: a fehérpont a natív EGÉSZ osztás csonkolása miatt 254-re is
-        # eshet — a gain `(255 << 16) // (hi − lo)` lefelé kerekít.
-        assert result[..., 0].min() == 0
-        assert result[..., 0].max() >= 254
-        assert result[..., 2].min() == 0
-        assert result[..., 2].max() >= 254
-        # a zöld már full-range volt → azonosság
+        # a piros és a kék csatornát is széthúzta (nem full-range bemenet),
+        # de a keverés miatt EGYIK sem feszül a teljes 0..255-re: a közös
+        # pontok loMin = 0, hiMax = 255 (a zöldtől), így
+        #   piros: 40 + 0,3·(0 − 40) = 28 … 200 + 0,3·(255 − 200) = 216
+        #   kék:   80 + 0,3·(0 − 80) = 56 … 180 + 0,3·(255 − 180) = 202
+        assert 0 < int(result[..., 0].min()) < int(result[..., 2].min())
+        assert int(result[..., 0].max()) > int(result[..., 2].max())
+        assert int(result[..., 0].max()) < 254
+        # a zöld már full-range volt → azonosság (a keverés sem mozdítja:
+        # ő ADJA a közös pontokat)
         np.testing.assert_array_equal(result[..., 1], image[..., 1])
 
         # linearitás: a piros csatorna középső mintapontjára illik a
-        # (be − lo)·255/(hi − lo) képlet a mért lo/hi-vel
-        lo, hi = int(red.min()), int(red.max())
+        # (be − lo')·255/(hi' − lo') képlet a KEVERT lo'/hi'-vel
+        lo = 40 + 0.30 * (0 - 40)
+        hi = 200 + 0.30 * (255 - 200)
         mid_input = int(red[span // 2])
         expected = round((mid_input - lo) * 255.0 / (hi - lo))
         assert abs(int(result[0, span // 2, 0]) - expected) <= 1
@@ -633,34 +638,160 @@ class TestCountRedeyeSpots:
         assert count_redeye_spots(image) == 0
 
 
-class TestMinStretchSpan:
-    """#539: a nagyon szűk hisztogramú csatornát a szinthúzás nem feszíti
-    ki a teljes tartományra.
+class TestSzukCsatorna721:
+    """#721: a szűk hisztogramú csatornát a KEVERÉS tartja vissza — nem
+    korlát.
 
-    A `referencia/imfeellucky/` „Utopic Unicorn" képén — a 12-ből az
-    egyetlen szélső eset — a két szűk csatorna kimért bemeneti tartománya
-    58,1 és 59,2, holott a nyers tartományuk 35 és 41 volt. A korlát a
-    feketepontot tartja, a fehérpontot tolja feljebb.
+    A #539 óta volt a kódban egy `_MIN_STRETCH_SPAN = 58` alsó korlát: a
+    „Utopic Unicorn" képen a Picasa által ALKALMAZOTT bemeneti tartomány
+    két szűk csatornán 58,1 és 59,2 volt, holott a nyers vágópontjuk sokkal
+    közelebb esett egymáshoz. A #721 keverés-lelete megmagyarázta, honnan
+    jött az az 58: **a kevert tartomány** azon a képen 58,7 és 58,7 (a zöld
+    kevert pontjai 18,0…76,7, a Picasából mértek 18,2…76,3). A korlát
+    ezért TÖRÖLVE — a natív képletben nincs ilyen, és a 12 referencia-páron
+    bevezetése óta egyetlen csatornán sem lépne működésbe.
     """
 
-    def test_szuk_csatorna_nem_feszul_a_teljes_tartomanyra(self) -> None:
-        # 30 szintnyi tartomány (100..130): a naiv nyújtás 0..255-re vinné
+    def test_szines_szuk_csatorna_a_keverestol_nem_feszul_ki(self) -> None:
+        """A „Utopic Unicorn" geometriája: két szűk (26 szintes) és egy
+        széles csatorna. A szűk zöld a keveréstől 18…76 tartományt kap
+        (span 58), tehát a legvilágosabb zöld képpontja 114-re kerül, nem
+        255-re — korlát nélkül.
+        """
+        image = _csatornankent_elteroe_kep(also=(30, 18, 74), felso=(56, 44, 153))
+
+        result = apply_enhance(image)
+
+        # zöld: lo' = 18 (ő a loMin), hi' = 44 + 0,30·(153 − 44) = 76
+        # gain = (255 << 16) // 58 = 288132 → (44 − 18)·gain >> 16 = 114
+        assert int(result[..., 1].min()) == 0
+        assert int(result[..., 1].max()) == 114
+
+    def test_szurke_szuk_kep_kifeszul(self) -> None:
+        """Szürkén nincs mit keverni (`lo_ch = loMin`, `hi_ch = hiMax`),
+        tehát a natív képlet a teljes tartományra visz — a törölt korlát
+        itt akadályozta meg ezt.
+        """
         narrow = np.tile(
             np.linspace(100, 130, 64, dtype=np.uint8)[:, np.newaxis, np.newaxis],
             (1, 64, 3),
         )
+
         result = apply_channel_levels_stretch(narrow)
-        spread = int(result.max()) - int(result.min())
-        assert spread < 200, f"a szűk csatorna teljesen kifeszült ({spread})"
-        # a feketepont a horgony: a legsötétebb képpont marad a legsötétebb
+
         assert int(result.min()) == 0
+        assert int(result.max()) - int(result.min()) > 240
 
     def test_szeles_csatorna_tovabbra_is_kifeszul(self) -> None:
-        """A korlát csak a szűk esetre vonatkozik — a szokásos képeken a
-        szinthúzás változatlanul a teljes tartományra visz."""
+        """A szokásos, széles hisztogramú képen a szinthúzás változatlanul
+        a teljes tartományra visz."""
         wide = np.tile(
             np.linspace(40, 200, 64, dtype=np.uint8)[:, np.newaxis, np.newaxis],
             (1, 64, 3),
         )
         result = apply_channel_levels_stretch(wide)
         assert int(result.max()) - int(result.min()) > 240
+
+
+def _csatornankent_elteroe_kep(
+    height: int = 100,
+    width: int = 100,
+    also: tuple[int, int, int] = (40, 0, 100),
+    felso: tuple[int, int, int] = (120, 60, 240),
+) -> np.ndarray:
+    """Kép, amelynek MINDHÁROM csatornája MÁS tartományt használ ki.
+
+    A gradiens pontosan az elemzőablak (`[0 .. 0,9·W)`, #721) szélességére
+    készül, a maradék oszlopokat a szélső értékkel töltjük — így a
+    csatornánkénti vágópontok bájtra kiszámíthatóak: `lo` az első, `hi` az
+    utolsó ablakbeli oszlop értéke.
+
+    A keverés csak ILYEN képen mérhető: szürkén (vagy azonos tartományú
+    csatornákon) `lo_ch = loMin` és `hi_ch = hiMax`, tehát a keverés
+    bármilyen értéknél ugyanazt adja.
+    """
+    span = width * 95 // 100 - width * 5 // 100
+    pad = ((0, width - span),)
+    channels = [
+        np.pad(np.linspace(lo, hi, span, dtype=np.uint8), pad, mode="edge")
+        for lo, hi in zip(also, felso, strict=True)
+    ]
+    return np.tile(np.stack(channels, axis=-1), (height, 1, 1))
+
+
+class TestKeveresParameter721:
+    """#721: a vágópontok KEVERÉSE a csatornánkénti és a közös érték között.
+
+    A `0x009db610` utasításszintű visszafejtése szerint a natív szinthúzó
+    nem csatornánkénti és nem is uniós, hanem a kettő között áll:
+
+    ```c
+    hi_ch' = hi_ch + keveres * (hiMax - hi_ch);
+    lo_ch' = lo_ch + keveres * (loMin - lo_ch);
+    ```
+
+    A keverést a HÍVÓ adja át: az `enhance` a `-1,0` jelzőt (→ **0,30**),
+    az `autocontrast` fixen **1,0**-et. A javítás előtt mindkettő tiszta
+    csatornánkéntit (`keverés = 0`) számolt, és a kettő AZONOS volt.
+    """
+
+    def test_az_enhance_a_kozos_fele_huzza_a_vagopontokat(self) -> None:
+        """A 0,30-as keverés bájtra kiszámítható a piros csatornán.
+
+        A csatornánkénti pontok: piros 40…120, zöld 0…60, kék 100…240,
+        tehát `loMin = 0`, `hiMax = 240`. A piros kevert pontjai:
+
+            lo' = 40 + 0,30·(0 − 40)   = 28
+            hi' = 120 + 0,30·(240 − 120) = 156
+
+        A natív fixpontos átvitellel (`gain = (255 << 16) // 128 = 130560`)
+        a legsötétebb piros képpont **23**-ra, a legvilágosabb **183**-ra
+        kerül. Keverés nélkül (a javítás előtt) 0-ra és 255-re került —
+        vagyis a régi kód a piros csatornát a teljes tartományra feszítette.
+        """
+        image = _csatornankent_elteroe_kep()
+
+        result = apply_enhance(image)
+
+        assert int(result[..., 0].min()) == 23
+        assert int(result[..., 0].max()) == 183
+
+    def test_az_autocontrast_kozos_vagopontot_hasznal(self) -> None:
+        """`keverés = 1,0`: mindhárom csatorna UGYANAZT a `[loMin, hiMax]`
+        tartományt kapja, tehát azonos bemeneti szint azonos kimenetet ad —
+        ez őrzi meg a színegyensúlyt. Csatornánkénti vágásnál (a javítás
+        előtti állapot) ugyanaz a szint csatornánként MÁSHOVÁ kerül.
+        """
+        image = _csatornankent_elteroe_kep()
+        kozos = np.intersect1d(image[0, :, 0], image[0, :, 2])
+        assert kozos.size, "a piros és a kék csatorna nem fed át"
+        ertek = int(kozos[kozos.size // 2])
+        piros_index = int(np.argmax(image[0, :, 0] == ertek))
+        kek_index = int(np.argmax(image[0, :, 2] == ertek))
+
+        result = apply_autocontrast(image)
+
+        assert int(result[0, piros_index, 0]) == int(result[0, kek_index, 2])
+
+    def test_az_enhance_es_az_autocontrast_mar_nem_azonos(self) -> None:
+        """A két szűrő szétvált: 0,30 kontra 1,0 keverés."""
+        image = _csatornankent_elteroe_kep()
+
+        assert not np.array_equal(apply_enhance(image), apply_autocontrast(image))
+
+    def test_a_careful_enhance_felezi_a_feketepontokat_es_252_re_vag(self) -> None:
+        """A `CarefulEnhance` bool nem csak a 252-es felső korlátot kapcsolja:
+        a feketepontokat 0,5-tel szorozza a KÖZÖS minimum képzése előtt
+        (`0x009db845`). Alacsonyabb `loMin` → a kevert `lo'` is lejjebb kerül,
+        tehát a legsötétebb képpont már NEM 0-ra esik.
+        """
+        image = _csatornankent_elteroe_kep(also=(40, 20, 100), felso=(120, 60, 240))
+
+        sima = apply_channel_levels_stretch(image)
+        careful = apply_channel_levels_stretch(image, careful=True)
+
+        # a zöld a legsötétebb csatorna: keverés nélküli loMin = 20,
+        # felezve 10 → lo' = 20 + 0,30·(10 − 20) = 17 (a sima ágon 20)
+        assert int(sima[..., 1].min()) == 0
+        assert int(careful[..., 1].min()) > 0
+        assert int(careful.max()) <= 252
