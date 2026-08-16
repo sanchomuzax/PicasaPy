@@ -1122,3 +1122,77 @@ paraméter-értelmezője** (`0x008f9bf0`) — vagyis tényleg egy csempe két
 (nyers `.rdata`, minden rekordhoz cím; három forrás egyezik) · **erős** a
 második token „üzemmód" értelmezésére (mind a kilenc pár illeszkedik, és a
 `dir_tint`/`radtint` külön is igazolja).
+
+### A második tokent a SHIFT billentyű kapcsolja (2026-08-16)
+
+Az előző szakasz nyitva hagyta, **melyik vezérlő** kapcsolja a csempe
+második tokenjét. A válasz: **egyik sem — a Shift billentyű.**
+
+```asm
+0x005d7c86  call    0xa67be0
+0x005d7c91  push    0x10                 ; VK_SHIFT
+0x005d7ca3  call    dword ptr [0xc406f8] ; USER32!GetAsyncKeyState
+0x005d7cbb  shr     eax, 0xf
+0x005d7cbe  and     al, 1
+0x005d7cc0  mov     byte ptr [ecx + 0x33a8], al   ; a panel „shift" jelzője
+```
+
+és a csempe-kirakó ezt olvassa:
+
+```asm
+0x005d7d63  cmp     byte ptr [ebx + 0x33a8], 0
+0x005d7d6a  je      0x5d7e07             ; nincs shift → marad az alap token
+0x005d7d70  mov     esi, dword ptr [esi + 0xc7e5a4]   ; a rekord +4 mezője
+0x005d7d76  test    esi, esi
+0x005d7d78  je      0x5d7e07             ; nincs 2. token → marad az alap
+                                          ; különben a 2. token lép a helyére
+```
+
+A `0x00c406f8` import feloldva: **`USER32.dll!GetAsyncKeyState`**, az
+argumentum `0x10` = **`VK_SHIFT`**.
+
+#### Újrarajzolás billentyűváltásra
+
+Az effekt-panel figyeli a billentyű állapotát, és **csak változáskor**
+rajzol újra:
+
+```asm
+0x005e6754  push    0x10                 ; VK_SHIFT
+0x005e6756  call    dword ptr [0xc406f8]
+0x005e675c  shr     eax, 0xf
+0x005e675f  and     al, 1
+0x005e6761  cmp     byte ptr [edi + 0x33a8], al
+0x005e6767  je      0x5e6776             ; nem változott → nincs teendő
+0x005e6771  call    0x5d7c20             ; a csempe-rács újrarajzolása
+```
+
+#### Amit ez jelent
+
+**A Shift lenyomva tartása mind a kilenc kétmódú csempét egyszerre
+átváltja** a másodlagos effektjére — nem csempénkénti jelölőnégyzet, hanem
+**egyetlen, globális billentyű-módosító**:
+
+| csempe | Shift nélkül | Shifttel |
+|---|---|---|
+| Élesítés | `unsharp2` | `unsharp` |
+| Filmszemcse | `PicnikGrain` | `grain` |
+| Árnyalás | `PicnikTint` | `tint` |
+| Ragyogás | `glow2` | `glow` |
+| Színátmenet | `dir_tint` | `radtint` |
+| Hőtérkép | `HeatMap` | `NightVision` |
+| Vignetta | `Vignette` | `Matte` |
+| Képpontnagyítás | `Pixelate` | `PicnikFocalPixelate` |
+| Szegély | `Border` | `RoundedEdges` |
+
+A csempe **felirata és bélyegképe is** ehhez igazodik: az erőforrás-nevet a
+`_mod%s` utótaggal képzi (`0x005d7df4`).
+
+> **Helyesbítés az előző szakaszhoz.** Ott „jelölőnégyzet vagy választó"
+> szerepelt a második token kapcsolójaként. **Ez téves volt** — a
+> visszafejtés szerint egyetlen, panelszintű `GetAsyncKeyState(VK_SHIFT)`
+> vizsgálat kapcsolja mind a kilencet. A tévedést a `0x33a8` eltolás
+> írás/olvasás helyeinek végigkeresése döntötte el (a teljes `.text`-ben
+> **három** hivatkozás van rá, mindhárom itt).
+
+*Bizonyítottsági fok: megerősített* (import feloldva, mindkét oldal
+— beállítás és olvasás — kiolvasva, címekkel).
