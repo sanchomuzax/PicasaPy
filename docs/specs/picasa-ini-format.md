@@ -149,9 +149,9 @@ float, `#` = 32-bit hex szín (pl. `fff7f5f3`), `[]` = rect64 crop téglalap.
 | `glow` (v1) | **azonos a `glow2`-vel** | ragyogás v1 — a natív szűrő-tábla szerint (`0x00cd07d8`) **ugyanaz a kezelő** (`0x008f8f70`), mint a `glow2`-é; lásd `picasa-native-filter-registry.md` |
 | `grain` (v1) | **azonos a `grain2`-vel** | filmszemcse v1 — a natív szűrő-tábla szerint (`0x00cd0868`) **ugyanaz a kezelő** (`0x008f88e0`), mint a `grain2`-é; lásd `picasa-native-filter-registry.md` |
 | `radtint` | `1,!x,!y,!feather[,!szín]` | radiális **szorzó**-tint (#565): a fókuszpont körül változatlan, kifelé `forrás × szín / 256`, köbös smoothstep maszkkal; a Feather affin leképezése még kalibrálatlan |
-| `RoundedEdges` | ismeretlen | önálló szűrő-token (a `Border`/`DropShadow` mellett) — exe-ből azonosított, paraméterezése dekódolatlan |
-| `Matte` | ismeretlen | önálló szűrő-token (a `MuseumMatte` és `Vignette` között) — exe-ből azonosított, paraméterezése dekódolatlan |
-| `NightVision` | ismeretlen | önálló szűrő-token (a `HeatMap`/`Invert` mellett) — exe-ből azonosított, paraméterezése dekódolatlan |
+| `RoundedEdges` | **a `Border` csempe 2. üzemmódja** | nem önálló szűrő: az effekt-csempe tábla (`0x00c7e720`) szerint a Szegély csempe második tokenje (sarok-lekerekítés); lásd `ui-audit-editor.md` |
+| `Matte` | **a `Vignette` csempe 2. üzemmódja** | nem önálló szűrő: az effekt-csempe tábla (`0x00c7e6d8`) szerint a Vignetta csempe második tokenje; lásd `ui-audit-editor.md` |
+| `NightVision` | **a `HeatMap` csempe 2. üzemmódja** | nem önálló szűrő: az effekt-csempe tábla (`0x00c7e690`) szerint a Hőtérkép csempe második tokenje; lásd `ui-audit-editor.md` |
 | `picnik=1;` | — | önálló, boolean jellegű filters-lánc-token (`redeye=1;`/`retouch=1;` mintájára) — exe-ből azonosított, jelentése/előfordulása élő ini-ben validálatlan |
 
 Forrás a fenti (`glow` v1, `grain` v1, `radtint`, `RoundedEdges`, `Matte`,
