@@ -577,8 +577,11 @@ Fontos tulajdonságok:
     ablakáról készül (#721 pontosította — ld. lent az `enhance` szakaszt),
   - a vágási küszöb a **teljes kép képpontszámának 1/200-a**, mindkét
     végén **azonosan** (az aszimmetrikus változatok a mérésen rosszabbak),
-  - a nyújtás bemeneti tartománya nem mehet **58 szint alá**
-    (`_MIN_STRETCH_SPAN`) — ez a natív `gain` felső korlátja.
+  - ~~a nyújtás bemeneti tartománya nem mehet **58 szint alá**
+    (`_MIN_STRETCH_SPAN`)~~ — **törölve a #721-ben**: az az 58 nem korlát
+    volt, hanem a vágópont-keverés lenyomata (ld. lent),
+  - a vágópontok **30%-ban a közös `[loMin, hiMax]` felé keverednek**
+    (`enhance`), illetve teljesen közösek (`autocontrast`) — #721.
 
   A 12 referencia-páron ez **2,68 → 2,61**-re viszi az átlagos eltérést;
   a vágópontok maguk pedig a mérttel egyeznek (fehérpont-eltérés átlaga
@@ -982,16 +985,19 @@ hisztogramba öntő közelítés helyett) és a fixpontos átvitelből jön; a 1
 képből 5 azonosság-esete bájtra pontos maradt. A `CarefulEnhance` 252-es
 kimeneti korlátja **kizárva**: mérve 3,41 a 2,61 helyett.
 
-**NYITVA marad az `enhance` kiugró képe** („Utopic Unicorn", 13,3): ott a
+*(Az `enhance` sora a #721 keverés-lelete ELŐTTI állapot; a bevezetés után
+**0,57** — ld. a következő szakasz végén a mérést.)*
+
+~~**NYITVA marad az `enhance` kiugró képe**~~ („Utopic Unicorn", 13,3): ott a
 Picasa által ténylegesen alkalmazott bemeneti tartomány két csatornán
 **szélesebb, mint magának a csatornának a teljes értékkészlete** (zöld:
 12–47 helyett 18,2–76,3), tehát *semmilyen* darabszám-küszöb nem adhatja ki.
-A natív gain-korlát léte ezzel bizonyított, de a dekompilátumban még nem
-találtuk meg (a Ghidra a `0x009db610` két float paraméterét elveszti), ezért
-a `_MIN_STRETCH_SPAN = 58` továbbra is **mért**, nem visszafejtett viselkedés.
-Amit ez a kör kizárt: az `autolight`+`enhance` bármely sorrendű összetétele
-(5,97–6,07), az azonossággal való erősség-keverés, a 252-es korlát, és minden
-1/100–1/400 közötti vágási osztó (a legjobb így is 2,56).
+Ebből született a `_MIN_STRETCH_SPAN = 58` mért korlát — **a #721 keverése
+zárta le: nem gain-korlát volt, hanem magának a keverésnek a lenyomata**
+(ld. a következő szakasz végét). Amit ez a kör kizárt: az
+`autolight`+`enhance` bármely sorrendű összetétele (5,97–6,07), az
+azonossággal való erősség-keverés, a 252-es korlát, és minden 1/100–1/400
+közötti vágási osztó (a legjobb így is 2,56).
 
 ### ⚠️ MEGVAN A KÉT ELVESZETT FLOAT — és megdől a „mindkettő csatornánként vág" (#721, 2026-08-16)
 
@@ -1130,6 +1136,33 @@ függetlenül).
 
 **Ami ezzel lezárult:** a #539 „a `_MIN_STRETCH_SPAN` mért, nem visszafejtett
 viselkedés" megjegyzése tárgytalan — a konstans **elhagyható**.
+
+#### ✅ MEGVALÓSÍTVA (#721, `render/ops.py`)
+
+A keverés `blend` paraméterként bekerült az `apply_channel_levels_stretch`-be
+(`_blend_clip_points`); az `enhance` **0,30**-cal, az `autocontrast` **1,0**-del
+hívja — **a kettő ezzel szétvált**, korábban ugyanaz a függvény volt. A
+`careful` kapcsoló a felezett feketepontokat és a 252-es korlátot adja.
+A `_MIN_STRETCH_SPAN = 58` a kódból **törölve** (a fenti levezetés szerint
+fölösleges).
+
+**A megvalósítás mérése pontosít egy részletet:** a kevert vágópontok egésszé
+alakítása **csonkolással** történik (a C `float → int` cast), nem kerekítéssel
+— és ez mérhető. Ugyanazon a 12 páron:
+
+| | átlagos eltérés |
+|---|---:|
+| kerekítve | 0,727 |
+| **csonkolva (ez a megvalósított)** | **0,572** |
+
+A fenti kutatói táblázat 0,727-es sora tehát a kerekített változaté; a
+kódban a csonkolt, 0,572-es modell fut. A kiugró kép (Utopic Unicorn)
+13,035 → **0,521**. A `CarefulEnhance` ága a referencia-exportból ezzel
+**kizárva** (2,366 ≫ 0,572).
+
+**Ami NYITVA marad:** a 0,572 maradékának forrása (JPEG-újratömörítés kontra
+modell-hiba) nincs szétválasztva.
+
 ## Az irányított család megvalósítva — `dir_sat`, `dir_brite`, `dir_sharp`, `linblur` (#623)
 
 A #568 visszafejtésének eredménye kódba került. Modulok:
@@ -1914,6 +1947,11 @@ valódi Picasa-kimenettől:
 | teljes kép | 2,68 | 12,53 |
 | bal felső 90 % × 90 % | 2,74 | 13,35 |
 | *az érintetlen kép* | *10,35* | *38,10* |
+
+*(Ez a táblázat a vágópont-KEVERÉS bevezetése előtti modellel készült.
+A kevert (mai) modellel újramérve a döntés nemhogy áll, hanem sokkal
+élesebb: balra igazított **0,572**, bal felső 0,782, középre igazított
+0,964, teljes kép 1,730.)*
 
 A három bizonyíték **egy irányba mutat**, és egyik sem illesztés: a
 dekompilátum betű szerinti olvasata egyben a mérésen is a legjobb.

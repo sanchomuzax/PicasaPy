@@ -185,13 +185,23 @@ class TestHolgaRealPhoto504510:
     @pytest.mark.parametrize("effect_name,apply_fn", [("Holga", c.apply_holga), ("Lomo", c.apply_lomo)])
     def test_a_korlat_FOLOTT_keskenyebb_a_vignetta(self, effect_name, apply_fn):
         """#504: a korlát fölött a sugár már NEM nő a képmérettel, ezért a
-        vignetta relatíve keskenyebb, és ÉRDEMBEN kevesebb a tiszta fekete
-        képpont. Ez a korlát létezésének közvetlen, mérhető következménye —
-        ha valaki visszavenné a `clamp_glow_radius`-t, ez a teszt bukna."""
+        vignetta relatíve keskenyebb, és kevesebb a tiszta fekete képpont.
+        Ez a korlát létezésének közvetlen, mérhető következménye — ha valaki
+        visszavenné a `clamp_glow_radius`-t, ez a teszt bukna.
+
+        A tűrés 5,0 → 1,0 pp-re csökkent a #721-es `AutoFix`-változás után
+        (a vágópontok 30%-os keverése a közös érték felé): a Holga belül
+        `AutoFix`-et hív, és a keveréssel jóval kevesebb képpont préselődik
+        tiszta feketére a KIS képen (96 px: 35,1% → 19,2%), a nagy képen
+        pedig alig változik (2560 px: 19,8% → 17,3%). A teszt ereje nem a
+        tűrésben van, hanem az IRÁNYBAN: a korlátot kivéve a 2560 px-es
+        érték **27,6%-ra ugrik**, tehát a kis képé FÖLÉ — az egyszerű
+        „huge < small" reláció önmagában megfogja a regressziót.
+        """
 
         small = apply_fn(_real_photo_rgb(96, 72))
         huge = apply_fn(_real_photo_rgb(2560, 1920))
-        assert _black_pct(huge) < _black_pct(small) - 5.0, (
+        assert _black_pct(huge) < _black_pct(small) - 1.0, (
             f"{effect_name}: a korlát fölött NEM csökkent érdemben a fekete-arány "
             f"(96px={_black_pct(small):.1f}%, 2560px={_black_pct(huge):.1f}%)"
         )

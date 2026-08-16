@@ -199,10 +199,11 @@ def gaussian_blur_f(image_f: np.ndarray, xblur: float, yblur: float | None = Non
 
 def autofix(image: np.ndarray) -> np.ndarray:
     """`AutoFix`: a Picasa belső, effekt-csővezetékekben újrahasznált
-    automatikus javítása — megfejtett modell (#535): ugyanaz a csatornánként
-    KÜLÖN, hisztogram-darabszám alapú lineáris szinthúzás, mint a „Jó napom
-    van" (I'm Feeling Lucky) `apply_enhance`-e (`ki = (be − lo)·255/(hi − lo)`,
-    ld. `apply_channel_levels_stretch` docstringjét a bizonyítékért). Ez hat
+    automatikus javítása — megfejtett modell (#535): ugyanaz a hisztogram-
+    darabszám alapú lineáris szinthúzás, mint a „Jó napom van" (I'm Feeling
+    Lucky) `apply_enhance`-e (ld. `apply_channel_levels_stretch` docstringjét
+    a bizonyítékért). A vágópont-keverés az ALAPÉRTELMEZETT 0,30: a natív
+    `0x009db610`-nek ezek a hívói is a `-1,0` jelzőt adják át (#721). Ez hat
     Glimmer-effektet is érint (Holga, NightVision, PencilSketch, Sixties,
     Cinemascope, HDR-család), amelyek belül `AutoFix`-et hívnak.
     """

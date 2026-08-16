@@ -15,10 +15,12 @@ modell (#540, 12-12 referencia-képpáron mérve):
   (a csatornánkénti vágópontok átlagából számolt) kimeneti tartományra
   simulnak — nem nyújtja mindegyiket önállóan 0..255-re (az a modell
   a mérésen jóval rosszabbul illeszkedett, ld. #540).
-- `enhance` ("Jó napom van"): csatornánként KÜLÖN vágás, a kép 90% × 90%-os,
-  vízszintesen BALRA IGAZÍTOTT ablakáról készült hisztogramból (#721,
-  `_analysis_region`), ÉS mindegyik csatorna önállóan a teljes 0..255
-  tartományra nyúlik (#535, `0x008f8840` → `0x009db610`).
+- `enhance` ("Jó napom van") és `autocontrast`: csatornánkénti vágás a kép
+  90% × 90%-os, vízszintesen BALRA IGAZÍTOTT ablakáról (#721,
+  `_analysis_region`), majd a vágópontok KEVERÉSE a közös `[loMin, hiMax]`
+  felé. A keverés arányát a hívó adja: az `enhance` 0,30-at
+  (`0x008f8840`), az `autocontrast` 1,0-et (`0x008f89d0`) — a kettő tehát
+  KÜLÖN szűrő, nem azonos (#721, `0x009db610` utasításszintű olvasata).
 
 A vágópont-keresés és a leképezés mindkét úton a natív algoritmus szerint
 történik: darabszám-küszöb (`_levels_clip_threshold`), a natív keresőciklus
@@ -372,83 +374,138 @@ def apply_autocolor(image: np.ndarray) -> np.ndarray:
     return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 
-#: A szinthúzás legkisebb bemeneti tartománya (#539). Egy nagyon szűk
-#: hisztogramú csatornát a Picasa NEM feszít ki a teljes 0..255-re: a
-#: `referencia/imfeellucky/` „Utopic Unicorn" képén (az egyetlen szélső eset
-#: a 12-ből) a két szűk csatorna kimért bemeneti tartománya **58,1** és
-#: **59,2** — gyakorlatilag ugyanaz a szám, holott a nyers tartományuk 35 és
-#: 41 volt. A korlát a FEKETEPONTOT tartja és a fehérpontot tolja feljebb
-#: (`lo`-hoz horgonyozva): a három lehetséges horgony közül ez illeszkedik,
-#: a középre igazítás 5,30-at, a fehérponthoz igazítás 8,4-et adna.
-#:
-#: Hatás a 12 referencia-páron: az átlagos eltérés **5,48 → 2,68**, és
-#: kizárólag a kiugró kép változik (46,0 → 12,4) — a többi tizenegy kép
-#: eltérése bájtra ugyanaz marad. A pontos érték széles optimum (52-nél
-#: 2,65, 64-nél 2,70), ezért a KÖZVETLENÜL MÉRT 58-at használjuk.
-#:
-#: #539 megerősítés: mind a 36 csatornán (12 kép × 3) kimérve a Picasa
-#: által ALKALMAZOTT bemeneti tartomány LEGKISEBB értéke **58,1** — soha
-#: nem megy alá, holott a nyers vágópontok 26-ig lemennek. A korlát tehát
-#: nem illesztési fogás, hanem a natív viselkedés (a `gain` felső korlátja)
-#: — a natív kódban viszont MÉG NEM TALÁLTUK MEG, hol dől el (a `0x009db610`
-#: dekompilátumából a Ghidra két float paramétert elveszít; ld. a #539
-#: jegyet). Amíg ez nyitva van, a korlát MÉRT viselkedés, nem visszafejtett.
-_MIN_STRETCH_SPAN = 58
+#: A vágópont-KEVERÉS alapértéke (#721): a natív `0x009db610` a hívótól
+#: kapott float paraméterrel keveri a csatornánkénti vágópontokat a KÖZÖS
+#: (uniós) érték felé. A `-1,0f` jelzőre (`0xcf3ed0`) az alapértéket
+#: használja: `0xc7dcc8` = **0,30f**. Ezt adja át az `enhance`
+#: (`0x008f8840`) és további három hívó, köztük a `tint` (`0x008f9630`) —
+#: vagyis a Glimmer-effektek belső `AutoFix`-e is ezzel fut.
+_ENHANCE_BLEND = 0.30
+
+#: Az `autocontrast` (`0x008f89d0`) fixen `1,0`-et ad át (`fld1`,
+#: `0x008f89fd`): a vágópont TELJESEN közös, tehát a szűrő megőrzi a
+#: színegyensúlyt.
+_AUTOCONTRAST_BLEND = 1.0
+
+#: A `CarefulEnhance` beállítás (`0x009db610` bool paramétere) két dolgot
+#: kapcsol: a feketepontokat `0,5`-tel szorozza a KÖZÖS minimum képzése
+#: előtt (`0x009db845`, `0xc7dafc` = 0,5f), és a kimenetet 252-re korlátozza.
+_CAREFUL_BLACK_SCALE = 0.5
+_CAREFUL_MAX_OUT = 252
 
 
-def apply_channel_levels_stretch(image: np.ndarray) -> np.ndarray:
-    """Csatornánként KÜLÖN lineáris szinthúzás: `ki = (be − lo)·255/(hi − lo)`.
+def _blend_clip_points(
+    points: tuple[tuple[int, int], ...],
+    blend: float,
+    careful: bool,
+) -> tuple[tuple[int, int], ...]:
+    """A csatornánkénti vágópontokat a KÖZÖS érték felé keveri (#721).
 
-    Ez a „Jó napom van" (I'm Feeling Lucky) és az `AutoFix` megfejtett
-    modellje (#535, 12 referencia-képpáron R² = 0,9995–1,0000 illesztéssel
-    igazolva). **Azonosság-eset:** ha egy csatorna `lo`/`hi`-je már `0`/`255`
-    (a csatorna kihasználja a teljes tartományt), azt a csatornát a Picasa
-    NEM módosítja — a natív fixpontos átvitel ilyenkor pontosan 65536-os
-    gaint ad, tehát a kimenet magától bájtra azonos.
+    A natív `0x009db610` (`0x009db876`–`0x009db935`) betű szerint:
 
-    #539: a vágópontok a natív geometriával és a natív keresőciklussal
-    készülnek (`_channel_black_white_points`), a leképezés pedig a natív
-    fixpontos átvitel (`_native_levels_lut`). A nagyon szűk hisztogramú
-    csatornát a Picasa nem feszíti ki teljesen — a bemeneti tartomány alsó
-    korlátja `_MIN_STRETCH_SPAN`, a feketeponthoz horgonyozva.
+    ```c
+    hiMax = max(hi_R, hi_G, hi_B);
+    loMin = min(lo_R*skala, lo_G*skala, lo_B*skala);   // skala: 1,0 vagy 0,5
+    hi_ch' = hi_ch + keveres * (hiMax - hi_ch);
+    lo_ch' = lo_ch + keveres * (loMin - lo_ch);
+    ```
+
+    `keverés = 0` → tiszta csatornánkénti · `keverés = 1` → teljesen közös.
+
+    A kevert pontok floatok, a rájuk épülő gain viszont fixpontos egész
+    (`_native_levels_lut`), tehát valahol egész-konverzió történik. A C
+    `float → int` cast CSONKOL, és a 12 referencia-páron ez mérhetően a
+    legjobb is: csonkolással **0,572**, kerekítéssel 0,727 az átlagos
+    csatorna-eltérés (float tartományból számolt gainnel 0,624).
+    """
+    scale = _CAREFUL_BLACK_SCALE if careful else 1.0
+    high_max = max(high for _, high in points)
+    low_min = min(low * scale for low, _ in points)
+    return tuple(
+        (
+            int(low + blend * (low_min - low)),
+            int(high + blend * (high_max - high)),
+        )
+        for low, high in points
+    )
+
+
+def apply_channel_levels_stretch(
+    image: np.ndarray,
+    blend: float = _ENHANCE_BLEND,
+    careful: bool = False,
+) -> np.ndarray:
+    """Lineáris szinthúzás a natív `0x009db610` szerint — KEVERT vágóponttal.
+
+    A vágópontok csatornánként készülnek (`_channel_black_white_points`), de
+    a függvény nem itt áll meg: a `blend` arányban a KÖZÖS `[loMin, hiMax]`
+    tartomány felé húzza őket (`_blend_clip_points`, #721). A hívó adja meg
+    az arányt — az `enhance` 0,30-at, az `autocontrast` 1,0-et. A leképezés a
+    natív fixpontos átvitel (`_native_levels_lut`).
+
+    A `careful` a `CarefulEnhance` beállítás ága: felezett feketepontok a
+    közös minimum képzése előtt, és 252-es kimeneti korlát. A valódi
+    Picasa-exportunk NEM ezzel készült (a 12 páron 2,366 kontra 0,572),
+    ezért az alapértelmezés `False` — a beállítás a felhasználó gépén él,
+    nem az ini-ben.
+
+    **Azonosság-eset:** ha egy csatorna kevert `lo`/`hi`-je `0`/`255`, a
+    natív fixpontos átvitel pontosan 65536-os gaint ad, tehát a kimenet
+    bájtra azonos a bemenettel.
+
+    Mért átlagos csatorna-eltérés a `referencia/imfeellucky/` 12 valódi
+    Picasa-képpárján: **0,572** — a #721 előtti kód (keverés nélkül, de a
+    `_MIN_STRETCH_SPAN = 58` korláttal) 2,480, az érintetlen kép 10,346.
+    A 0,30 MÉRT optimum is: 0,25-nél 0,795, 0,30-nál 0,572, 0,35-nél
+    0,884 — vagyis a visszafejtett konstanst a mérés önállóan megerősíti.
+
+    #721: a korábbi `_MIN_STRETCH_SPAN = 58` korlát ITT SZŰNT MEG. Az az
+    58 nem a natív kód korlátja volt, hanem épp ennek a keverésnek a
+    lenyomata: a „Utopic Unicorn" két szűk csatornáján a kevert tartomány
+    **58,7** és **58,7** (a Picasából mért 58,1 és 59,2), a zöld kevert
+    pontjai `18,0…76,7` (mérve `18,2…76,3`). A keveréssel a korlát a 12
+    páron EGYETLEN csatornán sem lépne működésbe (visszatéve mind a 12 kép
+    kimenete bájtra azonos), a kiugró képé pedig 13,035-ről 0,521-re esik.
     """
     _validate_image(image)
-    points = _channel_black_white_points(image)
-    luts = []
-    for low, high in points:
-        if 0 < high - low < _MIN_STRETCH_SPAN:
-            # a korlát a FEKETEPONTOT tartja, a fehérpontot tolja feljebb
-            high = low + _MIN_STRETCH_SPAN
-        luts.append(_native_levels_lut(low, high))
+    points = _blend_clip_points(_channel_black_white_points(image), blend, careful)
+    max_out = _CAREFUL_MAX_OUT if careful else 255
+    luts = [_native_levels_lut(low, high, max_out) for low, high in points]
     return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
 
 
 def apply_enhance(image: np.ndarray) -> np.ndarray:
-    """„Jó napom van" (I'm Feeling Lucky) — megfejtett modell (#535):
+    """„Jó napom van" (I'm Feeling Lucky) — `0x008f8840` → `0x009db610`.
 
-    csatornánként KÜLÖN, hisztogram-darabszám alapú lineáris szinthúzás
-    (`apply_channel_levels_stretch`) — nincs benne gamma, S-görbe, helyi
-    kontraszt vagy külön árnyék-/csúcsfény-emelés (ld. az adott függvény
-    docstringjét a bizonyítékért).
+    Hisztogram-darabszám alapú lineáris szinthúzás, a vágópontokat **30%-ban
+    a közös érték felé keverve** (#721): a hívó a `-1,0` jelzőt adja át,
+    amire a natív függvény a `0,30`-as alapértéket használja. Nincs benne
+    gamma, S-görbe, helyi kontraszt vagy külön árnyék-/csúcsfény-emelés
+    (#535).
+
+    A `CarefulEnhance` bool ágat itt nem kapcsoljuk be — a beállítás a
+    felhasználó gépén él, nem az ini-ben, és a referencia-exportunk is a
+    kikapcsolt ággal készült (ld. `apply_channel_levels_stretch`).
     """
     _validate_image(image)
-    return apply_channel_levels_stretch(image)
+    return apply_channel_levels_stretch(image, _ENHANCE_BLEND)
 
 
 def apply_autocontrast(image: np.ndarray) -> np.ndarray:
-    """`autocontrast` („Automatikus kontraszt") — csatornánkénti szinthúzás.
+    """`autocontrast` („Automatikus kontraszt") — `0x008f89d0` → `0x009db610`.
 
-    A #612 3.1 pontja szerint ez a szűrő (`0x008f89d0`) UGYANAZT a natív
-    hisztogram-elemzőt hívja, mint a „Jó napom van" (`0x009db610`), csak a
-    felső határt vezérlő jelzőt FIXEN 0-nak adja — vagyis a kimenet mindig a
-    teljes 0..255 tartományra nyúlik, míg az `enhance` ugyanezt a
-    `CarefulEnhance` beállítástól függően 252-re is korlátozhatja. Mivel mi az
-    `enhance`-t is a 255-ös ággal futtatjuk (a beállítás a felhasználó gépén
-    él, nem az ini-ben), a két szűrő ma AZONOS kimenetet ad — a #685
-    mérőszettjén maga a Picasa is bájtra ugyanazt adta a kettőre.
+    Ugyanaz a natív szinthúzó, mint az `enhance`-é, de a hívó **`1,0`**
+    keverést ad át (`fld1`, `0x008f89fd`) és fixen 0 boolt (`push 0`,
+    `0x008f8a03`). A vágópont tehát TELJESEN közös (`[loMin, hiMax]`),
+    vagyis — az `enhance`-szel ellentétben — a művelet **nem mozdítja el a
+    fehéregyensúlyt**, csak a kontrasztot húzza szét (#721).
+
+    A két szűrő a #685 szürke rámpáján azonos kimenetet adott — ott
+    `lo_ch = loMin` és `hi_ch = hiMax`, tehát a keverés elvileg sem
+    látszhat. Színes képen viszont eltérnek.
     """
     _validate_image(image)
-    return apply_channel_levels_stretch(image)
+    return apply_channel_levels_stretch(image, _AUTOCONTRAST_BLEND)
 
 
 def apply_redeye(
