@@ -928,7 +928,7 @@ külön auditot érdemel, itt csak jelzésként szerepel.
 | N1 | Mit jelent a szám az „alkalmazva" jelvényen? A **lánc-sorszám olvasat elvetve**; a „hányszor van alkalmazva" olvasat viszont ellentmond annak, hogy a felvételen a fotón nincs szerkesztés (3.4) | feltételes | (a) célzott képernyőkép: ugyanazt az effektet **kétszer** alkalmazva mutat-e „2"-t; (b) fotóváltás után eltűnik-e a jelvény; (c) a `FUN_005d7c20` (VA `0x005d7c20`) dekompilálása |
 | N2 | Az effekt-paraméter alpanel **tényleges** képernyőképe | — | egy felvétel bármelyik paraméteres effekt (pl. Holga-szerű) megnyitott alpaneléről — a 4. szakasz jelenleg az erőforrásokból + a 2. fül azonos vezérlőiből következtet |
 | N3 | A csempék elemleírása (tooltip) megjelenik-e a rácsban, és a `filter_<Kulcs>_tooltip0` szövege-e | feltételes | egérrel egy csempe fölött készített felvétel |
-| N4 | A csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés) | nincs adat | felvétel egérmutatóval a csempe fölött |
+| N4 | A csempe **kijelölt / egér alatti** állapotának megjelenése (keret, kitöltés) | **részben LEZÁRVA (2026-08-16)**: a Picasa hármas `typecolor` állapotmodellje kiolvasva — lásd „A csempefelirat és a hármas állapotszín" alább. A csempe HÁTTERÉNEK állapotképei (respack) még nincsenek kimérve | felvétel egérmutatóval a csempe fölött |
 | ~~N5~~ | ~~A rács **görgethető-e** 12 csempénél többnél~~ → **LEZÁRVA (2026-08-16)**: nem görgethető, és a `picnik_fx` nem rács-bővítő, hanem a megszűnt **Picnik** online szerkesztő indítógombja — lásd „A `picnik_fx` a megszűnt Picnik gombja" alább | megerősített | — |
 
 ### Amit a #704 ebből megvalósított, és hol tér el TUDATOSAN
@@ -1375,3 +1375,75 @@ létezik. A rács alján **nem kell** gomb.
 
 *Bizonyítottsági fok: megerősített* (az elrendezés-erőforrás teljes blokkja,
 a felirat szövegforrása, és a bináris tizennégy Picnik-hivatkozása).
+
+### A csempefelirat és a hármas állapotszín (2026-08-16)
+
+#### `Property typecolor` — a Picasa gombjainak állapotmodellje
+
+A `.tre` nyelvben egy gomb szövegszíne **három ARGB értékkel** van megadva,
+ebben a sorrendben:
+
+```
+Property typecolor <alap> <egér alatt> <lenyomva>
+```
+
+A binárisban mind a hét előfordulás:
+
+| makró / hely | alap | egér alatt | lenyomva | hol |
+|---|---|---|---|---|
+| `m_buttontypecolor` | `CC000000` | `CC000000` | `CC000000` | `macros.tre:134` |
+| `m_buttontypecolor2` | `CC000000` | **`FFFFFFFF`** | `CC000000` | `macros.tre:137` |
+| `m_buttontypecolor3` | `FFFFFFFF` | `CCFFFFFF` | `FFFFFFFF` | `macros.tre:140` |
+| `m_buttontypecolor4` | `99000000` | `99000000` | `99000000` | `macros.tre:143` |
+| `m_buttonfont12` | `FF000000` | **`FFFFFFFF`** | `FF000000` | `fontmacros_win.tre:104` |
+| (feltöltés-panel) | `FF0000FF` | `CC0000FF` | `FF0000FF` | `upload.tre:194` |
+| (kék/zöld chip-gomb) | `FFFFFFFF` | `FFFFFFFF` | `FFFFFFFF` | `chips_button_*.tre:5` |
+
+**A minta:** ahol van egér-alatti eltérés, ott a szöveg **fehérre vált**
+(`FFFFFFFF`) — a sötét kiemelő háttérhez. A **lenyomott** állapot mindenütt
+visszatér az alapszínre. Az alfa a leggyakoribb esetben `CC` (80%), nem
+teljesen átlátszatlan.
+
+#### Az effekt-csempe felirata: `m_fxlabel`
+
+`fontmacros_win.tre:281` (a `_mac` változat betűre azonos):
+
+```
+#define m_fxlabel
+YConstraint 0, 1, -18        # a feliratsáv a csempe alján, 18 px magas
+Property fonttrack -1        # betűköz −1
+Property fontsize 11
+Property fontweight 700      # félkövér
+Property fontleading 10      # sortávolság 10
+Property textalign center
+XConstraint 0, 0, 4          # 4 px behúzás balról
+XConstraint 1, 1, -4         # 4 px behúzás jobbról
+```
+
+> **Nincs `textwrap`.** A közvetlenül fölötte álló makró (`fontmacros_win.tre`
+> 270–279) tartalmaz `Property textwrap 1`-et — az `m_fxlabel` **nem**.
+> Vagyis az eredeti csempefelirat **egysoros**, és nem törik.
+
+Ez pontosan megerősíti a korábbi mérést: **18 px-es feliratsáv, 11 px-es
+félkövér, középre zárt szöveg**, oldalanként 4 px behúzással.
+
+#### ❌ Amiben eltérünk (tudatosan)
+
+| | eredeti | PicasaPy (`PanelButton.qml`) |
+|---|---|---|
+| sorok száma | **1** (nincs `textwrap`) | **2** (`wrapMode: WordWrap`, `maximumLineCount: 2`) |
+| betűméret | **11** | `Theme.fontSize − 2` |
+| vastagság | **700** (félkövér) | `font.bold` |
+| betűköz | **−1** | nincs beállítva |
+| oldalbehúzás | **4 px** | nincs beállítva |
+| egér-alatti szövegszín | **fehér** (a hármas modell szerint) | nincs állapotváltás |
+
+A kétsoros felirat **tudatos eltérés** (#422), az `ui-audit-editor.md` már
+rögzíti. A **betűköz**, az **oldalbehúzás** és az **egér-alatti fehér
+szövegszín** viszont pótolható hiány.
+
+*Bizonyítottsági fok: megerősített* (a makródefiníciók teljes szövege, és a
+`typecolor` mind a hét előfordulása).
+
+**Nyitva marad:** a csempe **hátterének** állapotképei (a `respack.yt`-ból) —
+a `typecolor` csak a szöveget írja le.
