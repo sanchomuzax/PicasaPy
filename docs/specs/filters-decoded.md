@@ -215,29 +215,47 @@ körben mérendő célzott próbákkal.
 - **`unsharp=1` (v1, param nélkül) = `unsharp2=1,0.600000`** — bitre azonos
   kimenet (átlag|Δ|, max, szórás egyezik). Ismételt alkalmazás kumulatív.
 - Modell: Gauss-alapú unsharp mask, **σ ≈ 1,0 px**, erősítés ≈ **1,21·s**
-  (RMSE 2,2/255 valódi fotón). A pontos kernel finomítása nyitva (nem tökéletesen
-  Gauss); B/W teszteknél figyelem: telített értékeken a túllövés klippel.
+  (RMSE 2,2/255 valódi fotón). A pontos kernel finomítása **továbbra is nyitva**
+  (nem tökéletesen Gauss) — jegy: **#762**, a diszpécser (`0x00a42c20`) fel van
+  térképezve, a konvolúció a `0xa43230`/`0x9e6340`-ben van. B/W teszteknél
+  figyelem: telített értékeken a túllövés klippel.
 
 ### `Vignette=1,35.0,1.4,0.0,00000000` — maszk lemérve
 
 Multiplikatív radiális maszk: közép 1,000 · r≈0,25: 0,994 · r≈0,45: 0,729 ·
 r≈0,65: 0,328 · sarok: 0,250. (r = képmérettel normált távolság a középponttól.)
-A paraméterek (35=belső sugár %, 1,4=erősség?) → analitikus illesztés nyitva;
-addig a mért radiális profil használható.
+~~A paraméterek (35=belső sugár %, 1,4=erősség?) → analitikus illesztés nyitva~~
+→ **ELAVULT JELÖLÉS (2026-08-16).** Az analitikus modell **megvan**:
+[`filterdesc-registry.md`](filterdesc-registry.md) 4.3 — belső ragyogás,
+`sugár = Blur · 0,02 · max(W,H) / 4`, az erősség a 2. paraméter. A mért
+radiális profil ettől függetlenül érvényes kontroll marad.
 
 ### `autocolor` — csillapított lineáris fehéregyensúly (részleges)
 
 Csatornánkénti lineáris korrekció (ki = a·be + c, |c|<1,5):
 warmcast: R×0,936 / G×1,021 / B×1,058; bluecast tükörképe (R×1,032 / B×0,936).
-A gainek a teljes szürkevilág-korrekció ~60–90%-a — a pontos csillapítási
-szabály (gray-world vs fehérpont-alapú) még nyitott.
+A gainek a teljes szürkevilág-korrekció ~60–90%-a.
+
+> ⚠️ **ELAVULT JELÖLÉS (2026-08-16):** *„a pontos csillapítási szabály
+> (gray-world vs fehérpont-alapú) még nyitott"* — a becslő azóta
+> **visszafejtve**: se nem szürkevilág, se nem fehérpont, hanem egy
+> **64 × 64-es kétdimenziós hisztogram** az `R/G` és `B/G`
+> kiegyensúlyozatlanságból, köbös Csebisev-súlyozással és súlyponttal.
+> Ld. „Az `autocolor` becslője VISSZAFEJTVE" szakaszt. A csatornánkénti
+> lineáris alak is **pontatlan**: az alkalmazó 3 × 3-as mátrix (#759).
 
 ## 5. kör — a 4–5. effekt-fül `filters=` kulcsai AZONOSÍTVA ✅ (#190)
 
 A felhasználó Windows-os Picasa 3.9-éből, az effekt-kit alap-alkalmazásaiból
 (2026-07-23). Minden effekt ini-alapú; a színparaméterek formátuma
-`00RRGGBB` hex. A paraméterek JELENTÉSE (csúszka-leképezés) még nyitott —
-a 2. kör deríti fel előre írt ini-variánsokkal, gépi úton.
+`00RRGGBB` hex.
+
+> ⚠️ **ELAVULT JELÖLÉS (2026-08-16):** *„a paraméterek JELENTÉSE
+> (csúszka-leképezés) még nyitott — a 2. kör deríti fel előre írt
+> ini-variánsokkal"* — erre **nem kellett** mérőkör: a `filterdesc.xml`
+> (2026-08-06) minden csúszka **nevét, min–max tartományát és alapértékét**
+> megadja ([`filterdesc-registry.md`](filterdesc-registry.md) 4.1–4.2), és a
+> levezetett ini-sorrend mind a 8 valós mintán stimmel.
 
 ### 4. fül (zöld ecset)
 
@@ -2392,3 +2410,36 @@ A `0x0090efa2`-től induló **kilenc elemű ciklus** — az írja a végleges
 fixpontos mátrixot a `[esp+0x30 … 0x50]` rekeszekbe. Amíg ez nincs meg,
 minden „kézenfekvő" adaptációs alak **kimérendő, nem feltételezhető**: eddig
 öt jelöltet mért ki két kör, és mind rosszabb a puszta átlósnál.
+
+## „Nyitva"-átvilágítás (2026-08-16) — mi elavult és mi él még
+
+A lapon szétszórt „nyitott" jelölések egy része **a saját későbbi munkánk
+óta tárgytalan**, de a jelölés bennmaradt — és egy következő kör
+végigjárhatta volna ugyanazt. Ez az átvilágítás ezt zárja ki.
+
+### Elavult jelölések (a válasz máshol már megvan)
+
+| jelölés | hol a válasz |
+|---|---|
+| `Vignette` analitikus illesztése | `filterdesc-registry.md` 4.3 — belső ragyogás, `sugár = Blur·0,02·max(W,H)/4` |
+| a 4–5. fül csúszka-leképezése | `filterdesc.xml` (2026-08-06): név, min–max, alapérték mind a 12 csúszkára |
+| `autocolor` csillapítási szabálya (gray-world vs fehérpont) | **egyik sem** — 64 × 64-es 2D hisztogram + köbös súlyozás, ld. „Az `autocolor` becslője VISSZAFEJTVE" |
+| `finetune2` utolsó paramétere | `picasa-ini-format.md` — a **színhőmérséklet**, `−1 … +1` |
+| `tint` 4 jegyes hex „anomáliája" | saját tesztadat-artefaktum, ld. a megfelelő szakaszt |
+| `desat` negyedik `0,333`-as mezője | **nem létezik**, `picasa-native-filter-registry.md` |
+| `_MIN_STRETCH_SPAN = 58` mint gain-korlát | **nem korlát** — a csatorna-keverés mellékhatása |
+| a `finetune` v1 ↔ v2 2×-skála | **megdőlt**, saját LUT kell |
+
+### Ami TÉNYLEG nyitott (jeggyel)
+
+| kérdés | jegy |
+|---|---|
+| az elmosó mag pontos alakja (`unsharp`, `blur`) | **#762** |
+| az `autocolor` 3 × 3-as mátrixának összeállítása | **#759** |
+| az `enhance` keverés bevezetése a kódba | **#721** |
+| a `radblur` sugár-hányada: `0,009` (mért) vs `0,01` (dekompilátum) | #317 |
+| a `Comicize`/`FocalZoom`/`PicnikFocalPixelate` mintavételezési peremszabálya | #569/#570 |
+
+> **A tanulság:** a „nyitott" jelölés **karbantartást igényel**. Ha egy kör
+> megválaszol valamit, a MÁSIK lapon lévő jelölést is le kell venni —
+> különben a bizonyíték megvan, de a következő kör nem találja meg.
