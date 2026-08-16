@@ -2868,3 +2868,58 @@ olvasatra (a lépték- és eltolás-argumentumok a kódból).
 **Nyitva marad:** a `ytResampler` 2-es módjának **konkrét magja** (súlyok
 vagy analitikus alak). Ott folytassa, aki az `unsharp`-ot kalibrálja:
 `0x00a42c20` → `0x00a43230` (a súlytábla-építő, 336 bájt).
+
+### A `ytResampler` felezőlépése: sima 2×2 doboz-átlag (2026-08-16)
+
+Az előző szakasz nyitva hagyta a `ytResampler` magját. Az első lépés
+megvan: a `0x00a43230` (336 bájt) **kettes osztású kicsinyítés**, és a
+mag **sima 2×2 doboz-átlag** — se Gauss, se Lanczos, se súlyozás.
+
+#### A célméret
+
+```asm
+0x00a43243  mov  eax, dword ptr [ecx + 8]    ; forrás szélesség
+0x00a43255  sar  esi, 1                       ; /2
+0x00a43257  sar  eax, 1                       ; /2  (magasság)
+0x00a43259  cmp  ebp, esi                     ; min(cél_szél, forrás_szél/2)
+0x00a4326b  cmp  ebx, eax                     ; min(cél_mag,  forrás_mag/2)
+```
+
+#### A mag: négy képpont átlaga, SWAR-ral
+
+Négy szomszédos képpontot olvas (`[ebx]`, `[ebx+4]` — a felső sor;
+`[edi]`, `[edi+4]` — az alsó), és a két csatornapárt **külön** összegzi:
+
+```asm
+and  eax, 0xff00ff        ; a PÁROS csatornák (R és B)
+shr  ecx, 8
+and  ecx, 0xff00ff        ; a PÁRATLAN csatornák (G és A)
+...                        ; mind a négy képpont hozzáadva
+0x00a4332a  shl  ecx, 6    ; (páratlan összeg / 4) << 8
+0x00a4332d  shr  eax, 2    ; páros összeg / 4
+0x00a43330  xor  eax, ecx  ; a két mező diszjunkt → összefésülés
+```
+
+`shl ecx, 6` = `(összeg >> 2) << 8`, tehát **mindkét összeg néggyel
+osztódik**. A `xor` azért működik összefésülésként, mert a két mező nem
+fed át.
+
+> **Csonkoló osztás, nincs kerekítés.** A `shr` lefelé kerekít; a Picasa
+> nem ad hozzá 2-t a felezéshez.
+
+#### Amit ez jelent
+
+1. **Az `unsharp` elmosása doboz-átlagokból épül**, nem Gauss-magból. Ez
+   magyarázza, miért csak illesztéssel (σ = 1,0 és ×1,21) tudtuk közelíteni.
+2. **A Picasa kicsinyítése lépcsős**: ismételt 2× felezés, nem egyetlen
+   tetszőleges arányú újramintavételezés.
+3. **Nálunk a kicsinyítés `cv2.INTER_AREA`** (`src/picasapy/cvimage.py:87`).
+   Pontosan 2× arányban ez ugyanaz a doboz-átlag — de **kerekít**, míg a
+   Picasa csonkol; nem 2-hatvány arányban pedig egészen más utat jár be.
+
+*Bizonyítottsági fok: megerősített* (a teljes aritmetika kiolvasva, a
+maszkok és a két eltolás egyértelmű).
+
+**Nyitva marad:** a felezés utáni **utolsó** lépés (a nem 2-hatvány
+maradék kezelése) — `0x00a42c20` további hívottjai: `0x009e6340`,
+`0x009e6df0`, `0x009e75a0`.

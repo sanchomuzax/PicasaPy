@@ -23,7 +23,7 @@ kérdés).
 4. **Render-pontosítás a golden-verdiktek szerint** (Nyitva 8), súlyossági sorrendben: `tint` ΔE 20,6 → `sat` pozitív ág 12 → `dir_tint` 9 → `finetune2` hőmérséklet 25 (extrémnél) → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
 5. **`fullres` / `slow` / `resize` jelzők beépítése a renderelőbe** (Nyitva 10)
 6. **A `tint` virtuális színátalakítása** (1506. sor) — a `ctx` harmadik függvénymutatója
-7. **A `ytResampler` 2-es módjának magja** (1703. sor) — ezzel mos el az `unsharp`; a `0x00a43230` súlytábla-építő a belépési pont. *(A korábbi megfogalmazás tévesen „közös elmosómagnak" hívta — 2026-08-16-i helyesbítés.)*
+7. **A `ytResampler` utolsó, nem 2-hatvány lépése** — a felezőlépés már megvan (sima 2×2 doboz-átlag, `0x00a43230`); a maradék `0x009e6340` / `0x009e6df0` / `0x009e75a0`. *(A korábbi megfogalmazás tévesen „közös elmosómagnak" hívta — 2026-08-16-i helyesbítés.)*
 8. **A vizsgálati ablak pontos SZÉLESSÉGE** (1980. sor)
 
 ### [ui-audit-editor.md](ui-audit-editor.md) — 3 kérdés
