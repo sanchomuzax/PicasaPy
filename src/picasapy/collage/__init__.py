@@ -1,5 +1,20 @@
-"""Kollázs-készítés (#29) — elrendezés (`layout`) + renderelés (`render`)."""
+"""Kollázs-készítés — elrendezés (`layout`) + renderelés (`render`).
 
+A #431 óta épül mellé a Picasa-hű réteg is: `themes` (a kilenc téma-kulcs),
+`fitting` (a közös illesztő és az MSVC-véletlen), `frames` (a három
+képkeret). Ezek a `docs/specs/picasa-create-features.md` 1.9 szakaszának
+dekompilált képleteit követik, míg a régi `layout`/`render` a #29-es, saját
+tervezésű változat — a kettő egyelőre párhuzamosan él.
+"""
+
+from .fitting import MsvcRandom, fit_inside, msvc_uniform01, picasa_round
+from .frames import (
+    PolaroidGeometry,
+    apply_border,
+    dim_for_background,
+    polaroid_geometry,
+    white_border_width,
+)
 from .layout import (
     COLLAGE_KINDS,
     CONTACT_SHEET,
@@ -21,8 +36,41 @@ from .render import (
     make_collage,
     write_collage,
 )
+from .themes import (
+    BORDER_THEMES,
+    COLLAGE_THEMES,
+    CONTACTSHEET,
+    FRAMEGRID,
+    MULTIEXP,
+    NOBORDER,
+    PICTUREGRID,
+    PICTUREPILE,
+    POLAROID,
+    REGULARGRID,
+    WHITEBORDER,
+)
 
 __all__ = [
+    "BORDER_THEMES",
+    "COLLAGE_THEMES",
+    "CONTACTSHEET",
+    "FRAMEGRID",
+    "MULTIEXP",
+    "MsvcRandom",
+    "NOBORDER",
+    "PICTUREGRID",
+    "PICTUREPILE",
+    "POLAROID",
+    "PolaroidGeometry",
+    "REGULARGRID",
+    "WHITEBORDER",
+    "apply_border",
+    "dim_for_background",
+    "fit_inside",
+    "msvc_uniform01",
+    "picasa_round",
+    "polaroid_geometry",
+    "white_border_width",
     "COLLAGE_KINDS",
     "CONTACT_SHEET",
     "GRID",
