@@ -1447,3 +1447,97 @@ szövegszín** viszont pótolható hiány.
 
 **Nyitva marad:** a csempe **hátterének** állapotképei (a `respack.yt`-ból) —
 a `typecolor` csak a szöveget írja le.
+
+## A videó vezérlősávja — teljes elemlista (2026-08-16)
+
+Az elrendezés önálló erőforrásfájlban él: **`video_control_bar.tre`**
+(150 sor), amit az `editpanel.tre` a 7. sorában `#include`-ol. A szerkesztő
+videót mutatva ezt a sávot teszi a kép alá.
+
+### Az elhelyezés a szerkesztőben
+
+```
+editpanel/movieparent_tracker: editpanel/preview
+m_scaleX
+YConstraint 0, 0, 0
+YConstraint 1, 1, movieparenty=-39      # a kép alja 39 px-szel feljebb
+
+editpanel/video_control_container: editpanel/movieparent_tracker
+XConstraint 0, 0, -6                     # 6 px-szel szélesebb balra
+XConstraint 1, 1, 6                      # …és jobbra
+YConstraint 1, 1, 42                     # a sáv 42 px magas
+m_hidden                                 # alapból rejtett
+```
+
+A `movieparenty` **változó**: `Handler varbutton movieparenty -39 0 0`
+(`editpanel.tre:1409`) — vagyis a kép alja **39 képponttal feljebb csúszik**,
+amikor a sáv megjelenik, és visszaáll `0`-ra, amikor eltűnik.
+
+### A sáv mind a 19 eleme
+
+**Vágó-csúszka (trim)**
+
+| elem | horgony |
+|---|---|
+| `video_control_bar/trimslider` | a görgető-tartályban, X: `+10 … −10` |
+| `video_control_bar/trimruler` | a `trimslider`-en, felül, X-re nyújtva |
+| `video_control_bar/lefttrim` | a `trimruler` **bal** széléhez, Y-ra nyújtva |
+| `video_control_bar/righttrim` | a `trimruler` **jobb** széléhez, Y-ra nyújtva |
+| `video_control_bar/startthumb` | a `trimslider` bal-alsó sarkához |
+| `video_control_bar/endthumb` | a `trimslider` jobb-alsó sarkához |
+
+**Idő-csúszka (scrub)**
+
+| elem | horgony |
+|---|---|
+| `video_control_bar/moviescrubslider_container` | a `controlbar`-on, balra-fent-jobbra |
+| `video_control_bar/time` | **szövegkijelző**, `m_systemfont11`, **középre zárt** |
+| `video_control_bar/sliderbaseL` | X: `+9` |
+| `video_control_bar/sliderbaseC` | X: `+10 … −10` |
+| `video_control_bar/sliderbaseR` | X: `−9` |
+| `video_control_bar/scaleslider` | X: `+10 … −10`, `Property slider 0` |
+| `video_control_bar/thumb` | a `scaleslider` bal-felső sarkához |
+
+**Hangerő**
+
+| elem | horgony |
+|---|---|
+| `video_control_bar/volumeslider_base` | a `controlbar` **jobb** felső sarkához |
+| `video_control_bar/volumeslider` | ugyanoda, `Property slider 0` |
+| `video_control_bar/volumethumb` | a `volumeslider` bal-felső sarkához |
+
+**Gombok (mind a `controlbar` JOBB oldalán)**
+
+| elem | ikon | buboréksúgó |
+|---|---|---|
+| `video_control_bar/setin` | `setin_icon` (X: közép **−2**) | „Create a new starting point" |
+| `video_control_bar/setout` | `setout_icon` (X: közép **+2**) | „Create a new ending point" |
+| `video_control_bar/moviemode1` | `fullscreen_icon` (középre) | „Play full screen" |
+
+**Alap**
+
+`video_control_bar/controlbar: root` — X-re nyújtva, felülre igazítva ·
+`video_control_bar/moviecontrolsclip` — a `controlbar` bal-felső sarkához
+
+### ⚠️ A buboréksúgók NINCSENEK lefordítva
+
+A három súgószöveg **közvetlenül a `.tre`-ben** áll, angolul, és a
+`video_control_bartext.tre` (a szokásos szövegfájl) **ugyanazt az angol
+szöveget** tartalmazza. A magyar erőforrásokban egyikük sem szerepel.
+
+A vágópontok **feliratai** viszont le vannak fordítva
+(`filter_moviestart_label0` → „Kezdőpont", `filter_movieend_label0` →
+„Végpont") — tehát a hiány a súgókra korlátozódik.
+
+> A PicasaPy-nak ezeket **le kell fordítania**: „Új kezdőpont
+> létrehozása", „Új végpont létrehozása", „Lejátszás teljes képernyőn".
+
+### Kikommentezett, elhagyott elemek
+
+A fájl négy blokkot tartalmaz `#`-mel kikommentezve: a `setin-label` és a
+`setout-label` **feliratszövege**, egy `1to1` gomb, és a `trimcontrolbar`.
+Vagyis a két vágópont-gomb eredetileg **feliratot is kapott volna** —
+a kiadott változatban csak ikon van rajtuk.
+
+*Bizonyítottsági fok: megerősített* (a `video_control_bar.tre` teljes
+tartalma és az `editpanel.tre` három hivatkozási pontja).
