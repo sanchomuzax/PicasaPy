@@ -3077,9 +3077,152 @@ fed át.
 *Bizonyítottsági fok: megerősített* (a teljes aritmetika kiolvasva, a
 maszkok és a két eltolás egyértelmű).
 
-**Nyitva marad:** a felezés utáni **utolsó** lépés (a nem 2-hatvány
+~~**Nyitva marad:** a felezés utáni **utolsó** lépés (a nem 2-hatvány
 maradék kezelése) — `0x00a42c20` további hívottjai: `0x009e6340`,
-`0x009e6df0`, `0x009e75a0`.
+`0x009e6df0`, `0x009e75a0`.~~ → **MEGVAN**, ld. a következő szakaszt.
+
+## A `ytResampler` KILENC szűrőmagja — a teljes katalógus (2026-08-16)
+
+**Az átméretező nem egy algoritmus, hanem egy szűrőcsalád**, és a tagot egy
+**beállítás** választja ki. Ez zárja le a `ytResampler` magjának kérdését — és
+egyben megmagyarázza, honnan jön az `unsharp` elmosása.
+
+### A mód a `ResampleFilter2` beállításból jön — az alapérték 6
+
+A konstruktorban (`0x00a3f490`), ha a hívó `-1`-et ad (mindenki azt adja):
+
+```asm
+0x00a3f4a0  mov   dword ptr [esi], 0xce3fb4      ; ytResampler::vftable
+0x00a3f507  push  0xce3fa0                        ; "ResampleFilter2"
+0x00a3f50c  push  0xc7eafc                        ; "Preferences"
+0x00a3f51c  mov   dword ptr [esp + 0x18], 6       ; ← az ALAPÉRTÉK
+0x00a3f524  call  0x407a20                        ; beállítás-olvasás
+0x00a3f536  mov   dword ptr [0xd9fdf4], eax       ; gyorsítótár (egyszer olvas)
+0x00a3f57a  mov   dword ptr [esi + 0x28], ecx     ; [this+0x28] = a mód
+```
+
+A `[this+0x28]` tehát a **szűrőmód**, és a hívó felül is írhatja — az
+`unsharp` pontosan ezt teszi (`0x0090c4fa`: `mov [esp+0x58], 2`, ami a
+`this+0x28`).
+
+### A kilenc mag, ugrótáblából
+
+A súlytáblát a `0x00a3f660` (3811 b) építi, két ugrótáblával, mindkettő a
+móddal indexelve:
+
+- **`0xa40550`** — a szűrő **tartósugara** (`0x00a3f6c2`);
+- **`0xa40574`** — maga a **súlyfüggvény** (`0x00a3fafc`).
+
+| mód | sugár | a mag | az ág címe | bizonyíték |
+|---:|---:|---|---|---|
+| 0 | **0,5** | **doboz** (`\|x\| ≤ 0,5 → 1`, egyébként 0) | `0xa3fb03` | `fcomp [0xc7dafc]`=0,5 |
+| 1 | **1** | **háromszög** (bilineáris), `1 − \|x\|` | `0xa3fb37` | `fld1; fsubrp`, abs |
+| 2 | **2** | **köbös B-spline** (ld. lent) | `0xa3fb82` | a négy szakasz konstansai |
+| 3 | **2** | köbös, **0,4-es paraméterrel** | `0xa3fc91` | `0x00a3f691` `fld [0xc7c838]`=0,4 → `call 0xa3f5b0` |
+| 4 | **3** | szakaszos köbös, 13/11 és 2,16746 együtthatókkal | `0xa3fd25` | `0xcf41c0`=1,181818, `0xcf41b8`=2,167464 |
+| 5 | **3** | **Lanczos-3** | `0xa3fdf5` | két `sin` (`0xa3fe43`, `0xa3fe8f`) |
+| **6** | **4** | **Lanczos-4** ← **ALAPÉRTELMEZÉS** | `0xa3feed` | két `sin` (`0xa3ff3b`, `0xa3ff87`) |
+| 7 | **6** | **Lanczos-6** | `0xa3ffe5` | két `sin` (`0xa4002f`, `0xa4007b`) |
+| 8 | **8** | **Lanczos-8** | `0xa400c6` | két `sin` (`0xa40114`, `0xa40164`) |
+| 9 | — | affin warp, **legközelebbi szomszéd** | `0x9e6df0` → `0x9e7420` | ld. lent |
+| 10 | — | soronkénti gyorsút | `0x9e75a0` → `0xaa5fb0` | — |
+
+A 9-es és a 10-es mód **kikerüli a súlytáblát** (`0x00a42f50`: `cmp eax,9` /
+`cmp eax,0xa` → `je 0xa43051`); a 0–8 a `vtbl+0x1c` (`0x00a40a90`) és
+`vtbl+0x20` (`0x00a426a0`) virtuális párján át fut.
+
+### A Lanczos-4, betű szerint (a `0xa3feed` ág)
+
+```c
+x = fabs(x);                       // 0x49f5c0
+if (x > 4.0f) return 0;            // 0xc7e4a4 = 4.0
+a = x * PI;                        // 0xcf4168 = 3,14159265358979
+s1 = (a == 0) ? 1 : sin(a)/a;      // 0xc285f0 = sin
+b = (x * 0.25) * PI;               // 0xc7d9c8 = 0.25 = 1/4
+s2 = (b == 0) ? 1 : sin(b)/b;
+return s1 * s2;                    // w(x) = sinc(πx) · sinc(πx/4)
+```
+
+Ez a **tankönyvi Lanczos, a = 4**. A 7-es és 8-as mód ugyanez `1/6`-tal,
+illetve `1/8`-cal.
+
+### A köbös B-spline (a 2-es mód, amit az `unsharp` használ)
+
+Négy szakasz, `x = |x|` után (`0xa3fb82`–`0xa3fc8c`):
+
+| tartomány | súly | cím |
+|---|---|---|
+| `x ≥ 2` | 0 | `0xa3fb97` |
+| `1 ≤ x < 2` | `(2 − x)³ / 6` | `0xa3fc5b` |
+| `0 ≤ x < 1` | `(4 − 6x² + 3x³) / 6` | `0xa3fc23` |
+| (negatív ág, szimmetrikusan) | ugyanaz | `0xa3fbeb`, `0xa3fbbb` |
+
+*(konstansok: `0xcf39f8`=3,0 · `0xcf3ec8`=−6,0 · `0xcf3d30`=4,0 ·
+`0xc7d9d0`=2,0)*
+
+Ez a **köbös B-spline** — és nem interpoláló: `w(±1) = 1/6 ≠ 0`. **Ezért mos
+el 1 : 1 arányban is**, míg a Lanczos ugyanott pontos másolatot adna. Ez volt
+a hiányzó láncszem az `unsharp`-nál.
+
+### A mag SZÉLESSÉGE: a `[this+0x30]` szórásszorzó
+
+```asm
+0x00a3f728  fcomp dword ptr [ecx + 0x30]     ; a lépték vs. [this+0x30]
+0x00a3f736  fld   dword ptr [ecx + 0x30]
+0x00a3f739  fadd  qword ptr [0xcf3db0]       ; + 0,001
+0x00a3f73f  fdivp st(1)                       ; lépték / ([this+0x30] + 0,001)
+0x00a3f745  fld   dword ptr [esp + 0x10]      ; a sugár
+0x00a3f74b  fdiv  dword ptr [esp + 0x70]      ; sugár / lépték  ← a mag szélessége
+```
+
+A konstruktor `[this+0x30]`-at **1,0**-ra állítja (`0x00a3f553` `fld1`,
+`0x00a3f556` `fst [esi+0x30]`). Az `unsharp` hívása viszont a harmadik
+argumentumát — a beégetett **`1,5f`**-et — pontosan ide írja
+(`0x0090c4e2`–`0x0090c4e8`, `[esp+0x60]` = `this+0x30`). Vagyis az
+`unsharp` szűrőmagja **másfélszeresre szélesedik**: köbös B-spline,
+2 × 1,5 = **3 képpont tartósugárral**.
+
+Az így kapott 1D súlyok (`w(k) = B₃(k/1,5)`, normálva):
+
+| eltolás | −2 | −1 | 0 | +1 | +2 |
+|---|---:|---:|---:|---:|---:|
+| súly | 0,0328 | 0,2459 | **0,4426** | 0,2459 | 0,0328 |
+
+Ennek a szórása **σ ≈ 0,87**, nem 1,0 — vagyis a mai `cv2.GaussianBlur(σ=1,0)`
+egy hajszállal **túl erősen** mos.
+
+### Amit ez a kör HELYESBÍT
+
+1. A 2-es mód **tényleg létezik és tényleg az `unsharp`-é** — a korábbi
+   „2-es mód" megfogalmazás helyes volt, csak a mező nem volt beazonosítva
+   (`[this+0x28]`).
+2. A `0x00a43230` **2 × 2 doboz-átlaga** nem az `unsharp` magja: az a
+   **piramis-felezés**, ami csak ≥ 2× kicsinyítésnél fut (`0x00a42ec9`),
+   és utána a `0x00a42c20` **önmagát hívja rekurzívan** kétszeres léptékkel
+   (`0xc7d9d0` = 2,0, `0x00a42f35` `call edx` a `vtbl+0x24`-en át, ami maga
+   a `0x00a42c20`).
+
+### A 9-es mód: legközelebbi szomszéd
+
+A `0x009e7420` teljes magja **egyetlen képpont kiolvasása**:
+
+```asm
+0x009e754d  sar  edx, 0x10          ; forrás x = fixpont >> 16 (CSONKÍTÁS)
+0x009e7553  sar  ecx, 0x10          ; forrás y
+0x009e756d  mov  ecx, dword ptr [edx + ecx*4]   ; EGY képpont
+0x009e7574  mov  dword ptr [edx], ecx
+```
+
+A forráskoordináta 16.16 fixpontban lépked (`0x009e7543`, `0x009e7549`), a
+mintavétel **képpontközépen** történik (`0xc72150` = 0,5, `0x009e7492`), és a
+képen kívülre eső képpont **kimarad** (`jae 0x9e7576`) — a célpuffer ott
+érintetlen marad, nem szegélyt ismétel.
+
+*Bizonyítottsági fok: **megerősített*** a mód-táblákra, a Lanczos-4-re, a
+B-splinera és a legközelebbi szomszédra (mind utasításszinten kiolvasva) ·
+**erős** a 4-es mód pontos alakjára (az együtthatók megvannak, a szakaszok
+összeillesztése nincs végigvezetve) és az `unsharp` súlyaira (a
+`[this+0x30]` szemantikája levezetett, golden-párral nem mérve).
 
 ## A sáv-jelzőknek nincs fogyasztója (2026-08-16)
 
