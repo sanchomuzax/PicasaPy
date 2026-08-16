@@ -36,23 +36,45 @@ kihagyva (ld. `ui-audit-editor.md`).
 
 ## ⚠️ Amit ez a lap egyszer s mindenkorra eldönt
 
-Az `editpanel.tre` **erőforrás-sorrendje NEM a kirajzolási sorrend.** A
-binárisból kiolvasott lista (crop → redeye → enhance → picnik → autocolor →
-autolighting → filllight → horizonadjust → edittext → retouch) **négy ponton**
-eltér attól, amit a program ténylegesen mutat: a Kiegyenesítés helye, az
-Automatikus szín/kontraszt párosa, a Szöveg/Retusálás párosa, és a
-Derítőfény-csúszka helye.
+**Nem „hiányzó bizonyíték" volt — ROSSZ FÁJLT néztünk.** A Picasa felületét
+két forrás írja le, és a korábbi körök a rosszabbikból következtettek:
 
-**A képernyőkép nyer.** A tulajdonos 2026-08-16-i, kifejezett rendelkezése
-(#464 hozzászólás): *„Ez a valódi és végleges effekt sorrend az első fülön!
-TILOS megkérdőjelezned újra! A kódban valami nem látszik vagy nem került
-feltárásra, azért mond ellent!"*
+| forrás | mit ad meg | mit NEM |
+|---|---|---|
+| `editpanel.tre` | a gombok **viselkedését** (mi nyílik kattintásra) | a helyüket |
+| **`respack.yt`** | a tervezővászon **koordinátáit, képpontra pontosan** | — |
 
-Vagyis a kérdés **nincs nyitva**. Az erőforrás-sorrend és a képernyő közti
-eltérés magyarázata még FELTÁRATLAN — nagy valószínűséggel egy futásidejű
-átrendezés vagy egy külön elrendezés-leíró, amit a kutatás eddig nem talált
-meg. **Ez kutatási nyitott pont, NEM ok a sorrend megváltoztatására.** Aki
-egyszer megtalálja, ide írja be — a sorrendhez akkor sem nyúl.
+Az 1. fülön mind a tíz gomb `.tre`-sora **szó szerint azonos** — ha az volna a
+teljes elrendezés, mind egymáson ülne. A körök a fájlban szereplő
+FELSOROLÁSI sorrendet olvasták kirajzolási sorrendnek. Az nem az.
+
+A `respack.yt`-ból kiolvasva a rács **betűre a tulajdonos képernyőképe**:
+
+```
+1. sor:  Vágás          Kiegyenlítés           Vörösszem
+2. sor:  Jó napom van   Automatikus kontraszt  Automatikus szín
+3. sor:  Retusálás      Szöveg                 (üres)
+4. sor:  Derítőfény
+```
+
+Három oszlop (**x 37 · 118 · 198**), négy sor (**y 91 · 155 · 223 · 290**),
+gombméret **44 × 30**.
+
+A 3. sor harmadik helye azért üres, mert a **Kreatív készlet** gombját a
+csomag kikommentezi (`#` előzi meg) — a szolgáltatás 2012-ben megszűnt.
+
+## Miért csúszott vissza kétszer
+
+**A helyes sorrend már két hónapja benne volt a méretspecifikációnkban,
+ugyanígy.** Egy későbbi kör a `.tre`-ből mondott ellent neki, és **nem volt
+megjelölve, melyik forrás az erősebb.** Ez a lap és a spec „egyetlen érvényes
+forrás" jelölése ezt zárja be: a `respack.yt` a helyre nézve az igazságforrás,
+a `.tre`-ből **sorrendre következtetni tilos**.
+
+**És a tulajdonos futó Picasájából készült képernyőkép erősebb bizonyíték a mi
+következtetésünknél** — a képet megkérdőjelezni tilos (#464, 2026-08-16):
+*„Ez a valódi és végleges effekt sorrend az első fülön! TILOS
+megkérdőjelezned újra!"*
 
 ## Miért kellett ezt külön lapra írni
 
