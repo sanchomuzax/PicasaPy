@@ -1563,8 +1563,8 @@ ezredmásodpercként a kezdőpont 2,3 óra lenne egy családi videóban.
 > (érték / 2³²), a `rect64` szellemében, ami koordinátánként 16 bites
 > törtet használ.
 >
-> *Bizonyítottsági fok: feltételes* — két fájl, és nincs meg a klipek
-> hossza. Az „NEM időegység" rész **erős**.
+> *Bizonyítottsági fok: feltételes* — lásd a következő szakaszt: a klipek
+> hosszát azóta kimértük, és ez **két** hipotézist hagyott állva.
 
 ### ❌ Nálunk ma hibásan nulla paraméterű
 
@@ -1575,3 +1575,59 @@ regiszter **téves adatot** állít, és erre későbbi validáció épülhet.
 
 *Bizonyítottsági fok: megerősített* arra, hogy van paraméterük és
 változó hosszú hex (a korpusz két esete) · **feltételes** a jelentésére.
+
+### A vágópontok MÉRÉSE — négyből kettő hipotézis maradt (2026-08-16)
+
+Az érintett klipek hossza `ffprobe`-bal kimérve:
+
+| fájl | hossz |
+|---|---:|
+| `M4V01960.MP4` | **374,374 s** (6:14) |
+| `M4V01962.MP4` | **385,886 s** (6:26) |
+
+*(A harmadik érintett klip — `M4V09238.MP4`, `movieend=e88a1626` — a
+gyűjteményben már nincs meg.)*
+
+#### A négy hipotézis a mért hosszakon
+
+| érték | egész | **tört** (`v/2³²·hossz`) | **100 ns** | **µs** | a klip hossza |
+|---|---:|---:|---:|---:|---:|
+| `bf0df826` (1960 start) | 3 204 604 966 | 279,3 s | 320,5 s | 3 204 s ❌ | 374,4 s |
+| `80252d` (1962 start) | 8 398 637 | 0,75 s | 0,84 s | 8,4 s | 385,9 s |
+| `b40728fd` (1962 end) | 3 020 530 941 | 271,3 s | 302,0 s | 3 020 s ❌ | 385,9 s |
+
+#### ❌ Kizárva
+
+- **Ezredmásodperc**: a legnagyobb érték 839 óra lenne.
+- **Mikroszekundum**: 3 020 s, illetve 3 204 s — **a klipek nyolcszorosa**.
+
+#### ✅ Ami állva maradt — KÉT hipotézis
+
+**(a) A hossz 32 bites törtrésze** (`érték / 2³²`). Mindhárom érték a klipen
+belülre esik, és a skála **klip-hossztól független** — nincs felső korlát.
+
+**(b) 100 nanoszekundumos egység** — a Windows `REFERENCE_TIME`, a
+DirectShow és a Media Foundation alapegysége. Mindhárom érték a klipen
+belülre esik. Egy DirectShow-korabeli Windows-alkalmazásnál (a Picasa az)
+ez a legkézenfekvőbb választás.
+
+Az egyetlen szerkezeti ellenérv a (b) ellen: **32 biten a 100 ns-os egység
+7 perc 9 másodpercnél elfogy** (`0xFFFFFFFF·10⁻⁷ = 429,5 s`). A két mért
+klip 6:14 és 6:26 — épphogy alatta. Ha a Picasa 64 bites mezőt ír `%x`-szel
+(a `80252d` hat jegye mutatja, hogy **nincs nullákkal feltöltve**), akkor
+nincs plafon, és az ellenérv elesik.
+
+#### A DÖNTŐ mérés, amit el kell végezni
+
+Kell **egy 7 percnél hosszabb klip vágóponttal**, aminek a vágópontja
+429 másodperc utánra esik:
+
+- ha az érték **meghaladja** a `0xFFFFFFFF`-et → **(b) igaz**, 100 ns-os idő;
+- ha az érték `0xFFFFFFFF` alatt marad, de a klipen belüli **aránya**
+  stimmel → **(a) igaz**, törtrész.
+
+A jelenlegi gyűjteményben ilyen klip nincs.
+
+*Bizonyítottsági fok:* **megerősített** a két kizárt hipotézisre (a mért
+hosszak nyolcszoros túllépése egyértelmű) · **nyitott** a maradék kettő
+között.
