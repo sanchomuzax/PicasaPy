@@ -497,7 +497,11 @@ ponton — érdemes csak megjegyezni, hogy a mért eredeti panel-szélesség
 - **Rács (fényképrács):** ugyanolyan szélességű (~16px), natív
   Windows-görgetősáv, szintén fel/le nyílgombokkal, halványkék
   kiemeléssel a fogantyún (`145027_gridscroll2.png`).
-- Mindkettő a natív Windows-króm (nem egyedi Picasa-stílus) — a
+- ~~Mindkettő a natív Windows-króm (nem egyedi Picasa-stílus)~~ ⛔
+  **HELYESBÍTÉS (2026-08-16): NEM natív.** A Picasának **saját
+  görgetősáv-grafikája** van (`scrollart/`, 46 réteg a `respack.yt`-ban),
+  Windows- ÉS Mac-változattal, és **négy** gombbal, nem kettővel — lásd
+  „A görgetősáv SAJÁT vezérlő, négy gombbal" alább. — a
   dizájnkézikönyv 06. fejezete szerint a cél-szín `#CDCDCD` egy vékony,
   lapos sávhoz (ld. `docs/specs/design-guide.md`), tehát a natív
   megjelenés **nem** követendő minta, csak dokumentált tényállapot.
@@ -1046,3 +1050,83 @@ szolgáltatás halott —, de **a sorrend is más**: az eredeti
 
 *Bizonyítottsági fok: megerősített* (a `searchcontainer.tre` teljes
 tartalma, és a felületkód két helyen ugyanezt a hét azonosítót hivatkozza).
+
+## ⛔ A görgetősáv SAJÁT vezérlő, négy gombbal (2026-08-16)
+
+A 3.1 szakasz azt írta, hogy a görgetősáv **natív Windows-króm**. A
+`respack.yt` ezt megcáfolja: a `scrollart/` **46 réteget** tartalmaz, a
+`throttle/` pedig **22-t** — a Picasának **saját, két platformra rajzolt
+görgetősáv-grafikája** van.
+
+### Négy gomb, nem kettő
+
+A `throttle` (a görgetősáv) felülről lefelé:
+
+| # | elem | y | méret (win) | mit csinál |
+|---:|---|---:|---|---|
+| 1 | `prevalbum` | **0** | **16 × 24** | ugrás az **előző albumra** |
+| 2 | `albumscrolltop` | **24** | **16 × 24** | görgetés **fel** |
+| — | `tilebg` (sín) | 48 | 16 × 273 | csempézett háttér |
+| — | `throttlethumb` | 219 | **16 × 64** | a fogantyú |
+| 3 | `albumscrollbottom` | **321** | **16 × 24** | görgetés **le** |
+| 4 | `nextalbum` | **345** | **16 × 24** | ugrás a **következő albumra** |
+
+A teljes magasság a tervezővásznon **369**, a szélesség **16**
+(Mac-változatban **15**).
+
+> **Az album-ugró gombpár a Picasa saját találmánya.** Natív
+> görgetősávon nincs ilyen: a felső ▲▲ az előző, az alsó ▼▼ a következő
+> albumra ugrik — így egy hosszú, sokalbumos listában is gyorsan lehet
+> navigálni.
+
+### A lapozó félterek
+
+```
+throttle/pageup:  YConstraint 1, 0.5, 0      # a sín tetejétől a KÖZEPÉIG
+throttle/pagedown: YConstraint 0, 0.5, 0     # a közepétől az ALJÁIG
+```
+
+A sín két fele **lapozó terület** (`pageup` / `pagedown`), egyenként
+**16 × 184**. Mindkettő és **mind a négy gomb** `m_autorepeat` — nyomva
+tartva ismétel.
+
+A `pageup`/`pagedown` `Property normalcursor 1` — vagyis a sínen a
+**normál egérmutató** marad (nem vált kéz- vagy szövegkurzorra).
+
+### Két platform, három színvariáns
+
+| utótag | mire |
+|---|---|
+| `_win` | Windows, **16** széles, gombok 16 × 24 |
+| `_mac` | Mac, **15** széles, gombok 15 × 19 / 15 × 25 |
+| `_mac_gray` | Mac szürke (grafit) rendszertéma |
+
+A `decelev*` réteg-család (`decelevMacGraphite`, `decelevMacBlue`,
+`decelevMacGray`…) a **pozíciójelző** (`throttleposition`, 16 × 3)
+platform- és témaváltozatai.
+
+Mind a négy gomb **három állapotképet** használ a szokásos
+`(,<n>,<p>,<h>)` mintával — pl.
+`button(,scrollart/up,scrollart/pressup,scrollart/hoverup): albumscrolltop_win`.
+
+### ❌ Amiben eltérünk
+
+| | eredeti | PicasaPy (`PicasaScrollBar.qml`) |
+|---|---|---|
+| szélesség | **16** (Mac 15) | 10 |
+| gombok | **négy** (album ↑↑ · ↑ · ↓ · album ↓↓) | **nincs** |
+| lapozó félterek | van, auto-ismétléssel | nincs |
+| pozíciójelző | külön réteg (16 × 3) | nincs |
+| stílus | **saját grafika**, két platformra | egyedi lapos sáv |
+
+> A **10 px-es, gomb nélküli** sáv tudatos dizájndöntés volt
+> (`design-guide.md`), és **maradhat** — de a mostani indoklás („az
+> eredeti natív Windows-króm, tehát nem követendő") **téves**. Az
+> eredeti saját, gondosan megrajzolt vezérlő volt, **album-ugró
+> gombokkal**, amiknek nálunk nincs megfelelője.
+>
+> **Az album-ugrás funkciója külön mérlegelendő** — az nem stílus,
+> hanem navigáció.
+
+*Bizonyítottsági fok: megerősített* (a `scrollart/` 46 és a `throttle/`
+22 rétege, plusz a `throttle.tre` teljes tartalma).
