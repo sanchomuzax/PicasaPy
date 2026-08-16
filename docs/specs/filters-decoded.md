@@ -2557,3 +2557,57 @@ forrása.
   behelyettesítéssel;
 - (a korábbi körökből) `C⁻¹ diag(1/v) C`, `C⁻¹ diag(v) C`,
   `C⁻¹ diag(v₁/v) C`, `C⁻¹ D C`, `C D C⁻¹` — **összesen nyolc alak**.
+
+### Az elmosó út PIRAMIS-alapú — két jelölt kizárva (#762, 2026-08-16)
+
+#### A lelet
+
+A `0x00a42c20` diszpécser két, közvetlenül hívott függvénye **nem** a
+konvolúció: az egyik egy **felező kicsinyítő** (mipmap), a másik egy
+**2D affin transzformáció-összefűző**. Ebből viszont kiderül, hogy az elmosó
+út **képpiramison** dolgozik — ez magyarázza, miért csúszik el egy sima
+Gauss-modell nagy sugárnál.
+
+#### Bizonyíték
+
+**`0x00a43230` (336 b) — 2 × 2-es dobozkicsinyítő.** A cél mérete a forrás
+fele (`sar esi,1` / `sar eax,1`, `0x00a43255`), és két szomszédos sorból
+olvas (`lea ebx, [edi + edx*8]` = 2 sornyi lépés, `0x00a4329b`). A belső
+ciklus a klasszikus SWAR-trükkel átlagol négy képpontot:
+
+```asm
+0x00a432c8  and eax, 0xff00ff      ; a páros bájtok (B, R)
+0x00a432d7  shr ecx, 8
+0x00a432e4  and ecx, 0xff00ff      ; a páratlan bájtok (G, A)
+...                                 ; négy képpont összege csatornánként
+```
+
+**`0x009e6340` (321 b) — 2D affin transzformáció összefűzése.** Hat float
+mezőt szoroz-összegez (`[eax+0..0x20]` × `[ecx+8..0x14]`), az `a·e + b·f`
+mintában — ez `[a b c; d e f]` alakú transzformációk kompozíciója, nem
+képszűrés.
+
+#### Ami NYITVA marad — és hol folytassa a következő kör
+
+A tényleges konvolúció a diszpécser **virtuális hívásában** van
+(`mov eax,[edi]; mov edx,[eax+8]; call edx` — `0x00a42c38`, `0x00a42c5c`,
+`0x00a42c7c`), nem a közvetlen hívottak közt. **A vtable-t kell feloldani:**
+melyik osztály példánya érkezik a diszpécserbe az `unsharp`
+(`0x0090c556`) hívási helyén.
+
+#### Amit ez a kör KIZÁRT
+
+- `0x00a43230` mint elmosó mag — **kicsinyítő**;
+- `0x009e6340` mint elmosó mag — **transzformáció-összefűző**.
+
+#### Mit jelent a piramis a mi modellünkre
+
+Ha a natív út kicsinyít → szűr → nagyít, akkor **nagy sugárnál a mi
+egylépéses Gauss-unk elvileg sem tud egyezni**: a piramis a magas
+frekvenciákat a kicsinyítéskor levágja, és a visszanagyítás
+interpolációs jelleget visz a képbe. A `referencia/blur-meres/` öt
+csúszkaállásán mért 0,48–1,63 szintes él-profil-hiba ezzel konzisztens.
+
+*Bizonyítottsági fok: megerősített* a két kizárásra és a kicsinyítő
+azonosítására · **feltételes** arra, hogy a teljes út piramis (a
+kicsinyítő létezése erősen valószínűsíti, de a szűrő-lépést még nem láttuk).
