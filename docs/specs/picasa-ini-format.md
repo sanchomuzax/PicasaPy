@@ -1453,3 +1453,60 @@ lennie: amit nem ismer, azt bájtra megőrizze — ahogy a lap fentebb előírja
 A „ismeretlen kulcs = hiba" megközelítés itt elvileg sem működne.
 
 *Bizonyítottsági fok: megerősített* (859 fájl, gépi leltár).
+
+## A metaadat-ÍRÓ függvény: `0x007d55f0` (2026-08-16)
+
+A `originhash` kulcs nyomán megtalált **egyetlen függvény, ami a fotó-szintű
+metaadatokat a `.picasa.ini`-be írja**. 2 681 bájt, és a saját naplózó
+sztringjei nevezik meg a lépéseit — ez a leghitelesebb forrásunk a
+kulcssorrendre és a formátumokra.
+
+### A KULCSOK ÍRÁSI SORRENDJE (a kódban, betű szerint)
+
+| # | kulcs | fájloffset | megjegyzés |
+|---:|---|---|---|
+| 1 | `caption` | `0x007d56f0` | |
+| 2 | `keywords` | `0x007d5755` | |
+| 3 | `geotag` | `0x007d582e` | formátum: `%lf %lf` **vagy** `%lf,%lf` (két ág!) |
+| 4 | `faces` | `0x007d5da2` | előtte a kontakt-hurok |
+| 5 | **`originhash`** | `0x007d5e74` | |
+| 6 | `star` | `0x007d5ec7` | értéke **`yes`** (`0x007d5ec2`) |
+| 7 | `onlinechecksum` | `0x007d5f14` | |
+| 8 | `photoid` | `0x007d5f71` | |
+| 9 | **`origloc`** | `0x007d5fde` | |
+
+**A korpusz megerősíti a sorrendet:** valós fájlokban `caption` →
+`originhash` → `onlinechecksum` mindig ebben a relatív sorrendben áll.
+(A `rotate`, `backuphash`, `IIDLIST_*`, `filters` **más útvonalon** íródik,
+ezért kerül közéjük.)
+
+### `originhash` és `origloc` — PÁR
+
+A két kulcs egymás mellett íródik ugyanabban a függvényben:
+az **eredeti fájl** helyét (`origloc`) és tartalom-ujjlenyomatát
+(`originhash`) rögzíti — a `.picasaoriginals` / import-forrás követéséhez.
+
+Az `origloc` a **korpuszban 0-szor** fordul elő (859 fájl) — vagyis csak
+akkor íródik, ha az eredeti máshol van. Az `originhash` viszont **1 787-szer**
+(32 hexa karakter, tehát 128 bites — MD5-alkatú).
+
+### Az arcírás útvonala — a naplósztringek szó szerint
+
+```
+0x007d5888  "Writing metadata: Found %d faces"
+0x007d59c6  "Processing face %d, person %s, rect %s"
+0x007d5aee  "Found person (%s) => contact (%llx)"
+0x007d5cbf  "PersistContactToINI failed: err %d"
+0x007d5df5  "Writing face string to INI: location %s, value %s"
+0x007d5965  "rect(%ld %ld %ld %ld)"        ← BELSŐ alak, nem a fájlformátum
+0x007d5638  "%I64x"                        ← a kontakt-azonosító alakja
+```
+
+Ez az írás **sorrendjét** is megadja: előbb a kontakt kerül a
+`[contacts2]`-be (`PersistContactToINI`), és **csak utána** a `faces=`
+hivatkozás. Ha a kontakt-írás hibázik, a `faces=` sor sem íródik ki.
+
+> ⚠️ A `rect(%ld %ld %ld %ld)` **nem** a fájlba írt alak — a fájlban
+> `rect64(…)` van. A `rect(...)` a naplóba megy.
+
+*Bizonyítottsági fok: megerősített* (diszasszemblált kód + 859 fájlos korpusz).
