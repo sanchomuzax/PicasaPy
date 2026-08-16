@@ -718,7 +718,10 @@ maradék 5,08-as hibája nagyrészt a kék csatorna kivágásából jön.)
    parszernek változó hosszú hex-színt kell tűrnie. **A korábbi „két külön
    színkódolás" nyom (colorwheel version) 2026-08-15-én megdőlt**; a
    render-oldal viszont teljes, és a szín `0x00RRGGBB` sorrendű.
-5. retouch/redeye régió-adatok, text overlay — régió-alapúak, 2. fázisban
+5. ~~retouch/redeye régió-adatok~~ — **LEZÁRVA (2026-08-16), NEGATÍV
+   eredménnyel: a `.picasa.ini` NEM tartalmaz régió-adatot hozzájuk**, lásd
+   „A `redeye` és a `retouch` sosem hordoz régiót" alább. A text overlay
+   (`text=`) formátuma a #371-ben megfejtve.
 6. ~~**Összehasonlító harness** (PicasaPy render vs golden, SSIM/ΔE)~~ —
    KÉSZ (#115): `tools/golden/compare_render.py`, ld. lent.
 7. ~~a 4–5. effekt-fül paraméter-jelentései (#190 2. kör)~~ — **MEGOLDVA
@@ -2968,3 +2971,52 @@ Három következmény:
 *Bizonyítottsági fok: megerősített* (a hivatkozások teljes keresése a
 `src/picasapy/` alatt; a `full_res`/`.resizes` mezőre a `render/` csomagon
 kívül nulla találat).
+
+## A `redeye` és a `retouch` sosem hordoz régiót (2026-08-16)
+
+A „Nyitva 5" pont a `retouch`/`redeye` régió-adatait kereste. **Nincsenek
+a `.picasa.ini`-ben** — két, egymástól független bizonyíték zárja le.
+
+### 1. A valós korpusz: 310 bejegyzés, mind paraméter nélküli
+
+859 valós `.picasa.ini`-ben:
+
+| bejegyzés | előfordulás | változat |
+|---|---:|---|
+| `redeye=1` | **228** | **egyetlen** alak, paraméter nélkül |
+| `retouch=1` | **82** | **egyetlen** alak, paraméter nélkül |
+
+Nulla olyan bejegyzés, amiben bármi állna az `1` után.
+
+### 2. A bináris: a lánc-szerializáló LITERÁLKÉNT tartalmazza őket
+
+A `0x00463fd0` (2 495 bájt) a `filters=` lánc szerializálója. A hivatkozott
+sztringjei egy helyen:
+
+```
+moviestart   rotate(-1)   rotate(%d)   redeye=1;   retouch=1;   picnik=1;
+rotate(0)    rect64(      moviestart=  movieend=   rect64(%I64x)
+```
+
+**Ez a döntő.** Ugyanaz a függvény, ami a forgatást `rotate(%d)`-vel és a
+vágást `rect64(%I64x)`-szel **formázza**, a vörösszemet és a retusálást
+**kész sztringként** írja ki: `redeye=1;`, `retouch=1;`. Nincs bennük
+formátum-jel, tehát **nincs mit beléjük írni**.
+
+*(A `picnik=1;` ugyanígy literál — összhangban azzal, hogy jelző, nem adat.)*
+
+### Ami ebből következik
+
+A vörösszem-javítás és a retusálás **a képpontokba sül**, az eredeti fájl
+pedig a `.picasaoriginals` mappában marad meg. A `redeye=1` / `retouch=1`
+csak azt jelzi, **hogy** történt ilyen művelet — nem azt, **hol**.
+
+A régió-adat helye a központi adatbázis (`db3`), lásd **#371**.
+
+> ⚠️ **A PicasaPy `retouch` régió-kiterjesztése** (`ini/retouch.py`) ezért
+> **marad PicasaPy-saját**, és a Picasa sosem fogja értelmezni. Ez tudatos
+> döntés volt (#148, #445); most már bizonyított, hogy nem is lehetett
+> volna másképp.
+
+*Bizonyítottsági fok: megerősített* — a korpusz 310 bejegyzése és a
+szerializáló sztring-táblája egymástól függetlenül ugyanazt mondja.
