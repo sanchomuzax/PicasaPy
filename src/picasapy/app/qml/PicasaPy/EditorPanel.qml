@@ -478,6 +478,31 @@ Rectangle {
         default: return key
         }
     }
+    // #448: a javaslat-gombok ELŐNÉZETI bélyegképének forrása — az eredetin
+    // mindegyik javaslatnak saját előnézete volt (`editpanel/cropsug_preview%d`).
+    //
+    // Nem kell hozzá új képszolgáltató: a vágó-eszközben a nagy előnézet
+    // (`editController.previewSource`) amúgy is a VÁGATLAN képet mutatja
+    // (`enterCropTool` a crop64 nélküli láncot regisztrálja), vagyis pontosan
+    // azt a képet, amire a javaslatok számoltak. A gombok ugyanezt az URL-t
+    // kérik — a Qt kép-gyorsítótára URL szerint kulcsol, tehát a bélyegképek
+    // a MÁR betöltött képet használják, újabb dekódolás és renderelés nélkül.
+    // A vágást a `PanelButton.thumbSourceRect` végzi, a megjelenítésben.
+    //
+    // Üres, ha nincs aktív szerkesztés — ekkor a gombok a felirat-only
+    // kinézetükre esnek vissza (a `thumbSource: ""` régi útja).
+    // #448: a `hasEffectController()` csak azt mondja meg, hogy VAN vezérlő —
+    // azt nem, hogy a `previewSource` már értelmezett. Próba-környezetben (és
+    // az indulás egy pillanatában) a vezérlő létezik, a tulajdonsága viszont
+    // még `undefined`, amit egy `string` tulajdonság nem tud felvenni
+    // („Unable to assign [undefined] to QString" — ezt a CI fogta el, helyben
+    // nem jött elő). A kifejezett üres-alapérték ezt zárja.
+    readonly property string cropSuggestionThumbSource: {
+        if (!panel.hasEffectController())
+            return ""
+        var forras = editController.previewSource
+        return forras ? String(forras) : ""
+    }
     signal cropApplyRequested()
     signal cropCancelRequested()
 
