@@ -23,8 +23,14 @@ használhatók**, nem úgy, mint a könyvtár-ablaknál.
 
 ## 1. ⚠️ A LEGFONTOSABB: EGY fiók, benne fülek — nem négy külön panel
 
-Az eredetiben **egyetlen jobb oldali fiók** van, saját fejléccel és
-fülsávval, és a négy tartalom **ugyanabban a fiókban vált**:
+Az eredetiben **egyetlen jobb oldali fiók** van, saját fejléccel, és a
+négy tartalom **ugyanabban a fiókban vált**:
+
+> ⚠️ **HELYESBÍTÉS (2026-08-16):** az alábbi ábra fülsávot mutat, de a
+> kiadott csomagban **a fülsáv és mind a négy fül `#`-kal ki van
+> kommentezva**. Lásd „⚠️ HELYESBÍTÉS: a fülsáv KI VAN KOMMENTEZVE"
+> a lap végén. A **fiók mérete és a négy panel egymásra ültetése
+> változatlanul érvényes.**
 
 ```
 rightdrawerpanel/base_decrect            276 széles
@@ -198,3 +204,55 @@ tartalomban 8-8 px margóval.
 (`rightdrawerpanel`, `peoplepanel`, `tagpanel`, `geopanel`,
 `propertiespanel`), a `rightdrawerpanel.tre` kötései, és a magyar feliratok
 a `panel-feliratok-hu.tsv`-ből.
+
+## ⚠️ HELYESBÍTÉS: a fülsáv KI VAN KOMMENTEZVE (2026-08-16)
+
+A lap eleje azt írja, hogy a fiók **fülsávval** vált a négy tartalom
+között. A `respack.yt` nyers olvasata szerint **a fülsáv és mind a négy
+fül `#`-kal ki van kommentezva** a kiadott csomagban:
+
+```
+#buttcontainer: tab_container            (  2,  5)  273x25
+#superbutton(drawer_tab, tab1): tab1     (  2,  5)   89x25
+#superbutton(drawer_tab, tab2): tab2     ( 94,  5)   89x25
+#superbutton(drawer_tab, tab3): tab3     (186,  5)   89x25
+#superbutton(drawer_tab, tab4): tab4     (186,  5)   89x25
+```
+
+A `#` az erőforrásnyelvben a kikommentezés jelölése — ugyanaz, mint a
+`.tre`-ben és a `picnik` gombnál (`ui-audit-editor.md`).
+
+### Ami a kiadott változatban TÉNYLEG ott van
+
+| elem | pozíció | méret | mi ez |
+|---|---|---|---|
+| `rect: base` / `docbounds` | (0, 0) | **276 × 388** | a fiók |
+| `decrect(insetleft2): base_decrect` | (0, 0) | 276 × 388 | a beljebb húzott keret |
+| `header` | (24, 0) | 3 × 30 | a **30 px magas** fejlécsáv |
+| `size_toggle` | (**8**, 10) | **14 × 14** | szélesség-váltó (bal/jobb nyíl) |
+| `text: title_text` | (**29**, 5) | **218 × 19** | a **cím** |
+| `close` | (**255**, 10) | **14 × 14** | bezárás |
+| `propertiespanel` | (0, **31**) | **276 × 357** | Tulajdonságok |
+| `tagpanel` | (0, **31**) | **276 × 357** | Címkék |
+| `peoplepanel` | (0, **31**) | **276 × 357** | Emberek |
+| `geopanel` | (0, **31**) | **276 × 357** | Helyek |
+
+**A négy panel PONTOSAN egymáson ül** — azonos pozíció, azonos méret;
+egyszerre csak egy látszik.
+
+### Mit jelent ez a megvalósításra
+
+A **lényeg változatlan**: **egyetlen, 276 × 388-as fiók**, közös 30 px-es
+fejléccel, és a négy tartalom **ugyanabban a fiókban vált**. A mai négy
+külön `SplitView`-panel (190 / 320 / 210 / 200) ettől továbbra is eltér.
+
+**Ami változik:** a váltás **nem fülsávval** történik. A fejlécben csak
+három elem van — a szélesség-váltó, a **cím**, és a bezárás. A tartalmat
+máshonnan kell váltani (menü vagy a bal panel), és a **cím jelzi**, melyik
+van elöl.
+
+> A tervezés során **volt** fülsáv (3 × 89 + 2 × 3 hézag = 273), és a 4.
+> fül a 3. helyére került volna. A kiadás előtt kivették.
+
+*Bizonyítottsági fok: megerősített* (a `respack.yt` mind a 16 bejegyzése
+a `rightdrawerpanel` alatt; a `#` előtag a kikommentezés jelölése).
