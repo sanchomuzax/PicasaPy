@@ -2658,3 +2658,45 @@ szerepére · **nyitott** az antialiasing szabályára.
 
 > A `CircularGradientImageMask` vtable-je ugyanígy fel van oldva — a
 > `Vignette` / `Focal*` család analitikus modelljéhez az lesz a belépő.
+
+#### A `TiledImageMask` TIZENKÉT attribútuma — kiolvasva (2026-08-16)
+
+A `0x00bba2e0` attribútum-olvasójában a hívások elé tolt sztringek:
+
+| # | attribútum | mire való |
+|---:|---|---|
+| 1–2 | `tileWidth` · `tileHeight` | a csempe mérete (a pont rácsa) |
+| 3–4 | `scaleWidth` · `scaleHeight` | a csempe tartalmának skálázása |
+| 5–8 | `paddingLeft` · `paddingTop` · `paddingRight` · `paddingBottom` | a csempén belüli üres perem — **ez adja a pont méretét** |
+| 9–10 | `offsetX` · `offsetY` | a rács eltolása (a második maszk fél csempével) |
+| **11–12** | **`alphaMin` · `alphaMax`** | **a maszk alfa-tartománya — ez a keresett „antialiasing"** |
+
+#### Amit a `Comicize` ténylegesen beállít
+
+```xml
+<TiledImageMask tileWidth="{_nDotSize}" tileHeight="{_nDotSize}"
+                alphaMin="0.0" width="{imagewidth}" height="{imageheight}"
+                id="_mskColorSpots1"/>
+<TiledImageMask … offsetX="{_nDotSize/2}" … id="_mskColorSpots2"/>
+```
+
+Vagyis a tizenkettőből **hármat**: `tileWidth`, `tileHeight`, `alphaMin`
+(a másodikon `offsetX` is). **A maradék kilenc beégetett alapértékkel megy.**
+
+#### Ami ebből következik
+
+1. **Az `alphaMin = 0.0` explicit** — a maszk alfa alulról 0-ig fut, tehát a
+   pont közepe teljesen átlátszó. Az `alphaMax` **nincs megadva**, vagyis az
+   alapértéke (feltehetően 1,0) érvényes.
+2. **A pont mérete nem külön paraméter:** a `padding*` négyese szabja meg a
+   csempén belül, és a `Comicize` **egyiket sem állítja** — a pont/csempe
+   arány tehát **beégetett**, nem a felhasználó állítja. Ez magyarázza, miért
+   nem találtuk a `filterdesc`-ben.
+3. **A második maszk eltolása `offsetX = _nDotSize/2`** — a doksi „fél
+   csempével eltolt" megfogalmazása ezzel **kódból is igazolt**, és
+   **csak vízszintesen** tolódik (`offsetY` nincs megadva).
+
+*Bizonyítottsági fok: megerősített* az attribútum-névsorra (a `.rdata`
+sztringjei az olvasó-hívások előtt) és arra, hogy a `Comicize` melyik hármat
+állítja · **nyitott**: a kilenc beégetett alapérték számszerű értéke — az a
+konstruktorban (`0x00bba030` / `0x00bba250`) lesz.
