@@ -2774,7 +2774,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>You can drag and drop pictures here to make a new album.</source>
-        <translation>Ide húzva a képeket új album készül.</translation>
+        <translation>Képeket idehúzva új albumot hozhat létre.</translation>
     </message>
     <message>
         <source>Scanning for faces... %1% complete</source>
@@ -6447,7 +6447,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Upload to Google &amp;Photos...</source>
-        <translation>Feltöltés a Google &amp;Fotókba…</translation>
+        <translation>Feltöltés a Google Fotókba...</translation>
     </message>
 </context>
 <context>
@@ -6512,7 +6512,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>&amp;Locate on Disk</source>
-        <translation>Keresés a &amp;lemezen</translation>
+        <translation>&amp;Keresés a lemezen</translation>
     </message>
     <message>
         <source>&amp;Move Folder...</source>
@@ -6548,7 +6548,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Refresh &amp;Thumbnails</source>
-        <translation>Indexképek &amp;frissítése</translation>
+        <translation>&amp;Indexképek frissítése</translation>
     </message>
     <message>
         <source>S&amp;ort Folder By</source>
@@ -6560,7 +6560,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Upload to Google &amp;Photos...</source>
-        <translation>Feltöltés a Google &amp;Fotókba…</translation>
+        <translation>Feltöltés a Google Fotókba...</translation>
     </message>
 </context>
 <context>
@@ -6579,7 +6579,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Re&amp;verse sort</source>
-        <translation>Rendezés meg&amp;fordítása</translation>
+        <translation>Rendezés megfordítása</translation>
     </message>
     <message>
         <source>Show &amp;Thumbnails in Library</source>
@@ -6587,11 +6587,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Sort &amp;People by Name</source>
-        <translation>Személyek re&amp;ndezése név alapján</translation>
+        <translation>Személyek rendezése &amp;név alapján</translation>
     </message>
     <message>
         <source>Sort People by &amp;Amount</source>
-        <translation>Sze&amp;mélyek rendezése mennyiség alapján</translation>
+        <translation>Személyek rendezése &amp;mennyiség alapján</translation>
     </message>
     <message>
         <source>Sort People by Top &amp;10</source>
@@ -6599,11 +6599,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Sort by &amp;Date</source>
-        <translation>Ren&amp;dezés dátum alapján</translation>
+        <translation>Rendezés &amp;dátum alapján</translation>
     </message>
     <message>
         <source>Sort by &amp;Name</source>
-        <translation>Re&amp;ndezés név alapján</translation>
+        <translation>Rendezés &amp;név alapján</translation>
     </message>
     <message>
         <source>Sort by &amp;Recent Changes</source>
