@@ -90,6 +90,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [picasa-create-features.md](picasa-create-features.md) | A „Létrehozás" menü funkciói |
 | [picasa-bezaras-es-kilepes.md](picasa-bezaras-es-kilepes.md) | Mit zár be az „X" — bezárás és kilépés |
 | [picasa-nyomtatas.md](picasa-nyomtatas.md) | A nyomtatás — panel (61 elem), 17 méret, beállítások |
+| [picasa-email-kuldes.md](picasa-email-kuldes.md) | E-mail-küldés — választó, beépített Gmail-szerkesztő, beállítások |
 | [vorosszem-eszkoz-terve.md](vorosszem-eszkoz-terve.md) | A vörösszem-eszköz terve |
 
 ## Nyelv és megjelenés
