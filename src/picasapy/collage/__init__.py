@@ -29,6 +29,8 @@ from .layout import (
     mosaic_layout,
     pile_layout,
 )
+from .rects import NormRect, PixelRect, to_pixel_rects
+from .regular_grid import regular_grid_rects, regular_grid_shape
 from .render import (
     CollageReport,
     CollageSettings,
@@ -52,6 +54,11 @@ from .themes import (
 
 __all__ = [
     "BORDER_THEMES",
+    "NormRect",
+    "PixelRect",
+    "regular_grid_rects",
+    "regular_grid_shape",
+    "to_pixel_rects",
     "COLLAGE_THEMES",
     "CONTACTSHEET",
     "FRAMEGRID",
