@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.63] – 2026-08-16
+
+### Új
+- **A három vágás-javaslat gombján mostantól látszik, mit kapsz (#448).**
+  Eddig csak a nevük állt ott; most kis előnézeti kép mutatja a javasolt
+  kivágást — új képfeldolgozás nélkül, a már betöltött előnézetből.
+
+### Dokumentáció
+- **A README elavult tényei javítva.** A verziószám 60 kiadásnyit csúszott
+  (0.6.1 állt benne); mostantól a jelvény magától a legfrissebb kiadást
+  mutatja. Az „amit még nem tud" lista hétből ötöt tévesen sorolt hiányzóként
+  — a retusálás és szöveg, a kollázs/film, a geocímke-térkép és az effekt-fülek
+  azóta elkészültek. A jegy-hivatkozások kattinthatók.
+- **A szerkesztő 1. füljének gombsorrende véglegesen rögzítve (#464)**, saját
+  döntés-lapon. A sorrend a tulajdonos képernyőképe szerinti; a bináris
+  `respack.yt` koordinátái betűre ugyanezt adják. Kiderült, hogy a korábbi
+  ellentmondás oka az volt, hogy **rossz fájlból** következtettünk: az
+  `editpanel.tre` a gombok viselkedését írja le, a helyüket nem.
+
 ## [0.7.62] – 2026-08-16
 
 ### Javítva
