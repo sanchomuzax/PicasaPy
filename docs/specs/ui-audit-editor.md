@@ -1607,7 +1607,13 @@ Az `editpanel/picnik` a **szerkesztő 1. fülén** ül (`tabpanel1`), nem a
 rács alatt (az a `picnik_fx`, lásd fentebb). Ez zárja le az utolsó
 nyitott pontot az effekt-panelen.
 
-#### Az 1. fül teljes gombsorrendje (`editpanel.tre` 130–240)
+> ⛔ **HELYESBÍTÉS (2026-08-16): az alábbi `.tre`-sorrend NEM a
+> megjelenítési sorrend.** A `.tre`-ben minden tab-1 gomb `m_offsetLT`-vel
+> él, tehát a fájl a **helyüket nem adja meg**. A valódi elrendezés a
+> `respack.yt`-ból jön — lásd „Az 1. fül VALÓDI elrendezése" alább. Az
+> alábbi lista így csak **deklarációs sorrend**, tájékoztató jellegű.
+
+#### Az 1. fül deklarációs sorrendje (`editpanel.tre` 130–240) — NEM a megjelenítési
 
 | # | elem | mi ez |
 |---:|---|---|
@@ -1667,3 +1673,109 @@ szűrő-táblában sincs képpont-kezelője (`picasa-native-filter-registry.md`)
 
 *Bizonyítottsági fok: megerősített* (a `.tre` gombsorrend és a tizenegy
 erőforrás-bejegyzés a hivatalos magyar fordítással).
+
+## ⛔ Az 1. fül VALÓDI elrendezése — a `respack.yt`-ból (2026-08-16)
+
+**Ez a szakasz felülír minden korábbi, `.tre`-sorrendből következtetett
+állítást az 1. fülről.** A tulajdonos képernyőképe (a #464 jegyben,
+2026-08-16) és a `respack.yt` **betűre egyezik** — a `.tre` viszont nem
+adja meg a sorrendet.
+
+### Miért nem a `.tre` dönt
+
+Az `editpanel.tre`-ben **mind a tíz** tab-1 gomb ugyanazt kapja:
+
+```
+editpanel/<gomb>: editpanel/tabpanel1
+m_buttontypecolor
+m_offsetLT              ← a szülő bal-felső sarkához, eltolás NÉLKÜL
+Property hitchildren 1
+```
+
+Ha ez volna a teljes elrendezés, **mind a tíz gomb egymáson ülne**. A
+`.tre` tehát csak a **szülő-gyerek viszonyt és a viselkedést** rögzíti; a
+**helyet a `respack.yt` tervezővászna** adja.
+
+### A mért koordináták (`respack.yt`, `layer:editpanel/…`)
+
+| gomb | belső név | x0 | y0 | méret |
+|---|---|---:|---:|---|
+| Vágás | `button(crop): crop` | **37** | **91** | 44×30 |
+| Kiegyenlítés | `button(straighten): horizonadjust` | **118** | **91** | 44×29 |
+| Vörösszem | `button(redeye): redeye` | **198** | **91** | 44×29 |
+| Jó napom van | `button(enhance): enhance` | **37** | **155** | 44×31 |
+| Automatikus kontraszt | `button(autolighting): autolighting` | **118** | **156** | 44×30 |
+| Automatikus szín | `button(autocolor): autocolor` | **198** | **156** | 44×30 |
+| Retusálás | `button(retouch): retouch` | **37** | **223** | 44×30 |
+| Szöveg | `button(text): edittext` | **118** | **223** | 44×30 |
+| *(Kreatív készlet)* | `button(picnik): picnik` | **198** | **223** | 44×30 |
+| Derítőfény (ikon) | `filllight_icon` | **37** | **290** | 44×30 |
+
+Kiegészítők:
+
+| elem | x0 | y0 | méret |
+|---|---:|---:|---|
+| `filllightlabel` („Derítőfény") | 94 | 283 | 141×14 |
+| `backlight_container` (csúszka) | 101 | 294 | 127×27 |
+| `showtextcheckbox` | 148 | 198 | 14×14 |
+| `showtextlabel` | 164 | 197 | 74×14 |
+| `rect: tabpanel1` | 3 | 79 | **273×277** |
+
+### A rács
+
+- **három oszlop**: x = **37 · 118 · 198** → **oszlop-osztás 81 px**
+- **négy sor**: y = **91 · 155/156 · 223 · 290** → **sor-osztás 64 / 67 / 67**
+- **gombméret**: **44 × 30** (a `redeye` és a `horizonadjust` 29, az
+  `enhance` 31 — egy képpontos eltérések a grafikából)
+
+Ez pontosan ugyanaz a rács, mint a `szerkeszto-panel-meretek.md`-ben mért
+**44 × 30 csempe, 81 px oszlop-osztás**.
+
+### A megjelenítési sorrend — VÉGLEGES
+
+```
+1. sor:  Vágás          Kiegyenlítés          Vörösszem
+2. sor:  Jó napom van   Automatikus kontraszt Automatikus szín
+3. sor:  Retusálás      Szöveg                (Kreatív készlet — rejtett)
+4. sor:  Derítőfény (ikon + felirat + csúszka)
+```
+
+### Amit ez megcáfol
+
+| korábbi állítás | valóság |
+|---|---|
+| a sorrend `crop · redeye · enhance · picnik · autocolor · autolighting · …` | **téves** — az a `.tre` deklarációs sorrendje |
+| a `horizonadjust` a 8. helyen | valójában a **2.** (1. sor, középen) |
+| az `autocolor` az `autolighting` előtt | fordítva: **`autolighting` van előbb** |
+| az `edittext` a `retouch` előtt | fordítva: **`retouch` van előbb** |
+| a `picnik` a 4. helyen | valójában a **9.** (3. sor, jobb szélen) |
+
+### A `picnik` gomb kétszer szerepel — az egyik KIKAPCSOLVA
+
+```
+layer:editpanel/#button(picnik): picnik    x0=187  65×30
+layer:editpanel/button(picnik):picnik      x0=198  44×30
+```
+
+Az elsőt **`#` előzi meg** — az erőforrásnyelvben ez a kikommentezés
+jelölése, ugyanúgy, mint a `.tre`-ben. Két változat készült (egy szélesebb,
+felirattal, és egy szabványos csempe), és a szélesebb ki van kapcsolva.
+
+A tulajdonos képernyőképén a 3. sor harmadik helye **üres** — a `picnik`
+abban a kiadásban nem jelenik meg.
+
+### Módszertani tanulság
+
+> **A `.tre` a viselkedést és a szülő-gyerek viszonyt adja meg, a
+> `respack.yt` a helyet.** Ha egy elem `.tre`-sora csak `m_offsetLT`-t
+> tartalmaz, a fájlból **semmilyen** sorrendre nem lehet következtetni.
+> Ez a hiba két körben is megismétlődött; a `respack.yt` lekérdezése
+> másodpercekbe telik:
+>
+> ```bash
+> python3 tools/picasa/respack.py list <respack.yt> | grep editpanel
+> ```
+
+*Bizonyítottsági fok: megerősített* — **két, egymástól független forrás**:
+a tulajdonos képernyőképe (valódi, futó Picasa 3, magyar felület) és a
+`respack.yt` nyers koordinátái. A kettő minden gombra egyezik.
