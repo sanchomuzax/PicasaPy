@@ -1143,3 +1143,58 @@ tölti ki (`0x009a91a0`).
 
 Egyszerű kivágás; a Polaroid a `min(szélesség, magasság)` méretű, **középre
 igazított négyzetet** kéri (a képlet a `filterdesc.xml`-ben van).
+
+## A színválasztó diszpécsere: `ImageFilters::PickColor` (`0x008fee80`, 2026-08-16)
+
+Egyetlen 1 737 bájtos függvény dönti el, hogy **melyik szűrőhöz melyik
+színrekesz tartozik**, és milyen címmel nyílik a színválasztó. Ez adja meg a
+teljes listát arról, **mely szűrőknek van felhasználó által választható
+színe** — és megválaszolja a `picasa-ini-format.md` „dekódolatlan" jelölését
+a `RoundedEdges` és a `Matte` tokenre.
+
+### A teljes leképezés (a diszasszemblált if-láncból, sorrendben)
+
+| kiváltó név | színrekesz (beállítás-kulcs) | a párbeszéd címe | offset |
+|---|---|---|---|
+| `Polaroid` | `ImageFilters::BackgroundColor` | „Background Color" | `0x008feed8` |
+| **`RoundedEdges`** | `ImageFilters::BackgroundColor` | „Background Color" | `0x008fef7c` → `0x008feed8` |
+| `Sixties` | `ImageFilters::BackgroundColor` | „Background Color" | `0x008fefe4` → `0x008feed8` |
+| **`Matte`** | `ImageFilters::MatteColor` | „Matte Color" | `0x008ff072` |
+| `Vignette` | `ImageFilters::VignetteColor` | „Vignette Color" | `0x008ff104` |
+| `Neon` | `ImageFilters::NeonColor` | „Neon Color" | `0x008ff193` |
+| `Tint` | `ImageFilters::TintColor` | „Tint Color" | `0x008ff1f2` |
+| `_cpkrOuter` | `ImageFilters::OuterColor` | „Outer Color" | `0x008ff265` |
+| `_cpkrInner` | `ImageFilters::InnerColor` | „Inner Color" | `0x008ff2ef` |
+| `_cpkrShadow` | `ImageFilters::ShadowColor` | „Shadow Color" | `0x008ff379` |
+| `_cpkrBackground` | `ImageFilters::BackgroundColor` | „Background Color" | `0x008ff403` |
+| `_cpkrBlack` | `ImageFilters::BlackColor` | **„First Color"** | `0x008ff445` köre |
+| `_cpkrWhite` | `ImageFilters::WhiteColor` | **„Second Color"** | ugyanott |
+
+Az első hét sor **szűrőnév**, az utolsó hat a `.tre` felületen elhelyezett
+**általános színválasztó gomb** azonosítója (`_cpkr…` = *color picker*).
+
+### Három tanulság
+
+**1. Három szűrő OSZTOZIK egy színrekeszen.** A `Polaroid`, a
+`RoundedEdges` és a `Sixties` mind az `ImageFilters::BackgroundColor`-t
+használja — ha a felhasználó a Polaroidnál átállítja a színt, a
+`RoundedEdges` is azzal a színnel nyílik legközelebb.
+
+**2. A szín BEÁLLÍTÁSBAN él, nem a képnél.** Az `ImageFilters::*Color`
+kulcsok a `Preferences`-ben tárolódnak — ez a színválasztó **legutóbb
+használt** értéke, nem a fotó paramétere. A fotóhoz tartozó szín a
+`filters=` láncba kerül (`%08x`, lásd `filters-decoded.md`).
+
+**3. A `_cpkrBlack`/`_cpkrWhite` felirata „First Color" / „Second Color"** —
+tehát a kétszínű szűrőknél (pl. duotone-szerű) a felület **nem** „fekete" és
+„fehér" néven mutatja őket, hanem sorszámozva.
+
+### Amit ez NEM mond meg
+
+A **paraméter-indexet** a `filters=` láncon belül (hányadik mező a szín), és
+az **alapértelmezett színt** friss telepítés után. A diszpécser csak a
+rekeszt választja ki; az alapérték a beállítás-olvasóban (`0x009ae560`,
+417 bájt) dől el.
+
+*Bizonyítottsági fok: megerősített* (diszasszemblált if-lánc, minden ághoz
+fájloffset).
