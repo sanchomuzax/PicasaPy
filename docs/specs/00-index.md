@@ -17,7 +17,7 @@ azt, hogy nincs rajta *megjelölt* nyitott kérdés.
 | [filters-decoded.md](filters-decoded.md) | **17** | Szűrő-visszafejtés — a golden-mérések eredményei |
 | [ui-audit-editor.md](ui-audit-editor.md) | **6** | A szerkesztőpanel és dialógusai |
 | [filterdesc-registry.md](filterdesc-registry.md) | **6** | A `filterdesc.xml` hivatalos szűrő-regisztere |
-| [ui-audit-mainwindow.md](ui-audit-mainwindow.md) | **4** | Főablak: mappafa, eszköztár, tálca, arányok |
+| [ui-audit-mainwindow.md](ui-audit-mainwindow.md) | **3** | Főablak: mappafa, eszköztár, tálca, arányok |
 | [picasa-ini-format.md](picasa-ini-format.md) | **2** | A `.picasa.ini` formátuma |
 | [picasa-native-filter-registry.md](picasa-native-filter-registry.md) | **1** | A natív szűrő-nyilvántartás (49 bejegyzés) |
 | [ui-audit-context-menus.md](ui-audit-context-menus.md) | **1** | Jobbklikkes helyi menük |
