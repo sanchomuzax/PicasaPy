@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.64] – 2026-08-16
+
+### Új
+- **A kollázs Picasa-hű magja (#431).** Mind a hat elrendezés (Képkupac,
+  Mozaik, Képkockamozaik, Rács, Indexkép-ív, Többszörös exponálás), mind a
+  három képkeret, és a **`.cxf` projektfájl** írása-olvasása. Fontos: a
+  korábbi négy elrendezés saját tervezésű volt, tehát a kollázsból eddig
+  **egy sem** követte az eredetit.
+
+  A képletek helyességét két független dolog igazolja: egy valódi `.cxf`
+  kilenc mérete **képpontra pontosan** kijön, és a szétszórt kupac
+  dőlésszögei maguktól ugyanabba a tartományba esnek, mint az eredetiben.
+
+  A felületi bekötés még hátravan — a kollázs a menüből egyelőre a régi
+  elrendezéseket használja.
+
 ## [0.7.63] – 2026-08-16
 
 ### Új
