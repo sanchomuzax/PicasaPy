@@ -1196,3 +1196,49 @@ A csempe **felirata és bélyegképe is** ehhez igazodik: az erőforrás-nevet a
 
 *Bizonyítottsági fok: megerősített* (import feloldva, mindkét oldal
 — beállítás és olvasás — kiolvasva, címekkel).
+
+### A kilenc Shift-változat TELJES paraméterlistája (2026-08-16)
+
+Az előző kör „nyitva" hagyta négy Shift-változat csúszkáit. **Fölöslegesen:**
+mind a négy megvan a `filterdesc-registry.md` 4. pontjában. Ez a szakasz a
+kilenc párt **egymás mellé** teszi, hogy a paraméterpanel egy helyről
+építhető legyen.
+
+| # | csempe | alap változat + paraméterei | **Shift-változat + paraméterei** |
+|---:|---|---|---|
+| 1 | Élesítés | `unsharp2` — Mennyiség | **`unsharp`** — Mennyiség (fix 1,5-ös sugár) |
+| 2 | Filmszemcse | `PicnikGrain` — Grain 0–50 (10), Világosítás jelölő (ki) | **`grain`** — **nincs csúszkája** |
+| 3 | Árnyalás | `PicnikTint` — szín (#80cfff), Fade 0–100 (0) + festhető maszk | **`tint`** — Színek megőrzése |
+| 4 | Ragyogás | `glow2` — Intenzitás, Sugár | **`glow`** — Intenzitás, Sugár |
+| 5 | Színátmenet | `dir_tint` | **`radtint`** — Lágy perem |
+| 6 | Hőtérkép | `HeatMap` — Hue −180–180 (0), Fade 0–100 (0) | **`NightVision`** — Fényerő −50–50 (0), Kontraszt −50–50 (0), Fade 0–100 (0) |
+| 7 | Vignetta | `Vignette` — Blur 0–50 (**35**), Strength 1–2 (**1,4**), szín (**#000**), Fade 0–100 (0) | **`Matte`** — Blur 0–50 (**40**), Strength 1–2 (**1,2**), szín (**#fff**), Fade 0–100 (0) |
+| 8 | Képpontnagyítás | `Pixelate` — Impact 2–150 (20), BlendMode 0–9 (9), Fade 0–100 (0) | **`PicnikFocalPixelate`** — Impact 2–100 (20), Radius 10–min(W,H)/2 (közép), Hardness 0–100 (50), Fade 0–100 (0), Fordított jelölő (ki) |
+| 9 | Szegély | `Border` — szín Outer (#000), OuterThickness 0–100 (20), szín Inner (#fff), InnerThickness 0–100 (5), CornerRadius 0–min(W,H)/2 (0), CaptionHeight 0–H/6 (0) | **`RoundedEdges`** — szín Outer (**#fff**), CornerRadius 0–min(W,H)/2 (**min(W,H)/10**) |
+
+### Három szerkezeti tanulság
+
+**1. A `Vignette` és a `Matte` paraméterei BETŰRE azonos szerkezetűek** —
+négy mező ugyanabban a sorrendben, csak az alapértékek térnek el, és a szín
+fekete ↔ fehér. A `filterdesc-registry.md` 316. sora is ezt mondja: ugyanaz
+a művelet (`GlowImageOperation`). A Shift tehát itt **a sötétítést
+világosításra váltja**.
+
+**2. A Shift-változat NEM feltétlenül szegényebb.** A `NightVision` három
+csúszkát kap a `HeatMap` kettő helyett, a `PicnikFocalPixelate` ötöt a
+`Pixelate` háromja helyett. A paraméterpanelt tehát **újra kell építeni**
+váltáskor, nem elég átcímkézni.
+
+**3. A `RoundedEdges` a `Border` szűkített változata** — hat mező helyett
+kettő (külső szín + saroksugár), és a saroksugár alapértéke **nem nulla**
+(`min(W,H)/10`), szemben a `Border` nulla alapértékével.
+
+### Módszertani megjegyzés
+
+Ez a kör azért indult, mert az előző „nyitva" jelölést tett oda, ahol a
+válasz **egy másik spec-lapon** már megvolt. A `00-index.md` pont ezért
+készült — de az összekapcsolás csak akkor működik, ha a kör **átnézi a
+rokon lapot**, mielőtt nyitottnak jelöl valamit.
+
+*Bizonyítottsági fok: megerősített* (a `filterdesc.xml` a Picasa saját
+szűrő-regisztere; a nevek a `*text.tre` szövegforrásból).
