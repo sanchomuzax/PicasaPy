@@ -487,3 +487,62 @@ ellentmondás** — a `radblur` izotróp, a `radsat` (és a `vignette_gain`,
 *Bizonyítottsági fok:* **megerősített** a képletre (a tábla és mindhárom
 konstans nyersen kiolvasva, az ágválasztás elemezve) · **megerősített** az
 ellentmondásra (a két saját függvényünk kódja).
+
+### Mi választja ki a sugár-paramétert (2026-08-16)
+
+Az előző szakasz nyitva hagyta, mit jelent a `[obj+0xe0]` csúszka-index és
+a `0xc7d5b8 = [0, 1, 2, 5, 1, 2]` átváltótábla. **Mindkettő megvan.**
+
+#### A `+0xe0` mező: MELYIK csúszka a sugár
+
+Az alapérték `0xFF` (= −1, „nincs sugár-csúszka"):
+
+```asm
+0x008f6997  mov byte ptr [esi + 0xe0], 0xff    ; a konstruktorban
+```
+
+És beállítva **akkor és csak akkor**, ha a vezérlő neve **`_sldrRadius`**:
+
+```asm
+0x009008c9  cmp  eax, 0xcd1120                 ; "_sldrRadius"
+0x009008ce  sete al
+0x009008d3  je   0x9008ee                      ; nem a sugár-csúszka → kihagy
+0x009008d9  cmp  dword ptr [eax], 1
+0x009008e4  mov  al, byte ptr [esp + 0x18]     ; a csúszka SORSZÁMA
+0x009008e8  mov  byte ptr [edx + 0xe0], al
+```
+
+Egy második hely (`0x008ffafd`) ugyanezt teszi, amikor az elem típusa
+`"slider"`.
+
+**Vagyis a `+0xe0` a `_sldrRadius` nevű csúszka sorszáma** a szűrő
+csúszkái között — és `0xFF`, ha a szűrőnek nincs sugár-csúszkája. Ezért
+adja vissza a `0x008f9cf0` a nullát a `cmp ecx, -1` ágon.
+
+A `_sldrRadius` a `filterdesc.xml` receptjeiben is így szerepel, pl. a
+`PencilSketch`-nél: `<BlurImageOperation xblur="{_sldrRadius.value}" …/>`
+(4. pont). A binárisban **45 különböző `_sldr…` név** van.
+
+#### Az átváltótábla: csúszka-sorszám → PARAMÉTER-hely
+
+```
+0xc7d5b8 = [0, 1, 2, 5, 1, 2]      (utána 0x00FF00FF töltelék)
+```
+
+| csúszka sorszáma | a `filters=` láncban hányadik paraméter |
+|---:|---:|
+| 0 | 0 |
+| 1 | 1 |
+| 2 | **2** |
+| 3 | **5** |
+| 4 | 1 |
+| 5 | 2 |
+
+#### ✅ Ellenőrizve a két érintett szűrőn
+
+A `radblur` és a `radsat` paraméter-sorrendje `x, y, sugár, erősség`
+(`render/chain.py:353` és `:363`) — a sugár tehát a **2.** paraméter.
+A táblázat a 2-es sorszámot **2-re** képezi. **Egyezik.**
+
+*Bizonyítottsági fok: megerősített* (a mező alapértéke, mindkét beállító
+hely, az átváltótábla nyers tartalma, és a két szűrő paraméter-sorrendje).
