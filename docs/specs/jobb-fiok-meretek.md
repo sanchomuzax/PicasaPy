@@ -256,3 +256,63 @@ van elöl.
 
 *Bizonyítottsági fok: megerősített* (a `respack.yt` mind a 16 bejegyzése
 a `rightdrawerpanel` alatt; a `#` előtag a kikommentezés jelölése).
+
+## Hogyan vált a felhasználó a négy tartalom között (2026-08-16)
+
+Az előző szakasz nyitva hagyta, honnan vált a felhasználó, ha nincs fülsáv.
+**A Nézet menüből.**
+
+### A négy menütétel — hivatalos magyar felirattal
+
+| erőforrás | EN | HU |
+|---|---|---|
+| `eMenuView::ID_VIEW_PROPERTIES` | Properties | **Tulajdonságok** |
+| `eMenuView::ID_CAPTAG` | &Tags | **&Címkék** |
+| `eMenuView::ID_VIEW_PEOPLE` | &People | **&Emberek** |
+| `eMenuView::ID_VIEW_PLACES` | &Places | **&Helyek** |
+
+A négy panelazonosítót (`rightdrawerpanel/propertiespanel`, `…/tagpanel`,
+`…/peoplepanel`, `…/geopanel`) **hét függvény** hivatkozza, köztük a
+menü-kezelő `0x005cb990` és a panelváltó `0x0056e1c0` (5 936 bájt).
+
+### A fejléc CÍME a panel neve
+
+A `title_text` (29, 5, 218 × 19) tartalma a panel saját címe:
+
+| panel | erőforrás | HU |
+|---|---|---|
+| `propertiespanel` | `PropertiesPanel::title` | **Tulajdonságok** |
+| `tagpanel` | `TagPanel::tags` | **Címkék** |
+| `peoplepanel` | `PeoplePanel::title` | **Emberek** |
+| `geopanel` | `GeoPanel::title` | **Helyek** |
+
+**Ugyanaz a szöveg, mint a menütételé** — a cím és a menü egy nyelvet
+beszél.
+
+### A fiók nyitása/zárása és a 280 képpont
+
+`thumbui.tre:696`:
+
+```
+thumbui/toggle_right_drawer: thumbui/basecontrolset
+m_fakehidden
+Property setpressed 0
+Property showtarget thumbui/right_drawer
+Handler varbutton RIGHTDRAWEROFFSET -280 0 1 editpanel/previewimage editpanel/previewimage2
+```
+
+| érték | jelentés |
+|---|---|
+| `RIGHTDRAWEROFFSET = -280` | a fiók **nyitva** |
+| `RIGHTDRAWEROFFSET = 0` | a fiók **zárva** |
+
+**A fiók 280 képponttal tolja be a tartalmat** — a panel maga 276 széles,
+plusz a 4 képpontos keret. A kapcsoló **két elemet is értesít**
+(`editpanel/previewimage`, `editpanel/previewimage2`), hogy az előnézet
+átméreteződjön.
+
+Az `m_fakehidden` azt jelenti, hogy a kapcsoló **nem látszó**
+kattintható terület — a fiók szélén.
+
+*Bizonyítottsági fok: megerősített* (a négy menütétel erőforrása, a
+panelváltó függvény, és a `.tre` kapcsoló-definíciója).
