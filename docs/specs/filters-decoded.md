@@ -1075,9 +1075,59 @@ küszöb, `0x009db876`–`0x009db935` keverés), a konstansok a `.rdata`-ból
 kiolvasva (`0xcf3ed0 = -1.0f`, `0xc7dcc8 = 0.30f`, `0xc7dafc = 0.5f`), a
 hívók paraméterei a hívási helyekről.
 
-**Ami NYITVA marad:** a `_MIN_STRETCH_SPAN = 58` (a gain felső korlátja) — a
-fenti képletben nincs ilyen korlát, tehát vagy a hívó oldalán, vagy a
-fixpontos osztás telítésében van. Továbbra is **mért**, nem visszafejtett.
+#### ✅ A modell MÉRVE — és a `_MIN_STRETCH_SPAN = 58` rejtélye megoldva
+
+A visszafejtett modellt lefuttattam a **12 golden-páron**
+(`referencia/imfeellucky/`, mérőszkript:
+`referencia/eszkozok/721-enhance/enhance_model.py`):
+
+| modell | átlagos eltérés |
+|---|---:|
+| tiszta csatornánkénti, korlát nélkül | 5,799 |
+| **a mai kódunk** (csatornánkénti + `_MIN_STRETCH_SPAN = 58`) | **2,480** |
+| **visszafejtett: keverés 0,30, korlát NÉLKÜL** | **0,727** |
+| teljesen közös (keverés 1,0) | 4,808 |
+
+**A keverés-söprésnek éles minimuma van pontosan a binárisból kiolvasott
+0,30-nál** — 0,25-nél 1,115, 0,30-nál **0,727**, 0,35-nél 1,131. A kódból
+olvasott konstanst tehát a mérés **függetlenül megerősíti**.
+
+Képenként **egyetlen kép sem romlik**, és a kiugró eset megszűnik:
+
+| kép | mai modell | visszafejtett |
+|---|---:|---:|
+| **Utopic Unicorn** | **13,03** | **0,72** |
+| Sunny Autumn | 4,90 | 1,27 |
+| Redes de hilo | 3,11 | 1,03 |
+| Music – tomasino.cz | 2,30 | 0,71 |
+| a többi nyolc | 0,20–1,49 | 0,20–0,97 |
+
+#### A `_MIN_STRETCH_SPAN = 58` NEM korlát — a keverés mellékhatása
+
+A #539 azt mérte, hogy „a ténylegesen alkalmazott bemeneti tartomány
+legkisebb értéke mind a 36 csatornán 58,1, és a Picasa sosem megy alá".
+Ebből egy beégetett gain-korlátra következtettünk. **Nincs ilyen korlát** —
+a `0x009db610` alkalmazó ciklusa (`0x009db9d0`–`0x009dba21`) csak a
+KIMENETET vágja `[0, felső]`-re, a gainre semmilyen felső határ nincs.
+
+A jelenség a keverésből jön. A kiugró képen a nyers csatorna-tartományok:
+
+```
+nyers:            [79, 26, 26]
+keverés 0,30 után [96, 59, 59]     ← innen a „soha nem megy 58 alá”
+keverés 1,0 után  [135, 135, 135]
+```
+
+A keverés minden csatornát a közös `[loMin, hiMax]` felé húz, ami a **szűk**
+csatornákat kiszélesíti. Az „58" tehát ennek a mérőkészletnek a véletlene,
+nem konstans. A modellben a korlát **fölösleges**: vele és nélküle a 12 páron
+bájtra azonos az eredmény (0,727 mindkettő).
+
+*Bizonyítottsági fok: megerősített* (kódból ÉS méréssel, egymástól
+függetlenül).
+
+**Ami ezzel lezárult:** a #539 „a `_MIN_STRETCH_SPAN` mért, nem visszafejtett
+viselkedés" megjegyzése tárgytalan — a konstans **elhagyható**.
 ## Az irányított család megvalósítva — `dir_sat`, `dir_brite`, `dir_sharp`, `linblur` (#623)
 
 A #568 visszafejtésének eredménye kódba került. Modulok:
