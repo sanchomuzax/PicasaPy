@@ -2049,3 +2049,76 @@ becsült erősítések beépülésének módja a `0x0090eda0` alkalmazó ciklus�
 a `0xa4a140`-ből derül ki — **ez a következő kör**).
 
 Mérőszkript: `referencia/eszkozok/721-enhance/autocolor_model.py` (privát repó).
+
+### Az `autocolor` ALKALMAZÓJA — mérve, és két hipotézis megdőlt (#759, 2026-08-16)
+
+#### Amit az utasítások mondanak
+
+A `0x0090eda0` képpont-ciklusa (`0x0090f360`–`0x0090f3bd`) **16.16 fixpontos
+3 × 3 mátrixszorzás**:
+
+```asm
+ebx = px[0] (B) ; esi = px[1] (G) ; edi = px[2] (R)
+eax = m[0x30]*R + m[0x34]*G + m[0x38]*B ; sar eax,16
+edx = m[0x3c]*R + m[0x40]*G + m[0x44]*B ; sar edx,16
+ecx = m[0x48]*R + m[0x4c]*G + m[0x50]*B ; sar ecx,16
+```
+
+*Bizonyítottsági fok: megerősített.*
+
+#### ⚠️ Önkorrekció a PR #758-hoz
+
+A #758 azt írta, hogy „az alkalmazó a kilenc float konstansból 3 × 3-as
+mátrixot épít". **Ez túlzás volt.** A kilenc konstans a `rep movsd`-vel a
+`[esp+0xcc]` pufferbe megy (és onnan a `0xa4a140` használja), a képpont-mátrix
+viszont a `[esp+0x30 … 0x50]` rekeszekben áll. **A kettő nem ugyanaz a puffer**,
+és a köztük lévő kapcsolat nincs igazolva.
+
+#### A mátrix-modell HELYES — orákulum-illesztéssel
+
+A 12 golden-páron csatornánként legkisebb négyzetes 3 × 3-at illesztve
+(20 000 mintapont/kép):
+
+| | átlagos eltérés |
+|---|---:|
+| **a legjobb 3 × 3 mátrix (orákulum)** | **0,97** |
+| a mai csatornánkénti modellünk | 2,35 |
+| érintetlen kép | 5,29 |
+
+**0,97 = a JPEG-újratömörítés zaja** — vagyis egy 3 × 3 mátrix a Picasa
+kimenetét gyakorlatilag hibátlanul megmagyarázza. A modell alakja tehát
+bizonyítottan mátrix, nem három független csatorna-erősítés.
+
+Az illesztett mátrixok **közel átlósak**, a keresztágakkal ±0,05 körül —
+egyetlen kivétellel: a „Night Seascape" (erős kék öntet) mátrixa
+`−0,508` és `+0,528` keresztágakat tartalmaz. Ez az a kép, amit a
+csatornánkénti modell **elvileg** sem tud lekövetni.
+
+#### ❌ MEGDŐLT: a kilenc konstans NEM adaptációs tér
+
+Kézenfekvő hipotézis volt, hogy a kilenc konstans (`C`) egy „élesített"
+színteret ad, és a becsült erősítések ott hatnak — a klasszikus von Kries-alak.
+Mindkét sorrendet kimérve a 9 nem-triviális páron:
+
+| modell | átlagos eltérés |
+|---|---:|
+| `diag(128/kR, 1, 128/kB)` (puszta átlós) | **3,10** |
+| `C⁻¹ · D · C` | 3,51 |
+| `C · D · C⁻¹` | 3,60 |
+| orákulum | 0,97 |
+
+**Mindkét adaptációs alak ROSSZABB a puszta átlósnál.** A kilenc konstans
+tehát nem így épül be. *Bizonyítottsági fok: megerősített (cáfolat).*
+
+#### Ami ebből következik a megvalósításra
+
+1. A `128/k` **túl erős**: a puszta átlós modell 3,10-et ad, a mai,
+   csillapított becslőnk 2,35-öt. A tényleges átló a `128/k` és az 1,0
+   **között** van.
+2. A cél a **0,97** — és ehhez **keresztágak kellenek**. Csatornánkénti
+   modellel a „Night Seascape" típusú képek nem javíthatók.
+3. A következő lépés a `0x0090eda0` **mátrix-építő** szakasza
+   (`0x0090ee28`–`0x0090f31c`) és a `0xa4a140` — ott derül ki, mi kerül a
+   `[esp+0x30 … 0x50]` rekeszekbe.
+
+Mérőszkript: `referencia/eszkozok/721-enhance/autocolor_model.py`.
