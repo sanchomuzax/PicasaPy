@@ -80,26 +80,56 @@ rejti és tiltja a panel vezérlőit — **nincs témánkénti külön UI-kód**
 | `contactsheet` — Indexkép | **`0x4B11`** |
 | `multiexp` — Többszörös exponálás | **`0x0100`** |
 
-Az eddig megfejtett bitek:
+A megfejtett bitek *(a 2026-08-18-i kör tizenegyre bővítette az eredeti
+ötöt — a keresés a teljes kollázs-kódterületre ment, `0x00829000`+90 KB és
+`0x0087a000`+72 KB)*:
 
 | bit | ha 1 | hol dől el |
 |---|---|---|
-| 0 (`0x1`) | egy további panelág (`0x00831ac0`) fut le | `0x00831932` |
+| 0 (`0x1`) | a **háttér-beállítások engedélyezve** (rádiógombok, háttérkép-doboz, színválasztó) | `0x00831932` → `0x00831ac0` |
+| 1 (`0x2`) | oldalformátum-váltáskor lefut egy csomópontonkénti újraszámolás (`0x0087e960`) | `0x00839f07`, `0x0083a201` |
+| 2 (`0x4`) | a **„Képek összekeverése"** gomb engedélyezve (ha ≥ 2 kép) | `0x0082fa0f` |
+| 3 (`0x8`) | a **„Véletlenszerű kollázs"** gomb engedélyezve (ha ≥ 1 kép) | `0x0082fa60` |
 | 4 (`0x10`) | a **kijelölés engedélyezett** (`select_all` aktív) | `0x008318ed` |
-| 9 (`0x200`) | a **három képkeret-gomb** (`borders_group`) látszik | `0x008317f5` |
+| 5 (`0x20`) | a képek **szabadon elhelyezhetők** — a `ringnode` létrejön, és a `collage::shadows` beállítás a modellbe kerül (`spec+0x28c`) | `0x008307ef`, `0x0083a512` |
+| 7 (`0x80`) | a csomópont `+0x168` lebegőpontos mezője (elforgatás) él | `0x0083ad5f` |
+| 8 (`0x100`) | a **darabszámfüggő alapméret** kiszámolódik (ld. 9.0) | `0x0082ca95`, `0x00831a6a` |
+| 9 (`0x200`) | a **három képkeret-gomb** (`borders_group`) látszik; és `spec+0x37` = 1 | `0x008317f5`, `0x0082cb3a` |
 | 10 (`0x400`) | a **térköz-csúszka** (`spacing_group`) látszik | `0x00831860` |
 | 11 (`0x800`) | az **árnyék-jelölő engedélyezett** | `0x00831818` |
 
 Ebből a hat témára:
 
-| téma | keretek | térköz | árnyék | kijelölés |
-|---|---|---|---|---|
-| Képkupac | **igen** | nem | igen | igen |
-| Mozaik | nem | **igen** | igen | igen |
-| Képkockamozaik | nem | **igen** | igen | igen |
-| Rács | nem | **igen** | igen | igen |
-| Indexkép | **igen** | nem | igen | igen |
-| Többszörös exponálás | nem | nem | **nem** | **nem** |
+| téma | keretek | térköz | árnyék | kijelölés | gyűrű | összekeverés | szétszórás | háttér |
+|---|---|---|---|---|---|---|---|---|
+| Képkupac | **igen** | nem | igen | igen | **igen** | igen | **igen** | igen |
+| Mozaik | nem | **igen** | igen | igen | nem | igen | **nem** | igen |
+| Képkockamozaik | nem | **igen** | igen | igen | nem | igen | **nem** | igen |
+| Rács | nem | **igen** | igen | igen | nem | igen | **nem** | igen |
+| Indexkép | **igen** | nem | igen | igen | nem | **nem** | **nem** | igen |
+| Többszörös exponálás | nem | nem | **nem** | **nem** | nem | **nem** | **nem** | **nem** |
+
+> **Ez magyarázza, amit a felületen látni.** Rácsba rendezett képeket nincs
+> értelme „szétszórni" — csak a sorrendjüket keverni; az Indexkép rendezett,
+> ott egyik sincs; a Többszörös exponálás pedig egymásra vetít, ezért ott
+> sem kijelölés, sem háttérválasztás, sem árnyék nincs.
+
+**Ami MÉG nyitva van a maszkból:** a 6., 12., 13., 14., 15. és 16. bit.
+Amit tudni róluk: a **6.** csak a három rácsos témánál áll, a **12.** csak a
+Mozaiknál és a Képkockamozaiknál (`0x0087e861` gatolja), a **13.** és a
+**15./16.** csak a Képkupacnál (a 13. a `0x00886142`-nél egy időzítés-szerű
+számítást enged), a **14.** a Képkupacnál és az Indexképnél
+(`0x0082c6e9`).
+
+Teljes bitlista témánként, hogy a folytatás ne kelljen újraszámolni:
+
+| téma | beállított bitek |
+|---|---|
+| `picturepile` | 0, 1, 2, 3, 4, 5, 7, 8, 9, 11, 13, 14, 15, 16 |
+| `picturegrid`, `framegrid` | 0, 2, 4, 6, 10, 11, 12 |
+| `regulargrid` | 0, 2, 4, 6, 10, 11 |
+| `contactsheet` | 0, 4, 8, 9, 11, 14 |
+| `multiexp` | 8 |
 
 **A keretsor és a térköz-csúszka egymást váltja:** a `borders_group`
 (13, 122) 266×89 és a `spacing_group` (19, 123) 250×81 **ugyanazt a helyet
@@ -114,8 +144,10 @@ foglalja el** a panelen. Sosem látszik mindkettő.
   (`0x00830530`, `framegrid` sztring-összehasonlítás). A `.tre`-ben
   `m_hidden`, tehát alapból rejtett.
 
-**Bizonyítottsági fok: megerősített** a maszkokra és a 4/9/10/11 bitre;
-a 0. bit hatása **feltételes** (a hívott `0x00831ac0` nincs kibontva).
+**Bizonyítottsági fok: megerősített** a maszkokra és a 0/2/3/4/9/10/11
+bitre. A **7.** bit jelentése („elforgatás") **erős**, nem megerősített: a
+`+0x168` mező azonosítása a környező kódból következik. Az **1.** és az
+**5.** bit hatása megerősített, a *célja* feltételes.
 A Képkupac-sor egyezik a felhasználó képernyőképével (Képkupac kiválasztva
 → a három keretgomb látszik, térköz-csúszka nincs).
 
@@ -131,6 +163,22 @@ A `background_types` rádiócsoport két gombot mutat (`color_bg`,
 | egyszínű | `solid` | a választott ARGB |
 | kép | (a `background_container` képe) | a háttérkép hivatkozása |
 | a képek **átlagszíne** | `collage::avgcolor` | `solid`-ként, a kiszámolt színnel |
+
+A módot a specifikáció **`+0x2c`** mezője tartja, és a beállító
+(`0x008364a0(mód, b1, b2)`) így működik:
+
+```
+spec[0x2c] = (Preferences\collage::avgcolor != 0) ? 0 : mód
+spec[0x34] = b1
+spec[0x35] = b2
+```
+
+Vagyis az **átlagszín-beállítás felülír mindent**: ha be van kapcsolva, a
+mód **0** lesz, akármit kért a hívó. A rendes út `mód = 1`, `(1, 1)`
+paraméterrel hívja; a **Többszörös exponálás** viszont `mód = 2`,
+`(0, 0)` paraméterrel, és mellé `spec[0x36] = 1`-et ír
+(`0x0082cafc`–`0x0082cb1a`). Ez a saját, külön háttérkezelése — ezért nincs
+neki háttér-beállítása a panelen (0. bit).
 
 A `.tre` szerint a **`color_bg` az alapértelmezés** (`Property setpressed 1`),
 és mindegyik gomb `showtarget`-tel kapcsolja a saját dobozát:
@@ -217,10 +265,65 @@ képpontról képpontra).
 - **4. esemény (felengedés):** az átlátszóság vissza **1,0**-ra
   (`0x008690a3` `fld1`).
 
-**Az `Alt` billentyűnek külön ága van** (`0x00868f99`,
-`GetKeyState(VK_MENU)`): más útvonalon fut (`0x005121d0`,
-`0x009df680`, `0x009df290`, `0x0075c860`). **Hogy pontosan mit csinál,
-még nincs megfejtve** — ld. 11.
+**Nincs vonszolási küszöb.** A gyűrűs mozgatás az első egérmozdulatra
+elindul: a kezelőben **egyetlen** gyökvonás vagy távolság-összehasonlítás
+sincs. A máshol emlegetett **10 képpontos** küszöb (`0xcf3b28 = 10.0f`)
+**kizárólag** a `CollageNodeHandler` OLE-vonszolásához tartozik
+(`0x008606d0`), a vásznon belüli mozgatáshoz nem.
+
+**Az `Alt` billentyű külön ága** (`0x00868f99`, `GetKeyState(VK_MENU)`) —
+2026-08-18-án kibontva:
+
+```
+csoport = GetSelectionGroup(node)          ; 0x005121d0 → node[0x244]
+ha (csoport) {
+    node->vt[1]()                          ; érvénytelenítés
+    UnionGroupBounds(csoport, node)        ; 0x009df680 — a csoport
+                                           ;   befoglaló téglalapját
+                                           ;   (+0x178..+0x184) bővíti
+    AddToSelection(node, csoport)           ; 0x009df290 — de a node MÁR
+                                           ;   ebben a csoportban van,
+                                           ;   ezért azonnal visszatér
+    node->vt[2]()
+}
+n = NodeByName([ebx+0x20]); ha (n) 0x0075c860(n)   ; a csoport horgony-
+                                                   ; csomópontját állítja
+                                                   ; (csoport[0x24c])
+```
+
+**Amit ez kizár:** az `Alt` **nem másol** és **nem klónoz** — a teljes ágon
+nincs foglalás, nincs új csomópont. (Ez volt a kézenfekvő feltevés, és
+téves.) Ami marad: az ág a **kijelölés-csoport befoglaló téglalapját
+számolja újra**, és beállítja a csoport horgonyát, mielőtt a húzás
+elindul. A **felhasználó által látott** hatás a kódból önmagában nem
+állapítható meg — ehhez a futó eredetiben kellene kipróbálni.
+
+**Bizonyítottsági fok:** a mechanizmus **megerősített**, a felhasználói
+hatás **nyitva**.
+
+### 5.2/b Két kép cseréje vonszolással — MEGFEJTVE (2026-08-18)
+
+A `CollageNodeHandler` **11. eseménye** (`0x00860ce7`) egy csomópontra
+ejtés. Amit csinál:
+
+```
+tmp1 = masik_node.path      ; 0x00860e60 — sztringpár másolása
+tmp2 = ez_a_node.path
+masik_node.SetPath(tmp2)    ; 0x00860270
+ez_a_node.SetPath(tmp1)
+[ebx+0x44]->vt[5](masik.x, masik.y, ez.x, ez.y)
+```
+
+A `0x00860270(this, út)` a csomópont **`+0x48` fájlútvonal-mezőjét** írja
+át, „piszkos" jelzéssel (`this[0x20] = 1`) és újratöltéssel
+(`0x00860140`). Ugyanez a `+0x48` mező az, amit a „Megjelenítés és
+szerkesztés" is olvas.
+
+**Tehát: két képet egymásra húzva a kettő KICSERÉLŐDIK** — a képek
+váltanak helyet, a keret, a méret és az elforgatás **marad**. A négy
+koordinátával hívott `vt[5]` az animációt/értesítést viszi.
+
+**Bizonyítottsági fok: megerősített.**
 
 ### 5.3 Forgatás és méretezés — EGY fogantyú, két hatás
 
@@ -254,8 +357,34 @@ igazítógombokhoz (`snap_12`, `snap_3`, `snap_6`, `snap_9`).
 „Szög: %d" (`collage::angle_format`), a `collagepanel/scaletext` a
 „Méretarány: %d%%" (`collage::scale_format`). A méretarány
 lenyomáskor **100** (`0x00868992` `push 0x64`). Felengedéskor mindkét
-szöveg eltűnik (`0x009cd730`), és lefut egy **`collage_adapt`** nevű
-lépés (`0x00868aa4`).
+szöveg eltűnik (`0x009cd730`), és lefut a **`collage_adapt`** lépés
+(`0x00868aa4`, ld. 5.5).
+
+### 5.5 A `collage_adapt` lépés — MEGFEJTVE (2026-08-18)
+
+A `collage_adapt` **nem függvényhívás, hanem egy névvel küldött parancs**:
+a Picasa sztringet épít belőle (`0x00985ff0`, 13 karakter), üzenetobjektumba
+csomagolja (`0x00591560`), és a csomópont `vt[0x70]` bejáratán küldi el —
+**pontosan ugyanaz a mechanizmus, mint a helyi menük megnyitása**
+(ott a név `collagenode_context_single` / `_group`).
+
+A nevet a panel kezelője kapja el (`0x0082cb50`, `0x0082d40b`
+sztring-összehasonlítás) és a **`0x0083d730`**-ra irányítja. Ez:
+
+1. **Pillanatképet készít a specifikáció mezőiről** — a `+0x2c…+0x3c`
+   blokkot átmásolja a `+0x40…+0x4c` árnyékblokkba (háttérmód, munkaméret,
+   három jelző, alapméret).
+2. Végigmegy az **összes csomóponton** (`[esi+0xe8]`, darabszám
+   `[+0x19c] >> 1`), és a befoglaló téglalapjuk szélességét
+   **`× 1/1024`**-gyel normalizálja (`0xcf3f68 = 0.0009765625`).
+3. Meghívja a `0x00835380`, `0x008366c0`, `0x00837e40`, `0x00885fd0`
+   rutinokat (újraépítés/újrarajzolás).
+
+Küldi még a `CollagePreviewHandler` is (`0x008860e0`).
+
+**Bizonyítottsági fok:** a mechanizmus és a pillanatkép **megerősített**;
+hogy a lépés *célja* a kézi szerkesztés megőrzése egy későbbi
+újrarendezésnél, **erős** következtetés.
 
 **A szög kijelzése ELŐJELET VÁLT:** a tárolt szöget a kiírás előtt
 `fchs`-szel negálja (`0x00868947`). Aki a tárolt fokot írja ki, ellentétes
@@ -366,10 +495,14 @@ A tételek, sorrendben, a kódból kiolvasott arányokkal:
 | `CustomAspectRatios` | Custom Aspect Ratios | — | csoportcím |
 | `AddCustomAspectRatio` | Add Custom Aspect Ratio… | — | a `customaspectratio.fen` párbeszéd |
 
-A **vastagon** szedett arányokat közvetlenül a kódból olvastuk ki
-(`push h; push w` az elem építése előtt). A `*`-gal jelölt négy tételnél a
-számpár máshonnan érkezik; ott az arány a **feliratból** következik —
-bizonyítottsági fok: **erős**, nem megerősített.
+**Mind a tizenhét számpár a kódból van** *(2026-08-18: a `*`-gal jelölt
+négy is)*. Kétféle írásmód van rá: a leírással rendelkező tételeknél
+`push h; push w` az elem építése előtt, a leírás nélkülieknél viszont
+`mov [esp+0x20], w` és `mov [esp+0x24], h` **a sztring után** — ezért
+maradtak ki az első körből. Az értékek:
+**5 × 8** (`0x007ccd2b`), **13 × 18** (`0x007cd190`),
+**20 × 25** (`0x007cd316`), **8 × 10** (`0x007cda22`) — vagyis pontosan
+annyi, amennyit a felirat mond. **Bizonyítottsági fok: megerősített.**
 
 Az `A4PageCollage` („A4-es méretű papír") a **kollázsnak külön** tétel:
 a lista két helyen is ad A4-et, más kulccsal és más felirattal
@@ -403,12 +536,78 @@ A lap többi részét a `solo` lista tölti ki: (17, 91) 247×311.
 **„Vissza a kollázshoz"** gombot (`collagepanel::back_to_collage`).
 A kollázs lapja közben nyitva marad.
 
-**Bizonyítottsági fok: megerősített** a folyamatra és a feliratokra;
-az `addclips`/`deleteclips` belső működése nincs kibontva.
+**A két gomb belső működése** *(2026-08-18)*:
+
+- **`addclips`** (`0x0083b180`): a klip-lista **kijelöléséből** dolgozik
+  (`[panel+0x124]` → `0x007166c0`); ha üres, azonnal kilép. A felvétel egy
+  **zárral védett** szakaszban fut (`[panel+0x218]` őrszerkezet,
+  `GetCurrentThreadId` + rekurziószámláló `+0x24`, belépés/kilépés a
+  `0xc4055c` importon át), és a kiválasztott elemeket a kollázs
+  csomópont-tömbjéhez (`+0x4c`) fűzi.
+- **`deleteclips`** (`0x0083b590`): ugyanennek a párja, eltávolítással.
+- **Mindkettő ugyanazzal zárul:** `0x0083b890` — ez **frissíti a fül
+  feliratát** a „Klipek (%d)" formátummal
+  (`collageUI::tab2_title` → `collagepanel/tab2-label`). Vagyis a fülön
+  látszó szám a klipek tényleges darabszáma, minden felvétel/törlés után
+  újraírva.
+- Az `addclips` ezen felül meghívja a `0x0082fa00`-t (a két
+  véletlenszerűsítő gomb engedélyezésének újraszámolása — ld. 2., 2./3.
+  bit) és a `0x008320d0`-t (újrarendezés).
+
+**Bizonyítottsági fok:** a folyamat, a feliratok és a záró lépések
+**megerősítettek**; a zár pontos típusa (kritikus szakasz vs. saját
+őrszerkezet) **feltételes**.
 
 ---
 
 ## 9. A kimenet
+
+### 9.0 A modell számai — a kollázs 1024 egység széles (2026-08-18)
+
+A `collage_adapt` (5.5) és a beállítás-frissítő (`0x0082c9a0`) együtt
+elárulja, milyen egységekben gondolkodik a kollázs.
+
+**A lap belső szélessége 1024 egység.** A csomópontok szélességét a
+`0x0083d730` `1/1024`-gyel szorozza (`0xcf3f68 = 0.0009765625`), az
+alapméretet pedig `× 1024`-gyel állítja elő. Nem képpont: **normalizált
+lapkoordináta**.
+
+**A képek alapmérete a darabszámból jön.** `0x0082c9a0`, `n` = a képek
+száma:
+
+```
+ha n <= 1:  s = 1.0
+egyébként:  s = 1 / sqrt( sqrt(n) − 1.0 )        ; 0x0082ca29–0x0082ca4d
+            ha s > 1.0: s = 1.0
+ha (téma_maszk & 0x100):                          ; 8. bit
+    spec[0x3c] = (egész) ( s × 1024.0 × 0.33 )   ; 0xcf4218, 0xcf46c0
+egyébként:
+    spec[0x3c] = 0
+```
+
+Vagyis **egyetlen kép a lap szélességének 33%-át kapja**, és onnantól a
+`1/sqrt(sqrt(n)−1)` görbe szerint zsugorodik: 10 képnél ~0,68-szoros,
+100 képnél ~0,33-szoros. A 8. bit miatt ez **csak a Képkupacra, az
+Indexképre és a Többszörös exponálásra** vonatkozik — a rácsos témák a
+pakolóból kapják a méretet.
+
+**A munkafelbontás a darabszámmal lépcsőzik.** Ugyanitt, `spec[0x30]`:
+
+| képek száma | `spec[0x30]` |
+|---|---|
+| ≤ 99 | a `0xd35808` globálisból (**2276**, nulla felé csonkolva) |
+| 100 – 199 | **256** |
+| 200 – 349 | **128** |
+| ≥ 350 | **64** |
+
+(Küszöbök: `0x63`, `0xc7`, `0x15d` a `0x0082c9d2`, `0x0082c9ee`,
+`0x0082c9fc` címeken.) Ez az, ami miatt a nagy kollázsok az eredetiben nem
+fulladtak meg: **350 kép fölött már csak 64 képpontos változatokkal
+dolgozik**.
+
+**Bizonyítottsági fok: megerősített** a képletekre, a konstansokra és a
+küszöbökre. Hogy a `spec[0x30]` pontosan „munkafelbontás"-e (és nem más
+hosszúság), **erős**, nem megerősített.
 
 ### 9.1 Létrehozás
 
@@ -514,26 +713,35 @@ kezdőérték a `collage::orientation` beállításból jön.
 
 ---
 
-## 12. Ami nyitva marad
+## 12. A hét nyitott kérdés — 2026-08-18-i elszámolás
 
-1. **Az `Alt`+vonszolás ága a `RingMoveHandler`-ben** (`0x00868f99`).
-   Folytatás: `0x005121d0` (19 bájt, általános elérő), majd
-   `0x009df680`, `0x009df290`, `0x0075c860`.
-2. **A `CollageNodeHandler` 11. eseménye** (`0x00860ce7`): két csomópont
-   adatait veszi elő (`0x00860e60`, `0x00860270`), és a `+0x44`
-   vtable-slot 5-ét hívja a két pozícióval — **valószínűleg két kép
-   cseréje** vonszolással, de ez **feltételes**.
-3. **A képesség-maszk többi bitje** (1, 2, 3, 5, 7, 8, 12–16). A 0. biten
-   függő `0x00831ac0` sincs kibontva.
-4. **Az `addclips` / `deleteclips` belső működése** (`0x0083b180`,
-   `0x0083b590`).
-5. **A `collage_adapt` lépés** (`0x00868aa4`) — mi fut le a manipuláció
-   végén.
-6. **A négy `*`-gal jelölt oldalarány számpárja** (5x8, 13x18, 20x25,
-   8x10) — a `0x007cc990`-ben a sztring **után** épül az elem.
-7. **A vonszolás 10 képpontos küszöbe** (`0xcf3b28 = 10.0f`,
-   `0x008606d0`) a `CollageNodeHandler` OLE-vonszolásához tartozik; hogy a
-   gyűrűs mozgatásnak van-e saját küszöbe, nem néztük meg.
+A lap első kiadása hét kérdést hagyott nyitva. A 2026-08-18-i kör
+mindegyiket megnézte; hat lezárult, egy részben.
+
+| # | kérdés | eredmény | hol |
+|---|---|---|---|
+| 1 | az `Alt`+vonszolás ága | **részben** — a mechanizmus megvan, a klónozás-feltevés megdőlt; a felhasználói hatás nyitva | 5.2 |
+| 2 | a 11. esemény | **LEZÁRVA** — két kép **cseréje** vonszolással | 5.2/b |
+| 3 | a képesség-maszk bitjei | **nagyrészt** — 5-ről **11**-re nőtt a megfejtett bitek száma; hat marad | 2. |
+| 4 | `addclips` / `deleteclips` | **LEZÁRVA** | 8. |
+| 5 | a `collage_adapt` lépés | **LEZÁRVA** — névvel küldött parancs → `0x0083d730` | 5.5 |
+| 6 | a négy hiányzó oldalarány | **LEZÁRVA** — mind a kódból, a felirat szerint | 7. |
+| 7 | van-e a gyűrűnek vonszolási küszöbe | **LEZÁRVA** — **nincs** | 5.2 |
+
+**Ami tényleg nyitva maradt:**
+
+1. **Az `Alt`+vonszolás felhasználói hatása.** A kód a kijelölés-csoport
+   befoglaló téglalapját számolja újra és horgonyt állít; hogy ez mit
+   változtat a képernyőn, futó eredetiben kellene kipróbálni. Klónozás
+   **nem** (nincs foglalás az ágon).
+2. **A képesség-maszk hat bitje:** 6., 12., 13., 14., 15., 16. Ismert
+   fogyasztójuk: 12. → `0x0087e861`, 13. → `0x00886142`,
+   14. → `0x0082c6e9`. A 6., 15. és 16. bitre a teljes kollázs-kódterületen
+   (162 KB) **nem találtunk fogyasztót** — vagy máshol olvassák, vagy nem
+   használtak.
+3. **A `spec[0x30]` pontos jelentése** (9.0) — „munkafelbontás" a
+   legvalószínűbb, de nem bizonyított.
+4. **Az `addclips` zárjának típusa** (8.).
 
 ---
 
@@ -544,6 +752,16 @@ kezdőérték a `collage::orientation` beállításból jön.
   egyiket (`0x00868870`, `0x0086888b`).
 - **Nem** igaz, hogy a `snap_9` 270°-ot tárol: `−90.0f`-et
   (`0xcf50d0`). A „270 fok" a menü **felirata**.
+- **Nem** igaz, hogy az `Alt`+vonszolás **másolna** vagy **klónozna** egy
+  képet: a teljes ágon nincs memóriafoglalás és nincs új csomópont
+  (`0x00868fac`–`0x00868ffe`). Ez volt a kézenfekvő feltevés, és téves.
+- **Nem** igaz, hogy a gyűrűs mozgatásnak lenne **elhúzási küszöbe**: a
+  `RingMoveHandler`-ben egyetlen gyökvonás sincs. A 10 képpontos küszöb
+  másé (`0x008606d0`).
+- **Nem** igaz, hogy a `collage_adapt` egy közvetlen függvényhívás volna:
+  **névvel küldött parancs**, ugyanazon a bejáraton, mint a helyi menük.
+- **Nem** igaz, hogy a kollázs képpontban gondolkodna: a belső lapszélesség
+  **1024 egység** (`0xcf3f68 = 1/1024`).
 - **Nem** igaz, hogy a témánkénti panelkülönbségek külön UI-kódból
   jönnek: egyetlen bitmaszk vezérli őket (`0x00831750`).
 - **Nem** igaz, hogy a kikommentezett `#ring` / `#chicklet` rajzok

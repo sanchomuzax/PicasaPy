@@ -49,22 +49,24 @@ kérdés).
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
-### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 7 kérdés
+### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 4 kérdés
 
-1. Mit csinál az **`Alt`+vonszolás** ága a `RingMoveHandler`-ben
-   (`0x00868f99` → `0x005121d0`, `0x009df680`, `0x0075c860`)?
-2. A `CollageNodeHandler` **11. eseménye** (`0x00860ce7`) tényleg két kép
-   cseréje-e vonszolással?
-3. A téma **képesség-maszkjának** többi bitje (1, 2, 3, 5, 7, 8, 12–16) és
-   a 0. biten függő `0x00831ac0`.
-4. Az **`addclips` / `deleteclips`** belső működése (`0x0083b180`,
-   `0x0083b590`).
-5. Mi fut le a **`collage_adapt`** lépésben a manipuláció végén
-   (`0x00868aa4`)?
-6. A **5x8 / 13x18 / 20x25 / 8x10** oldalarányok számpárja a
-   `0x007cc990`-ben (a sztring után épül az elem).
-7. Van-e a **gyűrűs mozgatásnak saját vonszolási küszöbe** (a
-   `CollageNodeHandler` OLE-ágáé `0xcf3b28 = 10.0f`)?
+*(A 2026-08-18-i kör az eredeti hétből hatot lezárt — az elszámolás a lap
+**12.** szakaszában. Ami lezárult: a 11. esemény = **két kép cseréje**; a
+`collage_adapt` = névvel küldött parancs; az `addclips`/`deleteclips`; a
+négy hiányzó oldalarány; a gyűrűnek **nincs** vonszolási küszöbe; a maszk
+megfejtett bitjei 5-ről 11-re nőttek.)*
+
+1. Mi az **`Alt`+vonszolás felhasználói hatása**? A mechanizmus megvan
+   (a kijelölés-csoport befoglaló téglalapját számolja újra és horgonyt
+   állít, `0x00868fac`–`0x00868ffe`), de a képernyőn látható következmény
+   csak futó eredetiben dönthető el. Klónozás **nincs**.
+2. A téma **képesség-maszkjának** hat maradék bitje: 6., 12., 13., 14.,
+   15., 16. Ismert fogyasztó: 12. → `0x0087e861`, 13. → `0x00886142`,
+   14. → `0x0082c6e9`; a 6./15./16.-ra a teljes kollázs-kódterületen nincs.
+3. Mit jelent pontosan a **`spec[0x30]`** (a darabszámmal 2276 → 256 → 128
+   → 64-re lépcsőző szám, `0x0082c9a0`)? „Munkafelbontás" a legvalószínűbb.
+4. Milyen **zárat** használ az `addclips` (`[panel+0x218]`, `0x0083b180`)?
 
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 
