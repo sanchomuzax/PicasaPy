@@ -45,6 +45,23 @@ kérdés).
    részhalmaza (a vágóé megvan, ld. #876) — ahhoz a
    `collagepanel/format_menu` képernyőképe vagy a menüfeltöltő kód kell
 
+### [picasa-gomb-es-menu-rendszer.md](picasa-gomb-es-menu-rendszer.md) — 2 kérdés
+
+1. Hogyan rajzolja a program a **letiltott** gombot (nincs `_d` réteg,
+   csak `Property disable 1`)
+2. A `popuplist` **lenyíló panel** háttér- és keretszíne — a rétegek csak
+   a bezárt vezérlőt tartalmazzák, a listát kód rajzolja
+
+### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — 4 kérdés
+
+1. A **gumikeretes kijelölés** szabálya Ctrl/Shift mellett —
+   `ytSelectionDragHandler` 4. slotja, `0x00a6f450`
+2. A **Shift-tartomány horgonya** — `[elem+0x5a]`/`[elem+0x5b]`, és a
+   léptető mag `0x00717eb0`
+3. A **26 belső eseménykód** jelentése (`WM_*` → belső leképezés)
+4. A **jobbklikk útja**: melyik helyi menü melyik felületrészhez tartozik
+   (`0x005e7c20` + `0x0056c5a0`)
+
 ### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
 
 1. Mit tesz a Picasa, ha külső program **írja az inifájlt ÉS megérinti a kép `mtime`-ját** (537. sor) — ⚠️ **windowsos próbára vár**, gépi úton nem eldönthető
@@ -120,6 +137,8 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [picasa-hu-terminology.md](picasa-hu-terminology.md) | Hivatalos Picasa-magyar terminológia |
 | [picasa-effekt-nevek.md](picasa-effekt-nevek.md) | Az effektek nevei és buboréksúgói |
 | [picasa-effekt-feliratok.md](picasa-effekt-feliratok.md) | Az effekt-vezérlők feliratai |
+| [picasa-gomb-es-menu-rendszer.md](picasa-gomb-es-menu-rendszer.md) | **A gomb- és menürendszer** — 9-szeletes gombok, állapotszínek, tipográfia, a kétféle menü |
+| [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) | **Egér, kijelölés, kattintás-viselkedés** — a `.tre` interakciós szótár, a Ctrl/Shift-modell |
 | [design-guide.md](design-guide.md) | Dizájn-kézikönyv — hűség-referencia |
 | [ux-principles.md](ux-principles.md) | UX-alapelvek — „a Picasa lelke" |
 
