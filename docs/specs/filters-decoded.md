@@ -2525,6 +2525,19 @@ egységtesztnek való:
 A második a képlet algebrai önellenőrzése: a mátrix a becsült megvilágítás
 színét a vele **azonos világosságú** semleges szürkére viszi.
 
+### 4. A `k` értékkészlete `[68 … 240]` — a `clip(k, 0, 255)` halott ág
+
+A becslő pszeudokódjában szereplő `clamp(k(d), 0, 255)` soha nem sül el:
+
+- a köbös súly `w = ((32 − táv)³) >> 5` **nullázza** a vödröt, ha
+  `32 − táv ≤ 3` (mert `3³ = 27 < 32 ≤ 64 = 4³`);
+- tehát csak a `táv ≤ 28`-as vödrök élnek túl, és a súlypont sem eshet
+  ezen kívülre: `dx, dy ∈ [−28, +28]`, nem `[−32, +32]`;
+- ebből `k(d) ∈ [16384/(60·4), (32+28)·4] = **[68 … 240]**`.
+
+A 12 mérőképen a tényleges tartomány `kR ∈ [97, 148]`, `kB ∈ [78, 156]`.
+Így a bájtba csomagolás túlcsordulásával (`k = 256`) sem kell számolni.
+
 ## A „Nyitva 7" két maradéka LEZÁRVA (2026-08-16)
 
 ### 1. A `Cinemascope` jelölőnégyzet polaritása — alapból BE
