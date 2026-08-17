@@ -1,0 +1,27 @@
+# A Qt (PySide6) futtatásához kellő Linux rendszercsomagok — EGYETLEN lista.
+#
+# Ezt a fájlt olvassa a CI (`.github/workflows/`), a session-indító bootstrap
+# (`scripts/bootstrap_env.sh`) és minden más telepítő; tételes `apt-get
+# install libegl1 ...` sort SEHOVA nem írunk többé. Őr:
+# `tests/test_kornyezet_szinkron.py`.
+#
+# Előzmény: a lista korábban négy helyen élt párhuzamosan, és el is csúszott —
+# a `libpulse0` a CI-be bekerült, a session-hookokba nem, így a felhős
+# munkamenet más környezetben futtatta a tesztkészletet, mint amiben a CI
+# zöldre váltott.
+#
+# Lekérdezés: `python scripts/print_dependencies.py --apt`
+# Formátum: soronként egy csomagnév; `#`-kezdetű és üres sor kimarad.
+
+# EGL/OpenGL — enélkül a PySide6 be sem töltődik (`libEGL.so.1: cannot open
+# shared object file`), még offscreen platformon sem.
+libegl1
+libgl1
+
+# Billentyűzet-leképezés; a QGuiApplication indulásakor kell.
+libxkbcommon0
+
+# Qt Multimedia (videó-lejátszás, #14). Nem minden futás használja, de a
+# modul betöltése ezt húzza be — ha hiányzik, a videós rész némán más ágra
+# fut, mint a CI-ben.
+libpulse0

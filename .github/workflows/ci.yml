@@ -56,15 +56,22 @@ jobs:
 
       - name: Install Linux Qt runtime dependencies
         if: runner.os == 'Linux'
+        # A csomaglista a packaging/qt-runtime-deps.txt — ugyanaz a fájl,
+        # amiből a session-bootstrap is telepít. Tételes lista ide nem
+        # kerülhet vissza (tests/test_kornyezet_szinkron.py).
         run: |
           sudo apt-get update
-          # libpulse0: a Qt Multimedia (videó-lejátszás, #14) betöltéséhez
-          sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libpulse0
+          sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
 
       - name: Install Python dependencies
+        # A lista a pyproject.toml (futásidejű + `dev` extra). A projektet
+        # magát NEM telepítjük: a tesztek a forrásfából futnak
+        # (pythonpath=["src"]), az editable install pedig *.egg-info-ot
+        # hagyna a fában, amiből a csomag-ellenőrzők hamis zöldet nyernek (#655).
+        shell: bash
         run: |
           python -m pip install --upgrade pip
-          pip install PySide6 opencv-python-headless pillow piexif watchdog pytest pytest-cov
+          pip install $(python scripts/print_dependencies.py --all)
 
       - name: Run tests
         # darabolt futtatás (#53): a teljes készlet egy processzben a
@@ -97,14 +104,17 @@ jobs:
       - name: Qt futtatókörnyezet
         # A füst-teszt IMPORTÁLJA a belépési pontot, az pedig a PySide6-ot
         # húzza be — enélkül `libEGL.so.1: cannot open shared object file`.
-        # Ugyanaz a lista, mint a `test` jobé; a libpulse0 itt nem kell,
-        # mert nem indítunk multimédiát.
+        # Ugyanaz a lista, mint mindenhol máshol: korábban itt egy szűkebb
+        # változat állt („a libpulse0 itt nem kell"), és pontosan az ilyen
+        # jószándékú eltérésekből lett négy, egymástól elcsúszott lista.
         run: |
           sudo apt-get update
-          sudo apt-get install -y libegl1 libgl1 libxkbcommon0
+          sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
 
       - name: Build eszközök
-        run: python -m pip install --upgrade pip build
+        run: |
+          python -m pip install --upgrade pip
+          pip install $(python scripts/print_dependencies.py --dev)
 
       - name: A deklarált setuptools-minimum valódi próbája (#652 őre)
         # A rendes build LEJJEBB build-izolációval fut, ami mindig a
@@ -151,7 +161,11 @@ jobs:
           python-version: "3.12"
 
       - name: Install ruff
-        run: python -m pip install --upgrade pip ruff
+        # A `dev` extrából, nem tételesen — így a lint ugyanazt a ruffot
+        # kapja, amit a fejlesztő a session-környezetében.
+        run: |
+          python -m pip install --upgrade pip
+          pip install $(python scripts/print_dependencies.py --dev)
 
       - name: Run ruff
         # #651: a `scripts/` is bekerült — a csomag- és

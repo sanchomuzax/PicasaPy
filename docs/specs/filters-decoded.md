@@ -3224,7 +3224,7 @@ móddal indexelve:
 | 0 | **0,5** | **doboz** (`\|x\| ≤ 0,5 → 1`, egyébként 0) | `0xa3fb03` | `fcomp [0xc7dafc]`=0,5 |
 | 1 | **1** | **háromszög** (bilineáris), `1 − \|x\|` | `0xa3fb37` | `fld1; fsubrp`, abs |
 | 2 | **2** | **köbös B-spline** (ld. lent) | `0xa3fb82` | a négy szakasz konstansai |
-| 3 | **2** | köbös, **0,4-es paraméterrel** | `0xa3fc91` | `0x00a3f691` `fld [0xc7c838]`=0,4 → `call 0xa3f5b0` |
+| 3 | **2** | **Mitchell–Netravali, B = C = 0,4** (ld. lent) | `0xa3fc91` | tíz konstans a `0x00a3f5b0`-ban |
 | 4 | **3** | **háromlebenyes köbös konvolúció** (ld. lent) | `0xa3fd25` | tíz konstans, `0xcf4180`…`0xcf41c0` |
 | 5 | **3** | **Lanczos-3** | `0xa3fdf5` | két `sin` (`0xa3fe43`, `0xa3fe8f`) |
 | **6** | **4** | **Lanczos-4** ← **ALAPÉRTELMEZÉS** | `0xa3feed` | két `sin` (`0xa3ff3b`, `0xa3ff87`) |
@@ -3251,6 +3251,61 @@ return s1 * s2;                    // w(x) = sinc(πx) · sinc(πx/4)
 
 Ez a **tankönyvi Lanczos, a = 4**. A 7-es és 8-as mód ugyanez `1/6`-tal,
 illetve `1/8`-cal.
+
+### A 3-as mód magja — Mitchell–Netravali, B = C = 0,4 (2026-08-17, #871)
+
+```
+|x| < 1:     ( (12 − 9B − 6C)|x|³ + (−18 + 12B + 6C)|x|² + (6 − 2B) ) / 6
+1 ≤ |x| < 2: ( (−B − 6C)|x|³ + (6B + 30C)|x|² + (−12B − 48C)|x| + (8B + 24C) ) / 6
+|x| ≥ 2:     0
+```
+
+Az együttható-számoló (`0x00a3f5b0`, 162 b) konstansai **betűre a
+Mitchell-készlet**: `6,0` · `1/6` · `12,0` · `18,0` · `9,0` · `8,0` ·
+`24,0` · `−12,0` · `48,0` · `30,0`.
+
+**A paraméter mindkét helyre ugyanaz a 0,4** (`0x00a3f691`: `fld
+[0xc7c838]` = 0,4, majd `fst [esp+4]` **és** `fstp [esp]`) — vagyis
+**B = C = 0,4**, nem a klasszikus 1/3.
+
+| x | 0 | 0,5 | 1 | 1,5 | 2 |
+|---|---:|---:|---:|---:|---:|
+| **w(x)** | **+0,866667** | +0,541667 | +0,066667 | **−0,041667** | 0 |
+
+**Számszerű kontroll a kódból:** a `w(0)` konstans tagja
+`(6 − 2B)/6` = **0,8666667** (`0x00a3f5b0`–`0x00a3f5cc`), és a
+súlyok összege **minden fázisban pontosan 1,0**.
+
+> ⭐ **Ezt a magot használja a FORGATÁS** — ld. lent.
+
+### A `RotateImageOperation` a `ytResampler`-t használja, NEM a Skiát (2026-08-17)
+
+> ⚠️ **Helyesbítés a `filterdesc-registry.md` 1195. sorához**, ami azt
+> állította, hogy „a mintavételező a Skia… az algoritmust nem kell
+> visszafejteni". **Téves.**
+
+A `0x00bcb5e0` (263 b) közvetlen hívottai: `0x009e6da0` · `0x009e6df0` ·
+**`0x00a3f490`** (a `ytResampler` konstruktora) · **`0x00a42c20`** (a
+diszpécsere) · `0x00425160`. **Skia-hívás nincs köztük.**
+
+A módot **explicit** adja át — nem az alapértelmezettet:
+
+```asm
+0x00bcb63e  fld1
+0x00bcb640  fcomp dword ptr [esp+0x10]   ; a LÉPTÉK == 1,0 ?
+0x00bcb64a  jp   0xbcb653                ;   igen →
+0x00bcb64c  mov  ecx, 3                  ;   nem  → 3-as mód (Mitchell)
+0x00bcb653  xor  ecx, ecx                ;   igen → 0-s mód (doboz)
+0x00bcb659  call 0xa3f490                ; ytResampler(ecx = mód)
+```
+
+| a forgatás léptéke | mód | mag |
+|---|---:|---|
+| **pontosan 1,0** | 0 | **doboz** (nincs mit interpolálni) |
+| bármi más | 3 | **Mitchell–Netravali, B = C = 0,4** |
+
+**A 46 statikusan befordított Skia-osztály önmagában nem bizonyíték** —
+a Picasa használja a Skiát, de **ezen az útvonalon nem**.
 
 ### A 4-es mód magja — háromlebenyes köbös konvolúció (2026-08-17, #871)
 
@@ -3591,3 +3646,140 @@ azonosítása, és hogy melyik csúszka adja a paraméterét.
 `Feather` 0,001-es padlójára, az `1 − Shade`-re, a `× 30`-as
 középpont-skálára, a LUT felépítésére és a szorzó színezésre · **erős** a
 negyed-kezelés pontos szemantikájára · **nyitott** a görbe alakja.
+
+## A három „automatikus" szűrő HÁROM külön algoritmus (2026-08-17)
+
+Független újraolvasás a callbackekből — a mai megvalósításunk megerősítve.
+
+| szűrő | callback | mit hív | keverés | `CarefulEnhance` |
+|---|---|---|---|---|
+| **`enhance`** | `0x008f8840` (147 b) | `0x009db610` | **−1,0f → 0,30** | a **beállításból** |
+| **`autocontrast`** | `0x008f89d0` (68 b) | `0x009db610` | **1,0** (`fld1`, `0x008f89fd`) | **fixen 0** (`push 0`, `0x008f8a03`) |
+| **`autolight`** | `0x008f80c0` (468 b) | `0x00a4b960` + `0x00a4bfd0` | — | — |
+
+**Az `enhance` és az `autocontrast` UGYANAZ a szinthúzó, két
+paraméterrel.** A különbség emberi nyelven:
+
+- **`enhance`** a csatornánkénti vágópontokat csak **30 %-ban** közelíti a
+  közös értékhez → a **színöntetet is korrigálja**;
+- **`autocontrast`** **100 %-ban** közös vágópontot használ → **csak a
+  kontrasztot húzza szét, a fehéregyensúlyt nem mozdítja**.
+
+**Az `autolight` ezzel szemben teljesen más út:** a hisztogram-felvevőn
+(`0x00a4b960`) keresztül dolgozik, nem a szinthúzón.
+
+> ⚠️ **Ne vonj össze közös segédfüggvényt a három alá.** A `0x009db610`
+> közös az első kettőnek, de a paraméterezés adja a jelentést; az
+> `autolight` pedig más kódúton van.
+
+*Bizonyítottsági fok: megerősített* (mindhárom callback hívási listája az
+indexből, a két konstans utasításszinten).
+
+## A szűrők TÉNYLEGES gyakorisága éles gyűjteményben (2026-08-17, #484)
+
+Eddig a mérőszett ΔE-értékei rangsoroltak. **A másik tényező is megvan:**
+mi fordul elő valódi `.picasa.ini`-kben.
+
+Forrás: `referencia/ini-korpusz/korpusz.txt` (privát repó) — **859
+`.picasa.ini` fájl**, ebből **317 tartalmaz `filters=` sort**, összesen
+**9147 lánc-tag, 28 féle szűrő**. A feldolgozás a saját
+`canonical_filter_name` és `effective_param_count` függvényünkkel futott.
+
+| szűrő | előfordulás | | szűrő | előfordulás |
+|---|---:|---|---|---:|
+| **`enhance`** | **3045** | | `autocolor` | 54 |
+| **`autolight`** | **2612** | | `unsharp2` | 27 |
+| **`fill`** | **1089** | | `Boost` | 22 |
+| **`crop64`** | **801** | | `radblur` | 18 |
+| **`finetune2`** | **561** | | `sepia` | 14 |
+| `redeye` | 228 | | `bw` | 10 |
+| `Vignette` | 219 | | `dir_tint` | 10 |
+| `warm` | 118 | | `Lomo` | 6 |
+| `sat` | 110 | | `HDR`, `glow2` | 4, 4 |
+| `tilt` | 102 | | `Holga`, `moviestart`, `movieend`, `tint` | 2 |
+| `retouch` | 82 | | `Cinemascope`, `CrossProcess`, `Sixties` | 1 |
+
+**Öt szűrő adja a tagok 88 %-át**: `enhance` · `autolight` · `fill` ·
+`crop64` · `finetune2`.
+
+### Két negatív eredmény ugyanebből a mérésből
+
+| kérdés | eredmény |
+|---|---|
+| hány tag visel **fölös paramétert**? | **0** a 9147-ből |
+| hány tag **nem kanonikus** írásmódú? | **0** |
+
+Vagyis a Picasa a saját maga írta fájlokban **mindig** pontos
+paraméterszámot és kanonikus nevet használ. A `filter_registry.py`
+megengedő olvasása **elméleti** védelem (kézzel szerkesztett ini ellen),
+nem napi szükséglet — és a #910-es render-hiba éles fájlon nem sül el.
+
+### Amit a rangsorban átrendez
+
+- **`finetune2`**: 561 előfordulás **és** 55,94 ΔE — a gyűjtemény
+  legnagyobb tényleges hatású render-hibája (#879).
+- A `#880` tíz „nem megvalósított" effektjéből a korpuszban **egyik sem**
+  fordul elő.
+- A `neon` (113,89 ΔE, #878) szintén **nulla** előfordulású.
+
+> ⚠️ **Korlát:** a korpusz **egy** felhasználó gyűjteménye, tehát az ő
+> szokásait tükrözi. Más felhasználónál más lehet — de ez az egyetlen
+> **mért** adatunk, és sokkal jobb a becslésnél.
+
+*Bizonyítottsági fok: megerősített* (teljes korpusz, gépi feldolgozás).
+
+## A `finetune2` színhőmérséklete: feketetest-tábla + az `autocolor` mátrixa (2026-08-17, #879)
+
+**A hőmérséklet-csúszka nem csatorna-szorzókat állít, hanem kiválaszt egy
+megvilágítás-színt, és a kép azt semlegesíti** — ugyanazzal a
+színmátrixszal, amit az `autocolor` használ.
+
+### A képlet
+
+```c
+// 0x0090e9d0 (54 b) — a finetune2 hőmérséklet-ága
+i = (int)(temp * 37.0 + 55.0);        // 0xcf47e0 = 37,0 · 0xcf4610 = 55,0
+k = TABLA[i];                          // 0x00c7cf98, csomagolt 0x00RRGGBB
+0x0090eda0(dst, src, k);               // ← AZ AUTOCOLOR ALKALMAZÓJA (#759)
+```
+
+A `0x0090eda0` teljes leírása fent, „Az `autocolor` MÁTRIX-ÉPÍTŐJE
+VISSZAFEJTVE" szakaszban: `L = (77·kR + 151·kG + 28·kB) >> 8`,
+`g = (M⁻¹·(L,L,L)) ⊘ (M⁻¹·k)`, `A = M · diag(g) · M⁻¹`.
+
+### A tábla — feketetest-sugárzás Kelvinben
+
+| index | RGB | Kelvin |
+|---:|---|---:|
+| 0 | (255, 56, 0) | 1000 K |
+| 18 | (255, 173, 94) | **2800 K** ← a csúszka alsó vége |
+| 36 | (255, 221, 190) | 4600 K |
+| **55** | **(255, 249, 253)** | **6500 K — a csúszka KÖZEPE** |
+| 70 | (227, 233, 255) | 8000 K |
+| 92 | (202, 218, 255) | **10200 K** ← a csúszka felső vége |
+
+**`Kelvin = 1000 + 100·i`**, tehát a csúszka jelentése:
+
+```
+Kelvin = 6500 + 3700 · temp        temp ∈ [−1 … 1]  →  2800 K … 10200 K
+```
+
+⚠️ **A `temp = 0` NEM azonosság:** az 55. bejegyzés (255, 249, 253)
+minimálisan meleg, tehát a mátrix egy hajszálnyit hűt.
+
+### A neutrális pipetta UGYANEZ a gépezet
+
+A callback (`0x008f7ee0`) **két egymás utáni** mátrix-menetet futtat:
+
+```asm
+0x008f7fe8  test edi, 0xffffff   ; a p4 (pipettával vett szín) nem nulla?
+0x008f7ffd  call 0x90eda0        ; 1. menet: a KIVÁLASZTOTT szín semlegesítése
+0x008f8010  call 0x90e9d0        ; 2. menet: a hőmérséklet-táblából vett szín
+```
+
+A `finetune` (v1) ugyanígy épül, csak a `0x0090ea10`-et hívja a
+`0x0090e9d0` helyett.
+
+*Bizonyítottsági fok: megerősített* a hőmérséklet-ágra, a két konstansra,
+a tábla tartalmára és a `0x0090eda0` azonosságára · **erős** a
+Kelvin-leképezésre (két független illeszkedés: 1000 K és 6500 K).

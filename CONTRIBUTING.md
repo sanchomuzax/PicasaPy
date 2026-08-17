@@ -6,10 +6,20 @@ Köszönjük az érdeklődést! A PicasaPy GPL-3.0 licencű, a fejlesztés a
 ## Fejlesztői környezet
 
 ```sh
-python -m pip install PySide6 opencv-python-headless pillow piexif watchdog pytest pytest-cov
+# Python-csomagok: futásidejű + fejlesztői eszközök
+python -m pip install $(python scripts/print_dependencies.py --all)
+
+# Linuxon a Qt rendszer-libjei
+sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
 ```
 
-Linuxon a Qt-hez kellenek még: `libegl1`, `libgl1`, `libxkbcommon0`.
+A csomagok listáját **ne írd ki kézzel**: a Python-oldal igazságforrása a
+`pyproject.toml`, a rendszercsomagoké a `packaging/qt-runtime-deps.txt`, és
+minden telepítő (CI, session-hook, ez a leírás) ezeket kérdezi le. A listák
+korábban négy helyen éltek párhuzamosan, és el is csúsztak egymástól; egy
+őr-teszt (`tests/test_kornyezet_szinkron.py`) most már elkapja, ha valaki
+tételes listát ír vissza valamelyik telepítőbe.
+
 Fej nélküli (CI, konténer) környezetben: `export QT_QPA_PLATFORM=offscreen`.
 
 ## Tesztelés
@@ -17,7 +27,7 @@ Fej nélküli (CI, konténer) környezetben: `export QT_QPA_PLATFORM=offscreen`.
 ```sh
 python scripts/run_tests.py        # a TELJES készlet — push előtt kötelező
 python scripts/run_tests.py --cov  # lefedettséggel
-ruff check src/ tests/             # lint
+ruff check src/ tests/ scripts/    # lint
 ```
 
 A tesztkészletet **a `scripts/run_tests.py`-vel futtasd**, ne közvetlenül a

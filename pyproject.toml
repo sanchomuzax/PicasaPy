@@ -14,15 +14,29 @@ version = "0.7.68"
 description = "Modern, open, cross-platform successor to Google Picasa"
 requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
-# A futáshoz szükséges csomagok (#4 — pip/pipx-telepíthetőség). A pontos
-# listát a CI (.github/workflows/ci.yml) telepítési lépése tartja
-# karban — ha ott bővül, itt is frissítendő.
+# A futáshoz szükséges csomagok (#4 — pip/pipx-telepíthetőség). Ez a lista az
+# IGAZSÁGFORRÁS: a CI és a session-indító bootstrap is innen kérdezi le, mit
+# telepítsen (`scripts/print_dependencies.py`). Korábban fordítva volt — a
+# komment a CI-hez küldte az olvasót —, és a másolatok el is csúsztak.
 dependencies = [
     "PySide6",
     "opencv-python-headless",
     "pillow",
     "piexif",
     "watchdog",
+]
+
+# Fejlesztői eszközök: teszt, lefedettség, lint, csomagépítés. Nem a futáshoz
+# kellenek, hanem ahhoz, hogy a PROTOKOLL push előtti lépései (teljes
+# tesztkészlet + `ruff`) EGYÁLTALÁN futtathatók legyenek — a `ruff` korábban
+# egyetlen telepítőben sem szerepelt, hiába kérte kötelezőként a CONTRIBUTING.
+# Telepítés: `pip install $(python scripts/print_dependencies.py --all)`.
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "build",
 ]
 
 # Parancssori belépési pont: `pip install .` / `pipx install .` után a
