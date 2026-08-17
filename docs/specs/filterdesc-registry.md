@@ -1057,6 +1057,76 @@ látszanak, ami a 4.10-es `Sharpen`-kernel olvasatát is megerősíti.
 >
 > **Ami maradt:** a `SimpleColorMatrix` melyik paramétere ez (telítettség /
 > kontraszt / fényerő). Egy golden-összevetés eldönti.
+>
+> ✅ **LEZÁRVA (2026-08-17, #878).** A golden-összevetés megtörtént (a #685
+> mérőszettjének `neon__alap.jpg` párja — a `Neon` az `EdgeDetectionB`
+> EGYETLEN hívója a fájlban): a **kontraszt** illeszkedik. Egyúttal a fenti
+> lépéstábla is pontosításra szorult, ld. lent.
+
+#### `EdgeDetectionB` — a TELJES lépéssor (2026-08-17, #878)
+
+A dekompilátum (`script-DecompileEdge.log`, 3321. sortól) két olyan lépést
+tartalmaz, ami a fenti hatsoros olvasatból kimaradt:
+
+| # | natív hívás | mit épít |
+|---|---|---|
+| 1 | `FUN_00bb4c40(2.0f, 2.0f, 2)` | `Blur(xblur=2, yblur=2, quality=2)` |
+| 2 | `FUN_00bb6150()` → `+0x34` | `SimpleColorMatrix` — **kontraszt = `100 − detail`** |
+| 3 | `FUN_00bc25d0("edgedetectimgop_orig")` | `SetVar` |
+| 4 | `FUN_00bb6560(0)` | `EdgeDetectionSobel(0)` — függőleges élek |
+| 5 | `FUN_00bb9990` + `"{[{x:0, y:0}, {x:128, y:255}, {x:255, y:0}]}"` | **háromszög-görbe** |
+| 6 | `FUN_00bc25d0("horizontal")` | `SetVar` — az első irány eltétele |
+| 7 | `FUN_00bbf740("edgedetectimgop_orig")` | `GetVar` — vissza a 2. lépés képére |
+| 8 | `FUN_00bb6560(1)` | `EdgeDetectionSobel` — vízszintes élek |
+| 9 | `FUN_00bb9990` + ugyanaz a görbe | |
+| 10 | `FUN_00bbf780("horizontal")` | `GetVar` **keverési móddal** (`BlendImageOperation` alap) |
+
+**A háromszög-görbe a kulcs, és megfordítja az egész effekt olvasatát.**
+A Sobel kimenete 128 körül van középre tolva; a görbe a 128-at **255-re**
+viszi, a széleket 0-ra — vagyis az `EdgeDetectionB` **fehér alapon sötét
+vonalas rajzot** ad, nem fekete alapon világos éleket. A `Neon` ezért
+invertál a végén, és ezért lesz a kimenete fekete alapon világos él.
+
+**Amit a bináris NEM ad meg** (mérésből, a fenti golden páron illesztve):
+a Sobel-válasz osztója a 128-as eltolás előtt (`4,0`), és a 10. lépés
+keverési módja (`multiply` és `darken` egyaránt illeszkedik — a fehér alap
+mellett gyakorlatilag megkülönböztethetetlenek).
+
+A `quality="2"` a Flash `BitmapFilterQuality` szerint az elmosás
+átfutásainak száma (4.5): két menet egy 2 képpont széles dobozszűrőből
+pontosan a `[1, 2, 1]/4` háromszög-mag.
+
+#### `TintImageOperation` — FÉNYESSÉG-TARTÓ színezés (2026-08-17, #878)
+
+A `Neon` záró lépése és a `PicnikTint` teljes csővezetéke ugyanez az egy
+művelet. A #685 `picniktint__alap.jpg` golden párjából
+(`PicnikTint=1,0.000000,0080cfff;`) mérve:
+
+```
+kimenet = luma(kép) + (szín − luma(szín))          Rec.601 luma
+```
+
+majd a tartományon kívülre került csatornák levágása, és a levágás
+fényesség-veszteségének kompenzálása a **még szabad** csatornákon, amíg a
+luminancia újra a bemenetivel egyezik. A művelet tehát a bemenet
+luminanciáját bájtra megőrzi, és csak a krómát cseréli le.
+
+Bizonyíték (a golden pár mediánjai, a szín lumája 188,9):
+
+| bemeneti luma | mért kimenet (R, G, B) | a kimenet lumája |
+|---:|---|---:|
+| 16 | (0, 16, 65) | 16,8 |
+| 128 | (69, 147, 195) | 129,1 |
+| 248 | (231, 255, 255) | 247,9 |
+
+A 248-as sor a döntő: két csatorna 255-ön áll, és a **harmadik** pontosan
+arra az értékre, amellyel a luminancia visszajön — tehát nem egyszerű
+`clip`. A modell csatornánkénti átlagos abszolút hibája a teljes golden
+páron **1,7–2,4 szint** (a JPEG-zaj nagyságrendje).
+
+> ⚠️ **A `PicnikTint` ebből még NEM lett átállítva** (ma szorzó-tinten fut,
+> ΔE 33,45 / SSIM 0,63) — arra külön jegy van. Ez a kör (#878) csak a
+> `Neon`-t vitte át az új primitívre.
 
 ### 4.12 A Polaroid / Múzeumi matt műveletcsaládja (2026-08-14, agent-#21)
 

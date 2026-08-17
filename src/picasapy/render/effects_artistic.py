@@ -1,5 +1,10 @@
 """A Picasa 5. fülének (kék ecset) művészi effektjei — I. rész: Boost, Soften,
-Pixelate, PencilSketch, Neon, Comicize.
+Pixelate, PencilSketch, Comicize.
+
+A `Neon` a #878-ban KIKERÜLT innen: az itteni modell a hatás jellegét
+közelítette, és soha nem is futott (a `filters=` láncot mindig a
+`glimmer_creative.apply_neon` szolgálta ki). A visszafejtett, mért
+csővezeték ott él, az `EdgeDetectionB` pedig a `glimmer_edges.py`-ban.
 
 A `FocalZoom` (és a `PicnikFocalPixelate`) a #570-ben átkerült a
 `render/focal.py`-ba: azok a natív `glimmer::RadialBlurImageOperation`
@@ -171,32 +176,6 @@ def apply_pencil_sketch(
         return _to_uint8(gray_rgb)
     mix = np.float32(color_mix / 100.0)
     return _to_uint8(gray_rgb + mix * (image_f - gray_rgb))
-
-
-def apply_neon(
-    image: np.ndarray, intensity: float = 50.0, color: tuple[int, int, int] = (0, 255, 170)
-) -> np.ndarray:
-    """Neon: éldetektálás színes izzással, sötét háttéren.
-
-    KÖZELÍTŐ MODELL (#330, kalibráció: #317) — a `Neon=1,0.000000,00ff0000;`
-    minta paramétereinek jelentése (csúszka-leképezés) NEM dekódolt, a
-    `color` alapértéke itt választott közelítés (nem a mért ini-minta
-    színe). `intensity` 0..100 az izzás erőssége. Canny-éldetektálás →
-    az élek Gauss-elmosott, `color` színű izzása fekete alapon; élmentes
-    (sík) területeken a kimenet közel fekete.
-    """
-    validate_image(image)
-    if intensity < 0:
-        raise ValueError(f"A neon-izzás erőssége nem lehet negatív: {intensity}")
-    if len(color) != 3:
-        raise ValueError(f"A szín 3 elemű (R, G, B) kell legyen: {color!r}")
-    gray = _to_uint8(_luma(image.astype(np.float32)))
-    edges = cv2.Canny(gray, 50, 150).astype(np.float32) / np.float32(255.0)
-    glow_mask = cv2.GaussianBlur(edges, (0, 0), 1.5)
-    glow_mask = np.clip(glow_mask * np.float32(0.5 + intensity / 100.0), 0.0, 1.0)
-    color_arr = np.array(color, dtype=np.float32)
-    result = glow_mask[..., np.newaxis] * color_arr
-    return _to_uint8(result)
 
 
 def apply_comicize(
