@@ -293,13 +293,45 @@ n = NodeByName([ebx+0x20]); ha (n) 0x0075c860(n)   ; a csoport horgony-
 
 **Amit ez kizár:** az `Alt` **nem másol** és **nem klónoz** — a teljes ágon
 nincs foglalás, nincs új csomópont. (Ez volt a kézenfekvő feltevés, és
-téves.) Ami marad: az ág a **kijelölés-csoport befoglaló téglalapját
-számolja újra**, és beállítja a csoport horgonyát, mielőtt a húzás
-elindul. A **felhasználó által látott** hatás a kódból önmagában nem
-állapítható meg — ehhez a futó eredetiben kellene kipróbálni.
+téves.)
 
-**Bizonyítottsági fok:** a mechanizmus **megerősített**, a felhasználói
-hatás **nyitva**.
+#### Mit csinál valójában: a képet a kupac TETEJÉRE hozza
+
+A `0x0075c860` a csoport **horgonymezőjét** (`+0x24c`) állítja:
+
+```
+csoport = node[0x244]
+ha (csoport[0x24c] == 0) {
+    ha (node == tömb[darab − 1])   csoport[0x24c] = 1     ; „nincs teendő"
+    egyébként                      csoport[0x24c] = node  ; „ezt kell mozgatni"
+                                   node.flags |= 7
+}
+```
+
+A horgonyt a **`0x009dfde0(csoport)`** dolgozza fel: megkeresi a horgony
+indexét a tömbben (`0x00a59000`), **a tömb végére mozgatja**, majd
+`csoport[0x24c] = 0` (`0x009e0084`). Ugyanez a párosítás megvan a
+`0x009dfbb0`-ban is, ott a `0x009dfde0` hívása a beállítás **előtt és
+után** is látszik.
+
+**A tömb a rétegsorrend, és az utolsó elem van legfelül.** Ez nem
+feltevés, hanem levezethető: a `move_down` parancs
+(`0x0083ab30(+1)` → `0x009dfc70` → **`0x009dfd60`**) a csomópontot a
+**0. index felé** cseréli (`0x009dfd9c`–`0x009dfdaf`), és −1-gyel tér
+vissza, ha már a 0. indexen áll. Tehát 0 = legalul, utolsó = legfelül.
+
+> **Így az őrfeltétel kimondja a választ:** „ha a kép **már az utolsó**,
+> nincs teendő". Egy művelet, aminél a *legfelső* elem a nincs-dolgunk
+> eset, csakis **a tetejére hozás** lehet.
+
+**Vagyis: `Alt`-ot nyomva tartva megfogni egy képet = a kép a kupac
+tetejére ugrik, és onnan mozog tovább.** A húzás maga változatlan (5.2).
+
+**Bizonyítottsági fok: megerősített.** Két független darab mondja
+ugyanazt: az őrfeltétel („már utolsó → nincs teendő") és a rétegsorrend
+iránya (`0x009dfd60`). *A futó eredetiben való próba ezek után nem
+szükséges — 2026-08-18-án ez volt a lap utolsó, felhasználóra váró
+kérdése, és lekerült a listáról.*
 
 ### 5.2/b Két kép cseréje vonszolással — MEGFEJTVE (2026-08-18)
 
@@ -716,11 +748,12 @@ kezdőérték a `collage::orientation` beállításból jön.
 ## 12. A hét nyitott kérdés — 2026-08-18-i elszámolás
 
 A lap első kiadása hét kérdést hagyott nyitva. A 2026-08-18-i kör
-mindegyiket megnézte; hat lezárult, egy részben.
+mindegyiket megnézte; **mind a hét lezárult** (az 1. egy második
+menetben).
 
 | # | kérdés | eredmény | hol |
 |---|---|---|---|
-| 1 | az `Alt`+vonszolás ága | **részben** — a mechanizmus megvan, a klónozás-feltevés megdőlt; a felhasználói hatás nyitva | 5.2 |
+| 1 | az `Alt`+vonszolás ága | **LEZÁRVA** — a képet a kupac **tetejére** hozza; klónozás nincs | 5.2 |
 | 2 | a 11. esemény | **LEZÁRVA** — két kép **cseréje** vonszolással | 5.2/b |
 | 3 | a képesség-maszk bitjei | **nagyrészt** — 5-ről **11**-re nőtt a megfejtett bitek száma; hat marad | 2. |
 | 4 | `addclips` / `deleteclips` | **LEZÁRVA** | 8. |
@@ -728,20 +761,17 @@ mindegyiket megnézte; hat lezárult, egy részben.
 | 6 | a négy hiányzó oldalarány | **LEZÁRVA** — mind a kódból, a felirat szerint | 7. |
 | 7 | van-e a gyűrűnek vonszolási küszöbe | **LEZÁRVA** — **nincs** | 5.2 |
 
-**Ami tényleg nyitva maradt:**
+**Ami tényleg nyitva maradt** *(a 2026-08-18-i második kör után már csak
+három, és egyik sem igényel futó Picasát)*:
 
-1. **Az `Alt`+vonszolás felhasználói hatása.** A kód a kijelölés-csoport
-   befoglaló téglalapját számolja újra és horgonyt állít; hogy ez mit
-   változtat a képernyőn, futó eredetiben kellene kipróbálni. Klónozás
-   **nem** (nincs foglalás az ágon).
-2. **A képesség-maszk hat bitje:** 6., 12., 13., 14., 15., 16. Ismert
+1. **A képesség-maszk hat bitje:** 6., 12., 13., 14., 15., 16. Ismert
    fogyasztójuk: 12. → `0x0087e861`, 13. → `0x00886142`,
    14. → `0x0082c6e9`. A 6., 15. és 16. bitre a teljes kollázs-kódterületen
    (162 KB) **nem találtunk fogyasztót** — vagy máshol olvassák, vagy nem
    használtak.
-3. **A `spec[0x30]` pontos jelentése** (9.0) — „munkafelbontás" a
+2. **A `spec[0x30]` pontos jelentése** (9.0) — „munkafelbontás" a
    legvalószínűbb, de nem bizonyított.
-4. **Az `addclips` zárjának típusa** (8.).
+3. **Az `addclips` zárjának típusa** (8.).
 
 ---
 
@@ -754,7 +784,8 @@ mindegyiket megnézte; hat lezárult, egy részben.
   (`0xcf50d0`). A „270 fok" a menü **felirata**.
 - **Nem** igaz, hogy az `Alt`+vonszolás **másolna** vagy **klónozna** egy
   képet: a teljes ágon nincs memóriafoglalás és nincs új csomópont
-  (`0x00868fac`–`0x00868ffe`). Ez volt a kézenfekvő feltevés, és téves.
+  (`0x00868fac`–`0x00868ffe`). Ez volt a kézenfekvő feltevés, és téves —
+  valójában a **kupac tetejére** hozza a képet (5.2).
 - **Nem** igaz, hogy a gyűrűs mozgatásnak lenne **elhúzási küszöbe**: a
   `RingMoveHandler`-ben egyetlen gyökvonás sincs. A 10 képpontos küszöb
   másé (`0x008606d0`).
