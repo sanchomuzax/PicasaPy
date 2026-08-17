@@ -373,6 +373,66 @@ kereséshez mindig legyen ground truth, különben a találatok azonosíthatatla
 
 ---
 
+## 14/d. HELYI diszasszemblálás — a felhős kör helyett ⭐
+
+A teljes autoanalízis (Ghidra, felhős futtatókörnyezetben) a ~10 MB-os
+PE32-n **442–444 másodperc**, és külön futtatókörnyezetet igényel. A kérdések
+**túlnyomó része nem igényli** — ha megvan a függvény címe és mérete, a
+helyi gép **másodpercek alatt** válaszol.
+
+### A recept
+
+```bash
+python3 -m venv venv-dis
+./venv-dis/bin/pip install capstone pefile
+```
+
+Két csomag elég: a **`pefile`** a PE-fejlécet és a szekciókat olvassa
+(VA → fájlpozíció, adatkonstansok kinyerése), a **`capstone`** diszasszemblál.
+
+Egy 30 soros szkript, ami címet és hosszt kap, és a `.rdata`-hivatkozásokat
+szövegként annotálja, gyakorlatilag minden „mit csinál ez a függvény"
+kérdésre elég.
+
+### A sorrend, ami ezt kifizetődővé teszi
+
+```
+bináris index (SQLite)  →  cím + méret  →  helyi diszasszemblálás
+```
+
+**Az indexet kell először kérdezni**, nem a diszasszemblert: a
+`functions` / `xrefs` / `string_xrefs` / `rtti` / `imports` táblák megadják,
+**hol** keresd. Ezért nem kell újraelemezni a binárist ahhoz, hogy egy
+konkrét kérdésre válaszolj.
+
+### Amit ez a szerszám kihoz — és amit nem
+
+| kérdéstípus | helyi kör elég? |
+|---|---|
+| „mit csinál a `0x00xxxxxx` függvény" | ✅ |
+| „milyen konstansokat használ" | ✅ (`pefile.get_data`) |
+| „ki hívja / mit hív" | ✅ (az index `xrefs` táblája) |
+| „melyik osztály vtable-je ez" | ✅ (az index `rtti` táblája) |
+| „hol van egy MÉG NEM indexelt függvény határa" | ❌ — ehhez kell az analízis |
+| „adj típusos, olvasható C-kódot" | ❌ — ahhoz dekompiláló kell |
+
+### Három csapda, amibe bele lehet futni
+
+1. **A szkriptet ne nevezd `dis.py`-nak.** Elfedi a Python beépített `dis`
+   modulját, és a `capstone` importja körkörös hivatkozással elszáll.
+2. **Az `objdump` ezen a PE-n nem működik** („file format not recognized”).
+3. **A rendszer Pythonja külső csomagot nem enged** (PEP 668) — ezért kell a
+   saját virtuális környezet.
+
+### Hol vannak a szkriptek
+
+A két kész szkript (`annot_disasm.py`, `find_members.py`) és a részletes
+használati leírás a **privát agent-repóban**:
+`referencia/eszkozok/binaris/`.
+
+> **A `Picasa3.exe` sem ide, sem a privát repóba nem kerül be** — a
+> szkriptek a felhasználó saját, helyi példányát olvassák.
+
 ## 15. Validációs LÉTRA — nem egy ellenőrzés, hanem több fok
 
 *(Forrás: az LLM-alapú bináris-visszafejtés kutatása — AutoDecompiler, FORGE,
