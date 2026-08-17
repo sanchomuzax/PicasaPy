@@ -23,7 +23,10 @@ kérdés).
 2. ~~**`unsharp` kernel finomítása** (Nyitva 3)~~ — **MEGVAN** (#762):
    köbös B-spline, `× 1,5` szélesítéssel, σ ≈ 0,87. A mérés szerint a mai
    Gauss már „JÓ" (0,47) — finomítás, nem hiba
-3. **Render-pontosítás a golden-verdiktek szerint** (Nyitva 8), súlyossági sorrendben: ~~`tint`~~ → **a fő oka MEGVAN (#872): a `preserve` skálája −1…255, nem 0…100** → `sat` pozitív ág 12 → ~~`dir_tint` 9~~ → **MEGVAN (#874): forgatható, fokos irány, az `x` puck is számít, szorzó színezés; nyitva a `0x0090ec40` görbe alakja** → `finetune2` hőmérséklet 25 (extrémnél) → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
+3. **Render-pontosítás** — ⭐ **a rangsor ÚJ alapja a mért korpusz-gyakoriság**
+   (`filters-decoded.md`, „A szűrők TÉNYLEGES gyakorisága"): a `finetune2`
+   561 előfordulás **és** 55,94 ΔE → a legnagyobb tényleges hatású hiba
+   (#879). A golden-verdiktek súlyossági sorrendje: ~~`tint`~~ → **a fő oka MEGVAN (#872): a `preserve` skálája −1…255, nem 0…100** → `sat` pozitív ág 12 → ~~`dir_tint` 9~~ → **MEGVAN (#874): forgatható, fokos irány, az `x` puck is számít, szorzó színezés; nyitva a `0x0090ec40` görbe alakja** → `finetune2` hőmérséklet 25 (extrémnél) → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
    - **MEGVÁLASZOLVA ugyanebben a menetben:** a `tint` (és a `rainbow`, `autocontrast`) **szinthúzással kezd** — a `0x009db610` helyben módosítja a képet, nem csak elemez. A `tint` hat lépéséből három hiányzik/rossz nálunk (#872)
 4. ~~**A `tint` virtuális színátalakítása**~~ — **GYAKORLATILAG LEZÁRVA** (#872): a `ctx` a **lánc-építő objektum**, a `[ctx+8]` egy függvénymutató-**mező** (nem vtable-slot), és a szokásos renderelési úton nem áll be. A recept teljes nélküle
 5. ~~**A `ytResampler` utolsó, nem 2-hatvány lépése**~~ — **MEGVAN** (#871,

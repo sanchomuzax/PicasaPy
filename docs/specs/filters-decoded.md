@@ -3645,3 +3645,56 @@ azonosítása, és hogy melyik csúszka adja a paraméterét.
 `Feather` 0,001-es padlójára, az `1 − Shade`-re, a `× 30`-as
 középpont-skálára, a LUT felépítésére és a szorzó színezésre · **erős** a
 negyed-kezelés pontos szemantikájára · **nyitott** a görbe alakja.
+
+## A szűrők TÉNYLEGES gyakorisága éles gyűjteményben (2026-08-17, #484)
+
+Eddig a mérőszett ΔE-értékei rangsoroltak. **A másik tényező is megvan:**
+mi fordul elő valódi `.picasa.ini`-kben.
+
+Forrás: `referencia/ini-korpusz/korpusz.txt` (privát repó) — **859
+`.picasa.ini` fájl**, ebből **317 tartalmaz `filters=` sort**, összesen
+**9147 lánc-tag, 28 féle szűrő**. A feldolgozás a saját
+`canonical_filter_name` és `effective_param_count` függvényünkkel futott.
+
+| szűrő | előfordulás | | szűrő | előfordulás |
+|---|---:|---|---|---:|
+| **`enhance`** | **3045** | | `autocolor` | 54 |
+| **`autolight`** | **2612** | | `unsharp2` | 27 |
+| **`fill`** | **1089** | | `Boost` | 22 |
+| **`crop64`** | **801** | | `radblur` | 18 |
+| **`finetune2`** | **561** | | `sepia` | 14 |
+| `redeye` | 228 | | `bw` | 10 |
+| `Vignette` | 219 | | `dir_tint` | 10 |
+| `warm` | 118 | | `Lomo` | 6 |
+| `sat` | 110 | | `HDR`, `glow2` | 4, 4 |
+| `tilt` | 102 | | `Holga`, `moviestart`, `movieend`, `tint` | 2 |
+| `retouch` | 82 | | `Cinemascope`, `CrossProcess`, `Sixties` | 1 |
+
+**Öt szűrő adja a tagok 88 %-át**: `enhance` · `autolight` · `fill` ·
+`crop64` · `finetune2`.
+
+### Két negatív eredmény ugyanebből a mérésből
+
+| kérdés | eredmény |
+|---|---|
+| hány tag visel **fölös paramétert**? | **0** a 9147-ből |
+| hány tag **nem kanonikus** írásmódú? | **0** |
+
+Vagyis a Picasa a saját maga írta fájlokban **mindig** pontos
+paraméterszámot és kanonikus nevet használ. A `filter_registry.py`
+megengedő olvasása **elméleti** védelem (kézzel szerkesztett ini ellen),
+nem napi szükséglet — és a #910-es render-hiba éles fájlon nem sül el.
+
+### Amit a rangsorban átrendez
+
+- **`finetune2`**: 561 előfordulás **és** 55,94 ΔE — a gyűjtemény
+  legnagyobb tényleges hatású render-hibája (#879).
+- A `#880` tíz „nem megvalósított" effektjéből a korpuszban **egyik sem**
+  fordul elő.
+- A `neon` (113,89 ΔE, #878) szintén **nulla** előfordulású.
+
+> ⚠️ **Korlát:** a korpusz **egy** felhasználó gyűjteménye, tehát az ő
+> szokásait tükrözi. Más felhasználónál más lehet — de ez az egyetlen
+> **mért** adatunk, és sokkal jobb a becslésnél.
+
+*Bizonyítottsági fok: megerősített* (teljes korpusz, gépi feldolgozás).
