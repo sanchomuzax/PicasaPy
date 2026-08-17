@@ -54,7 +54,7 @@ kérdés).
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
-### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 3 kérdés
+### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 1 kérdés
 
 *(A 2026-08-18-i két kör az eredeti hét kérdést **mind** lezárta — az
 elszámolás a lap **12.** szakaszában. Ami lezárult: az `Alt`+vonszolás =
@@ -71,9 +71,7 @@ futó Picasát.)*
    lezárult: 12. = a téma megvalósítja a 9. vtable-slotot, 13. = automata
    `collage_adapt`, 14. = a `collage::shadows` alapértéke, 15./16. =
    halott bitek.)*
-2. Mit jelent pontosan a **`spec[0x30]`** (a darabszámmal 2276 → 256 → 128
-   → 64-re lépcsőző szám, `0x0082c9a0`)? „Munkafelbontás" a legvalószínűbb.
-3. Milyen **zárat** használ az `addclips` (`[panel+0x218]`, `0x0083b180`)?
+
 
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 
