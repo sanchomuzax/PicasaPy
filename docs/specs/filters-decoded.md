@@ -3646,6 +3646,34 @@ azonosítása, és hogy melyik csúszka adja a paraméterét.
 középpont-skálára, a LUT felépítésére és a szorzó színezésre · **erős** a
 negyed-kezelés pontos szemantikájára · **nyitott** a görbe alakja.
 
+## A három „automatikus" szűrő HÁROM külön algoritmus (2026-08-17)
+
+Független újraolvasás a callbackekből — a mai megvalósításunk megerősítve.
+
+| szűrő | callback | mit hív | keverés | `CarefulEnhance` |
+|---|---|---|---|---|
+| **`enhance`** | `0x008f8840` (147 b) | `0x009db610` | **−1,0f → 0,30** | a **beállításból** |
+| **`autocontrast`** | `0x008f89d0` (68 b) | `0x009db610` | **1,0** (`fld1`, `0x008f89fd`) | **fixen 0** (`push 0`, `0x008f8a03`) |
+| **`autolight`** | `0x008f80c0` (468 b) | `0x00a4b960` + `0x00a4bfd0` | — | — |
+
+**Az `enhance` és az `autocontrast` UGYANAZ a szinthúzó, két
+paraméterrel.** A különbség emberi nyelven:
+
+- **`enhance`** a csatornánkénti vágópontokat csak **30 %-ban** közelíti a
+  közös értékhez → a **színöntetet is korrigálja**;
+- **`autocontrast`** **100 %-ban** közös vágópontot használ → **csak a
+  kontrasztot húzza szét, a fehéregyensúlyt nem mozdítja**.
+
+**Az `autolight` ezzel szemben teljesen más út:** a hisztogram-felvevőn
+(`0x00a4b960`) keresztül dolgozik, nem a szinthúzón.
+
+> ⚠️ **Ne vonj össze közös segédfüggvényt a három alá.** A `0x009db610`
+> közös az első kettőnek, de a paraméterezés adja a jelentést; az
+> `autolight` pedig más kódúton van.
+
+*Bizonyítottsági fok: megerősített* (mindhárom callback hívási listája az
+indexből, a két konstans utasításszinten).
+
 ## A szűrők TÉNYLEGES gyakorisága éles gyűjteményben (2026-08-17, #484)
 
 Eddig a mérőszett ΔE-értékei rangsoroltak. **A másik tényező is megvan:**
