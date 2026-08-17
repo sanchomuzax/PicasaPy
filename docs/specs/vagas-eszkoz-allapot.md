@@ -48,7 +48,60 @@ Három, egymástól független forrás. A kulcsban a **kettős kettőspont**
 (`::A4`, `::A4Page:Description`, `::A4PageCollage`, `::Crop20x25m`,
 `::FullPage:Description`), és nem jelent külön névteret.
 
-### ⚠️ A lista viszont HAT tétellel hosszabb a kelleténél (#875)
+### ⛔ HELYESBÍTÉS: a lista MÉRTÉKEGYSÉG-VÁLTÓS, nem „hat fölösleges tétel"
+
+A felépítő függvény (**`0x007cc990`**, 8140 b) **két, egymást kizáró ágra**
+oszlik:
+
+```asm
+0x007cccea  cmp byte ptr [ebp+0x14], 0
+            je  0x7cd5a6          ; ← hamis → az ANGOLSZÁSZ ágra ugrik
+            … 5x8m · 9x13m · 10x15m · Crop13x18m · Crop20x25m · A4 …
+0x007cd5a1  jmp 0x7cdb32          ; ← a metrikus ág ÁTUGORJA az angolszászt
+0x007cd5aa  … 4x6 · 5x7 · FullPage (8,5×11) · 8x10 …
+```
+
+| `[+0x14]` | a nyomatméretek |
+|---|---|
+| **igaz — metrikus** | `5x8` · `9x13` · `10x15` · `13x18` · **`20x25`** · `A4` |
+| **hamis — angolszász** | `4x6` · `5x7` · `8,5x11` · `8x10` |
+
+**A felhasználó képernyőképe a metrikus ágat mutatja.** A `4x6`, `5x7`,
+`8x10`, `8,5x11` tehát **nem fölösleges** — az angolszász ág tagjai, és a
+területi beállításhoz kell kötni őket. Részletek: **#876**.
+
+*(A `4x4` viszont tényleg nem tétel: a felépítő csak a `Desktop4x3`
+leírás-kulcsaként használja, `0x007cde49`.)*
+
+### A teljes felépítési sorrend
+
+Két kapcsoló vezérli: `[+0x28]` = **„Kézi" kell**, `[+0x14]` = **metrikus**.
+
+```
+1.  Kézi                     ha [+0x28]                       (0x007cc9da)
+2.  Jelenlegi megjelenítés   ha van érvényes képernyő-téglalap (0x007ccb7b)
+3.  metrikus VAGY angolszász nyomatméretek
+4.  A4 paper + A4            ha MINDKÉT kapcsoló hamis        (0x007cdb73)
+                             — 297 × 210 mm beégetve (push 0x129 / 0xd2)
+5.  Négyzet · 4:3 · 16:10 · 16:9 · 5:3
+6.  Egyéni méretarányok + Egyéni méretarány hozzáadása…
+```
+
+### ✅ És ezzel megvan a KOLLÁZS Oldalformátum-listája is
+
+A 4. lépés feltétele (**mindkét kapcsoló hamis**) pontosan a kollázs esete:
+
+```
+Jelenlegi megjelenítés · A4-es méretű papír · A4 · Négyzet: CD-borító ·
+4:3: Normál képernyő · 16:10: Szélesvásznú képernyő · 16:9: HDTV ·
+5:3: Szélesvásznú képkocka · Egyéni méretarányok ·
+Egyéni méretarány hozzáadása…
+```
+
+**Nincs benne „Kézi", és nincs benne egyetlen nyomatméret sem.** Ez
+lezárja a lap korábbi nyitott kérdését — képernyőkép nélkül.
+
+### ⚠️ A lista tételszáma (#876)
 
 A `aspectPresets` 19 tétele közül a valódi Picasa vágó-legördülőjében
 **13** van (`ui-audit-editor.md` képernyőképe: Kézi + Jelenlegi méretarány +

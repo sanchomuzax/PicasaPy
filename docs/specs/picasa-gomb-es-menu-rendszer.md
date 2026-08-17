@@ -328,6 +328,57 @@ a többi 19, 22 vagy 23).
 
 ---
 
+## 8/b A LETILTOTT állapot: alfa / 4 (2026-08-17, #893)
+
+Nincs `_d` réteg, mert nem kell — a csomópont-rajzoló (`0x009e2a60`) az
+alfát osztja:
+
+```asm
+0x009e3145  cmp byte ptr [esi+0x210], 0   ; „saját alfa felülír" jelző
+0x009e314e  ha 1 → [rajz+0x5c] = [esi+0x248]        (a saját alfa)
+0x009e315c  ha 0 → [rajz+0x5c] = ([rajz+0x5c] * [esi+0x248] + 128) >> 8
+0x009e316f  cmp byte ptr [esi+0x20e], 0   ; ← LETILTVA (a Property disable)
+0x009e3178  shr dword ptr [rajz+0x5c], 2  ; ← ALFA / 4  = 25 %
+0x009e3180  ha 0 → egyáltalán nem rajzol
+```
+
+| mező | jelentés |
+|---|---|
+| `[csomópont+0x248]` | a saját alfa, 0…255 |
+| `[csomópont+0x210]` | 1 → felülír, 0 → **szorzódik** a szülőével |
+| `[csomópont+0x20e]` | letiltva → `>> 2` |
+
+**Az öröklés szorzó**, 8 bites fixponttal és `+128`-as kerekítéssel — egy
+50 %-os panelben lévő 50 %-os gomb 25 %-ot kap. **Kivétel nincs**: a `>> 2`
+minden csomópontra fut, a zöld gombra is.
+
+## 8/c A legördülő PANEL és a görgetősáv (2026-08-17, #894)
+
+**`listdecrect/listdecrect`** (17 × 17, nyújtható):
+
+| sor | szín | mi ez |
+|---|---|---|
+| 0–1 | `#E8E8E8` | külső térköz |
+| 2 | `#D6D6D6` | lágy árnyék |
+| **3** | **`#BABABA`** | **a keret, 1 px** |
+| 4–12 | **`#E8E8E8`** | **a kitöltés — SÍK, nem átmenetes** |
+| 13–14 | `#F8F8F8` → `#F0F0F0` | belső fénykiemelés alul |
+
+Vízszintesen az árnyék `#DDDDDD` → `#C7C7C7` (a bal él sötétebb, mint a
+felső — ugyanaz a bal-felüli fényforrás, mint a gomboknál).
+
+**A görgetősáv saját rajz**, és **platformonként külön**:
+
+| réteg | méret |
+|---|---|
+| `scrollart/base_win` | 15 × 25 — vízszintes átmenet `#B6B6B6` → `#EDEDED`, jobb szélen `#C8C8C8` |
+| `scrollart/base_mac` · `base_mac_rounded` | 15 × 25 · 16 × 25 |
+| `scrollart/nextalbum_{n,h,p}_win` / `_mac` | 16 × 24 / 15 × 19 |
+
+A **kiemelt sor** a `.tre`-ben `Property round 2`, a felirat dobozánál
+**±4 px vízszintesen** és **+1 px lent** nagyobb (`scratch/highlight`).
+A **színe** kódból jön — nyitott.
+
 ## 9. A gomb-rétegek teljes leltára
 
 269 réteg a `globalbuttons/` névtérben. A névadás **kivétel nélkül**
