@@ -17,9 +17,10 @@ kérdés).
 
 ### [filters-decoded.md](filters-decoded.md) — 5 kérdés
 
-1. ~~**`autocolor` pontos gain-képlete** (Nyitva 1)~~ — **MEGVAN** (#759):
-   `M · diag(g) · M⁻¹`, kimérve 1,37 (volt 2,35). Maradék: a **becslő**
-   (`0x0090f8f0`) egyetlen képen téved — az `Empty Space`-en
+1. ~~**`autocolor` pontos gain-képlete** (Nyitva 1)~~ — **TELJESEN MEGVAN**
+   (#759, 2026-08-18): `M · diag(g) · M⁻¹`, és a becslő egész-osztásai
+   **nulla felé csonkolnak** (C-szemantika). Kimérve **0,614** (a mai kód
+   2,352, a JPEG-zajszint ~0,69) — nincs nyitott kérdés, csak bekötés
 2. ~~**`unsharp` kernel finomítása** (Nyitva 3)~~ — **MEGVAN** (#762):
    köbös B-spline, `× 1,5` szélesítéssel, σ ≈ 0,87. A mérés szerint a mai
    Gauss már „JÓ" (0,47) — finomítás, nem hiba

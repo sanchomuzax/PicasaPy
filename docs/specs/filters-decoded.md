@@ -308,7 +308,7 @@ végpontok felé tér el).
 
 | Szűrő | Eredmény (dE_átlag tartomány) | Állapot |
 |---|---|---|
-| `autocolor` | pixelhű→közelítés (0.00–1.55) | ✅ **teljes képlet MEGVAN** (#759): `M · diag(g) · M⁻¹`, mérve 1,37 |
+| `autocolor` | pixelhű→közelítés (0.00–1.55) | ✅ **teljes képlet MEGVAN** (#759): `M · diag(g) · M⁻¹` + csonkoló egész-osztás a becslőben, mérve **0,614** |
 | `autolight` | mind közelítés (0.20–0.74) | ✅ kész |
 | `glow` | közelítés (1.85 → **0,15–1,06** #668) | ✅ kész |
 | `enhance` | közelítés, színöntetnél eltér (0.49–3.02) | ✅ jó (az autocolor-komponens húzza) |
@@ -2181,6 +2181,12 @@ A kettő **gyakorlatilag azonos**, és ugyanazon a három képen tér el
 (Night Seascape, Sunny Autumn, Golden leaves). **A maradék hiba tehát nem a
 becslőben van** — a becslő cseréje önmagában semmit nem javítana.
 
+> ⚠️ **Helyesbítés (2026-08-18): ez csak a csatornánkénti alkalmazóval igaz.**
+> A mátrix-alkalmazóval a becslő pontossága nagyon is számít: a fenti
+> pszeudokód `/` jelei **C-osztások**, tehát nulla felé csonkolnak — Pythonban
+> `//`-val átírva (padló) 1,370 az eltérés, csonkolással **0,614**. Ld. „Az
+> `autocolor` TELJESEN LEZÁRVA (2026-08-18)".
+
 ### 7. Ahol a maradék van: az alkalmazó egy 3 × 3-as SZÍNMÁTRIX
 
 A `0x0090eda0` a legelső dolgaként **kilenc float konstanst** másol egy
@@ -2285,6 +2291,10 @@ Mérőszkript: `referencia/eszkozok/721-enhance/autocolor_model.py`.
 **Ez zárja le a „Nyitva 1"-et: az `autocolor` teljes képlete megvan.** A
 modell a 12 golden-páron **1,370** átlagos eltérést ad a mai 2,35 helyett, és
 **három képen bitre azonos** a Picasa kimenetével.
+
+> ⏭️ **A maradék 1,370-et azóta lecsökkentettük 0,614-re** — ld. „Az
+> `autocolor` TELJESEN LEZÁRVA (2026-08-18)" szakaszt: a becslő
+> egész-osztásai nulla felé csonkolnak, nem a padló felé.
 
 ### A kilenc konstans EGY mátrix, és a helyben INVERTÁLÓDIK
 
@@ -2425,6 +2435,95 @@ algebrai önellenőrzés (`A·k = (L,L,L)`) és a három bitazonos golden-pár
 egymástól függetlenül ugyanazt adja.
 
 Mérőszkript: `referencia/eszkozok/721-enhance/autocolor_matrix.py`.
+
+## Az `autocolor` TELJESEN LEZÁRVA (2026-08-18) — a maradék hiba egyetlen egész-osztás volt
+
+Két dolgot zár le ez a kör: az utolsó nyitott becslő-kérdést (`Empty Space`)
+és azt, hogy az alkalmazó alakja **referenciakép nélkül, pusztán a kódból**
+is eldönthető.
+
+### 1. A becslő egész-osztásai NULLA FELÉ csonkolnak (C-szemantika)
+
+A `0x0090f8f0` két helyen oszt előjelesen, **futásidőben változó osztóval**
+(tehát a fordító nem tudja eltolássá alakítani — valódi `idiv`):
+
+| hol | kifejezés | cím |
+|---|---|---|
+| a hisztogram tengelyei | `32*(R−G) / min(R,G)` és `32*(B−G) / min(B,G)` | `0x0090f9ee`–`0x0090fa2c` |
+| a súlypont | `Σ(x−32)·H / ΣH` és `Σ(y−32)·H / ΣH` | `0x0090fb08`–`0x0090fbf9` |
+
+Mindkét számláló lehet **negatív** (vörös-hiányos képpont, kék felé húzó
+súlypont). A C `/` ilyenkor **nulla felé csonkol**, a Python `//` viszont a
+**padló felé kerekít** — a kettő negatív számoknál pontosan 1-gyel tér el.
+A visszafejtett modellünk `//`-t használt, és ez volt a teljes maradék hiba:
+
+| változat | átlagos csatorna-eltérés a 12 páron |
+|---|---:|
+| mindkettő `//` (padló) — az eddigi modell | 1,370 |
+| csak a tengely-osztás csonkol | 1,021 |
+| csak a súlypont-osztás csonkol | 0,841 |
+| **mindkettő csonkol (a natív viselkedés)** | **0,614** |
+
+Összehasonlításul: a mai kódunk **2,352** (ma újramérve), az érintetlen kép
+5,287, és a korábban „elméleti alsó korlátnak" hitt orákulum 0,974.
+**A modell tehát az orákulum ALÁ ment** — vagyis nem közelítés többé.
+
+Hogy ez mennyire nem véletlen: az `Empty Space` volt az egyetlen kép, ahol a
+becslőnk korrekciót kért (`kR = 120`) olyan képre, amit a **Picasa
+érintetlenül hagyott**. A csonkítással a becslő pontosan `kR = 128`-at ad, és
+a kimenetünk **azonos a bemenettel** — ugyanaz a döntés, mint az eredetié.
+A 12-ből 10 kép javul, egy sem romlik.
+
+A maradék 0,614 a **JPEG-újratömörítés zaja**: a két képen, amit a Picasa nem
+változtatott meg, az érintetlen kép és a Picasa kimenete közti eltérés
+0,671 és 0,709 — ugyanez a nagyságrend.
+
+*Bizonyítottsági fok: **megerősített**.* A hipotézist a kód adta (futásidejű
+osztó + előjeles számláló), a mérés pedig egyértelműen eldöntötte.
+
+### 2. Az `M⁻¹` iránya a KÓDBÓL eldől — mérés nélkül
+
+Korábban a `M · diag(g) · M⁻¹` és a `M · diag(g) · M` közti választás
+mérésre hivatkozott (81,70 vs 0,45). **Erre nincs szükség**, a dekompilátum
+és egy sornyi számolás elegendő:
+
+1. A `0x00a4a140` **3 × 3-as invertáló**: Sarrus-szabállyal determinánst
+   számol, nulla determinánsnál **egységmátrixot** ír a célba, egyébként az
+   adjungáltat osztja (`0x00a4a0a0`), majd 9 dwordöt másol. A forrás `ECX`,
+   a **cél `EDX`** (`referencia/dekompilalt/hivasi-fa.c:2320`).
+2. A hívó a kilenc konstanst egy veremtömbbe teszi, arról **másolatot**
+   készít (`rep movsd`, `ecx = 9`), és a hívás után **ugyanabból a tömbből**
+   olvas tovább — miközben a záró balszorzás a kilenc konstanst
+   **közvetlen operandusként** használja (`1.9044`, `1.8018`, … a
+   dekompilátumban is így látszik). Ha a tömb a hívás után is `M` volna, a
+   fordítónak nem lett volna miért két külön forrásból dolgoznia.
+3. **A döntő érv, kép nélkül:** semleges becslésnél `k = (128,128,128)`, és
+   `L = (77+151+28)·128 >> 8 = 128`, tehát `g = (1,1,1)` **pontosan**.
+   - ha a tömb `M⁻¹`: `A = M·I·M⁻¹ = I` — és `float32`-ben a 16.16-os mátrix
+     **pontosan** `diag(65536)` lesz, a kimenet bájtra azonos a bemenettel;
+   - ha a tömb `M`: `A = M² `, aminek az átlója 3,16…3,58 — a középszürke
+     `(128,128,128)` képpontból `(255,255,255)` lesz, `(64,64,64)`-ből
+     `(189,255,255)`. Vagyis **minden kép fehérre égne**.
+
+   Egy „automatikus színkorrekció", ami a semleges képet fehérre égeti,
+   nem lehetséges olvasat. `det(M) = 6,567`, tehát az invertáló
+   nulla-determináns ága sem sül el.
+
+Ez a három pont együtt **kép nélkül** rögzíti az alakot; a golden-párok már
+csak a végeredményt hitelesítik.
+
+### 3. Kép nélkül futtatható önellenőrzések
+
+A modell két invariánsa **bemeneti kép nélkül** ellenőrizhető, tehát
+egységtesztnek való:
+
+| invariáns | miért igaz |
+|---|---|
+| `k = (128,128,128)` → a 16.16-os mátrix **pontosan** `diag(65536)`, a kimenet bájtra azonos | `g = 1` pontosan, `M·I·M⁻¹ = I` |
+| tetszőleges `k`-ra `(A·k) >> 16 == (L,L,L)` **±1-en belül** | `A·k = M·diag(P/Q)·Q = M·P = (L,L,L)` |
+
+A második a képlet algebrai önellenőrzése: a mátrix a becsült megvilágítás
+színét a vele **azonos világosságú** semleges szürkére viszi.
 
 ## A „Nyitva 7" két maradéka LEZÁRVA (2026-08-16)
 
