@@ -159,10 +159,17 @@ if (elem->kijelolve && !modositó)             // MAR ki volt jelolve, es nincs 
 flag2D2 = 0;  flag2CE = 0;
 ```
 
-> **Ebből következik a Picasa jellegzetes viselkedése:** egy **már
-> kijelölt** elemre kattintva az **aktiválódik** (megnyílik), egy még nem
-> kijelöltre kattintva **csak kijelölődik**. Ctrl vagy Shift lenyomva
-> **soha nem aktivál**, csak a kijelölést módosítja.
+> **Amit ez BIZTOSAN kimond:** az aktiválás (megnyitás) **két feltételhez**
+> kötött — az elem **már ki volt jelölve**, és **nincs módosító lenyomva**.
+> Ctrl vagy Shift mellett tehát **soha nem aktivál**, csak a kijelölést
+> módosítja.
+>
+> ⚠️ **Amit NEM mond ki:** hogy a 13. esemény egyszeres vagy **dupla**
+> kattintás-e. A 26 belső eseménykód jelentése nyitott (ld. lent), ezért
+> **nem állítható**, hogy a Picasa egyetlen kattintásra megnyitná a már
+> kijelölt képet. A megfigyelhető viselkedés (dupla kattintás nyit) ezzel
+> a kóddal is összefér: akkor a „már ki volt jelölve" feltétel egy őr, nem
+> a kiváltó ok. **A kérdést az eseménykód-táblázat megfejtése dönti el.**
 
 Az 5. esemény ága (`0x00719ace`) a kijelölés tényleges átállítását végzi,
 és a végén egy **`"selected"`** nevű értesítést küld ki (`0xc94970`),
