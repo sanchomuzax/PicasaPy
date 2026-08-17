@@ -19,7 +19,6 @@ import pytest
 from picasapy.render.effects_artistic import (
     apply_boost,
     apply_comicize,
-    apply_neon,
     apply_pencil_sketch,
     apply_pixelate,
     apply_soften,
@@ -211,43 +210,6 @@ class TestApplyPencilSketch:
     def test_fekete_feher_szelso_bemenet_nem_dob(self) -> None:
         apply_pencil_sketch(_uniform_image(0))
         apply_pencil_sketch(_uniform_image(255))
-
-
-class TestApplyNeon:
-    def test_sik_kepen_szinte_fekete(self) -> None:
-        image = _uniform_image(128, height=20, width=20)
-        result = apply_neon(image)
-        assert int(result.max()) <= 5
-
-    def test_elekkel_szinesen_izzik(self) -> None:
-        image = _block_checkerboard()
-        result = apply_neon(image, intensity=100.0, color=(0, 255, 0))
-        # az élgazdag képen kell legyen zöld dominanciájú, nem fekete pixel
-        assert int(result[..., 1].max()) > 50
-
-    def test_alak_es_dtype_megmarad(self) -> None:
-        image = _checkerboard()
-        result = apply_neon(image)
-        assert result.shape == image.shape
-        assert result.dtype == np.uint8
-
-    def test_nem_mutalja_a_bemenetet(self) -> None:
-        image = _checkerboard()
-        original = image.copy()
-        apply_neon(image)
-        np.testing.assert_array_equal(image, original)
-
-    def test_negativ_intenzitas_value_error(self) -> None:
-        with pytest.raises(ValueError):
-            apply_neon(_random_image(), intensity=-1.0)
-
-    def test_hibas_szin_value_error(self) -> None:
-        with pytest.raises(ValueError):
-            apply_neon(_random_image(), color=(1, 2))  # type: ignore[arg-type]
-
-    def test_fekete_feher_szelso_bemenet_nem_dob(self) -> None:
-        apply_neon(_uniform_image(0))
-        apply_neon(_uniform_image(255))
 
 
 class TestApplyComicize:

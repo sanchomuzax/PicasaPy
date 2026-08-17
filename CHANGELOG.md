@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.65] – 2026-08-17
+
+### Javítva
+- **A Neon effekt (#878).** A mérőszett legrosszabb elemje volt: a
+  kimenetünknek gyakorlatilag semmi köze nem volt a Picasáéhoz (a szerkezeti
+  hasonlóságot mérő SSIM lényegében nulla). Kiderült, hogy a modell rossz
+  úton indult — élkeresés helyett egy egészen más eljárást használt, és a
+  színezés is a fényes részeket festette be a halványak helyett.
+
+  A javítás után a Neon a Picasa saját, binárisból visszafejtett lépéssorát
+  követi: az eltérés az eredetihez képest **huszonnegyedére** csökkent, és a
+  kép szerkezete immár egyezik. A halványítás csúszkája végig helyesen
+  működik, a maximumon a kép bájtra változatlan marad.
+
+  Mellékeredmény: a Picasa **színező lépése** (amit a Színezés effekt is
+  használ) is megfejtésre került — az a kép fényességét pontosan megőrzi, és
+  csak a színt cseréli. A Színezés átállítása külön jegyen (#884).
+
 ## [0.7.64] – 2026-08-16
 
 ### Új

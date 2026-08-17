@@ -18,6 +18,7 @@ from __future__ import annotations
 import numpy as np
 
 from picasapy.render.curves import validate_image
+from picasapy.render.glimmer_edges import edge_detection_b
 from picasapy.render.glimmer_frame_ops import add_border_sides
 from picasapy.render.glimmer_ops import (
     adjust_curves,
@@ -34,7 +35,7 @@ from picasapy.render.glimmer_ops import (
     masked_blend,
     resize_image,
     simple_color_matrix,
-    tint_multiply,
+    tint_luma_preserving,
     to_float,
     to_uint8,
 )
@@ -238,22 +239,55 @@ def apply_ir(image, fade: float = 0.0):
 # --- Neon ------------------------------------------------------------------
 
 
+#: A `Neon` a `filterdesc.xml`-ben (`<filter id="Neon">`) az egyetlen hívója az
+#: `EdgeDetectionB`-nek, és fix `detail="50"`-nel hívja.
+_NEON_EDGE_DETAIL = 50.0
+
+
 def apply_neon(image, color=(255, 0, 0), fade: float = 0.0):
-    """`Neon=1,szín,Fade` — `EdgeDetectionB(detail=50)` (Canny-éldetektálás
-    közelítése) → `LocalContrast(0,0)` (a fix `0,0` paraméterrel: no-op) →
-    önmagával `multiply` → invertálás → `Tint(szín)`.
+    """`Neon=1,Fade,szín` — a `filterdesc.xml` receptje SZÓ SZERINT (#878).
+
+    ```xml
+    <NestedImageOperation BlendAlpha="{1-(_sldrFade.value/100)}">
+      <NestedImageOperation>
+        <EdgeDetectionBImageOperation detail="50"/>
+        <LocalContrastImageOperation Radius="0" Strength="0"/>
+        <SetVar Name="edgedetecteffect_edge"/>
+        <GetVarImageOperation Name="edgedetecteffect_edge" BlendMode="multiply"/>
+        <AdjustCurvesImageOperation MasterCurve="{[{x:0, y:255}, {x:255, y:0}]}"/>
+      </NestedImageOperation>
+      <TintImageOperation Color="{_clrsw.color}"/>
+    </NestedImageOperation>
+    ```
+
+    Lépésről lépésre:
+
+    1. `EdgeDetectionB(detail=50)` — FEHÉR alapon sötét vonalas élrajz
+       (ld. `glimmer_edges.edge_detection_b`);
+    2. `LocalContrast(Radius=0, Strength=0)` — a fix nullákkal **no-op**;
+    3. a `SetVar`/`GetVar multiply` pár a képet **önmagával** szorozza
+       (`x²/255`), ami a halvány éleket elnyeli, az erőseket megtartja;
+    4. kétpontos görbe = **invertálás** → innentől FEKETE alap, világos élek;
+    5. `Tint(szín)` — fényesség-tartó színezés
+       (`glimmer_ops.tint_luma_preserving`): a telített (fehér) élmag fehér
+       marad, a gyengébb élek kapják a neonszínt;
+    6. a külső burok `BlendAlpha = 1 − Fade/100` szerint keveri vissza az
+       eredetire — `Fade = 100`-nál a kimenet bájtra a bemenet.
+
+    **A korábbi modell (Canny-éldetektálás + szorzó-tint) szerkezetileg volt
+    hibás:** a #685 mérőszettjén ΔE 113,89 és SSIM −0,002, vagyis a kimenetnek
+    semmi köze nem volt a Picasáéhoz — a sík felületekre is TISZTA PIROS
+    képet rajzolt. A fenti csővezetékkel ugyanazon a golden páron
+    (`neon__alap.jpg`, `tools/golden/compare_render.py` mércéjével)
+    **ΔE 4,72 / SSIM 0,866**; a `Fade = 100` eset bájtra változatlan.
     """
-    from picasapy.render.color import apply_bw
-
     validate_image(image)
-    import cv2
-
-    gray = apply_bw(image)[..., 0]
-    edges = cv2.Canny(gray, 50, 150).astype(np.float32)
-    edges_rgb = np.stack([edges, edges, edges], axis=-1)
-    multiplied = apply_blend_mode(edges_rgb, edges_rgb, "multiply", 1.0)
-    inverted = 255.0 - multiplied
-    tinted = tint_multiply(to_uint8(inverted), color, 1.0)
+    edge = edge_detection_b(image, _NEON_EDGE_DETAIL)
+    # LocalContrast(Radius=0, Strength=0) — a fix nullákkal tétlen, kimarad
+    edge_f = to_float(edge)
+    squared = apply_blend_mode(edge_f, edge_f, "multiply", 1.0)
+    inverted = adjust_curves(to_uint8(squared), master=((0.0, 255.0), (255.0, 0.0)))
+    tinted = tint_luma_preserving(inverted, color)
     return to_uint8(alpha_blend(to_float(image), to_float(tinted), fade_alpha(fade)))
 
 
