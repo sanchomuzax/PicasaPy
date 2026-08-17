@@ -3223,7 +3223,7 @@ móddal indexelve:
 | 0 | **0,5** | **doboz** (`\|x\| ≤ 0,5 → 1`, egyébként 0) | `0xa3fb03` | `fcomp [0xc7dafc]`=0,5 |
 | 1 | **1** | **háromszög** (bilineáris), `1 − \|x\|` | `0xa3fb37` | `fld1; fsubrp`, abs |
 | 2 | **2** | **köbös B-spline** (ld. lent) | `0xa3fb82` | a négy szakasz konstansai |
-| 3 | **2** | köbös, **0,4-es paraméterrel** | `0xa3fc91` | `0x00a3f691` `fld [0xc7c838]`=0,4 → `call 0xa3f5b0` |
+| 3 | **2** | **Mitchell–Netravali, B = C = 0,4** (ld. lent) | `0xa3fc91` | tíz konstans a `0x00a3f5b0`-ban |
 | 4 | **3** | **háromlebenyes köbös konvolúció** (ld. lent) | `0xa3fd25` | tíz konstans, `0xcf4180`…`0xcf41c0` |
 | 5 | **3** | **Lanczos-3** | `0xa3fdf5` | két `sin` (`0xa3fe43`, `0xa3fe8f`) |
 | **6** | **4** | **Lanczos-4** ← **ALAPÉRTELMEZÉS** | `0xa3feed` | két `sin` (`0xa3ff3b`, `0xa3ff87`) |
@@ -3250,6 +3250,61 @@ return s1 * s2;                    // w(x) = sinc(πx) · sinc(πx/4)
 
 Ez a **tankönyvi Lanczos, a = 4**. A 7-es és 8-as mód ugyanez `1/6`-tal,
 illetve `1/8`-cal.
+
+### A 3-as mód magja — Mitchell–Netravali, B = C = 0,4 (2026-08-17, #871)
+
+```
+|x| < 1:     ( (12 − 9B − 6C)|x|³ + (−18 + 12B + 6C)|x|² + (6 − 2B) ) / 6
+1 ≤ |x| < 2: ( (−B − 6C)|x|³ + (6B + 30C)|x|² + (−12B − 48C)|x| + (8B + 24C) ) / 6
+|x| ≥ 2:     0
+```
+
+Az együttható-számoló (`0x00a3f5b0`, 162 b) konstansai **betűre a
+Mitchell-készlet**: `6,0` · `1/6` · `12,0` · `18,0` · `9,0` · `8,0` ·
+`24,0` · `−12,0` · `48,0` · `30,0`.
+
+**A paraméter mindkét helyre ugyanaz a 0,4** (`0x00a3f691`: `fld
+[0xc7c838]` = 0,4, majd `fst [esp+4]` **és** `fstp [esp]`) — vagyis
+**B = C = 0,4**, nem a klasszikus 1/3.
+
+| x | 0 | 0,5 | 1 | 1,5 | 2 |
+|---|---:|---:|---:|---:|---:|
+| **w(x)** | **+0,866667** | +0,541667 | +0,066667 | **−0,041667** | 0 |
+
+**Számszerű kontroll a kódból:** a `w(0)` konstans tagja
+`(6 − 2B)/6` = **0,8666667** (`0x00a3f5b0`–`0x00a3f5cc`), és a
+súlyok összege **minden fázisban pontosan 1,0**.
+
+> ⭐ **Ezt a magot használja a FORGATÁS** — ld. lent.
+
+### A `RotateImageOperation` a `ytResampler`-t használja, NEM a Skiát (2026-08-17)
+
+> ⚠️ **Helyesbítés a `filterdesc-registry.md` 1195. sorához**, ami azt
+> állította, hogy „a mintavételező a Skia… az algoritmust nem kell
+> visszafejteni". **Téves.**
+
+A `0x00bcb5e0` (263 b) közvetlen hívottai: `0x009e6da0` · `0x009e6df0` ·
+**`0x00a3f490`** (a `ytResampler` konstruktora) · **`0x00a42c20`** (a
+diszpécsere) · `0x00425160`. **Skia-hívás nincs köztük.**
+
+A módot **explicit** adja át — nem az alapértelmezettet:
+
+```asm
+0x00bcb63e  fld1
+0x00bcb640  fcomp dword ptr [esp+0x10]   ; a LÉPTÉK == 1,0 ?
+0x00bcb64a  jp   0xbcb653                ;   igen →
+0x00bcb64c  mov  ecx, 3                  ;   nem  → 3-as mód (Mitchell)
+0x00bcb653  xor  ecx, ecx                ;   igen → 0-s mód (doboz)
+0x00bcb659  call 0xa3f490                ; ytResampler(ecx = mód)
+```
+
+| a forgatás léptéke | mód | mag |
+|---|---:|---|
+| **pontosan 1,0** | 0 | **doboz** (nincs mit interpolálni) |
+| bármi más | 3 | **Mitchell–Netravali, B = C = 0,4** |
+
+**A 46 statikusan befordított Skia-osztály önmagában nem bizonyíték** —
+a Picasa használja a Skiát, de **ezen az útvonalon nem**.
 
 ### A 4-es mód magja — háromlebenyes köbös konvolúció (2026-08-17, #871)
 

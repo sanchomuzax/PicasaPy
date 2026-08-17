@@ -1192,7 +1192,15 @@ forgatás, majd vissza. A **simítás (élsimított mintavételezés) be van
 kapcsolva**, és a `padBorder` esetén a keletkező üres sarkokat a `borderColor`
 tölti ki (`0x009a91a0`).
 
-> **A mintavételező a Skia** — nem a Picasa saját kódja (2026-08-14). A hívási
+> ⛔ **MEGDŐLT (2026-08-17):** az alábbi Skia-olvasat téves. A
+> `0x00bcb5e0` közvetlen hívottai a **`ytResampler` konstruktora**
+> (`0x00a3f490`) és **diszpécsere** (`0x00a42c20`) — Skia-hívás nincs
+> köztük. A mód **explicit**: lépték = 1 → **0-s (doboz)**, egyébként
+> **3-as (Mitchell–Netravali, B = C = 0,4)**. Ld.
+> `filters-decoded.md`, „A `RotateImageOperation` a `ytResampler`-t
+> használja". A 46 befordított Skia-osztály önmagában nem bizonyíték.
+>
+> ~~**A mintavételező a Skia** — nem a Picasa saját kódja (2026-08-14). A hívási
 > lánc `RotateImageOperation` slot6 → `0x00bc8060` (transzform) → `0x00bcb5e0`
 > → `0x00a42c20` a rajzoló rétegbe fut, és az RTTI-tábla szerint a binárisba
 > **46 Skia-osztály** van statikusan befordítva, köztük a
