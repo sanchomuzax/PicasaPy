@@ -1136,8 +1136,9 @@ keresés időkorlátos szerkezetére, a visszaírásra és a vtable-eltérésekr
 
 #### 1.9.13 Ami még nyitott
 
-- A **Képkupac kezdeti (x, y) szórása** — az 1.9.2 képletei a már kiszámolt
-  pozícióból dolgoznak.
+- ~~A **Képkupac kezdeti (x, y) szórása**~~ — **MEGVAN, az 1.9.12-ben**
+  („legjobb jelölt" mintavételezés, képenként öt próbálkozással). Ez a
+  jelölés elavult volt; a 2026-08-17-i átvilágítás vette le.
 - A **Képkockamozaik kényszeres vágási szabálya** — `0x00897af0` (8479 b),
   ld. 1.9.14. A körülötte lévő adatszerkezet és keresés már megvan.
 

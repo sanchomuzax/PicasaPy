@@ -20,7 +20,9 @@ kérdés).
 1. ~~**`autocolor` pontos gain-képlete** (Nyitva 1)~~ — **MEGVAN** (#759):
    `M · diag(g) · M⁻¹`, kimérve 1,37 (volt 2,35). Maradék: a **becslő**
    (`0x0090f8f0`) egyetlen képen téved — az `Empty Space`-en
-2. **`unsharp` kernel finomítása** (Nyitva 3) — dekonvolúciós illesztés
+2. ~~**`unsharp` kernel finomítása** (Nyitva 3)~~ — **MEGVAN** (#762):
+   köbös B-spline, `× 1,5` szélesítéssel, σ ≈ 0,87. A mérés szerint a mai
+   Gauss már „JÓ" (0,47) — finomítás, nem hiba
 3. **Render-pontosítás a golden-verdiktek szerint** (Nyitva 8), súlyossági sorrendben: ~~`tint`~~ → **a fő oka MEGVAN (#872): a `preserve` skálája −1…255, nem 0…100** → `sat` pozitív ág 12 → ~~`dir_tint` 9~~ → **MEGVAN (#874): forgatható, fokos irány, az `x` puck is számít, szorzó színezés; nyitva a `0x0090ec40` görbe alakja** → `finetune2` hőmérséklet 25 (extrémnél) → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
    - **MEGVÁLASZOLVA ugyanebben a menetben:** a `tint` (és a `rainbow`, `autocontrast`) **szinthúzással kezd** — a `0x009db610` helyben módosítja a képet, nem csak elemez. A `tint` hat lépéséből három hiányzik/rossz nálunk (#872)
 4. ~~**A `tint` virtuális színátalakítása**~~ — **GYAKORLATILAG LEZÁRVA** (#872): a `ctx` a **lánc-építő objektum**, a `[ctx+8]` egy függvénymutató-**mező** (nem vtable-slot), és a szokásos renderelési úton nem áll be. A recept teljes nélküle
@@ -37,8 +39,9 @@ kérdés).
    ld. 1.9.14. A körülötte lévő adatszerkezet, a keresés és a visszaírás
    már megvan; a vágó eleje is olvasható (`0x00897b6b` a −1,0-s
    „nincs kényszer" vizsgálat). **Itt kell folytatni.**
-2. **A Képkupac kezdeti (x, y) szórása** — az 1.9.2 képletei a már
-   kiszámolt pozícióból dolgoznak
+2. ~~**A Képkupac kezdeti (x, y) szórása**~~ — **elavult jelölés volt**: a
+   szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
+   mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 

@@ -308,7 +308,7 @@ végpontok felé tér el).
 
 | Szűrő | Eredmény (dE_átlag tartomány) | Állapot |
 |---|---|---|
-| `autocolor` | pixelhű→közelítés (0.00–1.55) | ✅ kész (színöntetnél kis eltérés → Nyitva 1) |
+| `autocolor` | pixelhű→közelítés (0.00–1.55) | ✅ **teljes képlet MEGVAN** (#759): `M · diag(g) · M⁻¹`, mérve 1,37 |
 | `autolight` | mind közelítés (0.20–0.74) | ✅ kész |
 | `glow` | közelítés (1.85 → **0,15–1,06** #668) | ✅ kész |
 | `enhance` | közelítés, színöntetnél eltér (0.49–3.02) | ✅ jó (az autocolor-komponens húzza) |
@@ -320,7 +320,7 @@ végpontok felé tér el).
 | `Vignette` | eltér (4.65) | ❌ analitikus modell (Nyitva 2) |
 | `ansel` | eltér (5.60) | ❌ |
 | `dir_tint` | eltér (9.36) | ❌ |
-| `tint` | eltér (20.63) — legnagyobb | ❌ színparaméter-formátum (Nyitva 4) |
+| `tint` | eltér (13.6 a mai mérésben) | ❌ **a fő ok MEGVAN** (#872): a `preserve` skálája −1…255, plusz hiányzó szinthúzás és gamma |
 
 (Geometria/él/tónus — `crop64`, `tilt`, `unsharp/2`, `bw` — a `chart_detail`
 kontroll-méréseiben pixelhű; ezek a kit3-ban nem szerepelnek.)
@@ -1590,7 +1590,8 @@ w = 256 - szinmegorzes;
 Y = (77*R + 151*G + 28*B) >> 8;
 C = C + (((Y - C) * w) >> 8);
 
-// 2) a színezőszín átvezetése a virtuális átalakításon   (még NYITOTT)
+// 2) a színezőszín átvezetése a virtuális átalakításon   (ELHAGYHATÓ — #872:
+//    a lánc-kontextus [ctx+8] mezője, a szokásos úton nem áll be)
 
 // 3) telítettségfüggő tényező
 mx  = max(tR, tG, tB);
@@ -3099,9 +3100,11 @@ maradt az `unsharp` a „finomítandó" listán.
 (mindkét hívási lista kiolvasva) · **erős** az „1:1 újramintavételezés"
 olvasatra (a lépték- és eltolás-argumentumok a kódból).
 
-**Nyitva marad:** a `ytResampler` 2-es módjának **konkrét magja** (súlyok
-vagy analitikus alak). Ott folytassa, aki az `unsharp`-ot kalibrálja:
-`0x00a42c20` → `0x00a43230` (a súlytábla-építő, 336 bájt).
+~~**Nyitva marad:** a `ytResampler` 2-es módjának **konkrét magja** (súlyok
+vagy analitikus alak).~~ → **MEGVAN** (#762): a 2-es mód a **köbös
+B-spline**, tartósugár 2, és az `unsharp` a `this+0x30` szórásszorzóval
+(beégetett `1,5f`) **3 képpontra szélesíti**. Ld. „A `ytResampler` KILENC
+szűrőmagja" szakaszt.
 
 ### A `ytResampler` felezőlépése: sima 2×2 doboz-átlag (2026-08-16)
 
