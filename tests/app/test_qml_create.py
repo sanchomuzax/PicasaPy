@@ -35,14 +35,19 @@ class TestCreateMenu:
 
 
 class TestCollageDialog:
-    def test_does_not_open_without_selection(self, qml_app, qt_app):
+    def test_opens_even_without_selection_and_explains(self, qml_app, qt_app):
+        """#922: korábban ez azt állította, hogy a párbeszéd NEM nyílik meg
+        kijelölés nélkül — vagyis a néma, nyomtalan kattintást rögzítette
+        szerződésként. A felhasználó ezt hibaként jelentette. Az eredeti
+        Picasa megnyitja a lapot, és megmondja, mi hiányzik."""
         window, controller, lib, engine = qml_app
-        window.findChild(QObject, "menuCreateCollage").property("enabled")
+        window.setProperty("selectedIndexes", [])
         dialog = window.findChild(QObject, "collageDialog")
         assert dialog is not None
         dialog.metaObject().invokeMethod(dialog, "openForSelection")
         _settle(qt_app, 2)
-        assert dialog.property("visible") is False
+        assert dialog.property("visible") is True
+        assert dialog.property("sourceCount") == 0
 
     def test_opens_with_selection_and_offers_six_types(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app

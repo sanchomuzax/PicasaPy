@@ -44,15 +44,25 @@ Item {
         anchors.centerIn: parent
         standardButtons: Dialog.Ok | Dialog.Cancel
         property string targetFile: ""
+        // #922: hány kép lesz ténylegesen a kollázsban — a tálca ELŐBBRE
+        // való a kijelölésnél, ugyanúgy, ahogy a vezérlő `_sources_for`-ja
+        // dönt (#455). Ebből él a tipp és az OK is.
+        readonly property int sourceCount:
+            dialogs.trayHasPictures
+                ? controller.heldCount
+                : dialogs.appWindow.selectedIndexes.length
         function openForSelection() {
-            // #455: tartott képekkel a tálca a forrás — ilyenkor a
-            // rácsban nem is kell kijelölésnek lennie
-            if (!dialogs.trayHasPictures
-                    && dialogs.appWindow.selectedIndexes.length === 0) return
+            // #922: MINDIG megnyílik. Korábban forrás nélkül némán
+            // visszatért, és a kattintás nyomtalanul elnyelődött — az
+            // eredeti Picasában ilyen nincs, az megnyitja a lapot és
+            // megmondja, mi hiányzik.
             open()
         }
         onOpened: standardButton(Dialog.Ok).enabled = Qt.binding(
-            function() { return collageDialog.targetFile.length > 0 })
+            function() {
+                return collageDialog.targetFile.length > 0
+                       && collageDialog.sourceCount > 0
+            })
         onAccepted: controller.makeCollage(
             dialogs.appWindow.selectedIndexes,
             dialogs.collageKinds[collageKindBox.currentIndex],
@@ -60,6 +70,15 @@ Item {
             dialogs.collageBorders[collageBorderBox.currentIndex])
         ColumnLayout {
             spacing: 10
+            Text {
+                objectName: "collageNoSourceHint"
+                visible: collageDialog.sourceCount === 0
+                text: qsTr("Select pictures in the library first, or put them in the Picture Tray.")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+                wrapMode: Text.WordWrap
+                Layout.preferredWidth: 320
+            }
             Text {
                 objectName: "collageCountLabel"
                 text: qsTr("%1 pictures selected.").arg(
