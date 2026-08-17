@@ -27,9 +27,20 @@ class TestPicnikTint:
     def test_fade_100_valtozatlan(self, image):
         np.testing.assert_array_equal(fo.apply_picnik_tint(image, fade=100.0), image)
 
-    def test_fade_0_teljesen_szin(self, image):
+    def test_fade_0_a_kep_rajzolatat_MEGTARTJA(self, image):
+        """#884: ez a teszt korábban a HIBÁT rögzítette szerződésként — azt
+        állította, hogy `Fade = 0`-nál a kimenet MINDEN képpontja a választott
+        szín, tehát a kép egyetlen tömör felületté lapul.
+
+        A valódi `TintImageOperation` fényesség-tartó: a kép luminanciáját
+        megőrzi, és csak a krómát cseréli. A #685 golden párján ez ΔE 33,45 →
+        1,50 javulást adott. A részletes őrök: `test_picniktint_884.py`.
+        """
         result = fo.apply_picnik_tint(image, color=(1, 2, 3), fade=0.0)
-        assert tuple(result[0, 0]) == (1, 2, 3)
+        assert len(np.unique(result.reshape(-1, 3), axis=0)) > 1, (
+            "a kimenet nem lehet egyetlen tömör szín — a kép rajzolata megmarad"
+        )
+        assert float(result.std()) > 1.0
 
 
 class TestReanimatedEyeColor:

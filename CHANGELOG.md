@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.68] – 2026-08-17
+
+### Javítva
+- **A Színezés effekt (#884).** Eddig a képet egyetlen egyszínű felületre cserélte —
+  a fénykép rajzolata teljesen eltűnt alóla. Mostantól úgy működik, mint az eredeti
+  Picasában: a kép világosság-viszonyait pontosan megtartja, és csak a színt cseréli
+  le, mint egy színszűrő az objektív előtt.
+
+  Az eltérés az eredeti Picasa kimenetétől a huszonketted részére csökkent, és már a
+  fájlmentésből származó zaj szintjén van — vagyis gyakorlatilag képpontra egyezik.
+  A halványítás csúszkája végig helyesen működik, a maximumon a kép változatlan marad.
+
+  A helyes eljárás az előző körben (#878, Neon) került elő; ez a javítás azt hasznosítja
+  a második helyen is, ahol a Picasa ugyanezt a lépést használja.
+
 ## [0.7.67] – 2026-08-17
 
 ### Új
