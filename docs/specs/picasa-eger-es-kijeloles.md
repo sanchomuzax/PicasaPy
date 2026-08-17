@@ -83,6 +83,52 @@ lenyomás után elhúzva a kattintás visszavonható). A Picasában a következ�
 **műveletet hajt végre** (Mentés, Mégse, Kollázs létrehozása), az a
 szabványos felengedésre.
 
+### 2.1 A mechanizmus a kódban — megerősítve
+
+A `.tre`-parszer (`0x009ca5e0`) a `mousedown` értéket a
+`0x009c7800`-on át a csomópont **`+0x35c`** bájtjába írja. Ugyanezt a
+mezőt a gomb-csomópont eseménykezelője (`0x00a64050`) **két helyen**
+olvassa, két külön ágban:
+
+```asm
+; A) a LENYOMÁS ága
+0x00a643f8   cmp byte ptr [edi + 0x35c], 0
+0x00a643ff   je  0xa6446c            ; ha 0 → nem itt sül el
+0x00a64401   ...                      ; ha 1 → ITT sül el
+
+; B) a FELENGEDÉS ága
+0x00a64543   push ecx / push eax / push 0x80
+0x00a64546   call 0xa63f90            ; TALÁLAT-VIZSGÁLAT (0x80 jelző)
+0x00a6454b   test al, al / je …       ; ha a mutató NINCS a gombon → nem sül el
+0x00a64556   cmp byte ptr [edi + 0x35c], 0
+0x00a6455d   jne 0xa64577            ; ha 1 → már elsült lenyomásra, kihagyja
+0x00a6456a   call eax                 ; ha 0 → ITT sül el
+```
+
+**Két átvehető szabály:**
+
+1. A `mousedown` **nem ad hozzá** viselkedést, hanem **átteszi** az
+   elsülést a lenyomás ágába — egy gomb tehát **soha nem sül el kétszer**.
+2. A **felengedés ága találat-vizsgálatot végez** (`0x00a63f90`, `0x80`
+   jelző): ha a mutató lenyomás után elhagyta a gombot, **nem sül el**. A
+   **lenyomás ágában nincs ilyen ellenőrzés** — ott az elsülés
+   visszavonhatatlan. Ez a különbség a `mousedown`-os vezérlők
+   „azonnaliságának" ára, és pontosan így kell átvenni.
+
+*Bizonyítottsági fok: megerősített (a mező írása és mindkét olvasása
+utasításszinten).*
+
+### 2.2 A tulajdonságok tárolási helye
+
+| `.tre` tulajdonság | csomópont-mező | író |
+|---|---|---|
+| `mousedown` | **`+0x35c`** | `0x009c7800` |
+| `disable` | **`+0x20e`** | a parszer közvetlenül (`0x009cb66d`) |
+
+*(A `+0x20e` mezőt **73 függvény** olvassa — a letiltott állapot tehát
+nem egyetlen helyen rajzolódik, hanem minden vezérlőtípus maga kezeli.
+Ezért marad nyitott, hogyan néz ki egy letiltott gomb.)*
+
 ---
 
 ## 3. Módosítóbillentyűk — a pontos modell
