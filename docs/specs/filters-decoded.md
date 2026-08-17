@@ -3195,7 +3195,7 @@ móddal indexelve:
 | 1 | **1** | **háromszög** (bilineáris), `1 − \|x\|` | `0xa3fb37` | `fld1; fsubrp`, abs |
 | 2 | **2** | **köbös B-spline** (ld. lent) | `0xa3fb82` | a négy szakasz konstansai |
 | 3 | **2** | köbös, **0,4-es paraméterrel** | `0xa3fc91` | `0x00a3f691` `fld [0xc7c838]`=0,4 → `call 0xa3f5b0` |
-| 4 | **3** | szakaszos köbös, 13/11 és 2,16746 együtthatókkal | `0xa3fd25` | `0xcf41c0`=1,181818, `0xcf41b8`=2,167464 |
+| 4 | **3** | **háromlebenyes köbös konvolúció** (ld. lent) | `0xa3fd25` | tíz konstans, `0xcf4180`…`0xcf41c0` |
 | 5 | **3** | **Lanczos-3** | `0xa3fdf5` | két `sin` (`0xa3fe43`, `0xa3fe8f`) |
 | **6** | **4** | **Lanczos-4** ← **ALAPÉRTELMEZÉS** | `0xa3feed` | két `sin` (`0xa3ff3b`, `0xa3ff87`) |
 | 7 | **6** | **Lanczos-6** | `0xa3ffe5` | két `sin` (`0xa4002f`, `0xa4007b`) |
@@ -3221,6 +3221,29 @@ return s1 * s2;                    // w(x) = sinc(πx) · sinc(πx/4)
 
 Ez a **tankönyvi Lanczos, a = 4**. A 7-es és 8-as mód ugyanez `1/6`-tal,
 illetve `1/8`-cal.
+
+### A 4-es mód magja — háromlebenyes köbös konvolúció (2026-08-17, #871)
+
+`x = |x|`, három szakasz, minden együttható nevezője **11 vagy
+209 = 11 × 19**:
+
+| tartomány | súly |
+|---|---|
+| `0 ≤ x < 1` | `x·( x·(13/11·x − 453/209) − 3/209 ) + 1` |
+| `1 ≤ x < 2` | `t·( t·(270/209 − 6/11·t) − 156/209 )`, `t = x − 1` |
+| `2 ≤ x < 3` | `u·( u·(1/11·u − 45/209) + 26/209 )`, `u = x − 2` |
+| `x ≥ 3` | `0` |
+
+**Két független ellenőrzés igazolja az olvasatot:**
+
+1. **Folytonos** a szakaszhatárokon — `w(1) = w(2) = w(3) = 0` **pontosan**,
+   és `w(0) = 1`.
+2. **Egységfelbontás** — a súlyok összege **minden fázisban pontosan 1,0**
+   (0,00 · 0,25 · 0,50 fázison mérve).
+
+Ha az együtthatók olvasata rossz lenne, egyik sem jönne ki. A mag
+**interpoláló**, és **két negatív lebenye** van (`w(1,5) = −0,118`) — tehát
+élesít.
 
 ### A köbös B-spline (a 2-es mód, amit az `unsharp` használ)
 

@@ -23,12 +23,13 @@ kérdés).
 2. **`unsharp` kernel finomítása** (Nyitva 3) — dekonvolúciós illesztés
 3. **Render-pontosítás a golden-verdiktek szerint** (Nyitva 8), súlyossági sorrendben: ~~`tint`~~ → **a fő oka MEGVAN (#872): a `preserve` skálája −1…255, nem 0…100** → `sat` pozitív ág 12 → ~~`dir_tint` 9~~ → **MEGVAN (#874): forgatható, fokos irány, az `x` puck is számít, szorzó színezés; nyitva a `0x0090ec40` görbe alakja** → `finetune2` hőmérséklet 25 (extrémnél) → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
    - **MEGVÁLASZOLVA ugyanebben a menetben:** a `tint` (és a `rainbow`, `autocontrast`) **szinthúzással kezd** — a `0x009db610` helyben módosítja a képet, nem csak elemez. A `tint` hat lépéséből három hiányzik/rossz nálunk (#872)
-4. **A `tint` virtuális színátalakítása** — a `ctx` AZONOSÍTVA (a lánc-kontextus 3. függvénymutatója, `picasa-native-filter-registry.md`); nyitva marad, **mikor NEM `NULL`**, és mit csinál
+4. ~~**A `tint` virtuális színátalakítása**~~ — **GYAKORLATILAG LEZÁRVA** (#872): a `ctx` a **lánc-építő objektum**, a `[ctx+8]` egy függvénymutató-**mező** (nem vtable-slot), és a szokásos renderelési úton nem áll be. A recept teljes nélküle
 5. ~~**A `ytResampler` utolsó, nem 2-hatvány lépése**~~ — **MEGVAN** (#871,
    #762): kilenc szűrőmag, a `ResampleFilter2` beállítás választ, alapérték
    **6 = Lanczos-4**; az `unsharp` a 2-est (köbös B-spline) használja.
-   Maradék: a **4-es mód** pontos alakja (`0xa3fd25`) és a **10-es** mód
-   gyorsútja (`0x9e75a0`)
+   Maradék: ~~a **4-es mód** pontos alakja~~ **MEGVAN (#871): háromlebenyes
+   köbös konvolúció, 11/209-es törtekkel, két matematikai ellenőrzéssel
+   igazolva** → már csak a **10-es** mód gyorsútja (`0x9e75a0` → `0xaa5fb0`)
 
 ### [picasa-create-features.md](picasa-create-features.md) — 2 kérdés
 
@@ -39,25 +40,31 @@ kérdés).
 2. **A Képkupac kezdeti (x, y) szórása** — az 1.9.2 képletei a már
    kiszámolt pozícióból dolgoznak
 
-### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — 1 kérdés
+### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 
-1. A **kollázs Oldalformátum** legördülőjének pontos sorrendje és
-   részhalmaza (a vágóé megvan, ld. #876) — ahhoz a
-   `collagepanel/format_menu` képernyőképe vagy a menüfeltöltő kód kell
+~~A **kollázs Oldalformátum** legördülőjének sorrendje~~ — **MEGVAN**
+(#876): a felépítő `0x007cc990` két kapcsolója adja; a kollázs esete az,
+amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
+**metrikus/angolszász** ágra oszlanak.
 
-### [picasa-gomb-es-menu-rendszer.md](picasa-gomb-es-menu-rendszer.md) — 2 kérdés
+### [picasa-gomb-es-menu-rendszer.md](picasa-gomb-es-menu-rendszer.md) — 1 kérdés
 
-1. Hogyan rajzolja a program a **letiltott** gombot (nincs `_d` réteg,
-   csak `Property disable 1`)
-2. A `popuplist` **lenyíló panel** háttér- és keretszíne — a rétegek csak
-   a bezárt vezérlőt tartalmazzák, a listát kód rajzolja
+1. ~~a **letiltott** gomb rajza~~ — **MEGVAN** (#893): a rajzoló az alfát
+   **néggyel osztja** (`0x009e3178`), kivétel nélkül
+2. ~~a `popuplist` **lenyíló panel** színei~~ — **MEGVAN** (#894):
+   `listdecrect`, sík `#E8E8E8` kitöltés, `#BABABA` keret
+3. **A kiemelt sor SZÍNE** — a `respack`-ben nincs hozzá réteg, kódból jön
+   (`ytPopupListNode`, vtable `0x0089afb4`)
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — 4 kérdés
 
-1. A **gumikeretes kijelölés** szabálya Ctrl/Shift mellett —
-   `ytSelectionDragHandler` 4. slotja, `0x00a6f450`
-2. A **Shift-tartomány horgonya** — `[elem+0x5a]`/`[elem+0x5b]`, és a
-   léptető mag `0x00717eb0`
+1. ~~A **gumikeretes kijelölés** szabálya~~ — a `ytSelectionDragHandler` a
+   **szerkesztő** téglalapjaié, nem a rácsé: **arányt kényszerít**
+   (Shift 1,0 · Ctrl 4/3 · Alt 3/2, #891). **A RÁCS lasszójának szabálya
+   továbbra is nyitott — más kódúton van.**
+2. ~~A **Shift-tartomány horgonya**~~ — **MEGVAN** (#892): a horgony a
+   `[this+0x390]`, és Shifttel **egyesével bővít**, a horgony **továbblép**
+   (nem Intéző-féle tartomány)
 3. A **26 belső eseménykód** jelentése (`WM_*` → belső leképezés)
 4. A **jobbklikk útja**: melyik helyi menü melyik felületrészhez tartozik
    (`0x005e7c20` + `0x0056c5a0`)

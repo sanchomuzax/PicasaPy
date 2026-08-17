@@ -233,6 +233,62 @@ igaz (a kijelölés lecserélődik), Shifttel hamis (a kijelölés **bővül**).
 
 ---
 
+## 4/b A szerkesztő kijelölő-téglalapja ARÁNYT KÉNYSZERÍT (2026-08-17, #891)
+
+A `ytSelectionDragHandler` 4. slotja (**`0x00a6f450`**, 3488 b) — amit a
+`.tre` `Handler selectiondrag` köt a `editpanel/cropselection`,
+`redselection` és `addfaceselection` elemhez — húzás közben figyeli a
+módosítókat:
+
+```asm
+0x00a6fa56  push 0x10 (Shift)  → fld1              → [ebx+0x48] = 1,0
+0x00a6fa6f  push 0x11 (Ctrl)   → fld [0xcf4cd0]    → [ebx+0x48] = 1,3333333
+0x00a6fa8c  push 0x12 (Alt)    → fld [0xcf3ec4]    → [ebx+0x48] = 1,5
+0x00a6faa2  fcomp [ebx+0x48]                        ; 0 → nincs kényszer
+0x00a6fadb  call 0xa6f000                           ; alkalmazás
+0x00a6fae6  fstp [ebx+0x48]                         ; visszaáll 0-ra
+```
+
+A három vizsgálat **egymás után** fut, mindegyik felülírja az előzőt:
+**Alt üt Ctrl-t, Ctrl üt Shiftet.** A kényszer **csak a húzás idejére** él.
+
+⚠️ **A szorzó nem abszolút arány**: a `0x00a6ef20` a **kép saját arányára**
+szorozza (`[eax+0x10]/[eax]`), majd ahhoz igazítja a téglalapot. Shifttel
+tehát a kijelölés **a fénykép arányát** veszi fel, nem négyzetet.
+
+A **27-es (0x1b) eseményre** ugyanez a kezelő **nullázza a téglalapot** és
+törli a jelzőit (`0x00a6f481`–`0x00a6f4d7`) — ez a kijelölés-elvetés útja.
+
+> ⛔ **Ez NEM a bélyegkép-rács gumikerete.** A `.tre` szerint a
+> `selectiondrag` kizárólag a szerkesztő három téglalapjához van kötve.
+
+## 4/c A billentyűzetes léptetés és a HORGONY (2026-08-17, #892)
+
+A mag: **`0x00717eb0`** (606 b), argumentumai `[ebp+8]` = **irány**
+(+1/−1), `[ebp+0xc]` = **„cseréld a kijelölést"** (a hívók a Shift
+negáltját adják, `0x0071728c` `sete al`).
+
+```asm
+0x00718029  ebx += irány                ; a horgony indexe + irány
+0x00718031  ha túlfut → 0x717d10, kilép ; NEM fordul át
+0x00718058  cmp byte ptr [ebp+0xc], 0
+0x0071805c  je  0x7180a8                ; SHIFT → a leszedő ciklus KIMARAD
+0x00718091     [elem+0x5d] = 0          ; egyébként minden korábbi kijelölés le
+0x007180d6  [új elem+0x5d] = 1
+0x007180da  [this+0x390] = az új azonosítója   ; ← a HORGONY FRISSÜL
+```
+
+| mező | jelentés |
+|---|---|
+| **`[this+0x390]`** | **a horgony** — az utoljára kijelölt elem azonosítója; a kattintás ága is ide ír (`0x00719bb9`) |
+| `[elem+0x5d]` | kijelölve |
+| `[elem+0x59]` | „ebben a körben változott" |
+| `[elem+0x5a]` | elnyomó jelző: ha 1, a `+0x59` nem íródik |
+
+> **A Picasa Shift+nyíl viselkedése ELTÉR az Intézőétől:** nem tartományt
+> jelöl a horgonytól, hanem **egyesével bővít**, és **a horgonyt is
+> lépteti**.
+
 ## 5. Húzás, ejtés, gumikeret
 
 | osztály (RTTI) | vtable | mire |
