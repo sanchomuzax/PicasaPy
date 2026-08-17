@@ -3698,3 +3698,59 @@ nem napi szükséglet — és a #910-es render-hiba éles fájlon nem sül el.
 > **mért** adatunk, és sokkal jobb a becslésnél.
 
 *Bizonyítottsági fok: megerősített* (teljes korpusz, gépi feldolgozás).
+
+## A `finetune2` színhőmérséklete: feketetest-tábla + az `autocolor` mátrixa (2026-08-17, #879)
+
+**A hőmérséklet-csúszka nem csatorna-szorzókat állít, hanem kiválaszt egy
+megvilágítás-színt, és a kép azt semlegesíti** — ugyanazzal a
+színmátrixszal, amit az `autocolor` használ.
+
+### A képlet
+
+```c
+// 0x0090e9d0 (54 b) — a finetune2 hőmérséklet-ága
+i = (int)(temp * 37.0 + 55.0);        // 0xcf47e0 = 37,0 · 0xcf4610 = 55,0
+k = TABLA[i];                          // 0x00c7cf98, csomagolt 0x00RRGGBB
+0x0090eda0(dst, src, k);               // ← AZ AUTOCOLOR ALKALMAZÓJA (#759)
+```
+
+A `0x0090eda0` teljes leírása fent, „Az `autocolor` MÁTRIX-ÉPÍTŐJE
+VISSZAFEJTVE" szakaszban: `L = (77·kR + 151·kG + 28·kB) >> 8`,
+`g = (M⁻¹·(L,L,L)) ⊘ (M⁻¹·k)`, `A = M · diag(g) · M⁻¹`.
+
+### A tábla — feketetest-sugárzás Kelvinben
+
+| index | RGB | Kelvin |
+|---:|---|---:|
+| 0 | (255, 56, 0) | 1000 K |
+| 18 | (255, 173, 94) | **2800 K** ← a csúszka alsó vége |
+| 36 | (255, 221, 190) | 4600 K |
+| **55** | **(255, 249, 253)** | **6500 K — a csúszka KÖZEPE** |
+| 70 | (227, 233, 255) | 8000 K |
+| 92 | (202, 218, 255) | **10200 K** ← a csúszka felső vége |
+
+**`Kelvin = 1000 + 100·i`**, tehát a csúszka jelentése:
+
+```
+Kelvin = 6500 + 3700 · temp        temp ∈ [−1 … 1]  →  2800 K … 10200 K
+```
+
+⚠️ **A `temp = 0` NEM azonosság:** az 55. bejegyzés (255, 249, 253)
+minimálisan meleg, tehát a mátrix egy hajszálnyit hűt.
+
+### A neutrális pipetta UGYANEZ a gépezet
+
+A callback (`0x008f7ee0`) **két egymás utáni** mátrix-menetet futtat:
+
+```asm
+0x008f7fe8  test edi, 0xffffff   ; a p4 (pipettával vett szín) nem nulla?
+0x008f7ffd  call 0x90eda0        ; 1. menet: a KIVÁLASZTOTT szín semlegesítése
+0x008f8010  call 0x90e9d0        ; 2. menet: a hőmérséklet-táblából vett szín
+```
+
+A `finetune` (v1) ugyanígy épül, csak a `0x0090ea10`-et hívja a
+`0x0090e9d0` helyett.
+
+*Bizonyítottsági fok: megerősített* a hőmérséklet-ágra, a két konstansra,
+a tábla tartalmára és a `0x0090eda0` azonosságára · **erős** a
+Kelvin-leképezésre (két független illeszkedés: 1000 K és 6500 K).
