@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.69] – 2026-08-18
+
+### Javítva
+- **A Képkollázs menüpont nem indult el (#922).** Ha a képeket a képtálcára tetted
+  (és nem a rácsban jelölted ki), a *Létrehozás ▸ Képkollázs…* menüpont szürke maradt
+  — pedig a funkció hibátlanul működött volna. Ugyanez állt a Mozgófilm tételre is.
+
+  Emellett a párbeszéd mostantól **mindig megnyílik**: ha nincs mit betenni, megmondja,
+  hogy előbb képeket kell kijelölni vagy a képtálcára tenni. Eddig a kattintás
+  nyomtalanul elnyelődött, ami kívülről úgy nézett ki, mintha a program nem reagálna.
+
 ## [0.7.68] – 2026-08-17
 
 ### Javítva
