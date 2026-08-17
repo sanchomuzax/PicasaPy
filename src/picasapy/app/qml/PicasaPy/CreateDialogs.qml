@@ -20,8 +20,13 @@ Item {
         (typeof controller !== "undefined" && controller)
             ? controller.heldCount > 0 : false
 
-    // a kollázs-típusok sorrendje a ComboBox-szal egyezik
-    readonly property var collageKinds: ["grid", "contact_sheet", "mosaic", "pile"]
+    // #431: a HAT Picasa-elrendezés, a FELÜLETI sorrendben (a kulcsok a
+    // `.cxf` téma-azonosítói — egy betű eltérés olvashatatlan projektfájlt
+    // adna). ⚠️ A „Mozaik" kulcsa `picturegrid`, a „Rács"-é `regulargrid`.
+    readonly property var collageKinds: ["picturepile", "picturegrid", "framegrid",
+                                         "regulargrid", "contactsheet", "multiexp"]
+    // a három képkeret ugyanígy, a ComboBox sorrendjében
+    readonly property var collageBorders: ["noborder", "whiteborder", "polaroid"]
 
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
@@ -46,7 +51,8 @@ Item {
         onAccepted: controller.makeCollage(
             dialogs.appWindow.selectedIndexes,
             dialogs.collageKinds[collageKindBox.currentIndex],
-            collageDialog.targetFile)
+            collageDialog.targetFile,
+            dialogs.collageBorders[collageBorderBox.currentIndex])
         ColumnLayout {
             spacing: 10
             Text {
@@ -67,8 +73,24 @@ Item {
                     id: collageKindBox
                     objectName: "collageKindBox"
                     Layout.preferredWidth: 180
-                    model: [qsTr("Picture Grid"), qsTr("Contact Sheet"),
-                            qsTr("Frame Mosaic"), qsTr("Picture Pile")]
+                    // az eredeti Picasa nevei és sorrendje
+                    model: [qsTr("Picture Pile"), qsTr("Mosaic"),
+                            qsTr("Frame Mosaic"), qsTr("Grid"),
+                            qsTr("Contact Sheet"), qsTr("Multiple Exposure")]
+                }
+            }
+            RowLayout {
+                spacing: 8
+                Text {
+                    text: qsTr("Picture borders:")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+                ComboBox {
+                    id: collageBorderBox
+                    objectName: "collageBorderBox"
+                    Layout.preferredWidth: 180
+                    model: [qsTr("None"), qsTr("White Border"), qsTr("Polaroid")]
                 }
             }
             RowLayout {
