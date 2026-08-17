@@ -79,7 +79,7 @@ class TestMakeCollage:
         target = tmp_path / "kollazs.jpg"
         arrived, args = _run(
             controller.collageFinished,
-            lambda: controller.makeCollage([0, 1, 2], "grid", str(target)),
+            lambda: controller.makeCollage([0, 1, 2], "regulargrid", str(target)),
         )
         assert arrived, "nem érkezett collageFinished"
         path, used, skipped, missing = args
@@ -94,21 +94,21 @@ class TestMakeCollage:
         target = tmp_path / "url-kollazs.jpg"
         arrived, _ = _run(
             controller.collageFinished,
-            lambda: controller.makeCollage([0, 1], "mosaic", target.as_uri()),
+            lambda: controller.makeCollage([0, 1], "picturegrid", target.as_uri()),
         )
         assert arrived and target.exists()
 
     def test_empty_selection_fails_with_message(self, controller, tmp_path):
         arrived, args = _run(
             controller.collageFailed,
-            lambda: controller.makeCollage([], "grid", str(tmp_path / "x.jpg")), 2000,
+            lambda: controller.makeCollage([], "regulargrid", str(tmp_path / "x.jpg")), 2000,
         )
         assert arrived and args[0]
 
     def test_missing_target_fails(self, controller):
         arrived, args = _run(
             controller.collageFailed,
-            lambda: controller.makeCollage([0], "grid", ""), 2000,
+            lambda: controller.makeCollage([0], "regulargrid", ""), 2000,
         )
         assert arrived and args[0]
 
@@ -123,7 +123,7 @@ class TestMakeCollage:
         target = tmp_path / "k.jpg"
         arrived, args = _run(
             controller.collageFinished,
-            lambda: controller.makeCollage([0, 99], "grid", str(target)),
+            lambda: controller.makeCollage([0, 99], "regulargrid", str(target)),
         )
         assert arrived and args[1] == 1
 
@@ -191,7 +191,7 @@ class TestBackgroundThreadTeardown:
         arrived, _args = _run(
             controller.collageFinished,
             lambda: controller.makeCollage(
-                [0, 1], "grid", (tmp_path / "kollazs.jpg").as_uri()
+                [0, 1], "regulargrid", (tmp_path / "kollazs.jpg").as_uri()
             ),
             20000,
         )
