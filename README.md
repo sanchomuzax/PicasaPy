@@ -129,7 +129,7 @@ futtatja, így egy beragadó fájl sem viszi el az egész futást.
 Linuxon és Windowson (PowerShell) egyaránt:
 
 ```bash
-pip install pytest pytest-cov
+pip install $(python scripts/print_dependencies.py --dev)
 python scripts/run_tests.py
 ```
 
