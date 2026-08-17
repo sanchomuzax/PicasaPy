@@ -3106,6 +3106,31 @@ B-spline**, tartósugár 2, és az `unsharp` a `this+0x30` szórásszorzóval
 (beégetett `1,5f`) **3 képpontra szélesíti**. Ld. „A `ytResampler` KILENC
 szűrőmagja" szakaszt.
 
+### A 10-es mód: MMX-es bilineáris interpoláció (2026-08-17, #871)
+
+A `0x009e75a0` → **`0x00aa5fb0`** (451 b) a második gyorsút: tetszőleges
+affin transzformáció, **bilineáris** mintavétellel, a súlytábla
+megkerülésével.
+
+```asm
+0x00aa60a0  movzx ecx, ch           ; fy — a függőleges tört, 8 bit
+0x00aa60dc  movzx edx, dh           ; fx — a vízszintes tört
+0x00aa6107  movd mm0, [eax]         ; P(x0,y0)
+0x00aa610a  movd mm1, [eax+4]       ; P(x1,y0)
+0x00aa6117  movd mm2, [eax]         ; P(x0,y1)   (egy SORRAL lejjebb)
+0x00aa611a  movd mm3, [eax+4]       ; P(x1,y1)
+0x00aa6130  psubw / pmullw / psrlw 8 / paddb      ; felső sor × fx
+0x00aa6133  ugyanez az alsó sorra                  ; alsó sor × fx
+0x00aa614e  psubw / pmullw mm5 / psrlw 8 / paddb  ; a kettő között × fy
+0x00aa615b  packuswb                               ; vissza 8 bitre, telítéssel
+```
+
+**A súlyok 8 bitesek, az osztás `>> 8`** — tehát a maximális súly 255/256,
+nem 1,0. Aki `/255`-tel írja újra, rendszeres sötétedést kap.
+
+**Ezzel a `ytResampler` mind a tizenegy módja megvan** (0–8 a súlytáblás
+magok, 9 a legközelebbi szomszéd, 10 a bilineáris).
+
 ### A `ytResampler` felezőlépése: sima 2×2 doboz-átlag (2026-08-16)
 
 Az előző szakasz nyitva hagyta a `ytResampler` magját. Az első lépés
