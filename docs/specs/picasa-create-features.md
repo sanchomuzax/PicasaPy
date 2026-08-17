@@ -1120,14 +1120,49 @@ tehát **nem helyettesíti**, hanem **kiegészíti** az alap algoritmust.
 | csomópont 16 | `0x008938b0` | `0x0089a3d0` (504 b) |
 | csomópont 17 | — | `0x00899c40` (538 b) — ÚJ slot |
 
+##### A kényszeres vágó MAGJA (2026-08-17)
+
+A `0x00897af0` (8479 b) **levél-csomópontnál** ezt teszi:
+
+```c
+if (csomopont->bal == NULL && csomopont->jobb == NULL) {   // 0x00897b1c, 0x00897b25
+    kep = csomopont->kep;                                  // [esi+8]
+    if (kep != NULL) {
+        r = kep->vanHelye ? kep->teglalap                  // [kep+0x48] ? [kep+0x38..0x44]
+                          : alapertelmezes(0x88e6c0);
+        if (r.x0 != -1 && r.x1 != -1 && r.y1 != -1 && r.y0 != -1) {
+            elfogad(r);            // 0x891fc0(..., 0x100)
+            csomopont->frissit();  // vtbl +0x1c
+            csomopont->kesz = 1;   // [esi+0x31] = 1
+            return;                // ← NEM darabol tovább
+        }
+    }
+    if (darabszam == 1) { … }      // 0x00897bf4
+}
+```
+
+**Egy mondatban:** ha a képnek már van **érvényes** (nem −1-es)
+téglalapja, a fa **változatlanul átveszi**, és abban az ágban **nem
+darabol tovább**. A `−1`-et **mind a négy koordinátára** külön ellenőrzi
+(`0x00897b6b` `fld [0xcf3ed0]` = −1,0, majd `0x00897b71`, `0x00897b7a`,
+`0x00897b84`, `0x00897b8e`) — a „nincs kényszer" állapotot tehát a
+**teljes téglalap** jelöli, nem egy jelzőbit.
+
+**A teljes 8479 bájt mindössze HÁROM lebegőpontos konstanst olvas:**
+`−1,0` (`0xcf3ed0`) · `2,0` (`0xc7d9d0`) · `0,5` (`0xc72150`). Nincs
+benne illesztett szám — a vágás **tisztán geometriai** (felezés és
+középpont).
+
+*Bizonyítottsági fok: megerősített a levél-ágra · erős arra, hogy a
+maradék a kényszer nélküli rekurzív darabolás.*
+
 ##### Ami NYITVA marad
 
-**A `0x00897af0` (8479 bájt) a tényleges kényszeres guillotine-vágó** — ez
-dönti el, hogyan darabolódik a négyzet úgy, hogy a rögzített téglalap a
-helyén maradjon. Az eleje már olvasható: a `[kép+0x48]` szerint választ a
-kép saját téglalapja (`+0x38`) és egy `0x88e6c0`-ból jövő alapértelmezés
-között, majd **−1,0-val hasonlít** (`0x00897b6b`–`0x00897b7d`), hogy
-eldöntse, van-e egyáltalán kényszer. **Itt kell folytatni.**
+**Melyik részfába irányítja a vágó a kényszer-téglalapot**, ha a fa több
+szinten mélyül. Ott folytassa, aki tovább megy: a `0x008a9a20` /
+`0x008a9c00` páros (466–466 b, egyenként kétszer hívva) és a
+`0x0088e4e0` (113 b, **nyolcszor** hívva) — ez utóbbi a vágó leggyakoribb
+segédfüggvénye.
 
 *Bizonyítottsági fok: **megerősített** az adatszerkezetre (`+0x38…+0x48`), a
 keresés időkorlátos szerkezetére, a visszaírásra és a vtable-eltérésekre ·

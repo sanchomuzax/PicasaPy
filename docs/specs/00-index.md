@@ -35,10 +35,11 @@ kérdés).
 
 ### [picasa-create-features.md](picasa-create-features.md) — 2 kérdés
 
-1. **A Képkockamozaik kényszeres vágási szabálya** — `0x00897af0` (8479 b),
-   ld. 1.9.14. A körülötte lévő adatszerkezet, a keresés és a visszaírás
-   már megvan; a vágó eleje is olvasható (`0x00897b6b` a −1,0-s
-   „nincs kényszer" vizsgálat). **Itt kell folytatni.**
+1. ~~**A Képkockamozaik kényszeres vágási szabálya**~~ — a **MAGJA MEGVAN**
+   (#431, 1.9.14): a kényszeres levél a téglalapot változatlanul átveszi és
+   nem darabol tovább; a „nincs kényszer" jelölés mind a négy koordináta
+   −1,0. **Maradék:** melyik részfába irányítja a kényszert több szintnél
+   (`0x008a9a20` / `0x008a9c00` / `0x0088e4e0`)
 2. ~~**A Képkupac kezdeti (x, y) szórása**~~ — **elavult jelölés volt**: a
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
