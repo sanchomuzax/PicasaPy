@@ -48,5 +48,8 @@ PR-protokoll a privát repó `PROTOKOLL.md`-jében.
 - Python 3.12+, PySide6 (Qt 6) + QML, OpenCV a képfeldolgozáshoz.
 - Adattárolás: `.picasa.ini` (igazságforrás, round-trip) + SQLite index.
 - Teszt: `python scripts/run_tests.py` (a sima `pytest` az egész készletre
-  Qt/GIL-deadlockba futhat). Lint: `ruff check src/ tests/`.
+  Qt/GIL-deadlockba futhat). Lint: `ruff check src/ tests/ scripts/`.
+- Környezet: a csomaglisták egyetlen helyen élnek (`pyproject.toml`,
+  `packaging/qt-runtime-deps.txt`); a CI és a session-hook egyaránt a
+  `scripts/print_dependencies.py`-n át telepít — tételes listát sehova ne írj.
 - Közreműködés: `CONTRIBUTING.md`.

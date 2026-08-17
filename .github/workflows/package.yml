@@ -110,7 +110,8 @@ jobs:
       - name: Wheel + sdist build
         if: steps.tag.outputs.skip != 'true'
         run: |
-          python -m pip install --upgrade pip build
+          python -m pip install --upgrade pip
+          pip install $(python scripts/print_dependencies.py --dev)
           python -m build
 
       - name: Debian-csomag build (.deb)

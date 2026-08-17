@@ -1,0 +1,92 @@
+# A session-környezet VALÓDI próbája.
+#
+# A `ci.yml` azt méri, hogy a tesztek lefutnak-e abban a környezetben, amit a
+# CI maga épít fel. Azt viszont senki nem mérte, hogy a felhős munkamenetek
+# környezete — amit a SessionStart hook épít — ugyanolyan-e. A kettő listája
+# korábban négy helyen élt párhuzamosan, és el is csúszott: a `libpulse0` a
+# CI-ben szerepelt, a hookban nem.
+#
+# Ez a munkafolyamat ezt zárja be: egy tiszta gépen lefuttatja MAGÁT a hookot,
+# majd az általa felépített környezetben a TELJES tesztkészletet. Ugyanaz az
+# elv, mint a `scripts/check_declared_setuptools_minimum.py`-nál — a
+# deklarációt a valósághoz méri, nem önmagához (PROTOKOLL: a kimenetet
+# ellenőrizd, ne a szándékot).
+#
+# Ritkán fut: csak ha a környezetet leíró fájlok változnak, plusz hetente
+# egyszer. A heti futás azért kell, mert ez a környezet a repó változása
+# NÉLKÜL is elromolhat — egy upstream csomag vagy a runner-kép frissülésétől.
+name: Session-bootstrap
+
+on:
+  pull_request:
+    paths:
+      - 'pyproject.toml'
+      - 'packaging/qt-runtime-deps.txt'
+      - 'scripts/print_dependencies.py'
+      - 'scripts/bootstrap_env.sh'
+      - '.claude/hooks/**'
+      - '.codex/hooks/**'
+      - '.github/workflows/ci-bootstrap.yml'
+  schedule:
+    # Hétfő 04:00 UTC — a heti „még mindig felépül?" ellenőrzés.
+    - cron: '0 4 * * 1'
+  workflow_dispatch: {}
+
+jobs:
+  bootstrap:
+    name: A session-hook felépíti a környezetet
+    runs-on: ubuntu-latest
+    # Ugyanaz a korlát, mint a `ci.yml` teszt-jobjáé: a beragadt futást vágja
+    # el, nem az egészségeset.
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: A SessionStart hook futtatása
+        # Pontosan úgy, ahogy egy felhős munkamenetben indul — csak a
+        # „távoli környezet" kapuját nyitjuk ki kézzel.
+        #
+        # A privát agent-kontextus klónozása itt szándékosan elbukik (a CI-nek
+        # nincs hozzá jogosultsága); a hook ezt figyelmeztetéssel lenyeli, és a
+        # környezetépítés folytatódik — ezt a job pont így akarja látni. A
+        # GIT_TERMINAL_PROMPT=0 gondoskodik róla, hogy a git ne várjon
+        # interaktív jelszóra.
+        env:
+          PICASAPY_BOOTSTRAP_REMOTE: '1'
+          GIT_TERMINAL_PROMPT: '0'
+        run: |
+          export CLAUDE_ENV_FILE="$RUNNER_TEMP/session-env"
+          : > "$CLAUDE_ENV_FILE"
+          .claude/hooks/session-start.sh
+
+      - name: A hook beállította az offscreen platformot
+        # A QML-tesztek fej nélküli futásának feltétele; ha a hook ezt
+        # kihagyja, a felhős munkamenet minden QML-tesztje elszáll.
+        run: grep -q 'QT_QPA_PLATFORM=offscreen' "$RUNNER_TEMP/session-env"
+
+      - name: A telepített csomagok betölthetők
+        # Nem elég, hogy a pip lefutott: a Qt-modulok betöltése az, ami a
+        # hiányzó rendszer-libeket (libEGL, libxkbcommon, libpulse) kideríti.
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python -c "
+          from PySide6 import QtCore, QtQuick, QtMultimedia
+          import cv2, PIL, piexif, watchdog
+          print('Qt', QtCore.qVersion(), '| OpenCV', cv2.__version__)
+          "
+          ruff --version
+
+      - name: A TELJES tesztkészlet a hook által épített környezetben
+        # A bizonyíték maga. A darabolt futtatót használjuk (#53), ahogy a
+        # PROTOKOLL push előtt is előírja.
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python scripts/run_tests.py
