@@ -31,7 +31,9 @@ kérdés).
    **6 = Lanczos-4**; az `unsharp` a 2-est (köbös B-spline) használja.
    Maradék: ~~a **4-es mód** pontos alakja~~ **MEGVAN (#871): háromlebenyes
    köbös konvolúció, 11/209-es törtekkel, két matematikai ellenőrzéssel
-   igazolva** → már csak a **10-es** mód gyorsútja (`0x9e75a0` → `0xaa5fb0`)
+   igazolva** · ~~a **10-es** mód~~ **MEGVAN (#871): MMX-es bilineáris,
+   8 bites súlyokkal, `>> 8` osztással** → **a `ytResampler` mind a
+   tizenegy módja feltárva**
 
 ### [picasa-create-features.md](picasa-create-features.md) — 2 kérdés
 
@@ -59,6 +61,8 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    `listdecrect`, sík `#E8E8E8` kitöltés, `#BABABA` keret
 3. **A kiemelt sor SZÍNE** — a `respack`-ben nincs hozzá réteg, kódból jön
    (`ytPopupListNode`, vtable `0x0089afb4`)
+4. **A buboréksúgó rajza** — saját osztály (`ytToolTip`), de nincs hozzá
+   képréteg; a háttér/keret/árnyék kódból jön (#901)
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — 4 kérdés
 
@@ -69,7 +73,9 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 2. ~~A **Shift-tartomány horgonya**~~ — **MEGVAN** (#892): a horgony a
    `[this+0x390]`, és Shifttel **egyesével bővít**, a horgony **továbblép**
    (nem Intéző-féle tartomány)
-3. A **26 belső eseménykód** jelentése (`WM_*` → belső leképezés)
+3. A **26 belső eseménykód** jelentése (`WM_*` → belső leképezés) — két
+   kísérlet után sem konvergált: a `0x00920fa0` ablakeljárás csak
+   továbbít, és a `[esemény+8]` mezőt nem közvetlen konstanssal írják
 4. A **jobbklikk útja**: melyik helyi menü melyik felületrészhez tartozik
    (`0x005e7c20` + `0x0056c5a0`)
 

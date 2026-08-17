@@ -62,6 +62,59 @@ interakcióhoz kötve.
 
 ---
 
+## 1/b A motor TELJES tulajdonság-szótára (2026-08-17, #905)
+
+Az 1. szakasz listája a **szállított `.tre` fájlokból** készült. A parszer
+(`0x009ca5e0`) kulcsszó-táblája a `.rdata`-ban viszont **teljes**
+(fájloffszet 8 898 300 … 8 899 650): **58 `Property` + 13 nyelvi kulcsszó**.
+
+**Nyelvi kulcsszavak:** `Track` · `Edit` · `Zoom` · `Offset` · `Ratio` ·
+`XConstraint`/`YConstraint` · `Property` · `break` · `Handler` ·
+`Tooltip` · `Help` · `Label` · `Text`.
+
+**Nyolc `Property`-t egyetlen szállított `.tre` sem használ:**
+
+| tulajdonság | valószínű jelentés |
+|---|---|
+| `windrag` | az **ablak** húzása a vezérlőnél fogva |
+| `textclip` | a szöveg vágása a dobozhoz (a `textwrap` párja) |
+| `dither` | színcsökkentéses szórás rajzoláskor |
+| `vertslider` | **függőleges** csúszka (a `slider` párja) |
+| `enabletarget` | a `disabletarget` ellentéte |
+| `multiply` | **szorzó keverés** a csomópont rajzolásánál |
+| `alphatest` | átlátszóság-küszöb a **találat-vizsgálathoz** |
+| `underlineoffset` | az aláhúzás függőleges eltolása |
+
+> ⚠️ **A `multiply` NEM Glimmer-keverési mód**, hanem `.tre` tulajdonság.
+> A kettő könnyen összekeverhető.
+
+*Bizonyítottsági fok: megerősített a szótár teljességére (egyetlen,
+összefüggő `.rdata`-tömb) · **feltételes** a nyolc nem használt
+jelentésére (a nevükből következtetve).*
+
+## 4/d A vágó-átfedés elsötétítése — `Property negativemode` (2026-08-17, #900)
+
+Öt elem visel `Property negativemode 8f2f2f2f`-et:
+`editpanel/cropselection` · `redselection` · `addfaceselection` ·
+`faces` · `nav/nav`.
+
+A parszer **hexaként** olvassa, **`0x7F000000`** alapértelmezéssel:
+
+```asm
+0x009c79ce  push 0xc82fd4                        ; "%x"
+0x009c79d4  mov dword ptr [esp+0x10], 0x7f000000 ; alapértelmezés: fekete, 50 %
+0x009c79dc  call 0xc07eef                        ; sscanf
+0x009c79eb  call 0x9d3d60                        ; beállítás
+```
+
+| összetevő | `8F2F2F2F` |
+|---|---|
+| alfa | `0x8F` = 143 → **56,1 %** |
+| RGB | `#2F2F2F` — **semleges sötétszürke, nem fekete** |
+
+**A kijelölésen kívüli terület tehát nem kioltódik, hanem halványul** — a
+levágandó rész kontúrjai olvashatók maradnak.
+
 ## 2. A 49 vezérlő, ami LENYOMÁSRA sül el
 
 Ez a Windows-szabvány ellentéte (ott a gomb felengedésre sül el, és a
