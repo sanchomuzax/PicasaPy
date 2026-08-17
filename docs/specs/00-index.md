@@ -65,9 +65,12 @@ vonszolási küszöbe; a maszk megfejtett bitjei 5-ről 11-re nőttek. Az itt
 maradt három kérdés mind a második körben NYÍLT, és egyik sem igényel
 futó Picasát.)*
 
-1. A téma **képesség-maszkjának** hat maradék bitje: 6., 12., 13., 14.,
-   15., 16. Ismert fogyasztó: 12. → `0x0087e861`, 13. → `0x00886142`,
-   14. → `0x0082c6e9`; a 6./15./16.-ra a teljes kollázs-kódterületen nincs.
+1. A képesség-maszk **6. bitje** mit kapcsol? A helye megvan: a
+   kollázs-csomópont `+0x219` tulajdonságát állítja (`0x00860470`), amit a
+   keretrendszer a `0x009e2aa5`-nél olvas. *(A többi öt bit 2026-08-18-án
+   lezárult: 12. = a téma megvalósítja a 9. vtable-slotot, 13. = automata
+   `collage_adapt`, 14. = a `collage::shadows` alapértéke, 15./16. =
+   halott bitek.)*
 2. Mit jelent pontosan a **`spec[0x30]`** (a darabszámmal 2276 → 256 → 128
    → 64-re lépcsőző szám, `0x0082c9a0`)? „Munkafelbontás" a legvalószínűbb.
 3. Milyen **zárat** használ az `addclips` (`[panel+0x218]`, `0x0083b180`)?

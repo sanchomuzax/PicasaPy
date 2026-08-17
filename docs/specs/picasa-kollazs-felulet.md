@@ -114,12 +114,44 @@ Ebből a hat témára:
 > ott egyik sincs; a Többszörös exponálás pedig egymásra vetít, ezért ott
 > sem kijelölés, sem háttérválasztás, sem árnyék nincs.
 
-**Ami MÉG nyitva van a maszkból:** a 6., 12., 13., 14., 15. és 16. bit.
-Amit tudni róluk: a **6.** csak a három rácsos témánál áll, a **12.** csak a
-Mozaiknál és a Képkockamozaiknál (`0x0087e861` gatolja), a **13.** és a
-**15./16.** csak a Képkupacnál (a 13. a `0x00886142`-nél egy időzítés-szerű
-számítást enged), a **14.** a Képkupacnál és az Indexképnél
-(`0x0082c6e9`).
+##### A maradék hat bit — 2026-08-18, második kör
+
+A keresés ezúttal a **teljes `.text`-re** ment (8,4 MB): mintaillesztéssel
+összegyűjtöttük az összes `mov r32,[r32+0x1c]` + `call r32` + bit-teszt
+hármast. **39 találat**, ebből 29 valódi maszk-fogyasztó. Eredmény:
+
+| bit | mit jelent | bizonyíték |
+|---|---|---|
+| **6** | a kollázs-csomópont `+0x219` jelzőjét 1-re állítja, és érvényteleníti (`\|= 7`) | `0x00860470` |
+| **12** | **a téma megvalósítja a 9. vtable-slotot** | `0x0087e861` |
+| **13** | a vászon-kezelő magától **`collage_adapt`-ot küld**, ha egy mérték a **2,0**-t (`0xc7d9d0`) nem lépi túl | `0x00886142` |
+| **14** | **a `collage::shadows` beállítás ALAPÉRTÉKE** | `0x0082c6e9` |
+| **15, 16** | **nincs fogyasztójuk sehol a `.text`-ben** — halott bitek | a teljes pásztázás |
+
+**A 12. bit önmagát bizonyítja a vtable-ökből.** Ha áll, a kód meghívja a
+téma `vt[0x24]`-ét (`0x0087e870`). Márpedig a 9. slot **csak** a
+`CGridTheme`-nél és a `CFrameGridTheme`-nél valódi függvény
+(`0x00881710`); a másik négy témánál a generikus üres tő
+(`0x005baa00`) áll ott. Ez pontosan az a két téma, amelyiknél a 12. bit
+be van állítva — a bit tehát **képesség-hirdetés**, nem viselkedés.
+
+**A 14. bit a legkézzelfoghatóbb.** A beállítás-betöltőben
+(`0x0082c4e0`) a sorrend: `collage::theme` → `collage::orientation` →
+`collage::bgcolor` → `collage::showcaptions` → **`collage::shadows`**, és
+az utolsó olvasás **alapértékét** a bit adja (`0x0082c6ee` → `0x0082c70c`).
+Vagyis:
+
+> **Az árnyékrajzolás alapból BE van kapcsolva a Képkupacnál és az
+> Indexképnél, és KI a másik négy témánál.**
+>
+> Ez egyezik a felhasználó képernyőképével: Képkupac elrendezésnél az
+> „Árnyékok rajzolása" jelölő be van pipálva.
+
+**A 6. bit** a `+0x219` általános yt-csomópont-tulajdonságot állítja. A
+mező a keretrendszerben sok panelen ugyanezzel a mintával („ha más,
+érvénytelenít, aztán beállít") íródik, és a **`0x009e2aa5`**-nél olvassa
+egy szövegelrendezési rutin. **Hogy pontosan mit kapcsol, nem
+megállapított** — de a helye ezzel megvan.
 
 Teljes bitlista témánként, hogy a folytatás ne kelljen újraszámolni:
 
@@ -764,11 +796,11 @@ menetben).
 **Ami tényleg nyitva maradt** *(a 2026-08-18-i második kör után már csak
 három, és egyik sem igényel futó Picasát)*:
 
-1. **A képesség-maszk hat bitje:** 6., 12., 13., 14., 15., 16. Ismert
-   fogyasztójuk: 12. → `0x0087e861`, 13. → `0x00886142`,
-   14. → `0x0082c6e9`. A 6., 15. és 16. bitre a teljes kollázs-kódterületen
-   (162 KB) **nem találtunk fogyasztót** — vagy máshol olvassák, vagy nem
-   használtak.
+1. ~~**A képesség-maszk hat bitje**~~ — **LEZÁRVA** (2. szakasz): a 12.,
+   13. és 14. bit jelentése megvan, a 15. és 16. **halott** (nincs
+   fogyasztójuk a teljes `.text`-ben), a 6. bit helye megvan
+   (`+0x219` csomópont-tulajdonság), a **jelentése** nem. Ennyi maradt
+   belőle: **mit kapcsol a `+0x219`** (olvasó: `0x009e2aa5`).
 2. **A `spec[0x30]` pontos jelentése** (9.0) — „munkafelbontás" a
    legvalószínűbb, de nem bizonyított.
 3. **Az `addclips` zárjának típusa** (8.).
