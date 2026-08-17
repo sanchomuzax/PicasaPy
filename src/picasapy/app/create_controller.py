@@ -17,7 +17,9 @@ from pathlib import Path
 
 from PySide6.QtCore import Signal, Slot
 
-from picasapy.collage import COLLAGE_KINDS, CollageSettings, make_collage, write_collage
+from picasapy.collage import write_collage
+from picasapy.collage.picasa_render import PicasaCollageSettings, make_picasa_collage
+from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES, NOBORDER
 from picasapy.movie import MovieSettings, export_movie
 
 from .formatting import to_local_path
@@ -71,10 +73,19 @@ class CreateMixin(BackgroundWorkerMixin):
         return tray if tray else self._selected_sources(rows)
 
     @Slot(list, str, str)
-    def makeCollage(self, rows, kind: str, target_url: str) -> None:
+    @Slot(list, str, str, str)
+    def makeCollage(self, rows, kind: str, target_url: str, border: str = NOBORDER) -> None:
         """Kollázs a kijelölt képekből a megadott célfájlba (JPEG).
 
-        `kind`: a `picasapy.collage.COLLAGE_KINDS` egyike."""
+        `kind`: a `picasapy.collage.themes.COLLAGE_THEMES` egyike — a HAT
+        Picasa-elrendezés. `border`: a `BORDER_THEMES` egyike.
+
+        **#431: ez a slot a #29-es, saját tervezésű négy elrendezésről a
+        Picasa-hű hatra állt át.** A mag (`picasa_render`) 2026-08-16 óta
+        készen állt, de senki nem hívta — a felület a régi rajzolót
+        használta, tehát a kollázs működött, csak nem a Picasa
+        elrendezéseivel.
+        """
         sources = self._sources_for(rows)[:_MAX_ITEMS]
         target = to_local_path(target_url)
         if not sources:
@@ -83,17 +94,20 @@ class CreateMixin(BackgroundWorkerMixin):
         if not target:
             self.collageFailed.emit(self.tr("No target file was chosen."))
             return
-        if kind not in COLLAGE_KINDS:
+        if kind not in COLLAGE_THEMES:
             self.collageFailed.emit(self.tr("Unknown collage type."))
             return
+        if border not in BORDER_THEMES:
+            self.collageFailed.emit(self.tr("Unknown picture frame."))
+            return
 
-        settings = CollageSettings(
-            kind=kind, width=_COLLAGE_SIZE[0], height=_COLLAGE_SIZE[1]
+        settings = PicasaCollageSettings(
+            theme=kind, border=border, width=_COLLAGE_SIZE[0], height=_COLLAGE_SIZE[1]
         )
 
         def worker():
             try:
-                report = make_collage(sources, settings)
+                report = make_picasa_collage(sources, settings)
                 if not report.used:
                     self.collageFailed.emit(
                         self.tr("None of the selected pictures could be read.")

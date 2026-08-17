@@ -44,7 +44,7 @@ class TestCollageDialog:
         _settle(qt_app, 2)
         assert dialog.property("visible") is False
 
-    def test_opens_with_selection_and_offers_four_types(self, qml_app, qt_app):
+    def test_opens_with_selection_and_offers_six_types(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
         window.setProperty("selectedIndexes", [0, 1])
         window.setProperty("selectedIndex", 0)
@@ -52,7 +52,10 @@ class TestCollageDialog:
         dialog.metaObject().invokeMethod(dialog, "openForSelection")
         _settle(qt_app, 2)
         assert dialog.property("visible") is True
-        assert len(window.findChild(QObject, "collageKindBox").property("model")) == 4
+        # #431: a HAT Picasa-elrendezés (korábban a #29-es, saját tervezésű négy)
+        assert len(window.findChild(QObject, "collageKindBox").property("model")) == 6
+        # …és a képkeret-választó is megjelent mellette
+        assert len(window.findChild(QObject, "collageBorderBox").property("model")) == 3
         assert dialog.property("targetFile") == ""
 
     def test_selection_count_is_shown(self, qml_app, qt_app):
@@ -87,7 +90,7 @@ class TestResultDialog:
         target = tmp_path / "kollazs.jpg"
         loop = QEventLoop()
         controller.collageFinished.connect(loop.quit)
-        controller.makeCollage([0, 1], "grid", str(target))
+        controller.makeCollage([0, 1], "regulargrid", str(target))
         QTimer.singleShot(10000, loop.quit)
         loop.exec()
         _settle(qt_app, 2)
@@ -126,7 +129,7 @@ class TestResultDialog:
 
     def test_collage_failure_is_shown(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
-        controller.makeCollage([], "grid", "")
+        controller.makeCollage([], "regulargrid", "")
         _settle(qt_app, 2)
         result = window.findChild(QObject, "createResultDialog")
         assert result.property("visible") is True
