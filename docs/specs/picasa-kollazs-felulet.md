@@ -303,7 +303,7 @@ sincs. A máshol emlegetett **10 képpontos** küszöb (`0xcf3b28 = 10.0f`)
 **kizárólag** a `CollageNodeHandler` OLE-vonszolásához tartozik
 (`0x008606d0`), a vásznon belüli mozgatáshoz nem.
 
-**Az `Alt` billentyű külön ága** (`0x00868f99`, `GetKeyState(VK_MENU)`) —
+**Az `Alt` billentyű külön ága** (`0x00868f99`, `GetAsyncKeyState(VK_MENU)`) —
 2026-08-18-án kibontva:
 
 ```
@@ -406,8 +406,17 @@ Alt  NINCS lenyomva  →  MÉRETEZÉS aktív:
     táv  = sqrt(dx² + dy²)                      (0x0086890d)
 ```
 
-- `GetKeyState(0x11)` = **Ctrl** → `0x00868870`
-- `GetKeyState(0x12)` = **Alt** → `0x0086888b`
+- `GetAsyncKeyState(0x11)` = **Ctrl** → `0x00868870`
+- `GetAsyncKeyState(0x12)` = **Alt** → `0x0086888b`
+
+> ⚠️ **Helyesbítés (2026-08-18): `GetAsyncKeyState`, nem `GetKeyState`.**
+> A `0xc406f8` import neve a PE importtáblájából **`USER32.dll!
+> GetAsyncKeyState`**. A különbség nem szőrszálhasogatás: a Picasa a
+> módosítót a húzás **közben, folyamatosan** kérdezi (a pillanatnyi
+> fizikai billentyűállást), nem az egéresemény pillanatában rögzíti.
+> Tehát ha valaki húzás **közben** engedi el a `Ctrl`-t, a forgatás
+> onnantól él. Ugyanez a `picasa-eger-es-kijeloles.md` 3. szakaszának
+> megállapítása az egész felületre.
 
 Tehát **alapesetben a fogantyú egyszerre forgat és méretez**; a `Ctrl` a
 forgatást, az `Alt` a méretezést kapcsolja ki. Egyik sem „mód" — mindkettő
@@ -618,9 +627,16 @@ A kollázs lapja közben nyitva marad.
   véletlenszerűsítő gomb engedélyezésének újraszámolása — ld. 2., 2./3.
   bit) és a `0x008320d0`-t (újrarendezés).
 
-**Bizonyítottsági fok:** a folyamat, a feliratok és a záró lépések
-**megerősítettek**; a zár pontos típusa (kritikus szakasz vs. saját
-őrszerkezet) **feltételes**.
+**A zár típusa** *(2026-08-18)*: valódi **`CRITICAL_SECTION`** —
+a `0xc4055c` import a PE-táblából `KERNEL32.dll!EnterCriticalSection`,
+és a `[panel+0x218]` szerkezet `+0x28`-as offszetjén ül. Köré a Picasa
+**saját újrabelépés-őrt** épít: `GetCurrentThreadId` (`0xc40284`) a
+`+0x20`-ban, és ha ugyanaz a szál lép be újra, csak a `+0x24`
+számlálót növeli (`0x0083b1cf`) — a kritikus szakaszba nem lép be
+másodszor.
+
+**Bizonyítottsági fok: megerősített** — a folyamat, a feliratok, a záró
+lépések és a zár típusa is.
 
 ---
 
@@ -669,9 +685,19 @@ pakolóból kapják a méretet.
 fulladtak meg: **350 kép fölött már csak 64 képpontos változatokkal
 dolgozik**.
 
+**A `spec[0x30]` tényleg a kért képméret** *(2026-08-18)*. A
+`0xd35808` globális **konstans** — a `.text` mind a 15 hivatkozása
+`fld`, egyetlen írás sincs —, és **nem csak a kollázs használja**:
+ugyanez a szám megy át egész számra csonkolva a **miniatűr-**
+(`0x00568e4a`) és a **filmkészítő** (`0x005e8c9a`) ágban is, mindkét
+helyen közvetlenül **argumentumként** egy kép-lekérő hívásnak, a
+kép objektuma (`+0x4c`) mellé. Vagyis egy **alkalmazás-szintű
+„legnagyobb kért képélhossz"**, amit a kollázs a darabszám szerint
+levisz 256 / 128 / 64-re.
+
 **Bizonyítottsági fok: megerősített** a képletekre, a konstansokra és a
-küszöbökre. Hogy a `spec[0x30]` pontosan „munkafelbontás"-e (és nem más
-hosszúság), **erős**, nem megerősített.
+küszöbökre; **erős** arra, hogy a `spec[0x30]` jelentése a forrásképektől
+kért képpontméret.
 
 ### 9.1 Létrehozás
 
@@ -796,14 +822,11 @@ menetben).
 **Ami tényleg nyitva maradt** *(a 2026-08-18-i második kör után már csak
 három, és egyik sem igényel futó Picasát)*:
 
-1. ~~**A képesség-maszk hat bitje**~~ — **LEZÁRVA** (2. szakasz): a 12.,
-   13. és 14. bit jelentése megvan, a 15. és 16. **halott** (nincs
-   fogyasztójuk a teljes `.text`-ben), a 6. bit helye megvan
-   (`+0x219` csomópont-tulajdonság), a **jelentése** nem. Ennyi maradt
-   belőle: **mit kapcsol a `+0x219`** (olvasó: `0x009e2aa5`).
-2. **A `spec[0x30]` pontos jelentése** (9.0) — „munkafelbontás" a
-   legvalószínűbb, de nem bizonyított.
-3. **Az `addclips` zárjának típusa** (8.).
+**Egyetlen kérdés maradt az egész lapon:** mit kapcsol a képesség-maszk
+**6. bitje**? A helye megvan — a kollázs-csomópont `+0x219`
+tulajdonságát állítja (`0x00860470`), amit a keretrendszer a
+`0x009e2aa5`-nél olvas —, a jelentése nem. *(A `spec[0x30]` és az
+`addclips` zárja 2026-08-18-án lezárult, ld. 9.0 és 8.)*
 
 ---
 
