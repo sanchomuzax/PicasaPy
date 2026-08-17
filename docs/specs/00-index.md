@@ -50,24 +50,23 @@ kérdés).
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
-### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 4 kérdés
+### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 3 kérdés
 
-*(A 2026-08-18-i kör az eredeti hétből hatot lezárt — az elszámolás a lap
-**12.** szakaszában. Ami lezárult: a 11. esemény = **két kép cseréje**; a
-`collage_adapt` = névvel küldött parancs; az `addclips`/`deleteclips`; a
-négy hiányzó oldalarány; a gyűrűnek **nincs** vonszolási küszöbe; a maszk
-megfejtett bitjei 5-ről 11-re nőttek.)*
+*(A 2026-08-18-i két kör az eredeti hét kérdést **mind** lezárta — az
+elszámolás a lap **12.** szakaszában. Ami lezárult: az `Alt`+vonszolás =
+a képet a kupac **tetejére** hozza (klónozás nincs); a 11. esemény =
+**két kép cseréje**; a `collage_adapt` = névvel küldött parancs; az
+`addclips`/`deleteclips`; a négy hiányzó oldalarány; a gyűrűnek **nincs**
+vonszolási küszöbe; a maszk megfejtett bitjei 5-ről 11-re nőttek. Az itt
+maradt három kérdés mind a második körben NYÍLT, és egyik sem igényel
+futó Picasát.)*
 
-1. Mi az **`Alt`+vonszolás felhasználói hatása**? A mechanizmus megvan
-   (a kijelölés-csoport befoglaló téglalapját számolja újra és horgonyt
-   állít, `0x00868fac`–`0x00868ffe`), de a képernyőn látható következmény
-   csak futó eredetiben dönthető el. Klónozás **nincs**.
-2. A téma **képesség-maszkjának** hat maradék bitje: 6., 12., 13., 14.,
+1. A téma **képesség-maszkjának** hat maradék bitje: 6., 12., 13., 14.,
    15., 16. Ismert fogyasztó: 12. → `0x0087e861`, 13. → `0x00886142`,
    14. → `0x0082c6e9`; a 6./15./16.-ra a teljes kollázs-kódterületen nincs.
-3. Mit jelent pontosan a **`spec[0x30]`** (a darabszámmal 2276 → 256 → 128
+2. Mit jelent pontosan a **`spec[0x30]`** (a darabszámmal 2276 → 256 → 128
    → 64-re lépcsőző szám, `0x0082c9a0`)? „Munkafelbontás" a legvalószínűbb.
-4. Milyen **zárat** használ az `addclips` (`[panel+0x218]`, `0x0083b180`)?
+3. Milyen **zárat** használ az `addclips` (`[panel+0x218]`, `0x0083b180`)?
 
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 
