@@ -1,8 +1,19 @@
 name: Release
 
+# A kiadó lépés #896 óta a `scripts/ensure_release.py`-t hívja, nem egy
+# beágyazott shell-ciklust: az újrapróbálkozás így TESZTELHETŐ (a YAML-be írt
+# hurokra nem lehet állítást írni). A 2026-08-17-i GitHub-incidens alatt egy
+# egyetlen 503 elvitte a v0.7.65 kiadást, és a hiba némán maradt.
+#
+# A `schedule` ág az ŐRFUTÁS: azt fogja meg, ha ez a workflow EL SEM INDULT —
+# arra az újrapróbálkozás semmit nem ér. Naponta összeveti a pyproject.toml
+# verzióját a Releases hasábbal, és pótol, ha lemaradt.
+
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: "17 5 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -12,29 +23,22 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      # Szándékosan NINCS `ref:` — az alapértelmezés push-nál a pusholt commit,
+      # ütemezett/kézi futásnál az alapértelmezett ág feje. Mindkettő pont az,
+      # amit ki akarunk adni.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Verzió kiolvasása a pyproject.toml-ból
-        id: version
-        run: |
-          VERSION=$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: GitHub Release létrehozása, ha a verzióhoz még nincs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          TAG="v${VERSION}"
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "A ${TAG} release már létezik — a Releases hasáb naprakész, nincs teendő."
-            exit 0
-          fi
-          echo "A ${TAG} release hiányzik a main mögött — pótlás..."
-          gh release create "$TAG" \
+          python3 scripts/ensure_release.py \
             --repo "$GITHUB_REPOSITORY" \
-            --target "${{ github.sha }}" \
-            --title "PicasaPy ${VERSION}" \
-            --generate-notes
+            --target "$(git rev-parse HEAD)"
