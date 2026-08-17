@@ -1166,13 +1166,90 @@ középpont).
 *Bizonyítottsági fok: megerősített a levél-ágra · erős arra, hogy a
 maradék a kényszer nélküli rekurzív darabolás.*
 
-##### Ami NYITVA marad
+##### ~~Ami NYITVA marad~~ → MEGVÁLASZOLVA (2026-08-18)
 
-**Melyik részfába irányítja a vágó a kényszer-téglalapot**, ha a fa több
-szinten mélyül. Ott folytassa, aki tovább megy: a `0x008a9a20` /
-`0x008a9c00` páros (466–466 b, egyenként kétszer hívva) és a
-`0x0088e4e0` (113 b, **nyolcszor** hívva) — ez utóbbi a vágó leggyakoribb
-segédfüggvénye.
+> A kérdés az volt: **melyik részfába irányítja a vágó a
+> kényszer-téglalapot**, ha a fa több szinten mélyül.
+>
+> **A válasz: sehova — nincs irányítás.** A kényszer nem a fán vándorol
+> lefelé, hanem **képenként, kívülről** kerül a saját csomópontjába.
+
+A három gyanúsított tisztázva:
+
+| függvény | mi valójában |
+|---|---|
+| `0x0088e4e0` (113 b, 8×) | **struktúra-másolás**: a kép 0x50 bájtos leírója, a kényszer-téglalappal (`+0x38…+0x44`) és a „van helye" jelzővel (`+0x48`) együtt — a bemeneti lista részlistákra osztásához |
+| `0x008a9a20` / `0x008a9c00` (466–466 b) | **összefésülő rendezés**, két külön hasonlítóval (`0x008a9f20` az elsőé); a hatványkettes ciklus és az ideiglenes puffer egyértelmű |
+| `0x00891c70` (133 b) | a permutált index szerinti elem kikeresése a másoláshoz |
+
+Vagyis a fa felépítése a **rendezett/permutált lista kettévágása** —
+ugyanaz, mint a kényszer nélküli pakolónál. A kényszernek ebben nincs
+szerepe.
+
+##### A kényszer átadása: a keresés stempeli be, körönként
+
+A keresőciklusban (`0x008906e0`), amikor egy jelölt **jobb pontszámot**
+ad az eddigi legjobbnál (`0x00890d6d` `fcomp` + `jne`), a kód végigmegy a
+képeken (`0x00890d8f`–`0x00890dc4`), és mindegyik **saját
+csomópontjának** `+0x20…+0x2c` mezőjébe beírja:
+
+```
+ha (kep[0x48] != 0)  forras = kep + 0x38      ; a kényszer-téglalap
+egyébként            forras = (−1, −1, −1, −1) ; 0xcf3ed0
+csomopont[0x20 … 0x2c] = forras négy float-ja
+```
+
+A levélszabály (fentebb, `0x00897af0`) pedig ezt olvassa vissza: érvényes
+(nem −1-es) téglalapnál **változatlanul átveszi és nem darabol tovább**.
+
+**Ezért nincs szükség irányításra.** Hogy a kényszeres kép a *megfelelő*
+helyre kerüljön, azt nem egy okos elosztás dönti el, hanem az **időkorlátos,
+véletlen újrapróbálkozásos keresés**: a Picasa addig sorsol új
+sorrendeket, amíg a pontszám javul, és ha az időkorláton belül nem sikerül,
+**visszaesik a kényszer nélküli pakolóra** (`0x00891032` → `0x0088e9d0`).
+Elutasításos mintavétel, nem konstrukció.
+
+##### A pakoló CÉLFÜGGVÉNYE — `0x00893570` (2026-08-18)
+
+A keresés `node->vt[0x24]`-et hívja pontszámért (`0x00890d67`). Ez a
+`0x00893570` (328 b), és **mindkét fa ugyanazt használja** — a
+`CPackingTreeNode` 9. slotja is `0x00893570`, tehát ez a **Mozaik, a
+Képkockamozaik és a Rács közös célfüggvénye**.
+
+Rekurzív: belső csomópontnál a két gyerek pontszámának összege
+(`0x00893673`-tól). **Levélnél:**
+
+```
+w = cella.x1 − cella.x0                  ; [csp[8]+0x20] − [csp[8]+0x18]
+h = cella.y1 − cella.y0
+
+ha (p != NULL és p NEM mind −1) {         ; a kényszer-téglalap
+    w *= (p.x1 − p.x0)                    ; egész szélesség
+    h *= (p.y1 − p.y0)
+}
+
+cella_terulet = w · h                     ; [esp+0x20]
+arany         = 0x0088e650(kep)           ; a KÉP oldalaránya (szél/mag,
+                                          ;   két 64 bites mezőből)
+…a képet a cellába illeszti az arány megtartásával…
+pontszam = | cella_terulet − beillesztett_terulet |     ; fsubr + fabs
+ha (pontszam < 1e−5f) pontszam = 0        ; 0xcf3a10
+```
+
+**Egy mondatban: a pontszám az ELPAZAROLT TERÜLET** — mennyi marad üresen
+(vagy lóg ki), ha a képet a saját oldalarányával illesztjük a neki jutott
+cellába. A keresés ezt **minimalizálja**, 1e−5-ös holtsávval.
+
+> **Ez a legfontosabb szám az egész pakolóból.** Eddig a mi
+> megvalósításunk saját heurisztikát használ; ha valaha „miért máshova
+> tette a Picasa ezt a képet" kérdés merül fel, a válasz ebben a
+> célfüggvényben van.
+
+*Bizonyítottsági fok: **megerősített** a kényszer-átadásra, a rendezésre,
+a másolásra és arra, hogy a célfüggvény közös. A levélszintű pontszám
+**„elpazarolt terület"** olvasata **erős**: a `fsubr` + `fabs` páros és a
+`0x0088e650` aránya egyértelmű, de a köztes szorzás-sorrendet nem
+vezettük le lépésről lépésre.*
 
 *Bizonyítottsági fok: **megerősített** az adatszerkezetre (`+0x38…+0x48`), a
 keresés időkorlátos szerkezetére, a visszaírásra és a vtable-eltérésekre ·

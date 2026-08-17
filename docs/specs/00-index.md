@@ -39,13 +39,17 @@ kérdés).
    8 bites súlyokkal, `>> 8` osztással** → **a `ytResampler` mind a
    tizenegy módja feltárva**
 
-### [picasa-create-features.md](picasa-create-features.md) — 2 kérdés
+### [picasa-create-features.md](picasa-create-features.md) — nincs nyitott kérdés
 
-1. ~~**A Képkockamozaik kényszeres vágási szabálya**~~ — a **MAGJA MEGVAN**
-   (#431, 1.9.14): a kényszeres levél a téglalapot változatlanul átveszi és
-   nem darabol tovább; a „nincs kényszer" jelölés mind a négy koordináta
-   −1,0. **Maradék:** melyik részfába irányítja a kényszert több szintnél
-   (`0x008a9a20` / `0x008a9c00` / `0x0088e4e0`)
+1. ~~**A Képkockamozaik kényszeres vágási szabálya**~~ — **TELJESEN MEGVAN**
+   (#431/#916, 1.9.14, 2026-08-18): a kényszeres levél a téglalapot
+   változatlanul átveszi és nem darabol tovább; a „nincs kényszer" jelölés
+   mind a négy koordináta −1,0. A „melyik részfába irányítja" kérdés
+   **tárgytalan**: nincs irányítás — a keresés körönként, képenként
+   stempeli be a kényszert a csomópontba, és elutasításos mintavétellel
+   találja meg a jó elrendezést. Ugyanitt megvan a pakoló **célfüggvénye**
+   is (`0x00893570`, mindhárom rácsos témára közös): az **elpazarolt
+   terület** minimalizálása
 2. ~~**A Képkupac kezdeti (x, y) szórása**~~ — **elavult jelölés volt**: a
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
