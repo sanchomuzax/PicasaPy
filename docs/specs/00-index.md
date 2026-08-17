@@ -49,6 +49,23 @@ kérdés).
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
+### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 7 kérdés
+
+1. Mit csinál az **`Alt`+vonszolás** ága a `RingMoveHandler`-ben
+   (`0x00868f99` → `0x005121d0`, `0x009df680`, `0x0075c860`)?
+2. A `CollageNodeHandler` **11. eseménye** (`0x00860ce7`) tényleg két kép
+   cseréje-e vonszolással?
+3. A téma **képesség-maszkjának** többi bitje (1, 2, 3, 5, 7, 8, 12–16) és
+   a 0. biten függő `0x00831ac0`.
+4. Az **`addclips` / `deleteclips`** belső működése (`0x0083b180`,
+   `0x0083b590`).
+5. Mi fut le a **`collage_adapt`** lépésben a manipuláció végén
+   (`0x00868aa4`)?
+6. A **5x8 / 13x18 / 20x25 / 8x10** oldalarányok számpárja a
+   `0x007cc990`-ben (a sztring után épül az elem).
+7. Van-e a **gyűrűs mozgatásnak saját vonszolási küszöbe** (a
+   `CollageNodeHandler` OLE-ágáé `0xcf3b28 = 10.0f`)?
+
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 
 ~~A **kollázs Oldalformátum** legördülőjének sorrendje~~ — **MEGVAN**
@@ -143,6 +160,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | lap | miről szól |
 |---|---|
 | [picasa-create-features.md](picasa-create-features.md) | A „Létrehozás" menü funkciói |
+| [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) | A Kollázs teljes működése — parancstábla, gyűrű, helyi menük, kimenet |
 | [picasa-bezaras-es-kilepes.md](picasa-bezaras-es-kilepes.md) | Mit zár be az „X" — bezárás és kilépés |
 | [picasa-nyomtatas.md](picasa-nyomtatas.md) | A nyomtatás — panel (61 elem), 17 méret, beállítások |
 | [picasa-email-kuldes.md](picasa-email-kuldes.md) | E-mail-küldés — választó, beépített Gmail-szerkesztő, beállítások |

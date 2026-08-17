@@ -88,9 +88,19 @@ Rétegsorrend: `Move to the top of the pile` · `Move picture up` ·
 `Select None` (Ctrl-D).
 
 **Forgatás-illesztés (snap):** a `snap_12` / `snap_3` / `snap_6` / `snap_9`
-gombok az óralap szerint 0° / 90° / 180° / 270°-ra igazítanak.
+gombok az óralap szerint ~~0° / 90° / 180° / 270°~~ **0° / +90° / +180° /
+−90°**-ra igazítanak. *(2026-08-17-i helyesbítés: a `snap_9` a binárisban
+`−90.0f`-et ad át — `0xcf50d0`, `0x0082e25f` —, nem 270°-ot. Rajzban
+ugyanaz, tárolásban nem. A „270 fok" a helyi menü felirata
+[`Rotate::ID_COLLAGE_ALIGN_270`], nem a tárolt érték.)*
 Vonszolás közben a kijelzett értékek formátuma: `Angle: %d` és
-`Scale: %d%%` (`collage::angle_format`, `collage::scale_format`).
+`Scale: %d%%` (`collage::angle_format`, `collage::scale_format`) — a szöget
+a kiírás előtt a Picasa **negálja** (`0x00868947`).
+
+> **A vászon teljes viselkedése — a gyűrű (mozgatás, forgatás+méretezés,
+> módosítók), a három helyi menü, a témánkénti panelkép, az oldalformátum-
+> lista és a kimenet — külön lapon:
+> [`picasa-kollazs-felulet.md`](picasa-kollazs-felulet.md).**
 
 ### 1.5 Mentés, projektfájl, automatikus mentés
 
