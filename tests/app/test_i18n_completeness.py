@@ -44,6 +44,8 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
     ("CreateMixin", "No pictures are selected."): "AppController",
     ("CreateMixin", "No target file was chosen."): "AppController",
     ("CreateMixin", "Unknown collage type."): "AppController",
+    # #431: a képkeret-választó hibaszövege ugyanebbe a családba tartozik
+    ("CreateMixin", "Unknown picture frame."): "AppController",
     ("CreateMixin", "None of the selected pictures could be read."): "AppController",
     # #459: az `ExportMixin` (export_controller.py) ugyanígy a mixin-
     # kontextus fölé kevert `AppController` — a lemezhely-ellenőrzés

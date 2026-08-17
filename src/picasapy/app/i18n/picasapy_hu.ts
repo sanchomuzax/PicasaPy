@@ -1181,6 +1181,10 @@
 <context>
     <name>AppController</name>
     <message>
+        <source>Unknown picture frame.</source>
+        <translation>Ismeretlen képkeret.</translation>
+    </message>
+    <message>
         <source>No pictures are selected.</source>
         <translation>Nincs kijelölt kép.</translation>
     </message>
@@ -2112,6 +2116,41 @@
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62"/>
         <source>Picture Grid</source>
         <translation>Képrács</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="77"/>
+        <source>Mosaic</source>
+        <translation>Mozaik</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78"/>
+        <source>Grid</source>
+        <translation>Rács</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="79"/>
+        <source>Multiple Exposure</source>
+        <translation>Többszörös exponálás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="85"/>
+        <source>Picture borders:</source>
+        <translation>Képszegélyek:</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93"/>
+        <source>None</source>
+        <translation>Egyik sem</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93"/>
+        <source>White Border</source>
+        <translation>Fehér szegély</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93"/>
+        <source>Polaroid</source>
+        <translation>Polaroid</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62"/>
