@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [0.7.68] – 2026-08-17
+## [0.7.67] – 2026-08-17
 
 ### Javítva
 - **A Színezés effekt (#884).** Eddig a képet egyetlen egyszínű felületre cserélte —
