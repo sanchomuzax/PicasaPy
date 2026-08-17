@@ -342,9 +342,26 @@ ApplicationWindow {
         }
     }
 
+    // #922: a képtálca tartalma ÁLLAPOTKÉNT, nem közvetlen kötésként. Egy
+    // `controller.heldCount`-ra épülő kötés a `controller` null állapotában
+    // ki tud értékelődni ELŐSZÖR — olyankor a QML nem regisztrálja a
+    // függőséget, és a kötés soha többé nem frissül. Ez a `Connections`
+    // ettől független.
+    property bool trayHasPictures: false
+    Connections {
+        target: controller
+        function onHeldChanged() {
+            window.trayHasPictures = controller.heldCount > 0
+        }
+    }
     menuBar: PicasaMenuBar {
         photoActionsEnabled: !window.viewerOpen
                              && window.selectedIndexes.length > 0
+        // #922: a kollázs/film a TÁLCA tartalmán is dolgozik (#455) —
+        // a menüpontnak ezért tálcával, kijelölés nélkül is élnie kell
+        createActionsEnabled: !window.viewerOpen
+                              && (window.selectedIndexes.length > 0
+                                  || window.trayHasPictures)
         onRescanRequested: controller.rescan()
         onAboutRequested: aboutDialog.open()
         onThumbSizePreset: function(size) { window.thumbSize = size }
@@ -482,7 +499,11 @@ ApplicationWindow {
     // vs. Dokumentumok/Képek/Asztal), és nem nyitott mappalistát. Eddig
     // nálunk üres könyvtárnál rögtön a Mappakezelő nyílt ki: az egy fát és
     // egy jóval nagyobb döntést tett a felhasználó elé az első percben.
-    Component.onCompleted: initialScanDialog.openIfNeeded()
+    Component.onCompleted: {
+        initialScanDialog.openIfNeeded()
+        // #922: a képtálca kezdőállapota (a Connections innentől frissíti)
+        if (controller) window.trayHasPictures = controller.heldCount > 0
+    }
 
     // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
     header: MainToolbar {
