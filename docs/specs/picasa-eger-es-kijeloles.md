@@ -243,6 +243,48 @@ A `0x007199b0` (1951 b) egyetlen `switch`-csel oszt szét; a bájt-térkép a
 | 21, 23, 26 | `0x0071a077`, `0x0071a090`, `0x0071a0de` | |
 | 6–8, 14–20, 22, 24, 25 | `0x0071a141` | **nem kezelt** |
 
+### 4.2/b Mit JELENTENEK a motor eseménykódjai — viselkedésből (2026-08-18)
+
+A kérdés kétszer akadt el, mert az ablakeljárás felől kerestük
+(`0x00920fa0` csak továbbít, és a `[esemény+8]` mezőt nem közvetlen
+konstanssal írják). **A harmadik nekifutás megfordította az irányt:** nem
+azt kérdeztük, honnan jön a kód, hanem hogy **mit csinálnak rá a
+kezelők**.
+
+Gépi vizsgálat: az RTTI-ből mind a **84** `*Handler` osztály 3.
+vtable-slotja (az eseménykezelő), és minden kód, ami bennük `cmp`-ben
+szerepel.
+
+| kód | hány kezelő | jelentés | mi bizonyítja |
+|---:|---:|---|---|
+| **1** | 27 | **bal gomb LE** | a `CollageDeselectHandler` erre szünteti meg a kijelölést; a `CollageNodeHandler` erre jelöl ki és indít húzást (`0x00860ad0`) |
+| **2, 3** | 24 / 22 | **egérmozgás** — a kettőt minden vizsgált kezelő **azonos ágra** viszi | `0x00860dc6`, `0x008685b4` |
+| **4** | 17 | **gomb FEL** | a `RingMoveHandler` itt állítja vissza az átlátszóságot 1,0-ra (`0x008690a3`) |
+| **5** | ≥ 2 | **jobb gomb LE → helyi menü** | a `CollageNodeHandler` itt építi a `collagenode_context_*` menüt (`0x00860c5d`) |
+| **0x0b** | 1 | **ejtés egy csomópontra** | a két kép cseréje (`0x00860ce7`) |
+| **0x13** | 7 | **találat-vizsgálat / kurzorkérés** | téglalapba esést számol, `0xf4241`-gyel tér vissza (`0x00860a31`) |
+| **0x1b** | 7 | **elrendezés változott** | a `RingNodeLayoutHandler` itt teszi a gyűrűt a befoglaló téglalap közepére (`0x007e65eb`) |
+| **0x1f / 0x20** | 18 / 12 | **belépés / kilépés**, párban | a kezelő eltárolja, majd nullázza a cél-mutatót (`0x008609f9`, `0x00860a12`) |
+
+**A visszatérési értékek is állandóak:** `0xF4240` = *kezeltem*,
+`0xF4241` = *nem kezeltem, add tovább*.
+
+**A megfigyelt kódkészlet** (alsó becslés — a pásztázó csak az egyszerű
+`mov`+`cmp` mintát követi): 1, 2, 3, 4, 5, 8, 0x0b, 0x0c, 0x0d, 0x0e,
+0x0f, 0x11, 0x12, 0x13, 0x17, 0x18, 0x1b, 0x1c, 0x1f, 0x20, 0x21–0x28,
+0x2e, 0x41, 0x44, 0x70, 0x80, 0xff.
+
+> ⚠️ **Ez NEM ugyanaz a számozás, mint a 4.2 tábláé.** A 4.2 a
+> `CSelectionNode` **saját**, 26 elemű ugrótáblája (`0x0071a150`); az itt
+> szereplők a **motor** eseményei, amiket minden `*Handler` megkap.
+> A kettőt nem szabad összekeverni: a `CSelectionNode` 5. eseménye
+> „kijelölés-változás", a motoré „jobb gomb le".
+
+*Bizonyítottsági fok: **megerősített** a nyolc jelentésre (mindegyikhez
+konkrét kezelő-ág tartozik) · **erős** a kódkészletre (alsó becslés).
+A `WM_*` → belső leképezés továbbra is ismeretlen — de a jelentések
+birtokában **nincs is rá szükség** a megvalósításhoz.*
+
 ### 4.3 A kattintás pontos szemantikája
 
 A 13. esemény ága (`0x00719a44`), betű szerint:
