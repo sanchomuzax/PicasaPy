@@ -69,7 +69,7 @@ _DEFAULT_HEIGHT = 1200
 #: időkorlátos, véletlen újrapróbálkozású keresés, ahol a rögzített képek
 #: `(x0,y0,x1,y1)` téglalapot és egy „van már helye" jelzőt kapnak. A pontos
 #: keresés még nincs meg, ezért itt a rögzített kép egyszerűen a középső
-#: területre kerül, a többi pedig az alap pakolóval köré. A külön jegy: #911.
+#: területre kerül, a többi pedig az alap pakolóval köré. A külön jegy: #916.
 _FRAMEGRID_CENTER = NormRect(0.25, 0.25, 0.75, 0.75)
 
 #: Az Indexkép fejlécsávja a lap magasságának ennyied része.
