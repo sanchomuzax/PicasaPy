@@ -100,9 +100,14 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 2. ~~A **Shift-tartomány horgonya**~~ — **MEGVAN** (#892): a horgony a
    `[this+0x390]`, és Shifttel **egyesével bővít**, a horgony **továbblép**
    (nem Intéző-féle tartomány)
-3. A **26 belső eseménykód** jelentése (`WM_*` → belső leképezés) — két
-   kísérlet után sem konvergált: a `0x00920fa0` ablakeljárás csak
-   továbbít, és a `[esemény+8]` mezőt nem közvetlen konstanssal írják
+3. ~~A **26 belső eseménykód** jelentése~~ — **A GYAKORLATHOZ ELÉG MEGVAN**
+   (2026-08-18, 4.2/b): a harmadik nekifutás megfordította az irányt, és
+   nem az ablakeljárás felől, hanem a **84 `*Handler` viselkedéséből**
+   olvasta ki. Nyolc kód jelentése megerősítve (1 = bal le, 2/3 = mozgás,
+   4 = fel, 5 = jobb le, 0x0b = ejtés, 0x13 = találat-vizsgálat,
+   0x1b = elrendezés, 0x1f/0x20 = be/ki), a visszatérési értékekkel együtt
+   (`0xF4240` = kezeltem, `0xF4241` = add tovább). **Maradék:** a `WM_*` →
+   belső leképezés — de a megvalósításhoz nem kell
 4. A **jobbklikk útja**: melyik helyi menü melyik felületrészhez tartozik
    (`0x005e7c20` + `0x0056c5a0`)
 
