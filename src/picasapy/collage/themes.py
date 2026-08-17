@@ -90,6 +90,26 @@ THEME_CLASS_NAMES = {
 # UGYANAZT a helyet foglalja a panelen — ez önmagában bizonyítja, hogy a
 # kettő sosem látszik együtt.
 #
+# ⚠️ BIZONYÍTOTTSÁGI FOK — bitenként ELTÉRŐ, ne kezeld egyformán:
+#
+# | bit | mi támasztja alá |
+# |---|---|
+# | 9 (keret) | a fogyasztó kód + a felhasználó képernyőképe — de CSAK a Képkupacra |
+# | 10 (térköz) | ugyanaz, szintén csak a Képkupacra |
+# | 14 (árnyék alapérték) | ugyanaz, szintén csak a Képkupacra |
+# | 4 (kijelölés) | **KIZÁRÓLAG a fogyasztó kód olvasata** — nincs külső megerősítés |
+# | 11 (árnyék engedélyezve) | **KIZÁRÓLAG a fogyasztó kód olvasata** — nincs külső megerősítés |
+#
+# A maszkértékek ÉS a bit→jelentés hozzárendelés UGYANABBÓL az egy forrásból
+# származik (a `0x00831750` / `0x0082c4e0` visszafejtése). A `capabilities_for`
+# származtatása ezért NEM független megerősítés: azt igazolja, hogy a maszkok
+# és a belőlük közölt tábla között nincs átírási/számolási hiba — a bitek
+# JELENTÉSÉT nem.
+#
+# A legolcsóbb valódi ellenőrzés: a **Többszörös exponálás** az eredetiben.
+# A jóslat szerint ott sem kijelölés, sem háttér-beállítás, sem árnyék nincs —
+# egyetlen képernyőkép NÉGY bitet dönt el egyszerre.
+#
 # A 15. és 16. bitnek NINCS fogyasztója a `.text`-ben (halott bitek), a
 # 12. bit „képesség-hirdetés" (a téma megvalósítja a 9. vtable-slotot: csak
 # a `CGridTheme` és a `CFrameGridTheme`), a 6. bit jelentése NYITOTT.

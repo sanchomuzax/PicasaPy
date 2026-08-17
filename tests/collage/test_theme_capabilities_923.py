@@ -32,6 +32,12 @@ from picasapy.collage.themes import (
 
 #: A jegy táblája — a maszkoktól FÜGGETLENÜL leírva, hogy a származtatás
 #: hibája kiderüljön. (keret, térköz, árnyék, kijelölés)
+#:
+#: ⚠️ Amit ez az összevetés IGAZOL: hogy a maszkértékek és a belőlük közölt
+#: tábla között nincs átírási/számolási hiba. Amit NEM igazol: hogy a bitek
+#: jelentése helyes — az egyetlen forráson áll (a fogyasztó kód olvasata),
+#: és külső megerősítés csak a Képkupacra van. A bitenkénti bizonyítottsági
+#: tábla a `themes.py`-ban.
 VART = {
     PICTUREPILE: (True, False, True, True),
     PICTUREGRID: (False, True, True, True),
@@ -64,7 +70,14 @@ class TestKepessegTabla:
 
     def test_az_arnyek_alapertelmezese_a_14_bit(self):
         """A kutatás 2026-08-18-i köre: árnyék alapból BE a Képkupacnál és
-        az Indexképnél, KI a másik négynél."""
+        az Indexképnél, KI a másik négynél.
+
+        ⚠️ Ez az őr azt rögzíti, hogy a maszkokból EZ jön ki — nem azt,
+        hogy a 14. bit jelentése bizonyított. A bitek jelentése egyetlen
+        forráson áll (a fogyasztó kód olvasata); külső megerősítés csak a
+        Képkupacra van (a felhasználó képernyőképe). Ld. a `themes.py`
+        bizonyítottsági tábláját.
+        """
         bekapcsolva = {t for t, c in THEME_CAPABILITIES.items() if c.shadow_default}
         assert bekapcsolva == {PICTUREPILE, CONTACTSHEET}
 
