@@ -5,6 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.71] – 2026-08-18
+
+### Javítva
+- **A kollázs beállításai követik az elrendezést (#923).** Eddig bármelyik
+  beállítás bármelyik elrendezéssel kombinálható volt — pedig az eredeti Picasában
+  a **képkeret** csak a Képkupacnál és az Indexképnél választható, a **térköz** pedig
+  csak a három rácsos elrendezésnél. A panelen a kettő szó szerint ugyanazt a helyet
+  foglalja, tehát sosem látszanak együtt.
+
+  Mostantól a keretválasztó kiszürkül ott, ahol az eredetiben sincs, és a program
+  nem alkalmaz olyan beállítást, ami az adott elrendezésnél értelmetlen. Az árnyék
+  alapértéke is elrendezésenként eltér, ahogy az eredetiben.
+
 ## [0.7.68] – 2026-08-17
 
 ### Javítva

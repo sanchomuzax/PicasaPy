@@ -27,6 +27,11 @@ Item {
                                          "regulargrid", "contactsheet", "multiexp"]
     // a három képkeret ugyanígy, a ComboBox sorrendjében
     readonly property var collageBorders: ["noborder", "whiteborder", "polaroid"]
+    // #923: a keretválasztó CSAK a Képkupacnál és az Indexképnél létezik az
+    // eredetiben (a téma képesség-maszkjának 9. bitje) — a többi témánál a
+    // renderelő úgyis figyelmen kívül hagyja, ezért ne is kínáljuk fel.
+    // A panelen ugyanezt a helyet a térköz-csúszka foglalja el.
+    readonly property var collageBorderCapable: [true, false, false, false, true, false]
 
     function openCollage() { collageDialog.openForSelection() }
     function openMovie() { movieDialog.openForSelection() }
@@ -91,6 +96,7 @@ Item {
                     objectName: "collageBorderBox"
                     Layout.preferredWidth: 180
                     model: [qsTr("None"), qsTr("White Border"), qsTr("Polaroid")]
+                    enabled: dialogs.collageBorderCapable[collageKindBox.currentIndex]
                 }
             }
             RowLayout {

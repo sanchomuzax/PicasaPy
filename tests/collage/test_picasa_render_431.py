@@ -93,15 +93,20 @@ class TestMindAHatTema:
 
 
 class TestKeretek:
+    """#923: a keretválasztó CSAK a Képkupacnál és az Indexképnél él (a
+    képesség-maszk 9. bitje) — a Mozaiknál az eredetiben elő sem
+    állítható. Ezek a tesztek ezért KÉPKUPACON futnak; korábban Mozaikon
+    futottak, ami a maszk ismerete előtti (téves) feltevés volt."""
+
     @pytest.mark.parametrize("keret", BORDER_THEMES)
     def test_mindharom_keret_lefut(self, kepek, keret):
-        jelentes = make_picasa_collage(kepek, _beallitas(theme=PICTUREGRID, border=keret))
+        jelentes = make_picasa_collage(kepek, _beallitas(theme=PICTUREPILE, border=keret))
         assert jelentes.image.shape == (240, 320, 3)
 
     def test_a_harom_keret_KULONBOZO_kepet_ad(self, kepek):
         kimenetek = {
             keret: make_picasa_collage(
-                kepek, _beallitas(theme=PICTUREGRID, border=keret, seed=3)
+                kepek, _beallitas(theme=PICTUREPILE, border=keret, seed=3)
             ).image.tobytes()
             for keret in (NOBORDER, WHITEBORDER, POLAROID)
         }
