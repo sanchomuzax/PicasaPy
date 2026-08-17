@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.66] – 2026-08-17
+
+### Javítva
+- **A kiadás nem maradhat el egy pillanatnyi hálózati hiba miatt (#896).**
+  Kiderült, hogy a kiadásokat előállító automatika egyetlen átmeneti GitHub-hibától
+  feladta, és a kiadás némán elmaradt — pontosan ez történt az előző, 0.7.65-ös
+  verzióval, amit kézzel kellett pótolni. A baj alattomos volt: minden más zöldnek
+  látszott, és a következő kiadás visszamenőleg el is fedte volna a hiányt.
+
+  Mostantól az automatika többször újrapróbálkozik, egyre hosszabb szünetekkel, és
+  ha végül mégsem sikerül, azt hangosan jelzi ahelyett, hogy csendben elhallgatná.
+  Ugyanez a védelem került a telepítőcsomagok feltöltésére is, ahol egy hasonló hiba
+  eddig úgy hagyta ki a csomagokat, hogy közben sikeresnek jelentette magát.
+
+  Emellé jött egy **napi őrjárat**: naponta egyszer összeveti a program verzióját a
+  közzétett kiadásokkal, és pótolja, ha valamelyik lemaradt. Ez arra az esetre is
+  védelem, ha az automatika el sem indulna — amit az újrapróbálkozás önmagában nem
+  fogna meg.
+
 ## [0.7.65] – 2026-08-17
 
 ### Javítva

@@ -48,8 +48,28 @@ jobs:
             TAG="${{ inputs.tag }}"
           fi
           if [ -z "$TAG" ]; then
-            # workflow_run ág: a legfrissebb release tagje
-            TAG="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName || true)"
+            # workflow_run ág: a legfrissebb release tagje.
+            #
+            # #896: itt korábban `|| true` állt. Egy ÁTMENETI hiba (503) így
+            # üres tagot adott, a workflow pedig „nincs release" címen NÉMÁN,
+            # ZÖLDEN kihagyta az asset-feltöltést — a csomagok nem kerültek
+            # fel, és semmi nem jelezte. Ezért újrapróbálkozunk, és
+            # megkülönböztetjük az „üres repó"-t a „nem érhető el"-től.
+            for kiserlet in 1 2 3 4 5; do
+              if TAG="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName 2>/tmp/gh_hiba)"; then
+                break
+              fi
+              TAG=""
+              if grep -qi "release not found\|no releases\|not found" /tmp/gh_hiba; then
+                break   # tényleg nincs kiadás — ez legitim üres eset
+              fi
+              echo "A legfrissebb kiadás lekérdezése nem sikerült (${kiserlet}.): $(head -c 200 /tmp/gh_hiba)"
+              if [ "$kiserlet" = "5" ]; then
+                echo "::error::A legfrissebb kiadás öt kísérlet után sem volt lekérdezhető — a csomagok NEM kerültek fel."
+                exit 1
+              fi
+              sleep $((kiserlet * 20))
+            done
           fi
           if [ -z "$TAG" ]; then
             echo "Nincs release a repóban — nincs teendő."
@@ -60,8 +80,12 @@ jobs:
           # (kézi dispatch-nél a --clobber miatt felül szeretnénk írni,
           # ezért az ellenőrzés csak a workflow_run ágon fut).
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            COUNT="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets | length')"
-            if [ "$COUNT" -gt 0 ]; then
+            # #896: ha a lekérdezés átmeneti hibába fut, a COUNT üres maradna,
+            # és a `[ "" -gt 0 ]` hibára futtatná a lépést. Ilyenkor inkább
+            # ÉPÍTÜNK: a feltöltés `--clobber`-rel megy, tehát a fölösleges
+            # újraépítés ártalmatlan — a kimaradó feltöltés nem az.
+            COUNT="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets | length' 2>/dev/null || echo 0)"
+            if [ "${COUNT:-0}" -gt 0 ]; then
               echo "A(z) $TAG release-en már van $COUNT asset — kihagyva."
               echo "skip=true" >> "$GITHUB_OUTPUT"
               exit 0
@@ -103,8 +127,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          gh release upload "$TAG" \
-            dist/*.whl dist/*.tar.gz \
-            packaging/dist/*.deb packaging/dist/*.zip \
-            --repo "$GITHUB_REPOSITORY" \
-            --clobber
+          # #896: a feltöltés is újrapróbálkozik — a `--clobber` miatt a
+          # megismételt feltöltés felülír, nem duplikál, tehát biztonságos.
+          for kiserlet in 1 2 3 4 5; do
+            if gh release upload "$TAG" \
+                 dist/*.whl dist/*.tar.gz \
+                 packaging/dist/*.deb packaging/dist/*.zip \
+                 --repo "$GITHUB_REPOSITORY" \
+                 --clobber; then
+              exit 0
+            fi
+            echo "A feltöltés nem sikerült (${kiserlet}.) — újra."
+            sleep $((kiserlet * 20))
+          done
+          echo "::error::A(z) $TAG kiadáshoz öt kísérlet után sem sikerült feltölteni a csomagokat."
+          exit 1
