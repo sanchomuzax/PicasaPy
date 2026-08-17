@@ -33,6 +33,34 @@ stílusleírás), `Picasa3.exe` (importtábla, RTTI), `stringres-en-hu.tsv`.
 
 ---
 
+## 1/b Miért néz ki ma is XP-nek — mert NEM XP
+
+A Picasa **soha nem kéri meg az operációs rendszert**, hogy vezérlőt
+rajzoljon. Az importtáblában:
+
+| API | hívások |
+|---|---:|
+| `OpenThemeData` | **0** |
+| `DrawThemeBackground` | **0** |
+| `IsThemeActive` · `IsAppThemed` | **0** |
+| `SetWindowTheme` · `GetThemeColor` | **0** |
+| `DrawFrameControl` · `DrawEdge` | **0** |
+| `GetSysColor` | 7 (csak natív részekhez) |
+
+A **`uxtheme.dll` nincs a 24 importált könyvtár között.** A gombok, fülek,
+csúszkák és panelek **kizárólag a `respack.yt` bitképeiből** készülnek,
+amiket a Picasa saját megjelenítője másol a képernyőre.
+
+**Ebből következik:** a kinézet nem „XP-téma", hanem **lefagyasztott
+képpont** — ezért azonos XP-n, Windows 11-en és Wine alatt is. Aki az
+eredetit másolja, **nem az XP témamotorját** kell utánoznia, hanem ezeket a
+konkrét színeket és méreteket.
+
+⚠️ **Ami viszont követi a rendszert:** a menüsor, a helyi menük, a fájl- és
+üzenetablakok (a manifest `Microsoft.Windows.Common-Controls` v6-ot kér).
+Ezek Windows 11-en **Windows 11-esek** — a „a Picasa XP-s maradt" csak a
+**saját** vezérlőire igaz.
+
 ## 2. Egy gomb anatómiája — `b1_decrect`
 
 A Picasa minden „rendes" gombja **ugyanabból a 27 × 27-es rétegből**
