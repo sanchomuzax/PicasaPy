@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.67] – 2026-08-17
+
+### Új
+- **A képkollázs hat eredeti elrendezése (#431).** Eddig négy, saját tervezésű
+  elrendezés közül lehetett választani — mostantól az eredeti Picasa mind a hatja
+  elérhető, a saját nevével és sorrendjével: **Képkupac · Mozaik · Képkockamozaik ·
+  Rács · Indexkép · Többszörös exponálás**.
+
+  Mellé került a **képkeret** választója is: keret nélkül, fehér szegéllyel, vagy
+  Polaroid-kerettel.
+
+  A kollázs eddig is működött, de nem az eredeti elrendezéseivel — a Picasa-hű
+  számítások készen álltak, csak nem voltak bekötve a felülethez.
+
 ## [0.7.66] – 2026-08-17
 
 ### Javítva
