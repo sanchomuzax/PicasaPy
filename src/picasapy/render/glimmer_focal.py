@@ -8,7 +8,9 @@ kimutatta, hogy a kettő ALAPÁLLAPOTA nem ugyanaz:
 
 * **`PicnikTint`** befestés nélkül is a TELJES KÉPRE fut — az exporton a
   Picasa maga is átszínezte az egész mérőképet (ΔE 36,9). Nálunk tehát
-  marad a teljes képes hatás (a kalibrációs eltérés külön kérdés).
+  marad a teljes képes hatás. **A kalibrációs eltérés a #884-ben lezárult:**
+  a művelet a #878-ban megfejtett, fényesség-tartó `TintImageOperation`,
+  és ugyanezen a golden páron ΔE 1,50 / SSIM 0,9991 (JPEG-zaj szint).
 * **`ReanimatedEyeColor`** („Ghoul Eye") ÜRES maszkkal indul: a Picasa
   ugyanezen az exporton semmit nem változtatott (ΔE 0,18 = JPEG-zaj),
   miközben a mi modellünk ΔE 57,5-tel átfestette a képet (#688, P1).
@@ -34,6 +36,7 @@ from picasapy.render.glimmer_ops import (
     fade_alpha,
     gaussian_blur_f,
     masked_blend,
+    tint_luma_preserving,
     to_float,
     to_uint8,
 )
@@ -48,14 +51,35 @@ def _solid_layer(image_f, color):
 
 
 def apply_picnik_tint(image, color=(0x80, 0xCF, 0xFF), fade: float = 0.0):
-    """`PicnikTint=1,szín,Fade` — a kijelölt terület sima (`normal`) színes
-    bevonása, `BlendAlpha = 1 − Fade/100` átlátszósággal. **Ecset-maszk
-    nélkül: a TELJES KÉPRE fut** (ld. modul-docstring).
+    """`PicnikTint=1,Fade,szín` — FÉNYESSÉG-TARTÓ színezés (#884).
+
+    A `filterdesc.xml` szerint az effekt egyetlen műveletből áll:
+
+    ```xml
+    <TintImageOperation Color="{_clrsw.color}"
+                        BlendAlpha="{1-(_sldrFade.value/100)}"
+                        Mask="{_mctr.mask}"/>
+    ```
+
+    A `TintImageOperation` a bemenet Rec.601 luminanciáját **bájtra
+    megőrzi**, és csak a szín krómáját adja hozzá — a részletes képlet,
+    a gamut-kezelés és a mérési bizonyíték a
+    `glimmer_ops.tint_luma_preserving` docstringjében.
+
+    **A korábbi modell egy TÖMÖR SZÍNRÉTEGET kevert a képre `normal`
+    módban**, tehát `Fade = 0`-nál a kimenet egyetlen egyszínű felület lett,
+    a kép rajzolata nélkül. A #685 mérőszettjén ez ΔE 33,45 / SSIM 0,63 volt;
+    a fenti művelettel ugyanazon a golden páron (`picniktint__alap.jpg`,
+    `tools/golden/compare_render.py` mércéjével) **ΔE 1,50 / SSIM 0,9991** —
+    vagyis a JPEG-zaj szintjén.
+
+    **Ecset-maszk nélkül: a TELJES KÉPRE fut** (ld. modul-docstring) — ezt a
+    #685 exportja igazolja, ahol a Picasa maga is az egész mérőképet
+    átszínezte.
     """
     validate_image(image)
-    image_f = to_float(image)
-    layer = _solid_layer(image_f, color)
-    return to_uint8(apply_blend_mode(image_f, layer, "normal", fade_alpha(fade)))
+    tinted = tint_luma_preserving(image, color)
+    return to_uint8(alpha_blend(to_float(image), to_float(tinted), fade_alpha(fade)))
 
 
 def _normalized_mask(mask, shape) -> np.ndarray:
