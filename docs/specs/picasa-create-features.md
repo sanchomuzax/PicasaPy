@@ -298,6 +298,13 @@ koordinátáit** adják. A panel a főablak tartalomterületét tölti ki:
 ⚠️ A `#`-tel kezdődő nevek a `respack`-ben **kikommentezett** rétegek —
 ezek a Picasa 3.9-ben **nem látszanak** (régi eszközsáv, ikonok, chiclet-ek).
 
+⚠️ **Ezek a számok a TERVEZŐVÁSZON koordinátái, nem a futásidejű hely.**
+A `collagepanel.tre` kényszerei szerint a bal hasáb **fix méretű**, a
+vászon-oldal viszont **nyúlik**, a vászon körüli négy gombcsoport pedig
+magához a **laphoz** tapad. A teljes méretezési törvény:
+`kollazs-panel-ui-spec.md` **2.** szakasz — az abszolút x/y-t csak addig
+használd, amíg az ablak 800 × 534.
+
 #### 1.10.1 A panel váza
 
 | elem | pozíció | méret |

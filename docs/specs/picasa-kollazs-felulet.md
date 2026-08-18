@@ -6,7 +6,9 @@ egérrel a vásznon, mikor melyik panelrész látszik, és mi kerül a lemezre.
 A **geometria** (mind a 156 elem koordinátája és mérete) és a **feliratok**
 (mind az 52, hivatalos magyarral) nem itt vannak, hanem a
 `picasa-create-features.md` **1.10** szakaszában — a kettő együtt adja ki a
-teljes képet. Az elrendezés-algoritmusok (a hat téma pakolói) ugyanott, az
+teljes képet. A **megvalósításhoz** ezen felül a
+`kollazs-panel-ui-spec.md` kell: az az építési rajz (elemfa,
+`objectName`-ek, méretezési törvény, vezérlő-API, teszt-szerződés). Az elrendezés-algoritmusok (a hat téma pakolói) ugyanott, az
 **1.9**-ben.
 
 Forrás: a `Picasa3.exe` (3.9.141.259) helyi diszasszemblálása, a `respack.yt`
@@ -246,6 +248,33 @@ A két oldalsó csoport 15×15-ös gombokból áll, 16 képpont osztással.
 **A `rand_group` a `.tre` szerint a `previewshadow` gyereke,
 `m_centerX`, `YConstraint 0, 1, 2`** — azaz a vászon alá tapad, tőle
 2 képponttal, vízszintesen középre.
+
+> ⚠️ **Helyesbítés (2026-08-18): a fenti négy koordináta a TERVEZŐI
+> alapállás, nem a futásidejű hely.** Mind a négy csoport a
+> `previewshadow` — vagyis **maga a LAP** — gyereke, és kényszerekkel
+> tapad hozzá; a `respack`-beli abszolút x/y csak a tervezővásznon
+> érvényes. A teljes kényszertábla:
+>
+> | csoport | kényszer | jelentés |
+> |---|---|---|
+> | `action_group` | `m_centerX` + `YConstraint 1, 0, -2` | a lap **fölött** 2 px-re, középen |
+> | `rand_group` | `m_centerX` + `YConstraint 0, 1, 2` | a lap **alatt** 2 px-re, középen |
+> | `z_order_group` | `m_centerY` + `XConstraint 0, 1, 2` + **`m_hidden`** | a laptól **jobbra** 2 px-re, függőlegesen középen |
+> | `snap_rotation_group` | `m_centerY` + `XConstraint 1, 0, -2` + **`m_hidden`** | a laptól **balra** 2 px-re, függőlegesen középen |
+>
+> Két következmény: (1) a négy csoport **együtt mozog a lappal**, tehát
+> oldalformátum- vagy ablakméret-váltáskor is a lap szélén marad;
+> (2) a két oldalsó oszlop **alapból REJTETT** (`m_hidden`) — ezért nem
+> látszik a felhasználó képernyőképén sem. A `move_up`/`move_down`
+> ezen felül `m_autorepeat` (nyomva tartva ismétel), a `move_top`/
+> `move_bottom` nem.
+>
+> **Bizonyítottsági fok: megerősített** —
+> `referencia/tre-eroforrasok/collagepanel.tre` 13–24., 285–322. sor,
+> a makrók jelentése `macros.tre` 11–83. sor.
+>
+> A panel **teljes elrendezés-törvénye** (mi fix és mi nyúlik, ha az
+> ablak nem 800 × 534) a `kollazs-panel-ui-spec.md` **2.** szakaszában.
 
 ---
 
