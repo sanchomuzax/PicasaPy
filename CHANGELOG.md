@@ -5,6 +5,35 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.76] – 2026-08-18
+
+### Hozzáadva
+- **A kollázs piszkozata már nem vész el (#431).** A Picasa szerkesztés közben
+  folyamatosan mentett egy piszkozatot, és összeomlás után felajánlotta a
+  visszaállítást — ez eddig nálunk teljesen hiányzott. A mentés **atomi**: ha a
+  gép a mentés közben áll meg, a KORÁBBI piszkozat épen marad, és egy sérült
+  fájl sem akadályozza meg az indulást. (A piszkozat írásának bekötése a
+  kollázs-panelbe: #960.)
+- **A kollázs-panel csomópont-modellje és vezérlője (#943).** Felület nélküli
+  réteg, amire az élő vásznas panel épül.
+
+### Javítva
+- **A Boost, a Lomo és a Cinemascope színei az eredetit adják (#903, #904).**
+  A kontraszt eddig egy durva közelítésből jött; valójában a Picasa egy
+  **101 elemű, kézzel hangolt táblázatot** használ, és a képet nem a
+  középszürke, hanem a **negyedtónus** körül feszíti szét. A csúszka felső
+  végén az eltérés **ötszörös** volt. A telítettség szintén más: a pozitív
+  oldal **háromszoros** erősítést kap, és Haeberli-súlyokkal számol.
+
+  Ennek látható következménye: a **Boost** erős fokozaton mostantól
+  világosít és kiégeti a csúcsfényeket, nem sötétít. Ez elsőre hibának tűnt,
+  ezért a binárisból ellenőriztük — az eredeti Picasa is pontosan így
+  viselkedik (#964).
+- **Nem szemetel a napló a Létrehozás ablakánál (#918).** Minden indításkor
+  kétszer beírt egy belső figyelmeztetést, ami elfedte a valódi hibákat; a
+  visszajelző ablak szélessége ráadásul kiszámíthatatlan volt hosszabb
+  üzeneteknél.
+
 ## [0.7.75] – 2026-08-18
 
 ### Javítva
