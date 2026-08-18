@@ -713,7 +713,33 @@ ahogy a mai `makeCollage` — új szálkezelés ne szülessen.
   létrehozását?" — *Kollázs megszakítása* / *Megszakítás mellőzése*.
 - A Többszörös exponálásnak saját szövege van: „Képek egymásra helyezése",
   „%1 / %2 feldolgozva".
-- A fájlnév töve: **„kollázs"**; a cél a **Kollázsok** album.
+
+**A kimeneti fájl törvénye** (a teljes bizonyíték:
+`picasa-kollazs-felulet.md` **9.1/b**) — **fájlválasztó NINCS, soha**:
+
+| kérdés | az eredeti válasza |
+|---|---|
+| hova | `<Képek>/Picasa/Kollázsok` (a mappanév honosított erőforrás) |
+| milyen néven | a **forrásmappa/album címe**; üres címnél tartalék: „kollázs" |
+| ütközéskor | `név1.jpg`, `név2.jpg`… — `%s%lu`, **szóköz nélkül** |
+| mi íródik | a JPEG (minőség **90**) ÉS a vele azonos nevű **`.cxf`** |
+| hogyan | tmp-fájlba, majd átnevezés — előbb a `.cxf`, aztán a `.jpg` |
+| utána | indexelés + **a lap bezárja magát** + `locate`: a könyvtár a kész fájlra ugrik |
+| újramentéskor | „Meglévő cseréje" → az **eredeti útvonal** felülírása, nincs számozás |
+
+**Eredeti / nálunk / teendő** (a mai `app/collage_output.py`-hoz mérve):
+
+| | eredeti | `collage_output.py` ma | teendő |
+|---|---|---|---|
+| mappa | `<Képek>/Picasa/Kollázsok` | `~/Pictures/Kollázsok` | a `Picasa` közbülső szint pótlása |
+| név | forrásmappa címe | `kollázs-<időbélyeg>` | cím-alapú név + `%s%lu` számozás |
+| `.cxf`-pár | mindig | nincs | a mentés írja a `.cxf`-et is |
+| JPEG-minőség | 90 | a `write_collage` alapértéke | 90-re rögzíteni |
+| felső méret | 5120 (hosszabbik oldal, erős) | fix 1600 széles | 5120-ra emelni |
+| atomi írás | tmp + átnevezés | közvetlen írás | tmp + átnevezés, `.cxf` előbb |
+| mentés után | lap bezárul + `locate` | jelzés a felületnek | a panel-jegyekben (#948/#949) |
+
+- A fájlnév töve (tartalék): **„kollázs"**; a cél a **Kollázsok** album.
 
 **A folyamatjelző overlay** a vászon közepén (`m_centerXY`, alapból
 rejtett): 224 × 80 doboz, benne cím (fent), pörgő (középen), állapotsor

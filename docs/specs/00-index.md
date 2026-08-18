@@ -73,16 +73,13 @@ kérdés).
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
-### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 1 kérdés
+### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 3 kérdés
 
 *(A 2026-08-18-i két kör az eredeti hét kérdést **mind** lezárta — az
-elszámolás a lap **12.** szakaszában. Ami lezárult: az `Alt`+vonszolás =
-a képet a kupac **tetejére** hozza (klónozás nincs); a 11. esemény =
-**két kép cseréje**; a `collage_adapt` = névvel küldött parancs; az
-`addclips`/`deleteclips`; a négy hiányzó oldalarány; a gyűrűnek **nincs**
-vonszolási küszöbe; a maszk megfejtett bitjei 5-ről 11-re nőttek. Az itt
-maradt három kérdés mind a második körben NYÍLT, és egyik sem igényel
-futó Picasát.)*
+elszámolás a lap **12.** szakaszában. Ugyanaznap a harmadik, kimenet-kör
+megfejtette a mentés TELJES törvényét — hova, milyen néven, hogyan, mi
+történik utána; fájlválasztó bizonyítottan NINCS — a lap **9.1/b**
+szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
 
 1. A képesség-maszk **6. bitje** mit kapcsol? A helye megvan: a
    kollázs-csomópont `+0x219` tulajdonságát állítja (`0x00860470`), amit a
@@ -90,6 +87,12 @@ futó Picasát.)*
    lezárult: 12. = a téma megvalósítja a 9. vtable-slotot, 13. = automata
    `collage_adapt`, 14. = a `collage::shadows` alapértéke, 15./16. =
    halott bitek.)*
+2. Mi a **célja** a `FILE_ATTRIBUTE_TEMPORARY`-nak a kész kollázs-JPEG-en?
+   (A tény három címen bizonyított: `0x0083c3b8`, `0x0083cda5`,
+   `0x0068a81f` — a szándék nem ismert; ld. a lap 9.1/b 4. pontját.)
+3. Az **5120-as felső renderméret** (`0x0083d050`) pontos szemantikája a
+   renderelőn (`0x0087dcd0`) belül — a konstans megvan, az útja nincs
+   végigkövetve.
 
 
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
