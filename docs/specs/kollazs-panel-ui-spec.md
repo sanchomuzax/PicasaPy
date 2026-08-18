@@ -546,6 +546,16 @@ másolat" jelenne meg, az kitalált funkció.
 cserélnek helyet, a **fogadó keret, méret és elforgatás változatlan**.
 Nem áthelyezés, hanem csere.
 
+> ⚠️ **A cserét kizárólag VALÓDI EJTÉS-GESZTUSHOZ kösd, ne a
+> felengedéshez** (2026-08-18-i élő hiba: feltétel nélküli kereséssel
+> minden kijelölő kattintás némán kicserélt két fájlt, mert a kupac képei
+> fedik egymást). Az eredeti három kapuja: (1) az ejtés **külön
+> eseményazonosító** (11), nem a felengedés (4); (2) találat-ellenőrzés a
+> csere előtt; (3) **„ugyanaz a csomópont → nincs csere"**. Részletek és
+> címek: `picasa-kollazs-felulet.md` **5.2/b**. A „nincs elhúzási küszöb"
+> szabály a **gyűrűs mozgatásra** vonatkozik, nem arra, hogy történt-e
+> egyáltalán vonszolás.
+
 ### 7.4 Forgatás és méretezés — EGY fogantyú
 
 ```

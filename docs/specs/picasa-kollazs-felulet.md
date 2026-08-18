@@ -457,6 +457,29 @@ szerkesztés" is olvas.
 váltanak helyet, a keret, a méret és az elforgatás **marad**. A négy
 koordinátával hívott `vt[5]` az animációt/értesítést viszi.
 
+> ⚠️ **A cserét HÁROM kapu védi — ezek nélkül minden kattintás cserél
+> (2026-08-18).** A fejlesztésben élesben előfordult, hogy a felengedés
+> feltétel nélkül keresett fogadó csomópontot a kurzor alatt, és mivel a
+> kupac képei fedik egymást, **minden kijelölő kattintás némán kicserélt
+> két fájlt**. Az eredetiben ez nem történhet meg:
+>
+> 1. **A 11. esemény NEM a felengedés.** A kezelő eseményazonosító-lánca
+>    külön ágakat tart a **4** (felengedés, `0x00860b79`), az **5**
+>    (jobb gomb, `0x00860bb6`) és a **11** (ejtés, `0x00860ce7`)
+>    számokra. Egy sima kattintás a 4-esen megy ki, és **soha nem éri el
+>    a cserét**.
+> 2. **Találat-ellenőrzés.** A csere előtt a kezelő meghívja a
+>    `vt[0x24](cél, x, y, 0)` találatvizsgálót, és ha hamis, kilép
+>    (`0x00860d05`–`0x00860d09`).
+> 3. **„Ugyanaz a csomópont → nincs csere".** Ha a megtalált fogadó
+>    azonos a húzottal, az ág kimarad (`0x00860d5c`: `cmp ebx, edi` →
+>    `je 0x860db8`).
+>
+> **Megvalósításkor mind a hármat meg kell tartani**, és a cserét
+> **kizárólag valódi ejtés-gesztushoz** kötni — nem a felengedéshez.
+> A „nincs elhúzási küszöb" szabály (5.2) a **gyűrűs mozgatásra**
+> vonatkozik, **nem** arra, hogy történt-e egyáltalán vonszolás.
+
 **Bizonyítottsági fok: megerősített.**
 
 ### 5.3 Forgatás és méretezés — EGY fogantyú, két hatás
