@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import cv2
 import numpy as np
@@ -26,6 +27,12 @@ import numpy as np
 from picasapy.cvimage import read_image_bytes
 
 from .layout import GRID, Placement, layout_for
+
+if TYPE_CHECKING:  # pragma: no cover - csak a típusjelöléshez
+    # A `nodes.py` innen importál (`_paste`, `fit_to_frame`), ezért a
+    # csomópont-típus CSAK típusjelölésként jöhet vissza — futásidőben az
+    # import kört zárna.
+    from .nodes import CollageNode
 
 # A vászon (és a képkeretek) alapértelmezett mérete — a Picasa kollázsai
 # is nagy felbontású, nyomtatható képek.
@@ -75,6 +82,12 @@ class CollageReport:
     # átnevezve, törölve). Az eredeti Picasa külön mondatot adott rájuk —
     # a „nem található" más eset, mint a „nem dekódolható".
     missing: tuple[Path, ...] = ()
+    # #960: a TÉNYLEGESEN kirajzolt csomópontok (`nodes.CollageNode`), a
+    # rajzolás sorrendjében. Ebből — és csakis ebből — írható hiteles
+    # `.cxf` piszkozat: a geometria máshonnan nem szerezhető meg, kitalálni
+    # pedig rosszabb volna a semminél (#431 tanulsága). A #29-es
+    # `make_collage` nem csomópontokból dolgozik, ezért ott üres marad.
+    nodes: tuple[CollageNode, ...] = ()
 
 
 _DEFAULT_SETTINGS = CollageSettings()

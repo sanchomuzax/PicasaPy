@@ -50,7 +50,7 @@ Bemenet/kimenet: OpenCV **BGR** `uint8` képek (a `render.py` konvenciója).
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import cv2
@@ -242,6 +242,8 @@ def render_nodes(
         skipped=tuple(skipped),
         reasons=tuple(reasons),
         missing=tuple(missing),
+        # #960: amit kirajzoltunk, azt jelentjük is — ebből lesz a piszkozat
+        nodes=tuple(nodes),
     )
 
 
@@ -463,6 +465,9 @@ def make_picasa_collage(
             missing=tuple(missing),
         )
 
+    # #960: a kirajzolt csomópontok — a `.cxf` piszkozat egyetlen hiteles
+    # forrása. A Többszörös exponálás nem helyez el képeket, ott üres marad.
+    rajzolt: tuple[CollageNode, ...] = ()
     if settings.theme == MULTIEXP:
         # A Többszörös exponálás nem HELYEZ el képeket, hanem egymásra keveri
         # őket — nincsenek csomópontjai, ezért nem a közös rajzolón megy át.
@@ -495,9 +500,16 @@ def make_picasa_collage(
         nodes = _cell_nodes(used, rects, alsobeallitas, fill=False)
         draw_nodes(alvaszon, nodes, decoded, alsobeallitas.width)
         canvas[sav : sav + alvaszon.shape[0], :] = alvaszon
+        # a csomópontok az ALVÁSZON koordinátáiban készültek; a piszkozat a
+        # TELJES lapot írja le, ezért a fejlécsávval lejjebb tolva jelentjük
+        eltolas = pixels_to_sheet(sav, settings.width)
+        rajzolt = tuple(
+            replace(node, center_y=node.center_y + eltolas) for node in nodes
+        )
     else:
         nodes = layout_nodes(decoded, used, settings)
         draw_nodes(canvas, nodes, decoded, settings.width)
+        rajzolt = tuple(nodes)
 
     return CollageReport(
         image=canvas,
@@ -505,6 +517,7 @@ def make_picasa_collage(
         skipped=tuple(skipped),
         reasons=tuple(reasons),
         missing=tuple(missing),
+        nodes=rajzolt,
     )
 
 
