@@ -151,9 +151,23 @@ Vagyis:
 
 **A 6. bit** a `+0x219` általános yt-csomópont-tulajdonságot állítja. A
 mező a keretrendszerben sok panelen ugyanezzel a mintával („ha más,
-érvénytelenít, aztán beállít") íródik, és a **`0x009e2aa5`**-nél olvassa
-egy szövegelrendezési rutin. **Hogy pontosan mit kapcsol, nem
+érvénytelenít, aztán beállít") íródik. **Hogy pontosan mit kapcsol, nem
 megállapított** — de a helye ezzel megvan.
+
+*2026-08-18-i kiegészítés (a kérdés továbbra is NYITOTT, de szűkült):* a
+teljes `.text` pásztázása szerint a `+0x219`-nek **mindössze 30
+érintője** van, és a keretrendszerben **egyetlen olvasója**:
+`0x009e2aa5`, a `0x009e2a60` (3207 bájt) függvényen belül. Ez a rutin a
+csomópont **gyerekein megy végig** (`[ebx+4] >> 1` elemszám), és a
+`+0x219` **egy külön, gyerekenkénti ágat kapcsol be** — ha a jelző 0, az
+egész ág kimarad (`je 0x9e2bc4`). A hívói (`0x009e16d0`, `0x00a54b70`) a
+`UITransitions` / `UIProfiling` beállításokat kezelő rétegben ülnek. A
+mezőt az általános yt-csomópont-konstruktor (`0x009dd800`, `0x009dda0b`)
+nullázza a testvér-jelzőkkel (`+0x205`…`+0x217`) együtt.
+
+**Amit ez kizár:** a 6. bit **nem** szövegelrendezési kapcsoló (ez a lap
+korábbi feltevése volt, és nem igazolódott) — a gyerek-bejárás egy
+általános megjelenítési ága. **Nem blokkolja a megvalósítást.**
 
 Teljes bitlista témánként, hogy a folytatás ne kelljen újraszámolni:
 
@@ -929,6 +943,22 @@ tétel a kész-értesítés kezelőjéből (`0x0088a020`, itt él a
 HKCU\Control Panel\Desktop\  →  Wallpaper, WallpaperStyle, TileWallpaper
 SystemParametersInfo(SPI_SETDESKWALLPAPER)
 ```
+
+A registrybe írt **három érték** (`0x0057acaf`–`0x0057ad76`, mind
+`HKEY_CURRENT_USER` = `0x80000001`):
+
+| érték | tartalom |
+|---|---|
+| `Wallpaper` | a `picasabackground.bmp` teljes útvonala |
+| `WallpaperStyle` | **`"0"`** (`0xc7fe6c`) |
+| `TileWallpaper` | **`"0"`** (ugyanaz a sztring) |
+
+> **A `0` / `0` páros a Windowsban azt jelenti: KÖZÉPRE, nyújtás és
+> mozaik nélkül.** Ez magyarázza meg, miért van egyáltalán
+> „Figyelmeztetés: eltérő formátumok" (9.1): a Picasa **nem nyújt** — ha a
+> kollázs oldalformátuma nem a képernyőé, a kép középen marad, körülötte
+> csíkkal. Ezért ajánlja a figyelmeztetés szövege pont a „Jelenlegi
+> megjelenítés" oldalformátumot. A két lelet egymást igazolja.
 
 **Bizonyítottsági fok az egész 9.1/b-re: megerősített**, kivéve ahol
 jelölve („erős": a tmp-név második számlálója; az 5120 pontos
