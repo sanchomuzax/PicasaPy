@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 62 62" width="62" height="62">
+  <!-- PicasaPy sajat rajz (#946): a "Polaroid fenykepezogep" keret
+       ELONEZETE - vastag also szegely a kepfelirat helyevel. -->
+  <rect x="6" y="7" width="50" height="48" fill="#ffffff" stroke="#c9c4ba" stroke-width="1"/>
+  <rect x="11" y="12" width="40" height="30" fill="#dfe6ea"/>
+  <rect x="11" y="12" width="40" height="16" fill="#a8c4d6"/>
+  <circle cx="43" cy="20" r="4" fill="#f4e0a8"/>
+  <path d="M11 42 22 27 29 34 35 26 51 42Z" fill="#7f9c86"/>
+  <rect x="17" y="47" width="28" height="3" fill="#c9c4ba"/>
+</svg>

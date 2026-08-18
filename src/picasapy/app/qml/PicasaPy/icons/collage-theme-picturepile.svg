@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#946): "Kepkupac" - szetszort, dontott fotok.
+       A kollazs-temavalaszto lenyilojanak ikonja. -->
+  <g stroke="#8a8a8a" stroke-width="1">
+    <rect x="2.5" y="6.5" width="11" height="9" fill="#dfe6ea" transform="rotate(-13 8 11)"/>
+    <rect x="10.5" y="9.5" width="11" height="9" fill="#f3eee2" transform="rotate(9 16 14)"/>
+    <rect x="6.5" y="3.5" width="11" height="9" fill="#ffffff" transform="rotate(-2 12 8)"/>
+  </g>
+  <path d="M8 10.5 10.4 7.6 12.2 9.7 14 6.8 16.6 11.5 8 11.5Z" fill="#8fb0c4"/>
+</svg>

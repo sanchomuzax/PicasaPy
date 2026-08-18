@@ -143,7 +143,9 @@ Item {
 
         // A két laptartalom UGYANOTT ül; mindig pontosan az egyik látszik.
         // (13, 55) abszolút = a tabbase-hez képest (10, 35).
-        Item {
+        // A „Beállítások" lap tartalma (#946). A tartó GEOMETRIÁJA a #945
+        // szerződése — a lap beköltözött, a méretezési törvényhez nem nyúlt.
+        CollageSettingsTab {
             id: settingsTab
             objectName: "collageSettingsTab"
             x: 10
@@ -151,8 +153,7 @@ Item {
             width: 266
             height: 351
             visible: tabBar.currentIndex === 0
-            // TARTALOM: #946 („Beállítások" lap). A tartó geometriája a
-            // spec 4.1-é; aki ide költözik, a törvényhez nem nyúl.
+            controller: panel.controller
         }
 
         Item {

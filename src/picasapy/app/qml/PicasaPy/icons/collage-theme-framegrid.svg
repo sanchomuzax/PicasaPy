@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- PicasaPy sajat rajz (#946): "Kepkockamozaik" - mozaik hangsulyos
+       kozponti keppel. -->
+  <rect x="2.5" y="2.5" width="19" height="19" fill="none" stroke="#8a8a8a" stroke-width="1"/>
+  <rect x="3" y="3" width="6" height="6" fill="#c9d6b0"/>
+  <rect x="9" y="3" width="6" height="6" fill="#e6c98f"/>
+  <rect x="15" y="3" width="6" height="6" fill="#a8bcc9"/>
+  <rect x="3" y="9" width="6" height="6" fill="#d3b9c6"/>
+  <rect x="15" y="9" width="6" height="6" fill="#c9d6b0"/>
+  <rect x="3" y="15" width="6" height="6" fill="#e6c98f"/>
+  <rect x="9" y="15" width="6" height="6" fill="#a8bcc9"/>
+  <rect x="15" y="15" width="6" height="6" fill="#d3b9c6"/>
+  <rect x="8.5" y="8.5" width="7" height="7" fill="#8fb0c4" stroke="#ffffff" stroke-width="1"/>
+</svg>

@@ -87,7 +87,29 @@ _EDITOR_TOOL_ICONS = (
     "kreativ-kit.svg",
 )
 
-_ALL_ICONS = _EXPECTED_ICONS + _EDITOR_TOOL_ICONS
+# a Kollázs-panel „Beállítások" lapjának ikonjai (#946, a #920 5/8 lépcsője)
+_COLLAGE_PANEL_ICONS = (
+    # a hat kollázs-típus a téma-választó lenyílójában (24 × 24)
+    "collage-theme-picturepile.svg",
+    "collage-theme-picturegrid.svg",
+    "collage-theme-framegrid.svg",
+    "collage-theme-regulargrid.svg",
+    "collage-theme-contactsheet.svg",
+    "collage-theme-multiexp.svg",
+    # a három képkeret előnézete (62 × 62, a `.tre` gombmérete)
+    "collage-border-none.svg",
+    "collage-border-white.svg",
+    "collage-border-polaroid.svg",
+    # a kuka az egyéni oldalarány törlésére és a jelölőnégyzet pipája (14 × 14)
+    "collage-trash.svg",
+    "collage-check.svg",
+    # a két tájolás-gomb rajza és a lenyíló-nyíl — a méretük a `.tre`-ből jön
+    "collage-orient-landscape.svg",
+    "collage-orient-portrait.svg",
+    "collage-dropdown-arrow.svg",
+)
+
+_ALL_ICONS = _EXPECTED_ICONS + _EDITOR_TOOL_ICONS + _COLLAGE_PANEL_ICONS
 
 
 def _settle(qt_app, rounds=3):
@@ -101,6 +123,23 @@ def _settle(qt_app, rounds=3):
 #: #463: a bélyegkép sarkába kerülő jelvények — az eredeti Picasa
 #: réteg-adataiból vett, SZÁNDÉKOSAN nem négyzetes méretarányokkal.
 _CORNER_BADGES = frozenset({"faces-badge.svg", "face-suggestion-badge.svg"})
+
+#: Ikonok, amikre a négyzetes / 3:2 vászonszabály NEM vonatkozik, mert a
+#: méretarányukat egy KÜLSŐ forrás rögzíti:
+#:
+#: - a #463-as sarok-jelvényeké az eredeti Picasa réteg-adataiból való;
+#: - a #946-os három kollázs-rajz a `collagepanel.tre` geometriájából
+#:   (fekvő tájolás-ikon 23 × 12, álló 11 × 16, lenyíló-nyíl 9 × 5) — ezek
+#:   nem eszközgomb-képek, hanem a panel apró jelei, és a méretüket a
+#:   `test_collage_settings_tab_946.py` geometria-szerződése is rögzíti.
+#:
+#: A többi kollázs-ikon (téma, keret, kuka, pipa) NÉGYZETES, tehát marad a
+#: szabály alatt — a kivétel szűk, szándékosan.
+_SZABAD_ARANYU_IKONOK = _CORNER_BADGES | frozenset({
+    "collage-orient-landscape.svg",
+    "collage-orient-portrait.svg",
+    "collage-dropdown-arrow.svg",
+})
 
 
 class TestIconFilesExist:
@@ -123,7 +162,7 @@ class TestIconFilesExist:
         parts = [float(v) for v in view_box.replace(",", " ").split()]
         assert len(parts) == 4, f"hibás viewBox: {view_box!r}"
         arany = parts[2] / parts[3]
-        if name in _CORNER_BADGES:
+        if name in _SZABAD_ARANYU_IKONOK:
             # #463: a bélyegkép-sarok jelvényei NEM eszköz-ikonok: a
             # méretarányuk az eredeti Picasa réteg-adataiból származik
             # (pl. „emberek" 14×20), ezért nem a 3:2/négyzetes szabály
