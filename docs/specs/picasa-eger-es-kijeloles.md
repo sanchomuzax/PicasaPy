@@ -384,6 +384,50 @@ negáltját adják, `0x0071728c` `sete al`).
 > jelöl a horgonytól, hanem **egyesével bővít**, és **a horgonyt is
 > lépteti**.
 
+## 4/e A RÁCS lasszójának szabálya: METSZÉS, nem tartalmazás (2026-08-18)
+
+A `picasa-eger-es-kijeloles.md` eddig annyit mondott, hogy a rács lasszója
+„más kódúton van". Megvan.
+
+### A lasszó téglalapja (`0x00719f91`, 2./3. esemény)
+
+```
+x0 = min(kezdo.x, egér.x)      ; a kezdőpont [ebx+0x27c], [ebx+0x280]
+y0 = min(kezdo.y, egér.y)      ;   kerekítve (0x00c29990)
+x1 = max(...), y1 = max(...)
+ha x0 == x1 → x1 = x0 + 1      ; 0x0071a00b — SOHA nem elfajult
+ha y0 == y1 → y1 = y0 + 1      ; 0x0071a012
+[ebx+0x29c … 0x2a8] = (x0, y0, x1, y1)
+```
+
+### Az elemenkénti teszt (`0x0071bc90`)
+
+Minden elemre kiszámolja a képernyő-téglalapját a pozíciójából
+(`[elem+0x88]`, `[elem+0x8c]`) és a méretéből (`[elem+0x3c]`, `[elem+0x40]`),
+a `[elem+0x60]` nagyítással szorozva — majd:
+
+```
+ix0 = max(elem.x0, lasszo.x0)      ; 0x0071bef7
+iy0 = max(elem.y0, lasszo.y0)      ; 0x0071bf05
+ix1 = min(elem.x1, lasszo.x1)      ; 0x0071bf0f
+iy1 = min(elem.y1, lasszo.y1)      ; 0x0071bf19
+ha (ix0 < ix1 ÉS iy0 < iy1)  →  ÉRINTVE               ; 0x0071bf1f–0x0071bf25
+```
+
+**Vagyis a lasszó minden olyan elemet megérint, aminek a téglalapja
+METSZI a lasszóét** — nem kell, hogy teljesen benne legyen. A metszetnek
+**szigorúan pozitív területűnek** kell lennie (érintőleges találat nem
+számít).
+
+**Két elem-jelző kizár a tesztből** (`0x0071be19`, `0x0071be26`):
+`[elem+0x5a]` és `[elem+0x5b]` — ha bármelyik áll, az elem kimarad.
+
+Ha legalább egy elem érintve lett, a kód **beállítja a „volt húzás"
+jelzőt** (`[ebx+0x2d3] = 1`) — ez az, amit a felengedés ága néz, hogy
+szűkítsen-e (ld. 4/c és a #897).
+
+*Bizonyítottsági fok: megerősített.*
+
 ## 5. Húzás, ejtés, gumikeret
 
 | osztály (RTTI) | vtable | mire |

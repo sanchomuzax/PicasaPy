@@ -86,8 +86,10 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    **néggyel osztja** (`0x009e3178`), kivétel nélkül
 2. ~~a `popuplist` **lenyíló panel** színei~~ — **MEGVAN** (#894):
    `listdecrect`, sík `#E8E8E8` kitöltés, `#BABABA` keret
-3. **A kiemelt sor SZÍNE** — a `respack`-ben nincs hozzá réteg, kódból jön
-   (`ytPopupListNode`, vtable `0x0089afb4`)
+3. **A kiemelt sor SZÍNE** — a `respack`-ben nincs hozzá réteg, kódból jön.
+   *(2026-08-18: négy helyen kerestük, nincs ott — a negatív eredmény és a
+   folytatás helye a lap 8. szakaszában. A legolcsóbb út egy
+   színmérés a felhasználó képernyőképéről.)*
 4. **A buboréksúgó rajza** — saját osztály (`ytToolTip`), de nincs hozzá
    képréteg; a háttér/keret/árnyék kódból jön (#901)
 
@@ -95,8 +97,9 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 
 1. ~~A **gumikeretes kijelölés** szabálya~~ — a `ytSelectionDragHandler` a
    **szerkesztő** téglalapjaié, nem a rácsé: **arányt kényszerít**
-   (Shift 1,0 · Ctrl 4/3 · Alt 3/2, #891). **A RÁCS lasszójának szabálya
-   továbbra is nyitott — más kódúton van.**
+   (Shift 1,0 · Ctrl 4/3 · Alt 3/2, #891). ~~A RÁCS lasszójának szabálya~~ — **MEGVAN**
+   (2026-08-18, 4/e): **metszés-teszt**, nem tartalmazás; a metszetnek
+   szigorúan pozitív területűnek kell lennie.
 2. ~~A **Shift-tartomány horgonya**~~ — **MEGVAN** (#892): a horgony a
    `[this+0x390]`, és Shifttel **egyesével bővít**, a horgony **továbblép**
    (nem Intéző-féle tartomány)
