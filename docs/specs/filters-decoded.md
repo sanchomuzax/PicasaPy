@@ -3750,6 +3750,86 @@ mérést, nagyjából **40 %-kal kisebb szórással**. A mai
 *Bizonyítottsági fok: **megerősített** — eredeti Picasa-exportokból,
 geometria-független módszerrel.*
 
+## A `finetune2` SZERKEZETE — a csúcsfény és az árnyék EGY közös LUT (2026-08-18, #879)
+
+A `native-filter-registry.json` szerint a `finetune2` callbackje a
+**`0x008f7ee0`**. Végigolvasva a kompozit szerkezete ez:
+
+```
+p_fill = [szűrő+0x28]
+h      = max(1 − [szűrő+0x2c], 0,001)        ; 0xcf3da0 / 0xc7999c = 0,001
+s      = [szűrő+0x30]
+n      = [szűrő+0x3c]                        ; skalár
+c      = [szűrő+0x40]                        ; csomagolt szín
+
+1. ha (p_fill != 0):   0x0090ac20(cél, forrás, p_fill, 1,0)      ; DERÍTŐFÉNY
+2. ha (h != 1,0 VAGY s != 0):
+                       0x0090c430(…, a0, a1, a2)                 ; CSÚCSFÉNY + ÁRNYÉK
+3. ha (n != 0):
+      ha ((c & 0xffffff) != 0):  0x0090eda0(cél, forrás, c)      ; a színmátrix-alkalmazó
+                                 0x0090e9d0(…, n)                ; a hőmérséklet
+```
+
+### 1. A derítőfény-hívás AZONOS az önálló `fill`-ével
+
+Az önálló `fill`/`backlight` callback (`0x008f8970`) ugyanezt a magot
+ugyanígy hívja: `0x0090ac20(cél, forrás, p1, 1,0)` — ugyanaz a `+0x28`
+mező, ugyanaz a `fld1`. **A derítőfény tehát nem lehet a `finetune2`
+eltérésének oka**, és a mérésünk is ezt mondja: az önálló `fill` eredeti
+exportokhoz mérve 1,20–1,77.
+
+### 2. A csúcsfény és az árnyék EGYETLEN LUT — ez a valódi eltérés
+
+A `0x0090c430` (104 b) három lépés:
+
+```
+0x0090c46c  call 0x0090c1e0(a0, a1, a2)   ; 256 × uint16 TÁBLA ÉPÍTÉSE
+0x0090c478  call 0x0090be70(kép, tábla)   ; EGYETLEN menetben alkalmazza
+```
+
+A táblaépítő (`0x0090c1e0`, 211 b):
+
+```
+E     = 1 / a2                                  ; 0x0090c1ec
+skála = (a1 != a0) ? 1/(a1 − a0) : 1,0          ; 0x0090c206–0x0090c217
+alap  = pow(a0, E) × 65280                      ; 0xcf4200 = 65280,0
+minden i = 0…255:
+    v = pow(i/255, E) × 65280                   ; 0xcf4138 = 1/255
+    v = (v − alap) × skála
+    LUT16[i] = clamp(trunc(v), 0, 0xFF00)       ; 0x0090c28f
+```
+
+**A hívó egy irodalmi `fld1`-et is átad** (`0x008f7fa2`), tehát a
+kitevő `E = 1/1 = 1` — a görbe **lineáris**, és a művelet egyetlen
+**affin fekete-/fehérpont-leképezés**. Ezért illeszkedik a mért
+egy-vezérlős modellünk.
+
+### ⚠️ Amiben a mi megvalósításunk ELTÉR
+
+Mi **két külön menetben** csináljuk (`apply_highlights`, majd
+`apply_shadows`), és **mindkettő 8 bitre vág a végén**. Az eredeti
+**egyetlen** táblát épít és **egyszer** vág.
+
+Amíg csak az egyik vezérlő aktív, a kettő **bitre azonos**. Amint
+**mindkettő** nem nulla, szétmegy:
+
+| h | s | max eltérés | átlag | hány szinten |
+|---|---|---|---|---|
+| 0,48 | 0,48 | **217** | 29,3 | 69 / 256 |
+| 0,30 | 0,40 | 73 | 15,2 | 106 / 256 |
+| 0,24 | 0,24 | 26 | 7,3 | 143 / 256 |
+| 0,48 | 0 | **0** | 0 | 0 |
+| 0 | 0,48 | **0** | 0 | 0 |
+
+A közbenső 255-ös vágás **levágja a csúcsfény-részleteket**, mielőtt az
+árnyék-lépés hozzáérne — ezt egyetlen affin leképezés nem teszi.
+
+*Bizonyítottsági fok: **megerősített** a szerkezetre, a hívási
+azonosságra, a táblaépítőre és a numerikus eltérésre · **erős** az
+`a0`/`a1`/`a2` ↔ (feketepont, fehérpont, gamma) hozzárendelésre: a hívó
+három értéket ad át (`1,0`, `1−p2`, `p3`), a sorrendjük nincs
+lépésről lépésre levezetve.*
+
 ## A `dir_tint` (Graduated Tint) visszafejtve (2026-08-16, #874)
 
 **Az átmenet FORGATHATÓ, fokban megadott irányú** — nem függőleges. Ez a
