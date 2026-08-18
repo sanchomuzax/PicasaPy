@@ -311,10 +311,10 @@ használd, amíg az ablak 800 × 534.
 |---|---|---|
 | `docbounds` / `rect: base` | (0, 0) | 800 × 534 |
 | `rect: rightcontainer` | (289, 20) | 501 × 504 |
-| `decrect(tabbase): tabbase` | (3, 20) | 276 × 387 |
+| `decrect(tabbase): tabbase` | (3, 20) | 276 × 387 *(tervezői; futásidőben **386**: a `YConstraint 1, 0, 406` az alsó élt 406-ra köti, a felső 20 — ld. `kollazs-panel-ui-spec.md` 2.2)* |
 | `buttcontainer: tabs` | (3, 25) | 276 × 25 |
 | `buttcon(tab1…)` — **Beállítások** | (3, 25) | 92 × 25 |
-| `buttcon(tab2…)` — **Képek** | (95, 25) | 92 × 25 |
+| `buttcon(tab2…)` — **Képek** *(statikus címke; futásidőben a `collageUI::tab2_title` „Klipek (%d)"-je felülírja — ld. `picasa-kollazs-felulet.md` 8.)* | (95, 25) | 92 × 25 |
 | `rect: tabpanel1` (Beállítások lap) | (13, 55) | 266 × 351 |
 | `rect: tabpanel2` (Képek lap) | (13, 55) | 256 × 352 |
 

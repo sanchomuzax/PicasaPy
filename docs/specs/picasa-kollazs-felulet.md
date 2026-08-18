@@ -634,6 +634,14 @@ Az egyéni arány hibaüzenetei: `CustomAspectRatioDlg::AddError`,
 A fül felirata **számot tartalmaz**: `collageUI::tab2_title` =
 „Clips (%d)" / **„Klipek (%d)"** — a képernyőképen „Klipek (80)".
 
+> ⚠️ A `.tre` **statikus** fülcímkéje (`collagepanel/tab2-label`) magyarul
+> „**Képek**" — ez egy MÁSIK erőforrás, és gyakorlatilag sosem látszik:
+> a `0x0083b890` frissítő (négy hívó: `0x00830f30`, `0x00831e10`,
+> `addclips`, `deleteclips`) a „Klipek (%d)" formátummal felülírja.
+> A látható felirat a képernyőkép szerint is „Klipek (N)". *(A két
+> erőforrás léte megerősített; hogy a négy hívó közül melyik fut pontosan
+> a panel megnyitásakor, erős.)*
+
 Három gomb, mind a lap tetején:
 
 | gomb | hely | mit csinál |
@@ -765,6 +773,140 @@ A Többszörös exponálásnak saját folyamatszövege van:
 `collage:multiexp_progtitle` „Képek egymásra helyezése" és
 `collage:multiexp_progstatus_format` „%1$d / %2$d feldolgozva".
 
+### 9.1/b A kimeneti fájl TELJES törvénye — hova, milyen néven, hogyan (2026-08-18)
+
+**A Picasa a kollázs mentésekor SOHA nem kérdez fájlnevet vagy mappát.**
+Ez nem hiányzó funkció, hanem bizonyított tervezési döntés: az egész
+EXE-ben egyetlen fájldialógus-csomagoló van (`0x009b16f0`, ez hívja a
+`GetSaveFileNameW`/`GetOpenFileNameW`-t), és a kollázs-alrendszer
+(`0x008?????` tartomány) **egyetlen függvénye sem hivatkozik rá** (a
+teljes xref-tábla negatív). A felhasználó a Létrehozás gombot nyomja meg,
+minden más automatikus.
+
+#### A két mentőfüggvény és hívóik
+
+| út | hívási lánc |
+|---|---|
+| **Kollázs létrehozása** / **Asztali háttérkép** | `sharebutton`/`makedesktop` → `0x0082d570` → `0x0083ce90` → **`0x0083ba60`** (2887 bájt) |
+| **Piszkozat mentése** (a lap bezárásakor) | `cancelbutton` → `0x0082c0a0` → **`0x0083c5b0`** (2260 bájt) |
+
+Mindkettő ugyanazt a név- és hely-törvényt követi; a különbségeket a
+végén adjuk meg.
+
+#### 1. A célmappa: `<Képek>\Picasa\<Kollázsok>` — a mappanév HONOSÍTOTT
+
+Mindkét mentő (és a `CCollageManager::CollagesFolder` segéd,
+`0x0068a6a0`) így építi az utat:
+
+```
+<a Picasa képmappája>            ; 0x9966a0 → a saját "Picasa" gyökér
+  + "Picasa"                     ; 0xc7f0fc (fix, NEM honosított)
+  + stringres("CCollageManager::CollagesFolder")   ; 0x9ae560
+                                 ; EN "Collages" → HU "Kollázsok"
+```
+
+A mappanév tehát **erőforrásból jön, nyelvenként más** — a magyar
+Picasa `…\Picasa\Kollázsok`-ba ment. *(Élő bizonyíték: a tulajdonos
+NAS-án `/mnt/photo/Picasa/Kollázsok` — és az angol korszak
+`…\Picasa\Collages` mappája is ott van mellette.)* A mappa
+`.picasa.ini`-jébe a Picasa `P2category=Projects (internal)` sort ír —
+ettől jelenik meg az album a **Projektek** gyűjtőben.
+
+#### 2. A fájlnév: a FORRÁSMAPPA CÍME, nem „kollázs"
+
+A név kiválasztása (mindkét mentőben azonos, pl. `0x0083c7b0`–`0x0083c83c`):
+
+1. **Ha egy korábban mentett kollázst szerkesztünk újra** (állapot
+   `[obj+0x14] == 3`, és a neve nem „autosave"): a név a kollázs saját,
+   adatbázisban tárolt címe (`[obj+0x16c]`), a cél pedig az **eredeti
+   útvonala** (`[obj+0x13c]`) — a „Meglévő cseréje" válasz esetén.
+2. **Új kollázsnál**: `0x0087db30` — az **éppen nyitott mappa/album
+   címét** kéri le az adatbázisból (a nézet `[+0xeac]→[+0x3c0]`
+   azonosítójával, a `vt[0x48]+0x18` cím-lekérdezővel). *(Élő bizonyíték:
+   a NAS-on a kollázsfájl neve „2010-08-01 Sátor alkatrész.jpg" — pontosan
+   a forrásmappa címe.)* A `0x0087db30` a mappa **dátumát is** lekéri és
+   formázza (`ytDateTime::Format2`), de a fájlnévhez a hívó ezt NEM
+   használja fel.
+3. **Tartalék**: ha a cím üres vagy használhatatlan, a tő a
+   `stringres("il_collagefilename")` = EN „collage" / HU **„kollázs"**
+   (`0x0083c7d7`).
+4. **Tisztítás**: `0x009946f0` — szóközök és pontok levágása a szélekről,
+   és védelem a DOS-eszköznevek ellen (`aux`, `con`, `nul`, `prn`).
+
+#### 3. Ütközéskor számozás: `%s%lu` — szóköz NÉLKÜL
+
+Az egyedivé tétel a `0x00993030`: ha a `név.jpg` létezik, sorban
+`név1.jpg`, `név2.jpg`, … A formátum szó szerint **`"%s%lu"`**
+(`0xcd8d5c`) — a tő és a szám között **nincs szóköz, nincs zárójel**.
+Legfeljebb 4096 próba (`0x009930d2`, `cmp ebx, 0x1000`). *(Élő
+bizonyíték: a NAS-on „…Exp test.jpg" mellett „…Exp test1.jpg".)*
+
+#### 4. Atomi írás: tmp-fájlok, átnevezés — előbb a `.cxf`, aztán a `.jpg`
+
+1. Ideiglenes nevek a `0x009a40d0`-ból: `"%.4u%.4u%s"` —
+   `GetCurrentThreadId()` + egy második számláló (erős feltevés:
+   `GetTickCount`) + a `.jpg.tmp` / `.cxf.tmp` utótag; létezés-ellenőrzés
+   `GetFileAttributes`-szel.
+2. A **JPEG** a tmp-be íródik a `0x009d6010`-zel, a paraméterblokk
+   `{1, 4, 0x5a}` — a harmadik mező a **90-es JPEG-minőség**
+   (`0x0083c14b`; az automentés 640×480-as helykitöltője ugyanígy,
+   de `0x55` = 85-tel készül, `0x0068a7f6`).
+3. A **`.cxf`** (a szerkeszthető specifikáció) ugyanazzal a névtővel,
+   ugyanabba a mappába íródik (`0x00834700` írja a tmp-be).
+4. Átnevezés a véglegesre (`0x00994400`, paraméterei `(tmp, végleges,
+   1, 5)`): **előbb a `.cxf`** (`0x0083c2e3`), **aztán a `.jpg`**
+   (`0x0083c31b`) — ha a spec-írás elhasal, nem marad árva JPEG.
+5. A kész JPEG-re a Picasa **rárakja a `FILE_ATTRIBUTE_TEMPORARY`
+   (0x100) attribútumot** (`GetFileAttributes` → `or 0x100` →
+   `SetFileAttributes`; végleges mentés: `0x0083c3b8`–`0x0083c3d1`,
+   piszkozat: `0x0083cda5`, helykitöltő: `0x0068a81f`). A TÉNY
+   megerősített; a *célja* nem megállapított (nyitott kérdés).
+
+#### 5. Ami a mentés UTÁN történik — ez is a törvény része
+
+A **végleges** mentés (`0x0083ba60`) záró lépései sorban:
+
+1. az új JPEG indexelése a `indexonlyreadonly` paranccsal (`0x0083c404`);
+2. miniatűr-/adatbázis-munka (`0x0088b0a0`, `0x008390e0`);
+3. **a kollázs-lap magát zárja be**: a panel „Bezárás" gombját nyomja
+   meg programból (`0x009cd8a0(panel, "collagepanel/cancelbutton")`),
+   előtte `[panel+0x18] = 1` — a mentetlen-módosítás kérdés **elnyomva**;
+4. **`locate` parancs az új fájlra** (`0x0083c509`) — a könyvtár
+   **odaugrik a kész kollázshoz** a Kollázsok albumban.
+
+A **piszkozat**-mentés (`0x0083c5b0`) ehhez képest: `indexonly`-val
+indexel (nem readonly), **nem** zárja a lapot és **nem** ugrik sehova —
+a hívó (`0x0082c0a0`) zárja a lapot a maga útján.
+
+A `0x0083ce90` (Létrehozás-belépő) a mentés ELŐTT: képhiány-üzenet
+(9.1); asztali háttérképnél formátum-összevetés a képernyővel
+(`GetSystemMetrics(0/1)`, oldalarány-hányadosok egészosztásos
+összehasonlítása, `0x0083cf3d`–`0x0083cf5b`); a függőben lévő
+„CollageAutosave" háttérfeladat törlése (`0x9b3950` név szerinti keresés
+→ `0x97ae70` leállítás); és a renderelés felső mérete: **0x1400 = 5120**
+egység két példányban (`0x0083d050`) megy tovább a mentőnek — a kész
+JPEG hosszabbik oldala legfeljebb 5120 képpont *(erős; a pontos
+felhasználását a renderelőben nem követtük végig)*. Siker után
+`0x008421a0`: az automentés-állapot takarítása (`collage::lastautosave`).
+
+#### 6. Az „Asztali háttérkép" második fele: `picasabackground.bmp`
+
+A kollázs a Kollázsok albumba **ugyanúgy elmentődik**; a háttérképpé
+tétel a kész-értesítés kezelőjéből (`0x0088a020`, itt él a
+`collage::done` „A kollázs kész (kattintson ide)" szöveg is) hívott
+**`0x0057aa10`**-ben történik:
+
+```
+<Képek>\Picasa\<stringres("CThumbUI::BackgroundsFolder")>   ; EN "Backgrounds" / HU "Hátterek"
+  \picasabackground.bmp                                     ; BMP-be konvertálva
+HKCU\Control Panel\Desktop\  →  Wallpaper, WallpaperStyle, TileWallpaper
+SystemParametersInfo(SPI_SETDESKWALLPAPER)
+```
+
+**Bizonyítottsági fok az egész 9.1/b-re: megerősített**, kivéve ahol
+jelölve („erős": a tmp-név második számlálója; az 5120 pontos
+szemantikája). A `FILE_ATTRIBUTE_TEMPORARY` célja **nyitott**.
+
 ### 9.2 A lap bezárása és az újramentés — két külön kérdés
 
 **Bezáráskor**, ha van mentetlen módosítás (`CCollageUI::ConfirmCloseTitle`
@@ -862,11 +1004,18 @@ menetben).
 **Ami tényleg nyitva maradt** *(a 2026-08-18-i második kör után már csak
 három, és egyik sem igényel futó Picasát)*:
 
-**Egyetlen kérdés maradt az egész lapon:** mit kapcsol a képesség-maszk
-**6. bitje**? A helye megvan — a kollázs-csomópont `+0x219`
-tulajdonságát állítja (`0x00860470`), amit a keretrendszer a
-`0x009e2aa5`-nél olvas —, a jelentése nem. *(A `spec[0x30]` és az
-`addclips` zárja 2026-08-18-án lezárult, ld. 9.0 és 8.)*
+**Nyitott kérdések** *(a 2026-08-18-i kimenet-kör után)*:
+
+1. mit kapcsol a képesség-maszk **6. bitje**? A helye megvan — a
+   kollázs-csomópont `+0x219` tulajdonságát állítja (`0x00860470`), amit
+   a keretrendszer a `0x009e2aa5`-nél olvas —, a jelentése nem. *(A
+   `spec[0x30]` és az `addclips` zárja 2026-08-18-án lezárult, ld. 9.0
+   és 8.)*
+2. **mi a célja a `FILE_ATTRIBUTE_TEMPORARY`-nak** a kész kollázs-JPEG-en
+   (9.1/b 4. pont)? A tény három helyen bizonyított, a szándék nem.
+3. az **5120-as felső méret** pontos szemantikája a renderelőben
+   (9.1/b 5. pont) — a konstans megvan, az útja a `0x0087dcd0`-n belül
+   nincs végigkövetve.
 
 ---
 
@@ -890,6 +1039,13 @@ tulajdonságát állítja (`0x00860470`), amit a keretrendszer a
   **1024 egység** (`0xcf3f68 = 1/1024`).
 - **Nem** igaz, hogy a témánkénti panelkülönbségek külön UI-kódból
   jönnek: egyetlen bitmaszk vezérli őket (`0x00831750`).
+- **Nem** igaz, hogy a mentéshez fájlválasztó tartozna: az EXE egyetlen
+  fájldialógus-csomagolóját (`0x009b16f0`) a kollázs-alrendszer egyetlen
+  függvénye sem hívja (teljes xref-tábla, negatív bizonyíték). A nevet és
+  a mappát a program adja (9.1/b).
+- **Nem** igaz, hogy a kimeneti fájl neve „kollázs.jpg" volna: a tő a
+  **forrásmappa címe**; az „il_collagefilename" = „kollázs" csak üres cím
+  esetén tartalék (9.1/b 2.).
 - **Nem** igaz, hogy a kikommentezett `#ring` / `#chicklet` rajzok
   halottak: a panelfából vannak kivéve, de a gyűrű a felhasználó
   képernyőképén ott van — ezek kódból rajzolt overlay-elemek. (A
