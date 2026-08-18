@@ -38,6 +38,8 @@ stb.) reagál, amiket itt közvetlenül állítunk elő a `message` property és
 
 from __future__ import annotations
 
+import time
+
 from PySide6.QtCore import (
     Property,
     QObject,
@@ -92,6 +94,24 @@ class _ControllerStub(QObject):
     @Slot("QVariant", str, int, float)
     def exportMovie(self, indexes, target, height, seconds):
         pass
+
+
+def _wait_for(qt_app, feltetel, masodperc: float = 3.0) -> bool:
+    """Esemény-pörgetés, amíg a feltétel teljesül (vagy lejár az idő).
+
+    A `Dialog` megnyitása után az elrendezés NEM azonnal fut le: egyetlen
+    `processEvents()` után a tördelő `Text` még az egysoros állapotában van.
+    Valódi kijelzőn ez véletlenül gyorsabb, fejnélküli (offscreen) CI-ben
+    viszont nem — a #918 első köre pontosan ezen bukott el mindkét CI-lábon
+    (a magasság 12–14 px maradt, azaz egyetlen sor).
+    """
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        if feltetel():
+            return True
+        qt_app.processEvents()
+        time.sleep(0.01)
+    return feltetel()
 
 
 def _view(qt_app, qml: str, width: int = 800, height: int = 600):
@@ -224,17 +244,21 @@ class TestCreateResultDialogRendersALongMessageSensibly:
 
         dialog.setProperty("message", _LONG_MESSAGE)
         dialog.metaObject().invokeMethod(dialog, "open")
-        qt_app.processEvents()
+        # az elrendezést KI KELL VÁRNI — ld. `_wait_for` docstringje
+        _wait_for(qt_app, lambda: (text_item.property("lineCount") or 0) > 1)
 
         width = text_item.width()
         assert 0 < width <= 400, (
             f"a szöveg kirajzolt szélessége {width:.0f} px — nem korlátos, "
             "tördelt sávban jelenik meg (#918)"
         )
-        # hosszú, tördelt szöveg TÖBB sorba kerül — a magassága jóval
-        # meghaladja egyetlen sor magasságát (~Theme.fontSize * 1.x)
-        assert text_item.height() > 40, (
-            f"a szöveg kirajzolt magassága {text_item.height():.0f} px — "
-            "úgy tűnik, nem tördelt, hanem egyetlen (túl széles) sorba "
-            "került"
+        # A tördelés bizonyítéka a SOROK SZÁMA, nem a képpont-magasság: a
+        # betűméret platformfüggő (a #918 első köre 14 px-t mért Linuxon és
+        # 12-t Windowson), ezért a beégetett px-küszöb önmagában is hibás
+        # mérce volt. A `lineCount` közvetlenül azt mondja ki, amit a teszt
+        # állítani akar: több sorba került-e a szöveg.
+        sorok = text_item.property("lineCount")
+        assert sorok is not None and sorok > 1, (
+            f"a szöveg {sorok} sorba került — nem tördelt, hanem egyetlen "
+            f"(túl széles) sorba (szélesség: {width:.0f} px) (#918)"
         )
