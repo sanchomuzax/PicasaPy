@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.78] – 2026-08-18
+
+### Hozzáadva
+- **A kollázs saját LAP lett, nem párbeszédablak (#944).** Megjelent a
+  dokumentum-fülsáv: a „Könyvtár" mellett külön fülön él a kollázs, oda-vissza
+  lehet váltani, és a könyvtár közben megőrzi a helyét. A lap bezárása
+  rákérdez, ha mentetlen módosítás van — piszkozatként mentheted, elvetheted,
+  vagy nyitva hagyhatod.
+
 ## [0.7.77] – 2026-08-18
 
 ### Új
