@@ -250,8 +250,18 @@ Item {
         event.accepted = true
     }
 
-    // A mentetlen módosítás háromgombos megerősítése a #949-é; addig a
-    // bezárás közvetlen.
+    // A lap bezárásának EGYETLEN útja — a gomb, az Esc és a mentés utáni
+    // önzáródás mind ide fut be.
+    //
+    // Ez nem stílus kérdése: a `picasa-kollazs-felulet.md` 9.1/b szerint a
+    // sikeres mentés után a program MAGA nyomja meg a „Bezárás" gombot
+    // (`0x009cd8a0(panel, "collagepanel/cancelbutton")`), a mentetlen-
+    // módosítás kérdését elnyomva. Aki a #949-ben az automatikus zárást
+    // megírja, EZT hívja — ne szülessen mellé második bezárási út, mert
+    // akkor a megerősítés két helyen kerülne (vagy nem kerülne) elnyomásra.
+    //
+    // Maga a háromgombos megerősítés (Piszkozat mentése / Módosítások
+    // elvetése / Mégse) a #949 hatóköre; addig a bezárás közvetlen.
     function requestClose() {
         if (panel.controller)
             panel.controller.closeCollage()
