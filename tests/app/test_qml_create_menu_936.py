@@ -1,4 +1,21 @@
-"""#936 — a menüpontról indítva NYÍLJON meg a kollázs-párbeszéd.
+"""#936 — a menüpontról indítva NYÍLJON meg a kollázs (és a film).
+
+## ⚠️ #985: a KOLLÁZS célpontja megváltozott — a lap, nem a párbeszéd
+
+Ez a fájl eredetileg azt állította, hogy a Létrehozás ▸ Képkollázs… a
+`collageDialog` **modális ablakot** nyitja meg. A `kollazs-panel-ui-spec.md`
+**3.2**-es táblája ezt kifejezetten teendőként sorolja fel:
+„modálist nyit → **a lapot nyitja meg**". A #920-as sorozat (#942–#949)
+megépítette a lapot, a #985 pedig bekötötte — a menüpont mostantól a
+**Kollázs lapot** nyitja.
+
+A két kollázs-teszt ezért a célponton változott: a menü jelzésétől indul
+továbbra is, de a KIMENET a megnyílt lap (`controller.collageOpen`) és a
+látható panel. A film ága érintetlen: az továbbra is párbeszéd.
+
+A `movieDialog` melletti `collageDialog` komponens egyelőre a helyén marad
+(`CreateDialogs.qml`), csak nem ez a belépési útja — a leszerelése külön
+jegy.
 
 ## Miért nem fogta meg ezt a #922 hat tesztje
 
@@ -39,18 +56,25 @@ def _menusor(window):
 
 
 class TestMenuJelzesVegigmegy:
-    def test_a_menusor_jelzese_MEGNYITJA_a_kollazs_parbeszedet(self, qml_app, qt_app):
-        """A valódi út: a menüsor jelzését sütjük el, nem a párbeszédet hívjuk."""
+    def test_a_menusor_jelzese_MEGNYITJA_a_kollazs_LAPOT(self, qml_app, qt_app):
+        """A valódi út: a menüsor jelzését sütjük el, nem a panelt hívjuk.
+
+        #985: a kimenet a megnyílt LAP (spec 3.2), nem a régi modális
+        párbeszéd."""
         window, controller, lib, engine = qml_app
         window.setProperty("selectedIndexes", [0, 1])
-        dialog = window.findChild(QObject, "collageDialog")
-        assert dialog.property("visible") is False
+        window.setProperty("selectedIndex", 0)
+        assert controller.property("collageOpen") is False
 
         _menusor(window).metaObject().invokeMethod(_menusor(window), "collageRequested")
         _settle(qt_app, 3)
 
-        assert dialog.property("visible") is True, (
+        assert controller.property("collageOpen") is True, (
             "a menüsor jelzésének nincs kezelője — a kattintás a semmibe megy"
+        )
+        panel = window.findChild(QObject, "collagePanel")
+        assert panel is not None and panel.property("visible") is True, (
+            "a Kollázs lap nem látszik a menüpont után"
         )
 
     def test_a_menusor_jelzese_MEGNYITJA_a_film_parbeszedet(self, qml_app, qt_app):
@@ -61,12 +85,15 @@ class TestMenuJelzesVegigmegy:
         _settle(qt_app, 3)
         assert dialog.property("visible") is True
 
-    def test_kijeloles_NELKUL_is_megnyilik_es_megmondja(self, qml_app, qt_app):
-        """#922 + #936 együtt: a menüből, forrás nélkül is történik valami."""
+    def test_kijeloles_NELKUL_is_megnyilik_a_lap(self, qml_app, qt_app):
+        """#922 + #936 + #985: a menüből, forrás nélkül is történik valami.
+
+        Spec 3.2 utolsó bekezdése: forrás nélkül a lap **akkor is megnyílik**,
+        üres vászonnal — a felhasználó ne egy néma menüpontot kapjon."""
         window, controller, lib, engine = qml_app
         window.setProperty("selectedIndexes", [])
-        dialog = window.findChild(QObject, "collageDialog")
+        window.setProperty("selectedIndex", -1)
         _menusor(window).metaObject().invokeMethod(_menusor(window), "collageRequested")
         _settle(qt_app, 3)
-        assert dialog.property("visible") is True
-        assert window.findChild(QObject, "collageNoSourceHint").property("visible") is True
+        assert controller.property("collageOpen") is True
+        assert controller.property("collageClipCount") == 0

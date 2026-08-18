@@ -37,6 +37,7 @@ from . import formatting
 from .appearance_controller import AppearanceMixin
 from .batch_effect_controller import BatchEffectMixin
 from .busy_registry import get_app_busy_registry
+from .collage_controller import CollageMixin
 from .language_controller import LanguageMixin
 from .create_controller import CreateMixin
 from .custom_aspect_ratios_controller import CustomAspectRatiosMixin
@@ -96,6 +97,14 @@ class AppController(
     AppearanceMixin,
     LanguageMixin,
     CreateMixin,
+    # #985: a Kollázs-LAP vezérlője (#920 sorozat). A `CollageMixin` maga
+    # örökli a `CollageSaveMixin`-t (`class CollageMixin(CollageSaveMixin)`,
+    # a #949 vágta ketté a 1122 sorossá hízott fájlt), ezért itt EGY bázist
+    # sorolunk fel, nem kettőt — a mentés-szelet vele együtt érkezik, és a
+    # `test_collage_panel_wiring_985.py` mindkét `isinstance`-t állítja.
+    # A szelet a saját állapotát lustán hozza létre (`_ensure_collage_panel`),
+    # tehát az `__init__`-hez — ehhez a FORRÓ fájlhoz — nem kell nyúlni.
+    CollageMixin,
     GeoMixin,
     LibraryMixin,
     # #26 (3. lépcső): a bal hasáb Emberek gyűjteménye — a `PeopleMixin`

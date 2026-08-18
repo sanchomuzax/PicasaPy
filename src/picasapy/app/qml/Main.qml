@@ -50,6 +50,12 @@ ApplicationWindow {
         dark: Theme.shadeDark
     }
 
+    // #985: a globális `controller` egy KONTEXTUS-property, a `CollagePanel`
+    // viszont saját `controller` property-t deklarál (hogy a komponens-
+    // tesztekben becserélhető legyen). A `controller: controller` sor ezért
+    // önmagára kötne (kötési hurok) — ez az álnév oldja fel, egy helyen.
+    readonly property var appController: controller
+
     property int thumbSize: 144
     property int selectedIndex: -1        // horgony (utoljára kattintott)
     property var selectedIndexes: []      // a teljes kijelölés
@@ -81,6 +87,57 @@ ApplicationWindow {
     // a jobbklikkelt kép sora (#15) — a kontextusmenü egyedi műveleteinek
     // (átnevezés, fájlkezelő) célpontja
     property int fileOpTargetRow: -1
+
+    // -- Dokumentum-lapok (#985; a sáv maga a #944) -------------------------
+    //
+    // Az eredetiben a kollázs NEM párbeszédablak, hanem SAJÁT LAP a fülsávban
+    // (`panelroot/collagetab`), a „Könyvtár" lapja mellett — ld.
+    // `docs/specs/kollazs-panel-ui-spec.md` 3.1. Ma egyetlen projekt-laptípus
+    // van, a kollázs; a lista mégis lista, mert a sáv szerződése az.
+    readonly property string collageTabId: "collage"
+    readonly property var openProjectTabs:
+        (controller && controller.collageOpen)
+            ? [{
+                id: window.collageTabId,
+                title: qsTr("Collage"),
+                modified: controller.collageDirty === true
+              }]
+            : []
+
+    // A „Vissza a kollázshoz" gomb csak a „Továbbiak..." után jelenik meg
+    // (spec 4.3/13.): az eredeti is AKKOR rakja a könyvtár lapjára.
+    property bool backToCollagePrompted: false
+
+    // A kollázs forrása a mai `_sources_for` szabályt követi (#455): ha a
+    // képtálcán van kép, AZ a forrás, egyébként a rács kijelölése.
+    //
+    // ⚠️ A tálca mappákon átnyúlik, a `openCollage` viszont RÁCS-SOROKAT vár
+    // (#943 API). A jelenlegi mappán kívüli tálcaképeket ezért nem tudjuk
+    // átadni — olyankor a kijelölésre esünk vissza. Az útvonal-alapú
+    // megnyitás külön jegy; itt szándékosan nem építünk mellé második
+    // forrás-szabályt.
+    function collageSourceRows() {
+        if (!controller) return []
+        var held = controller.heldPaths || []
+        var rows = []
+        for (var i = 0; i < held.length; ++i) {
+            var row = controller.photos.rowOfPath(String(held[i]))
+            if (row >= 0) rows.push(row)
+        }
+        if (rows.length > 0) return rows
+        return window.selectedRows()
+    }
+
+    /** A Kollázs LAP megnyitása — a Létrehozás menü és a tálca gombja is ide
+        fut be (spec 3.2). Ha már nyitva van, csak visszaváltunk rá: a
+        felhasználó munkáját újranyitással eldobni némán adatvesztés volna. */
+    function openCollageTab() {
+        if (!controller) return
+        window.backToCollagePrompted = false
+        if (!controller.collageOpen)
+            controller.openCollage(window.collageSourceRows())
+        documentTabStrip.activateTab(window.collageTabId)
+    }
 
     // a kijelölt sorok listája (#12) — több-kijelölés, vagy ha az nincs,
     // az utoljára kattintott kép
@@ -390,7 +447,11 @@ ApplicationWindow {
         // menüpont elsütötte a jelzést, és az a semmibe ment. Az
         // egyetlen kezelő a képtálca sávján ült (`trayBar`), ezért
         // onnan indítva működött, a menüből nem.
-        onCollageRequested: createDialogs.openCollage()
+        // #985: a menüpont mostantól a KOLLÁZS LAPOT nyitja meg, nem a
+        // korábbi modális párbeszédet (spec 3.2: „modálist nyit → a lapot
+        // nyitja meg"). A `CreateDialogs` kollázs-ága egyelőre a helyén
+        // marad — a leszerelése külön jegy.
+        onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.openMovie()
         onExportRequested: exportDialogs.openForSelection()
         onLocateRequested: {
@@ -650,10 +711,51 @@ ApplicationWindow {
         }
     }
 
+    // #985: a dokumentum-fülsáv (#944) a tartalomterület TETEJÉN, az
+    // eszköztár alatt. Nyitott projekt-lap nélkül a magassága 0, tehát a mai
+    // elrendezés egyetlen képponttal sem csúszik el — ezt a
+    // `test_collage_panel_wiring_985.py` külön állítja.
+    DocumentTabStrip {
+        id: documentTabStrip
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+
+        projectTabs: window.openProjectTabs
+
+        // A néző és az Időrend a TELJES ablakot fedi; ilyenkor a sáv se ne
+        // látsszon, se ne foglaljon helyet (a komponens `height`-kötését
+        // ezért írjuk felül, nem csak a `visible`-t).
+        visible: documentTabStrip.hasProjectTabs
+                 && !window.viewerOpen && !window.timelineOpen
+        height: documentTabStrip.visible ? documentTabStrip.savMagassag : 0
+
+        onCloseAccepted: function(tabId, saveDraft) {
+            if (!controller || tabId !== window.collageTabId) return
+            // A háromgombos kérdés már eldőlt (#944); itt csak a
+            // következményt hajtjuk végre — a piszkozat a Kollázsok albumba
+            // megy (#949), majd a lap bezárul.
+            if (saveDraft) controller.saveCollageDraft()
+            controller.closeCollage()
+        }
+    }
+
     SplitView {
         id: mainSplit
-        anchors.fill: parent
+        objectName: "mainSplit"
+        // #985: a `anchors.fill: parent` négy horgonyra bomlik, hogy a
+        // tartalom a fülsáv ALATT kezdődjön. Üres sávnál a sáv magassága 0,
+        // tehát `documentTabStrip.bottom === parent.top` — a mai elrendezés
+        // képpontra ugyanaz marad.
+        anchors.top: documentTabStrip.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        // A Könyvtár lapjának tartalma. NEM `Loader.active`: a lap váltásakor
+        // a feed nem semmisülhet meg, különben elveszne a görgetési helye és
+        // a kijelölése (a #944 kimérte, a #985 tesztje állítja).
         visible: !window.viewerOpen && !window.timelineOpen
+                 && documentTabStrip.libraryActive
         orientation: Qt.Horizontal
 
         // #322: látható, fogható elválasztó. A Fusion alap-fogantyúja olyan
@@ -1092,6 +1194,52 @@ ApplicationWindow {
         }
     }
 
+    // #985: a Kollázs LAP tartalma — a Könyvtár lapjának TESTVÉRE, ugyanazon
+    // a helyen. Az eredetiben a `panelroot/collagetab` a `panelroot/picasatab`
+    // testvére, tehát a kollázs a mappapanellel EGYÜTT váltja le a könyvtárat
+    // (`picasa-kollazs-felulet.md` 8.: a „Továbbiak..." visszavált a
+    // `picasatab`-ra). A panel a saját bal hasábját hozza magával.
+    CollagePanel {
+        id: collagePanel
+        anchors.top: documentTabStrip.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        visible: !window.viewerOpen && !window.timelineOpen
+                 && documentTabStrip.activeTabId === window.collageTabId
+        // az álnév a kötési hurkot kerüli ki (ld. `appController`)
+        controller: window.appController
+        librarySelection: window.selectedIndexes
+
+        // spec 4.3/13.: a panel csak JELEZ, a fülváltás a gazdáé
+        onGetMoreClipsRequested: {
+            window.backToCollagePrompted = true
+            documentTabStrip.activateTab(documentTabStrip.libraryTabId)
+        }
+    }
+
+    // A „Vissza a kollázshoz" gomb (`collagepanel::back_to_collage`): a
+    // „Továbbiak..." után a KÖNYVTÁR lapján jelenik meg, a kollázs lapja
+    // közben nyitva marad (`picasa-kollazs-felulet.md` 8.).
+    PicasaButton {
+        objectName: "backToCollageButton"
+        z: 80
+        visible: window.backToCollagePrompted
+                 && documentTabStrip.hasProjectTabs
+                 && documentTabStrip.libraryActive
+                 && !window.viewerOpen && !window.timelineOpen
+        text: qsTr("Back to Collage")
+        accent: Theme.picasaGreen
+        anchors.top: documentTabStrip.bottom
+        anchors.topMargin: 8
+        anchors.right: parent.right
+        anchors.rightMargin: 24
+        onClicked: {
+            window.backToCollagePrompted = false
+            documentTabStrip.activateTab(window.collageTabId)
+        }
+    }
+
     // #209: lebegő „Importálás" folyamat-panel — jobb oldalt lebeg, húzható;
     // a néző felett is látszik (a szkennelés közben is lehet dolgozni),
     // csak a diavetítés (z:100) takarja
@@ -1278,8 +1426,9 @@ ApplicationWindow {
         appWindow: window
         viewerIndex: photoViewer.currentIndex
         onExportRequested: exportDialogs.openForSelection()
-        // #361: kollázs/film a tálca ikonjairól is (CreateDialogs, #29)
-        onCollageRequested: createDialogs.openCollage()
+        // #361: kollázs/film a tálca ikonjairól is; #985: a kollázs innen is
+        // a LAPOT nyitja (spec 3.2) — egy belépési út, nem kettő
+        onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.openMovie()
     }
 

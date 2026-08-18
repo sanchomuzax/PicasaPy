@@ -2983,6 +2983,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>Main</name>
     <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Collage</source>
+        <translation>Kollázs</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml"/>
+        <source>Back to Collage</source>
+        <translation>Vissza a kollázshoz</translation>
+    </message>
+    <message>
         <source>Reset Faces</source>
         <translation>Arcok alaphelyzetbe állítása</translation>
     </message>
