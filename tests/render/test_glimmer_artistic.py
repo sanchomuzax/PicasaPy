@@ -65,3 +65,14 @@ class TestPicnikGrain:
     def test_grain_0_kis_hatasu(self, image):
         result = a.apply_picnik_grain(image, grain=0.0, lighten=False)
         assert result.shape == image.shape
+
+    def test_mag_nelkul_fuggetlen(self, image):
+        """#907: alap `seed=None` esetén két hívás FÜGGETLEN mintát ad."""
+        first = a.apply_picnik_grain(image, grain=20.0)
+        second = a.apply_picnik_grain(image, grain=20.0)
+        assert not np.array_equal(first, second)
+
+    def test_explicit_mag_reprodukalhato(self, image):
+        first = a.apply_picnik_grain(image, grain=20.0, seed=3)
+        second = a.apply_picnik_grain(image, grain=20.0, seed=3)
+        np.testing.assert_array_equal(first, second)

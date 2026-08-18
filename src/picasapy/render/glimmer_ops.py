@@ -393,11 +393,16 @@ def inner_glow(
 
 
 def noise_layer(
-    height: int, width: int, seed: int, low: float, high: float, grayscale: bool
+    height: int, width: int, seed: int | None, low: float, high: float, grayscale: bool
 ) -> np.ndarray:
-    """`Noise`: egyenletes eloszlású zajréteg float32 [0,255], `seed`-del
-    determinisztikus (a Picasa saját PRNG-je nem publikus — a determinisztikus
-    reprodukálhatóság a lényeg, nem a bitre azonos zajminta).
+    """`Noise`: egyenletes eloszlású zajréteg float32 [0,255].
+
+    `seed`-del determinisztikus/reprodukálható (golden tesztekhez);
+    `seed=None` esetén `numpy.random.default_rng(None)` valódi, futásidejű
+    entrópiából húz — minden hívás FÜGGETLEN mintát ad (#907: az eredeti
+    Picasa PRNG-je sem publikus, és két egymás utáni alkalmazás nála sem
+    ad azonos mintát — a determinisztikus reprodukálhatóság csak a
+    magadott `seed` mellett cél, nem a bitre azonos zajminta).
     """
     rng = np.random.default_rng(seed)
     if grayscale:
@@ -408,14 +413,19 @@ def noise_layer(
 
 def apply_noise(
     image: np.ndarray,
-    seed: int,
     low: float,
     high: float,
     grayscale: bool,
     blend_alpha: float,
     blend_mode: BlendMode,
+    seed: int | None = None,
 ) -> np.ndarray:
-    """Zajréteg generálása és `blend_mode`/`blend_alpha` szerinti keverése."""
+    """Zajréteg generálása és `blend_mode`/`blend_alpha` szerinti keverése.
+
+    `seed=None` (alap) esetén a zaj FÜGGETLEN minden hívásnál (#907) — a
+    hívó csak akkor adjon explicit `seed`-et, ha determinisztikus,
+    reprodukálható kimenet kell (pl. golden teszt).
+    """
     validate_image(image)
     height, width = image.shape[:2]
     noise = noise_layer(height, width, seed, low, high, grayscale)

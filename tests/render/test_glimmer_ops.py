@@ -347,6 +347,13 @@ class TestNoiseAndGradient:
         second = g.apply_noise(image, seed=5, low=0, high=50, grayscale=True, blend_alpha=1.0, blend_mode="multiply")
         np.testing.assert_array_equal(first, second)
 
+    def test_zaj_mag_nelkul_fuggetlen(self, image):
+        """#907: `seed` nélkül (alapértelmezés) minden hívás FÜGGETLEN
+        mintát ad — az eredeti Picasa PRNG-jéhez hasonlóan."""
+        first = g.apply_noise(image, low=0, high=50, grayscale=True, blend_alpha=1.0, blend_mode="multiply")
+        second = g.apply_noise(image, low=0, high=50, grayscale=True, blend_alpha=1.0, blend_mode="multiply")
+        assert not np.array_equal(first, second)
+
     def test_gradient_map_vegpontok(self):
         black = np.zeros((4, 4, 3), dtype=np.uint8)
         white = np.full((4, 4, 3), 255, dtype=np.uint8)

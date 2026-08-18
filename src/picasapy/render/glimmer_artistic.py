@@ -64,20 +64,26 @@ def apply_pixelate(image, impact: float = 20.0, fade: float = 0.0):
     return to_uint8(alpha_blend(to_float(image), to_float(pixelated), fade_alpha(fade)))
 
 
-def apply_picnik_grain(image, grain: float = 10.0, lighten: bool = False):
+def apply_picnik_grain(image, grain: float = 10.0, lighten: bool = False, seed: int | None = None):
     """`PicnikGrain=1,Grain,Lighten` — szürke zaj, `Lighten` esetén
     `[0, 2,55·Grain]` tartományon `lighten` móddal, egyébként
     `[255−2,55·Grain, 255]` tartományon `darken` móddal (a `BlendMode`
     csúszka `7`/`5` indexeit a `Lighten` jelölő NEVE alapján a `lighten`/
     `darken` blend-módra képezzük — a `filterdesc.xml` konkrét mód-index
     → névtáblát nem közli). Nincs Fade.
+
+    `seed` alapból `None` (#907): a zajminta FÜGGETLEN minden alkalmazásnál,
+    mint az eredeti Picasánál. Csak tesztelési célra adj explicit `seed`-et,
+    ha determinisztikus/reprodukálható kimenet kell.
     """
     validate_image(image)
     if lighten:
         low, high, mode = 0.0, 2.55 * grain, "lighten"
     else:
         low, high, mode = 255.0 - 2.55 * grain, 255.0, "darken"
-    return apply_noise(image, seed=1, low=low, high=high, grayscale=True, blend_alpha=1.0, blend_mode=mode)
+    return apply_noise(
+        image, low=low, high=high, grayscale=True, blend_alpha=1.0, blend_mode=mode, seed=seed
+    )
 
 
 __all__ = ["apply_boost", "apply_soften", "apply_pixelate", "apply_picnik_grain"]

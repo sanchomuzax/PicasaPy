@@ -172,10 +172,15 @@ _SIXTIES_GREEN = ((0.0, 0.0), (22.0, 22.0), (150.0, 166.0), (255.0, 216.0))
 _SIXTIES_BLUE = ((0.0, 0.0), (9.0, 9.0), (126.0, 98.0), (255.0, 231.0))
 
 
-def apply_sixties(image, rounded: bool = True, color=(255, 255, 255), fade: float = 20.0):
+def apply_sixties(
+    image, rounded: bool = True, color=(255, 255, 255), fade: float = 20.0, seed: int | None = None
+):
     """`Sixties=1,Fade,szín,Rounded` — `AutoFix` → csatornagörbék → 235–255
     szürke szemcse (0,6 multiply) → Fade-keverés → (halványítatlan)
     `min(W,H)/14` sarok-lekerekítés, ha `Rounded`.
+
+    `seed` alapból `None` (#907): a szemcse FÜGGETLEN minden alkalmazásnál.
+    Csak tesztelési célra adj explicit `seed`-et.
     """
     from picasapy.render.glimmer_frame_ops import round_corners
 
@@ -185,7 +190,7 @@ def apply_sixties(image, rounded: bool = True, color=(255, 255, 255), fade: floa
         fixed, master=_SIXTIES_MASTER, red=_SIXTIES_RED, green=_SIXTIES_GREEN, blue=_SIXTIES_BLUE
     )
     noised = apply_noise(
-        curved, seed=5, low=235.0, high=255.0, grayscale=True, blend_alpha=0.6, blend_mode="multiply"
+        curved, low=235.0, high=255.0, grayscale=True, blend_alpha=0.6, blend_mode="multiply", seed=seed
     )
     blended = to_uint8(alpha_blend(to_float(image), to_float(noised), fade_alpha(fade)))
     if not rounded:
@@ -220,10 +225,15 @@ def apply_heatmap(image, hue: float = 0.0, fade: float = 0.0):
 _NIGHTVISION_COLORS = ((0, 0, 0), (0x57, 0xCC, 0x29))
 
 
-def apply_nightvision(image, brightness: float = 0.0, contrast: float = 0.0, fade: float = 0.0):
+def apply_nightvision(
+    image, brightness: float = 0.0, contrast: float = 0.0, fade: float = 0.0, seed: int | None = None
+):
     """`NightVision=1,Brightness,Contrast,Fade` — `AutoFix` → fekete→zöld
     `GradientMap` → belső ragyogás → színes zaj (lighten, 0,2 alfa) →
     fényerő/kontraszt → Fade-keverés.
+
+    `seed` alapból `None` (#907): a szemcse FÜGGETLEN minden alkalmazásnál.
+    Csak tesztelési célra adj explicit `seed`-et.
     """
     from picasapy.render.glimmer_ops import gradient_map
 
@@ -234,7 +244,7 @@ def apply_nightvision(image, brightness: float = 0.0, contrast: float = 0.0, fad
     radius = clamp_glow_radius(35.0 * 0.02 * max(height, width) / 3.0)
     glowed = inner_glow(mapped, (0, 0, 0), radius, radius, 1.5, alpha=1.0)
     noised = apply_noise(
-        glowed, seed=30, low=0.0, high=180.0, grayscale=False, blend_alpha=0.2, blend_mode="lighten"
+        glowed, low=0.0, high=180.0, grayscale=False, blend_alpha=0.2, blend_mode="lighten", seed=seed
     )
     matrixed = simple_color_matrix(noised, brightness=brightness, contrast=contrast)
     return to_uint8(alpha_blend(to_float(image), to_float(matrixed), fade_alpha(fade)))

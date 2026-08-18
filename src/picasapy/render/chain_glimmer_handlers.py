@@ -92,12 +92,13 @@ def apply_crossprocess_op(image, op: FilterOp):
     return tone.apply_crossprocess(image, fade=_float_at(op, 0, 0.0))
 
 
-def apply_sixties_op(image, op: FilterOp):
+def apply_sixties_op(image, op: FilterOp, seed: int | None = None):
     return tone.apply_sixties(
         image,
         fade=_float_at(op, 0, 20.0),
         color=_color_at(op, 1, (255, 255, 255)),
         rounded=_bool_at(op, 2, True),
+        seed=seed,
     )
 
 
@@ -105,12 +106,13 @@ def apply_heatmap_op(image, op: FilterOp):
     return tone.apply_heatmap(image, hue=_float_at(op, 0, 0.0), fade=_float_at(op, 1, 0.0))
 
 
-def apply_nightvision_op(image, op: FilterOp):
+def apply_nightvision_op(image, op: FilterOp, seed: int | None = None):
     return tone.apply_nightvision(
         image,
         brightness=_float_at(op, 0, 0.0),
         contrast=_float_at(op, 1, 0.0),
         fade=_float_at(op, 2, 0.0),
+        seed=seed,
     )
 
 
@@ -134,11 +136,11 @@ def apply_quantizepalette_op(image, op: FilterOp):
 # --- Creative ---------------------------------------------------------------
 
 
-def apply_cinemascope_op(image, op: FilterOp):
+def apply_cinemascope_op(image, op: FilterOp, seed: int | None = None):
     # A jelölő polaritása NYITOTT (docs/specs/filters-decoded.md, „Nyitva"):
     # a filterdesc alapértéke „true", a mért minta mégis Cinemascope=1,0 —
     # itt az ini-értéket egyenes leképezéssel vesszük át (0=ki, 1=be).
-    return creative.apply_cinemascope(image, letterbox=_bool_at(op, 0, True))
+    return creative.apply_cinemascope(image, letterbox=_bool_at(op, 0, True), seed=seed)
 
 
 def apply_orton_op(image, op: FilterOp):
@@ -156,9 +158,13 @@ def apply_pencil_sketch_op(image, op: FilterOp):
     )
 
 
-def apply_holga_op(image, op: FilterOp):
+def apply_holga_op(image, op: FilterOp, seed: int | None = None):
     return creative.apply_holga(
-        image, blur=_float_at(op, 0, 70.0), grain=_float_at(op, 1, 30.0), fade=_float_at(op, 2, 0.0)
+        image,
+        blur=_float_at(op, 0, 70.0),
+        grain=_float_at(op, 1, 30.0),
+        fade=_float_at(op, 2, 0.0),
+        seed=seed,
     )
 
 
@@ -189,8 +195,10 @@ def apply_pixelate_op(image, op: FilterOp):
     return artistic.apply_pixelate(image, impact=max(2.0, _float_at(op, 0, 20.0)), fade=_float_at(op, 2, 0.0))
 
 
-def apply_picnik_grain_op(image, op: FilterOp):
-    return artistic.apply_picnik_grain(image, grain=_float_at(op, 0, 10.0), lighten=_bool_at(op, 1, False))
+def apply_picnik_grain_op(image, op: FilterOp, seed: int | None = None):
+    return artistic.apply_picnik_grain(
+        image, grain=_float_at(op, 0, 10.0), lighten=_bool_at(op, 1, False), seed=seed
+    )
 
 
 # --- Frames (MÉRETNÖVELŐ) ----------------------------------------------------

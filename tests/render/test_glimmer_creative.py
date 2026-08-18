@@ -48,6 +48,17 @@ class TestCinemascope:
         result = c.apply_cinemascope(image, letterbox=True)
         assert tuple(result[0, result.shape[1] // 2]) == (0, 0, 0)
 
+    def test_mag_nelkul_fuggetlen(self, image):
+        """#907: alap `seed=None` esetén két hívás FÜGGETLEN mintát ad."""
+        first = c.apply_cinemascope(image, letterbox=False)
+        second = c.apply_cinemascope(image, letterbox=False)
+        assert not np.array_equal(first, second)
+
+    def test_explicit_mag_reprodukalhato(self, image):
+        first = c.apply_cinemascope(image, letterbox=False, seed=3)
+        second = c.apply_cinemascope(image, letterbox=False, seed=3)
+        np.testing.assert_array_equal(first, second)
+
 
 class TestOrton:
     @pytest.mark.parametrize("bloom,brightness,fade", [(0.0, 0.0, 0.0), (25.0, 50.0, 0.0), (50.0, 100.0, 100.0)])
@@ -85,6 +96,17 @@ class TestHolga:
         img = rng.integers(20, 235, size=(height, width, 3), dtype=np.uint8)
         result = c.apply_holga(img)
         assert result.mean() > 5.0
+
+    def test_mag_nelkul_fuggetlen(self, image):
+        """#907: alap `seed=None` esetén két hívás FÜGGETLEN mintát ad."""
+        first = c.apply_holga(image)
+        second = c.apply_holga(image)
+        assert not np.array_equal(first, second)
+
+    def test_explicit_mag_reprodukalhato(self, image):
+        first = c.apply_holga(image, seed=3)
+        second = c.apply_holga(image, seed=3)
+        np.testing.assert_array_equal(first, second)
 
 
 class TestLomo:

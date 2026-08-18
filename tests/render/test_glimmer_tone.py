@@ -127,6 +127,17 @@ class TestSixties:
         result = t.apply_sixties(image, fade=0.0, rounded=True, color=(1, 2, 3))
         assert tuple(result[0, 0]) == (1, 2, 3)
 
+    def test_mag_nelkul_fuggetlen(self, image):
+        """#907: alap `seed=None` esetén két hívás FÜGGETLEN mintát ad."""
+        first = t.apply_sixties(image, rounded=False)
+        second = t.apply_sixties(image, rounded=False)
+        assert not np.array_equal(first, second)
+
+    def test_explicit_mag_reprodukalhato(self, image):
+        first = t.apply_sixties(image, rounded=False, seed=3)
+        second = t.apply_sixties(image, rounded=False, seed=3)
+        np.testing.assert_array_equal(first, second)
+
 
 class TestHeatMap:
     @pytest.mark.parametrize("hue,fade", [(-180.0, 0.0), (0.0, 0.0), (180.0, 100.0)])
@@ -146,6 +157,17 @@ class TestNightVision:
 
     def test_fade_100_valtozatlan(self, image):
         np.testing.assert_array_equal(t.apply_nightvision(image, fade=100.0), image)
+
+    def test_mag_nelkul_fuggetlen(self, image):
+        """#907: alap `seed=None` esetén két hívás FÜGGETLEN mintát ad."""
+        first = t.apply_nightvision(image)
+        second = t.apply_nightvision(image)
+        assert not np.array_equal(first, second)
+
+    def test_explicit_mag_reprodukalhato(self, image):
+        first = t.apply_nightvision(image, seed=3)
+        second = t.apply_nightvision(image, seed=3)
+        np.testing.assert_array_equal(first, second)
 
 
 class TestVignetteMatteNightVisionRealPhoto504510:

@@ -256,11 +256,11 @@ def _apply_finetune_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
-def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # A grain2 sztochasztikus (véletlen mag); az élő előnézetben viszont
-    # rögzített maggal futtatjuk (seed=0), hogy egy változatlan lánc újra-
-    # renderelésekor a szemcse ne "villogjon" — a spec elfogadási teszthez
-    # (statisztikai) ez nem szükséges, csak az UI-élmény miatt választott mag.
+def _apply_grain_op(image: np.ndarray, op: FilterOp, seed: int | None = None) -> np.ndarray:
+    # A grain2 sztochasztikus (véletlen mag) — az eredeti Picasa minden
+    # alkalmazásnál FÜGGETLEN mintát ad (#907, mérve: két egymás utáni
+    # `grain2` a szórást √2-szeresre növeli, NEM duplázza). A `seed` itt a
+    # `apply_filters`-től kapott láncbeli POZÍCIÓ — ld. `_SEED_AWARE_OPS`.
     #
     # Ugyanez a handler szolgálja ki a `grain` (v1) bejegyzést is (#347
     # lezáró audit, 2026-08-06): a filterdesc-regiszter szerint a `grain`
@@ -270,7 +270,7 @@ def _apply_grain_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # külön golden-mérés, ezért ez KÖZELÍTÉS (a már mért grain2-modell
     # újrahasznosítása) — ugyanaz a minta, mint a glow/glow2,
     # unsharp/unsharp2, finetune/finetune2 v1/v2 párosításoknál.
-    return apply_grain(image, seed=0)
+    return apply_grain(image, seed=seed)
 
 
 def _effect_float(op: FilterOp, index: int, default: float) -> float:
@@ -634,6 +634,15 @@ _FRAME_EFFECTS = frozenset(
     key for key, spec in FILTER_REGISTRY.items() if spec.resizes
 ) & _HANDLERS.keys()
 
+#: Szemcsét/zajt alkalmazó effektek (#907): a `_HANDLERS` bejegyzésük
+#: opcionális `seed`-et fogad, amit `apply_filters` a láncbeli
+#: POZÍCIÓJUKKAL tölt ki — független minta effektenként, de determinisztikus
+#: egy változatlan lánc újra-renderelésekor.
+_SEED_AWARE_OPS = frozenset(
+    {"grain", "grain2", "cinemascope", "holga", "sixties", "nightvision", "picnikgrain"}
+)
+
+
 def can_render_filter(name: str) -> bool:
     """Van-e a `name` szűrőnévhez VALÓDI vizuális modellünk (#571)?
 
@@ -659,9 +668,10 @@ def apply_filters(
     `picasapy.ini.retouch` docsztring) — valódi Picasa-eredetű, régió nélküli
     `retouch=1;` bejegyzésnél no-op.
 
-    A `grain2` rögzített maggal (seed=0) renderel (#20): a Picasa szemcséje
-    véletlen magos, pixelhűen nem reprodukálható — a determinisztikus mag az
-    előnézet-villogást kerüli el, statisztikailag a spec szerinti a kimenet.
+    A szemcsés/zajos effektek (`_SEED_AWARE_OPS`) a láncbeli POZÍCIÓJUKAT
+    kapják magként (#907, korábban #20): két egymás utáni alkalmazás
+    FÜGGETLEN mintát ad (mérve: a szórás √2-szeresre nő, nem duplázódik),
+    egy változatlan lánc újra-renderelése mégis determinisztikus marad.
 
     A nem támogatott (ismeretlen nevű) szűrőket szándékosan némán kihagyja
     (részleges előnézet). Ismert nevű, de hibás/hiányos paraméterű bejegyzés
@@ -707,16 +717,16 @@ def apply_filters(
     range_warnings: list[str] = []
     legacy_warnings: list[str] = []
     crop_op: FilterOp | None = None
-    frame_ops: list[FilterOp] = []
-    for op in ops:
+    frame_ops: list[tuple[int, FilterOp]] = []
+    for index, op in enumerate(ops):
         key = op.name.casefold()
         if key == "crop64":
             crop_op = op  # csak az effektív (utolsó) crop64 számít
             continue
         if key in _FRAME_EFFECTS:
-            # a keret a vágás UTÁN kerül a képre (#330) — a lánc szerinti
-            # sorrendjüket egymás közt megtartva
-            frame_ops.append(op)
+            # a keret a vágás UTÁN kerül a képre (#330); az eredeti
+            # pozíciót is visszük (#907: a `cinemascope` szemcséjének kell)
+            frame_ops.append((index, op))
             continue
         if key in _NOOP_MARKERS:
             # boolean jelző-token (#347/#382), nem effekt — érvényes no-op,
@@ -746,7 +756,10 @@ def apply_filters(
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
         try:
-            result = handler(result, op)
+            if key in _SEED_AWARE_OPS:
+                result = handler(result, op, seed=index)  # #907
+            else:
+                result = handler(result, op)
         except Exception:
             # Ismert nevű, de hibás paraméterű bejegyzés: a lánc többi tagja
             # ettől még lefusson (#301) — a hiba nem tűnik el nyomtalanul.
@@ -761,12 +774,16 @@ def apply_filters(
             )
             skipped.append(crop_op.name)
     # keretek legvégül, a már kivágott képre (#330)
-    for op in frame_ops:
-        handler = _HANDLERS[op.name.casefold()]
+    for index, op in frame_ops:
+        key = op.name.casefold()
+        handler = _HANDLERS[key]
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
         try:
-            result = handler(result, op)
+            if key in _SEED_AWARE_OPS:
+                result = handler(result, op, seed=index)
+            else:
+                result = handler(result, op)
         except Exception:
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)

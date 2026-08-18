@@ -197,6 +197,48 @@ class TestApplyFilters:
         assert skipped == ()
 
 
+class TestGrainFuggetlenMagIsmeteltAlkalmazasnal:
+    """#907: a szemcse zajmintája FÜGGETLEN alkalmazásonként — a korábbi
+    fix mag (seed=0) két egymás utáni `grain2`-nél kétszeres amplitúdót
+    adott, az eredeti Picasánál mérten viszont a szórás csak √2-szeresre
+    nő (ΔE 1,804 → 2,671, ld. a #907 jegy számítását)."""
+
+    def test_ketszeri_grain_a_szorast_gyok2_szeresre_noveli(self) -> None:
+        # Homogén (nulla belső szórású) kép: a kimeneti szórás TISZTÁN a
+        # hozzáadott zajból jön, így a duplázódás/√2-szereződés
+        # számszerűen elválik.
+        image = np.full((300, 300, 3), 128, dtype=np.uint8)
+        single, _ = apply_filters(image, (FilterOp("grain2", ("1",)),))
+        double, _ = apply_filters(
+            image, (FilterOp("grain2", ("1",)), FilterOp("grain2", ("1",)))
+        )
+        single_sigma = float(single.astype(np.float64).std())
+        double_sigma = float(double.astype(np.float64).std())
+        ratio = double_sigma / single_sigma
+        # független minta esetén az arány √2 (~1,414); azonos mag (a
+        # javítás előtti hiba) esetén 2,0 lenne.
+        assert ratio == pytest.approx(math.sqrt(2), rel=0.15)
+        assert ratio < 1.8
+
+    def test_lancbeli_ket_grain_kulonbozo_magot_kap(self) -> None:
+        from picasapy.render.chain import _apply_grain_op
+
+        base = np.full((20, 20, 3), 128, dtype=np.uint8)
+        first = _apply_grain_op(base, FilterOp("grain2", ("1",)), seed=0)
+        second = _apply_grain_op(base, FilterOp("grain2", ("1",)), seed=1)
+        assert not np.array_equal(first, second)
+
+    def test_valtozatlan_lanc_ujrarendereleset_determinisztikus(self) -> None:
+        # A pozíció-alapú mag (#907) NEM jelent valódi véletlent: ugyanaz
+        # a lánc kétszer lerenderelve azonos eredményt ad — az élő
+        # előnézet nem "villog".
+        image = np.full((40, 40, 3), 128, dtype=np.uint8)
+        ops = (FilterOp("grain2", ("1",)), FilterOp("grain2", ("1",)))
+        first, _ = apply_filters(image, ops)
+        second, _ = apply_filters(image, ops)
+        np.testing.assert_array_equal(first, second)
+
+
 class TestApplyFiltersHibatoleranciaja:
     """#301: az ismert nevű, de hibás/hiányos paraméterű bejegyzés a lánc
     TÖBBI TAGJÁT nem viszi magával — csak ő maga marad ki, kivétel nem

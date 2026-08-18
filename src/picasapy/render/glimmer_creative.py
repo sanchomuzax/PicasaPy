@@ -47,12 +47,15 @@ _CINEMA_RED = ((0.0, 0.0), (111.0, 141.0), (255.0, 255.0))
 _CINEMA_BLUE = ((0.0, 0.0), (136.0, 121.0), (255.0, 255.0))
 
 
-def apply_cinemascope(image, letterbox: bool = True):
+def apply_cinemascope(image, letterbox: bool = True, seed: int | None = None):
     """`Cinemascope=1,Letterbox` — 1,7:1 középvágás → 95%-os függőleges
     zsugorítás → `AutoFix` → `Saturation −25` → görbék → szemcse (0,08 =
     225–245 tartomány, szorzó) → felül-alul fekete letterbox-sáv
     (`0,15·cropHeight`). Letterbox kikapcsolva: nincs vágás/zsugorítás,
     csak a görbék/szemcse fut, sáv nélkül. **MEGVÁLTOZTATJA A KÉP MÉRETÉT.**
+
+    `seed` alapból `None` (#907): a szemcse FÜGGETLEN minden alkalmazásnál.
+    Csak tesztelési célra adj explicit `seed`-et.
     """
     validate_image(image)
     height, width = image.shape[:2]
@@ -65,7 +68,7 @@ def apply_cinemascope(image, letterbox: bool = True):
     matrixed = simple_color_matrix(fixed, saturation=-25.0)
     curved = adjust_curves(matrixed, master=_CINEMA_MASTER, red=_CINEMA_RED, blue=_CINEMA_BLUE)
     noised = apply_noise(
-        curved, seed=0, low=225.0, high=245.0, grayscale=True, blend_alpha=1.0, blend_mode="multiply"
+        curved, low=225.0, high=245.0, grayscale=True, blend_alpha=1.0, blend_mode="multiply", seed=seed
     )
     if not letterbox:
         return noised
@@ -127,11 +130,14 @@ def apply_pencil_sketch(image, radius: float = 2.0, contrast: float = 100.0, fad
 # --- Holga / Lomo ------------------------------------------------------------
 
 
-def apply_holga(image, blur: float = 70.0, grain: float = 30.0, fade: float = 0.0):
+def apply_holga(image, blur: float = 70.0, grain: float = 30.0, fade: float = 0.0, seed: int | None = None):
     """`Holga=1,Blur,Grain,Fade` — körkörös maszk (`innerR=0,9·R`,
     `outerR=(2−Blur/100)·R`) → `AutoFix` → belső ragyogás (fekete, 1,4) →
     maszkolt elmosás (18×20) → `#ff6666` tintelt B&W → kontraszt +25 →
     szemcse (`low=255−round(Grain/200·255)`, szorzó 0,6).
+
+    `seed` alapból `None` (#907): a szemcse FÜGGETLEN minden alkalmazásnál.
+    Csak tesztelési célra adj explicit `seed`-et.
     """
     validate_image(image)
     height, width = image.shape[:2]
@@ -152,7 +158,7 @@ def apply_holga(image, blur: float = 70.0, grain: float = 30.0, fade: float = 0.
     matrixed = simple_color_matrix(tinted, contrast=25.0)
     low = max(0.0, 255.0 - round(grain / 200.0 * 255.0))
     noised = apply_noise(
-        matrixed, seed=5, low=low, high=255.0, grayscale=True, blend_alpha=0.6, blend_mode="multiply"
+        matrixed, low=low, high=255.0, grayscale=True, blend_alpha=0.6, blend_mode="multiply", seed=seed
     )
     return to_uint8(alpha_blend(to_float(image), to_float(noised), fade_alpha(fade)))
 
