@@ -106,12 +106,12 @@ def test_a_negy_bepattinto_parancs():
         "snap_12": 0.0,
         "snap_3": 90.0,
         "snap_6": 180.0,
-        "snap_9": 270.0,
+        "snap_9": -90.0,  # #921: a TÁROLT érték −90, nem 270
     }
 
 
 @pytest.mark.parametrize(
-    ("command", "fok"), [("snap_12", 0), ("snap_3", 90), ("snap_6", 180), ("snap_9", 270)]
+    ("command", "fok"), [("snap_12", 0), ("snap_3", 90), ("snap_6", 180), ("snap_9", -90)]
 )
 def test_a_bepattintas_radiant_ad(command, fok):
     assert snap_theta(command) == pytest.approx(math.radians(fok))
@@ -127,9 +127,10 @@ def test_ismeretlen_bepattinto_parancs():
 
 def test_a_szog_kijelzese_fokban_egeszre_kerekitve():
     """`collage::angle_format` = „Szög: %d" — a `theta` radiánból
-    `*180/π`-vel."""
-    assert angle_caption_degrees(math.radians(12.4)) == 12
-    assert angle_caption_degrees(math.radians(-12.6)) == -13
+    `*180/π`-vel, és #921 óta NEGÁLVA (a Picasa `fchs`-sel fordít a
+    kiírás előtt, `0x00868944`)."""
+    assert angle_caption_degrees(math.radians(12.4)) == -12
+    assert angle_caption_degrees(math.radians(-12.6)) == 13
     assert angle_caption_degrees(0.0) == 0
 
 

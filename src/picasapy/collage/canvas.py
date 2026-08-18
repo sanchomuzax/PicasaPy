@@ -34,11 +34,26 @@ from .fitting import fisher_yates, picasa_round
 T = TypeVar("T")
 
 # A négy „bepattintó" parancs és a hozzájuk tartozó szög fokban.
+#
+# ⚠️ #921: a `snap_9` a binárisban **−90,0** fok, NEM 270. Rajzban a kettő
+# ugyanaz, TÁROLÁSBAN nem: a `.cxf`-be `−1,570796` kerül `4,712389` helyett,
+# tehát a windowsos Picasával való oda-vissza olvasás elcsúszna.
+#
+# A helyi menü „270 fok" felirata (`Rotate::ID_COLLAGE_ALIGN_270`) a
+# MEGJELENÍTETT szöveg, nem a tárolt érték — a kettőt nem szabad
+# összekeverni. A címek:
+#
+# | parancs | érték | cím |
+# |---|---:|---|
+# | `snap_12` | `0.0` (`fldz`) | `0x0082e0e9` |
+# | `snap_3` | `+90.0f` | `0xcf4370`, `0x0082e163` |
+# | `snap_6` | `+180.0f` | `0xcf409c`, `0x0082e1e1` |
+# | `snap_9` | **`−90.0f`** | `0xcf50d0`, `0x0082e25f` |
 SNAP_COMMANDS = {
     "snap_12": 0.0,  # „Align rotation to straight up"
     "snap_3": 90.0,  # „Align rotation to 90 CW"
     "snap_6": 180.0,  # „Align rotation to 180 CW"
-    "snap_9": 270.0,  # „Align rotation to 270 CW"
+    "snap_9": -90.0,  # „Align rotation to 270 CW" — a TÁROLT érték −90
 }
 
 
@@ -131,8 +146,15 @@ def snap_theta(command: str) -> float:
 def angle_caption_degrees(theta: float) -> int:
     """A húzás közben kiírt szög (`collage::angle_format` = „Szög: %d").
 
-    A `theta` radiánban van; a felület `*180/π`-vel váltja fokra."""
-    return picasa_round(math.degrees(theta))
+    A `theta` radiánban van; a felület `*180/π`-vel váltja fokra.
+
+    ⚠️ #921: a Picasa a kiírás ELŐTT **negálja** a szöget (`fchs`,
+    `0x00868944`–`0x00868947`). Vagyis a felhasználó az óramutató járásával
+    EGYEZŐ forgatásnál pozitív számot lát, miközben a belső szög negatív —
+    nálunk eddig előjelhelyesen ment ki, tehát ellenkező előjelű számot
+    mutattunk.
+    """
+    return picasa_round(-math.degrees(theta))
 
 
 def scale_caption_percent(scale: float, base_scale: float) -> int:
