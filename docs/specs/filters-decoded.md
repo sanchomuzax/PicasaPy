@@ -354,8 +354,8 @@ végpontok felé tér el).
 | `fill` | csak gyenge erősségnél jó (1.03–6.56) → **eredeti exportokhoz mérve 1,20–1,77** (2026-08-18) | ✅ jó — a 6,56 túlbecsülte |
 | `glow2` | eltér (2.68) → **közelítés (0,18–1,19)** (#668) | ✅ kész |
 | `radblur` | eltér (3.18) → **közelítés (0,09–0,68)** (#668) | ✅ kész |
-| `Vignette` | eltér (4.65) | ❌ analitikus modell (Nyitva 2) |
-| `ansel` | eltér (5.60) | ❌ |
+| `Vignette` | eltér (4.65) | ✅ analitikus modell MEGVAN · **a zóna ELLIPSZIS — eredeti exportokkal igazolva (2026-08-18)** |
+| `ansel` | eltér (5.60) → **fehér szűrővel 0,53** (#317) | ✅ fehérre kész · ⚠️ SZÍNES szűrőre nincs export |
 | `dir_tint` | eltér (9.36) | ❌ |
 | `tint` | eltér (13.6 a mai mérésben) | ❌ **a fő ok MEGVAN** (#872): a `preserve` skálája −1…255, plusz hiányzó szinthúzás és gamma |
 
@@ -964,7 +964,9 @@ figyelembe veszi a `Preferences/CarefulEnhance` beállítást.
 ### Ami maradt
 
 - a `sat` luminancia-súlyainak csatorna-hozzárendelése (5:1:2);
-- az `ansel` hisztogram utáni lépése;
+- ~~az `ansel` hisztogram utáni lépése~~ — a mért tónusgörbe
+  (`_ANSEL_ANCHOR_CURVE`) fehér szűrővel **0,53**-ra viszi az eltérést
+  (volt 6,11);
 - `dir_tint`, `radsat` számszerű feldolgozása (a nyers kimenet megvan).
 
 **Ezekhez már nem a felhasználó Picasája kell**, hanem a meglévő
@@ -3714,6 +3716,39 @@ rámpa saját peremhatása).
 
 *Bizonyítottsági fok: megerősített* (a négy határ kiszámítása és mindkét
 ciklus feje nyers utasításszinten).
+
+### A vignetta zónája ELLIPSZIS — az eredeti exportjaival igazolva (2026-08-18)
+
+A `#859` azt állította, hogy a mi vignettánk ellipszist rajzol, míg az
+eredetié kör. **A Picasa saját exportjai ezt megcáfolják.**
+
+A privát repó `referencia/vignette/` mappájában **nyolc** eredeti export
+van ugyanarról a képről (2560 × 1702 — erősen nem négyzetes, tehát a
+kérdés jól mérhető). A próba geometria-független: minden képpontra
+kiszámoltuk a **megfigyelt erősítést** (kimenet/bemenet), sugár szerint
+rekeszekbe raktuk, és megnéztük a **rekeszen belüli szórást**. Amelyik
+geometria a valódi, abban a szórásnak el kell tűnnie.
+
+| export | szórás ELLIPSZIS sugárral | szórás KÖR sugárral |
+|---|---|---|
+| Vignette default | **0,0485** | 0,0775 |
+| Vignette fade mid | **0,0331** | 0,0452 |
+| Vignette size max | **0,0407** | 0,0754 |
+| Vignette strenght max | **0,0628** | 0,1042 |
+| Vignette strenght mid | **0,0514** | 0,0830 |
+| Vignette strenght min | **0,0378** | 0,0583 |
+
+Mind a hat informatív exportnál az **ellipszis** magyarázza jobban a
+mérést, nagyjából **40 %-kal kisebb szórással**. A mai
+`_radius_grid(…, 0.5, 0.5)` (tengelyenként külön normálás) tehát **helyes**.
+
+> **Két export nem informatív:** a `Vignette fade max` és a
+> `Vignette size min` **bájtra azonos a bemenettel** — vagyis maximális
+> elhalványításnál és minimális méretnél a Picasa vignettája
+> **nem csinál semmit**. Ez a paramétertartomány kalibrálásához hasznos.
+
+*Bizonyítottsági fok: **megerősített** — eredeti Picasa-exportokból,
+geometria-független módszerrel.*
 
 ## A `dir_tint` (Graduated Tint) visszafejtve (2026-08-16, #874)
 
