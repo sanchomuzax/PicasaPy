@@ -428,6 +428,43 @@ szűkítsen-e (ld. 4/c és a #897).
 
 *Bizonyítottsági fok: megerősített.*
 
+## 4/f A helyi menük LELTÁRA — melyik menü melyik felületrészé (2026-08-18)
+
+A menük **erőforrásnévvel** épülnek (ugyanaz a minta, mint a kollázsnál).
+A binárisból kiszedve, a **birtokló függvénnyel** együtt:
+
+| erőforrásnév | birtokló függvény | felületrész |
+|---|---|---|
+| `filmstripcontext` | `0x005ba010` | a filmszalag |
+| `ThumbUIOutput::AlbumMenu` · `FolderMenu` | `0x00537fb0` | a bélyegkép-rács — **album és mappa KÜLÖN menü** |
+| `albumbutton_menu` | `0x005de8e0` | album-gomb |
+| `CThumbUI::locatemenu` · `locateondiskmenu` | `0x0056c5a0` | a rács „Megkeresés" almenüje |
+| `collagenode_context_single` | `0x0082cb50` | kollázs: **egy** kép |
+| `collagenode_context_group` | `0x0082cb50` | kollázs: **több** kép |
+| `collagenode_context_document` | `0x0082cb50` | kollázs: a **vászon** |
+| `collagenode_context` | `0x0062cda0` | a kollázs-menük gyökere |
+| `acquirepanel/delete_menu` · `import_from_menu` | `0x005154f0` | importálás |
+| `acquirepanel/subfolder_menu` · `import_folder_menu` | `0x00517f90` | importálás |
+| `editpanel/crop_aspect_menu` | `0x005d3290` | a vágó arány-választója |
+| `publish/backup_set_menu` | `0x005d3290` | biztonsági mentés |
+| `publish/picsizemenu` | `0x0040bf70` | közzététel |
+| `uploadsize_menu` | `0x007a0830` | feltöltés |
+| `webalbums_menu` | `0x007aa080` | webalbumok |
+| `map_menu` | `0x0064e900` | térkép |
+
+**Két tanulság a listából:**
+
+- A **rácsnak két külön helyi menüje van**: `AlbumMenu` és `FolderMenu` —
+  ugyanaz a felület, de album- és mappanézetben **más** a menü.
+- A **kollázs vászon-menüje `collagenode_context_document`**, és a
+  **Többszörös exponálás témánál el van nyomva**: a kezelő
+  (`0x0082d3af`–`0x0082d3d0`) lekérdezi a téma kulcsát, és `multiexp`
+  esetén **más ágra ugrik**, nem nyitja meg. Ez független megerősítése a
+  képesség-maszk 4. bitjének (`multiexp` → nincs kijelölés) — két külön
+  kódút mondja ugyanazt.
+
+*Bizonyítottsági fok: megerősített a leltárra és a `multiexp`-elnyomásra.*
+
 ## 5. Húzás, ejtés, gumikeret
 
 | osztály (RTTI) | vtable | mire |

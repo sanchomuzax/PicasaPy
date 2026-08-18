@@ -515,7 +515,8 @@ Jobb egérgomb (5. esemény) a `CollageNodeHandler`-ben (`0x00860c5d`,
 **`collagenode_context_group`** — több kijelölt kép (`0x007347a0`),
 **három** tétel: Eltávolítás · Szegély módosítása · Forgatás igazítása.
 
-**A vászon menüje** (`0x007348f0`), **négy** tétel:
+**A vászon menüje** — az erőforrásneve **`collagenode_context_document`**
+(`0x0082d37e`), a tételeit a `0x007348f0` építi. **Négy** tétel:
 Az összes kijelölése · Az összes kijelölés megszüntetése ·
 Képek összekeverése (`Shuffle Pictures`) ·
 **Képek szétszórása** (`Scatter Pictures`).
@@ -524,6 +525,16 @@ Képek összekeverése (`Shuffle Pictures`) ·
 > **gomb** felirata „Scramble Collage" / **Véletlenszerű kollázs**, a
 > **menütételé** „Scatter Pictures" / **Képek szétszórása**. Nem
 > elírás — a két erőforrás külön szöveget tart.
+
+> ⚠️ **A vászon-menü a Többszörös exponálás témánál EL VAN NYOMVA**
+> (2026-08-18). A kezelő (`0x0082d3af`–`0x0082d3d0`) lekérdezi a téma
+> kulcsát, és `multiexp` esetén más ágra ugrik — nem nyitja meg. Ez
+> független megerősítése a képesség-maszk 4. bitjének (`multiexp` →
+> nincs kijelölés): két külön kódút mondja ugyanazt.
+>
+> A menü-erőforrások teljes leltára (mind a tizenhat, felületrészenként) a
+> [`picasa-eger-es-kijeloles.md`](picasa-eger-es-kijeloles.md) **4/f**
+> szakaszában.
 
 **Két almenü:**
 
