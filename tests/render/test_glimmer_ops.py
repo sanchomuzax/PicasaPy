@@ -360,6 +360,143 @@ class TestNoiseAndGradient:
         assert result.shape == image.shape and result.dtype == np.uint8
 
 
+class TestSimpleColorMatrixSaturation:
+    """#903: a `SimpleColorMatrix` telítettség-ága Haeberli-színmátrix,
+    aszimmetrikus csúszkával — nem sima Rec.601 luma-tartó erősítés."""
+
+    def test_pozitiv_oldal_haromszoros_k(self):
+        """+20 → k = 1,60 (NEM 1,20 — a régi, hibás képlet)."""
+        assert g._telitettseg_k(20.0) == pytest.approx(1.6)
+
+    def test_negativ_oldal_egyszeres_k(self):
+        """−25 → k = 0,75 (a negatív ág skálázása változatlan)."""
+        assert g._telitettseg_k(-25.0) == pytest.approx(0.75)
+
+    def test_hatarertekek(self):
+        assert g._telitettseg_k(100.0) == pytest.approx(4.0)
+        assert g._telitettseg_k(-100.0) == pytest.approx(0.0)
+
+    def test_matrix_egzakt_kimenet_pozitiv_oldalon(self):
+        """A teljes 3×3 Haeberli-mátrixot egy tetszőleges, nem szürke
+        képponton, a képlettől FÜGGETLENÜL számolt várt értékkel vetjük
+        össze — ha a mátrix vagy a súlyok eltérnek, ez elüt."""
+        pixel = np.array([[[200, 100, 50]]], dtype=np.uint8)
+        result = g.simple_color_matrix(pixel, saturation=20.0)
+        r, gr, b = 200.0, 100.0, 50.0
+        k = 1.6
+        w = 1.0 - k
+        rw, gw, bw = w * 0.3086, w * 0.6094, w * 0.0820
+        vart = np.array(
+            [
+                (k + rw) * r + gw * gr + bw * b,
+                rw * r + (k + gw) * gr + bw * b,
+                rw * r + gw * gr + (k + bw) * b,
+            ]
+        )
+        np.testing.assert_allclose(result[0, 0].astype(np.float64), np.clip(np.round(vart), 0, 255), atol=1.0)
+
+    def test_teljes_szurke_haeberli_sullyal_nem_rec601(self):
+        """−100-nál a szürke a Haeberli-súlyokból jön, nem a Rec.601-ből —
+        a kettő ezen a tiszta piroson jól szétválik."""
+        pixel = np.array([[[255, 0, 0]]], dtype=np.uint8)
+        result = g.simple_color_matrix(pixel, saturation=-100.0)
+        haeberli_gray = round(0.3086 * 255)
+        rec601_gray = round(0.299 * 255)
+        assert haeberli_gray != rec601_gray
+        assert abs(int(result[0, 0, 0]) - haeberli_gray) <= 1
+        assert result[0, 0, 0] == result[0, 0, 1] == result[0, 0, 2]
+
+    def test_nincs_telitettseg_valtozatlan(self, image):
+        result = g.simple_color_matrix(image, saturation=None)
+        np.testing.assert_array_equal(result, image)
+
+
+class TestSimpleColorMatrixContrast:
+    """#904: 101 elemű táblázatos kontraszt-görbe, 63,5-ös forgáspont,
+    korai kilépés kis `k`-nál."""
+
+    def test_k_csuszka_35(self):
+        assert 1.0 + g._kontraszt_gorbe(35.0) == pytest.approx(1.56, abs=0.01)
+
+    def test_k_csuszka_50(self):
+        assert 1.0 + g._kontraszt_gorbe(50.0) == pytest.approx(2.00, abs=0.005)
+
+    def test_k_csuszka_100(self):
+        assert 1.0 + g._kontraszt_gorbe(100.0) == pytest.approx(11.00, abs=0.005)
+
+    def test_negativ_ag_zart_keplet(self):
+        assert 1.0 + g._kontraszt_gorbe(-40.0) == pytest.approx(0.6)
+        assert 1.0 + g._kontraszt_gorbe(-100.0) == pytest.approx(0.0)
+
+    def test_forgaspont_63_5(self):
+        """A forgáspont 63,5, NEM 128 — ugyanaz a szürke, más eredmény."""
+        pixel = np.array([[[163, 163, 163]]], dtype=np.uint8)
+        result = g.simple_color_matrix(pixel, contrast=50.0)  # k = 2,00
+        assert result[0, 0, 0] == 255  # 63.5 + 2*(163-63.5) = 262.5 -> vágva
+
+    def test_kis_kontraszt_korai_kilepes_valtozatlan(self):
+        """`|k − 1| < eps` esetén a művelet TÉTLEN — a kép bitre azonos marad."""
+        rng = np.random.default_rng(3)
+        image = rng.integers(20, 235, size=(6, 6, 3), dtype=np.uint8)
+        result = g.simple_color_matrix(image, contrast=1e-8)
+        np.testing.assert_array_equal(result, image)
+
+    def test_negativ_100_egyenletes_szurke(self):
+        rng = np.random.default_rng(5)
+        image = rng.integers(0, 255, size=(8, 8, 3), dtype=np.uint8)
+        result = g.simple_color_matrix(image, contrast=-100.0)
+        assert result.std() == 0
+        assert abs(int(result[0, 0, 0]) - 64) <= 1  # k=0 -> R' = 63.5
+
+    def test_tabla_101_elemu(self):
+        assert len(g._KONTRASZT_TABLA) == 101
+        assert g._KONTRASZT_TABLA[0] == pytest.approx(0.0)
+        assert g._KONTRASZT_TABLA[50] == pytest.approx(1.0)
+        assert g._KONTRASZT_TABLA[100] == pytest.approx(10.0)
+
+    def test_linearis_interpolacio_tablasorok_kozott(self):
+        """0,5-ös csúszkánál a 0. és 1. táblaérték felezőpontja jön ki."""
+        vart = (g._KONTRASZT_TABLA[0] + g._KONTRASZT_TABLA[1]) / 2.0
+        assert g._kontraszt_gorbe(0.5) == pytest.approx(vart)
+
+
+class TestSimpleColorMatrixBrightness:
+    """#904: a fényerő közvetlenül adódik hozzá, nincs ×2,55 skálázás."""
+
+    def test_nincs_255_szorzas(self):
+        pixel = np.array([[[100, 100, 100]]], dtype=np.uint8)
+        result = g.simple_color_matrix(pixel, brightness=50.0)
+        assert result[0, 0, 0] == 150
+
+    def test_hatarnal_vagas(self):
+        pixel = np.array([[[240, 240, 240]]], dtype=np.uint8)
+        result = g.simple_color_matrix(pixel, brightness=50.0)
+        assert result[0, 0, 0] == 255
+
+    def test_csuszka_100_fole_vagva(self):
+        pixel = np.array([[[100, 100, 100]]], dtype=np.uint8)
+        result = g.simple_color_matrix(pixel, brightness=500.0)
+        assert result[0, 0, 0] == 200  # clamp(500,-100,100) -> 100 -> 100+100
+
+
+class TestSimpleColorMatrixLinked:
+    """#904: `ContrastAndBrightnessLinked` — külön kódút, 127,5-ös
+    forgásponttal, a `Brightness` a kontraszttal súlyozva hat."""
+
+    def test_forgaspont_127_5(self):
+        pixel = np.array([[[227, 227, 227]]], dtype=np.uint8)
+        result = g.simple_color_matrix(pixel, contrast=50.0, linked=True)  # k=2
+        # t = (k+1)*127.5*0/100 + (127.5 - k*127.5) = 127.5-255 = -127.5
+        # R' = 2*227 - 127.5 = 326.5 -> vágva
+        assert result[0, 0, 0] == 255
+
+    def test_kulonbozik_a_kulon_agtol(self):
+        pixel = np.array([[[150, 150, 150]]], dtype=np.uint8)
+        sep = g.simple_color_matrix(pixel, contrast=20.0, brightness=10.0, linked=False)
+        linked = g.simple_color_matrix(pixel, contrast=20.0, brightness=10.0, linked=True)
+        assert int(sep[0, 0, 0]) != int(linked[0, 0, 0])
+
+
 class TestCircularGradientMask:
     def test_belul_nulla_kivul_egy(self):
         mask = g.circular_gradient_mask(40, 40, 5.0, 15.0)

@@ -183,27 +183,38 @@ class TestHolgaRealPhoto504510:
         )
 
     @pytest.mark.parametrize("effect_name,apply_fn", [("Holga", c.apply_holga), ("Lomo", c.apply_lomo)])
-    def test_a_korlat_FOLOTT_keskenyebb_a_vignetta(self, effect_name, apply_fn):
-        """#504: a korlát fölött a sugár már NEM nő a képmérettel, ezért a
-        vignetta relatíve keskenyebb, és kevesebb a tiszta fekete képpont.
-        Ez a korlát létezésének közvetlen, mérhető következménye — ha valaki
-        visszavenné a `clamp_glow_radius`-t, ez a teszt bukna.
+    def test_a_korlat_csokkenti_a_fekete_aranyat(self, effect_name, apply_fn, monkeypatch):
+        """#504: a korlát fölött a sugár már NEM nő a képmérettel, ezért
+        KEVESEBB a tiszta fekete képpont, mint korlát nélkül lenne — ha
+        valaki visszavenné a `clamp_glow_radius`-t, ez a teszt bukna.
 
-        A tűrés 5,0 → 1,0 pp-re csökkent a #721-es `AutoFix`-változás után
-        (a vágópontok 30%-os keverése a közös érték felé): a Holga belül
-        `AutoFix`-et hív, és a keveréssel jóval kevesebb képpont préselődik
-        tiszta feketére a KIS képen (96 px: 35,1% → 19,2%), a nagy képen
-        pedig alig változik (2560 px: 19,8% → 17,3%). A teszt ereje nem a
-        tűrésben van, hanem az IRÁNYBAN: a korlátot kivéve a 2560 px-es
-        érték **27,6%-ra ugrik**, tehát a kis képé FÖLÉ — az egyszerű
-        „huge < small" reláció önmagában megfogja a regressziót.
+        #903/#904 UTÁN a korábbi, KÉT MÉRET (96 px / 2560 px) közötti
+        „huge < small" összevetés már NEM tartható: a `SimpleColorMatrix`
+        kontraszt-ága most a helyes, ALACSONYABB (63,5) forgáspontú és
+        ERŐSEBB (táblázatos) görbével számol, ez a nagy képen már korlát
+        ALATT is jelentkező, elhanyagolható mennyiségű tiszta feketét
+        (az `AutoFix`/belső ragyogás/maszkolt elmosás lánc mellékterméke)
+        felnagyítja — mérve: Holga 96px=7,4%, 2560px=12,0%, tehát a nagy
+        kép fekete-aránya a kis képé FÖLÉ kerül, FÜGGETLENÜL attól, hogy a
+        korlát dolgozik-e.
+
+        A `clamp_glow_radius` tényleges hatását ezért KÖZVETLENÜL, UGYANAZON
+        a képen, korlát be/ki összevetéssel mérjük (`GLOW_RADIUS_MAX`
+        ideiglenesen óriásira állítva) — ez nem függ a kontraszt
+        forgáspontjától. Mérve (1600×1200-as fotón): Holga korláttal
+        15,1%, korlát nélkül 19,6%; Lomo korláttal 0,03%, korlát nélkül
+        0,50%.
         """
-
-        small = apply_fn(_real_photo_rgb(96, 72))
-        huge = apply_fn(_real_photo_rgb(2560, 1920))
-        assert _black_pct(huge) < _black_pct(small) - 1.0, (
-            f"{effect_name}: a korlát fölött NEM csökkent érdemben a fekete-arány "
-            f"(96px={_black_pct(small):.1f}%, 2560px={_black_pct(huge):.1f}%)"
+        photo = _real_photo_rgb(1600, 1200)
+        clamped = apply_fn(photo)
+        monkeypatch.setattr("picasapy.render.glimmer_ops.GLOW_RADIUS_MAX", 1_000_000.0)
+        unclamped = apply_fn(photo)
+        clamped_pct = _black_pct(clamped)
+        unclamped_pct = _black_pct(unclamped)
+        threshold = clamped_pct + max(0.1, clamped_pct * 0.15)
+        assert unclamped_pct > threshold, (
+            f"{effect_name}: a korlát nem csökkentette érdemben a fekete-arányt "
+            f"(korláttal={clamped_pct:.2f}%, korlát nélkül={unclamped_pct:.2f}%)"
         )
 
     def test_holga_perf_nagy_kepen(self):

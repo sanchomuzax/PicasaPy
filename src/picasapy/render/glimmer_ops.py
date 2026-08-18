@@ -42,6 +42,37 @@ from picasapy.render.curves import (
 
 _REC601_WEIGHTS = (0.299, 0.587, 0.114)
 
+#: A Glimmer `SimpleColorMatrix` (#903) telítettség-ágának luminancia-súlyai
+#: — a klasszikus Haeberli-készlet, NEM Rec.601 és NEM Rec.709. A natív
+#: `0x008f1d00` ezt olvassa be közvetlenül; Rec.601-gyel látható
+#: színeltolás keletkezik (`docs/specs/filterdesc-registry.md` 4.9).
+_HAEBERLI_WEIGHTS = (0.3086, 0.6094, 0.0820)
+
+#: A Glimmer `SimpleColorMatrix` (#904) kontraszt-görbéjének (`0x008f2990`)
+#: pozitív ága ZÁRT KÉPLETTEL NEM közelíthető — a natív kód egy 101 elemű,
+#: kézzel hangolt táblázatból interpolál. A tábla forrása:
+#: `referencia/kontraszt-tabla.csv` (a `sanchomuzax/picasapy-agent` privát
+#: repóban, 101 sor, a `0x00c7d688` címről kimentve — ld. a fenti spec
+#: 4.9-es szakaszát). Index = a csúszka egész része (0..100), az érték a
+#: `kontraszt_gorbe(c)` visszatérési értéke `c` egész pontjaiban.
+_KONTRASZT_TABLA: tuple[float, ...] = (
+    0.00, 0.01, 0.02, 0.04, 0.05, 0.06, 0.07, 0.08, 0.10, 0.11,
+    0.12, 0.14, 0.15, 0.16, 0.17, 0.18, 0.20, 0.21, 0.22, 0.24,
+    0.25, 0.27, 0.28, 0.30, 0.32, 0.34, 0.36, 0.38, 0.40, 0.42,
+    0.44, 0.46, 0.48, 0.50, 0.53, 0.56, 0.59, 0.62, 0.65, 0.68,
+    0.71, 0.74, 0.77, 0.80, 0.83, 0.86, 0.89, 0.92, 0.95, 0.98,
+    1.00, 1.06, 1.12, 1.18, 1.24, 1.30, 1.36, 1.42, 1.48, 1.54,
+    1.60, 1.66, 1.72, 1.78, 1.84, 1.90, 1.96, 2.00, 2.12, 2.25,
+    2.37, 2.50, 2.62, 2.75, 2.87, 3.00, 3.20, 3.40, 3.60, 3.80,
+    4.00, 4.30, 4.70, 4.90, 5.00, 5.50, 6.00, 6.50, 6.80, 7.00,
+    7.30, 7.50, 7.80, 8.00, 8.40, 8.70, 9.00, 9.40, 9.60, 9.80,
+    10.00,
+)
+
+#: `|k − 1| < eps` esetén a kontraszt-lépés TÉTLEN (a natív `0x008f1bd0`
+#: korai kilépése) — #904.
+_CONTRAST_EPS = 1e-6
+
 #: `tint_luma_preserving`: hány kompenzáló menet fusson a gamut-levágás után.
 #: Menetenként legalább egy csatorna véglegesen kifut a tartományból, ezért
 #: három menet a három csatornás esetre elég — a negyedik biztonsági tartalék.
@@ -219,29 +250,108 @@ def autofix(image: np.ndarray) -> np.ndarray:
     return apply_channel_levels_stretch(image)
 
 
+def _telitettseg_k(saturation: float) -> float:
+    """A Haeberli-mátrix `k` erősítése (#903, `0x008f1d00`) — a csúszka
+    ASZIMMETRIKUS: a pozitív oldal háromszoros skálázást kap, a negatív
+    nem. `+100 → k=4,0`, `-100 → k=0,0` (teljes szürke)."""
+    if saturation > 0:
+        return 1.0 + (saturation * 3.0) / 100.0
+    return 1.0 + saturation / 100.0
+
+
+def _saturation_matrix(saturation: float) -> np.ndarray:
+    """A `SimpleColorMatrix` telítettség-ágának teljes 3×3 Haeberli-
+    színmátrixa (#903). A luminancia-súlyok 0,3086/0,6094/0,0820 —
+    NEM Rec.601 (ld. `_HAEBERLI_WEIGHTS` docstringje)."""
+    k = _telitettseg_k(saturation)
+    w = 1.0 - k
+    red_w, green_w, blue_w = _HAEBERLI_WEIGHTS
+    rw, gw, bw = w * red_w, w * green_w, w * blue_w
+    return np.array(
+        [
+            [k + rw, gw, bw],
+            [rw, k + gw, bw],
+            [rw, gw, k + bw],
+        ],
+        dtype=np.float32,
+    )
+
+
+def _kontraszt_gorbe(c: float) -> float:
+    """`kontraszt_gorbe` (#904, `0x008f2990`): negatív oldalon zárt képlet
+    (`c/100`), pozitív oldalon a 101 elemű `_KONTRASZT_TABLA`-ból lineáris
+    interpolációval — SEMMILYEN zárt képlet nem illeszkedik rá (a legjobb
+    exponenciális illesztés 0,64-gyel téved), ezért a táblát kell átvenni.
+    """
+    if c == 0.0:
+        return 0.0
+    if c < 0.0:
+        return c / 100.0
+    if c >= 100.0:
+        return _KONTRASZT_TABLA[100]
+    i = int(c)
+    f = c - i
+    if f < 1e-9:
+        return _KONTRASZT_TABLA[i]
+    return (1.0 - f) * _KONTRASZT_TABLA[i] + f * _KONTRASZT_TABLA[i + 1]
+
+
+def _kontraszt_alkalmaz(image_f: np.ndarray, contrast: float) -> np.ndarray:
+    """A KÜLÖN kontraszt-ág (#904, `0x008f1bd0`): a forgáspont **63,5**,
+    nem 128 — `t = (1-k)·127·0,5`. `|k-1| < eps` esetén a művelet tétlen
+    (a natív korai kilépése)."""
+    c = float(np.clip(contrast, -100.0, 100.0))
+    k = 1.0 + _kontraszt_gorbe(c)
+    if abs(k - 1.0) < _CONTRAST_EPS:
+        return image_f
+    t = (1.0 - k) * 127.0 * 0.5
+    return np.float32(k) * image_f + np.float32(t)
+
+
+def _kontraszt_fenyero_egyuttes(
+    image_f: np.ndarray, contrast: float, brightness: float
+) -> np.ndarray:
+    """A `ContrastAndBrightnessLinked` ág (#904, `0x008f2040`) — KÜLÖN
+    kódút, nem a különálló kontraszt+fényerő egymás után alkalmazva: a
+    forgáspont **127,5** (a valódi középszürke), és a fényerő-tag súlya a
+    kontraszttól függ (`(k+1)·127,5/100`), tehát erős kontraszt mellett a
+    fényerő is erősebben hat."""
+    c = float(np.clip(contrast, -100.0, 100.0))
+    b = float(np.clip(brightness, -100.0, 100.0))
+    k = 1.0 + _kontraszt_gorbe(c)
+    t = ((k + 1.0) * 127.5 * b) / 100.0 + (127.5 - k * 127.5)
+    return np.float32(k) * image_f + np.float32(t)
+
+
 def simple_color_matrix(
     image: np.ndarray,
     brightness: float = 0.0,
     contrast: float = 0.0,
     saturation: float | None = None,
+    linked: bool = False,
 ) -> np.ndarray:
-    """`SimpleColorMatrix`: fényerő (additív, `[-100..100]` → `±255`),
-    kontraszt (a 128 körüli lineáris széthúzás, `[-100..100]` → gain
-    `1 + contrast/100`) és telítettség (luma-tartó króma-erősítés,
-    `[-100..100]` → gain `1 + saturation/100`, `-100` = teljes
-    szürkeárnyalat). `saturation=None` → a telítettséget nem érinti.
+    """`SimpleColorMatrix`: telítettség (Haeberli-színmátrix, #903 —
+    `saturation=None` → nem érinti), majd — `linked` szerint — VAGY egy
+    közös `ContrastAndBrightnessLinked` lépés (127,5-ös forgáspont), VAGY
+    a kontraszt (101 elemű táblázatos görbe, 63,5-ös forgáspont, korai
+    kilépés kis `k`-nál) és a fényerő (KÖZVETLEN additív, nincs ×2,55
+    skálázás) külön-külön, ebben a sorrendben (#904). A `brightness` és a
+    `contrast` is `[-100..100]`-ra vágva, a natív mintájára.
     """
     validate_image(image)
     image_f = to_float(image)
     if saturation is not None:
-        gray = luma(image_f)[..., np.newaxis]
-        gain = np.float32(1.0 + saturation / 100.0)
-        image_f = gray + gain * (image_f - gray)
-    if contrast:
-        gain = np.float32(1.0 + contrast / 100.0)
-        image_f = np.float32(128.0) + gain * (image_f - np.float32(128.0))
-    if brightness:
-        image_f = image_f + np.float32(brightness * 2.55)
+        matrix = _saturation_matrix(float(saturation))
+        image_f = image_f @ matrix.T
+    if linked:
+        if contrast or brightness:
+            image_f = _kontraszt_fenyero_egyuttes(image_f, contrast, brightness)
+    else:
+        if contrast:
+            image_f = _kontraszt_alkalmaz(image_f, contrast)
+        if brightness:
+            b = float(np.clip(brightness, -100.0, 100.0))
+            image_f = image_f + np.float32(b)
     return to_uint8(image_f)
 
 
