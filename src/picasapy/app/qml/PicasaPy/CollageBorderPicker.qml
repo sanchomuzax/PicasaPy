@@ -22,7 +22,8 @@ Item {
     property var controller: null
 
     readonly property string currentBorder:
-        picker.controller ? picker.controller.collageBorder : "noborder"
+        picker.controller && picker.controller.collageBorder !== undefined
+            ? picker.controller.collageBorder : "noborder"
 
     //: A három keret a `.cxf` kulcsaival (`collage.themes.BORDER_THEMES`).
     readonly property var borders: [

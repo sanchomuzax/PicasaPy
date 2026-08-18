@@ -25,8 +25,12 @@ Item {
     //: Nyitva van-e a lenyíló. A lap más vezérlői is becsukhatják.
     property bool expanded: false
 
+    // A vezérlő az igazságforrás — de a kötés kibírja a HIÁNYOS vezérlőt is
+    // (a panel váza `undefined`-ot adó próba-vezérlővel is felépül, és a #305
+    // őre a néma QML-szkripthibát is hibának veszi).
     readonly property string currentTheme:
-        control.controller ? control.controller.collageTheme : "picturepile"
+        control.controller && control.controller.collageTheme !== undefined
+            ? control.controller.collageTheme : "picturepile"
 
     implicitWidth: 266
     implicitHeight: 56
@@ -132,24 +136,25 @@ Item {
             color: Theme.ink
         }
 
-        // a lenyíló-nyíl a jobb oldali 20 képpontos sávban
-        Canvas {
+        // A lenyíló-nyíl a jobb oldali 20 képpontos sávban.
+        //
+        // ⚠️ SVG, nem `Canvas` — ugyanaz a megfontolás, mint a
+        // `CollageSettingsTab` pipájánál: a `Canvas` rajza külön festési
+        // körben készül el, az `Image` viszont a mérés pillanatától
+        // függetlenül ott van. Hogy a nyíl LÁTSZIK is, azt a
+        // `test_a_temavalaszton_latszik_a_lenyilo_nyil` képpont-szintű őre
+        // méri.
+        Image {
+            objectName: "collageThemeArrow"
             width: 9
             height: 5
             anchors.right: parent.right
             anchors.rightMargin: 6
             anchors.verticalCenter: parent.verticalCenter
-            onPaint: {
-                var ctx = getContext("2d")
-                ctx.reset()
-                ctx.fillStyle = Theme.ink
-                ctx.beginPath()
-                ctx.moveTo(0, 0)
-                ctx.lineTo(width, 0)
-                ctx.lineTo(width / 2, height)
-                ctx.closePath()
-                ctx.fill()
-            }
+            source: "icons/collage-dropdown-arrow.svg"
+            sourceSize.width: 9
+            sourceSize.height: 5
+            fillMode: Image.PreserveAspectFit
         }
 
         MouseArea {

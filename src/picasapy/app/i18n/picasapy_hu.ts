@@ -6781,4 +6781,203 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Mégse</translation>
     </message>
 </context>
+<context>
+    <name>CollageThemePopup</name>
+    <message>
+        <source>Picture Pile</source>
+        <translation>Képkupac</translation>
+    </message>
+    <message>
+        <source>Looks like a pile of scattered pictures</source>
+        <translation>szétszórt képek hatását kelti</translation>
+    </message>
+    <message>
+        <source>Mosaic</source>
+        <translation>Mozaik</translation>
+    </message>
+    <message>
+        <source>Automatically fit pictures into the page</source>
+        <translation>a képek automatikus illesztése az oldalra</translation>
+    </message>
+    <message>
+        <source>Frame Mosaic</source>
+        <translation>Képkockamozaik</translation>
+    </message>
+    <message>
+        <source>A mosaic with a prominent center picture</source>
+        <translation>mozaik hangsúlyos központi képpel</translation>
+    </message>
+    <message>
+        <source>Grid</source>
+        <translation>Rács</translation>
+    </message>
+    <message>
+        <source>Arrange pictures into regular rows and columns</source>
+        <translation>a képek szabályos sorokba és oszlopokba rendezése</translation>
+    </message>
+    <message>
+        <source>Contact Sheet</source>
+        <translation>Indexkép</translation>
+    </message>
+    <message>
+        <source>Thumbnails with an informative header</source>
+        <translation>Miniatűr tájékoztató jellegű fejléccel</translation>
+    </message>
+    <message>
+        <source>Multiple Exposure</source>
+        <translation>Többszörös exponálás</translation>
+    </message>
+    <message>
+        <source>Superimpose pictures over one another</source>
+        <translation>Képek egymás tetejére helyezése</translation>
+    </message>
+</context>
+<context>
+    <name>CollageBorderPicker</name>
+    <message>
+        <source>Picture Borders</source>
+        <translation>Képszegélyek</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>Egyik sem</translation>
+    </message>
+    <message>
+        <source>White Border</source>
+        <translation>Fehér szegély</translation>
+    </message>
+    <message>
+        <source>Polaroid Camera</source>
+        <translation>Polaroid fényképezőgép</translation>
+    </message>
+</context>
+<context>
+    <name>CollageBackgroundBox</name>
+    <message>
+        <source>Background Options</source>
+        <translation>Háttér beállításai</translation>
+    </message>
+    <message>
+        <source>Solid Color</source>
+        <translation>Egyszínű</translation>
+    </message>
+    <message>
+        <source>Use Image</source>
+        <translation>Kép használata</translation>
+    </message>
+    <message>
+        <source>Use selected</source>
+        <translation>A kijelölt elemek használata</translation>
+    </message>
+</context>
+<context>
+    <name>CollageFormatMenu</name>
+    <message>
+        <source>Manual</source>
+        <translation>Kézi</translation>
+    </message>
+    <message>
+        <source>Small print</source>
+        <translation>Kisméretű nyomat</translation>
+    </message>
+    <message>
+        <source>Large print</source>
+        <translation>Nagyméretű nyomat</translation>
+    </message>
+    <message>
+        <source>Full page</source>
+        <translation>Teljes oldal</translation>
+    </message>
+    <message>
+        <source>Letter paper</source>
+        <translation>Letter méretű papír</translation>
+    </message>
+    <message>
+        <source>A4 paper</source>
+        <translation>A4-es méretű papír</translation>
+    </message>
+    <message>
+        <source>Square</source>
+        <translation>Négyzet</translation>
+    </message>
+    <message>
+        <source>CD Cover</source>
+        <translation>CD-borító</translation>
+    </message>
+    <message>
+        <source>Standard screen</source>
+        <translation>Normál képernyő</translation>
+    </message>
+    <message>
+        <source>Widescreen monitor</source>
+        <translation>Szélesvásznú képernyő</translation>
+    </message>
+    <message>
+        <source>Widescreen Photo Frame</source>
+        <translation>Szélesvásznú képkocka</translation>
+    </message>
+    <message>
+        <source>Current display</source>
+        <translation>Jelenlegi megjelenítés</translation>
+    </message>
+    <message>
+        <source>Custom Aspect Ratios</source>
+        <translation>Egyéni méretarányok</translation>
+    </message>
+    <message>
+        <source>Add Custom Aspect Ratio…</source>
+        <translation>Egyéni méretarány hozzáadása…</translation>
+    </message>
+    <message>
+        <source>You can select the relative width and height of the collage</source>
+        <translation>Kijelölheti a kollázs viszonylagos szélességét és magasságát</translation>
+    </message>
+</context>
+<context>
+    <name>CollageSettingsTab</name>
+    <message>
+        <source>Grid Spacing</source>
+        <translation>Rács vastagsága</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>Egyik sem</translation>
+    </message>
+    <message>
+        <source>Max.</source>
+        <translation>Maximális</translation>
+    </message>
+    <message>
+        <source>Page Format</source>
+        <translation>Oldalformátum</translation>
+    </message>
+    <message>
+        <source>Delete the current aspect ratio</source>
+        <translation>A jelenlegi méretarány törlése</translation>
+    </message>
+    <message>
+        <source>Landscape: orient the collage horizontally</source>
+        <translation>Fekvő: a kollázs vízszintes tájolása</translation>
+    </message>
+    <message>
+        <source>Portrait: orient the collage vertically</source>
+        <translation>Álló: A kollázs függőleges tájolása</translation>
+    </message>
+    <message>
+        <source>Draw Shadows</source>
+        <translation>Árnyékok rajzolása</translation>
+    </message>
+    <message>
+        <source>Show Captions</source>
+        <translation>Képfeliratok megjelenítése</translation>
+    </message>
+    <message>
+        <source>Show picture captions as text on pictures with the Polaroid Camera border</source>
+        <translation>Képfeliratok szövegként való megjelenítése „Polaroid fényképezőgép” szegélyű képeken</translation>
+    </message>
+    <message>
+        <source>Set as Frame Center</source>
+        <translation>Beállítás képkockaközéppontként</translation>
+    </message>
+</context>
 </TS>

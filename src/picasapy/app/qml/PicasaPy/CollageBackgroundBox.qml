@@ -26,13 +26,16 @@ Item {
     property var controller: null
 
     readonly property string mode:
-        box.controller ? box.controller.collageBackgroundMode : "solid"
+        box.controller && box.controller.collageBackgroundMode !== undefined
+            ? box.controller.collageBackgroundMode : "solid"
 
     readonly property color currentColor:
-        box.controller ? box.controller.collageBackgroundColor : "#000000"
+        box.controller && box.controller.collageBackgroundColor !== undefined
+            ? box.controller.collageBackgroundColor : "#000000"
 
     readonly property string currentImage:
-        box.controller ? box.controller.collageBackgroundImage : ""
+        box.controller && box.controller.collageBackgroundImage !== undefined
+            ? box.controller.collageBackgroundImage : ""
 
     //: Nyitva van-e a felugró paletta (`picker_panel`, a `.tre`-ben `m_hidden`).
     property bool paletteOpen: false
@@ -249,6 +252,7 @@ Item {
     }
 
     PicasaButton {
+        id: fromSelectionButton
         objectName: "collageBkgFromSelection"
         visible: box.mode === "image"
         x: 185
@@ -258,6 +262,17 @@ Item {
         padding: 2
         horizontalPadding: 2
         text: qsTr("Use selected")
+        // A hivatalos magyar felirat („A kijelölt elemek használata") három
+        // sor a 71 képpontos gombon — TÖRDEL, nem elidál: elidálva a
+        // felhasználó néma csonkot látna, és azt egyetlen teszt sem fogná meg.
+        contentItem: Text {
+            text: fromSelectionButton.text
+            font: fromSelectionButton.font
+            color: fromSelectionButton.inkColor
+            wrapMode: Text.Wrap
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
         onClicked: if (box.controller) box.controller.setBackgroundFromSelection()
     }
 

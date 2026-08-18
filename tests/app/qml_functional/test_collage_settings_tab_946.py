@@ -733,7 +733,55 @@ def test_az_uj_egyeni_arany_a_meglevo_448_as_parbeszeddel_megy(qt_app):
     assert stub.added_ratios == [(3.0, 1.0, "Panoráma")]
 
 
-# --- 6. A panelbe ágyazva ---------------------------------------------------
+# --- 6. A rajz — amit a property nem mond meg -------------------------------
+
+
+def _sotet_pixelek(tab: QQuickItem, item: QQuickItem, margo: int = 2) -> int:
+    """Hány SÖTÉT képpont esik az elem belsejébe a KIRAJZOLT ablakon.
+
+    ⚠️ Ez a teszt nem elegáns, de kellett. A `checked` property igaz, az elem
+    `visible` — és a felhasználó ettől még ÜRES négyzetet láthat: a pipát egy
+    külön rajz adja, ami hiányozhat, rossz színű lehet, vagy (mint a fejlesztés
+    közben egy `Canvas`-változatnál) csak késve készül el. A property-t olvasó
+    ellenőrzés mindegyik esetben zöld marad. Csak a képpontok döntik el, hogy a
+    felhasználó lát-e valamit.
+
+    A `margo` a doboz saját 1 képpontos keretét hagyja ki, hogy a keret ne
+    számítson bele „rajznak"."""
+    view = tab.property("_view")
+    kep = view.grabWindow()
+    sarok = item.mapToScene(QPointF(0, 0)).toPoint()
+    darab = 0
+    for dy in range(margo, int(item.height()) - margo):
+        for dx in range(margo, int(item.width()) - margo):
+            szin = QColor(kep.pixelColor(sarok.x() + dx, sarok.y() + dy))
+            if szin.lightness() < 128:
+                darab += 1
+    return darab
+
+
+@pytest.mark.parametrize(
+    "nev,mezo",
+    [("collageShadowCheckbox", "shadows"), ("collageCaptionCheckbox", "captions")],
+)
+def test_a_bekapcsolt_jelolon_latszik_is_a_pipa(qt_app, nev, mezo):
+    """A bekapcsolt jelölőn VAN rajz, a kikapcsolton nincs."""
+    be = _tab(qt_app, **{mezo: True})
+    assert _sotet_pixelek(be, _child(be, nev)) > 0, f"{nev}: a pipa nem látszik"
+
+    ki = _tab(qt_app, **{mezo: False})
+    assert _sotet_pixelek(ki, _child(ki, nev)) == 0, f"{nev}: üresen is rajzol"
+
+
+def test_a_temavalaszton_latszik_a_lenyilo_nyil(qt_app):
+    """A `.tre` 20 képpontos jobb margója a nyílé — ha nem rajzolódik ki,
+    a vezérlőről nem látszik, hogy lenyitható."""
+    tab = _tab(qt_app)
+    nyil = _child(tab, "collageThemeArrow")
+    assert _sotet_pixelek(tab, nyil, margo=0) > 0, "a lenyíló-nyíl nem látszik"
+
+
+# --- 7. A panelbe ágyazva ---------------------------------------------------
 
 
 def test_a_panel_beallitasok_lapja_a_valodi_tartalmat_mutatja(qt_app):

@@ -39,10 +39,12 @@ Item {
     readonly property int rowHeight: 16
 
     readonly property string currentKey:
-        menu.controller ? menu.controller.collageFormatKey : "Desktop4x3"
+        menu.controller && menu.controller.collageFormatKey !== undefined
+            ? menu.controller.collageFormatKey : "Desktop4x3"
 
     readonly property var customRatios:
-        menu.controller ? menu.controller.customAspectRatios : []
+        menu.controller && menu.controller.customAspectRatios !== undefined
+            ? menu.controller.customAspectRatios : []
 
     // A tizennyolc beépített formátum — a `page_formats.PAGE_FORMATS`
     // sorrendjében és kulcsaival.
