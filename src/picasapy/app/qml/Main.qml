@@ -386,6 +386,12 @@ ApplicationWindow {
         onMoveDatabaseRequested: moveDatabaseDialog.open()
         // #449: adatbázis-tömörítés (`compacting.fen`)
         onCompactDatabaseRequested: compactDatabaseDialog.open()
+        // #936: a Létrehozás menü jelzésének NEM VOLT kezelője — a
+        // menüpont elsütötte a jelzést, és az a semmibe ment. Az
+        // egyetlen kezelő a képtálca sávján ült (`trayBar`), ezért
+        // onnan indítva működött, a menüből nem.
+        onCollageRequested: createDialogs.openCollage()
+        onMovieRequested: createDialogs.openMovie()
         onExportRequested: exportDialogs.openForSelection()
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.selectedIndex)
