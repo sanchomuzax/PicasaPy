@@ -215,28 +215,19 @@ Item {
         onClicked: panel.requestClose()
     }
 
-    // A vászon-oldal: ez NYÚLIK az ablakkal.
-    Item {
+    // A vászon-oldal: ez NYÚLIK az ablakkal. A GEOMETRIÁJA ezé a jegyé (a
+    // méretezési törvény része); a TARTALMA — csomópontok, gyűrű, húzás —
+    // a #947-é (`CollageCanvas.qml`). A lap téglalapját is innen kapja, nem
+    // maga számolja: a törvény EGY helyen él.
+    CollageCanvas {
         id: canvas
         objectName: "collageCanvas"
+        controller: panel.controller
         x: panel.canvasArea.x
         y: panel.canvasArea.y
         width: panel.canvasArea.width
         height: panel.canvasArea.height
-
-        // A lap. A GEOMETRIÁJA ezé a jegyé (a méretezési törvény része); a
-        // TARTALMA — csomópontok, gyűrű, árnyék — a #947-é.
-        Rectangle {
-            objectName: "collageSheet"
-            x: panel.sheetRect.x
-            y: panel.sheetRect.y
-            width: panel.sheetRect.width
-            height: panel.sheetRect.height
-            visible: width > 0 && height > 0
-            color: Theme.contentPanel
-            border.width: 1
-            border.color: "#9a9a9a"
-        }
+        sheetRect: panel.sheetRect
     }
 
     // Az Esc a Bezárás (`.tre`: cancelbutton `Property escapekey 1`).
@@ -245,6 +236,12 @@ Item {
     // SOHA nem tüzel, mert billentyűesemény csak fókuszált elemhez jut el.
     // Mérve: fókusz nélkül az Esc nulla `closeCollage()` hívást adott.
     focus: true
+
+    // A vászon parancsai (Ctrl+A / Ctrl+D / Del) a `CollageCanvas`-ban
+    // élnek, de a fókusz a panelé — különben két fókuszgazda versenyezne, és
+    // az Esc-et elnyelné a vesztes. A továbbítás ezt oldja fel: a vászon
+    // ELŐBB látja a billentyűt, az Esc pedig továbbjön ide.
+    Keys.forwardTo: [canvas]
 
     Keys.onEscapePressed: function (event) {
         panel.requestClose()
