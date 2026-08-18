@@ -106,6 +106,10 @@ def qml_app(qt_app, tmp_path):
         sync_tree(conn, lib)
 
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    # #960: a kollázs kimeneti mappája — ide kerül az `autosave.cxf`
+    # piszkozat is. Enélkül a kollázst indító tesztek a felhasználó VALÓDI
+    # képmappájába (`~/Pictures/Kollázsok`) írnának.
+    settings.setValue("collage/outputDir", str(tmp_path / "kollazsok"))
     provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
     controller = AppController(db, (str(lib),), provider, settings=settings)
     # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — ugyanaz az

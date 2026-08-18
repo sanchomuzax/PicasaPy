@@ -288,6 +288,45 @@ collage                                        ← 0x009bfed0
 *Bizonyítottsági fok: megerősített* (a writer utasításai + a valódi minta
 mint kereszt-ellenőrzés).
 
+### 1.6/e A `<node>` mértékegységei — a mintából KISZÁMOLVA (2026-08-18)
+
+Az 1.6 táblázata a `scale`-t „a forrás vetített szélességeként" olvasta, és
+nem mondta ki, hogy az `x/y/w/h` **tengelyenként** arányos-e. A #960
+bekötéséhez ezt el kellett dönteni; a minta első csomópontja eldönti.
+
+Álló, `format="15:10"` lapon (a lap 1024 × 1536 lapegység, `0xcf3f68 =
+1/1024`):
+
+| a fájlban | átszámolva |
+|---|---|
+| `x=0,297852` | 0,297852 · 1024 = **305,0** lapegység (egész!) |
+| `y=0,248047` | 0,248047 · 1536 = **381,0** lapegység (egész!) |
+| `w=0,274210` | 0,274210 · 1024 = 280,8 |
+| `h=0,219401` | 0,219401 · 1536 = **337,0** |
+| `scale=337,0` | = a doboz **nagyobbik** oldala |
+
+Három, egymástól független szám esik egybe:
+
+1. a `scale` pontosan a doboz nagyobbik oldala (nem a szélessége);
+2. a 280,8 × 337,0 doboz egy **négyzetes** fotó polaroid-kerete
+   (280,8/1,145 = 245,2 és 337,0/1,374 = 245,3 — a két arány az 1.9.5
+   dekompilált konstansa), és a keret alsó feliratsávja miatt épp ez a
+   „közel négyzetes kivágás", amit az 1.9.5 külön megjegyez;
+3. a 337 egyben a Képkupac `pile_size`-ja is (0,33 · 1024).
+
+Ebből: **`x` és `w` a lap szélességéhez, `y` és `h` a lap magasságához
+arányos**, a `scale` pedig a csomópont befoglaló négyzetének oldala
+képpontban. A leképezést a `picasapy.collage.draft` valósítja meg.
+
+⚠️ **Egy eltérés a mai pakolónkhoz képest.** A minta szerint az eredeti a
+KERETES csempét illeszti a `pile_size` négyzetbe (a keret nem lóg ki), a
+mi `_pile_nodes`-unk viszont a FOTÓT illeszti, és a keret azon kívül nő.
+Ez nem a `.cxf`-en múlik, hanem a Képkupac elrendezésén — külön mérést és
+jegyet érdemel.
+
+*Bizonyítottsági fok: erős következtetés* (egyetlen valódi mintán mért,
+háromszorosan egybevágó számtan; a writer a `scale` FORRÁSÁT nem mondja ki).
+
 ### 1.10 A kollázs-panel TELJES felülete — 156 elem (2026-08-16)
 
 A `respack.yt` `collagepanel/*` bejegyzései a **tervezővászon tényleges

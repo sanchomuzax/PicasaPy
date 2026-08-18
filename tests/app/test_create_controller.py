@@ -22,8 +22,18 @@ def library(tmp_path):
     return root
 
 
+def _piszkozat_mappa(tmp_path):
+    """A kollázs-piszkozat mappája a tesztben (#960).
+
+    A piszkozat a „Kollázsok" album mappájába kerül (`collage/outputDir`) —
+    a fixture ezt tmp_path alá állítja, hogy egyetlen teszt se írjon a
+    felhasználó valódi képmappájába."""
+    return tmp_path / "kollazsok"
+
+
 @pytest.fixture
 def controller(qt_app, tmp_path, library):
+    from picasapy.app.collage_prefs import OUTPUT_DIR_KEY
     from picasapy.app.controller import AppController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.index import open_index, sync_tree
@@ -33,6 +43,7 @@ def controller(qt_app, tmp_path, library):
         sync_tree(conn, library)
     provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    settings.setValue(OUTPUT_DIR_KEY, str(_piszkozat_mappa(tmp_path)))
     ctl = AppController(
         tmp_path / "index.db", (str(library),), provider, settings=settings
     )
@@ -198,3 +209,132 @@ class TestBackgroundThreadTeardown:
         assert arrived
         assert controller.waitForBackgroundWorkers(30.0)
         assert not controller.backgroundWorkersRunning()
+
+
+class TestCollagePiszkozat:
+    """#960: a `.cxf` piszkozat (`autosave.cxf`) bekötése.
+
+    A #431 elkészítette a piszkozat életciklusát, de **hívó nélkül**: egyetlen
+    kódút sem írt piszkozatot. Ezek a tesztek a KIMENETET állítják — a lemezre
+    került fájlt olvassák vissza, és a benne álló csomópont-szögeket vetik
+    össze a ténylegesen kirajzolt vászonéval. Egy „meghívtuk a függvényt"
+    jellegű állítás pont azt nem fogná meg, amiért a jegy külön született.
+    """
+
+    KEPEK = [0, 1, 2]
+    TEMA = "picturepile"
+    KERET = "polaroid"
+
+    def _elonezet(self, controller):
+        arrived, _ = _run(
+            controller.collagePreviewReady,
+            lambda: controller.requestCollagePreview(
+                self.KEPEK, self.TEMA, self.KERET
+            ),
+        )
+        assert arrived, "nem érkezett collagePreviewReady"
+
+    def _vaszon(self, controller):
+        """A vászon, amit az élő előnézet rajzolt — ugyanazokkal a
+        beállításokkal újraszámolva."""
+        from picasapy.app.create_controller import _PREVIEW_SIZE
+        from picasapy.collage.picasa_render import (
+            PicasaCollageSettings,
+            make_picasa_collage,
+        )
+
+        beallitas = PicasaCollageSettings(
+            theme=self.TEMA,
+            border=self.KERET,
+            width=_PREVIEW_SIZE[0],
+            height=_PREVIEW_SIZE[1],
+            seed=controller.collageSeed,
+        )
+        return make_picasa_collage(
+            list(controller._sources_for(self.KEPEK)), beallitas
+        )
+
+    def test_a_szerkesztes_kozben_keletkezik_piszkozat(self, controller, tmp_path):
+        from picasapy.collage.autosave import read_autosave
+
+        self._elonezet(controller)
+        projekt = read_autosave(_piszkozat_mappa(tmp_path))
+        assert projekt is not None, "az előnézet nem írt piszkozatot"
+        assert projekt.theme == self.TEMA
+        assert len(projekt.nodes) == len(self.KEPEK)
+
+    def test_a_kiirt_szogek_a_VASZON_szogei(self, controller, tmp_path):
+        from picasapy.collage.autosave import read_autosave
+
+        self._elonezet(controller)
+        projekt = read_autosave(_piszkozat_mappa(tmp_path))
+        vaszon = self._vaszon(controller)
+        assert [n.theta for n in projekt.nodes] == pytest.approx(
+            [n.theta for n in vaszon.nodes], abs=1e-6
+        )
+        # az őrnek legyen foga: a Képkupac tényleg forgat, tehát a csupa
+        # nulla szög nem menne át
+        assert any(abs(n.theta) > 1e-3 for n in vaszon.nodes)
+
+    def test_a_kiirt_geometria_a_VASZONE(self, controller, tmp_path):
+        from picasapy.collage.autosave import read_autosave
+        from picasapy.collage.draft import nodes_from_project
+
+        self._elonezet(controller)
+        vissza = nodes_from_project(read_autosave(_piszkozat_mappa(tmp_path)))
+        vaszon = self._vaszon(controller)
+        for uj, regi in zip(vissza, vaszon.nodes, strict=True):
+            assert uj.center_x == pytest.approx(regi.center_x, abs=1e-2)
+            assert uj.center_y == pytest.approx(regi.center_y, abs=1e-2)
+            assert uj.width == pytest.approx(regi.width, abs=1e-2)
+            assert uj.height == pytest.approx(regi.height, abs=1e-2)
+            assert uj.border == regi.border
+
+    def test_a_sikeres_mentes_ELDOBJA_a_piszkozatot(self, controller, tmp_path):
+        from picasapy.collage.autosave import autosave_path
+
+        self._elonezet(controller)
+        assert autosave_path(_piszkozat_mappa(tmp_path)).exists()
+        arrived, _ = _run(
+            controller.collageFinished,
+            lambda: controller.makeCollage(
+                self.KEPEK, self.TEMA, str(tmp_path / "kollazs.jpg"), self.KERET
+            ),
+        )
+        assert arrived
+        assert not autosave_path(_piszkozat_mappa(tmp_path)).exists()
+        assert controller.collageDraftAvailable is False
+
+    def test_a_MEGHIUSULT_mentes_megtartja_a_piszkozatot(self, controller, tmp_path):
+        """A piszkozat épp az elveszett munka ellen van: ha a mentés
+        elszáll, maradnia KELL."""
+        from picasapy.collage.autosave import autosave_path
+
+        akadaly = tmp_path / "foglalt.jpg"
+        akadaly.mkdir()  # a célfájl helyén mappa áll → az írás elbukik
+        arrived, _ = _run(
+            controller.collageFailed,
+            lambda: controller.makeCollage(
+                self.KEPEK, self.TEMA, str(akadaly), self.KERET
+            ),
+        )
+        assert arrived
+        assert autosave_path(_piszkozat_mappa(tmp_path)).exists()
+
+    def test_a_felajanlas_property_koveti_a_piszkozatot(self, controller, tmp_path):
+        """A vezérlő-oldali horog a visszaállítás felajánlásához: a QML erre
+        a property-re és a jelzésére köt rá (a párbeszéd a kollázs-panel
+        sorozatáé)."""
+        valtozasok = []
+        controller.collageDraftAvailableChanged.connect(
+            lambda: valtozasok.append(controller.collageDraftAvailable)
+        )
+        assert controller.collageDraftAvailable is False
+
+        self._elonezet(controller)
+        assert controller.collageDraftAvailable is True
+        assert valtozasok and valtozasok[-1] is True
+
+        controller.discardCollageDraft()
+        assert controller.collageDraftAvailable is False
+        assert valtozasok[-1] is False
