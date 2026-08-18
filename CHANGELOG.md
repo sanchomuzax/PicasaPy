@@ -5,6 +5,35 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.0] – 2026-08-19
+
+### Hozzáadva
+- **Elkészült a Képkollázs-panel — a kollázs mostantól saját LAP, élő
+  vászonnal (#920).** A Létrehozás ▸ Képkollázs megnyit egy külön lapot a
+  „Könyvtár" mellett. Ott elrendezést és keretet válthatsz, **megfoghatod és
+  elhúzhatod a képeket**, a kijelöltre kerülő gyűrűvel forgathatod és
+  méretezheted, egy képet a másikra ejtve kicserélheted, Alt-tal a tetejére
+  emelheted — és **a mentett kép pontosan azt mutatja, amit a vásznon
+  látsz**. Eddig egyetlen párbeszédablak volt, ahol a kollázs elrendezésébe
+  nem lehetett beleszólni.
+
+  A lapon ott a Beállítások (téma, keretsor, térköz, háttér, oldalformátum,
+  tájolás), a Klipek lap a képek hozzáadásához és eltávolításához, a vászon
+  körüli gombok (kijelölés, rétegsorrend, forgatás-illesztés, keverés) és a
+  három helyi menü. A Könyvtár fülre visszaváltva **a böngészés a helyén
+  marad**.
+
+  A mentés fájlválasztó nélkül megy a Képek/Picasa/Kollázsok mappába, a JPEG
+  mellé `.cxf` piszkozat készül, így a kollázs később is szerkeszthető
+  marad — és a piszkozat **összeomlás után sem vész el**.
+
+  Nyolc lépcsőben épült (#942–#949), a bekötést a #985 zárta le.
+
+### Javítva
+- **Nem cserélődik ki két kép egy kattintástól (#947).** A képkupac képei
+  fedik egymást, és a kijelölő kattintás eddig némán felcserélte a kurzor
+  alatti két képet. A csere mostantól csak valódi elhúzás után történik.
+
 ## [0.7.79] – 2026-08-18
 
 ### Hozzáadva
