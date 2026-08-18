@@ -304,6 +304,38 @@ class CollageMixin(BackgroundWorkerMixin):
         self._ensure_collage_panel()
         return capability_map(self._collage_panel_theme)
 
+    @Property(float, notify=collageClipCountChanged)
+    def collageBaseNodeWidth(self) -> float:
+        """A csomópontok ALAPSZÉLESSÉGE lapegységben (spec 6.2).
+
+        Ez a `transformNode` `scale` paraméterének 1,0-s viszonyítási pontja:
+        a fogantyú (7.4) a lenyomáskor ebből számolja ki a kiinduló
+        méretarányt (`node.width / collageBaseNodeWidth`). Enélkül a felület
+        kénytelen volna az `initial_node_width` képletét megismételni — egy
+        elváló másolat pedig pontosan az a néma hiba, amit a #947 kerülni
+        akar."""
+        return initial_node_width(len(self._nodes()))
+
+    # -- a húzás közbeni feliratok (7.4) -----------------------------------
+    #
+    # A két formázó a `collage/canvas.py`-ban KÉSZ; ez a két slot csak
+    # átjáró a QML felé. Nem véletlenül nem a felület számol: a szög kiírása
+    # előjelet vált (#921 `fchs`), a kerekítés pedig `floor(x + 0,5)` és nem
+    # a JavaScript `Math.round`-ja — két apró eltérés, amit egy párhuzamos
+    # megvalósítás garantáltan elvét.
+
+    @Slot(float, result=int)
+    def collageAngleCaption(self, theta: float) -> int:
+        """A „Szög: %1" felirat értéke a `theta` radiánból."""
+        return canvas.angle_caption_degrees(float(theta))
+
+    @Slot(float, float, result=int)
+    def collageScaleCaption(self, scale: float, base_scale: float) -> int:
+        """A „Méretarány: %1%" felirat értéke; a lenyomás pillanatában 100."""
+        if base_scale <= 0.0:
+            return 100
+        return canvas.scale_caption_percent(float(scale), float(base_scale))
+
     # -- a lap megnyitása és bezárása (8.2) --------------------------------
 
     @Slot(list)

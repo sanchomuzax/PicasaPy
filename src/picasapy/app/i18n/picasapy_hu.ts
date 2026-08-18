@@ -6980,4 +6980,17 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Beállítás képkockaközéppontként</translation>
     </message>
 </context>
+<context>
+    <name>CollageCanvas</name>
+    <message>
+        <location filename="../qml/PicasaPy/CollageCanvas.qml"/>
+        <source>Angle: %1</source>
+        <translation>Szög: %1</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageCanvas.qml"/>
+        <source>Scale: %1%</source>
+        <translation>Méretarány: %1%</translation>
+    </message>
+</context>
 </TS>
