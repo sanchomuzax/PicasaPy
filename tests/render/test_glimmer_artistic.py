@@ -31,12 +31,35 @@ class TestBoost:
     def test_impact_0_valtozatlan(self, image):
         np.testing.assert_array_equal(a.apply_boost(image, impact=0.0), image)
 
-    def test_a_fenyero_negativ_iranyba_megy(self, image):
-        # a filterdesc.xml szerint Brightness = Impact·-20/50 — NAGYOBB
-        # Impact SÖTÉTEBB képet ad (issue #381 figyelmeztetése)
+    def test_a_fenyero_parameter_negativ_iranyba_no(self):
+        """A `filterdesc.xml` szerint `Brightness = Impact·−20/50` — a
+        `SimpleColorMatrix`-nak átadott fényerő-paraméter NAGYOBB Impact-tal
+        egyre negatívabb. Izoláltan, kontraszt/telítettség nélkül mérve ez
+        tényleg sötétebb kimenetet ad (ld. a #903/#904 utáni
+        `test_nagyobb_impact_osszkepben_vilagosabb`-ot arról, hogy a TELJES
+        `Boost`-lánc miért mégis világosodik)."""
+        from picasapy.render.glimmer_ops import simple_color_matrix
+
+        pixel = np.array([[[128, 128, 128]]], dtype=np.uint8)
+        low = simple_color_matrix(pixel, brightness=10.0 * -20.0 / 50.0)
+        high = simple_color_matrix(pixel, brightness=90.0 * -20.0 / 50.0)
+        assert int(high[0, 0, 0]) < int(low[0, 0, 0])
+
+    def test_nagyobb_impact_osszkepben_vilagosabb(self, image):
+        """#903/#904: a `Boost` TELJES kimenete NAGYOBB Impact-nál
+        VILÁGOSABB lesz, nem sötétebb — ez a `SimpleColorMatrix`
+        korábbi (hibás), gyenge lineáris kontrasztjával (`k=1+c/100`)
+        mérve fordítva volt, mert ott a szerény negatív fényerő
+        dominált. A HELYES, táblázatos kontraszt-görbe (`Contrast =
+        Impact·40/50`, csúszka 72-nél `k≈3,6`) a 63,5-ös forgáspont
+        körül sokkal erősebben húzza szét a képet, mint a régi,
+        128-as forgáspontú, `k≤2,0`-s közelítés — a felfutó pixelek
+        255-re vágódása felülírja a szerény sötétítést. Mérve (a
+        fixtúra képén): Impact=10 → átlag 140,3; Impact=90 → átlag
+        159,6."""
         low = a.apply_boost(image, impact=10.0).astype(np.int32)
         high = a.apply_boost(image, impact=90.0).astype(np.int32)
-        assert high.mean() < low.mean()
+        assert high.mean() > low.mean()
 
 
 class TestSoften:
