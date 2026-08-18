@@ -1201,6 +1201,14 @@
         <translation>A kijelölt képek egyike sem olvasható.</translation>
     </message>
     <message>
+        <source>Creating collage… initializing</source>
+        <translation>Kollázs létrehozása... inicializálás</translation>
+    </message>
+    <message>
+        <source>The collage is ready (click here)</source>
+        <translation>A kollázs kész (kattintson ide)</translation>
+    </message>
+    <message>
         <source>Sorry, there is not enough free disk space to safely download pictures.</source>
         <translation>Sajnáljuk, nincs elég szabad lemezhely a képek biztonságos letöltéséhez.</translation>
     </message>

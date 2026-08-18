@@ -54,6 +54,12 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
         "ExportMixin",
         "Sorry, there is not enough free disk space to safely download pictures.",
     ): "AppController",
+    # #943: a `CollageMixin` (collage_controller.py) ugyanez az eset — a
+    # kollázs-panel szelete is az `AppController`-be kevert mixin, tehát a
+    # mentés folyamat- és hibaszövegei futásidőben ott vannak lefordítva.
+    ("CollageMixin", "Creating collage… initializing"): "AppController",
+    ("CollageMixin", "The collage is ready (click here)"): "AppController",
+    ("CollageMixin", "None of the selected pictures could be read."): "AppController",
 }
 
 
@@ -191,6 +197,7 @@ class TestI18nCompleteness:
         assert loaded, "a picasapy_hu.qm nem tölthető be"
         app.installTranslator(translator)
         try:
+            from picasapy.app.collage_controller import CollageMixin
             from picasapy.app.create_controller import CreateMixin
             from picasapy.app.export_controller import ExportMixin
 
@@ -202,7 +209,11 @@ class TestI18nCompleteness:
             # vonna be), MINDEN dokumentált kivétel mixinjével összefűzve,
             # hogy pontosan azt a felbontást reprodukáljuk, amit a valódi
             # AppController(QObject, ..., CreateMixin, ExportMixin, ...) csinál.
-            probe_cls = type("AppController", (QObject, CreateMixin, ExportMixin), {})
+            # (#943: a CollageMixin is itt van — a `collageFailed` jelzés két
+            # mixinben is szerepel, ez PySide6-ban rendben van.)
+            probe_cls = type(
+                "AppController", (QObject, CreateMixin, ExportMixin, CollageMixin), {}
+            )
             probe = probe_cls()
             for (_wrong_context, source), real_context in (
                 _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS.items()

@@ -124,7 +124,29 @@ THEME_MASKS = {
     MULTIEXP: 0x0100,
 }
 
+# #943: a panel a MARADÉK öt bitet is használja — a `collageCapabilities`
+# térkép mind a kilenc képességet továbbadja a QML-nek, hogy témánkénti `if`
+# sehol ne szülessen (`kollazs-panel-ui-spec.md` 5.).
+#
+# | bit | jelentés | mi támasztja alá |
+# |---|---|---|
+# | 0 | a háttér-beállítások látszanak | a panelkód olvasata (`0x00831750`) |
+# | 2 | „Képek összekeverése" engedélyezve (≥ 2 kép) | `0x0082fa0f` |
+# | 3 | „Véletlenszerű kollázs" engedélyezve (≥ 1 kép) | `0x0082fa60` |
+# | 7 | szabad elforgatás | spec 15.: **erős** |
+#
+# ⚠️ A **gyűrű** (5. bit) a leggyengébb láncszem: a spec 5. mátrixa szerint a
+# gyűrű CSAK a Képkupacnál van, és az 5. bit pontosan ott áll — de a 7. bit
+# is, tehát a kettő szétosztása (5 = gyűrű, 7 = forgatás) a maszkokból
+# önmagában NEM eldönthető. A 7 = forgatás a specből jön, az 5 = gyűrű az
+# ebből maradó következtetés. A megvalósítást nem befolyásolja: mindkét bit
+# ugyanarra az egy témára áll.
+_BIT_BACKGROUND = 0
+_BIT_SHUFFLE = 2
+_BIT_SCRAMBLE = 3
 _BIT_SELECTION = 4
+_BIT_RING = 5
+_BIT_ROTATE = 7
 _BIT_BORDERS = 9
 _BIT_SPACING = 10
 _BIT_SHADOW = 11
@@ -136,6 +158,11 @@ class ThemeCapabilities(NamedTuple):
 
     `shadow_default` a `collage::shadows` alapértéke (14. bit): árnyék
     alapból BE a Képkupacnál és az Indexképnél, KI a másik négynél.
+
+    #943: az utolsó öt mező a panel többi vezérlőjét kapcsolja (háttér-doboz,
+    a két véletlenszerűsítő gomb, a gyűrű-overlay és a szabad forgatás). Az
+    ÚJ mezők a sor VÉGÉN állnak, hogy a #923 óta meglévő négy mező helye
+    (és a `picasa_render` olvasata) ne csússzon el.
     """
 
     borders: bool
@@ -143,6 +170,11 @@ class ThemeCapabilities(NamedTuple):
     shadow: bool
     selection: bool
     shadow_default: bool
+    background: bool
+    shuffle: bool
+    scramble: bool
+    ring: bool
+    rotate: bool
 
 
 def capabilities_for(theme: str) -> ThemeCapabilities:
@@ -156,7 +188,36 @@ def capabilities_for(theme: str) -> ThemeCapabilities:
         shadow=bool(mask & (1 << _BIT_SHADOW)),
         selection=bool(mask & (1 << _BIT_SELECTION)),
         shadow_default=bool(mask & (1 << _BIT_SHADOW_DEFAULT)),
+        background=bool(mask & (1 << _BIT_BACKGROUND)),
+        shuffle=bool(mask & (1 << _BIT_SHUFFLE)),
+        scramble=bool(mask & (1 << _BIT_SCRAMBLE)),
+        ring=bool(mask & (1 << _BIT_RING)),
+        rotate=bool(mask & (1 << _BIT_ROTATE)),
     )
+
+
+#: A FELÜLETNEK átadott képesség-térkép mezői (spec 8.1). A
+#: `shadow_default` szándékosan NINCS köztük: az az árnyék-jelölő
+#: kezdőértéke, nem külön vezérlő — a panelen nincs mit mutatni belőle.
+UI_CAPABILITY_FIELDS = (
+    "borders",
+    "spacing",
+    "shadow",
+    "selection",
+    "background",
+    "shuffle",
+    "scramble",
+    "ring",
+    "rotate",
+)
+
+
+def capability_map(theme: str) -> dict[str, bool]:
+    """A téma képességei SZÓTÁRKÉNT — ezt adja tovább a vezérlő a QML-nek
+    (`collageCapabilities`, QVariantMap). Egyetlen forrás, hogy témánkénti
+    `if` se a Pythonban, se a QML-ben ne szülessen."""
+    c = capabilities_for(theme)
+    return {name: bool(getattr(c, name)) for name in UI_CAPABILITY_FIELDS}
 
 
 #: Előszámolt tábla — a `capabilities_for` gyorsítója és egyben olvasható
@@ -165,6 +226,9 @@ THEME_CAPABILITIES = {theme: capabilities_for(theme) for theme in COLLAGE_THEMES
 
 __all__ = [
     "BORDER_THEMES",
+    "UI_CAPABILITY_FIELDS",
+    "capabilities_for",
+    "capability_map",
     "COLLAGE_THEMES",
     "CONTACTSHEET",
     "DIMMED",
