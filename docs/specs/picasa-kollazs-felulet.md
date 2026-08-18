@@ -1134,11 +1134,45 @@ A Képkupacnál és a rácsos témáknál nincs `k`: ott a képlet **közvetlen�
 befoglaló szélességből** (`W`) dolgozik, a Képkupacnál egy
 lépték-argumentummal (`A`) szorozva.
 
+#### Az `A` lépték — LEZÁRVA: a 9.0 darabszám-képlete (2026-08-18)
+
+A hívó (`0x0087b8c0`, `0x0087b8f6`–`0x0087b968`) így állítja elő, ahol
+`n` = a képek száma (`[ebx+0x14]`):
+
+```
+ha n <= 1:  A = 1.0                                   ; fld1 → 0x0087b8f6
+egyébként:  A = min( 1.0, 1 / sqrt( sqrt(n) − 1.0 ) ) ; 0x0049fe60 = sqrtf,
+                                                      ; 0x0049fab0 = fminf,
+                                                      ; 0xc7e328 = 1.0
+```
+
+> **Ez SZÓ SZERINT ugyanaz a képlet, mint a képek alapmérete a 9.0-ban**
+> (`0x0082c9a0`). Vagyis a Képkupac árnyéka **a képmérettel együtt
+> skálázódik** — ami éppen az elvárt viselkedés, és **független
+> megerősítése** a 9.0-nak: két külön kódhely, ugyanaz a görbe.
+>
+> Behelyettesítve (9.0: `alapszélesség = A · 1024 · 0,33`, a lap `W`
+> képpont széles → `képszélesség_px = 0,33 · A · W`):
+>
+> | mennyiség | a **képszélesség** arányában |
+> |---|---|
+> | eltolás x | `0,00303 · képszélesség + 1,0` |
+> | eltolás y | `0,00455 · képszélesség + 1,0` |
+> | elmosás | `0,0303 · képszélesség` → sugár `0,242 · képszélesség` |
+
+**Figyelem a mezőnevekre:** a Képkupac tervobjektumán a **`+0x18` BÁJT** —
+a dokumentum `+0x17c` árnyék-jelzőjének gyorsítótárazott másolata
+(`0x0087b8e2`–`0x0087b8fc`) —, **nem** az Indexkép terv-objektumának
+`+0x18` egész cellaéle. Két külön osztály, azonos eltolás: ne keverd
+össze őket.
+
+**Bizonyítottsági fok: megerősített.**
+
 **Bizonyítottsági fok:** a témánkénti szétválás, a hívási láncok, a
 vtable-hozzárendelés, mind a tizenkét konstans, az alfa-számítás, az
 eltolás iránya és a befoglaló-bővítés **megerősített**. A `k` levezetése
-(cellaél) **megerősített**. Az `A` lépték-argumentum **jelentése**
-(a Képkupac hívója adja) **feltételes**.
+(cellaél) **megerősített**. Az `A` lépték **megerősített** — a 9.0
+darabszám-képlete. **A szakaszban nem maradt feltételes állítás.**
 
 ⚠️ **Ami továbbra sincs mérve:** hogy a mi kimenetünk ettől lesz-e az
 eredetivel egyező. A képlet ismerete nem helyettesíti a mérést — de
@@ -1341,10 +1375,10 @@ három, és egyik sem igényel futó Picasát)*:
 3. az **5120-as felső méret** pontos szemantikája a renderelőben
    (9.1/b 5. pont) — a konstans megvan, az útja a `0x0087dcd0`-n belül
    nincs végigkövetve.
-4. ~~az árnyék-képlet bemenete~~ — **LEZÁRVA** (9/b.3): a `k` a képek
-   cellaéle képpontban, a `0x00887e50`-ből levezetve; a képletek
-   **témánként külön** paraméterezettek (9/b.2). Ami itt nyitva maradt:
-   a Képkupac `A` lépték-argumentumának pontos jelentése.
+4. ~~az árnyék-képlet bemenete~~ — **TELJESEN LEZÁRVA** (9/b.2–9/b.3):
+   a képletek **témánként külön** paraméterezettek (négy készlet); a `k`
+   a képek cellaéle képpontban (`0x00887e50`-ből); az `A` lépték a 9.0
+   darabszám-képlete (`0x0087b8f6`). **Nem maradt feltételes állítás.**
 5. a felirat-csomópont **két logikai kapcsolójának** jelentése
    (`vt[0x38]`, `vt[0x2c]`, mindkettő 1) — 9/c.
 6. az **`avgcolor` adatbázismező** előállítása (3/b) — a kollázson
