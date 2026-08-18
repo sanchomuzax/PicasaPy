@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.73] – 2026-08-18
+
+### Javítva
+- **A Képkollázs menüpont most már tényleg elindul (#936).** A menüpont aktív volt,
+  de a kattintás nyomtalanul elveszett: a menü jelzésének egyszerűen nem volt
+  fogadója a programban. A képtálca ikonjáról indítva ugyanez a funkció eddig is
+  működött — a menüből nem.
+
+  Az előző javítás (#922) a menüpont *engedélyezését* hozta rendbe, ez pedig azt,
+  hogy a kattintás el is jusson valahová.
+
 ## [0.7.72] – 2026-08-18
 
 ### Javítva
