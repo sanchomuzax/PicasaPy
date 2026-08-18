@@ -145,6 +145,7 @@ def qml_app(qt_app, tmp_path):
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
     engine.addImageProvider("effectthumb", effect_thumb_provider)
+    engine.addImageProvider("collagepreview", controller.collage_preview_provider)
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)

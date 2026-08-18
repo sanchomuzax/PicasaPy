@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.74] – 2026-08-18
+
+### Új
+- **Élő előnézet a kollázsnál (#920, első lépcső).** Eddig vakon kellett választani:
+  kijelölöd az elrendezést, megadod a célfájlt, és csak a mentés után derült ki, mit
+  kaptál. Mostantól a párbeszédben **azonnal látszik a kollázs**, és elrendezést vagy
+  keretet váltva rögtön frissül.
+
+  Mellé került a **„Véletlenszerű kollázs"** gomb: ugyanazokból a képekből új
+  elrendezést kever. Amit az előnézeten látsz, azt kapod mentéskor is.
+
+  Ez az eredeti Picasa teljes kollázs-lapjának első szelete — a szerkeszthető vászon
+  (mozgatás, forgatás, átrendezés) még hátravan.
+
 ## [0.7.73] – 2026-08-18
 
 ### Javítva

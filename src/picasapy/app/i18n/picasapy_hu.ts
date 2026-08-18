@@ -2158,6 +2158,11 @@
         <translation>Előbb jelölj ki képeket a könyvtárban, vagy tedd őket a képtálcára.</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="121"/>
+        <source>Scramble Collage</source>
+        <translation>Véletlenszerű kollázs</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62"/>
         <source>Contact Sheet</source>
         <translation>Indexképek</translation>

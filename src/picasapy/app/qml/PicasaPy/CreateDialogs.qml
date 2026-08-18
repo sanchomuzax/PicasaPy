@@ -51,12 +51,30 @@ Item {
             dialogs.trayHasPictures
                 ? controller.heldCount
                 : dialogs.appWindow.selectedIndexes.length
+        // #920: élő előnézet — a Kollázs eddig VAKON dolgozott: a
+        // felhasználó választott, a program fájlba renderelt, és csak utána
+        // derült ki, mit kapott.
+        property int previewRevision: 0
+        function refreshPreview() {
+            controller.requestCollagePreview(
+                dialogs.appWindow.selectedIndexes,
+                dialogs.collageKinds[collageKindBox.currentIndex],
+                dialogs.collageBorders[collageBorderBox.currentIndex])
+        }
+        Connections {
+            target: controller
+            function onCollagePreviewReady(revision) {
+                collageDialog.previewRevision = revision
+            }
+        }
+
         function openForSelection() {
             // #922: MINDIG megnyílik. Korábban forrás nélkül némán
             // visszatért, és a kattintás nyomtalanul elnyelődött — az
             // eredeti Picasában ilyen nincs, az megnyitja a lapot és
             // megmondja, mi hiányzik.
             open()
+            refreshPreview()
         }
         onOpened: standardButton(Dialog.Ok).enabled = Qt.binding(
             function() {
@@ -86,6 +104,27 @@ Item {
                 font.pixelSize: Theme.fontSize
                 color: Theme.textGray
             }
+            // #920: az élő előnézet — ez az, ami eddig hiányzott
+            Image {
+                objectName: "collagePreviewImage"
+                Layout.preferredWidth: 320
+                Layout.preferredHeight: 240
+                fillMode: Image.PreserveAspectFit
+                cache: false
+                visible: collageDialog.sourceCount > 0
+                source: collageDialog.previewRevision > 0
+                        ? "image://collagepreview/kollazs?rev=" + collageDialog.previewRevision
+                        : ""
+            }
+            Button {
+                objectName: "collageShuffleButton"
+                text: qsTr("Scramble Collage")
+                visible: collageDialog.sourceCount > 0
+                onClicked: {
+                    controller.shuffleCollage()
+                    collageDialog.refreshPreview()
+                }
+            }
             RowLayout {
                 spacing: 8
                 Text {
@@ -101,6 +140,7 @@ Item {
                     model: [qsTr("Picture Pile"), qsTr("Mosaic"),
                             qsTr("Frame Mosaic"), qsTr("Grid"),
                             qsTr("Contact Sheet"), qsTr("Multiple Exposure")]
+                    onCurrentIndexChanged: collageDialog.refreshPreview()
                 }
             }
             RowLayout {
@@ -116,6 +156,7 @@ Item {
                     Layout.preferredWidth: 180
                     model: [qsTr("None"), qsTr("White Border"), qsTr("Polaroid")]
                     enabled: dialogs.collageBorderCapable[collageKindBox.currentIndex]
+                    onCurrentIndexChanged: collageDialog.refreshPreview()
                 }
             }
             RowLayout {

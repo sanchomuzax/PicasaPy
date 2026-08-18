@@ -15,10 +15,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.collage import write_collage
 from picasapy.collage.picasa_render import PicasaCollageSettings, make_picasa_collage
+from picasapy.app.collage_preview import CollagePreviewProvider
 from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES, NOBORDER
 from picasapy.movie import MovieSettings, export_movie
 
@@ -33,6 +34,9 @@ _MAX_ITEMS = 200
 # A képek közti áttűnés felső korlátja (mp) — ennél hosszabb áttűnés
 # elmossa a diavetítés ritmusát.
 _MAX_TRANSITION_S = 0.5
+# #920: az élő előnézet mérete. Kicsi, mert a Képkupac pakolója
+# időkorlátos keresést futtat — teljes felbontáson a felület beragadna.
+_PREVIEW_SIZE = (640, 480)
 
 
 class CreateMixin(BackgroundWorkerMixin):
@@ -45,6 +49,29 @@ class CreateMixin(BackgroundWorkerMixin):
     movieProgress = Signal(int, int)
     movieFinished = Signal(str, int, int, int)
     movieFailed = Signal(str)
+    #: #920: az élő előnézet elkészült — a paraméter a revízió, amivel a
+    #: QML törni tudja a Qt kép-gyorsítótárát (`?rev=<n>`).
+    collagePreviewReady = Signal(int)
+    collagePreviewFailed = Signal(str)
+    collageSeedChanged = Signal()
+
+    def _ensure_collage_wired(self) -> None:
+        """Lusta, egyszeri állapot-inicializálás (a `TrayMixin.
+        _ensure_tray_wired` mintája) — a `controller.py` FORRÓ FÁJL, ezért a
+        szelet a saját állapotát maga hozza létre, nem az `__init__`-ben.
+        """
+        if getattr(self, "_collage_wired", False):
+            return
+        self._collage_wired = True
+        self._collage_preview = CollagePreviewProvider()
+        self._collage_preview_revision = 0
+        self._collage_seed = 0
+
+    @property
+    def collage_preview_provider(self) -> CollagePreviewProvider:
+        """A képszolgáltató, amit az `application.py` regisztrál."""
+        self._ensure_collage_wired()
+        return self._collage_preview
 
     def _selected_sources(self, rows) -> tuple[Path, ...]:
         """A kijelölt sorokból forrás-útvonalak, a rács sorrendjében."""
@@ -73,6 +100,63 @@ class CreateMixin(BackgroundWorkerMixin):
         return tray if tray else self._selected_sources(rows)
 
     @Slot(list, str, str)
+    def requestCollagePreview(self, rows, kind: str, border: str = NOBORDER) -> None:
+        """#920: élő előnézet a jelenlegi beállításokkal, háttérszálon.
+
+        A Kollázs eddig VAKON dolgozott: a felhasználó választott, a program
+        fájlba renderelt, és csak utána derült ki, mit kapott. Az eredetiben
+        a panel jobb oldalán élő vászon áll.
+
+        Az előnézet szándékosan KICSI (`_PREVIEW_SIZE`): a Képkupac pakolója
+        időkorlátos keresést futtat, és a teljes felbontású renderelés minden
+        csúszka-mozdulatnál használhatatlanná tenné a felületet.
+        """
+        self._ensure_collage_wired()
+        sources = self._sources_for(rows)[:_MAX_ITEMS]
+        if not sources:
+            self._collage_preview.clear()
+            self._collage_preview_revision += 1
+            self.collagePreviewReady.emit(self._collage_preview_revision)
+            return
+        if kind not in COLLAGE_THEMES or border not in BORDER_THEMES:
+            self.collagePreviewFailed.emit(self.tr("Unknown collage type."))
+            return
+
+        settings = PicasaCollageSettings(
+            theme=kind,
+            border=border,
+            width=_PREVIEW_SIZE[0],
+            height=_PREVIEW_SIZE[1],
+            seed=self._collage_seed,
+        )
+
+        def worker():
+            try:
+                report = make_picasa_collage(sources, settings)
+            except (ValueError, OSError) as error:
+                self.collagePreviewFailed.emit(str(error))
+                return
+            self._collage_preview.set_image(report.image)
+            self._collage_preview_revision += 1
+            self.collagePreviewReady.emit(self._collage_preview_revision)
+
+        self._start_background(worker, name="picasapy-collage-preview")
+
+    @Slot()
+    def shuffleCollage(self) -> None:
+        """#920: a két véletlenszerűsítő gomb magja — új elrendezés ugyanazokból
+        a képekből. A Képkupac szórása és a Mozaik pakolója is a magból dolgozik.
+        """
+        self._ensure_collage_wired()
+        self._collage_seed += 1
+        self.collageSeedChanged.emit()
+
+    @Property(int, notify=collageSeedChanged)
+    def collageSeed(self) -> int:
+        self._ensure_collage_wired()
+        return self._collage_seed
+
+    @Slot(list, str, str)
     @Slot(list, str, str, str)
     def makeCollage(self, rows, kind: str, target_url: str, border: str = NOBORDER) -> None:
         """Kollázs a kijelölt képekből a megadott célfájlba (JPEG).
@@ -86,6 +170,7 @@ class CreateMixin(BackgroundWorkerMixin):
         használta, tehát a kollázs működött, csak nem a Picasa
         elrendezéseivel.
         """
+        self._ensure_collage_wired()
         sources = self._sources_for(rows)[:_MAX_ITEMS]
         target = to_local_path(target_url)
         if not sources:
@@ -102,7 +187,12 @@ class CreateMixin(BackgroundWorkerMixin):
             return
 
         settings = PicasaCollageSettings(
-            theme=kind, border=border, width=_COLLAGE_SIZE[0], height=_COLLAGE_SIZE[1]
+            theme=kind,
+            border=border,
+            width=_COLLAGE_SIZE[0],
+            height=_COLLAGE_SIZE[1],
+            # #920: amit az előnézeten LÁT, azt kapja mentéskor is
+            seed=self._collage_seed,
         )
 
         def worker():
