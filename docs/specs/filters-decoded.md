@@ -3897,6 +3897,79 @@ eredeti Picasa-export, amelyben a Csúcsfények ÉS az Árnyékok is nem nulla,
 nem áll rendelkezésre (#951). A javítás a dekompilált képletet követi, a
 mérés az egy-vezérlős eseteket fedi.
 
+## A színhőmérsékletnek VAN kereszt-tagja — de csak a hideg végén (2026-08-18, #956)
+
+A #956 azt rögzítette, hogy a hőmérséklet-modell cseréje „nem igazolható",
+mert a mérésünk **vak a mátrix kereszt-tagjaira** — és a jegy külön
+képpontonkénti mérésre várt. **A mérés a meglévő anyagból elvégezhető
+volt, és eldöntötte a kérdést.**
+
+### A módszer: szórás a rekeszen belül, kontrollal
+
+Ha egy operátornak **nincs** kereszt-tagja, akkor egy csatorna kimenete
+kizárólag a **saját** bemenetétől függ. Tehát a bemeneti érték szerinti
+rekeszen belül a kimenet szórása csak a JPEG-zaj. Ha van kereszt-tag, a
+szórás érdemben nagyobb.
+
+**A zajszintet kontrollal mértük ki**: a Csúcsfények és az Árnyékok a
+binárisból **bizonyítottan csatornánkénti** (egyetlen közös LUT,
+`0x0090be70` alkalmazza mindhárom csatornára).
+
+| pár | átlagos eltérés | szórás B / G / R |
+|---|---|---|
+| **kontroll** — csúcsfények max | 55,77 | 1,94 / 1,09 / 1,55 |
+| **kontroll** — csúcsfények mid | 26,40 | 1,74 / 1,13 / 1,49 |
+| **kontroll** — árnyékok max | 57,04 | 2,03 / 1,09 / 1,50 |
+| **kontroll** — árnyékok mid | 31,49 | 1,57 / 1,06 / 1,35 |
+| színhőmérséklet **max** (meleg) | 6,96 | 1,56 / 1,03 / 1,86 |
+| színhőmérséklet **min** (hideg) | 34,10 | **4,09 / 3,06 / 9,82** |
+
+**A kontroll zajszintje 1,0–2,0 még 55–57 szintes hatásnál is.**
+
+- A **meleg** végén a hőmérséklet szórása **a zajszinten belül** van
+  (1,56 / 1,03 / 1,86) → ott az operátor gyakorlatilag csatornánkénti.
+- A **hideg** végén viszont **messze fölötte**, és a **kék csatornán a
+  legrosszabb: 9,82** — miközben a kontroll ugyanekkora hatásnál 1,5.
+  → **ott valódi kereszt-tag van.**
+
+### Független megerősítés: lineáris illesztés
+
+Ugyanezekre a párokra teljes `3×3 + eltolás` mátrixot és csak-átlós
+modellt is illesztettünk. A **legnagyobb átlón kívüli tag az átlóhoz
+viszonyítva**:
+
+| eset | max\|kereszt\| / átló |
+|---|---|
+| percent 0 (temp = −1,0) | **0,292** |
+| percent 10 (−0,8) | 0,123 |
+| percent 25 (−0,5) | 0,045 |
+| percent 75 (+0,5) | 0,022 |
+| percent 90 (+0,8) | 0,031 |
+| percent 100 (+1,0) | 0,037 |
+
+**Két, egymástól független módszer ugyanazt mondja:** a kereszt-tag a
+hideg végen ~29 %-os, a meleg végen elhanyagolható (2–4 %).
+
+### Mit jelent ez a modellünkre
+
+A mai modellünk (`tone.py:94` `_TEMPERATURE_KNOTS` +
+`_TEMPERATURE_GAINS`) **csatornánkénti erősítés**, csomópontok közti
+interpolációval. Ez **szerkezetileg képtelen** kereszt-tagot előállítani.
+A hideg végén tehát nem közelítés-pontatlanság, hanem **hiányzó
+szabadsági fok**.
+
+Ugyanezért **érvénytelen az a mérés is, amivel a natív tábla+mátrix
+modellt elvetettük**: az egy-vezérlős, csatornánkénti mért görbékhez
+hasonlított, amelyek a kereszt-tagot **maguk sem tudják ábrázolni**. Egy
+olyan mérce, ami a vizsgált jelenséget nem tudja megjeleníteni, nem
+alkalmas a modell elutasítására.
+
+*Bizonyítottsági fok: **megerősített** a kereszt-tag létére a hideg végen
+(két független módszer, kontrollal kimért zajszinttel) · **megerősített**
+arra, hogy a mai modellünk szerkezetileg nem tudja ábrázolni ·
+**feltételes** arra, hogy a natív mátrix-modell pontosan ezt adja — ehhez
+a natív modellt képpontonként kell lemérni ezeken a párokon.*
+
 ## A `dir_tint` (Graduated Tint) visszafejtve (2026-08-16, #874)
 
 **Az átmenet FORGATHATÓ, fokban megadott irányú** — nem függőleges. Ez a

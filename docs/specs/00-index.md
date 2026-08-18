@@ -32,7 +32,7 @@ kérdés).
    | tétel | régi verdikt | MA | jegy |
    |---|---|---|---|
    | `finetune2` Csúcsfény+Árnyék | 55,94 ΔE · 561 kép | ✅ **KÉSZ (2026-08-18)** — a kettő EGY közös LUT, a kompozit eltérés 217 szintről 0-ra (a valódi ini-korpusz 22 %-a kompozit) | #879 |
-   | `finetune2` hőmérséklet | — | **megfejtve, de a csere NEM igazolható**: a natív tábla+mátrix modell a mért görbéken hatból ötben rosszabb, viszont a mérés vak a mátrix kereszt-tagjaira — új, képpontonkénti mérés kell | #956 |
+   | `finetune2` hőmérséklet | — | **a kereszt-tag BIZONYÍTOTT a hideg végen** (2026-08-18): a kék csatorna szórása 9,82 az 1,4-es zajszinttel szemben, és a lineáris illesztés 29 %-os átlón kívüli tagot ad. A mai csatornánkénti modellünk ezt **szerkezetileg** nem tudja — és az elutasító mérés is vak volt rá. **Nincs szükség új felhasználói anyagra.** | #956 |
    | `tint` | 20,6 | megfejtve (`preserve` skálája −1…255) | #872 |
    | `sat` pozitív ág | 12 | ✅ **kész és kimérve: 0,74** | #693 |
    | `dir_tint` | 9 | ✅ **teljesen megvan** — az átmenet-görbe is (2026-08-18) | #874 |
