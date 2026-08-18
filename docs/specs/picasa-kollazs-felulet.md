@@ -232,6 +232,33 @@ gomb a panelen (198, 241) 71×37 és a `set_background` a vászon felett
 **Bizonyítottsági fok: megerősített** (a `.tre` és a `0x0082d570`);
 az `avgcolor` a `0x008364a0`-ból, ld. `picasa-create-features.md` 1.9.11.
 
+### 3/b Az átlagszín NEM menet közben számolódik — adatbázis-mező (2026-08-18)
+
+A „képek átlagszíne" háttér értékét a kollázs **nem számolja ki**: egy
+**adatbázis-tulajdonságot olvas ki** `"avgcolor"` kulccsal, ugyanazzal a
+hívással két helyen —
+
+```
+0x006a4cd0( adatbázistábla + 0xf20, kulcs, "avgcolor", &kimenet )
+```
+
+a végleges renderelőben (`0x0087e216`) és a csomópont-építőben
+(`0x0087c067`). A tábla az alkalmazásobjektum `+0x2bc → +0xf20`
+mezőjén ül; ugyanezt a kulcsot a beállítás-/adatbázis-réteg
+(`0x00425f60`, 12 452 bájt) kezeli a `moviestart`, `geoview` és társai
+mellett — vagyis **képenként tárolt, indexeléskor kiszámolt attribútum**.
+
+**Ami ebből következik a megvalósításra:** az eredeti pontos átlagszíne a
+`.picasa.ini`-ből **nem állítható elő** — az érték a Picasa saját
+adatbázisában élt. Nekünk **saját átlagot kell számolnunk**, és ki kell
+mondani, hogy ez **nem bitre azonos** az eredetivel. A számítás módja
+(mintavétel, súlyozás, színtér) **nem megfejtett**, mert nem a kollázs
+kódjában van.
+
+**Bizonyítottsági fok:** hogy a kollázs **kiolvassa és nem számolja** —
+**megerősített**. Hogy pontosan mi írja be és milyen képlettel —
+**nyitott**, és a kollázson kívüli terület.
+
 ---
 
 ## 4. A vászon körüli négy gombcsoport
@@ -936,6 +963,120 @@ A kimeneti fájlnév töve: `il_collagefilename` = „collage" / **„kollázs"*
 
 ---
 
+## 9/b Az ÁRNYÉK rajza — a teljes paraméterkészlet (2026-08-18)
+
+Eddig csak az „Árnyékok rajzolása" **kapcsoló** volt megfejtve (mikor
+látszik, mikor kapcsol be magától, melyik témánál alapértelmezett) — az,
+hogy az árnyék **hogyan néz ki**, nem. Most megvan, számokkal.
+
+### 9/b.1 A két résztvevő
+
+| osztály | hol jön létre | mi |
+|---|---|---|
+| `ShapeDraw<ShadowSampler>` (`0x00cbf4bc`) | **kétszer, azonosan**: a panelben (`0x0082b51f`) és a végleges renderelő útján (`0x0088a4de`) | a raszterizáló; a dokumentum `+0x274` mezőjén ül |
+| `ytShadowNode` (`0x00cc4af4`) | csomópontonként, `0x0087b170` | maga az árnyék-csomópont |
+
+A raszterizálót 100 bájtos foglalás hozza létre, a `0x00761720`
+konstruktorral (alapértékek: `+4 = +8 = 256`, `+0xc = 0.0`), majd a hívó
+**`+0xc = 60,0`**-ra és `+0x5c = 0`-ra állítja. A 60,0 csak **kezdőérték**:
+az elrendezés minden menetben felülírja (ld. lent). Az árnyék rajzolása
+`0x0082fdd0` — külön X és Y irányú lecsengés **szorzata** ad egy 0…255
+alfát; ha a rámpa-tábla (`+0x5c`) nincs beállítva (a kollázsban nincs), a
+lecsengés a beépített ág szerint megy.
+
+### 9/b.2 A képlet — ezt kell megvalósítani
+
+A csomópontonkénti árnyékot a `0x00888d02`–`0x00888d89` állítja elő. Legyen
+`k` a rajzolt (kerettel együtt vett) kép **`+0x18` egész mezője**:
+
+```
+eltolás_x = 0.001 · k + 1.0          ; 0xcf3db0 = 0.001, 0xc7e328 = 1.0
+eltolás_y = 0.002 · k + 2.0          ; 0xcf4120 = 0.002, 0xc7d9d0 = 2.0
+elmosás   = 0.03  · k                ; 0xcf4dc8 = 0.03
+átlátszatlanság = 0.6                ; 0xc7e304 = 0.6f
+```
+
+és ezekből az elrendezés (`0x0087b1e0`):
+
+```
+raszterizáló.sugár = elmosás · 8.0               ; 0xc7ea10 = 8.0
+raszterizáló.alfa  = (egész)(átlátszatlanság · 256.0)   ; 0xcf39d8 = 256.0
+                   = (egész)(0.6 · 256) = 153
+befoglaló_téglalap += elmosás · 1.5   MINDEN élen  ; 0xd34128 = 1.5
+```
+
+Az eltolás **hozzáadódik** a csomópont eltolásához (`0x0087b411`:
+`+0x278 → +0x1e4`, `0x0087b423`: `+0x27c → +0x1f0`) — vagyis az árnyék a
+képhez képest jobbra-**le** csúszik, és a **függőleges eltolás pontosan
+kétszerese a vízszintesnek**.
+
+> **Három szám, amit meg kell jegyezni:** az árnyék **60 %-os** (alfa
+> **153/255**), az eltolás **1 : 2 arányú** jobbra-le, az elmosás sugara a
+> mérettel **lineárisan** nő (`0.24 · k`, mert `0.03 · 8`).
+
+### 9/b.3 Ami NEM derült ki
+
+A `k` (a csomópont `+0x18` egész mezője) **pontos jelentése nem
+megállapított**. Amit tudunk: a rajzoló út ugyanezt a mezőt a `+0x14`
+párjával együtt olvassa és **0,08-dal** szorozza (`0x008882bc`–`0x008882d4`,
+`0xcf4df0 = 0.08`), tehát egy **méret-jellegű, előjel nélkül kezelt egész**
+— erős a gyanú, hogy a kerettel együtt vett kép **képpontban mért
+magassága**, de ezt nem bizonyítottuk. **A megvalósítás előtt ezt le kell
+mérni** (golden-pár: eredeti Picasa-kollázs árnyékkal vs. a miénk) — a
+képlet alakja megerősített, a bemenete nem.
+
+**Bizonyítottsági fok:** a konstansok, a képlet alakja, az alfa-számítás,
+az eltolás iránya és aránya, valamint a befoglaló-téglalap bővítése
+**megerősített**. A `k` jelentése **feltételes**. Hogy a mi kimenetünk
+ettől lesz-e az eredetivel egyező, **NINCS mérve**.
+
+---
+
+## 9/c A POLAROID-KÉPFELIRAT — doboz, szín, betűméret (2026-08-18)
+
+A keret geometriája eddig is megvolt (1.9.5), a **feliraté** nem. A
+felirat-csomópontot a `0x0087c820` építi; a `0x00839830` dönti el, hogy
+egyáltalán kell-e (a **`collage::showcaptions` BE** *és* a csomópont
+kerete **`polaroid`** — a `0x00839bef`–`0x00839d1c` háromszor is
+összehasonlítja a keretnevet).
+
+### A felirat-doboz — a polaroid-kerethez normalizálva
+
+```
+bal   = 0.098      jobb = 0.098 + 0.804 = 0.902     ; 0xcf4e18, 0xcf4e28
+fent  = 0.792      lent = 0.792 + 0.188 = 0.980     ; 0xcf4e1c, 0xcf4e20
+```
+
+A doboz méretét a `0x0087c8ed`–`0x0087c903` adja (`0.804 × 0.188`, a
+csomópont léptékével szorozva), a helyét a `0x009debd0(csp, 0.098, 0.792)`
+(`0x0087c9b0`), a léptéket a `0x009deca0(csp, 1/S)` (`0x0087c9cb`).
+
+> **A szám önmagát ellenőrzi.** A bal és a jobb margó **egyenlő**
+> (0,098 – 0,098), az alsó 0,020. És a keret-geometriából (1.9.5) a fotó
+> alsó éle négyzetes képnél `(1 + 0,0725) / 1,374 = 0,781` — a felirat
+> pedig **0,792**-nél kezdődik, épp a fotó alatt. Két, egymástól
+> független helyről számolt érték illeszkedik: ez erős megerősítés arra,
+> hogy az olvasat helyes.
+
+### Szín és betűméret
+
+| mi | érték | cím |
+|---|---|---|
+| a szöveg színe | **ARGB `0xFF4A4A4A`** = RGB(74, 74, 74), sötétszürke — **nem fekete** | `0x0087c9fa` |
+| a betűméret | `(egész)( magasság × 14 / 360 )` — azaz a referenciadoboz magasságának **3,89 %-a** | `0x0080c510`, `0xcf3d50 = 360.0` |
+| elforgatás | 0 (`0x005ba590(csp, 0.0)`) | `0x0087ca78` |
+| két logikai kapcsoló | mindkettő **1** (a szövegcsomópont `vt[0x38]` és `vt[0x2c]` bejáratán) | `0x0087ca4e`, `0x0087ca59` |
+
+A felirat-csomópont neve `collagepanel/textclip_<sorszám>`
+(`0xcc4ad8`), és `0x350` = 848 bájtos szövegcsomópont-osztály.
+
+**Bizonyítottsági fok: megerősített** a dobozra, a színre, a
+betűméret-képletre és a feltételre (showcaptions ÉS polaroid). A két
+logikai kapcsoló **jelentése** (feltehetően középre igazítás és
+sortörés) **nem megállapított** — csak az, hogy mindkettő 1.
+
+---
+
 ## 10. Megőrzött beállítások
 
 Mind a `Preferences` ág alatt, kulcsonként:
@@ -1016,6 +1157,12 @@ három, és egyik sem igényel futó Picasát)*:
 3. az **5120-as felső méret** pontos szemantikája a renderelőben
    (9.1/b 5. pont) — a konstans megvan, az útja a `0x0087dcd0`-n belül
    nincs végigkövetve.
+4. az árnyék-képlet bemenete: a csomópont **`+0x18`** egész mezőjének
+   jelentése (9/b.3) — a képlet megvan, a bemenet feltételes.
+5. a felirat-csomópont **két logikai kapcsolójának** jelentése
+   (`vt[0x38]`, `vt[0x2c]`, mindkettő 1) — 9/c.
+6. az **`avgcolor` adatbázismező** előállítása (3/b) — a kollázson
+   **kívüli** terület, az indexelőé.
 
 ---
 
