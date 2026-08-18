@@ -377,7 +377,26 @@ felső — ugyanaz a bal-felüli fényforrás, mint a gomboknál).
 
 A **kiemelt sor** a `.tre`-ben `Property round 2`, a felirat dobozánál
 **±4 px vízszintesen** és **+1 px lent** nagyobb (`scratch/highlight`).
-A **színe** kódból jön — nyitott.
+A **színe** kódból jön — **továbbra is nyitott**.
+
+> **Negatív eredmény (2026-08-18), hogy a következő kör ne járja újra.**
+> Ahol KERESTÜK és NINCS:
+>
+> - a `ytPopupListNode` saját vtable-metódusaiban (`0x009e0660`,
+>   `0x009e0700`, `0x009e08b0`, `0x009e0ad0`) **egyetlen szín-konstans
+>   sincs**;
+> - a `ytBasicPopupListHandler`-ben (`0x009d9890`) sem;
+> - a `.tre`-források között **nincs `popuplist` panel**: a lenyíló lista
+>   a `respack`-ben **rétegtípus** (`layer:…/popuplist: <név>`), nem
+>   `.tre`-vel leírt panel — tehát a szín nem `Property`-ként jön;
+> - a `.text` egészében **nincs** `0x7D8397` immediate (ez volt a
+>   képernyőképről becsült érték — a bináris nem erősíti meg).
+>
+> **Hol folytassa a következő kör:** a lista-csomópont osztályának
+> konstruktoránál (`0x0069d950`, `0x0069dc00`) és a rétegtípus rajzolóján
+> keresztül; vagy — olcsóbban — a felhasználó képernyőképéről
+> **közvetlen színméréssel**, mert az a projekt szabálya szerint
+> önmagában bizonyíték.
 
 ## 9. A gomb-rétegek teljes leltára
 

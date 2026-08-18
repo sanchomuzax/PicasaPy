@@ -15,7 +15,7 @@ kérdés).
 
 ## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
-### [filters-decoded.md](filters-decoded.md) — 5 kérdés
+### [filters-decoded.md](filters-decoded.md) — 1 kérdés
 
 1. ~~**`autocolor` pontos gain-képlete** (Nyitva 1)~~ — **TELJESEN MEGVAN**
    (#759, 2026-08-18): `M · diag(g) · M⁻¹`, és a becslő egész-osztásai
@@ -24,11 +24,28 @@ kérdés).
 2. ~~**`unsharp` kernel finomítása** (Nyitva 3)~~ — **MEGVAN** (#762):
    köbös B-spline, `× 1,5` szélesítéssel, σ ≈ 0,87. A mérés szerint a mai
    Gauss már „JÓ" (0,47) — finomítás, nem hiba
-3. **Render-pontosítás** — ⭐ **a rangsor ÚJ alapja a mért korpusz-gyakoriság**
-   (`filters-decoded.md`, „A szűrők TÉNYLEGES gyakorisága"): a `finetune2`
-   561 előfordulás **és** 55,94 ΔE → a legnagyobb tényleges hatású hiba
-   (#879). A golden-verdiktek súlyossági sorrendje: ~~`tint`~~ → **a fő oka MEGVAN (#872): a `preserve` skálája −1…255, nem 0…100** → `sat` pozitív ág 12 → ~~`dir_tint` 9~~ → **MEGVAN (#874): forgatható, fokos irány, az `x` puck is számít, szorzó színezés; nyitva a `0x0090ec40` görbe alakja** → ~~`finetune2` hőmérséklet~~ → **MEGVAN (#879): feketetest-tábla (`0x00c7cf98`) + az `autocolor` mátrixa; `Kelvin = 6500 + 3700·temp`** → `fill` 6,5 → `ansel` 5,6 → `Vignette` 4,6
-   - **MEGVÁLASZOLVA ugyanebben a menetben:** a `tint` (és a `rainbow`, `autocontrast`) **szinthúzással kezd** — a `0x009db610` helyben módosítja a képet, nem csak elemez. A `tint` hat lépéséből három hiányzik/rossz nálunk (#872)
+3. **Render-pontosítás** — ⭐ **a rangsor alapja a mért korpusz-gyakoriság**
+   (`filters-decoded.md`, „A szűrők TÉNYLEGES gyakorisága").
+   **A rangsor 2026-08-18-án ÚJRAÍRVA**, mert a régi alak nyolc áthúzott
+   beszúrástól olvashatatlanná vált, és a tételei nagyrészt elavultak.
+
+   | tétel | régi verdikt | MA | jegy |
+   |---|---|---|---|
+   | `finetune2` hőmérséklet | 55,94 ΔE · 561 kép | **megfejtve, bekötésre vár** — feketetest-tábla + `autocolor`-mátrix | #879 |
+   | `tint` | 20,6 | megfejtve (`preserve` skálája −1…255) | #872 |
+   | `sat` pozitív ág | 12 | ✅ **kész és kimérve: 0,74** | #693 |
+   | `dir_tint` | 9 | ✅ **teljesen megvan** — az átmenet-görbe is (2026-08-18) | #874 |
+   | `fill` | 6,5 | ✅ **eredeti exportokhoz mérve 1,20–1,77** (2026-08-18) — nincs teendő a szűrőn; a mérés bekötése #938 | — |
+   | `ansel` | 5,6 | ✅ **fehér szűrővel 0,53**; a SZÍNES szűrő igazolatlan — exportra vár | #939 |
+   | `Vignette` | 4,6 | ✅ a zóna **ELLIPSZIS** — eredeti exportokkal igazolva (2026-08-18) | #859 |
+
+   **Vagyis a rangsorból egyetlen valódi rendermunka maradt: a `finetune2`
+   hőmérséklet bekötése (#879).** A többi vagy kész, vagy külső exportra
+   vár.
+
+   - **Korábban megválaszolva:** a `tint` (és a `rainbow`, `autocontrast`)
+     **szinthúzással kezd** — a `0x009db610` helyben módosítja a képet, nem
+     csak elemez (#872)
 4. ~~**A `tint` virtuális színátalakítása**~~ — **GYAKORLATILAG LEZÁRVA** (#872): a `ctx` a **lánc-építő objektum**, a `[ctx+8]` egy függvénymutató-**mező** (nem vtable-slot), és a szokásos renderelési úton nem áll be. A recept teljes nélküle
 5. ~~**A `ytResampler` utolsó, nem 2-hatvány lépése**~~ — **MEGVAN** (#871,
    #762): kilenc szűrőmag, a `ResampleFilter2` beállítás választ, alapérték
@@ -86,17 +103,23 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    **néggyel osztja** (`0x009e3178`), kivétel nélkül
 2. ~~a `popuplist` **lenyíló panel** színei~~ — **MEGVAN** (#894):
    `listdecrect`, sík `#E8E8E8` kitöltés, `#BABABA` keret
-3. **A kiemelt sor SZÍNE** — a `respack`-ben nincs hozzá réteg, kódból jön
-   (`ytPopupListNode`, vtable `0x0089afb4`)
+3. **A kiemelt sor SZÍNE** — a `respack`-ben nincs hozzá réteg, kódból jön.
+   *(2026-08-18: négy helyen kerestük, nincs ott — a negatív eredmény és a
+   folytatás helye a lap 8. szakaszában. A legolcsóbb út egy
+   színmérés a felhasználó képernyőképéről.)*
 4. **A buboréksúgó rajza** — saját osztály (`ytToolTip`), de nincs hozzá
    képréteg; a háttér/keret/árnyék kódból jön (#901)
 
-### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — 4 kérdés
+### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott kérdés
+
+*(Mind a négy lezárult; a maradék apró pontok — a `WM_*` leképezés és az
+egyes menük tételsora — a lap saját szakaszaiban vannak jelölve.)*
 
 1. ~~A **gumikeretes kijelölés** szabálya~~ — a `ytSelectionDragHandler` a
    **szerkesztő** téglalapjaié, nem a rácsé: **arányt kényszerít**
-   (Shift 1,0 · Ctrl 4/3 · Alt 3/2, #891). **A RÁCS lasszójának szabálya
-   továbbra is nyitott — más kódúton van.**
+   (Shift 1,0 · Ctrl 4/3 · Alt 3/2, #891). ~~A RÁCS lasszójának szabálya~~ — **MEGVAN**
+   (2026-08-18, 4/e): **metszés-teszt**, nem tartalmazás; a metszetnek
+   szigorúan pozitív területűnek kell lennie.
 2. ~~A **Shift-tartomány horgonya**~~ — **MEGVAN** (#892): a horgony a
    `[this+0x390]`, és Shifttel **egyesével bővít**, a horgony **továbblép**
    (nem Intéző-féle tartomány)
@@ -108,8 +131,9 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    0x1b = elrendezés, 0x1f/0x20 = be/ki), a visszatérési értékekkel együtt
    (`0xF4240` = kezeltem, `0xF4241` = add tovább). **Maradék:** a `WM_*` →
    belső leképezés — de a megvalósításhoz nem kell
-4. A **jobbklikk útja**: melyik helyi menü melyik felületrészhez tartozik
-   (`0x005e7c20` + `0x0056c5a0`)
+4. ~~A **jobbklikk útja**~~ — **MEGVAN** (2026-08-18, 4/f): tizenhat helyi
+   menü erőforrásneve a birtokló függvénnyel; a rácsnak album- és
+   mappanézetben **külön** menüje van
 
 ### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
 

@@ -166,11 +166,48 @@ A fix tónusgörbe (reziduál) chart-függetlenül azonos (max|Δ|=2–3/255, á
 Minták: 16→18,7 · 64→71,3 · 128→142,7 · 192→214 · 240→255 (enyhe világosítás,
 csúcsfény-emelés). Hátralévő függés: az autocolor pontos modellje (ld. lent).
 
-### `fill` — MEGOLDVA (2D LUT)
+### `fill` — MEGOLDVA (analitikus gamma-LUT), 2026-08-18-án KIMÉRVE eredeti exportokhoz
 
 20 lépéses s-sweep lemérve (`luts3.json: fill2d`); szomszéd-görbék közti
 lineáris interpoláció max hibája **1,25/255** → tetszőleges s-re ±1 pontosságú
 implementáció LUT-interpolációval. A `finetune2` p1 ugyanez a LUT.
+
+**A mai megvalósításunk nem interpolál, hanem a natív képletet futtatja**
+(`tone.py:112`): `gamma = 1/((1−s)·0,7 + 0,3)`,
+`kitevő = 1/(gamma·0,7 + 0,3)`, `LUT[i] = 255·pow(i·gamma/255, kitevő)`,
+majd `apply_fill` **árnyék-súlyozott keveréssel** viszi rá (a súly a
+képpont `luma4`-jével fordított).
+
+#### Mérés eredeti Picasa-exportokhoz (2026-08-18)
+
+A privát repó `referencia/deritofeny/` mappájában **hat valódi Picasa-export**
+van ugyanarról a képről (0 / 10 / 25 / 50 / 75 / 100 %). Eddig **egyetlen
+mérés sem használta**. A mai kódunk ezekhez mérve:
+
+| csúszka | ΔE átlag | ΔE max |
+|---|---|---|
+| 10 % | **1,20** | 7,35 |
+| 25 % | **1,77** | 16,16 |
+| 50 % | **1,33** | 18,79 |
+| 75 % | 4,76 | 35,19 |
+| 100 % | **1,58** | 70,71 |
+
+Vagyis a `fill` a mérőszett „1,03–6,56" verdiktjénél **lényegesen jobb**:
+öt pontból négyen 1,2–1,8 között van.
+
+**A 75 %-os kilógás magyarázata:** `s = 0,80`-nal ugyanerre a képre a hiba
+**4,76 → 2,02**-re esik. Egyetlen kilógó pont, aminek a két szomszédja
+illeszkedik, sokkal valószínűbben **pontatlan csúszkaállás** az exportban
+(a Picasa csúszkáját egérrel húzzák), mint modellhiba. **Nem nyitottunk rá
+hibajegyet.**
+
+> ⚠️ **Negatív eredmény, hogy a következő kör ne járja újra.** A
+> `0x0090ac20` verem-követéséből 2026-08-18-án egy **fordított** képlet jött
+> ki (`i·D/255` alap és `D/(0,7D+0,3)` kitevő, ahol `D = 0,7(1−s)+0,3`).
+> A golden párokon mérve ez **11–127 szint** hibát adott, tehát megdőlt.
+> A helyes alak a **reciprok**, ahogy a `tone.py:119` írja. Tanulság: az
+> `fdivr`/`fdivrp` iránya kézzel könnyen elcsúszik — mérés nélkül nem
+> szabad ilyen képletet kiadni.
 
 ### `autocolor` — RÉSZBEN (csillapított fehéregyensúly)
 
@@ -312,13 +349,13 @@ végpontok felé tér el).
 | `autolight` | mind közelítés (0.20–0.74) | ✅ kész |
 | `glow` | közelítés (1.85 → **0,15–1,06** #668) | ✅ kész |
 | `enhance` | közelítés, színöntetnél eltér (0.49–3.02) | ✅ jó (az autocolor-komponens húzza) |
-| `sat` | negatív jó, pozitív romlik (0.70–12.71) | ⚠️ pozitív telítés pontosítandó |
+| `sat` | negatív jó, pozitív romlik (0.70–12.71) → **0,74** (#693) | ✅ **kész** — a pozitív ág csatornánkénti gammája megvan ÉS be van kötve (`saturation_positive.py`) |
 | `finetune2` | h/s alacsony jó, hő-extrém eltér (0.94–24.9) | ⚠️ hőmérséklet-tengely pontosítandó |
-| `fill` | csak gyenge erősségnél jó (1.03–6.56) | ⚠️ 2D-LUT az erősséggel driftel |
+| `fill` | csak gyenge erősségnél jó (1.03–6.56) → **eredeti exportokhoz mérve 1,20–1,77** (2026-08-18) | ✅ jó — a 6,56 túlbecsülte |
 | `glow2` | eltér (2.68) → **közelítés (0,18–1,19)** (#668) | ✅ kész |
 | `radblur` | eltér (3.18) → **közelítés (0,09–0,68)** (#668) | ✅ kész |
-| `Vignette` | eltér (4.65) | ❌ analitikus modell (Nyitva 2) |
-| `ansel` | eltér (5.60) | ❌ |
+| `Vignette` | eltér (4.65) | ✅ analitikus modell MEGVAN · **a zóna ELLIPSZIS — eredeti exportokkal igazolva (2026-08-18)** |
+| `ansel` | eltér (5.60) → **fehér szűrővel 0,53** (#317) | ✅ fehérre kész · ⚠️ SZÍNES szűrőre nincs export |
 | `dir_tint` | eltér (9.36) | ❌ |
 | `tint` | eltér (13.6 a mai mérésben) | ❌ **a fő ok MEGVAN** (#872): a `preserve` skálája −1…255, plusz hiányzó szinthúzás és gamma |
 
@@ -927,7 +964,9 @@ figyelembe veszi a `Preferences/CarefulEnhance` beállítást.
 ### Ami maradt
 
 - a `sat` luminancia-súlyainak csatorna-hozzárendelése (5:1:2);
-- az `ansel` hisztogram utáni lépése;
+- ~~az `ansel` hisztogram utáni lépése~~ — a mért tónusgörbe
+  (`_ANSEL_ANCHOR_CURVE`) fehér szűrővel **0,53**-ra viszi az eltérést
+  (volt 6,11);
 - `dir_tint`, `radsat` számszerű feldolgozása (a nyers kimenet megvan).
 
 **Ezekhez már nem a felhasználó Picasája kell**, hanem a meglévő
@@ -3678,6 +3717,39 @@ rámpa saját peremhatása).
 *Bizonyítottsági fok: megerősített* (a négy határ kiszámítása és mindkét
 ciklus feje nyers utasításszinten).
 
+### A vignetta zónája ELLIPSZIS — az eredeti exportjaival igazolva (2026-08-18)
+
+A `#859` azt állította, hogy a mi vignettánk ellipszist rajzol, míg az
+eredetié kör. **A Picasa saját exportjai ezt megcáfolják.**
+
+A privát repó `referencia/vignette/` mappájában **nyolc** eredeti export
+van ugyanarról a képről (2560 × 1702 — erősen nem négyzetes, tehát a
+kérdés jól mérhető). A próba geometria-független: minden képpontra
+kiszámoltuk a **megfigyelt erősítést** (kimenet/bemenet), sugár szerint
+rekeszekbe raktuk, és megnéztük a **rekeszen belüli szórást**. Amelyik
+geometria a valódi, abban a szórásnak el kell tűnnie.
+
+| export | szórás ELLIPSZIS sugárral | szórás KÖR sugárral |
+|---|---|---|
+| Vignette default | **0,0485** | 0,0775 |
+| Vignette fade mid | **0,0331** | 0,0452 |
+| Vignette size max | **0,0407** | 0,0754 |
+| Vignette strenght max | **0,0628** | 0,1042 |
+| Vignette strenght mid | **0,0514** | 0,0830 |
+| Vignette strenght min | **0,0378** | 0,0583 |
+
+Mind a hat informatív exportnál az **ellipszis** magyarázza jobban a
+mérést, nagyjából **40 %-kal kisebb szórással**. A mai
+`_radius_grid(…, 0.5, 0.5)` (tengelyenként külön normálás) tehát **helyes**.
+
+> **Két export nem informatív:** a `Vignette fade max` és a
+> `Vignette size min` **bájtra azonos a bemenettel** — vagyis maximális
+> elhalványításnál és minimális méretnél a Picasa vignettája
+> **nem csinál semmit**. Ez a paramétertartomány kalibrálásához hasznos.
+
+*Bizonyítottsági fok: **megerősített** — eredeti Picasa-exportokból,
+geometria-független módszerrel.*
+
 ## A `dir_tint` (Graduated Tint) visszafejtve (2026-08-16, #874)
 
 **Az átmenet FORGATHATÓ, fokban megadott irányú** — nem függőleges. Ez a
@@ -3740,24 +3812,53 @@ A képpont-ciklus a LUT **felső bájtját** olvassa, csatornánként, a
 Vagyis a `dir_tint` — a `radtint`-hez hasonlóan — **szorzó** színezés, nem
 lineáris keverés a szín felé.
 
-### Az átmenet-görbe (`0x0090ec40`, 134 b) — NYITVA
+### Az átmenet-görbe (`0x0090ec40`, 134 b) — MEGFEJTVE (2026-08-18)
 
-```asm
-0x0090ec41  fld1
-0x0090ec47  fucom st(1)          ; ha a paraméter == 1,0
-0x0090ec54  fld  [esp+8] / ret   ;   → LINEÁRIS (azonosság)
-0x0090ec5c  fdivrp               ; egyébként 1/paraméter
-0x0090ec5e  call 0xc0b310        ; matematikai segédfüggvény — NEM azonosított
-0x0090ec6e  call 0x49fe60        ; matematikai segédfüggvény — NEM azonosított
+**A két „nem azonosított" segédfüggvény UGYANAZ: a négyzetgyök.**
+A `0x0049fe60` mindössze egy `float`-os burkolat — betölti a verem-
+argumentumot és továbbadja a `0x00c0b310`-nek (`0x0049fe6c`), ami az FPU
+`sqrt`-intrinsic. Ezzel a görbe teljesen kiolvasható.
+
+Jelölje `x` a bemenetet (0…1) és `p` a paramétert:
+
+```
+ha p == 1,0        →  y = x                     (azonosság, 0x0090ec50)
+
+egyébként:
+    A = sqrt(1/p)                               ; 0x0090ec5c–0x0090ec5e
+    B = sqrt(p)                                 ; 0x0090ec6b–0x0090ec6e
+    y = ( 1 / ( (1−x)·(B−A) + A ) − A ) / (B − A)
 ```
 
-Torzító (bias) görbe. **Itt kell folytatni:** a két segédfüggvény
-azonosítása, és hogy melyik csúszka adja a paraméterét.
+**A képlet önmagát hitelesíti.** Mivel `A·B = 1` azonosan, a végpontok
+pontosan `y(0) = 0` és `y(1) = 1` — a görbe normalizált. És `p = 1`-nél
+`B − A = 0`, vagyis **nullával osztás lenne**: pontosan ezért van a
+kódban külön azonosság-ág erre az egy értékre. Két független jel mondja
+ugyanazt.
+
+Ez a klasszikus **reciprok (hiperbolikus) torzítógörbe**: `p > 1` az
+egyik vég felé húzza a tónusokat, `p < 1` a másik felé, `p = 1` semleges.
+
+### A paraméter útja: a Shade csúszkából
+
+```
+callback (0x008f998b):  arg = 1 − Shade
+munkafüggvény (0x0090f470):
+    q = clamp(arg, 0,01, 99,9)                  ; 0x0090f484–0x0090f4cd
+    p = 1 / q                                   ; 0x0090f5e7–0x0090f5f8
+LUT-építő (0x0090ecd0):  y = görbe(i/255, p) × 65535, csonkítva
+```
+
+Tehát **`p = 1 / clamp(1 − Shade, 0,01, 99,9)`**. Shade = 0-nál `p = 1`,
+azaz **azonosság** (nincs tónusformálás); Shade → 1-nél `p → 100`, azaz
+maximálisan torzított átmenet. A `0,01`-es padló az, ami a `p`-t 100-nál
+megfogja.
 
 *Bizonyítottsági fok: megerősített* a paraméter-térképre, a fokos szögre, a
 `Feather` 0,001-es padlójára, az `1 − Shade`-re, a `× 30`-as
-középpont-skálára, a LUT felépítésére és a szorzó színezésre · **erős** a
-negyed-kezelés pontos szemantikájára · **nyitott** a görbe alakja.
+középpont-skálára, a LUT felépítésére, a szorzó színezésre **és
+(2026-08-18) a görbe alakjára** · **erős** a negyed-kezelés pontos
+szemantikájára.
 
 ## A három „automatikus" szűrő HÁROM külön algoritmus (2026-08-17)
 
