@@ -6690,4 +6690,60 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Az ö&amp;sszes kijelölése</translation>
     </message>
 </context>
+<context>
+    <name>CollagePanel</name>
+    <message>
+        <location filename="../qml/PicasaPy/CollagePanel.qml"/>
+        <source>Desktop Background</source>
+        <translation>Asztali háttérkép</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollagePanel.qml"/>
+        <source>Save the picture as a JPG in the Collages album, then set it as your desktop background</source>
+        <translation>JPG formátumban mentheti a képet a Kollázsok albumba, majd beállíthatja az asztalra háttérképként</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollagePanel.qml"/>
+        <source>Create Collage</source>
+        <translation>Kollázs létrehozása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollagePanel.qml"/>
+        <source>Save as a JPG in the Collages album (in the Projects collection).</source>
+        <translation>Mentés JPG formátumban a Kollázsok albumba (a Projektek gyűjteménybe).</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollagePanel.qml"/>
+        <source>Reset</source>
+        <translation>Alaphelyzet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollagePanel.qml"/>
+        <source>Undo all changes</source>
+        <translation>Az összes módosítás visszavonása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollagePanel.qml"/>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollagePanel.qml"/>
+        <source>Close the Collage tab</source>
+        <translation>A Kollázs lap bezárása</translation>
+    </message>
+</context>
+<context>
+    <name>CollagePanelTabBar</name>
+    <message>
+        <location filename="../qml/PicasaPy/CollagePanelTabBar.qml"/>
+        <source>Settings</source>
+        <translation>Beállítások</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollagePanelTabBar.qml"/>
+        <source>Clips (%1)</source>
+        <translation>Klipek (%1)</translation>
+    </message>
+</context>
 </TS>

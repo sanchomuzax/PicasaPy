@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.77] – 2026-08-18
+
+### Új
+- **A Kollázs-panel váza, a helyes méretezéssel (#945).** A készülő kollázs-lap
+  csontváza a helyére került: bal oldalt a beállítás-hasáb a két füllel
+  („Beállítások" és „Képek (N)"), alatta a négy gomb — Asztali háttérkép,
+  Kollázs létrehozása, Alaphelyzet, Bezárás —, jobbra pedig a vászon a lappal.
+
+  A lényeg az, ami **átméretezéskor** történik: a bal hasáb mérete **állandó**,
+  és a négy gomb is ugyanott marad, akármekkorára húzod az ablakot — a
+  növekedést mind a vászon kapja meg. A lap a vásznon középen ül, és pontosan
+  az oldalformátum arányát tartja. Így viselkedik az eredeti Picasa is; a
+  szélesre húzott ablakban a hasáb alatt üres sáv marad, nem nyúlnak szét a
+  gombok.
+
+  A hasáb és a vászon tartalma (elrendezés-választó, keretek, háttér, illetve a
+  mozgatható képek) a következő lépcsőkben érkezik.
+
 ## [0.7.76] – 2026-08-18
 
 ### Hozzáadva

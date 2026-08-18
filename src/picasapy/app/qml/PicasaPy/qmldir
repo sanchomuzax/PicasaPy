@@ -98,3 +98,6 @@ EditorDialogs 1.0 EditorDialogs.qml
 EditorParamPanel 1.0 EditorParamPanel.qml
 EditorTabBar 1.0 EditorTabBar.qml
 EditorTabCommonFixes 1.0 EditorTabCommonFixes.qml
+CollagePanel 1.0 CollagePanel.qml
+CollagePanelTabBar 1.0 CollagePanelTabBar.qml
+CollagePanelTabButton 1.0 CollagePanelTabButton.qml
