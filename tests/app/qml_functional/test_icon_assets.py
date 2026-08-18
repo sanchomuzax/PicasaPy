@@ -109,7 +109,28 @@ _COLLAGE_PANEL_ICONS = (
     "collage-dropdown-arrow.svg",
 )
 
-_ALL_ICONS = _EXPECTED_ICONS + _EDITOR_TOOL_ICONS + _COLLAGE_PANEL_ICONS
+# a vászon körüli két oldalsó gomboszlop ikonjai (#948, a #920 7/8 lépcsője).
+# Mind 15 × 15 — a `.tre` gombmérete —, és mindkét oszlop csak kijelöléskor
+# látszik (`m_hidden`).
+_COLLAGE_CANVAS_ICONS = (
+    # forgatás-igazítás: óralap-nyíl a négy irányba (`snap_12/3/6/9`)
+    "collage-snap-12.svg",
+    "collage-snap-3.svg",
+    "collage-snap-6.svg",
+    "collage-snap-9.svg",
+    # rétegsorrend (`move_top/up/down/bottom`)
+    "collage-move-top.svg",
+    "collage-move-up.svg",
+    "collage-move-down.svg",
+    "collage-move-bottom.svg",
+)
+
+_ALL_ICONS = (
+    _EXPECTED_ICONS
+    + _EDITOR_TOOL_ICONS
+    + _COLLAGE_PANEL_ICONS
+    + _COLLAGE_CANVAS_ICONS
+)
 
 
 def _settle(qt_app, rounds=3):

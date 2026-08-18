@@ -108,3 +108,8 @@ CollagePanelTabBar 1.0 CollagePanelTabBar.qml
 CollagePanelTabButton 1.0 CollagePanelTabButton.qml
 CollageSettingsTab 1.0 CollageSettingsTab.qml
 CollageThemePopup 1.0 CollageThemePopup.qml
+CollageActionRow 1.0 CollageActionRow.qml
+CollageRandomRow 1.0 CollageRandomRow.qml
+CollageSnapColumn 1.0 CollageSnapColumn.qml
+CollageZOrderColumn 1.0 CollageZOrderColumn.qml
+CollageContextMenus 1.0 CollageContextMenus.qml
