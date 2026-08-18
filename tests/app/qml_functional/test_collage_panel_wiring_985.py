@@ -116,6 +116,19 @@ def _kozeppont(item: QQuickItem) -> tuple[float, float]:
 
 
 def _kattints(window, item: QQuickItem, qt_app) -> None:
+    # A kattintás helyét CSAK a tényleges elrendezés után szabad kiszámolni.
+    # A `_var` csak a KÖVETKEZMÉNYT várja ki; ha a koordináta már eleve rossz
+    # (az elem még 0 méretű, vagy a végleges helyére sem került), a kattintás
+    # a semmibe megy, és utólag semmilyen várakozás nem javítja.
+    #
+    # A main ubuntu-lába pontosan ezen bukott el a 0.8.0 után: a
+    # fedettség-méréssel futó, lassabb CI-n a Könyvtár fülre adott kattintás
+    # elkerülte a fület, és az `activeTabId` a kollázs-lapon maradt. Helyben,
+    # izoláltan mind a 34 eset zöld volt — a különbség a sebesség.
+    _var(qt_app, lambda: item.width() > 0 and item.height() > 0)
+    kozep_x, kozep_y = _kozeppont(item)
+    # a pozíció is legyen STABIL: két egymást követő mérés egyezzen
+    _var(qt_app, lambda: _kozeppont(item) == (kozep_x, kozep_y))
     kozep_x, kozep_y = _kozeppont(item)
     QTest.mouseClick(
         window,
@@ -194,9 +207,30 @@ def _fulsav(window):
     return _elem(window, "documentTabStrip")
 
 
+def _fulre_kattint_amig_valt(window, qt_app, objektum_nev, vart_azonosito) -> None:
+    """VALÓDI kattintás a fülre, amíg a váltás tényleg meg nem történik.
+
+    A kattintás helyét a `_kattints` már az elrendezés kivárása után
+    számolja, de fejnélküli környezetben a fülsáv a kattintás pillanatában
+    még átrendeződhet — ilyenkor az esemény a fül mellé esik, és a váltás
+    NÉMÁN elmarad. A main ubuntu-lába pontosan ezen bukott el a 0.8.0 után
+    (helyben, izoláltan mind a 34 eset zöld volt).
+
+    Legfeljebb háromszor próbálkozunk: ha a váltás a harmadik kattintásra
+    sem történik meg, az már VALÓDI hiba, és a hívó állítása buktatja el.
+    """
+    sav = _fulsav(window)
+    for _ in range(3):
+        if sav.property("activeTabId") == vart_azonosito:
+            return
+        _kattints(window, _elem(window, objektum_nev), qt_app)
+        if _var(qt_app, lambda: sav.property("activeTabId") == vart_azonosito, 1.0):
+            return
+
+
 def _konyvtar_fulre(window, qt_app) -> None:
     """VALÓDI kattintás a rögzített Könyvtár fülre (nem property-írás)."""
-    _kattints(window, _elem(window, "documentTabLibrary"), qt_app)
+    _fulre_kattint_amig_valt(window, qt_app, "documentTabLibrary", "library")
 
 
 def _kollazs_fulre(window, qt_app) -> None:
