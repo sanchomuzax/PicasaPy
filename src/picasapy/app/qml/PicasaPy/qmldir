@@ -16,6 +16,8 @@ PicasaButton 1.0 PicasaButton.qml
 PicasaScrollBar 1.0 PicasaScrollBar.qml
 PicasaSlider 1.0 PicasaSlider.qml
 EditorPanel 1.0 EditorPanel.qml
+DocumentTabStrip 1.0 DocumentTabStrip.qml
+DocumentTab 1.0 DocumentTab.qml
 CropOverlay 1.0 CropOverlay.qml
 FacesOverlay 1.0 FacesOverlay.qml
 SearchSuggestions 1.0 SearchSuggestions.qml

@@ -6746,4 +6746,39 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Klipek (%1)</translation>
     </message>
 </context>
+<context>
+    <name>DocumentTabStrip</name>
+    <message>
+        <source>Library</source>
+        <translation>Könyvtár</translation>
+    </message>
+    <message>
+        <source>Confirm…</source>
+        <translation>Jóváhagyás…</translation>
+    </message>
+    <message>
+        <source>The current collage contains unsaved changes.
+
+Would you like to save or discard them before closing the tab? (Note: drafts are saved to the Collages album.)
+
+Click Cancel to leave the tab open.</source>
+        <translation>A jelenlegi kollázs nem mentett módosításokat is tartalmaz.
+
+A lap bezárása előtt menti vagy elveti ezeket? (Megjegyzés: A program a piszkozatokat a „Kollázsok” albumba menti.)
+
+A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
+    </message>
+    <message>
+        <source>Save Draft</source>
+        <translation>Piszkozat mentése</translation>
+    </message>
+    <message>
+        <source>Discard Changes</source>
+        <translation>Módosítások elvetése</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+</context>
 </TS>
