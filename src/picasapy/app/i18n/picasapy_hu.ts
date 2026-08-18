@@ -6993,4 +6993,219 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <translation>Méretarány: %1%</translation>
     </message>
 </context>
+<context>
+    <name>CollageActionRow</name>
+    <message>
+        <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
+        <source>Select All</source>
+        <translation>Az összes kijelölése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
+        <source>Select all the pictures (Ctrl+A)</source>
+        <translation>Az összes kép kijelölése (Ctrl+A)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
+        <source>Select None</source>
+        <translation>Az összes kijelölés megszüntetése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
+        <source>Deselect all the pictures (Ctrl+D)</source>
+        <translation>Az összes kép kijelölésének megszüntetése (Ctrl+D)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
+        <source>Remove</source>
+        <translation>Eltávolítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
+        <source>Remove selected items from the collage (Del)</source>
+        <translation>Kijelölt elemek eltávolítása a kollázsból (Del)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
+        <source>Set as Background</source>
+        <translation>Beállítás háttérként</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageActionRow.qml"/>
+        <source>Use the selected picture as the background</source>
+        <translation>A kijelölt kép használata háttérként</translation>
+    </message>
+</context>
+<context>
+    <name>CollageRandomRow</name>
+    <message>
+        <location filename="../qml/PicasaPy/CollageRandomRow.qml"/>
+        <source>Scramble Collage</source>
+        <translation>Véletlenszerű kollázs</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageRandomRow.qml"/>
+        <source>Mix up the collage layout</source>
+        <translation>A kollázs elrendezésének összekeverése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageRandomRow.qml"/>
+        <source>Shuffle Pictures</source>
+        <translation>Képek összekeverése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageRandomRow.qml"/>
+        <source>Randomize the order of the pictures</source>
+        <translation>A képek sorrendjének véletlenszerűsítése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageRandomRow.qml"/>
+        <source>View and Edit</source>
+        <translation>Megjelenítés és szerkesztés</translation>
+    </message>
+</context>
+<context>
+    <name>CollageSnapColumn</name>
+    <message>
+        <location filename="../qml/PicasaPy/CollageSnapColumn.qml"/>
+        <source>Align rotation to straight up</source>
+        <translation>Forgatás igazítása egyenesre</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageSnapColumn.qml"/>
+        <source>Align rotation to 90 CW</source>
+        <translation>Forgatás igazítása 90 fokra (jobbra)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageSnapColumn.qml"/>
+        <source>Align rotation to 180 CW</source>
+        <translation>Forgatás igazítása 180 fokra (jobbra)</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageSnapColumn.qml"/>
+        <source>Align rotation to 270 CW</source>
+        <translation>Forgatás igazítása 270 fokra (jobbra)</translation>
+    </message>
+</context>
+<context>
+    <name>CollageZOrderColumn</name>
+    <message>
+        <location filename="../qml/PicasaPy/CollageZOrderColumn.qml"/>
+        <source>Move picture to the top of the pile</source>
+        <translation>Kép elhelyezése a kupac tetején</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageZOrderColumn.qml"/>
+        <source>Move picture up in the pile</source>
+        <translation>Kép feljebb helyezése a kupacban</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageZOrderColumn.qml"/>
+        <source>Move picture down in the pile</source>
+        <translation>Kép lejjebb helyezése a kupacban</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageZOrderColumn.qml"/>
+        <source>Move picture to the bottom of the pile</source>
+        <translation>Kép elhelyezése a kupac alján</translation>
+    </message>
+</context>
+<context>
+    <name>CollageContextMenus</name>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Change Border</source>
+        <translation>Szegély módosítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>None</source>
+        <translation>Egyik sem</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>White Border</source>
+        <translation>Fehér szegély</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Polaroid Camera</source>
+        <translation>Polaroid fényképezőgép</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Align Rotation</source>
+        <translation>Forgatás igazítása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>0 Degrees</source>
+        <translation>0 fok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>90 Degrees</source>
+        <translation>90 fok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>180 Degrees</source>
+        <translation>180 fok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>270 Degrees</source>
+        <translation>270 fok</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Remove</source>
+        <translation>Eltávolítás</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Set as Background</source>
+        <translation>Beállítás háttérként</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Set as Frame Center</source>
+        <translation>Beállítás képkockaközéppontként</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Bring to Top</source>
+        <translation>Legfelülre helyezés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Move to Bottom</source>
+        <translation>Legalulra helyezés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>View and Edit</source>
+        <translation>Megjelenítés és szerkesztés</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Select All</source>
+        <translation>Az összes kijelölése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Select None</source>
+        <translation>Az összes kijelölés megszüntetése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Shuffle Pictures</source>
+        <translation>Képek összekeverése</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
+        <source>Scatter Pictures</source>
+        <translation>Képek szétszórása</translation>
+    </message>
+</context>
 </TS>
