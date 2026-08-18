@@ -1128,12 +1128,67 @@ kezdőérték a `collage::orientation` beállításból jön.
 
 ---
 
+## 10/b Amit a teljes erőforrás-leltár még hozott (2026-08-18)
+
+A 128 `collagepanel/` · `collage::` · `collageUI::` erőforrásnév
+**tételes** összevetése a specekkel négy hiányt talált.
+
+### 10/b.1 A „Kötelező a kijelölés" párbeszéd — eddig sehol
+
+A **„Beállítás képkockaközéppontként"** gomb (`set_frame_center`,
+`0x0083d520`) **nem néma**, ha nincs pontosan egy kijelölt kép: modális
+üzenetet dob (`0x0083d5ad`–`0x0083d5ec`):
+
+| kulcs | magyar |
+|---|---|
+| `collage::framecenterwarntitle` | **Kötelező a kijelölés** |
+| `collage::framecenterwarn` | **MIELŐTT erre a gombra kattintana, jelölje ki azt az egy képet, amelyet a kollázs közepére szeretne helyezni.** |
+
+Az őrfeltételek sorban: van-e kijelölés-csoport (`0x0083d52d`), a
+darabszám pontosan a várt-e (`cmp ecx, 2` → `0x0083d53b`), és megvan-e a
+csomópont (`0x0083d547`). Bármelyik bukik → az üzenet.
+
+### 10/b.2 A három keretgomb feliratai és buboréksúgói
+
+A `borders_group` gombjainak eddig csak a helyi menüs feliratai voltak meg;
+a **panelbeli** nevük és leírásuk külön erőforrás:
+
+| kulcs | felirat | leírás (buboréksúgó) |
+|---|---|---|
+| `collage::noborder_dname` / `_desc2` | **Egyik sem** | Csak a kép, szegély nélkül |
+| `collage::whiteborder_dname` / `_desc2` | **Fehér szegély** | Egyszerű fehér szegély |
+| `collage::polaroid_dname` / `_desc2` | **Polaroid fényképezőgép** | Ismerős márkájú polaroid fényképezőgépnek tűnik |
+
+### 10/b.3 A téma-leírások erőforráskulcsai
+
+A téma-választó kétsoros szövegei (4.2, `kollazs-panel-ui-spec.md`) ezekből
+jönnek — a kulcsokat eddig nem írtuk le: `collage::pile_desc`,
+`pack_desc`, `frame_desc`, `grid_desc`, `csheet_desc`, `multiexp_desc`.
+Az ikonjaik a panelfában **kikommentezve** vannak (`#pile_icon`,
+`#pack_icon`, `#grid_icon`, `#contact_sheet_icon`, `#multiexp_icon`),
+akárcsak a három keretikon (`#polaroid_icon`, `#whiteborder_icon`,
+`#noborder_icon`) — kódból rajzolt elemek, mint a gyűrű (5.1).
+
+### 10/b.4 `collagepanel/filmstrip`
+
+A nevet **nem a panelépítő** használja, hanem a `0x0062cda0` — a
+lapváltás környéki kód. **Feltételes**: a fősablon filmszalagjának
+elrejtése/mutatása a kollázslap megnyitásakor. Nem vizsgáltuk végig.
+
+---
+
 ## 11. Elhagyott és holt elemek — amit NEM kell megépíteni
 
 - **`savebutton`, `loadbutton`** — a parancskezelőben ott van a két ág
   (`0x0082d7df` → `0x0083a6b0`, `0x0082d855` → `0x0083a5b0`), de a
   `respack.yt` panelfájában **nincs hozzájuk vezérlő**. Fejlesztői
   maradvány.
+- **`addallclips`** *(2026-08-18)* — a panel **lebontója** (`0x0082c360`,
+  `0x0082c3b7`) ugyanúgy leválasztja róla a kezelőt, mint az
+  `addclips`-ről, de a `collagepanel.tre` panelfájában **nincs hozzá
+  vezérlő**. Ugyanaz az eset, mint a `savebutton`/`loadbutton`:
+  fejlesztői maradvány. **Ne épüljön meg „Az összes klip felvétele"
+  gomb** — a kiadott Picasában nincs ilyen.
 - **`layer_up`, `layer_down`** — a parancskezelőben szerepelnek, de nincs
   mögöttük hívás, és a rajzuk (`#layer_up`, `#layer_down`) kikommentezve.
   A rétegsorrendet a `move_*` négyes viszi.
