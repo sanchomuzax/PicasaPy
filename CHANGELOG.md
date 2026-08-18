@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.72] – 2026-08-18
+
+### Javítva
+- **A kollázs forgatásának két apró eltérése (#921).** A „270 fokra igazítás" a
+  projektfájlba eddig más számot írt, mint az eredeti Picasa — a képen ugyanaz
+  látszott, de ugyanazt a kollázst a két programban megnyitva elcsúszott volna.
+  A húzás közben kijelzett szög pedig ellenkező előjellel jelent meg.
+
 ## [0.7.71] – 2026-08-18
 
 ### Javítva
