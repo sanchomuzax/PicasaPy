@@ -1,0 +1,798 @@
+"""A kollázs-panel vezérlője (#943) — az AppController szelete.
+
+Szerződés: `docs/specs/kollazs-panel-ui-spec.md` **8.** (property-k,
+slotok, jelzések, PONTOSAN ezekkel a nevekkel). A panel felülete külön
+jegyekben épül; ez a réteg felület nélkül is teljes, és önmagában
+tesztelhető.
+
+Négy elv, ami végigmegy a fájlon:
+
+1. **Minden vászonművelet a `collage/canvas.py` tiszta függvényeire épül**
+   (rétegsorrend, bepattintó forgatás, keverés) — a logika egy helyen él, a
+   `.cxf` mentése és a felület ugyanazt látja. Ez a fájl csak listát cserél.
+2. **A képességek EGYETLEN forrásból jönnek**
+   (`collage.themes.capabilities_for`): a `collageCapabilities` térkép a
+   maszkot adja tovább a QML-nek. Témánkénti `if` sem itt, sem a QML-ben
+   nem születik.
+3. **Egy kódút a mentésre**: a „Kollázs létrehozása" és az „Asztali
+   háttérkép" ugyanaz a `createCollage(asDesktopBackground)` — aki kettőt
+   ír meg belőle, kétszer fogja karbantartani.
+4. **A számolás tiszta modulokban van** (`collage_layout`, `collage_prefs`,
+   `collage_output`); itt csak állapot, jelzés és a slot-felület marad.
+
+⚠️ **Névterek:** a `create_controller.CreateMixin` a `_collage_*` előtagot
+már használja (`_collage_seed`, `_collage_preview`). Ez a szelet ezért
+mindenhol `_collage_panel_*` mezőneveket használ — a kettő ugyanabban az
+`AppController`-ben él majd, és egy néma felülírás a régi Kollázs-menüt
+törné el.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from pathlib import Path
+
+from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtGui import QColor, QGuiApplication
+
+from picasapy.collage import canvas
+from picasapy.collage.fitting import MsvcRandom
+from picasapy.collage.page_formats import (
+    FALLBACK_SCREEN_RATIO,
+    ORIENTATIONS,
+    is_known_format,
+    page_ratio,
+)
+from picasapy.collage.themes import (
+    BORDER_THEMES,
+    COLLAGE_THEMES,
+    NOBORDER,
+    capabilities_for,
+    capability_map,
+)
+
+from . import collage_layout as layout
+from . import collage_output as output
+from . import collage_prefs as prefs
+from .collage_model import (
+    CollageNode,
+    CollageNodeModel,
+    initial_node_width,
+    pictures_of,
+    selected_indices,
+    with_pictures,
+    with_pictures_swapped,
+    with_selection,
+)
+from .worker_thread import BackgroundWorkerMixin
+
+#: A kimeneti mappa beállítás-kulcsa — a `collage_prefs`-ből átemelve, hogy a
+#: felület és a teszt EGY nevet lásson.
+COLLAGE_OUTPUT_DIR_KEY = prefs.OUTPUT_DIR_KEY
+
+#: A háttér három módja (spec 6.4). Az `avg` a `collage::avgcolor`.
+BACKGROUND_MODES = ("solid", "image", "avg")
+
+#: Az oldalformátum-egyezés tűrése az asztali háttérképnél — a képernyő
+#: aránya ritkán egyezik bitre a menü tételével.
+_RATIO_TOLERANCE = 0.01
+
+
+class CollageMixin(BackgroundWorkerMixin):
+    """A kollázs-lap állapota és parancsai — a spec 8. szakasza."""
+
+    # -- jelzések (8.3) ----------------------------------------------------
+
+    collageProgress = Signal(int, str)
+    collageDone = Signal(str)
+    collageFailed = Signal(str)
+    collageNoImages = Signal()
+    collageFormatMismatch = Signal()
+    collageNeedsSelection = Signal()
+    collageDraftSaved = Signal(str)
+    #: Integrációs horog: a „Megjelenítés és szerkesztés" a szerkesztőt kéri
+    #: a megadott képre. A megnyitás a szerkesztő-szeleté, nem ezé.
+    collageEditRequested = Signal(str)
+    #: Integrációs horog: a kész kép asztali háttérképnek szánva. A tényleges
+    #: beállítás asztali környezettől függ (KDE/GNOME/labwc), ezért nem itt
+    #: dől el — a jelzés a `collageDone` UTÁN érkezik.
+    collageDesktopBackgroundReady = Signal(str)
+
+    # -- property-jelzések (8.1) -------------------------------------------
+
+    collageOpenChanged = Signal()
+    collageThemeChanged = Signal()
+    collageBorderChanged = Signal()
+    collageSpacingChanged = Signal()
+    collageShadowsChanged = Signal()
+    collageCaptionsChanged = Signal()
+    collageOrientationChanged = Signal()
+    collageFormatKeyChanged = Signal()
+    collagePageRatioChanged = Signal()
+    collageBackgroundModeChanged = Signal()
+    collageBackgroundColorChanged = Signal()
+    collageBackgroundImageChanged = Signal()
+    collageSelectionChanged = Signal()
+    collageFrameCenterChanged = Signal()
+    collageClipCountChanged = Signal()
+    collageDirtyChanged = Signal()
+    collageCapabilitiesChanged = Signal()
+
+    # -- lusta állapot -----------------------------------------------------
+
+    def _ensure_collage_panel(self) -> None:
+        """Egyszeri állapot-inicializálás a megőrzött beállításokból.
+
+        A `controller.py` FORRÓ FÁJL, ezért a szelet a saját állapotát maga
+        hozza létre, nem az `__init__`-ben (a `TrayMixin`/`CreateMixin`
+        mintája)."""
+        if getattr(self, "_collage_panel_wired", False):
+            return
+        self._collage_panel_wired = True
+        stored = prefs.load_prefs(self._get_settings())
+
+        self._collage_panel_open = False
+        self._collage_panel_model = CollageNodeModel()
+        self._collage_panel_frame_center = -1
+        self._collage_panel_dirty = False
+        self._collage_panel_seed = 1
+        self._collage_panel_border = NOBORDER
+        self._collage_panel_spacing = 0.0
+        self._collage_panel_bg_mode = "solid"
+        self._collage_panel_bg_image = ""
+
+        self._collage_panel_theme = stored.theme
+        self._collage_panel_format = stored.format_key
+        self._collage_panel_orientation = stored.orientation
+        self._collage_panel_captions = stored.captions
+        self._collage_panel_shadows = stored.shadows
+        self._collage_panel_shadows_explicit = stored.shadows_explicit
+        color = QColor(stored.background_color)
+        self._collage_panel_bg_color = (
+            color if color.isValid() else QColor(prefs.DEFAULT_BACKGROUND)
+        )
+
+    def _capabilities(self):
+        self._ensure_collage_panel()
+        return capabilities_for(self._collage_panel_theme)
+
+    def _nodes(self) -> tuple[CollageNode, ...]:
+        self._ensure_collage_panel()
+        return self._collage_panel_model.nodes
+
+    def _set_nodes(self, nodes: Sequence[CollageNode], *, dirty: bool = True) -> None:
+        """A csomópont-lista cseréje + a származtatott jelzések.
+
+        Egyetlen kapu: minden művelet ezen megy át, így a „piszkos" jelző, a
+        kijelölés és a klipszám sosem csúszhat el a modelltől."""
+        self._ensure_collage_panel()
+        before = self._collage_panel_model.nodes
+        if tuple(nodes) == before:
+            return
+        count_changed = len(nodes) != len(before)
+        self._collage_panel_model.set_nodes(nodes)
+        self.collageSelectionChanged.emit()
+        if count_changed:
+            self.collageClipCountChanged.emit()
+        if dirty:
+            self._set_dirty(True)
+
+    def _set_dirty(self, dirty: bool) -> None:
+        self._ensure_collage_panel()
+        if self._collage_panel_dirty == dirty:
+            return
+        self._collage_panel_dirty = dirty
+        self.collageDirtyChanged.emit()
+
+    def _rng(self) -> MsvcRandom:
+        """Új véletlenforrás a jelenlegi magból (megismételhető elrendezés)."""
+        return MsvcRandom(self._collage_panel_seed)
+
+    def _screen_ratio(self) -> float:
+        """A képernyő magasság / szélesség aránya („Jelenlegi megjelenítés"
+        tétel és az asztali háttérkép formátum-ellenőrzése).
+
+        Külön metódus, hogy a teszt (és egy több képernyős környezet későbbi
+        kezelése) felül tudja írni; képernyő nélkül 16:9."""
+        app = QGuiApplication.instance()
+        screen = app.primaryScreen() if app is not None else None
+        if screen is None:
+            return FALLBACK_SCREEN_RATIO
+        size = screen.size()
+        if size.width() <= 0 or size.height() <= 0:
+            return FALLBACK_SCREEN_RATIO
+        return size.height() / size.width()
+
+    # -- property-k (8.1) --------------------------------------------------
+
+    @Property(bool, notify=collageOpenChanged)
+    def collageOpen(self) -> bool:
+        self._ensure_collage_panel()
+        return self._collage_panel_open
+
+    @Property(str, notify=collageThemeChanged)
+    def collageTheme(self) -> str:
+        self._ensure_collage_panel()
+        return self._collage_panel_theme
+
+    @Property(str, notify=collageBorderChanged)
+    def collageBorder(self) -> str:
+        self._ensure_collage_panel()
+        return self._collage_panel_border
+
+    @Property(float, notify=collageSpacingChanged)
+    def collageSpacing(self) -> float:
+        self._ensure_collage_panel()
+        return self._collage_panel_spacing
+
+    @Property(bool, notify=collageShadowsChanged)
+    def collageShadows(self) -> bool:
+        """Rajzolunk-e árnyékot. A téma tilthatja (a maszk 11. bitje)."""
+        self._ensure_collage_panel()
+        return self._collage_panel_shadows and self._capabilities().shadow
+
+    @Property(bool, notify=collageCaptionsChanged)
+    def collageCaptions(self) -> bool:
+        self._ensure_collage_panel()
+        return self._collage_panel_captions
+
+    @Property(str, notify=collageOrientationChanged)
+    def collageOrientation(self) -> str:
+        self._ensure_collage_panel()
+        return self._collage_panel_orientation
+
+    @Property(str, notify=collageFormatKeyChanged)
+    def collageFormatKey(self) -> str:
+        self._ensure_collage_panel()
+        return self._collage_panel_format
+
+    @Property(float, notify=collagePageRatioChanged)
+    def collagePageRatio(self) -> float:
+        """A lap magasság / szélesség aránya — ebből él a lap alakja."""
+        self._ensure_collage_panel()
+        return page_ratio(
+            self._collage_panel_format,
+            self._collage_panel_orientation,
+            screen_ratio=self._screen_ratio(),
+        )
+
+    @Property(str, notify=collageBackgroundModeChanged)
+    def collageBackgroundMode(self) -> str:
+        self._ensure_collage_panel()
+        return self._collage_panel_bg_mode
+
+    @Property(QColor, notify=collageBackgroundColorChanged)
+    def collageBackgroundColor(self) -> QColor:
+        self._ensure_collage_panel()
+        return self._collage_panel_bg_color
+
+    @Property(str, notify=collageBackgroundImageChanged)
+    def collageBackgroundImage(self) -> str:
+        self._ensure_collage_panel()
+        return self._collage_panel_bg_image
+
+    @Property(QObject, constant=True)
+    def collageNodes(self) -> CollageNodeModel:
+        """A vászon modellje. A példány azonossága sosem változik — a QML
+        kötése ezért maradhat állandó."""
+        self._ensure_collage_panel()
+        return self._collage_panel_model
+
+    @Property(list, notify=collageSelectionChanged)
+    def collageSelection(self) -> list:
+        return list(selected_indices(self._nodes()))
+
+    @Property(int, notify=collageFrameCenterChanged)
+    def collageFrameCenter(self) -> int:
+        """A hangsúlyos középső kép indexe a Képkockamozaikban; −1 = nincs."""
+        self._ensure_collage_panel()
+        return self._collage_panel_frame_center
+
+    @Property(int, notify=collageClipCountChanged)
+    def collageClipCount(self) -> int:
+        """A „Klipek (%1)" fülfelirat száma — a kollázs képeinek száma."""
+        return len(self._nodes())
+
+    @Property(bool, notify=collageDirtyChanged)
+    def collageDirty(self) -> bool:
+        self._ensure_collage_panel()
+        return self._collage_panel_dirty
+
+    @Property("QVariantMap", notify=collageCapabilitiesChanged)
+    def collageCapabilities(self) -> dict:
+        """A téma képesség-maszkja a QML-nek — EGYETLEN forrásból."""
+        self._ensure_collage_panel()
+        return capability_map(self._collage_panel_theme)
+
+    # -- a lap megnyitása és bezárása (8.2) --------------------------------
+
+    @Slot(list)
+    def openCollage(self, rows) -> None:
+        """A kollázs-lap megnyitása a megadott rács-sorokkal."""
+        self._ensure_collage_panel()
+        self._collage_panel_frame_center = -1
+        self._relayout(self._sources_from_rows(rows), dirty=False)
+        self.collageFrameCenterChanged.emit()
+        if not self._collage_panel_open:
+            self._collage_panel_open = True
+            self.collageOpenChanged.emit()
+
+    @Slot()
+    def closeCollage(self) -> None:
+        """A lap bezárása. A mentetlen módosítás kérdése a felületé (9.2)."""
+        self._ensure_collage_panel()
+        self._set_nodes((), dirty=False)
+        self._set_dirty(False)
+        if self._collage_panel_open:
+            self._collage_panel_open = False
+            self.collageOpenChanged.emit()
+
+    def _sources_from_rows(self, rows) -> tuple[layout.CollageSource, ...]:
+        """A rács-sorokból kép-források (a fotólista a host-controlleré)."""
+        photos = getattr(getattr(self, "_photos", None), "photos", ())
+        return layout.sources_from_photos(photos, rows)
+
+    def _current_sources(self) -> tuple[layout.CollageSource, ...]:
+        """A kollázs jelenlegi képei forrásként — a CSOMÓPONTOKBÓL.
+
+        Külön forrás-listát tartani hibaforrás: a keverés és a csere a
+        képeket a rések között mozgatja, tehát egy párhuzamosan vezetett
+        lista pár művelet után más sorrendben állna, mint a vászon. A kép
+        oldalarányát a csomópont mérete őrzi (a méretezés arányt tart)."""
+        return tuple(
+            layout.CollageSource(node.path, node.caption, node.width / node.height)
+            for node in self._nodes()
+        )
+
+    def _relayout(
+        self, sources: Sequence[layout.CollageSource], *, dirty: bool
+    ) -> None:
+        """A csomópontok újraszámolása a forrásokból (kezdő elrendezés).
+
+        A kézi szerkesztés ilyenkor ELVESZIK — ez az eredeti viselkedése
+        téma-váltásnál és visszaállításnál (spec 5.), nem hiba."""
+        self._set_nodes(
+            layout.laid_out(
+                sources,
+                self.collagePageRatio,
+                self._collage_panel_border,
+                self._rng(),
+            ),
+            dirty=dirty,
+        )
+        self._set_dirty(dirty)
+
+    # -- beállítás-slotok (8.2) --------------------------------------------
+
+    @Slot(str)
+    def setCollageTheme(self, key: str) -> None:
+        """Téma-váltás. A kézi elrendezés ilyenkor ÚJRASZÁMOLÓDIK (a maszk
+        1. bitje, spec 5.) — az eredeti sem kérdez rá."""
+        self._ensure_collage_panel()
+        if key not in COLLAGE_THEMES or key == self._collage_panel_theme:
+            return
+        self._collage_panel_theme = key
+        self._get_settings().setValue(prefs.THEME_KEY, key)
+        self.collageThemeChanged.emit()
+        self.collageCapabilitiesChanged.emit()
+        capabilities = self._capabilities()
+        if not self._collage_panel_shadows_explicit:
+            self._collage_panel_shadows = capabilities.shadow_default
+        self.collageShadowsChanged.emit()
+        if not capabilities.selection:
+            self._set_nodes(with_selection(self._nodes(), ()), dirty=False)
+        if self._nodes():
+            self._relayout(self._current_sources(), dirty=True)
+
+    @Slot(str)
+    def setCollageBorder(self, key: str) -> None:
+        """Képkeret — a KIJELÖLTEKRE, ha van kijelölés; egyébként mindenkire."""
+        self._ensure_collage_panel()
+        if key not in BORDER_THEMES:
+            return
+        self._collage_panel_border = key
+        self.collageBorderChanged.emit()
+        nodes = self._nodes()
+        if not nodes:
+            return
+        selection = selected_indices(nodes) or range(len(nodes))
+        self._set_nodes(layout.replaced_many(nodes, selection, border=key))
+
+    @Slot(float)
+    def setCollageSpacing(self, value: float) -> None:
+        """A „Rács vastagsága" csúszka 0…1 értéke (nem képpont!)."""
+        self._ensure_collage_panel()
+        spacing = min(1.0, max(0.0, float(value)))
+        if spacing != self._collage_panel_spacing:
+            self._collage_panel_spacing = spacing
+            self.collageSpacingChanged.emit()
+            self._set_dirty(True)
+        self._apply_zero_spacing_shadow_rule()
+
+    def _apply_zero_spacing_shadow_rule(self) -> None:
+        """Spec 5./1.: ha a térköz-csúszka LÁTSZIK és az értéke 0, az
+        árnyék-jelölő BEkapcsol (nem tiltódik le) — nulla térköznél az árnyék
+        az egyetlen, ami elválasztja egymástól a képeket.
+
+        Ez ÁLLAPOT-szabály, nem esemény: akkor is érvényesül, ha a csúszka
+        már eddig is nullán állt."""
+        if self._collage_panel_spacing == 0.0 and self._capabilities().spacing:
+            self.setCollageShadows(True)
+
+    @Slot(bool)
+    def setCollageShadows(self, on: bool) -> None:
+        self._ensure_collage_panel()
+        wanted = bool(on) and self._capabilities().shadow
+        self._collage_panel_shadows_explicit = True
+        self._get_settings().setValue(
+            prefs.SHADOWS_KEY, "true" if wanted else "false"
+        )
+        if wanted == self._collage_panel_shadows:
+            return
+        self._collage_panel_shadows = wanted
+        self.collageShadowsChanged.emit()
+        self._set_dirty(True)
+
+    @Slot(bool)
+    def setCollageCaptions(self, on: bool) -> None:
+        self._ensure_collage_panel()
+        wanted = bool(on)
+        self._get_settings().setValue(
+            prefs.CAPTIONS_KEY, "true" if wanted else "false"
+        )
+        if wanted == self._collage_panel_captions:
+            return
+        self._collage_panel_captions = wanted
+        self.collageCaptionsChanged.emit()
+        self._set_dirty(True)
+
+    @Slot(str)
+    def setCollageOrientation(self, kind: str) -> None:
+        self._ensure_collage_panel()
+        if kind not in ORIENTATIONS or kind == self._collage_panel_orientation:
+            return
+        self._collage_panel_orientation = kind
+        self._get_settings().setValue(prefs.ORIENTATION_KEY, kind)
+        self.collageOrientationChanged.emit()
+        self.collagePageRatioChanged.emit()
+        self._set_dirty(True)
+
+    @Slot(str)
+    def setCollageFormat(self, key: str) -> None:
+        self._ensure_collage_panel()
+        if not is_known_format(key) or key == self._collage_panel_format:
+            return
+        self._collage_panel_format = key
+        self._get_settings().setValue(prefs.FORMAT_KEY, key)
+        self.collageFormatKeyChanged.emit()
+        self.collagePageRatioChanged.emit()
+        self._set_dirty(True)
+
+    @Slot(str)
+    def setCollageBackgroundMode(self, mode: str) -> None:
+        self._ensure_collage_panel()
+        if mode not in BACKGROUND_MODES or mode == self._collage_panel_bg_mode:
+            return
+        self._collage_panel_bg_mode = mode
+        self.collageBackgroundModeChanged.emit()
+        self._set_dirty(True)
+
+    @Slot("QColor")
+    def setCollageBackgroundColor(self, color) -> None:
+        self._ensure_collage_panel()
+        value = QColor(color)
+        if not value.isValid() or value == self._collage_panel_bg_color:
+            return
+        self._collage_panel_bg_color = value
+        self._get_settings().setValue(prefs.BGCOLOR_KEY, value.name())
+        self.collageBackgroundColorChanged.emit()
+        self._set_dirty(True)
+
+    @Slot()
+    def setBackgroundFromSelection(self) -> None:
+        """„A kijelölt elemek használata" — a háttérkép a kijelölt képből."""
+        node = self._single_selected()
+        if node is None:
+            return
+        self._collage_panel_bg_image = node.path
+        self.collageBackgroundImageChanged.emit()
+        self.setCollageBackgroundMode("image")
+        self._set_dirty(True)
+
+    def _single_selected(self) -> CollageNode | None:
+        """A pontosan egy kijelölt csomópont, vagy `None` + kérés a felület
+        felé. A „Beállítás háttérként", a „Megjelenítés és szerkesztés" és a
+        „Beállítás képkockaközéppontként" mind egy képet vár (spec 4.4)."""
+        nodes = self._nodes()
+        selection = selected_indices(nodes)
+        if len(selection) != 1:
+            self.collageNeedsSelection.emit()
+            return None
+        return nodes[selection[0]]
+
+    # -- kijelölés (8.2) ---------------------------------------------------
+
+    @Slot(list)
+    def setCollageSelection(self, indices) -> None:
+        self._ensure_collage_panel()
+        wanted = indices if self._capabilities().selection else ()
+        self._set_nodes(with_selection(self._nodes(), wanted or ()), dirty=False)
+
+    @Slot()
+    def selectAllNodes(self) -> None:
+        self.setCollageSelection(list(range(len(self._nodes()))))
+
+    @Slot()
+    def selectNoNodes(self) -> None:
+        self.setCollageSelection([])
+
+    @Slot()
+    def removeSelectedNodes(self) -> None:
+        """A kijelöltek kivétele (Del). Minden kép eltávolítható — a mentés
+        ilyenkor „Mentés mellőzve" üzenettel áll meg."""
+        nodes = self._nodes()
+        selection = selected_indices(nodes)
+        if not selection:
+            return
+        self._set_nodes(canvas.remove_at(nodes, selection))
+
+    # -- vászon-manipuláció (8.2) ------------------------------------------
+
+    @Slot(int, float, float)
+    def moveNode(self, index: int, cx: float, cy: float) -> None:
+        """Egy csomópont áthelyezése — a középpont LAPEGYSÉGBEN."""
+        nodes = self._nodes()
+        if not 0 <= index < len(nodes):
+            return
+        self._set_nodes(
+            layout.replaced_at(nodes, index, center_x=float(cx), center_y=float(cy))
+        )
+
+    @Slot(int, float, float)
+    def transformNode(self, index: int, scale: float, theta: float) -> None:
+        """Méretezés + forgatás EGY fogantyúval (7.4).
+
+        A `scale` a kollázs ALAPMÉRETÉHEZ képest szól (1,0 = a kezdő méret),
+        ahogy a húzás közbeni „Méretarány: %d%%" felirat is
+        (`canvas.scale_caption_percent`). A kép oldalaránya megmarad."""
+        nodes = self._nodes()
+        if not 0 <= index < len(nodes) or float(scale) <= 0.0:
+            return
+        node = nodes[index]
+        width = float(scale) * initial_node_width(len(nodes))
+        self._set_nodes(
+            layout.replaced_at(
+                nodes,
+                index,
+                width=width,
+                height=width * node.height / node.width,
+                theta=float(theta),
+            )
+        )
+
+    @Slot(int, int)
+    def swapNodes(self, a: int, b: int) -> None:
+        """Egy képet a másikra ejtve CSERÉLNEK: a fogadó rés mérete, kerete
+        és szöge marad, csak a kép költözik."""
+        nodes = self._nodes()
+        if not (0 <= a < len(nodes) and 0 <= b < len(nodes)) or a == b:
+            return
+        self._set_nodes(with_pictures_swapped(nodes, a, b))
+
+    @Slot(int)
+    def raiseNodeToTop(self, index: int) -> None:
+        """Alt+húzás: a csomópont a legfelső rétegbe.
+
+        Ha MÁR a legfelső (a lista végén áll), semmi nem történik — sem a
+        modell, sem a „piszkos" jelző nem változik."""
+        nodes = self._nodes()
+        if not 0 <= index < len(nodes) or index == len(nodes) - 1:
+            return
+        self._set_nodes(canvas.move_to_top(nodes, [index]))
+
+    @Slot()
+    def moveSelectionTop(self) -> None:
+        self._move_selection(canvas.move_to_top)
+
+    @Slot()
+    def moveSelectionUp(self) -> None:
+        self._move_selection(canvas.move_up)
+
+    @Slot()
+    def moveSelectionDown(self) -> None:
+        self._move_selection(canvas.move_down)
+
+    @Slot()
+    def moveSelectionBottom(self) -> None:
+        self._move_selection(canvas.move_to_bottom)
+
+    def _move_selection(self, operation) -> None:
+        """A négy rétegsorrend-parancs közös törzse — a `canvas.py`-ból.
+
+        A kijelölés a csomópont `selected` mezőjében él, ezért a lista
+        átrendezésével MAGÁTÓL követi a képet; nincs mit újraszámolni."""
+        nodes = self._nodes()
+        selection = selected_indices(nodes)
+        if not selection:
+            return
+        self._set_nodes(operation(nodes, selection))
+
+    @Slot(str)
+    def snapRotation(self, command: str) -> None:
+        """A négy bepattintó forgatás (`snap_12`/`snap_3`/`snap_6`/`snap_9`).
+
+        ⚠️ A `snap_9` **−90,0 fokot** tárol (nem 270-et): a `.cxf`-be
+        −1,570796 kerül, különben a windowsos Picasával az oda-vissza olvasás
+        elcsúszna. Az értéket a `canvas.snap_theta` adja."""
+        nodes = self._nodes()
+        selection = selected_indices(nodes)
+        if not selection:
+            self.collageNeedsSelection.emit()
+            return
+        if not self._capabilities().rotate:
+            return
+        try:
+            theta = canvas.snap_theta(command)
+        except ValueError:
+            return
+        self._set_nodes(layout.replaced_many(nodes, selection, theta=theta))
+
+    # -- véletlenszerűsítés (8.2) ------------------------------------------
+
+    @Slot()
+    def shufflePictures(self) -> None:
+        """„Képek összekeverése" (`rand_order`): a KÉPEK cserélnek helyet, a
+        rések (méret, keret, szög) maradnak — ugyanaz a szabály, mint az
+        egymásra ejtésnél. A keverő a `canvas.shuffle_order`."""
+        nodes = self._nodes()
+        if len(nodes) < 2 or not self._capabilities().shuffle:
+            return
+        self._collage_panel_seed += 1
+        pictures = canvas.shuffle_order(pictures_of(nodes), self._rng())
+        self._set_nodes(with_pictures(nodes, pictures))
+
+    @Slot()
+    def scrambleCollage(self) -> None:
+        """„Véletlenszerű kollázs" / „Képek szétszórása" (`rand_placement`):
+        az ELRENDEZÉS sorsolódik újra, a képek sorrendje marad."""
+        nodes = self._nodes()
+        if not nodes or not self._capabilities().scramble:
+            return
+        self._collage_panel_seed += 1
+        self._set_nodes(
+            layout.rescattered(nodes, self.collagePageRatio, self._rng())
+        )
+
+    @Slot()
+    def setFrameCenterFromSelection(self) -> None:
+        """„Beállítás képkockaközéppontként" — a hangsúlyos központi kép."""
+        node = self._single_selected()
+        if node is None:
+            return
+        self._collage_panel_frame_center = self._nodes().index(node)
+        self.collageFrameCenterChanged.emit()
+        self._set_dirty(True)
+
+    @Slot()
+    def viewAndEditSelection(self) -> None:
+        """„Megjelenítés és szerkesztés" — a képet a szerkesztő nyitja meg."""
+        node = self._single_selected()
+        if node is not None:
+            self.collageEditRequested.emit(node.path)
+
+    # -- klipek (8.2) ------------------------------------------------------
+
+    @Slot(list)
+    def addClips(self, rows) -> None:
+        """A „+" gomb: további képek a kollázsba, a LEGFELSŐ rétegbe."""
+        self._ensure_collage_panel()
+        added = self._sources_from_rows(rows)
+        if not added:
+            return
+        width = initial_node_width(len(self._nodes()) + len(added))
+        centers = layout.scatter(len(added), self.collagePageRatio, self._rng())
+        new_nodes = tuple(
+            layout.node_for(source, center, width, self._collage_panel_border)
+            for source, center in zip(added, centers, strict=True)
+        )
+        self._set_nodes((*self._nodes(), *new_nodes))
+
+    @Slot(list)
+    def deleteClips(self, rows) -> None:
+        """A „–" gomb: a megadott klipek (csomópont-indexek) kivétele."""
+        nodes = self._nodes()
+        indices = [int(r) for r in (rows or ()) if 0 <= int(r) < len(nodes)]
+        if not indices:
+            return
+        self._set_nodes(canvas.remove_at(nodes, indices))
+
+    @Slot()
+    def resetCollage(self) -> None:
+        """A kézi szerkesztés elvetése: elrendezés újra, a jelenlegi képekből."""
+        self._ensure_collage_panel()
+        self._collage_panel_seed += 1
+        self._relayout(self._current_sources(), dirty=False)
+
+    # -- létrehozás (8.2, 9.1) ---------------------------------------------
+
+    @Slot(bool)
+    @Slot(bool, bool)
+    def createCollage(
+        self,
+        asDesktopBackground: bool,  # noqa: N803 — a spec 8.2 neve
+        ignoreFormatMismatch: bool = False,  # noqa: N803
+    ) -> None:
+        """A kollázs mentése — EGY kódút a két gombhoz (spec 8.2).
+
+        `asDesktopBackground` esetén a formátum-eltérésre előbb
+        figyelmeztetünk (9.1); a „Beállítás ennek ellenére" gomb ugyanezt a
+        slotot hívja `ignoreFormatMismatch=True`-val."""
+        self._ensure_collage_panel()
+        nodes = self._nodes()
+        if not nodes:
+            self.collageNoImages.emit()
+            return
+        if (
+            asDesktopBackground
+            and not ignoreFormatMismatch
+            and abs(self.collagePageRatio - self._screen_ratio()) > _RATIO_TOLERANCE
+        ):
+            self.collageFormatMismatch.emit()
+            return
+
+        sources = tuple(Path(node.path) for node in nodes if not node.missing)
+        if not sources:
+            # 9.4: a kollázs minden képe eltűnt a lemezről — ez ugyanaz a
+            # zsákutca, mint amikor mindet eltávolították, és a felület
+            # ugyanazt a „Mentés mellőzve" üzenetet mutatja rá. Nyers
+            # kivétel-szöveg semmiképp ne menjen ki a felhasználóhoz.
+            self.collageNoImages.emit()
+            return
+        target = output.output_path(
+            output.output_dir(self._get_settings().value(prefs.OUTPUT_DIR_KEY))
+        )
+        self.collageProgress.emit(0, self.tr("Creating collage… initializing"))
+        self._start_background(
+            self._render_worker,
+            args=(sources, self._render_settings(), target, bool(asDesktopBackground)),
+            name="picasapy-collage-panel",
+        )
+
+    def _render_settings(self):
+        """A panel állapotából renderelő-beállítás (a színváltás a modulban)."""
+        color = self._collage_panel_bg_color
+        return output.render_settings(
+            theme=self._collage_panel_theme,
+            border=self._collage_panel_border,
+            spacing=self._collage_panel_spacing,
+            shadows=self._collage_panel_shadows,
+            page_ratio=self.collagePageRatio,
+            background_rgb=(color.red(), color.green(), color.blue()),
+            frame_center=self._collage_panel_frame_center,
+            seed=self._collage_panel_seed,
+        )
+
+    def _render_worker(self, sources, settings, target, wallpaper: bool) -> None:
+        """A háttérszál törzse — a `BackgroundWorkerMixin`-en fut (#430)."""
+        try:
+            path, _used = output.render_collage(sources, settings, target)
+        except (ValueError, OSError) as error:
+            self.collageFailed.emit(str(error))
+            return
+        if path is None:
+            self.collageFailed.emit(
+                self.tr("None of the selected pictures could be read.")
+            )
+            return
+        self._set_dirty(False)
+        self.collageProgress.emit(100, self.tr("The collage is ready (click here)"))
+        self.collageDone.emit(str(path))
+        if wallpaper:
+            self.collageDesktopBackgroundReady.emit(str(path))
+
+
+__all__ = [
+    "BACKGROUND_MODES",
+    "COLLAGE_OUTPUT_DIR_KEY",
+    "CollageMixin",
+]
