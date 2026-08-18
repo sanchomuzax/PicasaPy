@@ -93,12 +93,15 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
 3. Az **5120-as felső renderméret** (`0x0083d050`) pontos szemantikája a
    renderelőn (`0x0087dcd0`) belül — a konstans megvan, az útja nincs
    végigkövetve.
-4. Az **árnyék-képlet bemenete**: mit jelent a csomópont `+0x18` egész
-   mezője, amiből az eltolás, az elmosás és a befoglaló bővítése
-   számolódik? (A képlet megvan, ld. a lap **9/b**-jét; a bemenet
-   feltételes — méret-jellegű, de nem azonosított.)
+4. ~~Az árnyék-képlet bemenete~~ — **LEZÁRVA** (2026-08-18, második
+   árnyék-kör): az árnyék **témánként négy külön paraméterkészlettel**
+   dolgozik (alfa 102 a Képkupacnál és a rácsos témáknál, 153 a Rácsnál
+   és az Indexképnél); a `k` a képek cellaéle képpontban, az `A` lépték
+   a 9.0 darabszám-képlete. Nem maradt feltételes állítás — a lap
+   **9/b**-je. *(A jegy #977, már nem blokkolt.)*
 5. A polaroid-felirat **két logikai kapcsolójának** jelentése
-   (`vt[0x38]`, `vt[0x2c]`, mindkettő 1) — a lap **9/c**-je.
+   (`ytVectorTextNode` `vt[0x2c]` → `+0x2a4`, `vt[0x38]` → `+0x2f3`;
+   mindkettő 1) — a mechanikájuk megvan, a nevük nem: a lap **9/c**-je.
 6. Az **`avgcolor` adatbázismezőt** mi és milyen képlettel állítja elő?
    (A kollázs csak **kiolvassa** — a lap **3/b**-je; ez az **indexelő**
    területe, nem a kollázsé.)

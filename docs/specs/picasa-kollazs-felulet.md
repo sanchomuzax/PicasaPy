@@ -1233,10 +1233,25 @@ csomópont léptékével szorozva), a helyét a `0x009debd0(csp, 0.098, 0.792)`
 A felirat-csomópont neve `collagepanel/textclip_<sorszám>`
 (`0xcc4ad8`), és `0x350` = 848 bájtos szövegcsomópont-osztály.
 
-**Bizonyítottsági fok: megerősített** a dobozra, a színre, a
-betűméret-képletre és a feltételre (showcaptions ÉS polaroid). A két
-logikai kapcsoló **jelentése** (feltehetően középre igazítás és
-sortörés) **nem megállapított** — csak az, hogy mindkettő 1.
+**A két logikai kapcsolóról** *(2026-08-18, szűkítve)*: a felirat-csomópont
+osztálya **`ytVectorTextNode`** (vtable `0x00c939ec`, a `0x005b36d9`
+állítja be). A két hívott slot:
+
+| slot | függvény | mit csinál |
+|---|---|---|
+| `vt[0x2c]` | `0x005b3720` | `[+0x2a4] = arg`, továbbadja az elrendezés-objektum `+0x74` mezőjébe (`0x005b3a7c`), érvénytelenít (`\|= 5`), és `[+0x2f2] = 1` |
+| `vt[0x38]` | `0x005b3430` | a `[+0x2f3]` bájtot az arg **inverzére** állítja, ha eltér, majd érvénytelenít (`\|= 7`); az olvasója (`0x005b3470`) `sete`-vel adja vissza — tehát a mező a **tagadott** értéket tárolja |
+
+Mindkettőt **1**-gyel hívja a kollázs. A mezők **neve/jelentése továbbra
+sem megállapított**; az elrendezés-objektum `+0x74` szomszédja
+(`+0x78`) a csomópont `+0x298` mezőjének lebegőpontos alakja. Mivel a
+felirat-doboz margói szimmetrikusak (bal 0,098 = jobb 0,098), a
+megvalósításban a **vízszintes középre igazítás** a józan alapértelmezés.
+
+**Bizonyítottsági fok: megerősített** a dobozra, a színre (a végleges
+rajzoláson adaptív, ld. fent), a betűméret-képletre és a feltételre
+(showcaptions ÉS polaroid). A két kapcsoló **mechanikája** megerősített,
+a **jelentése nyitott**.
 
 ---
 
