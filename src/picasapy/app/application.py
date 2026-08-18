@@ -640,6 +640,9 @@ def run(argv: list[str]) -> int:
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
     engine.addImageProvider("effectthumb", effect_thumb_provider)
+    # #920: élő kollázs-előnézet. A szolgáltatót a vezérlő birtokolja
+    # (lusta init), mert a kollázs állapota is ott él.
+    engine.addImageProvider("collagepreview", controller.collage_preview_provider)
     engine.addImportPath(str(_APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
