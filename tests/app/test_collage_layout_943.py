@@ -44,8 +44,13 @@ class _Settings:
 class TestForrasok:
     def test_a_savon_kivuli_sor_kimarad(self):
         photos = [_Photo("/kepek", "a.jpg")]
+        # az elvárt útvonalat UGYANAZZAL a `Path`-szal állítjuk elő, amivel a
+        # kód is: Windowson a `Path("/kepek") / "a.jpg"` visszaperjelet ad
+        # (`\\kepek\\a.jpg`), a beégetett perjeles alak ott elbukna — a main
+        # windows-lába pontosan ezen piroslott
+        vart_ut = str(Path("/kepek") / "a.jpg")
         assert layout.sources_from_photos(photos, [0, 5, -1]) == (
-            layout.CollageSource("/kepek/a.jpg", "", pytest.approx(4 / 3)),
+            layout.CollageSource(vart_ut, "", pytest.approx(4 / 3)),
         )
 
     def test_a_hianyzo_meret_negyzetes(self):
