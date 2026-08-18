@@ -14,6 +14,14 @@ Az újat mindig a saját moduljából kell behozni:
 """
 
 from .contact_sheet import header_font_size
+from .autosave import (
+    AUTOSAVE_NAME,
+    autosave_path,
+    discard_autosave,
+    has_recoverable_draft,
+    read_autosave,
+    write_autosave,
+)
 from .cxf import CxfBackground, CxfNode, CxfProject, read_cxf, write_cxf
 from .fitting import MsvcRandom, fit_inside, msvc_uniform01, picasa_round
 from .frames import (
@@ -74,7 +82,13 @@ __all__ = [
     "CxfBackground",
     "CxfNode",
     "CxfProject",
+    "AUTOSAVE_NAME",
+    "autosave_path",
+    "discard_autosave",
+    "has_recoverable_draft",
+    "read_autosave",
     "read_cxf",
+    "write_autosave",
     "write_cxf",
     "PilePlacement",
     "pile_scale",
