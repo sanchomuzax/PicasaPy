@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.79] – 2026-08-18
+
+### Hozzáadva
+- **A kollázs vászna életre kelt (#947).** A képeket most már meg lehet fogni
+  és elhúzni, a kijelöltre kerülő gyűrűvel forgatni és méretezni, egy képet a
+  másikra ejtve kicserélni, és Alt-tal a tetejére emelni. Húzás közben a szög
+  és a méretarány kiíródik.
+- **Megjelent a „Beállítások" lap (#946).** Egy helyen a téma-választó, a
+  keretsor és a térköz, a háttér (szín, kép, a kijelölt kép, átlagszín), az
+  oldalformátum és a tájolás — a keretválasztó pedig csak ott jelenik meg,
+  ahol az adott elrendezésnek van értelme.
+
+### Javítva
+- **Nem cserélődik ki két kép egy egyszerű kattintástól (#947).** A képkupac
+  képei fedik egymást, és a kijelölő kattintás eddig némán felcserélte a
+  kurzor alatti két képet. A csere mostantól csak valódi elhúzás után,
+  ejtéskor történik — ahogy az eredetiben.
+
 ## [0.7.78] – 2026-08-18
 
 ### Hozzáadva
