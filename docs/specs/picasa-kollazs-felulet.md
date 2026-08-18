@@ -978,6 +978,33 @@ A piszkozatra a könyvtárban külön magyarázó szöveg tartozik
 (`projectutils::draft_collage`): „Ez a kollázs még nem készült el
 teljesen…".
 
+### 9.2/b Az automentés és a HELYREÁLLÍTÁS (2026-08-18)
+
+**Az írás.** Az `autosave.cxf` a `<Képek>/Picasa/Kollázsok` mappában él
+(`0x0068a6a0`). Az írását piszkos-jelző vezérli (`[obj+0xd]`), és
+**háttérfeladatként** fut, „**CollageAutosave**" néven: a `0x0083dbf0`
+ütemezi, a `0x0062cc50` (lapváltás / leállás) pedig **azonnal kiírja**,
+ha a jelző áll, majd nullázza. A Létrehozás gomb a mentés **előtt**
+törli a függő feladatot (`0x0083ce90`: `0x009b3950` név szerinti keresés
+→ `0x0097ae70` leállítás), siker után a `0x008421a0` takarít
+(`collage::lastautosave`).
+
+**A helykitöltő JPEG.** Ha az `autosave.cxf` mellett nincs kép, a Picasa
+**640 × 480**-as (`0x0068a767`: `0x280` = 640, `0x0068a79c`: `0x1e0` =
+480), `0xFF3F3F3F` színű (`0x0068a7c6`) helykitöltőt ír mellé,
+**85-ös** JPEG-minőséggel (`0x0068a7f6`: `{1, 4, 0x55}`) — ettől látszik
+a piszkozat csempéje a Kollázsok albumban.
+
+**A helyreállítás.** Induláskor a `0x00689f40` (a filmkészítővel közös
+belépő) hívja a `0x008419e0`-t. Ha talál `autosave.cxf`-et, **átnevezi**
+a `collage::recoveredautosave` = „**Helyreállított automatikus másolat**"
+névre (`0x00841b65`), ugyanazzal a `"%s%lu"` egyedivé tevővel
+(`0x00993030`, `0x00841bb8`) — tehát ütközéskor „Helyreállított
+automatikus másolat1", „…2" —, majd `indexonlyreadonly`-val indexeli
+(`0x00842048`). A `.jpg` párja ugyanígy megy (`0x00841ab2`, `0x00841d44`).
+
+**Bizonyítottsági fok: megerősített.**
+
 ### 9.3 Hiányzó képek
 
 | kulcs | mikor |
