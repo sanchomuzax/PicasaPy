@@ -24,9 +24,20 @@ from picasapy.render.glimmer_ops import (
 
 def apply_boost(image, impact: float = 50.0):
     """`Boost=1,Impact` — `SimpleColorMatrix(Brightness = Impact·−20/50,
-    Saturation = Impact·20/50, Contrast = Impact·40/50)`. **Figyelem: a
-    fényerő NEGATÍV irányba megy** (nagyobb `Impact` → sötétebb kép, a
-    kontraszt/telítettség-emelés mellett). Nincs Fade.
+    Saturation = Impact·20/50, Contrast = Impact·40/50)`. Nincs Fade.
+
+    A fényerő-PARAMÉTER negatív irányba megy, de a TELJES lánc kimenete
+    ettől függetlenül **világosodik**: a kontraszt 63,5-ös forgáspontja
+    (#904) a fölötte lévő tónusokat sokkal erősebben futtatja fel, mint
+    amennyit a szerény negatív fényerő levon, és a felfutó képpontok
+    255-re vágódnak. A `64,128,192` képpont `Impact=90`-nél `0,255,255`-re
+    megy, a középszürke `128,128,128` tiszta fehérre.
+
+    ⚠️ Egy korábbi docstring azt állította, hogy nagyobb `Impact` sötétebb
+    képet ad — **ez megdőlt** (#964). A binárisból megerősítve: az eredeti
+    is telítődő vágással dolgozik (`packuswb`, `0x008f28ae`), a három lépés
+    egyetlen 5×5 mátrixba fűzve (`0x008f28d0`), tehát a kiégés az EREDETI
+    viselkedése is, nem a mi hibánk.
     """
     validate_image(image)
     return simple_color_matrix(
