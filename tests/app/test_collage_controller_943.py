@@ -535,14 +535,18 @@ class TestLetrehozas:
         host.createCollage(False)
         assert jelzett == [1]
 
-    def test_a_kesz_fajl_a_kimeneti_mappaba_kerul(self, nyitott, tmp_path):
+    def test_a_kesz_fajl_a_kimeneti_mappaba_kerul(self, nyitott, tmp_path, library):
         megjott, args = _wait(nyitott.collageDone, lambda: nyitott.createCollage(False))
         assert megjott, "nem érkezett collageDone"
         from pathlib import Path
 
         cel = Path(args[0])
         assert cel.exists() and cel.parent == tmp_path / "kimenet"
-        assert cel.name.startswith("kollázs")
+        # ⚠️ #949: a fájlnév a FORRÁSMAPPA címe (spec 9.1), nem beégetett
+        # „kollázs" — az utóbbi csak a tartalék, ha nincs egy közös forrás.
+        # A #943 köre a tartalékot vette törvénynek; a részletes állítások a
+        # `test_collage_output_949.py`-ban élnek.
+        assert cel.name == f"{library.name}.jpg"
 
     def test_a_mentes_utan_nem_piszkos(self, nyitott):
         nyitott.moveNode(0, 5.0, 5.0)

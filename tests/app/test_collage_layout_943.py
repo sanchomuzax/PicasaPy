@@ -9,7 +9,6 @@ renderelőnek, vagy hogy egy sérült beállítás az alapértelmezésre esik.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -184,16 +183,26 @@ class TestKimenet:
         assert output.render_settings(frame_center=-1, **common).frame_center is None
         assert output.render_settings(frame_center=2, **common).frame_center == 2
 
-    def test_a_fajlnev_tove_kollazs(self, tmp_path):
-        cel = output.output_path(tmp_path, datetime(2026, 8, 18, 21, 30, 5))
-        assert cel.name.startswith("kollázs-20260818-213005")
-        assert cel.suffix == ".jpg"
+    # ⚠️ #949: ez a három eset ÁTÍRÓDOTT. A #943 időbélyeges nevet
+    # (`kollázs-20260818-213005.jpg`) és `~/Pictures/Kollázsok` mappát
+    # rögzített — a spec 9.1 táblája viszont mindkettőt TEENDŐKÉNT sorolja
+    # fel („a `Picasa` közbülső szint pótlása", „cím-alapú név + `%s%lu`
+    # számozás"). A régi teszt tehát a saját korábbi tévedésünket őrizte,
+    # nem az eredeti viselkedést. A részletes állítások a
+    # `test_collage_output_949.py`-ban élnek; itt a rétegre néző alap marad.
+
+    def test_a_fajlnev_tove_a_CIM_ures_cimnel_kollazs(self, tmp_path):
+        assert output.output_path(tmp_path, "Nyaralás").name == "Nyaralás.jpg"
+        assert output.output_path(tmp_path, "").name == "kollázs.jpg"
 
     def test_ket_gyors_mentes_nem_irja_felul_egymast(self, tmp_path):
-        egy = output.output_path(tmp_path)
-        ket = output.output_path(tmp_path)
-        assert egy != ket or egy.name.count("-") >= 3
+        egy = output.output_path(tmp_path, "Nyaralás")
+        egy.write_bytes(b"")
+        ket = output.output_path(tmp_path, "Nyaralás")
+        assert egy != ket
+        assert ket.name == "Nyaralás1.jpg"
 
     def test_a_celmappa_beallitasbol_vagy_alapertelmezesbol(self, tmp_path):
         assert output.output_dir(str(tmp_path)) == tmp_path
         assert output.output_dir(None) == Path.home() / output.DEFAULT_OUTPUT_DIR
+        assert output.DEFAULT_OUTPUT_DIR.parts == ("Pictures", "Picasa", "Kollázsok")

@@ -107,6 +107,8 @@ _COLLAGE_PANEL_ICONS = (
     "collage-orient-landscape.svg",
     "collage-orient-portrait.svg",
     "collage-dropdown-arrow.svg",
+    # #949: a „Továbbiak..." gomb bal oldali vissza-nyila (17 × 15, spec 11.)
+    "collage-back.svg",
 )
 
 # a vászon körüli két oldalsó gomboszlop ikonjai (#948, a #920 7/8 lépcsője).
@@ -160,6 +162,8 @@ _SZABAD_ARANYU_IKONOK = _CORNER_BADGES | frozenset({
     "collage-orient-landscape.svg",
     "collage-orient-portrait.svg",
     "collage-dropdown-arrow.svg",
+    # #949: a vissza-nyíl mérete is a `.tre`-ből jön (17 × 15, spec 11.)
+    "collage-back.svg",
 })
 
 

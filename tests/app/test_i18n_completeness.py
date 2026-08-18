@@ -57,9 +57,19 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
     # #943: a `CollageMixin` (collage_controller.py) ugyanez az eset — a
     # kollázs-panel szelete is az `AppController`-be kevert mixin, tehát a
     # mentés folyamat- és hibaszövegei futásidőben ott vannak lefordítva.
-    ("CollageMixin", "Creating collage… initializing"): "AppController",
-    ("CollageMixin", "The collage is ready (click here)"): "AppController",
-    ("CollageMixin", "None of the selected pictures could be read."): "AppController",
+    # #949: a mentés szövegei a `CollageSaveMixin`-be költöztek (a
+    # `collage_controller.py` 1100 sor fölé nőtt), de a futásidejű kontextus
+    # változatlanul az `AppController` — ugyanaz a mixin-eset.
+    ("CollageSaveMixin", "Creating collage… initializing"): "AppController",
+    # a Többszörös exponálás saját folyamatszövege (spec 9.1)
+    ("CollageSaveMixin", "Stacking pictures"): "AppController",
+    # a megszakítás visszajelzése (`collage::cancelling`)
+    ("CollageSaveMixin", "Creating collage… shutting down"): "AppController",
+    ("CollageSaveMixin", "The collage is ready (click here)"): "AppController",
+    (
+        "CollageSaveMixin",
+        "None of the selected pictures could be read.",
+    ): "AppController",
 }
 
 

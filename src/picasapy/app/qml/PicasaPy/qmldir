@@ -113,3 +113,6 @@ CollageRandomRow 1.0 CollageRandomRow.qml
 CollageSnapColumn 1.0 CollageSnapColumn.qml
 CollageZOrderColumn 1.0 CollageZOrderColumn.qml
 CollageContextMenus 1.0 CollageContextMenus.qml
+CollageClipsTab 1.0 CollageClipsTab.qml
+CollageProgressOverlay 1.0 CollageProgressOverlay.qml
+CollageDialogs 1.0 CollageDialogs.qml
