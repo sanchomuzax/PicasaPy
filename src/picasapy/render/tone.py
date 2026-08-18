@@ -21,8 +21,11 @@ import re
 
 import numpy as np
 
+from picasapy.render.color_temperature import (
+    neutralize_illuminant,
+    temperature_illuminant,
+)
 from picasapy.render.curves import (
-    apply_channel_luts,
     apply_lut,
     lut_ramp,
     validate_image,
@@ -173,24 +176,25 @@ def apply_shadows(image: np.ndarray, strength: float) -> np.ndarray:
 
 
 def apply_color_temperature(image: np.ndarray, temperature: float) -> np.ndarray:
-    """Színhőmérséklet (#551): csatornánkénti, mért KONSTANS szorzás.
+    """Színhőmérséklet — FEKETETEST-tábla + az `autocolor` mátrixa (#879).
 
-    A szorzókat a mért állások között lineárisan interpoláljuk; 0 =
-    változatlan. A hűtés lényegesen erősebb, mint a melegítés (ld. a
-    `_TEMPERATURE_GAINS` táblát).
+    A csúszka **nem** csatorna-szorzókat állít (ez volt a #551-es modell),
+    hanem kiválaszt egy megvilágítás-színt a feketetest-táblából, és a képet
+    azzal **semlegesíti** — ugyanazzal a `M · diag(g) · M⁻¹` mátrixszal,
+    amit az `autocolor` használ (#759). A részletek:
+    `picasapy.render.color_temperature`.
+
+    A #685 mérőszettjén a korábbi modell SSIM-je **0,478** volt: nem
+    hangolási kérdés volt, hanem szerkezetileg más modell.
+
+    ⚠️ **A `temperature = 0` NEM azonosság** — az 55. tábla-bejegyzés
+    (6500 K) minimálisan meleg, tehát a mátrix egy hajszálnyit hűt. A
+    korábbi kód itt a bemenetet adta vissza; ez apró, de rendszeres hiba
+    volt, és az éles korpusz 561 képén jelentkezett.
     """
     validate_image(image)
     clamped = _clamp(temperature, -1.0, 1.0)
-    if clamped == 0.0:
-        return image.copy()
-    gains = [
-        float(np.interp(clamped, _TEMPERATURE_KNOTS, [g[ch] for g in _TEMPERATURE_GAINS]))
-        for ch in range(3)
-    ]
-    # csatornánkénti szorzás → csatornánkénti LUT (#140): képméret-független
-    ramp = lut_ramp()
-    return apply_channel_luts(image, (ramp * gains[0], ramp * gains[1], ramp * gains[2]))
-
+    return neutralize_illuminant(image, temperature_illuminant(clamped))
 
 def parse_neutral_argb(value: str) -> tuple[int, int, int] | None:
     """A finetune2 p4 (AARRGGBB hex) értelmezése.
@@ -265,13 +269,11 @@ def apply_neutral_pipette(
     red, green, blue = neutral
     if green <= 0:
         return image.copy()
-    # csatornánkénti gain → csatornánkénti LUT (#140): képméret-független
-    ramp = lut_ramp()
-    luts = [
-        ramp if value <= 0 else ramp * (float(green) / float(value))
-        for value in (red, green, blue)
-    ]
-    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
+    # #879: a pipetta UGYANAZT a mátrixot futtatja, mint a hőmérséklet —
+    # a natív callback (`0x008f7ee0`) két egymás utáni menetben hívja a
+    # `0x0090eda0`-t: előbb a kiválasztott semleges színnel, aztán a
+    # táblából vettel. Korábban itt csatornánkénti osztás állt.
+    return neutralize_illuminant(image, (int(red), int(green), int(blue)))
 
 
 def apply_finetune2(
