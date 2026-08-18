@@ -1041,51 +1041,108 @@ az elrendezés minden menetben felülírja (ld. lent). Az árnyék rajzolása
 alfát; ha a rámpa-tábla (`+0x5c`) nincs beállítva (a kollázsban nincs), a
 lecsengés a beépített ág szerint megy.
 
-### 9/b.2 A képlet — ezt kell megvalósítani
+### 9/b.2 ⚠️ NINCS EGY KÖZÖS KÉPLET — az árnyék TÉMÁNKÉNT paraméterezett
 
-A csomópontonkénti árnyékot a `0x00888d02`–`0x00888d89` állítja elő. Legyen
-`k` a rajzolt (kerettel együtt vett) kép **`+0x18` egész mezője**:
+> **Helyesbítés (2026-08-18, második árnyék-kör).** Ennek a szakasznak az
+> első kiadása **egyetlen, közös képletet** állított, és a `k` bemenetet
+> „nem azonosított"-ként hagyta — golden-párt kérve a felhasználótól.
+> **Mindkettő téves volt.** A `ytShadowNode`-ot **négy külön hívó**
+> hozza létre, **külön konstansokkal**, és a `k` a binárisból
+> levezethető. A mérés-kérés visszavonva.
+
+A `ytShadowNode` konstruktorát (`0x0087b170`) pontosan négy hely hívja, és
+mindegyik egy-egy **téma osztályához** tartozik (a vtable-tulajdonos a
+`.rdata`-beli hivatkozásból):
+
+| hívó | vtable-tulajdonos | téma |
+|---|---|---|
+| `0x0087d9e0` ← `0x0087b8c0` | `CPileTheme` (`0x00cbf5ac`+8) | **Képkupac** |
+| `0x00883270` ← `0x008812a0` | `CGridTheme` (`0x00cbf5dc`+8) **és** `CFrameGridTheme` (`0x00cbf6a0`+8) | **Mozaik**, **Képkockamozaik** |
+| `0x00885470` ← `0x00885060` ← `0x00884040` | `CRegularGridTheme` (`0x00cbf610`) | **Rács** |
+| `0x00888b40` ← `0x00888210` ← `0x00887ad0` | `CContactSheetTheme` (`0x00cbf670`) | **Indexkép** |
+
+A **Többszörös exponálásnak nincs árnyéka** (a képesség-maszk 11. bitje,
+ld. 2.) — és nincs is hozzá hívó.
+
+#### A négy paraméterkészlet
+
+Jelölje `W` a rajzolt csomópont **befoglaló téglalapjának szélességét**
+képpontban (`[+0x190] − [+0x188]`), `A` a hívótól kapott
+**lépték-argumentumot** (a Képkupacnál a 2. veremparaméter), `k` pedig a
+téma által számolt **egész cellaélt** (ld. 9/b.3):
+
+| téma | eltolás x | eltolás y | elmosás | átlátszatlanság | alfa |
+|---|---|---|---|---|---|
+| **Képkupac** | `0.001·A·W + 1.0` | `0.0015·A·W + 1.0` | `0.01·A·W` | **0,4** | **102** |
+| **Mozaik**, **Képkockamozaik** | `0.0017·W + 1.0` | `0.0025·W + 1.0` | `0.008·W` | **0,4** | **102** |
+| **Rács**, **Indexkép** | `0.001·k + 1.0` | `0.002·k + 2.0` | `0.03·k` | **0,6** | **153** |
+
+Konstansok: `0xcf3db0 = 0.001`, `0xcf4e10 = 0.0015`, `0xcf40b8 = 0.01`,
+`0xcf4e08 = 0.0017`, `0xcf4e00 = 0.0025`, `0xcf4df8 = 0.008`,
+`0xcf4120 = 0.002`, `0xcf4dc8 = 0.03`, `0xc7e328 = 1.0`, `0xc7d9d0 = 2.0`,
+`0xc7c838 = 0.4f`, `0xc7e304 = 0.6f`.
+
+Címek a képletekhez: Képkupac `0x0087da1d`–`0x0087da87`; Mozaik
+`0x008832ad`–`0x00883309`; Rács `0x008856b0`–`0x008856fe`; Indexkép
+`0x00888d02`–`0x00888d75`.
+
+#### Amit mindegyik közösen csinál (`0x0087b1e0`)
 
 ```
-eltolás_x = 0.001 · k + 1.0          ; 0xcf3db0 = 0.001, 0xc7e328 = 1.0
-eltolás_y = 0.002 · k + 2.0          ; 0xcf4120 = 0.002, 0xc7d9d0 = 2.0
-elmosás   = 0.03  · k                ; 0xcf4dc8 = 0.03
-átlátszatlanság = 0.6                ; 0xc7e304 = 0.6f
-```
-
-és ezekből az elrendezés (`0x0087b1e0`):
-
-```
-raszterizáló.sugár = elmosás · 8.0               ; 0xc7ea10 = 8.0
+raszterizáló.sugár = elmosás · 8.0                      ; 0xc7ea10 = 8.0
 raszterizáló.alfa  = (egész)(átlátszatlanság · 256.0)   ; 0xcf39d8 = 256.0
-                   = (egész)(0.6 · 256) = 153
-befoglaló_téglalap += elmosás · 1.5   MINDEN élen  ; 0xd34128 = 1.5
+befoglaló_téglalap += elmosás · 1.5   MINDEN élen        ; 0xd34128 = 1.5
 ```
 
 Az eltolás **hozzáadódik** a csomópont eltolásához (`0x0087b411`:
-`+0x278 → +0x1e4`, `0x0087b423`: `+0x27c → +0x1f0`) — vagyis az árnyék a
-képhez képest jobbra-**le** csúszik, és a **függőleges eltolás pontosan
-kétszerese a vízszintesnek**.
+`+0x278 → +0x1e4`, `0x0087b423`: `+0x27c → +0x1f0`) — az árnyék tehát
+jobbra-**le** csúszik. A **függőleges eltolás mindig nagyobb a
+vízszintesnél**, de az arány témánként más: Képkupac **1 : 1,5**, Mozaik
+**1 : 1,47**, Rács/Indexkép **1 : 2** (és ott az állandó tag is 1 vs. 2).
 
-> **Három szám, amit meg kell jegyezni:** az árnyék **60 %-os** (alfa
-> **153/255**), az eltolás **1 : 2 arányú** jobbra-le, az elmosás sugara a
-> mérettel **lineárisan** nő (`0.24 · k`, mert `0.03 · 8`).
+> **A két szám, ami a legjobban látszik:** a **Képkupac és a rácsos témák
+> árnyéka 40 %-os** (alfa 102), a **Rácsé és az Indexképé 60 %** (alfa
+> 153). Aki egyetlen átlátszatlansággal írja meg, négy témából kettőt
+> elront.
 
-### 9/b.3 Ami NEM derült ki
+### 9/b.3 A `k` bemenet — LEVEZETVE (nem kell hozzá mérés)
 
-A `k` (a csomópont `+0x18` egész mezője) **pontos jelentése nem
-megállapított**. Amit tudunk: a rajzoló út ugyanezt a mezőt a `+0x14`
-párjával együtt olvassa és **0,08-dal** szorozza (`0x008882bc`–`0x008882d4`,
-`0xcf4df0 = 0.08`), tehát egy **méret-jellegű, előjel nélkül kezelt egész**
-— erős a gyanú, hogy a kerettel együtt vett kép **képpontban mért
-magassága**, de ezt nem bizonyítottuk. **A megvalósítás előtt ezt le kell
-mérni** (golden-pár: eredeti Picasa-kollázs árnyékkal vs. a miénk) — a
-képlet alakja megerősített, a bemenete nem.
+A Rács és az Indexkép egész bemenetét (`k`) az Indexképnél végig lehet
+követni: a `0x00887e50` számolja ki, és a csomópont-terv `+0x18` mezőjébe
+írja (`0x008881a1`), a `+0x10`/`+0x14` párjával együtt
+(`0x0088819b`, `0x0088819e`):
 
-**Bizonyítottsági fok:** a konstansok, a képlet alakja, az alfa-számítás,
-az eltolás iránya és aránya, valamint a befoglaló-téglalap bővítése
-**megerősített**. A `k` jelentése **feltételes**. Hogy a mi kimenetünk
-ettől lesz-e az eredetivel egyező, **NINCS mérve**.
+```
+W' = (egész)( (rect.x1 − rect.x0) · 0.88 )      ; 0xd3a140 = 0.88f
+H' = (egész)( (rect.y1 − rect.y0) · 0.79 )      ; 0xd3a144 = 0.79f
+k  = (egész) sqrt( W' · H' / n )                 ; 0x0049fe60 = sqrtf
+oszlopok = W' / k ;  sorok = H' / k
+amíg (oszlopok · sorok < n):  k−−, újraszámol   ; 0x00888177–0x00888195
+```
+
+majd egy érvényességi kapu: `rectSzélesség / oszlopok ≥ 8` **és**
+`rectMagasság / sorok ≥ 8`, különben a rajzolás **hibával tér vissza**
+(`0x008881ca`, `0x008881f1` → `−1`).
+
+> **Vagyis `k` = EGY KÉP CELLÁJÁNAK ÉLHOSSZA KÉPPONTBAN**, a lap hasznos
+> területéből (vízszintesen 88 %, függőlegesen 79 % — az Indexképnél a
+> maradék 21 % a fejlécé) és a képek darabszámából. A 0,88/0,79 szorzó
+> **önmagában is igazolja az olvasatot**: pont akkora fejléc-helyet hagy,
+> amekkorát az Indexkép fejléce elfoglal (1.9.4).
+
+A Képkupacnál és a rácsos témáknál nincs `k`: ott a képlet **közvetlenül a
+befoglaló szélességből** (`W`) dolgozik, a Képkupacnál egy
+lépték-argumentummal (`A`) szorozva.
+
+**Bizonyítottsági fok:** a témánkénti szétválás, a hívási láncok, a
+vtable-hozzárendelés, mind a tizenkét konstans, az alfa-számítás, az
+eltolás iránya és a befoglaló-bővítés **megerősített**. A `k` levezetése
+(cellaél) **megerősített**. Az `A` lépték-argumentum **jelentése**
+(a Képkupac hívója adja) **feltételes**.
+
+⚠️ **Ami továbbra sincs mérve:** hogy a mi kimenetünk ettől lesz-e az
+eredetivel egyező. A képlet ismerete nem helyettesíti a mérést — de
+mérőanyag **nélkül is** megvalósítható, mert minden szám a binárisból van.
 
 ---
 
@@ -1119,7 +1176,22 @@ csomópont léptékével szorozva), a helyét a `0x009debd0(csp, 0.098, 0.792)`
 
 | mi | érték | cím |
 |---|---|---|
-| a szöveg színe | **ARGB `0xFF4A4A4A`** = RGB(74, 74, 74), sötétszürke — **nem fekete** | `0x0087c9fa` |
+| a szöveg színe | **ARGB `0xFF4A4A4A`** = RGB(74, 74, 74), sötétszürke — **nem fekete** (a panel élő vásznán fix) | `0x0087c9fa` |
+
+> ⚠️ **Helyesbítés (2026-08-18): a VÉGLEGES rajzoláson a felirat színe
+> ADAPTÍV.** A `0x00887ad0` (az Indexkép-téma rajzoló-terve) a
+> háttérszínből számolja (`0x00887aff`–`0x00887b23`):
+>
+> ```
+> h = dokumentum[+0x160] & 0xFFFFFF          ; a háttérszín RGB része
+> szín = (h < 0x7F7F7F ? 0xB5B5B5 : 0) + 0xFF4A4A4A
+> ```
+>
+> Vagyis **sötét háttéren `0xFFFFFFFF` = FEHÉR**, világos háttéren marad a
+> `0xFF4A4A4A` sötétszürke. A küszöb komponensenként `0x7F` (a
+> maszkolt egészek összehasonlítása). Aki fixen szürkével írja, sötét
+> háttérnél olvashatatlan feliratot ad. *(Bizonyítottsági fok:
+> megerősített — a számtan zárt alakban kiolvasható.)*
 | a betűméret | `(egész)( magasság × 14 / 360 )` — azaz a referenciadoboz magasságának **3,89 %-a** | `0x0080c510`, `0xcf3d50 = 360.0` |
 | elforgatás | 0 (`0x005ba590(csp, 0.0)`) | `0x0087ca78` |
 | két logikai kapcsoló | mindkettő **1** (a szövegcsomópont `vt[0x38]` és `vt[0x2c]` bejáratán) | `0x0087ca4e`, `0x0087ca59` |
@@ -1269,8 +1341,10 @@ három, és egyik sem igényel futó Picasát)*:
 3. az **5120-as felső méret** pontos szemantikája a renderelőben
    (9.1/b 5. pont) — a konstans megvan, az útja a `0x0087dcd0`-n belül
    nincs végigkövetve.
-4. az árnyék-képlet bemenete: a csomópont **`+0x18`** egész mezőjének
-   jelentése (9/b.3) — a képlet megvan, a bemenet feltételes.
+4. ~~az árnyék-képlet bemenete~~ — **LEZÁRVA** (9/b.3): a `k` a képek
+   cellaéle képpontban, a `0x00887e50`-ből levezetve; a képletek
+   **témánként külön** paraméterezettek (9/b.2). Ami itt nyitva maradt:
+   a Képkupac `A` lépték-argumentumának pontos jelentése.
 5. a felirat-csomópont **két logikai kapcsolójának** jelentése
    (`vt[0x38]`, `vt[0x2c]`, mindkettő 1) — 9/c.
 6. az **`avgcolor` adatbázismező** előállítása (3/b) — a kollázson
