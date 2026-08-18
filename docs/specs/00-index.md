@@ -35,8 +35,8 @@ kérdés).
    | `tint` | 20,6 | megfejtve (`preserve` skálája −1…255) | #872 |
    | `sat` pozitív ág | 12 | ✅ **kész és kimérve: 0,74** | #693 |
    | `dir_tint` | 9 | ✅ **teljesen megvan** — az átmenet-görbe is (2026-08-18) | #874 |
-   | `fill` | 6,5 | ✅ **eredeti exportokhoz mérve 1,20–1,77** (2026-08-18) | #938 |
-   | `ansel` | 5,6 | ✅ **fehér szűrővel 0,53**; a SZÍNES szűrő igazolatlan | #939 |
+   | `fill` | 6,5 | ✅ **eredeti exportokhoz mérve 1,20–1,77** (2026-08-18) — nincs teendő a szűrőn; a mérés bekötése #938 | — |
+   | `ansel` | 5,6 | ✅ **fehér szűrővel 0,53**; a SZÍNES szűrő igazolatlan — exportra vár | #939 |
    | `Vignette` | 4,6 | ✅ a zóna **ELLIPSZIS** — eredeti exportokkal igazolva (2026-08-18) | #859 |
 
    **Vagyis a rangsorból egyetlen valódi rendermunka maradt: a `finetune2`
