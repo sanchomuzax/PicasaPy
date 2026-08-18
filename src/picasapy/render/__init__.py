@@ -75,6 +75,7 @@ from picasapy.render.tone import (
     apply_neutral_pipette,
     apply_shadows,
     estimate_neutral_color,
+    finetune_level_lut,
     parse_neutral_argb,
 )
 from picasapy.render.registry import (
@@ -135,6 +136,7 @@ __all__ = [
     "apply_shadow_highlight",
     "apply_shadows",
     "estimate_neutral_color",
+    "finetune_level_lut",
     "apply_tilt",
     "apply_tint",
     "apply_unsharp",

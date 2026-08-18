@@ -31,7 +31,8 @@ kérdés).
 
    | tétel | régi verdikt | MA | jegy |
    |---|---|---|---|
-   | `finetune2` hőmérséklet | 55,94 ΔE · 561 kép | **megfejtve, bekötésre vár** — feketetest-tábla + `autocolor`-mátrix | #879 |
+   | `finetune2` Csúcsfény+Árnyék | 55,94 ΔE · 561 kép | ✅ **KÉSZ (2026-08-18)** — a kettő EGY közös LUT, a kompozit eltérés 217 szintről 0-ra (a valódi ini-korpusz 22 %-a kompozit) | #879 |
+   | `finetune2` hőmérséklet | — | **megfejtve, de a csere NEM igazolható**: a natív tábla+mátrix modell a mért görbéken hatból ötben rosszabb, viszont a mérés vak a mátrix kereszt-tagjaira — új, képpontonkénti mérés kell | #956 |
    | `tint` | 20,6 | megfejtve (`preserve` skálája −1…255) | #872 |
    | `sat` pozitív ág | 12 | ✅ **kész és kimérve: 0,74** | #693 |
    | `dir_tint` | 9 | ✅ **teljesen megvan** — az átmenet-görbe is (2026-08-18) | #874 |
@@ -39,9 +40,10 @@ kérdés).
    | `ansel` | 5,6 | ✅ **fehér szűrővel 0,53**; a SZÍNES szűrő igazolatlan — exportra vár | #939 |
    | `Vignette` | 4,6 | ✅ a zóna **ELLIPSZIS** — eredeti exportokkal igazolva (2026-08-18) | #859 |
 
-   **Vagyis a rangsorból egyetlen valódi rendermunka maradt: a `finetune2`
-   hőmérséklet bekötése (#879).** A többi vagy kész, vagy külső exportra
-   vár.
+   **Vagyis a rangsorból nem maradt bekötésre kész rendermunka:** a
+   `finetune2` szintvágó ága 2026-08-18-án elkészült (#879), a
+   hőmérséklet-tengelye pedig új mérésre vár (#956). A többi vagy kész,
+   vagy külső exportra vár.
 
    - **Korábban megválaszolva:** a `tint` (és a `rainbow`, `autocontrast`)
      **szinthúzással kezd** — a `0x009db610` helyben módosítja a képet, nem
