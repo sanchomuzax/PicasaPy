@@ -50,6 +50,7 @@ from .render import CollageReport, _decode, _paste, _rotated_paste, fit_to_frame
 from .themes import (
     BORDER_THEMES,
     COLLAGE_THEMES,
+    THEME_CAPABILITIES,
     CONTACTSHEET,
     FRAMEGRID,
     MULTIEXP,
@@ -100,6 +101,47 @@ class PicasaCollageSettings:
     #: esik vissza (spec 1.9.14: „a `CLocationTree` nem helyettesíti, hanem
     #: kiegészíti az alap algoritmust").
     frame_center: int | None = None
+    #: Rajzoljunk-e árnyékot. `None` = a téma alapértelmezése (a maszk
+    #: 14. bitje) — ez az eredeti viselkedése, ld. `effective_shadow`.
+    shadow: bool | None = None
+
+    @property
+    def effective_border(self) -> str:
+        """A ténylegesen alkalmazott képkeret — a téma képességével szűrve.
+
+        #923: a Picasában a keretválasztó CSAK a Képkupacnál és az
+        Indexképnél látszik (a maszk 9. bitje). A többi témánál a beállítás
+        elő sem állítható a felületen, ezért itt **figyelmen kívül marad**.
+
+        Miért nem hiba, hanem elhagyás: a `.cxf` projektfájl tartalmazhat
+        sávon kívüli értéket (kézzel szerkesztve, vagy régebbi verzióból),
+        és a round-trip elv szerint azt MEGŐRIZZÜK — csak nem rajzoljuk ki.
+        A tárolt `border` ezért változatlan marad; a renderelő ezt a
+        property-t használja.
+        """
+        return self.border if THEME_CAPABILITIES[self.theme].borders else NOBORDER
+
+    @property
+    def effective_spacing(self) -> float:
+        """A ténylegesen alkalmazott térköz — a téma képességével szűrve.
+
+        A térköz-csúszka a három rácsos témánál látszik (10. bit); a
+        Képkupacnál, az Indexképnél és a Többszörös exponálásnál nincs
+        értelmezve. Ld. `effective_border` a megőrzés indoklásáért.
+        """
+        return self.spacing if THEME_CAPABILITIES[self.theme].spacing else 0.0
+
+    @property
+    def effective_shadow(self) -> bool:
+        """Rajzolunk-e árnyékot. A 11. bit engedélyezi, a 14. az ALAPÉRTÉKE.
+
+        A Többszörös exponálásnál az árnyék tiltott (a maszk 11. bitje 0),
+        a Képkupacnál és az Indexképnél alapból BE, a többinél KI.
+        """
+        képesség = THEME_CAPABILITIES[self.theme]
+        if not képesség.shadow:
+            return False
+        return képesség.shadow_default if self.shadow is None else self.shadow
 
     def __post_init__(self) -> None:
         if self.theme not in COLLAGE_THEMES:
@@ -136,11 +178,15 @@ def _place_in_cells(
     fill: bool = True,
 ) -> None:
     """A képek a cellákba illesztve, kerettel, a vászonra rajzolva."""
-    cells = to_pixel_rects(rects, settings.width, settings.height, settings.spacing)
+    cells = to_pixel_rects(
+        rects, settings.width, settings.height, settings.effective_spacing
+    )
     for image, cell in zip(images, cells, strict=False):
         width = max(1, cell.x1 - cell.x0)
         height = max(1, cell.y1 - cell.y0)
-        tile = apply_border(fit_to_frame(image, width, height, fill=fill), settings.border)
+        tile = apply_border(
+            fit_to_frame(image, width, height, fill=fill), settings.effective_border
+        )
         # a keret megnöveli a csempét — középre igazítva rajzoljuk a cellába
         offset_x = cell.x0 + (width - tile.shape[1]) // 2
         offset_y = cell.y0 + (height - tile.shape[0]) // 2
@@ -190,7 +236,8 @@ def _render_pile(
         magassag, szelesseg = image.shape[:2]
         cel_w, cel_h = fit_inside(szelesseg, magassag, oldal, oldal)
         tile = apply_border(
-            fit_to_frame(image, max(1, cel_w), max(1, cel_h), fill=False), settings.border
+            fit_to_frame(image, max(1, cel_w), max(1, cel_h), fill=False),
+            settings.effective_border
         )
         # a `pile_top_left` TENGELYENKÉNT dolgozik (skalárokkal), ezért
         # kétszer hívjuk — a szórási terület itt a teljes lap

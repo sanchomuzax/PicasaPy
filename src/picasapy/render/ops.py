@@ -33,6 +33,11 @@ import cv2
 import numpy as np
 
 from picasapy.ini.rect64 import Rect64
+from picasapy.render.autocolor_matrix import (
+    apply_autocolor_matrix,
+    autocolor_matrix_16_16,
+    estimate_illuminant,
+)
 from picasapy.render.curves import (
     apply_channel_luts,
     apply_lut,
@@ -333,66 +338,39 @@ def autocolor_gains(image: np.ndarray) -> tuple[float, float, float]:
 
 
 def apply_autocolor(image: np.ndarray) -> np.ndarray:
-    """Auto Colour — csatornánkénti ERŐSÍTÉS a semleges képpontokra
-    számolt szürkevilág-becslés szerint (#541).
+    """Auto Colour — `M · diag(g) · M⁻¹` SZÍNMÁTRIX (#759).
 
-    A `referencia/autocolor/` 12 kép-párja három dolgot mondott ki:
+    **A #541-es, csatornánkénti modell le lett váltva.** A natív alkalmazó
+    (`0x0090eda0`) egy 3×3-as mátrixszal szoroz 16.16 fixpontban, amibe a
+    becsült erősítések a mátrix TERÉBEN épülnek be — ezért nem ment 2,35
+    alá semmilyen csatornánkénti közelítés: hiányoztak a kereszt-tagok.
 
-    1. **Tiszta csatornánkénti LINEÁRIS leképezés.** A bemeneti értékek
-       vödrein belül a kimenet szórása 0,7–3,7 — vagyis JPEG-zaj, semmi
-       más: nincs se térbeli, se kereszt-csatornás összetevő.
-    2. **A feketepont NEM mozdul.** Mind a 36 csatorna-esetben az
-       illesztett `lo` 0 körül van (−4,5 … +4,2), tehát ez NEM
-       szinthúzás, hanem tiszta erősítés: `ki = be · gain`.
-    3. **Az erősítés a semleges képpontok szürkevilág-becslése.** A
-       telített képrészleteket kizárva a becslés a 12 képen jól illeszkedik.
+    A részletek, a mérés és a két csapda (float32; a csonkoló egész-osztás)
+    a `picasapy.render.autocolor_matrix` modul-docstringjében. Mért átlagos
+    csatorna-eltérés a 12 golden páron:
 
-    Mért átlagos csatorna-eltérés a valódi Picasa-kimenettől:
+        érintetlen kép ............................ 5,287
+        a korábbi modellünk (#541) ................ 2,352
+        EZ a modell ............................... 0,614
 
-        a korábbi (közös célsávra simító) modell ....... 7,45
-        az ÉRINTETLEN kép ............................. 5,29
-        EZ a modell ................................... 2,35
-        a MÉRT erősítésekkel (elméleti alsó korlát) ... 1,08
+    A 0,614 a JPEG-újratömörítés zajszintje (~0,69) ALATT van.
 
-    Vagyis a modell alakja bizonyítottan helyes (az „orákulum" 1,08 a
-    JPEG-újratömörítés zaja), és a becslő is a felét hozza a maradéknak.
-    A pontos becslő-képlet (miért épp ennyire tér el 12 képből 3-nál)
-    továbbra is nyitott — de a modell már **kétszer jobb az azonosságnál**,
-    nem rosszabb nála.
-
-    **Azonosság-eset:** szürkeárnyalatos képen a három csatorna-átlag
-    megegyezik, így mindhárom erősítés pontosan 1,0 — a kimenet bájtra
-    azonos a bemenettel (a mérésben két ilyen kép van, mindkettőt a Picasa
-    is változatlanul hagyta).
+    **Azonosság-eset:** semleges becslésnél (`kR = kB = 128`) a mátrix
+    pontosan az egységmátrix, tehát a kimenet bájtra a bemenet. A korábbi
+    modell ezt NEM tudta: egy semleges mérőképen 0,812-nyit elmozdított,
+    pedig a Picasa hozzá sem nyúlt.
     """
     _validate_image(image)
-    gains = autocolor_gains(image)
-    if gains == (1.0, 1.0, 1.0):
+    red_gain, blue_gain = estimate_illuminant(image)
+    matrix = autocolor_matrix_16_16(red_gain, 128, blue_gain)
+    if np.array_equal(matrix, np.diag([65536, 65536, 65536])):
         return image.copy()
-    ramp = lut_ramp()
-    luts = tuple(ramp * gain for gain in gains)
-    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
+    return apply_autocolor_matrix(image, matrix)
 
-
-#: A vágópont-KEVERÉS alapértéke (#721): a natív `0x009db610` a hívótól
-#: kapott float paraméterrel keveri a csatornánkénti vágópontokat a KÖZÖS
-#: (uniós) érték felé. A `-1,0f` jelzőre (`0xcf3ed0`) az alapértéket
-#: használja: `0xc7dcc8` = **0,30f**. Ezt adja át az `enhance`
-#: (`0x008f8840`) és további három hívó, köztük a `tint` (`0x008f9630`) —
-#: vagyis a Glimmer-effektek belső `AutoFix`-e is ezzel fut.
 _ENHANCE_BLEND = 0.30
-
-#: Az `autocontrast` (`0x008f89d0`) fixen `1,0`-et ad át (`fld1`,
-#: `0x008f89fd`): a vágópont TELJESEN közös, tehát a szűrő megőrzi a
-#: színegyensúlyt.
 _AUTOCONTRAST_BLEND = 1.0
-
-#: A `CarefulEnhance` beállítás (`0x009db610` bool paramétere) két dolgot
-#: kapcsol: a feketepontokat `0,5`-tel szorozza a KÖZÖS minimum képzése
-#: előtt (`0x009db845`, `0xc7dafc` = 0,5f), és a kimenetet 252-re korlátozza.
 _CAREFUL_BLACK_SCALE = 0.5
 _CAREFUL_MAX_OUT = 252
-
 
 def _blend_clip_points(
     points: tuple[tuple[int, int], ...],

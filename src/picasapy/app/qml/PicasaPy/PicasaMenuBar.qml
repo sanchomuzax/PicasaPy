@@ -45,6 +45,10 @@ MenuBar {
     }
     // van-e kijelölt kép — a fájlművelet- és export-menüpontok feltétele (#15/#16)
     property bool photoActionsEnabled: false
+    // #922: a Létrehozás-tételek forrása a KÉPTÁLCA is lehet (#455), ezért
+    // NEM a `photoActionsEnabled`-ből élnek — az a rácsbeli kijelöléshez
+    // kötött 27 fotó-műveletet vezérli, és azoknak tényleg kijelölés kell.
+    property bool createActionsEnabled: false
     // #444: van-e a kijelölésben MÁR mentett kép — enélkül a
     // „Visszaállítás" és az „Utolsó mentés visszavonása" értelmetlen
     property bool hasSavedBackup: false
@@ -602,7 +606,7 @@ MenuBar {
         MenuItem {
             objectName: "menuCreateCollage"
             text: qsTr("Picture Collage...")
-            enabled: bar.photoActionsEnabled
+            enabled: bar.createActionsEnabled
             onTriggered: bar.collageRequested()
         }
         // hiányzott (#324 audit): OS-integrációs funkciók
@@ -612,11 +616,13 @@ MenuBar {
         // filmkészítés a submenu egyetlen tételeként maradt életben
         Menu {
             title: qsTr("Movie")
-            enabled: bar.photoActionsEnabled
+            // #922: az ALMENÜ is kapuz — a benne lévő tétel hiába él, ha a
+            // szülő szürke. A film ugyanúgy a tálcáról is dolgozik (#455).
+            enabled: bar.createActionsEnabled
             MenuItem {
                 objectName: "menuCreateMovie"
                 text: qsTr("New Movie...")
-                enabled: bar.photoActionsEnabled
+                enabled: bar.createActionsEnabled
                 onTriggered: bar.movieRequested()
             }
         }

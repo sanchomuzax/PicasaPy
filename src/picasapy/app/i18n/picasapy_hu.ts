@@ -2153,6 +2153,11 @@
         <translation>Polaroid</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/CreateDialogs.qml" line="55"/>
+        <source>Select pictures in the library first, or put them in the Picture Tray.</source>
+        <translation>Előbb jelölj ki képeket a könyvtárban, vagy tedd őket a képtálcára.</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62"/>
         <source>Contact Sheet</source>
         <translation>Indexképek</translation>
