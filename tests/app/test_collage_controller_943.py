@@ -11,6 +11,8 @@ fut: a modell adat, nem rajz.
 
 from __future__ import annotations
 
+from pathlib import PurePath
+
 import math
 from dataclasses import dataclass
 
@@ -189,7 +191,7 @@ class TestMegnyitas:
         assert nyitott.collageOpen is True
         assert nyitott.collageClipCount == 3
         utak = [n.path for n in nyitott.collageNodes.nodes]
-        assert [u.rsplit("/", 1)[-1] for u in utak] == ["a.jpg", "b.jpg", "c.jpg"]
+        assert [PurePath(u).name for u in utak] == ["a.jpg", "b.jpg", "c.jpg"]
 
     def test_a_kezdo_meret_a_darabszambol(self, nyitott):
         from picasapy.app.collage_model import initial_node_width
@@ -245,7 +247,7 @@ class TestKijeloles:
     def test_a_kijeloltek_eltavolitasa(self, nyitott):
         nyitott.setCollageSelection([1])
         nyitott.removeSelectedNodes()
-        utak = [n.path.rsplit("/", 1)[-1] for n in nyitott.collageNodes.nodes]
+        utak = [PurePath(n.path).name for n in nyitott.collageNodes.nodes]
         assert utak == ["a.jpg", "c.jpg"]
         assert nyitott.collageDirty is True
 
@@ -266,7 +268,7 @@ class TestRetegsorrend:
 
     def test_alt_huzas_a_legfelso_retegbe_visz(self, nyitott):
         nyitott.raiseNodeToTop(0)
-        utak = [n.path.rsplit("/", 1)[-1] for n in nyitott.collageNodes.nodes]
+        utak = [PurePath(n.path).name for n in nyitott.collageNodes.nodes]
         assert utak == ["b.jpg", "c.jpg", "a.jpg"]
         assert nyitott.collageDirty is True
 
@@ -293,7 +295,7 @@ class TestRetegsorrend:
 
 
 def _nevek(host) -> list[str]:
-    return [n.path.rsplit("/", 1)[-1] for n in host.collageNodes.nodes]
+    return [PurePath(n.path).name for n in host.collageNodes.nodes]
 
 
 class TestCsereEsMozgatas:
