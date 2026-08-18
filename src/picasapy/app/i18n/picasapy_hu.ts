@@ -1201,6 +1201,14 @@
         <translation>A kijelölt képek egyike sem olvasható.</translation>
     </message>
     <message>
+        <source>Creating collage… shutting down</source>
+        <translation>Kollázs létrehozása... leállítás</translation>
+    </message>
+    <message>
+        <source>Stacking pictures</source>
+        <translation>Képek egymásra helyezése</translation>
+    </message>
+    <message>
         <source>Creating collage… initializing</source>
         <translation>Kollázs létrehozása... inicializálás</translation>
     </message>
@@ -7206,6 +7214,135 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
         <location filename="../qml/PicasaPy/CollageContextMenus.qml"/>
         <source>Scatter Pictures</source>
         <translation>Képek szétszórása</translation>
+    </message>
+</context>
+<context>
+    <name>CollageClipsTab</name>
+    <message>
+        <source>Get more...</source>
+        <translation>Továbbiak...</translation>
+    </message>
+    <message>
+        <source>Load more pictures from the library</source>
+        <translation>További képek beolvasása a könyvtárból</translation>
+    </message>
+    <message>
+        <source>+</source>
+        <translation>+</translation>
+    </message>
+    <message>
+        <source>Add selected clips to the collage</source>
+        <translation>Kijelölt klipek felvétele a kollázsba</translation>
+    </message>
+    <message>
+        <source>–</source>
+        <translation>–</translation>
+    </message>
+    <message>
+        <source>Remove the selected pictures from the tray</source>
+        <translation>A kijelölt képek eltávolítása a tálcáról</translation>
+    </message>
+</context>
+<context>
+    <name>CollageProgressOverlay</name>
+    <message>
+        <source>Creating collage - %1%</source>
+        <translation>Kollázs létrehozása - %1%</translation>
+    </message>
+    <message>
+        <source>%1 / %2 processed</source>
+        <translation>%1 / %2 feldolgozva</translation>
+    </message>
+</context>
+<context>
+    <name>CollageDialogs</name>
+    <message>
+        <source>Save Skipped</source>
+        <translation>Mentés mellőzve</translation>
+    </message>
+    <message>
+        <source>The collage cannot be saved because all of the pictures have been removed. Add at least one picture and try again.</source>
+        <translation>A kollázs nem menthető, mert az összes képet eltávolították. Vegyen fel legalább egy képet, és próbálkozzon újra.</translation>
+    </message>
+    <message>
+        <source>Format Mismatch Warning</source>
+        <translation>Figyelmeztetés: eltérő formátumok</translation>
+    </message>
+    <message>
+        <source>The page format of the collage does not match the format of your display. This may result in a desktop background that does not look as expected. (TIP: Choose „Current display” in the Page Format dropdown menu.)</source>
+        <translation>A kollázs oldalformátuma nem egyezik a képernyő formátumával. Emiatt az asztali háttérkép nem úgy fog kinézni, ahogy várná. (TIPP: válassza a „Jelenlegi megjelenítés” tételt az Oldalformátum menüből.)</translation>
+    </message>
+    <message>
+        <source>Set Anyway</source>
+        <translation>Beállítás ennek ellenére</translation>
+    </message>
+    <message>
+        <source>Don't Set</source>
+        <translation>Beállítás mellőzése</translation>
+    </message>
+    <message>
+        <source>Confirm…</source>
+        <translation>Jóváhagyás…</translation>
+    </message>
+    <message>
+        <source>Would you like to replace the existing one, or create a new one?</source>
+        <translation>Lecseréli a meglévőt, vagy újat hoz létre?</translation>
+    </message>
+    <message>
+        <source>Replace Existing</source>
+        <translation>Meglévő cseréje</translation>
+    </message>
+    <message>
+        <source>Create New</source>
+        <translation>Új létrehozása</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Mégse</translation>
+    </message>
+    <message>
+        <source>The current collage contains unsaved changes.
+
+Would you like to save or discard them before closing the tab? (Note: drafts are saved to the Collages album.)
+
+Click Cancel to leave the tab open.</source>
+        <translation>A jelenlegi kollázs nem mentett módosításokat is tartalmaz.
+
+A lap bezárása előtt menti vagy elveti ezeket? (Megjegyzés: A program a piszkozatokat a „Kollázsok” albumba menti.)
+
+A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
+    </message>
+    <message>
+        <source>Save Draft</source>
+        <translation>Piszkozat mentése</translation>
+    </message>
+    <message>
+        <source>Discard Changes</source>
+        <translation>Módosítások elvetése</translation>
+    </message>
+    <message>
+        <source>Cancel creating the collage?</source>
+        <translation>Megszakítja a kollázs létrehozását?</translation>
+    </message>
+    <message>
+        <source>Cancel Collage</source>
+        <translation>Kollázs megszakítása</translation>
+    </message>
+    <message>
+        <source>Don't Cancel</source>
+        <translation>Megszakítás mellőzése</translation>
+    </message>
+    <message>
+        <source>%1 pictures could not be found, so they cannot be displayed…</source>
+        <translation>%1 kép nem található, ezért nem jeleníthető meg…</translation>
+    </message>
+    <message>
+        <source>Selection Required</source>
+        <translation>Kötelező a kijelölés</translation>
+    </message>
+    <message>
+        <source>Please select the single image you want to place in the center of the collage BEFORE pressing this button.</source>
+        <translation>MIELŐTT erre a gombra kattintana, jelölje ki azt az egy képet, amelyet a kollázs közepére szeretne helyezni.</translation>
     </message>
 </context>
 </TS>

@@ -28,6 +28,11 @@ ORIENTATION_KEY = "collage/orientation"
 SHADOWS_KEY = "collage/shadows"
 CAPTIONS_KEY = "collage/showcaptions"
 BGCOLOR_KEY = "collage/bgcolor"
+#: A legutóbb kiírt piszkozat útvonala (spec 9.3 hetedik kulcsa). Nem a
+#: piszkozat TARTALMA — az `autosave.cxf`-ben él —, hanem az, hogy hol
+#: keressük: a felhasználó a Kollázsok album helyét átállíthatja, és egy
+#: összeomlás után a régi helyen álló piszkozatot is meg kell találnunk.
+AUTOSAVE_KEY = "collage/autosave"
 #: A kimeneti mappa („Kollázsok" album). Kulcsként tartjuk, hogy a teszt és
 #: a későbbi beállítás-panel ugyanazt az egy helyet írja.
 OUTPUT_DIR_KEY = "collage/outputDir"
@@ -104,6 +109,7 @@ def load_prefs(settings) -> CollagePrefs:
 
 
 __all__ = [
+    "AUTOSAVE_KEY",
     "BGCOLOR_KEY",
     "CAPTIONS_KEY",
     "DEFAULT_BACKGROUND",

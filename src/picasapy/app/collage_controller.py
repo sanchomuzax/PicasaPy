@@ -19,6 +19,11 @@ Négy elv, ami végigmegy a fájlon:
    ír meg belőle, kétszer fogja karbantartani.
 4. **A számolás tiszta modulokban van** (`collage_layout`, `collage_prefs`,
    `collage_output`); itt csak állapot, jelzés és a slot-felület marad.
+5. **A MENTÉS külön szeletben él** (`collage_save.CollageSaveMixin`, #949):
+   a cím, a célfájl, a folyamatjelzés, a megszakítás és a piszkozat. A
+   `CollageMixin` abból örököl, tehát a spec 8. szakaszának szerződése
+   kívülről EGY objektum marad — a vágás a fájlméret miatt kellett (a
+   nyolcadik jegy 1100 sor fölé vitte), nem az API miatt.
 
 ⚠️ **Névterek:** a `create_controller.CreateMixin` a `_collage_*` előtagot
 már használja (`_collage_seed`, `_collage_preview`). Ez a szelet ezért
@@ -29,6 +34,7 @@ törné el.
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -52,7 +58,6 @@ from picasapy.collage.themes import (
 )
 
 from . import collage_layout as layout
-from . import collage_output as output
 from . import collage_prefs as prefs
 from .collage_model import (
     CollageNode,
@@ -64,7 +69,7 @@ from .collage_model import (
     with_pictures_swapped,
     with_selection,
 )
-from .worker_thread import BackgroundWorkerMixin
+from .collage_save import CollageSaveMixin
 
 #: A kimeneti mappa beállítás-kulcsa — a `collage_prefs`-ből átemelve, hogy a
 #: felület és a teszt EGY nevet lásson.
@@ -73,30 +78,18 @@ COLLAGE_OUTPUT_DIR_KEY = prefs.OUTPUT_DIR_KEY
 #: A háttér három módja (spec 6.4). Az `avg` a `collage::avgcolor`.
 BACKGROUND_MODES = ("solid", "image", "avg")
 
-#: Az oldalformátum-egyezés tűrése az asztali háttérképnél — a képernyő
-#: aránya ritkán egyezik bitre a menü tételével.
-_RATIO_TOLERANCE = 0.01
 
 
-class CollageMixin(BackgroundWorkerMixin):
+
+class CollageMixin(CollageSaveMixin):
     """A kollázs-lap állapota és parancsai — a spec 8. szakasza."""
 
     # -- jelzések (8.3) ----------------------------------------------------
 
-    collageProgress = Signal(int, str)
-    collageDone = Signal(str)
-    collageFailed = Signal(str)
-    collageNoImages = Signal()
-    collageFormatMismatch = Signal()
     collageNeedsSelection = Signal()
-    collageDraftSaved = Signal(str)
     #: Integrációs horog: a „Megjelenítés és szerkesztés" a szerkesztőt kéri
     #: a megadott képre. A megnyitás a szerkesztő-szeleté, nem ezé.
     collageEditRequested = Signal(str)
-    #: Integrációs horog: a kész kép asztali háttérképnek szánva. A tényleges
-    #: beállítás asztali környezettől függ (KDE/GNOME/labwc), ezért nem itt
-    #: dől el — a jelzés a `collageDone` UTÁN érkezik.
-    collageDesktopBackgroundReady = Signal(str)
 
     # -- property-jelzések (8.1) -------------------------------------------
 
@@ -140,6 +133,19 @@ class CollageMixin(BackgroundWorkerMixin):
         self._collage_panel_spacing = 0.0
         self._collage_panel_bg_mode = "solid"
         self._collage_panel_bg_image = ""
+        # #949: a kimeneti fájl neve ebből lesz (spec 9.1); üresen a
+        # „kollázs" tartalék lép életbe
+        self._collage_panel_title = ""
+        # a legutóbb kiírt kollázs útvonala — ebből lesz a „Meglévő cseréje"
+        # ága (spec 9.2). Üres szöveg = még nem mentettük ezt a kollázst.
+        self._collage_panel_saved_path = ""
+        # a megszakítás EGYETLEN jelzője. Esemény, nem bool: a háttérszál
+        # olvassa, a felület írja, és a `threading.Event` pont ezt a
+        # találkozást teszi biztonságossá zár nélkül.
+        self._collage_panel_cancel = threading.Event()
+        # a legutóbb kiadott százalék — a megszakítás ezzel tudja a
+        # folyamatjelzőt a HELYÉN hagyni, miközben a címét „leállítás"-ra írja
+        self._collage_panel_percent = 0
 
         self._collage_panel_theme = stored.theme
         self._collage_panel_format = stored.format_key
@@ -338,12 +344,26 @@ class CollageMixin(BackgroundWorkerMixin):
 
     # -- a lap megnyitása és bezárása (8.2) --------------------------------
 
+    def _title_from_sources(self, sources) -> str:
+        """A közös FORRÁSMAPPA neve — ez lesz a kimeneti fájl neve (9.1).
+
+        Több mappából érkező kijelölésnél nincs egy címe a kollázsnak, tehát
+        üres szöveget adunk, és a „kollázs" tartalékra esünk. Kitalált,
+        „Nyaralás + 2 másik mappa" jellegű nevet nem gyártunk."""
+        mappak = {Path(source.path).parent for source in sources if source.path}
+        if len(mappak) != 1:
+            return ""
+        return next(iter(mappak)).name
+
     @Slot(list)
     def openCollage(self, rows) -> None:
         """A kollázs-lap megnyitása a megadott rács-sorokkal."""
         self._ensure_collage_panel()
         self._collage_panel_frame_center = -1
-        self._relayout(self._sources_from_rows(rows), dirty=False)
+        self._set_saved_path("")
+        sources = self._sources_from_rows(rows)
+        self.setCollageTitle(self._title_from_sources(sources))
+        self._relayout(sources, dirty=False)
         self.collageFrameCenterChanged.emit()
         if not self._collage_panel_open:
             self._collage_panel_open = True
@@ -744,83 +764,6 @@ class CollageMixin(BackgroundWorkerMixin):
         self._ensure_collage_panel()
         self._collage_panel_seed += 1
         self._relayout(self._current_sources(), dirty=False)
-
-    # -- létrehozás (8.2, 9.1) ---------------------------------------------
-
-    @Slot(bool)
-    @Slot(bool, bool)
-    def createCollage(
-        self,
-        asDesktopBackground: bool,  # noqa: N803 — a spec 8.2 neve
-        ignoreFormatMismatch: bool = False,  # noqa: N803
-    ) -> None:
-        """A kollázs mentése — EGY kódút a két gombhoz (spec 8.2).
-
-        `asDesktopBackground` esetén a formátum-eltérésre előbb
-        figyelmeztetünk (9.1); a „Beállítás ennek ellenére" gomb ugyanezt a
-        slotot hívja `ignoreFormatMismatch=True`-val."""
-        self._ensure_collage_panel()
-        nodes = self._nodes()
-        if not nodes:
-            self.collageNoImages.emit()
-            return
-        if (
-            asDesktopBackground
-            and not ignoreFormatMismatch
-            and abs(self.collagePageRatio - self._screen_ratio()) > _RATIO_TOLERANCE
-        ):
-            self.collageFormatMismatch.emit()
-            return
-
-        sources = tuple(Path(node.path) for node in nodes if not node.missing)
-        if not sources:
-            # 9.4: a kollázs minden képe eltűnt a lemezről — ez ugyanaz a
-            # zsákutca, mint amikor mindet eltávolították, és a felület
-            # ugyanazt a „Mentés mellőzve" üzenetet mutatja rá. Nyers
-            # kivétel-szöveg semmiképp ne menjen ki a felhasználóhoz.
-            self.collageNoImages.emit()
-            return
-        target = output.output_path(
-            output.output_dir(self._get_settings().value(prefs.OUTPUT_DIR_KEY))
-        )
-        self.collageProgress.emit(0, self.tr("Creating collage… initializing"))
-        self._start_background(
-            self._render_worker,
-            args=(sources, self._render_settings(), target, bool(asDesktopBackground)),
-            name="picasapy-collage-panel",
-        )
-
-    def _render_settings(self):
-        """A panel állapotából renderelő-beállítás (a színváltás a modulban)."""
-        color = self._collage_panel_bg_color
-        return output.render_settings(
-            theme=self._collage_panel_theme,
-            border=self._collage_panel_border,
-            spacing=self._collage_panel_spacing,
-            shadows=self._collage_panel_shadows,
-            page_ratio=self.collagePageRatio,
-            background_rgb=(color.red(), color.green(), color.blue()),
-            frame_center=self._collage_panel_frame_center,
-            seed=self._collage_panel_seed,
-        )
-
-    def _render_worker(self, sources, settings, target, wallpaper: bool) -> None:
-        """A háttérszál törzse — a `BackgroundWorkerMixin`-en fut (#430)."""
-        try:
-            path, _used = output.render_collage(sources, settings, target)
-        except (ValueError, OSError) as error:
-            self.collageFailed.emit(str(error))
-            return
-        if path is None:
-            self.collageFailed.emit(
-                self.tr("None of the selected pictures could be read.")
-            )
-            return
-        self._set_dirty(False)
-        self.collageProgress.emit(100, self.tr("The collage is ready (click here)"))
-        self.collageDone.emit(str(path))
-        if wallpaper:
-            self.collageDesktopBackgroundReady.emit(str(path))
 
 
 __all__ = [

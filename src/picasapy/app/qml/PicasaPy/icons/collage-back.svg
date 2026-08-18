@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 15" width="17" height="15">
+  <!-- PicasaPy sajat rajz (#949): vissza-nyil a „Tovabbiak..." gombhoz
+       (collage-back, 17x15) - a konyvtar fulre valt, a kollazs lapja nyitva marad. -->
+  <path d="M6.5 2.5 1.5 7.5l5 5" fill="none" stroke="#2b2b2b" stroke-width="1.6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M2.5 7.5h9a4 4 0 0 1 4 4v1" fill="none" stroke="#2b2b2b"
+        stroke-width="1.6" stroke-linecap="round"/>
+</svg>

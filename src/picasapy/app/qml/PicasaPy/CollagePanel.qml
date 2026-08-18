@@ -52,6 +52,15 @@ Item {
     //: A vezérlő (AppController + CollageMixin). Teszteléshez becserélhető.
     property var controller: null
 
+    //: A KÖNYVTÁR pillanatnyi kijelölése (rács-sorok). A „+" gomb ebből
+    //: vesz fel klipeket; a gazda (Main.qml) köti rá a rács kijelölését.
+    property var librarySelection: []
+
+    //: „Továbbiak..." — a gazda a Könyvtár fülre vált, és ott megjelenít
+    //: egy „Vissza a kollázshoz" gombot. A kollázs lapja NYITVA marad,
+    //: ezért a panel csak jelez: a fülváltás a gazdáé (spec 4.3, 13.).
+    signal getMoreClipsRequested()
+
     // --- A bal hasáb: FIX ---------------------------------------------------
 
     readonly property int columnX: 3
@@ -156,7 +165,7 @@ Item {
             controller: panel.controller
         }
 
-        Item {
+        CollageClipsTab {
             id: clipsTab
             objectName: "collageClipsTab"
             x: 10
@@ -164,7 +173,9 @@ Item {
             width: 256
             height: 352
             visible: tabBar.currentIndex === 1
-            // TARTALOM: #949 („Képek" lap).
+            controller: panel.controller
+            librarySelection: panel.librarySelection
+            onGetMoreClipsRequested: panel.getMoreClipsRequested()
         }
     }
 
@@ -180,7 +191,7 @@ Item {
                    + "it as your desktop background")
         ToolTip.visible: hovered
         ToolTip.delay: 500
-        onClicked: if (panel.controller) panel.controller.createCollage(true)
+        onClicked: panel.requestSave(true)
     }
     PicasaButton {
         objectName: "collageShareButton"
@@ -191,7 +202,7 @@ Item {
                    + "collection).")
         ToolTip.visible: hovered
         ToolTip.delay: 500
-        onClicked: if (panel.controller) panel.controller.createCollage(false)
+        onClicked: panel.requestSave(false)
     }
     PicasaButton {
         objectName: "collageResetButton"
@@ -254,14 +265,142 @@ Item {
     // Ez nem stílus kérdése: a `picasa-kollazs-felulet.md` 9.1/b szerint a
     // sikeres mentés után a program MAGA nyomja meg a „Bezárás" gombot
     // (`0x009cd8a0(panel, "collagepanel/cancelbutton")`), a mentetlen-
-    // módosítás kérdését elnyomva. Aki a #949-ben az automatikus zárást
-    // megírja, EZT hívja — ne szülessen mellé második bezárási út, mert
-    // akkor a megerősítés két helyen kerülne (vagy nem kerülne) elnyomásra.
+    // módosítás kérdését elnyomva. A #949 ezt a `skipUnsavedPrompt`
+    // paraméterrel valósítja meg — a MENTÉS UTÁNI ág ugyanezen a kapun megy
+    // be, és nincs mellette második bezárási út, ahol a megerősítés
+    // elcsúszhatna.
     //
-    // Maga a háromgombos megerősítés (Piszkozat mentése / Módosítások
-    // elvetése / Mégse) a #949 hatóköre; addig a bezárás közvetlen.
-    function requestClose() {
+    // A háromgombos megerősítés (Piszkozat mentése / Módosítások elvetése /
+    // Mégse) a `CollageDialogs`-ban él; a döntés következményét itt hajtjuk
+    // végre — a párbeszéd nem zár be semmit magától.
+    function requestClose(skipUnsavedPrompt) {
+        if (!panel.controller)
+            return
+        if (skipUnsavedPrompt !== true && panel.controller.collageDirty === true) {
+            dialogs.askClose()
+            return
+        }
+        panel.controller.closeCollage()
+    }
+
+    // --- A mentés (9.1, 9.2) -----------------------------------------------
+    //
+    // A két gomb — „Asztali háttérkép" és „Kollázs létrehozása" — UGYANIDE
+    // fut be, és a vezérlőben is ugyanaz a `createCollage(asDesktop)`. A
+    // felületnek két kérdése lehet a mentés előtt (már van fájlja? eltér a
+    // formátum?), de a mentés maga EGY hívás marad — aki kettőt ír meg
+    // belőle, kétszer fogja karbantartani.
+
+    //: A folyamatban lévő mentés paraméterei, amíg egy kérdés áll a képen.
+    property bool pendingDesktop: false
+    property bool pendingReplace: false
+
+    //: A kész kollázs útvonala — a gazda ebből indexel és ugrik rá
+    //: („locate", spec 9.1/b).
+    signal collageSaved(string path)
+
+    function requestSave(asDesktopBackground) {
+        if (!panel.controller)
+            return
+        panel.pendingDesktop = asDesktopBackground === true
+        panel.pendingReplace = false
+        // Szándékosan igazság-vizsgálat: hiányos vezérlőnél (a #945 próba-
+        // vezérlője ilyen) a property `undefined`, és olyankor NEM kérdezünk
+        // rá egy nem létező meglévő fájlra.
+        if (panel.controller.collageSavedPath) {
+            dialogs.askReplace()
+            return
+        }
+        panel.startSave(false)
+    }
+
+    function startSave(ignoreFormatMismatch) {
         if (panel.controller)
-            panel.controller.closeCollage()
+            panel.controller.createCollage(panel.pendingDesktop,
+                                           ignoreFormatMismatch === true,
+                                           panel.pendingReplace)
+    }
+
+    /** A sikeres mentés zárása: jelzés a gazdának, majd önzáródás. */
+    function finishSave(path) {
+        progressOverlay.visible = false
+        panel.collageSaved(path)
+        panel.requestClose(true)
+    }
+
+    // A folyamatjelző a VÁSZON közepén (spec 9.1). Szándékosan nem a
+    // `CollageCanvas`-ban ül: a vászon tartalma a #947/#948 hatóköre, a
+    // mentés folyamata ezé a jegyé — így a két kör nem ír ugyanabba a
+    // fájlba.
+    CollageProgressOverlay {
+        id: progressOverlay
+        objectName: "collageProgressOverlay"
+        x: panel.canvasArea.x + (panel.canvasArea.width - width) / 2
+        y: panel.canvasArea.y + (panel.canvasArea.height - height) / 2
+        total: panel.clipCount
+        multiExposure: panel.controller
+                       && panel.controller.collageTheme === "multiexp"
+        onClicked: {
+            if (progressOverlay.finished)
+                panel.finishSave(panel.controller
+                                 ? panel.controller.collageSavedPath : "")
+            else
+                dialogs.askCancel()
+        }
+    }
+
+    CollageDialogs {
+        id: dialogs
+
+        onFormatIgnored: panel.startSave(true)
+        onReplaceExisting: {
+            panel.pendingReplace = true
+            panel.startSave(false)
+        }
+        onCreateNew: {
+            panel.pendingReplace = false
+            if (panel.controller)
+                panel.controller.dropSavedCollagePath()
+            panel.startSave(false)
+        }
+        onCloseWithDraft: {
+            if (panel.controller) {
+                panel.controller.saveCollageDraft()
+                panel.controller.closeCollage()
+            }
+        }
+        onCloseDiscardingChanges: {
+            if (panel.controller)
+                panel.controller.closeCollage()
+        }
+        onCancelConfirmed: {
+            if (panel.controller)
+                panel.controller.cancelCollage()
+        }
+    }
+
+    // A vezérlő jelzései → a felület válaszai. Egy helyen, hogy látszódjon:
+    // minden ág vagy párbeszédet nyit, vagy a folyamatjelzőt állítja.
+    Connections {
+        target: panel.controller
+
+        function onCollageProgress(percent, text) {
+            progressOverlay.percent = percent
+            progressOverlay.phase = text
+            progressOverlay.visible = true
+        }
+        function onCollageDone(path) { panel.finishSave(path) }
+        function onCollageFailed(message) { progressOverlay.visible = false }
+        function onCollageCanceled() { progressOverlay.visible = false }
+        function onCollageNoImages() {
+            progressOverlay.visible = false
+            dialogs.showSaveSkipped()
+        }
+        function onCollageFormatMismatch() {
+            progressOverlay.visible = false
+            dialogs.askFormatMismatch()
+        }
+        function onCollageMissingImages(count) { dialogs.showMissing(count) }
+        function onCollageNeedsSelection() { dialogs.showSelectionRequired() }
     }
 }

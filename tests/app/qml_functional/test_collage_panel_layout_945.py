@@ -18,7 +18,7 @@ koordinátarendszerében kérdez.
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import Property, QObject, Qt, QUrl, Slot
+from PySide6.QtCore import Property, QObject, QPoint, Qt, QUrl, Slot
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
@@ -312,8 +312,24 @@ def test_az_esc_bezar(qt_app):
 
 
 def test_a_bezaras_gomb_ugyanazt_teszi_mint_az_esc(qt_app):
-    """Egy kódút: a gomb és az Esc ugyanazt a `requestClose()`-t hívja."""
+    """Egy kódút: a gomb és az Esc ugyanazt a `requestClose()`-t hívja.
+
+    ⚠️ #949: a hívás VALÓDI kattintás lett. A `requestClose()` azóta egy
+    paramétert kapott (`skipUnsavedPrompt`, a mentés utáni önzáródás ága —
+    ezt a #945 kommentje elő is írta), és a paraméteres QML-függvényt az
+    `invokeMethod` argumentum nélkül nem tudja meghívni. A gombot megnyomni
+    amúgy is közelebb van ahhoz, amit a teszt neve állít."""
     panel = _panel(qt_app, 800, 534)
+    view = panel.property("_view")
     stub = panel.property("_stub")
-    panel.metaObject().invokeMethod(panel, "requestClose")
+    QTest.qWaitForWindowExposed(view)
+    gomb = _child(panel, "collageCloseButton")
+    kozep = gomb.mapToScene(gomb.boundingRect().center())
+    QTest.mouseClick(
+        view,
+        Qt.LeftButton,
+        Qt.NoModifier,
+        QPoint(round(kozep.x()), round(kozep.y())),
+    )
+    QTest.qWait(50)
     assert stub.close_calls == 1
