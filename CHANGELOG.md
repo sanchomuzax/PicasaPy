@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.75] – 2026-08-18
+
+### Belső
+- **A kollázs rajzolója szétvált elrendezésre és rajzolásra (#942).** Eddig a
+  kollázs-készítő minden mentéskor ÚJRA kiszámolta, hova kerülnek a képek. Ez
+  most még nem látszott, mert a képeket úgysem lehetett kézzel mozgatni — de
+  amint a készülő szerkeszthető vásznon (#920) elhúzol egy képet, a mentés
+  visszarántotta volna a gépi helyére. Vagyis mást kaptál volna, mint amit a
+  képernyőn látsz.
+
+  Mostantól a program külön lépésben rendezi el a képeket és külön lépésben
+  rajzolja ki őket, és a mentés is ugyanazt az egyetlen rajzolót használja,
+  mint az előnézet. Ami a vásznon áll, az kerül a képre.
+
+  A ma elkészülő kollázsok **képpontra ugyanúgy néznek ki**, mint eddig — ezt
+  36 rögzített ujjlenyomat (mind a hat elrendezés, mindhárom keret, két
+  térköz-állás) őrzi. Új mellékhatás: a **nem található kép** többé nem tűnik
+  el némán a kollázsból, hanem áthúzott helykitöltő csempeként jelenik meg.
+
 ## [0.7.74] – 2026-08-18
 
 ### Új
