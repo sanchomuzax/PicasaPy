@@ -264,6 +264,17 @@ A két fül felirata: **„Beállítások"** és **„Klipek (%1)"** — a máso
 **tényleges klip-darabszám**mal (`collageUI::tab2_title`), minden
 felvétel/törlés után újraírva.
 
+> ⚠️ **Két külön erőforrás — ne keverd (2026-08-18).** A `.tre` statikus
+> fülcímkéje (`collagepanel/tab2-label`) magyarul „**Képek**"
+> (`panel-feliratok-hu.tsv`), a futásidejű formátum viszont
+> `collageUI::tab2_title` = „Clips (%d)" / „**Klipek (%d)**". A frissítőt
+> (`0x0083b890`) **négy** hely hívja (`0x00830f30`, `0x00831e10` —
+> panelépítés/újraépítés —, `addclips` `0x0083b180`, `deleteclips`
+> `0x0083b590`), ezért a látható felirat gyakorlatilag mindig
+> „Klipek (N)" — a felhasználó képernyőképén is „Klipek (80)". A
+> megvalósításban a fül felirata `qsTr("Clips (%1)")` → „Klipek (%1)";
+> a „Képek (%1)" hibrid az eredetiben **nem létezik**.
+
 ### 4.2 „Beállítások" lap — elemenként
 
 Az `x, y` a **`tabpanel1` bal-felső sarkához** képest értendő (a

@@ -634,6 +634,14 @@ Az egyéni arány hibaüzenetei: `CustomAspectRatioDlg::AddError`,
 A fül felirata **számot tartalmaz**: `collageUI::tab2_title` =
 „Clips (%d)" / **„Klipek (%d)"** — a képernyőképen „Klipek (80)".
 
+> ⚠️ A `.tre` **statikus** fülcímkéje (`collagepanel/tab2-label`) magyarul
+> „**Képek**" — ez egy MÁSIK erőforrás, és gyakorlatilag sosem látszik:
+> a `0x0083b890` frissítő (négy hívó: `0x00830f30`, `0x00831e10`,
+> `addclips`, `deleteclips`) a „Klipek (%d)" formátummal felülírja.
+> A látható felirat a képernyőkép szerint is „Klipek (N)". *(A két
+> erőforrás léte megerősített; hogy a négy hívó közül melyik fut pontosan
+> a panel megnyitásakor, erős.)*
+
 Három gomb, mind a lap tetején:
 
 | gomb | hely | mit csinál |
