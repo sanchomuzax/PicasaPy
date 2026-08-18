@@ -5,6 +5,32 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.7.71] – 2026-08-18
+
+### Javítva
+- **A kollázs beállításai követik az elrendezést (#923).** Eddig bármelyik
+  beállítás bármelyik elrendezéssel kombinálható volt — pedig az eredeti Picasában
+  a **képkeret** csak a Képkupacnál és az Indexképnél választható, a **térköz** pedig
+  csak a három rácsos elrendezésnél. A panelen a kettő szó szerint ugyanazt a helyet
+  foglalja, tehát sosem látszanak együtt.
+
+  Mostantól a keretválasztó kiszürkül ott, ahol az eredetiben sincs, és a program
+  nem alkalmaz olyan beállítást, ami az adott elrendezésnél értelmetlen. Az árnyék
+  alapértéke is elrendezésenként eltér, ahogy az eredetiben.
+
+- **Az „Automatikus szín" gomb (#759).** Eddig három, egymástól független
+  csatorna-erősítést alkalmazott — az eredeti Picasa viszont egy összetett
+  színátalakítást használ, amiben a csatornák hatnak egymásra. Ezért nem lehetett
+  a régi megközelítéssel közelebb kerülni, akárhogy hangoltuk.
+
+  Az eltérés az eredeti Picasa kimenetétől **a negyedére csökkent**, és már a
+  fájlmentésből származó zaj szintje ALATT van — vagyis a különbség ezen a
+  mérőanyagon nem is mérhető tovább. Tizenkét összehasonlító képből tíz javult,
+  egy sem romlott.
+
+  Mellékesen megszűnt egy régi hiba is: színöntet nélküli képre a program eddig is
+  ráigazított egy keveset, most — az eredetihez hasonlóan — érintetlenül hagyja.
+
 ## [0.7.70] – 2026-08-18
 
 ### Javítva
