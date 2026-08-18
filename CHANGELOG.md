@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.7.75] – 2026-08-18
 
+### Javítva
+- **A Finomhangolás Csúcsfények és Árnyékok csúszkája együtt is pontos (#879).**
+  Eddig a kettőt egymás után alkalmaztuk, az eredeti Picasa viszont egyetlen
+  számolásba vonja össze őket. Amíg csak az egyik csúszkát mozgattad, ez nem
+  látszott — amint **mindkettőt** elmozdítottad, a kép láthatóan másképp jött ki,
+  mint a Picasában.
+
+  Ez nem ritka eset: valódi fotógyűjtemények mentett beállításai közt a
+  Finomhangolás **minden ötödik** használatánál mindkét csúszka aktív. A régi
+  számolás ezeken legfeljebb 17 világossági szintet tévedett, a szélső állásban
+  pedig 217-et; mostantól bitre az eredetit adja.
+
+  Ugyanez a mag szolgálja ki a Megvilágítási javítások panelt is, tehát a két
+  hely innentől ugyanúgy számol.
+
 ### Belső
 - **A kollázs rajzolója szétvált elrendezésre és rajzolásra (#942).** Eddig a
   kollázs-készítő minden mentéskor ÚJRA kiszámolta, hova kerülnek a képek. Ez
