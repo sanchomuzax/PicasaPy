@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from picasapy.render.tone import (
+    FINETUNE_LEVEL_PARAM_MAX,
     apply_color_temperature,
     apply_fill,
     fill_lut,
@@ -25,6 +26,36 @@ from picasapy.render.tone import (
 
 def _uniform_image(value: int | tuple[int, int, int]) -> np.ndarray:
     return np.full((6, 8, 3), value, dtype=np.uint8)
+
+
+def _szintletra() -> np.ndarray:
+    """256 szintű szürke „létra" — egy pontonkénti művelet teljes LUT-ja."""
+    return np.arange(256, dtype=np.uint8).reshape(1, 256, 1).repeat(3, axis=2)
+
+
+def _eredeti_szintvago_lut(highlights: float, shadows: float) -> np.ndarray:
+    """A csúcsfény+árnyék 8 bites kimenete az EREDETI kód szerint (#879).
+
+    A `finetune2` callback (`0x008f7ee0`) EGYETLEN hívással
+    (`0x0090c430` → `0x0090c1e0`) építtet **egy** táblát, három értékkel:
+
+        a0 = p3                       ; árnyékok  → FEKETEPONT
+        a1 = max(1 − p2, 0,001)       ; csúcsfény → FEHÉRPONT
+        a2 = 1,0                      ; a hívó `fld1`-je → lineáris
+
+        LUT16[i] = clamp(rint((i·256 − a0·65280) / (a1 − a0)), 0, 0xFF00)
+        ki       = LUT16[i] >> 8
+
+    (Degenerált `a1 == a0` párnál a natív kód 1,0-s skálával megy tovább.)
+
+    A képlet itt SZÁNDÉKOSAN újra le van írva, nem a megvalósításból hívva:
+    így az elvárást nem tudja némán magával vinni egy átírás.
+    """
+    black = min(max(shadows, 0.0), FINETUNE_LEVEL_PARAM_MAX)
+    white = max(1.0 - min(max(highlights, 0.0), FINETUNE_LEVEL_PARAM_MAX), 0.001)
+    scale = 1.0 / (white - black) if white != black else 1.0
+    values = (np.arange(256, dtype=np.float64) * 256.0 - black * 65280.0) * scale
+    return (np.clip(np.rint(values), 0, 0xFF00).astype(np.int64) >> 8).astype(np.uint8)
 
 
 class TestApplyFill:
@@ -244,3 +275,103 @@ class TestApplyFinetune2:
             image, fill=0.3, highlights=0.1, shadows=0.2, neutral=None, temperature=0.5
         )
         np.testing.assert_array_equal(image, original)
+
+
+class TestFinetuneKozosLut:
+    """#879: a Csúcsfények és az Árnyékok EGYETLEN közös LUT-ban.
+
+    Az eredeti a két csúszkát nem egymás után futtatja, hanem **egy** affin
+    fekete-/fehérpont-leképezéssé vonja össze. Amíg csak az egyik csúszka
+    aktív, a kétféle számolás gyakorlatilag azonos — amint mindkettő nem
+    nulla, szétmegy, és a valódi `.picasa.ini`-korpuszban a Finomhangolás
+    **minden ötödik** használata ilyen (124 / 566).
+    """
+
+    @pytest.mark.parametrize(
+        ("highlights", "shadows"),
+        [
+            (0.1628, 0.2414),  # a valódi ini-korpusz legrosszabb kompozit esete
+            (0.1123, 0.2582),
+            (0.24, 0.24),
+            (0.30, 0.40),
+            (0.48, 0.48),
+            (0.10, 0.05),
+        ],
+    )
+    def test_kompozit_az_eredeti_egyetlen_lutjat_koveti(
+        self, highlights: float, shadows: float
+    ) -> None:
+        result = apply_finetune2(
+            _szintletra(),
+            fill=0.0,
+            highlights=highlights,
+            shadows=shadows,
+            neutral=None,
+            temperature=0.0,
+        )
+        vart = _eredeti_szintvago_lut(highlights, shadows)
+        np.testing.assert_array_equal(result[0, :, 0], vart)
+
+    @pytest.mark.parametrize(
+        ("highlights", "shadows"),
+        [(0.24, 0.0), (0.48, 0.0), (0.0, 0.24), (0.0, 0.48)],
+    )
+    def test_egy_vezerlonel_is_ugyanaz_a_lut(
+        self, highlights: float, shadows: float
+    ) -> None:
+        """A közös LUT az egy-vezérlős esetet is az eredeti szerint számolja."""
+        result = apply_finetune2(
+            _szintletra(),
+            fill=0.0,
+            highlights=highlights,
+            shadows=shadows,
+            neutral=None,
+            temperature=0.0,
+        )
+        np.testing.assert_array_equal(
+            result[0, :, 0], _eredeti_szintvago_lut(highlights, shadows)
+        )
+
+    def test_a_kulon_csuszka_fuggvenyek_a_kozos_lutot_hasznaljak(self) -> None:
+        """Az `apply_highlights`/`apply_shadows` a közös LUT elfajult esete."""
+        ladder = _szintletra()
+        np.testing.assert_array_equal(
+            apply_highlights(ladder, 0.32)[0, :, 0], _eredeti_szintvago_lut(0.32, 0.0)
+        )
+        np.testing.assert_array_equal(
+            apply_shadows(ladder, 0.32)[0, :, 0], _eredeti_szintvago_lut(0.0, 0.32)
+        )
+
+    def test_a_ket_menetes_szamolas_erdemben_maskepp_szamolna(self) -> None:
+        """Az őrnek foga van: rögzítjük, MEKKORA a javított hiba (#879).
+
+        A régi, két külön menetes modell a fekete-/fehérpontot egymás után
+        alkalmazta: `((be/(1−h)) − 255·s)/(1−s)`. Az eredeti egyetlen
+        leképezése ezzel szemben `(be − 255·s)/((1−h) − s)`. A maximumon a
+        meredekség 3,70 vs 25,0 — a két görbe 217 szinten tér el.
+        """
+        levels = np.arange(256, dtype=np.float64)
+        highlights = shadows = 0.48
+        ketmenetes = np.clip(np.rint(levels / (1.0 - highlights)), 0, 255)
+        ketmenetes = np.clip(
+            np.rint((ketmenetes - 255.0 * shadows) / (1.0 - shadows)), 0, 255
+        )
+        elteres = np.abs(
+            ketmenetes - _eredeti_szintvago_lut(highlights, shadows).astype(np.float64)
+        )
+        assert elteres.max() >= 200.0
+
+    def test_semleges_allasban_a_szintvagas_kimarad(self) -> None:
+        """A natív burkoló a lépést kihagyja, ha `p2 == 0` és `p3 == 0`."""
+        image = _uniform_image(137)
+        np.testing.assert_array_equal(
+            apply_finetune2(
+                image,
+                fill=0.0,
+                highlights=0.0,
+                shadows=0.0,
+                neutral=None,
+                temperature=0.0,
+            ),
+            image,
+        )

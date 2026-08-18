@@ -225,6 +225,20 @@ Vagyis a klasszikus **szint-transzformáció**, ebben a sorrendben:
 **gamma → feketepont eltolás → fehérpont skálázás**, 16 bites pontossággal.
 A `65280 = 255·256` a teljes kitérés.
 
+**Kik hívják és mivel** (2026-08-18, #879): a `triple2` a
+(Feketepont, Fehérpont) párral, a `triple3` és a `finetune`/`finetune2`
+pedig a Kiemelések/Árnyékok párral — mindhárom UGYANEBBEN az alakban:
+
+```
+black = Árnyékok (p3)          white = max(1 − Kiemelések, 0,001)   gamma = 1,0
+```
+
+A `finetune2` callbackjében (`0x008f7ee0`) ez a `0x008f7f7d`–`0x008f7f87`
+veremre pakolásból olvasható ki. **A két csúszka tehát EGYETLEN affin
+leképezés, nem két egymás utáni lépés** — a részletek és a numerikus
+következmények a [`filters-decoded.md`](filters-decoded.md) „A `finetune2`
+SZERKEZETE" szakaszában.
+
 ## 2.4 Kontraszt — `0x0090c2c0`
 
 Ugyanaz az alkalmazó, más LUT-építő (`0x0090c100`):

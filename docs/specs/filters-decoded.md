@@ -350,7 +350,7 @@ végpontok felé tér el).
 | `glow` | közelítés (1.85 → **0,15–1,06** #668) | ✅ kész |
 | `enhance` | közelítés, színöntetnél eltér (0.49–3.02) | ✅ jó (az autocolor-komponens húzza) |
 | `sat` | negatív jó, pozitív romlik (0.70–12.71) → **0,74** (#693) | ✅ **kész** — a pozitív ág csatornánkénti gammája megvan ÉS be van kötve (`saturation_positive.py`) |
-| `finetune2` | h/s alacsony jó, hő-extrém eltér (0.94–24.9) | ⚠️ hőmérséklet-tengely pontosítandó |
+| `finetune2` | h/s alacsony jó, hő-extrém eltér (0.94–24.9) | ✅ **a Csúcsfények+Árnyékok EGY közös LUT — javítva (#879, 2026-08-18)**, a kompozit eltérés 217 szintről 0-ra · ⚠️ a hőmérséklet-tengely nyitva marad (a mai modell a mért görbékhez jobban illik, de a mérés vak a kereszt-tagokra) |
 | `fill` | csak gyenge erősségnél jó (1.03–6.56) → **eredeti exportokhoz mérve 1,20–1,77** (2026-08-18) | ✅ jó — a 6,56 túlbecsülte |
 | `glow2` | eltér (2.68) → **közelítés (0,18–1,19)** (#668) | ✅ kész |
 | `radblur` | eltér (3.18) → **közelítés (0,09–0,68)** (#668) | ✅ kész |
@@ -688,6 +688,12 @@ A nevük félrevezető: egyik sem csúcsfény-mentés vagy árnyék-emelés, han
 Kiemelések(h): ki = clip( be / (1 − h) )
 Árnyékok(s):   ki = clip( (be − 255·s) / (1 − s) )
 ```
+
+> ⚠️ **Ez a két zárt képlet csak KÜLÖN-KÜLÖN érvényes.** Ha mindkét csúszka
+> nem nulla, az eredeti **nem** futtatja őket egymás után, hanem egyetlen
+> közös leképezést számol: `ki = clip( (be − 255·s) / ((1−h) − s) )`. A
+> különbség a maximumon 217 szint. Részletek: „A `finetune2` SZERKEZETE"
+> szakasz (#879).
 
 Ez egyben megmagyarázza a `filterdesc.xml` furcsa **`[0..0.48]`**
 paramétertartományát mindkét csúszkánál: a paraméter azt mondja meg, a
@@ -3792,43 +3798,104 @@ A táblaépítő (`0x0090c1e0`, 211 b):
 ```
 E     = 1 / a2                                  ; 0x0090c1ec
 skála = (a1 != a0) ? 1/(a1 − a0) : 1,0          ; 0x0090c206–0x0090c217
-alap  = pow(a0, E) × 65280                      ; 0xcf4200 = 65280,0
+alap  = a0 × 65280                              ; 0xcf4200 = 65280,0 (0x0090c221)
 minden i = 0…255:
     v = pow(i/255, E) × 65280                   ; 0xcf4138 = 1/255
     v = (v − alap) × skála
-    LUT16[i] = clamp(trunc(v), 0, 0xFF00)       ; 0x0090c28f
+    LUT16[i] = clamp(rint(v), 0, 0xFF00)        ; fistp, 0x0090c27f–0x0090c296
 ```
+
+Két korábbi pontatlanság javítva (2026-08-18, utasításszintű újraolvasás):
+az `alap` **nem** `pow(a0, E)`, hanem maga az `a0` szorozva (a `pow` csak a
+ciklusban fut), a kerekítés pedig **`fistp`**, azaz a lebegőpontos
+kerekítési mód szerint **a legközelebbi egészre** — nem csonkolás. (A
+csonkolás a KIMENETI oldalon van: az alkalmazó `>> 8`-cal veszi ki a nyolc
+bitet.)
 
 **A hívó egy irodalmi `fld1`-et is átad** (`0x008f7fa2`), tehát a
 kitevő `E = 1/1 = 1` — a görbe **lineáris**, és a művelet egyetlen
 **affin fekete-/fehérpont-leképezés**. Ezért illeszkedik a mért
 egy-vezérlős modellünk.
 
-### ⚠️ Amiben a mi megvalósításunk ELTÉR
+### A három argumentum — utasításról utasításra levezetve (2026-08-18)
 
-Mi **két külön menetben** csináljuk (`apply_highlights`, majd
-`apply_shadows`), és **mindkettő 8 bitre vág a végén**. Az eredeti
-**egyetlen** táblát épít és **egyszer** vág.
+A verembe pakolás a `0x008f7f7a`-nál kezdődik. Az FPU-verem ekkor
+`st0 = s`, `st1 = h`, `st2 = 1,0`:
 
-Amíg csak az egyik vezérlő aktív, a kettő **bitre azonos**. Amint
-**mindkettő** nem nulla, szétmegy:
+```asm
+0x008f7f7d  fxch st(2)         ; st0 = 1,0   st1 = h   st2 = s
+0x008f7f7f  fstp [esp+8]       ; a2 = 1,0                 → GAMMA
+0x008f7f83  fstp [esp+4]       ; a1 = h = max(1 − p2, 0,001)  → FEHÉRPONT
+0x008f7f87  fstp [esp]         ; a0 = s = p3                  → FEKETEPONT
+0x008f7f8a  call 0x90c430
+```
+
+Vagyis **`a0` = Árnyékok (p3), `a1` = 1 − Kiemelések (p2), `a2` = 1,0** —
+ugyanaz a hozzárendelés, amit a `triple3` burkolója (`0x008f8ce0`) is
+használ, és amit a mért egy-vezérlős görbék adnak (0,48-as állásban a mért
+meredekség 1,9235/1,9244, a képlet 1,9231).
+
+**A natív oldal a két paramétert NEM vágja** a `filterdesc.xml`-beli
+`[0..0.48]` tartományra; az egyetlen védelem a fehérpont `0,001`-es padlója
+(`0x008f7f05`, konstans `0xcf3da0`/`0xc7999c`). Élesben ez nem számít: a
+859 valódi `.picasa.ini`-ből álló korpusz **mind az 566** Finomhangolás-
+láncában a két érték a tartományon belül van (a mért maximum 0,222 és
+0,328), ezért a mi `[0..0.48]`-as vágásunk minden valódi láncon no-op.
+A tartományon KÍVÜLI viselkedés (degenerált `a1 == a0` → 1,0-s skála,
+illetve `a1 < a0` → negatív skála, azaz invertálás) így ma nincs kimérve.
+
+### ⚠️ Amiben a mi megvalósításunk ELTÉRT — JAVÍTVA (2026-08-18, #879)
+
+Mi **két külön menetben** csináltuk (`apply_highlights`, majd
+`apply_shadows`). Amíg csak az egyik vezérlő aktív, a kettő egy szinten
+belül azonos. Amint **mindkettő** nem nulla, szétmegy:
 
 | h | s | max eltérés | átlag | hány szinten |
 |---|---|---|---|---|
 | 0,48 | 0,48 | **217** | 29,3 | 69 / 256 |
-| 0,30 | 0,40 | 73 | 15,2 | 106 / 256 |
-| 0,24 | 0,24 | 26 | 7,3 | 143 / 256 |
-| 0,48 | 0 | **0** | 0 | 0 |
-| 0 | 0,48 | **0** | 0 | 0 |
+| 0,30 | 0,40 | 73 | 15,3 | 106 / 256 |
+| 0,24 | 0,24 | 26 | 7,6 | 147 / 256 |
+| 0,48 | 0 | 1 | 0,24 | 62 / 256 |
+| 0 | 0,48 | 1 | 0,23 | 60 / 256 |
 
-A közbenső 255-ös vágás **levágja a csúcsfény-részleteket**, mielőtt az
-árnyék-lépés hozzáérne — ezt egyetlen affin leképezés nem teszi.
+**Nem a közbenső 8 bites vágás okozta.** Vágás nélkül, folytonosan
+számolva ugyanez az eltérés jön ki (0,48/0,48-nál 216 vs 217) — a vágás
+tehát gyakorlatilag no-op, mert az árnyék-lépés a 255-öt fixpontként viszi.
+A valódi ok a **kétféle affin leképezés**:
 
-*Bizonyítottsági fok: **megerősített** a szerkezetre, a hívási
-azonosságra, a táblaépítőre és a numerikus eltérésre · **erős** az
-`a0`/`a1`/`a2` ↔ (feketepont, fehérpont, gamma) hozzárendelésre: a hívó
-három értéket ad át (`1,0`, `1−p2`, `p3`), a sorrendjük nincs
-lépésről lépésre levezetve.*
+```
+mi (két lépés):  ki = ((be/(1−h)) − 255·s) / (1−s)
+eredeti (1 LUT): ki = (be − 255·s) / ((1−h) − s)
+```
+
+h = s = 0,48-nál a meredekség **3,70 vs 25,0**, a feketepont **63,6 vs
+122,4**. Egy vezérlővel a két képlet algebrailag azonos, ezért maradt
+rejtve.
+
+**Mennyit számít élesben:** a valódi ini-korpusz 566 Finomhangolás-láncából
+**124 (22 %) kompozit** — mindkét csúszka nem nulla. Ezeken a régi modell
+legrosszabb esete 17 szint (átlag 5,3), a medián 2 szint, és 15 lánc (a
+kompozitok 12 %-a) tévedett legalább 5 szintet.
+
+**A javítás** (`render/tone.py`, `finetune_level_lut`): a két csúszka
+EGYETLEN `native_level_lut()` táblát épít, és egy menetben (`>> 8`)
+alkalmazódik — ugyanaz a mag, amit a `triple2`/`triple3` már használt. Az
+`apply_highlights`/`apply_shadows` innentől ennek az elfajult esete. A
+mért egy-vezérlős görbéken ez háromnál javult (0,51→0,35 · 0,61→0,35 ·
+0,42→0,32), egynél romlott (0,64→0,87, a `kiemelesek_mid`) — mind a négy az
+adott eset JPEG-zajszintje alatt, mert a natív alkalmazó `>>8`-cal csonkít,
+mi viszont (szándékosan) nem ditherelünk.
+
+*Bizonyítottsági fok: **megerősített** a szerkezetre, a hívási azonosságra,
+a táblaépítőre, a numerikus eltérésre ÉS (2026-08-18, capstone-os
+újraolvasás) az `a0`/`a1`/`a2` ↔ (feketepont, fehérpont, gamma)
+hozzárendelésre — a veremre pakolás sorrendje utasításról utasításra
+levezetve, és a mért egy-vezérlős görbékkel egybevágó.*
+
+⚠️ **Amit ez NEM bizonyít:** a kompozit viselkedésre **nincs mérésünk** —
+eredeti Picasa-export, amelyben a Csúcsfények ÉS az Árnyékok is nem nulla,
+nem áll rendelkezésre (#951). A javítás a dekompilált képletet követi, a
+mérés az egy-vezérlős eseteket fedi.
 
 ## A `dir_tint` (Graduated Tint) visszafejtve (2026-08-16, #874)
 
@@ -4076,3 +4143,42 @@ A `finetune` (v1) ugyanígy épül, csak a `0x0090ea10`-et hívja a
 *Bizonyítottsági fok: megerősített* a hőmérséklet-ágra, a két konstansra,
 a tábla tartalmára és a `0x0090eda0` azonosságára · **erős** a
 Kelvin-leképezésre (két független illeszkedés: 1000 K és 6500 K).
+
+### A tábla TELJESEN kiolvasva — és a modell KIMÉRVE (2026-08-18, #879)
+
+A `0x00c7cf98` tábla mind a 130 kiolvasott bejegyzése egybevág a fenti hat
+mintával, és a `Kelvin = 1000 + 100·i` leképezéssel: `i = 0` → (255, 56, 0),
+`i = 55` → (255, 249, 253), `i = 92` → (202, 218, 255). A csúszka indexe
+`i = (int)(temp·37 + 55)`, **nulla felé csonkolva** (C-cast), tehát
+`temp = −1 → i = 18` (2800 K) és `temp = +1 → i = 92` (10200 K).
+
+**A modellt lemértük a mért színhőmérséklet-görbéken** (a valódi Picasa
+kimenetéből desztillált `measured_luts.json`, hat csúszkaállás):
+
+| eset | temp | JPEG-zajszint | mai (csatorna-szorzós) | natív (tábla + mátrix) |
+|---|---:|---:|---:|---:|
+| `szinho_0` | −1,0 | 4,43 | **2,26** | 2,90 |
+| `szinho_10` | −0,8 | 2,63 | **1,12** | 1,67 |
+| `szinho_25` | −0,5 | 1,27 | **0,48** | 1,15 |
+| `szinho_75` | +0,5 | 0,88 | 0,38 | **0,36** |
+| `szinho_90` | +0,8 | 1,05 | **0,54** | 0,79 |
+| `szinho_100` | +1,0 | 1,11 | **0,54** | 0,62 |
+
+**A natív modell hatból ötben rosszabb — ezért NEM cseréltük le.** Két
+dolgot viszont ki kell mondani, mert a szám önmagában félrevezet:
+
+1. **Mindkét modell a zajszint alatt van** mind a hat esetben, tehát ez a
+   mérés egyiket sem cáfolja.
+2. **Ez a mérés szerkezetileg vak a különbségre.** A `measured_luts.json`
+   csatornánkénti görbéket tárol (bemeneti szint → átlagos kimeneti szint
+   ugyanazon a csatornán). Egy 3×3-as mátrix KERESZT-TAGJAI ebbe a
+   formába nem férnek bele — a mérés csak a diagonálist látja. Ráadásul a
+   mai csatorna-szorzóink ÉPPEN EZEKRE a görbékre lettek illesztve, tehát a
+   saját tanulóadatukon versenyeznek.
+
+**Amíg nincs olyan mérés, ami a kereszt-tagokat is látja** (eredeti
+Picasa-export erős hőmérséklet-állással, KÉPPONTONKÉNT összevetve, nem
+csatorna-LUT-ként), a csere sem nem igazolható, sem nem cáfolható. A
+korábbi kör ezt a Planck-sugárzásból SZÁMOLT táblával próbálta — a mostani
+mérés a binárisból olvasott, VALÓDI táblával fut, és ugyanoda jut. A hiányzó
+mérés a **#956** jegy tárgya.

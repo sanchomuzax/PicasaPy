@@ -45,11 +45,20 @@ from tests.support.finetune_reference import MeasuredCase, measured_cases
 #: leggyengébb (a modell konstans szorzó, a valóság a csúcsfényeknél vág);
 #: a szín-varázspálcánál a hiba nagyobb részét a viszonyítási szín
 #: BECSLÉSE adja, nem a csatorna-erősítés.
+#:
+#: **#879 (2026-08-18):** a Kiemelések/Árnyékok modellje a natív szinthúzó
+#: LUT-ra (`0x0090c1e0` + `0x0090be70`) állt át, ezért a négy szintvágó eset
+#: hibája újramérve. Három JAVULT (0,51→0,35 · 0,61→0,35 · 0,42→0,32), egy
+#: kicsit ROMLOTT (0,64→0,87): a natív alkalmazó `>>8`-cal CSONKÍT, mi pedig
+#: — a natívtól eltérően — nem ditherelünk, így félszintnyi lefelé torzítás
+#: marad. Mind a négy hiba az adott eset JPEG-zajszintje alatt van, vagyis a
+#: különbség nem mérhető ki élesben; cserébe a kompozit (két csúszkás) eset
+#: hibája 217 szintről nullára esett.
 HIBAKORLATOK: dict[str, float] = {
-    "kiemelesek_mid": 0.9,  # 0,64
-    "kiemelesek_max": 0.8,  # 0,51
-    "arnyekok_mid": 0.9,  # 0,61
-    "arnyekok_max": 0.7,  # 0,42
+    "kiemelesek_mid": 1.2,  # 0,87
+    "kiemelesek_max": 0.5,  # 0,35
+    "arnyekok_mid": 0.5,  # 0,35
+    "arnyekok_max": 0.45,  # 0,32
     "szinho_0": 3.2,  # 2,26
     "szinho_10": 1.6,  # 1,12
     "szinho_25": 0.8,  # 0,48
