@@ -6743,7 +6743,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/CollagePanelTabBar.qml"/>
         <source>Clips (%1)</source>
-        <translation>Képek (%1)</translation>
+        <translation>Klipek (%1)</translation>
     </message>
 </context>
 </TS>
