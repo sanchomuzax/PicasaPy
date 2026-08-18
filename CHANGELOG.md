@@ -19,10 +19,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   rajzolja ki őket, és a mentés is ugyanazt az egyetlen rajzolót használja,
   mint az előnézet. Ami a vásznon áll, az kerül a képre.
 
-  A ma elkészülő kollázsok **képpontra ugyanúgy néznek ki**, mint eddig — ezt
-  36 rögzített ujjlenyomat (mind a hat elrendezés, mindhárom keret, két
-  térköz-állás) őrzi. Új mellékhatás: a **nem található kép** többé nem tűnik
-  el némán a kollázsból, hanem áthúzott helykitöltő csempeként jelenik meg.
+  A ma elkészülő kollázsok **képpontra ugyanúgy néznek ki**, mint eddig: egy
+  teszt a régi és az új rajzolót egymás mellett futtatja, és mind a hat
+  elrendezésre, mindhárom keretre, két térköz-állásban összeveti a kimenetüket
+  — egyetlen képpont eltérés sem maradhat. Új mellékhatás: a **nem található
+  kép** többé nem tűnik el némán a kollázsból, hanem áthúzott helykitöltő
+  csempeként jelenik meg.
 
 ## [0.7.74] – 2026-08-18
 

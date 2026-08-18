@@ -10,18 +10,34 @@ rajzon **semmit** nem szabad változtatnia.
 
 Ezért a lap két, egymást kiegészítő őrt tart:
 
-1. **Bájtazonossági ujjlenyomatok** — a `make_picasa_collage` kimenetének
-   SHA-256-a mind a hat témára, mindhárom keretre, két térköz-állásban. A
-   számok a refaktor ELŐTTI kódból származnak; ha a refaktor bármit
-   elmozdított volna, ezek buknak.
+1. **A refaktor ELŐTTI rajzoló, mint orákulum** (`_regi_make_picasa_collage`)
+   — a #942 előtti `picasa_render.py` rajzoló-fele szó szerint, befagyasztva.
+   Az őr azt állítja, hogy a mai `make_picasa_collage` kimenete **bájtra
+   azonos** vele, mind a hat témára, mindhárom keretre, két térköz-állásban.
 2. **Viselkedési állítások** a `render_nodes`-ra: hogy tényleg a MEGADOTT
    elhelyezést rajzolja, és nem számol elrendezést.
+
+⚠️ **Miért orákulum, és miért nem beégetett SHA-256.** Az első változat a
+kimenet ujjlenyomatait rögzítette számként. Linuxon zöld volt, a
+Windows-lábon viszont a Képkupac + Polaroid párosra elbukott: az OpenCV
+átméretezése/forgatása **nem bitre azonos** a platformok között. A beégetett
+hash tehát többet állított, mint amit ez a jegy ígér — nem azt, hogy „a
+refaktor nem változtatott a rajzon", hanem azt, hogy „az OpenCV mindenhol
+ugyanazt adja". Az orákulum pontosan a helyes állítást méri: UGYANABBAN a
+processzben, ugyanazon az OpenCV-n futtatja a régi és az új utat, és a kettőt
+veti össze. Platformfüggetlen, és szigorúbb is — képpontokat hasonlít, nem
+kivonatot.
+
+A `_regi_*` függvények **befagyasztott másolatok**: a #942 előtti viselkedést
+kódolják, ezért szándékosan nem követik a `picasa_render.py` további
+fejlődését. Ha egy későbbi jegy TUDATOSAN változtat a rajzon, ezt az őrt
+akkor kell — kimondva, a jegyben indokolva — nyugdíjazni.
 """
 
 from __future__ import annotations
 
-import hashlib
 import math
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -36,16 +52,30 @@ from picasapy.collage.nodes import (
     pixels_to_sheet,
     sheet_to_pixels,
 )
+from picasapy.collage.fitting import MsvcRandom, fit_inside
+from picasapy.collage.frames import apply_border
+from picasapy.collage.layout import Placement
+from picasapy.collage.multi_exposure import blend_multi_exposure
+from picasapy.collage.packing import pack
+from picasapy.collage.picasa_render import (
+    _FRAMEGRID_CENTER as FRAMEGRID_CENTER,
+)
 from picasapy.collage.picasa_render import (
     PicasaCollageSettings,
+    _draw_contact_header,
     layout_nodes,
     make_picasa_collage,
     render_nodes,
 )
+from picasapy.collage.pile import pile_layout, pile_top_left
+from picasapy.collage.rects import to_pixel_rects
+from picasapy.collage.regular_grid import regular_grid_rects, regular_grid_shape
+from picasapy.collage.render import _paste, _rotated_paste, fit_to_frame
 from picasapy.collage.themes import (
     BORDER_THEMES,
     COLLAGE_THEMES,
     CONTACTSHEET,
+    FRAMEGRID,
     MULTIEXP,
     NOBORDER,
     PICTUREGRID,
@@ -85,63 +115,144 @@ def _mintakepek(mappa, darab=7):
     return utak
 
 
-def _ujjlenyomat(kep):
-    return hashlib.sha256(kep.tobytes()).hexdigest()[:16]
+# --- 1. Bájtazonosság: a refaktor nem változtat a rajzon -------------------
+#
+# Az orákulum: a #942 ELŐTTI rajzoló, szó szerint. Az `_regi_` előtag jelzi,
+# hogy befagyasztott másolat — ne igazítsd a mai kódhoz.
 
 
-# --- 1. Bájtazonosság: a refaktor nem változtat a rajzon ---------------------
-
-#: A `make_picasa_collage` kimenetének ujjlenyomata a #942 refaktora ELŐTT.
-#:
-#: A mérés paraméterei: `_mintakepek()` hét képe, 407 × 311-es lap, `seed=12345`,
-#: háttér `(30, 60, 90)`, `caption="Proba"`. A kulcs `(téma, keret, térköz)`.
-#:
-#: ⚠️ Ezeket a számokat **tilos** „hozzáigazítani" egy bukó futáshoz. Ha
-#: buknak, a refaktor elmozdított valamit a rajzon — az a hiba, nem a szám.
-#: Szándékos rajz-változtatáskor (új jegy!) kell csak újramérni őket.
-ELVART_UJJLENYOMATOK = {
-    ("picturepile", "noborder", 0.0): "4e9bf8f2ee48fd1e",
-    ("picturepile", "noborder", 0.4): "4e9bf8f2ee48fd1e",
-    ("picturepile", "whiteborder", 0.0): "b8397989aa02ccea",
-    ("picturepile", "whiteborder", 0.4): "b8397989aa02ccea",
-    ("picturepile", "polaroid", 0.0): "480e5f069f6926f6",
-    ("picturepile", "polaroid", 0.4): "480e5f069f6926f6",
-    ("picturegrid", "noborder", 0.0): "b337715bd19c356b",
-    ("picturegrid", "noborder", 0.4): "0bc8aedb8e2bd45b",
-    ("picturegrid", "whiteborder", 0.0): "b337715bd19c356b",
-    ("picturegrid", "whiteborder", 0.4): "0bc8aedb8e2bd45b",
-    ("picturegrid", "polaroid", 0.0): "b337715bd19c356b",
-    ("picturegrid", "polaroid", 0.4): "0bc8aedb8e2bd45b",
-    ("framegrid", "noborder", 0.0): "b337715bd19c356b",
-    ("framegrid", "noborder", 0.4): "0bc8aedb8e2bd45b",
-    ("framegrid", "whiteborder", 0.0): "b337715bd19c356b",
-    ("framegrid", "whiteborder", 0.4): "0bc8aedb8e2bd45b",
-    ("framegrid", "polaroid", 0.0): "b337715bd19c356b",
-    ("framegrid", "polaroid", 0.4): "0bc8aedb8e2bd45b",
-    ("regulargrid", "noborder", 0.0): "acf57683d7d196cc",
-    ("regulargrid", "noborder", 0.4): "6e1d77d4be52db05",
-    ("regulargrid", "whiteborder", 0.0): "acf57683d7d196cc",
-    ("regulargrid", "whiteborder", 0.4): "6e1d77d4be52db05",
-    ("regulargrid", "polaroid", 0.0): "acf57683d7d196cc",
-    ("regulargrid", "polaroid", 0.4): "6e1d77d4be52db05",
-    ("contactsheet", "noborder", 0.0): "eddd76b53779223f",
-    ("contactsheet", "noborder", 0.4): "c106b57d5e221b2f",
-    ("contactsheet", "whiteborder", 0.0): "eddd76b53779223f",
-    ("contactsheet", "whiteborder", 0.4): "c106b57d5e221b2f",
-    ("contactsheet", "polaroid", 0.0): "eddd76b53779223f",
-    ("contactsheet", "polaroid", 0.4): "c106b57d5e221b2f",
-    ("multiexp", "noborder", 0.0): "f94d7cd0cb779de2",
-    ("multiexp", "noborder", 0.4): "f94d7cd0cb779de2",
-    ("multiexp", "whiteborder", 0.0): "f94d7cd0cb779de2",
-    ("multiexp", "whiteborder", 0.4): "f94d7cd0cb779de2",
-    ("multiexp", "polaroid", 0.0): "f94d7cd0cb779de2",
-    ("multiexp", "polaroid", 0.4): "f94d7cd0cb779de2",
-}
+def _regi_place_in_cells(canvas, images, rects, settings, *, fill=True):
+    """A #942 előtti `_place_in_cells` — a képek a cellákba illesztve."""
+    cells = to_pixel_rects(
+        rects, settings.width, settings.height, settings.effective_spacing
+    )
+    for image, cell in zip(images, cells, strict=False):
+        width = max(1, cell.x1 - cell.x0)
+        height = max(1, cell.y1 - cell.y0)
+        tile = apply_border(
+            fit_to_frame(image, width, height, fill=fill), settings.effective_border
+        )
+        offset_x = cell.x0 + (width - tile.shape[1]) // 2
+        offset_y = cell.y0 + (height - tile.shape[0]) // 2
+        _paste(canvas, tile, offset_x, offset_y)
 
 
-@pytest.mark.parametrize("kulcs", sorted(ELVART_UJJLENYOMATOK))
+def _regi_render_pile(canvas, images, settings):
+    """A #942 előtti `_render_pile` — a Képkupac szórása és forgatása."""
+    rng = MsvcRandom(settings.seed)
+    places = pile_layout(len(images), settings.width, settings.height, rng)
+    for image, place in zip(images, places, strict=False):
+        oldal = max(1, place.size)
+        magassag, szelesseg = image.shape[:2]
+        cel_w, cel_h = fit_inside(szelesseg, magassag, oldal, oldal)
+        tile = apply_border(
+            fit_to_frame(image, max(1, cel_w), max(1, cel_h), fill=False),
+            settings.effective_border,
+        )
+        x = pile_top_left(place.center_x, tile.shape[1], settings.width, settings.width)
+        y = pile_top_left(place.center_y, tile.shape[0], settings.height, settings.height)
+        _rotated_paste(
+            canvas,
+            tile,
+            Placement(
+                x=round(x),
+                y=round(y),
+                width=tile.shape[1],
+                height=tile.shape[0],
+                angle=math.degrees(place.theta),
+            ),
+        )
+
+
+def _regi_make_picasa_collage(sources, settings):
+    """A #942 ELŐTTI `make_picasa_collage`, befagyasztva. Csak a képet adja."""
+    paths = [Path(s) for s in sources]
+    decoded = [
+        cv2.imdecode(np.fromfile(str(ut), dtype=np.uint8), cv2.IMREAD_COLOR)
+        for ut in paths
+        if ut.exists()
+    ]
+    decoded = [kep for kep in decoded if kep is not None]
+
+    canvas = np.empty((settings.height, settings.width, 3), dtype=np.uint8)
+    canvas[:, :] = settings.background
+    if not decoded:
+        return canvas
+
+    aspects = [kep.shape[1] / kep.shape[0] for kep in decoded]
+    if settings.theme == MULTIEXP:
+        canvas = blend_multi_exposure(
+            decoded, settings.width, settings.height, settings.background
+        )
+    elif settings.theme == PICTUREPILE:
+        _regi_render_pile(canvas, decoded, settings)
+    elif settings.theme in (PICTUREGRID, FRAMEGRID):
+        rogzitett = (
+            settings.frame_center
+            if settings.theme == FRAMEGRID
+            and settings.frame_center is not None
+            and 0 <= settings.frame_center < len(decoded)
+            else None
+        )
+        if rogzitett is None:
+            rects = pack(
+                aspects, settings.width / settings.height, MsvcRandom(settings.seed)
+            )
+            _regi_place_in_cells(canvas, decoded, rects, settings)
+        else:
+            tobbi = [kep for i, kep in enumerate(decoded) if i != rogzitett]
+            if tobbi:
+                rects = pack(
+                    [kep.shape[1] / kep.shape[0] for kep in tobbi],
+                    settings.width / settings.height,
+                    MsvcRandom(settings.seed),
+                )
+                _regi_place_in_cells(canvas, tobbi, rects, settings)
+            _regi_place_in_cells(
+                canvas, [decoded[rogzitett]], (FRAMEGRID_CENTER,), settings
+            )
+    elif settings.theme == REGULARGRID:
+        sorok, oszlopok = regular_grid_shape(aspects, settings.width, settings.height)
+        rects = regular_grid_rects(len(decoded), sorok, oszlopok)
+        _regi_place_in_cells(canvas, decoded, rects, settings)
+    elif settings.theme == CONTACTSHEET:
+        sav = _draw_contact_header(canvas, settings)
+        also = settings.height - sav
+        alvaszon = np.empty((max(1, also), settings.width, 3), dtype=np.uint8)
+        alvaszon[:, :] = settings.background
+        alsobeallitas = PicasaCollageSettings(
+            theme=REGULARGRID,
+            border=settings.border,
+            width=settings.width,
+            height=max(16, also),
+            background=settings.background,
+            spacing=settings.spacing,
+            seed=settings.seed,
+        )
+        sorok, oszlopok = regular_grid_shape(aspects, settings.width, max(1, also))
+        rects = regular_grid_rects(len(decoded), sorok, oszlopok)
+        _regi_place_in_cells(alvaszon, decoded, rects, alsobeallitas, fill=False)
+        canvas[sav : sav + alvaszon.shape[0], :] = alvaszon
+    else:
+        raise AssertionError(f"ismeretlen téma: {settings.theme}")
+    return canvas
+
+
+#: A mérés rácsa: mind a hat téma × mindhárom keret × két térköz-állás.
+BAJTAZONOSSAG_ESETEI = [
+    (tema, keret, terkoz)
+    for tema in COLLAGE_THEMES
+    for keret in BORDER_THEMES
+    for terkoz in (0.0, 0.4)
+]
+
+
+@pytest.mark.parametrize("kulcs", BAJTAZONOSSAG_ESETEI)
 def test_a_refaktor_nem_valtoztat_a_rajzon(tmp_path, kulcs):
-    """A `make_picasa_collage` kimenete BÁJTAZONOS a refaktor előttivel."""
+    """A `make_picasa_collage` kimenete BÁJTAZONOS a refaktor előttivel.
+
+    Az összevetés UGYANABBAN a processzben, ugyanazon az OpenCV-n fut, ezért
+    az eredmény nem függ a platformtól — csak attól, változott-e a rajz."""
     tema, keret, terkoz = kulcs
     forrasok = _mintakepek(tmp_path)
     beallitas = PicasaCollageSettings(
@@ -154,19 +265,21 @@ def test_a_refaktor_nem_valtoztat_a_rajzon(tmp_path, kulcs):
         background=(30, 60, 90),
         caption="Proba",
     )
-    jelentes = make_picasa_collage(forrasok, beallitas)
-    assert _ujjlenyomat(jelentes.image) == ELVART_UJJLENYOMATOK[kulcs], (
-        f"A(z) {tema}/{keret} (térköz {terkoz}) rajza megváltozott. "
-        "Ez a refaktor hibája — az ujjlenyomatot NE igazítsd hozzá."
+    most = make_picasa_collage(forrasok, beallitas).image
+    regen = _regi_make_picasa_collage(forrasok, beallitas)
+    eltero = int(np.count_nonzero(np.any(most != regen, axis=2)))
+    assert eltero == 0, (
+        f"A(z) {tema}/{keret} (térköz {terkoz}) rajza megváltozott: "
+        f"{eltero} képpont tér el a #942 előtti kimenettől."
     )
 
 
 def test_minden_tema_es_keret_le_van_fedve():
-    """Az ujjlenyomat-tábla mind a hat témát és mindhárom keretet lefedi.
+    """A mérés rácsa mind a hat témát és mindhárom keretet lefedi.
 
     Enélkül egy új téma némán kimaradhatna az őrből."""
-    lefedett_temak = {kulcs[0] for kulcs in ELVART_UJJLENYOMATOK}
-    lefedett_keretek = {kulcs[1] for kulcs in ELVART_UJJLENYOMATOK}
+    lefedett_temak = {eset[0] for eset in BAJTAZONOSSAG_ESETEI}
+    lefedett_keretek = {eset[1] for eset in BAJTAZONOSSAG_ESETEI}
     assert lefedett_temak == set(COLLAGE_THEMES)
     assert lefedett_keretek == set(BORDER_THEMES)
 

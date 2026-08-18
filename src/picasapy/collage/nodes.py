@@ -44,11 +44,17 @@ from .themes import BORDER_THEMES, NOBORDER, POLAROID, WHITEBORDER
 #: csak méretez.
 SHEET_UNITS = 1024.0
 
-#: Az egészre igazítás toleranciája. A lapegység → képpont oda-vissza váltás
-#: lebegőpontos, ezért egy „pontosan félúton" álló érték `n + 0.5 ± 1e-13`
-#: alakban jöhet vissza; enélkül a döntetlen-szabály véletlenszerűen billenne
-#: egyik vagy másik irányba, és a rácsos elrendezés képpontot csúszna.
-_PLACEMENT_EPSILON = 1e-9
+#: Hány tizedesjegyre simítjuk a bal/felső sarkot, MIELŐTT a döntetlent
+#: eldöntenénk.
+#:
+#: A lapegység → képpont oda-vissza váltás lebegőpontos, ezért egy „pontosan
+#: félúton" álló érték `n + 0.5 ± 1e-13` alakban jöhet vissza. A maradék bitje
+#: platformonként MÁS lehet (más libm, más fordító) — simítás nélkül tehát
+#: ugyanaz a kollázs Linuxon és Windowson egy képpontot csúszna, ami pontosan
+#: az a fajta néma, csak a felhasználónál jelentkező eltérés, amit kerülni
+#: akarunk. Kilenc tizedesjegy jóval a zaj fölött és jóval a valódi
+#: alképpontos különbségek alatt van.
+_PLACEMENT_DECIMALS = 9
 
 #: A nem található kép helykitöltő csempéjének színei BGR-ben (spec 9.4).
 _MISSING_FILL_BGR = (200, 200, 200)
@@ -212,8 +218,12 @@ def _origin(center: float, extent: int) -> int:
     (`ceil(v − 0.5)`). Ez a látszólag apró részlet dönti el, hogy a
     refaktor bájtazonos maradt-e: a rácsos cellákban az érték pontosan
     félúton áll, és ott a `floor`-t kell hoznia; a Képkupac folytonos
-    középpontjainál ellenben a legközelebbi egészre kell kerekítenie."""
-    return math.ceil(center - extent / 2.0 - 0.5 - _PLACEMENT_EPSILON)
+    középpontjainál ellenben a legközelebbi egészre kell kerekítenie.
+
+    A döntetlen eldöntése ELŐTT simítunk (`_PLACEMENT_DECIMALS`), különben a
+    lapegység-váltás lebegőpontos maradéka platformonként más irányba
+    billentené."""
+    return math.ceil(round(center - extent / 2.0, _PLACEMENT_DECIMALS) - 0.5)
 
 
 def _missing_tile(width: int, height: int) -> np.ndarray:
