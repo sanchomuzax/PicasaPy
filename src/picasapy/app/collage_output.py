@@ -267,9 +267,20 @@ def write_album_ini(folder: Path | str, album_name: str) -> Path:
     viszont sehol nem jelölte meg a mappát projekt-albumként, tehát a bal
     hasáb nem tudta hova sorolni.
 
-    A spec 1.5 három dolgot ír elő: `[encoding] utf8=1`, `[Picasa] name=`, és
-    a projekt-besorolás. A meglévő kulcsokat **megőrizzük** — a mappában
-    korábbi Picasa-adat is lehet, azt felülírni adatvesztés volna.
+    ⚠️ **A spec itt TÉVED, és a mérés erősebb.** A `picasa-create-features.md`
+    115. sora `[encoding] utf8=1` és `[Picasa] name=` szekciókat ír elő — de
+    az string-jelenlétből következtetett. A VALÓDI fájl a felhasználó
+    gyűjteményében ennyi:
+
+        [Picasa]
+        P2category=Projects (internal)
+
+    és a 67 fájlos ini-korpuszban **egyetlen** `[encoding]` szekció sincs.
+    Mivel a felhasználó ugyanezt a mappát a windowsos Picasa 3-mal is nyitja,
+    nem írunk olyan alakot, amilyet az eredeti soha (#1050).
+
+    A meglévő kulcsokat **megőrizzük** — a mappában korábbi Picasa-adat is
+    lehet, azt felülírni adatvesztés volna.
     """
     mappa = Path(folder)
     mappa.mkdir(parents=True, exist_ok=True)
@@ -290,18 +301,14 @@ def write_album_ini(folder: Path | str, album_name: str) -> Path:
         return any(sor.strip().lower().startswith(elotag) for sor in sorok)
 
     if not sorok:
-        sorok = ["[encoding]", "utf8=1", "", "[Picasa]"]
+        sorok = ["[Picasa]"]
     elif "[picasa]" not in [sor.strip().lower() for sor in sorok]:
         sorok += ["", "[Picasa]"]
 
-    # a `[Picasa]` szekció VÉGÉRE fűzünk, hogy a meglévő kulcsok maradjanak
-    beszurando = []
-    if not _van("name"):
-        beszurando.append(f"name={album_name}")
+    # Csak a projekt-besorolás — `name=` és `[encoding]` NEM, mert az
+    # eredeti sem ír ilyet (ld. a docstringet).
     if not _van("P2category"):
-        beszurando.append(f"P2category={PROJECTS_CATEGORY}")
-    if beszurando:
-        sorok += beszurando
+        sorok += [f"P2category={PROJECTS_CATEGORY}"]
 
     ut.write_text("\n".join(sorok) + "\n", encoding="utf-8")
     return ut
