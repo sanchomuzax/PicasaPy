@@ -7278,6 +7278,14 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
 <context>
     <name>CollageDialogs</name>
     <message>
+        <source>The collage could not be saved</source>
+        <translation>A kollázs mentése nem sikerült</translation>
+    </message>
+    <message>
+        <source>The collage could not be saved.</source>
+        <translation>A kollázs mentése nem sikerült.</translation>
+    </message>
+    <message>
         <source>Save Skipped</source>
         <translation>Mentés mellőzve</translation>
     </message>
