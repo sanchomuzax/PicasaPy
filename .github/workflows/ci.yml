@@ -1,17 +1,22 @@
 name: CI
 
 on:
-  # A tisztán dokumentációs (docs/, *.md) változások nem futtatnak CI-t:
-  # ékezet-/szövegjavítás, MEMORY.md stb. a program futására nincs hatással.
+  # Pusholásnál a tisztán dokumentációs (docs/, *.md) változás nem futtat
+  # CI-t: ékezet-/szövegjavítás, MEMORY.md stb. a program futására nincs
+  # hatással.
   push:
     branches: [main]
     paths-ignore:
       - '**.md'
       - 'docs/**'
+  # PR-en NINCS útvonal-szűrő, és ez szándékos. A főág védelme megköveteli a
+  # zöld „Test (ubuntu-latest)" ellenőrzést, egy le sem futott workflow pedig
+  # SOSEM jelent be eredményt: a dokumentációs PR-ok így örökre beragadnának
+  # („Expected — waiting for status to be reported"), amint a megkerülési
+  # lehetőséget kikapcsoljuk. A spórolás ezért egy szinttel lejjebb költözött:
+  # a job elindul és JELENT, de a drága lépéseket kihagyja, ha a PR csak
+  # dokumentációt érint (ld. a „Csak dokumentáció?" lépést lent).
   pull_request:
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
   # #651: kézi indítás. Az automatikus `pull_request` futás elmarad, ha a
   # PR-t/pusht a GitHub-integráció tokenje váltja ki — a GitHub az ilyen
   # eseményekre szándékosan nem indít workflow-t (ugyanaz a
@@ -48,14 +53,40 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # A „Csak dokumentáció?" lépés az alapághoz hasonlít — ahhoz kell
+          # a teljes történet.
+          fetch-depth: 0
+
+      - name: Csak dokumentáció? (a kötelező ellenőrzés akkor is jelentsen)
+        # A job MINDIG lefut és jelent — különben a dokumentációs PR-ok
+        # beragadnának a kötelező ellenőrzésre várva. A drága lépések
+        # (Qt-telepítés, tesztkészlet) viszont kimaradnak, ha a PR egyetlen
+        # kódfájlt sem érint: így a dokumentációs PR ~fél perc alatt zöld.
+        id: valtozas
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "kod=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          alap="origin/${{ github.base_ref }}"
+          git fetch -q origin "${{ github.base_ref }}"
+          if git diff --name-only "$alap...HEAD" | grep -qvE '(\.md$|^docs/)'; then
+            echo "kod=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "kod=false" >> "$GITHUB_OUTPUT"
+            echo "Csak dokumentációs változás — a tesztkészlet kimarad."
+          fi
 
       - name: Set up Python 3.12
+        if: steps.valtozas.outputs.kod == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install Linux Qt runtime dependencies
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && steps.valtozas.outputs.kod == 'true'
         # A csomaglista a packaging/qt-runtime-deps.txt — ugyanaz a fájl,
         # amiből a session-bootstrap is telepít. Tételes lista ide nem
         # kerülhet vissza (tests/test_kornyezet_szinkron.py).
@@ -64,6 +95,7 @@ jobs:
           sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
 
       - name: Install Python dependencies
+        if: steps.valtozas.outputs.kod == 'true'
         # A lista a pyproject.toml (futásidejű + `dev` extra). A projektet
         # magát NEM telepítjük: a tesztek a forrásfából futnak
         # (pythonpath=["src"]), az editable install pedig *.egg-info-ot
@@ -74,6 +106,7 @@ jobs:
           pip install $(python scripts/print_dependencies.py --all)
 
       - name: Run tests
+        if: steps.valtozas.outputs.kod == 'true'
         # darabolt futtatás (#53): a teljes készlet egy processzben a
         # Windows-runneren rendszeresen GIL-deadlockba ragadt — a script
         # a tests/app fájlokat külön processzben, kemény timeouttal futtatja.
