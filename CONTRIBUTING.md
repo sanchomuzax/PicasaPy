@@ -30,6 +30,19 @@ python scripts/run_tests.py --cov  # lefedettséggel
 ruff check src/ tests/ scripts/    # lint
 ```
 
+Az `on<Jelzés>` / `.connect()` fogadó nélkül maradt Qt-jelzéseket külön őr
+figyeli — ez a hibaosztály háromszor ment ki kiadásba (#985, #989, #1001),
+mindannyiszor zöld tesztek mellett:
+
+```sh
+python scripts/check_dead_signals.py         # ugyanaz, amit a CI futtat
+python scripts/check_dead_signals.py --list  # a mai néma jelzések
+```
+
+Ha új néma jelzést jelez: **kösd be** (QML-kezelő vagy `.connect`), vagy
+**töröld** a jelzést. A `scripts/dead_signals_baseline.txt` a bevezetéskori
+állapotot rögzíti, tételes indoklással — az a lista csak **rövidülhet**.
+
 A tesztkészletet **a `scripts/run_tests.py`-vel futtasd**, ne közvetlenül a
 `pytest`-tel: a Qt/QML-tesztek egy processzben GIL-deadlockba ragadhatnak,
 ezért a szkript darabolva futtat. Gyors, célzott ellenőrzéshez a nem-Qt rész
