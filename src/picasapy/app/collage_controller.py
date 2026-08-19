@@ -75,13 +75,14 @@ from .collage_model import (
     with_selection,
 )
 from .collage_save import CollageSaveMixin
+from .collage_shadow import CollageShadowMixin
 
 #: A kimeneti mappa beállítás-kulcsa — a `collage_prefs`-ből átemelve, hogy a
 #: felület és a teszt EGY nevet lásson.
 COLLAGE_OUTPUT_DIR_KEY = prefs.OUTPUT_DIR_KEY
 
 
-class CollageMixin(CollageSaveMixin, CollageBackgroundMixin):
+class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin):
     """A kollázs-lap állapota és parancsai — a spec 8. szakasza."""
 
     # -- jelzések (8.3) ----------------------------------------------------
@@ -119,6 +120,9 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin):
         if getattr(self, "_collage_panel_wired", False):
             return
         self._collage_panel_wired = True
+        # #1021: az árnyék értesítője a MEGLÉVŐ négy jelzésre kötve — a
+        # kötés a lusta indításkor születik, mint minden más állapot.
+        self._wire_collage_shadow()
         stored = prefs.load_prefs(self._get_settings())
 
         self._collage_panel_open = False

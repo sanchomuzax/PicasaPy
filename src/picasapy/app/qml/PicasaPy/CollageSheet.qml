@@ -48,6 +48,44 @@ Item {
     //: Képpont / lapegység (spec 6.1). A lap belső szélessége 1024 EGYSÉG.
     readonly property real unit: width > 0 ? width / 1024 : 0
 
+    // --- A vetett árnyék (#1021) --------------------------------------------
+    //
+    // A #977 az árnyékot a MAGBA tette, így a mentett kép azóta jó — az élő
+    // vászon viszont nem rajzolt semmit, és a felhasználó a v0.8.4-en
+    // jelezte, hogy a jelölőnégyzet kapcsolgatása nem csinál semmit.
+    //
+    // A vezérlő két dolgot ad: a geometriát LAPEGYSÉGBEN (`collageShadow` —
+    // ugyanabból a `render_settings()`-ből, amivel a MENTÉS dolgozik) és a
+    // kirajzolható CSEMPÉT (`collageShadowSprite`). A csempe egy elmosott
+    // téglalap, amit a `BorderImage` kilenc szeletre bontva nyújt: az árnyék
+    // szeparábilis, ezért ez nem közelítés, hanem pontos rekonstrukció
+    // (`collage/shadow_sprite.py`, 2/255 alatti eltéréssel mérve).
+    //
+    // ⚠️ Shader (`MultiEffect`) SZÁNDÉKOSAN nincs: a `QtQuick.Effects` modul
+    // a felhasználó gépén NINCS telepítve, a CI-n (pip-es PySide6) viszont
+    // igen — egy shaderes megoldás zöld CI mellett hagyta volna árnyék
+    // nélkül épp azt a gépet, ahonnan a bejelentés jött.
+
+    //: Az árnyék paraméterei LAPEGYSÉGBEN; üres térkép = nincs árnyék.
+    //:
+    //: ⚠️ A `!== undefined` őr a #305 szabálya, és nem elmélet: a
+    //: `test_collage_panel_layout_945.py` vezérlő-kettőse CSAK a geometriai
+    //: property-ket viseli, ott a `collageShadow` `undefined`. Enélkül 52
+    //: teszt bukott el „Cannot read property 'alpha' of undefined"-dal.
+    readonly property var shadow:
+        (controller && controller.collageShadow !== undefined)
+        ? controller.collageShadow : ({})
+
+    //: Van-e mit rajzolni. Az `alpha` egyben a térkép jelenlétének jelzője:
+    //: üres térképnél `undefined`.
+    readonly property bool shadowVisible: shadow.alpha !== undefined && unit > 0
+
+    //: A csempe és a hozzá tartozó szegélyméret EGY kérésből — két külön
+    //: forrásból a kettő elválna, és az árnyék elcsúszna a csempéjétől.
+    readonly property var shadowSprite: shadowVisible
+        ? controller.collageShadowSprite(shadow.blur * unit, shadow.alpha)
+        : null
+
     //: A miniatűr kért éle a DARABSZÁMBÓL lépcsőzve (spec 6.3, `spec[0x30]`).
     //: Ez az, amitől a 350 képes kollázs nem fullad meg.
     readonly property int thumbnailSize:
@@ -162,6 +200,13 @@ Item {
             captionsVisible: (lap && lap.controller)
                              ? lap.controller.collageCaptions : true
             thumbnailSize: lap ? lap.thumbnailSize : 256
+            // #1021 — az árnyék MINDEN adata a lapról jön: egy csempe,
+            // egy geometria, 350 csomópontra közösen.
+            shadowSource: (lap && lap.shadowSprite) ? lap.shadowSprite.url : ""
+            shadowSupport: (lap && lap.shadowSprite) ? lap.shadowSprite.support : 0
+            shadowBorder: (lap && lap.shadowSprite) ? lap.shadowSprite.border : 0
+            shadowOffsetX: (lap && lap.shadowVisible) ? lap.shadow.offsetX * lap.unit : 0
+            shadowOffsetY: (lap && lap.shadowVisible) ? lap.shadow.offsetY * lap.unit : 0
         }
     }
 
