@@ -26,14 +26,17 @@ látta meg.
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import pytest
 
 from picasapy.collage.picasa_render import (
+    _lapra_szorit,
     PicasaCollageSettings,
     layout_nodes_for_aspects,
 )
+from picasapy.collage.nodes import SHEET_UNITS
 from picasapy.collage.themes import PICTUREPILE
 
 
@@ -55,15 +58,46 @@ def _csomopontok(darab: int, keret: str, szelesseg: int = 1600, magassag: int = 
     return layout_nodes_for_aspects(aranyok, utak, beallitas), beallitas
 
 
+def _befoglalo(cs) -> tuple[float, float]:
+    """Az ELFORGATOTT csempe tengelypárhuzamos befoglalója.
+
+    ⚠️ A kupac csempéi döntve állnak (`theta`). Aki a csempe saját
+    szélességét/magasságát nézi, egy 8°-kal döntött polaroidról azt hiszi,
+    hogy elfér — közben a sarka túllóg a lapon, és a felhasználó pontosan
+    azt a csonka képet látja, ami miatt ez a jegy megszületett."""
+    koszinusz = abs(math.cos(cs.theta))
+    szinusz = abs(math.sin(cs.theta))
+    return (
+        cs.width * koszinusz + cs.height * szinusz,
+        cs.width * szinusz + cs.height * koszinusz,
+    )
+
+
+def _lap_hatarai(beallitas) -> tuple[float, float]:
+    """A lap mérete LAPEGYSÉGBEN — a csomópontok ebben élnek, nem képpontban.
+
+    ⚠️ Ez a teszt egyszer már rosszul állt: a képpontos `beallitas.width`
+    (1600) és `height` (1200) volt a határ, miközben a csomópontok
+    lapegységben jönnek, ahol a lap **1024 × 768**. A túl bő határ mellett a
+    „semmi nem lóg ki" állítás jóval kevesebbet jelentett, mint amennyinek
+    látszott — a durva kilógást megfogta, a néhány egységnyit nem.
+
+    A lapegység a SZÉLESSÉGRE van normálva (`pixels_to_sheet` mindkét
+    tengelyen a szélességgel oszt), ezért a magasság az oldalarányból jön."""
+    return SHEET_UNITS, SHEET_UNITS * beallitas.height / beallitas.width
+
+
 def _kilogo(csomopontok, beallitas):
-    """A lapról kilógó csomópontok — a TELJES, keretes téglalapot nézve."""
+    """A lapról kilógó csomópontok — a TELJES, keretes, ELFORGATOTT téglalap."""
+    lap_szeles, lap_magas = _lap_hatarai(beallitas)
     kilogok = []
     for cs in csomopontok:
+        szeles, magas = _befoglalo(cs)
         if (
-            cs.center_x - cs.width * 0.5 < -_TURES
-            or cs.center_y - cs.height * 0.5 < -_TURES
-            or cs.center_x + cs.width * 0.5 > beallitas.width + _TURES
-            or cs.center_y + cs.height * 0.5 > beallitas.height + _TURES
+            cs.center_x - szeles * 0.5 < -_TURES
+            or cs.center_y - magas * 0.5 < -_TURES
+            or cs.center_x + szeles * 0.5 > lap_szeles + _TURES
+            or cs.center_y + magas * 0.5 > lap_magas + _TURES
         ):
             kilogok.append(cs)
     return kilogok
@@ -112,3 +146,24 @@ def test_a_tiz_alatti_ag_VALTOZATLAN(darab):
             f"{darab} képnél a beszorítás HATOTT (y) — a ≤10 képes ág nem "
             "maradt változatlan"
         )
+
+
+# --------------------------------------------------------------------------
+# A beszorító függvény maga
+# --------------------------------------------------------------------------
+def test_a_lapon_belul_maradot_nem_mozgatja():
+    assert _lapra_szorit(500.0, 200.0, 1000) == 500.0
+
+
+@pytest.mark.parametrize(
+    ("kozep", "vart"), [(10.0, 100.0), (990.0, 900.0), (-50.0, 100.0)]
+)
+def test_a_szelen_tullogot_befele_huzza(kozep, vart):
+    assert _lapra_szorit(kozep, 200.0, 1000) == pytest.approx(vart)
+
+
+def test_a_lapnal_szelesebb_csempe_a_lap_kozepere_kerul():
+    """⚠️ Nincs olyan középpont, amivel elférne — de a naiv `min(max(...))`
+    ilyenkor a NEGATÍV oldalra vinné (a felső korlát az alsó alá csúszik),
+    vagyis pont azt a kilógást okozná, amit meg akarunk előzni."""
+    assert _lapra_szorit(300.0, 1500.0, 1000) == 500.0
