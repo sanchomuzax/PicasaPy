@@ -252,7 +252,6 @@ Item {
     }
 
     PicasaButton {
-        id: fromSelectionButton
         objectName: "collageBkgFromSelection"
         visible: box.mode === "image"
         x: 185
@@ -262,17 +261,10 @@ Item {
         padding: 2
         horizontalPadding: 2
         text: qsTr("Use selected")
-        // A hivatalos magyar felirat („A kijelölt elemek használata") három
-        // sor a 71 képpontos gombon — TÖRDEL, nem elidál: elidálva a
-        // felhasználó néma csonkot látna, és azt egyetlen teszt sem fogná meg.
-        contentItem: Text {
-            text: fromSelectionButton.text
-            font: fromSelectionButton.font
-            color: fromSelectionButton.inkColor
-            wrapMode: Text.Wrap
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
+        // A hivatalos magyar felirat („A kijelölt elemek használata") több
+        // sor a 71 képpontos gombon. A tördelést #992 óta a KÖZÖS
+        // `PicasaButton` végzi (tördelés + zsugorítás + vágás), ezért az
+        // itteni saját `contentItem` fölöslegessé vált.
         onClicked: if (box.controller) box.controller.setBackgroundFromSelection()
     }
 
