@@ -27,6 +27,7 @@ import math
 
 import pytest
 
+from picasapy.collage import rects
 from picasapy.collage.fitting import fit_aspect_inside, fit_inside
 from picasapy.collage.picasa_render import (
     PicasaCollageSettings,
@@ -235,3 +236,62 @@ class TestMozaik:
         nodes = _csomopontok(PICTUREGRID)
         terulet = sum(node.width * node.height for node in nodes)
         assert terulet == pytest.approx(1024.0 * 768.0, rel=0.02)
+
+
+class TestATerkozMindketTajolasban:
+    """A térköz `a = W/H` szorzója — a felhasználó nyolc golden-kollázsa
+    (2026-08-19) ezt méréssel igazolta, három témán (Mozaik, Képkockamozaik,
+    Rács), és korábban a 2014-es naptáron két ellentétes tájolásban is.
+
+    ## Mit állít ez, és miért pont ezt
+
+    A szorzó a `rects.to_pixel_rects`-ben KIZÁRÓLAG a függőleges réseket
+    skálázza (`rects.py:106-107`). Ennek egyetlen értelme van: hogy a rés
+    **képpontban mérve** vízszintesen és függőlegesen EGYFORMA legyen —
+    normalizált koordinátában ugyanaz a szám álló és fekvő lapon más
+    képpontnyi távolság.
+
+    Ezért a teszt nem a szorzót olvassa vissza (az a képlet ismétlése
+    volna), hanem a **következményét** méri: a csempék közti tényleges
+    képpont-rés. És mindkét tájolásban méri — ha valaki a szorzót
+    elhagyja, vagy a VÍZSZINTESRE teszi, az egyik tájolás azonnal elromlik,
+    a másik akár helyes is maradhat. Egytájolású teszt ezt átengedné.
+    """
+
+    #: két cella egymás mellett és egymás alatt — a négy szomszédos rés
+    #: mindegyike mérhető rajta
+    _RECTS = (
+        rects.NormRect(0.0, 0.0, 0.5, 0.5),
+        rects.NormRect(0.5, 0.0, 1.0, 0.5),
+        rects.NormRect(0.0, 0.5, 0.5, 1.0),
+        rects.NormRect(0.5, 0.5, 1.0, 1.0),
+    )
+
+    @pytest.mark.parametrize(
+        "szelesseg,magassag,tajolas",
+        [(1600, 1200, "fekvő"), (1200, 1600, "álló"), (1500, 1500, "négyzetes")],
+    )
+    def test_a_res_kepponban_egyforma_vizszintesen_es_fuggolegesen(
+        self, szelesseg, magassag, tajolas
+    ):
+        dobozok = rects.to_pixel_rects(self._RECTS, szelesseg, magassag, 0.5)
+        bal_felso, jobb_felso, bal_also = dobozok[0], dobozok[1], dobozok[2]
+
+        vizszintes_res = jobb_felso.x0 - bal_felso.x1
+        fuggoleges_res = bal_also.y0 - bal_felso.y1
+
+        assert vizszintes_res > 0 and fuggoleges_res > 0, (
+            f"{tajolas}: nincs rés a csempék közt — a térköz nem hatott"
+        )
+        # a kerekítés (`picasa_round`) miatt 1 képpont eltérés megengedett
+        assert abs(vizszintes_res - fuggoleges_res) <= 1, (
+            f"{tajolas} ({szelesseg}×{magassag}): a rés NEM egyforma — "
+            f"vízszintes {vizszintes_res} px, függőleges {fuggoleges_res} px. "
+            "Ez az `a = W/H` szorzó hiánya vagy rossz tengelyre tétele."
+        )
+
+    def test_nulla_terkoznel_nincs_res_egyik_tajolasban_sem(self):
+        for szelesseg, magassag in ((1600, 1200), (1200, 1600)):
+            dobozok = rects.to_pixel_rects(self._RECTS, szelesseg, magassag, 0.0)
+            assert dobozok[1].x0 == dobozok[0].x1
+            assert dobozok[2].y0 == dobozok[0].y1
