@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.1] – 2026-08-19
+
+### Javítva
+- **Az elrendezés-választó végre hat a vásznon (#989).** A Kollázs-panelen
+  eddig a hat elrendezés közül bármelyiket választottad, a vászon ugyanazt a
+  szórt kupacot mutatta — a hat valódi elrendező megvolt a programban, de a
+  panel nem használta őket. Mostantól a Képkupac, a Mozaik, a
+  Képkockamozaik, a Rács, az Indexkép és a Többszörös exponálás tényleg
+  másképp rendezi a képeket, és a mentett kép is az új elrendezést mutatja.
+
+  *(A 0.8.0 kiadási jegyzete ezt már ígérte — tévesen. A hibát a felhasználó
+  vette észre az első próbán.)*
+- **A magyar gombfeliratok nem lógnak ki és nem csúsznak egymásra (#992).**
+  A gombok mérete az angol feliratokra készült, a hosszabb magyar szöveg
+  pedig kifolyt rájuk: az „Az összes kijelölés megszüntetése" 182 képpontot
+  foglalt egy 100 képpontos gombban, és rátakarta a szomszédját. Ezért nem
+  lehetett megtalálni a „Véletlenszerű kollázs" gombot sem. A feliratok
+  mostantól tördelnek — teljes betűmérettel, olvashatóan.
+
 ## [0.8.0] – 2026-08-19
 
 ### Hozzáadva
