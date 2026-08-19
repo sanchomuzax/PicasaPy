@@ -192,14 +192,22 @@ def _canvas(settings: PicasaCollageSettings) -> np.ndarray:
     return canvas
 
 
-def _shadow(settings: PicasaCollageSettings, count: int) -> ShadowParams | None:
+def shadow_for_settings(
+    settings: PicasaCollageSettings, count: int
+) -> ShadowParams | None:
     """A téma árnyék-paraméterei, vagy `None`, ha nem kell árnyék (#977).
 
     Két kapu van, és MINDKETTŐ a képesség-maszkból jön: az
     `effective_shadow` (11. bit engedélyez, 14. bit az alapérték), és a
     `shadow.shadow_params` maga is a 11. bitet nézi. Így a Többszörös
     exponálás tiltása egyetlen forrásból származik — témanév-hasonlítás
-    sehol nem születik."""
+    sehol nem születik.
+
+    ⚠️ **Nyilvános** (#1021): az élő vászon UGYANEZT hívja, ugyanazzal a
+    `render_settings()`-szel, amivel a mentés dolgozik. Enélkül a vászon
+    egy párhuzamos számítást tartana, ami előbb-utóbb elválna — és a
+    felhasználó azt látná, hogy a mentett kép mást mutat, mint az
+    előnézet."""
     if not settings.effective_shadow:
         return None
     return shadow_params(
@@ -254,7 +262,9 @@ def render_nodes(
             skipped.append(path)
             reasons.append(str(error))
 
-    draw_nodes(canvas, nodes, images, settings.width, _shadow(settings, len(nodes)))
+    draw_nodes(
+        canvas, nodes, images, settings.width, shadow_for_settings(settings, len(nodes))
+    )
     return CollageReport(
         image=canvas,
         used=tuple(used),
@@ -629,7 +639,7 @@ def make_picasa_collage(
             nodes,
             decoded,
             alsobeallitas.width,
-            _shadow(settings, len(decoded)),
+            shadow_for_settings(settings, len(decoded)),
         )
         canvas[sav : sav + alvaszon.shape[0], :] = alvaszon
         # a csomópontok az ALVÁSZON koordinátáiban készültek; a piszkozat a
@@ -641,7 +651,7 @@ def make_picasa_collage(
     else:
         nodes = layout_nodes(decoded, used, settings)
         draw_nodes(
-            canvas, nodes, decoded, settings.width, _shadow(settings, len(decoded))
+            canvas, nodes, decoded, settings.width, shadow_for_settings(settings, len(decoded))
         )
         rajzolt = tuple(nodes)
 
@@ -667,5 +677,6 @@ __all__ = [
     "photo_box",
     "pixels_to_sheet",
     "render_nodes",
+    "shadow_for_settings",
     "sheet_to_pixels",
 ]

@@ -472,7 +472,28 @@ exponálásra vonatkozik — a rácsos témák a pakolóból kapnak méretet.
 - A keret rajza (`whiteborder`, `polaroid`) a `collage/frames.py`
   geometriájából jön (`polaroid_geometry`, `white_border_width`) — a QML
   ne találjon ki sajátot.
-- Az árnyék csomópontonként, ha a `collageShadows` be van kapcsolva.
+- **Az árnyék csomópontonként**, ha a `collageShadows` be van kapcsolva
+  (#1021). A csomópont ELSŐ gyereke, negatív `z`-vel: így a saját képe alá,
+  de a lejjebb lévő csomópontok fölé kerül — pontosan úgy, ahogy a rajzoló
+  teszi („minden csempének a saját árnyéka közvetlenül előtte rajzolódik",
+  `collage/nodes.py`). Ettől plasztikus a Képkupac.
+  - A rajzelem `BorderImage`, a forrása a vezérlőtől kapott `data:` URL
+    (`collageShadowSprite`). Az árnyék **szeparábilis** elmosás egy
+    téglalapon (9/b.1), ezért kilenc szeletre bontva **pontosan**
+    újraépíthető — nem közelítés (mérve 2/255 alatti eltéréssel a mag
+    `draw_shadow`-jához képest).
+  - Az **eltolást vissza kell forgatni** a csomópont saját rendszerébe: a
+    mag az eltolást a forgatás UTÁN adja hozzá, tehát az a lap tengelyei
+    szerint értendő, a csempe viszont a csomóponttal együtt fordul.
+  - ⚠️ **Shader (`QtQuick.Effects.MultiEffect`) NEM használható**: a modul a
+    disztribúciós PySide6 mellett nincs telepítve („module
+    "QtQuick.Effects" is not installed"), a `pip`-es CI-ban viszont igen —
+    egy shaderes megoldás zöld CI mellett hagyna árnyék nélkül éles gépet.
+  - **Ára** (RPi5, valódi OpenGL, vsync nélkül, 350 csomópont):
+    7,9 → 23,7 ms/képkocka. A költség NEM a technikáé: egy 4 × 4 képpontos
+    átlátszó `Rectangle` csomópontonként ugyanennyibe kerül (25,6 ms) —
+    a jelenetgráf csomópontonkénti EXTRA eleme a drága, tehát más rajzolási
+    mód sem volna olcsóbb. 100 képnél 7,1 → 11,2 ms.
 - A Polaroid-felirat csak akkor látszik, ha a **Képfeliratok
   megjelenítése** be van pipálva (a buboréksúgó ki is mondja: „…szövegként
   való megjelenítése *Polaroid fényképezőgép* szegélyű képeken").
@@ -691,6 +712,7 @@ API-hívók miatt), de a panel NEM azt hívja.
 | `collageClipCount` | int | a „Klipek (%1)" száma |
 | `collageDirty` | bool | van-e mentetlen módosítás |
 | `collageCapabilities` | QVariantMap | `{borders, spacing, shadow, selection, background, shuffle, scramble, ring, rotate}` — a `themes.capabilities_for`-ból |
+| `collageShadow` | QVariantMap | `{offsetX, offsetY, blur, opacity, alpha}` **lapegységben**, vagy üres térkép, ha nincs árnyék (#1021). A MENTÉS `render_settings()`-éből számol (`picasa_render.shadow_for_settings`), tehát a vászon és a mentett kép nem tud elválni. Értesítője a `collageShadowChanged`, amit a jelölőnégyzet, a téma, a darabszám és a laparány jelzése egyaránt kivált. |
 
 Minden property-hez `<név>Changed` jelzés. Kivétel a
 `collageBackgroundImageUrl`: ugyanaz az adat más alakban, ezért a
@@ -737,7 +759,13 @@ hiba volt, és a windows-CI-láb fogta meg.
 @Slot()              def resetCollage()
 @Slot(list)          def addClips(rows)
 @Slot(list)          def deleteClips(rows)
+@Slot(float, int, result="QVariantMap")  def collageShadowSprite(blur, alpha)
 ```
+
+> A `collageShadowSprite` a KIRAJZOLHATÓ árnyék-csempét adja vissza
+> (`{url, support, border}`), az elmosást a vászon **képpontjaiban** kérve.
+> Kép és geometria egy kérésben: két külön forrásból a kettő elválna, és az
+> árnyék elcsúszna a saját csempéjétől.
 
 > **A „Kollázs létrehozása" és az „Asztali háttérkép" UGYANAZ a művelet**,
 > egyetlen logikai paraméterrel. Aki kettőt ír meg belőle, kétszer fogja

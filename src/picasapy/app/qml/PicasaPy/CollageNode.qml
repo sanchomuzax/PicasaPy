@@ -54,6 +54,24 @@ Item {
     //: A kért miniatűr-él képpontban; a darabszámmal lépcsőzik (spec 6.3).
     property int thumbnailSize: 256
 
+    // --- A vetett árnyék (#1021) --------------------------------------------
+    //
+    // Minden adat a LAPRÓL jön (`CollageSheet`): egy csempe és egy geometria
+    // 350 csomópontra közösen. A csomópont nem számol árnyék-paramétert — az
+    // a mag dolga (`collage/shadow.py`), és a mentett kép ugyanazt használja.
+
+    //: A csempe `data:` URL-je; üres szöveg = ennek a témának nincs árnyéka
+    //: (Többszörös exponálás), vagy a jelölőnégyzet ki van kapcsolva.
+    property string shadowSource: ""
+    //: A haló képpontban: ennyivel lóg túl az árnyék a csomópont dobozán.
+    property int shadowSupport: 0
+    //: A `BorderImage.border` — a haló kétszerese (az átmenet a doboz éle
+    //: KÖRÜL zajlik, befelé is, kifelé is egy halónyit).
+    property int shadowBorder: 0
+    //: Az eltolás jobbra-le, a VÁSZON tengelyei szerint, képpontban.
+    property real shadowOffsetX: 0
+    property real shadowOffsetY: 0
+
     objectName: "collageNode" + nodeIndex
 
     width: Math.max(1, nodeWidth * unit)
@@ -107,6 +125,50 @@ Item {
         : (height - _photoHeight) / 2
 
     // --- A rajz -------------------------------------------------------------
+
+    // A VETETT ÁRNYÉK (#1021) — a csomópont ELSŐ gyereke, tehát a saját
+    // kerete és képe alá kerül, a LEJJEBB lévő csomópontok fölé. Pontosan
+    // ezt teszi a rajzoló is: „minden csempének a saját árnyéka közvetlenül
+    // előtte rajzolódik" (`collage/nodes.py` `draw_nodes`) — ettől esik a
+    // felül lévő kép árnyéka az alatta lévőre, és ez adja a Képkupac
+    // mélységét.
+    //
+    // ⚠️ Az eltolást VISSZA kell forgatni a csomópont saját rendszerébe. A
+    // mag az eltolást a forgatás UTÁN adja hozzá (`draw_shadow`: a maszkot
+    // elforgatja, majd `x + offset_x`-re teszi), tehát az eltolás a vászon
+    // tengelyei szerint értendő. A csempe viszont a csomóponttal EGYÜTT
+    // fordul, mert a gyereke — a két forgatás így ejti ki egymást. Aki ezt
+    // kihagyja, annál az árnyék iránya képenként más lesz (a Képkupac
+    // 0…−5°-ánál épp csak annyira, hogy „valami nem stimmel" érzést adjon).
+    readonly property real _shadowLocalX:
+        node.shadowOffsetX * Math.cos(node.theta)
+        + node.shadowOffsetY * Math.sin(node.theta)
+    readonly property real _shadowLocalY:
+        -node.shadowOffsetX * Math.sin(node.theta)
+        + node.shadowOffsetY * Math.cos(node.theta)
+
+    BorderImage {
+        objectName: "collageNodeShadow" + node.nodeIndex
+        visible: node.shadowSource !== ""
+        source: node.shadowSource
+        // A csempét MINDEN csomópont osztja: az URL azonos szövege miatt a
+        // Qt egyetlen textúrát tart belőle.
+        cache: true
+        x: node._shadowLocalX - node.shadowSupport
+        y: node._shadowLocalY - node.shadowSupport
+        width: node.width + 2 * node.shadowSupport
+        height: node.height + 2 * node.shadowSupport
+        border.left: node.shadowBorder
+        border.right: node.shadowBorder
+        border.top: node.shadowBorder
+        border.bottom: node.shadowBorder
+        // A sarkok VÁLTOZATLANUL, az élek egy tengelyen nyújtva: ott a
+        // lecsengés profilja állandó, tehát a nyújtás nem torzít. `Repeat`
+        // itt hibás volna — a haló mintázata ismétlődne.
+        horizontalTileMode: BorderImage.Stretch
+        verticalTileMode: BorderImage.Stretch
+        z: -1
+    }
 
     // A keret lapja. `noborder`-nél nincs mit rajzolni, de a Rectangle
     // átlátszóan ott marad, hogy a mérete egyetlen helyen éljen.
