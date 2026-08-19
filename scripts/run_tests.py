@@ -40,6 +40,8 @@ félrevezető ENOSPC-hibával."""
 
 from __future__ import annotations
 
+import concurrent.futures
+import os
 import shutil
 import subprocess
 import sys
@@ -50,6 +52,21 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parents[1]
 _NON_APP_TIMEOUT_S = 300
 _APP_FILE_TIMEOUT_S = 180
+
+#: Hány `tests/app`-fájl fusson EGYSZERRE (#1030). A fájlok külön processzben
+#: futnak (#53), a párhuzamosítás tehát nem gyengíti az izolációt — csak
+#: kihasználja a gép magjait, ahelyett hogy egyetlenegyen sorakoznának.
+#:
+#: Mért indok (RPi5, 4 mag): fájlonként 0,7 mp a puszta processzindulás, az
+#: átlagos fájl 5,4 mp — vagyis NEM az indítgatás a fő tétel, hanem az, hogy
+#: minden egyetlen magon fut. 30 fájlos mintán a négyszálas futás 163 mp
+#: helyett 68 mp volt (2,4×).
+#:
+#: `PICASAPY_TESZT_PARHUZAM=1` visszaadja a korábbi, soros viselkedést.
+_PARHUZAM = max(
+    1,
+    int(os.environ.get("PICASAPY_TESZT_PARHUZAM") or 0) or min(4, os.cpu_count() or 1),
+)
 
 #: A saját ideiglenes könyvtáraink gyökere és előtagja (#677). Az előtag azért
 #: kell, hogy a takarítás CSAK a sajátunkhoz nyúljon.
@@ -62,15 +79,66 @@ _TEMP_ELOTAG = "picasapy-tests-"
 _MARADEK_KOR_S = 3 * 3600
 
 
+#: A csendes (párhuzamos) részfutások összegyűjtött kimenete; kulcs a pytest
+#: argumentumsora. Minden szál a SAJÁT kulcsára ír, a főszál olvassa.
+_KIMENET: dict[str, str] = {}
+
+
+def _szoveggé(kimenet: bytes | str | None) -> str:
+    """A timeout-kivétel kimenete lehet bytes, str vagy semmi."""
+    if kimenet is None:
+        return "(nincs kimenet)"
+    if isinstance(kimenet, bytes):
+        return kimenet.decode("utf-8", "replace")
+    return kimenet
+
+
+def _reszfutas_kornyezete(sajat: Path) -> dict[str, str]:
+    """Részfutásonként KÜLÖN alkalmazás-adatmappák (#1030).
+
+    Az index-SQLite és a bélyegkép-gyorstár helyét az `XDG_DATA_HOME` /
+    `XDG_CACHE_HOME` adja (`app/application.py` `_data_dir`/`_cache_dir`) —
+    minden platformon, mert a kód közvetlenül ezeket a változókat olvassa.
+    Közös mappán a párhuzamos részfutások UGYANABBA az adatbázisfájlba
+    dolgoznának: méréskor pontosan ez történt, négy teszt bukott el
+    `unable to open database file`-lal, ami sorosan zöld volt.
+
+    A `HOME`-ot SZÁNDÉKOSAN nem írjuk felül, pedig kézenfekvő lenne: a
+    Python-csomagok a felhasználói site-packages-ben laknak, és felülírt
+    HOME-mal MINDEN részfutás `No module named pytest`-tel halt meg (mérve).
+    """
+    kornyezet = dict(os.environ)
+    for valtozo, alkonyvtar in (
+        ("XDG_DATA_HOME", "adat"),
+        ("XDG_CACHE_HOME", "gyorstar"),
+        ("XDG_CONFIG_HOME", "beallitas"),
+        ("XDG_STATE_HOME", "allapot"),
+    ):
+        ut = sajat / alkonyvtar
+        ut.mkdir(parents=True, exist_ok=True)
+        kornyezet[valtozo] = str(ut)
+    return kornyezet
+
+
 def _run_pytest(
-    args: list[str], timeout_s: int, *, cov: bool, basetemp: Path
+    args: list[str], timeout_s: int, *, cov: bool, basetemp: Path,
+    kornyezet: dict[str, str] | None = None, csendben: bool = False,
 ) -> int:
     """Egy pytest-részfutás saját processzben; timeoutnál 124-gyel tér vissza.
 
     cov=True esetén a pytest a `coverage run -p` alá fut (ld. a modul
-    docstringjét). A `basetemp` minden részfutásra AZONOS (#677): a pytest a
-    könyvtárat induláskor kiüríti, így az előző részfutás helye felszabadul,
-    és nem gyűlik tucatnyi könyvtár egymás mellé."""
+    docstringjét).
+
+    A `basetemp`-ről (#677 + #1030): soros futásnál minden részfutás UGYANAZT
+    kapja, mert a pytest a könyvtárat induláskor kiüríti — így az előző helye
+    felszabadul, és nem gyűlik tucatnyi könyvtár egymás mellé. Párhuzamos
+    futásnál viszont épp ezért kell részfutásonként KÜLÖN könyvtár (különben a
+    másik szál ideiglenes fájljait törölnék), a hívó pedig a részfutás végén
+    azonnal takarít — így a csúcsigény a szálak számával arányos, nem a
+    fájlokéval.
+
+    `csendben=True` esetén a kimenetet elnyeljük és `_KIMENET`-be tesszük: a
+    párhuzamos részfutások kiírásai összekeverednének."""
     pytest_args = [
         "-m",
         "pytest",
@@ -91,10 +159,22 @@ def _run_pytest(
         command = [sys.executable, "-m", "coverage", "run", "-p", *pytest_args]
     else:
         command = [sys.executable, *pytest_args]
-    print(f"$ {' '.join(command)}", flush=True)
+    if not csendben:
+        print(f"$ {' '.join(command)}", flush=True)
     try:
-        return subprocess.run(command, cwd=_ROOT, timeout=timeout_s).returncode
-    except subprocess.TimeoutExpired:
+        if not csendben:
+            return subprocess.run(
+                command, cwd=_ROOT, timeout=timeout_s, env=kornyezet
+            ).returncode
+        eredmeny = subprocess.run(
+            command, cwd=_ROOT, timeout=timeout_s, env=kornyezet,
+            capture_output=True, text=True, errors="replace",
+        )
+        _KIMENET[" ".join(args)] = (eredmeny.stdout or "") + (eredmeny.stderr or "")
+        return eredmeny.returncode
+    except subprocess.TimeoutExpired as kivetel:
+        if csendben:
+            _KIMENET[" ".join(args)] = _szoveggé(kivetel.stdout)
         print(f"TIMEOUT ({timeout_s}s): {' '.join(args)}", flush=True)
         return 124
 
@@ -171,6 +251,29 @@ def _futtat(cov: bool, basetemp: Path) -> int:
     app_test_files = sorted(app_dir.glob("test_*.py")) + sorted(
         (app_dir / "qml_functional").glob("test_*.py")
     )
+    if _PARHUZAM > 1:
+        failures += _app_fajlok_parhuzamosan(app_test_files, cov=cov, basetemp=basetemp)
+    else:
+        failures += _app_fajlok_sorosan(app_test_files, cov=cov, basetemp=basetemp)
+
+    if cov:
+        _report_coverage()
+
+    if failures:
+        print("\nHIBÁS RÉSZFUTÁSOK:", flush=True)
+        for name, returncode in failures:
+            print(f"  {name}: exit {returncode}", flush=True)
+        return 1
+
+    print("\nMinden részfutás zöld.", flush=True)
+    return 0
+
+
+def _app_fajlok_sorosan(
+    app_test_files: list[Path], *, cov: bool, basetemp: Path
+) -> list[tuple[str, int]]:
+    """A korábbi (2026-08-19 előtti) viselkedés — `PICASAPY_TESZT_PARHUZAM=1`."""
+    failures: list[tuple[str, int]] = []
     for test_file in app_test_files:
         relative = test_file.relative_to(_ROOT)
         returncode = _run_pytest(
@@ -185,18 +288,56 @@ def _futtat(cov: bool, basetemp: Path) -> int:
             )
         if returncode != 0:
             failures.append((str(relative), returncode))
+    return failures
 
-    if cov:
-        _report_coverage()
 
-    if failures:
-        print("\nHIBÁS RÉSZFUTÁSOK:", flush=True)
-        for name, returncode in failures:
-            print(f"  {name}: exit {returncode}", flush=True)
-        return 1
+def _app_fajlok_parhuzamosan(
+    app_test_files: list[Path], *, cov: bool, basetemp: Path
+) -> list[tuple[str, int]]:
+    """Ugyanaz, `_PARHUZAM` fájllal egyszerre (#1030).
 
-    print("\nMinden részfutás zöld.", flush=True)
-    return 0
+    Minden fájl SAJÁT mappát kap (ideiglenes fájlok + alkalmazás-adatmappák),
+    amit a részfutás végén azonnal törlünk — a csúcsigény így a szálak
+    számával arányos, nem a fájlokéval (#677).
+    """
+    failures: list[tuple[str, int]] = []
+
+    def egy_fajl(test_file: Path) -> tuple[str, int]:
+        relative = str(test_file.relative_to(_ROOT))
+        sajat = basetemp / test_file.stem
+        try:
+            kornyezet = _reszfutas_kornyezete(sajat)
+            returncode = _run_pytest(
+                [relative], _APP_FILE_TIMEOUT_S, cov=cov,
+                basetemp=sajat / "pytest", kornyezet=kornyezet, csendben=True,
+            )
+            if returncode == 124:
+                # alkalmi beragadás (#53): egyszeri újrapróbálás friss processzben
+                print(f"ÚJRAPRÓBÁLÁS (timeout után): {relative}", flush=True)
+                returncode = _run_pytest(
+                    [relative], _APP_FILE_TIMEOUT_S, cov=cov,
+                    basetemp=sajat / "pytest", kornyezet=kornyezet, csendben=True,
+                )
+            return relative, returncode
+        finally:
+            shutil.rmtree(sajat, ignore_errors=True)
+
+    print(f"\n$ tests/app: {len(app_test_files)} fájl, "
+          f"{_PARHUZAM} egyszerre", flush=True)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=_PARHUZAM) as pool:
+        for relative, returncode in pool.map(egy_fajl, app_test_files):
+            # Csak ASCII jelölés: a Windows-runner konzolja cp1252-ben ír, és
+            # a pipálás-karakter `UnicodeEncodeError`-ral MEGÖLTE a futást
+            # (mérve, #1030 első köre) — a kimenet díszítése nem érhet ennyit.
+            if returncode == 0:
+                print(f"  ok   {relative}", flush=True)
+                continue
+            failures.append((relative, returncode))
+            print(f"  HIBA {relative}: exit {returncode}", flush=True)
+            # a bukott részfutás teljes kimenete — soros futásnál ez amúgy is
+            # a képernyőn lenne, itt gyűjtve kerül ki, egyben
+            print(_KIMENET.get(relative, "(nincs kimenet)"), flush=True)
+    return failures
 
 
 if __name__ == "__main__":
