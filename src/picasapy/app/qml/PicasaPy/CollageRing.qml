@@ -50,7 +50,18 @@ Item {
 
     // A gyűrű rajza. A `respack` bitmapje nem szállítható, a MÉRETEI viszont
     // megerősítettek — a rajz ezért kódból készül, a méretek betartásával.
+    //
+    // ⚠️ Itt NINCS kézzel megadott `antialiasing` (#1010), és ez szándékos:
+    // a Qt a `radius != 0` téglalapokon MAGÁTÓL bekapcsolja (enélkül a kör
+    // széle fűrészfog lenne). A gyűrű ráadásul nem is forog a képpel — a
+    // mérete képernyő-egységben állandó. A rákent élsimítás itt tiszta
+    // rajzolási ráfizetés lenne; a `CollageNode` SZÖGLETES kerete a másik
+    // eset, ott kézzel kell megadni.
+    //
+    // Az `objectName`-eket a #1010 tesztje olvassa: ha valaki a `radius`-t
+    // kivenné vagy a kört szögletesre cserélné, az élsimítás némán elveszne.
     Rectangle {
+        objectName: "collageRingOuter" + ring.nodeIndex
         anchors.fill: parent
         radius: ring.outerRadius
         color: "transparent"
@@ -58,6 +69,7 @@ Item {
         border.color: "#f0ffffff"
     }
     Rectangle {
+        objectName: "collageRingInner" + ring.nodeIndex
         anchors.centerIn: parent
         width: 2 * ring.innerRadius
         height: 2 * ring.innerRadius
