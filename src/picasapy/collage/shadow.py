@@ -67,6 +67,7 @@ from typing import NamedTuple
 import cv2
 import numpy as np
 
+from .render import screen_rotation
 from .themes import (
     CONTACTSHEET,
     FRAMEGRID,
@@ -377,7 +378,14 @@ def draw_shadow(
 
     `x`, `y` a csempe bal felső sarka a vászonon, `theta` az elforgatása
     radiánban — ugyanaz a forgatás, amit a `render._rotated_paste` végez, és
-    ugyanazzal a mátrixszal, hogy az árnyék ne csússzon el a csempétől.
+    ugyanazzal a mátrixszal (`render.screen_rotation`), hogy az árnyék ne
+    csússzon el a csempétől. A pozitív `theta` az óramutatóval EGYEZŐ irányba
+    forgat, ahogy a `.cxf` és a vászon is (#1035).
+
+    ⚠️ Az **eltolás** (`offset_x`, `offset_y`) továbbra is a VÁSZON tengelyei
+    szerint értendő. Hogy az eredetiben a forgatás ELŐTT vagy UTÁN adódik a
+    csomópont eltolásához, nincs levezetve — a #1035 köre ezért kizárólag a
+    forgatás irányát javította, az eltolás koordinátarendszeréhez nem nyúlt.
 
     A menete: sziluett → befoglaló bővítése `elmosás · 1,5`-tel MINDEN élen →
     elmosás → eltolás jobbra-le → fekete keverés `alfa` súllyal. A vászon
@@ -387,16 +395,10 @@ def draw_shadow(
 
     maszk = np.ones((height, width), dtype=np.float32)
     if theta:
-        # ugyanaz a mátrix, mint a `render._rotated_paste`-ben — az árnyéknak
-        # a csempével EGYÜTT kell fordulnia, nem tükörképben
-        matrix = cv2.getRotationMatrix2D(
-            (width / 2.0, height / 2.0), math.degrees(theta), 1.0
-        )
-        cos, sin = abs(matrix[0, 0]), abs(matrix[0, 1])
-        out_w = int(height * sin + width * cos)
-        out_h = int(height * cos + width * sin)
-        matrix[0, 2] += out_w / 2 - width / 2.0
-        matrix[1, 2] += out_h / 2 - height / 2.0
+        # UGYANAZ a függvény, amit a `render._rotated_paste` hív — az árnyéknak
+        # a csempével EGYÜTT kell fordulnia, nem tükörképben (#1035: a közös
+        # hívás az, ami ezt szerkezetileg garantálja, nem egy megjegyzés)
+        matrix, out_w, out_h = screen_rotation(width, height, math.degrees(theta))
         maszk = cv2.warpAffine(maszk, matrix, (out_w, out_h))
         x -= (out_w - width) // 2
         y -= (out_h - height) // 2

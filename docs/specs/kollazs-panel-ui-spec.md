@@ -450,6 +450,23 @@ legfelül** (`canvas.py` már ezt tartja).
 | `selected` | bool | a kijelölés |
 | `missing` | bool | a fájl nem található (ld. 9.4) |
 
+⚠️ **A `theta` előjele (golden-mérés, #1035).** Az eredeti a `.cxf` tárolt
+`theta`-ját előjelváltás nélkül használja, képernyő-koordinátában (`y`
+lefelé):
+
+```
+X = cx + u*cos(theta) - v*sin(theta)
+Y = cy + u*sin(theta) + v*cos(theta)
+```
+
+A **megkülönböztető próba**: a csempe felső élének közepe (`u = 0`, `v = -b`)
+pozitív `theta` mellett `X = cx + b*sin(theta)`, vagyis **jobbra** mozdul;
+negatív `theta`-nál a kép **jobb oldala kerül magasabbra**. A QML
+`Item.rotation` és a mag `render.screen_rotation`-je egyaránt ezt követi. A
+`cv2.getRotationMatrix2D` viszont a pozitív szöget az ELLENKEZŐ irányba
+forgatja — az átfordítás egyetlen helyen, a `screen_rotation`-ben történik, a
+**tárolt** `theta`-hoz tilos hozzányúlni (azt a Picasa is visszaolvassa).
+
 **A kezdő méret** a darabszámból (spec 9.0):
 
 ```
