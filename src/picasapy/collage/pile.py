@@ -202,13 +202,12 @@ def pile_layout(
         # 9 képesek voltak.
         #
         # A sávot NEM szűkítjük: a 9 képes eset a mért minták középpontjait
-        # négy tizedesig hozza, tehát a sáv képlete helyes — szűkítve kevés
-        # képnél az eredetinél tömörebb kupac lenne. A beszorítás
-        # csomópontonként hat, és 10 képig semmit nem csinál.
-        fel_szelesseg = meret * 0.5
-        fel_magassag = meret * 0.5
-        center_x = min(max(center_x, fel_szelesseg), page_width - fel_szelesseg)
-        center_y = min(max(center_y, fel_magassag), page_height - fel_magassag)
+        # négy tizedesig hozza, tehát a sáv képlete helyes.
+        #
+        # ⚠️ A BESZORÍTÁS NEM ITT VAN, hanem a `_pile_nodes`-ban: ott ismert
+        # a KERETES csempe mérete (`outer_box`), és a kilógást az dönti el,
+        # nem a fotó négyzete. Itt beszorítva a keretes kép tovább lógna —
+        # egy 15 képes próbarenderen ez mérve is látszott.
         elhelyezesek.append(
             PilePlacement(
                 index=index,

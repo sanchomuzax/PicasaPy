@@ -347,11 +347,25 @@ def _pile_nodes(
         oldal = max(1, place.size)
         cel_w, cel_h = fit_aspect_inside(aspect, oldal, oldal)
         kulso_w, kulso_h = outer_box(max(1, cel_w), max(1, cel_h), keret)
+        # ⚠️ #1045: a szórás a KÖZÉPPONTOT tartja a lapon, a csempének viszont
+        # MÉRETE van körülötte — és a kilógást a KERETES méret dönti el, nem a
+        # fotóé. 11 képtől a legnagyobb csempe fele kilóg (a sávot a legkisebb
+        # kép szorzója szűkíti, a margót a legnagyobb igényli).
+        #
+        # 10 képig ez nem csinál semmit — a sáv ott már elfér —, tehát a 9
+        # képes eset, ami a valódi minták középpontjait négy tizedesig hozza,
+        # változatlan marad.
+        kozep_x = min(
+            max(place.center_x, kulso_w * 0.5), settings.width - kulso_w * 0.5
+        )
+        kozep_y = min(
+            max(place.center_y, kulso_h * 0.5), settings.height - kulso_h * 0.5
+        )
         nodes.append(
             CollageNode(
                 path=path,
-                center_x=pixels_to_sheet(place.center_x, settings.width),
-                center_y=pixels_to_sheet(place.center_y, settings.width),
+                center_x=pixels_to_sheet(kozep_x, settings.width),
+                center_y=pixels_to_sheet(kozep_y, settings.width),
                 width=pixels_to_sheet(kulso_w, settings.width),
                 height=pixels_to_sheet(kulso_h, settings.width),
                 theta=place.theta,

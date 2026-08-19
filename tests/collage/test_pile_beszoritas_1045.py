@@ -26,41 +26,67 @@ látta meg.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
-from picasapy.collage.fitting import MsvcRandom
-from picasapy.collage.pile import pile_layout
+from picasapy.collage.picasa_render import (
+    PicasaCollageSettings,
+    layout_nodes_for_aspects,
+)
+from picasapy.collage.themes import PICTUREPILE
 
 
-def _kilogo(elhelyezesek, szelesseg: int, magassag: int):
-    """A lapról kilógó elhelyezések — a TELJES téglalapot nézve."""
+#: A `layout_nodes_for_aspects` KÉPPONTBAN adja vissza a csomópontokat (a
+#: `settings.width`/`height` rendszerében). A kirajzolt csempe a KERETES
+#: méret (`outer_box`), ezért a kilógást ezen a szinten kell nézni — nem a
+#: `pile_layout` fotó-négyzetén, ahol a keret még nem ismert.
+_TURES = 0.5
+
+
+def _csomopontok(darab: int, keret: str, szelesseg: int = 1600, magassag: int = 1200):
+    """A ténylegesen kirajzolt csomópontok — ez a felhasználó látja."""
+    beallitas = PicasaCollageSettings(
+        theme=PICTUREPILE, width=szelesseg, height=magassag, border=keret
+    )
+    # vegyes tájolású képek, ahogy egy valódi gyűjteményben
+    aranyok = [(0.7 if i % 3 == 0 else 1.45) for i in range(darab)]
+    utak = [Path(f"/nincs/k{i}.jpg") for i in range(darab)]
+    return layout_nodes_for_aspects(aranyok, utak, beallitas), beallitas
+
+
+def _kilogo(csomopontok, beallitas):
+    """A lapról kilógó csomópontok — a TELJES, keretes téglalapot nézve."""
     kilogok = []
-    for e in elhelyezesek:
-        fel = e.size * 0.5
+    for cs in csomopontok:
         if (
-            e.center_x - fel < -0.5
-            or e.center_y - fel < -0.5
-            or e.center_x + fel > szelesseg + 0.5
-            or e.center_y + fel > magassag + 0.5
+            cs.center_x - cs.width * 0.5 < -_TURES
+            or cs.center_y - cs.height * 0.5 < -_TURES
+            or cs.center_x + cs.width * 0.5 > beallitas.width + _TURES
+            or cs.center_y + cs.height * 0.5 > beallitas.height + _TURES
         ):
-            kilogok.append(e)
+            kilogok.append(cs)
     return kilogok
 
 
 @pytest.mark.parametrize("darab", [4, 9, 10, 11, 15, 25, 50, 100])
-@pytest.mark.parametrize("mag", [1, 7, 42])
-def test_egyetlen_kep_sem_log_ki(darab, mag):
-    """A felhasználó ezt látja: a kép széle kilóg a lapról."""
-    elhelyezesek = pile_layout(darab, 1024, 768, MsvcRandom(mag))
+@pytest.mark.parametrize("keret", ["noborder", "whiteborder", "polaroid"])
+def test_egyetlen_kep_sem_log_ki(darab, keret):
+    """A felhasználó ezt látja: a kép széle kilóg a lapról.
 
-    kilogok = _kilogo(elhelyezesek, 1024, 768)
+    ⚠️ Mind a három kerettel: a kilógást a KERETES méret dönti el. Az első
+    javítás a fotó négyzetére szorított be, és egy 15 képes próbarenderen
+    így is KÉT csempe lógott ki — a keret azon kívül nő."""
+    csomopontok, beallitas = _csomopontok(darab, keret)
+
+    kilogok = _kilogo(csomopontok, beallitas)
 
     assert not kilogok, (
-        f"{darab} képnél {len(kilogok)} csomópont lóg ki a lapról "
-        f"(mag={mag}): "
+        f"{darab} képnél, {keret} kerettel {len(kilogok)} csempe lóg ki: "
         + ", ".join(
-            f"#{e.index} közép=({e.center_x:.1f},{e.center_y:.1f}) méret={e.size:.1f}"
-            for e in kilogok[:3]
+            f"közép=({cs.center_x:.3f},{cs.center_y:.3f}) "
+            f"méret=({cs.width:.3f}×{cs.height:.3f})"
+            for cs in kilogok[:3]
         )
     )
 
@@ -70,18 +96,19 @@ def test_a_tiz_alatti_ag_VALTOZATLAN(darab):
     """⚠️ A beszorítás 10 képig NEM nyúlhat hozzá semmihez.
 
     A 9 képes eset a valódi Picasa-minták középpontjait négy tizedesig
-    hozza — ha itt elmozdulna, azt rontanánk el, ami ma bizonyítottan jó."""
-    elhelyezesek = pile_layout(darab, 1024, 768, MsvcRandom(3))
+    hozza — ha itt elmozdulna, azt rontanánk el, ami ma bizonyítottan jó.
+    Ezt úgy állítjuk, hogy a csempék eleve beljebb vannak a fél méretüknél:
+    ilyenkor a beszorításnak nincs mit tennie."""
+    csomopontok, beallitas = _csomopontok(darab, "whiteborder")
 
-    for e in elhelyezesek:
-        fel = e.size * 0.5
-        # a beszorítás akkor "nem csinál semmit", ha a középpont eleve
-        # beljebb van a fél méretnél mindkét tengelyen
-        assert fel <= e.center_x <= 1024 - fel, (
-            f"{darab} képnél a beszorítás HATOTT (x) — a ≤10 képes ág "
-            "nem maradt változatlan"
+    for cs in csomopontok:
+        assert cs.width * 0.5 <= cs.center_x <= beallitas.width - cs.width * 0.5, (
+            f"{darab} képnél a beszorítás HATOTT (x) — a ≤10 képes ág nem "
+            "maradt változatlan"
         )
-        assert fel <= e.center_y <= 768 - fel, (
-            f"{darab} képnél a beszorítás HATOTT (y) — a ≤10 képes ág "
-            "nem maradt változatlan"
+        assert (
+            cs.height * 0.5 <= cs.center_y <= beallitas.height - cs.height * 0.5
+        ), (
+            f"{darab} képnél a beszorítás HATOTT (y) — a ≤10 képes ág nem "
+            "maradt változatlan"
         )
