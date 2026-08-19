@@ -355,6 +355,59 @@ képernyőképe mutatja is a gyűrűt a kijelölt képen.
 (a méret és az elhelyezés egyezik, de a rajzot nem vetettük össze
 képpontról képpontra).
 
+### 5.1/b A gyűrű MEGJELENÉSE — hover + időzítő + elhalványítás (2026-08-19)
+
+A felhasználó jelezte, hogy a gyűrű „kijelölés után **hoverre** jelenik
+meg, majd néha eltűnik". A `RingNodeFadeHandler` (`0x007e6220`, 358 bájt)
+ezt teljesen megmagyarázza — **a gyűrű léte és láthatósága két külön
+dolog**:
+
+- a gyűrű **létezik**, amíg a csomópont ki van jelölve (a kijelölés
+  hozza létre, ld. 5.1);
+- a **láthatósága** viszont az egérmutatótól függ, időzítővel.
+
+#### A mechanizmus
+
+```
+[esi+8] = eseményazonosító ; [esi+0x54], [esi+0x58] = egér x, y
+[edi+0x10] = az utolsó hover időbélyege ; [edi+8] = a jelenlegi állapot
+[edi+0x18] = ZÁR
+
+1) találatvizsgálat 12 KÉPPONTOS tűréssel      ; 0x9ac570(…, x, y, 0xc)
+                                               ; 0x007e62e3: push 0xc
+2) ha az egér a csomópont fölött van ÉS az esemény 2 vagy 3 (egérmozgás):
+       [edi+0x10] = most()                     ; 0x007e6301
+3) az ütemezett esemény (0x13 = 19) érkezésekor, HA a zár nem áll:
+       látszik = ( most() − [edi+0x10] ) < 0.5 s      ; 0xc72150 = 0.5
+       ha az állapot változott:
+           megjelenés:  animáció 0,25 s alatt alfa 0x100 = 256-ra
+                                                ; 0xc7c608 = 0.25f
+           eltűnés:     animáció 0,5 s alatt alfa 1-re
+                                                ; 0xc7dafc = 0.5f
+```
+
+#### Amit ez jelent a felületnek
+
+| viselkedés | érték |
+|---|---|
+| a gyűrű **megjelenik**, ha a kurzor a képen van | + **12 képpont** tűrés a kép körül |
+| **megjelenési animáció** | 0,25 s, teljes átlátszatlanságig (alfa 256) |
+| **várakozás** az eltűnés előtt, miután a kurzor elhagyta | **0,5 s** |
+| **eltűnési animáció** | 0,5 s, alfa 1-ig (gyakorlatilag láthatatlan) |
+| **zár** (`+0x18`) | amíg áll, az időzítő NEM fut — a gyűrű látható marad (ezt a `RingNodeFadeLockHandler`, `0x007e6390` kezeli, húzás közben) |
+
+> **Ezért „tűnik el néha":** ha a kurzor fél másodpercnél tovább van a
+> képen kívül, a gyűrű elhalványul — akkor is, ha a kép **továbbra is ki
+> van jelölve**. Húzás közben a zár tartja láthatóan.
+
+**Bizonyítottsági fok: megerősített** a fade-kezelőre (a képlet, a négy
+konstans és a 12 képpontos tűrés a `0x007e6220` diszasszemblátumából), és
+a felhasználó leírása pontosan ezt írja le. A **zár-kezelő** (`0x007e6390`)
+eseményágai **részben** feltártak: az 1., 2. és 3. eseményre reagál, és a
+`[ebx+0x20] / [ebx+0x24]` párral tartja nyilván az állapotot — **hogy
+pontosan mely felhasználói gesztus állítja a zárat, nem megállapított**
+(a húzás a legvalószínűbb).
+
 ### 5.2 Mozgatás
 
 `RingMoveHandler` (`0x00868e90`):
