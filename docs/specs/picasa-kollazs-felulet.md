@@ -929,9 +929,22 @@ A név kiválasztása (mindkét mentőben azonos, pl. `0x0083c7b0`–`0x0083c83c
    útvonala** (`[obj+0x13c]`) — a „Meglévő cseréje" válasz esetén.
 2. **Új kollázsnál**: `0x0087db30` — az **éppen nyitott mappa/album
    címét** kéri le az adatbázisból (a nézet `[+0xeac]→[+0x3c0]`
-   azonosítójával, a `vt[0x48]+0x18` cím-lekérdezővel). *(Élő bizonyíték:
-   a NAS-on a kollázsfájl neve „2010-08-01 Sátor alkatrész.jpg" — pontosan
-   a forrásmappa címe.)* A `0x0087db30` a mappa **dátumát is** lekéri és
+   azonosítójával, a `vt[0x48]+0x18` cím-lekérdezővel).
+
+   > ⚠️ **A hozzá tartozó bizonyíték pontosítva (2026-08-19).** A
+   > tulajdonos NAS-án a `Picasa/Kollázsok/.picasa.ini`-ben a Picasa
+   > által írt szakaszcímek: „2010-08-01 Sátor alkatrész.jpg",
+   > „2010-09-06 Exp test.jpg", „2010-09-06 Exp test1.jpg" — pontosan a
+   > forrásmappák címei, és a számozás is látszik rajtuk.
+   > **Maguk a kollázsfájlok azonban MÁR NINCSENEK MEG**: a mappa a
+   > 2014-es `.picasa.ini`-n és a `Thumbs.db`-n kívül üres, a
+   > `Collages/` mappában is csak az album-leíró `Picasa.ini` maradt.
+   > Vagyis ez a bizonyíték **a Picasa saját feljegyzése**, nem megmaradt
+   > fájl — a névszabályt igazolja, a kimenet képi tartalmát nem.
+   > *(A 859 `.picasa.ini`-t tartalmazó korpuszban egyetlen `.cxf`
+   > hivatkozás sincs.)*
+
+   A `0x0087db30` a mappa **dátumát is** lekéri és
    formázza (`ytDateTime::Format2`), de a fájlnévhez a hívó ezt NEM
    használja fel.
 3. **Tartalék**: ha a cím üres vagy használhatatlan, a tő a
@@ -945,8 +958,7 @@ A név kiválasztása (mindkét mentőben azonos, pl. `0x0083c7b0`–`0x0083c83c
 Az egyedivé tétel a `0x00993030`: ha a `név.jpg` létezik, sorban
 `név1.jpg`, `név2.jpg`, … A formátum szó szerint **`"%s%lu"`**
 (`0xcd8d5c`) — a tő és a szám között **nincs szóköz, nincs zárójel**.
-Legfeljebb 4096 próba (`0x009930d2`, `cmp ebx, 0x1000`). *(Élő
-bizonyíték: a NAS-on „…Exp test.jpg" mellett „…Exp test1.jpg".)*
+Legfeljebb 4096 próba (`0x009930d2`, `cmp ebx, 0x1000`). *(Ugyanabból az ini-ből: „…Exp test.jpg" mellett „…Exp test1.jpg" — feljegyzés, nem megmaradt fájl; ld. a 2. pont figyelmeztetését.)*
 
 #### 4. Atomi írás: tmp-fájlok, átnevezés — előbb a `.cxf`, aztán a `.jpg`
 
