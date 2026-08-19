@@ -110,8 +110,23 @@ Item {
 
     // A keret lapja. `noborder`-nél nincs mit rajzolni, de a Rectangle
     // átlátszóan ott marad, hogy a mérete egyetlen helyen éljen.
+    //
+    // ⚠️ `antialiasing: true` (#1010) — a csomópont EL VAN FORGATVA (a
+    // Képkupacnál 0…−5°), a Qt Quick pedig a SZÖGLETES `Rectangle` élét
+    // alapból élsimítás NÉLKÜL rajzolja. Egy 5°-kal forgatott fehér
+    // téglalapon, valódi OpenGL-háttéren mérve: élsimítás nélkül **0**
+    // átmeneti árnyalat az élen (tiszta lépcső — ezt jelezte a felhasználó
+    // a 0.8.1-en), bekapcsolva **466**.
+    //
+    // A `smooth` ide NEM való: az a TEXTÚRA szűrését állítja, nem a
+    // geometria élét — a `Rectangle`-nek nincs textúrája.
+    //
+    // `noborder`-nél sem költség: a teljesen átlátszó `Rectangle`-höz a Qt
+    // egyáltalán nem épít rajzoló csomópontot.
     Rectangle {
+        objectName: "collageNodeFrame" + node.nodeIndex
         anchors.fill: parent
+        antialiasing: true
         color: node.border === "polaroid" ? "#d9d9d9"       // POLAROID_PAPER
              : node.border === "whiteborder" ? "#eeeeee"    // WHITE_BORDER
              : "transparent"
@@ -133,6 +148,18 @@ Item {
         sourceSize.height: node.thumbnailSize
         asynchronous: true
         cache: true
+        // A miniatűr majdnem sosem pont akkora, mint a doboz, tehát MINDIG
+        // méreteződik — `smooth: true` nélkül a nagyítás nearest-neighbour
+        // lenne, azaz szemcsés. A Qt Quickben ez az alapértelmezés; itt
+        // kimondva szándék, hogy egy későbbi „optimalizálás" ne
+        // kapcsolhassa ki némán (#1010).
+        //
+        // `antialiasing` viszont ide hiába kerülne: a Qt a textúrázott
+        // csomópontokon (`Image`, `Canvas`) figyelmen kívül hagyja. A
+        // forgatott kép KÜLSŐ éle ezért `noborder`-nél továbbra sem
+        // élsimított — ahhoz a rajzolási cél többmintavételezése (MSAA)
+        // kellene, ami 350 képnél külön mérlegelés: külön jegy tárgya.
+        smooth: true
         // A rajzoló alapesete a `fill=True` (a doboz hézag nélkül tele, a
         // túllógó rész vágva) — `collage/nodes.py` `fit_to_frame`.
         fillMode: Image.PreserveAspectCrop
@@ -184,9 +211,13 @@ Item {
 
     // A kijelölés jelölése. A gyűrű a KÜLÖN overlay (`CollageRing`), ez csak
     // a keret — a rácsos témáknál (ahol nincs gyűrű) ez az EGYETLEN jel.
+    //
+    // A 2 képpontos keret UGYANAZZAL a szöggel forgatva rajzolódik, tehát
+    // ugyanúgy kell neki az élsimítás, mint a keret lapjának (#1010).
     Rectangle {
         objectName: "collageNodeSelection" + node.nodeIndex
         anchors.fill: parent
+        antialiasing: true
         visible: node.selected
         color: "transparent"
         border.width: 2
