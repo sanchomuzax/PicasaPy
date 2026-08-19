@@ -1252,9 +1252,46 @@ eltolás iránya és a befoglaló-bővítés **megerősített**. A `k` levezeté
 (cellaél) **megerősített**. Az `A` lépték **megerősített** — a 9.0
 darabszám-képlete. **A szakaszban nem maradt feltételes állítás.**
 
+### 9/b.4 ⚠️ MÉRÉS valódi kimeneten (2026-08-19) — részben cáfol
+
+A felhasználó nyolc kollázst készített teszteléshez, `.cxf`-párral
+(privát repó: `referencia/kollazs-golden/kollazsok-8db-cxf-parral.zip`).
+Az árnyék így **először lett megmérve** — és a lelet vegyes.
+
+**Képkupac — a képlet IGAZOLÓDIK.** `AI1` (picturepile, `noborder`,
+fehér háttér, 1:1, 5120×5120, 9 kép). Egy elszigetelt képen az árnyék
+kifutása: fent 28, lent 38, balra 31, jobbra 37 px. Ebből
+`eltolás = (kifutás_kifelé − kifutás_befelé)/2`, `sugár = (összeg)/2`:
+
+| | mért | a 9/b.2 képlete (`A` = 1/√(√9−1) = 0,7071, `W` = 5120 → `A·W` = 3620) |
+|---|---|---|
+| eltolás x | **3,0 px** | 0,001 · 3620 = **3,62** |
+| eltolás y | **5,0 px** | 0,0015 · 3620 = **5,43** |
+| sugár | **≈ 33,5 px** | 0,01 · 3620 = **36,2** |
+
+Mindhárom egyezik a mérési hibán belül (a küszöbölés a halvány farkat
+levágja, ezért a mért érték szisztematikusan kisebb). **Két dolog dől el
+ezzel:** (1) a `W` tényleg a **lap** szélessége, nem a csomóponté;
+(2) a képletben szereplő **`+1,0` additív tag nélkül illeszkedik jobban**
+— a `+1`-gyel 4,62 és 6,43 jönne ki, ami a mért 3,0/5,0-tól távolabb van.
+
+**Rácsos téma — NEM igazolódik.** `AI4` (framegrid, nagy hézag, egyszínű
+lila háttér, 5120×3840). Vízszintesen: jobbra 58, balra 32 px →
+**eltolás 13,0 px, sugár 45,0 px**. A 9/b.2 szerint a vízszintes eltolás
+`0,0017 · 5120 + 1 = 9,7` volna. A mért **13,0** ellenben a **másik**
+konstansra illeszkedik: `0,0025 · 5120 = 12,8`. A sugár (45) a
+`0,008 · 5120 = 41`-hez közel áll.
+
+> **Ezért a rácsos témák x/y hozzárendelése MOST NYITOTT.** A konstansok
+> értéke és a `blur = 0,008 · W` helyes, de vagy az **x/y felcserélve**
+> van a 9/b.2 táblájában, vagy a `W` a rácsos ágon mást jelent.
+> Újra le kell vezetni: a `0x00883270` argumentum-sorrendjét
+> (`0x008832ad`–`0x00883315`) és a `ytShadowNode` `+0x1e4` / `+0x1f0`
+> mezőinek jelentését (`0x0087b411`, `0x0087b423`) — a mérés megvan
+> hozzá ellenőrzésnek. **A Képkupac ága ettől független és igazolt.**
+
 ⚠️ **Ami továbbra sincs mérve:** hogy a mi kimenetünk ettől lesz-e az
-eredetivel egyező. A képlet ismerete nem helyettesíti a mérést — de
-mérőanyag **nélkül is** megvalósítható, mert minden szám a binárisból van.
+eredetivel egyező. A képlet ismerete nem helyettesíti a mérést.
 
 ---
 
