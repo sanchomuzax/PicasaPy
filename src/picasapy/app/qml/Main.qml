@@ -104,6 +104,29 @@ ApplicationWindow {
               }]
             : []
 
+    // #1026: a KÖNYVTÁR PANELJE — EGYETLEN kapcsoló, nem sávonkénti elrejtés.
+    //
+    // Az eredetiben a `panelroot/collagepanel` a `panelroot/mainuipanel`
+    // TESTVÉRE, nem melléje kerül: a felső éle a fülsáv alatt van
+    // (`YConstraint 0, 0, tabdiv`), az alsó az ablak alján
+    // (`YConstraint 1, 1, 0`). A könyvtár teljes kerete viszont a
+    // `mainuipanel` GYEREKE (`thumbui.tre`: `importbutton`, `sbutton`,
+    // `timelinebutton`, `globalmode`, `bottombevel_base`, és a kimeneti sáv
+    // az `outputlayout.tre`-ből). Vagyis a projekt-lapon nem két sáv
+    // „rejtőzik el", hanem a könyvtár panelja tűnik el EGÉSZBEN — és a
+    // vászon ezért kapja meg a fülsáv alatti TELJES területet, az ablak
+    // aljáig (a felhasználó két képernyőképe ezt a különbséget mutatta).
+    //
+    // Ezért egy kapcsoló és nem három külön kötés: aki új darabot tesz a
+    // könyvtár keretébe, erre köti — így nem maradhat ott egy elfelejtett
+    // sáv. A menüsor és a fülsáv MINDKÉT panelen kívül van (`panelroot`),
+    // azokat ez nem érinti.
+    //
+    // A néző/szerkesztő NEM projekt-lap: az a mai módon fedi le a
+    // könyvtárat a saját kötéseivel, azon ez a kapcsoló nem változtat.
+    readonly property bool libraryFrameVisible:
+        documentTabStrip.libraryActive || window.viewerOpen
+
     // A „Vissza a kollázshoz" gomb csak a „Továbbiak..." után jelenik meg
     // (spec 4.3/13.): az eredeti is AKKOR rakja a könyvtár lapjára.
     property bool backToCollagePrompted: false
@@ -634,7 +657,11 @@ ApplicationWindow {
         // tolta az egész panelt, és ezzel a mért geometria sem jöhetett ki.
         // A tulajdonosi döntés (`docs/decisions/szerkeszto-bal-panel.md`):
         // a felület PONTOSAN az eredetit kövesse.
-        visible: !window.viewerOpen
+        //
+        // #1026: az eszközsáv a KÖNYVTÁR panelének gyereke (`thumbui.tre`:
+        // `importbutton`/`sbutton`/`timelinebutton`/`globalmode`) — a
+        // projekt-lapon a panellel EGYÜTT tűnik el, nem külön szabályból.
+        visible: !window.viewerOpen && window.libraryFrameVisible
         onSearchEdited: function(text) {
             window.clearSelection()
             controller.search(text)
@@ -669,8 +696,11 @@ ApplicationWindow {
         anchors.rightMargin: 8
         width: 300
         query: toolbar.searchText
+        // #1026: a keresődoboz a könyvtár keretének része, tehát a buborék
+        // sem úszhat rá a projekt-lapra (a beírt szöveg megmarad, ezért a
+        // hosszra kötött feltétel önmagában igazat adna)
         visible: suggestions.length > 0 && toolbar.searchText.length > 0
-                 && !window.viewerOpen
+                 && !window.viewerOpen && window.libraryFrameVisible
         onChosen: function(kind, name, param) {
             if (kind === "folder") {
                 toolbar.clearSearch()
@@ -805,8 +835,11 @@ ApplicationWindow {
         // A Könyvtár lapjának tartalma. NEM `Loader.active`: a lap váltásakor
         // a feed nem semmisülhet meg, különben elveszne a görgetési helye és
         // a kijelölése (a #944 kimérte, a #985 tesztje állítja).
+        // #1026: a KERET közös kapcsolójára kötve (a `libraryFrameVisible`
+        // a `documentTabStrip.libraryActive`-ot hordozza) — így a könyvtár
+        // tartalma, az eszközsáv és az alsó sáv EGYSZERRE megy.
         visible: !window.viewerOpen && !window.timelineOpen
-                 && documentTabStrip.libraryActive
+                 && window.libraryFrameVisible
         orientation: Qt.Horizontal
 
         // #322: látható, fogható elválasztó. A Fusion alap-fogantyúja olyan
@@ -1488,6 +1521,11 @@ ApplicationWindow {
     footer: TrayBar {
         id: trayBar
         width: parent ? parent.width : 0
+        // #1026: az alsó tálca- és kimeneti sáv a KÖNYVTÁR panelének
+        // gyereke (`thumbui/bottombevel_base` + `outputlayout.tre`), tehát a
+        // projekt-lapon a panellel együtt tűnik el — a felszabaduló sávot a
+        // vászon kapja meg.
+        visible: window.libraryFrameVisible
         appWindow: window
         viewerIndex: photoViewer.currentIndex
         onExportRequested: exportDialogs.openForSelection()

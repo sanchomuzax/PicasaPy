@@ -176,7 +176,24 @@ nyolc kijelölésre hat —, közvetlen `showtarget` nincs rájuk.)*
 ### 2.6 A mi méretezési szabályunk — ezt kell megvalósítani
 
 A tervezővászon 800 × 534. A panel a **teljes tartalomterületet** kapja
-(a dokumentum-fülsáv alatt). A leképezés:
+(a dokumentum-fülsáv alatt).
+
+> **Mi a „teljes tartalomterület" (#1026).** A `panelroot.tre` szerint a
+> `collagepanel` a `mainuipanel` **testvére**: a felső éle a fülsáv alatt
+> (`YConstraint 0, 0, tabdiv`), az alsó az **ablak alján**
+> (`YConstraint 1, 1, 0`). A könyvtár felső eszközsávja és alsó
+> tálca-/kimeneti sávja viszont a `mainuipanel` **gyereke**
+> (`thumbui.tre`: `importbutton`, `sbutton`, `timelinebutton`,
+> `globalmode`, `bottombevel_base`, `#include outputlayout.tre`) — tehát a
+> projekt-lapon nem ez a két sáv „rejtőzik el", hanem a **könyvtár panelja
+> tűnik el egészben**, és a helyét a vászon kapja meg. Nálunk ezt egyetlen
+> kapcsoló hordozza (`Main.qml`: `libraryFrameVisible`), hogy a keret ne
+> bomolhasson darabonkénti elrejtésekre; az őre a
+> `tests/app/qml_functional/test_library_frame_hidden_1026.py`. Mért
+> nyereség 1280 × 800-as ablakban: a panel 631 → 737 px (+106 px), a lap
+> 708 × 531 → 849 × 637 px (+44% terület).
+
+A leképezés:
 
 ```
 base            = a tartalomterület
