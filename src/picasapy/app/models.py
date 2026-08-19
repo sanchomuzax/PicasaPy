@@ -3,6 +3,7 @@ rekord-tuple)."""
 
 from __future__ import annotations
 
+import os
 import re
 import sqlite3
 import zlib
@@ -445,6 +446,30 @@ class PhotoGridModel(QAbstractListModel):
         kijelölést háttér-frissítés (reset) után — -1, ha a fotó már nincs
         a jelen nézetben (törölve/kiszűrve)."""
         return self.row_of_id(photo_id)
+
+    @Slot(str, result=int)
+    def rowOfPath(self, path: str) -> int:
+        """A kép sor-indexe ABSZOLÚT ÚTVONAL alapján; -1, ha nincs a nézetben.
+
+        #1001: a kollázs a kép ÚTVONALÁT ismeri (a `.cxf` is azt tárolja), a
+        néző és a szerkesztő viszont sorindexet vár — ez a kettő közti
+        fordító. A `Main.qml` `collageSourceRows()`-a ezt a nevet már hívta
+        a képtálcára (#985), csak a modellben nem volt meg: a tálcás ág néma
+        QML-hibába futott.
+
+        Az összehasonlítás NORMALIZÁLT útvonalon megy: a kollázs `Path`-ból
+        építi a sztringet (Windowson fordított perjellel), a modell viszont
+        `/`-t használ — a nyers egyenlőség a windows-lábon némán bukna."""
+        if not path:
+            return -1
+        cel = os.path.normcase(os.path.normpath(str(path)))
+        for i, photo in enumerate(self._photos):
+            jelolt = os.path.normcase(
+                os.path.normpath(os.path.join(photo.folder_path, photo.name))
+            )
+            if jelolt == cel:
+                return i
+        return -1
 
     @Slot(int, int, result=int)
     def folderNeighbor(self, row: int, delta: int) -> int:

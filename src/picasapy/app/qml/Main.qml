@@ -139,6 +139,57 @@ ApplicationWindow {
         documentTabStrip.activateTab(window.collageTabId)
     }
 
+    /** Egy fájl útvonalának a mappája. A QML-ben nincs `Path`, a
+        csomópont-útvonal pedig a PLATFORM elválasztóját hozza (a kollázs
+        `Path`-ból építi, tehát Windowson fordított perjellel). */
+    function folderOfPath(path) {
+        var szoveg = String(path)
+        var vago = Math.max(szoveg.lastIndexOf("/"), szoveg.lastIndexOf("\\"))
+        return vago > 0 ? szoveg.substring(0, vago) : ""
+    }
+
+    /** #1001: a kollázs „Megjelenítés és szerkesztés" parancsa — a képet a
+        SZERKESZTŐBEN nyitja meg.
+
+        A vezérlő csak az ÚTVONALAT ismeri (`collageEditRequested`), a
+        szerkesztő — nálunk a néző bal panelje — viszont SORINDEXET vár; a
+        fordítás itt történik. A jelzésnek eddig egyetlen fogadója sem volt,
+        ezért mindhárom belépési pont (gomb, duplakattintás, helyi menü)
+        hatástalan maradt.
+
+        Az eredetiben a `view_and_edit` a képet a KÖNYVTÁRBAN nyitja meg
+        (`picasa-kollazs-felulet.md` 5.), a kollázs lapja pedig NYITVA marad
+        — ezért váltunk a Könyvtár lapjára, és ott nyílik a szerkesztő. A
+        visszautat a már meglévő „Vissza a kollázshoz" gomb adja (a
+        „Továbbiak..." mintája, `kollazs-panel-ui-spec.md` 4.3/13.): a
+        szerkesztő bezárása után ott áll a könyvtár lapján. */
+    function openCollageNodeInEditor(path) {
+        if (!controller) return
+        var cel = String(path || "")
+        if (cel.length === 0) return
+        var sor = controller.photos.rowOfPath(cel)
+        if (sor < 0) {
+            // A kollázs képei mappákon átnyúlhatnak (a „+" gomb más mappából
+            // is vehet fel klipet), a feed pedig szűrve/keresve szűkebb
+            // lehet: előbb a kép mappájára állunk, aztán újra kérdezünk.
+            var mappa = window.folderOfPath(cel)
+            if (mappa.length > 0) {
+                controller.selectFolder(mappa)
+                sor = controller.photos.rowOfPath(cel)
+            }
+        }
+        // Néma bukás helyett sem tehetünk mást: a kép nincs az indexben (pl.
+        // időközben törölték). A kollázs lapja érintetlen marad.
+        if (sor < 0) return
+
+        window.backToCollagePrompted = true
+        documentTabStrip.activateTab(documentTabStrip.libraryTabId)
+        window.selectedIndex = sor
+        window.selectedIndexes = [sor]
+        window.viewerOpen = true
+        photoViewer.show(sor)
+    }
+
     // a kijelölt sorok listája (#12) — több-kijelölés, vagy ha az nincs,
     // az utoljára kattintott kép
     function selectedRows() {
@@ -1215,6 +1266,18 @@ ApplicationWindow {
         onGetMoreClipsRequested: {
             window.backToCollagePrompted = true
             documentTabStrip.activateTab(documentTabStrip.libraryTabId)
+        }
+    }
+
+    // #1001: a „Megjelenítés és szerkesztés" FOGADÓJA. A parancs három
+    // helyről indul (a `CollageRandomRow` gombja, a `CollageNode`
+    // duplakattintása és a `CollageContextMenus` tétele), de mind a három a
+    // vezérlő `viewAndEditSelection()`-jébe fut, tehát EGY fogadó elég — és
+    // egy is kell, mert a lapváltás meg a néző a gazdáé, nem a panelé.
+    Connections {
+        target: controller
+        function onCollageEditRequested(path) {
+            window.openCollageNodeInEditor(path)
         }
     }
 

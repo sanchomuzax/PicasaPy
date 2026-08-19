@@ -321,6 +321,40 @@ class TestPhotoGridModel:
         assert model.revision == revision_before + 1
 
 
+class TestPhotoGridModelRowOfPath:
+    """#1001: útvonal → sorindex. A kollázs a kép ÚTVONALÁT ismeri, a néző
+    és a szerkesztő SORINDEXET vár — a `Main.qml` ezen a slot-on fordít."""
+
+    def test_megtalalja_a_kep_sorat(self, qt_app, conn, library):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        assert model.rowOfPath(str(library / "nyaralas" / "IMG_0002.jpg")) == 1
+
+    def test_a_platform_elvalasztojatol_fuggetlen(self, qt_app, conn, library):
+        """A kollázs `Path`-ból építi az útvonalat, a modell `/`-t használ.
+
+        A nyers sztring-egyenlőség a windows-lábon némán bukna — ott a
+        `str(Path(...))` fordított perjelet ad."""
+        from pathlib import Path
+
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        utvonal = Path(library) / "nyaralas" / "IMG_0001.jpg"
+        assert model.rowOfPath(str(utvonal)) == 0
+
+    def test_ismeretlen_utvonalra_minusz_egy(self, qt_app, conn, library):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        assert model.rowOfPath(str(library / "telek" / "IMG_0100.jpg")) == -1
+        assert model.rowOfPath("") == -1
+
+
 class TestPhotoGridModelFolderNavigation:
     """#84: a nagy nézőben a lapozás a mappahatárnál álljon meg — a
     folderNeighbor a rácsmodell szintjén szolgáltatja ezt a lépést."""

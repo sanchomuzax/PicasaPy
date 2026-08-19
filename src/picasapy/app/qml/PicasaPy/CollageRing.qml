@@ -31,6 +31,10 @@ Item {
     id: ring
 
     property var sheet: null
+    //: #1001: a „Megjelenítés és szerkesztés" parancshoz — a gyűrű a
+    //: kijelölt kép FÖLÖTT ül, tehát a duplakattintás ide érkezik, nem a
+    //: `CollageNode`-ra. A `CollageNode` mintájára kap saját property-t.
+    property var controller: null
     property int nodeIndex: 0
     property real theta: 0
 
@@ -136,5 +140,20 @@ Item {
         }
 
         onCanceled: if (ring.sheet) ring.sheet.cancelDrag()
+
+        // #1001: „Megjelenítés és szerkesztés" a rendszer dupla
+        // kattintásán — ugyanaz a parancs, mint a `CollageNode`-on.
+        //
+        // ⚠️ Enélkül a duplakattintás a KIJELÖLT képen néma marad: a gyűrű
+        // a kép FÖLÖTT ül (z: 10000+), az első lenyomás kijelöl, és
+        // onnantól minden egéresemény ide érkezik — a `CollageNode`
+        // kezelője már nem látja. A hiba pontosan így maradt észrevétlen.
+        // Csak a BELSŐ (mozgató) zóna nyit szerkesztőt; a peremen a
+        // forgató-méretező fogantyú van (spec 7.2).
+        onDoubleClicked: function (mouse) {
+            if (zone(mouse) !== "move" || !ring.controller)
+                return
+            ring.controller.viewAndEditSelection()
+        }
     }
 }

@@ -167,6 +167,7 @@ Item {
         model: lap.nodesModel
         delegate: CollageRing {
             sheet: lap
+            controller: lap ? lap.controller : null
             nodeIndex: index
             theta: model.theta
             visible: model.selected && lap !== null
