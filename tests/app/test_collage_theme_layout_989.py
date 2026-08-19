@@ -276,12 +276,25 @@ class TestAMentettKimenet:
         keret, az árnyék alapból ki), tehát ha a mentett képek eltérnek, az
         KIZÁRÓLAG az elrendezés különbsége lehet — a Képkupaccal szemben,
         ahol az árnyék alapértéke önmagában is más képet adna."""
+        # ⚠️ NEM `cv2.imread`: a mentés útvonala ékezetes
+        # (`Képek/Picasa/Kollázsok`), és az OpenCV Windowson az ilyen utat
+        # NEM tudja megnyitni — `None`-t ad vissza, némán. A projektnek
+        # pontosan erre van bájt-alapú olvasója (#190), a mag is azt
+        # használja (`collage/render.py`). A CI windows-lába ezen bukott el.
         import cv2
 
+        from picasapy.cvimage import read_image_bytes
+
+        def _beolvas(ut):
+            """A mag `_decode`-jának mintája: bájtok + `imdecode`."""
+            payload = read_image_bytes(ut)
+            assert payload is not None, f"nem olvasható: {ut}"
+            return cv2.imdecode(payload, cv2.IMREAD_COLOR)
+
         nyitott.setCollageTheme(PICTUREGRID)
-        mozaik = cv2.imread(str(self._ment(nyitott, kimenet)), cv2.IMREAD_COLOR)
+        mozaik = _beolvas(self._ment(nyitott, kimenet))
         nyitott.setCollageTheme(REGULARGRID)
-        racs = cv2.imread(str(self._ment(nyitott, kimenet)), cv2.IMREAD_COLOR)
+        racs = _beolvas(self._ment(nyitott, kimenet))
         assert mozaik is not None and racs is not None
         assert mozaik.shape == racs.shape
         assert not (mozaik == racs).all(), "a mentett kép nem követte a témát"
