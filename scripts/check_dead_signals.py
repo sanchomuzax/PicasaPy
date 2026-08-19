@@ -75,7 +75,10 @@ _NOTIFY = re.compile(r"notify\s*=\s*(\w+)")
 #: kerülni. Ez a plafon ezt teszi TUDATOS lépéssé: a 27. tételhez a számot is
 #: emelni kell, azt pedig a felülvizsgálat látja. Ahogy a lista fogy, ezt a
 #: számot ÉRDEMES lejjebb vinni — csökkenteni szabad, emelni csak indoklással.
-MAX_BASELINE_ENTRIES = 26
+# A plafon a lista MAI hossza — a #1001 lezárásával 26-ról 25-re csökkent.
+# Csak LEFELÉ szabad módosítani: ez akadályozza meg, hogy valaki egy új
+# néma jelzést a listába írva kerülje meg az őrt.
+MAX_BASELINE_ENTRIES = 25
 
 
 @dataclass(frozen=True)

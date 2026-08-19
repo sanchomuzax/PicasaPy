@@ -5,6 +5,27 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.2] – 2026-08-19
+
+### Javítva
+- **A „Megjelenítés és szerkesztés" tényleg megnyitja a szerkesztőt (#1001).**
+  A Kollázs-panelen a gomb, a képre adott duplakattintás és a helyi menü
+  megfelelő tétele eddig **semmit nem csinált** — a parancs elindult, de nem
+  volt, aki fogadja. Mostantól mindhárom megnyitja a kijelölt képet a
+  szerkesztőben, és a kollázs lapja közben nyitva marad.
+
+  Menet közben két másik, rejtett akadály is előkerült: a képtálcáról indított
+  keresés egy nem létező függvényt hívott, a kijelölés körüli gyűrű pedig
+  elnyelte a duplakattintást, így az soha nem jutott el a képig.
+
+### Hozzáadva
+- **Őr a néma parancsok ellen (#1003).** Egy új ellenőrzés minden változtatásnál
+  megnézi, hogy a program belső üzeneteinek van-e fogadója. Ez a hibafajta —
+  amikor egy gomb vagy egy hibaüzenet szó nélkül elvész — egyetlen napon
+  háromszor jutott ki kiadásba, mert a tesztek és az átnézés sem fogták meg.
+  Mostantól **új** ilyen nem keletkezhet észrevétlenül; a 26 meglévő eset
+  dokumentált listán van, ami csak rövidülhet.
+
 ## [0.8.1] – 2026-08-19
 
 ### Javítva
