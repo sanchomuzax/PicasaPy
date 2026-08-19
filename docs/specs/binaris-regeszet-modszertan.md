@@ -686,3 +686,26 @@ helyesbítés helyesbítésre szorult.
 > **tábla** (eredeti / nálunk / jegy) és egy **kimondott lista arról,
 > amit NEM néztünk meg**. A lefedettség állítása enélkül önigazoló.
 > Példa: `kollazs-atvilagitas.md`.
+
+### 16.10 A „kizártuk" bejegyzés csak arra érvényes, amit TÉNYLEGESEN mértek
+
+A negatív eredmény értékes (ld. a skill „a negatív eredmény is eredmény"
+szabályát) — de **paraméterestül** kell leírni. Egy „ezt az utat
+kipróbáltuk, nem működik" bejegyzés a következő kört **jóhiszeműen is
+félrevezetheti**, ha a mérés egy szűkebb esetre vonatkozott, mint amit a
+megfogalmazás sugall.
+
+**Írd oda, mit mértél, ne csak azt, hogy nem működött:** melyik
+beállítással, milyen környezetben, milyen paraméterekkel.
+
+**Bizonyíték (PicasaPy, 2026-08-19):** a #1010 köre kizárta a
+réteg-alapú rajzolást az élsimításhoz („0 átmeneti árnyalatot mért") — a
+mérés viszont a réteg **többmintavételezése nélkül** történt. Amikor a
+#1016-ban ugyanez az út került elő, immár `layer.samples: 4`-gyel, a
+korábbi bejegyzés **majdnem elvetette a jó megoldást**: a felvevő agent
+egy nem odaillő mérésre hivatkozva zárta volna le. A különbséget egy
+harmadik kör vette észre, mielőtt kárt okozott volna.
+
+**Gyakorlati fogás:** ha egy korábbi kör „kizárt" valamit, és te ugyanoda
+jutsz, **nézd meg a mérés paramétereit**, mielőtt elfogadod a kizárást.
+Ha a paraméterek nincsenek leírva, a kizárás nem kizárás, hanem sejtés.
