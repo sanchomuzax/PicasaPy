@@ -37,6 +37,14 @@ Item {
         box.controller && box.controller.collageBackgroundImage !== undefined
             ? box.controller.collageBackgroundImage : ""
 
+    //: A háttérkép URL-je a vezérlőtől — ⚠️ NEM `"file://" + útvonal`.
+    //: A kézi fűzés Windowson érvénytelen URL-t ad (a `C:` portnak látszik),
+    //: és az előnézet MINDEN útvonalra üres marad (#1009). Az átalakítás a
+    //: `formatting.to_file_url`-ben, EGY helyen él.
+    readonly property url currentImageUrl:
+        box.controller && box.controller.collageBackgroundImageUrl !== undefined
+            ? box.controller.collageBackgroundImageUrl : ""
+
     //: Nyitva van-e a felugró paletta (`picker_panel`, a `.tre`-ben `m_hidden`).
     property bool paletteOpen: false
 
@@ -247,7 +255,7 @@ Item {
             objectName: "collageCurrentBackgroundImage"
             anchors.fill: parent
             anchors.margins: 1
-            source: box.currentImage ? "file://" + box.currentImage : ""
+            source: box.currentImageUrl
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
             clip: true

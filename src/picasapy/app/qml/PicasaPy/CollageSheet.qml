@@ -113,7 +113,12 @@ Item {
         visible: lap.controller
                  && lap.controller.collageBackgroundMode === "image"
                  && lap.controller.collageBackgroundImage !== ""
-        source: visible ? "file:" + lap.controller.collageBackgroundImage : ""
+        //: ⚠️ NEM `"file:" + útvonal`: a kézi fűzés `#`-es fájlnévnél Linuxon
+        //: is levágja a nevet, Windowson pedig érvénytelen URL-t ad (#1009).
+        //: A null-őr a #305 szabálya: a lebontáskor és a teszt-kettősöknél a
+        //: hiányzó property `undefined`-ot adna, amit a `url` nem fogad el.
+        source: visible && lap.controller.collageBackgroundImageUrl !== undefined
+                ? lap.controller.collageBackgroundImageUrl : ""
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         clip: true

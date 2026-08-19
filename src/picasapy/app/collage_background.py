@@ -29,10 +29,11 @@ félig kész állapot ugyanarra a lapra.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, QUrl, Signal, Slot
 from PySide6.QtGui import QColor
 
 from . import collage_prefs as prefs
+from .formatting import to_file_url
 
 #: A háttér három módja (spec 6.4). Az `avg` a `collage::avgcolor`.
 BACKGROUND_MODES = ("solid", "image", "avg")
@@ -70,6 +71,22 @@ class CollageBackgroundMixin:
         nodes = self._nodes()
         index = self._collage_panel_bg_index
         return nodes[index].path if 0 <= index < len(nodes) else ""
+
+    @Property(QUrl, notify=collageBackgroundImageChanged)
+    def collageBackgroundImageUrl(self) -> QUrl:
+        """Ugyanaz az útvonal, de a QML `Image.source`-ának való URL-ként.
+
+        ⚠️ **Miért kell külön property.** A felület korábban `"file://" + út`
+        módon fűzte össze a forrást. Ez a windows-CI-lábon éles hibát adott:
+        a `C:` a QUrl-nek PORTNAK látszik, az URL érvénytelen lesz, és a
+        `source` üresre normalizálódik — vagyis a háttérkép-előnézet
+        Windowson MINDEN útvonalra üres maradt. Ékezetes vagy `#`-et
+        tartalmazó fájlnévnél a kézi fűzés Linuxon is romlik.
+
+        Az átalakítás EGY helyen él (`formatting.to_file_url`), és a Qt saját
+        `QUrl.fromLocalFile`-jára épül — a szabályt nem mi találjuk ki
+        platformonként."""
+        return to_file_url(self.collageBackgroundImage)
 
     # -- slotok (8.2) ------------------------------------------------------
 

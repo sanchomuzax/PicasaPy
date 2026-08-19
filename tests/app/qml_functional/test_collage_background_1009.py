@@ -24,10 +24,12 @@ pontosan ezen szokott elhasalni (#190).
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QObject, QPointF, QSettings, Qt, QUrl
 from PySide6.QtGui import QColor
-from PySide6.QtQml import QQmlComponent, QQmlExpression
+from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
 
@@ -119,6 +121,45 @@ def ures_vezerlo(qt_app, tmp_path, library):
     assert instance.waitForBackgroundWorkers(30.0), "a kollázs-szál nem állt le"
 
 
+@pytest.fixture
+def kenyes_vezerlo(qt_app, tmp_path):
+    """Kollázs, aminek a MAPPÁJA és a FÁJLNEVE is kényes: ékezet, szóköz, `#`.
+
+    A `#` az URL-ben töredékjel: kézzel fűzött `"file:" + útvonal` esetén a
+    QUrl a `#` UTÁNI részt levágja, tehát a kép néma csenddel nem töltődik
+    be — Linuxon is. Ez az az eset, amit a `QUrl.fromLocalFile`
+    százalékos kódolása old meg, és amit itt platformfüggetlenül tudunk
+    állítani (#1009)."""
+    from picasapy.app.collage_controller import COLLAGE_OUTPUT_DIR_KEY, CollageMixin
+
+    mappa = tmp_path / "Nyaralás #2026"
+    mappa.mkdir()
+    for nev in ("kép #1.jpg", "kép #2.jpg"):
+        make_jpeg(mappa / nev, size=(80, 60))
+
+    settings = QSettings(str(tmp_path / "kenyes.ini"), QSettings.Format.IniFormat)
+    settings.setValue(COLLAGE_OUTPUT_DIR_KEY, str(tmp_path / "kimenet"))
+
+    class _Host(CollageMixin, QObject):
+        def __init__(self):
+            super().__init__()
+            self._settings = settings
+            self._photos = _Photos(
+                [_Photo(str(mappa), "kép #1.jpg"), _Photo(str(mappa), "kép #2.jpg")]
+            )
+
+        def _get_settings(self):
+            return self._settings
+
+        def _screen_ratio(self):
+            return 9 / 16
+
+    instance = _Host()
+    instance.openCollage([0, 1])
+    yield instance
+    assert instance.waitForBackgroundWorkers(30.0), "a kollázs-szál nem állt le"
+
+
 def _doboz(qt_app, controller) -> QQuickItem:
     """A `CollageBackgroundBox` valódi ablakban, kirajzolva."""
     import picasapy.app.application as app_module
@@ -198,15 +239,23 @@ def _elonezet(root: QQuickItem) -> QQuickItem:
 
 
 def _betoltott(kep: QQuickItem) -> bool:
-    """`status === Image.Ready` — QML-kifejezésként kiértékelve.
+    """Betöltött-e a kép: teljes a `progress`, ÉS van valódi képmérete.
 
-    A `status` enumot a `property()` nem tudja Pythonba fordítani
-    („Can't find converter for 'QQuickImageBase::Status'"), a QML-kontextus
-    viszont igen — és az állítás így az EREDETI alakjában marad olvasható."""
-    from PySide6.QtQml import qmlContext
-
-    kifejezes = QQmlExpression(qmlContext(kep), kep, "status === Image.Ready")
-    return bool(kifejezes.evaluate())
+    ⚠️ A `status` enumot a `property()` nem tudja Pythonba fordítani
+    („Can't find converter for 'QQuickImageBase::Status'"). Az első
+    változat ezért `QQmlExpression`-nel értékelte ki a
+    `status === Image.Ready`-t — és **némán mindig igazat adott**: a PySide
+    `evaluate()`-je *(érték, undefined-e)* PÁRT ad vissza, és a nem üres
+    tuple Pythonban igaz. A windows-lábon emiatt egy sosem betöltött kép is
+    „betöltöttnek" látszott. A `progress` és a `sourceSize` sima szám és
+    QSize — nincs mit félreérteni rajtuk. Az ellenpróbáját a
+    `test_a_betoltottseg_merese_ellenprobat_all` állítja."""
+    meret = kep.property("sourceSize")
+    return (
+        kep.property("progress") == 1.0
+        and meret.width() > 0
+        and meret.height() > 0
+    )
 
 
 def _valt_kep_modra(qt_app, root: QQuickItem) -> None:
@@ -290,3 +339,64 @@ class TestElonezet:
             qt_app, lambda: kep.property("source").toString() != elso
         ), "az előnézet forrása nem követte a kijelölést"
         assert _varj(qt_app, lambda: _betoltott(kep))
+
+
+class TestUrl:
+    """A forrás URL-je — a #1009 windows-lábának lelete.
+
+    A felület korábban `"file://" + útvonal` módon fűzte a forrást. Ez
+    **Windowson minden útvonalra érvénytelen URL** (a `C:` a QUrl-nek
+    portnak látszik, és a `source` üresre normalizálódik), `#`-et tartalmazó
+    fájlnévnél pedig Linuxon is levágja a nevet. Az itteni állítások
+    platformfüggetlenek: az URL legyen ÉRVÉNYES, és mutasson vissza
+    pontosan arra a fájlra, amit a vezérlő mond."""
+
+    def test_az_url_ervenyes_es_a_fajlra_mutat(self, qt_app, vezerlo):
+        root = _doboz(qt_app, vezerlo)
+        _valt_kep_modra(qt_app, root)
+        kep = _elonezet(root)
+        _varj(qt_app, lambda: _betoltott(kep))
+        forras = kep.property("source")
+        assert forras.isValid(), f"érvénytelen URL: {forras.toString()!r}"
+        # ⚠️ `Path`-ként: a `toLocalFile` Windowson PER-jeles utat ad, a nyers
+        # szöveg-hasonlítás a windows-lábon némán bukna
+        assert Path(forras.toLocalFile()) == Path(vezerlo.collageBackgroundImage)
+
+    def test_a_kenyes_nevu_kep_is_betolt(self, qt_app, kenyes_vezerlo):
+        """`#` a fájlnévben: kézzel fűzött URL-lel a kép NÉMÁN nem töltődik be."""
+        root = _doboz(qt_app, kenyes_vezerlo)
+        _valt_kep_modra(qt_app, root)
+        kep = _elonezet(root)
+        assert _varj(qt_app, lambda: _betoltott(kep)), (
+            f"nem töltött be: source={kep.property('source').toString()!r}, "
+            f"útvonal={kenyes_vezerlo.collageBackgroundImage!r}"
+        )
+        assert Path(kep.property("source").toLocalFile()) == Path(
+            kenyes_vezerlo.collageBackgroundImage
+        )
+
+    def test_a_kenyes_nevu_kep_ki_is_rajzolodik(self, qt_app, kenyes_vezerlo):
+        root = _doboz(qt_app, kenyes_vezerlo)
+        _valt_kep_modra(qt_app, root)
+        kep = _elonezet(root)
+        _varj(qt_app, lambda: _betoltott(kep))
+        keret = _keres(root, "collageCurrentBackground")
+        alapszin = QColor(keret.property("color")).name()
+        assert _varj(qt_app, lambda: _belso_szinek(root, keret) - {alapszin}), (
+            "a `#`-es nevű kép nem rajzolódott ki"
+        )
+
+    def test_a_betoltottseg_merese_ellenprobat_all(self, qt_app, ures_vezerlo):
+        """A `_betoltott` legyen HAMIS, ha nincs mit betölteni.
+
+        Az első változat (`QQmlExpression` + `status === Image.Ready`) itt
+        igazat adott volna: a PySide `evaluate()` PÁRT ad vissza, és a nem
+        üres tuple igaz. Egy ilyen segéd minden ráépülő állítást elnémít —
+        a windows-lábon pontosan ez történt."""
+        root = _doboz(qt_app, ures_vezerlo)
+        _valt_kep_modra(qt_app, root)
+        kep = _elonezet(root)
+        for _ in range(10):
+            qt_app.processEvents()
+            QTest.qWait(20)
+        assert _betoltott(kep) is False

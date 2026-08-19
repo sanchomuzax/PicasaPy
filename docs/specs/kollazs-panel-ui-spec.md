@@ -683,7 +683,8 @@ API-hívók miatt), de a panel NEM azt hívja.
 | `collagePageRatio` | float | magasság / szélesség — ebből él a lap alakja |
 | `collageBackgroundMode` | str | `solid` / `image` / `avg` |
 | `collageBackgroundColor` | QColor | |
-| `collageBackgroundImage` | str | |
+| `collageBackgroundImage` | str | a háttérkép útvonala (a csomópont-indexből számolva) |
+| `collageBackgroundImageUrl` | QUrl | UGYANAZ URL-ként — a QML `Image.source`-a ezt kösse be, kézzel fűzött `"file://" + út` HELYETT (#1009) |
 | `collageNodes` | QAbstractListModel | a vászon modellje |
 | `collageSelection` | list[int] | |
 | `collageFrameCenter` | int | −1 = nincs |
@@ -691,7 +692,17 @@ API-hívók miatt), de a panel NEM azt hívja.
 | `collageDirty` | bool | van-e mentetlen módosítás |
 | `collageCapabilities` | QVariantMap | `{borders, spacing, shadow, selection, background, shuffle, scramble, ring, rotate}` — a `themes.capabilities_for`-ból |
 
-Minden property-hez `<név>Changed` jelzés.
+Minden property-hez `<név>Changed` jelzés. Kivétel a
+`collageBackgroundImageUrl`: ugyanaz az adat más alakban, ezért a
+`collageBackgroundImageChanged`-re jár (külön jelzésnek nem volna fogadója —
+`scripts/check_dead_signals.py`).
+
+⚠️ **Útvonal → URL: sose kézzel.** A `"file://" + útvonal` Windowson
+**érvénytelen** URL-t ad (a `C:` portnak látszik), a `"file:" + útvonal`
+pedig `#`-et tartalmazó fájlnévnél vágja el a nevet — mindkét esetben
+NÉMÁN, üres képpel. Az átalakítás egy helyen él:
+`app/formatting.to_file_url` (a `to_local_path` párja). A #1009-ben ez éles
+hiba volt, és a windows-CI-láb fogta meg.
 
 ### 8.2 Slotok
 

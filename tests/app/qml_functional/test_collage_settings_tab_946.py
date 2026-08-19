@@ -173,6 +173,12 @@ class _CollageStub(QObject):
     def collageBackgroundColor(self) -> QColor:
         return self._bg_color
 
+    @Property(QUrl, notify=collageBackgroundImageChanged)
+    def collageBackgroundImageUrl(self) -> QUrl:
+        """#1009: a felület URL-t köt be, nem kézzel fűzött szöveget. A
+        kettős azért ismeri, hogy a lap kötése itt is a valódi alakot kapja."""
+        return QUrl.fromLocalFile(self._bg_image) if self._bg_image else QUrl()
+
     @Property(str, notify=collageBackgroundImageChanged)
     def collageBackgroundImage(self) -> str:
         return self._bg_image

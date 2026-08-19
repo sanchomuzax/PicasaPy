@@ -137,6 +137,30 @@ class TestModvaltas:
         assert nyitott.collageBackgroundImage == valasztott
 
 
+class TestUrl:
+    """A felület URL-t vár, nem útvonalat (#1009, a windows-láb lelete).
+
+    A `collageBackgroundImage` marad szöveg (a spec 8.1 szerződése), de a
+    QML `Image.source`-ának ÉRVÉNYES URL kell. A kézzel fűzött
+    `"file://" + útvonal` Windowson minden útvonalra érvénytelen — ott az
+    előnézet üres maradt, hibaüzenet nélkül."""
+
+    def test_az_url_ervenyes_es_visszaadja_az_utvonalat(self, nyitott):
+        nyitott.setCollageBackgroundMode("image")
+        url = nyitott.collageBackgroundImageUrl
+        assert url.isValid()
+        # ⚠️ `Path`-ként: a `toLocalFile` Windowson PER-jeles utat ad
+        assert Path(url.toLocalFile()) == Path(nyitott.collageBackgroundImage)
+
+    def test_hatterkep_nelkul_ures_az_url(self, nyitott):
+        assert nyitott.collageBackgroundImageUrl.toString() == ""
+
+    def test_az_url_koveti_a_kijelolest(self, nyitott):
+        nyitott.setCollageSelection([2])
+        nyitott.setBackgroundFromSelection()
+        assert Path(nyitott.collageBackgroundImageUrl.toLocalFile()).name == "c.jpg"
+
+
 class TestKijelolesFelulirja:
     def test_a_kijeloles_felulirja_az_alapertelmezest(self, nyitott):
         nyitott.setCollageBackgroundMode("image")
