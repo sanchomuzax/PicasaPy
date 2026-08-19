@@ -55,8 +55,12 @@ class TestCollectionCatalogue:
         assert DEFAULT_COLLAPSED["folders"] is False
         assert DEFAULT_COLLAPSED["albums"] is False
         assert DEFAULT_COLLAPSED["people"] is True
-        assert DEFAULT_COLLAPSED["projects"] is True
         assert DEFAULT_COLLAPSED["other"] is True
+        # #1029: a Projektek MÁR NEM üres (a P2category-mappák benne
+        # állnak), ezért — az eredeti Picasához hasonlóan — nyitva indul.
+        # A korábbi `is True` állítás a „még tartalom nélküli" állapotot
+        # rögzítette; az elavult.
+        assert DEFAULT_COLLAPSED["projects"] is False
 
     def test_setting_key_is_namespaced(self):
         assert collection_setting_key("people") == "view/collection/people/collapsed"

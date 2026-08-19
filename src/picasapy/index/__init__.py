@@ -49,6 +49,7 @@ from .people import (
     people_with,
     person_photos,
 )
+from .project_folders import ProjectFolder, project_folders
 from .relocate import (
     RelocationCancelled,
     RelocationError,
@@ -72,6 +73,7 @@ __all__ = [
     "UnnamedFace",
     "PersonRecord",
     "PhotoRecord",
+    "ProjectFolder",
     "RelocationCancelled",
     "RelocationError",
     "RelocationProgress",
@@ -103,6 +105,7 @@ __all__ = [
     "unnamed_album_photos",
     "photos_in_folder",
     "photos_under_folder",
+    "project_folders",
     "prune_foreign_folders",
     "relocate_data_root",
     "remove_root",

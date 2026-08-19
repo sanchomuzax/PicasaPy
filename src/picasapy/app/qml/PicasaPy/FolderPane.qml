@@ -52,6 +52,10 @@ Rectangle {
     property int ignoredFaceCount: 0
     // #457: „Exportált képek" — `[{path, name}]`, az exportált célmappák
     property var exportedFolders: []
+    // #1029: a Projektek gyűjtemény mappái — `[{path, name, count}]`, a
+    // `.picasa.ini` `[Picasa]` `P2category=Projects (internal)` kulcsából
+    // (Kollázsok, Filmek, Rögzített videoklipek, …)
+    property var projectFolders: []
     property bool ignoredFacesActive: false
     // #730: a hasáb egységes sormagassága. A mappalista magasságát ebből és
     // a sordarabszámból számoljuk (a lista a görgethető hasábban a teljes
@@ -511,80 +515,22 @@ Rectangle {
                 }
             }
 
-            CollectionHeader {
+            // A Projektek gyűjtemény (fejléc + a P2category-alapú
+            // projekt-mappák + az „Exportált képek" csomópont) önálló
+            // komponensben él — ld. ProjectsSection.qml (#1029).
+            ProjectsSection {
+                objectName: "projectsSection"
                 Layout.fillWidth: true
-                label: qsTr("Projects")
-                // #457: az „Exportált képek" az eredetiben is külön csomópont
-                // volt a navigációban — az export így NYOMON KÖVETHETŐ maradt,
-                // nem tűnt el a fájlrendszerben. A Projektek gyűjtemény alá
-                // kerül, mert ez a felhasználó SAJÁT munkájának eredménye,
-                // nem beolvasott könyvtár.
-                itemCount: pane.exportedFolders.length
-                labelObjectName: "projectsHeader"
                 collapsed: pane.projectsCollapsed
+                projectFolders: pane.projectFolders
+                exportedFolders: pane.exportedFolders
+                selectedPath: pane.selectedPath
+                selectedAlbumToken: pane.selectedAlbumToken
+                rowHeight: pane.rowHeight
                 onToggled: pane.toggleCollection("projects")
-            }
-
-            Text {
-                objectName: "exportedPicturesLabel"
-                visible: !pane.projectsCollapsed && pane.exportedFolders.length > 0
-                Layout.fillWidth: true
-                Layout.leftMargin: 12
-                text: qsTr("Exported Pictures")
-                font.pixelSize: Theme.fontSize - 1
-                color: Theme.textGray
-            }
-
-            Repeater {
-                objectName: "exportedFolderRepeater"
-                model: pane.exportedFolders
-                delegate: Rectangle {
-                    id: exportedItem
-                    required property var modelData
-                    objectName: "exportedFolderItem_" + modelData.name
-                    visible: !pane.projectsCollapsed
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: pane.rowHeight
-                    // #757/3: album-nézetben a mappa-kijelölés itt is
-                    // szűnjön meg — enélkül album megnyitásakor KÉT sor
-                    // látszott egyszerre kijelöltnek. Ugyanaz az őr, mint a
-                    // mappalista és a gyűjtemény-mappa során (#9).
-                    readonly property bool isSelectedFolder:
-                        pane.selectedPath === modelData.path
-                        && pane.selectedAlbumToken === ""
-                    color: exportedItem.isSelectedFolder
-                           ? Theme.panelSelectionActive
-                           : (exportedMouse.containsMouse ? Theme.panelSelection
-                                                          : "transparent")
-                    Row {
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.left: parent.left; anchors.leftMargin: 20
-                        spacing: 5
-                        FolderIcon { anchors.verticalCenter: parent.verticalCenter }
-                        Text {
-                            text: exportedItem.modelData.name
-                            font.pixelSize: Theme.fontSize
-                            color: exportedItem.isSelectedFolder
-                                   || exportedMouse.containsMouse
-                                   ? Theme.panelSelectionText : Theme.textDark
-                        }
-                    }
-                    MouseArea {
-                        id: exportedMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        // #732: az exportált célmappa is MAPPA — a saját
-                        // menüje jár neki, nem a hasáb rendezés-menüje
-                        acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        onClicked: function(mouse) {
-                            if (mouse.button === Qt.RightButton) {
-                                pane.openFolderContextMenu(
-                                    exportedItem.modelData.path)
-                                return
-                            }
-                            pane.folderChosen(exportedItem.modelData.path)
-                        }
-                    }
+                onFolderChosen: function(path) { pane.folderChosen(path) }
+                onFolderContextMenuRequested: function(path) {
+                    pane.openFolderContextMenu(path)
                 }
             }
 

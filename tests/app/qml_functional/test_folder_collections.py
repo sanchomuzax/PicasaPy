@@ -32,13 +32,15 @@ class TestFiveCollectionHeaders:
             assert label in header.property("text")
 
     def test_default_collapsed_state_matches_spec(self, qml_app, qt_app):
-        # collections.DEFAULT_COLLAPSED: albums+folders nyitva, a többi
-        # (tartalom nélküli) csukva.
+        # collections.DEFAULT_COLLAPSED: albums+projects+folders nyitva, a
+        # többi (tartalom nélküli) csukva. #1029: a Projektek azóta NEM
+        # tartalom nélküli — a `P2category=Projects (internal)` mappák benne
+        # állnak —, ezért az eredetihez hasonlóan nyitva indul.
         window, _controller, _ = qml_app
         expectations = {
             "albumsHeaderRow": False,
             "peopleHeaderRow": True,
-            "projectsHeaderRow": True,
+            "projectsHeaderRow": False,
             "folderPaneHeaderRow": False,
             "otherHeaderRow": True,
         }

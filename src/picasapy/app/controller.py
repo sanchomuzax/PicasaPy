@@ -55,6 +55,7 @@ from .library_controller import LibraryMixin
 from .collections import COLLECTIONS, DEFAULT_COLLAPSED, collection_setting_key
 from .models import FolderListModel, PhotoGridModel, folder_order
 from .people_controller import PeopleMixin
+from .project_folders_controller import ProjectFoldersMixin
 from .perf_controller import PerfMonitorMixin
 from .photo_ops_controller import PhotoOpsMixin
 from .search_controller import SearchMixin
@@ -111,6 +112,9 @@ class AppController(
     # (#397) MOSTANTÓL bekötve (korábban önállóan, host-osztályos teszttel
     # élt, ld. `people_controller.py` modul-docstring és a jegy jelentése).
     PeopleMixin,
+    # #1029: a bal hasáb Projektek gyűjteménye — a `.picasa.ini`
+    # `P2category=Projects (internal)` mappái
+    ProjectFoldersMixin,
     TrayMixin,
     QObject,
 ):
@@ -206,6 +210,9 @@ class AppController(
         # saját kezdeti állapota (`people` property üres listával indul,
         # a `_reload()` tölti fel az indexből)
         self._init_people()
+        # #1029: a Projektek gyűjtemény kezdeti (üres) állapota — a
+        # `_reload()` tölti fel az indexből, a mappalistával együtt
+        self._init_project_folders()
         # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
         # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
         # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
@@ -778,6 +785,9 @@ class AppController(
                 self._folders.load(conn)  # #321: a fa sorrendje rögzített
                 self._load_albums(conn)  # #9: a bal hasáb albumlistája
                 self._load_people(conn)  # #26: a bal hasáb Emberek gyűjteménye
+                # #1029: a Projektek gyűjtemény (P2category) — a hasáb
+                # ne maradjon üres a háttér-szinkron után sem
+                self._load_project_folders(conn)
         if mode != "folder":
             # #38: aktív keresés/szűrő a háttér-sync után is megmarad —
             # a selectFolder eldobná, ezért csak a nézetet frissítjük.

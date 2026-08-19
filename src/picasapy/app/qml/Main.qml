@@ -933,6 +933,8 @@ ApplicationWindow {
             }
             // #457: „Exportált képek" — a Projektek gyűjtemény alatt
             exportedFolders: controller ? controller.exportedFolders : []
+            // #1029: a Projektek gyűjtemény mappái (P2category)
+            projectFolders: controller ? controller.projectFolders : []
             ignoredFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
                                ? (controller ? controller.photos.revision : 0,
                                   faceScanController.ignoredCount())
