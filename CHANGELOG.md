@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.7] – 2026-08-19
+
+### Javítva
+- **A mentett kollázs ugyanúgy dől, ahogy a vásznon látod (#1035).** Eddig a
+  program a képeket a mentéskor az **ellenkező irányba** forgatta: amit ferdén
+  balra dőlve raktál össze, az jobbra dőlve mentődött. A Képkupac legyezőszerű
+  dőlése így tükrözve került a kész képre.
+
+  A javítás a rajzolóban van — a projektfájl (`.cxf`) érintetlen maradt, tehát
+  a kollázsok továbbra is visszanyithatók az eredeti Picasában. Ellenőrizve:
+  mind a nyolc mintafájl bájtra azonosan jár körbe a javítás után is.
+
 ## [0.8.6] – 2026-08-19
 
 ### Javítva
