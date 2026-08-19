@@ -5,6 +5,26 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.5] – 2026-08-19
+
+### Javítva
+- **A Projektek gyűjtemény nem üres többé (#1029).** A bal hasábon a Projektek
+  alatt eddig **semmi** nem jelent meg. A projekt-mappákat (Kollázsok, Filmek,
+  Mozgófilmek, Rögzített videoklipek) a `.picasa.ini` jelöli meg — ezt a jelölést
+  eddig nem olvastuk. A gyűjtemény mostantól nyitva is indul: csukva a javítás
+  után is üresnek látszott volna.
+
+  A megoldás a meglévő indexen **azonnal** működik: nem kellett hozzá új
+  adatbázis-oszlop, ami csak teljes újraindexelés után töltődött volna fel.
+- **Látszik a vetett árnyék az élő vásznon is (#1021).** A 0.8.4-ben az árnyék
+  csak a **mentett** képre került rá, a szerkesztés közben nem — a jelölőnégyzet
+  kapcsolgatása nem csinált semmit. Mostantól a vásznon is megjelenik, a mentett
+  képpel egyező geometriával.
+
+  A megoldás szándékosan **nem** grafikus gyorsítót használ: az ahhoz szükséges
+  Qt-modul a fejlesztői gépen nincs telepítve, a tesztgépen viszont igen — így
+  a teszt zöld lett volna, a felhasználó pedig továbbra sem lát árnyékot.
+
 ## [0.8.4] – 2026-08-19
 
 ### Hozzáadva
