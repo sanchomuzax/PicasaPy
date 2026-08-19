@@ -180,8 +180,24 @@ def _regi_render_pile(canvas, images, settings):
             fit_to_frame(image, max(1, cel_w), max(1, cel_h), fill=False),
             settings.effective_border,
         )
-        x = pile_top_left(place.center_x, tile.shape[1], settings.width, settings.width)
-        y = pile_top_left(place.center_y, tile.shape[0], settings.height, settings.height)
+        # ⚠️ #1045: a beszorítás a `_pile_nodes`-ban él, ez a referencia-ág
+        # viszont közvetlenül a `pile_layout`-ból dolgozik, tehát megkerülné.
+        # Ha ez az ág nem szorít be, a két út SZÉTCSÚSZIK, és az őr olyan
+        # eltérésre bukik, ami szándékos viselkedésváltozás — nem regresszió.
+        #
+        # A beszorítást ITT is el kell végezni, ugyanazzal a képlettel (a
+        # KERETES csempe méretével), nem a javítást gyengíteni: az
+        # visszahozná a kilógó képeket a felhasználónál.
+        kozep_x = min(
+            max(place.center_x, tile.shape[1] * 0.5),
+            settings.width - tile.shape[1] * 0.5,
+        )
+        kozep_y = min(
+            max(place.center_y, tile.shape[0] * 0.5),
+            settings.height - tile.shape[0] * 0.5,
+        )
+        x = pile_top_left(kozep_x, tile.shape[1], settings.width, settings.width)
+        y = pile_top_left(kozep_y, tile.shape[0], settings.height, settings.height)
         _rotated_paste(
             canvas,
             tile,
