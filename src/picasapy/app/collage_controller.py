@@ -79,8 +79,6 @@ COLLAGE_OUTPUT_DIR_KEY = prefs.OUTPUT_DIR_KEY
 BACKGROUND_MODES = ("solid", "image", "avg")
 
 
-
-
 class CollageMixin(CollageSaveMixin):
     """A kollázs-lap állapota és parancsai — a spec 8. szakasza."""
 
@@ -389,30 +387,53 @@ class CollageMixin(CollageSaveMixin):
 
         Külön forrás-listát tartani hibaforrás: a keverés és a csere a
         képeket a rések között mozgatja, tehát egy párhuzamosan vezetett
-        lista pár művelet után más sorrendben állna, mint a vászon. A kép
-        oldalarányát a csomópont mérete őrzi (a méretezés arányt tart)."""
+        lista pár művelet után más sorrendben állna, mint a vászon.
+
+        ⚠️ #989: a kép oldalarányát a csomópont `aspect` mezője őrzi, NEM a
+        `width / height` hányados — a rácsos témák CELLÁBA vágnak, ott a
+        doboz a celláé."""
         return tuple(
-            layout.CollageSource(node.path, node.caption, node.width / node.height)
+            layout.CollageSource(node.path, node.caption, node.aspect)
             for node in self._nodes()
         )
 
     def _relayout(
         self, sources: Sequence[layout.CollageSource], *, dirty: bool
     ) -> None:
-        """A csomópontok újraszámolása a forrásokból (kezdő elrendezés).
+        """A csomópontok újraszámolása a TÉMA pakolójával (#989).
 
         A kézi szerkesztés ilyenkor ELVESZIK — ez az eredeti viselkedése
-        téma-váltásnál és visszaállításnál (spec 5.), nem hiba."""
+        téma-váltásnál és visszaállításnál (spec 5.), nem hiba. A
+        képkockaközéppont indexe a pakolás UTÁN igazodik: a hangsúlyos kép a
+        legfelső rétegbe, tehát a lista végére kerül."""
         self._set_nodes(
             layout.laid_out(
                 sources,
                 self.collagePageRatio,
                 self._collage_panel_border,
-                self._rng(),
+                theme=self._collage_panel_theme,
+                spacing=self._collage_panel_spacing,
+                frame_center=self._collage_panel_frame_center,
+                seed=self._collage_panel_seed,
             ),
             dirty=dirty,
         )
+        self._set_frame_center(
+            layout.frame_center_after(
+                self._collage_panel_theme,
+                self._collage_panel_frame_center,
+                len(self._nodes()),
+            )
+        )
         self._set_dirty(dirty)
+
+    def _set_frame_center(self, index: int) -> None:
+        """A képkockaközéppont beállítása; a jelzés csak valódi változásnál."""
+        self._ensure_collage_panel()
+        if self._collage_panel_frame_center == index:
+            return
+        self._collage_panel_frame_center = index
+        self.collageFrameCenterChanged.emit()
 
     # -- beállítás-slotok (8.2) --------------------------------------------
 
@@ -717,13 +738,19 @@ class CollageMixin(CollageSaveMixin):
 
     @Slot()
     def setFrameCenterFromSelection(self) -> None:
-        """„Beállítás képkockaközéppontként" — a hangsúlyos központi kép."""
+        """„Beállítás képkockaközéppontként" — a hangsúlyos központi kép.
+
+        #989: a Képkockamozaiknál a beállítás UTÁN újrarendezünk, különben a
+        parancsnak nem volna látható hatása — a hangsúlyos hely az
+        elrendezésben születik meg (`picasa_render._FRAMEGRID_CENTER`). A
+        többi téma pakolója nem olvassa ezt az értéket."""
         node = self._single_selected()
         if node is None:
             return
-        self._collage_panel_frame_center = self._nodes().index(node)
-        self.collageFrameCenterChanged.emit()
+        self._set_frame_center(self._nodes().index(node))
         self._set_dirty(True)
+        if layout.layout_uses_frame_center(self._collage_panel_theme):
+            self._relayout(self._current_sources(), dirty=True)
 
     @Slot()
     def viewAndEditSelection(self) -> None:

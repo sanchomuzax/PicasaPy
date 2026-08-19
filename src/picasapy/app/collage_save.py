@@ -396,7 +396,15 @@ def _panel_nodes_of(nodes) -> tuple[CollageNode, ...]:
 
     Az `output.render_nodes_of` megfordítása: a kijelölés (a modell mezője) a
     visszatöltésnél mindig üres, a kitöltés-mód (a rajzoló mezője) pedig a
-    témából él tovább — egyik sem utazik a `.cxf`-ben."""
+    témából él tovább — egyik sem utazik a `.cxf`-ben.
+
+    ⚠️ #989: a KÉP oldalarányát (`aspect`) a `.cxf` sem tárolja, ezért a
+    csomópont dobozából vesszük. A Képkupacnál, az Indexképnél és a
+    Többszörös exponálásnál ez PONTOS (ott a doboz a képé), a rácsos
+    témáknál viszont a CELLA aránya — a visszatöltött kollázs egy későbbi
+    téma-váltásnál ilyenkor közelítő arányokkal rendez újra. A képfájlok
+    fejlécének beolvasása pontos volna, de 350 képnél a visszatöltést
+    érezhetően lassítaná; ezt a cserét tudatosan vállaljuk."""
     return tuple(
         CollageNode(
             path="" if node.path is None else str(node.path),
@@ -408,6 +416,7 @@ def _panel_nodes_of(nodes) -> tuple[CollageNode, ...]:
             border=node.border,
             caption=node.caption,
             missing=node.missing,
+            aspect=node.width / node.height,
         )
         for node in nodes
     )

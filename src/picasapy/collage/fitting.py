@@ -66,6 +66,36 @@ def fit_inside(
     return (max(1, width), max(1, height))
 
 
+def fit_aspect_inside(
+    aspect: float, dst_width: int, dst_height: int
+) -> tuple[int, int]:
+    """Ugyanaz az illesztés, de a forrás OLDALARÁNYÁBÓL (#989).
+
+    A `fit_inside` képlete a forrás abszolút méretétől független — a
+    szorzatot kibontva (`a = srcW / srcH`):
+
+    ```
+    s·srcW = min( dstW + 0,499 ; (dstH + 0,499)·a )
+    s·srcH = min( (dstW + 0,499)/a ; dstH + 0,499 )
+    ```
+
+    Ez azért kell, mert a kollázs-panel **csak az index oldalarányát
+    ismeri** (a képet nem dekódolja — 350 képnél nem is tehetné), a
+    rajzolónak viszont a dekódolt kép van a kezében. Enélkül a kettő két
+    külön illesztőt használna, és a vászon mást mutatna, mint a mentett
+    kép.
+    """
+    if not aspect > 0.0:
+        raise ValueError(f"Érvénytelen oldalarány: {aspect}")
+    if dst_width < 1 or dst_height < 1:
+        raise ValueError(f"Érvénytelen célméret: {dst_width}×{dst_height}")
+    vizszintes = dst_width + _FIT_SLACK
+    fuggoleges = dst_height + _FIT_SLACK
+    width = picasa_round(min(vizszintes, fuggoleges * aspect) + _FIT_EPSILON)
+    height = picasa_round(min(vizszintes / aspect, fuggoleges) + _FIT_EPSILON)
+    return (max(1, width), max(1, height))
+
+
 def msvc_uniform01(rand_value: int) -> float:
     """Az MSVC `_rand()` 0…32767-es értékéből egyenletes `[0, 1)` szám.
 
@@ -125,6 +155,7 @@ __all__ = [
     "MSVC_RAND_MAX",
     "MsvcRandom",
     "fisher_yates",
+    "fit_aspect_inside",
     "fit_inside",
     "msvc_uniform01",
     "picasa_round",

@@ -266,6 +266,9 @@ def test_ctrl_kikapcsolja_a_forgatast(controller):
     controller.setCollageSelection([0])
     QGuiApplication.instance().processEvents()
     szeles_elotte = _csomopontok(controller)[0].width
+    # #989: a Képkupac LEGYEZŐSEN dönti meg a képeket (`pile_rotation`),
+    # tehát a kiinduló szög nem nulla — az állítás a VÁLTOZATLANSÁGRÓL szól
+    szog_elotte = _csomopontok(controller)[0].theta
 
     gyuru = _child(panel, "collageRing0")
     kozep_x, kozep_y = _kozeppont(gyuru)
@@ -276,7 +279,7 @@ def test_ctrl_kikapcsolja_a_forgatast(controller):
     _eger_fel(view, cel, Qt.KeyboardModifier.ControlModifier)
 
     node = _csomopontok(controller)[0]
-    assert node.theta == pytest.approx(0.0, abs=1e-6)
+    assert node.theta == pytest.approx(szog_elotte, abs=1e-6)
     assert node.width == pytest.approx(2.0 * szeles_elotte, rel=0.05)
 
 
@@ -341,12 +344,14 @@ def test_a_modositot_a_huzas_KOZBEN_kerdezzuk(controller):
     kozep_x, kozep_y = _kozeppont(gyuru)
     kezdo = QPoint(round(kozep_x), round(kozep_y + 57))
     jobbra = QPoint(round(kozep_x + 57), round(kozep_y))
+    # #989: a kupac kiinduló szöge nem nulla (`pile_rotation`)
+    szog_elotte = _csomopontok(controller)[0].theta
 
     _eger_le(view, kezdo)
     _eger_mozog(view, jobbra, Qt.KeyboardModifier.ControlModifier)
-    assert _csomopontok(controller)[0].theta == pytest.approx(0.0, abs=1e-6), (
-        "a Ctrl-lel megtett mozdulat NEM forgathat"
-    )
+    assert _csomopontok(controller)[0].theta == pytest.approx(
+        szog_elotte, abs=1e-6
+    ), "a Ctrl-lel megtett mozdulat NEM forgathat"
 
     _eger_mozog(view, jobbra)
     assert _csomopontok(controller)[0].theta == pytest.approx(

@@ -36,6 +36,7 @@ akkor kell — kimondva, a jegyben indokolva — nyugdíjazni.
 
 from __future__ import annotations
 
+import copy
 import math
 from pathlib import Path
 
@@ -64,6 +65,7 @@ from picasapy.collage.picasa_render import (
     PicasaCollageSettings,
     _draw_contact_header,
     layout_nodes,
+    layout_nodes_for_aspects,
     make_picasa_collage,
     render_nodes,
 )
@@ -629,14 +631,41 @@ def test_a_ket_hivo_ugyanazt_a_kepet_adja(tmp_path, tema):
     assert np.array_equal(egyben.image, ketto_lepesben.image)
 
 
+# ⚠️ #989: ez az eset ÁTÍRÓDOTT. A #942-es változat azt rögzítette, hogy a
+# Többszörös exponálásra és az Indexképre a `layout_nodes` HIBÁT dob („nincs
+# csomópont-elrendezés"). Ez a MI korábbi tervezési döntésünk volt, nem az
+# eredeti viselkedése — és pontosan ez tette lehetetlenné, hogy a kollázs-panel
+# vászna a témát kövesse (#989: a hat témából csak a Képkupac elrendezése
+# látszott). Mindkét témának VAN geometriája: az Indexkép a fejlécsáv alatti
+# rácsba rendez, a Többszörös exponálás pedig minden képet a teljes lapra
+# igazít és középre tesz (`multi_exposure._centered`). A hibadobás helyére
+# ezért az kerül, ami tényleg igaz: ismeretlen témára szól hangosan.
 @pytest.mark.parametrize("tema", [MULTIEXP, CONTACTSHEET])
-def test_a_csomopont_nelkuli_temak_hangosan_szolnak(tmp_path, tema):
-    """A Többszörös exponálás és az Indexkép nem csomópontos — ezt ki is mondja.
+def test_a_ket_kulonleges_temanak_is_van_pakoloja(tmp_path, tema):
+    """Az Indexkép és a Többszörös exponálás geometriája is csomópontos.
 
-    Néma üres lista helyett hiba: aki ezekre hív, elgépelte a témát."""
+    A `make_picasa_collage` RAJZOLÁSA külön úton megy (a fejléc és a keverés
+    miatt), de az ELRENDEZÉS innen jön — enélkül a panel kénytelen volna
+    sajátot kitalálni, és a vászon mást mutatna, mint a mentett kép."""
+    forrasok = _mintakepek(tmp_path, darab=4)
+    kepek = [cv2.imread(str(ut), cv2.IMREAD_COLOR) for ut in forrasok]
     beallitas = PicasaCollageSettings(theme=tema, width=400, height=300)
+    csomopontok = layout_nodes(kepek, forrasok, beallitas)
+    assert len(csomopontok) == len(forrasok)
+    assert all(n.width > 0.0 and n.height > 0.0 for n in csomopontok)
+
+
+def test_az_ismeretlen_tema_hangosan_szol():
+    """Néma üres lista helyett hiba: aki ide ér, elgépelte a témát.
+
+    A `PicasaCollageSettings` maga is szűr, ezért az ismeretlen témát az
+    ellenőrzés MEGKERÜLÉSÉVEL csempésszük be — a pakoló saját őre így is a
+    helyén marad."""
+    beallitas = PicasaCollageSettings(theme=PICTUREGRID, width=400, height=300)
+    hamis = copy.copy(beallitas)
+    object.__setattr__(hamis, "theme", "kollazs2000")
     with pytest.raises(ValueError, match="nincs csomópont-elrendezés"):
-        layout_nodes([], [], beallitas)
+        layout_nodes_for_aspects([1.0], ["/k/a.jpg"], hamis)
 
 
 def test_a_layout_nodes_kepszamot_es_utvonalszamot_osszeveti():

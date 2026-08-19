@@ -56,7 +56,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from .fitting import MsvcRandom, fit_inside
+from .fitting import MsvcRandom, fit_aspect_inside
 from .multi_exposure import blend_multi_exposure
 from .nodes import (
     SHEET_UNITS,
@@ -256,6 +256,8 @@ def _cell_nodes(
     settings: PicasaCollageSettings,
     *,
     fill: bool = True,
+    border: str | None = None,
+    spacing: float | None = None,
 ) -> list[CollageNode]:
     """A rácsos témák cellái csomópontokká.
 
@@ -263,11 +265,14 @@ def _cell_nodes(
     külső doboza `outer_box(cella)`, amiből a rajzoló `photo_box`-szal
     pontosan a cellát kapja vissza. A csomópont középpontja a cella
     középpontja: a rajzoló a csempét erre igazítja, ami szó szerint a régi
-    „a csempe a cellába középre" szabály."""
-    keret = settings.effective_border
-    cells = to_pixel_rects(
-        rects, settings.width, settings.height, settings.effective_spacing
-    )
+    „a csempe a cellába középre" szabály.
+
+    A `border` / `spacing` felülbírálás az Indexképé: ott a cellák egy
+    ÖNÁLLÓ, fejléc alatti lapra készülnek `REGULARGRID` beállítással, de a
+    keret és a térköz a HÍVÓ témájáé marad."""
+    keret = settings.effective_border if border is None else border
+    terkoz = settings.effective_spacing if spacing is None else spacing
+    cells = to_pixel_rects(rects, settings.width, settings.height, terkoz)
     nodes: list[CollageNode] = []
     for path, cell in zip(paths, cells, strict=False):
         cella_w = max(1, cell.x1 - cell.x0)
@@ -292,14 +297,14 @@ def _cell_nodes(
 
 
 def _pile_nodes(
-    images: Sequence[np.ndarray],
+    aspects: Sequence[float],
     paths: Sequence[Path],
     settings: PicasaCollageSettings,
 ) -> list[CollageNode]:
     """A Képkupac szórása csomópontokká.
 
-    A kupac a képet egy NÉGYZETBE illeszti arányosan (`fit_inside`), és a
-    kapott doboz köré nő a keret. A csomópont középpontja a szórás
+    A kupac a képet egy NÉGYZETBE illeszti arányosan (`fit_aspect_inside`),
+    és a kapott doboz köré nő a keret. A csomópont középpontja a szórás
     középpontja — a `pile_top_left` ugyanezt a „középre" szabályt írja le,
     csak a bal felső sarok felől."""
     keret = settings.effective_border
@@ -307,12 +312,11 @@ def _pile_nodes(
     # a `pile.pile_top_left` ugyanezt a szabályt írja le a bal felső sarok
     # felől (`x − szélesség · 0,5`); a csomópont a KÖZÉPPONTOT tárolja, a
     # sarokra váltás a rajzoló `_origin` dolga
-    places = pile_layout(len(images), settings.width, settings.height, rng)
+    places = pile_layout(len(aspects), settings.width, settings.height, rng)
     nodes: list[CollageNode] = []
-    for image, path, place in zip(images, paths, places, strict=False):
+    for aspect, path, place in zip(aspects, paths, places, strict=False):
         oldal = max(1, place.size)
-        magassag, szelesseg = image.shape[:2]
-        cel_w, cel_h = fit_inside(szelesseg, magassag, oldal, oldal)
+        cel_w, cel_h = fit_aspect_inside(aspect, oldal, oldal)
         kulso_w, kulso_h = outer_box(max(1, cel_w), max(1, cel_h), keret)
         nodes.append(
             CollageNode(
@@ -329,6 +333,81 @@ def _pile_nodes(
     return nodes
 
 
+def _multi_exposure_nodes(
+    aspects: Sequence[float],
+    paths: Sequence[Path],
+    settings: PicasaCollageSettings,
+) -> list[CollageNode]:
+    """A Többszörös exponálás geometriája csomópontokká (#989).
+
+    A téma nem HELYEZ el képeket, hanem egymásra vetíti őket — de a
+    vetítésnek is van geometriája: a `blend_multi_exposure` minden képet a
+    TELJES lapra igazít (`multi_exposure_size` = a közös illesztő), és
+    középre teszi. Pontosan ezt írja le ez a csomópont-lista, ugyanazzal az
+    illesztővel; így a panel vászna sem talál ki saját elrendezést.
+
+    ⚠️ A **rajzolás** ettől még más marad: a mentés az egyenlő súlyú
+    keverést végzi (`make_picasa_collage`), a vászon pedig egymásra rakja a
+    csempéket. A HELYÜK és a MÉRETÜK viszont ugyanaz.
+    """
+    keret = settings.effective_border
+    kozep_x = pixels_to_sheet(settings.width / 2.0, settings.width)
+    kozep_y = pixels_to_sheet(settings.height / 2.0, settings.width)
+    nodes: list[CollageNode] = []
+    for aspect, path in zip(aspects, paths, strict=False):
+        cel_w, cel_h = fit_aspect_inside(aspect, settings.width, settings.height)
+        kulso_w, kulso_h = outer_box(max(1, cel_w), max(1, cel_h), keret)
+        nodes.append(
+            CollageNode(
+                path=path,
+                center_x=kozep_x,
+                center_y=kozep_y,
+                width=pixels_to_sheet(kulso_w, settings.width),
+                height=pixels_to_sheet(kulso_h, settings.width),
+                border=keret,
+                fill=False,
+            )
+        )
+    return nodes
+
+
+def _contact_sheet_band(settings: PicasaCollageSettings) -> int:
+    """Az Indexkép fejlécsávjának magassága KÉPPONTBAN."""
+    return max(1, round(settings.height * _HEADER_RATIO))
+
+
+def _contact_sheet_nodes(
+    aspects: Sequence[float],
+    paths: Sequence[Path],
+    settings: PicasaCollageSettings,
+) -> tuple[list[CollageNode], int, PicasaCollageSettings]:
+    """Az Indexkép cellái az ALVÁSZON koordinátáiban + a fejlécsáv.
+
+    A fejléc alatti rész önálló lap: a külön vászonra rajzolás nem kényelmi
+    kérdés, hanem VÁGÁS (a cellából kilógó keret nem írhat a fejlécbe),
+    ezért a csomópontok itt még nincsenek lejjebb tolva. A teljes lapra
+    értendő változatot a `layout_nodes_for_aspects` adja.
+
+    Hármast ad vissza, hogy a `make_picasa_collage` az alvászont és a
+    hozzá tartozó beállítást ne számolja ki másodszor — egy elváló másolat
+    pontosan az a néma hiba, amit a #942 kerülni akar."""
+    sav = _contact_sheet_band(settings)
+    also = settings.height - sav
+    alsobeallitas = PicasaCollageSettings(
+        theme=REGULARGRID,
+        border=settings.border,
+        width=settings.width,
+        height=max(16, also),
+        background=settings.background,
+        spacing=settings.spacing,
+        seed=settings.seed,
+    )
+    sorok, oszlopok = regular_grid_shape(aspects, settings.width, max(1, also))
+    rects = regular_grid_rects(len(aspects), sorok, oszlopok)
+    # az Indexképnél a TELJES kép látszik (nem vágunk), ez a lényege
+    return (_cell_nodes(paths, rects, alsobeallitas, fill=False), sav, alsobeallitas)
+
+
 def _draw_contact_header(canvas: np.ndarray, settings: PicasaCollageSettings) -> int:
     """Az Indexkép fejlécsávja; a felhasznált magasságot adja vissza.
 
@@ -337,7 +416,7 @@ def _draw_contact_header(canvas: np.ndarray, settings: PicasaCollageSettings) ->
     """
     from .contact_sheet import header_font_size
 
-    band = max(1, round(settings.height * _HEADER_RATIO))
+    band = _contact_sheet_band(settings)
     canvas[:band, :] = settings.background
     felirat = settings.caption.strip()
     if not felirat:
@@ -360,50 +439,73 @@ def _draw_contact_header(canvas: np.ndarray, settings: PicasaCollageSettings) ->
     return band
 
 
-def layout_nodes(
-    images: Sequence[np.ndarray],
+def layout_nodes_for_aspects(
+    aspects: Sequence[float],
     paths: Sequence[Path],
     settings: PicasaCollageSettings = _DEFAULT_SETTINGS,
 ) -> list[CollageNode]:
-    """A téma pakolója: a képekből csomópontok — rajzolás NÉLKÜL.
+    """MIND A HAT téma pakolója, a képek OLDALARÁNYÁBÓL (#989).
 
-    Ez a `make_picasa_collage` első fele, önmagában is használható: a
-    kollázs-panel ezzel tölti fel a vásznat induláskor és a „Képek
-    szétszórása" parancsnál. A felhasználó kézi mozgatásai után ugyanezeket
-    a — közben módosított — csomópontokat rajzolja ki a `render_nodes`.
-    Enélkül a mentés újraszámolna, és a felhasználó mást kapna, mint amit a
-    képernyőn lát (spec 6.5).
+    Ez a kollázs elrendezésének **egyetlen** forrása: innen tölti fel a
+    vásznát a kollázs-panel, és ezt futtatja a `make_picasa_collage` is a
+    rajzolás előtt. Aki két pakoló-utat épít, előbb-utóbb azt kapja, hogy a
+    mentett kép mást mutat, mint a vászon (spec 6.5).
 
-    Két téma NEM ide tartozik: a Többszörös exponálás nem helyez el képeket
-    (egymásra keveri őket), az Indexkép pedig a fejlécsáv alatti önálló
-    lapra rendez — mindkettőt a `make_picasa_collage` kezeli.
+    Miért oldalarány és nem kép: a panel a képeket **nem dekódolja** (350
+    képnél nem is tehetné) — az indexből csak az arányt ismeri. A rajzolónak
+    van dekódolt képe, abból a `layout_nodes` számol arányt. A geometria
+    egyik esetben sem függ a forrás abszolút képpontméretétől
+    (`fitting.fit_aspect_inside`).
+
+    | téma | a geometriát adó mag |
+    |---|---|
+    | `picturepile` | `pile.pile_layout` |
+    | `picturegrid` | `packing.pack` |
+    | `framegrid` | `packing.pack` + a hangsúlyos kép a középső területre |
+    | `regulargrid` | `regular_grid` |
+    | `contactsheet` | `regular_grid` a fejlécsáv ALATT |
+    | `multiexp` | a közös illesztő: mindenki a teljes lapra, középre |
+
+    A keret és a térköz a téma KÉPESSÉG-MASZKJÁN át hat (`effective_border`,
+    `effective_spacing`) — témánkénti `if` sem itt, sem a felületen nem
+    születik.
     """
-    if len(images) != len(paths):
+    if len(aspects) != len(paths):
         raise ValueError("Minden képhez tartoznia kell útvonalnak.")
+    if not aspects:
+        return []
     if settings.theme == PICTUREPILE:
-        return _pile_nodes(images, paths, settings)
+        return _pile_nodes(aspects, paths, settings)
+    if settings.theme == MULTIEXP:
+        return _multi_exposure_nodes(aspects, paths, settings)
+    if settings.theme == CONTACTSHEET:
+        nodes, sav, _ = _contact_sheet_nodes(aspects, paths, settings)
+        # a cellák az ALVÁSZON koordinátáiban készültek; a lapra a
+        # fejlécsávval lejjebb tolva kerülnek
+        eltolas = pixels_to_sheet(sav, settings.width)
+        return [replace(node, center_y=node.center_y + eltolas) for node in nodes]
     if settings.theme in (PICTUREGRID, FRAMEGRID):
         rogzitett = (
             settings.frame_center
             if settings.theme == FRAMEGRID
             and settings.frame_center is not None
-            and 0 <= settings.frame_center < len(images)
+            and 0 <= settings.frame_center < len(aspects)
             else None
         )
         if rogzitett is None:
             # nincs rögzített kép → az EREDETI IS az alap pakolóra esik vissza
             rects = pack(
-                _aspects(list(images)),
+                list(aspects),
                 settings.width / settings.height,
                 MsvcRandom(settings.seed),
             )
             return _cell_nodes(paths, rects, settings)
-        tobbi = [kep for index, kep in enumerate(images) if index != rogzitett]
+        tobbi = [a for index, a in enumerate(aspects) if index != rogzitett]
         tobbi_ut = [ut for index, ut in enumerate(paths) if index != rogzitett]
-        nodes: list[CollageNode] = []
+        nodes = []
         if tobbi:
             rects = pack(
-                _aspects(tobbi),
+                tobbi,
                 settings.width / settings.height,
                 MsvcRandom(settings.seed),
             )
@@ -415,13 +517,28 @@ def layout_nodes(
         return nodes
     if settings.theme == REGULARGRID:
         sorok, oszlopok = regular_grid_shape(
-            _aspects(list(images)), settings.width, settings.height
+            list(aspects), settings.width, settings.height
         )
-        rects = regular_grid_rects(len(images), sorok, oszlopok)
+        rects = regular_grid_rects(len(aspects), sorok, oszlopok)
         return _cell_nodes(paths, rects, settings)
     raise ValueError(
         f"Ehhez a témához nincs csomópont-elrendezés: {settings.theme!r}"
     )
+
+
+def layout_nodes(
+    images: Sequence[np.ndarray],
+    paths: Sequence[Path],
+    settings: PicasaCollageSettings = _DEFAULT_SETTINGS,
+) -> list[CollageNode]:
+    """A téma pakolója DEKÓDOLT képekből — a `make_picasa_collage` első fele.
+
+    Csak annyit tesz, hogy a képekből oldalarányt számol, és átadja a
+    `layout_nodes_for_aspects`-nek; a geometria egyetlen helyen él.
+    """
+    if len(images) != len(paths):
+        raise ValueError("Minden képhez tartoznia kell útvonalnak.")
+    return layout_nodes_for_aspects(_aspects(list(images)), paths, settings)
 
 
 def make_picasa_collage(
@@ -483,21 +600,9 @@ def make_picasa_collage(
         also = settings.height - sav
         alvaszon = np.empty((max(1, also), settings.width, 3), dtype=np.uint8)
         alvaszon[:, :] = settings.background
-        alsobeallitas = PicasaCollageSettings(
-            theme=REGULARGRID,
-            border=settings.border,
-            width=settings.width,
-            height=max(16, also),
-            background=settings.background,
-            spacing=settings.spacing,
-            seed=settings.seed,
+        nodes, _, alsobeallitas = _contact_sheet_nodes(
+            _aspects(decoded), used, settings
         )
-        sorok, oszlopok = regular_grid_shape(
-            _aspects(decoded), settings.width, max(1, also)
-        )
-        rects = regular_grid_rects(len(decoded), sorok, oszlopok)
-        # az Indexképnél a TELJES kép látszik (nem vágunk), ez a lényege
-        nodes = _cell_nodes(used, rects, alsobeallitas, fill=False)
         draw_nodes(alvaszon, nodes, decoded, alsobeallitas.width)
         canvas[sav : sav + alvaszon.shape[0], :] = alvaszon
         # a csomópontok az ALVÁSZON koordinátáiban készültek; a piszkozat a
@@ -527,6 +632,7 @@ __all__ = [
     "PicasaCollageSettings",
     "border_growth",
     "layout_nodes",
+    "layout_nodes_for_aspects",
     "make_picasa_collage",
     "outer_box",
     "photo_box",
