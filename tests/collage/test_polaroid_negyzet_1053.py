@@ -243,3 +243,57 @@ class TestAPolaroidLapMargoi:
 
         assert geometria.outer_width == pytest.approx(661, abs=2)
         assert geometria.outer_height == pytest.approx(793, abs=2)
+
+
+# --------------------------------------------------------------------------
+# A csempeméret CSONKÍT, nem kerekít (#1059)
+# --------------------------------------------------------------------------
+#: A tulajdonos `AI1.cxf`-jének kilenc `scale` mezője, csomópont-sorrendben.
+#: Az `AI.cxf` ugyanezt adja; az `AI2.cxf` két kivétele bizonyítottan KÉZZEL
+#: átméretezett csomópont (nem egész `scale`), ezért nem mérce.
+GOLDEN_SCALE = (337, 337, 337, 337, 303, 280, 263, 249, 238)
+
+#: A mért elrendezési lapszélesség mindhárom golden kupacon 1024 (1024,0 /
+#: 1024,0 / 1023,8) — lapformátumtól függetlenül.
+GOLDEN_LAP = 1024
+
+
+class TestACsempemeretCsonkit:
+    """⚠️ A `pile_size` az EGYETLEN hely, ahol a csonkítás igazolt.
+
+    A `picasa_round` mindenhol máshol dekódolt, bizonyított viselkedés —
+    globálisan hozzányúlni tilos. Itt viszont a kerekítés minden csempét
+    egy képponttal nagyobbra vett a kelleténél, rendszeresen és
+    egyirányúan."""
+
+    @pytest.mark.parametrize(
+        ("index", "vart"), list(enumerate(GOLDEN_SCALE, start=1))
+    )
+    def test_a_golden_scale_ertekeket_hozza(self, index, vart):
+        from picasapy.collage.pile import pile_size
+
+        assert pile_size(index, GOLDEN_LAP) == vart
+
+    def test_a_kerekites_nyolcat_elrontana(self):
+        """A foga: ha valaki visszaállítaná a kerekítést, a kilencből
+        NYOLC érték elmozdulna. Ez nem elméleti — pontosan ez volt a
+        helyzet a #1059 előtt."""
+        import math
+
+        from picasapy.collage.pile import PILE_BASE_RATIO, pile_scale
+        from picasapy.collage.rects import picasa_round
+
+        pontos = [
+            pile_scale(i) * PILE_BASE_RATIO * GOLDEN_LAP
+            for i in range(1, len(GOLDEN_SCALE) + 1)
+        ]
+        kerekitve = sum(
+            picasa_round(ertek) == golden
+            for ertek, golden in zip(pontos, GOLDEN_SCALE, strict=True)
+        )
+        csonkitva = sum(
+            math.floor(ertek) == golden
+            for ertek, golden in zip(pontos, GOLDEN_SCALE, strict=True)
+        )
+
+        assert (kerekitve, csonkitva) == (1, 9)

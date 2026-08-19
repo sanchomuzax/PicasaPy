@@ -23,6 +23,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   kupacunk ezért lógott ki már 9 képnél is, miközben az eredeti ugyanott
   egyet sem. A biztonsági beszorítás most 9 képből **egyet** mozdít
   három helyett — ugyanannyit, mint keret nélkül.
+- **A kupac csempéi egy képponttal nagyobbak voltak a kelleténél (#1059).**
+  A méretük a lapszélesség arányából számolt tört értéket **kerekítette**,
+  az eredeti viszont **csonkít**. A tulajdonos kollázsainak `scale`
+  mezőivel összevetve: kerekítéssel kilencből **egy** érték stimmelt,
+  csonkítással **mind a kilenc**. Két külön kollázsfájlon ugyanez.
+
+  Menet közben kiderült, hogy a lap belső szélessége nem „körülbelül 1021",
+  ahogy egy korábbi becslés mondta, hanem pontosan **1024** — ezt most
+  három mintán mérve tudjuk, nem becsülve.
 
 ## [0.8.9] – 2026-08-20
 
