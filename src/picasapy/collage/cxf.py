@@ -72,13 +72,30 @@ def _flag(value: bool) -> str:
 
 @dataclass(frozen=True)
 class CxfBackground:
-    """A kollázs háttere: `<background type="solid" color="FFFFFFFF"/>`.
+    """A kollázs háttere — KÉT alakja van, és a különbség nem díszítés.
 
-    A szín **ARGB hexa**, nyolc karakter, nagybetűvel — ahogy a minta
-    tartalmazza."""
+    Egyszínű háttérnél önzáró elem, színnel:
+    `<background type="solid" color="FFFFFFFF"/>`. A szín **ARGB hexa**,
+    nyolc karakter, nagybetűvel — ahogy a minta tartalmazza.
+
+    **Képháttérnél** viszont (`AI2.cxf`, `AI5.cxf`, #1009) az eredeti Picasa
+    a `color` attribútumot **el is hagyja**, és a képet gyerekelemben adja:
+
+    ```
+     <background type="image">
+      <src>$My Pictures\\AI\\kep.png</src>
+     </background>
+    ```
+
+    A `src` a kollázs SAJÁT képeinek egyike (a program indexszel hivatkozik
+    rá, `0x00830a00`), és az útvonal — a `<node><src>`-hez hasonlóan —
+    **érintetlenül** őrződik. A `color` ilyenkor a mi alapértékünk marad;
+    kiírni nem írjuk ki, mert az eredeti sem teszi."""
 
     type: str = "solid"
     color: str = DEFAULT_BACKGROUND_COLOR
+    #: A háttérként használt kép útvonala — csak `type="image"` esetén.
+    src: str = ""
 
     def __post_init__(self) -> None:
         if self.type not in BACKGROUND_TYPES:
@@ -162,6 +179,23 @@ def _node_lines(node: CxfNode) -> list[str]:
     return lines
 
 
+def _background_lines(background: CxfBackground) -> list[str]:
+    """A `<background>` elem sorai — a KÉT alak közül a megfelelő.
+
+    A `src` jelenléte dönt, nem a `type`: így egy `type="image"`, de kép
+    nélküli (sérült vagy kézzel írt) projekt sem veszíti el a színét."""
+    if not background.src:
+        return [
+            f" <background type={quoteattr(background.type)}"
+            f" color={quoteattr(background.color)}/>"
+        ]
+    return [
+        f" <background type={quoteattr(background.type)}>",
+        f"  <src>{escape(background.src)}</src>",
+        " </background>",
+    ]
+
+
 def dumps(project: CxfProject) -> bytes:
     """A projekt `.cxf` bájtsorozattá alakítása (UTF-8, CRLF)."""
     root_attributes = [
@@ -185,10 +219,7 @@ def dumps(project: CxfProject) -> bytes:
         lines.append(f" <albumTitle>{escape(project.album_title)}</albumTitle>")
     if project.album_date:
         lines.append(f" <albumDate>{escape(project.album_date)}</albumDate>")
-    lines.append(
-        f' <background type={quoteattr(project.background.type)}'
-        f" color={quoteattr(project.background.color)}/>"
-    )
+    lines.extend(_background_lines(project.background))
     lines.append(f' <spacing value="{_f(project.spacing)}"/>')
     for node in project.nodes:
         lines.extend(_node_lines(node))
@@ -249,6 +280,7 @@ def loads(data: bytes | str) -> CxfProject:
         CxfBackground(
             type=background_element.get("type", "solid"),
             color=background_element.get("color", DEFAULT_BACKGROUND_COLOR),
+            src=_text(background_element, "src"),
         )
         if background_element is not None
         else CxfBackground()

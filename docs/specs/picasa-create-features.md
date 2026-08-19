@@ -149,8 +149,38 @@ projektfájlt (#436). A formátum: **UTF-8 XML, CRLF sorvégekkel.**
 | `shadows`, `captions` | `0`/`1` kapcsolók |
 | `albumUID` | 32 hex — ugyanaz az album-token, mint a `[.album:<token>]` szekcióké |
 | `<albumTitle>`, `<albumDate>` | a Contact Sheet fejlécéhez és a mentett album nevéhez |
-| `<background type="solid" color="FFFFFFFF"/>` | **ARGB hex**; a `type` más értékei (kép, átlagszín) további mintából derülnek ki |
+| `<background type="solid" color="FFFFFFFF"/>` | **ARGB hex**. A `type="image"` alakja MÁS — ld. 1.6/e alább |
 | `<spacing value="…"/>` | 0..1 float (a Grid Spacing csúszka) |
+
+#### 1.6/e A KÉPHÁTTÉR alakja — golden-mintából (2026-08-19, #1009)
+
+A `type="image"` **nem** az egyszínű alak `<src>`-cel kiegészítve: a Picasa
+ilyenkor a `color` attribútumot **el is hagyja**, és a képet gyerekelemben
+adja meg. Két valódi mintából (`AI2.cxf`, `AI5.cxf` a golden-készletben),
+karakterre:
+
+```xml
+ <background type="image">
+  <src>$My Pictures\AI\2a655925-cb0c-4fc0-828c-6d0107a9ba20.png</src>
+ </background>
+```
+
+Két további megfigyelés ugyanerről a két mintáról:
+
+1. A `<background><src>` **ugyanaz az útvonal**, mint a fájl valamelyik
+   `<node><src>`-e: a háttér a kollázs SAJÁT képeinek egyike. Ezt a bináris
+   is megerősíti — az előnézetet a `0x00830a00(this, index)` tölti fel, és
+   `index == -1` esetén kilép (`0x00830a8b`), tehát a hivatkozás **index**,
+   nem szabad útvonal.
+2. Mindkét mintában a háttér a csomópontlista **első** eleme (9 kép közül).
+   Ez *erős, de nem megerősített* jel arra, hogy a módváltás alapból az
+   elsőt választja — nem zárható ki, hogy a felhasználó választotta. A
+   PicasaPy ezért **alapértelmezésként** veszi (#1009), amit a kijelölés
+   felülír.
+
+A háttérként használt kép a `<node>`-ok között is ott marad, a saját
+keretével (a mintákban `polaroid`, illetve `noborder`) — a `dimmed` téma
+egyik mintában sem fordul elő.
 
 **Kép-csomópontok (`<node>`):**
 

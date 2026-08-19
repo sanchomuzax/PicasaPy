@@ -214,6 +214,9 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                 self._render_settings(),
                 target,
                 bool(asDesktopBackground),
+                # #1009: a háttérkép a GUI-szálon dől el — a háttérszál a
+                # modellhez nem nyúlhat
+                self._background_image_for_cxf(),
             ),
             name="picasapy-collage-panel",
         )
@@ -260,7 +263,9 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             width=self._collage_output_width(),
         )
 
-    def _render_worker(self, nodes, settings, target, wallpaper: bool) -> None:
+    def _render_worker(
+        self, nodes, settings, target, wallpaper: bool, background_image: str
+    ) -> None:
         """A háttérszál törzse — a `BackgroundWorkerMixin`-en fut (#430).
 
         A folyamatjelzés SZAKASZOS, nem képenkénti: a rajzoló
@@ -275,6 +280,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                 settings,
                 target,
                 album_title=self._collage_panel_title,
+                background_image=background_image,
                 should_cancel=self._rendered_now_writing,
             )
         except (ValueError, OSError) as error:
@@ -340,6 +346,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                     output.render_nodes_of(nodes, theme=self._collage_panel_theme),
                     self._render_settings(),
                     album_title=self._collage_panel_title,
+                    background_image=self._background_image_for_cxf(),
                 ),
             )
         except (OSError, ValueError) as hiba:

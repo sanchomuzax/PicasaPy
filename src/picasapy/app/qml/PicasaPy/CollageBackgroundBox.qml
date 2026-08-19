@@ -242,6 +242,9 @@ Item {
         border.width: 1
         border.color: Theme.chromeBorder
         Image {
+            // a kirajzolt teszt (#1009) EZT az elemet keresi: a `status` és a
+            // `paintedWidth` mondja meg, hogy a kép tényleg betöltődött-e
+            objectName: "collageCurrentBackgroundImage"
             anchors.fill: parent
             anchors.margins: 1
             source: box.currentImage ? "file://" + box.currentImage : ""

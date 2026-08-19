@@ -19,7 +19,11 @@ Négy elv, ami végigmegy a fájlon:
    ír meg belőle, kétszer fogja karbantartani.
 4. **A számolás tiszta modulokban van** (`collage_layout`, `collage_prefs`,
    `collage_output`); itt csak állapot, jelzés és a slot-felület marad.
-5. **A MENTÉS külön szeletben él** (`collage_save.CollageSaveMixin`, #949):
+5. **A HÁTTÉR külön szeletben él** (`collage_background`, #1009): a három
+   mód, a szín és a háttérkép indexe. A háttérkép a kollázs SAJÁT képeinek
+   egyike — ezért kellett a `_set_nodes`-ba egy visszakötés
+   (`_sync_background_index`), hogy a hivatkozás sose maradjon törött.
+6. **A MENTÉS külön szeletben él** (`collage_save.CollageSaveMixin`, #949):
    a cím, a célfájl, a folyamatjelzés, a megszakítás és a piszkozat. A
    `CollageMixin` abból örököl, tehát a spec 8. szakaszának szerződése
    kívülről EGY objektum marad — a vágás a fájlméret miatt kellett (a
@@ -59,6 +63,7 @@ from picasapy.collage.themes import (
 
 from . import collage_layout as layout
 from . import collage_prefs as prefs
+from .collage_background import BACKGROUND_MODES, CollageBackgroundMixin
 from .collage_model import (
     CollageNode,
     CollageNodeModel,
@@ -75,11 +80,8 @@ from .collage_save import CollageSaveMixin
 #: felület és a teszt EGY nevet lásson.
 COLLAGE_OUTPUT_DIR_KEY = prefs.OUTPUT_DIR_KEY
 
-#: A háttér három módja (spec 6.4). Az `avg` a `collage::avgcolor`.
-BACKGROUND_MODES = ("solid", "image", "avg")
 
-
-class CollageMixin(CollageSaveMixin):
+class CollageMixin(CollageSaveMixin, CollageBackgroundMixin):
     """A kollázs-lap állapota és parancsai — a spec 8. szakasza."""
 
     # -- jelzések (8.3) ----------------------------------------------------
@@ -100,9 +102,6 @@ class CollageMixin(CollageSaveMixin):
     collageOrientationChanged = Signal()
     collageFormatKeyChanged = Signal()
     collagePageRatioChanged = Signal()
-    collageBackgroundModeChanged = Signal()
-    collageBackgroundColorChanged = Signal()
-    collageBackgroundImageChanged = Signal()
     collageSelectionChanged = Signal()
     collageFrameCenterChanged = Signal()
     collageClipCountChanged = Signal()
@@ -130,7 +129,10 @@ class CollageMixin(CollageSaveMixin):
         self._collage_panel_border = NOBORDER
         self._collage_panel_spacing = 0.0
         self._collage_panel_bg_mode = "solid"
-        self._collage_panel_bg_image = ""
+        # #1009: a háttérkép a kollázs SAJÁT képeinek egyike, INDEXSZEL
+        # hivatkozva — az eredeti is így teszi (`0x00830a00(this, index)`,
+        # és `index == -1` esetén nincs háttérkép). −1 = nincs választva.
+        self._collage_panel_bg_index = -1
         # #949: a kimeneti fájl neve ebből lesz (spec 9.1); üresen a
         # „kollázs" tartalék lép életbe
         self._collage_panel_title = ""
@@ -174,7 +176,10 @@ class CollageMixin(CollageSaveMixin):
         if tuple(nodes) == before:
             return
         count_changed = len(nodes) != len(before)
+        # a háttérkép útvonala MÉG a csere előtt kell (#1009)
+        background_path = self.collageBackgroundImage
         self._collage_panel_model.set_nodes(nodes)
+        self._sync_background_index(background_path)
         self.collageSelectionChanged.emit()
         if count_changed:
             self.collageClipCountChanged.emit()
@@ -259,21 +264,6 @@ class CollageMixin(CollageSaveMixin):
             self._collage_panel_orientation,
             screen_ratio=self._screen_ratio(),
         )
-
-    @Property(str, notify=collageBackgroundModeChanged)
-    def collageBackgroundMode(self) -> str:
-        self._ensure_collage_panel()
-        return self._collage_panel_bg_mode
-
-    @Property(QColor, notify=collageBackgroundColorChanged)
-    def collageBackgroundColor(self) -> QColor:
-        self._ensure_collage_panel()
-        return self._collage_panel_bg_color
-
-    @Property(str, notify=collageBackgroundImageChanged)
-    def collageBackgroundImage(self) -> str:
-        self._ensure_collage_panel()
-        return self._collage_panel_bg_image
 
     @Property(QObject, constant=True)
     def collageNodes(self) -> CollageNodeModel:
@@ -541,47 +531,23 @@ class CollageMixin(CollageSaveMixin):
         self.collagePageRatioChanged.emit()
         self._set_dirty(True)
 
-    @Slot(str)
-    def setCollageBackgroundMode(self, mode: str) -> None:
-        self._ensure_collage_panel()
-        if mode not in BACKGROUND_MODES or mode == self._collage_panel_bg_mode:
-            return
-        self._collage_panel_bg_mode = mode
-        self.collageBackgroundModeChanged.emit()
-        self._set_dirty(True)
-
-    @Slot("QColor")
-    def setCollageBackgroundColor(self, color) -> None:
-        self._ensure_collage_panel()
-        value = QColor(color)
-        if not value.isValid() or value == self._collage_panel_bg_color:
-            return
-        self._collage_panel_bg_color = value
-        self._get_settings().setValue(prefs.BGCOLOR_KEY, value.name())
-        self.collageBackgroundColorChanged.emit()
-        self._set_dirty(True)
-
-    @Slot()
-    def setBackgroundFromSelection(self) -> None:
-        """„A kijelölt elemek használata" — a háttérkép a kijelölt képből."""
-        node = self._single_selected()
-        if node is None:
-            return
-        self._collage_panel_bg_image = node.path
-        self.collageBackgroundImageChanged.emit()
-        self.setCollageBackgroundMode("image")
-        self._set_dirty(True)
-
-    def _single_selected(self) -> CollageNode | None:
-        """A pontosan egy kijelölt csomópont, vagy `None` + kérés a felület
+    def _single_selected_index(self) -> int:
+        """A pontosan egy kijelölt csomópont INDEXE, vagy −1 + kérés a felület
         felé. A „Beállítás háttérként", a „Megjelenítés és szerkesztés" és a
-        „Beállítás képkockaközéppontként" mind egy képet vár (spec 4.4)."""
-        nodes = self._nodes()
-        selection = selected_indices(nodes)
+        „Beállítás képkockaközéppontként" mind egy képet vár (spec 4.4).
+
+        Külön az indexre (#1009): a háttérnek épp az index kell, a másik két
+        hívónak a csomópont — a kijelölés SZABÁLYA viszont egy helyen él."""
+        selection = selected_indices(self._nodes())
         if len(selection) != 1:
             self.collageNeedsSelection.emit()
-            return None
-        return nodes[selection[0]]
+            return -1
+        return selection[0]
+
+    def _single_selected(self) -> CollageNode | None:
+        """A pontosan egy kijelölt csomópont, vagy `None`."""
+        index = self._single_selected_index()
+        return None if index < 0 else self._nodes()[index]
 
     # -- kijelölés (8.2) ---------------------------------------------------
 

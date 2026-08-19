@@ -489,6 +489,26 @@ exponálásra vonatkozik — a rácsos témák a pakolóból kapnak méretet.
 akármit kért a felhasználó (`0x008364a0`). A Többszörös exponálásnak saját
 háttérkezelése van (mód 2), ezért nincs is háttér-beállítása.
 
+**A háttérkép a kollázs SAJÁT képeinek egyike** (#1009), indexszel
+hivatkozva: az előnézetet a `0x00830a00(this, index)` tölti fel, és
+`index == -1` esetén kilép (`0x00830a8b`). Ebből három szabály következik,
+és mindhármat a `collage_background.CollageBackgroundMixin` tartja:
+
+1. A „Kép használata"-ra váltás **azonnal választ képet** — alapból az
+   elsőt. (*Erős, nem megerősített*: a golden `AI2.cxf` és `AI5.cxf`
+   mindkettőjében az első kép a háttér — ld. `picasa-create-features.md`
+   1.6/e. Alapértelmezés, nem törvény.)
+2. „A kijelölt elemek használata" ezt **felülírja**.
+3. A háttér a **képet** követi, nem a rést: keverés és csere után is
+   ugyanaz a kép marad a háttér, és ha a képet kiveszik a kollázsból, a
+   háttér a következő érvényesre esik vissza — törött hivatkozás nem
+   maradhat.
+
+A `.cxf`-be a háttérkép `<background type="image"><src>…</src></background>`
+alakban megy ki (a `color` attribútum ilyenkor elmarad). ⚠️ A **kirajzolt
+JPEG** háttere egyelőre a beállított SZÍN marad: a képhátteret ma csak a
+projektfájl őrzi.
+
 ### 6.5 ⚠️ A mag hiánya: `render_nodes`
 
 A `picasa_render.make_picasa_collage(sources, settings)` **maga rendezi el**
