@@ -482,6 +482,49 @@ koordinátával hívott `vt[5]` az animációt/értesítést viszi.
 
 **Bizonyítottsági fok: megerősített.**
 
+### 5.2/c A kép TESTÉRE kattintás — kijelölés és a vonszolás élesítése (2026-08-19)
+
+Ez zárja le azt a kérdést, hogy **honnan tudja az eredeti, mozgatni vagy
+cserélni akarsz-e**: a kettőt nem a mozdulat hossza dönti el, hanem az,
+hogy **hol fogtad meg a képet**, és a kép testén egy **élesítő jelző**.
+
+A `CollageNodeHandler` (`0x008609e0`) **1. eseménye** (lenyomás,
+`0x00860ac7`):
+
+```
+ha a találatvizsgálat bukik (vt[0x1c] & 0x10, majd vt[0x24](node,x,y,0)) → nincs teendő
+kijelölés (0x009df260, 0x00a57630); a kezelő kimenete a talált csomópont
+ha ( globális [0xd67849] != 0  ÉS  GetAsyncKeyState(VK_CONTROL) lenyomva ):
+        node[0x5c] = 0                 ; a vonszolás NINCS élesítve
+        a kijelölés ÁTBILLENTÉSE (vt[0x10] → vt[0x14](1 − jelenlegi))
+        vége
+egyébként:
+        node[0x5c] = 1                 ; a vonszolás ÉLESÍTVE
+        node[0x60] = lenyomás x        ; 0x00860b58
+        node[0x64] = lenyomás y
+```
+
+A **2./3. esemény** (mozgatás) a `0x00860dc6` ágra megy, és a végén
+(`0x00860e16`) megnézi a `node[0x5c]` jelzőt: ha él, meghívja a
+`0x008606d0`-t, ami a lenyomási ponthoz mért **10 képpontos** küszöböt
+vizsgálja (`0xcf3b28`, `0x0086071b`), és azon túl indítja a vonszolást.
+
+**Három következmény a megvalósításra:**
+
+1. **A kép testén a lenyomás mindig kijelöl** — a vonszolás csak
+   *élesedik*, nem indul el azonnal.
+2. **A `Ctrl`+kattintás kifejezetten NEM élesíti a vonszolást**
+   (`node[0x5c] = 0`, `0x00860b31`): kijelölést billent, és onnantól az
+   egérmozgás nem kezd vonszolást. Aki ezt kihagyja, `Ctrl`-lel
+   kijelölgetve véletlen cseréket fog okozni.
+3. A 10 képpontos küszöb a **lenyomási ponthoz** mérődik, nem az előző
+   egéreseményhez.
+
+**Bizonyítottsági fok: megerősített** (a `0x00860ac7`–`0x00860b61`
+ág és a `0x00860e16` → `0x008606d0` kapcsolat). A `[0xd67849]` globális
+**jelentése** (a `Ctrl`-ág külső kapcsolója) nem megállapított — a
+`Ctrl`-ág maga megerősített.
+
 ### 5.3 Forgatás és méretezés — EGY fogantyú, két hatás
 
 `GroupRingKnobHandler` (`0x00868570`). A fogantyú lenyomásakor a kurzor
