@@ -1,0 +1,43 @@
+# PicasaPy nyelvi szótár — a helyesírás-ellenőrző ezeket ismerje el.
+#
+# Ide CSAK olyan szó kerüljön, amiről meggyőződtél, hogy helyes: terméknév,
+# effektnév, szakszó, összetétel. A lista a meglévő 1351 magyar feliratból
+# készült (2026-08-19), tételesen átnézve. Egy hibás alak ide írása a hibát
+# örökre láthatatlanná teszi — inkább javítsd a feliratot.
+#
+# Terméknevek és ragozott alakjaik
+Picasába
+Picasában
+Picasából
+Picasához
+Picasának
+Picasa-fórumok
+Picasa-mappák
+Picasa-telepítés
+Picasa-telepítést
+Picasa-telepítésedet
+Picasa-utód
+PicasaPy-ból
+PicasaPy-nál
+# Effektek és képszerkesztő szakszavak
+Fehérpont
+Gammakorrekció
+HDR-szerű
+Holga-szerű
+Kinemaszkóp
+Lomo-szerű
+Orton-szerű
+Poszterizálás
+Vörösszem
+# Funkciónevek, összetételek
+Earth-fájl
+Earth-fájlba
+Geocímke
+geocímkék
+Gyorscímkék
+ini-ből
+Kisméretű
+Nagyméretű
+MP4-videók
+Sajátgép
+véletlenszerűsítése
