@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.4] – 2026-08-19
+
+### Hozzáadva
+- **Megjelent a kollázs vetett árnyéka (#977).** Az „Árnyékok rajzolása"
+  jelölőnégyzetet eddig be lehetett kapcsolni, a projektfájlba is bekerült —
+  **hatása viszont nem volt**, mert árnyék-rajzolás egyáltalán nem létezett.
+
+  Az árnyék **elrendezésenként más**, ahogy az eredetiben is: a Képkupac, a
+  Mozaik és a Képkockamozaik 40%-os, a Rács és az Indexkép 60%-os árnyékot
+  kap, a Többszörös exponálásnak pedig nincs. Az eltolás és a lágyság is
+  elrendezésenként külön képlet szerint áll be.
+
+  A számokat a felhasználó nyolc, eredeti Picasával készített kollázsa
+  igazolta: a rekonstruált képek árnyéka a mintáktól átlagosan **0,5–2,3
+  árnyalattal** tér el (a 255-ből), a látható árnyékhossz 51 helyett 50
+  képpont.
+
+  ⚠️ Egyelőre **csak a mentett képen** látszik; az élő vásznon még nem (#1021).
+
 ## [0.8.3] – 2026-08-19
 
 ### Javítva
