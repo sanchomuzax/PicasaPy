@@ -523,7 +523,6 @@ Item {
     // --- 17. „Beállítás képkockaközéppontként" ------------------------------
 
     PicasaButton {
-        id: frameCenterButton
         objectName: "collageSetFrameCenter"
         x: 137
         y: 310
@@ -533,15 +532,8 @@ Item {
         horizontalPadding: 2
         visible: tab.theme === tab.frameGridKey
         text: qsTr("Set as Frame Center")
-        // a hivatalos magyar felirat két sor a 124 képpontos gombon
-        contentItem: Text {
-            text: frameCenterButton.text
-            font: frameCenterButton.font
-            color: frameCenterButton.inkColor
-            wrapMode: Text.Wrap
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
+        // A hivatalos magyar felirat két sor a 124 képpontos gombon — a
+        // tördelést #992 óta a KÖZÖS `PicasaButton` végzi.
         // Kijelölés nélkül a vezérlő adja a „Kötelező a kijelölés" üzenetet
         // (`collageNeedsSelection`) — a lap nem dönti el helyette.
         onClicked: if (tab.controller)
