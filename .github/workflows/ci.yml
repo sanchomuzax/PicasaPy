@@ -174,3 +174,20 @@ jobs:
         # Amíg a lint nem látta őket, a rájuk épülő garancia maga volt
         # ellenőrizetlen.
         run: ruff check src/ tests/ scripts/
+
+      - name: Néma akció-jelzések őre (#1003)
+        # Ide, a `lint` jobba illik: tisztán statikus vizsgálat, se Qt, se
+        # futtatókörnyezet nem kell hozzá (a szkript csak a szabványos
+        # könyvtárból dolgozik), és másodpercek alatt lefut.
+        #
+        # Mit fog meg: kibocsátott Qt-jelzést, aminek NINCS fogadója. Ez a
+        # hibaosztály 2026-08-19-ig HÁROMSZOR ment ki kiadásba (#985 a
+        # kollázs-panel, #989 a téma-választó, #1001 a „Megjelenítés és
+        # szerkesztés" gomb) — mindannyiszor zöld tesztek mellett, mert a
+        # teszt a KIBOCSÁTÁST állította, nem a HATÁST.
+        #
+        # A bevezetéskori 26 ismert eset a `scripts/dead_signals_baseline.txt`-
+        # ben áll, tételes indoklással. Ez a lépés akkor bukik, ha ÚJ néma
+        # jelzés keletkezik, vagy ha a lista elavult tételt tartalmaz — így a
+        # lista rövidülhet, de nem hízhat észrevétlenül.
+        run: python scripts/check_dead_signals.py
