@@ -7276,6 +7276,29 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     </message>
 </context>
 <context>
+    <name>CollageDraftDialog</name>
+    <message>
+        <source>Recovered Auto Backup</source>
+        <translation>Helyreállított automatikus másolat</translation>
+    </message>
+    <message>
+        <source>PicasaPy found an automatically saved collage draft from an earlier session.
+
+Restore it to continue where you left off. If you discard it, the draft is deleted and will not be offered again.</source>
+        <translation>A PicasaPy talált egy automatikusan mentett kollázs-piszkozatot egy korábbi munkamenetből.
+
+Állítsa vissza, ha ott szeretné folytatni, ahol abbahagyta. Ha elveti, a piszkozat törlődik, és a program többé nem ajánlja fel.</translation>
+    </message>
+    <message>
+        <source>Restore Draft</source>
+        <translation>Piszkozat visszaállítása</translation>
+    </message>
+    <message>
+        <source>Discard Draft</source>
+        <translation>Piszkozat elvetése</translation>
+    </message>
+</context>
+<context>
     <name>CollageDialogs</name>
     <message>
         <source>The collage could not be saved</source>

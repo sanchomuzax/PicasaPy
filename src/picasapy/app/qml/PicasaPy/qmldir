@@ -117,3 +117,4 @@ CollageContextMenus 1.0 CollageContextMenus.qml
 CollageClipsTab 1.0 CollageClipsTab.qml
 CollageProgressOverlay 1.0 CollageProgressOverlay.qml
 CollageDialogs 1.0 CollageDialogs.qml
+CollageDraftDialog 1.0 CollageDraftDialog.qml

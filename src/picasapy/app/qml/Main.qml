@@ -642,6 +642,9 @@ ApplicationWindow {
     // egy jóval nagyobb döntést tett a felhasználó elé az első percben.
     Component.onCompleted: {
         initialScanDialog.openIfNeeded()
+        // #1051: ha az előző munkamenet piszkozatot hagyott, most kell
+        // felajánlani — enélkül a lemezen ragad, ahogy a tulajdonosé is
+        collageDraftDialog.openIfNeeded()
         // #922: a képtálca kezdőállapota (a Connections innentől frissíti)
         if (controller) window.trayHasPictures = controller.heldCount > 0
     }
@@ -1658,6 +1661,13 @@ ApplicationWindow {
     InitialScanDialog {
         id: initialScanDialog
         objectName: "initialScanDialog"
+    }
+
+    // #1051: a kollázs-piszkozat visszaállításának felajánlása. A LAPRA
+    // váltás a gazdáé — a párbeszéd csak jelez, ahogy a `CollagePanel` is.
+    CollageDraftDialog {
+        id: collageDraftDialog
+        onRestored: documentTabStrip.activateTab(window.collageTabId)
     }
 
     // #444: Mentés / Visszaállítás / Utolsó mentés visszavonása
