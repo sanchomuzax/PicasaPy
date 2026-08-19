@@ -97,6 +97,18 @@ def qml_app(qt_app, tmp_path):
     # elszigetelt QSettings — a rendszer valós PicasaPy-beállításait ne
     # szennyezze a teszt (session/lastFolder, view/thumbCaption).
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    # #1054: a kollázs KIMENETI mappája is elszigetelt legyen. Enélkül a
+    # piszkozat- és mentés-utak a VALÓDI `~/Pictures/Picasa/Kollázsok`-ba
+    # írnak: a #985 fülsáv-tesztje például egy `autosave.cxf`-et hagyott ott
+    # a fejlesztői gépen, amit később valódi felhasználói munkának néztünk.
+    # Csak akkor állítjuk be, ha a teszt maga nem térítette már el (a #1051
+    # tesztjei az ini-fájlon át adják meg a saját mappájukat).
+    from picasapy.app import collage_prefs
+
+    if not settings.value(collage_prefs.OUTPUT_DIR_KEY):
+        settings.setValue(
+            collage_prefs.OUTPUT_DIR_KEY, str(tmp_path / "kollazs-kimenet")
+        )
     provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
     controller = AppController(db, (str(lib),), provider, settings=settings)
     # #367: az általános ConfirmDialog "Ne kérdezze újra" tára — ugyanaz az

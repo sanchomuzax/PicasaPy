@@ -5,6 +5,30 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.9] – 2026-08-20
+
+### Javítva
+- **A Kollázs lap a szerkesztőből nyitva is látszik (#1055).** Ha a
+  szerkesztőből (nézőből) indítottad a kollázst, a lap megnyílt, a kollázs
+  el is készült — te viszont közben a **mappanézetet** láttad, a kollázsból
+  semmit. A panel a nézőn kívülre van kötve, a nézőt pedig senki nem
+  zárta be. Mostantól a kollázs megnyitása elhagyja a nézőt.
+- **Visszakapod az automatikusan mentett piszkozatot (#1051).** A program
+  eddig is elmentette a félbehagyott kollázst, de **soha nem kínálta
+  vissza**: a visszatöltés kódja készen állt, a felület viszont egyetlen
+  helyen sem hívta meg. Mostantól induláskor felajánlja.
+
+  Az „Elvetés" **törli** a piszkozatot — ez visszavonhatatlan, ezért az
+  `Esc` csak elhalasztja a döntést, és a felajánlás a következő
+  indításkor visszatér.
+
+### Fejlesztői
+- A tesztek nem írnak többé a valódi `~/Pictures/Picasa/Kollázsok`
+  mappába (#1054). Egy fixture odaírt, és a lerakott fájlt utóbb egy
+  hibajegy a felhasználó elveszett munkájának nézte. Új, gyökér-szintű őr
+  nevezi meg azt a tesztet, amelyik a valódi képmappához nyúl; az őr fogát
+  hat teszt állítja.
+
 ## [0.8.8] – 2026-08-20
 
 ### Javítva

@@ -157,6 +157,12 @@ ApplicationWindow {
     function openCollageTab() {
         if (!controller) return
         window.backToCollagePrompted = false
+        // #1055: a NÉZŐT (és vele a szerkesztőt) el kell hagyni. A kollázs
+        // panelje `!viewerOpen`-re látszik, a képtálca kollázs-gombja
+        // viszont a nézőben IS ott van (`libraryFrameVisible`) — enélkül a
+        // lap megnyílik, a kollázs elkészül, és a felhasználó közben a
+        // mappanézetet látja. Pontosan ezt jelentette a v0.8.7-en.
+        window.viewerOpen = false
         if (!controller.collageOpen)
             controller.openCollage(window.collageSourceRows())
         documentTabStrip.activateTab(window.collageTabId)
@@ -642,6 +648,9 @@ ApplicationWindow {
     // egy jóval nagyobb döntést tett a felhasználó elé az első percben.
     Component.onCompleted: {
         initialScanDialog.openIfNeeded()
+        // #1051: ha az előző munkamenet piszkozatot hagyott, most kell
+        // felajánlani — enélkül a lemezen ragad, ahogy a tulajdonosé is
+        collageDraftDialog.openIfNeeded()
         // #922: a képtálca kezdőállapota (a Connections innentől frissíti)
         if (controller) window.trayHasPictures = controller.heldCount > 0
     }
@@ -1658,6 +1667,13 @@ ApplicationWindow {
     InitialScanDialog {
         id: initialScanDialog
         objectName: "initialScanDialog"
+    }
+
+    // #1051: a kollázs-piszkozat visszaállításának felajánlása. A LAPRA
+    // váltás a gazdáé — a párbeszéd csak jelez, ahogy a `CollagePanel` is.
+    CollageDraftDialog {
+        id: collageDraftDialog
+        onRestored: documentTabStrip.activateTab(window.collageTabId)
     }
 
     // #444: Mentés / Visszaállítás / Utolsó mentés visszavonása
