@@ -683,6 +683,27 @@ Két nem nyilvánvaló következmény, amit át kell venni:
 2. **A függőleges hézagot a lap oldalaránya szorozza** (`a = W/H`), tehát a
    rés **képpontban négyzetes**, nem a normalizált térben.
 
+> ✅ **MEGMÉRVE valódi Picasa-kimeneten (2026-08-19).** A tulajdonos két
+> eredeti Mozaik-kollázsán (a privát repó
+> `referencia/kollazs-golden/2014-naptar.zip`-jében), ellentétes
+> tájolásban — ez a mérés **megkülönbözteti** a képletet az `a` szorzó
+> nélküli változattól:
+>
+> | fájl | lap | vízszintes rés | a képlet jóslata függőlegesen | `a` NÉLKÜL lenne | **mért** |
+> |---|---|---|---|---|---|
+> | fekvő | 5120 × 4546 (`a` = 1,126) | 27 px | **27,00 px** | 23,97 px | **27 px** |
+> | álló | 3752 × 5120 (`a` = 0,733) | 8 px | **8,00 px** | 10,92 px | **8 px** |
+>
+> A két esetben az `a` szorzó **ellentétes irányba** téríti el az
+> eredményt (fekvőnél nagyobbra, állónál kisebbre), és a mérés mindkétszer
+> a képletet igazolja. Az 1. következmény is mérve: a fekvő lapon a bal
+> margó, a belső rés és a jobb margó **egyaránt 27 px**.
+>
+> *(A mérés mellékesen azt is megmutatja, hogy ezen a két kollázson az
+> árnyék KI volt kapcsolva és a keret `noborder` volt: a rések teljes
+> szélességükben tiszta fehérek — árnyékkal a résekben színátmenet
+> volna. Az árnyék-paraméterek (9/b) tehát **továbbra sincsenek mérve**.)*
+
 A `framegrid` ugyanezt a rajzolót örökli, csak a pakolót írja felül
 (`0x00888e60`) — a kijelölt kép kerül a hangsúlyos középső cellába.
 

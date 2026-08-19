@@ -1465,9 +1465,16 @@ három, és egyik sem igényel futó Picasát)*:
    és 8.)*
 2. **mi a célja a `FILE_ATTRIBUTE_TEMPORARY`-nak** a kész kollázs-JPEG-en
    (9.1/b 4. pont)? A tény három helyen bizonyított, a szándék nem.
-3. az **5120-as felső méret** pontos szemantikája a renderelőben
-   (9.1/b 5. pont) — a konstans megvan, az útja a `0x0087dcd0`-n belül
-   nincs végigkövetve.
+3. az **5120-as felső méret**: az **érték és a szerepe MEGERŐSÍTVE**
+   (2026-08-19) — a `0x1400 = 5120` konstans a mentési úton
+   méret**párként** megy tovább (`0x0083d050` → `0x0083ba60` →
+   `0x0087dcd0`), és a tulajdonos **hat eredeti, Picasa-készítette
+   kollázsán** a hosszabbik oldal **kivétel nélkül pontosan 5120**
+   képpont (3752×5120, 5120×4546 ×5 — a privát repó
+   `referencia/kollazs-golden/2014-naptar.zip`-je). Tehát a kimenet egy
+   **5120 × 5120-as befoglaló dobozba** illesztődik. **Ami NYITVA marad:**
+   a konkrét illesztő utasítássor a `0x0087dcd0`-n belül nincs
+   végigkövetve — a *szám* igazolt, a *mechanizmus* nem.
 4. ~~az árnyék-képlet bemenete~~ — **TELJESEN LEZÁRVA** (9/b.2–9/b.3):
    a képletek **témánként külön** paraméterezettek (négy készlet); a `k`
    a képek cellaéle képpontban (`0x00887e50`-ből); az `A` lépték a 9.0
