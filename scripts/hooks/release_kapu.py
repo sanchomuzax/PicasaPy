@@ -42,6 +42,25 @@ _POZICIO = r"(?:^|[;&|]\s*|\n\s*|\$\(\s*|`\s*)(?:\w+=\S*\s+)*"
 
 _VERZIO_SOR = re.compile(r"^[+-]\s*version\s*=", re.MULTILINE)
 
+# A hook a MUNKAMENET mappáját kapja meg, nem azt, ahová a parancs belép.
+# Nálunk viszont minden munka külön munkamásolatban folyik, `cd <út> && ...`
+# alakban — enélkül a verzióemelés-őr a főmappában nézne diffet, ahol nincs
+# eltérés, és NÉMÁN átengedne minden kiadást. Éles próbán bukott meg
+# (2026-08-19): a verzióemelő push simán átment.
+_CD = re.compile(r"(?:^|[;&|]\s*)cd\s+(?P<ut>'[^']*'|\"[^\"]*\"|[^\s;&|]+)")
+
+
+def _munkakonyvtar(cmd: str, cwd: str) -> str:
+    """A parancs TÉNYLEGES munkakönyvtára: az utolsó `cd` célja, ha van."""
+    utolso = None
+    for m in _CD.finditer(cmd):
+        utolso = m.group("ut").strip("'\"")
+    if not utolso:
+        return cwd
+    ut = utolso if os.path.isabs(utolso) else os.path.join(cwd, utolso)
+    ut = os.path.expanduser(ut)
+    return ut if os.path.isdir(ut) else cwd
+
 
 def _parancsok(cmd: str, program: str, alparancs: str) -> list[str]:
     """A `program alparancs ...` előfordulásai PARANCSPOZÍCIÓBAN, a maradékkal."""
@@ -128,7 +147,7 @@ def main() -> int:
     except Exception:
         return 0  # fail-open: rossz bemenet nem blokkolhat
     try:
-        indok = _blokkolando(cmd, cwd)
+        indok = _blokkolando(cmd, _munkakonyvtar(cmd, cwd))
     except Exception:
         return 0  # fail-open: elromlott kapu nem akaszthat meg munkát
     if indok is None:

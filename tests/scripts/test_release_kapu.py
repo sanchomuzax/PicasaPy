@@ -97,6 +97,41 @@ def test_verzioemelo_pr_merge_blokkolodik(monkeypatch, tmp_path):
     assert indok is not None and "PR beolvasztása" in indok
 
 
+def test_cd_utan_a_celmappat_hasznalja(tmp_path):
+    """A parancs `cd`-je dönti el, hol nézzük a verziót — nem a session mappája.
+
+    Éles próbán bukott meg (2026-08-19): a hook a főmappát kapta, ott nincs
+    eltérés, és a verzióemelő push némán átment.
+    """
+    cel = tmp_path / "munkamasolat"
+    cel.mkdir()
+    cmd = f"cd {cel} && git push origin main"
+    assert kapu._munkakonyvtar(cmd, str(tmp_path)) == str(cel)
+
+
+def test_cd_nelkul_a_session_mappaja(tmp_path):
+    assert kapu._munkakonyvtar("git push origin main", str(tmp_path)) == str(tmp_path)
+
+
+def test_nemletezo_cd_cel_eseten_a_session_mappaja(tmp_path):
+    cmd = "cd /nincs/ilyen/mappa && git push origin main"
+    assert kapu._munkakonyvtar(cmd, str(tmp_path)) == str(tmp_path)
+
+
+def test_tobb_cd_eseten_az_utolso_szamit(tmp_path):
+    elso, masodik = tmp_path / "a", tmp_path / "b"
+    elso.mkdir()
+    masodik.mkdir()
+    cmd = f"cd {elso}; echo x; cd {masodik} && git push"
+    assert kapu._munkakonyvtar(cmd, str(tmp_path)) == str(masodik)
+
+
+def test_relativ_cd_a_session_mappajahoz_kepest(tmp_path):
+    (tmp_path / "alkonyvtar").mkdir()
+    cmd = "cd alkonyvtar && git push origin main"
+    assert kapu._munkakonyvtar(cmd, str(tmp_path)) == str(tmp_path / "alkonyvtar")
+
+
 def test_verzio_sor_felismerese():
     """A pyproject-diff verziósorát ismerje fel, a függőség-változást ne."""
     verzio_diff = '--- a/pyproject.toml\n+++ b/pyproject.toml\n-version = "0.8.0"\n+version = "0.8.1"\n'
