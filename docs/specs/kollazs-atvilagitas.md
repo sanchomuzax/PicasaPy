@@ -43,7 +43,7 @@ hiányok):
 | 2.3 | térköz-csúszka (`spacing_group`), „Egyik sem"/„Maximális" | ✅ megvan | — |
 | 2.4 | a keretsor és a térköz **ugyanazt a helyet** foglalja, sosem látszik együtt | ✅ maszkból vezérelve | — |
 | 2.5 | háttér: egyszínű / kép + színválasztó + pipetta | ✅ megvan | — |
-| 2.6 | **az átlagszín-háttér** (`collage::avgcolor`) felülír mindent | ❌ nincs | *nincs jegy* → **lásd 8.** |
+| 2.6 | **az átlagszín-háttér** (`collage::avgcolor`) felülír mindent | ❌ nincs | **#1004** |
 | 2.7 | oldalformátum-lista (17 arány + egyéni) | ✅ megvan | — |
 | 2.8 | tájolás (álló/fekvő) | ✅ megvan, **de nem rendez újra** | **#991** |
 | 2.9 | árnyék-jelölő, képfelirat-jelölő, feliratra kattintva is kapcsol | ✅ megvan | — |
@@ -93,7 +93,7 @@ hiányok):
 | 6.2 | `<Képek>/Picasa/Kollázsok`, név = a forrásmappa címe, `%s%lu` számozás | ❌ időbélyeges név | **#969** |
 | 6.3 | a JPEG mellé **`.cxf`**, atomi írással, q90 | ❌ nincs | **#969** |
 | 6.4 | mentés után a lap bezárul + `locate` a kész fájlra | ❌ nincs | **#949** kommentje |
-| 6.5 | asztali háttérkép: BMP + registry (**0/0 = középre**) | ❌ nincs | *nincs jegy* → **lásd 8.** |
+| 6.5 | asztali háttérkép: BMP + registry (**0/0 = középre**) | ❌ nincs | **#1005** |
 | 6.6 | folyamatjelző overlay, megszakítás megerősítéssel | ✅ megvan | — |
 | 6.7 | piszkozat mentése bezáráskor | ✅ megvan | — |
 | 6.8 | **időzített** automentés + helyreállítás induláskor | ❌ nincs | **#979** *(a #990 után!)* |
@@ -109,7 +109,7 @@ hiányok):
 
 ---
 
-## 8. ⚠️ Amire NINCS jegy — és most kap
+## 8. Amire az átvilágítás ELŐTT nem volt jegy
 
 Az átvilágítás két olyan hiányt talált, ami eddig sehol nem szerepelt:
 
