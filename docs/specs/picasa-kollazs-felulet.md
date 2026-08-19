@@ -1252,43 +1252,53 @@ eltolás iránya és a befoglaló-bővítés **megerősített**. A `k` levezeté
 (cellaél) **megerősített**. Az `A` lépték **megerősített** — a 9.0
 darabszám-képlete. **A szakaszban nem maradt feltételes állítás.**
 
-### 9/b.4 ⚠️ MÉRÉS valódi kimeneten (2026-08-19) — részben cáfol
+### 9/b.4 ✅ MÉRÉS valódi kimeneten (2026-08-19) — a képlet IGAZOLÓDIK
 
-A felhasználó nyolc kollázst készített teszteléshez, `.cxf`-párral
-(privát repó: `referencia/kollazs-golden/kollazsok-8db-cxf-parral.zip`).
-Az árnyék így **először lett megmérve** — és a lelet vegyes.
+A felhasználó nyolc kollázst készített teszteléshez, **mindegyikhez a
+`.cxf` projektfájllal** — mind a hat téma, árnyékkal (privát repó:
+`referencia/kollazs-golden/kollazsok-8db-cxf-parral.zip`). A `.cxf`
+megadja a csomópontok pontos, térköz ELŐTTI téglalapjait, így a csempék
+képpont-határai a 1.9.3 térköz-képletéből **kiszámolhatók**, és az
+árnyékot nem küszöböléssel talált, hanem **ismert** élekhez lehet mérni.
 
-**Képkupac — a képlet IGAZOLÓDIK.** `AI1` (picturepile, `noborder`,
-fehér háttér, 1:1, 5120×5120, 9 kép). Egy elszigetelt képen az árnyék
-kifutása: fent 28, lent 38, balra 31, jobbra 37 px. Ebből
-`eltolás = (kifutás_kifelé − kifutás_befelé)/2`, `sugár = (összeg)/2`:
+> ⚠️ **Helyesbítés a lap előző kiadásához.** Egy első, elnagyolt mérés
+> alapján itt az állt, hogy a rácsos témák x/y hozzárendelése téves.
+> **Ez a megállapítás volt hibás**, nem a képlet: az akkori mérés a
+> csempeéleket a fotó tartalmára küszöbölve kereste, és 130 képponttal
+> elvétette őket. A `.cxf`-ből számolt élekkel a képlet **egyezik**.
 
-| | mért | a 9/b.2 képlete (`A` = 1/√(√9−1) = 0,7071, `W` = 5120 → `A·W` = 3620) |
+**Rácsos téma — `AI4` (framegrid), négy egymástól független rés:**
+
+| | mért | a 9/b.2 képlete (`W` = 5120) |
 |---|---|---|
-| eltolás x | **3,0 px** | 0,001 · 3620 = **3,62** |
-| eltolás y | **5,0 px** | 0,0015 · 3620 = **5,43** |
-| sugár | **≈ 33,5 px** | 0,01 · 3620 = **36,2** |
+| eltolás x | **10,0** (4 résen azonos) | 0,0017 · 5120 + 1 = **9,70** |
+| eltolás y | **14,5** (2 résen azonos) | 0,0025 · 5120 + 1 = **13,80** |
+| sugár | **44,5 – 46,0** | 0,008 · 5120 = **40,96** |
 
-Mindhárom egyezik a mérési hibán belül (a küszöbölés a halvány farkat
-levágja, ezért a mért érték szisztematikusan kisebb). **Két dolog dől el
-ezzel:** (1) a `W` tényleg a **lap** szélessége, nem a csomóponté;
-(2) a képletben szereplő **`+1,0` additív tag nélkül illeszkedik jobban**
-— a `+1`-gyel 4,62 és 6,43 jönne ki, ami a mért 3,0/5,0-tól távolabb van.
+**Három dolog dől el ezzel:** (1) a `W` tényleg a **lap** szélessége;
+(2) az **`+1,0` additív tag megvan** (nélküle 8,70 és 12,80 jönne, a
+mért 10,0/14,5-től távolabb); (3) az **x/y hozzárendelés helyes** —
+a kisebb együttható (0,0017) a vízszintes, a nagyobb (0,0025) a
+függőleges.
 
-**Rácsos téma — NEM igazolódik.** `AI4` (framegrid, nagy hézag, egyszínű
-lila háttér, 5120×3840). Vízszintesen: jobbra 58, balra 32 px →
-**eltolás 13,0 px, sugár 45,0 px**. A 9/b.2 szerint a vízszintes eltolás
-`0,0017 · 5120 + 1 = 9,7` volna. A mért **13,0** ellenben a **másik**
-konstansra illeszkedik: `0,0025 · 5120 = 12,8`. A sugár (45) a
-`0,008 · 5120 = 41`-hez közel áll.
+**Indexkép — `AI6` (contactsheet):** a vízszintes réseken a mért sugár
+**34,5 px**. A 9/b.2 szerint `blur = 0,03 · k`, ahol `k` a 9/b.3
+levezetése szerint a cellaél: `W' = 0,88 · 3841 = 3380`,
+`H' = 0,79 · 5120 = 4045`, `k = ⌊√(W'·H'/9)⌋ = 1233`, majd a
+csökkentő ciklus 3 oszlopig viszi → `k ≈ 1126` → `blur = 33,8`.
+**A mért 34,5 ezt igazolja** — vagyis a `k` levezetése (a 0,88/0,79-es
+hasznos terület és a sqrt-es cellaél) is helyes.
+*(A függőleges rések itt nem mérhetők: a képfeliratok sávja esik beléjük.)*
 
-> **Ezért a rácsos témák x/y hozzárendelése MOST NYITOTT.** A konstansok
-> értéke és a `blur = 0,008 · W` helyes, de vagy az **x/y felcserélve**
-> van a 9/b.2 táblájában, vagy a `W` a rácsos ágon mást jelent.
-> Újra le kell vezetni: a `0x00883270` argumentum-sorrendjét
-> (`0x008832ad`–`0x00883315`) és a `ytShadowNode` `+0x1e4` / `+0x1f0`
-> mezőinek jelentését (`0x0087b411`, `0x0087b423`) — a mérés megvan
-> hozzá ellenőrzésnek. **A Képkupac ága ettől független és igazolt.**
+**Képkupac — `AI1`:** mért eltolás (3,0 ; 5,0), sugár ≈ 33,5; a képlet
+`A·W = 0,7071 · 5120 = 3620`-szal (4,62 ; 6,43) és 36,2. Az **arány és a
+nagyságrend egyezik**, de a pontosság itt kisebb: a Képkupac csomópontjai
+**el vannak forgatva** (theta −0,009…−0,089 rad), és a tengelyirányú
+mérés emiatt keveri a két komponenst. **Feltételes megerősítés.**
+
+**Többszörös exponálás — `AI7`:** a `.cxf`-ben `shadows="0"`; a
+felhasználó **be sem tudta kapcsolni**. Ez a képesség-maszk 11. bitjének
+független, felhasználói igazolása.
 
 ⚠️ **Ami továbbra sincs mérve:** hogy a mi kimenetünk ettől lesz-e az
 eredetivel egyező. A képlet ismerete nem helyettesíti a mérést.
