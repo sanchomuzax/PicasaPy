@@ -579,3 +579,110 @@ A szerkesztő 1. füljén mind a tíz gomb `.tre`-sora azonos
 x = **37 · 118 · 198**, y = **91 · 155 · 223 · 290**, gomb **44 × 30**.
 Ez betűre egyezik a tulajdonos valódi Picasa-képernyőképével — a `.tre`
 deklarációs sorrendje viszont **négy helyen** tért el tőle.
+
+---
+
+## 16. Egy FUNKCIÓ teljes feltárása — a Kollázs-menet kilenc tanulsága (2026-08-19)
+
+A Képkollázs feltárása négy napig, sok kis körben zajlott, és a hiányok
+**egyesével** kerültek elő — jórészt úgy, hogy a felhasználó vette észre
+őket. A felhasználó jogosan kérdezett rá, miért nem derült ki minden az
+első körben. Ez a szakasz az abból levont tanulságokat rögzíti, mind
+bizonyítékkal. **Aki egy funkciót térképez fel, ezt olvassa el először.**
+
+### 16.1 Kívülről befelé, KÜLSŐ listával
+
+Ne abból indulj, amit már értesz (a panel), hanem egy listából, amit
+**nem te állítasz össze**: az összes erőforrásnév, az összes vezérlő a
+`.tre`-ből, a vezérlő összes slotja. Ezekhez képest jelöld, mi van
+megmagyarázva.
+
+**Bizonyíték:** a panelből kiinduló első kör teljesnek látszott, de a
+funkció fele a panelen **kívül** él (a szerkesztő „Kollázs szerkesztése"
+gombja, a fejléc-belépési pontok). A 128 erőforrásnév **tételes**
+összevetése egyetlen körben négy hiányt talált, köztük egy nem
+dokumentált párbeszédablakot.
+
+### 16.2 A `✅` bizonyíték nélkül TILOS
+
+Egy sor akkor kaphat „kész" jelölést, ha van mellé **fájl + sor**
+hivatkozás. Bizonyíték nélkül a helyes jelölés a `❓`.
+
+**Bizonyíték:** a `kollazs-atvilagitas.md` első kiadásában **három**
+téves jelölés volt, és öt perc ellenőrzés kiderítette mindet. A
+legrosszabb: egy gombot késznek jelöltem, pedig egy **másik saját
+specifikációnk az előző nap óta** írta, hogy hiányzik.
+
+### 16.3 Három állapot van, nem kettő
+
+Nem „megvan / nincs meg", hanem:
+
+1. **nincs leírva**,
+2. **le van írva, de nincs megírva**,
+3. **meg van írva, de NEM HAT.**
+
+A harmadik a legveszélyesebb: a teszt zöld, a kód létezik, a felhasználó
+mégsem lát semmit.
+
+**Bizonyíték:** három ilyen egy héten belül — a panel nem volt bekötve a
+főablakba (#985), a téma nem jutott el a pakolóhoz (#989), a gomb
+jelzésének nincs fogadója (#1001).
+
+### 16.4 A hibaOSZTÁLYT keresd, ne a hibát
+
+Ha ugyanaz az alak másodszor is előjön, **írj rá gépi keresőt**, mielőtt
+a harmadikat is kézzel keresnéd.
+
+**Bizonyíték:** a #1001-et kézzel találtuk. Egy húszsoros kereső
+(`eszkozok/nema_jelzesek.py` a privát repóban) percek alatt **25** néma
+akció-jelzést talált, köztük két olyan hibaüzenetet, amit a felhasználó
+sosem lát (`emailFailed`, `personWriteFailed`). A többit enélkül ő
+találta volna meg, egyesével.
+
+### 16.5 Vezérlőnként HAT kérdés
+
+mikor **látszik** · mikor **aktív** · mit tesz **kattintásra** · mit
+**hoverre** · mit **húzás közben** · mi történik **utána**.
+
+**Bizonyíték:** a „hoverre" kérdést egyetlen kör sem tette fel, ezért a
+gyűrű megjelenési viselkedése (#1000) rejtve maradt — a felhasználó
+vette észre. Utólag a binárisból teljesen kiolvasható volt.
+
+### 16.6 A statikus elemzés VAK AZ IDŐRE
+
+Időzítő, animáció, késleltetés, fókusz-viselkedés: ezeket az erőforrás
+és a `.tre` **elvileg sem** sugallja. Vagy nézi valaki a futó programot,
+vagy célzottan időzítő-alakú kódot kell keresni.
+
+**Bizonyíték:** a gyűrű 0,5 másodperces késleltetése és a 0,25 / 0,5
+másodperces animációi (`RingNodeFadeHandler`, `0x007e6220`) semmilyen
+erőforrásból nem következtek.
+
+### 16.7 A golden-anyagot az ELEJÉN kérd, ne a végén
+
+**Bizonyíték:** nyolc kollázs a `.cxf`-párjával **egy óra alatt** eldöntött
+olyan kérdéseket, amelyeket napokig kerülgettünk — és közben **kijavított
+egy téves leletet** is.
+
+### 16.8 Méréskor a geometriát SZÁMOLD, ne detektáld
+
+Ha van projektfájl (`.cxf`), abból a képlettel **számold ki** a
+képpont-határokat. Az éldetektálás a képek saját tartalmán elcsúszik.
+
+**Bizonyíték:** küszöböléssel **130 képponttal** vétettem el a
+csempeéleket, és ebből egy téves „a képlet rossz" következtetés lett. A
+`.cxf`-ből számolt élekkel a képlet egyezett.
+
+### 16.9 A saját CÁFOLATOD is lehet téves
+
+Ha egy mérés cáfolja a leletet, az első kérdés ne az legyen, „hol rossz a
+képlet", hanem az, hogy **jól mértem-e**.
+
+**Bizonyíték:** kiadtam, hogy a rácsos témák árnyék-hozzárendelése
+téves; a pontosabb mérés visszaigazolta az eredeti képletet. A
+helyesbítés helyesbítésre szorult.
+
+> **A menet mércéje:** a végén ne az álljon, hogy „kész", hanem egy
+> **tábla** (eredeti / nálunk / jegy) és egy **kimondott lista arról,
+> amit NEM néztünk meg**. A lefedettség állítása enélkül önigazoló.
+> Példa: `kollazs-atvilagitas.md`.
