@@ -32,6 +32,21 @@ A `_regi_*` függvények **befagyasztott másolatok**: a #942 előtti viselkedé
 kódolják, ezért szándékosan nem követik a `picasa_render.py` további
 fejlődését. Ha egy későbbi jegy TUDATOSAN változtat a rajzon, ezt az őrt
 akkor kell — kimondva, a jegyben indokolva — nyugdíjazni.
+
+## ⚠️ ÁTVEZETÉS: a vetett árnyék (#977)
+
+A #977 bekötötte a vetett árnyékot, amit a #942 előtti rajzoló **egyáltalán
+nem rajzolt**. Az árnyék két témánál alapból BE van kapcsolva (a
+képesség-maszk 14. bitje: **Képkupac** és **Indexkép**), tehát az orákulummal
+való összevetés ott **12 esetben** (2 téma × 3 keret × 2 térköz-állás)
+szükségszerűen eltérne.
+
+Az őr ezért **nem nyugdíjba megy, hanem élesedik**: a bájtazonossági rács
+mostantól kimondottan `shadow=False`-szal mér. Így pontosan azt állítja,
+amit a #942 ígért — *az ELRENDEZÉS és a csempe-rajz nem változott* —, és nem
+azt, hogy „soha semmi nem kerül a lapra". A tudatos változást külön eset
+rögzíti (`test_az_arnyek_a_ket_alapertelmezetten_arnyekos_temat_valtoztatja`):
+ott az orákulumtól való eltérés **kötelező**, és csak SÖTÉTÍTÉS lehet.
 """
 
 from __future__ import annotations
@@ -266,6 +281,10 @@ def test_a_refaktor_nem_valtoztat_a_rajzon(tmp_path, kulcs):
         seed=12345,
         background=(30, 60, 90),
         caption="Proba",
+        # #977: az orákulum a vetett árnyékot NEM ismeri, ezért az őr
+        # kimondottan árnyék nélkül mér — így az állítása továbbra is az,
+        # hogy az ELRENDEZÉS és a csempe-rajz változatlan
+        shadow=False,
     )
     most = make_picasa_collage(forrasok, beallitas).image
     regen = _regi_make_picasa_collage(forrasok, beallitas)
@@ -274,6 +293,54 @@ def test_a_refaktor_nem_valtoztat_a_rajzon(tmp_path, kulcs):
         f"A(z) {tema}/{keret} (térköz {terkoz}) rajza megváltozott: "
         f"{eltero} képpont tér el a #942 előtti kimenettől."
     )
+
+
+#: A két téma, amelynél az árnyék ALAPBÓL be van kapcsolva (maszk 14. bitje).
+ARNYEKOS_ALAPBOL = (PICTUREPILE, CONTACTSHEET)
+
+
+@pytest.mark.parametrize("tema", ARNYEKOS_ALAPBOL)
+@pytest.mark.parametrize("keret", sorted(BORDER_THEMES))
+def test_az_arnyek_a_ket_alapertelmezetten_arnyekos_temat_valtoztatja(
+    tmp_path, tema, keret
+):
+    """#977: a Képkupac és az Indexkép rajza SZÁNDÉKOSAN eltér az orákulumtól.
+
+    Ez az eset az árnyék bekötésének kimondott ára: a #942 előtti rajzoló nem
+    ismerte a vetett árnyékot, ez a kettő pedig alapból árnyékos. Az eltérés
+    tehát **kötelező** — de csak SÖTÉTÍTÉS lehet: az árnyék fekete keverés,
+    tehát egyetlen képpontot sem világosíthat, és a geometriát sem
+    mozdíthatja el. Ha valaha egy csempe elcsúszik, itt VILÁGOSABB képpont is
+    megjelenne, és az eset bukna."""
+    forrasok = _mintakepek(tmp_path)
+    kozos = dict(
+        theme=tema,
+        border=keret,
+        width=407,
+        height=311,
+        seed=12345,
+        background=(200, 210, 220),
+        caption="Proba",
+    )
+    arnyekkal = make_picasa_collage(
+        forrasok, PicasaCollageSettings(**kozos, shadow=True)
+    ).image
+    regen = _regi_make_picasa_collage(
+        forrasok, PicasaCollageSettings(**kozos, shadow=False)
+    )
+
+    assert not np.array_equal(arnyekkal, regen), (
+        f"a(z) {tema}/{keret} árnyéka nem jelent meg — pedig alapból BE van"
+    )
+    assert np.all(arnyekkal.astype(int) <= regen.astype(int)), (
+        "az árnyék csak sötétíthet: világosabb képpont geometriai elcsúszást "
+        "jelentene, nem árnyékot"
+    )
+    # és a kikapcsolt árnyék visszaadja a bájtazonosságot
+    nelkule = make_picasa_collage(
+        forrasok, PicasaCollageSettings(**kozos, shadow=False)
+    ).image
+    assert np.array_equal(nelkule, regen)
 
 
 def test_minden_tema_es_keret_le_van_fedve():
@@ -431,13 +498,8 @@ def test_a_csomopont_elmozditasa_a_kimeneten_is_elmozdul(tmp_path):
     assert _befoglalo(utana.image, hatter) == (100, 0, 200, 100)
 
 
-def test_a_render_nodes_nem_szamol_elrendezest(tmp_path):
-    """UGYANAZ a csomópontlista UGYANAZT rajzolja, bármelyik téma van beállítva.
-
-    Ez a jegy lényege: a rajzoló nem nyúl a téma pakolójához. Ha bármelyik
-    téma befolyásolná a kimenetet, a kézi elrendezés mentéskor elveszne."""
-    ut = _ir_kepet(tmp_path / "kek.png", 30, 50, (255, 0, 0))
-    csomopontok = [
+def _proba_csomopontok(ut):
+    return [
         CollageNode(
             path=ut,
             center_x=300.0,
@@ -451,15 +513,62 @@ def test_a_render_nodes_nem_szamol_elrendezest(tmp_path):
             path=ut, center_x=700.0, center_y=500.0, width=260.0, height=260.0
         ),
     ]
+
+
+def test_a_render_nodes_nem_szamol_elrendezest(tmp_path):
+    """UGYANAZ a csomópontlista UGYANOTT rajzol, bármelyik téma van beállítva.
+
+    Ez a jegy lényege: a rajzoló nem nyúl a téma pakolójához. Ha bármelyik
+    téma befolyásolná a HELYEKET, a kézi elrendezés mentéskor elveszne.
+
+    ⚠️ **#977: az eset át lett írva, kimondva.** Eredetileg a hat téma
+    kimenetének bájtazonosságát állította. Az árnyék bekötése óta ez már
+    TÖBBET állítana a kelleténél: az árnyék az eredetiben **témánként
+    paraméterezett** (négy készlet, spec 9/b.2), tehát a témának *látszania
+    is kell* a képen. Ami változatlan — és amit ez az eset azóta mér —, az az
+    ELRENDEZÉS: árnyék nélkül a hat téma rajza továbbra is bájtazonos."""
+    ut = _ir_kepet(tmp_path / "kek.png", 30, 50, (255, 0, 0))
+    csomopontok = _proba_csomopontok(ut)
     kepek = [
         render_nodes(
             csomopontok,
-            PicasaCollageSettings(theme=tema, width=400, height=300, spacing=0.7),
+            PicasaCollageSettings(
+                theme=tema, width=400, height=300, spacing=0.7, shadow=False
+            ),
         ).image
         for tema in COLLAGE_THEMES
     ]
     for kep in kepek[1:]:
         assert np.array_equal(kep, kepek[0])
+
+
+def test_az_arnyek_viszont_temankent_MAS(tmp_path):
+    """#977: bekapcsolt árnyékkal a témának LÁTSZANIA kell a képen.
+
+    A négy paraméterkészlet nem díszítés: a Mozaik és a Rács árnyéka
+    máshova és máshogy esik. Ha valaki egyetlen közös készletet ír, ez az
+    eset bukik — ugyanaz a kép jönne ki mindkét témára."""
+    ut = _ir_kepet(tmp_path / "feher.png", 30, 50, (255, 255, 255))
+    # csak a TENGELYPÁRHUZAMOS csomópont: a forgatott csempe éle a
+    # `warpAffine` miatt magától is sötét szegélyt kap, ami elnyomná a mérést
+    csomopontok = _proba_csomopontok(ut)[1:]
+
+    def _rajz(tema):
+        return render_nodes(
+            csomopontok,
+            PicasaCollageSettings(
+                theme=tema,
+                width=400,
+                height=300,
+                background=(255, 255, 255),
+                shadow=True,
+            ),
+        ).image
+
+    mozaik, racs = _rajz(PICTUREGRID), _rajz(REGULARGRID)
+    assert not np.array_equal(mozaik, racs)
+    # a Rács 60 %-os árnyéka SÖTÉTEBB a Mozaik 40 %-osánál
+    assert int(racs.min()) < int(mozaik.min())
 
 
 def test_a_lista_sorrendje_a_rajzolasi_sorrend(tmp_path):

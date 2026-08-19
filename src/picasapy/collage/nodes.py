@@ -31,6 +31,7 @@ from .fitting import picasa_round
 from .frames import apply_border, polaroid_geometry, white_border_width
 from .layout import Placement
 from .render import _paste, _rotated_paste, fit_to_frame
+from .shadow import ShadowParams, draw_shadow
 from .themes import BORDER_THEMES, NOBORDER, POLAROID, WHITEBORDER
 
 
@@ -310,6 +311,7 @@ def draw_nodes(
     nodes: Sequence[CollageNode],
     images: Sequence[np.ndarray | None],
     page_width: int,
+    shadow: ShadowParams | None = None,
 ) -> None:
     """A KÖZÖS rajzoló: a csomópontokat a vászonra teszi, rajzolási sorrendben.
 
@@ -317,13 +319,28 @@ def draw_nodes(
     utolsó legfelül** (`canvas.py` is ezt tartja). `images[i]` a már
     dekódolt kép, vagy `None`, ha nincs meg — akkor helykitöltő csempe jön.
 
-    Elrendezést NEM számol: pontosan oda rajzol, ahova a csomópont mutat."""
+    Elrendezést NEM számol: pontosan oda rajzol, ahova a csomópont mutat.
+
+    A `shadow` a téma árnyék-paraméterei (#977) vagy `None`. Minden csempének
+    a SAJÁT árnyéka közvetlenül előtte rajzolódik, nem előre az összes: így a
+    felül lévő kép árnyéka ráesik az alatta lévőre — ez adja a Képkupac
+    mélységét. A rajzoló nem ismeri a témát; a paramétereket a hívó adja."""
     for node, image in zip(nodes, images, strict=True):
         tile = _node_tile(node, image, page_width)
         kozep_x = sheet_to_pixels(node.center_x, page_width)
         kozep_y = sheet_to_pixels(node.center_y, page_width)
         x = _origin(kozep_x, tile.shape[1])
         y = _origin(kozep_y, tile.shape[0])
+        if shadow is not None:
+            draw_shadow(
+                canvas,
+                x=x,
+                y=y,
+                width=tile.shape[1],
+                height=tile.shape[0],
+                theta=node.theta,
+                params=shadow,
+            )
         if node.theta:
             _rotated_paste(
                 canvas,
@@ -343,6 +360,7 @@ def draw_nodes(
 __all__ = [
     "SHEET_UNITS",
     "CollageNode",
+    "ShadowParams",
     "border_growth",
     "draw_nodes",
     "outer_box",
