@@ -48,6 +48,14 @@ class CollageNode:
     a csomópont mérete **forgatás előtt, a kerettel együtt**, `theta` a
     forgatás **radiánban** (0 = felfelé, pozitív = az óramutató járása
     szerint).
+
+    ⚠️ **Az `aspect` a KÉP oldalaránya, nem a résé** (#989). Amíg minden
+    téma a Képkupac szórását kapta, a rés doboza mindig a kép arányát vette
+    fel, tehát a `width / height` visszaadta azt. A rácsos témák viszont
+    CELLÁBA vágnak: ott a doboz a celláé, és a kép aránya menthetetlenül
+    elveszne — márpedig a következő újrarendezéshez (`packing.pack`,
+    `regular_grid_shape`) pontosan a kép aránya kell. A képhez tartozik,
+    ezért a `Picture`-rel EGYÜTT költözik cserénél és keverésnél.
     """
 
     path: str
@@ -60,6 +68,7 @@ class CollageNode:
     caption: str = ""
     selected: bool = False
     missing: bool = False
+    aspect: float = 1.0
 
     def __post_init__(self) -> None:
         if self.border not in BORDER_THEMES:
@@ -70,6 +79,8 @@ class CollageNode:
             raise ValueError(
                 f"Érvénytelen csomópont-méret: {self.width}×{self.height}"
             )
+        if not self.aspect > 0.0:
+            raise ValueError(f"Érvénytelen kép-oldalarány: {self.aspect}")
 
 
 class Picture(NamedTuple):
@@ -78,6 +89,8 @@ class Picture(NamedTuple):
     path: str
     caption: str
     missing: bool
+    #: A kép oldalaránya; a képpel EGYÜTT költözik (ld. `CollageNode.aspect`).
+    aspect: float = 1.0
 
 
 def initial_node_width(count: int) -> float:
@@ -125,7 +138,7 @@ def with_selection(
 
 def pictures_of(nodes: Sequence[CollageNode]) -> tuple[Picture, ...]:
     """A csomópontokban ülő képek, rajzolási sorrendben."""
-    return tuple(Picture(n.path, n.caption, n.missing) for n in nodes)
+    return tuple(Picture(n.path, n.caption, n.missing, n.aspect) for n in nodes)
 
 
 def with_pictures(
@@ -138,7 +151,13 @@ def with_pictures(
             f"({len(nodes)})."
         )
     return tuple(
-        replace(node, path=kep.path, caption=kep.caption, missing=kep.missing)
+        replace(
+            node,
+            path=kep.path,
+            caption=kep.caption,
+            missing=kep.missing,
+            aspect=kep.aspect,
+        )
         for node, kep in zip(nodes, pictures, strict=True)
     )
 

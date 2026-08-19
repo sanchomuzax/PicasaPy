@@ -18,7 +18,14 @@ from picasapy.app import collage_output as output
 from picasapy.app import collage_prefs as prefs
 from picasapy.app.collage_model import CollageNode, initial_node_width
 from picasapy.collage.fitting import MsvcRandom
-from picasapy.collage.themes import CONTACTSHEET, MULTIEXP, NOBORDER, PICTUREPILE
+from picasapy.collage.themes import (
+    CONTACTSHEET,
+    FRAMEGRID,
+    MULTIEXP,
+    NOBORDER,
+    PICTUREPILE,
+    REGULARGRID,
+)
 
 
 @dataclass
@@ -63,29 +70,80 @@ class TestForrasok:
 
 
 class TestElrendezes:
-    def test_a_meret_a_darabszambol_jon(self):
+    # ⚠️ #989: a `laid_out` szignatúrája MEGVÁLTOZOTT. A régi alak
+    # (`sources, page_ratio, border, rng`) nem ismert témát — a törzse
+    # mindig a Képkupac szórását futtatta, ezért a panel téma-választója
+    # nem hatott a vászonra. A véletlenforrás helyére a MAG került: a hat
+    # pakoló közül több (Mozaik, Képkockamozaik) maga építi a generátorát,
+    # tehát egy kívülről beadott, félig elhasznált `rng` értelmét vesztette.
+
+    def test_a_kepkupac_negyzetbe_illeszt(self):
+        """A darabszámból jövő méret a NÉGYZET oldala (`pile_size`), nem a
+        csomópont szélessége — az álló és a fekvő kép így egyforma nagy."""
+        from picasapy.collage.pile import pile_size
+
         sources = tuple(
             layout.CollageSource(f"/k/{i}.jpg", "", 1.0) for i in range(5)
         )
-        nodes = layout.laid_out(sources, 0.75, NOBORDER, MsvcRandom(1))
-        assert all(n.width == pytest.approx(initial_node_width(5)) for n in nodes)
+        nodes = layout.laid_out(sources, 0.75, NOBORDER, seed=1)
+        for index, node in enumerate(nodes, start=1):
+            # a kupacban a sorrendben hátrébb lévő kép KISEBB (1.9.2)
+            assert max(node.width, node.height) == pytest.approx(
+                pile_size(index, 1024), abs=1.0
+            ), index
+        # a fogantyú viszonyítási pontja a darabszámé (spec 6.2) — ez a
+        # legkisebb, tehát az UTOLSÓ kép négyzete
+        assert initial_node_width(5) == pytest.approx(pile_size(5, 1024), abs=1.0)
 
     def test_a_kozeppontok_a_lapon_belul_vannak(self):
         sources = tuple(
             layout.CollageSource(f"/k/{i}.jpg", "", 1.0) for i in range(6)
         )
-        nodes = layout.laid_out(sources, 0.75, NOBORDER, MsvcRandom(7))
+        nodes = layout.laid_out(sources, 0.75, NOBORDER, seed=7)
         assert all(0.0 <= n.center_x <= 1024.0 for n in nodes)
         assert all(0.0 <= n.center_y <= 768.0 for n in nodes)
 
     def test_ures_forras_ures_lista(self):
-        assert layout.laid_out((), 0.75, NOBORDER, MsvcRandom(1)) == ()
+        assert layout.laid_out((), 0.75, NOBORDER, seed=1) == ()
 
     def test_ugyanaz_a_mag_ugyanazt_az_elrendezest_adja(self):
         sources = (layout.CollageSource("/k/a.jpg", "", 1.0),)
-        egy = layout.laid_out(sources, 1.0, NOBORDER, MsvcRandom(42))
-        ket = layout.laid_out(sources, 1.0, NOBORDER, MsvcRandom(42))
+        egy = layout.laid_out(sources, 1.0, NOBORDER, seed=42)
+        ket = layout.laid_out(sources, 1.0, NOBORDER, seed=42)
         assert egy == ket
+
+    def test_a_tema_MAS_elrendezest_ad(self):
+        """A jegy magja: a `theme` tényleg eljut a pakolóig."""
+        sources = tuple(
+            layout.CollageSource(f"/k/{i}.jpg", "", 1.0 + i * 0.3) for i in range(5)
+        )
+        kupac = layout.laid_out(sources, 0.75, NOBORDER, theme=PICTUREPILE, seed=3)
+        racs = layout.laid_out(sources, 0.75, NOBORDER, theme=REGULARGRID, seed=3)
+        assert [(n.center_x, n.width) for n in kupac] != [
+            (n.center_x, n.width) for n in racs
+        ]
+
+    def test_a_kep_oldalaranya_atmegy_a_csomopontra(self):
+        """A rés doboza a rácsnál a CELLÁÉ — a kép arányát ezért külön mező
+        őrzi, különben a következő újrarendezés torz arányokkal dolgozna."""
+        sources = (layout.CollageSource("/k/a.jpg", "", 16 / 9),)
+        for tema in (PICTUREPILE, REGULARGRID):
+            nodes = layout.laid_out(sources, 0.75, NOBORDER, theme=tema, seed=1)
+            assert nodes[0].aspect == pytest.approx(16 / 9), tema
+
+    def test_a_kepkockakozeppont_a_lista_vegere_kerul(self):
+        sources = tuple(
+            layout.CollageSource(f"/k/{i}.jpg", "", 1.0) for i in range(4)
+        )
+        nodes = layout.laid_out(
+            sources, 0.75, NOBORDER, theme=FRAMEGRID, frame_center=1, seed=5
+        )
+        assert nodes[-1].path == "/k/1.jpg"
+        assert layout.frame_center_after(FRAMEGRID, 1, len(nodes)) == len(nodes) - 1
+        # a többi témát a rögzítés nem rendezi át
+        assert layout.frame_center_after(PICTUREPILE, 1, 4) == 1
+        assert layout.layout_uses_frame_center(FRAMEGRID) is True
+        assert layout.layout_uses_frame_center(PICTUREPILE) is False
 
     def test_a_szetszoras_a_meretet_nem_bantja(self):
         nodes = (

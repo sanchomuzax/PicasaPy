@@ -193,19 +193,37 @@ class TestMegnyitas:
         utak = [n.path for n in nyitott.collageNodes.nodes]
         assert [PurePath(u).name for u in utak] == ["a.jpg", "b.jpg", "c.jpg"]
 
+    # ⚠️ #989: ez a két eset ÁTÍRÓDOTT. A #943 azt rögzítette, hogy MINDEN
+    # csomópont szélessége `initial_node_width(n)` — ez akkor volt igaz,
+    # amikor a panel a téma pakolója helyett egy saját, egyszerűsített
+    # szórást futtatott. A Képkupac valódi pakolója (`collage/pile.py`,
+    # 1.9.2) minden képet UGYANABBA A NÉGYZETBE illeszt (`pile_size`), tehát
+    # az álló kép szélessége kisebb, mint a fekvőé — a régi szabály egy álló
+    # képet 1,33-szor akkorára nagyított, mint egy fekvőt. A darabszámból
+    # jövő méret ettől nem tűnt el: az a NÉGYZET oldala (és egyben a
+    # `collageBaseNodeWidth` viszonyítási pontja, spec 6.2).
+
     def test_a_kezdo_meret_a_darabszambol(self, nyitott):
+        from picasapy.collage.pile import pile_size
+
+        oldal = pile_size(1, 1024)
+        for n in nyitott.collageNodes.nodes:
+            assert max(n.width, n.height) == pytest.approx(oldal, abs=1.0)
+
+    def test_a_meretarany_viszonyitasi_pontja_a_darabszamon_all(self, nyitott):
+        """A fogantyú 1,0-s viszonyítási pontja (spec 6.2, #947) továbbra is
+        a darabszámból jön — ezt a téma-váltás nem bántja."""
         from picasapy.app.collage_model import initial_node_width
 
-        vart = initial_node_width(3)
-        assert all(
-            n.width == pytest.approx(vart) for n in nyitott.collageNodes.nodes
-        )
+        assert nyitott.collageBaseNodeWidth == pytest.approx(initial_node_width(3))
 
     def test_a_magassag_a_kep_aranyabol(self, nyitott):
+        """A kép aránya megmarad — EGY lapegység tűréssel: az illesztő egész
+        képpontra kerekít (`fitting.picasa_round`)."""
         also, allo, negyzet = nyitott.collageNodes.nodes
-        assert also.height == pytest.approx(also.width * 300 / 400)
-        assert allo.height == pytest.approx(allo.width * 400 / 300)
-        assert negyzet.height == pytest.approx(negyzet.width)
+        assert also.height == pytest.approx(also.width * 300 / 400, abs=1.0)
+        assert allo.height == pytest.approx(allo.width * 400 / 300, abs=1.0)
+        assert negyzet.height == pytest.approx(negyzet.width, abs=1.0)
 
     def test_a_felirat_a_kephez_tartozik(self, nyitott):
         assert [n.caption for n in nyitott.collageNodes.nodes] == [
@@ -367,9 +385,13 @@ class TestForgatas:
         assert kert == [1]
 
     def test_ismeretlen_parancs_nem_omlik_ossze(self, nyitott):
+        """#989: a Képkupac a képeket LEGYEZŐSEN dönti meg (`pile_rotation`),
+        tehát a kiinduló szög nem nulla — az állítás azért arról szól, hogy
+        az ismeretlen parancs semmit NEM változtat."""
         nyitott.setCollageSelection([0])
+        elotte = nyitott.collageNodes.nodes[0].theta
         nyitott.snapRotation("snap_7")
-        assert nyitott.collageNodes.nodes[0].theta == 0.0
+        assert nyitott.collageNodes.nodes[0].theta == elotte
 
 
 class TestVeletlenszerusites:

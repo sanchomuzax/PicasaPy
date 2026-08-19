@@ -445,6 +445,18 @@ Vagyis **egy kép a lap szélességének 33%-át kapja**; 10 képnél ~0,68-szor
 100-nál ~0,33-szoros. Ez csak a Képkupacra, az Indexképre és a Többszörös
 exponálásra vonatkozik — a rácsos témák a pakolóból kapnak méretet.
 
+> ⚠️ **Pontosítás (#989).** Ez az `alapszélesség` a **viszonyítási pont**
+> (`spec[0x3c]`; a fogantyú 1,0-s méretaránya, nálunk
+> `collageBaseNodeWidth`), nem minden csomópont tényleges szélessége. A
+> csomópontok geometriáját **a téma pakolója** adja, mind a hat témánál —
+> ugyanaz a kód, ami mentéskor is fut
+> (`collage.picasa_render.layout_nodes_for_aspects`). A Képkupacnál ez azt
+> jelenti, hogy a képek egy NÉGYZETBE illeszkednek (`pile.pile_size`,
+> 1.9.2) — az álló és a fekvő kép tehát egyforma nagy —, és a szögük sem
+> nulla (`pile.pile_rotation` legyezőhatása). A #920 első változata minden
+> témára a Képkupac egyszerűsített szórását futtatta; ettől a
+> téma-választó egyáltalán nem hatott a vászonra.
+
 ### 6.3 Rajzolás a QML-ben
 
 - A lap: `Rectangle` a háttérszínnel (vagy `Image` háttérképpel), 1 px
