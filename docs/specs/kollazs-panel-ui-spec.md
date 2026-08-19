@@ -489,6 +489,26 @@ exponálásra vonatkozik — a rácsos témák a pakolóból kapnak méretet.
 akármit kért a felhasználó (`0x008364a0`). A Többszörös exponálásnak saját
 háttérkezelése van (mód 2), ezért nincs is háttér-beállítása.
 
+**A háttérkép a kollázs SAJÁT képeinek egyike** (#1009), indexszel
+hivatkozva: az előnézetet a `0x00830a00(this, index)` tölti fel, és
+`index == -1` esetén kilép (`0x00830a8b`). Ebből három szabály következik,
+és mindhármat a `collage_background.CollageBackgroundMixin` tartja:
+
+1. A „Kép használata"-ra váltás **azonnal választ képet** — alapból az
+   elsőt. (*Erős, nem megerősített*: a golden `AI2.cxf` és `AI5.cxf`
+   mindkettőjében az első kép a háttér — ld. `picasa-create-features.md`
+   1.6/e. Alapértelmezés, nem törvény.)
+2. „A kijelölt elemek használata" ezt **felülírja**.
+3. A háttér a **képet** követi, nem a rést: keverés és csere után is
+   ugyanaz a kép marad a háttér, és ha a képet kiveszik a kollázsból, a
+   háttér a következő érvényesre esik vissza — törött hivatkozás nem
+   maradhat.
+
+A `.cxf`-be a háttérkép `<background type="image"><src>…</src></background>`
+alakban megy ki (a `color` attribútum ilyenkor elmarad). ⚠️ A **kirajzolt
+JPEG** háttere egyelőre a beállított SZÍN marad: a képhátteret ma csak a
+projektfájl őrzi.
+
 ### 6.5 ⚠️ A mag hiánya: `render_nodes`
 
 A `picasa_render.make_picasa_collage(sources, settings)` **maga rendezi el**
@@ -663,7 +683,8 @@ API-hívók miatt), de a panel NEM azt hívja.
 | `collagePageRatio` | float | magasság / szélesség — ebből él a lap alakja |
 | `collageBackgroundMode` | str | `solid` / `image` / `avg` |
 | `collageBackgroundColor` | QColor | |
-| `collageBackgroundImage` | str | |
+| `collageBackgroundImage` | str | a háttérkép útvonala (a csomópont-indexből számolva) |
+| `collageBackgroundImageUrl` | QUrl | UGYANAZ URL-ként — a QML `Image.source`-a ezt kösse be, kézzel fűzött `"file://" + út` HELYETT (#1009) |
 | `collageNodes` | QAbstractListModel | a vászon modellje |
 | `collageSelection` | list[int] | |
 | `collageFrameCenter` | int | −1 = nincs |
@@ -671,7 +692,17 @@ API-hívók miatt), de a panel NEM azt hívja.
 | `collageDirty` | bool | van-e mentetlen módosítás |
 | `collageCapabilities` | QVariantMap | `{borders, spacing, shadow, selection, background, shuffle, scramble, ring, rotate}` — a `themes.capabilities_for`-ból |
 
-Minden property-hez `<név>Changed` jelzés.
+Minden property-hez `<név>Changed` jelzés. Kivétel a
+`collageBackgroundImageUrl`: ugyanaz az adat más alakban, ezért a
+`collageBackgroundImageChanged`-re jár (külön jelzésnek nem volna fogadója —
+`scripts/check_dead_signals.py`).
+
+⚠️ **Útvonal → URL: sose kézzel.** A `"file://" + útvonal` Windowson
+**érvénytelen** URL-t ad (a `C:` portnak látszik), a `"file:" + útvonal`
+pedig `#`-et tartalmazó fájlnévnél vágja el a nevet — mindkét esetben
+NÉMÁN, üres képpel. Az átalakítás egy helyen él:
+`app/formatting.to_file_url` (a `to_local_path` párja). A #1009-ben ez éles
+hiba volt, és a windows-CI-láb fogta meg.
 
 ### 8.2 Slotok
 

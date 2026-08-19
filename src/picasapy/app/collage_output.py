@@ -259,6 +259,7 @@ def render_collage(
     target: Path | str,
     *,
     album_title: str = "",
+    background_image: str = "",
     should_cancel=None,
 ) -> SaveResult:
     """A vászon kirajzolása és kiírása — a JPEG és a `.cxf` párja.
@@ -267,6 +268,10 @@ def render_collage(
     írja le a 400 képpontos élő előnézetet és az 5120 képpontos kimenetet.
     Ha egyetlen kép sem volt olvasható, fájl NEM születik — a hívó ebből
     fogalmazza meg a „Mentés mellőzve" üzenetet.
+
+    A `background_image` a `.cxf`-be írandó háttérkép (#1009). A rajzoló
+    egyszínű hátteret fest — a képhátteret EGYELŐRE csak a projektfájl őrzi,
+    tehát a kirajzolt JPEG háttere a beállított szín marad.
 
     A `should_cancel` a megszakítás egyetlen fogantyúja (spec 9.1): a
     rajzolás UTÁN, az írás ELŐTT kérdezzük meg. Így a megszakított mentés
@@ -287,7 +292,10 @@ def render_collage(
     if not jelentes.used:
         return SaveResult(None, 0, hianyzo, kihagyott, tuple(jelentes.image.shape))
     projekt = project_from_nodes(
-        jelentes.nodes, settings, album_title=album_title
+        jelentes.nodes,
+        settings,
+        album_title=album_title,
+        background_image=background_image,
     )
     ut = _write_pair(Path(target), jelentes.image, projekt)
     return SaveResult(

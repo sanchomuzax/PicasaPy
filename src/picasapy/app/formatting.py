@@ -11,7 +11,7 @@ import itertools
 import re
 from pathlib import Path
 
-from PySide6.QtCore import QDate, QDateTime, QLocale
+from PySide6.QtCore import QDate, QDateTime, QLocale, QUrl
 
 from picasapy.metadata import read_exif_details
 
@@ -42,12 +42,30 @@ def to_local_path(path_or_url: str) -> str:
     A QUrl.toLocalFile Windowson per-jeles utat ad (C:/...) — a Path-on
     átfuttatás normalizálja, különben ugyanaz a mappa két alakban
     szerepelhetne a figyeltek közt."""
-    from PySide6.QtCore import QUrl
-
     text = path_or_url.strip()
     if text.startswith("file:"):
         text = QUrl(text).toLocalFile()
     return str(Path(text)) if text else ""
+
+
+def to_file_url(path: str) -> QUrl:
+    """Lokális útvonal → `file:` URL a QML `Image.source`-ának (#1009).
+
+    A `to_local_path` PÁRJA, az ellenkező irányban — és nem kényelmi
+    függvény: **kézzel fűzött URL-t írni hibás**.
+
+    | amit írni szoktak | windowsos útvonalra | ékezetes/`#`-es névre |
+    |---|---|---|
+    | `"file://" + út` | **érvénytelen** URL (a `C:` portnak látszik, a `QUrl` üresre normalizál) | a `#` levágja a nevet |
+    | `"file:" + út` | véletlenül működik | a `#` levágja a nevet |
+    | `QUrl.fromLocalFile(út)` | helyes | helyes (százalékos kódolás) |
+
+    A `"file://"`-os alak a #1009-ben éles hibát okozott: a kollázs
+    háttérkép-előnézete Windowson MINDEN útvonalra üres maradt — a
+    windows-CI-láb fogta meg. Üres bemenetre üres (érvénytelen) URL jár,
+    hogy a QML `source`-a törölhető legyen."""
+    text = (path or "").strip()
+    return QUrl.fromLocalFile(text) if text else QUrl()
 
 
 #: A Picasa MAGYAR méretformátumai (#526), a CD-diavetítő 37 nyelvű

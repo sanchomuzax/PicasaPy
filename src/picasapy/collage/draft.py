@@ -150,12 +150,17 @@ def project_from_nodes(
     *,
     album_title: str = DEFAULT_ALBUM_TITLE,
     album_date: str = "",
+    background_image: str = "",
 ) -> CxfProject:
     """A kirajzolt vászonból teljes `.cxf` projekt.
 
     A téma, a térköz, az árnyék és a háttér a beállításból jön — de a
     TÉNYLEGESEN alkalmazott alakjukban (`effective_*`), mert a piszkozatnak
-    azt kell megőriznie, amit a felhasználó lát."""
+    azt kell megőriznie, amit a felhasználó lát.
+
+    ⚠️ A `background_image` NEM a `PicasaCollageSettings`-ből jön (#1009): a
+    rajzoló egyszínű hátteret fest, a képhátteret a projektfájl őrzi. Aki a
+    renderelő-beállításba tenné, azt ígérné, hogy ki is rajzolódik."""
     page_ratio = settings.height / settings.width
     return CxfProject(
         aspect_ratio=aspect_ratio_text(settings.width, settings.height),
@@ -167,7 +172,11 @@ def project_from_nodes(
         captions=any(node.caption for node in nodes),
         album_title=album_title,
         album_date=album_date,
-        background=CxfBackground(type="solid", color=_argb(settings.background)),
+        background=(
+            CxfBackground(type="image", src=background_image)
+            if background_image
+            else CxfBackground(type="solid", color=_argb(settings.background))
+        ),
         spacing=settings.effective_spacing,
         nodes=tuple(
             cxf_node_of(
