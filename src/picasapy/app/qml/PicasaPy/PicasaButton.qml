@@ -109,6 +109,20 @@ Button {
         //    felirat elfér, ott semmi nem változik.
         fontSizeMode: Text.Fit
         minimumPixelSize: control.minimumLabelPixelSize
+        // …a `minimumPointSize` is, mert a `Text.Fit` a betű megadási
+        // módjához illő padlót nézi: ha a stílus pont-alapú betűt ad, a
+        // képpontos padló nem érvényesülne.
+        minimumPointSize: control.minimumLabelPixelSize
+        // 3/b. A SORKÖZ az eredetié: az `m_buttonfontC` `fontsize 12`-höz
+        //    `fontleading 10`-et ad, azaz a sormagasság a betűméret 10/12-e.
+        //    Ez nem szépészet, hanem ez teremti meg a helyet a második
+        //    sornak: nélküle a natúr sorköz mellett két sor NEM fér a 26
+        //    képpontos gombba, és a felirat a `Text.Fit`-re szorulna —
+        //    amiről a Windows-láb megmutatta, hogy nem támaszkodhatunk rá
+        //    a magasságra. Így viszont a felirat TELJES méretben marad, és
+        //    olvashatóbb, mint zsugorítva.
+        lineHeightMode: Text.ProportionalHeight
+        lineHeight: 10 / 12
         // 4. Végső fék: ha a padlón sem fér el, akkor sem folyhat a
         //    szomszéd gombra. Ez a `.tre` `*_clip` konténereinek megfelelője.
         clip: true

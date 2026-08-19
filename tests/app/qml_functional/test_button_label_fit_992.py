@@ -89,6 +89,40 @@ def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
         return False
 
 
+def _geometria_ujjlenyomat(gyoker: QQuickItem) -> tuple:
+    """A gombok és feliratuk MINDEN mérete, egyetlen összehasonlítható alakban.
+
+    Ebből dől el, hogy az elrendezés megállapodott-e. A puszta „létezik már
+    gomb" feltétel kevés: a `Text` a saját méretét (és a `Text.Fit`
+    betűméretét) a doboz megérkezése UTÁN számolja újra, tehát a korai
+    olvasás a tördelés előtti értéket adná vissza."""
+    minta = []
+    for gomb in _picasa_gombok(gyoker):
+        meret = _felirat_doboza(gomb)
+        minta.append((gomb.objectName(), gomb.width(), gomb.height(), meret))
+    return tuple(minta)
+
+
+def _var_a_stabil_elrendezesre(qt_app, gyoker: QQuickItem, masodperc: float = 5.0):
+    """Vár, amíg a geometria KÉT egymást követő mintában azonos.
+
+    #918 + a #992 Windows-lába: fejnélküli környezetben az elrendezés
+    késik, és a késés platformfüggő. Egy „van már gomb" feltétel után
+    olvasva a felirat mérete még a tördelés előtti állapotot mutathatja —
+    onnantól a teszt akár hamis zöldet, akár hamis bukást adhat."""
+    elozo = None
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        mostani = _geometria_ujjlenyomat(gyoker)
+        if mostani and mostani == elozo:
+            return mostani
+        elozo = mostani
+        time.sleep(0.02)
+    assert elozo, "az elrendezés nem született meg az időkorláton belül"
+    return elozo
+
+
 def _bejar(item: QQuickItem):
     """A VIZUÁLIS fa bejárása — a `findChild` nem lát mindent (#651)."""
     for child in item.childItems():
@@ -191,10 +225,12 @@ def _jelenet(
     root.setHeight(height)
     view.show()
     _KEEPALIVE.extend((view, root, component, vezerlo))
-    # az elrendezés megszületésére VÁRUNK, nem feltételezzük (#918)
+    # az elrendezés megszületésére VÁRUNK, nem feltételezzük (#918), és nem
+    # elég, hogy a gomb létezik: a MÉRETEKNEK kell megállapodniuk
     assert _var(qt_app, lambda: len(_picasa_gombok(root)) > 0), (
         "a jelenetben egyetlen PicasaButton sem rajzolódott ki"
     )
+    _var_a_stabil_elrendezesre(qt_app, root)
     return root
 
 
@@ -323,6 +359,7 @@ def test_az_egesz_alkalmazas_gombfeliratai_beleferek(qt_app, qml_app):
     assert _var(qt_app, lambda: len(_picasa_gombok(gyoker)) > 0), (
         "a fő ablakban egyetlen PicasaButton sem rajzolódott ki"
     )
+    _var_a_stabil_elrendezesre(qt_app, gyoker)
     leletek = _tullogasok(gyoker)
     assert not leletek, (
         "magyar gombfelirat lóg ki a gombjából a fő ablakban (#992):\n"
