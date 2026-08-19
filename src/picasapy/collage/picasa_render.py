@@ -58,6 +58,7 @@ import cv2
 import numpy as np
 
 from .fitting import MsvcRandom, fit_aspect_inside
+from .frames import POLAROID_HEIGHT_RATIO, POLAROID_WIDTH_RATIO
 from .multi_exposure import blend_multi_exposure
 from .nodes import (
     SHEET_UNITS,
@@ -85,8 +86,15 @@ from .themes import (
     NOBORDER,
     PICTUREGRID,
     PICTUREPILE,
+    POLAROID,
     REGULARGRID,
 )
+
+#: A polaroid csempe RÖGZÍTETT oldalaránya (#1053). Nem új szám: a keret két
+#: aránya adja (`1,145 / 1,374 = 0,83333`), és a golden csempéken mérve
+#: `0,83313` / `0,83328` — négy tizedesig egyezik. Azért él nevesítve, mert a
+#: Képkupacban ez a csempe ALAKJA, nem csak a keret növekménye.
+POLAROID_CSEMPE_ARANY = POLAROID_WIDTH_RATIO / POLAROID_HEIGHT_RATIO
 
 _DEFAULT_WIDTH = 1600
 _DEFAULT_HEIGHT = 1200
@@ -338,6 +346,31 @@ def _lapra_szorit(kozep: float, meret: float, lap: int) -> float:
     return min(max(kozep, meret * 0.5), lap - meret * 0.5)
 
 
+def _polaroid_negyzet(oldal: int) -> tuple[int, int, int]:
+    """A `scale` négyzetbe illeszkedő polaroid csempe: (fotó oldala, szél., mag.).
+
+    #1053: az eredetiben a polaroid csempe KÜLSŐ doboza illeszkedik a `scale`
+    négyzetbe, fix 0,8333 aránnyal, és a fotó ebből visszaszámolva NÉGYZET.
+
+    ⚠️ Miért nem elég a `fit_aspect_inside` eredményét csomópont-méretnek
+    venni: a keret egész képpontokkal nő (`picasa_round`), ezért nem minden
+    külső doboz ÁLL ELŐ egy fotóméretből. A 134-es magasság például nem: a
+    98-as fotóhoz a rajzoló 135-öt rajzol. Ha a csomópont 134-et állítana,
+    a KIRAJZOLT csempe egy képponttal eltérne a bejelentettől — és a
+    beszorítás, az élő vászon meg a mentett kép ezen a képponton szétcsúszna.
+
+    Ezért a fotó oldalából indulunk vissza, és addig csökkentjük, amíg a
+    keretes doboz tényleg befér a négyzetbe. A ciklus legfeljebb néhány
+    lépés: a becslés már majdnem jó."""
+    becsles = max(1, int(oldal / POLAROID_HEIGHT_RATIO))
+    for foto in range(becsles + 2, 0, -1):
+        szeles, magas = outer_box(foto, foto, POLAROID)
+        if szeles <= oldal and magas <= oldal:
+            return foto, szeles, magas
+    szeles, magas = outer_box(1, 1, POLAROID)
+    return 1, szeles, magas
+
+
 def _pile_nodes(
     aspects: Sequence[float],
     paths: Sequence[Path],
@@ -358,8 +391,36 @@ def _pile_nodes(
     nodes: list[CollageNode] = []
     for aspect, path, place in zip(aspects, paths, places, strict=False):
         oldal = max(1, place.size)
-        cel_w, cel_h = fit_aspect_inside(aspect, oldal, oldal)
-        kulso_w, kulso_h = outer_box(max(1, cel_w), max(1, cel_h), keret)
+        # ⚠️ #1053: a POLAROID fotója NÉGYZET — az eredeti a `scale × scale`
+        # négyzetre VÁGJA a képet, és a keret 1,145 / 1,374 arányai erre a
+        # négyzetre mennek. Ezért ad ott MINDEN polaroid csempe 0,8333-at, a
+        # forráskép arányától függetlenül (18 golden csomópont, két
+        # lapformátum, több forráskép).
+        #
+        # Nálunk az arányok jók voltak, csak a fotó SAJÁT méretére mentek —
+        # így a csempe alakja képfüggő lett (0,47-től 1,48-ig). Más alakú
+        # csempe más helyre esik: ettől lógott ki a kupacunk már 9 képnél is,
+        # miközben az eredeti ugyanott egyet sem.
+        #
+        # A vágás KÖRBEVÁGÁS (`kitolt=True`), nem illesztés: a golden csempe
+        # fotóján belül nincs papír, ami 0,56 arányú forrásnál illesztéskor
+        # látszana.
+        #
+        # A többi keret VÁLTOZATLAN: a golden `AI1.cxf` ugyanezekre a képekre
+        # keret nélkül a kép arányát hozza (0,560 és 0,800 egy kollázsban).
+        # A `scale` MINDIG a KÜLSŐ csempe befoglaló négyzete — a golden
+        # `AI.cxf` polaroid csempéje és az `AI1.cxf` keret nélküli csempéje
+        # ugyanazt a `h = 0,3291 = 337 / lapszélesség` magasságot adja, tehát
+        # a keret NEM nő ki a négyzetből. A polaroidnál ezért a KÜLSŐ dobozt
+        # illesztjük a négyzetbe (fix 0,8333 aránnyal), és abból számoljuk
+        # vissza a fotót — nem fordítva.
+        kitolt = keret == POLAROID
+        if kitolt:
+            foto_oldal, kulso_w, kulso_h = _polaroid_negyzet(oldal)
+            cel_w = cel_h = foto_oldal
+        else:
+            cel_w, cel_h = fit_aspect_inside(aspect, oldal, oldal)
+            kulso_w, kulso_h = outer_box(max(1, cel_w), max(1, cel_h), keret)
         # ⚠️ #1045: a szórás a KÖZÉPPONTOT tartja a lapon, a csempének viszont
         # MÉRETE van körülötte — és a kilógást a KERETES méret dönti el, nem a
         # fotóé. 11 képtől a legnagyobb csempe fele kilóg (a sávot a legkisebb
@@ -389,7 +450,7 @@ def _pile_nodes(
                 height=pixels_to_sheet(kulso_h, settings.width),
                 theta=place.theta,
                 border=keret,
-                fill=False,
+                fill=kitolt,
             )
         )
     return nodes
