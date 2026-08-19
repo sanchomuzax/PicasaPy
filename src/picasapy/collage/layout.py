@@ -41,6 +41,11 @@ _PILE_SCALE = 0.42
 class Placement:
     """Egy kép helye a vásznon: bal felső sarok, méret, elforgatás (fok).
 
+    Az `angle` a KÉPERNYŐ-konvenció szerinti fok (#1035): a pozitív érték az
+    óramutató járásával EGYEZŐ irányba dönt — ugyanaz, amit a `.cxf` `theta`-ja
+    és a QML `Item.rotation` jelent. (Az OpenCV ezzel ellentétesen forgat; az
+    átfordítás a `render.screen_rotation` dolga, egyetlen helyen.)
+
     A `fill` dönti el, hogyan illeszkedik a kép a kerethez: True esetén
     kitölti (a túllógó rész levágva — rácsnál ez a szép), False esetén
     arányosan belefér (kontaktmásolat, ahol a teljes kép kell)."""

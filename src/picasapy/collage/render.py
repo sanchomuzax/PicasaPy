@@ -153,18 +153,48 @@ def _matted(tile: np.ndarray, mat: int) -> np.ndarray:
     )
 
 
+def screen_rotation(
+    width: float, height: float, angle_deg: float
+) -> tuple[np.ndarray, int, int]:
+    """Forgatásmátrix a Picasa KÉPERNYŐ-konvenciója szerint (#1035).
+
+    A pozitív szög az óramutató járásával **EGYEZŐ** irányba forgat a
+    képernyőn (y lefelé) — ez az, amit a `.cxf` `theta`-ja jelent, és amit a
+    QML `Item.rotation` is csinál:
+
+        X = cx + u·cos(θ) − v·sin(θ)
+        Y = cy + u·sin(θ) + v·cos(θ)
+
+    ⚠️ A `cv2.getRotationMatrix2D` a pozitív szöget az **ELLENKEZŐ** irányba
+    forgatja, ezért kap negált szöget. Enélkül a mentett kép a vásznon látott
+    dőlés tükörképe lett (#1035): amit a felhasználó balra dőlve látott, az
+    jobbra dőlve mentődött. A `.cxf`-be írt `theta`-hoz TILOS hozzányúlni —
+    azt a Picasa is olvassa, és a mai körbejárásunk bájtra pontos.
+
+    A visszaadott hármas: a mátrix (már a MEGNÖVELT kimeneti dobozra
+    igazítva, tehát a forgatás nem vág le a sarkokból), és a kimeneti doboz
+    mérete. A csempe és az árnyéka **ugyanezt** a függvényt hívja — így nem
+    csúszhatnak szét attól, hogy valaki csak az egyik helyen javít.
+    """
+    center = (width / 2.0, height / 2.0)
+    matrix = cv2.getRotationMatrix2D(center, -angle_deg, 1.0)
+    cos, sin = abs(matrix[0, 0]), abs(matrix[0, 1])
+    out_w = int(height * sin + width * cos)
+    out_h = int(height * cos + width * sin)
+    matrix[0, 2] += out_w / 2 - center[0]
+    matrix[1, 2] += out_h / 2 - center[1]
+    return (matrix, out_w, out_h)
+
+
 def _rotated_paste(
     canvas: np.ndarray, tile: np.ndarray, place: Placement
 ) -> None:
-    """Elforgatott csempe beillesztése maszkkal (a halom lapjai)."""
+    """Elforgatott csempe beillesztése maszkkal (a halom lapjai).
+
+    A `place.angle` a KÉPERNYŐ-konvenció szerinti fok (#1035): pozitív =
+    az óramutatóval egyező irány, ahogy a `.cxf` `theta`-ja is."""
     th, tw = tile.shape[:2]
-    center = (tw / 2, th / 2)
-    matrix = cv2.getRotationMatrix2D(center, place.angle, 1.0)
-    cos, sin = abs(matrix[0, 0]), abs(matrix[0, 1])
-    out_w = int(th * sin + tw * cos)
-    out_h = int(th * cos + tw * sin)
-    matrix[0, 2] += out_w / 2 - center[0]
-    matrix[1, 2] += out_h / 2 - center[1]
+    matrix, out_w, out_h = screen_rotation(tw, th, place.angle)
     rotated = cv2.warpAffine(tile, matrix, (out_w, out_h))
     mask = cv2.warpAffine(
         np.full((th, tw), 255, dtype=np.uint8), matrix, (out_w, out_h)

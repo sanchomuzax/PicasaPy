@@ -33,6 +33,20 @@ kódolják, ezért szándékosan nem követik a `picasa_render.py` további
 fejlődését. Ha egy későbbi jegy TUDATOSAN változtat a rajzon, ezt az őrt
 akkor kell — kimondva, a jegyben indokolva — nyugdíjazni.
 
+## ⚠️ ÁTVEZETÉS: a forgatás iránya (#1035)
+
+A #1035 megfordította a forgatás előjelét a magban (a `.cxf` `theta`-ja az
+óramutatóval EGYEZŐ irányt jelent, az OpenCV viszont ellentétesen forgat).
+A Képkupac rajza tehát **tudatosan megváltozott** — de ez az őr **nem**
+változott vele, és nem is kellett hozzányúlni: az orákulum `_regi_render_pile`
+a MAI `render._rotated_paste`-et hívja, nem a forgatás befagyasztott másolatát.
+A két oldal ezért együtt mozdult, a bájtazonosság sértetlen maradt (mind a hat
+téma, mindhárom keret, két térköz-állás).
+
+⚠️ Ebből az is következik, hogy **ez az őr a forgatás IRÁNYÁRA vak** — azt a
+`test_forgatas_iranya_1035.py` méri, a felső él eltolásával és a vászonnal
+való összevetéssel.
+
 ## ⚠️ ÁTVEZETÉS: a vetett árnyék (#977)
 
 A #977 bekötötte a vetett árnyékot, amit a #942 előtti rajzoló **egyáltalán
