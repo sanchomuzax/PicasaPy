@@ -28,9 +28,9 @@ hiányok):
 | # | eredeti | nálunk | jegy |
 |---|---|---|---|
 | 1.1 | **Létrehozás ▸ Képkollázs…** menü | ✅ megvan, a lapot nyitja | — |
-| 1.2 | `headerpanel/create_collage` gomb a mappa-fejlécben (44, 53) 29×27 | ✅ megvan | — |
-| 1.3 | `faceheaderpanel/create_collage` az arc-fejlécben (115, 55) | ❓ **nem ellenőrizve** | *nyitva* |
-| 1.4 | `outputlayout/button(collage)` a kimeneti sávban (2, 2) 55×36 | ❓ **nem ellenőrizve** | *nyitva* |
+| 1.2 | `headerpanel/create_collage` gomb a mappa-fejlécben (44, 53) 29×27 | ❌ **nincs** *(a lap első kiadása tévesen késznek jelölte)* | **#1006** |
+| 1.3 | `faceheaderpanel/create_collage` az arc-fejlécben (115, 55) | ❌ **nincs** *(2026-08-19-én ellenőrizve)* | **#1006** |
+| 1.4 | `outputlayout/button(collage)` a kimeneti sávban (2, 2) 55×36 | ✅ **megvan** — `TrayBar.qml` *(2026-08-19-én ellenőrizve)* | — |
 | 1.5 | a **Kollázsok** album elemére duplakattintás → a `.cxf` visszatöltése | ❌ nincs | **#1002** (a `.cxf` írása: **#969**) |
 | 1.6 | **`editpanel/editcollage`** — „Kollázs szerkesztése" a szerkesztő fejlécében (142, 9) 128×22 | ❌ nincs | **#1002** |
 
@@ -81,7 +81,7 @@ hiányok):
 | # | eredeti | nálunk | jegy |
 |---|---|---|---|
 | 5.1 | fülfelirat futásidejű darabszámmal („Klipek (%d)") | ✅ megvan | — |
-| 5.2 | „Továbbiak…" → vissza a könyvtárba, „Vissza a kollázshoz" gombbal | ⚠️ **részleges** — a visszatérő gomb nincs ellenőrizve | *nyitva* |
+| 5.2 | „Továbbiak…" → vissza a könyvtárba, „Vissza a kollázshoz" gombbal | ✅ **megvan** — `Main.qml:1221` *(2026-08-19-én ellenőrizve)* | — |
 | 5.3 | „+" / „–" klip-felvétel és -törlés | ✅ megvan | — |
 | 5.4 | `addallclips` | **halott az eredetiben is** — ne épüljön meg | — |
 
@@ -136,8 +136,10 @@ Hogy a lefedettség állítása ne legyen önigazoló, itt a lista arról, ami
 2. **Az 1.3 és 1.4 belépési pont** (arc-fejléc, kimeneti sáv) — a
    binárisban megvannak, nálunk nem ellenőriztem.
 3. **Az 5.2 „Vissza a kollázshoz" gomb** a könyvtárban.
-4. **Billentyűparancsok** a panelen az Esc / Ctrl+A / Ctrl+D / Del
-   négyesen túl.
+4. ~~Billentyűparancsok~~ — **LEZÁRVA (2026-08-19)**: a
+   `collagepanel.tre` egyetlen billentyűt deklarál, a
+   `Property escapekey 1`-et (492. sor). A Ctrl+A / Ctrl+D / Del a
+   parancstáblából ismert, és nálunk megvan.
 5. **A képek betöltési sorrendje és a hiányzó képek** viselkedése éles,
    nagy albumon.
 6. **A `.cxf` visszaolvasása** — az írását mértük, a betöltési utat nem.
@@ -148,12 +150,32 @@ Hogy a lefedettség állítása ne legyen önigazoló, itt a lista arról, ami
 
 | állapot | darab |
 |---|---|
-| ✅ megvan és működik | **28** |
-| ⚠️ részleges vagy hibás | **8** |
-| ❌ hiányzik | **11** |
-| ❓ nem ellenőrzött | **4** |
+| ✅ megvan és működik | **29** |
+| ⚠️ részleges vagy hibás | **7** |
+| ❌ hiányzik | **13** |
+| ❓ nem ellenőrzött | **2** |
 
 **A hiányok mindegyikéhez tartozik jegyszám** (#916, #969, #977, #978,
-#979, #989, #990, #991, #992, #1000, #1001, #1002, **#1004**, **#1005**).
+#979, #989, #990, #991, #992, #1000, #1001, #1002, #1004, #1005, **#1006**).
 A 9. szakasz hat pontja **nyitott terület**, nem hiány — ott azt sem
 tudjuk, van-e mit találni.
+
+
+---
+
+## 11. ⚠️ A lap ELSŐ kiadásának hibái (2026-08-19, ugyanaznap javítva)
+
+A felhasználó megkérdezte, hogy tényleg 100 %-os-e a feltárás. Az
+ellenőrzés **öt perc alatt három hibát talált ebben a lapban**:
+
+| sor | az első kiadás | a valóság |
+|---|---|---|
+| 1.2 | ✅ megvan | ❌ **nincs** — a fejléc-fájlokban egyetlen kollázs-hivatkozás sincs |
+| 1.4 | ❓ nem ellenőrizve | ✅ **megvan** (`TrayBar.qml`) |
+| 5.2 | ⚠️ részleges | ✅ **megvan** (`Main.qml:1221`) |
+
+**A tanulság nem az, hogy „ellenőrizni kell".** Az, hogy a `✅` jelölést
+**bizonyíték nélkül** tettem ki: az 1.2-nél a `kollazs-panel-ui-spec.md`
+3.2-es táblája már 2026-08-18 óta írta, hogy a gomb hiányzik — csak nem
+néztem meg. **Egy sor akkor kaphat `✅`-t, ha van mellé fájl+sor
+hivatkozás**; enélkül `❓` a helyes jelölés.
