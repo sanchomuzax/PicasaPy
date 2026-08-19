@@ -41,7 +41,21 @@ Button {
     // felirat a gomb TELJES magasságában ül. A korábbi 10/6-os kitöltés a
     // fix méretű gomboknál elvette azt a helyet, ahova tördelni lehetett
     // volna (a 26 képpontos gombból 14 maradt a szövegnek — egyetlen sor).
-    padding: 0
+    //
+    // ⚠️ A függőleges kitöltés a LEGSPECIFIKUSABB tulajdonságokkal megy
+    // (`topPadding`/`bottomPadding`), nem a gyűjtő `padding`-gel. A `padding`
+    // ugyanis csak TARTALÉK érték: ha a Controls-stílus a maga `Button`-jában
+    // explicit `verticalPadding`-et ad, az erősebb nála. A Windows natív
+    // stílusa pontosan ezt teszi — ott a `padding: 0` NEM érvényesült, a
+    // 26 képpontos gombból csak 16 maradt a feliratnak, és a két sor nem
+    // fért el. (A PR Windows-lába fogta meg; Linuxon egyik stílus sem
+    // csinálja, ezért helyben láthatatlan volt.)
+    //
+    // A vízszintes marad `horizontalPadding`: azt egyetlen stílus sem
+    // állítja explicit módon, és így a hívó oldalán felülírható maradhat
+    // (a szűk kollázs-gombok élnek is ezzel).
+    topPadding: 0
+    bottomPadding: 0
     horizontalPadding: 5
     // …a gomb IMPLICIT mérete viszont marad a régi, bőkezűbb kitöltésé:
     // a tartalmukhoz igazodó gombok (amikre nincs `width`/`height` írva)

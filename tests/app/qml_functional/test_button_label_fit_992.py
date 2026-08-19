@@ -330,6 +330,49 @@ def test_az_egesz_alkalmazas_gombfeliratai_beleferek(qt_app, qml_app):
     )
 
 
+def test_a_felirat_megkapja_a_gomb_teljes_magassagat(qt_app):
+    """A tördeléshez HELY kell — és azt egyetlen stílus se vehesse el.
+
+    A `padding` a QtQuick Controlsban csak TARTALÉK érték: ha a beállított
+    stílus a maga `Button`-jában explicit `verticalPadding`-et ad, az
+    erősebb nála. A Windows natív stílusa pontosan ezt teszi, ezért a
+    komponens első változatában a `padding: 0` ott nem érvényesült: a
+    26 képpontos gombból 16 maradt a feliratnak, a két sor nem fért el, és
+    a felhasználó megint kilógó szöveget látott volna.
+
+    Linuxon egyik stílus sem csinálja ezt, tehát a hiba helyben
+    LÁTHATATLAN volt — a PR Windows-lába fogta meg. Ez az őr a
+    következményt méri, platformfüggetlenül: a felirat doboza a gomb
+    TELJES magassága legyen."""
+    qml = """
+import QtQuick
+import PicasaPy 1.0
+Item {
+    width: 300
+    height: 100
+    PicasaButton {
+        objectName: "fixmeretu"
+        x: 10; y: 10; width: 100; height: 26
+        text: "Az összes kijelölés megszüntetése"
+    }
+}
+"""
+    gyoker = _jelenet(qt_app, qml, 300, 100)
+    gomb = _picasa_gombok(gyoker)[0]
+    tartalom = gomb.property("contentItem")
+    assert tartalom.height() >= gomb.height() - TURES, (
+        f"a felirat doboza csak {tartalom.height():.1f} képpont magas a "
+        f"{gomb.height():.1f} képpontos gombon — a függőleges kitöltést "
+        "elvette valami (a stílus explicit `verticalPadding`-je erősebb a "
+        "gyűjtő `padding`-nél; `topPadding`/`bottomPadding` kell)"
+    )
+    # …és a felirat tényleg tördel, nem egyetlen csonka sor
+    assert tartalom.property("lineCount") >= 2, (
+        "a 33 karakteres magyar felirat egyetlen sorban maradt a 100 "
+        "képpontos gombon — nem tördel"
+    )
+
+
 def test_a_tartalomhoz_igazodo_gomb_merete_nem_zsugorodott(qt_app):
     """Regresszió-őr: a javítás NEM szűkítheti az egész alkalmazás gombjait.
 
