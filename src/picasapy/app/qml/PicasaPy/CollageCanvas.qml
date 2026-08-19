@@ -38,15 +38,61 @@ Item {
         onClicked: if (canvas.controller) canvas.controller.selectNoNodes()
     }
 
-    CollageSheet {
-        id: sheet
-        objectName: "collageSheet"
-        controller: canvas.controller
-        x: canvas.sheetRect.x
-        y: canvas.sheetRect.y
-        width: canvas.sheetRect.width
-        height: canvas.sheetRect.height
-        visible: width > 0 && height > 0
+    // --- A VÁGÁS: `previewclip` (#1027) -------------------------------------
+    //
+    // A `.tre` a vászon-láncban KÜLÖN vágó konténert tart
+    // (`collagepanel.tre` 160–164. és 238–250. sor):
+    //
+    //     previewcontainer            ; kitölti a jobb konténert
+    //      └ previewclip              ; mind a négy élen 0 → PONTOSAN akkora
+    //         └ previewinset          ; −(12, 35, 12, 35)
+    //            ├ previewshadow      ; A LAP
+    //            └ previewroot        ; a kép-CSOMÓPONTOK
+    //
+    // Két dolog dönti el, hogy a vágás ide, a VÁSZONKERET szintjére való:
+    //
+    // 1. a `previewroot` — amiben a képek ülnek — a lap TESTVÉRE, nem a
+    //    gyereke: a lap tehát nem is tudná elvágni őket;
+    // 2. a `previewclip` geometriailag AZONOS a `previewcontainer`-rel. Egy
+    //    azonos méretű, külön elem egyetlen okból létezik: ez a vágás
+    //    határa. (Közvetett megerősítés: az `enableclip` az egész fájlban
+    //    egyszer szerepel, a `tabbase`-en, 0 értékkel — a vágás alapból be
+    //    van, és ahol nem kellett, külön kimondták.)
+    //
+    // ⚠️ Aki a LAPNÁL vagy a `previewinset`-nél vágna, a 12/35 képpontos
+    // behúzási sávot is levágná — az eredeti viszont a keret széléig
+    // MUTATJA a lapról túllógó képet.
+    //
+    // ## Miért csak a lap van a vágóban, és nem a négy gombcsoport
+    //
+    // Az eredetiben a négy csoport a lap gyereke, tehát a `previewclip`-en
+    // belül van. Nálunk viszont a VÁSZON gyerekei, a lap téglalapjából
+    // számolva (ld. lent) — és ez itt kapóra jön: ha a vágó föléjük kerülne,
+    // 800 × 534-es panelen a bal oldali oszlop 7 képponttal elvágódna. (Ott
+    // a lap a `previewinset` teljes SZÉLESSÉGÉT kitölti, tehát a bal széle
+    // 12 px-re van a kerettől, a 17 px széles oszlop pedig további 2 px
+    // réssel elé kerül: 12 − 2 − 17 = −7. Ugyanez az eredetiben is
+    // megtörténik — a mi eltérésünk tehát tudatos, és a felhasználó javára
+    // szól.)
+    //
+    // ⚠️ A vágás TENGELYPÁRHUZAMOS téglalapra megy (a vászonkeret nincs
+    // forgatva), tehát a Qt ollóval (scissor) intézi: nem hoz létre külön
+    // rajzfelületet, és nem nyúl a csomópontok saját élsimításához (#1016).
+    Item {
+        objectName: "collageSheetClip"
+        anchors.fill: parent
+        clip: true
+
+        CollageSheet {
+            id: sheet
+            objectName: "collageSheet"
+            controller: canvas.controller
+            x: canvas.sheetRect.x
+            y: canvas.sheetRect.y
+            width: canvas.sheetRect.width
+            height: canvas.sheetRect.height
+            visible: width > 0 && height > 0
+        }
     }
 
     // --- A lap körüli négy gombcsoport (#948) -------------------------------
