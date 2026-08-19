@@ -19,6 +19,8 @@ szeme külön-külön „működhet" úgy, hogy a felhasználó semmit nem lát.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import cv2
 import pytest
@@ -115,4 +117,51 @@ class TestAMentettKollazsMegjelenikAProjektekAlatt:
         assert eredmeny.path is not None and eredmeny.path.exists()
         assert is_projects_category(
             read_folder_category(load_document(cel_mappa / PICASA_INI_NAME))
+        )
+
+
+class TestAzIndexbeIsBekerul:
+    """⚠️ A MÁSODIK, FÜGGETLEN BLOKKOLÓ — enélkül a `.picasa.ini` sem elég.
+
+    A Projektek gyűjtemény lekérdezése így indul:
+
+        SELECT path FROM folders WHERE has_ini = 1
+
+    Vagyis csak a MÁR INDEXELT mappákon megy végig. A kollázs célmappája
+    viszont tipikusan egyetlen figyelt gyökér alatt sincs — mérve a valódi
+    indexen: 68 mappa, egy sem a Kollázsok.
+
+    Ez a teszt azért indul ÜRES indexszel, mert a korábbi tesztek előre
+    feltöltött `folders` táblán futottak, és emiatt ez a hiba
+    szerkezetileg megfoghatatlan volt.
+    """
+
+    def test_a_mentes_utan_a_PROJEKTEK_lekerdezes_megtalalja(self, tmp_path, kepek):
+        from picasapy.index import open_index
+        from picasapy.index.project_folders import project_folders
+
+        cel_mappa = tmp_path / "Képek" / "Picasa" / "Kollázsok"
+        db = tmp_path / "index.db"
+
+        with open_index(db) as conn:
+            assert list(project_folders(conn)) == [], "az index nem üresen indult"
+
+        eredmeny = _ment(cel_mappa, kepek)
+        assert eredmeny.path is not None and eredmeny.path.exists()
+
+        # a mentés vezérlő-oldali lépése: a célmappa felvétele az indexbe
+        from picasapy.index.sync import sync_folder
+
+        with open_index(db) as conn:
+            sync_folder(conn, cel_mappa, cel_mappa)
+
+        with open_index(db) as conn:
+            talalatok = list(project_folders(conn))
+
+        assert talalatok, (
+            "a mentett kollázs mappája NEM jelenik meg a Projektek "
+            "gyűjteményben — a felhasználó üres listát lát a mentés után"
+        )
+        assert any(Path(t.path) == cel_mappa for t in talalatok), (
+            f"a Projektek lista nem a mentési mappát adja: {talalatok}"
         )
