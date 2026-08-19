@@ -326,11 +326,14 @@ def _app_fajlok_parhuzamosan(
           f"{_PARHUZAM} egyszerre", flush=True)
     with concurrent.futures.ThreadPoolExecutor(max_workers=_PARHUZAM) as pool:
         for relative, returncode in pool.map(egy_fajl, app_test_files):
+            # Csak ASCII jelölés: a Windows-runner konzolja cp1252-ben ír, és
+            # a pipálás-karakter `UnicodeEncodeError`-ral MEGÖLTE a futást
+            # (mérve, #1030 első köre) — a kimenet díszítése nem érhet ennyit.
             if returncode == 0:
-                print(f"  ✓ {relative}", flush=True)
+                print(f"  ok   {relative}", flush=True)
                 continue
             failures.append((relative, returncode))
-            print(f"  ✗ {relative}: exit {returncode}", flush=True)
+            print(f"  HIBA {relative}: exit {returncode}", flush=True)
             # a bukott részfutás teljes kimenete — soros futásnál ez amúgy is
             # a képernyőn lenne, itt gyűjtve kerül ki, egyben
             print(_KIMENET.get(relative, "(nincs kimenet)"), flush=True)

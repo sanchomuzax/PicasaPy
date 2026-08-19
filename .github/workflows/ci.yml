@@ -60,7 +60,16 @@ jobs:
         # amiből a session-bootstrap is telepít. Tételes lista ide nem
         # kerülhet vissza (tests/test_kornyezet_szinkron.py).
         run: |
-          sudo apt-get update
+          # A GitHub apt-tükre 2026-08-19-én KÉTSZER lógott be némán: egyszer
+          # 10 percre (a csomag-job korlátjába futott), egyszer 40 percre (a
+          # teszt-job korlátjába) — a tesztek el sem indultak. Egy sikertelen
+          # frissítés nem ok arra, hogy egy 40 perces job elhaljon: rövid
+          # korláttal próbálkozunk, és háromszor.
+          for kiserlet in 1 2 3; do
+            timeout 180 sudo apt-get update && break
+            echo "apt-get update ($kiserlet.) nem jött vissza — újra"
+            sleep 5
+          done
           sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
 
       - name: Install Python dependencies
@@ -108,7 +117,16 @@ jobs:
         # változat állt („a libpulse0 itt nem kell"), és pontosan az ilyen
         # jószándékú eltérésekből lett négy, egymástól elcsúszott lista.
         run: |
-          sudo apt-get update
+          # A GitHub apt-tükre 2026-08-19-én KÉTSZER lógott be némán: egyszer
+          # 10 percre (a csomag-job korlátjába futott), egyszer 40 percre (a
+          # teszt-job korlátjába) — a tesztek el sem indultak. Egy sikertelen
+          # frissítés nem ok arra, hogy egy 40 perces job elhaljon: rövid
+          # korláttal próbálkozunk, és háromszor.
+          for kiserlet in 1 2 3; do
+            timeout 180 sudo apt-get update && break
+            echo "apt-get update ($kiserlet.) nem jött vissza — újra"
+            sleep 5
+          done
           sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
 
       - name: Build eszközök

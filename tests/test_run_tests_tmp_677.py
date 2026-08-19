@@ -49,24 +49,60 @@ class TestBasetempAtadasa:
         assert hivasok, "nem indult részfutás"
         assert f"--basetemp={basetemp}" in hivasok[0]
 
-    def test_a_basetemp_a_teljes_futasban_egyseges(self, monkeypatch, tmp_path):
-        """A `main()` egyetlen basetempet ad MINDEN részfutásnak.
+    def test_soros_futasban_a_basetemp_egyseges(self, monkeypatch, tmp_path):
+        """SOROS módban a `main()` egyetlen basetempet ad minden részfutásnak.
 
         Ha részfutásonként külön könyvtár lenne, visszatérne a #677: a
         tucatnyi könyvtár egymás mellett gyűlne, nem egymást váltva.
         """
         latott: list[str] = []
 
-        def _rogzit_pytest(args, timeout_s, *, cov, basetemp):
+        def _rogzit_pytest(args, timeout_s, *, cov, basetemp, **egyeb):
             latott.append(str(basetemp))
             return 0
 
+        monkeypatch.setattr(run_tests, "_PARHUZAM", 1)
         monkeypatch.setattr(run_tests, "_run_pytest", _rogzit_pytest)
         monkeypatch.setattr(run_tests, "_takarits_regi_maradekot", lambda: None)
 
         assert run_tests.main([]) == 0
         assert latott, "nem indult részfutás"
         assert len(set(latott)) == 1, f"részfutásonként eltérő basetemp: {set(latott)}"
+
+    def test_parhuzamosan_kulon_de_azonnal_takaritott_mappak(self, monkeypatch):
+        """PÁRHUZAMOS módban részfutásonként KÜLÖN mappa kell — de nyomtalanul.
+
+        A #677 tilalma tartalmilag az, hogy a futás ne hagyjon maga után
+        tucatnyi könyvtárat. Párhuzamosan a közös basetemp nem járható út: a
+        pytest induláskor kiüríti, tehát a szálak egymás ideiglenes fájljait
+        törölnék (#1030). A szerződés ezért: külön mappa, viszont a részfutás
+        végén AZONNAL eltűnik — így a csúcsigény a szálak számával arányos.
+        """
+        latott: list[Path] = []
+        volt_sajat_mappa: list[bool] = []
+
+        def _rogzit_pytest(args, timeout_s, *, cov, basetemp, **egyeb):
+            ut = Path(basetemp)
+            ut.mkdir(parents=True, exist_ok=True)
+            latott.append(ut)
+            volt_sajat_mappa.append(ut.exists())
+            return 0
+
+        monkeypatch.setattr(run_tests, "_PARHUZAM", 4)
+        monkeypatch.setattr(run_tests, "_run_pytest", _rogzit_pytest)
+        monkeypatch.setattr(run_tests, "_takarits_regi_maradekot", lambda: None)
+
+        assert run_tests.main([]) == 0
+        app_futasok = [ut for ut in latott if ut.name == "pytest"]
+        assert len(app_futasok) > 1, "nem indult több app-részfutás"
+        assert len(set(app_futasok)) == len(app_futasok), (
+            "a párhuzamos részfutások OSZTOZTAK a basetempen — ez törli "
+            "egymás ideiglenes fájljait"
+        )
+        assert all(volt_sajat_mappa), "a részfutás nem kapott saját mappát"
+        assert not [ut for ut in app_futasok if ut.exists()], (
+            "a részfutás mappája a futás után is megmaradt (#677)"
+        )
 
 
 class TestTakaritas:
@@ -75,7 +111,7 @@ class TestTakaritas:
     def test_a_futas_vegen_eltunik_a_basetemp(self, monkeypatch):
         keletkezett: list[Path] = []
 
-        def _rogzit_pytest(args, timeout_s, *, cov, basetemp):
+        def _rogzit_pytest(args, timeout_s, *, cov, basetemp, **egyeb):
             basetemp.mkdir(parents=True, exist_ok=True)
             (basetemp / "szemet.bin").write_bytes(b"x" * 1024)
             if basetemp not in keletkezett:
@@ -95,7 +131,7 @@ class TestTakaritas:
         """A takarítás nem függhet attól, zöld volt-e a futás."""
         keletkezett: list[Path] = []
 
-        def _bukik(args, timeout_s, *, cov, basetemp):
+        def _bukik(args, timeout_s, *, cov, basetemp, **egyeb):
             basetemp.mkdir(parents=True, exist_ok=True)
             if basetemp not in keletkezett:
                 keletkezett.append(basetemp)
@@ -112,7 +148,7 @@ class TestTakaritas:
         """Megszakítás (Ctrl-C) vagy hiba se hagyjon maradékot."""
         keletkezett: list[Path] = []
 
-        def _dobal(args, timeout_s, *, cov, basetemp):
+        def _dobal(args, timeout_s, *, cov, basetemp, **egyeb):
             basetemp.mkdir(parents=True, exist_ok=True)
             keletkezett.append(basetemp)
             raise KeyboardInterrupt
