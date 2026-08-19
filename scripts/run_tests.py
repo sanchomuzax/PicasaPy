@@ -68,6 +68,71 @@ _PARHUZAM = max(
     int(os.environ.get("PICASAPY_TESZT_PARHUZAM") or 0) or min(4, os.cpu_count() or 1),
 )
 
+
+def _masik_futas_pidjei() -> list[int]:
+    """Fut-e MÁSIK teljes tesztfuttatás ezen a gépen (csak Linuxon látható).
+
+    A fejlesztői gép négymagos, és egyetlen párhuzamos futás már közel
+    telíti. Kettő egyszerre CPU-éhezést okoz, amitől a fájlonkénti korlátba
+    VALÓDI HIBA NÉLKÜL is bele lehet futni — a bukás pedig „ingadozó
+    tesztnek" látszik. Pontosan ez vezetett félre egy másik munkamenetet
+    (#914): a bukást a teszt számlájára írta, holott két egyidejű futás
+    éheztette a gépet.
+    """
+    proc = Path("/proc")
+    if not proc.is_dir():  # nem Linux (pl. a Windows-runner) — nem látjuk
+        return []
+    sajat = {os.getpid(), os.getppid()}
+    talalatok: list[int] = []
+    for konyvtar in proc.glob("[0-9]*"):
+        try:
+            pid = int(konyvtar.name)
+            if pid in sajat:
+                continue
+            parancssor = (konyvtar / "cmdline").read_bytes().decode("utf-8", "replace")
+        except (OSError, ValueError):
+            continue  # a processz épp megszűnt, vagy nincs jogunk megnézni
+        if _futtatja_a_futtatot(parancssor):
+            talalatok.append(pid)
+    return talalatok
+
+
+def _futtatja_a_futtatot(parancssor: str) -> bool:
+    """A parancssor FUTTATJA a `run_tests.py`-t, vagy csak EMLÍTI?
+
+    A puszta névegyezés kevés: a shell, a szerkesztő, a `ruff` és a `grep`
+    parancssorában is ott a fájlnév — a fejlesztés közben ez folyamatosan
+    téves riasztást adna. (Ugyanez a hibaosztály tegnap a kiadás-kaput is
+    megvezette: ott a commit-üzenet EMLÍTETTE a tiltott parancsot.)
+
+    Ezért két feltétel kell: a processz python-értelmező legyen, ÉS legyen
+    olyan argumentuma, ami a futtatóra végződik.
+    """
+    reszek = [r for r in parancssor.split("\0") if r]
+    if not reszek:
+        return False
+    program = Path(reszek[0]).name.lower()
+    if not program.startswith("python"):
+        return False
+    return any(r.endswith("run_tests.py") for r in reszek[1:])
+
+
+def _dontsd_el_a_parhuzamot(
+    kert: str | None, alap: int, masik_fut: bool
+) -> tuple[int, str]:
+    """Hány szálon fussunk, és MIÉRT — naplózható indoklással.
+
+    A kért érték (környezeti változó) mindig nyer: aki explicit beállítja,
+    tudja, mit csinál. Automatikus visszalépés csak akkor van, ha nem kértek
+    semmit, és közben fut egy másik futás.
+    """
+    if kert:
+        return alap, f"kérésre (PICASAPY_TESZT_PARHUZAM={kert})"
+    if masik_fut and alap > 1:
+        return 1, "MÁSIK tesztfuttatás is dolgozik a gépen — sorosra váltok"
+    return alap, "alapértelmezés"
+
+
 #: A saját ideiglenes könyvtáraink gyökere és előtagja (#677). Az előtag azért
 #: kell, hogy a takarítás CSAK a sajátunkhoz nyúljon.
 _TEMP_GYOKER = Path(tempfile.gettempdir())
@@ -212,6 +277,33 @@ def _report_coverage() -> None:
     )
 
 
+def _bejelentkezes() -> None:
+    """Kiírja, hány szálon és hány magon futunk — és ha kell, sorosra vált.
+
+    Miért kell ez a sor: egy CPU-éhezésben született bukás a naplóban
+    UGYANÚGY néz ki, mint egy valódi. A #914-es jegyet emiatt diagnosztizálta
+    félre egy másik munkamenet — a napló nem árulta el, hogy két teljes futás
+    osztozott négy magon. Ez az egy sor utólag eldönthetővé teszi.
+    """
+    global _PARHUZAM
+    masik = _masik_futas_pidjei()
+    _PARHUZAM, indok = _dontsd_el_a_parhuzamot(
+        os.environ.get("PICASAPY_TESZT_PARHUZAM"), _PARHUZAM, bool(masik)
+    )
+    print(
+        f"Futtatás: {_PARHUZAM} párhuzamos részfutás / {os.cpu_count()} mag "
+        f"({indok}).",
+        flush=True,
+    )
+    if masik:
+        print(
+            f"FIGYELEM: másik tesztfuttatás is fut (PID: "
+            f"{', '.join(str(p) for p in masik)}). Egy bukás ilyenkor lehet "
+            "puszta CPU-éhezés is — a jegynyitás előtt futtasd újra tiszta gépen.",
+            flush=True,
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     cov = "--cov" in argv
@@ -223,6 +315,7 @@ def main(argv: list[str] | None = None) -> int:
             [sys.executable, "-m", "coverage", "erase"], cwd=_ROOT, check=False
         )
 
+    _bejelentkezes()
     _takarits_regi_maradekot()
     basetemp = Path(tempfile.mkdtemp(prefix=_TEMP_ELOTAG, dir=_TEMP_GYOKER))
     try:
