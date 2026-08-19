@@ -73,6 +73,7 @@ from .pile import pile_layout
 from .rects import NormRect, to_pixel_rects
 from .regular_grid import regular_grid_rects, regular_grid_shape
 from .render import CollageReport, _decode
+from .shadow import ShadowParams, shadow_params
 from .themes import (
     BORDER_THEMES,
     COLLAGE_THEMES,
@@ -191,6 +192,24 @@ def _canvas(settings: PicasaCollageSettings) -> np.ndarray:
     return canvas
 
 
+def _shadow(settings: PicasaCollageSettings, count: int) -> ShadowParams | None:
+    """A téma árnyék-paraméterei, vagy `None`, ha nem kell árnyék (#977).
+
+    Két kapu van, és MINDKETTŐ a képesség-maszkból jön: az
+    `effective_shadow` (11. bit engedélyez, 14. bit az alapérték), és a
+    `shadow.shadow_params` maga is a 11. bitet nézi. Így a Többszörös
+    exponálás tiltása egyetlen forrásból származik — témanév-hasonlítás
+    sehol nem születik."""
+    if not settings.effective_shadow:
+        return None
+    return shadow_params(
+        settings.theme,
+        page_width=settings.width,
+        page_height=settings.height,
+        count=max(1, count),
+    )
+
+
 def _aspects(images: list[np.ndarray]) -> list[float]:
     return [image.shape[1] / image.shape[0] for image in images]
 
@@ -235,7 +254,7 @@ def render_nodes(
             skipped.append(path)
             reasons.append(str(error))
 
-    draw_nodes(canvas, nodes, images, settings.width)
+    draw_nodes(canvas, nodes, images, settings.width, _shadow(settings, len(nodes)))
     return CollageReport(
         image=canvas,
         used=tuple(used),
@@ -603,7 +622,15 @@ def make_picasa_collage(
         nodes, _, alsobeallitas = _contact_sheet_nodes(
             _aspects(decoded), used, settings
         )
-        draw_nodes(alvaszon, nodes, decoded, alsobeallitas.width)
+        # az árnyék paraméterei a TELJES lapból jönnek (a `k` a lap hasznos
+        # területéből számol, ld. 9/b.3) — nem az alvászonéból
+        draw_nodes(
+            alvaszon,
+            nodes,
+            decoded,
+            alsobeallitas.width,
+            _shadow(settings, len(decoded)),
+        )
         canvas[sav : sav + alvaszon.shape[0], :] = alvaszon
         # a csomópontok az ALVÁSZON koordinátáiban készültek; a piszkozat a
         # TELJES lapot írja le, ezért a fejlécsávval lejjebb tolva jelentjük
@@ -613,7 +640,9 @@ def make_picasa_collage(
         )
     else:
         nodes = layout_nodes(decoded, used, settings)
-        draw_nodes(canvas, nodes, decoded, settings.width)
+        draw_nodes(
+            canvas, nodes, decoded, settings.width, _shadow(settings, len(decoded))
+        )
         rajzolt = tuple(nodes)
 
     return CollageReport(
