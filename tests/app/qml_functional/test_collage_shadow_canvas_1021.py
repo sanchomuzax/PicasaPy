@@ -39,6 +39,8 @@ Beégetett kivonat sehol (#942): minden állítás tűréssel mér.
 
 from __future__ import annotations
 
+import re
+
 import math
 
 import numpy as np
@@ -224,6 +226,23 @@ class TestLatszikEAVasznon:
 # --------------------------------------------------------------------------
 
 
+def _csomopontja(elem):
+    """Az árnyék-csempét viselő CSOMÓPONT — a szülője ma már a rajz-tartó.
+
+    A #1016 óta a csomópont rajza egy külön, a doboznál nagyobb tartóban ül
+    (`collageNodeLayer*`): a réteg-alapú élsimításnak átlátszó peremre van
+    szüksége, és az árnyéknak is el kell férnie benne. Az árnyék tehát a
+    csomópont LESZÁRMAZOTTJA, nem közvetlen gyereke — az őrizni való
+    állítás (a saját csomópontjához tartozik, nem közös felső rétegbe
+    került) változatlan."""
+    szulo = elem.parentItem()
+    while szulo is not None:
+        if re.fullmatch(r"collageNode\d+", szulo.objectName()):
+            return szulo
+        szulo = szulo.parentItem()
+    return None
+
+
 class TestAGeometria:
     def test_a_csempe_szegelye_a_halo_ketszerese(self, controller, qt_app):
         """A `BorderImage` szegélye a haló kétszerese, mert az átmenet a
@@ -234,9 +253,10 @@ class TestAGeometria:
         controller.setCollageShadows(True)
         _var()
         elem = _child(panel, "collageNodeShadow0")
-        halo = elem.parentItem().property("shadowSupport")
+        csomopont = _csomopontja(elem)
+        halo = csomopont.property("shadowSupport")
         assert halo >= 1
-        assert elem.parentItem().property("shadowBorder") == 2 * halo
+        assert csomopont.property("shadowBorder") == 2 * halo
 
     def test_az_arnyek_TULLOG_a_csomoponton(self, controller, qt_app):
         """A csempe minden élen egy halónyival nagyobb a csomópontnál —
@@ -247,7 +267,7 @@ class TestAGeometria:
         controller.setCollageShadows(True)
         _var()
         elem = _child(panel, "collageNodeShadow0")
-        csomopont = elem.parentItem()
+        csomopont = _csomopontja(elem)
         halo = csomopont.property("shadowSupport")
         assert elem.width() == pytest.approx(csomopont.width() + 2 * halo)
         assert elem.height() == pytest.approx(csomopont.height() + 2 * halo)
@@ -264,9 +284,9 @@ class TestAGeometria:
         _var()
         for index in range(len(_csomopontok(controller))):
             elem = _child(panel, f"collageNodeShadow{index}")
-            szulo = elem.parentItem()
-            assert szulo.objectName() == f"collageNode{index}", (
-                f"a(z) {index}. árnyék nem a saját csomópontja gyereke"
+            szulo = _csomopontja(elem)
+            assert szulo is not None and szulo.objectName() == f"collageNode{index}", (
+                f"a(z) {index}. árnyék nem a saját csomópontja leszármazottja"
             )
             assert elem.z() < 0, "az árnyék a saját keretének és képének fölé kerül"
 

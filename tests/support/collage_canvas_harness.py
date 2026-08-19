@@ -16,7 +16,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PySide6.QtCore import QEvent, QPoint, QPointF, QSettings, Qt, QUrl
+from PySide6.QtCore import (
+    QDeadlineTimer,
+    QEvent,
+    QEventLoop,
+    QPoint,
+    QPointF,
+    QSettings,
+    Qt,
+    QTimer,
+    QUrl,
+)
 from PySide6.QtGui import QGuiApplication, QMouseEvent
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
@@ -127,10 +137,37 @@ def _panel(controller, width=ABLAK[0], height=ABLAK[1]):
     root.setWidth(width)
     root.setHeight(height)
     view.show()
-    assert QTest.qWaitForWindowExposed(view, 5000), "az ablak nem jelent meg"
+    assert _var_a_megjelenesre(view), "az ablak nem jelent meg"
     _KEEPALIVE.extend((view, root, component))
     root.setProperty("_view", view)
     return root
+
+
+def _var_a_megjelenesre(view, ezredmasodperc: int = 5000) -> bool:
+    """Megvárja az ablak megjelenését — SAJÁT eseményhurokkal.
+
+    ⚠️ SZÁNDÉKOSAN nem `QTest.qWaitForWindowExposed`. Az valódi GPU-s
+    háttéren, szálas rajzoló hurokkal **holtpontra fut**, ha a jelenetben
+    réteg (`layer.enabled`) van — és a #1016 óta a kollázs minden
+    csomópontja ilyen. Offscreen (CI, `tests/app/conftest.py`) nincs
+    holtpont, tehát a hiba csak valódi kijelzőn jelentkezne: a fejlesztő
+    gépén néma befagyásként, ok nélkül. Mérve ezen a gépen: réteg nélkül
+    lefut, réteggel soha nem tér vissza; ez az eseményhurok mindkettővel jó.
+    """
+    hurok = QEventLoop()
+    hatarido = QDeadlineTimer(ezredmasodperc)
+    idozito = QTimer()
+    idozito.setInterval(20)
+
+    def figyel():
+        if view.isExposed() or hatarido.hasExpired():
+            hurok.quit()
+
+    idozito.timeout.connect(figyel)
+    idozito.start()
+    hurok.exec()
+    idozito.stop()
+    return view.isExposed()
 
 
 def _walk(item: QQuickItem):
