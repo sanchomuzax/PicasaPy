@@ -1,0 +1,41 @@
+name: Nyelvi ellenőrzés
+
+# A PR-ben hozzáadott MAGYAR FELÜLETI SZÖVEGEK helyesírás-ellenőrzése.
+#
+# Miért itt és nem a gépen: a 2026-08-18-i helyi (commit utáni) őr 16 óra alatt
+# 11 magyar szöveget hozó commitból egyet sem látott — a munka külön
+# munkamásolatokban folyik, a beolvasztás pedig a GitHubon történik. A PR az
+# egyetlen pont, ahol MINDEN változás áthalad.
+#
+# Tanácsadó: soha nem bukatja el a PR-t (a lelet figyelmeztetés). A zöld
+# jelzés nem bizonyítja a szöveg helyességét, csak azt, hogy nem létező
+# szóalakot és idegen szót nem talált.
+
+on:
+  pull_request:
+    paths:
+      - '**.ts'
+      - '**.qml'
+      - 'scripts/nyelvi_ellenorzes.py'
+      - 'scripts/nyelvi_szotar.txt'
+
+jobs:
+  nyelv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # kell a base..head diffhez
+
+      - name: Magyar szótár telepítése
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq hunspell hunspell-hu
+
+      - name: Öntesz — lát-e egyáltalán az ellenőrzés
+        # A saját, dokumentált hibáinkon méri magát. Ha ez elbukik, a néma
+        # zöld jelzés hazudna: inkább itt álljon meg.
+        run: python3 scripts/nyelvi_ellenorzes.py --proba
+
+      - name: A PR magyar szövegeinek ellenőrzése
+        run: |
+          python3 scripts/nyelvi_ellenorzes.py \
+            --tartomany "origin/${{ github.base_ref }}...HEAD"
