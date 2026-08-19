@@ -67,7 +67,9 @@ A Picasa funkcionalitása → PicasaPy megvalósítási fázisok.
 
 ## Nem cél (legalábbis egyelőre)
 
-- Picasa Web Albums / felhő-szinkron (a szolgáltatás halott; a `P2category`,
-  `IIDLIST_*` kulcsokat csak megőrizzük)
+- Picasa Web Albums / felhő-szinkron (a szolgáltatás halott; az
+  `IIDLIST_*` kulcsokat csak megőrizzük). A `P2category` viszont NEM
+  felhő-örökség: a mappa gyűjtemény-hovatartozását hordozza, és a
+  Projektek gyűjteményt ebből töltjük fel (#1029).
 - Windows/macOS csomagolás az 1. fázisban (Linux-first; a portolhatóság
   szempont a GUI-választásnál)

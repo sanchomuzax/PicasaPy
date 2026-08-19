@@ -43,6 +43,11 @@ from .filters import (
     serialize_filters_for_write,
     validate_op_for_write,
 )
+from .folder_category import (
+    PROJECTS_CATEGORY,
+    is_projects_category,
+    read_folder_category,
+)
 from .folder_date import (
     is_valid_folder_date,
     read_folder_date_override,
@@ -74,6 +79,7 @@ __all__ = [
     "KeyValueLine",
     "Line",
     "NO_SOURCE_FILE",
+    "PROJECTS_CATEGORY",
     "Rect64",
     "Section",
     "SourceFingerprint",
@@ -88,6 +94,7 @@ __all__ = [
     "encode_rect64",
     "ensure_contact",
     "find_contact_id",
+    "is_projects_category",
     "is_valid_folder_date",
     "load_contacts_xml",
     "load_document",
@@ -98,6 +105,7 @@ __all__ = [
     "parse_document",
     "parse_faces",
     "parse_filters",
+    "read_folder_category",
     "read_folder_date_override",
     "save_document",
     "serialize_album_refs",

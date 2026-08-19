@@ -6526,6 +6526,17 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
 </context>
 <context>
+    <name>ProjectsSection</name>
+    <message>
+        <source>Projects</source>
+        <translation>Projektek</translation>
+    </message>
+    <message>
+        <source>Exported Pictures</source>
+        <translation>Exportált képek</translation>
+    </message>
+</context>
+<context>
     <name>AlbumsSection</name>
     <message>
         <source>Albums</source>
