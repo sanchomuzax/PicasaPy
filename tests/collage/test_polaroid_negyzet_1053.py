@@ -39,6 +39,7 @@ import pytest
 from picasapy.collage.frames import (
     POLAROID_HEIGHT_RATIO,
     POLAROID_WIDTH_RATIO,
+    polaroid_geometry,
 )
 from picasapy.collage.picasa_render import (
     PicasaCollageSettings,
@@ -187,3 +188,58 @@ class TestAKilogasValodiProbaja:
         """A javítás előtti mért állapot: a vegyes készleten HÁROM csempét
         mozdított a beszorítás. Ez az őr azt fogja meg, ha visszacsúsznánk."""
         assert self._beszoritottak("polaroid") <= 1
+
+
+# --------------------------------------------------------------------------
+# A polaroid-lap MARGÓI — golden képpontokhoz kötve
+# --------------------------------------------------------------------------
+#: A tulajdonos `AI.jpg`-jének legfelső, TAKARATLAN polaroid csempéjén mérve
+#: (a fotó kontúrjának `minAreaRect`-jével, tehát a dőléstől függetlenül):
+#: fotó 578,2 × 578,2 · oldalsó és felső margó 41,4 · alsó sáv 173,4.
+GOLDEN_FOTO = 578
+GOLDEN_MARGO_ARANY = 41.4 / 578.2      # 0,0716
+GOLDEN_SAV_ARANY = 173.4 / 578.2       # 0,2999
+GOLDEN_SAV_PER_MARGO = 173.4 / 41.4    # 4,19
+
+
+class TestAPolaroidLapMargoi:
+    """A külső ARÁNY stimmelhet úgy is, hogy a keret geometriája rossz.
+
+    Ha az oldalsó margó és az alsó sáv aránya elcsúszik, a csempe akkor is
+    0,8333 marad — csak épp nem úgy néz ki, mint egy polaroid. Ezek az
+    állítások ezért a MARGÓKAT kötik a golden képpontjaihoz.
+
+    ⚠️ A golden számok kontúr-illesztésből jönnek (JPEG-tömörített képen),
+    tehát ~0,2%-os saját hibájuk van; a mi értékeink ezen felül egész
+    képpontra kerekednek. A tűrés ezt a kettőt fedi, nem lazaság."""
+
+    def test_a_margo_a_foto_szelessegehez_kotott(self):
+        geometria = polaroid_geometry(GOLDEN_FOTO, GOLDEN_FOTO)
+
+        assert geometria.margin / GOLDEN_FOTO == pytest.approx(
+            GOLDEN_MARGO_ARANY, abs=0.002
+        )
+
+    def test_az_also_sav_a_foto_harmada_koruli(self):
+        geometria = polaroid_geometry(GOLDEN_FOTO, GOLDEN_FOTO)
+
+        assert geometria.caption_height / GOLDEN_FOTO == pytest.approx(
+            GOLDEN_SAV_ARANY, abs=0.004
+        )
+
+    def test_az_also_sav_negyszerese_az_oldalsonak(self):
+        """Ez a polaroid FELISMERHETŐ jegye: vékony oldalsó és felső szegély,
+        vastag alsó sáv. Ha ez elcsúszik, a kép „keretes fotó" lesz, nem
+        polaroid — a külső arány viszont mit sem érez belőle."""
+        geometria = polaroid_geometry(GOLDEN_FOTO, GOLDEN_FOTO)
+
+        assert geometria.caption_height / geometria.margin == pytest.approx(
+            GOLDEN_SAV_PER_MARGO, abs=0.15
+        )
+
+    def test_a_kulso_doboz_a_golden_keppontjait_hozza(self):
+        """A mért csempe 661 × 793 képpont volt."""
+        geometria = polaroid_geometry(GOLDEN_FOTO, GOLDEN_FOTO)
+
+        assert geometria.outer_width == pytest.approx(661, abs=2)
+        assert geometria.outer_height == pytest.approx(793, abs=2)
