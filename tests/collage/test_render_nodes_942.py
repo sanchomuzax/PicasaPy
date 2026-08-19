@@ -93,6 +93,7 @@ from picasapy.collage.picasa_render import (
 from picasapy.collage.picasa_render import (
     PicasaCollageSettings,
     _draw_contact_header,
+    _lapra_szorit,
     layout_nodes,
     layout_nodes_for_aspects,
     make_picasa_collage,
@@ -180,8 +181,25 @@ def _regi_render_pile(canvas, images, settings):
             fit_to_frame(image, max(1, cel_w), max(1, cel_h), fill=False),
             settings.effective_border,
         )
-        x = pile_top_left(place.center_x, tile.shape[1], settings.width, settings.width)
-        y = pile_top_left(place.center_y, tile.shape[0], settings.height, settings.height)
+        # ⚠️ #1045: a beszorítás a `_pile_nodes`-ban él, ez a referencia-ág
+        # viszont közvetlenül a `pile_layout`-ból dolgozik, tehát megkerülné.
+        # Ha ez az ág nem szorít be, a két út SZÉTCSÚSZIK, és az őr olyan
+        # eltérésre bukik, ami szándékos viselkedésváltozás — nem regresszió.
+        #
+        # A beszorítást ITT is el kell végezni, ugyanazzal a képlettel (a
+        # KERETES csempe méretével), nem a javítást gyengíteni: az
+        # visszahozná a kilógó képeket a felhasználónál.
+        #
+        # A csempe EL VAN FORGATVA, tehát a befoglalója lóg ki, nem a saját
+        # mérete — a produkciós ág is így számol (`_lapra_szorit`).
+        koszinusz = abs(math.cos(place.theta))
+        szinusz = abs(math.sin(place.theta))
+        befoglalo_w = tile.shape[1] * koszinusz + tile.shape[0] * szinusz
+        befoglalo_h = tile.shape[1] * szinusz + tile.shape[0] * koszinusz
+        kozep_x = _lapra_szorit(place.center_x, befoglalo_w, settings.width)
+        kozep_y = _lapra_szorit(place.center_y, befoglalo_h, settings.height)
+        x = pile_top_left(kozep_x, tile.shape[1], settings.width, settings.width)
+        y = pile_top_left(kozep_y, tile.shape[0], settings.height, settings.height)
         _rotated_paste(
             canvas,
             tile,

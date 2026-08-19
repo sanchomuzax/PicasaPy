@@ -49,6 +49,7 @@ Bemenet/kimenet: OpenCV **BGR** `uint8` képek (a `render.py` konvenciója).
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -325,6 +326,18 @@ def _cell_nodes(
     return nodes
 
 
+def _lapra_szorit(kozep: float, meret: float, lap: int) -> float:
+    """Egy középpont beszorítása úgy, hogy a `meret` széles csempe a lapon maradjon.
+
+    Ha a csempe SZÉLESEBB a lapnál, nincs olyan középpont, amivel elférne —
+    ilyenkor a lap közepére tesszük. A naiv `min(max(...))` ebben az esetben
+    a NEGATÍV oldalra vinné (a felső korlát a alsó alá csúszik), vagyis pont
+    azt a kilógást okozná, amit meg akarunk előzni."""
+    if meret >= lap:
+        return lap * 0.5
+    return min(max(kozep, meret * 0.5), lap - meret * 0.5)
+
+
 def _pile_nodes(
     aspects: Sequence[float],
     paths: Sequence[Path],
@@ -347,11 +360,31 @@ def _pile_nodes(
         oldal = max(1, place.size)
         cel_w, cel_h = fit_aspect_inside(aspect, oldal, oldal)
         kulso_w, kulso_h = outer_box(max(1, cel_w), max(1, cel_h), keret)
+        # ⚠️ #1045: a szórás a KÖZÉPPONTOT tartja a lapon, a csempének viszont
+        # MÉRETE van körülötte — és a kilógást a KERETES méret dönti el, nem a
+        # fotóé. 11 képtől a legnagyobb csempe fele kilóg (a sávot a legkisebb
+        # kép szorzója szűkíti, a margót a legnagyobb igényli).
+        #
+        # 10 képig ez nem csinál semmit — a sáv ott már elfér —, tehát a 9
+        # képes eset, ami a valódi minták középpontjait négy tizedesig hozza,
+        # változatlan marad.
+        #
+        # ⚠️ És a csempe EL VAN FORGATVA (`place.theta`): a lapból nem a saját
+        # szélessége/magassága lóg ki, hanem az elforgatott BEFOGLALÓJA. Egy
+        # 8°-kal döntött polaroid a forgatás nélküli beszorítással is
+        # kicsúszott a bal élen — a felhasználó ugyanazt a csonka képet látta
+        # volna, csak keskenyebb sávban.
+        koszinusz = abs(math.cos(place.theta))
+        szinusz = abs(math.sin(place.theta))
+        befoglalo_w = kulso_w * koszinusz + kulso_h * szinusz
+        befoglalo_h = kulso_w * szinusz + kulso_h * koszinusz
+        kozep_x = _lapra_szorit(place.center_x, befoglalo_w, settings.width)
+        kozep_y = _lapra_szorit(place.center_y, befoglalo_h, settings.height)
         nodes.append(
             CollageNode(
                 path=path,
-                center_x=pixels_to_sheet(place.center_x, settings.width),
-                center_y=pixels_to_sheet(place.center_y, settings.width),
+                center_x=pixels_to_sheet(kozep_x, settings.width),
+                center_y=pixels_to_sheet(kozep_y, settings.width),
                 width=pixels_to_sheet(kulso_w, settings.width),
                 height=pixels_to_sheet(kulso_h, settings.width),
                 theta=place.theta,

@@ -390,7 +390,13 @@ Item {
             progressOverlay.visible = true
         }
         function onCollageDone(path) { panel.finishSave(path) }
-        function onCollageFailed(message) { progressOverlay.visible = false }
+        // ⚠️ A hiba NEM lehet néma. Az első változat csak eltüntette a
+        // folyamatjelzőt, és a felhasználó semmit nem látott — se képet, se
+        // okot; órákig kideríthetetlen volt, miért nincs mentett kollázs.
+        function onCollageFailed(message) {
+            progressOverlay.visible = false
+            dialogs.showFailed(message)
+        }
         function onCollageCanceled() { progressOverlay.visible = false }
         function onCollageNoImages() {
             progressOverlay.visible = false

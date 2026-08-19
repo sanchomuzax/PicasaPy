@@ -263,6 +263,40 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             width=self._collage_output_width(),
         )
 
+    def _index_saved_collage(self, path: Path) -> None:
+        """A mentett kollázs mappáját felvesszük az INDEXBE.
+
+        ⚠️ Enélkül a kollázs SEHOL nem jelenik meg a bal hasábon, hiába
+        tökéletes a `.picasa.ini`. A Projektek gyűjtemény lekérdezése
+        (`index/project_folders.py`) így indul:
+
+            SELECT path FROM folders WHERE has_ini = 1
+
+        — vagyis csak a MÁR INDEXELT mappákon megy végig. A kollázs
+        célmappája (`<Képek>/Picasa/Kollázsok`) viszont tipikusan egyetlen
+        figyelt gyökér alatt sincs, tehát oda sem teljes újraindexeléssel,
+        sem másképp nem kerül be. Mérve a valódi indexen: 68 mappa, egy sem
+        a Kollázsok.
+
+        A `sync_folder` gyökér-korlátja itt úgy teljesül, hogy a gyökér MAGA
+        a célmappa — így csak ezt az egy mappát vesszük fel, a felhasználó
+        figyelt gyökereihez nem nyúlunk.
+
+        A hiba nem buktatja el a mentést: a kép már a lemezen van, és egy
+        index-gond miatt nem mondjuk azt, hogy a mentés meghiúsult."""
+        mappa = Path(path).parent
+        try:
+            from picasapy.index import open_index
+            from picasapy.index.sync import sync_folder
+
+            with open_index(self._db_path) as conn:
+                sync_folder(conn, mappa, mappa)
+        except Exception:  # noqa: BLE001 - az indexelés soha ne bukatassa a mentést
+            logger.warning(
+                "A mentett kollázs mappája nem került az indexbe: %s", mappa,
+                exc_info=True,
+            )
+
     def _render_worker(
         self, nodes, settings, target, wallpaper: bool, background_image: str
     ) -> None:
@@ -296,6 +330,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             return
         self._set_dirty(False)
         self._set_saved_path(str(eredmeny.path))
+        self._index_saved_collage(eredmeny.path)
         if eredmeny.missing:
             # 9.4: a hiány nem hiba — a kollázs elkészült, de a felhasználó
             # tudja meg, hogy hány kép maradt ki belőle

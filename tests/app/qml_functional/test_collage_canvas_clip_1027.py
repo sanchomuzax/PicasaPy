@@ -177,19 +177,30 @@ def _belul_valtozott(alap: np.ndarray, uj: np.ndarray, doboz) -> int:
 
 
 @pytest.mark.parametrize("meret", [(800, 534), (1280, 800)])
-def test_a_vaszonnak_van_vago_konteneres_a_keret_teljes_teglalapjaval(controller, meret):
-    """`previewclip = previewcontainer`, mind a négy élen 0 (spec 2.3).
+def test_a_vago_a_LAP_teglalapjat_kapja(controller, meret):
+    """A vágó a LAP téglalapja — nem a vászonkereté.
 
-    Nem a lapnál és nem a `previewinset`-nél: a `.tre` a vágó elemet a
-    vászonkerettel AZONOS méretűre kényszeríti."""
+    ⚠️ EZ AZ ÁLLÍTÁS MEGFORDULT, és a megfordítás a lényeg. Az első
+    változat azt követelte, hogy a vágó a VÁSZONKERETTEL legyen azonos
+    (`previewclip = previewcontainer`), és zölden őrizte ezt — miközben a
+    felhasználó azt látta, hogy **a képek továbbra is kilógnak**.
+
+    Mindkettő igaz volt egyszerre: a csempe a vászonkereten belül maradt
+    (tehát a teszt átment), de a LAPON kívülre csúszott — és a felhasználó
+    a lap színes szélét nézi, nem a vászonkeretet. A teszt a kód
+    értelmezését rögzítette, nem azt, amit a képernyőn látni.
+
+    A négy lebegő gombcsoport ettől nem sérül: azok a vágó TESTVÉREI, nem
+    a gyerekei."""
     panel = _panel(controller, *meret)
     _var()
-    vaszon = _child(panel, "collageCanvas")
+    lap = _child(panel, "collageSheet")
     vago = _child(panel, VAGO)
 
-    assert _vag(vago), f"a(z) {VAGO} nem vág — a képek kilógnak a keretből"
-    assert _ablakban(vago) == _ablakban(vaszon), (
-        "a vágó téglalapja nem a vászonkereté (previewclip = previewcontainer)"
+    assert _vag(vago), f"a(z) {VAGO} nem vág — a képek kilógnak a lapból"
+    assert _ablakban(vago) == _ablakban(lap), (
+        "a vágó téglalapja nem a LAPÉ — a lapon kívülre csúszott csempe "
+        "nem vágódik el, és a felhasználó ezt látja kilógó képként"
     )
 
 

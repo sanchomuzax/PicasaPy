@@ -5,6 +5,46 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.8] – 2026-08-20
+
+### Javítva
+- **A kollázs képei tényleg nem lógnak ki (#1027, #1045).** A 0.8.6
+  ugyanezt ígérte, és nem tartotta be: a vágás a **vászonkeretnél**
+  történt, nem a **lapnál**, tehát a lapon túlnyúló kép attól még
+  látszott. A hozzá tartozó teszt is a rossz követelményt őrizte — az
+  zölden állt, miközben a hiba a képernyőn ott volt.
+
+  Most két helyen áll a védelem: a lap **elvágja**, ami túllóg rajta, és a
+  Képkupac elrendezése eleve **beszorítja** a csempét a lapra — a
+  KERETES mérettel számolva, nem a csupasz fotóéval, tehát a polaroid
+  papírszegélye sem lóghat le. 15 képes próbán: 2 kilógó csempéről
+  **0**-ra.
+
+  ⚠️ A beszorítás nem semleges: amíg megvan, a Képkupac kissé eltér az
+  eredeti Picasáétól. A mélyebb ok — a polaroid csempe méretezése — külön
+  jegyen (#1053) fut.
+- **A mentett kollázs megjelenik a Projektek alatt (#1046, #1048, #1050).**
+  Eddig a mentés után a Projektek gyűjtemény üres maradt. Három dolog
+  hiányzott, mind a három megvan: a program most **`.picasa.ini`-t ír** a
+  kollázsok mappájába (pontosan olyat, amilyet a valódi Picasa is — se
+  többet, se kevesebbet), és a mentett mappát **azonnal beindexeli**, hogy
+  ne kelljen újraindítani.
+- **A mentés hibája többé nem néma (#1047).** Ha a kollázs mentése
+  elszállt, a folyamatjelző eltűnt, és semmi nem történt — a kép nem
+  készült el, és erről nem szólt a program. Mostantól megmondja, mi volt a
+  baj.
+- **Visszakapod az automatikusan mentett piszkozatot (#1051).** A program
+  eddig is elmentette a félbehagyott kollázst, de **soha nem kínálta
+  vissza**: a visszatöltés kódja készen állt, a felület viszont egyetlen
+  helyen sem hívta meg. Mostantól induláskor felajánlja. Az „Elvetés"
+  törli a piszkozatot, az `Esc` viszont csak elhalasztja a döntést.
+
+### Fejlesztői
+- A tesztek nem írnak többé a valódi `~/Pictures/Picasa/Kollázsok`
+  mappába (#1054). Egy fixture hónapokig odaírt — a lerakott fájlt utóbb
+  egy hibajegy a felhasználó elveszett munkájának nézte. Új őr nevezi meg
+  azt a tesztet, amelyik a valódi képmappához nyúl.
+
 ## [0.8.7] – 2026-08-19
 
 ### Javítva
