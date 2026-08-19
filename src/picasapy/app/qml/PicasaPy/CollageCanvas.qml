@@ -78,19 +78,29 @@ Item {
     // ⚠️ A vágás TENGELYPÁRHUZAMOS téglalapra megy (a vászonkeret nincs
     // forgatva), tehát a Qt ollóval (scissor) intézi: nem hoz létre külön
     // rajzfelületet, és nem nyúl a csomópontok saját élsimításához (#1016).
+    // ⚠️ A vágó a LAP téglalapjára megy, NEM a teljes vászonra (#1027 → javítva).
+    //
+    // Az első nekifutás a vászon egészét vágta (`anchors.fill: parent`), és a
+    // felhasználó jogosan jelezte, hogy a képek TOVÁBBRA IS kilógnak: a lapon
+    // kívülre csúszott csempe a vásznon belül maradt, tehát nem vágódott el.
+    // Amit ő lát, az a LAP széle (a színes háttér), nem a vászonkeret.
+    //
+    // A négy lebegő gombcsoport ezt NEM sínyli meg: azok a vágó TESTVÉREI
+    // (lentebb deklarálva), nem a gyerekei — a vágás elvi lehetőséggel sem
+    // éri el őket.
     Item {
         objectName: "collageSheetClip"
-        anchors.fill: parent
+        x: canvas.sheetRect.x
+        y: canvas.sheetRect.y
+        width: canvas.sheetRect.width
+        height: canvas.sheetRect.height
         clip: true
 
         CollageSheet {
             id: sheet
             objectName: "collageSheet"
             controller: canvas.controller
-            x: canvas.sheetRect.x
-            y: canvas.sheetRect.y
-            width: canvas.sheetRect.width
-            height: canvas.sheetRect.height
+            anchors.fill: parent
             visible: width > 0 && height > 0
         }
     }
