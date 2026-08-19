@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.3] – 2026-08-19
+
+### Javítva
+- **A „Kép használata" háttérmód tényleg választ képet (#1009).** Eddig a mód
+  bekapcsolása után az előnézet üres maradt, mert képet csak a kijelölésből
+  lehetett beállítani. Mostantól a módváltás magától a kollázs első képét
+  választja, a kijelölés pedig felülírja.
+
+  ⚠️ Menet közben kiderült, hogy a kép **Windowson soha nem jelent volna meg**,
+  ékezetes mappa nélkül sem: a program kézzel fűzött össze egy fájlcímet, amiben
+  a meghajtóbetűt a rendszer portszámnak nézte, így a cím érvénytelen lett — és
+  a kép némán, hibaüzenet nélkül elmaradt. (Ugyanez a hiba `#` jelet tartalmazó
+  fájlnévnél Linuxon is jelentkezett volna. Két további helyen még javítandó:
+  #1019.)
+- **Nem szaggatottak a keretélek a kollázs-előnézetben (#1010).** A megdöntött
+  képek kerete lépcsősen rajzolódott ki. Mérve: egy 5 fokkal elforgatott élen
+  nulla átmeneti árnyalat volt, most 466. A mentett képet ez sosem érintette,
+  csak az előnézetet.
+
 ## [0.8.2] – 2026-08-19
 
 ### Javítva
