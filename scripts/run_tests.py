@@ -62,11 +62,18 @@ _APP_FILE_TIMEOUT_S = 180
 #: minden egyetlen magon fut. 30 fájlos mintán a négyszálas futás 163 mp
 #: helyett 68 mp volt (2,4×).
 #:
-#: `PICASAPY_TESZT_PARHUZAM=1` visszaadja a korábbi, soros viselkedést.
-_PARHUZAM = max(
-    1,
-    int(os.environ.get("PICASAPY_TESZT_PARHUZAM") or 0) or min(4, os.cpu_count() or 1),
-)
+#: 2026-08-19: az ALAPÉRTELMEZÉS visszaáll SOROSRA, a párhuzamosság kérésre
+#: kapcsolható (`PICASAPY_TESZT_PARHUZAM=4`). Ok: alapból bekapcsolva a főág
+#: CI-ja két egymást követő futáson elbukott —
+#:   * ubuntu: `tests/app/test_tray_export.py` (a teszt 15 mp-et vár egy
+#:     exportra; CPU-éhezésben ez kevés, a várt érték None marad),
+#:   * windows: `test_folder_pane_projects_1029.py` hozzáférési hibával
+#:     (0xC0000005) omlott össze.
+#: A gyorsulás valódi (ubuntu 22 → 6 perc), de piros főág mellett semmit nem ér:
+#: a felhasználó e-mailt kap róla, és a többi munkamenet nem tudja megmondani,
+#: valódi-e a bukás. A visszakapcsolás feltétele a két hiba megértése és a
+#: háromszori ismételt futás — ld. a hozzá tartozó jegyet.
+_PARHUZAM = max(1, int(os.environ.get("PICASAPY_TESZT_PARHUZAM") or 0) or 1)
 
 
 def _masik_futas_pidjei() -> list[int]:
