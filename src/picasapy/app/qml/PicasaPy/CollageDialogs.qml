@@ -70,10 +70,48 @@ Item {
     /** „Kötelező a kijelölés" (10/b.1). */
     function showSelectionRequired() { selectionRequired.open() }
 
+    /** A mentés MEGHIÚSULT — a hibaüzenettel együtt.
+     *
+     * ⚠️ Ez a párbeszéd azért született, mert a hiba eddig NÉMA volt: a
+     * `onCollageFailed` kezelő csak eltüntette a folyamatjelzőt, és a
+     * felhasználó semmit nem látott — se képet, se okot. Egy órákig
+     * kideríthetetlen hiba lett belőle. */
+    function showFailed(message) {
+        failedDialog.message = message || ""
+        failedDialog.open()
+    }
+
     readonly property bool anyVisible:
         saveSkipped.visible || formatMismatch.visible || replaceDialog.visible
         || closeConfirm.visible || cancelConfirm.visible
         || missingDialog.visible || selectionRequired.visible
+        || failedDialog.visible
+
+    // --- A mentés meghiúsult (a néma hiba helyett) --------------------------
+
+    Dialog {
+        id: failedDialog
+        objectName: "collageFailedDialog"
+        property string message: ""
+        anchors.centerIn: parent
+        modal: true
+        title: qsTr("The collage could not be saved")
+        standardButtons: Dialog.Ok
+
+        ColumnLayout {
+            Text {
+                objectName: "collageFailedText"
+                text: failedDialog.message.length > 0
+                      ? failedDialog.message
+                      : qsTr("The collage could not be saved.")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+                wrapMode: Text.WordWrap
+                Layout.preferredWidth: 360
+                Layout.fillWidth: true
+            }
+        }
+    }
 
     // --- 9.1 „Mentés mellőzve" ---------------------------------------------
 

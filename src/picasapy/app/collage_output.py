@@ -253,6 +253,60 @@ def _write_pair(target: Path, image, project) -> Path:
     return target
 
 
+#: A `[Picasa] P2category` értéke, amitől az album a PROJEKTEK gyűjteménybe
+#: kerül (spec 1.5 és `picasa-kollazs-felulet.md` 9.1/b; a #1029 mérte ki,
+#: hogy a valódi gyűjteményben pontosan a Picasa projekt-mappái hordozzák).
+PROJECTS_CATEGORY = "Projects (internal)"
+
+
+def write_album_ini(folder: Path | str, album_name: str) -> Path:
+    """A kimeneti mappa `.picasa.ini`-je — ettől látszik a PROJEKTEK alatt.
+
+    ⚠️ Ez a lépés hiányzott, és emiatt a felhasználó a mentés után **semmit
+    nem talált** a Projektek gyűjteményben: a kollázs kimentődött, a program
+    viszont sehol nem jelölte meg a mappát projekt-albumként, tehát a bal
+    hasáb nem tudta hova sorolni.
+
+    A spec 1.5 három dolgot ír elő: `[encoding] utf8=1`, `[Picasa] name=`, és
+    a projekt-besorolás. A meglévő kulcsokat **megőrizzük** — a mappában
+    korábbi Picasa-adat is lehet, azt felülírni adatvesztés volna.
+    """
+    mappa = Path(folder)
+    mappa.mkdir(parents=True, exist_ok=True)
+    ut = mappa / ".picasa.ini"
+
+    # A `.picasa.ini` NEM szabványos INI (ismétlődő szekciók, BOM nélküli
+    # UTF-8), ezért nem a configparserrel írjuk: soralapon egészítjük ki, és
+    # csak azt, ami hiányzik.
+    sorok: list[str] = []
+    if ut.exists():
+        try:
+            sorok = ut.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            sorok = []
+
+    def _van(kulcs: str) -> bool:
+        elotag = kulcs.lower() + "="
+        return any(sor.strip().lower().startswith(elotag) for sor in sorok)
+
+    if not sorok:
+        sorok = ["[encoding]", "utf8=1", "", "[Picasa]"]
+    elif "[picasa]" not in [sor.strip().lower() for sor in sorok]:
+        sorok += ["", "[Picasa]"]
+
+    # a `[Picasa]` szekció VÉGÉRE fűzünk, hogy a meglévő kulcsok maradjanak
+    beszurando = []
+    if not _van("name"):
+        beszurando.append(f"name={album_name}")
+    if not _van("P2category"):
+        beszurando.append(f"P2category={PROJECTS_CATEGORY}")
+    if beszurando:
+        sorok += beszurando
+
+    ut.write_text("\n".join(sorok) + "\n", encoding="utf-8")
+    return ut
+
+
 def render_collage(
     nodes: Sequence[CollageNode],
     settings: PicasaCollageSettings,
@@ -298,6 +352,9 @@ def render_collage(
         background_image=background_image,
     )
     ut = _write_pair(Path(target), jelentes.image, projekt)
+    # A mappa megjelölése projekt-albumként — enélkül a mentett kollázs
+    # SEHOL nem jelenik meg a bal hasábon (#1029 forrása a `P2category`).
+    write_album_ini(ut.parent, ut.parent.name)
     return SaveResult(
         ut, len(jelentes.used), hianyzo, kihagyott, tuple(jelentes.image.shape)
     )
@@ -311,7 +368,9 @@ __all__ = [
     "SaveResult",
     "output_dir",
     "output_path",
+    "PROJECTS_CATEGORY",
     "output_width",
+    "write_album_ini",
     "render_collage",
     "render_nodes_of",
     "render_settings",
