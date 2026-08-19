@@ -5,6 +5,24 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.6] – 2026-08-19
+
+### Javítva
+- **Nem szaggatott többé a kollázs-csempék széle (#1016).** A legzavaróbb a fehér
+  keret **belső** éle volt, ahol a fotó a kerettel találkozik — az a csempe
+  legnagyobb kontrasztú éle. Mérve, valódi kijelzőn: azon az élen **nulla**
+  átmeneti árnyalat volt, most **819**. A keret nélküli csempe külső éle:
+  0 → 516.
+- **A képek nem lógnak ki a keretből (#1027).** Az elmozgatott csempék eddig
+  a vászon fölé, a gombsorra folytak. Mostantól a vászon szélén elvágódnak —
+  a négy lebegő gombcsoport viszont sértetlen marad.
+- **Kollázs-módban eltűnik a felső eszközsáv és az alsó tálcasáv (#1026).**
+  Nem elrejtve: a **könyvtár teljes panelje** adja át a helyét a kollázsnak,
+  ahogy az eredetiben is.
+
+  **Ezért a vászon jóval nagyobb lett**: 1280 × 800-as ablakban a lap
+  708 × 531-ről **849 × 637**-re nőtt — **+20% él, +44% terület**.
+
 ## [0.8.5] – 2026-08-19
 
 ### Javítva
