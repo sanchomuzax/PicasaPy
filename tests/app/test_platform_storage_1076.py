@@ -8,12 +8,14 @@ from pathlib import Path
 import pytest
 
 from picasapy.app import application
+from picasapy.app.data_location import write_data_root
 from picasapy.app.platform_storage import (
     StorageMigrationError,
     default_storage_paths,
     legacy_windows_storage_paths,
     migrate_legacy_windows_storage,
 )
+from picasapy.app.startup_status import StartupStatus
 
 
 def _windows_env(tmp_path: Path) -> dict[str, str]:
@@ -100,6 +102,33 @@ class TestDefaultStoragePaths:
         assert application._config_dir(platform="win32") == (
             tmp_path / "AppData" / "Roaming" / "PicasaPy"
         )
+
+    def test_ekezetes_windows_profil_bitpontosan_mukodik(self, tmp_path):
+        profile = tmp_path / "Users" / "Sáncho"
+        env = {
+            "LOCALAPPDATA": str(profile / "AppData" / "Local"),
+            "APPDATA": str(profile / "AppData" / "Roaming"),
+            "XDG_DATA_HOME": str(profile / ".local" / "share"),
+            "XDG_CACHE_HOME": str(profile / ".cache"),
+            "XDG_CONFIG_HOME": str(profile / ".config"),
+        }
+        legacy = legacy_windows_storage_paths(environ=env, home=profile)
+        target = default_storage_paths("win32", environ=env, home=profile)
+        _create_index(legacy.data / "index.db", "Sáncho indexe")
+        legacy.config.mkdir(parents=True)
+        (legacy.config / "WatchedFolders.txt").write_text(
+            "C:\\Users\\Sáncho\\Képek\n", encoding="utf-8"
+        )
+
+        outcome = migrate_legacy_windows_storage(target, legacy)
+
+        assert outcome is not None
+        assert target.data == profile / "AppData" / "Local" / "PicasaPy"
+        assert target.config == profile / "AppData" / "Roaming" / "PicasaPy"
+        assert _index_value(target.data / "index.db") == "Sáncho indexe"
+        assert (target.config / "WatchedFolders.txt").read_text(
+            encoding="utf-8"
+        ) == "C:\\Users\\Sáncho\\Képek\n"
 
 
 class TestLegacyWindowsMigration:
@@ -212,3 +241,317 @@ class TestLegacyWindowsMigration:
 
         assert _index_value(legacy.data / "index.db") == "meglevő-index"
         assert not (target.data / "index.db").exists()
+
+
+def _symlink_or_skip(link: Path, target: Path, *, directory: bool = True) -> None:
+    try:
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to(target, target_is_directory=directory)
+    except OSError as error:
+        pytest.skip(f"A tesztkörnyezet nem enged symlinket: {error}")
+
+
+class TestMigrationPathSafety:
+    def _paths(self, tmp_path):
+        env = _windows_env(tmp_path)
+        return (
+            legacy_windows_storage_paths(environ=env, home=tmp_path / "home"),
+            default_storage_paths("win32", environ=env, home=tmp_path / "home"),
+        )
+
+    @pytest.mark.parametrize("dangling", [False, True])
+    def test_source_root_symlink_hangosan_megall(self, tmp_path, dangling):
+        import picasapy.app.platform_storage as storage
+
+        legacy, target = self._paths(tmp_path)
+        real_source = tmp_path / "valodi-forras"
+        if not dangling:
+            _create_index(real_source / "index.db")
+        _symlink_or_skip(legacy.data, real_source)
+
+        with pytest.raises(StorageMigrationError, match="symlink"):
+            migrate_legacy_windows_storage(target, legacy)
+
+        assert not (target.config / storage._MIGRATION_MARKER).exists()
+        assert not (target.data / "index.db").exists()
+
+    @pytest.mark.parametrize("dangling", [False, True])
+    def test_target_root_symlink_hangosan_megall(self, tmp_path, dangling):
+        import picasapy.app.platform_storage as storage
+
+        legacy, target = self._paths(tmp_path)
+        _create_index(legacy.data / "index.db")
+        real_target = tmp_path / "valodi-cel"
+        if not dangling:
+            real_target.mkdir()
+        _symlink_or_skip(target.data, real_target)
+
+        with pytest.raises(StorageMigrationError, match="symlink"):
+            migrate_legacy_windows_storage(target, legacy)
+
+        assert not (target.config / storage._MIGRATION_MARKER).exists()
+        assert not (real_target / "index.db").exists()
+
+    @pytest.mark.parametrize("side", ["source", "target"])
+    def test_storage_root_fajl_konyvtar_tipusutkozes_hangosan_megall(
+        self, tmp_path, side
+    ):
+        import picasapy.app.platform_storage as storage
+
+        legacy, target = self._paths(tmp_path)
+        if side == "source":
+            legacy.data.parent.mkdir(parents=True)
+            legacy.data.write_text("nem könyvtár", encoding="utf-8")
+        else:
+            _create_index(legacy.data / "index.db")
+            target.data.parent.mkdir(parents=True)
+            target.data.write_text("nem könyvtár", encoding="utf-8")
+
+        with pytest.raises(StorageMigrationError, match="típusütközés"):
+            migrate_legacy_windows_storage(target, legacy)
+
+        assert not (target.config / storage._MIGRATION_MARKER).exists()
+
+    def test_celfajl_helyen_konyvtar_tipusutkozes_hangosan_megall(self, tmp_path):
+        import picasapy.app.platform_storage as storage
+
+        legacy, target = self._paths(tmp_path)
+        legacy.data.mkdir(parents=True)
+        (legacy.data / "errorlog.txt").write_text("napló", encoding="utf-8")
+        (target.data / "errorlog.txt").mkdir(parents=True)
+
+        with pytest.raises(StorageMigrationError, match="típusütközés"):
+            migrate_legacy_windows_storage(target, legacy)
+
+        assert not (target.config / storage._MIGRATION_MARKER).exists()
+
+
+class TestMigrationDurability:
+    def test_minden_publikacio_fsync_et_kap_es_a_marker_az_utolso(
+        self, tmp_path, monkeypatch
+    ):
+        import picasapy.app.platform_storage as storage
+
+        env = _windows_env(tmp_path)
+        legacy = legacy_windows_storage_paths(environ=env, home=tmp_path / "home")
+        target = default_storage_paths("win32", environ=env, home=tmp_path / "home")
+        _create_index(legacy.data / "index.db")
+        (legacy.data / "errorlog.txt").write_text("napló", encoding="utf-8")
+        legacy.config.mkdir(parents=True)
+        (legacy.config / "WatchedFolders.txt").write_text("C:\\Fotók\n")
+
+        events: list[tuple[str, Path]] = []
+        original_fsync_file = storage._fsync_file
+        original_fsync_directory = storage._fsync_directory
+        original_publish = storage._publish_if_missing
+
+        def record_fsync_file(path):
+            original_fsync_file(path)
+            events.append(("fsync_file", Path(path)))
+
+        def record_fsync_directory(path):
+            original_fsync_directory(path)
+            events.append(("fsync_directory", Path(path)))
+
+        def record_publish(temporary, destination):
+            events.append(("publish", Path(destination)))
+            return original_publish(temporary, destination)
+
+        monkeypatch.setattr(storage, "_fsync_file", record_fsync_file)
+        monkeypatch.setattr(storage, "_fsync_directory", record_fsync_directory)
+        monkeypatch.setattr(storage, "_publish_if_missing", record_publish)
+
+        migrate_legacy_windows_storage(target, legacy)
+
+        publications = [event for event in events if event[0] == "publish"]
+        marker = target.config / storage._MIGRATION_MARKER
+        assert publications[-1] == ("publish", marker)
+        marker_index = events.index(("publish", marker))
+        earlier_publications = publications[:-1]
+        assert earlier_publications
+        for _, published in earlier_publications:
+            publish_index = events.index(("publish", published))
+            assert events[publish_index - 1][0] == "fsync_file"
+            assert ("fsync_directory", published.parent) in events[
+                publish_index + 1 : marker_index
+            ]
+        assert events[marker_index - 1][0] == "fsync_file"
+
+
+class TestStorageBootstrap:
+    def test_futo_regi_explicit_adatgyokernel_migracio_elott_megall(
+        self, tmp_path
+    ):
+        env = _windows_env(tmp_path)
+        legacy = legacy_windows_storage_paths(environ=env, home=tmp_path / "home")
+        explicit_root = tmp_path / "régi-explicit-adat"
+        explicit_root.mkdir()
+        write_data_root(legacy.config, explicit_root)
+        held_lock = application._acquire_instance_lock(explicit_root)
+        assert held_lock is not None
+        migration_calls = []
+        try:
+            with pytest.raises(application.StorageAlreadyRunning):
+                application._bootstrap_storage(
+                    platform="win32",
+                    environ=env,
+                    home=tmp_path / "home",
+                    migrate=lambda *_args: migration_calls.append(True),
+                )
+        finally:
+            held_lock.unlock()
+
+        assert migration_calls == []
+
+    def test_explicit_legacy_adatgyoker_symlinkjet_sem_koveti(self, tmp_path):
+        env = _windows_env(tmp_path)
+        legacy = legacy_windows_storage_paths(environ=env, home=tmp_path / "home")
+        real_root = tmp_path / "valodi-explicit-adat"
+        real_root.mkdir()
+        linked_root = tmp_path / "linkelt-explicit-adat"
+        _symlink_or_skip(linked_root, real_root)
+        write_data_root(legacy.config, linked_root)
+        migration_calls = []
+
+        with pytest.raises(StorageMigrationError, match="symlink"):
+            application._bootstrap_storage(
+                platform="win32",
+                environ=env,
+                home=tmp_path / "home",
+                migrate=lambda *_args: migration_calls.append(True),
+            )
+
+        assert migration_calls == []
+
+    def test_azonos_effektiv_rootnal_ugyanazt_a_zarat_tartja_meg_es_a_sorrend_jo(
+        self, tmp_path
+    ):
+        env = _windows_env(tmp_path)
+        legacy = legacy_windows_storage_paths(environ=env, home=tmp_path / "home")
+        explicit_root = tmp_path / "közös-explicit-adat"
+        explicit_root.mkdir()
+        write_data_root(legacy.config, explicit_root)
+        events = []
+        lock = object()
+
+        def acquire(path):
+            events.append(("lock", Path(path)))
+            return lock
+
+        def migrate(target_paths, legacy_paths):
+            events.append(("migrate", legacy_paths.data))
+            target_paths.config.mkdir(parents=True, exist_ok=True)
+            write_data_root(target_paths.config, explicit_root)
+            return True
+
+        bootstrap = application._bootstrap_storage(
+            platform="win32",
+            environ=env,
+            home=tmp_path / "home",
+            acquire_lock=acquire,
+            migrate=migrate,
+        )
+
+        assert events == [("lock", explicit_root), ("migrate", legacy.data)]
+        assert bootstrap.data_dir == explicit_root
+        assert bootstrap.instance_lock is lock
+        assert bootstrap.legacy_lock is lock
+
+    def test_windows_migracio_utan_az_uj_rootot_zarja(self, tmp_path):
+        env = _windows_env(tmp_path)
+        legacy = legacy_windows_storage_paths(environ=env, home=tmp_path / "home")
+        legacy.data.mkdir(parents=True)
+        events = []
+
+        def acquire(path):
+            events.append(("lock", Path(path)))
+            return object()
+
+        def migrate(_target, _legacy):
+            events.append(("migrate", _legacy.data))
+            return True
+
+        bootstrap = application._bootstrap_storage(
+            platform="win32",
+            environ=env,
+            home=tmp_path / "home",
+            acquire_lock=acquire,
+            migrate=migrate,
+        )
+
+        target = default_storage_paths("win32", environ=env, home=tmp_path / "home")
+        assert events == [
+            ("lock", legacy.data),
+            ("migrate", legacy.data),
+            ("lock", target.data),
+        ]
+        assert bootstrap.data_dir == target.data
+        assert bootstrap.instance_lock is not bootstrap.legacy_lock
+
+    def test_linuxon_nincs_migracio_es_az_xdg_root_zarodik(self, tmp_path):
+        env = {
+            "XDG_DATA_HOME": str(tmp_path / "data"),
+            "XDG_CACHE_HOME": str(tmp_path / "cache"),
+            "XDG_CONFIG_HOME": str(tmp_path / "config"),
+        }
+        events = []
+        lock = object()
+
+        bootstrap = application._bootstrap_storage(
+            platform="linux",
+            environ=env,
+            home=tmp_path / "home",
+            acquire_lock=lambda path: events.append(("lock", Path(path))) or lock,
+            migrate=lambda *_args: events.append(("migrate", Path("hiba"))),
+        )
+
+        target = default_storage_paths("linux", environ=env, home=tmp_path / "home")
+        assert events == [("lock", target.data)]
+        assert bootstrap.instance_lock is lock
+        assert bootstrap.legacy_lock is None
+
+    def test_run_a_bootstrapot_a_gyokerfeloldas_elott_hivja(self):
+        source = Path(application.__file__).read_text(encoding="utf-8")
+        run_source = source[source.index("def run(") :]
+
+        assert run_source.index("_bootstrap_storage()") < run_source.index(
+            "roots = _resolve_roots(argv)"
+        )
+
+
+class TestMigrationNotice:
+    def test_sikeres_migracio_a_splashen_forras_es_celuttal_latszik(self, tmp_path):
+        profile = tmp_path / "Users" / "Sáncho"
+        env = {
+            "LOCALAPPDATA": str(profile / "AppData" / "Local"),
+            "APPDATA": str(profile / "AppData" / "Roaming"),
+            "XDG_DATA_HOME": str(profile / ".local" / "share"),
+            "XDG_CACHE_HOME": str(profile / ".cache"),
+            "XDG_CONFIG_HOME": str(profile / ".config"),
+        }
+        legacy = legacy_windows_storage_paths(environ=env, home=profile)
+        _create_index(legacy.data / "index.db")
+        bootstrap = application._bootstrap_storage(
+            platform="win32",
+            environ=env,
+            home=profile,
+            acquire_lock=lambda _path: object(),
+        )
+        notice = bootstrap.migration_notice
+        assert notice is not None
+        status = StartupStatus("Indulás…")
+
+        class Controller:
+            started = False
+
+            def start(self):
+                self.started = True
+
+        controller = Controller()
+
+        application._start_initial_scan(status, controller, notice)
+
+        assert controller.started is True
+        assert str(notice.source) in status.statusText
+        assert str(notice.target) in status.statusText
+        assert "migr" in status.statusText.lower()
