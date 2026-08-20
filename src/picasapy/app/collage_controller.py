@@ -391,6 +391,27 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
             for node in self._nodes()
         )
 
+    def _relayout_for_page_shape(self) -> None:
+        """Újraszámolás a lap ALAKJÁNAK változása után (#991).
+
+        A `setCollageFormat` és a `setCollageOrientation` eddig csak a lap
+        arányát cserélte ki — a kártyák a régi helyükön maradtak, tehát
+        kilógtak, összetorlódtak, vagy nagy üres rész maradt. A
+        `setCollageTheme` már ma is helyesen újraszámol.
+
+        Az eredetiben ezt a képesség-maszk **1. bitje** kapcsolja
+        (`0x0087e960`, a kapcsolók a `0x00839f07` és a `0x0083a201` címen;
+        spec 2.), és a rácsos témák pakolói eleve a lap arányából dolgoznak
+        — mindkét ágon újraszámolás következik.
+
+        ⚠️ A kézi elrendezés ilyenkor ELVESZIK. Ez az eredeti viselkedése
+        (ugyanaz, mint téma-váltásnál, spec 5.), és nincs értelme
+        megőrizni: a régi helyek a RÉGI lap alakjához tartoztak.
+
+        A `dirty` jelző igazra vált — a `_relayout(dirty=True)` állítja be,
+        ezért itt külön `_set_dirty` nem kell."""
+        self._relayout(self._current_sources(), dirty=True)
+
     def _relayout(
         self, sources: Sequence[layout.CollageSource], *, dirty: bool
     ) -> None:
@@ -522,7 +543,7 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         self._get_settings().setValue(prefs.ORIENTATION_KEY, kind)
         self.collageOrientationChanged.emit()
         self.collagePageRatioChanged.emit()
-        self._set_dirty(True)
+        self._relayout_for_page_shape()
 
     @Slot(str)
     def setCollageFormat(self, key: str) -> None:
@@ -533,7 +554,7 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         self._get_settings().setValue(prefs.FORMAT_KEY, key)
         self.collageFormatKeyChanged.emit()
         self.collagePageRatioChanged.emit()
-        self._set_dirty(True)
+        self._relayout_for_page_shape()
 
     def _single_selected_index(self) -> int:
         """A pontosan egy kijelölt csomópont INDEXE, vagy −1 + kérés a felület

@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.16] – 2026-08-20
+
+### Javítva
+- **Lapformátum- vagy tájolásváltás után újrarendeződik a vászon (#991).**
+  Eddig a lap alakja megváltozott, a kártyák viszont a helyükön maradtak:
+  kilógtak, összetorlódtak, vagy nagy üres rész maradt. `4:3 → 16:9`
+  váltásnál a lap **megrövidül**, és a régi helyükön hagyott kártyák
+  kilógtak az aljából.
+
+  ⚠️ A kézi elrendezésed ilyenkor **elveszik** — ez az eredeti Picasa
+  viselkedése is (ugyanaz, mint témaváltásnál), és nincs értelme megőrizni:
+  a régi helyek a **régi lap alakjához** tartoztak.
+
+  Azonos formátumra vagy tájolásra váltás továbbra sem rendez újra.
+
 ## [0.8.15] – 2026-08-20
 
 ### Javítva
