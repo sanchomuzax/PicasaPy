@@ -471,6 +471,66 @@ alkalmazó belsejében dől el.
 hozzárendelésre és az alkalmazó argumentumaira · **nyitott** a
 dialógus-lista → fájlszakasz hozzárendelés.*
 
+### 5.2/c Az OK teljes alkalmazási útja — VÉGIGKÖVETVE (2026-08-21, M1 lezárva)
+
+Az alkalmazó `0x005cef20` **hat argumentumot** kap
+(`0x007c56fb`–`0x007c571f`), és ebben a sorrendben dolgozik:
+
+| # | argumentum | mi ez | mit csinál vele |
+|---|---|---|---|
+| 1 | `[dlg+0x268]` | a `CThumbUI` | ebből képzi a könyvtár-objektumot: `esi = [arg1+0x2bc] + 0xf8` (`0x005cef2e`) |
+| 2 | `[dlg+0x270]` | **„Eltávolítás" delta** | **1. ciklus** (`0x005cef64`): minden útvonalát megkeresi a **figyelt** listában (`[lib'+0x364]`, `0x005cef87`), és a **nem** figyeltekre fut a törzs |
+| — | — | — | **2. ciklus** (`0x005cf1b2`): végigjárja magát a **figyelt listát** (`[lib'+0x368]>>1` darab) |
+| 3 | `[dlg+0x280]` | a beolvasási lista egyik deltája | **`0x004f6a20`** (`0x005cf411`) — ld. lent |
+| 4 | `[dlg+0x288]` | a beolvasási lista másik deltája | ugyanoda |
+| 5 | `ebx` (helyben épített) | — | `0x00491210` (`0x005cf529`) |
+| 6 | `[dlg+0x298]` | **arcfelismerés-delta** | ugyanoda, `0x00491210` |
+
+majd `0x004b9200` (a **`]album:removed`** token, `0x005cf500`) és végül
+**`0x0065b840`** (`0x005cf535`) — a **nézet/keresősáv frissítése**.
+
+**A kulcs a `0x005cf411`:**
+
+```asm
+0x005cf3eb  mov eax, [esp+0x4c]   ; [dlg+0x288]
+0x005cf3ef  mov ecx, [esp+0x48]   ; [dlg+0x280]
+0x005cf3f3  mov ebx, [esp+0x1c]   ; a konyvtar-objektum
+0x005cf3f7  push eax / push ecx / push edx (kimenet) / push ebx
+0x005cf411  call 0x4f6a20          ; <<< a SCANLIST kezeloje (5127 bajt)
+```
+
+A `0x004f6a20` **pontosan a `scanlist.txt` írója (`0x004f61c0`) és
+olvasója (`0x004f6380`) között ül** — vagyis a **`scanlist.txt` `+` és `−`
+szakasza a dialógus `[+0x280]` / `[+0x288]` deltáiból frissül.**
+
+#### A rádió → delta → tároló lánc, teljes egészében
+
+| rádió | a mutált delta | hová vezet |
+|---|---|---|
+| **Keresés mindig** | `[dlg+0x2a8]` (`0x007c2c11`) | → `watchedfolders.txt` (`[lib'+0x364]`, `0x005cef87`) |
+| **Eltávolítás a Picasából** | `[dlg+0x270]` (`0x007c4184`) | → az 1. ciklus: kiveszi a figyelt listából; + `]album:removed` |
+| **Keresés egyszer** | `[dlg+0x288]` (`0x007c375c`) | → `0x004f6a20` → **`scanlist.txt`** |
+| **arcfelismerés-kapcsoló** | `[dlg+0x290]` / `[dlg+0x298]` | → `0x00491210` → `frexcludefolders.txt` |
+
+> **EGY részlet marad a láncból:** hogy a `0x004f6a20` a 3. paramétert
+> (`[dlg+0x280]`) teszi-e a **`+`**, és a 4-et (`[dlg+0x288]`) a **`−`**
+> szakaszba, vagy fordítva. A függvény a két listát **paraméterként**
+> kapja (`ebp` = 3., `[esp+0x3c]` = 4.), és nem hivatkozik közvetlenül a
+> `+0x280`/`+0x288` mezőkre — a polaritás az 5127 bájtos törzsében dől el.
+>
+> **Az olcsó bizonyítéklánc itt kimerült** (index → xref → célzott
+> diszasszemblálás mind lefutott); innentől a teljes törzs átolvasása
+> következne. **A megvalósításunkat nem érinti:** mi nem írunk
+> `scanlist.txt`-et, és a három állapot jelentése a feliratokból
+> egyértelmű. **Csak a Picasa-telepítés ÁTVÉTELÉHEZ (#146) kell**, ahol a
+> meglévő fájl `+`/`−` sorait értelmezni kell — ott viszont a **valódi
+> mintafájlunk** (`research/testdata/Picasa2/db3/scanlist.txt`: négy `+`
+> sor, mind meghajtó-gyökér, nulla `−` sor) önmagában is eligazít.
+
+*Bizonyítottsági fok: **megerősített** a teljes útvonalra (mind a hat
+argumentum, mindkét ciklus, a `0x004f6a20`-ra való átadás és a záró
+nézetfrissítés) · **nyitott, de hatókörön kívüli** a `+`/`−` polaritás.*
+
 ### 5.3 Az arcfelismerés-sor — `0x007c64a0`
 
 ```c
