@@ -629,3 +629,113 @@ mindhárom mérőkészlet eredeti exportját: a kvantálótábla a forráséval
 **bájtra azonos** (IJG q=97 mindkét oldalon). Ezért a Normál/Maximális/
 Minimális fokozatokra **nincs** mintánk — de a 11.3 miatt nincs is rá
 szükség.
+
+---
+
+## 12. MI TÖRTÉNIK AZ „EXPORTÁLÁS" GOMB UTÁN — a művelet teljes törvénye
+
+> **Ez a szakasz normatív.** Eddig a lap az ablakot írta le; ez a szakasz
+> azt, amit a gomb **csinál**. E nélkül az ablak megépíthető, a funkció nem.
+
+### 12.1 Hova kerül és milyen néven
+
+| | érték | bizonyíték |
+|---|---|---|
+| a hely alapértéke | a `DefaultExportPath` beállítás; ha nincs, a **`Picasa\Exports\`** | `0x00738d16`, ill. `0x00738cd6` + `CExportPrefsDialog::deffolder` |
+| a **mappanév** alapértéke | **a forrásmappa / album neve** | a tulajdonos képernyőképén: hely = `Asztal\PicasaPy merokit-3\`, név = `PicasaPy merokit-3` |
+| a mappanév szűrése | `filter="filename"` — fájlnévben tiltott karakter nem írható be | `export.fen` |
+| a névmező | induláskor fókuszban, **tartalma kijelölve** | `focus="name"` + képernyőkép |
+
+### 12.2 Ha a célmappa MÁR LÉTEZIK — kérdez, és felülíráskor TÖRÖL
+
+| | magyar szöveg | azonosító |
+|---|---|---|
+| a kérdés | **„A cél már létezik. Felülírja az új albummal?"** | `CExportPrefsPage::destexists` |
+| a kérdés címe | **„Szeretné felülírni?"** | `CExportPrefsPage::overwritetitle` |
+
+⚠️ **Az „igen" nem összefésül, hanem az ELŐZŐ ALBUMOT TÖRLI.** Ezt a
+hibaága árulja el: „Belső hiba történt az **előző album törlése** közben."
+(`CExportPrefsPage::deleteerror`). A művelet tehát: cél letapogatása →
+előző tartalom törlése → új export.
+
+### 12.3 A hibaüzenetek — szó szerint
+
+| helyzet | magyar szöveg | azonosító |
+|---|---|---|
+| a célmappa nem hozható létre | **„A célkönyvtárat nem lehetett létrehozni."** | `IDS_DESTDIRCANNOCREATE` |
+| írási hiba | **„Lemezhiba miatt nem lehetséges az összes fájl írása. Lehet, hogy a lemez megtelt vagy írásvédett."** | `CImageOutput::filewriteerr` |
+| fájl-letapogatási hiba | **„Belső hiba történt a fájlok közötti keresés közben."** | `CExportPrefsPage::scanfileerror` |
+| könyvtár-letapogatási hiba | **„Belső hiba történt a könyvtárak közötti keresés közben."** | `CExportPrefsPage::scanerror` |
+| törlési hiba | **„Belső hiba történt az előző album törlése közben."** | `CExportPrefsPage::deleteerror` |
+| könyvtár-eltávolítási hiba | **„Belső hiba történt egy könyvtár eltávolítása közben."** | `CExportPrefsPage::removeerror` |
+
+### 12.4 A folyamatjelző
+
+A haladásjelző felirata **„Exportálás mappába"**
+(`CImageOutput::exportprog`, `0x00741840`). Ugyanez a függvény adja az
+e-mail- (`Exportálás e-mailbe`) és a képernyővédő-ág feliratát is — tehát
+egyetlen közös kimeneti motor, módonként más felirattal.
+
+### 12.5 Az exportált mappa BEKERÜL A KÖNYVTÁRBA
+
+`0x0073f884` az **`IDS_EXPORTED_CATEGORY`** sztringet tölti be:
+
+> **„Exportált képek"** *(angolul: `Exported Pictures`)*
+
+Vagyis az export nem csak fájlokat ír ki: a célmappát **regisztrálja a
+könyvtárban**, az **„Exportált képek"** csoport alá — ugyanaz a
+mechanizmus, mint amivel a kollázsok a „Projektek" alá kerülnek.
+*(A `0x0073f877` feltétele: a kimeneti mód nem 0 és nem 1.)*
+
+### 12.6 A kicsi képeket NEM nagyítja fel
+
+A `UpsizeSmallImages` beállítás beolvasása `0x0073f82b`-nél, az alapérték
+a nullázott `esi` → **0**.
+
+➡️ **„Átméretezés: N képpont" esetén az N-nél kisebb kép változatlan
+marad**, nem nagyítja fel. Ez alapértelmezés, és nincs rá felületi
+kapcsoló — csak a beállításfájlból állítható.
+
+### 12.7 A sorszámozás csak MAPPÁBA exportálásnál él
+
+`0x0073fb96`: `cmp dword [ebx+0x64], 8` — ha a kimeneti mód **nem 8**
+(mappába exportálás), a program a sorszámozás-kapcsolót **átugorja** és
+nullának veszi (`0x0073fbd1`). Az `ExportAddNumbers` beolvasása
+`0x0073fba1`, alapértéke **0** (kikapcsolva).
+
+### 12.8 A felirat és a kulcsszavak ÁTKERÜLNEK a kimeneti fájlba
+
+| adat | hogyan | cím |
+|---|---|---|
+| **felirat** (`caption`) | átmásolva a kimenetre | `0x00740485` → `0x005ab210` |
+| **kulcsszavak** (`keywords`) | **vesszővel** összefűzve | `0x0074050d`, az elválasztó `0x007404b8`: `push 0x2c` = `','` |
+| a `.picasa.ini` | a célmappában is íródik | `0x00740295`, `0x007403bc` |
+
+➡️ **Az export nem „nyers kép-kiírás":** a felirat és a kulcsszavak
+átkerülnek, és a célmappa saját `.picasa.ini`-t kap.
+
+### 12.9 Kész, ha — a MŰVELETRE
+
+- [ ] a mappanév alapértéke **a forrásmappa neve**, a hely alapértéke a
+      `DefaultExportPath`, hiányában `Picasa\Exportálások\`
+- [ ] létező cél esetén **kérdés** a fenti két szó szerinti szöveggel, és
+      „igen"-re az **előző tartalom törlése** (nem összefésülés)
+- [ ] mind a hat hibaüzenet szó szerint, a fenti táblából
+- [ ] a folyamatjelző felirata **„Exportálás mappába"**
+- [ ] az exportált mappa megjelenik a könyvtárban az **„Exportált képek"**
+      csoport alatt
+- [ ] a célméretnél **kisebb képet nem nagyít fel**
+- [ ] a sorszámozás csak mappába exportálásnál hat, alapból **ki**
+- [ ] a **felirat** és a **kulcsszavak** (vesszővel) átkerülnek, és a
+      célmappa `.picasa.ini`-t kap
+
+**Bizonyítottsági fok:** a szövegek és az azonosítók **megerősítettek** (a
+honosítási táblából, szó szerint); a címekhez kötött viselkedések
+**megerősítettek**; a mappanév-alapérték a képernyőképből **erős**.
+
+### 12.10 Ami a művelet körül MÉG NINCS feltárva
+
+1. A **sorszám formátuma** (előtag, hány jegy, honnan indul).
+2. A **vízjel rajzolása**: hely, betűtípus, méret, átlátszóság.
+3. A **„Teljes film (nincs átméretezés)"** ág: milyen tárolóba/kodekkel ír.
+4. Nem JPEG forrás (PNG, TIFF) exportálásakor a **kimeneti formátum**.
