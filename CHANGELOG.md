@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.11] – 2026-08-20
+
+### Javítva
+- **A kész kollázst végre megtalálod (#1028).** A létrehozás után eddig a
+  lap bezáródott, és ennyi. Mostantól a könyvtár **odaugrik a kész
+  képre** (kijelölve), és megjelenik egy **kattintható** üzenet:
+  „A kollázs kész (kattintson ide)" — kattintásra nagyban nyílik.
+
+  A szöveg eddig is megvolt a programban, csak a **folyamatjelző sávba**
+  írtuk, amit a panel a rá következő pillanatban elrejtett: a helyes
+  üzenetet egy villanásra láttad, kattinthatatlanul.
+
+  Nézőt magától nem nyit — az eredeti is csak kijelöl, a nagyban
+  megnyitás a te kattintásod.
+
 ## [0.8.10] – 2026-08-20
 
 ### Javítva

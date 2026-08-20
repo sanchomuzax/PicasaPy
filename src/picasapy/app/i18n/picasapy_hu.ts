@@ -7299,6 +7299,13 @@ Restore it to continue where you left off. If you discard it, the draft is delet
     </message>
 </context>
 <context>
+    <name>CollageDoneNotice</name>
+    <message>
+        <source>The collage is ready (click here)</source>
+        <translation>A kollázs kész (kattintson ide)</translation>
+    </message>
+</context>
+<context>
     <name>CollageDialogs</name>
     <message>
         <source>The collage could not be saved</source>
