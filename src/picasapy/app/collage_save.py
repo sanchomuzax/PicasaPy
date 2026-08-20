@@ -37,7 +37,11 @@ from pathlib import Path
 from PySide6.QtCore import Property, Signal, Slot
 from PySide6.QtGui import QColor
 
-from picasapy.collage.autosave import read_autosave, write_autosave
+from picasapy.collage.autosave import (
+    discard_autosave,
+    read_autosave,
+    write_autosave,
+)
 from picasapy.collage import draft_placeholder, write_collage
 from picasapy.collage.picasa_render import render_nodes
 from picasapy.collage.cxf import read_cxf
@@ -345,6 +349,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self._set_dirty(False)
         self._set_saved_path(str(eredmeny.path))
         self._index_saved_collage(eredmeny.path)
+        self._discard_draft_after_render()
         if eredmeny.missing:
             # 9.4: a hiány nem hiba — a kollázs elkészült, de a felhasználó
             # tudja meg, hogy hány kép maradt ki belőle
@@ -353,6 +358,34 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self.collageDone.emit(str(eredmeny.path))
         if wallpaper:
             self.collageDesktopBackgroundReady.emit(str(eredmeny.path))
+
+    def _discard_draft_after_render(self) -> None:
+        """A kész kollázs mellől ELTAKARÍTJUK a piszkozatot (#1100).
+
+        ⚠️ Nem rendrakás: a valódi Picasa az ottfelejtett `autosave.cxf`-et
+        **elárvult automentésként** ismeri fel, és a saját 640 × 480-as,
+        egyszínű sötétszürke helykitöltőjét írja mellé `autosave.jpg` néven
+        — a felhasználó Kollázsok mappájába. A tulajdonos ezt látta a
+        v0.8.23-ban, és a mi kimenetünknek hitte.
+
+        Vagyis a mi maradékunk SZEMETET GYÁRTAT a valódi Picasával. A
+        piszkozat a véglegesítéssel betöltötte a szerepét.
+
+        A beállításból is kivezetjük: ha csak a fájlt törölnénk, a program
+        indításkor még mindig felajánlaná a helyreállítást, és a felhasználó
+        egy nem létező munkát „állítana helyre".
+
+        ⚠️ A már ott lévő, PICASA által írt `autosave.jpg`-hez NEM nyúlunk —
+        az nem a mi fájlunk, a felhasználó mappájában van.
+
+        A hiba nyelt: a kollázs ekkor már a lemezen van, és egy takarítási
+        gond nem teheti kudarccá a mentést."""
+        try:
+            discard_autosave(self._collage_panel_draft_dir())
+        except OSError as hiba:
+            logger.warning("A piszkozat nem takarítható el: %s", hiba)
+            return
+        self._get_settings().remove(prefs.AUTOSAVE_KEY)
 
     def _rendered_now_writing(self) -> bool:
         """A rajzolás kész, jön a kiírás — és közben: megszakították-e?
