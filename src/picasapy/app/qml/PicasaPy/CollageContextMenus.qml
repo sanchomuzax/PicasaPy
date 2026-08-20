@@ -103,6 +103,19 @@ Item {
         //: `CollageS::ChangeBorder`
         title: qsTr("Change Border")
 
+        // #1151: a keret CSAK a Képkupacnál és az Indexképnél értelmes (a
+        // téma képesség-maszkjának 9. bitje, a témák vtábláiból igazolva).
+        // A panel keretválasztója ezt eddig is tudta
+        // (`CollageSettingsTab.qml`), a helyi menü viszont NEM: kirakta
+        // mind a három tételt, az érték eltárolódott, a rajzoló pedig
+        // (helyesen) eldobta. A felhasználó tehát egy menütételt kapott,
+        // ami NÉMÁN nem csinál semmit — és jogosan hitte, hogy elromlott.
+        //
+        // Tiltás és nem elrejtés: a szürke tétel megmondja, hogy létezik a
+        // funkció, csak nem ehhez a témához. ⚠️ Hogy az eredeti rejt vagy
+        // tilt, NINCS kimérve.
+        enabled: menus.can("borders")
+
         MenuItem {
             objectName: prefix + "BorderNone"
             text: qsTr("None")
