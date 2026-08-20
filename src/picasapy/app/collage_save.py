@@ -330,10 +330,39 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         `név1.jpg`-t hagyna a Kollázsok albumban."""
         if replace_existing and self._collage_panel_saved_path:
             return Path(self._collage_panel_saved_path)
-        return output.output_path(
-            output.output_dir(self._get_settings().value(prefs.OUTPUT_DIR_KEY)),
-            self._collage_panel_title,
+        mappa = output.output_dir(
+            self._get_settings().value(prefs.OUTPUT_DIR_KEY)
         )
+        sajat = self._draft_placeholder_target(mappa)
+        if sajat is not None:
+            return sajat
+        return output.output_path(mappa, self._collage_panel_title)
+
+    def _draft_placeholder_target(self, mappa: Path) -> Path | None:
+        """A SAJÁT helykitöltőnk, ha a véglegesítés azt írja felül (#1125).
+
+        A tulajdonos jelentése: bezárás → újranyitás → „Létrehozás" után a
+        PISZKOZAT-kép OTTMARADT, a kész kollázs pedig `L1.jpg` néven
+        született. A #1072 szándéka az volt, hogy a helykitöltő lefoglalja a
+        nevet — de a foglalás csak a NYITOTT panelen élt
+        (`collageSavedPath`), bezárás után elveszett.
+
+        ⚠️ A felismerés a piszkozat-NYILVÁNTARTÁSBÓL megy, nem a névből: a
+        „nincs `.cxf` párja" IGAZ egy idegen JPEG-re is, amit a felhasználó
+        tett a Kollázsok mappába — azt felülírni ADATVESZTÉS volna.
+
+        Három feltétel EGYÜTT: a nyilvántartott útvonal (a) létezik, (b) a
+        célmappában van, és (c) nincs mellette `.cxf` — vagyis időközben nem
+        vált kész kollázzsá."""
+        jelolt = self._get_settings().value(prefs.PLACEHOLDER_KEY)
+        if not jelolt:
+            return None
+        ut = Path(str(jelolt))
+        if not ut.is_file() or ut.with_suffix(".cxf").exists():
+            return None
+        if os.path.normcase(str(ut.parent)) != os.path.normcase(str(mappa)):
+            return None
+        return ut
 
     def _collage_output_width(self) -> int:
         """A kimeneti kép szélessége. Külön metódus, hogy a teszt kisebb
@@ -463,7 +492,11 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         except OSError as hiba:
             logger.warning("A piszkozat nem takarítható el: %s", hiba)
             return
-        self._get_settings().remove(prefs.AUTOSAVE_KEY)
+        beallitas = self._get_settings()
+        beallitas.remove(prefs.AUTOSAVE_KEY)
+        # #1125: a helykitöltő szerepe is véget ért — a kész kollázs
+        # foglalja a helyét. A jelölő itt szűnik meg, nem a fájl.
+        beallitas.remove(prefs.PLACEHOLDER_KEY)
 
     def _rendered_now_writing(self) -> bool:
         """A rajzolás kész, jön a kiírás — és közben: megszakították-e?
@@ -564,6 +597,10 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             )
             return
         self._set_saved_path(str(cel))
+        # #1125: JEGYEZZÜK FEL, melyik fájl a mi helykitöltőnk. A
+        # véglegesítés csak ezt írhatja felül — a „nincs `.cxf` párja"
+        # önmagában egy IDEGEN képre is igaz volna.
+        self._get_settings().setValue(prefs.PLACEHOLDER_KEY, str(cel))
         self._index_saved_collage(cel)
 
     def _draft_placeholder_path(self, mappa: Path) -> Path:

@@ -33,6 +33,11 @@ BGCOLOR_KEY = "collage/bgcolor"
 #: keressük: a felhasználó a Kollázsok album helyét átállíthatja, és egy
 #: összeomlás után a régi helyen álló piszkozatot is meg kell találnunk.
 AUTOSAVE_KEY = "collage/autosave"
+
+#: A piszkozat HELYKITÖLTŐ képének útvonala (#1125). Enélkül a
+#: véglegesítés nem tudja, melyik JPEG a sajátja: a „nincs `.cxf` párja"
+#: IGAZ egy idegen képre is, amit a felhasználó tett a mappába.
+PLACEHOLDER_KEY = "collage/draftPlaceholder"
 #: A kimeneti mappa („Kollázsok" album). Kulcsként tartjuk, hogy a teszt és
 #: a későbbi beállítás-panel ugyanazt az egy helyet írja.
 OUTPUT_DIR_KEY = "collage/outputDir"
@@ -110,6 +115,7 @@ def load_prefs(settings) -> CollagePrefs:
 
 __all__ = [
     "AUTOSAVE_KEY",
+    "PLACEHOLDER_KEY",
     "BGCOLOR_KEY",
     "CAPTIONS_KEY",
     "DEFAULT_BACKGROUND",
