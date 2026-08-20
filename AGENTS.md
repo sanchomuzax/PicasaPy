@@ -43,6 +43,36 @@ Ebből a mappából több Codex-session fut egyszerre. Fájlmódosítás előtt
 issue-feladathoz külön `git worktree` kötelező. A foglalási kapu és a
 PR-protokoll a privát repó `PROTOKOLL.md`-jében.
 
+## 🗺️ Sávtérkép — párhuzamos munka és szerződések
+
+Az alábbi sávok egymástól **függetlenül művelhetők** (mért importgráf,
+2026-08-18); két párhuzamos jegy különböző sávban biztonságos, egy sávon belül
+is az, ha nem ugyanazt a fájlt érintik.
+
+| Sáv | Csomagok | Jelleg |
+|---|---|---|
+| render/effekt | `render/`, `color/` | 40+ effektfájl, egymástól függetlenek |
+| adatréteg | `ini/`, `index/`, `metadata/`, `scanner/` | igazságforrás + index |
+| ki/bemenet | `export/`, `webexport/`, `thumbs/`, `collage/`, `movie/`, `dedup/`, `fileops/`, `importsource/`, `pmpimport/`, `printing/`, `mailer/` | csővégek, egymást alig érintik |
+| UI (**forró zóna**) | `app/` (68 py + 102 QML) | mindenre támaszkodik; itt ütköznek a jegyek |
+
+**Keresztmetsző szerződések** — ha egy jegy ezek egyikét változtatja, az több
+sávot érint, tehát NEM párhuzamosítható szabadon:
+
+1. `.picasa.ini` formátum (round-trip; spec: `docs/specs/`) — `ini/` írja, 8 csomag olvassa.
+2. SQLite indexséma (`index/`) — az `app/` és a `webexport/` épít rá.
+3. Render-lánc regisztráció (`render/registry*.py`, `chain*.py`) — minden effekt ezen át kapcsolódik.
+4. QML↔Python controller-határ (`app/*_controller.py` ↔ `app/qml/`) — a kötések mindkét oldalt egyszerre érintik.
+5. `version.py` + CHANGELOG — kiadáskor, **csak az integrátor** nyúl hozzá.
+
+**Mért forró fájlok** (6 hét, változásszám): `app/qml/Main.qml` (93),
+`app/i18n/picasapy_hu.ts` (102, minden UI-szövegváltozás átfésüli),
+`app/controller.py` (51), `qml/PicasaPy/qmldir` (55), `PhotoViewer.qml` (53),
+`EditorPanel.qml` (46), `application.py` (41). Két jegy, amely ezek
+bármelyikét érinti, **szerializálandó** (egy session vigye mindkettőt, vagy a
+második a frissen mergelt main-re épüljön). Éjszakai jegyválasztásnál
+lehetőleg különböző sávokból végy jegyeket.
+
 ## Fejlesztés
 
 - Python 3.12+, PySide6 (Qt 6) + QML, OpenCV a képfeldolgozáshoz.
