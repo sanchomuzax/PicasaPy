@@ -18,6 +18,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
   *(A javítás a párhuzamosan dolgozó fejlesztői kör munkája; a kiadásba itt
   került be.)*
+- **A piszkozat visszatöltése nem felejti el a hátteret (#1085).** Ha
+  képhátteret állítottál be, majd piszkozatként mentetted és később
+  visszatöltötted, a háttér **sima színre váltott vissza**. A visszatöltés
+  mindent visszahozott — témát, tájolást, árnyékot, képfeliratot, címet —,
+  **csak a hátteret nem**, pedig a projektfájl tárolja.
+
+  Ha a háttérként használt kép időközben kikerült a kollázsból, a háttér a
+  **beállított színre** esik vissza: üres képhátteret mutatni rosszabb
+  volna, és törött hivatkozást nem hagyunk.
 
 ## [0.8.20] – 2026-08-20
 
