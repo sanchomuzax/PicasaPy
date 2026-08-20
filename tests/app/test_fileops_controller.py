@@ -7,14 +7,6 @@ from pathlib import Path
 import pytest
 
 
-@pytest.fixture(autouse=True)
-def _reveal_linux(monkeypatch):
-    """#1104: a „Keresés a lemezen" platformfüggő lett — a `reveal`-t
-    érintő esetek a LINUX ágat írják le (a többi platformot a
-    `tests/fileops/test_reveal_platform_1104.py` fedi)."""
-    monkeypatch.setattr("picasapy.fileops.reveal.sys.platform", "linux")
-
-
 @pytest.fixture
 def controller(qt_app):
     from picasapy.app.fileops_controller import FileOpsController
@@ -185,6 +177,17 @@ class TestTrashAvailableFor:
 
 
 class TestRevealPhoto:
+    """#1104: ez az osztály a LINUX ágat írja le.
+
+    ⚠️ A rögzítés SZŰK: modul-szinten `autouse`-ként a windows-CI-lábon
+    mást tört el (a `sys.platform` linuxra állítása miatt egy másik teszt
+    `os.uname()`-et hívott, ami Windowson nincs). A tanulság: a
+    platform-hamisítás akkora hatókörű legyen, amekkorát tényleg állít."""
+
+    @pytest.fixture(autouse=True)
+    def _linux(self, monkeypatch):
+        monkeypatch.setattr("picasapy.fileops.reveal.sys.platform", "linux")
+
     def test_calls_xdg_open_on_parent_folder(self, controller, tmp_path, monkeypatch):
         calls = []
 
