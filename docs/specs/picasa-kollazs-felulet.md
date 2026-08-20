@@ -82,6 +82,39 @@ rejti és tiltja a panel vezérlőit — **nincs témánkénti külön UI-kód**
 | `contactsheet` — Indexkép | **`0x4B11`** |
 | `multiexp` — Többszörös exponálás | **`0x0100`** |
 
+### 2.1 A maszkok témánkénti vtáblái — közvetlen kiolvasás (2026-08-20)
+
+A fenti hat érték eredetileg a **fogyasztó** oldaláról (`0x00831750`) lett
+visszafejtve. A #1122 vitájában ez kevés volt, ezért a maszkok most a
+**forrásukból**, témánként külön kiolvasva is megvannak.
+
+Az út: a `0x00829df0` név→objektum gyártó (`repe cmpsb` lánc; 0x1c bájtot
+foglal, és beírja a vtábla-pointert) → hat vtábla. A **6. rekesz a névadó**
+(`mov eax, <sztringcím>; ret`) — ezzel igazolható, melyik vtábla melyik
+témáé; a **7. rekesz a maszk-getter**, szintén `mov eax, <maszk>; ret`.
+
+| téma | névadó | vtábla | maszk |
+|---|---|---|---|
+| `picturepile` | `0x00829c80` | `0xCBF5AC` | `0x1EBBF` |
+| `picturegrid` | `0x00829cb0` | `0xCBF5DC` | `0x1C55` |
+| `regulargrid` | `0x00829cf0` | `0xCBF610` | `0x0C55` |
+| `multiexp` | `0x00829d20` | `0xCBF640` | `0x0100` |
+| `contactsheet` | `0x00829d70` | `0xCBF670` | `0x4B11` |
+| `framegrid` | `0x00829db0` | `0xCBF6A0` | `0x1C55` |
+
+Mind a hat **bájtra egyezik** a fogyasztó oldaláról kapott értékkel, tehát a
+korábbi visszafejtés helyes volt.
+
+**Független megerősítés, nem a binárisból:** a tulajdonos 12 valódi
+kollázsában keretet **csak** a `picturepile` (polaroid ×27, noborder ×17,
+whiteborder ×13) és a `contactsheet` (whiteborder ×9) lapok használnak; a
+`picturegrid`, `framegrid`, `regulargrid` és `multiexp` csempéi kivétel
+nélkül `noborder`-ek. Ez pontosan a 9. bit fenti eloszlása.
+
+**Következmény:** a **Rács témán nincs keretválasztó**, és a rajzoló
+helyesen hagyja figyelmen kívül a keretet. Egy ezzel ellentétes „javítás"
+eltérés lenne az eredetitől (#1122).
+
 A megfejtett bitek *(a 2026-08-18-i kör tizenegyre bővítette az eredeti
 ötöt — a keresés a teljes kollázs-kódterületre ment, `0x00829000`+90 KB és
 `0x0087a000`+72 KB)*:
