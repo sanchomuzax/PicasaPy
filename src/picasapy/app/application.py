@@ -68,6 +68,12 @@ from .folder_hierarchy_controller import FolderHierarchyController
 from .folder_tree_controller import FolderTreeController
 from .import_source_controller import ImportSourceController
 from .models import sorted_folder_rows
+from .platform_storage import (
+    StorageMigrationError,
+    default_storage_paths,
+    legacy_windows_storage_paths,
+    migrate_legacy_windows_storage,
+)
 from .startup_status import StartupStatus
 from .thumbnail_provider import ThumbnailProvider
 from .timeline_controller import TimelineController
@@ -147,34 +153,44 @@ def _onjavito_kollazsmappa(conn, settings: QSettings) -> None:
         )
 
 
-def _data_dir() -> Path:
+def _data_dir(platform: str | None = None) -> Path:
     """Az index-SQLite (+ zárolófájl) mappája — ha a "Move Database"
     dialóguson (#368) keresztül egyszer már áthelyezésre került, az
-    útvonal-felülbírálás (`data_location.py`) felülírja az XDG-
+    útvonal-felülbírálás (`data_location.py`) felülírja a platform-
     alapértelmezést; ilyenkor a cache-cel EGYESÍTVE ugyanazt a mappát
     adja vissza, mint `_cache_dir()` (ld. ott)."""
-    override = read_data_root(_config_dir())
+    active_platform = sys.platform if platform is None else platform
+    override = read_data_root(_config_dir(platform=active_platform))
     if override is not None:
         return override
-    base = os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))
-    return Path(base) / "picasapy"
+    return default_storage_paths(active_platform).data
 
 
-def _cache_dir() -> Path:
+def _cache_dir(platform: str | None = None) -> Path:
     """A thumbnail-lemezcache mappája — áthelyezés után (#368) a
     `_data_dir()`-rel EGYESÍTVE, hogy a Picasa-paritású "egy adatbázis-
     mappa" elv teljesüljön (a hívó ide illeszti a "thumbs" alkönyvtárat,
     ld. `run()`)."""
-    override = read_data_root(_config_dir())
+    active_platform = sys.platform if platform is None else platform
+    override = read_data_root(_config_dir(platform=active_platform))
     if override is not None:
         return override
-    base = os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache"))
-    return Path(base) / "picasapy"
+    return default_storage_paths(active_platform).cache
 
 
-def _config_dir() -> Path:
-    base = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
-    return Path(base) / "picasapy"
+def _config_dir(platform: str | None = None) -> Path:
+    active_platform = sys.platform if platform is None else platform
+    return default_storage_paths(active_platform).config
+
+
+def _migrate_legacy_windows_storage(platform: str | None = None) -> bool:
+    """A korábbi Windows XDG-helyek egyszeri, biztonságos átvétele."""
+    active_platform = sys.platform if platform is None else platform
+    if active_platform != "win32":
+        return False
+    return migrate_legacy_windows_storage(
+        default_storage_paths(active_platform), legacy_windows_storage_paths()
+    )
 
 
 def _force_qml_dialogs(platform: str = sys.platform) -> bool:
@@ -494,6 +510,32 @@ def run(argv: list[str]) -> int:
     app.setWindowIcon(QIcon(str(_window_icon_path())))
     _install_ui_font(app)
     _install_translator(app)
+
+    # #1076: a korábbi Windows-kiadások az XDG-szerű ~/.local/.cache/
+    # .config helyeket használták. Az átvételnek a gyökérfeloldás ELŐTT
+    # kell lefutnia, hogy a WatchedFolders.txt és az explicit adatgyökér is
+    # már az új AppData-helyről legyen olvasható. Hiba esetén nem indulunk
+    # el egy üres új indexszel, hanem a pontos forrás- és célutat jelezzük.
+    # A régi zárat a teljes futás alatt megtartjuk: így a frissítés
+    # pillanatában futó régi verziót sem másoljuk, és később sem
+    # indulhat egymás mellé egy régi-XDG és egy új-AppData példány.
+    legacy_instance_lock = None
+    if sys.platform == "win32":
+        legacy_data_dir = legacy_windows_storage_paths().data
+        if legacy_data_dir.is_dir():
+            legacy_instance_lock = _acquire_instance_lock(legacy_data_dir)
+            if legacy_instance_lock is None:
+                print(
+                    "A PicasaPy már fut — egyszerre csak egy példány "
+                    "engedélyezett.",
+                    file=sys.stderr,
+                )
+                return 0
+    try:
+        _migrate_legacy_windows_storage()
+    except StorageMigrationError as error:
+        print(str(error), file=sys.stderr)
+        return 1
 
     # Indítóképernyő-híd (#189): korán jön létre, hogy az első állapot-
     # üzenetek is látsszanak; helyi változóban tartva (GC ellen).
