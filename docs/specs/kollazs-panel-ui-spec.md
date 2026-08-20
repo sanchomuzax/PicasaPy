@@ -562,11 +562,18 @@ hivatkozva: az előnézetet a `0x00830a00(this, index)` tölti fel, és
 A `.cxf`-be a háttérkép `<background type="image"><src>…</src></background>`
 alakban megy ki (a `color` attribútum ilyenkor elmarad). A **kirajzolt
 JPEG** háttere a #1015 óta szintén a választott kép: a lapot KITÖLTI
-(arányt tartva, középről vágva). ⚠️ A kitölt-vagy-nyújt kérdés **nincs
-lemérve** az eredetin — a golden annyit mond, hogy a háttér a teljes lapot
-fedi, élesen, effekt nélkül; a kitöltés a mi döntésünk, és
-`tests/collage/test_kephatter_1015.py` rögzíti, hogy a megváltoztatása
-szándékos legyen.
+(arányt tartva, középről vágva), és **TOMPÍTVA**: a golden háttere a
+forráskép **85,1%-án** áll.
+
+A tompítás mérve, nem stílusból: az `AI2.jpg` háttérképe csempeként is
+szerepel az `AI1.jpg`-ben, tompítás nélkül. Csempeként a telített fehér a
+99,9. percentilisen is 255; háttérként **217-nél falba ütközik** (117 646
+képpont egyetlen tüskében, fölötte 0,06%). `(255 − 217) / 255 = 38/255 =
+0x26` — bájtra a `#26000000`, amit az élő előnézet is ráfest.
+
+⚠️ A kitölt-vagy-nyújt kérdés **nincs lemérve** — a kitöltés a mi
+döntésünk, és `tests/collage/test_kephatter_1015.py` rögzíti, hogy a
+megváltoztatása szándékos legyen.
 
 ### 6.5 ⚠️ A mag hiánya: `render_nodes`
 

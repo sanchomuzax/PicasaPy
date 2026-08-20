@@ -14,8 +14,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   mást mutatott, mint amit a képernyőn láttál.
 
   A háttérkép a lapot **kitölti**: arányt tartva nagyít, a túllógó részt
-  középről vágja, hogy ne torzuljon. Ha a háttérkép időközben eltűnt vagy
-  sérült, a szín marad — egy háttér miatt sosem hiúsulhat meg a mentés.
+  középről vágja, hogy ne torzuljon — és **tompítva** kerül rá, ugyanúgy,
+  ahogy a szerkesztő előnézetében látod. A tompítás mértéke nem becslés: a
+  te két kollázsodból mérve pontosan 14,9%. Ha a háttérkép időközben eltűnt
+  vagy sérült, a szín marad — egy háttér miatt sosem hiúsulhat meg a
+  mentés.
 
   A szín- és az átlagszín-mód érintetlen.
 

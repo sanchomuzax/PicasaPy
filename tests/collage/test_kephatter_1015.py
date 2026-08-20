@@ -194,3 +194,56 @@ class TestAMentettFajlHattere:
             assert sarok[1] > 140, (
                 f"a mentett kép sarka nem a háttérkép színe: {sarok}"
             )
+
+
+# --------------------------------------------------------------------------
+# A háttér TOMPÍTÁSA — mérve, nem stílusból
+# --------------------------------------------------------------------------
+#: A telített fehér ÉRTÉKE a mentett kollázs hátterében. A tulajdonos
+#: `AI2.jpg`-jének háttérképe csempeként is szerepel az `AI1.jpg`-ben,
+#: tompítás nélkül — a két előfordulás közvetlenül összevethető:
+#:
+#: | | 90% | 99% | 99,9% |
+#: |---|---:|---:|---:|
+#: | csempeként | 255 | 255 | 255 |
+#: | háttérként | 77 | **217** | 218 |
+#:
+#: A 217 FAL, nem lejtő: 117 646 képpont ül egyetlen tüskében, fölötte
+#: összesen 0,06% (JPEG-gyűrűzés). `(255 − 217) / 255 = 38/255 = 0x26` —
+#: bájtra az a `#26000000` réteg, amit a felület élő előnézete ma is ráfest.
+TOMPITOTT_FEHER = 217
+
+
+class TestATompitas:
+    """⚠️ A spec 6.4 („a háttérkép, **tompítva**, `DimmedBitmapTheme`") és egy
+    szemre készült mérés („éles, effekt nélkül") ellentmondott egymásnak.
+
+    A hisztogram döntött a spec javára: a szemrevételezés egyenletes 15%-os
+    tompítást összehasonlítási alap nélkül nem lát. A tanulság a jegyen:
+    **ha a spec és egy szemre készült mérés ütközik, a spec az erősebb.**"""
+
+    def test_a_telitett_feher_217_lesz(self, tmp_path):
+        ut = tmp_path / "feher.jpg"
+        cv2.imwrite(str(ut), np.full((300, 400, 3), 255, dtype=np.uint8))
+
+        kep = render_nodes((), _beallitas(str(ut))).image
+
+        assert int(kep[100, 100, 0]) == TOMPITOTT_FEHER
+
+    def test_a_tompitas_SEMLEGES_nem_szinez(self, tmp_path):
+        """A réteg fekete, nem tónus: a három csatorna arányosan halványul."""
+        # ⚠️ PNG, nem JPEG: a JPEG a 200/150/100 hármast is elmozdítja egy
+        # egységgel, és akkor a mérés a tömörítést mérné, nem a tompítást.
+        ut = tmp_path / "szines.png"
+        cv2.imwrite(str(ut), np.full((300, 400, 3), (200, 150, 100), dtype=np.uint8))
+
+        kep = render_nodes((), _beallitas(str(ut))).image
+        b, g, r = (int(x) for x in kep[100, 100])
+
+        assert (b, g, r) == (170, 128, 85)
+
+    def test_a_SZIN_mod_nem_tompul(self):
+        """A tompítás a HÁTTÉRKÉPÉ — a választott szín pontosan az marad."""
+        kep = render_nodes((), _beallitas()).image
+
+        assert _sarkok(kep) == [ALAPSZIN] * 4
