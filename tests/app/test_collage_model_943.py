@@ -13,6 +13,7 @@ from __future__ import annotations
 import math
 
 import pytest
+from PySide6.QtCore import QUrl
 
 from picasapy.app.collage_model import (
     SHEET_UNITS,
@@ -158,6 +159,11 @@ class TestQtModell:
             "caption",
             "selected",
             "missing",
+            # #1019: a csempe képének URL-je. Azért MODELL-szerep, mert a
+            # kézi `"file:" + útvonal` fűzés Windowson érvénytelen URL-t ad
+            # (a meghajtóbetű PORTNAK látszik), `#`-es fájlnévnél pedig
+            # Linuxon is elvágja a nevet — mindkét esetben NÉMÁN.
+            "fileUrl",
         }
         index = modell.index(0, 0)
         ertek = {
@@ -173,6 +179,7 @@ class TestQtModell:
         assert ertek["border"] == POLAROID
         assert ertek["caption"] == "Nyár"
         assert ertek["selected"] is True
+        assert ertek["fileUrl"] == QUrl.fromLocalFile("/a.jpg")
         assert ertek["missing"] is True
 
     def test_ervenytelen_index_none(self, qt_app):
