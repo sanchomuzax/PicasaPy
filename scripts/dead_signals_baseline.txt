@@ -20,7 +20,7 @@
 # Indoklás nélküli sor HIBA — a néma engedély pontosan az, ami ide nem kell.
 # A fájlút a vizsgált gyökérhez (src/picasapy) képest értendő.
 #
-# A négy tétel, amit a #1003 kézzel is visszaigazolt (a némaság a
+# A #1003 alatt kézzel is visszaigazolt tételek (a némaság a
 # FELHASZNÁLÓT érinti), lentebb „VISSZAIGAZOLT" jelöléssel szerepel.
 
 app/collage_save.py::collageDesktopBackgroundReady #1005 — az „Asztali háttérkép" második fele (BMP + registry) még nincs meg, a kész fájl útját ma senki nem veszi át

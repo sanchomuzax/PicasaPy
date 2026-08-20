@@ -87,9 +87,20 @@ def test_a_futtatas_hibaval_ter_vissza_uj_nema_jelzesre(
 # -- 2. nem kiabál hiába: a fogadó minden ismert alakja --------------------
 
 
-def test_a_deklarativ_qml_kezelot_fogadonak_veszi(tmp_path: Path) -> None:
-    gyoker = _fa(tmp_path, qml="Item { onValamiTortent: console.log(1) }")
-    assert _nema_kulcsok(gyoker) == set()
+def test_a_cel_nelkuli_qml_kezelo_nem_fogad_python_jelzest(tmp_path: Path) -> None:
+    """A QML saját `signal done`-jához tartozó `onDone` nem a Pythoné."""
+    gyoker = _fa(
+        tmp_path,
+        python="""\
+from PySide6.QtCore import QObject, Signal
+
+
+class Worker(QObject):
+    done = Signal()
+""",
+        qml="Item { signal done(); onDone: console.log(1) }",
+    )
+    assert _nema_kulcsok(gyoker) == {"vezerlo.py::done"}
 
 
 def test_a_connections_blokkot_fogadonak_veszi(tmp_path: Path) -> None:
@@ -147,6 +158,73 @@ class Vezerlo(QObject):
     assert jelentes.action == 0
 
 
+def test_a_notify_csak_a_sajat_osztaly_azonos_nevu_jelzeset_hagyja_ki(
+    tmp_path: Path,
+) -> None:
+    """`A.done` property-értesítője nem nyelheti el `B.done` akciójelét."""
+    gyoker = tmp_path / "src"
+    gyoker.mkdir()
+    (gyoker / "a.py").write_text(
+        """\
+from PySide6.QtCore import Property, QObject, Signal
+
+
+class A(QObject):
+    done = Signal()
+
+    @Property(bool, notify=done)
+    def ready(self):
+        return True
+""",
+        encoding="utf-8",
+    )
+    (gyoker / "b.py").write_text(
+        """\
+from PySide6.QtCore import QObject, Signal
+
+
+class B(QObject):
+    done = Signal()
+""",
+        encoding="utf-8",
+    )
+
+    assert _nema_kulcsok(gyoker) == {"b.py::done"}
+
+
+def test_a_deklaralo_modul_factoryjen_at_kotott_jelzes_nem_nema(
+    tmp_path: Path,
+) -> None:
+    """A `get_a().done.connect(...)` a saját `a.py::done` jelzését fogadja."""
+    gyoker = tmp_path / "src"
+    gyoker.mkdir()
+    (gyoker / "a.py").write_text(
+        """\
+from PySide6.QtCore import QObject, Signal
+
+
+class A(QObject):
+    done = Signal()
+
+
+def get_a():
+    return A()
+""",
+        encoding="utf-8",
+    )
+    (gyoker / "consumer.py").write_text(
+        """\
+from a import get_a
+
+
+get_a().done.connect(lambda: None)
+""",
+        encoding="utf-8",
+    )
+
+    assert _nema_kulcsok(gyoker) == set()
+
+
 # -- 3. pontosság: szóhatár és az azonos nevű jelzések ---------------------
 
 
@@ -193,6 +271,64 @@ def test_a_connections_csak_a_sajat_qml_celjanak_jelzeset_fogadja(
     assert _nema_kulcsok(gyoker) == {"b.py::done"}
 
 
+def test_a_property_alias_csak_a_sajat_pontos_rhs_at_oldja_fel(tmp_path: Path) -> None:
+    """A szomszédos, nem kapcsolódó property nem lehet a `target` alias része."""
+    gyoker = tmp_path / "src"
+    qml_dir = gyoker / "qml"
+    qml_dir.mkdir(parents=True)
+    for nev in ("worker", "other"):
+        (gyoker / f"{nev}.py").write_text(
+            "from PySide6.QtCore import QObject, Signal\n\n"
+            f"class {nev.title()}(QObject):\n"
+            "    done = Signal()\n",
+            encoding="utf-8",
+        )
+    (qml_dir / "Main.qml").write_text(
+        """\
+Item {
+    property var endpoint: worker
+    property var unrelated: other
+    Connections {
+        target: root.endpoint
+        function onDone() {}
+    }
+}
+""",
+        encoding="utf-8",
+    )
+
+    assert _nema_kulcsok(gyoker) == {"other.py::done"}
+
+
+def test_az_azonos_nevu_aliasok_qml_fajlonkent_kulon_oldodnek_fel(
+    tmp_path: Path,
+) -> None:
+    """Egy QML-fájl `endpoint` propertyje nem szivároghat át a másikba."""
+    gyoker = tmp_path / "src"
+    qml_dir = gyoker / "qml"
+    qml_dir.mkdir(parents=True)
+    for nev in ("worker", "other"):
+        (gyoker / f"{nev}.py").write_text(
+            "from PySide6.QtCore import QObject, Signal\n\n"
+            f"class {nev.title()}(QObject):\n"
+            "    done = Signal()\n",
+            encoding="utf-8",
+        )
+    for qml_name, target in (("One.qml", "worker"), ("Two.qml", "other")):
+        (qml_dir / qml_name).write_text(
+            "Item {\n"
+            f"    property var endpoint: {target}\n"
+            "    Connections {\n"
+            "        target: root.endpoint\n"
+            "        function onDone() {}\n"
+            "    }\n"
+            "}\n",
+            encoding="utf-8",
+        )
+
+    assert _nema_kulcsok(gyoker) == set()
+
+
 # -- 4. az alapállapot: rövidülhet, de nem hízhat --------------------------
 
 
@@ -215,7 +351,17 @@ def test_az_elavult_bejegyzes_bukik(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """Ha a tétel már NEM néma, a sorát törölni kell — a lista ne konzerváljon."""
-    gyoker = _fa(tmp_path, qml="Item { onValamiTortent: console.log(1) }")
+    gyoker = _fa(
+        tmp_path,
+        qml="""\
+Item {
+    Connections {
+        target: vezerlo
+        function onValamiTortent() {}
+    }
+}
+""",
+    )
     alapallapot = tmp_path / "alap.txt"
     alapallapot.write_text(
         "vezerlo.py::valamiTortent #1003 — tudatos tartalék\n", encoding="utf-8"

@@ -164,9 +164,24 @@ def _joined_text(root: Path, pattern: str) -> str:
     return "\n".join(_read_text(path) for path in sorted(root.rglob(pattern)))
 
 
-def notify_signals(python_text: str) -> set[str]:
-    """A `notify=` hivatkozással property-értesítővé tett jelzések nevei."""
-    return set(_NOTIFY.findall(python_text))
+def collect_notify_signals(root: Path) -> set[tuple[str, str | None, str]]:
+    """A property-értesítők fájl-, osztály- és jelzésazonosítója.
+
+    Azonos nevű jelzés több vezérlőben is lehet. Egy `A.done`-ra írt
+    `notify=done` ezért nem teheti property-értesítővé a `B.done`-ot.
+    """
+    found: set[tuple[str, str | None, str]] = set()
+    for path in sorted(root.rglob("*.py")):
+        relative = path.relative_to(root).as_posix()
+        text = _read_text(path)
+        classes = [(match.start(), match.group(1)) for match in _CLASS_DECL.finditer(text)]
+        for match in _NOTIFY.finditer(text):
+            owner = next(
+                (name for offset, name in reversed(classes) if offset < match.start()),
+                None,
+            )
+            found.add((relative, owner, match.group(1)))
+    return found
 
 
 def _connections_blocks(qml_text: str) -> list[str]:
@@ -186,45 +201,62 @@ def _connections_blocks(qml_text: str) -> list[str]:
     return blocks
 
 
+def _property_rhs(qml_text: str, name: str) -> str | None:
+    """Egy QML-property pontos, ugyanebben a fájlban álló jobb oldala."""
+    match = re.search(
+        rf"^(?P<indent>[ \t]*)(?:readonly\s+)?property\b[^\n]*\b"
+        rf"{re.escape(name)}\s*:\s*(?P<rhs>[^\n]*)$",
+        qml_text,
+        re.M,
+    )
+    if match is None:
+        return None
+    parts = [match.group("rhs").split(";", 1)[0]]
+    if ";" in match.group("rhs"):
+        return parts[0]
+    indent = len(match.group("indent"))
+    tail = qml_text[match.end():].splitlines()
+    for line in tail:
+        if not line.strip() or len(line) - len(line.lstrip()) <= indent:
+            break
+        parts.append(line.strip().split(";", 1)[0])
+        if ";" in line:
+            break
+    return "\n".join(parts)
+
+
 def _connection_targets(block: str, qml_text: str) -> set[str]:
-    """A `target:` kifejezés azonosítói, egy helyi property-feloldással."""
+    """A `target:` kifejezés azonosítói, fájlhelyes alias-feloldással."""
     target = re.search(r"\btarget\s*:\s*([^\n;]+)", block)
     if target is None:
         return set()
     names = set(re.findall(r"\b[A-Za-z_]\w*\b", target.group(1)))
-    # Gyakori QML-minta: `target: root.dropController`, ahol a property a
-    # context-propertyt (`dropImportController`) adja tovább. Egy szintet
-    # feloldunk, különben ez ugyanúgy hamis néma jelzést adna.
-    for name in tuple(names):
-        property_value = re.search(
-            rf"\bproperty\b[^\n]*\b{re.escape(name)}\s*:\s*([\s\S]{{0,300}})",
-            qml_text,
-        )
-        if property_value:
-            names.update(re.findall(r"\b[A-Za-z_]\w*\b", property_value.group(1)))
+    pending = list(names)
+    while pending:
+        name = pending.pop()
+        rhs = _property_rhs(qml_text, name)
+        if rhs is None:
+            continue
+        for resolved in re.findall(r"\b[A-Za-z_]\w*\b", rhs):
+            if resolved not in names:
+                names.add(resolved)
+                pending.append(resolved)
     return names
 
 
-def _qml_receivers(qml_text: str) -> tuple[list[tuple[set[str], set[str]]], set[str]]:
-    """QML-fogadók indexe: `Connections` targetek és cél nélküli kezelők."""
+def _qml_receivers(qml_text: str) -> list[tuple[set[str], set[str]]]:
+    """QML `Connections`-fogadók indexe a saját fájl targetjeivel."""
     blocks = _connections_blocks(qml_text)
     connected: list[tuple[set[str], set[str]]] = []
     for block in blocks:
         handlers = set(re.findall(r"\bon[A-Z]\w*\b", block))
         connected.append((_connection_targets(block, qml_text), handlers))
-    # A cél nélküli deklaratív `onFoo:` kezelő a komponens SAJÁT jelzését
-    # kezeli. A `Connections` blokkokat kivesszük, különben más target
-    # azonos nevű jelzése hamis zöldet adna.
-    outside_connections = qml_text
-    for block in blocks:
-        outside_connections = outside_connections.replace(block, "")
-    return connected, set(re.findall(r"\bon[A-Z]\w*\b", outside_connections))
+    return connected
 
 
 def _has_connection_receiver(
     declaration: SignalDecl,
     qml_receivers: list[tuple[set[str], set[str]]],
-    direct_handlers: set[str],
 ) -> bool:
     handler = _handler_name(declaration.name)
     if any(
@@ -232,7 +264,7 @@ def _has_connection_receiver(
         for targets, handlers in qml_receivers
     ):
         return True
-    return handler in direct_handlers
+    return False
 
 
 def _has_imperative_receiver(
@@ -249,13 +281,18 @@ def _has_imperative_receiver(
     ):
         return True
     pattern = re.compile(
-        rf"\b(?:self\s*\.\s*)?([A-Za-z_]\w*)\s*\.\s*{re.escape(declaration.name)}\s*"
+        rf"\b(?:self\s*\.\s*)?([A-Za-z_]\w*)(?:\s*\(\s*\))?\s*"
+        rf"\.\s*{re.escape(declaration.name)}\s*"
         r"\.\s*connect\s*\("
     )
-    return any(
-        _camel_name(match.group(1).lstrip("_")) in declaration.target_names
-        for match in pattern.finditer(text)
-    )
+    module = Path(declaration.path).stem
+    for match in pattern.finditer(text):
+        target = match.group(1).lstrip("_")
+        if _camel_name(target) in declaration.target_names:
+            return True
+        if target.startswith("get_") and module in target:
+            return True
+    return False
 
 
 def has_receiver(
@@ -264,10 +301,9 @@ def has_receiver(
     qml_text: str,
     own_python_text: str,
     qml_receivers: list[tuple[set[str], set[str]]],
-    direct_handlers: set[str],
 ) -> bool:
     """Van-e a KONKRÉT deklaráció fogadója, nem csak névazonos jelzésé."""
-    return _has_connection_receiver(declaration, qml_receivers, direct_handlers) or _has_imperative_receiver(
+    return _has_connection_receiver(declaration, qml_receivers) or _has_imperative_receiver(
         declaration, python_text, own_python_text
     ) or _has_imperative_receiver(declaration, qml_text)
 
@@ -290,27 +326,32 @@ def scan(root: Path) -> Report:
     """A teljes vizsgálat egy forrásfán."""
     python_text = _joined_text(root, "*.py")
     qml_text = _joined_text(root, "*.qml")
-    qml_receivers, direct_handlers = _qml_receivers(qml_text)
+    qml_receivers = [
+        receiver
+        for path in root.rglob("*.qml")
+        for receiver in _qml_receivers(_read_text(path))
+    ]
     python_by_path = {
         path.relative_to(root).as_posix(): _read_text(path)
         for path in root.rglob("*.py")
     }
-    notify = notify_signals(python_text)
+    notify = collect_notify_signals(root)
     declarations = collect_declarations(root)
     silent = tuple(
         declaration
         for declaration in declarations
-        if declaration.name not in notify
+        if (declaration.path, declaration.owner, declaration.name) not in notify
         and not has_receiver(
             declaration,
             python_text,
             qml_text,
             python_by_path[declaration.path],
             qml_receivers,
-            direct_handlers,
         )
     )
-    notify_count = sum(1 for d in declarations if d.name in notify)
+    notify_count = sum(
+        1 for d in declarations if (d.path, d.owner, d.name) in notify
+    )
     return Report(total=len(declarations), notify=notify_count, silent=silent)
 
 
