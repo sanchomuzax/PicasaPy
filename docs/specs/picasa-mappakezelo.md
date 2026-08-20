@@ -554,6 +554,8 @@ jelenléte pontosan a #1088-ban leírt eset — a `Képek` OneDrive-ra
 | 20 | Súgó | **böngésző**, `…answer=11511&hl=<nyelv>` | helyi súgóablak |
 | 21 | átméretező fogantyú | látható 20×20 elem a jobb-alsó sarokban, `SC_SIZE` | nincs (natív ablakkeret) |
 | 22 | gombsor | OK ‹ Mégse ‹ Súgó, 98×28, jobb-alsó | ✔ ugyanez a sorrend, más méret |
+| 22/b | **belepesi pontok** | KET menu: Fajl -> Mappa hozzaadasa a Picasahoz..., es Eszkozok -> Mappakezelo..., **ugyanaz a parancs** (`0x9caa`) | csak az Eszkozok menu; a Fajl menu tetele **halott `placeholder`** (`PicasaMenuBar.qml:158`) |
+| 22/c | **OK utani frissites** | a keresosav/nezet frissitese (`0x0065b840`) | nincs kimondva |
 | 23 | extra gombok | **nincsenek** | „Add folder…", „Adopt Picasa folders…" |
 | 24 | Figyelt mappák lista | csak a kifejezetten figyeltek, vegyes relatív/abszolút alak | teljes útvonalak |
 | 25 | figyelmeztetés: teljes meghajtó | ✔ + **nemre az „Eltávolítás" tétel lesz aktív** | ✔ figyelmeztet, a visszaállás nincs |
@@ -578,6 +580,78 @@ Vagyis a figyelmeztetés akkor jön elő, ha a kijelölés a **meghajtó
 gyökere** (`C:\`, `C:`), és nem jön elő semmilyen almappára.
 
 *Bizonyítottsági fok: **megerősített** (a függvény minden utasítása).*
+
+---
+
+## 10/b Mi AKTIVÁLJA, és MIT INDÍT EL (2026-08-21)
+
+*(A lap első kiadásából ez a két kérdés hiányzott — a tulajdonos vette
+észre. A kutatói skill 2/b szakasza azóta kötelezővé teszi.)*
+
+### 10/b.1 A belépési pontok — EGY parancs, KÉT menü
+
+Az `ID_TOOLS_INCLUDEEXCLUDEFOLDERS` azonosító a menüsáv-építőben
+(`0x00559150`) **kétszer** szerepel, két külön menüben, **ugyanazzal a
+parancsazonosítóval**:
+
+| menü | felirat | rekord | azonosító |
+|---|---|---|---|
+| **Fájl** | „Add Folder to Picasa…" (`eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS`, `0x005591b7`) | `0xd6d988` | **`0x9caa`** (`0xd6d992`) |
+| **Eszközök** | „&Folder Manager…" (`eMenuTools::ID_TOOLS_INCLUDEEXCLUDEFOLDERS`, `0x0055c54c`) | `0xd6e850` | **`0x9caa`** (`0xd6e85a`) |
+
+A parancs útja: a szétosztó (`0x005cb990`) a `0x9caa`-t a 104. indexen a
+`0x005cbdd1`-re viszi:
+
+```asm
+0x005cbdd1  push edi          ; a 2. argumentum: a mod-jelzo
+0x005cbdd2  push ebx          ; a CThumbUI
+0x005cbdd3  call 0x5ce590
+```
+
+és a `0x005ce590(objektum, mód)` **a jelző alapján ágazik**:
+
+```asm
+0x005ce597  mov ebx, [esp+0xb90]   ; a MOD (a 2. argumentum)
+0x005ce5a9  test bl, bl
+0x005ce5b4  je   0x5ce679           ; mod == 0 -> A MAPPAKEZELO MEGNYITASA
+0x005ce5ba  mov eax, [ebp+0xeb0]    ; mod != 0 -> a bal panel kijelolt mappaja
+```
+
+A `0x005ce590` sztringkészlete elárulja, hogy a **másik** ág egy egészen
+külön folyamat: *„Do you want to remove the folder %s and its
+subfolders?"*, `CThumbUI::ManageAlbum`, `CThumbUI:ManageAlbumConfirm`,
+`CThumbUI:ManageAlbumYesButton`, `Remove Folder`, `\Originals`,
+`\Modified` — vagyis **mappa (és almappái) eltávolítása a Picasából**,
+megerősítéssel, a szerkesztési biztonsági másolatok mappáit is figyelembe
+véve.
+
+> **Két, egymástól független tanulság:**
+>
+> 1. **Ugyanaz a dialógus két menüből nyílik**, két különböző felirattal —
+>    a „Mappa hozzáadása a Picasához…" nem külön funkció, hanem **ugyanez
+>    az ablak**.
+> 2. **A parancsazonosító nem egyenlő a funkcióval**: a `0x9caa` egy
+>    második, mód-jelzős ágon egy teljesen más folyamatot is kiszolgál.
+
+*(Az első indítás („beállítás-varázsló") belépési útját NEM követtük —
+ld. 12.)*
+
+### 10/b.2 Amit a dialógus KIFELÉ indít
+
+| mikor | mit indít |
+|---|---|
+| megnyitáskor | a `[dlg+0x414]` **kritikus szakasszal védett** segédobjektum felállítása; ugyanezt használja a fa-sorból útvonalat képző `0x007bfcb0` |
+| „Keresés mindig" teljes meghajtóra | **Igen/Nem párbeszéd** (`CFolderMgrDialog::warning`, `0x009bac20`, típus 1) |
+| figyelt mappa eltávolítása | **megerősítő párbeszéd** (`IDS_HOTFOLDER_CONFIRM`, saját címmel) |
+| **Súgó** | **külső böngésző** — `answer.py?answer=11511&hl=<nyelv>` |
+| **OK** | a lezáró (`0x007c6430`) **először leállítja** a `[dlg+0x414]` objektumot, majd `0x007c4df0`: `confirmfrexclude` párbeszéd (ha kizárt mappa arcadata törlődne) → `0x005cef20` (a **figyelt mappák** összevetése a `[lib+0x364]` listán) → `0x007bfec0` **háromszor** → `0x005088f0` → **`0x0065b840`: a keresősáv/nézet frissítése** |
+| **Mégse / Esc** | ugyanaz a lezáró, de az alkalmazás **kimarad** (7.1) |
+
+*Bizonyítottsági fok: **megerősített** a belépési pontokra (a
+menüsáv-építő két rekordja, azonos azonosítóval), a parancs útjára és a
+mód-jelzős elágazásra · **erős** a kifelé indított műveletek listájára (a
+hívások megvannak, néhány célfüggvény szerepe csak a sztringjeiből
+ismert).*
 
 ---
 
