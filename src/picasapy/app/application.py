@@ -48,6 +48,7 @@ from .error_log import error_log_path, install_error_log
 from .compact_controller import CompactController
 from .relocate_controller import RelocateController
 from .dedup_controller import DedupController
+from .email_controller import EmailController
 from .discovery_controller import DiscoveryController
 from .drop_import_controller import DropImportController
 from .edit_controller import EditController
@@ -68,6 +69,7 @@ from .models import sorted_folder_rows
 from .startup_status import StartupStatus
 from .thumbnail_provider import ThumbnailProvider
 from .timeline_controller import TimelineController
+from .webexport_controller import WebExportController
 from .window_geometry import virtual_desktop_rect, wire_window_geometry
 
 _APP_DIR = Path(__file__).parent
@@ -608,6 +610,21 @@ def run(argv: list[str]) -> int:
     # regisztrálja az érintett fotókat
     dedup_controller = DedupController(data_dir / "index.db", provider)
 
+    # #1066: a levelezés és a webexportálás vezérlője. Mindkettő a JELENLEG
+    # látható fotókat kéri (`photo_source`), ahogy a saját docstringjük
+    # előírja.
+    #
+    # ⚠️ Miért került ez külön jegybe: egyik sem jött létre SOHA, és egyik
+    # sem volt regisztrálva — miközben az `OptionsTabEmail.qml` és a
+    # `WebExportDialog.qml` hivatkozott rájuk, `typeof`-őr mögül. Az őr nem
+    # engedte elszállni a felületet, viszont el is REJTETTE a hiányt: az
+    # e-mail beállításfül elfogadta a módosítást, és némán nem mentette.
+    def _lathato_fotok():
+        return controller.photos.photos
+
+    email_controller = EmailController(photo_source=_lathato_fotok)
+    web_export_controller = WebExportController(photo_source=_lathato_fotok)
+
     # Import forrásból (#23): külső mappa (kártya/fényképezőgép) képeinek
     # másolása/áthelyezése a könyvtárba — a thumbnail-providerrel adja az
     # előnézetet, sikeres import után az addWatchedFolder úton a cél-mappa
@@ -666,6 +683,11 @@ def run(argv: list[str]) -> int:
         "timelineController", timeline_controller
     )
     engine.rootContext().setContextProperty("dedupController", dedup_controller)
+    # #1066 — az „E-Mail" beállításfül és a webexportálás párbeszéde
+    engine.rootContext().setContextProperty("emailController", email_controller)
+    engine.rootContext().setContextProperty(
+        "webExportController", web_export_controller
+    )
     # #368: adatbázis-áthelyezés — a MoveDatabaseDialog.qml hídja
     relocate_controller = RelocateController(
         data_dir / "index.db", _cache_dir() / "thumbs", _config_dir()
