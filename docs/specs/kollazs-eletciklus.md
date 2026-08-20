@@ -579,3 +579,109 @@ leképezésen** kell átmennie, mint a csomópontokénak — különben a
 `_node_index_of_path` sosem talál egyezést, és a háttér **némán színre
 esik**. Ugyanaz a hibaosztály, mint a #1103 (ott a sorrend, itt a
 kódolás miatt nem találna).
+
+---
+
+## 16. A kilenc kérdés — a NÉGY hiányzó darab (2026-08-21)
+
+A kollázs négy spec-lapja (3532 sor) a felületet, az életciklust, a
+`.cxf`-et és a kimenetet lefedi. A `picasapy-research` 2/b kilenc
+kérdésén végigmenve **négy dolog derült ki, ami egyik lapon sem
+szerepelt.**
+
+**Leltár:** a binárisban **112 függvény** hivatkozik kollázs-sztringre. Ez
+a szakasz ebből hetet nyit meg (`0x0088a020`, `0x0088a340`, `0x0088b220`,
+`0x00889f40`, `0x0083ce90`, `0x007f7120`, `0x00415790`); a többi a korábbi
+körökből ismert vagy továbbra sem vizsgált (ld. `kollazs-atvilagitas.md`
+9. szakasz).
+
+### 16.1 A folyamat NÉGY állapota — és a kész értesítés KATTINTHATÓ
+
+| állapot | kulcs | angol | magyar | cím |
+|---|---|---|---|---|
+| indulás | `collage::initializing` | Creating Collage...initializing | Kollázs létrehozása… inicializálás | `0x0088b220` |
+| haladás | `collage::refining_format` | Creating Collage - %d%% | Kollázs létrehozása - %d%% | `0x0088a340` |
+| megszakítás | `collage::cancelling` | Creating Collage...cancelling | Kollázs létrehozása… leállítás | `0x00889f40` |
+| **kész** | **`collage::done`** | **Collage Finished! (click to view)** | **A kollázs kész (kattintson ide)** | **`0x0088a020`** |
+
+> ⭐ **A befejezés egy KATTINTHATÓ értesítés** — „(click to view)" /
+> „(kattintson ide)". A hívási lánc `0x0088b220` → `0x0088a020`, tehát az
+> „inicializálás" állapotot kezelő rutin indítja a „kész" üzenetet is.
+> **Ez a lebegő értesítősáv** (`picasa-lebego-ertesito.md`) egyik valódi
+> eseménye — az a lap eddig nem tudott konkrét eseményt megnevezni.
+>
+> **Nálunk a kollázs elkészülte után nincs kattintható értesítés**, csak a
+> `locateSavedCollage()` navigáció (`Main.qml`).
+
+### 16.2 KÉT figyelmeztetés, ami egyik lapon sem volt (`0x0083ce90`)
+
+**a) „Mentés mellőzve"** — `collageUI::noimages_title` / `collageUI::noimages`
+
+> **A kollázs nem menthető, mert az összes képet eltávolították. Vegyen
+> fel legalább egy képet, és próbálkozzon újra.**
+
+Ez a **piszkozat-mentés** ága: ha a felhasználó minden klipet kivett, a
+mentés **csendben elmarad**, és ez a doboz szól róla. *(A hívó a
+`0x0082d570`, a panel fő szétosztója.)*
+
+**b) „Figyelmeztetés: eltérő formátumok"** — `collage::formatmismatch`
+
+> **A kollázs jelenlegi oldalformátuma nem egyezik az asztal aktuális
+> méretével.** Emiatt az asztal háttérképe nem várt módon jelenhet meg.
+>
+> (TIPP: Az Oldalformátum legördülő menüben a **„Jelenlegi megjelenítés"**
+> elemet választva biztosíthatja a tökéletes illeszkedést.)
+>
+> Biztosan folytatja a műveletet?
+
+Gombok: **„Beállítás ennek ellenére"** (`collage::formatwarningyesbutton`)
+és **„Beállítás mellőzése"** (`collage::formatwarningnobutton`).
+
+Ez az **„Asztali háttérkép"** kimeneti ág védelme: ha az oldalformátum nem
+egyezik a képernyőmérettel, a Picasa **rákérdez, és javaslatot is tesz**
+(a formátumlista „Jelenlegi megjelenítés" tétele).
+
+### 16.3 A várakozó állapot — `CThumbUI::CreateCollageWait`
+
+> **Várakozás a kollázs elkészítésére…** (`0x007f7120`, hívja `0x007f7b50`)
+
+Külön állapot a **főablakban** (a `CThumbUI`-ban), nem a kollázspanelban —
+tehát a kollázs indítása után a **könyvtárnézet** is jelez.
+
+### 16.4 A `hascollage` — a kollázs NYOMOT HAGY A FORRÁSKÉPEKEN
+
+A PMP-adatbázis oszloplistáját a `0x00415790` (7851 bájt) tartalmazza,
+és köztük van a **`hascollage`** oszlop — a `token`, `filename`,
+`category`, `description`, `location`, `inisync`,
+`albumcontactids`, `albumpeoplechecksum` társaságában.
+
+**Élő adat** (`research/testdata/Picasa2/db3/`):
+
+| fájl | típus | sorok | méret |
+|---|---|---:|---:|
+| `albumdata_filename.pmp` | `0x0000` (sztring) | 2371 | 169 472 |
+| `albumdata_token.pmp` | `0x0000` | 2371 | 93 958 |
+| **`albumdata_hascollage.pmp`** | **`0x0003`** | **2370** | **2390** |
+| `albumdata_inisync.pmp` | `0x0004` | 2371 | 18 988 |
+
+- A `hascollage` **1 bájt/sor** (2390 = 20 bájtos fejléc + 2370) —
+  logikai oszlop, típuskód **`0x0003`**.
+- Ebben a mintában **mind a 2370 érték nulla** (ez a felhasználó nem
+  készített kollázst), tehát **a `hascollage` = 1 esetre nincs mintánk**.
+- ⚠️ **A PMP-oszlopok NEM egyforma hosszúak**: a fotótábla 2371 soros, a
+  `hascollage` 2370 — a hiányzó vég alapértelmezett. Ezt a
+  `pmp-database.md` eddig nem mondta ki; egy szigorúan egyenlő hosszt
+  feltételező parszer **elhasal** valódi adaton.
+
+> **Amit ez a PicasaPy-nak jelent:** a kollázs nem csak kimeneti fájlt ír,
+> hanem **megjelöli a forrásképeket** is az indexben. Nálunk ilyen mező
+> nincs. A #1033 („egy projekt-mappa két gyűjteményben is látszik") és a
+> #1131 (gyári projekt-mappák) szempontjából ez a jelölés az, amiből az
+> eredeti tudja, mely képek szerepelnek kollázsban.
+
+*Bizonyítottsági fok: **megerősített** a négy folyamatállapotra, a két
+figyelmeztetésre (szó szerinti szöveg + kulcs + cím), a várakozó
+állapotra, és a `hascollage` oszlop létére, típusára és
+sorhosszára (valódi adat) · **nincs mintánk** `hascollage = 1` értékre,
+és **nem követtük végig**, mikor írja a program.
+
