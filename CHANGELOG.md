@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.19] – 2026-08-20
+
+### Új
+- **„Kollázs szerkesztése" gomb — a kész kollázs újranyitható (#1002).**
+  Eddig egy elkészült kollázst nem lehetett tovább szerkeszteni: a kész
+  képtől nem vezetett vissza út a panelra.
+
+  Mostantól, ha megnyitod a kollázst a nézőben, a „Vissza a könyvtárhoz"
+  mellett megjelenik a **„Kollázs szerkesztése"** gomb. Kattintásra
+  visszatölti a projektfájlt a panelra, és a „Létrehozás" **a meglévő
+  fájlt írja felül** — ugyanazt a kollázst szerkeszted tovább, nem
+  másolatot készítesz.
+
+  A gomb a **projektfájl létéből** látszik, nem abból, hogy „most készült":
+  bármikor megnyitod a kollázst, ott lesz.
+
+  Sérült projektfájlnál a program **szól** — nem hiúsul meg némán. A
+  megnyitás nem számít módosításnak, tehát a bezárás nem kérdez rá.
+
 ## [0.8.18] – 2026-08-20
 
 ### Javítva

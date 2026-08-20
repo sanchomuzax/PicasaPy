@@ -35,6 +35,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.collage.autosave import read_autosave, write_autosave
+from picasapy.collage.cxf import read_cxf
 from picasapy.collage.draft import nodes_from_project, project_from_nodes
 from picasapy.collage.page_formats import ORIENTATIONS
 from picasapy.collage.themes import COLLAGE_THEMES, MULTIEXP
@@ -413,6 +414,64 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         projekt = read_autosave(self._collage_panel_draft_dir())
         if projekt is None:
             return
+        self._apply_cxf_project(projekt, saved_path="")
+
+    @Slot(str, result=bool)
+    def hasCollageProject(self, image_path: str) -> bool:  # noqa: N802
+        """Van-e a képnek `.cxf` párja — vagyis kollázs-e (#1002).
+
+        A szerkesztő „Kollázs szerkesztése" gombja ezen látszik
+        (`editpanel/editcollage`, `m_hidden`: alapból rejtett, csak
+        kollázsnál jön elő). A tulajdonos szava: *„Ez a gomb mindig
+        megjelenik, ha megnyitom a kollázst."* — tehát nem a létrehozás
+        emléke kapcsolja be, hanem a fájl mellett álló projektfájl."""
+        return self._collage_project_path(image_path) is not None
+
+    @Slot(str)
+    def openCollageProject(self, image_path: str) -> None:  # noqa: N802
+        """A kész kollázs újranyitása SZERKESZTÉSRE (#1002).
+
+        A tulajdonos jelentése a v0.8.17-ről: *„Jelenleg ennek hiányában
+        nem szerkeszthető a kollázs."* — a kész képhez nem vezetett vissza
+        út a panelra.
+
+        A `saved_path` a MEGNYITOTT képre áll, tehát a „Létrehozás" a
+        meglévő fájlt írja felül, nem újat számoz mellé: a felhasználó
+        ugyanazt a kollázst szerkeszti tovább, nem másolatot készít."""
+        utvonal = self._collage_project_path(image_path)
+        if utvonal is None:
+            return
+        try:
+            projekt = read_cxf(utvonal)
+        except ValueError:
+            logger.warning("A kollázs projektfájlja nem olvasható: %s", utvonal)
+            self.collageFailed.emit(
+                self.tr("The collage project file could not be opened.")
+            )
+            return
+        self._ensure_collage_panel()
+        self._apply_cxf_project(projekt, saved_path=str(image_path))
+
+    def _collage_project_path(self, image_path: str) -> Path | None:
+        """A képhez tartozó `.cxf`, ha van és olvasható fájl."""
+        if not image_path:
+            return None
+        try:
+            utvonal = Path(str(image_path)).with_suffix(".cxf")
+        except (OSError, ValueError):  # pragma: no cover - platformfüggő
+            return None
+        try:
+            return utvonal if utvonal.is_file() else None
+        except OSError:  # pragma: no cover - elérhetetlen hálózati út
+            return None
+
+    def _apply_cxf_project(self, projekt, *, saved_path: str) -> None:
+        """Egy `.cxf` projekt ráterítése a panelra — EGY kódút.
+
+        A piszkozat-visszatöltés (#1051) és a kész kollázs újranyitása
+        (#1002) ugyanaz a művelet, csak a forrás más. Két külön
+        megvalósítás előbb-utóbb elválna, és a felhasználó azt látná, hogy
+        a kollázs máshogy jön vissza attól függően, honnan nyitotta."""
         if projekt.theme in COLLAGE_THEMES:
             self._collage_panel_theme = projekt.theme
             self.collageThemeChanged.emit()
@@ -433,7 +492,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             _panel_nodes_of(nodes_from_project(projekt)), dirty=False
         )
         self._set_dirty(False)
-        self._set_saved_path("")
+        self._set_saved_path(saved_path)
         if not self._collage_panel_open:
             self._collage_panel_open = True
             self.collageOpenChanged.emit()

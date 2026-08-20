@@ -168,6 +168,26 @@ ApplicationWindow {
         documentTabStrip.activateTab(window.collageTabId)
     }
 
+    /** Egy KÉSZ kollázs újranyitása szerkesztésre (#1002).
+
+        A tulajdonos jelentése a v0.8.17-ről: *„Jelenleg ennek hiányában nem
+        szerkeszthető a kollázs."* — a kész képtől nem vezetett vissza út a
+        panelra.
+
+        A nézőt elhagyjuk (#1055): a kollázs panelje `!viewerOpen`-re
+        látszik, tehát enélkül a lap megnyílna, és a felhasználó közben a
+        képet nézné. */
+    function openSavedCollage(path) {
+        if (!controller) return
+        var cel = String(path || "")
+        if (cel.length === 0) return
+        controller.openCollageProject(cel)
+        if (!controller.collageOpen) return
+        window.viewerOpen = false
+        window.backToCollagePrompted = false
+        documentTabStrip.activateTab(window.collageTabId)
+    }
+
     /** A KÉSZ kollázs megkeresése a könyvtárban (#1028).
 
         Az eredeti mentő négy záró lépése közül ez a negyedik: `locate` az
@@ -787,6 +807,11 @@ ApplicationWindow {
         }
         onResetFacesRequested: resetFacesConfirm.open()
         onPlayRequested: window.startSlideshow(currentIndex)
+        // #1002: a néző csak JELEZ — a panel feltöltése és a lapváltás
+        // a gazdáé, ugyanúgy, ahogy a `CollagePanel` jelzéseinél.
+        onEditCollageRequested: function(path) {
+            window.openSavedCollage(path)
+        }
         onClosed: {
             window.viewerOpen = false
             window.selectedIndex = currentIndex   // a rács kövesse a nézőt

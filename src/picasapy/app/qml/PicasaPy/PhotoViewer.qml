@@ -108,6 +108,9 @@ Rectangle {
     signal closed()
     // #8: a felső ▶ Lejátszás gomb — diavetítés az aktuális képtől
     signal playRequested()
+    //: #1002: a megnyitott kollázs újranyitása SZERKESZTÉSRE. A néző
+    //: csak JELEZ — a lapváltás és a panel feltöltése a gazdáé.
+    signal editCollageRequested(string path)
     // #422: a néző kontextusmenüjének „Törlés lemezről" tétele — a
     // megerősítő dialógus a Main.qml-ben él (FileOpsDialogs), ezért a
     // kérés jelként megy kifelé
@@ -478,6 +481,36 @@ Rectangle {
                     text: "◀  " + qsTr("Back to Library")
                     font.pixelSize: Theme.fontSize
                     onClicked: viewer.closed()
+                }
+                // #1002 — `editpanel/editcollage`. Az eredetiben `m_hidden`:
+                // alapból REJTETT, és csak akkor jön elő, ha a megnyitott
+                // képnek van kollázs-projektfájlja. A tulajdonos szava:
+                // „Ez a gomb mindig megjelenik, ha megnyitom a kollázst."
+                //
+                // ⚠️ NEM azonos a `collagepanel::back_to_collage` =
+                // „Vissza a kollázshoz" gombbal: az a KÖNYVTÁR lapján áll,
+                // és a félbehagyott kollázshoz visz vissza.
+                PicasaButton {
+                    id: kollazsSzerkesztes
+                    objectName: "viewerEditCollageButton"
+                    //: `editpanel/editcollage-label`
+                    text: qsTr("Edit Collage")
+                    font.pixelSize: Theme.fontSize
+                    //: `editpanel/editcollage` elemleírása
+                    ToolTip.text: qsTr(
+                        "Edit the collage from which this image was created")
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    //: A null-őr a #305 szabálya: a vezérlő a lebontáskor és a
+                    //: komponens-teszteknél hiányozhat.
+                    visible: typeof controller !== "undefined" && controller
+                             && viewer.currentIndex >= 0
+                             && viewer.photosModel !== null
+                             && controller.hasCollageProject(
+                                 viewer.photosModel.filePathAt(
+                                     viewer.currentIndex)) === true
+                    onClicked: viewer.editCollageRequested(
+                        viewer.photosModel.filePathAt(viewer.currentIndex))
                 }
                 Item { Layout.fillWidth: true }
                 PicasaButton {
