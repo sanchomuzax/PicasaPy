@@ -831,7 +831,7 @@ formátumra, a parszer előtag-vizsgálatára és a valódi mintaadatra ·
 *(Az iPhoto / Apple Photos ág **szándékosan kívül van a hatókörön** —
 tulajdonosi döntés, 2026-08-21. A 6.2 tájékoztatásul marad; nem kérdés.)*
 
-**A lap a FELÜLET viselkedését teljesen leírja. A KÖNYVTÁR-oldali hatás hat
+**A lap a FELÜLET viselkedését teljesen leírja. A KÖNYVTÁR-oldali hatás nyolc
 ponton nincs utasításszinten végigkövetve** — egyik sem blokkolja a felület
 megépítését, de mindegyikhez döntés kell:
 
@@ -855,6 +855,13 @@ megépítését, de mindegyikhez döntés kell:
    történik leválasztott hálózati meghajtóval.
 6. **A „Figyelt mappák" lista interaktivitása**: kattintható-e egy sora,
    ugrik-e tőle a fa, mi a rendezési szabálya.
+
+7. **A `0x007bf210` (468 bájt) tartalma** — ez dönti el, hogy a
+   `lb_predouble` ág tényleg a kinyitás / lusta betöltés-e (4.5).
+8. **Még nem nyitott függvények**: `0x007c6d30` (2729 b),
+   `0x007c6700` (1180 b), `0x007c6ba0` (390 b) és `0x007bf680`
+   (1193 b, `/Volumes/` — macOS kötetlista; valószínűleg a fa
+   gyökereinek felsorolása). A 33-ból 15-öt nyitottunk meg.
 
 Ezen felül **erős, de nem megerősített** két állítás:
 
