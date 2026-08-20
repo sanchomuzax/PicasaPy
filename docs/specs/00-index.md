@@ -171,8 +171,9 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rádió,
 **rejtett Mégse**. Jegy: **#1167**. Egyik kérdés sem igényel futó Picasát.)*
 
-1. **Mit ír a két rádió** (`0x005b77c0`)? A „Search my whole computer"
-   a `scanlist.txt` `+` szakaszába a meghajtó-gyökereket teszi-e?
+1. ~~Mit ír a két rádió?~~ — **LEZÁRVA** (6.1): a panel nem ír fájlt,
+   **−1/1/2 kódot** ad vissza. Ami MARAD: hol lesz ebből
+   `scanlist.txt`-bejegyzés (`0x0040d6e3`-tól).
 2. **Mi dönti el, melyik szövegkészlet** (`Text1` migráció / `Text2`
    tiszta telepítés) jelenik meg — a „van-e korábbi Picasa" vizsgálat helye.
 3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
