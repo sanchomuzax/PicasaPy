@@ -118,3 +118,19 @@ class TestFelosztas:
         assert run_tests._shard_parameter([]) == (1, 1)
         assert run_tests._shard_parameter(["--shard", "3/4"]) == (3, 4)
         assert run_tests._shard_parameter(["--shard=2/4"]) == (2, 4)
+
+
+def test_a_futtato_UTF8_kimenetet_kenyszerit():
+    """A windowsos konzol cp1252-je nem ismeri a magyar `ő`/`ű` betűket.
+
+    ⚠️ Egy `print()` rajtuk `UnicodeEncodeError`-rel elhasal, és a JOB
+    azonnal elbukik — még mielőtt egyetlen teszt elindulna. A #1127-ben
+    pontosan ez buktatta el MIND A NÉGY windows-darabot, egy „-ből" szótagon.
+
+    Az őr a forrásra néz, mert a hatást csak windowsos konzolon lehetne
+    előidézni; a szabály viszont platformfüggetlenül kimondható."""
+    forras = (CI.parents[2] / "scripts" / "run_tests.py").read_text(encoding="utf-8")
+    assert 'reconfigure(encoding="utf-8"' in forras, (
+        "a futtató nem kényszerít UTF-8 kimenetet — egy magyar `ő` a "
+        "windows-lábon elviszi az egész jobot"
+    )

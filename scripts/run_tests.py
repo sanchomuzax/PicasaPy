@@ -50,6 +50,18 @@ import tempfile
 import time
 from pathlib import Path
 
+# ⚠️ A windowsos konzol alapértelmezett kódlapja (cp1252) NEM ismeri a
+# magyar `ő` és `ű` betűket — egy `print()` rajtuk `UnicodeEncodeError`-rel
+# elhasal, és a JOB azonnal elbukik, még mielőtt egyetlen teszt elindulna.
+# (#1127: pontosan ez buktatta el mind a négy windows-darabot.)
+#
+# A megoldás nem a betűk kerülése — az minden jövőbeli magyar sorra
+# ráterhelné a szerzőt —, hanem az UTF-8 kimenet. Az `errors="replace"`
+# a végső védőháló: kiírni akkor is tudjunk, ha a cél mégsem bírja.
+for _folyam in (sys.stdout, sys.stderr):
+    if hasattr(_folyam, "reconfigure"):
+        _folyam.reconfigure(encoding="utf-8", errors="replace")
+
 _ROOT = Path(__file__).resolve().parents[1]
 _NON_APP_TIMEOUT_S = 300
 _APP_FILE_TIMEOUT_S = 180
