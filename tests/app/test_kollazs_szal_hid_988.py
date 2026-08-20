@@ -136,3 +136,39 @@ class TestAWorkerNemNyulSemmihez:
         assert not nyilvanos, (
             "a háttérszál NYILVÁNOS jelzést emitál (#988): " + " | ".join(nyilvanos)
         )
+
+
+class TestAWaitNemSzivarog:
+    """A `_wait` segédfüggvény ne hagyjon holt kapcsolatot a jelzésen (#988).
+
+    A #988 SIGSEGV-je a főszál **szemétgyűjtése** közben keletkezett. A
+    `test_collage_controller_943.py` `_wait`-je hívásonként egy lokális
+    függvényre mutató kapcsolatot hagyott hátra — 142 teszt alatt tucatnyit,
+    a hozzájuk tartozó `QEventLoop`-okkal együtt. Ezeket később a GC
+    takarította.
+
+    A bontás (`finally: signal.disconnect(_on)`) után a fájl a
+    **kontroll-ágon** (a `gc.disable` megkerülés NÉLKÜL) mindkét
+    CI-lábon zölden futott le, azon a fájlon, ami előtte három egymást
+    követő futáson ugyanitt bukott.
+
+    ⚠️ Ez az őr **nem** a SIGSEGV hiányát állítja — azt egy futás sem
+    bizonyítja. Azt állítja, ami determinisztikus: a segéd nem szivárog.
+    """
+
+    def test_a_wait_utan_nem_marad_kapcsolat(self, qt_app, host):
+        import warnings
+
+        from tests.app.test_collage_controller_943 import _wait
+
+        _wait(
+            host.collageProgress,
+            lambda: host.collageProgress.emit(1, "x"),
+            timeout_ms=200,
+        )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            maradt = host.collageProgress.disconnect()
+
+        assert not maradt, "a `_wait` holt kapcsolatot hagyott a jelzésen (#988)"
