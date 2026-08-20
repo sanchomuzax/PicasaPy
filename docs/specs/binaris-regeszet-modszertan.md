@@ -709,3 +709,49 @@ harmadik kör vette észre, mielőtt kárt okozott volna.
 **Gyakorlati fogás:** ha egy korábbi kör „kizárt" valamit, és te ugyanoda
 jutsz, **nézd meg a mérés paramétereit**, mielőtt elfogadod a kizárást.
 Ha a paraméterek nincsenek leírva, a kizárás nem kizárás, hanem sejtés.
+
+### 16.11 MINDIG tedd fel: „mit mond erről a bináris?" — az infrastruktúráról is
+
+A felhasználó explicit kérése (2026-08-20): **„Ezt a kérdést MINDIG fel
+kellene tegyed!"**
+
+**Az eset.** Kiderült, hogy a PicasaPy adat-, cache- és konfig-könyvtára
+kizárólag XDG-t ismer, tehát Windowson a `~\.local\share\picasapy` alá
+kerül minden (#1076). Jegyet nyitottam rá, és a javítást az **általános
+Windows-szokásból** vezettem le. **Eszembe sem jutott megnézni, mit csinált
+az eredeti** — pedig a Picasa elsősorban windowsos program volt, tehát
+ő az igazságforrás. A felhasználónak kellett rákérdeznie.
+
+**Az index öt perc alatt pontosabb választ adott, mint a találgatásom:**
+
+| lelet | cím |
+|---|---|
+| `SHGetSpecialFolderPathA/W` (SHELL32) — nem környezeti változó | import |
+| `Local AppData` (a CSIDL neve) | `0x00cd8f20` |
+| `Google\Picasa2` | `0x00c7eaec` |
+| `#db3\` (az adatbázis alkönyvtára) | `0x00c7eeb8` |
+| migrációs útvonalak Vista+ és XP alakban, ugyanoda | `0x00c7f3d0`, `0x00c7f368` |
+| `AppLocalDataPath` a registryben — **útvonal-felülbírálás** | `0x00c7ef0c` |
+
+Az utolsó sor a leglényegesebb: kiderült, hogy az útvonal-felülbírálásra
+**már van paritásunk** (`data_location.py`, #368), tehát ahhoz **nem kell
+nyúlni**. Ezt a találgatás nem adta volna meg.
+
+**A hiba gyökere:** volt egy kimondatlan, felül nem vizsgált feltevésem
+arról, hogy MIRE jó a bináris — képalgoritmusra, formátumra, felületi
+geometriára igen; „infrastruktúrára" nem. **Ez a határ nem létezik.** A
+bináris egy teljes, működő program: útvonalak, tárolás, hibakezelés,
+szálkezelés, migráció, platform-viselkedés — mind benne van.
+
+**Alkalmazás:**
+
+- **Minden** „hogyan viselkedjen a PicasaPy?" kérdésnél az ELSŐ kérdés:
+  *mit csinál az eredeti?* Akkor is, ha a kérdés unalmasnak vagy
+  platform-technikainak látszik.
+- Ez **olcsó**: string- és import-keresés az indexben, dekompiláció nélkül.
+- Különösen ide tartozik: fájl- és mappaútvonalak, adatbázis-elhelyezés,
+  cache, beállítás-tárolás, naplózás, migráció régi verzióról,
+  párhuzamosság, időzítés, hibatűrés.
+- Ha a mérés azt adja, hogy **szándékosan eltérünk** (pl. a Picasa a
+  registrybe írta a beállításokat, mi `QSettings`-be), azt **írd bele a
+  jegybe kimondva** — különben egy későbbi kör „kijavítja".
