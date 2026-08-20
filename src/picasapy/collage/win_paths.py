@@ -164,32 +164,37 @@ def decode_cxf_path(src: str) -> str:
     return szoveg
 
 
+#: **Íráskor CSAK ezt a változót használjuk.** A mért 101 hivatkozásból
+#: 101 `$My Pictures\…` — más változó nulla. A többit felismerjük olvasáskor,
+#: de kiírni nem kezdjük el: a Windows ideiglenes mappája például az
+#: `Application Data` alatt van, tehát a „minden ismert mappát kódolunk"
+#: szabály a temp-útvonalakat is átírta — a windows-CI-láb fogta meg
+#: (`$Application Data\…` került a fájlba egy `C:\Users\…\Temp\…` helyett).
+_IRT_VALTOZO = "My Pictures"
+
+
 def encode_cxf_path(path: str) -> str:
     r"""Valódi útvonal → a `.cxf` kódolt alakja (#1096).
 
-    A képmappa (és a többi ismert rendszermappa) alatt lévő fájl
-    `$<Változó>\maradék` alakot kap — így a `.cxf` túléli a költöztetést és
-    megosztható. Ami egyik mappa alá sem esik, az **változatlanul** megy ki:
-    kitalált kódolás rosszabb volna, mint a nyers útvonal.
+    A **képmappa** alatt lévő fájl `$My Pictures\maradék` alakot kap — így a
+    `.cxf` túléli a költöztetést és megosztható. Minden más
+    **változatlanul** megy ki: a mérés szerint az eredeti is csak ezt az
+    egy változót írja (101/101), és egy tágabb szabály valódi kárt okoz
+    (ld. `_IRT_VALTOZO`).
     """
     szoveg = (path or "").strip()
     if not szoveg:
         return szoveg
-    jelolt = PureWindowsPath(szoveg)
-    for nev, location in VALTOZOK.items():
-        if location is None:
-            continue
-        gyoker = _mappa(location)
-        if not gyoker:
-            continue
-        try:
-            maradek = jelolt.relative_to(PureWindowsPath(gyoker))
-        except ValueError:
-            continue
-        if str(maradek) in (".", ""):
-            continue
-        return f"${nev}\\{maradek}"
-    return szoveg
+    gyoker = _mappa(VALTOZOK[_IRT_VALTOZO])
+    if not gyoker:
+        return szoveg
+    try:
+        maradek = PureWindowsPath(szoveg).relative_to(PureWindowsPath(gyoker))
+    except ValueError:
+        return szoveg
+    if str(maradek) in (".", ""):
+        return szoveg
+    return f"${_IRT_VALTOZO}\\{maradek}"
 
 
 __all__ = ["VALTOZOK", "decode_cxf_path", "encode_cxf_path"]

@@ -220,3 +220,75 @@ class TestAHatterIsFeloldodik:
         nodes = nodes_from_project(projekt)
 
         assert nodes[0].path == decode_cxf_path(projekt.background.src)
+
+
+class TestAzIrasCSAKAKepmappat:
+    """Íráskor csak a `My Pictures` — a windows-CI fogta meg, miért (#1096).
+
+    Az első változat MINDEN ismert rendszermappára kódolt. Windowson az
+    ideiglenes mappa az `Application Data` alatt van, tehát a szabály a
+    temp-útvonalakat is átírta: `$Application Data\\…` került a fájlba egy
+    `C:\\Users\\…\\Temp\\…` helyett, és a `.cxf` köre elromlott.
+
+    A mérés is ezt mondja: 101 hivatkozásból 101 a `My Pictures` — más
+    változót az eredeti sem ír.
+    """
+
+    def test_a_kepmappan_KIVULI_ut_valtozatlan(self, tmp_path, monkeypatch):
+        kepek = tmp_path / "Képek"
+        kepek.mkdir()
+        mashol = tmp_path / "AppData" / "Local" / "Temp" / "a.jpg"
+        monkeypatch.setattr(
+            QStandardPaths,
+            "writableLocation",
+            staticmethod(
+                lambda location: str(kepek)
+                if location == QStandardPaths.StandardLocation.PicturesLocation
+                else str(tmp_path / "AppData" / "Local")
+            ),
+        )
+
+        assert encode_cxf_path(str(mashol)) == str(mashol)
+
+    def test_a_kepmappa_alatti_ut_kodolodik(self, kepmappa):
+        alatta = str(kepmappa / "AI" / "a.jpg")
+
+        assert encode_cxf_path(alatta).startswith("$My Pictures\\")
+
+
+class TestAPiszkozatFelajanlas:
+    """A kódolt útvonalat a piszkozat-ellenőrzésnek is fel kell oldania.
+
+    A `has_recoverable_draft` legalább egy LÉTEZŐ képet vár. Ha a `.cxf`
+    kódolt útvonalat tárol, és nyersen vizsgáljuk, a fájl sosem létezik —
+    a felajánlás némán elmaradna. A windows-CI ezt is megfogta.
+    """
+
+    def test_a_kodolt_utvonalu_piszkozat_felajanlhato(self, kepmappa):
+        from picasapy.collage.autosave import has_recoverable_draft, write_autosave
+
+        kep = kepmappa / "AI" / "a.jpg"
+        kep.parent.mkdir(parents=True)
+        kep.write_bytes(b"not a real JPEG, but it EXISTS")
+        projekt = CxfProject(
+            aspect_ratio="15:10",
+            orientation="landscape",
+            theme="picturepile",
+            shadows=True,
+            captions=True,
+            album_uid="",
+            album_title="",
+            album_date="",
+            background=CxfBackground(type="solid", color="FF000000"),
+            spacing=0.25,
+            nodes=(
+                CxfNode(
+                    x=0.5, y=0.5, w=0.3, h=0.2, theta=0.0, scale=512.0,
+                    theme="polaroid", src=encode_cxf_path(str(kep)),
+                ),
+            ),
+        )
+        mappa = kepmappa.parent / "piszkozat"
+        write_autosave(mappa, projekt)
+
+        assert has_recoverable_draft(mappa) is True

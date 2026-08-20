@@ -36,6 +36,7 @@ import os
 from pathlib import Path
 
 from picasapy.collage.cxf import CxfProject, dumps, loads
+from picasapy.collage.win_paths import decode_cxf_path
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +133,9 @@ def _letezik(forras: str) -> bool:
     if not forras:
         return False
     try:
-        return Path(forras).is_file()
+        # #1096: a `.cxf` KÓDOLT útvonalat tárol (`$My Pictures\…`) — nyersen
+        # vizsgálva SOHA nem létezne, és a felajánlás némán elmaradna.
+        return Path(decode_cxf_path(forras)).is_file()
     except OSError:  # pragma: no cover - platformfüggő, ritka
         return False
 
