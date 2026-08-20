@@ -102,13 +102,14 @@ Ezek **nyitott kérdések**, nem elhallgatott részletek:
 2. **Animáció** — a `progressbase`/`progressfill` réteg bizonyítja, hogy
    **van folyamatjelző**; hogy emellett becsúszik-e vagy elhalványul-e,
    továbbra sem bizonyított.
-3. **Élettartam** — mennyi ideig marad kint, eltűnik-e magától,
-   újrahasznosul-e egymást követő eseményeknél.
+3. **Élettartam** — az ABLAK singleton (megválaszolva), de hogy egy CELLA
+   meddig marad kint, nyitott. Olcsó úton nem megválaszolható: a `notifier`
+   modulnak nincs `tre:` bejegyzése, tehát a viselkedés kódban van.
 4. ~~**Az észlelési ág**~~ — **MEGVAN a szövege és a mechanizmus is**,
    ld. lent a „4. ág — új képek észlelése" szakaszt.
-5. **Az események teljes listája** — a `CNotifierPopup` általános tartály;
-   hány esemény használja, nincs felmérve. A mostani kör kettőt igazolt
-   (képernyőfelvétel, importálás vége).
+5. ~~**Az események teljes listája**~~ — **MEGVÁLASZOLVA**: nincs ilyen
+   lista. Az ablaknak egyetlen saját rekordja van (`il_PopupNotifierRec`),
+   minden más szöveget a hívó ad át. Ld. „Az életciklus és az események".
 
 ## 4. ág — új képek észlelése (2026-08-20)
 
@@ -210,9 +211,62 @@ Az ikonkészlet külön modulban: `tab_notifier_icons/import32` (**32 × 32**) �
 **Bizonyítottsági fok: megerősített** — a méretek a bináris erőforráscsomagból
 származnak, nem becslésből.
 
+## Az életciklus és az események — a hívási lánc végigjárva (2026-08-20)
+
+Az `xrefs` tábla feloldja a hívási láncot, amit az első kör nem nézett meg:
+
+```
+0x004051b0  →  0x004039f0  →  0x0040bf70  →  0x00657300 (CNotifierPopup)
+```
+
+A `0x0040bf70` az **alkalmazás-indítás** függvénye: ugyanott tölti be a
+kurzorokat (`pan_hand_normal`, `crosshair`, `rotatecursor`…), a
+`Preferences`-t, a `Picasa 3` ablaknevet és az erőforrás-kezelő hibaüzenetét
+(`ytResMgr::LoadError`).
+
+➡️ **Az értesítőablak SINGLETON: egyszer jön létre, az indításkor, és végig
+él.** Nem eseményenként születik és hal meg — az egyes értesítések **cellák**
+benne (`cellbase`, `cell1`).
+
+*Bizonyítottsági fok: megerősített* (egyetlen hívó, és az az indítás).
+
+### Hány eseménye van?
+
+A szövegtár **pontosan egy** saját értesítő-rekordot ismer:
+
+| kulcs | HU |
+|---|---|
+| `il_PopupNotifierRec::1` | `%1$d %2$s érkezett` |
+| `il_PopupNotifierRec::2/3` | kép / kép |
+
+Minden más felirat, ami az ablakban megjelenik, **más családból kölcsönzött**
+(`CThumbUI::screensaved`, `CThumbUI::clickview`, `CThumbUI::DelayOpWaiting`,
+`CAcquireUI::donenotifer`, `CAcquireUI::errornotifer`).
+
+➡️ **Az ablaknak nincs saját esemény-katalógusa**: egy általános
+„N kép érkezett" rekordja van, a többi szöveget a hívó adja át. Ez lezárja az
+első kör 5. nyitott kérdését — nem azért, mert megtaláltuk a listát, hanem
+mert **bizonyítottan nincs ilyen lista**.
+
+*Bizonyítottsági fok: erős* (a szövegtár teljes, `PopupNotifier`-re három
+találat van, és mindhármat ugyanaz a rekord-építő használja).
+
+### Miért NEM olvasható ki az animáció és az élettartam
+
+A `respack.yt`-ben a `notifier` modulnak **csak `layer:` bejegyzései vannak**
+— **`tre:` bejegyzése nincs**. A `.tre` a viselkedést és a szülő-gyerek
+viszonyt írja le; ha nincs, akkor a viselkedés **kódban van**, nem
+erőforrásban.
+
+➡️ Ezért az **animáció** és a **cella élettartama** olcsó úton **elvileg sem**
+válaszolható meg. Ez nem kihagyott lépés, hanem a lánc vége: innen **célzott
+dekompiláció** következik (`0x00657300` és a cellakezelő).
+
 ## Módszertani megjegyzés
 
 A megfejtés **teljes egészében olcsó bizonyítékból** származik (szövegtár +
 sztring-xref a bináris indexben), dekompiláció nélkül. A 4. és 5. pont
-viszont valószínűleg **célzott dekompilációt** kíván a `0x00657300`
-környékén — annak a függvénynek a hívóit kell felderíteni.
+viszont **célzott dekompilációt** kíván. A hívólánc időközben feloldva
+(`0x004051b0 → 0x004039f0 → 0x0040bf70 → 0x00657300`), tehát a következő kör
+nem a hívókat keresi, hanem magát a `0x00657300`-at és a cellakezelőt
+elemzi — az adja meg az animációt és a cella élettartamát.
