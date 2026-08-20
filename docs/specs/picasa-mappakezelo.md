@@ -320,23 +320,29 @@ benyomottságát ÉS az engedélyezettségét** (`[vezérlő+0x20e]`, a `disable
 mező), majd a végén meghívja az arcfelismerés-sor frissítőjét
 (`0x007c6382 → 0x007c64a0`).
 
-A dialógus **hat útvonal-listát** tart a memóriában, és mindenhol a
-`0x00492e40(lista, útvonal)` „benne van-e, hányadik" kereséssel dönt:
+Minden lekérdezés a `0x00492e40(lista, útvonal)` „benne van-e, hányadik"
+kereséssel megy. A listák **KÉT külön objektumon** élnek:
 
-| mező | hol használja | mi ez |
+| mező | gazdája | mi ez |
 |---|---|---|
-| `[dlg+0x270]` | a „Keresés mindig" ág **iPhoto/Apple Photos** oldalága (`0x007c2f67`) | a fotókönyvtár-ág listája |
-| `[dlg+0x280]`, `[dlg+0x288]` | `0x007c5c40` (`0x007c5c8e`, `0x007c5ca3`) | a mappa-állapot **delta-párja** |
-| `[dlg+0x290]`, `[dlg+0x298]` | `0x007c5ef0` (`0x007c5f37`, `0x007c5f4a`) | az **arcfelismerés-kizárás** delta-párja |
-| `[dlg+0x2a8]` | a „Keresés mindig" ág fő útja (`0x007c2c11`) | a figyelt mappák listája |
+| `[lib+0x280]` / `[+0x284]` | **a könyvtár** | a `scanlist.txt` **`+` (befoglaló) gyökerei** — ld. 11. |
+| `[lib+0x288]` / `[+0x28c]` | **a könyvtár** | a `scanlist.txt` **`−` (kizáró) gyökerei** |
+| `[lib+0x2e0]` / `[+0x2e4]` / `[+0x2e8]` | **a könyvtár** | a `scanlist.txt` **előtag nélküli**, beolvasott mappái |
+| `[lib+0x364]` / `[+0x368]` | **a könyvtár** | a **`watchedfolders.txt`** tartalma |
+| `[lib+0x3b4]` / `[+0x3b8]` | **a könyvtár** | a **`frexcludefolders.txt`** tartalma |
+| `[dlg+0x270]` | a dialógus | az **iPhoto/Apple Photos** oldalág listája |
+| `[dlg+0x290]`, `[dlg+0x298]` | a dialógus | az **arcfelismerés-kizárás függő delta-párja** (`0x007c5ef0`) |
+| `[dlg+0x2a8]` | a dialógus | a „Keresés mindig" ág függő listája (`0x007c2c11`) |
 
-A **párokba rendezettség** (0x280/0x288 és 0x290/0x298) a delta-modell
-lenyomata: „hozzáadandó" és „elveendő" halmaz a mentett állapothoz képest —
-ld. 5.4 és 7.1.
+> ⚠️ **HELYESBÍTÉS a lap első kiadásához képest.** Az első változat mind a
+> hat listát a **dialógusnak** tulajdonította. Tévedés: a `0x007c5c40`
+> `this`-e (a `0x007c60d0` **második** argumentuma) a **könyvtár**, nem a
+> dialógus — ezt a `scanlist.txt` írója/olvasója dönti el, ami ugyanezt a
+> `+0x280`/`+0x288` párost használja (`0x004f649f`, `0x004f667a`).
 
-*Bizonyítottsági fok: **megerősített** a szerkezetre és a használati
-helyekre · **erős** a pár-értelmezésre (a két-listás lekérdezés és a „csak
-OK-ra alkalmaz" szemantika együtt).*
+*Bizonyítottsági fok: **megerősített** a könyvtár-oldali mezőkre (a
+fájlíró/olvasó szó szerint ezeket használja) · **erős** a dialógus-oldali
+pár-értelmezésre.*
 
 ### 5.3 Az arcfelismerés-sor — `0x007c64a0`
 
@@ -416,7 +422,14 @@ gyereke örökli, két másik gyerek saját bejegyzéssel felülírja).
 > követtük végig, hogy volt-e ezt megelőzően egy korábbi állapotot
 > visszaállító ág.)*
 
-### 6.2 iPhoto / Apple Photos — külön ág
+#**A megerősítő párbeszéd gombkészlete:** a közös burkoló
+`0x009bac20(típus, szöveg, igen-felirat, nem-felirat, szülő, …)` hívása itt
+`típus = 1`, mindkét felirat `NULL` — a burkoló ilyenkor az `il_Yes` /
+`il_No` erőforrásból tölti a feliratokat, azaz **Igen / Nem** gombpár
+(`0x009bac47`: `cmp eax, 1` → az „Igen/Nem" ág; `típus ≥ 2` esetén lenne
+`il_Cancel`). Ugyanez áll a `confirmfrexclude` párbeszédre.
+
+## 6.2 iPhoto / Apple Photos — külön ág
 
 A „Keresés mindig" ág a meghajtó-vizsgálat után **kétszer** végez
 sztringegyezést a mappanévre: `"iPhoto Library"` (`0x007c2a92`) és
@@ -568,16 +581,130 @@ gyökere** (`C:\`, `C:`), és nem jön elő semmilyen almappára.
 
 ---
 
-## 11. Ami NYITVA marad
+## 11. Mit CSINÁL a három állapot — a HÁROM lista-fájl
 
-1. **Az iPhoto/Apple Photos ág LÁTHATÓ különbsége.** A helye, a feltételei
-   (`Preferences\iPhotoSupportEnabled`, `…\ApplePhotosSupportEnabled`, az
-   `Originals`/`Masters` almappák) és a használt lista megvannak (6.2), de
-   azt nem követtük végig, mit lát ebből a felhasználó. **A PicasaPy-ban
-   nem megvalósítandó** (macOS-örökség), ezért nem bontottuk tovább.
-2. **A minimális méret negatív állítása** (2.3) egyetlen ablakeljárás
-   (`0x00920fa0`) átvizsgálásán alapul. Ha később kiderül, hogy a dialógus
-   más ablakosztályt használ, ezt újra kell nézni.
+A dialógus felülete önmagában semmit nem mond arról, mi történik a
+képekkel. A válasz három egyszerű szövegfájlban van, és **mind a három
+megvan valódi mintával** a repóban (`research/testdata/`).
 
-*(A kör két további nyitott pontot lezárt: „melyik lista melyik állapoté"
-→ 5.2/5.4, és „mi a teljes meghajtó feltétele" → 10.)*
+### 11.1 A fájlok
+
+| fájl | hely | mit tárol | író | olvasó |
+|---|---|---|---|---|
+| **`watchedfolders.txt`** | `Picasa2Albums/` | a **figyelt** mappák | `0x004f5960` | `0x004f5a30` |
+| **`frexcludefolders.txt`** | `Picasa2Albums/` | az **arcfelismerésből kizárt** mappák | `0x004f5d90` | `0x004f5e60` |
+| **`scanlist.txt`** | `Picasa2/db3/` | a beolvasási lista, **három szakaszban** | `0x004f61c0` | `0x004f6380` |
+
+Mindhárom írás `fopen(…, "w")` + soronkénti `fprintf` — **teljes
+újraírás**, nem hozzáfűzés. Az útvonalak **abszolútak, záró `\`-sel**.
+
+### 11.2 A `watchedfolders.txt` és a `frexcludefolders.txt`
+
+Formátum: soronként `"%s\n"` (a formátumsztring a `0x00c7ebe8`-on),
+előtag nélkül. Valódi minta a repóból:
+
+```
+# research/testdata/Picasa2Albums/watchedfolders.txt
+C:\Users\Sancho\Synology\My Pictures\
+L:\backup\Xiaomi14T\
+L:\backup\Xiaomi14T\DCIM\Camera\
+
+# research/testdata/Picasa2Albums/frexcludefolders.txt
+C:\Users\Sancho\Pictures\Picasa\
+C:\Users\Sancho\Pictures\
+C:\Users\Sancho\Synology\My Pictures\
+L:\backup\Xiaomi14T\
+```
+
+> **Ez igazolja a 8. szakasz 2. pontját is:** a fájl **abszolút**
+> útvonalakat tárol, a „Figyelt mappák" listában látszó rövidített alak
+> (`Képek\AI\`) tehát **kizárólag megjelenítési** rövidítés.
+
+### 11.3 A `scanlist.txt` — három szakasz, három formátum
+
+Az író (`0x004f61c0`) egymás után **három** ciklust ír ki, három **külön
+formátumsztringgel**:
+
+| sorrend | forrásmező | formátum | cím |
+|---|---|---|---|
+| 1. | `[lib+0x2e0]`, darab `[+0x2e4]>>1`, kezdet `[+0x2e8]` | `"%s\n"` (`0x00c7ebe8`) | `0x004f6264` |
+| 2. | `[lib+0x288]`, darab `[+0x28c]>>1` | **`"-%s\n"`** (`0x00c865ac`) | `0x004f62a4` |
+| 3. | `[lib+0x280]`, darab `[+0x284]>>1` | **`"+%s\n"`** (`0x00c865b4`) | `0x004f62e4` |
+
+A parszer (`0x004f6380`) ugyanezt olvassa vissza:
+`cmp byte ptr [eax], 0x2d` (`'-'`, `0x004f646d`) → a `[lib+0x288]` listába
+(`0x004f649f`); `cmp byte ptr [eax], 0x2b` (`'+'`, `0x004f6648`) → a
+`[lib+0x280]`-ba (`0x004f667a`).
+
+Valódi minta (`research/testdata/Picasa2/db3/scanlist.txt`, 372 sor):
+**368 előtag nélküli** mappa, **0 darab `-`**, és négy `+` sor a végén:
+
+```
+C:\Users\Sancho\Synology\My Pictures\2011\2011-06-03..10 Vitorlázás (O550)\
+…
++C:\
++L:\
++E:\
++D:\
+```
+
+A fájl írása **kritikus szakasszal védett** és **újrabelépő**
+(`0x004f61f3` `GetCurrentThreadId` + számláló) — több szál is hívhatja.
+
+### 11.4 Amit ez KIMOND és amit NEM
+
+**Kimondja:** a Mappakezelő állapotai nem a felületen élnek, hanem ebben a
+három fájlban; a beolvasási lista **gyökér-alapú befoglalást/kizárást**
+(`+`/`−`) és **konkrét, már ismert mappákat** (előtag nélkül) egyaránt
+tárol; a figyelés és az arcfelismerés-kizárás **külön-külön** fájl.
+
+**Nem mondja ki:** hogy a három rádiógomb közül **melyik pontosan melyik
+szakaszba ír**. A megfeleltetés kézenfekvő (Keresés mindig →
+`watchedfolders.txt`; Eltávolítás → `−` sor; Keresés egyszer → `+` sor
+vagy előtag nélküli bejegyzés), de **ez következtetés, nem mérés** — a
+kiíró és a rádió közti utat (`0x007c4df0` → `0x005cef20` / `0x007bfec0` /
+`0x005088f0`) nem követtük végig utasításszinten. Ld. 12.
+
+*Bizonyítottsági fok: **megerősített** a fájlnevekre, a helyükre, a három
+formátumra, a parszer előtag-vizsgálatára és a valódi mintaadatra ·
+**feltételes** a rádió → szakasz megfeleltetésre.*
+
+---
+
+## 12. Ami NYITVA marad
+
+*(Az iPhoto / Apple Photos ág **szándékosan kívül van a hatókörön** —
+tulajdonosi döntés, 2026-08-21. A 6.2 tájékoztatásul marad; nem kérdés.)*
+
+**A lap a FELÜLET viselkedését teljesen leírja. A KÖNYVTÁR-oldali hatás öt
+ponton nincs utasításszinten végigkövetve** — egyik sem blokkolja a felület
+megépítését, de mindegyikhez döntés kell:
+
+1. **A rádió → lista-szakasz megfeleltetés.** A három fájl, a három
+   formátum és a parszer megvan (12.), a rádiógombtól a kiíróig vezető út
+   (`0x007c4df0` → `0x005cef20` / `0x007bfec0` / `0x005088f0`) **nincs**.
+2. **Mi történik a MÁR BEOLVASOTT képekkel az „Eltávolítás a Picasából"
+   után?** A `]album:removed` token (`0x004b9200`) és a `Picasa2Albums`
+   adatbázis-út (`0x00419c30`) megvan; hogy a képek kikerülnek-e az
+   indexből vagy csak elrejtődnek, **nincs kimérve**.
+3. **Az OK utáni újraolvasás.** Az `IDS_SETTING_UP_WATCHED` („Figyelt
+   mappák beállítása") létezik a Win32 sztringtáblában, de **hívási helye
+   nincs meg** — az `IDS_*` sztringeket azonosítóval tölti be a program,
+   ezért `string_xrefs`-szel nem található. Nem tudjuk, mikor és milyen
+   folyamatjelzővel indul újra a beolvasás.
+4. **A fa feltöltési szabályai**: mikor sorolja fel egy csomópont a
+   gyerekeit (lusta betöltés?), látszanak-e a rejtett/rendszermappák, mi
+   történik leválasztott hálózati meghajtóval.
+5. **A „Figyelt mappák" lista interaktivitása**: kattintható-e egy sora,
+   ugrik-e tőle a fa, mi a rendezési szabálya.
+
+Ezen felül **erős, de nem megerősített** két állítás:
+
+- **A minimális méret hiánya** (2.3) — egyetlen ablakosztály
+  átvizsgálásán alapuló negatív állítás.
+- **A meghajtó-figyelmeztetésre adott „nem" hatása** (6.1) — az utasítások
+  egyértelműek, de az őket megelőző ágat nem követtük végig.
+
+*(A kör három korábbi nyitott pontot lezárt: „melyik lista melyik
+állapoté" → 5.2, „mi a teljes meghajtó feltétele" → 10., és „hol tárolódik
+az állapot" → 12.)*
