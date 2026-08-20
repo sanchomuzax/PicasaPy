@@ -168,6 +168,39 @@ ApplicationWindow {
         documentTabStrip.activateTab(window.collageTabId)
     }
 
+    /** A KÉSZ kollázs megkeresése a könyvtárban (#1028).
+
+        Az eredeti mentő négy záró lépése közül ez a negyedik: `locate` az
+        új fájlra. A lap bezárása (harmadik lépés) már megvan — az a
+        `CollagePanel.finishSave` dolga; ide a NAVIGÁCIÓ tartozik.
+
+        ⚠️ Nézőt szándékosan NEM nyit: az eredeti is csak kijelöl, a
+        nagyban megnyitás a felhasználó kattintása az értesítésen. */
+    function locateSavedCollage(path) {
+        if (!controller) return
+        var cel = String(path || "")
+        if (cel.length === 0) return
+        var sor = controller.photos.rowOfPath(cel)
+        if (sor < 0) {
+            // A Kollázsok mappa tipikusan NEM a jelenlegi nézet: előbb oda
+            // állunk, aztán kérdezünk újra. (Az indexbe a mentés veszi fel,
+            // #1048 — enélkül a mappa üres volna.)
+            var mappa = window.folderOfPath(cel)
+            if (mappa.length > 0) {
+                controller.selectFolder(mappa)
+                sor = controller.photos.rowOfPath(cel)
+            }
+        }
+        documentTabStrip.activateTab(documentTabStrip.libraryTabId)
+        if (sor >= 0) {
+            window.selectedIndex = sor
+            window.selectedIndexes = [sor]
+        }
+        // Az értesítés akkor is jár, ha a sor nem található: a fájl a
+        // lemezen VAN, és a kattintás útvonalról is megnyitja.
+        collageDoneNotice.showFor(cel)
+    }
+
     /** Egy fájl útvonalának a mappája. A QML-ben nincs `Path`, a
         csomópont-útvonal pedig a PLATFORM elválasztóját hozza (a kollázs
         `Path`-ból építi, tehát Windowson fordított perjellel). */
@@ -1306,6 +1339,9 @@ ApplicationWindow {
         controller: window.appController
         librarySelection: window.selectedIndexes
 
+        // #1028: a mentés VÉGE — a panel jelez, a navigáció a gazdáé
+        onCollageSaved: function(path) { window.locateSavedCollage(path) }
+
         // spec 4.3/13.: a panel csak JELEZ, a fülváltás a gazdáé
         onGetMoreClipsRequested: {
             window.backToCollagePrompted = true
@@ -1674,6 +1710,21 @@ ApplicationWindow {
     CollageDraftDialog {
         id: collageDraftDialog
         onRestored: documentTabStrip.activateTab(window.collageTabId)
+    }
+
+    // #1028: „A kollázs kész (kattintson ide)" — a lapzárás UTÁN is látszik,
+    // ezért a gazdában él, nem a panelben, ami közben bezárul.
+    CollageDoneNotice {
+        id: collageDoneNotice
+        z: 100
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 24
+        onClicked: {
+            var cel = collageDoneNotice.path
+            collageDoneNotice.dismiss()
+            window.openCollageNodeInEditor(cel)
+        }
     }
 
     // #444: Mentés / Visszaállítás / Utolsó mentés visszavonása
