@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.13] – 2026-08-20
+
+### Javítva
+- **Nem ajánlja fel a visszaállíthatatlan piszkozatot (#1064).** Ha a
+  piszkozat készítése óta áthelyezted vagy törölted a benne szereplő
+  képeket, a program eddig is felajánlotta a visszaállítást — te
+  rábólintottál, és csupa üres helykitöltőt kaptál.
+
+  Mostantól csak akkor kérdez, ha **legalább egy kép** megvan. A részleges
+  visszaállítás megmarad: a hiányzó képek helykitöltőként jelennek meg, a
+  többi munkád viszont visszajön.
+
+  A piszkozatot **nem törli** magától: ha a képek visszakerülnek a helyükre
+  (visszacsatolt meghajtó, visszaállított mappa), a felajánlás újra
+  előjön.
+
 ## [0.8.12] – 2026-08-20
 
 ### Javítva

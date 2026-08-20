@@ -104,8 +104,37 @@ def has_recoverable_draft(directory: Path | str) -> bool:
     Szándékosan a tényleges beolvasással válaszol, nem a fájl létezésével: a
     felhasználónak felajánlani egy sérült piszkozatot rosszabb, mint nem
     felajánlani semmit.
+
+    ⚠️ #1064: a beolvashatóság nem elég — **legalább egy képnek lennie is
+    kell**. Az eredeti erre külön üzenetet tart fenn
+    (`CollageUI::AllImagesMissing`, spec 9.3): „A kollázs nem szerkeszthető,
+    mert a benne hivatkozott képek egyike sem található." Ha nem
+    szerkeszthető, felajánlani sincs értelme — a felhasználó rábólintana, és
+    csupa helykitöltő csempéből álló lapot kapna.
+
+    A határ **legalább egy**, nem „mind": a részleges visszaállítás értékes,
+    a hiányzók helykitöltőként jelennek meg (spec 9.4), a többi munka pedig
+    megmarad.
+
+    A piszkozatot ez a függvény SOHA nem törli. Ha a képek visszakerülnek a
+    helyükre (visszacsatolt meghajtó, visszaállított mappa), a piszkozat
+    magától újra érvényessé válik.
     """
-    return read_autosave(directory) is not None
+    projekt = read_autosave(directory)
+    if projekt is None:
+        return False
+    return any(_letezik(node.src) for node in projekt.nodes)
+
+
+def _letezik(forras: str) -> bool:
+    """Létezik-e a csomópont képe. Hibára `False` — egy elérhetetlen hálózati
+    útvonal nem dobhat kivételt egy indulási ellenőrzésben."""
+    if not forras:
+        return False
+    try:
+        return Path(forras).is_file()
+    except OSError:  # pragma: no cover - platformfüggő, ritka
+        return False
 
 
 def discard_autosave(directory: Path | str) -> bool:

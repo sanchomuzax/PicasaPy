@@ -22,6 +22,8 @@ fájl", hanem három sarokeset:
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from picasapy.collage.autosave import (
@@ -157,9 +159,27 @@ class TestAHelyreallitasSosemDobKivetelt:
         assert has_recoverable_draft(hianyzo) is False
 
     def test_ep_piszkozatra_igent_mond(self, tmp_path):
-        write_autosave(tmp_path, _project())
+        """⚠️ #1064: az „ép" azóta TÖBBET jelent — legalább egy képnek
+        léteznie is kell, különben a visszaállítás csupa helykitöltőt adna
+        (`CollageUI::AllImagesMissing`, spec 9.3). A `_project()` mintája
+        Picasa-relatív útvonalakat tárol (`$My Pictures\…`), amik itt nem
+        léteznek; ezért kap a piszkozat egy VALÓDI képet."""
+        valodi = tmp_path / "elso.jpg"
+        valodi.write_bytes(b"nem valodi JPEG, de LETEZIK")
+        projekt = _project()
+        projekt = replace(
+            projekt,
+            nodes=(replace(projekt.nodes[0], src=str(valodi)),) + projekt.nodes[1:],
+        )
+        write_autosave(tmp_path, projekt)
 
         assert has_recoverable_draft(tmp_path) is True
+
+    def test_kepek_nelkuli_piszkozatra_NEMET_mond(self, tmp_path):
+        """A #1064 másik fele: a beolvashatóság önmagában nem elég."""
+        write_autosave(tmp_path, _project())
+
+        assert has_recoverable_draft(tmp_path) is False
 
 
 class TestAPiszkozatEldobasa:
