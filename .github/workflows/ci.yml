@@ -88,6 +88,17 @@ jobs:
         # a tests/app fájlokat külön processzben, kemény timeouttal futtatja.
         # #300: a lefedettség-összesítő elég az ubuntu-lábon (--cov); a
         # Windows-lábat ez a plusz coverage-réteg ne terhelje/lassítsa.
+        env:
+          # A CI-futtató DEDIKÁLT gép: nincs rajta böngésző, szerkesztő, se
+          # másik munkamenet — ezért itt a párhuzamos futtatás biztonságos,
+          # ellentétben a fejlesztői géppel, ahol a #1031 vissza is vette
+          # sorosra (négy magon több munkamenet CPU-éhezést okozott, és a
+          # fali-óra alapú tesztek valódi hiba nélkül buktak).
+          #
+          # Szándékosan 2, nem 4: a futtatók magszáma nem garantált, és a
+          # túllőtt párhuzamosság ugyanazt a hamis bukást hozná vissza a
+          # CI-re, amit a fejlesztői gépen már megtapasztaltunk.
+          PICASAPY_TESZT_PARHUZAM: "2"
         run: python scripts/run_tests.py ${{ runner.os == 'Linux' && '--cov' || '' }}
 
   package:
