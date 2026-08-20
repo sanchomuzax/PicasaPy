@@ -56,6 +56,27 @@ is az, ha nem ugyanazt a fájlt érintik.
 | ki/bemenet | `export/`, `webexport/`, `thumbs/`, `collage/`, `movie/`, `dedup/`, `fileops/`, `importsource/`, `pmpimport/`, `printing/`, `mailer/` | csővégek, egymást alig érintik |
 | UI (**forró zóna**) | `app/` (68 py + 102 QML) | mindenre támaszkodik; itt ütköznek a jegyek |
 
+**Sáv-invariánsok** — ezek a szabályok a sávon belül IGAZAK, és a mérés
+szerint épp az ilyen kimondott határok teszik gyorssá a tájékozódást (nem a
+leírás hossza). Mindegyik greppel ellenőrizhető; ha egy jegy megsérti
+valamelyiket, az nem apró stílusdöntés, hanem sávhatár-átlépés:
+
+1. **adatréteg** — a `.picasa.ini`-t **kizárólag az `ini/` csomag API-ján át**
+   szabad írni (`update_document`, `save_document`); közvetlen fájlírás sehol
+   máshol nincs. *(Ellenőrizve: az `ini/`-n kívül nincs író hívás a fájlra;
+   a `fileops/`, `edit/`, `index/` mind az `ini` importon át megy.)*
+2. **adatréteg** — az SQLite **sémáját** (`CREATE TABLE`, `ALTER TABLE`,
+   `CREATE INDEX`) csak az `index/` hozza létre és módosítja; az `app/`
+   kizárólag lekérdez. *(Ellenőrizve: séma-utasítás csak `index/` alatt van.)*
+3. **render/effekt** — az effektek **nem nyúlnak a lemezhez**: képet kapnak és
+   képet adnak. *(Ellenőrizve: a `render/*.py`-ban nincs fájlmegnyitás,
+   `imread`/`imwrite`.)*
+
+A **UI-sávra szándékosan nincs invariáns**: a kézenfekvő jelölt („az `app/`
+nem ír közvetlenül lemezre") ELLENŐRZÉSKOR MEGDŐLT — a `collage_output.py`
+maga írja a `.cxf`-et és a kimeneti képet. Kimondatlanul hagyni jobb, mint
+hamis szerződést adni.
+
 **Keresztmetsző szerződések** — ha egy jegy ezek egyikét változtatja, az több
 sávot érint, tehát NEM párhuzamosítható szabadon:
 
