@@ -70,7 +70,10 @@ def _to_uint8(values: np.ndarray) -> np.ndarray:
 
 def _desaturate_native(image: np.ndarray, preserve: float) -> np.ndarray:
     """Egész lumás telítetlenítés a natív `0x009a9550` szerint (#872)."""
-    preserve_int = int(np.trunc(preserve))
+    # A callback a paramétert 32 bites dwordként (`float`) tölti be, és csak
+    # ezután vált FPU-csonkítással egésszé. Az egészhatárok körül a sorrend
+    # látható: pl. 79,999999 float32-ként már pontosan 80,0.
+    preserve_int = int(np.trunc(np.float32(preserve)))
     if preserve_int == 256:
         return image.copy()
 

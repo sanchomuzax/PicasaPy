@@ -72,6 +72,13 @@ _RANGE_VALIDATED_PARAM_POSITIONS: dict[str, tuple[tuple[int, int], ...]] = {
     "triple3": ((0, 1), (1, 2), (2, 3)),
 }
 
+#: A publikus csúszkatartományon kívüli, de a natív callback által külön
+#: kezelt belső őrértékek. A `tint` pontos 256-a kihagyja a telítetlenítést
+#: (#872); ettől a felületi/regiszterbeli tartomány továbbra is [-1, 255].
+_INTERNAL_PARAM_SENTINELS: dict[tuple[str, int], frozenset[float]] = {
+    ("tint", 0): frozenset({256.0}),
+}
+
 
 def validate_and_clamp_op(op: FilterOp) -> tuple[FilterOp, tuple[str, ...]]:
     """Tartományra vágja `op` ismert paramétereit (#382, 2. pont).
@@ -83,7 +90,9 @@ def validate_and_clamp_op(op: FilterOp) -> tuple[FilterOp, tuple[str, ...]]:
     figyelmeztetés kerül a visszaadott listába (a `skipped` mintájára). A
     `log_base`-szal jelzett csúszkáknál (`clamp_slider_value`) a validáció
     KIMARAD — ott a tárolt érték szándékosan túllépheti a névleges
-    tartományt (softclamp-kivétel, ld. `registry.clamp_slider_value`).
+    tartományt (softclamp-kivétel, ld. `registry.clamp_slider_value`). A
+    dokumentált natív belső őrértékek szintén változatlanul jutnak el a
+    handlerig, anélkül hogy a publikus csúszkatartományt kitágítanánk.
     """
     key = op.name.casefold()
     positions = _RANGE_VALIDATED_PARAM_POSITIONS.get(key)
@@ -100,6 +109,10 @@ def validate_and_clamp_op(op: FilterOp) -> tuple[FilterOp, tuple[str, ...]]:
             raw_value = float(params[position])
         except ValueError:
             continue  # hibás/nem-szám paraméter — a handler majd elszáll rajta
+        if raw_value in _INTERNAL_PARAM_SENTINELS.get(
+            (key, slider_index), frozenset()
+        ):
+            continue
         clamped, out_of_range = clamp_slider_value(spec, slider, raw_value)
         if out_of_range:
             warnings.append(

@@ -83,6 +83,50 @@ class TestApplyTint:
 
         np.testing.assert_array_equal(low_fraction, high_fraction)
 
+    def test_preserve_elobb_float32_dword_majd_csonkolodik(self) -> None:
+        image = _full_range_image((0, 5, 65))
+
+        near_boundary = apply_tint(
+            image, preserve=79.999999, color=(128, 128, 128)
+        )
+        at_80 = apply_tint(image, preserve=80.0, color=(128, 128, 128))
+        at_79 = apply_tint(image, preserve=79.0, color=(128, 128, 128))
+
+        # A natív paraméter dword: 79,999999 float32-ként már 80,0.
+        np.testing.assert_array_equal(near_boundary, at_80)
+        assert not np.array_equal(near_boundary, at_79)
+
+    def test_negativ_egeszhatarnal_is_float32_utan_csonkol(self) -> None:
+        image = _full_range_image((0, 1, 13))
+
+        near_boundary = apply_tint(
+            image, preserve=-0.99999999, color=(128, 128, 128)
+        )
+        at_minus_one = apply_tint(
+            image, preserve=-1.0, color=(128, 128, 128)
+        )
+        at_zero = apply_tint(image, preserve=0.0, color=(128, 128, 128))
+
+        # A natív dword -0,99999999-et -1,0-ra kerekíti a csonkítás előtt.
+        np.testing.assert_array_equal(near_boundary, at_minus_one)
+        assert not np.array_equal(near_boundary, at_zero)
+
+    def test_preserve_minusz_egy_a_257_es_sulyt_hasznalja(self) -> None:
+        image = _full_range_image((0, 1, 13))
+
+        result = apply_tint(image, preserve=-1.0, color=(128, 128, 128))
+
+        # Y=2; w=257 → [2,2,1]. A negatív különbség aritmetikai jobbra
+        # tolása miatt az eredmény egy szinttel eltérhet a tiszta szürkétől.
+        np.testing.assert_array_equal(result[5, 5], np.array([2, 2, 1]))
+
+    def test_fekete_tint_biztonsagosan_fekete_kimenetet_ad(self) -> None:
+        image = _full_range_image((17, 113, 241))
+
+        result = apply_tint(image, preserve=127.0, color=(0, 0, 0))
+
+        np.testing.assert_array_equal(result, np.zeros_like(image))
+
     def test_preserve_256_es_szurke_szin_mellett_a_kroma_erintetlen(self) -> None:
         image = _full_range_image((17, 113, 241))
 

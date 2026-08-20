@@ -14,6 +14,8 @@ import pytest
 
 from picasapy.ini.filters import parse_filters
 from picasapy.render.chain import apply_filters
+from picasapy.render.registry import get_filter_spec
+from picasapy.render.tinting import apply_tint
 
 
 @pytest.fixture
@@ -283,6 +285,25 @@ class TestTintRange:
         report = apply_filters(sample, parse_filters("tint=1,300.000000;"))
         assert len(report.range_warnings) == 1
         assert "tint" in report.range_warnings[0].casefold()
+
+    def test_a_256_os_belso_orertek_nem_vagodik_255_re(self, sample):
+        """#872: a publikus csúszka felső határa 255, de a natív callback
+        a pontos 256-ot belső „telítetlenítés kihagyása" őrértékként kezeli.
+        """
+        spec = get_filter_spec("tint")
+        assert spec is not None
+        assert spec.sliders[0].minimum == -1.0
+        assert spec.sliders[0].maximum == 255.0
+
+        report = apply_filters(
+            sample, parse_filters("tint=1,256.000000,ff808080;")
+        )
+        expected = apply_tint(sample, preserve=256.0, color=(128, 128, 128))
+        clamped = apply_tint(sample, preserve=255.0, color=(128, 128, 128))
+
+        assert report.range_warnings == ()
+        np.testing.assert_array_equal(report.image, expected)
+        assert not np.array_equal(report.image, clamped)
 
 
 class TestFillRange:
