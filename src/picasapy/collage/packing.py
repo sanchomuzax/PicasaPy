@@ -353,6 +353,14 @@ def _best_tree(
     return (best_rects, best_cost)
 
 
+#: Az időmérés EGYETLEN kapuja (#1018). A keresés időkorlátos, tehát a
+#: talált elrendezés attól függ, hány jelöltet fér bele a keret — terhelt
+#: gépen kevesebbet. A bájtazonossági őr ezt a nevet cseréli le
+#: determinisztikus számlálóra, hogy a mérése ne a gép pillanatnyi
+#: terheltségét mérje.
+_perf_counter = time.perf_counter
+
+
 def pack(
     aspects: Sequence[float],
     page_aspect: float,
@@ -360,7 +368,7 @@ def pack(
     *,
     constraint: NormRect | None = None,
     time_limit: float = PACK_TIME_LIMIT,
-    clock: Callable[[], float] = time.perf_counter,
+    clock: Callable[[], float] | None = None,
 ) -> tuple[NormRect, ...]:
     """A Mozaik pakolása: időkorlátos keresés véletlen sorrendekkel.
 
@@ -382,8 +390,15 @@ def pack(
     best_rects, best_cost = _best_tree(page_aspect, aspects, constraint)
     best_order = identity
 
-    start = clock()
-    while clock() - start < time_limit:
+    # ⚠️ #1018: az órát HÍVÁSKOR oldjuk fel, nem a `def` kiértékelésekor.
+    # Alapértelmezett paraméterként a `time.perf_counter` a függvény-objektumba
+    # ÉG BELE, és a `packing._perf_counter` cseréje nem hatna rá — a
+    # bájtazonossági őr pedig pontosan ezen az úton tudja determinisztikussá
+    # tenni a keresést.
+    tick = clock if clock is not None else _perf_counter
+
+    start = tick()
+    while tick() - start < time_limit:
         candidate = fisher_yates(identity, rng)
         rects, cost = _evaluate(candidate, aspects, page_aspect, constraint)
         if cost < best_cost:

@@ -300,6 +300,42 @@ def _regi_make_picasa_collage(sources, settings):
     return canvas
 
 
+@pytest.fixture(autouse=True)
+def determinisztikus_pakolas(monkeypatch):
+    """⚠️ #1018: a Mozaik pakolója IDŐKORLÁTOS keresés — az órát rögzítjük.
+
+    A `packing.pack` addig sorsol új sorrendeket, amíg a `PACK_TIME_LIMIT`
+    le nem jár. **Hány** jelöltet néz meg, az a gép pillanatnyi
+    terheltségétől függ; a talált elrendezés ezért terhelés alatt MÁS lehet.
+
+    Ez a bájtazonossági őrt megbízhatatlanná tette: a produkciós és a
+    referencia-ág külön-külön futtatja a keresést, két különböző
+    pillanatban, tehát terhelés alatt más-más elrendezést talál — és az őr
+    „megváltozott a rajz" néven jelentett egy olyan eltérést, ami valójában
+    csak a gép terheltsége volt. A #1018 pontosan ezt írta le
+    („újrafuttatásra zöld"), és a 2026-08-20-i CI-n a `framegrid`
+    mindkét kerettel elbukott, párhuzamos futások mellett.
+
+    A csere egy LÉPKEDŐ számláló: minden órakérdés fix lépéssel halad, tehát
+    a ciklus mindig UGYANANNYI jelöltet néz meg — a mérés így a rajzot méri,
+    nem a gépet. A produkciós viselkedés változatlan: a valódi órát csak a
+    teszt cseréli le."""
+    from picasapy.collage import packing
+
+    allapot = {"t": 0.0}
+
+    def _lepkedo() -> float:
+        allapot["t"] += packing.PACK_TIME_LIMIT / _PAKOLASI_LEPESEK
+        return allapot["t"]
+
+    monkeypatch.setattr(packing, "_perf_counter", _lepkedo)
+
+
+#: Hány jelöltet nézzen meg a pakoló a mérés alatt. Elég nagy ahhoz, hogy a
+#: keresés érdemi legyen, és elég kicsi, hogy a 36 eset gyorsan lefusson.
+_PAKOLASI_LEPESEK = 400
+
+
 #: A mérés rácsa: mind a hat téma × mindhárom keret × két térköz-állás.
 BAJTAZONOSSAG_ESETEI = [
     (tema, keret, terkoz)

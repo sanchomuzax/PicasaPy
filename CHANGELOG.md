@@ -20,6 +20,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   Nézőt magától nem nyit — az eredeti is csak kijelöl, a nagyban
   megnyitás a te kattintásod.
 
+### Fejlesztői
+- **Megvan az „ingadozó" kollázs-teszt gyökéroka (#1018).** A Mozaik
+  elrendezés-keresője **időkorlátos**: hány lehetőséget néz meg, az a gép
+  pillanatnyi terheltségétől függ. A bájtazonossági őr két külön
+  pillanatban futtatta a két ágat, tehát terhelés alatt két KÜLÖNBÖZŐ
+  elrendezést hasonlított össze — és „megváltozott a rajz" néven jelentett
+  valamit, ami csak a processzorterhelés volt.
+
+  A teszt mostantól lépkedő számlálót ad a keresésnek óra helyett, tehát
+  mindig ugyanannyi jelöltet néz meg. Bizonyítva: mesterséges
+  hárommagos terhelés alatt **8/8 zöld** (előtte 2/6 bukás). A program
+  viselkedése változatlan. Mellékesen a tesztfájl 17 másodpercről 5-re
+  gyorsult.
+
 ## [0.8.10] – 2026-08-20
 
 ### Javítva
