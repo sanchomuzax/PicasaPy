@@ -88,17 +88,18 @@ jobs:
         # a tests/app fájlokat külön processzben, kemény timeouttal futtatja.
         # #300: a lefedettség-összesítő elég az ubuntu-lábon (--cov); a
         # Windows-lábat ez a plusz coverage-réteg ne terhelje/lassítsa.
-        env:
-          # A CI-futtató DEDIKÁLT gép: nincs rajta böngésző, szerkesztő, se
-          # másik munkamenet — ezért itt a párhuzamos futtatás biztonságos,
-          # ellentétben a fejlesztői géppel, ahol a #1031 vissza is vette
-          # sorosra (négy magon több munkamenet CPU-éhezést okozott, és a
-          # fali-óra alapú tesztek valódi hiba nélkül buktak).
-          #
-          # Szándékosan 2, nem 4: a futtatók magszáma nem garantált, és a
-          # túllőtt párhuzamosság ugyanazt a hamis bukást hozná vissza a
-          # CI-re, amit a fejlesztői gépen már megtapasztaltunk.
-          PICASAPY_TESZT_PARHUZAM: "2"
+        # ⚠️ #1044 VISSZAVONVA (#988). A `PICASAPY_TESZT_PARHUZAM: "2"`
+        # bekapcsolása után az ELSŐ futáson azonnal jött a
+        # `test_collage_controller_943.py: exit -11` (SIGSEGV) — pont az a
+        # hiba, amit a #988 „ingadozónak" ír le, és amit a #999 a
+        # háttérszálak terhelés alatti lebontásához köt.
+        #
+        # A #1030 mérése (26 → 14 perc) áll, és a #1031 is a fejlesztői gép
+        # miatt vette vissza sorosra — de a szegmentálási hiba a MAIN-t
+        # festi pirosra, ami e-mailt küld a tulajdonosnak. Egy gyorsabb, de
+        # ingadozó CI rosszabb a lassú, de megbízhatónál.
+        #
+        # Visszakapcsolni csak a #988/#999 gyökérokának javítása UTÁN szabad.
         run: python scripts/run_tests.py ${{ runner.os == 'Linux' && '--cov' || '' }}
 
   package:
