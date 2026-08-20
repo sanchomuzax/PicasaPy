@@ -26,5 +26,22 @@ jobs:
     name: Test (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
-      - name: Dokumentációs változás — nincs mit tesztelni
+      # 2026-08-20: ez a láb korábban csak egy üzenetet írt ki. Csakhogy a
+      # szabálykönyvek (CLAUDE.md / AGENTS.md) MAGUK is `.md` fájlok — vagyis
+      # az őrük épp azokon a PR-eken nem futott le, amelyek elronthatják.
+      # Ugyanaz a hibaosztály, mint egy néma hook: az őr ott hiányzik, ahol
+      # kellene. A készlet többi része továbbra sem fut itt (nincs is rá ok).
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: pytest telepítése
+        run: python -m pip install --quiet pytest
+
+      - name: A szabálykönyvek szinkronja
+        run: python -m pytest tests/test_szabalykonyv_szinkron.py -q -p no:cacheprovider
+
+      - name: A készlet többi része kódváltozásnál fut
         run: echo "Csak dokumentáció változott; a teljes tesztkészletet a ci.yml futtatja kódváltozásnál."
