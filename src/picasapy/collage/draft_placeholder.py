@@ -81,20 +81,29 @@ def placeholder_size(page_ratio: float) -> tuple[int, int]:
     return (szeles, magas)
 
 
-#: **A felirat TERMÉSZETES nagybetű-magassága** a helykitöltőn (#1102).
-#: A tulajdonos álló piszkozatán mérve **72 képpont** egy 640 hosszú élű
-#: képen — a helykitöltőnk hosszabb éle mindig `PLACEHOLDER_LONG_EDGE`,
-#: tehát ez nálunk állandó.
+#: **A felirat TERMÉSZETES SZÉLESSÉGE** a hosszabb él arányában (#1102).
+#: A tulajdonos álló piszkozatán (453 × 640) a felirat a teljes szélességet
+#: kitölti ÉS levágódik; a látható betűkből becsült természetes szélesség
+#: **~544 kp**, azaz a 640-es hosszabb él **85%-a**.
 #:
-#: ⚠️ Egyetlen mintából: hogy az eredetiben FIX képpont, a hosszabb élhez
-#: arányos, vagy fix pontméret, **nincs eldöntve**. A mi helykitöltőnkön a
-#: három egybeesik, mert a hosszabb él rögzített.
+#: ⚠️ **Miért a SZÉLESSÉG a horgony, és nem a betűmagasság.** A natív
+#: szabály minden összehasonlítása a szöveg SZÉLESSÉGÉRŐL szól (`korlát ↔
+#: szöveg_szélesség`), a levágódás is abból következik. Ha a
+#: betűmagasságot horgonyoznánk le, az eredmény a HASZNÁLT BETŰTÍPUS
+#: szélesség/magasság arányán múlna — a mi `FONT_HERSHEY_DUPLEX`-ünk pedig
+#: keskenyebb a Picasáénál. Az első változatom ezt csinálta, és a CI
+#: mindkét lábán elbukott: ugyanaz a 72 kp magas felirat nálunk KIFÉRT a
+#: 453 széles képbe, tehát nem vágódott le.
 #:
 #: ⚠️ **A magassághoz arányos alak KIZÁRHATÓ**: akkor a szöveg szélessége
 #: is a magassággal skálázódna, tehát az arányuk állandó volna — a felirat
 #: vagy MINDIG kiférne, vagy MINDIG zsugorodna. A két mért minta ennek
 #: ellentmond (állón levágódik, fekvőn zsugorodik).
-_FELIRAT_NAGYBETU_ARANY = 72.0 / PLACEHOLDER_LONG_EDGE
+#:
+#: ⚠️ A 0,85 BECSÜLT (a látható betűkből). A zsugorítási szabály ettől
+#: független és megerősített; ez a szám csak azt állítja be, MEKKORA a
+#: „természetes" méret.
+_FELIRAT_SZELESSEG_ARANY = 544.0 / PLACEHOLDER_LONG_EDGE
 
 #: A zsugorítás ráhagyása a natív képletben (`0xcf3fa0` = 20.0).
 _ZSUGORITAS_RAHAGYAS = 20.0
@@ -131,10 +140,11 @@ def draw_draft_label(image: np.ndarray, text: str) -> np.ndarray:
     betu = cv2.FONT_HERSHEY_DUPLEX
     vastag = max(1, round(max(szeles, magas) / 220))
 
-    # 1. a TERMÉSZETES méret: a nagybetű-magasságból visszaszámolva
-    (_sz1, ma1), _a1 = cv2.getTextSize(text, betu, 1.0, vastag)
-    cel_nagybetu = max(szeles, magas) * _FELIRAT_NAGYBETU_ARANY
-    meret = cel_nagybetu / ma1 if ma1 > 0 else 1.0
+    # 1. a TERMÉSZETES méret: a szöveg SZÉLESSÉGÉBŐL visszaszámolva
+    #    (betűtípus-független — ld. a `_FELIRAT_SZELESSEG_ARANY` indoklását)
+    (sz1, _ma1), _a1 = cv2.getTextSize(text, betu, 1.0, vastag)
+    cel_szelesseg = max(szeles, magas) * _FELIRAT_SZELESSEG_ARANY
+    meret = cel_szelesseg / sz1 if sz1 > 0 else 1.0
     (sz, ma), _alap = cv2.getTextSize(text, betu, meret, vastag)
 
     # 2. zsugorítás CSAK akkor, ha a MAGASSÁG kisebb a szöveg szélességénél
