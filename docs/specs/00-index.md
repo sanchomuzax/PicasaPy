@@ -155,7 +155,7 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 4. **A buboréksúgó rajza** — saját osztály (`ytToolTip`), de nincs hozzá
    képréteg; a háttér/keret/árnyék kódból jön (#901)
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 7 kérdés
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 6 kérdés
 
 *(A lap 2026-08-20-án készült, a tulajdonos két képernyőképéből és a
 binárisból. A kör négy kérdést tett fel és kettőt le is zárt — a
