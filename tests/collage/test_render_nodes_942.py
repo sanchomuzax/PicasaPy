@@ -94,6 +94,7 @@ from picasapy.collage.picasa_render import (
     PicasaCollageSettings,
     _draw_contact_header,
     _lapra_szorit,
+    _polaroid_negyzet,
     layout_nodes,
     layout_nodes_for_aspects,
     make_picasa_collage,
@@ -176,10 +177,22 @@ def _regi_render_pile(canvas, images, settings):
     for image, place in zip(images, places, strict=False):
         oldal = max(1, place.size)
         magassag, szelesseg = image.shape[:2]
-        cel_w, cel_h = fit_inside(szelesseg, magassag, oldal, oldal)
+        keret = settings.effective_border
+        # ⚠️ #1053: a polaroid csempe KÜLSŐ doboza illeszkedik a `scale`
+        # négyzetbe, fix 0,8333 aránnyal, és a fotó abból számolva NÉGYZET,
+        # körbevágva. A produkciós ág (`_pile_nodes`) ugyanezt teszi — ha ez
+        # a referencia-ág a régi, képfüggő alaknál maradna, az őr olyan
+        # eltérésre bukna, ami SZÁNDÉKOS viselkedésváltozás, nem regresszió.
+        if keret == POLAROID:
+            cel_w, _kulso_w, _kulso_h = _polaroid_negyzet(oldal)
+            cel_h = cel_w
+            kitolt = True
+        else:
+            cel_w, cel_h = fit_inside(szelesseg, magassag, oldal, oldal)
+            kitolt = False
         tile = apply_border(
-            fit_to_frame(image, max(1, cel_w), max(1, cel_h), fill=False),
-            settings.effective_border,
+            fit_to_frame(image, max(1, cel_w), max(1, cel_h), fill=kitolt),
+            keret,
         )
         # ⚠️ #1045: a beszorítás a `_pile_nodes`-ban él, ez a referencia-ág
         # viszont közvetlenül a `pile_layout`-ból dolgozik, tehát megkerülné.

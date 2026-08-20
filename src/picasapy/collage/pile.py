@@ -26,7 +26,6 @@ import math
 from dataclasses import dataclass
 from typing import Protocol
 
-from .fitting import picasa_round
 
 # A legnagyobb kép a lap szélességének ekkora hányada.
 PILE_BASE_RATIO = 0.33
@@ -89,10 +88,31 @@ def pile_scale(index: int) -> float:
 
 
 def pile_size(index: int, page_width: int) -> int:
-    """A kép célmérete képpontban (a `.cxf` `scale` mezője)."""
+    """A kép célmérete képpontban (a `.cxf` `scale` mezője).
+
+    ⚠️ #1059: **CSONKÍT, nem kerekít.** Ez az egyetlen hely, ahol a Picasa
+    geometriájából a csonkítás igazolt — a `picasa_round` mindenhol máshol
+    dekódolt és bizonyított viselkedés, ide viszont nem illik.
+
+    A bizonyíték a tulajdonos kollázsainak `scale` mezői. Az `AI1.cxf`
+    kilenc értéke csomópont-sorrendben `337, 337, 337, 337, 303, 280, 263,
+    249, 238`; a képletünk pontos értékei `337,92 … 238,95`:
+
+    | | egyezés |
+    |---|---:|
+    | `picasa_round` | **1/9** |
+    | `math.floor` | **9/9** |
+
+    Az `AI.cxf` ugyanígy 9/9 csonkítással; az `AI2.cxf` 7/9, és a két
+    kivétel bizonyítottan KÉZZEL átméretezett csomópont (nem egész `scale`).
+
+    Kerekítéssel a kupac minden csempéje egy képponttal nagyobb volt a
+    kelleténél — rendszeresen és egyirányúan. A méret a szórás sávjába és a
+    beszorításba is bemegy, a polaroid keret pedig 1,374-szeresére nagyítja
+    magasságban."""
     if page_width < 1:
         raise ValueError(f"Érvénytelen lapszélesség: {page_width}")
-    return picasa_round(pile_scale(index) * PILE_BASE_RATIO * page_width)
+    return math.floor(pile_scale(index) * PILE_BASE_RATIO * page_width)
 
 
 def scatter_centers(

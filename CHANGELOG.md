@@ -5,6 +5,34 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.10] – 2026-08-20
+
+### Javítva
+- **A Képkupac polaroid csempéi végre egyformák (#1053).** Eddig a polaroid
+  keret alakja a fotó oldalarányától függött — egy kollázsban 0,47-től
+  1,48-ig terjedő csempék álltak egymás mellett. Az eredeti Picasában a
+  polaroid csempe **mindig ugyanolyan alakú** (0,8333), a fotót pedig
+  négyzetre vágja, ahogy egy valódi polaroid-kép is négyzetes.
+
+  A keret arányai nálunk is jók voltak (1,145 / 1,374 = 0,8333) — csak
+  **rossz alapra** mentek: a fotó saját méretére, nem a csempe négyzetére.
+  A tulajdonos két eredeti polaroid kollázsa (18 csempe, két lapformátum,
+  több forráskép) mind 0,833-at ad.
+
+  Ez nem szépészeti kérdés: **más alakú csempe más helyre esik.** A mi
+  kupacunk ezért lógott ki már 9 képnél is, miközben az eredeti ugyanott
+  egyet sem. A biztonsági beszorítás most 9 képből **egyet** mozdít
+  három helyett — ugyanannyit, mint keret nélkül.
+- **A kupac csempéi egy képponttal nagyobbak voltak a kelleténél (#1059).**
+  A méretük a lapszélesség arányából számolt tört értéket **kerekítette**,
+  az eredeti viszont **csonkít**. A tulajdonos kollázsainak `scale`
+  mezőivel összevetve: kerekítéssel kilencből **egy** érték stimmelt,
+  csonkítással **mind a kilenc**. Két külön kollázsfájlon ugyanez.
+
+  Menet közben kiderült, hogy a lap belső szélessége nem „körülbelül 1021",
+  ahogy egy korábbi becslés mondta, hanem pontosan **1024** — ezt most
+  három mintán mérve tudjuk, nem becsülve.
+
 ## [0.8.9] – 2026-08-20
 
 ### Javítva

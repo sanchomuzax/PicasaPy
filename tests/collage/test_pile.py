@@ -52,13 +52,31 @@ def test_pile_scale_egy_alatt_hibat_dob():
 
 
 def test_pile_meret_a_valodi_cxf_mintat_reprodukalja():
-    """A felhasználó `.cxf`-mintája (spec 1.6): a lap ≈ 1021 képpont széles,
-    a kilenc kép `scale` mezője 337/337/337/337/303/280/263/249/238.
+    """A felhasználó `.cxf`-mintája (spec 1.6): a kilenc kép `scale` mezője
+    337/337/337/337/303/280/263/249/238.
 
     Ez a képlet egyetlen független, valódi mérése — ha ez elromlik, a
-    Képkupac mérete nem az eredetié."""
-    page_width = 1021
-    tenyleges = [pile_size(i, page_width) for i in range(1, 10)]
+    Képkupac mérete nem az eredetié.
+
+    ## ⚠️ #1059: a lapszélesség 1024, és a képlet CSONKÍT
+
+    Ugyanezt a kilenc számot KÉT magyarázat is előállítja:
+
+    | lapszélesség | kerekítés | egyezés |
+    |---|---|---:|
+    | 1021 | `picasa_round` | 9/9 |
+    | **1024** | **`math.floor`** | **9/9** |
+
+    Ez a teszt eredetileg az elsőt rögzítette, mert a lapszélességet a
+    mintából BECSÜLTÜK („≈ 1021"). A 1024-et azóta **megmértük**: a `scale`
+    és a csomópont-magasság hányadosából mindhárom golden kupacon 1024,0 /
+    1024,0 / 1023,8 jön ki, lapformátumtól függetlenül — és ez pontosan a
+    `SHEET_UNITS`.
+
+    A mért lapszélesség mellett a kerekítés már csak **1/9**-et talál el,
+    a csonkítás **9/9**-et. A becsült szám igazodott a kerekítéshez, nem
+    fordítva; a mért szám dönt."""
+    tenyleges = [pile_size(i, 1024) for i in range(1, 10)]
     assert tenyleges == [337, 337, 337, 337, 303, 280, 263, 249, 238]
 
 
