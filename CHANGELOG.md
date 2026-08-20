@@ -5,6 +5,26 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.27] – 2026-08-20
+
+### Javítva
+- **A PISZKOZAT-kép nem marad ott a kész kollázs mellett (#1125).** Ha a
+  piszkozatot bezártad, majd később újranyitottad és létrehoztad belőle a
+  kollázst, a program ÚJ fájlt írt (`Kollázs1.jpg`), a PISZKOZAT-képet
+  pedig ottfelejtette — ezért látszott a listában továbbra is a felirat.
+  Mostantól a kész kollázs a helykitöltő helyére lép, ugyanazon a néven.
+  ⚠️ A Kollázsok mappába tett **saját képeidhez** nem nyúlunk.
+- **A rács vastagsága végre hat a vászonra (#1121).** A beállítás eddig
+  eltárolódott, de a kép nem rajzolódott újra, ezért a csúszka húzogatása
+  nem csinált semmit.
+- **A „Keresés a lemezen…" Windowson és macOS-en is működik (#1104).**
+  Eddig linuxos parancsot hívott, tehát máshol egyszerűen nem történt
+  semmi — és ez nem csak a kollázst érintette, hanem a fájl- és
+  mappa-menüt is.
+- **A PISZKOZAT-felirat az eredeti szabálya szerint méreteződik (#1102).**
+  Álló lapon a felirat a kép szélén levágódik — ez az eredeti Picasa
+  viselkedése, nem hiba.
+
 ## [0.8.26] – 2026-08-20
 
 ### Javítva
