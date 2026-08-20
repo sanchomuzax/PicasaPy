@@ -13,6 +13,7 @@ import os
 import sqlite3
 import sys
 import time
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 import shutil
@@ -68,6 +69,15 @@ from .folder_hierarchy_controller import FolderHierarchyController
 from .folder_tree_controller import FolderTreeController
 from .import_source_controller import ImportSourceController
 from .models import sorted_folder_rows
+from .platform_storage import (
+    MigrationNotice,
+    StorageAlreadyRunning,
+    StorageBootstrap,
+    StorageMigrationError,
+    StoragePaths,
+    bootstrap_storage,
+    default_storage_paths,
+)
 from .startup_status import StartupStatus
 from .thumbnail_provider import ThumbnailProvider
 from .timeline_controller import TimelineController
@@ -147,34 +157,55 @@ def _onjavito_kollazsmappa(conn, settings: QSettings) -> None:
         )
 
 
-def _data_dir() -> Path:
+def _data_dir(platform: str | None = None) -> Path:
     """Az index-SQLite (+ zárolófájl) mappája — ha a "Move Database"
     dialóguson (#368) keresztül egyszer már áthelyezésre került, az
-    útvonal-felülbírálás (`data_location.py`) felülírja az XDG-
+    útvonal-felülbírálás (`data_location.py`) felülírja a platform-
     alapértelmezést; ilyenkor a cache-cel EGYESÍTVE ugyanazt a mappát
     adja vissza, mint `_cache_dir()` (ld. ott)."""
-    override = read_data_root(_config_dir())
+    active_platform = sys.platform if platform is None else platform
+    override = read_data_root(_config_dir(platform=active_platform))
     if override is not None:
         return override
-    base = os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))
-    return Path(base) / "picasapy"
+    return default_storage_paths(active_platform).data
 
 
-def _cache_dir() -> Path:
+def _cache_dir(platform: str | None = None) -> Path:
     """A thumbnail-lemezcache mappája — áthelyezés után (#368) a
     `_data_dir()`-rel EGYESÍTVE, hogy a Picasa-paritású "egy adatbázis-
     mappa" elv teljesüljön (a hívó ide illeszti a "thumbs" alkönyvtárat,
     ld. `run()`)."""
-    override = read_data_root(_config_dir())
+    active_platform = sys.platform if platform is None else platform
+    override = read_data_root(_config_dir(platform=active_platform))
     if override is not None:
         return override
-    base = os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache"))
-    return Path(base) / "picasapy"
+    return default_storage_paths(active_platform).cache
 
 
-def _config_dir() -> Path:
-    base = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
-    return Path(base) / "picasapy"
+def _config_dir(platform: str | None = None) -> Path:
+    active_platform = sys.platform if platform is None else platform
+    return default_storage_paths(active_platform).config
+
+
+def _bootstrap_storage(
+    platform: str | None = None,
+    *,
+    environ: Mapping[str, str] | None = None,
+    home: Path | None = None,
+    acquire_lock: Callable[[Path], object | None] | None = None,
+    migrate: Callable[[StoragePaths, StoragePaths], object] | None = None,
+) -> StorageBootstrap:
+    """A Qt-zárolót a platformfüggetlen, tesztelhető bootstraphoz köti."""
+    active_platform = sys.platform if platform is None else platform
+    return bootstrap_storage(
+        active_platform,
+        acquire_lock=(
+            _acquire_instance_lock if acquire_lock is None else acquire_lock
+        ),
+        environ=environ,
+        home=home,
+        migrate=migrate,
+    )
 
 
 def _force_qml_dialogs(platform: str = sys.platform) -> bool:
@@ -338,6 +369,29 @@ def _remaining_splash_ms(
     return max(0, round(minimum_ms - elapsed_ms))
 
 
+def _start_initial_scan(
+    startup_status: StartupStatus,
+    controller: object,
+    migration_notice: MigrationNotice | None,
+) -> None:
+    """Elindítja a kezdeti szkennelést, előtte felhasználói státuszt ad.
+
+    A migrációs üzenet ugyanazon, már kirajzolt splash-csatornán marad
+    látható a minimum splash-idő végéig; nem sikert álcázunk hibának.
+    """
+    if migration_notice is None:
+        text = QCoreApplication.translate("startup", "Scanning folders…")
+    else:
+        template = QCoreApplication.translate(
+            "startup", "Existing data migrated from {source} to {target}."
+        )
+        text = template.format(
+            source=migration_notice.source, target=migration_notice.target
+        )
+    startup_status.report(text)
+    controller.start()
+
+
 def _window_icon_path(platform: str = sys.platform) -> Path:
     """Az ablak-/taskbar-ikon fájlja (#67): Windowson a több méretű `.ico`
     (a taskbar 16–32 px-es változatai előre renderelve, nem futásidejű
@@ -495,6 +549,21 @@ def run(argv: list[str]) -> int:
     _install_ui_font(app)
     _install_translator(app)
 
+    # #1076: Windowson a legacy konfigurációból feloldott EFFEKTÍV
+    # adatgyökeret még a migráció előtt zárjuk. A bootstrap az útvonalakat
+    # egyszer számolja ki, a régi és új zárat pedig futás végéig őrzi.
+    try:
+        storage_bootstrap = _bootstrap_storage()
+    except StorageAlreadyRunning:
+        print(
+            "A PicasaPy már fut — egyszerre csak egy példány engedélyezett.",
+            file=sys.stderr,
+        )
+        return 0
+    except StorageMigrationError as error:
+        print(str(error), file=sys.stderr)
+        return 1
+
     # Indítóképernyő-híd (#189): korán jön létre, hogy az első állapot-
     # üzenetek is látsszanak; helyi változóban tartva (GC ellen).
     # #243: amíg az eredeti Picasa effekt-készlete nem teljes (#20, #190),
@@ -506,19 +575,14 @@ def run(argv: list[str]) -> int:
     )
 
     roots = _resolve_roots(argv)
-    data_dir = _data_dir()
+    data_dir = storage_bootstrap.data_dir
+    cache_dir = storage_bootstrap.cache_dir
+    config_dir = storage_bootstrap.config_dir
     data_dir.mkdir(parents=True, exist_ok=True)
     # #449: hibanapló — a WARNING és súlyosabb üzenetek fájlba is mennek,
     # hogy adatbázis-hiba esetén legyen mit felajánlani megtekintésre
     error_log = install_error_log(data_dir) or error_log_path(data_dir)
 
-    instance_lock = _acquire_instance_lock(data_dir)
-    if instance_lock is None:
-        print(
-            "A PicasaPy már fut — egyszerre csak egy példány engedélyezett.",
-            file=sys.stderr,
-        )
-        return 0
     _install_desktop_entry()
 
     # Ottragadt gyökerek takarítása (#58): az indexben csak a most figyelt
@@ -547,7 +611,7 @@ def run(argv: list[str]) -> int:
     cache_size = _thumbnail_cache_size(_screen_device_pixel_ratio(app))
     provider = ThumbnailProvider(
         ThumbnailCache(
-            _cache_dir() / "thumbs",
+            cache_dir / "thumbs",
             size=cache_size,
             max_bytes=_THUMB_CACHE_LIMIT_BYTES,
         )
@@ -728,7 +792,7 @@ def run(argv: list[str]) -> int:
     )
     # #368: adatbázis-áthelyezés — a MoveDatabaseDialog.qml hídja
     relocate_controller = RelocateController(
-        data_dir / "index.db", _cache_dir() / "thumbs", _config_dir()
+        data_dir / "index.db", cache_dir / "thumbs", config_dir
     )
     engine.rootContext().setContextProperty(
         "relocateController", relocate_controller
@@ -781,10 +845,9 @@ def run(argv: list[str]) -> int:
 
     def _start_and_finish() -> None:
         first_frame_at = time.monotonic()
-        startup_status.report(
-            QCoreApplication.translate("startup", "Scanning folders…")
+        _start_initial_scan(
+            startup_status, controller, storage_bootstrap.migration_notice
         )
-        controller.start()
         elapsed_ms = (time.monotonic() - first_frame_at) * 1000
         QTimer.singleShot(
             _remaining_splash_ms(elapsed_ms), startup_status.finish

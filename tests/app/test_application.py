@@ -6,26 +6,39 @@ from picasapy.app import application
 
 
 class TestResolveRoots:
+    """⚠️ A konfig-könyvtárat a PLATFORM dönti el, nem az `XDG_CONFIG_HOME`.
+
+    Ezek a tesztek eredetileg `XDG_CONFIG_HOME`-ot állítottak, és a
+    windows-lábon némán elbuktak: a #1076 óta a windowsos ág a natív
+    `%APPDATA%`-ból dolgozik, tehát az XDG-változó ott nem jelent semmit.
+    A TERMÉK viselkedése helyes — a teszt feltevése volt platformfüggő.
+
+    Ezért a `_config_dir`-t közvetlenül helyettesítjük: így az állítás arról
+    szól, amiről szólni akar (a `_resolve_roots` a konfig-könyvtárból
+    olvas), és mind a két lábon ugyanazt jelenti."""
+
+    @pytest.fixture
+    def konfig(self, tmp_path, monkeypatch):
+        mappa = tmp_path / "picasapy"
+        mappa.mkdir()
+        monkeypatch.setattr(application, "_config_dir", lambda *a, **k: mappa)
+        return mappa
+
     def test_argv_wins(self):
         assert application._resolve_roots(["prog", "/a", "/b"]) == ("/a", "/b")
 
-    def test_watched_folders_fallback(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
-        config = tmp_path / "picasapy"
-        config.mkdir()
-        (config / "WatchedFolders.txt").write_text("/mnt/nas/fotok\n", encoding="utf-8")
+    def test_watched_folders_fallback(self, konfig):
+        (konfig / "WatchedFolders.txt").write_text(
+            "/mnt/nas/fotok\n", encoding="utf-8"
+        )
         assert application._resolve_roots(["prog"]) == ("/mnt/nas/fotok",)
 
-    def test_no_config_empty(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    def test_no_config_empty(self, konfig):
         assert application._resolve_roots(["prog"]) == ()
 
-    def test_watched_folders_lowercase_variant(self, tmp_path, monkeypatch):
+    def test_watched_folders_lowercase_variant(self, konfig):
         # #145: élesben a fájlnév kisbetűsen is előfordul.
-        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
-        config = tmp_path / "picasapy"
-        config.mkdir()
-        (config / "watchedfolders.txt").write_text(
+        (konfig / "watchedfolders.txt").write_text(
             "/mnt/nas/fotok\n", encoding="utf-8"
         )
         assert application._resolve_roots(["prog"]) == ("/mnt/nas/fotok",)
@@ -44,13 +57,26 @@ class TestDialogPolicy:
         assert application._force_qml_dialogs("darwin") is True
 
 
+#: A platform-rögzítés a linux ághoz (#1076).
+LINUX = "linux"
+
+
 class TestXdgDirs:
+    """⚠️ Az XDG-változók csak a LINUX ágra vonatkoznak.
+
+    A #1076 óta a windowsos ág a natív `%LOCALAPPDATA%`-ból dolgozik, a
+    macOS a sajátjából — az `XDG_DATA_HOME` ott nem jelent semmit. Ezek a
+    tesztek ezért a platformot KIMONDVA rögzítik; enélkül a windows-CI-lábon
+    a TERMÉK helyes viselkedése buktatja el őket, és a bukás azt sugallná,
+    hogy a natív útvonal a hiba.
+    """
+
     def test_dirs_respect_xdg_env(self, tmp_path, monkeypatch):
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "d"))
         monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "c"))
         monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
-        assert application._data_dir() == tmp_path / "d" / "picasapy"
-        assert application._cache_dir() == tmp_path / "c" / "picasapy"
+        assert application._data_dir(LINUX) == tmp_path / "d" / "picasapy"
+        assert application._cache_dir(LINUX) == tmp_path / "c" / "picasapy"
 
     def test_data_location_override_wins_over_xdg(self, tmp_path, monkeypatch):
         # #368: a "Move Database" dialógus sikeres áthelyezés után ide írja
@@ -64,15 +90,15 @@ class TestXdgDirs:
         new_root = tmp_path / "athelyezett-adatok"
         write_data_root(tmp_path / "cfg" / "picasapy", new_root)
 
-        assert application._data_dir() == new_root
-        assert application._cache_dir() == new_root
+        assert application._data_dir(LINUX) == new_root
+        assert application._cache_dir(LINUX) == new_root
 
     def test_no_override_file_keeps_xdg_default(self, tmp_path, monkeypatch):
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "d"))
         monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "c"))
         monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
-        assert application._data_dir() == tmp_path / "d" / "picasapy"
-        assert application._cache_dir() == tmp_path / "c" / "picasapy"
+        assert application._data_dir(LINUX) == tmp_path / "d" / "picasapy"
+        assert application._cache_dir(LINUX) == tmp_path / "c" / "picasapy"
 
 
 class TestAssets:

@@ -4564,6 +4564,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 <context>
     <name>startup</name>
     <message>
+        <source>Existing data migrated from {source} to {target}.</source>
+        <translation>A meglévő adatok átkerültek innen: {source} — ide: {target}.</translation>
+    </message>
+    <message>
         <location filename="../application.py" line="318"/>
         <source>Starting…</source>
         <translation>Indulás…</translation>
