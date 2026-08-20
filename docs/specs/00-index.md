@@ -107,24 +107,17 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    területe, nem a kollázsé.)
 
 
-### [export-parbeszed.md](export-parbeszed.md) — 2 kérdés
+### [export-parbeszed.md](export-parbeszed.md) — nincs nyitott kérdés
 
-*(A 2026-08-20-i kör az öt minőség-fokozat számértékét, az Egyéni csúszka
-kétirányú leképezését, a dinamikus „Egyéni (N)" feliratot és a fix 4:2:0
-színbontást lezárta — a lap **7.** szakaszában. Egyik alábbi kérdés sem
-igényel futó Picasát.)*
-
-1. **A minőségszám útja a párbeszédtől a kódolóig.** A tárolás helye
-   `[objektum+0xa3c]`, a kódoló belépője `0x00b1f870` (a minőség a
-   `[esp+0x1c]`-ből jön), a hívó `0x00a97f28`. A lánc végigkövetése emelné
-   „megerősített" szintre azt az állítást, hogy a Maximális 193-as értéke
-   változatlanul jut a skálázóhoz (és így a 100-zal azonos hatású).
-2. **A film-rádió alapértelmezése** (`FileExportMovie` alapértéke) — és
-   hogy pontosan mi tiltja le a csoportot (a képernyőképen szürke; a
-   valószínű ok, hogy a kijelölésben nincs film, **következtetés**).
-
-*(A `<multi>` átméretezési kérdése 2026-08-20-án lezárult: a magyarázó
-szöveg a legördülő MELLETT van, a hely fix — a lap 9.3-a.)*
+*(2026-08-20, három kör. A lap teljes: a `.fen` leíró, mind a 28 magyar
+felirat, a kötések, a 9 beállítás-kulcs, a **képpontra mért geometria** a
+tulajdonos képernyőképéről, a **teljes eseménykezelő-térkép** címekkel, és
+az öt minőség-fokozat számértéke. A három korábbi nyitott kérdés a lap
+**11.** szakaszában lezárva: a film-rádió alapértéke **0 = „Első
+képkocka"**; a film-csoport letiltása képpontméréssel igazolva (a címke
+fekete marad, csak a rádiók szürkülnek); a 193-as minőségérték
+gyakorlati következménye bizonyítottan nulla, tehát a „Maximális"
+nálunk maradhat 100.)*
 
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 

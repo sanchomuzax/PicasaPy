@@ -333,7 +333,7 @@ preset sem tud előállítani, tehát a forrásból jöttek.
 
 ---
 
-## 8. Ami NYITVA marad
+## 8. Ami NYITVA marad — ***MIND LEZÁRVA, ld. a 11. szakaszt***
 
 1. **A minőségszám útja a párbeszédtől a kódolóig.** A tárolás helye
    `[objektum+0xa3c]`, a kódoló belépője `0x00b1f870` (a minőség a
@@ -494,3 +494,114 @@ ebp = a kiválasztott tétel (0…4)
 | `0x0073b120` | konstruktor: `+0xa44 = 0`, `+0xa40 = 0` (nem automatikus), `+0xa34 = 0` |
 | `0x0073b14a` | konstruktor: **minőség = 0x55 = 85** |
 | `0x00b1f85a` | a kódoló színbontása fixen **4:2:0** (`0x22` / `0x11` / `0x11`) |
+
+---
+
+## 11. A NYITOTT KÉRDÉSEK LEZÁRÁSA (2026-08-20, harmadik kör)
+
+### 11.1 A film-rádió alapértéke — **MEGVAN: 0 = „Első képkocka"**
+
+A `FileExportMovie` beolvasása `0x00738c88`-nál:
+
+```
+0x00738c88  push 0xcaf974          ; "FileExportMovie"
+0x00738c8d  push 0xc7eafc          ; "Preferences"
+0x00738c99  lea  ecx, [esp+0x30]   ; ide mutat az alapérték
+0x00738c9d  mov  dword [esp+0x30], ebx     ; ebx = 0  (0x00738c12: xor ebx,ebx)
+0x00738ca1  call 0x407a20
+```
+
+Az alapérték tehát **0**, ami a `radiogroup` **első** tétele:
+**„Első képkocka"**.
+
+**Kontroll, hogy ez tényleg alapérték-átadás:** ugyanez a hívás a
+`FileExportSize`-nál (`0x00738c43`) a **3**-at teszi ugyanabba a rekeszbe
+(`0x00738c58`: `mov dword [esp+0x50], 3`). Ugyanaz a minta, más konstans —
+tehát a 0 nem véletlen nullázás, hanem szándékos alapérték.
+
+**Bizonyítottsági fok: megerősített.**
+
+### 11.2 A film-csoport letiltása — **a TÉNY mérve, az OK következtetés**
+
+Eddig szemre mondtam, hogy „szürke". Most **képpontban** mérve, a
+képernyőkép legsötétebb 40 képpontjának átlaga vezérlőnként:
+
+| elem | legsötétebb átlag | állapot |
+|---|---|---|
+| rádió „Eredeti méret használata" | **0,0** | aktív (fekete) |
+| jelölő „Számok hozzáadása…" | **0,0** | aktív |
+| „Megőrzi az eredeti képminőséget" | **0,0** | aktív |
+| jelölő „Vízjel hozzáadása" | **0,0** | aktív |
+| **„Filmek exportálása:" CÍMKE** | **0,1** | **AKTÍV — fekete marad!** |
+| **rádió „Első képkocka"** | **109,2** | **LETILTVA** |
+| **rádió „Teljes film…"** | **109,0** | **LETILTVA** |
+| méret-mező „1100" (letiltott sor) | 125,2 | letiltva |
+| „képpont" felirat (letiltott sor) | 160,0 | letiltva |
+
+➡️ **Fontos finomítás:** a csoport **címkéje fekete marad**, csak a
+**`radiogroup` maga** szürkül el. Tehát nem az egész `labelgroup` van
+letiltva, hanem a benne lévő rádiócsoport.
+
+**Amit KIZÁRTAM az okra nézve:**
+
+- ❌ **`.fen`-beli `bind attr="enabled"`** — a `<labelgroup title="Export
+  movies using:">` alatt **nincs** ilyen kötés (ld. az 1. szakasz idézetét).
+  A méret-csoportnál van (`<bind attr="enabled" source="sizeradio"/>`), itt
+  nincs.
+- ❌ **Névre hivatkozó futásidejű tiltás** — a `movies` sztringre
+  (`0xca2b64`) a teljes párbeszéd-kódban **pontosan két** hivatkozás van:
+  a kötés (`0x007390b5`) és a visszaírás (`0x00739b0d`). Egyik sem tiltás.
+
+**Marad a következtetés:** a program a **vezérlő-objektumon** keresztül
+tiltja le, futásidőben, mert a kijelölésben **nincs film** (a
+képernyőképen a merokit-3 hét JPEG-je volt kijelölve). Ez összhangban van
+azzal, hogy a címke fekete marad.
+
+**Bizonyítottsági fok:** a tény **megerősített** (képpontméréssel), az ok
+**erős következtetés**, nem bizonyíték.
+
+**Hol folytassa, aki bizonyítékot akar:** a párbeszédet megnyitó
+parancsnál kell keresni a film-számlálót; a párbeszéd konstruktora
+`0x0073b120`, és a `0x0073b500`-at (exportnév) hívja a `0x007f5575`,
+`0x007f5f9d`, `0x007f658c` — ez a **0x007f5000+ export-motor**, ott van a
+kijelölés-lista.
+
+**A megvalósítást ez NEM blokkolja:** a viselkedés egyértelmű (nincs film
+→ a rádiók tiltva, a címke aktív marad).
+
+### 11.3 A 193-as érték útja a kódolóig — **a kérdés gyakorlati
+következménye NULLA**
+
+A korábbi megfogalmazás („a lánc végigkövetése emelné megerősített
+szintre") félrevezető volt, mert azt sugallta, hogy a válasz múlhat rajta.
+Nem múlik:
+
+1. A minőség-egész **egyetlen** fogyasztója a JPEG-skálázó
+   `0x00b1cb70`, és annak **pontosan egy hívója** van: `0x00b1f8ca`.
+2. A skálázó szabálya: `q ≥ 100 → skála 0` (`0x00b1cb99`), a skála 0 pedig
+   csupa 1-es kvantálótáblát ad — ez a JPEG-minőség plafonja.
+3. **Mi 100-at adunk át, ami ugyanide fut ki.** A kimenet tehát azonos.
+4. A 193 csak akkor adna mást, ha valahol egy **100 fölötti értéket
+   átalakítanának** (pl. `q -= 100`). Ilyen ág **nincs** — átfésültem az
+   export-régiót (`0x00730000`+128 KB), a kódoló-régiót
+   (`0x00b1f000`+4 KB), a `0x00a90000`+64 KB-ot és a
+   `0x0066f000`+192 KB-ot `cmp/mov 0x64`-re és `0xc1`-re: a `0xC1`-re
+   **egyetlen** találat van a teljes export-kódban, a
+   `0x00739ca1`-es értékadás maga.
+
+➡️ **Következmény a fejlesztésre: a „Maximális" nálunk maradhat 100.**
+Nem közelítés, hanem bizonyíthatóan azonos kimenet.
+
+**Ami formálisan nyitva marad:** a virtuális hívásokon átvezető pontos
+hívási lánc a párbeszéd `[objektum+0xa3c]` mezőjétől a kódoló
+`0x00b1f870` belépőjéig. **Ez nem befolyásol semmilyen megvalósítási
+döntést**, ezért nem nyitott kérdésként, hanem lábjegyzetként tartjuk
+számon.
+
+### 11.4 Amit MÉG kimértem menet közben
+
+**Minden Picasa-exportunk „Automatikus"-sal készült.** Ellenőriztem
+mindhárom mérőkészlet eredeti exportját: a kvantálótábla a forráséval
+**bájtra azonos** (IJG q=97 mindkét oldalon). Ezért a Normál/Maximális/
+Minimális fokozatokra **nincs** mintánk — de a 11.3 miatt nincs is rá
+szükség.
