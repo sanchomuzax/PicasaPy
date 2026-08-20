@@ -6,6 +6,8 @@ Két vaklárma-osztály élesben derült ki (2026-08-19), mindkettőt őrzi tesz
 """
 
 import importlib.util
+import io
+import json
 import pathlib
 
 import pytest
@@ -138,3 +140,33 @@ def test_verzio_sor_felismerese():
     fuggoseg_diff = '--- a/pyproject.toml\n+++ b/pyproject.toml\n+  "numpy>=2.0",\n'
     assert kapu._VERZIO_SOR.search(verzio_diff)
     assert not kapu._VERZIO_SOR.search(fuggoseg_diff)
+
+
+class TestVizsgaltFaKiirasa:
+    """A blokkoló üzenet MONDJA MEG, mit vizsgált (#1113).
+
+    ⚠️ A kapu a MUNKAMENET cwd-jében diffel, ami `cd` nélküli parancsnál a
+    KÖZÖS főmásolat — nem a pusholó session worktree-je. Ha a főmásolat épp
+    verzióemelő ágon áll, a kapu MINDEN session pushát blokkolja, és az
+    üzenet olyan ágról szól, amihez a blokkolt félnek semmi köze.
+
+    2026-08-20-án egy munkamenet ezért futott neki négyszer a SAJÁT ágának,
+    ami végig üres volt. Ez az őr azt védi, hogy a válasz megnevezze a
+    vizsgált fát — enélkül a tünet és az ok külön munkamenetnél marad.
+    """
+
+    def test_a_fa_es_az_ag_a_kimenetben(self, tmp_path, capsys, monkeypatch):
+        monkeypatch.setattr(
+            kapu.sys, "stdin", io.StringIO(
+                json.dumps({
+                    "tool_input": {"command": "gh release create v9.9.9"},
+                    "cwd": str(tmp_path),
+                })
+            )
+        )
+        assert kapu.main() == 2
+        hiba = capsys.readouterr().err
+        assert "a vizsgált fa:" in hiba
+        assert str(tmp_path) in hiba
+        assert "ág:" in hiba
+        assert "#1113" in hiba, "a jegyszám nélkül nem találja meg a magyarázatot"
