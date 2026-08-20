@@ -346,3 +346,151 @@ preset sem tud előállítani, tehát a forrásból jöttek.
    (akkor a párbeszéd nem ugrál) vagy az **aktuálishoz**. A vtábla
    nagyrészt az ős metódusaira mutat, tehát kevés a felülírás.
 3. **A film-rádió alapértelmezése** (`FileExportMovie` alapértéke).
+
+---
+
+## 9. AZ ABLAK TÉNYLEGES KINÉZETE — a tulajdonos képernyőképéről mérve
+
+> **Ez a szakasz a `.fen`-t felülírja ott, ahol ellentmondanak.** A `.fen` a
+> szerkezetet és a kötéseket adja, a **helyet nem** (`fit`, `fill`, `4em`
+> relatív méretek). A tényleges elrendezést csak a futó program mutatja meg.
+> Forrás: a tulajdonos képernyőképe a magyar Picasa 3-ról (Windows 11,
+> 100 % nagyítás), elmentve:
+> `~/picasapy-agent/referencia/export-parbeszed-eredeti.png` (627 × 481).
+
+### 9.1 Az alapelrendezés: KÉTOSZLOPOS űrlap, JOBBRA igazított feliratokkal
+
+Ez a legfontosabb, és a `.fen`-ből **nem** derül ki: a `labelgroup`
+felirata **nem a vezérlő fölött**, hanem **tőle balra, jobbra igazítva**
+áll, kettősponttal.
+
+| | képpont |
+|---|---|
+| a felirat-oszlop **jobb** széle | **x = 151** |
+| a vezérlő-oszlop **bal** széle | **x = 158** |
+| a köztük lévő rés | **7 px** |
+| a vezérlők **jobb** széle (mezők) | **x ≈ 606** |
+| az ablak teljes mérete (kerettel) | **627 × 481** |
+
+### 9.2 Soronkénti geometria (az ablak bal-felső sarkához képest)
+
+| sor | felirat (jobbra igazítva, x=151-ig) | vezérlő | x | y | méret |
+|---|---|---|---|---|---|
+| címsor | — | „Exportálás mappába" | 11 | 15 | szöveg; bezáró **X** x≈597–606 |
+| 1 | **Exportálási hely:** | `pathbox` | **158** | **46** | **357 × 28** |
+| 1 | | **Tallózás…** gomb | **523** | **49** | **82 × 21** |
+| 2 | **Az exportált mappa neve:** | `edit` | **158** | **79** | **448 × 26** |
+| 3 | *(nincs felirat)* | jelölő **Számok hozzáadása…** | 158 | 112 | jelölő 13 px, felirat x=175-től |
+| 4 | **Képméret:** | rádió **Eredeti méret használata** | 158 | 139 | jelölő 13 px |
+| 4 | | rádió **Átméretezés:** | 158 | 161 | jelölő 13 px |
+| 5 | *(behúzva)* | számmező | ~157 | 187 | ~72 × 25 |
+| 5 | | felirat **képpont** | 239 | 194 | 45 × 14 |
+| 5 | | **csúszka** | **290** | **187** | **318 × 25** |
+| 6 | **Képminőség:** | `popup` | **157** | **232** | **153 × 26** |
+| 6 | | **magyarázó szöveg — UGYANEBBEN A SORBAN** | **315** | 240 | szöveg |
+| 7 | **Filmek exportálása:** | rádió **Első képkocka** | 158 | 286 | **LETILTVA** |
+| 7 | | rádió **Teljes film (nincs átméretezés)** | 158 | 307 | **LETILTVA** |
+| 8 | **Vízjel:** | jelölő **Vízjel hozzáadása** | 158 | 335 | |
+| 8 | | szövegmező | 158 | ~352 | ~448 × 26, letiltva |
+| 8 | | kisbetűs magyarázat, **két sorban** | 158 | 390 | |
+| 9 | — | **Exportálás** (alapértelmezett) | **429** | **440** | **83 × 21** |
+| 9 | — | **Mégse** | **522** | **440** | **82 × 21** |
+
+A gombok **jobbra igazítva**, az ablak alján; **nincs Súgó gomb** (a
+Mappakezelőtől eltérően).
+
+### 9.3 NÉGY viselkedés, ami eddig NEM volt a specben
+
+1. **A magyarázó szöveg a legördülő MELLETT van, nem alatta.** A `.fen`
+   `<multi>`-je tehát **soron belüli**: a négy magyarázó felirat és az
+   „Egyéni" csúszkája ugyanazt a helyet foglalja el a legördülőtől jobbra.
+   ➡️ **Ez megválaszolja a 8. szakasz 2. nyitott kérdését**: a fokozat
+   váltása **nem méretezi át** az ablakot, mert a hely fix.
+2. **A „Filmek exportálása" rádiók LE VANNAK TILTVA**, ha a kijelölésben
+   nincs film. A képernyőképen mindkettő szürke — a `.fen` erre nem ad
+   `bind`-ot, tehát futásidejű döntés.
+3. **A méret-sor letiltva marad, de az ÉRTÉKET megőrzi.** „Eredeti méret
+   használata" mellett a mező szürke, de **1100** áll benne — az előző
+   egyéni érték (`FileExportCustomSize`).
+4. **Az 1100 nincs a hét előbeállítás között** (320/480/640/800/1024/
+   1200/1600). A számmező tehát **szabadon írható**, és a csúszka a hét
+   értékre pattan; a kettő nem korlátozza egymást.
+
+Ezen felül: az **exportált mappa nevének szövege induláskor ki van
+jelölve** (kék), összhangban a `.fen` `focus="name"`-jével.
+
+---
+
+## 10. A TELJES ESEMÉNYKEZELŐ-TÉRKÉP — minden vezérlő, minden trigger
+
+Négy függvény viszi az egész párbeszédet. Minden vezérlőnév-hivatkozás
+címe kiolvasva:
+
+### 10.1 `0x00738c00` — felépítés és beolvasás
+
+| cím | vezérlő | mit csinál |
+|---|---|---|
+| `0x00738c43` | — | `FileExportSize` beolvasása (alap **3**) |
+| `0x00738c88` | — | `FileExportMovie` beolvasása |
+| `0x00738cd6` | — | az alapértelmezett mappa: `Picasa\Exports\` |
+| `0x00738d16` | — | `DefaultExportPath` |
+| `0x00738dfe` | — | `FileExportCustomSize` |
+| `0x00738e3f` | — | `FileExportQualityType` |
+| `0x00738e80` | — | `ExportAddNumbers` |
+| `0x00739053` | `sizeradio` | kötés |
+| `0x007390b5` | `movies` | kötés |
+| `0x00739113` | `name` | kötés |
+| `0x00739151` | `location` | kötés |
+| `0x0073918d` | `quality` | kötés |
+| `0x007391ea` | `addnumbers` | kötés |
+| `0x00739266` | `watermark` | kötés |
+| `0x007392e7` | `usewatermark` | kötés |
+| `0x007393fc` | `sizetext` | kötés |
+| `0x007395dd` | `qualslider` | kötés |
+| `0x0073962d` | — | `FileExportQuality` beolvasása, **alap 0x55 = 85** |
+| `0x007396a9` | `qualslider` | **csúszka-állás = minőség / 5** |
+| `0x0073a0c0` | `quality` 5. tétele | a felirat **„Custom (%d)"** összeállítása |
+
+### 10.2 `0x00739960` — visszaírás a beállításokba
+
+| cím | vezérlő | kulcs |
+|---|---|---|
+| `0x00739999` | `sizetext` | `FileExportCustomSize` |
+| `0x00739a01` | `sizeradio` | `FileExportSize` |
+| `0x00739b0d` | `movies` | `FileExportMovie` |
+| `0x00739b8b` | `addnumbers` | `ExportAddNumbers` |
+| `0x00739c0c` | `quality` | `FileExportQualityType` |
+| `0x00739c55` | `qualslider` | — |
+| `0x00739d7a` | `usewatermark` | `ExportWatermark` |
+| `0x00739dd4` | `watermark` | `ExportWatermarkText` |
+
+### 10.3 `0x00739c3f` — a KÉPMINŐSÉG-legördülő triggere
+
+```
+ebp = a kiválasztott tétel (0…4)
+0x00739c4d   [objektum+0xa40] = (ebp == 0)      ; „Automatikus" jelző
+0x00739c53   ha ebp == 4:                        ; „Egyéni”
+0x00739c85       minőség = csúszka × 5
+             különben ugrótábla 0x00739ef4:
+0x00739caf       0 Automatikus → 85
+0x00739caf       1 Normál      → 85
+0x00739ca1       2 Maximális   → 193
+0x00739ca8       3 Minimális   → 65
+0x00739cc0   a FileExportQualityType kiírása
+```
+
+### 10.4 `0x00739f70` — a csúszka és a névmező triggere
+
+| ág | cím | mit csinál |
+|---|---|---|
+| `qualslider` mozgatása | `0x00739fe6` | **minőség = állás × 5**, majd a „Custom (%d)" felirat frissítése (`0x73a0c0`) |
+| `name` változása | `0x0073a087` → `0x0073b390` → `0x0073b500` | az exportált mappa nevének átvétele |
+
+### 10.5 A méret és az alapértékek
+
+| cím | mit mond |
+|---|---|
+| `0x0073b410` | ha a méret-mód `0x3E8` (**1000**), az **egyéni** méret (`+0xa38`) érvényes |
+| `0x0073b120` | konstruktor: `+0xa44 = 0`, `+0xa40 = 0` (nem automatikus), `+0xa34 = 0` |
+| `0x0073b14a` | konstruktor: **minőség = 0x55 = 85** |
+| `0x00b1f85a` | a kódoló színbontása fixen **4:2:0** (`0x22` / `0x11` / `0x11`) |

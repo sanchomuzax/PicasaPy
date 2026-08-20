@@ -107,7 +107,7 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    területe, nem a kollázsé.)
 
 
-### [export-parbeszed.md](export-parbeszed.md) — 3 kérdés
+### [export-parbeszed.md](export-parbeszed.md) — 2 kérdés
 
 *(A 2026-08-20-i kör az öt minőség-fokozat számértékét, az Egyéni csúszka
 kétirányú leképezését, a dinamikus „Egyéni (N)" feliratot és a fix 4:2:0
@@ -119,11 +119,12 @@ igényel futó Picasát.)*
    `[esp+0x1c]`-ből jön), a hívó `0x00a97f28`. A lánc végigkövetése emelné
    „megerősített" szintre azt az állítást, hogy a Maximális 193-as értéke
    változatlanul jut a skálázóhoz (és így a 100-zal azonos hatású).
-2. **A `<multi>` elem átméretezési szabálya:** a mérete a **legnagyobb**
-   gyerekhez igazodik-e (akkor a párbeszéd nem ugrál a fokozatváltáskor)
-   vagy az **aktuálishoz**? Az elemgyár `0x008dfed0`-ben a `multi` ágat
-   `0x008e24f0`-re köti (0x8C bájt, vtábla `0x00CD00E4`).
-3. **A film-rádió alapértelmezése** (`FileExportMovie` alapértéke).
+2. **A film-rádió alapértelmezése** (`FileExportMovie` alapértéke) — és
+   hogy pontosan mi tiltja le a csoportot (a képernyőképen szürke; a
+   valószínű ok, hogy a kijelölésben nincs film, **következtetés**).
+
+*(A `<multi>` átméretezési kérdése 2026-08-20-án lezárult: a magyarázó
+szöveg a legördülő MELLETT van, a hely fix — a lap 9.3-a.)*
 
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 
