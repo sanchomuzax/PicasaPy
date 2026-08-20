@@ -542,32 +542,56 @@ képernyőkép legsötétebb 40 képpontjának átlaga vezérlőnként:
 **`radiogroup` maga** szürkül el. Tehát nem az egész `labelgroup` van
 letiltva, hanem a benne lévő rádiócsoport.
 
-**Amit KIZÁRTAM az okra nézve:**
+**A binárisban végigkeresve — NÉGY tény, ami az okot NEGATÍVAN dönti el:**
 
-- ❌ **`.fen`-beli `bind attr="enabled"`** — a `<labelgroup title="Export
-  movies using:">` alatt **nincs** ilyen kötés (ld. az 1. szakasz idézetét).
-  A méret-csoportnál van (`<bind attr="enabled" source="sizeradio"/>`), itt
-  nincs.
-- ❌ **Névre hivatkozó futásidejű tiltás** — a `movies` sztringre
-  (`0xca2b64`) a teljes párbeszéd-kódban **pontosan két** hivatkozás van:
-  a kötés (`0x007390b5`) és a visszaírás (`0x00739b0d`). Egyik sem tiltás.
+1. **A `.fen`-ben nincs `enabled` kötés a film-csoporton.** Nem az idézetet
+   néztem, hanem magát a fájlt (`Picasa3/runtime/export.fen`, 2411 bájt,
+   2015-10-13). A méret-csoportnál ott a
+   `<bind attr="enabled" source="sizeradio"/>`, a `movies`-nál **nincs**
+   semmilyen kötés.
+2. **A `.fen`-motor a letiltást KIZÁRÓLAG `<bind attr="enabled">`-ből
+   ismeri.** A kötés-attribútum eldöntője a `0x008d2210`: az `attr` értékét
+   az `„enabled"` (`0x00ccd33c`) és a `„visible"` (`0x00ccd344`)
+   sztringekhez hasonlítja (`0x008d2272`, `0x008d22a9`, `0x008d22fd`,
+   `0x008d2334`). Nincs harmadik út.
+3. **A `movies` vezérlőnévre a teljes párbeszéd-kódban PONTOSAN KÉT
+   hivatkozás van** (`0xca2b64`): a kötés létrehozása `0x007390b5`-nél és a
+   beállítás visszaírása `0x00739b0d`-nál. **Egyik sem tilt le semmit.**
+   *(A `moviesradio` / `moviesRadio` nevek a `0x007f52b0` / `0x007f5e80`-hoz
+   tartoznak — azok a **web-exportáló** saját vezérlői, nem ezek.)*
+4. **Nem a kötés típusa okozza.** Vezérlőnként kiolvasva, melyik
+   kötés-osztályt kapja:
 
-**Marad a következtetés:** a program a **vezérlő-objektumon** keresztül
-tiltja le, futásidőben, mert a kijelölésben **nincs film** (a
-képernyőképen a merokit-3 hét JPEG-je volt kijelölve). Ez összhangban van
-azzal, hogy a címke fekete marad.
+   | vezérlő | kötés-vtábla | a képernyőképen |
+   |---|---|---|
+   | `sizeradio` | `0xC7F790` | **aktív** |
+   | `quality` | `0xC7F790` | **aktív** |
+   | **`movies`** | **`0xC7F790`** | **letiltva** |
+   | `addnumbers` | `0xCAA2E8` | aktív |
+   | `sizetext`, `watermark` | `0xC8B714` | (a sor tiltva/aktív a kötés szerint) |
 
-**Bizonyítottsági fok:** a tény **megerősített** (képpontméréssel), az ok
-**erős következtetés**, nem bizonyíték.
+   A `movies` **ugyanazt** az osztályt kapja, mint a nem letiltott
+   `sizeradio` és `quality` — tehát a különbség nem innen jön.
 
-**Hol folytassa, aki bizonyítékot akar:** a párbeszédet megnyitó
-parancsnál kell keresni a film-számlálót; a párbeszéd konstruktora
-`0x0073b120`, és a `0x0073b500`-at (exportnév) hívja a `0x007f5575`,
-`0x007f5f9d`, `0x007f658c` — ez a **0x007f5000+ export-motor**, ott van a
-kijelölés-lista.
+➡️ **A negatív eredmény, ami ebből következik: az export-párbeszéd SAJÁT
+kódja NEM tiltja le a film-rádiókat.** Ezt kimondani többet ér, mint a
+korábbi „valószínűleg nincs film a kijelölésben" mondat, mert **kizárja** a
+párbeszédet mint helyszínt.
 
-**A megvalósítást ez NEM blokkolja:** a viselkedés egyértelmű (nincs film
-→ a rádiók tiltva, a címke aktív marad).
+**Ami tehát marad, és hol kell folytatni:** a letiltás vagy a **közös
+vezérlő-rétegben** történik (a vezérlő-alaposztály attribútumkezelője
+`0x008d1450`, és a `0x008d2210` hívói), vagy a párbeszédet **befogadó
+oldalon** — erre a legjobb jelölt a `CExportPrefsPage` (`0x007f6650`),
+amely már az export végrehajtásának hibaüzeneteit is viszi.
+
+**Bizonyítottsági fok:** a **tény** (a rádiók letiltva, a címke fekete
+marad) **megerősített**, képpontméréssel. A négy fenti kizárás
+**megerősített**, címmel. Az **ok** viszont **továbbra sem bizonyított** —
+a „nincs film a kijelölésben" magyarázat összefér mindennel, amit tudunk,
+de a binárisban **nem találtam meg a helyét**, és ezt nem takarom el.
+
+**A megvalósítást ez NEM blokkolja:** a viselkedés egyértelmű — nincs film
+→ a rádiók tiltva, a csoport címkéje aktív marad.
 
 ### 11.3 A 193-as érték útja a kódolóig — **a kérdés gyakorlati
 következménye NULLA**

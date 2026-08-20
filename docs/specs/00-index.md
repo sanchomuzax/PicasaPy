@@ -107,17 +107,26 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    területe, nem a kollázsé.)
 
 
-### [export-parbeszed.md](export-parbeszed.md) — nincs nyitott kérdés
+### [export-parbeszed.md](export-parbeszed.md) — 1 kérdés
 
 *(2026-08-20, három kör. A lap teljes: a `.fen` leíró, mind a 28 magyar
 felirat, a kötések, a 9 beállítás-kulcs, a **képpontra mért geometria** a
 tulajdonos képernyőképéről, a **teljes eseménykezelő-térkép** címekkel, és
 az öt minőség-fokozat számértéke. A három korábbi nyitott kérdés a lap
 **11.** szakaszában lezárva: a film-rádió alapértéke **0 = „Első
-képkocka"**; a film-csoport letiltása képpontméréssel igazolva (a címke
-fekete marad, csak a rádiók szürkülnek); a 193-as minőségérték
+képkocka"**; a 193-as minőségérték
 gyakorlati következménye bizonyítottan nulla, tehát a „Maximális"
 nálunk maradhat 100.)*
+
+1. **Mi tiltja le a film-rádiókat?** A tény mért (a rádiók szürkék, a
+   csoport **címkéje fekete marad**), és négy dolog **kizárva**: nincs
+   `.fen`-beli `enabled` kötés; a motor csak abból ismeri a letiltást
+   (`0x008d2210`); a `movies` névre a teljes párbeszéd-kódban két
+   hivatkozás van, egyik sem tilt; és a kötés-osztály ugyanaz
+   (`0xC7F790`), mint a nem letiltott `sizeradio`/`quality`-é. **Az
+   export-párbeszéd saját kódja tehát NEM tiltja le.** Folytatás: a közös
+   vezérlő-réteg (`0x008d1450`, a `0x008d2210` hívói) vagy a befogadó
+   `CExportPrefsPage` (`0x007f6650`). **A megvalósítást nem blokkolja.**
 
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 
