@@ -107,7 +107,7 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    területe, nem a kollázsé.)
 
 
-### [export-parbeszed.md](export-parbeszed.md) — 1 kérdés
+### [export-parbeszed.md](export-parbeszed.md) — 7 kérdés
 
 *(2026-08-20, három kör. A lap teljes: a `.fen` leíró, mind a 28 magyar
 felirat, a kötések, a 9 beállítás-kulcs, a **képpontra mért geometria** a
@@ -118,7 +118,14 @@ képkocka"**; a 193-as minőségérték
 gyakorlati következménye bizonyítottan nulla, tehát a „Maximális"
 nálunk maradhat 100.)*
 
-1. **Mi tiltja le a film-rádiókat?** A tény mért (a rádiók szürkék, a
+0. ⭐ **2026-08-21, működés-kör:** a lap **8.** szakasza a kilenc
+   működés-kérdést válaszolja meg (három belépési pont, a közös
+   `CImageOutput` mag, a `.picasa.ini`-átvitel, az `]history:export`
+   token, tíz hibaág, a registry-állapot). A **film-rádió
+   ALAPÉRTELMEZÉSE lezárva** (`FileExportMovie` → `setne`). A maradék
+   hét kérdés a lap **9.** szakaszában és a munkasorban. Jegy: **#1166**.
+
+1. **Mi TILTJA LE a film-rádiókat?** A tény mért (a rádiók szürkék, a
    csoport **címkéje fekete marad**), és négy dolog **kizárva**: nincs
    `.fen`-beli `enabled` kötés; a motor csak abból ismeri a letiltást
    (`0x008d2210`); a `movies` névre a teljes párbeszéd-kódban két
