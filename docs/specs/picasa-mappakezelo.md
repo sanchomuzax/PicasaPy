@@ -294,6 +294,87 @@ Ugyanez az arcfelismerés-jelvényre: a `Picasa` ki van zárva, a gyerekei
 
 ---
 
+### 4.4 A fa SOR-RAJZOLÁSA — mért értékek (2026-08-21)
+
+A rajzoló a `0x007c0130` (1035 bájt), amit az ablaknyitó (`0x005ce590`)
+állít fel. A használt erőforrások és konstansok:
+
+| mi | honnan | érték |
+|---|---|---|
+| **sormagasság** | `alist_height` konstans (`0x007c6660`), alapértelmezés `0x16` | **22 képpont** |
+| **szintenkénti behúzás** | `alist_indent` (`0x007c04a3`, `0x007c051f`) | **17 képpont** |
+| **betű** | `Praxis Semi Bold/Heavy` (`0x007c03b1`), méret `alist_fontsize_win` | **14** |
+| **becsukott csomópont nyila** | `arrows2/right` (283 bájt) | ▷ |
+| **kinyitott csomópont nyila** | `arrows2/down` (163 bájt) | ▲ |
+| **állapot-ikonok** | `icons/folder_manager_scan_once` · `_exclude` · `_watch` | ld. lent |
+| **arcfelismerés-jelvény** | `icons/folder_manager_nofr` | ld. lent |
+
+**A `constants.ui` (70 soros szövegfájl) vonatkozó sorai** — ez NEM
+respack, tehát a 3. szakasz R↔B cseréje **nem** érinti:
+
+```
+alist_height=22
+alist_fontsize_win=14
+alist_indent=17
+alist_bgcolor=0xFFF3F3F3
+alist_hicolor_win=0xFF83A7BD
+alist_selcolor_win=0xFF25648B
+```
+
+> ✅ **A 22 képpontos sormagasság a képernyőképen visszamérve pontos:** a
+> nagyított képen tizennégy egymás utáni sor y-koordinátája
+> 76, 98, 119, 141, 163, 185, … — a szomszédos különbségek **22** (egy
+> helyen 21, kerekítésből).
+
+#### A KIJELÖLT sor színe — mérés, mert a forrásokban nincs
+
+A kijelölt sor színe **mindkét képernyőképen `#7D8397`** (RGB 125, 131,
+151; az alapon 238, a nagyítotton 274 képpont dominanciával). Ez **NEM**
+az `alist_selcolor_win` (`#25648B`), és a `constants.ui` egyetlen
+konstansa sem áll közel hozzá; a teljes `runtime/` mappában sincs `7D8397`
+minta. **A szín tehát kódból jön** — a mérés az egyetlen forrásunk rá.
+
+#### A fa ikonjai MÁS erőforrások, mint a rádiósoroké
+
+| szerep | a jobb oldali rádiósorban | **a fában** | azonos? |
+|---|---|---|---|
+| Keresés egyszer | `foldermgr/icon_once` (643 b) | `icons/folder_manager_scan_once` (643 b) | **igen** |
+| Eltávolítás | `foldermgr/icon_exclude` (978 b) | `icons/folder_manager_exclude` (978 b) | **igen** |
+| Keresés mindig | `foldermgr/icon_always` (1068 b) | `icons/folder_manager_watch` (1068 b) | **igen** |
+| arcfelismerés | `foldermgr/nofr_on` (1678 b) / `nofr_off` (1818 b) | `icons/folder_manager_nofr` (**1368 b**) | **NEM — harmadik, külön kép** |
+
+*(Ugyanez a négy ikon `gpuploader_icons/` néven is szerepel a csomagban —
+a feltöltő is használja őket.)*
+
+*Bizonyítottsági fok: **megerősített** a konstansokra és az
+erőforrásnevekre (a kód szó szerint ezeket kéri, a `constants.ui` szöveges
+fájl) · **megerősített** a 22 képpontos sormagasságra (kódból ÉS
+képernyőképről) · **megerősített** a kijelölés színére mint MÉRÉSRE (két
+független képernyőkép), de a forrása ismeretlen.*
+
+### 4.5 Mi történik a fában KATTINTÁSRA
+
+A fa és a „Figyelt mappák" lista eseményeit a `0x007c5830` (971 bájt)
+osztja szét, **három** értesítésnév szerint:
+
+| értesítés | mikor | mit csinál |
+|---|---|---|
+| **`lb_preclick`** | kattintás ELŐTT | csak a fa-listaboxra (`[dlg+0x2f8]`) fut; ha az index változott, a `0x007c9d40`-en át frissít, majd `0x007bfb30` / `0x007c63a0` |
+| **`lb_selected`** | a kijelölés megváltozott | → **`0x007c60d0`**: a három rádió és az arcfelismerés-sor újraszámolása a kijelölt mappára (5.2, 5.3), majd `0x007c91c0`, `0x009d2810`, `0x007bf130` |
+| **`lb_predouble`** | dupla kattintás ELŐTT | → `0x007c63a0`, ami a fa-csomópont `[+0x290]` jelzőjét 1-re állítja és a `[dlg+0x414]` segédobjektumon a `0x007bf210`-et hívja; siker (`0xF4240`) esetén `0x007c9d40` + `0x009d2210` a listaboxon |
+
+> **Ez zárja le a „mi történik egy fa-sor kijelölésekor" kérdést:** a jobb
+> oldali panel teljes újraszámolása **az `lb_selected` értesítésen** lóg,
+> nem a rádiógombokon.
+>
+> A `lb_predouble` ág a `[dlg+0x414]` segédobjektumot kérdezi — ugyanazt,
+> amit az ablak bezárása előtt le kell állítani (10/b.2), és amit a
+> fa-sorból útvonalat képző `0x007bfcb0` is használ. **Erős** jelölt arra,
+> hogy ez a mappák felsorolását (kinyitás/lusta betöltés) végzi, de a
+> `0x007bf210` tartalmát nem olvastuk el — ld. 12.
+
+---
+
 ## 5. A három állapot és az arcfelismerés-kapcsoló
 
 ### 5.1 A jobb oldali panel felépítése
