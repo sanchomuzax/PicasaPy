@@ -5,6 +5,37 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.21] – 2026-08-20
+
+### Javítva
+- **A színezés (Tint) végre az eredeti receptjét követi (#872).** A hat
+  lépéséből három hiányzott vagy rosszul működött: a szinthúzás, a
+  telítettségfüggő gamma és a színmegtartás („Color Preserve") súlyozása.
+
+  A csúszka mostantól ugyanazt a képet adja, mint az eredeti Picasa —
+  különösen az erős színezéseknél és a magas színmegtartás mellett látszik
+  a különbség.
+
+  *(A javítás a párhuzamosan dolgozó fejlesztői kör munkája; a kiadásba itt
+  került be.)*
+- **A piszkozat visszatöltése nem felejti el a hátteret (#1085).** Ha
+  képhátteret állítottál be, majd piszkozatként mentetted és később
+  visszatöltötted, a háttér **sima színre váltott vissza**. A visszatöltés
+  mindent visszahozott — témát, tájolást, árnyékot, képfeliratot, címet —,
+  **csak a hátteret nem**, pedig a projektfájl tárolja.
+
+  Ha a háttérként használt kép időközben kikerült a kollázsból, a háttér a
+  **beállított színre** esik vissza: üres képhátteret mutatni rosszabb
+  volna, és törött hivatkozást nem hagyunk.
+
+### Fejlesztői
+- ⚠️ A `test_collage_controller_943.py` várakozó segédje a várakozás
+  idejére kikapcsolja a szemétgyűjtőt (#988). **Ez nem a hiba javítása** —
+  a veremkiíratás szerint a főszál szemétgyűjtése és a háttérszál
+  Qt-jelzése ütközik; a valódi javítás a worker Qt-natívvá tétele, ami
+  külön körben fut. Ez addig annyit tesz, hogy a főág CI-je ne legyen
+  piros, és a kiadások ne akadjanak el.
+
 ## [0.8.20] – 2026-08-20
 
 ### Javítva

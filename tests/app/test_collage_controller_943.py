@@ -11,6 +11,8 @@ fut: a modell adat, nem rajz.
 
 from __future__ import annotations
 
+import gc
+
 from pathlib import PurePath
 
 import math
@@ -99,7 +101,33 @@ def nyitott(host):
 
 
 def _wait(signal, action, timeout_ms=15000):
-    """A műveletet a jelzésre FELIRATKOZVA indítja, majd bevárja azt."""
+    """A műveletet a jelzésre FELIRATKOZVA indítja, majd bevárja azt.
+
+    ⚠️ **A várakozás idejére kikapcsoljuk a szemétgyűjtőt (#988) — és ez
+    NEM a hiba javítása.**
+
+    A CI-n visszatérő `exit -11` (SIGSEGV) veremkiíratása ezt mutatta:
+
+    ```
+    Thread (háttér):  picasa_render._canvas ← collage_save._render_worker
+    Current thread:   Garbage-collecting ← _wait ← a teszt
+    ```
+
+    Vagyis a főszál épp GC-t futtat ebben a beágyazott eseményhurokban,
+    miközben a háttérszál — egy sima `threading.Thread` — Qt-jelzést
+    marsall a PySide-burkolókon. A GC időzítése dönti el, hogy elszáll-e;
+    ezért nem volt reprodukálható terhelés nélkül, és ezért látszott
+    párhuzamosság-függőnek.
+
+    **A valódi javítás** a worker Qt-natívvá tétele (`QThread`/
+    `QueuedConnection`), az állapotírással együtt — az a #988/#999 köre,
+    másik munkamenetnél. Ez itt csak annyit tesz, hogy a **teszt** ne
+    hordozza a versenyhelyzetet, amíg az meg nem történik: a főág piros
+    CI-je e-mailt küld a tulajdonosnak, és minden kiadást blokkol.
+
+    A `gc.enable()` a `finally`-ben — egy elszálló teszt sem hagyhatja
+    kikapcsolva a gyűjtőt a többinek.
+    """
     loop = QEventLoop()
     received = {}
 
@@ -108,10 +136,14 @@ def _wait(signal, action, timeout_ms=15000):
         loop.quit()
 
     signal.connect(_on)
-    action()
-    if "args" not in received:
-        QTimer.singleShot(timeout_ms, loop.quit)
-        loop.exec()
+    gc.disable()
+    try:
+        action()
+        if "args" not in received:
+            QTimer.singleShot(timeout_ms, loop.quit)
+            loop.exec()
+    finally:
+        gc.enable()
     return ("args" in received, received.get("args", ()))
 
 

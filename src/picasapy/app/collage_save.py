@@ -29,10 +29,13 @@ NEVÉHEZ nem nyúlunk, mert egy néma felülírás a régi Kollázs-menüt törn
 
 from __future__ import annotations
 
+import os
+
 import logging
 from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtGui import QColor
 
 from picasapy.collage.autosave import read_autosave, write_autosave
 from picasapy.collage.cxf import read_cxf
@@ -465,6 +468,58 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         except OSError:  # pragma: no cover - elérhetetlen hálózati út
             return None
 
+    def _apply_cxf_background(self, hatter) -> None:
+        """A `.cxf` háttere vissza a panelra (#1085).
+
+        A tulajdonos jelentése: *„helyreállítja az előbbi fél mentést, de a
+        háttérképet elfelejti, sima színre kapcsolja vissza."* A
+        visszatöltés mindent visszahozott a témától a címig — a hátteret
+        nem, pedig a `.cxf` tárolja.
+
+        ⚠️ **A képháttér INDEXKÉNT él a panelen** (#1009: a háttérkép a
+        kollázs SAJÁT képeinek egyike), a `.cxf` viszont ÚTVONALAT tárol —
+        itt kell a kettő közé fordítani. Ha a hivatkozott kép már nincs a
+        kollázsban, **színre esünk vissza**: üres képhátteret mutatni
+        rosszabb volna, mint a színt, és törött hivatkozást a #1009
+        szabálya szerint sosem hagyunk.
+
+        A mezőket KÖZVETLENÜL állítjuk, a `set*` slotok helyett: azok
+        `_set_dirty(True)`-t hívnának, a visszatöltés viszont nem
+        módosítás."""
+        if hatter is None:
+            return
+        if hatter.type == "image" and hatter.src:
+            index = self._node_index_of_path(hatter.src)
+            if index >= 0:
+                self._collage_panel_bg_index = index
+                self._collage_panel_bg_mode = "image"
+                self.collageBackgroundModeChanged.emit()
+                self.collageBackgroundImageChanged.emit()
+                return
+            logger.info(
+                "a piszkozat háttérképe már nincs a kollázsban (%s) — szín marad",
+                hatter.src,
+            )
+        self._collage_panel_bg_mode = "solid"
+        self.collageBackgroundModeChanged.emit()
+        szin = _qcolor_from_argb(hatter.color)
+        if szin is not None:
+            self._collage_panel_bg_color = szin
+            self.collageBackgroundColorChanged.emit()
+
+    def _node_index_of_path(self, utvonal: str) -> int:
+        """Melyik csomópont ez az útvonal; −1, ha nincs a kollázsban.
+
+        Az összehasonlítás NORMALIZÁLT: a `.cxf` a mentés platformjának
+        elválasztóit hordozza, a mai csomópont az aktuálisét (#1019)."""
+        cel = os.path.normcase(os.path.normpath(str(utvonal)))
+        for index, csomopont in enumerate(self._nodes()):
+            if csomopont.path is None:
+                continue
+            if os.path.normcase(os.path.normpath(str(csomopont.path))) == cel:
+                return index
+        return -1
+
     def _apply_cxf_project(self, projekt, *, saved_path: str) -> None:
         """Egy `.cxf` projekt ráterítése a panelra — EGY kódút.
 
@@ -487,6 +542,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self.collageCaptionsChanged.emit()
         if projekt.album_title:
             self.setCollageTitle(projekt.album_title)
+        self._apply_cxf_background(projekt.background)
 
         self._set_nodes(
             _panel_nodes_of(nodes_from_project(projekt)), dirty=False
@@ -531,3 +587,18 @@ def _panel_nodes_of(nodes) -> tuple[CollageNode, ...]:
 
 
 __all__ = ["CollageSaveMixin"]
+
+
+def _qcolor_from_argb(ertek: str | None) -> QColor | None:
+    """`FFRRGGBB` (ARGB hexa) → `QColor`; érvénytelenre `None`.
+
+    A `.cxf` nagybetűs, nyolc karakteres ARGB-t tárol (`draft.py::_argb`); a
+    `QColor` `#AARRGGBB` alakot vár. Hibás értékre nem dobunk: egy idegen
+    `.cxf` sem tehet visszaállíthatatlanná egy kollázst."""
+    if not ertek:
+        return None
+    szoveg = str(ertek).strip().lstrip("#")
+    if len(szoveg) != 8:
+        return None
+    szin = QColor(f"#{szoveg}")
+    return szin if szin.isValid() else None
