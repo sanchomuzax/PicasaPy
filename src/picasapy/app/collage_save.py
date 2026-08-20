@@ -46,6 +46,7 @@ from picasapy.collage import draft_placeholder, write_collage
 from picasapy.collage.picasa_render import render_nodes
 from picasapy.collage.cxf import read_cxf
 from picasapy.collage.draft import nodes_from_project, project_from_nodes
+from picasapy.collage.win_paths import decode_cxf_path
 from picasapy.collage.page_formats import ORIENTATIONS
 from picasapy.collage.themes import COLLAGE_THEMES, MULTIEXP
 
@@ -676,7 +677,13 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         if hatter is None:
             return
         if hatter.type == "image" and hatter.src:
-            index = self._node_index_of_path(hatter.src)
+            # #1096: a `.cxf` a hátteret is KÓDOLT alakban tárolja
+            # (`$My Pictures\…`), a csomópontok útvonala viszont a
+            # `nodes_from_project`-ben már feloldva érkezik. Kódolt
+            # szöveggel keresve az egyezés SOSEM jönne össze, és a háttér
+            # némán színre esne vissza — pont az a hiba, amit a #1085/#1103
+            # javított, csak az eredeti Picasa fájljain.
+            index = self._node_index_of_path(decode_cxf_path(hatter.src))
             if index >= 0:
                 self._collage_panel_bg_index = index
                 self._collage_panel_bg_mode = "image"

@@ -46,6 +46,8 @@ a writer utasításszintű olvasata a `scale` FORRÁSÁT nem mondja ki).
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import math
 from collections.abc import Sequence
 
@@ -54,6 +56,7 @@ from .nodes import SHEET_UNITS, CollageNode
 from .picasa_render import PicasaCollageSettings
 from .page_formats import format_text, is_known_format
 from .themes import BORDER_THEMES, NOBORDER
+from .win_paths import decode_cxf_path, encode_cxf_path
 
 #: A `CollageSpec` alapértelmezett címe (`0x008342b0`: „Untitled").
 DEFAULT_ALBUM_TITLE = ""
@@ -147,7 +150,10 @@ def cxf_node_of(
         theta=node.theta,
         scale=max(node.width, node.height),
         theme=node.border,
-        src="" if node.path is None else str(node.path),
+        # #1096: az eredeti Picasa KÓDOLT alakot ír (`$My Pictures\…`),
+        # ami túléli a költöztetést és megosztható. Ami egyik ismert
+        # rendszermappa alá sem esik, az változatlanul megy ki.
+        src="" if node.path is None else encode_cxf_path(str(node.path)),
     )
 
 
@@ -208,7 +214,7 @@ def project_from_nodes(
         album_title=album_title,
         album_date=album_date,
         background=(
-            CxfBackground(type="image", src=background_image)
+            CxfBackground(type="image", src=encode_cxf_path(background_image))
             if background_image
             else CxfBackground(type="solid", color=_argb(settings.background))
         ),
@@ -231,8 +237,19 @@ def nodes_from_project(project: CxfProject | None) -> tuple[CollageNode, ...]:
         return ()
     page_ratio = page_ratio_of(project.aspect_ratio, project.orientation)
     return tuple(
-        collage_node_of(node, page_ratio=page_ratio) for node in project.nodes
+        _feloldott(collage_node_of(node, page_ratio=page_ratio))
+        for node in project.nodes
     )
+
+
+def _feloldott(node: CollageNode) -> CollageNode:
+    """A `.cxf` KÓDOLT útvonalát valódira fordítja (#1096).
+
+    Az eredeti Picasa `$My Pictures\…`, `$UNC…` és `[C]\…` alakot is ír; a
+    nyers szöveget fájlnévként megnyitni néma üres csempét adott. A `.cxf`-et
+    magát ez NEM írja át — csak a megjelenítés felé fordít."""
+    feloldott = decode_cxf_path(node.path)
+    return node if feloldott == node.path else replace(node, path=feloldott)
 
 
 __all__ = [
