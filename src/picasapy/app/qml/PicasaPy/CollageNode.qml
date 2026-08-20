@@ -37,6 +37,11 @@ Item {
     property real unit: 0
 
     property string path: ""
+    //: A kép URL-je a MODELLBŐL (#1019). A kézi `"file:" + útvonal` fűzés
+    //: Windowson érvénytelen URL-t ad (a meghajtóbetű PORTNAK látszik),
+    //: `#`-es fájlnévnél pedig Linuxon is elvágja a nevet — mindkét esetben
+    //: NÉMÁN, üres képpel. A szabályt a Qt `fromLocalFile`-ja adja.
+    property url fileUrl
     property real centerX: 0
     property real centerY: 0
     property real nodeWidth: 0
@@ -304,8 +309,11 @@ Item {
             y: node._layerMargin + node._photoY
             width: node._photoWidth
             height: node._photoHeight
+            //: ⚠️ NEM `"file:" + útvonal` (#1019) — ld. a `fileUrl`
+            //: property-t; az URL a modellből jön, nem kézi fűzésből.
             source: node.missing || node.path === ""
-                    ? "" : "file:" + node.path
+                    || node.fileUrl === undefined
+                    ? "" : node.fileUrl
             // A kért felbontás a darabszámmal lépcsőzik (spec 6.3): ettől nem
             // fullad meg a 350 képes kollázs — a Qt már a dekódolásnál
             // lekicsinyít, nem a teljes képet tartja a memóriában.

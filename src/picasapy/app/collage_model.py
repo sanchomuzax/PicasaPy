@@ -33,6 +33,7 @@ from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt
 
 from picasapy.collage.pile import PILE_BASE_RATIO, pile_scale
 from picasapy.collage.themes import BORDER_THEMES, NOBORDER
+from .formatting import to_file_url
 
 #: A lap belső szélessége egységben (6.1) — `0xcf3f68 = 1/1024`.
 SHEET_UNITS = 1024.0
@@ -194,6 +195,12 @@ class CollageNodeModel(QAbstractListModel):
     CaptionRole = Qt.ItemDataRole.UserRole + 8
     SelectedRole = Qt.ItemDataRole.UserRole + 9
     MissingRole = Qt.ItemDataRole.UserRole + 10
+    #: #1019: a csempe képének URL-je. Azért MODELL-szerep és nem
+    #: felületi fűzés, mert a kézi `"file:" + útvonal` Windowson
+    #: érvénytelen URL-t ad (a meghajtóbetű PORTNAK látszik), `#`-es
+    #: fájlnévnél pedig Linuxon is elvágja a nevet — mindkét esetben
+    #: NÉMÁN, üres képpel. A szabályt a Qt adja, nem mi.
+    FileUrlRole = Qt.ItemDataRole.UserRole + 11
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -248,6 +255,7 @@ class CollageNodeModel(QAbstractListModel):
             self.CaptionRole: b"caption",
             self.SelectedRole: b"selected",
             self.MissingRole: b"missing",
+            self.FileUrlRole: b"fileUrl",
         }
 
 
@@ -264,6 +272,7 @@ _ROLE_READERS = {
     CollageNodeModel.CaptionRole: lambda n: n.caption,
     CollageNodeModel.SelectedRole: lambda n: n.selected,
     CollageNodeModel.MissingRole: lambda n: n.missing,
+    CollageNodeModel.FileUrlRole: lambda n: to_file_url(n.path),
     Qt.ItemDataRole.DisplayRole: lambda n: n.path,
 }
 

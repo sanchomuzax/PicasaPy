@@ -188,6 +188,7 @@ Item {
             nodeIndex: index
             unit: lap ? lap.unit : 0
             path: model.path
+            fileUrl: model.fileUrl !== undefined ? model.fileUrl : ""
             centerX: model.centerX
             centerY: model.centerY
             nodeWidth: model.width

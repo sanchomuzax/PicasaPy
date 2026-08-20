@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.14] – 2026-08-20
+
+### Javítva
+- **Windowson és `#`-es fájlnévnél sem marad üres a kollázs csempéje
+  (#1019).** A vászon csempéi és a Klipek lap miniatűrjei kézzel fűzött
+  fájl-hivatkozást használtak. Windowson ez **érvénytelen hivatkozást** ad
+  (a meghajtóbetűt, például a `C:`-t, a rendszer portszámnak nézi), `#`-et
+  tartalmazó fájlnévnél pedig **minden rendszeren elvágja a nevet**.
+
+  Mindkét esetben **némán**: nincs hibaüzenet, csak egy üres kép a
+  csempe helyén.
+
+  A hivatkozást mostantól a modell adja, a Qt saját szabálya szerint — nem
+  a felület találja ki platformonként. Új teszt őrzi, hogy a fában
+  **sehol** ne maradjon kézi fűzés.
+
 ## [0.8.13] – 2026-08-20
 
 ### Javítva
