@@ -20,7 +20,7 @@ import cv2
 import numpy as np
 
 from picasapy.cvimage import read_image_bytes, scale_down
-from picasapy.ini.filters import FilterOp, parse_filters
+from picasapy.ini.filters import FilterOp, parse_filters_prefix
 from picasapy.ioutil import write_atomic
 from picasapy.render import apply_filters
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
@@ -180,7 +180,11 @@ def _export_one(
         shutil.copy2(source, target)  # copy2: mtime is átkerül (#136)
         return target
 
-    ops = parse_filters(item.filters) if item.filters else ()
+    # #1140: az OLVASÓ ág elvágja a láncot a hibás tagnál, és soha nem
+    # dob — egy idegen `.picasa.ini` hibás lánca nem hiúsíthatja meg az
+    # exportot. A felhasználó ettől kapott KEVESEBB képet, mint amennyit
+    # kijelölt.
+    ops = parse_filters_prefix(item.filters) if item.filters else ()
     if _is_noop_copy(source, item, settings, ops):
         # Az érvényesség-ellenőrzéshez dekódolunk (a sérült/nem-kép forrás
         # így is a `failed` listára kerül), de az eredményt eldobjuk — a

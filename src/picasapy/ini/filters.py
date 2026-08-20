@@ -60,6 +60,35 @@ def parse_filters(value: str) -> tuple[FilterOp, ...]:
     return tuple(ops)
 
 
+def parse_filters_prefix(value: str) -> tuple[FilterOp, ...]:
+    """A lánc ÉP ELŐTAGJA — az első hibás tagnál elvágva (#1140).
+
+    ⚠️ Az eredeti Picasa lánc-bejárója **az első hibás tagnál megáll**, és
+    ami előtte volt, azt alkalmazza. Két dolog tér el ettől a szigorú
+    `parse_filters`-től, és mindkettő MÉRT:
+
+    * a hibás tagot NEM elejtjük, hanem **elvágjuk a láncot** — a mögötte
+      állók sem futnak. Mérve: `nincsilyen=1;bw=1;` esetén a Picasa a
+      FORRÁST adja vissza, a `bw` nem fut le;
+    * az `=` nélküli tagra **nem dobunk kivételt**. Nálunk ettől a kép
+      EGYÁLTALÁN NEM exportálódott — nem romlott kép, hanem hiányzó kép.
+
+    A szigorú `parse_filters` megmarad: az ÍRÓ ágnak (szerkesztő, vágólap,
+    napló) tudnia kell a hibáról, mert ott a hibás lánc a mi hibánk. Ez a
+    változat az OLVASÓ ágé, ahol egy idegen `.picasa.ini` tartalmát kell
+    értelmeznünk — azt nem mi írtuk, és nem hiúsíthatja meg a műveletet.
+    """
+    ops: list[FilterOp] = []
+    for entry in value.split(";"):
+        if not entry:
+            continue
+        name, sep, rest = entry.partition("=")
+        if not sep or not name:
+            break
+        ops.append(FilterOp(name, tuple(rest.split(",")) if rest else ()))
+    return tuple(ops)
+
+
 def serialize_filters(ops: tuple[FilterOp, ...]) -> str:
     return "".join(f"{op.name}={','.join(op.params)};" for op in ops)
 
