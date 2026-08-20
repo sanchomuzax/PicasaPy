@@ -349,49 +349,60 @@ feliratot **kód rajzolja a JPEG-be**, nem a felületleíró.
 Ezért a `.tre` ezt **nem is fogja megmondani**; csak a bináris
 dekompilációja vagy a kész fájl **képpont-mérése**.
 
-### 8.3 A `0xFF3F3F3F` — szűkítve
+### 8.3 A `0xFF3F3F3F` és a `480` — MEGFEJTVE: MÁSIK helykitöltőé
 
-**Nem `.tre`-tulajdonság** (a keresés a teljes erőforrás-készleten
-nulla találat `3f3f3f`-re), tehát **kódbeli konstans** a
-`0x0068a6a0` függvényben.
+⚠️ **Ez a két konstans NEM a piszkozat-helykitöltőé.** Korábban ide
+soroltam őket — **tévesen**. Az **árva-automentés** helyreállító ágához
+tartoznak.
 
-**Nem a háttérszín** — az a projektből jön (a tulajdonos állította be).
-Két megmaradt jelölt: a **felirat színe/árnyéka**, vagy **tartalék
-háttér**, ha a projektben nincs szín. ⚠️ **Egyiket sem állítjuk.**
+**A Picasának KÉT helykitöltője van:**
 
-*(Érdekesség: a `.tre`-kben van egy hasonló alakú konstans,
-`Property negativemode 8f2f2f2f` — de az MÁS érték és más szerep,
-nem szabad összekeverni.)*
+| | mikor keletkezik | név | méret | tartalom |
+|---|---|---|---|---|
+| **piszkozat** | a Picasa maga ment piszkozatot | **a kollázs neve** (`AI10.jpg`, `lake.jpg`) | **a lap arányát követi** (A4 fekvőn 640 × 453) | **a kollázs kicsiben** |
+| **árva** | a Picasa **árva `autosave.cxf`-et** talál | **`autosave.jpg`** | **640 × 480 FIX** | **egyszínű `0xFF3F3F3F`** |
 
-### 8.4 A `480` konstans — új, TESZTELHETŐ hipotézis
+**Az árva-ág paraméterei** (`0x008419e0`, `collage::recoveredautosave`):
 
-Eddig azt írtuk, hogy a helykitöltő „640 a hosszabb élen". A `480`
-(`0x0068a79c`) ekkor magyarázat nélkül maradt.
+| konstans | cím | érték |
+|---|---|---|
+| szélesség | `0x0068a767` | `0x280` = 640 |
+| magasság | `0x0068a79c` | `0x1e0` = **480** |
+| szín | `0x0068a7c6` | `0xFF3F3F3F` = RGB(63, 63, 63) |
+| minőség | `0x0068a7f6` | q85 |
 
-**Új hipotézis: a lap egy 640 × 480-as DOBOZBA van illesztve.**
+**A bizonyíték, hogy ez a helyes hozzárendelés:** a tulajdonos
+Kollázsok mappájában megjelent egy `autosave.jpg` — **egyszínű
+sötétszürke, 640 × 480**, PISZKOZAT felirattal. A PicasaPy ezt a nevet
+**sehol nem írja**; a fájlt a **valódi Picasa** hozta létre, a
+PicasaPy által árván hagyott `autosave.cxf`-re válaszul. Mind a négy
+paraméter egyezik. → **#1100**
 
-Fekvő A4-en (5120 × 3620) a két szabály **ugyanazt adja**:
+*(A `.tre`-kben van egy hasonló alakú, de MÁS konstans:
+`Property negativemode 8f2f2f2f` — nem szabad összekeverni.)*
 
-```
-hosszabb él = 640     → 640 × 452,5 → 640 × 453
-doboz-illesztés       → min(640/5120, 480/3620) = 0,125 → 640 × 453
-```
+### 8.4 A piszkozat-helykitöltő mérete — a lap arányát követi
 
-Ezért a mért adat **nem különbözteti meg** őket.
+A `640` a **hosszabb él**, a másik oldal a **lap arányából**:
 
-**ÁLLÓ lapon viszont élesen szétválnak:**
+| lapformátum | tájolás | méret |
+|---|---|---|
+| A4 | fekvő | **640 × 453** ← a két mért képernyőkép |
+| Desktop 4:3 | fekvő | 640 × 480 |
+| Négyzet | — | 640 × 640 |
+| HDTV 16:9 | fekvő | 640 × 360 |
+| A4 | álló | **453 × 640** ⚠️ ellenőrizetlen |
 
-| szabály | álló A4 (3620 × 5120) |
-|---|---|
-| „640 a hosszabb élen" | **453 × 640** |
-| „640 × 480-as dobozba" | **339 × 480** |
+⚠️ **Az ÁLLÓ eset ellenőrizetlen.** Egy versengő olvasat szerint a lap
+egy **640 × 480-as dobozba** illeszkedne, ami álló A4-en **339 × 480**-at
+adna. **Fekvő lapon a két szabály egybeesik**, ezért a méréseink nem
+különböztetik meg őket — és minden mintánk fekvő.
 
-⚠️ **Amíg ez nem dől el, a helykitöltő méretét álló lapon NE tekintsük
-tudottnak.** A doboz-hipotézis a valószínűbb, mert megmagyarázza a
-`480`-at; de bizonyíték nélkül nem normatíva.
+**Amivel eldőlne:** egy **álló lapú** piszkozat mérete az eredeti
+Picasából (elég a szám a státuszsorból).
 
-**Amivel eldőlne:** egy **álló lapú** kollázs piszkozata az eredeti
-Picasából — elég a fájl mérete a státuszsorból.
+⚠️ Megjegyzés a 8.3-hoz: a `480` ott **fix** magasság (az árva-ágé), itt
+**véletlen egybeesés** a 4:3-as lapnál. A két 480 **nem ugyanaz**.
 
 ### 8.5 Két egymás utáni piszkozat-mentés
 
