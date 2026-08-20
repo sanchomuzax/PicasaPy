@@ -108,9 +108,14 @@ def test_a_csempe_KILOGHAT_fekvo_lapon():
 
 
 # --------------------------------------------------------------------------
-# A VALÓDI Picasa 3 kimenete (a tulajdonos Kollázsok mappája, 2026-08-20),
-# a kollázs-kutató munkamenet mérése. Ez a bizonyíték, amiért a #1045
-# beszorítását visszavontuk — a repóban is itt van, nem csak üzenetben.
+# A VALÓDI Picasa 3 kimenete (a tulajdonos Kollázsok mappája, 2026-08-20).
+# A mérés NORMATÍV leírása: `docs/specs/picasa-kollazs-felulet.md` 14.
+# szakasz — ott áll kimondva, hogy a kilógás nem hiány, hanem az eredeti
+# viselkedése. Ez a fájl ugyanannak a végrehajtható fele.
+#
+# ⚠️ A középpont NORMALIZÁLT lap-egységben van (tengelyenként 0…1), NEM a
+# `SHEET_UNITS` 1024-es skáláján: a `.cxf`-ből `x + w/2` és `y + h/2`
+# közvetlenül ezt adja, átváltani nem kell.
 # --------------------------------------------------------------------------
 
 #: A lapról KILÓGÓ csomópontok: (fájl, csomópontszám a lapon, x, y, w, h).
