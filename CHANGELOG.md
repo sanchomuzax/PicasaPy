@@ -5,6 +5,32 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.24] – 2026-08-20
+
+### Javítva
+- **⚠️ Windowson végre menthető a kollázs (#1097).** A Kollázsok mappában
+  álló, **rejtett** `.picasa.ini`-t nem tudtuk felülírni, ezért minden
+  mentés `[Errno 13] Permission denied`-del elbukott. Ráadásul azt írtuk
+  ki, hogy *„A kollázs nem készült el"* — holott a kép addigra már a
+  lemezen volt. Most a fájl írása a rejtett jelzőt megőrző módon megy, és
+  ha mégis gond van vele, az csak figyelmeztetés.
+- **A piszkozat háttérképe nem vész el (#1103).** Visszaállításkor a
+  program „elfelejtette" a képhátteret és sima színre váltott: a hátteret
+  előbb próbáltuk visszatenni, mint ahogy a képek a lapra kerültek, így
+  nem találta, melyik kép volt az.
+- **Nem hagyunk árva piszkozatot (#1100).** A kész kollázs mellől
+  eltakarítjuk a projektfájlt. Enélkül a valódi Picasa elárvult mentésnek
+  látta, és egy szürke, `autosave.jpg` nevű helykitöltőt gyártott a
+  Kollázsok mappádba.
+- **A kollázs a lapon ugyanúgy áll, mint az eredetiben (#1094).** Egy
+  korábbi „javítás" a képeket a lapra szorította; a valódi Picasa
+  kimenetéből kiderült, hogy az csak a képek KÖZÉPPONTJÁT korlátozza, a
+  csempe kilóghat. A hozzátoldás visszavonva.
+- **Windowson a natív adatmappákat használjuk (#1076),** és az áthozatal
+  nem fut hibára ékezetes felhasználónévnél sem: a másolás nyitva hagyta az
+  adatbázis-fájlt, amitől az egész átköltöztetés elbukott volna.
+- **A néma hibaüzenetek láthatóak (#1003).**
+
 ## [0.8.23] – 2026-08-20
 
 ### Hozzáadva
