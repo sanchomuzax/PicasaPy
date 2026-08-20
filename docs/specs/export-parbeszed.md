@@ -641,8 +641,10 @@ szükség.
 
 | | érték | bizonyíték |
 |---|---|---|
-| a hely alapértéke | a `DefaultExportPath` beállítás; ha nincs, a **`Picasa\Exports\`** | `0x00738d16`, ill. `0x00738cd6` + `CExportPrefsDialog::deffolder` |
-| a **mappanév** alapértéke | **a forrásmappa / album neve** | a tulajdonos képernyőképén: hely = `Asztal\PicasaPy merokit-3\`, név = `PicasaPy merokit-3` |
+| a hely alapértéke | a **`DefaultExportPath`** beállítás korábbi értéke; ha nincs elmentve, a honosított **`Picasa\Exportálások\`** | `0x00738d16`; a nyers alapérték `0xCAF984` = `Picasa\Exports\`, a honosítási kulcs `CExportPrefsDialog::deffolder` (`0xCAF994`), betöltés `0x00738cd6` |
+| a **mappanév** alapértéke | **a kiválasztott album / mappa neve** | `0x0073b500`: a név a bemeneti szerkezet `+8`-as mezőjéből jön (`0x0073b50b`), és ha nem üres, azt másolja a mezőbe |
+| ha a név **ÜRES** | a honosított **`exportálás`** | `0x0073b597`: a `CExportPrefsDialog::exportname` kulcs (`0xCAFB84`) betöltése, angol nyers alapértéke `export` (`0xC81228`); a tartalék beállítása `0x0073b5d8` |
+| a végleges útvonal alakja | **`<hely>\<név>\`** — záró visszaperjellel | a `%s\` formátum `0xC967C8`-on, összefűzés `0x0073b638` |
 | a mappanév szűrése | `filter="filename"` — fájlnévben tiltott karakter nem írható be | `export.fen` |
 | a névmező | induláskor fókuszban, **tartalma kijelölve** | `focus="name"` + képernyőkép |
 
