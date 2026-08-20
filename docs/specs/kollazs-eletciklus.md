@@ -393,16 +393,70 @@ A `640` a **hosszabb él**, a másik oldal a **lap arányából**:
 | HDTV 16:9 | fekvő | 640 × 360 |
 | A4 | álló | **453 × 640** ⚠️ ellenőrizetlen |
 
-⚠️ **Az ÁLLÓ eset ellenőrizetlen.** Egy versengő olvasat szerint a lap
-egy **640 × 480-as dobozba** illeszkedne, ami álló A4-en **339 × 480**-at
-adna. **Fekvő lapon a két szabály egybeesik**, ezért a méréseink nem
-különböztetik meg őket — és minden mintánk fekvő.
+### ✅ Az ÁLLÓ eset MEGMÉRVE (2026-08-20)
 
-**Amivel eldőlne:** egy **álló lapú** piszkozat mérete az eredeti
-Picasából (elég a szám a státuszsorból).
+A tulajdonos készített egy **A4 álló** piszkozatot. A Picasa
+státuszsora:
+
+```
+Kollázsok > lake.jpg   2026. 08. 20. 14:47:10   453x640 képpont   65 KB
+```
+
+a `lake.cxf` fejléce pedig `format="297:210" orientation="portrait"`.
+
+**453 × 640.** Ellenőrzés: `640 × 210/297 = 452,5 → 453`. ✔
+
+➡️ **A „640 a hosszabb élen" szabály IGAZOLT, a doboz-hipotézis
+MEGDŐLT** (az 339 × 480-at adott volna). A mai megvalósításunk helyes.
 
 ⚠️ Megjegyzés a 8.3-hoz: a `480` ott **fix** magasság (az árva-ágé), itt
-**véletlen egybeesés** a 4:3-as lapnál. A két 480 **nem ugyanaz**.
+**véletlen egybeesés** a 4:3-as lapnál. A két 480 **nem ugyanaz** — ez a
+szám-egyezés egyszer már félrevitt minket.
+
+### 8.5 A „PISZKOZAT" felirat — a szöveg KILÓG és LEVÁGÓDIK álló lapon
+
+Két mért eset ugyanabból a kollázsból:
+
+| tájolás | kép | a felirat |
+|---|---|---|
+| **fekvő** | 640 × 453 | teljesen kifér, oldalt margóval |
+| **álló** | 453 × 640 | **kilóg és levágódik MINDKÉT oldalon** — a „P" és a „T" a kép szélén elvágva |
+
+**Ebből következik:** a betűméret **nem a szélességhez** igazodik. A két
+eset akkor áll össze, ha a méret a kép **magasságához** kötött: fekvőn a
+magasság 453 (a felirat kifér), állón 640 (ugyanaz az arány már
+szélesebb, mint a 453-as kép).
+
+**Becsült arány:** a felirat szélessége ≈ **0,94 × a kép magassága**.
+
+⚠️ **Bizonyítottsági fok: erős, de nem pontos.** A 0,94 két
+képernyőképről, szemmértékkel becsült érték — a betűméret és a pontos
+pozíció **képpont-pontosan csak a fájlból** mérhető, és a
+`.tre`-erőforrásokban nincs benne (a feliratot kód rajzolja).
+
+⚠️ **NORMATÍVA: a levágódás az EREDETI viselkedése.** Álló lapon a
+feliratnak **ki KELL lógnia**. Aki „javításként" a szélességhez
+igazítaná, **eltérést** épít be — ugyanaz a hibaalak, mint a #1045
+beszorítása.
+
+### 8.6 A fájlnév a FORRÁSMAPPA neve — megerősítve
+
+A `lake.cxf` eldönt egy eddig kétértelmű pontot:
+
+```
+<albumTitle>Kollázsok</albumTitle>
+<src>$My Pictures\lake\262_size_1366x768_26.jpg</src>
+       ↑ a forrásmappa: „lake"
+fájlnév: lake.jpg
+```
+
+Az **albumTitle „Kollázsok"**, a forrásmappa **„lake"**, a fájl
+**`lake.jpg`** → **a név a FORRÁSMAPPÁBÓL jön, nem az albumTitle-ből.**
+
+A korábbi `AI`-mintákban a kettő megegyezett, ezért nem lehetett
+megkülönböztetni. **A mi megvalósításunk helyes**
+(`collage_controller.py:339 _title_from_sources` a közös forrásmappa
+nevét adja).
 
 ### 8.5 Két egymás utáni piszkozat-mentés
 
