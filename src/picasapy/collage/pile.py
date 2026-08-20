@@ -209,25 +209,16 @@ def pile_layout(
     elhelyezesek = []
     for index, (center_x, center_y) in enumerate(centers):
         meret = pile_size(index + 1, page_width)
-        # ⚠️ #1045: a KÖZÉPPONT a sávon belül van, a képnek viszont MÉRETE
-        # van a középpont körül — 11 képtől a legnagyobb kép fele kilóg a
-        # lapról, és a felhasználó ezt látja csonka képként.
+        # ⚠️ A KÖZÉPPONT a sávon belül van, a képnek viszont MÉRETE van
+        # körülötte — 11 képtől a legnagyobb csempe fele kilóghat a lapról.
+        # Ez az EREDETI viselkedése, nem hiba (#1094): a tulajdonos három
+        # A4-es FEKVŐ kollázsán a valódi Picasa kimenetében 89 csomópontból
+        # 3 lóg ki, mind függőlegesen, és egyik sem kézi szerkesztés.
         #
-        # A hiba darabszámfüggő, és ezért nem fogta meg egyetlen teszt sem:
-        # a `scatter_centers` a sávot `pile_scale(count)`-tal szűkíti (a
-        # LEGKISEBB kép szorzójával), a margót viszont a LEGNAGYOBB kép
-        # igényli, annak a szorzója pedig mindig 1,0. A legnagyobb kép bal
-        # széle 9 képnél +0,0100, 10-nél +0,0033, **11-nél −0,0024**,
-        # 25-nél −0,0412. A golden minták és a régi teszteseteink mind
-        # 9 képesek voltak.
-        #
-        # A sávot NEM szűkítjük: a 9 képes eset a mért minták középpontjait
-        # négy tizedesig hozza, tehát a sáv képlete helyes.
-        #
-        # ⚠️ A BESZORÍTÁS NEM ITT VAN, hanem a `_pile_nodes`-ban: ott ismert
-        # a KERETES csempe mérete (`outer_box`), és a kilógást az dönti el,
-        # nem a fotó négyzete. Itt beszorítva a keretes kép tovább lógna —
-        # egy 15 képes próbarenderen ez mérve is látszott.
+        # A #1045 ezt beszorítással „javította" a `_pile_nodes`-ban; a
+        # beszorítás azóta VISSZAVONVA. A sávot sem szűkítjük: a 9 képes
+        # eset a mért minták középpontjait négy tizedesig hozza, tehát a
+        # sáv képlete helyes.
         elhelyezesek.append(
             PilePlacement(
                 index=index,
