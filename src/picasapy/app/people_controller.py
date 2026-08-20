@@ -116,11 +116,21 @@ class PeopleMixin:
         képnél, „People in these photos:" többnél). A darabszám itt azt
         mondja, a kijelölés HÁNY képén szerepel az illető."""
         counts: dict[str, int] = {}
+        # ⚠️ #1146: MAPPÁNKÉNT olvasunk ini-t, nem képenként. A régi ág
+        # soronként hívott `load_document()`-et — 2 002 soros kijelölésnél
+        # 6 006 ini-beolvasás egyetlen billentyűleütésre, hálózati
+        # megosztáson mindegyik egy-egy hálózati kör.
+        dokumentumok: dict[str, object | None] = {}
         for photo in self._rows_to_photos(rows):
             folder = Path(photo.folder_path)
-            try:
-                document = load_document(folder / PICASA_INI_NAME)
-            except OSError:
+            kulcs = str(folder)
+            if kulcs not in dokumentumok:
+                try:
+                    dokumentumok[kulcs] = load_document(folder / PICASA_INI_NAME)
+                except OSError:
+                    dokumentumok[kulcs] = None
+            document = dokumentumok[kulcs]
+            if document is None:
                 continue
             names = {
                 contact.person_id.casefold(): contact.name
