@@ -26,6 +26,7 @@ Klipek lap miniatűrje (`CollageClipsTab.qml`). Mindkettő a
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -57,6 +58,19 @@ def _url(modell: CollageNodeModel, sor: int):
     return modell.data(index, CollageNodeModel.FileUrlRole)
 
 
+def _azonos_ut(a: str, b: str) -> bool:
+    """Útvonal-egyezés NORMALIZÁLVA.
+
+    ⚠️ Windowson a `QUrl.toLocalFile()` ELŐRE dőlő perjelet ad
+    (`C:/Users/...`), a `Path`-ból épített szöveg viszont hátra dőlőt
+    (`C:\\Users\\...`). A nyers egyenlőség ezért a windows-lábon
+    elbukik — a `models.py::rowOfPath` ugyanezt a csapdát már
+    dokumentálja, csak ez a teszt nem vette át."""
+    return os.path.normcase(os.path.normpath(a)) == os.path.normcase(
+        os.path.normpath(b)
+    )
+
+
 class TestASzerepLetezik:
     def test_a_szerep_neve_fileUrl(self):
         nevek = {
@@ -80,7 +94,7 @@ class TestAzUrlHelyes:
 
         url = _url(_modell(ut), 0)
 
-        assert url.toLocalFile() == ut
+        assert _azonos_ut(url.toLocalFile(), ut)
         assert url.toLocalFile().endswith("#1.jpg")
 
     def test_ekezetes_szokozos_mappara_is_jo(self, tmp_path):
@@ -88,7 +102,7 @@ class TestAzUrlHelyes:
         mappa.mkdir()
         ut = str(mappa / "árvíztűrő.jpg")
 
-        assert _url(_modell(ut), 0).toLocalFile() == ut
+        assert _azonos_ut(_url(_modell(ut), 0).toLocalFile(), ut)
 
     def test_a_kezi_fuzes_ELBUKNA_ugyanezen(self, tmp_path):
         """A jegy bizonyítéka, tesztként: a régi alak elvágja a nevet.
@@ -100,7 +114,7 @@ class TestAzUrlHelyes:
 
         kezi = QUrl("file:" + ut)
 
-        assert kezi.toLocalFile() != ut
+        assert not _azonos_ut(kezi.toLocalFile(), ut)
 
     def test_ures_utvonalra_ures_URL(self):
         assert _url(_modell(""), 0) == QUrl()
