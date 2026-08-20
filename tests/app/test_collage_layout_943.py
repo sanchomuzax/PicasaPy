@@ -262,5 +262,11 @@ class TestKimenet:
 
     def test_a_celmappa_beallitasbol_vagy_alapertelmezesbol(self, tmp_path):
         assert output.output_dir(str(tmp_path)) == tmp_path
-        assert output.output_dir(None) == Path.home() / output.DEFAULT_OUTPUT_DIR
-        assert output.DEFAULT_OUTPUT_DIR.parts == ("Pictures", "Picasa", "Kollázsok")
+        # ⚠️ #1088: a gyökér a RENDSZER képmappája, nem `Path.home()/Pictures`.
+        # A tulajdonosnál a Képek mappa OneDrive-ra volt átirányítva ÉS
+        # honosított néven állt — emiatt a PicasaPy és a Picasa két külön
+        # mappába dolgozott.
+        assert output.output_dir(None) == (
+            output.pictures_dir() / output.DEFAULT_OUTPUT_SUBPATH
+        )
+        assert output.DEFAULT_OUTPUT_SUBPATH.parts == ("Picasa", "Kollázsok")

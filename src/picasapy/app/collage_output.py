@@ -40,6 +40,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from PySide6.QtCore import QStandardPaths
+
 from picasapy.collage import write_collage
 from picasapy.collage.cxf import dumps
 from picasapy.collage.draft import project_from_nodes
@@ -74,10 +76,47 @@ MAX_OUTPUT_EDGE = 5120
 #: közti különbség mérhető fájlméret, nem látható minőség.
 JPEG_QUALITY = 90
 
-#: A „Kollázsok" album alapértelmezett helye, ha nincs beállított mappa.
+#: A „Kollázsok" album helye a rendszer KÉPMAPPÁJÁN belül.
 #: A `Picasa` közbülső szint NEM elhagyható: az eredeti oda írt, és a
 #: kétirányú kompatibilitás azon múlik, hogy ugyanott keressük a `.cxf`-et.
-DEFAULT_OUTPUT_DIR = Path("Pictures") / "Picasa" / "Kollázsok"
+DEFAULT_OUTPUT_SUBPATH = Path("Picasa") / "Kollázsok"
+
+#: Visszafelé kompatibilis alias — a régi név a teljes (képmappán belüli)
+#: útvonalat jelentette.
+DEFAULT_OUTPUT_DIR = DEFAULT_OUTPUT_SUBPATH
+
+
+def pictures_dir() -> Path:
+    """A rendszer KÉPMAPPÁJA — a shelltől kérdezve, nem kitalálva (#1088).
+
+    ⚠️ Ez P0 volt: a `Path.home() / "Pictures"` **két okból is** rossz
+    helyre mutatott a tulajdonosnál.
+
+    | | útvonal |
+    |---|---|
+    | valódi Picasa | `C:\\Users\\…\\OneDrive - …\\Képek\\Picasa\\Kollázsok` |
+    | PicasaPy (régi) | `C:\\Users\\…\\Pictures\\Picasa\\Kollázsok` |
+
+    A tulajdonos megfogalmazásában: *„Windows alatt az a Pictures mappa,
+    ami annak van jelölve a usernek. Nem találgat a Picasa, hanem a Windows
+    irányelveit elfogadja."*
+
+    Vagyis nem a MAPPANÉV a lényeg, hanem hogy **a rendszer dönti el**,
+    melyik mappa a képmappa — és az a döntés követi az átirányítást
+    (OneDrive) és a felhasználó saját beállítását is. A `Path.home()`-hoz
+    fűzött `"Pictures"` ezt megkerülte.
+
+    Ezért nem látta a PicasaPy-ben a Picasával készült kollázsait, és
+    fordítva: **sosem volt közös mappa.** Az eredeti a shellt kérdezi
+    (`SHGetSpecialFolderPathA/W`), ami mindkettőt követi — a Qt
+    `QStandardPaths` ugyanezt adja.
+
+    Tartalék: ha a rendszer nem ad képmappát (fejnélküli környezet), a
+    régi viselkedés marad, hogy a program indulni tudjon."""
+    hely = QStandardPaths.writableLocation(
+        QStandardPaths.StandardLocation.PicturesLocation
+    )
+    return Path(hely) if hely else Path.home() / "Pictures"
 
 #: A fájlnévben nem szereplő karakterek. A cím a felhasználótól (album- vagy
 #: mappanévből) jön, tehát tartalmazhat elválasztót — az útvonalból kiszökni
@@ -111,7 +150,7 @@ def output_dir(configured: str | None) -> Path:
     marad."""
     if configured:
         return Path(str(configured))
-    return Path.home() / DEFAULT_OUTPUT_DIR
+    return pictures_dir() / DEFAULT_OUTPUT_SUBPATH
 
 
 def safe_stem(title: str | None) -> str:
@@ -429,6 +468,8 @@ def render_collage(
 
 __all__ = [
     "DEFAULT_OUTPUT_DIR",
+    "DEFAULT_OUTPUT_SUBPATH",
+    "pictures_dir",
     "FILENAME_STEM",
     "JPEG_QUALITY",
     "MAX_OUTPUT_EDGE",
