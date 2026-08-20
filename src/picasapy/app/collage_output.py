@@ -156,16 +156,40 @@ def output_dir(configured: str | None) -> Path:
     return pictures_dir() / DEFAULT_OUTPUT_SUBPATH
 
 
+#: A DOS-kori **eszköznevek**, amiket Windows máig lefoglal: ilyen nevű
+#: fájl NEM hozható létre, kiterjesztéssel sem (`aux.jpg` sem). A kollázs
+#: neve a forrásmappa vagy az album CÍMÉBŐL jön, tehát a felhasználótól —
+#: egy „AUX" nevű album mentése enélkül némán elbukna a tulajdonos gépén.
+#:
+#: ⚠️ **Ez a MI védőágunk, nem az eredeti mért viselkedése.** Hogy a Picasa
+#: mit csinál ilyen címmel, nincs kimérve; a szabály célja csak annyi, hogy
+#: a mentés ne bukjon el. Ha valaha lemérjük, ez a viselkedés felülírandó.
+_ESZKOZNEVEK = frozenset(
+    ["con", "prn", "aux", "nul"]
+    + [f"com{i}" for i in range(1, 10)]
+    + [f"lpt{i}" for i in range(1, 10)]
+)
+
+
 def safe_stem(title: str | None) -> str:
     """A címből fájlnév-tő: elválasztók nélkül, üres címnél „kollázs".
 
     A cím a forrásmappa vagy az album neve, tehát a felhasználó írta —
     pontot, perjelet, kettőspontot is tartalmazhat. A csonkolás után is
     maradhat üres szöveg (pl. „...”), ezért a tartalékra esés az UTOLSÓ
-    lépés, nem az első."""
+    lépés, nem az első.
+
+    A DOS-eszköznevekre (`aux`, `con`, `nul`, `prn`, `com1`…, `lpt1`…)
+    aláhúzás kerül: ilyen nevű fájl Windowson nem hozható létre. A
+    vizsgálat az ELSŐ pontig tart, mert a foglaltság kiterjesztéssel is
+    érvényes (`aux.jpg` ugyanúgy tilos)."""
     tiszta = _TILTOTT_KARAKTEREK.sub("", str(title or ""))
     tiszta = tiszta.strip().strip(".").strip()
-    return tiszta or FILENAME_STEM
+    if not tiszta:
+        return FILENAME_STEM
+    if tiszta.split(".")[0].casefold() in _ESZKOZNEVEK:
+        return f"{tiszta}_"
+    return tiszta
 
 
 def output_path(folder: Path | str, title: str | None = "") -> Path:
