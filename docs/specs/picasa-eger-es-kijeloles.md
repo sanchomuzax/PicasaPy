@@ -922,3 +922,167 @@ ini-beolvasás egy hálózati körút — ott ugyanez perces nagyságrend.
 > maradék ~208 ms tiszta QML-kötés-újraértékelés — azt a
 > `selectedIndexes` tömb-alapú terjesztése okozza, és **külön** mérés kell
 > hozzá, hogy melyik kötés.
+
+---
+
+## 14. Lasszó VAGY képhúzás: a trigger GEOMETRIAI, és megvan (2026-08-20)
+
+A #1148 első kiadása ezt „a mi elrendezésünkre vonatkozó, nyitott
+UI-döntésnek" nevezte. **Ez tévedés volt** — a bináris pontosan megmondja,
+hol a határ. Ez a szakasz a helyesbítés.
+
+### 14.1 A szereposztás: KÉT külön csomópont, nem egy kezelő
+
+```
+CSelectionNode  (a rács maga)      ← a KIJELÖLÉS és a LASSZÓ gazdája
+ └─ ytDragNode  elemenként          ← a FOGD-ÉS-VIDD gazdája
+```
+
+A rács a saját elemeit **`ytDragNode`-ként hozza létre**: a `0x0071abc0`
+(a CSelectionNode elem-gyártója) foglal (`0x0097c5d0`), majd a
+`0x00aa1b90` `ytDragNode`-konstruktort hívja (`0x0071ac84`). A
+`ytDragNode` az egyetlen hely a binárisban, ami a **`"dragstart"`**
+értesítést kiküldi (`0x00aa22cd`), és az egyetlen, ami a `DoDragDrop`-hoz
+vezető `0x00aa1fb0`-t hordozza (vtábla `+0x78`).
+
+A `CThumbUI` a `"dragstart"` / `"dragstop"` / `"dragcancel"` értesítésekre
+csak egy jelzőt állít (`0x005df0b9`: `[CThumbUI+0xdc0] = 1`,
+`0x005dfa4b`: `= 0`) — ezt a rajzolás és az **ablakbezárás-tiltás**
+(`0x0057c554`: húzás közben az Esc/bezárás nem sül el) olvassa. **A
+lasszó–húzás döntésben ez a jelző NEM vesz részt.**
+
+### 14.2 A döntés: a rács a MOZGÁST NEM NYELI EL
+
+A `CSelectionNode` egérmozgás-ága (`0x00719ece`, 2./3. esemény):
+
+```asm
+0x00719f38  test cl, cl                    ; élő mozgás?
+0x00719f3c  cmp byte ptr [ebx + 0x2ce], 0  ; fut-e MÁR lasszó?
+0x00719f43  jne 0x719f91                   ;   igen → a keret frissítése
+0x00719f54  push 1 / push ebx
+0x00719f5b  call 0x7194e0                  ; TALÁLAT-VIZSGÁLAT
+0x00719f67  call 0x719480                  ;   ha elem: kéz-kurzor (IDC_HAND, 0x7f89)
+0x00719f71  call 0x71b8a0                  ;   lebegés-értesítés
+0x00719f76  mov eax, 0xf4241               ; ← „NEM KEZELTEM, ADD TOVÁBB"
+```
+
+**Ez a kulcs.** Ha nincs futó lasszó, a rács a mozgás-eseményt
+**visszaadja** (`0xF4241`), és az így jut el a lenyomott elem saját
+`ytDragNode`-jához, ami elindítja a húzást. A rács tehát **nem versenyez**
+a húzással: vagy lasszózik (mert üres területre nyomtak, és `[+0x2ce]`
+áll), vagy félreáll.
+
+A lasszó pedig **kizárólag üres területre** való lenyomásra indul —
+a lenyomás-ág (`0x00719c37`) elem-találat esetén a `0x0071bae0`-ra megy
+(kijelölés-váltás), és `[+0x2ce]`-t **nem** állítja; üres területnél
+viszont pillanatfelvételt ment és `[+0x2ce] = 1` (`0x00719dae`).
+
+> **A trigger tehát egyetlen kérdés: a TALÁLAT-VIZSGÁLAT ad-e elemet.**
+
+### 14.3 A találat-vizsgálat téglalapja: a KIRAJZOLT KÉP, nem a cella
+
+`0x007194e0(csomópont, pont, bool adjIdAzonositot)`:
+
+1. előbb a **csomópont** saját téglalapja (`[+0x2ac]`, `[+0x2b0]`,
+   `[+0x2b4]`, `[+0x2b8]`); kívül → `-1`;
+2. a pontot átviszi a csomópont transzformációján (`0x009de880`);
+3. az elemeken **hátulról előre** halad (`0x0071959d`: `ecx = darab−1`,
+   `0x0071973b`: `ecx−−`) — a legfelső nyer;
+4. az `[elem+0x5a] != 0` elemeket **kihagyja** (`0x007195f3`);
+5. és az elem téglalapját így számolja:
+
+```c
+sw = kerekit(elem->w /*[+0x3c]*/ * elem->zoom /*[+0x60]*/);
+sh = kerekit(elem->h /*[+0x40]*/ * elem->zoom);
+x0 = elem->x /*[+0x88]*/ + (elem->w - sw) * 0.5;   // ← 0.5: [0x00c72150]
+y0 = elem->y /*[+0x8c]*/ + (elem->h - sh) * 0.5;
+talalat = (x0 <= p.x <= x0 + sw) && (y0 <= p.y <= y0 + sh);
+```
+
+A `0.5`-ös szorzó a `0x00c72150`-en álló `double 0.5` — vagyis a
+**méretezett elem a saját dobozában KÖZÉPRE igazítva** ad találatot. Ami a
+dobozból kilóg a kép mellett, az a találat-vizsgálat szerint **üres
+terület**.
+
+### 14.4 A rács elrendezése: a cellák között VAN hézag
+
+A rács elrendezője a `0x0071ca60`. A konfiguráció a
+`CSelectionNode + 0x2c8` mutatón lóg:
+
+| mező | jelentés |
+|---|---|
+| `cfg[0x00]` | a bélyegkép-méret **512-es egységben** (`cella = cfg[0]·144/512` képpont) |
+| `cfg[0x08]` | a szélső margó képpontban (vízszintesen és függőlegesen is innen indul) |
+| `cfg[0x0c]` | az **arányos** térköz 512-es egységben |
+| `cfg[0x14]` | a **fix** térköz képpontban |
+
+```c
+cella  = cfg[0]*144 / 512;                       // 0x0071cbf5
+res    = (cfg[0x0c] * cfg[0]) / 512 + cfg[0x14]; // 0x0071cbd1–0x0071cbe5
+n      = (W - 2*cfg[8] - cella) / (cella + res); // 0x0071cbfc
+oszlop = n + 1;                                  // 0x0071cc10
+maradek= W - 2*cfg[8] - res*n - cella*oszlop;    // 0x0071cc0c–0x0071cc20
+extra  = maradek / oszlop;                       // 0x0071cc36
+pitch  = cella + res + extra;                    // 0x0071d2fa–0x0071d31b
+```
+
+és az elem a cellán belül **középre kerül**:
+
+```asm
+0x0071d2a0  eax = cfg[0]              ; a méret-beállítás
+0x0071d2a8  edx = [elem+0x3c]         ; az ELEM tényleges szélessége
+0x0071d2ab  eax = eax*9 ; shl 4       ; cfg[0]*144
+0x0071d2b3  ecx = edx >> 1            ; elem/2
+0x0071d2b5  eax >>= 0xa               ; cella/2
+0x0071d2b8  eax -= ecx                ; (cella − elem)/2   ← KÖZÉPRE
+0x0071d2c1  ecx = eax + futo_x
+0x0071d2ee  [elem+0x88] = ecx
+```
+
+*(A `0x0071d296` a sor magasságát az elemek magasságának **maximumaként**
+számolja — az elemek tehát nem egyforma méretűek, hanem a kép arányához
+igazodnak.)*
+
+**Két, egymástól független forrása van tehát az „üres területnek" a
+rácson belül:**
+
+1. a **cellák közti hézag** (`res + extra`, mindig ≥ 0, és a maradék
+   szétosztásával rendszerint > 0), és
+2. a **cellán belüli levélszekrény-sáv**: a kép arányához igazított elem
+   a `cella × cella` dobozban középen ül, a mellette maradó sáv üres.
+
+*(A `0x00573624` a `CThumbUI+0xea4` rácsának adja: `cfg[8] = 4`,
+`cfg[0x0c] = 6`, `cfg[0x10] = 6`, kiinduló `cfg[0] = 192`, „automatikus
+illesztés" módban `256`-ról 30 körben újraszámolva. Ezek **annak a
+csomópontnak** a számai — a könyvtárnézet albumsorai a saját cfg-jüket
+kapják; a képlet közös.)*
+
+### 14.5 Amit ebből át kell venni
+
+| | eredeti | nálunk |
+|---|---|---|
+| a bélyegkép **találati felülete** | a kirajzolt kép téglalapja, a cellán belül középre igazítva | a **teljes cella** (`ThumbDelegate` `MouseArea { anchors.fill: parent }`) |
+| a cellák közti hézag | `res + extra`, és a maradék szét van osztva | a `cellWidth` hézagmentesen fedi a sávot |
+| ki dönt lasszó/húzás közt | **a találat-vizsgálat** — a rács a mozgást elemtalálatnál nem nyeli el (`0xF4241`) | a `ThumbDelegate` `MouseArea`-ja maga választ (`cell.selected` alapján) |
+| a húzás gazdája | elemenkénti `ytDragNode` | ugyanaz a `MouseArea` |
+
+> **Vagyis nincs itt eldöntendő UI-kérdés.** A „pontosan úgy, mint az
+> eredeti Picasa" alapértelmezés alkalmazható: a **kép** a húzás felülete,
+> a **kép körüli sáv és a cellák közti hézag** a lasszóé.
+
+*Bizonyítottsági fok: **megerősített** — a találat-vizsgálat képlete és a
+`0.5`-ös konstans, az elrendezés képletei, a `0xF4241` visszatérés, és az
+elem-gyártó `ytDragNode`-hívása mind utasításszinten.*
+
+### 14.6 Amit KIZÁRTUNK a kereséssel
+
+- **Nincs képpont- vagy idő-küszöb a húzás indításához.** A
+  `GetSystemMetrics(SM_CXDRAG/SM_CYDRAG = 0x44/0x45)` a teljes
+  `.text`-ben **egyszer sem** hívódik meg; a `SetCapture`-nek mindössze
+  két hívóhelye van (`0x00923460`, `0x00a52890`), egyik sem a rácsé.
+- **A `[CThumbUI+0xdc0]` „húzás folyamatban" jelző nem trigger:**
+  mindössze két olvasója van (`0x00570f10` — elrendezés/rajzolás,
+  `0x0057c554` — a bezárás tiltása húzás közben).
+- **A `.tre` sem dönt:** a 24 `Handler`-kötés között a rácshoz **nincs**
+  húzás-kezelő (6. szakasz); a `selectiondrag` a szerkesztő három
+  téglalapjáé (4/b).

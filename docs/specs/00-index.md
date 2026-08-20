@@ -163,7 +163,12 @@ tehát a Picasában **nem létezik mappákon átnyúló kijelölés** ·
 „mindent kijelöl" mag (`0x00716f40`) · **12.** Home / End / Shift+Home /
 Shift+End / Ctrl+Home / Ctrl+End / PageUp / PageDown teljes leképezése ·
 **13.** a kijelölés-változás ára — az eredetiben egy menet, nálunk
-**mért** 10 010 `stat()` + 6 006 ini-beolvasás egyetlen Ctrl+A-ra
+**mért** 10 010 `stat()` + 6 006 ini-beolvasás egyetlen Ctrl+A-ra ·
+**14.** a lasszó és a képhúzás **geometriai** szétválasztása: a
+találat-vizsgálat a **kirajzolt képre** szűkít (középre igazítva,
+`0.5` @ `0x00c72150`), a rács a mozgást elemtalálatnál **nem nyeli el**
+(`0xF4241`), és az elrendezés cellák közti hézagot hagy — vagyis **ez sem
+a mi döntésünk**, mint korábban gondoltuk
 (jegyek: #1145, #1146, #1147, #1148).
 
 1. ~~A **gumikeretes kijelölés** szabálya~~ — a `ytSelectionDragHandler` a
