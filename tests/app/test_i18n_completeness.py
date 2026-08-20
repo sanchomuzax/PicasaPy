@@ -66,6 +66,11 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
     # a megszakítás visszajelzése (`collage::cancelling`)
     ("CollageSaveMixin", "Creating collage… shutting down"): "AppController",
     ("CollageSaveMixin", "The collage is ready (click here)"): "AppController",
+    # #1002: a kész kollázs újranyitásának hibája
+    (
+        "CollageSaveMixin",
+        "The collage project file could not be opened.",
+    ): "AppController",
     (
         "CollageSaveMixin",
         "None of the selected pictures could be read.",

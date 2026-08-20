@@ -1181,6 +1181,10 @@
 <context>
     <name>AppController</name>
     <message>
+        <source>The collage project file could not be opened.</source>
+        <translation>A kollázs projektfájlja nem nyitható meg.</translation>
+    </message>
+    <message>
         <source>Unknown picture frame.</source>
         <translation>Ismeretlen képkeret.</translation>
     </message>
@@ -3606,6 +3610,14 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <source>Edit Faces</source>
         <translation>Arcok szerkesztése</translation>
+    </message>
+    <message>
+        <source>Edit Collage</source>
+        <translation>Kollázs szerkesztése</translation>
+    </message>
+    <message>
+        <source>Edit the collage from which this image was created</source>
+        <translation>A kép alapjául szolgáló kollázs szerkesztése</translation>
     </message>
 </context>
 <context>
