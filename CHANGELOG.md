@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.21] – 2026-08-20
+
+### Javítva
+- **A színezés (Tint) végre az eredeti receptjét követi (#872).** A hat
+  lépéséből három hiányzott vagy rosszul működött: a szinthúzás, a
+  telítettségfüggő gamma és a színmegtartás („Color Preserve") súlyozása.
+
+  A csúszka mostantól ugyanazt a képet adja, mint az eredeti Picasa —
+  különösen az erős színezéseknél és a magas színmegtartás mellett látszik
+  a különbség.
+
+  *(A javítás a párhuzamosan dolgozó fejlesztői kör munkája; a kiadásba itt
+  került be.)*
+
 ## [0.8.20] – 2026-08-20
 
 ### Javítva
