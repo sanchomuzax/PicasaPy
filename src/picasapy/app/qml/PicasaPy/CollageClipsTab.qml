@@ -164,8 +164,16 @@ Item {
                     anchors.fill: parent
                     anchors.margins: 3
                     visible: !clip.missing && clip.path !== ""
+                    //: ⚠️ NEM `"file:" + útvonal`: Windowson a meghajtóbetű
+                    //: PORTNAK látszik (érvénytelen URL, üres kép), `#`-es
+                    //: fájlnévnél pedig Linuxon is elvágja a nevet (#1019).
+                    //: Az URL a MODELLBŐL jön, a Qt `fromLocalFile`-ján át.
+                    //: A null-őr a #305 szabálya: teszt-kettősöknél és a
+                    //: modell lebontásakor a szerep `undefined`-ot ad, amit a
+                    //: `url` nem fogad el — QML-szkripthiba lenne belőle.
                     source: clip.missing || clip.path === ""
-                            ? "" : "file:" + clip.path
+                            || clip.fileUrl === undefined
+                            ? "" : clip.fileUrl
                     // A miniatűr KICSI: egy 350 képes kollázs listája
                     // teljes felbontású dekódolással megfojtaná a felületet.
                     sourceSize.width: 128
