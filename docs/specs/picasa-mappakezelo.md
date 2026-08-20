@@ -425,6 +425,52 @@ kereséssel megy. A listák **KÉT külön objektumon** élnek:
 fájlíró/olvasó szó szerint ezeket használja) · **erős** a dialógus-oldali
 pár-értelmezésre.*
 
+### 5.2/b Melyik RÁDIÓ melyik listát írja — mérve (2026-08-21, M1)
+
+A három rádió ága a fa kijelölt sorából útvonalat képez (`0x007bfcb0`),
+majd **mind más listán** végzi a `0x00492e40` keresést:
+
+| rádió | az ág kezdete | a mutált lista | cím |
+|---|---|---|---|
+| **Keresés egyszer** | `0x007c3718` | **`[dlg+0x288]`** | `0x007c375c` |
+| **Eltávolítás a Picasából** | `0x007c40fa` | **`[dlg+0x270]`** | `0x007c4184` |
+| **Keresés mindig** | `0x007c290a` | **`[dlg+0x2a8]`** | `0x007c2c11` |
+| arcfelismerés-kizárás | — | **`[dlg+0x290]` / `[dlg+0x298]`** | `0x007c5f37`, `0x007c5f4a` |
+
+Az „Eltávolítás" ága ezen felül a **Figyelt mappák listbox** (`[dlg+0x2fc]`)
+kijelölését is beszámítja (`0x007c412e`) — vagyis a rádió **onnan is** tud
+tételt eltávolítani, nem csak a fából.
+
+Az OK-ra futó alkalmazó **hat argumentumot** kap (`0x007c56fb`–`0x007c571f`):
+
+```asm
+push [dlg+0x298]   ; arcfelismeres-delta
+push ebx           ; a helyben epitett lista
+push [dlg+0x288]   ; „Kereses egyszer" delta
+push [dlg+0x280]   ; a par masik fele
+push [dlg+0x270]   ; „Eltavolitas" delta
+push [dlg+0x268]   ; a CThumbUI
+call 0x005cef20
+```
+
+majd két feltételes `0x007bfec0` hívás a `[[dlg+0x268]+0x2bc] + 0xf8`
+tárolóra (`0x007c5743`, `0x007c5767`).
+
+> ⚠️ **Helyesbítés a lap korábbi állításához:** a `[dlg+0x270]`-t nem
+> csak az iPhoto-oldalág használja — **ez az „Eltávolítás" deltája**, és
+> a watch-ág iPhoto-útja is ide nyúl. Az iPhoto-ág tehát nem külön lista,
+> hanem ugyanez.
+
+**Ami MÉG nincs meg (M1 folytatása):** hogy a `0x005cef20` melyik
+argumentumot vezeti a `scanlist.txt` **`+`**, és melyiket a **`−`**
+szakaszába. A fájl oldaláról tudjuk, hogy a `+` a `[lib+0x280]`, a `−` a
+`[lib+0x288]` (11.3) — a dialógus-oldali delták hozzárendelése az
+alkalmazó belsejében dől el.
+
+*Bizonyítottsági fok: **megerősített** a rádió → dialógus-lista
+hozzárendelésre és az alkalmazó argumentumaira · **nyitott** a
+dialógus-lista → fájlszakasz hozzárendelés.*
+
 ### 5.3 Az arcfelismerés-sor — `0x007c64a0`
 
 ```c
