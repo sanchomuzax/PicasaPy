@@ -7,6 +7,14 @@ from pathlib import Path
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _reveal_linux(monkeypatch):
+    """#1104: a „Keresés a lemezen" platformfüggő lett — a `reveal`-t
+    érintő esetek a LINUX ágat írják le (a többi platformot a
+    `tests/fileops/test_reveal_platform_1104.py` fedi)."""
+    monkeypatch.setattr("picasapy.fileops.reveal.sys.platform", "linux")
+
+
 @pytest.fixture
 def controller(qt_app):
     from picasapy.app.fileops_controller import FileOpsController
