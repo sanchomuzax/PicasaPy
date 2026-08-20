@@ -95,12 +95,13 @@ környezete nincs kimérve.
 
 Ezek **nyitott kérdések**, nem elhallgatott részletek:
 
-1. **Geometria** — az ablak mérete, a jobb szélhez képesti pozíciója, a
-   belső margók. A `respack.yt` tervezővászon **nincs meg a kutatási
-   anyagban**, a `.tre` pedig elrendezést elvileg sem ad
-   ([picasa-respack-format.md](picasa-respack-format.md)).
-2. **Animáció** — a felhasználó „animált sávnak" írta le. Hogy becsúszik,
-   elhalványul, vagy folyamatjelzőt mozgat, **nincs bizonyítva**.
+1. ~~**Geometria**~~ — **MEGVAN**, ld. a „Geometria — mérve a binárisból"
+   szakaszt. (Az első változat tévesen állította, hogy a `respack.yt`
+   hiányzik.) Ami ebből még nyitott: az ablak **képernyőhöz képesti**
+   pozíciója — a rétegek a cella saját vásznához relatívak.
+2. **Animáció** — a `progressbase`/`progressfill` réteg bizonyítja, hogy
+   **van folyamatjelző**; hogy emellett becsúszik-e vagy elhalványul-e,
+   továbbra sem bizonyított.
 3. **Élettartam** — mennyi ideig marad kint, eltűnik-e magától,
    újrahasznosul-e egymást követő eseményeknél.
 4. ~~**Az észlelési ág**~~ — **MEGVAN a szövege és a mechanizmus is**,
@@ -162,6 +163,52 @@ amit a felhasználó másol a figyelt mappába — csak azt tudjuk, hogy
 helykitöltőjét) ezért nem ez a szakasz a bizonyíték, hanem a tulajdonos
 valódi Kollázsok mappájának mérése (11 JPEG + 11 `.cxf`, **nulla**
 párosítatlan fájl).
+
+## Geometria — MÉRVE A BINÁRISBÓL (2026-08-20)
+
+⚠️ **Helyesbítés:** e lap első változata azt állította, hogy a `respack.yt`
+„nincs meg a kutatási anyagban". **Ez hamis volt** — a fájl megvan
+(`research/copy_Picasa_3_7/Picasa3/runtime/respack.yt`, 3,8 MB, Picasa
+3.9.141.259), és minden réteget megad. A hiba az volt, hogy nem néztem meg a
+saját dokumentációnk által megnevezett útvonalat.
+
+A `notifier` modul **11 rétege**, a 13 bájtos fejlécek `int16 x0,y0,x1,y1`
+mezőiből (fájloffsetek a `respack.yt`-ben):
+
+| réteg | x0 | y0 | x1 | y1 | méret | szerep |
+|---|---:|---:|---:|---:|---:|---|
+| `docbounds` | 0 | 0 | 247 | 45 | **247 × 45** | **az értesítő-cella teljes mérete** |
+| `cell1` | 0 | 0 | 247 | 45 | 247 × 45 | egy cella tartalomrétege |
+| `cellbase` | 0 | 0 | 13 | 45 | 13 × 45 | bal oldali sáv (teljes magasság) |
+| `basedecrect` | 226 | 0 | 247 | 45 | 21 × 45 | **jobb oldali vezérlő-sáv** |
+| `close` | 231 | 4 | 242 | 15 | **11 × 11** | bezárás — jobb FELSŐ |
+| `collapse` | 231 | 30 | 242 | 41 | **11 × 11** | összecsukás — jobb ALSÓ |
+| `gripper` | 233 | 19 | 240 | 26 | 7 × 7 | fogantyú (mozgatás) — jobb KÖZÉP |
+| `chat` | 9 | 12 | 29 | 33 | 20 × 21 | ikonhely (üzenet) |
+| `globe` | 10 | 14 | 24 | 28 | 14 × 14 | ikonhely (online) |
+| `progressbase` | 40 | 10 | 170 | 21 | **130 × 11** | **folyamatjelző sín** |
+| `progressfill` | 42 | 12 | 167 | 18 | **125 × 6** | **folyamatjelző kitöltés** |
+
+Az ikonkészlet külön modulban: `tab_notifier_icons/import32` (**32 × 32**) és
+`import16` (**16 × 16**) — az importálás ikonja két méretben.
+
+### Amit a geometria eldönt
+
+1. **Az ablak fix szélességű: 247 képpont.** Ez magyarázza, amit a
+   tulajdonos képernyőképén látni: a hosszú magyar felirat **elvágódik**.
+2. **Három vezérlő van, nem egy** — a jobb szélső 21 képpontos sávban,
+   függőlegesen elosztva: **bezárás** (fent), **fogantyú** (közép),
+   **összecsukás** (lent).
+3. **Van folyamatjelző** (`progressbase` + `progressfill`) — ez az, amit a
+   tulajdonos „animált sávnak" látott. A kitöltés 2 képponttal beljebb kezdődik
+   (42 vs 40) és 6 képpont magas a 11 képpontos sínben.
+4. **Cellás felépítés** (`cellbase`, `cell1`): az értesítő **több bejegyzést**
+   tud egymás alatt megjeleníteni, nem csak egyet.
+5. Két ikonhely (`chat`, `globe`) mutatja, hogy az értesítő **többféle
+   eseményt** szolgál ki — összhangban azzal, hogy általános tartály.
+
+**Bizonyítottsági fok: megerősített** — a méretek a bináris erőforráscsomagból
+származnak, nem becslésből.
 
 ## Módszertani megjegyzés
 
