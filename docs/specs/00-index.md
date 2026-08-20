@@ -107,6 +107,24 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    területe, nem a kollázsé.)
 
 
+### [export-parbeszed.md](export-parbeszed.md) — 3 kérdés
+
+*(A 2026-08-20-i kör az öt minőség-fokozat számértékét, az Egyéni csúszka
+kétirányú leképezését, a dinamikus „Egyéni (N)" feliratot és a fix 4:2:0
+színbontást lezárta — a lap **7.** szakaszában. Egyik alábbi kérdés sem
+igényel futó Picasát.)*
+
+1. **A minőségszám útja a párbeszédtől a kódolóig.** A tárolás helye
+   `[objektum+0xa3c]`, a kódoló belépője `0x00b1f870` (a minőség a
+   `[esp+0x1c]`-ből jön), a hívó `0x00a97f28`. A lánc végigkövetése emelné
+   „megerősített" szintre azt az állítást, hogy a Maximális 193-as értéke
+   változatlanul jut a skálázóhoz (és így a 100-zal azonos hatású).
+2. **A `<multi>` elem átméretezési szabálya:** a mérete a **legnagyobb**
+   gyerekhez igazodik-e (akkor a párbeszéd nem ugrál a fokozatváltáskor)
+   vagy az **aktuálishoz**? Az elemgyár `0x008dfed0`-ben a `multi` ágat
+   `0x008e24f0`-re köti (0x8C bájt, vtábla `0x00CD00E4`).
+3. **A film-rádió alapértelmezése** (`FileExportMovie` alapértéke).
+
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 
 ~~A **kollázs Oldalformátum** legördülőjének sorrendje~~ — **MEGVAN**
@@ -216,6 +234,8 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) | A Kollázs teljes működése — parancstábla, gyűrű, helyi menük, kimenet |
 | [kollazs-atvilagitas.md](kollazs-atvilagitas.md) | **A Kollázs TELJES átvilágítása** — eredeti / nálunk / jegy minden vezérlőre, a panelen kívüliekkel; és kimondva, amit NEM néztünk meg |
 | [kollazs-panel-ui-spec.md](kollazs-panel-ui-spec.md) | **A Kollázs-panel MEGVALÓSÍTÁSI UI-specifikációja** — elemfa, `objectName`-ek, a `.tre` kényszereiből levezetett méretezési törvény, vezérlő-API, teszt-szerződés, jegyekre bontás |
+| [export-parbeszed.md](export-parbeszed.md) | **Az „Exportálás mappába" párbeszéd** — a `export.fen` leíró, mind a 28 magyar felirat, a kötések, a 9 megőrzött beállítás, és a képminőség öt fokozatának **számértéke a binárisból** |
+| [kollazs-eletciklus.md](kollazs-eletciklus.md) | **A kollázs életciklusa** — a három állapot, az átmenetek, mindhárom párbeszéd szó szerint |
 | [picasa-bezaras-es-kilepes.md](picasa-bezaras-es-kilepes.md) | Mit zár be az „X" — bezárás és kilépés |
 | [picasa-nyomtatas.md](picasa-nyomtatas.md) | A nyomtatás — panel (61 elem), 17 méret, beállítások |
 | [picasa-email-kuldes.md](picasa-email-kuldes.md) | E-mail-küldés — választó, beépített Gmail-szerkesztő, beállítások |

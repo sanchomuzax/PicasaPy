@@ -230,6 +230,11 @@ látszik.
 | **képméret** | **2 rádió + számmező + 7 fogásos CSÚSZKA** | egy legördülő | **átépítés** |
 | méret-előbeállítások | 320/480/640/800/1024/1200/1600 | — | átvenni |
 | **képminőség** | 5 fokozat + **váltakozó magyarázó szöveg**, és „Egyéni"-nél **21 fogásos csúszka** | legördülő + **nem állítható 85-ös mező** | **átépítés** |
+| Normál | **85** | 85 | ✅ nincs teendő |
+| Maximális | **193** → skála 0 | 100 → skála 0 | ✅ hatásában azonos |
+| Minimális | **65** | **70** | ❌ **65-re javítani** |
+| Egyéni csúszka | 0–100 **ötösével**, alap 85, felirat „Egyéni (85)" | nincs csúszka | ❌ pótolni |
+| színbontás | fix **4:2:0** | OpenCV alapértelmezés = 4:2:0 | ✅ |
 | „Automatikus" jelentése | **a forrás kvantálási tábláinak megőrzése** | fix 92-es közelítés (`exporter.py:83`) | valódi megőrzés |
 | **filmek exportálása** | **2 rádió** | **hiányzik** | **pótolni** |
 | vízjel | **csoportcím + mező + kis betűs magyarázat** | csak jelölő + mező | pótolni |
@@ -258,23 +263,86 @@ látszik.
 
 ---
 
-## 7. Ami NYITVA marad
+## 7. A képminőség öt fokozata — a binárisból kiolvasva (2026-08-20)
 
-1. **A „Normál", „Maximum", „Minimum" JPEG-minősége számokban.** A
-   kezelőben a `85` az egyetlen jelölt (valószínűleg az „Egyéni"
-   alapértéke). A három fokozat értékét **nem olvastam ki** — a
-   `0x00738c00` mélyebb szétszedése vagy egy **mérés** döntené el:
-   ugyanazt a képet exportálni négy fokozattal, és a kimenetek
-   kvantálási tábláit összevetni. **Ez a mérés olcsó, és a tulajdonos
-   gépén elvégezhető.**
-2. **A 21 fogásos „Egyéni" csúszka leképezése.** 0…20 → milyen
-   JPEG-minőség? Lineáris `q = 50 + 2,5·n`? Táblázatos? **Nem mértük.**
-   Ugyanaz az exportálásos mérés eldönti.
-3. **A `<multi>` váltásának pontos működése** (átméretezi-e az ablakot,
-   ha csúszkára vált). A `width="fit"` miatt valószínű, de nem mért.
-4. **A film-rádió alapértelmezése** (`FileExportMovie` alapértéke).
+*Ez a szakasz a korábbi 1. és 2. nyitott kérdést zárja le. Mérés nem
+kellett hozzá: a párbeszéd kódja megadja mind az öt értéket.*
 
-⚠️ Az 1. és 2. pont **ugyanazzal az egy méréssel** eldől: exportálni
-egy képet mind az öt fokozattal (és az „Egyéni" csúszka néhány
-állásával), majd a kimenetek DQT-jét összevetni. Amíg ez nincs meg,
-a fokozatok számértéke **feltételes**, és a kódban ki kell mondani.
+A választás (`ebp` = 0…4) a `0x00739c3f`-nél kezdődő ágon dől el, az
+ugrótábla `0x00739ef4`-en áll:
+
+| # | tétel | eredmény | cím |
+|---|---|---|---|
+| 0 | Automatikus | `[objektum+0xa40] = 1` — **külön logikai jelző** | `0x00739c4d` |
+| 1 | Normál | minőség = **85** (`0x55`) | `0x00739caf` |
+| 2 | Maximális | minőség = **193** (`0xC1`) | `0x00739ca1` |
+| 3 | Minimális | minőség = **65** (`0x41`) | `0x00739ca8` |
+| 4 | Egyéni | minőség = **csúszka × 5** | `0x00739c85` |
+
+Az Automatikus és a Normál **ugyanarra a 85-re** megy; a kettőt a
+`+0xa40` jelző különbözteti meg.
+
+**A 193 értelme.** A JPEG-kódoló skálázója (`0x00b1cb70`) a szabványos
+IJG-képlet: `q<50 → 5000/q`, `50≤q<100 → 2·(100−q)`, **`q≥100 → 0`**
+(`0x00b1cb99`). Skála 0 → a kvantálótábla minden eleme 1, azaz a lehető
+legjobb JPEG. A 193 tehát **hatásában azonos a 100-zal**.
+*(Bizonyítottsági fok: erős. A skálázó viselkedése megerősített, de a
+193 útját a párbeszédtől a kódolóig nem követtem végig — ld. lent.)*
+
+**Az Egyéni csúszka leképezése, mindkét irányban:**
+
+| irány | képlet | cím |
+|---|---|---|
+| betöltés | csúszka = minőség / 5 | `0x007396a9` (`0xCCCCCCCD`, `shr 2`) |
+| állításkor | minőség = csúszka × 5 | `0x00739fe6` (`lea eax,[eax+eax*4]`) |
+
+21 fok × 5 = **0, 5, 10 … 100**. Alapérték **85** (`0x0073b14a`
+konstruktor és a `FileExportQuality` alapértéke `0x00739642`-nél).
+
+**Az ötödik tétel felirata dinamikus:** `„Custom (%d)"` (`0x00cafa98`,
+formázó `0x0073a0c0`) — a `%d` helyén a tényleges szám, ami a csúszka
+mozgatásakor azonnal frissül.
+
+**A színbontás fixen 4:2:0** — `0x00b1f85a`: `mov byte [ecx+0x20], 0x22`
+(fényesség 2×2), a két színcsatorna `0x11`. Nincs rá beállítás.
+
+### 7.1 Az „Automatikus" mintával is igazolva
+
+A meglévő Picasa-export (30 fájl) mind ugyanazt a kvantálótáblát
+használja, és az **bájtra azonos a forrásképekével**:
+
+| | méret | bájt | DQT-összeg (fényesség / szín) |
+|---|---|---|---|
+| forrás `ansel__alap.jpg` | 960×640 | 61 548 | 221 / 333 |
+| Picasa-export ugyanaz | 960×640 | **54 200** | **221 / 333** |
+
+Más a fájlméret → **tényleg újrakódolt**, mégis megtartotta a forrás
+tábláit. A táblák pontosan az IJG q=97 skálázásai — ilyen értéket egyik
+preset sem tud előállítani, tehát a forrásból jöttek.
+➡️ **Automatikus = a forrás kvantálótábláinak átvétele**, nem fix szám.
+**Bizonyítottsági fok: megerősített.**
+
+### 7.2 Amit KIZÁRTAM
+
+- ❌ **„Picasa 4:4:4-et ír."** A `0x00b1cbb0`-t fixen `eax=4`-gyel hívják,
+  és ebből következtettem rá. Téves: a kódoló `0x00b1f85a`-nál fixen
+  `0x22`-t (4:2:0) állít, és a meglévő export SOF-je is 2×2.
+- ❌ **„Picasa saját, nem IJG kvantálótáblákat használ."** A hiba az volt,
+  hogy a fájlban a tábla **cikcakk sorrendben** áll; természetes sorrendbe
+  visszarendezve pontosan az IJG q=97 skálázása, mindkét táblára.
+
+---
+
+## 8. Ami NYITVA marad
+
+1. **A minőségszám útja a párbeszédtől a kódolóig.** A tárolás helye
+   `[objektum+0xa3c]`, a kódoló belépője `0x00b1f870` (a minőség a
+   `[esp+0x1c]`-ből jön), a hívó `0x00a97f28`. A közbenső láncot kell
+   végigkövetni — ez emelné a 193-as állítást „megerősített" szintre.
+2. **A `<multi>` váltásának pontos működése** (átméretezi-e az ablakot,
+   ha csúszkára vált). A helye megvan: az elemgyár `0x008dfed0`-ben a
+   `multi` ágat `0x008e24f0`-re köti (0x8C bájt, vtábla **`0x00CD00E4`**).
+   Azt kell eldönteni, hogy a mérete a **legnagyobb** gyerekhez igazodik-e
+   (akkor a párbeszéd nem ugrál) vagy az **aktuálishoz**. A vtábla
+   nagyrészt az ős metódusaira mutat, tehát kevés a felülírás.
+3. **A film-rádió alapértelmezése** (`FileExportMovie` alapértéke).
