@@ -81,22 +81,76 @@ def placeholder_size(page_ratio: float) -> tuple[int, int]:
     return (szeles, magas)
 
 
+#: **A felirat TERMÉSZETES SZÉLESSÉGE** a hosszabb él arányában (#1102).
+#: A tulajdonos álló piszkozatán (453 × 640) a felirat a teljes szélességet
+#: kitölti ÉS levágódik; a látható betűkből becsült természetes szélesség
+#: **~544 kp**, azaz a 640-es hosszabb él **85%-a**.
+#:
+#: ⚠️ **Miért a SZÉLESSÉG a horgony, és nem a betűmagasság.** A natív
+#: szabály minden összehasonlítása a szöveg SZÉLESSÉGÉRŐL szól (`korlát ↔
+#: szöveg_szélesség`), a levágódás is abból következik. Ha a
+#: betűmagasságot horgonyoznánk le, az eredmény a HASZNÁLT BETŰTÍPUS
+#: szélesség/magasság arányán múlna — a mi `FONT_HERSHEY_DUPLEX`-ünk pedig
+#: keskenyebb a Picasáénál. Az első változatom ezt csinálta, és a CI
+#: mindkét lábán elbukott: ugyanaz a 72 kp magas felirat nálunk KIFÉRT a
+#: 453 széles képbe, tehát nem vágódott le.
+#:
+#: ⚠️ **A magassághoz arányos alak KIZÁRHATÓ**: akkor a szöveg szélessége
+#: is a magassággal skálázódna, tehát az arányuk állandó volna — a felirat
+#: vagy MINDIG kiférne, vagy MINDIG zsugorodna. A két mért minta ennek
+#: ellentmond (állón levágódik, fekvőn zsugorodik).
+#:
+#: ⚠️ A 0,85 BECSÜLT (a látható betűkből). A zsugorítási szabály ettől
+#: független és megerősített; ez a szám csak azt állítja be, MEKKORA a
+#: „természetes" méret.
+_FELIRAT_SZELESSEG_ARANY = 544.0 / PLACEHOLDER_LONG_EDGE
+
+#: A zsugorítás ráhagyása a natív képletben (`0xcf3fa0` = 20.0).
+_ZSUGORITAS_RAHAGYAS = 20.0
+
+
 def draw_draft_label(image: np.ndarray, text: str) -> np.ndarray:
     """A „PISZKOZAT" felirat a kép KÖZEPÉRE, nagy fehér betűkkel.
 
     A `text` a honosítási táblából jön (`projectutils::draft`) — nem itt
-    fogalmazzuk meg."""
+    fogalmazzuk meg.
+
+    ## A méretezés szabálya — a binárisból (#1102)
+
+    A natív szövegrajzoló (`0x0061d350`) **nem igazít a szélességhez**:
+
+    ```
+    ha  korlát >= a szöveg természetes szélessége:  skála = 1,0
+    egyébként:                                      skála = (korlát − 20) / szöveg_szélesség
+    ```
+
+    A `20.0` a `0xcf3fa0` konstans. **A korlát a kép MAGASSÁGA** — ezt a két
+    mért minta együtt dönti el: az álló (453 × 640) feliratja **levágódik**
+    (tehát 640 ≥ szöveg, nincs zsugorítás, és a 453 széles képbe nem fér),
+    a fekvőé (640 × 453) viszont **kifér, kisebb betűvel** (tehát 453 <
+    szöveg, zsugorít).
+
+    ⚠️ **A levágódás az EREDETI viselkedése, nem hiba.** Aki „javításként" a
+    szélességhez igazítja, ELTÉRÉST épít be — a korábbi kódunk pontosan ezt
+    tette (`meret *= (szeles * 0,7) / sz`), és ezért NEM vágódott le soha.
+    """
     if image.size == 0:
         raise ValueError("Üres kép")
     magas, szeles = image.shape[:2]
     betu = cv2.FONT_HERSHEY_DUPLEX
-    # a felirat a szélesség ~70%-át töltse ki
-    meret = 1.0
-    vastag = max(1, round(szeles / 220))
+    vastag = max(1, round(max(szeles, magas) / 220))
+
+    # 1. a TERMÉSZETES méret: a szöveg SZÉLESSÉGÉBŐL visszaszámolva
+    #    (betűtípus-független — ld. a `_FELIRAT_SZELESSEG_ARANY` indoklását)
+    (sz1, _ma1), _a1 = cv2.getTextSize(text, betu, 1.0, vastag)
+    cel_szelesseg = max(szeles, magas) * _FELIRAT_SZELESSEG_ARANY
+    meret = cel_szelesseg / sz1 if sz1 > 0 else 1.0
     (sz, ma), _alap = cv2.getTextSize(text, betu, meret, vastag)
-    if sz > 0:
-        meret *= (szeles * 0.7) / sz
-        vastag = max(1, round(szeles / 220))
+
+    # 2. zsugorítás CSAK akkor, ha a MAGASSÁG kisebb a szöveg szélességénél
+    if sz > 0 and magas < sz:
+        meret *= (magas - _ZSUGORITAS_RAHAGYAS) / sz
+        meret = max(meret, 0.01)
         (sz, ma), _alap = cv2.getTextSize(text, betu, meret, vastag)
 
     kimenet = image.copy()
