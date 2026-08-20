@@ -217,7 +217,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
     def _on_worker_progress(self, percent: int, key: str) -> None:
         """A fogadó szálon: itt fordítunk és itt írjuk az állapotot."""
         if key == self._PROGRESS_READY:
-            text = self.tr("The collage is ready (click here)")
+            text = self.tr("The collage is ready")
         else:
             text = self._progress_text_initializing()
         self._emit_progress(percent, text)
@@ -251,7 +251,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             # 9.4: a hiány nem hiba — a kollázs elkészült, de a felhasználó
             # tudja meg, hogy hány kép maradt ki belőle
             self.collageMissingImages.emit(payload["hianyzo"])
-        self._emit_progress(100, self.tr("The collage is ready (click here)"))
+        self._emit_progress(100, self.tr("The collage is ready"))
         self.collageDone.emit(ut)
         if payload["hatterkep"]:
             self.collageDesktopBackgroundReady.emit(ut)

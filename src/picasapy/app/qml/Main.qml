@@ -216,9 +216,17 @@ ApplicationWindow {
             window.selectedIndex = sor
             window.selectedIndexes = [sor]
         }
-        // Az értesítés akkor is jár, ha a sor nem található: a fájl a
-        // lemezen VAN, és a kattintás útvonalról is megnyitja.
-        collageDoneNotice.showFor(cel)
+        // #1119: a RENDES létrehozás után NINCS értesítés. A
+        // `collage::done` értesítő a binárisban az „Asztali háttérkép"
+        // ágához tartozik (a `0x0057aa10` a `Control Panel\\Desktop\\`
+        // registrykulcsot és a `picasabackground.bmp`-t mozgatja), nem a
+        // rendes kollázs-készítéshez. A tulajdonos háromszor jelezte, hogy
+        // ilyen gomb a Picasa 3-ban nincs.
+        //
+        // ⚠️ A `CollageDoneNotice` komponens SZÁNDÉKOSAN marad: az
+        // „Asztali háttérkép" ágé, aminek a bekötése külön jegy (ma a
+        // `collageDesktopBackgroundReady` jelzésnek nincs fogadója).
+        // A törlése visszafejlesztés volna.
     }
 
     /** Egy fájl útvonalának a mappája. A QML-ben nincs `Path`, a

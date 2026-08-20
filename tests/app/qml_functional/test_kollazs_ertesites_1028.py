@@ -1,4 +1,4 @@
-"""A kész kollázs MEGTALÁLÁSA: odaugrás + kattintható értesítés (#1028).
+r"""A kész kollázs MEGTALÁLÁSA: odaugrás + kattintható értesítés (#1028).
 
 A felhasználó a v0.8.4-en jelezte, hogy a „Kollázs létrehozása" után a lap
 bezáródik — és ennyi. A kész képet nem látja sehol.
@@ -12,6 +12,23 @@ felül a kész-értesítés kezelője (`0x0088a020`) kiírja a `collage::done` =
 **„A kollázs kész (kattintson ide)"** szöveget.
 
 Nálunk a lapzárás megvolt, az odaugrás és az értesítés nem.
+
+## ⚠️ HELYESBÍTÉS (#1119, 2026-08-20) — az ÉRTESÍTÉS rossz ághoz került
+
+A fenti indoklás egy pontban téves volt: a `collage::done` értesítő
+(`0x0088a020`) a `0x0057aa10`-et hívja, amiben a `Control Panel\Desktop\`
+registrykulcs és a `picasabackground.bmp` szerepel — vagyis az értesítés az
+**„Asztali háttérkép"** ágé, **nem a rendes kollázs-készítésé**.
+
+A tulajdonos **háromszor** jelezte, hogy „ilyen gomb a Picasa 3-ban
+nincs" — és igaza volt.
+
+Ezért ez a fájl mostantól **az ellenkezőjét állítja**: a rendes mentés után
+az értesítés NEM jelenik meg. Az odaugrás (`locate`) és a lapzárás
+állításai **változatlanok** — azok a jegy helyes részei voltak.
+
+A `CollageDoneNotice` komponens **megmarad** (az „Asztali háttérkép" ágé),
+és az itteni tesztek a LÉTÉT továbbra is őrzik.
 
 ## Miért nem elég, hogy a szöveg MÁR MEGVAN
 
@@ -107,65 +124,49 @@ class TestAzOdaugras:
         assert window.property("viewerOpen") is False
 
 
-class TestAzErtesites:
-    """„A kollázs kész (kattintson ide)" — kattintható, és megmarad."""
+class TestNincsErtesites:
+    """#1119: a RENDES mentés után NINCS értesítés.
 
-    def test_megjelenik_a_mentes_utan(self, qml_app, qt_app, tmp_path):
-        window, controller, _engine = qml_app
+    A #1028 ezt az osztályt eredetileg fordítva állította. A helyesbítés
+    oka a modul docstringjében: a `collage::done` az „Asztali háttérkép"
+    ágé, nem a rendes kollázs-készítésé."""
+
+    def test_a_mentes_utan_NEM_jelenik_meg(self, qml_app, qt_app, tmp_path):
+        window, _controller, _engine = qml_app
 
         _mentes_kesz(window, qt_app, _kep_utvonala(tmp_path))
 
         ertesites = _ertesites(window)
-        assert ertesites is not None
-        assert ertesites.property("visible") is True
+        assert ertesites is None or ertesites.property("visible") is False
 
-    def test_a_lap_bezarasa_UTAN_is_latszik(self, qml_app, qt_app, tmp_path):
-        """A jegy lényege: a szöveg eddig a haldokló folyamatjelzőben volt."""
+    def test_a_lap_bezarasa_utan_sem_jelenik_meg(self, qml_app, qt_app, tmp_path):
         window, controller, _engine = qml_app
 
         _mentes_kesz(window, qt_app, _kep_utvonala(tmp_path))
 
         assert controller.collageOpen is False
-        assert _ertesites(window).property("visible") is True
+        ertesites = _ertesites(window)
+        assert ertesites is None or ertesites.property("visible") is False
 
-    def test_a_szovege_a_hivatalos_magyar_forras(self, qml_app, qt_app, tmp_path):
-        window, controller, _engine = qml_app
-
-        _mentes_kesz(window, qt_app, _kep_utvonala(tmp_path))
-
-        szoveg = _ertesites(window).findChild(QObject, ERTESITES_SZOVEG)
-        assert szoveg is not None
-        assert "click" in str(szoveg.property("text")).lower()
-
-    def test_kattintasra_nagyban_megnyitja(self, qml_app, qt_app, tmp_path):
-        window, controller, _engine = qml_app
-        cel = _kep_utvonala(tmp_path)
-        _mentes_kesz(window, qt_app, cel)
-
-        QMetaObject.invokeMethod(
-            _ertesites(window), "clicked", Qt.ConnectionType.DirectConnection
-        )
-        qt_app.processEvents()
-
-        assert window.property("viewerOpen") is True
-
-    def test_kattintas_utan_eltunik(self, qml_app, qt_app, tmp_path):
-        window, controller, _engine = qml_app
-        _mentes_kesz(window, qt_app, _kep_utvonala(tmp_path))
-
-        QMetaObject.invokeMethod(
-            _ertesites(window), "clicked", Qt.ConnectionType.DirectConnection
-        )
-        qt_app.processEvents()
-
-        assert _ertesites(window).property("visible") is False
-
-    def test_indulaskor_nem_latszik(self, qml_app, qt_app):
+    def test_indulaskor_sem_latszik(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
 
         ertesites = _ertesites(window)
 
         assert ertesites is None or ertesites.property("visible") is False
+
+
+class TestAKomponensMARAD:
+    """⚠️ A `CollageDoneNotice` az „Asztali háttérkép" ágé — NEM törlendő.
+
+    Az eredetiben LÉTEZIK ez az értesítés, csak máshol; a bekötése külön
+    jegy (ma a `collageDesktopBackgroundReady` jelzésnek nincs fogadója).
+    A törlés visszafejlesztés volna."""
+
+    def test_a_peldany_letezik_a_gazdaban(self, qml_app, qt_app):
+        window, _controller, _engine = qml_app
+
+        assert _ertesites(window) is not None
 
 
 class TestAJelzesnekVanFogadoja:

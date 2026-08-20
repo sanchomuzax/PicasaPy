@@ -1221,8 +1221,8 @@
         <translation>Kollázs létrehozása... inicializálás</translation>
     </message>
     <message>
-        <source>The collage is ready (click here)</source>
-        <translation>A kollázs kész (kattintson ide)</translation>
+        <source>The collage is ready</source>
+        <translation>A kollázs elkészült</translation>
     </message>
     <message>
         <source>Sorry, there is not enough free disk space to safely download pictures.</source>
