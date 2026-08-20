@@ -99,9 +99,11 @@ Ezek **nyitott kérdések**, nem elhallgatott részletek:
    szakaszt. (Az első változat tévesen állította, hogy a `respack.yt`
    hiányzik.) Ami ebből még nyitott: az ablak **képernyőhöz képesti**
    pozíciója — a rétegek a cella saját vásznához relatívak.
-2. **Animáció** — a `progressbase`/`progressfill` réteg bizonyítja, hogy
-   **van folyamatjelző**; hogy emellett becsúszik-e vagy elhalványul-e,
-   továbbra sem bizonyított.
+2. **Animáció** — a `progressbase`/`progressfill` réteg bizonyítja, hogy van
+   folyamatjelző, a dekompiláció pedig **kizárta a Win32 utat**
+   (`AnimateWindow`, rétegelt ablak). Ami marad: a `yt` keretrendszer saját
+   átmenet-rendszere (`ytCrossFadeColorTransitionNode`) — **nyom, nem
+   bizonyíték**.
 3. **Élettartam** — az ABLAK singleton (megválaszolva), de hogy egy CELLA
    meddig marad kint, nyitott. Olcsó úton nem megválaszolható: a `notifier`
    modulnak nincs `tre:` bejegyzése, tehát a viselkedés kódban van.
@@ -261,6 +263,54 @@ erőforrásban.
 ➡️ Ezért az **animáció** és a **cella élettartama** olcsó úton **elvileg sem**
 válaszolható meg. Ez nem kihagyott lépés, hanem a lánc vége: innen **célzott
 dekompiláció** következik (`0x00657300` és a cellakezelő).
+
+## Dekompiláció — pozicionálás és ablakstílus MEGFEJTVE, időzítő NINCS (2026-08-20)
+
+Ghidra 12.1.2, teljes autoanalízis (426 mp), Picasa 3.9.141.259
+(`sha256=644b7be…3ddc96`). Két célzott próba; a kimenet a privát repóban:
+`referencia/dekompilalt-notifier/`.
+
+### Pozitív leletek — az ablak elhelyezkedése
+
+A `0x00657300` (a `CNotifierPopup` létrehozója) ezt teszi:
+
+| cím | hívás | jelentés |
+|---|---|---|
+| `0x00657353` | `SystemParametersInfoA(0x30, …)` | **`SPI_GETWORKAREA`** — a **munkaterületet** kéri le, nem a képernyőt |
+| `0x00657369` | `local_4 + -0x90` | a munkaterület széléhez képest **144 képpont** eltolás |
+| `0x0065743c` | `SetWindowLongA(hwnd, -0x14, … \| 0x188)` | `GWL_EXSTYLE` \|= **`WS_EX_TOPMOST` (0x8) + `WS_EX_TOOLWINDOW` (0x80) + `WS_EX_WINDOWEDGE` (0x100)** |
+| `0x00657490` | `SetWindowLongA(hwnd, 0, 0x47506e74)` | saját azonosító az ablak extra bájtjaiban (`"GPnt"`) |
+| `0x006574a0` | `SetWindowPos` | a végleges elhelyezés |
+
+➡️ **Az ablak a tálcát tiszteletben tartva helyezkedik el** (munkaterület, nem
+teljes képernyő), **mindig felül van**, és **nem kap tálcagombot** — pontosan
+az a viselkedés, amit a tulajdonos „lebegő sávnak" nevezett.
+
+A `0x00658200` ugyanezt tartja karban: `SystemParametersInfoA` +
+`IsWindow` + `IsWindowVisible` + `GetWindowRect` — **újrahorgonyzás**, ha a
+munkaterület vagy az ablak állapota változik.
+
+*Bizonyítottsági fok: megerősített.*
+
+### Negatív lelet — és ez is válasz
+
+A vizsgált **öt** függvényben (`0x00657300` létrehozó, `0x00658340`
+rekord-építő, `0x00658200` pozicionáló, `0x00655e50`, `0x00655950`,
+`0x00656fe0`) **nincs**:
+
+- `SetTimer` / `KillTimer` / `WM_TIMER` / `GetTickCount` / `timeGetTime`
+  → **az élettartamot nem Win32 időzítő vezérli**;
+- `AnimateWindow`, rétegelt ablak (`SetLayeredWindowAttributes`), `AlphaBlend`
+  → **az animáció nem Win32 segédfüggvénnyel készül**.
+
+➡️ Mindkettő a program **saját `yt` keretrendszerének** ütemezőjében lehet —
+összhangban azzal, hogy a `data_symbols` tartalmaz
+`ytCrossFadeColorTransitionNode` (kereszt-áttűnés) osztályt. **Ez a nyom, nem
+bizonyíték:** a kapcsolat kimutatása a `yt` átmenet-rendszerének felderítését
+kívánja, ami külön menet.
+
+*Bizonyítottsági fok: megerősített (a Win32 út kizárva) · feltételes (hogy a
+`yt` átmenet-rendszer adja).*
 
 ## Módszertani megjegyzés
 
