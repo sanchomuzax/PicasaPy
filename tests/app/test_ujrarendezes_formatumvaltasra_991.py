@@ -19,10 +19,20 @@ formátumváltás természetes következménye.
 
 ## Mit állítunk
 
-A jegy „Kész, ha" listája a **kilógást** kéri mércének — ezért itt nem a
-`_relayout` HÍVÁSÁT nézzük (az a megvalósítás), hanem azt, hogy a váltás
-után a csomópontok a lapon belül vannak, és hogy a helyük tényleg
-MEGVÁLTOZOTT.
+Itt nem a `_relayout` HÍVÁSÁT nézzük (az a megvalósítás), hanem azt, amit a
+felhasználó lát: a váltás után a csomópontok az ÚJ lap alakja szerint
+állnak, és a helyük tényleg MEGVÁLTOZOTT.
+
+⚠️ **A mérce helyesbítve (#1094).** A jegy „Kész, ha" listája eredetileg a
+**kilógást** kérte, és a teszt azt is állította. A tulajdonos három A4-es
+FEKVŐ kollázsán mérve viszont a valódi Picasa kimenetében 89 csomópontból 3
+kilóg — az eredeti a KÖZÉPPONTOT korlátozza sávra, a csempe téglalapját
+nem. A „semmi nem lóg ki" tehát KITALÁLT követelmény volt; a #1045 ezt
+beszorítással teljesítette, azóta visszavonva.
+
+A helyes mérce: a középpontok az ÚJ lapra számolt sávban vannak. Ez az, ami
+elbukik, ha a formátumváltás után elmarad az újraszámolás — a régi lapra
+szórt középpontok a rövidebb lap sávjából kilógnának.
 """
 
 from __future__ import annotations
@@ -99,36 +109,44 @@ def _helyek(vezerlo):
     ]
 
 
-def _kilogok(vezerlo):
-    """A lapról kilógó csomópontok — LAPEGYSÉGBEN.
+def _savon_kivul(vezerlo):
+    """A csomópontok, amelyek KÖZÉPPONTJA az ÚJ lap sávján kívül esik.
 
     ⚠️ A csomópontok lapegységben élnek (`SHEET_UNITS = 1024`), a lap
     magassága az oldalarányból jön. Aki képpontban hasonlítana, jóval bővebb
-    határt adna, mint a valódi lap — ezt a #1045 egyszer már elrontotta."""
-    from picasapy.collage.nodes import SHEET_UNITS
+    határt adna, mint a valódi lap — ezt a #1045 egyszer már elrontotta.
 
-    lap_sz = SHEET_UNITS
+    A sáv a kupac szórásának korlátja (`scatter_centers`): a képszámmal
+    tágul, és a valódi Picasa hat mintáján igazolt. A csempe MÉRETÉRE nincs
+    állítás — az kilóghat, ez az eredeti viselkedése (#1094)."""
+    from picasapy.collage.nodes import SHEET_UNITS
+    from picasapy.collage.pile import PILE_BAND_FACTOR, pile_scale
+
+    darab = len(vezerlo.collageNodes.nodes)
+    band = 1.0 - pile_scale(darab) * PILE_BAND_FACTOR
+    also = (1.0 - band) * 0.5
+    felso = also + band
     lap_ma = SHEET_UNITS * vezerlo.collagePageRatio
+    tures = 1.0
     return [
         cs
         for cs in vezerlo.collageNodes.nodes
-        if cs.center_x - cs.width * 0.5 < -0.5
-        or cs.center_y - cs.height * 0.5 < -0.5
-        or cs.center_x + cs.width * 0.5 > lap_sz + 0.5
-        or cs.center_y + cs.height * 0.5 > lap_ma + 0.5
+        if not (also * SHEET_UNITS - tures <= cs.center_x <= felso * SHEET_UNITS + tures)
+        or not (also * lap_ma - tures <= cs.center_y <= felso * lap_ma + tures)
     ]
 
 
 class TestAFormatumvaltas:
-    def test_a_valtas_utan_semmi_nem_log_ki(self, nyitott):
+    def test_a_valtas_utan_az_UJ_lapra_all_a_vaszon(self, nyitott):
         """⚠️ Ez a felhasználó panasza: a kártyák a helyükön maradnak.
 
         A `Desktop4x3` → `HDTV16x9` váltás a lapot MEGRÖVIDÍTI (fekvő
-        oldalarány 0,75 → 0,5625) — pont az az eset, ahol a régi helyükön
-        hagyott kártyák kilógnak az aljából."""
+        oldalarány 0,75 → 0,5625). Ha elmarad az újraszámolás, a régi,
+        magasabb lapra szórt középpontok az új lap sávján KÍVÜL esnek —
+        pontosan azt a torlódást adva, amit a felhasználó jelentett."""
         nyitott.setCollageFormat("HDTV16x9")
 
-        assert not _kilogok(nyitott)
+        assert not _savon_kivul(nyitott)
 
     def test_a_csomopontok_helye_MEGVALTOZIK(self, nyitott):
         elotte = _helyek(nyitott)
@@ -160,10 +178,10 @@ class TestAFormatumvaltas:
 
 
 class TestATajolasvaltas:
-    def test_a_valtas_utan_semmi_nem_log_ki(self, nyitott):
+    def test_a_valtas_utan_az_UJ_lapra_all_a_vaszon(self, nyitott):
         nyitott.setCollageOrientation("portrait")
 
-        assert not _kilogok(nyitott)
+        assert not _savon_kivul(nyitott)
 
     def test_a_csomopontok_helye_MEGVALTOZIK(self, nyitott):
         elotte = _helyek(nyitott)
@@ -172,11 +190,11 @@ class TestATajolasvaltas:
 
         assert _helyek(nyitott) != elotte
 
-    def test_oda_vissza_valtas_utan_sem_log_ki(self, nyitott):
+    def test_oda_vissza_valtas_utan_is_az_UJ_lapra_all(self, nyitott):
         nyitott.setCollageOrientation("portrait")
         nyitott.setCollageOrientation("landscape")
 
-        assert not _kilogok(nyitott)
+        assert not _savon_kivul(nyitott)
 
     def test_azonos_tajolasra_valtas_NEM_rendez_ujra(self, nyitott):
         jelenlegi = nyitott.collageOrientation
