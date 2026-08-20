@@ -584,7 +584,7 @@ gyereke örökli, két másik gyerek saját bejegyzéssel felülírja).
 | mikor | erőforráskulcs | magyar szöveg |
 |---|---|---|
 | **teljes meghajtó** figyelésre állítása | `CFolderMgrDialog::warning` | Egy teljes meghajtó figyelése lelassíthatja a rendszert. Jobb lenne több almappát kiválasztani. Biztosan ezt kívánja tenni? |
-| **figyelt mappa eltávolítása** | `IDS_HOTFOLDER_CONFIRM` (+ `_TITLE` = „Figyelt mappa eltávolításának jóváhagyása") | Ha egy figyelt mappát eltávolít, a lemezen oda mentett új fájlokat a Picasa nem veszi fel automatikusan. Biztosan ezt szeretné? |
+| ~~figyelt mappa eltávolítása~~ **HALOTT, ld. 6.3** | `IDS_HOTFOLDER_CONFIRM` (+ `_TITLE`) | Ha egy figyelt mappát eltávolít, a lemezen oda mentett új fájlokat a Picasa nem veszi fel automatikusan. Biztosan ezt szeretné? |
 | **OK-ra, ha kizárt mappa arcadata törlődne** | `CFolderMgrDialog::confirmfrexclude` | Biztosan eltávolítja az összes arcot és névcímkét a kihagyott mappákból? |
 
 ### 6.1 A meghajtó-figyelmeztetés PONTOS útja
@@ -615,6 +615,57 @@ gyereke örökli, két másik gyerek saját bejegyzéssel felülírja).
 `il_No` erőforrásból tölti a feliratokat, azaz **Igen / Nem** gombpár
 (`0x009bac47`: `cmp eax, 1` → az „Igen/Nem" ág; `típus ≥ 2` esetén lenne
 `il_Cancel`). Ugyanez áll a `confirmfrexclude` párbeszédre.
+
+### 6.3 HELYESBÍTÉS: három szöveg HALOTT ebben a build-ben (M3, 2026-08-21)
+
+A lap 6. szakasza (és a **#543**) azt írta elő, hogy a **figyelt mappa
+eltávolításának megerősítését** (`IDS_HOTFOLDER_CONFIRM`) be kell kötni.
+**Ez tévedés volt: a 3.9.141.259 soha nem mutatja meg.**
+
+#### Hogyan dőlt el
+
+A Picasa a Win32-erőforrás-sztringeket **egyetlen burkolón** át tölti be:
+
+```asm
+; a hivas mintaja mind a 150 helyen:
+push <"IDS_NEV" mutato>     ; az i18n-kulcs
+push <numerikus azonosito>  ; a .rsrc RT_STRING azonositoja
+call 0x009ae710             ; -> LoadStringA(hInst, id, puffer, 0x400)  (0x009ae77e)
+```
+
+A `.rsrc` RT_STRING táblájából kibontva **265 sztring** van, köztük:
+
+| azonosító | szöveg |
+|---:|---|
+| **86** | If you remove a watched folder, new items that you add to that folder on disk will not be automatically added to Picasa. Are you sure you want to do this? |
+| **87** | Confirm Remove Watched Folder |
+| **100** | Setting Up Watched Folders |
+
+A burkoló **mind a 84 hívójában** végigmérve **95 különböző azonosító**
+fordul elő ténylegesen — és **a 86, a 87 és a 100 EGYIK SEM**. A
+`stringres`-úton (`0x009ae560`, kulcs szerint) sem hivatkozik rájuk semmi:
+a `string_xrefs`-ben a `HOTFOLDER` mintára **egyetlen** találat van, a
+`Preferences\HotFolders` **registry-út** — nem a szöveg.
+
+#### Amit ez kimond
+
+1. **Nincs „Figyelt mappák beállítása" folyamatjelző** az OK után. A
+   12. szakasz 3. pontja ezzel **tárgytalan**.
+2. **Nincs megerősítés a figyelt mappa eltávolításakor.** A szöveg és a
+   címe benne van a fordítási készletben, de a kód nem tölti be.
+3. A fordítási táblában (`stringres-en-hu.tsv`) való jelenlét **nem
+   bizonyítja a használatot** — az a fájl minden fordítható szöveget
+   tartalmaz, a halottakat is.
+
+> ⚠️ **Nálunk viszont MEGVAN** (`FolderManagerDialog.qml`,
+> `removeWatchedConfirm`) — a #543 alapján építettük be. Ez tehát
+> **TÖBB, mint az eredeti**. Nem hiba, de **tudatos eltérésként kell
+> kimondani** (a `docs/decisions/`-ben), különben egy későbbi kör
+> „paritás" címén kiveszi — vagy fordítva, egy harmadik visszateszi.
+
+*Bizonyítottsági fok: **megerősített**. A negatív állítás nem
+mintavételen alapul: a burkoló MINDEN hívóját (84 függvény, 150 hívás)
+végigmértük, és a `stringres`-utat is ellenőriztük.*
 
 ## 6.2 iPhoto / Apple Photos — külön ág
 
@@ -1005,11 +1056,9 @@ megépítését, de mindegyikhez döntés kell:
 2. ~~Mi történik a már beolvasott képekkel az „Eltávolítás" után?~~ —
    **LEZÁRVA** (11.5): nem törlődnek, a mappa `]album:removed` sírkő-tokent
    kap (`0x004b9200`).
-3. **Az OK utáni újraolvasás.** Az `IDS_SETTING_UP_WATCHED` („Figyelt
-   mappák beállítása") létezik a Win32 sztringtáblában, de **hívási helye
-   nincs meg** — az `IDS_*` sztringeket azonosítóval tölti be a program,
-   ezért `string_xrefs`-szel nem található. Nem tudjuk, mikor és milyen
-   folyamatjelzővel indul újra a beolvasás.
+3. ~~Az OK utáni újraolvasás / `IDS_SETTING_UP_WATCHED`~~ — **LEZÁRVA,
+   NEGATÍV** (6.3): a sztringet a program soha nem tölti be; nincs ilyen
+   folyamatjelző.
 4. **Az ELSŐ INDÍTÁS belépési útja.** A két menüs belépési pont megvan
    (10/b.1), de hogy az első indításkor melyik kód nyitja meg a
    dialógust (és ugyanazzal a mód-jelzővel-e), NINCS visszakövetve.
