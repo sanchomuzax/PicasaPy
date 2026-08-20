@@ -134,3 +134,34 @@ def test_a_futtato_UTF8_kimenetet_kenyszerit():
         "a futtató nem kényszerít UTF-8 kimenetet — egy magyar `ő` a "
         "windows-lábon elviszi az egész jobot"
     )
+
+
+class TestKotelezoNevek:
+    """A főág védelme NÉV szerint vár ellenőrzéseket (#1164).
+
+    ⚠️ A #1127 felosztása átnevezte a jobokat (`Test (ubuntu-latest 1/4)`),
+    és ettől MINDEN PR beragadt „Waiting for status to be reported"
+    állapotba: a védelem a régi nevet várta, ami soha nem érkezett meg.
+
+    Az összefogó jobok a RÉGI névvel jelentenek, és csak akkor zöldek, ha
+    mind a négy darab zöld. Ez az őr azt védi, hogy a nevek ne csússzanak
+    el újra — a hiba NÉMA, mert a CI maga zöld, csak a merge nem indul.
+    """
+
+    @pytest.mark.parametrize(
+        "nev", ["Test (ubuntu-latest)", "Test (windows-latest)"]
+    )
+    def test_a_kotelezo_nev_letezik(self, ci, nev):
+        nevek = {str(job.get("name", "")) for job in (ci.get("jobs") or {}).values()}
+        assert nev in nevek, (
+            f"nincs `{nev}` nevű job — a főág védelme örökre várna rá"
+        )
+
+    def test_az_osszefogo_a_darabokra_var(self, ci):
+        """Ha nem várna rájuk, zölden jelentene bukó darabok mellett is."""
+        for kulcs in ("test-ubuntu", "test-windows"):
+            job = ci["jobs"][kulcs]
+            assert job.get("needs") == "test", f"{kulcs}: nem a darabokra vár"
+            assert "needs.test.result" in str(job), (
+                f"{kulcs}: nem vizsgálja a darabok eredményét"
+            )

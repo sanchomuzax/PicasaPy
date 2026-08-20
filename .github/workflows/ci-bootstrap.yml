@@ -84,9 +84,39 @@ jobs:
           "
           ruff --version
 
-      - name: A TELJES tesztkészlet a hook által épített környezetben
-        # A bizonyíték maga. A darabolt futtatót használjuk (#53), ahogy a
-        # PROTOKOLL push előtt is előírja.
+      # ⚠️ A PR-en FÜSTPRÓBA fut, nem a teljes készlet (#1164).
+      #
+      # Ez a job azt bizonyítja, hogy a hook által épített környezet
+      # HASZNÁLHATÓ. Ehhez nem kell 271 tesztfájl: a teljes készletet a
+      # `ci.yml` amúgy is lefuttatja, négy gépen. Kétszer ugyanazt futtatni
+      # nem ad több biztonságot, viszont 19 percet vett el MINDEN olyan
+      # PR-től, amely a környezet-leíró fájlokhoz nyúlt.
+      #
+      # A füstpróba a környezet MIND A NÉGY rétegét érinti:
+      #   * Qt/QML          — `qml_functional/test_thumb_badges_463.py`
+      #   * képkezelés      — `test_thumbnail_async.py` (PIL, piexif)
+      #   * OpenCV          — `tests/render/test_chain.py`
+      #   * fájlfigyelés    — `tests/scanner` (watchdog)
+      # Mérve: 186 teszt, ~7 másodperc.
+      #
+      # ⚠️ A MÉLY garancia NEM veszett el, csak áthelyeződött: a heti
+      # ütemezett futás (és a kézi indítás) továbbra is a TELJES készletet
+      # viszi. Ott ráérünk — ott nem blokkol senkit.
+      - name: Füstpróba a hook által épített környezetben (PR)
+        if: github.event_name == 'pull_request'
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python -m pytest -q \
+            tests/app/qml_functional/test_thumb_badges_463.py \
+            tests/app/test_thumbnail_async.py \
+            tests/render/test_chain.py \
+            tests/scanner
+
+      - name: A TELJES tesztkészlet a hook által épített környezetben (heti)
+        # A darabolt futtatót használjuk (#53), ahogy a PROTOKOLL push előtt
+        # is előírja.
+        if: github.event_name != 'pull_request'
         env:
           QT_QPA_PLATFORM: offscreen
         run: python scripts/run_tests.py
