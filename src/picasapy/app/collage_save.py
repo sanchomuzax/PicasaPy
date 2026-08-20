@@ -429,7 +429,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             cel = (
                 Path(meglevo)
                 if meglevo
-                else output.output_path(mappa, self._collage_panel_title)
+                else self._draft_placeholder_path(mappa)
             )
             szeles, magas = draft_placeholder.placeholder_size(
                 self.collagePageRatio
@@ -451,6 +451,26 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             )
             return
         self._set_saved_path(str(cel))
+        self._index_saved_collage(cel)
+
+    def _draft_placeholder_path(self, mappa: Path) -> Path:
+        """A piszkozat helykitöltőjének célfájlja — ÚJRAÍRHATÓ, nem szaporodó.
+
+        A tulajdonos szava: *„A »PISZKOZAT« felirat akkor jelenik meg …
+        amikor a »Bezárás« gombot megnyomom … De csak addig van ott, amíg le
+        nem menti."* — vagyis a piszkozatnak EGYETLEN képe van. Ha a
+        visszaállítás után újra bezár, ugyanazt kell felülírnunk, különben
+        minden körben új `Kollázs1.jpg`, `Kollázs2.jpg` keletkezne.
+
+        A megkülönböztető a `.cxf` PÁR: a KÉSZ kollázs mellett ott áll a
+        projektfájlja (#1002 ezen az egy jelen áll), a helykitöltő mellett
+        nem — a piszkozat `.cxf`-je az `autosave.cxf`. Tehát ha a név
+        szabad, vagy már a MI helykitöltőnk ül rajta, azt írjuk felül; ha
+        egy kész kollázs foglalja, az `output_path` sorszámoz."""
+        alap = mappa / f"{output.safe_stem(self._collage_panel_title)}.jpg"
+        if not alap.exists() or not alap.with_suffix(".cxf").exists():
+            return alap
+        return output.output_path(mappa, self._collage_panel_title)
 
     @Slot()
     def restoreCollageDraft(self) -> None:
@@ -465,10 +485,14 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         áll össze. A csomópontok arányosan érkeznek, tehát a kép a lapon
         marad akkor is, ha a formátum közben más lett."""
         self._ensure_collage_panel()
-        projekt = read_autosave(self._collage_panel_draft_dir())
+        mappa = self._collage_panel_draft_dir()
+        projekt = read_autosave(mappa)
         if projekt is None:
             return
         self._apply_cxf_project(projekt, saved_path="")
+        meglevo = self._draft_placeholder_path(mappa)
+        if meglevo.exists():
+            self._set_saved_path(str(meglevo))
 
     @Slot(str, result=bool)
     def hasCollageProject(self, image_path: str) -> bool:  # noqa: N802
