@@ -490,3 +490,92 @@ az 5.1 párbeszédhez tartozik.
 | #969 | az elnevezési törvény |
 | #979 | az árva automentés helyreállítása |
 | #1097 | a rejtett `.picasa.ini` írása (P0) |
+
+---
+
+## 15. A `.cxf` KÓDOLT ÚTVONALAI — mért invariánsok (2026-08-20)
+
+A `<src>` mezők (csomópont ÉS háttér) nem nyers útvonalak. A #1096
+megvalósításához mért tények, hogy a következő kör ne vezesse le újra.
+
+### 15.1 Melyik alak fordul elő ténylegesen
+
+12 valódi Picasa-`.cxf`, **101 hivatkozás** (a tulajdonos 11 páros
+Kollázsok mappája + az álló `lake.cxf`):
+
+| alak | darab | arány |
+|---|---:|---:|
+| **`$My Pictures\…`** | **101** | **100,0%** |
+| `$UNC…` | 0 | 0% |
+| `[betű]\…` | 0 | 0% |
+| nyers `C:\…` | 0 | 0% |
+
+Egyetlen változónév fordul elő: **`My Pictures`**.
+
+⚠️ **Vakfolt:** a 12 minta egyetlen felhasználótól, egyetlen gépről van,
+és a képek mind a Képek mappa alól. **A nulla előfordulás nem bizonyítja
+a nemlétezést** — a másik két alak a kódoló formátumsztringjeiből ismert.
+
+### 15.2 Az OLVASÁSHOZ a `%s%s%s` bontás KÖZÖMBÖS
+
+A két formátumsztring:
+
+```
+0x00cd8f44   $UNC%s%s%s
+0x00cd8f50   [%c]%s%s%s
+```
+
+**A három `%s` között nincs literál** — se elválasztó, se semmi. Bárhogy
+is bontja szét az ÍRÓ, a három darab hézag nélkül kerül a fájlba.
+
+➡️ **Az olvasónak ezért az előtag utáni MINDEN a maradék útvonal.** A
+bontás nem tud belezavarni.
+
+**Ebből következik:**
+
+- a **`[betű]\`** alak nyugodtan feloldható: `[C]` + `\mappa\kep.jpg`
+  → `C:\mappa\kep.jpg` — nincs mit rosszul összefűzni;
+- a **`$UNC`** esetében a bizonytalanság **NEM a bontás**, hanem hogy a
+  maradék `\\`-sal kezdődik-e, vagy az író levágja. **Ezért ott
+  felismerés igen, feloldás nem** — a nyers szöveg megy tovább, és
+  látható helykitöltő lesz belőle, nem néma üresség.
+
+⚠️ Egy korábbi kommentem általánosabb aggályt fogalmazott meg
+(„a `%s%s%s` bontása nem igazolt") — az **túl széles volt**; a bontás
+csak az ÍRÁS oldalán kérdés.
+
+### 15.3 Két külön NÉVRÉTEG van
+
+A string-tábla szomszédsága (`0x00cd8f14` … `0x00cd8f50`):
+
+```
+'Personal'  ·  'Local AppData'  ·  'Common AppData'  ·  '$UNC%s%s%s'  ·  '[%c]%s%s%s'
+```
+
+Ezek a Windows **registry „Shell Folders"** nevei — a **feloldás belső
+oldala**. A `.cxf` ezzel szemben a **`WinSystemPaths` megjelenítési
+neveit** használja (`My Pictures`), amit a `0x00994a60` tábla ad.
+
+➡️ **A `.cxf` dekódolásához a `WinSystemPaths` a helyes tábla.** Ha
+valaha `$Personal\…` alak kerül elő, az ÚJ információ.
+
+### 15.4 A háttérkép MINDIG a kollázs saját képeinek egyike
+
+Négy képhátteres, Picasával készült minta:
+
+| fájl | háttér | a csomópontok között |
+|---|---|---|
+| AI2.cxf | `$My Pictures\AI\2a655925-….png` | **igen, index 0** |
+| AI5.cxf | `$My Pictures\AI\2a655925-….png` | **igen, index 0** |
+| AI8.cxf | `$My Pictures\AI\38ae21c1-….png` | **igen, index 8** |
+| lake.cxf | `$My Pictures\lake\262_size_….jpg` | **igen, index 0** |
+
+**4/4.** Ez megerősíti a #1009 alapfeltevését (a képháttér a kollázs
+saját képe), és azt is, hogy az **indexes** visszaállítás a helyes
+modell.
+
+⚠️ **Következmény a feloldásra:** a háttér `src`-jének **ugyanazon a
+leképezésen** kell átmennie, mint a csomópontokénak — különben a
+`_node_index_of_path` sosem talál egyezést, és a háttér **némán színre
+esik**. Ugyanaz a hibaosztály, mint a #1103 (ott a sorrend, itt a
+kódolás miatt nem találna).
