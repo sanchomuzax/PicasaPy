@@ -733,9 +733,44 @@ nullának veszi (`0x0073fbd1`). Az `ExportAddNumbers` beolvasása
 honosítási táblából, szó szerint); a címekhez kötött viselkedések
 **megerősítettek**; a mappanév-alapérték a képernyőképből **erős**.
 
-### 12.10 Ami a művelet körül MÉG NINCS feltárva
+### 12.10 A SORSZÁM FORMÁTUMA — `%0*d-%s`
 
-1. A **sorszám formátuma** (előtag, hány jegy, honnan indul).
-2. A **vízjel rajzolása**: hely, betűtípus, méret, átlátszóság.
-3. A **„Teljes film (nincs átméretezés)"** ág: milyen tárolóba/kodekkel ír.
-4. Nem JPEG forrás (PNG, TIFF) exportálásakor a **kimeneti formátum**.
+A nevet a `0x0073ee70` építi. A formátumsztring a `0xCB0178`-on áll, és
+bájtra ez:
+
+```
+%0*d-%s
+```
+
+A három argumentum, ahogy a kód összerakja:
+
+| argumentum | honnan | cím |
+|---|---|---|
+| a `*` = **mezőszélesség** | **az összes exportálandó kép darabszámának jegyszáma** — a `0x0073ee81`-es ciklus tízzel osztogatva számolja meg (`0xCCCCCCCD`, `shr 3`) | `0x0073ee81`–`0x0073ee90` |
+| a sorszám | `index + 1` → **1-től indul** | `0x0073eeab` |
+| a név | az eredeti fájlnév | `0x0073eea6` |
+
+➡️ **A szabály: `<nullákkal feltöltött sorszám><kötőjel><eredeti fájlnév>`,
+szóköz nélkül**, és a nullázás **az összlétszámhoz** igazodik:
+
+| hány képet exportálsz | a nevek |
+|---|---|
+| 7 | `1-kep.jpg`, `2-kep.jpg`, … `7-kep.jpg` |
+| 12 | `01-kep.jpg`, `02-kep.jpg`, … `12-kep.jpg` |
+| 178 | `001-kep.jpg` … `178-kep.jpg` |
+
+**Bizonyítottsági fok: megerősített** (a formátumsztring bájtra kiolvasva,
+a három argumentum összerakása címmel).
+
+### 12.11 Ami a művelet körül MÉG NINCS feltárva
+
+1. A **vízjel rajzolása**: hely, betűtípus, méret, átlátszóság. *(A szöveg
+   útja megvan a beállítástól — `ExportWatermarkText`, `0x0073fb2c` — a
+   kimeneti beállítás-objektumig `0x0073fb73`/`0x005c2100`; a **rajzolás**
+   a renderelési láncban van, azt kell követni.)*
+2. A **„Teljes film (nincs átméretezés)"** ág: milyen tárolóba/kodekkel ír.
+   *(A `FileExportMovie` fogyasztója `0x0073f3d6`, alapértéke 0.)*
+3. Nem JPEG forrás (PNG, TIFF) exportálásakor a **kimeneti formátum**. *(A
+   kimeneti motorban `0x0073e000`–`0x00742000` között **nincs** `.jpg`
+   sztring, tehát a kiterjesztést a fájlíró réteg dönti el — ott kell
+   keresni.)*
