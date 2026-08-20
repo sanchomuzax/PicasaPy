@@ -160,17 +160,54 @@ felirat rajzolása közös kód.
 
 Ebből **normatív**: a piszkozat **nem osztható meg és nem nyomtatható**.
 
-### 4.3 A „Létrehozás" gomb
+### 4.3 A „Létrehozás" gomb és a „Folyamatban…" felirat — MEGFEJTVE
 
-Megnyomására a gomb helyén **„Folyamatban…"** felirat jelenik meg, majd
-lefut a renderelés.
+Mindkettő az **`editpanel`** vezérlője, és **ugyanazon a helyen** ül: az
+egyik a másik helyére lép.
 
-⚠️ **NEM IGAZOLT**: a „Létrehozás" és a „Folyamatban…" erőforrás-kulcsa.
-A binárisban nincs `Create Now` string; a `draft_collage` szövege
-hivatkozik rá („kattintson a »Létrehozás« gombra"), és létezik egy
-`eMenuCreate` = `&Create` → `&Létrehozás` menü-kulcs, de hogy a gomb ezt
-használja-e, **nem tudom**. A feliratokat a képernyőkép igazolja, a
-kulcsuk nyitott kérdés.
+| vezérlő | felirat (EN) | **magyar** |
+|---|---|---|
+| **`editpanel/render_now`** | `Create Now` | **„Létrehozás"** |
+| **`editpanel/in_progress_label`** | `In Progress...` | **„Folyamatban..."** |
+
+*Forrás:* `editpaneltext.tre:367-371`, a magyar a honosítási táblából.
+
+**A deklaráció** (`editpanel.tre:679-690`):
+
+```
+editpanel/in_progress_base: editpanel/in_progress_label
+XConstraint 0, 0, -17
+XConstraint 1, 1,  15
+YConstraint 0, 0,  -3
+YConstraint 1, 1,   5
+Property predraw 1
+
+editpanel/in_progress_label: editpanel/overlay_group
+m_systemfont16
+m_centerX
+YConstraint 0.5, 0.875, 0
+m_hidden
+
+editpanel/render_now: editpanel/overlay_group
+m_centerX
+YConstraint 0.5, 0.875, 0
+m_hidden
+```
+
+**Amit ez kimond:**
+
+1. **Mindkettő az `editpanel/overlay_group` gyereke** — vagyis a **kép
+   FÖLÖTTI réteg**, nem a JPEG része. Ez független megerősítése annak,
+   amit a bélyegképből következtettünk.
+2. **Vízszintesen középre** (`m_centerX`).
+3. **Függőlegesen a saját közepük a szülő 87,5%-ára** kerül
+   (`YConstraint 0.5, 0.875, 0`) — mindkettő **ugyanoda**, ezért lép az
+   egyik a másik helyére.
+4. A „Folyamatban…" felirat **16 pontos rendszer-betű**
+   (`m_systemfont16`), és van mögötte egy **háttérlap**
+   (`in_progress_base`), `predraw`-val, körben **−17 / +15 / −3 / +5**
+   képpont ráhagyással.
+5. Mindkettő **alapból rejtett** (`m_hidden`).
 
 ---
 
@@ -218,12 +255,40 @@ Fent balra a **„Kollázs szerkesztése"** gomb látszik, azzal lehet
 visszatérni a szerkesztéshez.
 
 ⚠️ **Automatikus odaugrás/értesítés a folyamat része NEM lehet** —
-a felhasználó a képnézetben találja magát, nem kap kattintható
-értesítést. (A `collage::done` = „A kollázs kész (kattintson ide)"
-string létezik (`0x00cc4e44`), de a tulajdonos szerint ebben a
-folyamatban nem jelenik meg; a `0x0088b220` szálbelépési pontnak
-nincs statikus hívója, ami feltételes/tálcás értesítésre utalhat.
-**Nyitott kérdés**, nem normatíva.)
+a felhasználó a képnézetben találja magát.
+
+### 5.4 A `collage::done` értesítés az ASZTALI HÁTTÉRKÉP ágé — MEGFEJTVE
+
+A „A kollázs kész (kattintson ide)" (`collage::done`, `0x00cc4e44`)
+sokáig nyitott kérdés volt: a string létezik, a tulajdonos szerint
+mégsem jelenik meg a rendes létrehozáskor.
+
+**A hívási gráf eldönti.** Az értesítő függvény (`0x0088a020`) hívja a
+`0x0057aa10`-et, amiben ez van:
+
+```
+Picasa
+Backgrounds
+CThumbUI::BackgroundsFolder
+picasabackground.bmp
+Control Panel\Desktop\
+```
+
+A `Control Panel\Desktop\` a Windows **asztali háttérkép**
+registry-kulcsa, a `picasabackground.bmp` pedig a Picasa saját
+háttérkép-fájlja.
+
+**Tehát a `collage::done` értesítés az „Asztali háttérkép" ághoz
+tartozik**, nem a sima „Kollázs létrehozása"-hoz. A tulajdonos
+megfigyelése és a bináris ezzel **összeér**.
+
+⚠️ **Normatíva:** a rendes létrehozás után **NE tegyünk ki kattintható
+értesítést**. Ha az „Asztali háttérkép" gombot építjük meg, **oda**
+tartozik.
+
+*(Bizonyítottsági fok: erős. A hívási él és a háttérkép-stringek
+mérve; hogy az értesítés kizárólag ezen az ágon fut, dekompilációval
+volna bizonyítható.)*
 
 ---
 
@@ -264,17 +329,89 @@ A tulajdonos leírása szerint a folyamat **ciklikus**: a kész kollázst a
 
 ---
 
-## 8. Amit NEM tudunk — kimondva
+## 8. A hat nyitott kérdés elszámolása (2026-08-20, második kör)
 
-1. **A „Létrehozás" és a „Folyamatban…" gomb erőforrás-kulcsa.**
-2. **A helykitöltő pontos tipográfiája**: betűméret, a felirat pontos
-   pozíciója, van-e árnyék/sáv mögötte.
-3. **A `0xFF3F3F3F` szerepe** — nem a háttérszín; hogy mi, nyitott.
-4. **A `480` konstans** (`0x0068a79c`) szerepe: a mért képek 640 × 453-asak,
-   tehát nem fix magasság.
-5. **A `collage::done` értesítés** melyik folyamathoz tartozik.
-6. **Mi történik két egymás utáni piszkozat-mentésnél** — erős
-   következtetés szerint az 5.1 párbeszéd jön, de nem mért.
+| # | kérdés | állapot |
+|---|---|---|
+| 1 | a „Létrehozás"/„Folyamatban…" kulcsa | ✅ **MEGFEJTVE** — 4.3 |
+| 2 | a helykitöltő tipográfiája | ⚠️ részben — ld. lent |
+| 3 | a `0xFF3F3F3F` szerepe | ⚠️ szűkítve — ld. lent |
+| 4 | a `480` konstans szerepe | 💡 **új hipotézis** — ld. lent |
+| 5 | a `collage::done` hova tartozik | ✅ **MEGFEJTVE** — 5.4 |
+| 6 | két egymás utáni piszkozat-mentés | ⚠️ erős következtetés |
+
+### 8.2 A helykitöltőbe rajzolt „PISZKOZAT" tipográfiája
+
+**A `.tre`-erőforrásokban NINCS ilyen vezérlő** — végigkerestem, `draft`
+nevű elem egyik panel-fájlban sem szerepel. Ebből következik, hogy a
+feliratot **kód rajzolja a JPEG-be**, nem a felületleíró.
+
+Ezért a `.tre` ezt **nem is fogja megmondani**; csak a bináris
+dekompilációja vagy a kész fájl **képpont-mérése**.
+
+### 8.3 A `0xFF3F3F3F` — szűkítve
+
+**Nem `.tre`-tulajdonság** (a keresés a teljes erőforrás-készleten
+nulla találat `3f3f3f`-re), tehát **kódbeli konstans** a
+`0x0068a6a0` függvényben.
+
+**Nem a háttérszín** — az a projektből jön (a tulajdonos állította be).
+Két megmaradt jelölt: a **felirat színe/árnyéka**, vagy **tartalék
+háttér**, ha a projektben nincs szín. ⚠️ **Egyiket sem állítjuk.**
+
+*(Érdekesség: a `.tre`-kben van egy hasonló alakú konstans,
+`Property negativemode 8f2f2f2f` — de az MÁS érték és más szerep,
+nem szabad összekeverni.)*
+
+### 8.4 A `480` konstans — új, TESZTELHETŐ hipotézis
+
+Eddig azt írtuk, hogy a helykitöltő „640 a hosszabb élen". A `480`
+(`0x0068a79c`) ekkor magyarázat nélkül maradt.
+
+**Új hipotézis: a lap egy 640 × 480-as DOBOZBA van illesztve.**
+
+Fekvő A4-en (5120 × 3620) a két szabály **ugyanazt adja**:
+
+```
+hosszabb él = 640     → 640 × 452,5 → 640 × 453
+doboz-illesztés       → min(640/5120, 480/3620) = 0,125 → 640 × 453
+```
+
+Ezért a mért adat **nem különbözteti meg** őket.
+
+**ÁLLÓ lapon viszont élesen szétválnak:**
+
+| szabály | álló A4 (3620 × 5120) |
+|---|---|
+| „640 a hosszabb élen" | **453 × 640** |
+| „640 × 480-as dobozba" | **339 × 480** |
+
+⚠️ **Amíg ez nem dől el, a helykitöltő méretét álló lapon NE tekintsük
+tudottnak.** A doboz-hipotézis a valószínűbb, mert megmagyarázza a
+`480`-at; de bizonyíték nélkül nem normatíva.
+
+**Amivel eldőlne:** egy **álló lapú** kollázs piszkozata az eredeti
+Picasából — elég a fájl mérete a státuszsorból.
+
+### 8.5 Két egymás utáni piszkozat-mentés
+
+A tulajdonos leírása a **kész → szerkesztés → Bezárás → megint
+piszkozat** kört igazolja. Mivel a kollázsnak ilyenkor **már van neve**,
+a helykitöltő ugyanarra a névre íródik.
+
+**Erős következtetés**, nem mérés: a névadó (`%s%lu`) a
+piszkozat-mentő ágban fut (`0x006251f0`), de a már névvel bíró kollázs
+az 5.1 párbeszédhez tartozik.
+
+---
+
+## 8/b Amit továbbra sem tudunk
+
+1. A helykitöltő **betűmérete és a felirat pontos pozíciója** a képen
+   belül (kód rajzolja, `.tre` nem írja le).
+2. A `0xFF3F3F3F` **tényleges szerepe**.
+3. A helykitöltő mérete **álló lapon** (8.4).
+4. Hogy a `collage::done` **kizárólag** a háttérkép-ágon fut-e.
 
 ---
 
