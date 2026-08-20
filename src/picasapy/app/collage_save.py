@@ -34,7 +34,7 @@ import os
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, Qt, Signal, Slot
 from PySide6.QtGui import QColor
 
 from picasapy.collage.autosave import (
@@ -69,6 +69,19 @@ class CollageSaveMixin(BackgroundWorkerMixin):
     állapot ugyanarra a lapra."""
 
     # -- jelzések (8.3) ----------------------------------------------------
+
+    #: **BELSŐ, szál-határon átmenő jelzések (#988/#999).** A háttérszál
+    #: KIZÁRÓLAG ezeket emitálja, nyers adattal — az állapotírás, a
+    #: fordítás (`tr`) és a NYILVÁNOS jelzések a rájuk kötött slotokban
+    #: futnak, a fogadó (GUI-) szálon.
+    #:
+    #: Ok (#988 veremkiíratása): a rajzoló szál korábban maga írta a
+    #: `_collage_panel_percent`-et és maga emitálta a nyilvános jelzéseket,
+    #: miközben a GUI-szálon szemétgyűjtés futhat a PySide-burkolókon — ez
+    #: a #430-as SIGSEGV-osztály. A minta a `busy_registry.py`-é: a
+    #: szálhatárt EGY jelzés lépi át, a munka a fogadó szálán történik.
+    _workerProgress = Signal(int, str)
+    _workerOutcome = Signal(object)
 
     collageProgress = Signal(int, str)
     collageDone = Signal(str)
@@ -169,9 +182,78 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             )
 
     def _emit_progress(self, percent: int, text: str) -> None:
-        """A folyamatjelző egyetlen kapuja — a százalék itt jegyződik meg."""
+        """A folyamatjelző egyetlen kapuja — a százalék itt jegyződik meg.
+
+        ⚠️ CSAK a fogadó (GUI-) szálon hívható. A háttérszál a
+        `_post_progress`-t használja (#988/#999)."""
         self._collage_panel_percent = int(percent)
         self.collageProgress.emit(int(percent), text)
+
+    #: A háttérszálról küldhető folyamat-szövegek KULCSAI. A `tr()` hívása
+    #: is a fogadó szálon történik (#988/#999) — a szál csak kulcsot küld.
+    _PROGRESS_INITIALIZING = "initializing"
+    _PROGRESS_READY = "ready"
+
+    def _ensure_worker_bridge(self) -> None:
+        """A belső híd-jelzések bekötése — SORBA ÁLLÍTOTT kapcsolattal.
+
+        A GUI-szálon hívandó, a háttérszál indítása ELŐTT. Idempotens."""
+        if getattr(self, "_worker_bridge_ready", False):
+            return
+        self._workerProgress.connect(
+            self._on_worker_progress, Qt.ConnectionType.QueuedConnection
+        )
+        self._workerOutcome.connect(
+            self._on_worker_outcome, Qt.ConnectionType.QueuedConnection
+        )
+        self._worker_bridge_ready = True
+
+    def _post_progress(self, percent: int, key: str) -> None:
+        """A HÁTTÉRSZÁL folyamatjelzése — csak egy jelzés, semmi más."""
+        self._workerProgress.emit(int(percent), key)
+
+    @Slot(int, str)
+    def _on_worker_progress(self, percent: int, key: str) -> None:
+        """A fogadó szálon: itt fordítunk és itt írjuk az állapotot."""
+        if key == self._PROGRESS_READY:
+            text = self.tr("The collage is ready (click here)")
+        else:
+            text = self._progress_text_initializing()
+        self._emit_progress(percent, text)
+
+    @Slot(object)
+    def _on_worker_outcome(self, payload: dict) -> None:
+        """A rajzolás eredményének feldolgozása — a fogadó szálon.
+
+        Minden állapotírás és minden NYILVÁNOS jelzés itt történik; a
+        háttérszál csak a nyers adatot adta át."""
+        fajta = payload["fajta"]
+        if fajta == "hiba":
+            self.collageFailed.emit(payload["uzenet"])
+            return
+        if fajta == "olvashatatlan":
+            self.collageFailed.emit(
+                self.tr("None of the selected pictures could be read.")
+            )
+            return
+        if fajta == "megszakitva":
+            self.collageCanceled.emit()
+            return
+        ut = payload["ut"]
+        self._set_dirty(False)
+        self._set_saved_path(ut)
+        self._index_saved_collage(Path(ut))
+        # #1100: a piszkozat takarítása is a FOGADÓ szálon — a beállítás
+        # írása (`QSettings`) és a jelzések ugyanabba a körbe tartoznak.
+        self._discard_draft_after_render()
+        if payload["hianyzo"]:
+            # 9.4: a hiány nem hiba — a kollázs elkészült, de a felhasználó
+            # tudja meg, hogy hány kép maradt ki belőle
+            self.collageMissingImages.emit(payload["hianyzo"])
+        self._emit_progress(100, self.tr("The collage is ready (click here)"))
+        self.collageDone.emit(ut)
+        if payload["hatterkep"]:
+            self.collageDesktopBackgroundReady.emit(ut)
 
     # -- létrehozás (8.2, 9.1) ---------------------------------------------
 
@@ -216,6 +298,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
 
         target = self._target_path(replaceExisting)
         self._collage_panel_cancel.clear()
+        self._ensure_worker_bridge()  # #988/#999: a GUI-szálon, a szál ELŐTT
         self._emit_progress(0, self._progress_text_initializing())
         self._start_background(
             self._render_worker,
@@ -324,7 +407,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         kitalálni egyet rosszabb volna, mint durvábban jelezni. A három
         szakasz — indulás, rajzolás kész, kiírva — a felhasználónak azt
         mondja meg, ami tényleg igaz."""
-        self._emit_progress(10, self._progress_text_initializing())
+        self._post_progress(10, self._PROGRESS_INITIALIZING)
         try:
             eredmeny = output.render_collage(
                 nodes,
@@ -336,28 +419,22 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                 should_cancel=self._rendered_now_writing,
             )
         except (ValueError, OSError) as error:
-            self.collageFailed.emit(str(error))
+            self._workerOutcome.emit({"fajta": "hiba", "uzenet": str(error)})
             return
         if eredmeny.canceled:
-            self.collageCanceled.emit()
+            self._workerOutcome.emit({"fajta": "megszakitva"})
             return
         if eredmeny.path is None:
-            self.collageFailed.emit(
-                self.tr("None of the selected pictures could be read.")
-            )
+            self._workerOutcome.emit({"fajta": "olvashatatlan"})
             return
-        self._set_dirty(False)
-        self._set_saved_path(str(eredmeny.path))
-        self._index_saved_collage(eredmeny.path)
-        self._discard_draft_after_render()
-        if eredmeny.missing:
-            # 9.4: a hiány nem hiba — a kollázs elkészült, de a felhasználó
-            # tudja meg, hogy hány kép maradt ki belőle
-            self.collageMissingImages.emit(len(eredmeny.missing))
-        self._emit_progress(100, self.tr("The collage is ready (click here)"))
-        self.collageDone.emit(str(eredmeny.path))
-        if wallpaper:
-            self.collageDesktopBackgroundReady.emit(str(eredmeny.path))
+        self._workerOutcome.emit(
+            {
+                "fajta": "kesz",
+                "ut": str(eredmeny.path),
+                "hianyzo": len(eredmeny.missing),
+                "hatterkep": bool(wallpaper),
+            }
+        )
 
     def _discard_draft_after_render(self) -> None:
         """A kész kollázs mellől ELTAKARÍTJUK a piszkozatot (#1100).
@@ -396,7 +473,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         munka nagyja megvan — tehát ez az egyetlen hely, ahol a 90%-ot
         őszintén ki lehet írni. Két külön horog ugyanide kötve csak
         látszatra volna tisztább."""
-        self._emit_progress(90, self._progress_text_initializing())
+        self._post_progress(90, self._PROGRESS_INITIALIZING)
         return self._collage_panel_cancel.is_set()
 
     # -- piszkozat (3.3, 9.) -----------------------------------------------
