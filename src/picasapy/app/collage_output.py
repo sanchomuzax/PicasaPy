@@ -35,6 +35,7 @@ Két dolog, amit könnyű elrontani:
 
 from __future__ import annotations
 
+import logging
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -63,6 +64,8 @@ from picasapy.collage.themes import (
     PICTUREGRID,
     REGULARGRID,
 )
+
+logger = logging.getLogger(__name__)
 
 #: A kimeneti fájl TARTALÉK neve: `il_collagefilename` = „kollázs" (spec 9.1).
 FILENAME_STEM = "kollázs"
@@ -413,8 +416,32 @@ def write_album_ini(folder: Path | str, album_name: str) -> Path:
     if not _van("P2category"):
         sorok += [f"P2category={PROJECTS_CATEGORY}"]
 
-    ut.write_text("\n".join(sorok) + "\n", encoding="utf-8")
+    _ini_kiiras(ut, "\n".join(sorok) + "\n")
     return ut
+
+
+def _ini_kiiras(ut: Path, szoveg: str) -> None:
+    """A `.picasa.ini` kiírása úgy, hogy a REJTETT jelző se akadály, se kár.
+
+    ⚠️ #1097: a `write_text()` windowson `CREATE_ALWAYS`-szel nyit, és az egy
+    létező, REJTETT fájlon `ERROR_ACCESS_DENIED`-del bukik. A #1088 óta a
+    VALÓDI Picasa-mappába írunk, ahol a `.picasa.ini`-t a Picasa hozta létre
+    — rejtettként (`Picasa3.exe` importálja a `SetFileAttributesW`-t). A
+    tulajdonos ezért nem tudott egyetlen kollázst sem menteni.
+
+    Létező fájlt ezért `r+`-szal nyitunk (`OPEN_EXISTING`): ott a rejtett
+    jelző nem számít.
+
+    ⚠️ Ideiglenes fájl + átnevezés itt NEM jó, pedig a `_write_pair` azt
+    használja: az új fájl nem rejtett, tehát a `.picasa.ini` a felhasználó
+    Intézőjében LÁTHATÓVÁ válna. A helyben írás megőrzi az attribútumokat."""
+    adat = szoveg.encode("utf-8")
+    if ut.exists():
+        with open(ut, "r+b") as fajl:
+            fajl.write(adat)
+            fajl.truncate()
+        return
+    ut.write_bytes(adat)
 
 
 def render_collage(
@@ -467,7 +494,19 @@ def render_collage(
     ut = _write_pair(Path(target), jelentes.image, projekt)
     # A mappa megjelölése projekt-albumként — enélkül a mentett kollázs
     # SEHOL nem jelenik meg a bal hasábon (#1029 forrása a `P2category`).
-    write_album_ini(ut.parent, ut.parent.name)
+    #
+    # ⚠️ #1097: a megjelölés bukása NEM buktathatja el a mentést. A JPEG és a
+    # `.cxf` ekkor MÁR a lemezen van; ha ilyenkor „a kollázs nem készült el"
+    # üzenetet adunk, a felhasználó azt hiszi, elveszett a munkája — a
+    # tulajdonos pontosan ezt olvasta a v0.8.23-ban.
+    try:
+        write_album_ini(ut.parent, ut.parent.name)
+    except OSError as hiba:
+        logger.warning(
+            "A kollázs elkészült, de a mappa megjelölése nem sikerült (%s): %s",
+            ut.parent,
+            hiba,
+        )
     return SaveResult(
         ut, len(jelentes.used), hianyzo, kihagyott, tuple(jelentes.image.shape)
     )
