@@ -160,10 +160,6 @@ class PeopleMixin:
 
     # -- #422 4. lépcső: az Emberek-album kép-szintű parancsai -------------
 
-    #: a kötegelt arc-írás hibája (a `albumWriteFailed` mintája) — a hívó
-    #: réteg ezt köti hibaüzenetre
-    personWriteFailed = Signal(str)
-
     @staticmethod
     def _person_faces(document, photo_name: str, contact_id: str):
         """Az adott kontakthoz tartozó arc-régiók egy fotón.
@@ -234,7 +230,10 @@ class PeopleMixin:
                     Path(folder) / PICASA_INI_NAME, mutate, backup=True
                 )
             except _WRITE_ERRORS as error:
-                self.personWriteFailed.emit(str(error))
+                # Az AppController `syncFailed` jelzését a Main.qml már a
+                # látható globális hibasávra köti. Külön jelzés itt csak
+                # néma zsákutca volt (#1003).
+                self.syncFailed.emit(str(error))
                 return False
         self._refresh_view()
         return True

@@ -41,8 +41,6 @@ app/face_scan_controller.py::modelUnavailable #1003 — az arcfelismerő modell 
 app/face_scan_controller.py::scanStarted #1003 — az arcszkennelés indulását a felület nem jelzi
 app/fileops_controller.py::folderMoved #1003 — a mappa áthelyezése után a régi/új utat senki nem veszi át; át kell nézni, kell-e felületi frissítés
 app/import_source_controller.py::sourceScanStarted #1003 — az importforrás vizsgálatának indulását a felület nem jelzi
-app/people_controller.py::personWriteFailed #1003 — VISSZAIGAZOLT: néma ÍRÁSI hiba, a személy mentése elbukhat anélkül, hogy a felhasználó megtudná
-app/perf_controller.py::diagnosticsFolderOpenFailed #1003 — a diagnosztikai mappa megnyitásának hibája elvész, pedig a docstring szerint „nem hal el némán"
 app/photo_ops_controller.py::photoOpFinished #1003 — a fotóművelet vége; ma csak TESZT figyeli (ld. batch_effect_controller.py kommentjét), a felület nem
 app/print_controller.py::printFailed #1003 — a nyomtatás hibaüzenete elvész
 app/print_controller.py::printFinished #1003 — VISSZAIGAZOLT: a nyomtatás befejezéséről (fájl vagy nyomtató neve) a felhasználó nem kap visszajelzést

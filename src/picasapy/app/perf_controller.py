@@ -33,9 +33,6 @@ class PerfMonitorMixin:
 
     perfMonitorChanged = Signal()
     perfSampleChanged = Signal()
-    # #217: a diagnosztika-mappa megnyitása sikertelen — emberi nyelvű
-    # hibaüzenet a QML-nek, a syncFailed/photoOpFailed mintája szerint.
-    diagnosticsFolderOpenFailed = Signal(str)
     # A PerfCollector SAJÁT (nem-Qt) háttérszáláról emittálva — a fogadó
     # (self) a GUI-szálon él, ezért a Qt automatikusan queued kézbesítéssel
     # juttatja a főszálra (ld. ThumbnailProvider.activeCountChanged minta).
@@ -252,10 +249,10 @@ class PerfMonitorMixin:
         ezért ott csak a bináris hiányát (OSError) tekintjük hibának.
         Linuxon a #112-es mintát (`reveal_in_file_manager`, azaz
         `xdg-open` a szülőmappára) hasznosítja újra. Hiba esetén emberi
-        nyelvű üzenetet jelez a `diagnosticsFolderOpenFailed` jelzésen —
-        nem hal el némán."""
+        nyelvű üzenetet jelez a már bekötött `syncFailed` csatornán — nem
+        hal el némán."""
         if not path:
-            self.diagnosticsFolderOpenFailed.emit(
+            self.syncFailed.emit(
                 "Nincs elérhető naplófájl — előbb mentsd a diagnosztikát."
             )
             return
@@ -265,7 +262,7 @@ class PerfMonitorMixin:
             else:
                 reveal_in_file_manager(Path(path))
         except OSError as error:
-            self.diagnosticsFolderOpenFailed.emit(str(error))
+            self.syncFailed.emit(str(error))
 
     # -- életciklus ------------------------------------------------------
 

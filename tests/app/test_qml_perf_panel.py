@@ -179,8 +179,7 @@ class TestPerfMonitorPanel:
     def test_open_diagnostics_folder_reports_human_error(
         self, qml_app, qt_app, tmp_path, monkeypatch
     ):
-        """Hiba esetén emberi nyelvű üzenet a `diagnosticsFolderOpenFailed`
-        jelzésen — nem néma elhalás (#217 DoD)."""
+        """Hiba esetén a felhasználó a globális hibasávon látja az okot."""
         window, controller, _lib, _engine = qml_app
         monkeypatch.setattr(
             "picasapy.app.perf_controller.platform.system", lambda: "Linux"
@@ -193,21 +192,17 @@ class TestPerfMonitorPanel:
             "picasapy.app.perf_controller.reveal_in_file_manager", _raise
         )
 
-        received = []
-        controller.diagnosticsFolderOpenFailed.connect(received.append)
         controller.openDiagnosticsFolder(str(tmp_path / "diag.jsonl"))
+        qt_app.processEvents()
 
-        assert len(received) == 1
-        assert "xdg-open" in received[0]
+        assert "xdg-open" in _child(window, "errorBannerText").property("text")
 
     def test_open_diagnostics_folder_empty_path_reports_error(self, qml_app, qt_app):
-        """Hiányzó útvonalnál (még nem történt mentés) is emberi nyelvű
-        hibajelzés jár, nem csendes semmittevés (#217 DoD)."""
+        """Hiányzó útvonalnál is a már létező hibasáv szólal meg."""
         window, controller, _lib, _engine = qml_app
-        received = []
-        controller.diagnosticsFolderOpenFailed.connect(received.append)
         controller.openDiagnosticsFolder("")
-        assert len(received) == 1
+        qt_app.processEvents()
+        assert "Nincs elérhető naplófájl" in _child(window, "errorBannerText").property("text")
 
     def test_top_activity_reflects_sync_progress(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app

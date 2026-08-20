@@ -59,6 +59,15 @@ def test_a_nema_jelzest_megtalalja(tmp_path: Path) -> None:
     assert _nema_kulcsok(gyoker) == {"vezerlo.py::valamiTortent"}
 
 
+def test_a_kijavitott_hibajelzesek_nem_maradnak_a_valodi_alapallapotban() -> None:
+    """#1003: a két régi hibaút a látható `syncFailed` csatornára kerül."""
+    live = guard.scan(_REPO_ROOT / "src" / "picasapy")
+    keys = {signal.key for signal in live.silent}
+
+    assert "app/people_controller.py::personWriteFailed" not in keys
+    assert "app/perf_controller.py::diagnosticsFolderOpenFailed" not in keys
+
+
 def test_a_futtatas_hibaval_ter_vissza_uj_nema_jelzesre(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
