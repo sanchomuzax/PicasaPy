@@ -272,8 +272,16 @@ def _copy_sqlite_database(source: Path, target: Path) -> None:
         finally:
             source_connection.close()
 
-        with sqlite3.connect(str(temporary)) as copied:
+        # ⚠️ A `with sqlite3.connect(...)` NEM zárja be a kapcsolatot — csak
+        # a tranzakciót kezeli. Windowson a nyitva maradt másolat miatt a
+        # rákövetkező publikálás `WinError 32`-vel bukik, és az EGÉSZ
+        # migráció hibára fut: a felhasználó indexe nem kerül át. Linuxon
+        # ez láthatatlan, ott a nyitott fájl is linkelhető és törölhető.
+        copied = sqlite3.connect(str(temporary))
+        try:
             result = [str(row[0]) for row in copied.execute("PRAGMA integrity_check")]
+        finally:
+            copied.close()
         if result != ["ok"]:
             raise sqlite3.DatabaseError("; ".join(result))
         _fsync_file(temporary)
