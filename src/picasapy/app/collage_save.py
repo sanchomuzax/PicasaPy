@@ -652,11 +652,17 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self.collageCaptionsChanged.emit()
         if projekt.album_title:
             self.setCollageTitle(projekt.album_title)
-        self._apply_cxf_background(projekt.background)
-
         self._set_nodes(
             _panel_nodes_of(nodes_from_project(projekt)), dirty=False
         )
+        # ⚠️ #1103: a háttér CSAK a csomópontok után. A képháttér a panelen
+        # INDEXKÉNT él (#1009), a `.cxf` viszont ÚTVONALAT tárol, tehát a
+        # visszaállítás megkeresi a képet a csomópontok között. Ha előbb
+        # fut, a lista még a RÉGI (újraindítás után: ÜRES), az index −1
+        # lesz, és a #1085 védőága — helyesen, de rossz pillanatban
+        # kérdezve — színre ejti a hátteret. A tulajdonos ezt a v0.8.20 óta
+        # látta: „a háttérképet elfelejti, sima színre kapcsolja vissza."
+        self._apply_cxf_background(projekt.background)
         self._set_dirty(False)
         self._set_saved_path(saved_path)
         if not self._collage_panel_open:
