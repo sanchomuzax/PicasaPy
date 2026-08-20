@@ -133,7 +133,7 @@ class TestQtModell:
         assert modell.node_at(0).path == "/also.jpg"
         assert modell.nodes[-1].path == "/felso.jpg"
 
-    def test_mind_a_tiz_szerep_kiolvashato(self, qt_app):
+    def test_minden_szerep_kiolvashato(self, qt_app):
         modell = CollageNodeModel()
         modell.set_nodes(
             (
@@ -164,6 +164,10 @@ class TestQtModell:
             # (a meghajtóbetű PORTNAK látszik), `#`-es fájlnévnél pedig
             # Linuxon is elvágja a nevet — mindkét esetben NÉMÁN.
             "fileUrl",
+            # #995: a csempe átlátszatlansága a vásznon. A Többszörös
+            # exponálásnál a RÉTEGSORRENDTŐL függ (`1/(i+1)`), másutt 1,0 —
+            # így a vászon ugyanazt keveri, amit a mentés.
+            "tileOpacity",
         }
         index = modell.index(0, 0)
         ertek = {

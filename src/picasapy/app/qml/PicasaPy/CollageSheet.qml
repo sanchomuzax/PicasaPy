@@ -189,6 +189,8 @@ Item {
             unit: lap ? lap.unit : 0
             path: model.path
             fileUrl: model.fileUrl !== undefined ? model.fileUrl : ""
+            // #995: a Többszörös exponálás rétegsorrend szerinti keverése
+            tileOpacity: model.tileOpacity !== undefined ? model.tileOpacity : 1.0
             centerX: model.centerX
             centerY: model.centerY
             nodeWidth: model.width

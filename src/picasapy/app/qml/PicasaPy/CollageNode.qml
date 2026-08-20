@@ -51,6 +51,8 @@ Item {
     property string caption: ""
     property bool selected: false
     property bool missing: false
+    //: #995 — a modell `tileOpacity` szerepe (Többszörös exponálás)
+    property real tileOpacity: 1.0
 
     //: „Képfeliratok megjelenítése" — a Polaroid-keret alsó sávjának szövege
     //: CSAK ekkor látszik (a buboréksúgó ezt ki is mondja).
@@ -93,8 +95,12 @@ Item {
     // Húzás közben 0,9 (spec 7.3). A gazdája a vászon, mert az `Alt`
     // rétegváltása után a húzott csomópont INDEXE megváltozik — a jelzőt
     // ezért nem a saját lenyomásunk, hanem a vászon állapota adja.
+    // #995: a Többszörös exponálásnál a csempék KEVERNEK, nem takarnak —
+    // az átlátszatlanságot a MODELL adja (rétegsorrend szerinti 1/(i+1)),
+    // hogy a vászon ugyanazt mutassa, amit a mentés kever. A többi témánál
+    // a szerep 1,0, tehát ez az ág ott semlegesen viselkedik.
     opacity: (node.sheet && node.sheet.dragIndex === node.nodeIndex
-              && node.sheet.dragMode === "move") ? 0.9 : 1.0
+              && node.sheet.dragMode === "move") ? 0.9 : node.tileOpacity
 
     z: nodeIndex
 
