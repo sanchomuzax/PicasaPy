@@ -14,6 +14,7 @@ from picasapy.render.chain import apply_filters, tilt_cover_scale
 from picasapy.render.color import apply_bw
 from picasapy.render.ops import apply_autocolor, apply_autolight, apply_crop
 from picasapy.render.retouch import apply_retouch, apply_retouch_patches
+from picasapy.render.tinting import apply_tint
 from picasapy.render.tone import apply_fill, apply_finetune2
 
 
@@ -267,13 +268,16 @@ class TestApplyFiltersEffects:
         assert not np.array_equal(result, image)
 
     def test_tint_alkalmazasa(self) -> None:
-        # éles alak: tint=1,79.842102,ffff (rövid, vezető nullák nélküli szín)
+        # Éles alak: tint=1,79.842102,ffff (rövid, vezető nullák nélküli
+        # szín). Ez a lánc bekötését méri; a képletet a tinting céltesztjei.
         image = np.full((4, 4, 3), 128, dtype=np.uint8)
         ops = (FilterOp("tint", ("1", "79.842102", "ffff")),)
         result, skipped = apply_filters(image, ops)
         assert skipped == ()
-        assert int(result[0, 0, 0]) == 0
-        assert abs(int(result[0, 0, 1]) - 128) <= 1
+        np.testing.assert_array_equal(
+            result,
+            apply_tint(image, preserve=79.842102, color=(0x00, 0xFF, 0xFF)),
+        )
 
     def test_ansel_alkalmazasa(self) -> None:
         image = np.full((4, 4, 3), (100, 150, 200), dtype=np.uint8)

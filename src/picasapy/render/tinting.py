@@ -1,12 +1,12 @@
 """Színező effekt-műveletek: tint, ansel, dir_tint.
 
-Mért alapok (`docs/specs/filters-decoded.md`, 3. kör):
+Mért és binárisból megerősített alapok (`docs/specs/filters-decoded.md`):
 
-- **tint** — `tint=1,79.842102,ffff` szürke rámpán az R-csatornát nullázza,
-  G és B változatlan: a rövid `ffff` szín balra nullákkal kiegészítve
-  `0000ffff` (cián) → a luma csatornánkénti szorzása a színnel pontosan ezt
-  adja. A `preserve` paraméter szürkén mérten hatástalan; színes képen a
-  króma visszakeverésének súlyaként értelmezzük (0..100 skála) — KÖZELÍTÉS.
+- **tint** — a natív callback (`0x008f9630`, #872) előbb a közös
+  `0x009db610` szinthúzót futtatja 0,30-as keveréssel, majd 256-os súlyú,
+  egész lumás telítetlenítést, telítettségfüggő gamma-LUT-ot és a tint
+  legnagyobb komponensére normalizált szorzást végez. A `CarefulEnhance`
+  nálunk nem beállítás; a Picasa alapértelmezett KI ágát használjuk.
 - **ansel** (Filtered B&W) — a színparaméter **SZŰRŐ**, nem festék: a
   csatornák súlyát adja a szürkévé alakításban, a kimenet mindig semleges
   (R=G=B). A tónusgörbe a `referencia/filteredbw/` fehér szűrős exportjából
@@ -31,8 +31,13 @@ import numpy as np
 
 from picasapy.render.curves import validate_image
 from picasapy.render.effects import _radius_grid
+from picasapy.render.ops import apply_channel_levels_stretch
 
 _HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{1,8}$")
+
+#: A `tint` a `-1,0f` jelzővel hívja a közös szinthúzót; ez a natív
+#: alapértelmezett 0,30-as vágópont-keverést választja (#872).
+_TINT_LEVELS_BLEND = 0.30
 
 #: `ansel` (Filtered B&W) MÉRT tónusgörbéje — `referencia/filteredbw/`
 #: (fehér szűrőszínnel exportált 2560×1702-es kép, #317): a szűrt szürke
@@ -44,10 +49,6 @@ _ANSEL_ANCHOR_CURVE = (
     0.1, 16.8, 34.0, 51.0, 67.7, 84.3, 100.7, 117.0, 133.0, 148.9,
     164.5, 180.0, 195.3, 210.4, 225.4, 240.0, 253.8,
 )
-
-# tint: a preserve paraméter skálája (79.842102 az éles példa) — 0..100.
-_PRESERVE_SCALE = 100.0
-
 
 def parse_rgb_hex(value: str) -> tuple[int, int, int]:
     """A filters-beli hex színparaméter (AARRGGBB) értelmezése (R, G, B)-ként.
@@ -63,44 +64,82 @@ def parse_rgb_hex(value: str) -> tuple[int, int, int]:
     return (int(padded[2:4], 16), int(padded[4:6], 16), int(padded[6:8], 16))
 
 
-def _luma(image: np.ndarray) -> np.ndarray:
-    """Rec.601 luminancia float32 (H, W) tömbként."""
-    image_f = image.astype(np.float32)
-    return (
-        np.float32(0.299) * image_f[..., 0]
-        + np.float32(0.587) * image_f[..., 1]
-        + np.float32(0.114) * image_f[..., 2]
-    )
-
-
 def _to_uint8(values: np.ndarray) -> np.ndarray:
     return np.clip(np.rint(values), 0, 255).astype(np.uint8)
 
 
-def _colorize(gray: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
-    """Szürke (H, W) float kép csatornánkénti színezése: `ki_c = szürke·c/255`."""
-    factors = np.array(color, dtype=np.float32) / np.float32(255.0)
-    return gray[..., np.newaxis] * factors
+def _desaturate_native(image: np.ndarray, preserve: float) -> np.ndarray:
+    """Egész lumás telítetlenítés a natív `0x009a9550` szerint (#872)."""
+    preserve_int = int(np.trunc(preserve))
+    if preserve_int == 256:
+        return image.copy()
+
+    channels = image.astype(np.int64)
+    luma = (
+        77 * channels[..., 0]
+        + 151 * channels[..., 1]
+        + 28 * channels[..., 2]
+    ) >> 8
+    weight = 256 - preserve_int
+    desaturated = channels + (((luma[..., np.newaxis] - channels) * weight) >> 8)
+    return np.clip(desaturated, 0, 255).astype(np.uint8)
+
+
+def _gamma_lut_for_tint(color: tuple[int, int, int]) -> np.ndarray | None:
+    """A tint telítettségéből származó gamma-LUT, szürkén `None` (#872)."""
+    maximum = max(color)
+    scaled_sum = sum(color) * 85
+    if maximum <= 0 or scaled_sum <= 0:
+        return None
+
+    ratio = np.float32(maximum * 255) / np.float32(scaled_sum)
+    factor = (ratio - np.float32(1.0)) * np.float32(0.5) + np.float32(1.0)
+    if factor == np.float32(1.0):
+        return None
+    levels = np.arange(256, dtype=np.float32) / np.float32(255.0)
+    gamma_values = (
+        np.power(levels, np.float32(1.0) / factor) * np.float32(255.0)
+    )
+    return np.clip(
+        np.floor(gamma_values + np.float32(0.5)), 0, 255
+    ).astype(np.uint8)
+
+
+def _multiply_by_normalized_tint(
+    image: np.ndarray, color: tuple[int, int, int]
+) -> np.ndarray:
+    """Fixpontos tint-szorzás, a legnagyobb színkomponensre normálva."""
+    maximum = max(color)
+    if maximum <= 0:
+        return np.zeros_like(image)
+    # A natív callback `lround(65536 / mx)`-et ad a 16.16 szorzónak.
+    scale = int(np.floor(65536.0 / maximum + 0.5))
+    tint = np.array(color, dtype=np.int64)
+    multiplied = (image.astype(np.int64) * tint * scale) >> 16
+    return np.minimum(multiplied, 255).astype(np.uint8)
 
 
 def apply_tint(
     image: np.ndarray, preserve: float, color: tuple[int, int, int]
 ) -> np.ndarray:
-    """Színezés: a Rec.601 luma szorzása a színnel, króma-visszakeveréssel.
+    """A `tint` binárisból megerősített hatlépéses receptje (#872).
 
-    `ki = luma·szín/255 + (preserve/100)·(be − luma)` — a mért cián eset
-    (szürkén R=0, G=B változatlan) pontos; a preserve súly-értelmezése
-    színes képen KÖZELÍTÉS.
+    A képi előkészítés után a közös szinthúzó fut 0,30-as keveréssel és
+    **CarefulEnhance=KI** beállítással. A `preserve` nulla felé csonkolódik;
+    a telítetlenítés súlya `256 − preserve`, a 256-os őrértéknél pedig a
+    lépés kimarad. Ezt az egész `77/151/28` luma, a tint telítettségéből
+    számolt opcionális gamma-LUT, végül az `mx`-normalizált 16.16 szorzás
+    követi. Az opcionális ICC-átvezetés a szokásos Picasa-útvonalon `NULL`,
+    ezért a numpy renderútban is tétlen.
     """
     validate_image(image)
-    gray = _luma(image)
-    tinted = _colorize(gray, color)
-    keep = float(np.clip(preserve / _PRESERVE_SCALE, 0.0, 1.0))
-    if keep > 0.0:
-        tinted = tinted + np.float32(keep) * (
-            image.astype(np.float32) - gray[..., np.newaxis]
-        )
-    return _to_uint8(tinted)
+    leveled = apply_channel_levels_stretch(
+        image, blend=_TINT_LEVELS_BLEND, careful=False
+    )
+    desaturated = _desaturate_native(leveled, preserve)
+    gamma_lut = _gamma_lut_for_tint(color)
+    gamma_adjusted = desaturated if gamma_lut is None else gamma_lut[desaturated]
+    return _multiply_by_normalized_tint(gamma_adjusted, color)
 
 
 def apply_ansel(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
