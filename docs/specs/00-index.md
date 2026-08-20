@@ -75,6 +75,16 @@ kérdés).
 
 ### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 6 kérdés
 
+⭐ **2026-08-21, működés-kör (kilenc kérdés):** a
+`kollazs-eletciklus.md` **16.** szakasza négy, eddig sehol nem szereplő
+viselkedést rögzít — a **kattintható kész-értesítés**
+(`collage::done` = „A kollázs kész (kattintson ide)"), a **„Mentés
+mellőzve"** és a **formátum-eltérés** figyelmeztetése, a főablak
+**várakozó állapota**, és a **`hascollage` PMP-oszlop** (1 bájt/sor,
+valódi adaton mérve; a PMP-oszlopok **nem egyforma hosszúak**).
+Jegy: **#1168**. Az alábbi hat kérdést ez a kör NEM érintette.
+
+
 *(A 2026-08-18-i két kör az eredeti hét kérdést **mind** lezárta — az
 elszámolás a lap **12.** szakaszában. Ugyanaznap a harmadik, kimenet-kör
 megfejtette a mentés TELJES törvényét — hova, milyen néven, hogyan, mi
