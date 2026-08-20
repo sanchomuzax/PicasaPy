@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.17] – 2026-08-20
+
+### Javítva
+- **Kép hozzáadása és törlése után rendben marad a rács (#996).** A „+"
+  gomb az új képet eddig **minden témánál** a Képkupac szórásával tette a
+  vászonra — rácsos témánál ettől **kilógott a rácsból**. A „–" gomb pedig
+  **lyukat hagyott** a rács közepén.
+
+  Mostantól a rácsos témák újraszámolnak, a Képkupac viszont nem: ott a
+  szórás a helyes viselkedés, és az újraszámolás elvenné a kézi
+  elrendezésedet. Erre külön ellenőrzés áll — hozzáadáskor és törléskor a
+  többi kép **nem mozdul**.
+
+  ⚠️ A **térköz-csúszka** ebből a körből kimaradt: ott az azonnali
+  újrarendezés a Mozaiknál csúszkalépésenként fél másodperces keresést
+  jelentene, ehhez késleltetés kell. A jegy emiatt nyitva marad.
+
 ## [0.8.16] – 2026-08-20
 
 ### Javítva

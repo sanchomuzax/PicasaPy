@@ -754,10 +754,22 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
 
     @Slot(list)
     def addClips(self, rows) -> None:
-        """A „+" gomb: további képek a kollázsba, a LEGFELSŐ rétegbe."""
+        """A „+" gomb: további képek a kollázsba, a LEGFELSŐ rétegbe.
+
+        ⚠️ #996: a SZÓRÁS csak a Képkupacnál helyes. A rácsos témáknál az
+        új kép a kupac alapméretével, döntetlenül, véletlen helyre került —
+        vagyis KILÓGOTT a rácsból. Ott a téma pakolójának kell újraszámolnia.
+
+        A megkülönböztetés a téma `rotate` képessége (a szabad forgatás):
+        ez EGYETLEN témánál áll, a Képkupacnál — pont annál, aminek az
+        elrendezése eleve szórás, és amit a felhasználó kézzel rendez.
+        A többinél a hely a pakoló dolga, nem a véletlené."""
         self._ensure_collage_panel()
         added = self._sources_from_rows(rows)
         if not added:
+            return
+        if not self._capabilities().rotate:
+            self._relayout(self._current_sources() + tuple(added), dirty=True)
             return
         width = initial_node_width(len(self._nodes()) + len(added))
         centers = layout.scatter(len(added), self.collagePageRatio, self._rng())
@@ -769,12 +781,24 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
 
     @Slot(list)
     def deleteClips(self, rows) -> None:
-        """A „–" gomb: a megadott klipek (csomópont-indexek) kivétele."""
+        """A „–" gomb: a megadott klipek (csomópont-indexek) kivétele.
+
+        ⚠️ #996: rácsos témánál a törölt kép helyén LYUK maradt — a rács
+        hiányos lett. A Képkupacnál viszont a lyuk természetes: a csempék
+        eleve átfedik egymást, és az újraszámolás elvenné a felhasználó
+        kézi elrendezését. A határ ugyanaz, mint az `addClips`-nél: a téma
+        `rotate` képessége."""
+        self._ensure_collage_panel()
         nodes = self._nodes()
         indices = [int(r) for r in (rows or ()) if 0 <= int(r) < len(nodes)]
         if not indices:
             return
-        self._set_nodes(canvas.remove_at(nodes, indices))
+        maradek = canvas.remove_at(nodes, indices)
+        if not self._capabilities().rotate and maradek:
+            self._set_nodes(maradek, dirty=True)
+            self._relayout(self._current_sources(), dirty=True)
+            return
+        self._set_nodes(maradek)
 
     @Slot()
     def resetCollage(self) -> None:
