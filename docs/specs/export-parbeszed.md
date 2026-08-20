@@ -776,3 +776,159 @@ a három argumentum összerakása címmel).
    kimeneti motorban `0x0073e000`–`0x00742000` között **nincs** `.jpg`
    sztring, tehát a kiterjesztést a fájlíró réteg dönti el — ott kell
    keresni.)*
+
+---
+
+## 8. A MŰKÖDÉS — a kilenc kérdés (2026-08-21)
+
+A lap eddigi szakaszai a **párbeszéd felületét** írták le (az `export.fen`
+alapján). Ez a szakasz azt, **mi történik** — a `picasapy-research` skill
+2/b szakaszának kilenc kérdése szerint, a működéssel kezdve.
+
+### 8.0 Függvényleltár — mi a kutatás lefedettsége
+
+Az export-kód **nem egy tartományban** él. A leltár:
+
+| cím | méret | mi ez | megnézve |
+|---|---:|---|---|
+| `0x005312b0` | 610 | **a párbeszéd megnyitója** (`IDS_DEFAULT_EXPORT`, `Picasa Export`) | ✔ |
+| `0x00738c00` | 3035 | a párbeszéd felépítése + a **beállítások BEOLVASÁSA** | ✔ (részben) |
+| `0x00739850` | 272 | `changeloc` — a mappaválasztó | ✘ |
+| `0x00739960` | 1426 | a **beállítások KIÍRÁSA** | ✘ |
+| `0x00739f70` | 324 | `qualslider` — a minőség-csúszka | ✘ |
+| `0x0073a0c0` | 117 | `Custom (%d)` — az „Egyéni (N)" felirat | ✔ (korábbi kör) |
+| `0x0073a140` | 512 | `ShowUnixPaths`, `wine_get_unix_file_name` — útvonal-megjelenítés | ✘ |
+| `0x0073b500` | 459 | `CExportPrefsDialog::exportname` — a célmappa neve | ✘ |
+| **`0x0073f320`** | **9396** | **`CImageOutput` — MAGA AZ EXPORT** (mappa, e-mail, képernyővédő közösen) | ✔ (sztringszinten) |
+| `0x0073ee70` | 83 | `%0*d-%s` — a sorszámozott fájlnév | ✔ |
+| `0x007f6650` | 920 | **`CExportPrefsPage` — a hibaesetek** | ✔ (sztringszinten) |
+
+**Tíz export-függvényből öt van megnyitva**, és a legnagyobb
+(`0x0073f320`, 9396 bájt) csak sztringszinten. A maradék öt a 9. szakaszban.
+
+### 8.1 MI AKTIVÁLJA — három belépési pont
+
+| honnan | mi | hova |
+|---|---|---|
+| **Fájl menü → „Export Picture to Folder…"** | parancs **`0x9c81`** (rekord `0xd6dab4`, azonosító `0xd6dabe`) → a szétosztó 63. indexén `0x005cbaac` | `0x005312b0` |
+| **A kimeneti sáv „Exportálás" gombja** | **`outputlayout/folderbutton`** (`0x005dac55`) | `0x005312b0` |
+| harmadik út | `0x005e60d0` (1345 b) `0x005e64dd`-ről | `0x005312b0` |
+
+*(A **„Export as HTML Page…"** külön parancs — **`0x9c95`**, rekord
+`0xd6e288` —, és NEM ide megy: az a webexport.)*
+
+### 8.2 MIT INDÍT EL kifelé
+
+A `0x005312b0` megnyitja a párbeszédet; az OK az **`CImageOutput`**-ot
+(`0x0073f320`) indítja, ami **folyamatjelzőt** mutat:
+`CImageOutput::exportprog` = **„Exportálás mappába"**
+(e-mail-ágon `::emailprog` = „E-mailbe való exportálás”,
+előkészítéskor `::prepareprog` = „Preparing”).
+
+A `CImageOutput` **három kimenetet szolgál ki ugyanazzal a maggal**:
+mappa-export, **e-mail** (`temp\email\`, MAPI) és **képernyővédő**
+(`Software\Google\Google Photos Screensaver`,
+`rundll32.exe desk.cpl,InstallScreenSaver %s`).
+
+### 8.3 MIT ÍR
+
+| tároló | mi | cím |
+|---|---|---|
+| **kimeneti mappa** | alapértelmezett neve **`Exported Pictures`** | `0x0073f320` |
+| **a képfájlok** | a sorszámozott név formátuma **`%0*d-%s`** (`ExportAddNumbers` esetén) | `0x0073ee70` |
+| **`.picasa.ini`** | a `caption` és a `keywords` átvitele | `0x0073f320` |
+| **`]history:export`** | előzmény-token (a testvérei: `]history:email`, `]history:output`) | `0x0073f320` |
+| **registry** (`Preferences\…`) | `FileExportSize`, `FileExportCustomSize`, `FileExportQuality`, `FileExportQualityType`, `FileExportMovie`, `ExportWatermark`, `ExportWatermarkText`, `ExportAddNumbers`, `UpsizeSmallImages`, `EmailExportSize`, `EmailSinglePicture`, `EmailMovie`, `UseHTMLMailer`, `ShadowsHTMLEmail` | `0x00738c00` (olvasás), `0x00739960` (írás) |
+| **ideiglenes mappák** | `temp\`, `upload\`, `temp\email\` | `0x0073f320` |
+
+### 8.4 MIKOR érvényesül
+
+A beállítások **kiírója külön függvény** (`0x00739960`), tehát a
+mentés nem a beolvasóval közös úton történik — a pontos pillanat
+(OK-ra vagy vezérlőnként) a 9. szakasz nyitott pontja.
+
+### 8.5 MI LESZ A MEGLÉVŐ ADATTAL
+
+A célmappa ütközését a **`CExportPrefsPage`** (`0x007f6650`) kezeli:
+
+> **„A cél már létezik. Felülírja az új albummal?"**
+> (`CExportPrefsPage::destexists`, cím: `::overwritetitle` = „Szeretné
+> felülírni?")
+
+Igen esetén az előző albumot **törli** (`::deleteerror` =
+„Belső hiba történt az előző album törlése közben"). Az **eredeti képek
+nem módosulnak** — az export új fájlokat ír.
+
+### 8.6 MI FUT LE UTÁNA
+
+Folyamatjelző (`CImageOutput::exportprog`), majd az `]history:export`
+token bejegyzése. *(Az indexelés/nézetfrissítés útja a 9. szakasz nyitott
+pontja.)*
+
+### 8.7 HIBAESETEK — mind a hét, magyar szöveggel
+
+| kulcs | magyar |
+|---|---|
+| `CExportPrefsPage::destexists` | A cél már létezik. Felülírja az új albummal? |
+| `CExportPrefsPage::overwritetitle` | Szeretné felülírni? |
+| `CExportPrefsPage::errortitle` | Hiba |
+| `CExportPrefsPage::scanerror` | Belső hiba történt a könyvtárakban való keresés közben. |
+| `CExportPrefsPage::scanfileerror` | Belső hiba történt a fájlok közötti keresés közben. |
+| `CExportPrefsPage::deleteerror` | Belső hiba történt az előző album törlése közben. |
+| `CExportPrefsPage::removeerror` | Belső hiba történt egy könyvtár eltávolítása közben. |
+| `CImageOutput::filewriteerr` | Lemezhiba miatt nem lehetséges az összes fájl írása. Lehet, hogy a lemez megtelt vagy írásvédett. |
+| `IDS_DESTDIRCANNOCREATE` | A célkönyvtár nem hozható létre. |
+| `IDS_NO_IMAGES_TO_SEND` | Nem állt rendelkezésre kép a küldéshez. |
+
+**Tíz hibaág — nálunk egy sincs bekötve.**
+
+### 8.8 HONNAN JÖN INDULÁSKOR AZ ÁLLAPOT
+
+A `0x00738c00` a **registryből** olvassa vissza az összes beállítást
+(`Preferences\…`, `0x00407a20`), a célmappát a
+`CExportPrefsDialog::deffolder` / `IDS_DEFAULT_EXPORT` adja, és az
+útvonal megjelenítését a `ShowUnixPaths` + `wine_get_unix_file_name`
+befolyásolja (**Wine-tudatos** — `0x0073a140`).
+
+> ✅ **NYITOTT KÉRDÉS LEZÁRVA — a film-rádió alapértelmezése.** A
+> `Preferences\FileExportMovie` értéket a párbeszéd az init elején
+> beolvassa (`0x00738c88`–`0x00738cb3`), és a `movies` rádiócsoport
+> beállításánál `setne`-vel bináris értékké alakítja
+> (`0x007390b1`–`0x007390ba`): **nem nulla → „Full movie (no resizing)",
+> nulla vagy hiányzó → „First frame"**. A kétállású csoportnál a `setne`
+> eredménye maga a kiválasztott index.
+>
+> *(Ami ebből NEM következik: mi TILTJA LE a csoportot — ld. 9.)*
+
+### 8.9 …és csak ezután a geometria
+
+A felület leírása a lap 1–7. szakaszában van (az `export.fen`-ből).
+
+
+## 9. Ami NYITVA marad — és pontosan hol folytassa
+
+**Öt export-függvény nincs megnyitva** (a leltár a 8.0-ban):
+
+1. **`0x0073f320` (9396 b) — a `CImageOutput` törzse.** Sztringszinten
+   feltárva (mit ír, milyen hibái vannak), **utasításszinten nem**. Ebből
+   következik a 2–4. pont.
+2. **Mikor íródnak ki a beállítások** — a `0x00739960` (1426 b)
+   végigolvasása; OK-ra, vagy vezérlőnként?
+3. **Mi fut le az export UTÁN** — indexelés? nézetfrissítés? Az
+   `]history:export` token bejegyzésén túl nem követtük.
+4. **A sorszámozás pontos szabálya** — a `%0*d-%s` formátum megvan
+   (`0x0073ee70`), de a **szélesség** (`*`) forrása és a kezdőszám nem.
+5. **Mi TILTJA LE a film-rádiókat.** A 8.8 az *alapértelmezést* zárta le
+   (`Preferences\FileExportMovie` → `setne` → a kiválasztott index), a
+   letiltás viszont máshol dől el — a `movies` csoport `disable`
+   mezőjét (`+0x20e`) író helyet kell megkeresni, feltehetően a
+   kijelölés film-darabszámából.
+6. **A `changeloc` (mappaválasztó, `0x00739850`) és a célmappa-név
+   képzése (`0x0073b500`)** — a `CExportPrefsDialog::exportname` sablon.
+7. **Nincs élő mintaadatunk**: az `]history:export` token a 859 elemű
+   `.picasa.ini`-korpuszban **nullaszor** fordul elő, és a
+   `research/testdata/` alatt sincs exportált mappa. A token pontos
+   alakja tehát **nincs mintával igazolva**.
+
+*(Egyik sem blokkolt: mind gépi úton eldönthető, csak drágább —
+utasításszintű olvasás. A munkasorba kerültek.)*
