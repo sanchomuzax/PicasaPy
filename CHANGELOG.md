@@ -28,6 +28,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   **beállított színre** esik vissza: üres képhátteret mutatni rosszabb
   volna, és törött hivatkozást nem hagyunk.
 
+### Fejlesztői
+- ⚠️ A `test_collage_controller_943.py` várakozó segédje a várakozás
+  idejére kikapcsolja a szemétgyűjtőt (#988). **Ez nem a hiba javítása** —
+  a veremkiíratás szerint a főszál szemétgyűjtése és a háttérszál
+  Qt-jelzése ütközik; a valódi javítás a worker Qt-natívvá tétele, ami
+  külön körben fut. Ez addig annyit tesz, hogy a főág CI-je ne legyen
+  piros, és a kiadások ne akadjanak el.
+
 ## [0.8.20] – 2026-08-20
 
 ### Javítva
