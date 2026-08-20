@@ -1,0 +1,583 @@
+# A Mappakezelő (Folder Manager) TELJES specifikációja (2026-08-20)
+
+Ez a lap az eredeti Picasa 3.9.141.259 **Mappakezelő** ablakát írja le
+teljesen: elrendezés, átméretezés, a fa, a három állapot, az
+arcfelismerés-kapcsoló, a figyelmeztetések, az OK/Mégse szemantikája és a
+Súgó. A cél, hogy egy fejlesztő az eredeti program nélkül is pontosan
+újraépíthesse.
+
+**Források**
+
+| forrás | mit ad |
+|---|---|
+| `runtime/respack.yt` → `tre:foldermgr`, `tre:foldermgr_text` | az elrendezés-forrás és a feliratok |
+| ugyanaz → `layer:foldermgr/*` 30 rétege | a tervezővászon-geometria és az ikonok |
+| `Picasa3.exe` (SHA-256 `644b7bec…`) | a viselkedés: `0x007c0810`, `0x007c27d0`, `0x007c60d0`, `0x007c64a0`, `0x007c5ef0`, `0x007c4df0`, `0x007c6430` |
+| `referencia/stringres-en-hu.tsv` | a magyar feliratok |
+| **`picasapy-agent` → `referencia/mappakezelo/`** | **a tulajdonos két képernyőképe futó Picasából** (alap 581×518, kézzel nagyított 760×784) |
+
+> ⚠️ A képernyőképek a **privát** repóban vannak
+> (`referencia/mappakezelo/mappakezelo-alap.png` és
+> `…/mappakezelo-nagyitott.png`). Ha egy állítás ellentmond nekik, **a kép
+> az igazság** — az alábbi leírás minden pontja egyezik velük.
+
+---
+
+## 1. Az elrendezés-forrás és a tervezővászon
+
+A dialógus **nem `.fen`**, hanem a yt-keretrendszer respack-ablaka: a
+`runtime/` alatt nincs `foldermgr.fen`, viszont van `tre:foldermgr`.
+
+### 1.1 A csomópontfa (`tre:foldermgr`, szó szerint)
+
+```
+root
+├── foldermgr/base            m_offsetB · m_scaleX
+│   ├── left_side             X: 0,0,+4  …  1,.5,0     ← PONTOSAN 50 %
+│   │   │                     Y: 0,0,+4  …  1,1,0
+│   │   ├── folder_list_label m_offsetLT · font14
+│   │   └── foldertree        X: 0,0,+10 … 1,1,0 · Y: 0,0,+20 … 1,1,−60
+│   ├── right_side            X: 0,.5,0 … 1,1,−4 · Y: 0,0,+4 … 1,1,0
+│   │   ├── instructions_text m_offsetLT · font14
+│   │   ├── status_decrect    m_offsetLT   (decrect softbevel/flatbevel)
+│   │   │   ├── status_label  m_offsetLT · font14
+│   │   │   ├── status_group  m_offsetLT   (buttcontainer)
+│   │   │   │   ├── scan_once + scan_once_label   ← Property setpressed 1
+│   │   │   │   ├── remove    + remove_label
+│   │   │   │   ├── watch     + watch_label
+│   │   │   │   └── icon_once / icon_exclude / icon_always
+│   │   │   ├── line          m_offsetT · m_scaleX    ← elválasztó vonal
+│   │   │   └── frexclude + frexclude_label
+│   │   │       ├── nofr_on   m_offsetL · m_centerY
+│   │   │       └── nofr_off  m_offsetL · m_centerY · m_hidden
+│   │   ├── watched_label     m_offsetLT · font14
+│   │   └── watched_folders   m_offsetLT · X: 1,1,−10 · Y: 1,1,−60
+│   └── size                  m_offsetRB · Property winsize 1
+├── ok      m_offsetRB
+├── cancel  m_offsetRB
+└── help    m_offsetRB
+```
+
+A három rádiógomb és a `frexclude` `m_hit_childlabel`-t visel: **a
+feliratra kattintva is elsülnek**.
+
+A `frexclude` deklaratív kötése: `Property hidetarget foldermgr/nofr_on` és
+`Property showtarget foldermgr/nofr_off` — a kapcsoló elsülésekor a
+keretrendszer **magától** cseréli a két ikont, kód nélkül.
+
+### 1.2 A tervezővászon mért téglalapjai (respack, 13 bájtos fejléc)
+
+| elem | x0 | y0 | x1 | y1 | méret |
+|---|---:|---:|---:|---:|---|
+| **`docbounds` / `rect: base`** | 0 | 0 | **550** | **450** | **550×450 — a KIINDULÓ ablakméret** |
+| `clip: left_side` | 10 | 10 | 285 | 396 | 275×386 |
+| `clip: right_side` | 285 | 10 | 545 | 396 | 260×386 |
+| `folder_list_label` | 18 | 10 | 236 | 24 | 218×14 |
+| `listbox: foldertree` | 10 | 35 | 285 | 396 | 275×361 |
+| `text(instructions_text)` | 302 | 10 | 534 | 83 | 232×73 |
+| `decrect: status_decrect` | 303 | 97 | 534 | 269 | **231×172** |
+| `static: status_label` | 309 | 103 | 527 | 117 | 218×14 |
+| `buttcontainer: status_group` | 310 | 125 | 527 | 222 | 217×97 |
+| `buttcon: scan_once` | 310 | **130** | 334 | 154 | 24×24 |
+| `icon_once` | 340 | 133 | 358 | 147 | 18×14 |
+| `static: scan_once_label` | 363 | 133 | 581 | 147 | 218×14 |
+| `buttcon: remove` | 310 | **163** | 334 | 187 | 24×24 |
+| `icon_exclude` | 341 | 165 | 357 | 182 | 16×17 |
+| `static: remove_label` | 363 | 166 | 581 | 180 | 218×14 |
+| `buttcon: watch` | 310 | **196** | 334 | 220 | 24×24 |
+| `icon_always` | 340 | 197 | 357 | 215 | 17×18 |
+| `static: watch_label` | 363 | 199 | 581 | 213 | 218×14 |
+| `line` | 306 | 226 | 311 | 229 | 5×3 (vízszintesen nyúlik) |
+| `superbutton: frexclude` | 310 | 235 | 340 | 261 | 30×26 |
+| `nofr_on` | 315 | 239 | 335 | 258 | 20×19 |
+| `nofr_off` | 315 | 239 | 339 | 258 | 24×19 |
+| `static: frexclude_label` | 349 | 240 | 567 | 254 | 218×14 |
+| `static: watched_label` | 302 | 284 | 520 | 298 | 218×14 |
+| `listbox: watched_folders` | 302 | 309 | 537 | 397 | 235×88 |
+| `superbutton: ok` | **230** | 410 | 328 | 438 | 98×28 |
+| `superbutton: cancel` | **335** | 410 | 433 | 438 | 98×28 |
+| `superbutton: help` | **440** | 410 | 538 | 438 | 98×28 |
+| `size` | 530 | 434 | 550 | 454 | 20×20 (a vászon alján túlnyúlik) |
+
+**A rádiógombok függőleges osztása 33 képpont** (130 → 163 → 196), a gomb
+24×24, és a felirat a gomb jobb szélétől **+29** képponttal kezdődik
+(310+24 = 334 → 363).
+
+> ⚠️ A vászonrajz a `left_side` jobb szélét 285-nél (51,8 %) mutatja, de
+> **futásidőben az `XConstraint 1, .5, 0` érvényes: pontosan 50 %.** A
+> `picasa-respack-format.md` figyelmeztetése (a vászon-koordináták és a
+> `.tre` ütközése) itt élesben is számít. A tulajdonos két képernyőképe a
+> **50 %-ot** igazolja (kis ablak: ~564 képpont belméret, osztás 290-nél;
+> nagy ablak: ~721 képpont, osztás ~385-nél).
+
+### 1.3 A feliratok (`tre:foldermgr_text` + `stringres`)
+
+| elem | angol | magyar (a képernyőképről is) |
+|---|---|---|
+| `folder_list_label` | Folder List | **Mappalista** |
+| `instructions_text` | For each folder, you can choose whether or not to have Picasa find pictures inside it.  You can also pick folders to watch for new pictures. | Minden mappa esetében megadhatja, hogy a Picasa keressen-e bennük képeket. Kijelölhet egyes mappákat is, és beállíthatja, hogy a program figyelje bennük az új képek megjelenését. |
+| `status_label` | For the current folder: | **Az aktuális mappa esetében:** |
+| `scan_once_label` | Scan Once | **Keresés egyszer** |
+| `remove_label` | Remove from Picasa | **Eltávolítás a Picasából** |
+| `watch_label` | Scan Always | **Keresés mindig** |
+| `frexclude_label` | Face Detection **On** / **Off** (`CFolderMgrDialog::hasfr` / `::nofr`) | **Arcfelismerés bekapcsolva / kikapcsolva** |
+| `watched_label` | Watched Folders | **Figyelt mappák** |
+| `ok` / `cancel` / `help` | OK / Cancel / Help | **OK / Mégse / Súgó** |
+| ablakcím | `foldermgr::title` (`0x005ce590`) | **Mappakezelő** |
+
+*(Az angol szövegben az „inside it." után **két szóköz** van — a
+`foldermgr_text.tre` szó szerint így tartalmazza.)*
+
+---
+
+## 2. Átméretezés — mi nyúlik és mi nem
+
+Ezt a tulajdonos két képernyőképe **közvetlenül** igazolja.
+
+### 2.1 A szabályok a `.tre`-ből
+
+| elem | vízszintesen | függőlegesen |
+|---|---|---|
+| `base` | **nyúlik** (`m_scaleX`) | alul rögzítve (`m_offsetB`) |
+| `left_side` / `right_side` | mindig **fele-fele**, 4 képpont külső margóval | az ablak aljáig |
+| `foldertree` | **nyúlik** | **nyúlik**, az alja `−60` |
+| `watched_folders` | **nyúlik** (`−10`) | **nyúlik**, az alja `−60` |
+| `instructions_text` | **fix 232** széles | fix 73 magas |
+| `status_decrect` (a csoportkeret) | **fix 231** széles | **fix 172** magas |
+| `status_group`, a három rádió, a `frexclude` | fix | fix |
+| `line` | **nyúlik** (`m_scaleX`) | fix |
+| `ok` / `cancel` / `help` | fix 98×28, **jobb-alsó sarokhoz** rögzítve | ua. |
+| `size` (fogantyú) | fix 20×20, **jobb-alsó sarokhoz** rögzítve | ua. |
+
+**A `−60` a lista-aljakon pontosan a gombsáv helye**: a gombok teteje a
+vászon alsó élétől 40, a magasságuk 28, alattuk 12 — összesen 60.
+
+**A nagyított képernyőképen ez látszik is:** a csoportkeret jobb széle és a
+Figyelt mappák lista jobb széle közt **több mint száz képpontnyi üres sáv**
+marad, mert a keret nem nyúlik, a lista igen.
+
+### 2.2 Az átméretező fogantyú — `Property winsize 1`
+
+A `.tre`-parszer (`0x009ca5e0`) a kulcsszót a csomópont **`+0x22f`**
+bájtjába írja (`0x009cb19d`); a párja, a `windrag` a **`+0x22e`**-be
+(`0x009cb122`). *(A `picasa-eger-es-kijeloles.md` 1/b szakasza a
+`windrag`-ot „egyetlen szállított `.tre` sem használja" jelzéssel sorolta
+fel — a `winsize`-ra ez **nem** áll: itt használatban van.)*
+
+Az egérlenyomás-kezelő (`0x009e5590`):
+
+```asm
+0x009e559c  cmp byte [ebx+0x22d], 0     ; húzható csomópont?
+0x009e55a7  cmp byte [ebx+0x22e], 0     ; windrag?
+0x009e55b0  cmp byte [ebx+0x22f], 0     ; winsize?
+0x009e55b7  jne 0x9e55ce                ;   ha egyik sem → 0xF4241 (nem kezeltem)
+...                                     ; találat-vizsgálat a csomópont téglalapjára
+0x009e5650  cmp byte [ebx+0x22f], 0
+0x009e5657  je  0x9e5683                ;   winsize ág:
+0x009e5670  call 0x984350               ;   ← ÁTADÁS A WINDOWSNAK
+```
+
+és a `0x00984350` a teljes mechanizmus:
+
+```asm
+0x009843b4  push 0x17 / GetSystemMetrics(SM_SWAPBUTTON)
+0x009843cb  GetAsyncKeyState(<a „bal" gomb>)
+0x009843d1  test ax, 0x8000 / ja        ; ha NINCS lenyomva → nem indul (−1)
+0x009843dd  dl = [0xd678d4]             ; jobbról-balra (RTL) elrendezés?
+0x009843e9  edx = 8 (LTR) vagy 7 (RTL)
+0x009843ec  edx |= 0xf000               ; SC_SIZE | WMSZ_BOTTOMRIGHT = 0xF008
+0x009843f3  SendMessage(hwnd, WM_SYSCOMMAND (0x112), 0xF008, 0)
+0x009843ff  PostMessage(hwnd, WM_LBUTTONDOWN (0x201), 0, 0)
+0x0098440f  PostMessage(hwnd, WM_LBUTTONUP  (0x202), 0, 0)
+```
+
+**Vagyis a fogantyú nem méretez maga, hanem átadja a Windows saját modális
+méretező hurkának, a JOBB-ALSÓ sarokból** (RTL nyelvnél a bal-alsóból). A
+két szintetikus egérüzenet indítja el azonnal a követést.
+
+### 2.3 Van-e minimális méret?
+
+**Nincs saját minimum.** Az ablakeljárás (`0x00920fa0`, 1367 bájt) **nem
+kezeli** a `WM_GETMINMAXINFO`-t (`0x24`) — a teljes függvény
+diszasszemblálva egyetlen ilyen összehasonlítást sem tartalmaz. A méretet
+tehát kizárólag a Windows alapértelmezett minimuma korlátozza, és a
+`docbounds` (550×450) a **kiinduló**, nem a legkisebb méret.
+
+*Bizonyítottsági fok: **erős**. A negatív állítás egyetlen ablakeljárás
+átvizsgálásán alapul; ha a dialógus más ablakosztályt használna, a keresés
+mellémenne.*
+
+---
+
+## 3. Az ikonok — és egy MEGDŐLT szín
+
+| réteg | méret | mit ábrázol | szín **a futó programban** |
+|---|---|---|---|
+| `icon_once` | 18×14 | pipa | **zöld** |
+| `icon_exclude` | 16×17 | X | **piros** |
+| `icon_always` | 17×18 | körkörös nyíl („C") | **kék** |
+| `nofr_on` | 20×19 | arc-sziluett **áthúzva, gyűrűben** | **piros** gyűrű, szürke arc |
+| `nofr_off` | 24×19 | arc-sziluett **zöld pipával** | zöld pipa |
+
+> ⛔ **A `tools/picasa/respack.py` által kiírt PNG-ken az X KÉK, a „C"
+> NARANCS, a `nofr_on` gyűrűje KÉK.** A futó programban (a tulajdonos
+> képernyőképe) piros, kék, illetve piros. A különbség **R↔B
+> csatornacsere**: a respack képpontjai **BGRA** sorrendben állnak, a
+> kicsomagoló viszont RGBA-ként adja tovább
+> (`respack.py`, `Image.frombytes("RGBA", …)`).
+>
+> Mérés: az `icon_exclude` domináns képpontja a kimeneten `(35, 35, 242)` —
+> cserével `(242, 35, 35)` = piros ✔. `icon_always`: `(227, 138, 2)` →
+> `(2, 138, 227)` = kék ✔. A zöld pipa `(126, 220, 124)` cserétől
+> **változatlan** — ezért nem tűnt fel eddig.
+>
+> **Következmény:** minden korábbi, respack-PNG-ből vett SZÍN gyanús, ha
+> nem szürke. Külön jegy tárgya.
+
+Az ikonok **kétszer** jelennek meg: a **fában** minden mappa sorában (az
+effektív állapot), és a jobb oldali három rádiósor mellett (a jelentésük
+magyarázataként).
+
+---
+
+## 4. A fa (`foldertree`)
+
+A képernyőképekről (ez a **hiteles** forrás) olvasva.
+
+### 4.1 A gyökerek
+
+```
+▷ ❌ Asztal            (külön, monitor-szerű ikon)
+▲ ❌ Képek             (külön, „képek" ikon)
+▷ ❌ Dokumentumok      (külön, dokumentum-ikon)
+▷ ❌ C:\               (meghajtó-ikon)
+▷ ❌ P:\               (hálózati meghajtó ikonja — MÁS, mint a C:\)
+```
+
+Tehát: **Asztal, Képek, Dokumentumok, majd MINDEN meghajtó**, a
+rendszermappák saját ikonjukkal, a meghajtók típus szerinti ikonnal. A
+közönséges mappák egységes sárga mappaikont kapnak.
+
+### 4.2 Egy sor felépítése (balról jobbra)
+
+```
+[ kinyitó ▷/▲ vagy üres ]  [ állapot-ikon ]  [ arcfelismerés-jelvény, ha van ]  [ mappaikon ]  [ név ]
+```
+
+A kijelölt sor **teljes szélességű, tömör sávval** van kiemelve.
+
+### 4.3 Az effektív állapot ÖRÖKLŐDIK, de felülírható
+
+A nagyított képernyőkép `Képek` alatti részlete (a mérvadó bizonyíték):
+
+```
+▲ 🔄🚫 Picasa                      ← Keresés mindig + arcfelismerés kikapcsolva
+     🔄🚫 Captured Videos           ← ÖRÖKLI mindkettőt
+     🔄🚫 Képernyőfelvételek        ← ÖRÖKLI
+     🔄🚫 Kollázsok                 ← ÖRÖKLI
+   ▷ ❌   PicasaPy-golden-kit       ← FELÜLÍRVA: Eltávolítás a Picasából
+   ▷ ❌   PicasaPy-merokit          ← FELÜLÍRVA
+     🔄🚫 Screen Captures           ← ÖRÖKLI
+▷ ✅ podcast                        ← Keresés egyszer (KIJELÖLVE)
+  ❌ Sanoma Media logo
+```
+
+Két szabály, amit ez kimond:
+
+1. **A fában látszó ikon az EFFEKTÍV (örökölt) állapot**, nem csak a
+   kifejezetten beállított.
+2. **A gyerek felülírhatja a szülőt** — figyelt mappán belül is lehet
+   kizárt almappa.
+
+Ugyanez az arcfelismerés-jelvényre: a `Picasa` ki van zárva, a gyerekei
+**öröklik** a jelvényt. A kódbeli bizonyíték: 5.4.
+
+---
+
+## 5. A három állapot és az arcfelismerés-kapcsoló
+
+### 5.1 A jobb oldali panel felépítése
+
+```
+┌ status_decrect (süllyesztett keret) ──────────────────┐
+│  Az aktuális mappa esetében:                           │
+│    ( ) ✅  Keresés egyszer          ← ALAPBÓL bejelölt │
+│    ( ) ❌  Eltávolítás a Picasából                     │
+│    ( ) 🔄  Keresés mindig                              │
+│  ────────────────────────────────────────────────────  │  ← line
+│    [🚫] Arcfelismerés kikapcsolva                      │
+└────────────────────────────────────────────────────────┘
+```
+
+**A sorrend kötött:** Keresés egyszer → Eltávolítás → Keresés mindig (a
+vászon y = 130 / 163 / 196). Az alapállapot a `scan_once`
+(`Property setpressed 1`).
+
+### 5.2 Az állapotfrissítő — `0x007c60d0(dialógus, útvonal)`
+
+Minden fa-kijelölés után lefut, **mind a három rádiónak külön beállítja a
+benyomottságát ÉS az engedélyezettségét** (`[vezérlő+0x20e]`, a `disable`
+mező), majd a végén meghívja az arcfelismerés-sor frissítőjét
+(`0x007c6382 → 0x007c64a0`).
+
+A dialógus **hat útvonal-listát** tart a memóriában, és mindenhol a
+`0x00492e40(lista, útvonal)` „benne van-e, hányadik" kereséssel dönt:
+
+| mező | hol használja | mi ez |
+|---|---|---|
+| `[dlg+0x270]` | a „Keresés mindig" ág **iPhoto/Apple Photos** oldalága (`0x007c2f67`) | a fotókönyvtár-ág listája |
+| `[dlg+0x280]`, `[dlg+0x288]` | `0x007c5c40` (`0x007c5c8e`, `0x007c5ca3`) | a mappa-állapot **delta-párja** |
+| `[dlg+0x290]`, `[dlg+0x298]` | `0x007c5ef0` (`0x007c5f37`, `0x007c5f4a`) | az **arcfelismerés-kizárás** delta-párja |
+| `[dlg+0x2a8]` | a „Keresés mindig" ág fő útja (`0x007c2c11`) | a figyelt mappák listája |
+
+A **párokba rendezettség** (0x280/0x288 és 0x290/0x298) a delta-modell
+lenyomata: „hozzáadandó" és „elveendő" halmaz a mentett állapothoz képest —
+ld. 5.4 és 7.1.
+
+*Bizonyítottsági fok: **megerősített** a szerkezetre és a használati
+helyekre · **erős** a pár-értelmezésre (a két-listás lekérdezés és a „csak
+OK-ra alkalmaz" szemantika együtt).*
+
+### 5.3 Az arcfelismerés-sor — `0x007c64a0`
+
+```c
+// esi = az aktuális mappa útvonala, ebp = a dialógus
+szulo        = szulo_utvonal(esi);                  // 0x009a3b50
+szulo_kizart = (0x007c5ef0(dlg, szulo, …) != 0);    // [esp+0x16]
+sajat_kizart = (0x007c5ef0(dlg, esi,   …) != 0);    // [esp+0x15]
+
+frexclude.pressed  = (sajat_kizart == 0);           // 0x007c65a8 — BENYOMVA = BE
+frexclude.disabled = (arg2 != 0) || szulo_kizart || (nincs útvonal);  // 0x007c65d5
+frexclude_label    = sajat_kizart ? "Face Detection Off" : "Face Detection On";
+```
+
+**Két, a képernyőképeken közvetlenül látható következmény:**
+
+1. **Ha a SZÜLŐ ki van zárva, a kapcsoló LETILTOTT.** Az alap
+   képernyőképen a kijelölt `Kollázsok` szülője a kizárt `Picasa`, és a sor
+   **kiszürkült**: „Arcfelismerés kikapcsolva". Kizárt szülőn belül tehát
+   nem lehet gyereket visszakapcsolni.
+2. **Ha nincs kizárva, a kapcsoló él**, és a felirata „Arcfelismerés
+   bekapcsolva" — a nagyított képernyőképen a `podcast` mappánál pontosan
+   ez látszik.
+
+Az ikoncsere (`nofr_on` ↔ `nofr_off`) **deklaratív**: a `.tre`
+`hidetarget`/`showtarget` párja intézi, nem kód.
+
+### 5.4 A kizártság ÖRÖKLŐDÉSE — a kódbeli bizonyíték (`0x007c5ef0`)
+
+A 4.3-ban a képernyőképről olvasott öröklődés a kódban is megvan. A
+lekérdező **két listát** néz meg, és ha egyikben sincs találat, **felmegy a
+szülőhöz**:
+
+```asm
+0x007c5f23  lea ecx, [ebp + 0x290]      ; 1. lista
+0x007c5f37  call 0x492e40               ;   benne van az útvonal?  → bl
+0x007c5f3f  lea ecx, [ebp + 0x298]      ; 2. lista
+0x007c5f4a  call 0x492e40               ;   benne van?             → al
+0x007c5f5b  je  0x7c5f6b                ; ha egyikben sincs…
+0x007c5f8c  call 0x9a3b50               ;   …az utolsó komponens LEVÁGÁSA
+0x007c6037  call 0x7c5ef0               ;   …és REKURZIÓ a szülőre
+```
+
+**Az állapot a legközelebbi olyan ős-mappától öröklődik, amelyiknek van
+bejegyzése** — pontosan ezt mutatja a képernyőkép (`Picasa` kizárt, három
+gyereke örökli, két másik gyerek saját bejegyzéssel felülírja).
+
+---
+
+## 6. A figyelmeztetések és megerősítések
+
+| mikor | erőforráskulcs | magyar szöveg |
+|---|---|---|
+| **teljes meghajtó** figyelésre állítása | `CFolderMgrDialog::warning` | Egy teljes meghajtó figyelése lelassíthatja a rendszert. Jobb lenne több almappát kiválasztani. Biztosan ezt kívánja tenni? |
+| **figyelt mappa eltávolítása** | `IDS_HOTFOLDER_CONFIRM` (+ `_TITLE` = „Figyelt mappa eltávolításának jóváhagyása") | Ha egy figyelt mappát eltávolít, a lemezen oda mentett új fájlokat a Picasa nem veszi fel automatikusan. Biztosan ezt szeretné? |
+| **OK-ra, ha kizárt mappa arcadata törlődne** | `CFolderMgrDialog::confirmfrexclude` | Biztosan eltávolítja az összes arcot és névcímkét a kihagyott mappákból? |
+
+### 6.1 A meghajtó-figyelmeztetés PONTOS útja
+
+```asm
+; a „Keresés mindig" ág, 0x007c290a-tól
+0x007c292e  call 0x7bfcb0        ; a kijelölt fa-sorból ÚTVONAL
+0x007c294b  call 0x9a3d60        ; ← „ez egy teljes meghajtó?"  (69 bájt, ld. 10.)
+0x007c295b  je   0x7c2a6d        ;   ha nem → mehet tovább
+0x007c296f  push "CFolderMgrDialog::warning"
+0x007c2995  call 0x9bac20        ; Igen/Nem párbeszéd
+0x007c299d  test al, al
+0x007c299f  jne  0x7c2a6d        ;   IGEN → folytatás
+; --- NEM: a választás VISSZAÁLL ---
+0x007c29a5  "foldermgr/watch"  → 0xa65060(ctrl, pressed=0, 1)
+0x007c29ba  "foldermgr/remove" → [ctrl+0x359] = 1  + „buttontoggle" értesítés
+```
+
+> **Ha a felhasználó nemet mond, a Picasa nem „nem csinál semmit", hanem a
+> rádiót visszaállítja, és az „Eltávolítás a Picasából" tételt nyomja be.**
+> *(Bizonyítottsági fok: **erős** — az utasítások egyértelműek, de azt nem
+> követtük végig, hogy volt-e ezt megelőzően egy korábbi állapotot
+> visszaállító ág.)*
+
+### 6.2 iPhoto / Apple Photos — külön ág
+
+A „Keresés mindig" ág a meghajtó-vizsgálat után **kétszer** végez
+sztringegyezést a mappanévre: `"iPhoto Library"` (`0x007c2a92`) és
+`"Apple Photos Library"` (`0x007c2bda`), és eltérő ágra megy
+(`0x007c2f5b`), ami **másik listát** használ (`[dlg+0x270]` a `[+0x2a8]`
+helyett). A támogatás két beállításhoz kötött:
+`Preferences\iPhotoSupportEnabled` (`0x0047d0e0`) és
+`Preferences\ApplePhotosSupportEnabled` (`0x0047d150`); a
+könyvtár-felismerő (`0x0099bce0`) az `Originals` és `Masters` almappákat is
+nézi.
+
+---
+
+## 7. OK, Mégse, Súgó
+
+### 7.1 A változások CSAK OK-ra érvényesülnek
+
+```asm
+; a szétosztóban (0x007c27d0)
+; --- OK ---
+0x007c285f  mov byte ptr [ebx+0x2f0], 0   ; ← a „ne alkalmazd" jelző TÖRLÉSE
+0x007c2866  call 0x7c6430                 ; közös lezáró
+; --- Mégse ---
+0x007c28c6  jne 0x7c2866                  ; ← EGYENESEN a lezáróra, a jelző MARAD
+```
+
+```asm
+; a lezáró (0x007c6430)
+0x007c646c  cmp byte ptr [edi+0x2f0], 0
+0x007c6473  jne 0x7c6482                  ; ha a jelző áll → NEM alkalmaz
+0x007c6476  call 0x7c4df0                 ; ← AZ ALKALMAZÁS
+0x007c647b  mov byte ptr [edi+0x2f0], 1   ; kétszer ne fusson
+```
+
+**Vagyis: a fában és a rádiókon végzett módosítások a dialógus belső
+delta-listáiban gyűlnek, és csak az OK írja ki őket; a Mégse eldobja.** Az
+`Esc` a Mégsével azonos: az init (`0x007c0810`) a `cancel` gombra
+`[+0x384] = 0x1b` (`VK_ESCAPE`) értéket állít (`0x007c0943`).
+
+Az alkalmazó (`0x007c4df0`, 2611 bájt) menete: a listák összevetése, az
+iPhoto/Apple Photos beállítások lekérdezése (`0x00987030`), a
+listaműveletek (`0x00492e40`, `0x005088f0`), majd — ha kizárt mappákból
+arcadatot kell törölni — a **`confirmfrexclude`** párbeszéd (`0x007c54d6`
+→ `0x9bac20`), végül `0x007bfec0` háromszor és `0x005cef20`.
+
+### 7.2 A Súgó a WEBRE megy
+
+```asm
+0x007c4d23  push "http://picasa.google.com/support/bin/answer.py?answer=11511"
+0x007c4d77  push "&hl=%s"        ; + a felület nyelve
+```
+
+**A Súgó gomb a böngészőben nyitja meg a Google súgóoldalát**, nem helyi
+szöveget mutat. *(A cikk ma már nem él — a PicasaPy-nak saját megoldást
+kell adnia, de tudni kell, hogy az eredeti viselkedés ez volt.)*
+
+---
+
+## 8. A „Figyelt mappák" lista
+
+A tulajdonos nagyított képernyőképén a lista teljes tartalma látszik
+(nincs görgetősáv, tehát ez mind):
+
+```
+Videók
+Képek\AI\
+Képek\lake\
+Képek\Picasa\
+Képek\wallpapers\
+C:\Users\attila.virag\Pictures\
+```
+
+Három szabály olvasható ki:
+
+1. **Csak a KIFEJEZETTEN figyelt mappák szerepelnek** — a `Képek\Picasa\`
+   ott van, a gyerekei (`Captured Videos`, `Kollázsok`, …) **nincsenek**,
+   pedig a fában ők is a „Keresés mindig" ikont viselik (örökölt állapot,
+   4.3).
+2. **A megjelenítés vegyes**: ismert gyökér alatti mappák **relatív**
+   alakban, záró `\`-sel (`Képek\AI\`), a többi **abszolút** útvonalként
+   (`C:\Users\attila.virag\Pictures\`). A `Videók` záró `\` nélkül áll — ez
+   a Windows-könyvtár (library) bejegyzés alakja.
+3. **A lista tartalmazhat olyan mappát, ami a fában nem is látszik**: a
+   `Videók` nem szerepel a fa gyökerei közt (Asztal / Képek / Dokumentumok
+   / C:\ / P:\).
+
+A tárolás helye a **registry**: `Preferences\HotFolders` (`0x00418ad0`,
+1539 bájt).
+
+*(Mellékesen: a `Képek\…` és a `C:\Users\…\Pictures\` egyszerre való
+jelenléte pontosan a #1088-ban leírt eset — a `Képek` OneDrive-ra
+átirányítva, a valódi `Pictures` külön.)*
+
+---
+
+## 9. Eredeti / nálunk — a teljes eltéréslista
+
+`src/picasapy/app/qml/PicasaPy/FolderManagerDialog.qml` (322 sor) +
+`FolderStatePanel.qml` + `FolderTreeItem.qml` + `FolderStateBadge.qml`.
+
+| # | | eredeti | nálunk |
+|---|---|---|---|
+| 1 | kiinduló méret | **550×450** (`docbounds`) | 720×480 |
+| 2 | minimális méret | **nincs** (nincs `WM_GETMINMAXINFO`) | `minimumWidth 540`, `minimumHeight 340` |
+| 3 | osztás | **pontosan 50–50 %**, 4 px külső margóval | `Layout.fillWidth` mindkét oldalon (≈50 %), de 10 px margóval |
+| 4 | „Mappalista" felirat a fa fölött | **van** (font14) | **nincs** |
+| 5 | magyarázó szöveg helye | a **jobb hasáb** tetején, 232 px széles | a dialógus **teljes szélességében**, felül |
+| 6 | magyarázó szöveg tartalma | az eredeti kétmondatos szöveg | saját, eltérő szöveg |
+| 7 | süllyesztett csoportkeret | `decrect(softbevel/flatbevel)`, **fix 231×172** | `Rectangle { radius: 2 }` |
+| 8 | **a rádiók sorrendje** | **Keresés egyszer → Eltávolítás → Keresés mindig** | **Keresés mindig → Keresés egyszer → Eltávolítás** ❌ |
+| 9 | rádió-osztás | 33 px, gomb 24×24, felirat +29 px | ad hoc |
+| 10 | alapértelmezés | `scan_once` benyomva | nincs kimondva |
+| 11 | rádiónkénti **letiltás** | mindhárom külön engedélyezhető/tiltható | nincs |
+| 12 | elválasztó vonal | van, **vízszintesen nyúlik** | nincs |
+| 13 | arcfelismerés-kapcsoló letiltása | **kizárt SZÜLŐ esetén letiltva** | nincs (mindig kattintható) |
+| 14 | kapcsoló-felirat váltása | `Face Detection On/Off` | ✔ megvan |
+| 15 | ikonok | zöld pipa / **piros** X / **kék** C + két arc-jelvény | saját rajz (`FolderStateBadge`) |
+| 16 | fa gyökerei | Asztal, Képek, Dokumentumok, **minden meghajtó** | `rootPath: "/"` — egyetlen gyökér |
+| 17 | rendszermappa-ikonok | külön ikon Asztal/Képek/Dokumentumok/meghajtó | egységes mappaikon |
+| 18 | **OK/Mégse szemantika** | **a változás csak OK-ra érvényesül, a Mégse eldobja** | **azonnal alkalmaz** (`applyState` → controller) ❌ |
+| 19 | Esc | = Mégse (`[+0x384] = VK_ESCAPE`) | ellenőrizendő |
+| 20 | Súgó | **böngésző**, `…answer=11511&hl=<nyelv>` | helyi súgóablak |
+| 21 | átméretező fogantyú | látható 20×20 elem a jobb-alsó sarokban, `SC_SIZE` | nincs (natív ablakkeret) |
+| 22 | gombsor | OK ‹ Mégse ‹ Súgó, 98×28, jobb-alsó | ✔ ugyanez a sorrend, más méret |
+| 23 | extra gombok | **nincsenek** | „Add folder…", „Adopt Picasa folders…" |
+| 24 | Figyelt mappák lista | csak a kifejezetten figyeltek, vegyes relatív/abszolút alak | teljes útvonalak |
+| 25 | figyelmeztetés: teljes meghajtó | ✔ + **nemre az „Eltávolítás" tétel lesz aktív** | ✔ figyelmeztet, a visszaállás nincs |
+| 26 | figyelmeztetés: figyelt mappa eltávolítása | ✔ saját címmel | ✔ megvan |
+| 27 | `confirmfrexclude` | **OK-kor**, ha kizárt mappa arcadata törlődne | a kapcsolónál kérdez, nem OK-kor |
+
+---
+
+## 10. A „teljes meghajtó" feltétel — pontosan
+
+`0x009a3d60(útvonal-objektum /*edx*/)`, 69 bájt, teljes egészében:
+
+```c
+rest = [obj + 0x410];        // a gyökér UTÁNI útvonalrész
+name = [obj + 0x618];        // az utolsó (fájl/mappa-)komponens
+if (rest üres  ||  rest kezdete == "\\")   // a minta a 0x00c80910-en: "\"
+    return (name üres);      // → IGAZ: ez egy teljes meghajtó
+return HAMIS;
+```
+
+Vagyis a figyelmeztetés akkor jön elő, ha a kijelölés a **meghajtó
+gyökere** (`C:\`, `C:`), és nem jön elő semmilyen almappára.
+
+*Bizonyítottsági fok: **megerősített** (a függvény minden utasítása).*
+
+---
+
+## 11. Ami NYITVA marad
+
+1. **Az iPhoto/Apple Photos ág LÁTHATÓ különbsége.** A helye, a feltételei
+   (`Preferences\iPhotoSupportEnabled`, `…\ApplePhotosSupportEnabled`, az
+   `Originals`/`Masters` almappák) és a használt lista megvannak (6.2), de
+   azt nem követtük végig, mit lát ebből a felhasználó. **A PicasaPy-ban
+   nem megvalósítandó** (macOS-örökség), ezért nem bontottuk tovább.
+2. **A minimális méret negatív állítása** (2.3) egyetlen ablakeljárás
+   (`0x00920fa0`) átvizsgálásán alapul. Ha később kiderül, hogy a dialógus
+   más ablakosztályt használ, ezt újra kell nézni.
+
+*(A kör két további nyitott pontot lezárt: „melyik lista melyik állapoté"
+→ 5.2/5.4, és „mi a teljes meghajtó feltétele" → 10.)*

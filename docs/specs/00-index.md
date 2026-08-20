@@ -148,6 +148,22 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 4. **A buboréksúgó rajza** — saját osztály (`ytToolTip`), de nincs hozzá
    képréteg; a háttér/keret/árnyék kódból jön (#901)
 
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 2 kérdés
+
+*(A lap 2026-08-20-án készült, a tulajdonos két képernyőképéből és a
+binárisból. A kör négy kérdést tett fel és kettőt le is zárt — a
+lista-térképet (5.2/5.4) és a „teljes meghajtó" feltételét (10.). Ami
+maradt, egyik sem igényel futó Picasát, és egyik sem blokkolja a
+megvalósítást — jegy: **#1161**.)*
+
+1. **Az iPhoto / Apple Photos ág LÁTHATÓ különbsége.** A kódbeli helye, a
+   két beállítás-kapcsoló és a használt lista megvan (a lap 6.2), de nem
+   követtük végig, mit lát ebből a felhasználó. **A PicasaPy-ban nem
+   megvalósítandó** (macOS-örökség).
+2. **A dialógusnak tényleg nincs minimális mérete?** A `0x00920fa0`
+   ablakeljárás nem kezeli a `WM_GETMINMAXINFO`-t — de a negatív állítás
+   egyetlen ablakosztály átvizsgálásán alapul.
+
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott kérdés
 
 *(Mind a négy lezárult; a maradék apró pontok — a `WM_*` leképezés és az
@@ -261,6 +277,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [picasa-nyomtatas.md](picasa-nyomtatas.md) | A nyomtatás — panel (61 elem), 17 méret, beállítások |
 | [picasa-email-kuldes.md](picasa-email-kuldes.md) | E-mail-küldés — választó, beépített Gmail-szerkesztő, beállítások |
 | [picasa-importalas.md](picasa-importalas.md) | Az importálás panelje — tipp-sor, kártyatörlés-figyelmeztetés, hibák |
+| [picasa-mappakezelo.md](picasa-mappakezelo.md) | **A Mappakezelő TELJES specifikációja** — elrendezés és tervezővászon-geometria, az átméretezés szabályai (`winsize` → `SC_SIZE`), a fa és az öröklődő állapot, a három rádió, az arcfelismerés-kapcsoló, a három figyelmeztetés, az OK/Mégse delta-szemantikája, a Súgó URL-je |
 | [picasa-lebego-ertesito.md](picasa-lebego-ertesito.md) | A lebegő értesítősáv (`CNotifierPopup`) — képernyőfelvétel- és import-értesítés, kattintás-viselkedés; a geometria és az animáció NYITOTT |
 | [vorosszem-eszkoz-terve.md](vorosszem-eszkoz-terve.md) | A vörösszem-eszköz terve |
 | [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) | A vágás-eszköz állapota — 19 arány, egyéni arányok, 3 javaslat |
