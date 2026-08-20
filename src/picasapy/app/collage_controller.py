@@ -56,6 +56,7 @@ from picasapy.collage.page_formats import (
 from picasapy.collage.themes import (
     BORDER_THEMES,
     COLLAGE_THEMES,
+    MULTIEXP,
     NOBORDER,
     capabilities_for,
     capability_map,
@@ -182,6 +183,11 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         count_changed = len(nodes) != len(before)
         # a háttérkép útvonala MÉG a csere előtt kell (#1009)
         background_path = self.collageBackgroundImage
+        # #995: a Többszörös exponálás vászna KEVER, nem takar — a modell
+        # ebből számolja a rétegsorrend szerinti átlátszatlanságot
+        self._collage_panel_model.set_multi_exposure(
+            self._collage_panel_theme == MULTIEXP
+        )
         self._collage_panel_model.set_nodes(nodes)
         self._sync_background_index(background_path)
         self.collageSelectionChanged.emit()

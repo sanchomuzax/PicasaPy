@@ -201,10 +201,49 @@ class CollageNodeModel(QAbstractListModel):
     #: fájlnévnél pedig Linuxon is elvágja a nevet — mindkét esetben
     #: NÉMÁN, üres képpel. A szabályt a Qt adja, nem mi.
     FileUrlRole = Qt.ItemDataRole.UserRole + 11
+    #: #995: a csempe átlátszatlansága a VÁSZNON. Csak a Többszörös
+    #: exponálásnál más, mint 1,0 — ott a rétegsorrendtől függ.
+    #:
+    #: ⚠️ **Nem `1/k`, hanem `1/(i+1)`**, ahol `i` a réteg sorszáma. A
+    #: mentési út (`blend_multi_exposure`) egyenlő súlyú ÁTLAGOT számol; a
+    #: Qt „source-over" rétegzése ezt akkor adja vissza, ha az `i`-edik
+    #: réteg `1/(i+1)` átlátszatlanságot kap:
+    #:
+    #:     v_i = 1/(i+1) · kép_i + i/(i+1) · v_(i−1)
+    #:
+    #: ami lépésenként pontosan az addigi képek számtani átlaga. A jegyben
+    #: eredetileg javasolt FIX `1/k` **mérve rossz**: három egyszínű képre
+    #: (255/0/0) a mentés 85-öt ad, a fix `1/k` viszont 37,8-at — a korábbi
+    #: rétegeket ismételten csökkenti.
+    OpacityRole = Qt.ItemDataRole.UserRole + 12
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._nodes: tuple[CollageNode, ...] = ()
+        self._multi_exposure = False
+
+    def set_multi_exposure(self, active: bool) -> None:
+        """A Többszörös exponálás témát jelzi (#995).
+
+        A modellnek azért kell tudnia, mert az átlátszatlanság csak ennél a
+        témánál tér el 1,0-tól, és a RÉTEGSORRENDTŐL függ — a felület
+        témánkénti `if`-je helyett egy szerep adja."""
+        active = bool(active)
+        if active == self._multi_exposure:
+            return
+        self._multi_exposure = active
+        if self._nodes:
+            self.dataChanged.emit(
+                self.index(0, 0),
+                self.index(len(self._nodes) - 1, 0),
+                [self.OpacityRole],
+            )
+
+    def tile_opacity(self, row: int) -> float:
+        """A csempe átlátszatlansága — ld. az `OpacityRole` indoklását."""
+        if not self._multi_exposure:
+            return 1.0
+        return 1.0 / (row + 1)
 
     @property
     def nodes(self) -> tuple[CollageNode, ...]:
@@ -241,6 +280,9 @@ class CollageNodeModel(QAbstractListModel):
         if not index.isValid() or not 0 <= index.row() < len(self._nodes):
             return None
         node = self._nodes[index.row()]
+        if role == self.OpacityRole:
+            # sorszám-függő, ezért nem fér bele a csomópont-alapú táblába
+            return self.tile_opacity(index.row())
         return _ROLE_READERS.get(role, lambda _: None)(node)
 
     def roleNames(self):  # noqa: N802 (Qt API)
@@ -256,6 +298,7 @@ class CollageNodeModel(QAbstractListModel):
             self.SelectedRole: b"selected",
             self.MissingRole: b"missing",
             self.FileUrlRole: b"fileUrl",
+            self.OpacityRole: b"tileOpacity",
         }
 
 
