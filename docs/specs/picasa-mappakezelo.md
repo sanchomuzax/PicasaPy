@@ -750,7 +750,7 @@ formátumra, a parszer előtag-vizsgálatára és a valódi mintaadatra ·
 *(Az iPhoto / Apple Photos ág **szándékosan kívül van a hatókörön** —
 tulajdonosi döntés, 2026-08-21. A 6.2 tájékoztatásul marad; nem kérdés.)*
 
-**A lap a FELÜLET viselkedését teljesen leírja. A KÖNYVTÁR-oldali hatás öt
+**A lap a FELÜLET viselkedését teljesen leírja. A KÖNYVTÁR-oldali hatás hat
 ponton nincs utasításszinten végigkövetve** — egyik sem blokkolja a felület
 megépítését, de mindegyikhez döntés kell:
 
@@ -766,10 +766,13 @@ megépítését, de mindegyikhez döntés kell:
    nincs meg** — az `IDS_*` sztringeket azonosítóval tölti be a program,
    ezért `string_xrefs`-szel nem található. Nem tudjuk, mikor és milyen
    folyamatjelzővel indul újra a beolvasás.
-4. **A fa feltöltési szabályai**: mikor sorolja fel egy csomópont a
+4. **Az ELSŐ INDÍTÁS belépési útja.** A két menüs belépési pont megvan
+   (10/b.1), de hogy az első indításkor melyik kód nyitja meg a
+   dialógust (és ugyanazzal a mód-jelzővel-e), NINCS visszakövetve.
+5. **A fa feltöltési szabályai**: mikor sorolja fel egy csomópont a
    gyerekeit (lusta betöltés?), látszanak-e a rejtett/rendszermappák, mi
    történik leválasztott hálózati meghajtóval.
-5. **A „Figyelt mappák" lista interaktivitása**: kattintható-e egy sora,
+6. **A „Figyelt mappák" lista interaktivitása**: kattintható-e egy sora,
    ugrik-e tőle a fa, mi a rendezési szabálya.
 
 Ezen felül **erős, de nem megerősített** két állítás:
