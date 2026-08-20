@@ -5,6 +5,27 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.18] – 2026-08-20
+
+### Javítva
+- **⚠️ A mentett kollázs végre megnyitható a valódi Picasában (#1071).** A
+  PicasaPy-vel készített kollázs projektfájlja (`.cxf`) a Picasa 3-ban
+  **szerkesztéskor szétesett**: óriási, felnagyított töredékek.
+
+  Az ok: a képek méretét **kimeneti képpontban** írtuk a fájlba, a Picasa
+  viszont **lapegységben** olvassa. Az eltérés pontosan a kimeneti
+  nagyítás — a szokásos 5120 képpontos lapnál **ötszörös** érték került a
+  fájlba.
+
+  Élő mentésen ellenőrizve: a méretek most `337, 337, 337, 337, 303` —
+  pontosan azok, amiket az eredeti Picasa írna. Eddig `1685, 1685, …`
+  voltak.
+
+  ⚠️ **A korábbi verziókkal mentett `.cxf` fájlok érintettek maradnak** —
+  azokat a Picasa továbbra is torzan nyitja meg. A PicasaPy viszont
+  helyesen olvassa őket (a méretmezőt nem használja), tehát a kollázs
+  itt szerkeszthető és újramenthető.
+
 ## [0.8.17] – 2026-08-20
 
 ### Javítva

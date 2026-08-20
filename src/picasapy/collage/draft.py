@@ -50,7 +50,7 @@ import math
 from collections.abc import Sequence
 
 from .cxf import CxfBackground, CxfNode, CxfProject
-from .nodes import SHEET_UNITS, CollageNode, sheet_to_pixels
+from .nodes import SHEET_UNITS, CollageNode
 from .picasa_render import PicasaCollageSettings
 from .themes import BORDER_THEMES, NOBORDER
 
@@ -104,9 +104,24 @@ def cxf_node_of(
 ) -> CxfNode:
     """Egy vászon-csomópont `.cxf`-alakja.
 
-    `page_width` a lap szélessége **képpontban** (ebből lesz a `scale`),
     `page_ratio` a lap magasság/szélesség aránya (ebből a függőleges
-    arányosítás)."""
+    arányosítás).
+
+    ⚠️ **#1071 (P0): a `scale` LAPEGYSÉGBEN megy ki, nem képpontban.**
+
+    Korábban a kimeneti lapszélességgel váltottuk át
+    (`sheet_to_pixels(..., page_width)`), és 5120 képpontos kimenetnél így
+    **ötszörös** érték került a fájlba. A valódi Picasa 3 ettől
+    **szerkesztéskor szétesett**: óriási, felnagyított töredékeket rajzolt.
+
+    A saját oda-vissza utunk hibátlan volt — az olvasónk
+    (`collage_node_of`) a `scale`-t **egyáltalán nem használja** —, ezért a
+    kódolás önmagában konzisztens maradt, csak **nem szabványos**. A hiba
+    kizárólag akkor látszik, ha a fájlt MÁS program nyitja meg.
+
+    A csomópont méretei már lapegységben vannak, tehát átváltás nem kell.
+    A `page_width` paraméter megmarad, hogy a hívók ne törjenek, de a
+    `scale`-re **nem hat**."""
     if page_ratio <= 0.0:
         raise ValueError(f"Érvénytelen laparánya: {page_ratio}")
     lap_magassag = SHEET_UNITS * page_ratio
@@ -116,7 +131,7 @@ def cxf_node_of(
         w=node.width / SHEET_UNITS,
         h=node.height / lap_magassag,
         theta=node.theta,
-        scale=sheet_to_pixels(max(node.width, node.height), page_width),
+        scale=max(node.width, node.height),
         theme=node.border,
         src="" if node.path is None else str(node.path),
     )
