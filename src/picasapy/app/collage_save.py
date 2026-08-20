@@ -29,8 +29,8 @@ NEVÉHEZ nem nyúlunk, mert egy néma felülírás a régi Kollázs-menüt törn
 
 from __future__ import annotations
 
+import dataclasses
 import os
-
 import logging
 from pathlib import Path
 
@@ -38,6 +38,8 @@ from PySide6.QtCore import Property, Signal, Slot
 from PySide6.QtGui import QColor
 
 from picasapy.collage.autosave import read_autosave, write_autosave
+from picasapy.collage import draft_placeholder, write_collage
+from picasapy.collage.picasa_render import render_nodes
 from picasapy.collage.cxf import read_cxf
 from picasapy.collage.draft import nodes_from_project, project_from_nodes
 from picasapy.collage.page_formats import ORIENTATIONS
@@ -399,7 +401,56 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             logger.warning("A kollázs-piszkozat nem írható: %s", hiba)
             return
         self._get_settings().setValue(prefs.AUTOSAVE_KEY, str(ut))
+        self._write_draft_placeholder(nodes, ut.parent)
         self.collageDraftSaved.emit(str(ut))
+
+    def _write_draft_placeholder(self, nodes, mappa: Path) -> None:
+        """A piszkozat HELYKITÖLTŐ képe — ettől látszik a Kollázsok albumban.
+
+        A tulajdonos jelentése: *„A friss képkollázs piszkozat mentése nem
+        jelenik meg a PicasaPy és Picasa alatt sem."* Az eredeti a mentéskor
+        AZONNAL ír egy képet a `.cxf` mellé (mérve a képernyőképéről:
+        `AI10.jpg`, 640 × 453), és ettől jelenik meg a piszkozat.
+
+        A kép a kollázs **végleges nevét** kapja — nem `autosave.jpg`-t. Ez
+        egyben lefoglalja a nevet: a „Létrehozás" innentől a meglévő fájlt
+        látja, és a felület felteszi a *„Lecseréli a meglévőt, vagy újat hoz
+        létre?"* kérdést (spec 9.2), ahogy az eredeti is. Így a befejezés
+        nem hagy maga után szemetet.
+
+        ⚠️ A hiba **nyelt**: a piszkozat `.cxf`-je már a lemezen van, és egy
+        helykitöltő baja nem viheti el a felhasználó munkáját. Naplózva
+        viszont igen — a #1075 tanulsága, hogy a néma ág miatt vakon
+        állunk."""
+        if not nodes:
+            return
+        try:
+            meglevo = self.collageSavedPath
+            cel = (
+                Path(meglevo)
+                if meglevo
+                else output.output_path(mappa, self._collage_panel_title)
+            )
+            szeles, magas = draft_placeholder.placeholder_size(
+                self.collagePageRatio
+            )
+            beallitas = dataclasses.replace(
+                self._render_settings(), width=szeles, height=magas
+            )
+            jelentes = render_nodes(
+                output.render_nodes_of(nodes, theme=self._collage_panel_theme),
+                beallitas,
+            )
+            kep = draft_placeholder.draw_draft_label(
+                jelentes.image, self.tr("DRAFT")
+            )
+            write_collage(cel, kep, quality=output.JPEG_QUALITY)
+        except Exception:  # noqa: BLE001 - a piszkozat baja nem vihet el munkát
+            logger.warning(
+                "A piszkozat helykitöltő képe nem írható (%s)", mappa, exc_info=True
+            )
+            return
+        self._set_saved_path(str(cel))
 
     @Slot()
     def restoreCollageDraft(self) -> None:

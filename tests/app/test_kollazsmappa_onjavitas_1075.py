@@ -107,12 +107,30 @@ class TestAmitNEM_jelolunk_meg:
         assert ensure_project_album(tmp_path / "nincs") is False
 
     def test_csak_cxf_van_kep_nelkul_nem(self, tmp_path):
-        """Piszkozat-mappa (csak `autosave.cxf`) NEM projekt-album."""
+        """Kép nélküli mappa NEM projekt-album — nincs mit mutatni benne."""
         mappa = tmp_path / "Kollázsok"
         mappa.mkdir()
         (mappa / "autosave.cxf").write_bytes(b"<collage/>")
 
         assert ensure_project_album(mappa) is False
+
+
+class TestAPiszkozatosMappa:
+    """⚠️ A valódi Picasa piszkozata KÜLÖNBÖZŐ TÖVÖN áll.
+
+    A tulajdonos képernyőképe (2026-08-20) mutatta meg: a helykitöltő kép a
+    kollázs VÉGLEGES nevén keletkezik (`AI10.jpg`), a projektfájl viszont
+    `autosave.cxf` néven. Az első szabályom „azonos nevű párt" kért, tehát
+    épp ezt a mappát hagyta volna ki — azt az esetet, amiről a tulajdonos
+    panaszkodott."""
+
+    def test_kulonbozo_tovu_par_is_eleg(self, tmp_path):
+        mappa = tmp_path / "Kollázsok"
+        mappa.mkdir()
+        make_jpeg(mappa / "AI10.jpg", size=(80, 60))
+        (mappa / "autosave.cxf").write_bytes(b"<collage/>")
+
+        assert ensure_project_album(mappa) is True
 
 
 class TestALancVege:
