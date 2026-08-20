@@ -261,6 +261,13 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             frame_center=self._collage_panel_frame_center,
             seed=self._collage_panel_seed,
             width=self._collage_output_width(),
+            # #1015: csak KÉP-módban — a szín- és az átlagszín-mód (#1004)
+            # a `background` szín marad
+            background_image=(
+                self.collageBackgroundImage
+                if self._collage_panel_bg_mode == "image"
+                else ""
+            ),
         )
 
     def _index_saved_collage(self, path: Path) -> None:

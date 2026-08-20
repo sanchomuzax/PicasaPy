@@ -49,6 +49,7 @@ Bemenet/kimenet: OpenCV **BGR** `uint8` képek (a `render.py` konvenciója).
 
 from __future__ import annotations
 
+import logging
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
@@ -74,7 +75,7 @@ from .packing import pack
 from .pile import pile_layout
 from .rects import NormRect, to_pixel_rects
 from .regular_grid import regular_grid_rects, regular_grid_shape
-from .render import CollageReport, _decode
+from .render import CollageReport, _decode, fit_to_frame
 from .shadow import ShadowParams, shadow_params
 from .themes import (
     BORDER_THEMES,
@@ -95,6 +96,8 @@ from .themes import (
 #: `0,83313` / `0,83328` — négy tizedesig egyezik. Azért él nevesítve, mert a
 #: Képkupacban ez a csempe ALAKJA, nem csak a keret növekménye.
 POLAROID_CSEMPE_ARANY = POLAROID_WIDTH_RATIO / POLAROID_HEIGHT_RATIO
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT_WIDTH = 1600
 _DEFAULT_HEIGHT = 1200
@@ -140,6 +143,10 @@ class PicasaCollageSettings:
     #: Rajzoljunk-e árnyékot. `None` = a téma alapértelmezése (a maszk
     #: 14. bitje) — ez az eredeti viselkedése, ld. `effective_shadow`.
     shadow: bool | None = None
+    #: A HÁTTÉRKÉP útvonala (#1015). Üresen a `background` szín marad. A
+    #: kép a lapot KITÖLTI (arányt tartva, középről vágva) — a golden
+    #: háttere a teljes lapot fedi, élesen, effekt nélkül.
+    background_image: str = ""
 
     @property
     def effective_border(self) -> str:
@@ -196,8 +203,32 @@ _DEFAULT_SETTINGS = PicasaCollageSettings()
 
 
 def _canvas(settings: PicasaCollageSettings) -> np.ndarray:
+    """A lap alapja: a beállított szín, vagy a HÁTTÉRKÉP (#1015).
+
+    ⚠️ A háttérkép baja SOHA nem viheti el a kollázst. Hiányzó, olvashatatlan
+    vagy sérült fájlnál a szín marad — a felhasználó képei fontosabbak, mint
+    a háttér, és egy elszálló mentés sokkal rosszabb egy egyszínű háttérnél.
+
+    A kép a lapot KITÖLTI (`fill=True`): arányt tartva nagyít, a túllógó részt
+    középről vágja. A golden háttere a teljes lapot fedi, élesen, effekt
+    nélkül; a kitöltés-vagy-nyújtás kérdés nincs lemérve — a döntés
+    indoklása a `tests/collage/test_kephatter_1015.py` modul-docstringjében."""
     canvas = np.empty((settings.height, settings.width, 3), dtype=np.uint8)
     canvas[:, :] = settings.background
+    if not settings.background_image:
+        return canvas
+    try:
+        hatter = _decode(Path(settings.background_image))
+    except (ValueError, OSError) as hiba:
+        logger.info(
+            "A kollázs háttérképe nem olvasható (%s): %s",
+            settings.background_image,
+            hiba,
+        )
+        return canvas
+    canvas[:, :] = fit_to_frame(
+        hatter, settings.width, settings.height, fill=True
+    )
     return canvas
 
 

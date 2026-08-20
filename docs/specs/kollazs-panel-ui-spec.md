@@ -560,9 +560,13 @@ hivatkozva: az előnézetet a `0x00830a00(this, index)` tölti fel, és
    maradhat.
 
 A `.cxf`-be a háttérkép `<background type="image"><src>…</src></background>`
-alakban megy ki (a `color` attribútum ilyenkor elmarad). ⚠️ A **kirajzolt
-JPEG** háttere egyelőre a beállított SZÍN marad: a képhátteret ma csak a
-projektfájl őrzi.
+alakban megy ki (a `color` attribútum ilyenkor elmarad). A **kirajzolt
+JPEG** háttere a #1015 óta szintén a választott kép: a lapot KITÖLTI
+(arányt tartva, középről vágva). ⚠️ A kitölt-vagy-nyújt kérdés **nincs
+lemérve** az eredetin — a golden annyit mond, hogy a háttér a teljes lapot
+fedi, élesen, effekt nélkül; a kitöltés a mi döntésünk, és
+`tests/collage/test_kephatter_1015.py` rögzíti, hogy a megváltoztatása
+szándékos legyen.
 
 ### 6.5 ⚠️ A mag hiánya: `render_nodes`
 

@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.12] – 2026-08-20
+
+### Javítva
+- **A választott háttérkép a mentett kollázson is ott van (#1015).** Eddig
+  a „Kép használata" mód a vásznon és a projektfájlban működött, a mentett
+  JPEG háttere viszont a beállított **szín** maradt — vagyis a mentett kép
+  mást mutatott, mint amit a képernyőn láttál.
+
+  A háttérkép a lapot **kitölti**: arányt tartva nagyít, a túllógó részt
+  középről vágja, hogy ne torzuljon. Ha a háttérkép időközben eltűnt vagy
+  sérült, a szín marad — egy háttér miatt sosem hiúsulhat meg a mentés.
+
+  A szín- és az átlagszín-mód érintetlen.
+
 ## [0.8.11] – 2026-08-20
 
 ### Javítva

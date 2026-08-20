@@ -156,6 +156,7 @@ def render_settings(
     frame_center: int,
     seed: int,
     width: int | None = None,
+    background_image: str = "",
 ) -> PicasaCollageSettings:
     """A panel állapotából renderelő-beállítás.
 
@@ -178,6 +179,10 @@ def render_settings(
         seed=seed,
         frame_center=None if frame_center < 0 else frame_center,
         shadow=shadows,
+        # #1015: a HÁTTÉRKÉP a kimeneten is. A `.cxf` eddig is őrizte, a
+        # rajzoló viszont a színt festette — a mentett kollázs mást mutatott,
+        # mint a vászon.
+        background_image=background_image,
     )
 
 
@@ -330,9 +335,10 @@ def render_collage(
     Ha egyetlen kép sem volt olvasható, fájl NEM születik — a hívó ebből
     fogalmazza meg a „Mentés mellőzve" üzenetet.
 
-    A `background_image` a `.cxf`-be írandó háttérkép (#1009). A rajzoló
-    egyszínű hátteret fest — a képhátteret EGYELŐRE csak a projektfájl őrzi,
-    tehát a kirajzolt JPEG háttere a beállított szín marad.
+    A `background_image` a `.cxf`-be írandó háttérkép (#1009). A KIRAJZOLT
+    háttér a `settings.background_image`-ből jön (#1015) — a hívó
+    `render_settings`-e csak KÉP-módban tölti ki, tehát a szín- és az
+    átlagszín-mód érintetlen.
 
     A `should_cancel` a megszakítás egyetlen fogantyúja (spec 9.1): a
     rajzolás UTÁN, az írás ELŐTT kérdezzük meg. Így a megszakított mentés
