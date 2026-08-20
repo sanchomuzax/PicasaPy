@@ -85,12 +85,22 @@ def _projekt(lib: Path) -> CxfProject:
 
 @pytest.fixture
 def draft_dir(tmp_path):
-    """A piszkozat mappája, a `qml_app` beállításfájlján át eltérítve."""
+    """A piszkozat mappája, a `qml_app` beállításfájlján át eltérítve.
+
+    ⚠️ A beállítást **`QSettings`-szel** írjuk ki, nem nyers szövegként. Az
+    INI-formátumban a `\\` ESCAPE-karakter, tehát a windowsos útvonal
+    (`C:\\Users\\...`) nyersen kiírva összetörik: a program más mappát
+    keresne, és a felajánlás soha nem jönne elő. A windows-CI-lábon
+    pontosan ezen bukott el ez a fájl."""
+    from PySide6.QtCore import QSettings
+
     mappa = tmp_path / "kollazsok"
     mappa.mkdir()
-    (tmp_path / "settings.ini").write_text(
-        f"[collage]\noutputDir={mappa}\n", encoding="utf-8"
+    beallitasok = QSettings(
+        str(tmp_path / "settings.ini"), QSettings.Format.IniFormat
     )
+    beallitasok.setValue("collage/outputDir", str(mappa))
+    beallitasok.sync()
     return mappa
 
 

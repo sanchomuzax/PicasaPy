@@ -5,6 +5,25 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.20] – 2026-08-20
+
+### Javítva
+- **⚠️ A Kollázsok mappa magától visszakerül a Projektek alá (#1075).**
+  Ha a Projektek gyűjtemény üres volt, vagy a Kollázsok mappa „eltűnt", a
+  program **induláskor magától rendbe teszi** — nem kell hozzá csinálnod
+  semmit, csak elindítani.
+
+  Miért kellett: a mappa megjelölését eddig **kizárólag a mentés** végezte,
+  tehát visszamenőleg semmi. Két úton lett ebből eltűnt mappa: a **0.8.8
+  előtt** készült kollázsok mappájában nincs meg a jelölés, és a frissítés
+  nem javította utólag; illetve ha az indexelés egyszer elbukott, a mentés
+  némán továbbment, és a mappa **soha többé** nem került be.
+
+  A megjelölés szigorú feltételhez kötött: csak akkor történik meg, ha a
+  mappában tényleg a program saját kollázsai vannak (kép + projektfájl
+  párban). Egy tetszőleges képmappát soha nem jelöl meg, és a mappában
+  található korábbi Picasa-adatot érintetlenül hagyja.
+
 ## [0.8.19] – 2026-08-20
 
 ### Új
