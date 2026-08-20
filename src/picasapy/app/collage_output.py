@@ -424,6 +424,7 @@ def render_collage(
     *,
     album_title: str = "",
     background_image: str = "",
+    format_key: str = "",
     should_cancel=None,
 ) -> SaveResult:
     """A vászon kirajzolása és kiírása — a JPEG és a `.cxf` párja.
@@ -461,6 +462,7 @@ def render_collage(
         settings,
         album_title=album_title,
         background_image=background_image,
+        format_key=format_key,
     )
     ut = _write_pair(Path(target), jelentes.image, projekt)
     # A mappa megjelölése projekt-albumként — enélkül a mentett kollázs

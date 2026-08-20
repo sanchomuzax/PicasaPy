@@ -87,6 +87,40 @@ def format_for(key: str) -> PageFormat:
         raise ValueError(f"Ismeretlen oldalformátum: {key!r}") from None
 
 
+def format_text(key: str) -> str:
+    """A `.cxf` `format` attribútuma: a formátum NEVE, `hosszú:rövid` alakban.
+
+    A tulajdonos 11 valódi kollázsán mérve (#1089): az A4 neve `297:210` —
+    **milliméterben** —, holott a képpontaránya `256:181`. A kettőnek nincs
+    köze egymáshoz azon túl, hogy közelítik egymást. Aki a képpontméretből
+    számol, 11-ből 6-ot elront.
+
+    ⚠️ **Nem hozzuk legegyszerűbb alakra.** A `15:10` a `10 x 15`-ös papír
+    neve, nem egy törtszám: a `gcd`-osztás `3:2`-t adna, amit az eredeti
+    soha nem ír le. Ugyanez rontaná el a `297:210`-et is (`99:70`).
+
+    A név **nem forog a tájolással** — az álló A4 is `297:210`, a tájolást
+    a `.cxf` külön mezője mondja meg.
+
+    A két DINAMIKUS tételnek (`Manual`, `CurrentDisplay`) nincs neve: ott a
+    lap tényleges arányából számolunk. Hogy az eredeti pontosan mit ír
+    ezekhez, nincs mintánk — a formátum-menü 18 tételéből ez a kettő
+    maradt mérés nélkül."""
+    fmt = format_for(key)
+    if fmt.long is None or fmt.short is None:
+        raise ValueError(
+            f"A(z) {key!r} dinamikus formátumnak nincs neve; "
+            "használd az arányból számoló ágat."
+        )
+    return f"{_szam(fmt.long)}:{_szam(fmt.short)}"
+
+
+def _szam(ertek: float) -> str:
+    """`297.0` → `297`; a nevekben nincs tizedespont."""
+    egesz = int(ertek)
+    return str(egesz) if float(egesz) == float(ertek) else str(ertek)
+
+
 def is_known_format(key: str) -> bool:
     """Szerepel-e a kulcs a menüben — a felületi bemenet szűrésére."""
     return key in _BY_KEY
@@ -122,6 +156,7 @@ def page_ratio(
 __all__ = [
     "DEFAULT_FORMAT_KEY",
     "FALLBACK_SCREEN_RATIO",
+    "format_text",
     "ORIENTATIONS",
     "PAGE_FORMATS",
     "PageFormat",
