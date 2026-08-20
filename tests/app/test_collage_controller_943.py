@@ -127,6 +127,16 @@ def _wait(signal, action, timeout_ms=15000):
 
     A `gc.enable()` a `finally`-ben — egy elszálló teszt sem hagyhatja
     kikapcsolva a gyűjtőt a többinek.
+
+    ⚠️ **És a kapcsolatot a végén BONTJUK (#988).** A korábbi változat egy
+    lokális függvényre mutató kapcsolatot hagyott a jelzésen, hívásonként
+    egyet — a 142 teszt alatt tucatnyi holt kapcsolat és `QEventLoop` gyűlt
+    fel, amiket később a szemétgyűjtő takarított. A `finally` ág
+    determinisztikussá teszi a lebontást.
+
+    ⚠️ A bontás **önmagában NEM elég**: kontrollált méréssel ugyanazon a
+    kódon 1 zöld / 1 piros lett, ezért a `gc.disable()` MARAD, amíg nincs
+    valódi javítás. A kettő külön állítás, külön bizonyítékkal.
     """
     loop = QEventLoop()
     received = {}
@@ -144,6 +154,7 @@ def _wait(signal, action, timeout_ms=15000):
             loop.exec()
     finally:
         gc.enable()
+        signal.disconnect(_on)
     return ("args" in received, received.get("args", ()))
 
 
