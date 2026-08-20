@@ -91,3 +91,41 @@ class TestWorkflowBekotes:
             "nincs ellenőrzés, hogy a jelenlegi verzió ki van-e adva — "
             "az emelés önmagát hívná újra, végtelenül"
         )
+
+
+class TestNemAkaszthatjaMegAKiadast:
+    """A verzióemelés bukása NEM viheti el a kiadást (#1165).
+
+    ⚠️ Az első változat közvetlenül a `main`-re pusholt, és a védett ág
+    elutasította („Required status check is expected"). Ettől a LÉPÉS
+    elbukott, és a rákövetkező kiadási lépés `skipped` lett — vagyis a
+    verzióemelés hibája MEGAKADÁLYOZTA a kiadást. Rosszabb volt, mint
+    amit javítani akart.
+    """
+
+    @staticmethod
+    def _release():
+        yaml = pytest.importorskip("yaml")
+        ut = _UT.parents[1] / ".github" / "workflows" / "release.yml"
+        return yaml.safe_load(ut.read_text(encoding="utf-8")), ut.read_text(
+            encoding="utf-8"
+        )
+
+    def test_a_bump_lepes_nem_fatalis(self):
+        adat, _ = self._release()
+        bump = [
+            lepes
+            for lepes in adat["jobs"]["release"]["steps"]
+            if lepes.get("id") == "bump"
+        ]
+        assert bump, "nincs `bump` azonosítójú lépés"
+        assert bump[0].get("continue-on-error") is True, (
+            "a verzióemelés bukása elviszi a kiadást — pontosan ez történt"
+        )
+
+    def test_nem_pusholunk_kozvetlenul_a_mainre(self):
+        """A védett ág ezt elutasítja; ágra + PR-re megy."""
+        _, szoveg = self._release()
+        assert "HEAD:main" not in szoveg, (
+            "közvetlen push a védett `main`-re — a hook elutasítja"
+        )
