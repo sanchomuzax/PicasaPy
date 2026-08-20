@@ -66,28 +66,32 @@ _DEFAULT_BASELINE = Path(__file__).resolve().parent / "dead_signals_baseline.txt
 #: alakban áll (ast-tal ellenőrizve: 174 találat, mindkét módszerrel ugyanaz).
 _SIGNAL_DECL = re.compile(r"^[ \t]*(\w+)\s*=\s*Signal\(", re.M)
 
+#: A deklaráló osztály neve. A QML `Connections.target` gyakran ennek
+#: camelCase alakja (pl. `DedupController` → `dedupController`).
+_CLASS_DECL = re.compile(r"^[ \t]*class\s+(\w+)", re.M)
+
 #: ``Property(..., notify=jelzesNev)`` — a property-értesítő jelzések.
 _NOTIFY = re.compile(r"notify\s*=\s*(\w+)")
 
-#: Az alapállapot FELSŐ korlátja — a bevezetéskori 26 tétel.
+#: Az alapállapot FELSŐ korlátja — a legutóbbi teljes audit tételszáma.
 #:
 #: Az „új néma jelzés = piros CI" szabályt egy sor beírásával ki lehetne
-#: kerülni. Ez a plafon ezt teszi TUDATOS lépéssé: a 27. tételhez a számot is
+#: kerülni. Ez a plafon ezt teszi TUDATOS lépéssé: új tételhez a számot is
 #: emelni kell, azt pedig a felülvizsgálat látja. Ahogy a lista fogy, ezt a
 #: számot ÉRDEMES lejjebb vinni — csökkenteni szabad, emelni csak indoklással.
-# A plafon a lista MAI hossza — a #1001, majd a #1003 két javításával
-# 26-ról 23-ra csökkent.
+# A plafon a célhoz kötött QML-fogadóellenőrzés utáni mai lista hossza.
 # Csak LEFELÉ szabad módosítani: ez akadályozza meg, hogy valaki egy új
 # néma jelzést a listába írva kerülje meg az őrt.
-MAX_BASELINE_ENTRIES = 23
+MAX_BASELINE_ENTRIES = 27
 
 
 @dataclass(frozen=True)
 class SignalDecl:
-    """Egy deklarált jelzés: a neve és a fájl, ahol áll."""
+    """Egy deklarált jelzés: neve, fájlja és deklaráló osztálya."""
 
     name: str
     path: str  # a vizsgált gyökérhez képest, POSIX alakban
+    owner: str | None
 
     @property
     def key(self) -> str:
@@ -99,10 +103,39 @@ class SignalDecl:
         """
         return f"{self.path}::{self.name}"
 
+    @property
+    def target_names(self) -> set[str]:
+        """A QML/Python oldali, erre a deklarálóra utaló azonosítók.
+
+        A QML context-property neve rendszerint a modul vagy az osztály
+        camelCase alakja. A mixinek az `AppController` részei, ezért ott a
+        közös `controller` név is érvényes cél.
+        """
+        module = Path(self.path).stem
+        names = {_camel_name(module), module.replace("_controller", "")}
+        if self.owner:
+            names.add(_lower_camel(self.owner))
+            if self.owner.endswith("Mixin"):
+                names.add("controller")
+            if self.owner.endswith("Provider"):
+                names.add("provider")
+        return names
+
 
 def _handler_name(signal_name: str) -> str:
     """A jelzéshez tartozó QML-kezelő neve (`fooBar` → `onFooBar`)."""
     return "on" + signal_name[:1].upper() + signal_name[1:]
+
+
+def _lower_camel(name: str) -> str:
+    """`DedupController` → `dedupController`."""
+    return name[:1].lower() + name[1:]
+
+
+def _camel_name(name: str) -> str:
+    """`dedup_controller` → `dedupController`."""
+    head, *tail = name.split("_")
+    return head + "".join(part.capitalize() for part in tail)
 
 
 def _read_text(path: Path) -> str:
@@ -115,8 +148,14 @@ def collect_declarations(root: Path) -> list[SignalDecl]:
     found: list[SignalDecl] = []
     for path in sorted(root.rglob("*.py")):
         relative = path.relative_to(root).as_posix()
-        for match in _SIGNAL_DECL.finditer(_read_text(path)):
-            found.append(SignalDecl(name=match.group(1), path=relative))
+        text = _read_text(path)
+        classes = [(match.start(), match.group(1)) for match in _CLASS_DECL.finditer(text)]
+        for match in _SIGNAL_DECL.finditer(text):
+            owner = next(
+                (name for offset, name in reversed(classes) if offset < match.start()),
+                None,
+            )
+            found.append(SignalDecl(name=match.group(1), path=relative, owner=owner))
     return found
 
 
@@ -130,12 +169,107 @@ def notify_signals(python_text: str) -> set[str]:
     return set(_NOTIFY.findall(python_text))
 
 
-def has_receiver(name: str, python_text: str, qml_text: str) -> bool:
-    """Van-e a jelzésnek fogadója — QML-kezelő vagy imperatív kötés."""
-    if re.search(rf"\b{re.escape(_handler_name(name))}\b", qml_text):
+def _connections_blocks(qml_text: str) -> list[str]:
+    """A QML `Connections { … }` blokkjai, a belső függvénytörzsekkel együtt."""
+    blocks: list[str] = []
+    for match in re.finditer(r"\bConnections\s*\{", qml_text):
+        depth = 1
+        index = match.end()
+        while index < len(qml_text) and depth:
+            if qml_text[index] == "{":
+                depth += 1
+            elif qml_text[index] == "}":
+                depth -= 1
+            index += 1
+        if depth == 0:
+            blocks.append(qml_text[match.start():index])
+    return blocks
+
+
+def _connection_targets(block: str, qml_text: str) -> set[str]:
+    """A `target:` kifejezés azonosítói, egy helyi property-feloldással."""
+    target = re.search(r"\btarget\s*:\s*([^\n;]+)", block)
+    if target is None:
+        return set()
+    names = set(re.findall(r"\b[A-Za-z_]\w*\b", target.group(1)))
+    # Gyakori QML-minta: `target: root.dropController`, ahol a property a
+    # context-propertyt (`dropImportController`) adja tovább. Egy szintet
+    # feloldunk, különben ez ugyanúgy hamis néma jelzést adna.
+    for name in tuple(names):
+        property_value = re.search(
+            rf"\bproperty\b[^\n]*\b{re.escape(name)}\s*:\s*([\s\S]{{0,300}})",
+            qml_text,
+        )
+        if property_value:
+            names.update(re.findall(r"\b[A-Za-z_]\w*\b", property_value.group(1)))
+    return names
+
+
+def _qml_receivers(qml_text: str) -> tuple[list[tuple[set[str], set[str]]], set[str]]:
+    """QML-fogadók indexe: `Connections` targetek és cél nélküli kezelők."""
+    blocks = _connections_blocks(qml_text)
+    connected: list[tuple[set[str], set[str]]] = []
+    for block in blocks:
+        handlers = set(re.findall(r"\bon[A-Z]\w*\b", block))
+        connected.append((_connection_targets(block, qml_text), handlers))
+    # A cél nélküli deklaratív `onFoo:` kezelő a komponens SAJÁT jelzését
+    # kezeli. A `Connections` blokkokat kivesszük, különben más target
+    # azonos nevű jelzése hamis zöldet adna.
+    outside_connections = qml_text
+    for block in blocks:
+        outside_connections = outside_connections.replace(block, "")
+    return connected, set(re.findall(r"\bon[A-Z]\w*\b", outside_connections))
+
+
+def _has_connection_receiver(
+    declaration: SignalDecl,
+    qml_receivers: list[tuple[set[str], set[str]]],
+    direct_handlers: set[str],
+) -> bool:
+    handler = _handler_name(declaration.name)
+    if any(
+        handler in handlers and targets & declaration.target_names
+        for targets, handlers in qml_receivers
+    ):
         return True
-    connect = rf"\b{re.escape(name)}\s*\.\s*connect\s*\("
-    return bool(re.search(connect, python_text) or re.search(connect, qml_text))
+    return handler in direct_handlers
+
+
+def _has_imperative_receiver(
+    declaration: SignalDecl, text: str, own_python_text: str = ""
+) -> bool:
+    """`target.signal.connect(...)` csak a deklaráló ismert targetjére számít."""
+    self_connect = rf"\bself\s*\.\s*{re.escape(declaration.name)}\s*\.\s*connect\s*\("
+    if re.search(self_connect, own_python_text):
+        return True
+    # A mixin jelzéseit az AppController a saját `self`-én köti be. Ez a
+    # mixin és a végső osztály közti szándékos, ellenőrizhető kapcsolat.
+    if declaration.owner and declaration.owner.endswith("Mixin") and re.search(
+        self_connect, text
+    ):
+        return True
+    pattern = re.compile(
+        rf"\b(?:self\s*\.\s*)?([A-Za-z_]\w*)\s*\.\s*{re.escape(declaration.name)}\s*"
+        r"\.\s*connect\s*\("
+    )
+    return any(
+        _camel_name(match.group(1).lstrip("_")) in declaration.target_names
+        for match in pattern.finditer(text)
+    )
+
+
+def has_receiver(
+    declaration: SignalDecl,
+    python_text: str,
+    qml_text: str,
+    own_python_text: str,
+    qml_receivers: list[tuple[set[str], set[str]]],
+    direct_handlers: set[str],
+) -> bool:
+    """Van-e a KONKRÉT deklaráció fogadója, nem csak névazonos jelzésé."""
+    return _has_connection_receiver(declaration, qml_receivers, direct_handlers) or _has_imperative_receiver(
+        declaration, python_text, own_python_text
+    ) or _has_imperative_receiver(declaration, qml_text)
 
 
 @dataclass(frozen=True)
@@ -156,13 +290,25 @@ def scan(root: Path) -> Report:
     """A teljes vizsgálat egy forrásfán."""
     python_text = _joined_text(root, "*.py")
     qml_text = _joined_text(root, "*.qml")
+    qml_receivers, direct_handlers = _qml_receivers(qml_text)
+    python_by_path = {
+        path.relative_to(root).as_posix(): _read_text(path)
+        for path in root.rglob("*.py")
+    }
     notify = notify_signals(python_text)
     declarations = collect_declarations(root)
     silent = tuple(
         declaration
         for declaration in declarations
         if declaration.name not in notify
-        and not has_receiver(declaration.name, python_text, qml_text)
+        and not has_receiver(
+            declaration,
+            python_text,
+            qml_text,
+            python_by_path[declaration.path],
+            qml_receivers,
+            direct_handlers,
+        )
     )
     notify_count = sum(1 for d in declarations if d.name in notify)
     return Report(total=len(declarations), notify=notify_count, silent=silent)

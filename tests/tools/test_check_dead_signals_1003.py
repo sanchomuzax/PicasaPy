@@ -166,6 +166,33 @@ def test_az_azonos_nevu_jelzesek_kulon_kulcsot_kapnak(tmp_path: Path) -> None:
     }
 
 
+def test_a_connections_csak_a_sajat_qml_celjanak_jelzeset_fogadja(
+    tmp_path: Path,
+) -> None:
+    """Azonos jelzésnévnél a másik vezérlő kezelője nem lehet ál-fogadó."""
+    gyoker = tmp_path / "src"
+    qml_dir = gyoker / "qml"
+    qml_dir.mkdir(parents=True)
+    for nev in ("a", "b"):
+        (gyoker / f"{nev}.py").write_text(
+            "from PySide6.QtCore import QObject, Signal\n\n"
+            f"class {nev.upper()}(QObject):\n"
+            "    done = Signal()\n",
+            encoding="utf-8",
+        )
+    (qml_dir / "Main.qml").write_text(
+        "Item {\n"
+        "    Connections {\n"
+        "        target: a\n"
+        "        function onDone() {}\n"
+        "    }\n"
+        "}\n",
+        encoding="utf-8",
+    )
+
+    assert _nema_kulcsok(gyoker) == {"b.py::done"}
+
+
 # -- 4. az alapállapot: rövidülhet, de nem hízhat --------------------------
 
 
