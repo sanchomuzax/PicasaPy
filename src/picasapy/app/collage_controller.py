@@ -494,7 +494,12 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         if spacing != self._collage_panel_spacing:
             self._collage_panel_spacing = spacing
             self.collageSpacingChanged.emit()
-            self._set_dirty(True)
+            # #1121: a térköz a PAKOLÁS bemenete, nem csak a rajzolásé — a
+            # rácsos témák cellamérete tőle függ. Enélkül a vászon a RÉGI
+            # elrendezést mutatta, és a felhasználó azt látta, hogy a
+            # csúszka nem csinál semmit („hiába állítom be"). A
+            # `setCollageFormat`/`setCollageOrientation` ugyanígy rendez újra.
+            self._relayout_for_page_shape()
         self._apply_zero_spacing_shadow_rule()
 
     def _apply_zero_spacing_shadow_rule(self) -> None:
