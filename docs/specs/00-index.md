@@ -148,13 +148,18 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 4. **A buboréksúgó rajza** — saját osztály (`ytToolTip`), de nincs hozzá
    képréteg; a háttér/keret/árnyék kódból jön (#901)
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 2 kérdés
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 7 kérdés
 
 *(A lap 2026-08-20-án készült, a tulajdonos két képernyőképéből és a
 binárisból. A kör négy kérdést tett fel és kettőt le is zárt — a
 lista-térképet (5.2/5.4) és a „teljes meghajtó" feltételét (10.). Ami
 maradt, egyik sem igényel futó Picasát, és egyik sem blokkolja a
 megvalósítást — jegy: **#1161**.)*
+
+0. *(A lap 12. szakasza a hiteles, naprakész lista — 2026-08-21-én
+   nyolc pontra bővült, majd az **M1** lezárult. A tételek a
+   `picasapy-agent` → `memory/nyitott-kerdesek-sor.md` munkasorban is
+   szerepelnek, feldolgozási sorrendben.)*
 
 1. **Az iPhoto / Apple Photos ág LÁTHATÓ különbsége.** A kódbeli helye, a
    két beállítás-kapcsoló és a használt lista megvan (a lap 6.2), de nem
