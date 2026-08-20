@@ -569,14 +569,356 @@ kattintás kijelöl, második aktivál" szabály (utasításszinten) · a
 **Erős**: a Handler-ek jelentése (a nevük és a hordozó elemük együtt
 egyértelmű, de a kódjukat nem követtük végig).
 
-**Nyitott**:
+**Nyitott** — *ez a lista 2026-08-20-án ÜRESRE fogyott; a négy egykori
+tétel mind meg van válaszolva, a hivatkozás azért marad, hogy a következő
+kör ne induljon el újra ugyanezen:*
 
-1. **A gumikeretes kijelölés pontos szabálya** — mit tesz a keret
-   Ctrl-lel (hozzáad) és Shifttel (tartomány): `ytSelectionDragHandler`
-   negyedik slotja, `0x00a6f450`.
-2. **A Shift-tartomány horgonya** — a `[elem+0x5a]` / `[elem+0x5b]`
-   jelzők szerepe; a `0x00717eb0` (a léptető mag) végigolvasása.
-3. **A 26 eseménykód jelentése** — a `WM_*` → belső esemény leképezés; az
-   `0x00920fa0` ablakeljárás csak továbbít, a fordítás máshol történik.
-4. **A jobbklikk útja** — melyik helyi menü melyik felületrészhez tartozik
-   (a `0x005e7c20` és `0x0056c5a0` páros).
+1. ~~**A gumikeretes kijelölés pontos szabálya**~~ — **MEGVAN**: a
+   `ytSelectionDragHandler` (`0x00a6f450`) a **szerkesztő** téglalapjaié és
+   arányt kényszerít (4/b, #891); a **rács** lasszója külön kódúton van, és
+   **metszés-teszttel** dolgozik (4/e), pillanatfelvétellel (#897).
+2. ~~**A Shift-tartomány horgonya**~~ — **MEGVAN** (4/c, #892): a horgony a
+   `[this+0x390]`; a `[elem+0x5a]` elnyomó jelző (kizár a lasszóból és a
+   kijelölésből is), a `[elem+0x5b]` a fókusz-jelző. A `0x00717eb0` teljes
+   olvasata a **12.2**-ben (üres kijelölésnél az első/utolsó elemre lép).
+3. ~~**A 26 eseménykód jelentése**~~ — **a gyakorlathoz elég megvan**
+   (4.2/b): nyolc kód megerősítve a kezelők viselkedéséből. A `WM_*` →
+   belső leképezés továbbra sincs meg, de a megvalósításhoz nem kell.
+4. ~~**A jobbklikk útja**~~ — **MEGVAN** (4/f): tizenhat helyi menü
+   erőforrásneve a birtokló függvénnyel; a rácsnak album- és mappanézetben
+   külön menüje van.
+
+---
+
+## 10. A kijelölés HATÓKÖRE: EGY mappa, soha nem a könyvtár (2026-08-20)
+
+Ez a szakasz a lap eddigi legnagyobb hiányát pótolja: eddig leírtuk, **hogyan**
+jelöl ki a Picasa, de nem azt, hogy **min**. A válasz megváltoztatja a
+Ctrl+A, a Shift-tartomány, a lasszó és a Home/End értelmezését is.
+
+### 10.1 A könyvtárnézet: `CMultiAlbumNode` — mappánként EGY kijelölés-csomópont
+
+A könyvtár („lightbox") bélyegkép-területe a **`CMultiAlbumNode`** osztály
+(RTTI-vtábla `0x00cb29d4`). Ez **albumsorok listája**, és **minden sornak
+saját `CSelectionNode`-ja van**:
+
+```asm
+; a könyvtárnézet Home-kezelője (0x0076a390), a nem-Ctrl ág
+0x0076a3b5  mov eax, [esi + 0x2e0]      ; a JELENLEGI album sorindexe
+0x0076a3bb  cmp eax, -1
+0x0076a3c0  mov ecx, [esi + 0x300]      ; az albumsorok tömbje
+0x0076a3c6  mov eax, [ecx + eax*4]      ; a jelenlegi sor
+0x0076a3d5  mov esi, [eax + 0x2b4]      ; ← A SOR SAJÁT kijelölés-csomópontja
+0x0076a3ea  call 0x718880               ; a Home logikája EZEN a csomóponton
+```
+
+| mező | tartalom |
+|---|---|
+| `CMultiAlbumNode + 0x2e0` | a **jelenlegi** album sorindexe (−1 = nincs) |
+| `CMultiAlbumNode + 0x300` | az albumsorok mutatótömbje |
+| `albumsor + 0x2b4` | **a sor saját `CSelectionNode`-ja** |
+| `CSelectionNode + 0x3c0` | **annak az albumnak/mappának az azonosítója**, amelyikhez a csomópont tartozik |
+
+### 10.2 A `CThumbUI` a JELENLEGI mappa csomópontjára mutat
+
+A `CThumbUI` négy csomópont-mutatót tart: `+0xea0` (a görgető,
+`thumbui/albumscroll`), `+0xea4`, `+0xea8` és **`+0xeac`** — ez utóbbi
+**a fókuszban lévő mappa/album kijelölés-csomópontja**.
+
+A váltó (`0x0056bc10`) — a „másik mappára került a fókusz" útvonal:
+
+```asm
+0x0056bc30  cmp esi, [edi + 0xea4]
+0x0056bc36  je  0x56bc43
+0x0056bc38  mov edx, [edi + 0xea8]
+0x0056bc3e  call 0x718a50               ; ← AZ ELŐZŐ CSOMÓPONT KIJELÖLÉSE TELJESEN LE
+...
+0x0056bca4  mov esi, [ebx + 0x3c0]      ; az ÚJ csomópont album-azonosítója
+0x0056bcac  call 0x56b910               ; „a jelenlegi album megváltozott"
+0x0056bd43  mov [edi + 0xeac], ebx      ; ← az új mappa csomópontja lesz a jelenlegi
+0x0056bd8c  call 0x537fb0               ; a helyi menük (Album/Folder) újraépítése
+```
+
+És a takarító ág (`0x00662b20`), ami akkor fut, ha a nézet listája változik:
+
+```asm
+0x00663122  mov eax, [ebp + 0xeac]
+0x0066312c  mov eax, [eax + 0x3c0]      ; a csomópont album-azonosítója
+0x00663139  call 0x4af790               ; benne van-e még a nézetben?
+0x0066313e  cmp eax, -1
+0x00663152  call edx                    ; ha NINCS → elengedi
+0x00663154  mov [ebp + 0xeac], ebx      ; és nullázza
+```
+
+> **Két, egymástól független kódút mondja ki ugyanazt:** a kijelölés-csomópont
+> **egyetlen mappához/albumhoz tartozik**, és amint a fókusz átkerül egy másik
+> mappára, **a régi mappa kijelölése megszűnik**. A Picasában **nem lehet
+> mappákon átnyúló kijelölés** — se kattintással, se Shifttel, se Ctrl+A-val,
+> se lasszóval.
+
+*Bizonyítottsági fok: **megerősített** (utasításszinten, két kódút).*
+
+### 10.3 Ebből következik minden más hatóköre
+
+A `CSelectionNode` minden művelete a **saját** elemtömbjén (`+0x32c`,
+darabszám `+0x330 >> 1`), illetve a vtábla `+0xb4` (darabszám) / `+0xb8`
+(i-edik elem) párosán jár:
+
+| művelet | függvény | hatóköre |
+|---|---|---|
+| Ctrl+A (Összes kijelölése) | `0x00716f40` | a jelenlegi mappa |
+| Ctrl+D (Kijelölés törlése) | `0x00718a50` | a jelenlegi mappa |
+| Shift+kattintás tartomány | `0x0071bae0` → `0x00716ae0` | a jelenlegi mappa |
+| Shift+Home / Shift+End | `0x00718880` / `0x00718930` → `0x00716ae0` | a jelenlegi mappa |
+| lasszó | `0x0071bc90` | a jelenlegi mappa |
+| nyilak, Shift+nyíl | `0x00717eb0` | a jelenlegi mappa |
+
+---
+
+## 11. A kijelölés-parancsok: az azonosítótól a kódig (2026-08-20)
+
+### 11.1 A menütételek rekordja
+
+A menüket felépítő függvények (a menüsáv `0x00559150`, a mappa-menü
+`0x007319f0`, az album-menü `0x00732160`, az Emberek-menü `0x007359e0`)
+**20 bájtos rekordokat** töltenek ki:
+
+| eltolás | tartalom |
+|---|---|
+| `+0x00` | a honosított felirat (`0x009ae560(kulcs, alapértelmezés)` eredménye) |
+| `+0x04` | a **gyorsbillentyű betűje** külön C-sztringként (`"A"`, `"D"`, `"I"`, `"X"`, `"C"`, `"V"`) |
+| `+0x08` | 16 bites jelzőmező |
+| **`+0x0a`** | **16 bites parancsazonosító** |
+| `+0x0c`, `+0x10` | további mezők (a szállított menükben 0) |
+
+⚠️ **Fordítói csapda:** a rekord `+0x04…+0x0a` mezőit a fordító a
+**következő** menütétel blokkjában írja ki. Aki blokkonként olvassa a
+diszasszemblált kódot, **eggyel elcsúszva** párosítja a feliratot az
+azonosítóhoz. A globális címekkel dolgozó menüsáv-építőben
+(`0xd6db80`-tól) a rekordhatárok egyértelműek, és a `+0x04` gyorsbillentyű-
+betű (`"A"` a Ctrl+A-hoz) **független ellenőrzést** ad.
+
+### 11.2 A négy kijelölés-parancs
+
+| menütétel | erőforráskulcs | azonosító | kezelő | mit hív |
+|---|---|---:|---|---|
+| **Az összes kijelölése** (Ctrl+A) | `…ID_ALBUM_SELECTALLPICTURES` | **`0x9cb8`** | `0x005e5070` | `0x00716f40([this+0xeac], 1)` |
+| **Kiválasztás megfordítása** (Ctrl+I) | `…ID_SELECT_INVERT` | `0x9c47` | — | — |
+| **Kijelölés törlése** (Ctrl+D) | `…ID_CLEAR_SELECTION` | **`0x9c90`** | `0x005e5310` | `0x00718a50([this+0xeac])` |
+| **Csillagozottak kijelölése** | `…ID_SELECTSTAR` | `0x9d5b` | — | — |
+
+A parancs-szétosztó a `0x005cb990`: `lea eax,[esi-0x9c42]` → bájttérkép
+(`0x005cdb34`) → ugrótábla (`0x005cd9fc`). A `0x9cb8` a 118. bejegyzés,
+onnan a 39. ágra (`0x005cbcec`) megy, ami a `0x005e5070`-t hívja.
+
+> **A parancs neve maga is beszédes:** a menüsáv „Az összes kijelölése"
+> tétele **ugyanazt az `ID_ALBUM_SELECTALLPICTURES` azonosítót** használja,
+> mint a mappa- és album-helyimenü „Az összes kép kijelölése" tétele. Egy
+> parancs van, és az **album/mappa** hatókörű.
+
+### 11.3 A „mindent kijelöl" mag — `0x00716f40`
+
+```c
+void SetAllSelected(CSelectionNode *this /*edi*/, bool ertek /*bl*/) {
+    int elso = -1;                                  // esi
+    for (i = 0; i < this->count /*[+0x330]>>1*/; ++i) {
+        elem = this->items[i];                      // [+0x32c]
+        if (elem == NULL) continue;
+        if (elem->flag5A == 0) {                    // nem elnyomott elem
+            if (elso == -1) elso = elem->id;        // [+0xb4]
+            if (elem->selected != ertek && elem->flag5A == 0)
+                elem->changed /*+0x59*/ = 1;
+            elem->selected /*+0x5d*/ = ertek;
+        } else {
+            if (elem->selected != 0) elem->changed = 1;
+            elem->selected = 0;                     // elnyomott elem SOHA nem lesz kijelölt
+        }
+    }
+    if (ertek != 0) this->anchor /*[+0x390]*/ = elso;   // a horgony az ELSŐ elem
+    for (k = 0; k < this->observerCount /*[+0x320]>>1*/; ++k)
+        this->observers[k]->vt[1](this);            // EGYETLEN értesítés-kör
+}
+```
+
+**Ez a teljes ára a Ctrl+A-nak az eredetiben:** egy menet az elemtömbön, egy
+értesítés-kör, majd a hívó (`0x005e5070`) **egyetlen** teljes-felület
+érvénytelenítése (`0x00a54b70(this, 1, 1, 0.0, {-1,-1,-1,-1}, 1)`).
+**Elemenkénti jelzés, elemenkénti lekérdezés, elemenkénti fájlművelet
+NINCS.**
+
+### 11.4 A tartomány-mag — `0x00716ae0`
+
+A Shift+kattintás, a Shift+Home/End és a „jelöld ki az egészet" idióma
+mind ezt hívja: `0x00716ae0(node, idA, idB, ertek)` — **stdcall, 4
+argumentum**, opcionális kimeneti tömb `esi`-ben.
+
+```c
+bool tartomanyban = false;
+for (i = 0; i < node->count(); ++i) {          // vtábla +0xb4 / +0xb8
+    elem = node->itemAt(i);  id = elem->id;    // [+0xb4]
+    if (!tartomanyban) {
+        if      (id == idA) { tartomanyban = true; idA = -1; }
+        else if (id == idB) { tartomanyban = true; idB = -1; /* + horgony */ }
+        else continue;                          // még a tartomány előtt
+    }
+    elem->selected = ertek;                     // [+0x5d]
+    ha kell: kimenet.push(id);
+    if (id != -1 && (id == idA || id == idB)) break;   // a tartomány vége → KILÉP
+}
+```
+
+**Egyetlen menet, korai kilépéssel**, tetszőleges irányban (nem kell tudni,
+melyik végpont van előrébb). Ha az egyik végpont `-1`, a tartomány a **lista
+végéig** tart — erre épül a Shift+End.
+
+---
+
+## 12. Home, End, PageUp, PageDown — a teljes leképezés (2026-08-20)
+
+### 12.1 A billentyűk útja
+
+A `CThumbUI` billentyűkezelője (`0x005c24c0`) egy kis felületre oszt szét,
+ami a `CThumbUI + 0x2a4`-en ül; a könyvtárnézetben ezt a `CMultiAlbumNode`
+valósítja meg (a vtábla `+0x84`-től kezdődő második táblája):
+
+| billentyű / vezérlő | felület-slot | `CMultiAlbumNode` | függvény |
+|---|---|---|---|
+| **VK_HOME** (`0x24`) | `+0x00` | vtábla `+0x84` | `0x0076a390` |
+| **VK_END** (`0x23`) | `+0x04` | vtábla `+0x88` | `0x0076a400` |
+| `throttle/pageup` (görgetősáv-gomb) | `+0x08` | vtábla `+0x8c` | `0x0076a250` |
+| `throttle/pagedown` (görgetősáv-gomb) | `+0x0c` | vtábla `+0x90` | `0x0076a2a0` |
+| **VK_PRIOR / VK_NEXT** (`0x21`/`0x22`) | `+0x18` | — | egy függvény, `1` = fel, `0` = le |
+| `throttle/albumscrolltop` | `+0x20` | — | — |
+| **VK_RETURN** (`0x0d`) | `+0x38` | — | — |
+| `throttle/nextalbum` | `+0x3c` | — | — |
+| `throttle/prevalbum` | `+0x40` | — | — |
+| **VK_DELETE** (`0x2e`) | — | — | `0x005c9b00` |
+
+*(A görgetősáv-gombok szétosztója a `0x005de120`, névre illesztve.)*
+
+### 12.2 Home és End — négy viselkedés
+
+`0x0076a390` (Home) és `0x0076a400` (End) **először a Ctrl-t nézi**
+(`GetAsyncKeyState(0x11)`, a `[0xd67849]` globális kapuval — 3. szakasz):
+
+| billentyű | mit tesz |
+|---|---|
+| **Ctrl+Home** | `0x0076a2f0` — a könyvtár **legelejére** görget |
+| **Ctrl+End** | az albumlista utolsó eleméhez (`[+0x2c0]` darabszám−1 → `0x004ae180` → `0x00768470`) — az **utolsó mappához** görget |
+| **Home** | a jelenlegi mappa csomópontján `0x00718880` |
+| **End** | a jelenlegi mappa csomópontján `0x00718930` |
+
+A csomóponti rész (`0x00718880` / `0x00718930`) **a Shiftet nézi**:
+
+```asm
+; 0x00718930 (End)
+0x00718933  cmp byte ptr [0xd67849], 0      ; billentyűzet-kapu
+0x0071893e  je  0x71894f                    ; zárt → nincs Shift
+0x00718940  push 0x10 / GetAsyncKeyState    ; Shift?
+0x0071894d  jne 0x718964                    ;   igen → tartomány-ág
+; --- Shift NÉLKÜL ---
+0x0071894f  mov edx, edi / call 0x718a50    ; minden kijelölés le
+0x00718956  push edi     / call 0x7172a0    ; lépés −1  → ÜRES kijelölésnél az UTOLSÓ elem
+; --- Shifttel ---
+0x00718964  mov eax, [edi + 0x390]          ; a horgony
+0x0071896a  cmp eax, -1
+0x0071897f  je  0x7189ac                    ;   ha nincs horgony → 0x716f40 (mindent kijelöl)
+0x0071897d  push 1
+0x00718981  push -1                         ; a MÁSIK végpont: „a lista vége"
+0x00718983  push eax                        ; a horgony
+0x00718984  push edi
+0x00718989  call 0x716ae0                   ; ← tartomány a horgonytól a VÉGÉIG
+0x0071898e  call 0x71b810                   ; egyetlen értesítés
+```
+
+A Home (`0x00718880`) ugyanez, két különbséggel: lépés **+1**, és a
+tartomány másik végpontja nem `-1`, hanem az **első elem azonosítója**
+(`itemAt(0)->id`) — vagyis a horgonytól **a lista elejéig**.
+
+**A Shift nélküli ág trükkje** a `0x00717eb0`-ban van: ha a kijelölés
+**üres**, a léptető nem „a horgonytól" indul, hanem a teljes elemlistából
+vesz egyet — `+1` iránynál az **elsőt**, `−1`-nél az **utolsót**
+(`0x00717f4e`–`0x00717f7b`). Ezért lesz a „mindent le, majd lépj egyet"
+párosból **„ugorj a mappa első/utolsó képére"**.
+
+| billentyű | eredmény a jelenlegi mappán belül |
+|---|---|
+| **Home** | a kijelölés az **első** képre szűkül |
+| **End** | a kijelölés az **utolsó** képre szűkül |
+| **Shift+Home** | a horgonytól **a mappa elejéig** kijelöl |
+| **Shift+End** | a horgonytól **a mappa végéig** kijelöl |
+| **Shift+End horgony nélkül** | a mappa **összes** képe (`0x00716f40`) |
+
+*Bizonyítottsági fok: **megerősített** — a VK-leképezés (`0x005c24c0` és a
+görgetősáv `0x005de120`), a Ctrl/Shift-vizsgálatok és a hívott magok
+utasításszinten.*
+
+### 12.3 A görgetősáv page-gombjainak lépése
+
+`0x0076a250` / `0x0076a2a0` **kizárólag görget, a kijelöléshez nem nyúl**:
+
+```
+lepes = (bélyegkép_magassága / 5) + 90        ; bélyegkép_magassága = [node+0x314] * 144 / 512
+0x0076a250:  scrollBy(+lepes)                 ; throttle/pageup
+0x0076a2a0:  scrollBy(-lepes)                 ; throttle/pagedown
+```
+
+A görgetés **animált** (`0x007300c0`): a lépést a már beütemezett
+célpozícióhoz adja hozzá (tehát a gyors ismételt kattintás halmozódik), és
+az animáció **időtartama Shifttel más** (`[0xcf4998]` a `[0xcf48b8]`
+helyett).
+
+---
+
+## 13. A kijelölés-változás ÁRA — az eredetiben egy menet, nálunk N fájlművelet (2026-08-20)
+
+Ez a szakasz nem az eredetiről szól, hanem a **különbségről**, mert a
+felhasználó ezt látja: „azt hittem, halott az app".
+
+### 13.1 Az eredeti
+
+Egy Ctrl+A vagy egy Shift-tartomány az eredetiben:
+
+1. **egy** menet az elemtömbön (`0x00716f40` / `0x00716ae0`),
+2. **egy** értesítés-kör a megfigyelőknek (`0x00716f40` vége, ill. `0x0071b810`),
+3. **egy** teljes-felület érvénytelenítés (`0x00a54b70`, `{-1,-1,-1,-1}`).
+
+Lemezhez **nem nyúl**, adatbázist **nem kérdez**, elemenkénti visszahívás
+**nincs**. Ráadásul a menet hossza **egy mappa** (10.), nem a könyvtár.
+
+### 13.2 Nálunk — mért adat (2026-08-20)
+
+Mérés: `tests/app/qml_functional` `qml_app` fixture, offscreen, helyi
+tmpfs-könyvtár, `window.selectAll()` hívása, három ismétlés minimuma.
+
+| sorok | Ctrl+A (bemelegedve) | `hasSavedBackup` kikapcsolva | mindkettő kikapcsolva | **első (hideg) hívás** |
+|---:|---:|---:|---:|---:|
+| 202 | 47,5 ms | 44,3 ms | 41,4 ms | 205,8 ms |
+| 802 | 150,4 ms | 120,7 ms | 85,3 ms | 1 077,3 ms |
+| 2 002 | 322,7 ms | 253,6 ms | 208,3 ms | **2 575,1 ms** |
+
+Egyetlen Shift+kattintásos teljes tartomány ugyanennyi (2 002 sornál
+356,3 ms) — ugyanaz a kódút.
+
+**Hívásszámlálás egyetlen Ctrl+A-ra** (bármekkora kijelölésnél):
+
+| QML-kötés | hívás / Ctrl+A | soronkénti munkája |
+|---|---:|---|
+| `controller.hasSavedBackup(selectedIndexes)` (`Main.qml`, `PicasaMenuBar.hasSavedBackup`) | **5×** | `Path.is_dir()` **és** `Path.glob()` a `.picasaoriginals` mappán |
+| `controller.peopleOfRows(selectedRows())` (`Main.qml`, `PeoplePanel.peopleHere`) | **3×** | `load_document()` — **egy `.picasa.ini` beolvasása soronként** |
+
+2 002 soros kijelölésnél ez **10 010 `stat()`** és **6 006 ini-beolvasás**
+— *egyetlen* billentyűleütésre, a GUI szálán. A `peopleHere` kötése akkor
+is lefut, ha az Emberek-panel **be van csukva** (a QML a `visible`-től
+függetlenül értékeli a kötéseket).
+
+Helyi tmpfs-en ez „csak" másodperc; a felhasználó gyűjteménye **hálózati
+megosztáson** (`/mnt/photo`) van, ahol minden `stat()` és minden
+ini-beolvasás egy hálózati körút — ott ugyanez perces nagyságrend.
+
+> ⚠️ **Mechanizmus vs. diagnózis.** A fenti tábla **mérés**, nem
+> következtetés: a két slot kikapcsolása 2 002 sornál 322,7 ms-ról
+> 208,3 ms-ra visz (a hideg első hívásnál a különbség nagyságrendi). A
+> maradék ~208 ms tiszta QML-kötés-újraértékelés — azt a
+> `selectedIndexes` tömb-alapú terjesztése okozza, és **külön** mérés kell
+> hozzá, hogy melyik kötés.

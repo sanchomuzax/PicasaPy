@@ -150,6 +150,19 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 *(Mind a négy lezárult; a maradék apró pontok — a `WM_*` leképezés és az
 egyes menük tételsora — a lap saját szakaszaiban vannak jelölve.)*
 
+⭐ **2026-08-20, kijelölés-kör:** a lap négy ÚJ szakaszt kapott, és ezek a
+kijelölés eddig hiányzó **hatókörét** rögzítik:
+**10.** a könyvtárnézet `CMultiAlbumNode`, **mappánként külön
+`CSelectionNode`**-dal — mappaváltáskor a régi mappa kijelölése törlődik,
+tehát a Picasában **nem létezik mappákon átnyúló kijelölés** ·
+**11.** a Ctrl+A / Ctrl+D / Ctrl+I / Csillagozottak parancsazonosítói
+(`0x9cb8` / `0x9c90` / `0x9c47` / `0x9d5b`) a kezelőikig, és a
+„mindent kijelöl" mag (`0x00716f40`) · **12.** Home / End / Shift+Home /
+Shift+End / Ctrl+Home / Ctrl+End / PageUp / PageDown teljes leképezése ·
+**13.** a kijelölés-változás ára — az eredetiben egy menet, nálunk
+**mért** 10 010 `stat()` + 6 006 ini-beolvasás egyetlen Ctrl+A-ra
+(jegyek: #1145, #1146, #1147, #1148).
+
 1. ~~A **gumikeretes kijelölés** szabálya~~ — a `ytSelectionDragHandler` a
    **szerkesztő** téglalapjaié, nem a rácsé: **arányt kényszerít**
    (Shift 1,0 · Ctrl 4/3 · Alt 3/2, #891). ~~A RÁCS lasszójának szabálya~~ — **MEGVAN**
@@ -252,7 +265,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [picasa-effekt-nevek.md](picasa-effekt-nevek.md) | Az effektek nevei és buboréksúgói |
 | [picasa-effekt-feliratok.md](picasa-effekt-feliratok.md) | Az effekt-vezérlők feliratai |
 | [picasa-gomb-es-menu-rendszer.md](picasa-gomb-es-menu-rendszer.md) | **A gomb- és menürendszer** — 9-szeletes gombok, állapotszínek, tipográfia, a kétféle menü |
-| [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) | **Egér, kijelölés, kattintás-viselkedés** — a `.tre` interakciós szótár, a Ctrl/Shift-modell |
+| [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) | **Egér, kijelölés, kattintás-viselkedés** — a `.tre` interakciós szótár, a Ctrl/Shift-modell, a kijelölés **mappa-hatóköre**, a Ctrl+A/Home/End teljes leképezése |
 | [design-guide.md](design-guide.md) | Dizájn-kézikönyv — hűség-referencia |
 | [ux-principles.md](ux-principles.md) | UX-alapelvek — „a Picasa lelke" |
 
