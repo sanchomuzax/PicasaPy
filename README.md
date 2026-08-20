@@ -57,12 +57,13 @@ Azóta elkészült (a lista korábban ezeket még hiányzóként sorolta):
 - **Kollázs és mozgófilm készítés** ([#29](https://github.com/sanchomuzax/PicasaPy/issues/29)).
 - **Geocímke: térkép-nézet és szerkesztés** ([#30](https://github.com/sanchomuzax/PicasaPy/issues/30)).
 - **A Picasa 3.9-es effekt-fülei** dekódolva ([#190](https://github.com/sanchomuzax/PicasaPy/issues/190)).
+- **Arcfelismerés és -csoportosítás**: arc-detektálás, beágyazás és klaszterezés, **Emberek panel**, valamint a felismert régiók `faces=` visszaírása a `.picasa.ini`-be ([#26](https://github.com/sanchomuzax/PicasaPy/issues/26) részben).
+- **Sötét téma**: kapcsolható és megjegyzett megjelenés (a korábbi „mindig világos" állítás elavult).
 
 Amit **még nem** tud:
 
-- **Arcfelismerés** ([#26](https://github.com/sanchomuzax/PicasaPy/issues/26)) — a `.picasa.ini`-ben már meglévő arc-régiók (`faces=`) megjelennek a nézőben, de saját felismerést/`contacts.xml`-generálást a PicasaPy még nem végez.
+- **`contacts.xml` generálása** ([#26](https://github.com/sanchomuzax/PicasaPy/issues/26)) — a Picasa névjegyzékét olvasni tudjuk, írni még nem; a db3-importból örökölt „ignorált arcok" kezelése is nyitott.
 - **PMP/db3-import az indexbe** ([#1](https://github.com/sanchomuzax/PicasaPy/issues/1)) — az olvasó réteg kész, a tényleges import még nem.
-- **Sötét téma**: az alkalmazás **mindig világos**, ez tudatos döntés — a sötét téma a 3. fázis (V3) feladata.
 
 ## Állapot
 
@@ -125,6 +126,11 @@ deadlockba ragadhat ([#53](https://github.com/sanchomuzax/PicasaPy/issues/53), [
 az elsődleges út: a nem-Qt teszteket egy processzben, a `tests/app` alatti
 QML-teszteket pedig fájlonként, külön processzben, kemény timeouttal
 futtatja, így egy beragadó fájl sem viszi el az egész futást.
+
+A futtató alapból **sorosan** dolgozik. Ha egyedül vagy a gépen és sietős,
+`PICASAPY_TESZT_PARHUZAM=4` bekapcsolja a párhuzamos futást (jóval gyorsabb,
+de terhelés alatt az időzítésre érzékeny tesztek hamisan bukhatnak —
+[#1038](https://github.com/sanchomuzax/PicasaPy/issues/1038)).
 
 Linuxon és Windowson (PowerShell) egyaránt:
 
