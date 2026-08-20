@@ -6,26 +6,39 @@ from picasapy.app import application
 
 
 class TestResolveRoots:
+    """⚠️ A konfig-könyvtárat a PLATFORM dönti el, nem az `XDG_CONFIG_HOME`.
+
+    Ezek a tesztek eredetileg `XDG_CONFIG_HOME`-ot állítottak, és a
+    windows-lábon némán elbuktak: a #1076 óta a windowsos ág a natív
+    `%APPDATA%`-ból dolgozik, tehát az XDG-változó ott nem jelent semmit.
+    A TERMÉK viselkedése helyes — a teszt feltevése volt platformfüggő.
+
+    Ezért a `_config_dir`-t közvetlenül helyettesítjük: így az állítás arról
+    szól, amiről szólni akar (a `_resolve_roots` a konfig-könyvtárból
+    olvas), és mind a két lábon ugyanazt jelenti."""
+
+    @pytest.fixture
+    def konfig(self, tmp_path, monkeypatch):
+        mappa = tmp_path / "picasapy"
+        mappa.mkdir()
+        monkeypatch.setattr(application, "_config_dir", lambda *a, **k: mappa)
+        return mappa
+
     def test_argv_wins(self):
         assert application._resolve_roots(["prog", "/a", "/b"]) == ("/a", "/b")
 
-    def test_watched_folders_fallback(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
-        config = tmp_path / "picasapy"
-        config.mkdir()
-        (config / "WatchedFolders.txt").write_text("/mnt/nas/fotok\n", encoding="utf-8")
+    def test_watched_folders_fallback(self, konfig):
+        (konfig / "WatchedFolders.txt").write_text(
+            "/mnt/nas/fotok\n", encoding="utf-8"
+        )
         assert application._resolve_roots(["prog"]) == ("/mnt/nas/fotok",)
 
-    def test_no_config_empty(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    def test_no_config_empty(self, konfig):
         assert application._resolve_roots(["prog"]) == ()
 
-    def test_watched_folders_lowercase_variant(self, tmp_path, monkeypatch):
+    def test_watched_folders_lowercase_variant(self, konfig):
         # #145: élesben a fájlnév kisbetűsen is előfordul.
-        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
-        config = tmp_path / "picasapy"
-        config.mkdir()
-        (config / "watchedfolders.txt").write_text(
+        (konfig / "watchedfolders.txt").write_text(
             "/mnt/nas/fotok\n", encoding="utf-8"
         )
         assert application._resolve_roots(["prog"]) == ("/mnt/nas/fotok",)
