@@ -117,12 +117,93 @@ parancsazonosító teljes menü-leltárából.*
 
 ## 5. Ami NYITVA marad
 
-1. **Mit ír a két rádió.** A `0x005b77c0` végigolvasása adná meg, hogy a
-   „Search my whole computer" a `scanlist.txt` `+` szakaszába a
-   meghajtó-gyökereket teszi-e (a valódi mintánkban `+C:\`, `+L:\`,
-   `+E:\`, `+D:\` áll — `picasa-mappakezelo.md` 11.3), és mit tesz a
-   szűkített változat.
+1. ~~Mit ír a két rádió~~ — **LEZÁRVA** (6.1): a panel **nem ír fájlt**,
+   egy 1/2 (illetve −1) kódot ad vissza. Ami MARAD: hol lesz ebből
+   `scanlist.txt`-bejegyzés — az indulás-rutin `0x0040d6e3`-tól.
 2. **Mi dönti el, melyik szövegkészlet (`Text1`/`Text2`) jelenik meg** —
    a „van-e korábbi Picasa" vizsgálat helye.
 3. **Hol jelenik meg a panel** (saját ablak vagy a főablakba ágyazva), és
    mi történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
+
+---
+
+## 6. A panel SZERZŐDÉSE — mit ad vissza, és hogyan (2026-08-21, U1)
+
+### 6.1 A panel nem ír fájlt — egy KÓDOT ad vissza
+
+A megjelenítő a `0x0040e410`: foglal egy **0x278 bájtos** objektumot,
+megépíti (`0x005b7610`), majd **modálisként** mutatja
+(`0x009d4a80(dlg, "initialscan", szuloAblak, 0)`).
+
+Az eredményt a hívó által adott **egész-rekeszbe** írja
+(`CInitialScanDialog + 0x270` → az indulás-rutin `[ebx]`-e):
+
+```asm
+; 0x005b7e80 — az OK gomb kezeloje
+0x005b7f29  ecx = [esi+0x270]           ; a kimeneti rekesz
+0x005b7f31  cmp byte [edi+0x359], al    ; a radio_complete BE van nyomva?
+0x005b7f37  setne al
+0x005b7f3a  add eax, 1
+0x005b7f3d  [ecx] = eax                 ; 1 vagy 2
+```
+
+| érték | jelentés | ki állítja |
+|---:|---|---|
+| **−1** | **megszakítva** | az indulás-rutin `0x0040d56d`-nél nézi, és `0xF4242`-vel kilép |
+| **1** | a **szűkített** választás (`radio_limited`) | `0x005b7f3a` |
+| **2** | a **teljes gép** (`radio_complete`) | `0x005b7f3a` |
+
+> **Vagyis a panel maga NEM ír `scanlist.txt`-et.** Egy 1/2 kódot ad
+> vissza, és a **beolvasási lista összeállítása a hívó dolga** — az
+> indulás-rutin (`0x0040d3c0`) a `0x0040d5ac`-nál ágazik el az értékre
+> (`cmp dword [ebx], 0` → `jne 0x0040d6e3`).
+
+### 6.2 A migrációs változat KÉTLÉPCSŐS
+
+Ha a migrációs jelző (`[dlg+0x274]`) áll, a „Continue" **nem feltétlenül
+zárja be az ablakot**:
+
+```asm
+0x005b7ed9  cmp byte [esi+0x274], 0     ; migracios valtozat?
+0x005b7ee0  je  0x5b7f29                ;   nem -> a valasz kiirasa, bezaras
+0x005b7ee2  cmp byte [edi+0x359], 0     ; a radio_complete be van nyomva?
+0x005b7ee9  jne 0x5b7f3f                ;   igen -> tovabb (bezaras)
+0x005b7eeb  call 0x5b76d0               ;   nem  -> a MASIK szovegkeszlet betoltese
+0x005b7ef9  "initialscan/base" -> ujrarajzolas (|= 7)
+0x005b7f0b  [esi+0x274] = 0             ;   a migracios jelzo torlese
+0x005b7f20  return 0xF4241              ;   NEM kezeltem -> az ablak NYITVA marad
+```
+
+**Vagyis: migrációs esetben, ha a felhasználó nem a „Search my computer
+for pictures again" tételt választja, ugyanaz az ablak átvált a MÁSODIK
+szövegkészletre** (a beolvasási kérdésre), és csak a következő „Continue"
+zár be. A jelző törlődik, tehát a második képernyőn már az 1/2 kód íródik.
+
+*(Hogy a két lépés melyik felhasználói döntéshez tartozik pontosan, a
+`0x005b76d0` argumentumán múlik — a mechanizmus utasításszinten
+megerősített, a szemantikai olvasat ennyiben következtetés.)*
+
+### 6.3 HELYESBÍTÉS: Windowson MÁS a szűkített választás felirata
+
+A lap 1.2 szakasza a `.tre`-ből idézte:
+„Only search Documents, Pictures, the Desktop, and **iPhoto Library**".
+**Windowson ez nem ez a szöveg.** A panel felépítője (`0x005b77c0`)
+futásidőben **felülírja** a `text3`-at:
+
+| kulcs | szöveg | magyar |
+|---|---|---|
+| `CInitialScanDialog::OnlySearchWin` | Only search My Documents, My Pictures, and the Desktop | **Keresés csak a Dokumentumok és a Képek mappában, valamint az asztalon** |
+| `CInitialScanDialog::OnlySearchMac` | Only search Documents, Pictures, the Desktop, and iPhoto Library | Keresés csak a Dokumentumok és a Képek mappában, az asztalon és az iPhoto könyvtárban |
+
+A `.tre`-ben a **Mac**-es változat áll; a kód a `0x005b77c0`-nál cseréli
+Windowson. **A `.tre` szövege tehát nem mindig az, amit a felhasználó
+lát** — ezt a `picasa-respack-format.md` figyelmeztetéséhez hasonlóan
+kezelni kell.
+
+### 6.4 A panel kihagyható — `skipinitialscan`
+
+Az indulás-rutin (`0x0040d3c0`) `Preferences` kulcsai közt ott a
+**`skipinitialscan`** — a panel megkerülhető beállításból. *(Ugyanitt:
+`ConfiguredSlingshot`, `LastViewRoot`, `LastAlbumSelected`,
+`ReportStats`, `RIGHTDRAWEROFFSET`.)*
+
