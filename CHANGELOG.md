@@ -5,6 +5,26 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.15] – 2026-08-20
+
+### Javítva
+- **Az „E-Mail" beállításfül végre ment (#1066).** Eddig átállíthattad a
+  levelezőprogram-választást és a képméretet, a felület elfogadta — és
+  **semmi nem történt**: újranyitásra minden visszaállt.
+
+  Az ok: a beállításokat kezelő rész **soha nem jött létre** a futó
+  programban. A felület hivatkozott rá, de egy védőfeltétel mögül, ami
+  megakadályozta a hibaüzenetet — és el is rejtette a hiányt.
+
+- **A webexportálás párbeszéde sem volt bekötve (#1066).** Ugyanaz az ok,
+  ugyanaz a néma következmény: a sablonlista üresen maradt.
+
+### Fejlesztői
+- Új őr: minden felületről hivatkozott vezérlőnek regisztrált párja kell
+  legyen. Ez a hibaosztály **néma** — nincs hibaüzenet, nincs kivétel,
+  nincs piros teszt, csak egy funkció, ami nem működik. A szándékos
+  kivételek **indoklással** szerepelnek, és az elavult kivétel is hiba.
+
 ## [0.8.14] – 2026-08-20
 
 ### Javítva
