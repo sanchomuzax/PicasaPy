@@ -20,6 +20,18 @@ on:
   # valódi CI-bizonyíték, ne csak helyi futás.
   workflow_dispatch: {}
 
+# #1127: egy PR-re érkező ÚJ commit állítsa le az előző futást. A régi
+# eredmény ilyenkor már semmit nem mond — a mai napon több PR is három-négy
+# párhuzamos futást pörgetett ugyanazon az ágon, és a sor emiatt torlódott.
+#
+# ⚠️ A `main`-en NINCS megszakítás: ott minden commit CI-bizonyítéka kell,
+# és a kiadási automatika is erre épül. A csoportkulcs tartalmazza a refet,
+# tehát a `main` minden pushja külön csoport marad; a kikapcsolást ezen
+# felül a `cancel-in-progress` feltétele is biztosítja.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     name: Test (${{ matrix.os }})
@@ -53,6 +65,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # #1127: a pip-letöltések gyorsítótárazása. A csomaglista a
+          # pyproject.toml-ból jön, ezért a kulcs is arra hivatkozik — új
+          # függőségnél magától elévül.
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install Linux Qt runtime dependencies
         if: runner.os == 'Linux'
@@ -121,6 +138,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # #1127: a pip-letöltések gyorsítótárazása. A csomaglista a
+          # pyproject.toml-ból jön, ezért a kulcs is arra hivatkozik — új
+          # függőségnél magától elévül.
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Qt futtatókörnyezet
         # A füst-teszt IMPORTÁLJA a belépési pontot, az pedig a PySide6-ot
@@ -189,6 +211,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          # #1127: a pip-letöltések gyorsítótárazása. A csomaglista a
+          # pyproject.toml-ból jön, ezért a kulcs is arra hivatkozik — új
+          # függőségnél magától elévül.
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install ruff
         # A `dev` extrából, nem tételesen — így a lint ugyanazt a ruffot
