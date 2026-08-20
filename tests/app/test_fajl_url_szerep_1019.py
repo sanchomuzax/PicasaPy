@@ -33,6 +33,7 @@ import pytest
 from PySide6.QtCore import QUrl
 
 from picasapy.app.collage_model import CollageNode, CollageNodeModel
+from picasapy.app.formatting import to_local_path
 
 
 def _modell(*utak: str) -> CollageNodeModel:
@@ -81,7 +82,18 @@ class TestASzerepLetezik:
 
 
 class TestAzUrlHelyes:
-    """A `QUrl.fromLocalFile` szabályát nem mi találjuk ki platformonként."""
+    """A `QUrl.fromLocalFile` szabályát nem mi találjuk ki platformonként.
+
+    ⚠️ **Az útvonalakat `Path`-ként hasonlítjuk össze, nem sztringként
+    (#1082).** A `toLocalFile()` Windowson is PER-JELES alakot ad
+    (`C:/Users/...`), a `str(Path(...))` viszont VISSZAPERJELESET
+    (`C:\\Users\\...`). Ugyanaz a fájl, kétféle írásmód — a sztring-egyenlőség
+    ezért a windows-CI-lábon elbukott, holott a program jól működik: a
+    `formatting.to_local_path` pontosan ezért futtatja át `Path`-on a
+    visszaalakított útvonalat. Az elválasztójel alakját tesztelni Qt-t
+    tesztelne, nem minket; ami MINKET érdekel, az az, hogy a fájl ugyanaz
+    maradjon.
+    """
 
     def test_egyszeru_utvonalra_a_Qt_alakjat_adja(self, tmp_path):
         ut = str(tmp_path / "a.jpg")
@@ -103,6 +115,18 @@ class TestAzUrlHelyes:
         ut = str(mappa / "árvíztűrő.jpg")
 
         assert _azonos_ut(_url(_modell(ut), 0).toLocalFile(), ut)
+
+    def test_a_program_sajat_visszaalakitoja_a_parja(self, tmp_path):
+        """A valódi szerződés: `to_file_url` → `to_local_path` = azonosság.
+
+        Ez az, amit a program tényleg csinál (`drop_import_controller`,
+        `export_controller`, …) — és ez az, ami platformfüggetlenül a NATÍV
+        alakot adja vissza, mert a `to_local_path` `Path`-on futtat át."""
+        ut = str(tmp_path / "kép #1.jpg")
+
+        url = _url(_modell(ut), 0)
+
+        assert to_local_path(url.toString()) == ut
 
     def test_a_kezi_fuzes_ELBUKNA_ugyanezen(self, tmp_path):
         """A jegy bizonyítéka, tesztként: a régi alak elvágja a nevet.
