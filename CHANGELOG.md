@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.25] – 2026-08-20
+
+### Belső
+- A kollázs háttérmunkája nem ír megosztott állapotot és nem küld jelzést a
+  saját szálán: minden a fogadó szálra került, sorba állított kapcsolaton
+  át (#988/#999). ⚠️ Ez **nem javítja** a CI-n visszatérő összeomlást — a
+  mérés megcáfolta, hogy elég volna —, de három valódi hiányt megszüntet,
+  és mindhárom mellett őr-teszt áll.
+
 ## [0.8.24] – 2026-08-20
 
 ### Javítva
