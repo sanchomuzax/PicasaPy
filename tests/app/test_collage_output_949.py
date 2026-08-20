@@ -74,7 +74,8 @@ class TestCelmappa:
     def test_az_alapertelmezett_mappa_a_picasa_szintet_is_tartalmazza(self):
         cel = output.output_dir(None)
         assert cel.parts[-3:] == ("Pictures", "Picasa", "Kollázsok")
-        assert cel == Path.home() / output.DEFAULT_OUTPUT_DIR
+        # #1088: a rendszer képmappájából, nem `Path.home()`-ból
+        assert cel == output.pictures_dir() / output.DEFAULT_OUTPUT_SUBPATH
 
     def test_a_beallitott_mappa_erosebb(self, tmp_path):
         assert output.output_dir(str(tmp_path)) == tmp_path
