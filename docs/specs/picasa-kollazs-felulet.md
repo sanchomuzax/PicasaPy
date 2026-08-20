@@ -1617,3 +1617,76 @@ három, és egyik sem igényel futó Picasát)*:
   halottak: a panelfából vannak kivéve, de a gyűrű a felhasználó
   képernyőképén ott van — ezek kódból rajzolt overlay-elemek. (A
   `#tools_group` viszont **tényleg** halott: ahhoz nincs kezelő.)
+
+---
+
+## 14. A Képkupac szórása KILÓGHAT a lapról — mért ellenbizonyíték (2026-08-20)
+
+⚠️ **Ez a szakasz egy korábbi, TÉVES állításunkat helyesbíti.** A #1045
+azt rögzítette, hogy „az eredeti soha nem tesz képet a lapon kívülre", és
+ennek alapján beszorítást építettünk a szórásba. **Az állítás hamis volt**,
+a beszorítást a #1094 visszavonta.
+
+### Miért tévedtünk
+
+A megállapítás nyolc golden `.cxf`-en készült — és **mind a nyolc álló
+vagy négyzetes lap** volt. A jelenség a **fekvő** lapokon jelenik meg,
+amiből a készletben egy sem volt. Nem a következtetés volt hibás, hanem
+hogy nem néztük meg, **mit NEM tartalmaz a minta**.
+
+### A bizonyíték: a valódi Picasa kimenete kilóg
+
+A tulajdonos teljes Kollázsok mappájából (11 pár, 2026-08-20), A4 fekvő
+lapokról. **89 csomópontból 3** esik a lapon kívülre:
+
+| fájl | # | x | y | w | h | theta (rad) | scale | keret |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| AI8 | 2 | 0.252930 | **−0.011050** | 0.184442 | 0.465470 | −0.061644 | 337.0 | whiteborder |
+| AI9 | 1 | 0.577702 | **−0.045172** | 0.263281 | 0.465470 | 0.001978 | 337.0 | noborder |
+| AI9 | 2 | 0.653074 | 0.583320 | 0.263281 | 0.465470 | 0.009441 | 337.0 | noborder |
+
+A harmadiknál alul lóg ki: `y + h = 1.048790`.
+
+**Mind a három GENERÁTOR-kimenet, nem kézi szerkesztés:**
+
+- a `scale` mindháromnál **egész 337,0** — kézi méretezésnél nem egész
+  (az `AI2`-ben 295,392395 a kézzel átméretezett csomóponté);
+- a `theta` −3,53° … +0,54°, azaz a `pile_rotation` legyező-tartományán
+  belül — kézi forgatásnál kiugró (az `AI2`-ben +345° és +22,68°);
+- a keret egységes a fájlon belül.
+
+**Mind a három kilógás FÜGGŐLEGES, egy sem vízszintes** — fekvő lapon a
+csempe magassága a lap arányában nagyobb, ezért a sávon belüli középpont
+mellett is kilóghat a teteje vagy az alja.
+
+### Ami viszont ÁLL: a középpont-sáv képlete
+
+`band = 1 − pile_scale(n) · PILE_BAND_FACTOR`, `sáv_min = (1 − band)/2`.
+A három fekvő mintán:
+
+| fájl | n | sáv | mért cx | mért cy |
+|---|---:|---|---|---|
+| AI8 | 9 | [0.1750089 … 0.8249911] | [0.1765625 … 0.7781245] | [0.2216850 … 0.7872930] |
+| AI9 | 8 | [0.1830359 … 0.8169641] | [0.1856085 … 0.7847145] | [0.1875630 … 0.8160550] |
+| AI10 | 5 | [0.2226148 … 0.7773852] | [0.2241210 … 0.7075200] | [0.2548340 … 0.6650550] |
+
+**9/9, 8/8, 5/5 a sávon belül**, kivétel nélkül — több eset a határon ülve
+(a legszorosabb tartalék **+0,0015**). A képlet ezzel **hat mintán**
+igazolt: álló, négyzetes és fekvő lapon egyaránt.
+
+### A normatíva
+
+1. A szórás **a KÖZÉPPONTOKAT** korlátozza a fenti sávra, tengelyenként.
+2. A csempe **TÉGLALAPJÁRA nincs korlát** — kilóghat, és az eredetiben ki
+   is lóg.
+3. A kézi mozgatás (`moveNode`) **szintén nem szorít be** — az eredeti is
+   engedi.
+4. **Aki beszorítást lát hiánynak, olvassa el ezt a szakaszt**: nem hiány,
+   hanem az eredeti viselkedése. A #1045 → #1094 kör pontosan ezt járta be
+   egyszer már.
+
+### A középpont mértékegysége
+
+A sáv **normalizált lap-egységben** értendő (tengelyenként 0…1), NEM a
+`SHEET_UNITS` 1024-es skáláján. A `.cxf`-ből `x + w/2` és `y + h/2`
+közvetlenül ezt adja.
