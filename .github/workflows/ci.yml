@@ -135,6 +135,42 @@ jobs:
         # jegyre került; a `--cov` helyben változatlanul működik.
         run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4
 
+  # ⚠️ #1164: ÖSSZEFOGÓ ellenőrzés a főág védelmének.
+  #
+  # A #1127 felosztásával a jobok neve `Test (ubuntu-latest 1/4)`-re
+  # változott, a főág védelme viszont a RÉGI nevet (`Test (ubuntu-latest)`)
+  # várja kötelező ellenőrzésként. Az soha nem érkezik meg — minden PR
+  # örökre „Waiting for status to be reported" állapotban ragad.
+  #
+  # Ez a két job a régi NÉVVEL jelent, és csak akkor zöld, ha MIND A NÉGY
+  # darab zöld. Így a védelem beállításához nem kell hozzányúlni, és a
+  # felosztás haszna is megmarad.
+  test-ubuntu:
+    name: Test (ubuntu-latest)
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      - name: A négy ubuntu-darab mind zöld
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "Valamelyik darab elbukott: ${{ needs.test.result }}"
+            exit 1
+          fi
+
+  test-windows:
+    name: Test (windows-latest)
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      - name: A négy windows-darab mind zöld
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "Valamelyik darab elbukott: ${{ needs.test.result }}"
+            exit 1
+          fi
+
   package:
     name: Csomag-tartalom (a felépített wheel)
     runs-on: ubuntu-latest
