@@ -2,17 +2,16 @@
 #
 # Az őr: scripts/check_dead_signals.py (a CI `lint` jobjában fut).
 #
-# Ez a lista a 2026-08-19-i állapotot rögzíti: 26 olyan Qt-jelzés, amit
-# kibocsátunk, de senki nem fogad. Azért van lista, mert az őr bevezetése
-# nem tehette pirosra a main-t az első napon — a 26 tétel javítása külön
-# jegyek dolga.
+# Ez a lista a mindenkori, átvizsgált néma Qt-jelzéseket rögzíti. Azért van
+# lista, mert az őr bevezetése nem tehette azonnal pirosra a main-t; a
+# meglévő tételek javítása külön jegyek dolga.
 #
 # A LISTA CSAK RÖVIDÜLHET:
 #   * ÚJ néma jelzés → az őr bukik. Kösd be (QML-kezelő vagy `.connect`),
 #     vagy töröld a jelzést. Ide felvenni csak akkor szabad, ha a némaság
 #     TUDATOS döntés — és akkor is indoklással.
 #   * A lista HOSSZA sem nőhet: a felső korlát a szkriptben áll
-#     (MAX_BASELINE_ENTRIES), így a 27. tételhez a számot is emelni kell —
+#     (MAX_BASELINE_ENTRIES), ezért új tételhez a számot is emelni kell —
 #     azt pedig a felülvizsgálat látja. Ahogy a lista fogy, vidd lejjebb.
 #   * Ha egy tétel megszűnik némának lenni, a sorát TÖRÖLNI kell: az őr az
 #     elavult bejegyzésre is bukik, hogy a lista ne konzerválja a múltat.
@@ -21,7 +20,7 @@
 # Indoklás nélküli sor HIBA — a néma engedély pontosan az, ami ide nem kell.
 # A fájlút a vizsgált gyökérhez (src/picasapy) képest értendő.
 #
-# A négy tétel, amit a #1003 kézzel is visszaigazolt (a némaság a
+# A #1003 alatt kézzel is visszaigazolt tételek (a némaság a
 # FELHASZNÁLÓT érinti), lentebb „VISSZAIGAZOLT" jelöléssel szerepel.
 
 app/collage_save.py::collageDesktopBackgroundReady #1005 — az „Asztali háttérkép" második fele (BMP + registry) még nincs meg, a kész fájl útját ma senki nem veszi át
@@ -38,11 +37,13 @@ app/face_scan_controller.py::embeddingModelUnavailable #1003 — a hiányzó mod
 app/face_scan_controller.py::embeddingProgress #1003 — a lenyomatolás haladása; felületi folyamatjelző nincs
 app/face_scan_controller.py::embeddingStarted #1003 — a lenyomatolás indulását a felület nem jelzi
 app/face_scan_controller.py::modelUnavailable #1003 — az arcfelismerő modell hiányában némán kikapcsolunk; a felhasználó nem tudja meg, miért nincs találat
+app/face_scan_controller.py::scanCancelled #1003 — a FaceScanController megszakítását a DedupDialog azonos nevű kezelője korábban hamisan elfedte; saját QML-fogadó nincs
+app/face_scan_controller.py::scanFailed #1003 — az arcszkennelés hibáját a DedupDialog azonos nevű kezelője korábban hamisan elfedte; saját QML-fogadó nincs
+app/face_scan_controller.py::scanFinished #1003 — az arcszkennelés eredménye a DedupDialog azonos nevű kezelője miatt hamisan élőnek látszott; saját QML-fogadó nincs
+app/face_scan_controller.py::scanProgress #1003 — az arcszkennelés haladása a DedupDialog azonos nevű kezelője miatt hamisan élőnek látszott; saját QML-fogadó nincs
 app/face_scan_controller.py::scanStarted #1003 — az arcszkennelés indulását a felület nem jelzi
 app/fileops_controller.py::folderMoved #1003 — a mappa áthelyezése után a régi/új utat senki nem veszi át; át kell nézni, kell-e felületi frissítés
 app/import_source_controller.py::sourceScanStarted #1003 — az importforrás vizsgálatának indulását a felület nem jelzi
-app/people_controller.py::personWriteFailed #1003 — VISSZAIGAZOLT: néma ÍRÁSI hiba, a személy mentése elbukhat anélkül, hogy a felhasználó megtudná
-app/perf_controller.py::diagnosticsFolderOpenFailed #1003 — a diagnosztikai mappa megnyitásának hibája elvész, pedig a docstring szerint „nem hal el némán"
 app/photo_ops_controller.py::photoOpFinished #1003 — a fotóművelet vége; ma csak TESZT figyeli (ld. batch_effect_controller.py kommentjét), a felület nem
 app/print_controller.py::printFailed #1003 — a nyomtatás hibaüzenete elvész
 app/print_controller.py::printFinished #1003 — VISSZAIGAZOLT: a nyomtatás befejezéséről (fájl vagy nyomtató neve) a felhasználó nem kap visszajelzést

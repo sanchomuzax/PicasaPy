@@ -85,6 +85,22 @@ class TestRemovePersonFromRows:
         ctl, _library = controller
         assert ctl.removePersonFromRows([0], "") is False
 
+    def test_write_failure_reaches_the_global_error_channel(
+        self, controller, monkeypatch
+    ):
+        """Az írási hiba a Main.qml látható hibasávjáig menő csatornára kerül."""
+        ctl, _library = controller
+        received = []
+        ctl.syncFailed.connect(received.append)
+
+        def _fail(*_args, **_kwargs):
+            raise OSError("a .picasa.ini nem írható")
+
+        monkeypatch.setattr("picasapy.app.people_controller.update_document", _fail)
+
+        assert ctl.removePersonFromRows([0], "Anna") is False
+        assert received == ["a .picasa.ini nem írható"]
+
 
 class TestMovePersonOnRows:
     def test_face_moves_to_the_new_name(self, controller):
