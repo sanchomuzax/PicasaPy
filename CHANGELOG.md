@@ -5,6 +5,26 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.22] – 2026-08-20
+
+### Javítva
+- **⚠️ A kollázsok végre oda kerülnek, ahol a Picasa is keresi őket
+  (#1088).** A PicasaPy és a valódi Picasa eddig **két külön mappába**
+  dolgozott, ezért nem láttad a PicasaPy-ben a Picasával készült
+  kollázsaidat — és fordítva.
+
+  Az ok: a képmappa helyét **kitaláltuk** (a felhasználói mappa +
+  „Pictures"), ahelyett hogy megkérdeztük volna a rendszertől. Windowson
+  viszont **a rendszer dönti el, melyik a képmappa** — és az a döntés
+  követi az átirányítást (nálad OneDrive-ra) és a saját beállításodat is.
+
+  Mostantól a program ugyanazt kérdezi meg, amit az eredeti Picasa:
+  a rendszertől kéri el a képmappát.
+
+  ⚠️ **Ha korábban készítettél kollázst a PicasaPy-vel**, azok a régi
+  helyen maradtak (`…\Pictures\Picasa\Kollázsok`). A program ezentúl az
+  új helyre ír; a régieket kézzel tudod átmásolni, ha kellenek.
+
 ## [0.8.21] – 2026-08-20
 
 ### Javítva
