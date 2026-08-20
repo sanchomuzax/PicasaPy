@@ -43,6 +43,12 @@ from pathlib import Path
 from picasapy.collage import write_collage
 from picasapy.collage.cxf import dumps
 from picasapy.collage.draft import project_from_nodes
+from picasapy.ini.folder_category import (
+    is_projects_category,
+    read_folder_category,
+)
+from picasapy.ini.io import load_document
+from picasapy.scanner import PICASA_INI_NAME
 from picasapy.collage.nodes import CollageNode
 from picasapy.collage.picasa_render import (
     PicasaCollageSettings,
@@ -264,6 +270,54 @@ def _write_pair(target: Path, image, project) -> Path:
 PROJECTS_CATEGORY = "Projects (internal)"
 
 
+def ensure_project_album(folder: Path | str) -> bool:
+    """A kimeneti mappa megjelölése projekt-albumként, HA a mi kollázsaink
+    állnak benne. `True`, ha most írtunk bele.
+
+    ⚠️ #1075: a megjelölést eddig KIZÁRÓLAG a mentés végezte (#1046), tehát
+    visszamenőleg semmi. Ebből két, egymástól független módon lett „eltűnt
+    Kollázsok mappa":
+
+    * a **0.8.8 előtt** készült kollázsok mappájában nincs `.picasa.ini`, és
+      a frissítés nem javította utólag — a felhasználó örökre üres
+      Projekteket látott;
+    * ha az indexelés egyszer elbukott, a mentés-ág némán továbbment, és a
+      mappa soha többé nem került be.
+
+    Ezért fut ez INDULÁSKOR is, a mentéstől függetlenül.
+
+    **A biztonsági szabály:** csak akkor jelölünk meg, ha a mappában
+    tényleg a mi kimenetünk áll — egy `.jpg`, amihez tartozik azonos nevű
+    `.cxf`. Egy tetszőleges képmappát projekt-albumnak jelölni rosszabb
+    volna a hibánál, amit javítunk. A piszkozat-mappa (csak `autosave.cxf`,
+    kép nélkül) sem elég.
+
+    A meglévő kulcsokat a `write_album_ini` megőrzi."""
+    mappa = Path(folder)
+    try:
+        if not mappa.is_dir():
+            return False
+        sajat = any(
+            kep.with_suffix(".cxf").is_file() for kep in mappa.glob("*.jpg")
+        )
+    except OSError:  # pragma: no cover - elérhetetlen hálózati útvonal
+        return False
+    if not sajat:
+        return False
+
+    ini = mappa / PICASA_INI_NAME
+    try:
+        if ini.is_file() and is_projects_category(
+            read_folder_category(load_document(ini))
+        ):
+            return False
+    except (OSError, ValueError):
+        pass  # olvashatatlan ini: inkább írunk, mint hogy némán kihagyjuk
+
+    write_album_ini(mappa, mappa.name)
+    return True
+
+
 def write_album_ini(folder: Path | str, album_name: str) -> Path:
     """A kimeneti mappa `.picasa.ini`-je — ettől látszik a PROJEKTEK alatt.
 
@@ -383,6 +437,7 @@ __all__ = [
     "output_path",
     "PROJECTS_CATEGORY",
     "output_width",
+    "ensure_project_album",
     "write_album_ini",
     "render_collage",
     "render_nodes_of",

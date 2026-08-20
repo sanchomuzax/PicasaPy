@@ -31,6 +31,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
 
 from picasapy.index import open_index, prune_foreign_folders
+from picasapy.index.sync import sync_folder
 from picasapy.scanner import (
     EXCLUDE_FOLDERS_NAME,
     WATCHED_FOLDERS_NAME,
@@ -47,6 +48,7 @@ from .data_location import read_data_root
 from .error_log import error_log_path, install_error_log
 from .compact_controller import CompactController
 from .relocate_controller import RelocateController
+from . import collage_output, collage_prefs
 from .dedup_controller import DedupController
 from .email_controller import EmailController
 from .discovery_controller import DiscoveryController
@@ -108,6 +110,41 @@ def _screen_device_pixel_ratio(app: QGuiApplication) -> float:
     """A elsődleges képernyő devicePixelRatio-ja; hiányzó képernyőnél 1.0."""
     screen = app.primaryScreen()
     return screen.devicePixelRatio() if screen is not None else 1.0
+
+
+def _onjavito_kollazsmappa(conn, settings: QSettings) -> None:
+    """A Kollázsok mappa felvétele az indexbe INDULÁSKOR (#1075).
+
+    A tulajdonos jelentése a v0.8.18-ról: *„nincsen Kollázsok mappa sehol,
+    eltűnt. A Projektek mappa alatt sincsen semmi ismét."*
+
+    A Projektek gyűjtemény két feltételt kér: a mappa legyen az indexben, és
+    a `.picasa.ini`-je hordozza a `P2category`-t. Mindkettőt eddig KIZÁRÓLAG
+    a mentés állította elő (#1046, #1048), tehát visszamenőleg semmi:
+
+    * a 0.8.8 ELŐTT készült kollázsok mappájában nincs `.picasa.ini`, és a
+      frissítés nem javította utólag;
+    * ha az indexelés egyszer elbukott, a mentés-ág némán továbbment, és a
+      mappa soha többé nem került be.
+
+    Ezért fut ez minden induláskor. A megjelölés feltétele szigorú (ld.
+    `ensure_project_album`): csak a MI kimenetünket jelöljük meg.
+
+    A hiba nyelt — egy önjavítási kísérlet soha nem akadályozhatja meg az
+    indulást —, de NAPLÓZVA: a #1075 másik fele éppen az volt, hogy a néma
+    ág miatt vakon álltunk."""
+    try:
+        mappa = collage_output.output_dir(
+            settings.value(collage_prefs.OUTPUT_DIR_KEY)
+        )
+        if not mappa.is_dir():
+            return
+        collage_output.ensure_project_album(mappa)
+        sync_folder(conn, mappa, mappa)
+    except Exception:  # noqa: BLE001 - az indulás soha nem hiúsulhat meg tőle
+        logging.getLogger(__name__).warning(
+            "a Kollázsok mappa indulási felvétele hibára futott", exc_info=True
+        )
 
 
 def _data_dir() -> Path:
@@ -493,6 +530,7 @@ def run(argv: list[str]) -> int:
     try:
         with open_index(data_dir / "index.db") as conn:
             prune_foreign_folders(conn, roots)
+            _onjavito_kollazsmappa(conn, QSettings())
     except sqlite3.DatabaseError:
         # #449: az eredeti sem omlott össze némán és nem javított titokban —
         # FELAJÁNLOTTA a hibanaplót („There were errors loading the Picasa
