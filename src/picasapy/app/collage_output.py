@@ -325,20 +325,25 @@ def ensure_project_album(folder: Path | str) -> bool:
 
     Ezért fut ez INDULÁSKOR is, a mentéstől függetlenül.
 
-    **A biztonsági szabály:** csak akkor jelölünk meg, ha a mappában
-    tényleg a mi kimenetünk áll — egy `.jpg`, amihez tartozik azonos nevű
-    `.cxf`. Egy tetszőleges képmappát projekt-albumnak jelölni rosszabb
-    volna a hibánál, amit javítunk. A piszkozat-mappa (csak `autosave.cxf`,
-    kép nélkül) sem elég.
+    **A biztonsági szabály:** csak akkor jelölünk meg, ha a mappában van
+    **legalább egy `.cxf` ÉS legalább egy `.jpg`**. Egy tetszőleges
+    képmappát projekt-albumnak jelölni rosszabb volna a hibánál, amit
+    javítunk; a csak `.cxf`-et (piszkozat kép nélkül) vagy csak képeket
+    tartalmazó mappa tehát kimarad.
+
+    ⚠️ **Miért nem „azonos nevű pár".** Az első változat azt kérte, hogy a
+    `.jpg`-hez tartozzon AZONOS NEVŰ `.cxf`. A valódi Picasa piszkozata
+    viszont **különböző tövön** áll: a helykitöltő kép a kollázs végleges
+    nevén (`AI10.jpg`), a projektfájl `autosave.cxf` néven. A szigorúbb
+    szabály tehát épp a piszkozatos mappát hagyta volna ki — vagyis azt az
+    esetet, amiről a tulajdonos panaszkodott.
 
     A meglévő kulcsokat a `write_album_ini` megőrzi."""
     mappa = Path(folder)
     try:
         if not mappa.is_dir():
             return False
-        sajat = any(
-            kep.with_suffix(".cxf").is_file() for kep in mappa.glob("*.jpg")
-        )
+        sajat = any(mappa.glob("*.cxf")) and any(mappa.glob("*.jpg"))
     except OSError:  # pragma: no cover - elérhetetlen hálózati útvonal
         return False
     if not sajat:

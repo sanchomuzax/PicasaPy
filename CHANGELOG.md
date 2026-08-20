@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.23] – 2026-08-20
+
+### Hozzáadva
+- **A piszkozat végre LÁTSZIK (#1072).** A „Bezárás" gombra a program eddig
+  csak a projektfájlt mentette el, képet nem — ezért a friss piszkozat
+  **sehol nem jelent meg az indexképek között**, és úgy tűnt, elveszett.
+  (Nem veszett el: minden induláskor fel is ajánlotta a visszaállítást.)
+
+  Mostantól a bezárás a kollázs képét is kiírja, **PISZKOZAT** felirattal —
+  pontosan úgy, ahogy az eredeti Picasa tette —, és a mappát felveszi az
+  indexbe is, hogy a bal hasáb tényleg mutassa. A piszkozatnak egyetlen
+  képe van: ha visszaállítod és újra bezárod, ugyanazt írja felül. Amikor
+  végül lerendereled a kollázst, a végleges kép a helyére lép.
+
 ## [0.8.22] – 2026-08-20
 
 ### Javítva

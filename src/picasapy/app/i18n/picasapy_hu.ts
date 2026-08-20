@@ -1181,6 +1181,10 @@
 <context>
     <name>AppController</name>
     <message>
+        <source>DRAFT</source>
+        <translation>PISZKOZAT</translation>
+    </message>
+    <message>
         <source>The collage project file could not be opened.</source>
         <translation>A kollázs projektfájlja nem nyitható meg.</translation>
     </message>
