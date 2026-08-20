@@ -103,13 +103,65 @@ Ezek **nyitott kérdések**, nem elhallgatott részletek:
    elhalványul, vagy folyamatjelzőt mozgat, **nincs bizonyítva**.
 3. **Élettartam** — mennyi ideig marad kint, eltűnik-e magától,
    újrahasznosul-e egymást követő eseményeknél.
-4. **Az észlelési ág** — a felhasználó szerint akkor is felbukkan, ha a
-   Picasa magától vesz észre új képet vagy mappát. Ehhez a figyelt mappák
-   (`IDS_MAKE_WATCH`) irányából kell tovább ásni; a mostani körben **nem
-   találtam** hozzá tartozó értesítő-szöveget.
+4. ~~**Az észlelési ág**~~ — **MEGVAN a szövege és a mechanizmus is**,
+   ld. lent a „4. ág — új képek észlelése" szakaszt.
 5. **Az események teljes listája** — a `CNotifierPopup` általános tartály;
    hány esemény használja, nincs felmérve. A mostani kör kettőt igazolt
    (képernyőfelvétel, importálás vége).
+
+## 4. ág — új képek észlelése (2026-08-20)
+
+A tulajdonos kérdése — *„valami trigger kell legyen"* — jogos volt, és a
+szövegtár meg is adja a hiányzó értesítő-szöveget:
+
+| kulcs | EN | HU | cím |
+|---|---|---|---|
+| `il_PopupNotifierRec::1` | `%1$d %2$s received` | **`%1$d %2$s érkezett`** | `0x00ca27b0` |
+| `il_PopupNotifierRec::2` | picture | **kép** | `0x00ca2764` |
+| `il_PopupNotifierRec::3` | pictures | **kép** | `0x00ca2788` |
+
+Mindhármat **ugyanaz a függvény** használja (`0x00658340`), és **csak
+ezt a hármat** — tehát ez a függvény kizárólag az „N kép érkezett"
+értesítő-rekordot állítja össze. A `PopupNotifierRec` név is ezt mondja:
+**rekord** a `CNotifierPopup` számára.
+
+Ez az a szöveg, ami a 4. nyitott kérdésből hiányzott: az értesítő nem csak
+képernyőfelvételre és importálásra jön elő, hanem akkor is, ha a program
+**új képeket vesz észre**.
+
+### A mechanizmus: Win32 könyvtár-változás értesítés
+
+A `Picasa3.exe` importtáblája (`referencia/binary-index/imports.csv`) a
+következőket hozza a `KERNEL32.DLL`-ből:
+
+| import | mit ad |
+|---|---|
+| `FindFirstChangeNotificationW` | figyelő-fogantyú egy könyvtárra |
+| `FindNextChangeNotification` | a fogantyú újrafegyverzése egy esemény után |
+| `WaitForMultipleObjects` | több figyelő egyszerre, időkorláttal |
+
+A `FindNextChangeNotification`-t két függvény hívja (`0x007065f0`,
+`0x00706680`); az első egy **`WaitForMultipleObjects`-burkoló** —
+`0xc4039c` a thunk, és a `0x102`-es visszatérést (`WAIT_TIMEOUT`) külön
+ágon kezeli —, tehát a minta a klasszikus **esemény-vezérelt figyelő
+hurok**, nem periodikus újraolvasás.
+
+➡️ **A Picasa tehát nem pollozza a mappát: a rendszertől kap értesítést,
+és arra villantja fel a lebegő sávot.**
+
+*Bizonyítottsági fok: **megerősített** az értesítő-szövegre és arra, hogy a
+három kulcsot egyetlen rekord-építő használja · **megerősített** az
+import-táblára (a három API tényleg használatban van) · **feltételes** az,
+hogy éppen EZ a figyelő táplálja az „N kép érkezett" rekordot: a
+`0x00658340` hívói az indexben nincsenek feloldva, tehát a két oldal
+összekötése dekompilációt kíván.*
+
+⚠️ **Amit ez NEM mond meg:** mit tesz a Picasa egy olyan **idegen** képpel,
+amit a felhasználó másol a figyelt mappába — csak azt tudjuk, hogy
+**észreveszi**. A #1125 döntéséhez (a kollázs felülírja-e a saját
+helykitöltőjét) ezért nem ez a szakasz a bizonyíték, hanem a tulajdonos
+valódi Kollázsok mappájának mérése (11 JPEG + 11 `.cxf`, **nulla**
+párosítatlan fájl).
 
 ## Módszertani megjegyzés
 
