@@ -347,9 +347,23 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         nevet — de a foglalás csak a NYITOTT panelen élt
         (`collageSavedPath`), bezárás után elveszett.
 
+        **A felülírás MÉRT viselkedés**, nem használhatósági döntés: a
+        tulajdonos valódi, EREDETI Picasa által készített Kollázsok
+        mappájában 11 JPEG és 11 `.cxf` áll, és a párosítatlan JPEG-ek
+        száma **NULLA**. Ha az eredeti a helykitöltőt meghagyná és mellé
+        sorszámozna, ott pontosan olyan árva fájlok volnának, mint amilyet
+        a tulajdonos most kapott. A `%s%lu` sorszámozás használatban van
+        (AI → AI1 → AI2…), de csak KÜLÖN kollázsokra, ahol a nevet egy KÉSZ
+        (`.cxf`-fel párosított) kollázs foglalja.
+
         ⚠️ A felismerés a piszkozat-NYILVÁNTARTÁSBÓL megy, nem a névből: a
         „nincs `.cxf` párja" IGAZ egy idegen JPEG-re is, amit a felhasználó
         tett a Kollázsok mappába — azt felülírni ADATVESZTÉS volna.
+
+        ⚠️ **Ez az idegen-fájl védőág a MI döntésünk, nem az eredeti
+        rekonstrukciója.** A 11 mintában ilyen eset NINCS, tehát nem tudjuk,
+        mit tenne a Picasa egy idegen, `.cxf` nélküli JPEG-gel. Óvatosabb
+        irányba tértünk el, szándékosan és kimondva.
 
         Három feltétel EGYÜTT: a nyilvántartott útvonal (a) létezik, (b) a
         célmappában van, és (c) nincs mellette `.cxf` — vagyis időközben nem
