@@ -120,6 +120,27 @@ def _pr_verziot_emel(cmd: str, cwd: str) -> bool:
                for r in reszek)
 
 
+def _vizsgalt_fa(cwd: str) -> str:
+    """A vizsgált munkamásolat és ága — a blokkoló üzenetbe (#1113).
+
+    ⚠️ Enélkül a legdrágább fals riasztásunk vakon hagy: a kapu a
+    MUNKAMENET cwd-jében diffel, ami `cd` nélküli parancsnál a KÖZÖS
+    főmásolat — nem a pusholó session worktree-je. Ha a főmásolat épp
+    verzióemelő ágon áll, a kapu MINDEN session pushát blokkolja, és az
+    üzenet olyan ágról szól, amihez a blokkolt félnek semmi köze.
+
+    2026-08-20-án egy munkamenet ezért futott neki négyszer a SAJÁT ágának,
+    ami végig üres volt. Egy sor megadta volna a választ."""
+    try:
+        ag = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=cwd, capture_output=True, text=True, timeout=10,
+        ).stdout.strip()
+    except Exception:
+        ag = "?"
+    return f"a vizsgált fa: {cwd}   ág: {ag or '?'}"
+
+
 def _blokkolando(cmd: str, cwd: str) -> str | None:
     """A parancs kiadási lépés-e; ha igen, rövid indok, ha nem, None."""
     if FELOLDO in cmd:
@@ -146,14 +167,21 @@ def main() -> int:
         cwd = adat.get("cwd") or os.getcwd()
     except Exception:
         return 0  # fail-open: rossz bemenet nem blokkolhat
+    fa = _munkakonyvtar(cmd, cwd)
     try:
-        indok = _blokkolando(cmd, _munkakonyvtar(cmd, cwd))
+        indok = _blokkolando(cmd, fa)
     except Exception:
         return 0  # fail-open: elromlott kapu nem akaszthat meg munkát
     if indok is None:
         return 0
     sys.stderr.write(
         "[Kiadás-kapu] BLOKKOLVA: " + indok + ".\n"
+        + _vizsgalt_fa(fa) + "\n"
+        "⚠️ Ha ez NEM a te munkamásolatod: a kapu a munkamenet cwd-jében\n"
+        "néz diffet, ami `cd` nélküli parancsnál a KÖZÖS főmásolat. Ha az\n"
+        "épp verzióemelő ágon áll, a kapu a TE pushodat is blokkolja (#1113).\n"
+        "Ilyenkor NE a feloldó jelölőt keresd: szólj az integrátornak, hogy\n"
+        "tegye vissza a főmásolatot `main`-re.\n"
         "A kiadás visszavonhatatlan, ezért csak az integrátor session adhatja\n"
         "ki, a teljes ceremónia után (code review -> zöld CI -> éles próba).\n"
         "Ha sub-agent vagy: ÁLLJ LE, és jelentsd a hívónak, hogy a munkád\n"
