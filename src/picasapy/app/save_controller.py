@@ -116,9 +116,26 @@ class SaveMixin(BackgroundWorkerMixin):
         """
         from picasapy.edit.save import ORIGINALS_DIR_NAME
 
+        # ⚠️ #1146: MAPPÁNKÉNT nézünk a lemezre, nem képenként. A régi ág
+        # soronként hívott `is_dir()`-t ÉS `glob()`-ot — 2 002 soros
+        # kijelölésnél 10 010 `stat()` EGYETLEN billentyűleütésre. A
+        # tulajdonos gyűjteménye hálózati megosztáson van, ahol minden
+        # `stat()` egy hálózati kör: ott ez nem lassulás, hanem fagyás.
+        #
+        # Egy mappa `.picasaoriginals`-át elég EGYSZER kilistázni; a
+        # tőnevek halmazából utána memóriából válaszolunk.
+        tovek: dict[str, set[str]] = {}
         for record in self._selected_records(rows):
-            folder = Path(record.folder_path) / ORIGINALS_DIR_NAME
-            if folder.is_dir() and any(folder.glob(f"{Path(record.name).stem}*")):
+            mappa = str(record.folder_path)
+            if mappa not in tovek:
+                konyvtar = Path(mappa) / ORIGINALS_DIR_NAME
+                tovek[mappa] = (
+                    {p.name for p in konyvtar.glob("*")}
+                    if konyvtar.is_dir()
+                    else set()
+                )
+            to = Path(record.name).stem
+            if any(nev.startswith(to) for nev in tovek[mappa]):
                 return True
         return False
 
