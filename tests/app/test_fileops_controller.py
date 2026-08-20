@@ -177,6 +177,17 @@ class TestTrashAvailableFor:
 
 
 class TestRevealPhoto:
+    """#1104: ez az osztály a LINUX ágat írja le.
+
+    ⚠️ A rögzítés SZŰK: modul-szinten `autouse`-ként a windows-CI-lábon
+    mást tört el (a `sys.platform` linuxra állítása miatt egy másik teszt
+    `os.uname()`-et hívott, ami Windowson nincs). A tanulság: a
+    platform-hamisítás akkora hatókörű legyen, amekkorát tényleg állít."""
+
+    @pytest.fixture(autouse=True)
+    def _linux(self, monkeypatch):
+        monkeypatch.setattr("picasapy.fileops.reveal.sys.platform", "linux")
+
     def test_calls_xdg_open_on_parent_folder(self, controller, tmp_path, monkeypatch):
         calls = []
 

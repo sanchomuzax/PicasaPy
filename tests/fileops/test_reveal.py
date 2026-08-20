@@ -11,6 +11,16 @@ import pytest
 from picasapy.fileops import reveal_in_file_manager
 
 
+@pytest.fixture(autouse=True)
+def _linux(monkeypatch):
+    """#1104: a viselkedés platformfüggő lett — ez a fájl a LINUX ágat írja le.
+
+    A windowsos/macOS-es ágat a `test_reveal_platform_1104.py` állítja. A
+    rögzítés nélkül ez a fájl a windows-CI-lábon elbukna, holott a linuxos
+    szerződés változatlan."""
+    monkeypatch.setattr("picasapy.fileops.reveal.sys.platform", "linux")
+
+
 class TestRevealInFileManager:
     def test_opens_parent_folder(self, tmp_path, monkeypatch):
         calls = []
