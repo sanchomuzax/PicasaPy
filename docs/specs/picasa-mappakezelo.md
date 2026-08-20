@@ -932,6 +932,64 @@ formátumra, a parszer előtag-vizsgálatára és a valódi mintaadatra ·
 
 ---
 
+### 11.5 Mi történik a MÁR BEOLVASOTT képekkel az „Eltávolítás" után (M2)
+
+**A képek NEM törlődnek.** A mappa adatbázis-rekordja egy **sírkő-tokent**
+kap: **`]album:removed`**.
+
+A rutin a `0x004b9200` (254 bájt), amit **két** helyről hívnak: az
+OK-alkalmazó (`0x005cef20`) és a Mappakezelőt megnyitó / mappát eltávolító
+`0x005ce590`.
+
+```c
+// 0x004b9200(this /*eax*/, utvonallista /*[esp+8]*/)
+// — kritikus szakasszal vedett es UJRABELEPO (GetCurrentThreadId + szamlalo,
+//   ugyanaz a minta, mint a scanlist.txt-nel)
+for (i = 0; i < lista.darab; ++i) {
+    ha = 0x441cd0(this->db /*[esi+0xc4]*/, &lista[i], &id);  // 0x004b926a
+    if (ha != 0) continue;                                   // nincs ilyen mappa
+    [db+0x48]->vt[0](id, 0);                                 // 0x004b9288
+    0x00444990(db, id, "]album:removed");                    // 0x004b9297
+}
+```
+
+A `0x00444990` (1343 b) a **token-hozzáadó**: ugyanaz a rutin, amivel egy
+**album létrejön** (`0x0055d120`-ból is hívják) — vagyis az eltávolítás a
+Picasa saját album-token-rendszerét használja, nem külön törlési utat.
+
+#### Élő adat a repóból
+
+`research/testdata/Picasa2/db3/albumdata_token.pmp` (93 958 bájt) — a
+fotó→token tábla valódi tartalma:
+
+| token | darab |
+|---|---:|
+| `]album:<32 hexa uid>` | **2346** |
+| `]history:email`, `]history:upload` | 2 |
+| `]screensaver`, `]search`, `]star`, `]updated`, `]unknownface` | 1–1 |
+| **`]album:removed`** | **0** |
+
+**A mechanizmus tehát igazolt** (a `]`-tokenek valóban a `*.pmp`
+táblában élnek), a konkrét `]album:removed` viszont **ebben a mintában
+nem fordul elő** — ez a felhasználó nem távolított el mappát.
+*(Ugyanez a tábla azt is megmutatja, hogy az `]history:export` sem
+szerepel benne, csak az `]history:email` és `]history:upload` — ld.
+`export-parbeszed.md` 9/7.)*
+
+> **Amit ez a PicasaPy-nak jelent:** az „Eltávolítás a Picasából" nem
+> destruktív. Nálunk a `controller.removeFolder(path)` **tényleges
+> viselkedését** ehhez kell mérni: a képeknek az indexben kell
+> maradniuk, csak a mappa kap egy „eltávolított" jelölést. Ha ma
+> törlünk, az adatvesztés a felhasználó szemszögéből (a címkék, arcok,
+> szerkesztések a rekordhoz tartoznak).
+
+*Bizonyítottsági fok: **megerősített** a mechanizmusra (a rutin minden
+utasítása, a két hívó, a token-hozzáadó azonossága az albumkészítővel) ·
+**megerősített** arra, hogy a `]`-tokenek a `*.pmp` táblában élnek (valódi
+adat) · **nincs mintánk** magára a `]album:removed`-ra.*
+
+---
+
 ## 12. Ami NYITVA marad
 
 *(Az iPhoto / Apple Photos ág **szándékosan kívül van a hatókörön** —
@@ -944,10 +1002,9 @@ megépítését, de mindegyikhez döntés kell:
 1. **A rádió → lista-szakasz megfeleltetés.** A három fájl, a három
    formátum és a parszer megvan (12.), a rádiógombtól a kiíróig vezető út
    (`0x007c4df0` → `0x005cef20` / `0x007bfec0` / `0x005088f0`) **nincs**.
-2. **Mi történik a MÁR BEOLVASOTT képekkel az „Eltávolítás a Picasából"
-   után?** A `]album:removed` token (`0x004b9200`) és a `Picasa2Albums`
-   adatbázis-út (`0x00419c30`) megvan; hogy a képek kikerülnek-e az
-   indexből vagy csak elrejtődnek, **nincs kimérve**.
+2. ~~Mi történik a már beolvasott képekkel az „Eltávolítás" után?~~ —
+   **LEZÁRVA** (11.5): nem törlődnek, a mappa `]album:removed` sírkő-tokent
+   kap (`0x004b9200`).
 3. **Az OK utáni újraolvasás.** Az `IDS_SETTING_UP_WATCHED` („Figyelt
    mappák beállítása") létezik a Win32 sztringtáblában, de **hívási helye
    nincs meg** — az `IDS_*` sztringeket azonosítóval tölti be a program,
