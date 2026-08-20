@@ -41,6 +41,7 @@ félrevezető ENOSPC-hibával."""
 from __future__ import annotations
 
 import concurrent.futures
+import json
 import os
 import shutil
 import subprocess
@@ -48,6 +49,18 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+
+# ⚠️ A windowsos konzol alapértelmezett kódlapja (cp1252) NEM ismeri a
+# magyar `ő` és `ű` betűket — egy `print()` rajtuk `UnicodeEncodeError`-rel
+# elhasal, és a JOB azonnal elbukik, még mielőtt egyetlen teszt elindulna.
+# (#1127: pontosan ez buktatta el mind a négy windows-darabot.)
+#
+# A megoldás nem a betűk kerülése — az minden jövőbeli magyar sorra
+# ráterhelné a szerzőt —, hanem az UTF-8 kimenet. Az `errors="replace"`
+# a végső védőháló: kiírni akkor is tudjunk, ha a cél mégsem bírja.
+for _folyam in (sys.stdout, sys.stderr):
+    if hasattr(_folyam, "reconfigure"):
+        _folyam.reconfigure(encoding="utf-8", errors="replace")
 
 _ROOT = Path(__file__).resolve().parents[1]
 _NON_APP_TIMEOUT_S = 300
@@ -311,6 +324,66 @@ def _bejelentkezes() -> None:
         )
 
 
+def _shard_parameter(argv: list[str]) -> tuple[int, int]:
+    """A `--shard i/N` értelmezése; hiányában `(1, 1)` = a teljes készlet.
+
+    ⚠️ Ez NEM a gépen belüli párhuzamosítás (#1030/#1031: az CPU-éhezésben
+    pirosra vitte a főágat, vissza kellett venni). Itt minden darab SAJÁT
+    futtatón fut, magában — a fájlonkénti izoláció (#53) és a `/tmp`-korlát
+    (#677) garanciái érintetlenek."""
+    for i, arg in enumerate(argv):
+        ertek = None
+        if arg == "--shard" and i + 1 < len(argv):
+            ertek = argv[i + 1]
+        elif arg.startswith("--shard="):
+            ertek = arg.split("=", 1)[1]
+        if ertek is None:
+            continue
+        sorszam, _, darab = ertek.partition("/")
+        try:
+            sorszam_i, darab_i = int(sorszam), int(darab)
+        except ValueError:
+            raise SystemExit(f"Hibás --shard érték: {ertek!r} (várt: i/N)") from None
+        if not (1 <= sorszam_i <= darab_i):
+            raise SystemExit(f"Hibás --shard tartomány: {ertek!r}")
+        return sorszam_i, darab_i
+    return 1, 1
+
+
+def _kiegyensulyozott_darab(
+    egysegek: list[str], sorszam: int, darab: int
+) -> set[str]:
+    """A `sorszam.` darabhoz tartozó egységek — MÉRT idők szerint kiosztva.
+
+    Mohó kiosztás: a leghosszabb egység megy mindig a legkevésbé terhelt
+    darabba. Enélkül a darabok egyenetlenek, és a leglassabb határozza meg a
+    kör végét — a felosztás fele haszna elveszne.
+
+    Ismeretlen egységre a MEDIÁN időt vesszük, nem nullát: egy új tesztfájl
+    így nem torzítja a kiosztást azzal, hogy „ingyen van"."""
+    if darab <= 1:
+        return set(egysegek)
+    idok = _mert_idok()
+    ismert = sorted(idok[nev] for nev in egysegek if nev in idok)
+    median = ismert[len(ismert) // 2] if ismert else 1.0
+    terhelés = [0.0] * darab
+    kiosztas: list[list[str]] = [[] for _ in range(darab)]
+    for nev in sorted(egysegek, key=lambda n: -idok.get(n, median)):
+        cel = min(range(darab), key=lambda i: terhelés[i])
+        kiosztas[cel].append(nev)
+        terhelés[cel] += idok.get(nev, median)
+    return set(kiosztas[sorszam - 1])
+
+
+def _mert_idok() -> dict[str, float]:
+    """A commitolt futásidő-térkép; hiányában üres (minden egység medián)."""
+    ut = _ROOT / "scripts" / "teszt_idok.json"
+    try:
+        return json.loads(ut.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     cov = "--cov" in argv
@@ -324,33 +397,58 @@ def main(argv: list[str] | None = None) -> int:
 
     _bejelentkezes()
     _takarits_regi_maradekot()
+    sorszam, darab = _shard_parameter(argv)
     basetemp = Path(tempfile.mkdtemp(prefix=_TEMP_ELOTAG, dir=_TEMP_GYOKER))
     try:
-        return _futtat(cov, basetemp)
+        return _futtat(cov, basetemp, sorszam=sorszam, darab=darab)
     finally:
         # a takarítás nem függhet attól, zöld volt-e a futás, és attól sem,
         # hogy megszakították-e (#677)
         shutil.rmtree(basetemp, ignore_errors=True)
 
 
-def _futtat(cov: bool, basetemp: Path) -> int:
-    """A tényleges részfutás-sorozat; a basetemp életciklusa a hívóé."""
+#: A nem-app készlet egyetlen egységként szerepel a kiosztásban.
+_NEM_APP = "tests --ignore=tests/app"
+
+
+def _futtat(
+    cov: bool, basetemp: Path, *, sorszam: int = 1, darab: int = 1
+) -> int:
+    """A tényleges részfutás-sorozat; a basetemp életciklusa a hívóé.
+
+    `darab > 1` esetén CSAK a `sorszam.` darabhoz kiosztott egységek futnak
+    — a többi darabot másik futtató viszi (#1127)."""
     failures: list[tuple[str, int]] = []
 
-    returncode = _run_pytest(
-        ["tests", "--ignore=tests/app"], _NON_APP_TIMEOUT_S, cov=cov, basetemp=basetemp
+    app_dir = _ROOT / "tests" / "app"
+    app_test_files = sorted(app_dir.glob("test_*.py")) + sorted(
+        (app_dir / "qml_functional").glob("test_*.py")
     )
-    if returncode != 0:
-        failures.append(("tests (tests/app nélkül)", returncode))
+    egysegek = [_NEM_APP] + [str(p.relative_to(_ROOT)) for p in app_test_files]
+    enyem = _kiegyensulyozott_darab(egysegek, sorszam, darab)
+    if darab > 1:
+        print(
+            f"Darab {sorszam}/{darab}: {len(enyem)} egység a {len(egysegek)}-ből.",
+            flush=True,
+        )
+
+    if _NEM_APP in enyem:
+        returncode = _run_pytest(
+            ["tests", "--ignore=tests/app"],
+            _NON_APP_TIMEOUT_S,
+            cov=cov,
+            basetemp=basetemp,
+        )
+        if returncode != 0:
+            failures.append(("tests (tests/app nélkül)", returncode))
 
     # a tests/app közvetlen fájljai + a tests/app/qml_functional/ alattiak
     # (#155: a korábbi test_qml_functional.py szétbontásából) — mindegyik
     # KÜLÖN processzben, hogy egy fájlon belüli sok engine-életciklus se
     # torlódjon egyetlen processzbe.
-    app_dir = _ROOT / "tests" / "app"
-    app_test_files = sorted(app_dir.glob("test_*.py")) + sorted(
-        (app_dir / "qml_functional").glob("test_*.py")
-    )
+    app_test_files = [
+        p for p in app_test_files if str(p.relative_to(_ROOT)) in enyem
+    ]
     if _PARHUZAM > 1:
         failures += _app_fajlok_parhuzamosan(app_test_files, cov=cov, basetemp=basetemp)
     else:

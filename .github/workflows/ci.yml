@@ -34,7 +34,7 @@ concurrency:
 
 jobs:
   test:
-    name: Test (${{ matrix.os }})
+    name: Test (${{ matrix.os }} ${{ matrix.shard }}/4)
     runs-on: ${{ matrix.os }}
     # Korlát nélkül egy beragadt (#53 GIL-deadlock) pytest 6 órán át
     # foglalná a runnert, és eldugítaná a teljes Actions-sort (2026-07-19-en
@@ -54,6 +54,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        # #1127: a készletet NÉGY futtatóra osztjuk platformonként. A
+        # kiosztás mért futásidők szerint megy (`scripts/teszt_idok.json`),
+        # ezért a négy darab egyenlő — mérve 732/732/732/732 mp, arány 1,00×.
+        #
+        # ⚠️ Ez NEM a gépen belüli párhuzamosítás. Azt 2026-08-19-én
+        # kipróbáltuk (#1030/#1031), és CPU-éhezésben a főágat pirosra vitte
+        # — vissza kellett venni (#1037/#1038). Itt minden darab SAJÁT
+        # futtatón fut, magában: a fájlonkénti izoláció (#53) és a
+        # `/tmp`-korlát (#677) garanciái érintetlenek.
+        shard: [1, 2, 3, 4]
     env:
       QT_QPA_PLATFORM: offscreen
 
@@ -117,7 +127,13 @@ jobs:
         # ingadozó CI rosszabb a lassú, de megbízhatónál.
         #
         # Visszakapcsolni csak a #988/#999 gyökérokának javítása UTÁN szabad.
-        run: python scripts/run_tests.py ${{ runner.os == 'Linux' && '--cov' || '' }}
+        #
+        # ⚠️ #1127: a `--cov` KIKERÜLT a CI-ből. Négy darabra osztva minden
+        # darab csak a SAJÁT részét látná, tehát a kiírt szám nem a teljes
+        # lefedettség volna — egy részleges számot totálként mutatni
+        # rosszabb, mint nem mutatni semmit. A lefedettség-mérés külön
+        # jegyre került; a `--cov` helyben változatlanul működik.
+        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4
 
   package:
     name: Csomag-tartalom (a felépített wheel)
