@@ -155,7 +155,20 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 4. **A buboréksúgó rajza** — saját osztály (`ytToolTip`), de nincs hozzá
    képréteg; a háttér/keret/árnyék kódból jön (#901)
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 5 kérdés
+### [picasa-elso-inditas.md](picasa-elso-inditas.md) — 3 kérdés
+
+*(Új lap, 2026-08-21: az első indítás `initialscan` panelje — két
+szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rádió,
+**rejtett Mégse**. Jegy: **#1167**. Egyik kérdés sem igényel futó Picasát.)*
+
+1. **Mit ír a két rádió** (`0x005b77c0`)? A „Search my whole computer"
+   a `scanlist.txt` `+` szakaszába a meghajtó-gyökereket teszi-e?
+2. **Mi dönti el, melyik szövegkészlet** (`Text1` migráció / `Text2`
+   tiszta telepítés) jelenik meg — a „van-e korábbi Picasa" vizsgálat helye.
+3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
+   történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
+
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 4 kérdés
 
 *(A lap 2026-08-20-án készült, a tulajdonos két képernyőképéből és a
 binárisból. A kör négy kérdést tett fel és kettőt le is zárt — a
@@ -289,6 +302,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [picasa-nyomtatas.md](picasa-nyomtatas.md) | A nyomtatás — panel (61 elem), 17 méret, beállítások |
 | [picasa-email-kuldes.md](picasa-email-kuldes.md) | E-mail-küldés — választó, beépített Gmail-szerkesztő, beállítások |
 | [picasa-importalas.md](picasa-importalas.md) | Az importálás panelje — tipp-sor, kártyatörlés-figyelmeztetés, hibák |
+| [picasa-elso-inditas.md](picasa-elso-inditas.md) | **Az első indítás `initialscan` panelje** — migrációs és tiszta-telepítés változat, geometria, a kihagyhatatlan választás |
 | [picasa-mappakezelo.md](picasa-mappakezelo.md) | **A Mappakezelő TELJES specifikációja** — elrendezés és tervezővászon-geometria, az átméretezés szabályai (`winsize` → `SC_SIZE`), a fa és az öröklődő állapot, a három rádió, az arcfelismerés-kapcsoló, a három figyelmeztetés, az OK/Mégse delta-szemantikája, a Súgó URL-je |
 | [picasa-lebego-ertesito.md](picasa-lebego-ertesito.md) | A lebegő értesítősáv (`CNotifierPopup`) — képernyőfelvétel- és import-értesítés, kattintás-viselkedés; a geometria és az animáció NYITOTT |
 | [vorosszem-eszkoz-terve.md](vorosszem-eszkoz-terve.md) | A vörösszem-eszköz terve |
