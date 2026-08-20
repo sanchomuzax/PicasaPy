@@ -171,6 +171,40 @@ mert senki nem nézte meg a `runtime/` mappa XML-jeit.
 át az alkalmazás konfigurációs és definíciós fájljait** (`*.xml`, `*.ini`,
 `*.txt`, `*.fen`, `*.ui`). Amit az app magának deklarál, azt nem kell kitalálni.
 
+### 8.1 A `.fen` — a PÁRBESZÉDEK hiteles leírója (ne a binárisból indulj)
+
+A `runtime/` alatt **~40 `.fen` fájl** van: a Picasa párbeszédeinek
+**deklaratív leírói**. Egy `.fen` megadja az ablakot, a vezérlőket, a
+neveiket, a méretezésüket és a **kötéseiket** — vagyis pontosan azt, amit
+egyébként órákig fejtenénk vissza gépi kódból.
+
+Ilyen egyetlen sor a `export.fen`-ből, ami egy egész vezérlőt megmagyaráz:
+
+```xml
+<edit width="4em" name="sizetext" filter="digits">
+  <bind source="size" attr="title" list="320|480|640|800|1024|1200|1600"/>
+</edit>
+```
+
+Innen kiolvasható, hogy a számmező **csak számjegyet fogad**, és hogy a
+mellette lévő hét fogású csúszka melyik hét értéket adja — mérés nélkül.
+
+**A szabály, amit ebből le kell szűrni:**
+
+> **Ha a kérdés egy PÁRBESZÉDRŐL szól, a `.fen` az első lépés — nem a
+> string-index, és semmiképp nem a dekompiláció.**
+
+A bináris ezután **kiegészítő**, nem kiindulás: azt adja hozzá, amit a
+`.fen` nem tud — a **számértékeket** és a **beállítás-kulcsokat**. A
+2026-08-20-i export-kör pontosan így állt össze: a `.fen` adta a 28
+feliratot, a szerkezetet és a kötéseket, a bináris pedig az öt
+minőség-fokozat konkrét számát (`0x00739ef4` ugrótáblája).
+
+**Amit a `.fen` NEM ad meg:** a konkrét számértékeket a kötések mögött, a
+`Preferences`-kulcsok neveit, és a futásidejű ágakat (mikor tiltott egy
+vezérlő). Ezekért kell a binárishoz nyúlni — de már **célzottan**, a
+`.fen`-ből ismert vezérlőnévvel keresve.
+
 ---
 
 ## 9. PE-erőforrás-fa — a szabványos réteg
