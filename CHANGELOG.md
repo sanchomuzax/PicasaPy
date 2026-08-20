@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.26] – 2026-08-20
+
+### Javítva
+- **⚠️ A Picasával készült kollázsaid képei végre betöltődnek (#1096).** A
+  Picasa a projektfájlba nem teljes útvonalat ír, hanem egy rövidített
+  alakot (`$My Pictures\…`), amit mi szó szerint próbáltunk fájlnévként
+  megnyitni — ezért a régi kollázsaidban **egyetlen kép sem jelent meg**,
+  és a hiba **néma** volt: csak üres csempéket láttál.
+
+  Mostantól feloldjuk a rövidített alakot a rendszer szerinti képmappára,
+  és mentéskor mi is ezt írjuk — így a fájljaink akkor is jók maradnak, ha
+  a képmappád máshova kerül. A hálózati (`$UNC`) alakot felismerjük, de nem
+  bontjuk fel: ott látható helykitöltő csempe jelenik meg üres hely helyett.
+
+  A kollázs **háttérképe** ugyanezen a leképezésen megy át, tehát az eredeti
+  Picasa fájljain sem esik vissza sima színre.
+
 ## [0.8.25] – 2026-08-20
 
 ### Belső
