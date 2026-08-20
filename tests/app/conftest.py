@@ -93,6 +93,10 @@ def qml_app(qt_app, tmp_path):
     from picasapy.thumbs import ThumbnailCache
     from picasapy.version import version_string
     from PySide6.QtCore import QSettings
+    from picasapy.app.worker_thread import (
+        running_background_workers,
+        wait_for_all_background_workers,
+    )
     from PySide6.QtQml import QQmlApplicationEngine
 
     from support.jpeg_factory import make_jpeg
@@ -197,13 +201,13 @@ def qml_app(qt_app, tmp_path):
     # #438: minden nyilvántartott daemon-szál bevárása, AMÍG a controllerek
     # még élnek — a #430 SIGSEGV-osztály elkerülése (ld.
     # picasapy.app.worker_thread.BackgroundWorkerMixin).
-    for bg_controller in (
-        controller,
-        discovery_controller,
-        dedup_controller,
-        folder_tree_controller,
-        import_source_controller,
-    ):
-        assert bg_controller.waitForBackgroundWorkers(30.0), (
-            "háttérszál nem állt le a qml_app teardownban (#430/#438)"
-        )
+    # #988/#999: EGY hívás vár be MINDEN nyilvántartott háttérmunkát — a
+    # folyamat összes `_start_background`-szálát és a bejelentkezett
+    # `QThreadPool`-okat. Korábban itt egy KÉZZEL FELSOROLT controller-lista
+    # állt, és elcsúszott: a fixture által létrehozott `EditController`,
+    # `FaceScanController` és a két bélyegkép-szolgáltató pool-ja kimaradt
+    # belőle. Ebből lett két, véletlenszerűen pirosló SIGSEGV a CI-ben.
+    assert wait_for_all_background_workers(30.0), (
+        "háttérmunka nem állt le a teardownban (#430/#438/#988/#999): "
+        + ", ".join(running_background_workers())
+    )

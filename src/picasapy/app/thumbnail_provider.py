@@ -39,6 +39,7 @@ from picasapy.edit.session import EditSession
 from picasapy.index import PhotoRecord
 from picasapy.ini.filters import serialize_filters
 from picasapy.thumbs import ThumbnailCache
+from .worker_thread import register_pool_owner
 
 # #151/7: közös konstans — az edit-előnézet provider is ezt importálja,
 # hogy a placeholder-szürke egyetlen helyen legyen definiálva.
@@ -189,6 +190,10 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
             if max_threads is not None
             else min(_MAX_RENDER_THREADS, os.cpu_count() or 1)
         )
+        # #988/#999: a pool bejelentkezik a folyamat-szintű bevárásba,
+        # hogy a lebontás ne felejthesse el (a `QRunnable`-ök ugyanúgy
+        # Qt-objektumokat érnek el, mint a daemon-szálak — #430)
+        register_pool_owner(self)
 
     def register_photos(self, photos: tuple[PhotoRecord, ...]) -> None:
         """#142: a regisztráció csak a (immutábilis) rekordokat jegyzi meg —

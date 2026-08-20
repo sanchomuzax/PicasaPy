@@ -54,6 +54,7 @@ from picasapy.ini.filters import FilterOp
 from picasapy.render import apply_filters
 
 from .thumbnail_provider import PLACEHOLDER_COLOR
+from .worker_thread import register_pool_owner
 
 if TYPE_CHECKING:
     from picasapy.index import PhotoRecord
@@ -261,6 +262,10 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
             if max_threads is not None
             else min(_MAX_RENDER_THREADS, os.cpu_count() or 1)
         )
+        # #988/#999: a pool bejelentkezik a folyamat-szintű bevárásba,
+        # hogy a lebontás ne felejthesse el (a `QRunnable`-ök ugyanúgy
+        # Qt-objektumokat érnek el, mint a daemon-szálak — #430)
+        register_pool_owner(self)
 
     def requestImageResponse(self, id_str: str, requested_size) -> _EffectThumbResponse:
         """Aszinkron belépési pont (a Qt a főszálon hívja): a munka a

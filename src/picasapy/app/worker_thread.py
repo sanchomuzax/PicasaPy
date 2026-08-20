@@ -34,10 +34,79 @@ from __future__ import annotations
 
 import threading
 import time
+import weakref
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 from .busy_registry import get_app_busy_registry
+
+#: **FOLYAMAT-SZINTŰ szál-nyilvántartás (#988/#999).** A példányonkénti
+#: `_bg_workers` halmaz mellett minden `_start_background` ide is
+#: bejelentkezik. Ok: a lebontásért felelős fél (teszt-fixture,
+#: alkalmazás-kilépés) eddig **kézzel felsorolta**, mely controllereket vár
+#: be — és a lista elcsúszott. A `qml_functional/conftest.py` öt controllert
+#: várt be, miközben a fixture ennél többet hozott létre (`EditController`,
+#: `FaceScanController`), a két `QThreadPool`-os szolgáltatót pedig
+#: egyáltalán nem. Ebből lett két, véletlenszerűen pirosló CI-bukás.
+#:
+#: Ez a halmaz azért folyamat-szintű, hogy **ne lehessen elfelejteni**: aki
+#: a mixinen át indít szálat, automatikusan fedve van, a jövőbeli
+#: controllerek is.
+_ALL_WORKERS: set[threading.Thread] = set()
+_ALL_WORKERS_LOCK = threading.Lock()
+
+
+@runtime_checkable
+class PoolOwner(Protocol):
+    """Saját `QThreadPool`-t tartó objektum (bélyegkép-szolgáltatók)."""
+
+    def wait_for_done(self, msecs: int = ...) -> bool: ...
+
+
+#: A `QThreadPool`-t tartó szolgáltatók — GYENGE hivatkozással, hogy a
+#: nyilvántartás ne tartsa életben őket (a tesztek sok példányt hoznak
+#: létre). A `QRunnable`-ök ugyanúgy Qt-objektumokat érnek el, mint a
+#: daemon-szálak, tehát ugyanaz a #430-as osztály fenyegeti őket.
+_POOL_OWNERS: "weakref.WeakSet[PoolOwner]" = weakref.WeakSet()
+
+
+def register_pool_owner(owner: PoolOwner) -> None:
+    """Bejelentkezés a folyamat-szintű bevárásba (`wait_for_done`-nal).
+
+    A `QThreadPool`-t tartó osztályok a `__init__`-jükben hívják — így a
+    `wait_for_all_background_workers` rájuk is vár, anélkül hogy bárkinek
+    fel kellene sorolnia őket."""
+    _POOL_OWNERS.add(owner)
+
+
+def running_background_workers() -> tuple[str, ...]:
+    """A még futó, nyilvántartott háttérszálak nevei (hibaüzenethez)."""
+    with _ALL_WORKERS_LOCK:
+        return tuple(w.name or "<névtelen>" for w in _ALL_WORKERS if w.is_alive())
+
+
+def wait_for_all_background_workers(timeout_s: float = 30.0) -> bool:
+    """MINDEN nyilvántartott háttérmunka bevárása — szálak és pool-ok.
+
+    Egyetlen hívás, ami a folyamat összes `_start_background`-szálát és
+    minden bejelentkezett `QThreadPool`-t bevár. A lebontásért felelős fél
+    ezt hívja, **amíg a controllerek még élnek** (#430/#438) — így a
+    bevárandók listája nem csúszhat el a valósághoz képest.
+
+    `True`, ha a keretidőn belül minden leállt."""
+    deadline = time.monotonic() + timeout_s
+    mind_leallt = True
+    with _ALL_WORKERS_LOCK:
+        workers = tuple(_ALL_WORKERS)
+    for worker in workers:
+        worker.join(max(0.0, deadline - time.monotonic()))
+        if worker.is_alive():
+            mind_leallt = False
+    for owner in tuple(_POOL_OWNERS):
+        remaining_ms = int(max(0.0, deadline - time.monotonic()) * 1000)
+        if not owner.wait_for_done(remaining_ms):
+            mind_leallt = False
+    return mind_leallt
 
 
 class BackgroundWorkerMixin:
@@ -87,10 +156,15 @@ class BackgroundWorkerMixin:
                 target(*args, **(kwargs or {}))
             finally:
                 workers.discard(thread)
+                # #988/#999: a folyamat-szintű nyilvántartásból is
+                with _ALL_WORKERS_LOCK:
+                    _ALL_WORKERS.discard(thread)
                 registry.end()
 
         thread = threading.Thread(target=_run, name=name, daemon=True)
         workers.add(thread)
+        with _ALL_WORKERS_LOCK:
+            _ALL_WORKERS.add(thread)
         try:
             thread.start()
         except BaseException:
@@ -99,6 +173,8 @@ class BackgroundWorkerMixin:
             # `begin()` párját ilyenkor itt kell megadni, különben a kék csík
             # örökre pörögne, a halmazban pedig egy halott szál ragadna bent.
             workers.discard(thread)
+            with _ALL_WORKERS_LOCK:
+                _ALL_WORKERS.discard(thread)
             registry.end()
             raise
         return thread
