@@ -326,6 +326,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                 target,
                 album_title=self._collage_panel_title,
                 background_image=background_image,
+                format_key=self._collage_panel_format,
                 should_cancel=self._rendered_now_writing,
             )
         except (ValueError, OSError) as error:
@@ -393,6 +394,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                     self._render_settings(),
                     album_title=self._collage_panel_title,
                     background_image=self._background_image_for_cxf(),
+                    format_key=self._collage_panel_format,
                 ),
             )
         except (OSError, ValueError) as hiba:

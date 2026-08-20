@@ -52,6 +52,7 @@ from collections.abc import Sequence
 from .cxf import CxfBackground, CxfNode, CxfProject
 from .nodes import SHEET_UNITS, CollageNode
 from .picasa_render import PicasaCollageSettings
+from .page_formats import format_text, is_known_format
 from .themes import BORDER_THEMES, NOBORDER
 
 #: A `CollageSpec` alapértelmezett címe (`0x008342b0`: „Untitled").
@@ -74,6 +75,19 @@ def aspect_ratio_text(width: int, height: int) -> str:
         return "1:1"
     oszto = math.gcd(nagy, kicsi)
     return f"{nagy // oszto}:{kicsi // oszto}"
+
+
+def _format_szoveg(format_key: str, width: int, height: int) -> str:
+    """A `format` attribútum: a formátum NEVE, ha van; különben az arány.
+
+    A `Manual` és a `CurrentDisplay` tételnek nincs neve (nincs is rájuk
+    mintánk), ezekre a régi, képpontból számoló ág marad."""
+    if format_key and is_known_format(format_key):
+        try:
+            return format_text(format_key)
+        except ValueError:
+            pass  # dinamikus tétel: nincs neve
+    return aspect_ratio_text(width, height)
 
 
 def orientation_of(width: int, height: int) -> str:
@@ -166,6 +180,7 @@ def project_from_nodes(
     album_title: str = DEFAULT_ALBUM_TITLE,
     album_date: str = "",
     background_image: str = "",
+    format_key: str = "",
 ) -> CxfProject:
     """A kirajzolt vászonból teljes `.cxf` projekt.
 
@@ -175,10 +190,15 @@ def project_from_nodes(
 
     ⚠️ A `background_image` NEM a `PicasaCollageSettings`-ből jön (#1009): a
     rajzoló egyszínű hátteret fest, a képhátteret a projektfájl őrzi. Aki a
-    renderelő-beállításba tenné, azt ígérné, hogy ki is rajzolódik."""
+    renderelő-beállításba tenné, azt ígérné, hogy ki is rajzolódik.
+
+    ⚠️ A `format_key` a MENÜBEN kiválasztott oldalformátum kulcsa (#1089).
+    A `format` attribútum ennek a NEVE (A4 = `297:210`), nem a képpontokból
+    számolt arány — a tulajdonos 11 kollázsán a képpontos képlet 6-ot
+    elrontott. Kulcs nélkül (és a két dinamikus tételnél) marad az arány."""
     page_ratio = settings.height / settings.width
     return CxfProject(
-        aspect_ratio=aspect_ratio_text(settings.width, settings.height),
+        aspect_ratio=_format_szoveg(format_key, settings.width, settings.height),
         orientation=orientation_of(settings.width, settings.height),
         theme=settings.theme,
         shadows=settings.effective_shadow,
