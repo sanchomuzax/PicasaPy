@@ -121,8 +121,10 @@ parancsazonosító teljes menü-leltárából.*
    −1/1/2 kódot ad vissza, az indulás-rutin ebből
    `0x004fdd10(lista, teljesGép)`-et hív, és a lista a Mappakezelővel
    **közös** `+0xf8` tároló, amit a `scanlist.txt` írója ment ki.
-2. **Mi dönti el, melyik szövegkészlet (`Text1`/`Text2`) jelenik meg** —
-   a „van-e korábbi Picasa" vizsgálat helye.
+2. ~~Mi dönti el, melyik szövegkészlet jelenik meg~~ — **LEZÁRVA** (6.6):
+   a konstruktor `[dlg+0x274] = (*rekesz == 0)`; a rekeszt az
+   indulás-rutin tölti a felderített régi telepítés sztringjéből
+   (`0x00406c00`: Lifescape-registry, `#db2\`, `p1/p2/p3import`).
 3. **Hol jelenik meg a panel** (saját ablak vagy a főablakba ágyazva), és
    mi történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
 
@@ -254,3 +256,62 @@ a közös `+0xf8` tároló, az elágazás helye) · **erős** arra, hogy a
 szűkített ág a három rendszermappát, a teljes ág a meghajtó-gyökereket
 teszi be (a feloldó-tábla, a felirat és a valódi mintafájl együtt) —
 az ágak elemenkénti végigolvasása nem történt meg.*
+
+### 6.6 Mi dönti el, MELYIK szövegkészlet jelenik meg (U2)
+
+A döntés a **konstruktorban** (`0x005b7610`, 84 bájt) születik:
+
+```asm
+0x005b764f  [dlg+0x270] = esi          ; a hivo kimeneti rekesze
+0x005b7655  cmp dword ptr [esi], eax   ; eax = 0 -> a rekesz TARTALMA nulla?
+0x005b7657  sete al
+0x005b765a  [dlg+0x274] = al           ; ← a MIGRACIOS jelzo
+```
+
+**`migrációs jelző = (a kimeneti rekesz tartalma == 0)`** — vagyis a hívó
+a panel megnyitása **előtt** beleír egy értéket, és ez választja ki a
+szövegkészletet:
+
+| a rekesz előre beírt értéke | jelző | szövegkészlet |
+|---:|---:|---|
+| **0** | 1 | **`Text1` — MIGRÁCIÓ** |
+| **1** | 0 | **`Text2` — TISZTA TELEPÍTÉS** |
+
+Az indulás-rutin (`0x0040d3c0`) így tölti fel:
+
+```asm
+0x0040d40b  [ebx] = 0                       ; ebx = a rekesz ( = [esi+8] )
+...
+0x0040d434  eax = [esi+4]                   ; ← a VIZSGALT SZTRING
+0x0040d43a  test eax, eax        / je 0x40d458
+0x0040d442  test dword [eax], 0xffffff00 / je 0x40d458   ; ervenyes sztring?
+0x0040d44a  cmp byte [eax+4], 0  / je 0x40d458           ; nem ures?
+0x0040d450  [ebx] = 0                       ; ← VAN ilyen -> MIGRACIO
+0x0040d458  [ebx] = 1                       ; ← nincs   -> TISZTA TELEPITES
+```
+
+**A vizsgált sztring forrása** a `0x00406c00` (1362 bájt) — az
+**adatbázis- és migráció-felderítő** —, ami a fő objektum `+0x101c`
+hármasát tölti (`0x00402960`: `+0x101c` bájt, **`+0x1020` a sztring**,
+`+0x1024` a rekesz). A felderítés forrásai:
+
+| forrás | mi ez |
+|---|---|
+| **`SOFTWARE\Lifescape Solutions Inc.\Picasa\Runtime\`** | a **Picasa 1** (Lifescape) registry-ága |
+| **`#db2\`** | a **régi** adatbázismappa (a mai a `#db3\`) |
+| **`p1import` / `p2import` / `p3import`** | `Preferences`-jelzők: Picasa 1 / 2 / 3 importja |
+| `AppPath`, `index-thumbs.db`, `thumbs_index.db` | a régi indexfájlok |
+
+*(Ugyanitt lakik az `IDS_DB_DELETE_WARNING` az **„Adatbázis törlése" /
+„Ne törölje"** gombokkal, és egy „special key combination" indítási
+mód szövege — ezek nem az `initialscan` részei.)*
+
+> **A `skipinitialscan` kihagyás a SZŰKÍTETT választással egyenértékű:**
+> az indulás-rutin ilyenkor `[ebx] = 1`-et ír (`0x0040d506`), és ugyanaz
+> az ág fut, mint a felhasználó „csak ezek a mappák" választásánál.
+
+*Bizonyítottsági fok: **megerősített** a döntési szabályra (a konstruktor
+és az indulás-rutin minden utasítása) és a felderítő forrásaira (a
+`0x00406c00` sztringkészlete) · **erős** arra, hogy a `+0x1020` sztring
+maga a felderített régi telepítés jelölője — a feltöltés pontos helye a
+`0x00406c00`-n belül nincs végigolvasva.*
