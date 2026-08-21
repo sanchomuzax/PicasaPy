@@ -157,7 +157,7 @@ hármast. **39 találat**, ebből 29 valódi maszk-fogyasztó. Eredmény:
 
 | bit | mit jelent | bizonyíték |
 |---|---|---|
-| **6** | a kollázs-csomópont `+0x219` jelzőjét 1-re állítja, és érvényteleníti (`\|= 7`) | `0x00860470` |
+| **6** | **a `collagepanel/groupnode` KÜLÖN (overlay) feldolgozási ágba kerül** — a `+0x219` jelző 1-re, és érvénytelenítés (`\|= 7`) | `0x00860470` |
 | **12** | **a téma megvalósítja a 9. vtable-slotot** | `0x0087e861` |
 | **13** | a vászon-kezelő magától **`collage_adapt`-ot küld**, ha egy mérték a **2,0**-t (`0xc7d9d0`) nem lépi túl | `0x00886142` |
 | **14** | **a `collage::shadows` beállítás ALAPÉRTÉKE** | `0x0082c6e9` |
@@ -182,25 +182,83 @@ Vagyis:
 > Ez egyezik a felhasználó képernyőképével: Képkupac elrendezésnél az
 > „Árnyékok rajzolása" jelölő be van pipálva.
 
-**A 6. bit** a `+0x219` általános yt-csomópont-tulajdonságot állítja. A
-mező a keretrendszerben sok panelen ugyanezzel a mintával („ha más,
-érvénytelenít, aztán beállít") íródik. **Hogy pontosan mit kapcsol, nem
-megállapított** — de a helye ezzel megvan.
+**A 6. bit — MEGFEJTVE (2026-08-21, K1).** A bit a **kollázs
+csoport-csomópontját** teszi **külön, a szülőtől független feldolgozási
+ágba** (overlay-réteg), a szokásos, szülőhöz kötött bejárás helyett.
 
-*2026-08-18-i kiegészítés (a kérdés továbbra is NYITOTT, de szűkült):* a
-teljes `.text` pásztázása szerint a `+0x219`-nek **mindössze 30
-érintője** van, és a keretrendszerben **egyetlen olvasója**:
-`0x009e2aa5`, a `0x009e2a60` (3207 bájt) függvényen belül. Ez a rutin a
-csomópont **gyerekein megy végig** (`[ebx+4] >> 1` elemszám), és a
-`+0x219` **egy külön, gyerekenkénti ágat kapcsol be** — ha a jelző 0, az
-egész ág kimarad (`je 0x9e2bc4`). A hívói (`0x009e16d0`, `0x00a54b70`) a
-`UITransitions` / `UIProfiling` beállításokat kezelő rétegben ülnek. A
-mezőt az általános yt-csomópont-konstruktor (`0x009dd800`, `0x009dda0b`)
-nullázza a testvér-jelzőkkel (`+0x205`…`+0x217`) együtt.
+*Ez felváltja a lap korábbi „nem megállapított" megjegyzését.*
 
-**Amit ez kizár:** a 6. bit **nem** szövegelrendezési kapcsoló (ez a lap
-korábbi feltevése volt, és nem igazolódott) — a gyerek-bejárás egy
-általános megjelenítési ága. **Nem blokkolja a megvalósítást.**
+**A bizonyítéklánc négy lépésben:**
+
+1. **A gazda.** A `0x008603c0` (775 b) a `CollageNodeHandler` vtable
+   **5. rekesze**, és egy logikai paramétert kap (`0x008603ee`:
+   `al = [ebp+8]`, majd `cmp al, [ebx+0xc]` — állapotváltozás-szűrő). Ha
+   bekapcsol, létrehoz egy **`collagepanel/groupnode`** nevű,
+   **0x26c bájtos** csomópontot (`0x0086041a push 0x26c` →
+   `0x0085fd60` gyár); ha kikapcsol, a `0x00860494` ág bontja le. A név
+   **nincs benne a `collagepanel.tre`-ben** — kódból jön létre.
+
+2. **A kapu.** A 6. bit dönti el, hogy az új csomópont megkapja-e a
+   jelölést:
+
+   ```asm
+   0x0086046e  call edx                    ; a téma képesség-maszkja (vt[0x1c])
+   0x00860470  shr  eax, 6
+   0x00860473  test al, 1                  ; << a 6. BIT
+   0x00860475  je   0x86054f               ; nincs -> kihagyja
+   0x0086047b  cmp  byte ptr [edi + 0x219], 1
+   0x00860484  or   dword ptr [edi + 8], 7 ; érvénytelenítés
+   0x00860488  mov  byte ptr [edi + 0x219], 1
+   ```
+
+3. **Mit tesz a jelző.** A `+0x219` egyetlen keretrendszerbeli olvasója a
+   `0x009e2aa5` (a `0x009e2a60` jelenetgráf-bejáróban). Ha a jelző áll:
+
+   ```asm
+   0x009e2aa5  cmp  byte ptr [esi + 0x219], 0
+   0x009e2ab4  je   0x9e2bc4               ; 0 -> a NORMÁL ág
+   0x009e2b61  call 0x9e5a60               ; a 0x78 bájtos rekord MÁSOLÁSA
+   0x009e2b76  mov  dword ptr [edi + 4], ecx   ; a külön lista bővítése
+   0x009e2b8e  mov  dword ptr [eax + edi*8 - 0x70], esi  ; a csomópont eltárolása
+   0x009e2bbf  jmp  0x9e36c9               ; << KORAI KILÉPÉS
+   ```
+
+   vagyis a csomópont rekordja **egy külön verembe** kerül, és a rutin
+   **azonnal kilép** — a `0x9e2bc4`-től induló normál ág (a `+0x205` /
+   `+0x206` „piszkos" jelzők, a `+0x178` / `+0x180` geometria-összevetés)
+   **nem fut le rá**.
+
+4. **Mit csinál még ugyanezzel a jelzővel a program.** A `.text` teljes
+   pásztázása szerint a `+0x219`-nek **kilenc** beállítója van, és
+   mindegyik ugyanazt a fajta elemet építi: **lebegő, a szülő fölé
+   kilógó, kódból felépülő gyerekcsoportot.**
+
+   | beállító | mit épít |
+   |---|---|
+   | `0x00640670` | `peoplepanel/headerautocomplete` — legördülő kiegészítő |
+   | `0x00641000` | `peoplepanel/overlayautocomplete` + `overlayeditbox` |
+   | `0x006464a0` | `peoplepanel/peopleautocomplete` |
+   | `0x0064a680` | `peoplepanel/manual_add_autocomplete` |
+   | `0x00643020` | `faceoverlay/label` + `label_background` („Add a name") |
+   | `0x00654290` | a színválasztó palettája (`picker::mru_%d`) |
+   | `0x00569af0` | `editpanel/previewclip`, `previewclip2` — a vágókeret |
+   | `0x00597630` | `insettop` |
+   | **`0x008603c0`** | **`collagepanel/groupnode`** |
+
+   A közös nevező egyértelmű: **overlay-elem, amit a keretrendszer külön
+   rétegben, nem a szülő elrendezésébe ágyazva kezel.**
+
+**Melyik témánál áll a bit?** `picturegrid`, `framegrid`, `regulargrid` —
+a **három rács-téma**. A `picturepile`, a `contactsheet` és a `multiexp`
+nem állítja.
+
+**Bizalmi fok.** A **mechanizmus megerősített** (utasításszintű minden
+lépésnél, és a 9 beállító teljes enumerációval). Ami **NINCS mérve**: a
+csoport-csomópont *vizuális szerepe* — hogy keretet rajzol-e a kijelölt
+képek köré, együtt mozgatható tárolót ad-e, vagy csak logikai gyűjtő. Ez
+a `0x0085fd60` gyárból létrejövő csomópont rajzoló ágának
+végigkövetését igényelné. Az sem mérve, **miért** épp a három rács-téma
+kapja meg.
 
 Teljes bitlista témánként, hogy a folytatás ne kelljen újraszámolni:
 
@@ -1591,11 +1649,13 @@ három, és egyik sem igényel futó Picasát)*:
 
 **Nyitott kérdések** *(a 2026-08-18-i kimenet-kör után)*:
 
-1. mit kapcsol a képesség-maszk **6. bitje**? A helye megvan — a
-   kollázs-csomópont `+0x219` tulajdonságát állítja (`0x00860470`), amit
-   a keretrendszer a `0x009e2aa5`-nél olvas —, a jelentése nem. *(A
-   `spec[0x30]` és az `addclips` zárja 2026-08-18-án lezárult, ld. 9.0
-   és 8.)*
+1. ~~mit kapcsol a képesség-maszk **6. bitje**?~~ — **MEGFEJTVE**
+   (2026-08-21, K1 — ld. **2.**): a `collagepanel/groupnode`
+   (`CollageNodeHandler` vtable 5. rekesze, `0x008603c0`) **külön,
+   overlay feldolgozási ágba** kerül. **Ami MARAD:** a
+   csoport-csomópont *vizuális szerepe* nincs mérve (keret? együtt
+   mozgatható tároló? logikai gyűjtő?) — a `0x0085fd60` gyárból létrejövő
+   csomópont rajzoló ága nincs végigkövetve. Jegy: **#1170**.
 2. **mi a célja a `FILE_ATTRIBUTE_TEMPORARY`-nak** a kész kollázs-JPEG-en
    (9.1/b 4. pont)? A tény három helyen bizonyított, a szándék nem.
 3. az **5120-as felső méret**: az **érték és a szerepe MEGERŐSÍTVE**

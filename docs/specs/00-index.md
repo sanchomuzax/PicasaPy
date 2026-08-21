@@ -73,7 +73,7 @@ kérdés).
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
-### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 6 kérdés
+### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 5 kérdés
 
 ⭐ **2026-08-21, működés-kör (kilenc kérdés):** a
 `kollazs-eletciklus.md` **16.** szakasza négy, eddig sehol nem szereplő
@@ -91,12 +91,16 @@ megfejtette a mentés TELJES törvényét — hova, milyen néven, hogyan, mi
 történik utána; fájlválasztó bizonyítottan NINCS — a lap **9.1/b**
 szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
 
-1. A képesség-maszk **6. bitje** mit kapcsol? A helye megvan: a
-   kollázs-csomópont `+0x219` tulajdonságát állítja (`0x00860470`), amit a
-   keretrendszer a `0x009e2aa5`-nél olvas. *(A többi öt bit 2026-08-18-án
-   lezárult: 12. = a téma megvalósítja a 9. vtable-slotot, 13. = automata
-   `collage_adapt`, 14. = a `collage::shadows` alapértéke, 15./16. =
-   halott bitek.)*
+1. ~~A képesség-maszk **6. bitje** mit kapcsol?~~ — **MEGFEJTVE**
+   (2026-08-21, a lap **2.**): a `collagepanel/groupnode`
+   (`CollageNodeHandler` vtable 5. rekesze, `0x008603c0`) **külön,
+   overlay feldolgozási ágba** kerül; a `+0x219` jelző hatására a
+   jelenetgráf-bejáró (`0x009e2aa5`) külön verembe másolja a rekordot és
+   korán kilép. A bit a három **rács-témánál** áll. **Ami MARAD:** a
+   csoport-csomópont *vizuális szerepe* nincs mérve. Jegy: **#1170**.
+   *(A többi öt bit 2026-08-18-án lezárult: 12. = a téma megvalósítja a
+   9. vtable-slotot, 13. = automata `collage_adapt`, 14. = a
+   `collage::shadows` alapértéke, 15./16. = halott bitek.)*
 2. Mi a **célja** a `FILE_ATTRIBUTE_TEMPORARY`-nak a kész kollázs-JPEG-en?
    (A tény három címen bizonyított: `0x0083c3b8`, `0x0083cda5`,
    `0x0068a81f` — a szándék nem ismert; ld. a lap 9.1/b 4. pontját.)
