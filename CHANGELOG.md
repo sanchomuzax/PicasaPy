@@ -5,6 +5,13 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.31] – 2026-08-21
+
+### Javítva
+- **A Duo-Tone színei az eredeti Picasa mátrixláncával készülnek (#966).**
+  A két tónusszín most a megfelelő fekete-fehér köztes képre kerül, így a
+  színes forrás nem torzítja el az eredményt.
+
 ## [0.8.29] – 2026-08-21
 
 ### Javítva
