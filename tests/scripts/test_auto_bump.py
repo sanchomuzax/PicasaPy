@@ -141,3 +141,20 @@ def test_a_workflow_nyithat_PR_t():
     ut = _UT.parents[1] / ".github" / "workflows" / "release.yml"
     adat = yaml.safe_load(ut.read_text(encoding="utf-8"))
     assert adat.get("permissions", {}).get("pull-requests") == "write"
+
+
+def test_az_automatika_agat_felul_lehet_irni():
+    """A bump-ág egy korábbi futásból már létezhet (#1166).
+
+    ⚠️ 2026-08-21-én pontosan ez történt: a `gh pr create` egyszer elbukott
+    jogosultság híján, az ág viszont ottmaradt — a következő futás sima
+    pusha már nem volt gyors-előre, és a verzióemelés NÉMÁN elmaradt (a
+    futás zöld maradt, mert a lépés `continue-on-error`).
+
+    Eldobható automatika-ág: felülírható."""
+    ut = _UT.parents[1] / ".github" / "workflows" / "release.yml"
+    szoveg = ut.read_text(encoding="utf-8")
+    assert "push --force origin" in szoveg, (
+        "a bump-ág nem írható felül — egy félbemaradt futás után a "
+        "verzióemelés némán elmarad"
+    )
