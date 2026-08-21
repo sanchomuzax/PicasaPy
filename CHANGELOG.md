@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.29] – 2026-08-21
+
+### Javítva
+- **A Picasa felületi erőforrásai helyes színekkel csomagolhatók ki
+  (#1160).** A respack BGRA képpontjait korábban RGBA-ként írtuk PNG-be,
+  ezért a piros és a kék csatorna felcserélődött. A nyers oda-vissza út
+  továbbra is bájthű marad, a kapcsolódó színspecifikációk pedig javítva
+  lettek.
+- **A szkenner kihagyja a Picasa és a rendszer saját mappáit (#1169).** A
+  `thumbs` és `RECYCLER` mappák mellett külön, komponenshatáros
+  útvonal-előtag szűrés védi a Linux gyorsítótár-, lomtár- és
+  rendszermappáit anélkül, hogy azonos nevű fotómappákat rejtene el.
+- **Az átlagszín bitre kompatibilis a Picasával (#1171).** A számítás most
+  csonkol, mind a négy csatornát `0xAARRGGBB` alakban tárolja, és a 2×2-nél
+  kisebb képeket a Picasa `0` sentinelével jelöli.
+
 ## [0.8.28] – 2026-08-21
 
 *(Ide írjuk a felhasználónak szóló mondatokat a jegy PR-jében. A címet a
