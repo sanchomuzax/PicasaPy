@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.32] – 2026-08-21
+
+### Új
+- **A Mappakezelő az eredeti Picasa működését követi (#1161).** A változtatások
+  csak az OK gombbal lépnek életbe, a Mégse és az Esc elveti őket. A fa több
+  rendszer- és csatolási gyökeret, valamint rejtett mappákat is mutat; az
+  egyszeri keresés, a kizárás és a folyamatos figyelés öröklődő állapotai a
+  Picasa-kompatibilis `scanlist.txt` fájlban maradnak meg.
+
+### Javítva
+- **A Mappakezelő meghajtógyökere Windowson is helyesen azonosítható (#1161).**
+  A fa és a figyelt mappák most ugyanazt a kanonikus útvonalat használják,
+  ezért a meghajtó már nem látszik tévesen eltávolítottnak.
+
 ## [0.8.31] – 2026-08-21
 
 ### Javítva
