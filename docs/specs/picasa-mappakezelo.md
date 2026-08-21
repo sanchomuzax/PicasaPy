@@ -441,6 +441,13 @@ Az „Eltávolítás" ága ezen felül a **Figyelt mappák listbox** (`[dlg+0x2f
 kijelölését is beszámítja (`0x007c412e`) — vagyis a rádió **onnan is** tud
 tételt eltávolítani, nem csak a fából.
 
+> ⚠️ **PONTOSÍTÁS (2026-08-21, M6 — lásd 14.2):** a `[dlg+0x270]` nem csak
+> „az Eltávolítás rádió listája". Ez **a jobb oldali „Figyelt mappák" lista
+> tényleges tartalma** — a sorrajzoló (`0x007c6ba0`) és a kattintáskezelő
+> (`0x007c5a89`) is ezt a tömböt olvassa, `[dlg+0x274]>>1` elemszámmal. A
+> „Keresés mindig" a **végére fűz** bele (`0x007c2f5b`), az „Eltávolítás"
+> **kivesz** belőle (`0x007c4184`).
+
 Az OK-ra futó alkalmazó **hat argumentumot** kap (`0x007c56fb`–`0x007c571f`):
 
 ```asm
@@ -1068,8 +1075,13 @@ megépítését, de mindegyikhez döntés kell:
    rejtett/rendszermappákra **nem szűr** (a kizárás a beolvasóé); a
    **leválasztott hálózati meghajtó MEGJELENIK**, mert a hálózati ágat a
    felsoroló `checkFilesystem=0`-val hívja (`0x007c9fee`).
-6. **A „Figyelt mappák" lista interaktivitása**: kattintható-e egy sora,
-   ugrik-e tőle a fa, mi a rendezési szabálya.
+6. ~~**A „Figyelt mappák" lista interaktivitása**~~ — **LEZÁRVA** (14.):
+   **kattintható** (`lb_selected` külön ága, `0x007c5a5f`), a kattintás
+   **átállítja a három rádiót és az arcfelismerés-sort** (a közös
+   `0x007c60d0`), és a **fa odaugrik** — ha kell, lustán ki is nyílik
+   (`0x007bf130` + `SetEvent [dlg+0x550]`). Fordítva a fa kattintása
+   **törli a jobb lista kijelölését** (`0x007c5b61`). **Rendezés nincs**:
+   a végére fűz (`0x007c2f5b`), a sorrend a betöltési sorrend.
 
 7. ~~**A `0x007bf210` (468 bájt) tartalma**~~ — **LEZÁRVA** (13.2): igen,
    ez a **kinyitás/becsukás kapcsoló**, és ez a lusta betöltés indítója.
@@ -1350,3 +1362,155 @@ sem a fában, sem a kizárási listában **nem találtunk vizsgálatot**.
   Folytatás: `0x004fbd30` törzse utasításszinten.
 - **A `ytVolumeIsExternalFS` predikátum HASZNÁLATA** — a törzs mérve
   (13.5), a hívási oldal vtable-rekeszen át megy, xref nincs.
+
+---
+
+## 14. A „Figyelt mappák" lista INTERAKTÍV — és kétirányú a fával (2026-08-21)
+
+Ez a szakasz a 12. lista 6. pontját zárja le (M6). Bizalmi fok:
+**megerősített** — minden állítás mögött utasításszintű cím áll.
+
+### 14.1 A két listavezérlő azonosítója
+
+A vezérlő-kötő `0x007c0810` két rekeszbe teszi a listaboxokat:
+
+| rekesz | vezérlő | cím |
+|---|---|---|
+| `[dlg+0x2f8]` | `foldermgr/foldertree` — a **bal fa** | `0x007c0862` |
+| `[dlg+0x2fc]` | `foldermgr/watched_folders` — a **jobb lista** | `0x007c0896` |
+
+Listaboxon belül (`ytListBox`, `0x009d2810` alapján):
+`[lb+0x2f8]` = a kijelölt sor **relatív** indexe, `[lb+0x320]` = a
+**görgetés-eltolás**; az abszolút sorszám a kettő **összege** — a kód
+mindenütt így képzi.
+
+`0x009d2810` = `SetSelection(lb, index, jelző)`: a `-1` **törli a
+kijelölést**, és a `lb_preselected` értesítést küldi
+(`0x009d284e`, osztály `0x08000002`).
+
+### 14.2 A jobb lista TARTALMA — `[dlg+0x270]`
+
+A sorrajzoló `0x007c6ba0` (`CFolderMgrDialog::WatchedListDraw`) a
+gazdadialógusból (`[rajzoló+8]`) olvas:
+
+```asm
+0x007c6bb1  mov  ecx, dword ptr [eax + 0x274]
+0x007c6bb7  shr  ecx, 1                       ; sorszám
+0x007c6bb9  cmp  dword ptr [ebp + 8], ecx      ; a kért sor tartományban van?
+```
+
+Ugyanezt a tömböt indexeli a kattintáskezelő (`0x007c5a89`) és az
+„Eltávolítás" rádió tartalék-ága (`0x007c4150`).
+
+**Tehát `[dlg+0x270]` (elemszám `[dlg+0x274]>>1`) a jobb oldali lista
+tényleges tartalma.** Ez **pontosítja az 5.2/b táblázatot**: ott ez a
+tömb csak mint „az Eltávolítás rádió által mutált lista" szerepelt — a
+mutáció igaz, de a tömb elsődleges szerepe az, hogy **ez a látható
+figyelt-mappa lista**.
+
+**Mit ír bele melyik rádió:**
+
+| rádió | művelet a `[dlg+0x270]`-en | cím |
+|---|---|---|
+| **Keresés mindig** | `0x00492e40` keresés; ha **nincs benne**, a **végére fűzi** | `0x007c2f5b`–`0x007c2f6f` |
+| **Eltávolítás a Picasából** | `0x00492e40` keresés; a megtalált tételt **kiveszi** | `0x007c4184`–`0x007c4195` |
+
+**Rendezés: NINCS.** A hozzáfűzés a tömb **végére** megy, rendező hívás
+sehol. A lista tehát a **kezdeti betöltés sorrendjét** (a
+`watchedfolders.txt` sorrendje) őrzi, és az újakat **a végén** mutatja.
+
+*(A „Keresés mindig" ága ezen kívül a `[dlg+0x2a8]`-ba is felvesz —
+`0x007c2c05`, ha még nincs benne; a kettő szerepének viszonya a 14.5-ben
+marad nyitva.)*
+
+### 14.3 KATTINTÁS a jobb listán → a fa követi
+
+Az `lb_selected` kezelő (`0x007c5830`) a küldőt megnézi
+(`[értesítés+0x24]`), és **külön ága van a jobb listának**:
+
+```asm
+0x007c5a5f  mov  ecx, dword ptr [ebx + 0x2fc]   ; a JOBB lista?
+0x007c5a65  cmp  eax, ecx
+0x007c5a67  jne  0x7c5af2                       ; nem -> a fa ága
+0x007c5a6d  eax = [lista+0x320] + [lista+0x2f8] ; abszolút sorszám
+0x007c5a79  ecx = [dlg+0x274] >> 1              ; tartomány-ellenőrzés
+0x007c5a83  jae  0x7c5bf0                       ; kilóg -> nincs teendő
+0x007c5a89  edx = [dlg+0x270]                   ; a tömb
+0x007c5a95  esi = &tömb[eax]                    ; a kiválasztott útvonal
+0x007c5a9a  call 0x5c2100                       ; [dlg+0x2ec] := ez az útvonal
+0x007c5aa1  call 0x7c60d0(dlg, &[dlg+0x2ec])    ; << KÖZÖS állapotfrissítő (5.2)
+0x007c5aae  call 0x7c91c0(&[dlg+0x414], &útvonal)  ; a fában megkeresés
+0x007c5ab5  je   0x7c5ad2
+0x007c5ab7  ebx = [dlg+0x2f8]
+0x007c5ac2  call 0x9d2810(fa, -1, 0)            ; a fa kijelölésének TÖRLÉSE
+0x7c5ad2:
+0x007c5ad5  call 0x7bf130(&[dlg+0x414], &útvonal)  ; „betöltendő útvonal" beírása
+0x007c5ae1  call SetEvent([dlg+0x550])          ; << a háttérszál ébresztése
+```
+
+**Három, egymástól független következmény:**
+
+1. **A dialógus aktuális mappája átvált** a kiválasztott figyelt mappára
+   (`[dlg+0x2ec]`).
+2. **Lefut a közös állapotfrissítő** (`0x007c60d0`, 5.2) — vagyis a jobb
+   felső **három rádió és az arcfelismerés-sor is átáll**, pontosan úgy,
+   mint amikor a fában kattintasz. **Ez a lista tehát nem díszlet: teljes
+   értékű kiválasztó vezérlő.**
+3. **A bal fa reagál** — vagy a kijelölése törlődik, vagy (a másik ágon) a
+   `[CDirArray+0x128]` „betöltendő útvonal" rekeszbe kerül az út és a
+   háttérszál felébred, azaz **a fa lustán kinyílik odáig** (13.2).
+
+**Keresztellenőrzés a 13. szakasszal:** az itt ébresztett esemény a
+`[dlg+0x550]`, a `CDirArray` pedig a `[dlg+0x414]`-en ül —
+`0x414 + 0x13c = 0x550`, vagyis **ugyanaz az esemény**, amit a
+`0x007bf210` kinyitás-ág használ. A két szakasz mérése egymást igazolja.
+
+`0x007bf130` (218 b) törzse ezt meg is erősíti: kritikus szakaszon belül
+a `[CDirArray+0x128]` sztringmezőt írja felül a kapott útvonallal
+(`0x007bf17a`–`0x007bf1b9`).
+
+### 14.4 KATTINTÁS a fában → a jobb lista kijelölése törlődik
+
+A másik ág (`0x007c5af2`-től) szimmetrikus:
+
+```asm
+0x007c5af8  jne  0x7c5bf0                       ; nem a fa -> vége
+0x007c5b1c  ecx = [dlg+0x2f8]
+0x007c5b28  eax = [fa+0x320] + [fa+0x2f8]       ; a fa abszolút sora
+0x007c5b42  call 0x7bfcb0(&[dlg+0x414], sor, &út)  ; sor -> útvonal
+0x007c5b49  jne  0x7c5b66                       ; hiba -> vége
+0x007c5b51  call 0x7c60d0(dlg, &út)             ; ugyanaz a közös frissítő
+0x007c5b56  ebx = [dlg+0x2fc]
+0x007c5b61  call 0x9d2810(lista, -1, 0)         ; a JOBB lista kijelölésének törlése
+```
+
+**Vagyis a két lista kijelölése kölcsönösen kizárja egymást**: mindig
+legfeljebb az egyikben van kiemelt sor. (A képernyőképen a fában van a
+kiemelés — a `podcast` soron —, a jobb listában nincs.)
+
+### 14.5 Eredeti / nálunk / teendő
+
+| # | Viselkedés | Eredeti | Nálunk (0.8.27) | Teendő |
+|---|---|---|---|---|
+| 1 | A jobb lista sora | **kattintható**, teljes értékű kiválasztó | nincs Mappakezelő | kattintható lista |
+| 2 | Kattintásra | a három rádió + arcfelismerés **átáll** | — | ugyanaz az állapotfrissítő fusson, mint a fánál |
+| 3 | Kattintásra | a **fa odaugrik**, szükség esetén **lustán kinyílik** | — | a fa nyissa ki az őseit és jelölje ki a sort |
+| 4 | Fában kattintva | a **jobb lista kijelölése törlődik** | — | kölcsönösen kizáró kijelölés |
+| 5 | Rendezés | **nincs** — betöltési sorrend + a végére fűzés | — | ne rendezzük ábécébe |
+| 6 | „Keresés mindig" | a mappa **azonnal megjelenik** a jobb listában | — | a lista frissüljön OK előtt |
+| 7 | „Eltávolítás" | a mappa **azonnal eltűnik** a jobb listából | — | ugyanígy |
+| 8 | „Eltávolítás" a fa kijelölése nélkül | a **jobb lista** kijelölésére hat (`0x007c412e`) | — | tartalék-ág kell |
+
+### 14.6 Ami ebből NYITVA marad
+
+- **A `[dlg+0x270]` és a `[dlg+0x2a8]` viszonya.** A „Keresés mindig" ága
+  **mindkettőbe** felvesz (`0x007c2c05`, illetve `0x007c2f5b`), az
+  OK-alkalmazó pedig **külön argumentumként** kapja a kettőt (5.2/c). A
+  megjelenítés a `+0x270`-é — de hogy a `+0x2a8` a „hozzáadott" delta-e,
+  vagy a teljes kimeneti lista, **nincs utasításszinten eldöntve**.
+  Folytatás: `0x005cef20` (az alkalmazó) törzse.
+- **A `0x007c91c0` háromértékű visszatérése** (`0`, `1`, `9`) —
+  a `0` ág a háttérbetöltés, a nem-nulla ág a fa kijelölésének törlése;
+  hogy a `0x007c9270` (1853 b) mikor ad `0`-t és mikor `1`-et, nincs
+  végigkövetve. A **felhasználó által látott** viselkedést ez nem
+  változtatja (a fa mindkét ágon reagál), de a pontos sorrendet igen.

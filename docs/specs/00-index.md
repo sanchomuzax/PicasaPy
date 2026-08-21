@@ -179,7 +179,7 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
    történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 4 kérdés (a fa feltöltése LEZÁRVA)
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 4 kérdés (a fa feltöltése és a jobb lista interaktivitása LEZÁRVA)
 
 *(A lap 2026-08-20-án készült, a tulajdonos két képernyőképéből és a
 binárisból. A kör négy kérdést tett fel és kettőt le is zárt — a
@@ -202,6 +202,14 @@ megvalósítást — jegy: **#1161**.)*
    forrása (beégetett nevek + `filters.txt` + regisztrációs útvonalak) a
    **beolvasóé**, nem a fáé → **#1169**.
 
+   ⭐ **2026-08-21, jobb-lista-kör** — a lap **14. szakasza**: a „Figyelt
+   mappák" lista **teljes értékű kiválasztó vezérlő**. Kattintásra átáll a
+   három rádió és az arcfelismerés-sor (a közös `0x007c60d0`), a **fa
+   odaugrik**, és ha az ág még nincs betöltve, **lustán kinyílik**
+   (`0x007bf130` + `SetEvent [dlg+0x550]` — ugyanaz az esemény, mint a
+   13.2-ben). Fordítva a fa kattintása **törli a jobb lista
+   kijelölését**: a két kijelölés kölcsönösen kizáró. **Rendezés nincs.**
+
 1. **Az iPhoto / Apple Photos ág LÁTHATÓ különbsége.** A kódbeli helye, a
    két beállítás-kapcsoló és a használt lista megvan (a lap 6.2), de nem
    követtük végig, mit lát ebből a felhasználó. **A PicasaPy-ban nem
@@ -209,8 +217,10 @@ megvalósítást — jegy: **#1161**.)*
 2. **A dialógusnak tényleg nincs minimális mérete?** A `0x00920fa0`
    ablakeljárás nem kezeli a `WM_GETMINMAXINFO`-t — de a negatív állítás
    egyetlen ablakosztály átvizsgálásán alapul.
-3. **A „Figyelt mappák" lista interaktivitása** (a lap 12.6):
-   kattintható-e egy sora, ugrik-e tőle a fa, mi a rendezési szabálya?
+3. **A `[dlg+0x270]` és a `[dlg+0x2a8]` viszonya** (a lap 14.6) — a
+   „Keresés mindig" **mindkettőbe** felvesz, a megjelenítés a `+0x270`-é,
+   de hogy a `+0x2a8` delta-e vagy teljes kimeneti lista, nincs eldöntve.
+   Folytatás: `0x005cef20`.
 4. **A `filters.txt` `DirectoryIncludes` / `FileIncludes` /
    `BundleFilters-*` szakaszainak szemantikája** (a lap 13.8) — a
    szállított fájl mindegyiket üresen hagyja, a mi olvasatunk
@@ -218,6 +228,9 @@ megvalósítást — jegy: **#1161**.)*
 5. **A `ytVolumeIsExternalFS` (`0x007c84c0`) HASZNÁLATA** (a lap 13.5) —
    a törzs mérve (`fs == "NTFS"`), de vtable-rekesz, xref nincs, és az
    osztálynév ezzel ellentétesnek hangzik.
+6. **A `0x007c91c0` háromértékű visszatérése** (a lap 14.6) — a `0`, `1`
+   és `9` értékek szerepe; a felhasználó által látott viselkedést nem
+   változtatja, a pontos sorrendet igen. Folytatás: `0x007c9270`.
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott kérdés
 
