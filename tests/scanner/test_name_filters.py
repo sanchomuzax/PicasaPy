@@ -72,6 +72,7 @@ class TestPathPrefixExclusion:
     def test_linux_default_cache_prefix_uses_runtime_home(self, monkeypatch, tmp_path):
         home = tmp_path / "home"
         monkeypatch.setenv("HOME", str(home))
+        monkeypatch.setenv("USERPROFILE", str(home))
         filters = default_name_filters()
 
         assert filters.is_path_excluded(home / ".cache" / "thumbnails")
