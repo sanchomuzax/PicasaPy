@@ -17,6 +17,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from picasapy.paths import normalize_path
+
 from .worker_thread import BackgroundWorkerMixin
 
 
@@ -92,7 +94,7 @@ def _root_entries(home: Path | None = None, user: str | None = None) -> list[dic
     result: list[dict] = []
     seen: set[str] = set()
     for name, path in candidates:
-        normalized = str(path)
+        normalized = normalize_path(path)
         if normalized in seen:
             continue
         seen.add(normalized)

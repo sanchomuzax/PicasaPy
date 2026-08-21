@@ -96,13 +96,14 @@ class TestRequestChildren:
 
     def test_picasa_root_order_starts_with_user_folders_then_root(self, tmp_path):
         from picasapy.app.folder_tree_controller import _root_entries
+        from picasapy.paths import normalize_path
 
         roots = _root_entries(home=tmp_path, user="nemletezo-teszt-user")
         assert [(item["name"], item["path"]) for item in roots[:4]] == [
             ("Desktop", str(tmp_path / "Desktop")),
             ("Pictures", str(tmp_path / "Pictures")),
             ("Documents", str(tmp_path / "Documents")),
-            ("/", "/"),
+            ("/", normalize_path("/")),
         ]
 
     def test_missing_directory_yields_empty_list_not_crash(
