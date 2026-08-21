@@ -438,27 +438,34 @@ A feltöltés-lista stílusblokkjából (`0x007af010`) egy egész készlet:
 | `[+0x9ac]` | 2 |
 | `[+0x9b0]` | −2 |
 
-### 8/b A buboréksúgó rajza — hol NINCS (2026-08-21, G2)
+### 8/b A buboréksúgó rajza — hol NINCS (2026-08-21, G2 + kiegészítés)
 
 A `ytToolTip` **megjelenése** (háttér, keret, árnyék) továbbra sem
 mérhető ki a binárisból az olcsó lánccal. Hogy a következő kör ne járja
-újra ugyanezt, itt a **teljes negatív leltár**:
+újra ugyanezt, itt a **teljes negatív leltár** — a kör elején (G2) hét
+helyen kerestük, a felhasználó kérésére **négy továbbival** bővítve:
 
 | hol kerestük | eredmény |
 |---|---|
 | a `ytToolTip` **csomópont-vtable**-je (`0x00c909d4`, 30 rekesz) | **egyetlen saját rajzoló-felülírás sincs** — mind a 30 rekesz általános (`0x009e0…`, `0x00a6…`, `0x0051…`) |
-| a **konstruktor** (`0x00563060`, 224 b) | csak **nullázás**: `+0x33c`…`+0x370`; **egyetlen szín-konstans sem** |
+| a **konstruktor** (`0x00563060`, 224 b, teljes egészében kiolvasva) | **csak pozíció (`ecx`-ből 4 dword) és két IDŐBÉLYEG** (`[0xc40298]`-hívás, kétszer, `+0x328`/`+0x330`-ba) — **szín-paraméter EGYÁLTALÁN nem érkezik hívóból**, és nincs is beégetve |
 | az `IToolTip` felület (`0x00c90408`, 3 rekesz) | slot 0 = `0x00563040` (31 b, csak a vtable beállítása), a másik kettő `_purecall` |
 | a **`0x00562000`–`0x00564500`** kódtartomány (az osztály környéke) | ARGB-konstans **nincs**: csak `0xFF000000`, `0xFFFFFFFF` és `-1`/`-2` őrértékek |
-| a **respack** | van `tre:tooltips` (3595 b) — de az **szövegforrás** (`Tooltip <vezérlő>` + felirat), **nem** elrendezés vagy réteg |
+| a **respack**, teljes réteglista (nem csak a `.tre`-k) | **nincs** `tooltip`/`balloon`/`hint`/`callout`/`bubble` nevű `decrect`-réteg — a `listdecrect`, `tooldecrect`, `overlaydecrect` stb. mind MÁS elemé; van `tre:tooltips` (3595 b), de az **szövegforrás** (`Tooltip <vezérlő>` + felirat), nem elrendezés |
 | a **`.tre`-k** | a `thumbui.tre` `#include tooltips.tre` — ugyanaz a szövegforrás |
-| a létrehozó (`0x005733f0`, a `"tooltip"` névvel, `0x0057351e`) | a nevet átadja a `0x009ccdf0` gyárnak; **szín ott sincs** |
+| a létrehozó (`0x005733f0`, a `"tooltip"` névvel, `0x0057351e`) | a nevet a `0x009ccdf0`-nak adja át — **ez NEM csomópont-gyár, hanem egy globális NÉV-INTERNÁLÓ hashtábla** (39 hívó, `[0xd67914]` globális objektum) — szín ott sem lehet, mert a függvény semmilyen szín-adatot nem kezel |
+| **⭐ ÚJ: a megosztott, öröklött rajzoló-metódusok TÖRZSE** (`0x009e0660`, `0x009e0700`, `0x009e08b0`, `0x009e0ad0`, `0x009e0990`, `0x009e0ed0` [a legnagyobb, 2028 b], `0x009e0b50`, `0x009e3970/90/b00`, `0x00a6be80`, `0x00a6c4b0`, `0x00a6be40`, `0x00a6bca0`) | végigpásztázva **32 bites `0xFF…`/`0xFE…` ARGB-mintára** (a G1 tanulsága szerint) — **egyetlen valódi találat sincs**, csak a `and esp, 0xfffffff8` verem-igazítás és hasonló bitmaszk-műveletek |
+| **⭐ ÚJ: natív Win32 tooltip vezérlő** | a `COMCTL32.dll` importja **nem** tartalmaz tooltip-függvényt (csak `InitCommonControlsEx`, `PropertySheetA/W`, két ordinál — property sheet/wizard máshoz); a `"tooltips_class32"` / `"TOOLTIPS_CLASS"` szó **sehol nincs** a binárisban. **A buboréksúgó tehát biztosan a saját `ytToolTip`, nem az OS natív tooltipje.** |
+| **⭐ ÚJ: `GetSysColor`** (rendszerszín-lekérdezés, pl. `COLOR_INFOBK` a klasszikus sárga tooltip-háttérhez) | **hat hívási helye van a binárisban, egyik sincs** a tooltip létrehozási/rajzolási láncban (`0x005733f0`, `0x00563060`, a fenti generikus rajzolók) — a szín tehát **nem az operációs rendszertől** jön futásidőben |
 
 **Amit ez kizár:** a buboréksúgó megjelenése **nem** `.tre`-tulajdonság,
-**nem** respack-réteg, és **nem** az osztály saját kódjában ülő konstans.
-Marad a futásidőben felépített gyerek-csomópontok útja (mint a kollázs
-csoport-kereténél, `picasa-kollazs-felulet.md` 2/b) — ez viszont már a
-**drága** lánc-vég.
+**nem** respack-réteg, **nem** az osztály saját kódjában ülő konstans,
+**nem** az öröklött rajzoló-metódusok konstansa, **nem** natív Win32
+vezérlő, és **nem** rendszerszín. Az egyetlen megmaradó lehetőség egy
+futásidőben, más forrásból (pl. egy meg nem talált globális
+„skin"/paletta-objektum) összeállított érték — ennek nyomon követése
+már **bizonytalan kimenetelű, drága dekompiláció** lenne, hetekre
+visszamenő adatfolyam-követéssel, konkrét célcím nélkül.
 
 **A LEGOLCSÓBB ÚT: képernyőkép.** A megjelenés pontosan az, amit egy kép
 mutat, és a projekt szabálya szerint a tulajdonos képernyőképe önmagában
