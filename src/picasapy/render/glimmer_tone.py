@@ -252,15 +252,22 @@ def apply_twotone(
     fade: float = 0.0,
 ):
     """`TwoTone=1,Brightness,Contrast,Fade,fekete,fehér` —
-    `SimpleColorMatrix(Saturation=0, Brightness, Contrast)` → luma-alapú
-    lineáris interpoláció a `black_color`/`white_color` között.
+    `SimpleColorMatrix(Saturation=0, Brightness, Contrast,
+    ContrastAndBrightnessLinked=true)` → luma-alapú lineáris interpoláció
+    a `black_color`/`white_color` között.
     """
     import numpy as np
 
     validate_image(image)
     from picasapy.render.glimmer_ops import luma
 
-    matrixed = simple_color_matrix(image, saturation=-100.0, brightness=brightness, contrast=contrast)
+    matrixed = simple_color_matrix(
+        image,
+        saturation=0.0,
+        brightness=brightness,
+        contrast=contrast,
+        linked=True,
+    )
     gray = (luma(to_float(matrixed)) / 255.0)[..., None]
     black = np.array(black_color, dtype=float)
     white = np.array(white_color, dtype=float)

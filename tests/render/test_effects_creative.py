@@ -13,6 +13,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from picasapy.render import glimmer_tone as glimmer_tone
 from picasapy.render.effects_creative import (
     apply_cinemascope,
     apply_holga,
@@ -29,6 +30,7 @@ from picasapy.render.effects_creative_tone import (
     apply_quantizepalette,
     apply_twotone,
 )
+from picasapy.render.glimmer_ops import luma
 
 
 def _uniform_image(
@@ -343,6 +345,24 @@ class TestApplyQuantizepalette:
 
 
 class TestApplyTwotone:
+    def test_a_szinkevero_linkelt_es_tetlen_telitettséget_hasznal(self) -> None:
+        """#966: a TwoTone előtti SimpleColorMatrix az XML szerinti ág."""
+        image = np.array([[[40, 120, 220]]], dtype=np.uint8)
+        result = glimmer_tone.apply_twotone(
+            image,
+            black_color=(0, 0, 0),
+            white_color=(255, 255, 255),
+            brightness=10.0,
+            contrast=20.0,
+        )
+        matrixed = glimmer_tone.simple_color_matrix(
+            image, saturation=0.0, brightness=10.0, contrast=20.0, linked=True
+        )
+        expected_value = int(round(float(luma(matrixed.astype(np.float32))[0, 0])))
+        np.testing.assert_array_equal(
+            result[0, 0], np.array([expected_value, expected_value, expected_value], dtype=np.uint8)
+        )
+
     def test_fekete_bemenet_arnyek_szint_ad(self) -> None:
         result = apply_twotone(_uniform_image(0), shadow_color=(10, 20, 30))
         np.testing.assert_array_equal(result[0, 0], np.array([10, 20, 30], dtype=np.uint8))
