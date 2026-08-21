@@ -342,3 +342,97 @@ A „ki nyúl ehhez a tagmezőhöz?" kérdésre a bináris-index nem válaszol (
 struktúra-eltolásokat). A `.text` teljes végigdiszasszemblálása az eltolásokra
 keresve viszont **1,4 másodperc** helyben (`capstone` + `pefile`), és
 mind a 8 érintett függvényt megadja. Általánosan használható fogás.
+
+## Az `imagedata_avgcolor` oszlop — a KÉPLET (2026-08-21, K5)
+
+Az `avgcolor` az egyetlen PMP-oszlop, amit a Picasa **számol**, nem
+átvesz. A képlet és az élő adat egymást igazolja.
+
+### A számoló — `0x009ac640` (252 b)
+
+Az indexelő a `0x00425f60`-ban hívja (`0x004280c9`), majd az eredményt
+az `"avgcolor"` kulccsal írja az adatbázisba (`0x004280e0` → `0x006a5060`):
+
+```asm
+0x004280a8  or   ecx, 0xffffffff       ; a teglalap-parameter: (-1,-1,-1,-1)
+0x004280ab  sub  esp, 0x10             ;   = az EGESZ kep
+0x004280bb  lea  ecx, [esp + 0xe4]     ; a dekodolt keppuffer
+0x004280c9  call 0x9ac640
+0x004280d1  push eax                   ; az eredmeny
+0x004280d8  push 0xc813f0              ; "avgcolor"
+0x004280e0  call 0x6a5060              ; adatbazisba iras
+```
+
+**Két előfeltétel** (`0x0042808e`–`0x004280a2`): a kép szélessége **és**
+magassága is legalább **2** képpont; egyébként a hívás elmarad.
+
+**Egy kizáró feltétel** a számolóban: ha a pixelformátum-lekérdező
+(`0x009aab60`) **3**-at ad, a rutin azonnal **0**-t ad vissza
+(`0x009ac656`–`0x009ac65b`).
+
+### A ciklus — négy akkumulátor, csatornánként
+
+```asm
+0x009ac6c2  movzx ebp, byte ptr [ecx + 3]   ; a 4. bajt -> eax
+0x009ac6c8  movzx ebp, byte ptr [ecx + 2]   ; a 3. bajt -> esi
+0x009ac6ce  movzx ebp, byte ptr [ecx + 1]   ; a 2. bajt -> edi
+0x009ac6d4  movzx ebp, byte ptr [ecx]       ; az 1. bajt -> [esp+0x14]
+0x009ac6d9  add   ecx, 4                    ; kovetkezo 32 bites keppont
+```
+
+Egyszerű összegzés, **súlyozás és színtér-átváltás nélkül**.
+
+### Az osztás és a csomagolás
+
+```asm
+0x009ac6fc  edx = jobb - bal          ; szelesseg
+0x009ac700  ebx = also - felso        ; magassag
+0x009ac704  imul edx, ebx             ; N = keppontok szama
+0x009ac70b  div ecx                   ; osszeg[3] / N   -> ebx
+0x009ac713  div ecx                   ; osszeg[2] / N
+0x009ac715  shl ebx, 8 ; or ebx, eax
+0x009ac71e  div ecx                   ; osszeg[1] / N
+0x009ac720  shl ebx, 8 ; or ebx, eax
+0x009ac72e  div ecx                   ; osszeg[0] / N
+0x009ac730  shl ebx, 8 ; or eax, ebx
+```
+
+> **avgcolor = (átlag[3] << 24) | (átlag[2] << 16) | (átlag[1] << 8) | átlag[0]**
+>
+> ahol `átlag[k] = (a k. bájt összege) / N`, **egész osztással, tehát
+> LEFELÉ CSONKOLVA** — nem kerekítve.
+
+A képpuffer memóriabeli sorrendje BGRA (bájt0=B … bájt3=A), tehát a
+tárolt dword **`0xAARRGGBB`**.
+
+### Élő igazolás — `imagedata_avgcolor.pmp`
+
+A valódi adatbázisban (`research/testdata/Picasa2/db3/`, 140 755 sor,
+type-kód `0x0001`, 4 bájt/sor):
+
+| megfigyelés | érték |
+|---|---|
+| nem nulla | 133 454 / 140 755 (a 7 301 nulla = ki nem számolt) |
+| különböző értékek | 100 611 |
+| felső bájt = `0xFF` | 125 070 |
+| felső bájt = `0xFE` | 8 382 |
+| egyéb felső bájt | 2 (`0xAC`, `0xB6`) |
+| minta | `0xFFACA190`, `0xFFF7F8F9`, `0xFF233428` |
+
+**A `0xFE` a képlet közvetlen következménye.** Ha minden képpont alfája
+255, az átlag pontosan 255. Ha **akár egyetlen** képpont alfája kisebb, az
+összeg `255·N` alá esik, és a **csonkoló** osztás azonnal **254**-et ad.
+Ezért kétcsúcsú az eloszlás, és ezért van csak két, erősen átlátszó
+kimaradó. *(Kerekítéssel ez a kettősség nem jönne létre — a képlet és az
+élő adat tehát egymást igazolja.)*
+
+A bájtsorrend (`0xAARRGGBB`) **független megerősítése** annak, amit a
+kollázs csoport-keretének színénél (`picasa-kollazs-felulet.md` 2/b.3)
+a `0xFF7D8397` konstans négy előfordulásából kalibráltunk.
+
+### Ami NINCS mérve
+
+**Melyik felbontású puffert átlagolja** — a teljes felbontású dekódolt
+képet vagy az indexelés közben amúgy is előálló bélyegképet. A gyakorlati
+különbség csekély (a doboz-szűrős kicsinyítés az átlagot közel pontosan
+megőrzi), de bitre pontos egyezéshez számítana.

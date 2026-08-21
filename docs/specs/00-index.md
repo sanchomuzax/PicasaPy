@@ -73,7 +73,7 @@ kérdés).
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
-### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 3 kérdés
+### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 1 kérdés
 
 ⭐ **2026-08-21, működés-kör (kilenc kérdés):** a
 `kollazs-eletciklus.md` **16.** szakasza négy, eddig sehol nem szereplő
@@ -137,9 +137,13 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    rekeszt, `"right"`→2, `"center"`→1 —, a kollázs **1**-et ad, tehát
    **KÖZÉPRE**; a `_draw_polaroid_caption`-ünk már így csinálja.)*
    Jegy: **#978**.
-6. Az **`avgcolor` adatbázismezőt** mi és milyen képlettel állítja elő?
-   (A kollázs csak **kiolvassa** — a lap **3/b**-je; ez az **indexelő**
-   területe, nem a kollázsé.)
+6. ~~Az **`avgcolor` adatbázismezőt** mi és milyen képlettel állítja elő?~~
+   — **LEZÁRVA** (2026-08-21): a képlet a
+   [pmp-database.md](pmp-database.md) „Az `imagedata_avgcolor` oszlop"
+   szakaszában — csatornánkénti összeg / képpontszám **csonkoló** egész
+   osztással, `0xAARRGGBB`-be csomagolva (`0x009ac640`); az élő,
+   140 755 soros oszlop eloszlása a csonkolást függetlenül igazolja.
+   A mi képletünk **két ponton eltér** → **#1171**.
 
 
 ### [export-parbeszed.md](export-parbeszed.md) — 7 kérdés

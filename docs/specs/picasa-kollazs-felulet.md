@@ -2049,8 +2049,11 @@ három, és egyik sem igényel futó Picasát)*:
    a kapcsolónak **nincs „ki" állapota** — egyetlen szövegcsomópont-hívó
    sem ad 0-t —, ezért nincs megfigyelhető különbség, amit reprodukálni
    lehetne. *(A `vt[0x2c]` ugyanaznap megfejtve: `textalign` = középre.)*
-6. az **`avgcolor` adatbázismező** előállítása (3/b) — a kollázson
-   **kívüli** terület, az indexelőé.
+6. ~~az **`avgcolor` adatbázismező** előállítása~~ — **LEZÁRVA**
+   (2026-08-21, K5): a képlet a
+   [pmp-database.md](pmp-database.md) „Az `imagedata_avgcolor` oszlop"
+   szakaszában — csatornánkénti összeg / képpontszám, **csonkoló** egész
+   osztással, `0xAARRGGBB`-be csomagolva (`0x009ac640`). Jegy: **#1171**.
 
 ---
 
