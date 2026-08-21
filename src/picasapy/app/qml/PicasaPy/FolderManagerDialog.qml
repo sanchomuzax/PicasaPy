@@ -16,15 +16,17 @@ Window {
     objectName: "folderManagerDialog"
     title: qsTr("Folder Manager")
     modality: Qt.ApplicationModal
-    width: 720
-    height: 480
-    minimumWidth: 540
-    minimumHeight: 340
+    width: 550
+    height: 450
+    minimumWidth: 0
+    minimumHeight: 0
     color: Theme.canvasBg
 
     // a fa gyökere — alapból a teljes fájlrendszer (Linux-first: "/"),
     // tesztek felülírhatják (setProperty) egy ideiglenes könyvtárra
-    property string rootPath: "/"
+    // Üresen a Picasa-sorrendű többgyökeres nézetet kérjük; a tesztek és
+    // célzott tallózók továbbra is adhatnak egyetlen rootPath-ot.
+    property string rootPath: ""
     property string selectedPath: ""
     // a kijelölt mappa TÉNYLEGES állapota (backend: watchedFolders +
     // kliens-oldali "épp elindított egyszeri keresés" jelző)
@@ -36,17 +38,92 @@ Window {
     // csak azt tükrözzük, amit a backend ténylegesen tud): a mappa fotói
     // véglegesen bekerülnek a könyvtárba, de a mappa nem marad figyelve.
     property var onceScanned: ({})
+    // A Picasa a módosításokat csak az OK megnyomásakor írja ki. A két
+    // lista a megnyitáskori és a párbeszédben látható (már szerkesztett)
+    // állapot; a mapek a fa öröklődő felülbírálásait és az arc-kapcsolót
+    // tartják a munkamenet végéig.
+    property var initialWatched: []
+    property var visibleWatched: []
+    property var pendingStates: ({})
+    property var pendingFaces: ({})
+    property bool acceptingChanges: false
 
     property var rootChildren: []
     property bool rootLoaded: false
 
-    function open() { folderManagerWindow.visible = true }
+    Component.onCompleted: beginSession()
+
+    function open() {
+        beginSession()
+        folderManagerWindow.visible = true
+    }
+
+    function beginSession() {
+        initialWatched = controller ? controller.watchedFolders.slice() : []
+        visibleWatched = initialWatched.slice()
+        pendingStates = ({})
+        pendingFaces = ({})
+        onceScanned = ({})
+        acceptingChanges = false
+    }
+
+    function cancelChanges() {
+        beginSession()
+        folderManagerWindow.visible = false
+    }
+
+    function _isAtOrBelow(path, root) {
+        return path === root || path.indexOf(root + "/") === 0
+               || path.indexOf(root + "\\") === 0
+    }
+
+    function _containsPath(paths, path) {
+        for (var i = 0; i < paths.length; ++i)
+            if (paths[i] === path) return true
+        return false
+    }
+
+    function _finishAccept() {
+        for (var i = 0; i < initialWatched.length; ++i)
+            if (!_containsPath(visibleWatched, initialWatched[i]))
+                controller.removeFolder(initialWatched[i])
+        for (var j = 0; j < visibleWatched.length; ++j)
+            if (!_containsPath(initialWatched, visibleWatched[j]))
+                controller.addWatchedFolder(visibleWatched[j])
+        for (var path in pendingStates)
+            if (pendingStates[path] === "once") controller.scanFolderOnce(path)
+            else if (pendingStates[path] === "none"
+                     && !_containsPath(initialWatched, path)) controller.removeFolder(path)
+        for (var facePath in pendingFaces)
+            controller.setFaceDetectionEnabled(facePath, pendingFaces[facePath])
+        acceptingChanges = false
+        folderManagerWindow.visible = false
+    }
+
+    function acceptChanges() {
+        // A Picasa a destruktív arctörlési kérdést az OK-fázisban teszi fel.
+        for (var path in pendingFaces) {
+            if (pendingFaces[path] === false) {
+                acceptingChanges = true
+                faceExclusionConfirm.ask(
+                    "removeFacesFromExcludedFolder",
+                    qsTr("Are you sure you want to remove all faces "
+                         + "and name tags from excluded folders?"))
+                return
+            }
+        }
+        _finishAccept()
+    }
 
     function requestRootIfNeeded() {
         if (folderManagerWindow.rootLoaded) return
         folderManagerWindow.rootLoaded = true
-        if (typeof folderTreeController !== "undefined")
-            folderTreeController.requestChildren(folderManagerWindow.rootPath)
+        if (typeof folderTreeController !== "undefined") {
+            if (folderManagerWindow.rootPath.length > 0)
+                folderTreeController.requestChildren(folderManagerWindow.rootPath)
+            else
+                folderTreeController.requestRoots()
+        }
     }
 
     onVisibleChanged: if (folderManagerWindow.visible) folderManagerWindow.requestRootIfNeeded()
@@ -63,16 +140,30 @@ Window {
         function onChildrenLoaded(path, children) {
             if (path === folderManagerWindow.rootPath) folderManagerWindow.rootChildren = children
         }
+        function onRootsLoaded(roots) {
+            if (folderManagerWindow.rootPath.length === 0)
+                folderManagerWindow.rootChildren = roots
+        }
     }
 
     // a kijelölt mappa állapota: "always" (figyelt gyökér), "once"
     // (ebben a munkamenetben elindított egyszeri keresés), egyébként "none"
     function stateFor(path) {
-        if (!path) return "none"
+        if (!path) return "once"
+        var chosen = ""
+        var chosenLength = -1
+        for (var changedPath in folderManagerWindow.pendingStates) {
+            if (_isAtOrBelow(path, changedPath) && changedPath.length > chosenLength) {
+                chosen = folderManagerWindow.pendingStates[changedPath]
+                chosenLength = changedPath.length
+            }
+        }
+        if (chosen !== "") return chosen
         if (folderManagerWindow.onceScanned[path] === true) return "once"
         // #305: null-őr — a `selectedState` kötés (fentebb) a QML-engine
         // leépítésekor is újraértékelődhet, amikor a `controller` már null
-        if (controller && controller.watchedFolders.indexOf(path) !== -1) return "always"
+        for (var i = 0; i < folderManagerWindow.visibleWatched.length; ++i)
+            if (_isAtOrBelow(path, folderManagerWindow.visibleWatched[i])) return "always"
         return "none"
     }
 
@@ -82,6 +173,15 @@ Window {
     // egyezés a Python `faceDetectionEnabledFor` tükre.
     function facesExcludedFor(path) {
         if (!path || typeof controller === "undefined" || !controller) return false
+        var pending = ""
+        var pendingLength = -1
+        for (var changedPath in folderManagerWindow.pendingFaces) {
+            if (_isAtOrBelow(path, changedPath) && changedPath.length > pendingLength) {
+                pending = folderManagerWindow.pendingFaces[changedPath]
+                pendingLength = changedPath.length
+            }
+        }
+        if (pending !== "") return pending === false
         var roots = controller.faceExcludedFolders
         for (var i = 0; i < roots.length; i++) {
             var root = roots[i]
@@ -90,6 +190,22 @@ Window {
             if (path.indexOf(root + "\\") === 0) return true
         }
         return false
+    }
+
+    function parentFacesExcludedFor(path) {
+        if (!path) return false
+        var normalized = path.replace(/[\\/]+$/, "")
+        var slash = Math.max(normalized.lastIndexOf("/"), normalized.lastIndexOf("\\"))
+        if (slash <= 0) return false
+        return facesExcludedFor(normalized.substring(0, slash))
+    }
+
+    function setFaceDetectionEnabled(path, enabled) {
+        if (!path || parentFacesExcludedFor(path)) return
+        var next = {}
+        for (var key in pendingFaces) next[key] = pendingFaces[key]
+        next[path] = enabled
+        pendingFaces = next
     }
 
     // #543: teljes meghajtó-e az útvonal? Az eredeti Picasa ilyenkor
@@ -125,37 +241,42 @@ Window {
                      + "to your library."))
             return
         }
-        folderManagerWindow.applyState(path, state)
+        folderManagerWindow.stageState(path, state)
     }
 
     // a tényleges állapotváltás — a megerősítő párbeszédek is ezt hívják
-    function applyState(path, state) {
+    function stageState(path, state) {
         if (!path) return
+        var changes = {}
+        for (var changedPath in folderManagerWindow.pendingStates)
+            changes[changedPath] = folderManagerWindow.pendingStates[changedPath]
+        changes[path] = state
+        folderManagerWindow.pendingStates = changes
+
         var next = {}
         for (var key in folderManagerWindow.onceScanned)
             if (key !== path) next[key] = true
         if (state === "once") next[path] = true
         folderManagerWindow.onceScanned = next
 
-        if (state === "always") controller.addWatchedFolder(path)
-        else if (state === "once") controller.scanFolderOnce(path)
-        else controller.removeFolder(path)
+        var watched = folderManagerWindow.visibleWatched.slice()
+        var index = watched.indexOf(path)
+        if (state === "always" && index === -1) watched.push(path)
+        else if (state !== "always" && index !== -1) watched.splice(index, 1)
+        folderManagerWindow.visibleWatched = watched
+    }
+
+    Shortcut {
+        sequence: StandardKey.Cancel
+        context: Qt.WindowShortcut
+        enabled: folderManagerWindow.visible
+        onActivated: folderManagerWindow.cancelChanges()
     }
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 10
-        spacing: 8
-
-        Text {
-            Layout.fillWidth: true
-            text: qsTr(
-                "Choose which folders PicasaPy watches. New and changed "
-                + "pictures in watched folders appear automatically.")
-            wrapMode: Text.WordWrap
-            font.pixelSize: Theme.fontSize
-            color: Theme.textGray
-        }
+        anchors.margins: 4
+        spacing: 4
 
         RowLayout {
             Layout.fillWidth: true
@@ -165,37 +286,50 @@ Window {
             // bal oldal: a helyi fájlrendszer mappafája, lusta betöltéssel
             // #543: az eredeti `foldermgr.tre` PONTOSAN fele-fele oszt
             // (`XConstraint 1, .5, 0`) — nem fix 320/260 px
-            Rectangle {
+            ColumnLayout {
                 Layout.preferredWidth: 1
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                color: Theme.contentPanel
-                border.color: Theme.chromeBorder
+                spacing: 3
 
-                Flickable {
-                    id: treeFlick
-                    objectName: "folderManagerTree"
-                    anchors.fill: parent
-                    anchors.margins: 1
-                    clip: true
-                    contentWidth: width
-                    contentHeight: treeColumn.height
-                    ScrollBar.vertical: PicasaScrollBar {}
+                Text {
+                    text: qsTr("Folder list")
+                    font.pixelSize: Theme.fontSize
+                    font.bold: true
+                    color: Theme.ink
+                }
 
-                    Column {
-                        id: treeColumn
-                        width: treeFlick.width
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    color: Theme.contentPanel
+                    border.color: Theme.chromeBorder
 
-                        Repeater {
-                            model: folderManagerWindow.rootChildren
-                            delegate: FolderTreeItem {
-                                required property var modelData
-                                width: treeColumn.width
-                                path: modelData.path
-                                name: modelData.name
-                                hasChildren: modelData.hasChildren
-                                depth: 0
-                                manager: folderManagerWindow
+                    Flickable {
+                        id: treeFlick
+                        objectName: "folderManagerTree"
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        clip: true
+                        contentWidth: width
+                        contentHeight: treeColumn.height
+                        ScrollBar.vertical: PicasaScrollBar {}
+
+                        Column {
+                            id: treeColumn
+                            width: treeFlick.width
+
+                            Repeater {
+                                model: folderManagerWindow.rootChildren
+                                delegate: FolderTreeItem {
+                                    required property var modelData
+                                    width: treeColumn.width
+                                    path: modelData.path
+                                    name: modelData.name
+                                    hasChildren: modelData.hasChildren
+                                    depth: 0
+                                    manager: folderManagerWindow
+                                }
                             }
                         }
                     }
@@ -203,12 +337,30 @@ Window {
             }
 
             // jobb oldal: állapot-választó + figyelt mappák összegzése
-            FolderStatePanel {
+            ColumnLayout {
                 Layout.preferredWidth: 1
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                manager: folderManagerWindow
-                selectedPath: folderManagerWindow.selectedPath
+                spacing: 4
+
+                Text {
+                    Layout.preferredWidth: 232
+                    Layout.preferredHeight: 73
+                    text: qsTr(
+                        "PicasaPy displays pictures from the folders listed "
+                        + "below. Select a folder and choose how it should "
+                        + "be scanned.")
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.textGray
+                }
+
+                FolderStatePanel {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    manager: folderManagerWindow
+                    selectedPath: folderManagerWindow.selectedPath
+                }
             }
         }
 
@@ -237,18 +389,24 @@ Window {
             PicasaButton {
                 objectName: "folderManagerOkButton"
                 text: qsTr("OK")
-                onClicked: folderManagerWindow.visible = false
+                implicitWidth: 98
+                implicitHeight: 28
+                onClicked: folderManagerWindow.acceptChanges()
             }
             PicasaButton {
                 objectName: "folderManagerCancelButton"
                 text: qsTr("Cancel")
-                onClicked: folderManagerWindow.visible = false
+                implicitWidth: 98
+                implicitHeight: 28
+                onClicked: folderManagerWindow.cancelChanges()
             }
             // #543: az eredeti `foldermgr.tre` jobb alsó sarkában OK /
             // Cancel MELLETT Help gomb is van
             PicasaButton {
                 objectName: "folderManagerHelpButton"
                 text: qsTr("Help")
+                implicitWidth: 98
+                implicitHeight: 28
                 onClicked: folderManagerHelp.visible = true
             }
         }
@@ -259,7 +417,8 @@ Window {
         id: driveWarning
         namePrefix: "folderManagerDriveWarning"
         property string pendingPath: ""
-        onConfirmed: folderManagerWindow.applyState(driveWarning.pendingPath, "always")
+        onConfirmed: folderManagerWindow.stageState(driveWarning.pendingPath, "always")
+        onDenied: folderManagerWindow.stageState(driveWarning.pendingPath, "none")
     }
 
     // #543: IDS_HOTFOLDER_CONFIRM — figyelt mappa eltávolítása
@@ -267,8 +426,17 @@ Window {
         id: removeWatchedConfirm
         namePrefix: "folderManagerRemoveWatchedConfirm"
         property string pendingPath: ""
-        onConfirmed: folderManagerWindow.applyState(
+        onConfirmed: folderManagerWindow.stageState(
                          removeWatchedConfirm.pendingPath, "none")
+    }
+
+    ConfirmDialog {
+        id: faceExclusionConfirm
+        namePrefix: "faceDetectionConfirm"
+        onConfirmed: if (folderManagerWindow.acceptingChanges)
+                         folderManagerWindow._finishAccept()
+        onDenied: folderManagerWindow.acceptingChanges = false
+        onCanceled: folderManagerWindow.acceptingChanges = false
     }
 
     // #543: a Súgó gomb tartalma — az eredeti súgó weboldala nincs meg,
@@ -317,6 +485,6 @@ Window {
     FolderDialog {
         id: pickFolder
         title: qsTr("Add folder...")
-        onAccepted: controller.addWatchedFolder(selectedFolder.toString())
+        onAccepted: folderManagerWindow.stageState(selectedFolder.toString(), "always")
     }
 }

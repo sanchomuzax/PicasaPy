@@ -109,8 +109,19 @@ class TestFolderManagerWindow:
 
         assert dialog.property("visible") is True
         assert dialog.property("minimumWidth") is not None
-        assert dialog.property("minimumWidth") >= 400
+        assert dialog.property("minimumWidth") == 0
         assert dialog.property("minimumHeight") is not None
+
+    def test_picasa_alapmeret_es_nincs_mesterseges_minimum(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "folderManagerDialog")
+        _invoke(dialog, "open")
+        qt_app.processEvents()
+
+        assert dialog.property("width") == 550
+        assert dialog.property("height") == 450
+        assert dialog.property("minimumWidth") == 0
+        assert dialog.property("minimumHeight") == 0
 
     def test_ok_and_cancel_close_the_window(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
@@ -167,6 +178,59 @@ class TestFolderTreeLazyLoading:
 
 
 class TestFolderStateSelection:
+    def test_mappa_nelkul_az_egyszeri_az_alapertelmezett(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _child(window, "folderManagerDialog")
+        dialog.setProperty("selectedPath", "")
+        qt_app.processEvents()
+        assert dialog.property("selectedState") == "once"
+
+    def test_radio_sorrend_egyszer_eltavolitas_mindig(self, qml_app, qt_app):
+        window, _controller, _lib, _engine = qml_app
+        dialog = _dialog_window(window)
+        _invoke(dialog, "open")
+        qt_app.processEvents()
+
+        options = {
+            item.objectName().split(":", 1)[1]: item
+            for item in _walk_visual_tree(dialog.contentItem())
+            if item.objectName().startswith("folderStateOption:")
+        }
+        assert options["once"].y() < options["none"].y() < options["always"].y()
+
+    def test_valtozas_megseig_csak_a_dialogusban_el(self, qml_app, qt_app, tmp_path):
+        window, controller, _lib, _engine = qml_app
+        uj = tmp_path / "kesleltetett"
+        uj.mkdir()
+        dialog = _child(window, "folderManagerDialog")
+        _invoke(dialog, "open")
+        _invoke(dialog, "setState", str(uj), "always")
+        qt_app.processEvents()
+
+        assert str(uj) not in controller.watchedFolders
+        assert dialog.property("selectedState") in ("none", "always")
+        _invoke(_child(window, "folderManagerCancelButton"), "clicked")
+        qt_app.processEvents()
+        assert str(uj) not in controller.watchedFolders
+
+    def test_ok_alkalmazza_a_dialogusban_gyujtott_valtozast(
+        self, qml_app, qt_app, tmp_path
+    ):
+        window, controller, _lib, _engine = qml_app
+        uj = tmp_path / "elfogadott"
+        uj.mkdir()
+        dialog = _child(window, "folderManagerDialog")
+        _invoke(dialog, "open")
+        _invoke(dialog, "setState", str(uj), "always")
+        qt_app.processEvents()
+        assert str(uj) not in controller.watchedFolders
+
+        loop = _quit_on(controller.syncFinished)
+        _invoke(_child(window, "folderManagerOkButton"), "clicked")
+        loop.exec()
+        qt_app.processEvents()
+
+        assert str(uj) in controller.watchedFolders
     def test_selecting_watched_root_reports_always_state(self, qml_app, qt_app):
         window, controller, lib, engine = qml_app
         # a `qml_app` fixture a `lib` (kepek) mappát már figyeltként adja át
@@ -186,6 +250,28 @@ class TestFolderStateSelection:
         qt_app.processEvents()
         assert dialog.property("selectedState") == "none"
 
+    def test_orokolt_allapotot_a_gyerek_felulirhatja(self, qml_app, qt_app):
+        window, _controller, lib, _engine = qml_app
+        child = lib / "kivetel"
+        sibling = lib / "oroklo"
+        child.mkdir()
+        sibling.mkdir()
+        dialog = _child(window, "folderManagerDialog")
+        _invoke(dialog, "open")
+
+        dialog.setProperty("selectedPath", str(child))
+        qt_app.processEvents()
+        assert dialog.property("selectedState") == "always"
+
+        _invoke(dialog, "setState", str(child), "none")
+        dialog.setProperty("selectedPath", str(child))
+        qt_app.processEvents()
+        assert dialog.property("selectedState") == "none"
+
+        dialog.setProperty("selectedPath", str(sibling))
+        qt_app.processEvents()
+        assert dialog.property("selectedState") == "always"
+
     def test_scan_once_indexes_without_persisting_watch(
         self, qml_app, qt_app, tmp_path
     ):
@@ -201,8 +287,12 @@ class TestFolderStateSelection:
         qt_app.processEvents()
         assert dialog.property("selectedState") == "none"
 
-        loop = _quit_on(controller.syncFinished)
         _invoke(dialog, "setState", str(once_dir), "once")
+        qt_app.processEvents()
+        assert controller.folders.rowOfPath(str(once_dir)) == -1
+
+        loop = _quit_on(controller.syncFinished)
+        _invoke(_child(window, "folderManagerOkButton"), "clicked")
         loop.exec()
         qt_app.processEvents()
 
@@ -228,8 +318,12 @@ class TestFolderStateSelection:
         _invoke(_child(window, "folderManagerRemoveWatchedConfirmYesButton"), "clicked")
         qt_app.processEvents()
 
-        assert str(lib) not in controller.watchedFolders
+        assert str(lib) in controller.watchedFolders, "a jóváhagyás csak a dialógus-deltát írja"
         assert dialog.property("selectedState") == "none"
+
+        _invoke(_child(window, "folderManagerOkButton"), "clicked")
+        qt_app.processEvents()
+        assert str(lib) not in controller.watchedFolders
 
 
 class TestFolderManagerWarnings:

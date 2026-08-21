@@ -19,12 +19,12 @@ ColumnLayout {
     id: panel
     property var manager
     property string selectedPath: ""
-    spacing: 10
+    spacing: 4
 
     readonly property var stateOptions: [
-        { state: "always", label: qsTr("Scan Always") },
         { state: "once", label: qsTr("Scan Once") },
-        { state: "none", label: qsTr("Remove from Picasa") }
+        { state: "none", label: qsTr("Remove from Picasa") },
+        { state: "always", label: qsTr("Scan Always") }
     ]
 
     // #449: a Picasa 3 Mappakezelőjében NÉGY vezérlő volt, nem három — az
@@ -69,8 +69,8 @@ ColumnLayout {
 
     Rectangle {
         id: statusFrame
-        Layout.fillWidth: true
-        implicitHeight: statusColumn.implicitHeight + 16
+        Layout.preferredWidth: 231
+        Layout.preferredHeight: 172
         color: Theme.contentPanel
         border.width: 1
         border.color: Theme.chromeBorder
@@ -80,11 +80,11 @@ ColumnLayout {
             id: statusColumn
             anchors.fill: parent
             anchors.margins: 8
-            spacing: 6
+            spacing: 0
 
     ColumnLayout {
         Layout.fillWidth: true
-        spacing: 2
+        spacing: 0
         enabled: panel.selectedPath.length > 0
 
         Repeater {
@@ -102,21 +102,21 @@ ColumnLayout {
                 required property var modelData
                 objectName: "folderStateOption:" + optionRow.modelData.state
                 Layout.fillWidth: true
-                implicitHeight: rowLayout.implicitHeight
+                implicitHeight: 33
 
                 RowLayout {
                     id: rowLayout
                     anchors.fill: parent
-                    spacing: 6
+                    spacing: 5
 
                     Rectangle {
-                        width: 14; height: 14; radius: 7
+                        width: 24; height: 24; radius: 12
                         border.width: 1
                         border.color: Theme.chromeBorder
                         color: Theme.contentPanel
                         Rectangle {
                             anchors.centerIn: parent
-                            width: 8; height: 8; radius: 4
+                            width: 12; height: 12; radius: 6
                             color: Theme.selectionBlue
                             visible: panel.manager !== undefined
                                      && panel.manager !== null
@@ -161,6 +161,7 @@ ColumnLayout {
         enabled: panel.selectedPath.length > 0
                  && panel.manager
                  && panel.manager.stateFor(panel.selectedPath) !== "none"
+                 && !panel.manager.parentFacesExcludedFor(panel.selectedPath)
         opacity: faceDetectionRow.enabled ? 1.0 : 0.4
 
         readonly property bool enabledForSelection:
@@ -171,16 +172,9 @@ ColumnLayout {
         // paramétert visz, ami közvetlen tesztbeli meghívást nehezítene) —
         // ki: megerősítést kér (faceDetectionConfirm); be: azonnali
         function toggle() {
-            if (typeof controller === "undefined" || !controller) return
-            if (faceDetectionRow.enabledForSelection) {
-                faceDetectionConfirm.pendingPath = panel.selectedPath
-                faceDetectionConfirm.ask(
-                    "removeFacesFromExcludedFolder",
-                    qsTr("Are you sure you want to remove all faces "
-                         + "and name tags from excluded folders?"))
-            } else {
-                controller.setFaceDetectionEnabled(panel.selectedPath, true)
-            }
+            if (!panel.manager) return
+            panel.manager.setFaceDetectionEnabled(
+                panel.selectedPath, !faceDetectionRow.enabledForSelection)
         }
 
         RowLayout {
@@ -219,21 +213,6 @@ ColumnLayout {
         }
     }
 
-    // #449: az eredeti Picasa megerősítő kérdése arcfelismerés
-    // kikapcsolásakor. ŐSZINTESÉG: a projektben MÉG NINCS arcfelismerés-
-    // motor, tehát ez a lépés MA nem töröl tényleges arc-adatot — csak a
-    // mappát veszi fel a `FRExcludeFolders.txt`-be (a kizárási szándékot
-    // rögzíti), ld. `library_controller.py: setFaceDetectionEnabled`.
-    ConfirmDialog {
-        id: faceDetectionConfirm
-        namePrefix: "faceDetectionConfirm"
-        property string pendingPath: ""
-        onConfirmed: if (typeof controller !== "undefined" && controller
-                          && faceDetectionConfirm.pendingPath !== "")
-                         controller.setFaceDetectionEnabled(
-                             faceDetectionConfirm.pendingPath, false)
-    }
-
         }
     }
 
@@ -258,7 +237,7 @@ ColumnLayout {
             clip: true
             // #305: null-őr — a controller a QML-engine leépítésekor
             // átmenetileg null lehet
-            model: controller ? controller.watchedFolders : []
+            model: panel.manager ? panel.manager.visibleWatched : []
             delegate: Rectangle {
                 required property string modelData
                 width: watchedList.width

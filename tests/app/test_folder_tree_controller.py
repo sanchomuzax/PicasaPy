@@ -78,7 +78,7 @@ class TestRequestChildren:
         assert by_name["ures"]["hasChildren"] is False
         assert by_name["tele"]["hasChildren"] is True
 
-    def test_hidden_directories_are_skipped(self, make_controller, tmp_path):
+    def test_hidden_directories_are_visible(self, make_controller, tmp_path):
         (tmp_path / ".rejtett").mkdir()
         (tmp_path / "lathato").mkdir()
 
@@ -92,7 +92,18 @@ class TestRequestChildren:
         loop.exec()
 
         names = [c["name"] for c in results[0][1]]
-        assert names == ["lathato"]
+        assert names == [".rejtett", "lathato"]
+
+    def test_picasa_root_order_starts_with_user_folders_then_root(self, tmp_path):
+        from picasapy.app.folder_tree_controller import _root_entries
+
+        roots = _root_entries(home=tmp_path, user="nemletezo-teszt-user")
+        assert [(item["name"], item["path"]) for item in roots[:4]] == [
+            ("Desktop", str(tmp_path / "Desktop")),
+            ("Pictures", str(tmp_path / "Pictures")),
+            ("Documents", str(tmp_path / "Documents")),
+            ("/", "/"),
+        ]
 
     def test_missing_directory_yields_empty_list_not_crash(
         self, make_controller, tmp_path

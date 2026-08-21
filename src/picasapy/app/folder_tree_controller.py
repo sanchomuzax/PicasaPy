@@ -21,14 +21,12 @@ from .worker_thread import BackgroundWorkerMixin
 
 
 def _has_subdirectory(path: Path) -> bool:
-    """Van-e legalább egy (rejtett, nem-szimlink) almappa — csak a fa
+    """Van-e legalább egy (nem-szimlink) almappa — csak a fa
     kinyitó-nyilának megjelenítéséhez, a teljes tartalom listázása
     nélkül (első találatnál megáll)."""
     try:
         with os.scandir(path) as entries:
             for entry in entries:
-                if entry.name.startswith("."):
-                    continue
                 try:
                     if entry.is_dir(follow_symlinks=False):
                         return True
@@ -42,8 +40,8 @@ def _has_subdirectory(path: Path) -> bool:
 def _list_children(path: Path) -> list[dict]:
     """Egy szint közvetlen almappái, név szerint rendezve.
 
-    Rejtett (ponttal kezdődő) bejegyzések és szimbolikus linkek kimaradnak
-    (a szimlink-kihagyás körkörös hivatkozási hurkot előz meg). Olvasási
+    A rejtett mappák is látszanak; csak a szimbolikus linkek maradnak ki
+    (ez a körkörös hivatkozási hurkot előzi meg). Olvasási
     hiba (jogosultság, eltűnt mappa) esetén üres lista — nem hiba, a fa
     egyszerűen üresen mutatja azt az ágat."""
     try:
@@ -53,8 +51,6 @@ def _list_children(path: Path) -> list[dict]:
         return []
     children: list[dict] = []
     for entry in raw:
-        if entry.name.startswith("."):
-            continue
         try:
             if not entry.is_dir(follow_symlinks=False):
                 continue
@@ -72,12 +68,54 @@ def _list_children(path: Path) -> list[dict]:
     return children
 
 
+def _root_entries(home: Path | None = None, user: str | None = None) -> list[dict]:
+    """A Picasa-sorrendű fa-gyökerek Linuxon.
+
+    A három felhasználói gyökér akkor is megjelenik, ha az XDG mappa még
+    nem létezik. A csatolások felsorolása háttérszálon fut; egy eltűnt vagy
+    olvashatatlan mount egyszerűen nem akasztja meg a dialógust.
+    """
+    home = home or Path.home()
+    user = user or os.environ.get("USER", home.name)
+    candidates: list[tuple[str, Path]] = [
+        ("Desktop", home / "Desktop"),
+        ("Pictures", home / "Pictures"),
+        ("Documents", home / "Documents"),
+        ("/", Path("/")),
+    ]
+    for mount_parent in (Path("/media") / user, Path("/run/media") / user):
+        try:
+            candidates.extend((path.name, path) for path in mount_parent.iterdir())
+        except OSError:
+            continue
+
+    result: list[dict] = []
+    seen: set[str] = set()
+    for name, path in candidates:
+        normalized = str(path)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append({"name": name, "path": normalized, "hasChildren": True})
+    return result
+
+
 class FolderTreeController(BackgroundWorkerMixin, QObject):
     """A `FolderManagerDialog.qml` fa-nézetének háttér-hídja."""
 
     # (a lekérdezett mappa útvonala, a közvetlen almappák listája — dict-ek:
     # name/path/hasChildren)
     childrenLoaded = Signal(str, list)
+    rootsLoaded = Signal(list)
+
+    @Slot()
+    def requestRoots(self) -> None:
+        """Asztal/Képek/Dokumentumok és csatolt kötetek, háttérszálon."""
+
+        def worker() -> None:
+            self.rootsLoaded.emit(_root_entries())
+
+        self._start_background(worker, name="picasapy-foldertree-roots")
 
     @Slot(str)
     def requestChildren(self, path: str) -> None:
