@@ -253,12 +253,10 @@ a **három rács-téma**. A `picturepile`, a `contactsheet` és a `multiexp`
 nem állítja.
 
 **Bizalmi fok.** A **mechanizmus megerősített** (utasításszintű minden
-lépésnél, és a 9 beállító teljes enumerációval). Ami **NINCS mérve**: a
-csoport-csomópont *vizuális szerepe* — hogy keretet rajzol-e a kijelölt
-képek köré, együtt mozgatható tárolót ad-e, vagy csak logikai gyűjtő. Ez
-a `0x0085fd60` gyárból létrejövő csomópont rajzoló ágának
-végigkövetését igényelné. Az sem mérve, **miért** épp a három rács-téma
-kapja meg.
+lépésnél, és a 9 beállító teljes enumerációval). A csoport-csomópont
+**vizuális szerepe** azóta szintén mérve — **`#F85E0F` színű téglalap**,
+ld. **2/b**. Ami továbbra sem mérve: hogy **kitöltött-e vagy körvonal**
+(2/b.5), és hogy **miért** épp a három rács-téma kapja meg a bitet.
 
 Teljes bitlista témánként, hogy a folytatás ne kelljen újraszámolni:
 
@@ -291,6 +289,119 @@ A Képkupac-sor egyezik a felhasználó képernyőképével (Képkupac kiválasz
 → a három keretgomb látszik, térköz-csúszka nincs).
 
 ---
+
+---
+
+## 2/b A `collagepanel/groupnode` — MI EZ VIZUÁLISAN (2026-08-21, K1/b)
+
+A 2. szakasz megfejtette, hogy a **6. bit** ezt a csomópontot teszi külön,
+overlay feldolgozási ágba. Ez a szakasz azt méri ki, **mit rajzol**.
+
+**Rövid válasz: egy `#F85E0F` színű (átlátszatlan narancs) TÉGLALAPOT.**
+Nem logikai gyűjtő és nem együtt mozgatható tároló — a csomópont
+osztálya kizárólag rajzol.
+
+### 2/b.1 Az osztály és a gyár
+
+A `0x0085fd60` (82 b) gyár:
+
+```asm
+0x0085fd63  call 0x9dd800                       ; az általános yt-csomópont-konstruktor
+0x0085fd76  mov  dword ptr [esi], 0xcc3c44       ; << ytShapeNode::vftable
+0x0085fd70  mov  dword ptr [esi + 0x264], eax    ; 2. par = 0xfff85e0f
+0x0085fd7c  mov  dword ptr [esi + 0x268], ecx    ; 1. par = 0xd3a138
+0x0085fd84..0x0085fd9f                           ; [esi+0x188..0x194] := a hívó 4 dwordje
+0x0085fda5  mov  byte ptr [esi + 0x217], 1
+```
+
+**`ytShapeNode`** (vtable `0x00cc3c44`, 30 rekesz). Három saját felülírása
+van, a többi öröklött:
+
+| rekesz | cím | mit csinál |
+|---|---|---|
+| 8 | `0x0085fdc0` | **befoglaló doboz** — a `+0x188`-as saját téglalapból (`0xa4a240`), majd `[+0x8] += 2` és `[+0xc] += 2` |
+| 4 | `0x0085fdf0` | a szülő-transzformáció felvétele |
+| **17** | **`0x0085fea0`** | **a RAJZOLÁS** |
+
+### 2/b.2 Mit rajzol — a `0x0085fea0` vége
+
+```asm
+0x0085feac  cmp  dword ptr [edx + 0x268], 0   ; ha nincs alakzat-rajzoló -> 4 (nincs teendő)
+   ...
+0x0085ff4e  mov  esi, dword ptr [eax + 0x248] ; a csomópont ALFÁJA
+0x0085ff54  imul esi, dword ptr [ebx + 0x5c]  ; * a rétegbeli alfa
+0x0085ff58  mov  ecx, dword ptr [eax + 0x268] ; az alakzat-rajzoló objektum
+0x0085ff5e  mov  eax, dword ptr [eax + 0x264] ; << a SZÍN
+0x0085ff64  mov  edx, dword ptr [ecx]
+0x0085ff66  mov  edx, dword ptr [edx]         ; a rajzoló EGYETLEN vtable-rekesze
+0x0085ff68  shr  esi, 8                       ; alfa /= 256
+0x0085ff6b  push esi                          ; 5. arg: alfa
+0x0085ff6c  push &vágott_téglalap             ; 4. arg
+0x0085ff71  push &transzformáció              ; 3. arg (10 dword)
+0x0085ff76  push eax                          ; 2. arg: << a SZÍN
+0x0085ff7a  push dword ptr [ebx + 0x70]       ; 1. arg: a rajzcél
+0x0085ff7b  call edx
+```
+
+A `[node+0x268]` = `0xd3a138`, ami egy **`ShapeDraw<RectSampler>`**
+példány (RTTI: `0x00cb93ec`, `pointer[1]` — egyetlen rekeszes funktor):
+
+```
+0xd3a138 +0x00: 0x00cb93ec   ShapeDraw<RectSampler>::vftable
+         +0x04: 2
+         +0x08: 0.88f
+         +0x0c: 0.79f
+         +0x10: 256
+```
+
+A **`RectSampler`** név adja meg az alakzatot: **téglalap**. A rajzoló
+belépője a `0x007dec00` (1005 b), ami a színt a `0xff00ff`-maszkos,
+`imul` + `shr 8` mintával **előszorozza az alfával** — ez a klasszikus
+csomagolt **ARGB** kezelés.
+
+### 2/b.3 A SZÍN — `0xFFF85E0F`, azaz `#F85E0F`
+
+A bájtsorrendet **külön kalibráltuk**, nem feltételeztük. A binárisban a
+`0xFF7D8397` konstans **négy** helyen szerepel (`0x006084e2`,
+`0x00665bc9`, `0x007af034`, `0x007cea13`), a fordítottja
+(`0xFF97837D`) **egyszer sem**. A `#7D8397` pedig az a szín, amit a
+tulajdonos képernyőképén a **Mappakezelő kijelölt során mértünk**
+(`picasa-mappakezelo.md` 4.4). Tehát a tárolás **`0xAARRGGBB`**.
+
+> **`0xFFF85E0F` → A=255, R=248, G=94, B=15 → `#F85E0F`, erős narancs.**
+
+*(Mellékeredmény: ezzel a `picasa-gomb-es-menu-rendszer.md` „a kiemelt sor
+színe kódból jön" nyitott kérdése is kapott egy konkrét fogódzót — a
+`0xFF7D8397` négy címe.)*
+
+### 2/b.4 Geometria
+
+A `+0x188..0x194` négy dwordje a csomópont **saját téglalapja**. A gyár
+a hívótól kapja; a `0x008603c0` létrehozáskor egy elfajult `(0, ?, 1, 1)`
+kezdőértéket ad, tehát a **tényleges méret később, a kijelölés
+változásakor** áll be.
+
+A befoglaló doboz (8. rekesz) **két képponttal nagyobb** a téglalapnál
+két oldalon:
+
+```asm
+0x0085fdd4  mov eax, 2
+0x0085fdd9  add dword ptr [ecx + 0xc], eax
+0x0085fddc  add dword ptr [ecx + 8], eax
+```
+
+*(A `ShapeDraw` példány `+0x04` mezője szintén **2** — kézenfekvő, hogy
+ez a vonalvastagság, és a +2-es befoglaló ennek a helye. **Ez azonban
+korreláció, nem mérés.**)*
+
+### 2/b.5 Ami NYITVA marad
+
+**Kitöltött téglalap-e vagy csak körvonal?** A `0x007dec00` (1005 b)
+raszterezőjének pásztázó ciklusát nem követtük végig, és a
+`ShapeDraw<RectSampler>` négy paraméterének (`2`, `0.88`, `0.79`, `256`)
+a jelentése sincs megfejtve. **Egyetlen eredeti képernyőkép** (rács-téma,
+két vagy több kijelölt kép) **azonnal eldöntené.** Gépi úton a folytatás:
+`0x007dec00` + `0x00830170`.
 
 ## 3. A háttér — három mód, nem kettő
 

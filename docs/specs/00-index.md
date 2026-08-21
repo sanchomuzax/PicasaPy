@@ -96,8 +96,11 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    (`CollageNodeHandler` vtable 5. rekesze, `0x008603c0`) **külön,
    overlay feldolgozási ágba** kerül; a `+0x219` jelző hatására a
    jelenetgráf-bejáró (`0x009e2aa5`) külön verembe másolja a rekordot és
-   korán kilép. A bit a három **rács-témánál** áll. **Ami MARAD:** a
-   csoport-csomópont *vizuális szerepe* nincs mérve. Jegy: **#1170**.
+   korán kilép. A bit a három **rács-témánál** áll. A csomópont
+   **vizuális szerepe is mérve** (a lap **2/b**): egy **`#F85E0F` színű
+   TÉGLALAP** (`ytShapeNode` + `ShapeDraw<RectSampler>`); a
+   bájtsorrend a `0xFF7D8397` négy előfordulásával kalibrálva.
+   **Ami MARAD:** kitöltött-e vagy körvonal (2/b.5). Jegy: **#1170**.
    *(A többi öt bit 2026-08-18-án lezárult: 12. = a téma megvalósítja a
    9. vtable-slotot, 13. = automata `collage_adapt`, 14. = a
    `collage::shadows` alapértéke, 15./16. = halott bitek.)*
