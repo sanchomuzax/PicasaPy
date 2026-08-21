@@ -215,7 +215,7 @@ nálunk maradhat 100.)*
 amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 **metrikus/angolszász** ágra oszlanak.
 
-### [picasa-gomb-es-menu-rendszer.md](picasa-gomb-es-menu-rendszer.md) — 1 kérdés (a buboréksúgó)
+### [picasa-gomb-es-menu-rendszer.md](picasa-gomb-es-menu-rendszer.md) — nincs nyitott kérdés
 
 1. ~~a **letiltott** gomb rajza~~ — **MEGVAN** (#893): a rajzoló az alfát
    **néggyel osztja** (`0x009e3178`), kivétel nélkül
@@ -230,13 +230,14 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    **`#FDFDFD`**. **A 2026-08-18-i „nincs a binárisban" negatív eredmény
    TÉVES VOLT:** a 24 bites alakra kerestünk, a konstans 32 bites
    (alfával) — a képernyőkép-mérés végig helyes volt. Jegy: **#894**.
-4. **A buboréksúgó rajza** — **BLOKKOLT** (2026-08-21, #901
-   `blocked` + `felhasználóra-vár`): a lap **8/b** szakasza a **teljes
-   negatív leltárt** adja (vtable, konstruktor, `IToolTip`, a kódtartomány
-   ARGB-konstansai, a respack `tre:tooltips` — az **szövegforrás**, nem
-   réteg —, és a létrehozó). Sehol nincs. **A legolcsóbb út egyetlen
-   képernyőkép**, amelyen látszik a buborék: az egyszerre adja a
-   háttér- és keretszínt, a keretvastagságot és az árnyékot.
+4. ~~**A buboréksúgó rajza**~~ — **MEGVAN** (2026-08-21, a lap **8/c**):
+   a tulajdonos képernyőképéből képpontonként mérve — kitöltés
+   **`#F4F1E5`**, keret **`#B7B5AC` 1 px**, **derékszögű** sarkok, fekete
+   szöveg, és **árnyék CSAK a jobb és alsó élen** (a bal/felső élen
+   nincs). Az utóbbi a döntő nyom: ez pontosan a Win32
+   **`CS_DROPSHADOW`** ablakstílus automatikus, rendszer-rajzolta
+   árnyéka — ami megmagyarázza, miért nem volt sehol árnyék-kód a
+   binárisban (a 8/b tizenegy pontos negatív leltára). Jegy: **#901**.
 
 ### [picasa-elso-inditas.md](picasa-elso-inditas.md) — nincs nyitott kérdés
 

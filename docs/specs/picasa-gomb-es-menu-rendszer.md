@@ -467,15 +467,54 @@ futásidőben, más forrásból (pl. egy meg nem talált globális
 már **bizonytalan kimenetelű, drága dekompiláció** lenne, hetekre
 visszamenő adatfolyam-követéssel, konkrét célcím nélkül.
 
-**A LEGOLCSÓBB ÚT: képernyőkép.** A megjelenés pontosan az, amit egy kép
-mutat, és a projekt szabálya szerint a tulajdonos képernyőképe önmagában
-bizonyíték. Egyetlen, buboréksúgót mutató képernyőkép **egyszerre adja
-meg** a háttérszínt, a keretszínt és -vastagságot, valamint az árnyék
-meglétét/irányát. **Jegy: #901** (`blocked`, `felhasználóra-vár`).
+### 8/c A megjelenés MEGVAN — a tulajdonos képernyőképéből mérve (2026-08-21)
 
-> *A színmérésnél ügyelni kell arra, amit a G1 tanított: a Picasa a
-> színeket **32 bites `0xAARRGGBB`** alakban tárolja — a 24 bites alakra
-> keresés hamis negatívot ad.*
+A tulajdonos beküldött egy buboréksúgót mutató képernyőképet
+(`#901`, a „Finomhangolás" fül `Alapszínválasztás` pipettájáról). A
+kép **képpontonként** kimérve — ez a projekt szabálya szerint önmagában
+bizonyíték, a fenti negatív lelet pedig most már **meg is magyarázza**,
+miért nincs egy csepp kód sem hozzá.
+
+| tulajdonság | mért érték | hogyan |
+|---|---|---|
+| **kitöltés** | **`#F4F1E5`** (244, 241, 229) — meleg, halványkrém | képpontminta, szöveg- és élmentes belső terület |
+| **keret** | **`#B7B5AC`** (183, 181, 172), **1 képpont**, teljes körben | a kitöltés és a panelháttér közti egyetlen sornyi/oszlopnyi eltérő pixel |
+| **sarkok** | **DERÉKSZÖGŰEK** — nincs lekerekítés | a bal-felső és jobb-alsó sarok pixel-rácsa éles L-alakot ad, nincs átmeneti ívpixel |
+| **szöveg** | tiszta **fekete** (`#000000` a betűmag) | a legsötétebb képpontok a szövegdobozban |
+| **árnyék** | **VAN, de csak a JOBB és ALSÓ élen** — ~4–5 képpontos, sima (nem lépcsős) szürke elhalványulás a panel hátteréig; a **bal és felső élen NINCS árnyék** (éles átmenet panel→keret) | vízszintes/függőleges metszet mindkét párra |
+| **a panel háttere** (amin a buborék ül) | `#E8E8E8` — összhangban a #894-ben mért legördülő-panel-színnel | referenciapont a fentiekhez |
+
+**A csak-jobb/alsó árnyék a döntő nyom.** Egy alkalmazás-rajzolt árnyék
+tetszőleges alakú lehetne; egy **kétoldalas, éles vágású, azonos
+mélységű** árnyék pontosan az, amit a Win32 **`CS_DROPSHADOW`**
+ablakosztály-stílus ad automatikusan a felugró ablakoknak (a rendszer
+rajzolja, az alkalmazás kódja nem lát belőle semmit). **Ez összhangban
+van a 8/b teljes negatív lelettel**: nem azért nincs árnyék-kód a
+binárisban, mert nem találtuk meg, hanem mert **nincs is** — az
+operációs rendszer rajzolja rá.
+
+**Következtetés a kitöltésre és a keretre:** ha ezek sem
+alkalmazáskódból jönnek (a 8/b tizenegy pontja ezt kizárta), a
+legvalószínűbb magyarázat egy **Windows rendszerszín-pár**, amit a
+korábbi `GetSysColor`-keresésünk **nem** talált meg a tooltip-lánc
+közelében — vagyis vagy egy **közvetett** hívási úton jut oda (amit nem
+követtünk végig), vagy egy **futásidőben betöltött, statikusan nem
+látható** skin-objektumból. *(A klasszikus Win32 `COLOR_INFOBK`
+alapértéke `#FFFFE1` lenne — közel, de NEM egyezik a mért `#F4F1E5`-tel,
+tehát ez feltehetően egy egyéni, nem rendszer-alapértelmezett szín.)*
+
+**Kész, ha** (a PicasaPy megvalósításának): a buboréksúgó kitöltése
+`#F4F1E5`, kerete `#B7B5AC` 1 px, derékszögű sarkokkal, és — ha a
+platform/Qt engedi — árnyék csak a jobb és alsó élen.
+
+**Jegy: #901** — a leltár most már **pozitív mérési eredménnyel**
+zárható; a nyitva maradó rész csak a *miért éppen ez a szín* kérdés
+(nem befolyásolja a megvalósítást).
+
+> *A színmérésnél a G1 tanulságát alkalmaztuk: a Picasa a színeket
+> **32 bites `0xAARRGGBB`** alakban tárolja — de ez a kép önmagában
+> 24 bites RGB-ként mérhető, a csomagolás csak a bináris-oldali
+> kereséshez számított.*
 
 ## 9. A gomb-rétegek teljes leltára
 
