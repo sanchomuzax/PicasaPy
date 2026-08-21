@@ -1,5 +1,5 @@
 """Színkereső gyorsítótár az indexben (#383): `photo_colors` — kép-azonosság
-(útvonal, mtime_ns, méret) → átlagszín (`avgcolor`, 0xRRGGBB) + a hozzá
+(útvonal, mtime_ns, méret) → átlagszín (`avgcolor`, 0xAARRGGBB) + a hozzá
 legközelebbi Picasa-színtoken (`color_token`).
 
 MIÉRT nem a `schema.py`-ban él (ld. az ottani indoklást a `photo_hashes`-nél
@@ -131,7 +131,8 @@ def compute_photo_color(path: str | Path) -> tuple[int, str] | None:
     `reduced_color_flag`-fel megegyező, redukált-méretű útvonalat használja
     (ld. `picasapy.cvimage` — ugyanezt hívja a bélyegkép-gyorsítótár és a
     dedup dHash-e is). `None`, ha a fájl nem dekódolható (törölt/sérült/nem
-    kép — pl. videó)."""
+    kép — pl. videó); 2×2 alatti dekódolt képnél `(0, "")` a Picasa
+    „nincs kiszámolva” sentinelje."""
     from picasapy.cvimage import read_image_bytes, reduced_color_flag
 
     payload = read_image_bytes(Path(path))
@@ -143,9 +144,14 @@ def compute_photo_color(path: str | Path) -> tuple[int, str] | None:
     image = cv2.imdecode(payload, flag)
     if image is None:
         return None
-    r, g, b = average_color(image, order="bgr")
+    average = average_color(image, order="bgr")
+    if average is None:
+        # A Picasa 2x2 alatt nem számol átlagszínt: a 0 sentinel azt is
+        # megakadályozza, hogy a háttérkitöltő minden körben újrapróbálja.
+        return 0, ""
+    r, g, b, a = average
     token = classify_color(r, g, b)
-    return rgb_to_avgcolor(r, g, b), token
+    return rgb_to_avgcolor(r, g, b, a), token
 
 
 def backfill_colors(conn: sqlite3.Connection, limit: int = 200) -> int:

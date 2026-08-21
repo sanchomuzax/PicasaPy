@@ -94,18 +94,40 @@ class TestAverageColor:
     def test_solid_color(self):
         image = np.zeros((4, 4, 3), dtype=np.uint8)
         image[:, :] = (10, 20, 30)
-        assert average_color(image) == (10, 20, 30)
+        assert average_color(image) == (10, 20, 30, 255)
 
     def test_half_and_half_averages(self):
         image = np.zeros((2, 4, 3), dtype=np.uint8)
         image[:, :2] = (0, 0, 0)
         image[:, 2:] = (100, 200, 250)
-        assert average_color(image) == (50, 100, 125)
+        assert average_color(image) == (50, 100, 125, 255)
 
     def test_bgr_order_is_reversed(self):
-        image = np.zeros((1, 1, 3), dtype=np.uint8)
-        image[0, 0] = (30, 20, 10)  # BGR
-        assert average_color(image, order="bgr") == (10, 20, 30)
+        image = np.zeros((2, 2, 3), dtype=np.uint8)
+        image[:, :] = (30, 20, 10)  # BGR
+        assert average_color(image, order="bgr") == (10, 20, 30, 255)
+
+    def test_picasa_truncates_and_averages_all_bgra_channels(self):
+        """A 0xAARRGGBB érték szintetikus, hordozható őre (#1171).
+
+        A valódi PMP-korpusz helyben elérhető lehet, de személyes és
+        gitignore-olt, ezért azonos, 2×2 BGRA-pixelekből rögzítjük a
+        Picasa utasításszinten kimért csonkolását és bájtsorrendjét.
+        """
+        image = np.array(
+            [
+                [(9, 19, 29, 254), (10, 20, 30, 255)],
+                [(10, 20, 30, 255), (10, 20, 30, 255)],
+            ],
+            dtype=np.uint8,
+        )
+
+        assert average_color(image, order="bgr") == (29, 19, 9, 254)
+        assert rgb_to_avgcolor(29, 19, 9, 254) == 0xFE1D1309
+
+    @pytest.mark.parametrize("shape", [(1, 2, 3), (2, 1, 3), (1, 1, 4)])
+    def test_picasa_does_not_calculate_under_two_by_two(self, shape):
+        assert average_color(np.zeros(shape, dtype=np.uint8)) is None
 
     def test_rejects_wrong_shape(self):
         with pytest.raises(ValueError):
@@ -125,7 +147,8 @@ class TestAvgcolorPacking:
         assert avgcolor_to_rgb(rgb_to_avgcolor(1, 2, 3)) == (1, 2, 3)
 
     def test_known_value(self):
-        assert rgb_to_avgcolor(255, 0, 0) == 0xFF0000
+        assert rgb_to_avgcolor(255, 0, 0) == 0xFFFF0000
+        assert rgb_to_avgcolor(1, 2, 3, 4) == 0x04010203
         assert avgcolor_to_rgb(0x00FF00) == (0, 255, 0)
 
 
