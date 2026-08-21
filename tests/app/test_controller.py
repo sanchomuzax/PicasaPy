@@ -1024,6 +1024,16 @@ class TestRemoveFolder:
 
 
 class TestFolderManagerScanState:
+    def test_scan_state_change_stops_worker_using_old_exclude_snapshot(
+        self, controller, library
+    ):
+        should_stop = controller._make_should_stop(str(library))
+        assert should_stop() is False
+
+        controller.setFolderManagerState(str(library / "nyaralas"), "none")
+
+        assert should_stop() is True
+
     def test_excluded_child_stays_out_after_parent_rescan(
         self, controller, library
     ):

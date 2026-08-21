@@ -288,6 +288,13 @@ class TestFolderStateSelection:
             controller.watchedFolders
         )
 
+        _invoke(dialog, "setState", str(child), "none")
+        _invoke(dialog, "setState", str(child), "always")
+        qt_app.processEvents()
+        assert dialog.property("visibleWatched").toVariant() == list(
+            controller.watchedFolders
+        )
+
     def test_scan_once_indexes_without_persisting_watch(
         self, qml_app, qt_app, tmp_path
     ):

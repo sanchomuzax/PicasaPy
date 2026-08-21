@@ -83,6 +83,12 @@ Window {
         return false
     }
 
+    function _coveredByVisibleRoot(path) {
+        for (var i = 0; i < visibleWatched.length; ++i)
+            if (_isAtOrBelow(path, visibleWatched[i])) return true
+        return false
+    }
+
     function _finishAccept() {
         for (var i = 0; i < initialWatched.length; ++i)
             if (!_containsPath(visibleWatched, initialWatched[i]))
@@ -253,7 +259,6 @@ Window {
     // a tényleges állapotváltás — a megerősítő párbeszédek is ezt hívják
     function stageState(path, state) {
         if (!path) return
-        var previousState = folderManagerWindow.stateFor(path)
         var changes = {}
         for (var changedPath in folderManagerWindow.pendingStates)
             changes[changedPath] = folderManagerWindow.pendingStates[changedPath]
@@ -268,7 +273,8 @@ Window {
 
         var watched = folderManagerWindow.visibleWatched.slice()
         var index = watched.indexOf(path)
-        if (state === "always" && index === -1 && previousState !== "always")
+        if (state === "always" && index === -1
+                && !folderManagerWindow._coveredByVisibleRoot(path))
             watched.push(path)
         else if (state !== "always" && index !== -1) watched.splice(index, 1)
         folderManagerWindow.visibleWatched = watched

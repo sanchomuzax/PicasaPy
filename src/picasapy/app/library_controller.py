@@ -229,7 +229,13 @@ class LibraryMixin(BackgroundWorkerMixin):
         leállítási jelző be van állítva VAGY a gyökér már nem figyelt —
         a kettős ellenőrzés a jelző-törlés versenyhelyzetét is lefedi."""
         event = self._cancel_event(root)
-        return lambda: event.is_set() or root not in self._roots
+        self._ensure_folder_manager_scan_state()
+        scan_generation = self._folder_scan_generation
+        return lambda: (
+            event.is_set()
+            or root not in self._roots
+            or scan_generation != self._folder_scan_generation
+        )
 
     # -- életciklus ----------------------------------------------------------
 
@@ -314,6 +320,7 @@ class LibraryMixin(BackgroundWorkerMixin):
         self._folder_scan_scanned = list(scanned)
         self._folder_scan_excluded = list(excluded)
         self._folder_scan_included = list(included)
+        self._folder_scan_generation = 0
 
     @Slot(str, result=str)
     def folderManagerStateFor(self, path: str) -> str:
@@ -360,6 +367,9 @@ class LibraryMixin(BackgroundWorkerMixin):
             "none": self._folder_scan_excluded,
         }[state]
         target.append(normalized)
+        # A már futó teljes sync a következő mappahatáron álljon le: az
+        # induláskor kapott exclude-pillanatkép az új döntés után elavult.
+        self._folder_scan_generation += 1
         if self._folder_scan_file is not None:
             write_scan_list(
                 self._folder_scan_file,
