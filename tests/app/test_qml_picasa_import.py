@@ -113,27 +113,39 @@ class TestPicasaImportDialog:
         adopt_button = _child(window, "picasaImportAdoptButton")
         assert adopt_button.property("enabled") is False
 
-    def test_folder_manager_button_reopens_dialog(self, qml_app, qt_app, monkeypatch):
+    def test_az_atvetel_a_vezerlobol_nyithato(self, qml_app, qt_app, monkeypatch):
+        """A Picasa-mappák átvétele (#146) a VEZÉRLŐN át nyílik.
+
+        ⚠️ Ez a teszt korábban a Mappakezelő „Picasa-mappák átvétele…"
+        GOMBJÁT nyomta meg. Az a gomb a #1200-ban KIKERÜLT: az eredeti
+        Mappakezelőjének pontosan három gombja van (OK / Mégse / Súgó), és
+        a `tre:foldermgr` „# BUTTONS" szakasza ezt bizonyítja.
+
+        A FUNKCIÓ viszont megmaradt — csak a helye más: az első indítás
+        folyamatáé. Ezért a teszt a belépési pontot méri, nem a törölt
+        gombot: enélkül a képesség őrizetlenül maradna."""
         window, _controller, _lib, engine = qml_app
         monkeypatch.setattr(
             "picasapy.app.discovery_controller.discover_installations",
             lambda: (),
         )
 
+        dialog = _child(window, "picasaImportDialog")
+        discovery = _discovery_controller(engine)
+        loop = _quit_on(discovery.discoveryFinished)
+        discovery.openImportDialog()
+        loop.exec()
+        qt_app.processEvents()
+
+        assert dialog.property("visible") is True
+
+    def test_a_Mappakezeloben_MAR_NINCS_atveteli_gomb(self, qml_app, qt_app):
+        """#1200: az eredetiben nem létezik ez a gomb."""
+        window, _controller, _lib, _engine = qml_app
         folder_manager = _child(window, "folderManagerDialog")
         QMetaObject.invokeMethod(
             folder_manager, "open", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
 
-        dialog = _child(window, "picasaImportDialog")
-        discovery = _discovery_controller(engine)
-        loop = _quit_on(discovery.discoveryFinished)
-        adopt_open_button = _child(window, "adoptPicasaFoldersButton")
-        QMetaObject.invokeMethod(
-            adopt_open_button, "clicked", Qt.ConnectionType.DirectConnection
-        )
-        loop.exec()
-        qt_app.processEvents()
-
-        assert dialog.property("visible") is True
+        assert window.findChild(QObject, "adoptPicasaFoldersButton") is None

@@ -50,22 +50,52 @@ Column {
                : (rowMouse.containsMouse ? Theme.selectionBlue : "transparent")
 
         Row {
+            // ⚠️ #1200: a `Row` és a sor-`MouseArea` TESTVÉREK, és a z-rend
+            // testvérek között dönt. A nyíl `MouseArea`-jára tett `z` ezért
+            // önmagában nem elég — a Row EGÉSZÉT kell a sor fölé emelni,
+            // különben a később deklarált `rowMouse` nyeli el a kattintást.
+            z: 1
             anchors.verticalCenter: parent.verticalCenter
             anchors.left: parent.left
             // constants.ui alist_indent = 17 (fa-behúzás szintenként)
             anchors.leftMargin: 6 + root.depth * 17
             spacing: 4
 
+            // ⚠️ #1200: a nyílnak SAJÁT azonosítója van, hogy kattintással
+            // célozható legyen — és a `MouseArea`-ja a sor-`MouseArea`
+            // FÖLÉ kerül (`z: 1`). Enélkül a később deklarált sor-terület
+            // elnyelte a kattintást: a felhasználónál a fa EGYÁLTALÁN nem
+            // nyílt ki, miközben a `toggleExpand()`-et hívó teszt zöld
+            // maradt. A két találati terület az eredetiben is elkülönül.
             Text {
+                id: arrowText
+                objectName: "folderTreeArrow:" + root.path
                 width: 12
                 text: root.hasChildren ? (root.expanded ? "▾" : "▸") : ""
                 font.pixelSize: Theme.fontSize - 2
                 color: root.isSelected ? "#ffffff" : Theme.folderArrow
+                z: 1
                 MouseArea {
                     anchors.fill: parent
                     enabled: root.hasChildren
-                    onClicked: root.toggleExpand()
+                    // a kattintás NEM megy tovább a sorra: a nyíl nem jelöl ki
+                    onClicked: function (egerEsemeny) {
+                        egerEsemeny.accepted = true
+                        root.toggleExpand()
+                    }
                 }
+            }
+
+            // #1200/3: a sor összetétele balról jobbra az eredetiben:
+            // nyíl → ÁLLAPOT-IKON → arc-jelvény → mappaikon → név. Nálunk
+            // az állapot-ikon a név UTÁN állt.
+            FolderStateBadge {
+                objectName: "folderTreeGlyph:" + root.path
+                anchors.verticalCenter: parent.verticalCenter
+                folderState: root.manager ? root.manager.stateFor(root.path) : "none"
+                faceExcluded: root.manager
+                              ? root.manager.facesExcludedFor(root.path) : false
+                tint: root.isSelected ? "#ffffff" : Theme.selectionBlue
             }
 
             FolderIcon { size: 13; anchors.verticalCenter: parent.verticalCenter }
@@ -74,19 +104,6 @@ Column {
                 text: root.name
                 font.pixelSize: Theme.fontSize
                 color: root.isSelected ? "#ffffff" : Theme.ink
-            }
-
-            // #543: az eredeti `foldermgr.tre` KÉP-ikonokat használ
-            // (`icon_once`/`icon_always`), és külön, átfedő jelvényt az
-            // arcfelismerés kikapcsolt állapotára (`nofr_on`/`nofr_off`) —
-            // a korábbi egyetlen szöveges karakter helyett.
-            FolderStateBadge {
-                objectName: "folderTreeGlyph:" + root.path
-                anchors.verticalCenter: parent.verticalCenter
-                folderState: root.manager ? root.manager.stateFor(root.path) : "none"
-                faceExcluded: root.manager
-                              ? root.manager.facesExcludedFor(root.path) : false
-                tint: root.isSelected ? "#ffffff" : Theme.selectionBlue
             }
         }
 

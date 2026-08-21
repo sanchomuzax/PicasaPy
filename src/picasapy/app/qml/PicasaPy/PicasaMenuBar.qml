@@ -155,7 +155,18 @@ MenuBar {
             text: qsTr("New Album...") + "\tCtrl+N"
             placeholder: true
         }
-        PicasaMenuItem { text: qsTr("Add Folder to Picasa..."); placeholder: true }
+        // ⚠️ #1200: ez NEM külön funkció és NEM mappaválasztó — az
+        // eredetiben EZ A MENÜPONT nyitja meg a Mappakezelőt:
+        // `eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS` (`stringres` 2648.)
+        // → parancs `0x9caa` → `0x005cb990` szétosztó → `0x005ce590`.
+        //
+        // Korábban fordítva volt: a menüpont inaktív (placeholder), a
+        // funkciót pedig egy gomb végezte magában a párbeszédben.
+        MenuItem {
+            objectName: "menuFileAddFolder"
+            text: qsTr("Add Folder to Picasa...")
+            onTriggered: bar.folderManagerRequested()
+        }
         PicasaMenuItem { text: qsTr("Add File to Picasa...") + "\tCtrl+O"; placeholder: true }
         PicasaMenuItem { text: qsTr("Import From...") + "\tCtrl+M"; placeholder: true }
         // hiányzott (#324 audit): a Google Fotókból importálás menüpontja
