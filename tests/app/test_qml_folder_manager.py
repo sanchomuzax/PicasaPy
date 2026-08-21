@@ -204,11 +204,12 @@ class TestFolderStateSelection:
         uj.mkdir()
         dialog = _child(window, "folderManagerDialog")
         _invoke(dialog, "open")
+        dialog.setProperty("selectedPath", str(uj))
         _invoke(dialog, "setState", str(uj), "always")
         qt_app.processEvents()
 
         assert str(uj) not in controller.watchedFolders
-        assert dialog.property("selectedState") in ("none", "always")
+        assert dialog.property("selectedState") == "always"
         _invoke(_child(window, "folderManagerCancelButton"), "clicked")
         qt_app.processEvents()
         assert str(uj) not in controller.watchedFolders
@@ -271,6 +272,21 @@ class TestFolderStateSelection:
         dialog.setProperty("selectedPath", str(sibling))
         qt_app.processEvents()
         assert dialog.property("selectedState") == "always"
+
+    def test_orokolt_mindig_nem_hoz_letre_felesleges_gyokeret(
+        self, qml_app, qt_app
+    ):
+        window, controller, lib, _engine = qml_app
+        child = lib / "orokolt"
+        child.mkdir()
+        dialog = _child(window, "folderManagerDialog")
+        _invoke(dialog, "open")
+        _invoke(dialog, "setState", str(child), "always")
+        qt_app.processEvents()
+
+        assert dialog.property("visibleWatched").toVariant() == list(
+            controller.watchedFolders
+        )
 
     def test_scan_once_indexes_without_persisting_watch(
         self, qml_app, qt_app, tmp_path

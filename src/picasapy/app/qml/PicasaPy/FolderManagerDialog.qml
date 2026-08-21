@@ -91,6 +91,8 @@ Window {
             if (!_containsPath(initialWatched, visibleWatched[j]))
                 controller.addWatchedFolder(visibleWatched[j])
         for (var path in pendingStates)
+            controller.setFolderManagerState(path, pendingStates[path])
+        for (var path in pendingStates)
             if (pendingStates[path] === "once") controller.scanFolderOnce(path)
             else if (pendingStates[path] === "none"
                      && !_containsPath(initialWatched, path)) controller.removeFolder(path)
@@ -159,6 +161,10 @@ Window {
             }
         }
         if (chosen !== "") return chosen
+        if (controller && controller.folderManagerStateFor) {
+            var storedState = controller.folderManagerStateFor(path)
+            if (storedState === "none" || storedState === "once") return storedState
+        }
         if (folderManagerWindow.onceScanned[path] === true) return "once"
         // #305: null-őr — a `selectedState` kötés (fentebb) a QML-engine
         // leépítésekor is újraértékelődhet, amikor a `controller` már null
@@ -247,6 +253,7 @@ Window {
     // a tényleges állapotváltás — a megerősítő párbeszédek is ezt hívják
     function stageState(path, state) {
         if (!path) return
+        var previousState = folderManagerWindow.stateFor(path)
         var changes = {}
         for (var changedPath in folderManagerWindow.pendingStates)
             changes[changedPath] = folderManagerWindow.pendingStates[changedPath]
@@ -261,7 +268,8 @@ Window {
 
         var watched = folderManagerWindow.visibleWatched.slice()
         var index = watched.indexOf(path)
-        if (state === "always" && index === -1) watched.push(path)
+        if (state === "always" && index === -1 && previousState !== "always")
+            watched.push(path)
         else if (state !== "always" && index !== -1) watched.splice(index, 1)
         folderManagerWindow.visibleWatched = watched
     }

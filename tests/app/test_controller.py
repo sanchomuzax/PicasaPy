@@ -1023,6 +1023,44 @@ class TestRemoveFolder:
         assert controller.folders.folderCount == before
 
 
+class TestFolderManagerScanState:
+    def test_excluded_child_stays_out_after_parent_rescan(
+        self, controller, library
+    ):
+        from picasapy.scanner import read_scan_list
+
+        child = library / "nyaralas"
+        controller.setFolderManagerState(str(child), "none")
+        controller.removeFolder(str(child))
+        assert controller.folders.rowOfPath(str(child)) == -1
+
+        loop = _quit_on(controller.syncFinished)
+        controller.rescan()
+        loop.exec()
+
+        assert controller.folders.rowOfPath(str(child)) == -1
+        assert read_scan_list(controller._watched_file.with_name("scanlist.txt")) == (
+            (),
+            (str(child),),
+            (),
+        )
+
+    def test_explicit_child_include_overrides_excluded_parent(
+        self, controller, library, qt_app
+    ):
+        child = library / "nyaralas"
+        controller.setFolderManagerState(str(library), "none")
+        controller.setFolderManagerState(str(child), "always")
+
+        loop = _quit_on(controller.syncFinished)
+        controller.addWatchedFolder(str(child))
+        loop.exec()
+        qt_app.processEvents()
+
+        assert controller.folders.rowOfPath(str(child)) >= 0
+        assert controller.folderManagerStateFor(str(library)) == "none"
+        assert controller.folderManagerStateFor(str(child)) == "always"
+
 class TestLiveWatch:
     def test_dirty_folders_synced_into_index(self, controller, library, qt_app):
         # A watcher-jelzés (más szálból) a jelzett mappákat szinkronizálja,
