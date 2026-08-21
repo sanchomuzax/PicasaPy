@@ -217,10 +217,11 @@ megvalósítást — jegy: **#1161**.)*
 2. **A dialógusnak tényleg nincs minimális mérete?** A `0x00920fa0`
    ablakeljárás nem kezeli a `WM_GETMINMAXINFO`-t — de a negatív állítás
    egyetlen ablakosztály átvizsgálásán alapul.
-3. **A `[dlg+0x270]` és a `[dlg+0x2a8]` viszonya** (a lap 14.6) — a
-   „Keresés mindig" **mindkettőbe** felvesz, a megjelenítés a `+0x270`-é,
-   de hogy a `+0x2a8` delta-e vagy teljes kimeneti lista, nincs eldöntve.
-   Folytatás: `0x005cef20`.
+3. ~~A `[dlg+0x270]` és a `[dlg+0x2a8]` viszonya~~ — **LEZÁRVA**
+   (2026-08-21, a lap **5.2/d**): a `+0x2a8` munkamenet-helyi delta, ami az
+   alkalmazóig el sem jut; a `watchedfolders.txt` a **látható listából**
+   (`+0x270`) íródik a közös `+0xf8` scan-lista tárolón át. Az 5.2/b
+   táblázata helyesbítve.
 4. ~~A `filters.txt` szakaszainak szemantikája~~ — **LEZÁRVA**
    (2026-08-21): a mérés a
    [picasa-program-resources.md](picasa-program-resources.md) **3.1**

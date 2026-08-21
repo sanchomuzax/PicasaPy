@@ -434,12 +434,18 @@ majd **mind más listán** végzi a `0x00492e40` keresést:
 |---|---|---|---|
 | **Keresés egyszer** | `0x007c3718` | **`[dlg+0x288]`** | `0x007c375c` |
 | **Eltávolítás a Picasából** | `0x007c40fa` | **`[dlg+0x270]`** | `0x007c4184` |
-| **Keresés mindig** | `0x007c290a` | **`[dlg+0x2a8]`** | `0x007c2c11` |
+| **Keresés mindig** | `0x007c290a` | **`[dlg+0x2a8]`** *(delta)* **és `[dlg+0x270]`** *(a látható lista, `0x007c2f5b`)* | `0x007c2c11` |
 | arcfelismerés-kizárás | — | **`[dlg+0x290]` / `[dlg+0x298]`** | `0x007c5f37`, `0x007c5f4a` |
 
 Az „Eltávolítás" ága ezen felül a **Figyelt mappák listbox** (`[dlg+0x2fc]`)
 kijelölését is beszámítja (`0x007c412e`) — vagyis a rádió **onnan is** tud
 tételt eltávolítani, nem csak a fából.
+
+> ⚠️ **HELYESBÍTÉS (2026-08-21, M11 — lásd 5.2/d):** a `watchedfolders.txt`
+> **NEM** a `[dlg+0x2a8]`-ból íródik. A fájlig vezető lánc:
+> `[dlg+0x270]` → az alkalmazó 2. paramétere → `[könyvtár+0x2bc]+0xf8` →
+> `0x004f5960`. A `+0x2a8` munkamenet-helyi delta, ami az alkalmazóig el
+> sem jut.
 
 > ⚠️ **PONTOSÍTÁS (2026-08-21, M6 — lásd 14.2):** a `[dlg+0x270]` nem csak
 > „az Eltávolítás rádió listája". Ez **a jobb oldali „Figyelt mappák" lista
@@ -585,6 +591,87 @@ bejegyzése** — pontosan ezt mutatja a képernyőkép (`Picasa` kizárt, háro
 gyereke örökli, két másik gyerek saját bejegyzéssel felülírja).
 
 ---
+
+### 5.2/d A MENTÉSI LÁNC — mi jut el a fájlokig (2026-08-21, M11)
+
+Ez a szakasz a 14.6 nyitott pontját zárja le: mi a viszony a **látható
+lista** (`[dlg+0x270]`) és a **„Keresés mindig" delta** (`[dlg+0x2a8]`)
+között.
+
+#### A lánc
+
+```
+„Keresés mindig" rádió (0x007c290a)
+   ├─→ [dlg+0x2a8]   „mindig"-delta, ha még nincs benne  (0x007c2c05)
+   └─→ [dlg+0x270]   a LÁTHATÓ „Figyelt mappák" lista     (0x007c2f5b)
+                          │
+                     OK → 0x007c4df0 → 0x005cef20 2. paraméterként
+                          │   (az első ciklus: 0x005cef3e–0x005cf198)
+                          ↓
+                   [könyvtár+0x2bc] + 0xf8      ← a KÖZÖS scan-lista tároló
+                          │   (ugyanaz, amit az első indítás panelje ír — ld.
+                          │    picasa-elso-inditas.md 6.5 —, és amit a
+                          │    0x007bfec0 is bővít)
+                          ├─→ 0x004f5960 → watchedfolders.txt  (0x005cf49b)
+                          └─→ 0x004f6a20 → scanlist.txt        (0x005cf411)
+```
+
+Az alkalmazó szignatúrája a prológusból (`ret 0x18` = hat dword):
+
+```asm
+0x005cef23  mov  eax, dword ptr [esp + 0x30]   ; 1. par = a KÖNYVTÁR ([dlg+0x268])
+0x005cef27  mov  ecx, dword ptr [esp + 0x34]   ; 2. par = &[dlg+0x270]
+0x005cef2e  mov  esi, dword ptr [eax + 0x2bc]
+0x005cef36  add  esi, 0xf8                     ; a közös scan-lista tároló
+0x005cef46  mov  dword ptr [esp + 0x1c], esi   ; ezt kapja meg a fájlíró
+```
+
+és a fájlíró hívása:
+
+```asm
+0x005cf3f3  mov  ebx, dword ptr [esp + 0x1c]   ; = a +0xf8 tároló
+0x005cf49a  push ebx
+0x005cf49b  call 0x4f5960                      ; watchedfolders.txt
+```
+
+#### ⚠️ HELYESBÍTÉS az 5.2/b táblázathoz
+
+Az 5.2/b azt írta: *„mindig = `[dlg+0x2a8]` → `watchedfolders.txt`"*. A
+rádió valóban ír a `+0x2a8`-ba, de **a fájlig vezető út nem ezen megy**:
+
+| | eddig így szerepelt | a mérés szerint |
+|---|---|---|
+| a `watchedfolders.txt` forrása | `[dlg+0x2a8]` | **`[dlg+0x270]`** → a `+0xf8` közös tároló → `0x004f5960` |
+| a `[dlg+0x2a8]` szerepe | „a mindig-lista" | **munkamenet-helyi delta**, ami **nem jut el az alkalmazóig** |
+
+A `0x005cef20` hat argumentuma között a **`+0x2a8` nincs ott**
+(`0x007c56fb`–`0x007c571f`: `+0x298`, `ebx`, `+0x288`, `+0x280`, `+0x270`,
+`[dlg+0x268]`).
+
+#### Mire való akkor a `[dlg+0x2a8]`?
+
+Mind az öt hivatkozása megvan a `0x007b0000`–`0x007d0000` tartományban:
+
+| hely | mit tesz |
+|---|---|
+| `0x007c01fb` (konstruktor) | nullázás |
+| `0x007c0570` (`0x007c0550`-ből) | ürítés / újrainicializálás |
+| `0x007c2c05` (a „mindig" rádió) | hozzáfűzés, ha még nincs benne |
+| `0x007c09f0` | **iPhoto / Apple Photos** — *hatókörön kívül* |
+| `0x007c4df0` `0x007c4e5b`–`0x007c52aa` | az OK-kezelő nyitó ciklusa |
+
+Az OK-kezelő nyitó ciklusa végigmegy a `+0x2a8`-on, és minden útvonalat két
+Apple-fotókönyvtár-mintához mér (`0x0099bce0`, `0x0099bf40`); egyezésre
+kiveszi a `+0x270`-ből, illetve a `+0x280`-ból, és jelzőt állít, amit az
+alkalmazó után két további `0x007bfec0` hívás használ fel
+(`0x007c5724`, `0x007c5748`). **Ez teljes egészében az Apple-ág** —
+tulajdonosi döntés szerint hatókörön kívül (2026-08-21).
+
+**Következtetés a PicasaPy-ra:** a `[dlg+0x2a8]` **nem kell**. Ami
+számít, az a látható lista (`[dlg+0x270]`): az megy be a közös
+scan-listába, és abból íródik a `watchedfolders.txt`. Ez egyben azt is
+jelenti, hogy **a jobb oldali lista tartalma = amit OK-ra elmentünk** —
+nincs rejtett, harmadik igazságforrás.
 
 ## 6. A figyelmeztetések és megerősítések
 
@@ -1588,12 +1675,11 @@ kiemelés — a `podcast` soron —, a jobb listában nincs.)
 
 ### 14.6 Ami ebből NYITVA marad
 
-- **A `[dlg+0x270]` és a `[dlg+0x2a8]` viszonya.** A „Keresés mindig" ága
-  **mindkettőbe** felvesz (`0x007c2c05`, illetve `0x007c2f5b`), az
-  OK-alkalmazó pedig **külön argumentumként** kapja a kettőt (5.2/c). A
-  megjelenítés a `+0x270`-é — de hogy a `+0x2a8` a „hozzáadott" delta-e,
-  vagy a teljes kimeneti lista, **nincs utasításszinten eldöntve**.
-  Folytatás: `0x005cef20` (az alkalmazó) törzse.
+- ~~A `[dlg+0x270]` és a `[dlg+0x2a8]` viszonya~~ — **LEZÁRVA**
+  (2026-08-21, M11 — ld. **5.2/d**): a `+0x2a8` **munkamenet-helyi delta**,
+  ami **nem jut el az alkalmazóig**; a `watchedfolders.txt` a `+0x270` →
+  `[könyvtár+0x2bc]+0xf8` → `0x004f5960` láncon íródik. **Az 5.2/b
+  táblázata ezen a ponton helyesbítve.**
 - **A `0x007c91c0` háromértékű visszatérése** (`0`, `1`, `9`) —
   a `0` ág a háttérbetöltés, a nem-nulla ág a fa kijelölésének törlése;
   hogy a `0x007c9270` (1853 b) mikor ad `0`-t és mikor `1`-et, nincs
