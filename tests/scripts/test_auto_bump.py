@@ -129,3 +129,15 @@ class TestNemAkaszthatjaMegAKiadast:
         assert "HEAD:main" not in szoveg, (
             "közvetlen push a védett `main`-re — a hook elutasítja"
         )
+
+
+def test_a_workflow_nyithat_PR_t():
+    """A `gh pr create` külön jogosultságot kér (#1166).
+
+    ⚠️ A `contents: write` NEM elég: a PR-nyitás `Resource not accessible by
+    integration`-nel bukott, és a verzióemelés csak a naplóban látszott —
+    a felhasználó számára úgy tűnt, nem történt semmi."""
+    yaml = pytest.importorskip("yaml")
+    ut = _UT.parents[1] / ".github" / "workflows" / "release.yml"
+    adat = yaml.safe_load(ut.read_text(encoding="utf-8"))
+    assert adat.get("permissions", {}).get("pull-requests") == "write"
