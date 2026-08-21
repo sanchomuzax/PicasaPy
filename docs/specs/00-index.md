@@ -179,7 +179,7 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
    történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 4 kérdés (a fa feltöltése és a jobb lista interaktivitása LEZÁRVA)
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 1 kérdés (a hatókörön kívüli Apple-ágon felül)
 
 *(A lap 2026-08-20-án készült, a tulajdonos két képernyőképéből és a
 binárisból. A kör négy kérdést tett fel és kettőt le is zárt — a
@@ -232,9 +232,11 @@ megvalósítást — jegy: **#1161**.)*
    mezőjében **használatlan** (csak konstruktor + destruktor), a
    név/viselkedés feszültség pedig **szerkesztői összevonás**
    (`/OPT:ICF`) — a `ytVolumeIsNTFS` törzsével bájtra azonos.
-6. **A `0x007c91c0` háromértékű visszatérése** (a lap 14.6) — a `0`, `1`
-   és `9` értékek szerepe; a felhasználó által látott viselkedést nem
-   változtatja, a pontos sorrendet igen. Folytatás: `0x007c9270`.
+6. ~~A `0x007c91c0` háromértékű visszatérése~~ — **LEZÁRVA**
+   (2026-08-21, a lap **14.7**): **két** érték van (`0` = siker,
+   `9` = kudarc); a `1` egy tömb-növelő rutin helyi változója volt. A
+   siker ága nyitja ki az ősöket és kéri a háttérbetöltést, a kudarcé
+   törli a fa kijelölését.
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott kérdés
 

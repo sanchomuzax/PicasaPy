@@ -1628,9 +1628,12 @@ Az `lb_selected` kezelő (`0x007c5830`) a küldőt megnézi
    felső **három rádió és az arcfelismerés-sor is átáll**, pontosan úgy,
    mint amikor a fában kattintasz. **Ez a lista tehát nem díszlet: teljes
    értékű kiválasztó vezérlő.**
-3. **A bal fa reagál** — vagy a kijelölése törlődik, vagy (a másik ágon) a
-   `[CDirArray+0x128]` „betöltendő útvonal" rekeszbe kerül az út és a
-   háttérszál felébred, azaz **a fa lustán kinyílik odáig** (13.2).
+3. **A bal fa reagál.** Ha az út **kinyitható** (a `0x007c91c0` `0`-t ad),
+   a program kinyitja az összes ősét, majd a `[CDirArray+0x128]`
+   „betöltendő útvonal" rekeszbe teszi az utat és felébreszti a
+   háttérszálat, azaz **a fa lustán kinyílik odáig** (13.2). Ha **nem**
+   (`9`), a fa **kijelölése törlődik**, hogy ne maradjon elavult kiemelés.
+   A két érték pontos jelentése: **14.7**.
 
 **Keresztellenőrzés a 13. szakasszal:** az itt ébresztett esemény a
 `[dlg+0x550]`, a `CDirArray` pedig a `[dlg+0x414]`-en ül —
@@ -1673,15 +1676,102 @@ kiemelés — a `podcast` soron —, a jobb listában nincs.)
 | 7 | „Eltávolítás" | a mappa **azonnal eltűnik** a jobb listából | — | ugyanígy |
 | 8 | „Eltávolítás" a fa kijelölése nélkül | a **jobb lista** kijelölésére hat (`0x007c412e`) | — | tartalék-ág kell |
 
-### 14.6 Ami ebből NYITVA marad
+### 14.6 Ami ebből nyitva maradt — MINDKETTŐ LEZÁRVA
 
 - ~~A `[dlg+0x270]` és a `[dlg+0x2a8]` viszonya~~ — **LEZÁRVA**
   (2026-08-21, M11 — ld. **5.2/d**): a `+0x2a8` **munkamenet-helyi delta**,
   ami **nem jut el az alkalmazóig**; a `watchedfolders.txt` a `+0x270` →
   `[könyvtár+0x2bc]+0xf8` → `0x004f5960` láncon íródik. **Az 5.2/b
   táblázata ezen a ponton helyesbítve.**
-- **A `0x007c91c0` háromértékű visszatérése** (`0`, `1`, `9`) —
-  a `0` ág a háttérbetöltés, a nem-nulla ág a fa kijelölésének törlése;
-  hogy a `0x007c9270` (1853 b) mikor ad `0`-t és mikor `1`-et, nincs
-  végigkövetve. A **felhasználó által látott** viselkedést ez nem
-  változtatja (a fa mindkét ágon reagál), de a pontos sorrendet igen.
+- ~~A `0x007c91c0` háromértékű visszatérése~~ — **LEZÁRVA** (2026-08-21,
+  M12 — ld. **14.7**): **két** érték van, nem három (`0` = siker,
+  `9` = kudarc); a `1` egy tömb-növelő rutin helyi változója volt.
+
+### 14.7 A fa-ugratás visszatérése — KÉT érték, nem három (2026-08-21, M12)
+
+> ⚠️ **HELYESBÍTÉS a 14.6-hoz.** Ott „háromértékű visszatérés (`0`, `1`,
+> `9`)" szerepelt. **A `1` NEM visszatérési érték** — egy tömb-növelő
+> rutin helyi változója (`0x007c96bf mov eax,1` = kezdő kapacitás, utána
+> `jmp 0x7c96d2`, nem az epilógusba). A függvény **két** értéket ad.
+
+#### 14.7/a `0x007c91c0` — a belépő
+
+```c
+int Reveal(CDirArray* fa, ytString* célÚtvonal);
+```
+
+Végigmegy a **látható sorokon** (`[fa+0x7c]` tömb, elemszám
+`[fa+0x80]>>1`), és mindegyik sor útvonalára megnézi, hogy **előtagja-e**
+a célnak (`0x00987030`, kis-nagybetű-független előtag-teszt — a
+szemantikája a `picasa-program-resources.md` 3.1.2-ben mérve):
+
+```asm
+0x007c9218  mov  eax, dword ptr [esp + 0x24]   ; a cél útvonal
+0x007c921e  call 0x987030                      ; előtag-e a sor útja?
+0x007c9225  jne  0x7c924a                      ; IGEN -> a tényleges munka
+   ...
+0x007c923b  mov  eax, 9                        ; egyetlen sor sem előtag -> 9
+0x007c924a  call 0x7c9270                      ; találat -> ennek az értéke
+```
+
+#### 14.7/b `0x007c9270` — a rekurzív kinyitó
+
+**Rekurzív** (`0x007c9404 call 0x7c9270`): a cél útvonal **őseit** nyitja
+ki egyesével.
+
+```asm
+0x007c9404  call 0x7c9270                      ; előbb a SZÜLŐ
+0x007c9409  test eax, eax
+0x007c940b  jne  0x7c9456                      ; a szülő nem sikerült -> 9
+0x007c9416  call 0x40ecd0                      ; a szülő SORÁNAK keresése
+0x007c941d  cmp  ebx, -1
+0x007c9424  jne  0x7c9479
+0x007c9443  mov  eax, 9                        ; nincs ilyen sor -> 9
+0x007c9479:
+0x007c9479  mov  edx, dword ptr [ebp + 0x118]  ; a „kinyitva" jelzőtömb
+0x007c9483  mov  dword ptr [edx + ebx*4], 1    ; << KINYITJA a csomópontot
+   ...
+0x007c997f  mov  dword ptr [edx + ecx*4], 1    ; << és a célt is
+0x007c9993  xor  eax, eax                      ; SIKER -> 0
+```
+
+**A teljes visszatérési halmaz `{0, 9}`.** A függvényben pontosan **két**
+`jmp 0x7c9995` (az epilógusba) van, mindkettő `eax = 9`-cel; minden más út
+a `0x007c9993 xor eax, eax`-ra fut, tehát **0**-t ad.
+
+| érték | jelentés | hol keletkezik |
+|---|---|---|
+| **0** | **siker** — a cél minden őse „kinyitva" jelzőt kapott | `0x007c9993` |
+| **9** | **kudarc** — nincs előtag-sor (`0x007c923b`), vagy a rekurzió elbukott (`0x007c9443`), vagy a ciklus találat nélkül végigfutott (`0x007c946f`) | három hely |
+
+**Keresztellenőrzés:** a `[fa+0x118]` jelzőtömb **ugyanaz**, amit a
+13.2 a kinyitás/becsukás kapcsolónál (`0x007bf2ee`) mért. Két, egymástól
+függetlenül vizsgált függvény ugyanazt az adatszerkezetet írja.
+
+#### 14.7/c Miért indít a SIKER háttérbetöltést?
+
+A 14.3-beli elágazás így olvasandó:
+
+```asm
+0x007c5aae  call 0x7c91c0(&[dlg+0x414], &út)
+0x007c5ab3  test eax, eax
+0x007c5ab5  je   0x7c5ad2      ; 0 = SIKER
+0x007c5ac2  call 0x9d2810(fa, -1, 0)          ; 9 = kudarc -> kijelölés törlése
+0x7c5ad2:
+0x007c5ad5  call 0x7bf130(&[dlg+0x414], &út)  ; siker -> „betöltendő útvonal"
+0x007c5ae1  SetEvent([dlg+0x550])             ;          + a szál ébresztése
+```
+
+Ez **nem ellentmondás**: a kinyitás csak **jelzőt állít**
+(`[fa+0x118][sor] = 1`), a gyerekek tényleges felsorolása a
+**háttérszál** dolga (13.2). Tehát:
+
+- **siker** → a most kinyitott ágak gyerekeit **be kell tölteni** → a
+  betöltési kérés + ébresztés;
+- **kudarc** → nincs mit mutatni → a fa kijelölése **törlődik**, hogy ne
+  maradjon elavult kiemelés.
+
+**A felhasználó szempontjából:** a jobb listában kiválasztott mappa a fában
+kinyílik és kijelölődik; ha az útja egyáltalán nincs a fában (pl. egy
+azóta leválasztott meghajtón van), a fa **kijelölés nélkül marad** —
+hibaüzenet nélkül.
