@@ -150,7 +150,7 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    A mi képletünk **két ponton eltér** → **#1171**.
 
 
-### [export-parbeszed.md](export-parbeszed.md) — 1 kérdés
+### [export-parbeszed.md](export-parbeszed.md) — nincs nyitott kérdés
 
 *(2026-08-20, három kör. A lap teljes: a `.fen` leíró, mind a 28 magyar
 felirat, a kötések, a 9 beállítás-kulcs, a **képpontra mért geometria** a
@@ -198,15 +198,15 @@ nálunk maradhat 100.)*
    **Exportot kérni a felhasználótól NEM kell.** Névcsapda: a
    `CThumbDB::Exported` kulcs a **feltöltés** gyűjteményét nevezi meg.)*
 
-1. **Mi TILTJA LE a film-rádiókat?** A tény mért (a rádiók szürkék, a
-   csoport **címkéje fekete marad**), és négy dolog **kizárva**: nincs
-   `.fen`-beli `enabled` kötés; a motor csak abból ismeri a letiltást
-   (`0x008d2210`); a `movies` névre a teljes párbeszéd-kódban két
-   hivatkozás van, egyik sem tilt; és a kötés-osztály ugyanaz
-   (`0xC7F790`), mint a nem letiltott `sizeradio`/`quality`-é. **Az
-   export-párbeszéd saját kódja tehát NEM tiltja le.** Folytatás: a közös
-   vezérlő-réteg (`0x008d1450`, a `0x008d2210` hívói) vagy a befogadó
-   `CExportPrefsPage` (`0x007f6650`). **A megvalósítást nem blokkolja.**
+1. ~~**Mi TILTJA LE a film-rádiókat?**~~ — **LEZÁRVA** (2026-08-21, a lap
+   **13.10**). **A párbeszéd SAJÁT kódja tiltja**, ha a kijelölésben
+   **egyetlen film sincs**: `0x007394b3` (`[dlg+0xcd] == 0`) →
+   `vt[0x114]("movies", 0)` (`0x007394e1`); a jelzőt a létrehozó
+   (`0x005312b0`) teszi oda a `0x005c7990` vizsgálóból; a filmtípusok
+   kódjai **8, 9, 10, 11, 12, 23, 29**. **KÉT korábbi állításunk
+   megdőlt:** (a) „a párbeszéd saját kódja NEM tiltja le" — de igen, a
+   `movies` név **második** hivatkozása épp a tiltás; (b) „a csoport
+   címkéje fekete marad" — a képernyőképen a **címke is szürke**.
 
 ### [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) — nincs nyitott kérdés
 

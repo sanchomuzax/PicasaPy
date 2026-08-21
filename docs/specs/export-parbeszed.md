@@ -926,11 +926,12 @@ A felület leírása a lap 1–7. szakaszában van (az `export.fen`-ből).
    szélesség a **kijelölt képek számának jegyszáma**, a sorszám
    **1-től** indul, az elválasztó **kötőjel**, utána a teljes eredeti
    fájlnév.
-5. **Mi TILTJA LE a film-rádiókat.** A 8.8 az *alapértelmezést* zárta le
-   (`Preferences\FileExportMovie` → `setne` → a kiválasztott index), a
-   letiltás viszont máshol dől el — a `movies` csoport `disable`
-   mezőjét (`+0x20e`) író helyet kell megkeresni, feltehetően a
-   kijelölés film-darabszámából.
+5. ~~**Mi TILTJA LE a film-rádiókat**~~ — **LEZÁRVA** (2026-08-21, ld.
+   **13.10**): **a párbeszéd SAJÁT kódja tiltja**, ha a kijelölésben
+   **egyetlen film sincs** (`0x007394b3` → `vt[0x114]("movies", 0)`). A
+   filmjelzőt a létrehozó (`0x005312b0`) teszi a `[dlg+0xcd]`-be a
+   `0x005c7990` vizsgálóból. **KÉT korábbi állításunk megdőlt** —
+   ld. a szakasz elején.
 6. ~~**A `changeloc` (mappaválasztó) és a célmappa-név képzése**~~ —
    **LEZÁRVA** (2026-08-21, ld. **13.8**): a gomb nyolc lépése; az
    alapértelmezett mappanév a **szövegtárból** (`export` / magyarul
@@ -1286,3 +1287,83 @@ Az export gyűjteménye egy **másik** kulcson él
 
 *(Ez a `tre-szovegforrasok` tanulság újabb esete: **azonosítóból soha ne
 állíts jelentést**, ha van hozzá felirat.)*
+
+### 13.10 MI TILTJA LE a film-rádiókat — a párbeszéd SAJÁT kódja (2026-08-21, E1/b)
+
+> ⚠️ **KÉT KORÁBBI ÁLLÍTÁSUNK MEGDŐLT.** A lap eddig azt írta, hogy
+> „az export-párbeszéd saját kódja tehát **NEM** tiltja le", és hogy
+> „a csoport **címkéje fekete marad**". **Egyik sem igaz.**
+
+#### A lánc — három lépés
+
+**1. A kijelölés vizsgálata a párbeszéd LÉTREHOZÁSAKOR.** A
+`0x005312b0` (610 b, `IDS_DEFAULT_EXPORT` / `Picasa Export`) két
+vizsgálót futtat a kijelölésre, és az eredményüket a párbeszéd két
+bájtjába teszi:
+
+```asm
+0x005313aa  call 0x5c7990                 ; „van-e legalább egy FILM?"
+0x005313b5  mov  byte ptr [esp + 0x1c], al
+0x005313b9  call 0x5c7ab0                 ; „van-e NEM-film?"
+0x005313be  mov  dl, byte ptr [esp + 0x14]   ; a mentett első érték vissza
+0x005313d9  mov  byte ptr [esp + 0xec], al   ; -> [dlg + 0xcc]
+0x005313e0  mov  byte ptr [esp + 0xed], dl   ; -> [dlg + 0xcd]   << EZ a filmjelző
+```
+
+**2. A tiltás a párbeszéd FELÉPÍTÉSEKOR** (`0x00738c00`):
+
+```asm
+0x007394b3  cmp  byte ptr [ebp + 0xcd], bl   ; bl = 0
+0x007394b9  jne  0x7394e8                    ; VAN film -> nem tilt
+0x007394bb  push 0xca2b64                    ; "movies"
+0x007394d5  mov  edx, dword ptr [edx + 0x114]
+0x007394db  push ebx                         ; << az érték: 0 = TILTVA
+0x007394e1  call edx                         ; vt[0x114]("movies", 0)
+```
+
+**3. A tiltó maga** — `vt[0x114]` = `0x008d2640`, a közös
+párbeszéd-alaposztályé:
+
+```asm
+0x008d2649  mov  edx, dword ptr [eax + 0xa0]   ; vezérlő keresése NÉV szerint
+0x008d2653  call edx
+0x008d2659  je   0x8d268c                      ; nincs ilyen -> vége
+0x008d2660  test bl, bl                        ; az érték
+0x008d2662  jne  0x8d267e                      ; engedélyezés -> ugrás
+0x008d2666  mov  edx, dword ptr [eax + 0x13c]  ; TILTÁSKOR: a fókuszált vezérlő
+0x008d2670  cmp  eax, edi
+0x008d2679  call edx                           ; ha ez volt, a FÓKUSZ ELVÉTELE
+0x008d2680  mov  edx, dword ptr [eax + 0xc8]   ; a vezérlő engedélyezés-beállítója
+```
+
+#### A filmnek számító fájltípusok — HÉT kód
+
+Mindkét vizsgáló (`0x005c7990` és `0x005c7ab0`) ugyanazt a hét
+típuskódot ismeri (`0x005c7a17`–`0x005c7a38`, illetve
+`0x005c7b37`–`0x005c7b58`):
+
+> **8, 9, 10, 11, 12, 23 (0x17), 29 (0x1D)**
+
+A két vizsgáló **ellentétes polaritású**:
+
+| függvény | 1-et ad, ha | 0-t ad, ha | hova kerül |
+|---|---|---|---|
+| `0x005c7990` | van **legalább egy FILM** (`0x005c7a9f`) | egy sincs (`0x005c7a70`) | **`[dlg+0xcd]`** |
+| `0x005c7ab0` | van **NEM-film** (`0x005c7bbf`) | mind film (`0x005c7b90`) | `[dlg+0xcc]` |
+
+#### A szabály egy mondatban
+
+> **A „Filmek exportálása" csoport akkor és csak akkor tiltott, ha a
+> kijelölésben egyetlen film sincs.**
+
+#### A képernyőkép is ezt mondja — és cáfolja a régi állításunkat
+
+A tulajdonos képernyőképén
+(`referencia/export-parbeszed-eredeti.png`) a **„Filmek exportálása:"
+csoportcímke ugyanolyan szürke**, mint a két rádió — szemben a fekete
+„Képminőség:" és „Vízjel:" címkékkel. Ugyanez a mintázat a letiltott
+átméretezés-sorban („1100 **képpont**"). **A csoport tehát a címkéjével
+együtt tiltott**, ahogy a keretrendszertől várható.
+
+*(A korábbi „a címke fekete marad" megfigyelés téves volt; a mostani
+kör a képet újranézve javította.)*
