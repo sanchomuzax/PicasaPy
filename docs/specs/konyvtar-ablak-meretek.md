@@ -356,3 +356,9 @@ megvannak:
 
 *Bizonyítottsági fok: megerősített* (a `respack.yt` nyers rectjei; a
 feliratok és súgók a `thumbui_text.tre`-ből).
+
+> Ez a szakasz csak a **geometriát** adja. A mind az öt gomb teljes
+> **viselkedése** (mit ír, mit aktivál, milyen feltétellel engedélyezett,
+> menüegyenérték) a
+> [`picasa-konyvtar-eszkoztar-viselkedes.md`](picasa-konyvtar-eszkoztar-viselkedes.md)
+> lapon van.

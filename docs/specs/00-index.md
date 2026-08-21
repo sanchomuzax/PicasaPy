@@ -239,6 +239,17 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    árnyéka — ami megmagyarázza, miért nem volt sehol árnyék-kód a
    binárisban (a 8/b tizenegy pontos negatív leltára). Jegy: **#901**.
 
+### [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) — 1 kérdés
+
+1. **A `folderviewpopup` (Nézet-beállítások ▾) lenyíló menüjének pontos
+   felirata** — a menü **öt tételének léte és hatókör-kulcsa**
+   (Mind/My Computer, Figyelt mappák, Saját képek, Saját dokumentumok,
+   Asztal) megerősített (a kezelő függvény és a kulcsstringek
+   egyértelműek), de a **tényleges felirat-szöveg** nincs meg — a
+   `stringres-en-hu.tsv` nem tartalmazza a menütételek numerikus
+   parancsazonosítóit. Felhasználói képernyőkép a lenyíló menüről
+   eldöntené (mint a #901 buboréksúgónál). Jegy: **#853** (komment).
+
 ### [picasa-elso-inditas.md](picasa-elso-inditas.md) — nincs nyitott kérdés
 
 *(Új lap, 2026-08-21: az első indítás `initialscan` panelje — két
@@ -397,6 +408,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 |---|---|
 | [szerkeszto-panel-meretek.md](szerkeszto-panel-meretek.md) | A szerkesztő bal panelje (201 elem) — **az 1. fül gombsorrendjének EGYETLEN érvényes forrása** |
 | [konyvtar-ablak-meretek.md](konyvtar-ablak-meretek.md) | A könyvtár-ablak (156 elem) |
+| [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) | A fő eszköztár öt gombjának VISELKEDÉSE (Import, Új album, nézetváltó pár, Nézet-beállítások, Webkamera) — nem geometria |
 | [jobb-fiok-meretek.md](jobb-fiok-meretek.md) | A jobb oldali fiók („Metaadatok", 80 elem) |
 | [picasa-fo-ablak-elrendezes.md](picasa-fo-ablak-elrendezes.md) | A fő ablak elrendezése — a forrásból |
 

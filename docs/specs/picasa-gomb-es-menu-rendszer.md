@@ -31,6 +31,14 @@ stílusleírás), `Picasa3.exe` (importtábla, RTTI), `stringres-en-hu.tsv`.
 > kell Picasa-stílusúra festeni** — a platform natív menüje a hiteles
 > megoldás. A panelen belüli legördülők viszont a saját stílust követik.
 
+**Konkrét példa a natív menüre:** a könyvtár-eszköztár `folderviewpopup`
+(„Nézet-beállítások ▾") gombja is ezt az utat követi — a kattintáskezelő
+csak `EnableMenuItem`-szerű hívásokkal állítja be a tételek engedélyezett
+állapotát, nem rajzol semmit. A gomb teljes viselkedése (a menü öt
+tétele, mit ír, mivel egyezik meg a másik négy fejléc-gomb közül) a
+[`picasa-konyvtar-eszkoztar-viselkedes.md`](picasa-konyvtar-eszkoztar-viselkedes.md)
+lapon van.
+
 ---
 
 ## 1/b Miért néz ki ma is XP-nek — mert NEM XP
