@@ -104,8 +104,9 @@ def sync_tree(
     (másik kapcsolaton is) — erre épül a fokozatos UI-megjelenítés. A callback
     szál-kontextusa a hívóé (worker-szál!), ld. `SyncProgressCallback`.
 
-    #216 — tiszta megszakítás mappa-határon: a futás leáll, ha a `should_stop`
-    igazat ad (a soron következő mappa feldolgozása ELŐTT ellenőrizve), vagy
+    #216/#1161 — tiszta megszakítás mappa-határon: a futás leáll, ha a
+    `should_stop` igazat ad (a mappa feldolgozása ELŐTT és közvetlenül az
+    írás commitja ELŐTT ellenőrizve), vagy
     ha a `progress` callback igaz értékkel tér vissza (a mappa commitja UTÁN).
     Megszakadt futásnál a takarítás (`_prune_folders`) kimarad — a hiányos
     „látott" halmaz érvényes mappákat törölne; a már commitolt mappák
@@ -139,6 +140,13 @@ def sync_tree(
                 break
             continue
         new_total += _sync_folder(conn, scan)
+        if should_stop is not None and should_stop():
+            # Az olvasás alatt változhatott a Mappakezelő kizárási
+            # generációja. A jelen mappa még nem commitolt írásait eldobjuk,
+            # különben egy frissen kizárt ágat visszaírhatna a stale worker.
+            conn.rollback()
+            cancelled = True
+            break
         if incremental:
             _store_scan_state(conn, scan)
         conn.commit()

@@ -80,6 +80,24 @@ class TestSyncTreeCancel:
         )
         assert _folder_paths(conn) == {str(multi_library / "alma")}
 
+    def test_stop_raised_during_folder_scan_rolls_back_that_folder(
+        self, conn, multi_library, monkeypatch
+    ):
+        import picasapy.index.sync as sync_module
+
+        state = {"stop": False}
+        original = sync_module._sync_folder
+
+        def request_stop_after_writes(connection, scan):
+            result = original(connection, scan)
+            state["stop"] = True
+            return result
+
+        monkeypatch.setattr(sync_module, "_sync_folder", request_stop_after_writes)
+        sync_tree(conn, multi_library, should_stop=lambda: state["stop"])
+
+        assert _folder_paths(conn) == set()
+
 
 class TestSyncFolderCancel:
     def test_should_stop_leaves_index_untouched(self, conn, multi_library):
