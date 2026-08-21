@@ -170,8 +170,9 @@ Ebből két dolog következik, amit eddig nem tudtunk biztosan:
 > A táblázatot alább VÁLTOZATLANUL hagytuk (történeti feljegyzés, a
 > geometria-adatok továbbra is hasznosak lehetnek), de a színoszlopnak ez a
 > sora **megkérdőjelezett** — vagy rossz réteget olvasott ki a kinyerő
-> eszköz, vagy a `respack.yt`-beli RGBA-RLE dekódolás hibázott ezen a
-> rekordon. Újra-igazolás nélkül ne hivatkozz erre mint tényre.
+> eszköz, vagy a korábbi kicsomagoló BGRA-adatot RGBA-ként értelmező
+> dekódolása hibázott ezen a rekordon. Újra-igazolás nélkül ne hivatkozz erre
+> mint tényre.
 
 A `respack.yt` rétegeinek határoló dobozaiból, közvetlenül:
 

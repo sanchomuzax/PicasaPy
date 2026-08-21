@@ -219,20 +219,20 @@ mellémenne.*
 | `nofr_on` | 20×19 | arc-sziluett **áthúzva, gyűrűben** | **piros** gyűrű, szürke arc |
 | `nofr_off` | 24×19 | arc-sziluett **zöld pipával** | zöld pipa |
 
-> ⛔ **A `tools/picasa/respack.py` által kiírt PNG-ken az X KÉK, a „C"
-> NARANCS, a `nofr_on` gyűrűje KÉK.** A futó programban (a tulajdonos
-> képernyőképe) piros, kék, illetve piros. A különbség **R↔B
-> csatornacsere**: a respack képpontjai **BGRA** sorrendben állnak, a
-> kicsomagoló viszont RGBA-ként adja tovább
-> (`respack.py`, `Image.frombytes("RGBA", …)`).
+> **HELYESBÍTÉS (#1160).** A korábbi `respack.py`-vel kiírt PNG-ken az X KÉK,
+> a „C" NARANCS, a `nofr_on` gyűrűje KÉK volt. A futó programban (a
+> tulajdonos képernyőképe) piros, kék, illetve piros. A különbséget a nyers
+> **BGRA** képpontok téves RGBA-értelmezése okozta; a kicsomagoló most PNG-
+> íráskor BGRA→RGBA átalakítást végez, ezért a három PNG is a helyes piros,
+> kék, piros színt adja.
 >
 > Mérés: az `icon_exclude` domináns képpontja a kimeneten `(35, 35, 242)` —
 > cserével `(242, 35, 35)` = piros ✔. `icon_always`: `(227, 138, 2)` →
 > `(2, 138, 227)` = kék ✔. A zöld pipa `(126, 220, 124)` cserétől
 > **változatlan** — ezért nem tűnt fel eddig.
 >
-> **Következmény:** minden korábbi, respack-PNG-ből vett SZÍN gyanús, ha
-> nem szürke. Külön jegy tárgya.
+> A nem szürke, respack-PNG-ből vett korábbi állítások #1160-as auditja a
+> `picasa-respack-format.md` 4.1 szakaszában olvasható.
 
 Az ikonok **kétszer** jelennek meg: a **fában** minden mappa sorában (az
 effektív állapot), és a jobb oldali három rádiósor mellett (a jelentésük

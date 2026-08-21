@@ -197,6 +197,9 @@ bal mappa-panel **210 px ≈ 26%** (benne az albumlista 196 px) · jobb fiók
 | `thumbui/scratchpadbase` | `#f8f8f8` | `trayBg` ✅ |
 | `headerpanel/headerbase0` | `#eaeaea` | `lightboxBg` ✅ |
 
+**#1160 szín-audit:** e három, respackből vett tömör-kitöltés szürke
+(`R=G=B`), ezért a BGRA→RGBA csatornahelyesbítés nem változtatja meg őket.
+
 **Új, eddig nem ismert:** a mappa-fejléc **két rétegű** — `headerbase0` `#eaeaea`
 és `headerbase1` `#f8f8f8` —, vagyis **finom átmenet** van benne, nem egyszínű.
 Erre nincs tokenünk. Az „Emberek" panel alapja `#e2e2e2`.

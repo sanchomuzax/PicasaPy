@@ -165,6 +165,16 @@ class TestVisszakodolas:
         layer = respack.decode_layer(pack, entry)
         assert respack.encode_layer(layer) == SOLID[respack.HEADER_SIZE :]
 
+    def test_bgra_bajtsorrend_bitre_azonos_marad(self) -> None:
+        """A PNG-hez történő csatornacsere nem módosíthatja a nyers réteget."""
+        raw_bgra = bytes([2, 35, 242, 255])
+        blob = _header(0, 0, 1, 1, respack.ENC_SOLID) + raw_bgra
+        data = _build_pack([("layer:d/bgra", blob)])
+
+        layer = respack.decode_layer(data, respack.read_index(data)[0])
+        assert layer.pixels == raw_bgra
+        assert respack.encode_layer(layer) == raw_bgra
+
     def test_futam_atlog_a_sorhataron(self) -> None:
         """Egyszínű 3x2-es kép: EGYETLEN 6-os futam, nem két 3-as."""
         blob = _header(0, 0, 3, 2, respack.ENC_RLE) + bytes([6, 1, 2, 3, 255])
@@ -193,3 +203,27 @@ class TestSzoveg:
         out = tmp_path / "tre"
         assert respack.main(["tre", str(src), str(out)]) == 0
         assert (out / "demo.tre").read_text(encoding="latin1") == TRE.decode("latin1")
+
+
+class TestPngKimenet:
+    def test_bgra_reteg_pngben_rgbkent_jelenik_meg(self, tmp_path: Path) -> None:
+        """A respack nyers B,G,R,A-ja a PNG-ben R,G,B-ként jelenjen meg."""
+        from PIL import Image
+
+        # A piros szándékosan nem szürke: a hibás RGBA-értelmezés kékké tenné.
+        raw_bgra = bytes([2, 35, 242, 255])
+        pack = _build_pack(
+            [
+                (
+                    "layer:foldermgr/icon_exclude",
+                    _header(0, 0, 1, 1, respack.ENC_SOLID) + raw_bgra,
+                )
+            ]
+        )
+        src = tmp_path / "respack.yt"
+        out = tmp_path / "png"
+        src.write_bytes(pack)
+
+        assert respack.main(["png", str(src), str(out)]) == 0
+        with Image.open(out / "layer_foldermgr_icon_exclude.png") as image:
+            assert image.convert("RGBA").getpixel((0, 0)) == (242, 35, 2, 255)
