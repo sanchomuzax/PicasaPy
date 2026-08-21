@@ -150,7 +150,7 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    A mi képletünk **két ponton eltér** → **#1171**.
 
 
-### [export-parbeszed.md](export-parbeszed.md) — 3 kérdés
+### [export-parbeszed.md](export-parbeszed.md) — 2 kérdés
 
 *(2026-08-20, három kör. A lap teljes: a `.fen` leíró, mind a 28 magyar
 felirat, a kötések, a 9 beállítás-kulcs, a **képpontra mért geometria** a
@@ -183,6 +183,13 @@ nálunk maradhat 100.)*
    íródnak ki — a közös lezáró `0x008d2720` hívja a `vt[0x164]`-et, ha a
    lezárási kód 0 —, és **Mégsére semmi nem történik**: a `vt[0x168]` a
    `CExportPrefsDialog`-nál üres tő, `0x00b0d990`.)*
+   *(És a **13.8**: az alapértelmezett célmappa neve a **szövegtárból**
+   jön — angolul `export`, **magyarul `exportálás`** —, a név
+   **fájlnév-tisztításon** megy át (`0x009946f0`, tiltott halmaz
+   `\ / : * ? " < > |`), és a megjelenített útvonal **Wine-észleléssel**
+   Unix-alakú is lehet (`0x0073a140`, `ShowUnixPaths`). Mellékesen egy
+   **ütközés**: a mért időbélyeg-viselkedés és a mi `shutil.copy2`-nk
+   kizárja egymást → **#1138**.)*
 
 1. **Mi TILTJA LE a film-rádiókat?** A tény mért (a rádiók szürkék, a
    csoport **címkéje fekete marad**), és négy dolog **kizárva**: nincs

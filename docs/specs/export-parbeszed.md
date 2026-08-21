@@ -931,8 +931,13 @@ A felület leírása a lap 1–7. szakaszában van (az `export.fen`-ből).
    letiltás viszont máshol dől el — a `movies` csoport `disable`
    mezőjét (`+0x20e`) író helyet kell megkeresni, feltehetően a
    kijelölés film-darabszámából.
-6. **A `changeloc` (mappaválasztó, `0x00739850`) és a célmappa-név
-   képzése (`0x0073b500`)** — a `CExportPrefsDialog::exportname` sablon.
+6. ~~**A `changeloc` (mappaválasztó) és a célmappa-név képzése**~~ —
+   **LEZÁRVA** (2026-08-21, ld. **13.8**): a gomb nyolc lépése; az
+   alapértelmezett mappanév a **szövegtárból** (`export` / magyarul
+   **`exportálás`**); a név **fájlnév-tisztításon** megy át
+   (`0x009946f0`, tiltott halmaz `\ / : * ? " < > |`); a megjelenített
+   útvonal **Wine-észleléssel** és a `ShowUnixPaths` kapcsolóval
+   Unix-alakú is lehet (`0x0073a140`).
 7. **Nincs élő mintaadatunk**: az `]history:export` token a 859 elemű
    `.picasa.ini`-korpuszban **nullaszor** fordul elő, és a
    `research/testdata/` alatt sincs exportált mappa. A token pontos
@@ -1133,3 +1138,70 @@ lépés.)*
 
 **Bizonyítottsági fok: megerősített** — a rekesz-cím számítással, a hívó
 teljes törzsével, és a Mégse-ág üres tövének ellenőrzésével.
+
+### 13.8 A `changeloc` mappaválasztó és a CÉLMAPPANÉV képzése (2026-08-21, E6)
+
+A 9. szakasz 6. pontja. Mindkét fele megvan.
+
+#### 13.8/a A `changeloc` gomb — `0x00739850` (272 b)
+
+| lépés | cím | mit tesz |
+|---|---|---|
+| 1 | `0x00739878` | vezérlőnév-egyeztetés a `changeloc`-kal |
+| 2 | `0x007398cd`–`0x007398d5` | **mappaválasztó megnyitása** egy globális objektum (`0xd67b54`) `vt[0x68]` rekeszén át |
+| 3 | `0x007398dd`, `0x007398ed` | ha a visszaadott út **üres**, nem történik semmi |
+| 4 | `0x007398f8` | a választott utat a `[dlg+0xc8]` szerkezet `+8` mezőjébe másolja |
+| 5 | `0x00739902` | meghívja a **névképzőt** (`0x0073b500`) |
+| 6 | `0x00739925` | a végére **egy `\`-t** fűz (a `0xc80910` konstans egyetlen fordított perjel) |
+| 7 | `0x00739939` | a **megjelenítendő** alak előállítása (`0x0073a140` — lásd 13.8/c) |
+| 8 | `0x00739955` | a párbeszéd lezárása (`0x008d2720` — ld. 13.7) |
+
+#### 13.8/b A célmappanév — `0x0073b500` (`CExportPrefsDialog::exportname`)
+
+```asm
+0x0073b512  ; ha a javasolt név ([adat+8]) ÜRES -> a kimenet is üres
+0x0073b597  push 0xcafb84   ; "CExportPrefsDialog::exportname"
+0x0073b59c  mov  eax, 0xc81228   ; "export"   <- a TARTALÉK érték
+0x0073b5a1  call 0x9ae560        ; szövegtár-feloldás
+0x0073b5d8  call 0x9946f0        ; << FÁJLNÉV-TISZTÍTÁS
+0x0073b631  push 0xc967c8   ; "%s\"
+0x0073b638  call 0x40ea90        ; a kimenet += "<név>\"
+```
+
+**Két mért tény:**
+
+1. **Az alapértelmezett mappanév a szövegtárból jön**, nem beégetve:
+   kulcs `CExportPrefsDialog::exportname`, angolul **`export`**, magyarul
+   **`exportálás`** (a `referencia/stringres-en-hu.tsv` szerint).
+   *Vagyis magyar felületen az alapértelmezett célmappa neve
+   „exportálás", nem „export".*
+
+2. **A név fájlnév-tisztításon megy át.** A `0x009946f0` (808 b, 24 hívó)
+   ismeri a Windows tiltott karakterhalmazát: **`\ / : * ? " < > |`**
+   (a `0xca6a38` környéki `.rdata`-blokkban). Ugyanez a rutin szolgál ki
+   minden más névképzést is a programban.
+
+3. Az összefűzött alak **fordított perjelre végződik** (`"%s\"`).
+
+#### 13.8/c A megjelenített útvonal — Picasa ALATT WINE-T ÉSZLEL
+
+A `0x0073a140` (512 b) a megjelenítendő útvonalat állítja elő, és ez a
+kör **váratlan leletet** adott:
+
+```asm
+0x0073a193  push 0xca99b4   ; "wine_get_unix_file_name"
+0x0073a198  push 0xca99a8   ; "kernel32"
+0x0073a19d  call [0xc40238] ; GetModuleHandle
+0x0073a1a4  call [0xc40234] ; GetProcAddress
+0x0073a1b3  cmp  byte ptr [0xd6fc60], 0    ; a gyorsítótárazott eredmény
+0x0073a1bc  push 0xca4cc8   ; "ShowUnixPaths"
+0x0073a1c1  push 0xc7eafc   ; "Preferences"
+```
+
+A Picasa **futásidőben megnézi, hogy Wine alatt fut-e** (a
+`kernel32!wine_get_unix_file_name` létezésével), és ha a
+`Preferences\ShowUnixPaths` be van kapcsolva, a felületen **Unix-alakú
+útvonalat** mutat a Windows-alak helyett.
+
+*A PicasaPy-ra ez nem közvetlen teendő (nálunk minden út natív), de
+megerősíti, hogy a Wine-os futás a Picasa támogatott esete volt.*
