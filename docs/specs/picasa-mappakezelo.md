@@ -753,9 +753,9 @@ a `string_xrefs`-ben a `HOTFOLDER` mintára **egyetlen** találat van, a
 
 > ⚠️ **Nálunk viszont MEGVAN** (`FolderManagerDialog.qml`,
 > `removeWatchedConfirm`) — a #543 alapján építettük be. Ez tehát
-> **TÖBB, mint az eredeti**. Nem hiba, de **tudatos eltérésként kell
-> kimondani** (a `docs/decisions/`-ben), különben egy későbbi kör
-> „paritás" címén kiveszi — vagy fordítva, egy harmadik visszateszi.
+> **TÖBB, mint az eredeti**. **Tudatos eltérésként rögzítve — ld.
+> `docs/decisions/mappakezelo-eltavolitas-megerosito.md` (ADR-005,
+> jegy #1175):** a döntés a megtartás, nem a paritás.
 
 *Bizonyítottsági fok: **megerősített**. A negatív állítás nem
 mintavételen alapul: a burkoló MINDEN hívóját (84 függvény, 150 hívás)
