@@ -909,15 +909,22 @@ A felület leírása a lap 1–7. szakaszában van (az `export.fen`-ből).
 
 **Öt export-függvény nincs megnyitva** (a leltár a 8.0-ban):
 
-1. **`0x0073f320` (9396 b) — a `CImageOutput` törzse.** Sztringszinten
-   feltárva (mit ír, milyen hibái vannak), **utasításszinten nem**. Ebből
-   következik a 2–4. pont.
-2. **Mikor íródnak ki a beállítások** — a `0x00739960` (1426 b)
-   végigolvasása; OK-ra, vagy vezérlőnként?
-3. **Mi fut le az export UTÁN** — indexelés? nézetfrissítés? Az
-   `]history:export` token bejegyzésén túl nem követtük.
-4. **A sorszámozás pontos szabálya** — a `%0*d-%s` formátum megvan
-   (`0x0073ee70`), de a **szélesség** (`*`) forrása és a kezdőszám nem.
+1. ~~**`0x0073f320` (9396 b) — a `CImageOutput` törzse**~~ —
+   **LEZÁRVA** (2026-08-21, ld. a **10.** szakaszt): a váz, a
+   mód-elágazás, az ini-írás és az időbélyeg utasításszinten.
+2. **Mikor íródnak ki a beállítások** — az író a `0x00739960`, és
+   **azonosítva**: a `CExportPrefsDialog` vtable **89. rekesze**
+   (`0x00c8b8c8`). Ami hiányzik: **hol hívják** (OK-ra, vagy
+   vezérlőnként) — a `0x164`-es rekeszre a szokásos hívási mintával a
+   `0x0073…` tartományban nincs találat.
+3. ~~**Mi fut le az export UTÁN**~~ — **LEZÁRVA** (10.2): a célmappa
+   **megnyitása az Intézőben** (`ShellExecuteA`, feltételesen), majd
+   `]history:export` token. **Indexelés és nézetfrissítés NINCS** a záró
+   ágban — ez a kollázséhoz képest lényeges eltérés.
+4. ~~**A sorszámozás pontos szabálya**~~ — **LEZÁRVA** (10.3): a
+   szélesség a **kijelölt képek számának jegyszáma**, a sorszám
+   **1-től** indul, az elválasztó **kötőjel**, utána a teljes eredeti
+   fájlnév.
 5. **Mi TILTJA LE a film-rádiókat.** A 8.8 az *alapértelmezést* zárta le
    (`Preferences\FileExportMovie` → `setne` → a kiválasztott index), a
    letiltás viszont máshol dől el — a `movies` csoport `disable`
@@ -932,3 +939,141 @@ A felület leírása a lap 1–7. szakaszában van (az `export.fen`-ből).
 
 *(Egyik sem blokkolt: mind gépi úton eldönthető, csak drágább —
 utasításszintű olvasás. A munkasorba kerültek.)*
+
+---
+
+## 10. A `CImageOutput` (`0x0073f320`) TÖRZSE — utasításszinten (2026-08-21, E2)
+
+A 9. szakasz 1. pontja: „sztringszinten feltárva, utasításszinten nem".
+Most utasításszinten is megvan a váz — és vele a 3. és 4. pont is.
+
+### 10.1 A függvény szerepe: KÖZÖS kimenet-motor
+
+A 9396 bájtos rutin **négy kimeneti módot** szolgál ki egyetlen törzsben:
+**exportálás**, **e-mail**, **feltöltés** és **képernyővédő-telepítés**.
+A három ideiglenes mappa mindjárt az elején látszik: `temp\`
+(`0x0073f343`), `upload\` (`0x0073f48e`), `temp\email\` (`0x0073f526`).
+
+A módot a **záró elágazás** választja szét (`0x0074145b`-től):
+
+| mód | mit tesz a végén | cím |
+|---|---|---|
+| **e-mail** | `]history:email` token a célmappára | `0x0074146b` |
+| **exportálás** | **`ShellExecuteA(0, "open", <célmappa>, 0, 0, 5)`**, majd `]history:export` token | `0x007414af`, `0x007414dd` |
+| **képernyővédő** | registry (`Software\Google\Google Photos Screensaver`, `AppPath`), majd `rundll32.exe desk.cpl,InstallScreenSaver %s` | `0x00741504`, `0x007415c3`–`0x007415e7` |
+
+### 10.2 MI FUT LE AZ EXPORT UTÁN — a 9. szakasz 3. pontja LEZÁRVA
+
+**Két dolog, ebben a sorrendben:**
+
+1. **A célmappa megnyitása az Intézőben.**
+
+   ```asm
+   0x007414a8  push 5          ; SW_SHOW
+   0x007414aa  push 0          ; lpDirectory
+   0x007414ac  push 0          ; lpParameters
+   0x007414ae  push eax        ; << a CÉLMAPPA útvonala
+   0x007414af  push 0xc80fc0   ; "open"
+   0x007414b4  push 0          ; hwnd
+   0x007414b6  call dword ptr [0xc405e0]   ; ShellExecuteA
+   ```
+
+   **Feltételes**: a `0x00741477` (`cmp byte ptr [esp+0x181], 0`)
+   jelzőre ez a lépés kimarad, és helyette a `[esp+0x183]` jelző áll 1-re
+   (`0x00741481`).
+
+2. **`]history:export` token** a célmappára — a könyvtárobjektum
+   `vt[0x10]`-én át (`0x007414cd`–`0x007414e2`).
+
+**Amit ez KIZÁR:** a záró ágban **nincs** indexelés-hívás és **nincs**
+nézetfrissítés — ellentétben a kollázs mentésével, ahol mindkettő ott van
+(`picasa-kollazs-felulet.md` 9.1/b 5.). Az exportált mappa tehát a
+**figyelt-mappa-mechanizmuson** át kerül be, nem közvetlen paranccsal.
+
+### 10.3 A SORSZÁMOZÁS — a 9. szakasz 4. pontja LEZÁRVA
+
+A `0x0073ee70` mindössze **83 bájt**, és zárt alakban kiolvasható:
+
+```asm
+0x0073ee79  mov  dword ptr [esi], 0
+0x0073ee7f  jbe  0x73ee92               ; ha a DARABSZÁM 0 -> szélesség 0
+0x0073ee81  mov  eax, 0xcccccccd        ; a 10-zel osztás bűvös szorzója
+0x0073ee86  mul  ecx
+0x0073ee88  add  edi, 1                 ; szélesség++
+0x0073ee8b  shr  edx, 3
+0x0073ee8e  mov  ecx, edx               ; darabszám /= 10
+0x0073ee90  jne  0x73ee81
+   ...
+0x0073eeab  add  ecx, 1                 ; << a sorszám 1-TŐL indul
+0x0073eeaf  push edi                    ; a szélesség
+0x0073eeb0  push 0xcb0178               ; "%0*d-%s"
+```
+
+```c
+szélesség = a KIVÁLASZTOTT KÉPEK SZÁMÁNAK tízes számrendszerbeli jegyszáma;
+sprintf(ki, "%0*d-%s", szélesség, index + 1, eredetiNév);
+```
+
+| kijelölt képek | a fájlnév alakja |
+|---|---|
+| 9 | `1-kep.jpg` … `9-kep.jpg` |
+| 10 | `01-kep.jpg` … `10-kep.jpg` |
+| 100 | `001-kep.jpg` … `100-kep.jpg` |
+
+Elválasztó: **kötőjel**, és utána a **teljes eredeti fájlnév** (a
+kiterjesztéssel együtt).
+
+### 10.4 AZ EXPORTÁLT MAPPA `.picasa.ini`-je — csak KÉT kulcs
+
+A kimenet mellé a Picasa ini-t is ír (`0x00740295`, `0x007403bc`;
+a régi `Picasa.ini` alak is szerepel, `0x0074031a`), és **képenként
+pontosan két kulcsot** tesz bele:
+
+```asm
+0x00740485  push 0xc7fad0   ; "caption"
+0x0074048f  call 0x5ab210   ; ini-be írás
+   ...
+0x0074050d  push 0xc81848   ; "keywords"
+0x00740517  call 0x5ab210
+```
+
+A **kulcsszavak vesszővel** összefűzve (`0x007404b8 push 0x2c` → a
+`0x00985c00` karakter-hozzáfűző).
+
+**Szűrő, vágás, csillag NEM kerül bele** — az exportált kép már
+kirenderelt, a szerkesztési adatoknak nincs értelme. *(Ez egyben azt is
+megmagyarázza, miért nem találtunk `]history:export` tokent a 859 elemű
+ini-korpuszban: az exportált mappa ini-je más természetű.)*
+
+### 10.5 AZ IDŐBÉLYEG — minden exportált fájl UGYANAZT kapja
+
+```asm
+0x00740c14  call GetSystemTime(&st)             ; EGYSZER, a ciklus ELŐTT
+0x00740c27  call SystemTimeToFileTime(&st,&ft)
+   ... a képenkénti ciklus ...
+0x00740e51  push edx    ; lpLastWriteTime
+0x00740e54  push ecx    ; lpLastAccessTime
+0x00740e55  push edx    ; lpCreationTime
+0x00740e57  call SetFileTime
+```
+
+**Mind a három időmező** (létrehozás, utolsó hozzáférés, utolsó írás)
+ugyanarra az értékre áll — **az export INDULÁSÁNAK pillanatára** —,
+minden exportált fájlon azonosan. Nem a forráskép ideje, és nem is
+fájlonként külön „most".
+
+### 10.6 A beállítások OLVASÁSA — és ami a 2. pontból megvan
+
+A `CImageOutput` a beállításokat **olvassa**, nem írja. A sorrend a
+törzsben: `EmailExportSize` (`0x0073f36f`), `EmailSinglePicture`,
+`EmailMovie`, `FileExportMovie`, `UseHTMLMailer`, `ShadowsHTMLEmail`,
+`UpsizeSmallImages`, majd az export-hármas: **`ExportWatermark`**
+(`0x0073fae3`), **`ExportWatermarkText`** (`0x0073fb2c`),
+**`ExportAddNumbers`** (`0x0073fba1`).
+
+**Az ÍRÓ** a `0x00739960` (1426 b), és ez a **`CExportPrefsDialog`
+vtable 89. rekesze** (`0x00c8b764 + 0x164 = 0x00c8b8c8`) — tehát a
+dialógus saját metódusa, nem szabad függvény. **Hogy pontosan mikor
+hívódik** (OK-ra, vagy vezérlőnként), az továbbra is nyitott: a
+`0x164`-es rekeszre a szokásos `mov reg,[reg+0x164]` + `call reg`
+mintával a `0x0073…` tartományban nincs találat.

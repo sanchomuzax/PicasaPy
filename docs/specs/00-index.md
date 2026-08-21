@@ -150,7 +150,7 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    A mi képletünk **két ponton eltér** → **#1171**.
 
 
-### [export-parbeszed.md](export-parbeszed.md) — 7 kérdés
+### [export-parbeszed.md](export-parbeszed.md) — 4 kérdés
 
 *(2026-08-20, három kör. A lap teljes: a `.fen` leíró, mind a 28 magyar
 felirat, a kötések, a 9 beállítás-kulcs, a **képpontra mért geometria** a
@@ -167,6 +167,18 @@ nálunk maradhat 100.)*
    token, tíz hibaág, a registry-állapot). A **film-rádió
    ALAPÉRTELMEZÉSE lezárva** (`FileExportMovie` → `setne`). A maradék
    hét kérdés a lap **9.** szakaszában és a munkasorban. Jegy: **#1166**.
+
+   ⭐ **2026-08-21, `CImageOutput`-kör** — a lap **10.** szakasza a
+   9. szakasz 1., 3. és 4. pontját zárja le, utasításszinten:
+   **az export után megnyílik a célmappa az Intézőben**
+   (`ShellExecuteA`, `0x007414b6`), majd `]history:export` token —
+   **indexelés és nézetfrissítés NINCS** a záró ágban; a **sorszámozás**
+   teljes szabálya (`%0*d-%s`, szélesség = a kijelölt képek számának
+   jegyszáma, 1-től, kötőjel + teljes eredeti fájlnév, `0x0073ee70`);
+   az exportált mappa `.picasa.ini`-je **csak `caption` + `keywords`**
+   (vesszős, `0x00740485`/`0x0074050d`); és **minden exportált fájl
+   UGYANAZT az időbélyeget kapja** — mind a három mezőben, az export
+   indulásának pillanatát (`0x00740c14` → `0x00740e57`).
 
 1. **Mi TILTJA LE a film-rádiókat?** A tény mért (a rádiók szürkék, a
    csoport **címkéje fekete marad**), és négy dolog **kizárva**: nincs
