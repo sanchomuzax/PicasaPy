@@ -142,3 +142,18 @@ class TestATeardownAKozosBevarotHivja:
             assert not re.search(r"for bg_controller in \(", forras), (
                 f"{ut.name}: visszatért a kézzel felsorolt controller-lista"
             )
+
+    def test_a_bevaras_megelozi_a_qml_motor_megsemmisiteset(self):
+        """#1193: a futó pool-job még élő Qt-válaszra küldjön jelzést."""
+        gyoker = Path(__file__).resolve().parent
+        conftestek = (gyoker / "conftest.py", gyoker / "qml_functional" / "conftest.py")
+
+        for ut in conftestek:
+            forras = ut.read_text(encoding="utf-8")
+
+            assert forras.rindex("wait_for_all_background_workers(") < forras.rindex(
+                "engine.deleteLater()"
+            ), (
+                f"{ut}: a QML-motor megsemmisítése futó háttérmunka mellett "
+                "hozzáférési hibát okozhat"
+            )

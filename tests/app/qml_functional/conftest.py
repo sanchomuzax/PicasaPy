@@ -184,10 +184,8 @@ def qml_app(qt_app, tmp_path):
     controller.selectFolder(str(lib))
     qt_app.processEvents()
     yield window, controller, engine
-    engine.deleteLater()
-    qt_app.processEvents()
     # #438: minden nyilvántartott daemon-szál bevárása, AMÍG a controllerek
-    # még élnek — a #430 SIGSEGV-osztály elkerülése (ld.
+    # és a QML-motor még él — a #430 SIGSEGV-osztály elkerülése (ld.
     # picasapy.app.worker_thread.BackgroundWorkerMixin).
     # #988/#999: EGY hívás vár be MINDEN nyilvántartott háttérmunkát — a
     # folyamat összes `_start_background`-szálát és a bejelentkezett
@@ -199,3 +197,9 @@ def qml_app(qt_app, tmp_path):
         "háttérmunka nem állt le a teardownban (#430/#438/#988/#999): "
         + ", ".join(running_background_workers())
     )
+    # #1193: csak a háttérmunkák után szabad elengedni a motort. Az
+    # EffectThumbnailProvider QRunnable-je a végén Qt `finished` jelzést küld;
+    # Windows alatt hozzáférési hibát okoz, ha a válasz QML-tulajdonosa addigra
+    # már megsemmisült.
+    engine.deleteLater()
+    qt_app.processEvents()
