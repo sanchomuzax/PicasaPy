@@ -1826,34 +1826,69 @@ a tulajdonság szöveges értékét kis-nagybetű-függetlenül összevetve:
 > (`src/picasapy/collage/nodes.py`, `_draw_polaroid_caption`) már
 > középre igazít — tehát **helyes**.
 
-#### `vt[0x38]` — mérve, de NÉV nélkül
+#### `vt[0x38]` — a lánc végigkövetve, de a kapcsoló SOHA NEM VÁLTOZIK
 
-**Nem `.tre`-tulajdonság**: a feldolgozó egyik ága sem hívja. Kódból
-állított kapcsoló. Amit tudunk róla:
+*(2026-08-21, K4/b — a kérdés lezárva **hatókörön kívüliként**, az indok
+alább.)*
 
-- **Alapértéke logikailag HAMIS.** A konstruktor `[+0x2f3] = 1`-et ír
-  (`0x005b368b`), és mivel a beállító a **tagadottat** tárolja, ez
-  logikai 0-nak felel meg.
-- **Mind a négy hívója 1-gyel hívja**, egyik sem 0-val:
-  `0x0087ca4b` (**a kollázs felirata**, `collagepanel/textclip_`),
-  `0x0081217a` (**`%x-captionback`** — feliratdoboz háttérrel),
-  `0x0081023e` és `0x008103d3`, valamint `0x006f40e8`.
-  **A négyből kettő bizonyítottan KÉPFELIRAT-építő.**
-- A rajzoló (`0x005b45d0`) a **nyers** (tehát tagadott) bájtot adja át a
-  szövegraszterezőnek, a `[csp+0x31c]` objektum `vt[0x28]`-án
-  (`0x005b464f`–`0x005b467c`), a `[+0x33c]` bájttal és a szövegdobozzal
-  együtt.
+**Nem `.tre`-tulajdonság**: a feldolgozó (`0x009ca5e0`) egyik ága sem
+hívja. Kódból állított kapcsoló.
 
-**Ami NYITVA marad:** a kapcsoló **neve és látható hatása**. A
-megvalósításhoz ez a fontosabb: nem a nevét kell tudnunk, hanem hogy
-**mit változtat a képen**. Folytatás: a `[csp+0x31c]` raszterező
-azonosítása és a `vt[0x28]` paramétersora.
+**A rajzolási lánc végigkövetve három szinten:**
+
+```
+ytVectorTextNode::Draw            0x005b45d0
+   │  push [csp+0x2f3]            0x005b464f   ← a NYERS (tagadott) bájt
+   ▼
+ytSkia::vt[0x28]                  0x00904ab0   (671 b)
+   │  a 7. argumentumként adja tovább         0x00904cce → 0x00904cd6
+   ▼
+0x009033e0                        (4806 b)     ← a KÖZÖS glifa-elrendező/rajzoló,
+                                                 mind az ÖT ytSkia-belépő ezt hívja
+                                                 (0x009046c0, 0x00904850, 0x00904ab0,
+                                                  0x00905090, 0x009058d0)
+```
+
+A `[csp+0x31c]` objektum osztálya **`ytSkia`** (vtable `0x00cd1944`; a
+gyár `0x00904e80` foglal 0x11c bájtot és a `0x00902650` konstruktorban
+írja be a vtable-t, `0x00902666`).
+
+**Miért állt meg itt a kör:** a `0x009033e0` **4806 bájtos**, tizenhárom
+argumentumú rutin, és a kapcsoló használata nem áll egyetlen
+felismerhető veremhelyen. Innentől a lánc a **drága** végére ér
+(célzott dekompiláció), és a hozadéka — lásd alább — nulla.
+
+**A döntő mérés: a kapcsolónak NINCS „ki" állapota.**
+
+- Az **alapérték logikailag HAMIS**: a konstruktor `[+0x2f3] = 1`-et ír
+  (`0x005b368b`), és a beállító (`0x005b3430`) a **tagadottat** tárolja.
+- A `.text` teljes pásztázása szerint a `vt[0x38]`-at **0-val** hívó
+  négy hely **egyike sem szövegcsomópont**: EXIF/beállítás
+  (`0x0041ee10`), a filmvágó két csúszkája (`0x00596980`, `0x00618f30`)
+  és egy hárompárméteres, más szignatúrájú hívás (`0x00545b90`).
+- A szövegcsomópontot építő hívók **mind 1-gyel** hívják — köztük
+  **két bizonyított képfelirat-építő**: `0x0087ca4b`
+  (`collagepanel/textclip_`) és `0x0081217a` (`%x-captionback`).
+
+**Következmény:** a kiadott Picasában **nincs olyan állapot, amelyben ez
+a kapcsoló ki lenne**. Nem létezik hozzá megfigyelhető különbség — sem
+képernyőképpel, sem golden fájllal nem lehetne izolálni, mert nincs mihez
+hasonlítani.
+
+**Ezért a PicasaPy-t nem érinti:** a mi renderelőnk az eredeti
+*kimenetét* reprodukálja, nem a belső kapcsolóit. Egy olyan kapcsoló,
+ami mindig ugyanabban az állásban van, nem megkülönböztethető
+viselkedés, hanem a „így rajzol a Picasa vektoros szöveget" része.
+
+*(Ha egy későbbi kör mégis megnyitná a `0x009033e0`-t más okból, érdemes
+menet közben megnézni a 7. argumentumot — de önmagáért nem éri meg.)*
 
 **Bizonyítottsági fok: megerősített** a dobozra, a színre (a végleges
 rajzoláson adaptív, ld. fent), a betűméret-képletre és a feltételre
 (showcaptions ÉS polaroid). A `vt[0x2c]` **jelentése is megerősített**
-(`textalign` = **középre**); a `vt[0x38]` **mechanikája** megerősített,
-a **neve és látható hatása** nyitott.
+(`textalign` = **középre**). A `vt[0x38]` **mechanikája és lánca**
+megerősített; a **neve és látható hatása nem megállapítható**, mert a
+kapcsolónak nincs „ki" állapota — ld. fent.
 
 ---
 
@@ -2009,9 +2044,11 @@ három, és egyik sem igényel futó Picasát)*:
    a képletek **témánként külön** paraméterezettek (négy készlet); a `k`
    a képek cellaéle képpontban (`0x00887e50`-ből); az `A` lépték a 9.0
    darabszám-képlete (`0x0087b8f6`). **Nem maradt feltételes állítás.**
-5. a felirat-csomópont **`vt[0x38]`** kapcsolójának **neve és látható
-   hatása** — 9/c. *(A `vt[0x2c]` 2026-08-21-én megfejtve: `textalign`,
-   az érték 1 = **középre**.)*
+5. ~~a felirat-csomópont **`vt[0x38]`** kapcsolója~~ — **HATÓKÖRÖN
+   KÍVÜL** (2026-08-21): a lánc végigkövetve (`ytSkia`, `0x009033e0`), de
+   a kapcsolónak **nincs „ki" állapota** — egyetlen szövegcsomópont-hívó
+   sem ad 0-t —, ezért nincs megfigyelhető különbség, amit reprodukálni
+   lehetne. *(A `vt[0x2c]` ugyanaznap megfejtve: `textalign` = középre.)*
 6. az **`avgcolor` adatbázismező** előállítása (3/b) — a kollázson
    **kívüli** terület, az indexelőé.
 
