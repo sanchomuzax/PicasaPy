@@ -376,7 +376,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 |---|---|
 | [picasa-create-features.md](picasa-create-features.md) | A „Létrehozás" menü funkciói |
 | [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) | A Kollázs teljes működése — parancstábla, gyűrű, helyi menük, kimenet |
-| [kollazs-atvilagitas.md](kollazs-atvilagitas.md) | **A Kollázs TELJES átvilágítása** — eredeti / nálunk / jegy minden vezérlőre, a panelen kívüliekkel; és kimondva, amit NEM néztünk meg |
+| [kollazs-atvilagitas.md](kollazs-atvilagitas.md) | **A Kollázs TELJES átvilágítása** — eredeti / nálunk / jegy minden vezérlőre, a panelen kívüliekkel; és kimondva, amit NEM néztünk meg. *(2026-08-21: a 9. szakasz átvizsgálva — két tétel ELAVULT volt (a lap 1. szakasza már lezárta őket), a `.cxf` visszaolvasása MEGMÉRVE (`CCollageParser`, a mi olvasónk lefedi a teljes szótárt); valóban nyitott már csak a **futó program** viselkedése és a **betöltési sorrend nagy albumon**.)* |
 | [kollazs-panel-ui-spec.md](kollazs-panel-ui-spec.md) | **A Kollázs-panel MEGVALÓSÍTÁSI UI-specifikációja** — elemfa, `objectName`-ek, a `.tre` kényszereiből levezetett méretezési törvény, vezérlő-API, teszt-szerződés, jegyekre bontás |
 | [export-parbeszed.md](export-parbeszed.md) | **Az „Exportálás mappába" párbeszéd** — a `export.fen` leíró, mind a 28 magyar felirat, a kötések, a 9 megőrzött beállítás, és a képminőség öt fokozatának **számértéke a binárisból** |
 | [kollazs-eletciklus.md](kollazs-eletciklus.md) | **A kollázs életciklusa** — a három állapot, az átmenetek, mindhárom párbeszéd szó szerint |

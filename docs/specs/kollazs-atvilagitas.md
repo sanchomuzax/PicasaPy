@@ -126,23 +126,65 @@ Az átvilágítás két olyan hiányt talált, ami eddig sehol nem szerepelt:
 ## 9. ⚠️ Amit NEM néztem meg — kimondva
 
 Hogy a lefedettség állítása ne legyen önigazoló, itt a lista arról, ami
-**kívül maradt**:
+**kívül maradt**. *(2026-08-21-i átvizsgálás: hat pontból **kettő
+elavult volt** — a lap 1. szakasza már lezárta őket, csak itt maradtak
+benne —, egy pedig azóta megmérve. A lista ennek megfelelően frissítve.)*
 
 1. **A futó eredeti program viselkedése.** Minden bizonyíték álló
    (bináris, erőforrás, `.tre`, golden-kimenet). Ami csak mozgásban
    látszik — időzítők, animációk, fókusz-viselkedés —, azt csak akkor
    találjuk meg, ha valaki **nézi** a programot. A gyűrű (#1000) így
    került elő: a felhasználó vette észre, nem mi.
-2. **Az 1.3 és 1.4 belépési pont** (arc-fejléc, kimeneti sáv) — a
-   binárisban megvannak, nálunk nem ellenőriztem.
-3. **Az 5.2 „Vissza a kollázshoz" gomb** a könyvtárban.
+   **Ez állandó módszertani korlát, nem elvégezhető feladat** — nem
+   „nyitott kérdés", hanem a bizonyítéktípusunk határa.
+
+2. ~~**Az 1.3 és 1.4 belépési pont**~~ — **ELAVULT TÉTEL VOLT.** A lap
+   **1. szakasza mindkettőt rögzíti**, 2026-08-19-i ellenőrzéssel:
+   1.3 (`faceheaderpanel/create_collage`) ❌ nincs nálunk → **#1006**;
+   1.4 (`outputlayout/button(collage)`) ✅ **megvan**, `TrayBar.qml`.
+   *(A 9. szakasz egyszerűen nem lett átvezetve.)*
+
+3. ~~**Az 5.2 „Vissza a kollázshoz" gomb**~~ — **ELAVULT TÉTEL VOLT.**
+   Nálunk **megvan**: `app/qml/Main.qml` (a `collagepanel::back_to_collage`
+   gomb a könyvtár lapján, a fájl 1397. sora körül; a `PhotoViewer.qml`
+   490–491. sora külön ki is mondja, hogy a nézegető visszalépése **nem
+   azonos** ezzel).
+
 4. ~~Billentyűparancsok~~ — **LEZÁRVA (2026-08-19)**: a
    `collagepanel.tre` egyetlen billentyűt deklarál, a
    `Property escapekey 1`-et (492. sor). A Ctrl+A / Ctrl+D / Del a
    parancstáblából ismert, és nálunk megvan.
-5. **A képek betöltési sorrendje és a hiányzó képek** viselkedése éles,
-   nagy albumon.
-6. **A `.cxf` visszaolvasása** — az írását mértük, a betöltési utat nem.
+
+5. **A képek betöltési SORRENDJE éles, nagy albumon.** *(A „hiányzó
+   képek" fele azóta megvan: a hat üzenetkulcs a
+   `picasa-kollazs-felulet.md` 9.3-ban, hivatalos magyar szöveggel, és a
+   mi `collage/autosave.py`-unk a „egyik kép sem található" esetet
+   kezeli.)* Ami marad: **milyen sorrendben** tölti be a képeket egy
+   több száz elemű albumnál, és mit mutat közben. Ehhez futó program
+   és nagy album kell — ld. az 1. pontot.
+
+6. ~~**A `.cxf` visszaolvasása**~~ — **MEGMÉRVE (2026-08-21).** Az
+   olvasó osztály a **`CCollageParser`** (vtable `0x00cbf878`), három
+   érdemi metódussal, és a **teljes elemkészlete** kiolvasható:
+
+   | függvény | méret | felismert nevek |
+   |---|---|---|
+   | `0x00832830` | 3555 b | `collage`, `version`, `format` (`%d:%d`), `orientation` (`portrait`/`landscape`), `theme` (`picturepile`…), `shadows`, `captions`, `image`, `value`, `color` |
+   | `0x00833620` | 757 b | `theme`, **`albumTitle`**, **`albumDate`** |
+   | `0x00833920` | 911 b | `collage`, `background` |
+
+   A fájlválasztós betöltő (`0x0087ed80`, 1052 b) a `*.cxf` szűrővel és
+   a „Mentett kollázsok" mappával dolgozik; a hozzá tartozó hat
+   üzenetkulcs a `picasa-kollazs-felulet.md` 9.3-ban már megvolt.
+   *(Ez a betöltő a `savebutton`/`loadbutton` páros ága — a 11. szakasz
+   szerint fejlesztői maradvány, nincs hozzá vezérlő a respackben.)*
+
+   **A mi olvasónk lefedi a teljes szótárt.** A
+   `src/picasapy/collage/cxf.py` `loads()`/`read_cxf()` mind a tizenhárom
+   nevet ismeri (`version`, `format`, `orientation`, `theme`, `shadows`,
+   `captions`, `background`, `color`, `image`, `albumTitle`, `albumDate`,
+   `album_uid`, `album_id`) — **nincs olyan elem, amit az eredeti ért, mi
+   pedig nem.**
 
 ---
 
@@ -157,8 +199,13 @@ Hogy a lefedettség állítása ne legyen önigazoló, itt a lista arról, ami
 
 **A hiányok mindegyikéhez tartozik jegyszám** (#916, #969, #977, #978,
 #979, #989, #990, #991, #992, #1000, #1001, #1002, #1004, #1005, **#1006**).
-A 9. szakasz hat pontja **nyitott terület**, nem hiány — ott azt sem
-tudjuk, van-e mit találni.
+
+*(2026-08-21: a 9. szakasz hat pontjából **kettő elavult volt** (a lap 1.
+szakasza már lezárta őket), **egy** azóta lezárult (billentyűparancsok),
+**egy** megmérve (a `.cxf` visszaolvasása), **egy** felére csökkent (a
+hiányzó képek üzenetei megvannak, a betöltési sorrend nem). Ami **valóban**
+nyitott: a **futó program** viselkedése és a **betöltési sorrend nagy
+albumon** — mindkettő ugyanabba a korlátba ütközik.)*
 
 
 ---
