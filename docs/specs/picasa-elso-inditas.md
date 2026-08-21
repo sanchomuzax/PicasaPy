@@ -125,8 +125,10 @@ parancsazonosító teljes menü-leltárából.*
    a konstruktor `[dlg+0x274] = (*rekesz == 0)`; a rekeszt az
    indulás-rutin tölti a felderített régi telepítés sztringjéből
    (`0x00406c00`: Lifescape-registry, `#db2\`, `p1/p2/p3import`).
-3. **Hol jelenik meg a panel** (saját ablak vagy a főablakba ágyazva), és
-   mi történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
+3. ~~Hol jelenik meg a panel, és mi történik bezáráskor?~~ — **LEZÁRVA**
+   (6.7): saját **modális** ablak a főablak szülővel; **bezárásra −1**
+   kerül a kimeneti rekeszbe, és az indulási lépés **megszakítottként**
+   végződik (`0xF4242`).
 
 ---
 
@@ -315,3 +317,53 @@ mód szövege — ezek nem az `initialscan` részei.)*
 `0x00406c00` sztringkészlete) · **erős** arra, hogy a `+0x1020` sztring
 maga a felderített régi telepítés jelölője — a feltöltés pontos helye a
 `0x00406c00`-n belül nincs végigolvasva.*
+
+### 6.7 Hol jelenik meg, és mi történik bezáráskor (U3)
+
+**Saját, MODÁLIS ablak** — nem a főablakba ágyazott panel:
+
+```asm
+; 0x0040e410
+0x0040e433  push 0x278 / 0x97c5d0        ; 0x278 bajtos objektum foglalasa
+0x0040e45c  call 0x5b7610                ; konstruktor
+0x0040e46e  ... [eax+0x6c]               ; a FOABLAK HWND-je (szulo)
+0x0040e476  push "initialscan"
+0x0040e47c  call 0x9d4a80                ; a kozos MODALIS megjelenito (11 hivo)
+```
+
+A `0x005b75c0` (a vtábla 30. slotja) az ablak **nevét** adja vissza
+(`[dlg+0x260]`, alapértelmezés üres sztring), a `[dlg+0x258]` pedig a
+modális hurok objektuma.
+
+#### Bezárásra a panel −1-et ír — és az indulás MEGSZAKÍTOTTNAK számít
+
+A `0x005b7da0` (a vtábla 22. slotja) az értesítéseket kezeli. A
+**`0x08000002`** osztályban a nevet a **`"CloseModal"`** sztringgel veti
+össze, és egyezés esetén:
+
+```asm
+0x005b7e2d  [dlg+0x268] = 0            ; a "fut" jelzo torlese
+0x005b7e3f  [dlg+0x258]->vt[5](0, 0)   ; a MODALIS HUROK leallitasa
+0x005b7e47  0x9dfa10( [dlg+0x14c] )
+0x005b7e56  *[dlg+0x25c] = 0
+0x005b7e63  eax = [dlg+0x270]          ; a KIMENETI REKESZ
+0x005b7e69  *eax = 0xFFFFFFFF          ; ← −1 = MEGSZAKITVA
+0x005b7e6f  return 0xF4241
+```
+
+és az indulás-rutin pontosan ezt nézi:
+
+```asm
+0x0040d56d  cmp dword ptr [ebx], -1
+0x0040d570  jne 0x40d58c
+0x0040d572  mov eax, 0xf4242           ; "megszakitva" visszateres
+```
+
+> **Vagyis a Mégse gomb rejtett (2. szakasz), de az ABLAK BEZÁRÁSA mégis
+> megszakít** — és az indulás **nem folytatódik** a beolvasás-beállítással
+> (`0x0040d572`, `0xF4242`). A választás tehát nem „kikényszerített",
+> hanem: **vagy választasz, vagy az indulási lépés megszakad.**
+
+*Bizonyítottsági fok: **megerősített** — a megjelenítés útja, a
+`CloseModal` ág minden utasítása, és az indulás-rutin −1-ellenőrzése.*
+
