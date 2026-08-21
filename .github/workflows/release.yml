@@ -18,6 +18,10 @@ on:
 
 permissions:
   contents: write
+  # #1166: a verzióemelés ÁGRA tol és PR-t nyit (a `main` védett), ehhez a
+  # `contents: write` nem elég — a `gh pr create` `Resource not accessible
+  # by integration`-nel bukott. A PR-nyitás külön jogosultság.
+  pull-requests: write
 
 jobs:
   release:
