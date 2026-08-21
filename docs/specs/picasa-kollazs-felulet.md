@@ -254,9 +254,9 @@ nem állítja.
 
 **Bizalmi fok.** A **mechanizmus megerősített** (utasításszintű minden
 lépésnél, és a 9 beállító teljes enumerációval). A csoport-csomópont
-**vizuális szerepe** azóta szintén mérve — **`#F85E0F` színű téglalap**,
-ld. **2/b**. Ami továbbra sem mérve: hogy **kitöltött-e vagy körvonal**
-(2/b.5), és hogy **miért** épp a három rács-téma kapja meg a bitet.
+**vizuális szerepe** azóta szintén mérve — **`#F85E0F` színű, 2 képpont
+vastag, élsimított KÖRVONALAS téglalap**, ld. **2/b**. Ami továbbra sem
+mérve: hogy **miért** épp a három rács-téma kapja meg a bitet.
 
 Teljes bitlista témánként, hogy a folytatás ne kelljen újraszámolni:
 
@@ -394,14 +394,54 @@ két oldalon:
 ez a vonalvastagság, és a +2-es befoglaló ennek a helye. **Ez azonban
 korreláció, nem mérés.**)*
 
-### 2/b.5 Ami NYITVA marad
+### 2/b.5 KÖRVONAL, nem kitöltés — a raszterező kimérve (2026-08-21, K1/c)
 
-**Kitöltött téglalap-e vagy csak körvonal?** A `0x007dec00` (1005 b)
-raszterezőjének pásztázó ciklusát nem követtük végig, és a
-`ShapeDraw<RectSampler>` négy paraméterének (`2`, `0.88`, `0.79`, `256`)
-a jelentése sincs megfejtve. **Egyetlen eredeti képernyőkép** (rács-téma,
-két vagy több kijelölt kép) **azonnal eldöntené.** Gépi úton a folytatás:
-`0x007dec00` + `0x00830170`.
+> Ez a szakasz korábban nyitott kérdésként állt („kitöltött-e vagy
+> körvonal?"). **Eldőlt, gépi úton — képernyőkép nem kellett hozzá.**
+
+A `ShapeDraw<RectSampler>` egyetlen vtable-rekesze a **`0x007dec00`**
+(1005 b). A képpont-ciklusban a rajzolás **feltételes**:
+
+```asm
+0x007ded92  sub  edx, eax                    ; edx = w - x
+0x007ded94  lea  ecx, [edx + 1]              ; w - x + 1
+0x007ded97  lea  edi, [eax + 1]              ; x + 1
+0x007ded9d  cmp  edi, ecx
+0x007deda9  mov  dword ptr [esp + 0x28], edi ; [esp+0x28] = min(x+1, w-x+1)
+   ... ugyanez y-ra -> [esp+0x24] = min(y+1, h-y+1)
+0x007dedc9  mov  ecx, dword ptr [esp + 0x14] ; a ShapeDraw objektum
+0x007dedcd  mov  ecx, dword ptr [ecx + 4]    ; << a +0x04 mező = 2
+0x007dedd0  add  ecx, 1
+0x007dedd3  cmp  dword ptr [esp + 0x28], ecx
+0x007dedd7  jbe  0x7dede3                    ; közel a FÜGGŐLEGES élhez -> RAJZOL
+0x007dedd9  cmp  dword ptr [esp + 0x24], ecx
+0x007deddd  ja   0x7defb0                    ; << mindkettőtől távol -> KIHAGY
+```
+
+A `0x007defb0` a **következő képpontra lépés** címkéje — közvetlenül a
+képpont-írás (`0x007defae mov dword ptr [ecx], eax`) **után**. Vagyis a
+belső képpontok **egyáltalán nem íródnak ki**.
+
+> **A csoport-jelölés tehát egy KÖRVONALAS téglalap**, és a
+> `ShapeDraw` `+0x04` mezője (`2`) **a vonalvastagság**. Ez igazolja a
+> 2/b.4-ben csak korrelációként jelzett feltevést, és megmagyarázza a
+> befoglaló doboz `+2`-jét is (`0x0085fdd9`, `0x0085fddc`).
+
+**Élsimított.** A rutin a képpont **négy sarkára** külön számol
+fedettséget (mindegyik `0x100` vagy `0`), majd a 16.16-os fixpontos
+törtrészekkel **bilineárisan interpolál**
+(`0x007def14`–`0x007def3e`), és a kapott fedettséggel skálázza az
+elő-szorzott szín alfáját, `over` keveréssel
+(`0x007def46`–`0x007def61`).
+
+**A `ShapeDraw` másik három mezőjét ez az útvonal NEM olvassa.** A
+`this`-re (`[esp+0x14]`) mind a hat hivatkozás `+0x04`-et olvas
+(`0x007dedc9`, `0x007dedf9`, `0x007dee16`, `0x007dee52`, `0x007dee9f`) —
+a `0.88f`, a `0.79f` és a `256` ezen a rajzolási úton **halott adat**.
+
+**A `0xd3a138` példánynak egyetlen hivatkozója van** az egész binárisban:
+a kollázs csoport-keretének létrehozása (`0x00860441`). Nem osztott
+erőforrás.
 
 ## 3. A háttér — három mód, nem kettő
 
