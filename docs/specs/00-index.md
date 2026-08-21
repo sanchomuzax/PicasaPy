@@ -264,13 +264,33 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
    történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 1 kérdés (a hatókörön kívüli Apple-ágon felül)
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 2 kérdés (a hatókörön kívüli Apple-ágon felül)
+
+> 🔴 **2026-08-21 — ÉLES ÖSSZEVETÉS: a megvalósításunk NEM követi ezt a
+> lapot.** A tulajdonos egymás mellett futtatta a kettőt. A fa **nem
+> nyitható ki** (valódi egérkattintással mérve: a sor-`MouseArea` elnyeli
+> a nyílra adott kattintást), **egyetlen soron sincs állapot-ikon**, és
+> **két olyan gomb** van a párbeszédben, ami az eredetiben nem létezik —
+> ezek magyar felirattal **67,7 px**-szel kitolják a gombsort az 550 px-es
+> ablakból, így a Súgó nem látszik. A lap 9. szakasza **mindegyik hibát
+> előre leírta** (a 23. sor szó szerint: „extra gombok — **nincsenek**").
+> A mért eltéréslista a **9/b** szakaszban, a normatív sor-felépítés a
+> **4.4/b**-ben. Jegy: **#1200**.
 
 *(A lap 2026-08-20-án készült, a tulajdonos két képernyőképéből és a
 binárisból. A kör négy kérdést tett fel és kettőt le is zárt — a
 lista-térképet (5.2/5.4) és a „teljes meghajtó" feltételét (10.). Ami
 maradt, egyik sem igényel futó Picasát, és egyik sem blokkolja a
 megvalósítást — jegy: **#1161**.)*
+
+⭐ **2026-08-21, sor-rajzolás kör** — a **4.4/b** szakasz normatívvá teszi
+a fa-sor felépítését: mező→erőforrás hozzárendelés közvetlen kódolvasásból
+(`0x007c0130`), a rajzolás sorrendje (`0x007c6700`), és a **korábbi
+nyitott kérdés lezárása**: a kijelölt sor `#7D8397` / a nem kijelölt
+`#FDFDFD` **kódkonstansként megvan** (`0x007c6757`), nem csak mérésből —
+ugyanaz az idióma, mint a `popuplist`-nél (#894). **Ami nyitva maradt:**
+a `0x007c5c40` három kimenő jelzőjének pontos leképezése a három ikonra
+(szándékosan nem találgatva; a megvalósításhoz nem szükséges).
 
 0. *(A lap 12. szakasza a hiteles, naprakész lista — 2026-08-21-én
    nyolc pontra bővült, majd az **M1–M5, M7, M8** lezárult. A tételek a

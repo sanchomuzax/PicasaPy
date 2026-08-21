@@ -335,13 +335,104 @@ alist_selcolor_win=0xFF25648B
 > 76, 98, 119, 141, 163, 185, … — a szomszédos különbségek **22** (egy
 > helyen 21, kerekítésből).
 
-#### A KIJELÖLT sor színe — mérés, mert a forrásokban nincs
+#### A KIJELÖLT sor színe — ~~mérés, mert a forrásokban nincs~~ MEGVAN A KÓDBAN (2026-08-21)
 
 A kijelölt sor színe **mindkét képernyőképen `#7D8397`** (RGB 125, 131,
 151; az alapon 238, a nagyítotton 274 képpont dominanciával). Ez **NEM**
 az `alist_selcolor_win` (`#25648B`), és a `constants.ui` egyetlen
 konstansa sem áll közel hozzá; a teljes `runtime/` mappában sincs `7D8397`
-minta. **A szín tehát kódból jön** — a mérés az egyetlen forrásunk rá.
+minta.
+
+> ✅ **A „csak mérésből tudjuk" megszorítás MEGDŐLT.** A sor-rajzoló
+> (`0x007c6700`, `CFolderMgrDialog::TreeListDraw` vtable 2. metódusa)
+> **kódkonstansként** számolja ki mindkét színt, ugyanazzal az
+> ágmentes idiómával, amit a `popuplist` kiemelt soránál is találtunk
+> (#894):
+>
+> ```asm
+> 0x007c674d  mov  ecx, [eax + 4]
+> 0x007c6750  and  cl, 2              ; a KIJELÖLT bit
+> 0x007c6753  neg  cl
+> 0x007c6755  sbb  ecx, ecx           ; kijelölt -> 0xFFFFFFFF, egyébként 0
+> 0x007c6757  and  ecx, 0xff7f859a
+> 0x007c675d  add  ecx, 0xfffdfdfd
+> ```
+>
+> - kijelölt: `0xff7f859a + 0xfffdfdfd` = **`0xFF7D8397`** → **`#7D8397`**
+> - nem kijelölt: `0 + 0xfffdfdfd` = **`0xFFFDFDFD`** → **`#FDFDFD`**
+>
+> A mérés tehát végig helyes volt, és most **független, kódbeli
+> megerősítést** kapott. A `test [sor+4], 2` kijelölt-bit ugyanaz, mint a
+> `popuplist`-nél — a két lista **egy közös sor-modellt** használ.
+
+#### 4.4/b A sor SORRENDJE és az, hogy MINDIG van állapot-ikon (2026-08-21)
+
+Ez a szakasz a `0x007c6700` szó szerinti olvasásából származik, és a fenti
+4.2 vázlatot **normatívvá** teszi. Az erőforrás-mezők azonosítása a
+felállítóból (`0x007c0130`, `0x007c03ec`–`0x007c045c`) **közvetlen**, nem
+következtetés:
+
+| mező | erőforrás | mi ez |
+|---|---|---|
+| `[dlg+0x318]` | `arrows2/right` | becsukott nyíl ▷ |
+| `[dlg+0x340]` | `arrows2/down` | kinyitott nyíl ▲ |
+| `[dlg+0x368]` | `icons/folder_manager_watch` | **kék C** |
+| `[dlg+0x390]` | `icons/folder_manager_exclude` | **piros X** |
+| `[dlg+0x3b8]` | `icons/folder_manager_scan_once` | **zöld pipa** |
+| `[dlg+0x3e0]` | `icons/folder_manager_nofr` | arcfelismerés-jelvény |
+
+**A rajzolás sorrendje egy soron belül, balról jobbra:**
+
+1. **háttér** (`#7D8397` / `#FDFDFD`, ld. fent);
+2. **kinyitó nyíl** — `arrows2/right` vagy `arrows2/down`; **levélelemnél
+   egyik sem** (a `0x007c6831` ág egyszerűen kihagyja);
+3. **állapot-ikon** — a `0x007c68ec`–`0x007c691d` blokk **if / else-if /
+   else**, tehát ⚠️ **NINCS olyan ág, amiben egy sor ikon NÉLKÜL
+   marad.** Az alapértelmezett (egyik jelző sincs beállítva) ág a
+   `[dlg+0x3b8]`;
+4. **arcfelismerés-jelvény** (`[dlg+0x3e0]`) — **feltételes, második**
+   ikon, az állapot-ikon MELLETT, saját `[dlg+0x3e8]` előretolással;
+5. **mappaikon**, majd a **név**.
+
+> ⛔ **Ez a pont buktatta meg a mi megvalósításunkat (#1200):** nálunk a
+> jelvény a név UTÁN áll, és a „nincs állapot" esetben **semmit nem
+> rajzol**. Az eredetiben az ikon a név ELŐTT van, és **minden sornak van
+> ikonja**.
+
+**Az állapot forrása** (`0x007c5c40`): három tagsági keresés
+(`0x00492e40`, „benne van-e az útvonal a listában") a `[dlg+0x270]`,
+`[dlg+0x280]` és `[dlg+0x288]` listákon, és ha egyik sem dönt, egy
+adatbázis-lekérdezés (`0x004ee260`) az 5-ös, illetve 1-es állapotkódra.
+
+**A három ikon mért képe** (a `respack.yt`-ból kicsomagolva, átlátszóság
+fölötti átlagos RGB):
+
+| erőforrás | méret | átlagszín | mit ábrázol |
+|---|---|---|---|
+| `icon_once` / `folder_manager_scan_once` | **18 × 14** | (70, 181, 71) **zöld** | pipa |
+| `icon_exclude` / `folder_manager_exclude` | **16 × 17** | (194, 29, 30) **piros** | X |
+| `icon_always` / `folder_manager_watch` | **17 × 18** | (26, 108, 164) **kék** | körkörös nyíl („C") |
+| `nofr_on` | **20 × 19** | — | arc-sziluett **piros tiltótáblával** = arcfelismerés KI |
+| `nofr_off` | **24 × 19** | — | arc-sziluett **zöld pipával** = arcfelismerés BE |
+
+⚠️ A `nofr_*` nevek **fordítva olvasandók**, mint amit a név sugall:
+`nofr_on` = „a *nincs-arcfelismerés* be van kapcsolva" = a tiltott
+állapot. A `.tre`-ben a `nofr_on` az alapból látható, a `nofr_off`
+`m_hidden`, és a `frexclude` gomb `hidetarget`/`showtarget` párja
+cseréli őket.
+
+*Bizonyítottsági fok: **megerősített** — mind a mező→erőforrás
+hozzárendelés, mind a rajzolási sorrend szó szerinti kódolvasásból; az
+ikonok mérete és színe a kicsomagolt képekből mérve.*
+
+**Ami itt NYITVA marad:** hogy a három tagsági lista közül pontosan
+melyik jelző (`0x007c5c40` arg2/arg3/arg4 kimenete) tartozik a piros
+X-hez és melyik a kék C-hez, a veremaritmetikából **nem dőlt el
+egyértelműen** — ezt szándékosan nem találgatom. A gyakorlati sorrendet
+a tulajdonos képernyőképe adja meg (nem indexelt mappa → piros X,
+figyelt → kék C), és a jobb oldali rádiósor ikonjai amúgy is
+egyértelműsítik a szerep→ikon párosítást. Folytatás, ha kell:
+`0x007c5c40` argumentumainak pontos leképezése.
 
 #### A fa ikonjai MÁS erőforrások, mint a rádiósoroké
 
@@ -902,6 +993,46 @@ jelenléte pontosan a #1088-ban leírt eset — a `Képek` OneDrive-ra
 | 25 | figyelmeztetés: teljes meghajtó | ✔ + **nemre az „Eltávolítás" tétel lesz aktív** | ✔ figyelmeztet, a visszaállás nincs |
 | 26 | figyelmeztetés: figyelt mappa eltávolítása | ✔ saját címmel | ✔ megvan |
 | 27 | `confirmfrexclude` | **OK-kor**, ha kizárt mappa arcadata törlődne | a kapcsolónál kérdez, nem OK-kor |
+
+### 9/b Amit a 2026-08-21-i élő összevetés MÉRT (a tulajdonos képernyőképe + gépi mérés)
+
+A tulajdonos egymás mellett futtatta a kettőt. Ez a szakasz a fenti
+listát **mérésre váltja**, mert több tétel időközben javult, más viszont
+csak a valódi használatban derült ki. Jegy: **#1200**.
+
+| # | tétel | eredeti | nálunk — MÉRVE | állapot |
+|---|---|---|---|---|
+| A | **a fa kinyitható-e** | igen, rekurzív fájlrendszer-fa | ❌ **NEM** — a nyílra kattintás nem nyit ki semmit, csak kijelöl | **P1 hiba** |
+| B | állapot-ikon minden soron | **mindig** (3 közül 1) | ❌ „nincs állapot" esetben **semmi**; a 4 látható sor ikon nélkül | **P1 hiba** |
+| C | az ikon HELYE a sorban | a **név ELŐTT**, a mappaikon előtt | ❌ a név **UTÁN** | hiba |
+| D | rádiósorok ikonjai | mindegyik mellett a saját ikonja (`icon_once`/`_exclude`/`_always`) | ❌ nincs ikon, a feliratok **középre** igazítva | hiba |
+| E | gombsor | **3 gomb** (OK/Mégse/Súgó), 98×28, jobbra zárva | ❌ **5 gomb** — a sor igénye **556 px** angolul, **618 px** magyarul, az ablak **550 px** → a Súgó kilóg | **P1 hiba** |
+| F | bal felirat | „Folder List" / „Mappalista" | ❌ „Mappák" | hiba |
+| G | gyökerek neve | honosított (Asztal / Képek / Dokumentumok) | ❌ **angolul** beégetve (`Desktop`/`Pictures`/`Documents`) magyar felületen | hiba |
+| H | „Figyelt mappák" lista alakja | rövid, relatív útvonalak (`Képek\AI\`) | ❌ teljes útvonalak, középen `…`-tal csonkolva | eltérés |
+| I | ablakméret | 550×450 | ✔ **550×450** | rendben |
+| J | rádiók sorrendje | egyszer → eltávolítás → mindig | ✔ ugyanez | rendben (javult) |
+| K | Súgó gomb léte | van | ✔ van (csak kilóg, ld. E) | rendben |
+
+**Mérési módszer** az A és E soroknál (mindkettő gépi, nem szemre):
+
+- **A:** valódi `QMouseEvent` a nyíl közepére a Mappakezelő ablakában →
+  `expanded` **`false`** maradt, viszont a `selectedPath` beállt. A
+  sor-szintű `MouseArea` (`folderTreeRowMouse:*`) a `Rectangle`-ben
+  **később** van deklarálva, mint a nyíl `MouseArea`-ja, tehát
+  találat-vizsgálatnál **fölötte van** és elnyeli a kattintást.
+- **E:** a betöltött ablakban a gombsor `implicitWidth` = **556 px**
+  (angol feliratokkal), a Súgó gomb jobb széle **556** — az 550 px-es
+  ablakon **kívül**. Magyar feliratokkal, ugyanazzal a betűvel mérve
+  `QFontMetricsF`-fel: **617,7 px**, azaz **67,7 px túllógás**.
+
+> ⚠️ **Miért nem fogta meg ezt egyetlen teszt sem?** A
+> `tests/app/test_qml_folder_manager.py` a kinyitást a
+> `toggleExpand()` **közvetlen hívásával** végzi
+> (`_invoke(row_item, "toggleExpand")`), sosem kattint. A függvény
+> hibátlan — a **vezérlő** nem érhető el. A zöld készlet tehát pontosan
+> azt nem mérte, ami elromlott. Ez a `docs/`-ban már rögzített
+> „őr-teszt foga nélkül" minta újabb esete.
 
 ---
 
