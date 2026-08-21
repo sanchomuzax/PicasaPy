@@ -323,10 +323,11 @@ megvalósítást — jegy: **#1161**.)*
    siker ága nyitja ki az ősöket és kéri a háttérbetöltést, a kudarcé
    törli a fa kijelölését.
 
-### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott kérdés
+### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott bináris kérdés
 
-*(Mind a négy lezárult; a maradék apró pontok — a `WM_*` leképezés és az
-egyes menük tételsora — a lap saját szakaszaiban vannak jelölve.)*
+*(A #905 nyolc, korábban csak névből következtetett `.tre` tulajdonsága a lap
+1/c szakaszában kapott bináris választ; a végső látványbeli finomítások a
+szakaszban külön bizonyítottsági fokkal szerepelnek.)*
 
 ⭐ **2026-08-20, kijelölés-kör:** a lap négy ÚJ szakaszt kapott, és ezek a
 kijelölés eddig hiányzó **hatókörét** rögzítik:
