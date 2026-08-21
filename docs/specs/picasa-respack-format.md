@@ -85,14 +85,19 @@ vászonból negatív origóval; előjel nélkül olvasva ezek méretei
 
 ### 3.1 Kódolás `2` — tömör kitöltés (1403 réteg)
 
-A fejléc után pontosan **4 bájt RGBA**; a teljes határoló doboz ezzel a
+A fejléc után pontosan **4 bájt BGRA**; a teljes határoló doboz ezzel a
 színnel van kitöltve. A rekord így fixen 17 bájt.
 
 ### 3.2 Kódolás `1` — RLE, sorhatároktól FÜGGETLENÜL (1365 réteg)
 
-A fejléc után `(uint8 darab, R, G, B, A)` ötösök sorozata: a kép **egyetlen,
+A fejléc után `(uint8 darab, B, G, R, A)` ötösök sorozata: a kép **egyetlen,
 folytonos képpont-folyam**, a futamok **átlógnak a sorhatárokon**. A futamok
 összege pontosan `(x1−x0) × (y1−y0)` képpont.
+
+> **HELYESBÍTÉS (2026-08-21, #1160).** Ez a leírás korábban tévesen **RGBA**
+> sorrendet állított. A nyers `respack.yt` képpontok **BGRA** sorrendűek; a
+> kicsomagoló PNG-íráskor alakítja őket RGBA-vá. A nyers dekódolt puffer és a
+> visszakódolás BGRA marad, ezért a round-trip bájtra azonos.
 
 > **JAVÍTÁS (2026-08-07).** Ez a leírás korábban azt állította, hogy a futamok
 > **sorhatárra igazítottak**. **Tévedés volt.** Az eredeti megfigyelés (az
@@ -133,9 +138,25 @@ pontosan értjük — csak a **bájthű visszakódolás** bizonyítja. Ez a
 2. **A gomb-állapotok szisztematikus névkonvenciója** (`_n`/`_h`/`_p`,
    `_lg`/`_sm`, `_win`/`_mac`) megmutatja, hány állapotot rajzolt meg a
    Picasa minden vezérlőhöz — ez a hűség mércéje egy QML-stílushoz.
-3. **Színpontos referenciák**: a tömör rétegek 4 bájtos RGBA-értékei az
+3. **Színpontos referenciák**: a tömör rétegek 4 bájtos BGRA-értékei az
    eredeti UI *pontos* színei (nem screenshot-mintavétel). Pl. a
    `#e8e8e8` króm-háttér közvetlenül itt olvasható.
+
+### 4.1 Színállítás-audit (#1160)
+
+A korábbi RGBA-értelmezés minden nem szürke, a `respack.py`-vel kiírt PNG-ből
+vett szín R és B komponensét felcserélte. A publikus specifikációk auditja:
+
+- `picasa-mappakezelo.md`: az `icon_exclude`, `icon_always` és `nofr_on`
+  színei a futó Picasa képernyőképével egyeznek; a javított PNG-k immár
+  piros, kék, illetve piros eredményt adnak.
+- `ui-audit-editor.md`: az `ok_icon` helyes domináns színe `#4A904E`, a
+  `cancel_icon`-é `#A14B52`; a régi `#4E904A` és `#524BA1` értékek
+  felcserélt csatornákból származtak.
+- `design-guide.md`: az érintett tömör-kitöltés tokenek kizárólag szürkék
+  (`R=G=B`), ezért értékük változatlan.
+- `histogram-reference.md`: a barna rétegszín korábban is megkérdőjelezett
+  történeti mérés volt; ebből továbbra sem következik UI-színállítás.
 
 ## 5. `.tre` — a Picasa UI-elrendezés-nyelve
 

@@ -389,7 +389,9 @@ kicsomagoló: `tools/picasa/respack.py`.
 
 Röviden: névindex a fájl végén (`uint32` eltolás a 0. bájton), rekordonként
 13 bájtos fejléc (`int16` határoló doboz + kódolásbájt), az adat vagy tömör
-RGBA-kitöltés, vagy **soronkénti RLE** `(darab, R, G, B, A)` ötösökkel. A
+BGRA-kitöltés, vagy **sorhatároktól független RLE** `(darab, B, G, R, A)`
+ötösökkel. A korábbi összefoglaló itt is tévesen RGBA-sorrendet írt; a
+helyesbítés részletei a `picasa-respack-format.md` 3.2 szakaszában vannak. A
 csomag **2909 bejegyzést** tartalmaz: 2769 rajzi réteget (ezek adják a
 `.pbf` gombfájlok `src="runtime"` és a `fliprtl.txt` ikonneveit) és
 **140 `.tre` UI-elrendezés-forrásfájlt** — vagyis a Picasa fő ablakának és

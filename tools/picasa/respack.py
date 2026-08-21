@@ -13,8 +13,8 @@ Röviden:
 * minden rekord 13 bájtos fejléccel indul
   (`int16 x0,y0,x1,y1` + `uint8 ?` + `uint8 látható` + `uint16 ?` +
   `uint8 kódolás`), utána a hasznos adat:
-  - kódolás `2` = tömör kitöltés, 4 bájt RGBA;
-  - kódolás `1` = RLE: `(uint8 darab, R, G, B, A)` ötösök **egyetlen,
+  - kódolás `2` = tömör kitöltés, 4 bájt BGRA;
+  - kódolás `1` = RLE: `(uint8 darab, B, G, R, A)` ötösök **egyetlen,
     sorhatároktól FÜGGETLEN képpont-folyamként**, összesen
     `(x1-x0) * (y1-y0)` képpont (a futamok átlógnak a sorok között);
   - kódolás `0` = üres réteg (csak fejléc, nincs képpontadat);
@@ -70,7 +70,7 @@ class Layer:
     x1: int
     y1: int
     encoding: int
-    pixels: bytes  # RGBA, soronként; tömör kitöltésnél is kifejtve
+    pixels: bytes  # BGRA, soronként; tömör kitöltésnél is kifejtve
 
     @property
     def width(self) -> int:
@@ -122,7 +122,7 @@ def read_index(data: bytes) -> list[Entry]:
 
 
 def decode_layer(data: bytes, entry: Entry) -> Layer:
-    """Egy `layer:` bejegyzés kibontása RGBA képponttömbbé."""
+    """Egy `layer:` bejegyzés kibontása BGRA képponttömbbé."""
     if entry.is_tre:
         raise RespackError(f"{entry.name}: szöveges bejegyzés, nem réteg.")
     off = entry.offset
@@ -249,7 +249,9 @@ def _cmd_png(path: Path, outdir: Path, needle: str | None) -> int:
         if layer.width <= 0 or layer.height <= 0:
             skipped += 1
             continue
-        img = Image.frombytes("RGBA", (layer.width, layer.height), layer.pixels)
+        img = Image.frombytes(
+            "RGBA", (layer.width, layer.height), layer.pixels, "raw", "BGRA"
+        )
         img.save(outdir / f"{_safe_filename(layer.name)}.png")
         written += 1
     print(f"{written} PNG kiírva ({skipped} kihagyva) ide: {outdir}")

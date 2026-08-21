@@ -728,14 +728,15 @@ rétegeket; három számszerű adat innen való, és egy korábbi állítást he
 
 | réteg | kép | mért adat |
 |---|---|---|
-| `editpanel/ok_icon` | tömör kör, fehér pipa | domináns szín **`#4E904A`** (zöld) |
-| `editpanel/cancel_icon` | tömör kör, fehér X | domináns szín **`#524BA1`** (**indigó**) |
+| `editpanel/ok_icon` | tömör kör, fehér pipa | domináns szín **`#4A904E`** (zöld) |
+| `editpanel/cancel_icon` | tömör kör, fehér X | domináns szín **`#A14B52`** (**sötétvörös**) |
 | `editslider/sliderbase` | 191x27 | a vájat a 8.-16. képpontsorban fut -> **9 képpont magas sín** |
 | `editslider/thumb` | **16x26** | **álló, magas téglalap** fogantyú (nem kör) |
 
-FIGYELEM - **helyesbítés:** a dokumentum máshol "sötétvörös X-ikon"-t ír - az
-képernyőképről olvasott benyomás. A kicsomagolt bitkép szerint **indigó**, és
-ugyanaz a két kép szolgálja ki a vágás-panelt is.
+**#1160 helyesbítés:** a korábbi kicsomagolás a nyers BGRA-adatot RGBA-ként
+írta PNG-be, ezért a két nem szürke szín R és B komponense felcserélődött.
+A helyes `cancel_icon` így valóban **sötétvörös**, összhangban a korábbi
+képernyőképes megfigyeléssel; ugyanaz a két kép szolgálja ki a vágás-panelt is.
 
 Összehasonlításul a felület MÁSIK csúszka-sablonja (nagyítás, derítőfény,
 retusáló ecset - `scaleslider`): sín 121x9, fogantyú 16x22. A paraméter-alpanel
