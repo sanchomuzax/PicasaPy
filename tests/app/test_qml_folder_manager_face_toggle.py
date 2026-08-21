@@ -40,7 +40,7 @@ class TestFaceDetectionToggle:
         toggle = _child(window, "faceDetectionToggle")
         assert toggle.property("enabledForSelection") is True
 
-    def test_disabling_asks_for_confirmation_first(self, qml_app, qt_app):
+    def test_disabling_asks_for_confirmation_only_at_ok(self, qml_app, qt_app):
         window, controller, lib, _engine = qml_app
         dialog = _child(window, "folderManagerDialog")
         dialog.setProperty("selectedPath", str(lib))
@@ -50,6 +50,12 @@ class TestFaceDetectionToggle:
         qt_app.processEvents()
 
         confirm_dialog = _child(window, "faceDetectionConfirmDialog")
+        assert confirm_dialog.property("visible") is False
+        assert controller.faceDetectionEnabledFor(str(lib)) is True
+
+        _click(_child(window, "folderManagerOkButton"))
+        qt_app.processEvents()
+
         assert confirm_dialog.property("visible") is True
         # a KIKAPCSOLÁS még nem történt meg — csak megerősítés után
         assert controller.faceDetectionEnabledFor(str(lib)) is True
@@ -69,6 +75,8 @@ class TestFaceDetectionToggle:
         qt_app.processEvents()
 
         _toggle_face_detection(window)
+        qt_app.processEvents()
+        _click(_child(window, "folderManagerOkButton"))
         qt_app.processEvents()
         _click(_child(window, "faceDetectionConfirmYesButton"))
         qt_app.processEvents()
@@ -90,6 +98,8 @@ class TestFaceDetectionToggle:
 
         _toggle_face_detection(window)
         qt_app.processEvents()
+        _click(_child(window, "folderManagerOkButton"))
+        qt_app.processEvents()
         _click(_child(window, "faceDetectionConfirmNoButton"))
         qt_app.processEvents()
 
@@ -106,6 +116,9 @@ class TestFaceDetectionToggle:
         _toggle_face_detection(window)
         qt_app.processEvents()
 
+        assert controller.faceDetectionEnabledFor(str(lib)) is False
+        _click(_child(window, "folderManagerOkButton"))
+        qt_app.processEvents()
         assert controller.faceDetectionEnabledFor(str(lib)) is True
         confirm_dialog = _child(window, "faceDetectionConfirmDialog")
         assert confirm_dialog.property("visible") is False
@@ -140,4 +153,19 @@ class TestFaceToggleLabelAndEnablement:
 
         toggle = _child(window, "faceDetectionToggle")
         assert toggle is not None
+        assert toggle.property("enabled") is False
+
+    def test_kizart_szulo_gyereken_a_kapcsolo_nem_kattinthato(
+        self, qml_app, qt_app
+    ):
+        window, controller, lib, _engine = qml_app
+        child = lib / "gyerek"
+        child.mkdir()
+        controller.addWatchedFolder(str(child))
+        controller.setFaceDetectionEnabled(str(lib), False)
+        dialog = _child(window, "folderManagerDialog")
+        dialog.setProperty("selectedPath", str(child))
+        qt_app.processEvents()
+
+        toggle = _child(window, "faceDetectionToggle")
         assert toggle.property("enabled") is False

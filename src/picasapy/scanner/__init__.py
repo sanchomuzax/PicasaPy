@@ -24,6 +24,7 @@ from .name_filters import (
     NameFilters,
     default_name_filters,
 )
+from .scanlist import SCAN_LIST_NAME, read_scan_list, write_scan_list
 from .walker import (
     PICASA_INI_LEGACY_NAME,
     PICASA_INI_NAME,
@@ -49,6 +50,7 @@ __all__ = [
     "PICASA_INI_LEGACY_NAME",
     "PICASA_INI_NAME",
     "RAW_EXTENSIONS",
+    "SCAN_LIST_NAME",
     "VIDEO_EXTENSIONS",
     "WATCHED_FOLDERS_NAME",
     "FolderScan",
@@ -64,10 +66,12 @@ __all__ = [
     "media_kind_of",
     "propose_watched_folders",
     "read_exclude_folders",
+    "read_scan_list",
     "read_watched_folders",
     "SkipPredicate",
     "scan_folder",
     "scan_tree",
     "write_exclude_folders",
+    "write_scan_list",
     "write_watched_folders",
 ]

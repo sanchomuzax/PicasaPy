@@ -33,7 +33,9 @@ from picasapy.paths import normalize_path, path_key
 from picasapy.scanner import (
     LibraryWatcher,
     is_excluded,
+    read_scan_list,
     write_exclude_folders,
+    write_scan_list,
     write_watched_folders,
 )
 
@@ -227,7 +229,13 @@ class LibraryMixin(BackgroundWorkerMixin):
         leállítási jelző be van állítva VAGY a gyökér már nem figyelt —
         a kettős ellenőrzés a jelző-törlés versenyhelyzetét is lefedi."""
         event = self._cancel_event(root)
-        return lambda: event.is_set() or root not in self._roots
+        self._ensure_folder_manager_scan_state()
+        scan_generation = self._folder_scan_generation
+        return lambda: (
+            event.is_set()
+            or root not in self._roots
+            or scan_generation != self._folder_scan_generation
+        )
 
     # -- életciklus ----------------------------------------------------------
 
@@ -296,6 +304,110 @@ class LibraryMixin(BackgroundWorkerMixin):
             self._watcher = None
 
     # -- Mappakezelő ---------------------------------------------------------
+
+    def _ensure_folder_manager_scan_state(self) -> None:
+        if hasattr(self, "_folder_scan_excluded"):
+            return
+        self._folder_scan_file = (
+            self._watched_file.with_name("scanlist.txt")
+            if self._watched_file is not None
+            else None
+        )
+        if self._folder_scan_file is None:
+            scanned, excluded, included = (), (), ()
+        else:
+            scanned, excluded, included = read_scan_list(self._folder_scan_file)
+        self._folder_scan_scanned = list(scanned)
+        self._folder_scan_excluded = list(excluded)
+        self._folder_scan_included = list(included)
+        self._folder_scan_generation = 0
+
+    @Slot(str, result=str)
+    def folderManagerStateFor(self, path: str) -> str:
+        """A scanlist legspecifikusabb, öröklődő felülírása QML-nek."""
+        self._ensure_folder_manager_scan_state()
+        normalized = normalize_path(path)
+        if not normalized:
+            return ""
+        best_state = ""
+        best_length = -1
+        for state, roots in (
+            ("none", self._folder_scan_excluded),
+            ("always", self._folder_scan_included),
+        ):
+            for root in roots:
+                root_normalized = normalize_path(root)
+                if (
+                    normalized == root_normalized
+                    or Path(normalized).is_relative_to(root_normalized)
+                ) and len(root_normalized) > best_length:
+                    best_state = state
+                    best_length = len(root_normalized)
+        if normalized in self._folder_scan_scanned and len(normalized) > best_length:
+            return "once"
+        return best_state
+
+    @Slot(str, str)
+    def setFolderManagerState(self, path: str, state: str) -> None:
+        """Egy állapot tartós átvezetése, a scanlist teljes újraírásával."""
+        self._ensure_folder_manager_scan_state()
+        normalized = normalize_path(path)
+        if not normalized or state not in {"always", "once", "none"}:
+            return
+        for values in (
+            self._folder_scan_scanned,
+            self._folder_scan_excluded,
+            self._folder_scan_included,
+        ):
+            while normalized in values:
+                values.remove(normalized)
+        target = {
+            "always": self._folder_scan_included,
+            "once": self._folder_scan_scanned,
+            "none": self._folder_scan_excluded,
+        }[state]
+        target.append(normalized)
+        # A már futó teljes sync a következő mappahatáron álljon le: az
+        # induláskor kapott exclude-pillanatkép az új döntés után elavult.
+        self._folder_scan_generation += 1
+        if self._folder_scan_file is not None:
+            write_scan_list(
+                self._folder_scan_file,
+                tuple(self._folder_scan_scanned),
+                tuple(self._folder_scan_excluded),
+                tuple(self._folder_scan_included),
+            )
+        self.statusChanged.emit()
+
+    def _folder_manager_excludes_for_root(self, root: str) -> tuple[str, ...]:
+        self._ensure_folder_manager_scan_state()
+        root_path = Path(normalize_path(root))
+        # Egy explicit befoglaló gyökér felülírhat egy kizárt őságat.
+        result = []
+        for item in self._folder_scan_excluded:
+            item_path = Path(normalize_path(item))
+            if item_path == root_path or item_path.is_relative_to(root_path):
+                result.append(str(item_path))
+        return tuple(result)
+
+    def _folder_manager_path_excluded(self, path: str, root: str) -> bool:
+        path_obj = Path(normalize_path(path))
+        return any(
+            path_obj == Path(item) or path_obj.is_relative_to(item)
+            for item in self._folder_manager_excludes_for_root(root)
+        )
+
+    def _sync_folder_manager_tree(self, conn, root: str, progress=None) -> None:
+        excludes = self._folder_manager_excludes_for_root(root)
+        if not excludes:
+            self._sync_tree(conn, root, progress=progress)
+            return
+        from . import controller as controller_module
+
+        kwargs = {"exclude": excludes}
+        if progress is not None:
+            kwargs["progress"] = progress
+        controller_module.sync_tree(conn, root, **kwargs)
 
     def _find_root(self, path: str) -> str | None:
         """#507: a `path`-hoz tartozó, MÁR figyelt gyökér — `path_key`
@@ -366,7 +478,7 @@ class LibraryMixin(BackgroundWorkerMixin):
         def worker():
             try:
                 with open_index(self._db_path) as conn:
-                    self._sync_tree(conn, path, progress=progress)
+                    self._sync_folder_manager_tree(conn, path, progress=progress)
             finally:
                 self.syncFinished.emit()
 
@@ -395,7 +507,7 @@ class LibraryMixin(BackgroundWorkerMixin):
         def worker():
             try:
                 with open_index(self._db_path) as conn:
-                    self._sync_tree(conn, path, progress=progress)
+                    self._sync_folder_manager_tree(conn, path, progress=progress)
             finally:
                 self.syncFinished.emit()
 
@@ -545,13 +657,15 @@ class LibraryMixin(BackgroundWorkerMixin):
                         root = self._root_for_folder(folder)
                         if root is None:
                             continue  # már nem figyelt gyökér alatt — kihagyva
+                        if self._folder_manager_path_excluded(folder, root):
+                            continue
                         try:
                             # #216: eltávolított gyökér mappája már ne íródjon
                             sync_folder(
                                 conn,
                                 root,
                                 folder,
-                                exclude=(),
+                                exclude=self._folder_manager_excludes_for_root(root),
                                 should_stop=self._make_should_stop(root),
                             )
                         except (OSError, RuntimeError):
@@ -609,7 +723,7 @@ class LibraryMixin(BackgroundWorkerMixin):
                     # visszatérési értéke) csak a saját gyökerére áll be
                     progress = self._make_progress_emitter(should_stop=should_stop)
                     try:
-                        self._sync_tree(conn, root, progress=progress)
+                        self._sync_folder_manager_tree(conn, root, progress=progress)
                     except (OSError, RuntimeError, sqlite3.OperationalError) as error:
                         errors.append(f"{root}: {error}")
         except Exception as error:  # pl. index-migrációs hiba
