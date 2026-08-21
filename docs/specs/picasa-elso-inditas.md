@@ -117,9 +117,10 @@ parancsazonosító teljes menü-leltárából.*
 
 ## 5. Ami NYITVA marad
 
-1. ~~Mit ír a két rádió~~ — **LEZÁRVA** (6.1): a panel **nem ír fájlt**,
-   egy 1/2 (illetve −1) kódot ad vissza. Ami MARAD: hol lesz ebből
-   `scanlist.txt`-bejegyzés — az indulás-rutin `0x0040d6e3`-tól.
+1. ~~Mit ír a két rádió~~ — **TELJESEN LEZÁRVA** (6.1 és 6.5): a panel
+   −1/1/2 kódot ad vissza, az indulás-rutin ebből
+   `0x004fdd10(lista, teljesGép)`-et hív, és a lista a Mappakezelővel
+   **közös** `+0xf8` tároló, amit a `scanlist.txt` írója ment ki.
 2. **Mi dönti el, melyik szövegkészlet (`Text1`/`Text2`) jelenik meg** —
    a „van-e korábbi Picasa" vizsgálat helye.
 3. **Hol jelenik meg a panel** (saját ablak vagy a főablakba ágyazva), és
@@ -207,3 +208,49 @@ Az indulás-rutin (`0x0040d3c0`) `Preferences` kulcsai közt ott a
 `ConfiguredSlingshot`, `LastViewRoot`, `LastAlbumSelected`,
 `ReportStats`, `RIGHTDRAWEROFFSET`.)*
 
+
+### 6.5 A választástól a beolvasási listáig — a teljes lánc (U4)
+
+```
+initialscan panel (0x005b7e80)
+    -> a hivo rekeszebe: -1 (megszakitva) / 1 (szukitett) / 2 (teljes gep)
+
+indulas-rutin (0x0040d3c0), 0x0040d77a-tol:
+    ha az ertek 1 vagy 2:
+        dl = (ertek == 2)                              ; 0x0040d793  "teljes gep"
+        0x004fdd10( [ [this+0x2bc] + 0xf8 ], dl )      ; 0x0040d79d
+        0x00418930( [this+0x2bc] )                     ; 0x0040d7a9
+    egyebkent (0 vagy egyeb): kihagyja
+```
+
+**`0x004fdd10` (3415 bájt) a beolvasási lista felállítója**, és **egyetlen
+hívója az indulás-rutin**. Belül:
+
+| cím | mi történik |
+|---|---|
+| `0x004fdd36` | `0x009966a0` — a **„My Pictures"** rendszermappa feloldása |
+| — | `0x00994a60` a teljes Windows-rendszermappa-táblát tartja: `WinSystemPaths::MyPictures`, `::Desktop`, `::MyDocuments`, `::MyMusic`, `::MyVideos`, `::ApplicationData`, `::CommonApplicationData` |
+| **`0x004fe460`** | **`cmp byte ptr [esp+0x5c], 0` → a „teljes gép" jelző szerinti ELÁGAZÁS** (`je 0x004fe57e`) |
+| `0x004fe3f9` | `0x004efde0` — `Preferences\DSChangeDetect` |
+
+> ⭐ **A `+0xf8` alobjektum UGYANAZ**, amit a **Mappakezelő** alkalmazója is
+> használ (`0x005cef2e`: `esi = [arg1+0x2bc] + 0xf8`), és amire a
+> `0x007bfec0` dolgozik. Vagyis **egyetlen közös tároló** kapja a
+> beolvasási listát az első indításból ÉS a Mappakezelőből — és ezt menti
+> ki a `scanlist.txt` írója (`0x004f61c0`,
+> `picasa-mappakezelo.md` 11.3).
+
+**A két ág olvasata:** a **szűkített** ág a Windows-rendszermappa-feloldón
+megy (`MyPictures` / `Desktop` / `MyDocuments`) — pontosan azt a hármat,
+amit a felirat ígér („Keresés csak a Dokumentumok és a Képek mappában,
+valamint az asztalon"); a **teljes gép** ág a `0x004fe460` igaz ágán egy
+dinamikusan bővülő listát épít. A valódi `scanlist.txt`-mintánkban
+(`research/testdata/Picasa2/db3/`) éppen **négy `+` sor** áll, mind
+**meghajtó-gyökér** (`+C:\`, `+L:\`, `+E:\`, `+D:\`) — ez a „teljes gép"
+választás lenyomata.
+
+*Bizonyítottsági fok: **megerősített** a láncra (a kód minden lépése,
+a közös `+0xf8` tároló, az elágazás helye) · **erős** arra, hogy a
+szűkített ág a három rendszermappát, a teljes ág a meghajtó-gyökereket
+teszi be (a feloldó-tábla, a felirat és a valódi mintafájl együtt) —
+az ágak elemenkénti végigolvasása nem történt meg.*
