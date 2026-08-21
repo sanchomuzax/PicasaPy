@@ -938,10 +938,15 @@ A felület leírása a lap 1–7. szakaszában van (az `export.fen`-ből).
    (`0x009946f0`, tiltott halmaz `\ / : * ? " < > |`); a megjelenített
    útvonal **Wine-észleléssel** és a `ShowUnixPaths` kapcsolóval
    Unix-alakú is lehet (`0x0073a140`).
-7. **Nincs élő mintaadatunk**: az `]history:export` token a 859 elemű
-   `.picasa.ini`-korpuszban **nullaszor** fordul elő, és a
-   `research/testdata/` alatt sincs exportált mappa. A token pontos
-   alakja tehát **nincs mintával igazolva**.
+7. ~~**Nincs élő mintaadatunk** az `]history:export` tokenre~~ —
+   **LEZÁRVA** (2026-08-21, ld. **13.9**). **A premissza volt hibás:** az
+   `]history:*` **nem ini-token**, hanem az `albumdata_token.pmp`
+   egy-egy **album-sorának** tokenje — ezért volt nulla találat az
+   ini-korpuszban. A tulajdonos valódi adatbázisában **kettő él belőle**
+   (`]history:email` = „Elküldve e-mailben", 294. sor; `]history:upload`
+   = „Feltöltve", 295. sor). A token alakja **bizonyított** (a program a
+   literált adja át, `0x007414dd`), tehát **exportot kérni a
+   felhasználótól NEM kell**.
 
 *(Egyik sem blokkolt: mind gépi úton eldönthető, csak drágább —
 utasításszintű olvasás. A munkasorba kerültek.)*
@@ -1205,3 +1210,79 @@ A Picasa **futásidőben megnézi, hogy Wine alatt fut-e** (a
 
 *A PicasaPy-ra ez nem közvetlen teendő (nálunk minden út natív), de
 megerősíti, hogy a Wine-os futás a Picasa támogatott esete volt.*
+
+### 13.9 Az `]history:export` token — NEM kell export a felhasználótól (2026-08-21, E7)
+
+A 9. szakasz 7. pontja azt írta: *„Nincs élő mintaadatunk… a token
+pontos alakja nincs mintával igazolva"*, és exportot kért a
+tulajdonostól. **Erre nincs szükség — a kérdés a meglévő anyagból
+eldőlt.**
+
+#### A premissza volt hibás: NEM ini-token
+
+Az `]history:*` **nem a `.picasa.ini`-be** kerül, hanem az
+**adatbázisba**: az `albumdata_token.pmp` egy-egy **album-sorának** a
+tokenje. A 859 elemű ini-korpuszban ezért volt nulla találat — **rossz
+helyen kerestünk.** *(A `picasa-mappakezelo.md` 11.5 ezt már 2026-08-21-én
+rögzítette; a két lap nem lett összekötve.)*
+
+#### Élő bizonyíték — a tulajdonos valódi adatbázisából
+
+`research/testdata/Picasa2/db3/albumdata_token.pmp` + a párhuzamos
+`albumdata_name.pmp` (mindkettő 2371 sor) **sorindexre illesztve**:
+
+| sor | token | a beépített gyűjtemény neve |
+|---:|---|---|
+| 0 | `]star` | **Csillagozott képek** |
+| 292 | `]screensaver` | **Képernyővédő** |
+| 293 | `]updated` | **Legutóbb frissítve** |
+| **294** | **`]history:email`** | **Elküldve e-mailben** |
+| **295** | **`]history:upload`** | **Feltöltve** |
+| 2366 | `]search` | **Keresési eredmények** |
+
+**A négyes családból kettő élő mintával megvan.** A hiányzó kettő
+(`]history:output`, `]history:export`) egyszerűen azért nincs, mert ez a
+felhasználó **soha nem használt Fájl ▸ Exportálást** — e-mailt és
+feltöltést igen.
+
+#### A négytagú család és a regisztráló
+
+A négy literál a `.rdata`-ban **egymás után** áll, ami önmagában is
+mutatja, hogy egy család:
+
+| token | cím |
+|---|---|
+| `]history:email` | `0xc81238` |
+| `]history:output` | `0xc81248` |
+| `]history:upload` | `0xc81258` |
+| `]history:export` | `0xc81268` |
+
+Mind a négyet **ugyanaz a regisztráló** hozza létre: a `0x0041c340`
+(10499 b), amelyben ott van a **négy csupasz módnév** is (`email`,
+`output`, `upload`, `export`) a `]history:` előtag mellett. Ugyanez a
+függvény kezeli a teljes `]`-token szótárat:
+
+`]album`, `]album:`, `]album%d`, `]screensaver`, **`]hidden`**,
+**`]edited`**, **`]revertable`**, `]web_`, és a négy `]history:`.
+
+**Ezért a token alakja bizonyított**: a program a **literált** adja át
+(`0x007414dd push 0xc81268`), és az `]history:email` élő mintája
+igazolja, hogy a literál **változtatás nélkül** kerül a táblába.
+
+#### ⚠️ Névcsapda: a `CThumbDB::Exported` kulcs NEM az exportot jelenti
+
+| szövegtár-kulcs | angol | magyar | melyik sor |
+|---|---|---|---|
+| `CThumbDB::Emailed` | Emailed | **Elküldve e-mailben** | `]history:email` |
+| **`CThumbDB::Exported`** | **Uploaded** | **Feltöltve** | **`]history:upload`** |
+| `CThumbDB::RecentUpdate` | Recently Updated | Legutóbb frissítve | `]updated` |
+| **`IDS_EXPORTED_CATEGORY`** | **Exported Pictures** | **Exportált képek** | az export gyűjteménye |
+
+A `CThumbDB::Exported` kulcs **a feltöltés** gyűjteményét nevezi meg — aki
+a kulcsnévből következtet, a rossz gyűjteményt címkézi „exportált"-nak.
+Az export gyűjteménye egy **másik** kulcson él
+(`IDS_EXPORTED_CATEGORY`), és ugyanez a szöveg szerepel a
+`CImageOutput`-ban is (`0x0073f884`).
+
+*(Ez a `tre-szovegforrasok` tanulság újabb esete: **azonosítóból soha ne
+állíts jelentést**, ha van hozzá felirat.)*

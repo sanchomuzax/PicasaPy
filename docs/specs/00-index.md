@@ -150,7 +150,7 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    A mi képletünk **két ponton eltér** → **#1171**.
 
 
-### [export-parbeszed.md](export-parbeszed.md) — 2 kérdés
+### [export-parbeszed.md](export-parbeszed.md) — 1 kérdés
 
 *(2026-08-20, három kör. A lap teljes: a `.fen` leíró, mind a 28 magyar
 felirat, a kötések, a 9 beállítás-kulcs, a **képpontra mért geometria** a
@@ -190,6 +190,13 @@ nálunk maradhat 100.)*
    Unix-alakú is lehet (`0x0073a140`, `ShowUnixPaths`). Mellékesen egy
    **ütközés**: a mért időbélyeg-viselkedés és a mi `shutil.copy2`-nk
    kizárja egymást → **#1138**.)*
+   *(És a **13.9**: az `]history:*` **NEM ini-token**, hanem az
+   `albumdata_token.pmp` album-sorának tokenje — a tulajdonos valódi
+   adatbázisában **kettő él** belőle (`]history:email` = „Elküldve
+   e-mailben", `]history:upload` = „Feltöltve"), a négy literál a
+   `0xc81238`–`0xc81268` blokkban, közös regisztrálóval (`0x0041c340`).
+   **Exportot kérni a felhasználótól NEM kell.** Névcsapda: a
+   `CThumbDB::Exported` kulcs a **feltöltés** gyűjteményét nevezi meg.)*
 
 1. **Mi TILTJA LE a film-rádiókat?** A tény mért (a rádiók szürkék, a
    csoport **címkéje fekete marad**), és négy dolog **kizárva**: nincs
