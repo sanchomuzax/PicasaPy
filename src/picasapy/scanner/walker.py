@@ -5,12 +5,10 @@ a rejtett mappákat — köztük a .picasaoriginals-t — kihagyja. A `exclude`
 paraméterrel megadott mappák (és az alfáik) sem kerülnek bejárásra (#145,
 FRExcludeFolders.txt — ld. `picasapy.scanner.exclude`).
 
-#349: emellett a bejárás a Picasa gyári `filters.txt`-jének megfelelő
-NÉV-alapú kizárólistát is alkalmazza (`picasapy.scanner.name_filters`) —
-alapból kizárva: `windows`, `winnt`, `temp`, `Program Files`, `Originals`
-(kis-nagybetű-függetlenül). Ez főleg az `Originals` miatt fontos: ez a
-Picasa nem-destruktív szerkesztésének mentési almappája, enélkül a
-szerkesztett képek eredetije duplikátumként jelenne meg a rácsban.
+#349 és #1169: a bejárás a Picasa `filters.txt`-ének megfelelő név- és
+# útvonal-előtag alapú kizárólistát alkalmazza (`picasapy.scanner.name_filters`).
+# A névlista például `Originals`, `thumbs` és `RECYCLER` mappákat zár ki,
+# míg a Linuxos rendszer- és gyorsítótár-utak külön előtaglistában vannak.
 
 #143: a bejárás közvetlenül `os.scandir`-ra épül, és a DirEntry cache-elt
 stat-eredményét használja — fájlonként pontosan egy stat fut, külön
@@ -96,6 +94,10 @@ def scan_tree(
     konfigurációhoz), amelyben a `directory_includes` felülírhat egy gyári
     kizárást.
 
+    A névalapú szabályoktól független `path_prefix_filters` a teljes
+    útvonalon dolgozik (pl. `~/.cache`, `/proc`, `/sys`, `/usr`); így egy
+    tetszőleges helyen lévő `Cache` nevű fotómappa bejárható marad.
+
     A `skip` predikátum (#143) mappánként dönthet a fájl-statok kihagyásáról:
     igaz válasz esetén a mappa `skipped=True`-val, üres `files`-szal kerül az
     eredménybe — a hívó tudja, hogy az indexbeli állapot érvényes maradt.
@@ -128,6 +130,8 @@ def scan_folder(
     if path.name.startswith("."):
         return None
     filters = name_filters if name_filters is not None else default_name_filters()
+    if filters.is_path_excluded(path):
+        return None
     if filters.is_directory_excluded(path.name):
         return None
     try:
@@ -157,6 +161,8 @@ def _walk(
     (symlink-kör, önmagára mutató symlink) a mappa kihagyásra kerül,
     figyelmeztetéssel."""
     if _is_under_any(current, exclude_paths):
+        return
+    if name_filters.is_path_excluded(current):
         return
     try:
         stat = os.stat(current)
@@ -198,6 +204,8 @@ def _walk(
             # tartalma szándékosan marad ki az indexből.
             if excluded_names is not None:
                 excluded_names.append(current / entry.name)
+            continue
+        if name_filters.is_path_excluded(current / entry.name):
             continue
         _walk(
             current / entry.name,

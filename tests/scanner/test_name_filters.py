@@ -16,6 +16,8 @@ class TestDefaultNameFilters:
             "Program Files",
             "Originals",
             ".picasaoriginals",
+            "thumbs",
+            "RECYCLER",
         }
 
     def test_default_includes_and_file_filters_empty(self):
@@ -23,6 +25,8 @@ class TestDefaultNameFilters:
         assert filters.directory_includes == ()
         assert filters.file_filters == ()
         assert filters.file_includes == ()
+        assert filters.bundle_filters_blacklist == ()
+        assert filters.bundle_filters_whitelist == ()
 
 
 class TestDirectoryExclusionCaseInsensitive:
@@ -62,6 +66,24 @@ class TestDirectoryExclusionIsNameBasedNotSubstring:
         filters = default_name_filters()
         assert not filters.is_directory_excluded("nyaralas")
         assert not filters.is_directory_excluded("telek")
+
+
+class TestPathPrefixExclusion:
+    def test_linux_default_cache_prefix_uses_runtime_home(self, monkeypatch, tmp_path):
+        home = tmp_path / "home"
+        monkeypatch.setenv("HOME", str(home))
+        filters = default_name_filters()
+
+        assert filters.is_path_excluded(home / ".cache" / "thumbnails")
+        assert not filters.is_path_excluded(tmp_path / "photos" / "Cache")
+
+    def test_path_prefix_excludes_children_but_not_similar_folder_name(self, tmp_path):
+        cache = tmp_path / "home" / ".cache"
+        filters = NameFilters(path_prefix_filters=(cache,))
+
+        assert filters.is_path_excluded(cache / "thumbnails")
+        assert not filters.is_path_excluded(tmp_path / "photos" / "Cache")
+        assert not filters.is_path_excluded(tmp_path / "home" / ".cache-copy")
 
 
 class TestIncludesOverrideFilters:
@@ -104,6 +126,17 @@ class TestFileExclusion:
         filters = NameFilters(file_filters=("Thumbs.db",))
         assert filters.is_file_excluded("thumbs.db")
         assert filters.is_file_excluded("THUMBS.DB")
+
+
+class TestBundleFilters:
+    def test_bundle_filter_sections_are_stored_unchanged(self):
+        filters = NameFilters(
+            bundle_filters_blacklist=("legacy_bundle",),
+            bundle_filters_whitelist=("photo_bundle",),
+        )
+
+        assert filters.bundle_filters_blacklist == ("legacy_bundle",)
+        assert filters.bundle_filters_whitelist == ("photo_bundle",)
 
 
 class TestImmutability:
