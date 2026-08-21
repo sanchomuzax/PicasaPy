@@ -179,7 +179,7 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
    történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 4 kérdés
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 4 kérdés (a fa feltöltése LEZÁRVA)
 
 *(A lap 2026-08-20-án készült, a tulajdonos két képernyőképéből és a
 binárisból. A kör négy kérdést tett fel és kettőt le is zárt — a
@@ -188,9 +188,19 @@ maradt, egyik sem igényel futó Picasát, és egyik sem blokkolja a
 megvalósítást — jegy: **#1161**.)*
 
 0. *(A lap 12. szakasza a hiteles, naprakész lista — 2026-08-21-én
-   nyolc pontra bővült, majd az **M1** lezárult. A tételek a
+   nyolc pontra bővült, majd az **M1–M5, M7, M8** lezárult. A tételek a
    `picasapy-agent` → `memory/nyitott-kerdesek-sor.md` munkasorban is
    szerepelnek, feldolgozási sorrendben.)*
+
+   ⭐ **2026-08-21, fa-kör** — a lap **13. szakasza** lezárja a fa
+   feltöltését: **lusta betöltés háttérszálon** (`SetEvent`,
+   `0x007bf378` → a `0x007c9e70` szál), rögzített gyökérsorrend
+   (Asztal → Képek → Dokumentumok → meghajtók), a meghajtó-felsorolás
+   három hívása (a **hálózati ág fájlrendszer-ellenőrzés nélkül**, ezért
+   a **leválasztott hálózati meghajtó is látszik**), és **negatív
+   eredmény** a rejtett mappákra: a fa nem szűr. A kizárási lista három
+   forrása (beégetett nevek + `filters.txt` + regisztrációs útvonalak) a
+   **beolvasóé**, nem a fáé → **#1169**.
 
 1. **Az iPhoto / Apple Photos ág LÁTHATÓ különbsége.** A kódbeli helye, a
    két beállítás-kapcsoló és a használt lista megvan (a lap 6.2), de nem
@@ -199,6 +209,15 @@ megvalósítást — jegy: **#1161**.)*
 2. **A dialógusnak tényleg nincs minimális mérete?** A `0x00920fa0`
    ablakeljárás nem kezeli a `WM_GETMINMAXINFO`-t — de a negatív állítás
    egyetlen ablakosztály átvizsgálásán alapul.
+3. **A „Figyelt mappák" lista interaktivitása** (a lap 12.6):
+   kattintható-e egy sora, ugrik-e tőle a fa, mi a rendezési szabálya?
+4. **A `filters.txt` `DirectoryIncludes` / `FileIncludes` /
+   `BundleFilters-*` szakaszainak szemantikája** (a lap 13.8) — a
+   szállított fájl mindegyiket üresen hagyja, a mi olvasatunk
+   következtetés. Folytatás: `0x004fbd30`. Jegy: **#1169**.
+5. **A `ytVolumeIsExternalFS` (`0x007c84c0`) HASZNÁLATA** (a lap 13.5) —
+   a törzs mérve (`fs == "NTFS"`), de vtable-rekesz, xref nincs, és az
+   osztálynév ezzel ellentétesnek hangzik.
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott kérdés
 

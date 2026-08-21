@@ -1046,8 +1046,9 @@ adat) · **nincs mintánk** magára a `]album:removed`-ra.*
 *(Az iPhoto / Apple Photos ág **szándékosan kívül van a hatókörön** —
 tulajdonosi döntés, 2026-08-21. A 6.2 tájékoztatásul marad; nem kérdés.)*
 
-**A lap a FELÜLET viselkedését teljesen leírja. A KÖNYVTÁR-oldali hatás nyolc
-ponton nincs utasításszinten végigkövetve** — egyik sem blokkolja a felület
+**A lap a FELÜLET viselkedését teljesen leírja. A KÖNYVTÁR-oldali hatás
+az alábbi pontokon nincs utasításszinten végigkövetve** *(a 2., 3., 5., 7.
+és 8. pont azóta LEZÁRULT — lásd 11.5, 6.3 és 13.)* — egyik sem blokkolja a felület
 megépítését, de mindegyikhez döntés kell:
 
 1. **A rádió → lista-szakasz megfeleltetés.** A három fájl, a három
@@ -1062,18 +1063,25 @@ megépítését, de mindegyikhez döntés kell:
 4. **Az ELSŐ INDÍTÁS belépési útja.** A két menüs belépési pont megvan
    (10/b.1), de hogy az első indításkor melyik kód nyitja meg a
    dialógust (és ugyanazzal a mód-jelzővel-e), NINCS visszakövetve.
-5. **A fa feltöltési szabályai**: mikor sorolja fel egy csomópont a
-   gyerekeit (lusta betöltés?), látszanak-e a rejtett/rendszermappák, mi
-   történik leválasztott hálózati meghajtóval.
+5. ~~**A fa feltöltési szabályai**~~ — **LEZÁRVA** (13.2, 13.4, 13.6):
+   **lusta betöltés háttérszálon** (`SetEvent`, `0x007bf378`); a fa a
+   rejtett/rendszermappákra **nem szűr** (a kizárás a beolvasóé); a
+   **leválasztott hálózati meghajtó MEGJELENIK**, mert a hálózati ágat a
+   felsoroló `checkFilesystem=0`-val hívja (`0x007c9fee`).
 6. **A „Figyelt mappák" lista interaktivitása**: kattintható-e egy sora,
    ugrik-e tőle a fa, mi a rendezési szabálya.
 
-7. **A `0x007bf210` (468 bájt) tartalma** — ez dönti el, hogy a
-   `lb_predouble` ág tényleg a kinyitás / lusta betöltés-e (4.5).
-8. **Még nem nyitott függvények**: `0x007c6d30` (2729 b),
-   `0x007c6700` (1180 b), `0x007c6ba0` (390 b) és `0x007bf680`
-   (1193 b, `/Volumes/` — macOS kötetlista; valószínűleg a fa
-   gyökereinek felsorolása). A 33-ból 15-öt nyitottunk meg.
+7. ~~**A `0x007bf210` (468 bájt) tartalma**~~ — **LEZÁRVA** (13.2): igen,
+   ez a **kinyitás/becsukás kapcsoló**, és ez a lusta betöltés indítója.
+8. ~~**Még nem nyitott függvények**~~ — **LEZÁRVA** (13.1, 13.3, 13.5):
+   RTTI-ből mind a négy megnevezve — `0x007c6700` = a **bal fa
+   sorrajzolója** (`TreeListDraw`), `0x007c6ba0` = a **jobb lista
+   sorrajzolója** (`WatchedListDraw`), `0x007c6d30` = a
+   **csomópont-hozzáadó**, `0x007bf680` = **csomópont-rekurzió** (nem
+   gyökér-felsorolás: a gyökereket a `0x007c9e70` szál adja).
+   **HELYESBÍTÉS:** a korábbi „valószínűleg a fa gyökereinek felsorolása"
+   feltevés a `0x007bf680`-ra **MEGDŐLT** — a függvényben nincs egyetlen
+   fájlrendszer-hívás sem.
 
 Ezen felül **erős, de nem megerősített** két állítás:
 
@@ -1085,3 +1093,260 @@ Ezen felül **erős, de nem megerősített** két állítás:
 *(A kör három korábbi nyitott pontot lezárt: „melyik lista melyik
 állapoté" → 5.2, „mi a teljes meghajtó feltétele" → 10., és „hol tárolódik
 az állapot" → 12.)*
+
+---
+
+## 13. A fa FELTÖLTÉSE — lusta betöltés, gyökerek, kizárások (2026-08-21)
+
+Ez a szakasz a 12. lista 5., 7. és 8. pontját zárja le. Bizalmi fok:
+**megerősített** (utasításszintű bizonyíték minden állításhoz), kivéve ahol
+külön jelezve.
+
+### 13.1 A dialógus osztályai — RTTI-ből
+
+Az `rtti` tábla négy belső osztályt ad meg, ezzel a `0x007be…`–`0x007ca…`
+tartomány szerepe egy csapásra kiderül:
+
+| RTTI-név | vtable | hozzá tartozó függvények |
+|---|---|---|
+| `CFolderMgrDialog::CDirArray` | `0x00cb8300` | `0x007bece0`, `0x007becf0`, `0x007bfdf0`, `0x007c9e70` |
+| `CFolderMgrDialog::TreeListDraw` | `0x00cb82b8` | `0x007c6660`, **`0x007c6700`** |
+| `CFolderMgrDialog::WatchedListDraw` | `0x00cb82c8` | `0x007c6660`, **`0x007c6ba0`** |
+| `CFolderMgrDialog::ytVolumeIsExternalFS` | `0x00cb82d8` | **`0x007c84c0`** |
+
+Ezzel a 12.8 „meg nem nyitott függvények" listája **név szerint** megvan:
+`0x007c6700` = a **bal fa sorrajzolója**, `0x007c6ba0` = a **jobb „Figyelt
+mappák" lista sorrajzolója**, `0x007c6d30` = a **fa-csomópont hozzáadó**
+(lásd 13.3), `0x007bf680` = a **csomópont-rekurzió** (13.5).
+
+### 13.2 LUSTA BETÖLTÉS — bizonyítva (a 12.7 lezárása)
+
+A `0x007bf210` (468 b) a **kinyitás/becsukás kapcsoló**. A `lb_predouble`
+ág (4.5) ide fut be. Az adatszerkezet a `CDirArray`-ben:
+
+| eltolás | tartalom |
+|---|---|
+| `[obj+0x140]` | látható sor → elem-index tábla |
+| `[obj+0x108]` | elem-index → csomópont-index tábla |
+| `[obj+0x110]` | csomópont-tömb, **20 bájt/csomópont** (`lea ecx,[eax+eax*4]` majd `*4`) |
+| `[obj+0x118]` | csomópontonkénti **„kinyitva" bájt** (4 bájt lépésköz) |
+| `[obj+0x13c]` | **a háttérszál ébresztő eseménye** (Win32 event handle) |
+| `[obj+0x154]` | újraszámolt elrendezés-jelző |
+
+A döntés `0x007bf2ee`-nél:
+
+```asm
+0x007bf2ee  cmp   byte ptr [edx + eax*4], 0   ; kinyitva?
+0x007bf2f5  je    0x7bf36a                    ; NEM -> KINYITÁS
+0x007bf2f7  mov   dword ptr [eax], 0          ; IGEN -> BECSUKÁS
+0x007bf300  call  0x7bed10                    ; csak újrarendezés (szinkron)
+```
+
+A **kinyitás** ága a lényeg:
+
+```asm
+0x007bf36a  mov   dword ptr [eax], ebx        ; „kinyitva" = 1
+0x007bf36c  test  byte ptr [ecx + 0x10], bl   ; a csomópont +0x10 bitje:
+                                              ;   „a gyerekek már be vannak töltve?"
+0x007bf36f  jne   0x7bf380                    ; IGEN -> 0x7bed10, szinkron újrarendezés
+0x007bf371  mov   eax, dword ptr [esi + 0x13c]
+0x007bf378  call  dword ptr [0xc4031c]        ; SetEvent  <-- NEM: felébreszti a szálat
+```
+
+**Tehát:** a Picasa **lustán tölt**. Egy csomópont gyerekeit csak az első
+kinyitáskor sorolja fel, és azt is **háttérszálon**: a felület nem áll meg,
+csak `SetEvent`-et küld. A már betöltött csomópont ki-be csukása
+**szinkron és azonnali** — nincs újraolvasás.
+
+A becsukás **nem üríti** a gyerek-listát (a `+0x10` bit marad), tehát a
+második kinyitás is azonnali.
+
+### 13.3 A háttérszál: `0x007c9e70`
+
+A szál ciklusa a függvény végén látszik:
+`WaitForMultipleObjects` (`0x007ca827`) → `ResetEvent` (`0x007ca878`) →
+újra elölről. Ez a `0x007bf210` `SetEvent`-jének párja.
+
+Ébredés után a szál **három hívással** kéri le a meghajtókat a közös
+meghajtó-felsorolótól (`0x006dabf0`), majd három rögzített gyökeret ad a
+fához a `0x007c6d30` csomópont-hozzáadóval.
+
+**A gyökerek sorrendje, kódból:**
+
+| sorrend | feloldó függvény | shell-kulcs | a képernyőképen |
+|---|---|---|---|
+| 1. | `0x00996b90` | `Desktop` | **Asztal** |
+| 2. | `0x009966a0` | `My Pictures` | **Képek** |
+| 3. | `0x00996230` | `Personal` | **Dokumentumok** |
+| 4+ | `0x006dabf0` | meghajtók | **C:\\**, **P:\\** |
+
+*(A `0x009966a0` egyszer korábban is meghívódik, `0x007ca006`-nál, egyetlen
+paraméterrel — az egy előkészítő útvonal-lekérés, nem csomópont-hozzáadás.
+A csomópont-hozzáadások sorrendje `0x007ca02a`, `0x007ca061`, `0x007ca098`.)*
+
+Ez **pontosan egyezik** a felhasználó képernyőképével
+(`referencia/mappakezelo/mappakezelo-nagyitott.png`): Asztal → Képek →
+Dokumentumok → C:\\ → P:\\.
+
+### 13.4 MEGHAJTÓK — a leválasztott hálózati meghajtó esete (a 12.5 harmadik fele)
+
+A közös felsoroló a **`0x006dabf0`** (1092 b). Szignatúrája a hívási
+helyekből egyértelmű (`push` sorrend jobbról balra):
+
+```c
+void EnumDrives(Container* out, int driveType, bool checkFilesystem);
+```
+
+A törzs egy **betűciklus**:
+
+```asm
+0x006dac13  call  GetLogicalDrives          ; bitmaszk
+0x006dac1d  mov   al, 0x43                  ; 'C' -- itt kezd
+0x006dac1f  mov   dword [esp+0x28], 4       ; a C: bitje
+   ...
+0x006db007  shl   dword [esp+0x28], 1       ; következő bit
+0x006db00b  add   al, 1                     ; következő betű
+0x006db00d  cmp   al, 0x5a                  ; 'Z'
+0x006db013  jle   0x6dac2b                  ; ciklus
+```
+
+**Az `A:` és a `B:` (flopi) soha nem kerül a listába** — a ciklus a `C:`-n
+indul.
+
+Meghajtónként:
+
+1. `GetDriveTypeA("X:\")` (`0x006dace3`) — ha **nem egyezik** a kért
+   típussal (`0x006dace9` `cmp`), a meghajtó kimarad.
+2. Ha a `checkFilesystem` paraméter igaz (`0x006dacf6`):
+   `GetVolumeInformationA` (`0x006dad30`). **Ha ez HIBÁVAL tér vissza, a
+   meghajtó kimarad** (`0x006dad38 je`).
+3. A fájlrendszer nevét háromhoz hasonlítja (`0x006dad42`–`0x006dad7e`):
+   **`FAT`, `FAT32`, `NTFS`**. Ami nem ezek egyike, **kimarad**.
+
+A három hívás a Mappakezelő szálában:
+
+| hívás | típus | `checkFilesystem` | jelentés |
+|---|---|---|---|
+| `0x007c9ec0` | **3** = `DRIVE_FIXED` | **1** | belső lemezek, fájlrendszer-ellenőrzéssel |
+| `0x007c9fee` | **4** = `DRIVE_REMOTE` | **0** | **hálózati meghajtók, ellenőrzés NÉLKÜL** |
+| `0x007c9ffc` | **2** = `DRIVE_REMOVABLE` | **1** | cserélhető, fájlrendszer-ellenőrzéssel |
+
+**Ez válaszolja meg a leválasztott hálózati meghajtó kérdését:** a
+hálózati ágon a Picasa **szándékosan kihagyja** a
+`GetVolumeInformation`-t, ezért egy **leválasztott, de leképezett hálózati
+meghajtó is megjelenik a fában**. (Ha ellenőrizné, a hívás hibázna, és a
+meghajtó eltűnne — a többi ág pont így viselkedik.) A képernyőképen a
+`P:\` hálózati ikonnal szerepel.
+
+**Következmény a belső lemezekre:** egy **exFAT** formázású lemez a
+`FAT`/`FAT32`/`NTFS` hármas miatt **nem** kerül a fába. Ez a Picasa
+korából származó korlát; nálunk nem kell reprodukálni (lásd 13.7).
+
+### 13.5 A `ytVolumeIsExternalFS` predikátum
+
+`0x007c84c0`, 26 bájt, a teljes törzs:
+
+```asm
+0x007c84c0  mov   eax, dword ptr [esp + 8]
+0x007c84c4  push  0xc86410          ; "NTFS"
+0x007c84c9  push  eax
+0x007c84ca  call  0xbf697a          ; strcmp
+0x007c84d2  test  eax, eax
+0x007c84d4  sete  al                ; al = (fs == "NTFS")
+```
+
+Mért tény: **a predikátum akkor ad igazat, ha a kötet fájlrendszere
+pontosan `NTFS`**. Az osztálynév („IsExternalFS") ezzel **ellentétesnek
+hangzik**; a függvénynek nincs xrefje (vtable-rekesz), ezért a hívási
+oldalról nem tudjuk, hol fordítják meg az értelmét. **Ezt így, mérésként
+írjuk le — a névből NEM következtetünk a jelentésre.**
+
+### 13.6 REJTETT MAPPÁK — két különböző fogalom (a 12.5 második fele)
+
+A Picasában **kettő** van, és a Mappakezelő fájára **egyik sem hat**:
+
+**(a) A könyvtár kizárási listája** — `0x004e4ea0` (361 b) építi, egyszer,
+induláskor (`0x004051b0` → `0x00402f90` → `0x004183c0` → `0x004e4ea0`).
+Három forrásból áll:
+
+1. **Négy beégetett mappanév** (`0x004fbb90`):
+   `thumbs`, `RECYCLER`, `Originals`, `.picasaoriginals`.
+2. **A `runtime\filters.txt`** (`0x004e4fc5`), parszer: `0x004fbd30`
+   (3392 b). **Hat szakaszt** ismer — a napló-címkéi is megvannak
+   (`DS::DirectoryFilters` stb.):
+   `DirectoryFilters`, `DirectoryIncludes`, `FileFilters`,
+   `FileIncludes`, `BundleFilters-BlackList`, `BundleFilters-WhiteList`.
+
+   **A telepítőben szállított valódi fájl** — megvan helyben
+   (`research/copy_Picasa_3_7/Picasa3/runtime/filters.txt`, 13 sor):
+
+   ```
+   DirectoryFilters
+
+   windows
+   winnt
+   temp
+   Program Files
+   Originals
+
+   DirectoryIncludes
+
+   FileFilters
+
+   FileIncludes
+   ```
+
+   Vagyis: az öt kizárt mappanév **`windows`, `winnt`, `temp`,
+   `Program Files`, `Originals`**; a másik három szakasz **üres**, a két
+   `BundleFilters` szakasz pedig **nincs is a fájlban** (a parszer ismeri,
+   a szállított fájl nem használja).
+
+3. **Regisztrációs adatbázisból feloldott útvonalak** — a
+   `ytDirScannerWindows` init (`0x006a8660`, 1796 b) négy nevesített
+   szűrőt tesz a `Filters` beállítás-csoportba:
+
+   | szűrő neve | forrás |
+   |---|---|
+   | `IECache` | `SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\Cache\Paths` → az alkulcsok `Directory` értéke |
+   | `ProgramFiles` | `SOFTWARE\Microsoft\Windows\CurrentVersion` → `ProgramFilesDir` |
+   | `LocalSettings` | a felhasználó Local Settings mappája |
+   | `AppData` | a felhasználó AppData mappája |
+
+**(b) A program saját „rejtett mappa" fogalma** — a `]hidden` adatbázis-token
+(11 hivatkozó függvény, pl. `0x0041c340`, `0x004a51f0`) és a
+`Preferences\ShowHidden` kapcsoló (olvasói: `0x00440af0`, `0x005c9300`,
+`0x005643e0`, `0x0067bda0`). A könyvtárpanel egyik csoportfejléce épp
+**`Hidden Folders`** (`0x00402f90`, `0x005ec130`).
+
+**NEGATÍV EREDMÉNY — mindkettőre:** sem a kizárási lista építője
+(`0x004e4ea0`), sem a `ShowHidden` négy olvasója **nincs** a Mappakezelő
+tartományában (`0x007be…`–`0x007ca…`), és a fa szála (`0x007c9e70`), a
+csomópont-hozzáadó (`0x007c6d30`) és a rekurzió (`0x007bf680`) **egyiket
+sem hívja**. A kizárás a **könyvtár-beolvasóé**, nem a Mappakezelő fájáé.
+
+**Amit ez jelent:** a Mappakezelő fája a lemez tényleges mappaszerkezetét
+mutatja; a `windows` / `temp` / `Program Files` **nem a fából hiányzik,
+hanem a beolvasásból**. A Windows „rejtett" attribútumára (`FILE_ATTRIBUTE_HIDDEN`)
+sem a fában, sem a kizárási listában **nem találtunk vizsgálatot**.
+
+### 13.7 Eredeti / nálunk / teendő
+
+| # | Viselkedés | Eredeti Picasa | Nálunk (0.8.27) | Teendő |
+|---|---|---|---|---|
+| 1 | Gyerekek felsorolása | **lusta**, első kinyitáskor, **háttérszálon** | nincs Mappakezelő | lusta + aszinkron modell |
+| 2 | Becsukás | csak elrejt, a gyerekek megmaradnak | — | ne dobja el a betöltött ágat |
+| 3 | Gyökerek | Asztal, Képek, Dokumentumok, majd meghajtók | — | ez a sorrend, rögzítve |
+| 4 | Meghajtóbetűk | **C:–Z:**, az A:/B: kihagyva | — | Linuxon nem alkalmazható; a gyökér `/` és a csatolási pontok |
+| 5 | Belső lemez | csak `FAT`/`FAT32`/`NTFS` | — | **NE reprodukáljuk** — korabeli korlát, ext4/btrfs kizárná |
+| 6 | Hálózati meghajtó | listázva **ellenőrzés nélkül**, leválasztva is | — | a hálózati csatolást ne stat-oljuk a fa felépítésekor (különben a fa megakad) |
+| 7 | Rejtett mappák | a fa **nem** szűr | — | a fa mutassa őket; a szűrés a beolvasóé |
+| 8 | Kizárási lista | 4 beégetett + `filters.txt` + 4 regisztrációs útvonal | nincs | Linuxos megfelelő: `.Trash*`, `lost+found`, `.picasaoriginals`, `Originals`, `.thumbnails` + felhasználói lista |
+
+### 13.8 Ami ebből MÉG nyitva marad
+
+- **A `filters.txt` `DirectoryIncludes` / `FileIncludes` / `BundleFilters-*`
+  szakaszainak szemantikája.** A parszer ismeri őket, a szállított fájl
+  üresen hagyja — élő mintaadat nélkül a jelentésük következtetés lenne.
+  Folytatás: `0x004fbd30` törzse utasításszinten.
+- **A `ytVolumeIsExternalFS` predikátum HASZNÁLATA** — a törzs mérve
+  (13.5), a hívási oldal vtable-rekeszen át megy, xref nincs.
