@@ -115,8 +115,10 @@ Window {
                 acceptingChanges = true
                 faceExclusionConfirm.ask(
                     "removeFacesFromExcludedFolder",
-                    qsTr("Are you sure you want to remove all faces "
-                         + "and name tags from excluded folders?"))
+                    qsTranslate(
+                        "FolderStatePanel",
+                        "Are you sure you want to remove all faces "
+                        + "and name tags from excluded folders?"))
                 return
             }
         }
@@ -307,7 +309,7 @@ Window {
                 spacing: 3
 
                 Text {
-                    text: qsTr("Folder list")
+                    text: qsTranslate("FolderPane", "Folders")
                     font.pixelSize: Theme.fontSize
                     font.bold: true
                     color: Theme.ink
@@ -361,9 +363,8 @@ Window {
                     Layout.preferredWidth: 232
                     Layout.preferredHeight: 73
                     text: qsTr(
-                        "PicasaPy displays pictures from the folders listed "
-                        + "below. Select a folder and choose how it should "
-                        + "be scanned.")
+                        "Choose which folders PicasaPy watches. New and changed "
+                        + "pictures in watched folders appear automatically.")
                     wrapMode: Text.WordWrap
                     font.pixelSize: Theme.fontSize
                     color: Theme.textGray
