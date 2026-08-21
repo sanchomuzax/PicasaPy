@@ -74,7 +74,7 @@ Az 1. szakasz listája a **szállított `.tre` fájlokból** készült. A parsze
 
 **Nyolc `Property`-t egyetlen szállított `.tre` sem használ:**
 
-| tulajdonság | valószínű jelentés |
+| tulajdonság | korábbi, név-alapú hipotézis |
 |---|---|
 | `windrag` | az **ablak** húzása a vezérlőnél fogva |
 | `textclip` | a szöveg vágása a dobozhoz (a `textwrap` párja) |
@@ -89,8 +89,35 @@ Az 1. szakasz listája a **szállított `.tre` fájlokból** készült. A parsze
 > A kettő könnyen összekeverhető.
 
 *Bizonyítottsági fok: megerősített a szótár teljességére (egyetlen,
-összefüggő `.rdata`-tömb) · **feltételes** a nyolc nem használt
-jelentésére (a nevükből következtetve).*
+összefüggő `.rdata`-tömb) · a nyolc jelentését a következő szakasz a
+bináris setterek és fogyasztók alapján pontosítja.*
+
+## 1/c A nyolc, `.tre`-ben nem használt tulajdonság tényleges viselkedése (2026-08-21, #905)
+
+A nyolc kulcsszó a szállított `.tre`-kben valóban nem fordul elő, de a
+parszer nem holt névként kezeli őket: a `0x009ca5e0` függvény külön ágat és
+settert rendel hozzájuk. A következő táblázat a settert, a közvetlen
+fogyasztót és a bizonyítható hatást különíti el; a névből önmagában
+következő látványbeli értelmezést nem tekinti bizonyítéknak.
+
+| tulajdonság | bináris út | a bizonyítható hatás | fok |
+|---|---|---|---|
+| `windrag` | `0x009cb122` → `+0x22e`; eseménykezelő `0x009e5590` | Találatkor a `+0x8c` állapotot törli, az első engedélyezett leszármazotton virtuális `+0x24` műveletet hív, majd `0x00a57680`-n át elengedi a capture-t és a cél akcióját virtuális `+0x18`-on meghívja; kezelt eseményként `0xF4240`-t ad vissza. A `0x00984350`-ben látott közvetlen Windows-méretezés a **`winsize`** ág, nem ez. | erős a vezérlési láncra; feltételes a végső ablak-akcióra |
+| `textclip` | `0x009cbd91` → `0x009c7e10` | A csomópont `+0x2f1` bájtjába írja az értéket és a `+0xc` dirty-bitjét beállítja. A teljes közvetlen offset-keresésben további olvasó nem került elő; csak a csomópont-másoló rutin (`0x00a6b9e0`) viszi tovább ezt a bájtot. Szállított `.tre` nélkül tényleges vágási rajzolóág nem bizonyítható. | erős a tárolásra; közepes a „nincs fogyasztó” negatív állításra |
+| `dither` | `0x009cb5d1` → `0x009c79a0` → `0x009d3d60` | A paramétert `%x`-ként olvassa, alapértéke `0x7F000000`. A setter a `+0x27c` állapotot bekapcsolja, a csomópont `+0x268…+0x274` négy slotjába a packed értékből létrehozott objektumokat teszi, majd virtuális `+0x68` frissítést és gyermek-propagációt indít. A kód ezen az úton nem bizonyít önálló, képpontonkénti ditherelést. | erős a belső hatásra; közepes a végső renderjelentésre |
+| `vertslider` | `0x009cb741` → `0x009c7a50` | 12 bájtos `ytVertSliderHandler` példányt foglal, a `ytVertSliderHandler::vftable`-t (`0x00CDA48C`) állítja be, az egynél nagyobb paramétert a handler harmadik slotjába teszi, majd `0x009e4080`-n át a csomópont kezelőlistájára regisztrálja. | erős |
+| `enabletarget` | `0x009cadb1` → `0x009c7270` → `0x009c2580` | A célértéket előkészíti (`0x00985ff0`), majd a csomópont célreferencia-tömbjét bővíti és refcountolt pointereit másolja (`+0x3d4`, elemszám/állapot `+0x3d8`). Ez deklaratív célkapcsolat-regisztráció; nem egyszerű, azonnali „enable” hívás és nem a `disabletarget` bitenkénti ellentéte. | erős a tárolási/kapcsolati hatásra |
+| `multiply` | `0x009cb911` → `0x009c7b90`; fogyasztó `0x00a67d40` | A csomópont `+0x351` bájtját állítja, eltéréskor dirty-bitet (`+0x8`, `0x2`) jelöl. A renderelő `0x00a67d40` ezen a bájton két külön renderág között választ: nulla esetén a normál, nem nulla esetén az alternatív kompozitálási út fut. Ez a `.tre` renderkapcsoló külön entitás a Glimmer `MultiplyColorMatrix` műveletétől. | erős a renderág-váltásra; közepes a pontos pixelképletre |
+| `alphatest` | parser-ág `0x009cba61`; közvetlen írás `0x009cba92` → `ytButtonNode +0x358`; fogyasztó `0x00a64050` | Csak `ytButtonNode` típuson írható. A gomb hit-testje a `+0x358` engedélyezésekor az alpha-maszkot is vizsgálja: `0x00a63f90`-et `0x80` küszöbbel hívja, amely a leképezett bájtot összeveti a küszöbbel. Ez valóban alfa-alapú találatvizsgálat, nem pusztán rajzolási opció. | erős |
+| `underlineoffset` | parser-ág `0x009caaa6` → `0x00a6ca10` | A csomópont gyermeklistájában megkeresi az első `ytColorRectNode`-ot, és annak egy négykomponensű, `(1.0, 1.0, float(érték), 0)` alakú struktúráját állítja/használja; eltéréskor a gyermek dirty-bitjét jelöli. A bináris ezen a ponton a color-rect módosítást bizonyítja, az „aláhúzás” végső vizuális szerepét önmagában nem. | erős a belső műveletre; közepes a név szerinti látványra |
+
+**Mérleg:** mind a nyolc kérdés parser- és runtime-szinten megválaszolható
+lett. A `textclip`-nél a tárolás bizonyított, de a szállított programban nem
+találtunk külön fogyasztót; a `windrag` és az `underlineoffset` végső,
+ablak-/rajzszintű látványát a név helyett csak a virtuális célműveletek teljes
+dekompilálása tudná tovább szűkíteni. Ez már nem nyitott parser-kérdés, hanem
+élő UI-szcenárióval vagy célosztályonkénti további kutatással validálható
+finomítás.
 
 ## 4/d A vágó-átfedés elsötétítése — `Property negativemode` (2026-08-17, #900)
 

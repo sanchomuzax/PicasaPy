@@ -164,6 +164,15 @@ bájtjába írja (`0x009cb19d`); a párja, a `windrag` a **`+0x22e`**-be
 `windrag`-ot „egyetlen szállított `.tre` sem használja" jelzéssel sorolta
 fel — a `winsize`-ra ez **nem** áll: itt használatban van.)*
 
+**A `windrag` ág nem azonos a `winsize`-zal.** A `0x009e5590` eseménykezelő
+találatkor a `+0x22e` jelzőnél törli a capture-állapotot, az első engedélyezett
+leszármazotton virtuális `+0x24` műveletet kér, lefuttatja a
+`0x00a57680` capture-felszabadító rutint, majd a cél virtuális `+0x18`
+műveletét hívja. A közvetlen `ReleaseCapture`/`WM_SYSCOMMAND(SC_SIZE)`
+átadás a `+0x22f` **`winsize`** ágban, a `0x00984350` címen történik; a
+`windrag` önálló ablakmozgatását ebből a kódból nem szabad tényként
+kimondani.
+
 Az egérlenyomás-kezelő (`0x009e5590`):
 
 ```asm
