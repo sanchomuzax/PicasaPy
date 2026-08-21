@@ -221,10 +221,11 @@ megvalósítást — jegy: **#1161**.)*
    „Keresés mindig" **mindkettőbe** felvesz, a megjelenítés a `+0x270`-é,
    de hogy a `+0x2a8` delta-e vagy teljes kimeneti lista, nincs eldöntve.
    Folytatás: `0x005cef20`.
-4. **A `filters.txt` `DirectoryIncludes` / `FileIncludes` /
-   `BundleFilters-*` szakaszainak szemantikája** (a lap 13.8) — a
-   szállított fájl mindegyiket üresen hagyja, a mi olvasatunk
-   következtetés. Folytatás: `0x004fbd30`. Jegy: **#1169**.
+4. ~~A `filters.txt` szakaszainak szemantikája~~ — **LEZÁRVA**
+   (2026-08-21): a mérés a
+   [picasa-program-resources.md](picasa-program-resources.md) **3.1**
+   szakaszába került (hat szakasz, két külön teszt, a `FileIncludes`
+   sorai eldobódnak). Jegy: **#1169**.
 5. **A `ytVolumeIsExternalFS` (`0x007c84c0`) HASZNÁLATA** (a lap 13.5) —
    a törzs mérve (`fs == "NTFS"`), de vtable-rekesz, xref nincs, és az
    osztálynév ezzel ellentétesnek hangzik.

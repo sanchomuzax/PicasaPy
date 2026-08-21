@@ -1356,10 +1356,15 @@ sem a fában, sem a kizárási listában **nem találtunk vizsgálatot**.
 
 ### 13.8 Ami ebből MÉG nyitva marad
 
-- **A `filters.txt` `DirectoryIncludes` / `FileIncludes` / `BundleFilters-*`
-  szakaszainak szemantikája.** A parszer ismeri őket, a szállított fájl
-  üresen hagyja — élő mintaadat nélkül a jelentésük következtetés lenne.
-  Folytatás: `0x004fbd30` törzse utasításszinten.
+- ~~A `filters.txt` `DirectoryIncludes` / `FileIncludes` /
+  `BundleFilters-*` szakaszainak szemantikája~~ — **LEZÁRVA** (2026-08-21,
+  M9): a mérés a `picasa-program-resources.md` **3.1** szakaszába került.
+  Röviden: a `DirectoryIncludes` **eltárolódik** és a **sorrend** miatt
+  felülír (mindkét teszt előbb őt nézi); a **`FileIncludes` sorai
+  ELDOBÓDNAK** (`0x004fc954`); a `BundleFilters-*` nem lista, hanem egy
+  előre feltöltött katalógus (`[obj+0x3e4]`) elemein kapcsol. A
+  név-illesztés **teljes, kis-nagybetű-független egyezés**, az
+  útvonal-illesztés **kis-nagybetű-független előtag**.
 - **A `ytVolumeIsExternalFS` predikátum HASZNÁLATA** — a törzs mérve
   (13.5), a hívási oldal vtable-rekeszen át megy, xref nincs.
 

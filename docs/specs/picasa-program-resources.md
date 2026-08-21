@@ -245,10 +245,17 @@ befogadásához.
 
 ### 3.1 `filters.txt` — a mappa-beolvasás kizárási listája
 
-Tartalma (teljes fájl, 4 szekció, üres sorokkal elválasztva):
+> ⚠️ **Ezt a szakaszt 2026-08-21-én utasításszinten átmértük** (M9). A
+> korábbi leírás **négy** szakaszt említett és „tartalmazza/megegyezik"
+> illesztést feltételezett — **mindkettő téves volt.** A mért szemantika
+> alább; a régi szöveg helyesbítve.
+
+**A szállított fájl** (`research/copy_Picasa_3_7/Picasa3/runtime/filters.txt`,
+13 sor, üres sorokkal elválasztva):
 
 ```
 DirectoryFilters
+
 windows
 winnt
 temp
@@ -262,24 +269,97 @@ FileFilters
 FileIncludes
 ```
 
-**Szemantika:** a fájl négy, fejléc-sorral kezdődő szekcióból áll:
+#### 3.1.1 A parszer — `0x004fbd30` (3392 b)
 
-- `DirectoryFilters` — könyvtárnév-minták, amelyeket a lemez-beolvasó
-  (scanner) **kihagy**, ha a mappa neve tartalmazza/megegyezik ezekkel
-  (`windows`, `winnt`, `temp`, `Program Files`, `Originals`). Az
-  `Originals` bejegyzés a Picasa saját "nem-destruktív szerkesztés"
-  biztonsági mentési almappája — ezt direkt nem indexeli újra, hogy ne
-  duplázza a fotókat.
-- `DirectoryIncludes` — kivétel-lista a fenti kizárásokhoz (üres — nincs
-  gyári kivétel).
-- `FileFilters` — fájlnév-minták, amelyeket kizár a beolvasásból (üres a
-  gyári telepítésben — a kiterjesztés-alapú szűrés máshol, feltehetően az
-  `.exe`-ben van hardkódolva).
-- `FileIncludes` — kivétel-lista a fájlszűréshez (üres).
+Betöltő: `0x004e4ea0` (`0x004e4fc5`-nél a fájlnév), egyszer, induláskor
+(`0x004051b0` → `0x00402f90` → `0x004183c0` → `0x004e4ea0`).
 
-Ez **közvetlenül releváns a PicasaPy scanner-modulra**: a `.picasa.ini`
-kompatibilitás mellett érdemes ugyanezt a négyszekciós, kibővíthető
-kizárási sémát követni (könyvtár/fájl × filter/include).
+**HAT szakaszt ismer, nem négyet.** A fejléc-sorokat **nem** beégetett
+literálokkal hasonlítja, hanem a **szövegtárból** oldja fel
+(`0x9ae560`), kulcs `DS::<név>`, tartalék az angol literál. A hat kulcs a
+`referencia/stringres-en-hu.tsv`-ben is megvan (988–993. sor), magyarul
+ugyanaz a szöveg:
+
+| mód | szakasz | szövegtár-kulcs | felismerés címe |
+|---|---|---|---|
+| 1 | `DirectoryFilters` | `DS::DirectoryFilters` | `0x004fbff0` |
+| 2 | `DirectoryIncludes` | `DS::DirectoryIncludes` | `0x004fc04c` |
+| 3 | `FileFilters` | `DS::FileFilters` | `0x004fc0a4` |
+| 4 | `FileIncludes` | `DS::FileIncludes` | `0x004fc0fc` |
+| 5 | **`BundleFilters-BlackList`** | `DS::BundleFiltersBlackList` | `0x004fc154` |
+| 6 | **`BundleFilters-WhiteList`** | `DS::BundleFiltersWhiteList` | `0x004fc1ac` |
+
+A parszer sorról sorra olvas (`0x00996f20`); ha a sor **egyezik** egy
+fejléccel, csak a mód-változót állítja (`[esp+0x10] = 1..6`), egyébként a
+sort az aktuális mód szerint dolgozza fel:
+
+| mód | mit tesz a sorral | tároló |
+|---|---|---|
+| **1** `DirectoryFilters` | **hossz ≤ 3 → ELDOBJA** (`0x004fc21b`); ha a **2. karakter `:`** (`0x004fc224`) → **útvonal**-lista; egyébként → **név**-lista | `[obj+0x3c4]`/`+0x3c8` (útvonal), `[obj+0x3cc]`/`+0x3d0` (név) |
+| **2** `DirectoryIncludes` | eltárolja, hossz- és `:`-vizsgálat nélkül | `[obj+0x3bc]`/`+0x3c0` |
+| **3** `FileFilters` | eltárolja | `[obj+0x3d4]`/`+0x3d8` |
+| **4** `FileIncludes` | **SEMMIT — a sor eldobódik** (`0x004fc954 cmp ebx,4 / je` a ciklus elejére) | — |
+| **5** `BundleFilters-BlackList` | `0x004f9d80(this, sor)` — végigjárja a **`[obj+0x3e4]`/`+0x3e8`** tömböt és annak elemein állít | — |
+| **6** `BundleFilters-WhiteList` | `0x004fa080(this, sor)` — ugyanaz a tömb | — |
+
+**A négy beégetett mappanév** (`0x004fbb90` → `0x004f9bb0`) **ugyanabba a
+NÉV-listába** kerül (`[obj+0x3d0]`), mint a `DirectoryFilters` név-alakú
+sorai: `thumbs`, `RECYCLER`, `Originals`, `.picasaoriginals`.
+
+> **Ezért van üres sor a szállított fájlban:** az üres sor hossza 0, a
+> mód-1 ág a ≤ 3 hosszú sorokat eldobja. A `temp` négy karakter — épp
+> átmegy a rostán.
+
+#### 3.1.2 Az illesztés — KÉT KÜLÖN teszt
+
+**(a) NÉV-teszt — `0x004e2af0`** (a mappa saját nevére):
+
+```c
+for (e : DirectoryIncludes)      if (_stricmp(e, név) == 0) return 0;  // NEM kizárt
+for (e : DirectoryFilters_NÉV)   if (_stricmp(e, név) == 0) return 1;  // KIZÁRT
+return 0;
+```
+
+Címek: az Includes-ciklus `0x004e2b2a`–`0x004e2b52`, a Filters-ciklus
+`0x004e2b65`–`0x004e2b90`. Az összehasonlító `0x00bf697a`.
+
+**(b) ÚTVONAL-teszt — `0x004e2a50`** (a teljes útvonalra):
+
+```c
+for (e : DirectoryIncludes)      if (elotagE(út, e)) return 0;        // NEM kizárt
+for (e : DirectoryFilters_ÚTVONAL) if (elotagE(út, e)) return 0xF4242; // KIZÁRT
+return 0;
+```
+
+Címek: `0x004e2a57`–`0x004e2a8a`, illetve `0x004e2a96`–`0x004e2ac2`.
+
+**Három mért tulajdonság, amit eddig feltevésként kezeltünk:**
+
+1. **Az Includes TÉNYLEG felülír** — és a mechanizmus a **sorrend**:
+   mindkét teszt **előbb** az Includes-listát nézi, és találatra
+   **azonnal** „nem kizárt"-tal tér vissza. Nem külön prioritási szabály,
+   hanem korai kilépés.
+2. **A név-illesztés TELJES EGYEZÉS, kis-nagybetű-függetlenül.** Az
+   összehasonlító `0x00bf697a` a CRT `_stricmp`-je: `_NLSCMPERROR`
+   (`0x7FFFFFFF`) hibakód, `EINVAL` (0x16) null mutatóra, területi
+   beállítás-tábla (`[0xd49bf4]`). *(Bizalmi fok: **erős** — CRT-aláírás
+   alapján azonosítva, nem szimbólumból.)* **Nincs** részstring-illesztés.
+3. **Az útvonal-illesztés ELŐTAG, kis-nagybetű-függetlenül.** A
+   `0x00987030(A, B, kisNagybetuErzekeny)` akkor ad igazat, ha **`B`
+   előtagja `A`-nak**; a hívó `0`-t ad harmadik paraméternek, tehát a
+   ciklus az `'A'..'Z'` tartományt `+0x20`-szal kisbetűsíti
+   (`0x00987079`–`0x0098709e`). Ezért zárja ki egy
+   `C:\Program Files` bejegyzés a teljes fát alatta.
+
+#### 3.1.3 Ami NYITVA marad
+
+A `BundleFilters-BlackList` / `-WhiteList` **pontos hatása**. A két
+kezelő (`0x004f9d80`, 758 b; `0x004fa080`, 1291 b) nem egyszerű listába
+fűz, hanem a **`[obj+0x3e4]`/`+0x3e8` tömböt járja végig** és annak
+elemein állít állapotot — vagyis egy előre feltöltött „bundle"-katalógus
+engedélyezését/tiltását kapcsolja. A szállított fájl egyik szakaszt sem
+használja, tehát élő mintaadat nincs. **A PicasaPy-t nem érinti**: nálunk
+nincs bundle-fogalom.
 
 ### 3.2 `fliprtl.txt` — RTL-tükrözési lista
 
@@ -624,9 +704,11 @@ magyar) — mindkettő a privát agent-repóban.
    mini-parser vagy Jinja2-alapú kompatibilitási réteg), és az eredeti
    6 sablon (`whitebg`, `blackbg`, `greybg`, `whitefrm`, `blackfrm`,
    `greyfrm`, `xml`) tartalma megőrizhető/áthozható.
-3. **`filters.txt` szemantikája** (4 szekció: könyvtár/fájl ×
-   kizárás/kivétel) közvetlen mintaként szolgálhat a PicasaPy
-   mappabeolvasó-szűrőjéhez.
+3. **`filters.txt` szemantikája** — **HAT** szakasz (könyvtár/fájl ×
+   kizárás/kivétel + két `BundleFilters`), és a 3.1.2 szerint **két
+   külön teszt**: teljes, kis-nagybetű-független NÉV-egyezés, illetve
+   kis-nagybetű-független ÚTVONAL-ELŐTAG. Az Includes a **sorrend** miatt
+   írja felül a Filters-t. Jegy: **#1169**.
 4. ~~A **`respack.yt` bináris formátum**~~ — **MEGOLDVA** (2026-08-06),
    ld. [`picasa-respack-format.md`](picasa-respack-format.md): a formátum
    teljesen dekódolt, az eredeti UI-grafika és a 140 `.tre`
