@@ -73,7 +73,7 @@ kérdés).
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
-### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 5 kérdés
+### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 4 kérdés
 
 ⭐ **2026-08-21, működés-kör (kilenc kérdés):** a
 `kollazs-eletciklus.md` **16.** szakasza négy, eddig sehol nem szereplő
@@ -107,9 +107,13 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    *(A többi öt bit 2026-08-18-án lezárult: 12. = a téma megvalósítja a
    9. vtable-slotot, 13. = automata `collage_adapt`, 14. = a
    `collage::shadows` alapértéke, 15./16. = halott bitek.)*
-2. Mi a **célja** a `FILE_ATTRIBUTE_TEMPORARY`-nak a kész kollázs-JPEG-en?
-   (A tény három címen bizonyított: `0x0083c3b8`, `0x0083cda5`,
-   `0x0068a81f` — a szándék nem ismert; ld. a lap 9.1/b 4. pontját.)
+2. ~~Mi a **célja** a `FILE_ATTRIBUTE_TEMPORARY`-nak?~~ — **LEZÁRVA**
+   (2026-08-21, a lap **9.1/c**): a **hatóköre** kimérve — **öt** hely,
+   mind projekt-kimenet (végleges és piszkozat kollázs-JPEG, kollázs- és
+   film-automentés, film-kimenet); a Picasa **soha nem veszi le** és
+   **soha nem olvassa vissza**, tehát a programon belül semmit nem
+   vezérel. A **szándék** nincs a binárisban és nem is lesz. Linuxon
+   nincs megfelelője — **nincs teendő**. Jegy: **#979**.
 3. Az **5120-as felső renderméret** (`0x0083d050`) pontos szemantikája a
    renderelőn (`0x0087dcd0`) belül — a konstans megvan, az útja nincs
    végigkövetve.

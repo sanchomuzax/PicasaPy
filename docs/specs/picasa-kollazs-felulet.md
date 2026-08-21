@@ -1271,10 +1271,9 @@ Legfeljebb 4096 próba (`0x009930d2`, `cmp ebx, 0x1000`). *(Ugyanabból az ini-b
    1, 5)`): **előbb a `.cxf`** (`0x0083c2e3`), **aztán a `.jpg`**
    (`0x0083c31b`) — ha a spec-írás elhasal, nem marad árva JPEG.
 5. A kész JPEG-re a Picasa **rárakja a `FILE_ATTRIBUTE_TEMPORARY`
-   (0x100) attribútumot** (`GetFileAttributes` → `or 0x100` →
-   `SetFileAttributes`; végleges mentés: `0x0083c3b8`–`0x0083c3d1`,
-   piszkozat: `0x0083cda5`, helykitöltő: `0x0068a81f`). A TÉNY
-   megerősített; a *célja* nem megállapított (nyitott kérdés).
+   (0x100) attribútumot** (`GetFileAttributes` → `test 0x100` → `or 0x100`
+   → `SetFileAttributes`). **A TÉNY megerősített, és a HATÓKÖRE
+   2026-08-21-én kimérve — ld. 9.1/c.**
 
 #### 5. Ami a mentés UTÁN történik — ez is a törvény része
 
@@ -1335,7 +1334,69 @@ A registrybe írt **három érték** (`0x0057acaf`–`0x0057ad76`, mind
 
 **Bizonyítottsági fok az egész 9.1/b-re: megerősített**, kivéve ahol
 jelölve („erős": a tmp-név második számlálója; az 5120 pontos
-szemantikája). A `FILE_ATTRIBUTE_TEMPORARY` célja **nyitott**.
+szemantikája). A `FILE_ATTRIBUTE_TEMPORARY` **hatóköre** a 9.1/c-ben
+kimérve; a *szándék* — miért ezt az attribútumot választották — a
+binárisban nincs benne, és **nem is lesz**.
+
+### 9.1/c A `FILE_ATTRIBUTE_TEMPORARY` — HATÓKÖR kimérve (2026-08-21, K2)
+
+**Nem a kollázs sajátossága.** A Picasa **minden saját projekt-kimenetére**
+ráteszi, és **soha nem veszi le**.
+
+#### A minta
+
+Mind az öt helyen ugyanaz a hat utasítás:
+
+```asm
+call dword ptr [0xd694bc]   ; GetFileAttributesA (dinamikusan feloldott)
+cmp  eax, -1                ; INVALID_FILE_ATTRIBUTES -> GetLastError
+test eax, 0x100             ; már TEMPORARY? -> kész
+or   eax, 0x100
+call dword ptr [0xd69514]   ; SetFileAttributesA
+```
+
+*(A két API **dinamikusan feloldott** függvénymutatón át hívódik
+— `[0xd694bc]` és `[0xd69514]` —, ezért a bináris importtáblájában
+nem látszanak, és a korábbi keresések emiatt nem találták meg őket.)*
+
+#### Mind az öt hely
+
+| gazda | mit ír | tanúsztringek |
+|---|---|---|
+| `0x0083ba60` (`0x0083c3b8`–`0x0083c3d1`) | a **végleges kollázs-JPEG** | `collage`, `indexonlyreadonly` |
+| `0x0083c5b0` (`0x0083cda6`–`0x0083cdbf`) | a **piszkozat-JPEG** | `collage`, `indexonly`, `.jpg.tmp` |
+| `0x0068a6a0` (`0x0068a81f`–`0x0068a838`) | a kollázs **`autosave.cxf`**-e | `Collages`, `CCollageManager::CollagesFolder` |
+| `0x0068a4b0` (`0x0068a639`–`0x0068a652`) | a film **`autosave.mxf`**-e | `Movies`, `CMakeMoviePanel::SlideshowFolder` |
+| `0x0061d820` (`0x0061dbd0`–`0x0061dbe9`) | a **film kimenete** | `indexonly`, `overlays/film`; hívói `CMakeMoviePanel` |
+
+#### Két negatív eredmény — mindkettő teljes enumerációval
+
+1. **A Picasa SOHA nem veszi le a jelzőt.** A `SetFileAttributes`-nek
+   **34** hívási helye van; ebből **öt** nyúl a `0x100`-hoz, és mind az öt
+   **beállítja**. A `0xfffffeff` maszkolás (a bit törlése) a binárisban
+   három helyen fordul elő (`0x005cb4db`, `0x005cb635`, `0x005f1ba7`), de
+   **egyik sem** fájlattribútum-út: a két első a menü-parancskezelőé, a
+   harmadik a Picnik/HTTP-ágé.
+2. **A Picasa SOHA nem olvassa vissza.** A `0x100`-ra vonatkozó
+   `test`/`cmp` sehol nem következik `GetFileAttributes`-hívásból —
+   kivéve épp az öt beállító saját „már be van állítva?" ellenőrzését.
+
+**Amit ez eldönt:** a jelző a **programon belül semmilyen viselkedést nem
+vezérel**. Ha vezérelne, valahol vissza kellene olvasnia. A jelzés tehát
+**kifelé szól** — az operációs rendszernek és más programoknak.
+
+**Amit ez NEM dönt el:** hogy a Google **miért** épp ezt az attribútumot
+választotta. Ez szándék, nem viselkedés — a binárisban nincs benne, és
+nem is lesz. **Ezért ez a kérdés lezárva, nem blokkolva:** nincs olyan
+mérés vagy külső anyag, ami eldöntené.
+
+#### Mit jelent a PicasaPy-nak
+
+**Linuxon nincs megfelelője**, tehát nincs mit reprodukálni. Windowsos
+importnál a Picasa készítette kollázs- és film-fájlokon ott lesz az
+attribútum — a mi kódunk **nem olvas fájlattribútumot**, tehát nem
+zavarja. Ez a szakasz azért van, hogy egy következő kör ne nyissa meg
+újra ugyanezt a zsákutcát.
 
 ### 9.2 A lap bezárása és az újramentés — két külön kérdés
 
@@ -1807,8 +1868,11 @@ három, és egyik sem igényel futó Picasát)*:
    csoport-csomópont *vizuális szerepe* nincs mérve (keret? együtt
    mozgatható tároló? logikai gyűjtő?) — a `0x0085fd60` gyárból létrejövő
    csomópont rajzoló ága nincs végigkövetve. Jegy: **#1170**.
-2. **mi a célja a `FILE_ATTRIBUTE_TEMPORARY`-nak** a kész kollázs-JPEG-en
-   (9.1/b 4. pont)? A tény három helyen bizonyított, a szándék nem.
+2. ~~mi a célja a `FILE_ATTRIBUTE_TEMPORARY`-nak~~ — **LEZÁRVA**
+   (2026-08-21, K2 — ld. **9.1/c**): a **hatóköre** kimérve (öt hely,
+   mind projekt-kimenet; soha nem veszi le, soha nem olvassa vissza,
+   tehát a programon belül semmit nem vezérel). A **szándék** nincs a
+   binárisban és nem is lesz — nincs olyan mérés, ami eldöntené.
 3. az **5120-as felső méret**: az **érték és a szerepe MEGERŐSÍTVE**
    (2026-08-19) — a `0x1400 = 5120` konstans a mentési úton
    méret**párként** megy tovább (`0x0083d050` → `0x0083ba60` →
