@@ -127,9 +127,12 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    és az Indexképnél); a `k` a képek cellaéle képpontban, az `A` lépték
    a 9.0 darabszám-képlete. Nem maradt feltételes állítás — a lap
    **9/b**-je. *(A jegy #977, már nem blokkolt.)*
-5. A polaroid-felirat **két logikai kapcsolójának** jelentése
-   (`ytVectorTextNode` `vt[0x2c]` → `+0x2a4`, `vt[0x38]` → `+0x2f3`;
-   mindkettő 1) — a mechanikájuk megvan, a nevük nem: a lap **9/c**-je.
+5. A polaroid-felirat **`vt[0x38]`** kapcsolójának **látható hatása** — a
+   lap **9/c**-je. *(A `vt[0x2c]` 2026-08-21-én MEGFEJTVE: a `.tre`
+   `textalign` tulajdonság bejárata — `0x009c7c00` hívja pontosan ezt a
+   rekeszt, `"right"`→2, `"center"`→1 —, és a kollázs **1**-et ad, tehát
+   **KÖZÉPRE**. A mi `_draw_polaroid_caption`-ünk már így csinálja.
+   Jegy: **#978**.)*
 6. Az **`avgcolor` adatbázismezőt** mi és milyen képlettel állítja elő?
    (A kollázs csak **kiolvassa** — a lap **3/b**-je; ez az **indexelő**
    területe, nem a kollázsé.)

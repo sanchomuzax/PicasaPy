@@ -1790,25 +1790,70 @@ csomópont léptékével szorozva), a helyét a `0x009debd0(csp, 0.098, 0.792)`
 A felirat-csomópont neve `collagepanel/textclip_<sorszám>`
 (`0xcc4ad8`), és `0x350` = 848 bájtos szövegcsomópont-osztály.
 
-**A két logikai kapcsolóról** *(2026-08-18, szűkítve)*: a felirat-csomópont
-osztálya **`ytVectorTextNode`** (vtable `0x00c939ec`, a `0x005b36d9`
-állítja be). A két hívott slot:
+**A két logikai kapcsolóról — az EGYIK MEGFEJTVE** *(2026-08-21, K4)*. A
+felirat-csomópont osztálya **`ytVectorTextNode`** (vtable `0x00c939ec`, a
+`0x005b36d9` állítja be), és ez a vtable az **`ITextSettings`** felület
+40 rekeszes megvalósítása (a felület vtable-je `0x00c9432c`, szintén 40).
+A rekeszek **be-/kiolvasó párokban** állnak:
 
-| slot | függvény | mit csinál |
-|---|---|---|
-| `vt[0x2c]` | `0x005b3720` | `[+0x2a4] = arg`, továbbadja az elrendezés-objektum `+0x74` mezőjébe (`0x005b3a7c`), érvénytelenít (`\|= 5`), és `[+0x2f2] = 1` |
-| `vt[0x38]` | `0x005b3430` | a `[+0x2f3]` bájtot az arg **inverzére** állítja, ha eltér, majd érvénytelenít (`\|= 7`); az olvasója (`0x005b3470`) `sete`-vel adja vissza — tehát a mező a **tagadott** értéket tárolja |
+| rekesz | szerep | függvény | mező |
+|---|---|---|---|
+| `vt[0x2c]` | beállító | `0x005b3720` | `[+0x2a4]` (dword) |
+| `vt[0x3c]` | kiolvasó | `0x0052d7a0` | ugyanaz |
+| `vt[0x38]` | beállító | `0x005b3430` | `[+0x2f3]` (bájt, **tagadva**) |
+| `vt[0x48]` | kiolvasó | `0x005b3470` | ugyanaz, `sete`-vel |
 
-Mindkettőt **1**-gyel hívja a kollázs. A mezők **neve/jelentése továbbra
-sem megállapított**; az elrendezés-objektum `+0x74` szomszédja
-(`+0x78`) a csomópont `+0x298` mezőjének lebegőpontos alakja. Mivel a
-felirat-doboz margói szimmetrikusak (bal 0,098 = jobb 0,098), a
-megvalósításban a **vízszintes középre igazítás** a józan alapértelmezés.
+#### `vt[0x2c]` = **`textalign`** — megfejtve
+
+A `.tre` tulajdonság-feldolgozó (`0x009ca5e0`) `textalign` ága a
+`0x009c7c00` alkalmazóra megy, és az **pontosan a `vt[0x2c]`-t hívja**,
+a tulajdonság szöveges értékét kis-nagybetű-függetlenül összevetve:
+
+```asm
+0x009c7c30  mov  eax, 0xc939b8      ; "right"
+0x009c7c97  mov  eax, dword ptr [edx + 0x2c]
+0x009c7c9a  push 2                  ; "right"  -> 2
+0x009c7cb5  mov  eax, 0xc92148      ; "center"
+0x009c7d17  mov  eax, dword ptr [edx + 0x2c]
+0x009c7d1a  push 1                  ; "center" -> 1
+```
+
+**A kollázs 1-et ad (`0x0087ca59`) — vagyis KÖZÉPRE igazítás.**
+
+> Ez **megerősíti** a lap korábbi óvatos következtetését („mivel a
+> margók szimmetrikusak, a középre igazítás a józan alapértelmezés"),
+> és **méréssé** emeli. A mi megvalósításunk
+> (`src/picasapy/collage/nodes.py`, `_draw_polaroid_caption`) már
+> középre igazít — tehát **helyes**.
+
+#### `vt[0x38]` — mérve, de NÉV nélkül
+
+**Nem `.tre`-tulajdonság**: a feldolgozó egyik ága sem hívja. Kódból
+állított kapcsoló. Amit tudunk róla:
+
+- **Alapértéke logikailag HAMIS.** A konstruktor `[+0x2f3] = 1`-et ír
+  (`0x005b368b`), és mivel a beállító a **tagadottat** tárolja, ez
+  logikai 0-nak felel meg.
+- **Mind a négy hívója 1-gyel hívja**, egyik sem 0-val:
+  `0x0087ca4b` (**a kollázs felirata**, `collagepanel/textclip_`),
+  `0x0081217a` (**`%x-captionback`** — feliratdoboz háttérrel),
+  `0x0081023e` és `0x008103d3`, valamint `0x006f40e8`.
+  **A négyből kettő bizonyítottan KÉPFELIRAT-építő.**
+- A rajzoló (`0x005b45d0`) a **nyers** (tehát tagadott) bájtot adja át a
+  szövegraszterezőnek, a `[csp+0x31c]` objektum `vt[0x28]`-án
+  (`0x005b464f`–`0x005b467c`), a `[+0x33c]` bájttal és a szövegdobozzal
+  együtt.
+
+**Ami NYITVA marad:** a kapcsoló **neve és látható hatása**. A
+megvalósításhoz ez a fontosabb: nem a nevét kell tudnunk, hanem hogy
+**mit változtat a képen**. Folytatás: a `[csp+0x31c]` raszterező
+azonosítása és a `vt[0x28]` paramétersora.
 
 **Bizonyítottsági fok: megerősített** a dobozra, a színre (a végleges
 rajzoláson adaptív, ld. fent), a betűméret-képletre és a feltételre
-(showcaptions ÉS polaroid). A két kapcsoló **mechanikája** megerősített,
-a **jelentése nyitott**.
+(showcaptions ÉS polaroid). A `vt[0x2c]` **jelentése is megerősített**
+(`textalign` = **középre**); a `vt[0x38]` **mechanikája** megerősített,
+a **neve és látható hatása** nyitott.
 
 ---
 
@@ -1964,8 +2009,9 @@ három, és egyik sem igényel futó Picasát)*:
    a képletek **témánként külön** paraméterezettek (négy készlet); a `k`
    a képek cellaéle képpontban (`0x00887e50`-ből); az `A` lépték a 9.0
    darabszám-képlete (`0x0087b8f6`). **Nem maradt feltételes állítás.**
-5. a felirat-csomópont **két logikai kapcsolójának** jelentése
-   (`vt[0x38]`, `vt[0x2c]`, mindkettő 1) — 9/c.
+5. a felirat-csomópont **`vt[0x38]`** kapcsolójának **neve és látható
+   hatása** — 9/c. *(A `vt[0x2c]` 2026-08-21-én megfejtve: `textalign`,
+   az érték 1 = **középre**.)*
 6. az **`avgcolor` adatbázismező** előállítása (3/b) — a kollázson
    **kívüli** terület, az indexelőé.
 
