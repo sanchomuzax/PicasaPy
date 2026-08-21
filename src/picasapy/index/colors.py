@@ -131,7 +131,8 @@ def compute_photo_color(path: str | Path) -> tuple[int, str] | None:
     `reduced_color_flag`-fel megegyező, redukált-méretű útvonalat használja
     (ld. `picasapy.cvimage` — ugyanezt hívja a bélyegkép-gyorsítótár és a
     dedup dHash-e is). `None`, ha a fájl nem dekódolható (törölt/sérült/nem
-    kép — pl. videó)."""
+    kép — pl. videó); 2×2 alatti dekódolt képnél `(0, "")` a Picasa
+    „nincs kiszámolva” sentinelje."""
     from picasapy.cvimage import read_image_bytes, reduced_color_flag
 
     payload = read_image_bytes(Path(path))
@@ -145,7 +146,9 @@ def compute_photo_color(path: str | Path) -> tuple[int, str] | None:
         return None
     average = average_color(image, order="bgr")
     if average is None:
-        return None
+        # A Picasa 2x2 alatt nem számol átlagszínt: a 0 sentinel azt is
+        # megakadályozza, hogy a háttérkitöltő minden körben újrapróbálja.
+        return 0, ""
     r, g, b, a = average
     token = classify_color(r, g, b)
     return rgb_to_avgcolor(r, g, b, a), token

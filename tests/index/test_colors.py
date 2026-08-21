@@ -43,7 +43,7 @@ class TestComputePhotoColor:
         photo = tmp_path / "kicsi.png"
         photo.write_bytes(encoded.tobytes())
 
-        assert compute_photo_color(photo) is None
+        assert compute_photo_color(photo) == (0, "")
 
 
 class TestLazyTable:
