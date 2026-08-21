@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.33] – 2026-08-21
+
+### Dokumentáció
+- **Lezárult a `.tre` felületleíró nyelv nyolc ritka tulajdonságának
+  bináris kutatása (#905).** A specifikáció most setter- és runtime-szinten
+  dokumentálja többek között a `windrag`, `vertslider`, `alphatest` és
+  `multiply` működését, a bizonyított tényeket különválasztva a végső
+  látványra vonatkozó feltételezésektől.
+
 ## [0.8.32] – 2026-08-21
 
 ### Új
