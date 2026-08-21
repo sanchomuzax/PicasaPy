@@ -230,8 +230,13 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    **`#FDFDFD`**. **A 2026-08-18-i „nincs a binárisban" negatív eredmény
    TÉVES VOLT:** a 24 bites alakra kerestünk, a konstans 32 bites
    (alfával) — a képernyőkép-mérés végig helyes volt. Jegy: **#894**.
-4. **A buboréksúgó rajza** — saját osztály (`ytToolTip`), de nincs hozzá
-   képréteg; a háttér/keret/árnyék kódból jön (#901)
+4. **A buboréksúgó rajza** — **BLOKKOLT** (2026-08-21, #901
+   `blocked` + `felhasználóra-vár`): a lap **8/b** szakasza a **teljes
+   negatív leltárt** adja (vtable, konstruktor, `IToolTip`, a kódtartomány
+   ARGB-konstansai, a respack `tre:tooltips` — az **szövegforrás**, nem
+   réteg —, és a létrehozó). Sehol nincs. **A legolcsóbb út egyetlen
+   képernyőkép**, amelyen látszik a buborék: az egyszerre adja a
+   háttér- és keretszínt, a keretvastagságot és az árnyékot.
 
 ### [picasa-elso-inditas.md](picasa-elso-inditas.md) — nincs nyitott kérdés
 

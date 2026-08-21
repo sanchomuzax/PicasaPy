@@ -438,6 +438,38 @@ A feltöltés-lista stílusblokkjából (`0x007af010`) egy egész készlet:
 | `[+0x9ac]` | 2 |
 | `[+0x9b0]` | −2 |
 
+### 8/b A buboréksúgó rajza — hol NINCS (2026-08-21, G2)
+
+A `ytToolTip` **megjelenése** (háttér, keret, árnyék) továbbra sem
+mérhető ki a binárisból az olcsó lánccal. Hogy a következő kör ne járja
+újra ugyanezt, itt a **teljes negatív leltár**:
+
+| hol kerestük | eredmény |
+|---|---|
+| a `ytToolTip` **csomópont-vtable**-je (`0x00c909d4`, 30 rekesz) | **egyetlen saját rajzoló-felülírás sincs** — mind a 30 rekesz általános (`0x009e0…`, `0x00a6…`, `0x0051…`) |
+| a **konstruktor** (`0x00563060`, 224 b) | csak **nullázás**: `+0x33c`…`+0x370`; **egyetlen szín-konstans sem** |
+| az `IToolTip` felület (`0x00c90408`, 3 rekesz) | slot 0 = `0x00563040` (31 b, csak a vtable beállítása), a másik kettő `_purecall` |
+| a **`0x00562000`–`0x00564500`** kódtartomány (az osztály környéke) | ARGB-konstans **nincs**: csak `0xFF000000`, `0xFFFFFFFF` és `-1`/`-2` őrértékek |
+| a **respack** | van `tre:tooltips` (3595 b) — de az **szövegforrás** (`Tooltip <vezérlő>` + felirat), **nem** elrendezés vagy réteg |
+| a **`.tre`-k** | a `thumbui.tre` `#include tooltips.tre` — ugyanaz a szövegforrás |
+| a létrehozó (`0x005733f0`, a `"tooltip"` névvel, `0x0057351e`) | a nevet átadja a `0x009ccdf0` gyárnak; **szín ott sincs** |
+
+**Amit ez kizár:** a buboréksúgó megjelenése **nem** `.tre`-tulajdonság,
+**nem** respack-réteg, és **nem** az osztály saját kódjában ülő konstans.
+Marad a futásidőben felépített gyerek-csomópontok útja (mint a kollázs
+csoport-kereténél, `picasa-kollazs-felulet.md` 2/b) — ez viszont már a
+**drága** lánc-vég.
+
+**A LEGOLCSÓBB ÚT: képernyőkép.** A megjelenés pontosan az, amit egy kép
+mutat, és a projekt szabálya szerint a tulajdonos képernyőképe önmagában
+bizonyíték. Egyetlen, buboréksúgót mutató képernyőkép **egyszerre adja
+meg** a háttérszínt, a keretszínt és -vastagságot, valamint az árnyék
+meglétét/irányát. **Jegy: #901** (`blocked`, `felhasználóra-vár`).
+
+> *A színmérésnél ügyelni kell arra, amit a G1 tanított: a Picasa a
+> színeket **32 bites `0xAARRGGBB`** alakban tárolja — a 24 bites alakra
+> keresés hamis negatívot ad.*
+
 ## 9. A gomb-rétegek teljes leltára
 
 269 réteg a `globalbuttons/` névtérben. A névadás **kivétel nélkül**
