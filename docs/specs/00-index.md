@@ -165,7 +165,7 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 4. **A buboréksúgó rajza** — saját osztály (`ytToolTip`), de nincs hozzá
    képréteg; a háttér/keret/árnyék kódból jön (#901)
 
-### [picasa-elso-inditas.md](picasa-elso-inditas.md) — 1 kérdés
+### [picasa-elso-inditas.md](picasa-elso-inditas.md) — nincs nyitott kérdés
 
 *(Új lap, 2026-08-21: az első indítás `initialscan` panelje — két
 szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rádió,
