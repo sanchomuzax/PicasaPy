@@ -142,31 +142,41 @@ def _hue_band(hue_deg: float) -> str:
 
 def average_color(
     image: np.ndarray | Sequence[Sequence[Sequence[int]]], *, order: str = "rgb"
-) -> tuple[int, int, int]:
-    """Egy dekódolt kép (H×W×3, uint8-hoz hasonló) csatornánkénti átlaga,
-    kerekítve (0-255).
+) -> tuple[int, int, int, int] | None:
+    """Egy dekódolt kép Picasa-kompatibilis RGBA-átlaga.
 
-    `order`: "rgb" (alap) vagy "bgr" — az OpenCV BGR-sorrendű tömbjeit a
-    hívó ezzel adhatja át konverzió nélkül. Üres/hibás alakú bemenetre
-    `ValueError`."""
+    A Picasa a négy BGRA-bájt csatornánkénti összegét a képpontok számával
+    egész osztással csonkolja. Háromcsatornás bemenetet átlátszatlannak
+    (alfa=255) tekintünk, mert az OpenCV színes dekódolója ilyen tömböt ad.
+    `order`: "rgb" (alap) vagy "bgr". A 2×2-nél kisebb képre a Picasa sem
+    számol átlagot, ezért a visszatérési érték `None`. Üres/hibás alakú
+    bemenetre `ValueError`."""
     array = np.asarray(image)
     if array.ndim != 3 or array.shape[2] < 3 or array.size == 0:
         raise ValueError("average_color: H×W×3(+) alakú kép szükséges")
-    channels = array[:, :, :3].reshape(-1, 3).astype(np.float64)
-    means = channels.mean(axis=0)
-    if order == "bgr":
-        means = means[::-1]
-    elif order != "rgb":
+    if order not in {"rgb", "bgr"}:
         raise ValueError(f"Ismeretlen csatorna-sorrend: {order!r}")
-    r, g, b = (int(round(value)) for value in means)
-    return (min(255, max(0, r)), min(255, max(0, g)), min(255, max(0, b)))
+    if array.shape[0] < 2 or array.shape[1] < 2:
+        return None
+
+    pixel_count = array.shape[0] * array.shape[1]
+    rgb = (array[:, :, :3].astype(np.int64).sum(axis=(0, 1)) // pixel_count).tolist()
+    if order == "bgr":
+        rgb.reverse()
+    alpha = (
+        int(array[:, :, 3].astype(np.int64).sum() // pixel_count)
+        if array.shape[2] >= 4
+        else 255
+    )
+    r, g, b = (min(255, max(0, int(value))) for value in rgb)
+    return (r, g, b, min(255, max(0, alpha)))
 
 
-def rgb_to_avgcolor(r: int, g: int, b: int) -> int:
-    """RGB hármas → 0xRRGGBB egész (ez kerül tárolásra `avgcolor` néven)."""
-    return ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF)
+def rgb_to_avgcolor(r: int, g: int, b: int, a: int = 255) -> int:
+    """RGBA → Picasa `avgcolor` egész: `0xAARRGGBB`."""
+    return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF)
 
 
 def avgcolor_to_rgb(value: int) -> tuple[int, int, int]:
-    """`avgcolor` (0xRRGGBB) → RGB hármas."""
+    """`avgcolor` (0xAARRGGBB) → RGB hármas; az alfa nem része a besorolásnak."""
     return ((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF)

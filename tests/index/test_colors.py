@@ -3,13 +3,47 @@ mintájára: útvonal-azonosság szerinti upsert, batch-biztos lekérdezés."""
 
 import sqlite3
 
+import cv2
+import numpy as np
+
 from picasapy.index import open_index
 from picasapy.index.colors import (
     ColorKey,
+    compute_photo_color,
     load_color_tokens,
     paths_with_color,
     save_colors,
 )
+
+
+class TestComputePhotoColor:
+    def test_stores_picasa_opaque_argb_value(self, tmp_path):
+        """Az OpenCV BGR-dekódolóhoz a hiányzó alfa átlátszatlan (#1171)."""
+        image = np.array(
+            [
+                [(9, 19, 29), (10, 20, 30)],
+                [(10, 20, 30), (10, 20, 30)],
+            ],
+            dtype=np.uint8,
+        )
+        encoded_ok, encoded = cv2.imencode(".png", image)
+        assert encoded_ok
+        photo = tmp_path / "atlagszin.png"
+        photo.write_bytes(encoded.tobytes())
+
+        result = compute_photo_color(photo)
+
+        assert result is not None
+        assert result[0] == 0xFF1D1309
+
+    def test_small_image_has_no_avgcolor(self, tmp_path):
+        image = np.zeros((1, 2, 3), dtype=np.uint8)
+        encoded_ok, encoded = cv2.imencode(".png", image)
+        assert encoded_ok
+        photo = tmp_path / "kicsi.png"
+        photo.write_bytes(encoded.tobytes())
+
+        assert compute_photo_color(photo) is None
 
 
 class TestLazyTable:
