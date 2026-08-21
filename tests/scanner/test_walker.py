@@ -285,6 +285,36 @@ class TestScanTreeNameFilters:
         folders = scan_tree(root)
         assert [f.path for f in folders] == [root / "sajat"]
 
+    def test_thumbs_and_recycler_folders_excluded_by_default(self, tmp_path):
+        root = tmp_path / "gyoker"
+        for name in ("thumbs", "RECYCLER"):
+            folder = root / name
+            folder.mkdir(parents=True)
+            (folder / "kep.jpg").write_bytes(b"x" * 5)
+        kept = root / "sajat"
+        kept.mkdir()
+        (kept / "kep.jpg").write_bytes(b"x" * 5)
+
+        folders = scan_tree(root)
+
+        assert [folder.path for folder in folders] == [kept]
+
+    def test_path_prefix_filter_skips_cache_without_name_filtering(self, tmp_path):
+        from picasapy.scanner.name_filters import NameFilters
+
+        root = tmp_path / "gyoker"
+        cache = root / "home" / ".cache"
+        cache.mkdir(parents=True)
+        (cache / "kep.jpg").write_bytes(b"x" * 5)
+        photo_cache = root / "fotok" / "Cache"
+        photo_cache.mkdir(parents=True)
+        (photo_cache / "kep.jpg").write_bytes(b"x" * 5)
+
+        filters = NameFilters(path_prefix_filters=(cache,))
+        folders = scan_tree(root, name_filters=filters)
+
+        assert [folder.path for folder in folders] == [photo_cache]
+
     def test_name_containing_filter_word_not_excluded(self, tmp_path):
         # "Temp Munkak" a nevében tartalmazza a "temp"-et, de nem egyezik
         # vele teljesen — valódi fotómappa lehet, nem zárható ki.

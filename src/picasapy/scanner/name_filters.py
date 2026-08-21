@@ -2,12 +2,14 @@ r"""Név-alapú kizárólista a mappa-bejáráshoz — az eredeti Picasa
 `runtime/filters.txt` mintájára (#349, ld. `docs/specs/picasa-program-
 resources.md` 3.1. szakasz).
 
-Az eredeti fájl négy, fejléc-sorral kezdődő szekcióból állt:
+Az eredeti fájl hat, fejléc-sorral kezdődő szekciót ismert:
 
     DirectoryFilters      — kizárt könyvtárnevek
     DirectoryIncludes     — kivétel a fenti kizárás alól
     FileFilters           — kizárt fájlnevek
     FileIncludes          — kivétel a fenti kizárás alól
+    BundleFilters-BlackList — bundle-k tiltólistája
+    BundleFilters-WhiteList — bundle-k engedélyezőlistája
 
 Az Includes szekció mindig felülírja a Filters-t (elsőbbséget élvez) —
 ez teszi lehetővé, hogy egy tág kizárási mintán belül egy konkrét nevet
@@ -46,6 +48,7 @@ függetlenül is álljon, ha valaki a rejtett-mappa szabályt megkerülné
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
 # Az eredeti Picasa `runtime/filters.txt` DirectoryFilters szekciója.
 DEFAULT_DIRECTORY_FILTERS: tuple[str, ...] = (
@@ -55,12 +58,27 @@ DEFAULT_DIRECTORY_FILTERS: tuple[str, ...] = (
     "Program Files",
     "Originals",
     ".picasaoriginals",
+    "thumbs",
+    "RECYCLER",
+)
+
+# Linux-first alapértelmezések: ezek útvonal-előtagok, ezért szándékosan nem
+# kerülnek a könyvtárnév-alapú `DEFAULT_DIRECTORY_FILTERS` listába. A `~`
+# feloldása csak az összehasonlításkor történik, hogy importkor ne rögzítsük
+# a futtató felhasználó saját könyvtárát.
+DEFAULT_PATH_PREFIX_FILTERS: tuple[str, ...] = (
+    "~/.cache",
+    "~/.local/share/Trash",
+    "/proc",
+    "/sys",
+    "/usr",
 )
 
 
 @dataclass(frozen=True)
 class NameFilters:
-    """Könyvtár- és fájlnév-alapú kizárólista, Picasa-féle négyszekciós
+    """Könyvtár-, fájlnév- és útvonal-alapú kizárólista, Picasa-féle
+    hatszekciós
     szemantikával. Immutable — a bővítés (jövőbeli felhasználói
     konfiguráció) új példány létrehozásával történik, nem mutálással."""
 
@@ -68,6 +86,19 @@ class NameFilters:
     directory_includes: tuple[str, ...] = field(default_factory=tuple)
     file_filters: tuple[str, ...] = field(default_factory=tuple)
     file_includes: tuple[str, ...] = field(default_factory=tuple)
+    bundle_filters_blacklist: tuple[str, ...] = field(default_factory=tuple)
+    bundle_filters_whitelist: tuple[str, ...] = field(default_factory=tuple)
+    path_prefix_filters: tuple[str | Path, ...] = field(default_factory=tuple)
+    _normalised_path_prefixes: tuple[tuple[str, ...], ...] = field(
+        init=False, repr=False, compare=False
+    )
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "_normalised_path_prefixes",
+            tuple(_normalised_path_parts(prefix) for prefix in self.path_prefix_filters),
+        )
 
     def is_directory_excluded(self, name: str) -> bool:
         """Igaz, ha `name` (a mappa saját neve, nem teljes útvonal) a
@@ -83,13 +114,36 @@ class NameFilters:
         `file_includes` nem írja felül."""
         return _matches(name, self.file_filters) and not _matches(name, self.file_includes)
 
+    def is_path_excluded(self, path: str | Path) -> bool:
+        """Igaz, ha a teljes `path` valamely útvonal-előtag alatt van.
+
+        Ez külön művelet a könyvtárnév-egyezéstől: például a `~/.cache`
+        alatti fákat kizárja, egy máshol lévő `Cache` nevű fotómappát nem.
+        A komponenshatáros összehasonlítás megakadályozza, hogy `/usr` a
+        `/usrbin` vagy `/usr-local` útvonalra is tévesen illeszkedjen.
+        """
+        path_parts = _normalised_path_parts(path)
+        return any(
+            len(path_parts) >= len(prefix_parts)
+            and path_parts[: len(prefix_parts)] == prefix_parts
+            for prefix_parts in self._normalised_path_prefixes
+        )
+
 
 def default_name_filters() -> NameFilters:
     """A Picasa gyári `filters.txt`-jének megfelelő alapértelmezett
-    kizárólista — üres Includes/FileFilters szekciókkal."""
-    return NameFilters(directory_filters=DEFAULT_DIRECTORY_FILTERS)
+    kizárólista — üres Includes/FileFilters és BundleFilters szekciókkal."""
+    return NameFilters(
+        directory_filters=DEFAULT_DIRECTORY_FILTERS,
+        path_prefix_filters=DEFAULT_PATH_PREFIX_FILTERS,
+    )
 
 
 def _matches(name: str, candidates: tuple[str, ...]) -> bool:
     lowered = name.casefold()
     return any(lowered == candidate.casefold() for candidate in candidates)
+
+
+def _normalised_path_parts(path: str | Path) -> tuple[str, ...]:
+    resolved = Path(path).expanduser().resolve()
+    return tuple(part.casefold() for part in resolved.parts)

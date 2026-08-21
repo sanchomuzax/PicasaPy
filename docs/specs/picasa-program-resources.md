@@ -361,6 +361,20 @@ engedélyezését/tiltását kapcsolja. A szállított fájl egyik szakaszt sem
 használja, tehát élő mintaadat nincs. **A PicasaPy-t nem érinti**: nálunk
 nincs bundle-fogalom.
 
+#### 3.1.4 PicasaPy-leképezés
+
+A szkennerben a két illesztési mód külön marad (`scanner/name_filters.py`,
+#1169): a `directory_filters` kizárólag mappaneveket hasonlít teljes
+egyezéssel, a `path_prefix_filters` pedig teljes útvonalakat vizsgál
+komponenshatáros előtaggal. Így a Linuxos alapértelmezések (`~/.cache`,
+`~/.local/share/Trash`, `/proc`, `/sys`, `/usr`) nem tesznek kizárttá egy
+mással megegyező nevű, de másutt lévő valódi fotómappát.
+
+A Picasa beégetett `thumbs`, `RECYCLER`, `Originals` és `.picasaoriginals`
+nevei a névlistában vannak. A hatszakaszos modell a két
+`BundleFilters-*` szakaszt is tárolja, de ezekhez nincs PicasaPy-beli
+bundle-viselkedés, ezért egyelőre nem befolyásolják a bejárást.
+
 ### 3.2 `fliprtl.txt` — RTL-tükrözési lista
 
 Sima szöveges lista, soronként egy ikon-azonosító (pl. `arrows/right`,

@@ -20,6 +20,7 @@ from .filetypes import (
 )
 from .name_filters import (
     DEFAULT_DIRECTORY_FILTERS,
+    DEFAULT_PATH_PREFIX_FILTERS,
     NameFilters,
     default_name_filters,
 )
@@ -42,6 +43,7 @@ from .watcher import LibraryWatcher
 
 __all__ = [
     "DEFAULT_DIRECTORY_FILTERS",
+    "DEFAULT_PATH_PREFIX_FILTERS",
     "EXCLUDE_FOLDERS_NAME",
     "PHOTO_EXTENSIONS",
     "PICASA_INI_LEGACY_NAME",
