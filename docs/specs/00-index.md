@@ -226,9 +226,11 @@ megvalósítást — jegy: **#1161**.)*
    [picasa-program-resources.md](picasa-program-resources.md) **3.1**
    szakaszába került (hat szakasz, két külön teszt, a `FileIncludes`
    sorai eldobódnak). Jegy: **#1169**.
-5. **A `ytVolumeIsExternalFS` (`0x007c84c0`) HASZNÁLATA** (a lap 13.5) —
-   a törzs mérve (`fs == "NTFS"`), de vtable-rekesz, xref nincs, és az
-   osztálynév ezzel ellentétesnek hangzik.
+5. ~~A `ytVolumeIsExternalFS` (`0x007c84c0`) HASZNÁLATA~~ — **LEZÁRVA**
+   (2026-08-21, a lap 13.5 újraírva): a példány a `CDirArray` `+0x84`
+   mezőjében **használatlan** (csak konstruktor + destruktor), a
+   név/viselkedés feszültség pedig **szerkesztői összevonás**
+   (`/OPT:ICF`) — a `ytVolumeIsNTFS` törzsével bájtra azonos.
 6. **A `0x007c91c0` háromértékű visszatérése** (a lap 14.6) — a `0`, `1`
    és `9` értékek szerepe; a felhasználó által látott viselkedést nem
    változtatja, a pontos sorrendet igen. Folytatás: `0x007c9270`.

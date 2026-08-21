@@ -1254,24 +1254,102 @@ meghajtó eltűnne — a többi ág pont így viselkedik.) A képernyőképen a
 `FAT`/`FAT32`/`NTFS` hármas miatt **nem** kerül a fába. Ez a Picasa
 korából származó korlát; nálunk nem kell reprodukálni (lásd 13.7).
 
-### 13.5 A `ytVolumeIsExternalFS` predikátum
+### 13.5 A `ytVolumeIsExternalFS` predikátum — és miért NEM ellentmondás a neve
 
-`0x007c84c0`, 26 bájt, a teljes törzs:
+> **HELYESBÍTÉS (2026-08-21, M10).** Ez a szakasz korábban azt írta, hogy a
+> mért viselkedés (`fs == "NTFS"`) „ellentétesnek hangzik" az osztály
+> nevével, és hogy a hívási oldal ismeretlen. **Mindkettő megoldódott** —
+> és a válasz egyik része sem szemantikai, hanem **fordítói**.
 
-```asm
-0x007c84c0  mov   eax, dword ptr [esp + 8]
-0x007c84c4  push  0xc86410          ; "NTFS"
-0x007c84c9  push  eax
-0x007c84ca  call  0xbf697a          ; strcmp
-0x007c84d2  test  eax, eax
-0x007c84d4  sete  al                ; al = (fs == "NTFS")
+#### 13.5/a Az osztálycsalád
+
+Az RTTI szerint a `CFolderMgrDialog::ytVolumeIsExternalFS` öröklődési
+lánca (bázisosztály-tömb, `0x00d0e0a8`, 7 elem):
+
+```
+CFolderMgrDialog::ytVolumeIsExternalFS
+  : ytVolumeInfo
+      : ytBaseThread : ytSafe : ytBase : ytCriticalBase, IShouldExit
 ```
 
-Mért tény: **a predikátum akkor ad igazat, ha a kötet fájlrendszere
-pontosan `NTFS`**. Az osztálynév („IsExternalFS") ezzel **ellentétesnek
-hangzik**; a függvénynek nincs xrefje (vtable-rekesz), ezért a hívási
-oldalról nem tudjuk, hol fordítják meg az értelmét. **Ezt így, mérésként
-írjuk le — a névből NEM következtetünk a jelentésre.**
+A `ytVolumeInfo` **kilencrekeszes** vtable-t definiál; a 0–7. rekesz
+öröklött, a **8. rekesz** az osztály saját, **tisztán virtuális**
+predikátuma (a bázis 8. rekesze `0x00c07709` = `_purecall`).
+
+Négy leszármazott van, mind ugyanazzal a 0–7 előtaggal:
+
+| osztály | vtable | 8. rekesz | mit vizsgál |
+|---|---|---|---|
+| `ytVolumeInfo` (bázis) | `0x00c835e0` | `0x00c07709` | `_purecall` |
+| `ytVolumeIsNetwork` | `0x00c86d80` | `0x0099c1a0` | `GetDriveTypeA("<betű>:\") == 4` (**DRIVE_REMOTE**) |
+| `ytVolumeIsGDrive` | `0x00c83608` | `0x004a01d0` | `fs == "GREDIR"` **vagy** a kötetnév `"googlewebdrive"`-val kezdődik |
+| `ytVolumeIsNTFS` | `0x00c86da8` | **`0x007c84c0`** | `fs == "NTFS"` |
+| `CFolderMgrDialog::ytVolumeIsExternalFS` | `0x00cb82d8` | **`0x007c84c0`** | *ugyanaz a cím* |
+
+**A rejtély megoldása:** a `ytVolumeIsNTFS` és a
+`CFolderMgrDialog::ytVolumeIsExternalFS` 8. rekesze **ugyanarra a címre
+mutat**, mert a két függvény lefordított törzse **bájtra azonos**, és a
+szerkesztő összevonta őket (MSVC `/OPT:ICF`, azonos COMDAT-összevonás).
+A cím tehát **nem bizonyíték** arra, melyik osztály szemantikájáról van
+szó — de mivel a törzsek azonosak, a **viselkedés egyértelmű**.
+
+#### 13.5/b A predikátum szignatúrája — a testvérekből levezetve
+
+```c
+bool ytVolumeInfo::operator()(ytString* kotetNev /* [esp+4] */,
+                              const char* fsNev  /* [esp+8] */);
+```
+
+A `ytVolumeIsGDrive` **mindkét** paramétert használja (`0x004a01d6` a
+`fsNev`-re, `0x004a01e6` a `kotetNev`-re), a `ytVolumeIsNetwork` csak az
+elsőt, a `ytVolumeIsNTFS` csak a másodikat. Ez rögzíti a sorrendet.
+
+A `0x007c84c0` teljes törzse:
+
+```asm
+0x007c84c0  mov   eax, dword ptr [esp + 8]   ; fsNev
+0x007c84c4  push  0xc86410          ; "NTFS"
+0x007c84c9  push  eax
+0x007c84ca  call  0xbf697a          ; _stricmp (ld. picasa-program-resources 3.1.2)
+0x007c84d2  test  eax, eax
+0x007c84d4  sete  al                ; al = (fsNev == "NTFS")
+```
+
+#### 13.5/c A Mappakezelőben a példány HASZNÁLATLAN
+
+A `CDirArray` konstruktora (`0x007be9c0`, hívó: `0x007c0130`) a
+`+0x84`-es beágyazott mezőbe építi:
+
+```asm
+0x007bea10  lea   edi, [esi + 0x84]
+0x007bea21  call  0x49fff0          ; ytVolumeInfo konstruktor
+0x007bea26  mov   dword ptr [edi], 0xcb82d8   ; a vtable felülírása
+```
+
+és a destruktor (`0x007bead0`) bontja le:
+
+```asm
+0x007bec6c  lea   eax, [esi + 0x84]
+0x007bec78  call  0x4a0160          ; ytVolumeInfo destruktor
+```
+
+**Ezen a kettőn kívül a `0x007b0000`–`0x007d0000` tartományban SEHOL nincs
+hivatkozás a `+0x84`-es mezőre** — sem 8. rekeszes virtuális hívás, sem
+`lea`+`push` (átadás máshová). A bázis konstruktora (`0x0049fff0`, 360 b)
+**semmilyen globális nyilvántartásba nem regisztrálja** magát (nincs
+`mov dword ptr [0x…]` a törzsében).
+
+**Következtetés:** a Mappakezelő megépíti és lebontja a predikátumot, de
+**soha nem hívja meg**. Halott tag — feltehetően egy korábbi, elhagyott
+„külső fájlrendszer" ágnak a maradéka.
+
+**Bizalmi fok: erős.** A negatív állítás egy teljes tartomány-átvizsgáláson
+alapul (minden `[reg+0x84]` operandus a Mappakezelő függvényeiben), nem
+mintavételen. Amit NEM zár ki: ha a példányt egy *más* eltolással
+(pl. a dialógusból `dlg+0x498`-ként) érné el valami — erre sem találtunk
+hivatkozást.
+
+**A PicasaPy-t nem érinti**: nincs mit reprodukálni.
 
 ### 13.6 REJTETT MAPPÁK — két különböző fogalom (a 12.5 második fele)
 
@@ -1365,8 +1443,10 @@ sem a fában, sem a kizárási listában **nem találtunk vizsgálatot**.
   előre feltöltött katalógus (`[obj+0x3e4]`) elemein kapcsol. A
   név-illesztés **teljes, kis-nagybetű-független egyezés**, az
   útvonal-illesztés **kis-nagybetű-független előtag**.
-- **A `ytVolumeIsExternalFS` predikátum HASZNÁLATA** — a törzs mérve
-  (13.5), a hívási oldal vtable-rekeszen át megy, xref nincs.
+- ~~A `ytVolumeIsExternalFS` predikátum HASZNÁLATA~~ — **LEZÁRVA**
+  (2026-08-21, M10 — ld. 13.5): a példány **használatlan**; a
+  név/viselkedés feszültség pedig **szerkesztői összevonás** (`/OPT:ICF`),
+  nem szemantikai rejtély.
 
 ---
 
