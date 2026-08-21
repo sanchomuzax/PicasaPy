@@ -215,16 +215,21 @@ nálunk maradhat 100.)*
 amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
 **metrikus/angolszász** ágra oszlanak.
 
-### [picasa-gomb-es-menu-rendszer.md](picasa-gomb-es-menu-rendszer.md) — 1 kérdés
+### [picasa-gomb-es-menu-rendszer.md](picasa-gomb-es-menu-rendszer.md) — 1 kérdés (a buboréksúgó)
 
 1. ~~a **letiltott** gomb rajza~~ — **MEGVAN** (#893): a rajzoló az alfát
    **néggyel osztja** (`0x009e3178`), kivétel nélkül
 2. ~~a `popuplist` **lenyíló panel** színei~~ — **MEGVAN** (#894):
    `listdecrect`, sík `#E8E8E8` kitöltés, `#BABABA` keret
-3. **A kiemelt sor SZÍNE** — a `respack`-ben nincs hozzá réteg, kódból jön.
-   *(2026-08-18: négy helyen kerestük, nincs ott — a negatív eredmény és a
-   folytatás helye a lap 8. szakaszában. A legolcsóbb út egy
-   színmérés a felhasználó képernyőképéről.)*
+3. ~~**A kiemelt sor SZÍNE**~~ — **MEGVAN** (2026-08-21, a lap 8.
+   szakasza): **`#7D8397`**, kódkonstans, a binárisban **`0xFF7D8397`**
+   alakban, **négy** helyen (`0x006084e2` = `ytTextPopupListItem`,
+   `0x00665bc9` = `CAddToList`, `0x007af034` = a feltöltés-lista,
+   `0x007cea13` = a webalbum-panel), mindenütt a
+   `test byte ptr [sor+4], 2` kijelölt-bit mögött. A nem kijelölt sor
+   **`#FDFDFD`**. **A 2026-08-18-i „nincs a binárisban" negatív eredmény
+   TÉVES VOLT:** a 24 bites alakra kerestünk, a konstans 32 bites
+   (alfával) — a képernyőkép-mérés végig helyes volt. Jegy: **#894**.
 4. **A buboréksúgó rajza** — saját osztály (`ytToolTip`), de nincs hozzá
    képréteg; a háttér/keret/árnyék kódból jön (#901)
 

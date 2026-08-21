@@ -377,26 +377,66 @@ felső — ugyanaz a bal-felüli fényforrás, mint a gomboknál).
 
 A **kiemelt sor** a `.tre`-ben `Property round 2`, a felirat dobozánál
 **±4 px vízszintesen** és **+1 px lent** nagyobb (`scratch/highlight`).
-A **színe** kódból jön — **továbbra is nyitott**.
 
-> **Negatív eredmény (2026-08-18), hogy a következő kör ne járja újra.**
-> Ahol KERESTÜK és NINCS:
->
-> - a `ytPopupListNode` saját vtable-metódusaiban (`0x009e0660`,
->   `0x009e0700`, `0x009e08b0`, `0x009e0ad0`) **egyetlen szín-konstans
->   sincs**;
-> - a `ytBasicPopupListHandler`-ben (`0x009d9890`) sem;
-> - a `.tre`-források között **nincs `popuplist` panel**: a lenyíló lista
->   a `respack`-ben **rétegtípus** (`layer:…/popuplist: <név>`), nem
->   `.tre`-vel leírt panel — tehát a szín nem `Property`-ként jön;
-> - a `.text` egészében **nincs** `0x7D8397` immediate (ez volt a
->   képernyőképről becsült érték — a bináris nem erősíti meg).
->
-> **Hol folytassa a következő kör:** a lista-csomópont osztályának
-> konstruktoránál (`0x0069d950`, `0x0069dc00`) és a rétegtípus rajzolóján
-> keresztül; vagy — olcsóbban — a felhasználó képernyőképéről
-> **közvetlen színméréssel**, mert az a projekt szabálya szerint
-> önmagában bizonyíték.
+**A SZÍNE MEGVAN (2026-08-21): `#7D8397`** — kódkonstans, a binárisban
+**`0xFF7D8397`** alakban.
+
+> ⚠️ **A 2026-08-18-i negatív eredmény TÉVES VOLT.** Az akkori kör azt
+> írta: *„a `.text` egészében **nincs** `0x7D8397` immediate — a bináris
+> nem erősíti meg [a képernyőképről mért értéket]"*. **A keresés volt
+> hibás:** a konstans **32 bites, alfával** (`0xFF7D8397`), nem 24 bites.
+> A helyes alakra **négy találat** van. *(A bájtsorrendet külön
+> kalibráltuk: a fordított alak, `0xFF97837D`, a binárisban **egyszer sem**
+> fordul elő — ld. `picasa-kollazs-felulet.md` 2/b.3.)*
+
+### A rajzolási minta — háromszor, szó szerint ugyanaz
+
+```asm
+test byte ptr [sor + 4], 2        ; << a sor-rekord +4 mezőjének 2-es bitje = KIJELÖLT
+mov  ecx, <alapértelmezett háttér>
+je   <marad az alapértelmezett>
+mov  ecx, 0xff7d8397              ; << KIJELÖLVE
+```
+
+### A négy hely — és melyik lista
+
+| cím | osztály / lista | bizonyíték |
+|---|---|---|
+| `0x006084e2` | **`ytTextPopupListItem`** és **`ytTextSeparatorPopupListItem`** vtable **2. rekesze** — a **legördülő listák tételei** | RTTI (`0x00c80574`, `0x00c9e994`) |
+| `0x00665bc9` | **`CAddToList`** vtable **1. rekesze** | RTTI (`0x00ca2db8`) |
+| `0x007af034` | a **feltöltés album-listájának** stílusblokkja (`[obj+0x98c]`) | `upload/#folder`, `upload/#album` |
+| `0x007cea13` | a webalbum-panel sorrajzolója | a `0x007aa080` szomszédságában |
+
+Mindhárom rajzoló a **`Praxis Semi Bold/Heavy`** betűt használja —
+ugyanaz, amit a Mappakezelő fája (`picasa-mappakezelo.md` 4.4).
+
+### Független megerősítés
+
+A tulajdonos képernyőképén a **Mappakezelő kijelölt sorára mért**
+`#7D8397` (`picasa-mappakezelo.md` 4.4) **bitre egyezik** a binárisban
+talált konstanssal. A képernyőkép-mérés és a bináris tehát **egymást
+igazolja** — a 2026-08-18-i kör azért nem látta így, mert rossz alakra
+keresett.
+
+### Bónusz: a szomszédos színek és metrikák
+
+A `CAddToList` sorrajzolójából (`0x00665bc2`): a **nem kijelölt** sor
+háttere **`#FDFDFD`**.
+
+A feltöltés-lista stílusblokkjából (`0x007af010`) egy egész készlet:
+
+| mező | érték |
+|---|---|
+| `[+0x960]` | `0x17` = 23 |
+| `[+0x964]` | `0x0f` = 15 |
+| `[+0x968]` | 5 |
+| `[+0x96c]` | 2 |
+| `[+0x974]` | **`#6D6D6D`** |
+| `[+0x98c]` | **`#7D8397`** (a kiemelés) |
+| `[+0x99c]` | `0x0e` = 14 |
+| `[+0x9a0]` | **`#000000`** |
+| `[+0x9ac]` | 2 |
+| `[+0x9b0]` | −2 |
 
 ## 9. A gomb-rétegek teljes leltára
 
