@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.28] – 2026-08-21
 
 *(Ide írjuk a felhasználónak szóló mondatokat a jegy PR-jében. A címet a
 kiadáskor a `scripts/auto_bump.py` cseréli a verzióra és a dátumra — a
