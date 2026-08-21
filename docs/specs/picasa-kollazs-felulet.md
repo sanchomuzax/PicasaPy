@@ -1297,9 +1297,9 @@ A `0x0083ce90` (Létrehozás-belépő) a mentés ELŐTT: képhiány-üzenet
 összehasonlítása, `0x0083cf3d`–`0x0083cf5b`); a függőben lévő
 „CollageAutosave" háttérfeladat törlése (`0x9b3950` név szerinti keresés
 → `0x97ae70` leállítás); és a renderelés felső mérete: **0x1400 = 5120**
-egység két példányban (`0x0083d050`) megy tovább a mentőnek — a kész
-JPEG hosszabbik oldala legfeljebb 5120 képpont *(erős; a pontos
-felhasználását a renderelőben nem követtük végig)*. Siker után
+egység két példányban (`0x0083d050`) megy tovább a mentőnek, **négyzetes
+(5120 × 5120) befoglaló dobozként** — a kész JPEG hosszabbik oldala
+pontosan 5120 képpont. **Az útja végigkövetve: 9.1/d.** Siker után
 `0x008421a0`: az automentés-állapot takarítása (`collage::lastautosave`).
 
 #### 6. Az „Asztali háttérkép" második fele: `picasabackground.bmp`
@@ -1333,10 +1333,86 @@ A registrybe írt **három érték** (`0x0057acaf`–`0x0057ad76`, mind
 > megjelenítés" oldalformátumot. A két lelet egymást igazolja.
 
 **Bizonyítottsági fok az egész 9.1/b-re: megerősített**, kivéve ahol
-jelölve („erős": a tmp-név második számlálója; az 5120 pontos
-szemantikája). A `FILE_ATTRIBUTE_TEMPORARY` **hatóköre** a 9.1/c-ben
+jelölve („erős": a tmp-név második számlálója). Az 5120 szemantikája
+**2026-08-21-én megerősítettre javult** — 9.1/d. A `FILE_ATTRIBUTE_TEMPORARY` **hatóköre** a 9.1/c-ben
 kimérve; a *szándék* — miért ezt az attribútumot választották — a
 binárisban nincs benne, és **nem is lesz**.
+
+### 9.1/d Az 5120 — az ÚTJA végigkövetve (2026-08-21, K3)
+
+A korábbi állítás („a konstans megvan, az útja nincs végigkövetve") **már
+nem áll**. Az 5120 nem renderelés-idejű konstans, hanem **a mentési
+feladat egyik mezője**, és négy dwordként utazik.
+
+#### Az érték felépítése — `0x0083ce90`
+
+```asm
+0x0083d050  mov  eax, 0x1400              ; 5120
+0x0083d055  mov  dword ptr [esp + 0x20], eax
+0x0083d059  mov  dword ptr [esp + 0x24], eax
+0x0083d062  lea  ecx, [esp + 0x1c]        ; << a szerkezet CÍME (a push után E+0x18)
+0x0083d066  push ecx                      ; a 0x0083ba60 2. paramétere
+0x0083d06b  mov  dword ptr [esp + 0x24], ebx   ; = 0
+0x0083d06f  mov  dword ptr [esp + 0x28], ebx   ; = 0
+0x0083d073  call 0x83ba60
+```
+
+A négy dword a veremben, sorrendben: **`0, 0, 5120, 5120`**. Az első pár
+nulla, a második pár a korlát — tehát **négyzetes** befoglaló doboz.
+
+#### Az útja
+
+```
+0x0083ce90  (a „Létrehozás" belépő)
+   │  2. paraméter: &(0, 0, 5120, 5120)
+   ▼
+0x0083ba60  (a mentés)             a mutatót eltárolja  (0x0083ba88)
+   │  a négy dwordöt ÉRTÉK SZERINT másolja a veremre
+   │  (0x0083c458–0x0083c47c), majd
+   ▼
+0x008390e0  (a mentési feladat felépítése, 283 b)
+   │  a négy dwordöt újra átmásolja (0x0083917a–0x0083918c)
+   ▼
+0x00838f90  (a `.jpg` feladat, 323 b — itt van a `.jpg` utótag, 0x00839047)
+   │
+   ▼
+[feladat + 0x64 .. + 0x70]  ← ide kerül a négy dword
+   0x00838fc3  mov  dword ptr [ebp + 0x64], ecx
+   0x00838fcd  mov  dword ptr [ebp + 0x68], edx
+   0x00838fdc  mov  dword ptr [ebp + 0x6c], ecx
+   0x00838fe1  mov  dword ptr [ebp + 0x70], edx
+```
+
+*(A négy dword végig **két párban** utazik, nem egyetlen tömbként — a
+`0x00838f90` a `[esp+0xa40]`/`[esp+0xa44]` és a `[esp+0xa54]`/`[esp+0xa58]`
+párokból veszi. Ez a hívási konvenció következménye; az értékek sorrendje
+végig ugyanaz.)*
+
+#### A SZEMANTIKA — és miért megerősített
+
+A doboz **négyzetes** (5120 × 5120), és a tulajdonos **hat eredeti,
+Picasa-készítette kollázsán** a hosszabbik oldal **kivétel nélkül pontosan
+5120** képpont — **mindkét tájolásban**: egy álló (3752 × 5120) és öt
+fekvő (5120 × 4546). *(A privát repó
+`referencia/kollazs-golden/2014-naptar.zip`-je.)*
+
+Négyzetes dobozba illesztésnél a „férjen bele" és a „a hosszabbik oldal
+legyen pontosan 5120" **ugyanaz a szabály**:
+
+> **lépték = 5120 / max(szélesség, magasság)**, oldalarány megtartásával.
+
+**Ezért a szemantika megerősített**, nem „erős": a doboz alakját a
+bináris adja, a szabályt pedig **hat golden fájl igazolja mindkét
+tájolásban** — egy tájolás önmagában nem lenne elég (ld. a
+`nezd-meg-mit-nem-tartalmaz-a-minta` tanulságot).
+
+#### Ami NEM lett meg
+
+**Melyik utasítás számolja a léptéket** a `[feladat+0x64..0x70]`-ből. A
+feladatobjektum 0x14d4 bájtos (`0x00839133` foglalja), és a lépték-számítás
+a renderelő-szálon fut. **Ez a megvalósítást nem érinti**: a szabály fent
+ki van mondva, és golden fájlokkal ellenőrizhető. Aki mégis folytatná: a
+`0x00838f90` által épített feladat olvasói.
 
 ### 9.1/c A `FILE_ATTRIBUTE_TEMPORARY` — HATÓKÖR kimérve (2026-08-21, K2)
 
@@ -1873,16 +1949,17 @@ három, és egyik sem igényel futó Picasát)*:
    mind projekt-kimenet; soha nem veszi le, soha nem olvassa vissza,
    tehát a programon belül semmit nem vezérel). A **szándék** nincs a
    binárisban és nem is lesz — nincs olyan mérés, ami eldöntené.
-3. az **5120-as felső méret**: az **érték és a szerepe MEGERŐSÍTVE**
-   (2026-08-19) — a `0x1400 = 5120` konstans a mentési úton
-   méret**párként** megy tovább (`0x0083d050` → `0x0083ba60` →
-   `0x0087dcd0`), és a tulajdonos **hat eredeti, Picasa-készítette
-   kollázsán** a hosszabbik oldal **kivétel nélkül pontosan 5120**
-   képpont (3752×5120, 5120×4546 ×5 — a privát repó
-   `referencia/kollazs-golden/2014-naptar.zip`-je). Tehát a kimenet egy
-   **5120 × 5120-as befoglaló dobozba** illesztődik. **Ami NYITVA marad:**
-   a konkrét illesztő utasítássor a `0x0087dcd0`-n belül nincs
-   végigkövetve — a *szám* igazolt, a *mechanizmus* nem.
+3. ~~az **5120-as felső méret** szemantikája~~ — **LEZÁRVA**
+   (2026-08-21, K3 — ld. **9.1/d**): négy dwordként utazik
+   (`0, 0, 5120, 5120` — **négyzetes** doboz, `0x0083d050`–`0x0083d06f`),
+   és a `0x0083ba60` → `0x008390e0` → `0x00838f90` láncon a **mentési
+   feladat `+0x64..+0x70` mezőibe** kerül (`0x00838fc3`–`0x00838fe1`).
+   Szabály: **lépték = 5120 / max(szél, mag)**, oldalarány megtartásával
+   — a hat golden fájl **mindkét tájolásban** igazolja. **HELYESBÍTÉS:**
+   a korábbi állítás szerint a `0x0087dcd0`-n belül kellett volna
+   keresni; valójában az a hívás a mentés **előkészítése**, a doboz nem
+   oda megy. Ami nem lett meg: melyik utasítás számolja a léptéket a
+   feladat mezőiből — ez a megvalósítást nem érinti.
 4. ~~az árnyék-képlet bemenete~~ — **TELJESEN LEZÁRVA** (9/b.2–9/b.3):
    a képletek **témánként külön** paraméterezettek (négy készlet); a `k`
    a képek cellaéle képpontban (`0x00887e50`-ből); az `A` lépték a 9.0

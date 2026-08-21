@@ -73,7 +73,7 @@ kérdés).
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
-### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 4 kérdés
+### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 3 kérdés
 
 ⭐ **2026-08-21, működés-kör (kilenc kérdés):** a
 `kollazs-eletciklus.md` **16.** szakasza négy, eddig sehol nem szereplő
@@ -114,9 +114,13 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    **soha nem olvassa vissza**, tehát a programon belül semmit nem
    vezérel. A **szándék** nincs a binárisban és nem is lesz. Linuxon
    nincs megfelelője — **nincs teendő**. Jegy: **#979**.
-3. Az **5120-as felső renderméret** (`0x0083d050`) pontos szemantikája a
-   renderelőn (`0x0087dcd0`) belül — a konstans megvan, az útja nincs
-   végigkövetve.
+3. ~~Az **5120-as felső renderméret** szemantikája~~ — **LEZÁRVA**
+   (2026-08-21, a lap **9.1/d**): négy dwordként utazik
+   (`0, 0, 5120, 5120` = **négyzetes** doboz), és a mentési feladat
+   `+0x64..+0x70` mezőibe kerül (`0x00838fc3`–`0x00838fe1`). Szabály:
+   **lépték = 5120 / max(szél, mag)**, oldalarány megtartásával; hat
+   golden fájl igazolja **mindkét tájolásban**. A `0x0087dcd0`-s nyom
+   **téves volt** — az a hívás a mentés előkészítése.
 4. ~~Az árnyék-képlet bemenete~~ — **LEZÁRVA** (2026-08-18, második
    árnyék-kör): az árnyék **témánként négy külön paraméterkészlettel**
    dolgozik (alfa 102 a Képkupacnál és a rácsos témáknál, 153 a Rácsnál
