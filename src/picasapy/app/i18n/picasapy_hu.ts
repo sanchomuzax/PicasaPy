@@ -2617,6 +2617,10 @@ Would you like to rename or skip these files?</source>
 <context>
     <name>FolderManagerDialog</name>
     <message>
+        <source>Folder List</source>
+        <translation>Mappalista</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/FolderManagerDialog.qml"/>
         <source>Watching an entire drive can slow down the system. It would be better to select several sub-folders.</source>
         <translation>Egy teljes meghajtó figyelése lelassíthatja a rendszert. Érdemesebb néhány almappát kiválasztani.</translation>

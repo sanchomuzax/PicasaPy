@@ -124,10 +124,27 @@ ColumnLayout {
                                         === optionRow.modelData.state
                         }
                     }
+                    // ⚠️ #1200/4: minden rádiósor mellett ott a SAJÁT ikonja.
+                    // Az eredetiben az `icon_once` / `icon_exclude` /
+                    // `icon_always` a `status_group` gyermekei, a rádió
+                    // (24×24, x=310) és a felirat (x=363) KÖZÖTT, x≈340.
+                    //
+                    // Ugyanazt a `FolderStateBadge`-et használjuk, mint a
+                    // fa sorai — így a választó és a fa UGYANAZT a rajzot
+                    // mutatja; két külön rajz óhatatlanul szétcsúszna.
+                    FolderStateBadge {
+                        objectName: "folderStateOptionIcon:" + optionRow.modelData.state
+                        folderState: optionRow.modelData.state
+                        Layout.alignment: Qt.AlignVCenter
+                    }
                     Text {
                         text: optionRow.modelData.label
                         font.pixelSize: Theme.fontSize
                         color: Theme.ink
+                        // #1200/4: a felirat BALRA zárva (az eredetiben az
+                        // x=363-on kezdődik, nem középre igazítva)
+                        horizontalAlignment: Text.AlignLeft
+                        Layout.fillWidth: true
                     }
                 }
                 MouseArea {

@@ -15,7 +15,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, QStandardPaths, Signal, Slot
 
 from picasapy.paths import normalize_path
 
@@ -79,10 +79,35 @@ def _root_entries(home: Path | None = None, user: str | None = None) -> list[dic
     """
     home = home or Path.home()
     user = user or os.environ.get("USER", home.name)
+    # ⚠️ #1200/9: a gyökerek neve HONOSÍTVA jelenjen meg — magyar
+    # felületen az „Asztal"/„Képek"/„Dokumentumok" a helyes, nem az angol
+    # mappanév.
+    #
+    # A nevet NEM mi fordítjuk: a `QStandardPaths.displayName()` a
+    # RENDSZERTŐL kéri el, tehát pontosan azt adja, amit a felhasználó a
+    # fájlkezelőjében is lát (Windowson a Known Folder honosított neve, ld.
+    # a #1088 tanulságát a Képek mappáról). Ha nem ad nevet, marad az
+    # angol mappanév — látható tartalék, nem néma hiba.
+    def _honos(hely: QStandardPaths.StandardLocation, tartalek: str) -> str:
+        try:
+            nev = QStandardPaths.displayName(hely)
+        except Exception:  # noqa: BLE001 - a névadás sosem akaszthatja meg a fát
+            return tartalek
+        return nev or tartalek
+
     candidates: list[tuple[str, Path]] = [
-        ("Desktop", home / "Desktop"),
-        ("Pictures", home / "Pictures"),
-        ("Documents", home / "Documents"),
+        (
+            _honos(QStandardPaths.StandardLocation.DesktopLocation, "Desktop"),
+            home / "Desktop",
+        ),
+        (
+            _honos(QStandardPaths.StandardLocation.PicturesLocation, "Pictures"),
+            home / "Pictures",
+        ),
+        (
+            _honos(QStandardPaths.StandardLocation.DocumentsLocation, "Documents"),
+            home / "Documents",
+        ),
         ("/", Path("/")),
     ]
     for mount_parent in (Path("/media") / user, Path("/run/media") / user):

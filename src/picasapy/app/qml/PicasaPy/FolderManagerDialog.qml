@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Dialogs
 import QtQuick.Layouts
 
 // Mappakezelő (Eszközök menü + első indítás), #231 — a Picasa 3.9
@@ -309,7 +308,11 @@ Window {
                 spacing: 3
 
                 Text {
-                    text: qsTranslate("FolderPane", "Folders")
+                    // #1200/8: az eredetiben a Mappakezelő bal oszlopának
+                    // felirata „Folder List" (magyarul „Mappalista") — nem
+                    // ugyanaz, mint a főablak bal hasábjának „Mappák"
+                    // felirata, ezért NEM a FolderPane fordítását vesszük át.
+                    text: qsTr("Folder List")
                     font.pixelSize: Theme.fontSize
                     font.bold: true
                     color: Theme.ink
@@ -379,22 +382,27 @@ Window {
             }
         }
 
+        // ⚠️ #1200: PONTOSAN HÁROM gomb — OK / Mégse / Súgó.
+        //
+        // Az eredetiben nincs több: a `tre:foldermgr` „# BUTTONS" szakasza
+        // `ok`, `cancel`, `help`, és a `respack.yt` is pontosan három
+        // `superbutton` réteget tartalmaz (mind 98 × 28, y = 410,
+        // x = 230 / 335 / 440).
+        //
+        // A korábbi két extra gomb nem csak felesleges volt: MAGYAR
+        // feliratokkal a sor 617,7 px-et igényelt egy 550 px-es ablakban,
+        // ezért a Súgó gomb kilógott a képernyőről.
+        //
+        // ⚠️ A „Mappa hozzáadása a Picasához…" az eredetiben a FÁJL MENÜ
+        // tétele, ami EZT az ablakot nyitja meg (`ID_TOOLS_INCLUDE-
+        // EXCLUDEFOLDERS` → 0x005ce590) — nem egy gomb, ami mappaválasztót
+        // nyit. A „Picasa-mappák átvétele" (#146) pedig nem ide való: az
+        // első indítás folyamatának a helye.
         RowLayout {
+            objectName: "folderManagerButtonRow"
             Layout.fillWidth: true
-            spacing: 8
+            spacing: 7
 
-            PicasaButton {
-                text: qsTr("Add folder...")
-                onClicked: pickFolder.open()
-            }
-            // #146: a régi Picasa figyelt mappáinak felajánlása — a
-            // PicasaImportDialog a Main.qml-ben él, a discoveryController
-            // globális jelzésén (dialogRequested) keresztül nyílik meg
-            PicasaButton {
-                objectName: "adoptPicasaFoldersButton"
-                text: qsTr("Adopt Picasa folders...")
-                onClicked: discoveryController.openImportDialog()
-            }
             Item { Layout.fillWidth: true }
             // az állapot-váltások AZONNAL érvénybe lépnek (setState a
             // rádiógomb-sor kattintásakor rögtön hívja a controllert) —
@@ -497,9 +505,4 @@ Window {
         }
     }
 
-    FolderDialog {
-        id: pickFolder
-        title: qsTr("Add folder...")
-        onAccepted: folderManagerWindow.stageState(selectedFolder.toString(), "always")
-    }
 }
