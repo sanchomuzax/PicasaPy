@@ -32,7 +32,7 @@ kérdés).
    | tétel | régi verdikt | MA | jegy |
    |---|---|---|---|
    | `finetune2` Csúcsfény+Árnyék | 55,94 ΔE · 561 kép | ✅ **KÉSZ (2026-08-18)** — a kettő EGY közös LUT, a kompozit eltérés 217 szintről 0-ra (a valódi ini-korpusz 22 %-a kompozit) | #879 |
-   | `finetune2` hőmérséklet | — | **a művelet TELJES 3×3 mátrix — a binárisból** (2026-08-18): a `0x0090e9d0` a feketetest-táblából vett színnel az `autocolor` mátrix-alkalmazóját hívja. Az átlón kívüli tag a hideg végen **11,8 %**, a melegen 3,2 %, `temp=0`-nál 0,63 %. A mai csatornánkénti modellünk ezt **szerkezetileg** nem tudja. **Nincs szükség új felhasználói anyagra.** | #956 |
+   | `finetune2` hőmérséklet | — | ✅ **KIMÉRVE (2026-08-21), a natív modell 6/6-ban NYER**: képpontonkénti mérés a `referencia/szinhomerseklet/` hét exportján — a `percent 50` **bitre azonos** az eredetivel, tehát **nincs JPEG-zajszint**. Átlagos |Δ|: `temp −1,0` **5,08 → 1,23** (4,1×), `−0,8` 2,83 → 1,01, `−0,5` 1,33 → 1,07, `+0,5` 0,91 → 0,70, `+0,8` 1,11 → 0,80, `+1,0` 1,17 → 0,71. Ez az **ellenkezője** a #879 csatorna-LUT-os eredményének, ami szerkezetileg vak volt a kereszt-tagokra. **Már csak BEKÖTÉS**: a natív ág (`autocolor_matrix_16_16` + `apply_autocolor_matrix`) megvan a kódbázisban. | #956 |
    | `tint` | 20,6 | megfejtve (`preserve` skálája −1…255) | #872 |
    | `sat` pozitív ág | 12 | ✅ **kész és kimérve: 0,74** | #693 |
    | `dir_tint` | 9 | ✅ **teljesen megvan** — az átmenet-görbe is (2026-08-18) | #874 |

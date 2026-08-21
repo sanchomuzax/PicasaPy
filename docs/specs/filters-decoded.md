@@ -4251,3 +4251,75 @@ csatorna-LUT-ként), a csere sem nem igazolható, sem nem cáfolható. A
 korábbi kör ezt a Planck-sugárzásból SZÁMOLT táblával próbálta — a mostani
 mérés a binárisból olvasott, VALÓDI táblával fut, és ugyanoda jut. A hiányzó
 mérés a **#956** jegy tárgya.
+
+## A `finetune2` hőmérséklet-tengelye — KÉPPONTONKÉNTI MÉRÉS (2026-08-21, F1)
+
+A #956 azt kérte, ami eddig hiányzott: **képpontonkénti** összevetés, nem
+csatorna-LUT. Megvan, és **egyértelmű**.
+
+### A mérőanyag — és miért ez a legjobb, amink valaha volt
+
+`referencia/finomhangolas/original.jpg` + `referencia/szinhomerseklet/`
+hét exportja (`percent 0…100`), mind **2560 × 1702**.
+
+> **A `percent 50` BITRE AZONOS az `original.jpg`-vel** (átlag |Δ| = 0,000,
+> max = 0). Vagyis a `temp = 0` állás a Picasánál **valódi no-op**, és
+> ezért ennek a készletnek **NINCS JPEG-zajszintje** — minden eltérés
+> tisztán a modell hibája.
+
+Ez lényegesen erősebb alap, mint a #879 mérése, ahol a 4,43-as
+„JPEG-zajszint" mindkét modellt elnyelte.
+
+### Az eredmény — a natív modell 6/6-ban jobb
+
+| percent | temp | MAI (csatorna-szorzó) | **NATÍV** (tábla + mátrix) | javulás |
+|---:|---:|---:|---:|---:|
+| 0 | −1,0 | 5,082 | **1,230** | **4,1×** |
+| 10 | −0,8 | 2,831 | **1,005** | 2,8× |
+| 25 | −0,5 | 1,328 | **1,065** | 1,25× |
+| 75 | +0,5 | 0,909 | **0,696** | 1,3× |
+| 90 | +0,8 | 1,113 | **0,801** | 1,4× |
+| 100 | +1,0 | 1,170 | **0,707** | 1,65× |
+
+*(átlagos abszolút csatornaeltérés, 2560 × 1702 × 3 képpontcsatornán)*
+
+**Ez az ellenkezője a #879 eredményének** („hatból ötben rosszabb") — és
+a #956 pontosan megjósolta, miért: az akkori mérés **csatorna-LUT-okon**
+futott, amelyek **szerkezetileg vakok** a 3×3-as mátrix kereszt-tagjaira,
+márpedig épp azok a különbség.
+
+### A mérés menete (reprodukálható)
+
+1. A feketetest-tábla kiolvasva a binárisból (`0x00c7cf98`, 130 elem,
+   csomagolt `0x00RRGGBB`). Ellenőrzés: `i=18 → (255,173,94)`,
+   `i=55 → (255,249,253)`, `i=92 → (202,218,255)` — egyezik a fenti
+   táblázattal.
+2. `temp = (percent − 50) / 50`, `i = (int)(temp·37 + 55)`.
+3. A natív mátrix a **saját** `render/autocolor_matrix.py`
+   `autocolor_matrix_16_16(kR, kG, kB)`-jével, alkalmazva
+   `apply_autocolor_matrix`-szal — tehát nem külön, ad-hoc kód.
+4. A mai modell: `render/tone.py` `apply_color_temperature`.
+
+### Egy melléklelet: a tábla-index ±1 bizonytalansága
+
+A legjobban illeszkedő index állásonként:
+
+| percent | csonkolt `i` | a spec táblája | a MÉRT legjobb |
+|---:|---:|---:|---:|
+| 0 | 18 | 18 | **18** |
+| 10 | 25 | 25 | **25** |
+| 25 | 36 | 36 | **37** |
+| 75 | 73 | 74 | **74** |
+| 90 | 84 | 85 | **85** |
+| 100 | 92 | 92 | **92** |
+
+A két végpont (±1,0) **mindhárom oszlopban egyezik**. A köztes
+állásoknál ±1 az eltérés — a legvalószínűbb ok, hogy a `percent`
+címkék a **csúszka-pozíciók** a tulajdonos jelölésével, és a tényleges
+`temp` nem pontosan `(p−50)/50`. **Az exportokhoz nincs `.picasa.ini`**,
+így a valódi paraméter nem visszakereshető. *A mérés következtetését ez
+nem érinti: a natív modell mind a hat állásban nyer, bármelyik szomszédos
+indexszel.*
+
+**Bizonyítottsági fok: megerősített** — zajszint nélküli, képpontonkénti
+mérés, hat állásban, a saját kódunk két ágával.
