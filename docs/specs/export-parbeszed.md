@@ -910,18 +910,19 @@ A felület leírása a lap 1–7. szakaszában van (az `export.fen`-ből).
 **Öt export-függvény nincs megnyitva** (a leltár a 8.0-ban):
 
 1. ~~**`0x0073f320` (9396 b) — a `CImageOutput` törzse**~~ —
-   **LEZÁRVA** (2026-08-21, ld. a **10.** szakaszt): a váz, a
+   **LEZÁRVA** (2026-08-21, ld. a **13.** szakaszt): a váz, a
    mód-elágazás, az ini-írás és az időbélyeg utasításszinten.
-2. **Mikor íródnak ki a beállítások** — az író a `0x00739960`, és
-   **azonosítva**: a `CExportPrefsDialog` vtable **89. rekesze**
-   (`0x00c8b8c8`). Ami hiányzik: **hol hívják** (OK-ra, vagy
-   vezérlőnként) — a `0x164`-es rekeszre a szokásos hívási mintával a
-   `0x0073…` tartományban nincs találat.
-3. ~~**Mi fut le az export UTÁN**~~ — **LEZÁRVA** (10.2): a célmappa
+2. ~~**Mikor íródnak ki a beállítások**~~ — **LEZÁRVA** (2026-08-21,
+   ld. **13.7**): **OK-ra, egyetlen menetben**, a közös párbeszéd-lezáró
+   (`0x008d2720`) hívja a `vt[0x164]`-et, ha a lezárási kód **0**. A
+   **Mégse** ága a `vt[0x168]`-at hívja, ami a `CExportPrefsDialog`-nál
+   az üres tő (`0x00b0d990`, egyetlen `ret`) — **Mégsére semmi nem
+   íródik és semmi nem áll vissza**.
+3. ~~**Mi fut le az export UTÁN**~~ — **LEZÁRVA** (13.2): a célmappa
    **megnyitása az Intézőben** (`ShellExecuteA`, feltételesen), majd
    `]history:export` token. **Indexelés és nézetfrissítés NINCS** a záró
    ágban — ez a kollázséhoz képest lényeges eltérés.
-4. ~~**A sorszámozás pontos szabálya**~~ — **LEZÁRVA** (10.3): a
+4. ~~**A sorszámozás pontos szabálya**~~ — **LEZÁRVA** (13.3): a
    szélesség a **kijelölt képek számának jegyszáma**, a sorszám
    **1-től** indul, az elválasztó **kötőjel**, utána a teljes eredeti
    fájlnév.
@@ -942,12 +943,16 @@ utasításszintű olvasás. A munkasorba kerültek.)*
 
 ---
 
-## 10. A `CImageOutput` (`0x0073f320`) TÖRZSE — utasításszinten (2026-08-21, E2)
+## 13. A `CImageOutput` (`0x0073f320`) TÖRZSE — utasításszinten (2026-08-21, E2)
+
+> *(Számozási megjegyzés: a lap 8., 9. és 10. száma korábban kétszer is
+> kiosztásra került; ez a szakasz ezért 13., hogy ne ütközzön a 424. sor
+> körüli „10. A TELJES ESEMÉNYKEZELŐ-TÉRKÉP"-pel.)*
 
 A 9. szakasz 1. pontja: „sztringszinten feltárva, utasításszinten nem".
 Most utasításszinten is megvan a váz — és vele a 3. és 4. pont is.
 
-### 10.1 A függvény szerepe: KÖZÖS kimenet-motor
+### 13.1 A függvény szerepe: KÖZÖS kimenet-motor
 
 A 9396 bájtos rutin **négy kimeneti módot** szolgál ki egyetlen törzsben:
 **exportálás**, **e-mail**, **feltöltés** és **képernyővédő-telepítés**.
@@ -962,7 +967,7 @@ A módot a **záró elágazás** választja szét (`0x0074145b`-től):
 | **exportálás** | **`ShellExecuteA(0, "open", <célmappa>, 0, 0, 5)`**, majd `]history:export` token | `0x007414af`, `0x007414dd` |
 | **képernyővédő** | registry (`Software\Google\Google Photos Screensaver`, `AppPath`), majd `rundll32.exe desk.cpl,InstallScreenSaver %s` | `0x00741504`, `0x007415c3`–`0x007415e7` |
 
-### 10.2 MI FUT LE AZ EXPORT UTÁN — a 9. szakasz 3. pontja LEZÁRVA
+### 13.2 MI FUT LE AZ EXPORT UTÁN — a 9. szakasz 3. pontja LEZÁRVA
 
 **Két dolog, ebben a sorrendben:**
 
@@ -990,7 +995,7 @@ nézetfrissítés — ellentétben a kollázs mentésével, ahol mindkettő ott 
 (`picasa-kollazs-felulet.md` 9.1/b 5.). Az exportált mappa tehát a
 **figyelt-mappa-mechanizmuson** át kerül be, nem közvetlen paranccsal.
 
-### 10.3 A SORSZÁMOZÁS — a 9. szakasz 4. pontja LEZÁRVA
+### 13.3 A SORSZÁMOZÁS — a 9. szakasz 4. pontja LEZÁRVA
 
 A `0x0073ee70` mindössze **83 bájt**, és zárt alakban kiolvasható:
 
@@ -1023,7 +1028,7 @@ sprintf(ki, "%0*d-%s", szélesség, index + 1, eredetiNév);
 Elválasztó: **kötőjel**, és utána a **teljes eredeti fájlnév** (a
 kiterjesztéssel együtt).
 
-### 10.4 AZ EXPORTÁLT MAPPA `.picasa.ini`-je — csak KÉT kulcs
+### 13.4 AZ EXPORTÁLT MAPPA `.picasa.ini`-je — csak KÉT kulcs
 
 A kimenet mellé a Picasa ini-t is ír (`0x00740295`, `0x007403bc`;
 a régi `Picasa.ini` alak is szerepel, `0x0074031a`), és **képenként
@@ -1045,7 +1050,7 @@ kirenderelt, a szerkesztési adatoknak nincs értelme. *(Ez egyben azt is
 megmagyarázza, miért nem találtunk `]history:export` tokent a 859 elemű
 ini-korpuszban: az exportált mappa ini-je más természetű.)*
 
-### 10.5 AZ IDŐBÉLYEG — minden exportált fájl UGYANAZT kapja
+### 13.5 AZ IDŐBÉLYEG — minden exportált fájl UGYANAZT kapja
 
 ```asm
 0x00740c14  call GetSystemTime(&st)             ; EGYSZER, a ciklus ELŐTT
@@ -1062,7 +1067,7 @@ ugyanarra az értékre áll — **az export INDULÁSÁNAK pillanatára** —,
 minden exportált fájlon azonosan. Nem a forráskép ideje, és nem is
 fájlonként külön „most".
 
-### 10.6 A beállítások OLVASÁSA — és ami a 2. pontból megvan
+### 13.6 A beállítások OLVASÁSA — és ami a 2. pontból megvan
 
 A `CImageOutput` a beállításokat **olvassa**, nem írja. A sorrend a
 törzsben: `EmailExportSize` (`0x0073f36f`), `EmailSinglePicture`,
@@ -1077,3 +1082,54 @@ dialógus saját metódusa, nem szabad függvény. **Hogy pontosan mikor
 hívódik** (OK-ra, vagy vezérlőnként), az továbbra is nyitott: a
 `0x164`-es rekeszre a szokásos `mov reg,[reg+0x164]` + `call reg`
 mintával a `0x0073…` tartományban nincs találat.
+
+### 13.7 MIKOR íródnak ki a beállítások — OK-ra, EGYSZERRE (2026-08-21, E3)
+
+A 9. szakasz 2. pontja: „a `0x00739960` végigolvasása; **OK-ra, vagy
+vezérlőnként?**" — **OK-ra, egyszerre.**
+
+#### A bizonyíték: a KÖZÖS párbeszéd-lezáró
+
+Az író (`0x00739960`) nem szabad függvény, hanem a **`CExportPrefsDialog`
+vtable 89. rekesze**: `0x00c8b764 + 0x164 = 0x00c8b8c8`. A rekeszt egyetlen
+helyről hívják — a **közös párbeszéd-lezáró**, `0x008d2720` (89 bájt):
+
+```asm
+0x008d272e  mov  dword ptr [esi + 0x94], eax   ; a lezárás adata
+0x008d2734  mov  dword ptr [esi + 0x98], edi   ; << a LEZÁRÁSI KÓD
+0x008d273a  jne  0x8d2758                      ; kód != 0 -> a másik ág
+   ; --- kód == 0 (ELFOGADÁS) ---
+0x008d273e  mov  eax, dword ptr [edx + 0x164]
+0x008d2744  call eax                           ; << a BEÁLLÍTÁSOK KIÍRÁSA
+0x008d2748  mov  eax, dword ptr [edx + 0x15c]
+0x008d2751  call eax                           ; a záró lépés
+   ; --- kód == 1 (MÉGSE) ---
+0x008d275f  mov  eax, dword ptr [edx + 0x168]
+0x008d2765  call eax                           ; MÁS metódus
+0x008d276f  call [edx + 0x15c]
+```
+
+**Következmény:** a kilenc beállítás-kulcs **nem vezérlőnként** íródik ki
+(a vezérlő-triggerek — 10.3, 10.4 — csak a párbeszéd belső állapotát
+frissítik), hanem **egyetlen menetben, a párbeszéd elfogadásakor**.
+
+#### Mégsére NEM történik semmi
+
+A `CExportPrefsDialog` `vt[0x168]` rekesze
+(`0x00c8b764 + 0x168 = 0x00c8b8cc`) a **`0x00b0d990`**, ami egyetlen
+`ret` — az általános üres tő. Tehát a Mégse ága **sem nem ment, sem nem
+állít vissza**: a beállítások egyszerűen érintetlenek maradnak.
+
+*(A `vt[0x15c]` mindkét ágon lefut: `0x008d26d0`, 38 bájtos közös záró
+lépés.)*
+
+#### Mit jelent ez a megvalósításnak
+
+| # | Viselkedés | Eredeti | Teendő |
+|---|---|---|---|
+| 1 | Mikor mentődnek a beállítások | **csak az elfogadáskor**, egy menetben | ne mentsünk vezérlőnként |
+| 2 | Mégse | **semmit nem ír és nem állít vissza** | a párbeszéd bezárása elég |
+| 3 | Vezérlő-triggerek | csak a párbeszéd belső állapotát frissítik | ugyanígy |
+
+**Bizonyítottsági fok: megerősített** — a rekesz-cím számítással, a hívó
+teljes törzsével, és a Mégse-ág üres tövének ellenőrzésével.

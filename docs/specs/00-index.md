@@ -150,7 +150,7 @@ szakaszában. Az alábbi kérdések egyike sem igényel futó Picasát.)*
    A mi képletünk **két ponton eltér** → **#1171**.
 
 
-### [export-parbeszed.md](export-parbeszed.md) — 4 kérdés
+### [export-parbeszed.md](export-parbeszed.md) — 3 kérdés
 
 *(2026-08-20, három kör. A lap teljes: a `.fen` leíró, mind a 28 magyar
 felirat, a kötések, a 9 beállítás-kulcs, a **képpontra mért geometria** a
@@ -179,6 +179,10 @@ nálunk maradhat 100.)*
    (vesszős, `0x00740485`/`0x0074050d`); és **minden exportált fájl
    UGYANAZT az időbélyeget kapja** — mind a három mezőben, az export
    indulásának pillanatát (`0x00740c14` → `0x00740e57`).
+   *(Ugyanaznap a **13.7**: a beállítások **OK-ra, egyetlen menetben**
+   íródnak ki — a közös lezáró `0x008d2720` hívja a `vt[0x164]`-et, ha a
+   lezárási kód 0 —, és **Mégsére semmi nem történik**: a `vt[0x168]` a
+   `CExportPrefsDialog`-nál üres tő, `0x00b0d990`.)*
 
 1. **Mi TILTJA LE a film-rádiókat?** A tény mért (a rádiók szürkék, a
    csoport **címkéje fekete marad**), és négy dolog **kizárva**: nincs
