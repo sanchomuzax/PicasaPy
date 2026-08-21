@@ -436,3 +436,80 @@ a `0xFF7D8397` konstans négy előfordulásából kalibráltunk.
 képet vagy az indexelés közben amúgy is előálló bélyegképet. A gyakorlati
 különbség csekély (a doboz-szűrős kicsinyítés az átlagot közel pontosan
 megőrzi), de bitre pontos egyezéshez számítana.
+
+## Az `albumdata_hascollage` oszlop — MIT jelöl és MIKOR íródik (2026-08-21, K6)
+
+**A kérdés hamis alternatívát kínált** („a forrásképekre vagy a kimeneti
+képre?"): **egyikre sem**. A `hascollage` **nem képoszlop, hanem
+ALBUM-oszlop** — a fájl neve is ezt mondja
+(`albumdata_hascollage.pmp`, PMP-típuskód `0x03` = bájt, egy bájt
+albumonként).
+
+> **Jelentése: „ehhez az albumhoz tartozik egy mentett
+> `PicasaCollage.cxf` fájl".**
+
+### Az oszlop regisztrálása
+
+A `0x00415790` (7851 b) oszlopregisztráló az `albumdata` táblához
+(`0x004158c4`) sorolja, a **`[tábla + 0xe58]`** rekeszbe
+(`0x00415a47`–`0x00415a66`). A regisztráló `0x00496020` — más, mint a
+sztringoszlopoké (`0x004941f0`), összhangban a bájt-típussal.
+
+### A beíró — `0x0044ead0(tábla, sorindex, érték)`
+
+```asm
+0x0044eb26  lea ebx, [esi + 0xe58]              ; a hascollage oszlop
+0x0044ed39  mov al, byte ptr [ebp + 0xc]        ; a 2. paraméter = az ÉRTÉK
+0x0044ed3c  mov byte ptr [ecx + edx], al        ; beírás (új sor)
+   vagy
+0x0044ed4a  cmp byte ptr [esi], al              ; ha nem változott -> kilép
+0x0044ed4e  mov byte ptr [esi], al              ; beírás (meglévő sor)
+0x0044ed5c  call 0x6a2a60                       ; a változás jelzése (mentendő)
+```
+
+### MIKOR lesz 1 — fájl-létezés, nem kollázs-mentés
+
+Az album mentése/betöltése (`0x005608f0`, 3912 b):
+
+```asm
+0x00561329  call 0x47c3f0(tábla, sor, &útvonal)  ; << az album kollázs-útvonala
+0x005613c0  call 0x992ed0(társ)                  ; Exists(társ)?
+0x005613f5  call 0x994400(társ, útvonal, 1, 5)   ; ha igen: ATOMI ÁTNEVEZÉS
+                                                 ;   (ugyanaz a rutin, amit a
+                                                 ;    kollázs-mentés használ, 9.1/b)
+0x0056141f  call 0x992ed0(útvonal)               ; Exists(a végleges)?
+0x00561426  je   0x56143b                        ; nem -> marad 0
+0x00561430  push 1
+0x00561436  call 0x44ead0                        ; << hascollage = 1
+```
+
+Az útvonalat a **`0x0047c3f0`** (365 b) építi, és a fájlnév mindkét ágán
+ugyanaz:
+
+```asm
+0x0047c52b  mov  edx, 0xc81b38    ; "PicasaCollage"
+0x0047c530  call 0x69d7f0         ; utvonal-osszefuzes
+0x0047c535  mov  eax, 0xc81b30    ; ".cxf"
+0x0047c53c  call 0x9a3620         ; a kiterjesztes ellenorzese
+0x0047c546  call 0x9a3930         ; ha hianyzik, hozzafuzes
+```
+
+> A vizsgált fájl: **`<az album mappája>\PicasaCollage.cxf`**
+
+A másik hívó (`0x0055ece0` → `0x0055f1ea`) a **betöltési** ág: a bájtot
+egy már beolvasott rekordból másolja át (`0x0055f1de`,
+`movzx eax, byte ptr [edx + 0x31]`).
+
+### Élő adat
+
+`research/testdata/Picasa2/db3/albumdata_hascollage.pmp`: **2370 sor,
+mind 0**. A tulajdonos könyvtárában tehát **egyetlen albumhoz sem**
+tartozik `PicasaCollage.cxf` — összhangban azzal, hogy a
+`Picasa2Albums` mappában sincs `.cxf`.
+
+### Következmény a PicasaPy-ra
+
+A `hascollage` **nem a kollázs-mentés mellékterméke**, hanem egy
+**album-szintű, fájl-létezésből származtatott jelző**. Aki ezt
+reprodukálja, ne a kollázs mentésekor írja, hanem az album
+betöltésekor/mentésekor számolja ki a `PicasaCollage.cxf` meglétéből.

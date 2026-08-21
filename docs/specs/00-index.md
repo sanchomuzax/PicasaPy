@@ -82,6 +82,10 @@ viselkedést rögzít — a **kattintható kész-értesítés**
 mellőzve"** és a **formátum-eltérés** figyelmeztetése, a főablak
 **várakozó állapota**, és a **`hascollage` PMP-oszlop** (1 bájt/sor,
 valódi adaton mérve; a PMP-oszlopok **nem egyforma hosszúak**).
+*(2026-08-21: a `hascollage` **jelentése is megfejtve** — ALBUM-oszlop,
+„ehhez az albumhoz tartozik `PicasaCollage.cxf`", és az album
+betöltésekor/mentésekor **fájl-létezésből** áll elő, nem a kollázs
+mentésekor: [pmp-database.md](pmp-database.md).)*
 Jegy: **#1168**. Az alábbi hat kérdést ez a kör NEM érintette.
 
 
