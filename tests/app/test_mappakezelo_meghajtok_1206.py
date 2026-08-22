@@ -31,7 +31,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 
 from picasapy.app import folder_tree_controller as ftc
 
