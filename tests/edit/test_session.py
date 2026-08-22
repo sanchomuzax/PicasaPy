@@ -343,13 +343,20 @@ class TestToggle:
         assert "autolight=1;" in result
         assert "redeye" not in result
 
-    def test_toggle_case_insensitive(self):
-        """Toggle kis-nagybetű-tűrő."""
+    def test_toggle_PONTOS_irasmod(self):
+        """#1141: a toggle kis-nagybetű-ÉRZÉKENY.
+
+        Mérve (`merokit-2` export, hat kép): az eredeti a nem kanonikus
+        írásmódú tagot nem futtatja le, tehát nem is azonosítja vele. A
+        `Redeye` NEM a `redeye` — a kapcsoló ezért ÚJ tagot vesz fel."""
         session = EditSession.from_value("Redeye=1;")
         new_session = session.toggle("redeye")
 
-        # Eltávolít, mert case-insensitive
-        assert new_session.is_empty()
+        assert not new_session.is_empty(), "a nem egyező írásmód nem törölhet"
+
+    def test_toggle_a_kanonikus_alakot_kapcsolja(self):
+        session = EditSession.from_value("redeye=1;")
+        assert session.toggle("redeye").is_empty()
 
     def test_toggle_invalid_name(self):
         """Érvénytelen szűrő-név."""
@@ -419,9 +426,10 @@ class TestLastIs:
         session = EditSession.from_value("")
         assert not session.last_is("enhance")
 
-    def test_case_insensitive(self):
-        session = EditSession.from_value("Enhance=1;")
-        assert session.last_is("enhance")
+    def test_PONTOS_irasmod(self):
+        """#1141: az `Enhance` nem az `enhance`."""
+        assert not EditSession.from_value("Enhance=1;").last_is("enhance")
+        assert EditSession.from_value("enhance=1;").last_is("enhance")
 
 
 class TestHas:
@@ -438,11 +446,12 @@ class TestHas:
         session = EditSession.from_value("enhance=1;")
         assert not session.has("crop64")
 
-    def test_has_case_insensitive(self):
-        """has() kis-nagybetű-tűrő."""
+    def test_has_PONTOS_irasmod(self):
+        """#1141: a `has()` is pontos — a `Redeye` nem a `redeye`."""
         session = EditSession.from_value("Redeye=1;")
-        assert session.has("redeye")
-        assert session.has("REDEYE")
+        assert not session.has("redeye")
+        assert not session.has("REDEYE")
+        assert EditSession.from_value("redeye=1;").has("redeye")
 
     def test_has_empty(self):
         """Üres lánc."""
