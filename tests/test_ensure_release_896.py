@@ -150,3 +150,46 @@ class TestCsakEllenorzes:
         assert kod == 1
         assert gh.count("create") == 0
         assert "::error::" in capsys.readouterr().out
+
+
+class TestChangelogJegyzet:
+    """A kiadási jegyzet a CHANGELOG-ból jön, nem a gépi PR-listából.
+
+    A tulajdonos jelzése (2026-08-22): a Releases „What's Changed" szakasza
+    „gépzaj" volt — bot-PR-címek, emberi összefoglaló nélkül."""
+
+    def _changelog(self, tmp_path, szoveg):
+        utvonal = tmp_path / "CHANGELOG.md"
+        utvonal.write_text(szoveg, encoding="utf-8")
+        return utvonal
+
+    def test_a_verzio_szakaszat_adja(self, tmp_path):
+        from ensure_release import changelog_notes
+
+        utvonal = self._changelog(
+            tmp_path,
+            "# Cím\n\n## [1.2.3] – 2026-08-22\n\n### Javítva\n- valami\n\n"
+            "## [1.2.2] – 2026-08-21\n\n- régi\n",
+        )
+        jegyzet = changelog_notes("1.2.3", utvonal)
+        assert "### Javítva" in jegyzet and "- valami" in jegyzet
+        assert "régi" not in jegyzet
+
+    def test_helykitolto_szakasznal_ures(self, tmp_path):
+        from ensure_release import changelog_notes
+
+        utvonal = self._changelog(
+            tmp_path, "## [1.2.3] – 2026-08-22\n\n*(nincs felhasználói változás)*\n"
+        )
+        assert changelog_notes("1.2.3", utvonal) == ""
+
+    def test_hianyzo_szakasznal_ures(self, tmp_path):
+        from ensure_release import changelog_notes
+
+        utvonal = self._changelog(tmp_path, "## [9.9.9] – 2026-01-01\n\n- x\n")
+        assert changelog_notes("1.2.3", utvonal) == ""
+
+    def test_hianyzo_fajlnal_ures(self, tmp_path):
+        from ensure_release import changelog_notes
+
+        assert changelog_notes("1.2.3", tmp_path / "nincs.md") == ""

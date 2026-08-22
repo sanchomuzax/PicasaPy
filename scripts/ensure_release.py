@@ -82,6 +82,35 @@ def olvasott_verzio(pyproject: Path | None = None) -> str:
     return talalat.group(1)
 
 
+def changelog_notes(version: str, changelog: Path | None = None) -> str:
+    """A kiadási jegyzet a CHANGELOG verzió-szakaszából (#1167 utómunka).
+
+    A GitHub `--generate-notes` kimenete a bot-PR-ek címeit listázza —
+    a tulajdonos szavával „gépzaj": ebből nem derül ki, mi változott.
+    A valódi, embernek írt összefoglaló a CHANGELOG-ban él; a kiadás
+    jegyzete mostantól AZ. Üres/hiányzó szakasznál üres sztringet adunk,
+    és a hívó a gépi jegyzetre esik vissza — de az ilyen kiadás a
+    CHANGELOG-fegyelem megsértését jelzi, nem normál állapot.
+    """
+    utvonal = changelog or Path(__file__).resolve().parents[1] / "CHANGELOG.md"
+    try:
+        szoveg = utvonal.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    minta = re.compile(
+        rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)",
+        re.S | re.M,
+    )
+    talalat = minta.search(szoveg)
+    if not talalat:
+        return ""
+    torzs = talalat.group(1).strip()
+    # a helykitöltő-kommentes szakasz nem jegyzet
+    if not torzs or torzs.startswith("*("):
+        return ""
+    return torzs
+
+
 def _atmeneti(eredmeny: subprocess.CompletedProcess[str]) -> bool:
     szoveg = f"{eredmeny.stdout or ''}\n{eredmeny.stderr or ''}".lower()
     return any(minta in szoveg for minta in _ATMENETI_MINTAK)
@@ -126,15 +155,17 @@ def ensure_release(
             print(f"A {tag} létezés-ellenőrzése átmeneti hibába futott — újra.")
         else:
             print(f"A {tag} kiadás hiányzik a main mögött — pótlás ({kiserlet}.)…")
-            keszult = runner(
-                [
-                    "gh", "release", "create", tag,
-                    "--repo", repo,
-                    "--target", target,
-                    "--title", f"PicasaPy {version}",
-                    "--generate-notes",
-                ]
-            )
+            jegyzet = changelog_notes(version)
+            parancs = [
+                "gh", "release", "create", tag,
+                "--repo", repo,
+                "--target", target,
+                "--title", f"PicasaPy {version}",
+            ]
+            # embernek írt jegyzet a CHANGELOG-ból; ha nincs, a gépi lista
+            # marad — az ilyen kiadás a CHANGELOG-fegyelem hiányát jelzi
+            parancs += ["--notes", jegyzet] if jegyzet else ["--generate-notes"]
+            keszult = runner(parancs)
             if keszult.returncode == 0:
                 print(f"A {tag} kiadás létrejött.")
                 return 0
