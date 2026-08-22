@@ -2285,6 +2285,30 @@
 <context>
     <name>ExportDialogs</name>
     <message>
+        <source>Error</source>
+        <translation>Hiba</translation>
+    </message>
+    <message>
+        <source>Export movies using:</source>
+        <translation>Filmek exportálása:</translation>
+    </message>
+    <message>
+        <source>First frame</source>
+        <translation>Első képkocka</translation>
+    </message>
+    <message>
+        <source>Full movie (no resizing)</source>
+        <translation>Teljes film (nincs átméretezés)</translation>
+    </message>
+    <message>
+        <source>The destination already exists. Would you like to overwrite it with your new album?</source>
+        <translation>A cél már létezik. Felülírja az új albummal?</translation>
+    </message>
+    <message>
+        <source>Would you like to overwrite?</source>
+        <translation>Szeretné felülírni?</translation>
+    </message>
+    <message>
         <source>Export to Google Earth File</source>
         <translation>Exportálás Google Earth-fájlba</translation>
     </message>
@@ -7444,6 +7468,45 @@ A lap nyitva hagyásához kattintson a Mégse gombra.</translation>
     <message>
         <source>Please select the single image you want to place in the center of the collage BEFORE pressing this button.</source>
         <translation>MIELŐTT erre a gombra kattintana, jelölje ki azt az egy képet, amelyet a kollázs közepére szeretne helyezni.</translation>
+    </message>
+</context>
+<context>
+    <name>ExportMixin</name>
+    <message>
+        <source>An internal error occured, while deleting the previous album.</source>
+        <translation>Belső hiba történt az előző album törlése közben.</translation>
+    </message>
+    <message>
+        <source>An internal error occured, while removing a directory.</source>
+        <translation>Belső hiba történt egy könyvtár eltávolítása közben.</translation>
+    </message>
+    <message>
+        <source>An internal error occured, while scanning directories.</source>
+        <translation>Belső hiba történt a könyvtárakban való keresés közben.</translation>
+    </message>
+    <message>
+        <source>An internal error occured, while scanning files.</source>
+        <translation>Belső hiba történt a fájlok közötti keresés közben.</translation>
+    </message>
+    <message>
+        <source>Unable to write all files due to a disk error. The disk may be full or read-only.</source>
+        <translation>Lemezhiba miatt nem lehetséges az összes fájl írása. Lehet, hogy a lemez megtelt vagy írásvédett.</translation>
+    </message>
+    <message>
+        <source>The destination directory could not be created.</source>
+        <translation>A célkönyvtár nem hozható létre.</translation>
+    </message>
+    <message>
+        <source>No images were available to send.</source>
+        <translation>Nem állt rendelkezésre kép a küldéshez.</translation>
+    </message>
+    <message>
+        <source>export</source>
+        <translation>exportálás</translation>
+    </message>
+    <message>
+        <source>Exports</source>
+        <translation>Exportálások</translation>
     </message>
 </context>
 </TS>

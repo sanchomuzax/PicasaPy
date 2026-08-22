@@ -59,6 +59,19 @@ Item {
             return targetFolder + sep + name
         }
         onOpened: {
+            // #1166: a hely és a név alapértéke (spec 12.1) — a hely a
+            // korábban használt mappa, a név a forrásalbumé. A névmező
+            // fókuszban, tartalma kijelölve (`focus="name"`).
+            if (exportDialog.targetFolder.length === 0)
+                exportDialog.targetFolder = controller.defaultExportLocation()
+            exportFolderNameField.text = controller.defaultExportName()
+            exportFolderNameField.forceActiveFocus()
+            exportFolderNameField.selectAll()
+            exportDialog.movieFull = controller.exportMovieFull()
+            exportDialog.hasVideo = exportDialog.useTray
+                ? true
+                : controller.selectionHasVideo(
+                      dialogs.appWindow.selectedIndexes)
             standardButton(Dialog.Ok).enabled = Qt.binding(
                 function() { return exportDialog.targetFolder.length > 0 })
             // #350 (export.fen paritás): a FEN accept gombjának felirata
@@ -74,10 +87,20 @@ Item {
         // TÁLCA tartalmán fut, nem a pillanatnyi kijelölésen — az eredeti
         // Picasa buboréksúgói is végig „a képtálca képeire" hivatkoznak.
         // Üres tálcánál marad a kijelölés (a mai viselkedés).
+        // #1166: a tárolt film-mód (`FileExportMovie` megfelelője) és a
+        // kijelölés film-tartalma — megnyitáskor frissítjük.
+        property bool movieFull: false
+        property bool hasVideo: false
         readonly property bool useTray:
             (typeof controller !== "undefined" && controller)
                 ? controller.heldCount > 0 : false
-        onAccepted: {
+        // #1166: az eredeti a MEGLÉVŐ célmappára rákérdez
+        // (`CExportPrefsPage::destexists`), és igen esetén az ELŐZŐ albumot
+        // törli. A kérdést az elfogadás UTÁN, de az indítás ELŐTT tesszük
+        // fel — a válasz dönti el, ürítünk-e.
+        function startExport(purgeExisting) {
+            controller.setExportMovieFull(exportMovieFull.checked)
+            controller.rememberExportLocation(exportDialog.targetFolder)
             var quality = controller.resolveExportQuality(
                 qualityPresetKeys[exportQualityPreset.currentIndex],
                 exportQuality.value)
@@ -87,12 +110,18 @@ Item {
                 controller.exportHeld(
                     resolvedTargetFolder(),
                     sizeOptions[exportSizeBox.currentIndex], quality,
-                    exportAddNumbersCheck.checked, watermark)
+                    exportAddNumbersCheck.checked, watermark, purgeExisting)
             else
                 controller.exportRows(
                     dialogs.appWindow.selectedIndexes, resolvedTargetFolder(),
                     sizeOptions[exportSizeBox.currentIndex], quality,
-                    exportAddNumbersCheck.checked, watermark)
+                    exportAddNumbersCheck.checked, watermark, purgeExisting)
+        }
+        onAccepted: {
+            if (controller.exportTargetExists(resolvedTargetFolder()))
+                exportOverwriteDialog.open()
+            else
+                exportDialog.startExport(false)
         }
         ColumnLayout {
             spacing: 10
@@ -129,8 +158,38 @@ Item {
                     id: exportFolderNameField
                     objectName: "exportFolderNameField"
                     Layout.preferredWidth: 180
+                    // #1166: az alapértéket a megnyitás tölti ki (a
+                    // forrásmappa neve — `0x0073b500`); a mező tartalma
+                    // induláskor KI VAN JELÖLVE (`focus="name"`).
+                    selectByMouse: true
                     // #422: jobbklikk-menü (Picasa `Address`)
                     TextFieldContextArea {}
+                }
+            }
+            // #1166 (export.fen `radiogroup name="movies"`): a filmek
+            // exportálásának módja. A `.fen` nem ad kötést az
+            // engedélyezésre — a rádiók akkor szürkék, ha a kijelölésben
+            // nincs film (a spec 9.3/2. pontja, futásidejű döntés).
+            ColumnLayout {
+                spacing: 2
+                Text {
+                    text: qsTr("Export movies using:")
+                    font.pixelSize: Theme.fontSize
+                    color: Theme.ink
+                }
+                RadioButton {
+                    id: exportMovieFirstFrame
+                    objectName: "exportMovieFirstFrame"
+                    text: qsTr("First frame")
+                    enabled: exportDialog.hasVideo
+                    checked: !exportDialog.movieFull
+                }
+                RadioButton {
+                    id: exportMovieFull
+                    objectName: "exportMovieFull"
+                    text: qsTr("Full movie (no resizing)")
+                    enabled: exportDialog.hasVideo
+                    checked: exportDialog.movieFull
                 }
             }
             CheckBox {
@@ -207,10 +266,37 @@ Item {
         onAccepted: exportDialog.targetFolder = selectedFolder.toString()
     }
 
+    // #1166: a célmappa-ütközés kérdése — az eredeti szövegeivel
+    // (`CExportPrefsPage::destexists` / `::overwritetitle`). Igen esetén az
+    // ELŐZŐ album tartalma törlődik, nem mellé exportálunk.
+    Dialog {
+        id: exportOverwriteDialog
+        objectName: "exportOverwriteDialog"
+        title: qsTr("Would you like to overwrite?")
+        modal: true
+        anchors.centerIn: parent
+        // a tördelő szöveg és a Dialog implicit szélessége körbeérne (#1185)
+        implicitWidth: 380 + leftPadding + rightPadding
+        standardButtons: Dialog.Yes | Dialog.No
+        onAccepted: exportDialog.startExport(true)
+        onRejected: exportDialog.startExport(false)
+        Text {
+            objectName: "exportOverwriteText"
+            width: 380
+            wrapMode: Text.WordWrap
+            text: qsTr("The destination already exists. Would you like to overwrite it with your new album?")
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+    }
+
     Dialog {
         id: exportResultDialog
         objectName: "exportResultDialog"
-        title: qsTr("Export")
+        // #1166: hibás futásnál az eredeti címe „Hiba"
+        // (`CExportPrefsPage::errortitle`), sikeresnél marad az „Export".
+        title: exportResultDialog.failedDetails.length > 0
+               ? qsTr("Error") : qsTr("Export")
         modal: true
         anchors.centerIn: parent
         standardButtons: Dialog.Ok

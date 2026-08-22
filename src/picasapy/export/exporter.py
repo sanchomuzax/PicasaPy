@@ -20,9 +20,11 @@ import cv2
 import numpy as np
 
 from picasapy.cvimage import read_image_bytes, scale_down
+from picasapy.ini import IniConflictError, IniSaveError, update_document
 from picasapy.ini.filters import FilterOp, parse_filters_prefix
 from picasapy.ioutil import write_atomic
 from picasapy.render import apply_filters
+from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
 _ROTATIONS = {
@@ -58,6 +60,12 @@ class ExportSettings:
     # #369 (export.fen): jobb alsó sarokba égetett szöveg, fehér, félig
     # átlátszó — a Picasa mintáját közelítve (ld. _apply_watermark).
     watermark_text: str | None = None
+    # #1166 (export.fen `radiogroup name="movies"`): „Teljes film (nincs
+    # átméretezés)" = a videó bájthű másolása (alapértelmezés), „Első
+    # képkocka" = az első kocka képként. Az eredeti alapértéke a
+    # `Preferences\FileExportMovie`-ból jön (`0x00738c88`–`0x00738cb3`):
+    # nem nulla → teljes film, nulla/hiányzó → első képkocka.
+    movie_full: bool = True
 
     def __post_init__(self) -> None:
         if self.max_dimension is not None and self.max_dimension < 1:
@@ -108,6 +116,11 @@ class ExportItem:
     source: Path
     rotate_steps: int = 0
     filters: str | None = None
+    # #1166: a `.picasa.ini` `caption`/`keywords` mezője ÁTKERÜL a
+    # célmappába — az eredetiben ezt a közös kimeneti mag (`CImageOutput`,
+    # `0x0073f320`) végzi. Üresen hagyva nem születik ini a célban.
+    caption: str | None = None
+    keywords: str | None = None
 
 
 @dataclass(frozen=True)
@@ -121,6 +134,11 @@ class ExportReport:
     exported: tuple[Path, ...]
     failed: tuple[Path, ...]
     reasons: tuple[str, ...] = ()
+    # #1166: a KÖTEG szintű hiba fajtája — a hívó ebből választja ki az
+    # eredeti Picasa saját üzenetét (`IDS_DESTDIRCANNOCREATE`,
+    # `CExportPrefsPage::deleteerror` stb.), ahelyett hogy nyers OS-hibát
+    # mutatna. Üres sztring = nincs köteg-szintű hiba.
+    error_kind: str = ""
 
 
 # Az `ExportSettings` immutábilis (frozen dataclass), ezért egyetlen
@@ -133,6 +151,8 @@ def export_photos(
     items: Iterable[ExportItem],
     target_dir: Path,
     settings: ExportSettings = _DEFAULT_EXPORT_SETTINGS,
+    *,
+    purge_existing: bool = False,
 ) -> ExportReport:
     """Elemek exportja a célmappába; egy elem hibája nem állítja le a többit.
 
@@ -142,15 +162,23 @@ def export_photos(
     tud jelezni, sosem hal meg csendben kivétellel."""
     items = tuple(items)
     target_dir = Path(target_dir)
+    error_kind = ""
     try:
+        if purge_existing:
+            error_kind = _purge_target(target_dir)
+            if error_kind:
+                raise _PurgeError(error_kind)
         target_dir.mkdir(parents=True, exist_ok=True)
-    except OSError as error:
+    except (OSError, _PurgeError) as error:
         # A célmappa nélkül egyetlen elem sem exportálható — mindet
         # hibásként jelezzük, ahelyett hogy a kivétel megölné a hívó szálat.
         failed_sources = tuple(Path(item.source) for item in items)
         reason = f"célmappa nem hozható létre: {error}"
         return ExportReport(
-            exported=(), failed=failed_sources, reasons=(reason,) * len(failed_sources)
+            exported=(),
+            failed=failed_sources,
+            reasons=(reason,) * len(failed_sources),
+            error_kind=error_kind or "destdir",
         )
 
     exported: list[Path] = []
@@ -168,7 +196,89 @@ def export_photos(
         except Exception as error:  # noqa: BLE001 — egy rossz elem nem állíthatja le a köteget
             failed.append(source)
             reasons.append(str(error))
-    return ExportReport(exported=tuple(exported), failed=tuple(failed), reasons=tuple(reasons))
+    _write_ini_metadata(target_dir, tuple(zip(items, exported, strict=False)))
+    return ExportReport(
+        exported=tuple(exported),
+        failed=tuple(failed),
+        reasons=tuple(reasons),
+        # #1166: ha bármelyik fájl írása elbukott, a köteg üzenete az
+        # eredeti lemezhiba-szövege (`CImageOutput::filewriteerr`)
+        error_kind="write" if failed else "",
+    )
+
+
+class _PurgeError(Exception):
+    """Az ürítés hibája — a fajtáját (`delete`/`remove`/`scan`) a
+    `_purge_target` adja, hogy a hívó az eredeti üzenetet válassza."""
+
+
+def _purge_target(target_dir: Path) -> str:
+    """A célmappa KIÜRÍTÉSE — az eredeti „igen, felülírom" ága (#1166).
+
+    `CExportPrefsPage::destexists` („A cél már létezik. Felülírja az új
+    albummal?") — igen esetén a program az ELŐZŐ albumot törli, nem
+    mellé exportál.
+
+    ⚠️ Csak a célmappa TARTALMÁT törli, magát a mappát nem, és sosem lép
+    ki belőle. Nem létező mappánál nem csinál semmit; ha a cél egy fájl,
+    érintetlenül hagyja — a hívó a `mkdir` hibáján át kap jelzést
+    (`IDS_DESTDIRCANNOCREATE`)."""
+    if not target_dir.is_dir():
+        return ""
+    try:
+        entries = tuple(target_dir.iterdir())
+    except OSError:
+        # a cél LETAPOGATÁSA bukott — `CExportPrefsPage::scanerror`
+        return "scan"
+    for entry in entries:
+        try:
+            if entry.is_dir() and not entry.is_symlink():
+                shutil.rmtree(entry)      # `::removeerror` tartománya
+            else:
+                entry.unlink()            # `::deleteerror` tartománya
+        except OSError:
+            return "remove" if entry.is_dir() else "delete"
+    return ""
+
+
+def _write_ini_metadata(
+    target_dir: Path, parok: tuple[tuple[ExportItem, Path], ...]
+) -> None:
+    """A `caption`/`keywords` átvitele a célmappa `.picasa.ini`-jébe (#1166).
+
+    Egyetlen `update_document` hívással, a köteg végén: a párhuzamosan
+    futó eredeti Picasa közbeírása így sem veszhet el (#295), és nem
+    nyitjuk-zárjuk fájlonként. Adat nélküli kötegnél nem keletkezik ini.
+
+    A szekció fejléce a CÉLFÁJL neve (sorszámozásnál `001-a.jpg`),
+    különben az adatnak nem lenne gazdája."""
+    ujak = {
+        cel.name: {
+            kulcs: ertek
+            for kulcs, ertek in (("caption", item.caption), ("keywords", item.keywords))
+            if ertek
+        }
+        for item, cel in parok
+    }
+    ujak = {nev: mezok for nev, mezok in ujak.items() if mezok}
+    if not ujak:
+        return
+    ini_path = target_dir / PICASA_INI_NAME
+
+    def modosit(document):
+        for nev, mezok in ujak.items():
+            for kulcs, ertek in mezok.items():
+                # a `with_value` a hiányzó szekciót maga hozza létre, és ez
+                # a `.picasa.ini` minden kulcsírásának közös kapuja (#643)
+                document = document.with_value(nev, kulcs, ertek)
+        return document
+
+    try:
+        update_document(ini_path, modosit)
+    except (OSError, IniSaveError, IniConflictError):
+        # Az ini-írás hibája NEM hiúsíthatja meg a kész exportot: a képek
+        # a helyükön vannak, csak a felirat/címke marad el.
+        pass
 
 
 def _export_one(
@@ -176,6 +286,18 @@ def _export_one(
     number_prefix: str = "",
 ) -> Path:
     if source.suffix.lower() in VIDEO_EXTENSIONS:
+        if not settings.movie_full:
+            # #1166: „Első képkocka" — a videóból egyetlen JPEG lesz. Ha a
+            # kocka nem olvasható, NEM veszítjük el a felvételt: a teljes
+            # film másolására esünk vissza (az eredeti is fájlt ad, nem
+            # semmit).
+            frame = _first_frame(source)
+            if frame is not None:
+                target = _unique_target(
+                    target_dir, number_prefix + source.stem, ".jpg"
+                )
+                _write_jpeg(frame, target, settings)
+                return target
         target = _unique_target(target_dir, number_prefix + source.stem, source.suffix)
         shutil.copy2(source, target)  # copy2: mtime is átkerül (#136)
         return target
@@ -213,6 +335,39 @@ def _export_one(
     # maradjon (NAS/tele lemez).
     write_atomic(target, payload)
     return target
+
+
+def _first_frame(source: Path) -> np.ndarray | None:
+    """A videó ELSŐ olvasható képkockája BGR tömbként, vagy `None` (#1166).
+
+    Az eredeti „Első képkocka" választása ezt teszi a mappába a film
+    helyett. Sosem dob: olvashatatlan felvételnél a hívó a teljes film
+    másolására esik vissza."""
+    capture = None
+    try:
+        capture = cv2.VideoCapture(str(source))
+        if not capture.isOpened():
+            return None
+        ok, frame = capture.read()
+        return frame if ok and frame is not None and frame.size else None
+    except cv2.error:
+        return None
+    finally:
+        if capture is not None:
+            capture.release()
+
+
+def _write_jpeg(image: np.ndarray, target: Path, settings: ExportSettings) -> None:
+    """Kép JPEG-be, a köteg minőségével és méretkorlátjával (#1166) —
+    a kép-ág utolsó lépéseinek megfelelője a videó első kockájához."""
+    image = scale_down(image, settings.max_dimension)
+    image = _apply_watermark(image, settings.watermark_text)
+    ok, encoded = cv2.imencode(
+        ".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality]
+    )
+    if not ok:
+        raise ValueError(f"JPEG-kódolás sikertelen: {target}")
+    write_atomic(target, encoded.tobytes())
 
 
 def _is_noop_copy(

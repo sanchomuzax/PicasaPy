@@ -954,6 +954,45 @@ utasításszintű olvasás. A munkasorba kerültek.)*
 
 ---
 
+## 12.3 A megvalósítás állapota (#1166, 2026-08-22)
+
+A 8. és 12.1 szakasz működés-leletéből ez került be a PicasaPy-ba:
+
+| lelet | állapot |
+|---|---|
+| `.picasa.ini` `caption` + `keywords` átvitele a célmappába | ✅ `export/exporter.py` `_write_ini_metadata` |
+| célmappa-ütközés: kérdés + az ELŐZŐ album törlése | ✅ `exportOverwriteDialog` + `export_photos(purge_existing=…)` |
+| a tíz hibaág az eredeti szövegeivel | ✅ `ExportMixin._export_error_text` (fajta → üzenet) |
+| a mappanév alapértéke a forrásmappa neve, üresnél „export" | ✅ `defaultExportName()` |
+| a hely alapértéke a korábbi, hiányában a képek mappája alatti gyűjtő | ✅ `defaultExportLocation()` + `rememberExportLocation()` |
+| film-rádió (`Első képkocka` / `Teljes film`), tárolt alapértékkel | ✅ `exportMovieFull()` + `ExportSettings.movie_full` |
+| `%0*d-%s` sorszámozás | ✅ már megvolt (#369), most őrizve |
+| három belépési pont ugyanarra a párbeszédre | ✅ már megvolt, most őrizve |
+
+**Ami továbbra sem került be** (kimondva, hogy ne látszódjon késznek):
+
+- az **`]history:export` token**: a 13.9 szerint ez NEM ini-token, hanem
+  az `albumdata_token.pmp` album-sora. Nálunk nincs élő PMP-tár, tehát a
+  hű megfelelője egy virtuális „Exportálva" gyűjtemény lenne — önálló
+  döntés, külön jegy;
+- a **képméret- és képminőség-vezérlők átépítése** (rádió + csúszka + hét
+  előbeállítás, 21 fogásos egyéni csúszka) — az a párbeszéd FELÜLETÉRŐL
+  szóló munka, nem a működésről;
+- a **`scanfile` hibaág** kódútja: a fajta le van képezve az üzenetre, de
+  a mi ürítésünk nem külön fájl-letapogatással dolgozik, ezért ma nem tud
+  ilyen fajtát előállítani.
+
+⚠️ **Egy eltérés a jegy összefoglalójától:** a #1166 táblája szerint „a
+kimeneti mappa alapértelmezett neve `Exported Pictures`". A 12.1 MÉRÉSE
+ezt nem támasztja alá: a mappanév alapértéke a **forrásalbum neve**
+(`0x0073b500`), üres névnél a honosított `export`
+(`CExportPrefsDialog::exportname`), a HELY alapértéke pedig a
+`DefaultExportPath`, hiányában `Picasa\Exportálások\`
+(`0x00738d16`). Az `Exported Pictures` literál a `CImageOutput`-ban él,
+és nincs hozzá honosítási bejegyzés — a párbeszéd alapértékének tehát a
+12.1 mérése a forrása, nem az összefoglaló.
+
+
 ## 13. A `CImageOutput` (`0x0073f320`) TÖRZSE — utasításszinten (2026-08-21, E2)
 
 > *(Számozási megjegyzés: a lap 8., 9. és 10. száma korábban kétszer is
