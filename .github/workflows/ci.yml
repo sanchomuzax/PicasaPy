@@ -1,30 +1,21 @@
 name: CI
 
 on:
-  # A tisztán dokumentációs (docs/, *.md) változások nem futtatnak CI-t:
-  # ékezet-/szövegjavítás, MEMORY.md stb. a program futására nincs hatással.
+  # ⚠️ SEMMILYEN `paths` szűrő nincs — MÉRVE (PR #1257, 2026-08-23):
+  #
+  # A projekt szabálya szerint MINDEN kód-merge hoz CHANGELOG-bejegyzést,
+  # tehát minden kódos PR tartalmaz `.md`-t is. Amíg a gyors út külön
+  # workflow volt (`ci-docs.yml`), az ilyen PR-en IS elindult, és vagy
+  # hamis zöldet adott a kötelező ellenőrzés nevén a valódi mátrix ELŐTT
+  # (auto-merge mellett ez beolvasztott), vagy — miután őrt tettünk rá —
+  # MINDEN kódos PR-t megfogott.
+  #
+  # A megoldás: EGYETLEN workflow dönt. A `valtozas` job megnézi, érint-e
+  # a diff kódot; a mátrix csak akkor fut, a kötelező státuszt pedig
+  # mindig ugyanaz az aggregátor adja.
   push:
     branches: [main]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.github/**'
   pull_request:
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      # #1127: a CSAK CI-konfigurációt érintő PR-en a tesztmátrix futtatása
-      # a felhasználó megfogalmazásában „lopott idő": egyetlen Python-sor
-      # sem változott, mégis 10 perc futott arra, hogy a változatlan kódot
-      # újrateszteljük. A kötelező státuszt ilyenkor a `ci-docs.yml` adja
-      # (másodpercek). Ára: egy hibás workflow-változtatás a KÖVETKEZŐ
-      # kód-PR-en derül ki, nem a sajátján — vállalt csere.
-      - '.github/**'
-    # ⚠️ Ide NE kerüljön `branches-ignore` a verzióemelő ágakra: a
-    # `pull_request` esemény ág-szűrője a CÉLágra (base) illeszkedik, nem a
-    # forráságra. Mérve 2026-08-22-én: a `chore/auto-bump-0.8.44` PR-en a
-    # teljes mátrix ettől függetlenül elindult. A kizárás ezért
-    # JOB-SZINTEN, a `github.head_ref`-re megy (ld. lentebb).
   # #651: kézi indítás. Az automatikus `pull_request` futás elmarad, ha a
   # PR-t/pusht a GitHub-integráció tokenje váltja ki — a GitHub az ilyen
   # eseményekre szándékosan nem indít workflow-t (ugyanaz a
@@ -46,116 +37,78 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  test:
-    name: Test (${{ matrix.os }} ${{ matrix.shard }}/4)
-    runs-on: ${{ matrix.os }}
-    # #1127: a verzióemelő automatika ágain a teljes mátrix ceremónia —
-    # egyetlen `version = "…"` sor, olyan kódra, ami a jegy PR-jén már
-    # zölden átment. A kötelező státuszt a `ci-bump.yml` adja meg (~5 mp),
-    # ELLENŐRZÖTT diffel: ha a PR bármi mást is érint, ott elbukik.
-    #
-    # ⚠️ Miért itt, és nem a `pull_request` ág-szűrőjében: a `branches-ignore`
-    # a CÉLágra (base) illeszkedik, nem a forráságra — 2026-08-22-én a
-    # `chore/auto-bump-0.8.44` PR-en ettől a mátrix mégis elindult.
-    if: ${{ !startsWith(github.head_ref, 'chore/auto-bump-') }}
-    # Korlát nélkül egy beragadt (#53 GIL-deadlock) pytest 6 órán át
-    # foglalná a runnert, és eldugítaná a teljes Actions-sort (2026-07-19-en
-    # 19 beragadt futás állította le a release-automatikát).
-    #
-    # 2026-08-13: 20 percről 40-re emelve. A készlet azóta jelentősen nőtt:
-    # az Ubuntu-futás ~12–13 perc, a Windows ~1,6-szorosa — az a 20 percbe
-    # SZÁMÍTÁSSAL futott bele, és a rendszer levágta (két mért futás:
-    # 20:04 és 20:06). Ez nem elméleti kockázat: a Windows-ág aznap három
-    # valódi, Windows-specifikus hibát fogott meg (Path.home() a
-    # USERPROFILE-t olvassa; a rendszermappa-védelem POSIX-utakra épült;
-    # a time.monotonic() ~15 ms-os felbontása) — ha az ág levágódik, az
-    # ilyenek átcsúsznak. A korlát célja a BERAGADT futás elvágása marad,
-    # nem az egészségesé.
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        # #1127: a készletet NÉGY futtatóra osztjuk platformonként. A
-        # kiosztás mért futásidők szerint megy (`scripts/teszt_idok.json`),
-        # ezért a négy darab egyenlő — mérve 732/732/732/732 mp, arány 1,00×.
-        #
-        # ⚠️ Ez NEM a gépen belüli párhuzamosítás. Azt 2026-08-19-én
-        # kipróbáltuk (#1030/#1031), és CPU-éhezésben a főágat pirosra vitte
-        # — vissza kellett venni (#1037/#1038). Itt minden darab SAJÁT
-        # futtatón fut, magában: a fájlonkénti izoláció (#53) és a
-        # `/tmp`-korlát (#677) garanciái érintetlenek.
-        shard: [1, 2, 3, 4]
-    env:
-      QT_QPA_PLATFORM: offscreen
-
+  # Mit érint a diff? Ebből dől el, kell-e a teljes mátrix.
+  valtozas:
+    name: Változás-elemzés
+    runs-on: ubuntu-latest
+    outputs:
+      kod: ${{ steps.d.outputs.kod }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
         with:
-          python-version: "3.12"
-          # #1127: a pip-letöltések gyorsítótárazása. A csomaglista a
-          # pyproject.toml-ból jön, ezért a kulcs is arra hivatkozik — új
-          # függőségnél magától elévül.
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Install Linux Qt runtime dependencies
-        if: runner.os == 'Linux'
-        # A csomaglista a packaging/qt-runtime-deps.txt — ugyanaz a fájl,
-        # amiből a session-bootstrap is telepít. Tételes lista ide nem
-        # kerülhet vissza (tests/test_kornyezet_szinkron.py).
+          fetch-depth: 0
+      - id: d
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
-          # A GitHub apt-tükre 2026-08-19-én KÉTSZER lógott be némán: egyszer
-          # 10 percre (a csomag-job korlátjába futott), egyszer 40 percre (a
-          # teszt-job korlátjába) — a tesztek el sem indultak. Egy sikertelen
-          # frissítés nem ok arra, hogy egy 40 perces job elhaljon: rövid
-          # korláttal próbálkozunk, és háromszor.
-          for kiserlet in 1 2 3; do
-            timeout 180 sudo apt-get update && break
-            echo "apt-get update ($kiserlet.) nem jött vissza — újra"
-            sleep 5
-          done
-          sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
+          set -euo pipefail
+          if [ -z "${BASE:-}" ]; then
+            echo "push vagy kézi indítás — mindig a teljes kör."
+            echo "kod=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          valtozott="$(git diff --name-only "$BASE" "$HEAD")"
+          echo "Változott fájlok:"; echo "$valtozott"
 
-      - name: Install Python dependencies
-        # A lista a pyproject.toml (futásidejű + `dev` extra). A projektet
-        # magát NEM telepítjük: a tesztek a forrásfából futnak
-        # (pythonpath=["src"]), az editable install pedig *.egg-info-ot
-        # hagyna a fában, amiből a csomag-ellenőrzők hamis zöldet nyernek (#655).
-        shell: bash
-        run: |
-          python -m pip install --upgrade pip
-          pip install $(python scripts/print_dependencies.py --all)
+          # Nem érinti a kód futását: bármilyen .md és a docs/ egésze.
+          # ⚠️ A .github/ SZÁNDÉKOSAN kód: ha a CI-t magát változtatjuk,
+          # a teljes mátrixnak le KELL futnia, különben egy elrontott
+          # munkafolyamat-definíció zölden beolvad.
+          #
+          # A verzióemelés két fájlja (pyproject.toml, __init__.py) csak
+          # akkor számít nem-kódnak, ha bennük CSAK a verziósor változott —
+          # kódot ezen az úton nem lehet becsempészni.
+          maradek="$(grep -vE '^(.*\.md|docs/.*)$' <<<"$valtozott" || true)"
 
-      - name: Run tests
-        # darabolt futtatás (#53): a teljes készlet egy processzben a
-        # Windows-runneren rendszeresen GIL-deadlockba ragadt — a script
-        # a tests/app fájlokat külön processzben, kemény timeouttal futtatja.
-        # #300: a lefedettség-összesítő elég az ubuntu-lábon (--cov); a
-        # Windows-lábat ez a plusz coverage-réteg ne terhelje/lassítsa.
-        # ⚠️ #1044 VISSZAVONVA (#988). A `PICASAPY_TESZT_PARHUZAM: "2"`
-        # bekapcsolása után az ELSŐ futáson azonnal jött a
-        # `test_collage_controller_943.py: exit -11` (SIGSEGV) — pont az a
-        # hiba, amit a #988 „ingadozónak" ír le, és amit a #999 a
-        # háttérszálak terhelés alatti lebontásához köt.
-        #
-        # A #1030 mérése (26 → 14 perc) áll, és a #1031 is a fejlesztői gép
-        # miatt vette vissza sorosra — de a szegmentálási hiba a MAIN-t
-        # festi pirosra, ami e-mailt küld a tulajdonosnak. Egy gyorsabb, de
-        # ingadozó CI rosszabb a lassú, de megbízhatónál.
-        #
-        # Visszakapcsolni csak a #988/#999 gyökérokának javítása UTÁN szabad.
-        #
-        # ⚠️ #1127: a `--cov` KIKERÜLT a CI-ből. Négy darabra osztva minden
-        # darab csak a SAJÁT részét látná, tehát a kiírt szám nem a teljes
-        # lefedettség volna — egy részleges számot totálként mutatni
-        # rosszabb, mint nem mutatni semmit. A lefedettség-mérés külön
-        # jegyre került; a `--cov` helyben változatlanul működik.
-        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4
+          # Igaz (0), ha a fájlban a verziósoron KÍVÜL is változott valami.
+          van_erdemi_valtozas() {   # $1 = fájl, $2 = a verziósor mintája
+            git diff -U0 "$BASE" "$HEAD" -- "$1" \
+              | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' \
+              | grep -vqE "$2"
+          }
+          if grep -qx 'pyproject\.toml' <<<"$maradek" \
+             && ! van_erdemi_valtozas pyproject.toml '^[+-]version = '; then
+            maradek="$(grep -vx 'pyproject\.toml' <<<"$maradek" || true)"
+          fi
+          if grep -qx 'src/picasapy/__init__\.py' <<<"$maradek" \
+             && ! van_erdemi_valtozas src/picasapy/__init__.py '^[+-]__version__ = '; then
+            maradek="$(grep -vx 'src/picasapy/__init__\.py' <<<"$maradek" || true)"
+          fi
+
+          if [ -n "$maradek" ]; then
+            echo "A kód futását ÉRINTŐ fájlok:"; echo "$maradek"
+            echo "kod=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Csak dokumentáció és/vagy verziósor — a mátrix kimarad."
+            echo "kod=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # A két platform KÜLÖN hívás — ld. a `teszt-darabok.yml` fejlécét: egyetlen
+  # közös mátrix eredménye egyben látszik, és egy bukó windows-darab a
+  # kötelező ubuntu-ellenőrzést is pirosra vitte (mérve a #1257-en).
+  darabok-ubuntu:
+    needs: valtozas
+    if: ${{ needs.valtozas.outputs.kod == 'true' }}
+    uses: ./.github/workflows/teszt-darabok.yml
+    with:
+      os: ubuntu-latest
+
+  darabok-windows:
+    needs: valtozas
+    if: ${{ needs.valtozas.outputs.kod == 'true' }}
+    uses: ./.github/workflows/teszt-darabok.yml
+    with:
+      os: windows-latest
 
   # ⚠️ #1164: ÖSSZEFOGÓ ellenőrzés a főág védelmének.
   #
@@ -178,71 +131,47 @@ jobs:
   test-ubuntu:
     name: Test (ubuntu-latest)
     runs-on: ubuntu-latest
-    needs: test
+    # ⚠️ EZ a repó KÖTELEZŐ ellenőrzése. Mindig lefut, akkor is, ha a
+    # mátrix kimaradt — így a kötelező státuszt SOHA nem adhatja meg más
+    # workflow „kihagyva" állapotban (a GitHub a kihagyottat sikernek
+    # számolja, és auto-merge mellett ez beolvasztott volna egy bukó kört).
+    needs: [valtozas, darabok-ubuntu]
     if: always()
     steps:
-      - uses: actions/checkout@v4
-        if: ${{ startsWith(github.head_ref, 'chore/auto-bump-') }}
-        with:
-          fetch-depth: 0
-
-      # A verzióemelő PR EGYETLEN sort változtat, olyan kódra, ami a jegy
-      # PR-jén már zölden átment — a teljes mátrix ott ceremónia. De csak
-      # akkor engedjük át, ha a diff TÉNYLEG csak verzió-fájlokat érint:
-      # kódot ezen az úton nem lehet becsempészni.
-      - name: Verzióemelés — a diff CSAK verzió-fájlokat érinthet
-        if: ${{ startsWith(github.head_ref, 'chore/auto-bump-') }}
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
+      - name: A kód futását nem érintő PR — a mátrix kimaradt
+        if: ${{ needs.valtozas.outputs.kod != 'true' }}
         run: |
-          set -euo pipefail
-          valtozott="$(git diff --name-only "$BASE" "$HEAD")"
-          echo "Változott fájlok:"; echo "$valtozott"
-          tilos="$(grep -vE '^(pyproject\.toml|CHANGELOG\.md|README\.md|src/picasapy/__init__\.py)$' <<<"$valtozott" || true)"
-          if [ -n "$tilos" ]; then
-            echo "::error::A verzióemelő gyorsút CSAK verzió-fájlokat enged. Idegen fájlok:"
-            echo "$tilos"
-            exit 1
-          fi
-          if grep -q '^pyproject\.toml$' <<<"$valtozott"; then
-            erdemi="$(git diff -U0 "$BASE" "$HEAD" -- pyproject.toml \
-                       | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' \
-                       | grep -vE '^[+-]version = ' || true)"
-            if [ -n "$erdemi" ]; then
-              echo "::error::A pyproject.toml-ban a verziósoron kívül is változott valami:"
-              echo "$erdemi"
-              exit 1
-            fi
-          fi
-          echo "Csak verzióemelés — a teljes tesztkészletet a jegy PR-je már lefuttatta."
+          echo "A diff csak dokumentációt/verziósort érint (ld. a"
+          echo "Változás-elemzés jobot) — nincs mit futtatni."
 
       - name: A négy ubuntu-darab mind zöld
-        if: ${{ !startsWith(github.head_ref, 'chore/auto-bump-') }}
+        if: ${{ needs.valtozas.outputs.kod == 'true' }}
         run: |
-          if [ "${{ needs.test.result }}" != "success" ]; then
-            echo "Valamelyik darab elbukott: ${{ needs.test.result }}"
+          if [ "${{ needs.darabok-ubuntu.result }}" != "success" ]; then
+            echo "Valamelyik darab elbukott: ${{ needs.darabok-ubuntu.result }}"
             exit 1
           fi
 
   test-windows:
     name: Test (windows-latest)
     runs-on: ubuntu-latest
-    needs: test
+    needs: [valtozas, darabok-windows]
     if: always()
     steps:
       - name: A négy windows-darab mind zöld
-        # bump-ágon nincs mit ellenőrizni (a mátrix sem futott)
-        if: ${{ !startsWith(github.head_ref, 'chore/auto-bump-') }}
+        # ha a mátrix nem futott, nincs mit ellenőrizni
+        if: ${{ needs.valtozas.outputs.kod == 'true' }}
         run: |
-          if [ "${{ needs.test.result }}" != "success" ]; then
-            echo "Valamelyik darab elbukott: ${{ needs.test.result }}"
+          if [ "${{ needs.darabok-windows.result }}" != "success" ]; then
+            echo "Valamelyik darab elbukott: ${{ needs.darabok-windows.result }}"
             exit 1
           fi
 
   package:
     name: Csomag-tartalom (a felépített wheel)
     runs-on: ubuntu-latest
+    needs: valtozas
+    if: ${{ needs.valtozas.outputs.kod == 'true' }}
     # A többi job a FORRÁSFÁBÓL futtat (pythonpath = ["src"]), ezért zöld
     # marad akkor is, ha a telepített csomag használhatatlan. Pontosan ez
     # történt a #646-ban: a tételes package-data lista csendben kihagyott
@@ -320,6 +249,8 @@ jobs:
   lint:
     name: Lint (ruff)
     runs-on: ubuntu-latest
+    needs: valtozas
+    if: ${{ needs.valtozas.outputs.kod == 'true' }}
     # Gyors, önálló job — nem a teszt-mátrix része, egy platform elég egy
     # tisztán statikus ellenőrzéshez (#300).
     timeout-minutes: 5

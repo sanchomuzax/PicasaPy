@@ -19,12 +19,23 @@ import pytest
 
 yaml = pytest.importorskip("yaml")
 
-CI = pathlib.Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+MUNKAFOLYAMATOK = pathlib.Path(__file__).resolve().parents[1] / ".github" / "workflows"
+CI = MUNKAFOLYAMATOK / "ci.yml"
+#: A tesztmátrix a `ci.yml`-ből HÍVOTT munkafolyamatban él (platformonként
+#: külön hívás — ld. `TestKotelezoNevek`). Ami mindkettőre igaz szabály,
+#: azt mindkét fájlon ellenőrizzük, különben a kettéválasztással a lefedettség
+#: némán feleződne.
+DARABOK = MUNKAFOLYAMATOK / "teszt-darabok.yml"
 
 
 @pytest.fixture(scope="module")
 def ci() -> dict:
     return yaml.safe_load(CI.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
+def darabok() -> dict:
+    return yaml.safe_load(DARABOK.read_text(encoding="utf-8"))
 
 
 def test_a_PR_uj_commitja_leallitja_az_elozo_futast(ci):
@@ -50,10 +61,11 @@ def test_a_PR_uj_commitja_leallitja_az_elozo_futast(ci):
     )
 
 
-def test_minden_python_lepes_gyorsitotarazza_a_pipet(ci):
+def test_minden_python_lepes_gyorsitotarazza_a_pipet(ci, darabok):
     """A pip-letöltés jobonként 1–2 perc; a gyorsítótár ezt levágja."""
     hianyzo = []
-    for nev, job in (ci.get("jobs") or {}).items():
+    jobok = {**(ci.get("jobs") or {}), **(darabok.get("jobs") or {})}
+    for nev, job in jobok.items():
         for lepes in job.get("steps") or []:
             if not str(lepes.get("uses", "")).startswith("actions/setup-python"):
                 continue
@@ -157,11 +169,34 @@ class TestKotelezoNevek:
             f"nincs `{nev}` nevű job — a főág védelme örökre várna rá"
         )
 
-    def test_az_osszefogo_a_darabokra_var(self, ci):
-        """Ha nem várna rájuk, zölden jelentene bukó darabok mellett is."""
-        for kulcs in ("test-ubuntu", "test-windows"):
-            job = ci["jobs"][kulcs]
-            assert job.get("needs") == "test", f"{kulcs}: nem a darabokra vár"
-            assert "needs.test.result" in str(job), (
-                f"{kulcs}: nem vizsgálja a darabok eredményét"
-            )
+    @pytest.mark.parametrize(
+        ("kulcs", "sajat", "masik"),
+        [
+            ("test-ubuntu", "darabok-ubuntu", "darabok-windows"),
+            ("test-windows", "darabok-windows", "darabok-ubuntu"),
+        ],
+    )
+    def test_az_osszefogo_a_sajat_darabjaira_var(self, ci, kulcs, sajat, masik):
+        """A SAJÁT platformjára — és csak arra.
+
+        ⚠️ MÉRVE (PR #1257): amíg a két platform EGYETLEN mátrixban futott,
+        a `needs.<job>.result` egyben látszott, ezért egy bukó
+        windows-darab a KÖTELEZŐ `Test (ubuntu-latest)` ellenőrzést is
+        pirosra vitte — pedig mind a négy ubuntu-darab zöld volt. A projekt
+        szabálya szerint a windows-láb nem blokkol; ezt a szétválasztás
+        teszi igazzá, és ez az őr védi.
+        """
+        job = ci["jobs"][kulcs]
+        needs = job.get("needs")
+        needs = [needs] if isinstance(needs, str) else list(needs or ())
+        assert sajat in needs, f"{kulcs}: nem a saját darabjaira vár"
+        assert masik not in needs, (
+            f"{kulcs}: a MÁSIK platform darabjaira is vár — egy bukó "
+            f"{masik} így a {kulcs} kötelező ellenőrzést is elvinné"
+        )
+        assert f"needs.{sajat}.result" in str(job), (
+            f"{kulcs}: nem vizsgálja a saját darabjai eredményét"
+        )
+        assert f"needs.{masik}.result" not in str(job), (
+            f"{kulcs}: a másik platform eredményét vizsgálja"
+        )
