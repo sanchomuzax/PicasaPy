@@ -55,10 +55,24 @@ jobs:
           set -euo pipefail
           valtozott="$(git diff --name-only "$BASE" "$HEAD")"
           echo "Változott fájlok:"; echo "$valtozott"
-          kod="$(grep -vE '^(.*\.md|docs/.*|\.github/.*)$' <<<"$valtozott" || true)"
+          # MÉRVE (PR #1254): a verzióemelő PR CHANGELOG-ot IS visz, tehát
+          # ez a workflow elindul rá — az engedett készletben ezért a
+          # verzió-fájlok is benne vannak. A pyproject-re külön szigor: a
+          # verziósoron kívül SEMMI nem változhat, különben elbukunk.
+          kod="$(grep -vE '^(.*\.md|docs/.*|\.github/.*|pyproject\.toml|src/picasapy/__init__\.py)$' <<<"$valtozott" || true)"
           if [ -n "$kod" ]; then
             echo "::error::Ez a PR kódot IS érint — a zöldet a valódi tesztmátrixtól kell megkapnia. Kód és doksi ne keveredjen egy PR-ben. Kód-fájlok:"
             echo "$kod"
             exit 1
           fi
-          echo "Csak doksi/CI-konfiguráció változott; a teljes tesztkészletet a ci.yml futtatja kódváltozásnál."
+          if grep -q '^pyproject\.toml$' <<<"$valtozott"; then
+            erdemi="$(git diff -U0 "$BASE" "$HEAD" -- pyproject.toml \
+                       | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' \
+                       | grep -vE '^[+-]version = ' || true)"
+            if [ -n "$erdemi" ]; then
+              echo "::error::A pyproject.toml-ban a verziósoron kívül is változott valami:"
+              echo "$erdemi"
+              exit 1
+            fi
+          fi
+          echo "A kód futását nem érintő változás; a teljes tesztkészletet a ci.yml futtatja kódváltozásnál."
