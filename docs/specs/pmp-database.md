@@ -547,3 +547,100 @@ A `hascollage` **nem a kollázs-mentés mellékterméke**, hanem egy
 **album-szintű, fájl-létezésből származtatott jelző**. Aki ezt
 reprodukálja, ne a kollázs mentésekor írja, hanem az album
 betöltésekor/mentésekor számolja ki a `PicasaCollage.cxf` meglétéből.
+
+---
+
+## A `Picasa2` PROFILMAPPA teljes leltára (2026-08-22)
+
+Eddig a `db3` alkönyvtárat ismertük. A tulajdonos 2026-08-22-én adott egy
+**teljes profilmappa-másolatot**, amiben a `db3` melletti mappák is
+megvannak — ez a szakasz azokat leltározza. (A másolat helye:
+`research/testdata/Picasa2-arcok/`, gitignore-olt.)
+
+### A mappák
+
+| mappa | mit tartalmaz |
+|---|---|
+| `db3/` | a központi adatbázis (PMP-oszlopok + `.db` blokkfájlok) — ld. fent |
+| `contacts/contacts.xml` | a személynevek és azonosítóik |
+| `cache/` | **webes HTTP-gyorsítótár** — saját, hatoszlopos PMP-táblával |
+| `cache/feeds/<md5>` | a letöltött feed nyers XML-je |
+| `runtime/*.ytf` | **futásidőben rasztereltt betűkészletek** (ld. lent) |
+| `ioqueue/*.ioq` | három, **üres** művelet-sor: `albumsafe`, `filesafe`, `slingshot` |
+| `tmp/` | üres |
+| `network.log` | HTTP-napló |
+| `network_expwebsites.log` | 0 bájt |
+
+A `Picasa2Albums/` (testvérmappa) a `watchedfolders.txt` és
+`frexcludefolders.txt` helye — ld. `picasa-mappakezelo.md` 11.
+
+### A `.ytf` betűkészlet-gyorsítótár: SZÁLLÍTOTT vs. GENERÁLT
+
+A `.ytf` formátum megfejtése a
+[`picasa-program-resources.md`](picasa-program-resources.md) 3.5-ben van.
+Ami **most derült ki**: kétféle `.ytf` létezik, és a különbség fontos.
+
+| honnan | melyik betűk | darab |
+|---|---|---|
+| **a programmal szállítva** (`Picasa3/runtime/`) | `Praxis Semi Bold-Heavy`, `Praxis LT Regular`, `HelveticaNeue Condensed`, `HelveticaNeue MediumCond` | **12** |
+| **futásidőben generálva** (`%LocalAppData%\…\Picasa2\runtime/`) | **`Arial`** (11, 12, 14, 16, 18, 24 — súly 400/700/**800**/**900**), **`Arial Bold`** (12, 24), **`Georgia`** (14, 20, 24) | **15** |
+
+**Amit ez kimond:** a Picasa a **saját, márkás betűit** (Praxis,
+HelveticaNeue) előre rasztereltten szállítja a felület krómjához, a
+**rendszerbetűket** (Arial, Georgia) viszont **igény szerint, a felhasználói
+profilba** rasztereli. A Georgia (talpas) jelenléte a kollázs/film/nyomtatás
+felirataira utal, az Arial a felhasználói tartalomra.
+
+⚠️ A **800-as és 900-as súly** csak a generált oldalon fordul elő — ezek
+szintetikus (a rendszer által vastagított) változatok.
+
+*(Egy második, független telepítés `runtime`-ja ugyanennek a részhalmaza —
+9 fájl, ugyanezek a családok. A készlet tehát nem véletlenszerű.)*
+
+### A webes gyorsítótár PMP-sémája
+
+Hatoszlopos, soronként egy gyorsítótárazott válasz:
+
+| oszlop | típuskód | mit tárol |
+|---|---|---|
+| `cacheindex_url` | `0x00` str | a kérés URL-je |
+| `cacheindex_key` | `0x00` str | a gyorsítótár-kulcs |
+| `cacheindex_fn` | `0x00` str | a `cache/feeds/` alatti fájlnév (MD5-alakú) |
+| `cacheindex_etag` | `0x00` str | HTTP ETag |
+| `cacheindex_lastfetch` | **`0x02`** | az utolsó letöltés ideje (8 bájt — **új típuskód**, dátum-jellegű) |
+| `cacheindex_serial` | `0x01` u32 | sorszám |
+
+⭐ **A `0x02` típuskód eddig nem szerepelt a leltárunkban** (8 bájt/sor,
+dátum-gyanús — valószínűleg ugyanaz az OLE variant time, mint az
+`albumdata.date`; **nem igazolt**).
+
+### Mit hívogat a Picasa — a TELJES hálózati felület
+
+A 1802 soros `network.log` **mindössze két végpontot** tartalmaz:
+
+| végpont | kérések | mi ez |
+|---|---|---|
+| `clients2.google.com/service/update2` | **258 POST** | Google Omaha **automatikus frissítés-ellenőrzés** |
+| `picasa-readme.blogspot.com/feeds/posts/default` | **91 GET** | a „Picasa readme" **Atom-hírfolyam** (a válasz a `cache/feeds/` alatt) |
+
+Ez a két végpont pontosan a beállítás-alapértékek két kapcsolójához
+tartozik (ld. `picasa-arcfelismeres.md` 1.1 és a `0x006e0cb0` alapérték-tábla):
+**`AutoUpgradeCheck`/`AutoUpgradeAsk`** → az update2, **`AutoInfoCheck`** →
+a blogspot-feed. Mindkettő alapból **bekapcsolva**.
+
+> **Fotó-szolgáltatás felé egyetlen kérés sem ment** ebben a naplóban — a
+> webalbum-szinkron itt sosem futott. Az online ág tehát **nem
+> elkerülhetetlen**: a Picasa offline is teljes értékű.
+
+A napló fejléce egyben megerősíti a binárisból ismert
+naplózási kapcsolókat: `Log level 2, log faces 0` — a `LogFaces`
+(`0x009170f0`) tényleg futásidejű kapcsoló.
+
+### `ioqueue` — három, névvel ellátott művelet-sor
+
+`albumsafe.ioq`, `filesafe.ioq`, `slingshot.ioq` — mindhárom **0 bájt** a
+mintában. A nevekből: az album- és a fájlműveletek **külön, tartós
+sorban** várakoznak (összeomlás-biztos írás), a `slingshot` pedig a
+`runtime/slingshot/respack.yt`-tal egy családba tartozó feltöltő-ág.
+**A formátumuk nincs feltárva** (üresek) — ha valaha kell, élő,
+megszakított művelet közben készült másolat kellene.
