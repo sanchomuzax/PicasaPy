@@ -38,6 +38,15 @@ def home(tmp_path, monkeypatch):
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
     monkeypatch.delenv("HOMEDRIVE", raising=False)
     monkeypatch.delenv("HOMEPATH", raising=False)
+    # ⚠️ A platformot is rögzítjük. Ez a fixture POSIX-alakú home-ot épít
+    # (XDG-mappák), a `wide_folders` viszont a #1167 óta win32-n a
+    # MEGHAJTÓ-gyökereket adja vissza — a windows-lábon ettől a fixture-re
+    # épülő tesztek a futtató valódi „C:\", "D:\" köteteit kapták, és
+    # elbuktak (mérve: CI #1257, windows 4/4). A win32-ág saját, explicit
+    # tesztet kap (`TestWideChoiceKotetek`), nem ezt a fixture-t.
+    from picasapy.app import initial_scan
+
+    monkeypatch.setattr(initial_scan, "_platform", lambda: "linux")
     return tmp_path
 
 
@@ -176,6 +185,24 @@ class TestWideChoiceKotetek:
         assert str(home) in kotetek
         assert str(media / "USB1") in kotetek
         assert str(media / "USB2") in kotetek
+
+    def test_windowson_a_meghajto_gyokerek_jonnek(self, monkeypatch):
+        """A win32-ág eddig teszt NÉLKÜL volt (#1167).
+
+        Az eredeti a `GetLogicalDrives`-szal sorolja fel a köteteket
+        (`0x004fdd10`), nálunk ezt a `_windows_meghajtok()` végzi. Ez a
+        teszt azt állítja, hogy a „teljes gép" választás WINDOWSON tényleg
+        a meghajtó-gyökereket adja — nem a home-ot."""
+        from picasapy.app import folder_tree_controller, initial_scan
+
+        monkeypatch.setattr(initial_scan, "_platform", lambda: "win32")
+        monkeypatch.setattr(
+            folder_tree_controller,
+            "_windows_meghajtok",
+            lambda: [("C:", Path("C:/")), ("D: adatok", Path("D:/"))],
+        )
+
+        assert initial_scan.wide_folders() == (str(Path("C:/")), str(Path("D:/")))
 
     def test_a_mnt_szandekosan_kimarad(self, monkeypatch, tmp_path):
         from picasapy.app import initial_scan
