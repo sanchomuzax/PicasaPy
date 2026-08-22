@@ -129,6 +129,111 @@ ListView {
         if (!it) return null
         return it.y + it.height - contentY
     }
+    // -- Home / End / PageUp / PageDown (#1147) -----------
+    //
+    // Az eredetiben a `CThumbUI` billentyűkezelője (`0x005c24c0`) a
+    // `VK_HOME`/`VK_END`/`VK_PRIOR`/`VK_NEXT` kódokat a `CMultiAlbumNode`
+    // felületére osztja (`+0x84` = `0x0076a390` Home, `+0x88` =
+    // `0x0076a400` End). A nem-Ctrl ág a JELENLEGI mappa
+    // kijelölés-csomópontján dolgozik, a Ctrl-ág pedig csak görget.
+    // Teljes levezetés: `docs/specs/picasa-eger-es-kijeloles.md` 12.
+
+    /** A sorhoz tartozó mappacsoport `[első, utolsó]` sorindexe, vagy
+        `null`. A modelltől kérdezzük (#1219 `groupRange`), hogy a
+        csoporthatár egyetlen helyen legyen kimondva. */
+    function _groupRangeOfRow(row) {
+        if (!grid.ctl || row < 0) return null
+        var r = grid.ctl.photos.groupRange(row)
+        return (r && r.length === 2) ? r : null
+    }
+
+    /** A művelet hatóköre: a fókuszsor csoportja; kijelölés híján a
+        JELENLEGI mappáé (az eredetiben a `[+0x2e0]` album), végül az
+        első csoport. */
+    function _activeGroupRange() {
+        var byRow = _groupRangeOfRow(appWindow.selectedIndex)
+        if (byRow) return byRow
+        var groups = grid.ctl ? grid.ctl.feedGroups : null
+        if (!groups || groups.length === 0) return null
+        var current = grid.ctl.currentFolder
+        for (var i = 0; i < groups.length; ++i)
+            if (groups[i].path === current)
+                return [groups[i].start,
+                        groups[i].start + groups[i].count - 1]
+        return [groups[0].start, groups[0].start + groups[0].count - 1]
+    }
+
+    /** Shift NÉLKÜL: a kijelölés a csoport szélső képére szűkül.
+        Az eredetiben ez „minden kijelölés le" (`0x718a50`) + egy lépés,
+        ami üres kijelölésnél az elemlista első/utolsó elemét veszi
+        (`0x00717eb0`) — a látható eredmény az ugrás. */
+    function jumpToGroupEdge(toEnd) {
+        cancelRevealAfterViewer()
+        var g = _activeGroupRange()
+        if (!g) return
+        var target = toEnd ? g[1] : g[0]
+        appWindow.selectedIndexes = [target]
+        appWindow.selectedIndex = target
+        grid.selectionAnchor = target
+        scrollToRow(target)
+    }
+
+    /** Shifttel: tartomány a horgonytól a csoport széléig; horgony
+        nélkül a TELJES csoport (`0x716f40`). */
+    function extendToGroupEdge(toEnd) {
+        cancelRevealAfterViewer()
+        var g = _activeGroupRange()
+        if (!g) return
+        var anchor = grid.selectionAnchor >= 0
+                     ? grid.selectionAnchor : appWindow.selectedIndex
+        var from, to
+        if (anchor < 0 || anchor < g[0] || anchor > g[1]) {
+            from = g[0]; to = g[1]          // horgony nélkül: az egész
+        } else {
+            from = Math.min(anchor, toEnd ? g[1] : g[0])
+            to = Math.max(anchor, toEnd ? g[1] : g[0])
+        }
+        var sel = []
+        for (var r = from; r <= to; ++r) sel.push(r)
+        appWindow.selectedIndexes = sel
+        appWindow.selectedIndex = toEnd ? g[1] : g[0]
+        scrollToRow(appWindow.selectedIndex)
+    }
+
+    /** Ctrl-ág: csak görgetés, a kijelölés érintetlen. */
+    function scrollToFeedEdge(toEnd) {
+        cancelRevealAfterViewer()
+        if (!toEnd) {
+            positionViewAtBeginning()
+        } else if (grid.model && grid.model.length > 0) {
+            positionViewAtIndex(grid.model.length - 1, ListView.Beginning)
+        }
+        savedY = contentY
+        captureAnchor()
+    }
+
+    /** PageUp/PageDown: egy viewportnyi lapozás, kijelölés nélkül —
+        a görgő (`wheelStep`) mintája, csak nagyobb lépéssel. */
+    function pageStep(down) {
+        wheelStep(down ? -120 * Math.max(1, Math.floor(height / cellHeight))
+                       : 120 * Math.max(1, Math.floor(height / cellHeight)))
+    }
+
+    Keys.onPressed: function(ev) {
+        var ctrl = (ev.modifiers & Qt.ControlModifier) !== 0
+        var shift = (ev.modifiers & Qt.ShiftModifier) !== 0
+        if (ev.key === Qt.Key_Home || ev.key === Qt.Key_End) {
+            var toEnd = ev.key === Qt.Key_End
+            if (ctrl) scrollToFeedEdge(toEnd)
+            else if (shift) extendToGroupEdge(toEnd)
+            else jumpToGroupEdge(toEnd)
+            ev.accepted = true
+        } else if (ev.key === Qt.Key_PageUp || ev.key === Qt.Key_PageDown) {
+            pageStep(ev.key === Qt.Key_PageDown)
+            ev.accepted = true
+        }
+    }
+
     Keys.onLeftPressed: function(ev) {
         (ev.modifiers & Qt.ShiftModifier)
             ? extendSelection("left") : moveSelection("left")
