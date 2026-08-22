@@ -26,7 +26,7 @@ ki, és ettől „majdnem lefagyott az app".
 
 from pathlib import Path
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from PySide6.QtCore import Q_ARG, QMetaObject, Qt
 
 from support.jpeg_factory import make_jpeg
 
