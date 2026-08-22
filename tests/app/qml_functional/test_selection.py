@@ -266,11 +266,20 @@ class TestLasso:
     def test_lasso_ctrl_merges(self, qml_app, qt_app):
         from PySide6.QtCore import QObject, Qt
 
+        from PySide6.QtCore import QMetaObject
+
         window, controller, _ = qml_app
         window.setProperty("selectedIndexes", [1])
         grid = window.findChild(QObject, "photoGrid")
         cell_w = grid.property("cellWidth")
         ctrl = int(Qt.KeyboardModifier.ControlModifier.value)
+        # #1148/#897: a Ctrl a húzás INDULÁSAKOR mentett kijelöléshez
+        # viszonyít (`0x00719d80`), ezért a gesztus kezdetét itt is
+        # jelezni kell — a valódi húzásban ezt az első mozdulat teszi.
+        QMetaObject.invokeMethod(
+            grid, "beginLasso", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
         self._apply(qt_app, grid, 0, 2, cell_w * 4, 0, 0, 1, 1, ctrl)
         value = window.property("selectedIndexes")
         if hasattr(value, "toVariant"):
