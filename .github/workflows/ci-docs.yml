@@ -1,16 +1,26 @@
-# Csak-dokumentációs változások „üres" CI-je.
+# A kód futását NEM érintő változások „üres" CI-je.
 #
-# A `ci.yml` szándékosan NEM fut `**.md` / `docs/**` változásra (a program
-# futására nincs hatásuk, felesleges 9 perc runner-idő). A main ág védelme
-# viszont KÖTELEZŐ ellenőrzésként várja a `Test (ubuntu-latest)` nevű
-# státuszt — ami így sosem érkezett meg, és a tisztán dokumentációs PR
-# örökre „beolvasztásra vár" állapotban ragadt (kézi, admin-jogú átnyomás
-# kellett hozzá).
+# A `ci.yml` szándékosan NEM fut `**.md` / `docs/**` / `.github/**`
+# változásra: a program futására nincs hatásuk, a tesztmátrix rájuk
+# futtatva ~10 perc runner-idő a VÁLTOZATLAN kód újratesztelésére. A main
+# ág védelme viszont KÖTELEZŐ ellenőrzésként várja a `Test (ubuntu-latest)`
+# nevű státuszt — ami enélkül sosem érkezne meg, és a PR örökre
+# „beolvasztásra vár" állapotban ragadna.
 #
 # Ez a fájl pótolja a hiányzó státuszt: ugyanazon a néven azonnal sikeresre
-# fut, ha a PR dokumentációt érint. Vegyes (kód + doksi) PR-nél mindkét
-# munkafolyamat elindul — a VALÓDI teszt is —, tehát a védelem nem gyengül:
-# hibás kódot továbbra sem lehet beolvasztani.
+# fut. Vegyes (kód + doksi/CI) PR-nél mindkét munkafolyamat elindul — a
+# VALÓDI teszt is —, tehát a védelem nem gyengül: hibás kódot továbbra sem
+# lehet beolvasztani.
+#
+# ⚠️ A `.github/**` felvételének (#1127, 2026-08-22) kimondott ára: egy
+# hibás workflow-változtatás a KÖVETKEZŐ kód-PR-en derül ki, nem a
+# sajátján. Vállalt csere — a tulajdonos kifejezett kérése: változatlan
+# kódra ne fusson tesztkészlet.
+#
+# ⚠️ Paths-TRIGGERREL megy, nem job-szintű `if`-fel: a nem-illeszkedő PR-en
+# a workflow EL SEM INDUL, tehát nincs „kihagyva" állapotú azonos nevű
+# ellenőrzés (a GitHub a kihagyott kötelező ellenőrzést sikeresnek
+# számolja — egy job-szintű `if` ezért versenyhelyzetet nyitna).
 name: CI (docs)
 
 on:
@@ -18,13 +28,14 @@ on:
     paths:
       - '**.md'
       - 'docs/**'
+      - '.github/**'
 
 jobs:
   test:
-    # A névnek BETŰRE egyeznie kell a ci.yml mátrix-jobjának ubuntu-lábával,
-    # különben az ág-védelem nem ismeri fel kötelező ellenőrzésként.
+    # A névnek BETŰRE egyeznie kell a ci.yml aggregátorával, különben az
+    # ág-védelem nem ismeri fel kötelező ellenőrzésként.
     name: Test (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
-      - name: Dokumentációs változás — nincs mit tesztelni
-        run: echo "Csak dokumentáció változott; a teljes tesztkészletet a ci.yml futtatja kódváltozásnál."
+      - name: A kód futását nem érintő változás — nincs mit tesztelni
+        run: echo "Csak doksi/CI-konfiguráció változott; a teljes tesztkészletet a ci.yml futtatja kódváltozásnál."

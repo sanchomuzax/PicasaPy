@@ -8,10 +8,18 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+      - '.github/**'
   pull_request:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+      # #1127: a CSAK CI-konfigurációt érintő PR-en a tesztmátrix futtatása
+      # a felhasználó megfogalmazásában „lopott idő": egyetlen Python-sor
+      # sem változott, mégis 10 perc futott arra, hogy a változatlan kódot
+      # újrateszteljük. A kötelező státuszt ilyenkor a `ci-docs.yml` adja
+      # (másodpercek). Ára: egy hibás workflow-változtatás a KÖVETKEZŐ
+      # kód-PR-en derül ki, nem a sajátján — vállalt csere.
+      - '.github/**'
     # ⚠️ Ide NE kerüljön `branches-ignore` a verzióemelő ágakra: a
     # `pull_request` esemény ág-szűrője a CÉLágra (base) illeszkedik, nem a
     # forráságra. Mérve 2026-08-22-én: a `chore/auto-bump-0.8.44` PR-en a
