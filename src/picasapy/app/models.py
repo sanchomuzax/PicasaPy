@@ -229,9 +229,23 @@ def _has_edits(photo: PhotoRecord) -> bool:
 
 
 def _thumb_url(photo: PhotoRecord) -> str:
-    """Thumb-URL forgatás- és szerkesztés-érzékeny cache-busterrel (#59)."""
+    """Thumb-URL forgatás-, szerkesztés- és FÁJLVÁLTOZÁS-érzékeny
+    cache-busterrel (#59, #1186).
+
+    ⚠️ Az `mtime_ns`/`size` nélkül a felülírt fájl URL-je változatlan
+    marad (ugyanaz a sor, forgatás és lánc), a Qt pedig URL szerint
+    gyorstárazza a képet — a rácson a RÉGI képpontok maradnak. A
+    bélyegkép-gyorstár maga jól működik: az is a (útvonal, mtime, méret)
+    hármasra kulcsol, csak épp senki nem kérte el az újat. A tulajdonos
+    ezt a kollázs véglegesítésekor látta (a „PISZKOZAT" felirat ottmaradt
+    a bélyegképen), de minden külső felülírásra igaz volt.
+    """
     filters_tag = zlib.crc32((photo.filters or "").encode("utf-8"))
-    return f"image://thumbs/{photo.id}?r={photo.rotate_steps}&f={filters_tag}"
+    return (
+        f"image://thumbs/{photo.id}"
+        f"?r={photo.rotate_steps}&f={filters_tag}"
+        f"&m={photo.mtime_ns}&s={photo.size}"
+    )
 
 
 def _sort_key(sort_mode: str):
