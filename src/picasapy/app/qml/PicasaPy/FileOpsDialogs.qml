@@ -257,6 +257,14 @@ Item {
     Dialog {
         id: moveConfirmDialog
         objectName: "moveConfirmDialog"
+        // #1185: a `Dialog` a saját `implicitWidth`-ét a `contentItem`-ből
+        // számolja, a tördelő `Text` implicit szélessége viszont a kapott
+        // szélességtől függ — ez a kör „Binding loop … implicitWidth"-ként
+        // jelent meg a konzolon. A tartalom szélessége itt amúgy is
+        // rögzített (`width: 380`), ezért kimondjuk: a párbeszéd szélessége
+        // a szövegdoboz + a stílus térközei. A `Text.implicitWidth` Qt 6-ban
+        // ÍRÁSVÉDETT, ezért nem ott törjük meg a kört.
+        implicitWidth: 380 + leftPadding + rightPadding
         title: qsTr("Confirm Move")
         modal: true
         anchors.centerIn: parent
@@ -291,6 +299,14 @@ Item {
     Dialog {
         id: duplicateNamesDialog
         objectName: "duplicateNamesDialog"
+        // #1185: a `Dialog` a saját `implicitWidth`-ét a `contentItem`-ből
+        // számolja, a tördelő `Text` implicit szélessége viszont a kapott
+        // szélességtől függ — ez a kör „Binding loop … implicitWidth"-ként
+        // jelent meg a konzolon. A tartalom szélessége itt amúgy is
+        // rögzített (`width: 380`), ezért kimondjuk: a párbeszéd szélessége
+        // a szövegdoboz + a stílus térközei. A `Text.implicitWidth` Qt 6-ban
+        // ÍRÁSVÉDETT, ezért nem ott törjük meg a kört.
+        implicitWidth: 380 + leftPadding + rightPadding
         title: moveConfirmDialog.title
         modal: true
         anchors.centerIn: parent
@@ -384,6 +400,14 @@ Item {
     Dialog {
         id: fileOpsErrorDialog
         objectName: "fileOpsErrorDialog"
+        // #1185: a `Dialog` a saját `implicitWidth`-ét a `contentItem`-ből
+        // számolja, a tördelő `Text` implicit szélessége viszont a kapott
+        // szélességtől függ — ez a kör „Binding loop … implicitWidth"-ként
+        // jelent meg a konzolon. A tartalom szélessége itt amúgy is
+        // rögzített (`width: 380`), ezért kimondjuk: a párbeszéd szélessége
+        // a szövegdoboz + a stílus térközei. A `Text.implicitWidth` Qt 6-ban
+        // ÍRÁSVÉDETT, ezért nem ott törjük meg a kört.
+        implicitWidth: 380 + leftPadding + rightPadding
         title: qsTr("File operation failed")
         modal: true
         anchors.centerIn: parent
@@ -403,6 +427,14 @@ Item {
     Dialog {
         id: batchSummaryDialog
         objectName: "batchSummaryDialog"
+        // #1185: a `Dialog` a saját `implicitWidth`-ét a `contentItem`-ből
+        // számolja, a tördelő `Text` implicit szélessége viszont a kapott
+        // szélességtől függ — ez a kör „Binding loop … implicitWidth"-ként
+        // jelent meg a konzolon. A tartalom szélessége itt amúgy is
+        // rögzített (`width: 380`), ezért kimondjuk: a párbeszéd szélessége
+        // a szövegdoboz + a stílus térközei. A `Text.implicitWidth` Qt 6-ban
+        // ÍRÁSVÉDETT, ezért nem ott törjük meg a kört.
+        implicitWidth: 380 + leftPadding + rightPadding
         title: qsTr("File operation finished")
         modal: true
         anchors.centerIn: parent
