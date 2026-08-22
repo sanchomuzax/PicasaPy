@@ -8,18 +8,23 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+      - '.github/**'
   pull_request:
     paths-ignore:
       - '**.md'
       - 'docs/**'
-    # #1127: a verzióemelő automatika ágai NEM futtatják a teljes mátrixot —
-    # egyetlen `version = "…"` sorra tíz perc runner-idő ceremónia, olyan
-    # kódra, ami a saját jegy-PR-jén már zölden átment. A kötelező státuszt
-    # a `ci-bump.yml` adja meg azonnal, ELLENŐRZÖTT diffel: ha a PR bármi
-    # mást is érint, ott elbukik, tehát kódot ezen az úton nem lehet
-    # becsempészni.
-    branches-ignore:
-      - 'chore/auto-bump-*'
+      # #1127: a CSAK CI-konfigurációt érintő PR-en a tesztmátrix futtatása
+      # a felhasználó megfogalmazásában „lopott idő": egyetlen Python-sor
+      # sem változott, mégis 10 perc futott arra, hogy a változatlan kódot
+      # újrateszteljük. A kötelező státuszt ilyenkor a `ci-docs.yml` adja
+      # (másodpercek). Ára: egy hibás workflow-változtatás a KÖVETKEZŐ
+      # kód-PR-en derül ki, nem a sajátján — vállalt csere.
+      - '.github/**'
+    # ⚠️ Ide NE kerüljön `branches-ignore` a verzióemelő ágakra: a
+    # `pull_request` esemény ág-szűrője a CÉLágra (base) illeszkedik, nem a
+    # forráságra. Mérve 2026-08-22-én: a `chore/auto-bump-0.8.44` PR-en a
+    # teljes mátrix ettől függetlenül elindult. A kizárás ezért
+    # JOB-SZINTEN, a `github.head_ref`-re megy (ld. lentebb).
   # #651: kézi indítás. Az automatikus `pull_request` futás elmarad, ha a
   # PR-t/pusht a GitHub-integráció tokenje váltja ki — a GitHub az ilyen
   # eseményekre szándékosan nem indít workflow-t (ugyanaz a
@@ -44,6 +49,15 @@ jobs:
   test:
     name: Test (${{ matrix.os }} ${{ matrix.shard }}/4)
     runs-on: ${{ matrix.os }}
+    # #1127: a verzióemelő automatika ágain a teljes mátrix ceremónia —
+    # egyetlen `version = "…"` sor, olyan kódra, ami a jegy PR-jén már
+    # zölden átment. A kötelező státuszt a `ci-bump.yml` adja meg (~5 mp),
+    # ELLENŐRZÖTT diffel: ha a PR bármi mást is érint, ott elbukik.
+    #
+    # ⚠️ Miért itt, és nem a `pull_request` ág-szűrőjében: a `branches-ignore`
+    # a CÉLágra (base) illeszkedik, nem a forráságra — 2026-08-22-én a
+    # `chore/auto-bump-0.8.44` PR-en ettől a mátrix mégis elindult.
+    if: ${{ !startsWith(github.head_ref, 'chore/auto-bump-') }}
     # Korlát nélkül egy beragadt (#53 GIL-deadlock) pytest 6 órán át
     # foglalná a runnert, és eldugítaná a teljes Actions-sort (2026-07-19-en
     # 19 beragadt futás állította le a release-automatikát).
@@ -153,13 +167,58 @@ jobs:
   # Ez a két job a régi NÉVVEL jelent, és csak akkor zöld, ha MIND A NÉGY
   # darab zöld. Így a védelem beállításához nem kell hozzányúlni, és a
   # felosztás haszna is megmarad.
+  # ⚠️ #1127: a VERZIÓEMELŐ ág gyorsútja is ITT van, nem külön fájlban.
+  #
+  # Első nekifutásra külön `ci-bump.yml` adta ezt a nevet a bump-ágakon.
+  # MÉRVE (2026-08-22, PR #1246): sima ágon az a job „kihagyva" állapotban
+  # jelentett — és a GitHub a KIHAGYOTT kötelező ellenőrzést SIKERESNEK
+  # számolja. Két azonos nevű ellenőrzés versenyzett volna, ami elvileg
+  # zöldre válthat egy bukott futás fölött. Ezért a nevet EGYETLEN job
+  # viseli, és az dönti el magában, mit kell ellenőriznie.
   test-ubuntu:
     name: Test (ubuntu-latest)
     runs-on: ubuntu-latest
     needs: test
     if: always()
     steps:
+      - uses: actions/checkout@v4
+        if: ${{ startsWith(github.head_ref, 'chore/auto-bump-') }}
+        with:
+          fetch-depth: 0
+
+      # A verzióemelő PR EGYETLEN sort változtat, olyan kódra, ami a jegy
+      # PR-jén már zölden átment — a teljes mátrix ott ceremónia. De csak
+      # akkor engedjük át, ha a diff TÉNYLEG csak verzió-fájlokat érint:
+      # kódot ezen az úton nem lehet becsempészni.
+      - name: Verzióemelés — a diff CSAK verzió-fájlokat érinthet
+        if: ${{ startsWith(github.head_ref, 'chore/auto-bump-') }}
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          valtozott="$(git diff --name-only "$BASE" "$HEAD")"
+          echo "Változott fájlok:"; echo "$valtozott"
+          tilos="$(grep -vE '^(pyproject\.toml|CHANGELOG\.md|README\.md|src/picasapy/__init__\.py)$' <<<"$valtozott" || true)"
+          if [ -n "$tilos" ]; then
+            echo "::error::A verzióemelő gyorsút CSAK verzió-fájlokat enged. Idegen fájlok:"
+            echo "$tilos"
+            exit 1
+          fi
+          if grep -q '^pyproject\.toml$' <<<"$valtozott"; then
+            erdemi="$(git diff -U0 "$BASE" "$HEAD" -- pyproject.toml \
+                       | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' \
+                       | grep -vE '^[+-]version = ' || true)"
+            if [ -n "$erdemi" ]; then
+              echo "::error::A pyproject.toml-ban a verziósoron kívül is változott valami:"
+              echo "$erdemi"
+              exit 1
+            fi
+          fi
+          echo "Csak verzióemelés — a teljes tesztkészletet a jegy PR-je már lefuttatta."
+
       - name: A négy ubuntu-darab mind zöld
+        if: ${{ !startsWith(github.head_ref, 'chore/auto-bump-') }}
         run: |
           if [ "${{ needs.test.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.test.result }}"
@@ -173,6 +232,8 @@ jobs:
     if: always()
     steps:
       - name: A négy windows-darab mind zöld
+        # bump-ágon nincs mit ellenőrizni (a mátrix sem futott)
+        if: ${{ !startsWith(github.head_ref, 'chore/auto-bump-') }}
         run: |
           if [ "${{ needs.test.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.test.result }}"
