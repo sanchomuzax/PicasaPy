@@ -82,13 +82,34 @@ feloldás működik. További, csak éles adatból látható tények:
 - A leghosszabb oszlop (`filetype`, 140 758) **pontosan egyenlő** a thumbindex
   bejegyzésszámával → az 1:1 indexmegfeleltetés igazolt.
 - **`crop64` natív u64-ként** tárolódik (bit-pakolt rect64: 4×16 bit L/T/R/B).
-- **`facerect`** (u64): sok bejegyzésben `0x1` szentinel-érték (nem valós rect;
-  jelentése tisztázandó — valszeg „arc detektálva, régió máshol").
-- **`facerectdata`** (str): a tesztkészletben teljesen üres.
+- **`facerect`** (u64): ~~sok bejegyzésben `0x1` szentinel-érték~~ —
+  **HELYESBÍTVE (2026-08-22, #26):** az oszlop **kizárólag `0`-t és `1`-et**
+  vesz fel, **egyetlen valódi rect64 sincs benne** (7 044 sorból 0 db
+  harmadik érték). Tehát **fájlonkénti logikai jelző**, nem geometria. Az
+  eloszlás blokkos: minden **könyvtár**-sor `0`, a 7…6098 sortartomány
+  minden **fájl**-sora `1`, fölötte mind `0` — egy félbehagyott
+  detektálási menet lenyomata. A `0x1` pontos jelentése („lefutott" vs
+  „esedékes") **nyitott** → **#1238**. Teljes leírás:
+  [`picasa-arcfelismeres.md`](picasa-arcfelismeres.md) 3.3.
+- **`facerectdata`** (str): a tesztkészletben teljesen üres (**0** nem üres
+  sor 7 044-ből) — a szerepe emiatt nem eldönthető, ld. **#1238**.
 - **`deferredregion`** (str, ÚJ oszlop — a 2012-es listában nincs): a valódi
   arcadat-hordozó! Formátum: `rect64(<hex>),<Név>;rect64(<hex>),<Név>;...`
   — tisztanevű (nem hash-elt) régiólista. A rect64 hex itt is rövidülhet
   (15 karakteres érték élesben megfigyelve → zfill(16) kötelező).
+  **Mérve (2026-08-22):** 10 175 nem üres sor, **13 941 régió**, mind
+  geometriailag érvényes; a legtöbb régió **egyetlen soron: 45**. A hexből
+  8 jegyűre is lekophat a vezető nulla.
+- **`deferredface`** (str) — **a `deferredregion` PÁRJA**, ugyanaz a
+  szerkezet, de **hash-elt azonosítóval**:
+  `rect64(<hex>),<16 hexjegyű contact_id>`. Mérve: 6 870 sor, **11 128
+  régió**. Két szentinel: **`ffffffffffffffff`** = „ismeretlen / nincs
+  személyhez rendelve" (a leggyakoribb érték, 2 289 régió) és `0` (698).
+  **A két oszlop átfedéséből** (1 588 közös sor, bitre azonos rect64-ek)
+  levezethető a `contact_id → név` tábla — és kiderül, hogy a
+  `deferredregion` **nem íródik újra kontakt-átnevezéskor**, tehát csak
+  pillanatkép. Részletek:
+  [`picasa-arcfelismeres.md`](picasa-arcfelismeres.md) 3.4.
 - **További új oszlopok** a 2012-es listához képest: `edit_width`,
   `edit_height`, `deferredregion`.
 - **`albumdata.date`**: OLE variant time — dekódolása valódi dátumokra

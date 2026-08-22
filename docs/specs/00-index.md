@@ -250,6 +250,24 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    parancsazonosítóit. Felhasználói képernyőkép a lenyíló menüről
    eldöntené (mint a #901 buboréksúgónál). Jegy: **#853** (komment).
 
+### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) — nincs nyitott kérdés (3 BLOKKOLT tétel külső anyagra vár)
+
+⭐ **2026-08-22, arcfelismerés-kör (#26)** — új lap, a funkció **működése**
+(nem a felülete): a három független réteg és a hét `Preferences`-kapcsolójuk
+alapértékekkel, a két küszöb-legördülő teljes létrája (**50–95, ötösével,
+alap 85**, az ugrótáblák nyers bájtjaiból), a `.picasa.ini` **KÉT** írási
+útvonala és egy eddig sehol nem dokumentált kulcs (**`facedata`** — a 859
+fájlos korpuszban **0** előfordulás), a `db3` kilenc arc-oszlopa **élő
+adaton mérve**, a három romboló művelet pontos hatóköre, és a
+`frversion="1.5"` migrációs kapu.
+
+**Két korábbi állításunk MEGDŐLT:** a `facerect` nem „szentinel-es rect",
+hanem **tisztán 0/1 logikai jelző**; és a tesztkészletben **igenis van
+nevesítés** (13 941 régió).
+
+**BLOKKOLT (→ #1238):** hat, nulla soros oszlop szemantikája — nevesített
+arcokat tartalmazó `db3` másolat kell hozzá a tulajdonostól.
+
 ### [picasa-elso-inditas.md](picasa-elso-inditas.md) — nincs nyitott kérdés
 
 *(Új lap, 2026-08-21: az első indítás `initialscan` panelje — két
@@ -413,6 +431,7 @@ minden további lapja.
 |---|---|
 | [picasa-ini-format.md](picasa-ini-format.md) | A `.picasa.ini` — az igazságforrás, round-trip szabályokkal |
 | [pmp-database.md](pmp-database.md) | A központi adatbázis (`db3` / PMP) |
+| [picasa-arcfelismeres.md](picasa-arcfelismeres.md) | **Az arcfelismerés TELJES működése** — a három réteg és kapcsolóik, a két küszöb-létra, a KÉT ini-írási útvonal (`facedata`!), a `db3` arc-oszlopai élő adaton mérve, a három romboló művelet, a verzió-migráció |
 | [picasa-imagedata-rekord.md](picasa-imagedata-rekord.md) | Az `imagedata` rekord — belső kép-nyilvántartás |
 | [picasa-respack-format.md](picasa-respack-format.md) | `respack.yt` — a bináris erőforráscsomag (megfejtve) |
 | [picasa-program-resources.md](picasa-program-resources.md) | Erőforrás- és formátum-leltár (gombok, web-export, plugin-ök) |
