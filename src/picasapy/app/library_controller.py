@@ -666,9 +666,16 @@ class LibraryMixin(BackgroundWorkerMixin):
         újrajárására. A jelzett mappák koaleszálva, egyetlen worker-
         szálban dolgozódnak fel — a watcher amúgy is debounce-ol
         (`scanner/watcher.py`), így egy jelzésben több mappa is jöhet."""
-        if self._sync_running:
-            return  # a futó teljes szinkron úgyis lefedi
         paths = [str(f) for f in folders]
+        if self._sync_running:
+            # #1181: NEM dobjuk el. A korábbi „a futó teljes szinkron
+            # úgyis lefedi" feltevés hamis: ha a szinkron az adott mappán
+            # MÁR túlment, a változás (pl. egy törlés) a következő
+            # periodikus rescanig láthatatlan marad — a bejelentő ezt
+            # látta „az indexkép ottmarad"-ként. Ehelyett feljegyezzük, és
+            # a szinkron végén (`_flush_pending_dirty`) behozzuk.
+            self._pending_dirty.update(paths)
+            return
 
         def worker():
             errors = []
@@ -754,6 +761,19 @@ class LibraryMixin(BackgroundWorkerMixin):
             if errors:
                 self.syncFailed.emit("; ".join(errors))
             self.syncFinished.emit()
+
+    @Slot()
+    def _flush_pending_dirty(self) -> None:
+        """A szinkron alatt elhalasztott mappa-frissítések behozása (#1181).
+
+        A `syncFinished`-re fut. A halmazt ELŐBB ürítjük ki, hogy az
+        újraindított szinkron ne dolgozza fel kétszer ugyanazt, és hogy egy
+        közben érkező jelzés a KÖVETKEZŐ körbe kerüljön."""
+        if not self._pending_dirty:
+            return
+        folders = sorted(self._pending_dirty)
+        self._pending_dirty = set()
+        self._on_folders_dirty(folders)
 
     @Slot(int)
     def resyncFolderOfRow(self, row: int) -> None:

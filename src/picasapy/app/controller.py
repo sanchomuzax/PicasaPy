@@ -168,6 +168,10 @@ class AppController(
         self._folder_date = ""
         self._folder_description = ""
         self._sync_running = False
+        # #1181: a futó szinkron alatt kért célzott frissítések — a
+        # szinkron végén be kell hozni a lemaradást (ld. a
+        # `_on_folders_dirty` és a `_flush_pending_dirty` docstringjét)
+        self._pending_dirty: set[str] = set()
         self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
         self._filter_active = False
         self._filter_status = ""
@@ -217,6 +221,8 @@ class AppController(
         # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
         # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
         self.syncFinished.connect(self._reload_after_sync)
+        # #1181: a szinkron alatt elhalasztott mappa-frissítések
+        self.syncFinished.connect(self._flush_pending_dirty)
         # #209: mappánkénti haladás a workerből (queued) + panel-lezárás
         self.syncProgress.connect(self._on_sync_progress)
         self.syncFinished.connect(self._on_import_finished)
