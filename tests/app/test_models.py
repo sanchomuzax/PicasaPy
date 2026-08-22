@@ -534,7 +534,14 @@ class TestFolderListNavigation:
 
 class TestPhotoGridNavigation:
     """#77: kurzorgombos léptetés célsora a rács-feedben (mappánkénti
-    csoportok, rácssor-ugrás fel/le, folytonos balra/jobbra)."""
+    csoportok, rácssor-ugrás fel/le).
+
+    ⚠️ #1219: a léptetés MIND A NÉGY irányban a mappa-csoporton belül
+    marad — az eredetiben a feed konténere mindig egyetlen album
+    kijelölés-csomópontját éri el, tehát a határon MEGÁLL. A korábbi
+    „balra/jobbra folytonos" és „fel/le átvisz a szomszéd csoportba"
+    állítások a mi találmányunk voltak; az alábbi tesztek ezért a
+    megállást rögzítik."""
 
     @pytest.fixture
     def feed_model(self, qt_app, tmp_path):
@@ -558,27 +565,27 @@ class TestPhotoGridNavigation:
         model.set_photos(photos)
         return model
 
-    def test_left_right_are_continuous_across_groups(self, feed_model):
+    def test_left_right_stop_at_group_edges(self, feed_model):
         assert feed_model.navigate(0, "right", 3) == 1
-        assert feed_model.navigate(4, "right", 3) == 5  # átlép a B mappába
-        assert feed_model.navigate(5, "left", 3) == 4
-        assert feed_model.navigate(0, "left", 3) == 0   # elején megáll
-        assert feed_model.navigate(7, "right", 3) == 7  # végén megáll
+        assert feed_model.navigate(4, "right", 3) == 4  # az A mappa vége
+        assert feed_model.navigate(5, "left", 3) == 5   # a B mappa eleje
+        assert feed_model.navigate(0, "left", 3) == 0   # a feed eleje
+        assert feed_model.navigate(7, "right", 3) == 7  # a feed vége
 
     def test_down_within_group_jumps_a_row(self, feed_model):
         assert feed_model.navigate(1, "down", 3) == 4
         # csonka utolsó sor: az oszlop alatt nincs kép → az utolsóra lép
         assert feed_model.navigate(2, "down", 3) == 4
 
-    def test_down_crosses_group_keeps_column(self, feed_model):
-        assert feed_model.navigate(3, "down", 3) == 5
-        assert feed_model.navigate(4, "down", 3) == 6
+    def test_down_stops_at_group_bottom(self, feed_model):
+        assert feed_model.navigate(3, "down", 3) == 3  # az A alsó sora
+        assert feed_model.navigate(4, "down", 3) == 4
         assert feed_model.navigate(6, "down", 3) == 6  # utolsó csoport alja
 
-    def test_up_within_and_across_groups(self, feed_model):
+    def test_up_stops_at_group_top(self, feed_model):
         assert feed_model.navigate(4, "up", 3) == 1
-        assert feed_model.navigate(5, "up", 3) == 3  # az A utolsó sorába
-        assert feed_model.navigate(7, "up", 3) == 4  # oszlop-csonkolással
+        assert feed_model.navigate(5, "up", 3) == 5  # a B felső sora
+        assert feed_model.navigate(7, "up", 3) == 7
         assert feed_model.navigate(0, "up", 3) == 0
 
     def test_invalid_row_starts_at_first_photo(self, feed_model):

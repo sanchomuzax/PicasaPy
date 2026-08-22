@@ -521,45 +521,72 @@ class PhotoGridModel(QAbstractListModel):
             bounds.append((start, len(self._photos) - start))
         return tuple(bounds)
 
+    @Slot(int, result="QVariantList")
+    def groupRange(self, row: int) -> list:
+        """A sorhoz tartozó mappa-csoport [első, utolsó] sorindexe (#1219).
+
+        A QML kijelölés-szorításához: a Shift+kattintás tartományát a
+        KEZDŐPONT (horgony) mappacsoportjára kell szorítani, mert az
+        eredetiben a tartomány-mag (`0x00716ae0`) mindig egyetlen album
+        kijelölés-csomópontján fut. Érvénytelen sorra üres listát ad.
+        """
+        if not 0 <= row < len(self._photos):
+            return []
+        for start, count in self._group_bounds():
+            if start <= row < start + count:
+                return [start, start + count - 1]
+        return []
+
     @Slot(int, str, int, result=int)
     def navigate(self, row: int, direction: str, columns: int) -> int:
         """Kurzor-léptetés célsora a rács-feedben (#77).
 
-        Balra/jobbra folytonos (mappahatáron is átlép, ahogy a feed maga);
-        fel/le a mappa-csoport rácssorai közt ugrik `columns` oszloppal,
-        a csoport szélén a szomszéd csoport azonos oszlopára lép. Érvénytelen
-        sorról (pl. −1, nincs kijelölés) az első képre lép; üres modellnél −1.
+        ⚠️ #1219: MIND A NÉGY irány a MAPPA-CSOPORTON BELÜL marad.
+
+        Az eredetiben ez nem ellenőrzés, hanem SZERKEZET: a feed konténere
+        (`0x0076a390`, `CMultiAlbumNode` vtábla 33. rés) mindig pontosan
+        EGY albumsor kijelölés-csomópontját éri el — nincs ciklus a
+        `[+0x300]` sortömbön, tehát a léptetés fizikailag sem tud átlépni.
+
+        A mappa végén MEGÁLL (mérve): `0x00718031` `cmp/jbe` ELŐJEL
+        NÉLKÜLI, tehát a −1-re csökkenő index is ugyanide fut — mindkét
+        vég ugyanaz az ág; a határ-ág (`0x00717d10`) a végén
+        `0x00717e76`-nál `[this+0x2e0] = 0xFFFFFFFF`, azaz törli a jelölőt
+        és NEM jelöl ki újat. Nem lép át, és nem fordul át.
+
+        Korábban a balra/jobbra folytonos volt, a fel/le pedig a csoport
+        szélén SZÁNDÉKOSAN a szomszéd csoportra ugrott.
+
+        Érvénytelen sorról (pl. −1, nincs kijelölés) az első képre lép;
+        üres modellnél −1.
         """
         count = len(self._photos)
         if count == 0:
             return -1
         if not 0 <= row < count:
             return 0
-        if direction == "left":
-            return max(0, row - 1)
-        if direction == "right":
-            return min(count - 1, row + 1)
-        if direction not in ("up", "down"):
-            return row
-        cols = max(1, columns)
         bounds = self._group_bounds()
         group = next(i for i, (s, n) in enumerate(bounds) if s <= row < s + n)
         start, group_count = bounds[group]
+        # a csoport utolsó sorának indexe — minden irány eddig mehet
+        last = start + group_count - 1
+        if direction == "left":
+            return max(start, row - 1)
+        if direction == "right":
+            return min(last, row + 1)
+        if direction not in ("up", "down"):
+            return row
+        cols = max(1, columns)
         local = row - start
         grid_row, col = divmod(local, cols)
         if direction == "down":
             if grid_row < (group_count - 1) // cols:
                 return start + min(local + cols, group_count - 1)
-            if group + 1 < len(bounds):
-                next_start, next_count = bounds[group + 1]
-                return next_start + min(col, next_count - 1)
+            # #1219: a csoport alján MEGÁLL — nem lép a szomszéd csoportra
             return row
         if grid_row > 0:
             return start + local - cols
-        if group > 0:
-            prev_start, prev_count = bounds[group - 1]
-            last_grid_row = (prev_count - 1) // cols
-            return prev_start + min(last_grid_row * cols + col, prev_count - 1)
+        # #1219: a csoport tetején MEGÁLL
         return row
 
     def rowCount(self, parent=_ROOT_INDEX) -> int:

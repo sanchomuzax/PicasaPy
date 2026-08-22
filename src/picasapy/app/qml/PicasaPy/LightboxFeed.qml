@@ -73,8 +73,13 @@ ListView {
             appWindow.selectedIndex, direction, columns)
         if (t < 0) return
         appWindow.selectedIndex = t
-        var lo = Math.min(selectionAnchor, t)
-        var hi = Math.max(selectionAnchor, t)
+        // #1219: a tartomány a horgony mappacsoportjára szorítva
+        var hatar = controller.photos.groupRange(selectionAnchor)
+        var vegpont = t
+        if (hatar.length === 2)
+            vegpont = Math.max(hatar[0], Math.min(hatar[1], t))
+        var lo = Math.min(selectionAnchor, vegpont)
+        var hi = Math.max(selectionAnchor, vegpont)
         var sel = []
         for (var r = lo; r <= hi; ++r) sel.push(r)
         appWindow.selectedIndexes = sel

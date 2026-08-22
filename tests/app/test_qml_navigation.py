@@ -434,16 +434,26 @@ class TestArrowMinimalScroll:
 
 
 class TestShiftArrowSelection:
-    """#96: Shift+nyíl a horgonytól tartományt jelöl ki / von vissza."""
+    """#96: Shift+nyíl a horgonytól tartományt jelöl ki / von vissza.
 
-    @staticmethod
-    def _reset(window, qt_app):
+    ⚠️ #1219: a horgony a HÁROMKÉPES mappa (`adag1`) elején áll, nem a
+    feed 0. során. A feed sorrendjében az `adag2` (2 kép) van elöl, így a
+    0. sorról induló bővítés a 2. lépésben MAPPAHATÁRT lépett át — a
+    tesztek ezt a hibás viselkedést rögzítették. A határon való megállást
+    a `test_kijeloles_mappahatar_1219.py` méri; ezek itt a mappán BELÜLI
+    bővítés/visszavonás őrei maradnak."""
+
+    #: a második csoport (`adag1`, 3 kép) első sora a feedben
+    KEZDET = 2
+
+    @classmethod
+    def _reset(cls, window, qt_app):
         window.setProperty("viewerOpen", False)
-        window.setProperty("selectedIndex", 0)
-        window.setProperty("selectedIndexes", [0])
+        window.setProperty("selectedIndex", cls.KEZDET)
+        window.setProperty("selectedIndexes", [cls.KEZDET])
         grid = window.findChild(QObject, "photoGrid")
         assert grid is not None
-        grid.setProperty("selectionAnchor", 0)
+        grid.setProperty("selectionAnchor", cls.KEZDET)
         qt_app.processEvents()
         return grid
 
@@ -458,10 +468,12 @@ class TestShiftArrowSelection:
         window, _, _ = qml_nav_app
         grid = self._reset(window, qt_app)
         _invoke(qt_app, grid, "extendSelection", "right")
-        assert self._selection(window) == [0, 1]
-        assert window.property("selectedIndex") == 1
+        assert self._selection(window) == [self.KEZDET, self.KEZDET + 1]
+        assert window.property("selectedIndex") == self.KEZDET + 1
         _invoke(qt_app, grid, "extendSelection", "right")
-        assert self._selection(window) == [0, 1, 2]
+        assert self._selection(window) == [
+            self.KEZDET, self.KEZDET + 1, self.KEZDET + 2
+        ]
 
     def test_extend_back_shrinks_range(self, qml_nav_app, qt_app):
         window, _, _ = qml_nav_app
@@ -469,15 +481,15 @@ class TestShiftArrowSelection:
         _invoke(qt_app, grid, "extendSelection", "right")
         _invoke(qt_app, grid, "extendSelection", "right")
         _invoke(qt_app, grid, "extendSelection", "left")
-        assert self._selection(window) == [0, 1]
+        assert self._selection(window) == [self.KEZDET, self.KEZDET + 1]
 
     def test_plain_move_resets_to_single(self, qml_nav_app, qt_app):
         window, _, _ = qml_nav_app
         grid = self._reset(window, qt_app)
         _invoke(qt_app, grid, "extendSelection", "right")
         _invoke(qt_app, grid, "moveSelection", "right")
-        assert self._selection(window) == [2]
-        assert grid.property("selectionAnchor") == 2
+        assert self._selection(window) == [self.KEZDET + 2]
+        assert grid.property("selectionAnchor") == self.KEZDET + 2
 
 
 class TestFolderPaneStepping:

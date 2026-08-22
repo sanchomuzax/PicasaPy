@@ -321,8 +321,15 @@ ApplicationWindow {
                 Selection.toggled(window.selectedIndexes, i)
             window.selectedIndex = i
         } else if ((mods & Qt.ShiftModifier) && window.selectedIndex >= 0) {
+            // #1219: a tartomány a HORGONY mappacsoportján belül marad —
+            // az eredetiben a tartomány-mag mindig egyetlen album
+            // kijelölés-csomópontján fut, nem tud mappahatárt átlépni.
+            var hatar = controller.photos.groupRange(window.selectedIndex)
+            var veg = i
+            if (hatar.length === 2)
+                veg = Math.max(hatar[0], Math.min(hatar[1], i))
             window.selectedIndexes =
-                Selection.range(window.selectedIndex, i)
+                Selection.range(window.selectedIndex, veg)
         } else {
             window.selectedIndexes = [i]
             window.selectedIndex = i
