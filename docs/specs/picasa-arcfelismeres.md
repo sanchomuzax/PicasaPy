@@ -76,21 +76,28 @@ kiolvasva, nem a `cmp`-sorrendből következtetve.*
 
 ### 1.3 Menü- és felületi belépési pontok
 
-| kulcs | felirat (EN) | felirat (HU) |
-|---|---|---|
-| `eMenuTools::ID_TOOLS_DOWNLOAD_FACES` | — | — |
-| `eMenuTools::ID_WRITE_XMP_FACES` | *Write faces to XMP...* | — |
-| `eMenuPicture::ID_PICTURE_RESET_FACES` · `AlbumPhoto::…` | *Reset &Faces* | *Ar&cok alaphelyzetbe állítása* |
-| **`Album::ID_ALBUM_FILTERFACES`** | **&Add name tags** | **&Névcímkék hozzáadása** |
-| `eMenuCreateMovie::ID_FACES` | *From Faces in Selection...* | — |
-| `eMenuCreateMovie::ID_FACESRANDOM` | — | — |
-| `PplAlbumPhoto::ID_PEOPLEALBUMS` | *&Move to People Album* | *&Hozzáadás az Emberek albumhoz* |
-| `PplAlbumPhoto::ID_PEOPLEALBUMSNEW` | *Move to &New Person...* | *Áthelyezés új &személyhez...* |
-| `PplAlbumPhoto::ID_SETPEOPLEALBUMCOVER` | — | — |
-| `PplAlbum::ID_ALBUM_DELETE` | *&Delete People Album* | *Az Emberek &album törlése* |
-| `PplAlbum::ID_ALBUM_EDITCAPTIONS` | *&Edit People Album...* | *Az &Emberek album szerkesztése...* |
-| `PplAlbumPhoto::ID_FILE_DELETEFROMDISK` | *&Remove from People Album* | *&Eltávolítás az Emberek albumból* |
-| `AlbumList::ID_PEOPLEBYNAME` / `…BYAMOUNT` / `…BYAMOUNTTOP10` | a Személyek-lista három rendezése | *név / mennyiség / toplista alapján* |
+A menürekord **20 bájt** fix lépésközzel: `+0x00` felirat, `+0x04`
+gyorsbillentyű-szöveg, `+0x08` ikon/jelző, **`+0x0a` parancsazonosító**,
+`+0x0c` almenü-tömb, `+0x10` almenü-elemszám. A csupa nulla rekord =
+elválasztó vonal.
+
+| kulcs | cmd | hol | felirat (EN / HU) |
+|---|---|---|---|
+| `eMenuTools::ID_TOOLS_DOWNLOAD_FACES` | **0x9e10** | Eszközök, idx 10 (`0xd6e918`) | *Download Name Tags from Picasa Web Albums* / **Névcímkék letöltése a Picasa Webalbumokból** |
+| `eMenuTools::ID_WRITE_XMP_FACES` | **0x9e2a** | Eszközök ▸ **Experimental** almenü, utolsó elem (`0xd6e838`) | *Write faces to XMP…* / **Arcinformációk írása XMP-adatokba…** |
+| `eMenuPicture::ID_PICTURE_RESET_FACES` | **0x9e11** | Kép menü, idx 8 (`0xd6e538`) | *Reset &Faces* / **Arcok alaphelyzetbe állítása** |
+| `AlbumPhoto::ID_PICTURE_RESET_FACES` | **0x9e11** (ugyanaz) | **három** helyi menü: mappa-fotó, album-fotó, egyképes nézet | ugyanaz |
+| `Album::ID_ALBUM_FILTERFACES` | **0x9e1c** | **két** helyi menü (mappa, album) — mindkettőben az **utolsó** tétel | *&Add name tags* / **Névcímkék hozzáadása** |
+| `eMenuCreateMovie::ID_FACES` | **0x9d59** | Létrehozás ▸ Film almenü, idx 1 | *From Faces in Selection…* / **A kijelölésben lévő arcokból…** |
+| `eMenuCreateMovie::ID_FACESRANDOM` | **0x9d5a** | ugyanott, idx 2 | *From People Albums…* / **Az Emberek albumból…** |
+| `PplAlbumPhoto::ID_PEOPLEALBUMSNEW` | **0xa0cc** | Emberek-album fotó helyi menü, idx 1 | *Move to &New Person…* / **Áthelyezés új személyhez…** |
+| `PplAlbumPhoto::ID_PEOPLEALBUMS` | **0xa0cd** | ugyanott, idx 2 | *&Move to People Album* / **Hozzáadás az Emberek albumhoz** |
+| `PplAlbumPhoto::ID_SETPEOPLEALBUMCOVER` | **0x9e39** | ugyanott, idx 4 | *&Set as People Album Thumbnail* / **Beállítás az Emberek album indexképeként** |
+
+**Gyorsbillentyű: egyiknek sincs** — mind a tíz rekord `+0x04` mezője 0.
+*(Menüszinten bizonyított. A program futásidőben `CreateAcceleratorTableA`-val
+is épít gyorsítótáblát (`0x0092321a`); annak a tartalma nincs feltárva,
+tehát „a menüben nincs gyorsbillentyű" a pontos állítás.)*
 
 > ⚠️ **Az `ID_ALBUM_FILTERFACES` név MEGTÉVESZTŐ.** A felirata nem
 > „szűrés", hanem **„Névcímkék hozzáadása"**. Az azonosító nevéből
@@ -306,8 +313,25 @@ hogy a **szinkronizált webalbumok névcímkéit is eltávolíthatja**.
 | **`CThumbUI::ResetAllFaces`** | `0x00603a20` | **minden személyi album**, az arcok a **Név nélküliek** albumba kerülnek (az arcadat MEGMARAD) |
 | **`CThumbUI::ResetAll`** | `0x00603bb0` | külön rákérdez: *„Szeretné eltávolítani az arcokkal kapcsolatos összes adatot az INI fájlokból?"* — a `faces` és `facedata` kulcsokat törli a `.picasa.ini`-kből |
 
-Mindhárom a jobb fiók **Emberek** paneljéből indul
+Mindhárom elérhető a jobb fiók **Emberek** paneljéből
 (`rightdrawerpanel/peoplepanel` → `peoplepanel/resetfaces`).
+
+> ⭐ **REJTETT VISELKEDÉS: a menütétel MÓDOSÍTÓBILLENTYŰRE mást csinál.**
+> Az „Arcok alaphelyzetbe állítása" (`0x9e11`) kezelője (`0x005cc83c`)
+> **`GetAsyncKeyState`-tel** (`0x00c406f8`) megnézi, mi van lenyomva, és
+> **háromfelé ágazik**:
+>
+> | lenyomva | mi történik |
+> |---|---|
+> | **Ctrl** | `0x006038b0` — **`RemoveAllFaceData`**: MINDEN arc-adat és személyi album törlése + teljes újrakeresés |
+> | **Shift** | `0x00603a20` — **`ResetAllFaces`**: minden személyi album törlése, az arcok a „Név nélküliek" albumba |
+> | semmi | `0x0057daa0` — csak a **kijelölés** arcainak alaphelyzetbe állítása |
+>
+> Mindkét romboló ág egy **belső kapcsolóhoz is kötött**
+> (`byte [0xd67849] != 0`) — vagyis alapállapotban feltehetően rejtett,
+> fejlesztői funkció. **Ugyanaz a menüpont tehát ártalmatlan és
+> katasztrofális is lehet**, attól függően, mit tart lenyomva a
+> felhasználó.
 
 **A különbség lényege:** a `ResetAllFaces` a **neveket** dobja el, a
 `RemoveAllFaceData` **magukat az arcokat is**.
@@ -428,8 +452,8 @@ listában az `adorners/listsuggestionfaceadorner`.
 | # | | eredeti | nálunk | teendő |
 |---|---|---|---|---|
 | 1 | detektáló motor | háttérszál, 8 rekesz | **nincs** (3. fázis) | #26 |
-| 2 | `faces=` olvasás/írás | `rect64(hex),<contact_id>` | részben (ld. #26) | a `zfill(16)` legyen kötelező |
-| 3 | **`facedata` ini-kulcs** | írja, ha `FRWriteFaceDataINI` be | **nem ismerjük** | **round-tripben megőrizni**; írni nem kell |
+| 2 | `faces=` olvasás/írás | `rect64(hex),<contact_id>` | a `zfill(16)` **már helyes** (`ini/rect64.py:35`) | ✅ **nincs teendő** — ld. 13/b |
+| 3 | **`facedata` ini-kulcs** | írja, ha `FRWriteFaceDataINI` be | **nem ismertük**, de a round-trip **MEGŐRZI** (mérve) | ✅ **nincs teendő** — ld. 13/b |
 | 4 | `deferredface` / `deferredregion` import | két külön oszlop, átfedéssel | **nincs importálva** | ebből jön a `contact_id → név` tábla |
 | 5 | `facerect` értelmezése | **logikai jelző**, nem rect | a specünk „szentinel"-nek írta | helyesbítve (3.3) |
 | 6 | `ffffffffffffffff` | „ismeretlen" szentinel | — | ne személyként importáljuk |
@@ -464,13 +488,42 @@ listában az `adorners/listsuggestionfaceadorner`.
 | 4 | A `deferredregion` a nevesített részhalmaz-e | **LEZÁRVA (nemleges)** — 15 mért ellenpélda cáfolja a tiszta részhalmaz-viszonyt; a lap 3.4 rögzíti feltételesként |
 | 5 | A `contact_id` hash képzési szabálya | **HATÓKÖRÖN KÍVÜL** — az importáláshoz nem kell: az azonosítót nem mi képezzük, hanem olvassuk. Ha valaha kell, a `contacts.xml` adja a leképezést |
 | 6 | A `facedata` kulcs értékének pontos mezőszerkezete | **LEZÁRVA (tárgytalan)** — 0 korpusz-előfordulás, alapból kikapcsolt kapcsoló; a teendő a megőrzés, nem az értelmezés |
+| 7 | A `0x9e1c` azonosító **ütközése**: ugyanez az érték a feltöltés-beállítások felugró menüjében is szerepel (`ImpULOpts::ID_ALLOW_COLLAB`, rekord `0xd6f334`) | **LEZÁRVA (nem a mi gondunk)** — más menücsalád, más szétosztó-hívó; nálunk a parancsazonosítókat nem globális névtérként vesszük át, hanem menünként. Ha valaki mégis globálisan egyedinek tekintené, előbb ellenőrizze, befut-e ez a felugró a `0x005cb990`-be |
+| 8 | A `0xa0cd` (Hozzáadás az Emberek albumhoz) tényleges kezelője | **BLOKKOLT** — nincs saját ága a szétosztóban, az alapértelmezett ágra fut (`0x0069aeb0`), amiben egyetlen sztring sincs; futásidőben töltött almenü gyanúja. Jegy: **#1238** |
+| 9 | A `CreateAcceleratorTableA` (`0x0092321a`) tartalma — van-e mégis gyorsbillentyű | **BLOKKOLT** — a függvény hívója relatív `call`-szkenneléssel nem került elő (valószínűleg vtáblán át hívódik). Jegy: **#1238** |
 
 ```
-Nyitott kérdések: 0 nyílt · 3 lezárva · 3 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 0 nyílt · 5 lezárva · 5 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
 ```
 
-*(A 6 kérdésből egy — az 5. — hatókörön kívüli, ezért a lezártak közé nem
-számít bele; az összeg 3+3+1 = 7 sor, mert a 4. és a 6. is „lezárva".)*
+*(Kilenc tétel: 5 lezárva (4., 6., 7. + a 13/b két negatív eredménye),
+5 blokkolt (1., 2., 3., 8., 9.), 1 hatókörön kívül (5.). „Csak nyitva"
+egy sincs.)*
+
+---
+
+## 13/b Két NEGATÍV eredmény a saját kódunkról — mérve, ne járjátok újra
+
+A kör két olyan leletet talált, ami elsőre a mi kódunk hibájának látszott.
+**Mindkettő megdőlt** — a kód már helyes. Ezt azért rögzítjük, hogy a
+következő kör ne kezdje elölről:
+
+1. **A `rect64` vezető nulláinak pótlása.** A mérés szerint a Picasa
+   hexéből 8 jegyűig lekophat a vezető nulla. A mi dekóderünk
+   (`src/picasapy/ini/rect64.py:35`) **már `zfill(16)`-ot végez**, és a
+   modul docstringje ki is mondja, miért. **Nincs teendő.**
+
+2. **A `facedata` kulcs megőrzése round-tripnél.** Lemérve a
+   `document.py` API-ján:
+
+   | eset | eredmény |
+   |---|---|
+   | érintetlen fájl újraszerializálása | **bájtra azonos** |
+   | `facedata` megmarad érintetlenül | **igen** |
+   | `facedata` megmarad EGY MÁSIK kulcs módosítása után is | **igen** |
+
+   A dokumentum-réteg az ismeretlen kulcsokat általánosan megőrzi, tehát
+   a `facedata` külön kezelést **nem igényel**. **Nincs teendő.**
 
 ---
 
