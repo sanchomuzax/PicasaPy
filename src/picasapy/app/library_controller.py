@@ -517,9 +517,24 @@ class LibraryMixin(BackgroundWorkerMixin):
         újranyitása) után ismét „nem figyelt"-ként látszik.
 
         Már figyelt gyökérnél nincs teendő (a folyamatos figyelés úgyis
-        lefedi) — a hívás ekkor csendben kimarad."""
+        lefedi) — a hívás ekkor csendben kimarad.
+
+        #1213: a néma őr-sor szétbontva. Az eredeti Mappakezelő
+        (`0x007c27d0`) EGYETLEN üzenetet ismer (`CFolderMgrDialog::warning`,
+        a teljes meghajtó figyeléséről), és nála a „Keresés egyszer" nem
+        azonnali művelet, hanem a mappa ÁLLAPOTA (`foldermgr/scan_once`
+        rádió) — elutasítás-üzenet tehát nincs hozzá. Nálunk azonnali
+        művelet, ezért csak azt jelezzük, amitől a felhasználó kérése
+        ténylegesen ELMARAD; a „már figyelt" eset nem ilyen (a két rádió
+        az eredetiben is kizárja egymást)."""
         path = normalize_path(to_local_path(path_or_url))
-        if not path or self._find_root(path) is not None or not Path(path).is_dir():
+        if not path:
+            self.watchedFolderRejected.emit(str(path_or_url), "ures-utvonal")
+            return
+        if self._find_root(path) is not None:
+            return  # értelmes no-op: a folyamatos figyelés lefedi
+        if not Path(path).is_dir():
+            self.watchedFolderRejected.emit(path, "nem-mappa")
             return
         # nincs leállítási-jelző kötés (nem figyelt gyökér): egyszeri,
         # meg nem szakítható munka
