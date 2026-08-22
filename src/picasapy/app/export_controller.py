@@ -94,7 +94,7 @@ class ExportMixin(BackgroundWorkerMixin):
 
     @Slot(result=str)
     def defaultExportName(self) -> str:
-        """Az exportált mappa nevének alapértéke (#1166).
+        r"""Az exportált mappa nevének alapértéke (#1166).
 
         Mérve (`docs/specs/export-parbeszed.md` 12.1): a név **a
         kiválasztott album/mappa neve** (`0x0073b500`, a bemeneti szerkezet
