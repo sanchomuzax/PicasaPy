@@ -435,6 +435,42 @@ Window {
         }
     }
 
+    // ⚠️ #1207: ha a hozzáadás elutasításra kerül, a felhasználó TUDJA MEG.
+    //
+    // A tulajdonos jelentése: „Valamiért a képen látható mappát nem jegyzi
+    // meg »OK« gomb után. … Nem értem…" — a program két ágon is némán
+    // visszafordult, és ettől úgy tűnt, sikerült.
+    Connections {
+        target: typeof controller !== "undefined" ? controller : null
+        function onWatchedFolderRejected(utvonal, ok) {
+            if (!folderManagerWindow.visible) return
+            rejectNotice.utvonal = utvonal
+            rejectNotice.ok = ok
+            rejectNotice.visible = true
+        }
+    }
+
+    ConfirmDialog {
+        id: rejectNotice
+        objectName: "folderManagerRejectNotice"
+        namePrefix: "folderManagerRejectNotice"
+        property string utvonal: ""
+        property string ok: ""
+        // tájékoztatás, nem kérdés: egyetlen gomb
+        yesText: qsTr("OK")
+        noText: ""
+        message: {
+            if (rejectNotice.ok === "mar-figyelt")
+                return qsTr("This folder is already being watched:\n%1")
+                       .arg(rejectNotice.utvonal)
+            if (rejectNotice.ok === "nem-mappa")
+                return qsTr("This folder cannot be opened:\n%1")
+                       .arg(rejectNotice.utvonal)
+            return qsTr("The folder could not be added:\n%1")
+                   .arg(rejectNotice.utvonal)
+        }
+    }
+
     // #543: „Watching an entire drive can slow down the system…"
     ConfirmDialog {
         id: driveWarning
