@@ -93,117 +93,22 @@ jobs:
             echo "kod=false" >> "$GITHUB_OUTPUT"
           fi
 
-  test:
+  # A két platform KÜLÖN hívás — ld. a `teszt-darabok.yml` fejlécét: egyetlen
+  # közös mátrix eredménye egyben látszik, és egy bukó windows-darab a
+  # kötelező ubuntu-ellenőrzést is pirosra vitte (mérve a #1257-en).
+  darabok-ubuntu:
     needs: valtozas
-    name: Test (${{ matrix.os }} ${{ matrix.shard }}/4)
-    runs-on: ${{ matrix.os }}
-    # #1127: a verzióemelő automatika ágain a teljes mátrix ceremónia —
-    # egyetlen `version = "…"` sor, olyan kódra, ami a jegy PR-jén már
-    # zölden átment. A kötelező státuszt a `ci-bump.yml` adja meg (~5 mp),
-    # ELLENŐRZÖTT diffel: ha a PR bármi mást is érint, ott elbukik.
-    #
-    # ⚠️ Miért itt, és nem a `pull_request` ág-szűrőjében: a `branches-ignore`
-    # a CÉLágra (base) illeszkedik, nem a forráságra — 2026-08-22-én a
-    # `chore/auto-bump-0.8.44` PR-en ettől a mátrix mégis elindult.
     if: ${{ needs.valtozas.outputs.kod == 'true' }}
-    # Korlát nélkül egy beragadt (#53 GIL-deadlock) pytest 6 órán át
-    # foglalná a runnert, és eldugítaná a teljes Actions-sort (2026-07-19-en
-    # 19 beragadt futás állította le a release-automatikát).
-    #
-    # 2026-08-13: 20 percről 40-re emelve. A készlet azóta jelentősen nőtt:
-    # az Ubuntu-futás ~12–13 perc, a Windows ~1,6-szorosa — az a 20 percbe
-    # SZÁMÍTÁSSAL futott bele, és a rendszer levágta (két mért futás:
-    # 20:04 és 20:06). Ez nem elméleti kockázat: a Windows-ág aznap három
-    # valódi, Windows-specifikus hibát fogott meg (Path.home() a
-    # USERPROFILE-t olvassa; a rendszermappa-védelem POSIX-utakra épült;
-    # a time.monotonic() ~15 ms-os felbontása) — ha az ág levágódik, az
-    # ilyenek átcsúsznak. A korlát célja a BERAGADT futás elvágása marad,
-    # nem az egészségesé.
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        # #1127: a készletet NÉGY futtatóra osztjuk platformonként. A
-        # kiosztás mért futásidők szerint megy (`scripts/teszt_idok.json`),
-        # ezért a négy darab egyenlő — mérve 732/732/732/732 mp, arány 1,00×.
-        #
-        # ⚠️ Ez NEM a gépen belüli párhuzamosítás. Azt 2026-08-19-én
-        # kipróbáltuk (#1030/#1031), és CPU-éhezésben a főágat pirosra vitte
-        # — vissza kellett venni (#1037/#1038). Itt minden darab SAJÁT
-        # futtatón fut, magában: a fájlonkénti izoláció (#53) és a
-        # `/tmp`-korlát (#677) garanciái érintetlenek.
-        shard: [1, 2, 3, 4]
-    env:
-      QT_QPA_PLATFORM: offscreen
+    uses: ./.github/workflows/teszt-darabok.yml
+    with:
+      os: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          # #1127: a pip-letöltések gyorsítótárazása. A csomaglista a
-          # pyproject.toml-ból jön, ezért a kulcs is arra hivatkozik — új
-          # függőségnél magától elévül.
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Install Linux Qt runtime dependencies
-        if: runner.os == 'Linux'
-        # A csomaglista a packaging/qt-runtime-deps.txt — ugyanaz a fájl,
-        # amiből a session-bootstrap is telepít. Tételes lista ide nem
-        # kerülhet vissza (tests/test_kornyezet_szinkron.py).
-        run: |
-          # A GitHub apt-tükre 2026-08-19-én KÉTSZER lógott be némán: egyszer
-          # 10 percre (a csomag-job korlátjába futott), egyszer 40 percre (a
-          # teszt-job korlátjába) — a tesztek el sem indultak. Egy sikertelen
-          # frissítés nem ok arra, hogy egy 40 perces job elhaljon: rövid
-          # korláttal próbálkozunk, és háromszor.
-          for kiserlet in 1 2 3; do
-            timeout 180 sudo apt-get update && break
-            echo "apt-get update ($kiserlet.) nem jött vissza — újra"
-            sleep 5
-          done
-          sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
-
-      - name: Install Python dependencies
-        # A lista a pyproject.toml (futásidejű + `dev` extra). A projektet
-        # magát NEM telepítjük: a tesztek a forrásfából futnak
-        # (pythonpath=["src"]), az editable install pedig *.egg-info-ot
-        # hagyna a fában, amiből a csomag-ellenőrzők hamis zöldet nyernek (#655).
-        shell: bash
-        run: |
-          python -m pip install --upgrade pip
-          pip install $(python scripts/print_dependencies.py --all)
-
-      - name: Run tests
-        # darabolt futtatás (#53): a teljes készlet egy processzben a
-        # Windows-runneren rendszeresen GIL-deadlockba ragadt — a script
-        # a tests/app fájlokat külön processzben, kemény timeouttal futtatja.
-        # #300: a lefedettség-összesítő elég az ubuntu-lábon (--cov); a
-        # Windows-lábat ez a plusz coverage-réteg ne terhelje/lassítsa.
-        # ⚠️ #1044 VISSZAVONVA (#988). A `PICASAPY_TESZT_PARHUZAM: "2"`
-        # bekapcsolása után az ELSŐ futáson azonnal jött a
-        # `test_collage_controller_943.py: exit -11` (SIGSEGV) — pont az a
-        # hiba, amit a #988 „ingadozónak" ír le, és amit a #999 a
-        # háttérszálak terhelés alatti lebontásához köt.
-        #
-        # A #1030 mérése (26 → 14 perc) áll, és a #1031 is a fejlesztői gép
-        # miatt vette vissza sorosra — de a szegmentálási hiba a MAIN-t
-        # festi pirosra, ami e-mailt küld a tulajdonosnak. Egy gyorsabb, de
-        # ingadozó CI rosszabb a lassú, de megbízhatónál.
-        #
-        # Visszakapcsolni csak a #988/#999 gyökérokának javítása UTÁN szabad.
-        #
-        # ⚠️ #1127: a `--cov` KIKERÜLT a CI-ből. Négy darabra osztva minden
-        # darab csak a SAJÁT részét látná, tehát a kiírt szám nem a teljes
-        # lefedettség volna — egy részleges számot totálként mutatni
-        # rosszabb, mint nem mutatni semmit. A lefedettség-mérés külön
-        # jegyre került; a `--cov` helyben változatlanul működik.
-        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/4
+  darabok-windows:
+    needs: valtozas
+    if: ${{ needs.valtozas.outputs.kod == 'true' }}
+    uses: ./.github/workflows/teszt-darabok.yml
+    with:
+      os: windows-latest
 
   # ⚠️ #1164: ÖSSZEFOGÓ ellenőrzés a főág védelmének.
   #
@@ -230,7 +135,7 @@ jobs:
     # mátrix kimaradt — így a kötelező státuszt SOHA nem adhatja meg más
     # workflow „kihagyva" állapotban (a GitHub a kihagyottat sikernek
     # számolja, és auto-merge mellett ez beolvasztott volna egy bukó kört).
-    needs: [valtozas, test]
+    needs: [valtozas, darabok-ubuntu]
     if: always()
     steps:
       - name: A kód futását nem érintő PR — a mátrix kimaradt
@@ -242,23 +147,23 @@ jobs:
       - name: A négy ubuntu-darab mind zöld
         if: ${{ needs.valtozas.outputs.kod == 'true' }}
         run: |
-          if [ "${{ needs.test.result }}" != "success" ]; then
-            echo "Valamelyik darab elbukott: ${{ needs.test.result }}"
+          if [ "${{ needs.darabok-ubuntu.result }}" != "success" ]; then
+            echo "Valamelyik darab elbukott: ${{ needs.darabok-ubuntu.result }}"
             exit 1
           fi
 
   test-windows:
     name: Test (windows-latest)
     runs-on: ubuntu-latest
-    needs: [valtozas, test]
+    needs: [valtozas, darabok-windows]
     if: always()
     steps:
       - name: A négy windows-darab mind zöld
         # ha a mátrix nem futott, nincs mit ellenőrizni
         if: ${{ needs.valtozas.outputs.kod == 'true' }}
         run: |
-          if [ "${{ needs.test.result }}" != "success" ]; then
-            echo "Valamelyik darab elbukott: ${{ needs.test.result }}"
+          if [ "${{ needs.darabok-windows.result }}" != "success" ]; then
+            echo "Valamelyik darab elbukott: ${{ needs.darabok-windows.result }}"
             exit 1
           fi
 
