@@ -59,6 +59,15 @@ class TestDeleteToTrash:
             delete_to_trash(tmp_path / "nincs.jpg", trash_dir=tmp_path / "Trash")
 
     def test_default_trash_dir_uses_xdg_data_home(self, tmp_path, monkeypatch):
+        """⚠️ Ez a FREEDESKTOP-ág tesztje, ezért a platformot KIMONDJUK.
+
+        A #1182 óta Windowson a rendszer Lomtára a cél (`SHFileOperationW`),
+        nem az `$XDG_DATA_HOME/Trash` — ott ez a teszt a TERMÉK HELYES
+        viselkedésén bukna el, és a bukás azt sugallná, hogy a natív
+        Lomtár a hiba. (A windows-CI-lábon pontosan ez történt.)"""
+        from picasapy.fileops import trash as trash_modul
+
+        monkeypatch.setattr(trash_modul, "_platform", lambda: "linux")
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
         photo = tmp_path / "a.jpg"
         photo.write_bytes(b"kep")
