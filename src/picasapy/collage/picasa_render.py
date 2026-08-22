@@ -706,6 +706,25 @@ def layout_nodes(
     return layout_nodes_for_aspects(_aspects(list(images)), paths, settings)
 
 
+def _multiexp_node(path: Path, settings: PicasaCollageSettings) -> CollageNode:
+    """A Többszörös exponálás egyetlen csomópont-alakja (#1248).
+
+    Mérve az `AI7.cxf`-en: `x=0 y=0 w=1 h=1 theta=0`, `noborder` — vagyis
+    minden kép a TELJES lapot fedi. Lapegységben ez a lap közepén álló,
+    lap méretű doboz."""
+    lap_magassag = SHEET_UNITS * settings.height / settings.width
+    return CollageNode(
+        path=str(path),
+        center_x=SHEET_UNITS / 2.0,
+        center_y=lap_magassag / 2.0,
+        width=SHEET_UNITS,
+        height=lap_magassag,
+        theta=0.0,
+        border=NOBORDER,
+        fill=False,
+    )
+
+
 def make_picasa_collage(
     sources, settings: PicasaCollageSettings = _DEFAULT_SETTINGS
 ) -> CollageReport:
@@ -748,15 +767,26 @@ def make_picasa_collage(
         )
 
     # #960: a kirajzolt csomópontok — a `.cxf` piszkozat egyetlen hiteles
-    # forrása. A Többszörös exponálás nem helyez el képeket, ott üres marad.
+    # forrása. A Többszörös exponálás sem kivétel (#1248): geometriát nem
+    # ad, a FORRÁSKÉPEK listáját viszont neki is ki kell adnia.
     rajzolt: tuple[CollageNode, ...] = ()
     if settings.theme == MULTIEXP:
         # A Többszörös exponálás nem HELYEZ el képeket, hanem egymásra keveri
-        # őket — nincsenek csomópontjai, ezért nem a közös rajzolón megy át.
-        # A képesség-maszkja is ezt mondja: se kijelölés, se keret, se háttér.
+        # őket — ezért nem a közös rajzolón megy át. A képesség-maszkja is
+        # ezt mondja: se kijelölés, se keret, se háttér.
         canvas = blend_multi_exposure(
             decoded, settings.width, settings.height, settings.background
         )
+        # ⚠️ #1248: a csomópontok ettől függetlenül KELLENEK. A geometria
+        # tényleg nem hordoz információt, a `.cxf`-nek viszont tudnia kell,
+        # MELYIK képekből készült a kollázs — enélkül az újraszerkesztés
+        # fekete lapot ad, és a mentés azt jelenti, hogy „az összes képet
+        # eltávolították" (a tulajdonos jelentése, v0.8.45).
+        #
+        # Az alak MÉRVE (`referencia/kollazs-golden/AI7.cxf`, valódi
+        # Picasa-minta): képenként EGY csomópont, mind a TELJES lapon,
+        # forgatás és keret nélkül.
+        rajzolt = tuple(_multiexp_node(ut, settings) for ut in used)
     elif settings.theme == CONTACTSHEET:
         # Az Indexkép a fejlécsáv ALATT kap egy önálló lapot. A külön
         # vászonra rajzolás nem kényelmi kérdés, hanem VÁGÁS: a cellából

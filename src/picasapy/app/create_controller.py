@@ -18,9 +18,16 @@ piszkozatot, és a következő indításkor felajánlotta a visszaállítást (s
 egyáltalán létezik: az élő előnézet és a mentés `CollageReport.nodes`-
 csomópontjaiból (#942). Két szabály tartja értelmesnek:
 
-1. **Sosem találunk ki geometriát.** Ha a rajzoló nem ad csomópontot (a
-   Többszörös exponálás nem helyez el képeket), piszkozat sem születik — a
-   formátum épp azt ígéri, hogy pontosan visszaáll.
+1. **Sosem találunk ki geometriát.** Ha a rajzoló nem ad csomópontot,
+   piszkozat sem születik — a formátum épp azt ígéri, hogy pontosan
+   visszaáll.
+
+   ⚠️ A Többszörös exponálás **nem** ilyen eset (#1248). Geometriát tényleg
+   nem helyez el, de a `.cxf`-nek tudnia kell, MELYIK képekből készült; az
+   eredeti is képenként egy, teljes lapos csomópontot ír (mérve:
+   `referencia/kollazs-golden/AI7.cxf`). Amíg nálunk üres maradt, az
+   újraszerkesztés fekete lapot adott, a mentés pedig azt jelentette, hogy
+   „az összes képet eltávolították".
 2. **A piszkozat hibája sosem viheti el a kollázst.** Írása és eldobása
    naplózott, de nyelt hiba: a felhasználó munkája fontosabb, mint a
    biztonsági másolata.
