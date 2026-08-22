@@ -727,10 +727,7 @@ Rectangle {
                         fileOpsController.revealFolder(path)
                 }
                 onRemoveFromPicasaRequested: function(path) {
-                    folderContextMenu.folderPath = path
-                    removeFolderConfirm.ask(
-                        "removeFolder",
-                        qsTr("Remove this folder from PicasaPy? The files stay on disk."))
+                    pane._askRemoveFolder(path)
                 }
                 onMoveFolderRequested: function(path) {
                     pane._movingFolder = path
@@ -962,22 +959,39 @@ Rectangle {
             if (typeof fileOpsController !== "undefined" && fileOpsController)
                 fileOpsController.revealFolder(folderContextMenu.folderPath)
         }
-        onRemoveFromPicasaRequested: removeFolderConfirm.ask(
-            "removeFolder",
-            qsTr("Remove this folder from PicasaPy? The files stay on disk."))
+        onRemoveFromPicasaRequested: pane._askRemoveFolder(
+            folderContextMenu.folderPath)
         onExportAsHtmlRequested:
             if (pane.appWindow && pane.appWindow.openWebExport)
                 pane.appWindow.openWebExport()
     }
 
+    // #1249: az eredeti megerősítés — a MAPPA NEVÉVEL, és kimondja az
+    // almappákat („Do you want to remove the folder %s and its
+    // subfolders?", `CThumbUI::ManageAlbum`). A név a path utolsó tagja.
+    function _askRemoveFolder(path) {
+        folderContextMenu.folderPath = path
+        var nev = String(path).split(/[\\/]/).filter(Boolean).pop() || path
+        removeFolderConfirm.ask(
+            "removeFolder",
+            qsTr("Do you want to remove the folder %1 and its subfolders?")
+                .arg(nev))
+    }
+
     // „Eltávolítás a Picasából…" — a fájlok a lemezen maradnak, csak a
-    // figyelt mappák közül kerül ki (#422)
+    // könyvtárból kerül ki (#422 → #1249)
     ConfirmDialog {
         id: removeFolderConfirm
         namePrefix: "removeFolderConfirm"
+        // az eredeti igen-gombja: `CThumbUI:ManageAlbumYesButton`
+        yesText: qsTr("Remove Folder")
         onConfirmed: {
+            // #1249: a removeWatchedFolder CSAK pontos figyelt-gyökérre
+            // hatott — almappán némán semmit nem csinált (a jelentett
+            // tünet). A removeFolder a széles változat: gyökérre a teljes
+            // meglévő út, almappára index-takarítás + sírkő.
             if (controller && folderContextMenu.folderPath !== "")
-                controller.removeWatchedFolder(folderContextMenu.folderPath)
+                controller.removeFolder(folderContextMenu.folderPath)
         }
     }
 

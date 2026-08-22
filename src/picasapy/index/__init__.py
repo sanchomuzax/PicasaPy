@@ -59,6 +59,9 @@ from .relocate import (
 )
 from .schema import SCHEMA_VERSION
 from .sync import (
+    add_removed_folder,
+    clear_removed_folders_under,
+    removed_folder_paths,
     prune_foreign_folders,
     remove_root,
     sync_folder,
@@ -108,7 +111,10 @@ __all__ = [
     "project_folders",
     "prune_foreign_folders",
     "relocate_data_root",
+    "add_removed_folder",
+    "clear_removed_folders_under",
     "remove_root",
+    "removed_folder_paths",
     "replace_faces",
     "reset_all_faces",
     "save_colors",

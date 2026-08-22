@@ -114,6 +114,8 @@ def sync_tree(
     """
     root_path = Path(normalize_path(root))
     _ensure_scan_state(conn)
+    # #1249: a sírkövek mindig kizárnak — a hívónak nem kell tudnia róluk
+    exclude = tuple(exclude) + removed_folder_paths(conn)
     skip = _make_skip(conn) if incremental else None
     # #358: az `excluded_names` a #349 NÉV-kizárólista miatt kihagyott
     # mappákat gyűjti — ha ez nem üres, a gyökér scandirje bizonyíthatóan
@@ -213,6 +215,8 @@ def sync_folder(
             f"A mappa nem a figyelt gyökér alatt van: {folder_path} ∉ {root_path}"
         )
     _ensure_scan_state(conn)
+    # #1249: a sírkövek itt is kizárnak (a watcher-ág is ide fut)
+    exclude = tuple(exclude) + removed_folder_paths(conn)
     exclude_paths = tuple(Path(normalize_path(item)) for item in exclude)
     excluded = any(
         folder_path == item or item in folder_path.parents for item in exclude_paths
@@ -311,6 +315,53 @@ def _remove_folder(conn: sqlite3.Connection, folder_path: Path) -> None:
 def _ensure_scan_state(conn: sqlite3.Connection) -> None:
     """A scan-állapot cache-tábla lusta létrehozása (ld. _SCAN_STATE_DDL)."""
     conn.execute(_SCAN_STATE_DDL)
+    conn.execute(_REMOVED_FOLDERS_DDL)
+
+
+#: #1249: az „Eltávolítás a Picasából" SÍRKÖVEI. Az eredetiben a mappa nem
+#: törlődik az albumtárból — `]album:removed` tokennel jelölt bejegyzés
+#: marad (`0x004b9200`), és a beolvasó ettől nem veszi fel újra. Nálunk a
+#: megfelelője ez a tábla: a beolvasás kihagyja a felsorolt útvonalakat
+#: (és alfáikat), az újra-hozzáadás pedig feloldja őket.
+_REMOVED_FOLDERS_DDL = """
+CREATE TABLE IF NOT EXISTS removed_folders (
+    path TEXT PRIMARY KEY
+)
+"""
+
+
+def add_removed_folder(conn: sqlite3.Connection, path: str | Path) -> None:
+    """Sírkő az eltávolított mappára (#1249) — a rescan nem hozza vissza."""
+    _ensure_scan_state(conn)
+    conn.execute(
+        "INSERT OR REPLACE INTO removed_folders (path) VALUES (?)",
+        (normalize_path(str(path)),),
+    )
+    conn.commit()
+
+
+def clear_removed_folders_under(conn: sqlite3.Connection, path: str | Path) -> None:
+    """A sírkövek feloldása az útvonalon ÉS alatta (#1249) — az újra
+    felvett mappa (vagy szülője) alatt semmi nem maradhat némán rejtve."""
+    _ensure_scan_state(conn)
+    torzs = Path(normalize_path(str(path)))
+    torlendo = [
+        row["path"]
+        for row in conn.execute("SELECT path FROM removed_folders")
+        if Path(row["path"]) == torzs or Path(row["path"]).is_relative_to(torzs)
+    ]
+    for item in torlendo:
+        conn.execute("DELETE FROM removed_folders WHERE path = ?", (item,))
+    conn.commit()
+
+
+def removed_folder_paths(conn: sqlite3.Connection) -> tuple[str, ...]:
+    """A sírkövek listája — a beolvasás kizáró-készletéhez (#1249)."""
+    _ensure_scan_state(conn)
+    return tuple(
+        row["path"]
+        for row in conn.execute("SELECT path FROM removed_folders ORDER BY path")
+    )
 
 
 def _make_skip(conn: sqlite3.Connection):

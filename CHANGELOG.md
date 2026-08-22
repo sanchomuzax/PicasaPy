@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.8.48] – 2026-08-22
 
+### Javítva
+- **Az „Eltávolítás a Picasából…" almappán is működik, és a mappa nem jön
+  vissza (#1249).** A menü eddig almappára némán semmit nem csinált; és
+  ami eltűnt, azt a következő újraolvasás visszahozta. Mostantól az
+  eredeti „sírkő" jelölés akadályozza meg a visszatérést, az újra
+  felvett mappa pedig feloldja. A megerősítő kérdés a mappa nevével és
+  az eredeti „Mappa eltávolítása" gombbal jelenik meg.
+
 ### Új
 - **Az első indítás panelje az eredeti Picasát követi (#1167).** Ha a gépen
   korábbi Picasa-telepítés van, a migrációs kérdés jelenik meg („Frissíti a
