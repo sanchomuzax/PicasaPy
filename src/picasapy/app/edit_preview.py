@@ -505,7 +505,12 @@ class EditPreviewProvider(QQuickImageProvider):
         # A néző sourceSize.width-del (magasság nélkül) kér: a (w, 0) a
         # QSize.isValid() szerint érvényes, de a scaled() üres képet adna
         # (#48). Fél-dimenziós kérésnél képaránytartó scaledToWidth/Height.
-        if requested_size is not None:
+        # #1185: null képet NEM méretezünk — a `gpuprefix=1`/`gpulut=1`
+        # ágon szándékosan nincs placeholder-tartalék, ezért üres tárnál a
+        # kép null marad, a Qt pedig minden ilyen kérésnél kiírja, hogy
+        # „QImage::scaleWidth: Image is a null image". Ártalmatlan, de
+        # elfedi a valódi hibákat a naplóban.
+        if requested_size is not None and not image.isNull():
             width, height = requested_size.width(), requested_size.height()
             smooth = Qt.TransformationMode.SmoothTransformation
             if width > 0 and height > 0:
