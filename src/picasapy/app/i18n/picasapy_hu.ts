@@ -2618,6 +2618,54 @@ Would you like to rename or skip these files?</source>
 <context>
     <name>InitialScanDialog</name>
     <message>
+        <source>Picasa</source>
+        <translation>Picasa</translation>
+    </message>
+    <message>
+        <source>There is an older version of Picasa installed.  Would you like to update your existing picture library, or search your computer for pictures again?</source>
+        <translation>A Picasa egyik régebbi verziója van a számítógépre telepítve. Frissíti a meglévő képtárat, vagy újrakeresi a képeket a számítógépen?</translation>
+    </message>
+    <message>
+        <source>Picasa is ready to search for pictures on your computer</source>
+        <translation>A Picasa készen áll arra, hogy képeket keressen a számítógépen</translation>
+    </message>
+    <message>
+        <source>Update my existing picture library</source>
+        <translation>A meglévő képtár frissítése</translation>
+    </message>
+    <message>
+        <source>Choose this option if you use keywords or custom albums in Picasa 1, and you want to preserve these in Picasa 3.</source>
+        <translation>Akkor válassza ezt az opciót, ha a Picasa 1-es verziójában kulcsszavakat vagy egyéni albumokat használ, és ezeket a Picasa 3-as verziójában is meg szeretné őrizni.</translation>
+    </message>
+    <message>
+        <source>Search my computer for pictures again</source>
+        <translation>Képek ismételt keresése a saját gépen</translation>
+    </message>
+    <message>
+        <source>Choose this option for a more complete search of your computer, which includes extended picture information.  It will preserve your existing edits and organization, but it will not preserve keywords.  This search may take several minutes.</source>
+        <translation>Akkor válassza ezt az opciót, ha szélesebb körű keresést szeretne futtatni a számítógépen, amely a kiterjesztett képadatokra is kiterjed. A művelet megőrzi az eddigi szerkesztéseket és elrendezéseket, de nem őrzi meg a kulcsszavakat. A keresés eltarthat néhány percig.</translation>
+    </message>
+    <message>
+        <source>Choose this option if you only store your pictures in these folders.</source>
+        <translation>Akkor válassza ezt az opciót, ha csak ezekben a mappákban tárolja képeit.</translation>
+    </message>
+    <message>
+        <source>Search my whole computer for pictures</source>
+        <translation>Képek keresése a teljes számítógépen</translation>
+    </message>
+    <message>
+        <source>Choose this option if you have pictures stored in various folders across your computer, especially if you have pictures stored on more than one hard drive.</source>
+        <translation>Akkor válassza ezt az opciót, ha különböző mappákban tárolja a képeket a számítógépen, különösen akkor, ha a képek egynél több meghajtón találhatók.</translation>
+    </message>
+    <message>
+        <source>Searching for pictures never moves or copies files to new locations. You can choose which folders are displayed by Picasa by using the Folder Manager tool (available from the Tools menu)</source>
+        <translation>Miközben a program képeket keres, soha nem másolja vagy helyezi őket új helyre. Az Eszközök menüből elérhető Mappakezelő eszközzel megadhatja, hogy a Picasa mely mappákat jelenítse meg</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>Folytatás</translation>
+    </message>
+    <message>
         <source>Welcome to PicasaPy</source>
         <translation>Üdvözli a PicasaPy</translation>
     </message>

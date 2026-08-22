@@ -1838,6 +1838,12 @@ ApplicationWindow {
     InitialScanDialog {
         id: initialScanDialog
         objectName: "initialScanDialog"
+        // #1167: a migrációs „frissítés" ág a meglévő Picasa-átvételt
+        // nyitja (#146) — a felderítést a PicasaImportDialog végzi újra
+        onImportRequested: {
+            if (typeof discoveryController !== "undefined" && discoveryController)
+                discoveryController.openImportDialog()
+        }
     }
 
     // #1051: a kollázs-piszkozat visszaállításának felajánlása. A LAPRA
