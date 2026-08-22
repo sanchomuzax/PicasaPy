@@ -143,3 +143,81 @@ class TestControllerSlice:
         assert list(controller.initialScanFolders("narrow")) == list(
             narrow_folders(home)
         )
+
+
+class TestWideChoiceKotetek:
+    """#1167: a „teljes gép" választás az EREDETIBEN a meghajtó-gyökereket
+    veszi (`0x004fdd10`, `GetLogicalDrives`; a valódi mintában
+    `+C:\\ +L:\\ +E:\\ +D:\\`). Nálunk:
+
+    - Windowson a meghajtók (a `folder_tree_controller` felsorolójával);
+    - Linuxon a home + a /media és /run/media alatti FELHASZNÁLÓI
+      csatolások. A /mnt szándékosan NEM: ott ül a tulajdonos élő családi
+      NAS-a (csak-olvasás, napló-limittel) — azt első indításkor
+      beolvasni kifejezetten veszélyes lenne.
+    """
+
+    def test_linuxon_a_home_es_a_media_csatolasok(self, monkeypatch, tmp_path):
+        from picasapy.app import initial_scan
+
+        home = tmp_path / "sancho"
+        home.mkdir()
+        media = tmp_path / "media" / "sancho"
+        (media / "USB1").mkdir(parents=True)
+        (media / "USB2").mkdir()
+        monkeypatch.setattr(initial_scan, "_platform", lambda: "linux")
+        # a _MEDIA_PARENTS a /media megfelelője — a kód alá a
+        # felhasználónevet fűzi (/media/<user>/<kötet>)
+        monkeypatch.setattr(initial_scan, "_MEDIA_PARENTS", (media.parent,))
+        monkeypatch.setattr(initial_scan.Path, "home", classmethod(lambda cls: home))
+
+        kotetek = initial_scan.wide_folders(home)
+
+        assert str(home) in kotetek
+        assert str(media / "USB1") in kotetek
+        assert str(media / "USB2") in kotetek
+
+    def test_a_mnt_szandekosan_kimarad(self, monkeypatch, tmp_path):
+        from picasapy.app import initial_scan
+
+        home = tmp_path / "sancho"
+        home.mkdir()
+        (tmp_path / "mnt" / "photo").mkdir(parents=True)
+        monkeypatch.setattr(initial_scan, "_platform", lambda: "linux")
+        monkeypatch.setattr(initial_scan, "_MEDIA_PARENTS", ())
+
+        kotetek = initial_scan.wide_folders(home)
+
+        assert all("/mnt" not in k for k in kotetek)
+
+
+class TestMigracio:
+    """#1167: a MIGRÁCIÓS szövegkészlet (`Text1`) akkor jön, ha van
+    korábbi Picasa-telepítés — az eredetiben az indulás-rutin a
+    felderített sztringből dönt (`0x0040d450`, felderítő `0x00406c00`).
+    Nálunk a meglévő `scanner.discovery` (#146) a felderítő."""
+
+    def test_talalat_nelkul_tiszta_telepites(self, monkeypatch):
+        from picasapy.app import initial_scan
+
+        monkeypatch.setattr(
+            initial_scan, "_installation_count", lambda: 0
+        )
+        assert initial_scan.migration_detected() is False
+
+    def test_talalattal_migracios(self, monkeypatch):
+        from picasapy.app import initial_scan
+
+        monkeypatch.setattr(initial_scan, "_installation_count", lambda: 1)
+        assert initial_scan.migration_detected() is True
+
+    def test_a_felderites_hibaja_nem_akadalyoz(self, monkeypatch):
+        """A felderítés bukása nem állíthatja meg az indulást — tiszta
+        telepítésként megy tovább."""
+        from picasapy.app import initial_scan
+
+        def robban():
+            raise RuntimeError("registry-hiba")
+
+        monkeypatch.setattr(initial_scan, "_installation_count", robban)
+        assert initial_scan.migration_detected() is False

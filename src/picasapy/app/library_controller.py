@@ -44,6 +44,7 @@ from .formatting import to_local_path
 from .initial_scan import (
     SKIP_INITIAL_SCAN_KEY,
     folders_for_choice,
+    migration_detected,
     needs_initial_scan,
 )
 from .worker_thread import BackgroundWorkerMixin
@@ -444,6 +445,13 @@ class LibraryMixin(BackgroundWorkerMixin):
             self._get_settings().value(SKIP_INITIAL_SCAN_KEY, "false")
         ).lower() in ("true", "1", "yes")
         return needs_initial_scan(tuple(self._roots), skip)
+
+    @Slot(result=bool)
+    def initialScanMigration(self) -> bool:  # noqa: N802
+        """A MIGRÁCIÓS szövegkészlet kell-e (#1167) — van-e korábbi
+        Picasa-telepítés (az eredetiben `0x0040d450`, felderítő
+        `0x00406c00`; nálunk a `scanner.discovery`, #146)."""
+        return migration_detected()
 
     @Slot(str, result="QVariant")
     def initialScanFolders(self, choice: str):  # noqa: N802

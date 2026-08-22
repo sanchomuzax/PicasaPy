@@ -1,4 +1,4 @@
-"""Első indítás: mit olvassunk be (#449).
+r"""Első indítás: mit olvassunk be (#449).
 
 A Picasa az első indításkor **egyetlen kérdést** tett fel, mielőtt bármit
 csinált volna (`CInitialScanDialog`):
@@ -13,10 +13,14 @@ választás volt** — nem kért mappalistát, nem nyitott fát —, és **egyet
 hogy eldöntötted volna, hiszen enélkül a program üres. A finomhangolás
 utána, a Mappakezelőben történik.
 
-**A linuxos leképezés.** A „teljes számítógép" itt NEM a teljes
-fájlrendszer: csatolt hálózati meghajtók, konténerek és rendszermappák
-miatt az kifejezetten rossz ötlet. A tág választás nálunk a
-**home-könyvtár**; a szűk pedig az XDG szerinti Képek/Dokumentumok/Asztal.
+**A leképezés (#1167).** Az eredeti „teljes gép" ága a meghajtó-
+gyökereket veszi (`0x004fdd10`, `GetLogicalDrives` — a valódi mintában
+`+C:\ +L:\ +E:\ +D:\`). Nálunk: Windowson a meghajtók; Linuxon a
+home + a /media és /run/media alatti FELHASZNÁLÓI csatolások. A /mnt
+szándékosan kimarad: ott ül a tulajdonos élő családi NAS-a (csak-olvasás,
+napló-korláttal) — azt első indításkor beolvasni veszélyes volna. A szűk
+választás az XDG szerinti Dokumentumok/Képek/Asztal (az eredeti
+`WinSystemPaths::MyDocuments`/`::MyPictures`/`::Desktop` megfelelője).
 
 A varázsló kihagyható (`skipinitialscan`) — a Picasában is volt erre kulcs.
 """
@@ -24,6 +28,7 @@ A varázsló kihagyható (`skipinitialscan`) — a Picasában is volt erre kulcs
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 #: A két választás azonosítója (a QML és a beállítás is ezt használja).
@@ -71,10 +76,52 @@ def narrow_folders(home: Path | None = None) -> tuple[str, ...]:
     return tuple(found)
 
 
+#: a Linux-csatolások szülői — a `folder_tree_controller` gyökereinek mintája
+_MEDIA_PARENTS = (Path("/media"), Path("/run/media"))
+
+
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse."""
+    return sys.platform
+
+
 def wide_folders(home: Path | None = None) -> tuple[str, ...]:
-    """A tág választás: a home-könyvtár (a „teljes gép" linuxos megfelelője)."""
+    """A tág választás kötetei (#1167) — ld. a modul-docstring leképezését."""
+    if _platform() == "win32":
+        from .folder_tree_controller import _windows_meghajtok
+
+        return tuple(str(utvonal) for _nev, utvonal in _windows_meghajtok())
     base = Path(home) if home is not None else Path.home()
-    return (str(base),) if base.is_dir() else ()
+    kotetek = [str(base)] if base.is_dir() else []
+    felhasznalo = base.name
+    for szulo in _MEDIA_PARENTS:
+        try:
+            for csatolas in (szulo / felhasznalo).iterdir():
+                if csatolas.is_dir() and str(csatolas) not in kotetek:
+                    kotetek.append(str(csatolas))
+        except OSError:
+            continue
+    return tuple(kotetek)
+
+
+def _installation_count() -> int:
+    """A felderített korábbi telepítések száma — külön függvény, hogy a
+    teszt helyettesíthesse (a valódi felderítő a `scanner.discovery`, #146)."""
+    from picasapy.scanner import discover_installations
+
+    return len(discover_installations())
+
+
+def migration_detected() -> bool:
+    """A MIGRÁCIÓS szövegkészlet kell-e (`Text1`) — az eredetiben
+    `migrációs jelző = találtunk korábbi telepítést` (`0x0040d450`).
+
+    Hibatűrő: a felderítés bukása nem akadályozhatja az indulást — tiszta
+    telepítésként megy tovább."""
+    try:
+        return _installation_count() > 0
+    except Exception:
+        return False
 
 
 def folders_for_choice(choice: str, home: Path | None = None) -> tuple[str, ...]:
@@ -102,6 +149,7 @@ __all__ = [
     "SCAN_WIDE",
     "SKIP_INITIAL_SCAN_KEY",
     "folders_for_choice",
+    "migration_detected",
     "narrow_folders",
     "needs_initial_scan",
     "wide_folders",
