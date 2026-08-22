@@ -13,10 +13,17 @@ szerkesztés egyszerűen nem történik meg:
 | `Vignette=1,35,1.4,0,00000000;` | lefut |
 | `vignette=` / `VIGNETTE=` | **néma elejtés** |
 
-Ezért: **olvasáskor megengedők maradunk** (`FilterOp.matches` casefold —
-a felhasználó ini-jében bármilyen írásmód előfordulhat, és azt meg kell
-értenünk), **íráskor viszont kizárólag a kanonikus alak mehet ki**. A két
-irány összekeverése régi fájlokat tenne olvashatatlanná.
+Ezért **mindkét irányban a kanonikus alak számít**:
+
+- **íráskor** kizárólag a kanonikus alak mehet ki;
+- **olvasáskor** a nem egyező írásmódú, de FELISMERT nevű bejegyzés
+  ugyanúgy elesik, ahogy az eredetiben (#1141). Korábban itt casefold
+  illesztés állt („legyünk megengedők"), és ettől a PicasaPy olyan
+  szerkesztést mutatott, amit a Picasa a felhasználó gépén nem hajt végre
+  — a néma eltérés a mi oldalunkon keletkezett.
+
+Az ISMERETLEN nevet továbbra sem bántjuk: változatlanul megy vissza a
+láncba (round-trip elv).
 
 A kanonikus alakok forrása a `docs/specs/filterdesc-registry.md` 2.
 szakasza — a Picasa saját `filterdesc.xml`-jéből átvezetett, 84 bejegyzésű
