@@ -262,9 +262,14 @@ Column {
                 ToolTip.delay: 500
                 contentItem: Image {
                     objectName: "trayHoldIcon"
-                    anchors.centerIn: parent
+                    // #1188: a `Control` a contentItem geometriáját maga
+                    // állítja be (az `anchors.centerIn` ezért hatástalan
+                    // volt), a `fillMode` alapja pedig `Image.Stretch` —
+                    // a négyzetes SVG így a gomb tartalom-dobozára feszült
+                    // (mérve: 14×14-es forrás 16×26-ra nyúlva).
+                    fillMode: Image.PreserveAspectFit
                     source: "icons/hold-pin.svg"
-                    sourceSize: Qt.size(14, 14)
+                    sourceSize: Qt.size(28, 28)
                     opacity: trayHoldBtn.enabled ? 1.0 : 0.5
                 }
             }
@@ -279,9 +284,14 @@ Column {
                 ToolTip.delay: 500
                 contentItem: Image {
                     objectName: "trayClearIcon"
-                    anchors.centerIn: parent
+                    // #1188: a `Control` a contentItem geometriáját maga
+                    // állítja be (az `anchors.centerIn` ezért hatástalan
+                    // volt), a `fillMode` alapja pedig `Image.Stretch` —
+                    // a négyzetes SVG így a gomb tartalom-dobozára feszült
+                    // (mérve: 14×14-es forrás 16×26-ra nyúlva).
+                    fillMode: Image.PreserveAspectFit
                     source: "icons/tray-clear.svg"
-                    sourceSize: Qt.size(14, 14)
+                    sourceSize: Qt.size(28, 28)
                     opacity: trayClearBtn.enabled ? 1.0 : 0.5
                 }
             }
@@ -610,9 +620,14 @@ Column {
                 Layout.preferredWidth: 30
                 contentItem: Image {
                     objectName: "trayCollageIcon"
-                    anchors.centerIn: parent
+                    // #1188: a `Control` a contentItem geometriáját maga
+                    // állítja be (az `anchors.centerIn` ezért hatástalan
+                    // volt), a `fillMode` alapja pedig `Image.Stretch` —
+                    // a négyzetes SVG így a gomb tartalom-dobozára feszült
+                    // (mérve: 14×14-es forrás 16×26-ra nyúlva).
+                    fillMode: Image.PreserveAspectFit
                     source: "icons/collage.svg"
-                    sourceSize: Qt.size(16, 16)
+                    sourceSize: Qt.size(32, 32)
                     opacity: trayCollageBtn.enabled ? 1.0 : 0.5
                 }
             }
@@ -628,9 +643,14 @@ Column {
                 Layout.preferredWidth: 30
                 contentItem: Image {
                     objectName: "trayMovieIcon"
-                    anchors.centerIn: parent
+                    // #1188: a `Control` a contentItem geometriáját maga
+                    // állítja be (az `anchors.centerIn` ezért hatástalan
+                    // volt), a `fillMode` alapja pedig `Image.Stretch` —
+                    // a négyzetes SVG így a gomb tartalom-dobozára feszült
+                    // (mérve: 14×14-es forrás 16×26-ra nyúlva).
+                    fillMode: Image.PreserveAspectFit
                     source: "icons/movie.svg"
-                    sourceSize: Qt.size(16, 16)
+                    sourceSize: Qt.size(32, 32)
                     opacity: trayMovieBtn.enabled ? 1.0 : 0.5
                 }
             }
@@ -641,9 +661,14 @@ Column {
                 Layout.preferredWidth: 30
                 contentItem: Image {
                     objectName: "trayShareIcon"
-                    anchors.centerIn: parent
+                    // #1188: a `Control` a contentItem geometriáját maga
+                    // állítja be (az `anchors.centerIn` ezért hatástalan
+                    // volt), a `fillMode` alapja pedig `Image.Stretch` —
+                    // a négyzetes SVG így a gomb tartalom-dobozára feszült
+                    // (mérve: 14×14-es forrás 16×26-ra nyúlva).
+                    fillMode: Image.PreserveAspectFit
                     source: "icons/share.svg"
-                    sourceSize: Qt.size(16, 16)
+                    sourceSize: Qt.size(32, 32)
                     opacity: 0.5
                 }
             }
