@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 import stat as stat_module
 import urllib.parse
 from datetime import datetime
@@ -25,6 +26,68 @@ class TrashUnavailableError(OSError):
     a topdir nem írható). Ilyenkor a hívónak explicit kell döntenie a
     végleges törlésről (`delete_permanently`) — ez a kivétel soha nem vezet
     csendes, visszavonhatatlan törléshez."""
+
+
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse."""
+    return sys.platform
+
+
+def _windows_lomtarba(path: Path) -> None:
+    """A fájl a Windows LOMTÁRÁBA (`SHFileOperationW`, `FOF_ALLOWUNDO`).
+
+    ⚠️ #1182: a modul többi része a **freedesktop.org** Trash-specifikációt
+    valósítja meg (`$XDG_DATA_HOME/Trash`, `files/` + `info/` páros) — az
+    LINUXOS szabvány. Windowson emiatt a fájl egy rejtett mappába került,
+    amiről a Lomtár nem tud: a felhasználó számára ELTŰNT, és nem tudta
+    visszaállítani. A tulajdonos pontosan ezt jelentette.
+
+    Az EREDETI Picasa ugyanezt az API-t hívja: a `Picasa3.exe` importálja a
+    `SHELL32.DLL` → `SHFileOperationW` függvényt
+    (`referencia/binary-index/imports.csv:11282`, `0x009b1d50`).
+
+    A `FOF_ALLOWUNDO` az, ami a törlést Lomtárba helyezéssé teszi; enélkül
+    a shell VÉGLEGESEN törölne.
+
+    ⚠️ A forrás-útvonalat KETTŐS nullával kell lezárni: az API
+    nullával elválasztott listát vár, és a lista végét egy második nulla
+    jelzi. Enélkül a hívás a memóriában olvasna tovább.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    FO_DELETE = 3
+    FOF_ALLOWUNDO = 0x0040
+    FOF_NOCONFIRMATION = 0x0010
+    FOF_SILENT = 0x0004
+
+    class SHFILEOPSTRUCTW(ctypes.Structure):
+        _fields_ = [
+            ("hwnd", wintypes.HWND),
+            ("wFunc", wintypes.UINT),
+            ("pFrom", wintypes.LPCWSTR),
+            ("pTo", wintypes.LPCWSTR),
+            ("fFlags", ctypes.c_uint16),
+            ("fAnyOperationsAborted", wintypes.BOOL),
+            ("hNameMappings", ctypes.c_void_p),
+            ("lpszProgressTitle", wintypes.LPCWSTR),
+        ]
+
+    muvelet = SHFILEOPSTRUCTW(
+        hwnd=None,
+        wFunc=FO_DELETE,
+        pFrom=str(Path(path).resolve()) + "\0\0",
+        pTo=None,
+        fFlags=FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT,
+        fAnyOperationsAborted=False,
+        hNameMappings=None,
+        lpszProgressTitle=None,
+    )
+    eredmeny = ctypes.windll.shell32.SHFileOperationW(ctypes.byref(muvelet))
+    if eredmeny != 0 or muvelet.fAnyOperationsAborted:
+        raise OSError(
+            f"A Lomtárba helyezés nem sikerült (SHFileOperationW={eredmeny}): {path}"
+        )
 
 
 def delete_to_trash(path: Path, *, trash_dir: Path | None = None) -> Path:
@@ -49,6 +112,13 @@ def delete_to_trash(path: Path, *, trash_dir: Path | None = None) -> Path:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"A fájl nem létezik: {path}")
+
+    # ⚠️ #1182: Windowson a RENDSZER Lomtára a cél, nem a freedesktop-mappa.
+    # A `trash_dir` felülírás (teszt) továbbra is erősebb — azzal a
+    # freedesktop-ág mérhető marad minden platformon.
+    if trash_dir is None and _platform() == "win32":
+        _windows_lomtarba(path)
+        return path
 
     trash = trash_dir if trash_dir is not None else find_trash_dir(path)
     if trash is None:
@@ -163,6 +233,13 @@ def trash_available(path: Path, *, trash_dir: Path | None = None) -> bool:
     """True, ha `path`-hoz van elérhető lomtár (home vagy mount-
     specifikus) — a `deleteConfirmDialog` ez alapján dönt a szöveg és a
     hívandó slot (`deletePhoto` vs `deletePhotoPermanently`) között."""
+    # ⚠️ #1182: Windowson MINDIG van Lomtár — a rendszer sajátja. A
+    # `find_trash_dir` freedesktop-logikája (`$XDG_DATA_HOME`,
+    # `.Trash-$uid`) ott értelmetlen, és ha nem talál semmit, a program a
+    # VÉGLEGES törlés ágára megy (#457): a felhasználó azt a szöveget
+    # kapná, hogy nincs visszaút — holott a Lomtár működik.
+    if trash_dir is None and _platform() == "win32":
+        return True
     return find_trash_dir(path, trash_dir=trash_dir) is not None
 
 
