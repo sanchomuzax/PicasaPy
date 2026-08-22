@@ -670,6 +670,35 @@ class AppController(
             return ""
         return formatting.photo_info_text(photos[row], QLocale(), self.tr)
 
+    @Slot("QVariantList", result=str)
+    def selectionInfo(self, rows) -> str:
+        """A kék sáv szövege TÖBB kijelölt képnél (#1189).
+
+        Az eredetiben ezt a `GetSelectionInfo` (`0x0056fbc0`) állítja elő,
+        és a KIJELÖLÉSRŐL ír: darabszám, dátum(tartomány), összméret
+        (`il_GetSelectionInfo::3/4/5`). Valódi Picasa-képernyőképpel
+        megerősítve: „25 képek   2026. január 2., péntek-2026. május 18.,
+        hétfő   37,5 MB a lemezen".
+
+        Ugyanaz a formázó fut, mint a mappa-összesítésre (`statusText`) —
+        csak a KIJELÖLT rekordokon. Érvénytelen/ismétlődő sorindexek
+        kiszűrve, hogy egy elszállt QML-tömb ne torzítsa az összeget.
+        """
+        photos = self._photos.photos
+        latott: set[int] = set()
+        kijelolt = []
+        for nyers in rows or ():
+            try:
+                row = int(nyers)
+            except (TypeError, ValueError):
+                continue
+            if 0 <= row < len(photos) and row not in latott:
+                latott.add(row)
+                kijelolt.append(photos[row])
+        if not kijelolt:
+            return self._status
+        return formatting.status_text(kijelolt, QLocale(), self.tr, self.tr)
+
     @Slot(int, result="QVariantList")
     def propertiesOf(self, row: int) -> list:
         """A Tulajdonságok-panel (#13) sorai: {label, value} párok."""

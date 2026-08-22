@@ -77,14 +77,22 @@ Column {
             }
         }
         Text {
+            objectName: "trayInfoText"
             anchors.centerIn: parent
             // #718: null-őr — a `ctl` mellett az `appWindow` is
             // átmenetileg null lehet az engine-leépítés utolsó kiértékelésekor.
+            //
+            // #1189: az eredeti `GetSelectionInfo` (`0x0056fbc0`) a
+            // KIJELÖLÉSRŐL ír. Nálunk a „minden más" ág a mappa egészének
+            // összesítését (`statusText`) mutatta, ezért több kijelölt
+            // képnél a mappa adatai maradtak a sávban.
             text: (!tray.ctl || !tray.appWindow) ? "" : (tray.appWindow.viewerOpen
                   ? tray.ctl.viewerInfo(tray.viewerIndex)
                   : (tray.appWindow.selectedIndexes.length === 1
                      ? tray.ctl.photoInfo(tray.appWindow.selectedIndex)
-                     : tray.ctl.statusText))
+                     : (tray.appWindow.selectedIndexes.length > 1
+                        ? tray.ctl.selectionInfo(tray.appWindow.selectedIndexes)
+                        : tray.ctl.statusText)))
             color: Theme.infoBarText
             font.pixelSize: Theme.fontSize
             font.bold: true
