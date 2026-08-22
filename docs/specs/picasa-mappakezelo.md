@@ -1915,3 +1915,124 @@ Ez **nem ellentmondás**: a kinyitás csak **jelzőt állít**
 kinyílik és kijelölődik; ha az útja egyáltalán nincs a fában (pl. egy
 azóta leválasztott meghajtón van), a fa **kijelölés nélkül marad** —
 hibaüzenet nélkül.
+
+---
+
+## 15. „Eltávolítás a Picasából…" — a MENÜPONT teljes működése (2026-08-22)
+
+⚠️ **Ez NEM a Mappakezelő rádiógombja.** Két, magyarul majdnem azonos nevű
+dolog létezik, és a **hármaspont** különbözteti meg őket:
+
+| | felirat | mi ez |
+|---|---|---|
+| `foldermgr/remove_label` | „Eltávolítás a Picasából" | a **Mappakezelő rádiógombja** (állapot, ld. 5.) |
+| **`Folder::ID_MANAGE_ALBUM`** | **„Eltávolítás a Picasából…"** | **helyi menü / Mappa menü parancsa** — ez a szakasz |
+
+### 15.1 A belépési pontok
+
+A parancskulcs **két** helyen szerepel:
+
+- `Folder::ID_MANAGE_ALBUM` — a **mappa helyi menüje** (`0x007319f0`,
+  `0x00733a40`)
+- `eMenuLabelFolder::ID_MANAGE_ALBUM` — a menüsáv **Mappa** menüje
+  (`0x00559150`)
+
+Mindkettő a `0x005ce590(objektum, mód)` függvényre fut, **`mód != 0`**
+argumentummal. *(A `mód == 0` ág ugyanennek a függvénynek a másik fele: az
+a **Mappakezelőt nyitja meg** — ld. 10/b.1.)*
+
+### 15.2 A megerősítő párbeszéd — szó szerint
+
+| elem | kulcs | angol | magyar |
+|---|---|---|---|
+| cím | `CThumbUI:ManageAlbumConfirm` | *Confirm* | — |
+| szöveg | `CThumbUI::ManageAlbum` | *Do you want to remove the folder "%s" and its subfolders?* | **Eltávolítja a(z) „%s" mappát és a hozzá tartozó almappákat?** |
+| igen-gomb | `CThumbUI:ManageAlbumYesButton` | *Remove Folder* | **Mappa eltávolítása** |
+| mégse | `il_Cancel` | *Cancel* | Mégse |
+
+A párbeszédet a `0x009ba4d0` építi, a `0x009bab50` futtatja; **`2`-es
+visszatérés = Mégse**, ekkor a függvény `0xF4242`-vel kilép, és **semmi
+nem történik** (`0x005ce908`).
+
+⚠️ **A szöveg kimondja, hogy az ALMAPPÁKRA is vonatkozik**, és
+**tartalmazza a mappa nevét** (`%s`).
+
+### 15.3 Mi történik jóváhagyás után — a teljes lánc
+
+```
+0x005ce946  call 0x0097e4c0            ; köteg kezdete
+0x005ce952  add  dword [0xd6793c], 1   ; UI-frissítés elnyomása (mélységszámláló)
+…
+0x005ced3c  call 0x004f6a20            ; az útvonalkészlet felépítése:
+                                       ;   a mappa + "\Originals" + "\Modified"
+0x005ced57  call 0x004f5960            ; -> watchedfolders.txt  ÚJRAÍRÁSA
+0x005ced79  call 0x004f5d90            ; -> frexcludefolders.txt ÚJRAÍRÁSA
+0x005ced90  call 0x004b9200            ; -> ]album:removed  SÍRKŐ (ld. lent)
+0x005ceda3  call 0x0047cea0 …          ; iPhoto / Apple Photos ágak (Mac)
+0x005cedd9  call 0x0065b840            ; nézet-frissítés (keresősáv)
+0x005cee24  sub  dword [0xd6793c], 1   ; köteg vége; ha 0 -> kurzor vissza
+```
+
+**Két dolog, amit ki kell emelni:**
+
+1. **A `\Originals` és a `\Modified` almappa is a készlet része** — a
+   Picasa a szerkesztési biztonsági másolatok mappáit is eltávolítja
+   a mappával együtt.
+2. **A művelet KÖTEGELT**: a `[0xd6793c]` mélységszámláló a teljes lánc
+   idejére elnyomja a felület frissítését, és csak a végén enged egyetlen
+   újrarajzolást — plusz visszaállítja az egérkurzort
+   (`LoadCursorA(0, IDC_ARROW)` + `SetCursor`).
+
+### 15.4 ⭐ A lényeg: `]album:removed` — SÍRKŐ, nem törlés
+
+`0x004b9200(adatbázis, útvonallista)`, teljes egészében:
+
+```c
+for (i = 0; i < lista.count; ++i) {
+    ha (0x00441cd0(albumtábla, &lista[i], &kimenet) != 0)   // MÁR ismert?
+        continue;                                           // -> kihagy
+    [albumtábla+0x48]->vtbl[0](kimenet, 0);                 // új bejegyzés
+    0x00444990(albumtábla, kimenet);   edx = "]album:removed";
+}
+```
+
+⇒ **A mappa NEM törlődik az adatbázisból — bekerül egy `]album:removed`
+tokennel megjelölt bejegyzésként.** Ez sírkő: a beolvasó ebből tudja, hogy
+a mappát a felhasználó **szándékosan** vette ki, tehát a következő
+végigolvasásnál **nem szabad újra felvenni**.
+
+*Bizonyítottsági fok: **megerősített** — a teljes hívási lánc szó szerint
+olvasva, a három írófüggvény a saját fájlnév-sztringjével azonosítva
+(`watchedfolders.txt`, `frexcludefolders.txt`, `]album:removed`).*
+
+### 15.5 Eredeti / nálunk / teendő — KÉT MÉRT HIBA
+
+Jegy: **#1249**.
+
+| # | | eredeti | nálunk (mérve) | teendő |
+|---|---|---|---|---|
+| 1 | **almappára hat-e** | igen (a szöveg is kimondja) | ❌ **SEMMIT NEM CSINÁL** | a helyi menü a `removeFolder`-t hívja, ne a `removeWatchedFolder`-t |
+| 2 | **visszajön-e újraolvasáskor** | **nem** — `]album:removed` sírkő védi | ❌ **VISSZAJÖN** | sírkő-tábla kell az indexbe |
+| 3 | megerősítő szöveg | tartalmazza a **mappa nevét** és kimondja az **almappákat** | „Remove this folder from PicasaPy? The files stay on disk." | az eredeti szövegre cserélni |
+| 4 | igen-gomb felirata | **Mappa eltávolítása** | általános „Igen" | felirat javítása |
+| 5 | `\Originals`, `\Modified` | a készlet része | nincs kezelve | ellenőrizni |
+| 6 | belépési pontok | **két** menü (helyi + Mappa menü) | helyi menü ✔; menüsáv-tétel ellenőrizendő | — |
+
+**A mérés (2026-08-22), amivel az 1. és 2. sor eldőlt:**
+
+```
+_find_root("gyoker")       -> "…/gyoker"      (a figyelt gyökér)
+_find_root("gyoker/alma")  -> None            (almappára NINCS találat)
+
+removeWatchedFolder("gyoker/alma")  -> a figyelt gyökerek listája VÁLTOZATLAN
+                                       (a metódus a None-on azonnal kilép)
+
+removeFolder("gyoker/alma")         -> az index-ből eltűnik  ✔
+ctl.rescan()                        -> az „alma" VISSZAKERÜL  ❌
+```
+
+⇒ Az 1. hiba magyarázza a felhasználó által jelentett tünetet
+(„a mappa nem tűnik el a bal menüben"): a helyi menü
+(`FolderPane.qml:979` és `:729`) a **szűkebb** `removeWatchedFolder`-t
+hívja, ami **kizárólag pontos figyelt-gyökér egyezésre** csinál bármit
+(`library_controller.py:423–432`).
