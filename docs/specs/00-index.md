@@ -345,6 +345,17 @@ a `0x007c5c40` három kimenő jelzőjének pontos leképezése a három ikonra
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott bináris kérdés
 
+⭐ **2026-08-22, mappahatár-kör (#1219)** — a **15.** szakasz bizonyítja, hogy
+a mappahatáron való átnyúlás az eredetiben **nem egy ellenőrzés, hanem
+szerkezetileg lehetetlen**: a feed konténere (`0x0076a390`) mindig pontosan
+EGY sor kijelölés-csomópontját éri el, és mind a négy mag (tartomány
+`0x00716ae0`, léptetés `0x00717eb0`, határ-ág `0x00717d10`, lasszó-teszt
+`0x0071bc90`) csak a saját csomópontja `count()`/`itemAt()` párján iterál.
+**A #1219 kifejezetten mérendőnek jelölt kérdése megválaszolva:** a nyilas
+léptetés a mappa végén **MEGÁLL** (`0x00718031` `jbe`, mindkét vég ugyanaz
+az ág), nem lép át és nem jelöl ki újat. **Egy állítás MEGDŐLT:** a
+lasszónk hatóköre már ma is helyes.
+
 *(A #905 nyolc, korábban csak névből következtetett `.tre` tulajdonsága a lap
 1/c szakaszában kapott bináris választ; a végső látványbeli finomítások a
 szakaszban külön bizonyítottsági fokkal szerepelnek.)*

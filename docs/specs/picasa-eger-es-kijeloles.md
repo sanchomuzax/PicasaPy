@@ -1113,3 +1113,128 @@ elem-gyártó `ytDragNode`-hívása mind utasításszinten.*
 - **A `.tre` sem dönt:** a 24 `Handler`-kötés között a rácshoz **nincs**
   húzás-kezelő (6. szakasz); a `selectiondrag` a szerkesztő három
   téglalapjáé (4/b).
+
+---
+
+## 15. Miért NEM tud átnyúlni a mappahatáron a Shift-tartomány, a nyilas léptetés és a lasszó (2026-08-22, #1219)
+
+A 10. szakasz kimondta, hogy a kijelölés hatóköre egy mappa. Ez a szakasz
+azt bizonyítja, hogy ez **nem egy ellenőrzés, amit be lehetne kapcsolni,
+hanem a szerkezet következménye**: a Picasában nincs olyan kódút, amelyen
+egy tartomány, egy lasszó vagy egy nyíllépés a saját csomópontján kívüli
+elemhez érhetne.
+
+### 15.1 A szerkezet: konténer + mappánként EGY kijelölés-csomópont
+
+`0x0076a390` (`CMultiAlbumNode` vtábla, 33. rés) — a teljes függvény
+lényege:
+
+```c
+if (this->aktualisSorIndex /* [+0x2e0] */ == -1) return;
+sor = this->sorok /* [+0x300] */ [ aktualisSorIndex ];
+sel = sor->kijelolesCsomopont /* [+0x2b4] */;
+sel->AddRef();
+0x00718880(sel);            // a kijelölés-művelet EGYETLEN csomóponton
+sel->Release();
+```
+
+**Nincs ciklus a `[+0x300]` tömbön.** A feed konténere mindig **pontosan
+egy** sor kijelölés-csomópontját éri el: az aktuálisét. A `0x00718880`
+pedig épp az a burkoló, amelyik a **tartomány-magot** (`0x00716ae0`) és a
+**„mindent kijelöl" magot** (`0x00716f40`) is hívja.
+
+### 15.2 Mind a négy mag CSAK a saját csomópontja elemein megy végig
+
+Mindegyik a csomópont **saját** virtuális `count()` (vtábla `+0xb4`) és
+`itemAt(i)` (vtábla `+0xb8`) párján iterál — más csomóponthoz nem fér
+hozzá:
+
+| mag | cím | mit csinál |
+|---|---|---|
+| tartomány (Shift+kattintás, Shift+Home/End) | `0x00716ae0` | `+0xb4`/`+0xb8` (11.4) |
+| nyilas léptetés | `0x00717eb0` | `0x00717fd0`–`0x00718012`: a **horgonyt** (`[this+0x390]`) keresi meg a SAJÁT elemlistájában |
+| a határ-ág | `0x00717d10` | a saját kijelölt-lista felépítése (`0x00717420`, szintén `+0xb4`/`+0xb8`) |
+| lasszó elemenkénti teszt | `0x0071bc90` | a hívás `0x0071a032`: `push ebx` = a **hívó csomópont**; a lasszó téglalapja `[ebx+0x29c]` |
+
+### 15.3 Az egérkezelő MAGA is a kijelölés-csomóponté
+
+A rács teljes egérkezelése — a kattintás-ág (`0x00719a44`), a
+kijelölés-ág (`0x00719ace`), a lasszó-téglalap (`0x00719f91`) és a
+lasszó-teszt hívása (`0x0071a032`) — a **`0x007199b0`** függvényben van,
+ami a **`CSelectionNode` vtábla 29. rése** (öröklik:
+`CAlbumSelectionNode`, `CFoundFaceSelectionNode`).
+
+A feed konténere **ugyanezt a 29. rést írja felül** (`0x0076a660`), de az
+override **egyetlen kijelölés-műveletet sem végez**: mindössze négy
+eseménykódot (`0x13`, `0x0e`, `0x0f`, `0x11`) kezel — nagyítás-csúszka,
+`scaleslider/scaleslider` — a többit továbbadja az ős
+konténer-szétosztójának (`0x0072f980`).
+
+> **Ebből következik:** az egér lenyomása egy album-sor saját
+> kijelölés-csomópontjában landol, és a húzás minden további eseménye
+> **ugyanabban** a csomópontban fut le. A lasszó fizikailag nem lát más
+> mappa elemeit.
+
+### 15.4 A nyilas léptetés a mappa végén — MÉRVE, nem feltételezve
+
+A #1219 kifejezetten figyelmeztetett, hogy ezt **ne találgassuk** („lehet,
+hogy az eredeti átvisz a következő mappára ÉS törli az előzőt"). A válasz
+a kódból:
+
+```asm
+0x00717fd0–0x00718012   ; a HORGONY ([this+0x390]) indexének megkeresése
+                        ; a SAJÁT elemlistában  ->  ebx
+0x00718022  eax = irány             ; +1 vagy -1
+0x00718025  edx = elemszám
+0x00718029  ebx += irány
+0x0071802b  edx -= 1                ; elemszám-1
+0x00718031  cmp  ebx, edx
+0x00718033  jbe  0x718058           ; BELÜL -> normál léptetés
+; --- TÚLFUTÁS (mindkét irányban) ---
+0x00718035  push 0
+0x00718037  push -1
+0x00718039  push eax                ; irány
+0x0071803a  mov  eax, edi           ; this = UGYANAZ a csomópont
+0x0071803c  call 0x717d10
+0x0071804a  mov  eax, 0xf4240
+            ret  8
+```
+
+⚠️ A `jbe` **előjel nélküli** összehasonlítás, ezért a `-1`-re csökkenő
+index (`0xFFFFFFFF`) is ide fut: **mindkét vég ugyanezt az ágat járja.**
+
+A `0x00717d10(this, irány, -1, 0)` **ugyanazon a csomóponton** dolgozik,
+és a végén:
+
+```asm
+0x00717e20  cmp  eax, ebp           ; új index vs. elemszám-1
+0x00717e22  jbe  0x717e50           ; belül -> [this+0x2e0] = az elem azonosítója
+0x00717e24  cmp  byte ptr [esp+0x34], 0   ; a 3. argumentum = 0
+0x00717e29  je   0x717e76
+0x00717e76  mov  dword ptr [this+0x2e0], 0xFFFFFFFF   ; ← TÖRLI a jelölőt
+```
+
+**Az eredmény: a léptetés MEGÁLL.** Nem lép a következő mappára, nem
+fordul át a lista elejére, és **nem jelöl ki semmi újat** — a
+„jelenlegi elem" jelölőt (`[this+0x2e0]`) egyszerűen `-1`-re állítja.
+
+*Bizonyítottsági fok: **megerősített** — mind a négy mag, a vtábla-rések
+és a határ-ág szó szerinti kódolvasásból.*
+
+### 15.5 Eredeti / nálunk / teendő
+
+| | eredeti (bizonyítva) | nálunk (mérve) | teendő |
+|---|---|---|---|
+| **Shift+kattintás** | a tartomány-mag a jelenlegi mappa csomópontján fut → **nem léphet ki** | ❌ `Main.qml:323–325` — `Selection.range(selectedIndex, i)` **globális sorindexeken**, mappa-szorítás nélkül | a tartományt a kezdőpont mappacsoportjára szorítani |
+| **nyilas léptetés** | a mappa szélén **megáll**, nem lép át és nem jelöl ki újat | ❌ `models.py:538–555` — a balra/jobbra **folytonos**, a fel/le a csoport szélén **szándékosan a szomszéd csoportra ugrik** (a docstring ki is mondja) | a `navigate` álljon meg a csoporthatáron |
+| **Shift+nyíl** | **egyesével bővít, és a horgonyt is lépteti** (4/c) | ❌ `LightboxFeed.qml:66–81` — horgony↔cél tartományt jelöl, mappa-szorítás nélkül | két külön eltérés: hatókör ÉS a horgony-szemantika |
+| **lasszó** | a lenyomás csomópontjának elemein, metszés-szabállyal | ✅ **MÁR HELYES** — `LightboxFeed.qml:314–335` a kezdő **mappacsoport** `start`/`count` tartományára szorít (`idx < count`), és a csoportok mappánként állnak (`models.py:511–522`) | **nincs teendő a hatókörön**; a lasszó egyéb eltérései a #1148-ban |
+
+> ⚠️ **A #1219 harmadik állítása („a lasszó több mappa képeit is
+> befogja") TÉVES.** A `lassoIndexes` levágja a kezdő csoporton kívüli
+> indexeket, a csoportok pedig `folder_path`-váltásnál kezdődnek. Ezt a
+> #1148 valódi egéreseményes mérése is alátámasztja — ott épp az
+> **ellenkezője** szerepel eltérésként („a lasszónk nem lép át
+> mappacsoport-határt"). A mostani bizonyítás szerint **a mi
+> viselkedésünk az eredetivel egyezik**, tehát a #1148 azon aggálya is
+> tárgytalan.
