@@ -507,6 +507,30 @@ class AppController(
             self.selectFolder(paths[0])
 
     @Slot(str)
+    def focusFolder(self, folder_path: str) -> None:
+        """A rács fókusza másik mappára került (#1183) — a bal hasáb
+        kiemelése kövesse, de a nézet NE mozduljon.
+
+        Az eredetiben a jelenlegi mappa a rács fókuszát követi: a váltó
+        (`0x0056bc10`) elengedi az előző mappa kijelölés-csomópontját
+        (`0x718a50`), beállítja az újat (`[this+0xeac]`), és kimondja, hogy
+        „a jelenlegi album megváltozott" (`0x56b910`). Ez tehát nem
+        nézetváltás — ezért itt NINCS `folderActivated` (nem görgetünk oda,
+        a felhasználó már ott van) és nincs feed-újraolvasás sem.
+
+        Csak sima mappanézetben fut: keresés/album nézetben a bal hasáb mást
+        mutat, ott a fókusz nem határozza meg a kiemelést.
+        """
+        if not folder_path or self._view_mode[0] != "folder":
+            return
+        if folder_path == self._current_folder:
+            return
+        self._current_folder = folder_path
+        self._view_mode = ("folder", folder_path)
+        self._folder_description = self._read_folder_description(folder_path)
+        self.statusChanged.emit()
+
+    @Slot(str)
     def selectFolder(self, folder_path: str) -> None:
         """Mappa-választás (#64): a rács a TELJES könyvtár-feedet mutatja a
         bal hasáb sorrendjében — a választott mappához a rács odagörget

@@ -90,20 +90,37 @@ def _gorgesd_lathatora(window, qt_app, sor):
     el egyetlen indexképet sem, és a teszt a korábbi kijelölést látva
     némán zöld marad."""
     grid = _grid(window)
-    for _ in range(3):
+
+    def _kozeppont():
         terulet = _indexkep(window, sor)
         assert terulet is not None, f"a(z) {sor}. sor indexképe nem található"
-        kozep = terulet.mapToScene(
+        return terulet.mapToScene(
             QPointF(terulet.width() / 2, terulet.height() / 2)
         )
-        if 0 <= kozep.y() <= window.height() and 0 <= kozep.x() <= window.width():
-            return kozep
-        QMetaObject.invokeMethod(
-            grid,
-            "scrollToRow",
-            Qt.ConnectionType.DirectConnection,
-            Q_ARG("QVariant", sor),
+
+    def _belul(pont):
+        # ⚠️ margóval: a görgetés közbeni köztes állapotban a cella széle
+        # már benne van az ablakban, a közepe viszont még arrébb csúszik —
+        # margó nélkül a kattintás a szomszéd cellára esne (flaky teszt).
+        return (
+            8 <= pont.y() <= window.height() - 8
+            and 8 <= pont.x() <= window.width() - 8
         )
+
+    elozo = None
+    for kor in range(40):
+        kozep = _kozeppont()
+        # akkor fogadjuk el, ha látható ÉS már nem mozog
+        if _belul(kozep) and elozo is not None and abs(kozep.y() - elozo) < 0.5:
+            return kozep
+        elozo = kozep.y()
+        if kor % 8 == 0:
+            QMetaObject.invokeMethod(
+                grid,
+                "scrollToRow",
+                Qt.ConnectionType.DirectConnection,
+                Q_ARG("QVariant", sor),
+            )
         qt_app.processEvents()
     raise AssertionError(f"a(z) {sor}. sor indexképe nem görgethető láthatóra")
 
