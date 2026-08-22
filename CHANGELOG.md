@@ -5,6 +5,112 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.46] – 2026-08-22
+
+### Javítva
+- **A kiadási folyamat percek helyett másodpercek alatt zöldül (#1127).**
+  A verzióemelő és a csak CI-konfigurációt érintő változásokra többé nem fut
+  le a teljes tesztkészlet — a változatlan kód újratesztelése ~10 percet
+  rabolt minden kiadási körből. A védelem nem gyengült: a gyorsút ellenőrzi,
+  hogy a változás tényleg csak verzió-fájlokat érint.
+
+## [0.8.45] – 2026-08-22
+
+*(Csak a kiadási folyamat továbbjavítása — felhasználói változás nincs.)*
+
+## [0.8.44] – 2026-08-22
+
+*(Csak kiadási-folyamat változás — felhasználói változás nincs.)*
+
+## [0.8.43] – 2026-08-22
+
+### Új
+- **Az exportálás az eredeti Picasa teljes működését követi (#1166).** A
+  felirat és a címkék átkerülnek az exportált mappa `.picasa.ini`-jébe; a
+  már létező célmappára rákérdez, és igen esetén az előző kimenetet
+  eltávolítja; mind a tíz eredeti hibaüzenet megvan; a filmekhez választható
+  az „Első képkocka" vagy a „Teljes film" mód.
+- **A lasszó (gumikeretes kijelölés) végre használható (#1148).** Üres
+  területről indul (telített rácson is), metszés alapján válogat, a Shift
+  hozzáfűz, a Ctrl pedig a húzás kezdetéhez képest vált — a keret
+  visszahúzása visszavon.
+
+### Javítva
+- **A „Keresés egyszer" nem utasít el némán (#1213).** Az eltűnt vagy
+  elérhetetlen mappára jelzés érkezik; a már figyelt mappa kérése csendes
+  marad, mert azt a folyamatos figyelés úgyis lefedi.
+- **Nincs többé SyntaxWarning induláskor (#1242)** — és új őr vigyázza,
+  hogy ne is jöhessen vissza.
+
+## [0.8.42] – 2026-08-22
+
+### Javítva
+- **A kék állapotsáv több kijelölt képnél a kijelölés darabszámát és
+  összméretét mutatja (#1189)** — az eredeti Picasa formátumában.
+- **A bal hasáb követi a nézett mappát (#1183).** A rácsban másik mappa
+  képére lépve a mappafa kijelölése is átvált, ahogy az eredetiben.
+- **A törölt kép bélyegképe nem marad a rácson (#1181).** A futó
+  háttér-szinkron alatt kért frissítések eddig némán elvesztek.
+- **A kollázs véglegesítése után eltűnik a „PISZKOZAT" felirat a
+  bélyegképről (#1186).** A bélyegkép mostantól követi a fájl változását —
+  ez minden külső felülírásra igaz, nem csak a kollázsra.
+- **Nincs többé induláskori Shortcut-figyelmeztetés Windowson (#1205).**
+
+## [0.8.41] – 2026-08-22
+
+### Új
+- **Home / End / PageUp / PageDown a rácsban (#1147)** — mind a nyolc
+  eredeti kombináció, a Shift+End a mappa végéig jelöl ki.
+
+### Javítva
+- **A kijelölés nem lép át mappahatáron (#1219).** A nyilak, a
+  Shift+kattintás és a Shift+nyíl is a mappán belül marad — az eredetiben
+  ez szerkezeti szabály, most nálunk is az.
+- **A lábléc ikonjai nem nyúlnak meg (#1188).**
+- **Két konzol-figyelmeztetés megszűnt (#1185)** — a fájlművelet-ablakok
+  kötési hurka és a „null image" üzenet.
+
+## [0.8.40] – 2026-08-22
+
+### Javítva
+- **Az „Összes kijelölése" és a „Kijelölés megfordítása" csak a nézett
+  mappára hat (#1145)** — eddig a teljes könyvtárat jelölte ki, ami nagy
+  gyűjteménynél majdnem lefagyasztotta a programot.
+
+## [0.8.39] – 2026-08-22
+
+### Javítva
+- **A Mappakezelő fájában Windowson megjelennek a meghajtók (#1206).**
+
+## [0.8.38] – 2026-08-22
+
+### Javítva
+- **A figyelt mappa elutasítása nem néma (#1207).** Ha egy mappa nem
+  vehető fel, a program megmondja, miért.
+
+## [0.8.37] – 2026-08-22
+
+### Javítva
+- **A „Keresés a lemezen" Windowson a helyes fájlra ugrik (#1152).**
+
+## [0.8.36] – 2026-08-22
+
+### Javítva
+- **Windowson a rendszer Lomtárába törlünk (#1182)** — nem egy rejtett
+  mappába, ahonnan a Lomtár nem mutatta a törölt képeket.
+
+## [0.8.35] – 2026-08-22
+
+### Javítva
+- **A Mappakezelő fája kinyitható, és minden soron van állapot-ikon
+  (#1200).**
+
+## [0.8.34] – 2026-08-21
+
+### Dokumentáció
+- A Mappakezelő sor-rajzolásának normatív leírása és éles összevetése
+  (#1200).
+
 ## [0.8.33] – 2026-08-21
 
 ### Dokumentáció
