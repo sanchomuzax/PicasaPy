@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Új
+- **Az első indítás panelje az eredeti Picasát követi (#1167).** Ha a gépen
+  korábbi Picasa-telepítés van, a migrációs kérdés jelenik meg („Frissíti a
+  meglévő képtárat…"), és a frissítés a meglévő Picasa-átvételt nyitja; a
+  kérdés az eredeti kétlépcsős rendje szerint vált át a keresési választásra.
+  A „teljes gép" választás a csatolt köteteket veszi fel (Windowson a
+  meghajtókat). Minden szöveg az eredeti Picasa hivatalos magyar
+  fordításával jelenik meg.
+
 ## [0.8.46] – 2026-08-22
 
 ### Javítva
