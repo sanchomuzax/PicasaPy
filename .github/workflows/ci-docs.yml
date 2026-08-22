@@ -37,5 +37,28 @@ jobs:
     name: Test (ubuntu-latest)
     runs-on: ubuntu-latest
     steps:
-      - name: A kód futását nem érintő változás — nincs mit tesztelni
-        run: echo "Csak doksi/CI-konfiguráció változott; a teljes tesztkészletet a ci.yml futtatja kódváltozásnál."
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ⚠️ MÉRVE (2026-08-23, PR #1253): VEGYES (kód + doksi) PR-en ez a
+      # job zölden jelentett, MIELŐTT a valódi mátrix lefutott volna — az
+      # auto-merge pedig az első zöld kötelező névre beolvasztott. A
+      # fejléc korábbi állítása („a védelem nem gyengül") auto-merge
+      # mellett NEM állt. Ezért ez a job vegyes diffre ELBUKIK: a zöldet
+      # csak tisztán doksi/CI-konfig változás kaphatja meg.
+      - name: A diff NEM érinthet kódot
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          valtozott="$(git diff --name-only "$BASE" "$HEAD")"
+          echo "Változott fájlok:"; echo "$valtozott"
+          kod="$(grep -vE '^(.*\.md|docs/.*|\.github/.*)$' <<<"$valtozott" || true)"
+          if [ -n "$kod" ]; then
+            echo "::error::Ez a PR kódot IS érint — a zöldet a valódi tesztmátrixtól kell megkapnia. Kód és doksi ne keveredjen egy PR-ben. Kód-fájlok:"
+            echo "$kod"
+            exit 1
+          fi
+          echo "Csak doksi/CI-konfiguráció változott; a teljes tesztkészletet a ci.yml futtatja kódváltozásnál."
