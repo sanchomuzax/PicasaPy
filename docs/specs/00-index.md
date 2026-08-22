@@ -250,7 +250,7 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    parancsazonosítóit. Felhasználói képernyőkép a lenyíló menüről
    eldöntené (mint a #901 buboréksúgónál). Jegy: **#853** (komment).
 
-### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) — nincs nyitott kérdés (3 BLOKKOLT tétel külső anyagra vár)
+### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) — nincs nyitott kérdés (2 BLOKKOLT tétel)
 
 ⭐ **2026-08-22, arcfelismerés-kör (#26)** — új lap, a funkció **működése**
 (nem a felülete): a három független réteg és a hét `Preferences`-kapcsolójuk
@@ -265,8 +265,14 @@ adaton mérve**, a három romboló művelet pontos hatóköre, és a
 hanem **tisztán 0/1 logikai jelző**; és a tesztkészletben **igenis van
 nevesítés** (13 941 régió).
 
-**BLOKKOLT (→ #1238):** hat, nulla soros oszlop szemantikája — nevesített
-arcokat tartalmazó `db3` másolat kell hozzá a tulajdonostól.
+✅ **Ugyanaznap FELOLDVA:** a tulajdonos adott egy nevesített arcokat
+tartalmazó adatbázist, és ezzel a **teljes személy-album modell** megvan
+(`]facealbum:<N>` ↔ `albumcontactids` ↔ `contacts.xml`, **9/9 egyezés**),
+a **`facerectdata` jellemzőpontjai** (`conf`/`pan`/`leye`/`reye`/`mouth`),
+és a felismerési **javaslat + pontszám** oszlopok. Ugyanitt **megdőlt a
+saját reggeli állításunk**: a `facerect` IGENIS tárol valódi rect64-et.
+Blokkolt maradt: a két `*checksum` képzési szabálya és a
+`CreateAcceleratorTableA` tartalma (**#1238**).
 
 ### [picasa-elso-inditas.md](picasa-elso-inditas.md) — nincs nyitott kérdés
 

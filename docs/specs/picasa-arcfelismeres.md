@@ -213,40 +213,53 @@ A kiírás **kötegelt munkaként** fut, saját folyamatjelzéssel
 *Writing face tags* / *Done writing face tags* / *Cancelled writing face
 tags*. Tehát **megszakítható**.
 
-### 3.3 A `db3` PMP-oszlopok — VALÓDI ADATON MÉRVE
+### 3.3 A `db3` PMP-oszlopok — KÉT valódi adatbázison mérve
 
-Mérés a `research/testdata/Picasa2/db3/` alatti éles adatbázison. A
-PMP-fejléc 20 bájt (`magic 0x3fcccccd`, típuskód, sorszám).
+⚠️ **Ezt a szakaszt 2026-08-22-én ÁTÍRTUK.** Az első mérés olyan
+telepítésen készült, ahol a felhasználó **soha nem nevezett el arcokat**
+(nulla `]facealbum:` token) — ott hat oszlop üres volt, és ebből egy téves
+következtetés is született (ld. lent). A tulajdonos ezután adott egy
+**második, e célra készített telepítést**, ahol az arcfelismerés
+végigfutott és a személyek el vannak nevezve. Az alábbi tábla mindkettőt
+mutatja.
 
-| oszlop | típus | sorok | nem üres | mit tárol |
-|---|---|---|---|---|
-| `imagedata_facerect` | u64 | 7 044 | 6 064 × `0x1`, 980 × `0x0` | **logikai jelző, NEM geometria** |
-| `imagedata_facerectdata` | str | 7 044 | **0** | üres (szerepe nem dőlt el) |
-| `imagedata_deferredface` | str | 128 640 | 6 870 sor / **11 128 régió** | `rect64(hex),<contact_id>` |
-| `imagedata_deferredregion` | str | 128 675 | 10 175 sor / **13 941 régió** | `rect64(hex),<tisztanevű Név>` |
-| `imagedata_personalbumid` | u32 | **0** | 0 | regisztrált, soha nem írt |
-| `imagedata_suggestionpersonalbumid` | u32 | **0** | 0 | ugyanaz |
-| `imagedata_peoplealbumchecksum` | u16 | **0** | 0 | ugyanaz |
-| `albumdata_albumcontactids` | u64 | **0** | 0 | ugyanaz |
-| `albumdata_albumpeoplechecksum` | u32 | **0** | 0 | ugyanaz |
-| `facetags.txt` | — | — | **0 bájt** | üres |
-| `facetemplatesV2_0.db` | — | — | **4 bájt** | csak a magic — arc-sablon (biometria) **nem íródott ki** |
+| oszlop | típus | „A" telepítés (nincs névadás) | „B" telepítés (VAN névadás) |
+|---|---|---|---|
+| `imagedata_facerect` | u64 | 7 044 sor, **csak 0/1** | 4 344 sor, **629 VALÓDI rect64** + 2 575 × `1` + 1 140 × `0` |
+| `imagedata_facerectdata` | str | 7 044 sor, **0 nem üres** | 4 344 sor, 2 565 × `"1"` + **valódi jellemzőpont-sztringek** |
+| `imagedata_facequality` | u32 | — | 3 338 sor, **412 nem nulla, 403 különböző érték** |
+| `imagedata_personalbumid` | u32 | **0 sor** | 3 338 sor, **115 nem nulla** |
+| `imagedata_suggestionpersonalbumid` | u32 | **0 sor** | 3 337 sor, 1 nem nulla |
+| `imagedata_peoplealbumchecksum` | u16 | **0 sor** | 19 636 sor, 301 nem nulla (mind `34`) |
+| `imagedata_personalbumrecs` / `…recs2` | u32 | — | 3 337 / 3 163 sor, `0xFFFFFFFF` = „nincs" |
+| `imagedata_personalbumrecvalues` / `…values2` | u32 | — | ugyanannyi sor, pontszám |
+| `albumdata_albumcontactids` | u64 | **0 sor** | 118 sor, **pontosan 9 nem nulla** |
+| `albumdata_albumpeoplechecksum` | u32 | **0 sor** | 118 sor, 8 nem nulla |
+| `imagedata_deferredface` | str | 6 870 sor / 11 128 régió | 3 063 bájt |
+| `imagedata_deferredregion` | str | 10 175 sor / 13 941 régió | — |
+| `facetemplatesV2_0.db` | — | **4 bájt** (üres) | **430 132 bájt** + 40 076 B index |
+| `facetags.txt` | — | 0 bájt | **0 bájt** (mindkettőben üres) |
 
-> ⛔ **HELYESBÍTÉS a [`pmp-database.md`](pmp-database.md)-hez.** Az eddigi
-> szöveg így szólt: *„`facerect` (u64): sok bejegyzésben `0x1`
-> szentinel-érték"*. A mérés élesíti: **az oszlop KIZÁRÓLAG `0`-t és
-> `1`-et vesz fel, egyetlen valódi rect64 sincs benne** (7 044 sorból
-> 0 db harmadik érték). Az eloszlás **blokkos**: minden **könyvtár**-sor
-> `0`, és a 7…6098 sortartományban **minden fájl-sor `1`**, fölötte mind
-> `0` — egy **félbehagyott detektálási menet** lenyomata.
-
-**Két parser-csapda, mérve:**
-
-1. **A `rect64` hexből lekopnak a vezető nullák** — 15, 12, sőt 8 jegyű
-   értékek is előfordulnak. **`zfill(16)` kötelező**, különben a
-   koordináták elcsúsznak. (Ugyanez a `contact_id`-re is igaz.)
-2. **Egy sorban több régió**, `;`-vel láncolva — a mért maximum **45
-   régió egyetlen soron**.
+> ⛔ **HELYESBÍTÉS a saját, ugyanaznap reggeli állításunkhoz.** Akkor ezt
+> írtuk: *„a `facerect` KIZÁRÓLAG `0`-t és `1`-et vesz fel, egyetlen valódi
+> rect64 sincs benne… fájlonkénti logikai jelző, nem geometria."*
+> **Ez TÉVES.** A „B" telepítésben **629 valódi, geometriailag érvényes
+> rect64** van benne (mind `L<R` és `T<B`). Az „A" telepítésben azért nem
+> volt, mert ott **soha nem futott le a névadás**.
+>
+> **A helyes állítás:** a `facerect` **vegyes** oszlop — valódi rect64-et
+> tárol ott, ahol megerősített arc-régió van, és `1`-et jelzőként ott, ahol
+> a detektálás lefutott, de régió nem került be. Ugyanez igaz a
+> `facerectdata`-ra (`"1"` jelző vagy valódi adat).
+>
+> **Két módszertani tanulság:**
+> 1. Egy adatbázis „üres oszlopa" **nem bizonyít semmit az oszlop
+>    szemantikájáról** — csak azt, hogy azt a funkciót nem használták.
+> 2. A kontroll-mérésem (hány függvény hivatkozik az oszlop NEVÉRE) is
+>    **megtévesztő volt**: a `deferredregion` is csak EGY függvényben
+>    szerepel néven, mégis tele van adattal — az oszlopokat regisztráció
+>    után **indexszel** érik el, nem néven. Ezt a mérést nem szabad
+>    használhatóság bizonyítékaként használni.
 
 ### 3.4 A két „deferred" oszlop viszonya — a legértékesebb lelet
 
@@ -281,12 +294,93 @@ A `facerect==1` halmaz metszete a másik kettővel **nulla**. Vagyis a
 „detektálva, de nem nevesítve" és a „nevesítve" **két külön, időben is
 elkülönült korpusz** — nem ugyanazon képek két oszlopa.
 
+### 3.4/b A SZEMÉLY-ALBUM MODELL — teljesen megfejtve (2026-08-22)
+
+A „B" telepítésen a teljes lánc **9/9 pontos egyezéssel** kimérve:
+
+```
+]facealbum:<N>                       <- albumdata_token[N]   (N = a sor SAJÁT indexe)
+albumdata_name[N]                    = a személy megjelenített neve
+albumdata_albumcontactids[N]         = a kontakt 64 bites azonosítója (u64)
+                                        ->  contacts.xml  <contact id="<hex>" …>
+imagedata_personalbumid[képsor]      = N   (melyik személyhez tartozik a kép)
+```
+
+**A mérés:** a 118 albumsorból pontosan **9**-nek van nem nulla
+`albumcontactids` értéke; ez a 9 sor a **109…117** indexen ül, a tokenjük
+`]facealbum:109` … `]facealbum:117`, és mind a 9 azonosító **hexben
+karakterre egyezik** a `contacts.xml` megfelelő `id=` mezőjével. Az
+`imagedata_personalbumid` nem nulla értékei szintén **kizárólag 109…117**
+— vagyis **albumsor-indexek**, nem önálló azonosítók.
+
+⚠️ **A `contact_id` TELEPÍTÉSFÜGGŐ.** Ugyanaz a személy a két mért
+telepítésben **más azonosítót** kapott. Az azonosító tehát **nem
+hordozható** gépek között — importáláskor a **név** az egyeztetés alapja,
+nem az id.
+
+⚠️ **A `]facealbum:<N>` N-je az album SORINDEXE**, tehát szintén
+telepítésfüggő, és újraindexeléskor elcsúszhat. Egy importáló ne tekintse
+stabil kulcsnak.
+
+### 3.4/c `facerectdata` — az arc JELLEMZŐPONTJAI (2026-08-22)
+
+Az oszlop a legtöbb soron `"1"` jelzőt tárol, de ahol valódi adat van, ott
+egy **emberi szemmel is olvasható, vesszővel tagolt** sztringet:
+
+```
+conf(0.652),pan(-3.963),leye(0.036,0.745),reye(0.084,0.746),mouth(0.056,0.790)
+conf(0.588),pan(-9.550),leye(0.469,0.254),reye(0.555,0.250),mouth(0.507,0.340)
+conf(0.098),pan(31.974),leye(0.528,0.284),reye(0.624,0.285),mouth(0.544,0.395)
+```
+
+| mező | jelentés | mért tartomány |
+|---|---|---|
+| `conf(f)` | a detektálás **megbízhatósága** | 0,098 … 0,652 |
+| `pan(f)` | a fej **elfordulása**, előjeles | −9,55 … +31,97 |
+| `leye(x,y)` | bal szem | relatív [0..1] képkoordináta |
+| `reye(x,y)` | jobb szem | ugyanaz |
+| `mouth(x,y)` | száj | ugyanaz |
+
+*Bizonyítottsági fok: **megerősített** — a nyers oszlopértékek szó szerint
+ezek. A `pan` mértékegysége (**fok**) a nagyságrendből következtetve
+**erős**, nem megerősített.*
+
+### 3.4/d `personalbumrecs` — a felismerési JAVASLAT és a pontszáma
+
+Négy oszlop, két nemzedékben (a `2` utótag a `facetemplatesV2`-höz tartozik):
+
+| oszlop | típus | tartalom |
+|---|---|---|
+| `personalbumrecs` / `…recs2` | u32 | a **javasolt** személy-album sorindexe; **`0xFFFFFFFF` = nincs javaslat** |
+| `personalbumrecvalues` / `…values2` | u32 | a javaslat **pontszáma** (mért tartomány ≈ 5 100 … 6 300) |
+
+A `recs` nem `-1` értékei ugyanabból a **109…117** tartományból valók, mint
+a `personalbumid` — tehát ugyanaz az albumsor-index. A
+`suggestionpersonalbumid` ennek a „megerősítésre váró" párja (a mintában
+1 sor).
+
 ### 3.5 `contacts.xml`
 
 A személynevek elsődleges forrása; a formátumot a
 [`pmp-database.md`](pmp-database.md) „`contacts.xml`" szakasza írja le.
-⚠️ A tesztkészletben **nincs jelen**, ezért a `contact_id → név`
-leképezést ez a kör kizárólag a 3.4 szerinti átfedésből tudta levezetni.
+
+✅ **2026-08-22 óta MEGVAN** (a „B" telepítésben, 9 kontakttal). Az alak:
+
+```xml
+<contacts>
+ <contact id="99b4c1ce30280815" name="&lt;Név&gt;"
+          modified_time="2026-08-15T18:42:17+02:00" local_contact="1"/>
+</contacts>
+```
+
+- `id` — 16 hex jegy, **ez egyezik** az `albumdata_albumcontactids` u64
+  értékével (9/9 mérve, ld. 3.4/b);
+- `local_contact="1"` — a kontakt **csak helyben** létezik, nincs
+  Google-fiókhoz kötve;
+- `modified_time` — ISO-8601, időzónával.
+
+A `contact_id → név` leképezés innen **közvetlenül** olvasható; a 3.4
+szerinti átfedéses levezetés csak akkor kell, ha ez a fájl hiányzik.
 
 ---
 
@@ -482,23 +576,24 @@ listában az `adorners/listsuggestionfaceadorner`.
 
 | # | kérdés | állapot |
 |---|---|---|
-| 1 | A `facerect` `0x1` pontos jelentése („lefutott" vs „esedékes") | **BLOKKOLT** — az adat csak annyit bizonyít, hogy fájlonkénti logikai jelző; az írási hely a binárisban nincs feltárva. Folytatás: a `facerect` oszlop íróhelye a `0x004127c0` regisztrációból. Jegy: **#1238** |
-| 2 | A `facerectdata` szerepe | **BLOKKOLT** — 0 nem üres sor, nincs mit mérni; élő, arc-sablonos adatbázis kellene. Jegy: **#1238** (`felhasználóra-vár`: nevesített arcokat tartalmazó `db3` másolat) |
-| 3 | Az `albumcontactids` és a két `*checksum` szemantikája | **BLOKKOLT** — mind 0 soros; ugyanaz a külső anyag kell. Jegy: **#1238** |
+| 1 | A `facerect` `0x1` pontos jelentése | **LEZÁRVA (2026-08-22)** — a „B" telepítés megmutatta: az oszlop VEGYES, valódi rect64-et tárol megerősített régiónál, `1`-et jelzőként detektálás után (3.3). ~~BLOKKOLT~~ — az adat csak annyit bizonyít, hogy fájlonkénti logikai jelző; az írási hely a binárisban nincs feltárva. Folytatás: a `facerect` oszlop íróhelye a `0x004127c0` regisztrációból. Jegy: **#1238** |
+| 2 | A `facerectdata` szerepe | **LEZÁRVA (2026-08-22)** — arc-JELLEMZŐPONTOK: `conf`, `pan`, `leye`, `reye`, `mouth` (3.4/c). ~~BLOKKOLT~~ — 0 nem üres sor, nincs mit mérni; élő, arc-sablonos adatbázis kellene. Jegy: **#1238** (`felhasználóra-vár`: nevesített arcokat tartalmazó `db3` másolat) |
+| 3 | Az `albumcontactids` szemantikája | **LEZÁRVA (2026-08-22)** — album → kontakt-azonosító, 9/9 egyezés a `contacts.xml`-lel (3.4/b). A két `*checksum` **továbbra is BLOKKOLT** (a `peoplealbumchecksum` egyetlen értéke `34`, az `albumpeoplechecksum` 8 szórt érték — a képzési szabály nem dőlt el). ~~BLOKKOLT~~ — mind 0 soros; ugyanaz a külső anyag kell. Jegy: **#1238** |
 | 4 | A `deferredregion` a nevesített részhalmaz-e | **LEZÁRVA (nemleges)** — 15 mért ellenpélda cáfolja a tiszta részhalmaz-viszonyt; a lap 3.4 rögzíti feltételesként |
-| 5 | A `contact_id` hash képzési szabálya | **HATÓKÖRÖN KÍVÜL** — az importáláshoz nem kell: az azonosítót nem mi képezzük, hanem olvassuk. Ha valaha kell, a `contacts.xml` adja a leképezést |
+| 5 | A `contact_id` hash képzési szabálya | **HATÓKÖRÖN KÍVÜL** — és 2026-08-22 óta tárgytalan is: az azonosító **telepítésfüggő**, tehát importáláskor amúgy sem használható kulcsként; a **név** az egyeztetés alapja (3.4/b). — az importáláshoz nem kell: az azonosítót nem mi képezzük, hanem olvassuk. Ha valaha kell, a `contacts.xml` adja a leképezést |
 | 6 | A `facedata` kulcs értékének pontos mezőszerkezete | **LEZÁRVA (tárgytalan)** — 0 korpusz-előfordulás, alapból kikapcsolt kapcsoló; a teendő a megőrzés, nem az értelmezés |
 | 7 | A `0x9e1c` azonosító **ütközése**: ugyanez az érték a feltöltés-beállítások felugró menüjében is szerepel (`ImpULOpts::ID_ALLOW_COLLAB`, rekord `0xd6f334`) | **LEZÁRVA (nem a mi gondunk)** — más menücsalád, más szétosztó-hívó; nálunk a parancsazonosítókat nem globális névtérként vesszük át, hanem menünként. Ha valaki mégis globálisan egyedinek tekintené, előbb ellenőrizze, befut-e ez a felugró a `0x005cb990`-be |
 | 8 | A `0xa0cd` (Hozzáadás az Emberek albumhoz) tényleges kezelője | **BLOKKOLT** — nincs saját ága a szétosztóban, az alapértelmezett ágra fut (`0x0069aeb0`), amiben egyetlen sztring sincs; futásidőben töltött almenü gyanúja. Jegy: **#1238** |
 | 9 | A `CreateAcceleratorTableA` (`0x0092321a`) tartalma — van-e mégis gyorsbillentyű | **BLOKKOLT** — a függvény hívója relatív `call`-szkenneléssel nem került elő (valószínűleg vtáblán át hívódik). Jegy: **#1238** |
 
 ```
-Nyitott kérdések: 0 nyílt · 5 lezárva · 5 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 0 nyílt · 8 lezárva · 2 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
 ```
 
-*(Kilenc tétel: 5 lezárva (4., 6., 7. + a 13/b két negatív eredménye),
-5 blokkolt (1., 2., 3., 8., 9.), 1 hatókörön kívül (5.). „Csak nyitva"
-egy sincs.)*
+*(Tizenegy tétel. **2026-08-22-én a tulajdonos adott egy nevesített arcokat
+tartalmazó adatbázist**, amivel az 1., 2. és 3. tétel LEZÁRULT. Ami maradt
+blokkoltként: a két `*checksum` oszlop képzési szabálya és a
+`CreateAcceleratorTableA` tartalma (8., 9.). „Csak nyitva" egy sincs.)*
 
 ---
 

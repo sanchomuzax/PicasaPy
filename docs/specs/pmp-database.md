@@ -82,17 +82,30 @@ feloldás működik. További, csak éles adatból látható tények:
 - A leghosszabb oszlop (`filetype`, 140 758) **pontosan egyenlő** a thumbindex
   bejegyzésszámával → az 1:1 indexmegfeleltetés igazolt.
 - **`crop64` natív u64-ként** tárolódik (bit-pakolt rect64: 4×16 bit L/T/R/B).
-- **`facerect`** (u64): ~~sok bejegyzésben `0x1` szentinel-érték~~ —
-  **HELYESBÍTVE (2026-08-22, #26):** az oszlop **kizárólag `0`-t és `1`-et**
-  vesz fel, **egyetlen valódi rect64 sincs benne** (7 044 sorból 0 db
-  harmadik érték). Tehát **fájlonkénti logikai jelző**, nem geometria. Az
-  eloszlás blokkos: minden **könyvtár**-sor `0`, a 7…6098 sortartomány
-  minden **fájl**-sora `1`, fölötte mind `0` — egy félbehagyott
-  detektálási menet lenyomata. A `0x1` pontos jelentése („lefutott" vs
-  „esedékes") **nyitott** → **#1238**. Teljes leírás:
-  [`picasa-arcfelismeres.md`](picasa-arcfelismeres.md) 3.3.
-- **`facerectdata`** (str): a tesztkészletben teljesen üres (**0** nem üres
-  sor 7 044-ből) — a szerepe emiatt nem eldönthető, ld. **#1238**.
+- **`facerect`** (u64): **VEGYES oszlop** — valódi `rect64`-et tárol ott,
+  ahol megerősített arc-régió van, és `1`-et puszta jelzőként ott, ahol a
+  detektálás lefutott, de régió nem került be. Két adatbázison mérve
+  (2026-08-22, #26): a névadás nélküli telepítésben **csak 0/1** volt
+  (ezért írtuk egy ideig tévesen, hogy „nem geometria"), a nevesített
+  telepítésben viszont **629 valódi, geometriailag érvényes rect64**.
+  Ld. [`picasa-arcfelismeres.md`](picasa-arcfelismeres.md) 3.3.
+- **`facerectdata`** (str): **az arc JELLEMZŐPONTJAI** — megfejtve
+  (2026-08-22): `conf(<megbízhatóság>),pan(<fejelfordulás>),leye(x,y),reye(x,y),mouth(x,y)`,
+  relatív [0..1] koordinátákkal. A legtöbb soron csak `"1"` jelző áll.
+  Ld. `picasa-arcfelismeres.md` 3.4/c.
+- **`personalbumid`** (u32): **melyik személy-albumhoz tartozik a kép** —
+  az érték az `albumdata` tábla **sorindexe** (a `]facealbum:<N>` token
+  N-je). `0` = nincs hozzárendelve.
+- **`personalbumrecs` / `…recs2`** (u32): a **javasolt** személy-album
+  sorindexe, `0xFFFFFFFF` = nincs javaslat; a hozzá tartozó pontszám a
+  **`personalbumrecvalues` / `…values2`** oszlopban (mért tartomány
+  ≈ 5 100–6 300). A `2` utótag a `facetemplatesV2` nemzedéké.
+- **`albumdata.albumcontactids`** (u64): a személy-album → **kontakt
+  azonosítója**; hexben karakterre egyezik a `contacts.xml` `id=`
+  mezőjével (**9/9** mérve). ⚠️ Az azonosító **telepítésfüggő** — gépek
+  között nem hordozható, importáláskor a **név** az egyeztetés alapja.
+- **`peoplealbumchecksum`** / **`albumpeoplechecksum`**: a képzési
+  szabályuk **nem dőlt el** → **#1238**.
 - **`deferredregion`** (str, ÚJ oszlop — a 2012-es listában nincs): a valódi
   arcadat-hordozó! Formátum: `rect64(<hex>),<Név>;rect64(<hex>),<Név>;...`
   — tisztanevű (nem hash-elt) régiólista. A rect64 hex itt is rövidülhet
