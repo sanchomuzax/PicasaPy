@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Többszörös exponálás: az újraszerkesztés fekete lapot adott (#1248).** A
+  mentett `.cxf` nem sorolta fel a forrásképeket, ezért az újranyitott
+  kollázs üres volt, és a mentés azt jelentette, hogy „az összes képet
+  eltávolították". Az eredeti Picasa képenként egy, teljes lapos
+  csomópontot ír (mérve az `AI7.cxf` mintán) — mostantól mi is.
+  ⚠️ A korábban mentett, csomópont nélküli kollázsok nem állíthatók
+  helyre: nincs bennük információ a forrásképekről.
+
 ## [0.8.48] – 2026-08-22
 
 ### Új

@@ -15,6 +15,8 @@ geometriát tartalmaz.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import math
 
 import cv2
@@ -308,9 +310,54 @@ class TestKiirtPiszkozat:
                 math.isfinite(n.center_x) and n.width > 0 for n in jelentes.nodes
             ), tema
 
-    def test_a_tobbszoros_exponalasnak_nincsenek_csomopontjai(self, tmp_path):
-        """A `multiexp` nem HELYEZ el képeket — a piszkozata csomópont
-        nélküli, és ezt nem szabad kitalált geometriával pótolni."""
+    def test_a_tobbszoros_exponalasnak_IS_vannak_csomopontjai(self, tmp_path):
+        """⚠️ Ez a teszt VISSZAFELÉ állt (#1248).
+
+        Azt őrizte, hogy a `multiexp` piszkozata csomópont NÉLKÜLI, azzal
+        az indoklással, hogy a téma nem helyez el képeket. A geometriára ez
+        igaz — a `.cxf`-re NEM. Mérve az `AI7.cxf`-en (valódi Picasa-minta,
+        `referencia/kollazs-golden/`): az eredeti **képenként EGY**
+        csomópontot ír, mind azonos, teljes lapos geometriával.
+
+        A hiánynak ára volt: a tulajdonos gépén (v0.8.45) a többszörös
+        exponálású kollázs ÚJRASZERKESZTÉSKOR fekete lapot adott, mentéskor
+        pedig azt jelentette, hogy „az összes képet eltávolították" — mert
+        a `.cxf` tényleg nem tudta, MELYIK képekből készült."""
         utak = _mintakepek(tmp_path, darab=3)
         jelentes = make_picasa_collage(utak, _pile_beallitas(theme=MULTIEXP))
-        assert jelentes.nodes == ()
+
+        assert len(jelentes.nodes) == len(utak)
+        assert [n.path for n in jelentes.nodes] == [str(u) for u in utak]
+
+    def test_a_multiexp_cxf_csomopontja_az_AI7_mintat_koveti(self, tmp_path):
+        """A mért alak: `x=0 y=0 w=1 h=1 theta=0 scale=1`, `noborder`.
+
+        A `scale` külön figyelmet érdemel: a #1071 mérte ki, hogy a nem
+        szabványos `scale` a VALÓDI Picasát viszi szét szerkesztéskor
+        (óriási, felnagyított töredékek). Az AI7 mintában `1.000000` áll."""
+        utak = _mintakepek(tmp_path, darab=2)
+        beallitas = _pile_beallitas(theme=MULTIEXP)
+        jelentes = make_picasa_collage(utak, beallitas)
+
+        projekt = project_from_nodes(jelentes.nodes, beallitas)
+
+        assert len(projekt.nodes) == 2
+        for csomopont in projekt.nodes:
+            assert (csomopont.x, csomopont.y) == (0.0, 0.0)
+            assert (csomopont.w, csomopont.h) == (1.0, 1.0)
+            assert csomopont.theta == 0.0
+            assert csomopont.scale == 1.0
+            assert csomopont.theme == NOBORDER
+            assert csomopont.src
+
+    def test_a_multiexp_piszkozat_visszaolvasva_ugyanazokat_a_kepeket_adja(
+        self, tmp_path
+    ):
+        """A tulajdonos tünete: fekete lap újraszerkesztéskor (#1248)."""
+        utak = _mintakepek(tmp_path, darab=3)
+        beallitas = _pile_beallitas(theme=MULTIEXP)
+        jelentes = make_picasa_collage(utak, beallitas)
+
+        vissza = nodes_from_project(project_from_nodes(jelentes.nodes, beallitas))
+
+        assert [Path(n.path) for n in vissza] == [Path(u) for u in utak]

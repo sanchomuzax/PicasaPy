@@ -580,6 +580,39 @@ leképezésen** kell átmennie, mint a csomópontokénak — különben a
 esik**. Ugyanaz a hibaosztály, mint a #1103 (ott a sorrend, itt a
 kódolás miatt nem találna).
 
+### 15.5 A Többszörös exponálásnak IS vannak csomópontjai (#1248)
+
+Kézenfekvő feltevés, hogy a `multiexp` — mivel nem *helyez el* képeket —
+csomópont nélküli `.cxf`-et ír. **A mérés cáfolja.**
+
+`referencia/kollazs-golden/AI7.cxf` (valódi Picasa-minta, `theme="multiexp"`):
+
+```xml
+<node x="0.000000" y="0.000000" w="1.000000" h="1.000000" theta="0.000000" scale="1.000000">
+ <theme>noborder</theme>
+ <src>$My Pictures\AI\10e4bb2c-….png</src>
+ <uid>cc58d08b44001ed30000000000000000</uid>
+</node>
+```
+
+**Képenként egy csomópont, mind azonos: a TELJES lap, forgatás és keret
+nélkül.** A geometria tényleg nem hordoz információt — a `src` viszont
+igen, és nélküle a fájl nem tudja, miből készült.
+
+⚠️ A `scale` itt **1,0**, nem a doboz nagyobbik oldala lapegységben. Ez
+nem kozmetika: a #1071 mérte ki, hogy a nem szabványos `scale` a VALÓDI
+Picasát viszi szét szerkesztéskor (óriási, felnagyított töredékek).
+
+**Mibe került a hiánya:** a tulajdonos gépén (v0.8.45) a többszörös
+exponálású kollázs újraszerkesztéskor **fekete lapot** adott, mentéskor
+pedig azt jelentette, hogy „az összes képet eltávolították" (#1248). A
+jegy UNC-útvonalra gyanakodott; a beküldött `AI15.cxf` ezt **kizárta** —
+a háttér `src`-je szabályos `$My Pictures\…`, tehát a kódolás rendben
+volt, csak `<node>` nem volt a fájlban.
+
+⚠️ **A már mentett, csomópont nélküli `.cxf`-ek nem állíthatók helyre** —
+nincs bennük semmi, amiből a forrásképek kiderülnének.
+
 ---
 
 ## 16. A kilenc kérdés — a NÉGY hiányzó darab (2026-08-21)

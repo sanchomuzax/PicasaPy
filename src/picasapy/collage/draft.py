@@ -55,7 +55,7 @@ from .cxf import CxfBackground, CxfNode, CxfProject
 from .nodes import SHEET_UNITS, CollageNode
 from .picasa_render import PicasaCollageSettings
 from .page_formats import format_text, is_known_format
-from .themes import BORDER_THEMES, NOBORDER
+from .themes import BORDER_THEMES, MULTIEXP, NOBORDER
 from .win_paths import decode_cxf_path, encode_cxf_path
 
 #: A `CollageSpec` alapértelmezett címe (`0x008342b0`: „Untitled").
@@ -179,6 +179,20 @@ def collage_node_of(node: CxfNode, *, page_ratio: float) -> CollageNode:
     )
 
 
+def _multiexp_alak(node: CxfNode, theme: str) -> CxfNode:
+    """A Többszörös exponálás csomópontjának `scale`-je MÉRTEN 1,0 (#1248).
+
+    Az `AI7.cxf` (valódi Picasa-minta) teljes lapos csomópontjain
+    `scale="1.000000"` áll, míg az általános képletünk a doboz nagyobbik
+    oldalát írja ki lapegységben (1024). A különbség nem kozmetikai: a
+    #1071 mérte ki, hogy a nem szabványos `scale` a VALÓDI Picasát viszi
+    szét szerkesztéskor — óriási, felnagyított töredékeket rajzol. A többi
+    téma képletéhez nem nyúlunk: ott nincs mérésünk, ami ellentmondana."""
+    if theme != MULTIEXP:
+        return node
+    return replace(node, scale=1.0)
+
+
 def project_from_nodes(
     nodes: Sequence[CollageNode],
     settings: PicasaCollageSettings,
@@ -220,8 +234,9 @@ def project_from_nodes(
         ),
         spacing=settings.effective_spacing,
         nodes=tuple(
-            cxf_node_of(
-                node, page_width=settings.width, page_ratio=page_ratio
+            _multiexp_alak(
+                cxf_node_of(node, page_width=settings.width, page_ratio=page_ratio),
+                settings.theme,
             )
             for node in nodes
         ),
