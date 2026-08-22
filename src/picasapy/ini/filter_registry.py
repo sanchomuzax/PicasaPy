@@ -311,6 +311,21 @@ def canonical_filter_name(name: str) -> str | None:
     return _CANONICAL_BY_CASEFOLD.get(folded) or _LEGACY_ALIAS_BY_CASEFOLD.get(folded)
 
 
+def is_exact_filter_name(name: str) -> bool:
+    """A név PONTOSAN a kanonikus (regiszterbeli) alak-e (#1141).
+
+    Az eredeti Picasa lánc-bejárója kis-nagybetű-érzékeny: hat mért képen
+    (`merokit-2` export) a `Tint` / `TINT` / `tInT` / `vignette` /
+    `VIGNETTE` / `Sepia` alak NEM futott le, a kanonikus `tint` /
+    `Vignette` / `sepia` igen. A három család mintázata más, tehát tényleg
+    a regiszterbeli alakhoz kell illeszteni.
+
+    A régi (`_LEGACY_ALIAS_BY_CASEFOLD`) nevek a SAJÁT írásmódjukkal
+    fogadhatók el — azok is valódi Picasa-alakok.
+    """
+    return name in CANONICAL_FILTER_NAMES or name in _LEGACY_ALIAS_BY_CASEFOLD
+
+
 def canonicalize_filter_name(name: str) -> str:
     """A kanonikus alak, ismeretlen névnél maga a kapott név (round-trip)."""
     return canonical_filter_name(name) or name

@@ -16,18 +16,18 @@ from picasapy.ini.filters import parse_filters
 from picasapy.render.chain import _HANDLERS, apply_filters
 
 _CREATIVE_KEYS = (
-    "ir",
-    "lomo",
-    "holga",
-    "hdr",
-    "cinemascope",
-    "orton",
-    "sixties",
-    "invert",
-    "heatmap",
-    "crossprocess",
-    "quantizepalette",
-    "twotone",
+    "IR",
+    "Lomo",
+    "Holga",
+    "HDR",
+    "Cinemascope",
+    "Orton",
+    "Sixties",
+    "Invert",
+    "HeatMap",
+    "CrossProcess",
+    "QuantizePalette",
+    "TwoTone",
 )
 
 
@@ -44,7 +44,10 @@ def sample() -> np.ndarray:
 class TestCreativeEffectsAreWired:
     @pytest.mark.parametrize("key", _CREATIVE_KEYS)
     def test_handler_registered(self, key):
-        assert key in _HANDLERS, f"a(z) {key!r} nincs bekötve a láncba"
+        # #1141: a _HANDLERS regiszter kulcsai kisbetűsek (belső
+        # részlet); a LÁNC viszont a kanonikus alakot fogadja el. A
+        # bekötést ezért a kisbetűs kulcson nézzük.
+        assert key.casefold() in _HANDLERS, f"a(z) {key!r} nincs bekötve a láncba"
 
     @pytest.mark.parametrize("key", _CREATIVE_KEYS)
     def test_chain_applies_it_and_skips_nothing(self, key, sample):
@@ -75,27 +78,30 @@ class TestCreativeEffectsAreWired:
 
 
 _ARTISTIC_KEYS = (
-    "boost",
-    "soften",
-    "pixelate",
-    "focalzoom",
-    "pencilsketch",
-    "neon",
-    "comicize",
-    "border",
-    "dropshadow",
-    "museummatte",
-    "polaroid",
+    "Boost",
+    "Soften",
+    "Pixelate",
+    "FocalZoom",
+    "PencilSketch",
+    "Neon",
+    "Comicize",
+    "Border",
+    "DropShadow",
+    "MuseumMatte",
+    "Polaroid",
 )
 
 #: Ezek keretet tesznek a kép köré, tehát MEGNÖVELIK a méretet (#330).
-_FRAME_KEYS = ("border", "dropshadow", "museummatte", "polaroid")
+_FRAME_KEYS = ("Border", "DropShadow", "MuseumMatte", "Polaroid")
 
 
 class TestArtisticEffectsAreWired:
     @pytest.mark.parametrize("key", _ARTISTIC_KEYS)
     def test_handler_registered(self, key):
-        assert key in _HANDLERS, f"a(z) {key!r} nincs bekötve a láncba"
+        # #1141: a _HANDLERS regiszter kulcsai kisbetűsek (belső
+        # részlet); a LÁNC viszont a kanonikus alakot fogadja el. A
+        # bekötést ezért a kisbetűs kulcson nézzük.
+        assert key.casefold() in _HANDLERS, f"a(z) {key!r} nincs bekötve a láncba"
 
     @pytest.mark.parametrize("key", _ARTISTIC_KEYS)
     def test_chain_applies_it(self, key, sample):
@@ -227,7 +233,7 @@ class TestCropRunsBeforeTheFrame:
         # a bal felső negyed kivágása + keret (alapértelmezett külső szín:
         # a filterdesc.xml szerint FEKETE — #381, ld. filterdesc-registry.md
         # 4.2 "Border" sora: szín Outer (#000))
-        chain = "crop64=1,000000007fff7fff;border=1;"
+        chain = "crop64=1,000000007fff7fff;Border=1;"
         result, skipped = apply_filters(sample, parse_filters(chain))
         assert skipped == ()
         cropped_only, _ = apply_filters(sample, parse_filters("crop64=1,000000007fff7fff;"))
@@ -241,7 +247,7 @@ class TestCropRunsBeforeTheFrame:
     def test_frame_does_not_break_a_later_crop(self, sample):
         # fordított sorrend a láncban: a crop akkor is az eredetire vonatkozik
         result, skipped = apply_filters(
-            sample, parse_filters("border=1;crop64=1,000000007fff7fff;")
+            sample, parse_filters("Border=1;crop64=1,000000007fff7fff;")
         )
         assert skipped == ()
         assert result.shape[0] > 0 and result.shape[1] > 0

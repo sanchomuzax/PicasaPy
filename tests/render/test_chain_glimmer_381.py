@@ -105,8 +105,16 @@ class TestPaintableMaskWarning:
 
     @pytest.mark.parametrize("key", sorted(PAINTABLE_MASK_OPS))
     def test_figyelmeztetes_a_range_warnings_ban(self, key, sample):
-        report = apply_filters(sample, parse_filters(f"{key}=1;"))
-        assert any(key in warning.casefold() for warning in report.range_warnings), report.range_warnings
+        # #1141: a `PAINTABLE_MASK_OPS` kulcsai kisbetűsek (belső
+        # regiszter), a LÁNC viszont a kanonikus alakot fogadja el — a
+        # láncot ezért a kanonikus névvel építjük fel
+        from picasapy.ini.filter_registry import canonicalize_filter_name
+
+        kanonikus = canonicalize_filter_name(key)
+        report = apply_filters(sample, parse_filters(f"{kanonikus}=1;"))
+        assert any(
+            key in warning.casefold() for warning in report.range_warnings
+        ), report.range_warnings
 
     def test_nincs_figyelmeztetes_mas_effektnel(self, sample):
         report = apply_filters(sample, parse_filters("Invert=1;"))
@@ -118,6 +126,6 @@ class TestNewNamesRemovedFromUnrendered:
     `KNOWN_UNRENDERED_OPS` tagjai voltak (#382/#347) — most egzakt
     csővezetékük van, ezért a listából kikerültek."""
 
-    @pytest.mark.parametrize("key", ["matte", "nightvision", "roundededges"])
+    @pytest.mark.parametrize("key", ["Matte", "NightVision", "RoundedEdges"])
     def test_mar_nem_ismeretlen(self, key):
         assert key not in KNOWN_UNRENDERED_OPS

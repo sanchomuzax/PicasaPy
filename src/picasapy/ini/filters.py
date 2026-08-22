@@ -23,6 +23,8 @@ Két serialize-út van (#695):
 
 from __future__ import annotations
 
+from .filter_registry import canonical_filter_name, is_exact_filter_name
+
 from dataclasses import dataclass
 
 from picasapy.ini.filter_registry import (
@@ -40,7 +42,19 @@ class FilterOp:
     params: tuple[str, ...]
 
     def matches(self, name: str) -> bool:
-        return self.name.casefold() == name.casefold()
+        """Bájtra PONTOS név-illesztés (#1141).
+
+        ⚠️ Korábban `casefold()`-dal illesztettünk. Az eredeti Picasa
+        viszont kis-nagybetű-ÉRZÉKENY: hat mért képen (`merokit-2`
+        export) a `Tint` / `TINT` / `tInT` / `vignette` / `VIGNETTE` /
+        `Sepia` alak NEM futott le, a kanonikus `tint` / `Vignette` /
+        `sepia` igen. A három család mintázata más — tehát tényleg a
+        regiszterbeli alakhoz kell illeszteni, nem „csupa kisbetűhöz".
+
+        A #1140-nel együtt teljes a viselkedés: a fel nem ismert tag nem
+        „kimarad", hanem elvágja a lánc maradékát.
+        """
+        return self.name == name
 
     def float_params(self) -> tuple[float, ...]:
         """A flag utáni paraméterek számként."""
@@ -84,6 +98,13 @@ def parse_filters_prefix(value: str) -> tuple[FilterOp, ...]:
             continue
         name, sep, rest = entry.partition("=")
         if not sep or not name:
+            break
+        # #1141: a NEM kanonikus írásmód is hibás tag — az eredeti
+        # kis-nagybetű-érzékeny, és a bejáró az első hibás tagnál megáll
+        # (#1140). Mérve: `Sepia=1;bw=1;` esetén a `bw` sem fut le.
+        # Az ismeretlen (idegen/jövőbeli) nevet változatlanul beengedjük:
+        # azt a renderelő hagyja ki, a round-trip pedig megőrzi.
+        if canonical_filter_name(name) is not None and not is_exact_filter_name(name):
             break
         ops.append(FilterOp(name, tuple(rest.split(",")) if rest else ()))
     return tuple(ops)

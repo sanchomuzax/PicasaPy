@@ -26,12 +26,14 @@ class TestParse:
         ops = parse_filters("tilt=1,-0.114659,0.000000;")
         assert ops[0].float_params() == pytest.approx((-0.114659, 0.0))
 
-    def test_uppercase_vignette_name_preserved_and_matches(self):
-        # A parser kis-nagybetű-tűrő, de round-triphez a névalak megőrzendő.
-        ops = parse_filters("Vignette=1,0.500000,0.500000;")
-        assert ops[0].name == "Vignette"
-        assert ops[0].matches("vignette")
-        assert ops[0].matches("VIGNETTE")
+    def test_uppercase_vignette_name_preserved_but_does_NOT_match(self):
+        """#1141: a nagybetűs alak megőrződik (round-trip), de NEM
+        illeszkedik — az eredeti kis-nagybetű-érzékeny (mérve: hat kép a
+        `merokit-2` exportból)."""
+        ops = parse_filters("VIGNETTE=1,35;")
+        assert ops[0].name == "VIGNETTE", "a parse nem kanonizál"
+        assert not ops[0].matches("Vignette")
+
 
     def test_unknown_filter_kept(self):
         ops = parse_filters("futurefilter=1,1,2,3;")
