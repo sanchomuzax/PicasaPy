@@ -56,6 +56,8 @@ def _ujraolvas(controller, qt_app) -> None:
 
 
 def _feed(qml_app, qt_app, darab=6):
+    """`darab` kép a „sok" mappában — ismételten hívható, a hiányzókat
+    pótolja (az oszlopszám ismeretében pontos képszám kell)."""
     window, controller, _ = qml_app
     lib = Path(controller.watchedFolders[0])
     (lib / "sok").mkdir(exist_ok=True)
@@ -241,16 +243,25 @@ class TestUresTerulet:
         return None
 
     @staticmethod
-    def _ures_pont(window, grid):
-        """Egy pont a képfolyamon BELÜL, de cellán KÍVÜL.
+    def _ures_pont(window, horgony):
+        """Egy pont a képfolyamon BELÜL, de cellán KÍVÜL — MÉRÉSSEL.
 
         Nem geometriai feltevésből számoljuk (az oszlopszám a futtató
-        ablakméretétől függ — a CI-n más, mint itt), hanem méréssel: a
-        lasszó saját `MouseArea`-jának téglalapját pásztázzuk, és az első
-        olyan pontot adjuk vissza, amit egyetlen cella sem takar."""
+        ablakméretétől függ — a CI-n más, mint itt), hanem végigpásztázzuk
+        a lasszó saját `MouseArea`-jának téglalapját, és az első olyan,
+        ablakon belüli pontot adjuk vissza, amit egyetlen cella sem takar."""
+        # ⚠️ A feedben TÖBB csoport van, mindegyiknek saját lasszó-területe.
+        # Azt kell választani, amelyik a CÉLKÉPET tartalmazza — különben a
+        # húzás két csoport között menne, és a keret a másik csoport
+        # tartományára számolna (a lasszó csoporton belüli, #1219).
         terulet = None
         for elem in _bejar(window.contentItem()):
-            if elem.objectName() == "feedFlowLasso":
+            if elem.objectName() != "feedFlowLasso":
+                continue
+            bal_felso = elem.mapToScene(QPointF(0, 0))
+            if (bal_felso.x() <= horgony.x() <= bal_felso.x() + elem.width()
+                    and bal_felso.y() <= horgony.y()
+                    <= bal_felso.y() + elem.height()):
                 terulet = elem
                 break
         if terulet is None:
@@ -260,42 +271,75 @@ class TestUresTerulet:
             for e in _bejar(window.contentItem())
             if e.objectName() == "thumbMouseArea" and e.parentItem() is not None
         ]
-        lepes = 12
-        y = terulet.height() / 2
-        x = terulet.width() - lepes
-        while x > 0:
-            pont = terulet.mapToScene(QPointF(x, y))
-            if not (0 <= pont.x() <= window.width()
-                    and 0 <= pont.y() <= window.height()):
-                x -= lepes
-                continue
-            takart = False
-            for cella in cellak:
-                sarok = cella.mapToScene(QPointF(0, 0))
-                if (sarok.x() <= pont.x() <= sarok.x() + cella.width()
-                        and sarok.y() <= pont.y() <= sarok.y() + cella.height()):
-                    takart = True
-                    break
-            if not takart:
-                return pont
-            x -= lepes
+        keretek = []
+        for cella in cellak:
+            sarok = cella.mapToScene(QPointF(0, 0))
+            keretek.append(
+                (sarok.x(), sarok.y(),
+                 sarok.x() + cella.width(), sarok.y() + cella.height())
+            )
+        lepes = 10
+        y = lepes
+        while y < terulet.height():
+            x = lepes
+            while x < terulet.width():
+                pont = terulet.mapToScene(QPointF(x, y))
+                if (0 <= pont.x() <= window.width()
+                        and 0 <= pont.y() <= window.height()
+                        and not any(
+                            bx <= pont.x() <= jx and by <= pont.y() <= jy
+                            for bx, by, jx, jy in keretek
+                        )):
+                    return pont
+                x += lepes
+            y += lepes
         return None
 
     def test_ures_reszrol_indulva_kijelol(self, qml_app, qt_app):
         """⚠️ A jegy magja: telített rácson eddig sehonnan nem indult
         lasszó — kijelölt képről fogd-és-vidd lesz (#455, ez helyes), üres
-        területen viszont NEM VOLT kezelő."""
-        window, _controller = _feed(qml_app, qt_app, darab=3)
+        területen viszont NEM VOLT kezelő.
+
+        ⚠️ A csoport képszámát az OSZLOPSZÁMBÓL állítjuk be: ha a sor
+        pontosan tele van, a képfolyamban EGYÁLTALÁN nincs üres pont, és a
+        teszt a saját feltevésén bukna el, nem a terméken. (A CI ablaka
+        keskenyebb, ott ez elő is jött.)"""
+        window, controller = _feed(qml_app, qt_app, darab=3)
+        oszlopok = int(_grid(window).property("columns") or 1)
+        if oszlopok < 2:
+            import pytest
+
+            pytest.skip("egyoszlopos rács: nincs üres hely a folyamban")
+        _feed(qml_app, qt_app, darab=oszlopok + 1)
         window.setProperty("selectedIndexes", [])
         window.setProperty("selectedIndex", -1)
         qt_app.processEvents()
         grid = _grid(window)
 
-        ures = self._ures_pont(window, grid)
-        assert ures is not None, "nem található cellával nem takart pont a folyamon"
+        # ⚠️ Az újraolvasás után a feed elmozdulhat — a célt előbb
+        # láthatóra görgetjük, és megvárjuk, amíg megáll (a #1219
+        # tanulsága: a görgetés közbeni köztes állapot félrevisz).
+        QMetaObject.invokeMethod(
+            grid, "scrollToRow", Qt.ConnectionType.DirectConnection,
+            Q_ARG("QVariant", 0),
+        )
+        elozo = None
+        for _ in range(40):
+            qt_app.processEvents()
+            cel = self._cella(window, 0)
+            if cel is None:
+                continue
+            kozep = cel.mapToScene(QPointF(cel.width() / 2, cel.height() / 2))
+            if (elozo is not None and abs(kozep.y() - elozo) < 0.5
+                    and 8 <= kozep.y() <= window.height() - 8):
+                break
+            elozo = kozep.y()
         cel = self._cella(window, 0)
         assert cel is not None
         kozep = cel.mapToScene(QPointF(cel.width() / 2, cel.height() / 2))
+        assert 0 <= kozep.y() <= window.height(), "a célkép nem látszik"
+        ures = self._ures_pont(window, kozep)
+        assert ures is not None, "nem található cellával nem takart pont a folyamon"
 
         self._huzas(window, qt_app, ures, kozep)
 

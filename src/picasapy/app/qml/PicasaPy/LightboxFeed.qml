@@ -580,6 +580,10 @@ ListView {
                 objectName: "feedFlowLasso"
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton
+                // ⚠️ A ListView a függőleges húzást FLICK-nek veszi, és
+                // elveheti a grabet a gyerek MouseArea-tól — a cellák
+                // kezelője (ThumbDelegate) pontosan ezért `preventStealing`-el.
+                preventStealing: true
                 property real pressX: 0
                 property real pressY: 0
                 property bool huz: false
