@@ -13,6 +13,7 @@ mintája, ld. library_controller.py docsztringje)."""
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QStandardPaths, Signal, Slot
@@ -70,6 +71,66 @@ def _list_children(path: Path) -> list[dict]:
     return children
 
 
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse."""
+    return sys.platform
+
+
+def _windows_meghajtok() -> list[tuple[str, Path]]:
+    """A Windows-meghajtók (név, útvonal) párként — a fa gyökereihez.
+
+    ⚠️ #1206: a gyökér-lista korábban LINUX-alapú volt (`/`, `/media`), és
+    meghajtó-felsorolás egyáltalán nem volt — a tulajdonos csak a saját
+    felhasználói mappáját érte el.
+
+    Az EREDETI ugyanezt a három API-t használja (bináris-index):
+
+    | API | mire | hivatkozó |
+    |---|---|---|
+    | `KERNEL32.GetLogicalDrives` | a meghajtók felsorolása | `0x004fdd10` |
+    | `KERNEL32.GetDriveTypeA` | a meghajtó TÍPUSA | `0x004e2790` |
+    | `MPR.WNetGetConnectionA` | a hálózati megosztás neve | `0x00c06da6` |
+
+    ⚠️ A hálózati helyek a BETŰJELÜKÖN át jelennek meg, a megosztás
+    nevével kiegészítve — nem külön „hálózat" ágként. Ezt a
+    `WNetGetConnection` használata mutatja: az egy meghajtóbetűhöz adja
+    vissza az UNC-nevet.
+
+    A hiba nyelt: ha bármelyik lekérdezés elbukik, a meghajtó egyszerűen
+    kimarad — egy rosszul viselkedő eszköz nem akaszthatja meg a fát.
+    """
+    import ctypes
+
+    DRIVE_REMOTE = 4
+    eredmeny: list[tuple[str, Path]] = []
+    try:
+        maszk = ctypes.windll.kernel32.GetLogicalDrives()
+    except Exception:  # noqa: BLE001 - a fa sosem hiúsulhat meg emiatt
+        return eredmeny
+
+    for i in range(26):
+        if not maszk & (1 << i):
+            continue
+        betu = chr(ord("A") + i)
+        gyoker = f"{betu}:\\"
+        nev = f"{betu}:"
+        try:
+            tipus = ctypes.windll.kernel32.GetDriveTypeW(gyoker)
+            if tipus == DRIVE_REMOTE:
+                puffer = ctypes.create_unicode_buffer(1024)
+                meret = ctypes.c_ulong(1024)
+                # a WNetGetConnection a betűjelet KETTŐSPONTTAL, perjel
+                # nélkül várja
+                if ctypes.windll.mpr.WNetGetConnectionW(
+                    f"{betu}:", puffer, ctypes.byref(meret)
+                ) == 0 and puffer.value:
+                    nev = f"{betu}: ({puffer.value})"
+        except Exception:  # noqa: BLE001 - típus/név nélkül is felvesszük
+            pass
+        eredmeny.append((nev, Path(gyoker)))
+    return eredmeny
+
+
 def _root_entries(home: Path | None = None, user: str | None = None) -> list[dict]:
     """A Picasa-sorrendű fa-gyökerek Linuxon.
 
@@ -108,13 +169,20 @@ def _root_entries(home: Path | None = None, user: str | None = None) -> list[dic
             _honos(QStandardPaths.StandardLocation.DocumentsLocation, "Documents"),
             home / "Documents",
         ),
-        ("/", Path("/")),
     ]
-    for mount_parent in (Path("/media") / user, Path("/run/media") / user):
-        try:
-            candidates.extend((path.name, path) for path in mount_parent.iterdir())
-        except OSError:
-            continue
+    # ⚠️ #1206: a `/` gyökér és a `/media` felsorolás LINUXOS fogalom —
+    # Windowson félrevezető, illetve üres. Ott a MEGHAJTÓK a gyökerek.
+    if _platform() == "win32":
+        candidates.extend(_windows_meghajtok())
+    else:
+        candidates.append(("/", Path("/")))
+        for mount_parent in (Path("/media") / user, Path("/run/media") / user):
+            try:
+                candidates.extend(
+                    (path.name, path) for path in mount_parent.iterdir()
+                )
+            except OSError:
+                continue
 
     result: list[dict] = []
     seen: set[str] = set()
