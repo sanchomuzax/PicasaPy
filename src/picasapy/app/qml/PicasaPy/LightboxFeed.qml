@@ -431,6 +431,11 @@ ListView {
         var pitch = cols > 0 ? Math.floor(flowWidth / cols) : nominalCellWidth
         var left = Math.min(x1, x2), right = Math.max(x1, x2)
         var top = Math.min(y1, y2), bottom = Math.max(y1, y2)
+        // #1148: az elemteszt METSZÉS, szigorúan pozitív területtel
+        // (`0x0071bc90`, `0x0071bef7`–`0x0071bf25`) — nem cella-bucket.
+        // A különbség a határon látszik: a cellahatárra PONTOSAN illesztett
+        // keret a szomszédot nem fogja be (nulla területű érintés), egy
+        // képpontnyi átlógás viszont igen.
         var c0 = Math.max(0, Math.floor(left / pitch))
         var c1 = Math.min(cols - 1, Math.floor(right / pitch))
         var r0 = Math.max(0, Math.floor(top / cellHeight))
@@ -439,24 +444,47 @@ ListView {
         for (var r = r0; r <= r1; ++r)
             for (var c = c0; c <= c1; ++c) {
                 var idx = r * cols + c
-                if (idx >= 0 && idx < count)
+                if (idx < 0 || idx >= count) continue
+                var cellLeft = c * pitch, cellTop = r * cellHeight
+                if (left < cellLeft + pitch && right > cellLeft
+                        && top < cellTop + cellHeight && bottom > cellTop)
                     result.push(start + idx)
             }
         return result
+    }
+
+    // #1148/#897: a húzás INDULÁSAKOR mentett kijelölés — a Shift és a
+    // Ctrl ehhez viszonyít, ezért a keret visszahúzása is visszavon.
+    // Az eredeti minden elem kijelöltségét elmenti (`[elem+0x5c]`,
+    // `0x00719d80`–`0x00719d94`).
+    property var lassoSnapshot: []
+    function beginLasso() {
+        lassoSnapshot = appWindow.selectedIndexes.slice()
     }
     function applyLasso(start, count, flowWidth,
                         x1, y1, x2, y2, modifiers) {
         var picked = lassoIndexes(
             start, count, flowWidth, x1, y1, x2, y2)
-        if (Number(modifiers) & Qt.ControlModifier) {
-            var merged = appWindow.selectedIndexes.slice()
+        var mods = Number(modifiers)
+        var base = grid.lassoSnapshot || []
+        var sel
+        if (mods & Qt.ShiftModifier) {
+            // Shift: HOZZÁFŰZ a felvételkori kijelöléshez
+            sel = base.slice()
             for (var i = 0; i < picked.length; ++i)
-                if (merged.indexOf(picked[i]) < 0)
-                    merged.push(picked[i])
-            appWindow.selectedIndexes = merged
+                if (sel.indexOf(picked[i]) < 0) sel.push(picked[i])
+        } else if (mods & Qt.ControlModifier) {
+            // Ctrl: a keretbe esők a FELVÉTELKORI állapotukhoz képest
+            // fordulnak — visszahúzáskor visszaáll az eredeti (#897)
+            sel = []
+            for (var j = 0; j < base.length; ++j)
+                if (picked.indexOf(base[j]) < 0) sel.push(base[j])
+            for (var k = 0; k < picked.length; ++k)
+                if (base.indexOf(picked[k]) < 0) sel.push(picked[k])
         } else {
-            appWindow.selectedIndexes = picked
+            sel = picked
         }
+        appWindow.selectedIndexes = sel
         if (picked.length > 0)
             appWindow.selectedIndex = picked[picked.length - 1]
     }
@@ -538,6 +566,56 @@ ListView {
             readonly property int windowCount: Math.max(0, Math.min(
                 groupCol.modelData.count - windowStart,
                 (lastRow - firstRow + 1) * grid.columns))
+            // #1148: lasszó a képfolyam ÜRES részéről is. Az eredetiben a
+            // lasszó ÉPP az üres területre való lenyomásra indul
+            // (`0x00719d4b`) — a kijelölt képről indított húzás ott is
+            // fogd-és-vidd (nálunk #455). Telített rácson a csonka utolsó
+            // sor melletti sáv az egyetlen üres hely, ezért enélkül a
+            // lasszó gyakorlatilag elérhetetlen volt.
+            //
+            // A Repeater ELŐTT áll, tehát a cellák FÖLÖTTE vannak: a
+            // képre való lenyomást változatlanul a cella kezeli.
+            MouseArea {
+                id: flowLasso
+                objectName: "feedFlowLasso"
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton
+                // ⚠️ A ListView a függőleges húzást FLICK-nek veszi, és
+                // elveheti a grabet a gyerek MouseArea-tól — a cellák
+                // kezelője (ThumbDelegate) pontosan ezért `preventStealing`-el.
+                preventStealing: true
+                property real pressX: 0
+                property real pressY: 0
+                property bool huz: false
+                onPressed: function(event) {
+                    pressX = event.x; pressY = event.y; huz = false
+                }
+                onPositionChanged: function(event) {
+                    if (!pressed) return
+                    if (!huz && Math.abs(event.x - pressX)
+                            + Math.abs(event.y - pressY) <= 8)
+                        return
+                    if (!huz) { huz = true; grid.beginLasso() }
+                    lassoBand.update(
+                        mapToItem(grid, pressX, pressY),
+                        mapToItem(grid, event.x, event.y))
+                }
+                onReleased: function(event) {
+                    if (!huz) {
+                        // #1145/#1219: üres területre kattintva az
+                        // eredeti a kijelölést TÖRLI (a mappa
+                        // csomópontján), nem hagyja ott
+                        grid.appWindow.clearSelection()
+                        return
+                    }
+                    huz = false
+                    lassoBand.visible = false
+                    grid.applyLasso(
+                        groupCol.modelData.start, groupCol.modelData.count,
+                        groupFlow.width,
+                        pressX, pressY, event.x, event.y, event.modifiers)
+                }
+            }
             Repeater {
                 model: groupFlow.windowCount
                 delegate: Item {
@@ -609,6 +687,12 @@ ListView {
                             grid.openRequested(i)
                         }
                         onLassoDragged: function(sx, sy, cx, cy) {
+                            // #1148/#897: a gesztus ELSŐ mozdulatánál
+                            // pillanatfelvétel — a Shift/Ctrl ehhez
+                            // viszonyít, ezért a keret visszahúzása is
+                            // visszavon. A keretsáv láthatatlansága a
+                            // megbízható „most kezdődött" jel.
+                            if (!lassoBand.visible) grid.beginLasso()
                             lassoBand.update(
                                 mapToItem(grid, sx, sy),
                                 mapToItem(grid, cx, cy))
