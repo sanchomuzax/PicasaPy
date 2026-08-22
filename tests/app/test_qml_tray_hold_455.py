@@ -129,6 +129,13 @@ class FakeController(QObject):
     def photoInfo(self, row):
         return "photo.jpg"
 
+    @Slot("QVariantList", result=str)
+    def selectionInfo(self, rows):
+        # #1189: a valódi vezérlő a kijelölés összesítését adja; a duplum
+        # csak annyit vállal, hogy LÉTEZIK — különben a TrayBar kötése
+        # szkripthibára fut (a #305 őre ezt ki is szúrta).
+        return f"{len(rows or [])} pictures"
+
     @Slot(int, result=str)
     def viewerInfo(self, row):
         return "photo.jpg"

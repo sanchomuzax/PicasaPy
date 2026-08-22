@@ -91,6 +91,7 @@ Column {
                   : (tray.appWindow.selectedIndexes.length === 1
                      ? tray.ctl.photoInfo(tray.appWindow.selectedIndex)
                      : (tray.appWindow.selectedIndexes.length > 1
+                        && typeof tray.ctl.selectionInfo === "function"
                         ? tray.ctl.selectionInfo(tray.appWindow.selectedIndexes)
                         : tray.ctl.statusText)))
             color: Theme.infoBarText
