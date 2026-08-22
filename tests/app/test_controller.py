@@ -1680,7 +1680,10 @@ class TestExportRows:
         import picasapy.app.export_controller as ec
         from picasapy.export import ExportReport
 
-        def boom(items, target_dir, settings):
+        # #1166: a duplum a VALÓDI aláírást tükrözze — az export-mag azóta
+        # `purge_existing` kulcsszót is kap. Enélkül a hívás a háttérszálon
+        # TypeError-ra fut, és a teszt csak annyit lát, hogy nem jött jelzés.
+        def boom(items, target_dir, settings, **kwargs):
             return ExportReport(
                 exported=(), failed=(Path("rossz.jpg"),), reasons=("sérült fájl",)
             )

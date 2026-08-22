@@ -1699,6 +1699,7 @@ ApplicationWindow {
     // alsó sáv: infó-sáv + kijelölés-tálca (TrayBar.qml, #150)
     footer: TrayBar {
         id: trayBar
+        objectName: "trayBar"
         width: parent ? parent.width : 0
         // #1026: az alsó tálca- és kimeneti sáv a KÖNYVTÁR panelének
         // gyereke (`thumbui/bottombevel_base` + `outputlayout.tre`), tehát a

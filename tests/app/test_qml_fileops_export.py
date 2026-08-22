@@ -406,7 +406,13 @@ class TestExportDialog:
         loop.exec()
         qt_app.processEvents()
         assert results == [(1, 0)]
-        assert (target / "a.jpg").exists()
+        # #1166: az eredetiben a végleges útvonal `<hely>\<név>\` — a
+        # névmező alapértéke a FORRÁSMAPPA neve (spec 12.1, `0x0073b500`),
+        # ezért a kép a hely alatti, azonos nevű almappába kerül. Korábban
+        # a mező üresen állt, és a kép közvetlenül a helyre került.
+        nev = dialog.findChild(QObject, "exportFolderNameField").property("text")
+        assert nev, "a névmező alapértéke üres maradt"
+        assert (target / nev / "a.jpg").exists()
         # a visszajelző dialógus is megnyílt az exportFinished-re
         result_dialog = _child(window, "exportResultDialog")
         assert result_dialog.property("visible") is True
