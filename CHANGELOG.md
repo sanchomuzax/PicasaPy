@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Belső
+- **A platformfüggő ágak mind helyettesíthetők (#1217).** Egyetlen napon
+  négy jegy bukott ugyanazon a mintán (#1076, #1182, #1206, #1167): a teszt
+  hallgatólagosan a fejlesztői gépet feltételezte, és a windows-lábon a
+  HELYES natív viselkedésen bukott el. Mostantól minden platform-elágazás
+  modulszintű fogantyún (`_platform()`) vagy nevesített `platform=`
+  paraméteren megy át, és őr-teszt tartja így.
+
 ### Javítva
 - **Többszörös exponálás: az újraszerkesztés fekete lapot adott (#1248).** A
   mentett `.cxf` nem sorolta fel a forrásképeket, ezért az újranyitott

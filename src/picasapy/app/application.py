@@ -99,6 +99,15 @@ _GRID_MAX_THUMB_PX = 256
 _THUMB_CACHE_LIMIT_BYTES = 512 * 1024 * 1024
 
 
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217).
+
+    A modul többi platformfüggő ága nevesített `platform=` paramétert kap;
+    ez az egyetlen, amit nem hívunk paraméterrel (a Qt indulása ELŐTT fut).
+    """
+    return sys.platform
+
+
 def _thumbnail_cache_size(device_pixel_ratio: float) -> int:
     """A cache-elt thumbnail célmérete (leghosszabb oldal, px).
 
@@ -343,7 +352,7 @@ def _set_windows_app_id() -> None:
     A hívás a QGuiApplication indítása ELŐTT kell történjen, hogy a taskbar-
     ikon azonnal helyesen jelenjen meg.
     """
-    if sys.platform != "win32":
+    if _platform() != "win32":
         return  # Csak Windowson van értelme
 
     try:

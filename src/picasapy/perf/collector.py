@@ -108,12 +108,17 @@ def _windows_cpu_rss() -> tuple[float, int]:
     return times.user + times.system, rss_bytes
 
 
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217)."""
+    return sys.platform
+
+
 def _fallback_cpu_rss() -> tuple[float, int]:
     """Nem-Linux (vagy /proc nélküli) tartalék. Windowson psapi/os.times
     (pillanatnyi RSS); POSIX-on a `resource` modul — ott a RSS a
     CSÚCS-RSS (`ru_maxrss`), nem a pillanatnyi érték; jobb híján ez a
     legolcsóbb, függőségmentes becslés."""
-    if sys.platform == "win32":
+    if _platform() == "win32":
         try:
             return _windows_cpu_rss()
         except (OSError, AttributeError):
@@ -123,7 +128,7 @@ def _fallback_cpu_rss() -> tuple[float, int]:
     usage = resource.getrusage(resource.RUSAGE_SELF)
     cpu_time = usage.ru_utime + usage.ru_stime
     # macOS-en byte-ban, Linuxon KB-ban adja vissza a kernel
-    rss_bytes = usage.ru_maxrss * (1 if sys.platform == "darwin" else 1024)
+    rss_bytes = usage.ru_maxrss * (1 if _platform() == "darwin" else 1024)
     return cpu_time, rss_bytes
 
 
