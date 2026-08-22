@@ -15,6 +15,7 @@ from picasapy.index import open_index, sync_tree
 from picasapy.index.sync import (
     add_removed_folder,
     clear_removed_folders_under,
+    normalize_path,
     remove_root,
     removed_folder_paths,
 )
@@ -103,7 +104,18 @@ class TestSirko:
             assert removed_folder_paths(conn) == ()
 
     def test_a_lista_lekerdezheto(self, tmp_path):
+        # ⚠️ VALÓDI (abszolút) útvonalak kellenek, nem "/x/egy" alakúak: a
+        # tároló `normalize_path`-szal ír, az pedig a windows-lábon a
+        # "/x/egy"-ből "D:\x\egy"-et csinál — a POSIX-alakra írt elvárás
+        # ott elbukott (mérve: CI #1257, windows 1/4).
+        egy = tmp_path / "egy"
+        ketto = tmp_path / "ketto"
         with open_index(tmp_path / "i.db") as conn:
-            add_removed_folder(conn, "/x/egy")
-            add_removed_folder(conn, "/x/ketto")
-            assert set(removed_folder_paths(conn)) == {"/x/egy", "/x/ketto"}
+            add_removed_folder(conn, str(egy))
+            add_removed_folder(conn, str(ketto))
+            # A tároló `normalize_path`-szal ír; az elvárás is azon megy
+            # át, különben a windows-láb írásmódjához kötnénk a tesztet.
+            assert set(removed_folder_paths(conn)) == {
+                normalize_path(str(egy)),
+                normalize_path(str(ketto)),
+            }
