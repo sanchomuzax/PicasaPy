@@ -12,6 +12,14 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+    # #1127: a verzióemelő automatika ágai NEM futtatják a teljes mátrixot —
+    # egyetlen `version = "…"` sorra tíz perc runner-idő ceremónia, olyan
+    # kódra, ami a saját jegy-PR-jén már zölden átment. A kötelező státuszt
+    # a `ci-bump.yml` adja meg azonnal, ELLENŐRZÖTT diffel: ha a PR bármi
+    # mást is érint, ott elbukik, tehát kódot ezen az úton nem lehet
+    # becsempészni.
+    branches-ignore:
+      - 'chore/auto-bump-*'
   # #651: kézi indítás. Az automatikus `pull_request` futás elmarad, ha a
   # PR-t/pusht a GitHub-integráció tokenje váltja ki — a GitHub az ilyen
   # eseményekre szándékosan nem indít workflow-t (ugyanaz a
