@@ -328,28 +328,93 @@ ApplicationWindow {
             window.selectedIndex = i
         }
     }
+    // ⚠️ #1145: MAPPAVÁLTÁSKOR a kijelölés törlődik.
+    //
+    // Az eredetiben az előző mappa kijelölés-csomópontját a program
+    // elengedi (`0x0056bc10` → `0x718a50`), és a helyére az újat teszi.
+    // Nálunk a kijelölés túlélte a váltást — így egy másik mappában
+    // végzett művelet (csillag, forgatás, törlés) a KORÁBBI mappa képeire
+    // hatott volna.
+    //
+    // A `currentFolder` a `statusChanged`-en jelez, ezért a mappa saját
+    // értékét figyeljük, nem a jelzést: így csak VALÓDI váltásra törlünk.
+    property string _lastFolder: ""
+    Connections {
+        target: controller
+        function onStatusChanged() {
+            var folder = controller ? controller.currentFolder : ""
+            if (folder === window._lastFolder) return
+            window._lastFolder = folder
+            window.clearSelection()
+        }
+    }
+
     function clearSelection() {
         window.selectedIndexes = []
         window.selectedIndex = -1
     }
+    // ⚠️ #1145: a kijelölés hatóköre a JELENLEGI MAPPA, nem a teljes feed.
+    //
+    // Az eredetiben az „Az összes kijelölése" (`0x9cb8`) kezelője
+    // (`0x005e5070`) EGYETLEN kijelölés-csomóponton dolgozik, és az EGY
+    // mappához tartozik (`CSelectionNode + 0x3c0`). A Picasában
+    // egyáltalán nem létezik mappákon átnyúló kijelölés.
+    //
+    // Nálunk a Ctrl+A tízezres nagyságrendű sort jelölt ki — a tulajdonos
+    // ezt jelentette (#1184), és emiatt „majdnem lefagyott az app".
+    //
+    // A csoportot a jelenlegi kijelölés/fókusz sora dönti el; ha nincs
+    // ilyen, a jelenlegi mappa csoportja.
+    function _currentGroup() {
+        if (!controller) return null
+        var groups = controller.feedGroups
+        if (!groups || groups.length === 0) return null
+        var row = window.selectedIndex
+        if (row >= 0) {
+            for (var i = 0; i < groups.length; ++i) {
+                var g = groups[i]
+                if (row >= g.start && row < g.start + g.count) return g
+            }
+        }
+        var current = controller.currentFolder
+        for (var j = 0; j < groups.length; ++j)
+            if (groups[j].path === current) return groups[j]
+        return groups[0]
+    }
+
+    function _groupRows() {
+        var g = window._currentGroup()
+        if (!g) return Selection.allRows(controller.photos.rowCount())
+        var rows = []
+        for (var i = g.start; i < g.start + g.count; ++i) rows.push(i)
+        return rows
+    }
+
     function selectAll() {
-        var range = Selection.allRows(controller.photos.rowCount())
+        var range = window._groupRows()
         window.selectedIndexes = range
-        if (range.length > 0) window.selectedIndex = 0
+        if (range.length > 0) window.selectedIndex = range[0]
     }
     // #422: „Kiválasztás megfordítása" (Ctrl+I) — a mappa-kontextusmenü és
     // a Szerkesztés menü tétele
     function invertSelection() {
-        var rows = Selection.inverted(
-            window.selectedIndexes, controller.photos.rowCount())
+        // #1145: a megfordítás is a jelenlegi mappán belül marad
+        var scope = window._groupRows()
+        var current = window.selectedIndexes
+        var rows = []
+        for (var i = 0; i < scope.length; ++i)
+            if (current.indexOf(scope[i]) === -1) rows.push(scope[i])
         window.selectedIndexes = rows
         window.selectedIndex = rows.length > 0 ? rows[0] : -1
     }
     // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — a jelenlegi
     // nézet csillagos képeit jelöli ki (NEM a Mappák panel nézet-szűrője).
     function selectStarred() {
-        var rows = Selection.starredRows(
-            controller.photos.rowCount(), controller.photos.starAt)
+        // #1145: a csillagozottak is a jelenlegi mappából
+        var scope = window._groupRows()
+        var rows = []
+        for (var i = 0; i < scope.length; ++i)
+            if (controller.photos.starAt(scope[i])) rows.push(scope[i])
         window.selectedIndexes = rows
         window.selectedIndex = rows.length > 0 ? rows[0] : -1
     }
