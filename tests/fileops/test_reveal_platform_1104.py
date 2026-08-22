@@ -44,11 +44,15 @@ class _Kimenet:
 @pytest.fixture
 def hivasok(monkeypatch):
     """A `subprocess.run` elkapva — a PARANCSSOR a vizsgálat tárgya."""
-    rogzitett: list[list[str]] = []
+    rogzitett: list[list[str] | str] = []
     kimenet = _Kimenet()
 
     def _run(args, **_kwargs):
-        rogzitett.append(list(args))
+        # ⚠️ #1152: a windowsos ág SZTRING parancssort ad (a pontos
+        # idézőjelezés miatt, ld. az osztály docstringjét). A korábbi
+        # `list(args)` egy sztringet KARAKTEREKRE bontott volna — a teszt
+        # nem a terméket mérte volna, hanem a saját átalakítását.
+        rogzitett.append(args if isinstance(args, str) else list(args))
         return kimenet
 
     monkeypatch.setattr("picasapy.fileops.reveal.subprocess.run", _run)
@@ -60,7 +64,18 @@ def _platform(monkeypatch, nev: str) -> None:
 
 
 class TestWindows:
-    """`explorer` — a fájlt KI IS JELÖLI."""
+    """`explorer` — a fájlt KI IS JELÖLI.
+
+    ⚠️ #1152: a parancs SZTRING, és az útvonal IDÉZŐJELBEN van. Ezek a
+    tesztek korábban a listás, idézőjel NÉLKÜLI alakot állították — az
+    viszont a valóságban NEM MŰKÖDÖTT: a tulajdonos szóközös útvonalán
+    (`OneDrive - centralmediacsoport`) az Intéző az alapértelmezett mappát
+    nyitotta meg.
+
+    Az eredeti formátum-stringje a binárisból: `/select,"%s"`
+    (`0x00cd8604`), az `explorer` szóval együtt (`0x00cd85f4`), ugyanabból
+    a függvényből (`0x00981280`).
+    """
 
     def test_a_fajlt_kijeloli(self, tmp_path, monkeypatch, hivasok):
         rogzitett, _ = hivasok
@@ -69,12 +84,15 @@ class TestWindows:
 
         reveal_in_file_manager(kep)
 
-        assert rogzitett == [["explorer", f"/select,{kep}"]]
+        assert rogzitett == [f'explorer /select,"{kep}"']
 
-    def test_a_select_EGY_argumentum_vesszo_utan_szokoz_nelkul(
+    def test_a_szokozos_utvonal_IDEZOJELBEN_megy(
         self, tmp_path, monkeypatch, hivasok
     ):
-        """Szóközös, ékezetes útvonalon is — ez a tulajdonos esete."""
+        """Szóközös, ékezetes útvonalon is — ez a tulajdonos esete.
+
+        ⚠️ Idézőjel nélkül ez a hívás elhasal: pontosan emiatt nyílt meg a
+        Dokumentumok mappa a kép mappája helyett."""
         rogzitett, _ = hivasok
         _platform(monkeypatch, "win32")
         kep = tmp_path / "OneDrive - centralmediacsoport" / "Képek" / "a.jpg"
@@ -82,10 +100,10 @@ class TestWindows:
         reveal_in_file_manager(kep)
 
         (parancs,) = rogzitett
-        assert len(parancs) == 2
-        assert parancs[1].startswith("/select,")
-        assert not parancs[1].startswith("/select, ")
-        assert parancs[1][len("/select,") :] == str(kep)
+        assert isinstance(parancs, str)
+        assert parancs.startswith('explorer /select,"')
+        assert parancs.endswith('"')
+        assert str(kep) in parancs
 
     def test_a_mappat_kijeloles_nelkul_nyitja(self, tmp_path, monkeypatch, hivasok):
         rogzitett, _ = hivasok
@@ -93,7 +111,7 @@ class TestWindows:
 
         open_folder_in_file_manager(tmp_path)
 
-        assert rogzitett == [["explorer", str(tmp_path)]]
+        assert rogzitett == [f'explorer "{tmp_path}"']
 
     def test_a_nemnulla_kilepesi_kod_NEM_hiba(self, tmp_path, monkeypatch, hivasok):
         """Az `explorer` sikeres megnyitásnál is nemnullát ad — a régi

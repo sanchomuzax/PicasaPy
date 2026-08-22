@@ -57,20 +57,35 @@ def _macos() -> bool:
     return sys.platform == "darwin"
 
 
-def _parancs(cel: Path, *, kijelol: bool) -> list[str]:
+def _parancs(cel: Path, *, kijelol: bool) -> list[str] | str:
     """A platform szerinti parancssor.
 
     `kijelol=True` a „mutasd a fájlt" szándék: ahol a rendszer tudja, ott a
     fájlt ki is jelöljük, egyébként a mappát nyitjuk."""
     if _windows():
-        # a vessző után NINCS szóköz, és az egész EGY argumentum
-        return ["explorer", f"/select,{cel}"] if kijelol else ["explorer", str(cel)]
+        # ⚠️ #1152: az útvonal IDÉZŐJELBEN van. Az eredeti
+        # formátum-stringje a binárisból: `/select,"%s"` (`0x00cd8604`),
+        # az `explorer` szóval együtt (`0x00cd85f4`), ugyanabból a
+        # függvényből (`0x00981280`).
+        #
+        # Idézőjel nélkül a SZÓKÖZÖS útvonal elhasal — a tulajdonosé
+        # ilyen (`OneDrive - centralmediacsoport`), és az Intéző emiatt
+        # az alapértelmezett mappát nyitotta meg helyette.
+        #
+        # ⚠️ SZTRINGET adunk vissza, nem listát: listánál a Windows a
+        # saját szabályai szerint idézné az argumentumot, ami NEM az a
+        # forma, amit az Intéző vár. Sztringnél a parancssort mi
+        # állítjuk össze, karakterre pontosan.
+        if kijelol:
+            return 'explorer /select,"' + str(cel) + '"'
+        return 'explorer "' + str(cel) + '"'
+
     if _macos():
         return ["open", "-R", str(cel)] if kijelol else ["open", str(cel)]
     return ["xdg-open", str(cel)]
 
 
-def _inditsd(parancs: list[str], cel: Path) -> None:
+def _inditsd(parancs: list[str] | str, cel: Path) -> None:
     """A parancs futtatása, egységes hibaágakkal.
 
     A kilépési kódot **Windowson nem** vizsgáljuk (ld. a modul
@@ -81,8 +96,11 @@ def _inditsd(parancs: list[str], cel: Path) -> None:
         result = subprocess.run(parancs, check=False)
     except OSError as error:
         _log.warning("A fájlkezelő megnyitása sikertelen: %s", cel)
+        # ⚠️ #1152: a windowsos ág SZTRING parancssort ad (a pontos
+        # idézőjelezés miatt) — a hibaüzenet ne az első KARAKTERT írja ki.
+        program = parancs.split()[0] if isinstance(parancs, str) else parancs[0]
         raise OSError(
-            f"A fájlkezelő megnyitása sikertelen ({parancs[0]} hiányzik?): {cel}"
+            f"A fájlkezelő megnyitása sikertelen ({program} hiányzik?): {cel}"
         ) from error
     if _windows():
         # az explorer sikeres megnyitásnál is nemnulla kóddal tér vissza
