@@ -1,0 +1,64 @@
+# A VERZIÓEMELŐ PR gyorsútja.
+#
+# ## Miért
+#
+# A kiadási automatika minden beolvadt munka után nyit egy PR-t, ami
+# EGYETLEN sort változtat: `version = "0.8.43"`. Erre eddig lefutott a
+# TELJES tesztmátrix (2 platform × 4 darab + aggregátorok, ~10 perc) —
+# olyan kódra, ami a saját jegy-PR-jén már zölden átment. A kiadás így
+# minden körben tíz perccel csúszott, pusztán ceremóniából.
+#
+# Ez a fájl ugyanazt a trükköt használja, mint a `ci-docs.yml`: a kötelező
+# ellenőrzés nevén (`Test (ubuntu-latest)`) azonnal sikeresre fut.
+#
+# ## Miért NEM gyengíti a védelmet
+#
+# A job ELLENŐRZI, hogy a PR tényleg csak verziószámot/CHANGELOG-ot
+# változtat. Ha bármi más is van a diffben, ELBUKIK — kódot ezen az úton
+# nem lehet becsempészni. A `ci.yml` pedig ezekre az ágakra szándékosan
+# nem fut (`branches-ignore`), így nincs két, egymásnak ellentmondó
+# státusz sem.
+name: CI (verzióemelés)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    # A névnek BETŰRE egyeznie kell a ci.yml ubuntu-aggregátorával,
+    # különben az ág-védelem nem ismeri fel kötelező ellenőrzésként.
+    name: Test (ubuntu-latest)
+    if: startsWith(github.head_ref, 'chore/auto-bump-')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: A diff CSAK verzió-fájlokat érinthet
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          valtozott="$(git diff --name-only "$BASE" "$HEAD")"
+          echo "Változott fájlok:"; echo "$valtozott"
+          tilos="$(grep -vE '^(pyproject\.toml|CHANGELOG\.md|README\.md|src/picasapy/__init__\.py)$' <<<"$valtozott" || true)"
+          if [ -n "$tilos" ]; then
+            echo "::error::A verzióemelő gyorsút CSAK verzió-fájlokat enged. Idegen fájlok:"
+            echo "$tilos"
+            exit 1
+          fi
+          if grep -q '^pyproject\.toml$' <<<"$valtozott"; then
+            erdemi="$(git diff -U0 "$BASE" "$HEAD" -- pyproject.toml \
+                       | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' \
+                       | grep -vE '^[+-]version = ' || true)"
+            if [ -n "$erdemi" ]; then
+              echo "::error::A pyproject.toml-ban a verziósoron kívül is változott valami:"
+              echo "$erdemi"
+              exit 1
+            fi
+          fi
+          echo "Csak verzióemelés — a teljes tesztkészletet a jegy PR-je már lefuttatta."
