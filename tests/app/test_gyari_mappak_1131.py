@@ -23,9 +23,7 @@ szerinti mappába megy, de a MEGLÉVŐ (bármely nyelvű) mappát fel kell
 ismernünk — különben mi nyitunk néma harmadikat.
 """
 
-from pathlib import Path
 
-import pytest
 
 from picasapy.app.project_folder_names import (
     ProjectFolderKind,
