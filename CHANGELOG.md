@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A szűrőnevek írásmódja mostantól számít (#1141).** Az eredeti Picasa
+  kis-nagybetű-érzékenyen olvassa a szerkesztési láncot: a `Tint`, `TINT`
+  vagy `Sepia` alak nála nem fut le, csak a kanonikus `tint`, `sepia`,
+  `Vignette`. Nálunk eddig lefutott, ezért hat mérőképen látványosan
+  eltért a kimenet az eredetitől. A fájl tartalmát ez nem érinti: a
+  `.picasa.ini` bájtra ugyanaz marad.
+
 ## [0.8.49] – 2026-08-22
 
 ### Javítva
