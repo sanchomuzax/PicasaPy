@@ -94,10 +94,24 @@ class TestRequestChildren:
         names = [c["name"] for c in results[0][1]]
         assert names == [".rejtett", "lathato"]
 
-    def test_picasa_root_order_starts_with_user_folders_then_root(self, tmp_path):
+    def test_picasa_root_order_starts_with_user_folders_then_root(
+        self, tmp_path, monkeypatch
+    ):
+        """⚠️ Ez a LINUXOS gyökérsorrend tesztje, ezért a platformot
+        KIMONDJUK (#1206).
+
+        A negyedik gyökér a `/` — az **linuxos** fogalom. Windowson a
+        `normalize_path("/")` a JELENLEGI MEGHAJTÓ gyökerére oldódott fel
+        (`D:\`), és pontosan ez volt a félrevezető viselkedés, amit a
+        #1206 megszüntetett: ott a MEGHAJTÓK a gyökerek.
+
+        Platform-rögzítés nélkül ez a teszt a windows-lábon a TERMÉK
+        HELYES viselkedésén bukna el."""
+        from picasapy.app import folder_tree_controller as ftc
         from picasapy.app.folder_tree_controller import _root_entries
         from picasapy.paths import normalize_path
 
+        monkeypatch.setattr(ftc, "_platform", lambda: "linux")
         roots = _root_entries(home=tmp_path, user="nemletezo-teszt-user")
         assert [(item["name"], item["path"]) for item in roots[:4]] == [
             ("Desktop", str(tmp_path / "Desktop")),
