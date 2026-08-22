@@ -231,13 +231,106 @@ indexből** menjen, ne futásidejű szűréssel — nálunk ez az SQLite FTS5.
 | `distims.db` | hasonlósági ujjlenyomatok (a ki nem adott hasonlósági kereséshez) |
 | `makemoviecache.db` | film-előnézeti gyorstár |
 | `wordhash.dat` | szöveges kereső-index (ld. fent) |
-| `repository.dat` | a tár fő nyilvántartása |
-| `profilephotos.db` · `usernames.dat` | a megszűnt online szolgáltatáshoz |
-| `starlist.txt` · `saverlist.txt` | az adatbázisból generált **egyszerű listák** a kísérőprogramoknak (csillagozott, illetve képernyővédő-album) |
+| `repository.dat` | ~~a tár fő nyilvántartása~~ → **kulcs→érték tár**, ld. lent |
+| `profilephotos.db` · `usernames.dat` | ~~a megszűnt online szolgáltatáshoz~~ → **mérve üres**, ld. lent |
+| `starlist.txt` · `saverlist.txt` | az adatbázisból generált **egyszerű listák** (csillagozott, illetve képernyővédő-album), ld. lent |
 
 **Importálás szempontjából mind eldobható.** Az arc-sablonok bináris
 modell-adatok, a mi felismerőnkkel nem használhatók — ami átvehető, az a
 **név–arc hozzárendelés**, nem a sablon.
+
+### A négy segédfájl — MÉRVE, nem következtetve (2026-08-22)
+
+A fenti négy sor eddig **egymondatos találgatás** volt. A 2026-08-22-i
+profilmappa-másolaton (`research/testdata/Picasa2-arcok/`) mind a négy
+tényleges tartalma megvan.
+
+#### `repository.dat` — **kulcs→érték tár**, nem „nyilvántartás"
+
+Nem a szokásos 20 bájtos PMP-fejlécet használja, hanem egy **egyszerűbb
+alakot**:
+
+```
+uint32 magic = 0x3FCCCCCD          (ugyanaz, mint a PMP-nél)
+uint32 count                       (a PÁROK száma, mérve: 33)
+count × ( kulcs\0  érték\0 )       (null-lezárt UTF-8 sztringek)
+```
+
+A 33 pár többsége **mappa-útvonal → `"1"`** (vagyis halmazként használt
+kulcsok), de **valódi beállítás is keveredik közéjük**, pl.:
+
+```
+[8] 'rawversion'  →  [9] '1.1'
+```
+
+⇒ **`repository.dat` = vegyes kulcs→érték tár**: a bejárt/ismert mappák
+halmaza + néhány verzió-jellegű beállítás.
+
+#### `usernames.dat` — mérve ÜRES
+
+`8 bájt` összesen: `magic + count = 0`. Vagyis **egyetlen bejegyzés sincs
+benne** — ebben a telepítésben nincs bejelentkezett Google-fiók. Ez
+**egybevág a `network.log`-gal**, amiben egyetlen fotó-szolgáltatás felé
+menő kérés sincs (ld. „A `Picasa2` PROFILMAPPA teljes leltára").
+A `profilephotos_0.db` ugyanígy **4 bájt** = csak a magic.
+
+#### `starlist.txt` — a csillagozott képek sima szövegben
+
+50 sor, **CRLF** sorvégekkel, UTF-8 (ékezetes útvonalak), soronként **egy
+abszolút útvonal**. ⚠️ **Vegyesen tartalmaz helyi meghajtót és UNC hálózati
+útvonalat**:
+
+```
+C:\Users\…\Képek\AI\498683ac-….png
+P:\testdata\2025-05-xx\IMG_20250501_093058.jpg
+\\DS215j\photo\2009\2009-08-20 …\DSC03390.JPG
+```
+
+Vagyis a csillagozás **nem csak a `.picasa.ini` `star=yes` kulcsában él** —
+a Picasa egy **lapos, teljes listát is vezet** róla. A `saverlist.txt`
+(képernyővédő-album) ugyanez a formátum; a mintában **0 bájt**.
+
+#### `scanlist.txt` — a meghajtó-szintű be/kizárás, élő minta
+
+24 bájt, és pontosan ennyi:
+
+```
+-G:\
+-X:\
+-P:\
++C:\
+```
+
+Ez **igazolja a `+`/`-` előtag-szabályt** (a `picasa-mappakezelo.md` 11.3
+levezetését) a lehető legkisebb valódi mintán: három meghajtó kizárva,
+egy engedélyezve.
+
+#### A bélyegkép-szintek mérete ezen a kis készleten
+
+| fájl | méret |
+|---|---|
+| `previews_0.db` | **42,2 MB** |
+| `thumbs_0.db` | 15,1 MB |
+| `bigthumbs_0.db` | 12,7 MB |
+| `thumbs2_0.db` | 5,4 MB |
+| `profilephotos_0.db` | **4 bájt** (üres) |
+
+⚠️ A sorrend **eltér** a nagy készleten mérttől (ott a `bigthumbs` volt a
+domináns, 209 MB) — 3 338 képnél az **előnézet** viszi a legtöbb helyet.
+A négyszintű gyorsítótár-modell (`picasa-imagedata-rekord.md` / a fenti
+„bélyegkép-gyorsítótár NÉGY szintje") ettől érvényes marad.
+
+#### Két oszlop-eltérés a két telepítés között
+
+| oszlop | „A" (nagy, régi) | „B" (kicsi, új) |
+|---|---|---|
+| `imagedata_tagdate` | — | **van** |
+| `imagedata_facequality`, `personalbumrecs*`, `personalbumrecvalues*` | — | **van** |
+| `imagedata_suppress` | **van** | — |
+
+⇒ Az oszlopkészlet **nem fix**: a Picasa csak azokat az oszlopfájlokat
+hozza létre, amikre ténylegesen szükség volt. Egy importálónak ezért
+**minden oszlop hiányát tűrnie kell**.
 
 ## PicasaPy saját tárolási terve (munkahipotézis)
 
