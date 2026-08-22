@@ -282,7 +282,11 @@ Window {
     }
 
     Shortcut {
-        sequence: StandardKey.Cancel
+        // #1205: `sequences` (többes szám) — a `sequence` a szabványos
+        // billentyű TÖBB kötése közül csak az elsőt köti be, és Windowson
+        // minden induláskor figyelmeztet is rá („Only binding to one of
+        // multiple key bindings associated with 70").
+        sequences: [StandardKey.Cancel]
         context: Qt.WindowShortcut
         enabled: folderManagerWindow.visible
         onActivated: folderManagerWindow.cancelChanges()
