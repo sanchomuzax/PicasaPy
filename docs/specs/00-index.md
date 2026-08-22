@@ -301,6 +301,15 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 > A mért eltéréslista a **9/b** szakaszban, a normatív sor-felépítés a
 > **4.4/b**-ben. Jegy: **#1200**.
 
+⭐ **2026-08-22, „Eltávolítás a Picasából…” kör** — a lap **15.** szakasza a
+**menüparancsot** (`Folder::ID_MANAGE_ALBUM`, hármaspontos) írja le, ami NEM
+azonos a Mappakezelő azonos nevű rádiógombjával. A teljes lánc: a
+`watchedfolders.txt` és `frexcludefolders.txt` újraírása, majd egy
+**`]album:removed` SÍRKŐ** (`0x004b9200`) — a mappa nem törlődik, hanem
+megjelölődik, hogy a beolvasó ne vegye fel újra. **Két mért hibánk:** a helyi
+menü almappára **semmit nem csinál**, és a törölt mappa **újraolvasáskor
+visszajön**. Jegy: **#1249**.
+
 *(A lap 2026-08-20-án készült, a tulajdonos két képernyőképéből és a
 binárisból. A kör négy kérdést tett fel és kettőt le is zárt — a
 lista-térképet (5.2/5.4) és a „teljes meghajtó" feltételét (10.). Ami
