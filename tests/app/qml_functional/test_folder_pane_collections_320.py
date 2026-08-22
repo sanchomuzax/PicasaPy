@@ -94,6 +94,14 @@ class _StubController(QObject):
     def removeWatchedFolder(self, path):
         self.removed_folders.append(path)
 
+    @Slot(str)
+    def removeFolder(self, path):
+        """#1249: a menü ezt hívja — a `removeWatchedFolder` CSAK pontos
+        figyelt-gyökérre hatott, almappára némán semmit nem csinált. A
+        duplumnak a VALÓDI felszínt kell tükröznie, különben a teszt egy
+        nem létező úton marad zöld."""
+        self.removed_folders.append(path)
+
     @Property(str, notify=customCollectionsChanged)
     def folderSort(self):
         return "date"

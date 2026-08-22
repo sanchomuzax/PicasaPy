@@ -27,7 +27,13 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
 
-from picasapy.index import open_index, remove_root, sync_folder
+from picasapy.index import (
+    add_removed_folder,
+    clear_removed_folders_under,
+    open_index,
+    remove_root,
+    sync_folder,
+)
 from picasapy.index.dedup_folders import merge_duplicate_folders
 from picasapy.paths import normalize_path, path_key
 from picasapy.scanner import (
@@ -490,6 +496,10 @@ class LibraryMixin(BackgroundWorkerMixin):
         if not Path(path).is_dir():
             self.watchedFolderRejected.emit(path, "nem-mappa")
             return
+        # #1249: az újra felvett mappa (és alfái) sírkövei feloldódnak —
+        # különben a beolvasás némán hagyná ki, és senki nem tudná, miért
+        with open_index(self._db_path) as conn:
+            clear_removed_folders_under(conn, path)
         self._roots.append(path)
         self._persist_roots()
         self._restart_watcher()
@@ -544,6 +554,10 @@ class LibraryMixin(BackgroundWorkerMixin):
         if not Path(path).is_dir():
             self.watchedFolderRejected.emit(path, "nem-mappa")
             return
+        # #1249: az egyszeri keresés is feloldja a sírkövet — a felhasználó
+        # kifejezetten ezt a mappát kérte
+        with open_index(self._db_path) as conn:
+            clear_removed_folders_under(conn, path)
         # nincs leállítási-jelző kötés (nem figyelt gyökér): egyszeri,
         # meg nem szakítható munka
         progress = self._make_progress_emitter()
@@ -569,12 +583,19 @@ class LibraryMixin(BackgroundWorkerMixin):
         path = normalize_path(path)
         if not path:
             return
+        # #1249: SÍRKŐ mindkét ágon — az eredetiben a mappa nem törlődik,
+        # hanem `]album:removed` jelöléssel marad (`0x004b9200`), és a
+        # beolvasó nem veszi fel újra. Enélkül az almappa a következő
+        # rescan()-nél visszajött (a jegy gépi mérése).
         watched_root = self._find_root(path)
         if watched_root is not None:
+            with open_index(self._db_path) as conn:
+                add_removed_folder(conn, watched_root)
             self.removeWatchedFolder(watched_root)
             return
         with open_index(self._db_path) as conn:
             remove_root(conn, path)
+            add_removed_folder(conn, path)
         self._reload()
 
     @Slot(str)

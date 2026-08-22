@@ -2858,6 +2858,14 @@ Az arcfelismerés ettől független: egy mappa lehet figyelt úgy is, hogy az ar
 <context>
     <name>FolderPane</name>
     <message>
+        <source>Do you want to remove the folder %1 and its subfolders?</source>
+        <translation>Eltávolítja a(z) „%1&quot; mappát és a hozzá tartozó almappákat?</translation>
+    </message>
+    <message>
+        <source>Remove Folder</source>
+        <translation>Mappa eltávolítása</translation>
+    </message>
+    <message>
         <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
 
 To open a collection, double-click its name or click the icon next to it.</source>
