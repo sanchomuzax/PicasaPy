@@ -2617,6 +2617,24 @@ Would you like to rename or skip these files?</source>
 <context>
     <name>FolderManagerDialog</name>
     <message>
+        <source>This folder is already being watched:
+%1</source>
+        <translation>Ezt a mappát már figyeli a program:
+%1</translation>
+    </message>
+    <message>
+        <source>This folder cannot be opened:
+%1</source>
+        <translation>Ez a mappa nem nyitható meg:
+%1</translation>
+    </message>
+    <message>
+        <source>The folder could not be added:
+%1</source>
+        <translation>A mappát nem sikerült hozzáadni:
+%1</translation>
+    </message>
+    <message>
         <source>Folder List</source>
         <translation>Mappalista</translation>
     </message>

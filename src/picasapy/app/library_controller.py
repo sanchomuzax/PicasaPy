@@ -76,6 +76,17 @@ class LibraryMixin(BackgroundWorkerMixin):
     # #449: az első indítás kérdésének állapota (figyelt mappa lett/nem lett)
     initialScanChanged = Signal()
 
+    #: #1207: a figyelt mappa hozzáadása ELUTASÍTVA — (útvonal, ok).
+    #
+    # ⚠️ A hozzáadás két ágon fordulhat vissza, és mindkettő NÉMA
+    # volt: a tulajdonos beállítása eltűnt, és nem tudta meg, miért
+    # („Nem értem…"). A duplikáció-védelem némasága a #507 óta
+    # szándékos a háttérhívásoknál (első indítás, importálás) —
+    # ezért JELZÉST adunk, nem hibaüzenetet: aki kifejezetten kérte
+    # (Mappakezelő), az megjeleníti; a többi hívó figyelmen kívül
+    # hagyja.
+    watchedFolderRejected = Signal(str, str)
+
     # -- busy-állapot (#70, #505) --------------------------------------------
 
     @Property(bool, notify=busyChanged)
@@ -459,7 +470,17 @@ class LibraryMixin(BackgroundWorkerMixin):
         záró perjel, `..`/`.` szegmens, szimbolikus link vagy (Windowson)
         eltérő kis-nagybetűzés SEM vezet duplikátumhoz."""
         path = normalize_path(to_local_path(path_or_url))
-        if not path or self._find_root(path) is not None or not Path(path).is_dir():
+        # ⚠️ #1207: az elutasítás OKÁT megnevezzük. Némán visszafordulni azt
+        # a látszatot kelti, hogy sikerült — a tulajdonos beállítása így
+        # tűnt el nyomtalanul, és nem tudta meg, miért.
+        if not path:
+            self.watchedFolderRejected.emit(str(path_or_url), "ures-utvonal")
+            return
+        if self._find_root(path) is not None:
+            self.watchedFolderRejected.emit(path, "mar-figyelt")
+            return
+        if not Path(path).is_dir():
+            self.watchedFolderRejected.emit(path, "nem-mappa")
             return
         self._roots.append(path)
         self._persist_roots()
