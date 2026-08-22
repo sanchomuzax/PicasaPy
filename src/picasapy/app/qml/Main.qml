@@ -352,8 +352,37 @@ ApplicationWindow {
             var folder = controller ? controller.currentFolder : ""
             if (folder === window._lastFolder) return
             window._lastFolder = folder
+            // #1183: ha a kijelölés MÁR az új mappában van, akkor a váltást
+            // épp a rács fókusza okozta (a felhasználó ott kattintott) —
+            // nincs mit elengedni, az előző mappáé úgyis lecserélődött.
+            if (window._selectionInFolder(folder)) return
             window.clearSelection()
         }
+    }
+
+    // #1183: a fókuszsor mappája — a bal hasáb kiemelése ezt követi
+    function _folderOfRow(row) {
+        if (!controller || row < 0) return ""
+        var groups = controller.feedGroups
+        if (!groups) return ""
+        for (var i = 0; i < groups.length; ++i) {
+            var g = groups[i]
+            if (row >= g.start && row < g.start + g.count) return g.path
+        }
+        return ""
+    }
+
+    function _selectionInFolder(path) {
+        return path !== "" && window._folderOfRow(window.selectedIndex) === path
+    }
+
+    // A rács fókusza vezeti a jelenlegi mappát (az eredetiben `0x0056bc10`
+    // → `0x56b910`, „a jelenlegi album megváltozott"). Egy helyen kötjük be,
+    // így a kattintás, a nyilas léptetés és a programból állított fókusz is
+    // ugyanígy viselkedik.
+    onSelectedIndexChanged: {
+        var folder = window._folderOfRow(window.selectedIndex)
+        if (folder !== "" && controller) controller.focusFolder(folder)
     }
 
     function clearSelection() {
