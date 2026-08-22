@@ -40,6 +40,12 @@ from support.jpeg_factory import make_jpeg
 _ORA = [1000]
 
 
+def _bejar(item):
+    for gyerek in item.childItems():
+        yield gyerek
+        yield from _bejar(gyerek)
+
+
 def _ujraolvas(controller, qt_app) -> None:
     controller.rescan()
     for _ in range(200):
@@ -234,39 +240,66 @@ class TestUresTerulet:
                     return elem
         return None
 
+    @staticmethod
+    def _ures_pont(window, grid):
+        """Egy pont a képfolyamon BELÜL, de cellán KÍVÜL.
+
+        Nem geometriai feltevésből számoljuk (az oszlopszám a futtató
+        ablakméretétől függ — a CI-n más, mint itt), hanem méréssel: a
+        lasszó saját `MouseArea`-jának téglalapját pásztázzuk, és az első
+        olyan pontot adjuk vissza, amit egyetlen cella sem takar."""
+        terulet = None
+        for elem in _bejar(window.contentItem()):
+            if elem.objectName() == "feedFlowLasso":
+                terulet = elem
+                break
+        if terulet is None:
+            return None
+        cellak = [
+            e.parentItem()
+            for e in _bejar(window.contentItem())
+            if e.objectName() == "thumbMouseArea" and e.parentItem() is not None
+        ]
+        lepes = 12
+        y = terulet.height() / 2
+        x = terulet.width() - lepes
+        while x > 0:
+            pont = terulet.mapToScene(QPointF(x, y))
+            if not (0 <= pont.x() <= window.width()
+                    and 0 <= pont.y() <= window.height()):
+                x -= lepes
+                continue
+            takart = False
+            for cella in cellak:
+                sarok = cella.mapToScene(QPointF(0, 0))
+                if (sarok.x() <= pont.x() <= sarok.x() + cella.width()
+                        and sarok.y() <= pont.y() <= sarok.y() + cella.height()):
+                    takart = True
+                    break
+            if not takart:
+                return pont
+            x -= lepes
+        return None
+
     def test_ures_reszrol_indulva_kijelol(self, qml_app, qt_app):
         """⚠️ A jegy magja: telített rácson eddig sehonnan nem indult
         lasszó — kijelölt képről fogd-és-vidd lesz (#455, ez helyes), üres
-        területen viszont NEM VOLT kezelő.
-
-        A mérési pont a csoport CSONKA sorának üres része: három kép hat
-        oszlopban, tehát a 3. oszloptól jobbra a képfolyamon belül vagyunk,
-        de cella nélkül."""
+        területen viszont NEM VOLT kezelő."""
         window, _controller = _feed(qml_app, qt_app, darab=3)
         window.setProperty("selectedIndexes", [])
         window.setProperty("selectedIndex", -1)
         qt_app.processEvents()
+        grid = _grid(window)
 
-        utolso = self._cella(window, 2)
-        masodik = self._cella(window, 1)
-        assert utolso is not None and masodik is not None
-        kozep2 = utolso.mapToScene(QPointF(utolso.width() / 2,
-                                           utolso.height() / 2))
-        kozep1 = masodik.mapToScene(QPointF(masodik.width() / 2,
-                                            masodik.height() / 2))
-        # a 3. cellától JOBBRA: üres, de még a képfolyamon belül
-        ures = QPointF(kozep2.x() + utolso.width(), kozep2.y())
-        assert ures.x() < window.width(), "a mérési pont kilóg az ablakból"
+        ures = self._ures_pont(window, grid)
+        assert ures is not None, "nem található cellával nem takart pont a folyamon"
+        cel = self._cella(window, 0)
+        assert cel is not None
+        kozep = cel.mapToScene(QPointF(cel.width() / 2, cel.height() / 2))
 
-        self._huzas(window, qt_app, ures, kozep1)
+        self._huzas(window, qt_app, ures, kozep)
 
-        assert _kijelolt(window) == [1, 2], (
-            "az üres területről indított húzás nem a keretbe eső képeket "
-            f"jelölte ki: {_kijelolt(window)}"
+        assert 0 in _kijelolt(window), (
+            "az üres területről indított húzás nem jelölte ki a keretbe "
+            f"eső képet: {_kijelolt(window)}"
         )
-
-
-def _bejar(item):
-    for gyerek in item.childItems():
-        yield gyerek
-        yield from _bejar(gyerek)
