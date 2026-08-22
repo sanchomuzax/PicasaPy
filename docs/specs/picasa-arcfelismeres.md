@@ -578,16 +578,16 @@ listában az `adorners/listsuggestionfaceadorner`.
 |---|---|---|
 | 1 | A `facerect` `0x1` pontos jelentése | **LEZÁRVA (2026-08-22)** — a „B" telepítés megmutatta: az oszlop VEGYES, valódi rect64-et tárol megerősített régiónál, `1`-et jelzőként detektálás után (3.3). ~~BLOKKOLT~~ — az adat csak annyit bizonyít, hogy fájlonkénti logikai jelző; az írási hely a binárisban nincs feltárva. Folytatás: a `facerect` oszlop íróhelye a `0x004127c0` regisztrációból. Jegy: **#1238** |
 | 2 | A `facerectdata` szerepe | **LEZÁRVA (2026-08-22)** — arc-JELLEMZŐPONTOK: `conf`, `pan`, `leye`, `reye`, `mouth` (3.4/c). ~~BLOKKOLT~~ — 0 nem üres sor, nincs mit mérni; élő, arc-sablonos adatbázis kellene. Jegy: **#1238** (`felhasználóra-vár`: nevesített arcokat tartalmazó `db3` másolat) |
-| 3 | Az `albumcontactids` szemantikája | **LEZÁRVA (2026-08-22)** — album → kontakt-azonosító, 9/9 egyezés a `contacts.xml`-lel (3.4/b). A két `*checksum` **továbbra is BLOKKOLT** (a `peoplealbumchecksum` egyetlen értéke `34`, az `albumpeoplechecksum` 8 szórt érték — a képzési szabály nem dőlt el). ~~BLOKKOLT~~ — mind 0 soros; ugyanaz a külső anyag kell. Jegy: **#1238** |
+| 3 | Az `albumcontactids` szemantikája | **LEZÁRVA (2026-08-22)** — album → kontakt-azonosító, 9/9 egyezés a `contacts.xml`-lel (3.4/b). A két `*checksum` **továbbra is BLOKKOLT** — a 14.2 szakasz rögzíti a mért értékeket, a kilenc megdőlt hipotézist és a folytatás pontos helyét. ~~BLOKKOLT~~ — mind 0 soros; ugyanaz a külső anyag kell. Jegy: **#1238** |
 | 4 | A `deferredregion` a nevesített részhalmaz-e | **LEZÁRVA (nemleges)** — 15 mért ellenpélda cáfolja a tiszta részhalmaz-viszonyt; a lap 3.4 rögzíti feltételesként |
 | 5 | A `contact_id` hash képzési szabálya | **HATÓKÖRÖN KÍVÜL** — és 2026-08-22 óta tárgytalan is: az azonosító **telepítésfüggő**, tehát importáláskor amúgy sem használható kulcsként; a **név** az egyeztetés alapja (3.4/b). — az importáláshoz nem kell: az azonosítót nem mi képezzük, hanem olvassuk. Ha valaha kell, a `contacts.xml` adja a leképezést |
 | 6 | A `facedata` kulcs értékének pontos mezőszerkezete | **LEZÁRVA (tárgytalan)** — 0 korpusz-előfordulás, alapból kikapcsolt kapcsoló; a teendő a megőrzés, nem az értelmezés |
 | 7 | A `0x9e1c` azonosító **ütközése**: ugyanez az érték a feltöltés-beállítások felugró menüjében is szerepel (`ImpULOpts::ID_ALLOW_COLLAB`, rekord `0xd6f334`) | **LEZÁRVA (nem a mi gondunk)** — más menücsalád, más szétosztó-hívó; nálunk a parancsazonosítókat nem globális névtérként vesszük át, hanem menünként. Ha valaki mégis globálisan egyedinek tekintené, előbb ellenőrizze, befut-e ez a felugró a `0x005cb990`-be |
 | 8 | A `0xa0cd` (Hozzáadás az Emberek albumhoz) tényleges kezelője | **BLOKKOLT** — nincs saját ága a szétosztóban, az alapértelmezett ágra fut (`0x0069aeb0`), amiben egyetlen sztring sincs; futásidőben töltött almenü gyanúja. Jegy: **#1238** |
-| 9 | A `CreateAcceleratorTableA` (`0x0092321a`) tartalma — van-e mégis gyorsbillentyű | **BLOKKOLT** — a függvény hívója relatív `call`-szkenneléssel nem került elő (valószínűleg vtáblán át hívódik). Jegy: **#1238** |
+| 9 | A `CreateAcceleratorTableA` (`0x0092321a`) tartalma | **LEZÁRVA (2026-08-22, 14.1)** — egyetlen hívás, **egyelemű, csupa nulla** ACCEL, kizárólag az OLE helyben-aktiválás `OLEINPLACEFRAMEINFO`-jához. **Nincs alkalmazás-szintű gyorsítótábla.** |
 
 ```
-Nyitott kérdések: 0 nyílt · 8 lezárva · 2 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 0 nyílt · 9 lezárva · 1 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
 ```
 
 *(Tizenegy tétel. **2026-08-22-én a tulajdonos adott egy nevesített arcokat
@@ -632,3 +632,117 @@ következő kör ne kezdje elölről:
   kettő van, külön kapuval (3.1).
 - Hogy a `facetemplatesV2` biometrikus sablon jelen volna a
   tesztkészletben — **nem**: 4 bájt, csak a magic.
+
+---
+
+## 14. A két maradék blokkolt tétel — LEZÁRVA és NEM ELDÖNTVE (2026-08-22)
+
+### 14.1 ✅ A gyorsítótábla: NINCS alkalmazás-szintű gyorsbillentyű — bizonyítva
+
+A korábbi állítás („a menüben nincs gyorsbillentyű, de a futásidejű
+`CreateAcceleratorTableA` tartalma nincs feltárva") most **teljes** lett.
+
+A binárisban **egyetlen** `CreateAcceleratorTableA` hívás van
+(`0x0092321a`, IAT `0x00c406e4` — pefile-lal ellenőrizve), és a hívás
+környezete szó szerint ez:
+
+```asm
+0x00923200  push 1                       ; cAccel = 1  (EGYETLEN bejegyzés)
+0x00923202  lea  eax, [esp+0x10]
+0x00923206  push eax                     ; lpaccl
+0x00923207  mov  byte ptr [esp+0x14], 0  ; ACCEL.fVirt = 0
+0x0092320c  mov  word ptr [esp+0x16], 0  ; ACCEL.key   = 0
+0x00923213  mov  word ptr [esp+0x18], 0  ; ACCEL.cmd   = 0
+0x0092321a  call dword ptr [0xc406e4]    ; CreateAcceleratorTableA
+0x00923220  mov  [esi+0x98], eax
+```
+
+**A tábla egyetlen bejegyzése csupa nulla** — nincs benne billentyű és
+nincs benne parancsazonosító.
+
+**Miért létezik akkor egyáltalán?** A hívást követő blokk egy 20 bájtos
+struktúrát tölt ki:
+
+| eltolás | érték | `OLEINPLACEFRAMEINFO` mező |
+|---|---|---|
+| `+0x00` | `0x14` (= 20) | `cb` |
+| `+0x04` | `(esi+0x6c >> 2) & 1` | `fMDIApp` |
+| `+0x08` | **`GetParent(hwnd)`** (IAT `0x00c40804`) | `hwndFrame` |
+| `+0x0c` | a most létrehozott `HACCEL` | `haccel` |
+| `+0x10` | `haccel != 0 ? 1 : 0` | `cAccelEntries` |
+
+Ez pontosan az **OLE helyben-aktiválás** (`IOleInPlaceSite::GetWindowContext`)
+szerződése. A Windows itt **nem fogad el NULL-t**, ezért a program egy
+üres, egyelemű táblát gyárt — kizárólag azért, hogy legyen érvényes
+fogantyú a beágyazott (böngésző-)vezérlőnek.
+
+> ✅ **A pontos, végleges állítás:** a Picasa **nem használ Win32
+> gyorsítótáblát a menüparancsaihoz** — sem az arcfelismerés tíz
+> menütételéhez, sem máshoz. A menüben látható gyorsbillentyűket (Ctrl+A
+> stb.) a program a **saját billentyű-útján** dolgozza fel, nem
+> `TranslateAccelerator`-ral. A 1.3 szakasz „egyiknek sincs
+> gyorsbillentyűje" állítása tehát **mindkét szinten** igaz.
+
+*Bizonyítottsági fok: **megerősített** — egyetlen hívási hely, szó szerint
+olvasott argumentumok, pefile-lal feloldott import-nevek.*
+
+### 14.2 ⛔ A két `*checksum` oszlop képlete — NEM DŐLT EL
+
+**Nem találgatom meg.** Amit tudok, és amit próbáltam:
+
+**A mért adat** (a „B" telepítés, 9 személy-album):
+
+| album | tagok | `albumpeoplechecksum` |
+|---|---|---|
+| 109 | 32 | `0x8DAB10B8` |
+| 110 | 42 | `0xDC7A570C` |
+| 111 | 19 | `0x5CCEB284` |
+| 112 | **1** | **`0x00000000`** |
+| 113 | 2 | `0x00060B93` |
+| 114 | 4 | `0x030331FE` |
+| 115 | 7 | `0x98B4584D` |
+| 116 | 2 | `0x00063CE2` |
+| 117 | 6 | `0x9204CA91` |
+
+**Egy szerkezeti megfigyelés, ami erős, de nem elég:** az érték
+**nagysága együtt nő a taglétszámmal**, és az azonos taglétszámú albumok
+felső bitjei is egyeznek (két 2-tagú album: `0x0006_0B93` és
+`0x0006_3CE2`). Ez **akkumuláló, szorzás-összeadás típusú hash**-re vall,
+ami 32 biten telítődik — de a szorzót 9 mintából nem lehet visszafejteni.
+Az 1-tagú album `0` értéke ezzel nem magyarázható meg (vagy az első tag
+hozzájárulása 0, vagy az érték „még nem számolt").
+
+**Az `imagedata_peoplealbumchecksum`** (u16) a mintában **kizárólag `34`
+(0x22)** értéket vesz fel, 301 soron — és ezek a sorok **alig fedik át**
+(3/301) a `personalbumid != 0` sorokat. Egyetlen érték mellett a képlet
+elvileg sem visszafejthető.
+
+**Amit KIPRÓBÁLTAM (mind negatív, 0/9):** `crc32` az album `uid`-jén, a
+néven, a `contact_id` little-endian bájtjain, a `contact_id` hex-alakján;
+a `contact_id` alsó 32 bitje; a felső és alsó fele XOR-olva; `crc32` a
+tag-sorindexek tömbjén; a tag-sorindexek összege; az MD5 első 32 bitje a
+néven.
+
+**Amit a kód felől kipróbáltam:** az oszlop-objektum eltolásait
+(`albumdata+0x27b0`, `imagedata+0x10c8`) végigszkenneltem a teljes
+`.text`-en. A találatok **kizárólag a regisztrációban és egy általános
+gyorsítótár-karbantartó rutinban** vannak (`0x0048bd80`, `0x0048c100`,
+`0x0048ef20`) — az író nincs köztük. **Kontroll-mérés:** a
+`personalbumid`-ra (amiről *tudjuk*, hogy íródik) ugyanez a szken
+**szintén csak a regisztrációt** adja. Vagyis az oszlopokat írásnál
+**nem a `[db+eltolás]` úton érik el**, hanem regisztráció után kapott
+indexszel — ezért ez a keresési út **elvileg sem vezethet** az íróhoz.
+
+**Hol folytassa, aki nekiáll:** a `0x004127c0` / `0x00415790`
+regisztrációk **sorrendjéből** kell kiszámolni az oszlop **indexét**, majd
+a generikus oszlop-beállító (a `0x00494c50` / `0x004961b0` konstruktorok
+párja) hívásait szűrni erre az indexre.
+
+**Miért nem sürgős:** mindkét oszlop **származtatott, gyorsítótár-jellegű**
+adat (a nevük is `checksum`), amit a Picasa maga újraszámol. Egy
+importálónak **nem kell előállítania** — és a PicasaPy nem is ír
+PMP-fájlt. A kérdés tehát **tudásbeli hiány, nem megvalósítási akadály**.
+
+```
+14. szakasz mérlege: 1 LEZÁRVA · 1 NEM ELDŐLT (a folytatás pontos helyével)
+```
