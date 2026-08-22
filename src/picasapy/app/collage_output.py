@@ -145,15 +145,40 @@ class SaveResult:
     canceled: bool = False
 
 
-def output_dir(configured: str | None) -> Path:
-    """A célmappa: a beállított, egyébként `~/Pictures/Picasa/Kollázsok`.
+def output_dir(configured: str | None, language: str | None = None) -> Path:
+    """A célmappa: a beállított, egyébként a képmappa `Picasa` almappájában
+    a **meglévő vagy honosított** Kollázsok-mappa.
 
-    A mappanév MAGYAR („Kollázsok"), mert ez a felhasználónak megjelenő album
-    neve (spec 9.1) — a szülőmappa viszont a rendszer szokásos képmappája
-    marad."""
+    ⚠️ #1131: a mappanév maga is honosított erőforrás
+    (`CCollageManager::CollagesFolder`), ezért más nyelvű Picasa MÁS
+    mappát hoz létre — a tulajdonos gépén emiatt állt két „Kollázsok"
+    egymás mellett. Ha a képmappában MÁR van (bármely nyelvű) mappa, abba
+    írunk; újat csak akkor nyitunk, ha egyik alak sem létezik.
+
+    A `Picasa` közbülső szint NEM elhagyható: az eredeti oda írt, és a
+    kétirányú kompatibilitás azon múlik, hogy ugyanott keressük a `.cxf`-et.
+    """
     if configured:
         return Path(str(configured))
-    return pictures_dir() / DEFAULT_OUTPUT_SUBPATH
+    from .project_folder_names import ProjectFolderKind, letezo_vagy_honos_mappa
+
+    nyelv = language or _felulet_nyelve()
+    return letezo_vagy_honos_mappa(
+        pictures_dir() / "Picasa", ProjectFolderKind.COLLAGES, nyelv
+    )
+
+
+def _felulet_nyelve() -> str:
+    """A felület nyelve a mappanév-választáshoz (#1131).
+
+    A honosítás forrása ugyanaz, mint a felületé; hibatűrő: ismeretlen
+    állapotnál az angol alak a biztonságos (az eredeti nyers értéke)."""
+    try:
+        from PySide6.QtCore import QLocale
+
+        return QLocale().name().split("_")[0] or "en"
+    except Exception:
+        return "en"
 
 
 #: A DOS-kori **eszköznevek**, amiket Windows máig lefoglal: ilyen nevű
