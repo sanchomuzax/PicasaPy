@@ -159,15 +159,58 @@ jobs:
   # Ez a két job a régi NÉVVEL jelent, és csak akkor zöld, ha MIND A NÉGY
   # darab zöld. Így a védelem beállításához nem kell hozzányúlni, és a
   # felosztás haszna is megmarad.
+  # ⚠️ #1127: a VERZIÓEMELŐ ág gyorsútja is ITT van, nem külön fájlban.
+  #
+  # Első nekifutásra külön `ci-bump.yml` adta ezt a nevet a bump-ágakon.
+  # MÉRVE (2026-08-22, PR #1246): sima ágon az a job „kihagyva" állapotban
+  # jelentett — és a GitHub a KIHAGYOTT kötelező ellenőrzést SIKERESNEK
+  # számolja. Két azonos nevű ellenőrzés versenyzett volna, ami elvileg
+  # zöldre válthat egy bukott futás fölött. Ezért a nevet EGYETLEN job
+  # viseli, és az dönti el magában, mit kell ellenőriznie.
   test-ubuntu:
     name: Test (ubuntu-latest)
     runs-on: ubuntu-latest
     needs: test
-    # a bump-ágakon a `ci-bump.yml` adja ezt a státuszt — itt ki kell
-    # maradnia, különben KÉT azonos nevű ellenőrzés versenyezne
-    if: ${{ always() && !startsWith(github.head_ref, 'chore/auto-bump-') }}
+    if: always()
     steps:
+      - uses: actions/checkout@v4
+        if: ${{ startsWith(github.head_ref, 'chore/auto-bump-') }}
+        with:
+          fetch-depth: 0
+
+      # A verzióemelő PR EGYETLEN sort változtat, olyan kódra, ami a jegy
+      # PR-jén már zölden átment — a teljes mátrix ott ceremónia. De csak
+      # akkor engedjük át, ha a diff TÉNYLEG csak verzió-fájlokat érint:
+      # kódot ezen az úton nem lehet becsempészni.
+      - name: Verzióemelés — a diff CSAK verzió-fájlokat érinthet
+        if: ${{ startsWith(github.head_ref, 'chore/auto-bump-') }}
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          valtozott="$(git diff --name-only "$BASE" "$HEAD")"
+          echo "Változott fájlok:"; echo "$valtozott"
+          tilos="$(grep -vE '^(pyproject\.toml|CHANGELOG\.md|README\.md|src/picasapy/__init__\.py)$' <<<"$valtozott" || true)"
+          if [ -n "$tilos" ]; then
+            echo "::error::A verzióemelő gyorsút CSAK verzió-fájlokat enged. Idegen fájlok:"
+            echo "$tilos"
+            exit 1
+          fi
+          if grep -q '^pyproject\.toml$' <<<"$valtozott"; then
+            erdemi="$(git diff -U0 "$BASE" "$HEAD" -- pyproject.toml \
+                       | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' \
+                       | grep -vE '^[+-]version = ' || true)"
+            if [ -n "$erdemi" ]; then
+              echo "::error::A pyproject.toml-ban a verziósoron kívül is változott valami:"
+              echo "$erdemi"
+              exit 1
+            fi
+          fi
+          echo "Csak verzióemelés — a teljes tesztkészletet a jegy PR-je már lefuttatta."
+
       - name: A négy ubuntu-darab mind zöld
+        if: ${{ !startsWith(github.head_ref, 'chore/auto-bump-') }}
         run: |
           if [ "${{ needs.test.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.test.result }}"
@@ -178,9 +221,11 @@ jobs:
     name: Test (windows-latest)
     runs-on: ubuntu-latest
     needs: test
-    if: ${{ always() && !startsWith(github.head_ref, 'chore/auto-bump-') }}
+    if: always()
     steps:
       - name: A négy windows-darab mind zöld
+        # bump-ágon nincs mit ellenőrizni (a mátrix sem futott)
+        if: ${{ !startsWith(github.head_ref, 'chore/auto-bump-') }}
         run: |
           if [ "${{ needs.test.result }}" != "success" ]; then
             echo "Valamelyik darab elbukott: ${{ needs.test.result }}"
