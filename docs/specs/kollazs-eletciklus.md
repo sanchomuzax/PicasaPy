@@ -118,6 +118,35 @@ kicsiben. A tulajdonos szó szerint: *„a kollázs beállításaiban
 ⚠️ A `0xFF3F3F3F` konstans (`0x0068a7c6`) **nem a háttérszín** — a
 háttér a projektből jön. Hogy mi, az nincs megfejtve.
 
+### 3.5/b A létrehozás közbeni ANIMÁCIÓ — a `respack.yt`-ból (2026-08-23, #1072)
+
+A tulajdonos megfigyelése („a létrehozás alatt egy »Piszkozat« felirattal
+és egy **animációval** mutatja, hogy készül") második fele is megvan, és
+**nem kellett hozzá képernyőkép** — a `respack.yt` megadja:
+
+```
+layer:collagepanel/decrect(overlaydecrect): collageprog_base
+layer:collagepanel/#collageprog_spinner_orig      (1 243 B)
+layer:collagepanel/collageprog_spinner            (1 748 B)
+```
+
+A hozzájuk tartozó vezérlők: `collageprog_clip`, `collageprog_status`,
+`collageprog_title`, `collageprog_spinner` (`0x00887390`, `0x00887580`,
+`0x00887920`).
+
+⇒ Az „animáció" egy **pörgő** (`spinner`) egy `overlaydecrect` alapon —
+ugyanaz a minta, mint az `activity/spinner` és az `activitycapture/spinner`
+a csomag más részein. A `#`-os `_orig` változat a kikommentezett, korábbi
+grafika.
+
+A felirat oldala a **4.3**-ban: `editpanel/render_now` („Létrehozás") és
+`editpanel/in_progress_label` („Folyamatban...") **ugyanazon a helyen**
+váltják egymást.
+
+*Bizonyítottsági fok: **megerősített** a rétegek létére és nevére
+(`respack.yt` névindex); a pörgés **animációs paraméterei** (képkockaszám,
+sebesség) nincsenek mérve.*
+
 ### 3.5 A „PISZKOZAT" felirat
 
 **Szöveg:** `projectutils::draft` = `DRAFT` → **„PISZKOZAT"**
