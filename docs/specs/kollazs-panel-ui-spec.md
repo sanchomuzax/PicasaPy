@@ -425,6 +425,75 @@ megnyitásakor (az aktuális mappa, a kijelölés vagy a fotótálca) — az
 írási helyet nem sikerült megtalálni (ld. a 16.1 módszertani
 megjegyzését a lineáris szken elcsúszásáról).*
 
+### 4.3/c ⭐ A „Klipek" lap = a KÉPTÁLCA — a hat kérdés vezérlőnként (2026-08-23, #1153)
+
+A #1276 megállapította, hogy a lista egy `CSelectionNode`, de nyitva
+hagyta, **melyik**. A `.tre` súgószövegei eldöntik: **a Képtálca**
+(Picture Tray).
+
+#### A döntő bizonyíték: a súgószövegek
+
+| vezérlő | súgó (EN) | súgó (HU) |
+|---|---|---|
+| `addclips` | *Add selected clips to the **collage*** | **Kijelölt klipek felvétele a kollázsba** |
+| `deleteclips` | *Remove selected clips from the **tray*** | **A kijelölt képek eltávolítása a tálcáról** |
+| `getmoreclips` | *Get more clips from the Library* | **További képek beolvasása a könyvtárból** |
+
+⇒ A „+" a tálcából **a kollázsba** vesz fel; a „–" **a TÁLCÁRÓL** töröl,
+**nem a kollázsból**. A lap tehát a **gyűjtő-munkaterület**, nem a kollázs
+tartalma — pontosan ezért lehet benne olyan kép, ami még nincs a
+kollázsban.
+
+**A Képtálca önálló, projekt-szintű fogalom** a Picasában:
+`Tray::ID_PICTURE_HOLDINPICTURETRAY` („Kijelölés megtartása"),
+`Tray::ID_REMOVE_SELECTION` („Kijelölés eltávolítása"), `IDS_CLEARTRAY`
+(„Ezzel a művelettel a teljes tálcát kiüríti…"), és
+`IDS_MUST_SELECT` — *„A művelet elvégzéséhez a **képtálcán** elemeknek
+kell lenniük."*
+
+> ⛔ **Ebből következik a függőség:** a Klipek lap **nem építhető meg
+> helyesen Képtálca nélkül** — az a **#455**. A #1153 és a #1276 tehát a
+> #455-re épül, nem előzi meg.
+
+#### A négy vezérlő, hat kérdés szerint
+
+| | `getmoreclips` | `addclips` („+") | `deleteclips` („–") | `solo` (a lista) |
+|---|---|---|---|---|
+| **felirat** | **„Továbbiak..."** (`Label`) | **nincs** — a `.tre`-ben a `-label` sor **ki van kommentezve** (`#collagepanel/addclips-label`), csak ikon | **nincs**, ugyanígy | — |
+| **ikon** | `back_icon`, **`m_buttoniconleft`** (balra) — **vissza-nyíl** | `add_icon`, `m_centerXY` | `delete_icon`, `m_centerXY` | — |
+| **mit csinál** | átvált a **könyvtárra** (`panelroot/collagetab`) és megjelenít egy **„Vissza a kollázshoz"** gombot (`0x0082dcec`–`0x0082dd09`) | a **kijelölt** klipeket felveszi a kollázsba | a **kijelölt** klipeket törli **a tálcáról** | a tálca elemeit mutatja |
+| **stílus** | `superbutton(listheader_button)` | `superbutton(button_notext)` | `superbutton(button_notext)` | — |
+| **geometria** (a `tabpanel2`-höz képest) | (6, 5) **166 × 28** | (201, 5) **28 × 28** | (234, 5) **28 × 28** | (4, 36) **247 × 311** |
+| **billentyű** | nincs (a `.tre`-ben nincs kötés) | nincs | nincs | — |
+
+*(A `tabpanel2` maga: abszolút (13, 55), **256 × 352**, alapból
+`m_hidden` — a tab1 látszik először. A fül gombja: `tab2`, abszolút
+(95, 25), 92 × 25.)*
+
+#### ⛔ NEGATÍV EREDMÉNY: a kollázs-panelnek NINCS `.fen` fájlja
+
+A #1153 első javasolt lépése a `.fen` párbeszéd-leíró megkeresése volt.
+**Nincs ilyen:** a 46 `.fen` között egyetlen kollázs- vagy klip-vonatkozású
+sincs. Ennek oka szerkezeti — a `.fen` a **modális párbeszédeké**, a
+kollázs-panel viszont a főablakba ágyazott `.tre`-panel. A források tehát:
+`.tre` (szerkezet + súgó), `respack.yt` (geometria), bináris (viselkedés).
+
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| a lista forrása | **a Képtálca** elemei | `controller.collageNodes` — a kollázs csomópontjai | **#455** után a tálcára kötni |
+| „+" | tálca → **kollázs** | — | felvétel a kollázsba |
+| „–" | törlés **a TÁLCÁRÓL** | — | ⚠️ nem a kollázsból! |
+| „Továbbiak..." | könyvtárra vált + „Vissza a kollázshoz" | — | a bővítés útja |
+| „+"/„–" felirata | **nincs, csak ikon** | — | ikonos gomb |
+| „Továbbiak..." ikonja | **vissza-nyíl**, balra | — | — |
+
+*Bizonyítottsági fok: **megerősített** — a súgószövegek szó szerint a
+`.tre`-ből és a honosítási táblából; a geometria a `respack.yt` nyers
+rectjeiből; a „Továbbiak…" ága a binárisból. A `.fen` hiánya
+kimerítő keresés (mind a 46 fájl).*
+
 ### 4.4 A vászon körüli csoportok
 
 | komponens | `objectName` | elhelyezés (2.4) | tartalom |
