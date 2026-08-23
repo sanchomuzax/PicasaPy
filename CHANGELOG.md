@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Az újranyitott kollázs megtartja a saját képarányát és térközét
+  (#1272, #1274).** Eddig a *legutóbb használt* lapformátum ült rá a
+  megnyitott projektre — a tulajdonos szava: „mindig az utolsó használt
+  képarányt erőlteti rá a korábbi szerkesztésére". A formátum és a térköz
+  mostantól a projektfájlból jön vissza, ahogy a téma, a tájolás és a
+  háttér is. Ismeretlen formátumnévnél a panel beállítása marad: idegen
+  fájl nem teheti használhatatlanná a szerkesztőt.
+
 ## [0.8.51] – 2026-08-23
 
 ### Javítva

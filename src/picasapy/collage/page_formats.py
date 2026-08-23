@@ -115,6 +115,31 @@ def format_text(key: str) -> str:
     return f"{_szam(fmt.long)}:{_szam(fmt.short)}"
 
 
+def format_key_of(text: str) -> str | None:
+    """A `.cxf` `format` attribútuma → a menü kulcsa; ismeretlennél `None`.
+
+    A `format_text` megfordítása (#1272). A tábla UGYANAZ, tehát a két
+    irány nem tud elcsúszni egymástól.
+
+    ⚠️ Miért kell: az újranyitás eddig a MENTETT (legutóbb használt)
+    formátumot hagyta a panelen, mert a fájlban tárolt NÉV-ből nem volt út
+    vissza a kulcshoz. A tulajdonos ezt úgy látta, hogy „mindig az utolsó
+    használt képarányt erőlteti rá a korábbi szerkesztésére".
+
+    A két DINAMIKUS tételnek (`Manual`, `CurrentDisplay`) nincs neve, ezért
+    azok itt nem szerepelnek — rájuk `None` jön, és a hívó a panel
+    pillanatnyi formátumát hagyja."""
+    szoveg = (text or "").strip()
+    if not szoveg:
+        return None
+    for fmt in PAGE_FORMATS:
+        if fmt.long is None or fmt.short is None:
+            continue
+        if f"{_szam(fmt.long)}:{_szam(fmt.short)}" == szoveg:
+            return fmt.key
+    return None
+
+
 def _szam(ertek: float) -> str:
     """`297.0` → `297`; a nevekben nincs tizedespont."""
     egesz = int(ertek)
@@ -156,6 +181,7 @@ def page_ratio(
 __all__ = [
     "DEFAULT_FORMAT_KEY",
     "FALLBACK_SCREEN_RATIO",
+    "format_key_of",
     "format_text",
     "ORIENTATIONS",
     "PAGE_FORMATS",

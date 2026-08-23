@@ -47,7 +47,7 @@ from picasapy.collage.picasa_render import render_nodes
 from picasapy.collage.cxf import read_cxf
 from picasapy.collage.draft import nodes_from_project, project_from_nodes
 from picasapy.collage.win_paths import decode_cxf_path
-from picasapy.collage.page_formats import ORIENTATIONS
+from picasapy.collage.page_formats import ORIENTATIONS, format_key_of
 from picasapy.collage.themes import COLLAGE_THEMES, MULTIEXP
 
 from . import collage_output as output
@@ -780,6 +780,25 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             self._collage_panel_orientation = projekt.orientation
             self.collageOrientationChanged.emit()
             self.collagePageRatioChanged.emit()
+        # ⚠️ #1272: a LAPFORMÁTUM is a fájlból jön, nem a legutóbb
+        # használtból. Eddig hiányzott, ezért az újranyitott kollázsra a
+        # mentett beállítás ült rá — a tulajdonos szava: „mindig az utolsó
+        # használt képarányt erőlteti rá a korábbi szerkesztésére."
+        #
+        # A `.cxf` a formátum NEVÉT tárolja (#1089: az A4 neve `297:210`),
+        # ezért kulccsá kell visszafordítani. Ismeretlen vagy dinamikus
+        # névnél a panel pillanatnyi formátuma marad: egy idegen fájl nem
+        # teheti használhatatlanná a panelt.
+        formatum_kulcs = format_key_of(projekt.aspect_ratio)
+        if formatum_kulcs is not None:
+            self._collage_panel_format = formatum_kulcs
+            self.collageFormatKeyChanged.emit()
+            self.collagePageRatioChanged.emit()
+        # #1274: a térköz ugyanígy a projekté, nem a legutóbbié.
+        terkoz = float(projekt.spacing or 0.0)
+        if self._collage_panel_spacing != terkoz:
+            self._collage_panel_spacing = terkoz
+            self.collageSpacingChanged.emit()
         self._collage_panel_shadows = bool(projekt.shadows)
         self._collage_panel_shadows_explicit = True
         self.collageShadowsChanged.emit()
