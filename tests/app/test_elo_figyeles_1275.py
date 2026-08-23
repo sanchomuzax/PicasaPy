@@ -50,6 +50,18 @@ def _var(qt_app, feltetel, masodperc: float = 20.0) -> bool:
         return False
 
 
+def _nyugalom(qt_app, ctl, masodperc: float = 20.0) -> bool:
+    """Megvárja, amíg NINCS futó szinkron.
+
+    ⚠️ A `rescan()` első sora: `if self._sync_running: return` — egy író
+    elég. A `start()` maga is indít egy szinkront, tehát ha a teszt
+    azonnal `rescan()`-t hív, az NÉMÁN elnyelődik. Helyi gépen ez sosem
+    látszott (a kezdeti szinkron milliszekundumok alatt lefut), a CI
+    terhelt futtatóján viszont elbukott — a hiba a tesztben volt, nem a
+    termékben."""
+    return _var(qt_app, lambda: not ctl._sync_running, masodperc)
+
+
 @pytest.fixture
 def library(tmp_path):
     root = tmp_path / "kepek"
@@ -81,6 +93,8 @@ def elo_controller(qt_app, tmp_path, library):
         watched_file=tmp_path / "WatchedFolders.txt",
     )
     ctl.start()
+    # a kezdeti szinkron fusson le, mielőtt a teszt bármit állít
+    _var(qt_app, lambda: not ctl._sync_running, 20.0)
     yield ctl
     ctl.shutdown()
     assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"
@@ -133,6 +147,7 @@ class TestAHalozatiTartalek:
         # a figyelőt LEÁLLÍTJUK: ez a hálózati megosztás helyzete
         elo_controller._watcher.stop()
         elo_controller._watcher = None
+        assert _nyugalom(qt_app, elo_controller), "a kezdeti szinkron nem állt le"
 
         make_jpeg(mappa / "IMG_8888.jpg")
         elo_controller.rescan()
