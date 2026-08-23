@@ -80,12 +80,39 @@ jobs:
           # push nem gyors-előre. Eldobható automatika-ág, nyugodtan
           # felülírható.
           if git push --force origin "HEAD:$ag" 2>/dev/null; then
-            gh pr create --base main --head "$ag" \
+            if gh pr create --base main --head "$ag" \
               --title "chore: verzióemelés a beolvadt munkához" \
-              --body "Automatikus verzióemelés (#1127). A CHANGELOG „Nem kiadott” szakasza lezárva." \
-              || echo "A PR-nyitás nem sikerült — a kiadás ettől még megy."
+              --body "Automatikus verzióemelés (#1127). A CHANGELOG „Nem kiadott” szakasza lezárva."; then
+              szam="$(gh pr list --head "$ag" --json number --jq '.[0].number')"
+              # ⚠️ #1204: a PR NÉMÁN ült ott jóváhagyásra várva, és a
+              # TULAJDONOS vette észre („ezt ne hagyd parlagon, valaki
+              # elhagyta"). A GitHub a `GITHUB_TOKEN`-nel nyitott PR-en
+              # szándékosan nem indít workflow-t (#1190) — ez nem
+              # kapcsolható ki —, tehát a jelzés a minimum.
+              #
+              # Két dolgot teszünk, hogy EMBERI lépés nélkül is haladjon:
+              #
+              # 1. auto-merge élesítése — így a jóváhagyás után magától
+              #    beolvad, nem kell rá visszatérni;
+              # 2. `::warning::` + a futás ÖSSZEFOGLALÓJA — a warning a
+              #    futáslistában is látszik, nem csak a naplóban.
+              gh pr merge "$szam" --auto --squash --delete-branch \
+                || echo "Az auto-merge élesítése nem sikerült."
+              echo "::warning title=Verzióemelő PR jóváhagyásra vár::A #$szam CI-futása jóváhagyásra vár (a bot-PR-ek szándékos GitHub-viselkedése, #1190). Auto-merge élesítve: jóváhagyás után magától beolvad."
+              {
+                echo "### ⚠️ Verzióemelő PR nyitva: #$szam"
+                echo
+                echo "A CI-futása **jóváhagyásra vár** (bot-PR, #1190) — a jóváhagyás után"
+                echo "magától beolvad, mert az auto-merge élesítve van."
+                echo
+                echo "Jóváhagyás: a PR *Checks* fülén, vagy"
+                echo '`gh run list --json databaseId,conclusion --jq ".[]|select(.conclusion==\"action_required\")"`'
+              } >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::warning::A verzióemelő PR nyitása nem sikerült — a kiadás ettől még megy."
+            fi
           else
-            echo "Az ág feltolása nem sikerült — a kiadás ettől még megy."
+            echo "::warning::Az ág feltolása nem sikerült — a kiadás ettől még megy."
           fi
           git reset --hard HEAD~1
 
