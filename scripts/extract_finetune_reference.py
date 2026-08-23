@@ -60,6 +60,16 @@ CASES: tuple[Case, ...] = (
          "finomhangolas/original.jpg", "finomhangolas/árnyékok mid.jpg"),
     Case("arnyekok_max", "shadows", 0.48,
          "finomhangolas/original.jpg", "finomhangolas/árnyékok max.jpg"),
+    # KOMPOZIT (#951): a Kiemelések ÉS az Árnyékok EGYSZERRE, azonos
+    # csúszkaállásban. Ez az egyetlen eset, ami megkülönbözteti a KÖZÖS
+    # LUT-os modellt a két külön menetes (8 bitre kétszer vágó) hibástól —
+    # a valós ini-korpuszban a kompozit a GYAKORI eset.
+    Case("kompozit_mid", "highlights_shadows", 0.24,
+         "finomhangolas/original.jpg",
+         "finomhangolas/kiemelések+árnyékok mid.jpg"),
+    Case("kompozit_max", "highlights_shadows", 0.48,
+         "finomhangolas/original.jpg",
+         "finomhangolas/kiemelések+árnyékok max.jpg"),
     # Színhőmérséklet: a csúszka 0..100%-a, az 50% a semleges kiindulás.
     Case("szinho_0", "temperature", -1.0,
          "szinhomerseklet/percent 50.jpg", "szinhomerseklet/percent 0.jpg"),
