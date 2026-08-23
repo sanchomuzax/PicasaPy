@@ -2036,3 +2036,88 @@ ctl.rescan()                        -> az „alma" VISSZAKERÜL  ❌
 (`FolderPane.qml:979` és `:729`) a **szűkebb** `removeWatchedFolder`-t
 hívja, ami **kizárólag pontos figyelt-gyökér egyezésre** csinál bármit
 (`library_controller.py:423–432`).
+
+---
+
+## 16. HOGYAN veszi észre az eredeti az új fájlt? — NEM eseményből (2026-08-23, #1275)
+
+A #1275 kulcskérdése: a futó alkalmazás hogyan veszi észre a figyelt
+mappába kívülről bekerülő képet — és mi a helyzet **hálózati meghajtón**.
+A bináris egyértelmű választ ad, és ez a válasz **a mi tervezésünket is
+eldönti**.
+
+### 16.1 Az eredeti NEM használ operációs rendszer-szintű fájlfigyelést
+
+| API | importálva? | hivatkozás a végrehajtható szakaszokban |
+|---|---|---|
+| `ReadDirectoryChangesW` | **NINCS importálva** | — |
+| `SHChangeNotifyRegister` | **NINCS importálva** | — |
+| `FindFirstChangeNotificationW` | igen (`0xc404d0`) | **0** |
+| `FindFirstChangeNotificationA` | igen (`0xc404d8`) | **0** |
+| `FindNextChangeNotification` | igen (`0xc403c0`) | **0** |
+| `FindCloseChangeNotification` | igen (`0xc40368`) | **2** (`0x004e1805` betöltés, `0x004e18ba` hívás) |
+
+⇒ A program **lezárná** a változás-figyelő fogantyúkat, de **soha nem hoz
+létre egyet sem**. A létrehozó oldal hiányzik; a `FindClose…` egy
+megmaradt, védekező takarító ág. **Változás-értesítés tehát nincs
+használatban.**
+
+*(Módszertani megjegyzés: az első keresésem csak a
+`call dword ptr [abszolút]` alakot nézte, és emiatt a `FindClose…`-t is
+elmulasztotta. A fenti számok a **teljes végrehajtható szakaszok**
+minden operandus-hivatkozására vonatkoznak. ⚠️ A `.text` egészének
+lineáris diszasszemblálása viszont **elcsúszhat** — pontos
+eltolás-kereséshez mindig ismert függvényhatárról indíts,
+`annot_disasm.py`-vel.)*
+
+### 16.2 Amit HELYETTE csinál: újraolvasás és összehasonlítás
+
+A mappafigyelés osztálycsaládja (RTTI):
+
+| osztály | szerep |
+|---|---|
+| `ytDirScanner` / **`ytDirScannerWindows`** | a könyvtárbejáró |
+| `ytDirScanner::ScanNotify` | értesítés a bejárás eredményéről |
+| **`ytDirScannerChangeList`** / **`ytDirScannerChangeListWindows`** | a **változáslista** — a bejárás eredményének összevetése a korábbi állapottal |
+
+A „változáslista" elnevezés önmagában is árulkodó: nem eseményeket fogad,
+hanem **különbséget képez**. Ezt megerősíti a beépített hibakereső
+kiíratás (`0x004f25f0`, `Preferences\WriteDirscannerCSV`), ami **három
+pillanatképet** ment:
+
+```
+dirscanner-start.csv      ; induláskor
+dirscanner-up.csv         ; futás közben
+dirscanner-shutdown.csv   ; leálláskor
+oszlopok: Name,Creation Time,Access Time,Size,Type,Dirty,Valid
+```
+
+Ezek pontosan azok a mezők, amikből egy **állapot-összehasonlítás**
+elvégezhető (név + időbélyeg + méret + „piszkos" jelző).
+
+A várakozást a `WaitForMultipleObjects` végzi (`0x007065f0` időkorláttal,
+`0x00706680` nulla időkorláttal, azaz lekérdezéssel) egy fogantyú-tömbön —
+de a 16.1 szerint ezek **nem** változás-figyelő fogantyúk, hanem a szál
+saját ébresztő/leállító eseményei.
+
+### 16.3 Amit ez a #1275-re kimond
+
+> ✅ **Az eredeti Picasa POLLOZ.** Nincs olyan operációs rendszer-szintű
+> eseményfigyelés, amit „utánoznunk" kellene — és épp ezért működik
+> hálózati meghajtón is, ahol az eseményalapú figyelés notóriusan
+> megbízhatatlan.
+
+**Ebből következik a teendő:** a #1275-öt **nem** a watchdog
+„megjavításával** kell megoldani. A helyes irány egy **időzített
+újraolvasás** (a figyelt gyökerekre), ami a fájlrendszeri esemény
+**mellett**, nem helyette fut — az esemény gyorsítás, a lekérdezés a
+garancia. Ez egyben megválaszolja a jegy „ha a hálózati út elvi korlát"
+ágát is: **nem korlát, hanem tervezési döntés** — az eredeti is így
+oldotta meg.
+
+*Bizonyítottsági fok: **megerősített** az import- és hivatkozás-számokra
+(pefile + capstone, teljes végrehajtható szakaszok) és az
+osztálynevekre/CSV-mezőkre (RTTI + sztringtár). **Erős**, de nem
+megerősített: a lekérdezés **időköze** — konkrét intervallum-konstansot
+nem találtam (nincs `…Interval` jellegű `Preferences`-kulcs a
+könyvtárbejáróhoz).*

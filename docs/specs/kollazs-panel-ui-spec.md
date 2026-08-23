@@ -361,6 +361,70 @@ alsó 4) — a jobb oldali 20 px a lenyíló-nyílnak.
 A „Továbbiak..." átvált a **Könyvtár** fülre, és ott megjelenít egy
 **„Vissza a kollázshoz"** gombot; a kollázs lapja nyitva marad.
 
+### 4.3/b ⭐ MI a Klipek lista FORRÁSA — megfejtve (2026-08-23, #1276)
+
+A 4.3 eddig a lap **geometriáját** írta le. A #1276 azt kérdezi, ami
+ennél fontosabb: **honnan jön a lista tartalma.**
+
+**A számláló megadja a választ.** A fülfeliratot a `0x0083b890(darab)`
+írja ki (`"Clips (%d)"`), és a darabszámot a hívó számolja. A
+`0x0083b590` (a `deleteclips` ága) végén ez áll:
+
+```asm
+0x0083b7c3  mov  ecx, [ebp + 0x124]      ; a panel FORRÁS-CSOMÓPONTJA
+0x0083b7c9  mov  eax, [ecx + 0x330]      ; elemszám
+0x0083b7d1  shr  eax, 1
+0x0083b7d5  mov  edx, [ecx + 0x32c]      ; elem-mutatótömb
+0x0083b7e0  mov  ecx, [edx]              ; az elem
+0x0083b7e6  cmp  byte ptr [ecx + 0x5a], 0
+0x0083b7ea  jne  …                       ; a JELÖLT elemeket KIHAGYJA
+0x0083b7ec  add  esi, 1
+0x0083b7f7  push esi
+0x0083b7f8  call 0x83b890                ; -> "Klipek (N)"
+```
+
+⚠️ **A `+0x32c` (elemtömb) / `+0x330` (elemszám) mezőpár és a `+0x5a`
+elem-jelző NEM a kollázsé** — ez a **`CSelectionNode`** szerződése, amit
+a `picasa-eger-es-kijeloles.md` **10.** szakasza már rögzít
+(„a `CSelectionNode` minden művelete a saját elemtömbjén — `+0x32c`,
+darabszám `+0x330 >> 1`"), és a `+0x5a` ugyanott a **kizáró jelző**
+(a lasszóból is kihagyja, 4/e).
+
+⇒ **A Klipek lap egy `CSelectionNode` elemlistáját mutatja** — vagyis
+**ugyanazt a fajta fotó-készletet, amiből a rács is él**, nem a kollázs
+saját csomópontjait. A lista építő ciklusa (`0x0083b610`) szintén ezen a
+`[panel+0x124]` csomóponton megy, és a `0x007166c0` (a
+kijelölés-csomópont segédfüggvény-tartománya) hívásán át kéri az elemeket.
+
+**A „Továbbiak…" gomb ezt megerősíti.** A `collagepanel/getmoreclips`
+kezelője (`0x0082dcec`–`0x0082dd09`) **átvált a könyvtárra**
+(`panelroot/collagetab`), és megjelenít egy **„Vissza a kollázshoz"**
+gombot (`collagepanel::back_to_collage` = *Back to Collage*). Vagyis a
+munkamenet-készlet **bővítése a könyvtárban történik**, nem a lapon —
+ami csak akkor értelmes, ha a lap egy **készletet** mutat, amiből
+válogatni lehet, és nem a már bekerült elemeket.
+
+### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| a lista forrása | egy **`CSelectionNode`** elemlistája (`[panel+0x124]` → `+0x32c`/`+0x330`) | `controller.collageNodes` — a **kollázs saját csomópontjai** | a forrást a fotó-készletre cserélni |
+| a `+0x5a`-jelölt elemek | **kimaradnak** a számból és a listából | nincs megfelelője | szűrő kell |
+| „Klipek (N)" száma | a **szűrt** elemszám | a csomópontok száma | a szűrt készletből |
+| „Továbbiak…" | átvált a könyvtárra + **„Vissza a kollázshoz"** gomb | — | ez a bővítés útja |
+
+> **Ez magyarázza az üres lapot is:** ha az újranyitott kollázsnak nincs
+> csomópontja, a mi listánk üres — miközben az eredetiben a lap a
+> **készletet** mutatja, ami a kollázs tartalmától független.
+
+*Bizonyítottsági fok: **megerősített** a mezőhasználatra (a
+`CSelectionNode` szerződése a saját specünkben már rögzítve) és a
+„Továbbiak…" ágra (szó szerinti sztringek). **NYITVA marad**, hogy a
+`[panel+0x124]` csomópontot **melyik** forrásból tölti fel a panel
+megnyitásakor (az aktuális mappa, a kijelölés vagy a fotótálca) — az
+írási helyet nem sikerült megtalálni (ld. a 16.1 módszertani
+megjegyzését a lineáris szken elcsúszásáról).*
+
 ### 4.4 A vászon körüli csoportok
 
 | komponens | `objectName` | elhelyezés (2.4) | tartalom |
