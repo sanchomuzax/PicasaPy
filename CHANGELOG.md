@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.62] – 2026-08-23
 
 ### Javítva
 - **Megszűnt egy ingatag teszt az arc-beolvasás haladásánál (#1233).**
