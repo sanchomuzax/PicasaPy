@@ -8,6 +8,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **Lezárult a kollázs-mentés összeomlásának ügye (#988).** A korábbi
+  magyarázat szerint a hiba magában a programban volt: a kollázs
+  háttérmunkája és a memória-takarítás akadt volna össze. **A mérés ezt
+  megcáfolta** — a mentés 96 egymást követő futásban hibátlan maradt
+  akkor is, amikor a takarítást szándékosan a lehető legsűrűbben
+  kényszerítettük ki. A tényleges ok a tesztek oldalán volt, és az már
+  javítva. Új őr-teszt vigyáz rá, hogy a program oldala ne romolhasson el
+  észrevétlenül.
+
+## [Nem kiadott]
+
+### Javítva
 - **A főág ellenőrzése nem borul fel többé a kollázs-teszteknél
   (#988).** Az összeomlás (`exit -11`) egy versenyhelyzetből jött: a
   teszt beágyazott várakozása közben a főszál szemétgyűjtést futtatott,
