@@ -603,7 +603,7 @@
     <name>AddCustomAspectRatioDialog</name>
     <message>
         <source>Add Custom Aspect Ratio</source>
-        <translation>Egyéni képarány hozzáadása</translation>
+        <translation>Egyéni méretarány hozzáadása</translation>
     </message>
     <message>
         <source>Width:</source>
@@ -1481,12 +1481,12 @@
     <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="1834"/>
         <source>Add Custom Aspect Ratio…</source>
-        <translation>Egyéni képarány hozzáadása…</translation>
+        <translation>Egyéni méretarány hozzáadása…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="1810"/>
         <source>Delete this custom aspect ratio?</source>
-        <translation>Törli ezt az egyéni képarányt?</translation>
+        <translation>Törli ezt az egyéni méretarányt?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorPanel.qml" line="106"/>
@@ -5378,7 +5378,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
         <source>Add Custom Aspect Ratio…</source>
-        <translation>Egyéni képarány hozzáadása…</translation>
+        <translation>Egyéni méretarány hozzáadása…</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
@@ -5403,7 +5403,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
         <source>Delete this custom aspect ratio?</source>
-        <translation>Törli ezt az egyéni képarányt?</translation>
+        <translation>Törli ezt az egyéni méretarányt?</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/EditorCropPanel.qml"/>
