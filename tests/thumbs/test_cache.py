@@ -318,7 +318,13 @@ def _holga_op():
     from picasapy.ini.filters import FilterOp
 
     # blur=70, grain=30, fade=0 — a katalógus alapértéke (glimmer_creative.apply_holga)
-    return FilterOp("holga", ("1", "70", "30", "0"))
+    #
+    # ⚠️ A név KANONIKUS alakja `Holga`, nagy H-val (`filterdesc-registry.md`
+    # 2. szakasz, példa: `Holga=1,70.0,30.0,0.0`). A #1141 óta az illesztés
+    # bájtra pontos — ahogy az eredeti Picasáé is —, tehát a korábbi
+    # kisbetűs alak NÉMÁN elesne, és a teszt három egyforma, effekt nélküli
+    # képet hasonlítgatna össze.
+    return FilterOp("Holga", ("1", "70", "30", "0"))
 
 
 def _large_gradient_jpeg(path, size=(2400, 1600)):

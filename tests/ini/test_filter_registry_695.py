@@ -147,14 +147,26 @@ class TestParameterszamValidacio:
 
 
 class TestOlvasasMaradMegengedo:
-    """Elvi korlát: a beolvasás továbbra is kis-nagybetű-tűrő — régi
-    fájlok nem válhatnak olvashatatlanná."""
+    """A beolvasás nem dob és nem kanonizál — de a FUTTATÁS pontos.
 
-    @pytest.mark.parametrize("irasmod", ["Tint", "TINT", "tInT", "tint"])
-    def test_matches_minden_irasmodot_elfogad(self, irasmod):
+    ⚠️ #1141 (2026-08-22) HELYESBÍTETTE ezt az osztályt. A #695-ös elvi
+    korlát („a beolvasás kis-nagybetű-tűrő") a nyers ÉRTELMEZÉSRE
+    továbbra is igaz — a régi fájl nem válik olvashatatlanná, a lánc
+    bájtra megőrződik. A NÉV-ILLESZTÉS viszont az eredetiben
+    kis-nagybetű-ÉRZÉKENY: hat mért képen (`merokit-2` export) a `Tint` /
+    `TINT` / `tInT` alak NEM futott le, csak a kanonikus `tint`.
+    """
+
+    @pytest.mark.parametrize("irasmod", ["Tint", "TINT", "tInT"])
+    def test_a_nem_kanonikus_irasmod_NEM_illeszkedik(self, irasmod):
+        """#1141: mérve — az eredeti ezeket nem futtatja le."""
         ops = parse_filters(f"{irasmod}=1,5;")
-        assert ops[0].matches("tint")
+        assert not ops[0].matches("tint")
         assert ops[0].name == irasmod, "a parse NEM kanonizál"
+
+    def test_a_kanonikus_irasmod_illeszkedik(self):
+        ops = parse_filters("tint=1,5;")
+        assert ops[0].matches("tint")
 
     def test_serialize_filters_bajtra_pontos_marad(self):
         # A nyers `serialize_filters` a bélyegkép-kulcshoz kell: nem
@@ -162,8 +174,10 @@ class TestOlvasasMaradMegengedo:
         ertek = "Tint=1,5;grain2=1,0.5;"
         assert serialize_filters(parse_filters(ertek)) == ertek
 
-    def test_session_has_kis_nagybetu_turo(self):
-        assert EditSession.from_value("VIGNETTE=1;").has("vignette")
+    def test_session_has_PONTOS(self):
+        """#1141: a `has()` is pontos — a `VIGNETTE` nem a `Vignette`."""
+        assert not EditSession.from_value("VIGNETTE=1;").has("Vignette")
+        assert EditSession.from_value("Vignette=1;").has("Vignette")
 
 
 class TestRegiszterTeljesseg:

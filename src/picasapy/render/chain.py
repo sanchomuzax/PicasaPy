@@ -12,6 +12,7 @@ import math
 
 import numpy as np
 
+from picasapy.ini.filter_registry import is_exact_filter_name
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import decode_rect64
 from picasapy.ini.redeye import parse_redeye_regions
@@ -642,6 +643,10 @@ def can_render_filter(name: str) -> bool:
     `redeye`…) NEM effektek, ezért hamisat adnak — a felületen nincs is
     gombjuk.
     """
+    # #1141: az ELFOGADÁS pontos (az eredeti kis-nagybetű-érzékeny), a
+    # regiszter-keresés viszont a meglévő kisbetűs kulcsokon megy
+    if not (is_exact_filter_name(name) or name == "crop64"):
+        return False
     key = name.casefold()
     return key in _HANDLERS or key in _FRAME_EFFECTS or key == "crop64"
 
@@ -709,6 +714,12 @@ def apply_filters(
     crop_op: FilterOp | None = None
     frame_ops: list[FilterOp] = []
     for op in ops:
+        # #1141: a nem kanonikus írásmódú tag ISMERETLEN — a lánc
+        # bejárója ilyenkor az eredetiben megáll (#1140), ezért itt is
+        # kihagyjuk (a vágást a `parse_filters_prefix` végzi)
+        if not (is_exact_filter_name(op.name) or op.name == "crop64"):
+            skipped.append(op.name)
+            continue
         key = op.name.casefold()
         if key == "crop64":
             crop_op = op  # csak az effektív (utolsó) crop64 számít

@@ -86,7 +86,12 @@ class TestFilterApplication:
 
         provider = _make_provider()
         photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
-        op = FilterOp("vignette", ("1",))
+        # ⚠️ ISMERETLEN név kell ide, nem rossz írásmódú ismert név. A
+        # teszt korábban `vignette`-et adott át — az akkor tényleg
+        # támogatatlan volt, mára viszont `Vignette` néven MEGVAN. A #1141
+        # (bájtra pontos illesztés) óta a kisbetűs alak is elesne, tehát a
+        # teszt zöld maradt volna, de már nem azt állítaná, amit a neve mond.
+        op = FilterOp("nincsilyenszuro", ("1",))
         provider.register("1", photo, (op,))
         image = provider.requestImage("1", None, None)
         assert not image.isNull()
