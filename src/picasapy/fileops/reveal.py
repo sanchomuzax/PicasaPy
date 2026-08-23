@@ -49,12 +49,23 @@ from pathlib import Path
 _log = logging.getLogger(__name__)
 
 
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse.
+
+    ⚠️ #1217: a platformfüggő teszt MONDJA KI a platformját. Amíg a modul
+    közvetlenül a `sys.platform`-ot olvasta, a teszt csak a fejlesztői gép
+    viselkedését tudta állítani — a windows-lábon aztán a HELYES natív
+    viselkedésen bukott (négy jegy egyetlen napon: #1076, #1182, #1206,
+    #1167)."""
+    return sys.platform
+
+
 def _windows() -> bool:
-    return sys.platform.startswith("win")
+    return _platform().startswith("win")
 
 
 def _macos() -> bool:
-    return sys.platform == "darwin"
+    return _platform() == "darwin"
 
 
 def _parancs(cel: Path, *, kijelol: bool) -> list[str] | str:
