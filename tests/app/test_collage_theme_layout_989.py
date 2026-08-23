@@ -22,7 +22,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QEventLoop, QObject, QSettings, QTimer
+from PySide6.QtCore import QObject, QSettings
 
 from picasapy.collage.cxf import loads
 from picasapy.collage.themes import (
@@ -36,6 +36,7 @@ from picasapy.collage.themes import (
 )
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import varj_kollazs_jelzesre
 
 
 class _Photo:
@@ -118,19 +119,13 @@ def nyitott(host):
 
 
 def _wait(signal, action, timeout_ms=20000):
-    loop = QEventLoop()
-    received = {}
+    """A műveletet a jelzésre FELIRATKOZVA indítja, majd bevárja azt.
 
-    def _on(*args):
-        received.setdefault("args", args)
-        loop.quit()
-
-    signal.connect(_on)
-    action()
-    if "args" not in received:
-        QTimer.singleShot(timeout_ms, loop.quit)
-        loop.exec()
-    return ("args" in received, received.get("args", ()))
+    #988: ugyanaz a GC-szünetes közös segéd, mint a testvér kollázs-
+    tesztekben — ez a fájl a #949-cel AZONOS mintát használt és ugyanazt
+    a háttérszálas kollázs-mentést hajtja, tehát ugyanaz a
+    versenyhelyzet érte volna el, amint a #949 elhallgat."""
+    return varj_kollazs_jelzesre(signal, action, timeout_ms)
 
 
 def _geometria(vezerlo) -> tuple:

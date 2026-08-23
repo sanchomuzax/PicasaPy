@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A főág ellenőrzése nem borul fel többé a kollázs-teszteknél
+  (#988).** Az összeomlás (`exit -11`) egy versenyhelyzetből jött: a
+  teszt beágyazott várakozása közben a főszál szemétgyűjtést futtatott,
+  miközben a kollázs háttérszála épp Qt-jelzést adott át. A védekezés
+  eddig egyetlen tesztfájlba volt bemásolva, ezért amint az elhallgatott,
+  a testvérfájl kezdett elszállni — ma kétszer is. A védekezés mostantól
+  KÖZÖS, és mindhárom érintett fájl azt használja.
+
 ## [0.8.62] – 2026-08-23
 
 ### Javítva

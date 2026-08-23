@@ -11,7 +11,6 @@ fut: a modell adat, nem rajz.
 
 from __future__ import annotations
 
-import gc
 
 from pathlib import PurePath
 
@@ -19,7 +18,7 @@ import math
 from dataclasses import dataclass
 
 import pytest
-from PySide6.QtCore import QEventLoop, QObject, QSettings, QTimer
+from PySide6.QtCore import QObject, QSettings
 from PySide6.QtGui import QColor
 
 from picasapy.collage.themes import (
@@ -33,6 +32,7 @@ from picasapy.collage.themes import (
     capabilities_for,
 )
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import varj_kollazs_jelzesre
 
 
 @dataclass
@@ -103,59 +103,13 @@ def nyitott(host):
 def _wait(signal, action, timeout_ms=15000):
     """A műveletet a jelzésre FELIRATKOZVA indítja, majd bevárja azt.
 
-    ⚠️ **A várakozás idejére kikapcsoljuk a szemétgyűjtőt (#988) — és ez
-    NEM a hiba javítása.**
-
-    A CI-n visszatérő `exit -11` (SIGSEGV) veremkiíratása ezt mutatta:
-
-    ```
-    Thread (háttér):  picasa_render._canvas ← collage_save._render_worker
-    Current thread:   Garbage-collecting ← _wait ← a teszt
-    ```
-
-    Vagyis a főszál épp GC-t futtat ebben a beágyazott eseményhurokban,
-    miközben a háttérszál — egy sima `threading.Thread` — Qt-jelzést
-    marsall a PySide-burkolókon. A GC időzítése dönti el, hogy elszáll-e;
-    ezért nem volt reprodukálható terhelés nélkül, és ezért látszott
-    párhuzamosság-függőnek.
-
-    **A valódi javítás** a worker Qt-natívvá tétele (`QThread`/
-    `QueuedConnection`), az állapotírással együtt — az a #988/#999 köre,
-    másik munkamenetnél. Ez itt csak annyit tesz, hogy a **teszt** ne
-    hordozza a versenyhelyzetet, amíg az meg nem történik: a főág piros
-    CI-je e-mailt küld a tulajdonosnak, és minden kiadást blokkol.
-
-    A `gc.enable()` a `finally`-ben — egy elszálló teszt sem hagyhatja
-    kikapcsolva a gyűjtőt a többinek.
-
-    ⚠️ **És a kapcsolatot a végén BONTJUK (#988).** A korábbi változat egy
-    lokális függvényre mutató kapcsolatot hagyott a jelzésen, hívásonként
-    egyet — a 142 teszt alatt tucatnyi holt kapcsolat és `QEventLoop` gyűlt
-    fel, amiket később a szemétgyűjtő takarított. A `finally` ág
-    determinisztikussá teszi a lebontást.
-
-    ⚠️ A bontás **önmagában NEM elég**: kontrollált méréssel ugyanazon a
-    kódon 1 zöld / 1 piros lett, ezért a `gc.disable()` MARAD, amíg nincs
-    valódi javítás. A kettő külön állítás, külön bizonyítékkal.
-    """
-    loop = QEventLoop()
-    received = {}
-
-    def _on(*args):
-        received.setdefault("args", args)
-        loop.quit()
-
-    signal.connect(_on)
-    gc.disable()
-    try:
-        action()
-        if "args" not in received:
-            QTimer.singleShot(timeout_ms, loop.quit)
-            loop.exec()
-    finally:
-        gc.enable()
-        signal.disconnect(_on)
-    return ("args" in received, received.get("args", ()))
+    #988: a korábban ITT álló, bőven dokumentált enyhítés (GC-szünet a
+    várakozás idejére + a kapcsolat bontása) átkerült a KÖZÖS
+    `support.qt_wait.varj_kollazs_jelzesre` segédbe, mert időközben a
+    testvér `test_collage_controller_949` is elszállt ugyanattól — a
+    másolgatás pont azt a fájlt hagyta védtelenül, amelyik utána bukott.
+    Az indoklás és a veremkiíratás a segéd docstringjében."""
+    return varj_kollazs_jelzesre(signal, action, timeout_ms)
 
 
 class TestAlapallapot:
