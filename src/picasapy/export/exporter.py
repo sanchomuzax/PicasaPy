@@ -74,19 +74,32 @@ class ExportSettings:
             raise ValueError(f"Érvénytelen jpeg_quality: {self.jpeg_quality}")
 
 
-# #369 (export.fen "Image quality" popup): a Picasa pontos preset-értékei
-# nem dokumentáltak (a UI csak "Automatic/Normal/Maximum/Minimum/Custom"
-# feliratokat mutat, számot nem) — ez egy jóhiszemű, dokumentáltan közelítő
-# leképezés ésszerű JPEG-minőségekre. "Automatic" nem 100%-ig hű "forrás-
-# minőség": ha nincs mit beégetni (ld. _is_noop_copy), a bájthű másolás
-# amúgy is megőrzi az eredeti fájlt változtatás nélkül; ha viszont muszáj
-# újrakódolni (forgatás/átméretezés/szűrő/vízjel), egy közelítő, majdnem
-# veszteségmentes értéket használunk, mert az eredeti kódoló minőségének
-# megbízható visszafejtése (kvantálási táblákból) külön kutatást igényelne.
+# #369 / #1139 (export.fen "Image quality" popup): a fix fokozatok értéke a
+# binárisból ismert — a választás (0…4) a `0x00739c3f`-nél kezdődő ágon dől
+# el, az ugrótábla `0x00739ef4`-en áll (levezetés: docs/specs/
+# export-parbeszed.md 7. szakasz):
+#
+#   Normál     = 85  (`0x55`, `0x00739caf`)
+#   Maximális  = 193 (`0xC1`, `0x00739ca1`)
+#   Minimális  = 65  (`0x41`, `0x00739ca8`)
+#
+# A "maximum" nálunk SZÁNDÉKOSAN 100 a 193 helyett: a JPEG-kódoló IJG-
+# skálázója (`0x00b1cb70`) minden 100 fölötti minőséget 0 skálára visz
+# (`0x00b1cb99`), azaz csupa 1-es kvantálótáblára — a 193 és a 100 tehát
+# hatásában azonos kimenetet ad, a 100 viszont belefér az OpenCV 1–100
+# tartományába.
+#
+# Az "automatic" maradt közelítés: az eredetiben nem szám, hanem külön
+# logikai jelző (`[objektum+0xa40] = 1`, `0x00739c4d`), és a forrás
+# kvantálótábláit veszi át (7.1). Nálunk: ha nincs mit beégetni (ld.
+# _is_noop_copy), a bájthű másolás amúgy is megőrzi az eredeti fájlt; ha
+# viszont muszáj újrakódolni (forgatás/átméretezés/szűrő/vízjel), egy
+# majdnem veszteségmentes értéket használunk, mert a forrás tábláinak
+# átvétele az OpenCV-kódolón keresztül külön munka.
 _QUALITY_PRESETS: dict[str, int] = {
     "normal": 85,
     "maximum": 100,
-    "minimum": 70,
+    "minimum": 65,
 }
 _AUTOMATIC_QUALITY_APPROXIMATION = 92
 

@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Az export „Minimális" képminősége 65, nem 70 (#1139).** Az eredeti
+  Picasa minőség-legördülőjének három fix fokozata a binárisból pontosan
+  kiolvasható; a „Minimális" ága 65-öt állít be, nálunk viszont eddig 70
+  szerepelt — vagyis minden „Minimális" beállítással készült exportunk
+  eltért az eredetitől. A „Normál" (85) és a „Maximális" változatlan: az
+  utóbbi nálunk szándékosan 100 az eredeti 193 helyett, mert a JPEG-kódoló
+  minden 100 fölötti értéket ugyanarra a legjobb minőségű kvantálótáblára
+  visz — a kettő kimenete azonos.
+
 ## [0.8.59] – 2026-08-23
 
 ### Javítva
