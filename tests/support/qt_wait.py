@@ -126,11 +126,19 @@ def varj_kollazs_jelzesre(signal, action, timeout_ms: int = 20000):
     Mindkettő a `finally`-ben: egy elszálló teszt sem hagyhatja
     kikapcsolva a gyűjtőt a többinek.
 
-    ⚠️ **Ez ENYHÍTÉS, nem a hiba javítása.** A valódi javítás a worker
-    Qt-natívvá tétele (`QThread`/`QueuedConnection`) az állapotírással
-    együtt — az a #988/#999 nyitott köre. Ez itt csak annyit tesz, hogy a
-    TESZT ne hordozza a versenyhelyzetet, amíg az meg nem történik: a főág
-    piros CI-je e-mailt küld a tulajdonosnak, és minden kiadást blokkol.
+    **Hol van a hiba — MÉRVE (2026-08-23).** Sokáig az volt a magyarázat,
+    hogy a versenyhelyzet a TERMÉKBEN van, és a valódi javítás a worker
+    Qt-natívvá tétele (`QThread`) lenne. **Ezt a mérés megcáfolta:** a
+    kollázs-mentés 96 egymást követő futásban hibátlanul lefutott úgy,
+    hogy a főszál 0 ms-onként teljes szemétgyűjtést végzett közben
+    (`tests/app/test_kollazs_gc_verseny_988.py` őrzi ezt). A #1112 óta a
+    háttérszál nem ír állapotot és nem bocsát ki nyilvános jelzést, a
+    rajzolás pedig tiszta numpy — Qt-objektumhoz nem nyúl.
+
+    Ami tehát elszállt, az a TESZT oldalán keletkezett: a bontatlan
+    kapcsolatok és az árván maradt `QEventLoop`-ok, amiket a szemétgyűjtő
+    egy tetszőleges pillanatban takarított. Ezért elég — és ezért helyes —
+    itt kezelni.
 
     Returns:
         `(megjott, args)` — a jelzés megérkezett-e, és a paraméterei.
