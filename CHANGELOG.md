@@ -8,6 +8,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **Egyetlen magyar szó a képarányra: „méretarány" (#982).** A kollázs
+  formátum-menüje „méretarány"-t mondott, a vágópanel „képarány"-t —
+  ugyanarra a fogalomra. A Picasa saját magyar honosítási táblája dönt:
+  ott mind a négy vonatkozó felirat „méretarány" (és ugyanaz az
+  `AspectRatioList` lista szolgálja ki a vágóeszközt és a kollázst is),
+  tehát a „képarány" a mi saját szóalkotásunk volt. A vágópanel feliratai
+  mostantól a hivatalos alakot használják.
+
+## [Nem kiadott]
+
+### Javítva
 - **A Fotótálca Kollázs gombja feliratos és van súgója (#1116).** Eddig
   csak ikon volt, felirat és buboréksúgó nélkül — miközben a mellette
   álló Nyomtatás/Exportálás gombunk feliratos, az eredetiben pedig a
