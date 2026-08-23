@@ -458,6 +458,9 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                 settings,
                 target,
                 album_title=self._collage_panel_title,
+                album_date=self._collage_panel_album_date,
+                album_uid=self._collage_panel_album_uid,
+                album_id=self._collage_panel_album_id,
                 background_image=background_image,
                 format_key=self._collage_panel_format,
                 should_cancel=self._rendered_now_writing,
@@ -553,6 +556,9 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                     output.render_nodes_of(nodes, theme=self._collage_panel_theme),
                     self._render_settings(),
                     album_title=self._collage_panel_title,
+                    album_date=self._collage_panel_album_date,
+                    album_uid=self._collage_panel_album_uid,
+                    album_id=self._collage_panel_album_id,
                     background_image=self._background_image_for_cxf(),
                     format_key=self._collage_panel_format,
                 ),
@@ -806,6 +812,14 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self.collageCaptionsChanged.emit()
         if projekt.album_title:
             self.setCollageTitle(projekt.album_title)
+        # ⚠️ #1274: az album-azonosítók és a dátum a panelen nem
+        # SZERKESZTHETŐK, de a projekté maradnak — újramentéskor
+        # változatlanul mennek vissza. Enélkül egy Picasával készült
+        # kollázs újramentése ELDOBTA volna őket (a 12 golden minta
+        # mindegyikében van albumUID és albumDate).
+        self._collage_panel_album_uid = projekt.album_uid
+        self._collage_panel_album_id = projekt.album_id
+        self._collage_panel_album_date = projekt.album_date
         panel_csomopontok = _panel_nodes_of(nodes_from_project(projekt))
         self._set_nodes(panel_csomopontok, dirty=False)
         # ⚠️ #1274: a panel KERET-választója is a projekté. A `.cxf` a
