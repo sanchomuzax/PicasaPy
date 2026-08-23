@@ -190,6 +190,7 @@ class AppController(
         )
         self._watcher = None
         self._rescan_timer = None
+        self._folder_poll_timer = None
         # #70/#505: a busy-számlálás magában a közös `AppBusyRegistry`-ben él
         # (`busy_registry.py`) — itt csak a thumbnail-provider él-figyeléséhez
         # kell a legutóbbi SZINT (ld. `LibraryMixin._on_thumb_active`).
