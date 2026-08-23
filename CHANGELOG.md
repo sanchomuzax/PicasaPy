@@ -21,6 +21,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   1008 a mért érték), így a küszöb elvben nem garantálta, amit ígért —
   1280 képpontnál csak azért nem lógott ki semmi, mert az ablak
   történetesen szélesebb volt a küszöbnél. Újramérve és kerekítve.
+- **A fölös paraméterű szűrő-bejegyzést már a megjelenítés is elejti
+  (#910).** Az eredeti Picasa az olyan lánc-tagot, amelynek több
+  paramétere van, mint amennyit a szűrő ismer (pl.
+  `autobacklight=1,0.900000;` vagy `grain2=1,0.500000;` — mindkettőnek
+  nulla csúszkája van), némán eldobja. Nálunk eddig csak a MENTÉS
+  utasította vissza az ilyet, a megjelenítés viszont lefuttatta — vagyis
+  ugyanabból a `.picasa.ini`-ből más képet láttál nálunk, mint a
+  Picasában, miközben a mentett fájl végig helyes volt. Mostantól a két
+  irány ugyanazt a szabályt követi. Az ismeretlen nevű szűrő útja
+  változatlan (a round-trip elv nem sérül), a záró üres mező
+  (`grain=1,;`) továbbra is tolerált.
 
 ## [0.8.61] – 2026-08-23
 

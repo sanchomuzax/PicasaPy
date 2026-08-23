@@ -12,7 +12,11 @@ import math
 
 import numpy as np
 
-from picasapy.ini.filter_registry import is_exact_filter_name
+from picasapy.ini.filter_registry import (
+    effective_param_count,
+    is_exact_filter_name,
+    max_param_count,
+)
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import decode_rect64
 from picasapy.ini.redeye import parse_redeye_regions
@@ -151,6 +155,16 @@ MEASURED_IDLE_OPS = frozenset({"blur", "colorfix", "whitept"})
 MEASURED_IDLE_WARNING_TEMPLATE = (
     "{name}: a mérésben (#685) maga a Picasa sem változtatott vele a képen, "
     "ezért nem futtatunk rá modellt — a kép változatlan marad."
+)
+
+#: #910 — a FÖLÖS paraméterű tagra adott, felhasználónak szóló üzenet.
+#: Az eredeti Picasa lánc-bejárója az ilyen tagot elejti (a `filterdesc.xml`
+#: csúszkaszáma a felső korlát); mi eddig csak az ÍRÁS útvonalán
+#: érvényesítettük a `MAX_PARAM_COUNTS` táblát, a renderelésen nem.
+EXCESS_PARAM_WARNING_TEMPLATE = (
+    "{name}: több paramétere van ({count}), mint amennyit a szűrő ismer "
+    "({limit}) — a Picasa az ilyen bejegyzést elejti, ezért a kép "
+    "változatlan marad."
 )
 
 #: A halott bejegyzésre adott, felhasználónak szóló magyar üzenet (#567).
@@ -720,6 +734,23 @@ def apply_filters(
         if not (is_exact_filter_name(op.name) or op.name == "crop64"):
             skipped.append(op.name)
             continue
+        # #910: fölös paraméterű tag — az eredeti lánc-bejárója elejti.
+        # A korlát forrása ugyanaz a `MAX_PARAM_COUNTS`, amit az ÍRÁS
+        # oldala már használ (`ini/filter_guard.py`); ISMERETLEN névre a
+        # `max_param_count` None-t ad, tehát arra nem validálunk — a
+        # round-trip elv nem sérül. A ZÁRÓ ÜRES mező (`grain=1,;`) mérten
+        # tolerált, ezt az `effective_param_count` intézi.
+        limit = max_param_count(op.name)
+        if limit is not None:
+            count = effective_param_count(op.params)
+            if count > limit:
+                legacy_warnings.append(
+                    EXCESS_PARAM_WARNING_TEMPLATE.format(
+                        name=op.name, count=count, limit=limit
+                    )
+                )
+                skipped.append(op.name)
+                continue
         key = op.name.casefold()
         if key == "crop64":
             crop_op = op  # csak az effektív (utolsó) crop64 számít
