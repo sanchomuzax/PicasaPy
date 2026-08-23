@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A Picasával készült kollázs album-adatai túlélik az újramentést
+  (#1274).** A 12 valódi Picasa-mintánk MINDEGYIKÉBEN van `albumUID` és
+  `albumDate`; nálunk eddig sem az olvasás, sem a visszaírás nem ismerte
+  őket, tehát egy megnyitott és újramentett kollázs elvesztette mindkettőt.
+  Mostantól változatlanul mennek vissza. Kitalálni nem találjuk ki őket:
+  ami nincs a fájlban, az üres marad.
+
 ## [0.8.58] – 2026-08-23
 
 ### Javítva

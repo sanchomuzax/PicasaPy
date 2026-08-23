@@ -199,6 +199,8 @@ def project_from_nodes(
     *,
     album_title: str = DEFAULT_ALBUM_TITLE,
     album_date: str = "",
+    album_uid: str = "",
+    album_id: str = "",
     background_image: str = "",
     format_key: str = "",
 ) -> CxfProject:
@@ -227,6 +229,12 @@ def project_from_nodes(
         captions=any(node.caption for node in nodes),
         album_title=album_title,
         album_date=album_date,
+        # ⚠️ #1274: az albumUID/albumID a MEGNYITOTT projektből él tovább.
+        # A `.cxf`-jeink eddig nem írták (#1092), és ami rosszabb: egy
+        # Picasával készült kollázs újramentésekor a MEGLÉVŐ értéket is
+        # eldobtuk. Mérve: a 12 golden minta MINDEGYIKÉBEN van albumUID.
+        album_uid=album_uid,
+        album_id=album_id,
         background=(
             CxfBackground(type="image", src=encode_cxf_path(background_image))
             if background_image

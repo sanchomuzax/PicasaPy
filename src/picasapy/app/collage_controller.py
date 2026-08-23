@@ -141,6 +141,11 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         # #949: a kimeneti fájl neve ebből lesz (spec 9.1); üresen a
         # „kollázs" tartalék lép életbe
         self._collage_panel_title = ""
+        # #1274: a MEGNYITOTT projekt album-mezői — a panelen nem
+        # szerkeszthetők, de újramentéskor változatlanul mennek vissza.
+        self._collage_panel_album_uid = ""
+        self._collage_panel_album_id = ""
+        self._collage_panel_album_date = ""
         # a legutóbb kiírt kollázs útvonala — ebből lesz a „Meglévő cseréje"
         # ága (spec 9.2). Üres szöveg = még nem mentettük ezt a kollázst.
         self._collage_panel_saved_path = ""
