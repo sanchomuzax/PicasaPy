@@ -48,7 +48,7 @@ from picasapy.collage.cxf import read_cxf
 from picasapy.collage.draft import nodes_from_project, project_from_nodes
 from picasapy.collage.win_paths import decode_cxf_path
 from picasapy.collage.page_formats import ORIENTATIONS, format_key_of
-from picasapy.collage.themes import COLLAGE_THEMES, MULTIEXP
+from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES, MULTIEXP
 
 from . import collage_output as output
 from . import collage_prefs as prefs
@@ -806,9 +806,24 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self.collageCaptionsChanged.emit()
         if projekt.album_title:
             self.setCollageTitle(projekt.album_title)
-        self._set_nodes(
-            _panel_nodes_of(nodes_from_project(projekt)), dirty=False
-        )
+        panel_csomopontok = _panel_nodes_of(nodes_from_project(projekt))
+        self._set_nodes(panel_csomopontok, dirty=False)
+        # ⚠️ #1274: a panel KERET-választója is a projekté. A `.cxf` a
+        # keretet csomópontonként tárolja, a panelen viszont EGY választó
+        # van — ezért csak akkor állítjuk, ha MINDEN csomópont ugyanazt
+        # viseli. Vegyes keretnél a választó a helyén marad: egy értéket
+        # mutatni ott hazugság volna, a felhasználó pedig azt hinné, hogy
+        # a kollázs egységes.
+        #
+        # Enélkül az újranyitott polaroidos kollázs „nincs keret"-et
+        # mutatott, és a KÖVETKEZŐ felvett kép keret nélkül került be — a
+        # mentés ugyanis a panel értékéből dolgozik.
+        keretek = {node.border for node in panel_csomopontok}
+        if len(keretek) == 1:
+            keret = keretek.pop()
+            if keret in BORDER_THEMES and keret != self._collage_panel_border:
+                self._collage_panel_border = keret
+                self.collageBorderChanged.emit()
         # ⚠️ #1103: a háttér CSAK a csomópontok után. A képháttér a panelen
         # INDEXKÉNT él (#1009), a `.cxf` viszont ÚTVONALAT tárol, tehát a
         # visszaállítás megkeresi a képet a csomópontok között. Ha előbb

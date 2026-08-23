@@ -8,6 +8,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.8.52] – 2026-08-23
 
 ### Javítva
+- **Az újranyitott kollázs keret-választója is a projektből jön (#1274).**
+  A képek kerete eddig is visszajött, a panelé nem — ezért a polaroidos
+  kollázs újranyitva „nincs keret"-et mutatott, és a következő felvett kép
+  keret nélkül került be. Vegyes keretnél a választó szándékosan a helyén
+  marad: egy értéket mutatni ott azt hazudná, hogy a kollázs egységes.
 - **Az újranyitott kollázs megtartja a saját képarányát és térközét
   (#1272, #1274).** Eddig a *legutóbb használt* lapformátum ült rá a
   megnyitott projektre — a tulajdonos szava: „mindig az utolsó használt
