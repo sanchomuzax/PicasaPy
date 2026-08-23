@@ -5,7 +5,7 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.50] – 2026-08-23
 
 ### Javítva
 - **A szűrőnevek írásmódja mostantól számít (#1141).** Az eredeti Picasa
