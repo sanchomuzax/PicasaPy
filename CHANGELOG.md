@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Nem keletkezik újabb duplikált „Kollázsok" mappa (#1131).** A Picasa
+  gyári mappáinak neve maga is honosított — más nyelvű telepítés más
+  mappát hoz létre, a régit nem költözteti át. Mostantól, ha a képmappában
+  már van (bármely nyelvű) Kollázsok-mappa, abba mentünk; újat csak akkor
+  nyitunk, ha egyik sem létezik. A meglévő mappákhoz nem nyúlunk.
+
 ## [0.8.50] – 2026-08-23
 
 ### Javítva

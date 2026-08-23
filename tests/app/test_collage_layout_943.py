@@ -260,12 +260,23 @@ class TestKimenet:
         assert egy != ket
         assert ket.name == "Nyaralás1.jpg"
 
-    def test_a_celmappa_beallitasbol_vagy_alapertelmezesbol(self, tmp_path):
+    def test_a_celmappa_beallitasbol_vagy_alapertelmezesbol(
+        self, tmp_path, monkeypatch
+    ):
         assert output.output_dir(str(tmp_path)) == tmp_path
         # ⚠️ #1088: a gyökér a RENDSZER képmappája, nem `Path.home()/Pictures`.
         # A tulajdonosnál a Képek mappa OneDrive-ra volt átirányítva ÉS
         # honosított néven állt — emiatt a PicasaPy és a Picasa két külön
         # mappába dolgozott.
+        #
+        # ⚠️ #1131/#1217: a levél NEVE a felület nyelvéé (a mappanév maga is
+        # honosított erőforrás), ezért a nyelvet ki kell mondani — enélkül a
+        # teszt a futtatókörnyezet beállítását mérné.
+        kepek = tmp_path / "Kepek"
+        kepek.mkdir()
+        monkeypatch.setattr(output, "pictures_dir", lambda: kepek)
+        monkeypatch.setattr(output, "_felulet_nyelve", lambda: "hu")
+
         assert output.output_dir(None) == (
             output.pictures_dir() / output.DEFAULT_OUTPUT_SUBPATH
         )

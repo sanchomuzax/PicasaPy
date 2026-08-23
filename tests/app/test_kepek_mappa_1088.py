@@ -55,8 +55,22 @@ class TestAGyoker:
 
         assert output_dir(None).is_relative_to(vart)
 
-    def test_az_alszintek_valtozatlanok(self):
-        """A tulajdonos valódi útvonala is `…/Picasa/Kollázsok`-ra végződik."""
+    def test_az_alszintek_valtozatlanok(self, tmp_path, monkeypatch):
+        """A tulajdonos valódi útvonala is `…/Picasa/Kollázsok`-ra végződik.
+
+        ⚠️ #1131/#1217: a teszt korábban se a felület NYELVÉT, se a
+        képmappát nem mondta ki. Zöld volt a fejlesztői gépen (magyar
+        felület, létező `Kollázsok` mappa), a CI üres gépén viszont a
+        nyers `Collages` jött — a mappanév ugyanis maga is honosított
+        erőforrás. A `Picasa` közbülső szint az, ami valóban változatlan;
+        a levél neve a felület nyelvéé."""
+        from picasapy.app import collage_output
+
+        kepek = tmp_path / "Kepek"
+        kepek.mkdir()
+        monkeypatch.setattr(collage_output, "pictures_dir", lambda: kepek)
+        monkeypatch.setattr(collage_output, "_felulet_nyelve", lambda: "hu")
+
         assert DEFAULT_OUTPUT_SUBPATH == Path("Picasa") / "Kollázsok"
         assert output_dir(None).parts[-2:] == ("Picasa", "Kollázsok")
 
