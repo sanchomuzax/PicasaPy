@@ -161,8 +161,15 @@ def apply_ansel(image: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
 
     A szűrt szürkére a MÉRT tónusgörbe kerül (`_ANSEL_ANCHOR_CURVE`); a
     fehér szűrős exporttól való átlagos eltérés **0,53** (a korábbi
-    modellé 6,11, az érintetlen képé 15,15). A nem fehér szűrőszínekre
-    nincs export — ott a súlyozás a fenti képlet szerinti KÖVETKEZTETÉS.
+    modellé 6,11, az érintetlen képé 15,15).
+
+    A súlyozás 2026-08-23 óta **MEGERŐSÍTETT, nem következtetés** (#939):
+    a natív visszahívás (`0x008f8410`) a szín három bájtját `255,0`-val
+    osztja, a mag (`0x0090e680`) pedig **első lépésben normalizálja őket
+    az ÖSSZEGÜKKEL** (`1/(w1+w2+w3)`, `0x0090e6ca`–`0x0090e6e8`), majd
+    `256,0`-lal szoroz a fixpontos súlyokhoz. A `/255` a normalizálásban
+    kiesik, tehát a natív számítás azonos az itteni képlettel. Levezetés:
+    `docs/specs/filters-decoded.md`, „`ansel` — a SÚLYOZÁS igazolva".
     """
     validate_image(image)
     weights = np.array(color, dtype=np.float32)

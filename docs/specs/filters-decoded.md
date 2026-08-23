@@ -962,6 +962,59 @@ A `+0x50` mezőből vett **szűrőszínt** bontja három 0…1 súlyra
 16 bites fixpontban (`Y = w_r·R + w_g·G + w_b·B`, `0…0xffff`-re vágva), majd
 **256 rekeszes hisztogramot** épít belőle a további feldolgozáshoz.
 
+### `ansel` — a SÚLYOZÁS igazolva: a mag NORMALIZÁL az összeggel (2026-08-23, #939)
+
+A #939 azt rögzítette, hogy a szűrőszín **súlyozó** szerepe
+„következtetés", mert az egyetlen exportunk fehér szűrős, ahol minden
+súlyozási modell ugyanazt adja — és ezért a jegy **felhasználói exportra
+várt**. **A kód viszont eldönti**, export nélkül is.
+
+**1. A visszahívás (`0x008f8410`) három nyers súlyt képez** a `+0x50`
+szűrőszín három bájtjából, mindet **ugyanazzal az osztóval**:
+
+```asm
+0x008f8461  fld   qword ptr [0xcf39d0]   ; K
+0x008f846b  fdiv  st(1), st(0)           ; bájt2 / K
+0x008f8489  fdiv  st(1)                  ; bájt1 / K
+0x008f8493  fdivrp st(1)                 ; bájt0 / K
+0x008f84b1  call  0x0090e680             ; a három súly átadva
+```
+
+`[0xcf39d0]` **mérve: `255.0`** → a nyers súlyok `c/255`. Eddig ez volt
+ismert — és **önmagában félrevezető**, mert így fehér szűrőnél
+`(1, 1, 1)` jönne ki, ami túlcsordulna.
+
+**2. A mag (`0x0090e680`) ELSŐ dolga: normalizálás az ÖSSZEGGEL.**
+
+```asm
+0x0090e6b7  fld  [ebp+0xc]      ; w1
+0x0090e6c1  faddp st(2)         ; w1+w2
+0x0090e6c8  faddp st(3)         ; w1+w2+w3          <- ÖSSZEG
+0x0090e6ca  fld1
+0x0090e6cc  fdivrp st(3)        ; 1 / összeg
+0x0090e6de  fstp [ebp+0xc]      ; w1 := w1 / összeg
+0x0090e6e3  fstp [ebp+0x10]     ; w2 := w2 / összeg
+0x0090e6e8  fstp [ebp+0x14]     ; w3 := w3 / összeg
+```
+
+majd mindhármat **256,0**-lal (`[0xcf39d8]`) szorozva egészre kerekíti
+(`0x00c29990`) a fixpontos csatornasúlyokhoz.
+
+> ✅ **Ez pontosan a mi képletünk.** A `/255` a normalizálásban **kiesik**,
+> így a natív számítás azonos a
+> `szürke = Σ(szín_c · c) / Σ szín_c` alakkal
+> (`src/picasapy/render/tinting.py`, `apply_ansel`).
+>
+> ⇒ **A súlyozás NEM következtetés többé, hanem megerősített.** A színes
+> szűrős export a *képlet eldöntéséhez* **nem szükséges**; legfeljebb
+> végponttól végpontig tartó visszaigazolás lenne — az viszont a
+> **tónusgörbét** ellenőrizné, ami a színtől független, és fehér szűrővel
+> már 0,53-on áll.
+
+*Bizonyítottsági fok: **megerősített** — mindkét konstans a fájlból
+kiolvasva (`255.0`, `256.0`), a normalizálás lépésről lépésre a
+lebegőpontos veremműveletekből.*
+
 ### `tint`
 
 A `+0x50`-es színt használja, a keverési arány `256 − round(amount)`, és
