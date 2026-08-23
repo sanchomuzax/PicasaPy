@@ -88,9 +88,8 @@ def changelog_notes(version: str, changelog: Path | None = None) -> str:
     A GitHub `--generate-notes` kimenete a bot-PR-ek címeit listázza —
     a tulajdonos szavával „gépzaj": ebből nem derül ki, mi változott.
     A valódi, embernek írt összefoglaló a CHANGELOG-ban él; a kiadás
-    jegyzete mostantól AZ. Üres/hiányzó szakasznál üres sztringet adunk,
-    és a hívó a gépi jegyzetre esik vissza — de az ilyen kiadás a
-    CHANGELOG-fegyelem megsértését jelzi, nem normál állapot.
+    jegyzete AZ. Üres/hiányzó szakasznál üres sztringet adunk, és a hívó
+    az EMBERI tartalékra vált (`tartalek_jegyzet`) — gépi listára soha.
     """
     utvonal = changelog or Path(__file__).resolve().parents[1] / "CHANGELOG.md"
     try:
@@ -111,6 +110,32 @@ def changelog_notes(version: str, changelog: Path | None = None) -> str:
     return torzs
 
 
+#: Kiadás, amihez nincs CHANGELOG-szakasz. MÉRVE (2026-08-23): a
+#: verzióemelő lánc körönként egy kiadást csinál, de a CHANGELOG
+#: `[Nem kiadott]` szakaszát az ELSŐ emelés elviszi — a többi kiadás
+#: szakasz nélkül marad, és a `--generate-notes` bot-PR-címeket listáz.
+#: Három egymást követő kiadás (0.8.53–0.8.55) így ment ki gépzajjal,
+#: pont azzal, amit a tulajdonos kifogásolt.
+_TARTALEK_JEGYZET = (
+    "Ez a kiadás nem hoz felhasználónak látszó változást.\n\n"
+    "A benne lévő munka (tesztek, belső javítások, verziólépés) a "
+    "korábbi kiadások bejegyzéseihez tartozik — a részletes, emberi "
+    "leírás a [CHANGELOG.md]"
+    "(https://github.com/sanchomuzax/PicasaPy/blob/main/CHANGELOG.md) "
+    "megfelelő szakaszában áll."
+)
+
+
+def tartalek_jegyzet() -> str:
+    """A jegyzet, ha a CHANGELOG-ban nincs szakasz ehhez a verzióhoz.
+
+    ⚠️ Ez NEM a gépi lista helyettesítője „jobb híján", hanem szabály: a
+    Releases hasáb a tulajdonos egyetlen látható verziókövetése, és
+    gépzajt oda kiadni rosszabb, mint egy őszinte egymondatos jegyzet.
+    """
+    return _TARTALEK_JEGYZET
+
+
 def _atmeneti(eredmeny: subprocess.CompletedProcess[str]) -> bool:
     szoveg = f"{eredmeny.stdout or ''}\n{eredmeny.stderr or ''}".lower()
     return any(minta in szoveg for minta in _ATMENETI_MINTAK)
@@ -125,6 +150,7 @@ def ensure_release(
     sleeper: Callable[[float], None] = time.sleep,
     attempts: int = _ALAP_KISERLET,
     check_only: bool = False,
+    changelog: Path | None = None,
 ) -> int:
     """A `v<version>` kiadás megléte — pótlással vagy csak ellenőrzéssel.
 
@@ -155,16 +181,17 @@ def ensure_release(
             print(f"A {tag} létezés-ellenőrzése átmeneti hibába futott — újra.")
         else:
             print(f"A {tag} kiadás hiányzik a main mögött — pótlás ({kiserlet}.)…")
-            jegyzet = changelog_notes(version)
+            jegyzet = changelog_notes(version, changelog)
             parancs = [
                 "gh", "release", "create", tag,
                 "--repo", repo,
                 "--target", target,
                 "--title", f"PicasaPy {version}",
             ]
-            # embernek írt jegyzet a CHANGELOG-ból; ha nincs, a gépi lista
-            # marad — az ilyen kiadás a CHANGELOG-fegyelem hiányát jelzi
-            parancs += ["--notes", jegyzet] if jegyzet else ["--generate-notes"]
+            # Embernek írt jegyzet a CHANGELOG-ból; ha nincs szakasz,
+            # EMBERI tartalék megy ki — gépi lista SOHA (ld.
+            # `tartalek_jegyzet`).
+            parancs += ["--notes", jegyzet or tartalek_jegyzet()]
             keszult = runner(parancs)
             if keszult.returncode == 0:
                 print(f"A {tag} kiadás létrejött.")

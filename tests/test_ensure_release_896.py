@@ -193,3 +193,78 @@ class TestChangelogJegyzet:
         from ensure_release import changelog_notes
 
         assert changelog_notes("1.2.3", tmp_path / "nincs.md") == ""
+
+
+class TestAJegyzetSosemGepzaj:
+    """A Releases hasábra gépi PR-lista nem mehet ki (2026-08-23).
+
+    MÉRVE: a verzióemelő lánc körönként EGY kiadást csinál, de a CHANGELOG
+    `[Nem kiadott]` szakaszát az ELSŐ emelés elviszi — a többi kiadás
+    szakasz nélkül marad. A `--generate-notes` ilyenkor a bot-PR-ek címeit
+    listázta, és **három egymást követő kiadás** (0.8.53–0.8.55) így ment
+    ki. Pont az, amit a tulajdonos „gépzajként" kifogásolt.
+    """
+
+    def test_szakasz_nelkul_EMBERI_tartalek_megy_ki(self, sleeps, tmp_path):
+        import scripts.ensure_release as modul
+        from scripts.ensure_release import tartalek_jegyzet
+
+        # CHANGELOG szakasz NÉLKÜL erre a verzióra — pontosan az az eset,
+        # amit a verzióemelő lánc körönként előállít
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [0.1.0] – 2020-01-01\n", encoding="utf-8")
+        gh = FakeGh({"view": [(1, "release not found")], "create": [(0, "")]})
+        assert (
+            modul.ensure_release(
+                version="0.7.65",
+                target="a4256373",
+                repo="sanchomuzax/PicasaPy",
+                runner=gh,
+                sleeper=sleeps.append,
+                attempts=5,
+                changelog=naplo,
+            )
+            == 0
+        )
+
+        create = next(hivas for hivas in gh.calls if "create" in hivas)
+        assert "--generate-notes" not in create, (
+            "gépi PR-lista került volna a Releases hasábra"
+        )
+        assert "--notes" in create
+        assert create[create.index("--notes") + 1] == tartalek_jegyzet()
+
+    def test_a_tartalek_MAGYARUL_es_oszinten_fogalmaz(self):
+        from scripts.ensure_release import tartalek_jegyzet
+
+        szoveg = tartalek_jegyzet()
+        assert "nem hoz felhasználónak látszó változást" in szoveg
+        assert "CHANGELOG.md" in szoveg
+        # ne ígérjen olyat, amit nem tud: konkrét jegyszámot ne találjon ki
+        assert "#" not in szoveg.replace("](https", "")
+
+    def test_szakasszal_a_CHANGELOG_szovege_megy_ki(self, sleeps, tmp_path):
+        import scripts.ensure_release as modul
+
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text(
+            "# Változásnapló\n\n## [0.7.65] – 2026-01-01\n\n"
+            "### Javítva\n- **Valami emberi mondat.**\n",
+            encoding="utf-8",
+        )
+        gh = FakeGh({"view": [(1, "release not found")], "create": [(0, "")]})
+        assert (
+            modul.ensure_release(
+                version="0.7.65",
+                target="a4256373",
+                repo="sanchomuzax/PicasaPy",
+                runner=gh,
+                sleeper=sleeps.append,
+                attempts=5,
+                changelog=naplo,
+            )
+            == 0
+        )
+
+        create = next(hivas for hivas in gh.calls if "create" in hivas)
+        assert "Valami emberi mondat" in create[create.index("--notes") + 1]
