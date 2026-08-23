@@ -393,14 +393,22 @@ class TestWatermark:
 
 
 class TestQualityPresets:
-    """#369 (export.fen paritás): a minőség-lenyíló preset→JPEG-minőség
-    leképezése (`resolve_export_quality`) — a pontos Picasa-értékek nem
-    dokumentáltak, ez egy dokumentáltan közelítő leképezés."""
+    """#369 / #1139 (export.fen paritás): a minőség-lenyíló preset→JPEG-
+    minőség leképezése (`resolve_export_quality`). A három fix fokozat
+    értéke a #1139 óta a binárisból ismert (ugrótábla `0x00739ef4`), nem
+    közelítés; csak az „Automatikus" maradt közelítés."""
 
     def test_normal_maximum_minimum_map_to_documented_values(self):
         assert resolve_export_quality("normal", 50) == 85
         assert resolve_export_quality("maximum", 50) == 100
-        assert resolve_export_quality("minimum", 50) == 70
+        # #1139: az eredetiben 65 (`0x41`, `0x00739ca8`) — nálunk 70 volt.
+        assert resolve_export_quality("minimum", 50) == 65
+
+    def test_minimum_matches_the_binary_jump_table(self):
+        """#1139 őre: a „Minimális" fokozat pontosan 65, csúszkától
+        függetlenül — a `0x00739ef4` ugrótábla `0x00739ca8` ága."""
+        assert resolve_export_quality("minimum", 0) == 65
+        assert resolve_export_quality("MINIMUM", 100) == 65
 
     def test_automatic_maps_to_high_approximation(self):
         assert resolve_export_quality("automatic", 50) == 92
