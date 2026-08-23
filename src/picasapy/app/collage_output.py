@@ -171,12 +171,22 @@ def output_dir(configured: str | None, language: str | None = None) -> Path:
 def _felulet_nyelve() -> str:
     """A felület nyelve a mappanév-választáshoz (#1131).
 
-    A honosítás forrása ugyanaz, mint a felületé; hibatűrő: ismeretlen
-    állapotnál az angol alak a biztonságos (az eredeti nyers értéke)."""
-    try:
-        from PySide6.QtCore import QLocale
+    ⚠️ A forrás UGYANAZ, mint a feliratoké: `_configured_language()`
+    (környezeti változó → mentett beállítás → alapértelmezés, #333). Az
+    első nekifutásban itt `QLocale()` állt, és ez KÉT sebből vérzett:
 
-        return QLocale().name().split("_")[0] or "en"
+    1. a `QLocale` a RENDSZER nyelvét adja, a felület viszont
+       szándékosan nem azt nézi — magyar rendszeren, angolra állított
+       felületen „Kollázsok" mappát nyitottunk volna;
+    2. a CI-ben a locale „C", tehát a mappanév a futtatókörnyezettől
+       függött (a windows-láb ezen bukott el).
+
+    Hibatűrő marad: ha a beállítás nem olvasható (nincs QApplication),
+    az angol alak a biztonságos — az eredeti nyers értéke."""
+    try:
+        from .application import _configured_language
+
+        return _configured_language()
     except Exception:
         return "en"
 

@@ -71,11 +71,50 @@ def kepek(tmp_path):
 class TestCelmappa:
     """„hova": `<Képek>/Picasa/Kollázsok` — a `Picasa` közbülső szinttel."""
 
-    def test_az_alapertelmezett_mappa_a_picasa_szintet_is_tartalmazza(self):
+    def test_az_alapertelmezett_mappa_a_picasa_szintet_is_tartalmazza(
+        self, tmp_path, monkeypatch
+    ):
+        """A `Picasa` közbülső szint — és a mappanév a FELÜLET nyelvéé.
+
+        ⚠️ #1131/#1217: ez a teszt korábban se a nyelvet, se a képmappát
+        nem mondta ki. Zöld volt a fejlesztői gépen — ott ugyanis LÉTEZIK
+        egy `Pictures/Picasa/Kollázsok`, és a #1131 szabálya szerint a
+        meglévő mappa nyer. A CI-ben (üres gép, `en` alapértelmezés) a
+        magyar alakot várta, és elbukott. Most mindkettőt rögzíti."""
+        kepek = tmp_path / "Pictures"
+        kepek.mkdir()
+        monkeypatch.setattr(output, "pictures_dir", lambda: kepek)
+        monkeypatch.setattr(output, "_felulet_nyelve", lambda: "hu")
+
         cel = output.output_dir(None)
+
         assert cel.parts[-3:] == ("Pictures", "Picasa", "Kollázsok")
         # #1088: a rendszer képmappájából, nem `Path.home()`-ból
-        assert cel == output.pictures_dir() / output.DEFAULT_OUTPUT_SUBPATH
+        assert cel == kepek / output.DEFAULT_OUTPUT_SUBPATH
+
+    def test_angol_felulettel_az_eredeti_nyers_nev_jon(self, tmp_path, monkeypatch):
+        """A mappanév maga is honosított erőforrás (#1131)."""
+        kepek = tmp_path / "Pictures"
+        kepek.mkdir()
+        monkeypatch.setattr(output, "pictures_dir", lambda: kepek)
+        monkeypatch.setattr(output, "_felulet_nyelve", lambda: "en")
+
+        assert output.output_dir(None).parts[-3:] == (
+            "Pictures",
+            "Picasa",
+            "Collages",
+        )
+
+    def test_a_MEGLEVO_mappa_eros_ebb_a_felulet_nyelvenel(
+        self, tmp_path, monkeypatch
+    ):
+        """Nem nyitunk néma harmadikat a felhasználó gépén (#1131)."""
+        kepek = tmp_path / "Pictures"
+        (kepek / "Picasa" / "Kollázsok").mkdir(parents=True)
+        monkeypatch.setattr(output, "pictures_dir", lambda: kepek)
+        monkeypatch.setattr(output, "_felulet_nyelve", lambda: "en")
+
+        assert output.output_dir(None).name == "Kollázsok"
 
     def test_a_beallitott_mappa_erosebb(self, tmp_path):
         assert output.output_dir(str(tmp_path)) == tmp_path
