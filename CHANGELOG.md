@@ -8,6 +8,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **Megszűnt egy ingatag teszt az arc-beolvasás haladásánál (#1233).**
+  A teszt időzítéstől függően bukott (húsz futásból egy), mert a
+  százalékot a kibocsátás UTÁN olvasta vissza — mire mintát vett, az
+  érték már a következő állapoton állt. A termék viselkedése változatlan:
+  a hiba a mérésben volt. A hamis riasztás azért káros, mert elveszi az
+  időt a valódi hibáktól, és rászoktat az „újrafuttatom" reflexre.
+
+## [Nem kiadott]
+
+### Javítva
 - **Egyetlen magyar szó a képarányra: „méretarány" (#982).** A kollázs
   formátum-menüje „méretarány"-t mondott, a vágópanel „képarány"-t —
   ugyanarra a fogalomra. A Picasa saját magyar honosítási táblája dönt:

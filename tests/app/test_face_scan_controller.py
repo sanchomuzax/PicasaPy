@@ -10,7 +10,7 @@ mintáját követi (a `controller.py`-beli bekötés az integrátor dolga)."""
 
 from __future__ import annotations
 
-from PySide6.QtCore import QEventLoop, QTimer
+from PySide6.QtCore import Qt, QEventLoop, QTimer
 
 from support.jpeg_factory import make_jpeg
 
@@ -448,19 +448,36 @@ class TestScanPercent:
         assert ctl.scanPercent == -1
 
     def test_it_reaches_a_hundred_while_scanning(self, qt_app, tmp_path):
+        """#1233: a mintavétel a KIBOCSÁTÁS pillanatában történik.
+
+        A `scanPercentChanged` paraméter nélküli jelzés, és a százalékot a
+        HÁTTÉRSZÁL állítja — sorbaállított (queued) kapcsolattal a slot
+        csak később, a fő szál eseményhurkában futna le, és akkor a
+        property MÁR a következő (a végén: −1) értéket mutatná. Így a
+        100-as érték két mintavétel közé csúszhatott: húsz futásból egy
+        bukott ezen.
+
+        `Qt.DirectConnection`-nel a slot a kibocsátó szálban, AZONNAL fut,
+        tehát a lista a tényleges értéksorozatot rögzíti — időzítéstől
+        függetlenül. A termék viselkedése változatlan; a hiba a mérésben
+        volt, nem benne."""
         root = tmp_path / "kepek"
         root.mkdir()
         for name in ("a.jpg", "b.jpg", "c.jpg"):
             make_jpeg(root / name)
         ctl = _make_controller(qt_app, tmp_path, root)
         seen = []
-        ctl.scanPercentChanged.connect(lambda: seen.append(ctl.scanPercent))
+        ctl.scanPercentChanged.connect(
+            lambda: seen.append(ctl.scanPercent), Qt.DirectConnection
+        )
 
         _run(ctl.scanFinished, ctl.scanForFaces)
         assert ctl.waitForBackgroundWorkers(5.0)
 
-        assert 100 in seen
+        assert 100 in seen, f"a 100 nem szerepel a kibocsatott sorozatban: {seen}"
+        # a 100-ig monoton nő, utána már csak a lezáró −1 jöhet
         assert seen == sorted(seen[: seen.index(100) + 1]) + seen[seen.index(100) + 1 :]
+        assert seen[-1] == -1, f"a lezaro -1 hianyzik: {seen}"
 
     def test_a_scan_that_never_starts_leaves_it_idle(self, qt_app, tmp_path):
         root = tmp_path / "kepek"
