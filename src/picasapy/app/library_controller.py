@@ -65,6 +65,28 @@ _PROGRESS_EMIT_MIN_S = 0.25
 _PROGRESS_RELOAD_MIN_S = 1.5
 
 
+#: A LÁTOTT mappa célzott újraolvasásának időköze (#1275).
+#:
+#: ⚠️ Az eredeti Picasa **nem használ operációs rendszer-szintű
+#: fájlfigyelést**: a bináris a `ReadDirectoryChangesW`-t és a
+#: `SHChangeNotifyRegister`-t nem is importálja, a
+#: `FindFirstChangeNotification`-re pedig NULLA hivatkozás van (a
+#: `FindClose…` két helyen áll — védekező takarító ág). Helyette
+#: újraolvas és összehasonlít (`ytDirScannerChangeList`), amit a beépített
+#: `WriteDirscannerCSV` három pillanatképe is megerősít.
+#: Levezetés: `docs/specs/picasa-mappakezelo.md` 16. szakasz.
+#:
+#: Ebből következik a mi felosztásunk: az esemény (watchdog) a
+#: GYORSÍTÁS, a lekérdezés a GARANCIA. Hálózati megosztáson az esemény
+#: notóriusan elmarad — ott ez az egyetlen út.
+#:
+#: Miért CSAK a látott mappa, és miért nem a teljes fa: egyetlen könyvtár
+#: listázása olcsó, a teljes gyűjteményé nem. A tulajdonos gyűjteménye
+#: NAS-on van, mért napló-korláttal — a teljes fa sűrű pásztázása ott
+#: valódi kárt okozna. A teljes rescan ezért marad ötpercenként.
+FOLDER_POLL_MS = 10_000
+
+
 class LibraryMixin(BackgroundWorkerMixin):
     """Figyelt gyökerek kezelése + szinkron-munkák könyvelése."""
 
@@ -294,6 +316,12 @@ class LibraryMixin(BackgroundWorkerMixin):
         self._rescan_timer.setInterval(5 * 60 * 1000)
         self._rescan_timer.timeout.connect(self.rescan)
         self._rescan_timer.start()
+        # #1275: a LÁTOTT mappa célzott, olcsó újraolvasása — ez az, ami
+        # hálózati megosztáson egyáltalán működik (ld. FOLDER_POLL_MS).
+        self._folder_poll_timer = QTimer(self)
+        self._folder_poll_timer.setInterval(FOLDER_POLL_MS)
+        self._folder_poll_timer.timeout.connect(self._poll_current_folder)
+        self._folder_poll_timer.start()
 
     def _dedupe_roots(self) -> None:
         """#507: a betöltött (esetleg régi, még nem normalizált
@@ -317,6 +345,9 @@ class LibraryMixin(BackgroundWorkerMixin):
         """Leállítás: figyelő és időzítő leállítása (kilépéskor hívandó)."""
         if self._rescan_timer is not None:
             self._rescan_timer.stop()
+        if getattr(self, "_folder_poll_timer", None) is not None:
+            self._folder_poll_timer.stop()
+            self._folder_poll_timer = None
         if self._watcher is not None:
             self._watcher.stop()
             self._watcher = None
@@ -769,6 +800,21 @@ class LibraryMixin(BackgroundWorkerMixin):
         return best
 
     @Slot()
+    def _poll_current_folder(self) -> None:
+        """A LÁTOTT mappa célzott újraolvasása (#1275).
+
+        Nem a teljes fa: egyetlen könyvtár listázása olcsó, és a
+        felhasználó azt a mappát nézi, ahova a képet másolja. A munkát a
+        watcher-ág végzi (`_on_folders_dirty`), tehát a koaleszálás, a
+        sírkövek és a kizárások ugyanúgy érvényesek.
+
+        Futó szinkron alatt kihagyjuk: az úgyis frissít, és két egyidejű
+        író fölöslegesen versengene az indexen."""
+        mappa = self._current_folder
+        if not mappa or self._sync_running:
+            return
+        self._on_folders_dirty([mappa])
+
     def rescan(self) -> None:
         if self._sync_running:
             return  # egy író elég; a futó szinkron végén úgyis frissülünk

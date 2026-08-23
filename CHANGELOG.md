@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A látott mappába kívülről bekerülő kép ~10 másodpercen belül
+  megjelenik (#1275).** Eddig csak az azonnali fájlfigyelés jelzett, az
+  viszont hálózati meghajtón (NAS) gyakran egyáltalán nem küld eseményt —
+  ott a következő teljes újraolvasásig, akár 5 percig semmi nem történt.
+  Az eredeti Picasa sem eseményt figyel, hanem újraolvas és összehasonlít
+  (a bináris a fájlfigyelő API-kat nem is importálja), ezért mostantól az
+  **éppen nézett** mappát rendszeresen újraolvassuk. Csak azt az egy mappát:
+  a teljes gyűjtemény sűrű pásztázása hálózaton valódi terhelést jelentene.
+
 ## [0.8.56] – 2026-08-23
 
 ### Javítva
