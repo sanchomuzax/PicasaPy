@@ -19,13 +19,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QEventLoop, QObject, QSettings, QTimer
+from PySide6.QtCore import QObject, QSettings
 from PySide6.QtGui import QColor
 
 from picasapy.collage.autosave import AUTOSAVE_NAME
 from picasapy.collage.themes import CONTACTSHEET, PICTUREPILE, REGULARGRID
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import varj_kollazs_jelzesre
 
 
 class _Photo:
@@ -108,20 +109,14 @@ def nyitott(host):
 
 
 def _wait(signal, action, timeout_ms=20000):
-    """A műveletet a jelzésre FELIRATKOZVA indítja, majd bevárja azt."""
-    loop = QEventLoop()
-    received = {}
+    """A műveletet a jelzésre FELIRATKOZVA indítja, majd bevárja azt.
 
-    def _on(*args):
-        received.setdefault("args", args)
-        loop.quit()
-
-    signal.connect(_on)
-    action()
-    if "args" not in received:
-        QTimer.singleShot(timeout_ms, loop.quit)
-        loop.exec()
-    return ("args" in received, received.get("args", ()))
+    #988: a saját, csupasz hurok helyett a KÖZÖS, GC-szünetes segédre
+    megy — ez a fájl kétszer bukott `exit -11`-gyel a CI-ben (a #1292 és
+    a #1294 futásában), miközben a testvér `test_collage_controller_943`
+    ugyanezzel az enyhítéssel már zöld volt. Az indoklás és a
+    veremkiíratás a segéd docstringjében."""
+    return varj_kollazs_jelzesre(signal, action, timeout_ms)
 
 
 class TestEgyKodut:

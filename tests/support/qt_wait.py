@@ -96,3 +96,64 @@ def wait_for_photo_op(controller, action, *, qt_app=None) -> None:
         description="a kép-művelet (photoOpFinished)",
         process_events_with=qt_app,
     )
+
+
+def varj_kollazs_jelzesre(signal, action, timeout_ms: int = 20000):
+    """Kollázs-háttérmunkát indító művelet bevárása — **GC-szünettel**.
+
+    A kollázs-tesztek `_wait` segédjének közös alakja. Két dolgot tesz a
+    beágyazott eseményhurkon felül, és mindkettő KÜLÖN állítás, külön
+    bizonyítékkal (#988):
+
+    1. **A várakozás idejére kikapcsolja a szemétgyűjtőt.** A CI-n
+       visszatérő `exit -11` (SIGSEGV) veremkiíratása ezt mutatta:
+
+       ```
+       Thread (háttér):  picasa_render._canvas ← collage_save._render_worker
+       Current thread:   Garbage-collecting ← _wait ← a teszt
+       ```
+
+       A főszál épp GC-t futtat a beágyazott hurokban, miközben a
+       háttérszál — egy sima `threading.Thread` — Qt-jelzést marsall a
+       PySide-burkolókon. A GC időzítése dönti el, hogy elszáll-e; ezért
+       nem reprodukálható terhelés nélkül, és ezért látszik
+       párhuzamosság-függőnek.
+
+    2. **A végén bontja a kapcsolatot.** Enélkül hívásonként egy holt,
+       lokális függvényre mutató kapcsolat és egy `QEventLoop` marad a
+       jelzésen — pont az, amit később a szemétgyűjtő takarítana.
+
+    Mindkettő a `finally`-ben: egy elszálló teszt sem hagyhatja
+    kikapcsolva a gyűjtőt a többinek.
+
+    ⚠️ **Ez ENYHÍTÉS, nem a hiba javítása.** A valódi javítás a worker
+    Qt-natívvá tétele (`QThread`/`QueuedConnection`) az állapotírással
+    együtt — az a #988/#999 nyitott köre. Ez itt csak annyit tesz, hogy a
+    TESZT ne hordozza a versenyhelyzetet, amíg az meg nem történik: a főág
+    piros CI-je e-mailt küld a tulajdonosnak, és minden kiadást blokkol.
+
+    Returns:
+        `(megjott, args)` — a jelzés megérkezett-e, és a paraméterei.
+    """
+    import gc
+
+    from PySide6.QtCore import QEventLoop, QTimer
+
+    loop = QEventLoop()
+    received: dict[str, tuple] = {}
+
+    def _on(*args):
+        received.setdefault("args", args)
+        loop.quit()
+
+    signal.connect(_on)
+    gc.disable()
+    try:
+        action()
+        if "args" not in received:
+            QTimer.singleShot(timeout_ms, loop.quit)
+            loop.exec()
+    finally:
+        gc.enable()
+        signal.disconnect(_on)
+    return ("args" in received, received.get("args", ()))
