@@ -397,6 +397,71 @@ méretek nem önkényesek: a 72/144/288 duplázás azt jelenti, hogy a kisebb
 szint a nagyobbikból **pontos felezéssel** előállítható — ez a szintek közti
 generálást is olcsóvá teszi.
 
+### ⛔ NEGATÍV EREDMÉNY: a bélyegkép-tár NEM használható golden-referenciának (2026-08-23)
+
+**A hipotézis, amit ellenőriztem** (a #951 kapcsán): ha a bélyegkép-tár a
+Picasa **saját renderelésének** eredményét tárolja, akkor minden
+szerkesztett képhez megvan az eredeti program kimenete — vagyis
+golden-pár **export kérése nélkül**.
+
+**A hipotézis NEM igazolódott.** Két, egymástól független ok:
+
+#### 1. Az index HASH-alapú — nincs olcsó fájlonkénti párosítás
+
+A három tár indexe egységes szerkezetű:
+
+```
+20 bájt fejléc:  magic 0x3FCCCCCD · uint32 (0) · uint32 rekordszám · ...
+utána:           rekordszám × 12 bájt (3 × uint32)
+```
+
+mérve (kis készlet): `thumbs_index.db` **3 338** rekord (= pontosan a
+`thumbindex.db` bejegyzésszáma), `bigthumbs_index.db` 6 169,
+`previews_index.db` 5 971.
+
+⚠️ **A 12 bájtos rekord három mezője NEM eltolás/hossz**, hanem
+hash-jellegű, egyenletesen szórt 32 bites érték (pl. a 2. rekord:
+`0xdb3b20b7 0x8b14c30a 0x36fd4724`). Néhány rekordban mindhárom mező
+azonos. Vagyis a tár **tartalom-címzett/hash-táblás**, és a
+`sorindex → bélyegkép` leképezés a hash visszafejtése nélkül **nem áll
+elő**.
+
+#### 2. A kontroll-mérés a tartalmi hipotézist sem támogatja
+
+Két készlet, **~200×** eltérő sepia-szerkesztési sűrűséggel:
+
+| készlet | sepia-szerkesztés | szigorú „egyszínű barna" bélyegkép |
+|---|---|---|
+| kicsi (3 037 sor) | **79** (a szerkesztettek 6,4 %-a) | 23 / 1 166 = **1,97 %** |
+| nagy (140 661 sor) | **19** (a szerkesztettek 0,15 %-a) | 101 / 2 988 = **3,38 %** |
+
+Ha a tár a **szerkesztett** képpontokat tárolná, a nagy készletben
+nagyságrenddel **kevesebb** sepia-kinézetű bélyegképnek kellene lennie.
+**Az arány viszont nem követi a szerkesztési sűrűséget** — sőt, fordított.
+A jel tehát a **valóban meleg tónusú eredeti** fényképekből jön (régi
+szkennelt kép, naplemente, izzófényes belső), nem a szerkesztésből.
+
+*(A detektor: a számottevő krómájú képpontok hue-jának körkörös
+egységessége `R > 0,995`, átlagos hue 15–55°. Ez szigorú, de nyilván nem
+hibátlan — épp ezért a **két készlet összevetése** a bizonyíték, nem az
+abszolút szám.)*
+
+#### Amit ez kimond
+
+> ⛔ **A bélyegkép-tár ezen az úton NEM váltja ki a felhasználói exportot.**
+> A #951 (Finomhangolás kompozit mérése) **továbbra is exportra vár**.
+
+**Ami ettől még nyitva áll:** a hash-index visszafejtésével elvileg
+előállítható a fájlonkénti párosítás, és akkor a tartalmi kérdés
+(szerkesztett vs. nyers képpont) **egyetlen képen** eldönthető lenne. Ez
+azonban önálló, nem kicsi kutatási feladat — és a #951-hez képest
+kerülőút, mert az exportot amúgy is egy perc előállítani.
+
+*Bizonyítottsági fok: **megerősített** az index szerkezetére (fejléc- és
+rekordszám-egyezés három fájlon) · **erős** a tartalmi negatív
+eredményre (két készlet kontroll-összevetése) — de nem *megerősített*,
+mert a detektor hibás pozitívjait nem zártam ki egyenként.*
+
 ### A visszaesési sorrend — a kérő útvonalról (2026-08-15)
 
 A négy tároló az adatbázis-objektum **fix eltolásain** ül. A párosítást két,
