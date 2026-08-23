@@ -53,14 +53,22 @@ class TestAutobacklight:
             report = apply_filters(image, parse_filters("autobacklight=1;"))
             np.testing.assert_array_equal(report.image, apply_fill(image, 0.25))
 
-    def test_parameters_are_ignored(self, sample):
-        """Nincs szabad paramétere — egy odaírt érték sem változtat rajta
-        (és nem is dob kivételt)."""
-        plain = apply_filters(sample, parse_filters("autobacklight=1;")).image
-        with_param = apply_filters(
-            sample, parse_filters("autobacklight=1,0.900000;")
-        ).image
-        np.testing.assert_array_equal(plain, with_param)
+    def test_a_folos_parameteru_tag_elesik(self, sample):
+        """#910 HELYESBÍTI a #567 itteni feltevését.
+
+        Eddig azt állítottuk, hogy a fölös paramétert a szűrő egyszerűen
+        FIGYELMEN KÍVÜL hagyja (tehát `autobacklight=1,0.9;` ugyanazt adja,
+        mint `autobacklight=1;`). A #685 mérése ezt megcáfolta: a Picasán
+        az `autobacklight=1,0.900000;` lánc ΔE 0,18-at ad (= JPEG-zaj,
+        vagyis TÉTLEN), nálunk 5,54-et. Az eredeti tehát nem a paramétert
+        hagyja el, hanem az egész TAGOT ejti — a `filterdesc.xml` szerint
+        nulla csúszkája van, a paraméter fölös.
+
+        Kivételt továbbra sem dob, és a paraméter NÉLKÜLI alak változatlanul
+        fut (ld. a fenti teszteket)."""
+        report = apply_filters(sample, parse_filters("autobacklight=1,0.900000;"))
+        np.testing.assert_array_equal(report.image, sample)
+        assert report.skipped == ("autobacklight",)
 
 
 class TestDeadLegacyFocalPixelate:
