@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A Fotótálca Kollázs gombja feliratos és van súgója (#1116).** Eddig
+  csak ikon volt, felirat és buboréksúgó nélkül — miközben a mellette
+  álló Nyomtatás/Exportálás gombunk feliratos, az eredetiben pedig a
+  kollázs-gombnak is van felirata („Kollázs") és súgója („Készítsen
+  fotókollázst a kijelölt képekből"). Mindkét szöveg a Picasa saját
+  honosítási táblájából való, nem új fordítás. A felirat csak akkor jön
+  elő, ha bizonyíthatóan elfér: az alap 1280 képpontos ablakban a gomb
+  ikon-only marad, a többi felirat viszont ott is megmarad.
+- **A tálca szélesség-küszöbe a valós helyigényt tükrözi (#1116).**
+  A felirat-független elemek költségvetése alábecsült volt (900 helyett
+  1008 a mért érték), így a küszöb elvben nem garantálta, amit ígért —
+  1280 képpontnál csak azért nem lógott ki semmi, mert az ablak
+  történetesen szélesebb volt a küszöbnél. Újramérve és kerekítve.
+
 ## [0.8.61] – 2026-08-23
 
 ### Javítva
@@ -16,7 +33,6 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   utóbbi nálunk szándékosan 100 az eredeti 193 helyett, mert a JPEG-kódoló
   minden 100 fölötti értéket ugyanarra a legjobb minőségű kvantálótáblára
   visz — a kettő kimenete azonos.
-
 ## [0.8.59] – 2026-08-23
 
 ### Javítva

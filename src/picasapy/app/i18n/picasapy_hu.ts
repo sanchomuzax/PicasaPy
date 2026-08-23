@@ -4635,6 +4635,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Feltöltés a Google Fotókba</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Collage</source>
+        <translation>Kollázs</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Create a Photo Collage with your selection</source>
+        <translation>Készítsen fotókollázst a kijelölt képekből</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/TrayBar.qml" line="232"/>
         <source>Hold Selection</source>
         <translation>Kijelölés megtartása</translation>

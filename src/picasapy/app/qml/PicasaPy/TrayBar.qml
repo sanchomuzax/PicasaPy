@@ -162,14 +162,32 @@ Column {
             font.pixelSize: Theme.fontSize
             text: qsTr("Upload to Google Photos")
         }
+        // #1116: a Kollázs gomb is feliratos lett, tehát a szélessége is
+        // nyelvfüggő — bele kell számítani a küszöbbe, különben széles
+        // ablakban a sáv kilóghatna.
+        TextMetrics {
+            id: collageLabelMetrics
+            font.pixelSize: Theme.fontSize
+            text: qsTr("Collage")
+        }
         // A fix (felirat-független) elemek helyigénye: kijelölés-előnézet,
-        // ikonsorok, csúszka, térközök — mérve ~872 px, felfelé kerekítve
-        // 900-ra. INVARIÁNS, amiért ez biztonságos: a feliratos elrendezés
-        // tényleges igénye = fix + feliratok; a küszöb = 900 + feliratok.
-        // Feliratos módba csak `width >= küszöb` esetén váltunk, és ekkor
-        // width >= 900 + feliratok > fix + feliratok = igény — vagyis a
-        // tartalom BIZONYÍTHATÓAN elfér, bármilyen betűszélesség mellett.
-        readonly property real compactBudget: 900
+        // ikonsorok, csúszka, térközök. INVARIÁNS, amiért ez biztonságos:
+        // a feliratos elrendezés tényleges igénye = fix + feliratok; a
+        // küszöb = költségvetés + feliratok. Feliratos módba csak
+        // `width >= küszöb` esetén váltunk, és ekkor
+        // width >= költségvetés + feliratok >= fix + feliratok = igény —
+        // vagyis a tartalom BIZONYÍTHATÓAN elfér, bármilyen betűszélesség
+        // mellett (a betűszélesség mindkét oldalt egyformán mozgatja).
+        //
+        // #1116: a korábbi 900-as érték ALÁBECSÜLT volt. Újramérve a
+        // három képes kijelöléssel (a legdrágább eset, mert ilyenkor
+        // látszik a 200 px-es kijelölés-előnézet): a feliratos sáv jobb
+        // széle 1236 px-nél áll, a négy felirat összege 228 px, tehát a
+        // fix rész 1008 px. Felfelé kerekítve 1040-re — a régi 900 mellett
+        // a küszöb (1128) ALATTA maradt a tényleges igénynek (1236), azaz
+        // az invariáns bizonyítása nem állt; 1280 px-en csak azért nem
+        // lógott ki semmi, mert az ablak történetesen szélesebb volt.
+        readonly property real compactBudget: 1040
         // A küszöb kívülről is olvasható (teszt), hogy a „széles ablak"
         // esetet ne fix pixelértékkel kelljen megadni — az platform- és
         // nyelvfüggő lenne (a windows-CI éppen ezen bukott el 1280-on).
@@ -179,6 +197,18 @@ Column {
                                         + exportLabelMetrics.width
                                         + uploadLabelMetrics.width
         readonly property bool compact: width < compactThreshold
+        // #1116: a Kollázs felirata a sáv LEGSZŰKÖSEBB tétele — az alap
+        // 1280 px-es ablakba a többi felirat mellé már nem fér be (a
+        // feliratos igény 1236 + a kollázs 25 px fix többlete + a felirat).
+        // Ezért külön, magasabb küszöbe van: a gomb ikon-only marad
+        // egészen addig, amíg a felirat BIZONYÍTHATÓAN elfér — a többi
+        // felirat viszont az alap ablakszélességen is megmarad.
+        // A 25 px a gomb felirat-független többlete: 20 px belső margó
+        // (PicasaButton `implicitContentWidth + 20`) + 5 px ikon–felirat
+        // térköz, mínusz semmi: az ikon 30 px-e az ikon-only szélesség.
+        readonly property real collageLabelThreshold: compactThreshold
+                                        + collageLabelMetrics.width + 25
+        readonly property bool collageLabelVisible: width >= collageLabelThreshold
 
         Rectangle {
             width: parent.width; height: 1
@@ -611,12 +641,17 @@ Column {
             // kimeneti sávnak is részei; a tényleges Létrehozás-funkció
             // a Create-menü mellett innen is indítható (collage/movie
             // signal → Main.qml → CreateDialogs); a Megosztás backend
-            // híján tiltott helyőrző marad. Nincs
-            // qsTr-tooltip: a "Picture Collage..."/"Movie"/"Share" szöveg
-            // MÁR fordított a CreateDialogs/PicasaMenuBar/Main kontextusban
-            // — új kontextusban újra felvéve a lupdate "unfinished"-nek
-            // látná (test_i18n_completeness.py), az integrátor a menü-
-            // pontokkal egy körben veheti fel ide is a fordítást.
+            // híján tiltott helyőrző marad.
+            //
+            // #1116: a Kollázs gomb felirata és buboréksúgója NEM új
+            // fordítás, hanem átvétel a Picasa saját honosítási
+            // táblájából (`outputlayout_text.tre`): „Collage" →
+            // „Kollázs", `Create a Photo Collage with your selection` →
+            // „Készítsen fotókollázst a kijelölt képekből". A korábbi
+            // komment az integrátorra hagyta a szöveget, mert a lupdate
+            // „unfinished"-nek látta volna — ez tárgytalan, amint a
+            // fordítás a `.ts`-ben áll. (A Film/Megosztás gomb továbbra
+            // is ikon-only: azok külön jegyre tartoznak.)
             PicasaButton {
                 id: trayCollageBtn
                 objectName: "trayCollageButton"
@@ -626,18 +661,41 @@ Column {
                             && tray.appWindow.selectedIndexes.length > 0)
                          : false
                 onClicked: tray.collageRequested()
-                Layout.preferredWidth: 30
-                contentItem: Image {
-                    objectName: "trayCollageIcon"
-                    // #1188: a `Control` a contentItem geometriáját maga
-                    // állítja be (az `anchors.centerIn` ezért hatástalan
-                    // volt), a `fillMode` alapja pedig `Image.Stretch` —
-                    // a négyzetes SVG így a gomb tartalom-dobozára feszült
-                    // (mérve: 14×14-es forrás 16×26-ra nyúlva).
-                    fillMode: Image.PreserveAspectFit
-                    source: "icons/collage.svg"
-                    sourceSize: Qt.size(32, 32)
-                    opacity: trayCollageBtn.enabled ? 1.0 : 0.5
+                text: qsTr("Collage")
+                // #1116: az eredeti súgója a művelet MONDATA, nem a
+                // gombfelirat ismétlése — ezért (a Nyomtatás/Exportálás
+                // gombtól eltérően) kompakt módon kívül is látszik.
+                ToolTip.text: qsTr("Create a Photo Collage with your selection")
+                ToolTip.visible: trayCollageBtn.hovered
+                ToolTip.delay: 500
+                // Kompakt módban ikon-only marad (fix 30 px), egyébként a
+                // felirattal együtt a saját implicit szélességét kéri.
+                Layout.preferredWidth: trayMainBar.collageLabelVisible ? -1 : 30
+                contentItem: Row {
+                    spacing: trayMainBar.collageLabelVisible ? 5 : 0
+                    Image {
+                        objectName: "trayCollageIcon"
+                        anchors.verticalCenter: parent.verticalCenter
+                        // #1188: a `Control` a contentItem geometriáját maga
+                        // állítja be (az `anchors.centerIn` ezért hatástalan
+                        // volt), a `fillMode` alapja pedig `Image.Stretch` —
+                        // a négyzetes SVG így a gomb tartalom-dobozára feszült
+                        // (mérve: 14×14-es forrás 16×26-ra nyúlva).
+                        fillMode: Image.PreserveAspectFit
+                        width: 30
+                        height: 30
+                        source: "icons/collage.svg"
+                        sourceSize: Qt.size(32, 32)
+                        opacity: trayCollageBtn.enabled ? 1.0 : 0.5
+                    }
+                    Text {
+                        objectName: "trayCollageLabel"
+                        visible: trayMainBar.collageLabelVisible
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: trayCollageBtn.text
+                        font: trayCollageBtn.font
+                        color: trayCollageBtn.enabled ? Theme.iconInk : "#9a9a9a"
+                    }
                 }
             }
             PicasaButton {
