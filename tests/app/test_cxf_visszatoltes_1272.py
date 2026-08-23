@@ -163,3 +163,66 @@ class TestValodiPicasaMinta:
         projekt = loads((minta / GOLDEN).read_bytes())
         assert projekt.aspect_ratio == "4:3"
         assert format_key_of(projekt.aspect_ratio) == "Desktop4x3"
+
+
+class TestKeretVisszatoltes:
+    """A panel KERET-választója is a projektből jön (#1274).
+
+    A `.cxf` a keretet **csomópontonként** tárolja (`<theme>polaroid</theme>`),
+    a panelen viszont EGY keret-választó van. A csomópontok kerete eddig
+    visszajött, a panelé nem — ezért az újranyitott polaroidos kollázs
+    „nincs keret"-et mutatott, és a KÖVETKEZŐ felvett kép keret nélkül
+    került be. A tulajdonos szava: „elvesznek a kollázsképtípus
+    beállítások, amiket a Picasa 3 állított be."
+    """
+
+    @staticmethod
+    def _cxf_kerettel(tmp_path, keretek: list[str]) -> str:
+        mappa = tmp_path / "Kollázsok"
+        mappa.mkdir(exist_ok=True)
+        kep = mappa / "keretes.jpg"
+        make_jpeg(kep, size=(400, 300))
+        csomopontok = "".join(
+            f' <node x="0.1" y="0.1" w="0.3" h="0.3" theta="0.0" scale="1.0">\r\n'
+            f"  <theme>{keret}</theme>\r\n"
+            f"  <src>kep{i}.jpg</src>\r\n"
+            f" </node>\r\n"
+            for i, keret in enumerate(keretek)
+        )
+        (mappa / "keretes.cxf").write_text(
+            '<?xml version="1.0" encoding="utf-8" ?>\r\n'
+            '<collage version="2" format="4:3" orientation="landscape" '
+            'theme="picturepile" shadows="0" captions="0">\r\n'
+            " <albumTitle>Keretes</albumTitle>\r\n"
+            ' <background type="solid" color="FFFFFFFF"/>\r\n'
+            ' <spacing value="0.000000"/>\r\n' + csomopontok + "</collage>\r\n",
+            encoding="utf-8",
+        )
+        return str(kep)
+
+    def test_az_egysegez_keret_visszajon(self, host, tmp_path):
+        host.setCollageBorder("noborder")
+        ut = self._cxf_kerettel(tmp_path, ["polaroid", "polaroid", "polaroid"])
+
+        host.openCollageProject(ut)
+
+        assert host.collageBorder == "polaroid", (
+            "a panel keret-választója a legutóbbin maradt"
+        )
+
+    def test_vegyes_keretnel_a_panel_erteke_marad(self, host, tmp_path):
+        """Vegyes keretet EGY választó nem tud megjeleníteni — ne hazudjunk."""
+        host.setCollageBorder("whiteborder")
+        ut = self._cxf_kerettel(tmp_path, ["polaroid", "noborder"])
+
+        host.openCollageProject(ut)
+
+        assert host.collageBorder == "whiteborder"
+
+    def test_csomopont_nelkul_nem_valt(self, host, tmp_path):
+        host.setCollageBorder("whiteborder")
+        ut = self._cxf_kerettel(tmp_path, [])
+
+        host.openCollageProject(ut)
+
+        assert host.collageBorder == "whiteborder"
