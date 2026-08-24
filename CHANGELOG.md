@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A képfolyam nem ugrik meg a kattintás pillanatában (#1335).** Ha a
+  nézet a görgethető tartományon kívülre került (például egy mappára
+  ugrás vagy egy billentyűs lépés után), a rács eddig csak a következő
+  egérlenyomásra rendeződött vissza a helyére — a kattintás így a közben
+  elcsúszott képre esett, a húzásból pedig néma, üres kijelölés lett.
+  Mostantól a nézet mindig a görgethető tartományban marad.
 ## [0.8.80] – 2026-08-24
 
 ### Javítva

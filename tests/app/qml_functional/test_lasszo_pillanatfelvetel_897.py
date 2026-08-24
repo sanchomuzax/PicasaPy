@@ -120,14 +120,12 @@ def _gorgesd_lathatora(window, qt_app, sor):
     cél könnyen kicsúszik az ablakból; margó nélkül a kattintás a szomszéd
     cellára esne (a #1219 tanulsága).
 
-    ⚠️⚠️ A `scrollToRow` a `contentY`-t NEM vágja a görgethető tartományra
-    (a `wheelStep` igen). Ha a tartalom belefér a látótérbe, a nézet
-    érvénytelen helyre kerül, és a Flickable a KÖVETKEZŐ egérlenyomásra
-    rántja vissza a helyére — a lenyomás így egy már elmozdult cellára
-    esik. (Mérve: `contentY` 101 → 0 a lenyomás alatt, a cella középpontja
-    y=175-ről 276-ra ugrott, a húzásból néma üres kijelölés lett.) Ezért
-    minden mérés előtt visszaigazítjuk a nézetet a határaira — a
-    szintetikus lenyomás így ugyanazt látja, mint a mérés."""
+    (A #1335-ig itt egy `returnToBounds`-os megkerülés is állt: a
+    `scrollToRow` nem vágta a `contentY`-t a görgethető tartományra, ezért
+    a nézet érvénytelen helyre került, és a Flickable csak a KÖVETKEZŐ
+    egérlenyomásra rántotta vissza. A #1335 a vágást a `LightboxFeed`-be
+    tette — a megkerülés fölöslegessé vált, az őre a
+    `test_scrolltorow_vagas_1335.py`.)"""
     grid = _grid(window)
 
     def _belul(pont):
@@ -138,10 +136,6 @@ def _gorgesd_lathatora(window, qt_app, sor):
 
     elozo = None
     for kor in range(40):
-        QMetaObject.invokeMethod(
-            grid, "returnToBounds", Qt.ConnectionType.DirectConnection
-        )
-        qt_app.processEvents()
         kozep = _kozeppont(window, sor)
         if _belul(kozep) and elozo is not None and abs(kozep.y() - elozo) < 0.5:
             return kozep

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import "lasso.js" as Lasso
+import "scroll.js" as Scroll
 import "../selection.js" as Selection
 
 // Könyvtár-feed (#64, #150-ben kiemelve a Main.qml-ből): az ÖSSZES kép
@@ -102,8 +103,16 @@ ListView {
         var top = it.y + it.flowOffset + gridRow * cellHeight
         return { top: top, bottom: top + cellHeight }
     }
+    // #1335: a görgethető tartományra vágott pozíció — a `wheelStep`, a
+    // `scrollToRow` és a horgony-visszaállás KÖZÖS vágója. A számítás a
+    // `scroll.js`-ben; ott áll az is, mit tör el a hiánya.
+    function vagottY(y) {
+        return Scroll.clampContentY(y, originY, contentHeight, height)
+    }
     // #96: minimális görgetés — csak akkor és annyit mozdul
-    // a nézet, hogy a cél-sor belógjon a látótérbe
+    // a nézet, hogy a cél-sor belógjon a látótérbe.
+    // #1335: a `rowBounds` a még nem kész layoutból SZÁMOL, ezért túllőhet
+    // a tartalom végén — a vágás nélkül a nézet érvénytelen helyre kerül.
     function scrollToRow(row) {
         var b = rowBounds(row)
         if (!b) {
@@ -111,12 +120,8 @@ ListView {
             if (g < 0) return
             positionViewAtIndex(g, ListView.Contain)
             b = rowBounds(row)
-            if (!b) { savedY = contentY; return }
         }
-        if (b.bottom > contentY + height)
-            contentY = b.bottom - height
-        else if (b.top < contentY)
-            contentY = b.top
+        contentY = vagottY(Scroll.rowRevealY(b, contentY, height))
         savedY = contentY
         captureAnchor()
     }
@@ -252,19 +257,14 @@ ListView {
     function wheelStep(delta) {
         cancelRevealAfterViewer()  // #173: valódi görgetés
         var target = contentY - delta / 120 * cellHeight
-        // #95: a contentHeight a nem-példányosított csopor-
-        // toknál BECSLÉS — túllőhet a valós tartalom-végen,
-        // és üres lapra engedne. Az utolsó csoport VALÓS
-        // alja állít meg, amint példányosítva van.
-        var last = itemAtIndex(count - 1)
+        var last = itemAtIndex(count - 1)   // #95: ld. scroll.js
         if (delta < 0 && last) {
-            var stopY = Math.max(
-                originY, last.y + last.height - height)
+            var stopY = Scroll.feedEndStopY(
+                last.y, last.height, originY, height)
             if (contentY >= stopY - 1) return
             if (target > stopY) target = stopY
         }
-        var maxY = originY + Math.max(0, contentHeight - height)
-        contentY = Math.max(originY, Math.min(target, maxY))
+        contentY = vagottY(target)
         savedY = contentY
         captureAnchor()
     }
@@ -325,8 +325,7 @@ ListView {
     function applyRevealAfterViewer() {
         if (!revealAfterViewer) return
         restoring = true
-        contentY = Math.min(
-            revealTargetY, Math.max(0, contentHeight - height))
+        contentY = vagottY(revealTargetY)
         savedY = contentY
         captureAnchor()
         restoring = false
@@ -341,17 +340,20 @@ ListView {
         if (idx < 0) {
             // horgony-mappa már nincs (pl. minden képe
             // rejtett) — durva pixel-visszaállás marad
-            contentY = Math.min(
-                savedY, Math.max(0, contentHeight - height))
+            contentY = vagottY(savedY)
             savedY = contentY
             return
         }
         positionViewAtIndex(idx, ListView.Beginning)
         var it = itemAtIndex(idx)
         if (it) {
+            // #1335: a horgony-cél is a görgethető tartományba vágva — a
+            // csoport `y`-a a feed VÉGÉN túllóghat a maximumon (mérve:
+            // contentY 277, miközben a maximum 0 volt), és a Flickable
+            // csak a következő egérlenyomásra rántaná vissza.
             var maxOffset = Math.max(0, it.height - height)
-            contentY = it.y
-                + Math.min(anchorOffset, maxOffset)
+            contentY = vagottY(
+                it.y + Math.min(anchorOffset, maxOffset))
         }
         savedY = contentY
     }
