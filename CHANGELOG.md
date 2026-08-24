@@ -5,6 +5,13 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.69] – 2026-08-24
+
+### Javítva
+- **A Névtelen arcok nézete ismét a valódi arcfelismerési vezérlőt használja
+  (#1236).** Megszűnt az önmagára mutató QML-kötési hurok, amely miatt a panel
+  vezérlő nélkül, látszólag működően, de ténylegesen tétlenül nyílhatott meg.
+
 ## [0.8.68] – 2026-08-24
 
 ### Javítva
