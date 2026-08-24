@@ -106,6 +106,36 @@ mondja meg, melyik oprendszer-képesség hiányzik.
 - Commit-formátum: `feat|fix|docs|test|chore: leírás` (magyarul), a
   vonatkozó issue számával (`#N`).
 
+## A jegy címe
+
+A cím a jegy **legtartósabb** része: bekerül a commit-üzenetbe, a PR-címbe, a
+változásnaplóba és — ami a legfontosabb — a **keresésbe**. Ezért leíró, és
+csak leíró.
+
+**A kívánt alak:** *[érintett funkció] + alany + állítmány, és látszódjon a
+honnan-hová.*
+
+| | |
+|---|---|
+| Hiba | „A Klipek fül a kollázs csomópontjait sorolja fel a mappa képei helyett" |
+| Fejlesztés | „Az Exportálás mappába párbeszéd az eredeti Picasa elrendezését követi" |
+
+- **Az érintett funkció neve nem díszítés.** Fél év múlva senki nem a jegy
+  számára emlékszik, hanem a „kollázs" vagy a „hisztogram" szóra keres rá.
+- **Állapot és prioritás nem megy a címbe** — arra címke van (`P0`–`P4`,
+  `blocked`, `in-progress`, `ready`, `felhasználóra-vár`). A címke változik,
+  a cím marad: a kettőt összekötni garantált elavulás.
+- **A megoldás sem megy a címbe.** Az is vélemény, ami munka közben változik;
+  a cím a *mit* rögzítse, ne a *hogyant*.
+- **A semmitmondó cím sem jó.** A „Hisztogram" véleménymentes és
+  használhatatlan — a cím legyen leíró ÉS konkrét.
+- A `fix:`/`feat:` előtag a **commité és a PR-é**, nem a jegyé.
+
+Ezt a `scripts/hooks/jegycim_or.py` be is tartatja: a jegynyitást
+visszautasítja, ha a cím prioritást, állapotot, commit-előtagot vagy
+nagybetűs nyomatékot hordoz. Az alany-állítmányt és a funkciónevet nem méri
+— azt a hibaüzenet kéri, mert a téves blokk drágább, mint egy gyengébb cím.
+
 ## Pull request
 
 - A `main` védett: csak PR-en át, zöld CI-val kerülhet bele kód. A mérce az
