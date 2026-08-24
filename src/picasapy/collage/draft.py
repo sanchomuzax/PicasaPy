@@ -207,10 +207,17 @@ def _azonositoval(node: CxfNode, node_uids: Mapping[str, str]) -> CxfNode:
        (#1092), mert az eredeti `uid64` a Picasa belső adatbázisából jön,
        és nem vezethető le. A `.cxf`-jeinkből eddig teljesen HIÁNYZOTT.
 
+    ⚠️ A keresés KÉT alakkal megy: a `.cxf`-be írandó (kódolt) `src`-vel
+    és a feloldott útvonallal. A kettő nem mindig esik egybe — egy régebbi
+    PicasaPy abszolút útvonalat írt oda, ahová a mai kód a Picasa változós
+    alakját írja (#1096) —, és egyetlen alakra keresve az ilyen fájl
+    azonosítói némán elvesznének az újramentéskor.
+
     Kép nélküli csomópont azonosító nélkül marad: nincs mit azonosítani."""
     if not node.src:
         return node
-    return replace(node, uid=node_uids.get(node.src) or node_uid_for(node.src))
+    orzott = node_uids.get(node.src) or node_uids.get(str(decode_cxf_path(node.src)))
+    return replace(node, uid=orzott or node_uid_for(node.src))
 
 
 def project_from_nodes(

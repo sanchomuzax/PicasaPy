@@ -39,6 +39,7 @@ from __future__ import annotations
 import re
 
 import pytest
+from PySide6.QtCore import QStandardPaths
 
 from picasapy.collage.cxf import CxfNode, CxfProject, dumps, loads
 from picasapy.collage.draft import project_from_nodes
@@ -51,6 +52,23 @@ NODE_UID = re.compile(r"^[0-9a-f]{16}0{16}$")
 
 #: A mért `albumUID` alakja: 32 kisbetűs hexa.
 ALBUM_UID = re.compile(r"^[0-9a-f]{32}$")
+
+
+@pytest.fixture
+def kepmappa(tmp_path, monkeypatch):
+    """A rendszer képmappája a teszt saját mappájára térítve (a #1096 mintája)."""
+    mappa = tmp_path / "Képek"
+    mappa.mkdir()
+    monkeypatch.setattr(
+        QStandardPaths,
+        "writableLocation",
+        staticmethod(
+            lambda location: str(mappa)
+            if location == QStandardPaths.StandardLocation.PicturesLocation
+            else ""
+        ),
+    )
+    return mappa
 
 
 def _beallitas() -> PicasaCollageSettings:
@@ -130,6 +148,25 @@ class TestACsomopontAzonosito:
             [_vaszon_csomopont(ut)], _beallitas(), node_uids={ut: eredeti}
         )
 
+        assert projekt.nodes[0].uid == eredeti
+
+    def test_a_megorzes_a_FELOLDOTT_utvonallal_is_talal(self, kepmappa):
+        """A leképezés kulcsa és a fájlba írt `src` NEM ugyanaz a szöveg.
+
+        A csomópont útvonala a képmappa alatt van, tehát a `.cxf`-be
+        `$My Pictures\\AI\\a.jpg` kerül (#1096) — a leképezés viszont a
+        FELOLDOTT, abszolút alakot ismeri (így tárolta egy régebbi
+        PicasaPy). Egyetlen alakra keresve az azonosító némán elveszne."""
+        ut = str(kepmappa / "AI" / "a.jpg")
+        eredeti = "c91b4354e61f4a5a0000000000000000"
+
+        projekt = project_from_nodes(
+            [_vaszon_csomopont(ut)], _beallitas(), node_uids={ut: eredeti}
+        )
+
+        assert projekt.nodes[0].src == r"$My Pictures\AI\a.jpg", (
+            "a teszt előfeltétele dőlt meg: a `src` nem kódolt alakban megy ki"
+        )
         assert projekt.nodes[0].uid == eredeti
 
     def test_ures_forrasnal_nincs_azonosito(self, tmp_path):
