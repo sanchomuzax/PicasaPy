@@ -100,6 +100,14 @@ Rectangle {
     Item {
         id: plot
         objectName: "histogramPlot"
+        // #1344: a mért elrendezésben az EXIF-terület teteje (82) 2 képponttal
+        // a hisztogram alja (25 + 59 = 84) fölé ér — ez az eredetiben is így
+        // van. A rajzolási SORREND viszont nem mindegy: a #864 képpont-orákuluma
+        // a plot minden képpontját ellenőrzi, és a fölé csorgó betűtalpak
+        // (platformfüggő betűrajzolás!) hamis bukást adnának a másik CI-lábon.
+        // Ezért a plot a szöveg FÖLÖTT rajzolódik; a 2 képpontos átfedés
+        // megmarad, csak a takarás iránya rögzített.
+        z: 1
         x: box.bandX
         y: 25
         width: box.bandWidth
