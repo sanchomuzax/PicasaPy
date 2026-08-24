@@ -175,3 +175,22 @@ megépíteni.**
    viselkedés nincs visszakövetve.
 3. **Mi számít „régóta tartott" elemnek** (a 4.2 küszöbe) — a szöveg
    létezik, a feltétel nincs kimérve.
+
+---
+
+## 11. A műveletsor gombjainak MÉRT geometriája (2026-08-24)
+
+A `respack.yt` rétegfejléceiből (`int16 x0,y0,x1,y1`), minden gombra
+**azonos**:
+
+| elem | x0,y0 | x1,y1 | méret |
+|---|---|---|---|
+| a gomb **cellája** (`outputlayout/docbounds`, `overflow`) | 0, 0 | 59, 40 | **59 × 40** |
+| a **gomb** maga — mind a kilencre azonos: `button(print)`, `(email)`, `(export)`, `(shop)`, `(hello)`, `(blog)`, `(collage)`, `(movie)`, `buttcon(morebutton)` | **2, 2** | 57, 38 | **55 × 36** |
+| elválasztó (`separator`) | 28, 8 | 30, 35 | **2 × 27** |
+
+⇒ **Minden művelet-gomb 55 × 36 képpont, egy 59 × 40-es cellában** (2
+képpont körbe). Az elválasztó 2 képpont széles, 27 magas, a cellán belül
+vízszintesen középen (28…30), felülről 8, alulról 5 képpont behúzással.
+
+*Bizonyítottsági fok: **megerősített** — közvetlen rétegfejléc-olvasás.*
