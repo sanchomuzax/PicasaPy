@@ -1227,7 +1227,7 @@ fordul át a lista elejére, és **nem jelöl ki semmi újat** — a
 |---|---|---|---|
 | **Shift+kattintás** | a tartomány-mag a jelenlegi mappa csomópontján fut → **nem léphet ki** | ❌ `Main.qml:323–325` — `Selection.range(selectedIndex, i)` **globális sorindexeken**, mappa-szorítás nélkül | a tartományt a kezdőpont mappacsoportjára szorítani |
 | **nyilas léptetés** | a mappa szélén **megáll**, nem lép át és nem jelöl ki újat | ❌ `models.py:538–555` — a balra/jobbra **folytonos**, a fel/le a csoport szélén **szándékosan a szomszéd csoportra ugrik** (a docstring ki is mondja) | a `navigate` álljon meg a csoporthatáron |
-| **Shift+nyíl** | **egyesével bővít, és a horgonyt is lépteti** (4/c) | ❌ `LightboxFeed.qml:66–81` — horgony↔cél tartományt jelöl, mappa-szorítás nélkül | két külön eltérés: hatókör ÉS a horgony-szemantika |
+| **Shift+nyíl** | **egyesével bővít, és a horgonyt is lépteti** (4/c) | ✅ **JAVÍTVA** (#892/#1222) — `LightboxFeed.qml:67–85` a `Selection.withAdded`-del egyesével bővít, a léptetés töve (a kurzor) lép, a `_csoportraVagva` pedig a mappacsoportban tartja | nincs; a horgony két szerepét nálunk két mező viszi — ld. 15.6 |
 | **lasszó** | a lenyomás csomópontjának elemein, metszés-szabállyal | ✅ **MÁR HELYES** — `LightboxFeed.qml:314–335` a kezdő **mappacsoport** `start`/`count` tartományára szorít (`idx < count`), és a csoportok mappánként állnak (`models.py:511–522`) | **nincs teendő a hatókörön**; a lasszó egyéb eltérései a #1148-ban |
 
 > ⚠️ **A #1219 harmadik állítása („a lasszó több mappa képeit is
@@ -1238,3 +1238,34 @@ fordul át a lista elejére, és **nem jelöl ki semmi újat** — a
 > mappacsoport-határt"). A mostani bizonyítás szerint **a mi
 > viselkedésünk az eredetivel egyezik**, tehát a #1148 azon aggálya is
 > tárgytalan.
+
+### 15.6 A horgony KÉT szerepe — nálunk két mező (#892/#1222/#897)
+
+Az eredeti egyetlen mezőt (`[this+0x390]`) használ **két** dologra:
+
+1. a **nyilas léptetés töve** — innen indul a lépés (`0x00717ff9`
+   visszakeresi az indexét), és ide íródik vissza a friss elem
+   (`0x007180da`), tehát **lép**;
+2. a **Shift+kattintás tartományának töve** — `0x0071bb34` innen méri a
+   tartományt, és a kattintás **nem** lépteti.
+
+Nálunk ez két mező:
+
+| szerep | mező | lép-e? |
+|---|---|---|
+| a Shift+**nyíl** léptetésének töve | `selectedIndex` (a kurzor) | igen, minden nyílütésnél |
+| a Shift+**kattintás** tartományának töve | `LightboxFeed.selectionAnchor` | nem (#897) |
+
+**A látható eredmény ugyanaz**, mert az eredeti tartomány-magja
+(`0x00716ae0`) csak **kijelöl**: a tartományon kívül már kijelölt
+elemeket nem szedi le. Példa — kattintás az 1.-re, Shift+jobb ×2, majd
+Shift+kattintás az 5.-re:
+
+| | tő a kattintáskor | a kattintás eredménye | végállapot |
+|---|---|---|---|
+| eredeti | 3. (a nyíl léptette) | a 3.–5. kijelölődik, az 1.–2. marad | 1.–5. |
+| nálunk | 1. (a horgony nem lépett) | `range(1, 5)` | 1.–5. |
+
+Ezt a #897 `test_a_shift_kattintas_a_horgonytol_jelol` tesztje méri;
+a Shift+nyíl saját (irányváltásos) viselkedését a
+`tests/app/qml_functional/test_shift_nyil_bovites_892_1222.py`.
