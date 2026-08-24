@@ -1,0 +1,62 @@
+name: Kiadási őr
+
+# Ez a munkafolyamat a #1319 lényege: a repó MAGÁTÓL álljon vissza „nincs
+# nyitott automatikus teendő" állapotba.
+#
+# A #1318 nem attól lett baj, hogy egy verzióemelő PR létrejött, hanem attól,
+# hogy utána nem volt, aki elrendezze. A GitHub a saját tokenjével nyitott
+# PR-en SZÁNDÉKOSAN nem indít workflow-t (#1190) — ez nem kapcsolható ki —,
+# így a kötelező ellenőrzés sosem futott le, az auto-merge sosem sült el, és
+# a PR némán ott ült. Észrevenni egy figyelmes műszak dolga volt.
+#
+# ⚠️ A `release.yml` napi őrfutása a HIÁNYZÓ KIADÁST fogja meg; ez a
+# munkafolyamat a FÉLBEMARADT AUTOMATIKUS PR-t. A kettő nem helyettesíti
+# egymást.
+#
+# ⚠️ Az őr hatóköre KIZÁRÓLAG a saját automatika-ágai (`chore/auto-bump-*`);
+# emberi PR-hez soha nem nyúl. Van rá bukó teszt:
+# `tests/scripts/test_kiadas_or_1319.py::TestTeendok::test_emberi_pr_hoz_SOHA_nem_nyul`.
+
+on:
+  schedule:
+    # Negyedóránként. ⚠️ A GitHub ütemezője NEM óramű: terhelés alatt késik,
+    # néha kihagy. Ezért ez BIZTONSÁGI HÁLÓ, nem ütemterv — a gyors út
+    # továbbra is a `release.yml` végén futó ugyanilyen lépés.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  # `gh workflow run` — enélkül a hiányzó ellenőrzést nem tudja elindítani.
+  actions: write
+  # A néma bukás pontosan az a hiba, amit orvosolunk: bukáskor issue nyílik.
+  issues: write
+
+# Két őrfutás soha ne dolgozzon egyszerre ugyanazon a PR-en.
+concurrency:
+  group: kiadasi-or
+  cancel-in-progress: false
+
+jobs:
+  or:
+    name: A félbemaradt automatika elrendezése
+    runs-on: ubuntu-latest
+    steps:
+      # ⚠️ #1324: TELJES előzmény és címkék kellenek. Az őr a `v<verzió>` és a
+      # `HEAD` közti diffből dönti el, van-e egyáltalán kiadandó változás —
+      # sekély klónon ez némán „nem mérhető"-be futna, és a fölösleges
+      # verzióemelő PR-t sosem zárná le.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Kiadási őr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/kiadas_or.py --repo "$GITHUB_REPOSITORY"
