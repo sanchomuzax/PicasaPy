@@ -6,12 +6,11 @@ import QtQuick
 //
 // ## Miért itt van a húzás logikája
 //
-// Három hely tud húzást indítani: a kép maga, a gyűrű belseje és a gyűrű
-// pereme. Mindhárom UGYANAZT az állapotgépet használja, ami itt él. Ha
-// mindegyik a sajátját vinné, a három út előbb-utóbb elválna — és a
-// felhasználó azt látná, hogy a kép máshova kerül attól függően, hol
-// fogta meg. Ezért a `CollageNode` és a `CollageRing` egyetlen sort sem
-// tud a mozgatásról: eseményt továbbítanak, itt dől el, mi történik.
+// Három hely tud húzást indítani: a kép teste, a gyűrű belseje és a gyűrű
+// pereme. Az eseményeket mindegyik ide továbbítja, de a GESZTUSUK különböző:
+// a kép teste 10 px után cserét élesít, a gyűrű belseje küszöb nélkül mozgat,
+// a pereme pedig forgat és méretez (spec 5.2–5.2/c). A két első út már
+// lenyomáskor szétválik; felengedéskor sem futhatnak közös csereágba.
 //
 // ## Az egységváltó
 //
@@ -96,24 +95,28 @@ Item {
 
     // --- A húzás állapota ---------------------------------------------------
 
-    //: "" | "move" | "knob"
+    //: "" | "move" | "swap-pending" | "swap" | "knob"
     property string dragMode: ""
     property int dragIndex: -1
+    //: Alt-tal a húzott kép már lenyomáskor vizuálisan legfelül van; a
+    //: modellbeli sorrend a felengedéskor követi, hogy a Repeater szerepei
+    //: ne cserélődjenek ki a még lenyomott MouseArea alatt.
+    property bool _raiseMoveOnEnd: false
+    readonly property int moveRaisedIndex:
+        dragMode === "move" && _raiseMoveOnEnd ? dragIndex : -1
 
-    //: Volt-e VALÓDI egérmozdulat a lenyomás óta. A csere gesztusa az
-    //: EJTÉS egy másik képre (7.3), nem a kattintás: a képkupac képei fedik
-    //: egymást, tehát mozdulat-őr nélkül minden kijelölő kattintás némán
-    //: kicserélne két fájlt, és a felhasználó azt látná, hogy a képei
-    //: maguktól ugrálnak.
-    property bool _dragMoved: false
+    //: A `CollageNodeHandler` cseregesztusának küszöbe. Bináris bizonyíték:
+    //: `0xcf3b28 = 10.0f`, összehasonlítás `0x0086071b` (`0x008606d0`).
+    //: Kizárólag a KÉP TESTÉRE vonatkozik; a gyűrűs mozgatásra nem.
+    readonly property real dragStartThresholdPx: 10.0
 
     //: Fogási eltolás a csomópont KÖZEPÉHEZ képest, lapképpontban (7.3).
     property real _grabX: 0
     property real _grabY: 0
-    //: A csomópont közepe a lenyomás pillanatában, LAPEGYSÉGBEN — a csere
-    //: ide teszi vissza a rést (ld. `endDrag`).
-    property real _pressCenterX: 0
-    property real _pressCenterY: 0
+    //: A kép testén történt lenyomás helye LAP-KÉPPONTBAN. A csere küszöbe
+    //: mindig ehhez mérődik, nem az előző egéreseményhez (spec 5.2/c).
+    property real _swapPressX: 0
+    property real _swapPressY: 0
 
     //: A fogantyú (7.4) kiinduló adatai.
     property real _knobCenterX: 0
@@ -273,31 +276,54 @@ Item {
         // rétegváltás a csomópont helyzetét nem érinti, csak a sorszámát.
         _grabX = sx - elem.centerX * unit
         _grabY = sy - elem.centerY * unit
-        _pressCenterX = elem.centerX
-        _pressCenterY = elem.centerY
 
-        let cel = index
-        if (modifiers & Qt.AltModifier) {
+        _raiseMoveOnEnd = false
+        if ((modifiers & Qt.AltModifier) && index !== nodeCount - 1) {
             // ⚠️ Az `Alt` NEM másol és nem klónoz (spec 14.): a kép a
-            // legfelső rétegbe ugrik, és ONNAN mozog tovább. Ha már ott
-            // van, a vezérlő nem csinál semmit — nincs villanás.
-            controller.raiseNodeToTop(index)
-            cel = nodeCount - 1
+            // legfelső rétegbe ugrik, és ONNAN mozog tovább. A `z` már
+            // lenyomáskor ezt mutatja; a sorrend felengedéskor rögzül.
+            _raiseMoveOnEnd = true
         }
-        dragIndex = cel
+        dragIndex = index
         dragMode = "move"
-        _dragMoved = false
     }
 
     function updateMove(sx, sy, modifiers) {
         if (dragMode !== "move" || !controller)
             return
-        // NINCS elhúzási küszöb (spec 7.3): az első egérmozdulat már mozgat.
-        // A 10 képpontos küszöb a fájlrendszer felé menő OLE-vonszoláshoz
-        // tartozik, nem ide. A jelző tehát NEM küszöb: azt jegyzi meg, hogy
-        // volt-e egyáltalán mozdulat, mert csere csak EJTÉSKOR történhet.
-        _dragMoved = true
+        // NINCS elhúzási küszöb (spec 5.2): az első egérmozdulat már mozgat.
         controller.moveNode(dragIndex, (sx - _grabX) / unit, (sy - _grabY) / unit)
+    }
+
+    // --- Csere a kép testének vonszolásával (5.2/b–c) ----------------------
+
+    function beginSwap(index, sx, sy, modifiers) {
+        if (!controller || index < 0 || index >= nodeCount) {
+            cancelDrag()
+            return
+        }
+        // A Ctrl+kattintás kijelölést billent, de a vonszolást kifejezetten
+        // NEM élesíti (`node[0x5c] = 0`, `0x00860b31`).
+        if (modifiers & Qt.ControlModifier) {
+            cancelDrag()
+            return
+        }
+        dragIndex = index
+        dragMode = "swap-pending"
+        _swapPressX = sx
+        _swapPressY = sy
+    }
+
+    function updateSwap(sx, sy) {
+        if (dragMode !== "swap-pending" && dragMode !== "swap")
+            return
+        if (dragMode === "swap")
+            return
+        const dx = sx - _swapPressX
+        const dy = sy - _swapPressY
+        // „10 képponton TÚL": maga a 10 px még nem indít vonszolást.
+        if (Math.sqrt(dx * dx + dy * dy) > dragStartThresholdPx)
+            dragMode = "swap"
     }
 
     // --- Forgatás + méretezés EGY fogantyúval (7.4) -------------------------
@@ -319,7 +345,6 @@ Item {
         _knobTheta = elem.theta
         dragIndex = index
         dragMode = "knob"
-        _dragMoved = false
         angleCaption = controller.collageAngleCaption(_knobTheta)
         // „A méretarány a lenyomás pillanatában 100" (spec 7.4).
         scaleCaption = 100
@@ -358,25 +383,27 @@ Item {
     function updateDrag(sx, sy, modifiers) {
         if (dragMode === "move")
             updateMove(sx, sy, modifiers)
+        else if (dragMode === "swap-pending" || dragMode === "swap")
+            updateSwap(sx, sy)
         else if (dragMode === "knob")
             updateKnob(sx, sy, modifiers)
     }
 
     function endDrag(sx, sy) {
-        if (dragMode === "move")
-            endMove(sx, sy)
+        if (dragMode === "move") {
+            const huzott = dragIndex
+            const emel = _raiseMoveOnEnd
+            cancelDrag()
+            if (emel && controller)
+                controller.raiseNodeToTop(huzott)
+        } else if (dragMode === "swap")
+            endSwap(sx, sy)
         else
             cancelDrag()
     }
 
-    function endMove(sx, sy) {
-        if (dragMode !== "move" || !controller) {
-            cancelDrag()
-            return
-        }
-        if (!_dragMoved) {
-            // Kattintás ejtés nélkül: a kijelölés már megtörtént a
-            // lenyomáskor, más dolgunk nincs.
+    function endSwap(sx, sy) {
+        if (dragMode !== "swap" || !controller) {
             cancelDrag()
             return
         }
@@ -385,18 +412,15 @@ Item {
         cancelDrag()
         if (fogado < 0)
             return
-        // Egy képet a másikra ejtve a kettő KICSERÉLŐDIK — és ez
-        // kifejezetten NEM áthelyezés (spec 7.3). Ezért a húzott rést
-        // visszatesszük oda, ahonnan indult: különben a saját képünk a
-        // fogadó tetején maradna, ami nem csere, hanem takarás.
-        controller.moveNode(huzott, _pressCenterX, _pressCenterY)
+        // A kép teste nem mozgatta el a csomópontot: csak a két útvonal
+        // cserél helyet, a fogadó geometriája változatlan marad (5.2/b).
         controller.swapNodes(huzott, fogado)
     }
 
     function cancelDrag() {
         dragMode = ""
         dragIndex = -1
-        _dragMoved = false
+        _raiseMoveOnEnd = false
     }
 
     //: A megadott pont alatti LEGFELSŐ csomópont, a húzottat kihagyva.

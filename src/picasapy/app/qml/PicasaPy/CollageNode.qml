@@ -6,12 +6,11 @@ import QtQuick
 //
 // ## Amit ez a fájl NEM csinál
 //
-// Nem tud a húzásról. A lenyomás, a mozgatás és a felengedés mind a
-// `CollageSheet` közös függvényeire megy (`beginMove` / `updateMove` /
-// `endMove`) — ugyanazokra, amelyeket a gyűrű belseje is hív. Ez
-// szándékos: két külön mozgatás-megvalósítás előbb-utóbb elválik
-// egymástól, és a felhasználó azt látná, hogy a kép máshova ugrik attól
-// függően, hol fogta meg.
+// Nem módosít modellt. A kép testének eseményeit a `CollageSheet`
+// csereállapotgépéhez továbbítja (`beginSwap` / `updateDrag` / `endDrag`).
+// Ez SZÁNDÉKOSAN nem a gyűrű `beginMove` ága: az eredetiben a kép teste
+// 10 px után cserét indít, a gyűrű belseje pedig küszöb nélkül mozgat
+// (`picasa-kollazs-felulet.md` 5.2–5.2/c).
 //
 // ## A geometria
 //
@@ -102,7 +101,10 @@ Item {
     opacity: (node.sheet && node.sheet.dragIndex === node.nodeIndex
               && node.sheet.dragMode === "move") ? 0.9 : node.tileOpacity
 
-    z: nodeIndex
+    // Alt+gyűrűhúzáskor a kép lenyomástól vizuálisan legfelül van. A modell
+    // csak felengedéskor rendeződik át, különben a Repeater szerepcseréje
+    // megszüntetné a még futó egérgesztust.
+    z: node.sheet && node.sheet.moveRaisedIndex === nodeIndex ? 9999 : nodeIndex
 
     // --- A keret geometriája (a `collage/frames.py` arányaiból) -------------
     //
@@ -436,7 +438,7 @@ Item {
                 return
             node.sheet.clickSelect(node.nodeIndex, mouse.modifiers)
             const p = sheetPoint(mouse)
-            node.sheet.beginMove(node.nodeIndex, p.x, p.y, mouse.modifiers)
+            node.sheet.beginSwap(node.nodeIndex, p.x, p.y, mouse.modifiers)
         }
 
         onPositionChanged: function (mouse) {
