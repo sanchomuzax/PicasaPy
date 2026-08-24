@@ -15,51 +15,13 @@ kérdés).
 
 ## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
-### [filters-decoded.md](filters-decoded.md) — 1 kérdés (szűkítve)
+### [filters-decoded.md](filters-decoded.md) — nincs nyitott kérdés
 
-1. **A `FocalZoom` sugaras elmosásának perem-módja** — a natív magban (`0xbcf4b0`), a `filterdesc.xml` nem adja meg; nálunk `cv2.BORDER_REPLICATE` (`focal.py:141`), **méretlen feltevés**. Jegy: **#1351**.
-   *(A testvér-kérdés, a `Comicize` peremszabálya, 2026-08-24-én LEZÁRULT: **nulla padding**, képméretre feszített rács — a lap „A `TiledImageMask` peremszabálya" szakasza.)*
-
-1. ~~**`autocolor` pontos gain-képlete** (Nyitva 1)~~ — **TELJESEN MEGVAN**
-   (#759, 2026-08-18): `M · diag(g) · M⁻¹`, és a becslő egész-osztásai
-   **nulla felé csonkolnak** (C-szemantika). Kimérve **0,614** (a mai kód
-   2,352, a JPEG-zajszint ~0,69) — nincs nyitott kérdés, csak bekötés
-2. ~~**`unsharp` kernel finomítása** (Nyitva 3)~~ — **MEGVAN** (#762):
-   köbös B-spline, `× 1,5` szélesítéssel, σ ≈ 0,87. A mérés szerint a mai
-   Gauss már „JÓ" (0,47) — finomítás, nem hiba
-3. **Render-pontosítás** — ⭐ **a rangsor alapja a mért korpusz-gyakoriság**
-   (`filters-decoded.md`, „A szűrők TÉNYLEGES gyakorisága").
-   **A rangsor 2026-08-18-án ÚJRAÍRVA**, mert a régi alak nyolc áthúzott
-   beszúrástól olvashatatlanná vált, és a tételei nagyrészt elavultak.
-
-   | tétel | régi verdikt | MA | jegy |
-   |---|---|---|---|
-   | `finetune2` Csúcsfény+Árnyék | 55,94 ΔE · 561 kép | ✅ **KÉSZ (2026-08-18)** — a kettő EGY közös LUT, a kompozit eltérés 217 szintről 0-ra (a valódi ini-korpusz 22 %-a kompozit) | #879 |
-   | `finetune2` hőmérséklet | — | ✅ **KIMÉRVE (2026-08-21), a natív modell 6/6-ban NYER**: képpontonkénti mérés a `referencia/szinhomerseklet/` hét exportján — a `percent 50` **bitre azonos** az eredetivel, tehát **nincs JPEG-zajszint**. Átlagos |Δ|: `temp −1,0` **5,08 → 1,23** (4,1×), `−0,8` 2,83 → 1,01, `−0,5` 1,33 → 1,07, `+0,5` 0,91 → 0,70, `+0,8` 1,11 → 0,80, `+1,0` 1,17 → 0,71. Ez az **ellenkezője** a #879 csatorna-LUT-os eredményének, ami szerkezetileg vak volt a kereszt-tagokra. **Már csak BEKÖTÉS**: a natív ág (`autocolor_matrix_16_16` + `apply_autocolor_matrix`) megvan a kódbázisban. | #956 |
-   | `tint` | 20,6 | megfejtve (`preserve` skálája −1…255) | #872 |
-   | `sat` pozitív ág | 12 | ✅ **kész és kimérve: 0,74** | #693 |
-   | `dir_tint` | 9 | ✅ **teljesen megvan** — az átmenet-görbe is (2026-08-18) | #874 |
-   | `fill` | 6,5 | ✅ **eredeti exportokhoz mérve 1,20–1,77** (2026-08-18) — nincs teendő a szűrőn; a mérés bekötése #938 | — |
-   | `ansel` | 5,6 | ✅ **fehér szűrővel 0,53**; a SZÍNES szűrő igazolatlan — exportra vár | #939 |
-   | `Vignette` | 4,6 | ✅ a zóna **ELLIPSZIS** — eredeti exportokkal igazolva (2026-08-18) | #859 |
-
-   **Vagyis a rangsorból nem maradt bekötésre kész rendermunka:** a
-   `finetune2` szintvágó ága 2026-08-18-án elkészült (#879), a
-   hőmérséklet-tengelye pedig új mérésre vár (#956). A többi vagy kész,
-   vagy külső exportra vár.
-
-   - **Korábban megválaszolva:** a `tint` (és a `rainbow`, `autocontrast`)
-     **szinthúzással kezd** — a `0x009db610` helyben módosítja a képet, nem
-     csak elemez (#872)
-4. ~~**A `tint` virtuális színátalakítása**~~ — **GYAKORLATILAG LEZÁRVA** (#872): a `ctx` a **lánc-építő objektum**, a `[ctx+8]` egy függvénymutató-**mező** (nem vtable-slot), és a szokásos renderelési úton nem áll be. A recept teljes nélküle
-5. ~~**A `ytResampler` utolsó, nem 2-hatvány lépése**~~ — **MEGVAN** (#871,
-   #762): kilenc szűrőmag, a `ResampleFilter2` beállítás választ, alapérték
-   **6 = Lanczos-4**; az `unsharp` a 2-est (köbös B-spline) használja.
-   Maradék: ~~a **4-es mód** pontos alakja~~ **MEGVAN (#871): háromlebenyes
-   köbös konvolúció, 11/209-es törtekkel, két matematikai ellenőrzéssel
-   igazolva** · ~~a **10-es** mód~~ **MEGVAN (#871): MMX-es bilineáris,
-   8 bites súlyokkal, `>> 8` osztással** → **a `ytResampler` mind a
-   tizenegy módja feltárva**
+✅ **2026-08-24 — az utolsó kérdés (a `FocalZoom` perem-módja) LEZÁRVA MÉRÉSSEL:**
+a halmozás csak nagyít (`zoom ≥ 1`), ezért minden minta a képen belülre esik —
+négy perem-mód **bitre azonos** kimenetet ad képen belüli fókuszpontra. A mai
+`cv2.BORDER_REPLICATE` helyes. Melléklelet: a natív mag (`0x00bcf4b0`) igazolja a
+`zoom_max_offset` és `zoom_sample_count` képleteinket. Jegy: **#1351**.
 
 ### [picasa-create-features.md](picasa-create-features.md) — nincs nyitott kérdés
 
@@ -300,94 +262,19 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
    történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 2 kérdés (a hatókörön kívüli Apple-ágon felül)
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — nincs nyitott kérdés (a hatókörön kívüli Apple-ágon felül)
 
-> 🔴 **2026-08-21 — ÉLES ÖSSZEVETÉS: a megvalósításunk NEM követi ezt a
-> lapot.** A tulajdonos egymás mellett futtatta a kettőt. A fa **nem
-> nyitható ki** (valódi egérkattintással mérve: a sor-`MouseArea` elnyeli
-> a nyílra adott kattintást), **egyetlen soron sincs állapot-ikon**, és
-> **két olyan gomb** van a párbeszédben, ami az eredetiben nem létezik —
-> ezek magyar felirattal **67,7 px**-szel kitolják a gombsort az 550 px-es
-> ablakból, így a Súgó nem látszik. A lap 9. szakasza **mindegyik hibát
-> előre leírta** (a 23. sor szó szerint: „extra gombok — **nincsenek**").
-> A mért eltéréslista a **9/b** szakaszban, a normatív sor-felépítés a
-> **4.4/b**-ben. Jegy: **#1200**.
+✅ **2026-08-24 — a két megmaradt „erős, nem megerősített" állítás MEGERŐSÍTVE:**
 
-⭐ **2026-08-22, „Eltávolítás a Picasából…” kör** — a lap **15.** szakasza a
-**menüparancsot** (`Folder::ID_MANAGE_ALBUM`, hármaspontos) írja le, ami NEM
-azonos a Mappakezelő azonos nevű rádiógombjával. A teljes lánc: a
-`watchedfolders.txt` és `frexcludefolders.txt` újraírása, majd egy
-**`]album:removed` SÍRKŐ** (`0x004b9200`) — a mappa nem törlődik, hanem
-megjelölődik, hogy a beolvasó ne vegye fel újra. **Két mért hibánk:** a helyi
-menü almappára **semmit nem csinál**, és a törölt mappa **újraolvasáskor
-visszajön**. Jegy: **#1249**.
-
-*(A lap 2026-08-20-án készült, a tulajdonos két képernyőképéből és a
-binárisból. A kör négy kérdést tett fel és kettőt le is zárt — a
-lista-térképet (5.2/5.4) és a „teljes meghajtó" feltételét (10.). Ami
-maradt, egyik sem igényel futó Picasát, és egyik sem blokkolja a
-megvalósítást — jegy: **#1161**.)*
-
-⭐ **2026-08-21, sor-rajzolás kör** — a **4.4/b** szakasz normatívvá teszi
-a fa-sor felépítését: mező→erőforrás hozzárendelés közvetlen kódolvasásból
-(`0x007c0130`), a rajzolás sorrendje (`0x007c6700`), és a **korábbi
-nyitott kérdés lezárása**: a kijelölt sor `#7D8397` / a nem kijelölt
-`#FDFDFD` **kódkonstansként megvan** (`0x007c6757`), nem csak mérésből —
-ugyanaz az idióma, mint a `popuplist`-nél (#894). **Ami nyitva maradt:**
-a `0x007c5c40` három kimenő jelzőjének pontos leképezése a három ikonra
-(szándékosan nem találgatva; a megvalósításhoz nem szükséges).
-
-0. *(A lap 12. szakasza a hiteles, naprakész lista — 2026-08-21-én
-   nyolc pontra bővült, majd az **M1–M5, M7, M8** lezárult. A tételek a
-   `picasapy-agent` → `memory/nyitott-kerdesek-sor.md` munkasorban is
-   szerepelnek, feldolgozási sorrendben.)*
-
-   ⭐ **2026-08-21, fa-kör** — a lap **13. szakasza** lezárja a fa
-   feltöltését: **lusta betöltés háttérszálon** (`SetEvent`,
-   `0x007bf378` → a `0x007c9e70` szál), rögzített gyökérsorrend
-   (Asztal → Képek → Dokumentumok → meghajtók), a meghajtó-felsorolás
-   három hívása (a **hálózati ág fájlrendszer-ellenőrzés nélkül**, ezért
-   a **leválasztott hálózati meghajtó is látszik**), és **negatív
-   eredmény** a rejtett mappákra: a fa nem szűr. A kizárási lista három
-   forrása (beégetett nevek + `filters.txt` + regisztrációs útvonalak) a
-   **beolvasóé**, nem a fáé → **#1169**.
-
-   ⭐ **2026-08-21, jobb-lista-kör** — a lap **14. szakasza**: a „Figyelt
-   mappák" lista **teljes értékű kiválasztó vezérlő**. Kattintásra átáll a
-   három rádió és az arcfelismerés-sor (a közös `0x007c60d0`), a **fa
-   odaugrik**, és ha az ág még nincs betöltve, **lustán kinyílik**
-   (`0x007bf130` + `SetEvent [dlg+0x550]` — ugyanaz az esemény, mint a
-   13.2-ben). Fordítva a fa kattintása **törli a jobb lista
-   kijelölését**: a két kijelölés kölcsönösen kizáró. **Rendezés nincs.**
-
-1. **Az iPhoto / Apple Photos ág LÁTHATÓ különbsége.** A kódbeli helye, a
-   két beállítás-kapcsoló és a használt lista megvan (a lap 6.2), de nem
-   követtük végig, mit lát ebből a felhasználó. **A PicasaPy-ban nem
-   megvalósítandó** (macOS-örökség).
-2. **A dialógusnak tényleg nincs minimális mérete?** A `0x00920fa0`
-   ablakeljárás nem kezeli a `WM_GETMINMAXINFO`-t — de a negatív állítás
-   egyetlen ablakosztály átvizsgálásán alapul.
-3. ~~A `[dlg+0x270]` és a `[dlg+0x2a8]` viszonya~~ — **LEZÁRVA**
-   (2026-08-21, a lap **5.2/d**): a `+0x2a8` munkamenet-helyi delta, ami az
-   alkalmazóig el sem jut; a `watchedfolders.txt` a **látható listából**
-   (`+0x270`) íródik a közös `+0xf8` scan-lista tárolón át. Az 5.2/b
-   táblázata helyesbítve.
-4. ~~A `filters.txt` szakaszainak szemantikája~~ — **LEZÁRVA**
-   (2026-08-21): a mérés a
-   [picasa-program-resources.md](picasa-program-resources.md) **3.1**
-   szakaszába került (hat szakasz, két külön teszt, a `FileIncludes`
-   sorai eldobódnak). Jegy: **#1169**.
-5. ~~A `ytVolumeIsExternalFS` (`0x007c84c0`) HASZNÁLATA~~ — **LEZÁRVA**
-   (2026-08-21, a lap 13.5 újraírva): a példány a `CDirArray` `+0x84`
-   mezőjében **használatlan** (csak konstruktor + destruktor), a
-   név/viselkedés feszültség pedig **szerkesztői összevonás**
-   (`/OPT:ICF`) — a `ytVolumeIsNTFS` törzsével bájtra azonos.
-6. ~~A `0x007c91c0` háromértékű visszatérése~~ — **LEZÁRVA**
-   (2026-08-21, a lap **14.7**): **két** érték van (`0` = siker,
-   `9` = kudarc); a `1` egy tömb-növelő rutin helyi változója volt. A
-   siker ága nyitja ki az ősöket és kéri a háttérbetöltést, a kudarcé
-   törli a fa kijelölését.
-3. ~~Hol jön létre a változás-értesítő fogantyú?~~ — ✅ **LEZÁRVA 2026-08-24 (16.5)**: `0x007062b9`, a `0xd694fc` platform-váltó függvénymutatón át; a szűrő **`0x17`** (FILE_NAME|DIR_NAME|ATTRIBUTES|**LAST_WRITE**, méret NINCS), **`bWatchSubtree = 1` = rekurzív**. A figyelő ÉL. Ez megcáfolja a 16.4 saját óvatoskodását is.
+1. **Nincs minimális ablakméret** (2.3) — a kikötés megszűnt: a program **4**
+   ablakosztályt regisztrál, mind a négy ablakeljárás átnézve, `WM_GETMINMAXINFO`
+   és `WM_SIZING` **egyikben sincs**, ugrótáblás diszpécser sincs. *(Melléklelet:
+   a 9. szakasz összevető táblájának 2. sora ELAVULT volt — a mi kódunk már
+   `minimumWidth: 0` / `minimumHeight: 0`.)*
+2. **A meghajtó-figyelmeztetés „NEM" ága** (6.1/b) — az út végigkövetve: sehol
+   nem menti el a korábbi rádióállást, tehát **nem visszaállít, hanem feltétel
+   nélkül** az „Eltávolítás" tételre kapcsol; a `+0x359` általános „benyomva"
+   jelző (235 előfordulás), nem állapotmentő. Jegy: **#1334**.
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott bináris kérdés
 
@@ -530,7 +417,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [picasa-mappakezelo.md](picasa-mappakezelo.md) | **A Mappakezelő TELJES specifikációja** — elrendezés és tervezővászon-geometria, az átméretezés szabályai (`winsize` → `SC_SIZE`), a fa és az öröklődő állapot, a három rádió, az arcfelismerés-kapcsoló, a három figyelmeztetés, az OK/Mégse delta-szemantikája, a Súgó URL-je |
 | [picasa-keptalca.md](picasa-keptalca.md) | **A Képtálca (`scratch`, „Selection") MŰKÖDÉS-specje** — a döntő lelet, hogy a tálca **nem marad meg újraindítás után** (három független negatív ellenőrzés); a négy vezérlő felirat NÉLKÜL, csak ikon+súgó; a `Tray` helyi menü két parancsa; **két külön** ürítés-megerősítés; a 36,5%-os doboz-kényszer; a `trayexec` adatvezérelt műveletsor; két negatív eredmény (a `.pbz` placement NEM az alap-sorrend, a `Tray contains:` hibakereső lap) |
 | [picasa-nerdview-panel.md](picasa-nerdview-panel.md) | **A „Hisztogram és fényképezőgép-adatok" panel MÉRT geometriája** — a panel 238 × 144; a felirat egysoros, 11 képpont magas és **nem félkövér** (a `.tre` semmit nem jelöl); a hisztogram 213 × 59 (ez nálunk helyes); a két adatoszlop 138 + 6 rés + 69. Jegy: **#1344** |
-| [picasa-lebego-ertesito.md](picasa-lebego-ertesito.md) | A lebegő értesítősáv (`CNotifierPopup`) — képernyőfelvétel- és import-értesítés, kattintás-viselkedés; a geometria és az animáció NYITOTT |
+| [picasa-lebego-ertesito.md](picasa-lebego-ertesito.md) | A lebegő értesítősáv (`CNotifierPopup`) — képernyőfelvétel- és import-értesítés, kattintás-viselkedés. ⚠️ **Az „a geometria NYITOTT" megjegyzés 2026-08-24-én ELAVULTNAK bizonyult:** a geometria mérve van (a lap „Geometria — mérve a binárisból" szakasza), a pozicionálás dekompilálva (`SPI_GETWORKAREA` + 144 képpont). **Ami tényleg nyitva:** a cella élettartama és az animáció ütemforrása — a Win32 út az EGÉSZ binárisra kizárva (3 időzítő-hívó, egyik sem a notifieré). Jegy: **#1130** |
 | [vorosszem-eszkoz-terve.md](vorosszem-eszkoz-terve.md) | A vörösszem-eszköz terve |
 | [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) | A vágás-eszköz állapota — 19 arány, egyéni arányok, 3 javaslat |
 
