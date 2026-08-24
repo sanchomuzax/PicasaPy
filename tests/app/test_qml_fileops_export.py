@@ -435,9 +435,14 @@ class TestExportDialogFenParity:
     """#350: export.fen paritás — cím és gombfelirat."""
 
     def test_title_matches_fen_wording(self, qml_app, qt_app):
+        # #1138: a `.fen` címe „Export to Folder" — PONT NÉLKÜL
+        # (`export/window1.title` = „Exportálás mappába"). A korábbi
+        # három pont az app saját elnevezési konvenciója volt, nem az
+        # eredetié; a spec 5. szakasza ezt kifejezetten javítandóként
+        # sorolja fel.
         window, _controller, _lib, _engine = qml_app
         dialog = _child(window, "exportDialog")
-        assert dialog.property("title") == "Export to Folder..."
+        assert dialog.property("title") == "Export to Folder"
 
     def test_accept_button_says_export_not_ok(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app

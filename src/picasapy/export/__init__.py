@@ -5,6 +5,7 @@ from .exporter import (
     ExportReport,
     ExportSettings,
     export_photos,
+    is_automatic_quality,
     resolve_export_quality,
 )
 from .xmp import (
@@ -26,6 +27,7 @@ __all__ = [
     "ExportReport",
     "ExportSettings",
     "export_photos",
+    "is_automatic_quality",
     "resolve_export_quality",
     "XmpImageMetadata",
     "XmpRegion",

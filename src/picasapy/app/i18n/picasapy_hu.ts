@@ -2385,7 +2385,7 @@
     </message>
     <message>
         <source>Export location:</source>
-        <translation>Exportálás helye:</translation>
+        <translation>Exportálási hely:</translation>
     </message>
     <message>
         <source>Name of exported folder:</source>
@@ -2393,7 +2393,7 @@
     </message>
     <message>
         <source>Add numbers to file names to preserve order</source>
-        <translation>Sorszámozás a fájlnevekben a sorrend megőrzéséhez</translation>
+        <translation>Számok hozzáadása a fájlnevekhez a sorrend megőrzése érdekében</translation>
     </message>
     <message>
         <source>Add watermark</source>
@@ -2409,15 +2409,59 @@
     </message>
     <message>
         <source>Maximum</source>
-        <translation>Maximális</translation>
+        <translation>Maximum</translation>
     </message>
     <message>
         <source>Minimum</source>
-        <translation>Minimális</translation>
+        <translation>Minimum</translation>
     </message>
     <message>
         <source>Custom</source>
         <translation>Egyéni</translation>
+    </message>
+    <message>
+        <source>Export to Folder</source>
+        <translation>Exportálás mappába</translation>
+    </message>
+    <message>
+        <source>Use original size</source>
+        <translation>Eredeti méret használata</translation>
+    </message>
+    <message>
+        <source>Resize to:</source>
+        <translation>Átméretezés:</translation>
+    </message>
+    <message>
+        <source>pixels</source>
+        <translation>képpont</translation>
+    </message>
+    <message>
+        <source>Preserves original image quality</source>
+        <translation>Megőrzi az eredeti képminőséget</translation>
+    </message>
+    <message>
+        <source>Good balance of quality and size</source>
+        <translation>A minőség és méret megfelelő egyensúlya</translation>
+    </message>
+    <message>
+        <source>Very large file size, preserves fine detail</source>
+        <translation>Nagyon nagy méretű fájl, az apró részleteket is megőrzi</translation>
+    </message>
+    <message>
+        <source>Smallest file size, some quality loss</source>
+        <translation>Legkisebb fájlméret, némi minőségvesztés</translation>
+    </message>
+    <message>
+        <source>Custom (%1)</source>
+        <translation>Egyéni (%1)</translation>
+    </message>
+    <message>
+        <source>Watermark:</source>
+        <translation>Vízjel:</translation>
+    </message>
+    <message>
+        <source>Stamp photos with your name, a web domain, or a copyright notice.</source>
+        <translation>A fotókra rábélyegezheti saját nevét, egy internetes domain nevét vagy egy szerzői jogi közleményt.</translation>
     </message>
 </context>
 <context>
