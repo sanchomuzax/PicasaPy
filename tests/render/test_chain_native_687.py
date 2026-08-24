@@ -181,7 +181,10 @@ class TestTartomanyValidacio:
 
 class TestMertenTetlenBejegyzesek:
     #: A #685 mérésben a Picasa MAGA sem változtatott ezeken (ΔE ≤ 1,0).
-    TETLEN = ("blur", "colorfix", "whitept")
+    #: A `blur` a #1142-ben KIKERÜLT: a #685 szett csak a csúszkatartományt
+    #: járta be, a `merokit-2` viszont a tartományon kívüli
+    #: `blur=1,2.000000;` alakot is — és az valódi elmosást ad.
+    TETLEN = ("colorfix", "whitept")
 
     @pytest.mark.parametrize("name", TETLEN)
     def test_a_tetlen_nevek_jelolve_vannak(self, name):

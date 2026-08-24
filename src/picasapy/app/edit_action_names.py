@@ -173,7 +173,8 @@ ACTION_LABELS: dict[str, tuple[str, str]] = _build_labels()
 UNNAMED_CHAIN_KEYS: frozenset[str] = frozenset(
     {
         # a Picnik (Kreatív Kit) saját szűrői — a felület sosem kínálta őket
-        "picnikfocalpixelate",
+        # (a `picnikfocalpixelate` a #1142-ben KIKERÜLT: a renderelő már nem
+        # ismeri, mert a mérés szerint az eredeti Picasa sem futtatja)
         "picniktint",
         # a vörösszem-javítás belső, szem-szín visszaállító lépése
         "reanimatedeyecolor",

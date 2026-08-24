@@ -33,7 +33,13 @@ from picasapy.render.curves import validate_image
 from picasapy.render.effects import _radius_grid
 from picasapy.render.ops import apply_channel_levels_stretch
 
-_HEX_PATTERN = re.compile(r"^[0-9a-fA-F]{1,8}$")
+_HEX_PATTERN = re.compile(r"^[0-9a-fA-F]+$")
+
+#: Az eredeti beolvasó ennyi jegyet vesz a hexmezőből — a nyolcadik utáni
+#: rész NEM számít (#1142). Mérve: `000000ffff` ugyanazt a ΔE-t adja
+#: (106,728), mint a `0000ff` — ld. `docs/specs/picasa-ini-format.md`,
+#: „A hex színmező" szakasz.
+_HEX_FIELD_DIGITS = 8
 
 #: A `tint` a `-1,0f` jelzővel hívja a közös szinthúzót; ez a natív
 #: alapértelmezett 0,30-as vágópont-keverést választja (#872).
@@ -54,14 +60,20 @@ def parse_rgb_hex(value: str) -> tuple[int, int, int]:
     """A filters-beli hex színparaméter (AARRGGBB) értelmezése (R, G, B)-ként.
 
     A Picasa a vezető nullákat elhagyja (pl. `ffff` = `0000ffff` → cián),
-    ezért az értéket balra nullákkal 8 jegyre egészítjük ki; az alfa-mezőt
-    nem használjuk.
+    ezért a rövidebb értéket balra nullákkal 8 jegyre egészítjük ki; az
+    alfa-mezőt nem használjuk.
+
+    A NYOLCNÁL HOSSZABB mező sem hiba: az eredeti beolvasó az **első 8
+    jegyet** veszi, a többit eldobja (#1142). Mérve: `000000ffff` →
+    `000000ff` = kék, pontosan ugyanazzal a ΔE-vel, mint a `0000ff`. Ez
+    korábban kivételt dobott, amitől a lánc EGÉSZ tagja elesett — az
+    eredeti viszont lefuttatta.
     """
     text = value.strip()
     if not _HEX_PATTERN.match(text):
         raise ValueError(f"Érvénytelen hex színérték: {value!r}")
-    padded = text.rjust(8, "0")
-    return (int(padded[2:4], 16), int(padded[4:6], 16), int(padded[6:8], 16))
+    field = text[:_HEX_FIELD_DIGITS].rjust(_HEX_FIELD_DIGITS, "0")
+    return (int(field[2:4], 16), int(field[4:6], 16), int(field[6:8], 16))
 
 
 def _to_uint8(values: np.ndarray) -> np.ndarray:

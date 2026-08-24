@@ -70,7 +70,11 @@ _NOOP_NAMES = ("save", "rot", "crop", "moviestart", "movieend")
 #: dekompilált burkolóikból pedig egyértelmű a csúszka-leképezés (a
 #: munkafüggvények már megvoltak). A `triple` az egyetlen, aminek a
 #: mérőesete paraméter nélküli volt, tehát a bekötése méréssel nem igazolt.
+#: #1142: a `blur` is átkerült — a `merokit-2` szett három csúszkaállása
+#: kimérte, hogy a csúszkatartomány FÖLÖTTI küszöbnél valódi elmosást ad
+#: (ld. `render/blur.py`).
 _NOW_RENDERED_NAMES = (
+    "blur",
     "radtint",
     "autobacklight",
     "dir_sat",
@@ -92,7 +96,7 @@ _NOW_RENDERED_NAMES = (
 #: regiszterben nincs hozzá se callback, se névregisztráció.
 _DEAD_LEGACY_KEYS = ("focalpixelate",)
 
-#: A maradék 21, ami a `KNOWN_UNRENDERED_OPS`-ba tartozik.
+#: A maradék, ami a `KNOWN_UNRENDERED_OPS`-ba tartozik.
 _UNRENDERED_NAMES = tuple(
     name
     for name in _ALL_26_NAMES
@@ -120,9 +124,9 @@ class TestAll26NamesCovered:
         # átkerült a renderelők közé, a `focalpixelate` pedig halott legacy
         # névnek bizonyult (#567)
         assert len(_NOOP_NAMES) == 5
-        assert len(_NOW_RENDERED_NAMES) == 15
+        assert len(_NOW_RENDERED_NAMES) == 16
         assert len(_DEAD_LEGACY_KEYS) == 1
-        assert len(_UNRENDERED_NAMES) == 5
+        assert len(_UNRENDERED_NAMES) == 4
         assert (
             set(_NOOP_NAMES)
             | set(_NOW_RENDERED_NAMES)

@@ -794,6 +794,42 @@ A küszöb `n²`-tel osztódik, mert a különbségek `n × n` blokkokra összeg
 > A `blur` a Picasában **megőrzi az éleket** — ezért van egyáltalán
 > „Küszöbérték" csúszkája.
 
+#### A két véglet MEGMÉRVE (2026-08-24, #1142)
+
+A `PicasaPy merokit-2` szett (960×640-es tesztábra, eredeti Picasa-export
+`export-202608151438`) három küszöbállást tartalmaz. A számok a forrástól
+vett átlagos abszolút eltérések; a szett JPEG-zajszintje **0,240**:
+
+| lánc | eltérés | mit ad |
+|---|---|---|
+| `blur=1;` (alapérték, 0,1) | 0,240 | a FORRÁST |
+| `blur=1,0.500000;` (a csúszka teteje) | 0,562 | a forrást (σ ≤ 0,3) |
+| `blur=1,2.000000;` (a tartományon KÍVÜL) | 17,317 | **teljes elmosást** |
+
+A 2,0-s kimenetre a legjobb illesztés **σ = 4,00 szórású Gauss-elmosás**,
+0,552 maradékkal — a tesztábra fekete-fehér csíkjai is teljesen
+összemosódnak, tehát ott már **egyetlen fal sincs**. Ez a fenti
+dekompilátum két végállapota: a küszöb alatt minden szomszédpár fal (semmi
+nem simul), fölötte egy sem (a teljes, „szabad" simítás fut le).
+
+**A szabad simítás sugara a paramétertől FÜGGETLEN** — ez is a küszöb-
+értelmezést erősíti. A dokumentált háromléptékű `[1,2,1]` (n = 1, 2, 4)
+dilatált lánc σ ≈ 3,24-et adna, a mérés σ = 4,00-et: a per-lépték simítás
+pontos alakja tehát még nem stimmel, csak a végeredmény van kimérve.
+
+> **Ami NYITVA marad:** a `küszöb` → falképzés leképezése a 0,5 és a 2,0
+> közötti sávban. Erre nincs mérési pontunk, és a szabadon választott
+> küszöbskála pontosan az a fajta paraméter, ami elnyeli a hibát. A
+> PicasaPy modellje (`src/picasapy/render/blur.py`) ezért a váltást a
+> csúszka tetejére (0,5) teszi — az a legnagyobb mérten tétlen érték, és
+> egyben a `filterdesc.xml` felső korlátja, tehát minden felületről
+> elérhető érték a mért, tétlen ágon marad.
+>
+> **Következmény a felületre:** a `blur` a saját csúszkatartományában
+> mérten HATÁSTALAN, ezért a PicasaPy „Régi effektek" fülén szürke marad
+> (`chain.UI_INERT_RANGE_OPS`), miközben a LÁNCBÓL renderel — idegen vagy
+> kézzel szerkesztett `.picasa.ini`-ben állhat tartományon kívüli érték.
+
 ### 4.2.4 `radblur` / `radsat` — a sugaras maszk
 
 A burkoló (`0x008f8520`) két lépést végez:

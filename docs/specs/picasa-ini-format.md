@@ -632,6 +632,13 @@ tényleg csatornánként számít; a bájtsorrend a natív kódból **`0x00RRGGB
 **Bizonyítottsági fok: mind a három megerősített** — valódi Picasa-export,
 csoportonként egyetlen mozgatott változóval.
 
+> **Bekötve: #1142.** A nyolcnál hosszabb hexmező korábban kivételt dobott
+> nálunk, amitől a lánc EGÉSZ tagja elesett — a `tint=1,79.842102,000000ffff;`
+> az eredetiben lefutott (103,54), nálunk nem (0,00). A
+> `render/tinting.py::parse_rgb_hex` azóta az első 8 jegyet veszi; ez a
+> KÖZÖS hexolvasó, tehát a `tint`, az `ansel`, a `dir_tint`, a `radtint` és
+> a Glimmer-effektek színmezőire egyaránt érvényes.
+
 ## Írási szabályok (PicasaPy, kétirányú kompatibilitáshoz)
 
 1. Atomikus írás (temp fájl + rename), írás előtti backup.

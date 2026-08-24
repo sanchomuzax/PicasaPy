@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 from picasapy.ini.filters import parse_filters
-from picasapy.render.chain import apply_filters, can_render_filter
+from picasapy.render.chain import apply_filters, can_offer_filter_control
 from picasapy.render.legacy_effects import LEGACY_EFFECTS
 from support.jpeg_factory import make_jpeg
 
@@ -46,11 +46,16 @@ def _filters(photo):
     return (section.get("filters") if section else None) or ""
 
 
+# #1142: a gomb állapotát a `can_offer_filter_control` dönti el, nem a
+# `can_render_filter` — a `blur` renderel a láncból, gombként mégsem
+# kínálható (a csúszkatartományán mérten nincs hatása).
 ENABLED_KEYS = [
-    effect.key for effect in LEGACY_EFFECTS if can_render_filter(effect.key)
+    effect.key for effect in LEGACY_EFFECTS if can_offer_filter_control(effect.key)
 ]
 DISABLED_KEYS = [
-    effect.key for effect in LEGACY_EFFECTS if not can_render_filter(effect.key)
+    effect.key
+    for effect in LEGACY_EFFECTS
+    if not can_offer_filter_control(effect.key)
 ]
 
 
