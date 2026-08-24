@@ -212,9 +212,21 @@ diszasszemblálva egyetlen ilyen összehasonlítást sem tartalmaz. A méretet
 tehát kizárólag a Windows alapértelmezett minimuma korlátozza, és a
 `docbounds` (550×450) a **kiinduló**, nem a legkisebb méret.
 
-*Bizonyítottsági fok: **erős**. A negatív állítás egyetlen ablakeljárás
-átvizsgálásán alapul; ha a dialógus más ablakosztályt használna, a keresés
-mellémenne.*
+*Bizonyítottsági fok: **MEGERŐSÍTVE 2026-08-24** — a korábbi „erős"
+minősítés kikötése (*„ha a dialógus más ablakosztályt használna, a keresés
+mellémenne"*) **megszűnt**, mert azóta MINDEN ablakosztály át van nézve:*
+
+| ellenőrzés | eredmény |
+|---|---|
+| a program által regisztrált ablakosztályok száma | **4** (`RegisterClassA` 1 + `RegisterClassExA` 2 + `RegisterClassW` 1) |
+| ablakeljárások (a `DefWindowProcA` négy hívója) | `0x0040aed0`, `0x0054c540`, `0x00923e90`, `0x00924170` |
+| `cmp …, 0x24` (**WM_GETMINMAXINFO**) mind az ötben (a `0x00920fa0`-val együtt) | **0 darab** |
+| `0x214` (**WM_SIZING**) mind az ötben | **0 darab** |
+| ugrótáblás üzenet-diszpécser (ami elrejthetné) | **nincs** egyikben sem |
+| a talált `0x24` immediate-ek (2 eljárásban, 4 helyen) | **mind veremkeret-eltolás** (`sub esp, 0x24`, `[ebp-0x24]`), egyik sem üzenet-összevetés |
+
+*A negatív állítás tehát nem egy függvényen, hanem a **teljes
+ablakeljárás-készleten** áll.*
 
 ---
 
@@ -799,9 +811,56 @@ nincs rejtett, harmadik igazságforrás.
 
 > **Ha a felhasználó nemet mond, a Picasa nem „nem csinál semmit", hanem a
 > rádiót visszaállítja, és az „Eltávolítás a Picasából" tételt nyomja be.**
-> *(Bizonyítottsági fok: **erős** — az utasítások egyértelműek, de azt nem
-> követtük végig, hogy volt-e ezt megelőzően egy korábbi állapotot
-> visszaállító ág.)*
+> *(Bizonyítottsági fok: **MEGERŐSÍTVE 2026-08-24** — ld. 6.1/b.)*
+
+### 6.1/b A „NEM" ág VÉGIGKÖVETVE — nincs korábbi állapot, amit visszaállítana
+
+A 6.1 kikötése az volt, hogy „nem követtük végig, volt-e korábbi állapotot
+visszaállító ág". **Végigkövetve: nincs, és nem is lehet.**
+
+A teljes út a rádió-kattintástól a figyelmeztetésig
+(`0x007c28c4` … `0x007c2995`) **egyetlen helyen sem menti el** a korábbi
+rádióállást. A veremre csak két érték kerül: `[esp+0x20] = 0` és
+`[esp+0x27] = al` (a „teljes meghajtó?" vizsgálat eredménye). Nincs olyan
+mező vagy változó, amiből egy korábbi állapot visszaállítható volna.
+
+A „NEM" ág utasításról utasításra:
+
+```asm
+0x007c299d  test al, al
+0x007c299f  jne  0x7c2a6d          ; IGEN -> folytatás
+
+0x007c29a5  edx = "foldermgr/watch"
+0x007c29aa  call 0x9cd110          ; elem lekérése NÉV szerint -> eax
+0x007c29af  push 1 · push 0        ; (benyomva = 0)
+0x007c29b5  call 0xa65060          ; a „Keresés mindig" KIKAPCSOLÁSA
+
+0x007c29ba  edx = "foldermgr/remove"
+0x007c29bf  call 0x9cd110          ; -> ebx
+0x007c29c6  cmp  byte [ebx+0x359], 1
+0x007c29cd  je   0x7c2a31          ; << ŐRFELTÉTEL: ha MÁR benyomott, kihagyja
+0x007c29cf  or   dword [ebx+8], 7  ; érvénytelenítés (újrarajzolás)
+0x007c29d5  mov  byte [ebx+0x359], 1   ; BENYOMVA
+0x007c29f3  push "buttontoggle"        ; értesítés
+```
+
+**Két új részlet:**
+
+1. **A `+0x359` nem állapotmentő mező**, hanem a kapcsológomb **általános
+   „benyomva" jelzője** — a binárisban **235 helyen** fordul elő, a
+   Mappakezelőn kívül is. Tehát nem egy „korábbi rádióállás" tárolója.
+2. **Az „Eltávolítás" benyomása őrfeltételes:** ha az a tétel már benyomott,
+   a program **kihagyja** az egész ágat (nincs fölösleges érvénytelenítés és
+   nincs `buttontoggle` értesítés).
+
+⇒ **A „NEM" tehát nem visszaállít, hanem FELTÉTEL NÉLKÜL az „Eltávolítás a
+Picasából" tételre kapcsol** — akármi volt előtte.
+
+*Mellékesen: a `0x009cd110` egy általánosan hasznos primitív — **felületi
+elem lekérése NÉV szerint**.*
+
+*Bizonyítottsági fok: **megerősített** — a teljes út diszasszemblálva, és a
+`+0x359` mező szerepe nyers bájtkereséssel (235 előfordulás) tisztázva.*
 
 #**A megerősítő párbeszéd gombkészlete:** a közös burkoló
 `0x009bac20(típus, szöveg, igen-felirat, nem-felirat, szülő, …)` hívása itt
@@ -965,7 +1024,7 @@ jelenléte pontosan a #1088-ban leírt eset — a `Képek` OneDrive-ra
 | # | | eredeti | nálunk |
 |---|---|---|---|
 | 1 | kiinduló méret | **550×450** (`docbounds`) | 720×480 |
-| 2 | minimális méret | **nincs** (nincs `WM_GETMINMAXINFO`) | `minimumWidth 540`, `minimumHeight 340` |
+| 2 | minimális méret | **nincs** (megerősítve: mind a 4 ablakosztály átnézve) | ✅ **RENDBEN** — `minimumWidth: 0`, `minimumHeight: 0` (`FolderManagerDialog.qml:20–21`). *(A tábla korábbi `540`/`340` értéke ELAVULT.)* |
 | 3 | osztás | **pontosan 50–50 %**, 4 px külső margóval | `Layout.fillWidth` mindkét oldalon (≈50 %), de 10 px margóval |
 | 4 | „Mappalista" felirat a fa fölött | **van** (font14) | **nincs** |
 | 5 | magyarázó szöveg helye | a **jobb hasáb** tetején, 232 px széles | a dialógus **teljes szélességében**, felül |

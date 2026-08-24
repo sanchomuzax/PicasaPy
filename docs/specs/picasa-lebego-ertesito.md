@@ -97,16 +97,42 @@ Ezek **nyitott kérdések**, nem elhallgatott részletek:
 
 1. ~~**Geometria**~~ — **MEGVAN**, ld. a „Geometria — mérve a binárisból"
    szakaszt. (Az első változat tévesen állította, hogy a `respack.yt`
-   hiányzik.) Ami ebből még nyitott: az ablak **képernyőhöz képesti**
-   pozíciója — a rétegek a cella saját vásznához relatívak.
+   hiányzik.) ~~Ami ebből még nyitott: az ablak képernyőhöz képesti
+   pozíciója.~~ — ✅ **EZ IS MEGVAN**, ugyanezen a lapon lentebb:
+   „Dekompiláció — pozicionálás és ablakstílus MEGFEJTVE". Röviden:
+   `SPI_GETWORKAREA` (**munkaterület**, nem teljes képernyő) + **144
+   képpont** eltolás a szélétől, `WS_EX_TOPMOST | TOOLWINDOW | WINDOWEDGE`,
+   és újrahorgonyzás a munkaterület változásakor (`0x00658200`).
+   *(A jelölés 2026-08-20 óta elavult volt — a saját későbbi szakaszunk
+   válaszolta meg, és senki nem vezette át.)*
 2. **Animáció** — a `progressbase`/`progressfill` réteg bizonyítja, hogy van
    folyamatjelző, a dekompiláció pedig **kizárta a Win32 utat**
    (`AnimateWindow`, rétegelt ablak). Ami marad: a `yt` keretrendszer saját
    átmenet-rendszere (`ytCrossFadeColorTransitionNode`) — **nyom, nem
    bizonyíték**.
 3. **Élettartam** — az ABLAK singleton (megválaszolva), de hogy egy CELLA
-   meddig marad kint, nyitott. Olcsó úton nem megválaszolható: a `notifier`
-   modulnak nincs `tre:` bejegyzése, tehát a viselkedés kódban van.
+   meddig marad kint, **nyitott**. A `notifier` modulnak nincs `tre:`
+   bejegyzése, tehát a viselkedés kódban van.
+
+   ⭐ **2026-08-24 — a negatívum KITERJESZTVE az EGÉSZ binárisra.** A korábbi
+   dekompiláció öt függvényben zárta ki a Win32 időzítőt. Az importtábla
+   szerint a teljes állományban **mindössze ennyi** időzítő-hívó van:
+
+   | API | hívók |
+   |---|---|
+   | `SetTimer` | `0x004735c0`, `0x008de1b0` |
+   | `KillTimer` | `0x008ddf00`, `0x008de1b0` |
+   | `timeSetEvent` | `0x00ab8360` |
+
+   **Egyik sem a notifier moduljában** (`0x0065xxxx`: `0x00655aa0`,
+   `0x00656fe0`, `0x00657300`, `0x00658340`). ⇒ **A cella élettartamát
+   biztosan NEM Win32 időzítő méri.** A két időzítő-burok ráadásul maga is
+   csak **közvetve** hívódik (közvetlen `call` nélkül, vtable-rekeszből), és
+   a `0x008dxxxx` — a `yt` keretrendszer — tartományban ül.
+
+   **A következő lépés:** a `yt` keretrendszer saját képkocka-ütemének
+   (`ytCrossFadeColorTransitionNode` és társai, `TransitionNodeHandler`)
+   végigkövetése — ez már célzott dekompiláció, nem olcsó lánc.
 4. ~~**Az észlelési ág**~~ — **MEGVAN a szövege és a mechanizmus is**,
    ld. lent a „4. ág — új képek észlelése" szakaszt.
 5. ~~**Az események teljes listája**~~ — **MEGVÁLASZOLVA**: nincs ilyen
