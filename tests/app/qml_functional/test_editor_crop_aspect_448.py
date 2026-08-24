@@ -4,7 +4,10 @@ a beépített preset-lista a javított KULCSLISTÁT követi (ld. #448 jegy
 `CustomAspectRatiosMixin`-en át a valódi AppControllerbe kötve (a mixin
 `controller.py`-ba már be van drótozva, nincs szükség stub-controllerre,
 a `test_folder_pane_collections_320.py` #320-as mintájával ellentétben,
-ahol a bekötés még nem volt kész)."""
+ahol a bekötés még nem volt kész).
+
+Az egyéni képarányok és az utolsó vágási arány beállításállapotot módosít,
+ezért a fájl szándékosan funkció-szintű `qml_app` fixture-t használ."""
 
 from __future__ import annotations
 

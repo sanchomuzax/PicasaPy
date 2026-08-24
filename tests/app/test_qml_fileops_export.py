@@ -4,6 +4,9 @@ Main.qml-be — kontextusmenü, átnevezés-dialógus, export-dialógus, menüso
 Külön fájlban a test_qml_functional.py-tól, hogy a #53-as flaky (néző +
 image provider GIL) kizárásakor ezek a tesztek futhassanak tovább. A néző
 képbetöltését itt egyetlen teszt sem érinti.
+
+Az átnevezés, törlés, export és effektmásolás lemezállapotot módosít, ezért
+ez a fájl szándékosan funkció-szintű `qml_app` fixture-t használ.
 """
 
 import os

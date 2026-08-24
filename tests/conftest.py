@@ -13,17 +13,10 @@ hozzányúlt — a szennyezést így ott fogjuk meg, ahol keletkezik.
 from __future__ import annotations
 
 import pytest
-from support.valodi_mappa_or import VEDETT_MAPPAK, pillanatkep, valtozas_szovege
+from support.fixture_guards import user_folder_guard
 
 
 @pytest.fixture(autouse=True)
 def nem_szennyezi_a_felhasznaloi_mappat():
     """Elhasal, ha a teszt a valódi képmappában bármit létrehoz vagy módosít."""
-    elotte = {m: pillanatkep(m) for m in VEDETT_MAPPAK}
-
-    yield
-
-    for mappa, regi in elotte.items():
-        uzenet = valtozas_szovege(mappa, regi, pillanatkep(mappa))
-        if uzenet:
-            raise AssertionError(uzenet)
+    yield from user_folder_guard()

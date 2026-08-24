@@ -12,6 +12,10 @@ A splash-komponenst önállóan (QQmlComponent) töltjük — ld.
 tests/app/test_qml_splash.py mintája; a TrayBar-t a teljes Main.qml-en
 keresztül, a helyi `qml_app` fixture (window, controller, engine) ad
 hozzáférést.
+
+A `setDarkTheme()` a QSettings-ben is rögzíti a választást, ezért a fájl
+szándékosan a funkció-szintű `qml_app` fixture-t használja; a tesztek nem
+oszthatják meg ezt az állapotot.
 """
 
 from PySide6.QtCore import QObject, QUrl
