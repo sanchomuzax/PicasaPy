@@ -434,14 +434,21 @@ class TestArrowMinimalScroll:
 
 
 class TestShiftArrowSelection:
-    """#96: Shift+nyíl a horgonytól tartományt jelöl ki / von vissza.
+    """#96: Shift+nyíl a mappán belül bővíti a kijelölést.
 
     ⚠️ #1219: a horgony a HÁROMKÉPES mappa (`adag1`) elején áll, nem a
     feed 0. során. A feed sorrendjében az `adag2` (2 kép) van elöl, így a
     0. sorról induló bővítés a 2. lépésben MAPPAHATÁRT lépett át — a
     tesztek ezt a hibás viselkedést rögzítették. A határon való megállást
     a `test_kijeloles_mappahatar_1219.py` méri; ezek itt a mappán BELÜLI
-    bővítés/visszavonás őrei maradnak."""
+    bővítés őrei maradnak.
+
+    ⚠️ #892/#1222: a Shift+nyíl NEM tartományt jelöl, hanem EGYESÉVEL
+    bővít, és a léptetés töve is lép (`0x00717eb0`; a Shiftes ág a
+    `0x0071805c`-nél kihagyja a leszedést). A „visszafelé zsugorít"
+    tesztet ezért váltotta fel a megőrző párja. A teljes, irányváltásos
+    viselkedést VALÓDI billentyűeseménnyel a
+    `qml_functional/test_shift_nyil_bovites_892_1222.py` méri."""
 
     #: a második csoport (`adag1`, 3 kép) első sora a feedben
     KEZDET = 2
@@ -475,13 +482,18 @@ class TestShiftArrowSelection:
             self.KEZDET, self.KEZDET + 1, self.KEZDET + 2
         ]
 
-    def test_extend_back_shrinks_range(self, qml_nav_app, qt_app):
+    def test_extend_back_does_not_shrink(self, qml_nav_app, qt_app):
+        """#892/#1222: az irányváltás nem vesz vissza — a kurzor csak
+        visszasétál a már kijelölteken (a hármas mappában idáig ér)."""
         window, _, _ = qml_nav_app
         grid = self._reset(window, qt_app)
         _invoke(qt_app, grid, "extendSelection", "right")
         _invoke(qt_app, grid, "extendSelection", "right")
         _invoke(qt_app, grid, "extendSelection", "left")
-        assert self._selection(window) == [self.KEZDET, self.KEZDET + 1]
+        assert self._selection(window) == [
+            self.KEZDET, self.KEZDET + 1, self.KEZDET + 2
+        ]
+        assert window.property("selectedIndex") == self.KEZDET + 1
 
     def test_plain_move_resets_to_single(self, qml_nav_app, qt_app):
         window, _, _ = qml_nav_app

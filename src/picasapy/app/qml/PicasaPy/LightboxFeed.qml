@@ -50,8 +50,9 @@ ListView {
     // A cél-sort a modell számolja (rácssor-ugrás, mappa-
     // csoport-határok); a kijelölés és a látótér követi. Az
     // oszlopszám a #85 szerinti effektív elrendezésből jön.
-    // kijelölési horgony (#96): a Shift+nyíl tartomány
-    // kezdőpontja; sima lépés/kattintás ide állítja vissza
+    // kijelölési horgony (#96, #897): a Shift+KATTINTÁS tartományának
+    // töve; sima lépés/kattintás ide állítja vissza. A Shift+NYÍL töve
+    // ezzel szemben a kurzor, és az lép (#892/#1222) — ld. selection.js
     property int selectionAnchor: -1
     function moveSelection(direction) {
         cancelRevealAfterViewer()  // #173: valódi lapozás
@@ -63,8 +64,9 @@ ListView {
         selectionAnchor = t
         scrollToRow(t)
     }
-    // Shift+nyíl (#96): a horgony és a cél-index közti
-    // tartomány kijelölése; visszafelé lépve szűkül
+    // Shift+nyíl (#96, #892/#1222): EGYESÉVEL bővít, és a léptetés töve
+    // (a kurzor) is lép — nem tartomány, ezért az irányváltás nem
+    // zsugorít. A miért: selection.js `withAdded`.
     function extendSelection(direction) {
         if (appWindow.selectedIndex < 0) {
             moveSelection(direction); return
@@ -74,10 +76,11 @@ ListView {
         var t = controller.photos.navigate(
             appWindow.selectedIndex, direction, columns)
         if (t < 0) return
+        // #1219: a bővítés a kurzor mappacsoportjában marad
+        t = _csoportraVagva(appWindow.selectedIndex, t)
         appWindow.selectedIndex = t
-        // #1219: a tartomány a horgony mappacsoportjára szorítva
-        appWindow.selectedIndexes = Selection.range(
-            selectionAnchor, _csoportraVagva(selectionAnchor, t))
+        appWindow.selectedIndexes = Selection.withAdded(
+            appWindow.selectedIndexes, t)
         scrollToRow(t)
     }
     function groupOfRow(row) {
@@ -230,22 +233,17 @@ ListView {
         }
     }
 
-    Keys.onLeftPressed: function(ev) {
+    /** A négy nyíl közös ága. Az eredetiben is EGY mag (`0x00717eb0`)
+        szolgálja ki mindkét esetet, a Shift állapotát a hívó adja át neki
+        (`0x0071728c`): Shifttel bővít (#892), enélkül léptet (#77). */
+    function _arrowKey(ev, direction) {
         (ev.modifiers & Qt.ShiftModifier)
-            ? extendSelection("left") : moveSelection("left")
+            ? extendSelection(direction) : moveSelection(direction)
     }
-    Keys.onRightPressed: function(ev) {
-        (ev.modifiers & Qt.ShiftModifier)
-            ? extendSelection("right") : moveSelection("right")
-    }
-    Keys.onUpPressed: function(ev) {
-        (ev.modifiers & Qt.ShiftModifier)
-            ? extendSelection("up") : moveSelection("up")
-    }
-    Keys.onDownPressed: function(ev) {
-        (ev.modifiers & Qt.ShiftModifier)
-            ? extendSelection("down") : moveSelection("down")
-    }
+    Keys.onLeftPressed: function(ev) { _arrowKey(ev, "left") }
+    Keys.onRightPressed: function(ev) { _arrowKey(ev, "right") }
+    Keys.onUpPressed: function(ev) { _arrowKey(ev, "up") }
+    Keys.onDownPressed: function(ev) { _arrowKey(ev, "down") }
     // görgő (#89): a LAPOT görgeti, mint egy dokumentumot —
     // a kijelölés nem mozdul; a rácssor-léptetés kizárólag
     // a nyilak (moveSelection) dolga. Egy görgő-kattanás

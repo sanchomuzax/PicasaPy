@@ -70,3 +70,26 @@ function starredRows(count, starAt) {
         if (starAt(row)) result.push(row)
     return result
 }
+
+// #892/#1222: a Shift+NYÍL EGYESÉVEL bővít — az `index` hozzáadása a
+// kijelöléshez, ha még nincs benne. Növekvő sorrendű új tömböt ad, a
+// bemenetet nem mutálja.
+//
+// ⚠️ SZÁNDÉKOSAN nem a `range`. Az eredeti léptető mag (`0x00717eb0`) a
+// horgonyból (`[this+0x390]`) lép egyet, Shift esetén a leszedő ágat
+// KIHAGYJA (`0x0071805c`), az új elemet kijelöli (`0x007180d6`), és a
+// végén a horgonyt is a friss elemre írja (`0x007180da`). Nincs
+// „tartomány", csak halmozás — ezért az IRÁNYVÁLTÁS nem zsugorít:
+// visszafelé előbb a már kijelölteken sétál vissza, azon túl pedig a
+// másik irányba bővít.
+//
+// A horgony az eredetiben KÉT szerepet visz egyetlen mezőben: a léptetés
+// töve ÉS a Shift-KATTINTÁS tartományának töve. Nálunk ez két mező: a
+// léptetésé a kurzor (`selectedIndex`, ez lép minden nyílütésnél), a
+// kattintásé a `selectionAnchor` (#897, az marad). A látható eredmény
+// ugyanaz, mert az eredeti tartomány-magja (`0x00716ae0`) csak KIJELÖL —
+// a tartományon kívül már kijelölteket nem szedi le.
+function withAdded(selected, index) {
+    if (selected.indexOf(index) >= 0) return selected.slice()
+    return selected.concat([index]).sort(function (a, b) { return a - b })
+}
