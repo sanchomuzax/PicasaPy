@@ -23,7 +23,13 @@ from PySide6.QtCore import QObject, QSettings
 from PySide6.QtGui import QColor
 
 from picasapy.collage.autosave import AUTOSAVE_NAME
-from picasapy.collage.themes import CONTACTSHEET, PICTUREPILE, REGULARGRID
+from picasapy.collage.themes import (
+    CONTACTSHEET,
+    NOBORDER,
+    PICTUREPILE,
+    REGULARGRID,
+    WHITEBORDER,
+)
 
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import varj_kollazs_jelzesre
@@ -388,3 +394,19 @@ class TestMegorzottBeallitasok:
         assert host.collageShadows is False
         host.setCollageTheme(CONTACTSHEET)
         assert host.collageShadows is True
+
+    def test_az_indexkep_alapkerete_feher_de_utolag_valaszthato(self, host):
+        """Az AI6 ``whiteborder``-es; a felhasználó választása ettől még él."""
+        assert host.collageBorder == NOBORDER
+        host.setCollageTheme(CONTACTSHEET)
+        assert host.collageBorder == WHITEBORDER
+        host.setCollageBorder(NOBORDER)
+        assert host.collageBorder == NOBORDER
+
+    def test_a_projekt_fejlecmezoit_a_render_beallitas_is_megkapja(self, host):
+        host._ensure_collage_panel()
+        host._collage_panel_title = "AI"
+        host._collage_panel_album_date = "2023. november"
+        settings = host._render_settings()
+        assert settings.album_title == "AI"
+        assert settings.album_date == "2023. november"

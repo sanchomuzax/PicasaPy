@@ -405,6 +405,10 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                 if self._collage_panel_bg_mode == "image"
                 else ""
             ),
+            # #1273: ugyanazok a mezők adják az Indexkép fejlécét, amelyeket
+            # a #1274 már megőriz a `.cxf` körbejárásában.
+            album_title=self._collage_panel_title,
+            album_date=self._collage_panel_album_date,
         )
 
     def _index_saved_collage(self, path: Path) -> None:

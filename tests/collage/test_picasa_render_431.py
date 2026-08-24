@@ -159,7 +159,9 @@ class TestIndexkep:
         indexkep = make_picasa_collage(
             kepek, _beallitas(theme=CONTACTSHEET, caption="2026. augusztus")
         ).image
-        sav = indexkep[: round(240 * 0.08)]
+        # #1273: a dekompilált `CContactSheetTheme` 15%-os fejlécteret ad;
+        # a régi 8% volt a hiba egyik oka.
+        sav = indexkep[: round(240 * 0.15)]
         assert not np.all(sav == 255), "a feliratnak látszania kell a fejlécben"
 
     def test_felirat_nelkul_is_lefut(self, kepek):
