@@ -13,9 +13,20 @@ Mért alapok (`docs/specs/filters-decoded.md`):
   Picasa-exporton MÉRVE — ld. `apply_glow`.
 - **radblur** (#668): a natív elmosó mag + a natív sugaras smoothstep-maszk
   (`render/radial_mask.py`) — négy golden-páron MÉRVE, ld. `apply_radblur`.
-- **radsat**: továbbra sincs mért kimeneti adata — a térbeli modellje
-  dokumentált KÖZELÍTÉS. (A natív maszkja ugyanaz, mint a `radblur`-é, de
-  mérés nélkül az átállítása nem indokolt; a #317 kalibrálja.)
+- **radsat**: továbbra sincs mért kimeneti adata — az átmenet ALAKJA
+  (a `sharpness` hatása a lágyságra) dokumentált KÖZELÍTÉS. A zóna
+  GEOMETRIÁJA (a sugár és a középponttól mért távolság) viszont #859 óta
+  MÉRT ténnyel igazolt: a `radblur`-rel KÖZÖS natív függvény
+  (`0x008f9cf0`) adja, ezért a `radsat` a `radblur`-rel MEGEGYEZŐ
+  `native_radius_pixels`/`pixel_distance_grid` segédfüggvényt hívja
+  (`render/radial_mask.py`) — izotróp kör, nem tengelyenkénti ellipszis.
+- **vignette_gain / apply_vignette**: a zóna itt SZÁNDÉKOSAN ellipszis
+  (tengelyenkénti `_radius_grid`) — nyolc eredeti Picasa-export mérése
+  (#859 issue-komment, 2026-08-18) MEGCÁFOLTA az izotróp hipotézist: az
+  ellipszis-sugárral számolt megfigyelt erősítés szórása kb. 40%-kal
+  kisebb, mint a kör-sugárral számolté. Ez a `radsat`-tól ELTÉRŐ natív
+  függvényre vezethető vissza (`0x0090b050`-től független útvonal) — ide
+  tehát NEM vonatkozik az egységesítés.
 """
 
 from __future__ import annotations
@@ -24,7 +35,11 @@ import numpy as np
 
 from picasapy.render.curves import validate_image
 from picasapy.render.iir_blur import apply_picasa_blur
-from picasapy.render.radial_mask import apply_radial_mask
+from picasapy.render.radial_mask import (
+    apply_radial_mask,
+    native_radius_pixels,
+    pixel_distance_grid,
+)
 
 # A Vignette mért radiális profilja (r = képmérettel normált táv a középtől;
 # a sarok r-je √0,5 ≈ 0,7071). A profilon túl a maszk a sarokértéken marad.
@@ -56,7 +71,18 @@ RADBLUR_SHARPNESS = 0.0
 
 
 def _radius_grid(height: int, width: int, x: float, y: float) -> np.ndarray:
-    """Pixelközéppontok normált távolsága az (x, y) középponttól, float32."""
+    """Pixelközéppontok normált távolsága az (x, y) középponttól, float32.
+
+    SZÁNDÉKOSAN tengelyenkénti (anizotróp) normálás — nem négyzetes képen
+    ELLIPSZIS-zónát ad. A `vignette_gain`/`apply_vignette` ezt hívja, mert
+    nyolc eredeti Picasa-export mérése (#859) igazolta, hogy a vignetta
+    zónája valóban ellipszis. A `render/tinting.py` (`radtint`) is ezt
+    hívja — arra nincs mérésünk, ezért egyelőre változatlan marad.
+
+    A `radsat` NEM ezt hívja: annak a zónája — a `radblur`-rel közös natív
+    függvény miatt — izotróp kör (ld. `apply_radsat` és
+    `radial_mask.pixel_distance_grid`).
+    """
     cols = (np.arange(width, dtype=np.float32) + 0.5) / np.float32(width) - np.float32(x)
     rows = (np.arange(height, dtype=np.float32) + 0.5) / np.float32(height) - np.float32(y)
     return np.hypot(rows[:, np.newaxis], cols[np.newaxis, :])
@@ -195,18 +221,29 @@ def apply_radblur(
 def apply_radsat(
     image: np.ndarray, x: float, y: float, radius: float, sharpness: float
 ) -> np.ndarray:
-    """Radiális telítettség: az (x, y) körüli `radius` zónán kívül a kép a
+    """Radiális telítettség: az (x, y) körüli KÖR alakú zónán kívül a kép a
     Rec.601 luma felé telítetlenedik.
 
-    KÖZELÍTÉS (nincs mért kimeneti adat): a zónán belül a kép változatlan,
-    kívül a króma `1 − (r − radius)/(1 − sharpness)` súllyal tűnik el —
+    A zóna GEOMETRIÁJA MÉRT tény (#859), nem KÖZELÍTÉS: a `radblur`-rel
+    KÖZÖS natív függvény (`0x008f9cf0`) adja a sugarat, ezért itt is a
+    `radblur`-rel MEGEGYEZŐ `native_radius_pixels`/`pixel_distance_grid`
+    segédfüggvényeket hívjuk (`render/radial_mask.py`) — IZOTRÓP kör, a kép
+    RÖVIDEBB oldalához méretezve, nem tengelyenkénti ellipszis.
+
+    Az átmenet ALAKJA továbbra is KÖZELÍTÉS (nincs mért kimeneti adat a
+    `radsat`-hoz): a zónán belül a kép változatlan, kívül a króma
+    `1 − (r_px − sugár_px) / span_px` súllyal tűnik el — `span_px` a
+    sugárral azonos egységben (a kép rövidebb oldalának fele) skálázva;
     `sharpness=1` éles határ, kisebb érték szélesebb átmenet.
     """
     validate_image(image)
     height, width = image.shape[:2]
-    radii = _radius_grid(height, width, x, y)
-    span = max(1.0 - sharpness, 1e-6)
-    keep = np.clip(1.0 - (radii - np.float32(radius)) / np.float32(span), 0.0, 1.0)
+    distance_px = pixel_distance_grid(height, width, x, y)
+    radius_px = native_radius_pixels(width, height, radius)
+    span_px = max(1.0 - sharpness, 1e-6) * (min(width, height) / 2.0)
+    keep = np.clip(
+        1.0 - (distance_px - radius_px) / span_px, 0.0, 1.0
+    ).astype(np.float32)
     image_f = image.astype(np.float32)
     luma = (
         np.float32(0.299) * image_f[..., 0]

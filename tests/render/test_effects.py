@@ -201,3 +201,42 @@ class TestApplyRadsat:
         original = image.copy()
         apply_radsat(image, 0.5, 0.5, 0.3, 0.5)
         np.testing.assert_array_equal(image, original)
+
+    def test_zonaja_kor_4_3_aranyu_kepen(self) -> None:
+        """4:3 arányú képen a zóna KÖR — a középponttól AZONOS KÉPPONT-
+        távolságra eső pontok (egyszer vízszintesen, egyszer függőlegesen)
+        AZONOS mértékben telítetlenednek (#859: a natív képlet izotróp, a
+        kép RÖVIDEBB oldalához méretezve, nem tengelyenként).
+
+        KÉPPONTBAN mérve: a hiba előtti (tengelyenkénti) rácsnál ugyanez a
+        mérés `[171, 92, 92]` (vízszintes) vs `[150, 101, 101]`
+        (függőleges) — egyértelműen ELTÉRŐ értéket adott (lemérve, 2026).
+        """
+        height, width = 300, 400  # 4:3, tehát min(w,h) = 300
+        image = _uniform_image((200, 80, 80), height=height, width=width)
+        result = apply_radsat(image, 0.5, 0.5, 0.2, 0.5)
+        center_y, center_x = height // 2, width // 2
+        distance = 149  # < min(w,h)/2, tehát mindkét irányban a képen belül
+
+        horizontal = result[center_y, center_x + distance]
+        vertical = result[center_y + distance, center_x]
+        np.testing.assert_array_equal(horizontal, vertical)
+
+    def test_aranyosan_ugyanakkora_4_3_es_1_1_kepen(self) -> None:
+        """Azonos `min(szélesség, magasság)` mellett a zóna KÉPPONTBAN mért
+        mérete ne függjön a képarányától (#859 „Kész, ha" 5. pontja).
+
+        KÉPPONTBAN mérve: a hiba előtti rácsnál a 4:3-as kép vízszintes
+        metszete `[171, 92, 92]`, az 1:1-esé `[150, 101, 101]` volt —
+        ELTÉRT, holott mindkét kép rövidebb oldala 300 (lemérve, 2026).
+        """
+        distance = 149  # < 300 / 2, mindkét képen belül van
+        image_4_3 = _uniform_image((200, 80, 80), height=300, width=400)
+        result_4_3 = apply_radsat(image_4_3, 0.5, 0.5, 0.2, 0.5)
+        horizontal_4_3 = result_4_3[150, 200 + distance]
+
+        image_1_1 = _uniform_image((200, 80, 80), height=300, width=300)
+        result_1_1 = apply_radsat(image_1_1, 0.5, 0.5, 0.2, 0.5)
+        horizontal_1_1 = result_1_1[150, 150 + distance]
+
+        np.testing.assert_array_equal(horizontal_4_3, horizontal_1_1)
