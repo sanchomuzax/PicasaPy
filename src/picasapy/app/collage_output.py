@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -518,7 +518,7 @@ def render_collage(
     album_id: str = "",
     background_image: str = "",
     format_key: str = "",
-    node_uids=None,
+    node_uids: Mapping[str, str] | None = None,
     should_cancel=None,
 ) -> SaveResult:
     """A vászon kirajzolása és kiírása — a JPEG és a `.cxf` párja.

@@ -36,6 +36,7 @@ egyediséget és a stabilitást állítja, nem konkrét értékeket.
 
 from __future__ import annotations
 
+import os
 import re
 
 import pytest
@@ -189,6 +190,30 @@ class TestAzAlbumAzonosito:
 
     def test_ures_mappara_ures(self):
         assert album_uid_for("") == ""
+
+    def test_a_zaro_perjel_es_a_pont_nem_szamit(self):
+        """Normalizálatlan útvonalak ugyanarra a mappára mutatnak — az
+        `albumUID` nem hasadhat ketté tőlük (a mért invariáns: egy
+        forrásalbum → egy azonosító)."""
+        alap = album_uid_for("/kepek/AI")
+
+        assert album_uid_for("/kepek/AI/") == alap
+        assert album_uid_for("/kepek/./AI") == alap
+        assert album_uid_for("/kepek/lake/../AI") == alap
+
+    def test_a_kis_nagybetu_a_platform_szabalya_szerint_szamit(self):
+        """Windowson a `C:\\Kepek\\AI` és a `C:\\kepek\\ai` UGYANAZ a mappa,
+        Linuxon KETTŐ. A `normcase` pont ezt a különbséget hordozza — a
+        teszt ezért a platform szabályát állítja, nem egy fix választ.
+
+        (A #1217 tanulsága: a platformfüggő teszt MONDJA KI a platformját,
+        ne némán viselkedjen máshogy.)"""
+        egyezik = os.path.normcase("/Kepek/AI") == os.path.normcase("/kepek/ai")
+        azonos_uid = album_uid_for("/Kepek/AI") == album_uid_for("/kepek/ai")
+
+        assert azonos_uid is egyezik, (
+            "az azonosító nem a platform kis-nagybetű-szabályát követi"
+        )
 
 
 class TestAKorbejaras:
