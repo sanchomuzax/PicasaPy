@@ -35,6 +35,9 @@ PeoplePanelRow 1.0 PeoplePanelRow.qml
 LightboxFeed 1.0 LightboxFeed.qml
 MainToolbar 1.0 MainToolbar.qml
 TrayBar 1.0 TrayBar.qml
+TrayActionCell 1.0 TrayActionCell.qml
+TrayActionButton 1.0 TrayActionButton.qml
+TrayActionSeparator 1.0 TrayActionSeparator.qml
 FileOpsDialogs 1.0 FileOpsDialogs.qml
 SaveDialogs 1.0 SaveDialogs.qml
 InitialScanDialog 1.0 InitialScanDialog.qml

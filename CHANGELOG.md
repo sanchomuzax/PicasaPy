@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Az alsó műveletsor gombjai egyforma méretűek lettek (#1345).** A
+  Nyomtatás, E-mail, Exportálás, Megosztás, Kollázs és Film gomb eddig hat
+  különböző méretben állt egymás mellett; mostantól mindegyik pontosan
+  55 × 36 képpont, egyenlő közökkel — ahogy az eredeti Picasában. A
+  feliratuk az ikon alá került, ezért szűk ablakban sem tűnik el többé, és
+  a gombok az eredeti sorrendjében állnak. A csoportok között megjelent az
+  eredeti elválasztó vonal is.
+
 ### Belső
 - **A megszakadt tesztfutások maradéka magától eltűnik (#1358).** A futás
   életjelet hagy a saját ideiglenes könyvtárában, így a halott kör maradéka
