@@ -15,7 +15,10 @@ kérdés).
 
 ## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
-### [filters-decoded.md](filters-decoded.md) — 1 kérdés
+### [filters-decoded.md](filters-decoded.md) — 1 kérdés (szűkítve)
+
+1. **A `FocalZoom` sugaras elmosásának perem-módja** — a natív magban (`0xbcf4b0`), a `filterdesc.xml` nem adja meg; nálunk `cv2.BORDER_REPLICATE` (`focal.py:141`), **méretlen feltevés**. Jegy: **#1351**.
+   *(A testvér-kérdés, a `Comicize` peremszabálya, 2026-08-24-én LEZÁRULT: **nulla padding**, képméretre feszített rács — a lap „A `TiledImageMask` peremszabálya" szakasza.)*
 
 1. ~~**`autocolor` pontos gain-képlete** (Nyitva 1)~~ — **TELJESEN MEGVAN**
    (#759, 2026-08-18): `M · diag(g) · M⁻¹`, és a becslő egész-osztásai
@@ -73,7 +76,9 @@ kérdés).
    szórás az 1.9.12-ben már 2026-08-14 óta megvan („legjobb jelölt"
    mintavételezés). A 2026-08-17-i átvilágítás vette le.
 
-### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — 1 kérdés
+### [picasa-kollazs-felulet.md](picasa-kollazs-felulet.md) — nincs nyitott kérdés
+
+✅ **2026-08-24 — az utolsó kérdés (a 6. bit MIÉRT a három rácsos témán van) LEZÁRVA**, ld. a lap **2/c** szakaszát: a bit pontosan a három `*Grid*` osztályon áll, és **nem öröklődésből** (a `CRegularGridTheme` szerkezetileg külön áll, mégis beállítja) — szándékos, témánként kiírt képesség-deklaráció. A *szándék* hatókörön kívül: nincs a binárisban. Jegy: **#1170**.
 
 ⭐ **2026-08-21, működés-kör (kilenc kérdés):** a
 `kollazs-eletciklus.md` **16.** szakasza négy, eddig sehol nem szereplő

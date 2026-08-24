@@ -169,8 +169,9 @@ megépíteni.**
 
 1. ~~A „Hold Selection" és az „Add to Picture Tray" viszonya.~~ —
    ✅ **LEZÁRVA 2026-08-24, ld. 12.**
-2. **A tálca mint fogd-és-vidd FORRÁS az Intéző felé** — a #455 említi, a
-   viselkedés nincs visszakövetve.
+2. ~~A tálca mint fogd-és-vidd FORRÁS az Intéző felé.~~ —
+   ✅ **LEZÁRVA 2026-08-24, ld. 14.** — igen, forrás; a programban
+   **pontosan három** húzási forrás van.
 3. ~~Mi számít „régóta tartott" elemnek (a 4.2 küszöbe).~~ —
    ✅ **LEZÁRVA 2026-08-24, ld. 13.** — **nem idő-alapú**, hanem
    darabszám-növekedés.
@@ -333,3 +334,65 @@ nem kérdez.
 *Bizonyítottsági fok: **megerősített** — a feltétel, a két számláló és
 mindhárom állapotmező írója diszasszemblálva; a `+0x3194`/`+0x3190`
 eltolásokra nyers bájtkeresés adta ki az összes hozzáférést (8 és 7 hely).*
+
+---
+
+## 14. LEZÁRVA: a tálca húzási FORRÁS — és pontosan három ilyen van (2026-08-24)
+
+### A gépezet
+
+| elem | cím | bizonyíték |
+|---|---|---|
+| a húzás-forrás csomópont osztálya | **`ytDragNode`**, vtable `0x00ce5b9c` | RTTI |
+| a `DoDragDrop` burok | `0x00aa1fb0` (700 b) | **a `ytDragNode` vtable 30. rekesze** — közvetlen hívója NINCS, csak ez a rekesz |
+| a rendszer-híd | **`CSysDragDrop`**, vtable `0x00ce5c94` | RTTI; metódusai a `0x00aa2xxx` modulban |
+| a héj-formátumok | `0x005378e0` | `Shell IDList Array`, `FileGroupDescriptor`, `FileContents`, `FileName`, `Preferred DropEffect`, `UniformResourceLocator`, `Net Resource`, `Embedded Object` |
+| a `Dragnode` **csomópont-típus** neve | `0x004c7b30` típusnév-táblában | a `BG Node`, `Bitmap`, `Button`, `TextEdit`… mellett |
+
+### A HÁROM húzási forrás — a konstruktor hívóiból
+
+A `ytDragNode` konstruktora (`0x00aa1b90`, 179 b) a teljes `.text`-en
+**pontosan három** helyről hívódik (nyers `E8`+rel32 keresés):
+
+| hívás | befoglaló | mi ez |
+|---|---|---|
+| `0x005b97b5` | `0x005b9700` (1122 b) | **`filmeditstrip`** — a filmszerkesztő képsávja |
+| `0x008607fc` | `0x008606d0` (778 b) | **`CollageNodeHandler`** — a kollázs csempéi |
+| `0x0071ac84` | `0x0071abc0` (1008 b) | **a `CSelectionNode` modul** — vagyis **a kijelölés = a tálca** |
+
+A harmadik azonosítása: a `0x0071xxxx` tartományban a `CSelectionNode`, a
+`CAlbumSelectionNode` és a `CFoundFaceSelectionNode` vtáblái élnek, és
+ugyanitt ül a tálca két számlálója is (`0x00716cb0`, `0x00716d10`, ld. 13.).
+
+⇒ **A tálca (a kijelölés) húzási forrás.** Nem külön funkció: a
+kijelölés-csomópont maga hozza létre a húzás-csomópontot.
+
+### ⛔ Két megdőlt nyom — hogy ne járjuk be újra
+
+1. **`ytSelectionDragHandler` / `SelectionDragCreator` / a `selectiondrag`
+   kezelő NEM fotóhúzás.** A `.tre` dönti el: a `selectiondrag` kezelő az
+   `editpanel/cropselection` (vágókeret), az `editpanel/addfaceselection`
+   (arckeret) és a `nav/` (navigátor nézetkeret) elemeken ül — ez a
+   **gumikeret** húzása egy képen belül. A név megtévesztő.
+2. **A „Confirm Copy" / „Confirm Move" NEM az Intézőbe ejtés
+   megerősítése.** A `0x005350b0` sztringkörnyezete:
+   `CThumbUI::MoveFilesToAlbumFolder::1` és `::2`, `Copying file(s) to %s`,
+   *„This folder already contains files with the same name. Would you like
+   to rename or skip these files?"*, *„Are you sure you want to copy the
+   file(s) to %s ?"* ⇒ ez a **belső, album-mappába** másolás/mozgatás
+   megerősítése. A #455 leírása ezt tévesen az Intézőbe húzáshoz köti.
+
+### ⛔ NEGATÍV: egyetlen erőforrás-elem sem `Dragnode` típusú
+
+A `respack.yt` ~1700 rétegének **egyikén sem** `dragnode` a csomópont-típus
+(a jelen lévő típusok: `text` 263, `superbutton` 259, `rect` 200,
+`button` 145, `clip` 128, `docbounds` 99, `buttcon` 87, `static` 71 …).
+
+⇒ A húzás-csomópontok **kódból jönnek létre**, nem az erőforrásfából. Aki a
+`.tre`-ben keresi őket, nem fogja megtalálni.
+
+*Bizonyítottsági fok: **megerősített** a gépezetre, a három hívási helyre
+(nyers bájtkeresés a teljes `.text`-en) és a két megdőlt nyomra.
+**Erős, nem megerősített**: hogy a harmadik hívó konkrétan a
+`CSelectionNode`-hoz tartozik — ez RTTI-szomszédságon alapul, nem a
+függvényre írt néven.*

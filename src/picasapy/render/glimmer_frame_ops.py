@@ -116,24 +116,23 @@ def draw_border(
     return add_caption(ring, caption_height_px, outer_color)
 
 
-def draw_drop_shadow(
+def compose_drop_shadow(
     image: np.ndarray,
     shadow_color: tuple[int, int, int],
     background_color: tuple[int, int, int],
-    distance: float,
+    distance_px: int,
     angle: float,
-    blur: float,
+    blur_px: int,
+    margin: int,
     fade: float = 0.0,
 ) -> np.ndarray:
-    """`DropShadow`: a kép vetett árnyéka a `background_color` vászonra,
-    `distance`/`angle` szerint eltolva, `blur`-ral (0..100, a rövidebb oldal
-    százalékában) elmosva, `shadowAlpha = fade_alpha(fade)` átlátszósággal.
+    """A `DropShadow` kompozitálása MÁR KISZÁMOLT pixel-paraméterekkel
+    (elmosás-sugár, eltolás, vászon-margó) — a százalékos `draw_drop_shadow`
+    és a Polaroid rögzített (pixelben megadott) árnyék-receptje közös magja
+    (#1144). A hívó felel a `margin` helyes levezetéséért.
     """
     validate_image(image)
     height, width = image.shape[:2]
-    blur_px = max(1, thickness_px(height, width, blur))
-    distance_px = int(round(distance))
-    margin = blur_px * 2 + abs(distance_px)
     canvas_h, canvas_w = height + margin * 2, width + margin * 2
     canvas = np.empty((canvas_h, canvas_w, 3), dtype=np.float32)
     canvas[:] = np.array(background_color, dtype=np.float32)
@@ -156,19 +155,59 @@ def draw_drop_shadow(
     return to_uint8(canvas)
 
 
+def draw_drop_shadow(
+    image: np.ndarray,
+    shadow_color: tuple[int, int, int],
+    background_color: tuple[int, int, int],
+    distance: float,
+    angle: float,
+    blur: float,
+    fade: float = 0.0,
+) -> np.ndarray:
+    """`DropShadow`: a kép vetett árnyéka a `background_color` vászonra,
+    `distance`/`angle` szerint eltolva, `blur`-ral (0..100, a rövidebb oldal
+    százalékában) elmosva, `shadowAlpha = fade_alpha(fade)` átlátszósággal.
+
+    ⚠️ #1144/#626: ez a `blur`→pixel átváltás (rövidebb oldal százaléka,
+    `margin = 2·blur_px + distance`) a Polaroid mérésén bizonyítottan HIBÁS
+    modell — a valódi Flash-eredetű `DropShadowFilter`-ben a `blur` már
+    PIXELBEN értendő, és a margó `blur_px + distance` (nincs duplázás). A
+    Polaroid receptje ezért NEM ezt a függvényt hívja, hanem a
+    `compose_drop_shadow` magot közvetlenül, kiszámolt pixel-margóval — az
+    itteni százalékos modell (az önálló `DropShadow` effekt) javítása
+    külön, nyitott jegy (#626), mert a `min`/`max` mérés ezzel a
+    függvénnyel ELLENTMOND az egyszerű `blur_px + distance` képletnek.
+    """
+    validate_image(image)
+    height, width = image.shape[:2]
+    blur_px = max(1, thickness_px(height, width, blur))
+    distance_px = int(round(distance))
+    margin = blur_px * 2 + abs(distance_px)
+    return compose_drop_shadow(
+        image, shadow_color, background_color, distance_px, angle, blur_px, margin, fade
+    )
+
+
 def rotate_with_pad(
     image: np.ndarray, angle_deg: float, border_color: tuple[int, int, int]
 ) -> np.ndarray:
     """`Rotate(..., padBorder, borderColor=...)`: elforgatás úgy, hogy a
     vászon előbb kibővül (a forgatott téglalap befoglaló mérete), így a
-    sarkok nem vágódnak le — az üresen maradó sarkokat `border_color` tölti ki.
+    sarkok (majdnem) nem vágódnak le — az üresen maradó sarkokat
+    `border_color` tölti ki.
+
+    #1144: a befoglaló méretet LEFELÉ kerekítjük (`floor`), nem felfelé — a
+    Polaroid `818×950`/`887×1004` mért kimenete csak `floor`-ral egyezik
+    (két különböző forgatási szöggel is ellenőrizve; `ceil` mindkét esetben
+    +1 képpontot ad mindkét irányban). A gyakorlatban ez a forgatott
+    téglalap sarkaiból tör le fél képpontnál kevesebbet.
     """
     validate_image(image)
     height, width = image.shape[:2]
     angle_rad = np.deg2rad(angle_deg)
     cos_a, sin_a = abs(np.cos(angle_rad)), abs(np.sin(angle_rad))
-    new_w = int(np.ceil(width * cos_a + height * sin_a))
-    new_h = int(np.ceil(width * sin_a + height * cos_a))
+    new_w = int(np.floor(width * cos_a + height * sin_a))
+    new_h = int(np.floor(width * sin_a + height * cos_a))
     canvas = np.empty((new_h, new_w, 3), dtype=image.dtype)
     canvas[:] = np.array(border_color, dtype=image.dtype)
     top = (new_h - height) // 2
@@ -193,6 +232,7 @@ __all__ = [
     "round_corners",
     "add_caption",
     "draw_border",
+    "compose_drop_shadow",
     "draw_drop_shadow",
     "rotate_with_pad",
 ]

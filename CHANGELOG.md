@@ -12,6 +12,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   Eddig irányváltásnál zsugorított (Intéző-féle tartomány); mostantól
   egyesével bővít, és a másik irányba is bővít, ahogy az eredeti. Az egérrel
   húzott Shift-tartomány változatlan — az a két útvonal szándékosan más.
+- **A polaroid keret már nem nagyít 29%-ot a képen (#1144).** Az árnyék
+  elmosását a kép méretének százalékaként számoltuk, holott az eredeti fix
+  képpontértéket használ — emiatt a kimenet 960×640-es képnél 1053×1185 lett
+  a helyes 818×950 helyett.
+
+### Belső
+- **A CHANGELOG-őr nem engedhet át némán (#1340).** Ha a változást nem tudja
+  megmérni (hibás vagy elérhetetlen commit), az nem zöld út többé, hanem
+  látható hiba — a sikertelen mérésből korábban „nincs mit ellenőrizni" lett.
 
 ## [0.8.74] – 2026-08-24
 
