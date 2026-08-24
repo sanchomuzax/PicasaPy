@@ -16,6 +16,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   elhalványul. Kép mozgatása, forgatása vagy méretezése közben végig
   látható marad, akkor is, ha a mutató kifut a képből.
 
+### Belső
+- **A jegycímek leíróak maradnak (#1378).** Prioritás, állapot,
+  commit-előtag és nagybetűs nyomaték nem kerülhet a jegy címébe — arra
+  címke van —, és a cím nevezze meg az érintett funkciót, hogy később
+  kereshető legyen. Egy őr be is tartatja.
+
 ## [0.8.82] – 2026-08-24
 
 ### Belső
