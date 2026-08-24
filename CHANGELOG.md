@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.67] – 2026-08-24
+
+### Javítva
+- **A kollázsképek mozgatása többé nem változik át észrevétlen cserévé
+  (#990).** A kijelölt kép gyűrűjének húzása most mindig szabad mozgatás,
+  míg a kép testéről induló, 10 képpontnál hosszabb vonszolás külön
+  cseregesztus. A Ctrl-kattintás csak a kijelölést billenti, ezért nem tud
+  véletlenül két képet felcserélni; a korábban másik kártya fölött
+  „visszaugró” kép pedig ott marad, ahová a felhasználó húzta.
+
 ## [0.8.63] – 2026-08-23
 
 ### Javítva

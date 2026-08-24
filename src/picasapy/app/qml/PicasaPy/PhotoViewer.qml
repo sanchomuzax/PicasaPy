@@ -587,10 +587,14 @@ Rectangle {
             // bal eszközpanel — Gyakori javítások élesben (#19); a
             // Retusálás/Szöveg és a finomhangolás a #20-ban élesedik
             Rectangle {
+                id: leftDrawer
+                objectName: "viewerLeftDrawer"
                 // #411: az EditorPanel.qml implicitWidth-ével összhangban —
                 // FIX 280px, nem ablakarányos (ld. az ottani kommentet)
                 Layout.preferredWidth: 280
                 Layout.fillHeight: true
+                // A rajta kívül lebegő hisztogram a képterület fölé kerüljön.
+                z: 1
                 // #641: itt NINCS `Layout.minimumHeight`. A #628 azt tette ide,
                 // de az visszafelé sült el: a doboz nem zsugorodott a cellára,
                 // hanem TÚLNYÚLT rajta, és a panel aljához igazodó
@@ -873,9 +877,11 @@ Rectangle {
                 HistogramBox {
                     objectName: "viewerHistogramBox"
                     anchors.bottom: parent.bottom
-                    anchors.left: parent.left; anchors.right: parent.right
-                    anchors.margins: 10
-                    height: 150
+                    anchors.bottomMargin: 95
+                    anchors.left: parent.right
+                    anchors.leftMargin: 20
+                    width: 238
+                    height: 144
                     // #305: null-őr
                     histogramData: viewer.editCtl
                         ? viewer.editCtl.histogram : ({ r: [], g: [], b: [] })
