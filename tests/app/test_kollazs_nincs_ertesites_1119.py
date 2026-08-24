@@ -66,6 +66,27 @@ class TestNincsErtesitesAKeszitesUtan:
 
         assert not talalatok, "visszakerült az értesítés-hívás: " + ", ".join(talalatok)
 
+    def test_a_megjelenites_CSAK_a_hatterkep_agarol_indul(self):
+        """#1168: a komponens azóta BE VAN KÖTVE — de csak a háttérkép-ágra.
+
+        ⚠️ A fenti két őr a `collageDoneNotice.showFor` SZÖVEGET keresi, a
+        bekötés viszont a komponensen belül `notice.showFor`-ként hívódik.
+        Az őrök tehát önmagukban már nem fognák meg, ha valaki a RENDES
+        mentésre (`onCollageDone` / `onCollageSaved`) kötné rá — ez az
+        állítás az, ami továbbra is megfogja."""
+        forras = (QML / "PicasaPy" / "CollageDoneNotice.qml").read_text(
+            encoding="utf-8"
+        )
+        kod = "\n".join(_kodsorok(forras))
+
+        assert "onCollageDesktopBackgroundReady" in kod, (
+            "eltűnt a háttérkép-ág bekötése (#1168)"
+        )
+        for tiltott in ("onCollageDone", "onCollageSaved", "onCollageProgress"):
+            assert tiltott not in kod, (
+                f"a rendes létrehozásra kötött értesítés: {tiltott} (#1119)"
+            )
+
 
 class TestAKomponensMARAD:
     """Az eredetiben LÉTEZIK ez az értesítés — csak az „Asztali háttérkép"

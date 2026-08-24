@@ -112,6 +112,9 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
     collageClipCountChanged = Signal()
     collageDirtyChanged = Signal()
     collageCapabilitiesChanged = Signal()
+    # ⚠️ A `collageRenderingChanged` (#1168) a `collage_save.py`-ban él, a
+    # `collageProgress`/`collageDone` társaságában: a Property és a jelzése
+    # egy fájlban kell legyen, különben a `notify=` nem hivatkozható.
 
     # -- lusta állapot -----------------------------------------------------
 
@@ -159,6 +162,11 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         # a legutóbb kiadott százalék — a megszakítás ezzel tudja a
         # folyamatjelzőt a HELYÉN hagyni, miközben a címét „leállítás"-ra írja
         self._collage_panel_percent = 0
+        # #1168 (spec 16.3): fut-e ÉPPEN a kollázs rajzolása. Ebből tudja a
+        # FŐABLAK, hogy kiírja-e a „Várakozás a kollázs elkészítésére…"
+        # sort (`CThumbUI::CreateCollageWait`). A folyamatjelző DOBOZ a
+        # panelé; ez a jelző a könyvtárnézeté, ami közben is látszik.
+        self._collage_panel_rendering = False
 
         self._collage_panel_theme = stored.theme
         self._collage_panel_format = stored.format_key

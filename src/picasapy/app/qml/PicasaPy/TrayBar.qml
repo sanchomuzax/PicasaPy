@@ -39,6 +39,12 @@ Column {
     // kijelölést; az ÍRÁS (a kijelölés módosítása) marad közvetlenül az
     // `appWindow`-on, mert az csak felhasználói művelet közben fut, amikor
     // az ablak biztosan él.
+    //: #1168 (spec 16.3): `CThumbUI::CreateCollageWait` (`0x007f7120`) — a
+    //: főablak várakozó sora, amíg a kollázs készül. Külön tulajdonságban,
+    //: hogy az infó-sáv hármas feltétele olvasható maradjon.
+    readonly property string collageWaitText:
+        qsTr("Waiting for the collage to be created…")
+
     readonly property var selectedIndexesOrEmpty:
         (tray.appWindow && tray.appWindow.selectedIndexes)
             ? tray.appWindow.selectedIndexes
@@ -86,14 +92,22 @@ Column {
             // KIJELÖLÉSRŐL ír. Nálunk a „minden más" ág a mappa egészének
             // összesítését (`statusText`) mutatta, ezért több kijelölt
             // képnél a mappa adatai maradtak a sávban.
-            text: (!tray.ctl || !tray.appWindow) ? "" : (tray.appWindow.viewerOpen
+            //
+            // #1168 (spec 16.3): a kollázs rajzolása alatt a FŐABLAK is
+            // jelez — `CThumbUI::CreateCollageWait` (`0x007f7120`). A
+            // várakozás MINDEN mást megelőz: a kollázs lapja közben be is
+            // zárulhat, és a felhasználó máshol nézelődik, miközben a munka
+            // fut — az eredeti éppen ezért a KÖNYVTÁRNÉZETBEN mondja ki.
+            text: (!tray.ctl || !tray.appWindow) ? ""
+                  : (tray.ctl.collageRendering === true ? tray.collageWaitText
+                  : (tray.appWindow.viewerOpen
                   ? tray.ctl.viewerInfo(tray.viewerIndex)
                   : (tray.appWindow.selectedIndexes.length === 1
                      ? tray.ctl.photoInfo(tray.appWindow.selectedIndex)
                      : (tray.appWindow.selectedIndexes.length > 1
                         && typeof tray.ctl.selectionInfo === "function"
                         ? tray.ctl.selectionInfo(tray.appWindow.selectedIndexes)
-                        : tray.ctl.statusText)))
+                        : tray.ctl.statusText))))
             color: Theme.infoBarText
             font.pixelSize: Theme.fontSize
             font.bold: true

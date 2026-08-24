@@ -1,5 +1,10 @@
 """SQLite index: gyors lekérdezések a könyvtárra, ismételhető szinkronnal."""
 
+from .album_collage import (
+    COLLAGE_PROJECT_NAME,
+    albums_with_collage,
+    folder_has_collage,
+)
 from .albums import AlbumRecord, album_photos, albums_in_index
 from .colors import (
     backfill_colors,
@@ -70,6 +75,7 @@ from .sync import (
 )
 
 __all__ = [
+    "COLLAGE_PROJECT_NAME",
     "SCHEMA_VERSION",
     "AlbumRecord",
     "PendingEmbeddingFace",
@@ -83,6 +89,7 @@ __all__ = [
     "RelocationResult",
     "album_photos",
     "albums_in_index",
+    "albums_with_collage",
     "all_photos",
     "backfill_colors",
     "clear_faces",
@@ -108,6 +115,7 @@ __all__ = [
     "unnamed_album_photos",
     "photos_in_folder",
     "photos_under_folder",
+    "folder_has_collage",
     "project_folders",
     "prune_foreign_folders",
     "relocate_data_root",

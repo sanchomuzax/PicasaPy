@@ -23,8 +23,6 @@
 # A #1003 alatt kézzel is visszaigazolt tételek (a némaság a
 # FELHASZNÁLÓT érinti), lentebb „VISSZAIGAZOLT" jelöléssel szerepel.
 
-app/collage_save.py::collageDesktopBackgroundReady #1005 — az „Asztali háttérkép" második fele (BMP + registry) még nincs meg, a kész fájl útját ma senki nem veszi át
-app/collage_save.py::collageDraftSaved #1003 — a kollázs-piszkozat útvonalát ma nem használja senki; a helyreállítás induláskor a #979 dolga
 app/compact_controller.py::compactProgress #1003 — az index-tömörítés szívverése; a felületi folyamatjelző nincs bekötve
 app/compact_controller.py::compactStarted #1003 — a tömörítés indulását a felület nem jelzi
 app/create_controller.py::collagePreviewFailed #1003 — a kollázs-előnézet hibaüzenete elvész; át kell nézni, kell-e felületi jelzés
