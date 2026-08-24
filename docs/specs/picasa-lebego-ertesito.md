@@ -312,6 +312,26 @@ A `0x00657300` (a `CNotifierPopup` létrehozója) ezt teszi:
 teljes képernyő), **mindig felül van**, és **nem kap tálcagombot** — pontosan
 az a viselkedés, amit a tulajdonos „lebegő sávnak" nevezett.
 
+### Melyik ÉLHEZ képest a 144 képpont (2026-08-24, #1129)
+
+Az első leírás csak annyit mondott, hogy „144 képpont eltolás a szélétől" —
+a megvalósításhoz viszont tudni kell, MELYIK széltől. A dekompilátumból ez
+kiolvasható: a `SystemParametersInfoA(0x30, …)` a `local_10 … local_4`
+egymást követő rekeszekbe írja a `RECT`-et (`left, top, right, bottom`),
+tehát a `local_4` a munkaterület **alsó** éle, és a `local_4 + -0x90` ebből
+von le 144-et. Az így kapott érték az ablak **felső** éle lesz
+(`local_1c = local_4`, `local_14 = local_4 + 1`).
+
+Vízszintesen az induló téglalap `left = 10000` (jobbról-balra író
+felületnél `-10001`), vagyis **a képernyőn kívül**, a jobb oldalon — ez a
+*parkolóhely*, nem a megjelenési pozíció. Ez egyben a legerősebb közvetett
+nyom arra, hogy a felbukkanás **vízszintes becsúszás** lehet; bizonyíték
+továbbra sincs rá.
+
+➡️ Amit ebből a #1129 megvalósított: a sáv a munkaterület **jobb** széléhez
+igazodik, a **felső** éle pedig a munkaterület aljától **144 képponttal**
+feljebb van.
+
 A `0x00658200` ugyanezt tartja karban: `SystemParametersInfoA` +
 `IsWindow` + `IsWindowVisible` + `GetWindowRect` — **újrahorgonyzás**, ha a
 munkaterület vagy az ablak állapota változik.

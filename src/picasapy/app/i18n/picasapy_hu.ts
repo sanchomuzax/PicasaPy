@@ -7487,6 +7487,29 @@ Restore it to continue where you left off. If you discard it, the draft is delet
     </message>
 </context>
 <context>
+    <name>PicasaNotifier</name>
+    <message>
+        <source>Picasa Notifier</source>
+        <translation>Picasa Értesítő</translation>
+    </message>
+    <message>
+        <source>Completed Importing</source>
+        <translation>Az importálás elkészült</translation>
+    </message>
+    <message>
+        <source>Error Importing</source>
+        <translation>Hiba történt az importálás során</translation>
+    </message>
+    <message>
+        <source>click to view</source>
+        <translation>a megtekintéshez kattintson ide</translation>
+    </message>
+    <message>
+        <source>The collage is ready (click here)</source>
+        <translation>A kollázs kész (kattintson ide)</translation>
+    </message>
+</context>
+<context>
     <name>CollageDialogs</name>
     <message>
         <source>The collage could not be saved</source>

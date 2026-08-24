@@ -123,3 +123,6 @@ CollageProgressOverlay 1.0 CollageProgressOverlay.qml
 CollageDialogs 1.0 CollageDialogs.qml
 CollageDraftDialog 1.0 CollageDraftDialog.qml
 CollageDoneNotice 1.0 CollageDoneNotice.qml
+singleton NotifierBus 1.0 NotifierBus.qml
+NotifierCell 1.0 NotifierCell.qml
+PicasaNotifier 1.0 PicasaNotifier.qml
