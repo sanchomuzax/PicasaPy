@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.68] – 2026-08-24
+
+### Javítva
+- **A hisztogram ugyanazzal az algoritmussal rajzol, mint az eredeti Picasa
+  (#864).** A csatornák magassága már a mintavett képpontok átlagához
+  igazodik, a fedések pedig összeadó színkeveréssel készülnek, így a három
+  csatorna közös területe a helyes, átlátszatlan sötétszürke. A 256 × 70-es
+  belső kép a Picasa 213 × 59-es nézetébe skálázódik, a teljes
+  hisztogram- és fényképezőgép-adatpanel pedig az eredeti 238 × 144-es,
+  lebegő elrendezést követi.
+
 ## [0.8.67] – 2026-08-24
 
 ### Javítva
