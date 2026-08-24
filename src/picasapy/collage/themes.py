@@ -81,6 +81,7 @@ THEME_CLASS_NAMES = {
 # | bit | jelentés | cím |
 # |---|---|---|
 # | 4 | a kijelölés engedélyezett | `0x008318ed` |
+# | 6 | a CSOPORT-CSOMÓPONT külön overlay-ágba kerül | `0x00860470` |
 # | 9 | a három keretgomb látszik | `0x008317f5` |
 # | 10 | a térköz-csúszka látszik | `0x00831860` |
 # | 11 | az árnyék-jelölő engedélyezett | `0x00831818` |
@@ -99,6 +100,7 @@ THEME_CLASS_NAMES = {
 # | 14 (árnyék alapérték) | ugyanaz, szintén csak a Képkupacra |
 # | 4 (kijelölés) | **KIZÁRÓLAG a fogyasztó kód olvasata** — nincs külső megerősítés |
 # | 11 (árnyék engedélyezve) | **KIZÁRÓLAG a fogyasztó kód olvasata** — nincs külső megerősítés |
+# | 6 (csoport-overlay) | **megerősített mechanizmus** — utasításszinten végigkövetve (#1170) |
 #
 # A maszkértékek ÉS a bit→jelentés hozzárendelés UGYANABBÓL az egy forrásból
 # származik (a `0x00831750` / `0x0082c4e0` visszafejtése). A `capabilities_for`
@@ -112,7 +114,33 @@ THEME_CLASS_NAMES = {
 #
 # A 15. és 16. bitnek NINCS fogyasztója a `.text`-ben (halott bitek), a
 # 12. bit „képesség-hirdetés" (a téma megvalósítja a 9. vtable-slotot: csak
-# a `CGridTheme` és a `CFrameGridTheme`), a 6. bit jelentése NYITOTT.
+# a `CGridTheme` és a `CFrameGridTheme`).
+#
+# --- A 6. BIT — MEGFEJTVE (#1170, kutatás 2026-08-21) -----------------------
+#
+# A bit a kollázs **csoport-csomópontját** (`collagepanel/groupnode`) teszi
+# **külön, a szülőtől független feldolgozási ágba** — overlay-rétegbe —, a
+# szokásos, szülőhöz kötött jelenetgráf-bejárás helyett. NEM szövegelrendezési
+# kapcsoló: az a 2016 előtti feltevés volt, és megdőlt.
+#
+# A kapu maga (`CollageNodeHandler` vtable 5. rekesze, `0x008603c0`):
+#
+#     0x0086046e  call edx        ; a téma képesség-maszkja (vt[0x1c])
+#     0x00860470  shr  eax, 6
+#     0x00860473  test al, 1      ; << a 6. BIT
+#     0x00860475  je   0x86054f   ; nincs -> kihagyja
+#     0x00860488  mov  byte ptr [edi + 0x219], 1   ; a jelző, amit a bejáró néz
+#
+# A `+0x219` jelzőt a jelenetgráf-bejáró (`0x009e2aa5`) olvassa: a csomópont
+# rekordja KÜLÖN verembe kerül, és a rutin azonnal kilép — a normál ág
+# (piszkos jelzők, geometria-összevetés) nem fut le rá. A `.text` teljes
+# pásztázása szerint a jelzőnek kilenc beállítója van, és mind lebegő,
+# szülő fölé kilógó, kódból épülő gyerekcsoportot rak össze (az arcpanel
+# kiegészítői, a vágókeret, a színpaletta) — innen az „overlay" olvasat.
+#
+# A csomópont RAJZA is ki van mérve (`docs/specs/picasa-kollazs-felulet.md`
+# **2/b**): `#F85E0F` színű, 2 képpont vastag, élsimított KÖRVONALAS
+# téglalap — a felületi megvalósítása a `CollageGroupNode.qml`.
 
 #: A hat téma nyers maszkja — a forrás a fenti tábla.
 THEME_MASKS = {
@@ -146,6 +174,7 @@ _BIT_SHUFFLE = 2
 _BIT_SCRAMBLE = 3
 _BIT_SELECTION = 4
 _BIT_RING = 5
+_BIT_GROUP_OVERLAY = 6
 _BIT_ROTATE = 7
 _BIT_BORDERS = 9
 _BIT_SPACING = 10
@@ -159,10 +188,15 @@ class ThemeCapabilities(NamedTuple):
     `shadow_default` a `collage::shadows` alapértéke (14. bit): árnyék
     alapból BE a Képkupacnál és az Indexképnél, KI a másik négynél.
 
-    #943: az utolsó öt mező a panel többi vezérlőjét kapcsolja (háttér-doboz,
-    a két véletlenszerűsítő gomb, a gyűrű-overlay és a szabad forgatás). Az
-    ÚJ mezők a sor VÉGÉN állnak, hogy a #923 óta meglévő négy mező helye
-    (és a `picasa_render` olvasata) ne csússzon el.
+    #943: az öt középső mező a panel többi vezérlőjét kapcsolja (háttér-doboz,
+    a két véletlenszerűsítő gomb, a gyűrű-overlay és a szabad forgatás).
+
+    `group_overlay` (#1170, 6. bit) a vászon CSOPORT-ELEMÉT engedélyezi: a
+    három rács-témánál a többszörös kijelölés köré körvonalas keret kerül,
+    külön overlay-rétegben. Nem panel-vezérlő — a vászon olvassa.
+
+    ⚠️ Az ÚJ mezők MINDIG a sor VÉGÉN állnak, hogy a #923 óta meglévő négy
+    mező helye (és a `picasa_render` olvasata) ne csússzon el.
     """
 
     borders: bool
@@ -175,6 +209,7 @@ class ThemeCapabilities(NamedTuple):
     scramble: bool
     ring: bool
     rotate: bool
+    group_overlay: bool
 
 
 def capabilities_for(theme: str) -> ThemeCapabilities:
@@ -193,6 +228,7 @@ def capabilities_for(theme: str) -> ThemeCapabilities:
         scramble=bool(mask & (1 << _BIT_SCRAMBLE)),
         ring=bool(mask & (1 << _BIT_RING)),
         rotate=bool(mask & (1 << _BIT_ROTATE)),
+        group_overlay=bool(mask & (1 << _BIT_GROUP_OVERLAY)),
     )
 
 
@@ -209,6 +245,7 @@ UI_CAPABILITY_FIELDS = (
     "scramble",
     "ring",
     "rotate",
+    "group_overlay",
 )
 
 

@@ -77,12 +77,15 @@ class TestMaradekBitek:
 class TestKepessegTerkep:
     """A `capability_map` az, amit a vezérlő a QML-nek átad (spec 8.1)."""
 
-    def test_pontosan_a_kilenc_kulcs(self):
+    def test_pontosan_a_tiz_kulcs(self):
+        """#1170: a tizedik a `group_overlay` (6. bit) — a vászon
+        csoport-eleme. A szám azért van kimondva, hogy egy MEZŐ NÉLKÜLI
+        bővítés (csak a `NamedTuple`-be, a térképbe nem) kibukjon."""
         from picasapy.collage.themes import UI_CAPABILITY_FIELDS, capability_map
 
         terkep = capability_map(PICTUREPILE)
         assert set(terkep) == set(UI_CAPABILITY_FIELDS)
-        assert len(UI_CAPABILITY_FIELDS) == 9
+        assert len(UI_CAPABILITY_FIELDS) == 10
 
     def test_az_arnyek_ALAPERTEKE_nem_kerul_a_terkepbe(self):
         """A `shadow_default` az árnyék-jelölő kezdőértéke, nem vezérlő —
@@ -106,4 +109,5 @@ class TestKepessegTerkep:
                 "scramble": c.scramble,
                 "ring": c.ring,
                 "rotate": c.rotate,
+                "group_overlay": c.group_overlay,
             }
