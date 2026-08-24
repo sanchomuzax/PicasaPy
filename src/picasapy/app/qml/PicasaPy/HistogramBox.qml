@@ -54,7 +54,7 @@ Rectangle {
             objectName: "histogramTitle"
             Layout.fillWidth: true
             text: qsTr("Histogram and camera information")
-            font.pixelSize: Theme.fontSize
+            font.pointSize: 14
             font.bold: true
             color: Theme.ink
             // #235: keskeny doboznál a cím ne vágódjon `…`-ra — legfeljebb

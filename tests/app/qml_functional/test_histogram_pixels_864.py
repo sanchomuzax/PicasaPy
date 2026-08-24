@@ -7,6 +7,10 @@ amelyet a visszafejtett ``+85`` RGBA-keverés előír.
 
 from __future__ import annotations
 
+import math
+
+import pytest
+
 from PySide6.QtCore import QObject, QPointF, QUrl
 from PySide6.QtGui import QColor
 from PySide6.QtQml import QQmlComponent
@@ -16,7 +20,7 @@ from PySide6.QtTest import QTest
 _KEEPALIVE: list[object] = []
 
 
-def _histogram_box(qt_app) -> tuple[QQuickView, QQuickItem]:
+def _histogram_box(qt_app, histogram=None) -> tuple[QQuickView, QQuickItem]:
     """A valódi ``HistogramBox`` 238 × 144-es ablakban kirajzolva."""
     import picasapy.app.application as app_module
 
@@ -32,11 +36,12 @@ def _histogram_box(qt_app) -> tuple[QQuickView, QQuickItem]:
 
     # Alulról 20 px-ig R+G+B, 40 px-ig R+G, 60 px-ig csak R.
     # Minden bin azonos, így a 256→213 kicsinyítés vízszintesen homogén.
-    histogram = {
-        "r": [60 / 70] * 256,
-        "g": [40 / 70] * 256,
-        "b": [20 / 70] * 256,
-    }
+    if histogram is None:
+        histogram = {
+            "r": [60 / 70] * 256,
+            "g": [40 / 70] * 256,
+            "b": [20 / 70] * 256,
+        }
     root = component.createWithInitialProperties(
         {"histogramData": histogram, "cameraSummary": "Gép\t1/125 s"}
     )
@@ -106,6 +111,38 @@ def _assert_rgb(actual: QColor, expected: str) -> None:
     ) <= 1, f"várt {target.name()}, kapott {actual.name()}"
 
 
+def _valtozo_binek() -> tuple[dict[str, list[float]], dict[str, list[int]]]:
+    """Minden binben eltérő, egész belső magasságú tesztmintát ad."""
+    heights = {
+        "r": [(index * 13 + 3) % 71 for index in range(256)],
+        "g": [(index * 29 + 11) % 71 for index in range(256)],
+        "b": [(index * 47 + 23) % 71 for index in range(256)],
+    }
+    return (
+        {
+            channel: [height / 70 for height in channel_heights]
+            for channel, channel_heights in heights.items()
+        },
+        heights,
+    )
+
+
+def _vart_kijelzo_szin(
+    heights: dict[str, list[int]], x: int, y: int
+) -> QColor:
+    """Független orákulum a 256 × 70 → 213 × 59 legközelebbi mintához."""
+    # A legközelebbi texel középpontos leképezése; pontos félúton a kisebb
+    # index nyer, ezért ``ceil(...)-1`` és nem a Python bankárkerekítése.
+    source_x = min(255, math.ceil((x + 0.5) * 256 / 213) - 1)
+    source_y = min(69, math.ceil((y + 0.5) * 70 / 59) - 1)
+    bottom_y = 69 - source_y
+    active = tuple(heights[channel][source_x] > bottom_y for channel in "rgb")
+    count = sum(active)
+    # A bináris +85 premultiplied-alfa pufferét fehér háttérre kompozitáljuk.
+    background = 255 - 85 * count
+    return QColor(*(background + 85 * int(enabled) for enabled in active))
+
+
 def test_additive_rgba_mix_is_visible_in_rendered_pixels(qt_app):
     """A +85-ös szorzott-alfa keverés négy tartománya képpontos."""
     view, root = _histogram_box(qt_app)
@@ -153,3 +190,55 @@ def test_internal_and_display_geometry_is_exact(qt_app):
     assert isinstance(bitmap, QQuickItem)
     assert (plot.width(), plot.height()) == (213, 59)
     assert (bitmap.width(), bitmap.height()) == (256, 70)
+
+
+def test_final_213x59_output_scales_every_varying_bin(qt_app):
+    """A végső plot minden képpontja független skálázási orákulumot követ."""
+    histogram, heights = _valtozo_binek()
+    view, root = _histogram_box(qt_app, histogram)
+    plot = root.findChild(QObject, "histogramPlot")
+    assert isinstance(plot, QQuickItem)
+    image = view.grabWindow()
+    origin = plot.mapToScene(QPointF(0, 0))
+
+    mismatches: list[str] = []
+    for y in range(59):
+        for x in range(213):
+            actual = image.pixelColor(round(origin.x() + x), round(origin.y() + y))
+            expected = _vart_kijelzo_szin(heights, x, y)
+            if max(
+                abs(actual.red() - expected.red()),
+                abs(actual.green() - expected.green()),
+                abs(actual.blue() - expected.blue()),
+            ) > 1:
+                mismatches.append(
+                    f"({x}, {y}): várt {expected.name()}, kapott {actual.name()}"
+                )
+    assert not mismatches, (
+        f"A 213 × 59-es kirajzolás eltér (origó: {origin.x()}, {origin.y()}):\n"
+        + "\n".join(mismatches[:20])
+    )
+
+
+def test_real_photo_viewer_histogram_panel_geometry(qml_app, qt_app):
+    """A Mainből nyitott PhotoViewer lebegő paneljének éles geometriája pontos."""
+    window, _, _ = qml_app
+    window.setProperty("viewerOpen", True)
+    for _ in range(5):
+        qt_app.processEvents()
+        QTest.qWait(20)
+
+    viewer = window.findChild(QObject, "photoViewer")
+    drawer = window.findChild(QObject, "viewerLeftDrawer")
+    box = window.findChild(QObject, "viewerHistogramBox")
+    title = window.findChild(QObject, "histogramTitle")
+    assert all(isinstance(item, QQuickItem) for item in (viewer, drawer, box, title))
+
+    assert (box.width(), box.height()) == (238, 144)
+    drawer_right = drawer.mapToScene(drawer.boundingRect().topRight()).x()
+    box_left = box.mapToScene(box.boundingRect().topLeft()).x()
+    viewer_bottom = viewer.mapToScene(viewer.boundingRect().bottomLeft()).y()
+    box_bottom = box.mapToScene(box.boundingRect().bottomLeft()).y()
+    assert box_left == pytest.approx(drawer_right + 20, abs=0.5)
+    assert box_bottom == pytest.approx(viewer_bottom - 95, abs=0.5)
+    assert title.property("font").pointSizeF() == pytest.approx(14)
