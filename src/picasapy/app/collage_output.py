@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -518,6 +518,7 @@ def render_collage(
     album_id: str = "",
     background_image: str = "",
     format_key: str = "",
+    node_uids: Mapping[str, str] | None = None,
     should_cancel=None,
 ) -> SaveResult:
     """A vászon kirajzolása és kiírása — a JPEG és a `.cxf` párja.
@@ -531,6 +532,10 @@ def render_collage(
     háttér a `settings.background_image`-ből jön (#1015) — a hívó
     `render_settings`-e csak KÉP-módban tölti ki, tehát a szín- és az
     átlagszín-mód érintetlen.
+
+    A `node_uids` a MEGNYITOTT projekt `src → uid` párjai (#1092): ami
+    benne van, az változatlanul megy vissza a fájlba, a többi csomópont a
+    `src`-ből származtatott azonosítót kapja.
 
     A `should_cancel` a megszakítás egyetlen fogantyúja (spec 9.1): a
     rajzolás UTÁN, az írás ELŐTT kérdezzük meg. Így a megszakított mentés
@@ -559,6 +564,7 @@ def render_collage(
         album_id=album_id,
         background_image=background_image,
         format_key=format_key,
+        node_uids=node_uids,
     )
     ut = _write_pair(Path(target), jelentes.image, projekt)
     # A mappa megjelölése projekt-albumként — enélkül a mentett kollázs
