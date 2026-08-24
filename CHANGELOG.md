@@ -15,6 +15,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   helyükre kerültek, így az oszlopok nem csúsznak el, és a panel mérete a
   szöveg mennyiségétől függetlenül állandó.
 
+### Változott
+- **A PicasaPy többé nem írja át a fotók dátumát mentéskor (#1320).** Eddig
+  minden szerkesztés (csillag, felirat, effekt, arcok…) után a képfájl
+  módosítási dátuma is „mostani"-ra változott, hogy a párhuzamosan futó
+  eredeti Picasa észrevegye a változást. Kiderült, hogy erre nincs szükség:
+  a Picasa a `.picasa.ini` fájl saját dátumát figyeli, ami a mentéstől
+  amúgy is frissül. A fotók dátuma mostantól érintetlen marad, tehát a
+  dátum szerinti rendezés és a mentőprogramok nem zavarodnak össze. Aki a
+  régi viselkedést akarja, a `PICASAPY_TOUCH_PHOTO_MTIME=1` környezeti
+  változóval visszakapcsolhatja — ilyenkor a napló ki is írja, hány fájlt
+  érintett.
+
 ### Belső
 - **Helyben legfeljebb két tesztfutás mehet egyszerre (#1360).** A harmadik
   megvárja, amíg felszabadul egy hely, ahelyett hogy a négymagos gépet

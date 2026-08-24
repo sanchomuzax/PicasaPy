@@ -467,14 +467,22 @@ külső író a **képfájl** módosítási idejét is megérinti, a fotó beker
 újrafeldolgozandók közé — és akkor az ini-t is beolvassa. Ez egy mérhető
 kísérlet, nem elmélet.
 
-### A PicasaPy ezt a megkerülési utat MEGVALÓSÍTJA (#643, 2026-08-15)
+### A PicasaPy megvalósítja, de ALAPÉRTELMEZÉSBEN KIKAPCSOLVA (#643 → #1320)
 
-Az `update_document` (`src/picasapy/ini/io.py`) a sikeres ini-mentés után
-megérinti azoknak a fotóknak a **módosítási idejét**, amelyeknek a szakasza
-ténylegesen változott. A logika egy helyen él
-(`src/picasapy/ini/photo_touch.py`), és mivel az `update_document` a projekt
-EGYETLEN ini-írási kapuja, minden író (szerkesztő, csillag, felirat, arcok,
-kulcsszavak, csoportos effekt, mentés) automatikusan részesül belőle.
+> ⚠️ **Ezt a szakaszt a lap végi „MEGFEJTVE" szakasz felülírja.** Az
+> újraolvasás kulcsa a `.picasa.ini` SAJÁT írási ideje
+> (`albumdata_inisync`, 99,5%-os mért egyezés), nem a képfájlé. A lenti
+> megkerülési út ezért **feltételezett**, és a #1320 óta **opt-in**:
+> `PICASAPY_TOUCH_PHOTO_MTIME=1`. Alapértelmezésben a képfájlokhoz hozzá
+> sem nyúlunk.
+
+Az `update_document` (`src/picasapy/ini/io.py`) — ha a kapcsoló be van
+kapcsolva — a sikeres ini-mentés után megérinti azoknak a fotóknak a
+**módosítási idejét**, amelyeknek a szakasza ténylegesen változott. A logika
+egy helyen él (`src/picasapy/ini/photo_touch.py`), és mivel az
+`update_document` a projekt EGYETLEN ini-írási kapuja, minden író
+(szerkesztő, csillag, felirat, arcok, kulcsszavak, csoportos effekt, mentés)
+egyformán viselkedik.
 
 | kérdés | válasz |
 |---|---|
@@ -484,7 +492,8 @@ kulcsszavak, csoportos effekt, mentés) automatikusan részesül belőle.
 | melyik fájlra | az ini MELLETTI, azonos nevű, LÉTEZŐ fájlra; hiányzó képet, alkönyvtárat, `..`-t kihagy |
 | milyen érték | „most"; ha a képfájl mtime-ja a jövőben van (NAS-óraeltérés), akkor a jelenleginél 1 másodperccel későbbre — hogy biztosan újabbnak látsszon |
 | hibatűrés | az `utime` bukása (írásvédett kép, hálózati megosztás) **naplózott figyelmeztetés**, a mentés érvényes marad |
-| kikapcsolás | `PICASAPY_TOUCH_PHOTO_MTIME=0` (`false`/`no`/`off`/`ki` is jó). Hiányában BE. Környezeti változó, mert az `ini` réteg szándékosan Qt-mentes, és a mtime-érzékeny felhasználónak (fájlkezelős rendezés, rsync-alapú mentés) ez egyszeri, tartós döntés. |
+| bekapcsolás | `PICASAPY_TOUCH_PHOTO_MTIME=1` (`true`/`yes`/`on`/`igen`/`be` is jó). **Hiányában KI** (#1320). Bármi más érték is KI — elgépelésre a biztonságos irányba dőlünk. Környezeti változó, mert az `ini` réteg szándékosan Qt-mentes, és ez kísérleti kapcsoló, nem felhasználói beállítás. |
+| láthatóság | bekapcsolt állapotban a modul `INFO` szinten naplózza, hány képfájl időbélyegét írta át és melyik mappában (#1320) |
 
 > ⚠️ **Amit ez NEM állít.** Hogy a valódi, windowsos Picasa emiatt tényleg
 > újraindexeli-e a fotót, **Linuxon nem mérhető** — a fejlesztői gépen nincs
@@ -1747,13 +1756,21 @@ találtam meg**; a `thumbindex.py` `ThumbIndexEntry`-jében nincs időbélyeg.
 
 ### A gyakorlati következmény a MI kódunkra
 
-A `src/picasapy/ini/photo_touch.py` **alapértelmezésben bekapcsolva** átírja
-az éles fotók `mtime`-ját minden ini-írás után, egy olyan feltevés alapján,
-ami **soha nem lett Picasa-oldalon megmérve**, és amelynek most két mérés
-mond ellent. A modul fejlécének első tényállítása (`FindFirstChangeNotificationW`
-„a szűrőben benne a `LAST_WRITE` bit, rekurzívan") **nem ellenőrizhető**: a
-létrehozó hívási hely nem található (részletek:
-`picasa-mappakezelo.md` 16.4). ⇒ **jegy nyílt rá.**
+A `src/picasapy/ini/photo_touch.py` **régen alapértelmezésben bekapcsolva**
+átírta az éles fotók `mtime`-ját minden ini-írás után, egy olyan feltevés
+alapján, ami **soha nem lett Picasa-oldalon megmérve**, és amelynek két
+mérés mond ellent. ⇒ **#1320 elvégezve: az alapértelmezés KI**, a modul
+opt-in kísérleti kapcsolóvá vált (`PICASAPY_TOUCH_PHOTO_MTIME=1`), és
+bekapcsolt állapotban naplózza, hány fájlt érintett. A döntés indoklása:
+`docs/decisions/photo-mtime-erintes.md`.
+
+> **Egy helyesbítés helyesbítése.** Ez a szakasz eredetileg azt is állította,
+> hogy a modul fejlécének első tényállítása (`FindFirstChangeNotificationW`,
+> a szűrőben a `LAST_WRITE` bittel, rekurzívan) „nem ellenőrizhető". **Ez
+> tévedés volt:** a `picasa-mappakezelo.md` 16.5 megtalálta a létrehozó
+> hívási helyet (`0x007062b9`, szűrő `0x17`, `bWatchSubtree = TRUE`), tehát
+> az állítás **megerősített**. A figyelő él — csak épp az értesítés utáni
+> frissesség-vizsgálat kulcsa az ini dátuma, nem a képfájlé.
 
 *Bizonyítottsági fok: a három komparátor besorolása **megerősített**
 (diszasszemblálva); a CSV-mezőtérkép **megerősített**; az ebből levont
@@ -1813,7 +1830,12 @@ jelenik meg, annak **nem a kiváltás az oka**.
 >
 > **A képfájl `mtime`-jának megérintése a mechanizmusnak NEM része.**
 > A `photo_touch` modul egy olyan utat valósít meg, ami az eredetiben nem
-> létezik. → **#1320**
+> létezik. → **#1320 elvégezve (2026-08-24): az alapértelmezés KI.** A modul
+> megmarad opt-in kísérleti kapcsolóként
+> (`PICASAPY_TOUCH_PHOTO_MTIME=1`), mert a „segít-e mégis?" kérdést csak a
+> felhasználó windowsos próbája döntheti el — de amíg nincs mért haszon,
+> nem írjuk át az éles archívum időbélyegeit. Indoklás:
+> `docs/decisions/photo-mtime-erintes.md`.
 
 ### Ami EZUTÁN is nyitva marad
 
