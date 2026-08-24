@@ -71,6 +71,13 @@ kódtól).
   stb.), amit a Picasa 3.9 felülete sosem mutatott. Mi tudatosan
   előhívhatóvá tettük. Részletes indoklás: ADR-003,
   `docs/decisions/legacy-effects-tab.md`.
+- `src/picasapy/ini/photo_touch.py` (#643, #1320) — az ini-írás után a
+  változott fotók `mtime`-jának megérintése. Az eredeti Picasa a
+  `.picasa.ini` SAJÁT írási idejét figyeli (`albumdata_inisync`, 99,5%-os
+  mért egyezés), a képfájl dátuma nála nem játszik szerepet; ez az út tehát
+  a mi kiegészítésünk. Alapértelmezésben KI, kizárólag
+  `PICASAPY_TOUCH_PHOTO_MTIME=1` mellett fut. Indoklás: ADR-006,
+  `docs/decisions/photo-mtime-erintes.md`.
 - `src/picasapy/ini/redeye.py` (#445) — a vörösszem-jelölések saját
   `rect64(...)` paraméterezése a `redeye=` bejegyzésben. A bináris nem
   árulja el a valódi bájtformátumot (#371 nyitott kérdés); amíg az elő nem

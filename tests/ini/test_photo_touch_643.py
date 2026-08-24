@@ -1,27 +1,26 @@
-"""#643 — a KÉPFÁJL módosítási idejének megérintése az ini-írás után.
+"""#643 / #1320 — a KÉPFÁJL módosítási idejének megérintése az ini-írás után.
 
-## Miért van erre szükség (a jegy kutatói szála, lezárva)
+## Mit mér ez a teszt
 
-A futó eredeti Picasa a fotó rekordját a saját `db3` adatbázisából tekinti
-igazságforrásnak, és a rekord ÉRVÉNYESSÉGÉT a **képfájlhoz** méri
-(`moddate`, `onlinechecksum` — `0x00467ca0`). A `.picasa.ini` írása
-kivált ugyan operációs rendszer szintű értesítést (a figyelő szűrőjében
-benne van a `LAST_WRITE` bit), de egy **már indexelt** fotót nem tesz
-elavulttá: a rekord érvényes marad, a `filters=`-ünket a Picasa sosem
-olvassa be, sőt a következő saját írásánál felül is írja.
+A `photo_touch` modul egy **feltételezett** Picasa-oldali megkerülési utat
+valósít meg (ld. a modul fejlécét és a `docs/decisions/photo-mtime-erintes.md`
+ADR-t). A #1320 óta **alapértelmezésben KI van kapcsolva**, mert az ini
+újraolvasásának valódi kulcsa a `.picasa.ini` SAJÁT írási ideje
+(`albumdata_inisync`, 99,5%-os mért egyezés) — a képfájl `mtime`-ja a
+mechanizmusnak nem része.
 
-A spec (`docs/specs/picasa-ini-format.md`, „A beolvasás életciklusa") ebből
-egyetlen mérhető megkerülési utat vezet le: **ha a külső író a képfájl
-módosítási idejét is megérinti (a tartalom változtatása nélkül), a fotó
-bekerülhet az újrafeldolgozandók közé.**
+Ez a teszt ezért három dolgot állít:
 
-## Amit ez a teszt ÁLLÍT (és amit nem)
+1. **alapértelmezésben a képfájlhoz hozzá sem nyúlunk** — az `st_mtime_ns`
+   bitre azonos marad (ez a #1320 kifejezett követelménye);
+2. **kifejezett bekapcsolásra** (`PICASAPY_TOUCH_PHOTO_MTIME=1`) az érintés
+   pontosan akkor és arra fut le, amire kell, a bájtok és az `atime`
+   megőrzésével;
+3. **a hatás látható**: bekapcsolt állapotban a modul naplózza, hány fájl
+   időbélyegét írta át.
 
-Ez a teszt a MI oldalunkat méri: az érintés megtörténik-e, pontosan akkor,
-amikor kell, a képfájl bájtjainak és az `atime`-nak a megőrzésével, és
-kikapcsolható-e. **Azt, hogy a valódi Picasa emiatt tényleg újraolvassa-e
-az init, Linuxon nem lehet mérni** — az a felhasználó windowsos
-párhuzamos próbájára vár.
+Azt, hogy a valódi, windowsos Picasa mit kezd az érintéssel, **Linuxon nem
+lehet mérni** — épp ezért nem alapértelmezés.
 """
 
 from __future__ import annotations
@@ -31,7 +30,7 @@ import os
 import pytest
 
 from picasapy.ini import load_document, update_document
-from picasapy.ini.photo_touch import TOUCH_ENV_VAR
+from picasapy.ini.photo_touch import TOUCH_ENV_VAR, is_touch_enabled
 
 #: Egy apró, de valódi bájtsorozat képfájl helyett — a teszt sosem dekódolja,
 #: csak a bájtazonosságát ellenőrzi.
@@ -58,6 +57,18 @@ def folder(tmp_path, monkeypatch):
     return tmp_path
 
 
+@pytest.fixture
+def folder_be(folder, monkeypatch):
+    """Ugyanaz a mappa, de az érintés KIFEJEZETTEN bekapcsolva.
+
+    A #1320 óta ez a nem alapértelmezett ág; a régi „alapból BE" tesztek
+    ezen a fixture-ön futnak tovább, mert a viselkedésük maga nem változott,
+    csak az kell hozzá, hogy a felhasználó kérje.
+    """
+    monkeypatch.setenv(TOUCH_ENV_VAR, "1")
+    return folder
+
+
 def _write_filters(folder, section: str = "kep.jpg", value: str = "bw=1;") -> None:
     update_document(
         folder / ".picasa.ini",
@@ -66,66 +77,123 @@ def _write_filters(folder, section: str = "kep.jpg", value: str = "bw=1;") -> No
     )
 
 
-class TestErintesAlapertelmezesben:
-    """Alapértelmezés: BE — a round-trip ígéret ezen áll vagy bukik (#643)."""
+class TestAlapertelmezesKI:
+    """#1320: alapértelmezésben a képfájlhoz HOZZÁ SEM NYÚLUNK.
 
-    def test_a_kep_mtime_ja_frissul(self, folder):
+    Az újraolvasás kulcsa a `.picasa.ini` saját írási ideje; a fotó
+    `mtime`-jának átírása mért haszon nélküli, visszafordíthatatlan
+    mellékhatás az éles fotógyűjteményen.
+    """
+
+    def test_a_kapcsolo_alapertelmezese_ki(self):
+        assert is_touch_enabled({}) is False
+
+    def test_a_kep_mtime_ja_bitre_azonos_marad(self, folder):
+        elotte = (folder / "kep.jpg").stat().st_mtime_ns
         _write_filters(folder)
-        assert (folder / "kep.jpg").stat().st_mtime_ns > _OLD_NS
+        assert (folder / "kep.jpg").stat().st_mtime_ns == elotte == _OLD_NS
+
+    def test_az_atime_sem_valtozik(self, folder):
+        _write_filters(folder)
+        assert (folder / "kep.jpg").stat().st_atime_ns == _OLD_NS
 
     def test_a_kep_bajtjai_valtozatlanok(self, folder):
         _write_filters(folder)
         assert (folder / "kep.jpg").read_bytes() == _IMAGE_BYTES
 
-    def test_az_atime_megorzodik(self, folder):
-        _write_filters(folder)
-        # A `read_bytes` az előző tesztben módosíthatná az atime-ot, ezért itt
-        # külön, olvasás NÉLKÜL mérünk.
-        assert (folder / "kep.jpg").stat().st_atime_ns == _OLD_NS
-
     def test_az_ini_iras_maga_megtortenik(self, folder):
+        """A lényeg, ami a Picasát tényleg érdekli: az ini frissül."""
         _write_filters(folder)
         section = load_document(folder / ".picasa.ini").section("kep.jpg")
         assert section.get("filters") == "bw=1;"
         # A round-trip: a meglévő kulcs érintetlen.
         assert section.get("star") == "yes"
 
+    def test_az_ini_sajat_ideje_frissul(self, folder):
+        """Az `albumdata_inisync`-mechanizmus kiváltása: az ini írási ideje.
+
+        Ez az EGYETLEN dolog, amit a mért mechanizmus megkövetel — és ez
+        magától, a fájl kiírásából adódik, külön lépés nélkül.
+        """
+        ini = folder / ".picasa.ini"
+        os.utime(ini, ns=(_OLD_NS, _OLD_NS))
+        _write_filters(folder)
+        assert ini.stat().st_mtime_ns > _OLD_NS
+
+
+class TestBekapcsolvaErint:
+    """Kifejezett bekapcsolásra a viselkedés a régi (#643)."""
+
+    def test_a_kep_mtime_ja_frissul(self, folder_be):
+        _write_filters(folder_be)
+        assert (folder_be / "kep.jpg").stat().st_mtime_ns > _OLD_NS
+
+    def test_a_kep_bajtjai_valtozatlanok(self, folder_be):
+        _write_filters(folder_be)
+        assert (folder_be / "kep.jpg").read_bytes() == _IMAGE_BYTES
+
+    def test_az_atime_megorzodik(self, folder_be):
+        _write_filters(folder_be)
+        # A `read_bytes` az előző tesztben módosíthatná az atime-ot, ezért itt
+        # külön, olvasás NÉLKÜL mérünk.
+        assert (folder_be / "kep.jpg").stat().st_atime_ns == _OLD_NS
+
+
+class TestANaploLathatovaTeszi:
+    """#1320: ha az érintés fut, a hatásának LÁTSZANIA kell a naplóban.
+
+    Egy éles fotógyűjtemény időbélyegeit átírni nem csendes művelet.
+    """
+
+    def test_a_naplo_kiirja_hany_fajlt_erintett(self, folder_be, caplog):
+        with caplog.at_level("INFO", logger="picasapy.ini.photo_touch"):
+            _write_filters(folder_be)
+        assert any(
+            "1 képfájl" in record.getMessage() for record in caplog.records
+        ), [r.getMessage() for r in caplog.records]
+
+    def test_kikapcsolva_nincs_ilyen_naplosor(self, folder, caplog):
+        with caplog.at_level("INFO", logger="picasapy.ini.photo_touch"):
+            _write_filters(folder)
+        assert not any("képfájl" in record.getMessage() for record in caplog.records)
+
 
 class TestCsakAzErintettKep:
     """Nem szórunk szét érintést: csak az a fotó, amelynek a szakasza
     ténylegesen változott."""
 
-    def test_a_tobbi_kep_erintetlen(self, folder):
-        _write_filters(folder, section="kep.jpg")
-        assert (folder / "masik.jpg").stat().st_mtime_ns == _OLD_NS
+    def test_a_tobbi_kep_erintetlen(self, folder_be):
+        _write_filters(folder_be, section="kep.jpg")
+        assert (folder_be / "masik.jpg").stat().st_mtime_ns == _OLD_NS
 
-    def test_valtozatlan_szakasznal_nincs_erintes(self, folder):
+    def test_valtozatlan_szakasznal_nincs_erintes(self, folder_be):
         # A `mutate` nem módosít semmit — az ini ugyan újraíródik, de a fotó
         # rekordja nem változott, tehát nincs mit újraolvastatni a Picasával.
-        update_document(folder / ".picasa.ini", lambda document: document, backup=False)
-        assert (folder / "kep.jpg").stat().st_mtime_ns == _OLD_NS
+        update_document(
+            folder_be / ".picasa.ini", lambda document: document, backup=False
+        )
+        assert (folder_be / "kep.jpg").stat().st_mtime_ns == _OLD_NS
 
-    def test_specialis_szakasz_nem_fajl(self, folder):
+    def test_specialis_szakasz_nem_fajl(self, folder_be):
         # A `[Picasa]` nem fotó-szakasz; nincs hozzá képfájl, nem is szabad
         # kivételbe futni tőle.
         update_document(
-            folder / ".picasa.ini",
+            folder_be / ".picasa.ini",
             lambda document: document.with_value("Picasa", "name", "teszt"),
             backup=False,
         )
-        assert (folder / "kep.jpg").stat().st_mtime_ns == _OLD_NS
+        assert (folder_be / "kep.jpg").stat().st_mtime_ns == _OLD_NS
 
-    def test_nem_letezo_kepfajl_szakasza_nem_hiba(self, folder):
-        _write_filters(folder, section="nincs-ilyen.jpg")
-        section = load_document(folder / ".picasa.ini").section("nincs-ilyen.jpg")
+    def test_nem_letezo_kepfajl_szakasza_nem_hiba(self, folder_be):
+        _write_filters(folder_be, section="nincs-ilyen.jpg")
+        section = load_document(folder_be / ".picasa.ini").section("nincs-ilyen.jpg")
         assert section.get("filters") == "bw=1;"
 
 
-class TestKikapcsolhatosag:
-    """A mtime rendezési/biztonsági mentési szempontból számíthat — legyen
-    kikapcsolható a felhasználónak, kód módosítása nélkül."""
+class TestKapcsolo:
+    """A kapcsoló mindkét irányban, a `PICASAPY_*` szokásos elnéző olvasatával."""
 
-    @pytest.mark.parametrize("kikapcsolo", ["0", "false", "no", "off", "FALSE"])
+    @pytest.mark.parametrize("kikapcsolo", ["0", "false", "no", "off", "FALSE", ""])
     def test_kikapcsolva_semmi_nem_valtozik(self, folder, monkeypatch, kikapcsolo):
         monkeypatch.setenv(TOUCH_ENV_VAR, kikapcsolo)
         _write_filters(folder)
@@ -140,18 +208,24 @@ class TestKikapcsolhatosag:
         section = load_document(folder / ".picasa.ini").section("kep.jpg")
         assert section.get("filters") == "bw=1;"
 
-    @pytest.mark.parametrize("bekapcsolo", ["1", "true", "yes", "on"])
+    @pytest.mark.parametrize("bekapcsolo", ["1", "true", "yes", "on", "IGEN", "be"])
     def test_explicit_bekapcsolas(self, folder, monkeypatch, bekapcsolo):
         monkeypatch.setenv(TOUCH_ENV_VAR, bekapcsolo)
         _write_filters(folder)
         assert (folder / "kep.jpg").stat().st_mtime_ns > _OLD_NS
+
+    def test_ismeretlen_ertek_nem_kapcsol_be(self, folder, monkeypatch):
+        """Elgépelésre a BIZTONSÁGOS irányba dőlünk: nem nyúlunk a fájlhoz."""
+        monkeypatch.setenv(TOUCH_ENV_VAR, "talán")
+        _write_filters(folder)
+        assert (folder / "kep.jpg").stat().st_mtime_ns == _OLD_NS
 
 
 class TestHibaturés:
     """Az érintés SOHA nem boríthatja a mentést: a felhasználó szerkesztése
     fontosabb, mint a Picasa értesítése."""
 
-    def test_az_utime_hibaja_nem_boritja_a_mentest(self, folder, monkeypatch, caplog):
+    def test_az_utime_hibaja_nem_boritja_a_mentest(self, folder_be, monkeypatch, caplog):
         eredeti_utime = os.utime
 
         def bukó_utime(path, *args, **kwargs):
@@ -161,8 +235,8 @@ class TestHibaturés:
 
         monkeypatch.setattr(os, "utime", bukó_utime)
         with caplog.at_level("WARNING"):
-            _write_filters(folder)
-        section = load_document(folder / ".picasa.ini").section("kep.jpg")
+            _write_filters(folder_be)
+        section = load_document(folder_be / ".picasa.ini").section("kep.jpg")
         assert section.get("filters") == "bw=1;"
         assert any("kep.jpg" in record.getMessage() for record in caplog.records)
 
@@ -171,18 +245,18 @@ class TestTorlesIsValtozas:
     """A kulcs/szakasz TÖRLÉSE ugyanúgy elavulttá teszi a fotó rekordját —
     ez a `revert` és a „Mentés visszavonása" útja (#21, #444)."""
 
-    def test_kulcs_torlese_is_erint(self, folder):
+    def test_kulcs_torlese_is_erint(self, folder_be):
         update_document(
-            folder / ".picasa.ini",
+            folder_be / ".picasa.ini",
             lambda document: document.with_removed("kep.jpg", "star"),
             backup=False,
         )
-        assert (folder / "kep.jpg").stat().st_mtime_ns > _OLD_NS
+        assert (folder_be / "kep.jpg").stat().st_mtime_ns > _OLD_NS
 
-    def test_szakasz_torlese_is_erint(self, folder):
+    def test_szakasz_torlese_is_erint(self, folder_be):
         update_document(
-            folder / ".picasa.ini",
+            folder_be / ".picasa.ini",
             lambda document: document.without_section("kep.jpg"),
             backup=False,
         )
-        assert (folder / "kep.jpg").stat().st_mtime_ns > _OLD_NS
+        assert (folder_be / "kep.jpg").stat().st_mtime_ns > _OLD_NS

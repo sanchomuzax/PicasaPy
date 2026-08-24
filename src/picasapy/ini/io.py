@@ -3,11 +3,16 @@
 Írási szabályok a specből: temp fájl + rename (atomikus), opcionális backup
 írás előtt, BOM és kódolás megőrzése a byte-pontos round-triphez.
 
-#643: az `update_document` a sikeres mentés után megérinti azoknak a
-fotóknak a MTIME-ját, amelyeknek a szakasza változott — enélkül a
-párhuzamosan futó eredeti Picasa (amely a saját `db3`-át tekinti
-igazságforrásnak) sosem olvasná be a mi írásunkat. Az érintés a
-`photo_touch` modulban él, ott van az indoklása és a kikapcsolása is.
+#1320: a párhuzamosan futó eredeti Picasát MAGA AZ INI KIÍRÁSA értesíti —
+a Picasa a mappa `.picasa.ini`-jének írási idejét tárolja
+(`albumdata_inisync`), és ha a lemezen lévő fájl újabb, újraolvassa. Ehhez
+tehát ezen a ponton nincs külön teendő.
+
+#643: a `photo_touch` modul emellett meg tudja érinteni a változott fotók
+MTIME-ját is, de ez egy feltételezett, Picasa-oldalon nem mért út, ezért
+**alapértelmezésben ki van kapcsolva** (`PICASAPY_TOUCH_PHOTO_MTIME=1`
+kapcsolja be). Az indoklás a `photo_touch` fejlécében és a
+`docs/decisions/photo-mtime-erintes.md` ADR-ben él.
 """
 
 from __future__ import annotations
