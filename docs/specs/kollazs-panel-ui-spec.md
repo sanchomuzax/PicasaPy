@@ -756,7 +756,10 @@ Két érzékeny terület:
 - **a gyűrű belseje** → mozgatás (`RingMoveHandler`),
 - **a fogantyú a gyűrű peremén** → forgatás + méretezés (`RingKnobHandler`).
 
-### 7.3 Mozgatás
+### 7.3 Mozgatás és csere — két külön gesztus
+
+**Mozgatni kizárólag a kijelölt kép gyűrűjének belsejével lehet**
+(`RingMoveHandler`, `0x00868e90`):
 
 ```
 lenyomás:   fogási_eltolás = egér − csomópont_pozíció
@@ -766,26 +769,36 @@ felengedés: csomópont.opacity = 1.0  ;  collage_adapt lépés
 ```
 
 **Nincs elhúzási küszöb** — az első egérmozdulatra indul. (A 10 képpontos
-küszöb a fájlrendszer felé menő OLE-vonszoláshoz tartozik, nem ide.)
+küszöb a kép testének OLE-vonszolásához tartozik, nem ide.) A gyűrűs
+mozgatás felengedése **soha nem cserél**, akkor sem, ha a kép egy másik
+kép fölött áll meg.
 
 **`Alt` + lenyomás:** a kép **a legfelső rétegbe ugrik**, és onnan mozog
 tovább. Ha már a legfelső, **nem történik semmi** (nincs „villanás").
 Az `Alt` **nem másol és nem klónoz** — ha a megvalósításban „Alt =
 másolat" jelenne meg, az kitalált funkció.
 
-**Ejtés egy másik képre:** a két kép **kicserélődik** — a fájlútvonalak
-cserélnek helyet, a **fogadó keret, méret és elforgatás változatlan**.
-Nem áthelyezés, hanem csere.
+**A kép TESTÉNEK lenyomása** mindig azonnal kijelöl, és alapesetben
+csere-vonszolást *élesít* (`CollageNodeHandler`, `0x00860ac7`–`0x00860b61`).
+A kép teste **nem mozgatja** a csomópontot. A vonszolás akkor indul, ha az
+egér a **lenyomási ponttól** (nem az előző egéreseménytől) 10 képpontnál
+messzebbre jut: `0xcf3b28 = 10.0f`, összehasonlítás `0x0086071b` a
+`0x008606d0` ágban. A küszöb legyen elnevezett állandó a megvalósításban.
+
+**`Ctrl` + kattintás a kép testén:** kijelölést billent, és kifejezetten
+**nem élesíti** a csere-vonszolást (`node[0x5c] = 0`, `0x00860b31`). Az
+utána következő egérmozgás és felengedés ezért nem cserélhet képet.
+
+**A 10 px-en túli vonszolás ejtése egy másik képre:** a két kép
+**kicserélődik** — a fájlútvonalak cserélnek helyet, a **fogadó keret, méret
+és elforgatás változatlan**. Nem áthelyezés, hanem csere.
 
 > ⚠️ **A cserét kizárólag VALÓDI EJTÉS-GESZTUSHOZ kösd, ne a
-> felengedéshez** (2026-08-18-i élő hiba: feltétel nélküli kereséssel
-> minden kijelölő kattintás némán kicserélt két fájlt, mert a kupac képei
-> fedik egymást). Az eredeti három kapuja: (1) az ejtés **külön
+> felengedéshez.** Az eredeti három kapuja: (1) az ejtés **külön
 > eseményazonosító** (11), nem a felengedés (4); (2) találat-ellenőrzés a
 > csere előtt; (3) **„ugyanaz a csomópont → nincs csere"**. Részletek és
-> címek: `picasa-kollazs-felulet.md` **5.2/b**. A „nincs elhúzási küszöb"
-> szabály a **gyűrűs mozgatásra** vonatkozik, nem arra, hogy történt-e
-> egyáltalán vonszolás.
+> címek: `picasa-kollazs-felulet.md` **5.2/b–c**. A „nincs elhúzási
+> küszöb" szabály kizárólag a **gyűrűs mozgatásra** vonatkozik.
 
 ### 7.4 Forgatás és méretezés — EGY fogantyú
 

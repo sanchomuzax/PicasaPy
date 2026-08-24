@@ -2,9 +2,10 @@
 
 Spec: `docs/specs/kollazs-panel-ui-spec.md` **7.1**, **7.3** és **7.7**.
 
-Mozgatás elhúzási küszöb nélkül, a csere, az `Alt`-tal a legfelső rétegbe,
-a kijelölés és a kézi szerkesztés megmaradása. A vászon felépítése és a
-gyűrű matematikája a testvérfájlban van (`test_collage_canvas_947.py`).
+Gyűrűs mozgatás elhúzási küszöb nélkül, kép-testes csere, az `Alt`-tal a
+legfelső rétegbe, kijelölés és a kézi szerkesztés megmaradása. A vászon
+felépítése és a gyűrű matematikája a testvérfájlban van
+(`test_collage_canvas_947.py`).
 
 Mindegyik viselkedés csak VALÓDI eseménysorral mérhető: a húzási küszöb, a
 rétegváltás és a csere property-olvasásból nem látszik.
@@ -56,9 +57,11 @@ def test_nincs_elhuzasi_kuszob(controller):
     tartozik, nem ide (spec 7.3)."""
     panel = _panel(controller)
     view = panel.property("_view")
+    controller.setCollageSelection([0])
+    QGuiApplication.instance().processEvents()
     elotte = _csomopontok(controller)[0].center_x
 
-    elem = _child(panel, "collageNode0")
+    elem = _child(panel, "collageRing0")
     kozep_x, kozep_y = _kozeppont(elem)
     kezdo = QPoint(round(kozep_x), round(kozep_y))
     _eger_le(view, kezdo)
@@ -73,10 +76,12 @@ def test_huzas_kozben_az_atlatszatlansag_09(controller):
     """`opacity = 0.9` húzás közben, felengedve 1,0 (spec 7.3)."""
     panel = _panel(controller)
     view = panel.property("_view")
+    controller.setCollageSelection([0])
+    QGuiApplication.instance().processEvents()
     elem = _child(panel, "collageNode0")
     assert elem.opacity() == pytest.approx(1.0)
 
-    kozep_x, kozep_y = _kozeppont(elem)
+    kozep_x, kozep_y = _kozeppont(_child(panel, "collageRing0"))
     kezdo = QPoint(round(kozep_x), round(kozep_y))
     _eger_le(view, kezdo)
     assert elem.opacity() == pytest.approx(0.9)
@@ -91,9 +96,11 @@ def test_a_mozgatas_a_fogasi_eltolast_tartja(controller):
     panel = _panel(controller)
     view = panel.property("_view")
     egyseg = _egyseg(panel)
+    controller.setCollageSelection([0])
+    QGuiApplication.instance().processEvents()
     elotte = _csomopontok(controller)[0]
 
-    elem = _child(panel, "collageNode0")
+    elem = _child(panel, "collageRing0")
     kozep_x, kozep_y = _kozeppont(elem)
     # SZÁNDÉKOSAN nem a közepén fogjuk meg
     kezdo = QPoint(round(kozep_x + 12), round(kozep_y + 7))
@@ -187,8 +194,10 @@ def test_alt_lenyomas_a_legfelso_retegbe_visz(controller):
     panel = _panel(controller)
     view = panel.property("_view")
     elotte = [node.path for node in _csomopontok(controller)]
+    controller.setCollageSelection([0])
+    QGuiApplication.instance().processEvents()
 
-    kozep = _kozeppont(_child(panel, "collageNode0"))
+    kozep = _kozeppont(_child(panel, "collageRing0"))
     pont = QPoint(round(kozep[0]), round(kozep[1]))
     _eger_le(view, pont, Qt.KeyboardModifier.AltModifier)
     _eger_fel(view, pont, Qt.KeyboardModifier.AltModifier)
@@ -214,8 +223,10 @@ def test_alt_a_legfelsonel_nem_valtoztat_semmit(controller):
     panel = _panel(controller)
     view = panel.property("_view")
     elotte = _reteg_allapot(controller)
+    controller.setCollageSelection([2])
+    QGuiApplication.instance().processEvents()
 
-    kozep = _kozeppont(_child(panel, "collageNode2"))
+    kozep = _kozeppont(_child(panel, "collageRing2"))
     pont = QPoint(round(kozep[0]), round(kozep[1]))
     _eger_le(view, pont, Qt.KeyboardModifier.AltModifier)
     _eger_fel(view, pont, Qt.KeyboardModifier.AltModifier)
@@ -230,8 +241,10 @@ def test_alt_utan_a_felemelt_kep_mozog_tovabb(controller):
     egyseg = _egyseg(panel)
     ut0 = _csomopontok(controller)[0].path
     kezdo_kozep = _csomopontok(controller)[0].center_x
+    controller.setCollageSelection([0])
+    QGuiApplication.instance().processEvents()
 
-    kozep = _kozeppont(_child(panel, "collageNode0"))
+    kozep = _kozeppont(_child(panel, "collageRing0"))
     pont = QPoint(round(kozep[0]), round(kozep[1]))
     cel = QPoint(pont.x() + 30, pont.y())
     _eger_le(view, pont, Qt.KeyboardModifier.AltModifier)
@@ -247,7 +260,9 @@ def test_alt_nem_masol_es_nem_klonoz(controller):
     """Az `Alt` NEM másol — a darabszám nem változhat (spec 14.)."""
     panel = _panel(controller)
     view = panel.property("_view")
-    kozep = _kozeppont(_child(panel, "collageNode0"))
+    controller.setCollageSelection([0])
+    QGuiApplication.instance().processEvents()
+    kozep = _kozeppont(_child(panel, "collageRing0"))
     pont = QPoint(round(kozep[0]), round(kozep[1]))
     _eger_le(view, pont, Qt.KeyboardModifier.AltModifier)
     _eger_fel(view, pont, Qt.KeyboardModifier.AltModifier)
@@ -357,8 +372,10 @@ def test_a_kezi_szerkesztes_a_felengedes_utan_a_modellben_van(controller):
     egyseg = _egyseg(panel)
     elotte = _csomopontok(controller)[0]
     assert controller.collageDirty is False
+    controller.setCollageSelection([0])
+    QGuiApplication.instance().processEvents()
 
-    kozep = _kozeppont(_child(panel, "collageNode0"))
+    kozep = _kozeppont(_child(panel, "collageRing0"))
     pont = QPoint(round(kozep[0]), round(kozep[1]))
     cel = QPoint(pont.x() + 33, pont.y() + 21)
     _eger_le(view, pont)
