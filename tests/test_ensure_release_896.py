@@ -195,6 +195,11 @@ class TestChangelogJegyzet:
         assert changelog_notes("1.2.3", tmp_path / "nincs.md") == ""
 
 
+def _CP(args, kod, kimenet):
+    import subprocess
+    return subprocess.CompletedProcess(args, kod, kimenet, "")
+
+
 class TestAJegyzetSosemGepzaj:
     """A Releases hasábra gépi PR-lista nem mehet ki (2026-08-23).
 
@@ -234,14 +239,75 @@ class TestAJegyzetSosemGepzaj:
         assert "--notes" in create
         assert create[create.index("--notes") + 1] == tartalek_jegyzet()
 
-    def test_a_tartalek_MAGYARUL_es_oszinten_fogalmaz(self):
+    def test_a_tartalek_SOHA_nem_allithatja_hogy_nincs_valtozas(self):
+        """#1340 — ez az állítás korábban HAZUDOTT, és ez a teszt őrizte.
+
+        A v0.8.71 (a letiltott gombok megjelenése, #893) és a v0.8.72 (a
+        lasszós kijelölés, #897) ezzel a mondattal ment ki:
+
+            „Ez a kiadás nem hoz felhasználónak látszó változást."
+
+        A tulajdonos vette észre. A régi állítás azt kérte számon a
+        szövegen, hogy tartalmazza ezt a mondatot — vagyis a hazugságot
+        rögzítette szerződésként, ráadásul „őszinte" néven. A szkript NEM
+        TUDHATJA, hogy nem volt látható változás; amit tud, az az, hogy
+        nincs hozzá emberi mondat. Csak ezt szabad kimondania."""
         from scripts.ensure_release import tartalek_jegyzet
 
-        szoveg = tartalek_jegyzet()
-        assert "nem hoz felhasználónak látszó változást" in szoveg
-        assert "CHANGELOG.md" in szoveg
-        # ne ígérjen olyat, amit nem tud: konkrét jegyszámot ne találjon ki
-        assert "#" not in szoveg.replace("](https", "")
+        szoveg = tartalek_jegyzet(("a letiltott gomb halványan rajzolódik (#893)",))
+        assert "nem hoz felhasználónak látszó változást" not in szoveg
+        assert "nem készült emberi összefoglaló" in szoveg
+        assert "a letiltott gomb halványan rajzolódik (#893)" in szoveg
+
+    def test_a_tartalek_valtozas_nelkul_ezt_KI_IS_MONDJA(self):
+        """Ha tényleg nincs mit mondani, azt tényként mérjük, nem feltesszük."""
+        from scripts.ensure_release import tartalek_jegyzet
+
+        szoveg = tartalek_jegyzet(())
+        assert "verziólépés" in szoveg
+        assert "nem készült emberi összefoglaló" not in szoveg
+
+    def test_a_MERES_BUKASA_nem_valhat_allitassa(self):
+        """#1340 — ugyanaz a hiba, egy szinttel feljebb.
+
+        Ha a beolvadt munkákat nem sikerül lekérdezni, az NEM azt jelenti,
+        hogy nincs mit mondani. Az éles próbán ez azonnal elő is jött: a már
+        felcímkézett commitra a `git describe` magát a címkét adta vissza, a
+        tartomány üres lett, és a szöveg megint azt állította volna, hogy
+        „csak verziólépés" — pont az a fajta hazugság, ami miatt ez a jegy
+        megnyílt."""
+        from scripts.ensure_release import tartalek_jegyzet
+
+        szoveg = tartalek_jegyzet(None)
+        assert "sem sikerült megállapítani" in szoveg
+        assert "csak verziólépést tartalmaz" not in szoveg
+
+    def test_a_sajat_cimkejet_kihagyja_a_tartomanybol(self):
+        """A kiadandó verzió címkéje már ott ülhet a célon (ütemezett futás)."""
+        import scripts.ensure_release as modul
+
+        hivasok = []
+
+        def futtat(args):
+            hivasok.append(args)
+            if "describe" in args:
+                return _CP(args, 0, "v0.8.70\n")
+            return _CP(args, 0, "fix: valami (#1)\n")
+
+        assert modul.valodi_valtozasok("abc123", version="0.8.71", runner=futtat) == (
+            "valami (#1)",
+        )
+        describe = next(h for h in hivasok if "describe" in h)
+        assert "--exclude" in describe and "v0.8.71" in describe
+
+    def test_a_tartalek_kihagyja_az_automatika_sajat_commitjait(self):
+        """A „chore: verzióemelés" sor a felhasználónak semmit nem mond."""
+        from scripts.ensure_release import erdemi_valtozasok
+
+        assert erdemi_valtozasok([
+            "chore: verzióemelés a beolvadt munkához (#1127) (#1332)",
+            "fix: a letiltott gomb 25%-os alfával rajzolódik (#893) (#1331)",
+        ]) == ("a letiltott gomb 25%-os alfával rajzolódik (#893) (#1331)",)
 
     def test_szakasszal_a_CHANGELOG_szovege_megy_ki(self, sleeps, tmp_path):
         import scripts.ensure_release as modul

@@ -167,14 +167,13 @@ megépíteni.**
 
 ## 10. Ami NYITVA marad (örökölt, a #455-ből)
 
-1. **A „Hold Selection" és az „Add to Picture Tray" pontos viszonya.** A
-   `Tray::` névtérben csak a `HOLDINPICTURETRAY` és a `REMOVE_SELECTION`
-   van; „Add to Picture Tray" nevű parancs a szövegtárban **nem szerepel** —
-   tehát vagy más néven fut, vagy nem létezik. **Ez a kör nem döntötte el.**
+1. ~~A „Hold Selection" és az „Add to Picture Tray" viszonya.~~ —
+   ✅ **LEZÁRVA 2026-08-24, ld. 12.**
 2. **A tálca mint fogd-és-vidd FORRÁS az Intéző felé** — a #455 említi, a
    viselkedés nincs visszakövetve.
-3. **Mi számít „régóta tartott" elemnek** (a 4.2 küszöbe) — a szöveg
-   létezik, a feltétel nincs kimérve.
+3. ~~Mi számít „régóta tartott" elemnek (a 4.2 küszöbe).~~ —
+   ✅ **LEZÁRVA 2026-08-24, ld. 13.** — **nem idő-alapú**, hanem
+   darabszám-növekedés.
 
 ---
 
@@ -194,3 +193,143 @@ képpont körbe). Az elválasztó 2 képpont széles, 27 magas, a cellán belül
 vízszintesen középen (28…30), felülről 8, alulról 5 képpont behúzással.
 
 *Bizonyítottsági fok: **megerősített** — közvetlen rétegfejléc-olvasás.*
+
+---
+
+## 12. LEZÁRVA: a „Hold Selection" ÉS az „Add to Picture Tray" UGYANAZ (2026-08-24)
+
+A 10.1 kérdés hamis előfeltevésen állt: **nincs két parancs.**
+
+### A bizonyíték: egy parancs, két néven
+
+A menüépítő (`0x00732f20` környéke) így hozza létre a rekordot:
+
+```asm
+0x00732f35  push 0xcae618        ; fordítási kulcs: "Tray::ID_PICTURE_HOLDINPICTURETRAY"
+0x00732f3a  mov  eax, 0xcae63c   ; alapértelmezett angol felirat: "&Hold Selection"
+0x00732f4c  mov  word ptr [0xd6edca], 0x9ca0
+0x00732f55  call 0x9ae560        ; a honosított felirat lekérése
+```
+
+⇒ A **belső azonosító** `ID_PICTURE_HOLDINPICTURETRAY` („tartsd a
+képtálcán"), a **felhasználónak mutatott felirat** pedig „&Hold
+Selection" / **„Kijelölés &megtartása"**. Ez **egyetlen parancs**; az „Add
+to Picture Tray" elnevezés sehol nem létezik a szövegtárban.
+
+> Ez pontosan az a hibaosztály, amire a projekt szabálya figyelmeztet:
+> **azonosítóból nem szabad jelentést állítani, ha van hozzá felirat.**
+> Két néven futó egy parancsból lett két feltételezett parancs.
+
+### Belépési pontok: PONTOSAN EGY menü
+
+A második parancs közvetlenül utána épül, **ugyanabban a függvényben**:
+
+```asm
+0x00732f7f  push 0xcae5e4        ; "Tray::ID_REMOVE_SELECTION"
+0x00732f84  mov  eax, 0xcae600   ; "&Remove Selection"
+0x00732f9a  mov  word ptr [0xd6edde], 0x9cca
+```
+
+Nyers bájtkeresés a teljes állományon: a **`&Hold Selection`**
+(`0xcae63c`) és a **`&Remove Selection`** (`0xcae600`) sztringcímére
+**egyetlen-egy** hivatkozás van, mindkettőre. ⇒ **Egyik parancs sem
+szerepel több menüben** — a `Tray` helyi menü az egyetlen belépési pont.
+
+### ⚠️ NEGATÍV EREDMÉNY: a `+0x0a` mező itt NEM parancsazonosító
+
+A menüformátum korábbi leírása szerint a 20 bájtos rekord `+0x0a` mezője a
+parancsazonosító. **Ezekre a rekordokra ez nem áll:**
+
+| hol | rekord | `+0x08` | `+0x0a` |
+|---|---|---|---|
+| `0x00732f4c` | `Tray::ID_PICTURE_HOLDINPICTURETRAY` / „&Hold Selection" | 0 | **`0x9ca0`** |
+| `0x007307ff` | `AlbumPhoto::ID_LABELS` / **„&Add to Album"** | 4 | **`0x9ca0`** |
+| `0x007310bf` | `AlbumPhoto::ID_LABELS` / „&Add to Album" | 4 | **`0x9ca0`** |
+
+Két **különböző** parancs nem viselheti ugyanazt az azonosítót ⇒ a `0x9ca0`
+itt **nem** parancsazonosító, hanem valami közös érték (menüstílus, csoport
+vagy erőforrás-jelző). **A következő kör ne építsen rá.**
+
+*Bizonyítottsági fok: **megerősített**, hogy egy parancsról van szó és hogy
+egyetlen menüben ül (sztringcím-hivatkozás nyers bájtkereséssel, a teljes
+állományon). **Megerősített negatívum**, hogy a `+0x0a` itt nem
+parancsazonosító. **Nem tudjuk**, mi a `0x9ca0` jelentése — ez nem
+blokkolja a megvalósítást.*
+
+---
+
+## 13. LEZÁRVA: a „régóta tartott elemek" NEM idő-alapú (2026-08-24)
+
+A 4.2 párbeszéd (*„El szeretné távolítani a tálcán régóta tárolt
+elemeket?"*) angol szövege (*old held items*) **kort** sugall. A kód
+**darabszámot** hasonlít.
+
+### A feltétel — `0x00571e50` (2352 b)
+
+```asm
+0x00571edc  mov  esi, [ebx + 0xea4]        ; a tálca CSelectionNode-ja
+0x00571ee4  call 0x716cb0                  ; -> edi = a NEM KIZÁRT elemek száma
+0x00571eef  call 0x716d10                  ; (al=1) -> eax
+0x00571ef4  test eax, eax
+0x00571ef6  jne  0x571f03
+0x00571ef8  mov  byte ptr [ebx+0x3190], al ; nincs mit kérdezni -> jelző törlése
+0x00571efe  jmp  <kilépés>
+
+0x00571f03  cmp  edi, dword ptr [ebx+0x3194]   ; <<< A FELTÉTEL
+0x00571f09  jbe  0x571f97                      ; ha NEM nőtt -> nincs kérdés
+            … a párbeszéd felépítése (Don't Clear / Clear Tray) …
+
+0x00571f97  mov  dword ptr [ebx+0x3194], edi   ; a küszöb FRISSÜL a mostani számra
+0x00571f9d  mov  dword ptr [ebx+0x3198], eax
+```
+
+### A két számláló — a már ismert `CSelectionNode`-szerződésre épül
+
+`0x00716cb0(node)` — 46 bájt, a **nem kizárt** elemeket számolja:
+
+```asm
+ecx = [node+0x330] >> 1        ; darabszám
+edx = [node+0x32c]             ; elemtömb
+… cmp byte ptr [ecx+0x5a], 0   ; a kizárás-jelző
+    jne <kihagy>
+    add eax, 1
+```
+
+Ez pontosan a lap többi helyén és a `picasa-eger-es-kijeloles.md`-ben
+dokumentált szerződés (`+0x32c` tömb, `+0x330>>1` darab, `[elem+0x5a]`
+kizárás).
+
+`0x00716d10(al=1, node)` — 81 bájt, ugyanezen a listán jár végig egy globális
+(`[0xd676c0]`) alapján; a visszatérése a `+0x3198` mezőbe kerül.
+
+### A tálca három állapotmezője
+
+| mező | mit tárol | ki írja |
+|---|---|---|
+| `+0x3190` | logikai: „van mit takarítani" | `0x005727e0`, `0x00571ef8` |
+| **`+0x3194`** | **a legutóbb megjegyzett elemszám** (a küszöb) | `0x005727e0` (pillanatfelvétel), `0x00571f97` (frissítés) |
+| `+0x3198` | a `0x716d10` legutóbbi eredménye | ugyanott |
+
+A pillanatfelvételt a `0x005727e0` készíti:
+
+```asm
+0x005727e9  call 0x716cb0
+0x005727ee  mov  [esi+0x3194], eax        ; a mostani darabszám lesz a küszöb
+0x005727f8  call 0x716d10
+0x005727ff  mov  [esi+0x3198], eax
+0x00572808  mov  byte ptr [esi+0x3190], al
+```
+
+### ⇒ A szabály egy mondatban
+
+> **A kérdés akkor jelenik meg, ha a tálca nem kizárt elemeinek száma
+> NAGYOBB, mint a legutóbb megjegyzett szám.** „Régóta tartott" = ami már
+> a növekedés előtt is bent volt. **Eltelt idő sehol nem szerepel** — nincs
+> időbélyeg, nincs időzítő, nincs küszöb-konstans.
+
+Ha nem nőtt a szám, a program **némán frissíti** a megjegyzett értéket, és
+nem kérdez.
+
+*Bizonyítottsági fok: **megerősített** — a feltétel, a két számláló és
+mindhárom állapotmező írója diszasszemblálva; a `+0x3194`/`+0x3190`
+eltolásokra nyers bájtkeresés adta ki az összes hozzáférést (8 és 7 hely).*

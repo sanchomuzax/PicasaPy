@@ -25,6 +25,7 @@ Polaroid-kereten.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, replace
 from typing import NamedTuple
@@ -37,6 +38,11 @@ from .formatting import to_file_url
 
 #: A lap belső szélessége egységben (6.1) — `0xcf3f68 = 1/1024`.
 SHEET_UNITS = 1024.0
+
+#: #1170: ennyi kijelölt képtől CSOPORT a kijelölés. Az eredeti a
+#: `CollageNodeHandler` csoport-állapotára kapcsol (`0x008603c0`, logikai
+#: paraméterrel); egyetlen képnél a csomópont saját kijelölés-kerete a jel.
+GROUP_MIN_SELECTION = 2
 
 _ROOT_INDEX = QModelIndex()
 
@@ -134,6 +140,52 @@ def with_selection(
     wanted = {int(i) for i in indices}
     return tuple(
         replace(node, selected=index in wanted) for index, node in enumerate(nodes)
+    )
+
+
+def group_bounds(
+    nodes: Sequence[CollageNode],
+) -> tuple[float, float, float, float] | None:
+    """A CSOPORT-ELEM téglalapja lapegységben — `(x, y, szélesség, magasság)`.
+
+    #1170: a képesség-maszk 6. bitje a `collagepanel/groupnode` csomópontot
+    teszi külön overlay-rétegbe. Az eredeti a téglalap méretét „a kijelölés
+    változásakor" állítja be (`picasa-kollazs-felulet.md` 2/b.4); nálunk ez a
+    kijelölt csomópontok közös befoglalója.
+
+    `None`, ha a kijelölés nem éri el a `GROUP_MIN_SELECTION` küszöböt — egy
+    kép nem csoport, arra a `CollageNode` saját kijelölés-kerete való.
+
+    ⚠️ **A forgatott csomópont befoglalója nagyobb a doboznál.** A `width` /
+    `height` a forgatás ELŐTTI méret; aki azt veszi, egy 45°-ra forgatott
+    képnél a sarkokat kihagyja a keretből. A tengelypárhuzamos befoglaló
+    fél-kiterjedései:
+
+        fél_szélesség = w/2 * |cos θ| + h/2 * |sin θ|
+        fél_magasság  = w/2 * |sin θ| + h/2 * |cos θ|
+    """
+    selected = [node for node in nodes if node.selected]
+    if len(selected) < GROUP_MIN_SELECTION:
+        return None
+    boxes = [_axis_aligned_box(node) for node in selected]
+    left = min(box[0] for box in boxes)
+    top = min(box[1] for box in boxes)
+    right = max(box[2] for box in boxes)
+    bottom = max(box[3] for box in boxes)
+    return (left, top, right - left, bottom - top)
+
+
+def _axis_aligned_box(node: CollageNode) -> tuple[float, float, float, float]:
+    """Egy csomópont tengelypárhuzamos befoglalója: `(bal, teteje, jobb, alja)`."""
+    cos = abs(math.cos(node.theta))
+    sin = abs(math.sin(node.theta))
+    half_width = node.width / 2.0 * cos + node.height / 2.0 * sin
+    half_height = node.width / 2.0 * sin + node.height / 2.0 * cos
+    return (
+        node.center_x - half_width,
+        node.center_y - half_height,
+        node.center_x + half_width,
+        node.center_y + half_height,
     )
 
 
@@ -321,10 +373,12 @@ _ROLE_READERS = {
 
 
 __all__ = [
+    "GROUP_MIN_SELECTION",
     "SHEET_UNITS",
     "CollageNode",
     "CollageNodeModel",
     "Picture",
+    "group_bounds",
     "initial_node_width",
     "pictures_of",
     "selected_indices",

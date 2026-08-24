@@ -234,6 +234,16 @@ Item {
         }
     }
 
+    // A CSOPORT-ELEM (#1170) — a képesség-maszk 6. bitje az eredetiben is
+    // KÜLÖN, overlay feldolgozási ágba teszi, a szülőhöz kötött bejárás
+    // helyett. Ezért nem a csomópontok gyereke, hanem a legfelső réteg: a
+    // saját `z`-je minden `CollageNode`-énál magasabb. A geometriát a
+    // vezérlő adja lapegységben (`collageGroupRect`); a lap a
+    // mértékegységet és a képesség-térképet adja hozzá.
+    CollageGroupNode {
+        sheet: lap
+    }
+
     // --- Kijelölés (7.1) ----------------------------------------------------
 
     function clickSelect(index, modifiers) {
