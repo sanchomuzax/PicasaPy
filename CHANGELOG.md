@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Belső
+- **A kiadási folyamat önjavító lett (#1319).** Az automatika csak akkor emel
+  verziót, ha az utolsó kiadás óta a program maga változott — dokumentáció-,
+  teszt- vagy munkafolyamat-változás önmagában nem szül többé verzióemelő
+  PR-t. Az új kiadási őr negyedóránként elrendezi a félbemaradt automatikus
+  PR-eket: elindítja a rajtuk elmaradó ellenőrzést, lezárja az elavultakat,
+  és hibánál látható jegyet nyit.
+
 ## [0.8.69] – 2026-08-24
 
 ### Javítva
