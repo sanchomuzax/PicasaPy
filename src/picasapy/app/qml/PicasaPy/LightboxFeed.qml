@@ -1,5 +1,7 @@
 import QtQuick
 import QtQuick.Controls
+import "lasso.js" as Lasso
+import "../selection.js" as Selection
 
 // Könyvtár-feed (#64, #150-ben kiemelve a Main.qml-ből): az ÖSSZES kép
 // egyetlen görgethető folyamban, a bal hasáb mappa-sorrendjében —
@@ -74,15 +76,8 @@ ListView {
         if (t < 0) return
         appWindow.selectedIndex = t
         // #1219: a tartomány a horgony mappacsoportjára szorítva
-        var hatar = controller.photos.groupRange(selectionAnchor)
-        var vegpont = t
-        if (hatar.length === 2)
-            vegpont = Math.max(hatar[0], Math.min(hatar[1], t))
-        var lo = Math.min(selectionAnchor, vegpont)
-        var hi = Math.max(selectionAnchor, vegpont)
-        var sel = []
-        for (var r = lo; r <= hi; ++r) sel.push(r)
-        appWindow.selectedIndexes = sel
+        appWindow.selectedIndexes = Selection.range(
+            selectionAnchor, _csoportraVagva(selectionAnchor, t))
         scrollToRow(t)
     }
     function groupOfRow(row) {
@@ -147,6 +142,13 @@ ListView {
         return (r && r.length === 2) ? r : null
     }
 
+    /** A `cel` sor a `horgony` MAPPACSOPORTJÁRA vágva (#1219) — a
+        tartomány-kijelölés (nyíl, Shift-kattintás) nem lép mappahatárt. */
+    function _csoportraVagva(horgony, cel) {
+        var hatar = _groupRangeOfRow(horgony)
+        return hatar ? Math.max(hatar[0], Math.min(hatar[1], cel)) : cel
+    }
+
     /** A művelet hatóköre: a fókuszsor csoportja; kijelölés híján a
         JELENLEGI mappáé (az eredetiben a `[+0x2e0]` album), végül az
         első csoport. */
@@ -186,16 +188,10 @@ ListView {
         if (!g) return
         var anchor = grid.selectionAnchor >= 0
                      ? grid.selectionAnchor : appWindow.selectedIndex
-        var from, to
-        if (anchor < 0 || anchor < g[0] || anchor > g[1]) {
-            from = g[0]; to = g[1]          // horgony nélkül: az egész
-        } else {
-            from = Math.min(anchor, toEnd ? g[1] : g[0])
-            to = Math.max(anchor, toEnd ? g[1] : g[0])
-        }
-        var sel = []
-        for (var r = from; r <= to; ++r) sel.push(r)
-        appWindow.selectedIndexes = sel
+        // a csoporton kívüli (vagy hiányzó) horgony esetén az EGÉSZ csoport
+        appWindow.selectedIndexes = (anchor >= g[0] && anchor <= g[1])
+            ? Selection.range(anchor, toEnd ? g[1] : g[0])
+            : Selection.range(g[0], g[1])
         appWindow.selectedIndex = toEnd ? g[1] : g[0]
         scrollToRow(appWindow.selectedIndex)
     }
@@ -427,30 +423,12 @@ ListView {
         // koordináták bucketeléséhez a TÉNYLEGES (effektív,
         // kitöltő) cellaszélesség kell — ugyanaz a pitch,
         // amit a delegate-ek ténylegesen elfoglalnak.
+        // A metszés-teszt és a soha-nem-nulla téglalap a lasso.js-ben.
         var cols = Math.max(1, Math.floor(flowWidth / nominalCellWidth))
-        var pitch = cols > 0 ? Math.floor(flowWidth / cols) : nominalCellWidth
-        var left = Math.min(x1, x2), right = Math.max(x1, x2)
-        var top = Math.min(y1, y2), bottom = Math.max(y1, y2)
-        // #1148: az elemteszt METSZÉS, szigorúan pozitív területtel
-        // (`0x0071bc90`, `0x0071bef7`–`0x0071bf25`) — nem cella-bucket.
-        // A különbség a határon látszik: a cellahatárra PONTOSAN illesztett
-        // keret a szomszédot nem fogja be (nulla területű érintés), egy
-        // képpontnyi átlógás viszont igen.
-        var c0 = Math.max(0, Math.floor(left / pitch))
-        var c1 = Math.min(cols - 1, Math.floor(right / pitch))
-        var r0 = Math.max(0, Math.floor(top / cellHeight))
-        var r1 = Math.floor(bottom / cellHeight)
-        var result = []
-        for (var r = r0; r <= r1; ++r)
-            for (var c = c0; c <= c1; ++c) {
-                var idx = r * cols + c
-                if (idx < 0 || idx >= count) continue
-                var cellLeft = c * pitch, cellTop = r * cellHeight
-                if (left < cellLeft + pitch && right > cellLeft
-                        && top < cellTop + cellHeight && bottom > cellTop)
-                    result.push(start + idx)
-            }
-        return result
+        var pitch = Math.max(1, Math.floor(flowWidth / cols))
+        return Lasso.hitRows(
+            Lasso.normalizedRect(x1, y1, x2, y2),
+            start, count, cols, pitch, cellHeight)
     }
 
     // #1148/#897: a húzás INDULÁSAKOR mentett kijelölés — a Shift és a
@@ -458,35 +436,87 @@ ListView {
     // Az eredeti minden elem kijelöltségét elmenti (`[elem+0x5c]`,
     // `0x00719d80`–`0x00719d94`).
     property var lassoSnapshot: []
+    // #897: az eredeti `[+0x2ce]` „lasszó aktív" jelzőjének megfelelője.
+    // A gesztus kezdetét ez mondja meg — a keretsáv láthatósága NEM
+    // megbízható jel (a sávot a rajzolás állítja, nem a modell).
+    property bool lassoActive: false
+
     function beginLasso() {
         lassoSnapshot = appWindow.selectedIndexes.slice()
+        lassoActive = true
     }
+
+    /** `{ picked, sel }`: a keret találatai (ebből lesz a kurzor a gesztus
+        végén), és a pillanatfelvétellel összefésült végleges kijelölés. */
+    function _lassoResult(start, count, flowWidth, x1, y1, x2, y2, modifiers) {
+        var picked = lassoIndexes(start, count, flowWidth, x1, y1, x2, y2)
+        var mods = Number(modifiers)
+        return {
+            picked: picked,
+            sel: Lasso.merged(grid.lassoSnapshot, picked,
+                              (mods & Qt.ShiftModifier) !== 0,
+                              (mods & Qt.ControlModifier) !== 0)
+        }
+    }
+
+    /** Húzás KÖZBEN (#897): a kijelölés minden mozdulatnál újraszámolódik
+        a pillanatfelvételből — a felhasználó végig LÁTJA, mit fog be a
+        keret, és a visszahúzás visszavon. ⚠️ A KURZORT (`selectedIndex`)
+        szándékosan nem mozdítjuk: arra mappaváltás (`focusFolder`, #1183)
+        van kötve, ami minden egérmozdulatnál elsülne — az a felengedéskor
+        áll be. */
+    function updateLasso(start, count, flowWidth,
+                         x1, y1, x2, y2, modifiers) {
+        if (!grid.lassoActive) beginLasso()
+        appWindow.selectedIndexes = _lassoResult(
+            start, count, flowWidth, x1, y1, x2, y2, modifiers).sel
+    }
+
+    /** Felengedés: a kijelölés mellett a kurzor is a keret utolsó képére áll. */
     function applyLasso(start, count, flowWidth,
                         x1, y1, x2, y2, modifiers) {
-        var picked = lassoIndexes(
-            start, count, flowWidth, x1, y1, x2, y2)
+        var r = _lassoResult(
+            start, count, flowWidth, x1, y1, x2, y2, modifiers)
+        appWindow.selectedIndexes = r.sel
+        if (r.picked.length > 0)
+            appWindow.selectedIndex = r.picked[r.picked.length - 1]
+        grid.lassoActive = false
+    }
+
+    /** Egérkattintás egy indexképen — a rács szintjén, hogy a HORGONY
+        (`selectionAnchor`) egyetlen helyen éljen (#897).
+
+        ⚠️ EGÉRREL a Shift TARTOMÁNYT jelöl a horgonytól a kattintott
+        képig (`0x0071bb34`, `[edi+0x390]`), és a horgonyt NEM lépteti;
+        BILLENTYŰZETTEL viszont egyesével bővít, és a horgony lép
+        (#892/#96). Az eredetiben is két külön kódút — itt sem közös.
+        A Shift a Ctrl ELŐTT dönt, mint az eredetiben (`0x0071bb1f` a
+        `0x0071bbeb` előtt áll).
+
+        Horgony híján az eredeti kiszámol egyet (`0x714550`). A MI
+        alapértelmezésünk: előbb a kurzor (`selectedIndex`), és ha az
+        sincs, a Shift-kattintás sima kattintásként viselkedik — a
+        kattintott képre szűkít, és leteszi a horgonyt. Üres nézeten a
+        „kiszámolt" horgony (a lista eleje) megjósolhatatlan tartományt
+        adna, a felhasználó pedig azt sem látná, honnan mérünk. */
+    function applyThumbClick(index, modifiers) {
+        var i = Number(index)
         var mods = Number(modifiers)
-        var base = grid.lassoSnapshot || []
-        var sel
-        if (mods & Qt.ShiftModifier) {
-            // Shift: HOZZÁFŰZ a felvételkori kijelöléshez
-            sel = base.slice()
-            for (var i = 0; i < picked.length; ++i)
-                if (sel.indexOf(picked[i]) < 0) sel.push(picked[i])
-        } else if (mods & Qt.ControlModifier) {
-            // Ctrl: a keretbe esők a FELVÉTELKORI állapotukhoz képest
-            // fordulnak — visszahúzáskor visszaáll az eredeti (#897)
-            sel = []
-            for (var j = 0; j < base.length; ++j)
-                if (picked.indexOf(base[j]) < 0) sel.push(base[j])
-            for (var k = 0; k < picked.length; ++k)
-                if (base.indexOf(picked[k]) < 0) sel.push(picked[k])
-        } else {
-            sel = picked
+        var horgony = grid.selectionAnchor >= 0
+                      ? grid.selectionAnchor : appWindow.selectedIndex
+        if ((mods & Qt.ShiftModifier) && horgony >= 0) {
+            grid.selectionAnchor = horgony
+            // #1219: a tartomány a HORGONY mappacsoportján belül marad
+            var veg = _csoportraVagva(horgony, i)
+            appWindow.selectedIndexes = Selection.range(horgony, veg)
+            // a kurzor a tartomány CSOPORTHATÁRRA VÁGOTT végpontjára ül
+            // (a Shift+nyíl mintája) — így nem szökik át a szomszéd
+            // mappába, ami a #1145 kijelölés-törlését hozná mozgásba
+            appWindow.selectedIndex = veg
+            return
         }
-        appWindow.selectedIndexes = sel
-        if (picked.length > 0)
-            appWindow.selectedIndex = picked[picked.length - 1]
+        appWindow.handleThumbClick(i, mods)
+        grid.selectionAnchor = i
     }
 
     // #422: jobbklikk a rács ÜRES területén — a mappa-kontextusmenü első
@@ -599,6 +629,13 @@ ListView {
                     lassoBand.update(
                         mapToItem(grid, pressX, pressY),
                         mapToItem(grid, event.x, event.y))
+                    // #897: a kijelölés MÁR HÚZÁS KÖZBEN követi a keretet
+                    // (a saját koordinátáink a groupFlow-éi — a terület
+                    // kitölti a képfolyamot)
+                    grid.updateLasso(
+                        groupCol.modelData.start, groupCol.modelData.count,
+                        groupFlow.width,
+                        pressX, pressY, event.x, event.y, event.modifiers)
                 }
                 onReleased: function(event) {
                     if (!huz) {
@@ -680,22 +717,31 @@ ListView {
                             .selectedSet[slot.row] === true
                         onChosen: function(i, mods) {
                             grid.forceActiveFocus()   // kurzorgombokhoz (#77)
-                            grid.selectionAnchor = i  // Shift+nyíl horgony (#96)
-                            grid.appWindow.handleThumbClick(i, mods)
+                            // #897: a horgony kezelése a rácsé — a Shift
+                            // EGÉRREL tartományt jelöl a horgonytól, és
+                            // nem lépteti azt
+                            grid.applyThumbClick(i, mods)
                         }
                         onOpened: function(i) {
                             grid.openRequested(i)
                         }
-                        onLassoDragged: function(sx, sy, cx, cy) {
+                        onLassoDragged: function(sx, sy, cx, cy, mods) {
                             // #1148/#897: a gesztus ELSŐ mozdulatánál
                             // pillanatfelvétel — a Shift/Ctrl ehhez
                             // viszonyít, ezért a keret visszahúzása is
-                            // visszavon. A keretsáv láthatatlansága a
-                            // megbízható „most kezdődött" jel.
-                            if (!lassoBand.visible) grid.beginLasso()
+                            // visszavon.
+                            if (!grid.lassoActive) grid.beginLasso()
                             lassoBand.update(
                                 mapToItem(grid, sx, sy),
                                 mapToItem(grid, cx, cy))
+                            // #897: a kijelölés húzás közben is követ
+                            var a = mapToItem(groupFlow, sx, sy)
+                            var b = mapToItem(groupFlow, cx, cy)
+                            grid.updateLasso(
+                                groupCol.modelData.start,
+                                groupCol.modelData.count,
+                                groupFlow.width,
+                                a.x, a.y, b.x, b.y, mods)
                         }
                         onLassoFinished: function(sx, sy, cx, cy, mods) {
                             var a = mapToItem(groupFlow, sx, sy)

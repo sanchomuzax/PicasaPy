@@ -50,8 +50,11 @@ Item {
         maxContentHeight > 0 ? Math.min(cell.height, maxContentHeight) : cell.height
     signal chosen(int index, int modifiers)
     signal opened(int index)
-    // lasszó: a koordináták a cella saját rendszerében — a fogadó képezi le
-    signal lassoDragged(real startX, real startY, real curX, real curY)
+    // lasszó: a koordináták a cella saját rendszerében — a fogadó képezi le.
+    // #897: a MÓDOSÍTÓK is kellenek, mert a kijelölés már húzás közben
+    // frissül, és a Shift/Ctrl a felvételkori állapothoz viszonyít.
+    signal lassoDragged(real startX, real startY, real curX, real curY,
+                        int modifiers)
     signal lassoFinished(real startX, real startY, real curX, real curY,
                          int modifiers)
     // jobbklikk (#15): fájlműveletek kontextusmenüje — a pozíció a cella
@@ -334,7 +337,8 @@ Item {
             }
             if (!lassoing && moved) lassoing = true
             if (lassoing)
-                cell.lassoDragged(pressX, pressY, event.x, event.y)
+                cell.lassoDragged(
+                    pressX, pressY, event.x, event.y, event.modifiers)
         }
         onReleased: function(event) {
             if (dragging) {
