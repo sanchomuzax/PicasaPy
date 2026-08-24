@@ -240,6 +240,38 @@ m_hidden
 
 ---
 
+### 4.4 A megvalósítás és EGY MEGDŐLT elvárás (2026-08-24, #1072)
+
+A PISZKOZAT-állapot ezzel a körrel a kódban is létezik:
+
+| a jegy elvárása | mi lett belőle |
+|---|---|
+| jelölés az albumban | **a képbe rajzolt „PISZKOZAT" felirat** — ld. lent |
+| megosztás/nyomtatás tiltása | a nyomtatás és az e-mail-csatolás visszautasítja a piszkozatot, a `projectutils::draft_collage` szövegével |
+| külön befejező lépés | „Létrehozás" gomb a kép fölött (`editpanel/render_now`), rendereléskor „Folyamatban..." |
+| a piszkozat szerkeszthető | a „Kollázs szerkesztése" a piszkozaton is nyit — a projektje az `autosave.cxf` |
+
+**Az állapot forrása a lemez**, nem külön nyilvántartás: a kép PISZKOZAT,
+ha nincs `<név>.cxf` párja, de a mappában ott az `autosave.cxf` — pontosan
+az 1. szakasz táblája. Kód: `picasapy/collage/draft_state.py`. Emiatt SQL
+séma- vagy oszlopváltozás nem kellett, és a jelzés magától követi, ha a
+fájlok kívülről változnak.
+
+⚠️ **A `PISZKOZAT -- <név>` cím-előtag NEM készült el, és nem is szabad
+megcsinálni.** A #1072 leírása még azt kérte, hogy a piszkozat az albumban
+`draft_format` (`DRAFT -- %s`) szerinti címmel jelenjen meg. A 3.5 azóta
+kimondta, hogy ez a formátumsztring **máshol** használatos, a piszkozatot
+pedig a KÉPBE rajzolt felirat jelöli — amit a tulajdonos képernyőképe is
+így mutat. A két jelölés együtt kétszeres volna.
+
+⚠️ **Ismert korlát:** a befejezés utáni takarítás
+(`_discard_draft_after_render`) a BEÁLLÍTOTT Kollázsok-mappából dobja el az
+`autosave.cxf`-et. Ha a felhasználó a piszkozat mentése után átállítja a
+kimeneti mappát, a régi automentés árván marad — és a valódi Picasa arra
+`autosave.jpg`-t gyárt (8.3, #1100).
+
+---
+
 ## 5. „Kollázs létrehozása" — a befejező ág
 
 ### 5.1 A párbeszéd, ha a kollázs már létezik

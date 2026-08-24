@@ -44,6 +44,8 @@ from picasapy.mailer import (
     resolve_email_max_dimension,
 )
 
+from .collage_draft_guard import CollageDraftGuard
+
 _log = logging.getLogger(__name__)
 
 # QSettings-kulcsok — a `mail/` névtér az OptionsTabEmail élő mezőié
@@ -102,6 +104,8 @@ class EmailController(QObject):
         (az `application.py`-ban már beállított szervezet/app-név alatt)."""
         super().__init__(parent)
         self._photo_source = photo_source
+        # #1072: a piszkozat-tilalom — közös a `PrintController`-rel
+        self._draft_guard = CollageDraftGuard(self)
         self._settings = settings if settings is not None else QSettings()
         self._multi_size_index = _clamp_index(
             self._settings.value(_MULTI_SIZE_KEY), _DEFAULT_MULTI_SIZE_INDEX
@@ -193,6 +197,13 @@ class EmailController(QObject):
         felesleges másolat."""
         items = self._resolve_items(rows)
         if not items:
+            return []
+        # #1072: a befejezetlen kollázst nem küldjük el
+        # (`projectutils::draft_collage`: a megosztás a befejezés
+        # feltétele). Az egész küldés áll meg, nem csak a piszkozat marad
+        # ki — egy csendben elhagyott csatolmányról a feladó nem tudna.
+        if self._draft_guard.first_draft(item.source for item in items) is not None:
+            self.emailFailed.emit(self._draft_guard.restriction_message())
             return []
         index = self._multi_size_index if multi else self._single_size_index
         max_dimension = resolve_email_max_dimension(index)
