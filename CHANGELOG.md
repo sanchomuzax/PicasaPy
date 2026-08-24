@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **Lebegő értesítősáv a képernyő jobb szélén (#1129).** A Picasa 3 a
+  háttérműveletek végét egy kis, önálló ablakban villantja fel a képernyő
+  szélén — nálunk ez a felület eddig egyáltalán nem létezett, a
+  háttérműveletek némán futottak le. Mostantól megvan a sáv: a főablaktól
+  független, mindig a többi ablak fölött marad, tálcagombot nem foglal, és
+  a tálcát tiszteletben tartva a jobb alsó sarok fölé áll be. Egy-egy
+  értesítés a saját sorával jelenik meg, a hosszú felirat — az eredetihez
+  hasonlóan — elvágódik, nem tördel. Az értesítésre kattintva a program
+  odavisz, ahol az eredmény van; van záró gomb is, és néhány másodperc
+  után magától eltűnik. Ma két esemény szólal meg benne: az importálás
+  befejeződése és hibája, valamint az asztali háttérképnek készült kollázs
+  elkészülte (ez utóbbi eddig csak kattintásra tűnt el).
+
 ### Belső
 - **A platformfüggő tesztek kimondják, melyik platformot mérik (#1217).** A
   program három különböző módon kérdezte meg, milyen rendszeren fut, és a
