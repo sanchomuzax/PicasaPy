@@ -158,10 +158,15 @@ def _dontsd_el_a_parhuzamot(
 _TEMP_GYOKER = Path(tempfile.gettempdir())
 _TEMP_ELOTAG = "picasapy-tests-"
 
-#: Ennél régebbi saját maradékot takarítunk induláskor. Kor szerint szűrünk,
-#: mert egy PÁRHUZAMOS munkamenet friss könyvtárát elvinni rosszabb, mint
-#: helyet pazarolni.
+#: Ennél régebbi saját maradékot takarítunk mindenképpen. A kor a VÉGSŐ háló:
+#: életjel nélküli maradékra és PID-újrahasznosításra is ez a válasz.
 _MARADEK_KOR_S = 3 * 3600
+
+#: A futás életjele a saját basetempjében (#1358). Enélkül a takarítás csak a
+#: koron múlt: 2026-08-24-én négy megszakadt kör ~1,5 GB-ot hagyott a
+#: `/tmp`-en, mindegyik fiatalabb a küszöbnél, miközben a folyamatuk rég
+#: halott volt. A tulajdonosnak kellett szólnia.
+_PID_FAJL = ".futas.pid"
 
 
 #: A csendes (párhuzamos) részfutások összegyűjtött kimenete; kulcs a pytest
@@ -264,18 +269,61 @@ def _run_pytest(
         return 124
 
 
+def _jelold_a_futast(basetemp: Path) -> None:
+    """Életjel a basetempbe: melyik folyamat dolgozik itt (#1358).
+
+    A kiírás bukása SOHA nem foghatja meg a tesztfutást — a takarítás
+    kényelme nem előzheti meg magát a munkát."""
+    try:
+        (basetemp / _PID_FAJL).write_text(str(os.getpid()), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _el_e_a_futas(konyvtar: Path) -> bool | None:
+    """Él-e még a könyvtárhoz tartozó folyamat?
+
+    `True` él, `False` halott, `None` **nem tudjuk** — és a három nem
+    keverhető: a tudatlanságból nem lehet törlési döntés.
+
+    ⚠️ A PID-kérdés kizárólag POSIX-on futhat. A CPython `os.kill(pid, 0)`
+    Windowson nem életjel-kérdés, hanem `TerminateProcess` — MEGÖLNÉ a
+    folyamatot. Ott `None`-t adunk, és marad a kor-szabály."""
+    if os.name != "posix":
+        return None
+    try:
+        pid = int((konyvtar / _PID_FAJL).read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return None
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        # létezik, de nem a miénk (vagy nem kérdezhető) — ne töröljünk
+        return True
+    return True
+
+
 def _takarits_regi_maradekot() -> None:
     """Korábbi (megszakadt) futások saját maradékainak eltakarítása.
 
-    KOR SZERINT szűrünk, és CSAK a saját előtagunkra: egy párhuzamosan futó
-    munkamenet friss könyvtárát elvinni rosszabb, mint helyet pazarolni.
-    """
+    CSAK a saját előtagunkra nyúlunk, és két lépcsőben döntünk:
+
+    1. **életjel** — ha a könyvtárhoz tartozó folyamat bizonyítottan halott,
+       a maradék mehet, kortól függetlenül (#1358);
+    2. **kor** — végső háló az életjel nélküli maradékra, a Windowsra és a
+       PID-újrahasznosításra.
+
+    Élő futás könyvtárához SOHA nem nyúlunk: azt elvinni rosszabb, mint
+    helyet pazarolni."""
     hatarido = time.time() - _MARADEK_KOR_S
     for konyvtar in _TEMP_GYOKER.glob(f"{_TEMP_ELOTAG}*"):
         if not konyvtar.is_dir():
             continue
         try:
-            if konyvtar.stat().st_mtime > hatarido:
+            regi = konyvtar.stat().st_mtime <= hatarido
+            if not regi and _el_e_a_futas(konyvtar) is not False:
                 continue
             shutil.rmtree(konyvtar, ignore_errors=True)
         except OSError:
@@ -395,10 +443,18 @@ def main(argv: list[str] | None = None) -> int:
             [sys.executable, "-m", "coverage", "erase"], cwd=_ROOT, check=False
         )
 
+    if "--csak-takaritas" in argv:
+        # A munkamenet-indító ezt hívja (#1358): minden új session rendet
+        # rak, tesztfuttatás nélkül is. Aki csak fejleszt vagy kutat, eddig
+        # sosem takarított.
+        _takarits_regi_maradekot()
+        return 0
+
     _bejelentkezes()
     _takarits_regi_maradekot()
     sorszam, darab = _shard_parameter(argv)
     basetemp = Path(tempfile.mkdtemp(prefix=_TEMP_ELOTAG, dir=_TEMP_GYOKER))
+    _jelold_a_futast(basetemp)
     try:
         return _futtat(cov, basetemp, sorszam=sorszam, darab=darab)
     finally:

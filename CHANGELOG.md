@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Belső
+- **A megszakadt tesztfutások maradéka magától eltűnik (#1358).** A futás
+  életjelet hagy a saját ideiglenes könyvtárában, így a halott kör maradéka
+  azonnal takarítható, nem csak három óra után — és a takarítás minden
+  munkamenet indulásakor lefut, nem csak tesztfuttatáskor. Élő futás
+  könyvtárához továbbra sem nyúl senki.
+
 ## [0.8.77] – 2026-08-24
 
 ### Hozzáadva
