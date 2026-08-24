@@ -100,6 +100,25 @@ kódtól).
   (`SetTimer`/`KillTimer`/`timeSetEvent` egyik hívója sincs a notifier
   moduljában), a `yt` keretrendszer saját ütemezője pedig nincs felderítve.
   A magától eltűnés a #1168 kimondott igénye — az érték a mi döntésünk.
+- `src/picasapy/collage/uids.py` (#1092) — a `.cxf` `albumUID`-jának és
+  csomópontonkénti `<uid>`-jának **IDEIGLENES származtatása**. Az ALAK
+  eredeti és mért (32, illetve 16+16 nulla hexa karakter, determinisztikus:
+  egy forrásalbum → egy `albumUID`, egy kép → egy `<uid>`); a KÉPZÉSI
+  SZABÁLY a miénk, de **nem eldöntött saját funkció, hanem tartalék**:
+  - a csomópont-`<uid>`-nál az eredeti érték a Picasa belső adatbázisából
+    jön (`imagedata` `uid64`), és mérésekkel kizártuk, hogy az útvonalból
+    levezethető lenne — itt a származtatás tartós;
+  - az `albumUID`-nál **nyitott kérdés**: a saját specünk
+    (`picasa-create-features.md` 1.6) szerint ez a `[.album:<token>]`
+    token, és ezt a mai anyagból NEM lehet eldönteni (a golden kollázsok
+    forrásmappájának `.picasa.ini`-je nincs meg). Ha a hipotézis
+    beigazolódik, a származtatás helyére az olvasott token lép, és csak
+    a token nélküli mappákra marad meg. Amíg nincs kimérve, ez a tétel
+    **ideiglenes**.
+- `src/picasapy/collage/draft.py` (#1092) — a fenti származtatás
+  BEHELYEZÉSE a projektfájlba (`_azonositoval`): a megnyitott fájlból
+  hozott azonosítót nem írjuk felül, csak az üresen maradt csomópontokat
+  töltjük ki.
 
 ## Tervezett, még nem implementált saját funkciók
 

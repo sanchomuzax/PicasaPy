@@ -29,6 +29,20 @@ fordított perjelekkel): a változó feloldása az útvonal-réteg dolga. Ha itt
 > ⚠️ Amit NEM tudunk a mintából: az eredeti fájl pontos sortördelése a
 > gyökérelemen belül. Mi minden attribútumot egy sorba írunk. A Picasa XML-t
 > olvas vissza, nem szöveget, tehát ez nem befolyásolja a kompatibilitást.
+
+**A három azonosító (`albumUID`, `<albumDate>`, `<uid>`) — #1092.** Ez a
+modul mind a hármat ISMERI (írja is, olvassa is), üresen viszont nem írja
+ki őket; a KITÖLTÉSÜK nem itt dől el:
+
+- a csomópontok `<uid>`-ját a `draft.project_from_nodes` teszi be
+  (`uids.node_uid_for`, illetve a megnyitott fájlból hozott érték),
+- az `albumUID`-ot és az `<albumDate>`-et a panel adja át a képek közös
+  forrásmappájából (`app/collage_album_fields.py`).
+
+A képzési szabály a MIÉNK (a jelölés és az indoklás a `uids.py`-ban): az eredeti
+értékek a Picasa belső adatbázisából jönnek. Az `albumID`-t szándékosan
+NEM írjuk — a 12 golden mintából egyben sincs, és az eredeti író sem
+hivatkozik rá (csak az olvasó, `0x00832830`).
 """
 
 from __future__ import annotations

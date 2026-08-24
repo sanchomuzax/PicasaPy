@@ -505,6 +505,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                 album_id=self._collage_panel_album_id,
                 background_image=background_image,
                 format_key=self._collage_panel_format,
+                node_uids=self._collage_panel_node_uids,
                 should_cancel=self._rendered_now_writing,
             )
         except (ValueError, OSError) as error:
@@ -612,6 +613,7 @@ class CollageSaveMixin(BackgroundWorkerMixin):
                     album_id=self._collage_panel_album_id,
                     background_image=self._background_image_for_cxf(),
                     format_key=self._collage_panel_format,
+                    node_uids=self._collage_panel_node_uids,
                 ),
             )
         except (OSError, ValueError) as hiba:
@@ -922,6 +924,18 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self._collage_panel_album_uid = projekt.album_uid
         self._collage_panel_album_id = projekt.album_id
         self._collage_panel_album_date = projekt.album_date
+        # #1092: a csomópont-azonosítókat a vászon-csomópont nem hordozza,
+        # ezért `src → uid` leképezésben tesszük el. A KÓDOLT és a
+        # FELOLDOTT alak is kulcs: a `.cxf` a Picasa változós útvonalát
+        # tárolja (`$My Pictures\…`, #1096), a visszaíráskor viszont az
+        # újrakódolt alakot keressük — a két kulcs együtt akkor is talál,
+        # ha a feloldás ezen a gépen máshova mutat.
+        self._collage_panel_node_uids = {
+            kulcs: node.uid
+            for node in projekt.nodes
+            if node.uid and node.src
+            for kulcs in {node.src, str(decode_cxf_path(node.src))}
+        }
         panel_csomopontok = _panel_nodes_of(nodes_from_project(projekt))
         self._set_nodes(panel_csomopontok, dirty=False)
         # ⚠️ #1274: a panel KERET-választója is a projekté. A `.cxf` a
