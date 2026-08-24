@@ -295,7 +295,7 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
    történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 3 kérdés (a hatókörön kívüli Apple-ágon felül)
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 2 kérdés (a hatókörön kívüli Apple-ágon felül)
 
 > 🔴 **2026-08-21 — ÉLES ÖSSZEVETÉS: a megvalósításunk NEM követi ezt a
 > lapot.** A tulajdonos egymás mellett futtatta a kettőt. A fa **nem
@@ -382,7 +382,7 @@ a `0x007c5c40` három kimenő jelzőjének pontos leképezése a három ikonra
    `9` = kudarc); a `1` egy tömb-növelő rutin helyi változója volt. A
    siker ága nyitja ki az ősöket és kéri a háttérbetöltést, a kudarcé
    törli a fa kijelölését.
-3. **Hol jön létre a változás-értesítő fogantyú?** (16.4) — a `FindNextChangeNotification`/`FindCloseChangeNotification` alkalmazáskódból hívódik, de a `FindFirstChangeNotification…` létrehozó helye nem található; emiatt az sem eldöntött, él-e a figyelő minden futásban. A végigpróbált utak a 16.4-ben.
+3. ~~Hol jön létre a változás-értesítő fogantyú?~~ — ✅ **LEZÁRVA 2026-08-24 (16.5)**: `0x007062b9`, a `0xd694fc` platform-váltó függvénymutatón át; a szűrő **`0x17`** (FILE_NAME|DIR_NAME|ATTRIBUTES|**LAST_WRITE**, méret NINCS), **`bWatchSubtree = 1` = rekurzív**. A figyelő ÉL. Ez megcáfolja a 16.4 saját óvatoskodását is.
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott bináris kérdés
 
