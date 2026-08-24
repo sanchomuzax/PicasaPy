@@ -1,0 +1,140 @@
+"""A felhasználót érintő PR-nek CHANGELOG-bejegyzést kell hoznia (#1340).
+
+## A lelet
+
+A v0.8.71 és a v0.8.72 ezzel a mondattal jelent meg a Releases hasábon:
+
+    „Ez a kiadás nem hoz felhasználónak látszó változást."
+
+Miközben az egyikben a letiltott gombok megjelenése javult (#893), a
+másikban a lasszós kijelölés készült el (#897). A mondat HAZUDOTT, és a
+tulajdonos vette észre.
+
+Az ok egyszerű: egyik PR sem írt CHANGELOG-bejegyzést, a kiadó lépés pedig
+szakasz híján tartaléksablonra váltott. A szabály („a CHANGELOG szövegét
+EMBER írja") le volt írva, de **semmi nem őrizte**.
+
+Ez a fájl az őr. A másik felét — hogy a tartalék se állíthasson valótlant —
+a `test_ensure_release_896.py` méri.
+"""
+
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+
+import changelog_or as cor  # noqa: E402
+
+_DIFF_BEJEGYZESSEL = """\
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -6,6 +6,9 @@
+ ## [Nem kiadott]
+ 
++### Javítva
++- **A letiltott gombok halványan jelennek meg (#893).** A zöld gombokra
++  sincs kivétel.
+ 
+ ## [0.8.70] – 2026-08-24
+"""
+
+_DIFF_CSAK_ATRENDEZES = """\
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -6,6 +6,6 @@
+-## [Nem kiadott]
++## [0.8.71] – 2026-08-24
+"""
+
+
+class TestMikorKellBejegyzes:
+    def test_felhasznaloi_kodhoz_kell(self) -> None:
+        assert cor.kell_bejegyzes(["src/picasapy/app/qml/PicasaPy/PicasaButton.qml"])
+
+    def test_a_1331_es_1333_esete_kellett_volna(self) -> None:
+        """A két PR, amelyik a hamis jegyzetet okozta."""
+        assert cor.kell_bejegyzes(
+            ["src/picasapy/app/qml/PicasaPy/lasso.js",
+             "tests/app/qml_functional/test_lasszo_pillanatfelvetel_897.py"]
+        )
+
+    @pytest.mark.parametrize(
+        "fajl",
+        ["docs/specs/valami.md", "tests/render/test_effects.py",
+         ".github/workflows/ci.yml", "scripts/ensure_release.py", "CHANGELOG.md"],
+    )
+    def test_belso_valtozashoz_nem_kell(self, fajl: str) -> None:
+        assert not cor.kell_bejegyzes([fajl])
+
+
+class TestMiSzamitBejegyzesnek:
+    def test_uj_felsorolas_szamit(self) -> None:
+        assert cor.van_uj_bejegyzes(_DIFF_BEJEGYZESSEL)
+
+    def test_a_szakaszcim_atnevezese_NEM_bejegyzes(self) -> None:
+        """A verzióemelés átnevezi a címet — az nem emberi összefoglaló."""
+        assert not cor.van_uj_bejegyzes(_DIFF_CSAK_ATRENDEZES)
+
+    def test_erintetlen_changelog_nem_bejegyzes(self) -> None:
+        assert not cor.van_uj_bejegyzes("")
+
+
+class TestKiadatlanSzakasz:
+    def test_a_bejegyzesnek_a_Nem_kiadott_szakaszban_a_helye(self) -> None:
+        assert cor.van_kiadatlan_szakasz("# Változásnapló\n\n## [Nem kiadott]\n\n- x\n")
+
+    def test_szakasz_nelkul_bukik(self) -> None:
+        assert not cor.van_kiadatlan_szakasz("# Változásnapló\n\n## [0.8.70] – ma\n")
+
+
+class TestParancssor:
+    def _futtato(self, valaszok: dict[str, str]):
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            for kulcs, kimenet in valaszok.items():
+                if kulcs in " ".join(args):
+                    return subprocess.CompletedProcess(args, 0, kimenet, "")
+            return subprocess.CompletedProcess(args, 0, "", "")
+
+        return futtat
+
+    def test_hianyzo_bejegyzes_BUKTATJA_a_kort(
+        self, capsys: pytest.CaptureFixture[str], tmp_path: Path
+    ) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=self._futtato({"--name-only": "src/picasapy/render/vivid.py\n"}),
+        )
+        assert kod == 1
+        kimenet = capsys.readouterr().out
+        assert "::error" in kimenet, "néma bukás — a naplóban elveszne"
+        assert "CHANGELOG" in kimenet
+
+    def test_meglevo_bejegyzessel_atmegy(self, tmp_path: Path) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n\n- x\n", encoding="utf-8")
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=self._futtato({
+                "--name-only": "src/picasapy/render/vivid.py\nCHANGELOG.md\n",
+                "-- CHANGELOG.md": _DIFF_BEJEGYZESSEL,
+            }),
+        )
+        assert kod == 0
+
+    def test_belso_valtozas_atmegy_bejegyzes_nelkul(self, tmp_path: Path) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=self._futtato({"--name-only": "docs/specs/a.md\n"}),
+        )
+        assert kod == 0

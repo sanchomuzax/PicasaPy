@@ -258,6 +258,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # #1340: a CHANGELOG-őr a PR alapja és feje közti diffet nézi —
+          # sekély klónon az alap commit nem érhető el.
+          fetch-depth: 0
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -283,6 +287,24 @@ jobs:
         # Amíg a lint nem látta őket, a rájuk épülő garancia maga volt
         # ellenőrizetlen.
         run: ruff check src/ tests/ scripts/
+
+      - name: CHANGELOG-őr (#1340)
+        # ⚠️ Csak PR-en van értelme: pusholt commitnak nincs „alapja",
+        # amihez a diffet mérni lehetne.
+        if: ${{ github.event_name == 'pull_request' }}
+        # Mit fog meg: felhasználót érintő változást EMBERI MONDAT nélkül.
+        #
+        # A v0.8.71 (a letiltott gombok megjelenése, #893) és a v0.8.72 (a
+        # lasszós kijelölés, #897) azzal a mondattal ment ki, hogy „ez a
+        # kiadás nem hoz felhasználónak látszó változást" — mert egyik PR sem
+        # írt CHANGELOG-bejegyzést, és a kiadó lépés tartaléksablonra váltott.
+        # A tulajdonos vette észre; a Releases hasáb az ő egyetlen látható
+        # verziókövetése. A szabály addig is le volt írva, csak semmi nem
+        # őrizte.
+        run: |
+          python3 scripts/changelog_or.py \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head "${{ github.event.pull_request.head.sha }}"
 
       - name: Néma akció-jelzések őre (#1003)
         # Ide, a `lint` jobba illik: tisztán statikus vizsgálat, se Qt, se
