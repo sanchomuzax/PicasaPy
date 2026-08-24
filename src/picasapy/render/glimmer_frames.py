@@ -15,10 +15,20 @@ from __future__ import annotations
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_frame_ops import (
     add_border_sides,
+    compose_drop_shadow,
     draw_border,
     draw_drop_shadow,
     rotate_with_pad,
 )
+
+#: Polaroid rögzített árnyék-recept (`DropShadowImageOperation` felülírás):
+#: `blur`/`distance` itt PIXELBEN értendő, nem a rövidebb oldal
+#: százalékában (#1144 — a `818×950`/`887×1004` mért kimenet csak ezzel a
+#: két konstanssal, `margin = blur + distance` képlettel egyezik; a
+#: `draw_drop_shadow` %-os modellje ide NEM alkalmazható, ld. annak
+#: docstringjét).
+_POLAROID_SHADOW_BLUR_PX = 8
+_POLAROID_SHADOW_DISTANCE_PX = 3
 
 
 def apply_border(
@@ -114,8 +124,21 @@ def apply_polaroid(image, rotate: float = 5.0, color=(0xE2, 0xE2, 0xE2)):
     top_border = round(crop_size * 0.0968)
     bottom_border = round(crop_size * 0.258)
     bordered = add_border_sides(cropped, side_border, side_border, top_border, bottom_border, color)
-    # shadowAlpha = 0,4 rögzített → fade_alpha(fade) = 0,4 ⇒ fade = 60
-    shadowed = draw_drop_shadow(bordered, (0, 0, 0), color, distance=3.0, angle=90.0 - rotate, blur=8.0, fade=60.0)
+    # shadowAlpha = 0,4 rögzített → fade_alpha(fade) = 0,4 ⇒ fade = 60.
+    # #1144: a margó `blur_px + distance_px` (NEM `2·blur_px + distance_px` —
+    # az a `draw_drop_shadow` %-os, ide nem érvényes modellje volt, ami a
+    # kimenetet 29%-kal megnövelte).
+    margin = _POLAROID_SHADOW_BLUR_PX + _POLAROID_SHADOW_DISTANCE_PX
+    shadowed = compose_drop_shadow(
+        bordered,
+        (0, 0, 0),
+        color,
+        distance_px=_POLAROID_SHADOW_DISTANCE_PX,
+        angle=90.0 - rotate,
+        blur_px=_POLAROID_SHADOW_BLUR_PX,
+        margin=margin,
+        fade=60.0,
+    )
     return rotate_with_pad(shadowed, rotate, color)
 
 
