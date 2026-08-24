@@ -221,7 +221,13 @@ def test_final_213x59_output_scales_every_varying_bin(qt_app):
 
 
 def test_real_photo_viewer_histogram_panel_geometry(qml_app, qt_app):
-    """A Mainből nyitott PhotoViewer lebegő paneljének éles geometriája pontos."""
+    """A Mainből nyitott PhotoViewer hisztogrampaneljének éles geometriája.
+
+    #1323: a panel a bal fiókON BELÜL dokkolt — a fiók BAL szélétől 20 px-re
+    —, nem a fiók jobb pereme mellett, a képterület fölött lebegve. Az
+    ``editpanel.tre`` ``LEFTDRAWEROFFSET``-je a fiók be-/kicsúsztatását
+    vezérlő változó (0 ↔ −279), nem a fiók szélessége.
+    """
     window, _, _ = qml_app
     window.setProperty("viewerOpen", True)
     for _ in range(5):
@@ -235,10 +241,14 @@ def test_real_photo_viewer_histogram_panel_geometry(qml_app, qt_app):
     assert all(isinstance(item, QQuickItem) for item in (viewer, drawer, box, title))
 
     assert (box.width(), box.height()) == (238, 144)
+    drawer_left = drawer.mapToScene(drawer.boundingRect().topLeft()).x()
     drawer_right = drawer.mapToScene(drawer.boundingRect().topRight()).x()
     box_left = box.mapToScene(box.boundingRect().topLeft()).x()
+    box_right = box.mapToScene(box.boundingRect().topRight()).x()
     viewer_bottom = viewer.mapToScene(viewer.boundingRect().bottomLeft()).y()
     box_bottom = box.mapToScene(box.boundingRect().bottomLeft()).y()
-    assert box_left == pytest.approx(drawer_right + 20, abs=0.5)
+    assert box_left == pytest.approx(drawer_left + 20, abs=0.5)
     assert box_bottom == pytest.approx(viewer_bottom - 95, abs=0.5)
+    # a doboz NEM lóghat ki a fiókból a képterületre
+    assert box_right <= drawer_right + 0.5
     assert title.property("font").pointSizeF() == pytest.approx(14)

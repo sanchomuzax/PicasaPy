@@ -2039,7 +2039,12 @@ hívja, ami **kizárólag pontos figyelt-gyökér egyezésre** csinál bármit
 
 ---
 
-## 16. HOGYAN veszi észre az eredeti az új fájlt? — NEM eseményből (2026-08-23, #1275)
+## 16. HOGYAN veszi észre az eredeti az új fájlt? (2026-08-23, #1275)
+
+> ⚠️ **HELYESBÍTVE 2026-08-24-én — a 16.1 szakasz számai TÉVESEK VOLTAK.**
+> Az eredeti **használ** változás-értesítést; a leszámlálásom hibás volt.
+> A részletes helyesbítés a **16.4** szakaszban. A 16.1–16.3 azért marad
+> itt, hogy a hiba visszakereshető legyen — a számait NE használd.
 
 A #1275 kulcskérdése: a futó alkalmazás hogyan veszi észre a figyelt
 mappába kívülről bekerülő képet — és mi a helyzet **hálózati meghajtón**.
@@ -2052,15 +2057,15 @@ eldönti**.
 |---|---|---|
 | `ReadDirectoryChangesW` | **NINCS importálva** | — |
 | `SHChangeNotifyRegister` | **NINCS importálva** | — |
-| `FindFirstChangeNotificationW` | igen (`0xc404d0`) | **0** |
-| `FindFirstChangeNotificationA` | igen (`0xc404d8`) | **0** |
-| `FindNextChangeNotification` | igen (`0xc403c0`) | **0** |
+| `FindFirstChangeNotificationW` | igen (`0xc404d0`) | ~~0~~ → **1** (16.4) |
+| `FindFirstChangeNotificationA` | igen (`0xc404d8`) | **0** (ez igaz) |
+| `FindNextChangeNotification` | igen (`0xc403c0`) | ~~0~~ → **2** (16.4) |
 | `FindCloseChangeNotification` | igen (`0xc40368`) | **2** (`0x004e1805` betöltés, `0x004e18ba` hívás) |
 
-⇒ A program **lezárná** a változás-figyelő fogantyúkat, de **soha nem hoz
-létre egyet sem**. A létrehozó oldal hiányzik; a `FindClose…` egy
-megmaradt, védekező takarító ág. **Változás-értesítés tehát nincs
-használatban.**
+⇒ ~~A program lezárná a változás-figyelő fogantyúkat, de soha nem hoz
+létre egyet sem.~~ **EZ TÉVES — ld. 16.4.** A `FindNext…` két valódi
+hívóval rendelkezik az alkalmazás kódjában, és a fogantyúkat éppen
+változás-értesítésként fegyverzi újra.
 
 *(Módszertani megjegyzés: az első keresésem csak a
 `call dword ptr [abszolút]` alakot nézte, és emiatt a `FindClose…`-t is
@@ -2097,13 +2102,14 @@ elvégezhető (név + időbélyeg + méret + „piszkos" jelző).
 
 A várakozást a `WaitForMultipleObjects` végzi (`0x007065f0` időkorláttal,
 `0x00706680` nulla időkorláttal, azaz lekérdezéssel) egy fogantyú-tömbön —
-de a 16.1 szerint ezek **nem** változás-figyelő fogantyúk, hanem a szál
-saját ébresztő/leállító eseményei.
+és a 16.4 szerint ezek **igenis** változás-figyelő fogantyúk (a 0. rekesz
+kivételével, ami a szál ébresztő/leállító eseménye).
 
 ### 16.3 Amit ez a #1275-re kimond
 
-> ✅ **Az eredeti Picasa POLLOZ.** Nincs olyan operációs rendszer-szintű
-> eseményfigyelés, amit „utánoznunk" kellene — és épp ezért működik
+> ⚠️ **A premissza téves (16.4), a következtetés viszont ÁLL.** Az eredeti
+> **egyszerre** figyel eseményt ÉS pollozik. Nincs olyan eseményfigyelés,
+> amit *helyette* kellene „utánoznunk" — és épp ezért működik
 > hálózati meghajtón is, ahol az eseményalapú figyelés notóriusan
 > megbízhatatlan.
 
@@ -2121,3 +2127,66 @@ osztálynevekre/CSV-mezőkre (RTTI + sztringtár). **Erős**, de nem
 megerősített: a lekérdezés **időköze** — konkrét intervallum-konstansot
 nem találtam (nincs `…Interval` jellegű `Preferences`-kulcs a
 könyvtárbejáróhoz).*
+
+### 16.4 HELYESBÍTÉS — az eredeti IGENIS használ változás-értesítést (2026-08-24)
+
+A 16.1 leszámlálása hibás volt. Az újramérés (`imports` tábla, a
+`function_address` mező szerint csoportosítva — ez soronként **egy hívási
+helyet** jelent, az üres mezős sor pedig maga az importbejegyzés, nem hívó):
+
+| API | valódi hívási helyek | hol |
+|---|---|---|
+| `ReadDirectoryChangesW` | — | **nincs importálva** (ez igaz maradt) |
+| `SHChangeNotifyRegister` | — | **nincs importálva** (ez igaz maradt) |
+| `FindFirstChangeNotificationA` | **0** | — |
+| `FindFirstChangeNotificationW` | **1** | `0x009b3000` — de ez **CRT `A`→`W` átalakító burok** (CP_UTF8 = `0xfde9`, `[0xc402e4]`), nem alkalmazáslogika |
+| `FindNextChangeNotification` | **2** | `0x007065f0`, `0x00706680` — **alkalmazáskód** |
+| `FindCloseChangeNotification` | **2** | `0x004e17f0`, `0x004e1890` — **alkalmazáskód** |
+
+**A figyelő osztály szerkezete kiolvasható** (`0x007065f0`, 120 bájt):
+
+```
+[this+0x18] = fogantyú-tömb        [this+0x1c] >> 1 = fogantyúk száma
+WaitForMultipleObjects([0xc4039c])  (count, tömb, bWaitAll=FALSE, timeout)
+  eredmény == 0x102 (WAIT_TIMEOUT) → -1
+  egyébként: tömb[jelzett] → FindNextChangeNotification([0xc403c0])  ← ÚJRAFEGYVERZÉS
+```
+
+A bontó oldal (`0x004e17f0`) a tömböt **az 1. rekesztől** zárja
+`FindCloseChangeNotification`-nal, a **0. rekeszt kihagyja** — az tehát
+más fajta fogantyú (a szál ébresztő/leállító eseménye), az 1..n−1 viszont
+**valódi változás-értesítő**.
+
+⇒ **Amit a 16.1 „védekező takarító ágnak" nézett, az a figyelő rendes
+bontása.** A `FindNext…` nem hívható olyan fogantyún, amit nem
+`FindFirst…` adott.
+
+#### Ami EBBŐL is nyitva maradt
+
+**A létrehozó hívási helyet nem találtam meg.** A `FindFirstChangeNotificationA`
+hívó nélküli, a `W` változatot pedig csak a CRT-burok hívja — amit viszont
+senki. Két lehetőség maradt, és **nem tudom eldönteni, melyik**:
+
+1. az indexem egy közvetett (`call dword ptr [IAT]`) hívási helyet
+   **kihagyott** a `W` változatnál (a `FindNext…` kettőjét megtalálta,
+   tehát nem elvi korlát);
+2. a fogantyúk **máshonnan** származnak (öröklés, más modul, `LoadLibrary`).
+
+Amit végigpróbáltam: a `0x004e1890` (1744 bájt, a másik `FindClose…`-hívó,
+a legvalószínűbb „figyelőhalmaz újraépítése" jelölt) **teljes**
+diszasszemblálása — a benne lévő három közvetett hívás `[0xc40368]`
+(`FindClose…`) és kétszer `[0xc40560]` (egybájtos karakterosztály-vizsgálat,
+`cmp eax, 0xff`), **nincs köztük `FindFirst…`**; továbbá a `0x004e1xxx`
+függvénylista átnézése.
+
+*Bizonyítottsági fok: **megerősített**, hogy a `FindNext…`/`FindClose…`
+alkalmazáskódból hívódik és hogy a `0x007065f0` újrafegyverez.
+**Eldöntetlen**, hol jön létre a fogantyú, és ezért az is, hogy a figyelő
+**minden** futásban él-e.*
+
+#### Amit ez a 16.3 következtetésén NEM változtat
+
+A #1275-re adott teendő (**időzített újraolvasás**, az esemény *mellett*)
+**érvényben marad** — sőt a 16.4 megerősíti: az eredeti maga is
+**mindkettőt** csinálja. Csak a *premissza* dőlt meg („nincs esemény"),
+a *javaslat* nem.

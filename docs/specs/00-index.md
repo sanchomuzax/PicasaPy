@@ -295,7 +295,7 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
    történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 2 kérdés (a hatókörön kívüli Apple-ágon felül)
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 3 kérdés (a hatókörön kívüli Apple-ágon felül)
 
 > 🔴 **2026-08-21 — ÉLES ÖSSZEVETÉS: a megvalósításunk NEM követi ezt a
 > lapot.** A tulajdonos egymás mellett futtatta a kettőt. A fa **nem
@@ -382,6 +382,7 @@ a `0x007c5c40` három kimenő jelzőjének pontos leképezése a három ikonra
    `9` = kudarc); a `1` egy tömb-növelő rutin helyi változója volt. A
    siker ága nyitja ki az ősöket és kéri a háttérbetöltést, a kudarcé
    törli a fa kijelölését.
+3. **Hol jön létre a változás-értesítő fogantyú?** (16.4) — a `FindNextChangeNotification`/`FindCloseChangeNotification` alkalmazáskódból hívódik, de a `FindFirstChangeNotification…` létrehozó helye nem található; emiatt az sem eldöntött, él-e a figyelő minden futásban. A végigpróbált utak a 16.4-ben.
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott bináris kérdés
 
@@ -438,9 +439,19 @@ a mi döntésünk**, mint korábban gondoltuk
    menü erőforrásneve a birtokló függvénnyel; a rácsnak album- és
    mappanézetben **külön** menüje van
 
-### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
+### [picasa-ini-format.md](picasa-ini-format.md) — nincs nyitott kérdés
 
-1. Mit tesz a Picasa, ha külső program **írja az inifájlt ÉS megérinti a kép `mtime`-ját** (537. sor) — ⚠️ **windowsos próbára vár**, gépi úton nem eldönthető
+✅ **2026-08-24 — LEZÁRVA.** „Mit tesz a Picasa, ha külső program írja az
+inifájlt?" A kulcs **nem a képfájl, hanem maga a `.picasa.ini`**: a Picasa
+mappánként eltárolja az ini **utolsó írási idejét** (`albumdata_inisync`,
+FILETIME), és ha a lemezen lévő fájl újabb, újraolvassa — **`flags = 3`**-mal,
+tehát a `filters` is hatókörben. Mérés: **783/787 bitre egyező** valódi
+mappán (99,5%). ⇒ **elég írni az ini-t**; a képfájl érintése az eredetiben
+nem létező út → **#1320**. Részletek: a lap „MEGFEJTVE: az újraolvasás
+kulcsa az INI FÁJL saját dátuma" szakasza.
+
+A megmaradt szál (miért nem jelenik meg mégsem a `filters=`) **nem a
+kiváltás** kérdése — a szigorú beolvasás ága, **#685**.
 
 ### Nincs nyitott kérdés
 
