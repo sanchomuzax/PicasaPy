@@ -232,16 +232,68 @@ Rectangle {
         // zavartalanul, de bármikor ellenőrizhető legyen, PONTOSAN
         // melyik commit fut (appVersion → version.version_string()).
         Text {
+            id: versionLabel
             objectName: "versionLabel"
             Layout.alignment: Qt.AlignVCenter
             Layout.minimumWidth: 0
             text: appVersion
             font.pixelSize: 9
+            // #706: rámutatásra és fókuszban aláhúzott — ránézésre is
+            // látszódjon, hogy a szám kattintható hivatkozás.
+            font.underline: versionHover.hovered || versionLabel.activeFocus
             color: Theme.textGray
             opacity: 0.6
+            // billentyűzettel is elérhető (Tab), és Enterrel/szóközzel
+            // aktiválható — ld. lent a Keys.onPressed ágat
+            activeFocusOnTab: true
+
+            // #706: a kiadások LISTÁJÁRA visz, nem a futó verzió saját
+            // kiadására: fejlesztői példánynál (még ki nem adott build)
+            // a `.../releases/tag/v<verzió>` 404-et adna.
+            readonly property string releasesUrl:
+                "https://github.com/sanchomuzax/PicasaPy/releases/"
+            // maga a szám nem árulja el, hova visz — a súgó mondja ki.
+            // (Saját property, mert a csatolt `ToolTip.text` a Qt
+            // metaobjektumán át nem olvasható ki teszteléskor.)
+            readonly property string tooltipText:
+                qsTr("Kiadások megtekintése a GitHubon")
+
+            function openReleases() {
+                Qt.openUrlExternally(versionLabel.releasesUrl)
+            }
+
             ToolTip.visible: versionHover.hovered
-            ToolTip.text: qsTr("Verzió és build")
-            HoverHandler { id: versionHover }
+            ToolTip.text: versionLabel.tooltipText
+
+            HoverHandler {
+                id: versionHover
+                objectName: "versionCursor"
+                cursorShape: Qt.PointingHandCursor
+            }
+            TapHandler {
+                objectName: "versionTap"
+                onTapped: versionLabel.openReleases()
+            }
+            Keys.onPressed: function (event) {
+                if (event.key === Qt.Key_Return
+                        || event.key === Qt.Key_Enter
+                        || event.key === Qt.Key_Space) {
+                    versionLabel.openReleases()
+                    event.accepted = true
+                }
+            }
+            // látható fókuszjelölés — billentyűzetes navigációnál a
+            // felhasználó lássa, hol jár
+            Rectangle {
+                objectName: "versionFocusRing"
+                anchors.fill: parent
+                anchors.margins: -2
+                visible: versionLabel.activeFocus
+                color: "transparent"
+                border.color: Theme.linkBlue
+                border.width: 1
+                radius: 2
+            }
         }
     }
 }
