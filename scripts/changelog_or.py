@@ -104,6 +104,18 @@ def main(
     beallitas = ertelmezo.parse_args(argv)
 
     valtozott = runner(["git", "diff", "--name-only", beallitas.base, beallitas.head])
+    if valtozott.returncode != 0:
+        # ⚠️ A sikertelen mérésből SOHA nem lehet zöld út. Éles próbán jött
+        # elő: hibás refekkel a diff elbukott, a fájllista üres lett, és az őr
+        # „nincs mit ellenőrizni" címén átengedett. Ugyanaz a hibaosztály,
+        # ami miatt ez a jegy megnyílt — csak eggyel feljebb.
+        print(
+            f"::error title=A CHANGELOG-őr nem tudott mérni::"
+            f"A `git diff {beallitas.base} {beallitas.head}` elbukott: "
+            f"{(valtozott.stderr or '').strip()[:200]}. Ellenőrzés nélkül nem "
+            f"adunk zöld utat."
+        )
+        return 1
     fajlok = [s for s in (valtozott.stdout or "").splitlines() if s.strip()]
 
     erdemi = [f for f in fajlok if kell_bejegyzes([f])]
