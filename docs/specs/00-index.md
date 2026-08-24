@@ -239,16 +239,23 @@ amikor **mindkettő hamis**. Ugyanitt derült ki, hogy a nyomatméretek
    árnyéka — ami megmagyarázza, miért nem volt sehol árnyék-kód a
    binárisban (a 8/b tizenegy pontos negatív leltára). Jegy: **#901**.
 
-### [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) — 1 kérdés
+### [picasa-konyvtar-eszkoztar-viselkedes.md](picasa-konyvtar-eszkoztar-viselkedes.md) — nincs nyitott kérdés
 
-1. **A `folderviewpopup` (Nézet-beállítások ▾) lenyíló menüjének pontos
-   felirata** — a menü **öt tételének léte és hatókör-kulcsa**
-   (Mind/My Computer, Figyelt mappák, Saját képek, Saját dokumentumok,
-   Asztal) megerősített (a kezelő függvény és a kulcsstringek
-   egyértelműek), de a **tényleges felirat-szöveg** nincs meg — a
-   `stringres-en-hu.tsv` nem tartalmazza a menütételek numerikus
-   parancsazonosítóit. Felhasználói képernyőkép a lenyíló menüről
-   eldöntené (mint a #901 buboréksúgónál). Jegy: **#853** (komment).
+⭐ **2026-08-24** — a lap egyetlen nyitott kérdése (**a `folderviewpopup` ▾
+menü feliratai**) **LEZÁRVA**, és **képernyőkép nélkül**: a menüépítő
+(`0x00559150`) 20 bájtos rekordtömbjének gépi végigjárása **160
+parancsazonosítót** oldott fel egyértelműen. A ▾ menü a
+`Nézet ▸ Mappanézet` almenü.
+
+**Két helyesbítés ugyanebből a körből:**
+1. ⛔ a lap korábban a `flatview`-hoz `0x9c8b`-t, a `folderview`-hoz
+   `0x9cbd`-t rendelt — **mindkettő TÉVES**, azok **rendezés**-parancsok
+   (`ID_VIEWBYDATE`, `ID_VIEWBYRECENT`). A valódiak: **`0x9db6`**
+   (Egyszerű mappanézet) és **`0x9db9`** (Fanézet).
+2. ⭐ **HÁROM** mappanézet-mód van, nem kettő — a harmadik a
+   **`ID_VIEW_WATCHED` = „Egyszerűsített fanézet"** (`0x9db8`), ami eddig
+   sehol nem szerepelt nálunk (a `FolderHierarchyView.qml` fejléce is két
+   módról ír). Jegy: **#853**.
 
 ### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) — nincs nyitott kérdés (2 BLOKKOLT tétel)
 

@@ -96,21 +96,33 @@ felület minden `thumbui/<név>` kattintását ide vezeti; innen ágazik el az
     gyökér-hatókört állítják be (a pontos cél-elérési út string.
     összefésülése ezen a mélységen nem lett tovább bontva — ld. „Ami
     nyitva marad").
-- **Az engedélyezett/lenyomott állapot** (`0x00574b70`, a globális
-  UI-frissítő, amit a `flatview`/`folderview` maguk is meghívnak
-  kattintáskor): egy **közös mód-mező** (`[dokumentum+0x2c0+0xd8]`)
-  alapján dönt —
-  - `flatview` (parancs-azonosító `0x9c8b`) **akkor engedélyezett**, ha a
-    mód-mező **0** (vagyis épp FA-nézetben vagyunk — a gomb felkínálja a
-    váltást lapos nézetre),
-  - `folderview` (`0x9cbd`) **akkor engedélyezett**, ha a mód-mező **1**
-    (épp LAPOS nézetben vagyunk),
+- **Az engedélyezett állapot** (`0x00574b70`, a globális UI-frissítő,
+  amit a `flatview`/`folderview` maguk is meghívnak kattintáskor).
 
-  vagyis a pár **kölcsönösen kizáró rádiógomb-szerűen** viselkedik: mindig
-  csak az van engedélyezve, amelyik a MÁSIK állapotra váltana. (Ugyanez a
-  mód-mező szolgálja ki más, itt nem vizsgált gombok — `0x9c8c` ha
-  mód≠2, `0x9dc8` ha mód≠5 — engedélyezését is; ezek valószínűleg más
-  fő nézetmódok, ld. „Ami nyitva marad".)
+  > ⛔ **HELYESBÍTÉS (2026-08-24).** Ez a szakasz korábban azt állította,
+  > hogy a `flatview` parancsazonosítója `0x9c8b`, a `folderview`-é
+  > `0x9cbd`, és hogy a kettő mód-mező szerint kölcsönösen kizáró.
+  > **Mindkét azonosító TÉVES volt** — a menüépítő (`0x00559150`)
+  > rekordtömbjének végigjárásával a valódi feloldás:
+  >
+  > | cmd | menükulcs | felirat (HU) |
+  > |---|---|---|
+  > | `0x9c8b` | `eMenuView::ID_VIEWBYDATE` | Rendezés létrehozási dátum alapján |
+  > | `0x9cbd` | `eMenuView::ID_VIEWBYRECENT` | Rendezés a legutóbbi változtatások alapján |
+  > | `0x9c8c` | `eMenuView::ID_VIEWBYNAME` | Rendezés név alapján |
+  > | `0x9dc8` | `eMenuView::ID_VIEWBYSIZE` | Rendezés méret alapján |
+  > | **`0x9db6`** | **`eMenuView::ID_VIEW_FOLDERS`** | **&Egyszerű mappanézet** |
+  > | **`0x9db9`** | **`eMenuView::ID_VIEW_ALL`** | **&Fanézet** |
+  >
+  > Vagyis a `0x00574b70` a **RENDEZÉS** menütételeit tiltja/engedi a
+  > mód-mező (`[dokumentum+0x2c0+0xd8]`, értékei 0/1/2/5) szerint, a két
+  > **mappanézet-módot** pedig egyetlen közös jelzőn (`[+0x9d]`) — nem
+  > kölcsönösen kizáróan, ahogy korábban írtuk.
+  >
+  > **Miből derült ki:** a menürekord 20 bájtos, a `+0x0a` a
+  > parancsazonosító, és a `0x00559150`-ben a rekord **címkéjét** a
+  > kulcs-push UTÁN írják. A rekordbázisok végigjárásával 160
+  > parancsazonosító oldódott fel egyértelműen — köztük mind a hat fenti.
 - **Menüegyenérték:** **IGEN** — a `0x005cb990` menü-diszpécserben a
   View menü megfelelő tételei ugyanezt a `0x00575130`-at hívják a
   `"all"`/`"flat"` kulccsal.
@@ -140,20 +152,66 @@ felület minden `thumbui/<név>` kattintását ide vezeti; innen ágazik el az
     ShowAlbumThumbnails2`** kulcsot is — ez valószínűleg egy külön
     jelölőnégyzet-tétel a menüben ("Show album thumbnails" jellegű), de
     ennek a konkrét feliratát/hatását ez a kör nem azonosította.
-  - A menü tételeinek **engedélyezett/letiltott állapotát** kb. 9-10
-    numerikus parancsazonosítóval (`0x9c8b`, `0x9cbd`, `0x9c8c`,
-    `0x9dc8`, `0xa0cf`, `0x9db6`, `0x9db8`, `0x9db9`, `0x9e18`, `0x9e19`,
-    `0x9e38`) frissíti, ugyanazzal a mechanizmussal, mint a `0x00574b70`
-    globális UI-frissítő — ezek egy **közös "parancs engedélyezése"
-    hívást** (`[0x00c40810]`) osztanak meg a teljes eszköztárral.
-- **Menüegyenérték:** a `.tre` szerint a `folderviewpopup`-on
-  `Property mousedown 1` áll (#885-be tartozik) — lenyomásra nyílik meg,
-  nem kattintásra.
-- **Amit NEM sikerült feloldani:** a fenti 9-10 numerikus azonosítóhoz
-  **nincs egyező bejegyzés** a `stringres-en-hu.tsv`-ben — a pontos
-  feliratszöveg (a menütételek angol/magyar szövege) ezen a forráson
-  keresztül **nem dönthető el**. A tételek **létezését és a
-  hatókör-kulcsok listáját** viszont a fenti bizonyíték megerősíti.
+  - A menü tételeinek engedélyezett állapotát numerikus
+    parancsazonosítókkal frissíti, közös „parancs engedélyezése" híváson
+    (`[0x00c40810]`) át — ugyanúgy, mint a `0x00574b70`.
+
+### 4/b ⭐ A MENÜ TÉTELEI — feloldva (2026-08-24)
+
+A korábbi „a pontos feliratszöveg nem dönthető el" megállapítás
+**MEGDŐLT**. A menüépítő (`0x00559150`) rekordtömbjének végigjárásával
+mind a tizenegy azonosító feloldódott, és a feliratok a honosítási
+táblából jönnek. **Ez a `Nézet ▸ Mappanézet` almenü**
+(`eMenuView::FolderView` = „&Mappanézet").
+
+**Mappanézet-módok — HÁROM, nem kettő:**
+
+| cmd | kulcs | angol | **magyar** |
+|---|---|---|---|
+| `0x9db6` | `ID_VIEW_FOLDERS` | &Flat Folder View | **&Egyszerű mappanézet** |
+| `0x9db8` | `ID_VIEW_WATCHED` | &Simplified Tree View | **&Egyszerűsített fanézet** |
+| `0x9db9` | `ID_VIEW_ALL` | &Tree View | **&Fanézet** |
+
+> ⚠️ **A HARMADIK mód eddig sehol nem szerepelt nálunk.** A lap 3. pontja
+> (és a `FolderHierarchyView.qml` fejléce) **két** egymást kizáró módról
+> ír. Valójában **három** van — ez magyarázza a mód-mező 0/1/2/5
+> értékkészletét is.
+
+**Gyökér-hatókörök — a scope-kulcsok felirata:**
+
+| scope-kulcs (`0x00575130`) | cmd | kulcs | **magyar felirat** |
+|---|---|---|---|
+| `"all"` | `0x9dcb` | `ID_VIEW_MYCOMPUTER` | **&Sajátgép** |
+| `"mydocs"` | `0x9db7` | `ID_VIEW_MYDOCS` | **Do&kumentumok** |
+| `"mypics"` | `0x9e3a` | `ID_VIEW_MYPICTURES` | **&Képek** |
+| `"desktop"` | `0x9dba` | `ID_VIEW_DESKTOP` | **&Asztal** |
+| `"watched"` | — | `ViewRoot::AllFolders` | **Alapértelmezett nézet** |
+
+*(A kezelő az `"all"` ághoz szó szerint a `ViewRoot::All` = „My Computer"
+/ **„Sajátgép"** feliratot használja, a `"watched"`-hez a
+`ViewRoot::AllFolders` = „Default View" / **„Alapértelmezett nézet"**-et —
+ez zárja a kört a `0x00575130`-ban látott sztringekkel.)*
+
+**Rendezés-tételek** (ugyanennek a menünek a része, a mód-mező szerint
+tiltva/engedve):
+
+| cmd | kulcs | **magyar** |
+|---|---|---|
+| `0x9c8b` | `ID_VIEWBYDATE` | Rendezés létre&hozási dátum alapján |
+| `0x9cbd` | `ID_VIEWBYRECENT` | Rendezés a leg&utóbbi változtatások alapján |
+| `0x9c8c` | `ID_VIEWBYNAME` | Rendezés &név alapján |
+| `0x9dc8` | `ID_VIEWBYSIZE` | Rendezés &méret alapján |
+| `0xa0cf` | `ID_VIEWREVERSE` | Rendezés megfordítása |
+
+**Ami ebből NEM oldódott fel:** `0x9e18`, `0x9e19`, `0x9e38` — ezek a
+menüsáv-építőben nem szerepelnek, tehát egy **helyi menü** építőjében
+élnek. Ez nem blokkol semmit: a ▾ menü nyolc tétele + öt rendezés
+megvan.
+
+*Bizonyítottsági fok: **megerősített** — a menürekord-tömb gépi
+végigjárása (160 azonosító egyértelműen feloldva), a feliratok a
+honosítási táblából. A `0x9db8` ↔ „Egyszerűsített fanézet" ugyanebből a
+körből, ugyanazzal a módszerrel.*
 
 ## 5. `webcambutton` — Webkamera-felvétel
 
@@ -231,13 +289,15 @@ felület minden `thumbui/<név>` kattintását ide vezeti; innen ágazik el az
 
 ## Ami NYITVA marad
 
-1. **A `folderviewpopup` menü öt tételének pontos felirata** (angol és
-   magyar). A `stringres-en-hu.tsv` nem tartalmazza a `0x9c8b` stb.
-   numerikus azonosítókat — vagy más táblában vannak, vagy futásidőben
-   generált szöveg. **Folytatás:** a `thumbui_text.tre`-ben keresni
-   `folderviewpopup` alatti almenü-feliratokat (ha van ilyen bejegyzés),
-   vagy felhasználói képernyőkép a lenyíló menüről (mint a #901
-   buboréksúgónál — ez itt is eldöntené a kérdést percek alatt).
+1. ~~**A `folderviewpopup` menü tételeinek pontos felirata**~~ —
+   **LEZÁRVA (2026-08-24), ld. 4/b.** Mind a tizenegy parancsazonosító
+   feloldva a menüépítő rekordtömbjének gépi végigjárásával; a feliratok
+   a honosítási táblából. **Képernyőkép NEM kellett hozzá** — a korábbi
+   „ezt csak a tulajdonos képernyőképe döntheti el" megállapítás
+   elhamarkodott volt, az olcsó bizonyítéklánc nem volt kimerítve.
+   ⭐ Melléktermékként kiderült, hogy **három** mappanézet-mód van, nem
+   kettő, és hogy két korábbi parancsazonosító-hozzárendelésünk téves
+   volt (ld. a 3. pont helyesbítését).
 2. **A `ShowAlbumThumbnails2` preferencia pontos hatása** — csak azt
    tudjuk, hogy a `folderviewpopup` kezelő olvassa; hogy ez egy
    jelölőnégyzet-e a menüben, vagy valami más UI-elemhez tartozik, nincs
