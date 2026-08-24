@@ -10,6 +10,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject
 
+from picasapy.app import perf_controller
+
 
 def _child(window, name):
     obj = window.findChild(QObject, name)
@@ -109,7 +111,7 @@ class TestPerfMonitorPanel:
 
         calls = []
         monkeypatch.setattr(
-            "picasapy.app.perf_controller.platform.system", lambda: "Linux"
+            perf_controller, "_platform", lambda: "linux"
         )
         monkeypatch.setattr(
             "picasapy.app.perf_controller.reveal_in_file_manager",
@@ -138,7 +140,7 @@ class TestPerfMonitorPanel:
         window, controller, _lib, _engine = qml_app
         calls = []
         monkeypatch.setattr(
-            "picasapy.app.perf_controller.platform.system", lambda: "Linux"
+            perf_controller, "_platform", lambda: "linux"
         )
         monkeypatch.setattr(
             "picasapy.app.perf_controller.reveal_in_file_manager",
@@ -164,7 +166,7 @@ class TestPerfMonitorPanel:
             returncode = 1  # az Intéző /select sikeresen is gyakran 1-et ad vissza
 
         monkeypatch.setattr(
-            "picasapy.app.perf_controller.platform.system", lambda: "Windows"
+            perf_controller, "_platform", lambda: "win32"
         )
         monkeypatch.setattr(
             "picasapy.app.perf_controller.subprocess.run",
@@ -182,7 +184,7 @@ class TestPerfMonitorPanel:
         """Hiba esetén a felhasználó a globális hibasávon látja az okot."""
         window, controller, _lib, _engine = qml_app
         monkeypatch.setattr(
-            "picasapy.app.perf_controller.platform.system", lambda: "Linux"
+            perf_controller, "_platform", lambda: "linux"
         )
 
         def _raise(_path):

@@ -8,8 +8,8 @@ csak a be- és kikapcsoláskor indít/állít le bármit is."""
 
 from __future__ import annotations
 
-import platform
 import subprocess
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import Property, QElapsedTimer, QTimer, Signal, Slot, qVersion
@@ -18,6 +18,16 @@ from picasapy.fileops import reveal_in_file_manager
 from picasapy.perf.collector import PerfCollector, PerfSample
 from picasapy.perf.logwriter import PerfLogWriter
 from picasapy.version import version_string
+
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217).
+
+    ⚠️ Az ág korábban `platform.system() == "Windows"`-t nézett: ugyanaz a
+    döntés, harmadik szótárral (`sys.platform` / `os.name` /
+    `platform.system()`). Fogantyú nélkül a diagnosztika-mappa windowsos
+    megnyitását a linuxos teszt nem tudta kimondani."""
+    return sys.platform
+
 
 # A mintavétel ütemezése (~1 Hz, #211 elvárt viselkedés).
 _SAMPLE_INTERVAL_S = 1.0
@@ -257,7 +267,7 @@ class PerfMonitorMixin:
             )
             return
         try:
-            if platform.system() == "Windows":
+            if _platform().startswith("win"):
                 subprocess.run(["explorer", f"/select,{path}"], check=False)
             else:
                 reveal_in_file_manager(Path(path))

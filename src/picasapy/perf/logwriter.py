@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import json
 import os
-import platform as _platform
+import platform
 import time
 from collections import deque
 from dataclasses import asdict
@@ -53,8 +53,8 @@ def session_header(app_version: str, qt_version: str = "") -> dict:
     return {
         "type": "session",
         "app_version": app_version,
-        "platform": _platform.platform(),
-        "python_version": _platform.python_version(),
+        "platform": platform.platform(),
+        "python_version": platform.python_version(),
         "qt_version": qt_version,
         "started_at": _iso(time.time()),
     }

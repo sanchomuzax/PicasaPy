@@ -139,7 +139,9 @@ class TestWindowsVedelem:
         # különben a teszt saját segédfüggvénye bukna el rajta
         pid = _halott_pid()
         konyvtar = _maradek(tmp_path, "win", pid=pid)
-        monkeypatch.setattr(run_tests.os, "name", "nt")
+        # ⚠️ #1217: a fogantyút cseréljük, nem a globális `os.name`-et — az
+        # `os` itt MAGA a standard modul, az átírása mindenre hatott volna.
+        monkeypatch.setattr(run_tests, "_platform", lambda: "win32")
         monkeypatch.setattr(
             run_tests.os, "kill", lambda *a: pytest.fail("Windowson tilos os.kill")
         )

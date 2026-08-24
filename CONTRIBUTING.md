@@ -51,6 +51,52 @@ futtatható egyben: `pytest tests --ignore=tests/app -q`.
 QML-viselkedés változásához funkcionális teszt kötelező (minta:
 `tests/app/test_qml_functional.py`).
 
+### A platformfüggő teszt MONDJA KI a platformját
+
+Ha egy teszt állítása **egy platformra igaz**, a teszt mondja ki, melyikre
+— ne hallgatólagosan feltételezze a fejlesztői gépet. Ez a hibaosztály
+egyetlen napon **négyszer** vitt el egy-egy kört (#1076, #1182, #1206,
+#1167): mindannyiszor a TERMÉK volt helyes, és a Windows-lábon a teszt
+bukott el — a natív, helyes viselkedésen. A bukás ráadásul félrevezet: úgy
+néz ki, mintha a helyes viselkedés lenne a hiba.
+
+Ezért a platform-lekérdezés minden modulban egy **helyettesíthető
+fogantyú**, mindig ugyanazon a néven:
+
+```python
+def _platform() -> str:
+    # A futó platform — külön függvény, hogy a teszt helyettesíthesse.
+    return sys.platform
+```
+
+A teszt ezt a fogantyút rögzíti:
+
+```python
+monkeypatch.setattr(modul, "_platform", lambda: "win32")
+```
+
+Három szabály, mindhármat őr figyeli (`tests/test_platform_seam_1217.py`):
+
+1. **Elágazásban ne kérdezd közvetlenül a platformot.** Sem `sys.platform`,
+   sem `os.name`, sem `platform.system()` — mindhárom ugyanaz a döntés,
+   csak más szótárral. (Nevesített `platform=` paraméter is szabályos
+   fogantyú; az `application.py` azt használja.)
+2. **Egy fogantyú, egy név.** `_platform` — és a név ne jelentsen mást,
+   modul-aliasnak sem használható.
+3. **A teszt a fogantyút cserélje, ne a globális modult.** A
+   `monkeypatch.setattr("…modul.sys.platform", "linux")` alak **nem** a
+   modult módosítja: a `modul.sys` MAGA a globális `sys`, tehát a rögzítés
+   a teszt teljes idejére minden más modulra is hat. Ez már okozott is
+   elszabaduló hibát — ld. a `test_fileops_controller.py` `TestRevealPhoto`
+   osztályának docstringjét.
+
+⚠️ **A `skipif` nem helyettesíti a rögzítést**: a kihagyott teszt a másik
+platformon nem mér semmit, a rögzített viszont **mindkét** CI-lábon fut, és
+azt méri, amit állít. `skipif` ott indokolt, ahol a viselkedés tényleg a
+valódi oprendszertől függ, nem egy helyettesíthető függvénytől (szimbolikus
+link létrehozása, `chmod`-szemantika, `os.geteuid()`) — ilyenkor a `reason`
+mondja meg, melyik oprendszer-képesség hiányzik.
+
 ## Kódstílus
 
 - **TDD**: előbb a bukó teszt, utána a kód.
