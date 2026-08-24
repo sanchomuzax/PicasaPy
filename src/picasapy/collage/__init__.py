@@ -23,6 +23,7 @@ from .autosave import (
     write_autosave,
 )
 from .cxf import CxfBackground, CxfNode, CxfProject, read_cxf, write_cxf
+from .draft_state import draft_project_path, is_draft_image
 from .fitting import MsvcRandom, fit_inside, msvc_uniform01, picasa_round
 from .frames import (
     PolaroidGeometry,
@@ -85,7 +86,9 @@ __all__ = [
     "AUTOSAVE_NAME",
     "autosave_path",
     "discard_autosave",
+    "draft_project_path",
     "has_recoverable_draft",
+    "is_draft_image",
     "read_autosave",
     "read_cxf",
     "write_autosave",

@@ -46,6 +46,7 @@ from picasapy.collage import draft_placeholder, write_collage
 from picasapy.collage.picasa_render import render_nodes
 from picasapy.collage.cxf import read_cxf
 from picasapy.collage.draft import nodes_from_project, project_from_nodes
+from picasapy.collage.draft_state import draft_project_path, is_draft_image
 from picasapy.collage.win_paths import decode_cxf_path
 from picasapy.collage.page_formats import ORIENTATIONS, format_key_of
 from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES, MULTIEXP
@@ -725,18 +726,41 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         emléke kapcsolja be, hanem a fájl mellett álló projektfájl."""
         return self._collage_project_path(image_path) is not None
 
+    @Slot(str, result=bool)
+    def isCollageDraft(self, image_path: str) -> bool:  # noqa: N802
+        """Befejezetlen PISZKOZAT-e a megadott kép (#1072).
+
+        A `hasCollageProject` párja, de a MÁSIK állapotra: az KÉSZ
+        kollázsra igaz (van `<név>.cxf` párja), ez a piszkozatra (nincs
+        párja, de a mappában ott az `autosave.cxf`). A kettő soha nem igaz
+        egyszerre — a szabály a spec 1. szakaszának táblája.
+
+        Erre kötődik a felület három következménye: a „Létrehozás" gomb
+        megjelenése, a „Kollázs szerkesztése" gomb piszkozaton is, és a
+        megosztás/nyomtatás tilalma."""
+        return is_draft_image(image_path)
+
     @Slot(str)
     def openCollageProject(self, image_path: str) -> None:  # noqa: N802
-        """A kész kollázs újranyitása SZERKESZTÉSRE (#1002).
+        """A kollázs újranyitása SZERKESZTÉSRE — készen és piszkozaton is.
 
         A tulajdonos jelentése a v0.8.17-ről: *„Jelenleg ennek hiányában
-        nem szerkeszthető a kollázs."* — a kész képhez nem vezetett vissza
-        út a panelra.
+        nem szerkeszthető a kollázs."* (#1002) — a kész képhez nem vezetett
+        vissza út a panelra.
+
+        ⚠️ #1072: a PISZKOZAT projektje nem a kép melletti `<név>.cxf` (az
+        épp nincs is), hanem a mappa `autosave.cxf`-je. Enélkül a „Kollázs
+        szerkesztése" gomb a piszkozaton némán hatástalan lett volna,
+        pedig a spec 6. szakasza szerint ott is működik. A visszatöltés
+        maga UGYANAZ a kódút — a `restoreCollageDraft`-tal együtt három
+        belépési pont, egy `_apply_cxf_project`.
 
         A `saved_path` a MEGNYITOTT képre áll, tehát a „Létrehozás" a
         meglévő fájlt írja felül, nem újat számoz mellé: a felhasználó
         ugyanazt a kollázst szerkeszti tovább, nem másolatot készít."""
         utvonal = self._collage_project_path(image_path)
+        if utvonal is None:
+            utvonal = draft_project_path(image_path)
         if utvonal is None:
             return
         try:
@@ -762,6 +786,34 @@ class CollageSaveMixin(BackgroundWorkerMixin):
             return utvonal if utvonal.is_file() else None
         except OSError:  # pragma: no cover - elérhetetlen hálózati út
             return None
+
+    @Slot(str)
+    def finishCollageDraft(self, image_path: str) -> None:  # noqa: N802
+        """A piszkozat BEFEJEZÉSE — az `editpanel/render_now` gomb (#1072).
+
+        A jegy harmadik hiánya: nálunk *„a mentés egyben véglegesít"* volt,
+        vagyis egy MÁR mentett piszkozathoz nem vezetett külön befejező
+        lépés. Az eredetiben ez a kép fölött ülő **„Létrehozás"** gomb
+        (spec 4.1/4.3), és a `projectutils::draft_collage` szövege is erre
+        hivatkozik.
+
+        **Nem új mentő kódút** (spec 8.2 szabálya): betölti a piszkozat
+        projektjét, majd a meglévő `createCollage`-ot hívja
+        `replaceExisting=True`-val. Az eredeti is UGYANAZT a fájlnevet írja
+        felül — a spec 5.1 mért igazolása szerint az `AI10.jpg` a piszkozat
+        46 KB-járól ugyanazon a néven nőtt 2440 KB-ra, nem sorszámozott
+        mellé. A takarítás (az `autosave.cxf` és a helykitöltő-jelölő
+        megszűnése) a közös `_discard_draft_after_render` dolga.
+
+        Nem piszkozatra NEM csinál semmit: a felület null-őrei és a
+        gyorsan változó néző-sorok miatt ez a slot idegen útvonalat is
+        kaphat, és egy véletlen renderelés a felhasználó képét írná felül."""
+        if not is_draft_image(image_path):
+            return
+        self.openCollageProject(image_path)
+        if not self._collage_panel_open:
+            return
+        self.createCollage(False, False, True)
 
     def _apply_cxf_background(self, hatter) -> None:
         """A `.cxf` háttere vissza a panelra (#1085).

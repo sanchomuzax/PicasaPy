@@ -2,6 +2,13 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="hu_HU">
 <context>
+    <name>CollageDraftGuard</name>
+    <message>
+        <source>This collage was not completed. To finalize this collage (required for sharing or printing), please select the "Create Now" button. Please note that you can always change your collage later, even after it has been saved.</source>
+        <translation>Ez a kollázs még nem készült el teljesen. A kollázs befejezéséhez (ami a megosztás és a nyomtatás feltétele) kattintson a „Létrehozás” gombra. Megjegyzendő, hogy később bármikor módosíthatja a kollázst, akár még a mentése után is.</translation>
+    </message>
+</context>
+<context>
     <name>PrintController</name>
     <message>
         <source>No pictures to print.</source>
@@ -3589,6 +3596,14 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>PhotoViewer</name>
+    <message>
+        <source>Create Now</source>
+        <translation>Létrehozás</translation>
+    </message>
+    <message>
+        <source>In Progress...</source>
+        <translation>Folyamatban...</translation>
+    </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml"/>
         <source>Redeye fixes cannot be recovered with redo. Are you sure you want to undo?</source>

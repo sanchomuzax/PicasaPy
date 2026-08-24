@@ -48,6 +48,7 @@ from picasapy.printing.layout import (
     resolve_orientation,
 )
 
+from .collage_draft_guard import CollageDraftGuard
 from .formatting import to_local_path
 
 _log = logging.getLogger(__name__)
@@ -74,6 +75,9 @@ class PrintController(QObject):
         `PhotoRecord`-jait adja vissza (ld. a modul docstringje)."""
         super().__init__(parent)
         self._photo_source = photo_source
+        # #1072: a piszkozat-tilalom szövege és felismerése — közös a
+        # `EmailController`-rel, ezért külön objektum (ld. ott a docstringet)
+        self._draft_guard = CollageDraftGuard(self)
 
     @Slot(result=list)
     def listPrinters(self) -> list[str]:
@@ -136,6 +140,14 @@ class PrintController(QObject):
         paths = self._resolve_paths(rows)
         if not paths:
             self.printFailed.emit(self.tr("No pictures to print."))
+            return False
+        # #1072: a befejezetlen kollázs NEM nyomtatható
+        # (`projectutils::draft_collage`). A kapu itt áll, nem a
+        # tálcagombon: a `printRows` és a `renderPrintPreviewPdf` egyaránt
+        # ezen az egy ágon megy át, tehát a felület későbbi bekötése nem
+        # kerülheti meg.
+        if self._draft_guard.first_draft(paths) is not None:
+            self.printFailed.emit(self._draft_guard.restriction_message())
             return False
         try:
             mode = PrintFitMode(fit_mode) if fit_mode else PrintFitMode.FIT

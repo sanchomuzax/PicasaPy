@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [0.8.83] – 2026-08-24
 
+### Hozzáadva
+- **A befejezetlen kollázs (piszkozat) végre külön állapot (#1072).** Ha a
+  kollázs lapját a „Piszkozat mentése” gombbal zárja be, a Kollázsok
+  albumban megjelenő, „PISZKOZAT” feliratú kép mostantól tudja is magáról,
+  hogy félkész:
+  - a kép megnyitva egy **„Létrehozás”** gomb jelenik meg fölötte — ezzel
+    fejezhető be a kollázs, ugyanazon a néven, teljes felbontásban
+    (készítés közben a gomb „Folyamatban...” feliratra vált);
+  - a **„Kollázs szerkesztése”** gomb a piszkozaton is működik, tehát
+    befejezés nélkül is vissza lehet térni a szerkesztéshez;
+  - a piszkozat **nem nyomtatható és nem küldhető el e-mailben**; a
+    kísérletre az eredeti Picasa magyarázata jelenik meg: a kollázst előbb
+    be kell fejezni, de utána is bármikor módosítható.
+
 ### Javítva
 - **A kollázson a kijelölés gyűrűje az egérmutatót követi (#1000).** Eddig a
   gyűrű a kijelöléstől kezdve folyamatosan a képen ült, és eltakarta azt.

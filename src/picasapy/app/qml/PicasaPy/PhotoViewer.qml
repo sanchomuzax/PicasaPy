@@ -11,6 +11,33 @@ import PicasaPy.Gpu
 Rectangle {
     id: viewer
 
+    // #1072: a megnyitott kép útvonala és a KOLLÁZS-ÁLLAPOTA. A két gomb
+    // (Kollázs szerkesztése / Létrehozás) ugyanezt kérdezi, ezért itt áll
+    // egyszer — a `filePathAt` hívást háromszor beírni néma szétcsúszás.
+    //
+    // ⚠️ A `collageSavedPath` SZÁNDÉKOS függőség a kifejezésben: az
+    // `isCollageDraft` egy slot, nem értesítő tulajdonság, tehát magától
+    // soha nem értékelődne újra. A piszkozat befejezésekor viszont épp ez
+    // a tulajdonos változik meg — enélkül a „Létrehozás" gomb a kész
+    // kollázs fölött is ottmaradna. Kötési hurok nincs: a gomb nem írja.
+    readonly property string currentFilePath:
+        (viewer.currentIndex >= 0 && viewer.photosModel !== null)
+            ? viewer.photosModel.filePathAt(viewer.currentIndex) : ""
+    readonly property bool controllerReady:
+        typeof controller !== "undefined" && controller ? true : false
+    readonly property bool currentIsCollageDraft: {
+        if (!viewer.controllerReady || viewer.currentFilePath.length === 0)
+            return false
+        return controller.collageSavedPath !== undefined
+               && controller.isCollageDraft(viewer.currentFilePath) === true
+    }
+    readonly property bool currentIsSavedCollage: {
+        if (!viewer.controllerReady || viewer.currentFilePath.length === 0)
+            return false
+        return controller.collageSavedPath !== undefined
+               && controller.hasCollageProject(viewer.currentFilePath) === true
+    }
+
     // #641: mekkora magasság kell ahhoz, hogy a bal panel TELJESEN elférjen
     // — a felső sáv plusz a panel saját igénye. Beégetett szám nincs benne:
     // mindkét tag a saját elemétől jön.
@@ -502,15 +529,14 @@ Rectangle {
                     ToolTip.visible: hovered
                     ToolTip.delay: 500
                     //: A null-őr a #305 szabálya: a vezérlő a lebontáskor és a
-                    //: komponens-teszteknél hiányozhat.
-                    visible: typeof controller !== "undefined" && controller
-                             && viewer.currentIndex >= 0
-                             && viewer.photosModel !== null
-                             && controller.hasCollageProject(
-                                 viewer.photosModel.filePathAt(
-                                     viewer.currentIndex)) === true
-                    onClicked: viewer.editCollageRequested(
-                        viewer.photosModel.filePathAt(viewer.currentIndex))
+                    //: komponens-teszteknél hiányozhat (ld. a `viewer`
+                    //: gyökerén a `controllerReady`-t).
+                    //: #1072: a PISZKOZATON is látszik — a spec 6. szakasza
+                    //: és a tulajdonos képernyőképe szerint a visszaút a
+                    //: befejezetlen kollázsról is nyitva áll.
+                    visible: viewer.currentIsSavedCollage
+                             || viewer.currentIsCollageDraft
+                    onClicked: viewer.editCollageRequested(viewer.currentFilePath)
                 }
                 Item { Layout.fillWidth: true }
                 PicasaButton {
@@ -1336,6 +1362,38 @@ Rectangle {
                 BusyIndicator {
                     anchors.centerIn: parent
                     running: photo.status === Image.Loading
+                }
+
+                // #1072 — `editpanel/render_now` („Létrehozás"): a PISZKOZAT
+                // külön befejező lépése. A `projectutils::draft_collage`
+                // szövege erre a gombra hivatkozik: a megosztás és a
+                // nyomtatás feltétele, hogy a felhasználó megnyomja.
+                //
+                // A HELYE mért, nem választott (spec 4.3, `editpanel.tre`):
+                // az `overlay_group` gyereke, tehát a kép FÖLÖTTI réteg —
+                // a bélyegképen nincs rajta, csak a JPEG-be égetett
+                // „PISZKOZAT" felirat. Vízszintesen középen (`m_centerX`),
+                // függőlegesen a saját közepe a szülő 87,5%-án
+                // (`YConstraint 0.5, 0.875, 0`).
+                //
+                // ⚠️ Renderelés közben az eredeti ugyanide teszi a
+                // „Folyamatban..." feliratot (`editpanel/in_progress_label`)
+                // — a kettő EGYMÁS HELYÉRE lép, ezért egyetlen elem
+                // felirata változik, nem két külön gomb.
+                PicasaButton {
+                    id: piszkozatLetrehozas
+                    objectName: "viewerCreateNowButton"
+                    //: `editpanel/render_now` / `editpanel/in_progress_label`
+                    text: viewer.controllerReady && controller.collageRendering
+                          ? qsTr("In Progress...") : qsTr("Create Now")
+                    enabled: !(viewer.controllerReady
+                               && controller.collageRendering)
+                    font.pixelSize: Theme.fontSize
+                    visible: viewer.currentIsCollageDraft
+                    x: (parent.width - width) / 2
+                    y: parent.height * 0.875 - height / 2
+                    onClicked: controller.finishCollageDraft(
+                        viewer.currentFilePath)
                 }
 
                 // #6: alsó zoom-sáv (design-guide hiánylista 4.):
