@@ -107,3 +107,12 @@ class TestKiadasiOr:
     def test_ket_orfutas_nem_dolgozik_egyszerre(self, orjarat: dict) -> None:
         assert orjarat["concurrency"]["group"]
         assert orjarat["concurrency"]["cancel-in-progress"] is False
+
+    def test_az_or_TELJES_elozmenyt_huz(self, orjarat: dict) -> None:
+        """#1324: sekély klónon a `git diff v<verzió> HEAD` nem mérhető, és a
+        fölösleges verzióemelő PR némán nyitva maradna."""
+        checkout = next(
+            lepes for lepes in orjarat["jobs"]["or"]["steps"]
+            if str(lepes.get("uses", "")).startswith("actions/checkout")
+        )
+        assert checkout.get("with", {}).get("fetch-depth") == 0

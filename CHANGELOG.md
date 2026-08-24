@@ -14,6 +14,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   PR-t. Az új kiadási őr negyedóránként elrendezi a félbemaradt automatikus
   PR-eket: elindítja a rajtuk elmaradó ellenőrzést, lezárja az elavultakat,
   és hibánál látható jegyet nyit.
+- **A kiadási őr a fölösleges verzióemelő PR-t is felismeri (#1324).** Nem
+  csak azt zárja le, amit a main lehagyott, hanem azt is, amihez nincs
+  kiadandó változás — élesben ez egy olyan 0.8.70-es kiadást előzött volna
+  meg, amiben a felhasználó számára semmi nem változott.
 
 ## [0.8.69] – 2026-08-24
 
