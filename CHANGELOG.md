@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A Shift+nyíl az eredeti Picasa szerint bővíti a kijelölést (#892, #1222).**
+  Eddig irányváltásnál zsugorított (Intéző-féle tartomány); mostantól
+  egyesével bővít, és a másik irányba is bővít, ahogy az eredeti. Az egérrel
+  húzott Shift-tartomány változatlan — az a két útvonal szándékosan más.
+
 ## [0.8.74] – 2026-08-24
 
 ### Új
