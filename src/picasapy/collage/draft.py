@@ -49,13 +49,14 @@ from __future__ import annotations
 from dataclasses import replace
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from .cxf import CxfBackground, CxfNode, CxfProject
 from .nodes import SHEET_UNITS, CollageNode
 from .picasa_render import PicasaCollageSettings
 from .page_formats import format_text, is_known_format
 from .themes import BORDER_THEMES, MULTIEXP, NOBORDER
+from .uids import node_uid_for
 from .win_paths import decode_cxf_path, encode_cxf_path
 
 #: A `CollageSpec` alapértelmezett címe (`0x008342b0`: „Untitled").
@@ -193,6 +194,25 @@ def _multiexp_alak(node: CxfNode, theme: str) -> CxfNode:
     return replace(node, scale=1.0)
 
 
+def _azonositoval(node: CxfNode, node_uids: Mapping[str, str]) -> CxfNode:
+    """A csomópont `<uid>`-ja: a MEGŐRZÖTT érték, vagy a származtatott (#1092).
+
+    Két forrás, ebben a sorrendben:
+
+    1. **A megnyitott projektből hozott azonosító** (`node_uids`, kulcs a
+       `.cxf`-be írt `src`). Egy Picasával készült kollázs újramentése nem
+       cserélheti le az eredeti azonosítókat a sajátunkra — ugyanaz a
+       körbejárás-elv, amit a #1274 az `albumUID`-nál mondott ki.
+    2. **Származtatás a `src`-ből** (`uids.node_uid_for`) — SAJÁT FUNKCIÓ
+       (#1092), mert az eredeti `uid64` a Picasa belső adatbázisából jön,
+       és nem vezethető le. A `.cxf`-jeinkből eddig teljesen HIÁNYZOTT.
+
+    Kép nélküli csomópont azonosító nélkül marad: nincs mit azonosítani."""
+    if not node.src:
+        return node
+    return replace(node, uid=node_uids.get(node.src) or node_uid_for(node.src))
+
+
 def project_from_nodes(
     nodes: Sequence[CollageNode],
     settings: PicasaCollageSettings,
@@ -203,6 +223,7 @@ def project_from_nodes(
     album_id: str = "",
     background_image: str = "",
     format_key: str = "",
+    node_uids: Mapping[str, str] | None = None,
 ) -> CxfProject:
     """A kirajzolt vászonból teljes `.cxf` projekt.
 
@@ -217,7 +238,12 @@ def project_from_nodes(
     ⚠️ A `format_key` a MENÜBEN kiválasztott oldalformátum kulcsa (#1089).
     A `format` attribútum ennek a NEVE (A4 = `297:210`), nem a képpontokból
     számolt arány — a tulajdonos 11 kollázsán a képpontos képlet 6-ot
-    elrontott. Kulcs nélkül (és a két dinamikus tételnél) marad az arány."""
+    elrontott. Kulcs nélkül (és a két dinamikus tételnél) marad az arány.
+
+    ⚠️ A `node_uids` a MEGNYITOTT projekt `src → uid` párjai (#1092). Ami
+    benne van, az változatlanul megy vissza; a többi csomópont a `src`-ből
+    származtatott azonosítót kapja (`uids.node_uid_for`)."""
+    uids = dict(node_uids or {})
     page_ratio = settings.height / settings.width
     return CxfProject(
         aspect_ratio=_format_szoveg(format_key, settings.width, settings.height),
@@ -242,9 +268,14 @@ def project_from_nodes(
         ),
         spacing=settings.effective_spacing,
         nodes=tuple(
-            _multiexp_alak(
-                cxf_node_of(node, page_width=settings.width, page_ratio=page_ratio),
-                settings.theme,
+            _azonositoval(
+                _multiexp_alak(
+                    cxf_node_of(
+                        node, page_width=settings.width, page_ratio=page_ratio
+                    ),
+                    settings.theme,
+                ),
+                uids,
             )
             for node in nodes
         ),

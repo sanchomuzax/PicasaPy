@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A mentett kollázs-projektfájlból már nem hiányzik három azonosító
+  (#1092).** Az eredeti Picasa minden kollázsába beleírja, hogy melyik
+  albumból készült (`albumUID`), mikori az az album (`albumDate`), és
+  képenként egy azonosítót is elhelyez benne — nálunk mindhárom
+  hiányzott. Mostantól kikerülnek a fájlba: az album azonosítója és
+  dátuma a képek közös forrásmappájából (a dátum a mappa legrégebbi
+  képéé, „2023. november" alakban, a felület nyelvén), a képazonosítók
+  pedig a képek útvonalából, kiszámíthatóan — ugyanaz a kép mindig
+  ugyanazt kapja. Egy Picasával készült kollázs újramentése a fájlban
+  talált eredeti azonosítókat változatlanul viszi tovább.
+
 ## [0.8.83] – 2026-08-24
 
 ### Hozzáadva

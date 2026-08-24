@@ -45,6 +45,8 @@ from pathlib import Path
 from PySide6.QtCore import Property, QObject, Signal, Slot
 from PySide6.QtGui import QColor, QGuiApplication
 
+from picasapy.app.collage_album_fields import album_fields_of
+
 from picasapy.collage import canvas
 from picasapy.collage.fitting import MsvcRandom
 from picasapy.collage.page_formats import (
@@ -152,6 +154,12 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         self._collage_panel_album_uid = ""
         self._collage_panel_album_id = ""
         self._collage_panel_album_date = ""
+        # #1092: a MEGNYITOTT projekt `src → uid` párjai. A `.cxf`
+        # csomópont-azonosítóit a vászon-csomópont nem hordozza (nincs rá
+        # mezője), ezért a panel tartja őket egy leképezésben — így az
+        # eredeti Picasa írta `<uid>` túléli az újramentést, ahelyett hogy
+        # a származtatott sajátunkra cserélnénk.
+        self._collage_panel_node_uids: dict[str, str] = {}
         # a legutóbb kiírt kollázs útvonala — ebből lesz a „Meglévő cseréje"
         # ága (spec 9.2). Üres szöveg = még nem mentettük ezt a kollázst.
         self._collage_panel_saved_path = ""
@@ -390,6 +398,38 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
             return ""
         return next(iter(mappak)).name
 
+    def _apply_source_album_fields(self, sources) -> None:
+        """Az `albumUID` és az `<albumDate>` a FORRÁSMAPPÁBÓL (#1092).
+
+        A `.cxf`-jeinkből eddig mindkettő hiányzott, pedig a 12 golden
+        mintában mind ott van. A forrás ugyanaz, mint a címé: a képek közös
+        mappája — több mappánál nincs egy forrásalbum, tehát üresen maradnak.
+
+        ⚠️ Az `albumID`-t NEM töltjük ki: a golden készlet 12 mintájából
+        **egyben sem** szerepel (az író, `0x008347b0`, nem is írja) — csak
+        az olvasó ismeri. Ami az eredetiben nincs, azt nem gyártjuk le.
+
+        ⚠️ Új kollázs indul, tehát a MEGNYITOTT projekt csomópont-
+        azonosítói sem érvényesek többé: a leképezés ürül. Enélkül egy
+        korábban megnyitott Picasa-fájl azonosítója átszivárogna az új
+        kollázsba, ha ugyanaz a kép kerül bele."""
+        # A hónapnév a FELÜLET nyelvéből jön, nem a `QLocale()`
+        # rendszerlokáljából — ugyanaz a forrás, mint a Kollázsok mappa
+        # nevéé (#1131): magyar rendszeren angol felülettel a rendszerlokál
+        # hazudna, a CI „C" lokálján pedig a kimenet a futtatókörnyezettől
+        # függene.
+        from .collage_output import _felulet_nyelve
+
+        self._collage_panel_node_uids = {}
+        self._collage_panel_album_id = ""
+        self._collage_panel_album_uid, self._collage_panel_album_date = (
+            album_fields_of(
+                sources,
+                getattr(getattr(self, "_photos", None), "photos", ()),
+                language=_felulet_nyelve(),
+            )
+        )
+
     @Slot(list)
     def openCollage(self, rows) -> None:
         """A kollázs-lap megnyitása a megadott rács-sorokkal."""
@@ -398,6 +438,7 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         self._set_saved_path("")
         sources = self._sources_from_rows(rows)
         self.setCollageTitle(self._title_from_sources(sources))
+        self._apply_source_album_fields(sources)
         self._relayout(sources, dirty=False)
         self.collageFrameCenterChanged.emit()
         if not self._collage_panel_open:
