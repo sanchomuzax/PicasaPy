@@ -21,7 +21,8 @@ Rectangle {
     id: box
     objectName: "histogramBox"
 
-    // {r: [0..1 érték * 256 vödör], g: [...], b: [...]} — histogram_helper.py
+    // {r: [0..1 belső magasság * 256 bin], g: [...], b: [...]}
+    // — histogram_helper.py; 1,0 pontosan 70 belső képpont.
     property var histogramData: ({ r: [], g: [], b: [] })
     property string cameraSummary: ""
 
@@ -63,40 +64,24 @@ Rectangle {
             elide: Text.ElideRight
         }
 
-        // A hisztogram rajzterülete: a három csatorna egymásra rajzolva,
-        // áttetsző kitöltésű oszlopokkal.
+        // A hisztogram 213 × 59-es megjelenítési területe. A tartalom előbb
+        // pontosan 256 × 70-es belső képként készül el (HistogramBitmap),
+        // majd ez a réteg méreteződik le — egy bin tehát nem egy képernyő-
+        // oszlop, ahogy a Picasában sem (#864).
         //
-        // #512: KORÁBBAN a magasságot kézzel számoltuk (doboz-magasság
-        // mínusz cím/EXIF-sor implicitHeight-je) — ez két okból is hibás
-        // volt: (1) `box.anchors.margins` a `box` KÜLSŐ (a szülőhöz való
-        // horgonyzási) margóját adta vissza, ami a PhotoViewer.qml-beli
-        // példányosításnál VÉLETLENÜL nem-nulla (10), miközben a valódi,
-        // itt számító belső margó 8 — a kettő összecserélése hibás
-        // levonást adott; (2) a `Math.max(0, …)` alsó korlát miatt bőséges
-        // (pl. magyar, több soros) EXIF-szöveg mellett a rajzterület
-        // magassága NULLÁRA zuhant, és a `Column` a KÖVETKEZŐ elemet
-        // (`cameraLabel`) ilyenkor a `plot` UTÁNI térköz hozzáadása
-        // NÉLKÜL, közvetlenül a cím alá helyezte — mérve: 8 soros EXIF
-        // mellett `plot.y === cameraLabel.y` (mindkettő 19px), azaz a
-        // rajzterület és a szöveg doboza AZONOS pozícióból indult.
-        // (A `cameraLabel.implicitHeight` „sortörés előtti" hipotézise
-        // NEM igazolódott: a kötött szélesség miatt már a tördelt,
-        // véglegesen soktornyú szöveg magasságát tükrözi.)
-        //
-        // A ROBUSZTUS megoldás: nem számolunk kézzel — a `ColumnLayout`
-        // maga osztja el a helyet. A cím és az EXIF-sor a saját
-        // (`implicitHeight`-ből származó) preferált magasságát kapja, a
-        // rajzterület `Layout.fillHeight`-tel a MARADÉKOT — soha nem
-        // csúszhat rá a szövegre, mert egy Layout elemei sosem fedik
-        // egymást (legfeljebb szélsőségesen bőséges szöveg esetén a
-        // rajzterület `Layout.minimumHeight: 0`-ra zsugorodik, ahelyett
-        // hogy átfedne).
+        // #512: a ColumnLayout gondoskodik róla, hogy a rajzterület és az
+        // EXIF-szöveg ne fedje egymást. A #864 óta a plot nem a maradék
+        // helyet tölti ki, hanem a bizonyított fix 213 × 59-es méretet kapja.
         Item {
             id: plot
             objectName: "histogramPlot"
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            Layout.minimumHeight: 0
+            Layout.preferredWidth: 213
+            Layout.minimumWidth: 213
+            Layout.maximumWidth: 213
+            Layout.preferredHeight: 59
+            Layout.minimumHeight: 59
+            Layout.maximumHeight: 59
+            Layout.alignment: Qt.AlignHCenter
             clip: true
 
             // #512: a rajzterület (`histoback`/`histo` réteg) elkülönül a
@@ -111,30 +96,21 @@ Rectangle {
                 color: Theme.contentPanel
             }
 
-            // egy csatorna oszlopsorozata — kitöltött, áttetsző (a három
-            // egymásra keveredve adja a Picasa-hisztogram színvilágát)
-            component ChannelBars : Repeater {
-                id: bars
-                required property var values
-                required property color barColor
-                model: box.bucketCount
-                delegate: Rectangle {
-                    required property int index
-                    readonly property real v: (bars.values && index < bars.values.length)
-                                              ? bars.values[index] : 0
-                    width: Math.ceil(plot.width / box.bucketCount)
-                    x: index * (plot.width / box.bucketCount)
-                    height: v * plot.height
-                    y: plot.height - height
-                    color: bars.barColor
-                    opacity: 0.55
-                    visible: height > 0
+            Item {
+                id: scaledBitmap
+                anchors.fill: parent
+
+                HistogramBitmap {
+                    histogramData: box.histogramData
+                    transformOrigin: Item.TopLeft
+                    transform: Scale {
+                        origin.x: 0
+                        origin.y: 0
+                        xScale: scaledBitmap.width / 256
+                        yScale: scaledBitmap.height / 70
+                    }
                 }
             }
-
-            ChannelBars { values: box.histogramData ? box.histogramData.r : []; barColor: Theme.brandRed }
-            ChannelBars { values: box.histogramData ? box.histogramData.g : []; barColor: Theme.brandGreen }
-            ChannelBars { values: box.histogramData ? box.histogramData.b : []; barColor: Theme.brandBlue }
         }
 
         // #235: a kameraadat az eredeti Picasa 2-oszlopos, címkézett

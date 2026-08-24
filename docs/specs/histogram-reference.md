@@ -6,22 +6,17 @@ referencia-képkészlet segítségével.
 
 ## Miért kell ez?
 
-> ⛔ **HELYESBÍTÉS (2026-08-16):** az alábbi mondat — „Ez a Picasa mintája" —
-> **téves**. A Picasa **NEM a csúcshoz normalizál**, hanem az **átlaghoz**,
-> és **összeadó** keverést használ, nem átlátszóságot. A visszafejtett,
-> pixelpontos algoritmus: [`picasa-hisztogram.md`](picasa-hisztogram.md).
-
 A hisztogram a `src/picasapy/app/histogram_helper.py` `compute_rgb_histogram`
-függvényével készül. A normalizálás jelenleg **csatornánként a saját
-csúcsához** történik (#232) — vagyis mindhárom görbe (R, G, B) kitölti a doboz
-magasságát, egymástól függetlenül. ~~Ez a Picasa mintája~~, de a pontos alakot
-gépi teszt nélkül nehéz garantálni. Ezért:
+függvényével készül. A #864 óta a visszafejtett Picasa-algoritmust követi:
+**közös, átlag-alapú normalizálás**, 70 px-es klip és **összeadó** RGBA-keverés.
+A pixelpontos algoritmus: [`picasa-hisztogram.md`](picasa-hisztogram.md).
+Ezért:
 
 1. előállítunk néhány képet, amelynek hisztogramja **előre, fejben ismert**;
 2. egy teszt igazolja, hogy a `compute_rgb_histogram` tényleg a várt alakot
    adja (csúcs-pozíciók / laposság);
-3. egy renderelő PNG-be rajzolja a PicasaPy dobozát — ezt vetjük össze a
-   felhasználó által **egyszer** elkészített Picasa-golden-screenshotokkal.
+3. egy, a bináris specifikációból számoló független referencia és egy valódi
+   `QQuickView`-os teszt képpontonként összeveti a kirajzolt eredményt.
 
 ## A referencia-képek
 
@@ -61,11 +56,9 @@ megváltozik, ezek a tesztek azonnal jeleznek.
 
 ## A PicasaPy hisztogram-render PNG-be
 
-A vizuális összevetéshez a `tools/histogram/render_reference.py` PNG-be
-rajzolja a PicasaPy hisztogram-dobozát, **ugyanazzal a skálázással és
-színvilággal**, mint a QML-oldali `HistogramBox.qml` (oszlopmagasság =
-`érték * plot-magasság`, csatornánként 0.55 opacitású, egymásra kevert
-piros/zöld/kék oszlopok):
+A `tools/histogram/render_reference.py` a visszafejtett konstansokból PNG-be
+rajzolja a Picasa hisztogramját: 256 × 70-es belső kép, csatornánként +85
+szín és +85 alfa, majd 213 × 59-es megjelenítés:
 
 ```bash
 QT_QPA_PLATFORM=offscreen python3 tools/histogram/render_reference.py \
@@ -77,53 +70,12 @@ A kimeneti könyvtárban minden képhez két PNG kerül:
 - `<név>.png` — a **nyers referencia-kép** (ezt nyitod meg a Picasában);
 - `<név>__hist.png` — a **PicasaPy hisztogram-doboz** renderje.
 
-> **Megjegyzés a döntésről:** a golden-rendert nem valódi QML `grabToImage`-dzsel
-> készítjük, mert az a headless (offscreen) környezetben törékeny és
-> időzítés-függő (ez volt a #232 Canvas-problémájának gyökere is). Helyette a
-> hisztogram-ADATOT rajzoljuk a QML-lel azonos képlettel — determinisztikus és
-> gyors. A részletes indoklás a szkript docstringjében.
-
-## A felhasználó teendője: Picasa-golden-screenshotok (EGYSZER)
-
-Ezt a lépést elég **egyetlen alkalommal** elvégezni a Windows-os Picasa 3-ban;
-utána a golden-képek referenciaként megmaradnak.
-
-1. Futtasd a fenti render-szkriptet, hogy létrejöjjenek a nyers
-   referencia-PNG-k (`pure_red.png`, `gray_ramp.png`, …) a `--out` könyvtárban.
-2. Másold át ezeket a PNG-ket a Windows-gépre, ahol a Picasa 3 fut.
-3. A Picasában nyisd meg egyesével a képeket. A hisztogram a jobb oldali
-   panelen jelenik meg (ha nem látszik, kapcsold be a hisztogram-nézetet).
-4. Készíts képernyőképet **csak a hisztogram-dobozról** (a doboz kereten
-   belüli tartalmáról), és mentsd el a kép nevével, pl.
-   `pure_red__picasa.png`, `gray_ramp__picasa.png`.
-5. Tedd a `__picasa.png` fájlokat a `__hist.png` fájlok mellé.
-
-## Az összevetés
-
-Nyisd meg egymás mellett a `<név>__hist.png` (PicasaPy) és a
-`<név>__picasa.png` (Picasa golden) képeket. Ellenőrizd:
-
-- a **csúcsok ugyanabban a vízszintes pozícióban** vannak-e (bal szél = 0,
-  jobb szél = 255);
-- a **relatív magasságok** egyeznek-e (mivel mindkét oldal csatornánként a
-  saját csúcsához normalizál);
-- a lapos eseteknél (`gray_ramp`) mindkét oldal **egyenletesen kitöltött**-e.
-
-Mivel a bin-pozíciókat a `test_histogram_reference.py` már gépi úton
-garantálja, a Picasa-golden elsősorban azt igazolja, hogy a **megjelenítés
-stílusa** (skálázás, normalizálás, színkeverés) is Picasa-hű — nem csak a
-számítás.
-
-## Ha a skála mégis eltér
-
-Ez a tesztcsomag **kizárólag mérőeszköz** — nem javítja a
-`histogram_helper.py` normalizálási logikáját (#232). Ha az összevetés során
-kiderül, hogy a PicasaPy és a Picasa 3 hisztogram-skálája/alakja **eltér**
-(pl. a Picasa globális csúcsra normalizál, nem csatornánkéntire, vagy más a
-görbe), azt **ne** ebben a jegyben javítsd ki: nyiss egy **külön GitHub
-issue-t** a konkrét eltérés leírásával (melyik referencia-képnél, milyen
-irányú a különbség, a két PNG csatolva), és azon a jegyen keresztül döntsön a
-felhasználó/csapat a normalizálás módosításáról.
+> A `tests/app/qml_functional/test_histogram_pixels_864.py` nem a termékkód
+> képletét hívja vissza referenciaként. Valódi `QQuickView` képernyőképén
+> mind a **17 920 belső képpontot** a binárisból kiolvasott +85 konstansokból
+> önállóan levezetett elvárással veti össze, és külön ellenőrzi a 256 × 70 →
+> 213 × 59 geometriát. Így nincs szükség személyes Windows-gépre vagy kézzel
+> karbantartott golden fájlra.
 
 ---
 
@@ -238,7 +190,7 @@ Olvasat:
   (nálunk ma is ez, de eddig nem volt rá bizonyíték).
 - A **doboz aránya** (213×59, fehér alapon) és a **kétoszlopos
   kamera-blokk** átvehető.
-- A **normalizálás módja** (csatornánkénti vs globális csúcs) továbbra
-  **nem derül ki** a binárisból — a `histogram` rétegtípus a rajzolómotor
-  natív kódjában van, nem adatban. Ezt továbbra is a golden-összevetés
-  dönti el (ld. a dokumentum eleje).
+- A **normalizálás módját és a keverést** azóta a rajzolómotor natív kódja
+  teljesen eldöntötte: közös, átlag-alapú `8960/(3N)` skála és +85-ös
+  összeadó RGBA-keverés. A visszakereshető címek és konstansok a
+  [`picasa-hisztogram.md`](picasa-hisztogram.md) lapon vannak.
