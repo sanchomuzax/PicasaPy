@@ -9,6 +9,7 @@ az `operationFailed` jelzésre tudja fordítani, ahogy a többi fájlműveletné
 import pytest
 
 from picasapy.fileops import reveal_in_file_manager
+from picasapy.fileops import reveal
 
 
 @pytest.fixture(autouse=True)
@@ -17,8 +18,14 @@ def _linux(monkeypatch):
 
     A windowsos/macOS-es ágat a `test_reveal_platform_1104.py` állítja. A
     rögzítés nélkül ez a fájl a windows-CI-lábon elbukna, holott a linuxos
-    szerződés változatlan."""
-    monkeypatch.setattr("picasapy.fileops.reveal.sys.platform", "linux")
+    szerződés változatlan.
+
+    ⚠️ #1217: a rögzítés a modul `_platform` FOGANTYÚJÁT cseréli. A korábbi
+    `monkeypatch.setattr("…reveal.sys.platform", …)` alak a GLOBÁLIS `sys`
+    modult írta át (a `reveal.sys` maga a `sys`), így minden más modulra
+    átszivárgott — a `test_fileops_controller.py` egy emiatt elbukott
+    tesztet őriz a kommentjében."""
+    monkeypatch.setattr(reveal, "_platform", lambda: "linux")
 
 
 class TestRevealInFileManager:

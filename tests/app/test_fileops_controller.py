@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from picasapy.fileops import reveal
+
 
 @pytest.fixture
 def controller(qt_app):
@@ -182,11 +184,17 @@ class TestRevealPhoto:
     ⚠️ A rögzítés SZŰK: modul-szinten `autouse`-ként a windows-CI-lábon
     mást tört el (a `sys.platform` linuxra állítása miatt egy másik teszt
     `os.uname()`-et hívott, ami Windowson nincs). A tanulság: a
-    platform-hamisítás akkora hatókörű legyen, amekkorát tényleg állít."""
+    platform-hamisítás akkora hatókörű legyen, amekkorát tényleg állít.
+
+    ⚠️ #1217: a fenti szivárgás OKA az volt, hogy a rögzítés a GLOBÁLIS
+    `sys.platform`-ot írta át — a `picasapy.fileops.reveal.sys` maga a
+    `sys` modul, tehát a csere minden más modulra is hatott. Most a
+    `reveal` modul `_platform` fogantyúját cseréljük: a hatókör így már a
+    MECHANIZMUSBÓL adódóan egyetlen modul, nem a fixture ügyességéből."""
 
     @pytest.fixture(autouse=True)
     def _linux(self, monkeypatch):
-        monkeypatch.setattr("picasapy.fileops.reveal.sys.platform", "linux")
+        monkeypatch.setattr(reveal, "_platform", lambda: "linux")
 
     def test_calls_xdg_open_on_parent_folder(self, controller, tmp_path, monkeypatch):
         calls = []
