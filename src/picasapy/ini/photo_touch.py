@@ -1,67 +1,91 @@
-"""#643 — a KÉPFÁJL módosítási idejének megérintése az ini-írás után.
+"""#643 / #1320 — a KÉPFÁJL módosítási idejének megérintése az ini-írás után.
 
-## A probléma, amit ez old (a jegy kutatói szála, LEZÁRVA)
+SAJÁT FUNKCIÓ (#1320): ez a modul egy olyan utat valósít meg, ami az eredeti
+Picasában NEM létezik — a képfájl `mtime`-jának megérintése nem része a
+Picasa frissesség-vizsgálatának (az az ini saját dátumát nézi). Ezért
+alapértelmezésben KI van kapcsolva, és opt-in kísérleti kapcsolóként marad
+meg (lista: docs/decisions/vedett-sajat-funkciok.md).
 
-A futó eredeti Picasa nem a `.picasa.ini`-t, hanem a saját `db3`
-adatbázisát tekinti igazságforrásnak, és a fotó rekordjának ÉRVÉNYESSÉGÉT
-a **képfájlhoz** méri (`moddate`, `onlinechecksum` — az ini ↔ adatbázis
-szinkron `0x00467ca0`-nál). Ebből három, méréssel megerősített
-következmény adódik:
+## Amit MA tudunk: az újraolvasás kulcsa az INI SAJÁT dátuma
 
-1. A `.picasa.ini` írása kivált ugyan operációs rendszer szintű értesítést
-   (`FindFirstChangeNotificationW`, a szűrőben benne a `LAST_WRITE` bit,
-   rekurzívan) — de egy **már indexelt** fotót nem tesz elavulttá.
-2. Ezért a Picasa **újraindítás után sem** olvassa be a `filters=`-ünket:
-   az adatbázis-gyorsítótárból dolgozik.
-3. Sőt: amikor a Picasa legközelebb maga ír a fotóhoz, a szakaszt EGÉSZBEN
-   írja ki a `db3`-ból — a mi láncunk némán elveszik.
+Az eredeti Picasa mappánként eltárolja a `.picasa.ini` **utolsó írási
+idejét** (`db3/albumdata_inisync.pmp`, FILETIME), és a következő
+beolvasáskor ehhez méri a lemezen lévő fájlt: ha az ini újabb, a mappát
+újraolvassa — **`flags = 3` értékkel, ami a szerkesztéseket (`filters`,
+`crop`, `rotate`, …) is magában foglalja**. A mérés a felhasználó valódi
+adatbázisán 787 mappából 783-ra bitre egyezett (99,5%); a négy eltérésből
+három olyan mappa, ahol épp az ini az újabb, azaz újraolvasásra vár.
 
-A spec (`docs/specs/picasa-ini-format.md`, „A beolvasás életciklusa") ebből
-egyetlen ismert, mérhető megkerülési utat vezet le: **ha a külső író a
-képfájl módosítási idejét is megérinti, a fotó bekerülhet az
-újrafeldolgozandók közé — és akkor az ini-t is beolvassa.**
+⇒ **A helyes lépés egyszerűen az, hogy írjuk a `.picasa.ini`-t.** A fájl
+írási ideje ettől magától megváltozik, ami a mechanizmus teljes kiváltása.
+Ezt az `io.update_document` amúgy is megteszi minden mentésnél; nincs
+szükség hozzá külön lépésre.
 
-Ez a modul pontosan ezt teszi, és semmi mást.
+Részletek: `docs/specs/picasa-ini-format.md` → „MEGFEJTVE: az újraolvasás
+kulcsa az INI FÁJL saját dátuma", és `docs/specs/pmp-database.md` →
+„Az `albumdata_inisync` oszlop".
 
-## A négy kimondott döntés
+## Amit ez a modul csinál, és MIÉRT NEM alapértelmezés
+
+Ez a modul egy MÁSIK, **feltételezett** utat valósít meg: az ini-írás után
+megérinti a változott szakaszokhoz tartozó **képfájlok** `mtime`-ját
+(`os.utime`, a tartalom változtatása nélkül). A gondolatmenet az volt, hogy
+egy már indexelt fotó rekordja csak akkor avul el, ha maga a képfájl
+frissül.
+
+**A feltevés Picasa-oldalon soha nem lett megmérve, és két mérés szól
+ellene** (`docs/specs/picasa-ini-format.md` → „Az mtime-megkerülés
+mérlege"):
+
+1. mind a **három** `CompareFileTime`-hívási hely rendezés-komparátor,
+   egyik sem frissesség-vizsgálat;
+2. a könyvtárbejáró rekordja **nem tárol** módosítási időt (a hibakereső
+   CSV oszlopai: `Name, Creation Time, Access Time, Size, Type, Dirty,
+   Valid`), a `GetFileAttributesExW` egyetlen hívója pedig csak méretet
+   vizsgál.
+
+*(Amit viszont NEM cáfoltunk: az eredeti IGENIS figyel változás-értesítést,
+`FindFirstChangeNotification` a `0x007062b9`-nél, szűrő `0x17`, benne a
+`LAST_WRITE` bittel, rekurzívan — ez `docs/specs/picasa-mappakezelo.md`
+16.5-ben megerősített. Az értesítés léte azonban nem mond semmit arról,
+hogy a fotó `mtime`-ja számít-e; a frissességet az ini dátuma dönti el.)*
+
+## A döntés: az alapértelmezés KI (#1320)
+
+Egy éles, családi fotógyűjtemény időbélyegeinek átírása
+**visszafordíthatatlan** mellékhatás (fájlkezelős rendezés, `rsync`
+méret+mtime alapú mentés, „régóta nem használt" takarítók). Ezt az árat
+csak **mért** haszonért szabad megfizetni — a haszon pedig ma nem mért, sőt
+a mechanizmus ismeretében szükségtelen.
+
+A modul mégis MEGMARAD, kifejezetten bekapcsolhatóan
+(`PICASAPY_TOUCH_PHOTO_MTIME=1`), mert a „segít-e mégis?" kérdést egyedül a
+felhasználó párhuzamos windowsos próbája döntheti el — ehhez kell egy
+kapcsoló, amivel a kísérlet elvégezhető. Ha a próba pozitív, az
+alapértelmezés visszafordítható; ha negatív, a modul törölhető.
+
+A vonatkozó ADR: `docs/decisions/photo-mtime-erintes.md`.
+
+## A többi, változatlanul érvényes döntés
 
 **1. A képfájl TARTALMA nem változhat.** Kizárólag `os.utime` fut le; a
-fájlt meg sem nyitjuk. Ez éles családi fotógyűjteményen dolgozik — egy
-újrakódolás vagy akár egy „ártalmatlan" bájtmódosítás visszafordíthatatlan
-minőségvesztés lenne. A fájl bájtjai, jogosultságai, tulajdonosa és mérete
+fájlt meg sem nyitjuk. A bájtjai, jogosultságai, tulajdonosa és mérete
 érintetlen marad.
 
 **2. Az `atime` megőrzendő.** Az `os.utime` egyszerre állítja a két
 időbélyeget, ezért az `atime`-ot előbb kiolvassuk (`os.stat`) és
-változatlanul visszaírjuk. Enélkül egy szerkesztés „olvasottnak" jelölné a
-fájlt olyan eszközök felé (archiválók, „régóta nem használt" takarítók),
-amelyek az `atime`-ra építenek.
+változatlanul visszaírjuk — enélkül az érintés „olvasottnak" jelölné a
+fájlt az `atime`-ra építő eszközök felé.
 
-**3. Kikapcsolható — KÖRNYEZETI VÁLTOZÓVAL, nem beállítás-ablakkal.** Van,
-akinél a mtime rendezési (fájlkezelő) vagy biztonsági mentési (rsync
-méret+mtime összehasonlítás) szempontból számít, ezért a kikapcsolás
-lehetősége kötelező. A környezeti változó mellett szól, hogy (a) ez a
-réteg a Qt-tól FÜGGETLEN — az `ini` csomag szándékosan nem importál
-PySide6-ot, tehát a `QSettings` itt nem elérhető architektúra-törés
-nélkül; (b) egy felületi kapcsoló a `Main.qml`-t és a beállítás-ablakot is
-érintené, ami ebben a körben tiltott terület; (c) a viselkedés a
-felhasználó 99%-ának láthatatlan, a maradéknak pedig egyszeri, tartós
-döntés — nem futásidőben kapcsolgatandó opció.
+**3. A kapcsoló KÖRNYEZETI VÁLTOZÓ, nem beállítás-ablak.** Ez a réteg a
+Qt-tól FÜGGETLEN (az `ini` csomag szándékosan nem importál PySide6-ot),
+tehát a `QSettings` itt architektúra-törés nélkül nem elérhető; ráadásul ez
+most egy kísérleti kapcsoló, nem felhasználónak szánt beállítás.
 
-**4. Az alapértelmezés BE.** Ez a projekt 1. döntése (kétirányú
-`.picasa.ini`-kompatibilitás): érintés nélkül a PicasaPy-ban végzett
-szerkesztés a párhuzamosan futó Picasában **soha** nem jelenik meg — pont
-ez a #643-as hibajelentés. A mtime-változás ára ehhez képest kicsi és
-visszafordítható; aki mégsem kéri, egy környezeti változóval kikapcsolja.
-
-## Amit ez a modul NEM ígér
-
-Azt, hogy a valódi, windowsos Picasa emiatt tényleg újraindexeli a fotót,
-**Linuxon nem lehet mérni**. A megkerülési út a visszafejtésből levezetett,
-a jegy által kért kísérlet — a megerősítése a felhasználó párhuzamos
-windowsos próbája. A kód a saját oldalát garantálja: az érintés megtörténik,
-a tartalom nem változik.
+**4. Ha fut, LÁTSZANIA kell.** Bekapcsolt állapotban a modul naplózza, hány
+képfájl időbélyegét írta át — az éles archívum módosítása nem lehet néma.
 """
+
 
 from __future__ import annotations
 
@@ -69,17 +93,18 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Iterable
+from collections.abc import Iterable, Mapping
 
 from .document import IniDocument
 
 _log = logging.getLogger(__name__)
 
-#: A kikapcsoló környezeti változó. Hiányában BE (ld. a modul 4. döntését).
+#: A BEKAPCSOLÓ környezeti változó. Hiányában KI (#1320 döntése).
 TOUCH_ENV_VAR = "PICASAPY_TOUCH_PHOTO_MTIME"
 
-#: „Hamis" értékek — a `PICASAPY_*` kapcsolók szokásos, elnéző olvasata.
-_FALSE_VALUES = frozenset({"0", "false", "no", "off", "nem", "ki"})
+#: „Igaz" értékek — a `PICASAPY_*` kapcsolók szokásos, elnéző olvasata.
+#: Bármi más (üres érték, elgépelés) a BIZTONSÁGOS irányba dől: nem érintünk.
+_TRUE_VALUES = frozenset({"1", "true", "yes", "on", "igen", "be"})
 
 #: Óraeltérés-tartalék: ha a képfájl mtime-ja a JÖVŐBEN van (NAS és gép
 #: órája eltér, ami a felhasználó pontos helyzete), a „most" beállítása
@@ -91,21 +116,24 @@ _FALSE_VALUES = frozenset({"0", "false", "no", "off", "nem", "ki"})
 _SKEW_BUMP_NS = 1_000_000_000
 
 
-def is_touch_enabled(environ: dict[str, str] | None = None) -> bool:
-    """Be van-e kapcsolva a képfájl-érintés (alapértelmezésben igen).
+def is_touch_enabled(environ: Mapping[str, str] | None = None) -> bool:
+    """Be van-e kapcsolva a képfájl-érintés (alapértelmezésben NEM).
+
+    A #1320 óta ez opt-in: a képfájl `mtime`-jának átírása nem része az
+    eredeti Picasa mechanizmusának, ezért csak kifejezett kérésre fut.
 
     Args:
         environ: A vizsgálandó környezet; alapértelmezésben `os.environ`
             (a paraméter a tesztelhetőséget szolgálja).
 
     Returns:
-        True, ha a `PICASAPY_TOUCH_PHOTO_MTIME` hiányzik vagy nem „hamis".
+        True, ha a `PICASAPY_TOUCH_PHOTO_MTIME` értéke kifejezetten „igaz".
     """
     env = os.environ if environ is None else environ
     raw = env.get(TOUCH_ENV_VAR)
     if raw is None:
-        return True
-    return raw.strip().casefold() not in _FALSE_VALUES
+        return False
+    return raw.strip().casefold() in _TRUE_VALUES
 
 
 def changed_photo_sections(before: IniDocument, after: IniDocument) -> tuple[str, ...]:
@@ -180,6 +208,9 @@ def touch_photos(ini_path: Path, section_names: Iterable[str]) -> tuple[Path, ..
         ini_path: A most kiírt `.picasa.ini` útja.
         section_names: A megérintendő fotók szakasznevei.
 
+    Kikapcsolt állapotban (ez az alapértelmezés) azonnal üressel tér vissza,
+    tehát a képfájlokat `stat`-tal sem érinti.
+
     Returns:
         A ténylegesen megérintett képfájlok útjai.
     """
@@ -197,6 +228,17 @@ def touch_photos(ini_path: Path, section_names: Iterable[str]) -> tuple[Path, ..
             continue
         if touch_photo(candidate):
             touched.append(candidate)
+    if touched:
+        # #1320: az éles archívum időbélyegeinek átírása nem lehet néma —
+        # a hatásnak látszania kell, hogy a felhasználó tudjon róla.
+        _log.info(
+            "%d képfájl módosítási idejét írtuk át a(z) %s mappában, mert a "
+            "%s=1 kapcsoló be van kapcsolva (#1320). A fájlok tartalma "
+            "változatlan.",
+            len(touched),
+            folder,
+            TOUCH_ENV_VAR,
+        )
     return tuple(touched)
 
 
@@ -208,8 +250,11 @@ def notify_picasa_after_ini_write(
     Összeköti a két felét: kiszámolja, mely fotók rekordja változott, és
     azok képfájljának mtime-ját frissíti. Ez az EGYETLEN hely, ahonnan az
     érintés indul, hogy minden ini-író (szerkesztő, csillag, felirat,
-    arcok, kulcsszavak, csoportos effekt, mentés) automatikusan részesüljön
-    belőle, és ne kelljen hívónként emlékezni rá.
+    arcok, kulcsszavak, csoportos effekt, mentés) egyformán viselkedjen.
+
+    **Alapértelmezésben nem csinál semmit** (#1320): a Picasa újraolvasását
+    maga az ini kiírása váltja ki, a képfájl megérintése nem része a
+    mechanizmusnak. Csak `PICASAPY_TOUCH_PHOTO_MTIME=1` mellett fut le.
 
     Args:
         ini_path: A most kiírt `.picasa.ini` útja.
@@ -217,7 +262,8 @@ def notify_picasa_after_ini_write(
         after: A kiírt dokumentum.
 
     Returns:
-        A megérintett képfájlok útjai (üres, ha ki van kapcsolva).
+        A megérintett képfájlok útjai (üres, ha ki van kapcsolva — ez az
+        alapértelmezés).
     """
     if not is_touch_enabled():
         return ()

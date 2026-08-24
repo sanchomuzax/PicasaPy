@@ -87,8 +87,18 @@ Rectangle {
         font.pixelSize: 11
         font.bold: false
         color: Theme.ink
-        // egy sor, tördelés nélkül (`wrapMode` alapértéke `NoWrap`);
-        // az elide csak végszükség-őr, hogy a doboz sose lógjon túl
+        // egy sor, tördelés nélkül (`wrapMode` alapértéke `NoWrap`).
+        //
+        // ⚠️ A 11 képpont FELSŐ korlát, nem fix méret. A magyar fordítás
+        // („Hisztogram és fényképezőgép-adatok") a windowsos alapbetűvel
+        // 374 képpontot kérne a 213-as sávban — a CI windows-lába pontosan
+        // ezen bukott el. Elidálni rossz válasz: a felirat közepét vágná ki.
+        // A `HorizontalFit` ezért a betűt zsugorítja, ahol nem fér el; ahol
+        // elfér (linuxi alapbetű), ott semmi nem változik.
+        // Ugyanez a minta él a `PicasaButton`-ben (#992).
+        fontSizeMode: Text.HorizontalFit
+        minimumPixelSize: 8
+        // az elide csak VÉGSZÜKSÉG-őr a 8 képpontos padló alatt
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
     }
