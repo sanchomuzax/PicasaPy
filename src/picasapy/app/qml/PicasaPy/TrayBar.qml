@@ -57,10 +57,12 @@ Column {
         color: Theme.infoBar
         clip: true
 
-        // #70: lassan végigvonuló fény-hullám, amíg a PicasaPy a
-        // háttérben dolgozik (indexelés, thumbnail-batch). XAnimator:
-        // a render-szálon fut (a főszálat/GIL-t nem érinti, ld. #53),
-        // idle-ben running=false → 0 CPU/GPU. Nem polloz: a
+        // SAJÁT FUNKCIÓ (#70): lassan végigvonuló fény-hullám, amíg a
+        // PicasaPy a háttérben dolgozik (indexelés, thumbnail-batch). Az
+        // eredetiben nincs ilyen vizuális visszajelzés — saját UX-
+        // kiegészítés (lista: docs/decisions/vedett-sajat-funkciok.md).
+        // XAnimator: a render-szálon fut (a főszálat/GIL-t nem érinti, ld.
+        // #53), idle-ben running=false → 0 CPU/GPU. Nem polloz: a
         // controller.isWorking jelzés-alapú (busyChanged).
         Rectangle {
             id: busySweep

@@ -5,7 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.78] – 2026-08-24
+
+### Javítva
+- **A „Hisztogram és fényképezőgép-adatok" felirat és a panel elrendezése
+  (#1344).** A felirat már nem félkövér és nem törik két sorba: az eredeti
+  Picasához hasonlóan egyetlen, normál vastagságú sor. A panel elemei — a
+  felirat, a hisztogram és a két fényképezőgép-adat oszlop — a kimért
+  helyükre kerültek, így az oszlopok nem csúsznak el, és a panel mérete a
+  szöveg mennyiségétől függetlenül állandó.
+
+### Belső
+- **Helyben legfeljebb két tesztfutás mehet egyszerre (#1360).** A harmadik
+  megvárja, amíg felszabadul egy hely, ahelyett hogy a négymagos gépet
+  térdre kényszerítené — a túlterhelésből eddig valódi hiba nélküli
+  „ingadozó" bukások lettek. A CI-t nem érinti.
 
 ### Javítva
 - **Az alsó műveletsor gombjai egyforma méretűek lettek (#1345).** A
@@ -22,6 +36,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   azonnal takarítható, nem csak három óra után — és a takarítás minden
   munkamenet indulásakor lefut, nem csak tesztfuttatáskor. Élő futás
   könyvtárához továbbra sem nyúl senki.
+- **„SAJÁT FUNKCIÓ" jelölés a nem eredeti Picasa-funkciókra (#1187).**
+  Módszertani szabály és kereshető jegyzék
+  (`docs/decisions/vedett-sajat-funkciok.md`) azokra a funkciókra, amelyek
+  tudatosan eltérnek az eredeti Picasától (pl. a szerkesztő 7 effekt-füle
+  az eredeti 5 helyett) — hogy egy későbbi kutatási/hibakeresési kör ne
+  minősítse ezeket hibának. Ellenőrző szkript:
+  `scripts/check_protected_features.py`. Felhasználói viselkedés nem
+  változott.
 
 ## [0.8.77] – 2026-08-24
 

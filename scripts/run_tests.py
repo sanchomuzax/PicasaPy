@@ -48,6 +48,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 # ⚠️ A windowsos konzol alapértelmezett kódlapja (cp1252) NEM ismeri a
@@ -115,6 +116,77 @@ def _masik_futas_pidjei() -> list[int]:
         if _futtatja_a_futtatot(parancssor):
             talalatok.append(pid)
     return talalatok
+
+
+#: Ennyi teljes tesztfutás mehet EGYSZERRE ezen a gépen (#1360). A
+#: tulajdonos szava: „Lokális (RPi-n futó) teszt egyszerre max 2 futhat. Ezt
+#: mindig elfelejti a developer agent." A felismerés eddig is megvolt
+#: (`_masik_futas_pidjei`), a KORLÁT nem: akárhány session indíthatott kört,
+#: mindegyik szabályosan sorosra váltott, és a négymagos gép mégis térdre
+#: ment. Egy szabály, amit be kell tartatni, nem szabály: kapu.
+_EGYIDEJU_ALAP = 2
+
+#: Meddig várunk szabad helyre, mielőtt feladjuk.
+_VARAKOZAS_S = 45 * 60
+
+#: Két ellenőrzés közti szünet.
+_VARAKOZAS_LEPES_S = 20.0
+
+#: Kilépési kód, ha nem kaptunk helyet. SZÁNDÉKOSAN nem 1: az a
+#: tesztbukásé. Az éjszakai műszak ebből tudja, hogy nincs mit javítania.
+_NINCS_HELY_KOD = 75
+
+
+def _egyideju_korlat() -> int:
+    """Hány teljes futás mehet egyszerre; 0 = nincs korlát.
+
+    ⚠️ A CI-t SOHA nem foghatja meg: ott minden job SAJÁT gépen fut, a
+    korlát értelmetlen lenne — és ha egyszer megfogná, a főág pirosra
+    váltana, amiről a tulajdonos e-mailt kap."""
+    if os.environ.get("CI"):
+        return 0
+    try:
+        return max(0, int(os.environ.get("PICASAPY_TESZT_EGYIDEJU") or _EGYIDEJU_ALAP))
+    except ValueError:
+        return _EGYIDEJU_ALAP
+
+
+def _varj_szabad_helyre(
+    *,
+    korlat: int,
+    varakozas_s: float,
+    pidek: Callable[[], list[int]] | None = None,
+    alvo: Callable[[float], None] = time.sleep,
+) -> bool:
+    """Vár, amíg felszabadul egy hely; `False`, ha lejárt a türelmi idő.
+
+    A várakozás LÁTHATÓ: kiírja, kire vár. Néma fagyásból a következő
+    munkamenet nem tudja megmondani, mi történik — és pont a némaság az,
+    amiből a projektben eddig is a legtöbb félreértés lett."""
+    if korlat <= 0:
+        return True
+    kerdez = pidek or _masik_futas_pidjei
+    eltelt = 0.0
+    jelentve = False
+    while True:
+        masok = kerdez()
+        if len(masok) < korlat:
+            if jelentve:
+                print("Felszabadult egy hely — indulok.", flush=True)
+            return True
+        if not jelentve:
+            print(
+                f"MÁR {len(masok)} tesztfutás dolgozik ezen a gépen "
+                f"(PID: {', '.join(str(p) for p in masok)}), a korlát {korlat}. "
+                f"Várok szabad helyre — a gép négymagos, és a túlterhelésből "
+                f"VALÓDI HIBA NÉLKÜLI bukások lesznek (#914, #1360).",
+                flush=True,
+            )
+            jelentve = True
+        if eltelt >= varakozas_s:
+            return False
+        alvo(_VARAKOZAS_LEPES_S)
+        eltelt += _VARAKOZAS_LEPES_S
 
 
 def _futtatja_a_futtatot(parancssor: str) -> bool:
@@ -452,6 +524,19 @@ def main(argv: list[str] | None = None) -> int:
 
     _bejelentkezes()
     _takarits_regi_maradekot()
+
+    # #1360: a harmadik egyidejű futás VÁRJON, ne induljon el. A gép
+    # négymagos; a túlterhelésből valódi hiba nélküli bukások lesznek.
+    if not _varj_szabad_helyre(
+        korlat=_egyideju_korlat(), varakozas_s=_VARAKOZAS_S
+    ):
+        print(
+            "\nNEM INDULOK EL: nem szabadult fel hely a türelmi idő alatt.\n"
+            "⚠️ Ez NEM a tesztek bukása — nincs mit javítani rajtuk. Várd meg,\n"
+            "amíg a másik két futás befejeződik, és indítsd újra.",
+            flush=True,
+        )
+        return _NINCS_HELY_KOD
     sorszam, darab = _shard_parameter(argv)
     basetemp = Path(tempfile.mkdtemp(prefix=_TEMP_ELOTAG, dir=_TEMP_GYOKER))
     _jelold_a_futast(basetemp)

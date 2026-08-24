@@ -100,6 +100,10 @@ lehetőleg különböző sávokból végy jegyeket.
 - Adattárolás: `.picasa.ini` (igazságforrás, round-trip) + SQLite index.
 - Teszt: `python scripts/run_tests.py` (a sima `pytest` az egész készletre
   Qt/GIL-deadlockba futhat). Lint: `ruff check src/ tests/ scripts/`.
+  **Helyben legfeljebb KÉT teljes tesztfutás mehet egyszerre** — a gép
+  négymagos, a túlterhelésből valódi hiba nélküli bukások lesznek (#914).
+  Ezt a `run_tests.py` betartatja: a harmadik futás vár a szabad helyre, és
+  ha nem kap, `75`-tel lép ki — az NEM tesztbukás (#1360).
 - Környezet: a csomaglisták egyetlen helyen élnek (`pyproject.toml`,
   `packaging/qt-runtime-deps.txt`); a CI és a session-hook egyaránt a
   `scripts/print_dependencies.py`-n át telepít — tételes listát sehova ne írj.

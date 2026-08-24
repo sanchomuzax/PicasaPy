@@ -2,6 +2,9 @@
 
 Dátum: 2026-08-12 · Státusz: ELFOGADVA · jegy: #571
 
+**Frissítés (#1187):** ez már nem az egyetlen ilyen pont a projektben — a
+teljes, kereshető jegyzék: `docs/decisions/vedett-sajat-funkciok.md`.
+
 ## A helyzet
 
 A Picasa 3.9 motorja **jóval több szűrőt ismer**, mint amennyihez felület
