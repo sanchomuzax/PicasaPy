@@ -12,6 +12,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   megmérni (hibás vagy elérhetetlen commit), az nem zöld út többé, hanem
   látható hiba — a sikertelen mérésből korábban „nincs mit ellenőrizni" lett.
 
+## [Nem kiadott]
+
+### Javítva
+- **A polaroid keret már nem nagyít 29%-ot a képen (#1144).** Az árnyék
+  elmosását a kép méretének százalékaként számoltuk, holott az eredeti fix
+  képpontértéket használ — emiatt a kimenet 960×640-es képnél 1053×1185 lett
+  a helyes 818×950 helyett.
+
 ## [0.8.74] – 2026-08-24
 
 ### Új
