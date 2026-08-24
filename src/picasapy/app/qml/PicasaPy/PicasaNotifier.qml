@@ -137,6 +137,16 @@ Window {
     ListModel { id: cellak }
 
     readonly property bool hasCells: cellak.count > 0
+    //: A sávban álló értesítések száma. A `Repeater` delegáltjait
+    //: `findChild` NEM találja meg, ezért a sáv állapotát a gazda (és a
+    //: teszt) ezen a két olvasón át kérdezi, nem a vizuális fából.
+    readonly property int cellCount: cellak.count
+
+    //: A legutóbb felvett értesítés hasznos adata (nálunk útvonal), vagy
+    //: üres sztring, ha a sáv üres. Property, nem függvény: így a gazda
+    //: kötni is tudja, és a teszt egyszerűen olvassa.
+    readonly property string lastPayload:
+        cellak.count > 0 ? cellak.get(cellak.count - 1).payload : ""
 
     // ------------------------------------------------------------------
     // Az ablak
