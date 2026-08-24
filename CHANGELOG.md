@@ -14,6 +14,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   egérlenyomásra rendeződött vissza a helyére — a kattintás így a közben
   elcsúszott képre esett, a húzásból pedig néma, üres kijelölés lett.
   Mostantól a nézet mindig a görgethető tartományban marad.
+- **A kollázson a kijelölés gyűrűje az egérmutatót követi (#1000).** Eddig a
+  gyűrű a kijelöléstől kezdve folyamatosan a képen ült, és eltakarta azt.
+  Mostantól úgy viselkedik, mint az eredeti Picasában: akkor úszik elő, ha
+  az egérmutató a képre — vagy a szélétől számított 12 képponton belülre —
+  ér, a mutató távozása után még fél másodpercig látszik, majd lassan
+  elhalványul. Kép mozgatása, forgatása vagy méretezése közben végig
+  látható marad, akkor is, ha a mutató kifut a képből.
+
 ## [0.8.80] – 2026-08-24
 
 ### Javítva

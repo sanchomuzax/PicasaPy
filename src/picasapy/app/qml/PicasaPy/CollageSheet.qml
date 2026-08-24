@@ -134,6 +134,56 @@ Item {
     property int angleCaption: 0
     property int scaleCaption: 100
 
+    // --- Az egérmutató helye a gyűrűk elhalványításához (#1000) -------------
+    //
+    // Spec: `picasa-kollazs-felulet.md` **5.1/b** (`RingNodeFadeHandler`,
+    // `0x007e6220`). A gyűrű LÉTE a kijelöléshez kötött, a LÁTHATÓSÁGA
+    // viszont az egérmutatóhoz — hogy rajta van-e a mutató a képen, azt a
+    // `CollageRing` maga dönti el (12 képpont tűréssel, a saját, forgatott
+    // dobozára). A lap ehhez egyetlen dolgot ad: hol a mutató.
+    //
+    // ⚠️ EGY `HoverHandler` van, a lapon — nem csomópontonként egy. A
+    // `HoverHandler` nem nyeli el a gombeseményeket, és a mutató alatti
+    // `MouseArea`-k (a képeké, a gyűrűké) sem fogják el előle a hovert
+    // (mérve: a szülőn ülő kezelő a gyerek `MouseArea` fölött is megkapja).
+    // Csomópontonkénti kezelő 350 képnél 350 kezelőt jelentene ugyanezért.
+
+    //: Az egérmutató helye LAP-KÉPPONTBAN.
+    property real hoverX: 0
+    property real hoverY: 0
+    //: A lapon van-e egyáltalán a mutató. Ha nincs, egyetlen gyűrű sem
+    //: számít „hoverelt"-nek — a `hoverX`/`hoverY` ilyenkor elavult.
+    property bool hoverActive: false
+
+    //: A ZÁR (`RingNodeFadeLockHandler`, `0x007e6390`): húzás közben az
+    //: elhalványítás időzítője fel van függesztve, tehát a gyűrű látható
+    //: marad akkor is, ha a mutató kifut a képből. Enélkül a felhasználó
+    //: épp azt a fogantyút veszítené szem elől, amivel dolgozik.
+    readonly property bool ringFadeLocked: dragMode !== ""
+
+    HoverHandler {
+        id: hoverFigyelo
+        onPointChanged: {
+            lap.hoverX = point.position.x
+            lap.hoverY = point.position.y
+        }
+        onHoveredChanged: lap.hoverActive = hovered
+    }
+
+    //: A mutató helyének frissítése LENYOMOTT gombbal is.
+    //:
+    //: ⚠️ Amíg egy `MouseArea` fogja az egeret, a Qt `MouseMove`-ot küld,
+    //: NEM `HoverMove`-ot: a `HoverHandler` ilyenkor nem frissül. A zár
+    //: alatt ez nem baj (a gyűrű úgyis látszik) — a felengedés
+    //: pillanatában viszont a zár feloldódik, és ha a mutató helye a húzás
+    //: KEZDETÉN ragadt volna, a gyűrű a lap túlsó felén is „hoverelt"
+    //: maradna, amíg a felhasználó meg nem mozdítja az egeret.
+    function trackDragHover(sx, sy) {
+        hoverX = sx
+        hoverY = sy
+        hoverActive = true
+    }
+
     // --- A háttér (spec 6.4) ------------------------------------------------
 
     Rectangle {
@@ -226,8 +276,16 @@ Item {
             controller: lap ? lap.controller : null
             nodeIndex: index
             theta: model.theta
-            visible: model.selected && lap !== null
-                     && lap.capabilities.ring === true
+            //: A gyűrű LÉTE — a kijelöléshez kötött. A LÁTHATÓSÁGA ettől
+            //: külön él (#1000): azt a gyűrű `opacity`-je adja.
+            ringExists: model.selected && lap !== null
+                        && lap.capabilities.ring === true
+            //: A csomópont doboza a hover találatvizsgálatához (#1000).
+            unit: lap ? lap.unit : 0
+            centerX: model.centerX
+            centerY: model.centerY
+            nodeWidth: model.width
+            nodeHeight: model.height
             x: (lap ? model.centerX * lap.unit : 0) - width / 2
             y: (lap ? model.centerY * lap.unit : 0) - height / 2
             z: 10000 + index
@@ -391,6 +449,9 @@ Item {
     // --- Közös bejáratok ----------------------------------------------------
 
     function updateDrag(sx, sy, modifiers) {
+        // #1000: a zár alatt is tudnunk kell, hol a mutató — a feloldás
+        // pillanatában ebből dől el, marad-e látható a gyűrű.
+        trackDragHover(sx, sy)
         if (dragMode === "move")
             updateMove(sx, sy, modifiers)
         else if (dragMode === "swap-pending" || dragMode === "swap")
@@ -400,6 +461,9 @@ Item {
     }
 
     function endDrag(sx, sy) {
+        // #1000: MÉG a zár feloldása (`cancelDrag`) ELŐTT — a gyűrű a
+        // felengedés helyéből számol, nem a húzás kezdetéből.
+        trackDragHover(sx, sy)
         if (dragMode === "move") {
             const huzott = dragIndex
             const emel = _raiseMoveOnEnd
