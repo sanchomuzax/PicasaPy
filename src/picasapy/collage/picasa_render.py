@@ -336,7 +336,9 @@ def render_nodes(
         # #1273: ez az ÉLŐ vászon és az újraszerkesztés bejárata. Korábban
         # csak a gépi `make_picasa_collage` rajzolta a fejlécet, ezért az a
         # szerkesztés első frissítésekor eltűnt.
-        _draw_contact_header(canvas, settings, len(nodes))
+        # A fejléc ugyanazt számolja, mint a mentett út: csak a ténylegesen
+        # dekódolt képeket. A hiányzó helykitöltő nem lehet „kép” a számban.
+        _draw_contact_header(canvas, settings, len(used))
     draw_nodes(
         canvas, nodes, images, settings.width, shadow_for_settings(settings, len(nodes))
     )

@@ -13,11 +13,13 @@ import cv2
 import numpy as np
 import pytest
 
+import picasapy.collage.picasa_render as picasa_render
 from picasapy.collage.contact_sheet import header_lines
 from picasapy.collage.picasa_render import (
     PicasaCollageSettings,
     _unicode_font,
     layout_nodes_for_aspects,
+    make_picasa_collage,
     render_nodes,
 )
 from picasapy.collage.themes import CONTACTSHEET, WHITEBORDER
@@ -108,3 +110,32 @@ def test_az_elo_render_minden_szerkesztesnel_ujrarajzolja_a_fejlecet(tmp_path):
     ).image
 
     assert not np.array_equal(first, second)
+
+
+def test_a_hianyzo_kepet_az_elo_es_a_mentett_fejlec_sem_szamolja(
+    tmp_path, monkeypatch
+):
+    image = np.full((40, 32, 3), (30, 80, 150), dtype=np.uint8)
+    source = tmp_path / "kep.png"
+    missing = tmp_path / "hianyzik.png"
+    assert cv2.imwrite(str(source), image)
+    settings = PicasaCollageSettings(
+        theme=CONTACTSHEET,
+        border=WHITEBORDER,
+        width=320,
+        height=400,
+        album_title="AI",
+        album_date="2023. november",
+    )
+    nodes = layout_nodes_for_aspects((0.8, 0.8), (source, missing), settings)
+    counts: list[int] = []
+
+    def capture_count(_canvas, _settings, count):
+        counts.append(count)
+
+    monkeypatch.setattr(picasa_render, "_draw_contact_header", capture_count)
+
+    render_nodes(nodes, settings)
+    make_picasa_collage((source, missing), settings)
+
+    assert counts == [1, 1]
