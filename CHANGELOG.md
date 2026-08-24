@@ -5,7 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.82] – 2026-08-24
+
+### Belső
+- **A platformfüggő tesztek kimondják, melyik platformot mérik (#1217).** A
+  program három különböző módon kérdezte meg, milyen rendszeren fut, és a
+  tesztek egy része a rendszer globális beállítását írta át — ami átszivárgott
+  a többi tesztre, és korábban okozott is elszabaduló hibát. Mostantól egyetlen
+  egységes fogantyú van, a tesztek azt cserélik, és a windowsos ágakat a linuxos
+  gép is végigméri (eddig ott egyáltalán nem futottak). A viselkedés a
+  felhasználó felé változatlan; a cél, hogy a Windows-hibák a fejlesztés közben
+  derüljenek ki, ne nála.
+
+## [0.8.81] – 2026-08-24
 
 ### Javítva
 - **A képfolyam nem ugrik meg a kattintás pillanatában (#1335).** Ha a

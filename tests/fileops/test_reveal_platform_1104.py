@@ -17,9 +17,10 @@ szolgálja ki a fájl- és a mappa-kontextusmenüt (#15, #112, #422).
 
 ## Mit állítanak a tesztek
 
-A `sys.platform`-ot fecskendezzük be (a `application.py:143`
-`_force_qml_dialogs` mintájára), és a TÉNYLEGES parancssort nézzük — nem
-azt, hogy „lefutott-e".
+A vizsgált platformot a modul `_platform` fogantyúján át MONDJUK KI
+(#1217), és a TÉNYLEGES parancssort nézzük — nem azt, hogy „lefutott-e".
+Így mindkét CI-láb ugyanazt a három ágat méri: a windowsos állítás a
+linuxos gépen is fut, és fordítva.
 
 ⚠️ **A Windows-ág két külön állítást igényel**, mert két külön csapda van:
 az `explorer` **sikeres** megnyitásnál is nemnulla kóddal tér vissza, a
@@ -30,7 +31,7 @@ from __future__ import annotations
 
 import pytest
 
-from picasapy.fileops import reveal_in_file_manager
+from picasapy.fileops import reveal, reveal_in_file_manager
 from picasapy.fileops.reveal import open_folder_in_file_manager
 
 
@@ -60,7 +61,14 @@ def hivasok(monkeypatch):
 
 
 def _platform(monkeypatch, nev: str) -> None:
-    monkeypatch.setattr("picasapy.fileops.reveal.sys.platform", nev)
+    """A vizsgált platform KIMONDÁSA — a modul fogantyúján át.
+
+    ⚠️ #1217: a rögzítés a modul `_platform` FOGANTYÚJÁT cseréli. A korábbi
+    `monkeypatch.setattr("…reveal.sys.platform", …)` alak a GLOBÁLIS `sys`
+    modult írta át (a `reveal.sys` maga a `sys`), így minden más modulra
+    átszivárgott — a `test_fileops_controller.py` egy emiatt elbukott
+    tesztet őriz a kommentjében."""
+    monkeypatch.setattr(reveal, "_platform", lambda: nev)
 
 
 class TestWindows:

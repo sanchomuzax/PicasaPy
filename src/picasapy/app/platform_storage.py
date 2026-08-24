@@ -16,6 +16,7 @@ from __future__ import annotations
 import os
 import shutil
 import sqlite3
+import sys
 import tempfile
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -176,6 +177,10 @@ def _validate_file_or_missing(path: Path) -> bool:
     return True
 
 
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217)."""
+    return sys.platform
+
 def _fsync_file(path: Path) -> None:
     """A teljes fájlt a stabil tárra kényszeríti publikálás előtt."""
     with path.open("rb+") as file:
@@ -189,7 +194,7 @@ def _fsync_directory(path: Path) -> None:
     try:
         descriptor = os.open(path, flags)
     except OSError:
-        if os.name == "nt":
+        if _platform().startswith("win"):
             # A Windows Python nem ad megnyitható directory fd-t. A fájl
             # fsync-je ott is kötelezően megtörtént; a directory flush-t
             # maga az NTFS/link művelet biztosítja.

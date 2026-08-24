@@ -352,6 +352,17 @@ def _jelold_a_futast(basetemp: Path) -> None:
         pass
 
 
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217).
+
+    ⚠️ A windowsos ágat korábban `os.name` adta, és a tesztje a GLOBÁLIS
+    `os.name`-et írta át (`monkeypatch.setattr(run_tests.os, "name", "nt")`).
+    Az `os` itt MAGA a standard modul: a rögzítés a teszt teljes idejére
+    minden más kódra is hatott. A fogantyú cseréje viszont csak ezt az
+    egy döntést mozdítja."""
+    return sys.platform
+
+
 def _el_e_a_futas(konyvtar: Path) -> bool | None:
     """Él-e még a könyvtárhoz tartozó folyamat?
 
@@ -361,7 +372,7 @@ def _el_e_a_futas(konyvtar: Path) -> bool | None:
     ⚠️ A PID-kérdés kizárólag POSIX-on futhat. A CPython `os.kill(pid, 0)`
     Windowson nem életjel-kérdés, hanem `TerminateProcess` — MEGÖLNÉ a
     folyamatot. Ott `None`-t adunk, és marad a kor-szabály."""
-    if os.name != "posix":
+    if _platform().startswith("win"):
         return None
     try:
         pid = int((konyvtar / _PID_FAJL).read_text(encoding="utf-8").strip())

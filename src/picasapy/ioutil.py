@@ -20,6 +20,7 @@ from __future__ import annotations
 import contextlib
 import os
 import stat
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -137,12 +138,23 @@ def _remove_quietly(temp_name: str) -> None:
         os.unlink(temp_name)
 
 
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217)."""
+    return sys.platform
+
+
 def _fsync_directory(directory: Path) -> None:
     """A rename tartósságához a könyvtárbejegyzést is ki kell írni.
 
     Csak POSIX-on lehetséges (Windowson könyvtár nem nyitható fd-ként;
-    ott az os.replace enélkül is atomikus)."""
-    if os.name != "posix":
+    ott az os.replace enélkül is atomikus).
+
+    ⚠️ #1217: az ág korábban közvetlenül `os.name != "posix"`-ot nézett.
+    Ugyanaz a döntés, más szótárral — de fogantyú nélkül, így a windowsos
+    ágat a linuxos teszt nem tudta kimondani (és fordítva). A CPython
+    `os.name`-je `"posix"` vagy `"nt"`, tehát a „nem POSIX" pontosan a
+    windowsos esetet jelentette; a feltétel most ezt mondja ki."""
+    if _platform().startswith("win"):
         return
     dir_fd = os.open(directory, os.O_RDONLY)
     try:

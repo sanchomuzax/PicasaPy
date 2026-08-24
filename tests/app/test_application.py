@@ -287,8 +287,11 @@ class TestWindowsAppId:
         class MockWindll:
             shell32 = MockShell32()
 
-        # Mock az application.sys.platform-ot és a ctypes.windll-t
-        monkeypatch.setattr(application.sys, "platform", "win32")
+        # ⚠️ #1217: a platformot a modul `_platform` FOGANTYÚJÁN mondjuk ki.
+        # Korábban a globális `sys` modul `platform`-ját írtuk át — az
+        # `application` modulon KERESZTÜL, de ugyanazt az egy `sys`
+        # objektumot, tehát a csere minden más modulra is hatott.
+        monkeypatch.setattr(application, "_platform", lambda: "win32")
         monkeypatch.setattr(application, "ctypes", type("MockCtypes", (), {
             "windll": MockWindll()
         })())
@@ -312,7 +315,7 @@ class TestWindowsAppId:
         class MockWindll:
             shell32 = MockShell32()
 
-        monkeypatch.setattr(application.sys, "platform", "linux")
+        monkeypatch.setattr(application, "_platform", lambda: "linux")
         monkeypatch.setattr(application, "ctypes", type("MockCtypes", (), {
             "windll": MockWindll()
         })())
@@ -323,7 +326,7 @@ class TestWindowsAppId:
 
     def test_handles_attribute_error_gracefully(self, monkeypatch):
         # Régi Windows-verzió vagy hiányzó API — csendben kimarad
-        monkeypatch.setattr(application.sys, "platform", "win32")
+        monkeypatch.setattr(application, "_platform", lambda: "win32")
 
         class MockShell32:
             pass
@@ -354,7 +357,7 @@ class TestWindowsAppId:
         class MockWindll:
             shell32 = MockShell32()
 
-        monkeypatch.setattr(application.sys, "platform", "win32")
+        monkeypatch.setattr(application, "_platform", lambda: "win32")
         monkeypatch.setattr(application, "ctypes", type("MockCtypes", (), {
             "windll": MockWindll()
         })())
