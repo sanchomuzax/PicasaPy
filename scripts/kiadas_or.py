@@ -41,6 +41,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from ensure_release import olvasott_verzio  # noqa: E402
+from kiadas_szukseges import kiadasra_erdemes, valtozott_fajlok  # noqa: E402
 
 Runner = Callable[[list[str]], "subprocess.CompletedProcess[str]"]
 
@@ -92,11 +93,18 @@ def teendok(
     *,
     kiadott_verziok: set[str],
     fo_verzio: str,
+    indokolt: bool = True,
 ) -> tuple[Teendo, ...]:
     """Mit kell tenni a nyitott PR-ekkel? — tiszta függvény, mérhető.
 
     A `prek` elemei: `szam`, `ag`, `automerge` (él-e), `van_ellenorzes`
-    (van-e a fejen kötelező ellenőrzés)."""
+    (van-e a fejen kötelező ellenőrzés).
+
+    Az `indokolt` azt mondja meg, hogy az utolsó kiadás óta VAN-E egyáltalán
+    kiadandó változás. Ha nincs, a PR nem elavult, hanem FÖLÖSLEGES — ez a
+    #1324: a #1322 még a régi, feltétel nélküli automatikával született, és
+    az őr kis híján kiadatott vele egy olyan verziót, amiben a felhasználó
+    számára semmi nem változott."""
     jeloltek = [(p, verzio_az_agbol(p["ag"])) for p in prek]
     jeloltek = [(p, v) for p, v in jeloltek if v is not None]
     if not jeloltek:
@@ -118,6 +126,9 @@ def teendok(
         elif verzio < legujabb:
             lista.append(Teendo("zaras", pr["szam"], pr["ag"],
                                 f"újabb verzióemelő PR van: #{legujabb_szam}"))
+        elif not indokolt:
+            lista.append(Teendo("zaras", pr["szam"], pr["ag"],
+                                f"a v{fo_verzio} óta nincs kiadandó változás"))
         else:
             if not pr.get("van_ellenorzes"):
                 lista.append(Teendo("ci", pr["szam"], pr["ag"],
@@ -126,6 +137,19 @@ def teendok(
                 lista.append(Teendo("automerge", pr["szam"], pr["ag"],
                                     "az auto-merge nem él"))
     return tuple(lista)
+
+
+def indokolt_e_az_emeles(fo_verzio: str, *, runner: Runner = _valodi_gh) -> bool:
+    """Van-e egyáltalán kiadandó változás az utolsó kiadás óta?
+
+    Ugyanaz a döntés, amit a `release.yml` a PR NYITÁSAKOR meghoz — csak itt
+    utólag, a már nyitott PR-re. A kettő szándékosan ugyanaz a szkript: két
+    külön szabály előbb-utóbb elcsúszna egymástól.
+
+    ⚠️ Ha nem tudunk mérni (hiányzó címke, sekély klón), INDOKOLTNAK vesszük:
+    lezárni csak biztos tudás alapján szabad, a kiadás elmaradása drágább."""
+    fajlok = valtozott_fajlok(f"v{fo_verzio}", "HEAD", runner=runner)
+    return kiadasra_erdemes(fajlok)
 
 
 def kiadas_teendo(fo_verzio: str, kiadott_verziok: set[str]) -> Teendo | None:
@@ -282,7 +306,15 @@ def main(argv: list[str] | None = None, *, runner: Runner = _valodi_gh) -> int:
         )
         return 1
 
-    lista = list(teendok(prek, kiadott_verziok=kiadott, fo_verzio=fo_verzio))
+    indokolt = indokolt_e_az_emeles(fo_verzio, runner=runner)
+    lista = list(
+        teendok(
+            prek,
+            kiadott_verziok=kiadott,
+            fo_verzio=fo_verzio,
+            indokolt=indokolt,
+        )
+    )
     kiadas = kiadas_teendo(fo_verzio, kiadott)
     if kiadas is not None:
         lista.append(kiadas)

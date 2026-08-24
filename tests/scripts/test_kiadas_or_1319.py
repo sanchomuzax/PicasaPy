@@ -170,3 +170,53 @@ class TestHibajelzes:
         naplo = _Naplozo({"issue list": (0, f'[{{"number":9,"title":"{cim}"}}]')})
         ko.jelents_hibat(cim, "részletek", repo="sanchomuzax/PicasaPy", runner=naplo)
         assert naplo.parancsok("issue create") == []
+
+
+class TestFolosleges1324:
+    """A PR nem csak ELAVULT lehet, hanem FÖLÖSLEGES is (#1324).
+
+    Élesben mérve, a #1321 beolvadásának percében: egy dokumentáció-only
+    merge még a RÉGI automatikával nyitott egy verzióemelő PR-t (#1322), és
+    az őr — mert csak az elavult esetet ismerte — szabályosan el is indította
+    rajta a CI-t. Kis híján kiment egy 0.8.70, amiben a felhasználó számára
+    semmi nem változott.
+    """
+
+    def test_indokolatlan_emelest_lezar(self) -> None:
+        prek = [_pr(1322, "chore/auto-bump-0.8.70", ellenorzes=False)]
+        teendo = ko.teendok(
+            prek, kiadott_verziok={"0.8.69"}, fo_verzio="0.8.69", indokolt=False
+        )
+        assert [t.fajta for t in teendo] == ["zaras"]
+        assert "nincs kiadandó változás" in teendo[0].indok
+
+    def test_indokolatlan_emelesre_NEM_indit_CI_t(self) -> None:
+        """A fölösleges PR-re indított teljes mátrix tiszta veszteség."""
+        prek = [_pr(1322, "chore/auto-bump-0.8.70", automerge=False, ellenorzes=False)]
+        teendo = ko.teendok(
+            prek, kiadott_verziok={"0.8.69"}, fo_verzio="0.8.69", indokolt=False
+        )
+        assert not [t for t in teendo if t.fajta in {"ci", "automerge"}]
+
+    def test_indokolt_esetben_valtozatlan_a_viselkedes(self) -> None:
+        prek = [_pr(1322, "chore/auto-bump-0.8.70", ellenorzes=False)]
+        teendo = ko.teendok(
+            prek, kiadott_verziok={"0.8.69"}, fo_verzio="0.8.69", indokolt=True
+        )
+        assert [t.fajta for t in teendo] == ["ci"]
+
+
+class TestIndokoltsagMerese1324:
+    def test_a_kiadas_ota_torteneteket_meri(self) -> None:
+        naplo = _Naplozo({"diff": (0, "docs/a.md\n")})
+        assert ko.indokolt_e_az_emeles("0.8.69", runner=naplo) is False
+        assert ["git", "diff", "--name-only", "v0.8.69", "HEAD"] in naplo.hivasok
+
+    def test_kodos_valtozasra_indokolt(self) -> None:
+        naplo = _Naplozo({"diff": (0, "src/picasapy/app/controller.py\n")})
+        assert ko.indokolt_e_az_emeles("0.8.69", runner=naplo) is True
+
+    def test_meresi_bukas_eseten_INDOKOLTNAK_veszi(self) -> None:
+        """Ha nem tudunk mérni, nem zárunk le semmit — a kiadás felé tévedünk."""
+        naplo = _Naplozo({"diff": (128, "")})
+        assert ko.indokolt_e_az_emeles("0.8.69", runner=naplo) is True
