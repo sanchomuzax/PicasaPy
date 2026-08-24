@@ -66,14 +66,13 @@ def qml_warnings():
     )
 
 
-@pytest.fixture
-def qml_app(qt_app, tmp_path):
-    """Teljes app betöltve offscreen: (window, controller, lib, engine) —
-    az application.py bekötésének tükre (controller + edit + fileops).
+def _build_qml_app(qt_app, tmp_path):
+    """Teljes app betöltése és biztonságos lebontása egy gyökérmappában.
 
-    A test_qml_functional.py saját, azonos nevű fixture-e ezt árnyékolja
-    (ott a visszatérési alak is más); az új funkcionális teszt-fájlok ezt
-    a közöset használják."""
+    A publikus fixture-wrapper dönti el, hogy a gyökér egy teszt vagy egy
+    teljes modul élettartamáig él-e; maga az alkalmazásépítés közös, hogy a
+    két életciklus ugyanazt a teardown-garanciát használja.
+    """
     import picasapy.app.application as app_module
     from picasapy.app.controller import AppController
     from picasapy.app.dedup_controller import DedupController
@@ -215,3 +214,21 @@ def qml_app(qt_app, tmp_path):
     # már megsemmisült.
     engine.deleteLater()
     qt_app.processEvents()
+
+
+@pytest.fixture
+def qml_app(qt_app, tmp_path):
+    """Teljes app tesztenként, funkció-szintű állapot-izolációval."""
+    yield from _build_qml_app(qt_app, tmp_path)
+
+
+@pytest.fixture(scope="module")
+def qml_app_module(qt_app, tmp_path_factory):
+    """Teljes app egyszer a modulhoz, csak állapotmentes QML-őrökhöz.
+
+    A használó fájl nem írhat tartós állapotot: amelyik teszt ini-t,
+    beállítást vagy más lemezállapotot módosít, annak a `qml_app` wrapper
+    marad a funkció-scope-ban.
+    """
+    root = tmp_path_factory.mktemp("qml-app-module")
+    yield from _build_qml_app(qt_app, root)

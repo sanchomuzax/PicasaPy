@@ -1,7 +1,11 @@
 """QML-funkcionális tesztek: szerkesztő — EditorPanel/CropOverlay ↔
 EditController ↔ ini bekötés, és a néző mappahatáron belüli lapozása
 (#155: a korábbi `test_qml_functional.py` egyik szelete, processzenkénti
-izolációhoz)."""
+izolációhoz).
+
+Az állapotot író szerkesztési utak miatt ez a fájl szándékosan a funkció-
+szintű `qml_app` fixture-t használja; a tesztek közötti ini-állapot nem
+osztható meg biztonságosan."""
 
 import pytest
 from PySide6.QtCore import QObject

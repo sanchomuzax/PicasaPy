@@ -62,6 +62,38 @@ from PySide6.QtTest import QTest
 AZ_ELREJTENDO_KERET = ("header", "mainSplit", "footer")
 
 
+@pytest.fixture(scope="module")
+def qml_app(qml_app_module):
+    """Állapotmentes QML-őrök közös appja a teljes modulra.
+
+    A tesztek csak QML-geometriát és átmeneti memóriabeli kijelölést
+    vizsgálnak; nem írnak ini-t, beállítást vagy más maradandó állapotot.
+    """
+    return qml_app_module
+
+
+@pytest.fixture(autouse=True)
+def _reset_transient_qml_state(qml_app, qt_app):
+    """A közös appban is minden teszt tiszta, átmeneti QML-állapotból indul.
+
+    Ez nem per-teszt alkalmazás-újratöltés: csak a lapot, kijelölést és a
+    kereső buborékját állítjuk vissza, amelyek a következő kirajzolt állítást
+    befolyásolhatják. Lemezre írt állapot nincs, ezért a modul-fixture
+    biztonságos marad.
+    """
+    window = qml_app[0]
+    qml_app[1].closeCollage()
+    window.setProperty("viewerOpen", False)
+    _konyvtar_fulre(window, qt_app)
+    window.resize(1280, 800)
+    window.setProperty("selectedIndexes", [])
+    window.setProperty("selectedIndex", -1)
+    _elem(window, "searchField").setProperty("text", "")
+    _elem(window, "searchSuggestions").setProperty("suggestions", [])
+    qt_app.processEvents()
+    yield
+
+
 def _walk(item: QQuickItem):
     for child in item.childItems():
         yield child

@@ -1,6 +1,9 @@
 """QML-funkcionális teszt: DedupDialog.qml (#287) — a duplikátum-kezelő
 önálló ablak, a `dedupController` hídján keresztül, valódi ideiglenes
 könyvtárfán/indexen, mock nélkül (a test_qml_folder_manager.py mintája).
+
+A feloldási tesztek fájlokat mozgatnak és az indexet frissítik, ezért a fájl
+szándékosan funkció-szintű `qml_app` fixture-t használ.
 """
 
 from PySide6.QtCore import (

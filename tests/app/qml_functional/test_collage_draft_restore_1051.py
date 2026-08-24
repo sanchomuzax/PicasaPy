@@ -20,6 +20,8 @@ indulás után van-e felajánlás, és a két ág tényleg elvégzi-e, amit íg�
 A piszkozat helye a `collage/outputDir` beállítás, tartaléka pedig a
 VALÓDI `~/Pictures/Picasa/Kollázsok`. Egy teszt, ami ezt nem téríti el,
 a felhasználó saját piszkozatát olvasná — és a „nem" ágon TÖRÖLNÉ is.
+A fájl ezért szándékosan funkció-szintű `qml_app` fixture-t használ, nem
+osztja meg a piszkozat- vagy beállításállapotot a tesztek között.
 A `qml_app` a `tmp_path/settings.ini`-ből építi a `QSettings`-et, ezért a
 mappát oda írjuk be, MIELŐTT a `qml_app` felállna (a fixture-sorrendet a
 tesztek szignatúrája rögzíti: `draft_dir` mindig előbb szerepel).

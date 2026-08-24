@@ -135,3 +135,25 @@ kockázata valós. Előbb a 4.1.
 - **Nem törölt egyetlen tesztet sem.** A jegy leltárt és javaslatot kért.
 - Nem vezetett be sávokat (ld. 4.3 indoklás).
 - A kollázs-fájlok szűkítése a sáv gazdájával egyeztetendő.
+
+## 6. #1260 utómérés (2026-08-24)
+
+A két bizonyítottan állapotmentes jelöltet modul-fixture-rel, a többi nyolc
+fájlt továbbra is funkció-fixture-rel futtattuk. A mérés reprodukálható
+parancsa minden fájlra:
+
+```text
+timeout 60 python -m pytest <fájl> -q --basetemp=<közös-ideiglenes-mappa>
+```
+
+| fájl | korábbi leltár | utómérés | változás |
+|---|---:|---:|---:|
+| `test_library_frame_hidden_1026.py` | 55,31 s | 14,06 s | −74,6% |
+| `test_dark_theme_chrome.py` | 38,13 s | 22,45 s | −41,1% |
+
+A korábbi leltárértékek a JSON előző commitjából származnak; a friss értékek
+bekerültek a `scripts/teszt_idok.json` fájlba. A tíz fájl közös, 60 másodperces
+alapmérése ebben az offscreen környezetben timeoutolt, ezért a nyolc
+állapotíró fájlt nem „gyorsítottuk meg” mérési becsléssel. A modul-fixture-es
+fájlok tesztszáma változatlan: 20, illetve 11; a zöld célzott futás ezt
+igazolja.

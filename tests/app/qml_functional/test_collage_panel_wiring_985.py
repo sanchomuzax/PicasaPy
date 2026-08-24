@@ -21,6 +21,9 @@ igazi `AppController`, igazi `Main.qml`, igazi ablak.
 > megfog egy képet, elhúzza, elforgatja, és a **mentett kép PONTOSAN azt
 > mutatja, amit a vásznon látott**.
 
+A mentési útvonal JPEG-et és `.cxf`-et ír, ezért ez a fájl szándékosan a
+funkció-szintű `qml_app` fixture-t használja, nem modul-fixture-t.
+
 A `TestAMentettKepAzAmitLatott` osztály ezt a teljes láncot végigviszi
 valódi kattintásokkal és valódi egérhúzással, majd **két független lábon**
 állítja a záró egyenlőséget:

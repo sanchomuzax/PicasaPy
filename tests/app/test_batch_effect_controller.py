@@ -2,7 +2,10 @@
 mindegyikére egyszerre alkalmazott egykattintásos effekt, mappánkénti
 kötegelt ini-írással, haladásjelzéssel, megszakíthatósággal és egyetlen
 visszavonási lépéssel. A `test_rename_many_controller.py` fixtúra-mintáját
-követi (AppController + QEventLoop, amíg a háttérszál végez)."""
+követi (AppController + QEventLoop, amíg a háttérszál végez).
+
+A kötegelt effekt minden pozitív ágon ini-t ír, ezért a tesztek funkció-
+szintű fixture-rel maradnak izolálva."""
 
 from __future__ import annotations
 

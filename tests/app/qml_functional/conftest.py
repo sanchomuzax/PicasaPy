@@ -66,9 +66,12 @@ def qml_warnings():
     )
 
 
-@pytest.fixture
-def qml_app(qt_app, tmp_path):
-    """Teljes app betöltve offscreen: (window, controller, engine)."""
+def _build_qml_app(qt_app, tmp_path):
+    """Teljes app betöltése és biztonságos lebontása egy gyökérmappában.
+
+    A fixture-wrapper dönti el a teszt- vagy modulszintű életciklust; az
+    alkalmazásépítés és a háttérmunkák teardownja közös marad.
+    """
     import picasapy.app.application as app_module
     from picasapy.app.controller import AppController
     from picasapy.app.discovery_controller import DiscoveryController
@@ -203,3 +206,20 @@ def qml_app(qt_app, tmp_path):
     # már megsemmisült.
     engine.deleteLater()
     qt_app.processEvents()
+
+
+@pytest.fixture
+def qml_app(qt_app, tmp_path):
+    """Teljes app tesztenként, funkció-szintű állapot-izolációval."""
+    yield from _build_qml_app(qt_app, tmp_path)
+
+
+@pytest.fixture(scope="module")
+def qml_app_module(qt_app, tmp_path_factory):
+    """Teljes app egyszer a modulhoz, csak állapotmentes QML-őrökhöz.
+
+    A használó fájl nem írhat tartós állapotot: az állapotot író tesztfájlok
+    továbbra is a `qml_app` funkció-scope-ját használják.
+    """
+    root = tmp_path_factory.mktemp("qml-app-module")
+    yield from _build_qml_app(qt_app, root)

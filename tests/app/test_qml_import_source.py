@@ -3,7 +3,10 @@ forrásból": az eszköztár "Import" gombja, a forrás-előnézet, a HÁROM
 célmappa-elnevezési mód, a duplikátum-kizárás, az egyenkénti válogatás és a
 háromállapotú forrás-törlés a `importSourceController` hídján keresztül,
 valódi ideiglenes forrás- és cél-mappával, mock nélkül (a
-`test_qml_dedup.py` mintája)."""
+`test_qml_dedup.py` mintája).
+
+Az import fájlokat másol és a törlési ágakon forrásfájlokat távolít el,
+ezért ez a fájl szándékosan funkció-szintű `qml_app` fixture-t használ."""
 
 from datetime import date
 
