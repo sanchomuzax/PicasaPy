@@ -43,7 +43,10 @@ from picasapy.ini.text_overlay import (
     serialize_text_active,
 )
 from picasapy.metadata import read_exif_details
-from picasapy.render.chain import DEAD_LEGACY_OPS, can_render_filter
+from picasapy.render.chain import (
+    DEAD_LEGACY_OPS,
+    can_offer_filter_control,
+)
 from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
 from picasapy.render.crop_suggest import suggest_crops
 from picasapy.render.gpu_point_pipeline import build_finetune2_lut
@@ -95,11 +98,12 @@ _EFFECT_PARAMS: dict[str, tuple[str, ...]] = {
 #: A „Régi effektek" fül gombjai közül azok, amelyeket ALKALMAZNI is lehet
 #: (#582). A fülön minden örökölt név látszik, de csak ezekhez van valódi
 #: renderelőnk; a többi gombja letiltva jelenik meg, és ide sem juthat el.
-#: Az igazságforrás itt is a renderelő (`can_render_filter`), nem kézzel
-#: karbantartott lista — így a fül soha nem kínálhat olyan effektet,
-#: amelyik utána kivételbe futna.
+#: Az igazságforrás itt is a renderelő (`can_offer_filter_control`), nem
+#: kézzel karbantartott lista — így a fül soha nem kínálhat olyan effektet,
+#: amelyik utána kivételbe futna, sem olyat, aminek a csúszkatartományán
+#: belül mérten nincs hatása (#1142).
 _LEGACY_EFFECT_NAMES = tuple(
-    sorted(key for key in LEGACY_EFFECT_KEYS if can_render_filter(key))
+    sorted(key for key in LEGACY_EFFECT_KEYS if can_offer_filter_control(key))
 )
 _EFFECT_NAMES = (
     "unsharp",
@@ -475,7 +479,7 @@ class EditController(QObject, BackgroundWorkerMixin):
                 # nem forráskód, ezért `qsTr()` nem tudná kigyűjteni —
                 # a `.ts`-ben a "LegacyEffects" kontextus tartja őket
                 "label": QCoreApplication.translate("LegacyEffects", effect.label),
-                "enabled": can_render_filter(effect.key),
+                "enabled": can_offer_filter_control(effect.key),
                 "dead": effect.key in DEAD_LEGACY_OPS,
             }
             for effect in LEGACY_EFFECTS
@@ -1672,14 +1676,19 @@ class EditController(QObject, BackgroundWorkerMixin):
 
     @Slot(str, result=bool)
     def canRenderEffect(self, name: str) -> bool:
-        """Van-e VALÓDI vizuális modellünk erre az effektre (#571)?
+        """Kínálható-e ez az effekt ÁLLÍTHATÓ vezérlőként (#571, #1142)?
 
         Az „Örökség" fül gombjai ebből tudják, hogy engedélyezettek-e. A
         válasz a RENDERELŐBŐL jön (`chain._HANDLERS`), nem kézzel karban
         tartott listából — így egy effekt bekötése automatikusan élővé teszi
         a gombját, és nem maradhat hazug (aktív, de mégsem ható) gomb.
+
+        #1142: a „nem hazug" feltétel a modell meglétén TÚL azt is jelenti,
+        hogy a csúszkatartományon belül legyen látható hatása — a `blur`
+        lánc-szinten renderel, gombként mégsem kínálható (ld.
+        `chain.UI_INERT_RANGE_OPS`).
         """
-        return can_render_filter(name)
+        return can_offer_filter_control(name)
 
     @Slot(str, result=bool)
     def isDeadLegacyEffect(self, name: str) -> bool:

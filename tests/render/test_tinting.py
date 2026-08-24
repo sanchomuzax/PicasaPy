@@ -52,8 +52,10 @@ class TestParseRgbHex:
             parse_rgb_hex("")
         with pytest.raises(ValueError):
             parse_rgb_hex("xyz")
-        with pytest.raises(ValueError):
-            parse_rgb_hex("123456789")
+    def test_a_nyolcnal_hosszabb_mezo_az_elso_nyolcra_vagodik(self) -> None:
+        # #1142: az eredeti beolvasó az ELSŐ 8 jegyet veszi — ez korábban
+        # kivételt dobott, amitől a lánc egész tagja elesett
+        assert parse_rgb_hex("123456789") == parse_rgb_hex("12345678")
 
 
 class TestApplyTint:

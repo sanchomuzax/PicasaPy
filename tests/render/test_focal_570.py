@@ -180,7 +180,27 @@ class TestParameterPositionsInTheChain:
             ),
         )
 
-    def test_focal_pixelate_reads_all_six_parameters(self, photo):
+    def test_focal_pixelate_mind_a_hat_parametert_olvassa(self, photo):
+        """#1142: a LÁNCBÓL már nem hívjuk (az eredeti sem futtatja), de a
+        #570-ben visszafejtett csővezeték maga változatlanul él — a hat
+        paraméter olvasása itt a függvényen marad ellenőrizve."""
+        kicsi = apply_focal_pixelate(
+            photo, x=0.25, y=0.75, impact=20.0, radius=12.0, hardness=30.0, fade=10.0
+        )
+        assert not np.array_equal(kicsi, photo)
+        for eltero in (
+            dict(x=0.75), dict(y=0.25), dict(impact=60.0),
+            dict(radius=40.0), dict(hardness=90.0), dict(fade=90.0),
+        ):
+            alap = dict(
+                x=0.25, y=0.75, impact=20.0, radius=12.0, hardness=30.0, fade=10.0
+            )
+            assert not np.array_equal(
+                kicsi, apply_focal_pixelate(photo, **{**alap, **eltero})
+            ), f"a {list(eltero)[0]} paraméter nem hat"
+
+    def test_focal_pixelate_a_lancbol_kimarad(self, photo):
+        """A `merokit-2` mérése szerint az eredeti Picasa nem futtatja."""
         report = apply_filters(
             photo,
             parse_filters(
@@ -188,19 +208,8 @@ class TestParameterPositionsInTheChain:
                 "30.000000,10.000000;"
             ),
         )
-        assert report.skipped == ()
-        np.testing.assert_array_equal(
-            report.image,
-            apply_focal_pixelate(
-                photo,
-                x=0.25,
-                y=0.75,
-                impact=20.0,
-                radius=12.0,
-                hardness=30.0,
-                fade=10.0,
-            ),
-        )
+        assert report.skipped == ("PicnikFocalPixelate",)
+        np.testing.assert_array_equal(report.image, photo)
 
     def test_impact_is_the_third_field_not_the_radius(self, photo):
         """Ha a harmadik mezőt Radius-ként olvasnánk (a régi hiba), a két

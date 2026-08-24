@@ -454,6 +454,20 @@ szomszéd, nem interpoláció) — ettől élesek a blokkok.
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
 
+> ⚠️ **MÉRVE (#1142): a 3.9.141.259 a `PicnikFocalPixelate`-et sem futtatja
+> le.** A `merokit-2` szettben mindkét alak — a hétparaméteres
+> `PicnikFocalPixelate=1,0.500000,0.500000,40.000000,60.000000,50.000000,0.000000;`
+> és a négyparaméteres `PicnikFocalPixelate=1,40.000000,60.000000,50.000000,0.000000;`
+> — **a forrást adta vissza** (0,164 eltérés = a JPEG-újratömörítés
+> zajszintje), miközben a PicasaPy 29,19-es eltérést okozott. A lánc ezért
+> a #1142 óta NEM futtatja (`chain.MEASURED_NOT_RUNNING_OPS`); a fenti
+> csővezeték maga megmarad (`render/focal.py`), csak nem hívjuk.
+>
+> Hogy az OK a névregisztráció hiánya vagy a paraméterszám, a mérés nem
+> dönti el: mindkét paraméterszám egyformán tétlen maradt. Azt sem tudjuk,
+> hogy a tag **elvágja-e** mögötte a láncot (#1140) — a szettben egyik
+> esetben sem áll mögötte másik tag.
+
 **Nyitott:** a pontos perem-/interpolációs szabály a mintavételezésnél —
 golden-összevetéssel rögzíthető (#317).
 
@@ -1898,15 +1912,43 @@ objektum 2-es módja) — ehhez egy mélyebb kör kell.~~
 > készül, nem a Picasa IIR-elmosóján. Részletek: „Az `unsharp` elmosása
 > az ÁTMÉRETEZŐBŐL jön" alább.
 
-### `blur` — ugyanaz a motor, a csúszka a sugár
+### `blur` — a csúszka a KÜSZÖB, nem a sugár (helyesbítve: #1142)
 
 ```c
-FUN_0090cf60(dst, src, /*sugar*/ *(p + 0x28), /*skala*/ 1.0f);
+FUN_0090cf60(dst, src, /*kuszob*/ *(p + 0x28), /*skala*/ 1.0f);
 ```
 
 A munkafüggvény `(h+1)·(w+1)` darab **16 bites** akkumulátort foglal — ez
 összegzőtábla/dobozszűrő-jellegű megvalósításra utal, nem Gauss-konvolúcióra.
-*Bizonyítottsági fok: erős (a foglalás alakjából), a mag pontos alakja nyitva.*
+
+> ⚠️ **HELYESBÍTÉS (#1142): a harmadik argumentum NEM sugár.** A szakasz
+> korábbi címe („a csúszka a sugár") megdőlt. A `filterdesc.xml` a `blur`
+> egyetlen csúszkáját `Threshold`-nak nevezi (`[-0,5; 0,5]`, alapérték
+> `0,1`), a [`picasa-native-filter-workers.md`](picasa-native-filter-workers.md)
+> 4.2.3 dekompilátuma pedig élmegőrző, HÁROM LÉPTÉKŰ simítást ír le, ahol a
+> paraméter az él-küszöb (`ΔR² + ΔG² + ΔB² > küszöb / n²` → „fal").
+
+**Mérés (`PicasaPy merokit-2`, 2026-08-15-i eredeti export, 960×640-es
+tesztábra; a JPEG-újratömörítés zajszintje ebben a szettben 0,240):**
+
+| lánc | eltérés a forrástól | legjobb illesztés |
+|---|---|---|
+| `blur=1;` (alapérték, 0,1) | 0,240 | tétlen |
+| `blur=1,0.500000;` (a csúszka teteje) | 0,562 | tétlen (σ ≤ 0,3) |
+| `blur=1,2.000000;` (tartományon KÍVÜL) | 17,317 | **σ = 4,00 Gauss**, 0,552 maradék |
+
+A σ optimuma éles (3,90 → 0,650; 4,10 → 0,692), és minden más próbált mag
+rosszabb: a Picasa saját IIR-elmosója (`iir_blur`, a legjobb sugarán) 3,49;
+a háromléptékű `[1,2,1]` dilatált lánc (n = 1, 2, 4) 2,03; a legjobb
+háromdobozos lánc 0,72. A sugár tehát **nem függ a paramétertől** — ami
+összefér a dekompilátummal: a küszöb azt dönti el, HOL simíthat, nem azt,
+mekkora sugárral.
+
+*Bizonyítottsági fok: a két véglet MEGERŐSÍTETT (eredeti export, képenként).
+Ami NYITVA marad: a küszöb → falképzés leképezése a 0,5 és a 2,0 közötti
+sávban — erre nincs mérési pontunk. A PicasaPy modellje
+(`src/picasapy/render/blur.py`) a váltást a csúszka tetejére teszi, mert az
+a legnagyobb mérten tétlen érték; a sáv kimérése önálló kutatói kör.*
 
 ### `grain` / `grain2` — MSVC `rand()`, majd vízszintes simítás
 

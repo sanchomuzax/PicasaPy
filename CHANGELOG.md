@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Három szűrő végre úgy viselkedik a képeken, ahogy az eredeti Picasában
+  (#1142).** Az eredeti programmal készült képeket összehasonlítva kiderült,
+  hogy három szerkesztés fordítva működött nálunk. (1) Az „Elhomályosítás"
+  hatását eddig egyszerűen kihagytuk; mostantól lefut, és a képünk az
+  eredeti Picasáéval a tömörítési zaj szintjéig egyezik. (2) A színezés
+  akkor is működik már, ha a színkód a szokásosnál hosszabb: eddig az ilyen
+  képeken a színezés teljesen elmaradt, most — az eredetihez hasonlóan — a
+  színkód eleje számít. (3) A „Kockásítás fókuszban" viszont eddig fölösleg
+  volt: az eredeti Picasa nem futtatja, ezért mi sem futtatjuk többé — a kép
+  változatlan marad, és a szerkesztő meg is mondja, miért.
+
 ## [0.8.83] – 2026-08-24
 
 ### Hozzáadva

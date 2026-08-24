@@ -83,14 +83,19 @@ class TestDeadLegacyFocalPixelate:
         assert "legacy" in report.legacy_warnings[0].casefold()
 
     def test_not_confused_with_the_live_picnik_effect(self, sample):
-        """A két név KÜLÖN kulcs: a kisbetűs halott bejegyzés jelzést kap, az
-        élő `PicnikFocalPixelate` viszont nem — az a saját (#570-ben
-        pontosítandó) útján megy."""
+        """A két név KÜLÖN kulcs — a KÜLÖNBÖZŐSÉG viszont a #1142 óta már
+        nem a „halott vs. renderelt" tengelyen áll.
+
+        A `merokit-2` mérése szerint az eredeti a `PicnikFocalPixelate`-et
+        SEM futtatja, de MÁS bizonyíték alapján: ott a kimenet van megmérve
+        (a forrást adja vissza), itt a natív regiszter hiánya a lelet.
+        Ezért két külön halmaz és két külön üzenet."""
         live = apply_filters(
             sample, parse_filters("PicnikFocalPixelate=1,50.000000;")
         )
-        assert live.legacy_warnings == ()
         assert "picnikfocalpixelate" not in DEAD_LEGACY_OPS
+        assert len(live.legacy_warnings) == 1
+        assert "halott" not in live.legacy_warnings[0]
 
     def test_a_regular_unrendered_name_gets_no_legacy_warning(self, sample):
         """A „még nincs modellünk" és a „halott bejegyzés" két külön ok — a

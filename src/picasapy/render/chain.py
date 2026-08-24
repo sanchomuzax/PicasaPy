@@ -35,8 +35,9 @@ from picasapy.render.effects import (
     apply_radblur,
     apply_radsat,
 )
+from picasapy.render.blur import apply_blur
 from picasapy.render.effects_artistic import apply_comicize
-from picasapy.render.focal import apply_focal_pixelate, apply_focal_zoom
+from picasapy.render.focal import apply_focal_zoom
 from picasapy.render.effects_creative_tone import apply_invert
 from picasapy.render import chain_glimmer_handlers as glimmer
 from picasapy.render import chain_native_handlers as native
@@ -115,7 +116,9 @@ KNOWN_UNRENDERED_OPS = frozenset(
         # pixel-matematika rögzített. A `linblur` sugár-leképezése és a
         # `dir_sharp` rámpa-horgonya KÖZELÍTÉS — ld. a két `apply_*`
         # docstringjét; a kalibráció a #317-ben fut.
-        "blur",
+        # A `blur` a #1142-ben KIKERÜLT innen: a `merokit-2` szett három
+        # csúszkaállása kimérte, hogy a csúszkatartományon KÍVÜLI küszöbnél
+        # valódi, σ = 4,0 szórású elmosást ad (ld. `render/blur.py`).
         "whitept",
         "debug",
     }
@@ -141,20 +144,46 @@ DEAD_LEGACY_OPS = frozenset({"focalpixelate"})
 #: tartalmazta.
 #:
 #: **Ez NEM azonos a `DEAD_LEGACY_OPS`-szal.** Ezeknek a natív regiszterben
-#: VAN feldolgozójuk (a `blur` magja `0x0090cf60`, a `colorfix`/`whitept`
-#: a `0x0090eda0` fehérpont-magot hívja) — csak a mérésben nem hatottak.
+#: VAN feldolgozójuk (a `colorfix`/`whitept` a `0x0090eda0` fehérpont-magot
+#: hívja) — csak a mérésben nem hatottak.
 #: Két magyarázat áll nyitva, és a mérés egyik mellett sem dönt:
 #: vagy tényleg tétlenek a 3.9.141.259-ben, vagy a mérőszett által
 #: generált paraméter-alak nem az, amit a Picasa olvas (a `colorfix` és a
 #: `whitept` PIPETTA-színt vár, amit a szett a lánc végére írt). Ezért a
 #: bejegyzés célja pusztán annyi, hogy a következő mérés ne HIÁNYNAK
 #: olvassa őket: a felhasználó a lánc kihagyásakor megkapja az okot is.
-MEASURED_IDLE_OPS = frozenset({"blur", "colorfix", "whitept"})
+#:
+#: ⚠️ A `blur` a #1142-ben KIKERÜLT innen. A #685-ös mérés csak a
+#: `filterdesc.xml` csúszkatartományát (`[-0,5; 0,5]`) járta be, és ott
+#: tényleg tétlen — a `merokit-2` szett viszont a tartományon KÍVÜLI
+#: `blur=1,2.000000;` alakot is kimérte, és az VALÓDI elmosást ad. A
+#: „mérten tétlen" tehát a MÉRT tartományra szólt, nem a szűrőre.
+MEASURED_IDLE_OPS = frozenset({"colorfix", "whitept"})
+
+#: #1142 — MÉRTEN NEM FUTÓ szűrőnevek: a `merokit-2` szettben az eredeti
+#: Picasa a FORRÁST adta vissza rájuk (0,164 = a JPEG-újratömörítés
+#: zajszintje), miközben nálunk volt hozzájuk renderer, tehát a mi
+#: kimenetünk némán ELTÉRT az eredetiétől (a `PicnikFocalPixelate`-nél
+#: 29,19-es eltéréssel).
+#:
+#: Ez sem a `DEAD_LEGACY_OPS` (ott a natív regiszter hiánya a bizonyíték),
+#: sem a `MEASURED_IDLE_OPS` (ott ismert a natív feldolgozó, csak a hatás
+#: maradt el): itt a KIMENET van megmérve, az OK nem. Hogy a
+#: `PicnikFocalPixelate` azért nem fut-e, mert a 3.9.141.259 nem ismeri a
+#: nevet, vagy mert a paraméterszám nem stimmel, a mérés nem dönti el —
+#: mindkét mért alak (hét és négy paraméter) egyformán tétlen maradt.
+MEASURED_NOT_RUNNING_OPS = frozenset({"picnikfocalpixelate"})
 
 #: A mérten tétlen bejegyzésre adott, felhasználónak szóló magyar üzenet.
 MEASURED_IDLE_WARNING_TEMPLATE = (
     "{name}: a mérésben (#685) maga a Picasa sem változtatott vele a képen, "
     "ezért nem futtatunk rá modellt — a kép változatlan marad."
+)
+
+#: A mérten NEM FUTÓ bejegyzésre adott, felhasználónak szóló üzenet (#1142).
+MEASURED_NOT_RUNNING_WARNING_TEMPLATE = (
+    "{name}: a mérésben (#1142) maga a Picasa sem futtatja le ezt a "
+    "szűrőt, ezért mi sem futtatjuk — a kép változatlan marad."
 )
 
 #: #910 — a FÖLÖS paraméterű tagra adott, felhasználónak szóló üzenet.
@@ -460,6 +489,22 @@ def _apply_linblur_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
+def _apply_blur_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`blur=1[,Küszöbérték]` — küszöbvezérelt simítás (#1142).
+
+    Az egyetlen csúszka a KÜSZÖB, nem a sugár: a `filterdesc.xml` szerinti
+    `[-0,5; 0,5]` tartományon belül a mérés tétlen kimenetet ad, fölötte
+    viszont valódi, paraméterfüggetlen elmosás jön (ld. `render/blur.py`).
+    Az alapérték a `filterdesc.xml`-ből 0,1.
+
+    ⚠️ A paraméter szándékosan NINCS a `chain_report` tartományvágó
+    táblájában: a mérten futó `blur=1,2.000000;` alak kilóg a
+    csúszkatartományból, a vágás tehát épp azt az esetet ölné meg, amit az
+    eredeti lefuttat.
+    """
+    return apply_blur(image, threshold=_effect_float(op, 0, 0.1))
+
+
 def _apply_dir_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     # Élő alak: `dir_tint=1,x,y,gradiens,árnyalás[,szín]` — a szín
     # opcionális (#357), hiányában az alapértelmezett színnel futunk.
@@ -501,22 +546,12 @@ def _apply_focal_zoom_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     )
 
 
-def _apply_focal_pixelate_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    """`PicnikFocalPixelate=1,x,y,Impact,Radius,Hardness,Fade` (#570).
-
-    Ugyanaz a paraméter-sorrend és ugyanaz a körmaszk, mint a
-    `FocalZoom`-nál; a hatás lekicsinyítés + legközelebbi-szomszéd
-    visszanagyítás (`smoothing = false`).
-    """
-    return apply_focal_pixelate(
-        image,
-        x=_effect_float(op, 0, 0.5),
-        y=_effect_float(op, 1, 0.5),
-        impact=_effect_float(op, 2, 20.0),
-        radius=_effect_float(op, 3, 10.0),
-        hardness=_effect_float(op, 4, 50.0),
-        fade=_effect_float(op, 5, 0.0),
-    )
+# A `PicnikFocalPixelate` handlere a #1142-ben MEGSZŰNT: a `merokit-2`
+# mérés szerint az eredeti Picasa nem futtatja a szűrőt (a
+# `MEASURED_NOT_RUNNING_OPS` docstringje írja le a bizonyítékot). Maga a
+# `render.focal.apply_focal_pixelate` megmarad — a #570-es visszafejtés
+# eredménye, és a jövőbeli kalibrációhoz kell —, csak a láncból nem
+# hívjuk.
 
 
 def _apply_comicize_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
@@ -576,6 +611,8 @@ _HANDLERS = {
     "dir_brite": _apply_dir_brite_op,
     "dir_sharp": _apply_dir_sharp_op,
     "linblur": _apply_linblur_op,
+    # #1142: a `blur` mérten LEFUT a csúszkatartomány fölött
+    "blur": _apply_blur_op,
     "radtint": _apply_radtint_op,
     "autobacklight": _apply_autobacklight_op,
     # --- a #687-ben bekötött natív szűrők (törzsük:
@@ -621,7 +658,7 @@ _HANDLERS = {
     # #570: mindkét fókusz-effekt a natív paraméter-sorrendet és a közös
     # körmaszkot használja (render/focal.py)
     "focalzoom": _apply_focal_zoom_op,
-    "picnikfocalpixelate": _apply_focal_pixelate_op,
+    # a `picnikfocalpixelate` a #1142-ben KIKERÜLT: mérten nem fut
     "pencilsketch": glimmer.apply_pencil_sketch_op,
     "neon": glimmer.apply_neon_op,
     "comicize": _apply_comicize_op,  # KÖZELÍTŐ maradt (ld. fent)
@@ -663,6 +700,29 @@ def can_render_filter(name: str) -> bool:
         return False
     key = name.casefold()
     return key in _HANDLERS or key in _FRAME_EFFECTS or key == "crop64"
+
+
+#: #1142 — VAN modellünk, de a felületen mégsem kínálható vezérlőként: a
+#: `filterdesc.xml` szerinti TELJES csúszkatartományán a mérés szerint maga
+#: az eredeti Picasa sem változtat a képen.
+#:
+#: A `blur` küszöbcsúszkája `[-0,5; 0,5]`, és a #685 (−0,5 / 0,1 / 0,5),
+#: illetve a `merokit-2` (0,5) mérése mind tétlen kimenetet adott; hatást
+#: csak a tartományon KÍVÜLI érték hoz (`blur=1,2.000000;`). Egy ilyen
+#: érték idegen vagy kézzel szerkesztett `.picasa.ini`-ből jöhet — ezért a
+#: LÁNC rendereli —, de gombot adni rá a felületen hazug lenne: a
+#: felhasználó állítgatná a csúszkát, és nem történne semmi.
+UI_INERT_RANGE_OPS = frozenset({"blur"})
+
+
+def can_offer_filter_control(name: str) -> bool:
+    """Kínálhatjuk-e a szűrőt a felületen ÁLLÍTHATÓ vezérlőként (#1142)?
+
+    Szigorúbb, mint a `can_render_filter`: azt is megköveteli, hogy a
+    csúszkatartományon belül LEGYEN látható hatása (ld.
+    `UI_INERT_RANGE_OPS`).
+    """
+    return can_render_filter(name) and name.casefold() not in UI_INERT_RANGE_OPS
 
 
 def apply_filters(
@@ -777,6 +837,12 @@ def apply_filters(
                 # a két ok külön üzenetet kap (ld. MEASURED_IDLE_OPS)
                 legacy_warnings.append(
                     MEASURED_IDLE_WARNING_TEMPLATE.format(name=op.name)
+                )
+            elif key in MEASURED_NOT_RUNNING_OPS:
+                # #1142: a mérés szerint az eredeti nem futtatja — nálunk
+                # volt rá renderer, ezért a mi kimenetünk tért el
+                legacy_warnings.append(
+                    MEASURED_NOT_RUNNING_WARNING_TEMPLATE.format(name=op.name)
                 )
             skipped.append(op.name)
             continue

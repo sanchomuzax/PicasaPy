@@ -148,8 +148,22 @@ class TestLegacyCatalogue:
         # felületen nem lehet aktívnak látszó, de nem ható gomb
         from picasapy.render.chain import can_render_filter
 
-        for key in ("blur", "colorfix", "rainbow"):
+        for key in ("colorfix", "rainbow"):
             assert not can_render_filter(key)
+
+    def test_a_blur_renderel_de_gombkent_nem_kinalhato(self):
+        """#1142 — a `blur` a LÁNCBÓL renderel (egy idegen ini-ben állhat a
+        csúszkatartományon kívüli küszöb), a fülön viszont szürke marad: a
+        `filterdesc.xml` szerinti `[-0,5; 0,5]` tartományon a mérés szerint
+        maga az eredeti Picasa sem változtat a képen, tehát a csúszka
+        minden állásában hatástalan gomb lenne."""
+        from picasapy.render.chain import (
+            can_offer_filter_control,
+            can_render_filter,
+        )
+
+        assert can_render_filter("blur")
+        assert not can_offer_filter_control("blur")
 
     def test_debug_is_deliberately_absent(self):
         # a `debug` („For debugging") fejlesztői eszköz volt, nem
