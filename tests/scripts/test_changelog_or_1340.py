@@ -204,3 +204,34 @@ class TestAVerzioemeloSajatPRje:
         assert cor.main(
             ["--base", "a", "--head", "b", "--changelog", str(naplo)], runner=futtat
         ) == 1
+
+
+class TestAMeresBukasa:
+    """Ha az őr nem tud mérni, NEM adhat zöld utat (#1340).
+
+    Éles próbán jött elő: hibás refekkel meghívva a `git diff` elbukott, a
+    fájllista üres lett, és az őr azt mondta, hogy „nem jut el a
+    felhasználóhoz — nem kell bejegyzés". A sikertelen mérésből megint
+    állítás lett, pontosan az a hibaosztály, ami miatt ez a jegy megnyílt.
+    """
+
+    def _bukó_git(self):
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args, 128, "", "fatal: bad object")
+
+        return futtat
+
+    def test_a_bukott_diff_BUKTATJA_az_ort(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        kod = cor.main(["--base", "rossz", "--head", "refek"], runner=self._bukó_git())
+        assert kod == 1
+        assert "::error" in capsys.readouterr().out
+
+    def test_ures_diff_sikeres_lekerdezessel_viszont_rendben(self) -> None:
+        """A tényleg üres változás nem hiba — csak a MÉRÉS bukása az."""
+
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(args, 0, "", "")
+
+        assert cor.main(["--base", "a", "--head", "b"], runner=futtat) == 0

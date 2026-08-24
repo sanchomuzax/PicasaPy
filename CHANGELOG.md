@@ -5,6 +5,13 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Belső
+- **A CHANGELOG-őr nem engedhet át némán (#1340).** Ha a változást nem tudja
+  megmérni (hibás vagy elérhetetlen commit), az nem zöld út többé, hanem
+  látható hiba — a sikertelen mérésből korábban „nincs mit ellenőrizni" lett.
+
 ## [0.8.74] – 2026-08-24
 
 ### Új
