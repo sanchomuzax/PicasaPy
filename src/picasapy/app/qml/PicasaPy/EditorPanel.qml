@@ -119,6 +119,11 @@ Rectangle {
     // aktív fül: 0 = Gyakori javítások, 1 = Finomhangolás, 2–4 = a három
     // eredeti effekt-fül (#328), 5 = további effektek (#422), 6 = Régi
     // effektek (#571). Az eszköz-módok a fülsávtól függetlenül élnek.
+    //
+    // SAJÁT FUNKCIÓ (#1187): a fenti 7 fülből csak 5 (0–4. index) van meg
+    // az eredeti Picasában — az 5. és a 6. index a MI hozzáadásunk. A
+    // bináris-egyezés erre a két fülre NEM vonatkozik: hogy az eredetiben
+    // nincs ilyen fül, nem hiba. Lista: docs/decisions/vedett-sajat-funkciok.md
     property int activeTab: 0
 
     // kapcsoló-állapotok — az aktív eszköz csempéje "benyomva" jelenik meg

@@ -5,11 +5,14 @@ import QtQuick.Layouts
 // A szerkesztő 7. füle: a Picasa ÖRÖKÖLT, ma már felület nélküli szűrői
 // (#571).
 //
-// TUDATOS ELTÉRÉS AZ EREDETITŐL. A PicasaPy egyébként a Picasa felületét
-// követi; itt szándékosan TÖBBET adunk. A motorban benne maradt egy csomó
-// régi szűrő, amit a 3.9 felülete nem mutat — a felhasználó nem tudja
-// előhívni, és egy régi `.picasa.ini`-ből mégis ott lehet a képén. Egy
-// későbbi „hűségjavítás" ezt a fület NE vegye ki.
+// SAJÁT FUNKCIÓ (#571) — TUDATOS ELTÉRÉS AZ EREDETITŐL. A PicasaPy
+// egyébként a Picasa felületét követi; itt szándékosan TÖBBET adunk. A
+// motorban benne maradt egy csomó régi szűrő, amit a 3.9 felülete nem
+// mutat — a felhasználó nem tudja előhívni, és egy régi `.picasa.ini`-ből
+// mégis ott lehet a képén. Egy későbbi „hűségjavítás" ezt a fület NE vegye
+// ki: a bináris-egyezés erre a fülre nem vonatkozik (lista:
+// docs/decisions/vedett-sajat-funkciok.md, részletes indoklás: ADR-003,
+// docs/decisions/legacy-effects-tab.md).
 //
 // A gombok a katalógusból jönnek (`editController.legacyEffects`), nem
 // kézzel beírva; hogy melyik ÉL, azt a RENDERELŐ dönti el
