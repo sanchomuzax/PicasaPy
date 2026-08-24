@@ -5,6 +5,35 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Belső
+- **Kiadás nem mehet ki hamis jegyzettel (#1340).** A felhasználót érintő
+  változáshoz mostantól kötelező CHANGELOG-bejegyzés (a CI ellenőrzi), a
+  tartalékjegyzet pedig nem állíthatja többé, hogy „nincs látható változás":
+  ha nincs emberi összefoglaló, ezt mondja ki, és felsorolja a beolvadt
+  munkákat.
+
+## [0.8.72] – 2026-08-24
+
+### Új
+- **A rácson húzott kijelölőkeret (lasszó) úgy viselkedik, mint az eredetiben
+  (#897).** A keret a húzás kezdetén „lefényképezi" a meglévő kijelölést, és
+  ahhoz viszonyít: ha visszahúzod a keretet, nem ragad benne kép, Ctrl-lel
+  tartva pedig hozzáad a meglévő kijelöléshez. Egérrel Shiftet tartva a
+  horgonytól tartományt jelöl ki. Egy már kijelölt képre kattintva a kijelölés
+  nem esik szét, így több képet egyben lehet elhúzni. A cellahatáron pontosan
+  végighúzott keret sem marad üresen.
+
+## [0.8.71] – 2026-08-24
+
+### Javítva
+- **A letiltott gombok végre letiltottnak látszanak (#893).** Az éppen nem
+  használható gomb — a zöld, kiemelt gombokat is beleértve — a feliratával
+  együtt negyed erősséggel jelenik meg, ahogy az eredeti Picasában. Eddig a
+  zöld gombok letiltva is teljes erővel világítottak, a halványítás pedig
+  csak a gomb hátterét érintette, a feliratát nem.
+
 ## [0.8.70] – 2026-08-24
 
 ### Javítva
