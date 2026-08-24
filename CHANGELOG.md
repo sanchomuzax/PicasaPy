@@ -17,6 +17,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   tartalékjegyzet pedig nem állíthatja többé, hogy „nincs látható változás":
   ha nincs emberi összefoglaló, ezt mondja ki, és felsorolja a beolvadt
   munkákat.
+- **A CHANGELOG-őr a kötelező ellenőrzésbe került (#1340).** Az első
+  változata a lint jobban futott, ami az automatikus beolvasztást nem
+  állítja meg — így nem lett volna foga. A verzióemelő automatika saját
+  PR-jét viszont nem fogja meg: ott csak a verziósor változik.
 
 ## [0.8.73] – 2026-08-24
 

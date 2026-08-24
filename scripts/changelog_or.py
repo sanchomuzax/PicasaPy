@@ -27,6 +27,7 @@ előbb-utóbb elcsúszna egymástól.
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 from collections.abc import Callable, Iterable
@@ -44,6 +45,26 @@ KIADATLAN_CIM = "## [Nem kiadott]"
 
 def _valodi_git(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(args, capture_output=True, text=True, check=False)
+
+
+#: A `pyproject.toml` verziósora — ezt az automatika írja át, nem ember.
+_VERZIO_SOR = re.compile(r"^[+-]version\s*=")
+
+
+def van_erdemi_valtozas(diff: str) -> bool:
+    """Van-e a fájlban a VERZIÓSORON KÍVÜL is változás?
+
+    ⚠️ Enélkül az őr a saját automatikánkat fogná meg: a verzióemelő PR a
+    verziósort írja át és a CHANGELOG címét nevezi át, emberi mondatot pedig
+    nem hoz — mert nem is neki kell. Ha ezt megfognánk, a verzióemelés soha
+    nem tudna beolvadni, és a kiadás állna. Ugyanez a kivétel él a
+    `ci.yml` változás-elemzésében is."""
+    for sor in diff.splitlines():
+        if not sor or sor[0] not in "+-" or sor.startswith(("+++", "---")):
+            continue
+        if not _VERZIO_SOR.match(sor):
+            return True
+    return False
 
 
 def kell_bejegyzes(fajlok: Iterable[str]) -> bool:
@@ -85,7 +106,16 @@ def main(
     valtozott = runner(["git", "diff", "--name-only", beallitas.base, beallitas.head])
     fajlok = [s for s in (valtozott.stdout or "").splitlines() if s.strip()]
 
-    if not kell_bejegyzes(fajlok):
+    erdemi = [f for f in fajlok if kell_bejegyzes([f])]
+    if erdemi == ["pyproject.toml"]:
+        pyproject_diff = runner([
+            "git", "diff", beallitas.base, beallitas.head, "--", "pyproject.toml",
+        ])
+        if not van_erdemi_valtozas(pyproject_diff.stdout or ""):
+            print("Csak a verziósor változott — ez az automatika saját PR-je.")
+            return 0
+
+    if not erdemi:
         print("A változás nem jut el a felhasználóhoz — nem kell CHANGELOG-bejegyzés.")
         return 0
 
@@ -120,9 +150,8 @@ def main(
         "magáról valótlanul, hogy nem hoz látható változást (#1340)."
     )
     print("A programot érintő fájlok:")
-    for f in fajlok:
-        if kell_bejegyzes([f]):
-            print(f"  {f}")
+    for f in erdemi:
+        print(f"  {f}")
     return 1
 
 

@@ -138,3 +138,69 @@ class TestParancssor:
             runner=self._futtato({"--name-only": "docs/specs/a.md\n"}),
         )
         assert kod == 0
+
+
+_DIFF_CSAK_VERZIOSOR = """\
+diff --git a/pyproject.toml b/pyproject.toml
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -10,7 +10,7 @@
+-version = "0.8.73"
++version = "0.8.74"
+"""
+
+_DIFF_ERDEMI_PYPROJECT = """\
+diff --git a/pyproject.toml b/pyproject.toml
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -30,6 +30,7 @@
+ dependencies = [
++  "uj-fuggoseg>=1.0",
+ ]
+"""
+
+
+class TestAVerzioemeloSajatPRje:
+    """Az őrnek NEM szabad a saját automatikánkat megfognia.
+
+    A verzióemelő PR a `[Nem kiadott]` címet nevezi át és a verziósort
+    írja át — emberi mondatot nem hoz, mert nem is neki kell. Ha az őr ezt
+    megfogná, a verzióemelés soha nem tudna beolvadni, és a kiadás állna:
+    pont az a baj, amit a #1319 megszüntetett.
+    """
+
+    def test_a_verziosor_onmagaban_nem_erdemi_valtozas(self) -> None:
+        assert not cor.van_erdemi_valtozas(_DIFF_CSAK_VERZIOSOR)
+
+    def test_uj_fuggoseg_viszont_erdemi(self) -> None:
+        assert cor.van_erdemi_valtozas(_DIFF_ERDEMI_PYPROJECT)
+
+    def test_a_verzioemelo_PR_atmegy(self, tmp_path: Path) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [0.8.74] – ma\n\n- x\n", encoding="utf-8")
+
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            egy = " ".join(args)
+            if "--name-only" in egy:
+                return subprocess.CompletedProcess(args, 0, "CHANGELOG.md\npyproject.toml\n", "")
+            if "-- pyproject.toml" in egy:
+                return subprocess.CompletedProcess(args, 0, _DIFF_CSAK_VERZIOSOR, "")
+            return subprocess.CompletedProcess(args, 0, _DIFF_CSAK_ATRENDEZES, "")
+
+        assert cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)], runner=futtat
+        ) == 0
+
+    def test_valodi_fuggosegvaltozas_viszont_bejegyzest_ker(self, tmp_path: Path) -> None:
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")
+
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            egy = " ".join(args)
+            if "--name-only" in egy:
+                return subprocess.CompletedProcess(args, 0, "pyproject.toml\n", "")
+            return subprocess.CompletedProcess(args, 0, _DIFF_ERDEMI_PYPROJECT, "")
+
+        assert cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)], runner=futtat
+        ) == 1
