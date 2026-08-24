@@ -43,6 +43,13 @@ def _write_rgba_image(path: Path, color: int, alpha: int) -> None:
     assert ok
 
 
+def _write_uint16_image(path: Path, value: int) -> None:
+    """16 bites PNG, hogy a különbségszámítás ne csordulhasson túl."""
+    image = np.full((3, 4, 3), value, dtype=np.uint16)
+    ok = cv2.imwrite(str(path), image)
+    assert ok
+
+
 class TestCompareExports:
     def test_meres_effektenkent_es_variansonkent_determinisztikus(self, tmp_path: Path) -> None:
         original = tmp_path / "picasa"
@@ -111,6 +118,20 @@ class TestCompareExports:
         row = report["effektenkent"][0]["valtozatok"][0]
         assert row["verdikt"] == "ELTÉR"
         assert row["atlagos_abszolut_csatornaelteres"] == pytest.approx(63.75)
+
+    def test_16_bites_png_kulonbsege_nem_csordul_tul(self, tmp_path: Path) -> None:
+        original = tmp_path / "picasa"
+        rendered = tmp_path / "picasapy"
+        original.mkdir()
+        rendered.mkdir()
+        _write_uint16_image(original / "hdr__alap.png", 65_535)
+        _write_uint16_image(rendered / "hdr__alap.png", 0)
+
+        report = cee.compare_exports(original, rendered, threshold=3.0)
+
+        row = report["effektenkent"][0]["valtozatok"][0]
+        assert row["verdikt"] == "ELTÉR"
+        assert row["atlagos_abszolut_csatornaelteres"] == pytest.approx(65_535.0)
 
     @pytest.mark.parametrize("threshold", [-0.1, float("nan"), "nem-szam"])
     def test_ervenytelen_kuszob_hibauzenete_vilagos(self, tmp_path: Path, threshold: object) -> None:

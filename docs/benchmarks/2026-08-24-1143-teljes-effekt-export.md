@@ -17,8 +17,8 @@ python3 scripts/compare_effect_exports.py \
 ```
 
 A szkript a közös relatív útvonalú JPEG/PNG-párokat rendezetten járja be,
-bájtúton olvassa a fájlokat (ékezetes Windows-útvonalon is), majd az RGB
-RGB/RGBA csatornák átlagos abszolút eltérését méri (PNG-n az alfa is része a
+bájtúton olvassa a fájlokat (ékezetes Windows-útvonalon is), majd az RGB/RGBA
+csatornák átlagos abszolút eltérését méri (PNG-n az alfa is része a
 mérésnek). A 3,0 fölötti érték eltérés;
 eltérő méret mindig eltérés. Hiányzó vagy olvashatatlan bemenetnél világos,
 magyar hiba keletkezik. A mérési lelet önmagában nem hibakód: az eszköz

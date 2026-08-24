@@ -113,7 +113,9 @@ def _compare_pair(relative_path: str, original: Path, rendered: Path, threshold:
         )
         return row
 
-    difference = np.abs(original_image.astype(np.int16) - rendered_image.astype(np.int16))
+    # A PNG lehet 16 bites: az int16 a 0..65535 tartomány különbségénél
+    # túlcsordulna, és akár teljes fekete/fehér eltérést is egyezésnek mérne.
+    difference = np.abs(original_image.astype(np.int32) - rendered_image.astype(np.int32))
     mean_difference = float(difference.mean())
     row.update(
         {
