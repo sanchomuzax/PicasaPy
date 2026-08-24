@@ -534,7 +534,7 @@ ha ez a lépés változást jelez.
 |---|---|---|
 | Picasa **ír** → külső olvasó | ✅ | az ini a Picasa kimenete, mindig naprakész |
 | külső **ír** → futó Picasa **olvassa** | ❌ | nincs olyan hívási út, ami a képfájl érintése nélkül kiváltaná |
-| külső ír **+ a képfájl mtime-ját is megérinti** | ❓ **megmérendő** | ez a levezetett megkerülési út (fent); a PicasaPy már így ír, de a Picasa-oldali hatás windowsos próbára vár |
+| külső ír **+ a képfájl mtime-ját is megérinti** | ⚠️ **kétséges** — ld. lent | ez a levezetett megkerülési út (fent); a PicasaPy már így ír, de **2026-08-24-én két mérés szólt ellene** — ld. „Az mtime-megkerülés mérlege" |
 | külső ír → Picasa **legközelebbi saját írása** | ⚠️ **adatvesztés** | a szinkron a saját adatbázis-rekordjából írja ki a szakaszt egészben, így a külső kulcsokat felülírja |
 
 > ⚠️ **A harmadik sor a legfontosabb, és két egyváltozós próba erősítette
@@ -1696,3 +1696,65 @@ mérés.
 Megerősítetté akkor válik, ha előkerül egy `0xFFFFFFFF`-nél nagyobb
 (kilenc vagy több jegyű) vágópont: azt a törtrész-hipotézis nem tudná
 előállítani.
+
+## Az mtime-megkerülés mérlege — két mérés szól ELLENE (2026-08-24)
+
+A „ha a külső író megérinti a képfájl `mtime`-ját, a Picasa újrafeldolgozza"
+feltevés eddig **levezetés** volt, mérés nélkül. Ez a kör nem a windowsos
+próbát végezte el, hanem azt kérdezte: **van-e a binárisban egyáltalán olyan
+hely, ami módosítási időt hasonlít össze.** A válasz kétszer is nemleges.
+
+### 1. Mind a HÁROM `CompareFileTime`-hívás rendezés-komparátor
+
+| hívó | mit csinál | miből látszik |
+|---|---|---|
+| `0x00509930` (547 b) | két tömbelem összevetése `[base + i*12 + 4]`-nél | 12 bájtos rekordok, `ret` rendezési eredménnyel |
+| `0x00509b60` (176 b) | ugyanaz, rövidebb változat | ugyanaz a rekordlépés |
+| `0x009a6e40` (529 b) | **általános listaoszlop-komparátor**: `[this+0xe4]` az oszloptípus; **2** = FILETIME (`CompareFileTime` a `[handle + index*8]` párra), **4** = természetes (számtudatos) szövegrendezés | típuskapcsoló + `ret 4`, −1/0/1 visszatérés |
+
+⇒ A teljes binárisban **egyetlen** `CompareFileTime`-hívás sincs
+változásérzékelési szerepben. Mindhárom **megjelenítési rendezés**.
+
+### 2. A könyvtárbejáró gyorsítótár-rekordjában NINCS módosítási idő
+
+A program saját hibakereső CSV-kiíratása (`0x004f25f0`,
+`Preferences\WriteDirscannerCSV`) rekordonként ezt írja ki:
+
+```
+Name , Creation Time , Access Time , Size , Type , Dirty , Valid
+  @0        @+4            @+0xc      @+0x14  @+0x18  @+0x1c  @+0x1d
+```
+
+Mindkét időmezőt `0x0098b650` = `FileTimeToSystemTime` alakítja át, tehát
+valóban FILETIME-ok — de a program **saját felirata szerint** a
+*létrehozási* és a *hozzáférési* idő, **nem a módosítási**. Amit nem tárol
+el, azt nem is hasonlíthatja össze később.
+
+### Mit jelent ez — és mit NEM
+
+> **Erős, de nem perdöntő bizonyíték az mtime-út ellen.** Két kiskapu marad:
+> (a) egy 64 bites FILETIME **beágyazott** összehasonlítása (`cmp`/`sbb` a két
+> duplaszón) nem használ `CompareFileTime`-ot, és importkeresésre láthatatlan;
+> (b) a CSV-oszlopfeliratok a *hibakereső* ág feliratai — elvben elavulhattak
+> a mögöttük lévő mezőkhöz képest.
+
+**Amit még végigpróbáltam ebben a körben:** a `GetFileAttributesExW` egyetlen
+hívója (`0x0072ac80`, 2056 b, `[0xc403c8]` a `0x0072b401`-nél) **csak
+méretküszöböt** vizsgál, időbélyeget nem; a `0x009aeff0` =
+`FindNextFileW`-burok a teljes `WIN32_FIND_DATAW`-t `rep movsd`-del adja
+tovább, tehát a választás lejjebb történik, és a kitöltő helyet **nem
+találtam meg**; a `thumbindex.py` `ThumbIndexEntry`-jében nincs időbélyeg.
+
+### A gyakorlati következmény a MI kódunkra
+
+A `src/picasapy/ini/photo_touch.py` **alapértelmezésben bekapcsolva** átírja
+az éles fotók `mtime`-ját minden ini-írás után, egy olyan feltevés alapján,
+ami **soha nem lett Picasa-oldalon megmérve**, és amelynek most két mérés
+mond ellent. A modul fejlécének első tényállítása (`FindFirstChangeNotificationW`
+„a szűrőben benne a `LAST_WRITE` bit, rekurzívan") **nem ellenőrizhető**: a
+létrehozó hívási hely nem található (részletek:
+`picasa-mappakezelo.md` 16.4). ⇒ **jegy nyílt rá.**
+
+*Bizonyítottsági fok: a három komparátor besorolása **megerősített**
+(diszasszemblálva); a CSV-mezőtérkép **megerősített**; az ebből levont
+„nincs mtime-összehasonlítás" következtetés **erős**, nem megerősített.*
