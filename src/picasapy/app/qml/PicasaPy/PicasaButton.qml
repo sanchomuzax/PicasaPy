@@ -73,9 +73,17 @@ Button {
     readonly property color surfaceBottom: control.accented
         ? control.accent
         : (control.down ? Qt.darker(Theme.buttonBg, 1.22) : Theme.buttonBg)
-    readonly property color inkColor: control.accented
-        ? "white"
-        : (control.enabled ? Theme.ink : Theme.textGray)
+    // #893: a letiltott gomb felirata NEM kap külön szürkítést. Az
+    // eredetiben a felirat a gomb gyerekcsomópontja, tehát ugyanazt a
+    // negyedelt alfát örökli — a szín maga változatlan marad.
+    readonly property color inkColor: control.accented ? "white" : Theme.ink
+
+    // #893: a letiltott csomópont alfáját az eredeti rajzoló NÉGGYEL OSZTJA
+    // (`0x009e3178: shr dword ptr [edx+0x5c], 2`), közvetlenül a rajzolás
+    // előtt. Nincs külön „letiltott" kép a respack.yt-ben, mert nem kell —
+    // és a rajzolóban NINCS kivétel az akcentusos (zöld) gombra sem.
+    // A QML `opacity` a gyerekekre ugyanúgy szorzódva öröklődik, mint ott.
+    opacity: control.enabled ? 1.0 : 0.25
 
     background: Rectangle {
         radius: 3
@@ -86,8 +94,6 @@ Button {
             GradientStop { position: 0.0; color: control.surfaceTop }
             GradientStop { position: 1.0; color: control.surfaceBottom }
         }
-        // az akcentusos (zöld) gomb letiltva is színes marad — Picasa-minta
-        opacity: control.enabled || control.accented ? 1.0 : 0.55
     }
 
     contentItem: Text {
