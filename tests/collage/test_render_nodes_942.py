@@ -356,6 +356,12 @@ def test_a_refaktor_nem_valtoztat_a_rajzon(tmp_path, kulcs):
     most = make_picasa_collage(forrasok, beallitas).image
     regen = _regi_make_picasa_collage(forrasok, beallitas)
     eltero = int(np.count_nonzero(np.any(most != regen, axis=2)))
+    if tema == CONTACTSHEET:
+        # #1273: az Indexkép régi „orákuluma" maga a hiba: 8%-os fejléc,
+        # margó és hézag nélküli regular_grid. Az AI6.cxf-fel mért új
+        # geometria ezért KÖTELEZŐEN eltér; a másik öt téma őre változatlan.
+        assert eltero > 0
+        return
     assert eltero == 0, (
         f"A(z) {tema}/{keret} (térköz {terkoz}) rajza megváltozott: "
         f"{eltero} képpont tér el a #942 előtti kimenettől."
@@ -392,9 +398,16 @@ def test_az_arnyek_a_ket_alapertelmezetten_arnyekos_temat_valtoztatja(
     arnyekkal = make_picasa_collage(
         forrasok, PicasaCollageSettings(**kozos, shadow=True)
     ).image
-    regen = _regi_make_picasa_collage(
-        forrasok, PicasaCollageSettings(**kozos, shadow=False)
-    )
+    if tema == CONTACTSHEET:
+        # #1273: ugyanazt az ÚJ geometriát hasonlítjuk önmagához, mert a
+        # régi orákulum éppen a most javított hibás rácsot fagyasztotta be.
+        regen = make_picasa_collage(
+            forrasok, PicasaCollageSettings(**kozos, shadow=False)
+        ).image
+    else:
+        regen = _regi_make_picasa_collage(
+            forrasok, PicasaCollageSettings(**kozos, shadow=False)
+        )
 
     assert not np.array_equal(arnyekkal, regen), (
         f"a(z) {tema}/{keret} árnyéka nem jelent meg — pedig alapból BE van"
@@ -596,6 +609,11 @@ def test_a_render_nodes_nem_szamol_elrendezest(tmp_path):
     ELRENDEZÉS: árnyék nélkül a hat téma rajza továbbra is bájtazonos."""
     ut = _ir_kepet(tmp_path / "kek.png", 30, 50, (255, 0, 0))
     csomopontok = _proba_csomopontok(ut)
+    # #1273: az Indexkép a megadott csomópontok HELYÉT nem módosítja, de
+    # fejlécet rajzol, tehát képkimenetben helyesen eltér a többi témától.
+    elrendezes_nelkuli_temak = tuple(
+        tema for tema in COLLAGE_THEMES if tema != CONTACTSHEET
+    )
     kepek = [
         render_nodes(
             csomopontok,
@@ -603,7 +621,7 @@ def test_a_render_nodes_nem_szamol_elrendezest(tmp_path):
                 theme=tema, width=400, height=300, spacing=0.7, shadow=False
             ),
         ).image
-        for tema in COLLAGE_THEMES
+        for tema in elrendezes_nelkuli_temak
     ]
     for kep in kepek[1:]:
         assert np.array_equal(kep, kepek[0])

@@ -51,13 +51,14 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
-from .fitting import MsvcRandom, fit_aspect_inside
+from .fitting import MsvcRandom, fit_aspect_inside, picasa_round
 from .frames import POLAROID_HEIGHT_RATIO, POLAROID_WIDTH_RATIO
 from .multi_exposure import blend_multi_exposure
 from .nodes import (
@@ -75,7 +76,13 @@ from .pile import pile_layout
 from .rects import NormRect, to_pixel_rects
 from .regular_grid import regular_grid_rects, regular_grid_shape
 from .render import CollageReport, _decode, fit_to_frame
-from .shadow import ShadowParams, shadow_params
+from .shadow import (
+    CONTACT_USABLE_HEIGHT,
+    CONTACT_USABLE_WIDTH,
+    ShadowParams,
+    cell_edge,
+    shadow_params,
+)
 from .themes import (
     BORDER_THEMES,
     COLLAGE_THEMES,
@@ -132,10 +139,6 @@ _DEFAULT_HEIGHT = 1200
 #: területre kerül, a többi pedig az alap pakolóval köré. A külön jegy: #916.
 _FRAMEGRID_CENTER = NormRect(0.25, 0.25, 0.75, 0.75)
 
-#: Az Indexkép fejlécsávja a lap magasságának ennyied része.
-_HEADER_RATIO = 0.08
-
-
 @dataclass(frozen=True)
 class PicasaCollageSettings:
     """A Picasa kollázs-panel beállításai.
@@ -154,6 +157,10 @@ class PicasaCollageSettings:
     spacing: float = 0.0
     seed: int = 0
     caption: str = ""
+    #: Az Indexkép két fejlécsorának forrása (#1273). A mezők a `.cxf`
+    #: `albumTitle` / `albumDate` értékei; a darabszámot a rajzoló ismeri.
+    album_title: str = ""
+    album_date: str = ""
     #: A „Beállítás képkockaközéppontként" gomb eredménye: melyik kép kapja
     #: a hangsúlyos középső helyet a Képkockamozaikban. `None` esetén NINCS
     #: rögzített kép — és ilyenkor az eredeti is az alap (Mozaik-)pakolóra
@@ -325,6 +332,11 @@ def render_nodes(
             skipped.append(path)
             reasons.append(str(error))
 
+    if settings.theme == CONTACTSHEET:
+        # #1273: ez az ÉLŐ vászon és az újraszerkesztés bejárata. Korábban
+        # csak a gépi `make_picasa_collage` rajzolta a fejlécet, ezért az a
+        # szerkesztés első frissítésekor eltűnt.
+        _draw_contact_header(canvas, settings, len(nodes))
     draw_nodes(
         canvas, nodes, images, settings.width, shadow_for_settings(settings, len(nodes))
     )
@@ -538,7 +550,52 @@ def _multi_exposure_nodes(
 
 def _contact_sheet_band(settings: PicasaCollageSettings) -> int:
     """Az Indexkép fejlécsávjának magassága KÉPPONTBAN."""
-    return max(1, round(settings.height * _HEADER_RATIO))
+    from .contact_sheet import CONTACT_SHEET_HEADER_RATIO
+
+    return max(1, picasa_round(settings.height * CONTACT_SHEET_HEADER_RATIO))
+
+
+def _framed_size_inside(
+    aspect: float, width: int, height: int, border: str
+) -> tuple[int, int]:
+    """Aránytartó fotó + keret legnagyobb, a dobozba férő KÜLSŐ mérete."""
+    photo_w, photo_h = fit_aspect_inside(aspect, width, height)
+    # A keret a fotón KÍVÜL nő. Egész képpontos, ezért a zárt képlet helyett
+    # legfeljebb a keret néhány tucat képpontját lépjük vissza.
+    while photo_w > 1 and photo_h > 1:
+        outer_w, outer_h = outer_box(photo_w, photo_h, border)
+        if outer_w <= width and outer_h <= height:
+            return outer_w, outer_h
+        if aspect >= 1.0:
+            photo_w -= 1
+            photo_h = max(1, picasa_round(photo_w / aspect))
+        else:
+            photo_h -= 1
+            photo_w = max(1, picasa_round(photo_h * aspect))
+    return outer_box(max(1, photo_w), max(1, photo_h), border)
+
+
+def _unicode_font(size: int):
+    """Unicode-képes, rendszerfüggetlenül feloldható sans betű.
+
+    A Windows Picasa Arial-közeli rajzához előbb Arialt/Liberation Sanst
+    kérünk; a DejaVu Sans a Linux CI biztos tartaléka. A Pillow a puszta
+    fájlnevet a platform szabványos fontmappáiban is keresi.
+    """
+    for name in (
+        "arial.ttf",
+        "Arial.ttf",
+        "LiberationSans-Regular.ttf",
+        "DejaVuSans.ttf",
+        "NimbusSans-Regular.otf",
+    ):
+        try:
+            return ImageFont.truetype(name, max(1, size))
+        except OSError:
+            continue
+    # Rendkívül szűk, font nélküli környezetben legalább a rajzolás maradjon
+    # működőképes; a támogatott Windows/Linux célokon a fenti ág mindig él.
+    return ImageFont.load_default(size=max(1, size))
 
 
 def _contact_sheet_nodes(
@@ -546,61 +603,106 @@ def _contact_sheet_nodes(
     paths: Sequence[Path],
     settings: PicasaCollageSettings,
 ) -> tuple[list[CollageNode], int, PicasaCollageSettings]:
-    """Az Indexkép cellái az ALVÁSZON koordinátáiban + a fejlécsáv.
+    """Az Indexkép Picasa-hű cellái a TELJES lap koordinátáiban.
 
-    A fejléc alatti rész önálló lap: a külön vászonra rajzolás nem kényelmi
-    kérdés, hanem VÁGÁS (a cellából kilógó keret nem írhat a fejlécbe),
-    ezért a csomópontok itt még nincsenek lejjebb tolva. A teljes lapra
-    értendő változatot a `layout_nodes_for_aspects` adja.
-
-    Hármast ad vissza, hogy a `make_picasa_collage` az alvászont és a
-    hozzá tartozó beállítást ne számolja ki másodszor — egy elváló másolat
-    pontosan az a néma hiba, amit a #942 kerülni akar."""
+    A ``0x00887e50`` / ``0x00888210`` bizonyított receptje: 6% bal margó,
+    15% felső margó, 88% × 79% hasznos terület és a ``k`` cellaél 8%-os
+    belső ráhagyása. A régi megoldás ehelyett egy 8%-os fejléc alatt a teljes
+    maradék lapot hézagmentes ``regular_grid``-del töltötte ki.
+    """
+    if not aspects:
+        return [], _contact_sheet_band(settings), settings
     sav = _contact_sheet_band(settings)
-    also = settings.height - sav
-    alsobeallitas = PicasaCollageSettings(
-        theme=REGULARGRID,
-        border=settings.border,
-        width=settings.width,
-        height=max(16, also),
-        background=settings.background,
-        spacing=settings.spacing,
-        seed=settings.seed,
-    )
-    sorok, oszlopok = regular_grid_shape(aspects, settings.width, max(1, also))
-    rects = regular_grid_rects(len(aspects), sorok, oszlopok)
-    # az Indexképnél a TELJES kép látszik (nem vágunk), ez a lényege
-    return (_cell_nodes(paths, rects, alsobeallitas, fill=False), sav, alsobeallitas)
+    k = cell_edge(settings.width, settings.height, len(aspects))
+    hasznos_w = int(settings.width * CONTACT_USABLE_WIDTH)
+    hasznos_h = int(settings.height * CONTACT_USABLE_HEIGHT)
+    oszlopok = max(1, hasznos_w // k)
+    sorok = max(1, hasznos_h // k)
+    cella_w = picasa_round(settings.width * CONTACT_USABLE_WIDTH / oszlopok)
+    cella_h = picasa_round(settings.height * CONTACT_USABLE_HEIGHT / sorok)
+    belso = picasa_round(k * 0.08)
+    bal = picasa_round(settings.width * 0.06)
+    fent = picasa_round(settings.height * 0.15)
+    keret = settings.effective_border
+    nodes: list[CollageNode] = []
+    for index, (aspect, path) in enumerate(zip(aspects, paths, strict=False)):
+        sor, oszlop = divmod(index, oszlopok)
+        # A bináris sorrendje számít: előbb a keretes befoglaló illeszkedik
+        # a TELJES cellába (`FUN_009b4aa0`), aztán mind a négy él beljebb
+        # lép `0,08·k`-val (`0x008884b4`–`0x008884da`). Ha előbb a cellát
+        # szűkítjük, az AI6 csempéi körülbelül 4%-kal túl szélesek lesznek.
+        kulso_w, kulso_h = _framed_size_inside(
+            aspect, cella_w, cella_h, keret
+        )
+        kulso_w = max(1, kulso_w - 2 * belso)
+        kulso_h = max(1, kulso_h - 2 * belso)
+        x = bal + oszlop * cella_w + (cella_w - kulso_w) / 2.0
+        y = fent + sor * cella_h + (cella_h - kulso_h) / 2.0
+        nodes.append(
+            CollageNode(
+                path=path,
+                center_x=pixels_to_sheet(x + kulso_w / 2.0, settings.width),
+                center_y=pixels_to_sheet(y + kulso_h / 2.0, settings.width),
+                width=pixels_to_sheet(kulso_w, settings.width),
+                height=pixels_to_sheet(kulso_h, settings.width),
+                border=keret,
+                fill=False,
+            )
+        )
+    return nodes, sav, settings
 
 
-def _draw_contact_header(canvas: np.ndarray, settings: PicasaCollageSettings) -> int:
+def _draw_contact_header(
+    canvas: np.ndarray, settings: PicasaCollageSettings, count: int = 0
+) -> int:
     """Az Indexkép fejlécsávja; a felhasznált magasságot adja vissza.
 
     A `contact_sheet.header_font_size` a betűméretet a lap magasságából és a
     panel oldalarányából számolja; a sáv maga a lap tetején ül.
     """
-    from .contact_sheet import header_font_size
+    from .contact_sheet import (
+        CONTACT_SHEET_LEFT_RATIO,
+        CONTACT_SHEET_SUBTITLE_OFFSET_RATIO,
+        CONTACT_SHEET_SUBTITLE_SIZE_RATIO,
+        CONTACT_SHEET_TITLE_TOP_RATIO,
+        NARROW_PANEL_FACTOR,
+        header_font_size,
+        header_lines,
+    )
 
     band = _contact_sheet_band(settings)
     canvas[:band, :] = settings.background
-    felirat = settings.caption.strip()
-    if not felirat:
-        return band
-    meret = header_font_size(settings.height, settings.width / settings.height)
-    skala = max(0.4, meret / 32.0)
-    vastagsag = max(1, round(skala * 1.5))
-    (_, szoveg_h), _ = cv2.getTextSize(felirat, cv2.FONT_HERSHEY_SIMPLEX, skala, vastagsag)
-    szin = tuple(255 - c for c in settings.background)
-    cv2.putText(
-        canvas,
-        felirat,
-        (max(4, round(settings.width * 0.02)), (band + szoveg_h) // 2),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        skala,
-        szin,
-        vastagsag,
-        cv2.LINE_AA,
+    title, subtitle = header_lines(
+        settings.album_title or settings.caption, settings.album_date, count
     )
+    panel_aspect = settings.width / settings.height
+    meret = header_font_size(settings.height, panel_aspect)
+    factor = 1.0 if panel_aspect > 1.0 else NARROW_PANEL_FACTOR
+    subtitle_size = max(
+        1, picasa_round(factor * CONTACT_SHEET_SUBTITLE_SIZE_RATIO * settings.height)
+    )
+    # 0x00887aff–0x00887b23: világos háttéren #4A4A4A, sötéten fehér.
+    blue, green, red = settings.background
+    packed_rgb = (red << 16) | (green << 8) | blue
+    color = (255, 255, 255) if packed_rgb < 0x7F7F7F else (74, 74, 74)
+    x = picasa_round(settings.width * CONTACT_SHEET_LEFT_RATIO)
+    title_top = picasa_round(settings.height * CONTACT_SHEET_TITLE_TOP_RATIO)
+    subtitle_top = picasa_round(
+        settings.height
+        * (CONTACT_SHEET_TITLE_TOP_RATIO + factor * CONTACT_SHEET_SUBTITLE_OFFSET_RATIO)
+    )
+    # Az OpenCV Hershey-fontja nem Unicode: a „kép" szót „k??p" alakban
+    # rajzolná. A Pillow/FreeType ugyanazt háttérszálon, GUI-objektum nélkül
+    # és valódi magyar karakterekkel rajzolja.
+    header_rgb = cv2.cvtColor(canvas[:band], cv2.COLOR_BGR2RGB)
+    image = Image.fromarray(header_rgb)
+    draw = ImageDraw.Draw(image)
+    if title:
+        draw.text((x, title_top), title, font=_unicode_font(meret), fill=color)
+    draw.text(
+        (x, subtitle_top), subtitle, font=_unicode_font(subtitle_size), fill=color
+    )
+    canvas[:band] = cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
     return band
 
 
@@ -644,11 +746,8 @@ def layout_nodes_for_aspects(
     if settings.theme == MULTIEXP:
         return _multi_exposure_nodes(aspects, paths, settings)
     if settings.theme == CONTACTSHEET:
-        nodes, sav, _ = _contact_sheet_nodes(aspects, paths, settings)
-        # a cellák az ALVÁSZON koordinátáiban készültek; a lapra a
-        # fejlécsávval lejjebb tolva kerülnek
-        eltolas = pixels_to_sheet(sav, settings.width)
-        return [replace(node, center_y=node.center_y + eltolas) for node in nodes]
+        nodes, _, _ = _contact_sheet_nodes(aspects, paths, settings)
+        return nodes
     if settings.theme in (PICTUREGRID, FRAMEGRID):
         rogzitett = (
             settings.frame_center
@@ -788,32 +887,20 @@ def make_picasa_collage(
         # forgatás és keret nélkül.
         rajzolt = tuple(_multiexp_node(ut, settings) for ut in used)
     elif settings.theme == CONTACTSHEET:
-        # Az Indexkép a fejlécsáv ALATT kap egy önálló lapot. A külön
-        # vászonra rajzolás nem kényelmi kérdés, hanem VÁGÁS: a cellából
-        # kilógó keret nem írhat bele a fejlécbe.
-        sav = _draw_contact_header(canvas, settings)
-        also = settings.height - sav
-        alvaszon = np.empty((max(1, also), settings.width, 3), dtype=np.uint8)
-        alvaszon[:, :] = settings.background
+        # Ugyanez a teljes-lapos csomópontlista megy az élő vászonra és a
+        # mentésbe; ettől a szerkesztés közbeni frissítés nem válhat el.
+        _draw_contact_header(canvas, settings, len(decoded))
         nodes, _, alsobeallitas = _contact_sheet_nodes(
             _aspects(decoded), used, settings
         )
-        # az árnyék paraméterei a TELJES lapból jönnek (a `k` a lap hasznos
-        # területéből számol, ld. 9/b.3) — nem az alvászonéból
         draw_nodes(
-            alvaszon,
+            canvas,
             nodes,
             decoded,
             alsobeallitas.width,
             shadow_for_settings(settings, len(decoded)),
         )
-        canvas[sav : sav + alvaszon.shape[0], :] = alvaszon
-        # a csomópontok az ALVÁSZON koordinátáiban készültek; a piszkozat a
-        # TELJES lapot írja le, ezért a fejlécsávval lejjebb tolva jelentjük
-        eltolas = pixels_to_sheet(sav, settings.width)
-        rajzolt = tuple(
-            replace(node, center_y=node.center_y + eltolas) for node in nodes
-        )
+        rajzolt = tuple(nodes)
     else:
         nodes = layout_nodes(decoded, used, settings)
         draw_nodes(

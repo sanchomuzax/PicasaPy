@@ -747,12 +747,22 @@ A `framegrid` ugyanezt a rajzolót örökli, csak a pakolót írja felül
   1.9.8-ban**); a 3. slot
   (`0x00885750` → `0x008857a0`) **nem** elrendezés, hanem a sorrend
   megfordítása/keverése (két indextömb rendezése, majd páronkénti csere).
-- **`contactsheet`** — a fejléc két sorból áll, a szövegek a
-  `collage/contactsheet/title` és `.../subtitle` erőforrásokból, az alsó sor
-  formátuma a `CContactSheetTheme::subtitle_format` mintából. A címsor
+- **`contactsheet`** — a fejléc két sorból áll. A
+  `collage/contactsheet/title` és `.../subtitle` a két **szövegcsomópont
+  neve**, nem a kiírandó szöveg: a felső sor a projekt `albumTitle` mezője,
+  az alsó a képszám és az `albumDate`, a
+  `CContactSheetTheme::subtitle_format` mintájával. A valódi `AI6.cxf` /
+  `AI6.jpg` közvetlen bizonyítéka: `albumTitle="AI"`,
+  `albumDate="2023. november"`, 9 csomópont → **„AI"** és
+  **„9 kép, 2023. november"**. A címsor
   betűmérete `round(f * 0.04 * lapMagassag)`, ahol `f = 1,0`, ha a panel
   méretaránya nagyobb 1-nél, különben **0,75**. A fejléc jobbról-balra író
   nyelveken tükröződik (a kód a `DAT_00d678d4` jelzőre előjelet vált).
+  A képrács bal/felső kezdete **6% / 15%**, hasznos területe **88% × 79%**;
+  a cella befoglalójának mind a négy éle `round(0,08·k)` értékkel beljebb
+  lép (`k` a 9/b.3-ban levezetett cellaél). Ez az `AI6.cxf` első helyét és
+  osztását ezredes pontossággal visszaadja. A pontos betűcsalád továbbra
+  sincs azonosítva; a tartalom, méret, hely és adaptív szín igen.
 - **`multiexp`** — minden kép a **teljes lapra** kerül, oldalarányhoz
   igazítva (`0x00841860`), és egymásra keveredik (`0x00409ea0` `1.0f, 1.0f`
   súlyokkal). Nincs pozíciószámítás.

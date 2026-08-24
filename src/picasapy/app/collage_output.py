@@ -264,6 +264,8 @@ def render_settings(
     seed: int,
     width: int | None = None,
     background_image: str = "",
+    album_title: str = "",
+    album_date: str = "",
 ) -> PicasaCollageSettings:
     """A panel állapotából renderelő-beállítás.
 
@@ -290,6 +292,8 @@ def render_settings(
         # rajzoló viszont a színt festette — a mentett kollázs mást mutatott,
         # mint a vászon.
         background_image=background_image,
+        album_title=album_title,
+        album_date=album_date,
     )
 
 

@@ -56,8 +56,10 @@ from picasapy.collage.page_formats import (
 from picasapy.collage.themes import (
     BORDER_THEMES,
     COLLAGE_THEMES,
+    CONTACTSHEET,
     MULTIEXP,
     NOBORDER,
+    WHITEBORDER,
     capabilities_for,
     capability_map,
 )
@@ -475,6 +477,11 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
         self.collageThemeChanged.emit()
         self.collageCapabilitiesChanged.emit()
         capabilities = self._capabilities()
+        if key == CONTACTSHEET:
+            # A valódi AI6 alap-Indexképe fehér szegélyes. A választó ettől
+            # még aktív: a felhasználó a témaváltás UTÁN felülírhatja.
+            self._collage_panel_border = WHITEBORDER
+            self.collageBorderChanged.emit()
         if not self._collage_panel_shadows_explicit:
             self._collage_panel_shadows = capabilities.shadow_default
         self.collageShadowsChanged.emit()
