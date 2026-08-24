@@ -43,7 +43,7 @@ import re
 import subprocess
 import sys
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[1]
@@ -116,24 +116,100 @@ def changelog_notes(version: str, changelog: Path | None = None) -> str:
 #: szakasz nélkül marad, és a `--generate-notes` bot-PR-címeket listáz.
 #: Három egymást követő kiadás (0.8.53–0.8.55) így ment ki gépzajjal,
 #: pont azzal, amit a tulajdonos kifogásolt.
-_TARTALEK_JEGYZET = (
-    "Ez a kiadás nem hoz felhasználónak látszó változást.\n\n"
-    "A benne lévő munka (tesztek, belső javítások, verziólépés) a "
-    "korábbi kiadások bejegyzéseihez tartozik — a részletes, emberi "
-    "leírás a [CHANGELOG.md]"
-    "(https://github.com/sanchomuzax/PicasaPy/blob/main/CHANGELOG.md) "
-    "megfelelő szakaszában áll."
+#:
+#: ⚠️ #1340: a tartalék korábban AZT ÁLLÍTOTTA, hogy „ez a kiadás nem hoz
+#: felhasználónak látszó változást". A v0.8.71-ben a letiltott gombok
+#: megjelenése javult (#893), a v0.8.72-ben a lasszós kijelölés készült el
+#: (#897) — a mondat mindkétszer HAZUDOTT, és a tulajdonos vette észre.
+#: A szkript nem tudhatja, hogy nem volt látható változás; azt tudja, hogy
+#: nincs hozzá EMBERI MONDAT. Csak ezt szabad kimondania.
+_CHANGELOG_LINK = (
+    "[CHANGELOG.md]"
+    "(https://github.com/sanchomuzax/PicasaPy/blob/main/CHANGELOG.md)"
 )
 
+#: Amit az automatika saját magának commitol — a felhasználónak semmit nem mond.
+_AUTOMATIKA_ELOTAGOK = ("chore: verzióemelés", "chore: verzioemeles")
 
-def tartalek_jegyzet() -> str:
+#: A conventional-commit típusjelölés: a felhasználót nem érdekli.
+_TIPUS_ELOTAG = re.compile(r"^(feat|fix|docs|test|chore|refactor|perf|ci)(\([^)]*\))?: ")
+
+
+def erdemi_valtozasok(cimek: "Sequence[str]") -> tuple[str, ...]:
+    """A beolvadt munkák címei — az automatika saját commitjai nélkül.
+
+    ⚠️ Ez NEM a `--generate-notes` gépi listája: azt a bot-PR-ek címei tették
+    zajjá, és pont azért vetettük el (#1167). Ezek EMBER által írt
+    commit-címek, és csak akkor kerülnek elő, ha emberi összefoglaló nincs —
+    a hamis „nem változott semmi" mondatnál minden esetben többet érnek."""
+    tiszta = []
+    for cim in cimek:
+        szoveg = cim.strip()
+        if not szoveg or szoveg.startswith(_AUTOMATIKA_ELOTAGOK):
+            continue
+        tiszta.append(_TIPUS_ELOTAG.sub("", szoveg))
+    return tuple(tiszta)
+
+
+def valodi_valtozasok(
+    target: str, *, version: str, runner: Runner = _valodi_gh
+) -> tuple[str, ...] | None:
+    """A legutóbbi KORÁBBI kiadás óta beolvadt munkák címei.
+
+    `None`, ha a mérés nem sikerült — és ez NEM ugyanaz, mint az üres lista.
+    Az üres lista mért tény („nincs érdemi munka"), a `None` tudatlanság; a
+    kettőt összemosni pontosan az a hiba, ami miatt ez a jegy megnyílt.
+
+    ⚠️ A saját címkénket KI KELL zárni: ütemezett futásnál a `v<version>` már
+    ott ülhet a célon, és a `git describe` magát adná vissza — a tartomány
+    üres lenne, a jegyzet pedig „csak verziólépést" állítana egy valódi
+    funkcióról. Éles próbán bukott meg, mielőtt kiment volna."""
+    elozo = runner([
+        "git", "describe", "--tags", "--abbrev=0",
+        "--exclude", f"v{version}", target,
+    ])
+    if elozo.returncode != 0 or not (elozo.stdout or "").strip():
+        return None
+    naplo = runner([
+        "git", "log", "--pretty=%s", f"{(elozo.stdout or '').strip()}..{target}",
+    ])
+    if naplo.returncode != 0:
+        return None
+    return erdemi_valtozasok((naplo.stdout or "").splitlines())
+
+
+def tartalek_jegyzet(valtozasok: "Sequence[str] | None" = None) -> str:
     """A jegyzet, ha a CHANGELOG-ban nincs szakasz ehhez a verzióhoz.
 
-    ⚠️ Ez NEM a gépi lista helyettesítője „jobb híján", hanem szabály: a
-    Releases hasáb a tulajdonos egyetlen látható verziókövetése, és
-    gépzajt oda kiadni rosszabb, mint egy őszinte egymondatos jegyzet.
+    Három eset, és egyik sem keverhető össze a másikkal:
+
+    * `None` — a tartalmat nem sikerült megállapítani. Ilyenkor SEMMIT nem
+      állítunk róla.
+    * üres — mértük, és tényleg nincs benne érdemi munka.
+    * van benne — kimondjuk, hogy az emberi összefoglaló hiányzik, és
+      felsoroljuk, mi van benne. Csonka, de igaz.
     """
-    return _TARTALEK_JEGYZET
+    if valtozasok is None:
+        return (
+            "⚠️ Ehhez a kiadáshoz **nem készült emberi összefoglaló**, és a "
+            "tartalmát sem sikerült megállapítani. Amíg ez pótlásra nem kerül, "
+            f"a beolvadt munkák a commit-előzményben és a {_CHANGELOG_LINK}-ben "
+            "nézhetők meg."
+        )
+    if not valtozasok:
+        return (
+            "Ez a kiadás csak verziólépést tartalmaz — a benne lévő munkák a "
+            f"korábbi kiadásokban mentek ki. A részletes leírás a "
+            f"{_CHANGELOG_LINK} megfelelő szakaszában áll."
+        )
+    sorok = "\n".join(f"- {v}" for v in valtozasok)
+    return (
+        "⚠️ Ehhez a kiadáshoz **nem készült emberi összefoglaló** — az alábbi "
+        "lista a beolvadt munkák címéből áll, nem felhasználói leírás.\n\n"
+        f"{sorok}\n\n"
+        f"A részletes, embernek írt változásleírás a {_CHANGELOG_LINK}-be "
+        "utólag kerül be."
+    )
 
 
 def _atmeneti(eredmeny: subprocess.CompletedProcess[str]) -> bool:
@@ -191,7 +267,12 @@ def ensure_release(
             # Embernek írt jegyzet a CHANGELOG-ból; ha nincs szakasz,
             # EMBERI tartalék megy ki — gépi lista SOHA (ld.
             # `tartalek_jegyzet`).
-            parancs += ["--notes", jegyzet or tartalek_jegyzet()]
+            parancs += [
+                "--notes",
+                jegyzet or tartalek_jegyzet(
+                    valodi_valtozasok(target, version=version, runner=runner)
+                ),
+            ]
             keszult = runner(parancs)
             if keszult.returncode == 0:
                 print(f"A {tag} kiadás létrejött.")

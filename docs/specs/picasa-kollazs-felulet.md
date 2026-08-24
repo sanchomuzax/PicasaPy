@@ -2161,3 +2161,70 @@ igazolt: álló, négyzetes és fekvő lapon egyaránt.
 A sáv **normalizált lap-egységben** értendő (tengelyenként 0…1), NEM a
 `SHEET_UNITS` 1024-es skáláján. A `.cxf`-ből `x + w/2` és `y + h/2`
 közvetlenül ezt adja.
+
+### 2/c A 6. bit MIÉRT épp a három rácsos témán van — LEZÁRVA (2026-08-24)
+
+A 2/b nyitva hagyta: *„miért épp a három rács-téma kapja a bitet."*
+
+#### A hat téma osztálya (RTTI) és a bit
+
+| osztály | vtable | téma | maszk | 6. bit | vtable-rekesz |
+|---|---|---|---|---|---|
+| `CPileTheme` | `0x00cbf5ac` | `picturepile` — Képkupac | `0x1EBBF` | 0 | 11 |
+| **`CGridTheme`** | `0x00cbf5dc` | `picturegrid` — Mozaik | `0x1C55` | **1** | **12** |
+| **`CRegularGridTheme`** | `0x00cbf610` | `regulargrid` — Rács | `0x0C55` | **1** | 11 |
+| `CMultiExposureTheme` | `0x00cbf640` | `multiexp` — Többszörös exponálás | `0x0100` | 0 | 11 |
+| `CContactSheetTheme` | `0x00cbf670` | `contactsheet` — Indexkép | `0x4B11` | 0 | 11 |
+| **`CFrameGridTheme`** | `0x00cbf6a0` | `framegrid` — Képkockamozaik | `0x1C55` | **1** | **12** |
+
+⇒ **A bit pontosan azon a három osztályon áll, amelyiknek a nevében
+`Grid` szerepel.** Ez nem egybeesés: a hat téma közül a három rácsos
+kap egy olyan képességet, amit a szórt (`Pile`), az egymásra exponáló
+(`MultiExposure`) és a lapszerű (`ContactSheet`) elrendezés nem.
+
+#### ⛔ De NEM öröklődés útján kapja — mérve
+
+A vtable-rekeszek rekeszenkénti összevetése a `CGridTheme`-hez képest:
+
+| osztály | azonos rekesz | arány |
+|---|---|---|
+| `CFrameGridTheme` | **8 / 12** | **67%** — és **mindkettőnek 12 rekesze van** (a többinek 11) |
+| `CRegularGridTheme` | 2 / 11 | 18% |
+| `CMultiExposureTheme` | 1 / 11 | 9% |
+| `CContactSheetTheme` | 1 / 11 | 9% |
+| `CPileTheme` | 0 / 11 | 0% |
+
+Tehát **két külön dolog** van itt:
+
+1. a `CGridTheme` és a `CFrameGridTheme` **valódi családot alkot** — 12
+   rekesz, 8 közös, és **bájtra azonos maszk** (`0x1C55`);
+2. a `CRegularGridTheme` **szerkezetileg külön** áll (11 rekesz, 2 közös,
+   más maszk: `0x0C55` = a `0x1C55`-ből hiányzik a 12. bit) — mégis
+   **beállítja ugyanazt a 6. bitet**.
+
+⇒ **A 6. bit szándékos, témánként kiírt képesség-deklaráció, nem egy közös
+ős mellékhatása.** Ha öröklés adná, a `CRegularGridTheme` nem kaphatná meg,
+hiszen nem a `CGridTheme`-ből származik.
+
+#### Miért épp a rácsokon — a szerkezeti indok
+
+A bit a **`collagepanel/groupnode`** overlay-ágat kapcsolja be, ami a 2/b
+mérése szerint egy **tengelyekkel párhuzamos, `#F85E0F` színű, 2 képpont
+vastag KÖRVONALAS téglalap** (`ytShapeNode` + `ShapeDraw<RectSampler>`).
+
+Egy tengelypárhuzamos téglalap **csak szabályos rácson ír le értelmesen egy
+több csempéből álló kijelölést**. A `picturepile` csempéi szórtak és
+elforgatottak, a `multiexp` egymásra exponál, a `contactsheet` pedig
+lapszerű — ezeknél egy befoglaló téglalap nem a kijelölést mutatná, hanem
+egy értelmetlen, mindent lefedő keretet.
+
+> ⚠️ **A SZÁNDÉK nincs a binárisban, és nem is lesz.** A fenti bekezdés a
+> mért alakzattípusból (tengelypárhuzamos téglalap) levezetett **szerkezeti
+> indok**, nem a fejlesztő leírt szándéka. Ugyanaz a helyzet, mint a
+> `FILE_ATTRIBUTE_TEMPORARY`-nál (9.1/c): a **hatókör** kimérhető, a
+> **miért** nem. A megvalósításhoz a hatókör elég.
+
+*Bizonyítottsági fok: **megerősített** a bit témánkénti eloszlására (RTTI +
+a maszkok bitenkénti kiszámítása) és arra, hogy nem öröklés adja
+(vtable-rekesz összevetés). **Levezetett, nem megerősített**: a „miért épp
+a rácsokon" szerkezeti indoklás.*

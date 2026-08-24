@@ -157,6 +157,8 @@ class TestKepessegek:
             "scramble": vart.scramble,
             "ring": vart.ring,
             "rotate": vart.rotate,
+            # #1170: a 6. bit — a vászon csoport-eleme
+            "group_overlay": vart.group_overlay,
         }
 
     def test_ismeretlen_tema_nem_valtoztat(self, host):

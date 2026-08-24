@@ -1184,8 +1184,9 @@ dolga** — a feature-branch csak leírja az igényt a jegyben.
 | a parancstábla, a képesség-maszkok, a gyűrű matematikája, a menütételek, a feliratok | **megerősített** |
 | a gyűrű 132 × 132-es rajz, és képernyő-egységben állandó | **erős** |
 | a maszk **7.** bitje = elforgatás | **erős** |
-| a maszk **6.** bitje mit kapcsol | **NYITOTT** — a helye megvan (`+0x219`, `0x00860470`), a jelentése nem. **Nem blokkolja a megvalósítást.** |
+| a maszk **6.** bitje mit kapcsol | **MEGFEJTVE** (2026-08-21, #1170) — a `collagepanel/groupnode` csoport-csomópontot teszi külön overlay-ágba (`0x00860470` → `+0x219`); a rajza `#F85E0F` körvonalas téglalap. Részletek: `picasa-kollazs-felulet.md` **2.** és **2/b**. |
 | a `framegrid` `CLocationTree` pakolója | **NYITOTT** (#916) — a mai közelítés (középre rögzített kép) marad |
 
 **Ez a lap nem igényel további bináris kutatást a megvalósítás
-megkezdéséhez.** A két nyitott pont egyike sem érinti a felületet.
+megkezdéséhez.** A megmaradt egyetlen nyitott pont (a `framegrid` pakolója)
+nem érinti a felületet.

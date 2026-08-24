@@ -152,6 +152,29 @@ jobs:
             exit 1
           fi
 
+      # ⚠️ #1340: EBBE a jobba kerül, nem a `lint`-be. A repó KÖTELEZŐ
+      # ellenőrzése egyedül a „Test (ubuntu-latest)" — egy piros `lint` az
+      # auto-merge-öt NEM állítja meg, tehát ott az őrnek nem lenne foga.
+      # Az első változat pont ezt a hibát követte el.
+      - name: Checkout a CHANGELOG-őrhöz
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/checkout@v4
+        with:
+          # a PR alapja és feje közti diff kell — sekély klónon nem mérhető
+          fetch-depth: 0
+
+      - name: CHANGELOG-őr (#1340)
+        if: ${{ github.event_name == 'pull_request' }}
+        # Mit fog meg: felhasználót érintő változást EMBERI MONDAT nélkül.
+        # A v0.8.71 (#893), a v0.8.72 (#897) és a v0.8.73 (#900) azzal a
+        # mondattal ment ki, hogy „ez a kiadás nem hoz felhasználónak látszó
+        # változást" — mert egyik PR sem írt CHANGELOG-bejegyzést, és a kiadó
+        # lépés tartaléksablonra váltott. A tulajdonos vette észre.
+        run: |
+          python3 scripts/changelog_or.py \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head "${{ github.event.pull_request.head.sha }}"
+
   test-windows:
     name: Test (windows-latest)
     runs-on: ubuntu-latest
@@ -258,6 +281,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # #1340: a CHANGELOG-őr a PR alapja és feje közti diffet nézi —
+          # sekély klónon az alap commit nem érhető el.
+          fetch-depth: 0
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
