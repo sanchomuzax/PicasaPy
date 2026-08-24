@@ -138,8 +138,9 @@ kockázata valós. Előbb a 4.1.
 
 ## 6. #1260 utómérés (2026-08-24)
 
-A két bizonyítottan állapotmentes jelöltet modul-fixture-rel, a többi nyolc
-fájlt továbbra is funkció-fixture-rel futtattuk. A mérés reprodukálható
+A tíz jelölt állapot-auditja után csak a könyvtár-keret fájl bizonyult
+állapotmentesnek; a sötét-téma fájl QSettings-be ír, ezért funkció-fixture-en
+maradt. A mérés reprodukálható
 parancsa minden fájlra:
 
 ```text
@@ -148,12 +149,13 @@ timeout 60 python -m pytest <fájl> -q --basetemp=<közös-ideiglenes-mappa>
 
 | fájl | korábbi leltár | utómérés | változás |
 |---|---:|---:|---:|
-| `test_library_frame_hidden_1026.py` | 55,31 s | 14,06 s | −74,6% |
-| `test_dark_theme_chrome.py` | 38,13 s | 22,45 s | −41,1% |
+| `test_library_frame_hidden_1026.py` | 55,31 s | 15,94 s | −71,2% |
+| `test_dark_theme_chrome.py` | 38,13 s | 76,02 s | scope-korrekció |
 
 A korábbi leltárértékek a JSON előző commitjából származnak; a friss értékek
-bekerültek a `scripts/teszt_idok.json` fájlba. A tíz fájl közös, 60 másodperces
-alapmérése ebben az offscreen környezetben timeoutolt, ezért a nyolc
-állapotíró fájlt nem „gyorsítottuk meg” mérési becsléssel. A modul-fixture-es
-fájlok tesztszáma változatlan: 20, illetve 11; a zöld célzott futás ezt
-igazolja.
+bekerültek a `scripts/teszt_idok.json` fájlba. A sötét-téma fájl állapotot ír,
+ezért funkció-scope-ra visszaállítva 76,02 s alatt futott; csak a könyvtár-
+keret fájl kapott modul-fixture-t. A tíz fájl közös, 60 másodperces
+alapmérése ebben az offscreen környezetben timeoutolt, ezért a többi
+állapotíró fájlt nem „gyorsítottuk meg” mérési becsléssel. A könyvtár-keret
+tesztszáma változatlan: 20; a zöld célzott futás ezt igazolja.

@@ -12,9 +12,12 @@ A splash-komponenst önállóan (QQmlComponent) töltjük — ld.
 tests/app/test_qml_splash.py mintája; a TrayBar-t a teljes Main.qml-en
 keresztül, a helyi `qml_app` fixture (window, controller, engine) ad
 hozzáférést.
+
+A `setDarkTheme()` a QSettings-ben is rögzíti a választást, ezért a fájl
+szándékosan a funkció-szintű `qml_app` fixture-t használja; a tesztek nem
+oszthatják meg ezt az állapotot.
 """
 
-import pytest
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtQml import QQmlComponent
 
@@ -24,16 +27,6 @@ import picasapy.app.application as app_module
 # végéig (ld. test_qml_splash.py indoklása — a C++ oldal a Python-objektum
 # GC-jével együtt tűnhet el, ha nincs élő referencia).
 _KEEP_ALIVE: list = []
-
-
-@pytest.fixture(scope="module")
-def qml_app(qml_app_module):
-    """Állapotmentes QML-őrök közös appja a teljes modulra.
-
-    A tesztek csak témát, kijelölést és ideiglenes QML-komponenseket
-    állítanak; lemezre írt vagy teszten túli alkalmazásállapot nincs.
-    """
-    return qml_app_module
 
 
 def _make_splash(engine, **props):

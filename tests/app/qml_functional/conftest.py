@@ -21,8 +21,8 @@ import pytest
 
 from picasapy.index import open_index, sync_tree
 from picasapy.version import version_string
+from support.fixture_guards import qml_warning_guard, user_folder_guard
 from support.jpeg_factory import make_jpeg
-from support.qml_warning_filter import is_qml_script_error
 
 
 @pytest.fixture(autouse=True)
@@ -44,26 +44,19 @@ def qml_warnings():
     aktív, amikor a `qml_app` fixture a tesztek végén elvégzi az
     `engine.deleteLater()` + `processEvents()` hívást, ami a null-őrök
     nélkül a fenti figyelmeztetéseket generálná."""
-    from PySide6.QtCore import QtMsgType, qInstallMessageHandler
+    yield from qml_warning_guard()
 
-    messages: list[str] = []
 
-    def _handler(msg_type, context, message):
-        if msg_type in (
-            QtMsgType.QtWarningMsg,
-            QtMsgType.QtCriticalMsg,
-            QtMsgType.QtFatalMsg,
-        ) and is_qml_script_error(message):
-            messages.append(message)
+@pytest.fixture(scope="module")
+def _module_qml_warnings():
+    """A modul-fixture teljes setup/teardownja alatt aktív QML-hiba-őr."""
+    yield from qml_warning_guard()
 
-    previous = qInstallMessageHandler(_handler)
-    yield messages
-    qInstallMessageHandler(previous)
-    assert not messages, (
-        "QML-szkripthiba jelent meg a teszt során (#305) — "
-        "valószínűleg hiányzó null-őr egy `controller`-kötésben:\n"
-        + "\n".join(messages)
-    )
+
+@pytest.fixture(scope="module")
+def _module_user_folder_guard():
+    """A modul-fixture teljes életciklusa alatt aktív mappaszennyezés-őr."""
+    yield from user_folder_guard()
 
 
 def _build_qml_app(qt_app, tmp_path):
@@ -215,7 +208,12 @@ def qml_app(qt_app, tmp_path):
 
 
 @pytest.fixture(scope="module")
-def qml_app_module(qt_app, tmp_path_factory):
+def qml_app_module(
+    qt_app,
+    tmp_path_factory,
+    _module_qml_warnings,
+    _module_user_folder_guard,
+):
     """Teljes app egyszer a modulhoz, csak állapotmentes QML-őrökhöz.
 
     A használó fájl nem írhat tartós állapotot: az állapotot író tesztfájlok
