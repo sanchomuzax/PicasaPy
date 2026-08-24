@@ -44,6 +44,19 @@ A fenti csak a TERMÉK oldala: legyen fogantyú. Az őr eredeti változata
 Ezért az alábbi őrök együtt érvényesek: fogantyú legyen, EGY néven legyen,
 és a teszt a fogantyút rögzítse, ne a globális `sys`-t.
 
+## Mérés (2026-08-24, a #1217 zárásakor)
+
+Ezt a fájlt nem számolva **19** platformfüggő tesztfájl van. A jegy
+nyitásakor ebből **6** mondta ki a platformját szabályosan; a kör után
+**12**. A maradék 7 szándékosan `skipif` (ld. a következő szakaszt).
+
+A javított rögzítések: **12 hely, 6 fájlban** — `test_application.py` (4),
+`test_qml_perf_panel.py` (4), `test_reveal.py`, `test_reveal_platform_1104.py`,
+`test_fileops_controller.py`, `test_run_tests_maradek_eletjel_1358.py`.
+⚠️ A bevezető commit üzenete tévesen „kilenc helyet" ír: az a foga-próba
+sértési ALAKJAINAK száma (9), nem a javított helyeké (12). A mérvadó szám
+ez itt — a jegy épp arról szól, hogy az ellenőrizetlen szám félrevisz.
+
 ## Ahol a rögzítés NEM lehetséges — és ezért marad `skipif`
 
 A szabály a *helyettesíthető függvénytől* függő viselkedésre szól. Ahol a
