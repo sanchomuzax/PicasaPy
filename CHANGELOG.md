@@ -18,6 +18,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.8.75] – 2026-08-24
 
 ### Javítva
+- **A Shift+nyíl az eredeti Picasa szerint bővíti a kijelölést (#892, #1222).**
+  Eddig irányváltásnál zsugorított (Intéző-féle tartomány); mostantól
+  egyesével bővít, és a másik irányba is bővít, ahogy az eredeti. Az egérrel
+  húzott Shift-tartomány változatlan — az a két útvonal szándékosan más.
 - **A polaroid keret már nem nagyít 29%-ot a képen (#1144).** Az árnyék
   elmosását a kép méretének százalékaként számoltuk, holott az eredeti fix
   képpontértéket használ — emiatt a kimenet 960×640-es képnél 1053×1185 lett
