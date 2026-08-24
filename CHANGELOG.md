@@ -38,7 +38,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   a hiba a mérésben volt. A hamis riasztás azért káros, mert elveszi az
   időt a valódi hibáktól, és rászoktat az „újrafuttatom" reflexre.
 
-## [Nem kiadott]
+## [0.8.65] – 2026-08-24
 
 ### Javítva
 - **Egyetlen magyar szó a képarányra: „méretarány" (#982).** A kollázs
