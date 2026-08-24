@@ -24,7 +24,9 @@
       "Bash(gh run view:*)",
       "Bash(gh run watch:*)",
       "Bash(gh run rerun:*)",
-      "Bash(gh workflow run:*)"
+      "Bash(gh workflow run:*)",
+      "Bash(rm -rf /tmp/picasapy-tests-:*)",
+      "Bash(rm -rf /tmp/pytest-of-:*)"
     ]
   },
   "hooks": {
