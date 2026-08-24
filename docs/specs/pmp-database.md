@@ -802,3 +802,40 @@ sorban** várakoznak (összeomlás-biztos írás), a `slingshot` pedig a
 `runtime/slingshot/respack.yt`-tal egy családba tartozó feltöltő-ág.
 **A formátumuk nincs feltárva** (üresek) — ha valaha kell, élő,
 megszakított művelet közben készült másolat kellene.
+
+## Az `albumdata_inisync` oszlop — a `.picasa.ini` ÍRÁSI IDEJE (2026-08-24)
+
+`albumdata_inisync.pmp`, PMP-típuskód **`0x04`** (8 bájtos előjel nélküli
+egész), soronként egy albumdata-sor, azaz **mappánként egy érték**.
+
+**A tartalma: a mappa `.picasa.ini` fájljának `LastWriteTime`-ja FILETIME-ként**
+(100 ns-os egységek 1601-01-01 óta). Ez az a horgony, amihez a Picasa a
+következő beolvasáskor méri a fájlt: ha a lemezen lévő ini **újabb**, a
+mappát újra beolvassa.
+
+### Mérés a valódi adatbázison
+
+| | |
+|---|---|
+| összes sor | 2371 |
+| nem nulla | 1260 |
+| érvényes FILETIME-tartományban (2004–2036) | 1233 |
+| tartományon kívüli („szemét") | **27** — ezekre az oszlop nem értelmezhető |
+| összevetve valódi `.picasa.ini` fájllal | 787 (a többi mappa nem elérhető) |
+| **bitre egyező (≤2 ms)** | **783 = 99,5%** |
+
+A négy eltérésből három olyan mappa, ahol az **ini az újabb** — vagyis
+újraolvasásra vár. A negyedik 1 másodperces eltolás.
+
+Az egyezés 2014–2025 közti mappákon áll fenn, tehát nem egyetlen beolvasási
+menet műterméke.
+
+> ⚠️ **Módszertani figyelmeztetés a következő körnek.** Az oszlop első hat
+> értéke egyetlen percen belül van, amiből először azt olvastam ki, hogy ez
+> „a beolvasási menet pillanata". A teljes oszlop szórása **19 év**. Hat elem
+> nem minta.
+
+**Kapcsolódó:** a mechanizmus teljes leírása, a `Preferences\AlbumIniSync`
+kapcsoló és a `flags = 3` beolvasás:
+`picasa-ini-format.md` → „MEGFEJTVE: az újraolvasás kulcsa az INI FÁJL saját
+dátuma".

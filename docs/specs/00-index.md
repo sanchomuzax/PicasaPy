@@ -439,9 +439,19 @@ a mi döntésünk**, mint korábban gondoltuk
    menü erőforrásneve a birtokló függvénnyel; a rácsnak album- és
    mappanézetben **külön** menüje van
 
-### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
+### [picasa-ini-format.md](picasa-ini-format.md) — nincs nyitott kérdés
 
-1. Mit tesz a Picasa, ha külső program **írja az inifájlt ÉS megérinti a kép `mtime`-ját** (537. sor) — ⚠️ **windowsos próbára vár**. 2026-08-24: **két bináris mérés szól ELLENE** (mindhárom `CompareFileTime`-hívás rendezés-komparátor; a bejáró rekordja nem tárol módosítási időt) → lásd „Az mtime-megkerülés mérlege"; a mi oldalunkon jegy: **#1320**
+✅ **2026-08-24 — LEZÁRVA.** „Mit tesz a Picasa, ha külső program írja az
+inifájlt?" A kulcs **nem a képfájl, hanem maga a `.picasa.ini`**: a Picasa
+mappánként eltárolja az ini **utolsó írási idejét** (`albumdata_inisync`,
+FILETIME), és ha a lemezen lévő fájl újabb, újraolvassa — **`flags = 3`**-mal,
+tehát a `filters` is hatókörben. Mérés: **783/787 bitre egyező** valódi
+mappán (99,5%). ⇒ **elég írni az ini-t**; a képfájl érintése az eredetiben
+nem létező út → **#1320**. Részletek: a lap „MEGFEJTVE: az újraolvasás
+kulcsa az INI FÁJL saját dátuma" szakasza.
+
+A megmaradt szál (miért nem jelenik meg mégsem a `filters=`) **nem a
+kiváltás** kérdése — a szigorú beolvasás ága, **#685**.
 
 ### Nincs nyitott kérdés
 
