@@ -59,18 +59,38 @@ class TestHivatalosMagyar:
 
 
 class TestKompaktKuszob:
-    def test_a_kollazs_feliratnak_sajat_mert_kuszobe_van(self):
-        """#406 invariánsa: a küszöb a MÉRT feliratszélességekből áll,
-        nem fix képpontszámból — különben a szélesebb rendszerbetűvel
+    def test_a_kuszob_mert_feliratszelessegbol_all(self):
+        """#406 invariánsa: a küszöb a MÉRT feliratszélességből áll, nem
+        fix képpontszámból — különben a szélesebb rendszerbetűvel
         (windows-CI) kilógna a sáv.
 
-        #1116: a Kollázs felirata nem fér bele az alap 1280 px-es ablakba
-        a többi felirat mellé, ezért KÜLÖN, magasabb küszöbe van — így a
-        gomb ikon-only marad, de a Nyomtatás/Exportálás felirata megmarad
-        az alap ablakszélességen is."""
-        assert "id: collageLabelMetrics" in _QML_FORRAS
+        #1116-ban a Kollázs gombnak KÜLÖN, magasabb küszöbe volt, mert a
+        felirata a gomb MELLETT ült, és így szélesítette a sávot. A #1345
+        óta a kimeneti gombok fix 55 × 36 képpontosak, a felirat a gombon
+        BELÜL van: egyik kimeneti felirat sem szélesíti a sávot, ezért a
+        külön kollázs-küszöb megszűnt. A küszöb egyetlen felirat-függő
+        tagja a tartalomhoz igazodó zöld „Feltöltés" gomb maradt —
+        a mérés elve viszont VÁLTOZATLAN, és ezt őrizzük itt."""
+        assert "id: uploadLabelMetrics" in _QML_FORRAS
         kuszob = _QML_FORRAS.split(
-            "readonly property real collageLabelThreshold", 1
-        )[1].split("readonly property bool collageLabelVisible", 1)[0]
-        assert "compactThreshold" in kuszob
-        assert "collageLabelMetrics.width" in kuszob
+            "readonly property real compactThreshold", 1
+        )[1].split("readonly property bool compact:", 1)[0]
+        assert "uploadLabelMetrics.width" in kuszob, (
+            "a küszöb nem mért feliratszélességből áll"
+        )
+        assert "collageLabelMetrics" not in _QML_FORRAS, (
+            "a külön kollázs-küszöb a #1345 óta tárgytalan"
+        )
+
+    def test_a_kollazs_felirata_nem_kuszobhoz_kotott(self):
+        """A #1345 következménye: a Kollázs felirata nem tűnhet el.
+
+        A gomb doboza fix, a felirat benne ül — a `visible` kötése ezért
+        nem hivatkozhat semmilyen szélesség-küszöbre. (A LÁTHATÓSÁGOT
+        magát a `tests/app/test_qml_tray_responsive.py` méri a valódi
+        komponensen.)"""
+        blokk = _QML_FORRAS.split("id: trayCollageBtn", 1)[1].split(
+            "TrayActionCell {", 1
+        )[0]
+        assert "labelVisible" not in blokk
+        assert "collageLabelVisible" not in _QML_FORRAS

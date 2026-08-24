@@ -147,84 +147,62 @@ Column {
         width: parent.width; height: 52
         color: Theme.trayBg
 
-        // #406: szűk ablaknál (pl. fél képernyő) a szöveges gombok
-        // (E-mail, Nyomtatás, Exportálás, Feltöltés) ne lógjanak ki —
-        // a küszöb alatt ikon-only módra váltanak (tooltippel).
+        // #406: szűk ablaknál (pl. fél képernyő) a sáv ne lógjon ki — a
+        // küszöb alatt a kijelölés-előnézet és a csúszka zsugorodik, a
+        // zöld Feltöltés gomb ikon-only lesz, a csoportelválasztók pedig
+        // elmaradnak.
         //
-        // A küszöb NEM fix pixelérték: a feliratok tényleges szélessége
+        // #1345: a KIMENETI GOMBOK feliratai kikerültek ebből a
+        // számításból. A gombok azóta FIX 55 × 36 képpontosak (a felirat
+        // az ikon alatt, a gombon BELÜL ül), tehát a feliratuk semmivel
+        // nem szélesíti a sávot — hiába rejtenénk el, egyetlen képpontot
+        // sem nyernénk vele, csak információt veszítenénk. Egyedül a zöld
+        // Feltöltés gomb maradt tartalomhoz igazodó szélességű, ezért
+        // csak annak a feliratát mérjük.
+        //
+        // A küszöb NEM fix pixelérték: a felirat tényleges szélessége
         // betűkészlet- és NYELVFÜGGŐ (a windows-CI éppen ezen bukott el
         // — ott a szélesebb rendszerbetűvel 1280 px-en is kilógott a
-        // sáv). Ezért a négy feliratot `TextMetrics`-szel MEGMÉRJÜK, és
-        // a mért összeghez adjuk a fix elem-költségvetést (ikonok,
-        // térközök, csúszka, kijelölés-előnézet). A TextMetrics nem függ
-        // az elrendezéstől, így kötés-hurok sem keletkezik.
-        TextMetrics {
-            id: emailLabelMetrics
-            font.pixelSize: Theme.fontSize
-            text: qsTr("E-Mail")
-        }
-        TextMetrics {
-            id: printLabelMetrics
-            font.pixelSize: Theme.fontSize
-            text: qsTr("Print")
-        }
-        TextMetrics {
-            id: exportLabelMetrics
-            font.pixelSize: Theme.fontSize
-            text: qsTr("Export")
-        }
+        // sáv). A `TextMetrics` nem függ az elrendezéstől, így
+        // kötés-hurok sem keletkezik.
         TextMetrics {
             id: uploadLabelMetrics
             font.pixelSize: Theme.fontSize
             text: qsTr("Upload to Google Photos")
         }
-        // #1116: a Kollázs gomb is feliratos lett, tehát a szélessége is
-        // nyelvfüggő — bele kell számítani a küszöbbe, különben széles
-        // ablakban a sáv kilóghatna.
-        TextMetrics {
-            id: collageLabelMetrics
-            font.pixelSize: Theme.fontSize
-            text: qsTr("Collage")
-        }
         // A fix (felirat-független) elemek helyigénye: kijelölés-előnézet,
-        // ikonsorok, csúszka, térközök. INVARIÁNS, amiért ez biztonságos:
-        // a feliratos elrendezés tényleges igénye = fix + feliratok; a
-        // küszöb = költségvetés + feliratok. Feliratos módba csak
-        // `width >= küszöb` esetén váltunk, és ekkor
-        // width >= költségvetés + feliratok >= fix + feliratok = igény —
-        // vagyis a tartalom BIZONYÍTHATÓAN elfér, bármilyen betűszélesség
-        // mellett (a betűszélesség mindkét oldalt egyformán mozgatja).
+        // ikonsorok, a kimeneti gombok cellái, csúszka, térközök.
+        // INVARIÁNS, amiért ez biztonságos: a bő elrendezés tényleges
+        // igénye = fix + a Feltöltés felirata; a küszöb = költségvetés +
+        // ugyanaz a felirat. Bő módba csak `width >= küszöb` esetén
+        // váltunk, és ekkor width >= költségvetés + felirat >= fix +
+        // felirat = igény — vagyis a tartalom elfér. A bizonyítás
+        // annyiban nem teljes, hogy a „fix" részben is van néhány apró,
+        // betűfüggő tétel (ld. lentebb); azokra a költségvetés ráhagyása
+        // felel.
         //
-        // #1116: a korábbi 900-as érték ALÁBECSÜLT volt. Újramérve a
-        // három képes kijelöléssel (a legdrágább eset, mert ilyenkor
-        // látszik a 200 px-es kijelölés-előnézet): a feliratos sáv jobb
-        // széle 1236 px-nél áll, a négy felirat összege 228 px, tehát a
-        // fix rész 1008 px. Felfelé kerekítve 1040-re — a régi 900 mellett
-        // a küszöb (1128) ALATTA maradt a tényleges igénynek (1236), azaz
-        // az invariáns bizonyítása nem állt; 1280 px-en csak azért nem
-        // lógott ki semmi, mert az ablak történetesen szélesebb volt.
-        readonly property real compactBudget: 1040
+        // #1345: újramérve a három képes kijelöléssel (a legdrágább eset,
+        // mert ilyenkor látszik a 200 px-es kijelölés-előnézet). A bő sáv
+        // tényleges igénye 1221 px, ebből a Feltöltés felirata 133 px,
+        // tehát a fix rész 1088. Felfelé kerekítve 1120-ra: a 32 képpont
+        // ráhagyás azokat az apró, szintén betűfüggő tételeket fedi,
+        // amelyek nem külön mértek (az „Add to" gomb felirata, a ± jelek)
+        // — ugyanaz a ráhagyás, mint a #1116 előtti 1040-es értéknél.
+        readonly property real compactBudget: 1120
         // A küszöb kívülről is olvasható (teszt), hogy a „széles ablak"
         // esetet ne fix pixelértékkel kelljen megadni — az platform- és
         // nyelvfüggő lenne (a windows-CI éppen ezen bukott el 1280-on).
         readonly property real compactThreshold: compactBudget
-                                        + emailLabelMetrics.width
-                                        + printLabelMetrics.width
-                                        + exportLabelMetrics.width
                                         + uploadLabelMetrics.width
         readonly property bool compact: width < compactThreshold
-        // #1116: a Kollázs felirata a sáv LEGSZŰKÖSEBB tétele — az alap
-        // 1280 px-es ablakba a többi felirat mellé már nem fér be (a
-        // feliratos igény 1236 + a kollázs 25 px fix többlete + a felirat).
-        // Ezért külön, magasabb küszöbe van: a gomb ikon-only marad
-        // egészen addig, amíg a felirat BIZONYÍTHATÓAN elfér — a többi
-        // felirat viszont az alap ablakszélességen is megmarad.
-        // A 25 px a gomb felirat-független többlete: 20 px belső margó
-        // (PicasaButton `implicitContentWidth + 20`) + 5 px ikon–felirat
-        // térköz, mínusz semmi: az ikon 30 px-e az ikon-only szélesség.
-        readonly property real collageLabelThreshold: compactThreshold
-                                        + collageLabelMetrics.width + 25
-        readonly property bool collageLabelVisible: width >= collageLabelThreshold
+        // #1345: a két csoportelválasztó két TELJES cellát (2 × 59 px)
+        // tesz a sávba. Az eredetiben a `morebutton`/`overflow` gondozza
+        // a helyhiányt; amíg az nincs meg, a legolcsóbb hű viselkedés az,
+        // ha az elválasztók csak ott jelennek meg, ahol ez a többlet is
+        // bizonyíthatóan elfér.
+        readonly property int actionCellWidth: 59
+        readonly property bool separatorsVisible:
+            width >= compactThreshold + 2 * actionCellWidth
 
         Rectangle {
             width: parent.width; height: 1
@@ -542,220 +520,173 @@ Column {
             }
             Text { text: "+"; color: Theme.textGray; font.pixelSize: 13 }
             Item { width: trayMainBar.compact ? 4 : 10 }
-            // #361: a kimeneti sáv gombjai saját SVG-ikonnal (PBZ-leltár:
-            // outputlayout/ebutton, /pbutton) — a felirat objectName-jei
-            // (label szöveg, iconInk-szín) VÁLTOZATLANOK, csak egy Image
-            // került a Text mellé (icons/PicasaButtonWithIcon mintája
-            // lentebb, trayExportBtn-nél).
-            PicasaButton {
-                id: trayEmailBtn
-                objectName: "trayEmailButton"
-                text: qsTr("E-Mail")
-                // #32: kijelölés kell hozzá, néző-nézetben (egy kép) is
-                // elérhető — a trayExportBtn/trayCollageBtn mintája
-                // #718: null-őr — ld. a fenti `ctl` docstringje.
-                enabled: tray.appWindow
-                         ? (tray.appWindow.viewerOpen
-                            ? tray.viewerIndex >= 0
-                            : tray.appWindow.selectedIndexes.length > 0)
-                         : false
-                onClicked: tray.emailRequested()
-                // #406: kompakt módban (szűk ablak) a felirat eltűnik,
-                // csak az ikon marad — a szöveg tooltipként érhető el
-                // (a MÁR fordított gombfeliratot használjuk, nem új
-                // qsTr-t)
-                ToolTip.text: trayEmailBtn.text
-                ToolTip.visible: trayMainBar.compact && trayEmailBtn.hovered
-                ToolTip.delay: 500
-                contentItem: Row {
-                    spacing: trayMainBar.compact ? 0 : 5
-                    Image {
-                        anchors.verticalCenter: parent.verticalCenter
-                        source: "icons/email.svg"
-                        sourceSize: Qt.size(14, 14)
-                        opacity: trayEmailBtn.enabled ? 1.0 : 0.5
-                    }
-                    Text {
-                        objectName: "trayEmailLabel"
-                        visible: !trayMainBar.compact
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: trayEmailBtn.text
-                        font: trayEmailBtn.font
-                        color: trayEmailBtn.enabled ? Theme.iconInk : "#9a9a9a"
-                    }
-                }
-            }
-            PicasaButton {
-                id: trayPrintBtn
-                objectName: "trayPrintButton"
-                text: qsTr("Print")
-                // #718: null-őr — ld. a fenti `ctl` docstringje.
-                enabled: tray.appWindow
-                         ? (tray.appWindow.viewerOpen
-                            ? tray.viewerIndex >= 0
-                            : tray.appWindow.selectedIndexes.length > 0)
-                         : false
-                onClicked: tray.printRequested()
-                ToolTip.text: trayPrintBtn.text
-                ToolTip.visible: trayMainBar.compact && trayPrintBtn.hovered
-                ToolTip.delay: 500
-                contentItem: Row {
-                    spacing: trayMainBar.compact ? 0 : 5
-                    Image {
-                        anchors.verticalCenter: parent.verticalCenter
-                        source: "icons/print.svg"
-                        sourceSize: Qt.size(14, 14)
-                        opacity: trayPrintBtn.enabled ? 1.0 : 0.5
-                    }
-                    Text {
-                        objectName: "trayPrintLabel"
-                        visible: !trayMainBar.compact
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: trayPrintBtn.text
-                        font: trayPrintBtn.font
-                        color: trayPrintBtn.enabled ? Theme.iconInk : "#9a9a9a"
+            // #1345: a cellák EGYMÁS MELLETT, külön térköz nélkül —
+            // az eredetiben a 2-2 képpontos cellamargó ADJA a gombok
+            // közötti hézagot (4 képpont), a sáv `spacing`-je nem adódik
+            // hozzá. Ezért a csoport saját, nulla térközű sora.
+            Row {
+                objectName: "trayActionRow"
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 0
+
+                // #1345: a kimeneti sáv gombjai a `respack.yt` MÉRT
+                // geometriájával — mindegyik **55 × 36** képpont, egy
+                // **59 × 40**-es cellában (`TrayActionCell`, 2-2 képpont margó
+                // körbe; `docs/specs/picasa-keptalca.md` 11.). A méret FIX: a
+                // rétegfejlécek mind a kilenc gombra bájtra azonosak, tehát a
+                // sáv nem skálázhatja őket az ablakkal.
+                //
+                // A sorrend a respack DEKLARÁCIÓS sorrendje (spec 7.):
+                // print → email → export → [shop] → hello → [blog] → collage →
+                // movie → [morebutton]. A szögletes zárójelben álló három gomb
+                // nálunk MÉG NINCS MEG (`docs/specs/ui-lefedettseg.md`
+                // `outputlayout` hiánylistája: `orderbutton`, `blogger`,
+                // `morebutton`) — a meglévők egymáshoz képesti sorrendje
+                // viszont az eredetié. A zöld „Feltöltés" (`webupload`) nem
+                // tartozik a mért kilenc közé, ezért marad a saját méretén.
+                //
+                // #361: a gombok saját SVG-ikonnal (PBZ-leltár:
+                // outputlayout/pbutton, /ebutton, /folderbutton, /sharewith,
+                // /collage, /movie).
+                TrayActionCell {
+                    TrayActionButton {
+                        id: trayPrintBtn
+                        objectName: "trayPrintButton"
+                        anchors.fill: parent
+                        text: qsTr("Print")
+                        iconSource: "icons/print.svg"
+                        iconObjectName: "trayPrintIcon"
+                        labelObjectName: "trayPrintLabel"
+                        // #32: kijelölés kell hozzá, néző-nézetben (egy kép) is
+                        // elérhető
+                        // #718: null-őr — ld. a fenti `ctl` docstringje.
+                        enabled: tray.appWindow
+                                 ? (tray.appWindow.viewerOpen
+                                    ? tray.viewerIndex >= 0
+                                    : tray.appWindow.selectedIndexes.length > 0)
+                                 : false
+                        onClicked: tray.printRequested()
+                        // #1345: a felirat a fix méretű gombon BELÜL ül,
+                        // ezért minden ablakszélességen látszik. Ha nagyon
+                        // szűk helyre szorul, a betű zsugorodik — a teljes
+                        // szöveget ezért a buboréksúgó is kiírja (a MÁR
+                        // fordított gombfeliratot használjuk, nem új qsTr-t).
+                        ToolTip.text: trayPrintBtn.text
+                        ToolTip.visible: trayPrintBtn.hovered
+                        ToolTip.delay: 500
                     }
                 }
-            }
-            PicasaButton {
-                id: trayExportBtn
-                objectName: "trayExportButton"
-                text: qsTr("Export")
-                // #718: null-őr — ld. a fenti `ctl` docstringje.
-                enabled: tray.appWindow
-                         ? (!tray.appWindow.viewerOpen
-                            && tray.appWindow.selectedIndexes.length > 0)
-                         : false
-                onClicked: tray.exportRequested()
-                // #314: a PicasaButton alap-krómja nem témavezérelt (ld.
-                // trayRotateLeftBtn indoklása fentebb) — az ikon+felirat
-                // tintája itt is a fix Theme.iconInk.
-                ToolTip.text: trayExportBtn.text
-                ToolTip.visible: trayMainBar.compact && trayExportBtn.hovered
-                ToolTip.delay: 500
-                contentItem: Row {
-                    spacing: trayMainBar.compact ? 0 : 5
-                    Image {
-                        anchors.verticalCenter: parent.verticalCenter
-                        source: "icons/folder-export.svg"
-                        sourceSize: Qt.size(14, 14)
-                        opacity: trayExportBtn.enabled ? 1.0 : 0.5
-                    }
-                    Text {
-                        objectName: "trayExportLabel"
-                        visible: !trayMainBar.compact
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: trayExportBtn.text
-                        font: trayExportBtn.font
-                        color: trayExportBtn.enabled ? Theme.iconInk : "#9a9a9a"
+                TrayActionCell {
+                    TrayActionButton {
+                        id: trayEmailBtn
+                        objectName: "trayEmailButton"
+                        anchors.fill: parent
+                        text: qsTr("E-Mail")
+                        iconSource: "icons/email.svg"
+                        iconObjectName: "trayEmailIcon"
+                        labelObjectName: "trayEmailLabel"
+                        // #718: null-őr — ld. a fenti `ctl` docstringje.
+                        enabled: tray.appWindow
+                                 ? (tray.appWindow.viewerOpen
+                                    ? tray.viewerIndex >= 0
+                                    : tray.appWindow.selectedIndexes.length > 0)
+                                 : false
+                        onClicked: tray.emailRequested()
+                        ToolTip.text: trayEmailBtn.text
+                        ToolTip.visible: trayEmailBtn.hovered
+                        ToolTip.delay: 500
                     }
                 }
-            }
-            Item { width: trayMainBar.compact ? 3 : 6 }
-            // #361: Kollázs / Film / Megosztás — a PBZ-leltár szerint
-            // (outputlayout/collage, /makemovie, /sharewith) az eredeti
-            // kimeneti sávnak is részei; a tényleges Létrehozás-funkció
-            // a Create-menü mellett innen is indítható (collage/movie
-            // signal → Main.qml → CreateDialogs); a Megosztás backend
-            // híján tiltott helyőrző marad.
-            //
-            // #1116: a Kollázs gomb felirata és buboréksúgója NEM új
-            // fordítás, hanem átvétel a Picasa saját honosítási
-            // táblájából (`outputlayout_text.tre`): „Collage" →
-            // „Kollázs", `Create a Photo Collage with your selection` →
-            // „Készítsen fotókollázst a kijelölt képekből". A korábbi
-            // komment az integrátorra hagyta a szöveget, mert a lupdate
-            // „unfinished"-nek látta volna — ez tárgytalan, amint a
-            // fordítás a `.ts`-ben áll. (A Film/Megosztás gomb továbbra
-            // is ikon-only: azok külön jegyre tartoznak.)
-            PicasaButton {
-                id: trayCollageBtn
-                objectName: "trayCollageButton"
-                // #718: null-őr — ld. a fenti `ctl` docstringje.
-                enabled: tray.appWindow
-                         ? (!tray.appWindow.viewerOpen
-                            && tray.appWindow.selectedIndexes.length > 0)
-                         : false
-                onClicked: tray.collageRequested()
-                text: qsTr("Collage")
-                // #1116: az eredeti súgója a művelet MONDATA, nem a
-                // gombfelirat ismétlése — ezért (a Nyomtatás/Exportálás
-                // gombtól eltérően) kompakt módon kívül is látszik.
-                ToolTip.text: qsTr("Create a Photo Collage with your selection")
-                ToolTip.visible: trayCollageBtn.hovered
-                ToolTip.delay: 500
-                // Kompakt módban ikon-only marad (fix 30 px), egyébként a
-                // felirattal együtt a saját implicit szélességét kéri.
-                Layout.preferredWidth: trayMainBar.collageLabelVisible ? -1 : 30
-                contentItem: Row {
-                    spacing: trayMainBar.collageLabelVisible ? 5 : 0
-                    Image {
-                        objectName: "trayCollageIcon"
-                        anchors.verticalCenter: parent.verticalCenter
-                        // #1188: a `Control` a contentItem geometriáját maga
-                        // állítja be (az `anchors.centerIn` ezért hatástalan
-                        // volt), a `fillMode` alapja pedig `Image.Stretch` —
-                        // a négyzetes SVG így a gomb tartalom-dobozára feszült
-                        // (mérve: 14×14-es forrás 16×26-ra nyúlva).
-                        fillMode: Image.PreserveAspectFit
-                        width: 30
-                        height: 30
-                        source: "icons/collage.svg"
-                        sourceSize: Qt.size(32, 32)
-                        opacity: trayCollageBtn.enabled ? 1.0 : 0.5
-                    }
-                    Text {
-                        objectName: "trayCollageLabel"
-                        visible: trayMainBar.collageLabelVisible
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: trayCollageBtn.text
-                        font: trayCollageBtn.font
-                        color: trayCollageBtn.enabled ? Theme.iconInk : "#9a9a9a"
+                TrayActionCell {
+                    TrayActionButton {
+                        id: trayExportBtn
+                        objectName: "trayExportButton"
+                        anchors.fill: parent
+                        text: qsTr("Export")
+                        iconSource: "icons/folder-export.svg"
+                        iconObjectName: "trayExportIcon"
+                        labelObjectName: "trayExportLabel"
+                        // #718: null-őr — ld. a fenti `ctl` docstringje.
+                        enabled: tray.appWindow
+                                 ? (!tray.appWindow.viewerOpen
+                                    && tray.appWindow.selectedIndexes.length > 0)
+                                 : false
+                        onClicked: tray.exportRequested()
+                        ToolTip.text: trayExportBtn.text
+                        ToolTip.visible: trayExportBtn.hovered
+                        ToolTip.delay: 500
                     }
                 }
-            }
-            PicasaButton {
-                id: trayMovieBtn
-                objectName: "trayMovieButton"
-                // #718: null-őr — ld. a fenti `ctl` docstringje.
-                enabled: tray.appWindow
-                         ? (!tray.appWindow.viewerOpen
-                            && tray.appWindow.selectedIndexes.length > 0)
-                         : false
-                onClicked: tray.movieRequested()
-                Layout.preferredWidth: 30
-                contentItem: Image {
-                    objectName: "trayMovieIcon"
-                    // #1188: a `Control` a contentItem geometriáját maga
-                    // állítja be (az `anchors.centerIn` ezért hatástalan
-                    // volt), a `fillMode` alapja pedig `Image.Stretch` —
-                    // a négyzetes SVG így a gomb tartalom-dobozára feszült
-                    // (mérve: 14×14-es forrás 16×26-ra nyúlva).
-                    fillMode: Image.PreserveAspectFit
-                    source: "icons/movie.svg"
-                    sourceSize: Qt.size(32, 32)
-                    opacity: trayMovieBtn.enabled ? 1.0 : 0.5
+                // `outputlayout/sharewith` („Hello") — backend híján tiltott
+                // helyőrző, de a HELYE az eredetié: az export után, a kollázs
+                // előtt (a kimaradó `shop` és `blog` közé esne).
+                TrayActionCell {
+                    TrayActionButton {
+                        id: trayShareBtn
+                        objectName: "trayShareButton"
+                        anchors.fill: parent
+                        enabled: false
+                        iconSource: "icons/share.svg"
+                        iconObjectName: "trayShareIcon"
+                    }
                 }
-            }
-            PicasaButton {
-                id: trayShareBtn
-                objectName: "trayShareButton"
-                enabled: false
-                Layout.preferredWidth: 30
-                contentItem: Image {
-                    objectName: "trayShareIcon"
-                    // #1188: a `Control` a contentItem geometriáját maga
-                    // állítja be (az `anchors.centerIn` ezért hatástalan
-                    // volt), a `fillMode` alapja pedig `Image.Stretch` —
-                    // a négyzetes SVG így a gomb tartalom-dobozára feszült
-                    // (mérve: 14×14-es forrás 16×26-ra nyúlva).
-                    fillMode: Image.PreserveAspectFit
-                    source: "icons/share.svg"
-                    sourceSize: Qt.size(32, 32)
-                    opacity: 0.5
+                // #1345: a csoportelválasztó (`outputlayout/separator`), 2 × 27
+                // képpont a saját 59 × 40-es cellájában. Szűk ablakban elmarad:
+                // a fix méretű cellák mellett ez a 118 képpont az, ami a
+                // kompakt sávba már nem fér bele (az eredetiben erre való a
+                // `morebutton`/`overflow`, ami nálunk még nincs meg).
+                TrayActionSeparator { visible: trayMainBar.separatorsVisible }
+                // #361: Kollázs / Film — a PBZ-leltár szerint
+                // (outputlayout/collage, /makemovie) az eredeti kimeneti
+                // sávnak is részei; a tényleges Létrehozás-funkció a
+                // Create-menü mellett innen is indítható (collage/movie
+                // signal → Main.qml → CreateDialogs).
+                //
+                // #1116: a Kollázs gomb felirata és buboréksúgója NEM új
+                // fordítás, hanem átvétel a Picasa saját honosítási
+                // táblájából (`outputlayout_text.tre`): „Collage" →
+                // „Kollázs", `Create a Photo Collage with your selection` →
+                // „Készítsen fotókollázst a kijelölt képekből".
+                TrayActionCell {
+                    TrayActionButton {
+                        id: trayCollageBtn
+                        objectName: "trayCollageButton"
+                        anchors.fill: parent
+                        text: qsTr("Collage")
+                        iconSource: "icons/collage.svg"
+                        iconObjectName: "trayCollageIcon"
+                        labelObjectName: "trayCollageLabel"
+                        // #718: null-őr — ld. a fenti `ctl` docstringje.
+                        enabled: tray.appWindow
+                                 ? (!tray.appWindow.viewerOpen
+                                    && tray.appWindow.selectedIndexes.length > 0)
+                                 : false
+                        onClicked: tray.collageRequested()
+                        // #1116: az eredeti súgója a művelet MONDATA, nem a
+                        // gombfelirat ismétlése — ezért (a Nyomtatás/Exportálás
+                        // gombtól eltérően) kompakt módon kívül is látszik.
+                        ToolTip.text: qsTr("Create a Photo Collage with your selection")
+                        ToolTip.visible: trayCollageBtn.hovered
+                        ToolTip.delay: 500
+                    }
                 }
+                TrayActionCell {
+                    TrayActionButton {
+                        id: trayMovieBtn
+                        objectName: "trayMovieButton"
+                        anchors.fill: parent
+                        iconSource: "icons/movie.svg"
+                        iconObjectName: "trayMovieIcon"
+                        // #718: null-őr — ld. a fenti `ctl` docstringje.
+                        enabled: tray.appWindow
+                                 ? (!tray.appWindow.viewerOpen
+                                    && tray.appWindow.selectedIndexes.length > 0)
+                                 : false
+                        onClicked: tray.movieRequested()
+                    }
+                }
+                TrayActionSeparator { visible: trayMainBar.separatorsVisible }
             }
-            Item { width: trayMainBar.compact ? 3 : 6 }
             // az egyetlen zöld elsődleges tett — jobbra igazítva,
             // a képernyő vizuális súlypontja (kézikönyv 01/08) — #406:
             // kompakt módban ez is ikon-only (a leghosszabb felirat,

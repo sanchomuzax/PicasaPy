@@ -1,9 +1,14 @@
 """#406: a TrayBar (alsó sáv) legyen reszponzív — szűk ablaknál a
-szöveges gombok (E-mail, Nyomtatás, Exportálás, Feltöltés a Google
-Fotókba) essenek vissza ikon-only módra, a zoom-csúszka és a
-kijelölés-előnézet zsugorodjon, és SEMMI ne lógjon ki a sáv jobb
+zoom-csúszka és a kijelölés-előnézet zsugorodjon, a zöld „Feltöltés"
+gomb essen vissza ikon-only módra, és SEMMI ne lógjon ki a sáv jobb
 széléből (kilógás-őr). A `test_qml_tray_print_email.py` betöltési
-mintáját követi (önálló TrayBar, controller nélkül)."""
+mintáját követi (önálló TrayBar, controller nélkül).
+
+#1345: a kimeneti gombok (Nyomtatás, E-mail, Exportálás, Kollázs, Film,
+Megosztás) MÁR NEM esnek vissza ikon-only módra — fix 55 × 36 képpontos
+gombok lettek, amelyekben a felirat az ikon alatt, a gombon BELÜL ül,
+tehát nem szélesítik a sávot. Szűk ablakban helyettük a két
+csoportelválasztó marad el."""
 
 from __future__ import annotations
 
@@ -161,21 +166,29 @@ class TestTrayBarNoOverflowAtNarrowWidth:
         tray.deleteLater()
         engine.deleteLater()
 
-    def test_no_overflow_when_the_collage_label_appears(self, app_module, qt_app):
-        """#1116: a Kollázs felirata pont akkor jelenik meg, amikor
-        bizonyíthatóan elfér — a saját küszöbén ÁLLVA sem lóghat ki
-        semmi. (A szélességet a komponens küszöbéből származtatjuk, mert
-        a feliratszélesség platform- és nyelvfüggő.)"""
+    def test_no_overflow_when_the_separators_appear(self, app_module, qt_app):
+        """#1345: a sáv LEGBŐVEBB alakja — a két csoportelválasztóval.
+
+        A #1116 eredeti változata a Kollázs felirat saját küszöbén mért;
+        az a küszöb a #1345-tel megszűnt (a gomb fix 55 × 36, a felirata
+        nem szélesíti a sávot, ezért mindig látszik). A legdrágább eset
+        azóta az, amikor a két elválasztó cellája (2 × 59 px) is bekerül
+        — a szélességet ezért ennek a küszöbnek a széléről vesszük, nem
+        fix pixelértékből (az platform- és nyelvfüggő lenne).
+        """
         app_window = FakeAppWindow()
         app_window.selectedIndexes = [0, 1, 2]
         tray, engine = _load_tray(app_module, app_window, width=900)
         for _ in range(3):
             qt_app.processEvents()
         bar = _child(tray, "trayMainBar")
-        szeles = bar.property("collageLabelThreshold")
+        szeles = bar.property("compactThreshold") + 2 * bar.property(
+            "actionCellWidth"
+        )
         tray.setProperty("width", szeles)
         for _ in range(3):
             qt_app.processEvents()
+        assert bar.property("separatorsVisible") is True
         assert _child(tray, "trayCollageLabel").property("visible") is True
         self._assert_no_overflow(tray, qt_app, expected_width=szeles)
         tray.deleteLater()
@@ -233,33 +246,40 @@ class TestTrayBarIconOnlyModeStillWorks:
         tray.deleteLater()
         engine.deleteLater()
 
-    def test_collage_label_follows_the_compact_mode(self, app_module, qt_app):
-        """#1116: a Kollázs gombnak széles ablakban FELIRATA van (mint a
-        Nyomtatás/Exportálás gombnak), kompakt módban viszont ikon-only
-        marad — különben szűk ablaknál kilógna a sáv."""
+    def test_the_output_labels_survive_the_compact_mode(self, app_module, qt_app):
+        """#1345: a kimeneti gombok felirata MINDEN szélességen látszik.
+
+        Ez a #1116-os őr utódja. Az eredeti azt állította, hogy a Kollázs
+        gomb kompakt módban ikon-only marad — annak akkor volt értelme,
+        amikor a felirat a gomb MELLETT ült, és így szélesítette a sávot.
+        A #1345 óta a gomb fix 55 × 36 képpont, a felirat pedig az ikon
+        ALATT, a gombon belül: elrejtésével egyetlen képpontot sem
+        nyernénk, csak információt veszítenénk. A #1116 célja (legyen a
+        Kollázs gombnak felirata, mint a Nyomtatásnak) így erősebben
+        teljesül, mint korábban.
+        """
         app_window = FakeAppWindow()
         app_window.selectedIndexes = [0]
         tray, engine = _load_tray(app_module, app_window, width=900)
         for _ in range(3):
             qt_app.processEvents()
         bar = _child(tray, "trayMainBar")
-        collage_label = _child(tray, "trayCollageLabel")
         assert bar.property("compact") is True
-        assert collage_label.property("visible") is False
 
-        # a saját küszöbe ALATT (de a többi feliratéhoz képest bőven
-        # felette): a gomb még mindig ikon-only
-        tray.setProperty("width", bar.property("collageLabelThreshold") - 40)
+        for nev in ("trayCollageLabel", "trayPrintLabel", "trayEmailLabel",
+                    "trayExportLabel"):
+            felirat = _child(tray, nev)
+            assert felirat.property("visible") is True, (
+                f"{nev} kompakt módban eltűnt — a fix méretű gombon ezzel "
+                "semmit nem nyerünk"
+            )
+            assert felirat.property("text") != ""
+
+        tray.setProperty("width", bar.property("compactThreshold") + 40)
         for _ in range(3):
             qt_app.processEvents()
         assert bar.property("compact") is False
-        assert collage_label.property("visible") is False
-
-        tray.setProperty("width", bar.property("collageLabelThreshold") + 40)
-        for _ in range(3):
-            qt_app.processEvents()
-        assert collage_label.property("visible") is True
-        assert collage_label.property("text") != ""
+        assert _child(tray, "trayCollageLabel").property("visible") is True
         tray.deleteLater()
         engine.deleteLater()
 
