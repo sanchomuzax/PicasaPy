@@ -83,6 +83,12 @@ python3 -m pip install --upgrade pip || true
 # shellcheck disable=SC2086
 python3 -m pip install $PIP_CSOMAGOK
 
+# Megszakadt teszt-körök maradékának takarítása (#1358). Eddig ez csak
+# tesztfuttatáskor futott le, és csak a 3 óránál régebbi könyvtárakra — így
+# 2026-08-24-én négy fiatal, de halott maradék ~1,5 GB-ot foglalt a /tmp-en,
+# és a tulajdonosnak kellett szólnia. Élő futás könyvtárához nem nyúl.
+python3 "$PROJECT_DIR/scripts/run_tests.py" --csak-takaritas || true
+
 # Az offscreen Qt-platform a fejléc/QML-teszteknek is kell. A környezetfájl
 # neve agentfüggő; ha egyik sem ismert, a beállítás kimarad (nem hiba).
 ENV_FILE="${CLAUDE_ENV_FILE:-${CODEX_ENV_FILE:-}}"
