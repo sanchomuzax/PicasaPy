@@ -3386,9 +3386,9 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Keresés</translation>
     </message>
     <message>
-        <location filename="../qml/PicasaPy/MainToolbar.qml" line="179"/>
-        <source>Verzió és build</source>
-        <translation>Verzió és build</translation>
+        <location filename="../qml/PicasaPy/MainToolbar.qml" line="259"/>
+        <source>Kiadások megtekintése a GitHubon</source>
+        <translation>Kiadások megtekintése a GitHubon</translation>
     </message>
 </context>
 <context>
