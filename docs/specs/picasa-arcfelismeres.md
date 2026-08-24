@@ -746,3 +746,68 @@ PMP-fájlt. A kérdés tehát **tudásbeli hiány, nem megvalósítási akadály
 ```
 14. szakasz mérlege: 1 LEZÁRVA · 1 NEM ELDŐLT (a folytatás pontos helyével)
 ```
+
+
+## A `peoplealbumchecksum` NEM checksum — konstans arc-jelző (2026-08-24)
+
+A #1238 három oszlopot nevezett meg értelmezhetetlenként. A
+`research/testdata/Picasa2-arcok/Picasa2/db3/` (a nevesített arcokat
+tartalmazó, **már a repóban lévő** adatbázis) egyiket eldönti.
+
+### `imagedata_peoplealbumchecksum` — egyetlen érték: 34
+
+| mérés | eredmény |
+|---|---|
+| sorok | 19 636 |
+| nem nulla | **301** |
+| **különböző nem-nulla érték** | **1 darab: `34` (`0x0022`)** |
+| ebből `facerect`-tel rendelkező | **300 / 301** |
+| a 115 `personalbumid`-os képből mennyi hordozza | **3** |
+
+⇒ **Ez nem képenkénti ellenőrzőösszeg.** Egyetlen konstans, ami gyakorlatilag
+azokon a képeken áll, amiknek **arckeretük** van — és **nem** azokon,
+amiknek személy-albumuk. Állapot- vagy verziójelző, nem hash.
+
+> A név megtévesztő. A `checksum` szó azt sugallja, hogy a személy-albumok
+> tagságából képződik — a mérés szerint nem: a `personalbumid`-os képek
+> **97%-án nincs** rajta.
+
+### `albumdata_albumpeoplechecksum` — ez VALÓDI hash, és NINCS megfejtve
+
+Kilenc nevesített személy-album (`]facealbum:109` … `]facealbum:117`),
+nyolc nem nulla, egymástól független 32 bites érték.
+
+**Három megdőlt hipotézis — hogy ne járjuk be újra:**
+
+1. **„Az `albumcontactids`-ből képződik."** ❌ Mind a kilenc albumra
+   kipróbálva az alsó 32 bit, a felső 32 bit és a kettő XOR-ja — **egyik sem**
+   egyezik egyetlen albumnál sem.
+2. **„A tagképek `peoplealbumchecksum`-jaiból halmozódik."** ❌ A vizsgált
+   albumok minden tagképének `peoplealbumchecksum`-ja **0**, miközben az
+   album-checksum nem nulla. (És a fenti mérés szerint az az oszlop amúgy is
+   konstans.)
+3. **„Egyszerű `a·K + b` a tagképek sorindexein."** ❌ A két 2 tagú albumra
+   (`0x00060b93` és `0x00063ce2`) nincs olyan egész `K`, ami mindkettőt adná.
+
+**Ami a következő lépés:** a tagképek **fájlazonosítói** (nem sorindexei) —
+de ebben az adatbázisban az `imagedata_0` tábla **4 bájtos** (csak a magic),
+tehát a névoszlop nincs meg; a képek azonosítói a bélyegkép-indexből
+jönnének.
+
+### A többi oszlop állapota ugyanebben az adatbázisban
+
+| oszlop | sorok | nem üres |
+|---|---|---|
+| `albumdata_albumcontactids` | 118 | 9 |
+| `albumdata_albumpeoplechecksum` | 118 | 8 |
+| `imagedata_personalbumid` | 3 338 | **115** |
+| `imagedata_suggestionpersonalbumid` | 3 337 | **1** |
+| `imagedata_facerectdata` | 4 344 | **2 977** |
+
+*Bizonyítottsági fok: **megerősített** a `peoplealbumchecksum` konstans
+voltára és az arckeret-korrelációra (valódi adaton mérve); **megerősített
+negatívum** a három megdőlt hipotézisre. Az `albumpeoplechecksum` képzési
+szabálya **nyitva marad**.*
+
+⚠️ **Adatvédelem:** a szóban forgó adatbázis valódi családi neveket
+tartalmaz. A mérések ide csak **album-indexszel** kerülnek, névvel soha.

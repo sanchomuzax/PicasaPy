@@ -4447,3 +4447,59 @@ feltevés**, nem mérés. Ez marad nyitva.
 (diszasszemblálva); a `Comicize` peremszabálya **megerősített** (a szállított
 `filterdesc.xml` közvetlen olvasása). A `FocalZoom` perem-módja
 **feltételes** — nincs se dekompilálva, se mérve.*
+
+### A `FocalZoom` perem-módja — LEZÁRVA MÉRÉSSEL: NEM SZÁMÍT (2026-08-24)
+
+Az előző szakasz nyitva hagyta a `FocalZoom` halmozott nagyító-meneteinek
+perem-módját, azzal, hogy a natív magban (`0xbcf4b0`) van. **Nem kellett
+visszafejteni: a kérdés geometriailag el van döntve, és mérés igazolja.**
+
+#### A geometriai érv
+
+A halmozás **kizárólag nagyít** (`zoom ≥ 1`) egy `C` fókuszpont körül. Egy
+`p` kimeneti képponthoz tartozó forráspont `C + (p − C) / zoom`, ami mindig
+**`C` és `p` között** van. Ha tehát `C` és `p` is a képen belül van, a minta
+is belül esik ⇒ **a perem-mód sosem kerül szóba**.
+
+#### A mérés — 240 × 360 zajkép, négy perem-mód, négy fókuszpont, három erősség
+
+Maximális |Δ| a `BORDER_REPLICATE`-hez képest:
+
+| fókuszpont | Impact | `CONSTANT(0)` | `REFLECT` | `WRAP` |
+|---|---|---|---|---|
+| (0,5 · 0,5) | 10 / 50 / 100 | **0,000000** | **0,000000** | **0,000000** |
+| (0,02 · 0,02) | 10 / 50 / 100 | **0,000000** | **0,000000** | **0,000000** |
+| (0,98 · 0,5) | 10 / 50 / 100 | **0,000000** | **0,000000** | **0,000000** |
+| **(0,0 · 1,0)** — pontosan a sarokban | 10 | 5,60 | **0,00** | 4,80 |
+| | 50 | 25,43 | **0,00** | 20,70 |
+| | 100 | 43,97 | **0,00** | 30,30 |
+
+⇒ **A képen belüli fókuszpontra a négy mód bitre azonos kimenetet ad.**
+Csak akkor tér el bármi, ha a fókuszpont **pontosan a képhatáron** ül (ott
+az interpoláció fél képponttal kilóg) — és **ott is egyezik a `REPLICATE` a
+`REFLECT`-tel**.
+
+> **A mai `cv2.BORDER_REPLICATE` (`src/picasapy/render/focal.py:141`)
+> helyes, és a választás nem befolyásolja az eredményt.** A korábbi
+> „dokumentált feltevés" megjelölés levehető.
+
+#### Mellékleletek: a natív mag IGAZOLJA a két képletünket
+
+A `0x00bcf4b0` (1238 b) eleje:
+
+```asm
+0x00bcf4d2  mov  eax, 0x51eb851f      ; magic: osztás 200-zal
+0x00bcf4d7  mul  edx                  ;  edx = szélesség * Impact
+0x00bcf4dd  shr  edi, 6               ;  -> edi = szélesség · Impact / 200
+0x00bcf4e0  lea  eax, [ecx + 5]       ;  Impact + 5
+0x00bcf4e3  cmp  eax, 0x1e            ;  30
+0x00bcf4f5  ja   0xbcf4fb             ;  -> min(Impact + 5, 30)
+```
+
+Ez **bitre egyezik** a mi `zoom_max_offset` (`floor(width · Impact / 200)`)
+és `zoom_sample_count` (`min(trunc(Impact) + 5, 30)`) függvényeinkkel
+(`focal.py:80–87`). A #570 ezeket helyesen mérte ki.
+
+*Bizonyítottsági fok: **megerősített** — a perem-mód közömbössége mérve (12
+esetből 9-ben bitre azonos, a maradék háromban a `REFLECT` is azonos), a két
+képlet a natív magból diszasszemblálva.*
