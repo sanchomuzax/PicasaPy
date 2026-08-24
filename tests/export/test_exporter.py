@@ -396,7 +396,9 @@ class TestQualityPresets:
     """#369 / #1139 (export.fen paritás): a minőség-lenyíló preset→JPEG-
     minőség leképezése (`resolve_export_quality`). A három fix fokozat
     értéke a #1139 óta a binárisból ismert (ugrótábla `0x00739ef4`), nem
-    közelítés; csak az „Automatikus" maradt közelítés."""
+    közelítés. #1138: az „Automatikus" sem az — a száma 85, a
+    különbséget a `quality_automatic` jelző (a forrás kvantálótábláinak
+    átvétele) hordozza."""
 
     def test_normal_maximum_minimum_map_to_documented_values(self):
         assert resolve_export_quality("normal", 50) == 85
@@ -410,17 +412,24 @@ class TestQualityPresets:
         assert resolve_export_quality("minimum", 0) == 65
         assert resolve_export_quality("MINIMUM", 100) == 65
 
-    def test_automatic_maps_to_high_approximation(self):
-        assert resolve_export_quality("automatic", 50) == 92
+    def test_automatic_maps_to_the_measured_85(self):
+        """#1138: az „Automatikus" SZÁMA is 85 — az ugrótábla 0. ága
+        ugyanoda fut, mint a „Normál" (`0x00739caf`). A kettőt a `+0xa40`
+        jelző különbözteti meg (`ExportSettings.quality_automatic`), nem a
+        szám; a 85 itt már csak visszaesés, ha nincs honnan táblát venni."""
+        assert resolve_export_quality("automatic", 50) == 85
 
     def test_custom_uses_the_given_value(self):
         assert resolve_export_quality("custom", 42) == 42
 
     def test_custom_out_of_range_raises(self):
+        # #1138: a 0 már NEM hiba — a 21 fogásos csúszka legalsó fogása
+        # 0×5 = 0-t ad, amit az IJG-kódoló maga emel 1-re.
+        assert resolve_export_quality("custom", 0) == 1
         with pytest.raises(ValueError):
-            resolve_export_quality("custom", 0)
+            resolve_export_quality("custom", -1)
         with pytest.raises(ValueError):
             resolve_export_quality("custom", 101)
 
     def test_unknown_preset_falls_back_to_automatic(self):
-        assert resolve_export_quality("???", 50) == 92
+        assert resolve_export_quality("???", 50) == 85

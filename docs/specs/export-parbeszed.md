@@ -975,9 +975,8 @@ A 8. és 12.1 szakasz működés-leletéből ez került be a PicasaPy-ba:
   az `albumdata_token.pmp` album-sora. Nálunk nincs élő PMP-tár, tehát a
   hű megfelelője egy virtuális „Exportálva" gyűjtemény lenne — önálló
   döntés, külön jegy;
-- a **képméret- és képminőség-vezérlők átépítése** (rádió + csúszka + hét
-  előbeállítás, 21 fogásos egyéni csúszka) — az a párbeszéd FELÜLETÉRŐL
-  szóló munka, nem a működésről;
+- ~~a **képméret- és képminőség-vezérlők átépítése**~~ — **BEKERÜLT**
+  (#1138, ld. a **14.** szakaszt);
 - a **`scanfile` hibaág** kódútja: a fajta le van képezve az üzenetre, de
   a mi ürítésünk nem külön fájl-letapogatással dolgozik, ezért ma nem tud
   ilyen fajtát előállítani.
@@ -1406,3 +1405,36 @@ együtt tiltott**, ahogy a keretrendszertől várható.
 
 *(A korábbi „a címke fekete marad" megfigyelés téves volt; a mostani
 kör a képet újranézve javította.)*
+## 14. A FELÜLET átépítése (#1138, 2026-08-24)
+
+> *(Számozási megjegyzés: a 12.x számok a lapon már kétszer ki vannak
+> osztva — ld. a 13. szakasz elején —, ezért ez a szakasz 14.)*
+
+A 12.3 „ami továbbra sem került be" listájáról a felületi tétel lekerült.
+Ami a 6. szakasz „Kész, ha" listájából ezzel teljesült:
+
+| „Kész, ha" | állapot | hol |
+|---|---|---|
+| minden felirat szó szerint a 2. szakaszból | ✅ | `app/i18n/picasapy_hu.ts`; őr: `tests/app/test_export_feliratok_1138.py` (a `.qm`-et tölti be, tehát azt méri, amit a felhasználó lát) |
+| képméret: rádió + mező + 7 fogásos csúszka, a sor letiltva | ✅ | `ExportDialogs.qml`; a hét fogás egyetlen forrásból: `app/export_prefs.py` `SIZE_PRESETS` |
+| képminőség: öt fokozat, váltakozó magyarázat, „Egyéni"-nél 21 fogásos csúszka | ✅ | `ExportDialogs.qml` — a `<multi>` FIX helyű `Item`, ezért a fokozat váltása nem méretezi át az ablakot (9.3/1) |
+| „Automatikus" = a forrás kvantálótábláinak átvétele | ✅ | `export/exporter.py` `_encode_with_source_qtables` (Pillow `qtables=`, 4:2:0); mérce-őr: `tests/export/test_automatikus_minoseg_1138.py` |
+| „Filmek exportálása" csoport | ✅ (#1166) — #1138: a **címke is szürkül** (13.10) | `ExportDialogs.qml` |
+| vízjel: mező csak bejelölve, alatta kis betűs magyarázat | ✅ | `ExportDialogs.qml` |
+| a párbeszéd megjegyzi az előző beállításokat | ✅ | `app/export_prefs.py` + `exportSettings()` / `saveExportSettings()`; a kiírás **egyetlen menetben, csak elfogadáskor** (13.7) |
+| alapértelmezett célmappa `Picasa\Exportálások\` | ✅ (#1166) | őrizve |
+| a mappanév-mező fókuszban, kijelölt tartalommal | ✅ (#1166) | őrizve |
+| mappanév fájlnév-szűrt, méretmező csak számjegy | ✅ | `RegularExpressionValidator`-ok |
+
+**Két kimondott eltérés az eredetitől:**
+
+1. **A „Maximális" nálunk 100, nem 193.** Nem közelítés: a 11.3 szerint a
+   kimenet bizonyíthatóan azonos (`q ≥ 100 → skála 0`).
+2. **A `FileExportSize` kulcs kettéválik nálunk.** A 10.2 szerint a
+   `sizeradio` írja (`0x00739a01`), a 10.1 szerint viszont az alapértéke
+   **3** (`0x00738c58`) — egy kétállású rádiócsoport nem lehet 3. A kettő
+   nem hozható közös nevezőre a meglévő méréssel, ezért nálunk **két**
+   kulcs van: a csúszka állása és a rádió állása. A *viselkedés* hű (a
+   párbeszéd mindkettőt megjegyzi); a registry-kulcs egy-az-egyben
+   megfeleltetése **nyitva marad**.
+

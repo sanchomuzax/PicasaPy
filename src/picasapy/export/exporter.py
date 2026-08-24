@@ -11,6 +11,7 @@ QML) az integrátor lépése."""
 
 from __future__ import annotations
 
+import io
 import shutil
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -18,6 +19,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+from PIL import Image, UnidentifiedImageError
 
 from picasapy.cvimage import read_image_bytes, scale_down
 from picasapy.ini import IniConflictError, IniSaveError, update_document
@@ -66,6 +68,14 @@ class ExportSettings:
     # `Preferences\FileExportMovie`-ból jön (`0x00738c88`–`0x00738cb3`):
     # nem nulla → teljes film, nulla/hiányzó → első képkocka.
     movie_full: bool = True
+    # #1138 (spec 3.3 és 7.1): az „Automatikus" fokozat az eredetiben NEM
+    # szám, hanem KÜLÖN LOGIKAI JELZŐ (`[objektum+0xa40] = 1`,
+    # `0x00739c4d`), és a kimenet a FORRÁS JPEG-kvantálási tábláit veszi át
+    # — mérve: a forrás és a Picasa exportjának DQT-je bájtra azonos,
+    # miközben a fájlméret más (tehát tényleg újrakódolt). Bekapcsolva a
+    # `jpeg_quality` már csak VISSZAESÉS: nem JPEG forrásnál vagy
+    # olvashatatlan táblánál.
+    quality_automatic: bool = False
 
     def __post_init__(self) -> None:
         if self.max_dimension is not None and self.max_dimension < 1:
@@ -89,19 +99,32 @@ class ExportSettings:
 # hatásában azonos kimenetet ad, a 100 viszont belefér az OpenCV 1–100
 # tartományába.
 #
-# Az "automatic" maradt közelítés: az eredetiben nem szám, hanem külön
-# logikai jelző (`[objektum+0xa40] = 1`, `0x00739c4d`), és a forrás
-# kvantálótábláit veszi át (7.1). Nálunk: ha nincs mit beégetni (ld.
-# _is_noop_copy), a bájthű másolás amúgy is megőrzi az eredeti fájlt; ha
-# viszont muszáj újrakódolni (forgatás/átméretezés/szűrő/vízjel), egy
-# majdnem veszteségmentes értéket használunk, mert a forrás tábláinak
-# átvétele az OpenCV-kódolón keresztül külön munka.
+# #1138: az "automatic" SZÁMA is a binárisból való: az ugrótábla 0. ága
+# ugyanoda fut, mint a "normal" — 85 (`0x00739caf`). A kettőt a `+0xa40`
+# jelző különbözteti meg, és a jelző hatása az, hogy a kimenet a FORRÁS
+# kvantálótábláit kapja (`ExportSettings.quality_automatic`). A 85 tehát
+# itt már nem „közelítés", hanem a mért visszaesési érték arra az esetre,
+# amikor nincs honnan táblát venni (nem JPEG forrás).
+_AUTOMATIC_QUALITY = 85
 _QUALITY_PRESETS: dict[str, int] = {
+    "automatic": _AUTOMATIC_QUALITY,
     "normal": 85,
     "maximum": 100,
     "minimum": 65,
 }
-_AUTOMATIC_QUALITY_APPROXIMATION = 92
+
+#: #1138 (spec 3.3): az „Automatikus" fokozat kulcsa — nem szám, hanem
+#: külön logikai jelző az eredetiben is.
+_AUTOMATIC_KEY = "automatic"
+
+
+def is_automatic_quality(preset: str) -> bool:
+    """Az „Automatikus" fokozatot választották-e (#1138).
+
+    Külön kérdés a `resolve_export_quality`-tól, mert az eredetiben is
+    külön logikai jelző (`[objektum+0xa40] = 1`, `0x00739c4d`), nem a
+    minőségszám hordozza: a szám ugyanaz a 85, mint a „Normál"-nál."""
+    return (preset or "").strip().lower() == _AUTOMATIC_KEY
 
 
 def resolve_export_quality(preset: str, custom: int) -> int:
@@ -109,15 +132,19 @@ def resolve_export_quality(preset: str, custom: int) -> int:
 
     `preset`: "normal" | "maximum" | "minimum" | "custom" | "automatic"
     (kis-nagybetűtől független); ismeretlen/üres preset — és maga
-    "automatic" is — a közelítő automatikus értékre esik vissza.
-    `custom` csak `preset == "custom"` esetén számít, és 1–100 közé kell
-    essen (ugyanaz a korlát, mint az `ExportSettings.jpeg_quality`-é)."""
+    "automatic" is — a mért 85-re esik vissza (ld. `_AUTOMATIC_QUALITY`).
+    `custom` csak `preset == "custom"` esetén számít, és 0–100 közé kell
+    essen: a 21 fogásos egyéni csúszka 0-s állása 0×5 = 0-t adna, amit az
+    IJG-kódoló maga emel 1-re (`if (quality <= 0) quality = 1`) — ezt itt
+    tesszük meg, hogy a felület legalsó fogása se dobjon kivételt."""
     key = (preset or "").strip().lower()
     if key == "custom":
+        if custom == 0:
+            custom = 1
         if not 1 <= custom <= 100:
             raise ValueError(f"Érvénytelen egyéni minőség: {custom}")
         return custom
-    return _QUALITY_PRESETS.get(key, _AUTOMATIC_QUALITY_APPROXIMATION)
+    return _QUALITY_PRESETS.get(key, _AUTOMATIC_QUALITY)
 
 
 @dataclass(frozen=True)
@@ -337,12 +364,7 @@ def _export_one(
     image = _apply_rotation(image, item.rotate_steps)
     image = scale_down(image, settings.max_dimension)
     image = _apply_watermark(image, settings.watermark_text)
-    ok, encoded = cv2.imencode(
-        ".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality]
-    )
-    if not ok:
-        raise ValueError(f"JPEG-kódolás sikertelen: {source}")
-    payload = _transfer_metadata(source, encoded.tobytes())
+    payload = _transfer_metadata(source, _encode_jpeg(image, settings, source))
     target = _unique_target(target_dir, number_prefix + source.stem, ".jpg")
     # Közös helper (#129): fsync + atomikus csere — félkész célfájl sose
     # maradjon (NAS/tele lemez).
@@ -372,15 +394,81 @@ def _first_frame(source: Path) -> np.ndarray | None:
 
 def _write_jpeg(image: np.ndarray, target: Path, settings: ExportSettings) -> None:
     """Kép JPEG-be, a köteg minőségével és méretkorlátjával (#1166) —
-    a kép-ág utolsó lépéseinek megfelelője a videó első kockájához."""
+    a kép-ág utolsó lépéseinek megfelelője a videó első kockájához.
+
+    Forrás nincs (a kocka egy videóból jön), ezért az „Automatikus"
+    itt mindig a visszaesési értékkel kódol — filmnek nincs DQT-je."""
     image = scale_down(image, settings.max_dimension)
     image = _apply_watermark(image, settings.watermark_text)
+    write_atomic(target, _encode_jpeg(image, settings, None))
+
+
+# #1138 (spec 7.2, `0x00b1f85a`): a Picasa kódolója FIXEN 4:2:0-t ír
+# (fényesség `0x22`, a két színcsatorna `0x11`) — nincs rá beállítás. A
+# Pillow-ág ugyanezt kéri, hogy az „Automatikus" ne csak a
+# kvantálótáblákban, hanem a színbontásban is egyezzen.
+_PICASA_SUBSAMPLING = 2  # 4:2:0
+
+
+def _encode_jpeg(
+    image: np.ndarray, settings: ExportSettings, source: Path | None
+) -> bytes:
+    """A kirenderelt kép JPEG-bájtjai.
+
+    Az „Automatikus" fokozatnál (#1138) a FORRÁS kvantálási tábláival
+    kódolunk — ez az eredeti mért viselkedése (spec 7.1: a forrás és a
+    Picasa exportjának DQT-je bájtra azonos). Minden más esetben — és ha
+    a forrásból nem olvasható ki tábla — marad az OpenCV-kódoló a
+    `jpeg_quality` értékkel."""
+    if settings.quality_automatic and source is not None:
+        payload = _encode_with_source_qtables(image, source)
+        if payload is not None:
+            return payload
     ok, encoded = cv2.imencode(
         ".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, settings.jpeg_quality]
     )
     if not ok:
-        raise ValueError(f"JPEG-kódolás sikertelen: {target}")
-    write_atomic(target, encoded.tobytes())
+        raise ValueError(f"JPEG-kódolás sikertelen: {source}")
+    return encoded.tobytes()
+
+
+def _source_quantization(source: Path) -> dict | None:
+    """A forrás JPEG kvantálási táblái, vagy `None`.
+
+    Sosem dob: nem JPEG, sérült vagy olvashatatlan forrásnál `None` —
+    a hívó ilyenkor a minőségszámos ágra esik vissza."""
+    try:
+        with Image.open(source) as kep:
+            if kep.format != "JPEG":
+                return None
+            tablak = dict(kep.quantization)
+    except (OSError, ValueError, UnidentifiedImageError):
+        return None
+    return tablak or None
+
+
+def _encode_with_source_qtables(image: np.ndarray, source: Path) -> bytes | None:
+    """Kódolás a forrás kvantálási tábláival (#1138), vagy `None`, ha nem
+    megy — a hívó ilyenkor a szokásos úton kódol.
+
+    A Pillow a beolvasott `quantization` szótárat `qtables=`-ként
+    változtatás nélkül visszaveszi, tehát a kimenet DQT-je bájtra a
+    forrásé lesz."""
+    tablak = _source_quantization(source)
+    if not tablak:
+        return None
+    try:
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        puffer = io.BytesIO()
+        Image.fromarray(rgb).save(
+            puffer,
+            format="JPEG",
+            qtables=tablak,
+            subsampling=_PICASA_SUBSAMPLING,
+        )
+    except (OSError, ValueError, TypeError, cv2.error):
+        return None
+    return puffer.getvalue()
 
 
 def _is_noop_copy(

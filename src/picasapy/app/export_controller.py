@@ -16,6 +16,7 @@ from picasapy.export import (
     ExportItem,
     ExportSettings,
     export_photos,
+    is_automatic_quality,
     resolve_export_quality,
 )
 from picasapy.fileops import has_enough_free_space, required_bytes_for
@@ -24,6 +25,13 @@ from picasapy.index import open_index, photo_by_id
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
 from .formatting import to_local_path
+from .export_prefs import EXPORT_PATH_SETTINGS_KEY as _EXPORT_PATH_KEY
+from .export_prefs import MOVIE_FULL_SETTINGS_KEY as _MOVIE_FULL_KEY
+from .export_prefs import (
+    SIZE_PRESETS,
+    read_export_prefs,
+    write_export_prefs,
+)
 from .exported_folders import (
     EXPORTED_FOLDERS_SETTINGS_KEY,
     existing_exported_folders,
@@ -84,13 +92,15 @@ class ExportMixin(BackgroundWorkerMixin):
     #: #1166: a film-rádió állása — az eredeti `Preferences\FileExportMovie`
     #: megfelelője (`0x00738c88`–`0x00738cb3`): nem nulla → „Teljes film",
     #: nulla/hiányzó → „Első képkocka". A mi alapértékünk ezért False.
-    MOVIE_FULL_SETTINGS_KEY = "export/moviefull"
+    #: #1138: a kulcsnév a közös `export_prefs` modulból jön — a
+    #: párbeszéd kilenc kulcsa egy helyen él.
+    MOVIE_FULL_SETTINGS_KEY = _MOVIE_FULL_KEY
 
     #: #1166: a hely alapértéke — az eredetiben a `DefaultExportPath`
     #: korábbi értéke, hiányában a honosított `Picasa\Exportálások\`
     #: (`0x00738d16`, nyers alapérték `Picasa\Exports\`, kulcs
     #: `CExportPrefsDialog::deffolder`).
-    EXPORT_PATH_SETTINGS_KEY = "export/defaultpath"
+    EXPORT_PATH_SETTINGS_KEY = _EXPORT_PATH_KEY
 
     @Slot(result=str)
     def defaultExportName(self) -> str:
@@ -144,6 +154,45 @@ class ExportMixin(BackgroundWorkerMixin):
     def setExportMovieFull(self, full: bool) -> None:
         """A film-rádió állásának megőrzése a következő exportig (#1166)."""
         self._get_settings().setValue(self.MOVIE_FULL_SETTINGS_KEY, bool(full))
+
+    # -- a párbeszéd megőrzött beállításai (#1138) ---------------------------
+
+    @Slot(result="QVariantMap")
+    def exportSettings(self) -> dict:
+        """A párbeszéd MEGŐRZÖTT beállításai (#1138, spec 4. szakasz).
+
+        A leképezés, az alapértékek és a `FileExportSize` körüli kimondott
+        bizonytalanság az `app/export_prefs.py` modul-docstringjében."""
+        return read_export_prefs(self._get_settings())
+
+    @Slot("QVariantMap")
+    def saveExportSettings(self, values) -> None:
+        """A beállítások kiírása — EGYETLEN menetben, az ELFOGADÁSKOR.
+
+        Spec 13.7 (mért): a közös párbeszéd-lezáró (`0x008d2720`) csak
+        akkor hívja a kiírót (`vt[0x164]` = `0x00739960`), ha a lezárási
+        kód 0; a Mégse ága az üres tő (`0x00b0d990`, egyetlen `ret`).
+        Ezért a felület sem menthet vezérlőnként — egyetlen hívás, az
+        `onAccepted`-ben."""
+        write_export_prefs(self._get_settings(), values)
+
+    @Slot(result="QVariantList")
+    def exportSizePresets(self) -> list:
+        """A méret-csúszka hét fogása (`export.fen` `bind17.list`).
+
+        A felület innen kéri el: egyetlen igazságforrás, hogy a QML és a
+        mentett méret-index ne csússzon szét."""
+        return list(SIZE_PRESETS)
+
+    @Slot(str, result=bool)
+    def exportQualityIsAutomatic(self, quality_preset: str) -> bool:
+        """Az „Automatikus" fokozat van-e kiválasztva (#1138).
+
+        Külön kérdés a `resolveExportQuality`-tól, mert az eredetiben is
+        külön logikai jelző hordozza (`[objektum+0xa40] = 1`,
+        `0x00739c4d`), nem a szám: az „Automatikus" és a „Normál"
+        ugyanarra a 85-re megy."""
+        return is_automatic_quality(quality_preset)
 
     @Slot("QVariantList", result=bool)
     def selectionHasVideo(self, rows) -> bool:
@@ -227,10 +276,11 @@ class ExportMixin(BackgroundWorkerMixin):
         indoklásáért (a pontos Picasa-értékek nem dokumentáltak)."""
         return resolve_export_quality(quality_preset, custom_quality)
 
-    @Slot(list, str, int, int, bool, str, bool)
+    @Slot(list, str, int, int, bool, str, bool, bool)
     def exportRows(self, rows, target_dir: str, max_dimension: int,
                    jpeg_quality: int, add_numbers: bool = False,
-                   watermark_text: str = "", purge_existing: bool = False) -> None:
+                   watermark_text: str = "", purge_existing: bool = False,
+                   quality_automatic: bool = False) -> None:
         """Kijelölt sorok exportja célmappába (#16, Ctrl+Shift+S).
 
         A forgatás (rotate_steps) ÉS a `filters=` szerkesztés-lánc (#136)
@@ -249,12 +299,14 @@ class ExportMixin(BackgroundWorkerMixin):
             if 0 <= int(r) < len(photos)
         )
         self._export_items(items, target_dir, max_dimension, jpeg_quality,
-                           add_numbers, watermark_text, purge_existing)
+                           add_numbers, watermark_text, purge_existing,
+                           quality_automatic)
 
-    @Slot(str, int, int, bool, str, bool)
+    @Slot(str, int, int, bool, str, bool, bool)
     def exportHeld(self, target_dir: str, max_dimension: int,
                    jpeg_quality: int, add_numbers: bool = False,
-                   watermark_text: str = "", purge_existing: bool = False) -> None:
+                   watermark_text: str = "", purge_existing: bool = False,
+                   quality_automatic: bool = False) -> None:
         """A KÉPTÁLCA tartalmának exportja célmappába (#455, 3. teendő).
 
         Az eredetiben a tálca alatti műveletsor a **tálca tartalmán**
@@ -267,6 +319,7 @@ class ExportMixin(BackgroundWorkerMixin):
         self._export_items(
             self._held_export_items(), target_dir, max_dimension,
             jpeg_quality, add_numbers, watermark_text, purge_existing,
+            quality_automatic,
         )
 
     def _held_export_items(self) -> tuple[ExportItem, ...]:
@@ -285,7 +338,8 @@ class ExportMixin(BackgroundWorkerMixin):
 
     def _export_items(self, items, target_dir: str, max_dimension: int,
                       jpeg_quality: int, add_numbers: bool,
-                      watermark_text: str, purge_existing: bool = False) -> None:
+                      watermark_text: str, purge_existing: bool = False,
+                      quality_automatic: bool = False) -> None:
         target = to_local_path(target_dir)
         if not items or not target:
             # #1166: az eredeti sem hallgat — `IDS_NO_IMAGES_TO_SEND`
@@ -315,6 +369,10 @@ class ExportMixin(BackgroundWorkerMixin):
             # elmenti (`setExportMovieFull`), ezért itt a tárolt érték
             # MINDIG a most választott — nem kell nyolcadik paraméter.
             movie_full=self.exportMovieFull(),
+            # #1138: az „Automatikus" fokozat — a kimenet a FORRÁS
+            # kvantálási tábláit veszi át (spec 3.3/7.1), nem a
+            # `jpeg_quality`-t. Az utóbbi csak visszaesés marad.
+            quality_automatic=bool(quality_automatic),
         )
 
         # #457: a célmappa a „Exportált képek" nyilvántartásba kerül —
