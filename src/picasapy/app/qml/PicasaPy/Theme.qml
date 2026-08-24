@@ -70,6 +70,16 @@ QtObject {
     readonly property color trayBg: dark ? "#262626" : "#f8f8f8"
     readonly property color trayBorder: dark ? "#3c3c3c" : "#d0d0c8"
     readonly property color viewerBg: dark ? "#1a1a1a" : "#808080"
+
+    // #900: a kijelölésen KÍVÜLI terület elsötétítése a szerkesztő
+    // eszközeiben (vágás, vörösszem, arc hozzáadása). Az eredeti `.tre`
+    // öt elemen adja meg ugyanezt: `Property negativemode 8f2f2f2f` —
+    // ARGB-ként olvasva alfa 143 (56,1%) + RGB 47/47/47.
+    // NEM fekete: a fekete kioltja a képet, ez a semleges sötétszürke
+    // viszont MEGTARTJA a kontúrokat, tehát a levágandó rész halványan,
+    // de olvashatóan látszik. (A parszer alapértelmezése `0x7F000000`
+    // volna — fekete, 50% —, de mind az öt elem felülírja.)
+    readonly property color selectionDim: "#8f2f2f2f"
     readonly property color starYellow: "#f5c518"
     readonly property color textGray: dark ? "#a29e96" : "#7a776f"
 
