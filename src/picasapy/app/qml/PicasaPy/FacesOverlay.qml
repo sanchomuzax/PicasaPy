@@ -163,6 +163,21 @@ Item {
     }
     // a húzás közbeni draft-téglalap (pixel-koordináták)
     property rect draftRect: Qt.rect(0, 0, 0, 0)
+
+    // #900: az `editpanel/addfaceselection` a téglalapon KÍVÜLI területet
+    // ugyanazzal a `negativemode 8f2f2f2f` értékkel sötétíti, mint a vágó.
+    // A sötétítés a fogantyúk ALATT rajzolódik, hogy azok olvashatók
+    // maradjanak.
+    SelectionDim {
+        objectName: "faceSelectionDim"
+        active: overlay.editMode
+                && overlay.draftRect.width > 0 && overlay.draftRect.height > 0
+        selX: overlay.draftRect.x
+        selY: overlay.draftRect.y
+        selW: overlay.draftRect.width
+        selH: overlay.draftRect.height
+    }
+
     Rectangle {
         visible: overlay.editMode
                  && overlay.draftRect.width > 0 && overlay.draftRect.height > 0

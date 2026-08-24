@@ -152,10 +152,16 @@ Item {
         overlay.commitFromPixels(left, top, w, h)
     }
 
-    // a kijelölésen kívüli terület: normál módban sötétítés, Előnézet
-    // tartásakor a néző hátterével teljesen fedett (vágás-előnézet)
-    readonly property color dimColor: overlay.previewHold ? "#808080"
-                                                          : "#000000a0"
+    // A kijelölésen kívüli terület sötétítése (#900): `Theme.selectionDim`
+    // — az eredeti `editpanel/cropselection` `negativemode 8f2f2f2f`-e.
+    //
+    // ⚠️ Az „Előnézet" TARTÁSA a MI kiegészítésünk, nem az eredetié (#1187):
+    // ott nincs ilyen állapot. Nálunk a gomb nyomva tartása a vágás
+    // eredményét mutatja, ezért a külső rész ilyenkor nem sötétedik, hanem
+    // a néző hátterével TELJESEN fedett. A kettő szándékosan más — egy
+    // későbbi kör ne „egységesítse" össze őket.
+    readonly property color dimColor: overlay.previewHold ? Theme.viewerBg
+                                                          : Theme.selectionDim
     Rectangle {
         visible: overlay.hasSelection
         color: overlay.dimColor

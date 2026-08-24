@@ -1225,6 +1225,25 @@ Rectangle {
                             }
                         }
 
+                        // #900: az `editpanel/redselection` a téglalapon
+                        // KÍVÜLI területet ugyanazzal a
+                        // `negativemode 8f2f2f2f` értékkel sötétíti, mint a
+                        // vágó. Csak húzás közben — a már rögzített régiók
+                        // körül nincs sötétítés, azokat csak keret jelöli.
+                        SelectionDim {
+                            objectName: "redeyeSelectionDim"
+                            active: redeyeDragArea.dragging
+                                    && !editorPanel.redeyeHideOutlines
+                            selX: Math.min(redeyeDragArea.startX,
+                                           redeyeDragArea.lastX)
+                            selY: Math.min(redeyeDragArea.startY,
+                                           redeyeDragArea.lastY)
+                            selW: Math.abs(redeyeDragArea.lastX
+                                           - redeyeDragArea.startX)
+                            selH: Math.abs(redeyeDragArea.lastY
+                                           - redeyeDragArea.startY)
+                        }
+
                         // az ÉPP húzott téglalap (még nincs a pufferben)
                         Rectangle {
                             objectName: "redeyeDragRect"
