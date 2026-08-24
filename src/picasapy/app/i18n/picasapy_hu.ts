@@ -4650,6 +4650,11 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <location filename="../qml/PicasaPy/TrayBar.qml"/>
+        <source>Waiting for the collage to be created…</source>
+        <translation>Várakozás a kollázs elkészítésére…</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/TrayBar.qml"/>
         <source>Add to</source>
         <translation>Hozzáadás</translation>
     </message>
@@ -7504,8 +7509,16 @@ Restore it to continue where you left off. If you discard it, the draft is delet
         <translation>Figyelmeztetés: eltérő formátumok</translation>
     </message>
     <message>
-        <source>The page format of the collage does not match the format of your display. This may result in a desktop background that does not look as expected. (TIP: Choose „Current display” in the Page Format dropdown menu.)</source>
-        <translation>A kollázs oldalformátuma nem egyezik a képernyő formátumával. Emiatt az asztali háttérkép nem úgy fog kinézni, ahogy várná. (TIPP: válassza a „Jelenlegi megjelenítés” tételt az Oldalformátum menüből.)</translation>
+        <source>The current page format of the collage does not match the current size of your desktop. This may cause your desktop background to appear in an unexpected way.
+
+(TIP: In the Page Format dropdown menu, choose „Current display” to ensure a perfect fit.)
+
+Are you sure you want to continue?</source>
+        <translation>A kollázs jelenlegi oldalformátuma nem egyezik az asztal aktuális méretével. Emiatt az asztal háttérképe nem várt módon jelenhet meg.
+
+(TIPP: Az Oldalformátum legördülő menüben a „Jelenlegi megjelenítés” elemet választva biztosíthatja a tökéletes illeszkedést.)
+
+Biztosan folytatja a műveletet?</translation>
     </message>
     <message>
         <source>Set Anyway</source>

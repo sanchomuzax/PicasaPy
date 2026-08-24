@@ -153,14 +153,22 @@ Item {
             // az angolra készültek, elidálva a felhasználó néma csonkot
             // látna — és pont a megoldást tartalmazó zárójeles tippet
             // veszítené el.
+            //
+            // #1168 (spec 16.2/b): a magyar szöveg mostantól a HIVATALOS
+            // erőforrásé (`collage::formatmismatch`) — a korábbi a mi
+            // fordításunk volt, mert a magyar erőforrás akkor még nem volt
+            // a leltárunkban. Vele érkezett a ZÁRÓ KÉRDÉS is, ami eddig
+            // hiányzott, holott a párbeszéd épp arról szól: folytatja-e.
             Text {
                 objectName: "collageFormatMismatchMessage"
                 Layout.preferredWidth: 380
-                text: qsTr("The page format of the collage does not match the "
-                           + "format of your display. This may result in a "
-                           + "desktop background that does not look as "
-                           + "expected. (TIP: Choose „Current display” "
-                           + "in the Page Format dropdown menu.)")
+                text: qsTr("The current page format of the collage does not "
+                           + "match the current size of your desktop. This "
+                           + "may cause your desktop background to appear in "
+                           + "an unexpected way.\n\n"
+                           + "(TIP: In the Page Format dropdown menu, choose "
+                           + "„Current display” to ensure a perfect fit.)\n\n"
+                           + "Are you sure you want to continue?")
                 wrapMode: Text.WordWrap
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink

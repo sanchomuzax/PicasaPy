@@ -295,6 +295,10 @@ Item {
     property bool pendingDesktop: false
     property bool pendingReplace: false
 
+    //: #1168: a felhasználó a „Piszkozat mentése" gombbal indult BEZÁRNI —
+    //: a lap a piszkozat tényleges kiírására vár (spec 16.2/a).
+    property bool closeAfterDraft: false
+
     //: A kész kollázs útvonala — a gazda ebből indexel és ugrik rá
     //: („locate", spec 9.1/b).
     signal collageSaved(string path)
@@ -363,10 +367,15 @@ Item {
                 panel.controller.dropSavedCollagePath()
             panel.startSave(false)
         }
+        // #1168 (spec 16.2/a): a lapot a piszkozat MEGÍRÁSA zárja be, nem a
+        // gomb megnyomása. Üres vásznon a mentés elmarad, és a
+        // „Mentés mellőzve" doboz azt ígéri, hogy „vegyen fel legalább egy
+        // képet, és próbálkozzon újra" — becsukott lapon ez üres ígéret
+        // volna. A bezárást ezért a `collageDraftSaved` fogadója viszi.
         onCloseWithDraft: {
             if (panel.controller) {
+                panel.closeAfterDraft = true
                 panel.controller.saveCollageDraft()
-                panel.controller.closeCollage()
             }
         }
         onCloseDiscardingChanges: {
@@ -400,7 +409,21 @@ Item {
         function onCollageCanceled() { progressOverlay.visible = false }
         function onCollageNoImages() {
             progressOverlay.visible = false
+            // #1168: a mentés elmaradt, tehát a bezárási szándék is elévül —
+            // különben a következő, SIKERES piszkozat zárná be a lapot
+            // egy olyan kérésre, amit a felhasználó rég elengedett.
+            panel.closeAfterDraft = false
             dialogs.showSaveSkipped()
+        }
+        // #1168: a bezárás a piszkozat kiírására vár (ld. `onCloseWithDraft`).
+        // A jelzés akkor is jöhet, amikor nem zárni akartunk (pl. egy
+        // jövőbeli, automatikus piszkozat) — ezért kell a szándék-jelző.
+        function onCollageDraftSaved(path) {
+            if (!panel.closeAfterDraft)
+                return
+            panel.closeAfterDraft = false
+            if (panel.controller)
+                panel.controller.closeCollage()
         }
         function onCollageFormatMismatch() {
             progressOverlay.visible = false

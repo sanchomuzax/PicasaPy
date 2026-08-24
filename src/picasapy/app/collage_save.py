@@ -103,6 +103,9 @@ class CollageSaveMixin(BackgroundWorkerMixin):
 
     collageTitleChanged = Signal()
     collageSavedPathChanged = Signal()
+    #: #1168 (spec 16.3): a `collageRendering` váltása — a FŐABLAK várakozó
+    #: sora (`CThumbUI::CreateCollageWait`) erre köt.
+    collageRenderingChanged = Signal()
 
     # -- property-k (8.1) --------------------------------------------------
 
@@ -190,6 +193,32 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self._collage_panel_percent = int(percent)
         self.collageProgress.emit(int(percent), text)
 
+    # -- a főablak várakozó állapota (#1168, spec 16.3) --------------------
+
+    @Property(bool, notify=collageRenderingChanged)
+    def collageRendering(self) -> bool:
+        """Fut-e éppen a kollázs rajzolása (spec 16.3).
+
+        Az eredetiben a KÖNYVTÁRNÉZET is jelez a kollázs készítése alatt
+        (`CThumbUI::CreateCollageWait` = „Várakozás a kollázs
+        elkészítésére…"), nem csak a panel folyamatjelző doboza. A panel
+        közben be is zárulhat — ezért kell a főablaknak SAJÁT olvasata
+        arról, hogy dolgozunk-e."""
+        self._ensure_collage_panel()
+        return self._collage_panel_rendering
+
+    def _set_rendering(self, running: bool) -> None:
+        """A várakozó jelző EGYETLEN kapuja — idempotens.
+
+        Minden ág ide fut be: az indítás, a siker, a hiba, a megszakítás és
+        az olvashatatlan képek is. Aki új kimeneti ágat ír, ezt hívja —
+        különben a könyvtárnézetben BERAGAD a várakozó sor."""
+        self._ensure_collage_panel()
+        if bool(running) == self._collage_panel_rendering:
+            return
+        self._collage_panel_rendering = bool(running)
+        self.collageRenderingChanged.emit()
+
     #: A háttérszálról küldhető folyamat-szövegek KULCSAI. A `tr()` hívása
     #: is a fogadó szálon történik (#988/#999) — a szál csak kulcsot küld.
     _PROGRESS_INITIALIZING = "initializing"
@@ -227,7 +256,11 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         """A rajzolás eredményének feldolgozása — a fogadó szálon.
 
         Minden állapotírás és minden NYILVÁNOS jelzés itt történik; a
-        háttérszál csak a nyers adatot adta át."""
+        háttérszál csak a nyers adatot adta át.
+
+        ⚠️ A várakozó jelzőt (#1168) MINDEN ág lekapcsolja — a rajzolásnak
+        ez az egyetlen visszaérkezési pontja, tehát itt nem maradhat ki."""
+        self._set_rendering(False)
         fajta = payload["fajta"]
         if fajta == "hiba":
             self.collageFailed.emit(payload["uzenet"])
@@ -301,6 +334,10 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         self._collage_panel_cancel.clear()
         self._ensure_worker_bridge()  # #988/#999: a GUI-szálon, a szál ELŐTT
         self._emit_progress(0, self._progress_text_initializing())
+        # #1168 (16.3): innentől a KÖNYVTÁRNÉZET is jelzi a várakozást — az
+        # összes korábbi visszafordulás (nincs kép, formátum-eltérés) már
+        # megtörtént, tehát innen tényleg rajzolás következik.
+        self._set_rendering(True)
         self._start_background(
             self._render_worker,
             args=(
@@ -548,10 +585,19 @@ class CollageSaveMixin(BackgroundWorkerMixin):
         Csomópont nélkül NEM ír: egy üres piszkozat visszaállítva üres lapot
         adna, ami rosszabb annál, mintha nem ajánlanánk fel semmit. A hiba
         naplózott, de nyelt — a piszkozat baja sosem viheti el a
-        felhasználó kollázsát."""
+        felhasználó kollázsát.
+
+        ⚠️ #1168 (spec 16.2/a): a kép nélküli ág eddig NÉMÁN tért vissza. Az
+        eredeti ilyenkor a **„Mentés mellőzve"** dobozt mutatja
+        (`collageUI::noimages_title` / `collageUI::noimages`) — ugyanaz a
+        `collageNoImages` jelzés, amit a végleges mentés is kiad, tehát a
+        felületnek nem kell új ágat írnia hozzá. A jelzés egyben azt is
+        eldönti, hogy a lap NYITVA marad: a felhasználó vegyen fel egy
+        képet, és próbálkozzon újra."""
         self._ensure_collage_panel()
         nodes = self._nodes()
         if not nodes:
+            self.collageNoImages.emit()
             return
         try:
             ut = write_autosave(

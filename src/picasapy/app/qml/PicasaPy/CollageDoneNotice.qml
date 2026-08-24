@@ -23,6 +23,25 @@ import QtQuick.Controls
 // A `locate` a könyvtárban KIJELÖLI a kész képet, de nem nyit nézőt. A
 // nagyban megnyitás a felhasználó kattintása — az eredeti is így osztja
 // szét a kettőt, és ez tartja meg neki a döntést.
+//
+// ## MELYIK ágon jelenik meg (#1119 → #1168)
+//
+// A #1119 helyesbítése óta tudjuk: a `collage::done` értesítő
+// (`0x0088a020`) a `0x0057aa10`-et hívja, amiben a `Control Panel\Desktop\`
+// registrykulcs és a `picasabackground.bmp` szerepel — vagyis az értesítés
+// az **„Asztali háttérkép"** ágé, NEM a rendes kollázs-készítésé. A
+// tulajdonos háromszor jelezte, hogy a rendes létrehozás után ilyen gomb a
+// Picasa 3-ban nincs.
+//
+// A #1119 óta ez a komponens ezért állt bekötetlenül: „a
+// `collageDesktopBackgroundReady` jelzésnek nincs fogadója". A #1168
+// (spec 16.1) ezt a hiányt zárja — a fogadó ITT él, nem a gazdában:
+//
+//   * a `Main.qml` FORRÓ FÁJL, és a kötés egyetlen jelzésről szól;
+//   * a `controller` gyökér-kontextus-tulajdonság, tehát a komponens a
+//     gazda közreműködése nélkül is eléri;
+//   * így a „melyik ágon szólal meg" döntés EGY helyen, a komponens
+//     mellett olvasható — a gazda csak a kattintás következményét viszi.
 Rectangle {
     id: notice
     objectName: "collageDoneNotice"
@@ -42,6 +61,16 @@ Rectangle {
     function dismiss() {
         notice.visible = false
         notice.path = ""
+    }
+
+    // #1168 (spec 16.1): a jelzés fogadója. CSAK az „Asztali háttérkép"
+    // ága — a `collageDesktopBackgroundReady`-t a vezérlő kizárólag akkor
+    // adja ki, ha a mentés a háttérkép-gombbal indult (`collage_save.py`,
+    // `payload["hatterkep"]`). A rendes `collageDone`-ra SZÁNDÉKOSAN nem
+    // kötünk — az volna a #1119-ben javított hiba.
+    Connections {
+        target: typeof controller !== "undefined" ? controller : null
+        function onCollageDesktopBackgroundReady(path) { notice.showFor(path) }
     }
 
     visible: false

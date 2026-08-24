@@ -747,3 +747,24 @@ figyelmeztetésre (szó szerinti szöveg + kulcs + cím), a várakozó
 sorhosszára (valódi adat) · **nincs mintánk** `hascollage = 1` értékre,
 és **nem követtük végig**, mikor írja a program.
 
+
+### 16.5 Mi valósult meg belőle (#1168, 2026-08-24)
+
+A fenti négy lelet átvezetése után az „Eredeti / nálunk" tábla több sora
+elavult. A pontos mai állapot:
+
+| lelet | mai állapot a PicasaPy-ban |
+|---|---|
+| négy folyamatállapot, %-os haladás | **már megvolt** (#949) — a szövegek és a magyar honosítás is |
+| a kész értesítés KATTINTHATÓ | a `CollageDoneNotice` megvolt (#1028), de **bekötetlen** volt; a #1168 bekötötte az **„Asztali háttérkép"** ágra (`collageDesktopBackgroundReady`) |
+| a RENDES létrehozás utáni értesítés | **szándékosan nincs** — #1119: a `collage::done` a háttérkép-ághoz tartozik, a tulajdonos háromszor jelezte |
+| „Mentés mellőzve" a végleges mentésnél | **már megvolt** (#949) |
+| „Mentés mellőzve" a PISZKOZAT ágán | **új** (#1168): a `saveCollageDraft()` eddig némán tért vissza; most `collageNoImages`, és a lap NYITVA marad |
+| formátum-figyelmeztetés két gombbal + tipp | **már megvolt** (#949); a #1168 a hivatalos magyar szövegre cserélte, a hiányzó **záró kérdéssel** együtt |
+| várakozás a főablakban | **új** (#1168): `collageRendering` property + az alsó infó-sáv felirata |
+| `hascollage` | **nem képjelölés** — ld. `pmp-database.md` K6: album-szintű, a `PicasaCollage.cxf` LÉTEZÉSÉBŐL származtatva. Nálunk `index/album_collage.py`, séma-oszlop NÉLKÜL |
+| a PMP-parszer tűri a rövidebb oszlopot | **már megvolt** (`table.py` kipótol); a #1168 az élő alakra (2371 vs 2370) írt őrt |
+
+**Nyitva marad:** a lebegő értesítősáv (#1129) — a kész-értesítés ma egy
+saját, a főablak aljára horgonyzott doboz, nem a sáv eleme; és a
+`hascollage`-nak nincs hívója, amíg a #1033/#1131 nem kéri.
