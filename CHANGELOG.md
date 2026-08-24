@@ -17,7 +17,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   javítva. Új őr-teszt vigyáz rá, hogy a program oldala ne romolhasson el
   észrevétlenül.
 
-## [Nem kiadott]
+## [0.8.64] – 2026-08-24
 
 ### Javítva
 - **A főág ellenőrzése nem borul fel többé a kollázs-teszteknél
