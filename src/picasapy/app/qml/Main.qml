@@ -84,6 +84,10 @@ ApplicationWindow {
     // #26: melyik arc-album van nyitva — „unnamed" vagy „ignored"
     // (`CAlbumLabel::Ignored` = „Mellőzött emberek")
     property string facesAlbumMode: "unnamed"
+    // #1236: külön ablak-szintű név kell. Az UnnamedFacesView azonos nevű
+    // property-jének jobb oldalán a `faceScanController` önmagára oldódna.
+    readonly property var _faceScanController:
+        typeof faceScanController !== "undefined" ? faceScanController : null
     // a jobbklikkelt kép sora (#15) — a kontextusmenü egyedi műveleteinek
     // (átnevezés, fájlkezelő) célpontja
     property int fileOpTargetRow: -1
@@ -1356,8 +1360,7 @@ ApplicationWindow {
                             Layout.fillHeight: true
                             visible: window.unnamedFacesOpen
                             mode: window.facesAlbumMode
-                            faceScanController: typeof faceScanController !== "undefined"
-                                                 ? faceScanController : null
+                            faceScanController: window._faceScanController
                         }
                     }
                 }
