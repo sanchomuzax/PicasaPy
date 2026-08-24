@@ -461,7 +461,16 @@ magassághoz külön.
 visszafejtéséből származik, és a mostani, **független** úton kiolvasott
 konstansok (1,0 és 0,5) megerősítik.
 
-#### ⚠️ A `radsat` nálunk NEM ezt használja
+#### ⚠️ A `radsat` nálunk NEM ezt használja (JAVÍTVA — #859, 2026-08-24)
+
+> A lejjebbi lelet ELAVULT: a `radsat` mai (`render/effects.py: apply_radsat`)
+> kódja már a `radblur`-rel KÖZÖS `native_radius_pixels`/`pixel_distance_grid`
+> segédfüggvényt hívja (`render/radial_mask.py`) — izotróp kör, nem
+> tengelyenkénti ellipszis. A `vignette_gain` (`effects.py:100`) VÁLTOZATLAN
+> maradt: nyolc eredeti Picasa-export mérése (#859 issue-komment,
+> 2026-08-18) megcáfolta az izotróp hipotézist ARRA — annak zónája
+> SZÁNDÉKOSAN ellipszis. Az alábbi eredeti lelet a történeti nyom kedvéért
+> marad, nem törölve.
 
 `src/picasapy/render/effects.py:58` — a `_radius_grid()` **tengelyenként**
 normalizál:

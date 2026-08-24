@@ -295,7 +295,7 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
    történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
 
-### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 3 kérdés (a hatókörön kívüli Apple-ágon felül)
+### [picasa-mappakezelo.md](picasa-mappakezelo.md) — 2 kérdés (a hatókörön kívüli Apple-ágon felül)
 
 > 🔴 **2026-08-21 — ÉLES ÖSSZEVETÉS: a megvalósításunk NEM követi ezt a
 > lapot.** A tulajdonos egymás mellett futtatta a kettőt. A fa **nem
@@ -382,7 +382,7 @@ a `0x007c5c40` három kimenő jelzőjének pontos leképezése a három ikonra
    `9` = kudarc); a `1` egy tömb-növelő rutin helyi változója volt. A
    siker ága nyitja ki az ősöket és kéri a háttérbetöltést, a kudarcé
    törli a fa kijelölését.
-3. **Hol jön létre a változás-értesítő fogantyú?** (16.4) — a `FindNextChangeNotification`/`FindCloseChangeNotification` alkalmazáskódból hívódik, de a `FindFirstChangeNotification…` létrehozó helye nem található; emiatt az sem eldöntött, él-e a figyelő minden futásban. A végigpróbált utak a 16.4-ben.
+3. ~~Hol jön létre a változás-értesítő fogantyú?~~ — ✅ **LEZÁRVA 2026-08-24 (16.5)**: `0x007062b9`, a `0xd694fc` platform-váltó függvénymutatón át; a szűrő **`0x17`** (FILE_NAME|DIR_NAME|ATTRIBUTES|**LAST_WRITE**, méret NINCS), **`bWatchSubtree = 1` = rekurzív**. A figyelő ÉL. Ez megcáfolja a 16.4 saját óvatoskodását is.
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott bináris kérdés
 
@@ -523,6 +523,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [picasa-importalas.md](picasa-importalas.md) | Az importálás panelje — tipp-sor, kártyatörlés-figyelmeztetés, hibák |
 | [picasa-elso-inditas.md](picasa-elso-inditas.md) | **Az első indítás `initialscan` panelje** — migrációs és tiszta-telepítés változat, geometria, a kihagyhatatlan választás |
 | [picasa-mappakezelo.md](picasa-mappakezelo.md) | **A Mappakezelő TELJES specifikációja** — elrendezés és tervezővászon-geometria, az átméretezés szabályai (`winsize` → `SC_SIZE`), a fa és az öröklődő állapot, a három rádió, az arcfelismerés-kapcsoló, a három figyelmeztetés, az OK/Mégse delta-szemantikája, a Súgó URL-je |
+| [picasa-keptalca.md](picasa-keptalca.md) | **A Képtálca (`scratch`, „Selection") MŰKÖDÉS-specje** — a döntő lelet, hogy a tálca **nem marad meg újraindítás után** (három független negatív ellenőrzés); a négy vezérlő felirat NÉLKÜL, csak ikon+súgó; a `Tray` helyi menü két parancsa; **két külön** ürítés-megerősítés; a 36,5%-os doboz-kényszer; a `trayexec` adatvezérelt műveletsor; két negatív eredmény (a `.pbz` placement NEM az alap-sorrend, a `Tray contains:` hibakereső lap) |
 | [picasa-lebego-ertesito.md](picasa-lebego-ertesito.md) | A lebegő értesítősáv (`CNotifierPopup`) — képernyőfelvétel- és import-értesítés, kattintás-viselkedés; a geometria és az animáció NYITOTT |
 | [vorosszem-eszkoz-terve.md](vorosszem-eszkoz-terve.md) | A vörösszem-eszköz terve |
 | [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) | A vágás-eszköz állapota — 19 arány, egyéni arányok, 3 javaslat |
