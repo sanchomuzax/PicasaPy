@@ -49,7 +49,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   tehát a „képarány" a mi saját szóalkotásunk volt. A vágópanel feliratai
   mostantól a hivatalos alakot használják.
 
-## [Nem kiadott]
+## [0.8.66] – 2026-08-24
 
 ### Javítva
 - **A Fotótálca Kollázs gombja feliratos és van súgója (#1116).** Eddig
