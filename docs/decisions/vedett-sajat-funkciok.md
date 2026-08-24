@@ -1,0 +1,101 @@
+# Módszertan: SAJÁT FUNKCIÓ jelölés — a nem eredeti Picasa-funkciók jegyzéke
+
+Állapot: élő lista (folyamatosan bővül) · Dátum: 2026-08-24 · jegy: #1187
+
+## A szabály
+
+A projekt módszertana a Windows-os Picasa binárisát tekinti mércének: ha a
+kódunk eltér tőle, az az alapeset szerint **hiba** (ld.
+`docs/specs/binaris-regeszet-modszertan.md` 17. szakasza). Ennek a
+szabálynak van egy kimondott kivétele: a **szándékosan hozzáadott, nem
+eredeti funkciók**. Ezeknél az eltérés nem hiba, hanem a terv — **a
+bináris-egyezés ide nem vonatkozik.**
+
+Ez a fájl az ilyen esetek **kereshető jegyzéke**. Új saját funkció
+bevezetésekor:
+
+1. tedd ki a kód (vagy a spec) érintett pontjára a `SAJÁT FUNKCIÓ`
+   jelölőt (ld. lent),
+2. vedd fel ide egy sort,
+3. ha a tulajdonos külön döntésként hozta létre (nem apró UX-részlet), írj
+   hozzá `docs/decisions/`-ADR-t is, és hivatkozz rá innen.
+
+## A jelölő — három helyen, egyetlen szó fedi mindet
+
+A greppelhető kulcsszó: **`SAJÁT FUNKCIÓ`** (nagybetűvel, pontosan így —
+ez teszi lehetővé, hogy egyetlen kereséssel mindhárom helyet megtaláljuk:
+`grep -rn "SAJÁT FUNKCIÓ" src/ docs/`).
+
+- **Kódban** (Python-/QML-megjegyzés vagy docstring), a divergencia
+  pontjánál, egy sorban a jegyszámmal:
+
+  ```
+  // SAJÁT FUNKCIÓ (#1187): <mi tér el, és miért — egy mondatban>
+  ```
+
+  ```python
+  # SAJÁT FUNKCIÓ (#445): <...>
+  ```
+
+- **Specifikációban** (`docs/specs/*.md`), a bekezdés elején félkövérrel:
+
+  ```
+  **SAJÁT FUNKCIÓ (#445):** <...>
+  ```
+
+- **Jegyen**: a `sajat-feature` GitHub-címke. Jelentése: *ez a jegy
+  szándékosan nem eredeti Picasa-viselkedést érint — a bináris-egyezés
+  ellenőrzése ide nem vonatkozik.*
+
+## Munkafolyamat-szabály (kutatás/kódolás/hibakeresés)
+
+**Jegynyitás előtt, ha az érintett terület gyanúsan „hiányzik" a
+binárisból, vagy „többet" csinál nála**: fusd le a fenti grepet az érintett
+fájlokra és a `docs/specs/`-re, és nézd át ezt a listát. Ha a terület itt
+szerepel, az eltérés **nem kutatási találat és nem hiba** — a jegyet ez
+alapján zárd, ne a bináris-eltérésre hivatkozva nyisd.
+
+Ellenőrzés: `python scripts/check_protected_features.py` — ellenőrzi, hogy
+(a) minden alábbi tétel fájlja valóban tartalmazza a jelölőt, és (b) minden
+`SAJÁT FUNKCIÓ` jelölésnek van itt tétele (a lista nem maradhat le a
+kódtól).
+
+## Ismert esetek
+
+- `src/picasapy/app/qml/PicasaPy/EditorPanel.qml` (#422, #571) — A
+  szerkesztő 7 effekt-füle az eredeti 5 helyett: a 2–4. index az eredeti
+  három effekt-fül, az 5. („további effektek", #422) és a 6. („Régi
+  effektek", #571) index a mi hozzáadásunk.
+- `src/picasapy/app/qml/PicasaPy/EditorLegacyTab.qml` (#571) — a 7. fül
+  maga: a motor ismer egy sor szűrőt (`radtint`, `linblur`, `dir_sat`
+  stb.), amit a Picasa 3.9 felülete sosem mutatott. Mi tudatosan
+  előhívhatóvá tettük. Részletes indoklás: ADR-003,
+  `docs/decisions/legacy-effects-tab.md`.
+- `src/picasapy/ini/redeye.py` (#445) — a vörösszem-jelölések saját
+  `rect64(...)` paraméterezése a `redeye=` bejegyzésben. A bináris nem
+  árulja el a valódi bájtformátumot (#371 nyitott kérdés); amíg az elő nem
+  kerül, ez a mi kódolásunk — paraméter nélkül bájtra egyezik az eredetivel.
+- `src/picasapy/app/qml/PicasaPy/TrayBar.qml` (#70) — az alsó kék
+  állapotsáv (`infoBar`) `busySweep` fény-hullám animációja háttérmunka
+  (indexelés, bélyegkép-gyártás) közben. Az eredetiben nincs ilyen vizuális
+  visszajelzés — saját UX-kiegészítés, felhasználói panasz nyomán (ld. #70
+  motivációja: hálózati mappánál a program „beragadtnak" tűnt).
+- `src/picasapy/app/qml/PicasaPy/CropOverlay.qml` (#1187) — a vágó
+  „Előnézet" gombjának NYOMVA TARTÁSA a vágási eredményt mutatja (ilyenkor
+  a kijelölésen kívüli terület nem sötétedik, hanem a néző hátterével
+  teljesen fedetté válik). Az eredetiben nincs ilyen állapot, csak az
+  állandó kijelölés-sötétítés (#900).
+
+## Tervezett, még nem implementált saját funkciók
+
+Ezeket a tulajdonos nevezte meg (#1187) mint jövőbeli saját kiegészítést,
+de a mai kódban **nincs hozzájuk konkrét hely** — ha valamelyik
+megvalósul, a fenti jelölőt és egy sort ide is fel kell venni akkor, ne
+utólag pótolandó adósságként:
+
+- Google Fotók feltöltés/letöltés és albumkezelés egy saját (nem Google-)
+  webes felületen — a mai `webexport/` csomag az eredeti `.tpl`-motort
+  reprodukálja, ez NEM ugyanaz a funkció.
+- további, a fentieken túli, teljesen saját ötletű effektek (nem a
+  binárisban talált, csak a felületén hiányzó `Glimmer`-szűrők
+  előhívása — az az `EditorLegacyTab.qml` fenti tétele).

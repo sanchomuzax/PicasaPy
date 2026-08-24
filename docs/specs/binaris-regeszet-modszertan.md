@@ -789,3 +789,44 @@ szálkezelés, migráció, platform-viselkedés — mind benne van.
 - Ha a mérés azt adja, hogy **szándékosan eltérünk** (pl. a Picasa a
   registrybe írta a beállításokat, mi `QSettings`-be), azt **írd bele a
   jegybe kimondva** — különben egy későbbi kör „kijavítja".
+
+## 17. SAJÁT FUNKCIÓ — amikor a bináris-egyezés NEM mérce (#1187)
+
+A fenti 16.11 pont utolsó mondata egy általánosabb szabály speciális esete:
+**vannak a projektben szándékosan, nem az eredeti Picasából hozott
+funkciók** (pl. a szerkesztő 7 effekt-füle az eredeti 5 helyett, saját
+UX-animáció, saját vörösszem-kódolás). Ezeknél az eltérés **nem hiba és nem
+kutatási találat** — a bináris itt nem igazságforrás, mert nincs mihez
+igazodni: a funkció definíció szerint nincs benne.
+
+**A veszély, amit ez a szakasz megelőz:** a #1045→#1094 kör megmutatta, hogy
+a „bináris a mérce" szabály **helyesen** működik, amikor a kódunk egy
+ÖNKÉNTELEN eltérést vezetett be (egy beszorítást, amit az eredeti nem
+csinál) — azt jogosan vontuk vissza. A kockázat a FORDÍTOTT eset: ha egy
+kutatói/kódoló/hibakereső kör nem tudja megkülönböztetni „ezt még nem
+vettük észre, hogy hiányzik az eredetiből" (= hiba, mint #1045-nél) és „ezt
+TUDATOSAN tettük hozzá, mert nem az eredeti reprodukálása a cél" (= terv,
+mint a 7. effekt-fülnél) esetét, egy jogos saját funkciót vághat vissza
+vagy könyvelhet el hibaként, csak azért, mert a bináris nem csinálja.
+
+**A jelölő és a teljes, kereshető jegyzék:**
+`docs/decisions/vedett-sajat-funkciok.md` — ott él a `SAJÁT FUNKCIÓ`
+kulcsszó pontos alakja (kódban, specben, jegycímkén) és minden ma ismert
+eset.
+
+**Munkafolyamat-szabály:** mielőtt egy kutatási vagy hibajegyet nyitnál
+azon az alapon, hogy „a kódunk eltér a bináristól" vagy „a kódunk többet
+csinál, mint az eredeti", fusd le:
+
+```
+grep -rn "SAJÁT FUNKCIÓ" src/ docs/
+```
+
+és nézd át a fenti jegyzéket. Ha az érintett terület ott szerepel, az
+eltérés **szándékos** — a jegyet erre hivatkozva zárd, ne nyisd.
+
+Ellenőrző szkript (CI-be még nincs kötve, kézzel futtatható):
+`python scripts/check_protected_features.py` — megfogja, ha a jegyzék és a
+kód szétcsúszik (törölt/átnevezett fájlra mutató tétel, vagy jelöletlenül
+maradt jegyzék-tétel; illetve fordítva: kódba került `SAJÁT FUNKCIÓ`
+jelölés, ami nincs felvéve a jegyzékbe).

@@ -13,6 +13,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   azonnal takarítható, nem csak három óra után — és a takarítás minden
   munkamenet indulásakor lefut, nem csak tesztfuttatáskor. Élő futás
   könyvtárához továbbra sem nyúl senki.
+- **„SAJÁT FUNKCIÓ" jelölés a nem eredeti Picasa-funkciókra (#1187).**
+  Módszertani szabály és kereshető jegyzék
+  (`docs/decisions/vedett-sajat-funkciok.md`) azokra a funkciókra, amelyek
+  tudatosan eltérnek az eredeti Picasától (pl. a szerkesztő 7 effekt-füle
+  az eredeti 5 helyett) — hogy egy későbbi kutatási/hibakeresési kör ne
+  minősítse ezeket hibának. Ellenőrző szkript:
+  `scripts/check_protected_features.py`. Felhasználói viselkedés nem
+  változott.
 
 ## [0.8.77] – 2026-08-24
 

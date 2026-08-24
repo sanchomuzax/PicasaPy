@@ -1,5 +1,9 @@
 """Vörösszem-régiók a `filters=` láncban (#445) — PicasaPy-SAJÁT kiterjesztés.
 
+SAJÁT FUNKCIÓ (#445): a lenti `rect64(...)` paraméterezés a mi kódolásunk,
+nem igazolt bináris-formátum — a bináris-egyezés erre a paraméterezésre nem
+vonatkozik (lista: docs/decisions/vedett-sajat-funkciok.md).
+
 Az eredeti Picasa `redeye=1;` alakot ír: hogy a kézzel megjelölt szemek
 koordinátái nála milyen bájtformában élnek, **nem derült ki** a binárisból
 (nincs `redeye64(`-szerű formátum-string) — ez a #371 nyitott kérdése.
