@@ -119,8 +119,9 @@ class TestFlatChannels:
         hist = compute_rgb_histogram(reference_by_name("gray_ramp").array)
         for channel in _CHANNELS:
             values = np.asarray(hist[channel])
-            # minden bin ~1.0 (minden intenzitás azonos gyakoriságú)
-            assert np.all(values > 0.99), channel
+            # Minden bin az átlagos gyakoriságú: a Picasa 70 px-es belső
+            # képének pontosan a hatodát, 11,67 px-t tölti ki (#864).
+            assert values == pytest.approx([1 / 6] * BUCKET_COUNT)
             assert values.min() == pytest.approx(values.max())
 
     def test_ramp_channels_are_flagged_flat(self):

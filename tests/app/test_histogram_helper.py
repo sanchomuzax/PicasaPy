@@ -12,6 +12,22 @@ from picasapy.app.histogram_helper import (
 
 
 class TestComputeRgbHistogram:
+    def test_uniform_histogram_uses_global_average_scale(self):
+        """#864: egy átlagos bin a belső 70 px hatodát tölti ki.
+
+        A 256 fokozatú szürkerámpában minden bin csatornánként pontosan
+        egyszer szerepel. A Picasa skálája ezért
+        ``1 * 8960 / (3 * 256) / 70 = 1/6``, nem pedig a régi,
+        csúcshoz normalizált 1,0.
+        """
+        ramp = np.arange(256, dtype=np.uint8).reshape(1, 256, 1)
+        array = np.repeat(ramp, 3, axis=2)
+
+        hist = compute_rgb_histogram(array)
+
+        for channel in ("r", "g", "b"):
+            assert np.asarray(hist[channel]) == pytest.approx([1 / 6] * 256)
+
     def test_solid_color_gives_single_peak_bucket_per_channel(self):
         array = np.zeros((4, 4, 3), dtype=np.uint8)
         array[:, :, 0] = 200
@@ -26,13 +42,16 @@ class TestComputeRgbHistogram:
         assert sum(hist["g"]) == 1.0
         assert sum(hist["b"]) == 1.0
 
-    def test_normalization_is_relative_to_the_tallest_bucket(self):
-        array = np.zeros((4, 1, 3), dtype=np.uint8)
-        array[0:3, 0, 0] = 10  # 3 pixel a 10-es vödörben
-        array[3:4, 0, 0] = 50  # 1 pixel az 50-es vödörben
+    def test_normalization_uses_one_global_scale(self):
+        array = np.repeat(
+            np.arange(256, dtype=np.uint8).reshape(256, 1, 1), 3, axis=2
+        )
+        array[0:2, 0, 0] = 10  # az eredetivel együtt 3 pixel a 10-es binben
         hist = compute_rgb_histogram(array)
-        assert hist["r"][10] == 1.0
-        assert hist["r"][50] == pytest.approx(1 / 3)
+        assert hist["r"][10] == pytest.approx(0.5)
+        assert hist["r"][50] == pytest.approx(1 / 6)
+        # A zöld csatorna saját csúcsa nem változtatja meg a vörös skáláját.
+        assert hist["g"][50] == pytest.approx(1 / 6)
 
     def test_bucket_count_length_matches_requested_buckets(self):
         array = np.zeros((2, 2, 3), dtype=np.uint8)

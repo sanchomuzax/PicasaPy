@@ -31,14 +31,14 @@ EMPTY_HISTOGRAM: dict[str, list[float]] = {
 def compute_rgb_histogram(
     rgb_array: np.ndarray | None, buckets: int = BUCKET_COUNT
 ) -> dict[str, list[float]]:
-    """RGB uint8 (H, W, 3) tömbből normalizált (0..1) hisztogram csatornánként.
+    """RGB uint8 (H, W, 3) tömbből Picasa-skálájú hisztogramot készít.
 
     A `buckets` a 256 intenzitásérték összevonása (256-nak osztójának kell
-    lennie); a normalizálás CSATORNÁNKÉNT a saját csúcsértékére történik
-    (a Picasa és a legtöbb hisztogram-nézet mintája) — így mindhárom görbe
-    kitölti a doboz magasságát, egymástól függetlenül összehasonlítható
-    alakkal. Üres/None tömbre, illetve csupa-nulla (fekete) képre mindhárom
-    csatorna nulla lista — QML-oldalon ez üres/lapos görbeként jelenik meg."""
+    lennie). Az érték a visszafejtett 70 px-es belső képhez viszonyított
+    magasság: ``min(bin * 8960 / (3N), 70) / 70``, ahol ``N`` a ténylegesen
+    mintavett képpontok száma. A három csatorna tehát KÖZÖS, átlag-alapú
+    skálát használ; csak a hatszoros átlagot elérő bin tölti ki a magasságot.
+    Üres/None tömbre mindhárom csatorna nulla listát kap."""
     if buckets <= 0 or 256 % buckets != 0:
         raise ValueError(f"A vödörszámnak a 256 osztójának kell lennie: {buckets}")
     if rgb_array is None or rgb_array.size == 0:
@@ -56,13 +56,14 @@ def compute_rgb_histogram(
             hist = hist.reshape(buckets, fold).sum(axis=1)
         raw_counts[channel] = hist
 
+    sampled_pixels = sample.shape[0] * sample.shape[1]
+    # 8960 / (3N) a belső 70 px-re, majd /70 a QML-nek átadott 0..1
+    # magasságarányhoz. A klip pontosan a natív 70 px-es felső korlát.
+    normalized_scale = 128.0 / (3.0 * sampled_pixels)
     result = {}
     for channel, hist in raw_counts.items():
-        peak = hist.max()
         # lista (nem tuple) — ld. a modul tetején a #232-es magyarázatot
-        result[channel] = (
-            (hist / peak).tolist() if peak > 0 else [0.0] * len(hist)
-        )
+        result[channel] = np.clip(hist * normalized_scale, 0.0, 1.0).tolist()
     return result
 
 

@@ -5,20 +5,15 @@ MIT csinál:
     Betölti a `tests/support/histogram_reference` determinisztikus
     referencia-képeit, mindegyikre kiszámítja a
     `picasapy.app.histogram_helper.compute_rgb_histogram` kimenetét, majd
-    PNG-be rajzolja a PicasaPy hisztogram-dobozát — pontosan azzal a
-    skálázással és színvilággal, ahogy a QML-oldali `HistogramBox.qml`.
-    Emellett kiírja a nyers referencia-képeket is (a felhasználó ezeket
-    nyitja meg a Windows-os Picasa 3-ban a golden-screenshotokhoz).
+    PNG-be rajzolja a visszafejtett Picasa-hisztogramot: 256 × 70-es belső
+    kép, +85-ös összeadó RGBA-keverés, majd 213 × 59-es megjelenítés.
+    Emellett kiírja a nyers referencia-képeket is.
 
 MIÉRT nem valódi QML `grabToImage`:
-    A HistogramBox egy deklaratív, sok apró `Rectangle`-oszlopból álló QML
-    komponens (ld. #232). A `grabToImage` teljes QML-scene-graph render-loopot
-    igényel, ami headless (offscreen) CI-környezetben törékeny és
-    időzítés-függő — pont az a probléma, ami miatt a Canvas-t is lecseréltük.
-    Ezért a golden előállításához a hisztogram-ADATOT rajzoljuk PNG-be, a
-    QML-lel AZONOS képlettel (ld. lentebb a `_render_box`-ban a HistogramBox
-    hivatkozásokat). Ez determinisztikus, gyors és pontosan reprodukálja a
-    doboz kinézetét — a normalizálás (#232) hű összevetéséhez ez elég.
+    A fej nélküli QML-render időzítésfüggő lehet (#232). Ezért ez az eszköz
+    közvetlenül a dokumentált natív konstansokból állítja elő a referenciát;
+    a tényleges QML-kimenetet ettől független, valódi `QQuickView`-os
+    képpontteszt ellenőrzi (`test_histogram_pixels_864.py`).
 
 Futtatás (headless is jó):
     QT_QPA_PLATFORM=offscreen python3 tools/histogram/render_reference.py \
@@ -53,58 +48,39 @@ from tests.support.histogram_reference import (  # noqa: E402
     write_reference_pngs,
 )
 
-# A HistogramBox.qml / Theme.qml megfelelői (RGB). A QML a három csatornát
-# 0.55 opacitással EGYMÁSRA rajzolja — ugyanezt tesszük alfa-keveréssel.
-_BRAND_RED = (224, 74, 63)  # Theme.brandRed  #e04a3f
-_BRAND_GREEN = (13, 171, 98)  # Theme.brandGreen #0dab62
-_BRAND_BLUE = (68, 138, 253)  # Theme.brandBlue  #448afd
-_PANEL = (255, 255, 255)  # Theme.contentPanel #ffffff
-_BORDER = (205, 205, 205)  # Theme.chromeBorder #cdcdcd
-_BAR_OPACITY = 0.55  # HistogramBox delegate opacity
-
-# A render-doboz mérete (a plot-rész arányai a néző dobozát közelítik).
-_BOX_W = 512
-_PLOT_H = 200
-_MARGIN = 8
-_BUCKETS = 256
+# A natív bittérkép és a felületen látható doboz mérete (#864).
+_INTERNAL_W = 256
+_INTERNAL_H = 70
+_DISPLAY_W = 213
+_DISPLAY_H = 59
+_CHANNEL_INCREMENT = 85
 
 
 def _render_box(hist: dict[str, list[float]]) -> np.ndarray:
-    """A hisztogram-dobozt RGB uint8 képbe rajzolja, a QML-lel azonos módon.
+    """A bináris specifikációból levezetett, 213 × 59-es RGB-kép."""
+    import cv2
 
-    A QML delegate: ``height = v * plot.height``, az oszlop alulról nő
-    (``y = plot.height - height``), szélessége ``ceil(plot.width/256)``, és a
-    három csatorna 0.55 opacitással egymásra keveredik. Ugyanezt reprodukáljuk.
-    """
-    plot_w = _BOX_W - 2 * _MARGIN
-    canvas = np.zeros((_PLOT_H, plot_w, 3), dtype=np.float64)
-    canvas[:, :] = _PANEL
+    heights = np.rint(
+        np.asarray([hist["r"], hist["g"], hist["b"]]) * _INTERNAL_H
+    ).astype(np.int16)
+    heights = np.clip(heights, 0, _INTERNAL_H)
+    internal = np.full((_INTERNAL_H, _INTERNAL_W, 3), 255, dtype=np.uint8)
 
-    bar_w = int(np.ceil(plot_w / _BUCKETS))
-    for values, colour in (
-        (hist["r"], _BRAND_RED),
-        (hist["g"], _BRAND_GREEN),
-        (hist["b"], _BRAND_BLUE),
-    ):
-        colour_arr = np.asarray(colour, dtype=np.float64)
-        for index, v in enumerate(values):
-            if v <= 0:
-                continue
-            height = int(round(v * _PLOT_H))
-            if height <= 0:
-                continue
-            x0 = int(index * (plot_w / _BUCKETS))
-            x1 = min(x0 + bar_w, plot_w)
-            y0 = _PLOT_H - height
-            region = canvas[y0:_PLOT_H, x0:x1]
-            # alfa-keverés (a QML opacity 0.55-ös rárajzolása)
-            region[:] = region * (1 - _BAR_OPACITY) + colour_arr * _BAR_OPACITY
+    for x in range(_INTERNAL_W):
+        for from_bottom in range(int(heights[:, x].max(initial=0))):
+            active = heights[:, x] > from_bottom
+            channel_count = int(active.sum())
+            alpha = channel_count * _CHANNEL_INCREMENT
+            # Szorzott-alfa puffer fehér háttérre: rawRGB + 255 - alpha.
+            raw_rgb = active.astype(np.int16) * _CHANNEL_INCREMENT
+            displayed = raw_rgb + 255 - alpha
+            internal[_INTERNAL_H - from_bottom - 1, x] = displayed.astype(np.uint8)
 
-    # 1px keret a doboz köré (chromeBorder)
-    framed = np.zeros((_PLOT_H + 2, plot_w + 2, 3), dtype=np.float64)
-    framed[:, :] = _BORDER
-    framed[1:-1, 1:-1] = canvas
-    return np.clip(framed, 0, 255).astype(np.uint8)
+    return cv2.resize(
+        internal,
+        (_DISPLAY_W, _DISPLAY_H),
+        interpolation=cv2.INTER_LINEAR,
+    )
 
 
 def render_all(out_dir: Path) -> list[Path]:

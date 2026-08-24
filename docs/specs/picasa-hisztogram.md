@@ -192,30 +192,25 @@ A 256 × 70-es bittérkép a **213 × 59**-es dobozba kerül — vagyis
 
 ## 5. Összevetés a PicasaPy-jal
 
-| | eredeti Picasa | PicasaPy | eltérés hatása |
+| | eredeti Picasa | PicasaPy | állapot |
 |---|---|---|---|
-| **normalizálás** | **átlaghoz**: `70/(3N/128)`, klip 70-nél | **csatornánként a saját csúcsához** (`hist/peak`, `histogram_helper.py:61`) | ⚠️ **alapvető** — nálunk minden csatorna kitölti a dobozt, az eredetiben csak a hatszoros átlag fölött |
-| **keverés** | **összeadó**, `+85` szín és `+85` alfa | `opacity: 0.55`, normál source-over (`HistogramBox.qml:130`) | ⚠️ **alapvető** — az eredetiben a hármas fedés `#555555` átlátszatlan |
-| **rajzfelbontás** | **256 × 70** bittérkép, utána feszítve | közvetlenül a doboz szélességén, vödrönként egy `Rectangle` | ⚠️ más a lépcsőzés |
-| **doboz mérete** | **213 × 59** | a panel szerint változó | igazítandó |
+| **normalizálás** | **átlaghoz**: `70/(3N/128)`, klip 70-nél | `histogram_helper.py`: közös `128/(3N)` skála, 1,0-nál klip | ✅ egyezik |
+| **keverés** | **összeadó**, `+85` szín és `+85` alfa | `HistogramBitmap.qml`: a +85-ös szorzott-alfa végeredménye | ✅ egyezik |
+| **rajzfelbontás** | **256 × 70** bittérkép, utána feszítve | 256 × 70-es belső komponens, utána méretezve | ✅ egyezik |
+| **doboz mérete** | **213 × 59** | **213 × 59** | ✅ egyezik |
 | **forrás** | a megjelenített **előnézet** | ugyanaz | ✅ egyezik |
 | **binek** | 256 | 256 | ✅ egyezik |
 | **bájtsorrend** | B, G, R, A | RGB | ✅ egyenértékű |
 | **ritkítás** | lépésköz **vízszintesen és függőlegesen** | `stride`-mintavétel 500 000 képpont fölött | hasonló elv, más küszöb |
 | **alulról felfelé** | igen | igen (`y: plot.height - height`) | ✅ egyezik |
 
-### Miért néz ki teljesen másképp
+### Megvalósítási állapot (#864)
 
-A két eltérés **egymást erősíti**:
-
-1. **A csúcshoz normalizálás** minden csatornát felnagyít a doboz
-   magasságára. Egy tipikus fotón a legmagasabb bin sokszorosa az
-   átlagnak, így a mi görbénk **laposabbnak és zajosabbnak** látszik, míg
-   az eredeti **a doboz alsó harmadában** marad, és csak a valódi
-   csúcsok érik el a tetejét.
-2. **A source-over keverés** 0,55-ös átlátszatlansággal **világosít**, az
-   összeadó keverés **sötétít és telít**. Ahol mindhárom csatorna fed, mi
-   egy világos, mosott színt kapunk, az eredeti **`#555555`** sötétszürkét.
+A korábbi csúcsnormalizálás és 0,55-ös source-over keverés megszűnt. A
+Python-réteg a ténylegesen mintavett `N` alapján adja át a 70 px-re
+normalizált magasságot; a QML-réteg a három magasságot legfeljebb három,
+egymást nem fedő szakaszra bontja, és közvetlenül a +85-ös RGBA-összeg
+végeredményét rajzolja. A teljes 256 × 70-es belső kép képpontos tesztet kap.
 
 *Bizonyítottsági fok: megerősített* — a felvevő ciklus, a
 referencia-összeg, a skála-képlet mindkét konstansa (70,0 és a `>>7`), a
@@ -223,9 +218,11 @@ klippelés és a három összeadó konstans (`0x55550000`, `0x55005500`,
 `0x55000055`) mind nyers utasításszinten kiolvasva; a felületi geometria a
 `respack.yt` rectjeiből.
 
-**Nyitva marad:** a ritkítás **lépésközének** kiszámítása (az objektum
-0. mezője) — hol és milyen képlettel áll elő. A hisztogram *alakját* nem
-befolyásolja érdemben, a *pontos* bin-értékeket igen.
+**Ritkítás:** az objektum 0. mezője hívónkénti lépésköz-paraméter; a
+`0x00a4b650` burkoló bizonyítottan 1-et ír bele (nincs ritkítás). Más hívók
+más értéket adhatnak, de a referenciaösszeg ugyanabból a mintából készül,
+mint a binek, ezért a normalizált görbe alakja önkonzisztens. A PicasaPy
+500 000 képpont fölötti stride-mintavétele ezt a tulajdonságot megtartja.
 
 ## 6. A hisztogram alatti EXIF-blokk — bitre pontosan
 
