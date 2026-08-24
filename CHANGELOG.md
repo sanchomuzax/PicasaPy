@@ -5,7 +5,11 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.74] – 2026-08-24
+
+### Új
+- **Megvan az „Exportálás mappába" párbeszéd felülete (#1138).** A képek
+  mappába mentésének párbeszédablaka az eredeti Picasa elrendezését követi.
 
 ### Belső
 - **Kiadás nem mehet ki hamis jegyzettel (#1340).** A felhasználót érintő
@@ -13,6 +17,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   tartalékjegyzet pedig nem állíthatja többé, hogy „nincs látható változás":
   ha nincs emberi összefoglaló, ezt mondja ki, és felsorolja a beolvadt
   munkákat.
+
+## [0.8.73] – 2026-08-24
+
+### Javítva
+- **A kivágásnál a kijelölésen kívüli terület helyesen sötétedik el (#900).**
+  A kijelölő keret körüli rész az eredeti Picasával azonos sötétítést kap
+  (#2F2F2F, 56%-os fedés), így a kivágandó rész tisztán elválik a
+  környezetétől.
 
 ## [0.8.72] – 2026-08-24
 
