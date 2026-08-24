@@ -8,6 +8,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Belső
+- **Helyben legfeljebb két tesztfutás mehet egyszerre (#1360).** A harmadik
+  megvárja, amíg felszabadul egy hely, ahelyett hogy a négymagos gépet
+  térdre kényszerítené — a túlterhelésből eddig valódi hiba nélküli
+  „ingadozó" bukások lettek. A CI-t nem érinti.
+
+### Belső
 - **A megszakadt tesztfutások maradéka magától eltűnik (#1358).** A futás
   életjelet hagy a saját ideiglenes könyvtárában, így a halott kör maradéka
   azonnal takarítható, nem csak három óra után — és a takarítás minden
