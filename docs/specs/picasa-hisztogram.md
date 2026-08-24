@@ -32,7 +32,9 @@ XConstraint 0, 0, LEFTDRAWEROFFSET, 20
 YConstraint 1, 1, -95
 ```
 
-— a **bal fiók jobb széléhez +20**, és a képernyő aljához **−95**.
+— a **bal fiók BAL széléhez +20**, és a képernyő aljához **−95**. A
+`LEFTDRAWEROFFSET` a fiók be-/kicsúsztatását vezérlő **változó**, nem a
+fiók szélessége (ld. 7.1) — a panel tehát a fiókON BELÜL dokkolt.
 
 A `nerdview/histo` a `histoback`-en **középre** ül (`m_centerXY`).
 
@@ -339,12 +341,32 @@ m_scaleXY
 
 | megkötés | jelentése |
 |---|---|
-| `XConstraint 0, 0, LEFTDRAWEROFFSET, 20` | a bal széle a **bal fiók jobb pereméhez**, **+20 px** |
+| `XConstraint 0, 0, LEFTDRAWEROFFSET, 20` | a bal széle a **`root` bal széléhez**, `LEFTDRAWEROFFSET` **+20 px** |
 | `YConstraint 1, 1, -95` | az alsó széle a **képernyő aljához**, **−95 px** |
 | `m_scaleXY` | a panel a tartójával együtt nyúlik |
 
-A panel tehát **a szerkesztő bal alsó sarkában lebeg**, a bal fiók mellett
-20 képponttal, az alsó éltől 95 képpontra. Mérete **238 × 144**.
+**A `LEFTDRAWEROFFSET` nem a fiók szélessége, hanem a fiók
+be-/kicsúsztatását vezérlő változó** — ezt három sor mondja ki, egymást
+erősítve:
+
+| sor | tartalom | mit mond ki |
+|---|---|---|
+| `editpanel.tre:1413` | `Handler varbutton LEFTDRAWEROFFSET 0 -279 1 editpanel/previewimage` | a fiók-összecsukó gomb a változót **0 ↔ −279** között billegteti — tehát **eltolás** |
+| `editpanel.tre:1421` | `editpanel/insetleft: root` + `XConstraint 0, 0, LEFTDRAWEROFFSET, 279` | a **képterület** `LEFTDRAWEROFFSET + 279`-nél kezdődik → a fiók sávja `[+0, +279]` |
+| `editpanel.tre:1233` | `editpanel/editcontrols` … `YConstraint 1, 1, -270` | a fiók vezérlői **270 px-rel az alsó él fölött** végződnek — épp helyet hagyva a 95 + 144 = **239 px**-es panelnek |
+
+A panel bal éle így `LEFTDRAWEROFFSET + 20`, jobb éle `+258` — **a fiók
+279 px-es sávján belül**. A panel tehát **a bal fiók alján, a fiókON BELÜL
+dokkolt**, és a fiókkal együtt csúszik ki a képernyőről, ha a felhasználó
+összecsukja azt. Mérete **238 × 144**.
+
+> **Helyesbítés (#1323).** Ez a szakasz korábban azt írta, hogy a panel „a
+> bal fiók jobb pereméhez +20", vagyis a **képterület fölött lebeg**. A #864
+> megvalósítása ezt vette át, és a panel a fotó bal alsó sarkára került. A
+> fenti három `.tre` sor ezt cáfolja: a `LEFTDRAWEROFFSET` eltolás-változó,
+> a panel a fiókon belül dokkolt. A `histogram-reference.md` is ezt erősíti:
+> a lebegő korszak sorai (`#nerdview/floater`, `#nerdview/close`) ki vannak
+> kommentezve, a 3.9-ben már dokkolt a panel.
 
 > Az elvetett változat (`#editpanel/nerdview_container: editpanel/editbase`,
 > `YConstraint 0, 0, 400`) a **szerkesztőterületen belül**, fentről 400

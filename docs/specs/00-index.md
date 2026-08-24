@@ -382,6 +382,7 @@ a `0x007c5c40` három kimenő jelzőjének pontos leképezése a három ikonra
    `9` = kudarc); a `1` egy tömb-növelő rutin helyi változója volt. A
    siker ága nyitja ki az ősöket és kéri a háttérbetöltést, a kudarcé
    törli a fa kijelölését.
+3. ~~Hol jön létre a változás-értesítő fogantyú?~~ — ✅ **LEZÁRVA 2026-08-24 (16.5)**: `0x007062b9`, a `0xd694fc` platform-váltó függvénymutatón át; a szűrő **`0x17`** (FILE_NAME|DIR_NAME|ATTRIBUTES|**LAST_WRITE**, méret NINCS), **`bWatchSubtree = 1` = rekurzív**. A figyelő ÉL. Ez megcáfolja a 16.4 saját óvatoskodását is.
 
 ### [picasa-eger-es-kijeloles.md](picasa-eger-es-kijeloles.md) — nincs nyitott bináris kérdés
 
@@ -438,9 +439,19 @@ a mi döntésünk**, mint korábban gondoltuk
    menü erőforrásneve a birtokló függvénnyel; a rácsnak album- és
    mappanézetben **külön** menüje van
 
-### [picasa-ini-format.md](picasa-ini-format.md) — 1 kérdés
+### [picasa-ini-format.md](picasa-ini-format.md) — nincs nyitott kérdés
 
-1. Mit tesz a Picasa, ha külső program **írja az inifájlt ÉS megérinti a kép `mtime`-ját** (537. sor) — ⚠️ **windowsos próbára vár**, gépi úton nem eldönthető
+✅ **2026-08-24 — LEZÁRVA.** „Mit tesz a Picasa, ha külső program írja az
+inifájlt?" A kulcs **nem a képfájl, hanem maga a `.picasa.ini`**: a Picasa
+mappánként eltárolja az ini **utolsó írási idejét** (`albumdata_inisync`,
+FILETIME), és ha a lemezen lévő fájl újabb, újraolvassa — **`flags = 3`**-mal,
+tehát a `filters` is hatókörben. Mérés: **783/787 bitre egyező** valódi
+mappán (99,5%). ⇒ **elég írni az ini-t**; a képfájl érintése az eredetiben
+nem létező út → **#1320**. Részletek: a lap „MEGFEJTVE: az újraolvasás
+kulcsa az INI FÁJL saját dátuma" szakasza.
+
+A megmaradt szál (miért nem jelenik meg mégsem a `filters=`) **nem a
+kiváltás** kérdése — a szigorú beolvasás ága, **#685**.
 
 ### Nincs nyitott kérdés
 
@@ -512,6 +523,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [picasa-importalas.md](picasa-importalas.md) | Az importálás panelje — tipp-sor, kártyatörlés-figyelmeztetés, hibák |
 | [picasa-elso-inditas.md](picasa-elso-inditas.md) | **Az első indítás `initialscan` panelje** — migrációs és tiszta-telepítés változat, geometria, a kihagyhatatlan választás |
 | [picasa-mappakezelo.md](picasa-mappakezelo.md) | **A Mappakezelő TELJES specifikációja** — elrendezés és tervezővászon-geometria, az átméretezés szabályai (`winsize` → `SC_SIZE`), a fa és az öröklődő állapot, a három rádió, az arcfelismerés-kapcsoló, a három figyelmeztetés, az OK/Mégse delta-szemantikája, a Súgó URL-je |
+| [picasa-keptalca.md](picasa-keptalca.md) | **A Képtálca (`scratch`, „Selection") MŰKÖDÉS-specje** — a döntő lelet, hogy a tálca **nem marad meg újraindítás után** (három független negatív ellenőrzés); a négy vezérlő felirat NÉLKÜL, csak ikon+súgó; a `Tray` helyi menü két parancsa; **két külön** ürítés-megerősítés; a 36,5%-os doboz-kényszer; a `trayexec` adatvezérelt műveletsor; két negatív eredmény (a `.pbz` placement NEM az alap-sorrend, a `Tray contains:` hibakereső lap) |
 | [picasa-lebego-ertesito.md](picasa-lebego-ertesito.md) | A lebegő értesítősáv (`CNotifierPopup`) — képernyőfelvétel- és import-értesítés, kattintás-viselkedés; a geometria és az animáció NYITOTT |
 | [vorosszem-eszkoz-terve.md](vorosszem-eszkoz-terve.md) | A vörösszem-eszköz terve |
 | [vagas-eszkoz-allapot.md](vagas-eszkoz-allapot.md) | A vágás-eszköz állapota — 19 arány, egyéni arányok, 3 javaslat |

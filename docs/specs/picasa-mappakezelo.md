@@ -1285,18 +1285,22 @@ az alábbi pontokon nincs utasításszinten végigkövetve** *(a 2., 3., 5., 7.
 és 8. pont azóta LEZÁRULT — lásd 11.5, 6.3 és 13.)* — egyik sem blokkolja a felület
 megépítését, de mindegyikhez döntés kell:
 
-1. **A rádió → lista-szakasz megfeleltetés.** A három fájl, a három
-   formátum és a parszer megvan (12.), a rádiógombtól a kiíróig vezető út
-   (`0x007c4df0` → `0x005cef20` / `0x007bfec0` / `0x005088f0`) **nincs**.
+1. ~~**A rádió → lista-szakasz megfeleltetés.**~~ — ✅ **LEZÁRVA
+   2026-08-24 (17.)**: az OK-út végigkövetve. `0x007c4df0` → `0x005cef20`,
+   ami `watchedfolders.txt` + `]album:removed` sírkő + `frexcludefolders.txt`
+   sorrendben ír; a `scanlist.txt` innen **NEM** íródik. A 12.1 saját
+   függvény-felsorolása **helyesbítve**: a `0x007bfec0` zárolt listaművelet,
+   a `0x005088f0` listaművelet — egyik sem fájlkiíró. Jegy: **#1334**.
 2. ~~Mi történik a már beolvasott képekkel az „Eltávolítás" után?~~ —
    **LEZÁRVA** (11.5): nem törlődnek, a mappa `]album:removed` sírkő-tokent
    kap (`0x004b9200`).
 3. ~~Az OK utáni újraolvasás / `IDS_SETTING_UP_WATCHED`~~ — **LEZÁRVA,
    NEGATÍV** (6.3): a sztringet a program soha nem tölti be; nincs ilyen
    folyamatjelző.
-4. **Az ELSŐ INDÍTÁS belépési útja.** A két menüs belépési pont megvan
-   (10/b.1), de hogy az első indításkor melyik kód nyitja meg a
-   dialógust (és ugyanazzal a mód-jelzővel-e), NINCS visszakövetve.
+4. ~~**Az ELSŐ INDÍTÁS belépési útja.**~~ — ✅ **LEZÁRVA, NEGATÍV
+   2026-08-24 (18.)**: nincs külön első-indítási út. A megnyitó
+   (`0x005ce590`) **pontosan két** hívóval bír, mindkettő a főablak
+   parancs-diszpécsere — és a **mód-jelzőjük különbözik** (1 vs 0).
 5. ~~**A fa feltöltési szabályai**~~ — **LEZÁRVA** (13.2, 13.4, 13.6):
    **lusta betöltés háttérszálon** (`SetEvent`, `0x007bf378`); a fa a
    rejtett/rendszermappákra **nem szűr** (a kizárás a beolvasóé); a
@@ -2039,7 +2043,12 @@ hívja, ami **kizárólag pontos figyelt-gyökér egyezésre** csinál bármit
 
 ---
 
-## 16. HOGYAN veszi észre az eredeti az új fájlt? — NEM eseményből (2026-08-23, #1275)
+## 16. HOGYAN veszi észre az eredeti az új fájlt? (2026-08-23, #1275)
+
+> ⚠️ **HELYESBÍTVE 2026-08-24-én — a 16.1 szakasz számai TÉVESEK VOLTAK.**
+> Az eredeti **használ** változás-értesítést; a leszámlálásom hibás volt.
+> A részletes helyesbítés a **16.4** szakaszban. A 16.1–16.3 azért marad
+> itt, hogy a hiba visszakereshető legyen — a számait NE használd.
 
 A #1275 kulcskérdése: a futó alkalmazás hogyan veszi észre a figyelt
 mappába kívülről bekerülő képet — és mi a helyzet **hálózati meghajtón**.
@@ -2052,15 +2061,15 @@ eldönti**.
 |---|---|---|
 | `ReadDirectoryChangesW` | **NINCS importálva** | — |
 | `SHChangeNotifyRegister` | **NINCS importálva** | — |
-| `FindFirstChangeNotificationW` | igen (`0xc404d0`) | **0** |
-| `FindFirstChangeNotificationA` | igen (`0xc404d8`) | **0** |
-| `FindNextChangeNotification` | igen (`0xc403c0`) | **0** |
+| `FindFirstChangeNotificationW` | igen (`0xc404d0`) | ~~0~~ → **1** (16.4) |
+| `FindFirstChangeNotificationA` | igen (`0xc404d8`) | **0** (ez igaz) |
+| `FindNextChangeNotification` | igen (`0xc403c0`) | ~~0~~ → **2** (16.4) |
 | `FindCloseChangeNotification` | igen (`0xc40368`) | **2** (`0x004e1805` betöltés, `0x004e18ba` hívás) |
 
-⇒ A program **lezárná** a változás-figyelő fogantyúkat, de **soha nem hoz
-létre egyet sem**. A létrehozó oldal hiányzik; a `FindClose…` egy
-megmaradt, védekező takarító ág. **Változás-értesítés tehát nincs
-használatban.**
+⇒ ~~A program lezárná a változás-figyelő fogantyúkat, de soha nem hoz
+létre egyet sem.~~ **EZ TÉVES — ld. 16.4.** A `FindNext…` két valódi
+hívóval rendelkezik az alkalmazás kódjában, és a fogantyúkat éppen
+változás-értesítésként fegyverzi újra.
 
 *(Módszertani megjegyzés: az első keresésem csak a
 `call dword ptr [abszolút]` alakot nézte, és emiatt a `FindClose…`-t is
@@ -2097,13 +2106,14 @@ elvégezhető (név + időbélyeg + méret + „piszkos" jelző).
 
 A várakozást a `WaitForMultipleObjects` végzi (`0x007065f0` időkorláttal,
 `0x00706680` nulla időkorláttal, azaz lekérdezéssel) egy fogantyú-tömbön —
-de a 16.1 szerint ezek **nem** változás-figyelő fogantyúk, hanem a szál
-saját ébresztő/leállító eseményei.
+és a 16.4 szerint ezek **igenis** változás-figyelő fogantyúk (a 0. rekesz
+kivételével, ami a szál ébresztő/leállító eseménye).
 
 ### 16.3 Amit ez a #1275-re kimond
 
-> ✅ **Az eredeti Picasa POLLOZ.** Nincs olyan operációs rendszer-szintű
-> eseményfigyelés, amit „utánoznunk" kellene — és épp ezért működik
+> ⚠️ **A premissza téves (16.4), a következtetés viszont ÁLL.** Az eredeti
+> **egyszerre** figyel eseményt ÉS pollozik. Nincs olyan eseményfigyelés,
+> amit *helyette* kellene „utánoznunk" — és épp ezért működik
 > hálózati meghajtón is, ahol az eseményalapú figyelés notóriusan
 > megbízhatatlan.
 
@@ -2121,3 +2131,259 @@ osztálynevekre/CSV-mezőkre (RTTI + sztringtár). **Erős**, de nem
 megerősített: a lekérdezés **időköze** — konkrét intervallum-konstansot
 nem találtam (nincs `…Interval` jellegű `Preferences`-kulcs a
 könyvtárbejáróhoz).*
+
+### 16.4 HELYESBÍTÉS — az eredeti IGENIS használ változás-értesítést (2026-08-24)
+
+A 16.1 leszámlálása hibás volt. Az újramérés (`imports` tábla, a
+`function_address` mező szerint csoportosítva — ez soronként **egy hívási
+helyet** jelent, az üres mezős sor pedig maga az importbejegyzés, nem hívó):
+
+| API | valódi hívási helyek | hol |
+|---|---|---|
+| `ReadDirectoryChangesW` | — | **nincs importálva** (ez igaz maradt) |
+| `SHChangeNotifyRegister` | — | **nincs importálva** (ez igaz maradt) |
+| `FindFirstChangeNotificationA` | **0** | — |
+| `FindFirstChangeNotificationW` | **1** | `0x009b3000` — de ez **CRT `A`→`W` átalakító burok** (CP_UTF8 = `0xfde9`, `[0xc402e4]`), nem alkalmazáslogika |
+| `FindNextChangeNotification` | **2** | `0x007065f0`, `0x00706680` — **alkalmazáskód** |
+| `FindCloseChangeNotification` | **2** | `0x004e17f0`, `0x004e1890` — **alkalmazáskód** |
+
+**A figyelő osztály szerkezete kiolvasható** (`0x007065f0`, 120 bájt):
+
+```
+[this+0x18] = fogantyú-tömb        [this+0x1c] >> 1 = fogantyúk száma
+WaitForMultipleObjects([0xc4039c])  (count, tömb, bWaitAll=FALSE, timeout)
+  eredmény == 0x102 (WAIT_TIMEOUT) → -1
+  egyébként: tömb[jelzett] → FindNextChangeNotification([0xc403c0])  ← ÚJRAFEGYVERZÉS
+```
+
+A bontó oldal (`0x004e17f0`) a tömböt **az 1. rekesztől** zárja
+`FindCloseChangeNotification`-nal, a **0. rekeszt kihagyja** — az tehát
+más fajta fogantyú (a szál ébresztő/leállító eseménye), az 1..n−1 viszont
+**valódi változás-értesítő**.
+
+⇒ **Amit a 16.1 „védekező takarító ágnak" nézett, az a figyelő rendes
+bontása.** A `FindNext…` nem hívható olyan fogantyún, amit nem
+`FindFirst…` adott.
+
+#### Ami EBBŐL is nyitva maradt
+
+**A létrehozó hívási helyet nem találtam meg.** A `FindFirstChangeNotificationA`
+hívó nélküli, a `W` változatot pedig csak a CRT-burok hívja — amit viszont
+senki. Két lehetőség maradt, és **nem tudom eldönteni, melyik**:
+
+1. az indexem egy közvetett (`call dword ptr [IAT]`) hívási helyet
+   **kihagyott** a `W` változatnál (a `FindNext…` kettőjét megtalálta,
+   tehát nem elvi korlát);
+2. a fogantyúk **máshonnan** származnak (öröklés, más modul, `LoadLibrary`).
+
+Amit végigpróbáltam: a `0x004e1890` (1744 bájt, a másik `FindClose…`-hívó,
+a legvalószínűbb „figyelőhalmaz újraépítése" jelölt) **teljes**
+diszasszemblálása — a benne lévő három közvetett hívás `[0xc40368]`
+(`FindClose…`) és kétszer `[0xc40560]` (egybájtos karakterosztály-vizsgálat,
+`cmp eax, 0xff`), **nincs köztük `FindFirst…`**; továbbá a `0x004e1xxx`
+függvénylista átnézése.
+
+*Bizonyítottsági fok: **megerősített**, hogy a `FindNext…`/`FindClose…`
+alkalmazáskódból hívódik és hogy a `0x007065f0` újrafegyverez.
+**Eldöntetlen**, hol jön létre a fogantyú, és ezért az is, hogy a figyelő
+**minden** futásban él-e.*
+
+#### Amit ez a 16.3 következtetésén NEM változtat
+
+A #1275-re adott teendő (**időzített újraolvasás**, az esemény *mellett*)
+**érvényben marad** — sőt a 16.4 megerősíti: az eredeti maga is
+**mindkettőt** csinálja. Csak a *premissza* dőlt meg („nincs esemény"),
+a *javaslat* nem.
+
+### 16.5 LEZÁRVA — a fogantyú létrehozási helye megvan, a szűrő `0x17`, REKURZÍV (2026-08-24)
+
+A 16.4 nyitva hagyta, hol jön létre a változás-értesítő fogantyú. A választ
+egy **nyers bájtkeresés** adta meg, ami immunis a diszasszemblálás
+elcsúszására: az importált függvény IAT-rekeszének **minden** `.text`-beli
+előfordulását megkerestük, nem csak a `call dword ptr [rekesz]` alakot.
+
+#### A hiányzó láncszem: futásidejű A/W választó
+
+A hívás **nem közvetlenül** az importon át megy, hanem egy
+**függvénymutató-változón** (`0xd694fc`) keresztül, amit egy platform-váltó
+tölt fel induláskor (`0x00c32f94`–`0x00c32fbf`):
+
+```
+call [0xc40450]                     ; platform-lekérdezés
+cmp  [0xd6fc58], 0x80000000
+jae  0xc32fb5
+    mov [0xd694fc], 0x9b3000        ; NT: az A→W burok (0x009b3000)
+    ret
+0xc32fb5:
+    mov eax, [0xc404d8]             ; Win9x: közvetlenül a ...A import
+    mov [0xd694fc], eax
+```
+
+**Ezért nem találta meg sem az index, sem a `FF 15` mintakeresés:** a
+hívási hely operandusa nem az API rekesze, hanem ez a változó.
+
+#### A létrehozás — `0x007062b9`
+
+```
+0x007062b2  push 0x17                 ; dwNotifyFilter
+0x007062b4  push 1                    ; bWatchSubtree = TRUE   ← REKURZÍV
+0x007062b6  push eax                  ; lpPathName
+0x007062b7  call dword ptr [0xd694fc] ; FindFirstChangeNotification
+0x007062bd  mov  esi, eax
+0x007062bf  cmp  esi, -1              ; INVALID_HANDLE_VALUE
+```
+
+**A szűrő `0x17` bitenként:**
+
+| bit | érték | jelentés | be? |
+|---|---|---|---|
+| `FILE_NOTIFY_CHANGE_FILE_NAME` | `0x01` | fájl létrejön/törlődik/átnevezik | ✅ |
+| `FILE_NOTIFY_CHANGE_DIR_NAME` | `0x02` | mappa létrejön/törlődik | ✅ |
+| `FILE_NOTIFY_CHANGE_ATTRIBUTES` | `0x04` | attribútum változik | ✅ |
+| `FILE_NOTIFY_CHANGE_SIZE` | `0x08` | méret változik | ❌ **NINCS** |
+| `FILE_NOTIFY_CHANGE_LAST_WRITE` | `0x10` | **utolsó írás ideje** | ✅ |
+
+A teljes figyelő-modul a `0x00706xxx` tartományban ül: létrehozás
+`0x007061c0`-ban (1061 bájt), várakozás+újrafegyverzés `0x007065f0`
+(időkorláttal) és `0x00706680` (lekérdező, nulla időkorláttal), bontás
+`0x004e17f0` / `0x004e1890`.
+
+#### ⚠️ Ez MEGCÁFOLJA a 16.4-ben tett saját helyesbítésemet is
+
+A 16.4 azt írta, hogy a `W` változatot „csak a CRT-burok hívja — amit
+viszont senki", és ebből azt, hogy eldöntetlen, él-e a figyelő. **Ez téves
+volt:** a burkot a platform-váltó **köti be** a `0xd694fc` mutatóba, és
+onnan hívódik. A figyelő **él**.
+
+Ezzel egyidejűleg **igazolódik** a `src/picasapy/ini/photo_touch.py`
+fejlécének első tényállítása („a szűrőben benne a `LAST_WRITE` bit,
+rekurzívan"), amit a 2026-08-24-i első körben tévesen
+„nem ellenőrizhetőnek" minősítettem. Egy korábbi kör ezt **helyesen**
+mérte ki; az én két leszámlálásom volt hibás.
+
+**Módszertani tanulság, a következő körnek:** importált API hívási helyeit
+**ne** csak a `call dword ptr [IAT]` alakra keresd. Három elrejtő alak van,
+mindhárom előfordul ebben a binárisban:
+`mov reg,[IAT]` + `call reg` (`0x004e1807`), a platform-váltó
+függvénymutató (`0xd694fc`), és az A→W burok. A megbízható módszer az
+IAT-rekesz **minden** `.text`-beli 4 bájtos előfordulásának keresése.
+
+*Bizonyítottsági fok: **megerősített** — nyers bájtkeresés a teljes
+`.text`-en (elcsúszás-mentes) + a hívási hely diszasszemblálása.*
+
+## 17. Az OK MENTÉSI ÚTJA — a 12.1 pont lezárása (2026-08-24)
+
+A 12. lista 1. pontja azt kérte, ami a rádiógombtól a fájlkiíróig vezet.
+Az út végigkövetve, és **a 12.1 pont saját függvény-felsorolása helyesbítésre
+szorul**.
+
+### 17.1 A lánc
+
+```
+CFolderMgrDialog OK-kezelő  (0x007c4df0, 2611 b)
+ │   RTTI-igazolás: a függvény hivatkozza a
+ │   "CFolderMgrDialog::confirmfrexclude" sztringet
+ │
+ ├─ mappánkénti ciklus a függőben lévő listán
+ │     tömb  [dlg+0x2a8] · darabszám [dlg+0x2ac]
+ │     0x00492e40(lista, elem)  → index vagy -1  („benne van-e")
+ │     0x005088f0(elem, lista)  → listaművelet (a 0x005094c0 keresővel)
+ │     két PISZKOS-jelző:  [esp+0x11]  és  [esp+0x12]
+ │
+ ├─ a két jelző a 0x007bfec0 hívásait kapuzza
+ │     ⚠️ a 0x007bfec0 NEM fájlkiíró (ld. 17.3)
+ │
+ └─ 0x005cef20 (1679 b) — A TÉNYLEGES MENTÉS, hat argumentummal
+        (dlg+0x268, dlg+0x270, dlg+0x280, dlg+0x288, ebx, dlg+0x298)
+
+        0x005cf49b   0x004f5960(ebx)      → watchedfolders.txt
+        0x005cf500   0x004b9200(…)        → ]album:removed sírkő
+                                            (forrás: [dlg+0x2c0])
+        0x005cf529   0x00491210(a, b, c)  → 0x004f5d90 → frexcludefolders.txt
+                     kapuzva: a KÉT lista bármelyike nem üres
+                     ([esp+0x50]+4 vagy [esp+0x54]+4 ≠ 0)
+        0x005cf535   0x0065b840(dlg,0,0,1) → záró lépés
+```
+
+### 17.2 Negatív eredmény: a `scanlist.txt` innen NEM íródik
+
+A `scanlist.txt` két kezelője (`0x004f61c0`, `0x004f6380`) **kizárólag**
+a `0x004f54b0` és a `0x004183c0` felől hívódik — a Mappakezelő
+párbeszédéből **nem érhető el**. Az OK tehát **két** listafájlt ír
+(`watchedfolders.txt`, `frexcludefolders.txt`) és a sírköveket, nem hármat.
+
+### 17.3 ⚠️ HELYESBÍTÉS a 12.1 ponthoz
+
+A 12.1 három függvényt nevezett meg kiíróként:
+`0x005cef20` / `0x007bfec0` / `0x005088f0`. **Csak az első ír fájlt.**
+
+| függvény | amit a 12.1 mondott | ami valójában |
+|---|---|---|
+| `0x005cef20` | kiíró | ✅ **igen** — ez a mentés |
+| `0x007bfec0` | kiíró | ❌ **zárolt listaművelet**: rekurzív kritikus szakasz (`[obj+0x68]`, tulajdonos-szál `+0x20`, rekurziószám `+0x24`), `EnterCriticalSection` (`[0xc4055c]`); **egyetlen fájlműveletet sem tartalmaz** |
+| `0x005088f0` | kiíró | ❌ **listaművelet** a `0x005094c0` keresővel; a lista darabszáma `[lista+4] >> 1` |
+
+### 17.4 Ami a `frexcludefolders.txt` KÉT listájából következik
+
+A `0x00491210` **három** argumentumot kap, és a hívás akkor fut le, ha a
+**két** átadott lista bármelyike nem üres. Ez egybevág a lap korábbi
+mérésével, hogy a fájl **előjeles** sorformátumot használ (`+%s\n` /
+`-%s\n`): a két lista a **hozzáadandó** és az **eltávolítandó** mappák.
+
+*Bizonyítottsági fok: **megerősített** a hívási lánc és a sztring-kötések
+(`watchedfolders.txt` → `0x004f5960`, `frexcludefolders.txt` →
+`0x004f5d90`, `]album:removed` → `0x004b9200`) — mind sztring-xref és
+diszasszemblálás. **Erős, nem megerősített**: hogy a két frexclude-lista
+melyike a `+` és melyike a `−` előjelű (a formátumsztringek a hívott
+függvényben vannak, nem a hívóban). **Következtetett**: a `0x005088f0`
+pontos szemantikája (eltávolítás vs. csak keresés).*
+
+## 18. Az ELSŐ INDÍTÁS belépési útja — a 12.4 pont lezárása, NEGATÍV (2026-08-24)
+
+A 12. lista 4. pontja azt kérdezte, melyik kód nyitja meg a párbeszédet az
+első indításkor, és ugyanazzal a mód-jelzővel-e. **Nincs külön első-indítási
+út.**
+
+### A bizonyíték: a lánc egyetlen pontban szűkül
+
+| lépés | cím | hány hívó |
+|---|---|---|
+| a párbeszéd **konstruktora** (a három vtable beállítása: `0x00cb81fc`, `0x00cb829c`, `0x00cb82ac` a `0x7c0169`-nél) | `0x007c0130` (1035 b) | **1** — `0x005ce75d` |
+| a **megnyitó** | `0x005ce590` (2439 b) | **2** |
+| a két hívó | `0x005cbd11` és `0x005cbdd3` | mindkettő a főablak parancs-diszpécserében (`0x005cb990`, 8291 b) |
+
+A keresés **nyers bájtszinten** történt (`E8` + rel32 feloldás a teljes
+`.text`-en, plusz a függvénycímre mutató adathivatkozások) — tehát nem
+maradhatott ki közvetett hívás.
+
+### A két belépés MÓD-jelzője KÜLÖNBÖZIK
+
+```
+0x005cbd0e   push 1     ; mód = 1
+0x005cbd10   push ebx
+0x005cbd11   call 0x5ce590
+
+0x005cbdd1   push edi   ; mód = 0   (edi a diszpécser elején: xor edi,edi @ 0x005cb9a6)
+0x005cbdd2   push ebx
+0x005cbdd3   call 0x5ce590
+```
+
+⇒ A 10/b.1 két menüs belépési pontja **nem azonos hívás**: az egyik
+**1**-es, a másik **0**-s móddal nyit. A mód a `0x005ce590` második
+argumentuma.
+
+### Amit ez kimond
+
+> **Az első indításnak NINCS saját kódútja a Mappakezelőhöz.** Ha a
+> párbeszéd az első futáskor megjelenik, azt csak úgy teheti, hogy a program
+> **elküldi magának a két menüparancs egyikét** — harmadik hívó nem létezik.
+
+**A megvalósításunkra:** nem kell külön „első indítás" ág; elég a két
+parancs, és az egyiket induláskor kiváltani, ha a beolvasandó lista üres.
+A **mód-jelző különbségét** viszont át kell venni (1 vs 0), mert a két
+menüpont nem ugyanaz.
+
+*Bizonyítottsági fok: **megerősített** — a hívási helyek nyers
+bájtkereséssel, elcsúszás-mentesen; a mód-értékek diszasszemblálva.
+**Nem vizsgáltam**, mit csinál a mód-jelző a `0x005ce590`-en belül — ez
+külön kérdés, és nem blokkolja a fenti következtetést.*

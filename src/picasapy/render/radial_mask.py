@@ -47,6 +47,36 @@ _BLEND_DIVISOR = 256
 _SHARPNESS_SCALE = 0.99
 
 
+def native_radius_pixels(width: int, height: int, size: float) -> float:
+    """A `0x008f9cf0` közös sugár-képlete: `(paraméter + 1,0) · 0,5 ·
+    min(szélesség, magasság)` (#859).
+
+    Ez a KÖZÖS natív függvény adja a `radblur` ÉS a `radsat` sugarát is —
+    IZOTRÓP, a kép RÖVIDEBB oldalához méretezve, nem tengelyenként. A
+    `radblur` ezen a függvényen át kapja a sugarát (`radial_weight_table`),
+    a `radsat`-nak (`render/effects.py: apply_radsat`) UGYANEZT a
+    segédfüggvényt kell hívnia — így a két effekt nem mondhat ellent
+    egymásnak.
+    """
+    return min(width, height) / 2.0 * (float(size) + 1.0)
+
+
+def pixel_distance_grid(height: int, width: int, x: float, y: float) -> np.ndarray:
+    """Izotróp képpont-távolság az (x, y) középponttól, NYERS képpontban.
+
+    A `radblur` a súlytáblához négyzetes (egész aritmetikás) alakban méri
+    ugyanezt (`_squared_distance`); a `radsat` (`render/effects.py`) ezt a
+    float alakot hívja közvetlenül, mert nem indexel táblát. Mindkettő
+    egyaránt PIXELBEN, tengelyek közt torzítás nélkül számol (#859) — ez a
+    lényeg, nem a bitpontos egyezés a natív egész-aritmetikával.
+    """
+    center_x = width * float(x)
+    center_y = height * float(y)
+    cols = np.arange(width, dtype=np.float64) + 0.5 - center_x
+    rows = np.arange(height, dtype=np.float64) + 0.5 - center_y
+    return np.hypot(rows[:, np.newaxis], cols[np.newaxis, :])
+
+
 def radial_weight_table(
     width: int, height: int, size: float, sharpness: float
 ) -> tuple[np.ndarray, int]:
@@ -55,7 +85,7 @@ def radial_weight_table(
     A visszaadott tábla `int64`, 0…255 értékekkel; az `index = (dx²+dy²)
     >> shift` képlettel indexelendő.
     """
-    radius = min(width, height) / 2.0 * (float(size) + 1.0)
+    radius = native_radius_pixels(width, height, size)
     squared = radius * radius
     shift = 0
     while squared > RADIAL_TABLE_SIZE:
@@ -113,4 +143,10 @@ def apply_radial_mask(
     return np.clip(np.where(inside, blended, base), 0, 255).astype(np.uint8)
 
 
-__all__ = ["RADIAL_TABLE_SIZE", "apply_radial_mask", "radial_weight_table"]
+__all__ = [
+    "RADIAL_TABLE_SIZE",
+    "apply_radial_mask",
+    "native_radius_pixels",
+    "pixel_distance_grid",
+    "radial_weight_table",
+]

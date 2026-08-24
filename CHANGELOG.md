@@ -5,6 +5,39 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [0.8.70] – 2026-08-24
+
+### Javítva
+- **A hisztogrampanel visszakerült a bal fiók aljára (#1323).** A #864
+  megvalósítása a képterület fölé, a fotó bal alsó sarkába tette. Az
+  eredetiben a panel a fiókon BELÜL dokkolt, és a fiókkal együtt csúszik ki,
+  ha a felhasználó összecsukja azt.
+- **A radiális telítettség zónája kör lett, nem ellipszis (#859).** Nem
+  négyzetes fotón — vagyis gyakorlatilag mindegyiken — a hatás alakja eddig
+  eltért az eredetitől: 4:3-nál a vízszintes tengelyen 1,33-szorosan nyúlt.
+  A sugarat mostantól ugyanaz a segédfüggvény adja, mint a radiális
+  elmosásét, ahogy az eredetiben is. *(A vignetta szándékosan változatlan
+  maradt: nyolc eredeti Picasa-exporton végzett mérés szerint annak a zónája
+  valóban ellipszis.)*
+
+### Hozzáadva
+- **A verziószám kattintható (#706).** A jobb felső sarokban lévő verzió
+  mostantól hivatkozás a kiadások oldalára, buboréksúgóval és billentyűzetes
+  eléréssel — egy kattintással megnézhető, van-e újabb változat és mi
+  változott benne.
+
+### Belső
+- **A kiadási folyamat önjavító lett (#1319).** Az automatika csak akkor emel
+  verziót, ha az utolsó kiadás óta a program maga változott — dokumentáció-,
+  teszt- vagy munkafolyamat-változás önmagában nem szül többé verzióemelő
+  PR-t. Az új kiadási őr negyedóránként elrendezi a félbemaradt automatikus
+  PR-eket: elindítja a rajtuk elmaradó ellenőrzést, lezárja az elavultakat,
+  és hibánál látható jegyet nyit.
+- **A kiadási őr a fölösleges verzióemelő PR-t is felismeri (#1324).** Nem
+  csak azt zárja le, amit a main lehagyott, hanem azt is, amihez nincs
+  kiadandó változás — élesben ez egy olyan 0.8.70-es kiadást előzött volna
+  meg, amiben a felhasználó számára semmi nem változott.
+
 ## [0.8.69] – 2026-08-24
 
 ### Javítva

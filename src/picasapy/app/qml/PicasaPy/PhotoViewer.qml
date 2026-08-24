@@ -593,8 +593,6 @@ Rectangle {
                 // FIX 280px, nem ablakarányos (ld. az ottani kommentet)
                 Layout.preferredWidth: 280
                 Layout.fillHeight: true
-                // A rajta kívül lebegő hisztogram a képterület fölé kerüljön.
-                z: 1
                 // #641: itt NINCS `Layout.minimumHeight`. A #628 azt tette ide,
                 // de az visszafelé sült el: a doboz nem zsugorodott a cellára,
                 // hanem TÚLNYÚLT rajta, és a panel aljához igazodó
@@ -874,11 +872,20 @@ Rectangle {
                 }
                 // élő RGB-hisztogram + fényképezőgép-adat sor (#25): a
                 // korábbi placeholder-doboz élesítve — HistogramBox.qml
+                // #1323: a panel a bal fiókON BELÜL dokkolt, nem a
+                // képterület fölött lebeg. Az `editpanel.tre` szerint
+                // (`nerdview_container`, XConstraint 0, 0, LEFTDRAWEROFFSET,
+                // 20) a bal éle a fiók bal szélétől 20 px — a
+                // `LEFTDRAWEROFFSET` a fiók BE-/KICSÚSZTATÁSÁT vezérlő
+                // változó (0 ↔ −279, `editpanel.tre:1413`), nem a fiók
+                // szélessége; a képterület `LEFTDRAWEROFFSET + 279`-nél
+                // kezdődik (`insetleft`, 1421). A 238 × 144-es doboz így a
+                // 280 px-es fiók sávján belülre esik.
                 HistogramBox {
                     objectName: "viewerHistogramBox"
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 95
-                    anchors.left: parent.right
+                    anchors.left: parent.left
                     anchors.leftMargin: 20
                     width: 238
                     height: 144
@@ -1216,6 +1223,25 @@ Rectangle {
                                 border.width: 1
                                 border.color: Theme.selectionBlue
                             }
+                        }
+
+                        // #900: az `editpanel/redselection` a téglalapon
+                        // KÍVÜLI területet ugyanazzal a
+                        // `negativemode 8f2f2f2f` értékkel sötétíti, mint a
+                        // vágó. Csak húzás közben — a már rögzített régiók
+                        // körül nincs sötétítés, azokat csak keret jelöli.
+                        SelectionDim {
+                            objectName: "redeyeSelectionDim"
+                            active: redeyeDragArea.dragging
+                                    && !editorPanel.redeyeHideOutlines
+                            selX: Math.min(redeyeDragArea.startX,
+                                           redeyeDragArea.lastX)
+                            selY: Math.min(redeyeDragArea.startY,
+                                           redeyeDragArea.lastY)
+                            selW: Math.abs(redeyeDragArea.lastX
+                                           - redeyeDragArea.startX)
+                            selH: Math.abs(redeyeDragArea.lastY
+                                           - redeyeDragArea.startY)
                         }
 
                         // az ÉPP húzott téglalap (még nincs a pufferben)
