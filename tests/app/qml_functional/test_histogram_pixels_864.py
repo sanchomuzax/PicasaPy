@@ -251,4 +251,8 @@ def test_real_photo_viewer_histogram_panel_geometry(qml_app, qt_app):
     assert box_bottom == pytest.approx(viewer_bottom - 95, abs=0.5)
     # a doboz NEM lóghat ki a fiókból a képterületre
     assert box_right <= drawer_right + 0.5
-    assert title.property("font").pointSizeF() == pytest.approx(14)
+    # #1344: a felirat NEM félkövér, és a mért 11 képpontos sormagasságot
+    # kapja (a korábbi `pointSize: 14` + félkövér a mi kitalálásunk volt —
+    # a `nerdview.tre`-ben SEMMI nem jelöl félkövéret).
+    assert title.property("font").bold() is False
+    assert title.height() == 11

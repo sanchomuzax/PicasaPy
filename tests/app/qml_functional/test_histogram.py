@@ -156,15 +156,21 @@ class TestHistogramBoxWiring:
         assert "Focal length: 6.72 mm" in texts
         assert "f/1.69" in texts
 
-    def test_title_wraps_instead_of_eliding(self, qml_app, qt_app):
-        """#235: a cím keskeny doboznál sortöréssel marad teljes (max 2 sor),
-        nem `…`-ra vágva."""
+    def test_title_stays_on_a_single_line(self, qml_app, qt_app):
+        """#1344: a cím EGY sor — a #235 kétsoros tördelése MEGDŐLT.
+
+        A #235 abból indult ki, hogy „a cím mindig teljes", és ehhez két
+        sort engedett (`WordWrap` + `maximumLineCount: 2`). A `respack.yt`
+        mérése ezt megcáfolta: a `nerdview/nvhead` réteg doboza
+        13,4 → 113,15, azaz **11 képpont magas — egyetlen sor**. Ez az
+        ellenkező irányú őr: ha a tördelés visszakúszna, itt bukik.
+        """
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
         title = window.findChild(QObject, "histogramTitle")
-        # a wrapMode enum PySide-oldalon nem konvertálható — a viselkedést a
-        # maximumLineCount (2 sor engedett) és a QML-forrás rögzíti
-        assert title.property("maximumLineCount") == 2
+        assert title.property("lineCount") == 1
+        # a szöveg el is fér a sávban — tehát nem `…`-ra vágva „egysoros"
+        assert title.property("contentWidth") <= title.property("width")
 
     def test_panel_background_is_not_brown(self, qml_app, qt_app):
         """#512: a #429-ben bevezetett `#a88974` meleg barna REGRESSZIÓ volt
@@ -193,16 +199,36 @@ class TestHistogramBoxWiring:
 
     def test_plot_area_never_overlaps_long_multiline_exif_text(self, qml_app, qt_app):
         """#512 regresszió: hosszú, TÖBB SOROS (pl. magyar fordítású) EXIF-
-        blokk mellett is a rajzterület alja a szöveg fölött / annak tetején
-        marad — nem lóg rá. Korábban a kézzel számolt magasság-levonás
-        (`box.anchors.margins`, `cameraLabel.implicitHeight`) hibás margót
-        használt, és bőséges szöveg mellett a rajzterület és a szöveg
-        doboza AZONOS y-pozícióból indult (mérve: 8 soros EXIF esetén
-        mindkettő 19px-en). A ColumnLayout-alapú elosztás ezt szerkezetileg
-        kizárja."""
+        blokk mellett sem csúszik egymásra a rajzterület és a szöveg.
+        Korábban a kézzel számolt magasság-levonás (`box.anchors.margins`,
+        `cameraLabel.implicitHeight`) hibás margót használt, és bőséges
+        szöveg mellett a rajzterület és a szöveg doboza AZONOS y-pozícióból
+        indult (mérve: 8 soros EXIF esetén mindkettő 19px-en).
+
+        #1344: a védelem szerkezete megváltozott. Nem a `ColumnLayout`
+        osztja el a helyet, hanem MÉRT, fix koordináták tartják a helyükön
+        az elemeket — ezért a hiba osztálya (a tartalom tolja a rétegeket)
+        közvetlenül állítható: a geometria a szöveg mennyiségétől
+        FÜGGETLEN. A megengedett átfedés a `respack.yt`-ben is meglévő
+        2 képpont (`histoback` alja 84, `detail1` teteje 82).
+        """
         window, _, _ = qml_app
         self._open_viewer(window, qt_app)
         box = window.findChild(QObject, "viewerHistogramBox")
+        plot = window.findChild(QObject, "histogramPlot")
+        camera = window.findChild(QObject, "cameraSummaryArea")
+        assert plot is not None and camera is not None
+
+        def _geometria():
+            return (
+                plot.property("y"),
+                plot.property("height"),
+                camera.property("y"),
+                camera.property("height"),
+            )
+
+        rovid_geometria = _geometria()
+
         rows = [
             f"Nagyon hosszú fényképezőgép-adat sor {i}, ami biztosan több sorba törik\tÉrték {i}"
             for i in range(8)
@@ -211,11 +237,12 @@ class TestHistogramBoxWiring:
         for _ in range(6):
             qt_app.processEvents()
 
-        plot = window.findChild(QObject, "histogramPlot")
-        camera = window.findChild(QObject, "cameraSummaryArea")
-        assert plot is not None and camera is not None
+        assert _geometria() == rovid_geometria, (
+            "a bőséges EXIF-szöveg elmozdította a rétegeket: "
+            f"{rovid_geometria} → {_geometria()}"
+        )
         plot_bottom = plot.property("y") + plot.property("height")
-        assert plot_bottom <= camera.property("y") + 0.01, (
-            f"a rajzterület ({plot_bottom}) rálóg az EXIF-szövegre "
-            f"({camera.property('y')})"
+        assert plot_bottom <= camera.property("y") + 2.01, (
+            f"a rajzterület ({plot_bottom}) a mért 2 képpontnál mélyebben "
+            f"lóg rá az EXIF-szövegre ({camera.property('y')})"
         )

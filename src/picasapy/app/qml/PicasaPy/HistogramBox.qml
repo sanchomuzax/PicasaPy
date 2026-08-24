@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 
 // RGB-hisztogram + fényképezőgép-adat doboz (#25, #228, #232): a néző
 // bal alsó dobozának élesítése, Picasa-mintára. Buta komponens — a
@@ -17,6 +16,14 @@ import QtQuick.Layouts
 // csomópont) — nincs `requestPaint`, nincs időzítés; amint a kötött adat
 // vagy a méret érvényes, a kötések maguktól újraértékelődnek és az oszlopok
 // megjelennek. A kitöltött oszlopok ráadásul a referencia-kinézetet is hozzák.
+//
+// #1344 ELRENDEZÉS: a panel MINDEN eleme ki van mérve a `respack.yt`
+// rétegfejléceiből (`docs/specs/picasa-nerdview-panel.md`), a panel bal
+// felső sarkához relatívan. A korábbi `ColumnLayout` + 8-as margó
+// találgatás volt (a spec csak a hisztogram 213 × 59-ét tartalmazta),
+// ezért a tartalom magasságával együtt mozgott minden. Most fix,
+// koordinátás elrendezés van: a panel 238 × 144, és az elemek a mért
+// helyükön ülnek — a tartalom mennyiségétől függetlenül.
 Rectangle {
     id: box
     objectName: "histogramBox"
@@ -27,6 +34,13 @@ Rectangle {
     property string cameraSummary: ""
 
     readonly property int bucketCount: 256
+
+    // A mért panelméret (`nerdview/docbounds`, 0,0 → 238,144). A
+    // PhotoViewer.qml explicit width/height-tal is ezt adja; az implicit
+    // méret attól független használatnál (teszt, önálló beágyazás) is a
+    // helyes dobozt hozza.
+    implicitWidth: 238
+    implicitHeight: 144
 
     // #512: a #429-ben bevezetett meleg barna (`#a88974`) hibás volt — a
     // bejelentő ELEREDETI Picasa-képernyőképe világosszürke panelt mutat,
@@ -44,127 +58,150 @@ Rectangle {
     border.color: Theme.chromeBorder
     radius: 3
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 8
-        spacing: 5
+    // A tartalom sávja: a mért elemek mind a bal széltől 13-nál kezdődnek
+    // és 226-nál érnek véget (13 + 213).
+    readonly property int bandX: 13
+    readonly property int bandWidth: 213
 
-        Text {
-            id: titleLabel
-            objectName: "histogramTitle"
-            Layout.fillWidth: true
-            text: qsTr("Histogram and camera information")
-            font.pointSize: 14
-            font.bold: true
-            color: Theme.ink
-            // #235: keskeny doboznál a cím ne vágódjon `…`-ra — legfeljebb
-            // két sorba törik (az eredeti Picasában a cím mindig teljes)
-            wrapMode: Text.WordWrap
-            maximumLineCount: 2
-            elide: Text.ElideRight
+    // A felirat (`static(Histogram & Camera Information): nvhead`,
+    // 13,4 → 113,15). A doboz 11 képpont magas: EGY sor.
+    //
+    // #1344: a #235-ben bevezetett `font.bold: true` + `pointSize: 14` +
+    // kétsoros tördelés a mi kitalálásunk volt — a `nerdview.tre`-ben a
+    // `nvhead`-nek EGYETLEN tulajdonsága van (`m_displayfont14`), és SEMMI
+    // nem jelöl félkövéret. A mérvadó bizonyíték a réteg doboza: 11
+    // képpont magas, tehát egysoros, normál vastagságú felirat.
+    Text {
+        id: titleLabel
+        objectName: "histogramTitle"
+        x: box.bandX
+        y: 4
+        width: box.bandWidth
+        height: 11
+        text: qsTr("Histogram and camera information")
+        // A sormagasság a mérvadó (11 képpont), nem a Picasa font-tokene:
+        // az `m_displayfont14` a Picasa erőforrás-nyelvének neve, nem
+        // Qt-pontméret. A 11 képpontos betűméret egy sorba fér a 11
+        // képpontos dobozba, és a hosszabb magyar fordítás is elfér a
+        // 213 képpontos sávban.
+        font.pixelSize: 11
+        font.bold: false
+        color: Theme.ink
+        // egy sor, tördelés nélkül (`wrapMode` alapértéke `NoWrap`);
+        // az elide csak végszükség-őr, hogy a doboz sose lógjon túl
+        elide: Text.ElideRight
+        verticalAlignment: Text.AlignVCenter
+    }
+
+    // A hisztogram 213 × 59-es megjelenítési területe (`rect: histoback`,
+    // 13,25 → 226,84). A tartalom előbb pontosan 256 × 70-es belső képként
+    // készül el (HistogramBitmap), majd ez a réteg méreteződik le — egy bin
+    // tehát nem egy képernyő-oszlop, ahogy a Picasában sem (#864).
+    Item {
+        id: plot
+        objectName: "histogramPlot"
+        x: box.bandX
+        y: 25
+        width: box.bandWidth
+        height: 59
+        clip: true
+
+        // #512: a rajzterület (`histoback`/`histo` réteg) elkülönül a
+        // panel hátterétől — a `Theme.contentPanel` a projekt szokásos
+        // „elkülönülő világos tartalom" tokene (ld. pl. EditorPanel
+        // fültartalma), világos témán fehér, sötét témán sötétszürke
+        // kártyaháttér.
+        Rectangle {
+            id: plotBackground
+            objectName: "histogramPlotBackground"
+            anchors.fill: parent
+            color: Theme.contentPanel
         }
 
-        // A hisztogram 213 × 59-es megjelenítési területe. A tartalom előbb
-        // pontosan 256 × 70-es belső képként készül el (HistogramBitmap),
-        // majd ez a réteg méreteződik le — egy bin tehát nem egy képernyő-
-        // oszlop, ahogy a Picasában sem (#864).
-        //
-        // #512: a ColumnLayout gondoskodik róla, hogy a rajzterület és az
-        // EXIF-szöveg ne fedje egymást. A #864 óta a plot nem a maradék
-        // helyet tölti ki, hanem a bizonyított fix 213 × 59-es méretet kapja.
         Item {
-            id: plot
-            objectName: "histogramPlot"
-            Layout.preferredWidth: 213
-            Layout.minimumWidth: 213
-            Layout.maximumWidth: 213
-            Layout.preferredHeight: 59
-            Layout.minimumHeight: 59
-            Layout.maximumHeight: 59
-            Layout.alignment: Qt.AlignHCenter
-            clip: true
+            id: scaledBitmap
+            anchors.fill: parent
 
-            // #512: a rajzterület (`histoback`/`histo` réteg) elkülönül a
-            // panel hátterétől — a `Theme.contentPanel` a projekt szokásos
-            // „elkülönülő világos tartalom" tokene (ld. pl. EditorPanel
-            // fültartalma), világos témán fehér, sötét témán sötétszürke
-            // kártyaháttér.
-            Rectangle {
-                id: plotBackground
-                objectName: "histogramPlotBackground"
-                anchors.fill: parent
-                color: Theme.contentPanel
-            }
-
-            Item {
-                id: scaledBitmap
-                anchors.fill: parent
-
-                HistogramBitmap {
-                    histogramData: box.histogramData
-                    transformOrigin: Item.TopLeft
-                    transform: Scale {
-                        origin.x: 0
-                        origin.y: 0
-                        xScale: scaledBitmap.width / 256
-                        yScale: scaledBitmap.height / 70
-                    }
+            HistogramBitmap {
+                histogramData: box.histogramData
+                transformOrigin: Item.TopLeft
+                transform: Scale {
+                    origin.x: 0
+                    origin.y: 0
+                    xScale: scaledBitmap.width / 256
+                    yScale: scaledBitmap.height / 70
                 }
             }
         }
+    }
 
-        // #235: a kameraadat az eredeti Picasa 2-oszlopos, címkézett
-        // elrendezését követi. A cameraSummary soronként `bal\tjobb`
-        // cellapárokat hordoz (formatting.camera_summary_text) — ha nincs
-        // tab a szövegben (régi/egyszerű érték), egyoszloposan jelenik meg.
-        Column {
-            id: cameraLabel
-            objectName: "cameraSummaryArea"
-            Layout.fillWidth: true
-            spacing: 1
+    // #235: a kameraadat az eredeti Picasa 2-oszlopos, címkézett
+    // elrendezését követi. A cameraSummary soronként `bal\tjobb`
+    // cellapárokat hordoz (formatting.camera_summary_text) — ha nincs
+    // tab a szövegben (régi/egyszerű érték), egyoszloposan jelenik meg.
+    //
+    // #1344: a két oszlop NEM egyforma. A mért rétegek: `text: detail1`
+    // 13,82 → 151,123 (138 × 41) és `text: detail2` 157,82 → 226,123
+    // (69 × 41) — köztük 151 → 157, azaz 6 képpont rés. A sáv 123-nál
+    // véget ér, alatta 21 képpont üres térköz a panel aljáig. A `clip`
+    // gondoskodik róla, hogy bőséges EXIF-blokk se nőjön ki a panelből.
+    Column {
+        id: cameraLabel
+        objectName: "cameraSummaryArea"
+        x: box.bandX
+        y: 82
+        width: box.bandWidth
+        height: 41
+        clip: true
+        spacing: 1
 
-            readonly property var summaryRows:
-                box.cameraSummary.length > 0 ? box.cameraSummary.split("\n") : []
+        readonly property int leftColumnWidth: 138
+        readonly property int columnGap: 6
+        readonly property int rightColumnWidth: 69
 
-            Text {
-                objectName: "cameraSummaryText"
-                width: parent.width
-                visible: cameraLabel.summaryRows.length === 0
-                text: qsTr("No EXIF data available")
-                font.pixelSize: Theme.fontSize - 2
-                font.italic: true
-                color: Theme.ink
-            }
+        readonly property var summaryRows:
+            box.cameraSummary.length > 0 ? box.cameraSummary.split("\n") : []
 
-            Repeater {
-                model: cameraLabel.summaryRows
-                delegate: Item {
-                    required property string modelData
-                    readonly property var cells: modelData.split("\t")
-                    width: cameraLabel.width
-                    height: Math.max(leftCell.implicitHeight,
-                                     rightCell.implicitHeight)
+        Text {
+            objectName: "cameraSummaryText"
+            width: parent.width
+            visible: cameraLabel.summaryRows.length === 0
+            text: qsTr("No EXIF data available")
+            font.pixelSize: Theme.fontSize - 2
+            font.italic: true
+            color: Theme.ink
+        }
 
-                    Text {
-                        id: leftCell
-                        anchors.left: parent.left
-                        width: Math.floor(parent.width * 0.6)
-                        text: parent.cells[0]
-                        wrapMode: Text.WordWrap
-                        maximumLineCount: 2
-                        elide: Text.ElideRight
-                        font.pixelSize: Theme.fontSize - 2
-                        color: Theme.ink
-                    }
-                    Text {
-                        id: rightCell
-                        anchors.right: parent.right
-                        width: Math.floor(parent.width * 0.38)
-                        text: parent.cells.length > 1 ? parent.cells[1] : ""
-                        elide: Text.ElideRight
-                        font.pixelSize: Theme.fontSize - 2
-                        color: Theme.ink
-                    }
+        Repeater {
+            model: cameraLabel.summaryRows
+            delegate: Item {
+                required property string modelData
+                readonly property var cells: modelData.split("\t")
+                width: cameraLabel.width
+                height: Math.max(leftCell.implicitHeight,
+                                 rightCell.implicitHeight)
+
+                Text {
+                    id: leftCell
+                    objectName: "cameraCellLeft"
+                    x: 0
+                    width: cameraLabel.leftColumnWidth
+                    text: parent.cells[0]
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 2
+                    elide: Text.ElideRight
+                    font.pixelSize: Theme.fontSize - 2
+                    color: Theme.ink
+                }
+                Text {
+                    id: rightCell
+                    objectName: "cameraCellRight"
+                    x: cameraLabel.leftColumnWidth + cameraLabel.columnGap
+                    width: cameraLabel.rightColumnWidth
+                    text: parent.cells.length > 1 ? parent.cells[1] : ""
+                    elide: Text.ElideRight
+                    font.pixelSize: Theme.fontSize - 2
+                    color: Theme.ink
                 }
             }
         }
