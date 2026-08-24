@@ -58,16 +58,45 @@ class TestKattinthatoKeszErtesites:
     """16.1 — a „kész" értesítésnek VAN fogadója."""
 
     def test_az_asztali_hatterkep_aga_megmutatja(self, qml_app, qt_app, tmp_path):
+        """A jelzésnek VAN fogadója — de hogy MELYIK felület mutatja, az a
+        #1129 óta attól függ, jelen van-e a lebegő értesítősáv.
+
+        A `Main.qml` mostantól példányosítja a `PicasaNotifier`-t, és az a
+        `NotifierBus.attached` kapun át **elhallgattatja** a régi
+        `CollageDoneNotice`-t — különben ugyanaz az esemény kétszer, két
+        helyen szólalna meg. A régi doboz szándékosan a fában marad (a sáv
+        nélküli üzemmód tartaléka), ezért a `visible: True` állítás
+        önmagában már nem a hibát mérné.
+
+        Az állítás ezért a FELHASZNÁLÓI kimenetre szól: az esemény
+        valamelyik felületen megjelenik, a helyes célútvonallal."""
         window, controller, _engine = qml_app
         cel = str(tmp_path / "kepek" / "a.jpg")
 
         controller.collageDesktopBackgroundReady.emit(cel)
         qt_app.processEvents()
 
-        ertesites = _keres(window, ERTESITES)
-        assert ertesites is not None
-        assert ertesites.property("visible") is True
-        assert ertesites.property("path") == cel
+        regi_doboz = _keres(window, ERTESITES)
+        assert regi_doboz is not None, "a régi értesítő-doboz eltűnt a fából"
+
+        sav = _keres(window, "picasaNotifier")
+        if sav is not None:
+            # a sáv jelen van: ŐNEKI kell mutatnia, a réginek hallgatnia
+            assert regi_doboz.property("visible") is False, (
+                "a sáv mellett a régi doboz is megszólalt — kétszeres értesítés"
+            )
+            # a `Repeater` delegáltjait `findChild` nem találja meg, ezért a
+            # sáv saját olvasóin át kérdezünk (`cellCount` / `payloadAt`)
+            assert sav.property("cellCount") == 1, (
+                "a sáv nem vette fel az értesítést"
+            )
+            assert sav.property("lastPayload") == cel, (
+                "a sáv nem a helyes célútvonalat kapta"
+            )
+        else:
+            # sáv nélküli üzemmód: a régi doboz a fogadó
+            assert regi_doboz.property("visible") is True
+            assert regi_doboz.property("path") == cel
 
     def test_a_szovege_a_collage_done_kulcse(self, qml_app, qt_app, tmp_path):
         window, controller, _engine = qml_app

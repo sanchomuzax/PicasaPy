@@ -68,9 +68,18 @@ Rectangle {
     // adja ki, ha a mentés a háttérkép-gombbal indult (`collage_save.py`,
     // `payload["hatterkep"]`). A rendes `collageDone`-ra SZÁNDÉKOSAN nem
     // kötünk — az volna a #1119-ben javított hiba.
+    // #1129: a valódi gazda a LEBEGŐ ÉRTESÍTŐSÁV (`CNotifierPopup`) — az
+    // eredetiben ez az esemény ott jelenik meg, és ott tűnik el magától
+    // is. Amíg a sáv nincs a felületen példányosítva, ez az értesítés
+    // marad az egyetlen jelzés; amint ott van, ELHALLGAT — különben a
+    // felhasználó ugyanazt kapná kétszer, két helyen. A kapu:
+    // `NotifierBus.attached`.
     Connections {
         target: typeof controller !== "undefined" ? controller : null
-        function onCollageDesktopBackgroundReady(path) { notice.showFor(path) }
+        function onCollageDesktopBackgroundReady(path) {
+            if (!NotifierBus.attached)
+                notice.showFor(path)
+        }
     }
 
     visible: false

@@ -92,6 +92,14 @@ kódtól).
   a kijelölésen kívüli terület nem sötétedik, hanem a néző hátterével
   teljesen fedetté válik). Az eredetiben nincs ilyen állapot, csak az
   állandó kijelölés-sötétítés (#900).
+- `src/picasapy/app/qml/PicasaPy/PicasaNotifier.qml` (#1129) — a lebegő
+  értesítősáv celláinak **magától eltűnése** (`cellLifetimeMs`). Maga a sáv
+  eredeti (`CNotifierPopup`), és a mérete, elhelyezése, ablakstílusa a
+  binárisból mért érték; az egyes cellák ÉLETTARTAMA viszont nincs kimérve.
+  A bináris importtáblája bizonyítja, hogy Win32 időzítő nem méri
+  (`SetTimer`/`KillTimer`/`timeSetEvent` egyik hívója sincs a notifier
+  moduljában), a `yt` keretrendszer saját ütemezője pedig nincs felderítve.
+  A magától eltűnés a #1168 kimondott igénye — az érték a mi döntésünk.
 
 ## Tervezett, még nem implementált saját funkciók
 

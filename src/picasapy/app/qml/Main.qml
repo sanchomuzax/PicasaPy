@@ -1856,6 +1856,23 @@ ApplicationWindow {
         onRestored: documentTabStrip.activateTab(window.collageTabId)
     }
 
+    // #1129: a lebegő értesítősáv (Picasa Notifier) — önálló, keret nélküli
+    // ablak a munkaterület jobb alsó részén. Az alkalmazás indítása hozza
+    // létre, nem a főablak, ezért nincs `transientParent`-je.
+    //
+    // A `NotifierBus.attached` kapun át a `CollageDoneNotice` MAGÁTÓL
+    // elhallgat, amint a sáv jelen van — így ugyanaz az esemény nem szólal
+    // meg kétszer, két helyen. A `CollageDoneNotice` SZÁNDÉKOSAN marad a
+    // fában: a #1119 őre a jelenlétét állítja, és a törlése önálló döntés
+    // (a sáv nélküli üzemmód tartaléka).
+    PicasaNotifier {
+        id: picasaNotifier
+        onActivated: function (kind, payload) {
+            if (kind === "collage")
+                window.openCollageNodeInEditor(payload)
+        }
+    }
+
     // #1028: „A kollázs kész (kattintson ide)" — a lapzárás UTÁN is látszik,
     // ezért a gazdában él, nem a panelben, ami közben bezárul.
     CollageDoneNotice {
