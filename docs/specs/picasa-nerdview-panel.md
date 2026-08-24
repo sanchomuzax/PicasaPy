@@ -74,19 +74,29 @@ m_centerXY
 ⇒ A panel az ablak **aljához** horgonyzott (−95 képpont), balról
 `LEFTDRAWEROFFSET + 20`. A hisztogram a háttérrétegére **középre** kerül.
 
-## 4. Eredeti / nálunk / teendő
+## 4. Eredeti / nálunk
 
-| | eredeti (mért) | nálunk (`HistogramBox.qml`) | teendő |
+*A #1344 (2026-08-24) óta a `HistogramBox.qml` a mért geometriát követi: a
+`ColumnLayout` + 8-as margó helyett fix, koordinátás elrendezés van. A
+„nálunk korábban" oszlop a javítás ELŐTTI állapotot rögzíti.*
+
+| | eredeti (mért) | nálunk korábban | ma (`HistogramBox.qml`) |
 |---|---|---|---|
-| felirat betűvastagság | **normál** (nincs jelölés) | **`font.bold: true`** | vegyük le |
-| felirat mérete | **11 képpont soronként**, egy sor | `font.pointSize: 14` (~19 képpont) | igazítsuk 11 képpontos sormagassághoz |
-| felirat tördelése | **nincs** — egy sor, a 238-as panelben elfér | `wrapMode: WordWrap`, `maximumLineCount: 2` | egysoros, tördelés nélkül |
-| felirat helye | x = 13, y = 4 | `ColumnLayout` 8-as margóval | 13 / 4 |
-| hisztogram | 213 × 59 | ✅ **213 × 59** (#864) | — |
-| kameraadat-oszlopok | **138 + 6 + 69** | egyenlő oszlopok | 138 / 69 |
-| panel mérete | 238 × 144 | tartalomtól függő | rögzített 238 × 144 |
-| alsó térköz | 21 képpont | 8-as margó | 21 |
-| bezáró gomb | **nincs** (kikommentezve) | nincs | — |
+| felirat betűvastagság | **normál** (nincs jelölés) | `font.bold: true` | ✅ `font.bold: false` |
+| felirat mérete | **11 képpont soronként**, egy sor | `font.pointSize: 14` (~19 képpont) | ✅ `height: 11`, `font.pixelSize: 11` |
+| felirat tördelése | **nincs** — egy sor, a 238-as panelben elfér | `wrapMode: WordWrap`, `maximumLineCount: 2` | ✅ egysoros (`NoWrap`) |
+| felirat helye | x = 13, y = 4 | `ColumnLayout` 8-as margóval | ✅ x = 13, y = 4 |
+| hisztogram | 213 × 59 | ✅ **213 × 59** (#864) | ✅ 13, 25-től 213 × 59 |
+| kameraadat-oszlopok | **138 + 6 + 69** | egyenlő oszlopok | ✅ 138 + 6 + 69 |
+| panel mérete | 238 × 144 | tartalomtól függő magasság | ✅ rögzített 238 × 144 |
+| alsó térköz | 21 képpont | 8-as margó | ✅ 21 (a sáv 123-nál zárul) |
+| bezáró gomb | **nincs** (kikommentezve) | nincs | nincs |
+
+A `detail1` teteje (82) 2 képponttal a `histoback` alja (84) FÖLÉ ér — ez
+az eredetiben is így van, a megvalósítás átveszi. Az őrteszt ezért 2
+képpont átfedést enged, de azt állítja, hogy a geometria a szöveg
+mennyiségétől független
+(`tests/app/qml_functional/test_histogram_panel_geometry_1344.py`).
 
 ## 5. Miért tért el — a felelősség helye
 

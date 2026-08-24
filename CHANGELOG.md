@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A „Hisztogram és fényképezőgép-adatok" felirat és a panel elrendezése
+  (#1344).** A felirat már nem félkövér és nem törik két sorba: az eredeti
+  Picasához hasonlóan egyetlen, normál vastagságú sor. A panel elemei — a
+  felirat, a hisztogram és a két fényképezőgép-adat oszlop — a kimért
+  helyükre kerültek, így az oszlopok nem csúsznak el, és a panel mérete a
+  szöveg mennyiségétől függetlenül állandó.
+
 ### Belső
 - **Helyben legfeljebb két tesztfutás mehet egyszerre (#1360).** A harmadik
   megvárja, amíg felszabadul egy hely, ahelyett hogy a négymagos gépet
