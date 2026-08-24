@@ -13,13 +13,13 @@ együtt vizsgálva az egyik némán elveszhetne.
 
 A betűmérethez tartozó egyetlen relatív állítás (elfér-e a magyar szöveg
 egy sorban) szándékosan nem képpontszámot éget be: a szöveg tényleges
-szélességét a futó platform betűjével, `QFontMetricsF`-fel méri.
+szélességét a KIRAJZOLT kimeneten méri (`truncated`, `contentWidth`),
+nem a deklarált betűmérettel számolva — a betű platformonként más.
 """
 
 from __future__ import annotations
 
 from PySide6.QtCore import QObject, QUrl
-from PySide6.QtGui import QFontMetricsF
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
@@ -113,9 +113,21 @@ def test_a_felirat_egy_sorban_marad(qt_app):
     #    tehát nem is vágódik `…`-ra (relatív állítás, nem képpontszám)
     assert title.property("contentWidth") <= title.width()
 
-    # 3. a HOSSZABB magyar fordítás is elfér — a futó platform betűjével mérve
-    metrics = QFontMetricsF(title.property("font"))
-    assert metrics.horizontalAdvance(MAGYAR_FELIRAT) <= title.width()
+    # 3. a HOSSZABB magyar fordítás sem vágódik le.
+    #
+    # ⚠️ Ezt a KIRAJZOLT kimeneten mérjük, nem a deklarált betűvel számolva:
+    #    a windowsos alapbetűvel a magyar felirat 374 képpontot kérne a
+    #    213-as sávban, tehát a `QFontMetricsF(11 px)`-alapú állítás ott
+    #    elbukott — pedig a TERMÉK helyes, mert a `Text.HorizontalFit`
+    #    zsugorít. Ez pontosan a #1217-ben leírt csapda: a teszt
+    #    hallgatólagosan a fejlesztői gép betűjét feltételezte.
+    title.setProperty("text", MAGYAR_FELIRAT)
+    qt_app.processEvents()
+    assert title.property("lineCount") == 1, "a magyar felirat két sorba tört"
+    assert title.property("truncated") is False, (
+        "a magyar felirat le van vagva (elidalva) - a HorizontalFit nem mukodik"
+    )
+    assert title.property("contentWidth") <= title.width()
 
 
 def test_a_felirat_helye_es_sormagassaga(qt_app):

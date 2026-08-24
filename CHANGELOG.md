@@ -5,6 +5,14 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A hisztogram-panel felirata Windowson sem vágódik le (#1344).** A magyar
+  „Hisztogram és fényképezőgép-adatok" felirat a windowsos alapbetűvel nem
+  fért a 213 képpontos sávba, és a végét levágta volna. Mostantól a betű
+  zsugorodik, ahol nem fér el — ahol elfér, ott semmi nem változik.
+
 ## [0.8.78] – 2026-08-24
 
 ### Javítva
