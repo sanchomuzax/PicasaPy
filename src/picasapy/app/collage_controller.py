@@ -70,6 +70,7 @@ from .collage_background import BACKGROUND_MODES, CollageBackgroundMixin
 from .collage_model import (
     CollageNode,
     CollageNodeModel,
+    group_bounds,
     initial_node_width,
     pictures_of,
     selected_indices,
@@ -300,6 +301,27 @@ class CollageMixin(CollageSaveMixin, CollageBackgroundMixin, CollageShadowMixin)
     @Property(list, notify=collageSelectionChanged)
     def collageSelection(self) -> list:
         return list(selected_indices(self._nodes()))
+
+    @Property("QVariantMap", notify=collageSelectionChanged)
+    def collageGroupRect(self) -> dict:
+        """A CSOPORT-ELEM téglalapja lapegységben; ÜRES térkép = nincs elem.
+
+        #1170: a képesség-maszk 6. bitje a `collagepanel/groupnode`
+        csomópontot külön overlay-rétegbe teszi a három rács-témánál. A
+        téglalapot a `group_bounds` tiszta függvény adja — a vászon csak
+        felszorozza a lapegységgel.
+
+        A jelzés a `collageSelectionChanged`, és ez nem szűkítés: a
+        `_set_nodes` MINDEN csomópont-változásnál elsüti, tehát a keret a
+        mozgatást és a méretezést is követi.
+
+        ⚠️ Üres térkép, nem `None`: a QML `undefined`-ra hasal el a
+        `.width` olvasásakor (#305), üres `QVariantMap`-re nem."""
+        bounds = group_bounds(self._nodes())
+        if bounds is None:
+            return {}
+        x, y, width, height = bounds
+        return {"x": x, "y": y, "width": width, "height": height}
 
     @Property(int, notify=collageFrameCenterChanged)
     def collageFrameCenter(self) -> int:

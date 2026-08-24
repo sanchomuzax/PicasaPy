@@ -4376,3 +4376,74 @@ indexszel.*
 
 **Bizonyítottsági fok: megerősített** — zajszint nélküli, képpontonkénti
 mérés, hat állásban, a saját kódunk két ágával.
+
+## A `TiledImageMask` peremszabálya — MEGVAN, és NEM beégetett kód (2026-08-24)
+
+A lap eddig azt mondta a `Comicize`/`FocalZoom`/`PicnikFocalPixelate`-ról,
+hogy *„egyedül a mintavételezés perem-/interpolációs szabálya vár
+golden-összevetésre"*. A `Comicize` felére ez **már nem igaz**.
+
+### A maszk TELJES paraméterkészlete — a binárisból
+
+A `glimmer::TiledImageMask` paraméterolvasója (`0x00bba2e0`, 481 b) tizenkét
+nevesített paramétert vesz át, mindegyiket saját mezőbe:
+
+| paraméter | mező | | paraméter | mező |
+|---|---|---|---|---|
+| `tileWidth` | `+0x18` | | `paddingRight` | `+0x48` |
+| `tileHeight` | `+0x20` | | `paddingBottom` | `+0x50` |
+| `scaleWidth` | `+0x28` | | `offsetX` | `+0x58` |
+| `scaleHeight` | `+0x30` | | `offsetY` | `+0x60` |
+| `paddingLeft` | `+0x38` | | `alphaMin` | `+0x68` |
+| `paddingTop` | `+0x40` | | `alphaMax` | `+0x70` |
+
+⇒ **A perem viselkedése paraméter, nem beégetett szabály.** Nincs
+`clamp`/`wrap`/`mirror` nevű sztring a binárisban — mert nincs is ilyen
+üzemmód: négy oldalankénti `padding` van helyette.
+
+### Amit a `Comicize` ténylegesen kér — `filterdesc.xml` 781–782. sor
+
+```xml
+<Variable id="_nDotSize" val="{Math.round(imagewidth/70)+1}"/>
+
+<imageOperations:TiledImageMask id="_mskColorSpots1"
+    tileWidth="{_nDotSize}" tileHeight="{_nDotSize}" alphaMin="0.0"
+    width="{imagewidth}" height="{imageheight}"/>
+
+<imageOperations:TiledImageMask id="_mskColorSpots2"
+    tileWidth="{_nDotSize}" tileHeight="{_nDotSize}" alphaMin="0.0"
+    width="{imagewidth}" height="{imageheight}"
+    offsetX="{_nDotSize/2}" offsetY="{_nDotSize/2}"/>
+```
+
+**Egyik maszk sem ad meg SEMMILYEN `padding` értéket** ⇒ mind a négy
+alapértelmezett (0).
+
+> **A peremszabály tehát:** a csemperács **pontosan a kép méretére** van
+> kifeszítve (`width`/`height` = a kép mérete), a `(0,0)` + `offset` pontból
+> indul, és **nincs semmilyen szegély-kiterjesztés**. A jobb és alsó szélen
+> részlegesen kilógó csempéket egyszerűen **levágja a kép határa**. Nincs
+> tükrözés, nincs ismétlés, nincs szélső képpont-nyújtás.
+
+A második fázis fél csempével eltolt — és a **pixelesítés is**: a 793. sor
+`PixelateImageOperation`-je eltolás nélküli, a 807. soré viszont
+`offsetX = offsetY = _nDotSize/2`. A két ág tehát **a maszkban ÉS a
+pixelesítésben is** el van tolva.
+
+`alphaMin="0.0"` kimondott; az `alphaMax` hiányzik → alapértelmezett.
+
+### ⚠️ Ami EZUTÁN is nyitva marad: a `FocalZoom` sugaras elmosásának pereme
+
+A `FocalZoom` a leíró szerint **nem** nagyítás, hanem
+`RadialBlurImageOperation` egy `CircularGradientImageMask` alatt
+(`filterdesc.xml` 888. sortól) — ezt a megvalósításunk helyesen követi
+(`src/picasapy/render/focal.py`, halmozott nagyító-menetek).
+
+A halmozás **perem-módja** viszont a natív magban (`0xbcf4b0`) van, nem a
+leíróban. Nálunk ma `cv2.BORDER_REPLICATE` (`focal.py:141`) — **dokumentált
+feltevés**, nem mérés. Ez marad nyitva.
+
+*Bizonyítottsági fok: a paraméterkészlet és a mezőeltolások **megerősítettek**
+(diszasszemblálva); a `Comicize` peremszabálya **megerősített** (a szállított
+`filterdesc.xml` közvetlen olvasása). A `FocalZoom` perem-módja
+**feltételes** — nincs se dekompilálva, se mérve.*
