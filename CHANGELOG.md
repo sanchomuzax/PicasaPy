@@ -14,6 +14,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   területről. Az ablak mostantól nem húzható keskenyebbre, mint amennyi a
   sávnak kell.
 
+### Javítva
+- **A rácsos kollázsaink újra szerkeszthetők az eredeti Picasában
+  (#1036).** A kollázs mentésekor keletkező projektfájlba témánként MÁS
+  méretadat tartozik, és a Mozaik, a Képkockamozaik és a Rács témánál
+  eddig rosszat írtunk bele — helyenként a valódi érték másfélszeresét.
+  A Picasa 3 az ilyen fájltól szerkesztéskor szétesik: óriási,
+  felnagyított töredékeket rajzol. A tulajdonos tizenkét eredeti
+  kollázsán kimért szabály szerint a rácsos témák a cella szélességét
+  írják oda, a Képkupac pedig a csempe befoglaló négyzetét — mostantól
+  mindegyik a sajátját kapja. A kollázs kinézetén ez nem változtat: a
+  javított mező csak a projektfájl visszaolvasásakor számít.
+  A Képkupac ugyanezt a mezőt eddig is helyesen írta; a mérés ezt is
+  megerősítette.
+
 ### Belső
 - **A kiadás nem vár kézi indításra a verzióemelés beolvadása után
   (#1338).** A verzióemelő összefésülést a GitHub szándékosan nem

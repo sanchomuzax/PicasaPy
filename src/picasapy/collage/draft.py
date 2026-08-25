@@ -23,25 +23,28 @@ függvények, Qt és fájlrendszer nélkül — a piszkozat kiírását a hívó
 A vízszintes irány ezért egyszerű (`érték / 1024`), a függőleges viszont a
 lap arányával oszt: a lap magassága lapegységben `1024 · magasság/szélesség`.
 
-## Miért a NAGYOBBIK oldal a `scale`
+## A `scale` TÉMÁNKÉNT mást jelent (#1036)
 
-A spec 1.6 mintája ezt eldönti. Az álló, `format="15:10"` lapon az első
-csomópont `w=0,274210`, `h=0,219401`, `scale=337,000000`:
+A **Képkupacban** a doboz befoglaló négyzetének oldala. Az álló,
+`format="15:10"` lapon az első csomópont `w=0,274210`, `h=0,219401`,
+`scale=337,000000`:
 
 ```
 w · 1024        = 280,8 lapegység          (a lap szélessége 1024)
 h · 1024 · 1,5  = 337,0 lapegység          (a lap magassága 1536)
 ```
 
-vagyis a `scale` a doboz **nagyobbik** oldala, 1024 képpont széles lapon.
 Kereszt-ellenőrzés: a 280,8 × 337,0 doboz pontosan egy NÉGYZETES fotó
 polaroid-kerete (`280,8/1,145 = 245,2`, `337,0/1,374 = 245,3` — a két
 arány a `frames.py` dekompilált konstansa), és a 337 egyben a Képkupac
-`pile_size`-ja is (`0,33 · 1024`). Három, egymástól független szám esik
-egybe — ezért nem a szélesség, hanem a befoglaló négyzet oldala.
+`pile_size`-ja is (`0,33 · 1024`).
 
-*Bizonyítottsági fok: erős következtetés* (a valódi mintán mért egybeesés;
-a writer utasításszintű olvasata a `scale` FORRÁSÁT nem mondja ki).
+A **rácsos** témákban viszont a cella **SZÉLESSÉGE**, akkor is, ha a cella
+álló. Az `AI3` első cellája 219,5 × 288,1 lapegység, és a fájlban
+`scale="216"` áll. Ugyanaz a doboz Képkupacban 288-at adna. A képlet és a
+teljes mért tábla: `scale_for_theme`.
+
+*Bizonyítottsági fok: mért* (12 golden `.cxf`, 89 csomópont, hat téma).
 """
 
 from __future__ import annotations
@@ -55,7 +58,14 @@ from .cxf import CxfBackground, CxfNode, CxfProject
 from .nodes import SHEET_UNITS, CollageNode
 from .picasa_render import PicasaCollageSettings
 from .page_formats import format_text, is_known_format
-from .themes import BORDER_THEMES, MULTIEXP, NOBORDER
+from .themes import (
+    BORDER_THEMES,
+    FRAMEGRID,
+    MULTIEXP,
+    NOBORDER,
+    PICTUREGRID,
+    REGULARGRID,
+)
 from .uids import node_uid_for
 from .win_paths import decode_cxf_path, encode_cxf_path
 
@@ -139,7 +149,13 @@ def cxf_node_of(
 
     A csomópont méretei már lapegységben vannak, tehát átváltás nem kell.
     A `page_width` paraméter megmarad, hogy a hívók ne törjenek, de a
-    `scale`-re **nem hat**."""
+    `scale`-re **nem hat**.
+
+    ⚠️ **#1036: az itt beírt `scale` a Képkupac szabálya** (befoglaló
+    négyzet), mert ez a leképezés nem ismeri a lap témáját. A rácsos témák
+    MÁS szabályt követnek; a témafüggést a `project_from_nodes` teszi rá a
+    `scale_for_theme`-en át. Aki közvetlenül ezt a függvényt hívja, a
+    Képkupac alakját kapja."""
     if page_ratio <= 0.0:
         raise ValueError(f"Érvénytelen laparánya: {page_ratio}")
     lap_magassag = SHEET_UNITS * page_ratio
@@ -180,18 +196,64 @@ def collage_node_of(node: CxfNode, *, page_ratio: float) -> CollageNode:
     )
 
 
-def _multiexp_alak(node: CxfNode, theme: str) -> CxfNode:
-    """A Többszörös exponálás csomópontjának `scale`-je MÉRTEN 1,0 (#1248).
+#: Ezek a témák a `scale`-be a cella SZÉLESSÉGÉT írják (#1036).
+_SZELESSEG_SCALE_TEMAK = (PICTUREGRID, FRAMEGRID, REGULARGRID)
 
-    Az `AI7.cxf` (valódi Picasa-minta) teljes lapos csomópontjain
-    `scale="1.000000"` áll, míg az általános képletünk a doboz nagyobbik
-    oldalát írja ki lapegységben (1024). A különbség nem kozmetikai: a
-    #1071 mérte ki, hogy a nem szabványos `scale` a VALÓDI Picasát viszi
-    szét szerkesztéskor — óriási, felnagyított töredékeket rajzol. A többi
-    téma képletéhez nem nyúlunk: ott nincs mérésünk, ami ellentmondana."""
-    if theme != MULTIEXP:
-        return node
-    return replace(node, scale=1.0)
+
+def scale_for_theme(width: float, height: float, theme: str) -> float:
+    """A `.cxf` `scale` mezője lapegységben — a TÉMA szabálya szerint (#1036).
+
+    A `width` / `height` a csomópont doboza lapegységben (`SHEET_UNITS`
+    széles lap). A visszaadott érték is lapegység — a #1071 óta ez a
+    formátum egyetlen helyes mértéke.
+
+    | téma | a `scale` | mért minta |
+    |---|---|---|
+    | `picturepile` | a doboz **befoglaló négyzetének** oldala | AI, AI1, AI2, AI8, AI9, AI10 — 49/49 csomópont, `|Δ| ≤ 0,09` |
+    | `picturegrid`, `framegrid`, `regulargrid` | a cella **szélessége** | AI3, AI4, AI5 — 27/27 |
+    | `multiexp` | **1,0** | AI7 (#1248) |
+    | `contactsheet` | *nincs levezetve* — marad a négyzetoldal | AI6: mind a 9 csomóponton 313, a doboztól függetlenül |
+
+    ## Miért nem lehet egyetlen közös szabály
+
+    A rácsos témák álló cellái ezt eldöntik. Az `AI3` első cellája
+    219,5 × 288,1 lapegység, és a fájlban `scale="216"` áll — a
+    **szélesség**, nem a 288-as nagyobbik oldal. Ugyanaz a doboz a
+    Képkupacban 288-at adna, mert ott a `scale` a `pile_size` négyzete,
+    amibe a csempe illeszkedik. Ugyanaz a szám, két jelentés.
+
+    ## Miért nem kozmetikai
+
+    A #1071 mérte ki: a nem szabványos `scale`-től a VALÓDI Picasa 3
+    **szerkesztéskor szétesik** — óriási, felnagyított töredékeket rajzol.
+    A saját olvasónk (`collage_node_of`) a `scale`-t nem használja, ezért a
+    körbejárásunk erre a mezőre szerkezetileg vak: csak a golden mintához
+    kötött állítás fogja meg.
+
+    ## A maradék: legfeljebb egy lapegység
+
+    Az eredeti a cellát az **1024 képpont széles** lapon kerekíti, mi a
+    kimeneti felbontáson (5120), és onnan váltunk vissza. Az `AI4` első
+    cellája nálunk 280,8, az eredetiben 280. A mai, témavak szabály
+    ugyanezen a cellán **357,6**-ot ír."""
+    if theme == MULTIEXP:
+        # #1248: az AI7.cxf teljes lapos csomópontjain `scale="1.000000"`.
+        return 1.0
+    if theme in _SZELESSEG_SCALE_TEMAK:
+        return width
+    return max(width, height)
+
+
+def _tema_scale(node: CxfNode, theme: str, *, page_ratio: float) -> CxfNode:
+    """A már normalizált csomópont `scale`-jének témánkénti helyesbítése.
+
+    A `cxf_node_of` a Képkupac szabályát (befoglaló négyzet) írja be
+    alapértelmezésnek, mert a leképezés maga nem ismeri a témát. A doboz
+    lapegységben visszaszámolható a normalizált mezőkből, tehát ez a lépés
+    nem veszít pontosságot — és egy helyen tartja a témafüggést."""
+    szelesseg = node.w * SHEET_UNITS
+    magassag = node.h * SHEET_UNITS * page_ratio
+    return replace(node, scale=scale_for_theme(szelesseg, magassag, theme))
 
 
 def _azonositoval(node: CxfNode, node_uids: Mapping[str, str]) -> CxfNode:
@@ -276,11 +338,12 @@ def project_from_nodes(
         spacing=settings.effective_spacing,
         nodes=tuple(
             _azonositoval(
-                _multiexp_alak(
+                _tema_scale(
                     cxf_node_of(
                         node, page_width=settings.width, page_ratio=page_ratio
                     ),
                     settings.theme,
+                    page_ratio=page_ratio,
                 ),
                 uids,
             )
@@ -322,4 +385,5 @@ __all__ = [
     "orientation_of",
     "page_ratio_of",
     "project_from_nodes",
+    "scale_for_theme",
 ]
