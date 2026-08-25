@@ -48,8 +48,13 @@ class FileOpsController(QObject):
     photoMoved = Signal(str, str)  # (régi_út, új_út)
     photoDeleted = Signal(str)  # (törölt_út)
     operationFailed = Signal(str, str)  # (művelet, hibaüzenet)
-    # (művelet, kész, kihagyott, hibás) — a köteg EGYETLEN összegzése (#457/2)
-    batchFinished = Signal(str, int, int, int)
+    # (művelet, kész, kihagyott, hibás, első_hiba_oka) — a köteg EGYETLEN
+    # összegzése (#457/2). #1430: az OK is kimegy, nem csak a darabszám. A
+    # felületen az áthelyezés MINDIG ezen az úton fut (a `Main.qml` az
+    # `openMove` → `startBatch("move")` láncot hívja, egyetlen kijelölt
+    # képnél is), tehát a magok magyarázó hibaüzenetei kizárólag itt tudnak
+    # eljutni a felhasználóhoz — enélkül némán elvesznének.
+    batchFinished = Signal(str, int, int, int, str)
     # #457: haladás a kötegelt másolás/áthelyezés alatt — (művelet, cél,
     # kész, összes). Az eredeti is SZÁMLÁLÓT mutatott
     # (`CAcquireUI::copying` = „Copying %1$d of %2$d files"), nem csak egy
@@ -140,7 +145,11 @@ class FileOpsController(QObject):
                 self.photoMoved.emit(str(source), str(target))
         # #459: EGY összegzés a köteg végén, nem fájlonkénti ablak
         self.batchFinished.emit(
-            operation, len(result.done), len(result.skipped), len(result.failed)
+            operation,
+            len(result.done),
+            len(result.skipped),
+            len(result.failed),
+            _first_failure_reason(result),
         )
 
     @Slot(str, str)
@@ -255,3 +264,21 @@ class FileOpsController(QObject):
         clipboard = QGuiApplication.clipboard()
         if clipboard is not None:
             clipboard.setText(local)
+
+
+def _first_failure_reason(result) -> str:
+    """Az ELSŐ bukás fájlneve és oka — a köteg összegzéséhez (#1430).
+
+    A `BatchResult.failed` (forrás, hibaüzenet) párokat tart; a darabszám
+    önmagában nem cselekvésre fordítható („1 fájlt nem sikerült
+    feldolgozni"). A fájlnevet elé tesszük, mert a mag üzenete nem mindig
+    nevezi meg a forrást. Üres sztring, ha nem volt bukás.
+
+    Csak az elsőt mutatjuk: a köteg összegzése SZÁNDÉKOSAN egyetlen
+    párbeszéd (#459), nem fájlonkénti ablak — a többi bukás darabszáma a
+    saját sorában szerepel.
+    """
+    if not result.failed:
+        return ""
+    source, reason = result.failed[0]
+    return f"{Path(source).name}: {reason}"

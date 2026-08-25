@@ -19,6 +19,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+from picasapy.fileops.originals import originals_follow
 from picasapy.ini import (
     IniConflictError,
     IniSaveError,
@@ -45,12 +46,14 @@ def move_photo(path: Path, dest_folder: Path) -> Path:
     Raises:
         FileNotFoundError: Ha `path` vagy `dest_folder` nem létezik.
         NotADirectoryError: Ha `dest_folder` nem könyvtár.
-        FileExistsError: Ha a célmappában már van azonos nevű fájl vagy
-            ini-szekció — nem írjuk felül csendben.
+        FileExistsError: Ha a célmappában már van azonos nevű fájl,
+            ini-szekció, vagy a megőrzött eredetinek szánt helyen fájl
+            (#1430) — nem írjuk felül csendben.
         OSError | IniSaveError | IniConflictError: Ha a fájl már átkerült, de
             valamelyik ini-írás nem sikerült. A hiba TÍPUSA az eredetivel
             azonos marad (a hívók így tudják osztályozni), az üzenete pedig
-            megmondja, hol a fájl és hol maradt a metaadat.
+            megmondja, hol a fájl és hol maradt a metaadat. A megőrzött
+            eredeti költöztetésének bukásakor viszont a kép SEM mozdul el.
     """
     path = Path(path)
     dest_folder = Path(dest_folder)
@@ -75,7 +78,11 @@ def move_photo(path: Path, dest_folder: Path) -> Path:
             f"A célmappa ini-jében már van ilyen nevű szekció: {name}"
         )
 
-    shutil.move(str(path), str(target))
+    # #1430: a megőrzött eredeti (és a sorszámozott pillanatképek) a képpel
+    # együtt költöznek — enélkül a „Vissza az eredetihez” az új helyen nem
+    # találna semmit, a régiben pedig árván maradna egy fájl.
+    with originals_follow(path, target):
+        shutil.move(str(path), str(target))
 
     if not has_section:
         return target

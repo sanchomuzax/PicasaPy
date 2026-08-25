@@ -440,13 +440,21 @@ Item {
         anchors.centerIn: parent
         standardButtons: Dialog.Ok
         property string message: ""
-        function showFor(operation, done, skipped, failed) {
+        // #1430: a `reason` az ELSŐ bukás fájlneve és oka. A darabszám
+        // önmagában nem cselekvésre fordítható, és a felületen az
+        // áthelyezés mindig ezen az úton fut — a magok magyarázó üzenete
+        // csak így jut el a felhasználóhoz. A szöveg a magból jön, magyarul
+        // és készen (ahogy a `fileOpsErrorDialog`-ban is), ezért nincs
+        // `qsTr()` köré vonva.
+        function showFor(operation, done, skipped, failed, reason) {
             if (skipped === 0 && failed === 0) return
             var lines = [qsTr("%n file(s) done.", "", done)]
             if (skipped > 0)
                 lines.push(qsTr("%n file(s) skipped (a file with the same name already exists).", "", skipped))
             if (failed > 0)
                 lines.push(qsTr("%n file(s) could not be processed.", "", failed))
+            if (reason)
+                lines.push(reason)
             message = lines.join("\n")
             open()
         }
@@ -535,9 +543,9 @@ Item {
         function onBatchProgress(operation, destination, done, total, speed) {
             batchProgressDialog.report(operation, destination, done, total, speed)
         }
-        function onBatchFinished(operation, done, skipped, failed) {
+        function onBatchFinished(operation, done, skipped, failed, reason) {
             batchProgressDialog.close()
-            batchSummaryDialog.showFor(operation, done, skipped, failed)
+            batchSummaryDialog.showFor(operation, done, skipped, failed, reason)
         }
         function onOperationFailed(operation, message) {
             fileOpsErrorDialog.message = message

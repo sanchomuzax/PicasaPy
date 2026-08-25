@@ -8,6 +8,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [0.8.94] – 2026-08-25
 
 ### Javítva
+- **Átnevezéskor és áthelyezéskor a kép mostantól magával viszi az eredeti
+  változatát is (#1430).** A program — akárcsak a Picasa — a szerkesztést
+  belesüti magába a képfájlba, és a szerkesztés előtti változatot egy külön
+  almappában őrzi meg: ez az egyetlen visszaút, ha később mégis meggondolod
+  magad („Vissza az eredetihez"). Eddig viszont, ha átnevezted a képet vagy
+  másik mappába vitted, ez a megőrzött eredeti a régi helyén maradt: az új
+  helyen a Vissza az eredetihez már nem talált semmit, a szerkesztés
+  véglegessé vált, a régi mappában pedig ott maradt egy fájl, amiről már
+  senki nem tudta, kihez tartozik. Mostantól az eredeti — és a mentésenként
+  külön megőrzött korábbi változatok is — a képpel együtt költöznek, mindkét
+  mappanév alól (a régebbi Picasa-verziók látható `Originals` mappájából és
+  az újabbak rejtett `.picasaoriginals` mappájából egyaránt). Ha a
+  költöztetés valamiért nem sikerülne — például mert a célhelyen már van egy
+  azonos nevű fájl —, a program **el sem kezdi** a műveletet: a kép a helyén
+  marad, és egy üzenet megmondja, mi van útban és mit tegyél. Meglévő fájlt
+  sosem ír felül.
 - **A rács mostantól magától észreveszi a többi mappában történt
   változást is (#1435).** Eddig a program csak azt a mappát olvasta újra
   rendszeresen, amelyiket épp kiválasztottál — pedig a rácson egyszerre

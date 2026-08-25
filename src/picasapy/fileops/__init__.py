@@ -16,6 +16,14 @@ from .copy import copy_photo
 from .diskspace import has_enough_free_space, required_bytes_for
 from .move import move_photo
 from .move_folder import FolderMoveError, move_folder
+from .originals import (
+    OriginalMove,
+    move_preserved_originals,
+    originals_follow,
+    originals_slot_free,
+    plan_original_moves,
+    undo_original_moves,
+)
 from .rename import RenameItem, preview_name, rename_photo, rename_photos_many
 from .reveal import open_folder_in_file_manager, reveal_in_file_manager
 from .trash import (
@@ -31,6 +39,7 @@ __all__ = [
     "RENAME",
     "SKIP",
     "BatchResult",
+    "OriginalMove",
     "RenameItem",
     "TrashUnavailableError",
     "conflicting_names",
@@ -45,6 +54,10 @@ __all__ = [
     "move_folder",
     "move_photo",
     "move_photos",
+    "move_preserved_originals",
+    "originals_follow",
+    "originals_slot_free",
+    "plan_original_moves",
     "preview_name",
     "rename_photo",
     "rename_photos_many",
@@ -52,4 +65,5 @@ __all__ = [
     "required_bytes_for",
     "reveal_in_file_manager",
     "trash_available",
+    "undo_original_moves",
 ]
