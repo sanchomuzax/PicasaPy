@@ -123,9 +123,16 @@ def _build_qml_app(qt_app, tmp_path):
     # effekt-gomb bélyegképek (#338) — az application.py bekötésének tükre
     effect_thumb_provider = EffectThumbnailProvider(provider.photo_record)
     engine = QQmlApplicationEngine()
-    engine.addImageProvider("thumbs", provider)
+    # ⚠️ #1457: a QML-motor SZINKRON szolgáltatót kap. A termékkód
+    # aszinkron marad; itt a pool-szálak és a válasz-objektumok csak a
+    # #999-es összeomlás-osztályt hoznák be, haszon nélkül — ezek a
+    # tesztek a felület bekötését mérik, nem a bélyegkép-készítést.
+    # Az aszinkron utat saját, motor nélküli tesztek fedik.
+    from support.szinkron_kepszolgaltato import SzinkronKepSzolgaltato
+
+    engine.addImageProvider("thumbs", SzinkronKepSzolgaltato())
     engine.addImageProvider("editpreview", edit_preview)
-    engine.addImageProvider("effectthumb", effect_thumb_provider)
+    engine.addImageProvider("effectthumb", SzinkronKepSzolgaltato())
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
