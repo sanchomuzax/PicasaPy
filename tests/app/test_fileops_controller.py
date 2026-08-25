@@ -367,9 +367,18 @@ class TestIniConflictReachesUser:
 
 class TestMegorzottEredeti1430:
     """#1430: a megőrzött eredeti a képpel költözik, és ha ez nem megy, a
-    felhasználó ÉRTHETŐ üzenetet kap — nem néma elutasítást. A `FileOpsDialogs`
-    az `operationFailed` üzenetét szó szerint kiteszi a hibaablakba, tehát az
-    itt ellenőrzött szöveg az, amit a felhasználó elolvas."""
+    felhasználó ÉRTHETŐ üzenetet kap — nem néma elutasítást.
+
+    **Melyik út melyik felületi gombhoz tartozik.** A `renamePhoto` az F2-es
+    átnevezés valódi útja, és a hibája az `operationFailed`-en át a
+    `fileOpsErrorDialog`-ba kerül szó szerint. A `movePhoto` viszont
+    NEM felületi út: a „Move to Folder…" mindig a kötegelt `movePhotos`-t
+    hívja (`Main.qml` → `openMove` → `startBatch("move")`), egyetlen kijelölt
+    képnél is. Az egyfájlos slotot csak tesztek hívják — az áthelyezés
+    felhasználói üzenetét ezért a KÖTEGELT úton kell mérni (lent), és a
+    végső megjelenést a
+    `tests/app/qml_functional/test_koteg_hibaok_1430.py` őrzi.
+    """
 
     def test_atnevezes_viszi_az_eredetit(self, controller, tmp_path):
         photo = tmp_path / "a.jpg"
@@ -380,7 +389,23 @@ class TestMegorzottEredeti1430:
         controller.renamePhoto(str(photo), "b.jpg")
         assert (originals / "b.jpg").read_bytes() == b"eredeti"
 
-    def test_mozgatas_viszi_az_eredetit(self, controller, tmp_path):
+    def test_kotegelt_mozgatas_viszi_az_eredetit(self, controller, tmp_path):
+        """A felület valódi áthelyezési útja (`movePhotos`)."""
+        src = tmp_path / "forras"
+        dest = tmp_path / "cel"
+        src.mkdir()
+        dest.mkdir()
+        photo = src / "a.jpg"
+        photo.write_bytes(b"szerkesztett")
+        originals = src / ".picasaoriginals"
+        originals.mkdir()
+        (originals / "a.jpg").write_bytes(b"eredeti")
+        controller.movePhotos([str(photo)], str(dest), "rename")
+        assert (dest / ".picasaoriginals" / "a.jpg").read_bytes() == b"eredeti"
+
+    def test_egyfajlos_slot_is_viszi_az_eredetit(self, controller, tmp_path):
+        """A `movePhoto` slotnak ma nincs QML-hívója, de programozói felület
+        (és a `dedup_controller` is a magját hívja) — maradjon helyes."""
         src = tmp_path / "forras"
         dest = tmp_path / "cel"
         src.mkdir()
@@ -393,7 +418,36 @@ class TestMegorzottEredeti1430:
         controller.movePhoto(str(photo), str(dest))
         assert (dest / ".picasaoriginals" / "a.jpg").read_bytes() == b"eredeti"
 
-    def test_utban_levo_fajlrol_ertheto_uzenet_megy_ki(self, controller, tmp_path):
+    def test_atnevezesnel_az_ok_az_operation_failedre_megy(
+        self, controller, tmp_path
+    ):
+        photo = tmp_path / "a.jpg"
+        photo.write_bytes(b"szerkesztett")
+        originals = tmp_path / ".picasaoriginals"
+        originals.mkdir()
+        (originals / "a.1.jpg").write_bytes(b"pillanatkep")
+        (originals / "b.1.jpg").write_bytes(b"utban-van")
+
+        failures = []
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.renamePhoto(str(photo), "b.jpg")
+
+        assert failures, "a felhasználó semmilyen visszajelzést nem kapott"
+        kind, message = failures[0]
+        assert kind == "rename"
+        assert "eredeti" in message.lower()
+        assert str(originals / "b.1.jpg") in message
+        assert "Semmi nem változott" in message
+        assert photo.exists()
+
+    def test_kotegelt_mozgatasnal_az_ok_a_batch_osszegzesbe_megy(
+        self, controller, tmp_path
+    ):
+        """#1430 kódszemle, 1. blokkoló: a kötegelt út eddig csak a
+        DARABSZÁMOT jelentette, az okot eldobta — így az áthelyezés
+        magyarázó üzenete sosem jutott el a felhasználóhoz."""
         src = tmp_path / "forras"
         dest = tmp_path / "cel"
         src.mkdir()
@@ -401,21 +455,22 @@ class TestMegorzottEredeti1430:
         photo = src / "a.jpg"
         photo.write_bytes(b"szerkesztett")
         (src / ".picasaoriginals").mkdir()
-        (src / ".picasaoriginals" / "a.jpg").write_bytes(b"eredeti")
+        (src / ".picasaoriginals" / "a.1.jpg").write_bytes(b"pillanatkep")
+        # a célban egy ÉLŐ kép birtokolja ugyanazt a helyet
+        (dest / "a.1.jpg").write_bytes(b"masik-elo-kep")
         (dest / ".picasaoriginals").mkdir()
-        (dest / ".picasaoriginals" / "a.jpg").write_bytes(b"utban-van")
+        (dest / ".picasaoriginals" / "a.1.jpg").write_bytes(b"masik-kep-eredetije")
 
-        failures = []
-        controller.operationFailed.connect(
-            lambda kind, msg: failures.append((kind, msg))
+        summary = []
+        controller.batchFinished.connect(lambda *args: summary.append(tuple(args)))
+        controller.movePhotos([str(photo)], str(dest), "rename")
+
+        assert summary, "a köteg nem jelentett semmit"
+        operation, done, skipped, failed, reason = summary[0]
+        assert (operation, done, failed) == ("move", 0, 1)
+        assert reason.startswith("a.jpg: "), "a bukott fájl neve hiányzik"
+        assert "eredeti" in reason.lower(), "a bukás OKA nem megy ki"
+        assert "NE törölje" in reason, (
+            "a másik kép eredetijének törlését nem szabad tanácsolni"
         )
-        controller.movePhoto(str(photo), str(dest))
-
-        assert failures, "a felhasználó semmilyen visszajelzést nem kapott"
-        kind, message = failures[0]
-        assert kind == "move"
-        # az üzenet megmondja, MI a baj, HOL, és hogy semmi nem változott
-        assert "eredeti" in message.lower()
-        assert str(dest / ".picasaoriginals" / "a.jpg") in message
-        assert "Semmi nem változott" in message
-        assert photo.exists()  # a kép tényleg a helyén maradt
+        assert photo.exists()

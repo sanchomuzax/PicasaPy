@@ -20,6 +20,7 @@ from .originals import (
     OriginalMove,
     move_preserved_originals,
     originals_follow,
+    originals_slot_free,
     plan_original_moves,
     undo_original_moves,
 )
@@ -55,6 +56,7 @@ __all__ = [
     "move_photos",
     "move_preserved_originals",
     "originals_follow",
+    "originals_slot_free",
     "plan_original_moves",
     "preview_name",
     "rename_photo",

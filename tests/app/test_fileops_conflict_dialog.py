@@ -75,7 +75,7 @@ class TestControllerSlots:
         controller.movePhotos([str(a)], str(dest), "rename")
 
         assert moved == [(str(a), str(dest / "a-1.jpg"))]
-        assert summary == [("move", 1, 0, 0)]
+        assert summary == [("move", 1, 0, 0, "")]
 
     def test_move_skip_reports_the_skipped_file(self, controller, tmp_path):
         src, dest = tmp_path / "src", tmp_path / "dest"
@@ -87,7 +87,7 @@ class TestControllerSlots:
         controller.movePhotos([str(a)], str(dest), "skip")
 
         assert a.exists()
-        assert summary == [("move", 0, 1, 0)]
+        assert summary == [("move", 0, 1, 0, "")]
 
     def test_copy_batch_keeps_the_sources(self, controller, tmp_path):
         src, dest = tmp_path / "src", tmp_path / "dest"
@@ -99,7 +99,7 @@ class TestControllerSlots:
         controller.copyPhotos([str(a)], str(dest), "rename")
 
         assert a.exists() and (dest / "a.jpg").exists()
-        assert summary == [("copy", 1, 0, 0)]
+        assert summary == [("copy", 1, 0, 0, "")]
 
     def test_bad_policy_is_reported_not_raised(self, controller, tmp_path):
         dest = tmp_path / "dest"

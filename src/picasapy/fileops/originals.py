@@ -46,7 +46,24 @@ mozgatása bukik el (verseny egy párhuzamos íróval, tele lemez), az
 Felülírni sosem írunk felül: ha a célhelyen már van azonos nevű fájl (pl.
 egy korábbi költözés árvája), a művelet EL SEM INDUL, és a hiba üzenete
 megmondja, mi van útban — a néma elutasítás a projekt visszatérő
-hibaosztálya (#1003, #1207, #1213).
+hibaosztálya (#1003, #1207, #1213). A tanács attól függ, KIÉ az útban lévő
+fájl: ha egy másik, ÉLŐ kép eredetije, a törlését tanácsolni pont azt a kárt
+okozná, amit ez a modul megelőzni hivatott (`_occupied_message`).
+
+## A megnyugtatás feltételes
+
+Ha a visszagörgetés IS elbukik, a „minden a helyén maradt" mondat HAMIS
+lenne, és a következménye nem kozmetikai: a `find_original_backup` a kép
+mellett ilyenkor nem talál eredetit, az `edit/save.py` pedig
+`existing_backup is None` mellett a MÁR SZERKESZTETT bájtokat írja be új
+„eredetiként". A megnyugtatott felhasználó egyetlen mentéssel véglegesen
+elveszítené az érintetlen változatot — ezért a `_stranded_warning` ilyenkor
+azt mondja meg, mit NE tegyen (`_reassurance` csak üres `stranded` mellett
+szólalhat meg).
+
+A hibaüzenetek a KÖTEGELT úton is kimennek: a felületen az áthelyezés mindig
+a `movePhotos`-t hívja, ezért a `FileOpsController` a `batchFinished`-del az
+első bukás okát is átadja (#1430).
 """
 
 from __future__ import annotations
@@ -111,23 +128,44 @@ def _snapshot_numbers(directory: Path, photo: Path) -> Iterator[tuple[int, Path]
         middle = (
             name[len(prefix) : len(name) - len(suffix)] if suffix else name[len(prefix) :]
         )
-        if not middle.isdigit():
+        # `isdecimal()`, nem `isdigit()`: az utóbbi átengedi a `²`-t és
+        # társait, amiken az `int()` `ValueError`-t dob — az a felhasználó
+        # felé olvashatatlan angol hibaüzenetként bukna ki.
+        if not middle.isdecimal():
             continue
         if (photo.parent / name).exists():
             continue  # egy önálló kép eredetije, nem a mi pillanatképünk
-        yield int(middle), path
+        # A sorszám SZÖVEGÉT is visszaadjuk, nem csak a számértékét: a
+        # célnévben szó szerint megtartjuk (ld. `plan_original_moves`).
+        yield int(middle), middle, path
 
 
 def originals_slot_free(folder: str | Path, name: str) -> bool:
     """Szabad-e a `name` fájlnév helye a `folder` ÖSSZES eredeti-mappájában.
 
+    „Szabad" az, ahol sem a megőrzött eredeti, sem EGYETLEN sorszámozott
+    pillanatkép helye nincs elfoglalva — a kettő együtt költözik, tehát a
+    kettő közül bármelyik ütközése megbuktatná a műveletet.
+
     A kötegelt áthelyezés ütközés-feloldása (`fileops/batch.py`) ezzel kerüli
-    el, hogy egy korábbi költöztetés árván maradt eredetije miatt válasszon
-    olyan pótnevet, amivel a művelet aztán elbukna."""
+    el, hogy egy korábbi költöztetés árván maradt fájlja miatt válasszon
+    olyan pótnevet, amivel a művelet aztán elbukna.
+
+    Szándékosan óvatos: ha a mappában van a névhez illő pillanatkép-hely, a
+    nevet akkor is foglaltnak mondjuk, ha a költöző képnek éppen nincs
+    pillanatképe. A tévedés iránya így egy másik pótnév — nem egy bukott
+    művelet."""
     folder = Path(folder)
-    return not any(
-        (folder / dir_name / name).exists() for dir_name in _originals_dir_names()
-    )
+    photo = folder / name
+    for dir_name in _originals_dir_names():
+        directory = folder / dir_name
+        if not directory.is_dir():
+            continue
+        if (directory / name).exists():
+            return False
+        if next(_snapshot_numbers(directory, photo), None) is not None:
+            return False
+    return True
 
 
 def plan_original_moves(
@@ -154,31 +192,74 @@ def plan_original_moves(
         backup = source_dir / source_photo.name
         if backup.is_file():
             moves.append(OriginalMove(backup, target_dir / target_photo.name))
-        for number, snapshot in sorted(_snapshot_numbers(source_dir, source_photo)):
-            new_name = f"{target_photo.stem}.{number}{target_photo.suffix}"
+        for _, sorszam, snapshot in sorted(
+            _snapshot_numbers(source_dir, source_photo)
+        ):
+            # A sorszám SZÖVEGÉT visszük át, nem a számértékét: `a.01.jpg`
+            # így `b.01.jpg` lesz, nem `b.1.jpg`. Az átszámozás összeejtené
+            # az `a.1.jpg`-t és az `a.01.jpg`-t ugyanarra a célnévre, és a
+            # `shutil.move` POSIX-on NÉMÁN felülírja a másikat.
+            new_name = f"{target_photo.stem}.{sorszam}{target_photo.suffix}"
             moves.append(OriginalMove(snapshot, target_dir / new_name))
     return tuple(moves)
 
 
-def _reject_occupied_targets(moves: Sequence[OriginalMove]) -> None:
-    """Ha bármelyik célhely foglalt, a művelet el sem indul.
+def _reject_unsafe_targets(moves: Sequence[OriginalMove]) -> None:
+    """A terv ellenőrzése MIELŐTT bármi elmozdulna: felülírni sosem írunk
+    felül, se meglévő fájlt, se a saját tervünk másik elemét.
 
     Raises:
-        FileExistsError: emberi nyelvű üzenettel arról, MI van útban —
-            felülírni nem írunk felül, az a másik kép visszaútja lenne.
+        FileExistsError: emberi nyelvű üzenettel arról, MI van útban.
     """
+    latott: dict[Path, OriginalMove] = {}
     for move in moves:
-        if not move.target.exists():
-            continue
-        raise FileExistsError(
-            f"A képhez megőrzött eredetit nem lehet átvinni, mert a helyén "
-            f"már van egy azonos nevű fájl: {move.target}. Ez valószínűleg "
-            f"egy korábbi költöztetés árván maradt fájlja. Semmi nem "
-            f"változott: a kép és az eredetije is a régi helyén maradt. "
-            f"Ha az útban lévő fájlra nincs szüksége, előbb törölje vagy "
-            f"nevezze át a(z) „{move.target.parent.name}” mappában, "
-            f"és próbálja újra."
+        elozo = latott.get(move.target)
+        if elozo is not None:
+            # A `plan_original_moves` a sorszámot szó szerint viszi át, ezért
+            # ez ma nem fordulhat elő. Az őr mégis marad: ha valaha
+            # visszakerülne az átszámozás, ez a sor állítja meg — nem a
+            # felhasználó adatvesztése.
+            raise FileExistsError(
+                f"A képhez két megőrzött változat is ugyanarra a névre "
+                f"költözne ({elozo.source.name} és {move.source.name} → "
+                f"{move.target.name}), így az egyik felülírná a másikat. "
+                f"Semmi nem változott: a kép és a megőrzött változatai is a "
+                f"régi helyükön maradtak."
+            )
+        latott[move.target] = move
+        if move.target.exists():
+            raise FileExistsError(_occupied_message(move))
+
+
+def _occupied_message(move: OriginalMove) -> str:
+    """Az „útban van egy fájl" üzenet — a tanács attól függ, KIÉ az a fájl.
+
+    Az eredeti-mappában lévő fájl lehet egy MÁSIK, élő kép saját megőrzött
+    eredetije (a `<név>.<N>` névminta kétértelműsége miatt ez valódi eset).
+    Annak a törlését tanácsolni pont azt a kárt okozná, amit ez a modul
+    megelőzni hivatott — ezért előbb megnézzük, van-e a képmappában ilyen
+    nevű, élő kép."""
+    kep_mappa = move.target.parent.parent
+    gazda = kep_mappa / move.target.name
+    fej = (
+        f"A képhez megőrzött eredeti változatot nem lehet a helyére tenni, mert "
+        f"ott "
+        f"már van egy azonos nevű fájl: {move.target}. Semmi nem változott: "
+        f"a kép és a megőrzött változatai is a régi helyükön maradtak. "
+    )
+    if gazda.exists():
+        return fej + (
+            f"Ez a fájl a(z) {gazda.name} nevű képhez tartozik, annak az "
+            f"eredeti változata — NE törölje, mert azzal annak a képnek a "
+            f"visszaútját semmisítené meg. Adjon inkább a képnek másik "
+            f"nevet, vagy válasszon másik célmappát."
         )
+    return fej + (
+        f"Ez valószínűleg egy korábbi költöztetés árván maradt fájlja: nincs "
+        f"a(z) {kep_mappa} mappában {move.target.name} nevű kép, amihez "
+        f"tartozhatna. Ha nincs rá szüksége, törölje vagy nevezze át a(z) "
+        f"„{move.target.parent.name}” mappában, és próbálja újra."
+    )
 
 
 def move_preserved_originals(
@@ -206,7 +287,7 @@ def move_preserved_originals(
     moves = plan_original_moves(source_photo, target_photo)
     if not moves:
         return ()
-    _reject_occupied_targets(moves)
+    _reject_unsafe_targets(moves)
 
     done: list[OriginalMove] = []
     for move in moves:
@@ -215,11 +296,16 @@ def move_preserved_originals(
             shutil.move(str(move.source), str(move.target))
         except OSError as error:
             stranded = undo_original_moves(tuple(done))
+            # A célmappa itt akkor is takarítandó, ha a `done` ÜRES (mindjárt
+            # az első kísérőnél buktunk): a `mkdir` már lefutott, és egy üres,
+            # a legacy esetben LÁTHATÓ `Originals/` maradna a felhasználó
+            # célmappájában — miközben az üzenet azt mondja, semmi nem
+            # változott.
+            _remove_if_empty(move.target.parent)
             raise type(error)(
-                f"A képhez megőrzött eredetit nem sikerült átvinni ide: "
-                f"{move.target} ({error}). A kép nem mozdult el, a "
-                f"„Vissza az eredetihez” a régi helyén továbbra is működik."
-                f"{_rollback_warning(stranded)}"
+                f"A képhez megőrzött eredeti változatot nem sikerült átvinni ide: "
+                f"{move.target} ({error})."
+                f"{_stranded_warning(stranded) or _reassurance()}"
             ) from error
         done.append(move)
     return tuple(done)
@@ -247,27 +333,51 @@ def undo_original_moves(
             continue
         # A célmappában közben létrehozott eredeti-mappa ne maradjon ott
         # üresen — a látható `Originals` egy üres, magyarázat nélküli
-        # mappaként tűnne fel a felhasználó fájlkezelőjében. Az `rmdir`
-        # csak ÜRES könyvtárat töröl, tehát semmit nem vihet magával.
-        try:
-            move.target.parent.rmdir()
-        except OSError:
-            pass
+        # mappaként tűnne fel a felhasználó fájlkezelőjében.
+        _remove_if_empty(move.target.parent)
     return tuple(stranded)
 
 
-def _rollback_warning(stranded: Sequence[OriginalMove]) -> str:
-    """Kiegészítő mondat, ha a visszatétel sem sikerült.
+def _remove_if_empty(directory: Path) -> None:
+    """Üres eredeti-mappa eltakarítása. Az `rmdir` csak ÜRES könyvtárat
+    töröl, tehát semmit nem vihet magával."""
+    try:
+        directory.rmdir()
+    except OSError:
+        pass
 
-    Üres sztring, ha minden visszakerült — ilyenkor a felhasználót nem kell
-    olyasmivel terhelni, amit nem kell megoldania."""
+
+def _reassurance() -> str:
+    """A megnyugtató zárómondat — KIZÁRÓLAG akkor mondható ki, ha minden
+    megőrzött változat a kép mellett maradt."""
+    return (
+        " A kép nem mozdult el, és a megőrzött változatai is a helyükön "
+        "vannak: a „Vissza az eredetihez” továbbra is működik."
+    )
+
+
+def _stranded_warning(stranded: Sequence[OriginalMove]) -> str:
+    """A figyelmeztetés, ha a visszatétel IS elbukott. Üres sztring, ha
+    minden visszakerült.
+
+    Itt a megnyugtatás HAZUGSÁG lenne, és a kár nem kozmetikai: a
+    `find_original_backup` a kép mellett ilyenkor nem talál eredetit, az
+    `edit/save.py` pedig `existing_backup is None` mellett a MÁR
+    SZERKESZTETT bájtokat írja be új „eredetiként". A megnyugtatott
+    felhasználó egyetlen mentéssel véglegesen elveszítené az érintetlen
+    változatot — ezért a legfontosabb mondanivaló az, hogy MIT NE tegyen."""
     if not stranded:
         return ""
     helyek = ", ".join(str(move.target) for move in stranded)
+    honnan = ", ".join(str(move.source) for move in stranded)
     return (
-        f" Figyelem: a kép megőrzött eredetijét nem sikerült a régi helyére "
-        f"visszatenni, itt maradt: {helyek}. A fájl megvan, csak máshol — "
-        f"kézzel visszamásolható."
+        f" FIGYELEM: a kép megőrzött változatát nem sikerült a helyére "
+        f"visszatenni, itt maradt: {helyek}. Amíg nincs a kép mellett, a "
+        f"„Vissza az eredetihez” nem talál semmit, és ha ÚJRA MENTI a képet, "
+        f"a program a mostani, szerkesztett állapotot fogja eredetinek "
+        f"tekinteni — az érintetlen változat véglegesen elveszne. Ne mentse "
+        f"újra a képet, amíg ezt a fájlt kézzel vissza nem másolta ide: "
+        f"{honnan}."
     )
 
 
@@ -292,7 +402,7 @@ def originals_follow(
         yield
     except OSError as error:
         stranded = undo_original_moves(moved)
-        warning = _rollback_warning(stranded)
+        warning = _stranded_warning(stranded)
         if warning:
             # A típus megőrzése kötelező: a hívók (FileOpsController,
             # PhotoOpsController) kivételosztály szerint szűrnek, egy új
