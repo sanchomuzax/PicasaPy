@@ -9,7 +9,7 @@ Ez a fájl az az ŐR, amelyik KIMONDJA a hatókört és az irányt, hogy a
 „mappa vs. tartalom" tévesztés ne tudjon csendben visszatérni:
 
 * HATÓKÖR — a `Folder::SortFolderBy` menü a mappa KÉPEIT rendezi; a mappák
-  egymáshoz viszonyított sorrendjét NEM mozdítja (azt a Nézet ▸ Mappanézet
+  egymáshoz viszonyított sorrendjét NEM mozdítja (azt a Mappa ▸ Rendezés
   `folderSort`-ja és a bal hasáb `paneSort`-ja állítja).
 * IRÁNY — az alapérték NÖVEKVŐ: dátumnál a legrégebbi elöl, a LEGÚJABB a
   VÉGÉN (a tulajdonos megfigyelése a Picasa 3-ról); a „Fordított sorrend"

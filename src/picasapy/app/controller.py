@@ -363,8 +363,8 @@ class AppController(
         Az eredeti Picasában a bal panel saját jobbklikk-menüje
         (`AlbumList`, ld. `ui-audit-context-menus.md` A.2) tartalmazta a
         „Rendezés dátum / név / méret / legutóbbi változtatás alapján"
-        tételeket — vagyis az a HASÁBOT rendezte. A felső Nézet ▸ Mappanézet
-        ettől külön, a RÁCSOT állítja (#321). Két parancs, két cél."""
+        tételeket — vagyis az a HASÁBOT rendezte. A Mappa ▸ Rendezés ettől
+        külön, a RÁCSOT állítja (#321). Két parancs, két cél."""
         return self._get_settings().value("view/paneSort", "date")
 
     @Property(bool, notify=statusChanged)
@@ -389,7 +389,11 @@ class AppController(
 
     @Slot(str)
     def setFolderSort(self, mode: str) -> None:
-        """A RÁCS rendezése (Nézet → Mappanézet): date/changed/size/name."""
+        """A RÁCS rendezése (Mappa ▸ Rendezés): date/changed/size/name.
+
+        #1454: a Nézet ▸ Mappanézet almenü — ahonnan ez korábban szintén
+        hívható volt — nem rendez, hanem a bal hasáb szerkezetét állítja.
+        """
         if mode not in ("date", "changed", "size", "name"):
             return
         self._get_settings().setValue("view/folderSort", mode)
@@ -404,9 +408,9 @@ class AppController(
         self._refresh_view()  # a feed sorrendje követi a hasábot (#64)
 
     def _reload_folders(self) -> None:
-        # #321 + #461/3: a bal hasábnak SAJÁT rendezése van — a felső
-        # Nézet ▸ Mappanézet (folderSort) továbbra sem nyúl hozzá, azt csak a
-        # rács követi. A hasáb sorrendjét a saját jobbklikk-menüje állítja
+        # #321 + #461/3: a bal hasábnak SAJÁT rendezése van — a Mappa ▸
+        # Rendezés (folderSort) továbbra sem nyúl hozzá, azt csak a rács
+        # követi. A hasáb sorrendjét a saját jobbklikk-menüje állítja
         # (`paneSort`), ahogy az eredeti Picasa `AlbumList` menüje tette.
         with open_index(self._db_path) as conn:
             self._folders.load(conn, self.paneSort, self.paneSortReverse)
@@ -591,7 +595,7 @@ class AppController(
         return tuple(stamp)
 
     def _feed_records(self, conn) -> tuple:
-        """A teljes könyvtár a Mappanézet rendezése szerint (#64, #321).
+        """A teljes könyvtár a Mappa ▸ Rendezés szerint (#64, #321).
 
         A sorrendet KÜLÖN kérdezzük le, nem a bal hasáb modelljéből vesszük:
         a fa a saját rögzített sorrendjében áll, a rács a beállítást követi.

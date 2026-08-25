@@ -168,11 +168,22 @@ class TestAKetNezetmodKizarjaEgymast:
         )
 
     def test_fa_modban_a_lapos_lista_eltunik(self, render_pane, qt_app):
+        """#1454: a várt sorhalmaz megváltozott — SZÁNDÉKOSAN.
+
+        Korábban itt `{""}` állt: fa-módba lépve a hasáb egyetlen,
+        ÖSSZECSUKOTT „Sajátgép" sorra zsugorodott. Ez akkor nem tűnt fel,
+        mert a fanézet menüből elérhetetlen volt; amint a #1454 elérhetővé
+        tette, kiderült, hogy az első kattintás élménye „a bal hasáb
+        kiürült" lenne. A nézetmód-váltás azóta kinyitja a kijelölt
+        mappáig az ágakat (`FolderPane.onTreeViewModeChanged`), kijelölés
+        híján pedig magát a gyökeret — ezért látszik a gyökér EGYETLEN
+        gyermeke (`/`) is.
+        """
         _view, pane, _hierarchy = render_pane(tree=True)
 
         assert _child(pane, "folderListView").property("visible") is False
-        assert _rendered_tree_paths(pane) == {""}, (
-            "fa-módban induláskor a nézet-gyökér (My Computer) sora látszik"
+        assert _rendered_tree_paths(pane) == {"", "/"}, (
+            "fa-módban a nézet-gyökér NYITVA látszik, nem összecsukva"
         )
 
     def test_a_csukott_gyujtemeny_a_fat_is_elrejti(self, render_pane, qt_app):

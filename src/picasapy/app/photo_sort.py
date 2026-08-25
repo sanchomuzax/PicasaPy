@@ -2,8 +2,9 @@
 
 A „Mappa rendezésének alapja ▸" menü (spec: `ui-audit-context-menus.md`
 6.3) a mappa KÉPEIT rendezi, nem a mappákat. A mappák egymáshoz
-viszonyított sorrendje két MÁSIK beállításé: a rácsé a Nézet ▸ Mappanézet
-(`folderSort`, #321), a bal hasábé a saját menüje (`paneSort`, #461/3).
+viszonyított sorrendje két MÁSIK beállításé: a rácsé a Mappa ▸ Rendezés
+(`folderSort`, #321; #1454-ig tévesen a Nézet ▸ Mappanézet alatt is), a bal
+hasábé a saját menüje (`paneSort`, #461/3).
 
 Az itteni függvény ezért **mappa-blokkon belül** rendez: a rács a képeket
 egymást követő, azonos mappájú futamokban rajzolja (a fejléceket ugyanezen

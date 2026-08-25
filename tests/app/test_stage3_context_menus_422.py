@@ -68,7 +68,7 @@ class TestFolderListContextMenu:
         "folderListMenuSortPeopleByName",
         "folderListMenuSortPeopleByCount",
         "folderListMenuSortPeopleByTopList",
-        "folderListMenuFlatView",
+        "folderListMenuSimplifiedTree",
         "folderListMenuShowThumbnails",
         "folderListMenuShortcuts",
         "folderListMenuDesktop",
@@ -83,11 +83,27 @@ class TestFolderListContextMenu:
         ]
         assert found == self.EXPECTED
 
+    #: #1454: az „Egyszerűsített fanézet" mögé megjött a réteg — a bal
+    #: hasáb fa-vezérlőjének kapcsolója, tehát már nem helykitöltő.
+    ELO_KIVETELEK = {"folderListMenuSimplifiedTree"}
+
     def test_unbacked_commands_are_shown_but_disabled(self, qml_engine):
         menu = _load(qml_engine, "FolderListContextMenu")
         for name in self.EXPECTED[5:]:  # a személy-rendezéstől lefelé
+            if name in self.ELO_KIVETELEK:
+                continue
             item = menu.findChild(QObject, name)
             assert item.property("enabled") is False, f"{name} nem szürke"
+
+    def test_the_simplified_tree_item_is_live(self, qml_engine, qt_app):
+        """#1454: a tétel `placeholder: true` volt — most jelzést ad."""
+        menu = _load(qml_engine, "FolderListContextMenu")
+        events = []
+        menu.simplifiedTreeRequested.connect(lambda: events.append(True))
+        item = _trigger(menu, "folderListMenuSimplifiedTree")
+        qt_app.processEvents()
+        assert item.property("enabled") is True
+        assert events == [True]
 
     def test_sort_checkmarks_follow_the_current_state(self, qml_engine, qt_app):
         menu = _load(qml_engine, "FolderListContextMenu")

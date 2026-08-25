@@ -106,6 +106,62 @@ class TestTheSimplifiedSwitch:
 
         assert seen == []
 
+    def test_toggling_flips_the_switch(self, controller):
+        """#1454: a menütétel ezt hívja — az eredeti is logikai tagadással
+        írja vissza a `SimplifiedHierarchy` kulcsot (`0x005cc63f`)."""
+        controller.toggleSimplified()
+        assert controller.simplified is True
+
+        controller.toggleSimplified()
+        assert controller.simplified is False
+
+
+class TestTheViewMode:
+    """#1454: Egyszerű ↔ Fa — az eredetiben EGYETLEN bájt (`[+0x9d]`) két
+    állapota, tehát kizáró pár (`0x00574b70`)."""
+
+    def test_the_flat_list_is_the_default(self, controller):
+        assert controller.treeView is False
+
+    def test_switching_to_the_tree_emits_once(self, controller):
+        seen: list[int] = []
+        controller.treeViewChanged.connect(lambda: seen.append(1))
+
+        controller.setTreeView(True)
+
+        assert controller.treeView is True
+        assert seen == [1]
+
+    def test_setting_the_same_value_emits_nothing(self, controller):
+        seen: list[int] = []
+        controller.treeViewChanged.connect(lambda: seen.append(1))
+
+        controller.setTreeView(False)
+
+        assert seen == []
+
+    def test_the_view_mode_does_not_touch_the_rows(self, controller):
+        """A lapos és a fás nézet UGYANABBÓL a mappalistából él — a váltás
+        nem építi újra a sorokat (az eredeti sem indexel újra, spec 4.3)."""
+        controller.expandAll()
+        elotte = _paths(controller)
+        seen: list[int] = []
+        controller.rowsChanged.connect(lambda: seen.append(1))
+
+        controller.setTreeView(True)
+
+        assert _paths(controller) == elotte
+        assert seen == []
+
+    def test_the_two_switches_are_independent(self, controller):
+        """Az „Egyszerűsített fanézet" pipája a `[+0x9d]`-től FÜGGETLEN."""
+        controller.toggleSimplified()
+        controller.setTreeView(True)
+        assert controller.simplified is True
+
+        controller.setTreeView(False)
+        assert controller.simplified is True
+
 
 class TestSignals:
     def test_reloading_identical_folders_emits_nothing(self, controller):

@@ -94,7 +94,7 @@ tartalmilag megegyeznek a Mappa-éval.
 | Színkezelés használata | — | **nem** | hiányzik (színprofil-kezelés kapcsoló) |
 | Megjelenítési mód ▸ (almenü) | — | **nem** | teljes almenü hiányzik, tartalma a képekből nem derül ki |
 | Indexkép felirata ▸ (almenü) | — | igen | `Thumbnail Caption` almenü, tartalma egyezik (Nincs/Fájlnév/Felirat/Címkék/Felbontás) |
-| Mappanézet ▸ (almenü) | — | igen | `Folder View` almenü, tartalma egyezik (dátum/változás/méret/név szerint + fordítás) |
+| Mappanézet ▸ (almenü) | — | igen | `Folder View` almenü. ⚠️ A „tartalma egyezik” állítás TÉVES VOLT (#1454): az eredetiben itt nem rendezés, hanem három szerkezeti tétel áll (Egyszerű mappanézet · Fanézet · Egyszerűsített fanézet) — ld. `docs/specs/picasa-mappanezet.md` |
 
 **Nálunk van, az eredetiben nincs:** „Dark Theme" (sötét téma) — szándékos
 PicasaPy-bővítés, jó helyen van jelölve.

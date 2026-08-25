@@ -10,7 +10,12 @@ Két, egymástól független beállítás marad tehát a rácson:
 | beállítás | mit rendez | honnan állítható |
 |---|---|---|
 | `folderPhotoSort` (ez a szelet) | a mappa KÉPEIT | mappa-jobbklikk ▸ Mappa rendezésének alapja |
-| `folderSort` (#321) | a MAPPÁK sorrendjét | Nézet ▸ Mappanézet |
+| `folderSort` (#321) | a MAPPÁK sorrendjét | Mappa ▸ Rendezés |
+
+#1454: a `folderSort` sora korábban a Nézet ▸ Mappanézet menüre
+mutatott. Az az almenü az eredetiben NEM rendez, hanem a bal hasáb
+szerkezetét állítja (`docs/specs/picasa-mappanezet.md`) — a mappák
+sorrendje a Mappa ▸ Rendezés és a bal hasáb helyi menüje alatt van.
 
 A tényleges átrendezést a `PhotoGridModel` végzi (`photo_sort.sort_folder_blocks`),
 mert a rács sorrendje a modellé; ez a szelet a BEÁLLÍTÁST tartja, menti és

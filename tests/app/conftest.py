@@ -5,6 +5,7 @@ import os
 import pytest
 
 from support.fixture_guards import qml_warning_guard, user_folder_guard
+from support.folder_hierarchy_wiring import wire_folder_hierarchy
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -160,6 +161,13 @@ def _build_qml_app(qt_app, tmp_path):
     )
     engine.rootContext().setContextProperty(
         "folderTreeController", folder_tree_controller
+    )
+    # #1454: a bal hasáb fa-mappanézete (#702) — enélkül a menüsáv
+    # `Nézet ▸ Mappanézet` tételei NÉMÁK ebben a fixture-ben, és egy rájuk
+    # épülő teszt zölden mérne egy halott menüt
+    # a névre kötés életben tartja a vezérlőt, amíg a motor él
+    _folder_hierarchy_controller = wire_folder_hierarchy(
+        engine, controller, db
     )
     engine.rootContext().setContextProperty("dedupController", dedup_controller)
     engine.rootContext().setContextProperty(
