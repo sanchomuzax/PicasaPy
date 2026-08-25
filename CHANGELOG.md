@@ -5,6 +5,17 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Belső
+- **A windowsos tesztkörünk újra megbízhatóan jelez (#1381).** Két teszt
+  minden ellenőrzési körben pirosan állt a windowsos ágon — nem hiba miatt,
+  hanem mert egy linuxos szokást vártak el ott is. Emiatt egy valódi, új
+  windowsos hiba beleveszett volna a zajba: kézzel kellett szétválogatni,
+  melyik piros az örökölt. A takarítófunkció maga helyesen működött; a
+  tesztek mondják ki mostantól, melyik rendszert mérik, és így mindkét
+  ellenőrzésen ugyanazt vizsgálják.
+
 ## [0.8.86] – 2026-08-24
 
 ### Javítva
