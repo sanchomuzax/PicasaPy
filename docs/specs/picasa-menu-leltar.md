@@ -190,6 +190,29 @@ menü rekordjaival, ahol ugyanez a mező mást hordozott, ld.
 
 ### A kinyert térkép: **177 tétel, 145 parancsazonosítóval**
 
+> 🔴 **FIGYELMEZTETÉS a CSV-re (2026-08-25, ugyanaznap felfedezve):** a
+> menüépítőben a **felirat a KÖVETKEZŐ rekord `+0x00` mezőjébe íródik**, a
+> fordítás lekérése (`call 0x9ae560`) után:
+>
+> ```asm
+> push 0xc8c9e8    ; "eMenuView::ID_VIEW_BW"
+> mov  eax, 0xc8ca00   ; "&Black and White"
+> mov  word ptr [0xd6dda6], 0x9d1b   ; az AKTUÁLIS rekord azonosítója
+> call 0x9ae560                       ; a fordítás lekérése…
+> mov  dword ptr [0xd6ddb0], eax      ; …a KÖVETKEZŐ rekord feliratába
+> mov  word ptr [0xd6ddba], 0x9d1c    ; a következő rekord azonosítója
+> ```
+>
+> ⇒ **Nem eldöntött, hogy a kulcs a saját rekordjához vagy a következőhöz
+> tartozik** — a CSV azonosító-oszlopa tehát **egy rekorddal el lehet
+> csúszva**. **Amíg ez nincs eldöntve, a CSV `parancsazonosito` oszlopára
+> ne építsen senki.** A `menu`, `parancs`, `felirat_en`, `felirat_hu`
+> oszlopok érintetlenek és megbízhatók.
+>
+> **A feloldás módja:** egy független horgony — pl. a `0x00575670`
+> megjelenítési-mód tömbje (11 azonosító) összevetve a menü tényleges
+> tartalmával, vagy egyetlen parancsazonosító visszakeresése a kezelőjéig.
+
 Géppel olvasható alakban: **[`picasa-menu-parancsok.csv`](picasa-menu-parancsok.csv)**
 (oszlopok: `menu`, `parancs`, `parancsazonosito`, `felirat_en`, `felirat_hu`).
 

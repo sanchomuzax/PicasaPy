@@ -1,3 +1,5 @@
+# FIGYELEM: a parancsazonosito oszlop egy rekorddal el lehet csuszva - ne epits ra,
+# amig a picasa-menu-leltar.md 7. szakasznak figyelmeztetese fel nem oldodik.
 menu,parancs,parancsazonosito,felirat_en,felirat_hu
 CMenuBar,Delete,,Delete,Törlés
 CMenuBar,Enter,,Enter,Enter
