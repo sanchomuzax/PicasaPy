@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **Az alsó műveletsáv nem lóghat ki az ablakból (#1367).** Amióta a
+  műveletgombok az eredeti fix méretét kapták, nem zsugorodnak tovább — egy
+  nagyon keskenyre húzott ablakban a jobb szélső gomb kicsúszott a látható
+  területről. Az ablak mostantól nem húzható keskenyebbre, mint amennyi a
+  sávnak kell.
+
 ### Belső
 - **A kiadás nem vár kézi indításra a verzióemelés beolvadása után
   (#1338).** A verzióemelő összefésülést a GitHub szándékosan nem
