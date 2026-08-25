@@ -81,7 +81,13 @@ Item {
 
     //: A csempe és a hozzá tartozó szegélyméret EGY kérésből — két külön
     //: forrásból a kettő elválna, és az árnyék elcsúszna a csempéjétől.
-    readonly property var shadowSprite: shadowVisible
+    //: ⚠️ #305-őr a `controller`-re is: a `shadowVisible` a `shadow` térképből
+    //: dolgozik, ami a lebontás pillanatában még a RÉGI értéket tarthatja,
+    //: miközben a `controller` már `null` — ilyenkor ez a kötés
+    //: „Cannot read property 'collageShadowSprite'" hibát dobna a
+    //: fixture-életciklusban (a #1260 őre ezt bukásként jelenti). A CI-n
+    //: elő is jött, helyben nem: időzítésfüggő.
+    readonly property var shadowSprite: (controller && shadowVisible)
         ? controller.collageShadowSprite(shadow.blur * unit, shadow.alpha)
         : null
 
