@@ -5,6 +5,22 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A „Visszaállítás" megtalálja a régi, 2009 előtti eredetiket is (#1425).**
+  A Picasa a szerkesztés előtti eredetit két különböző nevű mappába mentette:
+  a 2009 utáni verziók a rejtett `.picasaoriginals`-ba, a régebbiek a látható
+  `Originals`-ba. Eddig csak az újabb nevet ismertük, így a 2005 és 2009
+  között szerkesztett képeknél a „Visszaállítás" menütétel szürke maradt —
+  minden magyarázat nélkül —, pedig az érintetlen eredeti ott volt a lemezen.
+  Mostantól mindkét mappát megnézzük, és ha valamiért egyikben sincs meg a
+  kép eredetije, a program érthető magyar mondatban megmondja, hol keresett
+  és mikor működik egyáltalán a Visszaállítás. Ha ugyanahhoz a képhez
+  mindkét mappában van példány, a régebbi, `Originals`-beli nyer: az az
+  időben korábbi, tehát az áll közelebb az érintetlen eredetihez. A mentés
+  ezentúl nem készít második „eredetit" sem, ha a régi mappában már van egy.
+
 ## [0.8.92] – 2026-08-25
 
 ### Javítva

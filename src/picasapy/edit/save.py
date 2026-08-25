@@ -48,6 +48,50 @@ specifikáció szövegének ("szerkesztési verem integritás-hash").
 összevetésével) — ha eltérés derül ki a tényleges Picasa-algoritmustól, az
 egyetlen érintett függvény a `_compute_originhash`.
 
+## Két mappanév: `.picasaoriginals` és `Originals` (#1425)
+
+A Picasa a szerkesztés előtti eredetit **két, időben elváló néven** tárolta
+(`docs/specs/picasa-ini-format.md`, „Az eredeti képek mentése — KÉT
+elnevezés, verzióváltással"; 181 valós mappa, *megerősített*):
+
+| mappanév | darab a korpuszban | évek |
+|---|---:|---|
+| `Originals` (látható) | 127 | 2005–2009 |
+| `.picasaoriginals` (rejtett) | 54 | 2009–2016 |
+
+A #371 kutatása kizárta, hogy a retus/vörösszem régió-adata bárhol
+tárolódna: a javítás a mentett képbe van beleégetve, tehát a Visszaállítás
+EGYETLEN útja a megőrzött eredeti fájl. A régi név ismerete nélkül a
+tulajdonos 127 mappányi eredetijéhez nem tudnánk visszatérni, ezért az
+`ORIGINALS_DIR_NAMES` sorrendjében **mindkettőt** megnézzük.
+
+**SAJÁT FUNKCIÓ (#1425):** ütközéskor — ha ugyanahhoz a képhez MINDKÉT
+mappában van példány — a régi, `Originals` nyer. Ez **nem mérés**: arra,
+hogy az eredeti Picasa mit tesz ilyenkor, nincs bizonyítékunk (a korpusz
+csak `.picasa.ini`-szövegeket tartalmaz, és `Originals/` alatt egyetlen ini
+sincs — az a név rajta van a Picasa saját kizárási listáján, ezért oda
+sosem írt). A döntés két megfontoláson áll:
+
+1. **Időrend.** A két név nem keveredik: az `Originals`-beli példány
+   szükségképpen a korábbi, tehát közelebb van az érintetlen eredetihez.
+   A `.picasaoriginals`-beli ilyenkor a 2005–2009 közötti szerkesztéseket
+   MÁR beégetve tartalmazza.
+2. **A hiba iránya.** Az újabbat választva a felhasználó egy részlegesen
+   visszaállított képet kapna, **némán** — pont az, amit a Visszaállítás
+   ígérete kizár. A régebbit választva „minden változás elvész", ami a
+   művelet kimondott szerződése.
+
+Ugyanez a szabály védi a mentést is: ha bármelyik mappában MÁR van
+megőrzött eredeti, a `save_edited` **nem tesz mellé másodikat** — különben
+az első PicasaPy-mentés egy `Originals`-os mappában a már szerkesztett
+bájtokat írná a `.picasaoriginals`-ba, és (ha valaha megfordulna a
+sorrend) a valódi eredeti elérhetetlenné válna.
+
+**A sorszámozott pillanatképek (`undo_save`) KIZÁRÓLAG a
+`.picasaoriginals`-ban élnek.** Ezek a MI mentéseink melléktermékei, és a
+`undo_save` a felhasznált pillanatképet TÖRLI — a látható, Picasa-korabeli
+`Originals` mappában fájlt törölni nem szabad.
+
 ## `.picasaoriginals` accent-path-tolerancia
 
 A MEMORY.md #190-es tanulsága szerint a `cv2.imwrite`/`cv2.imread`
@@ -79,8 +123,18 @@ from picasapy.ini import (
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.ioutil import write_atomic
 
-#: A rejtett almappa neve, ahová az érintetlen eredeti kerül (spec + UX #3).
+#: A rejtett almappa neve, ahová az ÚJ mentéseink érintetlen eredetije kerül
+#: (spec + UX #3). Írni MINDIG ide írunk.
 ORIGINALS_DIR_NAME = ".picasaoriginals"
+
+#: A 2009 ELŐTTI Picasa-verziók LÁTHATÓ mappaneve ugyanerre a célra (#1425).
+#: Csak OLVASSUK — a tulajdonos gyűjteményében élesben előfordul.
+LEGACY_ORIGINALS_DIR_NAME = "Originals"
+
+#: A megőrzött eredeti KERESÉSI SORRENDJE — az első találat nyer.
+#: A régi, `Originals` áll elöl; az indoklás a modul „Két mappanév”
+#: szakaszában.
+ORIGINALS_DIR_NAMES = (LEGACY_ORIGINALS_DIR_NAME, ORIGINALS_DIR_NAME)
 
 # A mentéskor/visszaállításkor érintett ini-kulcsok — a redo verem és a
 # hozzá tartozó integritás-hash a szerkesztési lánc állapotát tükrözi; a
@@ -180,7 +234,10 @@ def save_edited(
             állapotra, hogy ne maradjon dupla-szerkesztés (#297).
     """
     image_path = Path(image_path)
-    backup_path = _backup_path_for(image_path)
+    # #1425: a „szent" eredeti bármelyik ismert mappanév alatt ott lehet —
+    # ha van, azt tekintjük megőrzöttnek, és nem teszünk mellé másodikat.
+    existing_backup = find_original_backup(image_path)
+    backup_path = existing_backup or _backup_path_for(image_path)
 
     # A (b) lépés ELŐTTI bájtok — ezekre kell visszaállni, ha a (c) elbukik
     # (#297). Első mentésnél ez maga az eredeti (ugyanaz, ami a
@@ -188,8 +245,9 @@ def save_edited(
     # renderelt tartalma.
     bytes_before_write = image_path.read_bytes()
 
-    # (a) Az eredeti megőrzése — KIZÁRÓLAG ha még nincs korábbi mentésből.
-    backup_created_now = not backup_path.exists()
+    # (a) Az eredeti megőrzése — KIZÁRÓLAG ha még nincs korábbi mentésből
+    # (sem a mai, sem a 2009 előtti nevű mappában).
+    backup_created_now = existing_backup is None
     if backup_created_now:
         write_atomic(backup_path, bytes_before_write, make_parents=True)
 
@@ -316,7 +374,11 @@ def undo_save(image_path: str | Path) -> UndoSaveResult:
 
 
 def revert(image_path: str | Path) -> RevertResult:
-    """A "Visszaállítás": az eredeti visszamásolása a `.picasaoriginals`-ból.
+    """A "Visszaállítás": a megőrzött eredeti visszamásolása.
+
+    Az eredetit MINDKÉT ismert mappanév alatt keresi (`.picasaoriginals` és
+    a 2009 előtti `Originals` — ld. a modul „Két mappanév" szakaszát), és a
+    `RevertResult.restored_from` megmondja, melyikből dolgozott (#1425).
 
     A korábbi szerkesztés-könyvelést (`filters=`, `redo=`, `originhash`) az
     ini-ből törli — a fájl a szerkesztés ELŐTTI állapotba kerül vissza,
@@ -331,17 +393,14 @@ def revert(image_path: str | Path) -> RevertResult:
         `RevertResult` a visszaállítás adataival.
 
     Raises:
-        SaveError: ha a `.picasaoriginals`-ban nincs mentett eredeti (a kép
-            még sosem lett `save_edited`-del elmentve).
+        SaveError: ha egyik ismert mappában sincs megőrzött eredeti — az
+            üzenet a felhasználónak szól, és megnevezi mindkét mappát
+            (`_missing_original_message`).
     """
     image_path = Path(image_path)
-    backup_path = _backup_path_for(image_path)
-    if not backup_path.exists():
-        raise SaveError(
-            f"Nincs elérhető eredeti-mentés ehhez a képhez: {image_path} "
-            f"(hiányzik: {backup_path}) — a Visszaállítás csak korábban "
-            f"elmentett (save_edited-en átment) képnél lehetséges."
-        )
+    backup_path = find_original_backup(image_path)
+    if backup_path is None:
+        raise SaveError(_missing_original_message(image_path))
 
     # A visszaállítás ELŐTTI (szerkesztett) bájtok — ezekre kell visszaállni,
     # ha az ini-kulcsok törlése elbukik (#297, fordított irányú rés). Ha a
@@ -399,8 +458,51 @@ def _restore_image_or_raise(
         ) from error
 
 
+def find_original_backup(image_path: str | Path) -> Path | None:
+    """A képhez megőrzött eredeti — MINDKÉT mappanevet megnézve (#1425).
+
+    Az `ORIGINALS_DIR_NAMES` sorrendjében keres (régi `Originals` előbb, ld.
+    a modul „Két mappanév" szakaszát), és az első meglévő fájl útját adja
+    vissza. Ha egyik mappában sincs példány, `None`.
+
+    Csak a KÉT ismert nevet nézi meg, kis-nagybetű pontosan, és nem listázza
+    ki a mappát: képenként így legfeljebb két `stat()` — a #1146 tanulsága
+    szerint a tulajdonos gyűjteménye hálózati megosztáson él, ahol minden
+    fölösleges könyvtárlistázás egy hálózati kör.
+    """
+    image_path = Path(image_path)
+    for dir_name in ORIGINALS_DIR_NAMES:
+        candidate = image_path.parent / dir_name / image_path.name
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def _missing_original_message(image_path: Path) -> str:
+    """A „nincs megőrzött eredeti" ÉRTHETŐ üzenete (#1425).
+
+    A néma elutasítás a projekt visszatérő hibaosztálya (#1003, #1207,
+    #1213): a felhasználónak — aki nem programozó — meg kell tudnia, MIT
+    kerestünk, HOL, és mikor működik egyáltalán a Visszaállítás. Belső
+    függvénynevek nem szivároghatnak ki ide.
+    """
+    mappak = " és ".join(f"„{name}”" for name in ORIGINALS_DIR_NAMES)
+    return (
+        f"Ehhez a képhez nincs megőrzött eredeti: {image_path.name}. "
+        f"A kép melletti {mappak} nevű almappák egyikében sem találtuk meg "
+        f"a mentés előtti változatát. A Visszaállítás csak olyan képnél "
+        f"működik, amelyről készült ilyen másolat — a PicasaPy és a Picasa "
+        f"is az első mentéskor készíti el. "
+        f"(Keresett hely: {image_path.parent})"
+    )
+
+
 def _backup_path_for(image_path: Path) -> Path:
-    """A kép `.picasaoriginals`-beli, várt biztonsági-mentés útja."""
+    """Ahová egy ÚJ eredeti-mentés kerül: mindig a `.picasaoriginals`.
+
+    A régi, `Originals` mappát csak OLVASSUK (ld. `find_original_backup`) —
+    a Picasa-korabeli, látható mappába nem írunk.
+    """
     return image_path.parent / ORIGINALS_DIR_NAME / image_path.name
 
 
