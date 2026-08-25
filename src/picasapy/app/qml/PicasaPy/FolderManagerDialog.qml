@@ -88,21 +88,33 @@ Window {
         return false
     }
 
+    // #1334: az OK MENTÉSI ÚTJA. Az eredetiben (`0x005cef20`) az OK egyetlen
+    // mentést végez, kötött sorrendben: watchedfolders.txt → ]album:removed
+    // sírkövek → (kapuzva) frexcludefolders.txt → záró lépés. Nálunk a
+    // párbeszéd tételenként hívja a vezérlőt, ezért a hívásokat ZÁRÓJELBE
+    // tesszük: a zárójelen belül csak a szándék gyűlik, a fájlok EGYSZER,
+    // a végén íródnak ki. A `finally` kötelező — enélkül egy félbeszakadt
+    // OK nyitva hagyná a zárójelet, és a KÉSŐBBI írások is elmaradnának.
     function _finishAccept() {
-        for (var i = 0; i < initialWatched.length; ++i)
-            if (!_containsPath(visibleWatched, initialWatched[i]))
-                controller.removeFolder(initialWatched[i])
-        for (var j = 0; j < visibleWatched.length; ++j)
-            if (!_containsPath(initialWatched, visibleWatched[j]))
-                controller.addWatchedFolder(visibleWatched[j])
-        for (var path in pendingStates)
-            controller.setFolderManagerState(path, pendingStates[path])
-        for (var path in pendingStates)
-            if (pendingStates[path] === "once") controller.scanFolderOnce(path)
-            else if (pendingStates[path] === "none"
-                     && !_containsPath(initialWatched, path)) controller.removeFolder(path)
-        for (var facePath in pendingFaces)
-            controller.setFaceDetectionEnabled(facePath, pendingFaces[facePath])
+        if (controller) controller.beginFolderManagerSave()
+        try {
+            for (var i = 0; i < initialWatched.length; ++i)
+                if (!_containsPath(visibleWatched, initialWatched[i]))
+                    controller.removeFolder(initialWatched[i])
+            for (var j = 0; j < visibleWatched.length; ++j)
+                if (!_containsPath(initialWatched, visibleWatched[j]))
+                    controller.addWatchedFolder(visibleWatched[j])
+            for (var path in pendingStates)
+                controller.setFolderManagerState(path, pendingStates[path])
+            for (var path in pendingStates)
+                if (pendingStates[path] === "once") controller.scanFolderOnce(path)
+                else if (pendingStates[path] === "none"
+                         && !_containsPath(initialWatched, path)) controller.removeFolder(path)
+            for (var facePath in pendingFaces)
+                controller.setFaceDetectionEnabled(facePath, pendingFaces[facePath])
+        } finally {
+            if (controller) controller.commitFolderManagerSave()
+        }
         acceptingChanges = false
         folderManagerWindow.visible = false
     }

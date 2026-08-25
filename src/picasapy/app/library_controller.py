@@ -28,7 +28,6 @@ from pathlib import Path
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.index import (
-    add_removed_folder,
     clear_removed_folders_under,
     open_index,
     remove_root,
@@ -46,6 +45,7 @@ from picasapy.scanner import (
 )
 
 from .busy_registry import get_app_busy_registry
+from .folder_manager_save_controller import FolderManagerSaveMixin
 from .formatting import to_local_path
 from .initial_scan import (
     SKIP_INITIAL_SCAN_KEY,
@@ -87,7 +87,7 @@ _PROGRESS_RELOAD_MIN_S = 1.5
 FOLDER_POLL_MS = 10_000
 
 
-class LibraryMixin(BackgroundWorkerMixin):
+class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
     """Figyelt gyökerek kezelése + szinkron-munkák könyvelése."""
 
     syncFinished = Signal()
@@ -351,6 +351,16 @@ class LibraryMixin(BackgroundWorkerMixin):
         if self._watcher is not None:
             self._watcher.stop()
             self._watcher = None
+
+    # -- A Mappakezelő OK-jának MENTÉSI ÚTJA (#1334) -------------------------
+    #
+    # A szelet külön fájlban él: `folder_manager_save_controller.py`
+    # (`FolderManagerSaveMixin`, a `LibraryMixin` őse) — a sorrend- és
+    # kapu-szabály pedig Qt nélkül a `folder_manager_save.py`-ban.
+    #
+    # Ami itt látszik belőle: a `_persist_roots`, a `setFaceDetectionEnabled`
+    # és a `removeFolder` OK-fázisban nem ír azonnal, hanem a piszkozatba
+    # gyűjt (`_folder_manager_draft`).
 
     # -- Mappakezelő ---------------------------------------------------------
 
@@ -620,13 +630,14 @@ class LibraryMixin(BackgroundWorkerMixin):
         # rescan()-nél visszajött (a jegy gépi mérése).
         watched_root = self._find_root(path)
         if watched_root is not None:
-            with open_index(self._db_path) as conn:
-                add_removed_folder(conn, watched_root)
+            # #1334: OK-fázisban a sírkő a mentési út 2. lépésében íródik
+            # (a figyelt mappák fájlja UTÁN), egyébként azonnal
+            self._add_tombstone(watched_root)
             self.removeWatchedFolder(watched_root)
             return
         with open_index(self._db_path) as conn:
             remove_root(conn, path)
-            add_removed_folder(conn, path)
+        self._add_tombstone(path)
         self._reload()
 
     @Slot(str)
@@ -711,11 +722,21 @@ class LibraryMixin(BackgroundWorkerMixin):
         if roots == self._face_excluded_roots:
             return
         self._face_excluded_roots = roots
-        if self._exclude_file is not None:
+        # #1334: OK-fázisban a fájl a mentési út 3. lépésében íródik, és
+        # csak akkor, ha a két lista bármelyike nem üres (a KAPU) — a
+        # szándékot addig a piszkozat tartja
+        draft = self._folder_manager_draft()
+        if draft is not None:
+            self._fm_draft = draft.with_face_change(path, enabled)
+        elif self._exclude_file is not None:
             write_exclude_folders(self._exclude_file, tuple(roots))
         self.statusChanged.emit()
 
     def _persist_roots(self) -> None:
+        # #1334: OK-fázisban a figyelt mappák fájlja a mentési út 1.
+        # lépésében íródik — EGYSZER, nem mappánként
+        if self._folder_manager_draft() is not None:
+            return
         if self._watched_file is not None:
             write_watched_folders(self._watched_file, tuple(self._roots))
 
