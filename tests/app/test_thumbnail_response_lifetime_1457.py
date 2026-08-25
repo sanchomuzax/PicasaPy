@@ -375,10 +375,25 @@ class TestALebontasAValaszLANCOTIsBevarja:
 
         from picasapy.app import worker_thread
 
-        forras = inspect.getsource(worker_thread._valaszlanc_kiurult)
-        assert "DeferredDelete" in forras, (
-            "a halasztott törléseket kifejezetten ki kell hajtani, különben a "
-            "`deleteLater` a következő eseményhurok-fordulóig vár"
+        # ⚠️ A DOCSTRING NÉLKÜL nézzük: az első változat a teljes forrást
+        # olvasta, és a saját magyarázó szövegében szereplő szóra bukott
+        # el. Az őr a KÓDOT mérje, ne a róla szóló prózát.
+        import ast
+
+        fa = ast.parse(inspect.getsource(worker_thread.elo_valaszok).lstrip())
+        fuggveny = fa.body[0]
+        if (
+            fuggveny.body
+            and isinstance(fuggveny.body[0], ast.Expr)
+            and isinstance(fuggveny.body[0].value, ast.Constant)
+        ):
+            fuggveny.body = fuggveny.body[1:]
+        forras = ast.unparse(fuggveny)
+        assert "processEvents" not in forras, (
+            "az `elo_valaszok` eseménysort pörget. Egy korábbi változat ezt "
+            "csinálta, és a CI megmutatta, hogy ÁRT: az extra "
+            "eseményforduló újraértékelteti a QML-kötéseket a lebontás "
+            "közben, és `TypeError` lett belőle. Ez a függvény csak MÉR."
         )
         assert callable(worker_thread.elo_valaszok), (
             "a hívónak meg kell tudnia nevezni, MELYIK szolgáltatónál maradt "

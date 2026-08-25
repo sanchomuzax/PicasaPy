@@ -120,14 +120,20 @@ def wait_for_all_background_workers(timeout_s: float = 30.0) -> bool:
         remaining_ms = int(max(0.0, deadline - time.monotonic()) * 1000)
         if not owner.wait_for_done(remaining_ms):
             mind_leallt = False
-    # A válaszlánc kihajtása SZÁNDÉKOSAN nem befolyásolja a visszatérési
-    # értéket — ld. `_valaszlanc_kiurult`.
-    _valaszlanc_kiurult(deadline)
     return mind_leallt
 
 
 def elo_valaszok() -> tuple[str, ...]:
-    """A még el nem engedett aszinkron válaszok szolgáltatónként."""
+    """A még el nem engedett aszinkron válaszok szolgáltatónként.
+
+    ⚠️ **Tiszta lekérdezés: NEM pörget eseménysort.** Egy korábbi
+    változatom a lebontásban `processEvents()`-et és halasztott
+    törlés-kihajtást futtatott, hogy „esélyt adjon" a láncnak lefutni. A
+    CI megmutatta, hogy ez ÁRT: az extra eseményforduló újraértékelteti a
+    QML-kötéseket, miközben az objektumok már bomlanak, és ebből
+    `TypeError` lett egy vezérlő-hívásban (`test_qml_folder_manager`).
+
+    A lebontás sorrendje kényes; ez a függvény ezért csak MÉR."""
     jelentes = []
     for owner in tuple(_POOL_OWNERS):
         szamlalo = getattr(owner, "live_response_count", None)
@@ -137,56 +143,6 @@ def elo_valaszok() -> tuple[str, ...]:
         if darab:
             jelentes.append(f"{type(owner).__name__}: {darab}")
     return tuple(jelentes)
-
-
-def _valaszlanc_kiurult(deadline: float) -> bool:
-    """A pool VÉGE nem a lánc vége — ezt is meg kell várni (#1457/#999).
-
-    ⚠️ Ezt egy független átnézés mutatta ki: a `wait_for_done` csak azt
-    garantálja, hogy a pool-feladatok lefutottak. A Qt viszont ezután még
-    a saját image-reader szálán dolgozza fel a `finished` jelzést, hívja a
-    `textureFactory()`-t, majd a `deleteLater()`-t. Amíg ez a lánc nem
-    futott le, a válasz-objektumok ÉLNEK — és ha közben a teszt elengedi a
-    vezérlőket és a motort, a lánc félig lebontott világban folytatódik.
-
-    A `live_response_count()` pontosan ezt a láncot méri: a válasz akkor
-    kerül ki a nyilvántartásból, amikor a motor ténylegesen megsemmisítette
-    (`destroyed`). Itt tehát addig pörgetjük az eseménysort — beleértve a
-    halasztott törléseket —, amíg a számláló ki nem ürül.
-
-    ⚠️ **Ez a lépés NEM buktat.** Mérve: motor NÉLKÜL létrehozott
-    válaszokat (egységtesztek, amelyek közvetlenül hívják a
-    `requestImageResponse()`-t) SOHA senki nem semmisít meg, mert nincs
-    motor, ami a tulajdonjogot átvenné — a számláló ilyenkor jogosan nem
-    ürül ki. Ha a bevárás emiatt bukna, minden ilyen teszt teardownja a
-    teljes időkorlátot végigvárná, majd elhasalna. Az első változatom
-    pontosan ezt csinálta: három meglévő tesztet buktatott.
-
-    Ezért itt csak **esélyt adunk** a láncnak lefutni, és az eredményt az
-    `elo_valaszok()` teszi láthatóvá. Aki VALÓDI motorral dolgozik (a
-    QML-fixture), az állítson rá — ott a maradék tényleg hiba.
-
-    A szolgáltatók, amelyek nem ismerik a számlálót, kimaradnak: rájuk a
-    régi, pool-szintű garancia marad érvényben."""
-    from PySide6.QtCore import QCoreApplication, QEvent
-
-    app = QCoreApplication.instance()
-    if app is None:
-        return True
-    # legfeljebb 2 másodperc: a lánc néhány eseményhurok-forduló alatt
-    # lefut, ha egyáltalán lefut — a hosszabb várakozás csak a motor
-    # nélküli teszteket lassítaná
-    hatar = min(deadline, time.monotonic() + 2.0)
-    while True:
-        if not elo_valaszok():
-            return True
-        if time.monotonic() >= hatar:
-            return False
-        # a halasztott törlések kifejezetten is: a `deleteLater` enélkül a
-        # következő eseményhurok-fordulóig várna
-        app.sendPostedEvents(None, QEvent.Type.DeferredDelete)
-        app.processEvents()
-        time.sleep(0.005)
 
 
 class BackgroundWorkerMixin:
