@@ -262,6 +262,8 @@ szövegkészlet (migráció / tiszta telepítés), 640×463 geometria, két rád
 3. **Hol jelenik meg a panel** (saját ablak vagy beágyazva), és mi
    történik, ha a felhasználó bezárja az ablakot (a Mégse rejtett).
 
+### [picasa-mappanezet.md](picasa-mappanezet.md) — nincs nyitott kérdés
+
 ### [picasa-mappakezelo.md](picasa-mappakezelo.md) — nincs nyitott kérdés (a hatókörön kívüli Apple-ágon felül)
 
 ✅ **2026-08-24 — a két megmaradt „erős, nem megerősített" állítás MEGERŐSÍTVE:**
@@ -415,6 +417,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [picasa-email-kuldes.md](picasa-email-kuldes.md) | E-mail-küldés — választó, beépített Gmail-szerkesztő, beállítások |
 | [picasa-importalas.md](picasa-importalas.md) | Az importálás panelje — tipp-sor, kártyatörlés-figyelmeztetés, hibák |
 | [picasa-elso-inditas.md](picasa-elso-inditas.md) | **Az első indítás `initialscan` panelje** — migrációs és tiszta-telepítés változat, geometria, a kihagyhatatlan választás |
+| [picasa-mappanezet.md](picasa-mappanezet.md) | **A `Nézet ▸ Mappanézet` MŰKÖDÉS-specje — egy funkcionális félreértést javít**: ez NEM rendezés, hanem a bal hasáb **gyökere és hierarchiája**. A lapos↔fa **kizáró pár** (`[+0x9d]`), az „Egyszerűsített fanézet" viszont **független kapcsoló**, ami a `SimplifiedHierarchy` beállítással az `all` gyökeret **`watched`-re cseréli**. Hat gyökér-token, négy gyökér a helyi menüben, a fejlécfelirat („Alapértelmezett nézet" / „Sajátgép"), a `LastViewRoot`/`LastViewRoot2` tárolás, és a visszaesés a Sajátgépre hibaesetben. Jegyek: **#1407**, **#1454** |
 | [picasa-mappakezelo.md](picasa-mappakezelo.md) | **A Mappakezelő TELJES specifikációja** — elrendezés és tervezővászon-geometria, az átméretezés szabályai (`winsize` → `SC_SIZE`), a fa és az öröklődő állapot, a három rádió, az arcfelismerés-kapcsoló, a három figyelmeztetés, az OK/Mégse delta-szemantikája, a Súgó URL-je |
 | [picasa-keptalca.md](picasa-keptalca.md) | **A Képtálca (`scratch`, „Selection") MŰKÖDÉS-specje** — a döntő lelet, hogy a tálca **nem marad meg újraindítás után** (három független negatív ellenőrzés); a négy vezérlő felirat NÉLKÜL, csak ikon+súgó; a `Tray` helyi menü két parancsa; **két külön** ürítés-megerősítés; a 36,5%-os doboz-kényszer; a `trayexec` adatvezérelt műveletsor; két negatív eredmény (a `.pbz` placement NEM az alap-sorrend, a `Tray contains:` hibakereső lap) |
 | [picasa-menu-leltar.md](picasa-menu-leltar.md) | **A menüsor gépi leltára a binárisból** — 189 tétel 18 `eMenu*` névtérben; a lefedettségünk 150/189 (79%), a 39 hiányzó három csoportban (14 hatókörön kívül, 18 érdemi, 1 almenü). Jegy: **#1397** |
