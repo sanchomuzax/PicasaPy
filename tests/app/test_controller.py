@@ -1,5 +1,6 @@
 """AppController: mappa-választás, keresés, státusz, provider-regisztráció."""
 
+import threading
 import time
 
 import pytest
@@ -1788,13 +1789,26 @@ class TestBusyAndBackgroundResync:
         from PySide6.QtCore import QEventLoop, QTimer
 
         # #505: a rescan a valódi (apró) teszt-könyvtáron a küszöbnél is
-        # gyorsabban lefuthatna — egy rövid, mesterséges késleltetéssel
-        # biztosítjuk, hogy a küszöb-ablak alatt még fusson, így a
-        # `isWorking is True` állítás determinisztikus marad.
+        # gyorsabban lefuthatna, ezért a munkát FEL KELL TARTANI, amíg a
+        # teszt meg nem látta a busy-jelzést.
+        #
+        # ⚠️ Korábban ez egy 50 ms-os `time.sleep()` volt, és a CI-ben
+        # elbukott (`assert _wait_until(... isWorking is True)` → False):
+        # terhelt futón — négy teszt-darab párhuzamosan, mellettük egy
+        # összeomlás utáni újrapróbálás (#1457) — a rescan a küszöb előtt
+        # végzett. Az idő-ablak tehát NEM szinkronpont, csak fogadás.
+        #
+        # Most valódi szinkronpont van: a worker addig áll, amíg a teszt
+        # el nem engedi. Az őr foga megmarad — ha a busy-jelzés SOSEM
+        # jönne meg, a `_wait_until` az 5 másodperces korlátjánál bukik,
+        # ahogy eddig is.
         original_sync_tree = controller_module.sync_tree
+        engedd_tovabb = threading.Event()
 
         def slow_sync_tree(conn, folder, progress=None):
-            time.sleep(0.05)
+            # a felső korlát csak azért van, hogy egy elrontott teszt se
+            # akaszthassa meg örökre a készletet
+            engedd_tovabb.wait(30.0)
             if progress is None:
                 original_sync_tree(conn, folder)
             else:
@@ -1810,6 +1824,7 @@ class TestBusyAndBackgroundResync:
         controller.syncFinished.connect(loop.quit)
         controller.rescan()
         assert _wait_until(qt_app, lambda: controller.isWorking is True)
+        engedd_tovabb.set()  # a busy-t LÁTTUK, a munka mehet tovább
         QTimer.singleShot(5000, loop.quit)
         loop.exec()
         assert _wait_until(qt_app, lambda: controller.isWorking is False)
