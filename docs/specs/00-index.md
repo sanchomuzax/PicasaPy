@@ -398,6 +398,7 @@ Ezek **normatívak**: a felületnek pontosan ezeket kell követnie.
 | [ui-audit-context-menus.md](ui-audit-context-menus.md) | Jobbklikkes helyi menük |
 | [ui-lefedettseg.md](ui-lefedettseg.md) | Az eredeti panelek ↔ a mi QML-fánk megfeleltetése |
 | [picasa-beviteli-mezok.md](picasa-beviteli-mezok.md) | Beviteli mezők és párbeszédpanelek |
+| [picasa-gyorsbillentyuk.md](picasa-gyorsbillentyuk.md) | **A gyorsbillentyűk teljes tára ÉS a funkciójuk** — a `Picasa3i18n.dll` 48 rekeszes `SHORTCUTS.XML` keymapje (nyolc nyelv, **magyar nincs** → az angol alaptábla fut); a menüsáv 32 és a helyi menük 44 rekordja **parancsazonosítóval és rekordcímmel**; a jelzőbájt három bitje mérve (a 2. bit fordított: `Ctrl` akkor van, ha 0); a keymap kommentjei **három helyen elavultak** (`Ctrl+S`, `Ctrl+T`, `Ctrl+W`); és a mai kiosztásunk tételes összevetése (34 egyedi kombinációból 18 megvan / 2 eltér / 14 hiányzik). Jegy: **#1154** |
 
 ## Viselkedés és funkciók
 
