@@ -87,6 +87,7 @@ def _build_qml_app(qt_app, tmp_path):
     from PySide6.QtCore import QSettings
     from picasapy.app.worker_thread import (
         running_background_workers,
+        elo_valaszok,
         wait_for_all_background_workers,
     )
     from PySide6.QtQml import QQmlApplicationEngine
@@ -197,6 +198,15 @@ def _build_qml_app(qt_app, tmp_path):
     # állt, és elcsúszott: a fixture által létrehozott `EditController`,
     # `FaceScanController` és a két bélyegkép-szolgáltató pool-ja kimaradt
     # belőle. Ebből lett két, véletlenszerűen pirosló SIGSEGV a CI-ben.
+    # ⚠️ #1457: VALÓDI motor mellett a válasz-lánc is le kell hogy fusson.
+    # A pool vége NEM a lánc vége: a Qt ezután dolgozza fel a `finished`-et
+    # a saját image-reader szálán, hívja a `textureFactory()`-t, majd a
+    # `deleteLater()`-t. Ha a lebontás ezt nem várja meg, a lánc félig
+    # lebontott világban folytatódik — ez a #999 hibaosztálya.
+    assert elo_valaszok() == (), (
+        "a motor válasz-lánca nem futott le a lebontás előtt (#1457): "
+        + ", ".join(elo_valaszok())
+    )
     assert wait_for_all_background_workers(30.0), (
         "háttérmunka nem állt le a teardownban (#430/#438/#988/#999): "
         + ", ".join(running_background_workers())

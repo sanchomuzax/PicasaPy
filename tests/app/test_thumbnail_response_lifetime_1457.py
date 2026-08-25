@@ -325,3 +325,62 @@ class TestAKetSZOLGALTATOUgyanazokatAVedelmeketKapja:
                 f"a(z) {szolgaltato.__name__} nem tart hivatkozást az élő "
                 "válaszokra — a Python megsemmisítheti őket a motor alól"
             )
+
+
+class TestALebontasAValaszLANCOTIsBevarja:
+    """A pool VÉGE nem a lánc vége (#1457/#999).
+
+    Ezt egy független átnézés mutatta ki, és ez a nap legerősebb új
+    nyoma: a `wait_for_done` csak azt garantálja, hogy a pool-feladatok
+    lefutottak. A Qt viszont ezután még a saját image-reader szálán
+    dolgozza fel a `finished` jelzést, hívja a `textureFactory()`-t, majd
+    a `deleteLater()`-t. Amíg ez nem futott le, a válasz-objektumok
+    ÉLNEK — és ha közben a teszt elengedi a vezérlőket és a motort, a lánc
+    félig lebontott világban folytatódik.
+    """
+
+    def test_a_bevaras_LATHATOVA_teszi_a_maradekot(self, qt_app, tmp_path):
+        """A bevárás nem buktat rá, de MEGNEVEZI, mi maradt életben.
+
+        ⚠️ Motor NÉLKÜL létrehozott válaszokat senki nem semmisít meg —
+        nincs, aki a tulajdonjogot átvegye —, tehát a számláló jogosan
+        nem ürül ki. Az első változatom emiatt HÁROM meglévő tesztet
+        buktatott: minden ilyen teardown végigvárta volna a teljes
+        időkorlátot, majd elhasal. A lépés ezért csak esélyt ad a láncnak,
+        és az eredményt láthatóvá teszi.
+
+        Aki VALÓDI motorral dolgozik, az állítson az ürességre — ott a
+        maradék tényleg hiba."""
+        from picasapy.app.worker_thread import (
+            elo_valaszok,
+            wait_for_all_background_workers,
+        )
+
+        provider = _provider(tmp_path)
+        for i in range(6):
+            provider.requestImageResponse(f"{90000 + i}", None)
+
+        assert wait_for_all_background_workers(30.0), (
+            "a háttérmunka bevárása nem futott ki"
+        )
+        maradek = elo_valaszok()
+        assert any("ThumbnailProvider" in sor for sor in maradek), (
+            "a jelentésnek meg kell neveznie a szolgáltatót, amelynél élő "
+            f"válasz maradt; kapott: {maradek}"
+        )
+
+    def test_a_bevaras_JELENTI_is_mi_maradt(self, qt_app, tmp_path):
+        """A néma bukás itt a legrosszabb: a hibaüzenet nevezze meg, mi él."""
+        import inspect
+
+        from picasapy.app import worker_thread
+
+        forras = inspect.getsource(worker_thread._valaszlanc_kiurult)
+        assert "DeferredDelete" in forras, (
+            "a halasztott törléseket kifejezetten ki kell hajtani, különben a "
+            "`deleteLater` a következő eseményhurok-fordulóig vár"
+        )
+        assert callable(worker_thread.elo_valaszok), (
+            "a hívónak meg kell tudnia nevezni, MELYIK szolgáltatónál maradt "
+            "élő válasz; a puszta „nem sikerült” itt semmit nem ér"
+        )
