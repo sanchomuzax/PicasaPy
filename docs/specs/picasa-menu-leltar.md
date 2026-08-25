@@ -160,3 +160,74 @@ keresés ezen dolgozik.
 kitöltöttségére (valódi adaton mérve) és az `ImageColorSwatch` létére.
 **Erős, nem megerősített**: hogy a keresés konkrétan ezt az oszlopot
 olvassa — a keresőkód nincs végigkövetve odáig.*
+
+---
+
+## 7. A TELJES parancstérkép a menüépítő kódból (2026-08-25)
+
+A 1–6. szakasz a **szövegtárból** dolgozott. Ez a szakasz a **kódból**: a
+menüsort egyetlen függvény építi, és abból a **parancsazonosítók** is
+kiolvashatók.
+
+### A menüépítő: `0x00559150` — 15 495 bájt
+
+Ez a `CMenuBar` építője; **minden** menüt ez rak össze. A menürekord
+felépítése soronként visszaköszön:
+
+```asm
+push  <fordítási kulcs>                  ; pl. "eMenuView::ID_VIEW_PROJECTOR"
+mov   eax, <alapértelmezett angol felirat>   ; "&Projector Mode"
+mov   dword ptr [rek+0x04], ebx          ; gyorsbillentyű-szöveg
+mov   word  ptr [rek+0x08], bx           ; ikon
+mov   word  ptr [rek+0x0a], 0x9d20       ; <<< PARANCSAZONOSÍTÓ
+mov   dword ptr [rek+0x0c], ebx          ; almenü-tömb
+mov   dword ptr [rek+0x10], ebx          ; almenü darabszám
+```
+
+*(A `+0x0a` = parancsazonosító itt **igazolódik** — szemben a `Tray` helyi
+menü rekordjaival, ahol ugyanez a mező mást hordozott, ld.
+`picasa-keptalca.md` 12.)*
+
+### A kinyert térkép: **177 tétel, 145 parancsazonosítóval**
+
+Géppel olvasható alakban: **[`picasa-menu-parancsok.csv`](picasa-menu-parancsok.csv)**
+(oszlopok: `menu`, `parancs`, `parancsazonosito`, `felirat_en`, `felirat_hu`).
+
+| névtér | tétel | | névtér | tétel |
+|---|---:|---|---|---:|
+| `eMenuView` | 48 | | `eMenuHelp` | 10 |
+| `eMenuTools` | 36 | | `eMenuCreate` | 7 |
+| `eMenuFile` | 19 | | `CMenuBar` | 4 *(gyorsbillentyűk)* |
+| `eMenuPicture` | 19 | | `eMenuCreateMovie` | 3 |
+| `eMenuLabelFolder` | 13 | | platform-változatok | 7 |
+| `eMenuEdit` | 11 | | | |
+
+> **Miért ez a legfontosabb eszköz a további feltáráshoz:** a
+> parancsazonosítóval **közvetlenül megtalálható a kezelője** a főablak
+> parancs-diszpécserében (`0x005cb990`), tehát bármely menüpont működése
+> egy lépésben kereshetővé vált. A menük tényleg „majdnem minden
+> funkcióhoz" elvezetnek — ez a térkép az útjelző.
+
+### Példa: a Nézet menü megjelenítési módjai
+
+| parancs | azonosító | felirat |
+|---|---|---|
+| `ID_VIEW_RDESK` | `0x9d18` | &Remote Desktop |
+| `ID_VIEW_OV` | `0x9d19` | &Show overflow pixels |
+| `ID_VIEW_LINEAR` | `0x9d1a` | Linear &Gamma (2.2) |
+| `ID_VIEW_16` | `0x9d1e` | &16-bit (dithered) |
+| `ID_VIEW_NORMAL` | `0x9d1f` | &24-bit |
+| `ID_VIEW_PROJECTOR` | `0x9d20` | &Projector Mode |
+| `ID_VIEW_MAC` | `0x9d55` | &Mac Gamma (1.6) |
+| `ID_VIEW_LCD` | `0x9dbc` | &LCD Whitepoint |
+| `ID_VIEW_FOLDERS` | *(a kinyerés nem adta)* | &Flat Folder View |
+
+A `0x9d18`–`0x9d20` **összefüggő blokk** — erős jel arra, hogy ezek egy
+csoportot alkotnak; a `MAC` és az `LCD` külön tartományban van, tehát
+később kerültek be. *(A rádió/kapcsoló besorolás **még nincs kimérve** —
+ez a #1409 tárgya.)*
+
+*Bizonyítottsági fok: **megerősített** a menüépítő címére, a rekord-alakra
+és a kinyert azonosítókra (diszasszemblálva + gépi kinyerés). A CSV
+**gépi kinyerés eredménye**: ahol az azonosító üres, ott a minta eltért —
+az ilyen tételt kézzel kell ellenőrizni (9 tétel a 177-ből... pontosan 32).*

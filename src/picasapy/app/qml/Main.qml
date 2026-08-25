@@ -20,6 +20,11 @@ ApplicationWindow {
     // szintjén — ez az a hely, ahol érvényesíteni kell.
     minimumHeight: photoViewer.requiredHeight
                    + (window.menuBar ? window.menuBar.height : 0)
+    // #1367: az ablak nem mehet olyan keskenyre, hogy az alsó
+    // műveletsáv kilógjon — a #1345 fix gombcellái óta a sáv nem
+    // zsugorodik tovább. Az igény MÉRT (ld. `TrayBar.requiredWidth`),
+    // és őr-teszt méri újra élőben.
+    minimumWidth: trayBar.requiredWidth
     visible: true
     title: "PicasaPy"
     color: Theme.lightboxBg
