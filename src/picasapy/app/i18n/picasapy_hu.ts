@@ -3079,7 +3079,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     <message>
         <location filename="../qml/PicasaPy/HistogramBox.qml" line="42"/>
         <source>Histogram and camera information</source>
-        <translation>Hisztogram és fényképezőgép-adatok</translation>
+        <translation>Hisztogram és fényképadatok</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/HistogramBox.qml" line="111"/>
@@ -3755,7 +3755,7 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
     </message>
     <message>
         <source>Histogram and camera information</source>
-        <translation>Hisztogram és fényképezőgép-adatok</translation>
+        <translation>Hisztogram és fényképadatok</translation>
     </message>
     <message>
         <location filename="../qml/PicasaPy/PhotoViewer.qml" line="588"/>
