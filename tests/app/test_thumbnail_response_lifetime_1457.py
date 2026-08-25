@@ -162,3 +162,48 @@ class TestRendesUtValtozatlan:
         response = provider.requestImageResponse(str(records[0].id), None)
         assert response._done.wait(10)
         assert not response._image.isNull()
+
+
+class TestAKepMezoVersenyMentes:
+    """A `_image` mezőhöz HÁROM szál nyúl — mindhárom a zár alatt.
+
+    A `_finish` a pool-szálon ÍR, a `textureFactory` a motor szálán
+    OLVAS, a `cancel` pedig a motor szálán állít jelzőt. A `QImage`
+    implicit megosztású: a másolat a hivatkozásszámlálót lépteti. Ha az
+    írás és az olvasás átfedi egymást, a számláló sérül — és a hiba nem
+    ott csattan, ahol keletkezett, hanem egy későbbi felszabadításnál,
+    látszólag véletlenszerű helyen.
+
+    Ez volt a #1457 utolsó nyitott ablaka: a jelzés kibocsátását már egy
+    szálra soroltuk, a KÉP MEZŐT viszont még nem védte semmi."""
+
+    def test_a_textureFactory_a_zar_alatt_olvas(self, qt_app):
+        """Az olvasás nem kezdődhet el, amíg az írás tart.
+
+        Az őr foga: ha a `textureFactory`-ból kivesszük a zárat, az
+        olvasás átcsúszik a félbehagyott írás alatt, és a teszt bukik."""
+        from picasapy.app.thumbnail_provider import _ThumbResponse
+
+        valasz = _ThumbResponse()
+        sorrend: list[str] = []
+        eredeti_lock = valasz._lock
+
+        class _NaplozoZar:
+            """A valódi zár, ami feljegyzi, ki mikor lép be és ki."""
+
+            def __enter__(self):
+                sorrend.append("be")
+                return eredeti_lock.__enter__()
+
+            def __exit__(self, *args):
+                sorrend.append("ki")
+                return eredeti_lock.__exit__(*args)
+
+        valasz._lock = _NaplozoZar()
+        valasz.textureFactory()
+
+        assert sorrend == ["be", "ki"], (
+            "a `textureFactory` nem a zár alatt olvassa a `_image` mezőt — "
+            "a pool-szál írásával átfedve a QImage hivatkozásszámlálója "
+            "sérül, és a program egy későbbi felszabadításnál omlik össze"
+        )

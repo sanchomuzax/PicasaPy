@@ -196,7 +196,21 @@ class _ThumbResponse(QQuickImageResponse):
             self.finished.emit()
 
     def textureFactory(self) -> QQuickTextureFactory:
-        return QQuickTextureFactory.textureFactoryForImage(self._image)
+        """A kész kép átadása a motornak — a MOTOR szálán hívódik.
+
+        ⚠️ A zár nem formalitás. A `_finish` a POOL-szálon írja a
+        `self._image`-et, ezt a metódust viszont a motor a SAJÁT szálán
+        hívja. A `QImage` implicit megosztású: a másolat a
+        hivatkozásszámlálót lépteti, nem a képpontokat másolja. Ha az írás
+        és az olvasás átfedi egymást, a számláló sérül — és a hiba nem ott
+        csattan, ahol keletkezett, hanem egy későbbi felszabadításnál,
+        látszólag véletlenszerű helyen (#1457).
+
+        A `_finish` és a `cancel` már ugyanezt a zárat használja; ez a
+        harmadik út, amelyik ugyanahhoz a mezőhöz nyúl."""
+        with self._lock:
+            image = self._image
+        return QQuickTextureFactory.textureFactoryForImage(image)
 
 
 class _ThumbJob(QRunnable):
