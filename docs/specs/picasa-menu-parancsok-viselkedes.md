@@ -140,3 +140,77 @@ Bekapcsolva: **monitor ICM-profil** (`GetICMProfileA`, 1 hívó) + a képbe
 (vágólap, fájlidő, színkezelés, registry-ág) **megerősítettek**; a
 `SMALL` ↔ `SMALLTHUMBNAILS` különbség és a Printing fül öt `title` nélküli
 legördülője **nem vizsgált**.*
+
+---
+
+# ⚠️ HELYESBÍTÉS ÉS A MENÜSORUNK MÉRT ÁLLAPOTA (2026-08-25, ugyanaznap)
+
+## A „nálunk" oszlopok tévesek voltak — a mérés
+
+A fejlesztői szál jelezte, hogy *a felvett jegyek felénél a mérés mást
+mondott, mint a jegy*. Felmértem a menüsorunkat
+(`app/qml/PicasaPy/PicasaMenuBar.qml`):
+
+| | darab |
+|---|---:|
+| **működő** menütétel (sima `MenuItem`) | **67** |
+| nem működő (`PicasaMenuItem`) | 55 |
+| — **helyfoglaló** (`placeholder: true`, „még nincs bekötve") | **45** |
+| — **nyugdíjazott** (`retired: true`, megszűnt szolgáltatás) | **10** |
+| menü / almenü | 18 |
+
+> A `PicasaMenuItem` **kizárólag** a nem működő tételekre való — ezt a
+> komponens fejléce mondja ki (`enabled: !placeholder && !retired`).
+
+### Amit tévesen „hiányzónak" írtam — pedig MŰKÖDIK
+
+`Find Duplicates...` · `Move Database...` · `Compact Database...` ·
+`Copy All Effects` · `Paste All Effects` · a **négy** indexkép-felirat mód
+(`None`/`Filename`/`Caption`/`Resolution` — nálunk **öt**, `Tags`-szel) ·
+`Options...` · `Export as HTML Page...` · `Folder Manager...` ·
+`Refresh Thumbnails` · `Library View` · `Small`/`Normal Thumbnails` ·
+`Properties` · `Export to Google Earth File` · a **kilenc** rendezési tétel ·
+a **hét** gyorsjavítás · `Picture Collage...` · `New Movie...`
+
+### ⇒ A hátralévő munka nagy része BEKÖTÉS, nem új menüpont
+
+A 45 helyfoglaló között ott van a feltárt tételek nagy része. A teendő
+ezért **„kösd be a meglévő, szürke menüpontot"**, nem „vedd fel a menübe" —
+lényegesen olcsóbb feladat.
+
+### A #1397 lefedettségi száma is félrevezető volt
+
+A „150/189 megvan (79%)" **felirat-egyezésen** alapult, és a bekötetlen
+helyfoglalókat is „megvan"-nak számolta. **A lefedettséget csak MŰKÖDŐ
+tételre szabad számolni.**
+
+## További leletek a 8–10. adagból
+
+**Gombkezelő** (`buttonmgr.tre` + `_text.tre`): két lista
+(`Available Buttons:` ↔ `Current Buttons:`), kilenc gomb (`Add >>`,
+`<< Remove`, `Move Up`, `Move Down`, `Reset to Defaults`,
+**`Find buttons online...`**, `Done`, `OK`, `Cancel`). A működési szabály az
+útmutató szövegéből: **a jobb lista fentről-lefelé sorrendje = a gombok
+balról-jobbra sorrendje** az alsó sávban. A „Find buttons online…"
+magyarázza a `buttons/*.pbz` **letölthető gomb**-formátumot.
+
+**Képernyővédő** (`CScrPrefs::*`) és **Fotómegjelenítő** (`slingshot::*`,
+30 szöveg): **külön Windows-komponensek** saját beállítóval —
+**hatókörön kívül**; a fogalmak (képernyővédő-album, fájltársítás)
+átvehetők.
+
+**„Fájl(ok) megnyitása szerkesztőben"**: **HÁROM** belépési pont
+(`eMenuFile`, `AlbumPhoto`, `OneUp`), **eltérő feliratokkal**. ⛔ **Nincs
+beállítható szerkesztő-útvonal** — `ShellExecuteA` (8 hívó) adja át a
+rendszer társításának. Linuxon ez az `xdg-open` (nálunk már létező fogalom,
+ld. #1104).
+
+**„Megjelenítés és szerkesztés"**: **KÉT** belépési pont (Kép menü + a fotó
+helyi menüje).
+
+**Szöveg elrejtése/megjelenítése**: **két külön parancs**
+(`ID_PICTURE_HIDE_TEXT` / `ID_PICTURE_SHOW_TEXT`), nem egy kapcsoló.
+
+**`ID_VIEW_AUTO`**: **nem sikerült besorolni** — nem tagja a tizenegyes
+megjelenítési-mód tömbnek, és nem illik az „Indexkép felirata" négyeséhez.
+Nyitva marad.
