@@ -29,6 +29,7 @@ from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.index import (
     clear_removed_folders_under,
+    folder_scan_stamps,
     open_index,
     remove_root,
     sync_folder,
@@ -45,6 +46,7 @@ from picasapy.scanner import (
 )
 
 from .busy_registry import get_app_busy_registry
+from .folder_freshness import next_sweep_batch, stale_folders
 from .folder_manager_save_controller import FolderManagerSaveMixin
 from .formatting import to_local_path
 from .initial_scan import (
@@ -85,6 +87,21 @@ _PROGRESS_RELOAD_MIN_S = 1.5
 #: NAS-on van, mért napló-korláttal — a teljes fa sűrű pásztázása ott
 #: valódi kárt okozna. A teljes rescan ezért marad ötpercenként.
 FOLDER_POLL_MS = 10_000
+
+#: #1435 — hány TOVÁBBI (a feedben látszó, de nem kiválasztott) mappa
+#: PECSÉTJÉT nézzük meg körönként.
+#:
+#: A rács feedje (#64) egyszerre több mappát mutat; a #1275 célzott
+#: újraolvasása viszont csak a kiválasztottat nézte, így a többi mappa új
+#: és törölt képei csak az ötperces körben jelentek meg (a helyben átírt
+#: fájl pedig ott sem — a mappa mtime-ja nem lép, lemérve).
+#:
+#: A költség KORLÁTOS és független a könyvtár méretétől: mappánként
+#: pontosan két fájlrendszer-művelet (`folder_freshness.directory_stamp`),
+#: tehát körönként legfeljebb 2 × ennyi. A jelen értékkel 16 művelet / 10 mp
+#: ≈ 1,6 művelet/mp — nagyságrendekkel a NAS mért 200/mp korlátja alatt.
+#: Teljes újraolvasást csak az a mappa kap, amelynek a pecsétje eltért.
+SWEEP_FOLDERS_PER_TICK = 8
 
 
 class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
@@ -830,11 +847,77 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         sírkövek és a kizárások ugyanúgy érvényesek.
 
         Futó szinkron alatt kihagyjuk: az úgyis frissít, és két egyidejű
-        író fölöslegesen versengene az indexen."""
+        író fölöslegesen versengene az indexen.
+
+        #1435: a kiválasztott mappa mellé a feedben LÁTSZÓ többi mappa
+        olcsó frissesség-ellenőrzése is belefér (`_sweep_candidates` +
+        `_stale_feed_folders`) — teljes újraolvasást csak az a mappa kap,
+        amelyik tényleg megváltozott.
+
+        ⚠️ A pecsét-ellenőrzés HÁTTÉRSZÁLON fut, két okból: (1) a statok
+        hálózati megosztáson lassúak, a GUI-szálon akadást okoznának;
+        (2) a végén EGYETLEN `watcherDirty` megy ki a kiválasztott és az
+        elavult mappákkal együtt, tehát egy szinkron-worker lesz belőle —
+        két egyidejű index-író `OperationalError`-t és a felhasználónak
+        szóló hibajelzést eredményezne."""
         mappa = self._current_folder
         if not mappa or self._sync_running:
             return
-        self._on_folders_dirty([mappa])
+        batch = self._sweep_candidates(mappa)
+        if not batch:
+            # nincs más látszó mappa: a #1275 útja változatlanul
+            self._on_folders_dirty([mappa])
+            return
+
+        def worker():
+            # a jelzés a watchdog-éval azonos úton megy a GUI-szálra
+            # (queued `watcherDirty`) — onnan a jól bejáratott
+            # `_on_folders_dirty` végzi a koaleszálást és a szinkront
+            self.watcherDirty.emit([mappa, *self._stale_feed_folders(batch)])
+
+        # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+        self._start_background(worker, name="picasapy-frissesseg-sweep")
+
+    def _sweep_candidates(self, current: str) -> tuple[str, ...]:
+        """A körönként megnézendő adag a feedben látszó, KIVÁLASZTOTTON
+        KÍVÜLI mappákból (#1435) — tiszta válogatás, fájlrendszert NEM ér.
+
+        Körönként legfeljebb `SWEEP_FOLDERS_PER_TICK` mappa kerül sorra,
+        körbeforgó kurzorral: a költség így korlátos marad akkor is, ha a
+        feed több száz mappát mutat."""
+        candidates = tuple(
+            group["path"]
+            for group in self._feed_groups
+            if group.get("path") and group["path"] != current
+        )
+        if not candidates:
+            return ()
+        # a kurzor lustán születik: a mixinnek nincs saját __init__-je
+        cursor = getattr(self, "_sweep_cursor", 0)
+        batch, self._sweep_cursor = next_sweep_batch(
+            candidates, cursor, SWEEP_FOLDERS_PER_TICK
+        )
+        return batch
+
+    def _stale_feed_folders(self, batch: tuple[str, ...]) -> tuple[str, ...]:
+        """Az adagból azok a mappák, amelyek pecsétje eltér az indexben
+        tároltól (#1435) — mappánként két fájlrendszer-művelet.
+
+        ⚠️ HÁTTÉRSZÁLON hívandó (ld. `_poll_current_folder`).
+
+        Hiba esetén üres eredmény: a frissesség-ellenőrzés kényelmi
+        gyorsítás, nem törhet meg tőle a körönkénti alapfrissítés."""
+        if not batch:
+            return ()
+        try:
+            with open_index(self._db_path) as conn:
+                stored = folder_scan_stamps(conn, batch)
+            return stale_folders(batch, stored)
+        except (sqlite3.Error, OSError):
+            logger.debug(
+                "#1435: a frissesség-ellenőrzés nem sikerült", exc_info=True
+            )
+            return ()
 
     def rescan(self) -> None:
         if self._sync_running:

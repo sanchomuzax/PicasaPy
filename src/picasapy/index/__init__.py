@@ -66,6 +66,7 @@ from .schema import SCHEMA_VERSION
 from .sync import (
     add_removed_folder,
     clear_removed_folders_under,
+    folder_scan_stamps,
     removed_folder_paths,
     prune_foreign_folders,
     remove_root,
@@ -98,6 +99,7 @@ __all__ = [
     "face_embedding",
     "face_groups",
     "faces_missing_embedding",
+    "folder_scan_stamps",
     "geotagged_photos",
     "group_unnamed_faces",
     "load_color_tokens",

@@ -364,6 +364,31 @@ def removed_folder_paths(conn: sqlite3.Connection) -> tuple[str, ...]:
     )
 
 
+def folder_scan_stamps(
+    conn: sqlite3.Connection, paths: tuple[str, ...]
+) -> dict[str, tuple[int, int | None]]:
+    """A megadott mappák utoljára LÁTOTT pecsétje (mtime_ns, ini_mtime_ns).
+
+    A `folder_scan_state` táblát a szinkron amúgy is vezeti — ez csak
+    OLVASSA (#1435), új séma nincs. A hívó (`app/folder_freshness.py`)
+    ehhez hasonlítja a lemezen mért pecsétet, és csak eltérésnél kér
+    teljes újraolvasást. A még sosem látott mappa egyszerűen kimarad a
+    szótárból."""
+    if not paths:
+        return {}
+    _ensure_scan_state(conn)
+    placeholders = ",".join("?" for _ in paths)
+    return {
+        row["path"]: (row["mtime_ns"], row["ini_mtime_ns"])
+        for row in conn.execute(
+            "SELECT s.path, s.mtime_ns, s.ini_mtime_ns"
+            " FROM folder_scan_state s JOIN folders f ON f.path = s.path"
+            f" WHERE s.path IN ({placeholders})",
+            paths,
+        )
+    }
+
+
 def _make_skip(conn: sqlite3.Connection):
     """Kihagyás-predikátum az inkrementális rescanhez (#143).
 

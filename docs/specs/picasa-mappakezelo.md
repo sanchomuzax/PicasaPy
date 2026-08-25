@@ -2330,6 +2330,39 @@ IAT-rekesz **minden** `.text`-beli 4 bájtos előfordulásának keresése.
 *Bizonyítottsági fok: **megerősített** — nyers bájtkeresés a teljes
 `.text`-en (elcsúszás-mentes) + a hívási hely diszasszemblálása.*
 
+### 16.6 Nálunk (megvalósítva, #1275 + #1435)
+
+A 16.3 következtetése — **az esemény gyorsítás, a lekérdezés a garancia** —
+két lépcsőben épült be.
+
+| réteg | mit fed le | hol |
+|---|---|---|
+| inotify-figyelő (watchdog) | minden esemény, HELYI lemezen | `scanner/watcher.py` |
+| kiválasztott mappa újraolvasása, 10 mp | új / törölt / **helyben átírt** fájl | `app/library_controller.py::_poll_current_folder` |
+| feed többi mappája, körbeforgó pecsét | új / törölt fájl, ini-változás | `app/folder_freshness.py` (#1435) |
+| teljes rescan, 5 perc | a fa egésze | `LibraryMixin.rescan` |
+
+#### Amiben az eredeti TÖBBET tud nálunk — és miért nem baj
+
+A `0x17` szűrőben benne van a `FILE_NOTIFY_CHANGE_LAST_WRITE` bit, tehát
+az eredeti **értesítést kap a helyben átírt fájlról is**. A mi
+inotify-figyelőnk ugyanezt megkapja — de **csak helyi lemezen**. Hálózati
+megosztáson (a tulajdonos NAS-a) egyik sem kap eseményt, és ott a
+lekérdezés marad.
+
+⚠️ **Lemért korlát (#1435):** a helyben átírt fájl a mappa mtime-ját NEM
+lépteti (a könyvtárbejegyzés változatlan), ezért
+
+- a **inkrementális** 5 perces rescan kihagyja a mappát (`_make_skip`), és
+- a #1435 olcsó pecsétje (mappa-stat + ini-stat) sem látja.
+
+Ezt az esetet hálózati megosztáson jelenleg **csak a kiválasztott mappa**
+tízmásodpercenkénti teljes újraolvasása fedi le. A feed többi mappájában
+helyben átírt fájl a következő `incremental=False` teljes syncig elavult
+marad. Ez tudatos csere: a teljes újraolvasás fájlonként ~2 művelet
+(mérés), a pecsét mappánként 2 — a NAS mért 200/mp korlátja mellett a
+látszó mappák sűrű teljes újraolvasása valódi kárt okozna.
+
 ## 17. Az OK MENTÉSI ÚTJA — a 12.1 pont lezárása (2026-08-24)
 
 A 12. lista 1. pontja azt kérte, ami a rádiógombtól a fájlkiíróig vezet.
