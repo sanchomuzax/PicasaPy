@@ -14,6 +14,8 @@ property-ket állítanánk.
 
 from __future__ import annotations
 
+import time
+
 import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, Qt, QUrl
 from PySide6.QtGui import QGuiApplication, QWheelEvent
@@ -55,6 +57,79 @@ _FOLDERS = [
 ]
 
 
+# --------------------------------------------------------------------------
+# Várakozás — #1463
+#
+# Ebben a fájlban korábban három fali órás `QTest.qWait(N)` állt (a fixture
+# 80 ms-a, a `_settle` 80 ms-a és a görgetés 300 ms-a). Mindhárom azt
+# FELTÉTELEZTE, hogy N ezredmásodperc alatt megtörténik, amire várunk;
+# terhelt, négymagos gépen ez valódi hiba nélkül ad pirosat. Helyette
+# határidős poll: a VALÓDI feltételt figyeljük, és amint teljesül, azonnal
+# továbbengedünk.
+# --------------------------------------------------------------------------
+def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+    """Határidős várakozás: a feltételt figyeli, nem az órát (#1463).
+
+    #918: fejnélküli környezetben az elrendezés késik — egyetlen
+    `processEvents()` után a méretek még a kezdeti állapotot mutatják."""
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        try:
+            if feltetel():
+                return True
+        except (AttributeError, TypeError, RuntimeError):
+            pass
+        time.sleep(0.01)
+    qt_app.processEvents()
+    try:
+        return bool(feltetel())
+    except (AttributeError, TypeError, RuntimeError):
+        return False
+
+
+def _var_stabil(qt_app, minta, masodperc: float = 5.0) -> bool:
+    """Megvárja, amíg a `minta()` KÉT EGYMÁST KÖVETŐ mérésben azonos.
+
+    Ahol nincs egyetlen logikai feltétel, csak „álljon meg az elrendezés”,
+    ott ez a helyes várakozás (a repóban már bevált idióma:
+    `test_collage_view_and_edit_1001.py::_stabil_kozeppont`)."""
+    elozo: list = []
+
+    def _egyezik() -> bool:
+        mostani = minta()
+        stabil = bool(elozo) and elozo[0] == mostani
+        elozo[:] = [mostani]
+        return stabil
+
+    return _var(qt_app, _egyezik, masodperc)
+
+
+def _var_a_hasab_elrendezesere(qt_app, pane) -> None:
+    """Megvárja, amíg a hasáb elrendezése MEGÁLL (#1463).
+
+    A minta a hasáb tartalommagassága a két nézet (lapos lista, fa)
+    magasságával együtt. Előbb megvárjuk, hogy legyen egyáltalán tartalom
+    — enélkül a kezdeti csupa-0 minta két mérésben „stabilnak” látszana, és
+    a poll a tördelés ELŐTT engedne tovább.
+
+    Szándékosan nem a kirajzolt fasorokra várunk: lapos módban (`tree=False`)
+    egyetlen fasor sincs, és pont ezt állítja a
+    `test_a_lapos_lista_az_alapallapot`."""
+    flickable = _child(pane, "folderPaneFlickable")
+    lista = _child(pane, "folderListView")
+    fa = _child(pane, "folderHierarchyView")
+    _var(qt_app, lambda: flickable.property("contentHeight") > 0)
+    _var_stabil(
+        qt_app,
+        lambda: (
+            round(flickable.property("contentHeight"), 3),
+            round(lista.property("height"), 3),
+            round(fa.property("height"), 3),
+        ),
+    )
+
+
 @pytest.fixture
 def render_pane(qt_app):
     """Kirajzolt `QQuickView` a FolderPane-nel + egy élő fa-vezérlővel.
@@ -88,8 +163,11 @@ def render_pane(qt_app):
         view.resize(_HASAB_SZELESSEG, height)
         view.show()
         QTest.qWaitForWindowExposed(view)
-        QTest.qWait(80)
-        qt_app.processEvents()
+        # #1463: itt korábban `QTest.qWait(80)` állt — fali óra, ami azt
+        # feltételezte, hogy a hasáb 80 ms alatt kitördeli magát. Terhelt,
+        # négymagos gépen ez hamis pirosat ad; most magát az elrendezés
+        # megállását várjuk ki.
+        _var_a_hasab_elrendezesere(qt_app, pane)
 
         _KEEPALIVE.extend((engine, component, view, pane, hierarchy))
         return view, pane, hierarchy
@@ -123,11 +201,17 @@ def _rendered_tree_paths(pane) -> set[str]:
     }
 
 
-def _settle(qt_app):
+def _settle(qt_app, pane):
     """A `ListView` a delegátumokat a következő polish-körben hozza létre —
-    egyetlen `processEvents()` kevés hozzá."""
-    QTest.qWait(80)
-    qt_app.processEvents()
+    egyetlen `processEvents()` kevés hozzá.
+
+    #1463: a helyén korábban `QTest.qWait(80)` állt. A kilenc hívó KÜLÖNBÖZŐ
+    dolgokat állít be (kinyitás, csukás, kijelölés), ezért nincs egyetlen
+    közös logikai feltétel — a közös igazság az, hogy a KIRAJZOLT fasorok
+    halmaza álljon meg. Ezt figyeljük: két egymást követő mérésben legyen
+    azonos a `_rendered_tree_paths(pane)`. Az, hogy MI lett a halmaz, marad
+    a hívó teszt állítása — az őr foga tehát nem tompul."""
+    _var_stabil(qt_app, lambda: _rendered_tree_paths(pane))
 
 
 def _send_wheel(qt_app, view, item, *, angle_delta: int = -120):
@@ -179,7 +263,7 @@ class TestAKetNezetmodKizarjaEgymast:
         _view, pane, _hierarchy = render_pane(tree=True)
 
         pane.setProperty("foldersCollapsed", True)
-        _settle(qt_app)
+        _settle(qt_app, pane)
 
         assert _rendered_tree_paths(pane) == set(), (
             "a csukott Mappák gyűjtemény tartalma nem látszhat"
@@ -194,7 +278,7 @@ class TestAFaAdataAVezerlobolJon:
         _view, pane, hierarchy = render_pane(tree=True)
 
         hierarchy.expandAll()
-        _settle(qt_app)
+        _settle(qt_app, pane)
 
         paths = _rendered_tree_paths(pane)
         for folder in _FOLDERS:
@@ -207,7 +291,7 @@ class TestAFaAdataAVezerlobolJon:
         TELJES tartalmát kirakja — pont úgy, mint a lapos lista."""
         _view, pane, hierarchy = render_pane(tree=True)
         hierarchy.expandAll()
-        _settle(qt_app)
+        _settle(qt_app, pane)
 
         tree_view = _child(pane, "folderHierarchyView")
         sorok = len(hierarchy.rows)
@@ -221,7 +305,7 @@ class TestAKijelolesMindketIranybanAtjar:
     ):
         _view, pane, hierarchy = render_pane(tree=True)
         hierarchy.expandAll()
-        _settle(qt_app)
+        _settle(qt_app, pane)
         kapott: list[str] = []
         pane.folderChosen.connect(kapott.append)
 
@@ -243,7 +327,7 @@ class TestAKijelolesMindketIranybanAtjar:
         _view, pane, hierarchy = render_pane(tree=True)
 
         pane.setProperty("selectedPath", "/mnt/photo/Kepek/AI")
-        _settle(qt_app)
+        _settle(qt_app, pane)
 
         tree_view = _child(pane, "folderHierarchyView")
         assert tree_view.property("selectedPath") == "/mnt/photo/Kepek/AI"
@@ -260,7 +344,7 @@ class TestAJobbklikkASorSajatMenujetAdja:
     def test_a_fasor_a_hierfolder_menut_nyitja(self, render_pane, qt_app):
         view, pane, hierarchy = render_pane(tree=True)
         hierarchy.expandAll()
-        _settle(qt_app)
+        _settle(qt_app, pane)
 
         sorok = {
             item.objectName()[len("hierRow:"):]: item
@@ -277,10 +361,19 @@ class TestAJobbklikkASorSajatMenujetAdja:
             Qt.KeyboardModifier.NoModifier,
             kozep.toPoint(),
         )
-        _settle(qt_app)
-
+        # #1463: itt korábban `_settle(qt_app)` állt, ami fali órás
+        # `QTest.qWait(80)`-at jelentett. A kirajzolt fasorokra várni itt
+        # SEMMIT nem érne (a jobbklikk nem változtatja őket) — a valódi
+        # feltétel az, hogy megjelenjen VALAMELYIK menü. Hogy a HELYES
+        # nyílt-e meg, azt az alatta lévő két állítás mondja meg.
         hier_menu = _child(pane, "hierFolderContextMenu")
         lista_menu = _child(pane, "folderListContextMenu")
+        _var(
+            qt_app,
+            lambda: hier_menu.property("visible")
+            or lista_menu.property("visible"),
+        )
+
         assert hier_menu.property("visible") is True, (
             "a fasor jobbklikkje nem a HierFolder menüt adta (#732-osztály)"
         )
@@ -304,7 +397,7 @@ class TestAHasabEgyetlenGorgetojeMarad:
     ):
         view, pane, hierarchy = render_pane(folders=sok_mappa, tree=True)
         hierarchy.expandAll()
-        _settle(qt_app)
+        _settle(qt_app, pane)
 
         flickable = _child(pane, "folderPaneFlickable")
         assert flickable.property("contentHeight") > view.height(), (
@@ -313,8 +406,10 @@ class TestAHasabEgyetlenGorgetojeMarad:
         assert flickable.property("contentY") == 0
 
         _send_wheel(qt_app, view, _child(pane, "folderHierarchyView"))
-        QTest.qWait(300)
-        qt_app.processEvents()
+        # #1463: itt korábban `QTest.qWait(300)` állt — a `Flickable`
+        # lassulásának becsült ideje. A valódi feltétel maga az állítás
+        # előfeltétele: elmozdult-e a tartalom.
+        _var(qt_app, lambda: flickable.property("contentY") > 0)
 
         assert flickable.property("contentY") > 0, (
             "a fa elnyelte a görgő-eseményt — a hasáb nem mozdult (#730)"
@@ -325,7 +420,7 @@ class TestAHasabEgyetlenGorgetojeMarad:
         görgető rétegünk lenne egymáson."""
         _view, pane, hierarchy = render_pane(folders=sok_mappa, tree=True)
         hierarchy.expandAll()
-        _settle(qt_app)
+        _settle(qt_app, pane)
 
         lista = _child(pane, "folderHierarchyList")
         assert lista.property("interactive") is False

@@ -122,13 +122,25 @@ def _kattints(window, item: QQuickItem, qt_app) -> None:
     qt_app.processEvents()
 
 
-def _duplan_kattints(window, item: QQuickItem, qt_app) -> None:
+def _duplan_kattints(window, item: QQuickItem, qt_app, amig=None) -> None:
+    """Valódi duplakattintás; `amig` a kattintás KÖVETKEZMÉNYE.
+
+    #1463: korábban a kattintás után fix `QTest.qWait(30)` állt, a hívó
+    pedig azonnal állított — vagyis a teszt arra fogadott, hogy 30 ms elég.
+    Terhelt, négymagos gépen ez hamis pirosat ad. Az `amig` predikátummal a
+    hívóhely megmondja, MIRE vár, és a várakozás azonnal továbbenged, amint
+    az bekövetkezett."""
     pont = _stabil_kozeppont(item, qt_app)
     QTest.mouseDClick(
         window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, pont
     )
     qt_app.processEvents()
-    QTest.qWait(30)
+    if amig is None:
+        # Nincs megnevezett következmény: marad a fali óra. Új hívónál ez ne
+        # maradjon így — a hívóhelyre illő feltételt kell megadni.
+        QTest.qWait(30)
+    else:
+        _var(qt_app, amig)
     qt_app.processEvents()
 
 
@@ -268,7 +280,15 @@ class TestADuplakattintas:
         window, controller = kollazs
         csomopont = _elem(window, "collageNode1")
 
-        _duplan_kattints(window, csomopont, qt_app)
+        # #1463: a poll feltétele PONTOSAN az, amit az alábbi állítás mér —
+        # a bukás így az eredeti, beszédes állításon jelentkezik (kiírja a
+        # tényleges kijelölést), nem a várakozáson.
+        _duplan_kattints(
+            window,
+            csomopont,
+            qt_app,
+            amig=lambda: list(controller.collageSelection) == [1],
+        )
 
         # a lenyomás maga jelöl ki (`picasa-eger-es-kijeloles.md` 2.) —
         # ha az esemény mégis másik képre esett, azt itt tudjuk meg, nem

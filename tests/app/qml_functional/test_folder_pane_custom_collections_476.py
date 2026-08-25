@@ -17,11 +17,14 @@ deklarált) gyerekei — a benne lévő `CollectionHeader` és a belső `Repeate
 
 from __future__ import annotations
 
+import time
+
 import pytest
 from PySide6.QtCore import (
     Property,
     QMetaObject,
     QObject,
+    QPoint,
     QPointF,
     Q_ARG,
     Q_RETURN_ARG,
@@ -56,6 +59,69 @@ pytestmark = pytest.mark.skipif(
 )
 
 _KEEPALIVE = []
+
+
+# --------------------------------------------------------------------------
+# Várakozás — #1463
+#
+# A (c) kattintás-teszt korábban fali órás `QTest.qWait(50)`-nel várt arra,
+# hogy a `ColumnLayout` kitördelje a gyűjtemény mappa-sorát. Az indok jó
+# volt (kitördeletlen soron a kattintás mellétrafál), az 50 ms viszont
+# találgatás: terhelt, négymagos gépen nem elég, és a kattintás ilyenkor
+# NÉMÁN a semmibe megy — a teszt valódi hiba nélkül vált pirosra.
+# --------------------------------------------------------------------------
+def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+    """Határidős várakozás: a feltételt figyeli, nem az órát (#1463).
+
+    #918: fejnélküli környezetben az elrendezés késik — egyetlen
+    `processEvents()` után a méretek még a kezdeti állapotot mutatják."""
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        try:
+            if feltetel():
+                return True
+        except (AttributeError, TypeError, RuntimeError):
+            pass
+        time.sleep(0.01)
+    qt_app.processEvents()
+    try:
+        return bool(feltetel())
+    except (AttributeError, TypeError, RuntimeError):
+        return False
+
+
+def _var_stabil(qt_app, minta, masodperc: float = 5.0) -> bool:
+    """Megvárja, amíg a `minta()` KÉT EGYMÁST KÖVETŐ mérésben azonos.
+
+    A repóban bevált idióma (`test_collage_view_and_edit_1001.py::
+    _stabil_kozeppont`) arra az esetre, amikor nincs egyetlen logikai
+    feltétel, csak annyi, hogy „álljon meg az elrendezés”."""
+    elozo: list = []
+
+    def _egyezik() -> bool:
+        mostani = minta()
+        stabil = bool(elozo) and elozo[0] == mostani
+        elozo[:] = [mostani]
+        return stabil
+
+    return _var(qt_app, _egyezik, masodperc)
+
+
+def _kozeppont(item) -> tuple[float, float]:
+    """Az elem középpontja az ABLAK koordinátarendszerében."""
+    pont = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
+    return (round(pont.x(), 3), round(pont.y(), 3))
+
+
+def _var_a_sor_geometriajara(qt_app, row) -> None:
+    """A kattintás helyét CSAK kitördelt, MEGÁLLT soron szabad kiszámolni.
+
+    Előbb legyen egyáltalán mérete, utána álljon meg a középpontja (két
+    egymást követő azonos mérés). Ha a koordináta már eleve rossz, azon
+    utólag semmilyen várakozás nem segít — az esemény a semmibe megy."""
+    _var(qt_app, lambda: row.width() > 0 and row.height() > 0)
+    _var_stabil(qt_app, lambda: _kozeppont(row))
 
 
 class _StubController(QObject):
@@ -263,24 +329,32 @@ class TestCustomCollectionFolderClick:
             [{"name": "Nyaralások", "folders": ["/kepek/balaton"]}]
         )
         qt_app.processEvents()
+
         # a `ColumnLayout` a modell-frissítés utáni újratördelést csak a
         # következő polish-körben végzi el — enélkül a sor szélessége/
-        # pozíciója még 0 maradna, és a kattintás mellétrafálna.
-        QTest.qWait(50)
-        qt_app.processEvents()
-
+        # pozíciója még 0 maradna, és a kattintás mellétrafálna. #1463: ezt
+        # korábban `QTest.qWait(50)` „várta ki”; most magát a sor
+        # geometriáját figyeljük, és amint megáll, azonnal kattintunk.
         pane = shown_view.rootObject()
+        _var(
+            qt_app,
+            lambda: pane.findChild(
+                QObject, "customCollectionsRepeater"
+            ).property("count")
+            == 1,
+        )
         item0 = _collection_item(pane, 0)
         row = _folder_row(item0, "Nyaralások", 0)
         assert row.objectName() == "customCollectionFolder_/kepek/balaton"
+        _var_a_sor_geometriajara(qt_app, row)
 
         received: list[str] = []
         pane.folderChosen.connect(lambda path: received.append(path))
 
-        center = row.mapToScene(QPointF(row.width() / 2, row.height() / 2))
+        kozep_x, kozep_y = _kozeppont(row)
         QTest.mouseClick(
             shown_view, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
-            center.toPoint(),
+            QPoint(round(kozep_x), round(kozep_y)),
         )
         qt_app.processEvents()
 

@@ -73,6 +73,32 @@ def panel(controller):
     return root
 
 
+def _var(feltetel, ms: int = 3000) -> bool:
+    """Esemény-pörgetés HATÁRIDŐVEL, amíg a feltétel teljesül — #1463.
+
+    A fali órás `QTest.qWait(N)` arra fogad, hogy N ezredmásodperc alatt
+    megtörténik valami; egy terhelt, négymagos gépen ez hamis pirosat ad. Ez
+    a poll a VALÓDI feltételt figyeli, és amint teljesül, azonnal
+    továbbenged — így gyorsabb IS, meg megbízhatóbb IS.
+
+    (A `test_collage_output_ui_949._var` mintája. Az `AssertionError` azért
+    van elkapva, mert a `_child()` nem-létező elemre azzal jelez, és a
+    keresett csempe a poll elején még hiányozhat.)"""
+    eltelt = 0
+    while eltelt < ms:
+        try:
+            if feltetel():
+                return True
+        except (AssertionError, AttributeError, TypeError, RuntimeError):
+            pass
+        QTest.qWait(25)
+        eltelt += 25
+    try:
+        return bool(feltetel())
+    except (AssertionError, AttributeError, TypeError, RuntimeError):
+        return False
+
+
 def _klipek_lapra(panel):
     """A „Klipek" fülre kattint — VALÓDI egérrel, ahogy a felhasználó."""
     gomb = _child(panel, "collageClipsTabButton")
@@ -83,10 +109,20 @@ def _klipek_lapra(panel):
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
     )
-    QTest.qWait(50)
+    # #1463: itt korábban fix `QTest.qWait(50)` állt. A fülváltás VALÓDI
+    # következménye az, hogy a Klipek lap láthatóvá válik — erre várunk.
+    assert _var(lambda: _child(panel, "collageClipsTab").isVisible() is True), (
+        "a Klipek fülre kattintva a lap nem lett látható"
+    )
 
 
-def _kattints(panel, item):
+def _kattints(panel, item, amig=None):
+    """Valódi egérkattintás az elemre; `amig` a kattintás KÖVETKEZMÉNYE.
+
+    #1463: korábban a kattintás után fix `QTest.qWait(50)` állt, a hívók
+    pedig azonnal állítottak — vagyis a teszt arra fogadott, hogy 50 ms
+    elég. Az `amig` predikátummal a hívóhely megmondja, MIRE vár, és a
+    várakozás azonnal továbbenged, amint az bekövetkezett."""
     kozep = item.mapToScene(item.boundingRect().center())
     QTest.mouseClick(
         panel.property("_view"),
@@ -94,7 +130,12 @@ def _kattints(panel, item):
         Qt.KeyboardModifier.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
     )
-    QTest.qWait(50)
+    if amig is None:
+        # Nincs megnevezett következmény: marad a fali óra. Új hívónál ez
+        # ne maradjon így — a hívóhelyre illő feltételt kell megadni.
+        QTest.qWait(50)
+        return
+    assert _var(amig), "a kattintás várt következménye nem következett be"
 
 
 def _lap(panel):
@@ -149,13 +190,21 @@ class TestFulfelirat:
 
     def test_torles_utan_ujrairodik(self, panel, controller):
         controller.setCollageSelection([0])
-        _kattints(panel, _child(panel, "collageDeleteClips"))
+        _kattints(
+            panel,
+            _child(panel, "collageDeleteClips"),
+            amig=lambda: controller.collageClipCount == 2,
+        )
         assert controller.collageClipCount == 2
         assert _fulfelirat(panel) == "Clips (2)"
 
     def test_felvetel_utan_ujrairodik(self, panel, controller):
         controller.addClips([1])
-        QTest.qWait(50)
+        # #1463: fix `QTest.qWait(50)` helyett a felvétel VALÓDI eredményére
+        # várunk — a klipszám négyre nőtt.
+        assert _var(lambda: controller.collageClipCount == 4), (
+            "az addClips() után a klipszám nem lett 4"
+        )
         assert controller.collageClipCount == 4
         assert _fulfelirat(panel) == "Clips (4)"
 
@@ -183,18 +232,30 @@ class TestKlipLista:
         )
 
     def test_a_csempere_kattintva_kijelolodik(self, panel, controller):
-        _kattints(panel, _child(panel, "collageClip1"))
+        _kattints(
+            panel,
+            _child(panel, "collageClip1"),
+            amig=lambda: list(controller.collageSelection) == [1],
+        )
         assert list(controller.collageSelection) == [1]
 
     def test_a_kijelolt_csempe_jelolve_van(self, panel, controller):
         controller.setCollageSelection([2])
-        QTest.qWait(50)
+        # #1463: fix `QTest.qWait(50)` helyett arra várunk, ami az állítás
+        # tárgya — a harmadik csempe felvette a kijelölt állapotot.
+        assert _var(
+            lambda: _child(panel, "collageClip2").property("selected") is True
+        ), "a kijelölés nem jelent meg a csempén"
         assert _child(panel, "collageClip2").property("selected") is True
         assert _child(panel, "collageClip0").property("selected") is False
 
     def test_torles_utan_eltunik_a_csempe(self, panel, controller):
         controller.setCollageSelection([0])
-        _kattints(panel, _child(panel, "collageDeleteClips"))
+        _kattints(
+            panel,
+            _child(panel, "collageDeleteClips"),
+            amig=lambda: not _van(panel, "collageClip2"),
+        )
         assert _van(panel, "collageClip1")
         assert not _van(panel, "collageClip2")
 
@@ -203,22 +264,47 @@ class TestGombok:
     def test_a_torles_a_KIJELOLT_klipeket_veszi_ki(self, panel, controller):
         elso = controller.collageNodes.nodes[0].path
         controller.setCollageSelection([0])
-        _kattints(panel, _child(panel, "collageDeleteClips"))
+        _kattints(
+            panel,
+            _child(panel, "collageDeleteClips"),
+            amig=lambda: controller.collageClipCount == 2,
+        )
         assert [n.path for n in controller.collageNodes.nodes] != [elso]
         assert controller.collageClipCount == 2
 
     def test_kijeloles_nelkul_a_torles_TILTOTT(self, panel, controller):
+        # #1463: ez a fali óra SZÁNDÉKOSAN marad. Az állítás TÁVOLLÉTRE
+        # fogad („a gomb NEM aktív"), amihez nincs olyan feltétel, aminek a
+        # bekövetkeztét ki lehetne várni: a kikapcsolt állapot már a
+        # `setCollageSelection([])` pillanatában fennállhat. A kockázat itt
+        # fordított: terhelt gépen nem hamis PIROS, hanem hamis ZÖLD — ha a
+        # kötés lassan futna le, a teszt a még-nem-frissült állapotot látná.
+        # Az 50 ms ezért a kötés lefutásának ideje, nem várakozási határidő.
         controller.setCollageSelection([])
         QTest.qWait(50)
         assert _child(panel, "collageDeleteClips").property("enabled") is False
 
     def test_a_felvetel_a_konyvtar_kijeloleset_hasznalja(self, panel, controller):
         panel.setProperty("librarySelection", [0, 1])
-        QTest.qWait(50)
-        _kattints(panel, _child(panel, "collageAddClips"))
+        # #1463: fix `QTest.qWait(50)` helyett a gomb ENGEDÉLYEZETTSÉGÉRE
+        # várunk. Ez nem kényelmi kérdés: a következő sor VALÓDI egérrel
+        # kattint, és egy letiltott gomb a kattintást elnyeli — a teszt így
+        # nem a felvételt, hanem a saját sietségét mérné.
+        assert _var(
+            lambda: _child(panel, "collageAddClips").property("enabled") is True
+        ), "a könyvtár-kijelölés nem tette aktívvá a felvétel gombot"
+        _kattints(
+            panel,
+            _child(panel, "collageAddClips"),
+            amig=lambda: controller.collageClipCount == 5,
+        )
         assert controller.collageClipCount == 5
 
     def test_ures_konyvtar_kijelolesnel_a_felvetel_TILTOTT(self, panel):
+        # #1463: ez a fali óra SZÁNDÉKOSAN marad — ugyanaz az eset, mint a
+        # törlés-gombnál fentebb. Az állítás TÁVOLLÉTRE fogad („a felvétel
+        # gomb NEM aktív"), amire nincs kivárható feltétel. Terhelt gépen a
+        # kockázat hamis ZÖLD (a kötés még nem futott le), nem hamis piros.
         panel.setProperty("librarySelection", [])
         QTest.qWait(50)
         assert _child(panel, "collageAddClips").property("enabled") is False
@@ -229,7 +315,11 @@ class TestGombok:
         dolga), ezért a panel jelzést ad; a lapot nem zárja be."""
         kaptunk = []
         panel.getMoreClipsRequested.connect(lambda: kaptunk.append(1))
-        _kattints(panel, _child(panel, "collageGetMoreClips"))
+        _kattints(
+            panel,
+            _child(panel, "collageGetMoreClips"),
+            amig=lambda: kaptunk == [1],
+        )
         assert kaptunk == [1]
         assert controller.collageOpen is True
 

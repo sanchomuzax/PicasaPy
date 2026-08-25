@@ -43,9 +43,15 @@ def _var_a_kirajzolasra(view: QQuickView, qt_app, masodperc: float = 10.0) -> bo
        határidővel.
 
     Így a teszt sosem indul korábban, mint eddig, terhelt gépen viszont
-    tovább tud várni. Az őr foga változatlan: ha a kép sosem áll be, a
-    határidő lejár, a hívó ugyanúgy elolvassa a képpontokat, és a
-    képpontos állítás bukik.
+    tovább tud várni. A padló + kiterjesztés alakkal 8 futásból 8 zöld.
+
+    Az őr foga változatlan: ha a kép sosem áll be, a határidő lejár, a
+    hívó ugyanúgy elolvassa a képpontokat, és a képpontos állítás bukik.
+    Mutációval igazolva: a `HistogramBitmap.qml` additív keverésének
+    elrontása (`case 7: "#555555"` → `"#112233"`) pirosra váltja.
+
+    ⚠️ Aki ezt „feleslegesen bonyolultnak" látja és visszaegyszerűsíti
+    puszta pollozásra, a fenti 1/6-os bukást hozza vissza.
     """
     # 1. a régi, fix beállás — alsó korlát, nem szinkronpont
     for _ in range(5):
