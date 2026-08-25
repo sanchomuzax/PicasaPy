@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Belső
+- **A tesztek már nem írják át egymás alól a rendszerfüggvényeket (#1375).**
+  A tesztek egy része úgy cserélt ki szabványos függvényeket (fájlmozgatás,
+  külső program indítása, lemezműveletek), hogy a csere a futás idejére az
+  EGÉSZ programra érvényes volt, nem csak a vizsgált részre. Ebből a
+  háttérszálakkal együtt futó tesztek egymás viselkedését írhatták át. A
+  71 érintett hely mostantól a saját moduljának fogantyúját cseréli, és egy
+  őr-teszt vigyáz rá, hogy ne kerüljön vissza a régi alak. A felhasználó
+  ebből semmit nem lát; a haszna az, hogy a hibajelzéseink megbízhatóbbak.
+
 ## [0.8.94] – 2026-08-25
 
 ### Javítva
