@@ -64,8 +64,17 @@ feladata — ez a modul csak a felderítést és a javaslat-számítást végzi.
   **minden oszlopa külön `.pmp` fájl**.
 - Fájlszerkezet: fejléc (oszlop adattípusa: string / float / int + rekordszám),
   utána a nyers rekordok egymás után, **szeparátor nélkül**.
-- `thumbindex.db` / `thumbs_index.db`: bináris indexfájlok — a PMP-rekordok és a
-  fizikai fájlrendszer (képek/mappák abszolút útvonalai) összerendelése.
+- `thumbindex.db`: az **útvonal-index** — a PMP-sorok és a fizikai
+  fájlrendszer (képek/mappák abszolút útvonalai) összerendelése.
+  Magic `0x40466666`, a bejegyzésszám a `+4`-en.
+- `<nev>_index.db` (`thumbs_index.db`, `thumbs2_index.db`,
+  `previews_index.db`, `bigthumbs_index.db`, `albums_index.db`,
+  `facetemplatesV2_index.db`): **gyorsítótár-indexek**, teljesen más
+  formátum — magic `0x3FCCCCCD`, a bejegyzésszám a `+8`-on. Nem
+  útvonalakat tárolnak, hanem bájttartományt a párban álló `<nev>_0.db`-be.
+  Részletes formátum: „Az `*_index.db` formátum" szakasz lent.
+  ⚠️ A két fájl neve megtévesztően hasonló, a tartalmuk semmiben nem az —
+  aki a `thumbs_index.db`-t útvonal-indexként olvassa, azonnal elhasal (#1444).
 - Sérülés esetén a Picasa a `.pmp` fájlokat törli, a `scanlist.txt`,
   `thumbindex.db`, `thumbs_index.db` fájlokat megtartja, és az ini + EXIF/XMP
   adatokból újraépít.
@@ -397,6 +406,150 @@ méretek nem önkényesek: a 72/144/288 duplázás azt jelenti, hogy a kisebb
 szint a nagyobbikból **pontos felezéssel** előállítható — ez a szintek közti
 generálást is olcsóvá teszi.
 
+### Az `*_index.db` formátum — MÉRVE 11 fájlon, két adatbázison (2026-08-25, #1444)
+
+> **Ez a szakasz JAVÍTJA a lenti ⛔ negatív eredmény 1. pontjának szerkezeti
+> állítását.** Az index nem „12 bájtos rekordokból álló hash-tábla": három,
+> egyenként darabszámmal előtagolt `uint32`-vektor, és a második-harmadik
+> vektor **eltolás és hossz** a párban álló `<nev>_0.db` adatfájlba. Ezzel a
+> `sorindex → bélyegkép` leképezés **előáll** — ld. lent.
+
+#### A tényleges elrendezés
+
+```
++0    uint32  magic       = 0x3FCCCCCD   (ugyanaz, mint a .pmp oszlopoké)
++4    uint32  ismeretlen  = 0            (mind a 11 mért fájlban 0)
++8    uint32  n           = bejegyzésszám
++12           uint32 kulcs[n]
+              uint32 n                   (vektor-darabszám, ismét)
+              uint32 eltolas[n]
+              uint32 n                   (vektor-darabszám, ismét)
+              uint32 hossz[n]
+```
+
+Vagyis: 8 bájt fájlfejléc (magic + egy nulla mező), utána **három,
+darabszámmal előtagolt `uint32`-vektor**. A teljes méret ebből
+`8 + 3 × (4 + 4n)` = **`20 + 12n`**, maradék nélkül.
+
+#### Mérési bizonyíték — a méret
+
+| fájl | méret | `n` (`+8`) | `20 + 12n` | `12 + 12n` |
+|---|---:|---:|---:|---:|
+| `arcok/thumbs_index.db` | 40 076 | 3 338 | **40 076** ✅ | 40 068 ✗ |
+| `arcok/thumbs2_index.db` | 40 076 | 3 338 | **40 076** ✅ | 40 068 ✗ |
+| `arcok/previews_index.db` | 71 672 | 5 971 | **71 672** ✅ | 71 664 ✗ |
+| `arcok/bigthumbs_index.db` | 74 048 | 6 169 | **74 048** ✅ | 74 040 ✗ |
+| `arcok/albums_index.db` | 1 748 | 144 | **1 748** ✅ | 1 740 ✗ |
+| `arcok/facetemplatesV2_index.db` | 40 076 | 3 338 | **40 076** ✅ | 40 068 ✗ |
+| `nagy/thumbs_index.db` | 1 689 080 | 140 755 | **1 689 080** ✅ | 1 689 072 ✗ |
+| `nagy/thumbs2_index.db` | 1 689 080 | 140 755 | **1 689 080** ✅ | 1 689 072 ✗ |
+| `nagy/previews_index.db` | 3 287 072 | 273 921 | **3 287 072** ✅ | 3 287 064 ✗ |
+| `nagy/bigthumbs_index.db` | 3 287 072 | 273 921 | **3 287 072** ✅ | 3 287 064 ✗ |
+| `nagy/albums_index.db` | 28 472 | 2 371 | **28 472** ✅ | 28 464 ✗ |
+
+(`arcok/` = `research/testdata/Picasa2-arcok/Picasa2/db3/`, `nagy/` =
+`research/testdata/Picasa2/db3/`.)
+
+A „12 bájtos fejléc + n × 12 bájtos rekord" olvasat **mind a 11 fájlon
+pontosan 8 bájttal kevesebbet** ad — ez a két extra vektor-darabszám. És a
+darabszám mind a három vektor előtt tényleg ott áll: a `+8`, a `+12+4n` és a
+`+16+8n` eltoláson **mind a 11 fájlban ugyanaz az `n`** áll.
+
+#### Miért látszott hash-nek mind a három mező
+
+A régi olvasat a rekord-ablakot a **kulcsvektoron belül** csúsztatta. A lenti
+⛔ szakasz idézett „2. rekordja" — `0xdb3b20b7 0x8b14c30a 0x36fd4724` — a
+`+44`, `+48`, `+52` eltoláson ül, ami a helyes olvasatban `kulcs[8]`,
+`kulcs[9]`, `kulcs[10]`: **három egymást követő kulcs**, nem egy rekord három
+mezője. Ezért tűnt mindhárom mező egyenletesen szórtnak, és ezért fordult elő,
+hogy „néhány rekordban mindhárom mező azonos" (egymást követő, azonos kulcsú
+slotok — pl. egy fotó és a hozzá tartozó arckivágások).
+
+#### Mit jelent a három vektor
+
+**`eltolas` és `hossz` — MÉRVE, nem következtetve.** A `hossz[i] > 0` slotok
+`[eltolas[i], eltolas[i] + hossz[i])` tartományai:
+
+- **egyetlen átfedés sincs** egyik fájlban sem (11/11);
+- a legnagyobb végük **bájtra pontosan** a párban álló `<nev>_0.db` mérete
+  (11/11) — pl. `arcok/thumbs_index.db` → 15 071 085 = `thumbs_0.db` mérete,
+  `nagy/previews_index.db` → 711 231 091 = `previews_0.db` mérete.
+
+Két, egymástól független egyezés 11 fájlon, két adatbázison — ez teszi az
+„eltolás + hossz" olvasatot megerősítetté.
+
+A tartományok nem hézagmentesek (pl. `nagy/thumbs_index.db`: 2 729 hézag
+133 453 slotra). *Következtetés, nem mérés:* ez felszabadult hely, amit egy
+újra-gyorstárazott, hosszabb bélyegkép hagyott maga után.
+
+**`kulcs` — NEM fejtettük meg.** Amit MÉRTÜNK róla:
+
+- `kulcs[i] ≠ 0` és `hossz[i] > 0` a 11-ből 10 fájlon pontosan együtt jár;
+  az `arcok/albums_index.db`-ben 9 slotnak (109–117) érvényes tartománya van
+  **nulla kulccsal**. → **A „használt-e a slot" próba a `hossz`, nem a kulcs.**
+- A `previews_index.db` és a `bigthumbs_index.db` kulcsa a nagy adatbázisban
+  **minden használt sloton azonos** (14 531/14 531).
+- Ugyanott a `thumbs_index.db` kulcsa **egyetlen sloton sem** egyezik a
+  `previews_index.db`-ével (0/14 531) → a kulcs tárankénti, nem globális
+  fotó-azonosító.
+- Az `arcok/thumbs_index.db`-ben egy fotó sora és a hozzá tartozó
+  arckivágás-sorok **ugyanazt a kulcsot** viselik (pl. `0xeaf5d787` a 20.,
+  111., 112. és 113. sloton, ahol a 111–113 szülője a 20.).
+- A `facetemplatesV2_index.db` kulcsa **minden használt sloton `1`**, a hossz
+  pedig állandó 1 044 bájt.
+
+*Következtetés (nem mérés):* a kulcs érvényességi jelző / tartalom- vagy
+paraméter-függő hash, amivel a Picasa eldönti, hogy a gyorstárazott blob még
+a mai forráshoz tartozik-e. A képzése nincs visszafejtve — aki erre épít,
+előbb mérje le.
+
+#### A sorindex → fájlnév leképezés — MEGVAN
+
+**A slot indexe azonos a `thumbindex.db` sorindexével** (és így a PMP-oszlopok
+sorindexével). Három, egymástól független mérés:
+
+1. **`facetemplatesV2_index.db`**: a 412 használt slot indexhalmaza
+   **elemről elemre azonos** a `thumbindex.db` 412 arc-rekordjának
+   indexhalmazával (üres név + érvényes szülőindex). Nem a darabszám
+   egyezik — maga a halmaz.
+2. **Az üres slotok könyvtárak.** `arcok`: 134 üres slot, **mind a 134** a
+   `thumbindex.db` könyvtár-sora, és egyetlen nem-könyvtár sor sem üres.
+   `nagy`: 7 301 üres slot, **mind a 7 301** könyvtár-sor, nem-könyvtár
+   egy sem. (A 150, illetve 7 669 könyvtárból 16, illetve 368 mégis kapott
+   bélyegképet — ezek a mappa-bélyegképek.)
+3. **Darabszám-egyezés a megfelelő tábla sorszámával.**
+   `arcok/thumbs_index.db` `n` = 3 338 = a `thumbindex.db` bejegyzésszáma =
+   a leghosszabb `imagedata_*.pmp` oszlop. Az `albums_index.db` viszont az
+   **album**-tábla sorszámát követi: `n` = 144 (arcok), illetve 2 371 (nagy)
+   = a leghosszabb `albumdata_*.pmp` oszlop, mindkét adatbázisban.
+
+A fájlnév tehát: slot `i` → a `thumbindex.db` `i`-edik sora →
+`resolve_path()` (a `pmpimport/thumbindex.py`-ban) → teljes Windows-útvonal.
+(Az `albums_index.db` sorindexe ennek megfelelően nem képre, hanem albumra
+mutat.)
+
+**Két fenntartás, kimondva:**
+
+- A `previews_index.db` / `bigthumbs_index.db` `n`-je **nagyobb**, mint a
+  `thumbindex.db` sorszáma (5 971 vs. 3 338; 273 921 vs. 140 758), és az
+  `arcok` készletben 186 használt slot a `thumbindex.db` végén **túlmutat**.
+  *Következtetés (nem mérés):* ezek a vektorok csak nőnek, zsugorodni nem
+  zsugorodnak, így elavult sorok maradnak bennük egy korábbi, nagyobb
+  katalógusból. Amíg ez nincs lemérve, a `previews`/`bigthumbs` párosítást
+  **ellenőrizni kell**, nem feltételezni.
+- A nagy adatbázisban a `thumbs_index.db` `n`-je 140 755, a `thumbindex.db`-é
+  és a leghosszabb `imagedata_*.pmp` oszlopé egyaránt 140 758 — **hárommal
+  kevesebb**. A gyorsítótár-vektor tehát lemaradhat az útvonal-index mögött;
+  a legvégén lévő sorokra nincs slot. Aki `thumbs_index[i]`-t olvas, előbb
+  nézze meg, hogy `i < n`.
+
+#### Adatvédelmi megjegyzés
+
+Az `*_index.db` fájlok **kizárólag `uint32`-eket tartalmaznak** — a parszolás
+mind a 11 fájlon maradék nélkül elfogyasztotta a teljes fájlt, tehát nincs
+bennük fájlnév, sem képtartalom. Maga az adatbázis a felhasználó saját
+fotóiról készült, a repóba nem kerül.
+
 ### ⛔ NEGATÍV EREDMÉNY: a bélyegkép-tár NEM használható golden-referenciának (2026-08-23)
 
 **A hipotézis, amit ellenőriztem** (a #951 kapcsán): ha a bélyegkép-tár a
@@ -406,25 +559,24 @@ golden-pár **export kérése nélkül**.
 
 **A hipotézis NEM igazolódott.** Két, egymástól független ok:
 
-#### 1. Az index HASH-alapú — nincs olcsó fájlonkénti párosítás
+#### 1. ~~Az index HASH-alapú — nincs olcsó fájlonkénti párosítás~~ ❌ MEGDŐLT (2026-08-25, #1444)
 
-A három tár indexe egységes szerkezetű:
+> ⚠️ **Ez a pont TÉVES volt, és nem áll fenn.** Az akkori olvasat a
+> rekord-ablakot a kulcsvektoron belül csúsztatta, ezért látszott mindhárom
+> mező hash-nek. A helyes formátum és a bizonyítékok: „Az `*_index.db`
+> formátum" szakasz fent.
+>
+> A tényleges szerkezet **három, darabszámmal előtagolt `uint32`-vektor**
+> (kulcs · eltolás · hossz), és a `sorindex → bélyegkép` leképezés **létezik**:
+> a slot indexe azonos a `thumbindex.db` sorindexével. Így a fájlonkénti
+> párosítás **olcsó**, hash-visszafejtés nélkül.
 
-```
-20 bájt fejléc:  magic 0x3FCCCCCD · uint32 (0) · uint32 rekordszám · ...
-utána:           rekordszám × 12 bájt (3 × uint32)
-```
-
-mérve (kis készlet): `thumbs_index.db` **3 338** rekord (= pontosan a
-`thumbindex.db` bejegyzésszáma), `bigthumbs_index.db` 6 169,
-`previews_index.db` 5 971.
-
-⚠️ **A 12 bájtos rekord három mezője NEM eltolás/hossz**, hanem
-hash-jellegű, egyenletesen szórt 32 bites érték (pl. a 2. rekord:
-`0xdb3b20b7 0x8b14c30a 0x36fd4724`). Néhány rekordban mindhárom mező
-azonos. Vagyis a tár **tartalom-címzett/hash-táblás**, és a
-`sorindex → bélyegkép` leképezés a hash visszafejtése nélkül **nem áll
-elő**.
+*Az eredeti (téves) állítás, a nyom kedvéért:* a rekordot 20 bájtos fejléc
+utáni 12 bájtos, három hash-mezős egységnek olvastuk (pl. a „2. rekord":
+`0xdb3b20b7 0x8b14c30a 0x36fd4724` — valójában `kulcs[8..10]`), és ebből
+arra jutottunk, hogy a tár tartalom-címzett. A darabszám-mérés viszont
+helyes volt: `thumbs_index.db` **3 338** (= a `thumbindex.db`
+bejegyzésszáma), `bigthumbs_index.db` 6 169, `previews_index.db` 5 971.
 
 #### 2. A kontroll-mérés a tartalmi hipotézist sem támogatja
 
@@ -451,16 +603,17 @@ abszolút szám.)*
 > ⛔ **A bélyegkép-tár ezen az úton NEM váltja ki a felhasználói exportot.**
 > A #951 (Finomhangolás kompozit mérése) **továbbra is exportra vár**.
 
-**Ami ettől még nyitva áll:** a hash-index visszafejtésével elvileg
-előállítható a fájlonkénti párosítás, és akkor a tartalmi kérdés
-(szerkesztett vs. nyers képpont) **egyetlen képen** eldönthető lenne. Ez
-azonban önálló, nem kicsi kutatási feladat — és a #951-hez képest
-kerülőút, mert az exportot amúgy is egy perc előállítani.
+**Ami ettől még nyitva áll — 2026-08-25 óta OLCSÓBBAN:** a fájlonkénti
+párosítás már megvan (slot index = `thumbindex.db` sorindex), tehát a
+tartalmi kérdés (szerkesztett vs. nyers képpont) **egyetlen, névvel
+azonosított képen** eldönthető, kutatási kerülőút nélkül. A 2. pont
+(kontroll-mérés) ettől függetlenül **áll**: az továbbra is a tartalmi
+hipotézis ellen szól.
 
-*Bizonyítottsági fok: **megerősített** az index szerkezetére (fejléc- és
-rekordszám-egyezés három fájlon) · **erős** a tartalmi negatív
-eredményre (két készlet kontroll-összevetése) — de nem *megerősített*,
-mert a detektor hibás pozitívjait nem zártam ki egyenként.*
+*Bizonyítottsági fok: az index szerkezetére vonatkozó 1. pont **megdőlt**
+(ld. fent) · **erős** a tartalmi negatív eredményre (két készlet
+kontroll-összevetése) — de nem *megerősített*, mert a detektor hibás
+pozitívjait nem zártam ki egyenként.*
 
 ### A visszaesési sorrend — a kérő útvonalról (2026-08-15)
 
