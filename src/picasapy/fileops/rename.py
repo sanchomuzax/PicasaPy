@@ -20,6 +20,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from picasapy.fileops.originals import originals_follow
 from picasapy.ini import load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -37,9 +38,11 @@ def rename_photo(path: Path, new_name: str) -> Path:
     Raises:
         ValueError: Ha `new_name` üres vagy elérési út elemet tartalmaz.
         FileNotFoundError: Ha `path` nem létezik.
-        FileExistsError: Ha a célnév (fájl vagy ini-szekció) már foglalt —
-            akkor is, ha az ini-szekciót csak az átnevezés közben foglalta
-            el egy párhuzamos író.
+        FileExistsError: Ha a célnév (fájl, ini-szekció vagy a megőrzött
+            eredeti helye) már foglalt — akkor is, ha az ini-szekciót csak az
+            átnevezés közben foglalta el egy párhuzamos író.
+        OSError: Ha a megőrzött eredeti költöztetése bukott el (#1430) —
+            ilyenkor sem a kép, sem az eredetije nem mozdult el.
         IniConflictError: Ha az ini-t egy párhuzamos író miatt tartósan nem
             sikerült ütközésmentesen menteni (a fájl ekkor már át van
             nevezve; az üzenet megmondja, hol maradt a metaadat).
@@ -57,7 +60,12 @@ def rename_photo(path: Path, new_name: str) -> Path:
     if has_ini and load_or_empty(ini_path).section(new_name) is not None:
         raise FileExistsError(f"A célnév ini-szekciója már foglalt: {new_name}")
 
-    path.rename(target)
+    # #1430: a megőrzött eredeti (és a sorszámozott pillanatképek) a képpel
+    # együtt mennek. Előbb ők költöznek, utána a kép — ha a kísérők
+    # költöztetése bukik, a kép el sem indul; ha a kép átnevezése bukik, a
+    # `originals_follow` visszateszi őket.
+    with originals_follow(path, target):
+        path.rename(target)
 
     if has_ini:
         try:

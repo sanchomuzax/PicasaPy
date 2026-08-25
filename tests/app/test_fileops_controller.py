@@ -363,3 +363,59 @@ class TestIniConflictReachesUser:
         controller.movePhoto(str(photo), str(dest))
         assert failures[0][0] == "move"
         assert str(src / ".picasa.ini") in failures[0][1]
+
+
+class TestMegorzottEredeti1430:
+    """#1430: a megőrzött eredeti a képpel költözik, és ha ez nem megy, a
+    felhasználó ÉRTHETŐ üzenetet kap — nem néma elutasítást. A `FileOpsDialogs`
+    az `operationFailed` üzenetét szó szerint kiteszi a hibaablakba, tehát az
+    itt ellenőrzött szöveg az, amit a felhasználó elolvas."""
+
+    def test_atnevezes_viszi_az_eredetit(self, controller, tmp_path):
+        photo = tmp_path / "a.jpg"
+        photo.write_bytes(b"szerkesztett")
+        originals = tmp_path / ".picasaoriginals"
+        originals.mkdir()
+        (originals / "a.jpg").write_bytes(b"eredeti")
+        controller.renamePhoto(str(photo), "b.jpg")
+        assert (originals / "b.jpg").read_bytes() == b"eredeti"
+
+    def test_mozgatas_viszi_az_eredetit(self, controller, tmp_path):
+        src = tmp_path / "forras"
+        dest = tmp_path / "cel"
+        src.mkdir()
+        dest.mkdir()
+        photo = src / "a.jpg"
+        photo.write_bytes(b"szerkesztett")
+        originals = src / ".picasaoriginals"
+        originals.mkdir()
+        (originals / "a.jpg").write_bytes(b"eredeti")
+        controller.movePhoto(str(photo), str(dest))
+        assert (dest / ".picasaoriginals" / "a.jpg").read_bytes() == b"eredeti"
+
+    def test_utban_levo_fajlrol_ertheto_uzenet_megy_ki(self, controller, tmp_path):
+        src = tmp_path / "forras"
+        dest = tmp_path / "cel"
+        src.mkdir()
+        dest.mkdir()
+        photo = src / "a.jpg"
+        photo.write_bytes(b"szerkesztett")
+        (src / ".picasaoriginals").mkdir()
+        (src / ".picasaoriginals" / "a.jpg").write_bytes(b"eredeti")
+        (dest / ".picasaoriginals").mkdir()
+        (dest / ".picasaoriginals" / "a.jpg").write_bytes(b"utban-van")
+
+        failures = []
+        controller.operationFailed.connect(
+            lambda kind, msg: failures.append((kind, msg))
+        )
+        controller.movePhoto(str(photo), str(dest))
+
+        assert failures, "a felhasználó semmilyen visszajelzést nem kapott"
+        kind, message = failures[0]
+        assert kind == "move"
+        # az üzenet megmondja, MI a baj, HOL, és hogy semmi nem változott
+        assert "eredeti" in message.lower()
+        assert str(dest / ".picasaoriginals" / "a.jpg") in message
+        assert "Semmi nem változott" in message
+        assert photo.exists()  # a kép tényleg a helyén maradt

@@ -29,6 +29,7 @@ from pathlib import Path
 from picasapy.fileops.copy import copy_photo
 from picasapy.ini import IniConflictError, IniSaveError
 from picasapy.fileops.move import move_photo
+from picasapy.fileops.originals import originals_slot_free
 from picasapy.fileops.rename import rename_photo
 
 #: A két házirend, ahogy az eredeti két gombja adta.
@@ -115,13 +116,21 @@ def _free_name(path: Path, dest_folder: Path) -> str:
 
     A célban azért, hogy legyen hova mozgatni; a forrásban azért, mert az
     átnevezés ott történik (a testvér fájlokat nem üthetjük el).
+
+    #1430: a MEGŐRZÖTT EREDETI helyének is szabadnak kell lennie mindkét
+    mappában. Az eredeti a képpel együtt költözik, tehát egy korábbi
+    költöztetés árván maradt eredetije foglalttá teszi a pótnevet — ha ezt
+    nem néznénk, a köteg egy elkerülhető hibával állna meg ennél a fájlnál.
     """
     counter = 1
     while True:
         candidate = f"{path.stem}-{counter}{path.suffix}"
-        if not (dest_folder / candidate).exists() and not (
-            path.parent / candidate
-        ).exists():
+        if (
+            not (dest_folder / candidate).exists()
+            and not (path.parent / candidate).exists()
+            and originals_slot_free(dest_folder, candidate)
+            and originals_slot_free(path.parent, candidate)
+        ):
             return candidate
         counter += 1
 
