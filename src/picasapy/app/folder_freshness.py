@@ -40,29 +40,49 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from picasapy.scanner.walker import PICASA_INI_NAME
+from picasapy.scanner.walker import PICASA_INI_LEGACY_NAME, PICASA_INI_NAME
 
 # (mappa mtime_ns, ini mtime_ns vagy None, ha nincs ini)
 FolderStamp = tuple[int, int | None]
+
+#: Az ini-fájl nevei ELSŐBBSÉGI SORRENDBEN.
+#:
+#: ⚠️ Bitre a `scanner/walker.py::_ini_mtime` sorrendjét kell követnie —
+#: a tárolt pecsétet AZ készíti, ezt pedig ahhoz hasonlítjuk. Ha a kettő
+#: eltér, az érintett mappa pecsétje SOHA nem egyezik, tehát minden
+#: körben megkapja a drága teljes újraolvasást, és sosem konvergál.
+#: (A régi Picasa-verziók a `Picasa.ini` nevet írták — a tulajdonos
+#: NAS-mappáit a windowsos Picasa 3 is írja, ez tehát élő eset.)
+_INI_NAMES = (PICASA_INI_NAME, PICASA_INI_LEGACY_NAME)
 
 
 def directory_stamp(folder: str | Path) -> FolderStamp | None:
     """A mappa olcsó változás-pecsétje, vagy None, ha a mappa nem érhető el.
 
-    KÖLTSÉG: pontosan két fájlrendszer-művelet (a mappa statja és az
-    ini statja) — a hívó ezzel a kettővel dönti el, kell-e a drága
-    teljes újraolvasás. A pecsét alakja szándékosan azonos a
-    `folder_scan_state` tárolt párosával (mtime_ns, ini_mtime_ns).
+    KÖLTSÉG: a szokásos esetben (van `.picasa.ini`) pontosan KÉT
+    fájlrendszer-művelet, a felső korlát HÁROM — akkor, ha az első
+    ini-név hiányzik, tehát a másodikat is meg kell néznünk (csak régi
+    `Picasa.ini`, vagy egyáltalán nincs ini).
+
+    A harmadik művelet ára tudatosan vállalt: enélkül a régi nevű ini-t
+    tartalmazó mappa pecsétje SOHA nem egyezne a tárolttal, tehát minden
+    körben a sokkal drágább teljes újraolvasást kapná (ld. `_INI_NAMES`).
+
+    A pecsét alakja szándékosan azonos a `folder_scan_state` tárolt
+    párosával (mtime_ns, ini_mtime_ns).
     """
     folder_path = Path(folder)
     try:
         folder_mtime = os.stat(folder_path).st_mtime_ns
     except OSError:
         return None  # eltűnt, lecsatolt vagy elérhetetlen mappa
-    try:
-        ini_mtime = os.stat(folder_path / PICASA_INI_NAME).st_mtime_ns
-    except OSError:
-        ini_mtime = None  # nincs (még) ini — érvényes állapot, nem hiba
+    ini_mtime = None  # nincs ini — érvényes állapot, nem hiba
+    for name in _INI_NAMES:
+        try:
+            ini_mtime = os.stat(folder_path / name).st_mtime_ns
+            break
+        except OSError:
+            continue
     return (folder_mtime, ini_mtime)
 
 

@@ -63,6 +63,10 @@ def library(tmp_path):
     # lecsatolt NAS-mount pontosan így néz ki), és a sor bent maradna az
     # indexben. A törlés-eset így a valódi helyzetet méri, nem azt.
     make_jpeg(root / "kollazsok" / "masik.jpg")
+    # HARMADIK mappa: enélkül a sweep adagja egyetlen elemű lenne, és a
+    # költség-őr gyakorlatilag semmit nem mérne (a keret 8).
+    (root / "regi").mkdir(parents=True)
+    make_jpeg(root / "regi" / "IMG_9001.jpg")
     return root
 
 
@@ -143,14 +147,14 @@ class TestMasikMappaAFeedben:
         self, controller, library, qt_app
     ):
         controller.selectFolder(str(library / "nyaralas"))
-        assert _var(qt_app, lambda: controller.photos.rowCount() == 4)
+        assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
 
         # a felhasználó a „nyaralas"-t nézi, de a feedben a „kollazsok" is
         # látszik — oda érkezik új kép
         make_jpeg(library / "kollazsok" / "uj_kollazs.jpg")
 
         assert _var(
-            qt_app, lambda: controller.photos.rowCount() == 5
+            qt_app, lambda: controller.photos.rowCount() == 6
         ), (
             "a feedben LÁTSZÓ másik mappa új képe nem jelent meg — a "
             "célzott újraolvasás csak a kiválasztott mappát nézi"
@@ -160,13 +164,76 @@ class TestMasikMappaAFeedben:
         self, controller, library, qt_app
     ):
         controller.selectFolder(str(library / "nyaralas"))
-        assert _var(qt_app, lambda: controller.photos.rowCount() == 4)
+        assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
 
         (library / "kollazsok" / "masik.jpg").unlink()
 
         assert _var(
-            qt_app, lambda: controller.photos.rowCount() == 3
+            qt_app, lambda: controller.photos.rowCount() == 4
         ), "a feedben látszó másik mappa törölt képe ottmaradt"
+
+class TestAtfedoKorok:
+    """Tickenként EGY sweep és EGY szinkron-worker — két egyidejű
+    index-író `OperationalError`-t és felhasználói hibajelzést adna."""
+
+    def test_futo_sweep_alatt_nem_indul_masodik(
+        self, controller, library, qt_app, monkeypatch
+    ):
+        """Akadó mounton a pecsét-kör túlfuthat a 10 másodpercen."""
+        controller.selectFolder(str(library / "nyaralas"))
+        assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
+        inditasok = []
+        piszkos = []
+        monkeypatch.setattr(
+            controller,
+            "_start_background",
+            lambda *a, **k: inditasok.append(k.get("name")),
+        )
+        monkeypatch.setattr(
+            controller, "_on_folders_dirty", lambda m: piszkos.append(m)
+        )
+        controller._sweep_running = True
+        try:
+            controller._poll_current_folder()
+        finally:
+            controller._sweep_running = False
+
+        assert inditasok == [], "az előző kör mellé másodikat indítottunk"
+        assert piszkos == []
+
+    def test_a_kapu_a_kor_vegen_felnyilik(self, controller, library, qt_app):
+        """A jelző nem ragadhat be — különben a frissülés örökre leáll."""
+        controller.selectFolder(str(library / "nyaralas"))
+        assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
+
+        controller._poll_current_folder()
+
+        assert _var(
+            qt_app, lambda: not getattr(controller, "_sweep_running", False)
+        ), "a sweep-kapu beragadt"
+
+    def test_bukott_pecset_utan_is_frissul_a_valasztott_mappa(
+        self, controller, library, qt_app, monkeypatch
+    ):
+        """A #1435 kényelmi gyorsítása NEM béníthatja meg a #1275
+        alapgaranciáját: ha a pecsét-ellenőrzés hibára fut, a kiválasztott
+        mappa jelzésének akkor is ki kell mennie."""
+        controller.selectFolder(str(library / "nyaralas"))
+        assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
+        jelzesek = []
+        controller.watcherDirty.connect(lambda m: jelzesek.append(m))
+
+        def robban(_batch):
+            raise RuntimeError("szimulált index-hiba")
+
+        monkeypatch.setattr(controller, "_stale_feed_folders", robban)
+        controller._poll_current_folder()
+
+        assert _var(qt_app, lambda: len(jelzesek) == 1), (
+            "a pecsét bukása elnyelte a kiválasztott mappa jelzését is"
+        )
+        assert jelzesek[0] == [str(library / "nyaralas")]
+
 
 class TestANASTerheles:
     """A jegy kemény feltétele: a sweep NE terhelje a hálózati megosztást."""
@@ -174,13 +241,15 @@ class TestANASTerheles:
     def test_a_sweep_koltsege_ket_muvelet_mappankent(
         self, controller, library, qt_app, monkeypatch
     ):
-        """Körönként legfeljebb 2 × SWEEP_FOLDERS_PER_TICK művelet."""
+        """Mappánként legfeljebb HÁROM művelet, semmivel sem több.
+
+        ⚠️ Az állítás PONTOS, nem nagyvonalú felső korlát: egy 8-szoros
+        tartalékkal mérő őr akkor is zöld maradna, ha a pecsét mappánként
+        16 műveletbe kerülne — azaz semmit nem bizonyítana."""
         import os as os_modul
 
-        from picasapy.app.library_controller import SWEEP_FOLDERS_PER_TICK
-
         controller.selectFolder(str(library / "nyaralas"))
-        assert _var(qt_app, lambda: controller.photos.rowCount() == 4)
+        assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
 
         hivasok = []
         eredeti = os_modul.stat
@@ -190,14 +259,17 @@ class TestANASTerheles:
             return eredeti(*args, **kwargs)
 
         batch = controller._sweep_candidates(str(library / "nyaralas"))
+        assert len(batch) >= 2, (
+            f"üres/egyelemű adaggal a mérés semmit nem bizonyít: {batch}"
+        )
         monkeypatch.setattr(
             "picasapy.app.folder_freshness.os.stat", szamlalo
         )
         controller._stale_feed_folders(batch)
 
-        assert len(hivasok) <= 2 * SWEEP_FOLDERS_PER_TICK, (
-            f"a sweep {len(hivasok)} műveletet generált — a NAS mért "
-            f"200/mp korlátja mellett ez a költség körönként fizetendő"
+        assert len(hivasok) <= 3 * len(batch), (
+            f"a sweep {len(hivasok)} műveletet generált {len(batch)} "
+            f"mappára — a felső korlát 3/mappa"
         )
 
     def test_valtozatlan_mappara_NEM_fut_teljes_ujraolvasas(
@@ -205,14 +277,14 @@ class TestANASTerheles:
     ):
         """A drága lépés (`sync_folder`) csak eltérő pecsétnél indulhat."""
         controller.selectFolder(str(library / "nyaralas"))
-        assert _var(qt_app, lambda: controller.photos.rowCount() == 4)
+        assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
         assert _var(qt_app, lambda: not controller._sync_running)
 
         # semmi nem változott a lemezen
         aktualis = str(library / "nyaralas")
-        elavult = controller._stale_feed_folders(
-            controller._sweep_candidates(aktualis)
-        )
+        batch = controller._sweep_candidates(aktualis)
+        assert batch, "üres adagon a „nem elavult” állítás üresen is igaz"
+        elavult = controller._stale_feed_folders(batch)
 
         assert elavult == (), (
             f"változatlan mappára is teljes újraolvasást kérnénk: {elavult}"

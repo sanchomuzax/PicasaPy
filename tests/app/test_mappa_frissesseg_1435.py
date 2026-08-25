@@ -27,13 +27,12 @@ from support.jpeg_factory import make_jpeg
 
 
 class TestDirectoryStamp:
-    def test_a_pecset_pontosan_ket_muveletbe_kerul(self, tmp_path, monkeypatch):
-        """A NAS-garancia: mappánként két fájlrendszer-művelet, nem több."""
-        from picasapy.app.folder_freshness import directory_stamp
+    @staticmethod
+    def _muveletszam(monkeypatch, mappa) -> int:
+        """Hány `os.stat` kell egy pecséthez? (CSAK a modul sajátjait
+        számoljuk, hogy a pytest belső statjai ne szennyezzék a mérést.)"""
+        from picasapy.app import folder_freshness
 
-        mappa = tmp_path / "a"
-        mappa.mkdir()
-        make_jpeg(mappa / "k.jpg")
         hivasok = []
         eredeti = os.stat
 
@@ -41,14 +40,32 @@ class TestDirectoryStamp:
             hivasok.append(args[0] if args else None)
             return eredeti(*args, **kwargs)
 
-        monkeypatch.setattr(os, "stat", szamlalo)
+        monkeypatch.setattr(folder_freshness.os, "stat", szamlalo)
+        folder_freshness.directory_stamp(mappa)
+        monkeypatch.undo()
+        return len(hivasok)
 
-        directory_stamp(mappa)
+    def test_a_szokasos_eset_pontosan_ket_muvelet(self, tmp_path, monkeypatch):
+        """A NAS-garancia: `.picasa.ini`-vel rendelkező mappa = 2 művelet.
 
-        assert len(hivasok) == 2, (
-            f"a pecsét {len(hivasok)} műveletbe került, nem 2-be — NAS-on "
-            f"ez a költség mappánként fizetendő: {hivasok}"
-        )
+        Ez a TÖBBSÉGI eset — a PicasaPy maga is ezt a nevet írja."""
+        mappa = tmp_path / "a"
+        mappa.mkdir()
+        make_jpeg(mappa / "k.jpg")
+        (mappa / ".picasa.ini").write_text("[k.jpg]\nstar=yes\n", encoding="utf-8")
+
+        assert self._muveletszam(monkeypatch, mappa) == 2
+
+    def test_a_legrosszabb_eset_harom_muvelet(self, tmp_path, monkeypatch):
+        """Ini NÉLKÜLI mappánál mindkét nevet hiába próbáljuk: 3 művelet.
+
+        Ez a FELSŐ korlát — a `SWEEP_FOLDERS_PER_TICK` költségvetése
+        ezzel számol (3 × 8 = 24 művelet / 10 mp ≈ 2,4 művelet/mp)."""
+        mappa = tmp_path / "a"
+        mappa.mkdir()
+        make_jpeg(mappa / "k.jpg")
+
+        assert self._muveletszam(monkeypatch, mappa) == 3
 
     def test_uj_fajl_megvaltoztatja_a_pecsetet(self, tmp_path):
         from picasapy.app.folder_freshness import directory_stamp
@@ -94,6 +111,43 @@ class TestDirectoryStamp:
         from picasapy.app.folder_freshness import directory_stamp
 
         assert directory_stamp(tmp_path / "nincs") is None
+
+    def test_a_REGI_nevu_ini_is_szamit(self, tmp_path):
+        """⚠️ A régi Picasa-verziók `Picasa.ini`-t írtak, és a tárolt
+        pecsétet készítő `walker._ini_mtime` MINDKÉT nevet ismeri.
+
+        Ha itt csak a `.picasa.ini`-t néznénk, az ilyen mappa pecsétje
+        soha nem egyezne a tárolttal — tehát MINDEN körben megkapná a
+        drága teljes újraolvasást, és sosem konvergálna. Épp azt a
+        NAS-terhelést okozná, amit a jegy tilt."""
+        from picasapy.app.folder_freshness import directory_stamp
+
+        mappa = tmp_path / "regi"
+        mappa.mkdir()
+        make_jpeg(mappa / "k.jpg")
+        (mappa / "Picasa.ini").write_text("[k.jpg]\nstar=yes\n", encoding="utf-8")
+
+        _, ini_mtime = directory_stamp(mappa)
+
+        assert ini_mtime is not None, (
+            "a régi nevű Picasa.ini-t nem vettük észre — a mappa örökre "
+            "elavultnak látszana"
+        )
+        assert ini_mtime == (mappa / "Picasa.ini").stat().st_mtime_ns
+
+    def test_az_uj_nevu_ini_elsobbseget_elvez(self, tmp_path):
+        """A `walker._ini_mtime` sorrendjével bitre egyeznünk kell."""
+        from picasapy.app.folder_freshness import directory_stamp
+
+        mappa = tmp_path / "mindketto"
+        mappa.mkdir()
+        make_jpeg(mappa / "k.jpg")
+        (mappa / "Picasa.ini").write_text("[k.jpg]\nstar=yes\n", encoding="utf-8")
+        (mappa / ".picasa.ini").write_text("[k.jpg]\nstar=no\n", encoding="utf-8")
+
+        _, ini_mtime = directory_stamp(mappa)
+
+        assert ini_mtime == (mappa / ".picasa.ini").stat().st_mtime_ns
 
     def test_a_HELYBEN_atirt_fajlt_a_pecset_NEM_latja(self, tmp_path):
         """A pecsét SZÁNDÉKOS határa — kimondva, hogy ne feltevés legyen.
@@ -161,6 +215,41 @@ class TestStaleFolders:
         hianyzo = str(tmp_path / "nincs")
 
         assert stale_folders((hianyzo,), {hianyzo: (123, None)}) == (hianyzo,)
+
+
+class TestKonvergencia:
+    """A pecsét az INDEX által tárolt pecséttel áll szemben — ha a kettő
+    nem ugyanúgy készül, a mappa örökre elavult marad, és minden körben
+    megkapja a drága teljes újraolvasást (a NAS-terhelés, amit tiltunk)."""
+
+    def _stale_sync_utan(self, tmp_path, ini_nev: str | None):
+        from picasapy.app.folder_freshness import stale_folders
+        from picasapy.index import folder_scan_stamps, open_index, sync_tree
+
+        root = tmp_path / "kepek"
+        mappa = root / "a"
+        mappa.mkdir(parents=True)
+        make_jpeg(mappa / "k.jpg")
+        if ini_nev is not None:
+            (mappa / ini_nev).write_text("[k.jpg]\nstar=yes\n", encoding="utf-8")
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, root)
+            tarolt = folder_scan_stamps(conn, (str(mappa),))
+        return stale_folders((str(mappa),), tarolt)
+
+    def test_szinkron_utan_nem_elavult_ini_nelkul(self, tmp_path):
+        assert self._stale_sync_utan(tmp_path, None) == ()
+
+    def test_szinkron_utan_nem_elavult_uj_ini_nevvel(self, tmp_path):
+        assert self._stale_sync_utan(tmp_path, ".picasa.ini") == ()
+
+    def test_szinkron_utan_nem_elavult_REGI_ini_nevvel(self, tmp_path):
+        """⚠️ Ez a teszt a H1 hibát fogja: a `Picasa.ini`-s mappa a
+        szinkron UTÁN is elavultnak látszott, tehát nem konvergált."""
+        assert self._stale_sync_utan(tmp_path, "Picasa.ini") == (), (
+            "a régi nevű ini-t tartalmazó mappa a szinkron után is "
+            "elavult — minden körben teljes újraolvasást kapna"
+        )
 
 
 class TestNextSweepBatch:

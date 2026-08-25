@@ -2359,9 +2359,23 @@ lépteti (a könyvtárbejegyzés változatlan), ezért
 Ezt az esetet hálózati megosztáson jelenleg **csak a kiválasztott mappa**
 tízmásodpercenkénti teljes újraolvasása fedi le. A feed többi mappájában
 helyben átírt fájl a következő `incremental=False` teljes syncig elavult
-marad. Ez tudatos csere: a teljes újraolvasás fájlonként ~2 művelet
-(mérés), a pecsét mappánként 2 — a NAS mért 200/mp korlátja mellett a
-látszó mappák sűrű teljes újraolvasása valódi kárt okozna.
+marad. Ez tudatos csere: a teljes újraolvasás **fájlonként** ~2 művelet
+(mérés), a pecsét **mappánként** 2–3 — a NAS mért 200/mp korlátja mellett
+a látszó mappák sűrű teljes újraolvasása valódi kárt okozna.
+
+#### ⚠️ Buktató, amibe a #1435 első köre beleesett
+
+A pecsétnek **bitre ugyanúgy** kell készülnie, mint a tárolt állapotnak
+(`scanner/walker.py::_ini_mtime`), különben az érintett mappa pecsétje
+soha nem egyezik, tehát **minden körben** megkapja a drága teljes
+újraolvasást, és **sosem konvergál** — épp azt a NAS-terhelést okozva,
+amit a mechanizmus el akar kerülni.
+
+Konkrétan: az ini-fájlnak **két** neve van (`.picasa.ini`, és a régi
+verziók `Picasa.ini`-je, ld. `picasa-ini-format.md`). Az első kör csak az
+elsőt nézte. Ezért a pecsét a **második nevet is** megpróbálja (ettől lesz
+a felső korlát 3 művelet, nem 2), és őr-teszt rögzíti, hogy a szinkron
+után egyik ini-változat mellett sem marad elavult a mappa.
 
 ## 17. Az OK MENTÉSI ÚTJA — a 12.1 pont lezárása (2026-08-24)
 

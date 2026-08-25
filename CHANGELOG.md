@@ -15,7 +15,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   került, vagy onnan törlődött egy, az csak jóval később, a program
   ötpercenkénti nagytakarításakor jelent meg. Ez főleg akkor zavaró, ha a
   képek hálózati meghajtón vannak, és egy másik program — például a
-  Windows-os Picasa 3 — is írja őket: onnan a rendszer nem küld értesítést
+  windowsos Picasa 3 — is írja őket: onnan a rendszer nem küld értesítést
   a változásról. Mostantól a program a rácson látszó többi mappát is
   figyeli, körbeforgó rendszerben, mappánként mindössze két apró
   kérdéssel, hogy a hálózati meghajtót ne terhelje.
