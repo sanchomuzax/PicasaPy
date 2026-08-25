@@ -107,3 +107,56 @@ awk -F'\t' '$1 ~ /^eMenu/ {print $1"\t"$2"\t"$3}' \
 szövegtárból). A lefedettség-mérés **erős**: felirat-egyezésen alapul, tehát
 egy átfogalmazott menüpontot „hiányzónak" jelölhet — ezért a 3.2 lista
 minden tétele külön ellenőrzendő a megvalósítás előtt.*
+
+---
+
+## 5. Az Eszközök menünek NÉGY ALMENÜJE van (2026-08-25)
+
+A `eMenuTools` névtér **nem lapos**: négy kulcs nem `ID_`-vel kezdődik —
+ezek az **almenü-fejlécek**:
+
+| kulcs | magyar felirat | mi tartozik alá (a tételekből következtetve) |
+|---|---|---|
+| `Experimental` | **Kísérleti** | — |
+| `Geotag` | **Geocímke** | `ID_PICTURE_GEOTAG`, `ID_PICTURE_GEOUNTAG`, `ID_EXPORT_EARTH`, `ID_VIEW_EARTH` |
+| `Searchfor` | **Keresés…** | a hat `ID_S_<szín>`, `ID_SAVESEARCH`, `ID_SEARCHTOKEN`, `ID_DUPES` |
+| `Upload` | **Feltöltés** | `ID_TOOLS_UPLOAD`, `ID_TOOLS_UPLOAD_ES`, `ID_TOOLS_BATCH_UPLOAD`, `ID_TOOLS_YOUTUBE`, `ID_TOOLS_COLLAB` |
+
+⚠️ A képernyőkép-alapú audit ezt az **almenü-szerkezetet** nem rögzítette.
+
+*A hozzárendelés bizonyítottsági foka: **erős** — a felirat-szemantikából és
+a névterek együtt-tárolásából; a menüépítő kódban nincs végigkövetve.*
+
+## 6. A hat `ID_S_<szín>` = KERESÉS SZÍN SZERINT
+
+**Hat szín**, nem négy (a korábbi hiánylistám kettőt tévesen lefedettnek
+jelölt, mert a „Kék"/„Piros" szó máshol előfordul a fordításunkban):
+
+| parancs | HU | | parancs | HU |
+|---|---|---|---|---|
+| `ID_S_BLUE` | Kék | | `ID_S_PURPLE` | Lila |
+| `ID_S_GREEN` | Zöld | | `ID_S_RED` | Piros |
+| `ID_S_ORANGE` | Narancssárga | | `ID_S_YELLOW` | Sárga |
+
+**Ez nem színcímkézés, hanem keresés**: a `Searchfor` („Keresés…") almenü
+alatt ülnek, és a binárisban ott van hozzá az **`ImageColorSwatch`**
+(`0x00bb41c0`) — a színminta-vezérlő.
+
+### Az adatforrás: `imagedata_avgcolor` — MÉRVE valódi adaton
+
+| adatbázis | sor | nem üres | arány |
+|---|---:|---:|---:|
+| `research/testdata/Picasa2/db3` | 140 755 | **133 454** | **94,8 %** |
+| `research/testdata/Picasa2-arcok/…/db3` | 3 335 | 2 792 | 83,7 % |
+
+A tárolt érték **ARGB dword**, alfa mindig `0xff`. Példák:
+`0xffaca190` (R 172, G 161, B 144 — meleg bézs), `0xff5a5046`,
+`0xfff7f8f9` (majdnem fehér). Ezek hihető **kép-átlagszínek**.
+
+⇒ A Picasa **minden képre** eltárolja az átlagszínt, és a szín szerinti
+keresés ezen dolgozik.
+
+*Bizonyítottsági fok: **megerősített** az oszlop létére, típusára és
+kitöltöttségére (valódi adaton mérve) és az `ImageColorSwatch` létére.
+**Erős, nem megerősített**: hogy a keresés konkrétan ezt az oszlopot
+olvassa — a keresőkód nincs végigkövetve odáig.*
