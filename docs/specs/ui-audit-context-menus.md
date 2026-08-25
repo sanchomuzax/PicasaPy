@@ -9,6 +9,12 @@ szakaszban, két véletlen képernyőképből, 4 tételt említett.
 `src/picasapy/app/qml/PicasaPy/PhotoContextMenu.qml` és
 `FolderContextMenu.qml`.
 
+> 🔑 **A helyi menük gyorsbillentyűi bináris bizonyítékkal** (építő-
+> függvény, rekordcím, `cmd`-azonosító, a módosító-jelzőbájt bitjei):
+> [picasa-gyorsbillentyuk.md](picasa-gyorsbillentyuk.md) **4.** szakasz
+> (#1154). Két billentyű **csak** helyi menüben létezik: az `Esc`
+> (visszatérés a könyvtárhoz) és a `Ctrl+H` (megtartás a tálcán).
+
 ## 0. Összegzés egy mondatban
 
 A Picasában **öt különböző** kontextusmenü él, összesen **~40 egyedi
