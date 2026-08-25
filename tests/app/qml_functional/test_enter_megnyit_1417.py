@@ -27,6 +27,7 @@ from PySide6.QtCore import QEvent, QMetaObject, QObject, Qt
 from PySide6.QtGui import QKeyEvent
 
 from support.jpeg_factory import make_jpeg
+from support.qml_focus import fokuszt_ad
 
 
 def _ujraolvas(controller, qt_app) -> None:
@@ -58,11 +59,8 @@ def _gyerek(window, nev):
 
 
 def _fokusz(elem, qt_app):
-    elem.setProperty("focus", True)
-    QMetaObject.invokeMethod(
-        elem, "forceActiveFocus", Qt.ConnectionType.DirectConnection
-    )
-    qt_app.processEvents()
+    """A közös, megerősítő fókuszadás (#1423)."""
+    fokuszt_ad(elem, qt_app)
 
 
 def _billentyu(window, qt_app, key, mods=Qt.KeyboardModifier.NoModifier):

@@ -152,6 +152,12 @@ class TestVerzioCimkeHivatkozas:
         )
         cimke.forceActiveFocus()
         qt_app.processEvents()
+        # #1423: előbb a fókuszt magát erősítjük meg. Enélkül egy hatástalan
+        # forceActiveFocus() ugyanúgy „nem látszik a jelölés" hibaüzenetet
+        # adna, mint egy tényleg hiányzó fókuszjelölés.
+        assert cimke.property("activeFocus") is True, (
+            "a fókusz nem ment át a verziócímkére"
+        )
         assert jelolo.property("visible") is True, (
             "fókuszban nem látszik a fókuszjelölés"
         )

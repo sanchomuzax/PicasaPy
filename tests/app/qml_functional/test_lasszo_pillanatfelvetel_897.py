@@ -45,6 +45,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QKeyEvent, QMouseEvent, QPointingDevice
 
 from support.jpeg_factory import make_jpeg
+from support.qml_focus import fokuszt_ad
 
 #: a szintetikus események időbélyege — enélkül a Qt dupla kattintást lát
 _ORA = [1000]
@@ -178,12 +179,7 @@ def _kattints(window, qt_app, sor, mods=Qt.KeyboardModifier.NoModifier):
 
 def _nyil_shifttel(window, qt_app, kulcs):
     """VALÓDI billentyűesemény a rácsra — nem az `extendSelection` hívása."""
-    grid = _grid(window)
-    grid.setProperty("focus", True)
-    QMetaObject.invokeMethod(
-        grid, "forceActiveFocus", Qt.ConnectionType.DirectConnection
-    )
-    qt_app.processEvents()
+    fokuszt_ad(_grid(window), qt_app)
     qt_app.sendEvent(
         window,
         QKeyEvent(QEvent.Type.KeyPress, kulcs, Qt.KeyboardModifier.ShiftModifier),

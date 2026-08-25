@@ -21,6 +21,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   időben korábbi, tehát az áll közelebb az érintetlen eredetihez. A mentés
   ezentúl nem készít második „eredetit" sem, ha a régi mappában már van egy.
 
+### Belső
+- **A fókuszt kérő tesztek megerősítik, hogy a fókusz tényleg átment
+  (#1423).** A `forceActiveFocus()` némán nem csinál semmit, ha a cél
+  vezérlő épp nem látható — az így írt teszt zölden fut úgy, hogy semmit
+  nem mér. A tesztkészlet mind a hét ilyen hívása át lett mérve: az öt
+  billentyűzetes rács-teszt közös, megerősítő segédre került
+  (`support/qml_focus.fokuszt_ad`), ami elbukik, ha a fókusz nem ért célba;
+  a maradék kettő a verziócímke billentyűzet-elérhetőségét méri, ott a
+  helyszínen kimondott állítás a helyénvaló — az egyikük most kapta meg. A
+  felhasználó számára a program viselkedése változatlan.
+
 ## [0.8.92] – 2026-08-25
 
 ### Javítva
