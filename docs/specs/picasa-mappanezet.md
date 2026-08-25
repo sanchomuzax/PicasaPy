@@ -210,6 +210,101 @@ visszaesés a Sajátgép-gyökérre**, nem hibaüzenet.
 
 ---
 
+## 4/b ✅ MEGFEJTVE: mely ágakat rajzolja a `watched` gyökér
+
+*(Utólagos mérés, 2026-08-25. A 7. szakasz ezt korábban „erős, nem mért"
+fokon hagyta — mostantól **megerősített**.)*
+
+### A döntő bizonyíték: ugyanaz a tároló, mint a `watchedfolders.txt`-é
+
+A felsőszintű ágak listáját a `0x004b41b0` (6307 b) állítja elő. A
+függvény **első dolga** egy elágazás a gyökér-tokenre:
+
+```
+0x004b41fe  test esi, esi          ; esi = a gyökér-token
+0x004b4200  je   0x4b48c7          ;   nincs token → általános ág
+0x004b4211  … "watched" …
+0x004b4242  je   0x4b48c7          ;   NEM watched → általános ág
+; ── innentől a WATCHED-specifikus ág ──
+0x004b424f  mov esi, [ecx+0xc4]
+0x004b4257  add esi, 0xf8          ; ⇐ a bejárt tároló
+0x004b42c4  mov ecx, [eax+0x364]   ;    adat
+0x004b42a2  test dword [esi+0x368] ;    darabszám
+```
+
+**Ez a tároló bizonyítottan a figyelt mappák listája.** A
+`watchedfolders.txt` írója (`0x004f5960`) és olvasója (`0x004f5a30`)
+**ugyanazt a két mezőt** használja:
+
+| | adat | darabszám |
+|---|---|---|
+| `0x004b41b0` watched-ág | `[+0x364]` | `[+0x368]` |
+| `0x004f5960` (fájl írása) | `0x004f59a3` `[ebx+0x364]` | `0x004f5997` `[ebx+0x368]` |
+| `0x004f5a30` (fájl olvasása) | `0x004f5a6d` `[ebp+0x364]` | `0x004f5a62` `[ebp+0x368]` |
+
+⇒ **Az „Egyszerűsített fanézet" ágai pontosan a `watchedfolders.txt`
+tartalma** — ugyanaz a lista, amit a Mappakezelő ír
+(`picasa-mappakezelo.md` 17.).
+
+### Egy mért szűrő: a két karakternél rövidebb bejegyzések kimaradnak
+
+```
+0x004b4309  sub eax, edx
+0x004b430b  cmp eax, 2
+0x004b430e  jbe 0x4b446b        ; ⇐ átugorja
+```
+
+⇒ a puszta meghajtó-gyökerek (`C:`, `C:\`) **nem lesznek ágak**.
+
+### Amiben az `all` és a `watched` NEM különbözik
+
+**Mindkét gyökér megkapja ugyanazt az öt rendszermappát**, ebben a
+sorrendben — a hívások a `0x004b41b0`-ban:
+
+| # | cím | CSIDL | mappa |
+|---:|---|---|---|
+| 1 | `0x004b4be2` → `0x009966a0` | `0x27` | Képek |
+| 2 | `0x004b4dc0` → `0x009967a0` | `0x0D` | Zene |
+| 3 | `0x004b4f9d` → `0x009968a0` | `0x0E` | Videók |
+| 4 | `0x004b517a` → `0x00996230` | `0x05` | Dokumentumok |
+| 5 | `0x004b5359` → `0x00996b90` | `0x00` | Asztal |
+
+*(A kapu `0x004b4b8b`–`0x004b4bc7`: `all` VAGY `watched` → beveszi; más
+gyökérnél egy jelző dönt.)*
+
+⇒ **Az „egyszerűsített" nem attól szűkebb, hogy elhagyja a
+rendszermappákat.** Az általános ág ehelyett a
+`Preferences\AcquirePath`-t (az importálás célmappáját) veszi be
+`0x004b48cf` → `0x00513830`.
+
+### A gyermekek szintjén is elválik — `CAlbumState::Folders`
+
+A `0x004b6190` egyetlen logikai jelzőt számol ki a gyökér-tokenből:
+
+```
+0x004b7350  cmp eax, "watched"
+0x004b7355  sete byte ptr [esp+0x13]     ; ⇐ isWatched
+…
+0x004b79f1  cmp byte ptr [esp+0x13], 0
+0x004b79f6  je  0x4b7c11                 ; NEM watched → másik ág
+0x004b79fc  … [ebx+0x44] / [ebx+0x48] …  ; watched → a csomópont TÁROLT gyermeklistája
+```
+
+⇒ `watched` módban a fa a csomópontok **tárolt gyermeklistájából**
+épül; `all` módban a másik ágon (`0x004b7c11`).
+
+### Mit jelent ez nekünk
+
+Az „Egyszerűsített fanézet" nálunk **nem** a fa tömörítése, hanem:
+
+1. az ágak halmaza a **figyelt mappák listája** (nálunk ennek megfelelője
+   az indexelt mappák halmaza), a **két karakternél rövidebbek nélkül**;
+2. plusz az **öt rendszermappa**, amit a teljes fa is megkap;
+3. a gyermekek a **tárolt** (indexelt) listából jönnek, nem a
+   fájlrendszer bejárásából.
+
+---
+
 ## 5. Eredeti / nálunk / teendő
 
 > **Megvalósítási állapot (2026-08-25, #1454):** az 1., 2., 3. és 9. sor
@@ -266,9 +361,9 @@ visszaesés a Sajátgép-gyökérre**, nem hibaüzenet.
 `LastViewRoot2` mentés és visszatöltés; az azonnali, indexelés nélküli
 frissítés.
 
-**Erős, nem mért**: hogy a `watched` gyökér pontosan mely ágakat rajzolja
-(a rajzolás a `0x004b6190` `CAlbumState::Folders`-ében van, 7518 b —
-nem bontottam ki).
+**Megerősített (2026-08-25-i utólagos mérés, 4/b szakasz)**: hogy a
+`watched` gyökér ágai a `watchedfolders.txt` tárolójából jönnek — ugyanaz
+a `[+0x364]`/`[+0x368]` mezőpár, amit a fájl írója és olvasója használ.
 
 **Elvetve**: hogy a Mappanézet rendezés lenne; hogy három egyenrangú mód
 lenne (a #1407 eredeti címe így szólt); hogy az „egyszerűsített" a fa
@@ -287,7 +382,7 @@ tömörítése lenne.
 | Hibaeset? | **LEZÁRVA** — 4.6 |
 | Induláskori állapot? | **LEZÁRVA** — 4.3 |
 | `LastViewRoot` vs `LastViewRoot2` szerepe | **HATÓKÖRÖN KÍVÜL** — Win32 registry-részlet; nálunk egyetlen saját beállítás tárolja a gyökeret, a kettéosztás nem reprodukálandó |
-| A `watched` gyökér pontos ágválogatása | **LEZÁRVA mint erős állítás**, a rajzoló kibontása külön jegy tárgya (#1407) |
+| A `watched` gyökér pontos ágválogatása | **LEZÁRVA** — 4/b szakasz, tárolóazonosság a `watchedfolders.txt`-tel |
 
 ```
 Nyitott kérdések: 0 nyílt · 7 lezárva · 0 blokkolt · 1 hatókörön kívül · 0 csak-nyitva
