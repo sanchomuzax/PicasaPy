@@ -9,7 +9,12 @@ import QtQuick.Layouts
 Rectangle {
     id: toolbar
     objectName: "mainToolbar"
-    height: 34
+    // #587: a felső sáv magassága a `thumbui.tre` `searchtop` konstansa —
+    // 35 képpont. Ez a SÁV magassága (a panelek innen kezdődnek); a
+    // `respack.yt` `buttonbarsets` rétegtéglalapja (800 × 37, y = 4) a
+    // sáv HÁTTÉRKÉPE, nem a sávhatár. A normatív lap:
+    // `docs/specs/konyvtar-ablak-meretek.md` 2. szakasz.
+    height: 35
     color: Theme.chromeBg
 
     // a keresőmező tartalma (a Main a mappa-választásnál olvassa)
@@ -30,7 +35,7 @@ Rectangle {
         width: parent.width; height: 1
         color: Theme.chromeBorder
     }
-    // #423: a sáv MINDIG egyetlen ~34px-es csík marad — a RowLayout maga
+    // #423: a sáv MINDIG egyetlen (ma 35px-es) csík marad — a RowLayout maga
     // sosem tördel új sorba, de a régi kötések (fix preferredWidth minden
     // elemen, sehol minimumWidth) szűk ablaknál egymásra csúszó/kilógó
     // elemekhez vezettek, ami vizuálisan "törésnek" hatott. A javítás a
@@ -49,9 +54,14 @@ Rectangle {
             objectName: "toolbarImportButton"
             text: qsTr("Import")
             enabled: true
-            Layout.preferredWidth: 100
-            Layout.minimumWidth: 100
-            Layout.preferredHeight: 24
+            // #587: az eredeti `importbutton` 111 × 22 (a `respack.yt`
+            // mért téglalapja, `konyvtar-ablak-meretek.md` 2. szakasz).
+            // A magasság 22 azért fér el a feliratnak, mert a
+            // `PicasaButton` függőleges kitöltése 0 (ld. ott a #992
+            // kommentjét) — a 12px-es betű teljes sormagassága belefér.
+            Layout.preferredWidth: 111
+            Layout.minimumWidth: 111
+            Layout.preferredHeight: 22
             onClicked: toolbar.importRequested()
         }
         Item { Layout.fillWidth: true; Layout.minimumWidth: 0 }
@@ -162,13 +172,18 @@ Rectangle {
         }
         Item { width: 20; visible: filterZone.visible }
         // Picasa-hű kereső: fehér mező nagyítóval, törlő ×-szel — a
-        // zsugorodási sorrend 2. lépése (#423): 300px-ről 120px-ig
-        // zsugorodhat, mielőtt bármi máshoz hozzányúlnánk.
+        // zsugorodási sorrend 2. lépése (#423): a teljes méretétől
+        // 120px-ig zsugorodhat, mielőtt bármi máshoz hozzányúlnánk.
+        //
+        // #587: a teljes méret az eredeti `searchcontainer`-é: 388 × 30
+        // (`konyvtar-ablak-meretek.md` 2. szakasz). A `minimumWidth`
+        // marad 120 — a zsugorodási sorrendet a #423 rögzítette, ezt a
+        // kör nem írja felül.
         Rectangle {
             objectName: "toolbarSearchBox"
-            Layout.preferredWidth: 300
+            Layout.preferredWidth: 388
             Layout.minimumWidth: 120
-            Layout.preferredHeight: 24
+            Layout.preferredHeight: 30
             radius: 3
             color: Theme.controlBase
             border.color: Theme.chromeBorder

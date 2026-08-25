@@ -61,8 +61,10 @@ A szerkesztő-panellel ellentétben a könyvtár-ablak elemeit a `.tre`
 - a fogantyú (`hlisthandle_win`) **8 × 47**, függőlegesen középen.
 
 > ⚠️ A `design-guide.md` „386 px ≈ 20 %, arányosan skálázandó" és a
-> „210 px ≈ 26 %" értéke **egyaránt téves**. A mai
-> `Main.qml` `folderPaneWidth` alapértéke **230** — legyen **240**.
+> „210 px ≈ 26 %" értéke **egyaránt téves** volt — a #587 kijavította
+> mind a kettőt. A `folderPaneWidth` alapértéke viszont **még 230**;
+> a 240-re állítás a `FOLDER_PANE_WIDTH_DEFAULT`-ot (`app/controller.py`)
+> és a `Main.qml` tartalék-értékét érinti.
 
 ---
 
@@ -87,7 +89,7 @@ A szerkesztő-panellel ellentétben a könyvtár-ablak elemeit a `.tre`
 `newalbum_icon` 19 × 14, `importbutton_icon` 27 × 14,
 `webcambutton_icon` 24 × 17, `folderview_arrow` 7 × 4).
 
-> A mai `MainToolbar.qml` magassága **34** — legyen **35**.
+> ✅ #587: a `MainToolbar.qml` magassága **35** (előtte 34).
 
 ### A keresés kibontott sávja
 
@@ -253,14 +255,17 @@ hézag nélkül:
 
 ## 6. Megvalósítási ellenőrzőlista
 
-- [ ] bal panel **240 px** fix (ma 230), **nem** skálázódik átméretezéskor
+- [ ] bal panel **240 px** fix (ma 230 — integrátori lépés), de a **nem
+      skálázódik** rész ✅ megvan és mérve van (#587)
 - [ ] elválasztó **8 px**, fogantyú **8 × 47**
-- [ ] felső sáv **35 px** (ma 34)
-- [ ] alsó sáv **105 px** (ma 20 + 52 = 72)
+- [x] felső sáv **35 px** ✅ (#587)
+- [ ] alsó sáv **105 px** (ma 20 + 52 = 72) — a magassággal EGYÜTT a
+      tálca-tartalmat is át kell építeni, különben holt sáv keletkezik
 - [ ] a nézetváltó gombok **132 × 29 / 132 × 28**
-- [ ] `importbutton` **111 × 22**, `newalbum` / `newfolder` **29 × 22**,
-      `flatview` / `folderview` **30 × 22**, `folderviewpopup` **22 × 22**
-- [ ] keresősáv **388 × 30**
+- [x] `importbutton` **111 × 22** ✅ (#587)
+- [ ] `newalbum` / `newfolder` **29 × 22**, `flatview` / `folderview`
+      **30 × 22**, `folderviewpopup` **22 × 22** (a gombok még hiányoznak)
+- [x] keresősáv **388 × 30** ✅ (#587)
 - [ ] a bal panel listája **9 px** bal, **5 px** jobb margóval
 - [ ] a rács melletti lebegő gombok **14 × 14**, **15 px** osztásközzel
 - [ ] az alsó sáv a **36,5 %**-os pontnál válik ketté
@@ -346,13 +351,13 @@ megvannak:
 
 | | eredeti | PicasaPy |
 |---|---|---|
-| sáv magassága | **37** (a `buttonbarsets`) | 34 |
-| Import gomb | **111 × 22**, x 6 | 100 × 24 |
+| sáv magassága | **37** (a `buttonbarsets` háttérképe; a sávhatár a `searchtop` = 35) | **35** ✅ (#587) |
+| Import gomb | **111 × 22**, x 6 | **111 × 22** ✅ (#587) |
 | új album (`newalbum`) | **29 × 22**, x 124 | **hiányzik** |
 | nézetváltó pár | **2 × 30 × 22**, x 160 és 190 | **hiányzik** |
 | nézet-beállítások (▾) | **22 × 22**, x 225 | **hiányzik** |
 | webkamera | **36 × 22**, x 254 | **hiányzik** |
-| keresősáv | **388 × 30**, x **323** | 300 × 24 |
+| keresősáv | **388 × 30**, x **323** | **388 × 30** ✅ (#587) |
 
 *Bizonyítottsági fok: megerősített* (a `respack.yt` nyers rectjei; a
 feliratok és súgók a `thumbui_text.tre`-ből).

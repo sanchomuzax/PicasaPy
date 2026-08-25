@@ -684,11 +684,11 @@ teljes 1920×1080-as kijelző, tálca alja levágva a képernyő aljával):
 |---|---|---|---|
 | Ablak alap-méret | 1920×1080 (maximalizált) | `Main.qml`: `width: 1280; height: 800` (alap, nem maximalizált) | eltérő tesztfelbontás, nem hűség-kérdés |
 | Menüsor magassága | ~23px | natív Qt-menüsor (nem mérhető innen) | — |
-| Eszköztár magassága | ~38–39px | 34px | ld. 4.3/1 |
-| Bal panel szélessége | ~236–243px @1920px (≈12,3%) | `SplitView.preferredWidth: 230` @1280px (≈18%) | **arányaiban szélesebb nálunk** kisebb ablakban; `design-guide.md` 386px@1920/250px@1280 becslése is ezt támasztja alá |
+| Eszköztár magassága | ~38–39px | **35px** (#587 óta; előtte 34) | a forrásból vett sávhatár a `searchtop` = 35, ld. `konyvtar-ablak-meretek.md` 2. |
+| Bal panel szélessége | ~236–243px @1920px | `SplitView.preferredWidth: 230` @1280px | a képernyőképes mérés a forrás **240 px fix** értékét erősíti meg (`thumbui.tre` `HLISTOFFSET2`) — nem arány. A `design-guide.md` régi 386px@1920/250px@1280 becslése téves volt, a #587 kijavította; az alapérték 240-re állítása még nyitva |
 | Panel-sor magassága | ~22px (mérve a mappasorok között) | `height: 22` (`FolderPane.qml` delegate) | **egyezik** |
 | Infó-csík magassága | ~13–14px | 20px | ld. 5.3/1 |
-| Tálca magassága | legalább ~85–100px (screenshot levágva) | 52px (fő sáv) + 20px (infó) = 72px | valószínűleg kisebb nálunk, de az eredeti nem mérhető pontosan a vágás miatt |
+| Tálca magassága | **105px** (a `thumbui.tre` `publishbottom`-ja; a screenshot le volt vágva, a forrás kiváltja) | 52px (fő sáv) + 20px (infó) = 72px | **33px-szel kisebb nálunk**, és a tálca tartalma is más szerkezetű (#587 nyitva) |
 
 ---
 

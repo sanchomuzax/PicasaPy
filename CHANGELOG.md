@@ -8,6 +8,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **A felső eszközsáv és a keresőmező az eredeti Picasa méretét kapta
+  (#587).** A sáv magassága 34 helyett 35 képpont, az „Importálás" gomb
+  100 × 24 helyett 111 × 22, a keresőmező pedig 300 × 24 helyett
+  388 × 30 — pontosan úgy, ahogy a Picasa saját elrendezés-forrásfájljai
+  megadják. A kereső ezzel érezhetően nagyobb és könnyebben eltalálható
+  lett. Szűk ablakban a mező ugyanúgy zsugorodik, mint eddig, csak
+  nagyobbról indul.
+
+### Javítva
 - **A Mappakezelő OK gombja egyszerre, kötött sorrendben ment (#1334).**
   Eddig minden apró változtatás azonnal, külön-külön került lemezre: három
   mappa átállítása háromszor írta újra a figyelt mappák listáját, és az
