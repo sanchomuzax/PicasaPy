@@ -172,6 +172,8 @@ class AppController(
         self._folder_date = ""
         self._folder_description = ""
         self._sync_running = False
+        # #1440: fut-e CÉLZOTT mappa-szinkron (ld. `_on_folders_dirty`)
+        self._dirty_running = False
         # #1181: a futó szinkron alatt kért célzott frissítések — a
         # szinkron végén be kell hozni a lemaradást (ld. a
         # `_on_folders_dirty` és a `_flush_pending_dirty` docstringjét)

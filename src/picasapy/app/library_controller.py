@@ -813,7 +813,7 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         paths = [str(f) for f in folders]
         if not paths:
             return  # üres jelzés: nincs mit szinkronizálni, jelzőt sem fogunk
-        if self._sync_running or getattr(self, "_dirty_running", False):
+        if self._sync_running or self._dirty_running:
             # #1181: NEM dobjuk el. A korábbi „a futó teljes szinkron
             # úgyis lefedi" feltevés hamis: ha a szinkron az adott mappán
             # MÁR túlment, a változás (pl. egy törlés) a következő
@@ -854,20 +854,35 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                             # a maradék mappák feldolgozása folytatódik.
                             errors.append(f"{folder}: {error}")
             finally:
-                # #1440: a jelzőt ELŐBB engedjük el, mint a `syncFinished`-et.
-                # Arra fut a `_flush_pending_dirty`, és zárt kapu mellett a
-                # lemaradt mappák azonnal visszakerülnének a várólistára —
-                # a következő jelzésig senki nem hozná be őket. A kapcsoló
-                # itt már biztonságos: az `open_index` blokk lezárult, tehát
-                # ez a szál nem ír többé az indexbe.
+                # #1440: a jelzőt az EMITEK ELŐTT engedjük el.
+                #
+                # ⚠️ NEM azért, mert a `_flush_pending_dirty` különben zárt
+                # kapuba futna: az a `syncFinished`-re fut, ami innen, a
+                # munkásszálról QUEUED módon ér a GUI-szálra, tehát
+                # mindenképp ez után a `finally` után hívódik — a sorrend a
+                # kapu szempontjából közömbös.
+                #
+                # Az ok: maga az EMIT dobhat. Leállás közben a C++ oldal már
+                # eltűnhet, és a `RuntimeError` a jelzőt igazon hagyná —
+                # onnantól minden célzott frissítés némán a várólistán
+                # ragadna. A kapcsoló itt már biztonságos is: az
+                # `open_index` blokk lezárult, ez a szál nem ír többé.
                 self._dirty_running = False
-                if errors:
-                    self.syncFailed.emit("; ".join(errors))
-                self.syncFinished.emit()
+                try:
+                    if errors:
+                        self.syncFailed.emit("; ".join(errors))
+                    self.syncFinished.emit()
+                except RuntimeError:
+                    # ugyanaz a védelem, mint a sweep-workerében (#1435):
+                    # leállás közben a C++ oldal már eltűnhetett
+                    logger.debug(
+                        "#1440: a célzott szinkron jelzése elmaradt", exc_info=True
+                    )
 
         # A jelző a szálindítás ELŐTT áll be: a hívások mind a GUI-szálon
         # érkeznek (queued `watcherDirty`, időzítő, QML-slot), tehát a
-        # beállítás és az ellenőrzés között nincs másik hívó.
+        # beállítás és az ellenőrzés között nincs másik hívó. A kezdőérték
+        # a `controller.py`-ban, a `_sync_running` mellett születik.
         self._dirty_running = True
         try:
             # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin,
@@ -1091,12 +1106,23 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
 
         A `syncFinished`-re fut. A halmazt ELŐBB ürítjük ki, hogy az
         újraindított szinkron ne dolgozza fel kétszer ugyanazt, és hogy egy
-        közben érkező jelzés a KÖVETKEZŐ körbe kerüljön."""
+        közben érkező jelzés a KÖVETKEZŐ körbe kerüljön.
+
+        ⚠️ #1440: az átadás DOBHAT — a `_on_folders_dirty` újradobja a
+        bukott szálindítást (`RuntimeError: can't start new thread`). Az
+        előre kiürített halmazba ilyenkor senki nem tenné vissza a
+        mappákat, a kivétel pedig a slotból kiszökve csak tracebacket ír:
+        a lemaradás némán elveszne az ötperces rescanig. Ezért dobás
+        esetén visszatesszük őket — a következő `syncFinished` behozza."""
         if not self._pending_dirty:
             return
         folders = sorted(self._pending_dirty)
         self._pending_dirty = set()
-        self._on_folders_dirty(folders)
+        try:
+            self._on_folders_dirty(folders)
+        except BaseException:
+            self._pending_dirty.update(folders)
+            raise
 
     @Slot(int)
     def resyncFolderOfRow(self, row: int) -> None:

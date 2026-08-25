@@ -152,17 +152,35 @@ class TestAtfedoIrok:
                 egyidejuleg -= 1
 
         monkeypatch.setattr(lc, "sync_folder", lassu_sync)
+        # ⚠️ Az egyidejűség-csúcs önmagában IDŐFÜGGŐ mérés: terhelt gépen
+        # hamis zöldet adhatna (a második szál nem ér oda a mintavételig).
+        # Az indítás-számláló ezért determinista kiegészítés: ha a kapu
+        # nem fog, a MÁSODIK indítás akkor is látszik, ha nem fedtek át.
+        inditasok: list[str | None] = []
+        eredeti_start = controller._start_background
+
+        def figyelt_start(worker, name=None):
+            inditasok.append(name)
+            return eredeti_start(worker, name=name)
+
+        monkeypatch.setattr(controller, "_start_background", figyelt_start)
 
         controller._on_folders_dirty([str(library / "nyaralas")])
-        # megvárjuk, hogy az első worker tényleg BENT legyen a syncben
-        hatarido = time.monotonic() + 10.0
-        while time.monotonic() < hatarido and csucs == 0:
-            time.sleep(0.01)
-        controller._on_folders_dirty([str(library / "kollazsok")])
-        time.sleep(0.2)  # ha indulna második szál, itt már bent lenne
-        engedely.set()
+        try:
+            # megvárjuk, hogy az első worker tényleg BENT legyen a syncben
+            hatarido = time.monotonic() + 10.0
+            while time.monotonic() < hatarido and csucs == 0:
+                time.sleep(0.01)
+            assert csucs == 1, "az első worker el sem indult"
+            controller._on_folders_dirty([str(library / "kollazsok")])
+            time.sleep(0.2)  # ha indulna második szál, itt már bent lenne
+        finally:
+            engedely.set()
 
         assert controller.waitForBackgroundWorkers(30.0)
+        assert inditasok == ["picasapy-sync-dirty"], (
+            f"a futó worker mellé újabb szál indult: {inditasok}"
+        )
         assert csucs == 1, f"{csucs} index-író futott egyszerre"
 
 
@@ -238,3 +256,83 @@ class TestLemaradasBehozasa:
             qt_app, lambda: str(library / "kollazsok") in szinkronizalt
         ), "a visszatartott mappa sosem került sorra"
         assert controller.waitForBackgroundWorkers(30.0)
+
+
+class TestVarolistaNemVeszit:
+    """A `_flush_pending_dirty` nem nyelheti el a lemaradást (#1440)."""
+
+    def test_bukott_atadas_utan_a_mappak_visszakerulnek(
+        self, controller, library, monkeypatch
+    ):
+        """⚠️ A halmazt a flush ELŐBB üríti ki, csak utána ad át. Ha az
+        átadás dob (bukott szálindítás — pont az az eset, amire a jelző
+        feloldása épül), akkor a kivétel a `syncFinished`-slotból kiszökve
+        csak tracebacket ír, a mappákat viszont senki nem tenné vissza:
+        nincs olyan út, ami a várólistát `syncFinished` nélkül behozná, a
+        lemaradás az ötperces rescanig NÉMÁN elveszne."""
+        controller._pending_dirty = {
+            str(library / "nyaralas"),
+            str(library / "kollazsok"),
+        }
+
+        def nem_indul(*args, **kwargs):
+            raise RuntimeError("can't start new thread")
+
+        monkeypatch.setattr(controller, "_start_background", nem_indul)
+        with pytest.raises(RuntimeError):
+            controller._flush_pending_dirty()
+
+        assert controller._pending_dirty == {
+            str(library / "nyaralas"),
+            str(library / "kollazsok"),
+        }, "a várólista kiürült, a lemaradást senki nem hozza be"
+
+    def test_sikeres_atadas_utan_a_varolista_ures(
+        self, controller, library, monkeypatch
+    ):
+        """Az ellenkező irány: sikeres átadásnál NEM maradhat bent semmi,
+        különben a következő kör kétszer dolgozná fel ugyanazt."""
+        controller._pending_dirty = {str(library / "nyaralas")}
+        monkeypatch.setattr(controller, "_start_background", lambda *a, **k: None)
+
+        controller._flush_pending_dirty()
+
+        assert controller._pending_dirty == set()
+
+
+class TestJelzoAzEmitekElott:
+    """A jelző feloldása MEGELŐZI a jelzéseket (#1440)."""
+
+    def test_a_syncFinished_pillanataban_a_jelzo_mar_nyitva_van(
+        self, controller, library, monkeypatch
+    ):
+        """⚠️ Az ok NEM az, hogy a `_flush_pending_dirty` különben zárt
+        kapuba futna: az a `syncFinished`-re fut, ami a munkásszálról
+        QUEUED módon ér a GUI-szálra, tehát mindenképp a `finally` UTÁN
+        hívódik. Az ok az, hogy maga az EMIT dobhat: leállás közben a C++
+        oldal eltűnhet, és a `RuntimeError` a jelzőt igazon hagyná —
+        onnantól minden célzott frissítés némán a várólistán ragadna.
+        (A dobó emitet nem lehet hűen szimulálni — a PySide6 elnyeli a
+        slot kivételét, a valódi eset pedig törölt C++ objektum. Amit
+        MÉRNI lehet, az a sorrend, és a #1440 védelme épp azon áll.)"""
+        from PySide6.QtCore import Qt
+
+        import picasapy.app.library_controller as lc
+
+        monkeypatch.setattr(lc, "sync_folder", lambda *a, **k: None)
+        allapotok: list[bool] = []
+        # DIRECT kapcsolat: a vevő magán a munkásszálon fut, pontosan az
+        # `emit` pillanatában — a queued kapcsolat már későbbi állapotot
+        # látna, és a teszt foga elveszne.
+        controller.syncFinished.connect(
+            lambda: allapotok.append(controller._dirty_running),
+            Qt.ConnectionType.DirectConnection,
+        )
+
+        controller._on_folders_dirty([str(library / "nyaralas")])
+        assert controller.waitForBackgroundWorkers(30.0)
+
+        assert allapotok and allapotok[0] is False, (
+            "az emit pillanatában a jelző még zárva volt: egy dobó emit "
+            "innentől örökre beragasztaná"
+        )
