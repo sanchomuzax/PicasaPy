@@ -20,10 +20,33 @@ mappa teljes újraolvasása fedi le, ami körönként úgyis lefut.
 from __future__ import annotations
 
 import os
+import time
 
 import pytest
 
 from support.jpeg_factory import make_jpeg
+
+
+def _oregitsd_a_pecsetet(mappa) -> None:
+    """A mappa (és a benne lévő ini) idejét MÚLTBA állítja.
+
+    ⚠️ Miért kell: a fájlidő felbontása platformfüggő. Windowson a
+    rendszeróra ~15,6 ms-onként lép, tehát a közvetlenül az írás UTÁN
+    vett mtime bitre azonos lehet az írás ELŐTTIVEL. A CI windows-lába
+    pontosan ezen bukott el (#1435):
+
+        assert (1787659405455004900, None) != (1787659405455004900, None)
+
+    Ez a segéd NEM tompítja az őrt, hanem HŰBB helyzetet állít elő: a
+    valós működésben a tárolt pecsét a legutóbbi indexeléskor készül,
+    másodpercekkel-percekkel a felhasználó módosítása előtt — nem
+    ugyanabban az óraütemben. Az állítás marad ugyanaz: a valódi
+    módosítás megváltoztatja a pecsétet.
+    """
+    regen = time.time() - 60
+    for cel in (mappa, mappa / ".picasa.ini", mappa / "Picasa.ini"):
+        if cel.exists():
+            os.utime(cel, (regen, regen))
 
 
 class TestDirectoryStamp:
@@ -73,6 +96,7 @@ class TestDirectoryStamp:
         mappa = tmp_path / "a"
         mappa.mkdir()
         make_jpeg(mappa / "k.jpg")
+        _oregitsd_a_pecsetet(mappa)
         elotte = directory_stamp(mappa)
 
         make_jpeg(mappa / "uj.jpg")
@@ -86,6 +110,7 @@ class TestDirectoryStamp:
         mappa.mkdir()
         make_jpeg(mappa / "k.jpg")
         make_jpeg(mappa / "masik.jpg")
+        _oregitsd_a_pecsetet(mappa)
         elotte = directory_stamp(mappa)
 
         (mappa / "masik.jpg").unlink()
@@ -99,6 +124,7 @@ class TestDirectoryStamp:
         mappa.mkdir()
         make_jpeg(mappa / "k.jpg")
         (mappa / ".picasa.ini").write_text("[k.jpg]\nstar=yes\n", encoding="utf-8")
+        _oregitsd_a_pecsetet(mappa)
         elotte = directory_stamp(mappa)
 
         (mappa / ".picasa.ini").write_text(
@@ -165,6 +191,7 @@ class TestDirectoryStamp:
         mappa = tmp_path / "a"
         mappa.mkdir()
         make_jpeg(mappa / "k.jpg")
+        _oregitsd_a_pecsetet(mappa)
         elotte = directory_stamp(mappa)
 
         make_jpeg(mappa / "k.jpg", size=(64, 48))  # más tartalom, azonos név
@@ -192,6 +219,7 @@ class TestStaleFolders:
         mappa = tmp_path / "a"
         mappa.mkdir()
         make_jpeg(mappa / "k.jpg")
+        _oregitsd_a_pecsetet(mappa)
         tarolt = {str(mappa): directory_stamp(mappa)}
 
         make_jpeg(mappa / "uj.jpg")

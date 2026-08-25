@@ -191,8 +191,9 @@ class TestABelepesiPontokLeltara:
     """Ha új csillag-vezérlő születik, ez a teszt kéri hozzá az őrt."""
 
     def test_csak_a_ket_ismert_hivo_van(self) -> None:
+        # `as_posix`: a várt lista `/`-t ír, a Windows `\`-t adna
         hivok = sorted(
-            str(path.relative_to(_QML_DIR))
+            path.relative_to(_QML_DIR).as_posix()
             for path in _QML_DIR.rglob("*.qml")
             if "controller.toggleStar" in path.read_text(encoding="utf-8")
         )
