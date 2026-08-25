@@ -48,17 +48,53 @@ def controller(qt_app, library):
     )
 
 
-def _wait_for_export(controller, qt_app, timeout_ms=15000):
+def _wait_for_export(controller, qt_app, action, timeout_ms=15000):
+    """Elindítja az `action`-t, és megvárja az `exportFinished` jelzést.
+
+    #1038 / #1463 — két hibát javít egyszerre, és mindkettő csak azért
+    maradhatott rejtve, mert a vészfék NÉMA volt:
+
+    1. **A vészfék most hangos.** Ha a jelzés nem érkezik meg az
+       időkorlát alatt (terhelt CI-futó!), korábban a hurok csendben
+       kilépett, a `result` üresen maradt, és nem itt bukott el a teszt,
+       hanem KÉSŐBB — `assert result.get("done") == 2` alakban, `None`-nal.
+       Ez tartalmi hibának LÁTSZOTT, holott az export még futott.
+
+    2. **A bekötés a művelet ELŐTT történik.** Korábban a hívó előbb
+       elindította az exportot, és a segéd csak UTÁNA kötötte be a
+       jelzést — versenyhelyzet: ha a háttérmunka a bekötés előtt
+       végzett, a jelzés elveszett. A `test_an_empty_tray_exports_nothing`
+       kommentje ezt már ki is mondta az üres tálcára („a jelzés AZONNAL
+       (szinkron) megy ki"); a hangos vészfék megmutatta, hogy a
+       `test_the_selection_is_not_used` egyképes exportjánál is bekövetkezik.
+
+    A jelzésre azonnal továbblép, tehát a bő időkorlát a zöld futást nem
+    lassítja; csak azt szabja meg, mennyi idő után mondjuk ki, hogy a
+    háttérmunka beragadt.
+    """
     from PySide6.QtCore import QEventLoop, QTimer
 
     loop = QEventLoop()
     result = {}
-    controller.exportFinished.connect(
-        lambda done, failed: (result.update(done=done, failed=failed), loop.quit())
-    )
-    QTimer.singleShot(timeout_ms, loop.quit)
-    loop.exec()
+
+    def _kesz(done, failed):
+        result.update(done=done, failed=failed)
+        loop.quit()
+
+    controller.exportFinished.connect(_kesz)
+    try:
+        action()
+        if not result:  # nem ment ki szinkron módon: várunk rá
+            QTimer.singleShot(timeout_ms, loop.quit)
+            loop.exec()
+    finally:
+        controller.exportFinished.disconnect(_kesz)
     qt_app.processEvents()
+    assert result, (
+        f"az exportFinished jelzés {timeout_ms / 1000:g} másodperc alatt sem "
+        f"érkezett meg. Ez NEM tartalmi hiba: a háttérmunka lassabb volt az "
+        f"időkorlátnál (vagy beragadt) — ld. #1038."
+    )
     return result
 
 
@@ -98,8 +134,9 @@ class TestExportHeld:
 
         target = tmp_path / "cel"
         target.mkdir()
-        controller.exportHeld(str(target), 0, 85, False, "")
-        result = _wait_for_export(controller, qt_app)
+        result = _wait_for_export(
+            controller, qt_app, lambda: controller.exportHeld(str(target), 0, 85, False, "")
+        )
 
         assert result.get("done") == 2
         assert {p.name for p in target.glob("*.jpg")} == {"a.jpg", "b.jpg"}
@@ -132,8 +169,9 @@ class TestExportHeld:
 
         target = tmp_path / "cel3"
         target.mkdir()
-        controller.exportHeld(str(target), 0, 85, False, "")
-        _wait_for_export(controller, qt_app)
+        _wait_for_export(
+            controller, qt_app, lambda: controller.exportHeld(str(target), 0, 85, False, "")
+        )
 
         assert [p.name for p in target.glob("*.jpg")] == ["a.jpg"]
 
@@ -146,8 +184,9 @@ class TestExportHeld:
 
         target = tmp_path / "cel4"
         target.mkdir()
-        controller.exportHeld(str(target), 0, 85, False, "")
-        result = _wait_for_export(controller, qt_app)
+        result = _wait_for_export(
+            controller, qt_app, lambda: controller.exportHeld(str(target), 0, 85, False, "")
+        )
 
         # a megmaradt kép átmegy; az eltűnt nem akasztja meg a köteget
         assert [p.name for p in target.glob("*.jpg")] == ["b.jpg"]

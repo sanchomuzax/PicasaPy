@@ -22,7 +22,7 @@ a `qml_functional/test_csillag_belepesi_pontok_1438.py` méri.
 
 from __future__ import annotations
 
-import time
+import threading
 from pathlib import Path
 
 import pytest
@@ -170,22 +170,35 @@ class TestACsillagozasAszinkron:
         from picasapy.app import photo_ops_controller as ops
 
         eredeti_update_document = ops.update_document
+        engedd_tovabb = threading.Event()
 
-        def lassitott(*args, **kwargs):
-            # a főszálnak biztosan legyen ideje lekérdezni a nézetet, mielőtt
-            # a háttérszál végez
-            time.sleep(0.4)
+        def feltartott(*args, **kwargs):
+            # #1463: itt korábban `time.sleep(0.4)` állt „a főszálnak
+            # legyen ideje lekérdezni a nézetet" indoklással. Az idő-ablak
+            # NEM szinkronpont: terhelt, négymagos futón a főszál három
+            # sora is elcsúszhat 0,4 mp-en túlra, és a teszt hamis pirosat
+            # ad. Most valódi szinkronpont van: az írás addig ÁLL, amíg a
+            # főszál ki nem mondta, hogy üresen látta a nézetet.
+            #
+            # A felső korlát csak azért van, hogy egy elrontott teszt se
+            # akaszthassa meg örökre a készletet.
+            engedd_tovabb.wait(30.0)
             return eredeti_update_document(*args, **kwargs)
 
-        monkeypatch.setattr(ops, "update_document", lassitott)
+        monkeypatch.setattr(ops, "update_document", feltartott)
 
         controller.selectFolder(str(library / "nyaralas"))
         controller.toggleStar(0)  # SZÁNDÉKOSAN nem várunk a jelzésre
-        assert _starred_names(controller) == [], (
-            "a lassított írás alatt a nézetnek még üresnek KELL lennie — ha "
-            "ez a sor elbukik, a művelet már nem aszinkron, és a fenti "
-            "magyarázat elavult"
-        )
+        try:
+            assert _starred_names(controller) == [], (
+                "a lassított írás alatt a nézetnek még üresnek KELL lennie — "
+                "ha ez a sor elbukik, a művelet már nem aszinkron, és a fenti "
+                "magyarázat elavult"
+            )
+        finally:
+            # akkor is elengedjük, ha az állítás bukott — különben a
+            # háttérszál 30 mp-ig fogva maradna
+            engedd_tovabb.set()
 
         assert controller.waitForBackgroundWorkers(15.0)
         assert _starred_names(controller) == ["IMG_0001.jpg"], (
