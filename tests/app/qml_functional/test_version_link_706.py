@@ -11,6 +11,8 @@ képernyő-koordinátáin), nem a kezelőfüggvény közvetlen hívásával: egy
 közvetlen hívás akkor is zöld lenne, ha a címke valójában kattinthatatlan.
 """
 
+import time
+
 from PySide6.QtCore import QCoreApplication, QEvent, QObject, QPoint, QPointF, Qt, Slot
 from PySide6.QtGui import QDesktopServices, QHoverEvent
 from PySide6.QtTest import QTest
@@ -70,6 +72,29 @@ def _url_fogo(qt_app):
         qt_app.processEvents()
 
 
+def _var_a_megnyitasra(qt_app, fogo, masodperc: float = 10.0) -> bool:
+    """Megvárja, hogy a `QDesktopServices` url-kezelője MEGKAPJA a címet.
+
+    #1463: itt korábban `QTest.qWait(30)` állt. A 30 ezredmásodperc
+    fogadás volt arra, hogy a kattintás → `Qt.openUrlExternally` →
+    url-kezelő lánc addigra végigfut; terhelt, négymagos futón ez hamis
+    pirosat adhat. A VALÓDI feltétel megfigyelhető: a fogó listája
+    megtelik. Amint megtelt, azonnal továbbmegyünk, tehát a bő határidő
+    a zöld futást nem lassítja.
+
+    Az őr foga változatlan: ha a kattintás semmit nem nyit meg, a
+    határidő lejár, és az utána következő állítás — a kapott címekkel a
+    hibaüzenetben — ugyanúgy elbukik."""
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        if fogo.cimek:
+            return True
+        time.sleep(0.01)
+    qt_app.processEvents()
+    return bool(fogo.cimek)
+
+
 class TestVerzioCimkeHivatkozas:
     """#706: a verziószám kattintható, és a kiadások oldalára visz."""
 
@@ -87,9 +112,7 @@ class TestVerzioCimkeHivatkozas:
                 Qt.KeyboardModifier.NoModifier,
                 _kozeppont(cimke),
             )
-            qt_app.processEvents()
-            QTest.qWait(30)
-            qt_app.processEvents()
+            _var_a_megnyitasra(qt_app, fogo)
             assert fogo.cimek == [KIADASOK_URL], (
                 f"a kattintás nem a kiadások oldalát nyitotta meg: {fogo.cimek}"
             )
@@ -133,9 +156,7 @@ class TestVerzioCimkeHivatkozas:
         fogo = next(fogo_gen)
         try:
             QTest.keyClick(window, Qt.Key.Key_Return)
-            qt_app.processEvents()
-            QTest.qWait(30)
-            qt_app.processEvents()
+            _var_a_megnyitasra(qt_app, fogo)
             assert fogo.cimek == [KIADASOK_URL], (
                 f"Enter nem nyitotta meg a kiadások oldalát: {fogo.cimek}"
             )
