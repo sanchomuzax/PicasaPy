@@ -124,26 +124,51 @@ Menu {
         // sorrend (spec A.2)
         title: qsTr("S&ort Folder By")
 
+        // #1468: a valódi kattintás előbb IMPERATÍVAN átbillenti a `checked`-et,
+        // és csak utána dördül el a `triggered`. Kizáró csoportban a MÁR AKTÍV
+        // tételre kattintva a vezérlő állapota nem változik, tehát a kötés magától
+        // soha nem értékelődik újra — a menü újranyitásakor egyik tételen sem
+        // állna pipa. Ezért a jelzés után azonnal VISSZAKÖTJÜK a `checked`-et
+        // (a #1464-ben bevezetett minta).
+        //
+        // A `menu.sortMode` PILLANATFELVÉTEL: a gazda csak a menü nyitásakor
+        // írja bele a vezérlő állapotát. Azonos értéket visszaírva nincs
+        // változás-jelzés, tehát a kötés újranyitáskor sem éledne fel.
         MenuItem {
             objectName: "folderMenuSortByDate"
             text: qsTr("&Date")
             checkable: true
             checked: menu.sortMode === "date"
-            onTriggered: menu.sortModeRequested("date")
+            onTriggered: {
+                menu.sortModeRequested("date")
+                checked = Qt.binding(function () {
+                    return menu.sortMode === "date"
+                })
+            }
         }
         MenuItem {
             objectName: "folderMenuSortByName"
             text: qsTr("&Name")
             checkable: true
             checked: menu.sortMode === "name"
-            onTriggered: menu.sortModeRequested("name")
+            onTriggered: {
+                menu.sortModeRequested("name")
+                checked = Qt.binding(function () {
+                    return menu.sortMode === "name"
+                })
+            }
         }
         MenuItem {
             objectName: "folderMenuSortBySize"
             text: qsTr("&Size")
             checkable: true
             checked: menu.sortMode === "size"
-            onTriggered: menu.sortModeRequested("size")
+            onTriggered: {
+                menu.sortModeRequested("size")
+                checked = Qt.binding(function () {
+                    return menu.sortMode === "size"
+                })
+            }
         }
         MenuSeparator {}
         MenuItem {

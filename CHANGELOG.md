@@ -8,6 +8,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **Nem tűnik el a pipa, ha a menüben a már beállított sorra kattintunk
+  (#1468).** Az olyan menücsoportokban, ahol egyszerre csak egy sor lehet
+  bejelölve, eddig hibás volt a viselkedés: ha a felhasználó a MÁR aktív
+  sorra kattintott, a pipa lekerült róla, és a menü újranyitásakor a
+  csoport egyetlen során sem látszott jelölés — hiába volt a beállítás
+  érvényben. A hiba mérhetően jelentkezett az **Eszközök ▸ Nyelv** menüben,
+  a bal oldali mappalista jobbklikk-menüjének **rendezésében** és a mappák
+  jobbklikk-menüjének **„Mappa rendezése"** almenüjében. A **Nézet ▸
+  Könyvtárnézet** sorról pedig egyetlen kattintás véglegesen leszedte a
+  pipát. Mostantól mindegyikben pontosan azon a soron áll a jelölés,
+  amelyik érvényben van — akárhányszor kattintunk rá.
 - **A Nézet ▸ Mappanézet menü végre azt csinálja, amit a neve ígér (#1454).**
   Eddig ugyanazt az öt rendezési sort kínálta, mint a Mappa ▸ Rendezés — a
   Picasában viszont ez a menü nem rendez, hanem a bal oldali mappalista
@@ -27,6 +38,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   program az Egyszerű mappanézetből indul; a megjegyzése külön munka lesz.
 
 ### Belső
+- **A menüpipák jelölése már nem függ egy véletlen mellékhatástól (#1468).**
+  A **Nézet ▸ Indexkép felirata** és a **Mappa ▸ Rendezés** csoportokban
+  ugyanaz a hiba készen állt, de nem látszott: e két beállítás háttérkódja
+  akkor is jelez frissítést, ha a választott érték nem változott, és ez
+  véletlenül helyrehozta a pipát. Ez a védelem nem volt szándékos, és egy
+  későbbi átalakítás némán elvehette volna, ezért mindkét csoport megkapta
+  a rendes megoldást. Egy őr-teszt mostantól a teljes felületen figyeli,
+  hogy új menücsoport ne kerülhessen be a hibás mintával.
 - **A tesztek már nem írják át egymás alól a rendszerfüggvényeket (#1375).**
   A tesztek egy része úgy cserélt ki szabványos függvényeket (fájlmozgatás,
   külső program indítása, lemezműveletek), hogy a csere a futás idejére az

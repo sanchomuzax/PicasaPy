@@ -45,33 +45,62 @@ Menu {
 
     // -- 1. blokk: a mappalista rendezése ---------------------------------
 
+    // #1468: a valódi kattintás előbb IMPERATÍVAN átbillenti a `checked`-et,
+    // és csak utána dördül el a `triggered`. Kizáró csoportban a MÁR AKTÍV
+    // tételre kattintva a vezérlő állapota nem változik, tehát a kötés magától
+    // soha nem értékelődik újra — a menü újranyitásakor egyik tételen sem
+    // állna pipa. Ezért a jelzés után azonnal VISSZAKÖTJÜK a `checked`-et
+    // (a #1464-ben bevezetett minta).
+    //
+    // A `menu.sortMode` itt is PILLANATFELVÉTEL (a gazda a nyitáskor írja),
+    // ezért az azonos értékű visszaírás nem élesztené fel a kötést.
     MenuItem {
         objectName: "folderListMenuSortByDate"
         text: qsTr("Sort by &Date")
         checkable: true
         checked: menu.sortMode === "date"
-        onTriggered: menu.sortModeRequested("date")
+        onTriggered: {
+            menu.sortModeRequested("date")
+            checked = Qt.binding(function () {
+                return menu.sortMode === "date"
+            })
+        }
     }
     MenuItem {
         objectName: "folderListMenuSortByName"
         text: qsTr("Sort by &Name")
         checkable: true
         checked: menu.sortMode === "name"
-        onTriggered: menu.sortModeRequested("name")
+        onTriggered: {
+            menu.sortModeRequested("name")
+            checked = Qt.binding(function () {
+                return menu.sortMode === "name"
+            })
+        }
     }
     MenuItem {
         objectName: "folderListMenuSortBySize"
         text: qsTr("Sort by &Size")
         checkable: true
         checked: menu.sortMode === "size"
-        onTriggered: menu.sortModeRequested("size")
+        onTriggered: {
+            menu.sortModeRequested("size")
+            checked = Qt.binding(function () {
+                return menu.sortMode === "size"
+            })
+        }
     }
     MenuItem {
         objectName: "folderListMenuSortByChanged"
         text: qsTr("Sort by &Recent Changes")
         checkable: true
         checked: menu.sortMode === "changed"
-        onTriggered: menu.sortModeRequested("changed")
+        onTriggered: {
+            menu.sortModeRequested("changed")
+            checked = Qt.binding(function () {
+                return menu.sortMode === "changed"
+            })
+        }
     }
     MenuItem {
         objectName: "folderListMenuSortReverse"
