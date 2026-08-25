@@ -97,7 +97,10 @@ Rectangle {
         // elfér (linuxi alapbetű), ott semmi nem változik.
         // Ugyanez a minta él a `PicasaButton`-ben (#992).
         fontSizeMode: Text.HorizontalFit
-        minimumPixelSize: 8
+        //: A padló 7 képpont: a windowsos alapbetűvel a magyar felirat
+        //: 11 képponton nem fér a 213-as sávba, és elidálva a VÉGE veszne el.
+        //: A 7 még olvasható, és a mért 213-at nem lépi túl.
+        minimumPixelSize: 7
         // az elide csak VÉGSZÜKSÉG-őr a 8 képpontos padló alatt
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
