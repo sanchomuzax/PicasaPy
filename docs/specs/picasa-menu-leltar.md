@@ -190,28 +190,33 @@ menü rekordjaival, ahol ugyanez a mező mást hordozott, ld.
 
 ### A kinyert térkép: **177 tétel, 145 parancsazonosítóval**
 
-> 🔴 **FIGYELMEZTETÉS a CSV-re (2026-08-25, ugyanaznap felfedezve):** a
-> menüépítőben a **felirat a KÖVETKEZŐ rekord `+0x00` mezőjébe íródik**, a
-> fordítás lekérése (`call 0x9ae560`) után:
+> 🔴 **A gépi azonosító-kinyerés MEGBUKOTT — az oszlop eltávolítva
+> (2026-08-25, ugyanaznap).**
 >
-> ```asm
-> push 0xc8c9e8    ; "eMenuView::ID_VIEW_BW"
-> mov  eax, 0xc8ca00   ; "&Black and White"
-> mov  word ptr [0xd6dda6], 0x9d1b   ; az AKTUÁLIS rekord azonosítója
-> call 0x9ae560                       ; a fordítás lekérése…
-> mov  dword ptr [0xd6ddb0], eax      ; …a KÖVETKEZŐ rekord feliratába
-> mov  word ptr [0xd6ddba], 0x9d1c    ; a következő rekord azonosítója
-> ```
+> A menüépítőben a **felirat a KÖVETKEZŐ rekord `+0x00` mezőjébe íródik**, a
+> fordítás lekérése (`call 0x9ae560`) után — ezért a kulcs↔azonosító párosítás
+> kétséges volt. **Kontroll-méréssel eldöntve, független horgonnyal:**
 >
-> ⇒ **Nem eldöntött, hogy a kulcs a saját rekordjához vagy a következőhöz
-> tartozik** — a CSV azonosító-oszlopa tehát **egy rekorddal el lehet
-> csúszva**. **Amíg ez nincs eldöntve, a CSV `parancsazonosito` oszlopára
-> ne építsen senki.** A `menu`, `parancs`, `felirat_en`, `felirat_hu`
-> oszlopok érintetlenek és megbízhatók.
+> A `picasa-konyvtar-eszkoztar-viselkedes.md` egy korábbi, más úton végzett
+> kör alapján rögzíti, hogy `0x9db6` = **`ID_VIEW_FOLDERS`** (&Flat Folder
+> View), `0x9db8` = `ID_VIEW_WATCHED`, `0x9db9` = `ID_VIEW_ALL`. A gépi
+> kinyerésem viszont `0x9db6`-ra **`ID_VIEW_ALL`**-t mondott, `0x9db9`-re
+> pedig `ID_VIEWBYDATE`-et — miközben `ID_VIEW_MYPICTURES` = `0x9db7`
+> **helyes** volt.
 >
-> **A feloldás módja:** egy független horgony — pl. a `0x00575670`
-> megjelenítési-mód tömbje (11 azonosító) összevetve a menü tényleges
-> tartalmával, vagy egyetlen parancsazonosító visszakeresése a kezelőjéig.
+> ⇒ **A tévedés SZABÁLYTALAN**, nem egyenletes egy-rekordos elcsúszás, tehát
+> nem javítható egy eltolással. **Egy félig hibás azonosító-térkép rosszabb,
+> mint semmilyen**, mert használat közben bizalmat kelt — ezért az oszlopot
+> **kivettem** a CSV-ből.
+>
+> **Ami MEGMARADT és megbízható:** `menu`, `parancs`, `felirat_en`,
+> `felirat_hu` — a névterek, a parancsnevek és a feliratok a szövegtárból
+> és a menüépítő sztringjeiből jönnek, azokat a kontroll nem érintette.
+>
+> **Ha valakinek kell egy konkrét parancsazonosító:** keresse ki
+> egyenként, a kulcs sztringcímétől indulva a menüépítőben
+> (`0x00559150`), és **ellenőrizze független horgonnyal** — pontosan úgy,
+> ahogy ez a bekezdés készült.
 
 Géppel olvasható alakban: **[`picasa-menu-parancsok.csv`](picasa-menu-parancsok.csv)**
 (oszlopok: `menu`, `parancs`, `parancsazonosito`, `felirat_en`, `felirat_hu`).
