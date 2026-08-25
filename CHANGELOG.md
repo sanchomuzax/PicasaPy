@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Nem villan fel többé hibaüzenet, amikor a program a háttérben frissíti a
+  rácsot (#1440).** A program tízmásodpercenként ránéz a látott mappákra, hogy
+  a máshonnan — például a windowsos Picasa 3-ból vagy egy másik gépről —
+  érkezett változások maguktól megjelenjenek. Hálózati meghajtón egy ilyen
+  frissítés fél percig is eltarthat, és eddig előfordult, hogy közben elindult
+  a következő is: a kettő egyszerre akart írni a program belső nyilvántartásába,
+  amiből hibaüzenet lett a képernyő alján. Mostantól egyszerre csak egy
+  frissítés fut, a közben esedékessé váló mappák pedig sorra kerülnek utána —
+  egyetlen mappa sem marad ki. Ráadásul, ha az ellenőrző kör egy akadó hálózati
+  meghajtón elidőzik, az épp kiválasztott mappa frissítése emiatt már nem
+  csúszik ki.
+
 ## [0.8.94] – 2026-08-25
 
 ### Javítva

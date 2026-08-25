@@ -799,15 +799,31 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         watcher konkrét mappát jelez, nincs ok a teljes részfa
         újrajárására. A jelzett mappák koaleszálva, egyetlen worker-
         szálban dolgozódnak fel — a watcher amúgy is debounce-ol
-        (`scanner/watcher.py`), így egy jelzésben több mappa is jöhet."""
+        (`scanner/watcher.py`), így egy jelzésben több mappa is jöhet.
+
+        ⚠️ #1440: ennek az ágnak SAJÁT futásjelzője van (`_dirty_running`).
+        A `_sync_running` a `rescan()`-é, a `_sweep_running` (#1435) pedig
+        a pecsét-köröké — egyik sem fedte a MÁSIK célzott szinkront. Egy
+        hosszú, hálózati megosztáson futó dirty-worker mellé így egy
+        következő jelzés (a tíz másodperccel későbbi lekérdezési kör vagy
+        egy watcher-esemény) simán indított egy másodikat: két egyidejű
+        index-íróból `sqlite3.OperationalError`, abból pedig a
+        felhasználónak szóló `syncFailed` lett. A #1435 óta a worker akár
+        kilenc mappát is visz, tehát sokkal tovább él — a kitettség nőtt."""
         paths = [str(f) for f in folders]
-        if self._sync_running:
+        if not paths:
+            return  # üres jelzés: nincs mit szinkronizálni, jelzőt sem fogunk
+        if self._sync_running or getattr(self, "_dirty_running", False):
             # #1181: NEM dobjuk el. A korábbi „a futó teljes szinkron
             # úgyis lefedi" feltevés hamis: ha a szinkron az adott mappán
             # MÁR túlment, a változás (pl. egy törlés) a következő
             # periodikus rescanig láthatatlan marad — a bejelentő ezt
             # látta „az indexkép ottmarad"-ként. Ehelyett feljegyezzük, és
             # a szinkron végén (`_flush_pending_dirty`) behozzuk.
+            #
+            # #1440: ugyanez a várólista fogadja a FUTÓ CÉLZOTT szinkron
+            # alatt érkező jelzéseket is. Halmaz, tehát egyetlen mappa sem
+            # veszhet el akkor sem, ha közben több jelzés fut be.
             self._pending_dirty.update(paths)
             return
 
@@ -838,13 +854,35 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                             # a maradék mappák feldolgozása folytatódik.
                             errors.append(f"{folder}: {error}")
             finally:
+                # #1440: a jelzőt ELŐBB engedjük el, mint a `syncFinished`-et.
+                # Arra fut a `_flush_pending_dirty`, és zárt kapu mellett a
+                # lemaradt mappák azonnal visszakerülnének a várólistára —
+                # a következő jelzésig senki nem hozná be őket. A kapcsoló
+                # itt már biztonságos: az `open_index` blokk lezárult, tehát
+                # ez a szál nem ír többé az indexbe.
+                self._dirty_running = False
                 if errors:
                     self.syncFailed.emit("; ".join(errors))
                 self.syncFinished.emit()
 
-        # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430) —
-        # a busy-bejelentkezés is ITT, a mixinben történik (ld. worker_thread.py)
-        self._start_background(worker, name="picasapy-sync-dirty")
+        # A jelző a szálindítás ELŐTT áll be: a hívások mind a GUI-szálon
+        # érkeznek (queued `watcherDirty`, időzítő, QML-slot), tehát a
+        # beállítás és az ellenőrzés között nincs másik hívó.
+        self._dirty_running = True
+        try:
+            # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin,
+            # #430) — a busy-bejelentkezés is ITT, a mixinben történik
+            # (ld. worker_thread.py)
+            self._start_background(worker, name="picasapy-sync-dirty")
+        except BaseException:
+            # ⚠️ #550/#1435 mintája: a `start()` elbukhat (`RuntimeError:
+            # can't start new thread`), és akkor a `worker` — vele a
+            # `finally` ága — SOSEM fut le. Beragadt jelzővel innentől
+            # MINDEN célzott frissítés a várólistára menne, és onnan soha
+            # senki nem hozná be: a rács a munkamenet végéig NÉMÁN sosem
+            # frissülne magától. Egyetlen tranziens hiba örökre elrontaná.
+            self._dirty_running = False
+            raise
 
     def _root_for_folder(self, folder: str) -> str | None:
         """A jelzett mappához tartozó figyelt gyökér (a `sync_folder`
@@ -882,21 +920,32 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         lesz — két egyidejű index-író `OperationalError`-t és a
         felhasználónak szóló hibajelzést eredményezne.
 
-        ⚠️ Ez a garancia TICKRE igaz, tickek KÖZÖTT nem: a
-        `_on_folders_dirty`-nek nincs saját futásjelzője, tehát egy hosszú
-        szinkron mellé a következő tick újat indíthat. Ennek a rendezése
-        külön jegy tárgya; a `_sweep_running` csak a sweep-ágat fedi.
+        ⚠️ #1440: a TICKEK KÖZÖTTI átfedést két külön kapu zárja ki, és
+        ez a kettő NEM ugyanaz:
 
-        ⚠️ A `_sweep_running` kapu a TICKEK KÖZÖTTI átfedést zárja ki: egy
-        akadó hálózati mounton a pecsét-kör túlfuthat a 10 másodpercen, és
-        kapu nélkül a következő időzítő-jelzés újabb szálat indítana —
-        onnan pedig két `watcherDirty`, két szinkron-worker, két egyidejű
-        index-író, végül a felhasználónak szóló `syncFailed`."""
+        * `_sweep_running` — a pecsét-körök átfedése. Akadó hálózati
+          mounton a kör túlfuthat a 10 másodpercen; kapu nélkül a
+          következő időzítő-jelzés újabb pecsét-szálat indítana.
+        * `_dirty_running` (`_on_folders_dirty`) — a célzott szinkronok,
+          vagyis az INDEX-ÍRÓK átfedése. A #1440 előtt ez hiányzott: egy
+          hosszú (a #1435 óta akár kilenc mappás) szinkron mellé a
+          következő tick simán indított egy másodikat.
+
+        Mivel az írók átfedését már a `_dirty_running` zárja ki, a futó
+        pecsét-kör alatt is kimehet a kiválasztott mappa jelzése — a
+        #1275 alapgaranciája így akkor sem esik ki egyetlen körre sem, ha
+        a sweep egy lassú mounton bent ragad."""
         mappa = self._current_folder
         if not mappa or self._sync_running:
             return
         if getattr(self, "_sweep_running", False):
-            return  # az előző kör pecsétjei még futnak (lassú mount)
+            # #1440: az előző kör pecsétjei még futnak (lassú mount), de a
+            # #1275 alapgaranciája — a LÁTOTT mappa újraolvasása — ettől
+            # nem eshet ki. A pecsét-kör csak OLVAS; az írók átfedése ellen
+            # a `_on_folders_dirty` saját jelzője véd, tehát ez a jelzés
+            # legrosszabb esetben is csak a várólistára kerül.
+            self._on_folders_dirty([mappa])
+            return
         batch = self._sweep_candidates(mappa)
         if not batch:
             # nincs más látszó mappa: a #1275 útja változatlanul
