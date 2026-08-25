@@ -148,16 +148,6 @@ class TestBalPanelNemSkalazodik:
         assert panel.property("width") == controller.folderPaneWidth
 
 
-@pytest.mark.xfail(
-    reason=(
-        "#587 INTEGRÁTORI LÉPÉS: a `HLISTOFFSET2` = 240 alapérték a "
-        "`FOLDER_PANE_WIDTH_DEFAULT`-ban (app/controller.py) és a "
-        "`Main.qml` tartalék-értékében él — mindkét fájl tiltott volt "
-        "ebben a körben. Ha a bekötés megtörtént, ez a teszt XPASS lesz: "
-        "akkor a jelölőt le kell venni róla."
-    ),
-    strict=False,
-)
 def test_bal_panel_alapertelmezese_240(qml_app_module, qt_app):
     window, controller, _ = qml_app_module
     _szelesseg(window, qt_app, 1280)
