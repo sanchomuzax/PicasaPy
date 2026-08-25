@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import "groups.js" as Groups
 import "lasso.js" as Lasso
 import "scroll.js" as Scroll
 import "../selection.js" as Selection
@@ -15,7 +16,7 @@ ListView {
 
     // a főablak (kijelölés-állapot + kijelölés-logika gazdája)
     required property var appWindow
-    // dupla-katt egy képen: néző megnyitása a sorral
+    // dupla-katt vagy Enter (#1417) egy képen: néző megnyitása a sorral
     signal openRequested(int row)
     // zöld ▸ a mappa-fejlécen: vetítés a csoport első képétől
     signal slideshowRequested(int startRow)
@@ -84,17 +85,11 @@ ListView {
             appWindow.selectedIndexes, t)
         scrollToRow(t)
     }
-    function groupOfRow(row) {
-        for (var i = 0; i < model.length; ++i)
-            if (row >= model[i].start
-                && row < model[i].start + model[i].count)
-                return i
-        return -1
-    }
     // a sor függőleges sávja content-koordinátában; null,
-    // ha a csoport-delegate nincs példányosítva
+    // ha a csoport-delegate nincs példányosítva (a csoportkeresés
+    // a `groups.js`-ben)
     function rowBounds(row) {
-        var g = groupOfRow(row)
+        var g = Groups.indexOfRow(model, row)
         if (g < 0) return null
         var it = itemAtIndex(g)
         if (!it) return null
@@ -116,7 +111,7 @@ ListView {
     function scrollToRow(row) {
         var b = rowBounds(row)
         if (!b) {
-            var g = groupOfRow(row)
+            var g = Groups.indexOfRow(model, row)
             if (g < 0) return
             positionViewAtIndex(g, ListView.Contain)
             b = rowBounds(row)
@@ -162,15 +157,9 @@ ListView {
         első csoport. */
     function _activeGroupRange() {
         var byRow = _groupRangeOfRow(appWindow.selectedIndex)
-        if (byRow) return byRow
-        var groups = grid.ctl ? grid.ctl.feedGroups : null
-        if (!groups || groups.length === 0) return null
-        var current = grid.ctl.currentFolder
-        for (var i = 0; i < groups.length; ++i)
-            if (groups[i].path === current)
-                return [groups[i].start,
-                        groups[i].start + groups[i].count - 1]
-        return [groups[0].start, groups[0].start + groups[0].count - 1]
+        return byRow ? byRow : Groups.rangeOfPath(
+            grid.ctl ? grid.ctl.feedGroups : null,
+            grid.ctl ? grid.ctl.currentFolder : "")
     }
 
     /** Shift NÉLKÜL: a kijelölés a csoport szélső képére szűkül.
@@ -235,6 +224,16 @@ ListView {
         } else if (ev.key === Qt.Key_PageUp || ev.key === Qt.Key_PageDown) {
             pageStep(ev.key === Qt.Key_PageDown)
             ev.accepted = true
+        } else if (ev.key === Qt.Key_Return || ev.key === Qt.Key_Enter) {
+            // #1417: az Enter a rács helyi menüjének FÉLKÖVÉR,
+            // alapértelmezett tétele („Megjelenítés és szerkesztés\tEnter",
+            // PhotoContextMenu.qml) — ugyanazt teszi, mint a dupla
+            // kattintás. Kijelölés nélkül nincs mit megnyitni, olyankor az
+            // eseményt sem vesszük el (mehet tovább a fókuszláncon).
+            if (appWindow.selectedIndex >= 0) {
+                openRequested(appWindow.selectedIndex)
+                ev.accepted = true
+            }
         }
     }
 
