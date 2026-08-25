@@ -8,6 +8,7 @@ amelyet a visszafejtett ``+85`` RGBA-keverés előír.
 from __future__ import annotations
 
 import math
+import time
 
 import pytest
 
@@ -18,6 +19,57 @@ from PySide6.QtQuick import QQuickItem, QQuickView
 from PySide6.QtTest import QTest
 
 _KEEPALIVE: list[object] = []
+
+
+def _var_a_kirajzolasra(view: QQuickView, qt_app, masodperc: float = 10.0) -> bool:
+    """Megvárja, amíg a kirajzolt kép MEGÁLLAPODIK — a fix beállás UTÁN.
+
+    #1463: itt korábban CSAK egy fix `for _ in range(5): processEvents();
+    QTest.qWait(20)` állt — 100 ezredmásodpercnyi fogadás arra, hogy
+    addigra a QML-kötések, a tördelés és a rajzolás mind lefutottak.
+    Terhelt, négymagos futón ez kevés lehet, és a képpontos állítás
+    hamis pirosat ad.
+
+    ⚠️ A fix beállást NEM lehetett elhagyni. Mérve (2026-08-25, 6+6
+    futás): ha csak a „két egymást követő azonos `grabWindow()`"
+    feltételre vártunk, a poll TÚL KORÁN állt meg — két egyforma, még
+    nem kész felvétel is azonos —, és a
+    `test_additive_rgba_mix_is_visible_in_rendered_pixels` 6 futásból
+    1-szer elbukott, miközben az eredeti változat 6/6-ot ment. A
+    fali-óra tehát itt PADLÓ, nem plafon:
+
+    1. előbb a régi, fix beállás (változatlan alsó korlát),
+    2. utána — és csak utána — a felvétel-stabilitásra várunk, bőkezű
+       határidővel.
+
+    Így a teszt sosem indul korábban, mint eddig, terhelt gépen viszont
+    tovább tud várni. A padló + kiterjesztés alakkal 8 futásból 8 zöld.
+
+    Az őr foga változatlan: ha a kép sosem áll be, a határidő lejár, a
+    hívó ugyanúgy elolvassa a képpontokat, és a képpontos állítás bukik.
+    Mutációval igazolva: a `HistogramBitmap.qml` additív keverésének
+    elrontása (`case 7: "#555555"` → `"#112233"`) pirosra váltja.
+
+    ⚠️ Aki ezt „feleslegesen bonyolultnak" látja és visszaegyszerűsíti
+    puszta pollozásra, a fenti 1/6-os bukást hozza vissza.
+    """
+    # 1. a régi, fix beállás — alsó korlát, nem szinkronpont
+    for _ in range(5):
+        qt_app.processEvents()
+        QTest.qWait(20)
+
+    # 2. bőkezű hosszabbítás: két egymást követő azonos felvétel
+    elozo = None
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        mostani = view.grabWindow()
+        if elozo is not None and mostani == elozo:
+            return True
+        elozo = mostani
+        time.sleep(0.01)
+    qt_app.processEvents()
+    return False
 
 
 def _histogram_box(qt_app, histogram=None) -> tuple[QQuickView, QQuickItem]:
@@ -52,9 +104,7 @@ def _histogram_box(qt_app, histogram=None) -> tuple[QQuickView, QQuickItem]:
     view.resize(238, 144)
     view.show()
     assert QTest.qWaitForWindowExposed(view)
-    for _ in range(5):
-        qt_app.processEvents()
-        QTest.qWait(20)
+    _var_a_kirajzolasra(view, qt_app)
 
     _KEEPALIVE.extend((view, root, component))
     return view, root
@@ -84,9 +134,7 @@ def _histogram_bitmap(qt_app) -> tuple[QQuickView, QQuickItem]:
     view.resize(256, 70)
     view.show()
     assert QTest.qWaitForWindowExposed(view)
-    for _ in range(5):
-        qt_app.processEvents()
-        QTest.qWait(20)
+    _var_a_kirajzolasra(view, qt_app)
     _KEEPALIVE.extend((view, root, component))
     return view, root
 
@@ -230,9 +278,38 @@ def test_real_photo_viewer_histogram_panel_geometry(qml_app, qt_app):
     """
     window, _, _ = qml_app
     window.setProperty("viewerOpen", True)
-    for _ in range(5):
+
+    # #1463: itt korábban fix `for _ in range(5): processEvents();
+    # QTest.qWait(20)` állt — 100 ezredmásodpercnyi fogadás arra, hogy a
+    # néző és a bal fiók addigra felépül és a helyére kerül. Helyette a
+    # VALÓDI feltételre várunk: legyen meg mind a négy elem, és a mért
+    # geometriájuk álljon be (két egymást követő azonos minta). Ha ez
+    # sosem következik be, a határidő lejár, és az alábbi állítások
+    # ugyanúgy elbuknak — az őr foga változatlan.
+    def _ujjlenyomat():
+        elemek = [
+            window.findChild(QObject, nev)
+            for nev in ("photoViewer", "viewerLeftDrawer", "viewerHistogramBox", "histogramTitle")
+        ]
+        if not all(isinstance(item, QQuickItem) for item in elemek):
+            return None
+        doboz, felirat = elemek[2], elemek[3]
+        return (
+            doboz.width(),
+            doboz.height(),
+            doboz.mapToScene(doboz.boundingRect().topLeft()).x(),
+            felirat.height(),
+        )
+
+    _elozo = None
+    _hatarido = time.monotonic() + 10.0
+    while time.monotonic() < _hatarido:
         qt_app.processEvents()
-        QTest.qWait(20)
+        _mostani = _ujjlenyomat()
+        if _mostani is not None and _mostani == _elozo:
+            break
+        _elozo = _mostani
+        time.sleep(0.01)
 
     viewer = window.findChild(QObject, "photoViewer")
     drawer = window.findChild(QObject, "viewerLeftDrawer")

@@ -18,6 +18,8 @@ kirajzolt `QQuickView`, sok elem, igazi `QWheelEvent` és igazi
 
 from __future__ import annotations
 
+import time
+
 import pytest
 from PySide6.QtCore import (
     Q_ARG,
@@ -65,6 +67,86 @@ _HASAB_MAGASSAG = 800
 #: Ennyi mappa kerül a próbakönyvtárba — a görgő-léptetésnek (#77) kell
 #: szomszéd, a mappalistának pedig mérhető magasság.
 _MAPPA_DB = 8
+
+
+# --------------------------------------------------------------------------
+# Várakozás — #1463
+#
+# Ebben a fájlban korábban három fali órás `QTest.qWait(N)` állt (a
+# `render_pane` fixture-ben 80 ms, a `_right_click`-ben 50 ms, a
+# görgetés-tesztben 300 ms). A fali óra azt FELTÉTELEZI, hogy N
+# ezredmásodperc alatt megtörténik, amire várunk. Négymagos gépen, két
+# párhuzamos tesztfutás mellett ez nem igaz — a teszt valódi hiba nélkül
+# vált pirosra. Helyette határidős poll: a VALÓDI feltételt figyeljük, és
+# amint teljesül, azonnal továbbengedünk.
+# --------------------------------------------------------------------------
+def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+    """Határidős várakozás: a feltételt figyeli, nem az órát (#1463).
+
+    #918: fejnélküli környezetben az elrendezés késik — egyetlen
+    `processEvents()` után a méretek még a kezdeti állapotot mutatják."""
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        try:
+            if feltetel():
+                return True
+        except (AttributeError, TypeError, RuntimeError):
+            pass
+        time.sleep(0.01)
+    qt_app.processEvents()
+    try:
+        return bool(feltetel())
+    except (AttributeError, TypeError, RuntimeError):
+        return False
+
+
+def _var_stabil(qt_app, minta, masodperc: float = 5.0) -> bool:
+    """Megvárja, amíg a `minta()` KÉT EGYMÁST KÖVETŐ mérésben azonos.
+
+    Ahol nincs egyetlen logikai feltétel, csak „álljon meg az elrendezés”,
+    ott ez a helyes várakozás (a repóban már bevált idióma:
+    `test_collage_view_and_edit_1001.py::_stabil_kozeppont`)."""
+    elozo: list = []
+
+    def _egyezik() -> bool:
+        mostani = minta()
+        stabil = bool(elozo) and elozo[0] == mostani
+        elozo[:] = [mostani]
+        return stabil
+
+    return _var(qt_app, _egyezik, masodperc)
+
+
+def _var_a_hasab_elrendezesere(qt_app, pane) -> None:
+    """Megvárja, amíg a hasáb elrendezése MEGÁLL (#1463).
+
+    A helyén korábban `QTest.qWait(80)` állt azzal az indokkal, hogy „a
+    ColumnLayout az újratördelést a következő polish-körben végzi”. Az
+    indok igaz, a 80 ms viszont találgatás.
+
+    A mintánk a hasáb tartalommagassága és a mappalista magassága együtt;
+    a poll akkor enged tovább, ha a pár két egymást követő mérésben azonos
+    (és a hasábnak már van tartalma — enélkül a kezdeti 0-s állapot
+    „stabilnak” látszana).
+
+    Szándékosan NEM várunk arra, hogy `folderListView.height() > 0`: pont
+    EZT állítja a `test_folder_list_keeps_a_usable_height` (#730). Ha a
+    fixture is erre várna, egy valódi visszaesésnél minden eset a
+    határidőt ülné végig, és a bukás a fixture-ből jönne a beszédes
+    állítás helyett — vagyis az őr foga tompulna."""
+    flickable = _child(pane, "folderPaneFlickable")
+    lista = _child(pane, "folderListView")
+    # előbb legyen egyáltalán tartalma (különben a kezdeti 0/0 pár két
+    # mérésben „stabil”, és a poll a tördelés ELŐTT engedne tovább)
+    _var(qt_app, lambda: flickable.property("contentHeight") > 0)
+    _var_stabil(
+        qt_app,
+        lambda: (
+            round(flickable.property("contentHeight"), 3),
+            round(lista.property("height"), 3),
+        ),
+    )
 
 
 @pytest.fixture
@@ -164,9 +246,10 @@ def render_pane(qt_app, conn):
         paths = list(folders_model.folder_paths())
         pane.setProperty("selectedPath", paths[len(paths) // 2])
 
-        # a ColumnLayout az újratördelést a következő polish-körben végzi
-        QTest.qWait(80)
-        qt_app.processEvents()
+        # a ColumnLayout az újratördelést a következő polish-körben végzi.
+        # #1463: itt korábban `QTest.qWait(80)` állt — a 80 ms találgatás
+        # volt; most magát az elrendezés megállását várjuk ki.
+        _var_a_hasab_elrendezesere(qt_app, pane)
 
         _KEEPALIVE.extend((engine, component, view, pane, folders_model))
         return view, pane, paths
@@ -243,7 +326,7 @@ def _open_menus(pane):
     )
 
 
-def _right_click(qt_app, view, item):
+def _right_click(qt_app, view, pane, item):
     center = _center_in_window(item)
     assert 0 <= center.y() <= view.height(), (
         f"a kattintási pont ({center.y():.0f}) az ablakon kívülre esik"
@@ -254,9 +337,11 @@ def _right_click(qt_app, view, item):
         Qt.KeyboardModifier.NoModifier,
         center.toPoint(),
     )
-    qt_app.processEvents()
-    QTest.qWait(50)
-    qt_app.processEvents()
+    # #1463: itt korábban `QTest.qWait(50)` állt — annak a feltevésnek a
+    # fali órás alakja, hogy „50 ms alatt kinyílik a popup”. A VALÓDI
+    # feltétel az, hogy megjelenjen VALAMELYIK menü; hogy a HELYES nyílt-e
+    # meg, azt utána a hívó teszt állítja — az őr foga tehát megmarad.
+    _var(qt_app, lambda: _open_menus(pane) != [])
 
 
 class TestPaneScrollsAsAWhole:
@@ -380,8 +465,12 @@ class TestWheelOverThePaneDoesNotJumpFolders:
         assert flickable.property("contentY") == 0
 
         _send_wheel(qt_app, view, _child(pane, "albumsHeaderRow"))
-        QTest.qWait(300)
-        qt_app.processEvents()
+        # #1463: itt korábban `QTest.qWait(300)` állt — a `Flickable`
+        # lassulásának becsült ideje. A valódi feltétel maga az állítás
+        # előfeltétele: elmozdult-e a tartalom. Ha igen, azonnal
+        # továbbmegyünk; ha nem, a határidő lejárta után az alatta lévő
+        # állítás mondja meg, mi a baj (#730/#731).
+        _var(qt_app, lambda: flickable.property("contentY") > 0)
 
         assert flickable.property("contentY") > 0, (
             "a görgő a hasáb fejléce fölött nem görgetett (#730/#731)"
@@ -410,7 +499,7 @@ class TestRightClickOpensTheRowsOwnMenu:
         view, pane, _paths = render_pane(exported=True)
         row = _repeater_item(pane, "exportedFolderRepeater", 0)
 
-        _right_click(qt_app, view, row)
+        _right_click(qt_app, view, pane, row)
 
         assert _open_menus(pane) == ["folderContextMenu"], (
             "az exportált mappa sora nem a mappa-menüt adta (#732)"
@@ -433,7 +522,7 @@ class TestRightClickOpensTheRowsOwnMenu:
         )
         assert row is not None, "a gyűjtemény-mappa sora nem jött létre"
 
-        _right_click(qt_app, view, row)
+        _right_click(qt_app, view, pane, row)
 
         assert _open_menus(pane) == ["folderContextMenu"], (
             "a gyűjtemény-mappa sora nem a mappa-menüt adta (#732)"
@@ -449,7 +538,7 @@ class TestRightClickOpensTheRowsOwnMenu:
         Emberek-album menüjét kell adnia (ui-audit-context-menus.md A.2)."""
         view, pane, _paths = render_pane(unnamed=5)
 
-        _right_click(qt_app, view, _child(pane, "unnamedFacesItem"))
+        _right_click(qt_app, view, pane, _child(pane, "unnamedFacesItem"))
 
         assert _open_menus(pane) == ["peopleAlbumContextMenu"], (
             "a „Névtelenek” sor nem az Emberek-album menüjét adta (#732)"
@@ -461,7 +550,7 @@ class TestRightClickOpensTheRowsOwnMenu:
         """A „Mellőzött emberek” ugyanúgy ALBUM (`CAlbumLabel::Ignored`)."""
         view, pane, _paths = render_pane(ignored=3)
 
-        _right_click(qt_app, view, _child(pane, "ignoredFacesItem"))
+        _right_click(qt_app, view, pane, _child(pane, "ignoredFacesItem"))
 
         assert _open_menus(pane) == ["peopleAlbumContextMenu"], (
             "a „Mellőzött emberek” sor nem az Emberek-album menüjét adta "
