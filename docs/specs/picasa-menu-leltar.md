@@ -190,6 +190,34 @@ menü rekordjaival, ahol ugyanez a mező mást hordozott, ld.
 
 ### A kinyert térkép: **177 tétel, 145 parancsazonosítóval**
 
+> 🔴 **A gépi azonosító-kinyerés MEGBUKOTT — az oszlop eltávolítva
+> (2026-08-25, ugyanaznap).**
+>
+> A menüépítőben a **felirat a KÖVETKEZŐ rekord `+0x00` mezőjébe íródik**, a
+> fordítás lekérése (`call 0x9ae560`) után — ezért a kulcs↔azonosító párosítás
+> kétséges volt. **Kontroll-méréssel eldöntve, független horgonnyal:**
+>
+> A `picasa-konyvtar-eszkoztar-viselkedes.md` egy korábbi, más úton végzett
+> kör alapján rögzíti, hogy `0x9db6` = **`ID_VIEW_FOLDERS`** (&Flat Folder
+> View), `0x9db8` = `ID_VIEW_WATCHED`, `0x9db9` = `ID_VIEW_ALL`. A gépi
+> kinyerésem viszont `0x9db6`-ra **`ID_VIEW_ALL`**-t mondott, `0x9db9`-re
+> pedig `ID_VIEWBYDATE`-et — miközben `ID_VIEW_MYPICTURES` = `0x9db7`
+> **helyes** volt.
+>
+> ⇒ **A tévedés SZABÁLYTALAN**, nem egyenletes egy-rekordos elcsúszás, tehát
+> nem javítható egy eltolással. **Egy félig hibás azonosító-térkép rosszabb,
+> mint semmilyen**, mert használat közben bizalmat kelt — ezért az oszlopot
+> **kivettem** a CSV-ből.
+>
+> **Ami MEGMARADT és megbízható:** `menu`, `parancs`, `felirat_en`,
+> `felirat_hu` — a névterek, a parancsnevek és a feliratok a szövegtárból
+> és a menüépítő sztringjeiből jönnek, azokat a kontroll nem érintette.
+>
+> **Ha valakinek kell egy konkrét parancsazonosító:** keresse ki
+> egyenként, a kulcs sztringcímétől indulva a menüépítőben
+> (`0x00559150`), és **ellenőrizze független horgonnyal** — pontosan úgy,
+> ahogy ez a bekezdés készült.
+
 Géppel olvasható alakban: **[`picasa-menu-parancsok.csv`](picasa-menu-parancsok.csv)**
 (oszlopok: `menu`, `parancs`, `parancsazonosito`, `felirat_en`, `felirat_hu`).
 
