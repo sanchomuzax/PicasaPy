@@ -9,6 +9,11 @@ import QtQuick.Layouts
 Column {
     id: tray
 
+    // #1367: a sáv MÉRT szélesség-igénye — a `Main.qml` erre köti az ablak
+    // `minimumWidth`-ét. A gyökéren át érhető el, mert a főablak a
+    // komponenst látja, nem a belső `trayMainBar`-t.
+    readonly property real requiredWidth: trayMainBar.requiredWidth
+
     // a főablak (kijelölés-állapot + rotateTargetsAllVideo őr gazdája)
     required property var appWindow
     // a néző aktuális sora (a Main köti a photoViewer.currentIndex-re)
@@ -201,6 +206,30 @@ Column {
         // ha az elválasztók csak ott jelennek meg, ahol ez a többlet is
         // bizonyíthatóan elfér.
         readonly property int actionCellWidth: 59
+        // #1367: a sáv MÉRT szélesség-igénye kompakt módban. A #1345 fix
+        // cellái miatt a gombok többé nem zsugorodnak, tehát a sáv igénye
+        // 722-ről ~830 képpontra nőtt; ez alatt a jobb szélső elem (a zöld
+        // „Feltöltés…") kicsúszik a látható területről.
+        //
+        // ⚠️ NEM beégetett szám: a Qt számolja a TÉNYLEGES tartalomból
+        // (`implicitWidth`), tehát a másik platformon a helyi betűvel mér —
+        // épp azt a csapdát kerülve, amin a windows-CI egyszer már elbukott
+        // (ld. a `compactThreshold` kommentjét). A `Main.qml` erre köti az
+        // ablak `minimumWidth`-ét, ugyanúgy, ahogy a magasságot a
+        // `photoViewer.requiredHeight`-re (#641).
+        //
+        // Az eredetiben a helyhiányt a `morebutton`/overflow gondozná — az
+        // nálunk még nincs meg (#1367 hosszú útja).
+        //
+        // ⚠️ Miért KONSTANS, és nem `trayRowLayout.implicitWidth`: az
+        // `implicitWidth` a MINDENKORI módot tükrözi (bő módban 1221), a
+        // `compact` viszont a szélességtől függ — a kettőt összekötve
+        // visszacsatolás keletkezne, és az ablak soha nem tudna kompakt
+        // módba váltani. A szám ezért MÉRT állandó (kompakt mód: a sor
+        // igénye 830 + 20 margó = 850), és az őr-teszt ÉLŐBEN újraméri:
+        // ha a betű vagy a fordítás nő, a teszt elbukik, és ezt kell emelni.
+        // Ugyanez a minta, mint a `compactBudget`-nél.
+        readonly property real requiredWidth: 850
         readonly property bool separatorsVisible:
             width >= compactThreshold + 2 * actionCellWidth
 
