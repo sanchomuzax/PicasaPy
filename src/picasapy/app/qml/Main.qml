@@ -642,7 +642,12 @@ ApplicationWindow {
     // ütközés, mert a rács album-parancsai nem élnek
     Shortcut {
         objectName: "shortcutDeleteFromDiskViewer"
-        sequence: "Delete"
+        // #1418: a nézőben (jobbklikk-menüs felület) `Ctrl+Delete` a helyes,
+        // nem a puszta `Delete` — a #1154 mérése szerint a `0x9c9a` parancs
+        // felület szerint válik szét: menüsávban `Delete`, helyi menükben
+        // `Ctrl+Delete`. A korábbi `Delete` a #422 azóta felülírt feltevése
+        // volt.
+        sequence: "Ctrl+Delete"
         enabled: window.viewerOpen && photoViewer.currentIndex >= 0
         onActivated: {
             var p = controller.photos.filePathAt(photoViewer.currentIndex)

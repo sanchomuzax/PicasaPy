@@ -133,15 +133,20 @@ class TestViewerContextMenuStructure:
             assert item.property("enabled") is False, f"{name} nem szürke"
         _close_menu(window, qt_app)
 
-    def test_delete_shortcut_is_plain_delete_in_the_viewer(self, qml_app, qt_app):
-        """A rácsban `Ctrl+Delete`, a nézőben `Delete` — szándékos
-        eltérés (spec 3.)."""
+    def test_delete_shortcut_is_ctrl_delete_in_the_viewer(self, qml_app, qt_app):
+        """#1418: a rácsban ÉS a nézőben is `Ctrl+Delete` — a korábbi
+        feltevés (a nézőben puszta `Delete`, spec 3.) a friss #1154-mérés
+        (spec 4., a helyi menük `0x00a6aee0` rekordjai) szerint téves
+        volt: mindkét helyi menü ugyanazt a billentyűt hirdeti, csak a
+        menüsáv (ahol a néző nem is látszik) marad `Delete`."""
         window, _controller, _engine = qml_app
         _open_viewer(window, qt_app)
         _open_menu(window, qt_app)
         # a projekt konvenciója: a gyorsbillentyű `\t` után áll a feliratban
         # (PicasaMenuBar.qml)
-        assert _child(window, "viewerMenuDelete").property("text").endswith("\tDelete")
+        assert _child(window, "viewerMenuDelete").property("text").endswith(
+            "\tCtrl+Delete"
+        )
         _close_menu(window, qt_app)
 
 

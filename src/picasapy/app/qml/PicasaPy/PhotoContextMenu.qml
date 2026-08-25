@@ -18,8 +18,9 @@ import QtQuick.Controls
 // (`currentAlbumToken`).
 //
 // A néző menüje (ViewerContextMenu.qml) szándékosan MÁS: az első tétel ott
-// „Visszatérés a könyvtárhoz", a mappa-műveletek elmaradnak, a törlés
-// gyorsbillentyűje pedig `Delete` — itt `Ctrl+Delete` (spec 3.).
+// „Visszatérés a könyvtárhoz", a mappa-műveletek elmaradnak. A törlés
+// gyorsbillentyűje viszont MINDKÉT helyi menüben `Ctrl+Delete` (#1418,
+// spec 4.) — csak a menüsávban puszta `Delete`.
 //
 // A még be nem kötött parancsok `PicasaMenuItem { placeholder: true }`-ként
 // szürkén LÁTSZANAK (#416, illetve a spec 5.1. szabálya: az inaktív tétel
@@ -267,7 +268,9 @@ Menu {
     }
     MenuItem {
         objectName: "contextMenuDelete"
-        // a rácsban Ctrl+Delete — a nézőben puszta Delete (spec 3.)
+        // #1418: a rácsban (és a nézőben is) Ctrl+Delete — a puszta
+        // Delete a menüsávé (spec 4.). A valódi billentyű a Main.qml
+        // `shortcutDeleteFromDiskGrid` Shortcutja (#422-ből, változatlan).
         text: qsTr("Delete from Disk") + "\tCtrl+Delete"
         onTriggered: menu.deleteRequested()
     }

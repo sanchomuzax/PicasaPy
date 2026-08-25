@@ -9,15 +9,20 @@ import QtQuick.Controls
 // eddig EGYÁLTALÁN nem volt kontextusmenü.
 //
 // A menü szándékosan majdnem azonos a rács `PhotoContextMenu`-jével, de a
-// spec szerinti NÉGY eltéréssel:
+// spec szerinti HÁROM eltéréssel:
 //   1. az első, félkövér tétel „Visszatérés a könyvtárhoz" (`Esc`), nem
 //      „Megjelenítés és szerkesztés" (`Enter`);
 //   2. a mappa-műveletek (áthelyezés új mappába, mappa felosztása) itt
 //      nincsenek — a nézőben nincs értelmük;
-//   3. a lemezről törlés gyorsbillentyűje `Delete`, nem `Ctrl+Delete` (a
-//      rácsban a puszta `Delete` = eltávolítás az albumból, itt nincs
-//      ütközés);
-//   4. a feltöltés „Gyors feltöltés", nem „Feltöltés a Webalbumokba…".
+//   3. a feltöltés „Gyors feltöltés", nem „Feltöltés a Webalbumokba…".
+//
+// #1418: a lemezről törlés gyorsbillentyűje itt IS `Ctrl+Delete` — a
+// korábbi feltételezés (miszerint a nézőben puszta `Delete` élne, mert a
+// rácsban a puszta `Delete` „eltávolítás az albumból") tévesnek bizonyult:
+// a #1154 friss mérése (a helyi menük `0x00a6aee0` rekordjai,
+// docs/specs/picasa-gyorsbillentyuk.md 4.) a néző (OneUp) helyi menüjében
+// is `Ctrl+Delete`-et talált — ugyanúgy, mint a rácsban. A menüsávban
+// (ahol a néző NEM látszik) marad a puszta `Delete`.
 //
 // A még be nem kötött parancsok `PicasaMenuItem { placeholder: true }`-ként
 // jelennek meg (#416: halvány felirat + pont). Ez EGYBEN a spec 5.1.
@@ -179,8 +184,10 @@ Menu {
     }
     MenuItem {
         objectName: "viewerMenuDelete"
-        // a nézőben PUSZTA Delete — a rácsban Ctrl+Delete (spec 3.)
-        text: qsTr("Delete from Disk") + "\tDelete"
+        // #1418: itt is Ctrl+Delete, ugyanúgy mint a rácsban (spec 4.,
+        // ld. a fájl fejlécének megjegyzését) — a valódi billentyű a
+        // PhotoViewer.qml Keys.onPressed-jében él.
+        text: qsTr("Delete from Disk") + "\tCtrl+Delete"
         onTriggered: menu.triggerDelete()
     }
     MenuItem {

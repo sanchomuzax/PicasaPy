@@ -8,6 +8,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **A törlés Ctrl+Delete-je mostantól a fotónézőben is működik (#1418).**
+  Az eredeti Picasában a lemezről törlés két billentyűn él: a menüsávban
+  puszta `Delete`, a jobbklikk-menükben `Ctrl+Delete`. A bélyegkép-rácsban
+  ez már korábban is így volt bekötve, a fotónézőben (a kép teljes
+  képernyős megnyitásakor) viszont a `Ctrl+Delete` eddig egyáltalán nem
+  reagált — csak a jobbklikk-menüből, egérrel lehetett törölni. A
+  jobbklikk-menü felirata is a régi, elavult billentyűt (puszta `Delete`)
+  mutatta; mostantól `Ctrl+Delete`-et hirdet, és valóban erre reagál.
+  A nézőben a puszta `Delete` **többé nem töröl** — az a menüsáv
+  billentyűje, a jobbklikk-menüké a `Ctrl+Delete`.
 - **A „Visszaállítás" megtalálja a régi, 2009 előtti eredetiket is (#1425).**
   A Picasa a szerkesztés előtti eredetit két különböző nevű mappába mentette:
   a 2009 utáni verziók a rejtett `.picasaoriginals`-ba, a régebbiek a látható
