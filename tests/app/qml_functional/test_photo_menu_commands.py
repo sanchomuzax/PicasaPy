@@ -85,9 +85,19 @@ class TestPhotoMenuCommands:
 
 
 class TestDeleteShortcutsAreContextDependent:
-    """Spec 3.: a lemezről törlés a rácsban `Ctrl+Delete`, a nézőben
-    `Delete` — a rácsban a puszta `Delete` mást jelent, ezért ott kell a
-    módosító."""
+    """A lemezről törlés **mindkét helyi menüs felületen** `Ctrl+Delete`.
+
+    ⚠️ **VISSZAVONT DÖNTÉS, kimondva (#1418).** A spec 3. szakasza korábban
+    azt írta, hogy a nézőben a puszta `Delete` a helyes; ez a #422 feltevése
+    volt. A #1154 mérése (a menüsáv rekordtáblája `0x00559150`-től és a
+    helyi menük rekordjai a `0x00a6aee0` hívóiban) **felülírta**: a `0x9c9a`
+    parancs FELÜLET szerint válik szét — **menüsávban** puszta `Delete`,
+    **helyi menükben** (rács ÉS néző) `Ctrl+Delete`.
+
+    Ez a teszt korábban a régi feltevést rögzítette szerződésként; most az
+    új, mért állapotot rögzíti. A visszaesés ellen a
+    `test_torles_billentyu_felulet_1418.py` ellenkező irányú őre véd (a
+    nézőben a puszta `Delete` NEM törölhet)."""
 
     def test_grid_shortcut_is_ctrl_delete(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
@@ -95,10 +105,12 @@ class TestDeleteShortcutsAreContextDependent:
         sequence = str(shortcut.property("sequence"))
         assert sequence.startswith("Ctrl+") and sequence.endswith("Delete")
 
-    def test_viewer_shortcut_is_plain_delete(self, qml_app, qt_app):
+    def test_viewer_shortcut_is_ctrl_delete(self, qml_app, qt_app):
+        """A néző is helyi menüs felület, tehát `Ctrl+Delete` (#1418)."""
         window, _controller, _engine = qml_app
         shortcut = _child(window, "shortcutDeleteFromDiskViewer")
-        assert str(shortcut.property("sequence")) == "Delete"
+        sequence = str(shortcut.property("sequence"))
+        assert sequence.startswith("Ctrl+") and sequence.endswith("Delete")
 
     def test_only_one_of_them_is_live_at_a_time(self, qml_app, qt_app):
         """A nézőé csak nyitott nézőben, a rácsé csak zárt nézőben él —
