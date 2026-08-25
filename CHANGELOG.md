@@ -13,8 +13,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   külső program indítása, lemezműveletek), hogy a csere a futás idejére az
   EGÉSZ programra érvényes volt, nem csak a vizsgált részre. Ebből a
   háttérszálakkal együtt futó tesztek egymás viselkedését írhatták át. A
-  71 érintett hely mostantól a saját moduljának fogantyúját cseréli, és egy
-  őr-teszt vigyáz rá, hogy ne kerüljön vissza a régi alak. A felhasználó
+  felmérés 71 ilyen helyet talált 26 fájlban; ebből 64 állt át a saját
+  moduljának fogantyújára, 7 pedig dokumentált kivétel maradt (ezek nem
+  kölcsönvett függvények, hanem magának a folyamatnak az állapotai). Egy
+  őr-teszt vigyáz rá, hogy a régi alak ne kerüljön vissza. A felhasználó
   ebből semmit nem lát; a haszna az, hogy a hibajelzéseink megbízhatóbbak.
 
 ## [0.8.94] – 2026-08-25
