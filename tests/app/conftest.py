@@ -73,7 +73,6 @@ def _build_qml_app(qt_app, tmp_path):
     from picasapy.app.drop_import_controller import DropImportController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
-    from picasapy.app.effect_thumbnails import EffectThumbnailProvider
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
@@ -116,8 +115,12 @@ def _build_qml_app(qt_app, tmp_path):
     confirm_settings = ConfirmSettingsBridge(settings=settings)
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
-    # effekt-gomb bélyegképek (#338) — az application.py bekötésének tükre
-    effect_thumb_provider = EffectThumbnailProvider(provider.photo_record)
+    # #1457: az effekt-bélyegkép szolgáltatót itt SZÁNDÉKOSAN nem hozzuk
+    # létre. A motor szinkron szolgáltatót kap (ld. lentebb), tehát a
+    # valódi, pool-szálas változatra ezekben a tesztekben nincs szükség —
+    # és a puszta létrehozása is bejelentkezne a folyamat-szintű
+    # pool-nyilvántartásba. Az `application.py` változatlanul a valódit
+    # köti be; azt saját, motor nélküli tesztek mérik.
     fileops_controller = FileOpsController()
     app_module.wire_fileops(fileops_controller, controller)
     discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)

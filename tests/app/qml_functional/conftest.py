@@ -70,7 +70,6 @@ def _build_qml_app(qt_app, tmp_path):
     from picasapy.app.discovery_controller import DiscoveryController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
-    from picasapy.app.effect_thumbnails import EffectThumbnailProvider
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
@@ -120,8 +119,12 @@ def _build_qml_app(qt_app, tmp_path):
     # szerkesztő-híd (#19) — az application.py bekötésének tükre
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
-    # effekt-gomb bélyegképek (#338) — az application.py bekötésének tükre
-    effect_thumb_provider = EffectThumbnailProvider(provider.photo_record)
+    # #1457: az effekt-bélyegkép szolgáltatót itt SZÁNDÉKOSAN nem hozzuk
+    # létre. A motor szinkron szolgáltatót kap (ld. lentebb), tehát a
+    # valódi, pool-szálas változatra ezekben a tesztekben nincs szükség —
+    # és a puszta létrehozása is bejelentkezne a folyamat-szintű
+    # pool-nyilvántartásba. Az `application.py` változatlanul a valódit
+    # köti be; azt saját, motor nélküli tesztek mérik.
     engine = QQmlApplicationEngine()
     # ⚠️ #1457: a QML-motor SZINKRON szolgáltatót kap. A termékkód
     # aszinkron marad; itt a pool-szálak és a válasz-objektumok csak a
