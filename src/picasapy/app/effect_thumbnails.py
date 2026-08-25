@@ -43,12 +43,10 @@ import numpy as np
 import itertools
 import shiboken6
 from PySide6.QtCore import (
-    QMetaObject,
     QRunnable,
     QSize,
     Qt,
     QThreadPool,
-    Slot,
 )
 from PySide6.QtGui import QImage, QImageReader
 from PySide6.QtQuick import (
@@ -252,22 +250,23 @@ class _EffectThumbResponse(QQuickImageResponse):
             if not self._cancelled:
                 self._image = image
             self._done.set()
-            # A jelzés NEM innen, a pool-szálról megy ki, hanem a válasz
-            # SAJÁT szálán: a motor a `finished`-re hívja a `deleteLater`-t,
-            # és a törlést ugyanaz a szál végzi. Egy szálra sorolva a
-            # kibocsátás és a törlés nem futhat egyszerre.
+            # ⚠️ #1457 — A JELZÉS ITT, A POOL-SZÁLRÓL MEGY KI.
             #
-            # Lemondott válaszon is ki kell mennie: enélkül a motor sosem
-            # takarítaná el, és a nyilvántartás sem ürülne.
-            QMetaObject.invokeMethod(
-                self, "_emit_finished", Qt.ConnectionType.QueuedConnection
-            )
-
-    @Slot()
-    def _emit_finished(self) -> None:
-        """A `finished` tényleges kibocsátása — a válasz saját szálán."""
-        if shiboken6.isValid(self):
+            # Készült egy változat, amely ezt a válasz saját szálára
+            # ütemezte át (`QMetaObject.invokeMethod` + `QueuedConnection`),
+            # hogy a kibocsátás és a motor `deleteLater`-e egy szálra
+            # kerüljön. Az ötlet védhető, DE a CI-ben ezután egy MÁSIK
+            # tesztfájl kezdett összeomlani (`test_collage_panel_wiring_985`),
+            # miközben a főág ugyanott zöld volt — és a bukást helyben,
+            # terhelés alatt, nyolc körben SEM sikerült reprodukálni.
+            #
+            # Bizonyítatlan gyanúval nem viszünk be időzítést változtató
+            # módosítást: az átütemezés kikerült, a jegy (#1457) nyitva
+            # marad rá. Az itt maradó védelmek — a zár, a `cancel`, az
+            # élő válaszok nyilvántartása — NEM változtatnak időzítést,
+            # és mindegyiket külön őr méri.
             self.finished.emit()
+
 
     def textureFactory(self) -> QQuickTextureFactory:
         with self._lock:

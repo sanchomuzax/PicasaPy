@@ -22,6 +22,7 @@ import gc
 import weakref
 
 import shiboken6
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QImage
 
 from picasapy.thumbs import ThumbnailCache
@@ -81,7 +82,8 @@ class TestValaszElettartam:
     def test_lemondott_valaszba_nem_irunk_kepet(self, qt_app, tmp_path):
         """Lemondás után a kép beírása fölösleges munka — de a `finished`
         jelzésnek ki KELL mennie, különben a motor sosem takarítaná el a
-        választ. A jelzés #1457 óta queued, ezért kell a `processEvents`."""
+        választ. (A `processEvents` azért marad, hogy a kötés akkor is
+        lefusson, ha a Qt később mégis sorba tenné a kézbesítést.)"""
         from picasapy.app.thumbnail_provider import _ThumbResponse
 
         response = _ThumbResponse()
@@ -93,46 +95,52 @@ class TestValaszElettartam:
         qt_app.processEvents()
         assert jelzesek == [1], "a motornak jeleznünk kell, hogy eltakaríthassa"
 
-    def test_a_jelzes_a_valasz_sajat_szalan_megy_ki(self, qt_app, tmp_path):
-        """#1457 magja: nem elég, hogy a jelzés KÉZBESÍTÉSE a főszálra
-        sorolódik (azt a Qt auto-kapcsolata amúgy is megteszi) — maga a
-        KIBOCSÁTÁS sem futhat a dolgozó szálon, mert az a válasz-objektumot
-        érinti, amit közben a motor a saját szálán elpusztíthat.
+    def test_a_jelzes_ma_a_POOL_szalrol_megy_ki_es_ezt_kimondjuk(self, qt_app):
+        """A #1457 NYITOTT része — az őr a mai állapotot rögzíti, nem a vágyat.
 
-        Ezért azt mérjük, MELYIK SZÁLON fut le a kibocsátó lépés."""
+        A `finished` ma a pool-szálról megy ki, miközben a motor a saját
+        szálán hívja a `deleteLater`-t ugyanazon az objektumon. Készült rá
+        javítás (a kibocsátás átütemezése a válasz saját szálára), de a
+        CI-ben ezután egy MÁSIK tesztfájl kezdett összeomlani, miközben a
+        főág ott zöld volt — és a bukást helyben, terhelés alatt, nyolc
+        körben sem sikerült reprodukálni. Bizonyítatlan gyanúval időzítést
+        változtató módosítást nem viszünk be; a jegy nyitva marad.
+
+        Ez az őr azért van, hogy a következő olvasó **ne higgye
+        megoldottnak**: ha valaki az átütemezést visszahozza, ez a teszt
+        buktatja, és ezzel odavezeti a jegyhez, a méréseivel együtt."""
         import threading
 
         from picasapy.app.thumbnail_provider import _ThumbResponse
 
-        rogzitett: list[int] = []
+        response = _ThumbResponse()
+        kibocsato: list[int] = []
+        # ⚠️ KÖZVETLEN kapcsolat: enélkül a kötést a főszálon hoztuk
+        # létre, tehát a Qt oda SOROLNÁ a szeletet, és a mérés a
+        # kézbesítés szálát adná — nem a KIBOCSÁTÁSÉT. Az őr első
+        # változata pontosan ezen csúszott el, és fogatlan volt.
+        response.finished.connect(
+            lambda: kibocsato.append(threading.get_ident()),
+            Qt.ConnectionType.DirectConnection,
+        )
 
-        class Figyelt(_ThumbResponse):
-            def _emit_finished(self) -> None:
-                rogzitett.append(threading.get_ident())
-                super()._emit_finished()
+        dolgozo_azonosito: list[int] = []
 
-        response = Figyelt()
-        fo_szal = threading.get_ident()
-
-        dolgozo: list[int] = []
-
-        def munka():
-            dolgozo.append(threading.get_ident())
+        def dolgozo() -> None:
+            dolgozo_azonosito.append(threading.get_ident())
             response._finish(QImage(8, 8, QImage.Format.Format_RGB32))
 
-        t = threading.Thread(target=munka)
-        t.start()
-        t.join()
-        assert response._done.is_set()
-        assert rogzitett == [], (
-            "a kibocsátás nem futhat le a dolgozó szálon (#1457)"
-        )
+        szal = threading.Thread(target=dolgozo)
+        szal.start()
+        szal.join(5.0)
         qt_app.processEvents()
-        assert rogzitett == [fo_szal], (
-            "a kibocsátásnak a válasz saját szálán kell lefutnia; "
-            f"dolgozó szál: {dolgozo}, mért: {rogzitett}"
-        )
 
+        assert kibocsato == dolgozo_azonosito, (
+            "a `finished` már NEM a pool-szálról megy ki. Ha ez szándékos "
+            "javítás, olvasd el a #1457-et: az átütemezés egyszer már "
+            "bekerült, és a CI-ben egy másik tesztfájl kezdett tőle "
+            "összeomlani. Mérd le, mielőtt visszahozod."
+        )
 
 class TestPoolFeladatViszony:
     def test_a_pool_feladat_autodelete_marad(self, qt_app, tmp_path):
@@ -240,17 +248,32 @@ class TestAKetSZOLGALTATOUgyanazokatAVedelmeketKapja:
                 "lemondott válaszba írás és a jelzés elmaradása is kárt okoz"
             )
 
-    def test_mindketto_a_sajat_szalan_bocsatja_ki_a_jelzest(self):
-        """A pool-szálról kibocsátott jelzés a törléssel versenyzik."""
+    def test_mindketto_UGYANUGY_bocsatja_ki_a_jelzest(self):
+        """A két szolgáltató NE csússzon szét ezen a ponton sem.
+
+        ⚠️ A jelzés ma MINDKETTŐBEN a pool-szálról megy ki, és ez a #1457
+        NYITOTT része: a motor a saját szálán hívja a `deleteLater`-t
+        ugyanazon az objektumon. Készült rá javítás (a kibocsátás
+        átütemezése a válasz saját szálára), de a CI-ben ezután egy MÁSIK
+        tesztfájl kezdett összeomlani, miközben a főág ott zöld volt — és
+        a bukást helyben, terhelés alatt, nyolc körben sem sikerült
+        reprodukálni. Bizonyítatlan gyanúval időzítést változtató
+        módosítást nem viszünk be.
+
+        Amit ez az őr véd: ha valaki a KÉT szolgáltató közül csak az
+        egyiket írja át, a másik ne maradjon le csendben — a #1457 első
+        köre pontosan ezen bukott el."""
         import inspect
 
-        for nev, osztaly in self._valasz_osztalyok().items():
-            forras = inspect.getsource(osztaly)
-            assert "invokeMethod" in forras and "QueuedConnection" in forras, (
-                f"a(z) {nev} válasza a POOL-szálról bocsátja ki a jelzést; a "
-                "motor ugyanakkor a saját szálán hívja a deleteLater-t, és a "
-                "kettő ugyanazon az objektumon fut"
-            )
+        alakok = {
+            nev: ("invokeMethod" in inspect.getsource(osztaly))
+            for nev, osztaly in self._valasz_osztalyok().items()
+        }
+        assert len(set(alakok.values())) == 1, (
+            "a két bélyegkép-szolgáltató MÁSHOGY bocsátja ki a `finished` "
+            f"jelzést: {alakok}. Az egyik javítása a másikat is kell hogy "
+            "kövesse — különben a hiba megmarad abban, amelyik lemaradt."
+        )
 
     def test_mindketto_a_zar_alatt_olvassa_a_kepet(self):
         import inspect

@@ -43,7 +43,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 import shiboken6
-from PySide6.QtCore import QMetaObject, QRunnable, Qt, QThreadPool, Signal, Slot
+from PySide6.QtCore import QRunnable, QThreadPool, Signal
 from PySide6.QtGui import QImage, QTransform
 from PySide6.QtQuick import (
     QQuickAsyncImageProvider,
@@ -170,30 +170,23 @@ class _ThumbResponse(QQuickImageResponse):
             if not self._cancelled:
                 self._image = image
             self._done.set()
-            # Lemondott válaszon is KI KELL mennie a jelzésnek: a motor a
-            # `finished`-re takarítja el a választ (deleteLater), enélkül
-            # se a C++ oldal, se a provider nyilvántartása nem szabadulna
-            # fel.
+            # ⚠️ #1457 — A JELZÉS ITT, A POOL-SZÁLRÓL MEGY KI.
             #
-            # #1457 — a jelzés NEM innen, a pool-szálról megy ki, hanem a
-            # válasz SAJÁT szálán (a motor olvasószálán), queued hívással.
-            # Ez zárja be az utolsó ablakot: a motor a `finished` hatására
-            # `deleteLater()`-t hív, és a törlést ugyanaz a szál végzi el.
-            # Ha a jelzést a pool-szálról bocsátanánk ki, a motor a saját
-            # szálán elpusztíthatná a választ, MIKÖZBEN a pool-szál még a
-            # kibocsátás belsejében jár ugyanazon az objektumon — pontosan
-            # ez a use-after-free omlasztotta össze a programot. Egy szálra
-            # sorolva a kibocsátás és a törlés nem futhat egyszerre.
-            QMetaObject.invokeMethod(
-                self, "_emit_finished", Qt.ConnectionType.QueuedConnection
-            )
-
-    @Slot()
-    def _emit_finished(self) -> None:
-        """A `finished` tényleges kibocsátása — mindig a válasz saját
-        szálán fut (ld. `_finish`)."""
-        if shiboken6.isValid(self):
+            # Készült egy változat, amely ezt a válasz saját szálára
+            # ütemezte át (`QMetaObject.invokeMethod` + `QueuedConnection`),
+            # hogy a kibocsátás és a motor `deleteLater`-e egy szálra
+            # kerüljön. Az ötlet védhető, DE a CI-ben ezután egy MÁSIK
+            # tesztfájl kezdett összeomlani (`test_collage_panel_wiring_985`),
+            # miközben a főág ugyanott zöld volt — és a bukást helyben,
+            # terhelés alatt, nyolc körben SEM sikerült reprodukálni.
+            #
+            # Bizonyítatlan gyanúval nem viszünk be időzítést változtató
+            # módosítást: az átütemezés kikerült, a jegy (#1457) nyitva
+            # marad rá. Az itt maradó védelmek — a zár, a `cancel`, az
+            # élő válaszok nyilvántartása — NEM változtatnak időzítést,
+            # és mindegyiket külön őr méri.
             self.finished.emit()
+
 
     def textureFactory(self) -> QQuickTextureFactory:
         """A kész kép átadása a motornak — a MOTOR szálán hívódik.
