@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from PySide6.QtCore import Property, Signal, Slot
 
+from .folder_photo_sort_controller import FolderPhotoSortMixin
+
 # A QSettings-kulcs — a `view/` névtér a többi nézet-beállításé is
 # (folderSort, thumbCaption, showHidden).
 DARK_THEME_KEY = "view/darkTheme"
@@ -33,8 +35,14 @@ def coerce_dark_flag(value) -> bool:
     return False
 
 
-class AppearanceMixin:
-    """`darkTheme` kapcsoló — perzisztens, jelzéssel a QML-kötéseknek."""
+class AppearanceMixin(FolderPhotoSortMixin):
+    """`darkTheme` kapcsoló — perzisztens, jelzéssel a QML-kötéseknek.
+
+    #1436: a mappán belüli képsorrend szelete (`FolderPhotoSortMixin`) is
+    innen kapcsolódik az `AppController`-hez — mindkettő `view/` névtérbeli,
+    perzisztens nézet-beállítás, és az `AppController` bázislistája a forró
+    `controller.py`-ban él (a `CollageMixin` ugyanígy hozza a szeleteit).
+    """
 
     darkThemeChanged = Signal()
 
@@ -42,6 +50,7 @@ class AppearanceMixin:
         """Az AppController.__init__ hívja (a mixinek nem definiálnak saját
         __init__-et — ez a repó konvenciója, ld. PerfMonitorMixin)."""
         self._dark_theme = coerce_dark_flag(self._get_settings().value(DARK_THEME_KEY))
+        self._init_folder_photo_sort()  # #1436
 
     @Property(bool, notify=darkThemeChanged)
     def darkTheme(self) -> bool:

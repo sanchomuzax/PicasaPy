@@ -48,6 +48,8 @@ class _StubController(QObject):
         self.removed_folders: list[str] = []
         self.sort_calls: list[str] = []
         self.reverse_calls = 0
+        self.photo_sort_calls: list[str] = []  # #1436
+        self.photo_reverse_calls = 0
 
     @Property("QVariant", notify=customCollectionsChanged)
     def customCollections(self):
@@ -117,6 +119,25 @@ class _StubController(QObject):
     @Slot()
     def toggleFolderSortReverse(self):
         self.reverse_calls += 1
+
+    # #1436: a mappa-menü „Mappa rendezésének alapja ▸" tételei a mappa
+    # TARTALMÁT rendezik — a duplumnak ezt a felszínt kell tükröznie,
+    # különben a teszt egy nem létező úton marad zöld.
+    @Property(str, notify=customCollectionsChanged)
+    def folderPhotoSort(self):
+        return "name"
+
+    @Property(bool, notify=customCollectionsChanged)
+    def folderPhotoSortReverse(self):
+        return False
+
+    @Slot(str)
+    def setFolderPhotoSort(self, mode):
+        self.photo_sort_calls.append(mode)
+
+    @Slot()
+    def toggleFolderPhotoSortReverse(self):
+        self.photo_reverse_calls += 1
 
     # a FolderPane induláskor a gyűjtemény-csukottságot is lekérdezi
     @Slot(str, result=bool)
@@ -268,16 +289,19 @@ class TestFolderMenuCommands:
         assert controller.resync_calls == ["/kepek/balaton"]
 
     def test_sort_mode_reaches_the_controller(self, pane, controller, qt_app):
+        """#1436: a mappa-menü a KÉPSORRENDET állítja, nem a mappákét."""
         menu = pane.findChild(QObject, "folderContextMenu")
-        menu.sortModeRequested.emit("name")
+        menu.sortModeRequested.emit("date")
         qt_app.processEvents()
-        assert controller.sort_calls == ["name"]
+        assert controller.photo_sort_calls == ["date"]
+        assert controller.sort_calls == []  # a MAPPÁK sorrendjéhez nem nyúl
 
     def test_reverse_order_reaches_the_controller(self, pane, controller, qt_app):
         menu = pane.findChild(QObject, "folderContextMenu")
         menu.sortReverseRequested.emit()
         qt_app.processEvents()
-        assert controller.reverse_calls == 1
+        assert controller.photo_reverse_calls == 1
+        assert controller.reverse_calls == 0
 
     def test_remove_from_picasa_asks_before_removing(self, pane, controller, qt_app):
         """A „…" a feliratban megerősítést ígér — a mappa csak a jóváhagyás
