@@ -18,11 +18,14 @@ import QtQuick.Controls
 // `toggleFolderSortReverse`) — a Picasa is egyetlen parancskészletet
 // használ, a menük abból válogatnak.
 //
-// A személyek rendezése, az egyszerűsített fanézet, az „indexképek
-// megjelenítése a könyvtárban" és az „Asztal" gyorsugrás mögött még nincs
-// réteg — szürkén látszanak (#416, spec 5.1.). A Windows-specifikus
-// Sajátgép/Dokumentumok/Képek tételek szándékosan kimaradnak: a felmérés
-// szerint is csak Windowson léteznek, a PicasaPy pedig Linux-first.
+// A személyek rendezése, az „indexképek megjelenítése a könyvtárban" és
+// az „Asztal" gyorsugrás mögött még nincs réteg — szürkén látszanak
+// (#416, spec 5.1.). Az egyszerűsített fanézet a #1454-ben élővé vált: a
+// `FolderHierarchyController.simplified` kapcsolóját billenti.
+//
+// A Windows-specifikus Sajátgép/Dokumentumok/Képek tételek szándékosan
+// kimaradnak: a felmérés szerint is csak Windowson léteznek, a PicasaPy
+// pedig Linux-first.
 //
 // Önálló, signal-alapú komponens: a bekötést a FolderPane.qml végzi.
 Menu {
@@ -32,9 +35,13 @@ Menu {
     // a jelenlegi rendezés — a pipákhoz
     property string sortMode: "date"
     property bool sortReverse: false
+    // #1454: az „Egyszerűsített fanézet" pipája — a bal hasáb
+    // fa-vezérlőjének állapota, a gazda köti be
+    property bool simplifiedTree: false
 
     signal sortModeRequested(string mode)
     signal sortReverseRequested()
+    signal simplifiedTreeRequested()
 
     // -- 1. blokk: a mappalista rendezése ---------------------------------
 
@@ -96,10 +103,22 @@ Menu {
 
     // -- 3. blokk: nézet-kapcsolók -------------------------------------------
 
-    PicasaMenuItem {
-        objectName: "folderListMenuFlatView"
+    // #1454: a menüsáv `Nézet ▸ Mappanézet` harmadik tételének MÁSIK
+    // belépési pontja (`AlbumList::ID_VIEW_WATCHED`) — ugyanaz a kapcsoló,
+    // ezért ugyanaz a vezérlő. A korábbi `folderListMenuFlatView`
+    // objectName félrevezető volt: nem a lapos nézet tétele ez.
+    MenuItem {
+        objectName: "folderListMenuSimplifiedTree"
         text: qsTr("&Simplified Tree View")
-        placeholder: true
+        checkable: true
+        checked: menu.simplifiedTree
+        onTriggered: {
+            menu.simplifiedTreeRequested()
+            // a kattintás imperatívan átbillenti a `checked`-et, mielőtt a
+            // jelzés eldördülne — ha a gazda nem váltott állapotot (nincs
+            // bekötve, vagy elutasította), a pipa hazudna. Visszakötjük.
+            checked = Qt.binding(function () { return menu.simplifiedTree })
+        }
     }
     PicasaMenuItem {
         objectName: "folderListMenuShowThumbnails"

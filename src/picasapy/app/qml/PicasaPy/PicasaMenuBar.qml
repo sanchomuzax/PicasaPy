@@ -14,6 +14,13 @@ MenuBar {
     // a context property átmenetileg null lehet, miközben a QML-kötések
     // utoljára kiértékelődnek.
     readonly property var ctl: controller
+    // #1454: a bal hasáb NÉZETMÓDJA (Egyszerű / Fa / Egyszerűsített fa) a
+    // `FolderHierarchyController`-ben él, ami ÖNÁLLÓ context property — nem
+    // az `AppController` része. A `typeof`-őr azért kell, mert a menüsávot
+    // önmagában betöltő próbák nem regisztrálják.
+    readonly property var folderViewCtl:
+        (typeof folderHierarchyController !== "undefined")
+        ? folderHierarchyController : null
 
     // #423: a kék „Bejelentkezés Google Fiókkal" hivatkozás a menüsáv jobb
     // szélén — az eredeti Picasa ugyanabban a sorban tartja, mint a
@@ -404,38 +411,70 @@ MenuBar {
                 onTriggered: controller.setThumbCaptionMode("resolution")
             }
         }
+        // #1454: a `Nézet ▸ Mappanézet` az eredetiben NEM rendez — a bal
+        // hasáb GYÖKERÉT és HIERARCHIÁJÁT állítja. Korábban itt a
+        // `Mappa ▸ Sort By` szó szerinti másolata állt, ugyanazzal a
+        // `folderSort` bekötéssel; a rendezés oda (és az indexkép-helyi
+        // menübe) tartozik, ide a szerkezet.
+        //
+        // A pipa-logika mérve (`0x00574b70`, `docs/specs/picasa-mappanezet.md`
+        // 3.): az első kettő EGYETLEN bájt két állapota, tehát kizáró pár;
+        // az „Egyszerűsített fanézet" ettől FÜGGETLEN, tartós kapcsoló.
+        // A négy gyökér (Sajátgép / Képek / Dokumentumok / Asztal) külön
+        // jegy (#1407), ezért itt még nem szerepel.
         Menu {
+            id: folderViewMenu
+            objectName: "menuViewFolderView"
             title: qsTr("Folder View")
+            // A vezérlő állapota EGY helyen — a tételek pipái ezt olvassák,
+            // és a kattintás utáni visszakötés is erre hivatkozik.
+            readonly property bool treeMode:
+                bar.folderViewCtl ? bar.folderViewCtl.treeView : false
+            readonly property bool simplifiedMode:
+                bar.folderViewCtl ? bar.folderViewCtl.simplified : false
+
+            // MÉRT buktató (#1454): a valódi kattintás IMPERATÍVAN
+            // átbillenti a `checked`-et, MIELŐTT a `triggered` eldördülne.
+            // Ha a felhasználó a MÁR aktív tételre kattint, a vezérlő
+            // állapota nem változik, a kötés tehát nem értékelődik újra —
+            // és a menü újranyitásakor EGYIK tételen sem lenne pipa. Ezért
+            // a jelzés után azonnal visszakötjük a `checked`-et.
             MenuItem {
-                text: qsTr("Sort by creation date")
+                objectName: "menuViewFlatFolderView"
+                text: qsTr("Flat Folder View")
                 checkable: true
-                checked: bar.ctl && bar.ctl.folderSort === "date"
-                onTriggered: controller.setFolderSort("date")
+                checked: !folderViewMenu.treeMode
+                onTriggered: {
+                    if (bar.folderViewCtl) bar.folderViewCtl.setTreeView(false)
+                    checked = Qt.binding(function () {
+                        return !folderViewMenu.treeMode
+                    })
+                }
             }
             MenuItem {
-                text: qsTr("Sort by recent changes")
+                objectName: "menuViewTreeView"
+                text: qsTr("Tree View")
                 checkable: true
-                checked: bar.ctl && bar.ctl.folderSort === "changed"
-                onTriggered: controller.setFolderSort("changed")
-            }
-            MenuItem {
-                text: qsTr("Sort by size")
-                checkable: true
-                checked: bar.ctl && bar.ctl.folderSort === "size"
-                onTriggered: controller.setFolderSort("size")
-            }
-            MenuItem {
-                text: qsTr("Sort by name")
-                checkable: true
-                checked: bar.ctl && bar.ctl.folderSort === "name"
-                onTriggered: controller.setFolderSort("name")
+                checked: folderViewMenu.treeMode
+                onTriggered: {
+                    if (bar.folderViewCtl) bar.folderViewCtl.setTreeView(true)
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.treeMode
+                    })
+                }
             }
             MenuSeparator {}
             MenuItem {
-                text: qsTr("Reverse sort")
+                objectName: "menuViewSimplifiedTreeView"
+                text: qsTr("Simplified Tree View")
                 checkable: true
-                checked: bar.ctl ? bar.ctl.folderSortReverse : false
-                onTriggered: controller.toggleFolderSortReverse()
+                checked: folderViewMenu.simplifiedMode
+                onTriggered: {
+                    if (bar.folderViewCtl) bar.folderViewCtl.toggleSimplified()
+                    checked = Qt.binding(function () {
+                        return folderViewMenu.simplifiedMode
+                    })
+                }
             }
         }
     }
@@ -452,30 +491,36 @@ MenuBar {
             text: qsTr("Refresh Thumbnails")
             onTriggered: bar.rescanRequested()
         }
-        // #324 audit („eltérő"): eredetiben aktív almenü — most valódi
-        // almenü, a Nézet ▸ Mappanézet almenüvel MEGEGYEZŐ bekötéssel
+        // #324 audit („eltérő"): eredetiben aktív almenü — nálunk is az.
+        // #1454: a mappák sorrendje EGYEDÜL itt (és az indexkép-helyi
+        // menüben) állítható; a Nézet ▸ Mappanézetből kikerült, mert ott az
+        // eredetiben szerkezeti tételek állnak, nem rendezés.
         Menu {
             objectName: "menuFolderSortBy"
             title: qsTr("Sort By")
             MenuItem {
+                objectName: "menuFolderSortByDate"
                 text: qsTr("Sort by creation date")
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "date"
                 onTriggered: controller.setFolderSort("date")
             }
             MenuItem {
+                objectName: "menuFolderSortByChanged"
                 text: qsTr("Sort by recent changes")
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "changed"
                 onTriggered: controller.setFolderSort("changed")
             }
             MenuItem {
+                objectName: "menuFolderSortBySize"
                 text: qsTr("Sort by size")
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "size"
                 onTriggered: controller.setFolderSort("size")
             }
             MenuItem {
+                objectName: "menuFolderSortByName"
                 text: qsTr("Sort by name")
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "name"
@@ -483,6 +528,7 @@ MenuBar {
             }
             MenuSeparator {}
             MenuItem {
+                objectName: "menuFolderSortReverse"
                 text: qsTr("Reverse sort")
                 checkable: true
                 checked: bar.ctl ? bar.ctl.folderSortReverse : false

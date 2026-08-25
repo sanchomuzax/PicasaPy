@@ -74,6 +74,7 @@ def _build_qml_app(qt_app, tmp_path):
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
+    from picasapy.app.folder_hierarchy_controller import FolderHierarchyController
     from picasapy.app.folder_tree_controller import FolderTreeController
     from picasapy.app.import_source_controller import ImportSourceController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
@@ -144,6 +145,29 @@ def _build_qml_app(qt_app, tmp_path):
     folder_tree_controller = FolderTreeController()
     engine.rootContext().setContextProperty(
         "folderTreeController", folder_tree_controller
+    )
+    # #1454: a bal hasáb fa-mappanézete (#702) — az application.py
+    # bekötésének tükre. Korábban KIMARADT innen, ezért a `Main.qml`-ben
+    # `typeof`-őr védte a hivatkozást, a nézetmód pedig `false`-ra volt
+    # égetve — vagyis a fa-nézet egyetlen QML-funkcionális teszten sem
+    # jelent meg. A nézetmód-váltó menü (#1454) csak így mérhető.
+    from picasapy.app.models import sorted_folder_rows
+
+    folder_hierarchy_controller = FolderHierarchyController()
+
+    def _reload_folder_hierarchy() -> None:
+        with open_index(db) as conn:
+            folder_hierarchy_controller.setFolders(
+                [
+                    {"path": path, "count": count}
+                    for _name, path, count, *_rest in sorted_folder_rows(conn)
+                ]
+            )
+
+    _reload_folder_hierarchy()
+    controller.syncFinished.connect(_reload_folder_hierarchy)
+    engine.rootContext().setContextProperty(
+        "folderHierarchyController", folder_hierarchy_controller
     )
     # arc-keretek (#147) — az application.py bekötésének tükre
     faces_helper = FacesHelper()

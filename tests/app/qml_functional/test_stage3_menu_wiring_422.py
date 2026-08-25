@@ -32,7 +32,7 @@ class TestFolderListMenuWiring:
 
     # #461/3: a bal panel SAJÁT menüje a PANELT rendezi (az eredeti
     # `AlbumList` menüje is ezt tette — ui-audit-context-menus.md A.2), a
-    # felső Nézet ▸ Mappanézet pedig a RÁCSOT (#321). A kettő külön
+    # Mappa ▸ Rendezés pedig a RÁCSOT (#321). A kettő külön
     # beállítás; korábban mindkét menü a rács-rendezést írta, ezért a panel
     # menüjének pipái hazudtak.
     def test_opening_the_menu_takes_the_current_sort_state(self, qml_app, qt_app):

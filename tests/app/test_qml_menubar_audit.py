@@ -164,10 +164,15 @@ class TestMeglevoTetelekMukodnekTovabbra:
         assert dark is not None and dark.property("checkable") is True
         assert perf is not None and perf.property("checkable") is True
 
-    def test_folder_sort_by_submenu_mirrors_folder_view(self, qml_app):
-        """A Mappa ▸ Rendezés almenü ugyanazt a controllert hívja, mint a
-        Nézet ▸ Mappanézet — csak a bekötést ellenőrizzük, nem UI-kattintást
-        (a Menu popup-nyitás offscreen módban törékeny)."""
+    def test_folder_sort_by_submenu_exists(self, qml_app):
+        """A Mappa ▸ Rendezés almenü megvan — csak a jelenlétét nézzük, nem
+        UI-kattintást (a Menu popup-nyitás offscreen módban törékeny).
+
+        #1454: a korábbi név („mirrors folder view") azt állította, hogy ez
+        az almenü a Nézet ▸ Mappanézettel AZONOS — épp ez volt a hiba. A
+        mappák rendezése azóta EGYEDÜL itt (és a helyi menükben) él; a
+        tényleges kattintást a
+        `tests/app/qml_functional/test_mappanezet_menu_1454.py` méri."""
         window, controller, lib, engine = qml_app
         sort_by = window.findChild(QObject, "menuFolderSortBy")
         assert sort_by is not None

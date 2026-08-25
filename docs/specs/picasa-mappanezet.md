@@ -167,6 +167,16 @@ visszaesés a Sajátgép-gyökérre**, nem hibaüzenet.
 
 ## 5. Eredeti / nálunk / teendő
 
+> **Megvalósítási állapot (2026-08-25, #1454):** az 1., 2., 3. és 9. sor
+> KÉSZ — a `Nézet ▸ Mappanézet` almenüben már a három szerkezeti tétel áll
+> (`PicasaMenuBar.qml`), a nézetmódot a
+> `FolderHierarchyController.treeView` tartja (kizáró pár), az
+> „Egyszerűsített fanézet" mindkét belépési pontja élő. A 4. (a `watched`
+> szemantika), az 5–6. (gyökerek, fejlécfelirat) és a 7–8. (tartós
+> tárolás) továbbra is nyitott — **#1407**. Az 1. szakasz „MIT AD MA"
+> táblája a #1454 ELŐTTI állapotot rögzíti, azt szándékosan nem írtuk át.
+
+
 | # | eredeti | nálunk MA | teendő |
 |---:|---|---|---|
 | 1 | `Nézet ▸ Mappanézet` = 3 szerkezeti tétel | **5 rendezési tétel** (a `Mappa ▸ Rendezés` másolata) | a rendezést ki a Mappanézetből |

@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Javítva
+- **A Nézet ▸ Mappanézet menü végre azt csinálja, amit a neve ígér (#1454).**
+  Eddig ugyanazt az öt rendezési sort kínálta, mint a Mappa ▸ Rendezés — a
+  Picasában viszont ez a menü nem rendez, hanem a bal oldali mappalista
+  szerkezetét állítja. Mostantól három sor áll benne: **Egyszerű mappanézet**
+  (a megszokott lapos lista), **Fanézet** (a mappák a valódi
+  könyvtárszerkezetükben, kinyitható ágakkal) és **Egyszerűsített fanézet**
+  (a semmit nem tartalmazó köztes szintek összevonva). Az első kettő egymást
+  váltja, a harmadik külön ki-be kapcsolható. A fanézet eddig el volt készülve,
+  de semmilyen menüből nem lehetett elérni; a bal hasáb jobbklikk-menüjében az
+  „Egyszerűsített fanézet" sor pedig szürke, kattinthatatlan volt — az is
+  élővé vált. A mappák rendezése változatlanul ott van, ahol eddig: a Mappa ▸
+  Rendezés almenüben és a mappák jobbklikk-menüjében.
+
 ### Belső
 - **A tesztek már nem írják át egymás alól a rendszerfüggvényeket (#1375).**
   A tesztek egy része úgy cserélt ki szabványos függvényeket (fájlmozgatás,

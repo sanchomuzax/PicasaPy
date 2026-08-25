@@ -121,7 +121,9 @@ FELIRATOK: dict[str, dict[str, tuple[str, str]]] = {
         "folderListMenuSortPeopleByTopList": (
             "Sort People by Top &10", "AlbumList::ID_PEOPLEBYAMOUNTTOP10"
         ),
-        "folderListMenuFlatView": (
+        # #1454: a korábbi `folderListMenuFlatView` objectName félrevezető
+        # volt — ez az „Egyszerűsített fanézet" tétele, nem a lapos nézeté
+        "folderListMenuSimplifiedTree": (
             "&Simplified Tree View", "AlbumList::ID_VIEW_WATCHED"
         ),
         "folderListMenuShowThumbnails": (

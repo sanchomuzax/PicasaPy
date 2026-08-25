@@ -66,10 +66,13 @@ Rectangle {
     // (`thumbui/hviewtoggle`): a lapos lista (`eMenuView::ID_VIEW_FOLDERS`)
     // és a fa (`eMenuView::ID_VIEW_ALL`) — ld. ui-audit-mainwindow.md 1.4/1.7.
     // A `hierarchyController` a `FolderHierarchyController` példánya (a
-    // gazda köti be); nézetmód-váltó gomb még nincs, ezért a lapos lista az
-    // alapállapot — a váltó külön jegy.
+    // gazda köti be). #1454: a nézetmód is ONNAN jön — a `Nézet ▸
+    // Mappanézet` „Egyszerű mappanézet"/„Fanézet" tételpárja azt állítja.
+    // A kötés felülírható (a hasábot önmagában rajzoló próbák élnek vele),
+    // vezérlő nélkül pedig a lapos lista az alapállapot.
     property var hierarchyController: null
-    property bool treeViewMode: false
+    property bool treeViewMode:
+        pane.hierarchyController ? pane.hierarchyController.treeView : false
     // a fa sorainak száma — a magasságszámításhoz (#305 null-őrrel)
     readonly property int hierarchyRowCount:
         pane.hierarchyController ? pane.hierarchyController.rows.length : 0
@@ -103,7 +106,7 @@ Rectangle {
         folderContextMenu.customCollections = pane.customCollectionsModel
         // #1436: a pipák a mappa TARTALMÁNAK rendezését mutatják — ez a
         // menü (`Folder::SortFolderBy`) a mappa képeit rendezi, nem a
-        // mappákat (azt a Nézet ▸ Mappanézet `folderSort`-ja állítja).
+        // mappákat (azt a Mappa ▸ Rendezés `folderSort`-ja állítja, #1454).
         if (controller) {
             folderContextMenu.sortMode = controller.folderPhotoSort
             folderContextMenu.sortReverse = controller.folderPhotoSortReverse
@@ -880,10 +883,16 @@ Rectangle {
 
     FolderListContextMenu {
         id: folderListContextMenu
+        // #1454: az „Egyszerűsített fanézet" ugyanazt a kapcsolót billenti,
+        // mint a menüsáv `Nézet ▸ Mappanézet` harmadik tétele
+        simplifiedTree:
+            pane.hierarchyController ? pane.hierarchyController.simplified : false
         onSortModeRequested: function(mode) {
             if (controller) controller.setPaneSort(mode)
         }
         onSortReverseRequested: if (controller) controller.togglePaneSortReverse()
+        onSimplifiedTreeRequested:
+            if (pane.hierarchyController) pane.hierarchyController.toggleSimplified()
     }
 
     // #457: melyik mappát mozgatjuk épp (a dialógus elfogadásakor kell)

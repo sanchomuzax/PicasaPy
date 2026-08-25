@@ -4056,6 +4056,21 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>Mappanézet</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
+        <source>Flat Folder View</source>
+        <translation>Egyszerű mappanézet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
+        <source>Tree View</source>
+        <translation>Fanézet</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0"/>
+        <source>Simplified Tree View</source>
+        <translation>Egyszerűsített fanézet</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152"/>
         <source>Sort by creation date</source>
         <translation>Rendezés létrehozási dátum alapján</translation>

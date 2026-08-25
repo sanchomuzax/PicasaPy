@@ -41,7 +41,8 @@ def sorted_folder_rows(
 
     Külön függvény, mert két, egymástól FÜGGETLEN sorrendet kell kiszolgálnia
     (#321): a bal hasáb a saját, rögzített Picasa-sorrendjében áll, a rács
-    (feed) viszont a Nézet ▸ Mappanézet beállítását követi.
+    (feed) viszont a Mappa ▸ Rendezés beállítását követi (#1454-ig ez a
+    menü Nézet ▸ Mappanézet néven szerepelt — tévesen).
     """
     db_rows = conn.execute(
         "SELECT f.path, f.date, f.offline, count(p.id) AS n,"

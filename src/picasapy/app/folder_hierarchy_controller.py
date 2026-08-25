@@ -41,12 +41,14 @@ class FolderHierarchyController(QObject):
 
     rowsChanged = Signal()
     simplifiedChanged = Signal()
+    treeViewChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._folders: tuple[dict, ...] = ()
         self._expanded: frozenset[str] = frozenset()
         self._simplified = False
+        self._tree_view = False
         self._rows: tuple[dict, ...] = ()
         self._rebuild()
 
@@ -63,13 +65,46 @@ class FolderHierarchyController(QObject):
         self._folders = tuple(dict(folder) for folder in folders or ())
         self._rebuild()
 
+    # -- nézetmód: Egyszerű ↔ Fa (`thumbui/hviewtoggle`) -----------------
+
+    @Property(bool, notify=treeViewChanged)
+    def treeView(self) -> bool:
+        """Fa-módban áll-e a bal hasáb.
+
+        Szándékosan BOOL, nem háromállású mód: az eredetiben az „Egyszerű
+        mappanézet" (`eMenuView::ID_VIEW_FOLDERS`) és a „Fanézet"
+        (`eMenuView::ID_VIEW_ALL`) EGYETLEN bájt (`[+0x9d]`) két állapota,
+        tehát kizáró pár — a pipa-frissítő `0x00574b70` bizonyítja
+        (`docs/specs/picasa-mappanezet.md` 3.). Az „Egyszerűsített
+        fanézet" ettől független kapcsoló, ezért az külön property.
+        """
+        return self._tree_view
+
+    @Slot(bool)
+    def setTreeView(self, value: bool) -> None:
+        """A nézetmód beállítása — a `Nézet ▸ Mappanézet` két rádiótétele
+        (#1454) ezt hívja. A fa tartalmát nem érinti: a lapos és a fás
+        nézet UGYANABBÓL a mappalistából él, csak más alakban."""
+        if bool(value) == self._tree_view:
+            return
+        self._tree_view = bool(value)
+        self.treeViewChanged.emit()
+
     # -- egyszerűsített fanézet (`SimplifiedHierarchy`) ------------------
 
     @Property(bool, notify=simplifiedChanged)
     def simplified(self) -> bool:
         """Az „Egyszerűsített fanézet" (`eMenuView::ID_VIEW_WATCHED`)
         állapota: az egygyermekes, fotó nélküli köztes szintek
-        összevonása."""
+        összevonása.
+
+        ⚠️ A MECHANIZMUS eltér az eredetitől: ott a
+        `SimplifiedHierarchy = 1` az `all` gyökeret `watched`-re cseréli
+        (`0x0057517c`–`0x005751ec`), vagyis a fa HATÓKÖRÉT szűkíti a
+        figyelt mappák ágaira; nálunk útvonal-tömörítés, ami sosem rejt
+        el mappát. A látvány hasonló, a szemantika nem — a helyreállítása
+        a #1407 tárgya, a #1454 csak bekötötte a menübe azt, ami van.
+        """
         return self._simplified
 
     @Slot(bool)
@@ -79,6 +114,13 @@ class FolderHierarchyController(QObject):
         self._simplified = bool(value)
         self.simplifiedChanged.emit()
         self._rebuild()
+
+    @Slot()
+    def toggleSimplified(self) -> None:
+        """A kapcsoló átbillentése — az eredeti is logikai tagadással írja
+        vissza a `SimplifiedHierarchy` kulcsot (`0x005cc63f`:
+        olvas → `neg/sbb/add 1` → visszaír)."""
+        self.setSimplified(not self._simplified)
 
     # -- sorok ----------------------------------------------------------
 

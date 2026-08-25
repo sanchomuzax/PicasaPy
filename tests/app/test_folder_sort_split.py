@@ -1,4 +1,7 @@
-"""#321: a Nézet ▸ Mappanézet rendezés a RÁCSRA hat, a bal hasábra nem.
+"""#321: a `folderSort` rendezés a RÁCSRA hat, a bal hasábra nem.
+
+(#1454: a beállítás menübeli helye a Mappa ▸ Rendezés almenü — korábban a
+Nézet ▸ Mappanézet is ugyanezt kínálta, tévesen.)
 
 Az eredeti Picasában a mappafa sorrendje a saját (gyűjtemény/év) szabálya
 szerint áll, és a rendezés váltása nem mozdítja meg — csak a fő rács
@@ -96,7 +99,7 @@ class TestPaneHasItsOwnSort:
     tartalmazta a „Rendezés dátum / név / méret / legutóbbi változtatás
     alapján" tételeket, vagyis az a HASÁBOT rendezte.
 
-    A #321 szerződése ettől érintetlen: a felső Nézet ▸ Mappanézet
+    A #321 szerződése ettől érintetlen: a Mappa ▸ Rendezés
     (`setFolderSort`) továbbra is CSAK a rácsot rendezi."""
 
     def test_pane_sort_reorders_the_pane(self, controller):
