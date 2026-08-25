@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QMetaObject, QObject, Qt
 
 _MENU_QML = (
     Path(__file__).resolve().parents[2]
@@ -163,6 +163,36 @@ class TestMeglevoTetelekMukodnekTovabbra:
         perf = window.findChild(QObject, "menuHelpPerfMonitor")
         assert dark is not None and dark.property("checkable") is True
         assert perf is not None and perf.property("checkable") is True
+
+    def test_a_mappanezet_tetelei_ELOK_ebben_a_fixtureben_is(
+        self, qml_app, qt_app
+    ):
+        """#1454: a `folderHierarchyController` bekötése ELŐSZÖR csak a
+        `tests/app/qml_functional/conftest.py`-ba került be — itt a
+        `bar.folderViewCtl` null maradt volna, a három új menütétel néma, a
+        pipa örökre az „Egyszerű mappanézet"-en. Ma nem bukna tőle semmi, de
+        egy jövőbeli, EBBEN a fixture-ben mérő teszt zölden mérne egy halott
+        menüt. Ez az őr azt méri, hogy a tétel tényleg hat."""
+        window, _controller, _lib, engine = qml_app
+        hier = engine.rootContext().contextProperty("folderHierarchyController")
+        assert hier is not None, (
+            "a folderHierarchyController nincs regisztrálva ebben a "
+            "fixture-ben — a Mappanézet menü néma"
+        )
+        assert hier.treeView is False
+
+        tetel = window.findChild(QObject, "menuViewTreeView")
+        assert tetel is not None
+        QMetaObject.invokeMethod(tetel, "toggle", Qt.ConnectionType.DirectConnection)
+        QMetaObject.invokeMethod(
+            tetel, "triggered", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
+        assert hier.treeView is True
+        assert window.findChild(
+            QObject, "folderHierarchyList"
+        ).property("visible") is True
 
     def test_folder_sort_by_submenu_exists(self, qml_app):
         """A Mappa ▸ Rendezés almenü megvan — csak a jelenlétét nézzük, nem

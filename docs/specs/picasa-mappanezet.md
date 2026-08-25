@@ -179,31 +179,36 @@ visszaesés a Sajátgép-gyökérre**, nem hibaüzenet.
 
 | # | eredeti | nálunk MA | teendő |
 |---:|---|---|---|
-| 1 | `Nézet ▸ Mappanézet` = 3 szerkezeti tétel | **5 rendezési tétel** (a `Mappa ▸ Rendezés` másolata) | a rendezést ki a Mappanézetből |
-| 2 | Egyszerű ↔ Fa: kizáró pár | megvan (`FolderHierarchyView`) | menübe kötni |
-| 3 | Egyszerűsített fanézet: **külön, tartós kapcsoló** | `simplified` property **nincs bekötve** | bekötni + tartóssá tenni |
+| 1 | `Nézet ▸ Mappanézet` = 3 szerkezeti tétel | **5 rendezési tétel** (a `Mappa ▸ Rendezés` másolata) | **KÉSZ (#1454)** |
+| 2 | Egyszerű ↔ Fa: kizáró pár | megvan (`FolderHierarchyView`) | **KÉSZ (#1454)** |
+| 3 | Egyszerűsített fanézet: **külön, tartós kapcsoló** | `simplified` property **nincs bekötve** | bekötve (#1454); a **tartósság** még nincs (#1407) |
 | 4 | „egyszerűsített" = a gyökér `all`→`watched` | `_simplify()` = útvonal-tömörítés | a szemantikát a mérthez igazítani |
 | 5 | 4 gyökér a helyi menüben | **nincs** gyökér-fogalom | megépíteni |
 | 6 | fejléc: „Alapértelmezett nézet" / „Sajátgép" | nincs | megjeleníteni |
 | 7 | `SimplifiedHierarchy` azonnal tárolódik | nincs tárolva | beállításba |
 | 8 | a gyökér kilépéskor tárolódik | nincs tárolva | beállításba |
-| 9 | a helyi menü tétele élő | `placeholder: true` | élővé tenni |
+| 9 | a helyi menü tétele élő | `placeholder: true` | **KÉSZ (#1454)** |
 
 ---
 
 ## 6. Kész, ha
 
-- [ ] A `Nézet ▸ Mappanézet` almenü **három** tételt tartalmaz: Egyszerű
+- [x] A `Nézet ▸ Mappanézet` almenü **három** tételt tartalmaz: Egyszerű
       mappanézet · Fanézet · Egyszerűsített fanézet — és **egyetlen
-      rendezési tételt sem**.
-- [ ] Az első kettő **kizáró pár**, a harmadik **független pipa**.
-- [ ] A rendezés kizárólag a `Mappa ▸ Rendezés` és az indexkép-helyimenü
-      alatt marad.
+      rendezési tételt sem**. *(#1454)*
+- [x] Az első kettő **kizáró pár**, a harmadik **független pipa**. *(#1454)*
+- [x] A rendezés kizárólag a `Mappa ▸ Rendezés` és az indexkép-helyimenü
+      alatt marad. *(#1454)*
 - [ ] Az Egyszerűsített fanézet **elrejti a nem figyelt ágakat**.
 - [ ] A mappa-hasáb helyi menüje kínálja a négy gyökeret, és élő.
 - [ ] A hasáb fejléce „Alapértelmezett nézet", illetve „Sajátgép".
 - [ ] Mindhárom állapot **túléli az újraindítást**.
 - [ ] A váltás **nem** indít újraindexelést, és megőrzi a görgetést.
+      *(#1454: az újraindexelés-mentesség megvan — a nézetmód nem építi
+      újra a sorokat —, és a váltás kinyitja a kijelölt mappáig az ágakat,
+      tehát a hasáb nem zsugorodik egyetlen sorra. A görgetés pontos
+      megőrzése (`[+0x30c] = [+0x320] + [+0x2f8]`, spec 4.4) még nincs
+      mérve.)*
 
 ---
 

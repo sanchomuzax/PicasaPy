@@ -21,6 +21,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtQuick import QQuickItem
 
 _MENU_QML = (
     Path(__file__).resolve().parents[3]
@@ -58,6 +59,30 @@ def _trigger(root, name):
     if item.property("checkable"):
         QMetaObject.invokeMethod(item, "toggle", Qt.ConnectionType.DirectConnection)
     QMetaObject.invokeMethod(item, "triggered", Qt.ConnectionType.DirectConnection)
+
+
+def _walk(item: QQuickItem):
+    """A VIZUÁLIS fa bejárása — a delegátumoknak nincs QObject-szülőjük."""
+    for child in item.childItems():
+        yield child
+        yield from _walk(child)
+
+
+def _rendered_tree_paths(window) -> set[str]:
+    """A ténylegesen KIRAJZOLT fasorok útvonalai.
+
+    A `visible` öröklődik, ezért az `isVisible()`-t ÉS a valódi magasságot
+    nézzük — a `folderHierarchyList.count` önmagában a modellből jön, és
+    akkor is „helyes" volna, ha a fa sosem látszik (mutációval mérve).
+    """
+    prefix = "hierRow:"
+    return {
+        item.objectName()[len(prefix):]
+        for item in _walk(_child(window, "folderPane"))
+        if item.objectName().startswith(prefix)
+        and item.isVisible()
+        and item.height() > 0
+    }
 
 
 def _menu_item_texts(menu) -> list[str]:
@@ -121,15 +146,68 @@ class TestEgyszeruEsFaKizaroPar:
         assert fa.property("count") > 0
         assert _hierarchy(engine).treeView is True
 
+    def test_a_valtas_utan_a_kijelolt_mappa_latszik_a_faban(
+        self, qml_app, qt_app
+    ):
+        """MÉRT hiba volt: fa-módra váltva a hasáb EGYETLEN, összecsukott
+        sorra („Sajátgép") zsugorodott, és a kijelölt mappa sehol nem
+        látszott.
+
+        Az ok: a `revealPath()` csak a `selectedPath` VÁLTOZÁSÁRA futott,
+        a nézetmód-váltásra nem — a nyitott ágak halmaza pedig induláskor
+        üres, és a `flatten()` a virtuális gyökeret sem tekinti nyitottnak.
+        A fanézet eddig menüből elérhetetlen volt, ezért ezt még senki nem
+        láthatta; a spec 6. pontja („a váltás megőrzi a görgetést") N sorról
+        1 sorra esve nem teljesülne.
+        """
+        window, controller, _engine = qml_app
+        kijelolt = controller.currentFolder
+        assert kijelolt, "a fixture nem választott ki mappát — nincs mit mérni"
+
+        _trigger(window, "menuViewTreeView")
+        qt_app.processEvents()
+
+        sorok = _rendered_tree_paths(window)
+        assert kijelolt in sorok, (
+            "a fanézetre váltás után a kijelölt mappa nem látszik a fában; "
+            f"kirajzolt sorok: {sorted(sorok)}"
+        )
+
+    def test_a_valtas_nem_zsugoritja_ossze_a_hasabot(self, qml_app, qt_app):
+        """A lapos listában látott mappák a fában is elérhetők maradnak —
+        a váltás nem eshet vissza egyetlen összecsukott sorra."""
+        window, _controller, _engine = qml_app
+        lapos_sorok = _child(window, "folderListView").property("count")
+
+        _trigger(window, "menuViewTreeView")
+        qt_app.processEvents()
+
+        sorok = _rendered_tree_paths(window)
+        # a gyökérsoron felül legalább annyi mappasor, ahányat a lapos
+        # lista mutatott (a fában a köztes szintek is sorok, tehát több)
+        assert len(sorok) > lapos_sorok, (
+            f"a fa {len(sorok)} sorra zsugorodott, a lapos lista "
+            f"{lapos_sorok} sort mutatott"
+        )
+
     def test_az_egyszeru_tetele_visszavalt(self, qml_app, qt_app):
         window, _controller, engine = qml_app
         _trigger(window, "menuViewTreeView")
         qt_app.processEvents()
+        # a KÖZBENSŐ állapotot is állítjuk: e nélkül a teszt akkor is zöld
+        # maradna, ha a fa-módra váltás egyáltalán nem történt volna meg
+        # (mutációval mérve) — a végállapot ugyanis mindkét esetben lapos
+        assert _child(window, "folderHierarchyList").property("visible") is True
+        assert _rendered_tree_paths(window) != set()
+
         _trigger(window, "menuViewFlatFolderView")
         qt_app.processEvents()
 
         assert _child(window, "folderListView").property("visible") is True
         assert _child(window, "folderHierarchyList").property("visible") is False
+        assert _rendered_tree_paths(window) == set(), (
+            "lapos módban a fa egyetlen sora sem rajzolódhat ki"
+        )
         assert _hierarchy(engine).treeView is False
 
     def test_a_mar_aktiv_tetelre_kattintva_marad_a_pipa(self, qml_app, qt_app):
@@ -191,20 +269,29 @@ class TestEgyszerusitettFanezetFuggetlenKapcsolo:
 
     def test_a_fan_tenylegesen_kevesebb_sor_marad(self, qml_app, qt_app):
         """A KIMENET mérése: az egyszerűsítés összevonja a köztes
-        szinteket, tehát a kirajzolt fa rövidebb lesz."""
+        szinteket, tehát a KIRAJZOLT fa rövidebb lesz.
+
+        A `folderHierarchyList.count` NEM elég: az a modellből jön, és
+        mutációval mérve akkor is helyes maradt, amikor a fa egyáltalán nem
+        látszott (visszaégetett `treeViewMode: false`). Ezért a kirajzolt
+        sorokat és a lista láthatóságát is állítjuk.
+        """
         window, _controller, engine = qml_app
         hier = _hierarchy(engine)
         _trigger(window, "menuViewTreeView")
         hier.expandAll()
         qt_app.processEvents()
-        elotte = _child(window, "folderHierarchyList").property("count")
+        assert _child(window, "folderHierarchyList").property("visible") is True
+        elotte = _rendered_tree_paths(window)
 
         _trigger(window, "menuViewSimplifiedTreeView")
         qt_app.processEvents()
-        utana = _child(window, "folderHierarchyList").property("count")
+        utana = _rendered_tree_paths(window)
 
-        assert elotte > 1, "a mért fa túl sekély ahhoz, hogy legyen mit összevonni"
-        assert utana < elotte, (
+        assert len(elotte) > 1, (
+            "a mért fa túl sekély ahhoz, hogy legyen mit összevonni"
+        )
+        assert len(utana) < len(elotte), (
             f"az egyszerűsítés nem rövidítette a fát ({elotte} → {utana})"
         )
 
@@ -253,7 +340,8 @@ class TestAHelyiMenuEgyszerusitettTetele:
         _trigger(window, "menuViewTreeView")
         hier.expandAll()
         qt_app.processEvents()
-        elotte = _child(window, "folderHierarchyList").property("count")
+        assert _child(window, "folderHierarchyList").property("visible") is True
+        elotte = _rendered_tree_paths(window)
 
         pane = _child(window, "folderPane")
         QMetaObject.invokeMethod(
@@ -266,9 +354,9 @@ class TestAHelyiMenuEgyszerusitettTetele:
         qt_app.processEvents()
 
         assert hier.simplified is True
-        utana = _child(window, "folderHierarchyList").property("count")
-        assert elotte > 1
-        assert utana < elotte
+        utana = _rendered_tree_paths(window)
+        assert len(elotte) > 1
+        assert len(utana) < len(elotte)
 
     def test_a_pipaja_a_vezerlo_allapotat_mutatja(self, qml_app, qt_app):
         window, _controller, engine = qml_app

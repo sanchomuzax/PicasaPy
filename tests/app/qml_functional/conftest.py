@@ -22,6 +22,7 @@ import pytest
 from picasapy.index import open_index, sync_tree
 from picasapy.version import version_string
 from support.fixture_guards import qml_warning_guard, user_folder_guard
+from support.folder_hierarchy_wiring import wire_folder_hierarchy
 from support.jpeg_factory import make_jpeg
 
 
@@ -74,7 +75,6 @@ def _build_qml_app(qt_app, tmp_path):
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
-    from picasapy.app.folder_hierarchy_controller import FolderHierarchyController
     from picasapy.app.folder_tree_controller import FolderTreeController
     from picasapy.app.import_source_controller import ImportSourceController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
@@ -151,23 +151,11 @@ def _build_qml_app(qt_app, tmp_path):
     # `typeof`-őr védte a hivatkozást, a nézetmód pedig `false`-ra volt
     # égetve — vagyis a fa-nézet egyetlen QML-funkcionális teszten sem
     # jelent meg. A nézetmód-váltó menü (#1454) csak így mérhető.
-    from picasapy.app.models import sorted_folder_rows
-
-    folder_hierarchy_controller = FolderHierarchyController()
-
-    def _reload_folder_hierarchy() -> None:
-        with open_index(db) as conn:
-            folder_hierarchy_controller.setFolders(
-                [
-                    {"path": path, "count": count}
-                    for _name, path, count, *_rest in sorted_folder_rows(conn)
-                ]
-            )
-
-    _reload_folder_hierarchy()
-    controller.syncFinished.connect(_reload_folder_hierarchy)
-    engine.rootContext().setContextProperty(
-        "folderHierarchyController", folder_hierarchy_controller
+    # A bekötés a KÖZÖS helyen él, mert a szülő `tests/app/conftest.py`-nak
+    # is kell — a féloldalas tükrözés ott már majdnem átcsúszott.
+    # a névre kötés életben tartja a vezérlőt, amíg a motor él
+    _folder_hierarchy_controller = wire_folder_hierarchy(
+        engine, controller, db
     )
     # arc-keretek (#147) — az application.py bekötésének tükre
     faces_helper = FacesHelper()

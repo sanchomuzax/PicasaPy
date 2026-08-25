@@ -270,6 +270,18 @@ Rectangle {
                 Math.max(0, Math.min(bottom - paneFlickable.height, maxY))
     }
 
+    // #1454: a NÉZETMÓD-váltás is nyissa ki a kijelölt mappáig az ágakat.
+    // A `revealPath()` eddig csak a `selectedPath` VÁLTOZÁSÁRA futott — a
+    // nyitott ágak halmaza viszont induláskor üres, és a `flatten()` a
+    // virtuális gyökeret sem tekinti nyitottnak. Fa-módra váltva ezért a
+    // hasáb egyetlen összecsukott „Sajátgép" sorra zsugorodott, a kijelölt
+    // mappa pedig eltűnt. (A fanézet menüből eddig elérhetetlen volt, így
+    // ez a hiba még sosem látszott.)
+    onTreeViewModeChanged: {
+        if (pane.treeViewMode && pane.hierarchyController)
+            pane.hierarchyController.revealPath(pane.selectedPath)
+    }
+
     // a kijelölt mappa maradjon látótérben (kívülről is változhat:
     // kereső-javaslat, feed-görgetés)
     onSelectedPathChanged: {
