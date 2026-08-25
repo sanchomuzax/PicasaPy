@@ -42,6 +42,13 @@ from pathlib import Path
 
 from picasapy.scanner.walker import PICASA_INI_LEGACY_NAME, PICASA_INI_NAME
 
+#: Az `os.stat` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
+#:
+#: Az `os.stat` globális átírása különösen veszélyes: rajta áll a `pathlib`,
+#: a fájlmegnyitás és a pytest saját gépezete is — a csere az egész teszt
+#: idejére eltéríti őket.
+_stat = os.stat
+
 # (mappa mtime_ns, ini mtime_ns vagy None, ha nincs ini)
 FolderStamp = tuple[int, int | None]
 
@@ -73,13 +80,13 @@ def directory_stamp(folder: str | Path) -> FolderStamp | None:
     """
     folder_path = Path(folder)
     try:
-        folder_mtime = os.stat(folder_path).st_mtime_ns
+        folder_mtime = _stat(folder_path).st_mtime_ns
     except OSError:
         return None  # eltűnt, lecsatolt vagy elérhetetlen mappa
     ini_mtime = None  # nincs ini — érvényes állapot, nem hiba
     for name in _INI_NAMES:
         try:
-            ini_mtime = os.stat(folder_path / name).st_mtime_ns
+            ini_mtime = _stat(folder_path / name).st_mtime_ns
             break
         except OSError:
             continue

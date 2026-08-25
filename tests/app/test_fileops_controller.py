@@ -144,7 +144,7 @@ class TestTrashAvailableFor:
         )
         monkeypatch.setattr("picasapy.fileops.trash._mount_point", lambda p: topdir)
         monkeypatch.setattr(
-            "picasapy.fileops.trash.os.access", lambda path, mode: False
+            "picasapy.fileops.trash._access", lambda path, mode: False
         )
         assert controller.trashAvailableFor([str(photo)]) is False
 
@@ -166,7 +166,7 @@ class TestTrashAvailableFor:
         monkeypatch.setattr("picasapy.fileops.trash._device_of", device_of)
         monkeypatch.setattr("picasapy.fileops.trash._mount_point", lambda p: topdir)
         monkeypatch.setattr(
-            "picasapy.fileops.trash.os.access", lambda path, mode: False
+            "picasapy.fileops.trash._access", lambda path, mode: False
         )
 
         assert (
@@ -203,7 +203,7 @@ class TestRevealPhoto:
             returncode = 0
 
         monkeypatch.setattr(
-            "picasapy.fileops.reveal.subprocess.run",
+            "picasapy.fileops.reveal._run",
             lambda args, **kwargs: calls.append(args) or _CompletedProcess(),
         )
         photo = tmp_path / "a.jpg"
@@ -216,7 +216,7 @@ class TestRevealPhoto:
         def _raise(*_args, **_kwargs):
             raise FileNotFoundError("xdg-open nincs telepítve")
 
-        monkeypatch.setattr("picasapy.fileops.reveal.subprocess.run", _raise)
+        monkeypatch.setattr("picasapy.fileops.reveal._run", _raise)
         failures = []
         controller.operationFailed.connect(
             lambda kind, msg: failures.append((kind, msg))
@@ -231,7 +231,7 @@ class TestRevealPhoto:
             returncode = 1
 
         monkeypatch.setattr(
-            "picasapy.fileops.reveal.subprocess.run",
+            "picasapy.fileops.reveal._run",
             lambda args, **kwargs: _CompletedProcess(),
         )
         failures = []

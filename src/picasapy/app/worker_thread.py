@@ -40,6 +40,15 @@ from typing import Any, Protocol, runtime_checkable
 
 from .busy_registry import get_app_busy_registry
 
+#: A `threading.Thread` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT
+#: cserélje: `monkeypatch.setattr(worker_thread, "_Thread", …)`.
+#:
+#: A `monkeypatch.setattr(threading, "Thread", …)` alak a GLOBÁLIS
+#: `threading`-et írja át, tehát a szálszámláló a teszt idejére MINDEN
+#: szálindítást lát — a Qt-ét, a bélyegkép-gyorstáráét, a watcherét is.
+#: Az „egy szál indult" állítás így nem is a vizsgált vezérlőről szól.
+_Thread = threading.Thread
+
 #: **FOLYAMAT-SZINTŰ szál-nyilvántartás (#988/#999).** A példányonkénti
 #: `_bg_workers` halmaz mellett minden `_start_background` ide is
 #: bejelentkezik. Ok: a lebontásért felelős fél (teszt-fixture,
@@ -161,7 +170,7 @@ class BackgroundWorkerMixin:
                     _ALL_WORKERS.discard(thread)
                 registry.end()
 
-        thread = threading.Thread(target=_run, name=name, daemon=True)
+        thread = _Thread(target=_run, name=name, daemon=True)
         workers.add(thread)
         with _ALL_WORKERS_LOCK:
             _ALL_WORKERS.add(thread)

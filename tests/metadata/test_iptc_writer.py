@@ -152,7 +152,7 @@ class TestWriteCaption:
                 raise PermissionError(13, "Access is denied")
             return original_replace(src, dst)
 
-        monkeypatch.setattr(ioutil_module.os, "replace", flaky_replace)
+        monkeypatch.setattr(ioutil_module, "_replace", flaky_replace)
         assert write_iptc_caption(photo, "zárolt közben")
         assert read_file_metadata(photo).caption == "zárolt közben"
 
@@ -167,7 +167,7 @@ class TestWriteCaption:
         def always_denied(src, dst):
             raise PermissionError(13, "Access is denied")
 
-        monkeypatch.setattr(ioutil_module.os, "replace", always_denied)
+        monkeypatch.setattr(ioutil_module, "_replace", always_denied)
         monkeypatch.setattr(writer_module, "_RETRY_DELAY", 0.001)
         assert write_iptc_caption(photo, "fallback felirat")
         assert read_file_metadata(photo).caption == "fallback felirat"
@@ -283,8 +283,8 @@ class TestDurabilityAndPermissions:
             events.append("replace")
             return original_replace(src, dst)
 
-        monkeypatch.setattr(ioutil_module.os, "fsync", spy_fsync)
-        monkeypatch.setattr(ioutil_module.os, "replace", spy_replace)
+        monkeypatch.setattr(ioutil_module, "_fsync", spy_fsync)
+        monkeypatch.setattr(ioutil_module, "_replace", spy_replace)
         assert write_iptc_caption(photo, "tartós felirat")
         assert "fsync" in events
         assert events.index("fsync") < events.index("replace")

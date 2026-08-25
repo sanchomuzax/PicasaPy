@@ -14,6 +14,13 @@ from pathlib import Path
 
 from picasapy import __version__
 
+#: A `subprocess.run` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
+#:
+#: A `monkeypatch.setattr(version.subprocess, "run", …)` alak a GLOBÁLIS
+#: `subprocess`-t írja át: a hamis git-válasz így minden más
+#: folyamatindításra is rákerül, amíg a teszt fut.
+_run = subprocess.run
+
 # A repó gyökere: src/picasapy/version.py → parents[2]
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -21,7 +28,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 def _git(*args: str) -> str | None:
     """Egy git-parancs kimenete a repó gyökeréből, vagy None hiba esetén."""
     try:
-        out = subprocess.run(
+        out = _run(
             ["git", "-C", str(_REPO_ROOT), *args],
             capture_output=True,
             text=True,

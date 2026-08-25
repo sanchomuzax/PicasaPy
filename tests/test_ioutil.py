@@ -56,8 +56,8 @@ class TestDurability:
             events.append("replace")
             return original_replace(src, dst)
 
-        monkeypatch.setattr(ioutil.os, "fsync", spy_fsync)
-        monkeypatch.setattr(ioutil.os, "replace", spy_replace)
+        monkeypatch.setattr(ioutil, "_fsync", spy_fsync)
+        monkeypatch.setattr(ioutil, "_replace", spy_replace)
         write_atomic(tmp_path / "a.bin", b"x")
         assert "fsync" in events
         assert events.index("fsync") < events.index("replace")
@@ -66,7 +66,7 @@ class TestDurability:
         # Thumbnail-cache: a tartósság nem szempont (újragenerálható),
         # az fsync a NAS-on csak lassítana.
         calls = []
-        monkeypatch.setattr(ioutil.os, "fsync", lambda fd: calls.append(fd))
+        monkeypatch.setattr(ioutil, "_fsync", lambda fd: calls.append(fd))
         write_atomic(tmp_path / "a.bin", b"x", durable=False)
         assert calls == []
 
@@ -97,7 +97,7 @@ class TestFailurePaths:
         def boom(fd, mode):
             raise OSError("nincs hely")
 
-        monkeypatch.setattr(ioutil.os, "fdopen", boom)
+        monkeypatch.setattr(ioutil, "_fdopen", boom)
         with pytest.raises(OSError):
             write_atomic(tmp_path / "a.bin", b"x")
         assert list(tmp_path.iterdir()) == []
@@ -106,7 +106,7 @@ class TestFailurePaths:
         def denied(src, dst):
             raise PermissionError(13, "Access is denied")
 
-        monkeypatch.setattr(ioutil.os, "replace", denied)
+        monkeypatch.setattr(ioutil, "_replace", denied)
         with pytest.raises(PermissionError):
             write_atomic(tmp_path / "a.bin", b"x")
         assert list(tmp_path.iterdir()) == []
@@ -122,7 +122,7 @@ class TestFailurePaths:
                 raise PermissionError(13, "Access is denied")
             return original_replace(src, dst)
 
-        monkeypatch.setattr(ioutil.os, "replace", flaky)
+        monkeypatch.setattr(ioutil, "_replace", flaky)
         target = tmp_path / "a.bin"
         write_atomic(target, b"x", lock_retries=5, lock_retry_delay=0.001)
         assert target.read_bytes() == b"x"
@@ -134,7 +134,7 @@ class TestFailurePaths:
         def denied(src, dst):
             raise PermissionError(13, "Access is denied")
 
-        monkeypatch.setattr(ioutil.os, "replace", denied)
+        monkeypatch.setattr(ioutil, "_replace", denied)
         target = tmp_path / "a.bin"
         target.write_bytes(b"regi")
         write_atomic(
@@ -150,7 +150,7 @@ class TestFailurePaths:
         def sharing_violation(src, dst):
             raise OSError(22, "sharing violation")
 
-        monkeypatch.setattr(ioutil.os, "replace", sharing_violation)
+        monkeypatch.setattr(ioutil, "_replace", sharing_violation)
         target = tmp_path / "a.bin"
         target.write_bytes(b"gyoztes")
         write_atomic(target, b"vesztes", ignore_replace_race=True)
@@ -162,7 +162,7 @@ class TestFailurePaths:
         def sharing_violation(src, dst):
             raise PermissionError(13, "sharing violation")
 
-        monkeypatch.setattr(ioutil.os, "replace", sharing_violation)
+        monkeypatch.setattr(ioutil, "_replace", sharing_violation)
         target = tmp_path / "a.bin"
         target.write_bytes(b"gyoztes")
         write_atomic(target, b"vesztes", ignore_replace_race=True)
@@ -173,7 +173,7 @@ class TestFailurePaths:
         def sharing_violation(src, dst):
             raise OSError(22, "sharing violation")
 
-        monkeypatch.setattr(ioutil.os, "replace", sharing_violation)
+        monkeypatch.setattr(ioutil, "_replace", sharing_violation)
         with pytest.raises(OSError):
             write_atomic(tmp_path / "a.bin", b"x", ignore_replace_race=True)
         assert list(tmp_path.iterdir()) == []

@@ -25,6 +25,18 @@ import tempfile
 import time
 from pathlib import Path
 
+#: Az atomikus írás standard lépéseinek MODULSZINTŰ fogantyúi (#1375) — a
+#: teszt EZEKET cserélje: `monkeypatch.setattr(ioutil, "_replace", …)`.
+#:
+#: A `monkeypatch.setattr(ioutil.os, "replace", …)` alak nem a modult
+#: módosítja: az `ioutil.os` MAGA a globális `os` modul. Az `os.replace`-t
+#: pedig épp ez a modul adja az egész programnak — ha a hibaút szimulációja
+#: globálisan hat, a teszt saját takarítása és minden párhuzamosan futó
+#: mentés is ráfut a hamis kivételre.
+_replace = os.replace
+_fsync = os.fsync
+_fdopen = os.fdopen
+
 
 def write_atomic(
     target: str | Path,
@@ -61,7 +73,7 @@ def write_atomic(
     )
     try:
         try:
-            handle = os.fdopen(fd, "wb")
+            handle = _fdopen(fd, "wb")
         except BaseException:
             # Az os.fdopen nem vette át a mkstemp nyers fd-jét → nekünk kell
             # lezárni, különben Windowson a nyitott fd megakadályozza a temp
@@ -72,7 +84,7 @@ def write_atomic(
             handle.write(payload)
             if durable:
                 handle.flush()
-                os.fsync(handle.fileno())
+                _fsync(handle.fileno())
         if preserve_mode and target.exists():
             os.chmod(temp_name, stat.S_IMODE(target.stat().st_mode))
         _replace_temp(
@@ -104,7 +116,7 @@ def _replace_temp(
     """`os.replace` a paraméterezett hibautakkal (retry, fallback, verseny)."""
     for attempt in range(lock_retries + 1):
         try:
-            os.replace(temp_name, target)
+            _replace(temp_name, target)
             return
         except PermissionError:
             # Windowson a sharing violation is PermissionError, ezért a
@@ -158,6 +170,6 @@ def _fsync_directory(directory: Path) -> None:
         return
     dir_fd = os.open(directory, os.O_RDONLY)
     try:
-        os.fsync(dir_fd)
+        _fsync(dir_fd)
     finally:
         os.close(dir_fd)

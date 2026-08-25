@@ -40,7 +40,7 @@ class TestBasetempAtadasa:
 
             return _Eredmeny()
 
-        monkeypatch.setattr(run_tests.subprocess, "run", _rogzit)
+        monkeypatch.setattr(run_tests, "_run", _rogzit)
         monkeypatch.setattr(run_tests, "_ROOT", Path(run_tests._ROOT))
 
         basetemp = tmp_path / "kozos"

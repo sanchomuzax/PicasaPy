@@ -113,7 +113,7 @@ class TestAzAtomiIras:
         def _elszall(*args, **kwargs):
             raise OSError("szimulált összeomlás mentés közben")
 
-        monkeypatch.setattr("picasapy.collage.autosave.os.replace", _elszall)
+        monkeypatch.setattr("picasapy.collage.autosave._replace", _elszall)
         with pytest.raises(OSError):
             write_autosave(tmp_path, _project(theta=9.9))
 
@@ -128,7 +128,7 @@ class TestAzAtomiIras:
         def _elszall(*args, **kwargs):
             raise OSError("szimulált összeomlás mentés közben")
 
-        monkeypatch.setattr("picasapy.collage.autosave.os.replace", _elszall)
+        monkeypatch.setattr("picasapy.collage.autosave._replace", _elszall)
         with pytest.raises(OSError):
             write_autosave(tmp_path, _project(theta=9.9))
 

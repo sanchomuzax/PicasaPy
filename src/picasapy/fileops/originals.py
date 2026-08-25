@@ -74,6 +74,13 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
+#: A `shutil.move` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
+#:
+#: A `"picasapy.fileops.originals.shutil.move"` sztringes rögzítés a GLOBÁLIS
+#: `shutil`-t írja át, tehát a „bukjon el a mozgatás" szimuláció a teszt
+#: minden más mozgatását is elrontja — a takarítást is.
+_move = shutil.move
+
 
 @dataclass(frozen=True)
 class OriginalMove:
@@ -293,7 +300,7 @@ def move_preserved_originals(
     for move in moves:
         try:
             move.target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(move.source), str(move.target))
+            _move(str(move.source), str(move.target))
         except OSError as error:
             stranded = undo_original_moves(tuple(done))
             # A célmappa itt akkor is takarítandó, ha a `done` ÜRES (mindjárt
@@ -327,7 +334,7 @@ def undo_original_moves(
     for move in reversed(list(moves)):
         try:
             move.source.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(move.target), str(move.source))
+            _move(str(move.target), str(move.source))
         except OSError:
             stranded.append(move)
             continue

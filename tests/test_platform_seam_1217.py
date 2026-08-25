@@ -79,12 +79,75 @@ képesség hiányzik. Az alábbiakat szándékosan NEM írtuk át (#1217):
 Ezekben a `skipif` NEM hallgatólagos feltevés: kimondja, mit nem tud a
 másik platform. A tiltott alak az, amikor egy **helyettesíthető** ág marad
 mérés nélkül.
+
+# A szivárgás nem csak a platformnál él (#1375)
+
+A #1217 a `sys.platform`/`os.name`/`platform.system()` hármast zárta le. A
+MECHANIZMUS viszont minden standard függvényre ugyanaz, és ott ugyanúgy
+használtuk:
+
+```python
+monkeypatch.setattr("picasapy.fileops.reveal.subprocess.run", _bukik)
+```
+
+Ez nem a `reveal` modult módosítja. A `monkeypatch` az utolsó pont előtti
+részt oldja fel objektumként, és a `reveal.subprocess` **maga a globális
+`subprocess` modul** — a csere tehát minden más modulra is hat, amíg a
+teszt fut. Ugyanez igaz az objektumos alakra
+(`monkeypatch.setattr(ioutil.os, "replace", …)`) és a `unittest.mock`
+`patch("…modul.shutil.which")` alakjára is.
+
+## Mérés (2026-08-25, a #1375 zárásakor)
+
+Összesen **71 hely, 26 tesztfájlban** írt át globális standard modult.
+Ebből **64 hely (24 fájl) volt sértés** és javítottuk, **7 hely (3 fájl)**
+szabályos kivétel (ld. a következő szakaszt).
+
+| függvény | hely | | függvény | hely |
+|---|---|---|---|---|
+| `subprocess.run` | 12 | | `os.fsync` | 3 |
+| `os.replace` | 12 | | `threading.Thread` | 2 |
+| `shutil.which` | 8 | | `os.stat` | 2 |
+| `os.access` | 7 | | `subprocess.Popen` | 2 |
+| `shutil.move` | 5 | | `shutil.disk_usage` | 2 |
+| `os.kill` | 4 | | `sqlite3.connect`, `builtins.open`, `shutil.rmtree`, `os.utime`, `os.fdopen` | 1–1 |
+
+A termékoldali válasz mindenütt ugyanaz, mint a `_platform`-nál:
+**modulszintű fogantyú** (`_run`, `_move`, `_replace`, `_open`, …), amit a
+teszt cserél. Tizenkilenc modul kapott ilyet (17 a `src/` alatt, plusz a
+`scripts/run_tests.py` és a `tools/golden/make_golden_kit_effects.py`).
+
+⚠️ **A jegy „nyolc hely, öt fájl" száma elavult volt** — a mai fán 71 hely
+van. A különbség java része NEM új kód, hanem a jegy mérése volt szűk: csak
+a `monkeypatch` sztringes alakját nézte. Kimaradt belőle a
+`unittest.mock.patch` (8 hely), az objektumos
+`monkeypatch.setattr(modul.os, "replace", …)` alak (28 hely), és a
+`subprocess`/`shutil`/`os` hármason kívüli standard modulok
+(`threading`, `sqlite3`, `builtins`). Ezért támaszkodik ez az őr a
+`sys.stdlib_module_names`-re, nem kézzel írt listára: a #1268 pont attól
+maradt lyukas.
+
+## Ahol a GLOBÁLIS csere szabályos — és miért
+
+Nem minden globális rögzítés hiba. A szabály a **mellékhatásos standard
+függvényekre** szól: ott a teszt a saját moduljának viselkedését akarja
+átírni, és a globális csere ennek nem kívánt túlnyúlása.
+
+A `sys.argv`, `sys.stdin`, `sys.stdout` és `sys.stderr` MÁS eset: ezek
+maguk a folyamat állapotai, nem egy modul kölcsönvett függvényei. Amikor a
+`test_main.py` az `argv`-t állítja, vagy a `test_jegycim_or_1378.py` a
+szkript bemenetét eteti, épp a FOLYAMAT-szintű állapotot akarja
+szimulálni — nincs mit a modulba fogantyúzni, és a „modulszintű fogantyú"
+bevezetése itt csak zaj lenne. Ezért ezek nevesített kivételek
+(`_ENGEDETT_GLOBALIS`), nem elnézett szivárgás.
 """
 
 from __future__ import annotations
 
 import ast
+import importlib
 import pathlib
+import sys
 
 GYOKER = pathlib.Path(__file__).resolve().parents[1]
 FORRAS = GYOKER / "src" / "picasapy"
@@ -347,4 +410,136 @@ def test_a_teszt_a_fogantyut_rogzitse_ne_a_globalis_sys_t():
         "— ez minden más modulra átszivárog (#1217). Helyette: "
         '`monkeypatch.setattr(modul, "_platform", lambda: "win32")`:\n  '
         + "\n  ".join(vetok)
+    )
+
+
+# ---------------------------------------------------------------------
+# Ugyanaz a szivárgás, MINDEN standard függvényre (#1375).
+# ---------------------------------------------------------------------
+
+#: Azok a `(standard modul, attribútum)` párok, amelyeknél a GLOBÁLIS csere
+#: SZABÁLYOS — ld. a modul docstringjének „Ahol a GLOBÁLIS csere szabályos"
+#: szakaszát. Ezek a folyamat saját állapotai, nem egy modul kölcsönvett
+#: függvényei: nincs mit fogantyúzni, a kivétel nem elnézés.
+_ENGEDETT_GLOBALIS = {
+    ("sys", "argv"),
+    ("sys", "stdin"),
+    ("sys", "stdout"),
+    ("sys", "stderr"),
+}
+
+#: A rögzítő hívások, amiket nézünk. A `monkeypatch` mellett a
+#: `unittest.mock.patch` is ide tartozik: a `test_email_controller.py` nyolc
+#: helyen ezzel írta át a globális `shutil`-t, és a #1375 első mérése épp
+#: azért volt szűk, mert csak a `monkeypatch`-et nézte.
+_ROGZITO_NEVEK = {"setattr", "delattr", "patch", "object"}
+
+
+def _standard_modul(nev: str) -> object | None:
+    """A `nev` a standard könyvtár egy modulja? Ha igen, a modul.
+
+    A `sys.stdlib_module_names`-re támaszkodunk, hogy az őr ne egy kézzel
+    karbantartott listától függjön (a #1268 pont attól maradt lyukas). Ami
+    ezen a gépen nem importálható (pl. `winreg` linuxon), az nem is lehet
+    egy itt futó teszt célpontja."""
+    if nev not in sys.stdlib_module_names:
+        return None
+    try:
+        return importlib.import_module(nev)
+    except Exception:  # pragma: no cover — platformidegen modul
+        return None
+
+
+def _rogzito_hivasok(fa: ast.AST) -> list[ast.Call]:
+    """A `monkeypatch.setattr/delattr` és a `mock.patch`/`patch.object` hívások."""
+    talalat: list[ast.Call] = []
+    for cs in ast.walk(fa):
+        if not isinstance(cs, ast.Call):
+            continue
+        fn = cs.func
+        if isinstance(fn, ast.Name) and fn.id == "patch":
+            talalat.append(cs)
+        elif isinstance(fn, ast.Attribute) and fn.attr in _ROGZITO_NEVEK:
+            talalat.append(cs)
+    return talalat
+
+
+def _globalis_standard_fuggvenyt_ir(hivas: ast.Call) -> str | None:
+    """A hívás egy GLOBÁLIS standard modul attribútumát írja-e át.
+
+    Két alak vezet ugyanoda, és egyik sem a hívó modul saját nevét cseréli::
+
+        monkeypatch.setattr("picasapy.fileops.reveal.subprocess.run", …)
+        monkeypatch.setattr(ioutil.os, "replace", …)
+
+    Mindkettőnél a **globális** `subprocess` / `os` modul módosul, tehát a
+    csere minden más modulra átszivárog, amíg a teszt fut.
+
+    A találat csak akkor sértés, ha az attribútum tényleg LÉTEZIK azon a
+    standard modulon — így egy `mod.select`, `mod.code` vagy `mod.token`
+    nevű PROJEKT-objektum nem lesz téves riasztás pusztán a nevétől."""
+    if not hivas.args:
+        return None
+    elso = hivas.args[0]
+
+    if isinstance(elso, ast.Constant) and isinstance(elso.value, str):
+        darabok = elso.value.split(".")
+        if len(darabok) < 3:
+            return None
+        modulnev, attr = darabok[-2], darabok[-1]
+    else:
+        if len(hivas.args) < 2:
+            return None
+        masodik = hivas.args[1]
+        if not isinstance(masodik, ast.Constant) or not isinstance(
+            masodik.value, str
+        ):
+            return None
+        if isinstance(elso, ast.Name):
+            modulnev = elso.id
+        elif isinstance(elso, ast.Attribute):
+            modulnev = elso.attr
+        else:
+            return None
+        attr = masodik.value
+
+    if (modulnev, attr) in _ENGEDETT_GLOBALIS:
+        return None
+    modul = _standard_modul(modulnev)
+    if modul is None or not hasattr(modul, attr):
+        return None
+    return f"{modulnev}.{attr}"
+
+
+def test_a_teszt_a_modul_fogantyujat_rogzitse_ne_a_globalis_standardot():
+    """Standard függvényt csak a hívó modul SAJÁT fogantyúján át szabad cserélni.
+
+    Nem elmélet: a `test_fileops_controller.py::TestRevealPhoto` docstringje
+    egy pontosan emiatt elbukott tesztet őriz. A `subprocess.run` globális
+    kicserélése ugyanabban a tesztben futó MÁS modulokra is hat — és a
+    veszélyesebbje (`os.replace`, `os.stat`, `shutil.move`) még a pytest
+    saját takarítását is eltérítheti.
+
+    A helyes alak::
+
+        # a termékmodulban:  _run = subprocess.run
+        monkeypatch.setattr(reveal, "_run", _bukik)
+        # vagy sztringesen, ugyanoda:
+        monkeypatch.setattr("picasapy.fileops.reveal._run", _bukik)
+    """
+    vetok: list[str] = []
+    for ut in sorted(TESZTEK.rglob("test_*.py")):
+        if ut.name == pathlib.Path(__file__).name:
+            continue  # ez a fájl a MINTÁKAT írja le, nem használja őket
+        fa = ast.parse(ut.read_text(encoding="utf-8"), filename=str(ut))
+        for hivas in _rogzito_hivasok(fa):
+            cel = _globalis_standard_fuggvenyt_ir(hivas)
+            if cel is not None:
+                vetok.append(f"{ut.relative_to(GYOKER)}:{hivas.lineno} → {cel}")
+
+    assert not vetok, (
+        "a teszt egy GLOBÁLIS standard modult ír át a hívó modul fogantyúja "
+        "helyett — ez minden más modulra átszivárog, amíg a teszt fut "
+        "(#1375). Vezess be modulszintű fogantyút a termékben (pl. "
+        '`_run = subprocess.run`), és azt cseréld:\n  ' + "\n  ".join(vetok)
     )

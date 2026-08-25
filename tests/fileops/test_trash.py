@@ -89,7 +89,7 @@ class TestDeleteToTrash:
             seen_before_move["exists"] = info_path.exists()
             return original_move(src, dst)
 
-        monkeypatch.setattr("picasapy.fileops.trash.shutil.move", spy_move)
+        monkeypatch.setattr("picasapy.fileops.trash._move", spy_move)
         delete_to_trash(photo, trash_dir=trash_dir)
         assert seen_before_move["exists"] is True
 
@@ -120,7 +120,7 @@ class TestDeleteToTrash:
         def failing_move(src, dst):
             raise OSError("lemez megtelt")
 
-        monkeypatch.setattr("picasapy.fileops.trash.shutil.move", failing_move)
+        monkeypatch.setattr("picasapy.fileops.trash._move", failing_move)
         with pytest.raises(OSError):
             delete_to_trash(photo, trash_dir=trash_dir)
         assert not (trash_dir / "info" / "a.jpg.trashinfo").exists()
@@ -222,7 +222,7 @@ class TestFindTrashDir:
         )
         monkeypatch.setattr("picasapy.fileops.trash._mount_point", lambda p: topdir)
         monkeypatch.setattr(
-            "picasapy.fileops.trash.os.access", lambda path, mode: False
+            "picasapy.fileops.trash._access", lambda path, mode: False
         )
 
         assert find_trash_dir(photo) is None
@@ -243,7 +243,7 @@ class TestFindTrashDir:
         )
         monkeypatch.setattr("picasapy.fileops.trash._mount_point", lambda p: topdir)
         monkeypatch.setattr(
-            "picasapy.fileops.trash.os.access", lambda path, mode: False
+            "picasapy.fileops.trash._access", lambda path, mode: False
         )
 
         assert find_trash_dir(photo) == per_user
@@ -267,7 +267,7 @@ class TestTrashAvailable:
         )
         monkeypatch.setattr("picasapy.fileops.trash._mount_point", lambda p: topdir)
         monkeypatch.setattr(
-            "picasapy.fileops.trash.os.access", lambda path, mode: False
+            "picasapy.fileops.trash._access", lambda path, mode: False
         )
 
         assert trash_available(photo) is False
@@ -291,7 +291,7 @@ class TestDeleteToTrashRaisesWhenNoTrashAvailable:
         )
         monkeypatch.setattr("picasapy.fileops.trash._mount_point", lambda p: topdir)
         monkeypatch.setattr(
-            "picasapy.fileops.trash.os.access", lambda path, mode: False
+            "picasapy.fileops.trash._access", lambda path, mode: False
         )
 
         with pytest.raises(TrashUnavailableError):

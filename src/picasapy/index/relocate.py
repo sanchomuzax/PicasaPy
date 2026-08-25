@@ -31,6 +31,11 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+#: A `shutil.disk_usage` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT
+#: cserélje, ne a `monkeypatch.setattr(relocate.shutil, "disk_usage", …)`
+#: alakot: az a GLOBÁLIS `shutil`-t írja át.
+_disk_usage = shutil.disk_usage
+
 # a backup API ennyi oldalanként ad haladás-visszahívást — elég sűrű a
 # folyamatjelzőhöz, de nem terheli túl a hívást nagy indexnél sem
 _BACKUP_PAGES_PER_STEP = 64
@@ -129,7 +134,7 @@ def _database_total_bytes(index_db: Path) -> int:
 
 
 def _check_free_space(new_root: Path, required_bytes: int) -> None:
-    usage = shutil.disk_usage(new_root)
+    usage = _disk_usage(new_root)
     margin = max(
         int(required_bytes * _FREE_SPACE_MARGIN_RATIO), _FREE_SPACE_MARGIN_MIN_BYTES
     )

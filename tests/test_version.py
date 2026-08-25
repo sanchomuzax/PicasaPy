@@ -31,7 +31,7 @@ class TestGitFailureIsSilent:
         def boom(*args, **kwargs):
             raise FileNotFoundError("git")
 
-        monkeypatch.setattr(version.subprocess, "run", boom)
+        monkeypatch.setattr(version, "_run", boom)
         assert version.build_number() is None
         assert version.build_id() is None
         # a címke sosem dobhat — legrosszabb esetben "dev"

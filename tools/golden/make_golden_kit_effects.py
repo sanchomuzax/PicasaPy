@@ -36,6 +36,13 @@ import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
+#: A `shutil.rmtree` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
+#:
+#: A `monkeypatch.setattr(mgke.shutil, "rmtree", …)` alak a GLOBÁLIS
+#: `shutil`-t írja át: a „zárolt mappa" szimuláció így a pytest saját
+#: takarítására is ráragadna, amíg a teszt fut.
+_rmtree = shutil.rmtree
+
 _HERE = Path(__file__).resolve().parent
 
 
@@ -357,7 +364,7 @@ def _friss_kimenet(out: Path) -> None:
 
     for _ in range(3):
         try:
-            shutil.rmtree(out, onerror=_irhatova)
+            _rmtree(out, onerror=_irhatova)
             return
         except PermissionError:
             time.sleep(1.0)  # zárolás (OneDrive/víruskereső) — várunk kicsit

@@ -38,6 +38,14 @@ from pathlib import Path
 from picasapy.collage.cxf import CxfProject, dumps, loads
 from picasapy.collage.win_paths import decode_cxf_path
 
+#: Az `os.replace` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
+#:
+#: A `"picasapy.collage.autosave.os.replace"` sztringes rögzítés a GLOBÁLIS
+#: `os`-t írja át. Az `os.replace` az egész programban az atomikus kiírás
+#: utolsó lépése (`ioutil.atomic_write`), tehát az „álljon el a csere"
+#: szimuláció más modulok mentését is elrontja, amíg a teszt fut.
+_replace = os.replace
+
 logger = logging.getLogger(__name__)
 
 #: a piszkozat fájlneve — a Picasáéval szó szerint egyezik (spec 1.5)
@@ -67,7 +75,7 @@ def write_autosave(directory: Path | str, project: CxfProject) -> Path:
 
     try:
         ideiglenes.write_bytes(dumps(project))
-        os.replace(ideiglenes, vegleges)
+        _replace(ideiglenes, vegleges)
     except OSError:
         # a félkész átmeneti fájl nem maradhat ott: a következő mentés
         # megbízhatóságát rontaná, és a felhasználó mappájában is szemét

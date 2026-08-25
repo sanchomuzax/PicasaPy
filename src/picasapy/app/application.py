@@ -84,6 +84,15 @@ from .timeline_controller import TimelineController
 from .webexport_controller import WebExportController
 from .window_geometry import virtual_desktop_rect, wire_window_geometry
 
+#: A `shutil.which` és a `subprocess.run` MODULSZINTŰ fogantyúja (#1375) —
+#: a teszt EZEKET cserélje.
+#:
+#: A `monkeypatch.setattr(application.shutil, "which", …)` alak a GLOBÁLIS
+#: `shutil`-t írja át, tehát minden más modul `which`-hívására is hat, amíg
+#: a teszt fut.
+_which = shutil.which
+_run = subprocess.run
+
 _APP_DIR = Path(__file__).parent
 _I18N_DIR = _APP_DIR / "i18n"
 
@@ -455,11 +464,11 @@ def _refresh_icon_cache(icons_dir: Path) -> None:
     """A hicolor icon-theme.cache frissítése ikoncsere után — enélkül a
     tálca a cache-elt régi ikont mutatja, amíg kézzel nem frissítik (#35).
     Best-effort: ahol nincs gtk-update-icon-cache (pl. Windows), kimarad."""
-    tool = shutil.which("gtk-update-icon-cache")
+    tool = _which("gtk-update-icon-cache")
     if tool is None:
         return
     try:
-        subprocess.run(
+        _run(
             [tool, "-f", "--ignore-theme-index", str(icons_dir)],
             check=False,
             capture_output=True,

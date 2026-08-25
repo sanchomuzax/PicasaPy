@@ -99,7 +99,7 @@ def _posix_eletjel(monkeypatch, *, el: bool) -> None:
         if not el:
             raise ProcessLookupError(pid)
 
-    monkeypatch.setattr(run_tests.os, "kill", _kill)
+    monkeypatch.setattr(run_tests, "_kill", _kill)
 
 
 def _halott_pid() -> int:
@@ -234,7 +234,7 @@ class TestWindowsVedelem:
         # `os` itt MAGA a standard modul, az átírása mindenre hatott volna.
         monkeypatch.setattr(run_tests, "_platform", lambda: "win32")
         monkeypatch.setattr(
-            run_tests.os, "kill", lambda *a: pytest.fail("Windowson tilos os.kill")
+            run_tests, "_kill", lambda *a: pytest.fail("Windowson tilos os.kill")
         )
         monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
 
@@ -251,7 +251,7 @@ class TestWindowsVedelem:
         )
         monkeypatch.setattr(run_tests, "_platform", lambda: "win32")
         monkeypatch.setattr(
-            run_tests.os, "kill", lambda *a: pytest.fail("Windowson tilos os.kill")
+            run_tests, "_kill", lambda *a: pytest.fail("Windowson tilos os.kill")
         )
         monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
 
@@ -278,7 +278,7 @@ class TestCsakTakaritas:
         szerinti maradék elmegy — az életjel-kérdés viszont kimarad."""
         monkeypatch.setattr(run_tests, "_platform", lambda: "win32")
         monkeypatch.setattr(
-            run_tests.os, "kill", lambda *a: pytest.fail("Windowson tilos os.kill")
+            run_tests, "_kill", lambda *a: pytest.fail("Windowson tilos os.kill")
         )
         monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
         monkeypatch.setattr(

@@ -188,13 +188,9 @@ class TestDesktopEntry:
         # régi ikont látja, amíg kézzel nem fut gtk-update-icon-cache.
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
         calls = []
+        monkeypatch.setattr(application, "_which", lambda name: f"/usr/bin/{name}")
         monkeypatch.setattr(
-            application.shutil, "which", lambda name: f"/usr/bin/{name}"
-        )
-        monkeypatch.setattr(
-            application.subprocess,
-            "run",
-            lambda cmd, **kwargs: calls.append(cmd),
+            application, "_run", lambda cmd, **kwargs: calls.append(cmd)
         )
         application._install_desktop_entry()
         assert len(calls) == 1
@@ -206,7 +202,7 @@ class TestDesktopEntry:
     def test_missing_cache_tool_skipped_silently(self, tmp_path, monkeypatch):
         # Windowson (vagy eszköz híján) a cache-frissítés csendben kimarad.
         monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
-        monkeypatch.setattr(application.shutil, "which", lambda name: None)
+        monkeypatch.setattr(application, "_which", lambda name: None)
         application._install_desktop_entry()  # nem dobhat
         assert (
             tmp_path / "icons" / "hicolor" / "256x256" / "apps" / "picasapy.png"

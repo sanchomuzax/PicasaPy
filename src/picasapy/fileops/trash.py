@@ -33,6 +33,18 @@ def _platform() -> str:
     return sys.platform
 
 
+#: A `shutil.move` és az `os.access` MODULSZINTŰ fogantyúja (#1375).
+#:
+#: Ugyanaz a gondolat, mint a `_platform`-nál, csak a standard függvényekre:
+#: a teszt EZEKET cserélje — `monkeypatch.setattr(trash, "_move", …)` —, ne a
+#: `"picasapy.fileops.trash.shutil.move"` sztringes utat. Az utóbbi a
+#: GLOBÁLIS `shutil` modult írja át, tehát a csere minden más modulra is hat,
+#: amíg a teszt fut (a lomtárazás bukását szimuláló csere így pont a
+#: takarítást is elronthatja).
+_move = shutil.move
+_access = os.access
+
+
 def _windows_lomtarba(path: Path) -> None:
     """A fájl a Windows LOMTÁRÁBA (`SHFileOperationW`, `FOF_ALLOWUNDO`).
 
@@ -145,7 +157,7 @@ def delete_to_trash(path: Path, *, trash_dir: Path | None = None) -> Path:
     )
 
     try:
-        shutil.move(str(path), str(trashed_path))
+        _move(str(path), str(trashed_path))
     except Exception:
         info_path.unlink(missing_ok=True)
         raise
@@ -223,7 +235,7 @@ def find_trash_dir(path: Path, *, trash_dir: Path | None = None) -> Path | None:
     per_user = topdir / f".Trash-{uid}"
     if per_user.is_dir():
         return per_user
-    if os.access(topdir, os.W_OK):
+    if _access(topdir, os.W_OK):
         return per_user
 
     return None

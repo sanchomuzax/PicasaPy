@@ -354,7 +354,14 @@ class TestToggleStar:
 
     def test_rescan_not_reentrant(self, controller, monkeypatch):
         # Futó szinkron alatt az újabb rescan nem indíthat második írót.
+        # #1375: a modul SAJÁT fogantyúját cseréljük. A globális
+        # `threading.Thread` átírása a teszt idejére MINDEN szálindítást a
+        # számlálóba terelné — a Qt-ét, a bélyegkép-gyorstárét, a watcherét
+        # is —, tehát az „ennyi szál indult" állítás nem is a vizsgált
+        # vezérlőről szólna.
         import threading
+
+        from picasapy.app import worker_thread
 
         started = []
         original = threading.Thread
@@ -363,7 +370,7 @@ class TestToggleStar:
             started.append(1)
             return original(*args, **kwargs)
 
-        monkeypatch.setattr(threading, "Thread", counting_thread)
+        monkeypatch.setattr(worker_thread, "_Thread", counting_thread)
         monkeypatch.setattr(controller, "_sync_worker", lambda: None)
         controller._sync_running = True
         controller.rescan()
@@ -1112,7 +1119,14 @@ class TestLiveWatch:
     def test_dirty_folders_coalesced_into_one_thread(self, controller, library, monkeypatch):
         # Több piszkos mappa EGYETLEN jelzésben EGY worker-szálban
         # dolgozódjon fel, ne mappánként külön szál.
+        # #1375: a modul SAJÁT fogantyúját cseréljük. A globális
+        # `threading.Thread` átírása a teszt idejére MINDEN szálindítást a
+        # számlálóba terelné — a Qt-ét, a bélyegkép-gyorstárét, a watcherét
+        # is —, tehát az „ennyi szál indult" állítás nem is a vizsgált
+        # vezérlőről szólna.
         import threading
+
+        from picasapy.app import worker_thread
 
         started = []
         original = threading.Thread
@@ -1121,7 +1135,7 @@ class TestLiveWatch:
             started.append(1)
             return original(*args, **kwargs)
 
-        monkeypatch.setattr(threading, "Thread", counting_thread)
+        monkeypatch.setattr(worker_thread, "_Thread", counting_thread)
         loop = _quit_on(controller.syncFinished)
         controller._on_folders_dirty(
             [str(library / "nyaralas"), str(library / "nyaralas")]

@@ -294,7 +294,7 @@ class TestANASTerheles:
             f"üres/egyelemű adaggal a mérés semmit nem bizonyít: {batch}"
         )
         monkeypatch.setattr(
-            "picasapy.app.folder_freshness.os.stat", szamlalo
+            "picasapy.app.folder_freshness._stat", szamlalo
         )
         controller._stale_feed_folders(batch)
 

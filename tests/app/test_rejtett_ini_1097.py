@@ -50,10 +50,18 @@ def test_letezo_ini_t_NEM_csonkolva_nyitunk(tmp_path, monkeypatch):
             modok.append(mod)
         return eredeti(fajl, mod, *args, **kwargs)
 
-    monkeypatch.setattr(builtins, "open", figyelo)
+    # #1375: a modul SAJÁT fogantyúját cseréljük, nem a `builtins.open`-t —
+    # az utóbbi a folyamat összes fájlmegnyitását ide terelné, amíg a teszt
+    # fut. A csere így csak azt látja, amit EZ a modul nyit; ha valaki
+    # visszaesne a `write_text()`-re (a #1097 gyökere), a `_open` meg sem
+    # hívódna, és az alábbi „meg sem nyitottuk" állítás bukna el.
+    monkeypatch.setattr(collage_output, "_open", figyelo)
     collage_output.write_album_ini(mappa, "Kollázsok")
 
-    assert modok, "meg sem nyitottuk az ini-t"
+    assert modok, (
+        "a modul meg sem nyitotta az ini-t — visszaesés a csonkoló "
+        "`write_text()`-re (#1097)?"
+    )
     assert all("w" not in mod for mod in modok), (
         f"csonkoló megnyitás egy LÉTEZŐ ini-n: {modok} — "
         "windowson ez rejtett fájlon Permission denied"

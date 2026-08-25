@@ -80,7 +80,7 @@ class TestValidateDestination:
             free = 1  # gyakorlatilag nulla szabad hely
 
         monkeypatch.setattr(
-            relocate_module.shutil, "disk_usage", lambda _path: _FakeUsage()
+            relocate_module, "_disk_usage", lambda _path: _FakeUsage()
         )
         with pytest.raises(RelocationError, match="Nincs elég szabad hely"):
             relocate_data_root(index_db, cache_dir, new_root)
