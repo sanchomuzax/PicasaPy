@@ -42,8 +42,9 @@ menüből.**
 
 ### 2.2 A mappa-hasáb helyi menüje — `thumbui/folderviewpopup` (`0x00733480`)
 
-Ugyanez a funkció **másik belépési ponton**, és itt **négy gyökér** is
-választható:
+Ugyanez a funkció **másik belépési ponton**, négy további tétellel.
+⚠️ Ezek közül **csak a Sajátgép valódi gyökér** — a másik három a teljes
+fára vált, majd odaugrik; ld. **4.5/b**.
 
 | parancs | felirat | magyar |
 |---|---|---|
@@ -154,6 +155,50 @@ Win32 registry-részlet, a mi tárolásunkra nézve közömbös — ld. 8. pont.
 | `thumbui/flatview` | `0x9cd8f0`, paraméter = `[esp+0x14]==0` | **csak lapos módban** |
 | `thumbui/soloview` | `0x9cd9a0` | az eredménye a `[+0x9c]` mezőbe megy |
 | `thumbui/folderviewpopup` | `0x9cd080` | a helyi menü |
+
+### 4.5/b ⚠️ HELYESBÍTÉS: a három rendszermappa NEM önálló gyökér
+
+*(Utólagos mérés, 2026-08-25 — a 2.2 szakasz „négy gyökér" megfogalmazása
+ezt félrevezetően sugallta.)*
+
+A `mypics` / `mydocs` / `desktop` ág mindegyike **azonos alakú**:
+
+```
+push 2 · push "all" · call 0x575130   ; ⇐ ELŐBB átvált a TELJES fára
+push <kimenet> · call <rendszermappa-feloldó>
+```
+
+*(`0x005753b2`–`0x005753d4`, `0x0057540b`–`0x0057542d`,
+`0x00575461`–`0x0057547e`.)*
+
+⇒ **Csak KÉT valódi gyökér van: `flat` és `all`** *(plusz az `all`
+`watched`-re cserélt változata)*. A három rendszermappa-tétel a **teljes
+fára vált, majd felfedi és kijelöli** azt a mappát. A `[+0x2e0]`/`[+0x2f0]`
+rekesz viszont a `mypics`/`mydocs`/`desktop` tokent tárolja — ezért kapnak
+a helyi menüben mégis rádiógomb-pipát.
+
+**A feloldók és a CSIDL-jük** — az érték a `0x00996140` hívása előtt:
+
+| token | függvény | CSIDL | Linux-megfelelő |
+|---|---|---|---|
+| `mypics` | `0x009966a0` | **`0x27`** `CSIDL_MYPICTURES` | `XDG_PICTURES_DIR` |
+| `mydocs` | `0x00996230` | **`0x05`** `CSIDL_PERSONAL` | `XDG_DOCUMENTS_DIR` |
+| `desktop` | `0x00996b90` | **`0x00`** `CSIDL_DESKTOP` | `XDG_DESKTOP_DIR` |
+
+A `mypics` feloldó **maga is visszaesik** a Dokumentumokra, ha a Képek
+mappa nem oldható fel (`0x00996747  call 0x996230`).
+
+### 4.5/c A fejlécfelirat — csak KETTŐ rögzített van
+
+Mindkét ág ugyanabba a felirat-beállítóba (`0x005c2100`) fut, de mást ad neki:
+
+| eset | mi kerül a fejlécbe |
+|---|---|
+| `flat` | **rögzített** erőforrás-szöveg: „Alapértelmezett nézet" |
+| `all`, `watched` | **rögzített** erőforrás-szöveg: „Sajátgép" |
+| `mypics`, `mydocs`, `desktop` | **a feloldott mappa saját útvonala/neve** (`0x00575483  mov esi, eax`) — nincs hozzá erőforrás-szöveg |
+
+Ezért van a `stringres`-ben pontosan **két** `ViewRoot::` kulcs, és nem öt.
 
 ### 4.6 Hibaeset
 
