@@ -126,8 +126,10 @@ class TestNezobenMostMarCtrlDeleteTorol:
             "a nézőben a Ctrl+Delete-nek törlést kellene kérdeznie — "
             "ez volt a #1418 tényleges hiánya"
         )
-        vart = str(Path(controller.watchedFolders[0]) / "a.jpg")
-        assert _lista(confirm.property("paths")) == [vart]
+        vart = Path(controller.watchedFolders[0]) / "a.jpg"
+        # `Path`-ként hasonlítunk: a felület `/`-t fűz, a Windows `\`-t
+        # várna — a kettő ugyanaz a fájl, a nyers szövegegyezés nem az
+        assert [Path(p) for p in _lista(confirm.property("paths"))] == [vart]
 
     def test_kijeloletlen_kepnel_a_ctrl_delete_nem_csinal_semmit(
         self, qml_app, qt_app

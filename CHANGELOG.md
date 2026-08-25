@@ -8,6 +8,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Javítva
+- **A rács mostantól magától észreveszi a többi mappában történt
+  változást is (#1435).** Eddig a program csak azt a mappát olvasta újra
+  rendszeresen, amelyiket épp kiválasztottál — pedig a rácson egyszerre
+  több mappa képei látszanak. Ha egy másik, ugyanúgy látszó mappába új kép
+  került, vagy onnan törlődött egy, az csak jóval később, a program
+  ötpercenkénti nagytakarításakor jelent meg. Ez főleg akkor zavaró, ha a
+  képek hálózati meghajtón vannak, és egy másik program — például a
+  windowsos Picasa 3 — is írja őket: onnan a rendszer nem küld értesítést
+  a változásról. Mostantól a program a rácson látszó többi mappát is
+  figyeli, körbeforgó rendszerben, mappánként mindössze két apró
+  kérdéssel, hogy a hálózati meghajtót ne terhelje.
+
+  Egy eset továbbra sem oldódik meg magától: ha egy **nem kiválasztott**
+  mappában egy meglévő kép tartalma cserélődik ki — a fájl neve marad,
+  csak a tartalma más —, azt a program még nem veszi észre, mert a mappán
+  kívülről semmilyen jel nem látszik ilyenkor. A kiválasztott mappában ez
+  az eset is frissül, ahogy eddig.
 - **A „Mappa rendezésének alapja ▸ Dátum" végre a mappa KÉPEIT rendezi
   (#1436).** A menüpont eddig nem azt csinálta, amit a neve ígért: nem a
   mappa tartalmát rendezte, hanem azt, hogy a mappák milyen sorrendben
