@@ -480,12 +480,30 @@ Rectangle {
     // F: arc-keretek be/ki (#147) — szövegmezőben (pl. felirat) a saját
     // Keys-kezelés (gépelés) már elfogadja, ide nem buborékol.
     // Shift+F: arc-SZERKESZTŐ mód be/ki (#26, 2. kör).
+    //
+    // #1418: a törlés a nézőben — akárcsak a rácsban — Ctrl+Delete (a
+    // helyi menük rekordjai, docs/specs/picasa-gyorsbillentyuk.md 4.).
+    // Ugyanazt az utat hívja, mint a jobbklikk-menü "Törlés lemezről"
+    // tétele (onDeleteRequested lent).
+    //
+    // ⚠️ ISMERT MARADVÁNY: a Main.qml `shortcutDeleteFromDiskViewer`
+    // Shortcutja (TILTOTT fájl ehhez a jegyhez) MÉG mindig a puszta
+    // "Delete"-re figyel — a #422-es, azóta felülírt feltételezés
+    // (spec 3.) szerint kötve. A helyes érték "Ctrl+Delete" volna (a
+    // fenti Ctrl+Delete-tel egy irányba mutatva); egysoros javítás, de
+    // ezt a jegyet a Main.qml szerkesztésétől eltiltották — az
+    // integrátornak kell elvégeznie.
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_F && event.modifiers === Qt.NoModifier) {
             viewer.toggleFaces()
             event.accepted = true
         } else if (event.key === Qt.Key_F && event.modifiers === Qt.ShiftModifier) {
             viewer.toggleFacesEdit()
+            event.accepted = true
+        } else if (event.key === Qt.Key_Delete
+                   && event.modifiers === Qt.ControlModifier) {
+            if (viewer.currentPath.length > 0)
+                viewer.deleteRequested(viewer.currentPath)
             event.accepted = true
         }
     }

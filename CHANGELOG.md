@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A törlés Ctrl+Delete-je mostantól a fotónézőben is működik (#1418).**
+  Az eredeti Picasában a lemezről törlés két billentyűn él: a menüsávban
+  puszta `Delete`, a jobbklikk-menükben `Ctrl+Delete`. A bélyegkép-rácsban
+  ez már korábban is így volt bekötve, a fotónézőben (a kép teljes
+  képernyős megnyitásakor) viszont a `Ctrl+Delete` eddig egyáltalán nem
+  reagált — csak a jobbklikk-menüből, egérrel lehetett törölni. A
+  jobbklikk-menü felirata is a régi, elavult billentyűt (puszta `Delete`)
+  mutatta; mostantól `Ctrl+Delete`-et hirdet, és valóban erre reagál.
+
 ## [0.8.90] – 2026-08-25
 
 ### Hozzáadva
