@@ -28,6 +28,13 @@ from picasapy.ini import (
 )
 from picasapy.scanner import PICASA_INI_NAME
 
+#: A `shutil.move` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
+#:
+#: A `"picasapy.fileops.move.shutil.move"` sztringes rögzítés nem a modult
+#: módosítja: a `move.shutil` MAGA a globális `shutil`, tehát a csere minden
+#: más modulra is átszivárog, amíg a teszt fut.
+_move = shutil.move
+
 # Az ini-írás kezelt hibái: a fájlrendszeré (`OSError`), a kódolásé
 # (`IniSaveError`) és a tartós párhuzamos-írás-ütközésé (`IniConflictError`).
 _INI_WRITE_ERRORS = (OSError, IniSaveError, IniConflictError)
@@ -82,7 +89,7 @@ def move_photo(path: Path, dest_folder: Path) -> Path:
     # együtt költöznek — enélkül a „Vissza az eredetihez” az új helyen nem
     # találna semmit, a régiben pedig árván maradna egy fájl.
     with originals_follow(path, target):
-        shutil.move(str(path), str(target))
+        _move(str(path), str(target))
 
     if not has_section:
         return target

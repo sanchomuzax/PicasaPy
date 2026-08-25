@@ -19,6 +19,12 @@ from picasapy.perf.collector import PerfCollector, PerfSample
 from picasapy.perf.logwriter import PerfLogWriter
 from picasapy.version import version_string
 
+#: A `subprocess.run` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
+#:
+#: A `"picasapy.app.perf_controller.subprocess.run"` sztringes rögzítés a
+#: GLOBÁLIS `subprocess`-t írja át, nem a modul saját nevét.
+_run = subprocess.run
+
 def _platform() -> str:
     """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217).
 
@@ -268,7 +274,7 @@ class PerfMonitorMixin:
             return
         try:
             if _platform().startswith("win"):
-                subprocess.run(["explorer", f"/select,{path}"], check=False)
+                _run(["explorer", f"/select,{path}"], check=False)
             else:
                 reveal_in_file_manager(Path(path))
         except OSError as error:

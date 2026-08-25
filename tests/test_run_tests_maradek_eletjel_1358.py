@@ -99,7 +99,7 @@ def _posix_eletjel(monkeypatch, *, el: bool) -> None:
         if not el:
             raise ProcessLookupError(pid)
 
-    monkeypatch.setattr(run_tests.os, "kill", _kill)
+    monkeypatch.setattr(run_tests, "_kill", _kill)
 
 
 def _halott_pid() -> int:
@@ -226,6 +226,21 @@ class TestEletjelKiirasa:
 
 
 class TestWindowsVedelem:
+    """A windows-lábon egyetlen PID-kérdés sem futhat.
+
+    ⚠️ #1375 — az őr HATÓKÖRE szűkült. Amíg a rögzítés a globális
+    `os.kill`-t cserélte, ez az állítás azt mondta: „a teszt alatt SEHOL
+    nem fut `os.kill`". A `run_tests._kill` fogantyú cseréje óta csak azt
+    mondja: „a `run_tests` a SAJÁT fogantyúját nem hívja". Ha valaki a
+    modulban közvetlen `os.kill(...)`-re térne vissza, ez a három őr
+    (`_kill` → `pytest.fail`) néma maradna.
+
+    Miért fogadjuk el mégis: a megkerülésnek van közvetett őre. A POSIX-os
+    testvértesztek (`_posix_eletjel`) a fogantyún át adják meg, hogy a PID
+    él-e; egy közvetlen `os.kill` ott a VALÓDI, tetszőleges PID-et
+    kérdezné, és a takarítás eredménye eltérne az elvárttól. A rés tehát
+    nem őrizetlen, csak nem ITT csattan."""
+
     def test_windowson_NEM_kerdezunk_pidet(self, monkeypatch, tmp_path):
         """⚠️ A CPython `os.kill(pid, 0)` Windowson MEGÖLI a folyamatot —
         ott csak a kor-szabály futhat."""
@@ -234,7 +249,7 @@ class TestWindowsVedelem:
         # `os` itt MAGA a standard modul, az átírása mindenre hatott volna.
         monkeypatch.setattr(run_tests, "_platform", lambda: "win32")
         monkeypatch.setattr(
-            run_tests.os, "kill", lambda *a: pytest.fail("Windowson tilos os.kill")
+            run_tests, "_kill", lambda *a: pytest.fail("Windowson tilos os.kill")
         )
         monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
 
@@ -251,7 +266,7 @@ class TestWindowsVedelem:
         )
         monkeypatch.setattr(run_tests, "_platform", lambda: "win32")
         monkeypatch.setattr(
-            run_tests.os, "kill", lambda *a: pytest.fail("Windowson tilos os.kill")
+            run_tests, "_kill", lambda *a: pytest.fail("Windowson tilos os.kill")
         )
         monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
 
@@ -275,10 +290,14 @@ class TestCsakTakaritas:
 
     def test_windowson_is_takarit_es_kilep(self, monkeypatch, tmp_path):
         """Ugyanaz a kapcsoló a windows-lábon: teszt nem fut, és a kor
-        szerinti maradék elmegy — az életjel-kérdés viszont kimarad."""
+        szerinti maradék elmegy — az életjel-kérdés viszont kimarad.
+
+        ⚠️ #1375: a `_kill` fogantyú cseréje csak azt állítja, hogy a
+        `run_tests` a SAJÁT fogantyúját nem hívja — nem azt, hogy sehol
+        nem fut `os.kill`. Ld. a `TestWindowsVedelem` docstringjét."""
         monkeypatch.setattr(run_tests, "_platform", lambda: "win32")
         monkeypatch.setattr(
-            run_tests.os, "kill", lambda *a: pytest.fail("Windowson tilos os.kill")
+            run_tests, "_kill", lambda *a: pytest.fail("Windowson tilos os.kill")
         )
         monkeypatch.setattr(run_tests, "_TEMP_GYOKER", tmp_path)
         monkeypatch.setattr(

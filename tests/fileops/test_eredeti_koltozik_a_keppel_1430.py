@@ -146,10 +146,14 @@ class TestAtnevezes:
         photo = _photo(tmp_path, "a.jpg")
         _original(tmp_path, ORIGINALS_DIR_NAME, "a.jpg", b"eredeti")
 
-        def _bukik(self, target):  # noqa: ANN001
+        def _bukik(path, target):  # noqa: ANN001
             raise OSError("a lemez megtelt")
 
-        monkeypatch.setattr(Path, "rename", _bukik)
+        # #1375: a modul SAJÁT fogantyúja. A `monkeypatch.setattr(Path,
+        # "rename", …)` a `pathlib.Path` OSZTÁLYT írta át, tehát a teszt
+        # idejére a folyamat MINDEN átnevezése elbukott — az ini atomikus
+        # cseréje is, ami épp a visszagörgetés útjában áll.
+        monkeypatch.setattr("picasapy.fileops.rename._rename", _bukik)
 
         with pytest.raises(OSError) as hiba:
             rename_photo(photo, "b.jpg")
@@ -247,7 +251,7 @@ class TestMozgatas:
                 raise OSError("a lemez megtelt")
             return eredeti_move(src, dst, *args, **kwargs)
 
-        monkeypatch.setattr("picasapy.fileops.move.shutil.move", _csak_a_kepnel_bukik)
+        monkeypatch.setattr("picasapy.fileops.move._move", _csak_a_kepnel_bukik)
 
         with pytest.raises(OSError) as hiba:
             move_photo(photo, cel)
@@ -341,7 +345,7 @@ class TestVisszagorgetesUzenete:
             allapot["odaut_kesz"] = True
             return eredeti_move(src, dst, *args, **kwargs)
 
-        monkeypatch.setattr("picasapy.fileops.originals.shutil.move", _fake)
+        monkeypatch.setattr("picasapy.fileops.originals._move", _fake)
 
     def test_bukott_visszagorgetes_nem_allitja_hogy_minden_rendben(
         self, tmp_path, monkeypatch
@@ -483,7 +487,7 @@ class TestUresMappaNemMaradHatra:
         def _mindig_bukik(src, dst, *args, **kwargs):  # noqa: ANN001
             raise OSError("a lemez megtelt")
 
-        monkeypatch.setattr("picasapy.fileops.originals.shutil.move", _mindig_bukik)
+        monkeypatch.setattr("picasapy.fileops.originals._move", _mindig_bukik)
 
         with pytest.raises(OSError):
             move_photo(photo, cel)

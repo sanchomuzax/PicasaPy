@@ -226,6 +226,11 @@ class TestHibaturés:
     fontosabb, mint a Picasa értesítése."""
 
     def test_az_utime_hibaja_nem_boritja_a_mentest(self, folder_be, monkeypatch, caplog):
+        # #1375: a modul SAJÁT fogantyúját cseréljük. Az `os.utime` globális
+        # átírása a teszt idejére minden más modul időbélyeg-írását is
+        # eltérítené — az `os` modul itt csak az eredeti függvényt adja.
+        from picasapy.ini import photo_touch
+
         eredeti_utime = os.utime
 
         def bukó_utime(path, *args, **kwargs):
@@ -233,7 +238,7 @@ class TestHibaturés:
                 raise PermissionError("írásvédett hálózati megosztás")
             return eredeti_utime(path, *args, **kwargs)
 
-        monkeypatch.setattr(os, "utime", bukó_utime)
+        monkeypatch.setattr(photo_touch, "_utime", bukó_utime)
         with caplog.at_level("WARNING"):
             _write_filters(folder_be)
         section = load_document(folder_be / ".picasa.ini").section("kep.jpg")

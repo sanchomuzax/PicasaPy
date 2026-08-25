@@ -36,10 +36,13 @@ class TestHasEnoughFreeSpace:
         assert has_enough_free_space(not_yet_created, required_bytes=1) is True
 
     def test_defensively_true_when_usage_cannot_be_determined(self, tmp_path, monkeypatch):
-        import shutil
+        # #1375: a modul SAJÁT fogantyúját cseréljük. A `shutil.disk_usage`
+        # globális átírása minden más modul szabadhely-kérdésére is hatna,
+        # amíg a teszt fut.
+        from picasapy.fileops import diskspace
 
         def boom(_path):
             raise OSError("nem érhető el")
 
-        monkeypatch.setattr(shutil, "disk_usage", boom)
+        monkeypatch.setattr(diskspace, "_disk_usage", boom)
         assert has_enough_free_space(tmp_path, required_bytes=10**18) is True

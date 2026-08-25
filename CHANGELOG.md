@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Belső
+- **A tesztek már nem írják át egymás alól a rendszerfüggvényeket (#1375).**
+  A tesztek egy része úgy cserélt ki szabványos függvényeket (fájlmozgatás,
+  külső program indítása, lemezműveletek), hogy a csere a futás idejére az
+  EGÉSZ programra érvényes volt, nem csak a vizsgált részre. Ebből a
+  háttérszálakkal együtt futó tesztek egymás viselkedését írhatták át. A
+  felmérés 76 ilyen helyet talált 30 fájlban; ebből 69 állt át a saját
+  moduljának fogantyújára, 7 pedig dokumentált kivétel maradt (ezek nem
+  kölcsönvett függvények, hanem magának a folyamatnak az állapotai). Egy
+  őr-teszt vigyáz rá, hogy a régi alak ne kerüljön vissza. A felhasználó
+  ebből semmit nem lát; a haszna az, hogy a hibajelzéseink megbízhatóbbak.
+
 ### Javítva
 - **Nem villan fel többé hibaüzenet, amikor a program a háttérben frissíti a
   rácsot (#1440).** A program tízmásodpercenként ránéz a látott mappákra, hogy

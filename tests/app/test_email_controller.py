@@ -123,8 +123,8 @@ class TestSendRows:
     def test_uses_xdg_email_when_available(self, qt_app, tmp_path):
         controller = _controller([], tmp_path)
         with patch(
-            "picasapy.app.email_controller.shutil.which", return_value="/usr/bin/xdg-email"
-        ), patch("picasapy.app.email_controller.subprocess.Popen") as popen:
+            "picasapy.app.email_controller._which", return_value="/usr/bin/xdg-email"
+        ), patch("picasapy.app.email_controller._popen") as popen:
             ok = controller.sendRows(["/tmp/a.jpg"], "Tárgy", "Szöveg")
         assert ok is True
         popen.assert_called_once()
@@ -139,9 +139,9 @@ class TestSendRows:
         events = []
         controller.emailFailed.connect(events.append)
         with patch(
-            "picasapy.app.email_controller.shutil.which", return_value="/usr/bin/xdg-email"
+            "picasapy.app.email_controller._which", return_value="/usr/bin/xdg-email"
         ), patch(
-            "picasapy.app.email_controller.subprocess.Popen",
+            "picasapy.app.email_controller._popen",
             side_effect=OSError("boom"),
         ):
             ok = controller.sendRows(["/tmp/a.jpg"], "s", "b")
@@ -151,7 +151,7 @@ class TestSendRows:
     def test_falls_back_to_mailto_without_xdg_email(self, qt_app, tmp_path):
         controller = _controller([], tmp_path)
         with patch(
-            "picasapy.app.email_controller.shutil.which", return_value=None
+            "picasapy.app.email_controller._which", return_value=None
         ), patch(
             "picasapy.app.email_controller.QDesktopServices.openUrl",
             return_value=True,
@@ -167,7 +167,7 @@ class TestSendRows:
         events = []
         controller.emailFailed.connect(events.append)
         with patch(
-            "picasapy.app.email_controller.shutil.which", return_value=None
+            "picasapy.app.email_controller._which", return_value=None
         ), patch(
             "picasapy.app.email_controller.QDesktopServices.openUrl",
             return_value=True,
@@ -180,7 +180,7 @@ class TestSendRows:
         events = []
         controller.emailFailed.connect(events.append)
         with patch(
-            "picasapy.app.email_controller.shutil.which", return_value=None
+            "picasapy.app.email_controller._which", return_value=None
         ), patch(
             "picasapy.app.email_controller.QDesktopServices.openUrl",
             return_value=True,
@@ -193,7 +193,7 @@ class TestSendRows:
         events = []
         controller.emailFailed.connect(events.append)
         with patch(
-            "picasapy.app.email_controller.shutil.which", return_value=None
+            "picasapy.app.email_controller._which", return_value=None
         ), patch(
             "picasapy.app.email_controller.QDesktopServices.openUrl",
             return_value=False,

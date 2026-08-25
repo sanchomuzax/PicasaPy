@@ -65,6 +65,15 @@ from picasapy.collage.themes import (
     REGULARGRID,
 )
 
+#: A beépített `open` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje.
+#:
+#: A `monkeypatch.setattr(builtins, "open", …)` alak a folyamat MINDEN
+#: fájlmegnyitását a figyelőbe tereli — a pytest-ét, a naplózóét, a Qt-ét is
+#: —, tehát a „milyen módon nyitottuk az ini-t" állítás nem is csak erről a
+#: modulról szólna. A `_ini_kiiras` az egyetlen hely, ahol ez a modul
+#: közvetlenül nyit fájlt.
+_open = open
+
 logger = logging.getLogger(__name__)
 
 #: A kimeneti fájl TARTALÉK neve: `il_collagefilename` = „kollázs" (spec 9.1).
@@ -500,7 +509,7 @@ def _ini_kiiras(ut: Path, szoveg: str) -> None:
     Intézőjében LÁTHATÓVÁ válna. A helyben írás megőrzi az attribútumokat."""
     adat = szoveg.encode("utf-8")
     if ut.exists():
-        with open(ut, "r+b") as fajl:
+        with _open(ut, "r+b") as fajl:
             fajl.write(adat)
             fajl.truncate()
         return

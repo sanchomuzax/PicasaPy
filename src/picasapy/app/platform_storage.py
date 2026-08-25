@@ -24,6 +24,15 @@ from pathlib import Path
 
 from .data_location import read_data_root
 
+#: Az `sqlite3.connect` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT
+#: cserélje.
+#:
+#: A `monkeypatch.setattr(platform_storage.sqlite3, "connect", …)` alak a
+#: GLOBÁLIS `sqlite3`-at írja át, tehát a „maradt-e nyitott kapcsolat"
+#: figyelő az `index/` és a `webexport/` kapcsolatait is felvenné — az
+#: állítás így nem is a vizsgált másolásról szólna.
+_connect = sqlite3.connect
+
 _APP_DIR_WINDOWS = "PicasaPy"
 _APP_DIR_XDG = "picasapy"
 _MIGRATION_MARKER = ".legacy-xdg-migration-1076-complete"
@@ -267,9 +276,9 @@ def _copy_sqlite_database(source: Path, target: Path) -> None:
         return
     temporary = _temporary_path(target)
     try:
-        source_connection = sqlite3.connect(str(source))
+        source_connection = _connect(str(source))
         try:
-            target_connection = sqlite3.connect(str(temporary))
+            target_connection = _connect(str(temporary))
             try:
                 source_connection.backup(target_connection)
             finally:
@@ -282,7 +291,7 @@ def _copy_sqlite_database(source: Path, target: Path) -> None:
         # rákövetkező publikálás `WinError 32`-vel bukik, és az EGÉSZ
         # migráció hibára fut: a felhasználó indexe nem kerül át. Linuxon
         # ez láthatatlan, ott a nyitott fájl is linkelhető és törölhető.
-        copied = sqlite3.connect(str(temporary))
+        copied = _connect(str(temporary))
         try:
             result = [str(row[0]) for row in copied.execute("PRAGMA integrity_check")]
         finally:

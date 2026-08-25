@@ -21,6 +21,11 @@ import shutil
 from collections.abc import Iterable
 from pathlib import Path
 
+#: A `shutil.disk_usage` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT
+#: cserélje, ne a `monkeypatch.setattr(shutil, "disk_usage", …)` alakot: az
+#: a GLOBÁLIS `shutil`-t írja át, minden más modulra is hatva.
+_disk_usage = shutil.disk_usage
+
 
 def required_bytes_for(paths: Iterable[Path]) -> int:
     """A megadott fájlok méretének összege. A nem olvasható/eltűnt fájlok
@@ -49,7 +54,7 @@ def has_enough_free_space(target_dir: Path, required_bytes: int) -> bool:
             return True
         probe = parent
     try:
-        usage = shutil.disk_usage(probe)
+        usage = _disk_usage(probe)
     except OSError:
         return True
     return usage.free >= required_bytes

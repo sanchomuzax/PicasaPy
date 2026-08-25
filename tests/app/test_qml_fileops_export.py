@@ -332,7 +332,7 @@ class TestDeleteConfirmDialogNoTrashAvailable:
         )
         monkeypatch.setattr("picasapy.fileops.trash._mount_point", lambda p: topdir)
         monkeypatch.setattr(
-            "picasapy.fileops.trash.os.access", lambda path, mode: False
+            "picasapy.fileops.trash._access", lambda path, mode: False
         )
         return photo
 

@@ -168,7 +168,7 @@ def test_kit_generalas_zarolt_kimenetnel_felulirassal_folytat(
     def _zarolt_rmtree(*_args, **_kwargs):
         raise PermissionError(5, "A hozzáférés megtagadva")
 
-    monkeypatch.setattr(mgke.shutil, "rmtree", _zarolt_rmtree)
+    monkeypatch.setattr(mgke, "_rmtree", _zarolt_rmtree)
     argv = sys.argv
     sys.argv = ["make_golden_kit_effects.py", str(out)]
     try:

@@ -68,7 +68,9 @@ def test_a_masolas_minden_kapcsolatot_BEZAR(forras, tmp_path, monkeypatch):
         megnyitott.append(kapcsolat)
         return kapcsolat
 
-    monkeypatch.setattr(platform_storage.sqlite3, "connect", figyelo)
+    # #1375: a modul SAJÁT fogantyúját cseréljük — a globális `sqlite3`
+    # átírásával a figyelő minden más modul kapcsolatát is felvenné.
+    monkeypatch.setattr(platform_storage, "_connect", figyelo)
     cel = tmp_path / "cel" / "index.db"
 
     platform_storage._copy_sqlite_database(forras, cel)

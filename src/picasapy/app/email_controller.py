@@ -46,6 +46,15 @@ from picasapy.mailer import (
 
 from .collage_draft_guard import CollageDraftGuard
 
+#: A `shutil.which` és a `subprocess.Popen` MODULSZINTŰ fogantyúja (#1375) —
+#: a teszt EZEKET cserélje.
+#:
+#: A `patch("picasapy.app.email_controller.shutil.which", …)` alak nem a
+#: modult módosítja: az `email_controller.shutil` MAGA a globális `shutil`,
+#: tehát a csere minden más modulra is hat, amíg a teszt fut.
+_which = shutil.which
+_popen = subprocess.Popen
+
 _log = logging.getLogger(__name__)
 
 # QSettings-kulcsok — a `mail/` névtér az OptionsTabEmail élő mezőié
@@ -225,11 +234,11 @@ class EmailController(QObject):
         visszaesés — csatolmány NÉLKÜL (ld. a modul docstringje), erről a
         `emailFailed` jelez, hogy a UI figyelmeztethesse a felhasználót."""
         attachments = [Path(path) for path in attachment_paths]
-        xdg_email = shutil.which("xdg-email")
+        xdg_email = _which("xdg-email")
         if xdg_email is not None:
             argv = build_xdg_email_argv(subject, body, attachments)
             try:
-                subprocess.Popen(argv)  # noqa: S603 — argv-lista, nincs shell
+                _popen(argv)  # noqa: S603 — argv-lista, nincs shell
             except OSError as error:
                 self.emailFailed.emit(str(error))
                 return False

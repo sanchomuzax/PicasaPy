@@ -39,6 +39,16 @@ from picasapy.render.chain import apply_filters, can_render_filter
 
 from .worker_thread import BackgroundWorkerMixin
 
+def _konyvtar_tartalma(konyvtar: Path) -> list[Path]:
+    """Az eredeti-mappa egyszeri listázása — külön függvény, hogy a teszt
+    MEGSZÁMOLHASSA (#1146), a globális `Path.glob` átírása nélkül (#1375).
+
+    A `monkeypatch.setattr(Path, "glob", figyelo)` alak a `pathlib.Path`
+    OSZTÁLYT írja át: a számláló a teszt idejére a folyamat MINDEN
+    mappalistázását felvenné, tehát a „100 képre egy listázás" állítás nem
+    is csak erről a vezérlőről szólna."""
+    return list(konyvtar.glob("*"))
+
 #: A mentés kezelt hibái: a fájlrendszeré, a kódolásé, a párhuzamos
 #: ini-íróé és a magé — egyik sem szökhet ki a QML felé kivételként.
 _SAVE_ERRORS = (OSError, ValueError, SaveError, IniSaveError, IniConflictError)
@@ -139,7 +149,10 @@ class SaveMixin(BackgroundWorkerMixin):
                 for dir_name in ORIGINALS_DIR_NAMES:
                     konyvtar = Path(mappa) / dir_name
                     if konyvtar.is_dir():
-                        nevek.update(utvonal.name for utvonal in konyvtar.glob("*"))
+                        nevek.update(
+                            utvonal.name
+                            for utvonal in _konyvtar_tartalma(konyvtar)
+                        )
                 tovek[mappa] = nevek
             to = Path(record.name).stem
             if any(nev.startswith(to) for nev in tovek[mappa]):

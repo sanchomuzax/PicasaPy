@@ -48,6 +48,14 @@ from pathlib import Path
 
 _log = logging.getLogger(__name__)
 
+#: A `subprocess.run` MODULSZINTŰ fogantyúja (#1375).
+#:
+#: A teszt EZT cserélje — `monkeypatch.setattr(reveal, "_run", …)` —, ne a
+#: `"picasapy.fileops.reveal.subprocess.run"` sztringes utat. Az utóbbi nem a
+#: modult módosítja: a `reveal.subprocess` MAGA a globális `subprocess` modul,
+#: tehát a csere MINDEN más modulra is hat, amíg a teszt fut.
+_run = subprocess.run
+
 
 def _platform() -> str:
     """A futó platform — külön függvény, hogy a teszt helyettesíthesse.
@@ -104,7 +112,7 @@ def _inditsd(parancs: list[str] | str, cel: Path) -> None:
     hívó (`FileOpsController`) az `operationFailed` jelzésre fordíthassa —
     a felhasználó ne maradjon néma némaságban (#112)."""
     try:
-        result = subprocess.run(parancs, check=False)
+        result = _run(parancs, check=False)
     except OSError as error:
         _log.warning("A fájlkezelő megnyitása sikertelen: %s", cel)
         # ⚠️ #1152: a windowsos ág SZTRING parancssort ad (a pontos

@@ -63,7 +63,7 @@ class TestDirectoryStamp:
             hivasok.append(args[0] if args else None)
             return eredeti(*args, **kwargs)
 
-        monkeypatch.setattr(folder_freshness.os, "stat", szamlalo)
+        monkeypatch.setattr(folder_freshness, "_stat", szamlalo)
         folder_freshness.directory_stamp(mappa)
         monkeypatch.undo()
         return len(hivasok)

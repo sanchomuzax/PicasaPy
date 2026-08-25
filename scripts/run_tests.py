@@ -51,6 +51,16 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
+#: A `subprocess.run` és az `os.kill` MODULSZINTŰ fogantyúja (#1375) — a
+#: teszt EZEKET cserélje: `monkeypatch.setattr(run_tests, "_run", …)`.
+#:
+#: A `monkeypatch.setattr(run_tests.subprocess, "run", …)` alak a GLOBÁLIS
+#: `subprocess`-t írja át. Itt ez különösen kellemetlen: a futtató saját
+#: tesztjei épp a részfutások indítását némítják el, és a csere közben
+#: minden más modul folyamatindítása is a hamis felvevőbe futna.
+_run = subprocess.run
+_kill = os.kill
+
 # ⚠️ A windowsos konzol alapértelmezett kódlapja (cp1252) NEM ismeri a
 # magyar `ő` és `ű` betűket — egy `print()` rajtuk `UnicodeEncodeError`-rel
 # elhasal, és a JOB azonnal elbukik, még mielőtt egyetlen teszt elindulna.
@@ -346,10 +356,10 @@ def _run_pytest(
         print(f"$ {' '.join(command)}", flush=True)
     try:
         if not csendben:
-            return subprocess.run(
+            return _run(
                 command, cwd=_ROOT, timeout=timeout_s, env=kornyezet
             ).returncode
-        eredmeny = subprocess.run(
+        eredmeny = _run(
             command, cwd=_ROOT, timeout=timeout_s, env=kornyezet,
             capture_output=True, text=True, errors="replace",
         )
@@ -400,7 +410,7 @@ def _el_e_a_futas(konyvtar: Path) -> bool | None:
     except (OSError, ValueError):
         return None
     try:
-        os.kill(pid, 0)
+        _kill(pid, 0)
     except ProcessLookupError:
         return False
     except OSError:
@@ -440,11 +450,11 @@ def _report_coverage() -> None:
     lefedettségi összesítő kiírása. Tájékoztató jellegű (#300): küszöb
     (`--fail-under`) egyelőre nincs bekötve, ez külön döntés."""
     print("\n$ coverage combine", flush=True)
-    subprocess.run(
+    _run(
         [sys.executable, "-m", "coverage", "combine"], cwd=_ROOT, check=False
     )
     print("$ coverage report", flush=True)
-    subprocess.run(
+    _run(
         [sys.executable, "-m", "coverage", "report"], cwd=_ROOT, check=False
     )
 
@@ -543,7 +553,7 @@ def main(argv: list[str] | None = None) -> int:
     if cov:
         # tiszta lap: egy korábbi (pl. megszakadt) --cov futásból maradt
         # .coverage.* adatfájlok ne keveredjenek a mostani mérésbe.
-        subprocess.run(
+        _run(
             [sys.executable, "-m", "coverage", "erase"], cwd=_ROOT, check=False
         )
 

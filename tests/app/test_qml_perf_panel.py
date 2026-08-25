@@ -169,7 +169,7 @@ class TestPerfMonitorPanel:
             perf_controller, "_platform", lambda: "win32"
         )
         monkeypatch.setattr(
-            "picasapy.app.perf_controller.subprocess.run",
+            "picasapy.app.perf_controller._run",
             lambda args, **kwargs: calls.append(args) or _CompletedProcess(),
         )
         log_path = tmp_path / "perf" / "diag.jsonl"

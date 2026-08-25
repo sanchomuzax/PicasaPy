@@ -56,7 +56,7 @@ def hivasok(monkeypatch):
         rogzitett.append(args if isinstance(args, str) else list(args))
         return kimenet
 
-    monkeypatch.setattr("picasapy.fileops.reveal.subprocess.run", _run)
+    monkeypatch.setattr("picasapy.fileops.reveal._run", _run)
     return rogzitett, kimenet
 
 
@@ -136,7 +136,7 @@ class TestWindows:
         def _raise(*_a, **_k):
             raise FileNotFoundError("nincs explorer")
 
-        monkeypatch.setattr("picasapy.fileops.reveal.subprocess.run", _raise)
+        monkeypatch.setattr("picasapy.fileops.reveal._run", _raise)
 
         with pytest.raises(OSError):
             open_folder_in_file_manager(tmp_path)

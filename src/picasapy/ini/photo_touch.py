@@ -97,6 +97,11 @@ from collections.abc import Iterable, Mapping
 
 from .document import IniDocument
 
+#: Az `os.utime` MODULSZINTŰ fogantyúja (#1375) — a teszt EZT cserélje, ne a
+#: `monkeypatch.setattr(os, "utime", …)` alakot: az a GLOBÁLIS `os`-t írja
+#: át, tehát minden más modul időbélyeg-írására is hat.
+_utime = os.utime
+
 _log = logging.getLogger(__name__)
 
 #: A BEKAPCSOLÓ környezeti változó. Hiányában KI (#1320 döntése).
@@ -183,7 +188,7 @@ def touch_photo(image_path: Path) -> bool:
     try:
         stat = image_path.stat()
         new_mtime_ns = max(time.time_ns(), stat.st_mtime_ns + _SKEW_BUMP_NS)
-        os.utime(image_path, ns=(stat.st_atime_ns, new_mtime_ns))
+        _utime(image_path, ns=(stat.st_atime_ns, new_mtime_ns))
     except OSError as error:
         _log.warning(
             "A(z) %s módosítási ideje nem frissíthető (%s) — a mentés ettől "

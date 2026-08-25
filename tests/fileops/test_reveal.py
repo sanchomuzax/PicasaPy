@@ -36,7 +36,7 @@ class TestRevealInFileManager:
             returncode = 0
 
         monkeypatch.setattr(
-            "picasapy.fileops.reveal.subprocess.run",
+            "picasapy.fileops.reveal._run",
             lambda args, **kwargs: calls.append(args) or _CompletedProcess(),
         )
         photo = tmp_path / "album" / "a.jpg"
@@ -48,7 +48,7 @@ class TestRevealInFileManager:
         def _raise(*_args, **_kwargs):
             raise FileNotFoundError("xdg-open nincs telepítve")
 
-        monkeypatch.setattr("picasapy.fileops.reveal.subprocess.run", _raise)
+        monkeypatch.setattr("picasapy.fileops.reveal._run", _raise)
         with pytest.raises(OSError):
             reveal_in_file_manager(tmp_path / "a.jpg")
 
@@ -57,7 +57,7 @@ class TestRevealInFileManager:
             returncode = 1
 
         monkeypatch.setattr(
-            "picasapy.fileops.reveal.subprocess.run",
+            "picasapy.fileops.reveal._run",
             lambda args, **kwargs: _CompletedProcess(),
         )
         with pytest.raises(OSError):
