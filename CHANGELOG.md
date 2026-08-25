@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+### Hozzáadva
+- **Az `Enter` megnyitja a kijelölt képet a nézőben (#1417).** Eddig csak
+  dupla kattintással lehetett megnyitni egy képet a bélyegkép-rácsból, így
+  aki billentyűzetről dolgozik, a nyilakkal odaléphetett a képre, de nem
+  tudta megnyitni. Mostantól az `Enter` ugyanazt teszi, mint a dupla
+  kattintás — pontosan úgy, ahogy az eredeti Picasában, ahol ez a jobbklikk-
+  menü félkövér, alapértelmezett tétele. A keresőmezőben, a névbeviteli
+  mezőkben és a párbeszédekben az `Enter` változatlanul a saját dolgát végzi.
+
 ### Javítva
 - **A felső eszközsáv és a keresőmező az eredeti Picasa méretét kapta
   (#587).** A sáv magassága 34 helyett 35 képpont, az „Importálás" gomb

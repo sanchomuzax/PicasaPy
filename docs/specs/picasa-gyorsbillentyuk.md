@@ -468,7 +468,7 @@ Forrás: `src/picasapy/app/qml/Main.qml`,
 | `Ctrl+2` | Normál indexképek | ✅ megvan | `PicasaMenuBar.qml:135` |
 | `Ctrl+Enter` | Keresés a lemezen | ✅ megvan (`Ctrl+Return`) | `PicasaMenuBar.qml:140` |
 | `Esc` | Visszatérés a könyvtárhoz | ⚠️ **eltér** – nálunk a `DocumentTabStrip` projektlap-váltása, a nézőben `Keys.onEscapePressed` | `DocumentTabStrip.qml:115`, `PhotoViewer.qml:471` |
-| `Home` / `End` | első/utolsó kép a mappában | ✅ megvan | `LightboxFeed.qml:229` |
+| `Home` / `End` | első/utolsó kép a mappában | ✅ megvan | `LightboxFeed.qml:218` |
 | `Ctrl+N` | Új album | ❌ **hiányzik** | — |
 | `Ctrl+O` | Fájl felvétele a Picasába | ❌ hiányzik | — |
 | `Ctrl+M` | Importálás forrása | ❌ hiányzik | — |
@@ -480,7 +480,7 @@ Forrás: `src/picasapy/app/qml/Main.qml`,
 | `Ctrl+Shift+P` | Indexképek nyomtatása | ❌ hiányzik | — |
 | `Ctrl+H` | Kijelölés megtartása a tálcán | ❌ hiányzik | — |
 | `F1` | Súgó | ❌ hiányzik | — |
-| **`Enter`** | Megjelenítés és szerkesztés (rácsból a nézőbe) | ❌ **hiányzik** – nálunk csak dupla kattintás nyitja a nézőt (`ThumbDelegate.qml:359`); a rácsban `Enter`-re nincs kötés | — |
+| **`Enter`** | Megjelenítés és szerkesztés (rácsból a nézőbe) | ✅ megvan (#1417) – a rács `Keys.onPressed` ága ugyanazt az `openRequested` jelet adja, mint a dupla kattintás | `LightboxFeed.qml:227` |
 
 **A könyvtár-kiosztáson kívüli billentyűink** — ezek nem ütköznek a
 fenti táblával:
@@ -503,8 +503,8 @@ rekordja **28 egyedi** kombinációt takar (az `F2`, a `Ctrl+3`, a `Ctrl+4`
 helyi menüben élő (`Enter`, `Esc`, `Ctrl+H`, `Ctrl+Delete`) és a rács
 `Home` / `End` billentyűje — **összesen 34**.
 
-Ebből nálunk: **18 megvan**, **2 eltér** (`Delete`, `Esc`),
-**14 hiányzik**.
+Ebből nálunk: **19 megvan**, **2 eltér** (`Delete`, `Esc`),
+**13 hiányzik**.
 
 ---
 
