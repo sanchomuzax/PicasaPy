@@ -162,18 +162,26 @@ tartozó **alapértelmezett margók számértéke viszont nem szerepel a
 
 ## Eltérés a PicasaPy-tól
 
-| | eredeti | nálunk | teendő |
-|---|---|---|---|
-| bal panel szélessége | **240 px fix**, húzható | `folderPaneWidth`, alap **230** | 240-re |
-| a bal panel viselkedése átméretezéskor | **nem skálázódik** | — | ellenőrizni |
-| felső sáv | 35 px | ? | ellenőrizni |
-| alsó sáv | 105 px | ? | ellenőrizni |
+A „nálunk" oszlop **kirajzolva mérve** (#587, a teljes `Main.qml`
+1280/1600/1920 px-es ablakban — a mérő őr:
+`tests/app/qml_functional/test_fo_ablak_elrendezes_587.py`):
 
-> **A `design-guide.md` két, egymásnak ellentmondó értéket tartalmaz**
-> (386 px ≈ 20 %, illetve 210 px ≈ 26 %), és azt írja, hogy „arányosan
-> skálázandó". **Mindkettő téves**: a forrás szerint 240 px, fix, húzható
-> elválasztóval. A képernyőkép-mintavételből származó becslést itt a
-> forráskód felülírja.
+| | eredeti | nálunk | állapot |
+|---|---|---|---|
+| bal panel szélessége | **240 px fix**, húzható | `folderPaneWidth`, alap **230** | ❌ **nyitva** — az alapérték a `FOLDER_PANE_WIDTH_DEFAULT`-ban (`app/controller.py`) és a `Main.qml` tartalék-értékében él |
+| a bal panel viselkedése átméretezéskor | **nem skálázódik** | nem skálázódik (mérve: 230 mindhárom ablakszélességen) | ✅ |
+| felső sáv | 35 px | **35 px** (#587 előtt 34) | ✅ |
+| `importbutton` | 111 × 22 | **111 × 22** (#587 előtt 100 × 24) | ✅ |
+| `searchcontainer` | 388 × 30 | **388 × 30** (#587 előtt 300 × 24) | ✅ |
+| alsó sáv | 105 px | 20 + 52 = **72 px** | ❌ **nyitva** — a magasság önmagában holt sávot adna: a tálca-tartalom (36,5 %-os osztópont, 81 px-es képtálca) is átépítendő |
+
+> **A `design-guide.md` két, egymásnak ellentmondó értéket tartalmazott**
+> (386 px ≈ 20 %, illetve 210 px ≈ 26 %), és azt írta, hogy „arányosan
+> skálázandó". **Mindkettő téves volt**: a forrás szerint 240 px, fix,
+> húzható elválasztóval. A képernyőkép-mintavételből származó becslést itt
+> a forráskód felülírja. **A #587 mindkét helyet kijavította** — a
+> `design-guide.md` mostantól a forrásra mutat, és a fix/skálázódó
+> megkülönböztetést is kimondja.
 
 ## Elérhető, még fel nem dolgozott elrendezések
 

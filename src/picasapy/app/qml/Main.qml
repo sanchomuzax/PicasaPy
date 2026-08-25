@@ -1056,7 +1056,7 @@ ApplicationWindow {
             id: folderPane
             objectName: "folderPane"
             // #305: null-őr — a controller a leépítéskor átmenetileg null
-            SplitView.preferredWidth: controller ? controller.folderPaneWidth : 230
+            SplitView.preferredWidth: controller ? controller.folderPaneWidth : 240
             SplitView.minimumWidth: 160
             SplitView.maximumWidth: 600
 

@@ -69,7 +69,11 @@ _THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
 #: érték a QSettings-ben él. A határok azt védik ki, hogy egy elrontott
 #: (nulla vagy képernyőnél szélesebb) érték használhatatlan felülettel
 #: indítsa a következő futást.
-FOLDER_PANE_WIDTH_DEFAULT = 230
+# #587: a forrás szerinti alapérték a `HLISTOFFSET2` = **240** px, FIX
+# (a bal panel nem skálázódik az ablakkal, csak a felhasználó húzhatja).
+# A korábbi 230 becslés volt; a `design-guide.md` két helyen 386-ot,
+# illetve 210-et állított — mindkettő téves, a #587 javította.
+FOLDER_PANE_WIDTH_DEFAULT = 240
 FOLDER_PANE_WIDTH_MIN = 160
 FOLDER_PANE_WIDTH_MAX = 600
 

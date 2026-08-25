@@ -271,8 +271,19 @@ class TestUresTerulet:
             for e in _bejar(window.contentItem())
             if e.objectName() == "thumbMouseArea" and e.parentItem() is not None
         ]
+        # ⚠️ A GÖRGETŐSÁV is elnyeli az egérlenyomást, pedig „cellával nem
+        # takart" pont. Ha a keresés oda esik, a húzás el sem indul, és a
+        # bukás úgy néz ki, mintha a lasszó lenne hibás. A #587 (bal panel
+        # 230 → 240) épp ilyen ponthoz sodorta a keresést: x = 1252 egy
+        # 1280 széles ablakban. Ezért a sávot ugyanúgy kizárjuk, mint a
+        # cellákat — MÉRÉSSEL, nem szélső margóval.
+        kizart = list(cellak)
+        kizart += [
+            e for e in _bejar(window.contentItem())
+            if e.objectName() == "feedScrollBar"
+        ]
         keretek = []
-        for cella in cellak:
+        for cella in kizart:
             sarok = cella.mapToScene(QPointF(0, 0))
             keretek.append(
                 (sarok.x(), sarok.y(),

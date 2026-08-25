@@ -115,22 +115,32 @@ cellaszélesség) egyben változna, ezért külön jegyet érdemel.
 
 ## Elrendezés-méretek (1920×1080 alapon; arányosítva viendő át)
 
+> ⚠️ **A fő ablak sávjai és a bal panel NEM ebből a táblázatból jönnek.**
+> A normatív lap [`konyvtar-ablak-meretek.md`](konyvtar-ablak-meretek.md),
+> a levezetés
+> [`picasa-fo-ablak-elrendezes.md`](picasa-fo-ablak-elrendezes.md): azok a
+> számok a Picasa **saját elrendezés-forrásfájljaiból** (`thumbui.tre`,
+> `respack.yt`) származnak, nem képernyőkép-mintavételből. Ahol a kettő
+> ütközik, a forrás nyer. Az alábbi táblázat ARÁNYOS becsléseket ad
+> azokra az elemekre, amikre nincs forrásból vett méret.
+
 | Elem | Pixel @1920×1080 | Megjegyzés |
 |---|---|---|
 | Menüsor | ~20px magas | natív |
-| Eszköztár | ~37px | Importálás gomb + nézetváltók balra, Szűrők középen, kereső jobbra |
-| Bal panel szélessége | 386px (~20%) | 1280-as ablaknál ≈ 250px — **arányosan skálázandó** |
+| Eszköztár | **35px, FIX** | a `thumbui.tre` `searchtop`-ja; **nem** skálázódik. (A `respack.yt` `buttonbarsets` rétege 37px — az a sáv háttérképe, nem a sávhatár.) |
+| Bal panel szélessége | **240px, FIX** | a `thumbui.tre` `HLISTOFFSET2`-je; **nem** skálázódik: az ablak növelésekor a rács nő, a panel marad. Húzható elválasztó (`hlistsizer`, 8px) írja át. |
 | Panel-sor magasság | 22px | szekció-fejléc és mappa-sor egyaránt |
-| Infó-sáv | ~15px | nálunk 20px (olvashatóság) |
-| Tálca | ~85px | 800 magas ablaknál ≈ 64px |
+| Infó-sáv | 14px az eredetiben | nálunk 20px — **szándékos, dokumentált eltérés** (olvashatóság) |
+| Alsó sáv (infó-sáv + tálca) | **105px, FIX** | a `thumbui.tre` `publishbottom`-ja. Ma nálunk 20 + 52 = **72px** (#587) |
 | Néző felső sáv | ~30px | filmszalag ~38px magas thumbokkal |
 | Néző eszközpanel | **FIX 280px széles** | fülek + gombrács + hisztogram alul — **NEM skálázandó** (ld. lábjegyzet) |
 
 > **#411 — a Néző eszközpanel szélessége FIX, nem ablakarányos.** A
-> táblázat többi sora ("arányosítva viendő át" fejléc) az ablakmérethez
-> igazodó értékeket ad meg (pl. a Bal panel szélessége 1280px-es ablaknál
-> ≈250px-re vetítendő) — a szerkesztő-eszközpanel viszont az EREDETI
-> Picasában is fix pixelszélességű, minden ablakméretnél 280px. A #405-ös
+> táblázat "arányosítva viendő át" fejléce csak azokra a sorokra
+> vonatkozik, ahol nincs kiírva a **FIX** jelölés — a szerkesztő-
+> eszközpanel viszont az EREDETI Picasában is fix pixelszélességű,
+> minden ablakméretnél 280px. (#587: ugyanez derült ki a fő ablak bal
+> paneljéről és sávjairól is — azok is fixek.) A #405-ös
 > kör tévesen ablakarányosan skálázta le 190px-re; a felhasználó
 > screenshot-összevetése (~955px széles ablaknál ~275px-es eredeti panel)
 > bizonyította a hibát. `EditorPanel.qml` `implicitWidth: 280` és
@@ -178,16 +188,23 @@ elrendezést. **Fontos fenntartás:** a fő ablak tervezési vászna **800×534*
 | sáv | magasság | a mi guide-unk |
 |---|---|---|
 | felső fül-sáv | 29 px | — |
-| **eszköztár** | **37 px** | ~37 px ✅ **egyezik** |
+| **eszköztár** | **37 px** (a `buttonbarsets` háttérképe; a sávhatár a `searchtop` = **35 px**) | 35 px ✅ (#587) |
 | kereső/szűrő sor | 25 px | — |
 | **mappa-fejléc** | 86 px + 4 px árnyék | — |
-| alsó vezérlő-sáv (tálca) | 105 px | ~85 px (közeli) |
+| alsó vezérlő-sáv (tálca) | 105 px | **72 px** ❌ (#587 — még nincs meg) |
 
 ### Panelszélességek (a 800 px-es vászonhoz viszonyítva)
 
-bal mappa-panel **210 px ≈ 26%** (benne az albumlista 196 px) · jobb fiók
-**276 px** · a teljes jobb terület 388 px. A mi 20%-os bal panelünk ehhez képest
-**keskenyebb** — érdemes 25% körülre vinni.
+bal mappa-panel **210 px** (benne az albumlista 196 px) · jobb fiók
+**276 px** · a teljes jobb terület 388 px.
+
+> ⚠️ **A 210 px a TERVEZŐVÁSZON értéke, nem futásidejű méret — és
+> százalékként értelmezni hiba.** A `thumbui.tre` a bal panelt
+> `HLISTOFFSET2` = **240 px** fix kényszerrel köti, és a panel az ablak
+> növelésekor **nem** skálázódik. A korábbi „210 px ≈ 26%, érdemes 25%
+> körülre vinni" ajánlás ezért téves volt, ahogy a fenti táblázat régi
+> „386 px ≈ 20%, arányosan skálázandó" sora is (#587). A jobb fiók 276
+> px-ére ld. [`jobb-fiok-meretek.md`](jobb-fiok-meretek.md).
 
 ### Tömör kitöltések — HÁROM tokenünk igazolva
 

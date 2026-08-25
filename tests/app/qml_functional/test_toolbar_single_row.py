@@ -1,5 +1,5 @@
-"""QML-funkcionális tesztek: #423 — a felső eszközsáv EGYETLEN ~34px-es
-csík marad minden ablakszélességen, az "Importálás" gomb soha nem törik
+"""QML-funkcionális tesztek: #423 — a felső eszközsáv EGYETLEN csík
+marad minden ablakszélességen, az "Importálás" gomb soha nem törik
 új sorba. Szűk ablaknál a középső szűrő-zóna zsugorodik/rejtőzik, nem a
 sáv.
 
@@ -28,15 +28,17 @@ def _set_width(window, qt_app, width):
 
 
 class TestToolbarStaysSingleStrip:
-    """#423: a sáv magassága rögzített 34px, és az "Importálás" gomb +
+    """#423: a sáv magassága rögzített (#587 óta 35px), és az
+    "Importálás" gomb +
     a keresőmező + a verzió-címke egyetlen sorban maradnak — szűk (1280)
     és széles (1920) ablaknál is."""
 
     def _assert_single_row(self, window, qt_app, width):
         _set_width(window, qt_app, width)
         toolbar = _child(window, "mainToolbar")
-        assert toolbar.property("height") == 34, (
-            f"a sáv magassága nem 34px {width}px ablakszélességnél"
+        # #587: 35px — a `thumbui.tre` `searchtop` konstansa
+        assert toolbar.property("height") == 35, (
+            f"a sáv magassága nem 35px {width}px ablakszélességnél"
         )
 
         import_button = _child(window, "toolbarImportButton")
@@ -59,7 +61,8 @@ class TestToolbarStaysSingleStrip:
         # az Importálás gomb a sáv bal szélén marad, soha nem csúszik
         # lejjebb egy második "sorba"
         assert import_button.property("x") < 30
-        assert import_button.property("width") == 100
+        # #587: az eredeti `importbutton` 111 × 22
+        assert import_button.property("width") == 111
 
     def test_single_row_at_narrow_width(self, qml_app, qt_app):
         window, _, _ = qml_app
@@ -91,15 +94,16 @@ class TestFilterZoneShrinksBeforeBarBreaks:
         _set_width(window, qt_app, 760)
         zone = _child(window, "toolbarFilterZone")
         assert zone.property("visible") is False
-        # a sáv ettől még nem törik — 34px marad
+        # a sáv ettől még nem törik — 35px marad
         toolbar = _child(window, "mainToolbar")
-        assert toolbar.property("height") == 34
+        assert toolbar.property("height") == 35
 
     def test_search_box_shrinks_but_not_below_minimum(self, qml_app, qt_app):
         window, _, _ = qml_app
         _set_width(window, qt_app, 760)
         search_box = _child(window, "toolbarSearchBox")
-        assert 120 <= search_box.property("width") <= 300
+        # #587: a teljes méret 388 (`searchcontainer`), a padló 120
+        assert 120 <= search_box.property("width") <= 388
 
 
 class TestFiltersLabelInsideStrip:
