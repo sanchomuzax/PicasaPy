@@ -37,6 +37,29 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   frissítése. A program így kevesebbet ír a lemezre, és egy félbeszakadt
   mentés sem hagyhat kevert állapotot a beállításfájlokban.
 
+### Javítva
+- **A képre írt felirat mostantól a valódi Picasa formátumában mentődik
+  (#371).** Eddig a PicasaPy a saját, rögtönzött alakjában írta a feliratot
+  a `.picasa.ini` fájlba — a Windowsos Picasa ezt félreolvasta volna, mert
+  nála ugyanazokon a helyeken a felirat hossz-adatai állnak. A formátum
+  időközben megfejtődött (859 valódi `.picasa.ini` elemzéséből), és a
+  program mostantól pontosan azt írja: a felirat helyét, méretét,
+  elforgatását, betűtípusát, valamint a kitöltés és a körvonal színét.
+  A színek ezzel meg is maradnak: legközelebbi megnyitáskor visszaállnak,
+  nem esnek vissza fehérre és feketére.
+- **Többsoros és pontosvesszőt tartalmazó felirat sem sérül (#371).** A
+  sortörést a Picasa olyan jelöléssel tárolja, ami maga is pontosvesszőre
+  végződik — a régi beolvasónk ezen elvágta a szöveget. Az új beolvasó a
+  felirat hosszát használja, így a több bekezdéses és a pontosvesszős
+  felirat is hiánytalanul tér vissza.
+- **A valódi Picasával készült, több feliratblokkos képek nem csonkulnak
+  (#371).** Ha egy képen a Picasa két külön feliratot helyezett el, a
+  PicasaPy eddig egyetlen, összekevert szövegként látta. Mostantól
+  mindkettőt felismeri, és ha az elsőt átírjuk, a második változatlanul
+  megmarad a fájlban. A korábbi PicasaPy-verziókkal mentett feliratok
+  továbbra is beolvashatók, és a következő mentéskor átállnak az új
+  alakra.
+
 ## [0.8.88] – 2026-08-25
 
 ### Javítva

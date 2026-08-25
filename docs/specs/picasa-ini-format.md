@@ -164,7 +164,11 @@ paraméterezése és csővezetéke a #565-ben a natív kód visszafejtéséből
 megvan (ld. `filters-decoded.md`), csak a Feather csúszka affin leképezése
 vár még golden-párra.
 
-Szöveg-overlay (külön kulcs): `text=1; 136;11;sample text;Aharoni;...` + `textactive=`.
+Szöveg-overlay (külön kulcs): `text=` + `textactive=`. A régi, rövidített
+példa (`text=1; 136;11;sample text;Aharoni;...`) **nem teljes sor** — a
+formátum hossz-előtagos és többblokkos, ld. „A `text=` sor formátuma"
+szakaszt lent. (A rövidítés első négy mezője utólag igazolódott: a `11`
+tényleg a `sample text` bájthossza.)
 
 ### Kiegészítések valódi adatból (2026-07-16, Picasa 3.9-es db3, 13 046 szűrőzött kép)
 
@@ -1047,10 +1051,33 @@ a tárolt alak `&#010;`-t tartalmaz (6 bájt), a bejegyzett hossz viszont az
 pontosan egyezik a dekódolt UTF-8 hosszal.
 *Bizonyítottsági fok: megerősített* (két független minta, mindkettő stimmel).
 
-A `blokkhossz` az egyblokkos mintán pontosan a tárolt maradék hossza (161);
-a kétblokkos mintán **egy karakterrel** eltért a kézi számolásomtól, ezért
-ez a mező *erős*, nem *megerősített* — egy harmadik minta eldöntené. A
-parszernek amúgy sincs rá szüksége, mert a `szöveghossz` elég.
+#### A `blokkhossz` képlete — LEZÁRVA (#371 megvalósítási kör, 2026-08-25)
+
+Egy korábbi kör *erősnek*, nem *megerősítettnek* jelölte ezt a mezőt, mert a
+kétblokkos minta első blokkján „egy karakterrel eltért a kézi számolástól".
+**Az eltérés nem egy karakter volt, hanem öt — és rendszeres.** A helyes
+képlet a szöveget a **DEKÓDOLT** hosszával számolja:
+
+```
+blokkhossz = len(str(szöveghossz)) + 1 + szöveghossz + 1
+           + len(betűtípus) + 1 + len(geometria) + 1 + len(stílus) + 1
+```
+
+(minden hossz UTF-8 bájtban; a záró `+1` a blokkzáró **első**
+pontosvesszője). A döntő eset a kétblokkos minta első blokkja: ott a tárolt
+alak `&#010;`-t tartalmaz (6 bájt), a dekódolt újsor 1 — a tárolt hosszal
+számolva 192 jönne ki a valódi **187** helyett.
+
+| blokk | tárolt alapú | dekódolt alapú | valódi |
+|---|---:|---:|---:|
+| egyblokkos minta | 161 | **161** | 161 |
+| kétblokkos, 1. blokk | 192 | **187** | 187 |
+| kétblokkos, 2. blokk | 126 | **126** | 126 |
+
+*Bizonyítottsági fok: megerősített (3/3 blokk).* Ebből következik, hogy a
+mező **levezethető**, tehát a parszernek nincs rá szüksége (a `szöveghossz`
+elég), az írónak pedig **újra kell számolnia** — különben egy szerkesztett
+felirat hossz-mezője hazudna.
 
 ### Geometria — normalizált hely, RADIÁNBAN mért forgatás
 
