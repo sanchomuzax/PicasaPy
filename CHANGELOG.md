@@ -58,6 +58,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   ebből semmit nem lát; a haszna az, hogy a hibajelzéseink megbízhatóbbak.
 
 ### Javítva
+- **Nem omlik össze a program mappaváltáskor, amikor sok bélyegkép készül
+  egyszerre (#1457).** Nagyobb mappára váltva a program négy szálon gyártja a
+  bélyegképeket, miközben a rács maga is újraépül. Ilyenkor előfordult, hogy
+  egy éppen elkészült bélyegképet a program már azután próbált átadni a
+  felületnek, hogy az annak helyet adó rácselem eltűnt — ettől a program
+  figyelmeztetés nélkül kilépett, és a még el nem mentett munka elveszett. A hiba
+  ritka és időzítésfüggő volt: leginkább terhelt gépen, gyors mappaváltáskor
+  jött elő. Mostantól a kész bélyegkép átadása és a rácselem eltűnése nem
+  csúszhat egymásra, a már eltűnt elemhez tartozó munka pedig csendben
+  félreteszi az eredményét.
 - **Nem villan fel többé hibaüzenet, amikor a program a háttérben frissíti a
   rácsot (#1440).** A program tízmásodpercenként ránéz a látott mappákra, hogy
   a máshonnan — például a windowsos Picasa 3-ból vagy egy másik gépről —

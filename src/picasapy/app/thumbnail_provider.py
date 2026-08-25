@@ -9,9 +9,23 @@ hármasait.
 
 Szálkezelés (#53 GIL↔Qt deadlock-osztály): a pool-szálakon KIZÁRÓLAG
 érték-típusú Qt-objektum (QImage) készül, QObject nem; a kész képet a
-QQuickImageResponse.finished jelzi, amit a Qt dokumentáltan bármely
-szálról fogad. A busy-számláló jelzése queued kézbesítéssel jut a
-főszálra.
+QQuickImageResponse.finished jelzi. A busy-számláló jelzése queued
+kézbesítéssel jut a főszálra.
+
+Élettartam (#1457): a jelzés KIBOCSÁTÁSA szálbiztos, de ez nem ugyanaz,
+mint élettartam-biztos — egy már megsemmisített válaszon a `finished`
+kibocsátása use-after-free, és a folyamat összeomlik (mért SIGSEGV).
+A válasz C++ oldalát a QML-motor kezeli: a saját olvasószálán hozza
+létre, és ott is semmisíti meg, amikor végzett vele. A PySide viszont
+a Python-oldali referenciaszámot is figyeli (a válasz `ownedByPython`
+marad azután is, hogy visszaadtuk a motornak) — ha tehát az utolsó
+Python-hivatkozás előbb esik ki, mint ahogy a motor végez, akkor a
+PYTHON húzza ki a motor alól az objektumot, miközben az még nyers
+mutatót tart rá. Márpedig az egyetlen Python-hivatkozást eddig a
+pool-feladat tartotta, amit a QThreadPool a `run()` után azonnal
+eldob. Ezért a provider maga tart erős hivatkozást minden élő válaszra,
+és csak a `destroyed` jelzésre — vagyis miután a motor ténylegesen
+elengedte — ejti el.
 
 Hibatűrés (#66): a renderből kivétel SOHA nem szökhet ki — az elszökő
 kivétel a kérést némán megölné, és a rácson random üres/beragadt cellák
@@ -20,6 +34,7 @@ maradnának. Hiba esetén placeholder megy vissza, a részletek a logba.
 
 from __future__ import annotations
 
+import itertools
 import logging
 import os
 import threading
@@ -27,6 +42,7 @@ import zlib
 from collections import OrderedDict
 from pathlib import Path
 
+import shiboken6
 from PySide6.QtCore import QRunnable, QThreadPool, Signal
 from PySide6.QtGui import QImage, QTransform
 from PySide6.QtQuick import (
@@ -113,22 +129,95 @@ class _FilteredThumbMemo:
 
 
 class _ThumbResponse(QQuickImageResponse):
-    """Egy aszinkron thumbnail-kérés eredménye. A `finished` a pool-szálról
-    megy ki — a Qt ezt dokumentáltan bármely szálról fogadja, és a korai
-    (bekötés előtti) kibocsátást is kezeli."""
+    """Egy aszinkron thumbnail-kérés eredménye.
+
+    A képet a pool-szál készíti el és adja át (`_finish`), és a `finished`
+    jelzés is ONNAN megy ki.
+
+    ⚠️ Itt korábban az állt, hogy a kibocsátás a válasz saját szálára van
+    átütemezve, mert különben a motor „a kibocsátás belsejében" törölné az
+    objektumot. **Ez a modell HAMIS** — független átnézés mutatta ki, a Qt
+    forrására hivatkozva: a Qt 6.8 a `finished`-et egy
+    `ReaderThreadExecutionEnforcer`-hez köti, tehát a más szálról érkező
+    jelzés magától queued lesz, és a `textureFactory()` meg a
+    `deleteLater()` az image-reader szálon fut. A pool-szálról való
+    kibocsátás **támogatott** működés; a hivatalos Qt-példa is így csinálja.
+
+    Az átütemezést ezért visszavontuk (#1457) — nem azért, mert veszélyes,
+    hanem mert fölösleges volt, és időzítést változtatott egy olyan
+    hibakeresés közben, ahol ez félrevisz.
+
+    A zár, amit itt tartunk, NEM a `QImage` hivatkozásszámlálóját védi (az
+    atomikus), hanem a `cancel` és a befejezés **állapotát** tartja
+    konzisztensen: lemondott válaszba ne írjunk képet, és a `_done` jelző
+    a képpel együtt álljon be.
+
+    Az itteni zár azt a két útvonalat választja szét, amelyik egyszerre
+    nyúlna a válaszhoz: a pool-szál lezárását (`_finish`) és a motor
+    lemondását (`cancel`, a motor szálán)."""
 
     def __init__(self):
         super().__init__()
         self._image = QImage()
         self._done = threading.Event()  # tesztek várakozásához
+        self._lock = threading.Lock()
+        self._cancelled = False
+
+    def cancel(self) -> None:
+        """A motor jelzi, hogy a válaszra már nincs szüksége (a QML-elem
+        eltűnt, a modell újraépült). A zár alatt beállított jelző után a
+        `_finish` már nem ír képet a válaszba — fölösleges munka lenne."""
+        with self._lock:
+            self._cancelled = True
+            self._done.set()
 
     def _finish(self, image: QImage) -> None:
-        self._image = image
-        self._done.set()
-        self.finished.emit()
+        """A pool-szál lezárja a választ. A zár a `cancel`-lel szemben véd,
+        a `shiboken6.isValid` pedig a már megszűnt C++ oldal ellen: egy
+        elszabadult `finished.emit()` ott SIGSEGV-vel járna (#1457)."""
+        with self._lock:
+            if not shiboken6.isValid(self):
+                # a motor már elpusztította a választ — nincs mit lezárni,
+                # és nincs kinek jeleznünk; a várakozókat elengedjük
+                self._done.set()
+                return
+            if not self._cancelled:
+                self._image = image
+            self._done.set()
+            # ⚠️ #1457 — A JELZÉS ITT, A POOL-SZÁLRÓL MEGY KI.
+            #
+            # Készült egy változat, amely ezt a válasz saját szálára
+            # ütemezte át (`QMetaObject.invokeMethod` + `QueuedConnection`),
+            # hogy a kibocsátás és a motor `deleteLater`-e egy szálra
+            # kerüljön. Az ötlet védhető, DE a CI-ben ezután egy MÁSIK
+            # tesztfájl kezdett összeomlani (`test_collage_panel_wiring_985`),
+            # miközben a főág ugyanott zöld volt — és a bukást helyben,
+            # terhelés alatt, nyolc körben SEM sikerült reprodukálni.
+            #
+            # Bizonyítatlan gyanúval nem viszünk be időzítést változtató
+            # módosítást: az átütemezés kikerült, a jegy (#1457) nyitva
+            # marad rá. Az itt maradó védelmek — a zár, a `cancel`, az
+            # élő válaszok nyilvántartása — NEM változtatnak időzítést,
+            # és mindegyiket külön őr méri.
+            self.finished.emit()
+
 
     def textureFactory(self) -> QQuickTextureFactory:
-        return QQuickTextureFactory.textureFactoryForImage(self._image)
+        """A kész kép átadása a motornak — a MOTOR szálán hívódik.
+
+        ⚠️ A zár nem formalitás. A `_finish` a POOL-szálon írja a
+        `self._image`-et, ezt a metódust viszont a motor a SAJÁT szálán
+        hívja. A `QImage` implicit megosztású: a másolat a
+        hivatkozásszámlálót lépteti, nem a képpontokat másolja. Ha az írás
+        és az olvasás átfedi egymást, a számláló sérül — és a hiba nem ott
+        csattan, ahol keletkezett, hanem egy későbbi felszabadításnál,
+        látszólag véletlenszerű helyen (#1457).
+
+        A `_finish` és a `cancel` már ugyanezt a zárat használja; ez a
+        harmadik út, amelyik ugyanahhoz a mezőhöz nyúl."""
+        with self._lock:
+            image = self._image
+        return QQuickTextureFactory.textureFactoryForImage(image)
 
 
 class _ThumbJob(QRunnable):
@@ -182,6 +271,17 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         self._active = 0
         self._active_lock = threading.Lock()
         self._memo = _FilteredThumbMemo()
+        # #1457: erős hivatkozás MINDEN élő válaszra. A motor nyers C++
+        # mutatót tart a válaszra, a PySide viszont a Python-oldali
+        # referenciaszámot is figyeli — e nyilvántartás nélkül a válasz
+        # utolsó Python-hivatkozását a pool-feladat tartaná, és annak
+        # eldobásakor a Python semmisítené meg a motor alól (use-after-free).
+        # A bejegyzés a `destroyed` jelzésre szűnik meg, vagyis miután a
+        # motor ténylegesen elengedte a választ — így a Python sosem előzi
+        # meg a motort.
+        self._live_responses: dict[int, _ThumbResponse] = {}
+        self._live_lock = threading.Lock()
+        self._response_tokens = itertools.count()
         # saját pool a globalInstance helyett: a thumbnail-terhelés nem
         # szoríthatja ki az app többi háttérfeladatát (és fordítva)
         self._pool = QThreadPool()
@@ -259,11 +359,36 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         return entry
 
     def requestImageResponse(self, photo_id: str, requested_size) -> _ThumbResponse:
-        """Aszinkron belépési pont (a Qt a főszálon hívja): a munka a
-        poolba kerül, a válasz azonnal visszamegy."""
+        """Aszinkron belépési pont (a Qt a saját olvasószálán hívja): a
+        munka a poolba kerül, a válasz azonnal visszamegy.
+
+        A válasz #1457 óta bekerül a provider nyilvántartásába is, és csak
+        a motor általi megszüntetéskor (`destroyed`) kerül ki onnan."""
         response = _ThumbResponse()
+        token = next(self._response_tokens)
+        with self._live_lock:
+            self._live_responses[token] = response
+        # A kötés SZÁNDÉKOSAN nem zárja magába a választ (csak a tokent),
+        # különben a nyilvántartás sosem ürülne. A `destroyed` átadja a
+        # megszűnő objektumot is — azt eldobjuk (`*_`): ilyenkor a C++
+        # oldal már érvénytelen, hozzányúlni tilos.
+        response.destroyed.connect(
+            lambda *_, token=token: self._release_response(token)
+        )
         self._pool.start(_ThumbJob(self, photo_id, response))
         return response
+
+    def _release_response(self, token: int) -> None:
+        """A motor elpusztította a választ — elengedhetjük a hivatkozást."""
+        with self._live_lock:
+            self._live_responses.pop(token, None)
+
+    def live_response_count(self) -> int:
+        """A nyilvántartott (a motor által még el nem engedett) válaszok
+        száma — a #1457 őr-tesztek ebből látják, hogy a nyilvántartás
+        ürül, azaz nem szivárog."""
+        with self._live_lock:
+            return len(self._live_responses)
 
     def wait_for_done(self, msecs: int = 10_000) -> bool:
         """Minden folyamatban lévő pool-feladat bevárása (tesztekhez)."""

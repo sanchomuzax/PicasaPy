@@ -71,6 +71,11 @@ class PoolOwner(Protocol):
 
     def wait_for_done(self, msecs: int = ...) -> bool: ...
 
+    # Nem kötelező: aki ismeri, annak a válaszláncát is bevárjuk
+    # (`_valaszlanc_kiurult`). A régi szolgáltatókra a pool-szintű
+    # garancia marad érvényben.
+    # def live_response_count(self) -> int: ...
+
 
 #: A `QThreadPool`-t tartó szolgáltatók — GYENGE hivatkozással, hogy a
 #: nyilvántartás ne tartsa életben őket (a tesztek sok példányt hoznak
@@ -116,6 +121,28 @@ def wait_for_all_background_workers(timeout_s: float = 30.0) -> bool:
         if not owner.wait_for_done(remaining_ms):
             mind_leallt = False
     return mind_leallt
+
+
+def elo_valaszok() -> tuple[str, ...]:
+    """A még el nem engedett aszinkron válaszok szolgáltatónként.
+
+    ⚠️ **Tiszta lekérdezés: NEM pörget eseménysort.** Egy korábbi
+    változatom a lebontásban `processEvents()`-et és halasztott
+    törlés-kihajtást futtatott, hogy „esélyt adjon" a láncnak lefutni. A
+    CI megmutatta, hogy ez ÁRT: az extra eseményforduló újraértékelteti a
+    QML-kötéseket, miközben az objektumok már bomlanak, és ebből
+    `TypeError` lett egy vezérlő-hívásban (`test_qml_folder_manager`).
+
+    A lebontás sorrendje kényes; ez a függvény ezért csak MÉR."""
+    jelentes = []
+    for owner in tuple(_POOL_OWNERS):
+        szamlalo = getattr(owner, "live_response_count", None)
+        if szamlalo is None:
+            continue
+        darab = szamlalo()
+        if darab:
+            jelentes.append(f"{type(owner).__name__}: {darab}")
+    return tuple(jelentes)
 
 
 class BackgroundWorkerMixin:

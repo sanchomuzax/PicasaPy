@@ -71,7 +71,6 @@ def _build_qml_app(qt_app, tmp_path):
     from picasapy.app.discovery_controller import DiscoveryController
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
-    from picasapy.app.effect_thumbnails import EffectThumbnailProvider
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.app.fileops_controller import FileOpsController
@@ -83,6 +82,7 @@ def _build_qml_app(qt_app, tmp_path):
     from PySide6.QtCore import QSettings
     from picasapy.app.worker_thread import (
         running_background_workers,
+        elo_valaszok,
         wait_for_all_background_workers,
     )
     from PySide6.QtQml import QQmlApplicationEngine
@@ -120,12 +120,23 @@ def _build_qml_app(qt_app, tmp_path):
     # szerkesztő-híd (#19) — az application.py bekötésének tükre
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
-    # effekt-gomb bélyegképek (#338) — az application.py bekötésének tükre
-    effect_thumb_provider = EffectThumbnailProvider(provider.photo_record)
+    # #1457: az effekt-bélyegkép szolgáltatót itt SZÁNDÉKOSAN nem hozzuk
+    # létre. A motor szinkron szolgáltatót kap (ld. lentebb), tehát a
+    # valódi, pool-szálas változatra ezekben a tesztekben nincs szükség —
+    # és a puszta létrehozása is bejelentkezne a folyamat-szintű
+    # pool-nyilvántartásba. Az `application.py` változatlanul a valódit
+    # köti be; azt saját, motor nélküli tesztek mérik.
     engine = QQmlApplicationEngine()
-    engine.addImageProvider("thumbs", provider)
+    # ⚠️ #1457: a QML-motor SZINKRON szolgáltatót kap. A termékkód
+    # aszinkron marad; itt a pool-szálak és a válasz-objektumok csak a
+    # #999-es összeomlás-osztályt hoznák be, haszon nélkül — ezek a
+    # tesztek a felület bekötését mérik, nem a bélyegkép-készítést.
+    # Az aszinkron utat saját, motor nélküli tesztek fedik.
+    from support.szinkron_kepszolgaltato import SzinkronKepSzolgaltato
+
+    engine.addImageProvider("thumbs", SzinkronKepSzolgaltato())
     engine.addImageProvider("editpreview", edit_preview)
-    engine.addImageProvider("effectthumb", effect_thumb_provider)
+    engine.addImageProvider("effectthumb", SzinkronKepSzolgaltato())
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
@@ -201,6 +212,23 @@ def _build_qml_app(qt_app, tmp_path):
     # állt, és elcsúszott: a fixture által létrehozott `EditController`,
     # `FaceScanController` és a két bélyegkép-szolgáltató pool-ja kimaradt
     # belőle. Ebből lett két, véletlenszerűen pirosló SIGSEGV a CI-ben.
+    # ⚠️ #1457: VALÓDI motor mellett a válasz-lánc is le kell hogy fusson.
+    # A pool vége NEM a lánc vége: a Qt ezután dolgozza fel a `finished`-et
+    # a saját image-reader szálán, hívja a `textureFactory()`-t, majd a
+    # `deleteLater()`-t. Ha a lebontás ezt nem várja meg, a lánc félig
+    # lebontott világban folytatódik — ez a #999 hibaosztálya.
+    # ⚠️ Itt SZÁNDÉKOSAN nincs állítás, csak napló. Az első változat
+    # `assert elo_valaszok() == ()`-t írt elő, és a CI megmutatta, miért
+    # hibás: ezen a ponton a QML-fa MÉG ÉL (a motort csak lentebb engedjük
+    # el), tehát a látszó képekhez tartozó válaszok jogosan léteznek.
+    # Mérve: `EffectThumbnailProvider: 57`.
+    #
+    # A szám viszont ÖNMAGÁBAN lelet: a rács-bélyegképeknél nem marad
+    # semmi, az effekt-bélyegképeknél viszont tucatnyi — ez a #1457-en
+    # rögzített nyitott kérdés (szivárog-e, vagy csak a fa élettartama).
+    maradek = elo_valaszok()
+    if maradek:
+        print(f"[#1457] élő aszinkron válasz a lebontás előtt: {maradek}")
     assert wait_for_all_background_workers(30.0), (
         "háttérmunka nem állt le a teardownban (#430/#438/#988/#999): "
         + ", ".join(running_background_workers())
