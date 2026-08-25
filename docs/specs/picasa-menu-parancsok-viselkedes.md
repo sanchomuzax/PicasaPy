@@ -246,3 +246,27 @@ listából választva. A fül többi kulcsa: `PrintProxyPreview`,
 választja el őket. Négy külön dolog van: az indexképek **láthatósága**
 (`ID_VIEW_THUMBNAILS`), a **méret-pár** (`SMALL`/`LARGETHUMBNAILS`), és a
 külön „Kis képek".
+
+## A 16–18. adag — a jegy lezárása (38/38)
+
+**Gombtárolás:** a letölthető gombok a profil **`buttons\`** almappájába
+kerülnek; a `.pbz` a **`PicasaButtonFiles`** fájltípus-társításon át
+importálódik (*„Launch Picasa and import buttons?"*, hibánál *„Sorry, the
+file is not a recognized button file format."*). A szállított gombok külön:
+`Picasa3/buttons/*.pbz`. **A beállított SORREND tárolási helye nem
+található** — nincs hozzá `Preferences` kulcs.
+
+**Shell-ige:** a „Fájl(ok) megnyitása szerkesztőben" a sima **`open`**
+igével megy (`ShellExecuteW`, `0x0050a740`). Az **`edit` ige a binárisban
+NEM létezik** — ahogy az `explore`/`runas`/`openas` sem. ⇒ nincs külön
+„szerkesztésre megnyitás", és **nem kell szerkesztő-beállítás**.
+
+**„Kis képek" (`ID_VIEW_SMALL`):** **láthatósági szűrő**, nem méret. A
+menüépítőben a „Keresési opciók" és a „Rejtett képek" között ül; a felirata
+bekapcsolva **`IDS_INCLUDING_SMALL`** = *„A kisebb képeket is"*, a küszöb
+kulcsa **`minsize`**. A Picasa alapból elrejti a küszöb alatti képeket.
+
+**XMP arcrégió (#1403):** `mwg-rs:Regions/mwg-rs:RegionList[last()]` ⇒
+**hozzáfűz**, nem felülír; a régió `mwg-rs:Area` (`stArea` típus), és a
+koordináták a kiírt **`mwg-rs:AppliedToDimensions`**-höz viszonyulnak. A
+`normalized` és a `pixel` mértékegység-sztring is jelen van.
