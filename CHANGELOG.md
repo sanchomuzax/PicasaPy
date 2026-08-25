@@ -25,6 +25,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   csak a tartalma más —, azt a program még nem veszi észre, mert a mappán
   kívülről semmilyen jel nem látszik ilyenkor. A kiválasztott mappában ez
   az eset is frissül, ahogy eddig.
+- **A „Mappa rendezésének alapja ▸ Dátum" végre a mappa KÉPEIT rendezi
+  (#1436).** A menüpont eddig nem azt csinálta, amit a neve ígért: nem a
+  mappa tartalmát rendezte, hanem azt, hogy a mappák milyen sorrendben
+  következzenek egymás után a rácsban — a mappán belüli képsorrend minden
+  beállításnál a fájlnevet követte. Mostantól a menü három tétele (Dátum ·
+  Név · Méret) a mappa képeit rendezi, **növekvő** sorrendben: dátumnál a
+  legrégebbi kép áll elöl és a legújabb a végén, ahogy az eredeti Picasa 3
+  is teszi. A „Fordított sorrend" ezt megfordítja, és a választás a
+  következő indításkor is megmarad. A dátum a fénykép felvételi ideje
+  (EXIF); ha egy képnek nincs ilyen adata, a fájl dátuma dönt. A MAPPÁK
+  egymáshoz viszonyított sorrendje továbbra is két külön helyről állítható:
+  a rácsé a Nézet ▸ Mappanézet, a bal hasábé a saját jobbklikk-menüje —
+  ezekhez a mappa-menü többé nem nyúl.
 
 ## [0.8.93] – 2026-08-25
 

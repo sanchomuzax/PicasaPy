@@ -101,10 +101,12 @@ Rectangle {
     function openFolderContextMenu(path) {
         folderContextMenu.folderPath = path
         folderContextMenu.customCollections = pane.customCollectionsModel
-        // #422: a rendezés-almenü pipái a jelenlegi rács-rendezést mutatják
+        // #1436: a pipák a mappa TARTALMÁNAK rendezését mutatják — ez a
+        // menü (`Folder::SortFolderBy`) a mappa képeit rendezi, nem a
+        // mappákat (azt a Nézet ▸ Mappanézet `folderSort`-ja állítja).
         if (controller) {
-            folderContextMenu.sortMode = controller.folderSort
-            folderContextMenu.sortReverse = controller.folderSortReverse
+            folderContextMenu.sortMode = controller.folderPhotoSort
+            folderContextMenu.sortReverse = controller.folderPhotoSortReverse
         }
         folderContextMenu.popup()
     }
@@ -950,10 +952,14 @@ Rectangle {
 
         onRefreshThumbnailsRequested:
             if (controller) controller.resyncFolder(folderContextMenu.folderPath)
+        // #1436: a mappa TARTALMÁT rendezi (a képeket), nem a mappákat. A
+        // korábbi `setFolderSort` a rács MAPPA-sorrendjét állította, ezért
+        // tett a menüpont mást, mint amit a neve ígért.
         onSortModeRequested: function(mode) {
-            if (controller) controller.setFolderSort(mode)
+            if (controller) controller.setFolderPhotoSort(mode)
         }
-        onSortReverseRequested: if (controller) controller.toggleFolderSortReverse()
+        onSortReverseRequested:
+            if (controller) controller.toggleFolderPhotoSortReverse()
 
         onLocateRequested: {
             if (typeof fileOpsController !== "undefined" && fileOpsController)
