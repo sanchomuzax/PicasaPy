@@ -38,6 +38,7 @@ teljes újraolvasása fedi le; a feed többi mappájára nyitott marad
 from __future__ import annotations
 
 import os
+from picasapy.paths import normalize_path
 from pathlib import Path
 
 from picasapy.scanner.walker import PICASA_INI_LEGACY_NAME, PICASA_INI_NAME
@@ -97,13 +98,21 @@ def stale_folders(
     sosem láttuk) vagy ha eltűnt a lemezről — az utóbbinál a sor
     takarítása a szinkron dolga, tehát oda kell adni neki.
     """
-    return tuple(
-        folder
-        for folder in candidates
+    # ⚠️ A `stored` kulcsai az INDEXBŐL jönnek, ahol a `normalize_path`
+    # kanonikus alakja szerepel; a `candidates` viszont a feedből, nyers
+    # alakban. Windowson a kettő elválhat (elválasztó-karakter, kis/nagybetű),
+    # és akkor MINDEN mappa ismeretlennek látszana → körönként teljes
+    # újraolvasás, épp az a NAS-terhelés, amit a jegy el akar kerülni.
+    # A CI windows-lába pontosan ezen bukott el (#1435).
+    kanoni = {normalize_path(kulcs): ertek for kulcs, ertek in stored.items()}
+    talalat = []
+    for folder in candidates:
+        kulcs = normalize_path(folder)
         # a sorrend szándékos: az ismeretlen mappánál a pecsét két
         # műveletét meg sem fizetjük, úgyis szinkronra megy
-        if folder not in stored or directory_stamp(folder) != stored[folder]
-    )
+        if kulcs not in kanoni or directory_stamp(folder) != kanoni[kulcs]:
+            talalat.append(folder)
+    return tuple(talalat)
 
 
 def next_sweep_batch(
