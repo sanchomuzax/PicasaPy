@@ -172,6 +172,7 @@ class TestMasikMappaAFeedben:
             qt_app, lambda: controller.photos.rowCount() == 4
         ), "a feedben látszó másik mappa törölt képe ottmaradt"
 
+
 class TestAtfedoKorok:
     """Tickenként EGY sweep és EGY szinkron-worker — két egyidejű
     index-író `OperationalError`-t és felhasználói hibajelzést adna."""
@@ -212,6 +213,33 @@ class TestAtfedoKorok:
             qt_app, lambda: not getattr(controller, "_sweep_running", False)
         ), "a sweep-kapu beragadt"
 
+    def test_bukott_szalinditas_utan_a_kapu_NYITVA_marad(
+        self, controller, library, qt_app, monkeypatch
+    ):
+        """⚠️ A `_start_background` ÚJRADOBJA a `thread.start()` hibáját
+        (`RuntimeError: can't start new thread`, ld. #550) — ilyenkor a
+        worker `finally` ága SOSEM fut le.
+
+        A kapu a `_poll_current_folder` ELEJÉN áll, tehát ha beragadna,
+        onnantól nemcsak a sweep, hanem a `_on_folders_dirty` alapág is
+        néma maradna: a rács a munkamenet végéig soha többé nem frissülne
+        magától. Egyetlen tranziens szálindítási hiba örökre elrontaná."""
+        controller.selectFolder(str(library / "nyaralas"))
+        assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
+        controller._folder_poll_timer.stop()
+
+        def nem_indul(*args, **kwargs):
+            raise RuntimeError("can't start new thread")
+
+        monkeypatch.setattr(controller, "_start_background", nem_indul)
+        with pytest.raises(RuntimeError):
+            controller._poll_current_folder()
+
+        assert not getattr(controller, "_sweep_running", False), (
+            "a kapu beragadt True-n: innentől MINDEN következő kör azonnal "
+            "visszatér, a rács némán sosem frissül többé"
+        )
+
     def test_bukott_pecset_utan_is_frissul_a_valasztott_mappa(
         self, controller, library, qt_app, monkeypatch
     ):
@@ -220,6 +248,9 @@ class TestAtfedoKorok:
         mappa jelzésének akkor is ki kell mennie."""
         controller.selectFolder(str(library / "nyaralas"))
         assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
+        # az élő időzítő minden tickre újra hívna (és a `robban` minden
+        # körben dobna) — a jelzés-számlálás így összecsúszhatna
+        controller._folder_poll_timer.stop()
         jelzesek = []
         controller.watcherDirty.connect(lambda m: jelzesek.append(m))
 
@@ -229,7 +260,7 @@ class TestAtfedoKorok:
         monkeypatch.setattr(controller, "_stale_feed_folders", robban)
         controller._poll_current_folder()
 
-        assert _var(qt_app, lambda: len(jelzesek) == 1), (
+        assert _var(qt_app, lambda: len(jelzesek) >= 1), (
             "a pecsét bukása elnyelte a kiválasztott mappa jelzését is"
         )
         assert jelzesek[0] == [str(library / "nyaralas")]

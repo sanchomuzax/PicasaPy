@@ -878,9 +878,14 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         ⚠️ A pecsét-ellenőrzés HÁTTÉRSZÁLON fut, két okból: (1) a statok
         hálózati megosztáson lassúak, a GUI-szálon akadást okoznának;
         (2) a végén EGYETLEN `watcherDirty` megy ki a kiválasztott és az
-        elavult mappákkal együtt, tehát egy szinkron-worker lesz belőle —
-        két egyidejű index-író `OperationalError`-t és a felhasználónak
-        szóló hibajelzést eredményezne.
+        elavult mappákkal együtt, tehát EGY TICKBŐL egy szinkron-worker
+        lesz — két egyidejű index-író `OperationalError`-t és a
+        felhasználónak szóló hibajelzést eredményezne.
+
+        ⚠️ Ez a garancia TICKRE igaz, tickek KÖZÖTT nem: a
+        `_on_folders_dirty`-nek nincs saját futásjelzője, tehát egy hosszú
+        szinkron mellé a következő tick újat indíthat. Ennek a rendezése
+        külön jegy tárgya; a `_sweep_running` csak a sweep-ágat fedi.
 
         ⚠️ A `_sweep_running` kapu a TICKEK KÖZÖTTI átfedést zárja ki: egy
         akadó hálózati mounton a pecsét-kör túlfuthat a 10 másodpercen, és
@@ -921,8 +926,18 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
                     # leállás közben a C++ oldal már eltűnhetett
                     logger.debug("#1435: a sweep jelzése elmaradt", exc_info=True)
 
-        # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
-        self._start_background(worker, name="picasapy-frissesseg-sweep")
+        try:
+            # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
+            self._start_background(worker, name="picasapy-frissesseg-sweep")
+        except BaseException:
+            # ⚠️ #550 mintája: a `start()` elbukhat (`RuntimeError: can't
+            # start new thread`), és akkor a `worker` — vele a `finally`
+            # ága — SOSEM fut le. A kapu a metódus ELEJÉN áll, tehát egy
+            # beragadt jelző után nemcsak a sweep halna meg, hanem a
+            # `_on_folders_dirty` alapág is: a rács a munkamenet végéig
+            # NÉMÁN sosem frissülne magától. Pont a jegy ellentéte.
+            self._sweep_running = False
+            raise
 
     def _sweep_candidates(self, current: str) -> tuple[str, ...]:
         """A körönként megnézendő adag a feedben látszó, KIVÁLASZTOTTON
@@ -935,7 +950,11 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         A jelenleg NEM ELÉRHETŐ (offline, #459/5) mappák kimaradnak: a
         pecsétjük úgyis None volna, tehát minden körben elavultnak
         látszanának, és a lecsatolt NAS-mount örökös, hiábavaló teljes
-        újraolvasás-kísérleteket kapna."""
+        újraolvasás-kísérleteket kapna.
+
+        ⚠️ Ennek ára van: a VISSZATÉRŐ mount csak akkor kerül vissza a
+        sweep látókörébe, amikor az ötperces rescan (vagy a mappa
+        kiválasztása) levette róla az offline jelölést."""
         offline = self._folders.offline_paths()
         candidates = tuple(
             group["path"]
