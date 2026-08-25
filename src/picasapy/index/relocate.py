@@ -36,6 +36,17 @@ from pathlib import Path
 #: alakot: az a GLOBÁLIS `shutil`-t írja át.
 _disk_usage = shutil.disk_usage
 
+def _probe_iras(probe: Path) -> None:
+    """A cél írhatóságát próbáló üres kiírás — külön függvény, hogy a teszt
+    helyettesíthesse (#1375).
+
+    A teszt korábban a `pathlib.Path.write_bytes`-t írta át GLOBÁLISAN: az
+    OSZTÁLYON végzett csere a folyamat minden `write_bytes` hívására hat,
+    tehát a „nem írható a cél" szimuláció az ini-mentést és a pytest saját
+    kiírásait is elvitte volna."""
+    probe.write_bytes(b"")
+
+
 # a backup API ennyi oldalanként ad haladás-visszahívást — elég sűrű a
 # folyamatjelzőhöz, de nem terheli túl a hívást nagy indexnél sem
 _BACKUP_PAGES_PER_STEP = 64
@@ -109,7 +120,7 @@ def validate_destination(new_root: Path, sources: Iterable[Path]) -> None:
         ) from error
     probe = new_root / f".picasapy-write-test-{id(new_root):x}"
     try:
-        probe.write_bytes(b"")
+        _probe_iras(probe)
     except OSError as error:
         raise RelocationError(f"A cél mappa nem írható: {error}") from error
     finally:

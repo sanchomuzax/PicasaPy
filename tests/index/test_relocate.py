@@ -65,7 +65,10 @@ class TestValidateDestination:
         def _boom(*args, **kwargs):
             raise OSError("nincs jogosultság")
 
-        monkeypatch.setattr("pathlib.Path.write_bytes", _boom)
+        # #1375: a modul SAJÁT fogantyúja. A `"pathlib.Path.write_bytes"`
+        # rögzítés a `Path` OSZTÁLYT írta át: a teszt idejére a folyamat
+        # minden fájlkiírása dobott volna.
+        monkeypatch.setattr("picasapy.index.relocate._probe_iras", _boom)
         with pytest.raises(RelocationError, match="nem írható"):
             relocate_data_root(index_db, cache_dir, new_root)
         assert index_db.exists()

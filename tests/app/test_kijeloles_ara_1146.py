@@ -23,7 +23,6 @@ A kép ugyanabban a mappában van; a mappa `.picasaoriginals`-át és
 
 from __future__ import annotations
 
-from pathlib import Path
 
 
 
@@ -32,13 +31,17 @@ def test_hasSavedBackup_mappankent_nez_a_lemezre(tmp_path, monkeypatch):
     from picasapy.app import save_controller
 
     hivasok: list[str] = []
-    eredeti_glob = Path.glob
+    eredeti = save_controller._konyvtar_tartalma
 
-    def figyelo(self, minta):
-        hivasok.append(str(self))
-        return eredeti_glob(self, minta)
+    def figyelo(konyvtar):
+        hivasok.append(str(konyvtar))
+        return eredeti(konyvtar)
 
-    monkeypatch.setattr(Path, "glob", figyelo)
+    # #1375: a modul SAJÁT fogantyúját cseréljük. A
+    # `monkeypatch.setattr(Path, "glob", figyelo)` a `pathlib.Path`
+    # OSZTÁLYT írta át, tehát a számláló a folyamat MINDEN mappalistázását
+    # felvette — az állítás így nem is csak erről a vezérlőről szólt.
+    monkeypatch.setattr(save_controller, "_konyvtar_tartalma", figyelo)
 
     mappa = tmp_path / "kepek"
     (mappa / ".picasaoriginals").mkdir(parents=True)
@@ -54,6 +57,13 @@ def test_hasSavedBackup_mappankent_nez_a_lemezre(tmp_path, monkeypatch):
 
     _Host().hasSavedBackup(list(range(100)))
 
+    # ⚠️ #1375: ALSÓ korlát is kell. A szűkített (modulszintű) rögzítés
+    # mellett a „nulla listázás" is teljesítené a felső korlátot — akkor is,
+    # ha a vezérlő már nem is nézi a lemezt, tehát az őr némán elveszne.
+    assert hivasok, (
+        "a vezérlő egyetlen könyvtárat sem listázott — a `_konyvtar_tartalma` "
+        "fogantyú megkerülve? az őr így semmit nem mérne"
+    )
     assert len(hivasok) <= 1, (
         f"{len(hivasok)} könyvtár-listázás 100 képre EGY mappában — "
         "hálózati megosztáson ez fagyás"

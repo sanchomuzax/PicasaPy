@@ -15,6 +15,7 @@ import pytest
 
 from picasapy.app import busy_registry as busy_registry_module
 from picasapy.app.busy_registry import get_app_busy_registry, reset_app_busy_registry
+from picasapy.app import worker_thread
 from picasapy.app.worker_thread import BackgroundWorkerMixin
 
 _TEST_SHOW_DELAY_MS = 30
@@ -172,10 +173,17 @@ class TestThreadStartFailure:
         qt_app.processEvents()
         before = registry.activeCount
 
-        def boom(self):
-            raise RuntimeError("can't start new thread")
+        # #1375: a modul SAJÁT fogantyúját cseréljük egy olyan
+        # Thread-osztályra, aminek a `start()`-ja dob. A korábbi
+        # `monkeypatch.setattr(threading.Thread, "start", boom)` a
+        # `threading.Thread` OSZTÁLYT írta át, tehát a teszt idejére a
+        # folyamat MINDEN szálindítása elbukott — a Qt-é és a
+        # bélyegkép-gyorstáré is.
+        class _NemIndulo(threading.Thread):
+            def start(self):
+                raise RuntimeError("can't start new thread")
 
-        monkeypatch.setattr(threading.Thread, "start", boom)
+        monkeypatch.setattr(worker_thread, "_Thread", _NemIndulo)
         worker = _Worker()
         with pytest.raises(RuntimeError):
             worker._start_background(lambda: None)

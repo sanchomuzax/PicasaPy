@@ -298,9 +298,23 @@ class TestANASTerheles:
         )
         controller._stale_feed_folders(batch)
 
+        # ⚠️ #1375: ALSÓ korlát is kell. Amíg a rögzítés a GLOBÁLIS
+        # `os.stat`-ot cserélte, a számláló bármilyen fájlrendszer-
+        # tevékenységtől nem-nulla volt. A `_stat` fogantyú szűkítése óta
+        # viszont üresen igaz lenne a felső korlát, ha a `folder_freshness`
+        # egyáltalán nem futna le: `0 <= 3 * len(batch)`. Konkrét
+        # forgatókönyv: valaki a pecsétben `os.stat` helyett
+        # `Path(...).stat()`-ra tér át — az a `pathlib`-en át a globális
+        # `os.stat`-ra megy, tehát MEGKERÜLI a fogantyút. A NAS-terhelés
+        # nőne, az őr néma maradna.
+        assert hivasok, (
+            "a `folder_freshness` egyetlen pecsét-műveletet sem végzett — "
+            "megkerüli a `_stat` fogantyút (pl. `Path(...).stat()`)? az őr "
+            "így nem mér semmit"
+        )
         assert len(hivasok) <= 3 * len(batch), (
-            f"a sweep {len(hivasok)} műveletet generált {len(batch)} "
-            f"mappára — a felső korlát 3/mappa"
+            f"a `folder_freshness` {len(hivasok)} pecsét-műveletet generált "
+            f"{len(batch)} mappára — a felső korlát 3/mappa"
         )
 
     def test_valtozatlan_mappara_NEM_fut_teljes_ujraolvasas(

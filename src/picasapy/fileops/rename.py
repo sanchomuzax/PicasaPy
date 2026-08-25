@@ -24,6 +24,15 @@ from picasapy.fileops.originals import originals_follow
 from picasapy.ini import load_or_empty, update_document
 from picasapy.scanner import PICASA_INI_NAME
 
+def _rename(path: Path, target: Path) -> None:
+    """A tényleges átnevezés — külön függvény, hogy a teszt
+    helyettesíthesse (#1375).
+
+    A `monkeypatch.setattr(Path, "rename", boom)` alak a `pathlib.Path`
+    OSZTÁLYT írja át, tehát a teszt idejére a folyamat MINDEN átnevezése
+    dob — az `ini`-mentés atomikus cseréje és a takarítás is."""
+    path.rename(target)
+
 
 def rename_photo(path: Path, new_name: str) -> Path:
     """A `path` fájl átnevezése `new_name`-re, ugyanabban a mappában.
@@ -65,7 +74,7 @@ def rename_photo(path: Path, new_name: str) -> Path:
     # költöztetése bukik, a kép el sem indul; ha a kép átnevezése bukik, a
     # `originals_follow` visszateszi őket.
     with originals_follow(path, target):
-        path.rename(target)
+        _rename(path, target)
 
     if has_ini:
         try:

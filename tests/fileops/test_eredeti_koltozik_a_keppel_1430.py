@@ -146,10 +146,14 @@ class TestAtnevezes:
         photo = _photo(tmp_path, "a.jpg")
         _original(tmp_path, ORIGINALS_DIR_NAME, "a.jpg", b"eredeti")
 
-        def _bukik(self, target):  # noqa: ANN001
+        def _bukik(path, target):  # noqa: ANN001
             raise OSError("a lemez megtelt")
 
-        monkeypatch.setattr(Path, "rename", _bukik)
+        # #1375: a modul SAJÁT fogantyúja. A `monkeypatch.setattr(Path,
+        # "rename", …)` a `pathlib.Path` OSZTÁLYT írta át, tehát a teszt
+        # idejére a folyamat MINDEN átnevezése elbukott — az ini atomikus
+        # cseréje is, ami épp a visszagörgetés útjában áll.
+        monkeypatch.setattr("picasapy.fileops.rename._rename", _bukik)
 
         with pytest.raises(OSError) as hiba:
             rename_photo(photo, "b.jpg")

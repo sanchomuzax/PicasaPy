@@ -178,7 +178,10 @@ class TestWideChoiceKotetek:
         # a _MEDIA_PARENTS a /media megfelelője — a kód alá a
         # felhasználónevet fűzi (/media/<user>/<kötet>)
         monkeypatch.setattr(initial_scan, "_MEDIA_PARENTS", (media.parent,))
-        monkeypatch.setattr(initial_scan.Path, "home", classmethod(lambda cls: home))
+        # #1375: a `Path.home` rögzítése itt HALOTT volt — a `wide_folders`
+        # a `home`-ot paraméterben kapja, tehát a `Path.home()` ágra nem is
+        # fut rá. Az `initial_scan.Path` ráadásul MAGA a `pathlib.Path`, így
+        # a csere a folyamat minden `Path.home()` hívására hatott volna.
 
         kotetek = initial_scan.wide_folders(home)
 
