@@ -1083,6 +1083,25 @@ class TestRetouchBrushSize:
         assert controller.brushSize != 99
 
 
+#: A `.picasa.ini`-korpusz valódi, KÉTBLOKKOS `text=` sora (#371).
+_KETBLOKKOS_GOLDEN = (
+    "2;187;63;Kellemes karácsonyi ünnepeket és&#010;boldog újévet kívánunk!;Arial;"
+    "0.105605,0.008726,0.059259,-4.712389;"
+    "v1,4292215592,4293454056,128.000000,1.000000,0.500000,1.000000,700,258,49152;;"
+    "126;4;2010;Arial;"
+    "0.943794,0.039316,0.112127,1.308997;"
+    "v1,4292215592,4293454056,128.000000,1.000000,0.500000,1.000000,700,258,49152;;"
+)
+
+
+def _text_ertek(photo) -> str:
+    """A megírt `.picasa.ini` `text=` sorának ÉRTÉKE (a kulcs nélkül)."""
+    for line in (photo.parent / ".picasa.ini").read_text(encoding="utf-8").splitlines():
+        if line.startswith("text="):
+            return line[len("text=") :]
+    raise AssertionError("nincs text= sor a .picasa.ini-ben")
+
+
 class TestTextTool:
     """#148: a szöveg-eszköz (`text=`/`textactive=`) enter/exit + Alkalmaz/Mégse."""
 
@@ -1155,6 +1174,95 @@ class TestTextTool:
         assert "textactive=" not in ini_text
         assert controller.hasTextOverlay is False
 
+    # -- #371: a kiírt `text=` a VALÓDI Picasa-formátum -------------------
+
+    def test_a_kiirt_sor_picasa_formatumu(self, controller, photo):
+        """A 0.8.88-ig kiírt saját alak (`1;<x*10000>;<y*10000>;…`) a valódi
+        Picasánál rosszul értelmeződött volna: a 2. mező nála blokkhossz, a
+        3. szöveghossz. Mostantól szabályos, hét mezős blokkot írunk."""
+        from picasapy.ini.text_overlay import parse_text
+
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("Nyaralás")
+        controller.previewTextPlacement(0.25, 0.75)
+        controller.applyText()
+        raw = _text_ertek(photo)
+        overlay = parse_text(raw)
+        assert len(overlay.blocks) == 1
+        block = overlay.blocks[0]
+        assert block.content == "Nyaralás"
+        assert block.geometry.x == pytest.approx(0.25)
+        assert block.geometry.y == pytest.approx(0.75)
+        assert raw.endswith(";;")
+
+    def test_tobbsoros_felirat_entitassal_irodik_es_visszaolvashato(
+        self, controller, photo
+    ):
+        """A sortörés `&#010;`-ként kerül a fájlba (ez maga is pontosvesszőre
+        végződik) — a hossz-előtag miatt így is hibátlanul visszaolvasható."""
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextDraft("első sor\nmásodik sor")
+        controller.previewTextPlacement(0.1, 0.1)
+        controller.applyText()
+        assert "&#010;" in _text_ertek(photo)
+        controller.endEdit()
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        assert controller.textDraft == "első sor\nmásodik sor"
+
+    def test_a_szinek_visszatoltodnek(self, controller, photo):
+        """A `text=` stílus-mezője két színt hordoz — ezek mostantól
+        mentődnek és a következő megnyitáskor visszaállnak."""
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        controller.setTextFillColor("#ff0000")
+        controller.setTextOutlineColor("#0000ff")
+        controller.setTextDraft("Piros")
+        controller.previewTextPlacement(0.5, 0.5)
+        controller.applyText()
+        controller.endEdit()
+        controller.beginEdit("1", str(photo))
+        assert controller.textFillColor == "#ff0000"
+        assert controller.textOutlineColor == "#0000ff"
+
+    def test_a_masodik_picasa_blokk_nem_vesz_el_szerkeszteskor(
+        self, controller, photo
+    ):
+        """Valódi, KÉTBLOKKOS Picasa-felirat átírásakor csak az első blokk
+        cserélődik — a második érintetlenül marad a fájlban."""
+        from picasapy.ini.text_overlay import parse_text
+
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            "[IMG_0001.jpg]\ntext=" + _KETBLOKKOS_GOLDEN + "\ntextactive=1\n",
+            encoding="utf-8",
+        )
+        controller.beginEdit("1", str(photo))
+        controller.enterTextTool()
+        assert controller.textDraft.startswith("Kellemes")
+        controller.setTextDraft("Új felirat")
+        controller.previewTextPlacement(0.3, 0.3)
+        controller.applyText()
+        blocks = parse_text(_text_ertek(photo)).blocks
+        assert len(blocks) == 2
+        assert blocks[0].content == "Új felirat"
+        assert blocks[1].content == "2010"
+
+    def test_a_regi_picasapy_felirat_nem_vesz_el(self, controller, photo):
+        """A 0.8.88-ig mentett saját alakú feliratot beolvassuk, és a
+        pozícióját átszámoljuk — a felhasználó szövege nem tűnik el."""
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            "[IMG_0001.jpg]\ntext=1;2500;8000;Régi felirat;Arial\ntextactive=1\n",
+            encoding="utf-8",
+        )
+        controller.beginEdit("1", str(photo))
+        assert controller.hasTextOverlay is True
+        controller.enterTextTool()
+        assert controller.textDraft == "Régi felirat"
+
     def test_provider_receives_text_overlay_for_preview(
         self, controller, provider, photo
     ):
@@ -1166,8 +1274,9 @@ class TestTextTool:
         assert not image.isNull()
 
     def test_reload_after_apply_restores_relative_position(self, controller, photo):
-        """A raw_x/raw_y PicasaPy-saját skálázása (#148) kerek-út (round-trip)
-        pontos legyen a relatív [0..1] koordinátára."""
+        """A mentett felirat pozíciója kerek-úton (mentés → újranyitás) is
+        pontos marad. #371 óta a `text=` geometria-mezője viszi, ugyanabban
+        a normalizált [0..1] egységben, amit a szerkesztő használ."""
         controller.beginEdit("1", str(photo))
         controller.enterTextTool()
         controller.setTextDraft("Cím")
@@ -1182,8 +1291,9 @@ class TestTextTool:
 
 class TestTextStyle:
     """#450: kitöltés+körvonal szín, körvonal-vastagság, kitöltés ki/be,
-    átlátszóság — munkamenet-szintű állapot, NEM kerül a `.picasa.ini`-be
-    (ld. `_DEFAULT_TEXT_*` megjegyzését az edit_controller.py-ban)."""
+    átlátszóság. #371 óta a KÉT SZÍN mentődik (a `text=` stílus-mezőjének
+    van rá helye), a másik három továbbra is munkamenet-szintű állapot —
+    ld. `_DEFAULT_TEXT_*` megjegyzését az edit_controller.py-ban."""
 
     def test_defaults(self, controller, photo):
         controller.beginEdit("1", str(photo))
@@ -1225,7 +1335,13 @@ class TestTextStyle:
         with pytest.raises(ValueError):
             controller.setTextOpacity(1.5)
 
-    def test_style_does_not_write_ini(self, controller, photo):
+    def test_csak_a_ket_szin_kerul_iniba(self, controller, photo):
+        """#371: a `text=` stílus-mezőjének KÉT színe van (kitöltés,
+        körvonal) — ezek mentődnek. A körvonal-vastagságnak, a kitöltés
+        ki/be-nek és az átlátszóságnak NINCS megfelelő mezője, ezért azok
+        munkamenet-szintűek maradnak."""
+        from picasapy.ini.text_overlay import parse_text
+
         controller.beginEdit("1", str(photo))
         controller.enterTextTool()
         controller.setTextDraft("Nyaralás")
@@ -1236,11 +1352,16 @@ class TestTextStyle:
         controller.setTextFillEnabled(False)
         controller.setTextOpacity(0.4)
         controller.applyText()
-        ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")
-        # csak az ismert öt mező + esetleges raw_tail kerül a text=-be —
-        # a stílus-mezők NEM ini-kulcsok (#450)
-        assert "ff0000" not in ini_text.lower()
-        assert "00ff00" not in ini_text.lower()
+        style = parse_text(_text_ertek(photo)).blocks[0].style
+        assert style.fill_argb == 0xFFFF0000
+        assert style.outline_argb == 0xFF00FF00
+        # a mentés utáni újranyitás a vastagságot/átlátszóságot alapértékre
+        # állítja: ezeknek nincs hova mentődniük
+        controller.endEdit()
+        controller.beginEdit("1", str(photo))
+        assert controller.textOutlineThickness == 0
+        assert controller.textOpacity == 1.0
+        assert controller.textFillEnabled is True
 
     def test_style_change_affects_live_preview(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))

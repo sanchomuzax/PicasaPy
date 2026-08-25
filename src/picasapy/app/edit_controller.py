@@ -36,7 +36,11 @@ from picasapy.ini import (
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.ini.retouch import RetouchPatch
 from picasapy.ini.text_overlay import (
+    DEFAULT_TEXT_SIZE,
+    TextBlock,
+    TextGeometry,
     TextOverlay,
+    TextStyle,
     parse_text,
     parse_text_active,
     serialize_text,
@@ -208,17 +212,20 @@ _BRUSH_SIZE_MAX = 100
 _DEFAULT_BRUSH_SIZE = 20
 _BRUSH_SIZE_TO_RELATIVE_DIVISOR = 1000.0
 
-#: A szöveg-eszköz (#148) rögzített betűtípusa — a valódi Picasa `text=`
-#: kulcsának betűtípus-mezője csak ROUND-TRIP-elve kerül megőrzésre (ld.
-#: `picasapy.ini.text_overlay` docsztring), a rajzoláshoz pedig a render-
-#: réteg (`picasapy.render.text_overlay`) amúgy is egységes Hershey-fontot
-#: használ — betűtípus-választó ezért nincs a UI-ban.
+#: A szöveg-eszköz (#148) rögzített betűtípusa. A `text=` betűtípus-mezője
+#: a valódi Picasánál a betűtípus TELJES neve (`Arial`,
+#: `Bickham Script Pro Regular`) — mi ezt beolvasva megőrizzük, de a
+#: rajzoláshoz a render-réteg (`picasapy.render.text_overlay`) egységes
+#: Hershey-fontot használ, ezért betűtípus-választó nincs a UI-ban, és
+#: mentéskor az `Arial`-t írjuk.
 _DEFAULT_TEXT_FONT = "Arial"
 
 #: #450 (2. lépcső): tipográfia — a rajzoló (`render.text_fonts`) családja,
 #: méret-szorzója és stílusai. PicasaPy-saját, MUNKAMENET-szintű állapot: a
-#: `.picasa.ini`-be nem kerül, mert a `text=` kulcs betűtípus-mezőjének
-#: pontos jelentése nincs igazolva (#371).
+#: `.picasa.ini`-be nem kerül: a `text=` kulcsnak van ugyan betűtípus- és
+#: stílus-mezője (#371 megfejtette), de azok a Picasa saját rajzolójára
+#: vonatkoznak — a mi Hershey-alapú rajzolónk család/méret/dőlt/aláhúzott
+#: beállításai nem képezhetők le rájuk veszteség nélkül.
 _DEFAULT_TEXT_FAMILY = DEFAULT_TEXT_FAMILY
 _DEFAULT_TEXT_SCALE = 1.0
 _DEFAULT_TEXT_BOLD = False
@@ -226,25 +233,21 @@ _DEFAULT_TEXT_ITALIC = False
 _DEFAULT_TEXT_UNDERLINE = False
 _DEFAULT_TEXT_ALIGN = "left"
 
-#: A `text=` kulcs `raw_x`/`raw_y` mezőinek JELENTÉSE ismeretlen (ld. az
-#: `picasapy.ini.text_overlay` modul docsztringje) — ezért a PicasaPy a
-#: relatív [0..1] pozíciót SAJÁT, dokumentált skálázással kódolja ezekbe az
-#: egész mezőkbe (kerekítve, 4 tizedesjegynyi felbontással). Ez PicasaPy-
-#: eredetű szövegre 100%-ban round-trip-biztos (a modul-docsztring
-#: garanciája szerint); egy VALÓDI Picasa `text=` sorát a PicasaPy nem
-#: próbálja értelmezni/felülírni, amíg a felhasználó ténylegesen nem
-#: szerkeszti (akkor a generikus round-trip réteg helyett ez a modul veszi
-#: át — attól kezdve ez a konvenció érvényes rá is).
-_TEXT_COORD_SCALE = 10000
+# A felirat pozíciója a `text=` kulcs GEOMETRIA mezőjében él, a képre
+# normalizált [0..1] értékként (#371-ben megfejtve) — ugyanabban az
+# egységben, amit a szerkesztő és az előnézet is használ, ezért nincs
+# szükség átszámításra, és nem kell hozzá saját skálázó konstans sem. A
+# 0.8.88-ig írt, PicasaPy-saját egész-kódolást az
+# `picasapy.ini.text_overlay` olvasó oldala migrálja.
 
-#: A szöveg-eszköz stílus-beállításai (#450: kitöltés+körvonal szín,
-#: körvonal-vastagság, kitöltés ki/be, átlátszóság) NEM ismert `text=`
-#: mezők — a valódi Picasa `text=` sorának `raw_tail` (a betűtípus UTÁNI,
-#: tagolatlan) része is ismeretlen jelentésű (ld. `picasapy.ini.text_overlay`
-#: docsztring), ezért ide NEM próbálunk kódolni. Ezek a beállítások PicasaPy-
-#: saját, KIZÁRÓLAG a folyamatban lévő szerkesztési munkamenet állapotában
-#: élnek (mint a `_text_draft`/`_text_pending_pos`) — beginEdit/endEdit
-#: alapértékre állnak, a `.picasa.ini`-be jelenleg NEM kerülnek be.
+#: A szöveg-eszköz stílus-beállításai (#450). A `text=` stílus-mezőjének
+#: (#371-ben megfejtett) alakja KÉT színt hordoz — a kitöltést és a
+#: körvonalat —, ezért ez a kettő mentődik és töltődik vissza. A TÖBBI
+#: beállítás (körvonal-vastagság, kitöltés ki/be, átlátszóság) továbbra is
+#: KIZÁRÓLAG a folyamatban lévő szerkesztési munkamenet állapota, mert a
+#: Picasa-formátumban nincs nekik megfelelő mező, és a megfejtetlen
+#: számmezőkbe (`unknown_a`/`unknown_b`) tippelni rosszabb lenne, mint
+#: elhagyni őket — beginEdit/endEdit alapértékre állítja őket.
 _DEFAULT_TEXT_FILL_COLOR = (255, 255, 255)
 _DEFAULT_TEXT_OUTLINE_COLOR = (0, 0, 0)
 _DEFAULT_TEXT_OUTLINE_THICKNESS = 0
@@ -267,12 +270,17 @@ def _hex_to_rgb(value: str) -> tuple[int, int, int]:
         raise ValueError(f"Érvénytelen szín (nem #rrggbb alakú): {value!r}") from error
 
 
-def _relative_to_raw(value: float) -> int:
-    return round(_clamp01(value) * _TEXT_COORD_SCALE)
+def _rgb_to_argb(rgb: tuple[int, int, int]) -> int:
+    """RGB → a `text=` stílus-mezőjének `0xAARRGGBB` egésze, teljesen
+    átlátszatlan alfával (a korpusz mindkét mintáján `0xFF` az alfa)."""
+    r, g, b = rgb
+    return 0xFF000000 | (r << 16) | (g << 8) | b
 
 
-def _raw_to_relative(raw: int) -> float:
-    return _clamp01(raw / _TEXT_COORD_SCALE)
+def _argb_to_rgb(argb: int) -> tuple[int, int, int]:
+    """`0xAARRGGBB` → RGB; az alfát elhagyjuk (a rajzoló külön
+    `opacity`-vel dolgozik)."""
+    return ((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF)
 
 
 class EditController(QObject, BackgroundWorkerMixin):
@@ -591,11 +599,8 @@ class EditController(QObject, BackgroundWorkerMixin):
     def hasTextOverlay(self) -> bool:
         """Van-e MENTETT, aktív szöveg-overlay — a „Visszavonás: Szöveg"
         felirathoz és a UI állapot-jelzéséhez."""
-        return (
-            self._text_overlay is not None
-            and self._text_active
-            and bool(self._text_overlay.content)
-        )
+        primary = self._text_overlay.primary if self._text_overlay else None
+        return primary is not None and self._text_active and bool(primary.content)
 
     # -- szöveg-stílus (#450): kitöltés+körvonal szín, körvonal-vastagság,
     # kitöltés ki/be, átlátszóság — ld. a `_DEFAULT_TEXT_*` konstansok
@@ -927,8 +932,17 @@ class EditController(QObject, BackgroundWorkerMixin):
         )
         self._text_draft = ""
         self._text_pending_pos = None
-        self._text_fill_color = _DEFAULT_TEXT_FILL_COLOR
-        self._text_outline_color = _DEFAULT_TEXT_OUTLINE_COLOR
+        # A mentett felirat KÉT színe visszatölthető (#371) — a többi
+        # stílus-beállításnak nincs `text=` mezője, azok alapértékre állnak.
+        loaded = self._text_overlay.primary if self._text_overlay else None
+        self._text_fill_color = (
+            _argb_to_rgb(loaded.style.fill_argb) if loaded else _DEFAULT_TEXT_FILL_COLOR
+        )
+        self._text_outline_color = (
+            _argb_to_rgb(loaded.style.outline_argb)
+            if loaded
+            else _DEFAULT_TEXT_OUTLINE_COLOR
+        )
         self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
         self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity = _DEFAULT_TEXT_OPACITY
@@ -1449,7 +1463,8 @@ class EditController(QObject, BackgroundWorkerMixin):
         (ha van), pozíció nélkül — a felhasználónak a képre kattintva kell
         elhelyeznie."""
         self._require_active()
-        self._text_draft = self._text_overlay.content if self._text_overlay else ""
+        primary = self._text_overlay.primary if self._text_overlay else None
+        self._text_draft = primary.content if primary else ""
         self._text_pending_pos = None
         self.toolsChanged.emit()
 
@@ -1492,15 +1507,24 @@ class EditController(QObject, BackgroundWorkerMixin):
         self._require_active()
         if self._text_pending_pos is None or not self._text_draft.strip():
             return
-        raw_x = _relative_to_raw(self._text_pending_pos[0])
-        raw_y = _relative_to_raw(self._text_pending_pos[1])
-        self._text_overlay = TextOverlay(
-            enabled=True,
-            raw_x=raw_x,
-            raw_y=raw_y,
+        # A meglévő overlay TÖBBI blokkja megmarad: ha a képen valódi
+        # Picasa-felirat van több blokkal, a szerkesztés csak az elsőt
+        # írja át, a többit nem dobjuk el.
+        previous = self._text_overlay or TextOverlay()
+        block = TextBlock(
             content=self._text_draft,
             font=_DEFAULT_TEXT_FONT,
+            geometry=TextGeometry(
+                x=self._text_pending_pos[0],
+                y=self._text_pending_pos[1],
+                size=DEFAULT_TEXT_SIZE,
+            ),
+            style=TextStyle(
+                fill_argb=_rgb_to_argb(self._text_fill_color),
+                outline_argb=_rgb_to_argb(self._text_outline_color),
+            ),
         )
+        self._text_overlay = previous.with_primary(block)
         self._text_active = True
         self._text_pending_pos = None
         self._save_text()
@@ -1929,7 +1953,8 @@ class EditController(QObject, BackgroundWorkerMixin):
             return
 
         def mutate(document):
-            if self._text_overlay is None or not self._text_overlay.content:
+            primary = self._text_overlay.primary if self._text_overlay else None
+            if primary is None or not primary.content:
                 document = document.with_removed(self._section_name, "text")
                 document = document.with_removed(self._section_name, "textactive")
             else:
@@ -2149,17 +2174,15 @@ class EditController(QObject, BackgroundWorkerMixin):
             return TextOverlaySpec(
                 content=content, x=x, y=y, **self._text_style_kwargs()
             )
-        if (
-            self._text_overlay is not None
-            and self._text_active
-            and self._text_overlay.content
-        ):
-            x = _raw_to_relative(self._text_overlay.raw_x)
-            y = _raw_to_relative(self._text_overlay.raw_y)
+        primary = self._text_overlay.primary if self._text_overlay else None
+        if primary is not None and self._text_active and primary.content:
+            # A valódi Picasa a képen KÍVÜLRE lógó feliratot is elmenthet;
+            # a rajzoló viszont [0..1]-en kívül hibát dob, ezért itt vágunk.
+            # Ez csak az ELŐNÉZETET érinti — a mentett érték nem változik.
             return TextOverlaySpec(
-                content=self._text_overlay.content,
-                x=x,
-                y=y,
+                content=primary.content,
+                x=_clamp01(primary.geometry.x),
+                y=_clamp01(primary.geometry.y),
                 **self._text_style_kwargs(),
             )
         return None
