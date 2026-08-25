@@ -245,6 +245,27 @@ _PID_FAJL = ".futas.pid"
 #: argumentumsora. Minden szál a SAJÁT kulcsára ír, a főszál olvassa.
 _KIMENET: dict[str, str] = {}
 
+#: Azok a fájlok, amelyek ELSŐRE összeomlottak, másodjára zöldek lettek.
+#: A futás végén tételesen kiírjuk — az összeomlás akkor sem tűnhet el
+#: nyomtalanul, ha az újrapróbálás sikerül (#1457).
+_OSSZEOMLAS_UJRAPROBA: list[str] = []
+
+
+def _osszeomlas(returncode: int) -> bool:
+    """A részfutás JELRE halt meg (nem tesztbukás, nem időtúllépés)?
+
+    POSIX-on a `subprocess` a jelet negatív kilépőkódként adja vissza
+    (`-11` = SIGSEGV). Windowson a NTSTATUS-kódok jönnek: `0xC0000005` =
+    ACCESS_VIOLATION, `0xC0000374` = heap-sérülés — mindkettő a
+    `0xC0000000` tartományban.
+
+    ⚠️ A tesztbukás (`1`), a gyűjtési hiba (`2..5`) és az időtúllépés
+    (`124`) SZÁNDÉKOSAN nem tartozik ide: azokat nem szabad
+    újrapróbálással elfedni."""
+    if returncode < 0:
+        return True
+    return returncode >= 0xC0000000
+
 
 def _szoveggé(kimenet: bytes | str | None) -> str:
     """A timeout-kivétel kimenete lehet bytes, str vagy semmi."""
@@ -609,6 +630,21 @@ def _futtat(
     if cov:
         _report_coverage()
 
+    if _OSSZEOMLAS_UJRAPROBA:
+        # ⚠️ NEM néma: az összeomlás akkor is látszik, ha másodjára zöld lett.
+        # A #1457 addig marad nyitva, amíg ez a lista ki nem ürül.
+        print(
+            "\nELSŐRE ÖSSZEOMLOTT, MÁSODJÁRA ZÖLD (#1457) — "
+            f"{len(_OSSZEOMLAS_UJRAPROBA)} fájl:", flush=True
+        )
+        for name in sorted(_OSSZEOMLAS_UJRAPROBA):
+            print(f"  {name}", flush=True)
+        print(
+            "  Ez NEM rendben van: a folyamat jelre halt meg. A #1457 "
+            "gyűjti a vermeket — a fenti fájlokat oda kell bemásolni.",
+            flush=True,
+        )
+
     if failures:
         print("\nHIBÁS RÉSZFUTÁSOK:", flush=True)
         for name, returncode in failures:
@@ -636,6 +672,19 @@ def _app_fajlok_sorosan(
             returncode = _run_pytest(
                 [str(relative)], _APP_FILE_TIMEOUT_S, cov=cov, basetemp=basetemp
             )
+        elif _osszeomlas(returncode):
+            # #1457: a folyamat JELRE halt meg. Egyszeri újrapróbálás —
+            # a tartósan összeomló fájl így is kibukik, a végén pedig
+            # tételes lista megy ki arról, mi omlott össze elsőre.
+            print(
+                f"ÚJRAPRÓBÁLÁS (összeomlás után, exit {returncode}): "
+                f"{relative}", flush=True
+            )
+            returncode = _run_pytest(
+                [str(relative)], _APP_FILE_TIMEOUT_S, cov=cov, basetemp=basetemp
+            )
+            if returncode == 0:
+                _OSSZEOMLAS_UJRAPROBA.append(str(relative))
         if returncode != 0:
             failures.append((str(relative), returncode))
     return failures
@@ -668,6 +717,20 @@ def _app_fajlok_parhuzamosan(
                     [relative], _APP_FILE_TIMEOUT_S, cov=cov,
                     basetemp=sajat / "pytest", kornyezet=kornyezet, csendben=True,
                 )
+            elif _osszeomlas(returncode):
+                # #1457: JELRE halt meg a folyamat — egyszeri újrapróbálás
+                print(
+                    f"ÚJRAPRÓBÁLÁS (összeomlás után, exit {returncode}): "
+                    f"{relative}", flush=True
+                )
+                returncode = _run_pytest(
+                    [relative], _APP_FILE_TIMEOUT_S, cov=cov,
+                    basetemp=sajat / "pytest", kornyezet=kornyezet, csendben=True,
+                )
+                if returncode == 0:
+                    # a lista bővítése a pool szálaiból történik; a CPython
+                    # `list.append` atomi, külön zár nem kell
+                    _OSSZEOMLAS_UJRAPROBA.append(relative)
             return relative, returncode
         finally:
             shutil.rmtree(sajat, ignore_errors=True)
