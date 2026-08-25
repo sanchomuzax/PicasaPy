@@ -5,6 +5,20 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A Mappakezelő OK gombja egyszerre, kötött sorrendben ment (#1334).**
+  Eddig minden apró változtatás azonnal, külön-külön került lemezre: három
+  mappa átállítása háromszor írta újra a figyelt mappák listáját, és az
+  arcfelismerésből kihagyott mappák fájlja akkor is íródott, amikor semmi
+  nem változott rajta. Mostantól az OK egyetlen mentést végez, pontosan
+  abban a sorrendben, ahogy az eredeti Picasa: előbb a figyelt mappák,
+  aztán az eltávolított mappák megjelölése, majd — csak ha tényleg
+  változott — az arcfelismerésből kihagyott mappák listája, végül a nézet
+  frissítése. A program így kevesebbet ír a lemezre, és egy félbeszakadt
+  mentés sem hagyhat kevert állapotot a beállításfájlokban.
+
 ## [0.8.88] – 2026-08-25
 
 ### Javítva

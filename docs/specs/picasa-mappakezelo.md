@@ -2397,6 +2397,24 @@ melyike a `+` és melyike a `−` előjelű (a formátumsztringek a hívott
 függvényben vannak, nem a hívóban). **Következtetett**: a `0x005088f0`
 pontos szemantikája (eltávolítás vs. csak keresés).*
 
+### 17.5 Nálunk (megvalósítva, #1334)
+
+A mentési út a `app/folder_manager_save.py`-ban él (sorrend + kapu, Qt
+nélkül), a bekötése a `app/library_controller.py`-ban: a párbeszéd OK-ja
+zárójelbe teszi a tételes vezérlőhívásokat
+(`beginFolderManagerSave` … `commitFolderManagerSave`), a zárójelen belül
+csak a szándék gyűlik, és a végén EGYSZER íródik minden — a mért
+sorrendben. Őrök: `tests/app/test_mappakezelo_mentes_1334.py`.
+
+⚠️ **Egy tudatos eltérés.** Nálunk a `scanlist.txt` a HÁROMÁLLAPOTÚ
+választó (Keresés mindig / egyszer / Eltávolítás) egyetlen tárhelye, és
+a Mappakezelő az egyetlen szerkesztője — a `setFolderManagerState`
+tehát továbbra is írja, ha a felhasználó ténylegesen állapotot vált.
+A MENTÉSI ÚT nem nyúl hozzá (ezt teszt állítja), de a 17.2 betű
+szerinti teljesítése — hogy az OK egyáltalán ne érintse a fájlt —
+könyvtár-szintű mentőt kívánna (az eredetiben a `0x004f54b0`), ami
+nálunk nincs; enélkül a háromállapotú beállítás elveszne.
+
 ## 18. Az ELSŐ INDÍTÁS belépési útja — a 12.4 pont lezárása, NEGATÍV (2026-08-24)
 
 A 12. lista 4. pontja azt kérdezte, melyik kód nyitja meg a párbeszédet az
