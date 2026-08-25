@@ -214,3 +214,35 @@ helyi menüje).
 **`ID_VIEW_AUTO`**: **nem sikerült besorolni** — nem tagja a tizenegyes
 megjelenítési-mód tömbnek, és nem illik az „Indexkép felirata" négyeséhez.
 Nyitva marad.
+
+---
+
+## A 11–15. adag leletei (2026-08-25, este)
+
+**`ID_VIEW_AUTO`** a „Megjelenítési mód" almenü **első** tétele (a
+menüépítőben közvetlenül a 24 bites előtt) ⇒ a menüben **12** tétel, a
+kezelő kizáró-tömbjében **11**; az „Automatikus" nincs a tömbben.
+
+**A parancsazonosító-térkép MÁSODSZOR is megbukott.** A rekord felirata a
+saját kulcsától jön, az azonosítója a **következő** kulcs pushja után —
+ebből egy „az előző kulcsé" szabály következne, de az független horgonyon
+**1/4**-et adott. **A leképezés szabálytalan; ne legyen harmadik
+próbálkozás.**
+
+**A `Shortcuts` valószínűleg nem almenü**, hanem gyűjtő-fejléc a
+gyorsbillentyűs nézet-tételekhez — a utána épülő négy tétel közül a
+`ID_VIEW_WATCHED` bizonyítottan a **mappanézet** hármasába tartozik, tehát
+nem lehet a `Shortcuts` tartalma.
+
+**A Nyomtatás fül öt névtelen legördülője** = az **öt gyors nyomtatási
+méret**, `PrintSize1`…`PrintSize5` néven, a **17 tételes** `ytPrintSizes`
+listából választva. A fül többi kulcsa: `PrintProxyPreview`,
+`PrinterQuality` *(`os="win"` — Windows-specifikus)*,
+**`PrintResamplerQuality`** (`General (Lanczos-3)` / `Extra sharp
+(Lanczos-8)`), és a `Preferences\PrinterData` blob.
+
+**`ID_VIEW_SMALL` ≠ `ID_VIEW_SMALLTHUMBNAILS`.** Az angol felirat dönt:
+„Small **Pictures**" vs „S&mall **Thumbnails**"; a menüépítőben 190 sor
+választja el őket. Négy külön dolog van: az indexképek **láthatósága**
+(`ID_VIEW_THUMBNAILS`), a **méret-pár** (`SMALL`/`LARGETHUMBNAILS`), és a
+külön „Kis képek".
