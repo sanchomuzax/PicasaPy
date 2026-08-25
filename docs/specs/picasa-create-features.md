@@ -348,14 +348,85 @@ Ebből: **`x` és `w` a lap szélességéhez, `y` és `h` a lap magasságához
 arányos**, a `scale` pedig a csomópont befoglaló négyzetének oldala
 képpontban. A leképezést a `picasapy.collage.draft` valósítja meg.
 
-⚠️ **Egy eltérés a mai pakolónkhoz képest.** A minta szerint az eredeti a
-KERETES csempét illeszti a `pile_size` négyzetbe (a keret nem lóg ki), a
-mi `_pile_nodes`-unk viszont a FOTÓT illeszti, és a keret azon kívül nő.
-Ez nem a `.cxf`-en múlik, hanem a Képkupac elrendezésén — külön mérést és
-jegyet érdemel.
+✅ **A korábbi eltérés a pakolónkhoz képest RENDEZVE (#1053).** Ez a
+szakasz azt írta, hogy az eredeti a KERETES csempét illeszti a `pile_size`
+négyzetbe, mi viszont a FOTÓT, és a keret azon kívül nő. A #1053 a 18
+polaroid golden csomóponton kimérte a szabályt, és a `_pile_nodes` azóta a
+KÜLSŐ dobozt illeszti a négyzetbe.
 
 *Bizonyítottsági fok: erős következtetés* (egyetlen valódi mintán mért,
 háromszorosan egybevágó számtan; a writer a `scale` FORRÁSÁT nem mondja ki).
+
+### 1.6/f A `<node>` mezői TÉMÁNKÉNT — mérve 12 golden fájlon (2026-08-25, #1036)
+
+Az 1.6/e egyetlen Képkupac-mintából vezette le a mértékegységeket, és
+hallgatólagosan **minden témára** kiterjesztette. A tulajdonos tizenkét
+`.cxf`-jén (89 csomópont, mind a hat téma) végigmérve kiderült, hogy a
+kiterjesztés a `scale`-re **nem áll**.
+
+#### A `scale`
+
+| téma | a `scale` jelentése | minta | egyezés |
+|---|---|---|---|
+| `picturepile` | a csomópont-doboz **befoglaló négyzetének** oldala lapegységben | AI, AI1, AI2, AI8, AI9, AI10 | 49/49, `|Δ| ≤ 0,09` |
+| `picturegrid` | a **kirajzolt cella SZÉLESSÉGE** (a térköz UTÁN), az 1024 képpont széles lapon | AI3 | 9/9 |
+| `framegrid` | ugyanaz | AI4 | 9/9 |
+| `regulargrid` | ugyanaz | AI5 | 9/9 |
+| `multiexp` | **1,0** | AI7 | 4/4 (#1248) |
+| `contactsheet` | **nincs levezetve** — mind a 9 csomóponton `313` | AI6 | — |
+
+A megkülönböztető eset az **álló cella**: az `AI3` első cellája
+219,5 × 288,1 lapegység, és a fájlban `scale="216"` áll — a **szélesség**,
+nem a 288-as nagyobbik oldal. Ugyanaz a doboz Képkupacban 288-at adna. A
+két szabály tehát nem hozható közös nevezőre.
+
+Az `AI3` szomszédos, **azonos méretű** cellái (`216` és `214`, illetve
+`289` és `287`) először képfüggésnek látszottak. Nem azok: a lap szélét
+érintő él a TELJES hézagot kapja, a belső él felet-felet (1.9.3), és a két
+cella ebben tér el. A számolást az 1024 képpontos lapon elvégezve mind a
+kilenc érték **pontosan** kijön.
+
+#### Az `x`, `y`, `w`, `h`
+
+Mind a hat témán ugyanaz: a kirajzolt csempe tengelyirányú doboza a
+**forgatás ELŐTT**, tengelyenként a lap saját oldalához arányosítva. A
+Képkupacra képpontra ellenőrizve: az `AI10.jpg` legfelső (tehát takaratlan)
+csempéjének mind a négy éle **két képponton belül** van ott, ahova a `w`/`h`
+mutat — 1515 képpontos csempe, 5120 képpontos lap.
+
+> ⚠️ **Mérési csapda, amibe már kétszer beleestünk.** A Képkupac csempéi
+> fedik egymást, és a 0. index van legalul. Egy takart csempe **látható**
+> része a valódinál kisebb; az így mért „~930 × 1010" indította el a #1036-ot
+> azzal a téves lelettel, hogy a Képkupac dobozai rosszak. Képpontot csak a
+> legfelső csempén szabad mérni.
+
+Az, hogy MELYIK doboz kerül a fájlba, viszont témánként más:
+
+| téma | a `<node>` doboza |
+|---|---|
+| `picturepile` | a kirajzolt csempe KÜLSŐ doboza (a kerettel együtt) |
+| `picturegrid`, `framegrid` | a pakolási cella a térköz **ELŐTT** — a téglalapok 0,0-t és 1,0-t érintenek, és élben csatlakoznak |
+| `regulargrid` | a cella a térköz **UTÁN** — az `AI5` téglalapjai között ott a hézag |
+| `contactsheet` | a cellába illesztett **FOTÓ** doboza, a fehér szegély NÉLKÜL |
+| `multiexp` | a teljes lap (`0 0 1 1`) |
+
+⚠️ **Két nyitott pont** (mérésünk van rá, levezetésünk nincs):
+
+1. **Az Indexkép `scale`-je (`313`).** Lap-szintű állandó: a két különböző
+   méretű csomópont (242 × 302,6 és 155 × 276,6 lapegység) ugyanazt kapja.
+   Sem a `k` cellaél (300), sem a cella magassága (359), sem a `k` 8%-os
+   ráhagyásával csökkentett cella (311) nem adja ki. Egyetlen mintánk van.
+2. **A rácsos témák térköz ELŐTTI téglalapja.** A `picturegrid` és a
+   `framegrid` a pakolási téglalapot írja ki, a `regulargrid` a hézagosat;
+   mi mind a hármat hézagosan írjuk. Térköz nélkül a kettő egybeesik, ezért
+   a hiba csak bekapcsolt „Rács vastagsága" mellett látszik — az `AI4`
+   0,3825-ös térközénél a `w` 0,350 helyett 0,337 lenne. A javítás nem a
+   `.cxf`-írón múlik: a vászon-csomópont (`nodes.CollageNode`) ma nem
+   hordozza a térköz előtti cellát, és kézi átrendezés után nem is
+   létezik.
+
+*Bizonyítottsági fok: mért* (12 valódi Picasa-projekt, 89 csomópont; a
+Képkupac dobozai a golden JPEG képpontjain is ellenőrizve).
 
 ### 1.10 A kollázs-panel TELJES felülete — 156 elem (2026-08-16)
 
