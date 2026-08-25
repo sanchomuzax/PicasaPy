@@ -27,10 +27,11 @@ kezelőfüggvényt hívta közvetlenül.
 
 from pathlib import Path
 
-from PySide6.QtCore import QEvent, QMetaObject, QObject, Qt
+from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QKeyEvent
 
 from support.jpeg_factory import make_jpeg
+from support.qml_focus import fokuszt_ad
 
 
 def _ujraolvas(controller, qt_app) -> None:
@@ -62,12 +63,7 @@ def _grid(window):
 
 
 def _billentyu(window, qt_app, key, mods=Qt.KeyboardModifier.NoModifier):
-    grid = _grid(window)
-    grid.setProperty("focus", True)
-    QMetaObject.invokeMethod(
-        grid, "forceActiveFocus", Qt.ConnectionType.DirectConnection
-    )
-    qt_app.processEvents()
+    fokuszt_ad(_grid(window), qt_app)
     qt_app.sendEvent(window, QKeyEvent(QEvent.Type.KeyPress, key, mods))
     qt_app.processEvents()
 
