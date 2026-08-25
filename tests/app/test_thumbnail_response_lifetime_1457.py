@@ -46,6 +46,28 @@ def _response(tmp_path):
 
 
 class TestValaszElettartam:
+    """⚠️ **A bizonyító erő korlátja — kimondva.**
+
+    Ezek a tesztek **közvetlenül Pythonból** hívják a
+    `requestImageResponse()`-t, tehát NEM haladnak át azon a PySide
+    C++ virtual-call hídon, amelyik a válasz tulajdonjogát C++-ra
+    ruházná. Ezért az `ownedByPython=True` itt **várható**, nem lelet — és
+    a `shiboken6.delete()` sem azt csinálja, amit a valódi motor
+    (queued feldolgozás után `deleteLater()`).
+
+    ⇒ Az itteni nyilvántartás-őrök azt mérik, hogy a MI könyvelésünk
+    következetes (a válasz túléli a pool-feladatot, és a `destroyed`-re
+    kiürül) — azt NEM bizonyítják, hogy a valódi motorban lett volna
+    tulajdonjog-hiba. Az erős hivatkozás óvatos kerülőmegoldás, nem
+    bizonyított javítás.
+
+    A valódi próbához a kérést egy QML `Image`-nek kell indítania, és
+    response-onként rögzíteni a C++ mutatót, az `ownedByPython`
+    értéket és a szálat — a visszahívásban, egy utána queued próbában, a
+    `textureFactory()`-ban és a `destroyed`-kor. Ez a #1457 nyitott
+    feladata (független átnézés javaslata).
+    """
+
     def test_valasz_tulel_a_pool_feladaton(self, qt_app, tmp_path):
         """A DoD magja: miután MINDEN Python-hivatkozás kiesett, a válasz
         C++ oldalának ÉLNIE kell — a motor még nyers mutatót tart rá.
@@ -172,8 +194,17 @@ class TestRendesUtValtozatlan:
         assert not response._image.isNull()
 
 
-class TestAKepMezoVersenyMentes:
-    """A `_image` mezőhöz HÁROM szál nyúl — mindhárom a zár alatt.
+class TestAKepMezoAllapotaKonzisztens:
+    """A `cancel` és a befejezés ÁLLAPOTA konzisztens marad.
+
+    ⚠️ **Helyesbítés.** Ez az osztály korábban azt állította, hogy a zár a
+    `QImage` hivatkozásszámlálójának sérülése ellen véd. Független átnézés
+    kimutatta, hogy ez **túl erős állítás**: a Qt implicit megosztásának
+    számlálója atomikus, külön `QImage`-példányok szálak közötti másolása
+    támogatott. Amit a zár ténylegesen véd, az az ÁLLAPOT: lemondott
+    válaszba ne írjunk képet, és a `_done` jelző a képpel együtt álljon be.
+
+    Az eredeti szöveg (megőrizve, hogy a tévedés nyoma megmaradjon):
 
     A `_finish` a pool-szálon ÍR, a `textureFactory` a motor szálán
     OLVAS, a `cancel` pedig a motor szálán állít jelzőt. A `QImage`

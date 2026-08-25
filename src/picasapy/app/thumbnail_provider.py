@@ -131,12 +131,26 @@ class _FilteredThumbMemo:
 class _ThumbResponse(QQuickImageResponse):
     """Egy aszinkron thumbnail-kérés eredménye.
 
-    A képet a pool-szál készíti el és adja át (`_finish`), de a `finished`
-    jelzés #1457 óta NEM onnan megy ki, hanem a válasz saját szálán —
-    ugyanazon, amelyiken a motor a választ létrehozta és el is pusztítja.
-    Így a kibocsátás és a megsemmisítés nem futhat egyszerre ugyanazon az
-    objektumon. Az élettartam egészéről a modul-docstring „Élettartam"
-    szakasza szól; a válasz életben tartása a `ThumbnailProvider` dolga.
+    A képet a pool-szál készíti el és adja át (`_finish`), és a `finished`
+    jelzés is ONNAN megy ki.
+
+    ⚠️ Itt korábban az állt, hogy a kibocsátás a válasz saját szálára van
+    átütemezve, mert különben a motor „a kibocsátás belsejében" törölné az
+    objektumot. **Ez a modell HAMIS** — független átnézés mutatta ki, a Qt
+    forrására hivatkozva: a Qt 6.8 a `finished`-et egy
+    `ReaderThreadExecutionEnforcer`-hez köti, tehát a más szálról érkező
+    jelzés magától queued lesz, és a `textureFactory()` meg a
+    `deleteLater()` az image-reader szálon fut. A pool-szálról való
+    kibocsátás **támogatott** működés; a hivatalos Qt-példa is így csinálja.
+
+    Az átütemezést ezért visszavontuk (#1457) — nem azért, mert veszélyes,
+    hanem mert fölösleges volt, és időzítést változtatott egy olyan
+    hibakeresés közben, ahol ez félrevisz.
+
+    A zár, amit itt tartunk, NEM a `QImage` hivatkozásszámlálóját védi (az
+    atomikus), hanem a `cancel` és a befejezés **állapotát** tartja
+    konzisztensen: lemondott válaszba ne írjunk képet, és a `_done` jelző
+    a képpel együtt álljon be.
 
     Az itteni zár azt a két útvonalat választja szét, amelyik egyszerre
     nyúlna a válaszhoz: a pool-szál lezárását (`_finish`) és a motor

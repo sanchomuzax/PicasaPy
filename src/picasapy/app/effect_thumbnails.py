@@ -330,8 +330,12 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
         register_pool_owner(self)
 
     def requestImageResponse(self, id_str: str, requested_size) -> _EffectThumbResponse:
-        """Aszinkron belépési pont (a Qt a főszálon hívja): a munka a
-        poolba kerül, a válasz azonnal visszamegy."""
+        """Aszinkron belépési pont: a munka a poolba kerül, a válasz azonnal
+        visszamegy.
+
+        ⚠️ Korábban „a Qt a főszálon hívja" állt itt. Tipikus Qt 6.8
+        buildben ez az **image-reader szál**, nem a főszál (független
+        átnézés, #1457)."""
         response = _EffectThumbResponse()
         # #1457: a válasz `ownedByPython` marad, és az egyetlen Python-
         # hivatkozást eddig a pool-feladat tartotta — amit a `QThreadPool`
