@@ -26,7 +26,7 @@ from PySide6.QtTest import QTest
 
 # A magyar felirat (`picasapy_hu.ts`) — az angol forrásnál hosszabb, tehát
 # ez a szűk keresztmetszet az egysorosságnál.
-MAGYAR_FELIRAT = "Hisztogram és fényképezőgép-adatok"
+MAGYAR_FELIRAT = "Hisztogram és fényképadatok"
 
 _KEEPALIVE: list[object] = []
 

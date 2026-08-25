@@ -112,9 +112,11 @@ class SaveMixin(BackgroundWorkerMixin):
 
         Ettől függ, hogy a „Visszaállítás" és az „Utolsó mentés
         visszavonása" egyáltalán értelmes-e (mentetlen képnél nincs mit
-        visszaállítani) — a menü ezzel tiltja a pontjait.
+        visszaállítani) — a menü ezzel tiltja a pontjait. A mentés-előtti
+        másolat KÉT mappanév alatt lehet (`.picasaoriginals`, `Originals`);
+        ld. `picasapy.edit.save` „Két mappanév" szakaszát (#1425).
         """
-        from picasapy.edit.save import ORIGINALS_DIR_NAME
+        from picasapy.edit.save import ORIGINALS_DIR_NAMES
 
         # ⚠️ #1146: MAPPÁNKÉNT nézünk a lemezre, nem képenként. A régi ág
         # soronként hívott `is_dir()`-t ÉS `glob()`-ot — 2 002 soros
@@ -122,18 +124,23 @@ class SaveMixin(BackgroundWorkerMixin):
         # tulajdonos gyűjteménye hálózati megosztáson van, ahol minden
         # `stat()` egy hálózati kör: ott ez nem lassulás, hanem fagyás.
         #
-        # Egy mappa `.picasaoriginals`-át elég EGYSZER kilistázni; a
-        # tőnevek halmazából utána memóriából válaszolunk.
+        # Egy mappa eredeti-mappáit elég EGYSZER kilistázni; a tőnevek
+        # halmazából utána memóriából válaszolunk.
+        #
+        # #1425: MINDKÉT mappanevet nézzük — a mai `.picasaoriginals`-t és a
+        # 2009 előtti, látható `Originals`-t. A régi név a tulajdonos
+        # gyűjteményében 127 mappában előfordul; enélkül a „Visszaállítás"
+        # menütétel ott szürke maradna, magyarázat nélkül.
         tovek: dict[str, set[str]] = {}
         for record in self._selected_records(rows):
             mappa = str(record.folder_path)
             if mappa not in tovek:
-                konyvtar = Path(mappa) / ORIGINALS_DIR_NAME
-                tovek[mappa] = (
-                    {p.name for p in konyvtar.glob("*")}
-                    if konyvtar.is_dir()
-                    else set()
-                )
+                nevek: set[str] = set()
+                for dir_name in ORIGINALS_DIR_NAMES:
+                    konyvtar = Path(mappa) / dir_name
+                    if konyvtar.is_dir():
+                        nevek.update(utvonal.name for utvonal in konyvtar.glob("*"))
+                tovek[mappa] = nevek
             to = Path(record.name).stem
             if any(nev.startswith(to) for nev in tovek[mappa]):
                 return True

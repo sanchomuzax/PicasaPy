@@ -119,6 +119,19 @@ kódtól).
   BEHELYEZÉSE a projektfájlba (`_azonositoval`): a megnyitott fájlból
   hozott azonosítót nem írjuk felül, csak az üresen maradt csomópontokat
   töltjük ki.
+- `src/picasapy/edit/save.py` (#1425) — a **két eredeti-mappa ütközésének
+  feloldása**. Maguk a mappanevek eredetiek és mértek (`Originals`
+  2005–2009, `.picasaoriginals` 2009–2016; 181 valós mappa, ld.
+  `docs/specs/picasa-ini-format.md`), a mindkettőt olvasó visszaállítás
+  tehát NEM saját funkció. Az viszont a MI döntésünk, hogy melyikből
+  dolgozunk, ha ugyanahhoz a képhez mindkét mappában van példány: nálunk a
+  régi, `Originals` az elsőbbségi — az az időben korábbi példány, tehát az
+  áll közelebb az érintetlen eredetihez, és a téves választás kára is arra
+  fordul kisebbre (a másik irány NÉMÁN adna részlegesen visszaállított
+  képet). Az eredeti Picasa erre az esetre nincs kimérve: a korpusz csak
+  `.picasa.ini`-szöveget tartalmaz, és `Originals/` alatt egyetlen ini
+  sincs, mert az a név rajta van a Picasa saját kizárási listáján. Ha
+  később mérés születik rá, ez a tétel eltűnik.
 
 ## Tervezett, még nem implementált saját funkciók
 

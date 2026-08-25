@@ -16,6 +16,29 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   reagált — csak a jobbklikk-menüből, egérrel lehetett törölni. A
   jobbklikk-menü felirata is a régi, elavult billentyűt (puszta `Delete`)
   mutatta; mostantól `Ctrl+Delete`-et hirdet, és valóban erre reagál.
+  A nézőben a puszta `Delete` **többé nem töröl** — az a menüsáv
+  billentyűje, a jobbklikk-menüké a `Ctrl+Delete`.
+- **A „Visszaállítás" megtalálja a régi, 2009 előtti eredetiket is (#1425).**
+  A Picasa a szerkesztés előtti eredetit két különböző nevű mappába mentette:
+  a 2009 utáni verziók a rejtett `.picasaoriginals`-ba, a régebbiek a látható
+  `Originals`-ba. Eddig csak az újabb nevet ismertük, így a 2005 és 2009
+  között szerkesztett képeknél a „Visszaállítás" menütétel szürke maradt —
+  minden magyarázat nélkül —, pedig az érintetlen eredeti ott volt a lemezen.
+  Mostantól mindkét mappát megnézzük, és ha valamiért egyikben sincs meg a
+  kép eredetije, a program érthető magyar mondatban megmondja, hol keresett
+  és mikor működik egyáltalán a Visszaállítás. Ha ugyanahhoz a képhez
+  mindkét mappában van példány, a régebbi, `Originals`-beli nyer: az az
+  időben korábbi, tehát az áll közelebb az érintetlen eredetihez. A mentés
+  ezentúl nem készít második „eredetit" sem, ha a régi mappában már van egy.
+
+## [0.8.92] – 2026-08-25
+
+### Javítva
+- **A hisztogram felirata Windowson sem csonkul (#1344).** A „Hisztogram és
+  fényképezőgép-adatok" a windowsos alapbetűvel nem fért a panel sávjába, és
+  a vége levágódott volna. A felirat rövidebb lett („Hisztogram és
+  fényképadatok"), és ha egy fordítás mégis hosszabb, a betű zsugorodik
+  levágás helyett.
 
 ## [0.8.90] – 2026-08-25
 
@@ -48,6 +71,29 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   változott — az arcfelismerésből kihagyott mappák listája, végül a nézet
   frissítése. A program így kevesebbet ír a lemezre, és egy félbeszakadt
   mentés sem hagyhat kevert állapotot a beállításfájlokban.
+
+### Javítva
+- **A képre írt felirat mostantól a valódi Picasa formátumában mentődik
+  (#371).** Eddig a PicasaPy a saját, rögtönzött alakjában írta a feliratot
+  a `.picasa.ini` fájlba — a Windowsos Picasa ezt félreolvasta volna, mert
+  nála ugyanazokon a helyeken a felirat hossz-adatai állnak. A formátum
+  időközben megfejtődött (859 valódi `.picasa.ini` elemzéséből), és a
+  program mostantól pontosan azt írja: a felirat helyét, méretét,
+  elforgatását, betűtípusát, valamint a kitöltés és a körvonal színét.
+  A színek ezzel meg is maradnak: legközelebbi megnyitáskor visszaállnak,
+  nem esnek vissza fehérre és feketére.
+- **Többsoros és pontosvesszőt tartalmazó felirat sem sérül (#371).** A
+  sortörést a Picasa olyan jelöléssel tárolja, ami maga is pontosvesszőre
+  végződik — a régi beolvasónk ezen elvágta a szöveget. Az új beolvasó a
+  felirat hosszát használja, így a több bekezdéses és a pontosvesszős
+  felirat is hiánytalanul tér vissza.
+- **A valódi Picasával készült, több feliratblokkos képek nem csonkulnak
+  (#371).** Ha egy képen a Picasa két külön feliratot helyezett el, a
+  PicasaPy eddig egyetlen, összekevert szövegként látta. Mostantól
+  mindkettőt felismeri, és ha az elsőt átírjuk, a második változatlanul
+  megmarad a fájlban. A korábbi PicasaPy-verziókkal mentett feliratok
+  továbbra is beolvashatók, és a következő mentéskor átállnak az új
+  alakra.
 
 ## [0.8.88] – 2026-08-25
 

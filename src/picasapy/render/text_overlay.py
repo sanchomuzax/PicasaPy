@@ -1,12 +1,15 @@
 """Szöveg-overlay rajzolása képre (#148/#450).
 
-**Szándékosan ELVÁLASZTVA** a `picasapy.ini.text_overlay` nyers `text=`
-mezőitől: a valódi Picasa `text=` kulcs `raw_x`/`raw_y` számpárjának
-jelentése nem megerősített (ld. az ini-modul docsztringjét), ezért ez a
-függvény NEM ezekből számol pozíciót — a hívó explicit, relatív [0..1]
-koordinátákat ad át. Ez PicasaPy-saját, dokumentált konvenció: amíg nincs
-golden-minta a valódi `text=` mezők jelentésére, ez az egyetlen módja, hogy
-a szöveg-eszköz determinisztikusan, találgatás nélkül működjön.
+**Szándékosan ELVÁLASZTVA** a `picasapy.ini.text_overlay` `text=` mezőitől:
+ez a függvény nem ini-adatot vesz át, hanem explicit, relatív [0..1]
+koordinátákat — így a rajzoló önmagában, ini nélkül is tesztelhető.
+
+A `text=` geometria-mezője (#371-ben megfejtve) UGYANEBBEN a normalizált
+[0..1] egységben adja a pozíciót, ezért a hívó (`app.edit_controller`) ma
+közvetlenül átadhatja. A geometria `méret` mezője viszont a Picasa saját
+betűrajzolójára vonatkozik, a mi `font_scale`-ünk pedig a Hershey/FreeType
+útra — a kettő leképezése nincs mérve, ezért a méret ma NEM köti a
+rajzolót.
 
 **A rajzoló (#450, 2. lépcső): TrueType, ha van.** A Pillow FreeType-útján
 rajzolunk — ez adja a betűcsaládot, a félkövéret/dőltet, az aláhúzást és a
@@ -16,9 +19,10 @@ szöveg-eszköz sose essen ki — ilyenkor a stílus-vezérlők hatástalanok, a
 szöveg viszont megjelenik.
 
 A betűcsaládok leképezése (Arial → Liberation Sans stb.) a
-`render.text_fonts` dolga; a `font` ini-mező továbbra is csak MEGŐRZŐDIK
-(round-trip), mert a `text=` kulcs betűtípus-mezőjének pontos jelentése
-nincs igazolva (#371).
+`render.text_fonts` dolga. A `text=` betűtípus-mezője a betűtípus TELJES
+neve (#371: `Arial`, `Bickham Script Pro Regular`) — ezt beolvasva
+MEGŐRIZZÜK, de a rajzolót ma nem köti: a Picasa Windows-os betűkészletére
+hivatkozik, aminek a Linuxos megfelelője gépenként más.
 """
 
 from __future__ import annotations

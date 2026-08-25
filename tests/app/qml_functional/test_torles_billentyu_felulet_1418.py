@@ -146,17 +146,20 @@ class TestNezobenMostMarCtrlDeleteTorol:
         assert confirm.property("visible") is False
 
 
-class TestIsmertMaradvanyPusztaDeleteANezoben:
-    """⚠️ DOKUMENTÁLT, NEM javított hiba: a nézőben a puszta Delete IS
-    törli a képet (Main.qml `shortcutDeleteFromDiskViewer`, még mindig a
-    #422-es, azóta felülírt feltevés — spec 3. — szerint kötve). A friss
-    mérés (spec 4.) szerint itt Ctrl+Delete kellene, DE a Main.qml
-    szerkesztése ehhez a jegyhez TILOS — a záró jelentés ezt nyitva
-    hagyott pontként jelöli. Ez a teszt SZÁNDÉKOSAN rögzíti a jelenlegi
-    (nem kívánt) viselkedést, hogy egy jövőbeli kör tudatosan döntsön
-    róla, ne véletlenül fedezze fel."""
+class TestANezobenAPusztaDeleteNemTorol:
+    """A nézőben (jobbklikk-menüs felület) CSAK a `Ctrl+Delete` töröl.
 
-    def test_puszta_delete_meg_mindig_torol_a_nezoben(self, qml_app, qt_app):
+    A #1154 mérése szerint a `0x9c9a` parancs felület szerint válik szét:
+    menüsávban puszta `Delete`, helyi menükben `Ctrl+Delete`. A néző az
+    utóbbi családba tartozik.
+
+    ⚠️ Ez **ellenkező irányú őr**: nem azt állítja, hogy a helyes billentyű
+    működik (arra külön teszt van), hanem hogy a HELYTELEN **nem** — a
+    korábbi `Delete`-kötés (a #422 azóta felülírt feltevése) így nem tud
+    csendben visszatérni. A törlés visszafordíthatatlan, ezért kell mindkét
+    irány."""
+
+    def test_a_puszta_delete_nem_torol_a_nezoben(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         window.setProperty("viewerOpen", True)
         viewer = _gyerek(window, "photoViewer")
@@ -167,27 +170,7 @@ class TestIsmertMaradvanyPusztaDeleteANezoben:
 
         _billentyu(window, qt_app, Qt.Key.Key_Delete)
 
-        assert confirm.property("visible") is True, (
-            "ha ez most False, a Main.qml maradvány-hibája megszűnt — "
-            "frissítsd a jelentést és zárd ezt a pontot, ne csak a tesztet"
+        assert confirm.property("visible") is False, (
+            "a nézőben a puszta Delete törölni akart — a #422-es, felülírt "
+            "kötés tért vissza (a helyes itt: Ctrl+Delete)"
         )
-
-
-class TestFeliratokAKetHelyiMenuben:
-    """A menüsáv Delete-et hirdet, mindkét helyi menü Ctrl+Delete-et."""
-
-    def test_menusav_delete_et_hirdet(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
-        tetel = _gyerek(window, "menuFileDelete")
-        assert tetel.property("text").endswith("\tDelete")
-
-    def test_racs_helyi_menuje_ctrl_delete_et_hirdet(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
-        tetel = _gyerek(window, "contextMenuDelete")
-        assert tetel.property("text").endswith("\tCtrl+Delete")
-
-    def test_nezo_helyi_menuje_ctrl_delete_et_hirdet(self, qml_app, qt_app):
-        """#1418: korábban "\tDelete" volt — ez volt a felirat-oldali hiba."""
-        window, _controller, _engine = qml_app
-        tetel = _gyerek(window, "viewerMenuDelete")
-        assert tetel.property("text").endswith("\tCtrl+Delete")
