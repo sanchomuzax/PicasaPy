@@ -207,3 +207,67 @@ class TestAKepMezoVersenyMentes:
             "a pool-szál írásával átfedve a QImage hivatkozásszámlálója "
             "sérül, és a program egy későbbi felszabadításnál omlik össze"
         )
+
+
+class TestAKetSZOLGALTATOUgyanazokatAVedelmeketKapja:
+    """A két aszinkron bélyegkép-szolgáltató UGYANAZT a mintát futtatja.
+
+    A #1457 első köre CSAK a `thumbnail_provider`-t javította, és az
+    összeomlások **folytatódtak** — mert az `effect_thumbnails` betűre
+    ugyanazt a hibás mintát vitte tovább (pool-szálról kibocsátott jelzés,
+    zár nélküli képmező, a válaszra semmilyen hivatkozás). A javítás
+    fájlonkénti foltozása pontosan az a hiba, amit a #999 kizár:
+
+    > „nem fájlonkénti foltozás, hanem ott, ahol a szálat indítjuk"
+
+    Ez az őr azt tartja karban, hogy a kettő **együtt** mozogjon: ha
+    valaki az egyiket javítja vagy megváltoztatja, a másik ne maradjon le
+    csendben.
+    """
+
+    @staticmethod
+    def _valasz_osztalyok():
+        from picasapy.app.effect_thumbnails import _EffectThumbResponse
+        from picasapy.app.thumbnail_provider import _ThumbResponse
+
+        return {"thumbnail_provider": _ThumbResponse,
+                "effect_thumbnails": _EffectThumbResponse}
+
+    def test_mindketto_ismeri_a_lemondast(self):
+        for nev, osztaly in self._valasz_osztalyok().items():
+            assert hasattr(osztaly, "cancel"), (
+                f"a(z) {nev} válasza nem kezeli a motor lemondását — a "
+                "lemondott válaszba írás és a jelzés elmaradása is kárt okoz"
+            )
+
+    def test_mindketto_a_sajat_szalan_bocsatja_ki_a_jelzest(self):
+        """A pool-szálról kibocsátott jelzés a törléssel versenyzik."""
+        import inspect
+
+        for nev, osztaly in self._valasz_osztalyok().items():
+            forras = inspect.getsource(osztaly)
+            assert "invokeMethod" in forras and "QueuedConnection" in forras, (
+                f"a(z) {nev} válasza a POOL-szálról bocsátja ki a jelzést; a "
+                "motor ugyanakkor a saját szálán hívja a deleteLater-t, és a "
+                "kettő ugyanazon az objektumon fut"
+            )
+
+    def test_mindketto_a_zar_alatt_olvassa_a_kepet(self):
+        import inspect
+
+        for nev, osztaly in self._valasz_osztalyok().items():
+            forras = inspect.getsource(osztaly.textureFactory)
+            assert "self._lock" in forras, (
+                f"a(z) {nev} `textureFactory`-ja zár nélkül olvassa a "
+                "képmezőt, amit a pool-szál közben írhat"
+            )
+
+    def test_mindket_szolgaltato_nyilvantartja_az_elo_valaszokat(self):
+        from picasapy.app.effect_thumbnails import EffectThumbnailProvider
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+
+        for szolgaltato in (ThumbnailProvider, EffectThumbnailProvider):
+            assert hasattr(szolgaltato, "live_response_count"), (
+                f"a(z) {szolgaltato.__name__} nem tart hivatkozást az élő "
+                "válaszokra — a Python megsemmisítheti őket a motor alól"
+            )

@@ -40,7 +40,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
 import numpy as np
-from PySide6.QtCore import QRunnable, QSize, Qt, QThreadPool
+import itertools
+import shiboken6
+from PySide6.QtCore import (
+    QMetaObject,
+    QRunnable,
+    QSize,
+    Qt,
+    QThreadPool,
+    Slot,
+)
 from PySide6.QtGui import QImage, QImageReader
 from PySide6.QtQuick import (
     QQuickAsyncImageProvider,
@@ -198,22 +207,72 @@ class _ThumbCache:
 
 
 class _EffectThumbResponse(QQuickImageResponse):
-    """Egy aszinkron bélyegkép-kérés eredménye (`thumbnail_provider._ThumbResponse`
-    mintája) — a `finished` a pool-szálról megy ki, a Qt ezt bármely
-    szálról dokumentáltan fogadja."""
+    """Egy aszinkron bélyegkép-kérés eredménye — a
+    `thumbnail_provider._ThumbResponse` MINTÁJA, bitre ugyanazokkal a
+    védelmekkel (#1457).
+
+    ⚠️ A korábbi docstring azt állította, hogy „a `finished` a pool-szálról
+    megy ki, a Qt ezt bármely szálról dokumentáltan fogadja". A mondat
+    FÉLREVEZETŐ volt: a **szálbiztonság nem ugyanaz, mint az
+    élettartam-biztonság**. A jelzés kibocsátása lehet szálbiztos — egy
+    közben megszűnt objektumon akkor sem az.
+
+    Három út nyúl ugyanahhoz a példányhoz, és mindhárom más szálon:
+
+    * `_finish` — a POOL-szálon ír képet és zár;
+    * `textureFactory` — a MOTOR szálán olvassa a képet;
+    * `cancel` — a motor mondja le a választ.
+
+    A `QImage` implicit megosztású: a másolat a hivatkozásszámlálót
+    lépteti, nem a képpontokat. Átfedő írás és olvasás esetén a számláló
+    sérül, és a hiba nem ott csattan, ahol keletkezett, hanem egy későbbi
+    felszabadításnál — látszólag véletlenszerű helyen, más tesztfájlban.
+    Ezért fut mind a három út UGYANAZON a záron."""
 
     def __init__(self) -> None:
         super().__init__()
         self._image = QImage()
         self._done = threading.Event()  # tesztek várakozásához
+        self._lock = threading.Lock()
+        self._cancelled = False
+
+    def cancel(self) -> None:
+        """A motor jelzi, hogy a válaszra már nincs szüksége."""
+        with self._lock:
+            self._cancelled = True
+            self._done.set()
 
     def _finish(self, image: QImage) -> None:
-        self._image = image
-        self._done.set()
-        self.finished.emit()
+        """A pool-szál lezárja a választ."""
+        with self._lock:
+            if not shiboken6.isValid(self):
+                # a motor már elpusztította — a várakozókat elengedjük
+                self._done.set()
+                return
+            if not self._cancelled:
+                self._image = image
+            self._done.set()
+            # A jelzés NEM innen, a pool-szálról megy ki, hanem a válasz
+            # SAJÁT szálán: a motor a `finished`-re hívja a `deleteLater`-t,
+            # és a törlést ugyanaz a szál végzi. Egy szálra sorolva a
+            # kibocsátás és a törlés nem futhat egyszerre.
+            #
+            # Lemondott válaszon is ki kell mennie: enélkül a motor sosem
+            # takarítaná el, és a nyilvántartás sem ürülne.
+            QMetaObject.invokeMethod(
+                self, "_emit_finished", Qt.ConnectionType.QueuedConnection
+            )
+
+    @Slot()
+    def _emit_finished(self) -> None:
+        """A `finished` tényleges kibocsátása — a válasz saját szálán."""
+        if shiboken6.isValid(self):
+            self.finished.emit()
 
     def textureFactory(self) -> QQuickTextureFactory:
-        return QQuickTextureFactory.textureFactoryForImage(self._image)
+        with self._lock:
+            image = self._image
+        return QQuickTextureFactory.textureFactoryForImage(image)
 
 
 class _EffectThumbJob(QRunnable):
@@ -256,6 +315,10 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
         self._thumb_cache = _ThumbCache()
         # saját, KIS pool (#338): nem versenyezhet a nagy thumbnail-rács
         # generálásával a közös CPU-kapacitásért
+        # #1457: a még élő válaszok nyilvántartása (ld. requestImageResponse)
+        self._live_responses: dict[int, _EffectThumbResponse] = {}
+        self._live_lock = threading.Lock()
+        self._response_tokens = itertools.count()
         self._pool = QThreadPool()
         self._pool.setMaxThreadCount(
             max_threads
@@ -271,8 +334,32 @@ class EffectThumbnailProvider(QQuickAsyncImageProvider):
         """Aszinkron belépési pont (a Qt a főszálon hívja): a munka a
         poolba kerül, a válasz azonnal visszamegy."""
         response = _EffectThumbResponse()
+        # #1457: a válasz `ownedByPython` marad, és az egyetlen Python-
+        # hivatkozást eddig a pool-feladat tartotta — amit a `QThreadPool`
+        # a `run()` után azonnal eldob. Ha ez megelőzi a motort, a Python
+        # semmisíti meg a választ a motor nyers mutatója alól. A provider
+        # ezért erős hivatkozást tart rá, és csak a `destroyed`-re engedi el.
+        token = next(self._response_tokens)
+        with self._live_lock:
+            self._live_responses[token] = response
+        # A kötés SZÁNDÉKOSAN csak a tokent zárja magába, különben a
+        # nyilvántartás sosem ürülne.
+        response.destroyed.connect(
+            lambda *_, token=token: self._release_response(token)
+        )
         self._pool.start(_EffectThumbJob(self, id_str, response))
         return response
+
+    def _release_response(self, token: int) -> None:
+        """A motor elpusztította a választ — elengedhetjük a hivatkozást."""
+        with self._live_lock:
+            self._live_responses.pop(token, None)
+
+    def live_response_count(self) -> int:
+        """A nyilvántartott (még el nem engedett) válaszok száma — az őr
+        ebből látja, hogy a nyilvántartás ürül, azaz nem szivárog."""
+        with self._live_lock:
+            return len(self._live_responses)
 
     def wait_for_done(self, msecs: int = 10_000) -> bool:
         """Minden folyamatban lévő pool-feladat bevárása (tesztekhez)."""
