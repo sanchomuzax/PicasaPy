@@ -19,6 +19,8 @@ nem a deklarált betűmérettel számolva — a betű platformonként más.
 
 from __future__ import annotations
 
+import time
+
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
@@ -29,6 +31,55 @@ from PySide6.QtTest import QTest
 MAGYAR_FELIRAT = "Hisztogram és fényképadatok"
 
 _KEEPALIVE: list[object] = []
+
+
+def _var_a_beallasra(view: QQuickView, root: QQuickItem, qt_app, masodperc: float = 10.0):
+    """Megvárja, amíg a panel elrendezése MEGÁLLAPODIK — a fix beállás UTÁN.
+
+    #1463: itt korábban CSAK egy fix `for _ in range(5): processEvents();
+    QTest.qWait(20)` állt — 100 ezredmásodpercnyi fogadás arra, hogy
+    addigra a `HistogramBox` felépül és a helyére kerül. Terhelt,
+    négymagos futón ez kevés lehet, és a képpontos geometria-állítások
+    hamis pirosat adnak.
+
+    ⚠️ A fix beállás PADLÓ marad, nem plafon. A testvérfájlban
+    (`test_histogram_pixels_864.py`) MÉRVE lett, hogy a fix beállás
+    elhagyása és puszta stabilitás-figyelés túl korán enged tovább (két
+    egyforma, még nem kész minta is „stabil"): a képpontos teszt 6
+    futásból 1-szer elbukott. Ezért itt is előbb a régi beállás fut le,
+    és csak UTÁNA jön a bőkezű hosszabbítás.
+
+    Az őr foga változatlan: ha a geometria sosem áll be, a határidő
+    lejár, a hívó ugyanúgy megméri, amit talál, és az állítások buknak.
+    """
+    for _ in range(5):
+        qt_app.processEvents()
+        QTest.qWait(20)
+
+    def _ujjlenyomat():
+        felirat = root.findChild(QObject, "histogramTitle")
+        if not isinstance(felirat, QQuickItem):
+            return None
+        return (
+            root.width(),
+            root.height(),
+            felirat.x(),
+            felirat.y(),
+            felirat.width(),
+            felirat.height(),
+        )
+
+    elozo = None
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        mostani = _ujjlenyomat()
+        if mostani is not None and mostani == elozo:
+            return True
+        elozo = mostani
+        time.sleep(0.01)
+    qt_app.processEvents()
+    return False
 
 
 def _panel(qt_app, camera_summary: str = "Gép\t1/125 s") -> QQuickItem:
@@ -58,9 +109,7 @@ def _panel(qt_app, camera_summary: str = "Gép\t1/125 s") -> QQuickItem:
     view.resize(238, 144)
     view.show()
     assert QTest.qWaitForWindowExposed(view)
-    for _ in range(5):
-        qt_app.processEvents()
-        QTest.qWait(20)
+    _var_a_beallasra(view, root, qt_app)
 
     _KEEPALIVE.extend((view, root, component))
     return root

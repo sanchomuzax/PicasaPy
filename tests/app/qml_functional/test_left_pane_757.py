@@ -21,6 +21,8 @@ feltételét nem.
 
 from __future__ import annotations
 
+import time
+
 import pytest
 from PySide6.QtCore import Q_ARG, Q_RETURN_ARG, QMetaObject, QObject, Qt, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
@@ -48,6 +50,80 @@ _KEEPALIVE: list[object] = []
 _HASAB_SZELESSEG = 230
 
 
+# --------------------------------------------------------------------------
+# Várakozás — #1463
+#
+# A fixture-ben korábban `QTest.qWait(80)` állt: fali óra, ami azt
+# FELTÉTELEZTE, hogy a hasáb 80 ms alatt kitördeli magát. Terhelt, négymagos
+# gépen ez valódi hiba nélkül ad pirosat — és ebben a fájlban a tétel
+# geometria (a #757/1 a `starredItem` y-koordinátáinak KÜLÖNBSÉGÉT méri),
+# tehát egy félig kész elrendezésen mért szám némán rossz eredményt adna.
+# --------------------------------------------------------------------------
+def _var(qt_app, feltetel, masodperc: float = 5.0) -> bool:
+    """Határidős várakozás: a feltételt figyeli, nem az órát (#1463).
+
+    #918: fejnélküli környezetben az elrendezés késik — egyetlen
+    `processEvents()` után a méretek még a kezdeti állapotot mutatják."""
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        try:
+            if feltetel():
+                return True
+        except (AttributeError, TypeError, RuntimeError):
+            pass
+        time.sleep(0.01)
+    qt_app.processEvents()
+    try:
+        return bool(feltetel())
+    except (AttributeError, TypeError, RuntimeError):
+        return False
+
+
+def _var_stabil(qt_app, minta, masodperc: float = 5.0) -> bool:
+    """Megvárja, amíg a `minta()` KÉT EGYMÁST KÖVETŐ mérésben azonos.
+
+    A repóban bevált idióma (`test_library_frame_hidden_1026.py::_kattints`)
+    arra az esetre, amikor nincs egyetlen logikai feltétel, csak annyi, hogy
+    „álljon meg az elrendezés”."""
+    elozo: list = []
+
+    def _egyezik() -> bool:
+        mostani = minta()
+        stabil = bool(elozo) and elozo[0] == mostani
+        elozo[:] = [mostani]
+        return stabil
+
+    return _var(qt_app, _egyezik, masodperc)
+
+
+def _var_a_hasab_elrendezesere(qt_app, pane) -> None:
+    """Megvárja, amíg a hasáb elrendezése MEGÁLL (#1463).
+
+    A minta a `starredItem` helye és magassága: ez a sor az albumszakasz
+    ALATT ül, ezért a fölötte lévő minden szakasz (köztük a mért „Új album”
+    súgó) tördelése beleszámít a helyébe — pont ezt a különbséget méri a
+    #757/1 tesztje.
+
+    Előbb megvárjuk, hogy a hasábnak egyáltalán legyen tartalma — enélkül a
+    kezdeti csupa-0 minta két mérésben „stabilnak” látszana, és a poll a
+    tördelés ELŐTT engedne tovább. A gate szándékosan a hasáb
+    tartalommagassága, NEM a `starredItem.y > 0`: a csillag-sor csukott
+    albumszakaszban rejtett (`visible: !collapsed`), ott az y-ja 0 marad, és
+    a `test_csukott_gyujtemenyben_sem_latszik` a határidőt ülné végig."""
+    flickable = _child(pane, "folderPaneFlickable")
+    csillag = _child(pane, "starredItem")
+    _var(qt_app, lambda: flickable.property("contentHeight") > 0)
+    _var_stabil(
+        qt_app,
+        lambda: (
+            round(flickable.property("contentHeight"), 3),
+            round(csillag.property("y"), 3),
+            round(csillag.property("height"), 3),
+        ),
+    )
+
+
 @pytest.fixture
 def render_pane(qt_app):
     """Kirajzolt `QQuickView` a FolderPane-nel, controller nélkül (#305)."""
@@ -72,8 +148,10 @@ def render_pane(qt_app):
         view.resize(_HASAB_SZELESSEG, 800)
         view.show()
         QTest.qWaitForWindowExposed(view)
-        QTest.qWait(80)
-        qt_app.processEvents()
+        # #1463: itt korábban `QTest.qWait(80)` állt — a 80 ms találgatás
+        # volt arra, hogy mennyi idő alatt tördel a ColumnLayout. Most magát
+        # az elrendezés megállását várjuk ki.
+        _var_a_hasab_elrendezesere(qt_app, pane)
 
         _KEEPALIVE.extend((engine, component, view, pane))
         return view, pane

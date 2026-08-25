@@ -122,6 +122,28 @@ def _ablakban(item: QQuickItem) -> tuple[float, float, float, float]:
     return (bal_felso.x(), bal_felso.y(), item.width(), item.height())
 
 
+def _var(feltetel, ms: int = 3000) -> bool:
+    """Esemény-pörgetés HATÁRIDŐVEL, amíg a feltétel teljesül — #1463.
+
+    A fali órás `QTest.qWait(N)` arra fogad, hogy N ezredmásodperc alatt
+    megtörténik valami; egy terhelt, négymagos gépen ez hamis pirosat ad. Ez
+    a poll a VALÓDI feltételt figyeli, és amint teljesül, azonnal
+    továbbenged. (A `test_collage_output_ui_949._var` mintája.)"""
+    eltelt = 0
+    while eltelt < ms:
+        try:
+            if feltetel():
+                return True
+        except (AssertionError, AttributeError, TypeError, RuntimeError):
+            pass
+        QTest.qWait(25)
+        eltelt += 25
+    try:
+        return bool(feltetel())
+    except (AssertionError, AttributeError, TypeError, RuntimeError):
+        return False
+
+
 # --- 1. A törvény: a hasáb fix, a vászon nyúlik -----------------------------
 
 
@@ -331,5 +353,8 @@ def test_a_bezaras_gomb_ugyanazt_teszi_mint_az_esc(qt_app):
         Qt.NoModifier,
         QPoint(round(kozep.x()), round(kozep.y())),
     )
-    QTest.qWait(50)
+    # #1463: itt korábban fix `QTest.qWait(50)` állt — a teszt arra fogadott,
+    # hogy 50 ms alatt körbeér a kattintás. A VALÓDI feltétel az, ami az
+    # alábbi állítás tárgya is: a gomb elsütötte a `closeCollage()`-t.
+    _var(lambda: stub.close_calls == 1)
     assert stub.close_calls == 1

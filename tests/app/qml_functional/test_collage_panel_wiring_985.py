@@ -679,7 +679,25 @@ class TestAMentettKepAzAmitLatott:
         _eger_mozog(window, cel)
         _eger_fel(window, cel)
         qt_app.processEvents()
-        QTest.qWait(30)
+        # #1463: itt korábban fix `QTest.qWait(30)` állt — a teszt arra
+        # fogadott, hogy 30 ms alatt lefut a gesztus következménye; terhelt,
+        # négymagos gépen ez hamis pirosat ad. A következő sor a csomópont
+        # HELYÉT méri, tehát a valódi feltétel az, hogy a gesztus-állapotgép
+        # elengedte a vásznat: a `dragMode` visszaállt üresre.
+        #
+        # ⚠️ #1463-as LELET (itt SZÁNDÉKOSAN nincs javítva): ez a „húzás"
+        # valójában NEM mozdítja el a képet. A kép TESTÉN indított vonszolás
+        # a spec szerint CSERE-gesztus (`CollageSheet.beginSwap`, küszöb 10
+        # képpont), és üres helyre engedve nyom nélkül elhal — a szabad
+        # mozgatás a gyűrű BELSEJÉN indul (`beginMove`). Mérve: a csomópont
+        # középpontja a gesztus előtt és után képpontra azonos
+        # (565,66 / 456,82). Az alatta álló állítás (0,05 < u < 0,95) ezért
+        # vakon teljesül: a kép ott van, ahol volt. A javítás — a gesztust a
+        # gyűrű belsejére vinni, és az elmozdulást is állítani — külön jegy,
+        # mert megváltoztatja, mit MÉR ez a teszt.
+        assert _var(qt_app, lambda: _lap(window).property("dragMode") == ""), (
+            "a gesztus-állapotgép a felengedés után is húzásban maradt"
+        )
 
         u_huzas, v_huzas = _lap_arany(csomopont, lap)
         assert 0.05 < u_huzas < 0.95 and 0.05 < v_huzas < 0.95, (
@@ -697,7 +715,14 @@ class TestAMentettKepAzAmitLatott:
         _eger_mozog(window, vege)
         _eger_fel(window, vege)
         qt_app.processEvents()
-        QTest.qWait(30)
+        # #1463: fix `QTest.qWait(30)` helyett arra várunk, ami az alábbi
+        # állítás tárgya — a forgatás elérte a modellt. A `_var` visszatérési
+        # értékét szándékosan NEM állítjuk: a bukás így az eredeti, beszédes
+        # (a theta értékét kiíró) állításon jelentkezik, nem itt.
+        _var(
+            qt_app,
+            lambda: abs(controller.collageNodes.nodes[0].theta) > 0.2,
+        )
 
         modell = controller.collageNodes.nodes[0]
         assert abs(modell.theta) > 0.2, (

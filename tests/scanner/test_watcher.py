@@ -38,7 +38,19 @@ def watcher_factory(collector):
         watcher = LibraryWatcher((str(root),), collector, debounce_seconds=debounce)
         watcher.start()
         watchers.append(watcher)
-        time.sleep(0.3)  # az inotify-watchok felállása
+        # #1463: itt korábban egy 0,3 mp-es `time.sleep()` állt „az
+        # inotify-watchok felállása" indoklással. Ez fali-óra alapú
+        # fogadás volt — és feleslegesen az: a watchdog a watchokat
+        # SZINKRON módon adja hozzá, még mielőtt a `start()` visszatérne.
+        # A lánc: `Observer.start()` → `emitter.start()` →
+        # `BaseThread.start()`, ami a hívó szálán futtatja az
+        # `on_thread_start()`-ot, az pedig megnyitja az `InotifyBuffer`-t
+        # (`inotify_add_watch` mindegyik mappára). A `watcher.start()`
+        # visszatérése tehát MAGA a szinkronpont.
+        #
+        # Mérve (2026-08-25, ezen a gépen): alvás nélkül 40 futásból
+        # 40-szer megérkezett a közvetlenül a `start()` után írt fájl
+        # jelzése — 0 elmaradás.
         return watcher
 
     yield _make
@@ -62,6 +74,18 @@ class TestLibraryWatcher:
         assert str(tmp_path / "m") in collector.seen
 
     def test_irrelevant_files_ignored(self, tmp_path, watcher_factory, collector):
+        """A nem releváns fájlok nem adnak jelzést.
+
+        ⚠️ #1463 — fali-óra alapú, és az is MARAD: távollétet állítunk,
+        azt pedig csak várakozással lehet. A 0,8 mp a 0,2 mp-es
+        debounce négyszerese, tehát ha a szűrő elromlana, a flush
+        bőven beleférne az ablakba.
+
+        Terhelt gépen ez NEM hamis bukást ad, hanem hamis ZÖLDET: ha a
+        gép annyira lassú, hogy a hibásan átengedett esemény sem ér oda
+        0,8 mp alatt, a teszt zöld marad. Az irány tehát biztonságos —
+        de aki itt zöldet lát terhelés alatt, ne vegye erős bizonyítéknak.
+        """
         (tmp_path / "m").mkdir()
         watcher_factory(tmp_path)
         (tmp_path / "m" / "jegyzet.txt").write_text("nem média", encoding="utf-8")
@@ -70,6 +94,12 @@ class TestLibraryWatcher:
         assert collector.batches == []
 
     def test_hidden_dirs_ignored(self, tmp_path, watcher_factory, collector):
+        """A rejtett mappákban történt változás nem ad jelzést.
+
+        ⚠️ #1463 — ugyanaz a fali-óra alapú távollét-állítás, mint a
+        `test_irrelevant_files_ignored`-ban: a 0,8 mp a debounce
+        négyszerese; terhelt gépen hamis ZÖLD a kockázat, nem hamis piros.
+        """
         hidden = tmp_path / ".picasaoriginals"
         hidden.mkdir()
         watcher_factory(tmp_path)
@@ -87,6 +117,12 @@ class TestLibraryWatcher:
         assert {str(tmp_path / "a"), str(tmp_path / "b")} <= collector.seen
 
     def test_stop_stops_reporting(self, tmp_path, watcher_factory, collector):
+        """A `stop()` után nem érkezik több jelzés.
+
+        ⚠️ #1463 — fali-óra alapú távollét-állítás (0,8 mp, a 0,2 mp-es
+        debounce négyszerese). Terhelt gépen hamis ZÖLD a kockázat, nem
+        hamis piros.
+        """
         (tmp_path / "m").mkdir()
         watcher = watcher_factory(tmp_path)
         watcher.stop()
@@ -137,7 +173,16 @@ class TestLibraryWatcher:
             # a max. ablaknak (0.4s) ki kell kényszerítenie a flush-t, jóval
             # a debounce (0.3s) ismételt újraindítása által sugallt
             # "végtelen halasztás" előtt
-            assert collector.event.wait(timeout=0.9), "nem érkezett jelzés a max. ablakon belül"
+            # #1463: az időkorlát SZÁNDÉKOSAN bőkezű (korábban 0,9 mp volt).
+            # Az állítás foga nem a szűk ablakon múlik: a jelölő szál
+            # 0,05 mp-enként újraindítja a 0,3 mp-es debounce-t, tehát
+            # `max_debounce` NÉLKÜL a flush SOHA nem futna le — akármeddig
+            # várunk. A szűk határidő ezért csak hamis bukást tudott
+            # termelni terhelt gépen, valódi hibát nem fogott meg többet.
+            assert collector.event.wait(timeout=10.0), (
+                "nem érkezett jelzés a max. ablakon belül — a folyamatos "
+                "esemény-sorozat a végtelenbe halasztotta a flush-t"
+            )
         finally:
             stop_marking.set()
             marker.join(timeout=2)

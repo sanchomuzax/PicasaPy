@@ -13,6 +13,32 @@ from PySide6.QtCore import QObject
 from picasapy.app import perf_controller
 
 
+#: #1463: a mintavételi ütem 1 mp (`perf_controller._SAMPLE_INTERVAL_S`),
+#: és a `PerfCollector._run` az ELSŐ minta előtt is végigvárja az ütemet.
+#: A korábbi 3 mp-es határidő tehát mindössze három ütemnyi tartalékot
+#: adott — terhelt, négymagos futón ez kevés volt. A határidő SZÁNDÉKOSAN
+#: bőkezű: az őr foga nem az ablak szűkösségén múlik, hanem azon, hogy a
+#: minta megérkezik-e egyáltalán. Ha a gyűjtő szál el sem indul, a
+#: várakozás akkor is elbukik — csak később.
+_MINTA_HATARIDO_S = 60.0
+
+
+def _var_elso_mintara(controller, qt_app, masodperc: float = _MINTA_HATARIDO_S):
+    """Megvárja az első élő mintát a `PerfCollector` háttérszálából.
+
+    Nem fali-óra alapú fogadás: a VALÓDI feltételt (`perfRssMb > 0`)
+    figyeli, és amint teljesül, azonnal továbbenged. Az időkorlát csak
+    a végtelen várakozást zárja ki."""
+    hatarido = time.monotonic() + masodperc
+    while time.monotonic() < hatarido:
+        qt_app.processEvents()
+        if controller.perfRssMb > 0.0:
+            return True
+        time.sleep(0.02)
+    qt_app.processEvents()
+    return controller.perfRssMb > 0.0
+
+
 def _child(window, name):
     obj = window.findChild(QObject, name)
     assert obj is not None, f"{name} nem található"
@@ -64,23 +90,23 @@ class TestPerfMonitorPanel:
         controller._perf_collector = None  # tiszta induló állapot
         controller.setPerfMonitorEnabled(True)
         try:
-            deadline = time.monotonic() + 3.0
-            while (
-                controller.perfCpuPercent == 0.0 and controller.perfRssMb == 0.0
-            ) and time.monotonic() < deadline:
-                qt_app.processEvents()
-                time.sleep(0.05)
-            assert controller.perfRssMb > 0.0, "nem érkezett élő minta"
+            assert _var_elso_mintara(controller, qt_app), (
+                "nem érkezett élő minta a PerfCollector háttérszálából"
+            )
         finally:
             controller.setPerfMonitorEnabled(False)
 
     def test_disabling_stops_collector_and_resets_display(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app
         controller.setPerfMonitorEnabled(True)
-        deadline = time.monotonic() + 3.0
-        while controller.perfRssMb == 0.0 and time.monotonic() < deadline:
-            qt_app.processEvents()
-            time.sleep(0.05)
+        # #1463: a minta bevárása ITT is állítás. Korábban a 3 mp-es
+        # határidő némán lejárhatott, és a kikapcsolás egy már amúgy is
+        # nulla kijelzőt „állított vissza" — a teszt hamis zöldet adott,
+        # mert nem volt mit nullázni.
+        assert _var_elso_mintara(controller, qt_app), (
+            "nem érkezett élő minta, tehát a kikapcsolás nem is tudna "
+            "nullázni semmit — az alábbi állítások üresek lennének"
+        )
         controller.setPerfMonitorEnabled(False)
         assert controller.perfCpuPercent == 0.0
         assert controller.perfRssMb == 0.0
