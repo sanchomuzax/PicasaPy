@@ -290,7 +290,17 @@ MenuBar {
     }
     Menu {
         title: qsTr("&View")
-        MenuItem { text: qsTr("Library View"); checkable: true; checked: true }
+        MenuItem {
+            objectName: "menuViewLibraryView"
+            text: qsTr("Library View")
+            checkable: true
+            // A pipa ÁLLANDÓ (a könyvtárnézet mindig aktív, amíg az „Edit
+            // View" helykitöltő). Kötés híján itt nincs mit újraértékelni,
+            // ezért a kattintás imperatív `checked`-írását kézzel kell
+            // visszavenni — különben egyetlen kattintás VÉGLEG leszedi.
+            checked: true
+            onTriggered: checked = true
+        }
         MenuSeparator {}
         MenuItem {
             text: qsTr("Small Thumbnails") + "\tCtrl+1"
@@ -378,37 +388,79 @@ MenuBar {
             title: qsTr("Display Mode")
             enabled: false
         }
+        // #1468: a valódi kattintás előbb IMPERATÍVAN átbillenti a `checked`-et,
+        // és csak utána dördül el a `triggered`. Kizáró csoportban a MÁR AKTÍV
+        // tételre kattintva a vezérlő állapota nem változik, tehát a kötés magától
+        // soha nem értékelődik újra — a menü újranyitásakor egyik tételen sem
+        // állna pipa. Ezért a jelzés után azonnal VISSZAKÖTJÜK a `checked`-et
+        // (a #1464-ben bevezetett minta).
+        //
+        // Az öt felirat-mód kizáró csoport. FIGYELEM: a `setThumbCaptionMode`
+        // ma FELTÉTEL NÉLKÜL jelez (`statusChanged.emit()`), ezért a hiba itt
+        // épp nem látszik — ez azonban a setter véletlen mellékhatása, nem
+        // szerződés. A visszakötés ettől függetlenné teszi a menüt.
         Menu {
+            objectName: "menuViewThumbnailCaption"
             title: qsTr("Thumbnail Caption")
             MenuItem {
+                objectName: "menuViewThumbCaptionNone"
                 text: qsTr("None")
                 checkable: true
                 checked: bar.ctl && bar.ctl.thumbCaptionMode === "none"
-                onTriggered: controller.setThumbCaptionMode("none")
+                onTriggered: {
+                    controller.setThumbCaptionMode("none")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.thumbCaptionMode === "none"
+                    })
+                }
             }
             MenuItem {
+                objectName: "menuViewThumbCaptionFilename"
                 text: qsTr("Filename")
                 checkable: true
                 checked: bar.ctl && bar.ctl.thumbCaptionMode === "filename"
-                onTriggered: controller.setThumbCaptionMode("filename")
+                onTriggered: {
+                    controller.setThumbCaptionMode("filename")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.thumbCaptionMode === "filename"
+                    })
+                }
             }
             MenuItem {
+                objectName: "menuViewThumbCaptionCaption"
                 text: qsTr("Caption")
                 checkable: true
                 checked: bar.ctl && bar.ctl.thumbCaptionMode === "caption"
-                onTriggered: controller.setThumbCaptionMode("caption")
+                onTriggered: {
+                    controller.setThumbCaptionMode("caption")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.thumbCaptionMode === "caption"
+                    })
+                }
             }
             MenuItem {
+                objectName: "menuViewThumbCaptionTags"
                 text: qsTr("Tags")
                 checkable: true
                 checked: bar.ctl && bar.ctl.thumbCaptionMode === "tags"
-                onTriggered: controller.setThumbCaptionMode("tags")
+                onTriggered: {
+                    controller.setThumbCaptionMode("tags")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.thumbCaptionMode === "tags"
+                    })
+                }
             }
             MenuItem {
+                objectName: "menuViewThumbCaptionResolution"
                 text: qsTr("Resolution")
                 checkable: true
                 checked: bar.ctl && bar.ctl.thumbCaptionMode === "resolution"
-                onTriggered: controller.setThumbCaptionMode("resolution")
+                onTriggered: {
+                    controller.setThumbCaptionMode("resolution")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.thumbCaptionMode === "resolution"
+                    })
+                }
             }
         }
         // #1454: a `Nézet ▸ Mappanézet` az eredetiben NEM rendez — a bal
@@ -495,6 +547,16 @@ MenuBar {
         // #1454: a mappák sorrendje EGYEDÜL itt (és az indexkép-helyi
         // menüben) állítható; a Nézet ▸ Mappanézetből kikerült, mert ott az
         // eredetiben szerkezeti tételek állnak, nem rendezés.
+        // #1468: a valódi kattintás előbb IMPERATÍVAN átbillenti a `checked`-et,
+        // és csak utána dördül el a `triggered`. Kizáró csoportban a MÁR AKTÍV
+        // tételre kattintva a vezérlő állapota nem változik, tehát a kötés magától
+        // soha nem értékelődik újra — a menü újranyitásakor egyik tételen sem
+        // állna pipa. Ezért a jelzés után azonnal VISSZAKÖTJÜK a `checked`-et
+        // (a #1464-ben bevezetett minta).
+        //
+        // A négy rendezési szempont kizáró csoport; a „Fordított sorrend"
+        // ÖNÁLLÓ kapcsoló (az állapota minden kattintásra változik, a kötés
+        // tehát magától helyreáll) — ott nem kell visszakötés.
         Menu {
             objectName: "menuFolderSortBy"
             title: qsTr("Sort By")
@@ -503,28 +565,48 @@ MenuBar {
                 text: qsTr("Sort by creation date")
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "date"
-                onTriggered: controller.setFolderSort("date")
+                onTriggered: {
+                    controller.setFolderSort("date")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.folderSort === "date"
+                    })
+                }
             }
             MenuItem {
                 objectName: "menuFolderSortByChanged"
                 text: qsTr("Sort by recent changes")
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "changed"
-                onTriggered: controller.setFolderSort("changed")
+                onTriggered: {
+                    controller.setFolderSort("changed")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.folderSort === "changed"
+                    })
+                }
             }
             MenuItem {
                 objectName: "menuFolderSortBySize"
                 text: qsTr("Sort by size")
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "size"
-                onTriggered: controller.setFolderSort("size")
+                onTriggered: {
+                    controller.setFolderSort("size")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.folderSort === "size"
+                    })
+                }
             }
             MenuItem {
                 objectName: "menuFolderSortByName"
                 text: qsTr("Sort by name")
                 checkable: true
                 checked: bar.ctl && bar.ctl.folderSort === "name"
-                onTriggered: controller.setFolderSort("name")
+                onTriggered: {
+                    controller.setFolderSort("name")
+                    checked = Qt.binding(function () {
+                        return bar.ctl && bar.ctl.folderSort === "name"
+                    })
+                }
             }
             MenuSeparator {}
             MenuItem {
@@ -746,6 +828,16 @@ MenuBar {
         // #333: nyelvválasztás — alapértelmezés az angol, a magyar
         // választható; a döntés a QSettings-ben marad. A #305-ös null-őr
         // kötelező: a controller a QML-engine leépítésekor null lehet.
+        // #1468: a valódi kattintás előbb IMPERATÍVAN átbillenti a `checked`-et,
+        // és csak utána dördül el a `triggered`. Kizáró csoportban a MÁR AKTÍV
+        // tételre kattintva a vezérlő állapota nem változik, tehát a kötés magától
+        // soha nem értékelődik újra — a menü újranyitásakor egyik tételen sem
+        // állna pipa. Ezért a jelzés után azonnal VISSZAKÖTJÜK a `checked`-et
+        // (a #1464-ben bevezetett minta).
+        //
+        // Itt a hiba MÉRHETŐ volt: a `LanguageController.setLanguage` azonos
+        // értéknél szándékosan NEM jelez, tehát a már aktív nyelvre kattintva
+        // mindkét pipa eltűnt.
         Menu {
             objectName: "menuToolsLanguage"
             title: qsTr("Language")
@@ -754,14 +846,24 @@ MenuBar {
                 text: qsTr("English")
                 checkable: true
                 checked: controller ? controller.language === "en" : true
-                onTriggered: if (controller) controller.setLanguage("en")
+                onTriggered: {
+                    if (controller) controller.setLanguage("en")
+                    checked = Qt.binding(function () {
+                        return controller ? controller.language === "en" : true
+                    })
+                }
             }
             MenuItem {
                 objectName: "menuLanguageHungarian"
                 text: qsTr("Hungarian")
                 checkable: true
                 checked: controller ? controller.language === "hu" : false
-                onTriggered: if (controller) controller.setLanguage("hu")
+                onTriggered: {
+                    if (controller) controller.setLanguage("hu")
+                    checked = Qt.binding(function () {
+                        return controller ? controller.language === "hu" : false
+                    })
+                }
             }
         }
         MenuSeparator {}
