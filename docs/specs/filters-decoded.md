@@ -4545,3 +4545,62 @@ Ez **bitre egyezik** a mi `zoom_max_offset` (`floor(width · Impact / 200)`)
 *Bizonyítottsági fok: **megerősített** — a perem-mód közömbössége mérve (12
 esetből 9-ben bitre azonos, a maradék háromban a `REFLECT` is azonos), a két
 képlet a natív magból diszasszemblálva.*
+
+### A `TiledImageMask` beégetett alapértékei — a KÖTŐ függvény (2026-08-25)
+
+A `#785` nyitott pontja: *„a 12 attribútum megvan, a beégetett alapértékek
+nincsenek."* A kötő függvény megvan, az **értékek** megvannak, a
+**hozzárendelés** nem.
+
+#### Hol vannak: vtable 7. rekesz — `0x00bba580` (234 b)
+
+Ugyanaz a szerkezeti hely, mint a `CircularGradientImageMask`-nál
+(`0x00bcfe10`): az attribútum-**olvasó** az 5. rekeszben (`0x00bba2e0`),
+a **kötő** — ami a tartalékokat verembe állítja — a 7.-ben.
+
+```asm
+0x00bba589  fld  dword ptr [0xc7dbc4]   ; = 0.8f
+0x00bba590  fst  [esp+0x18]             ;  -> 1. float rekesz
+0x00bba595  fstp [esp+0x20]             ;  -> 2. float rekesz
+0x00bba59b  fldz                        ; 0.0
+0x00bba5a1  fst  [esp+0x38]             ;  -> 3.
+0x00bba5a5  fst  [esp+0x3c]             ;  -> 4.
+0x00bba5ac  fstp [esp+0x40]             ;  -> 5.
+0x00bba5b1  fld1                        ; 1.0
+0x00bba5b7  fstp [esp+0x48]             ;  -> 6.
+;  + nyolc EGÉSZ nulla ([esp+0x14] … [esp+0x38])
+0x00bba5b3  lea  esi, [esp+0x14]        ;  a blokk bázisa
+```
+
+**A hat lebegőpontos tartalék, sorrendben: `0.8`, `0.8`, `0.0`, `0.0`,
+`0.0`, `1.0`.**
+
+#### Melyik attribútum fut tartalékon — a `Comicize`-nál HÉT
+
+A leíró (`filterdesc.xml` 781–782) ezeket **megadja**: `tileWidth`,
+`tileHeight`, `alphaMin`, `offsetX`, `offsetY`, `width`, `height`.
+
+⇒ **Tartalékon fut:** `scaleWidth`, `scaleHeight`, `paddingLeft`,
+`paddingTop`, `paddingRight`, `paddingBottom`, `alphaMax` — **hét darab**.
+
+#### ⚠️ Amit NEM sikerült: a hozzárendelés
+
+**Hét** tartalékon futó attribútum áll szemben **hat** lebegőpontos
+tartalékkal ⇒ a blokk **nem 1:1** a nem beállított attribútumokkal, tehát a
+sorrendből nem lehet leolvasni, melyik melyiké.
+
+A `CircularGradientImageMask`-nál volt keresztellenőrzés (a `FocalZoom`
+**fölöslegesen** kiírta az `innerAlpha="0"` / `outerAlpha="1"` értékeket,
+épp a tartalékokat) — **itt nincs ilyen**: a `Comicize` egyetlen redundáns
+attribútumot sem ad meg.
+
+**Az is kizárva, hogy a konstansból következtessünk:** a `[0xc7dbc4]`
+(`0.8f`) **általános, megosztott** konstans — **14 helyen** hivatkozzák a
+`.text`-ben (`0x609599`, `0x782be8`, `0x7f848c`, `0x83a13e`, `0x868b1f` …),
+tehát nem hordoz attribútum-specifikus jelentést.
+
+**A következő lépés:** a kötő két hívottja — `0xbbace0` és `0xbbafe0` —
+másolja a blokkot az objektum mezőibe; ott derül ki a leképezés.
+
+*Bizonyítottsági fok: **megerősített** a kötő helye, a hat érték és a
+`Comicize` hét tartalékon futó attribútuma; **nyitva** a hozzárendelés.*

@@ -19,6 +19,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   napi őrfutás változatlanul a háló mögötte, és az utókövető maga soha
   nem hoz létre kiadást: csak akkor indít, ha a `main` verziójához még
   nincs.
+- **A windowsos tesztkörünk újra megbízhatóan jelez (#1381).** Két teszt
+  minden ellenőrzési körben pirosan állt a windowsos ágon — nem hiba miatt,
+  hanem mert egy linuxos szokást vártak el ott is. Emiatt egy valódi, új
+  windowsos hiba beleveszett volna a zajba: kézzel kellett szétválogatni,
+  melyik piros az örökölt. A takarítófunkció maga helyesen működött; a
+  tesztek mondják ki mostantól, melyik rendszert mérik, és így mindkét
+  ellenőrzésen ugyanazt vizsgálják.
 
 ## [0.8.86] – 2026-08-24
 

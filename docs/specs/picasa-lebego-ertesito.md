@@ -366,3 +366,68 @@ viszont **célzott dekompilációt** kíván. A hívólánc időközben feloldva
 (`0x004051b0 → 0x004039f0 → 0x0040bf70 → 0x00657300`), tehát a következő kör
 nem a hívókat keresi, hanem magát a `0x00657300`-at és a cellakezelőt
 elemzi — az adja meg az animációt és a cella élettartamát.
+
+
+## A cella élettartama NEM idővezérelt — a keresési tér bezárva (2026-08-25)
+
+Az „Amit NEM sikerült megállapítani" 3. pontja (a cella élettartama) tovább
+szűkült. **Négy negatív és két pozitív lelet.**
+
+### Négy negatív — a notifier nem méri az időt, sehogy
+
+| amit kerestem | eredmény |
+|---|---|
+| Win32 időzítő a notifierben | **nincs.** A teljes binárisban összesen három időzítő-hívó függvény van (`SetTimer`: `0x004735c0`, `0x008de1b0`; `KillTimer`: `0x008ddf00`, `0x008de1b0`; `timeSetEvent`: `0x00ab8360`) — **egyik sem** a notifier moduljában |
+| óra-olvasás a notifierben | **nincs.** A `0x0065xxxx` tartományban hat `QueryPerformanceCounter`-hívó van (`0x00652f50`, `0x00654150`, `0x00654610`, `0x0065a6b0`, `0x0065a700`, `0x0065d010`), de **egyik sem** notifier-függvény (`0x00655950`, `0x00655aa0`, `0x00655e50`, `0x00656fe0`, `0x00657300`, `0x00658200`, `0x00658340`) |
+| időtartam-konstans átadása | **nincs** a két külső belépési pont egyikén sem |
+| a modul külső felülete | **mindössze KÉT** távoli belépési pont (ld. lent) |
+
+### Két pozitív — mi a modul valódi külső felülete
+
+Az összes `E8`+rel32 hívás feloldva a teljes `.text`-en, majd megszűrve
+azokra, amik a `0x00655000`–`0x00659800` tartományba mutatnak **kívülről**:
+
+| belépési pont | külső hívó | mi ez |
+|---|---|---|
+| `0x00657300` (496 b) | `0x0040c339` | a **létrehozó** — az alkalmazás indulásából |
+| **`0x006574f0`** (188 b) | `0x0073f104` | az **export/előzmény-modulból** (`]history:email`, `]history:output`, `]history:export` sztringek a `0x0073f0f0`/`0x0073f320`-ban) |
+
+### ⚠️ HELYESBÍTÉS: a `0x006574f0` NEM „értesítés megjelenítése"
+
+Utasításról utasításra ez történik benne:
+
+```asm
+0x006574f1  mov  ebp, [0xc40284]        ; GetCurrentThreadId
+0x006574fb  call ebp                    ; rekurzív zár: tulajdonos +0x20, számláló +0x24
+0x0065751a  call [0xc4055c]             ; EnterCriticalSection
+0x00657535  mov  ecx, [esi+0x90]
+0x0065753f  call 0x65a9d0               ; függőben lévő művelet LEMONDÁSA
+0x00657544  and  [esi+0x94], 1
+0x0065754b  fld  qword ptr [0xcf3a08]   ; <<< 100.0 (double)
+0x00657551  mov  [esi+0x90], 0
+0x00657565  fstp qword ptr [esp]
+0x00657568  call [vtable+0x64]          ; << az érték átadása
+…                                        ; a maradék: a zár feloldása
+0x00657596  call [0xc402a8]             ; LeaveCriticalSection
+```
+
+A `[0xcf3a08]` kiolvasott értéke **100.0**. A notifiernek van
+`progressbase`/`progressfill` rétege (ld. a geometria-szakaszt) ⇒ ez
+**„a folyamatjelző 100%-ra"**, azaz **befejezés-jelzés** — nem élettartam és
+nem „mutasd meg".
+
+### Amit ez kimond
+
+> **A cella élettartama nem idővezérelt, hanem ESEMÉNY-/FOLYAMAT-vezérelt.**
+> A gazda (az export/előzmény-modul) jelenti a haladást, és a **100%** a
+> befejezés jele. Nincs a modulban semmi, ami másodperceket számolna.
+
+**Ami még nyitva:** mi távolítja el a cellát a 100% UTÁN (magától eltűnik,
+a felhasználó kattintására, vagy a következő cella szorítja ki). A keresési
+tér viszont bezárult: **nem időzítő és nem óra** — a cella-rekord
+másolója (`0x00656a30`, 473 b) egy **float mezőt** visz `+0xc`-n, ez a
+következő jelölt.
+
+*Bizonyítottsági fok: **megerősített** a négy negatívumra (import-tábla +
+nyers hívásfeloldás a teljes `.text`-en) és a `0x006574f0` szerepére
+(diszasszemblálva, a konstans kiolvasva). **Nyitva**: a cella eltávolítása.*
