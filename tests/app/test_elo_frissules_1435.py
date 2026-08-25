@@ -180,16 +180,44 @@ class TestAtfedoKorok:
     def test_futo_sweep_alatt_nem_indul_masodik(
         self, controller, library, qt_app, monkeypatch
     ):
-        """Akadó mounton a pecsét-kör túlfuthat a 10 másodpercen."""
+        """Akadó mounton a pecsét-kör túlfuthat a 10 másodpercen — MÁSODIK
+        PECSÉT-KÖR akkor sem indulhat.
+
+        ⚠️ #1440: ez a teszt korábban azt is állította, hogy futó sweep
+        alatt a `_on_folders_dirty` SEM hívódik. Az az elvárás a #1440-cal
+        MEGDŐLT, és szándékosan: az indoka („két egyidejű index-író")
+        azóta nem áll, mert az írók átfedése ellen a `_on_folders_dirty`
+        SAJÁT jelzője (`_dirty_running`) véd. A pecsét-kör csak OLVAS,
+        tehát a kiválasztott mappa jelzése biztonságos — és nélküle a
+        #1275 alapgaranciája minden lassú körben kiesne egy tickre.
+        A megfordított irányt a `test_futo_sweep_alatt_is_frissul_a_valasztott`
+        őrzi."""
         controller.selectFolder(str(library / "nyaralas"))
         assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
         inditasok = []
-        piszkos = []
         monkeypatch.setattr(
             controller,
             "_start_background",
             lambda *a, **k: inditasok.append(k.get("name")),
         )
+        monkeypatch.setattr(controller, "_on_folders_dirty", lambda m: None)
+        controller._sweep_running = True
+        try:
+            controller._poll_current_folder()
+        finally:
+            controller._sweep_running = False
+
+        assert inditasok == [], "az előző kör mellé másodikat indítottunk"
+
+    def test_futo_sweep_alatt_is_frissul_a_valasztott(
+        self, controller, library, qt_app, monkeypatch
+    ):
+        """#1440: bent ragadt pecsét-kör mellett is ki kell mennie a
+        LÁTOTT mappa jelzésének — ez a #1275 alapgaranciája, és a #1435
+        kényelmi gyorsítása nem eheti meg."""
+        controller.selectFolder(str(library / "nyaralas"))
+        assert _var(qt_app, lambda: controller.photos.rowCount() == 5)
+        piszkos = []
         monkeypatch.setattr(
             controller, "_on_folders_dirty", lambda m: piszkos.append(m)
         )
@@ -199,8 +227,9 @@ class TestAtfedoKorok:
         finally:
             controller._sweep_running = False
 
-        assert inditasok == [], "az előző kör mellé másodikat indítottunk"
-        assert piszkos == []
+        assert piszkos == [[str(library / "nyaralas")]], (
+            "a lassú pecsét-kör miatt a kiválasztott mappa kimaradt a körből"
+        )
 
     def test_a_kapu_a_kor_vegen_felnyilik(self, controller, library, qt_app):
         """A jelző nem ragadhat be — különben a frissülés örökre leáll."""
