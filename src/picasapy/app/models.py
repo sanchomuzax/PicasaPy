@@ -20,6 +20,8 @@ from PySide6.QtCore import (
 
 from picasapy.index import PhotoRecord
 
+from .photo_sort import DEFAULT_SORT_MODE, sort_folder_blocks
+
 # Importált Windows-útvonalak is előfordulhatnak a folders táblában.
 _PATH_SEPARATORS = re.compile(r"[/\\]")
 _YEAR_PREFIX = re.compile(r"^(\d{4})")
@@ -321,6 +323,52 @@ class PhotoGridModel(QAbstractListModel):
         super().__init__(parent)
         self._photos: tuple[PhotoRecord, ...] = ()
         self._revision = 0
+        # #1436: a mappa TARTALMÁNAK rendezése („Mappa rendezésének alapja ▸").
+        # A beállítást a `FolderPhotoSortMixin` tolja ide; az `is_active`
+        # predikátum mondja meg, szabad-e a JELEN nézetben átrendezni (csak a
+        # mappa-feedben — ld. a szelet `_apply_folder_photo_sort` docstringjét).
+        # Amíg senki nem állította be, a modell nem rendez át semmit.
+        self._folder_photo_sort = DEFAULT_SORT_MODE
+        self._folder_photo_sort_reverse = False
+        self._folder_photo_sort_active = None
+
+    def set_folder_photo_sort(
+        self, sort_mode: str, reverse: bool, is_active=None
+    ) -> None:
+        """A mappán belüli képsorrend beállítása (#1436).
+
+        A MÁR megjelenített képekre azonnal érvényesül, hogy a menüpont
+        hatása ne csak a következő újratöltéskor látszódjon.
+        """
+        self._folder_photo_sort = sort_mode
+        self._folder_photo_sort_reverse = bool(reverse)
+        self._folder_photo_sort_active = is_active
+        if self._photos:
+            self.set_photos(self._photos)
+
+    def _in_folder_photo_order(
+        self, photos: tuple[PhotoRecord, ...]
+    ) -> tuple[PhotoRecord, ...]:
+        """Átrendezés mappa-blokkonként, ha a jelen nézet megengedi (#1436).
+
+        A blokkhatárok nem mozdulnak, tehát a MAPPÁK sorrendje érintetlen —
+        csak a mappán belüli képsorrend változik.
+
+        Az ALAPÁLLAPOT (fájlnév, növekvő) pontosan az, amit az index
+        lekérdezése már ad, ezért ott nem rendezünk újra: egy nagy
+        könyvtárban ez minden frissítéskor felesleges munka lenne.
+        """
+        active = self._folder_photo_sort_active
+        if active is None or not active():
+            return photos
+        if (
+            self._folder_photo_sort == DEFAULT_SORT_MODE
+            and not self._folder_photo_sort_reverse
+        ):
+            return photos
+        return sort_folder_blocks(
+            photos, self._folder_photo_sort, self._folder_photo_sort_reverse
+        )
 
     @Property(int, notify=revisionChanged)
     def revision(self) -> int:
@@ -332,6 +380,7 @@ class PhotoGridModel(QAbstractListModel):
         return self._revision
 
     def set_photos(self, photos: tuple[PhotoRecord, ...]) -> None:
+        photos = self._in_folder_photo_order(tuple(photos))
         # #142: változatlan tartalomnál no-op — a reset eldobná a
         # delegate-eket és a revision-bump minden élő cellát újraköttetne,
         # így minden háttér-szinkron a teljes rácsot újrarajzolná

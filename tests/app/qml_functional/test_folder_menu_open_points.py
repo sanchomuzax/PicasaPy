@@ -68,10 +68,14 @@ class TestFolderMenuOpenPoints:
 
     def test_sort_state_is_refreshed_when_the_menu_opens(self, qml_app, qt_app):
         """A „Mappa rendezésének alapja ▸" pipái a menü megnyitásakor a
-        vezérlő friss állapotát veszik át."""
+        vezérlő friss állapotát veszik át.
+
+        #1436: a menü a mappa TARTALMÁNAK rendezését mutatja
+        (`folderPhotoSort`), nem a mappák sorrendjét — az alapérték a
+        fájlnév, ezért a próba egy MÁSIK értéket állít be."""
         window, controller, _engine = qml_app
-        controller.setFolderSort("name")
+        controller.setFolderPhotoSort("date")
         qt_app.processEvents()
         _open_from_window(window, "")
         qt_app.processEvents()
-        assert _child(window, "folderContextMenu").property("sortMode") == "name"
+        assert _child(window, "folderContextMenu").property("sortMode") == "date"

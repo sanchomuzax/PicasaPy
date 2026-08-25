@@ -229,6 +229,17 @@ négy csupasz tétel viszont csak itt; más jelölt készletben („Rendezés a
 legutóbbi változtatások alapján" az `AlbumList::`/`eMenuView::` alatt) nincs
 „Fordított sorrend".
 
+**A menü HATÓKÖRE: a mappa TARTALMA (#1436).** A négy tétel a mappa KÉPEIT
+rendezi, nem a mappákat — ez a menü neve („Mappa rendezésének alapja") mellett
+abból is látszik, hogy a `Size` egyetlen mappára nézve csak a képek
+fájlméretét jelentheti, és hogy a mappa-listát rendező parancsoknak SAJÁT
+osztályuk van (`AlbumList::`, a bal panel menüje, ahol a negyedik szempont a
+„legutóbbi változtatás" — ez a `Sort` osztályban nincs). A tulajdonos éles
+összevetése szerint a `Date` **növekvő**: a legrégebbi kép elöl, a legújabb a
+végén; a `Reverse order` fordítja meg. Nálunk a menü eddig tévesen a rács
+MAPPA-sorrendjét állította (`setFolderSort`, #321) — a #1436 kötötte át a
+mappa képsorrendjére (`setFolderPhotoSort`).
+
 > **Módszertani megjegyzés.** Mindhárom pont azt kérte, hogy „további
 > képernyőkép kell". A válasz mindhárom esetben a **szövegtáblában** volt —
 > érdemes ott kezdeni, mielőtt a tulajdonostól kérünk képet.
