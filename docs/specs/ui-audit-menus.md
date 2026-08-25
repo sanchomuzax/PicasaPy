@@ -1,5 +1,13 @@
 # UI-audit: menürendszer (#324)
 
+> ⚠️ **2026-08-25 — ez a lap KÉPERNYŐKÉPEKBŐL készült, tehát nem teljes.**
+> A menüsor **gépi** leltára (a szállított szövegtár `eMenu*` névtereiből,
+> **189 tétel 18 névtérben**) itt van:
+> **[picasa-menu-leltar.md](picasa-menu-leltar.md)**. Amit ez a lap nem
+> látott: a platform-változatok (Win/Mac) és az **`eMenuCreateMovie`
+> almenü** (Létrehozás → Film, 3 tétel). Lefedettségünk a gépi leltár
+> szerint **150/189 (79%)**. Jegy: **#1397**.
+
 Forrás: az eredeti **Picasa 3.9** magyar nyelvű felületének 35 képernyőképe
 (`2026-07-17 20 54 38.png` … `2026-07-17 21 00 20.png`, végigkattintva minden
 felső menün). Összevetve a jelenlegi implementációval:
