@@ -5,6 +5,21 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Belső
+- **A kiadás nem vár kézi indításra a verzióemelés beolvadása után
+  (#1338).** A verzióemelő összefésülést a GitHub szándékosan nem
+  tekinti olyan eseménynek, amire munkafolyamatot indítana, így a
+  `pyproject.toml` verziója felment, a Releases hasáb viszont nem
+  követte: 2026-08-24-én a nap tizennégy kiadását kézzel kellett
+  elindítani. Mostantól a verzióemelő PR megnyitásakor elindul egy
+  utókövető, ami a beolvadás pillanatában elindítja a kiadót — a
+  késleltetés másodpercek, nem fél nap. A negyedórás kiadási őr és a
+  napi őrfutás változatlanul a háló mögötte, és az utókövető maga soha
+  nem hoz létre kiadást: csak akkor indít, ha a `main` verziójához még
+  nincs.
+
 ## [0.8.86] – 2026-08-24
 
 ### Javítva

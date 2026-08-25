@@ -124,6 +124,28 @@ jobs:
               #    futáslistában is látszik, nem csak a naplóban.
               gh pr merge "$szam" --auto --squash --delete-branch \
                 || echo "Az auto-merge élesítése nem sikerült."
+              # ⚠️ #1338: a beolvasztás UTÁN a kiadó nem indul el magától —
+              # az integrációs token pushjára a GitHub szándékosan nem
+              # indít workflow-t. Mérve (2026-08-24): a `release.yml`
+              # negyven futásából egyetlen `push` sem verzióemelő PR
+              # beolvadásából jött, és a nap tizennégy kiadását a
+              # tulajdonos indította kézzel.
+              #
+              # Ezért itt, ahol MÁR TUDJUK, hogy hamarosan kiadás fog
+              # kelleni, elindítjuk az utókövetőt: az figyeli az
+              # `origin/main` verzióját, és a beolvadás pillanatában
+              # dispatch-eli a kiadót. A `workflow_dispatch` a
+              # rekurzióvédelem dokumentált kivétele — a kiadási őr
+              # ugyanígy indít CI-t és kiadást.
+              #
+              # ⚠️ Külön munkafolyamat, SAJÁT konkurenciacsoporttal: a
+              # `release-…` zárat egy negyven percig figyelő futás nem
+              # foglalhatja el (#1319).
+              #
+              # ⚠️ A hiba itt sem lehet FATÁLIS: ha az utókövető nem indul,
+              # a kiadás akkor is megy, és a negyedórás kiadási őr pótol.
+              gh workflow run kiadas-utokoveto.yml --repo "$GITHUB_REPOSITORY" --ref main \
+                || echo "::warning::A kiadás-utókövető indítása nem sikerült — a negyedórás kiadási őr pótol (#1338)."
               echo "::warning title=Verzióemelő PR jóváhagyásra vár::A #$szam CI-futása jóváhagyásra vár (a bot-PR-ek szándékos GitHub-viselkedése, #1190). Auto-merge élesítve: jóváhagyás után magától beolvad."
               {
                 echo "### ⚠️ Verzióemelő PR nyitva: #$szam"

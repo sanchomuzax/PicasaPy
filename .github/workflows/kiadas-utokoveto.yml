@@ -1,0 +1,69 @@
+name: Kiadás-utókövető
+
+# A #1338 gyors útja: a verzióemelő PR beolvadása után a kiadás MAGÁTÓL
+# induljon el, ne kézzel.
+#
+# A `release.yml` a `push: branches: [main]` eseményre indul, a verzióemelő
+# PR-t viszont az integrációs token olvasztja be — és a GitHub a saját
+# tokenjével keletkező pushra SZÁNDÉKOSAN nem indít workflow-t (#1190). Mérve
+# (2026-08-24): a `release.yml` negyven futásából EGYETLEN `push` sem a
+# verzióemelő PR beolvasztásából jött; a nap tizennégy kiadását a tulajdonos
+# indította kézzel.
+#
+# Ezt a munkafolyamatot a `release.yml` indítja, közvetlenül azután, hogy
+# megnyitotta a verzióemelő PR-t — tehát pontosan akkor, amikor MÁR TUDJUK,
+# hogy hamarosan kiadás fog kelleni. A szkript figyeli az `origin/main`
+# verzióját, és amint az egy még ki nem adott verzióra ugrik, elindítja a
+# `release.yml`-t.
+#
+# ⚠️ A `workflow_dispatch` a rekurzióvédelem DOKUMENTÁLT kivétele, és a
+# repóban MÉRT bizonyíték van rá, hogy működik: a 2026-08-24 20:03:36-os
+# `release.yml` futást a `github-actions[bot]` indította így, a kiadási
+# őrből. Nem új mechanizmust vezetünk be, hanem a bevált utat használjuk.
+#
+# ⚠️ Ez a GYORS ÚT, nem az egyetlen. A negyedórás `kiadasi-or.yml` és a
+# `release.yml` napi őrfutása változatlanul a háló mögötte: ha ez a futás
+# lejár, a kiadás akkor sem marad el, csak később jön.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  # Az utókövető FIGYEL és INDÍT — semmit nem ír.
+  contents: read
+  # `gh workflow run release.yml` — enélkül a gyors út nem létezik.
+  actions: write
+
+# ⚠️ A `release.yml` konkurenciazárát (`release-…`) TILOS elfoglalni: egy
+# negyven percig figyelő futás ott minden kiadást sorba állítana, és pont a
+# #1319-ben megoldott bajt hozná vissza. Saját csoport kell.
+#
+# `cancel-in-progress: true`: egyszerre egy utókövető figyeljen. Ha közben
+# újabb verzióemelés indul, az újabb figyelő a frissebb állapotot nézi —
+# a régit felesleges tovább járatni.
+concurrency:
+  group: kiadas-utokoveto
+  cancel-in-progress: true
+
+jobs:
+  utokovetes:
+    name: A beolvadt verzióemelés kiadása
+    runs-on: ubuntu-latest
+    # A szkript 80 kört vár 30 másodpercenként (40 perc); a korlát ennél
+    # egy hajszállal nagyobb, hogy a futás a saját `::notice::`-ával
+    # záruljon, ne néma megszakítással.
+    timeout-minutes: 45
+    steps:
+      # Sekély klón elég: a szkript a verziót `git show origin/main`-nel
+      # kérdezi, előzményt nem elemez.
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: A kiadás utókövetése
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/kiadas_utokovetes.py --repo "$GITHUB_REPOSITORY"

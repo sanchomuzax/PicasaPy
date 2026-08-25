@@ -73,13 +73,25 @@ def _valodi_gh(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(args, capture_output=True, text=True, check=False)
 
 
+def verzio_a_szovegbol(szoveg: str, *, forras: str = "a megadott szöveg") -> str:
+    """A `version = "…"` sor értéke egy `pyproject.toml` SZÖVEGÉBŐL.
+
+    Azért külön, mert a verziót nem csak a munkafa fájljából olvassuk: a
+    kiadás utókövetése (#1338) az `origin/main`-en álló változatot nézi
+    (`git show`), ott pedig nincs mit `Path`-ként megnyitni. Két külön
+    verzióolvasó előbb-utóbb elcsúszna egymástól."""
+    talalat = re.search(r'^version = "(.+?)"', szoveg, re.M)
+    if talalat is None:
+        raise ValueError(f"Nincs `version = \"…\"` sor ebben: {forras}")
+    return talalat.group(1)
+
+
 def olvasott_verzio(pyproject: Path | None = None) -> str:
     """A verzió a `pyproject.toml`-ból — a projekt EGYETLEN verzióhelye (#642)."""
     forras = pyproject or (_ROOT / "pyproject.toml")
-    talalat = re.search(r'^version = "(.+?)"', forras.read_text(encoding="utf-8"), re.M)
-    if talalat is None:
-        raise ValueError(f"Nincs `version = \"…\"` sor a {forras} fájlban")
-    return talalat.group(1)
+    return verzio_a_szovegbol(
+        forras.read_text(encoding="utf-8"), forras=f"a {forras} fájl"
+    )
 
 
 def changelog_notes(version: str, changelog: Path | None = None) -> str:
@@ -212,7 +224,12 @@ def tartalek_jegyzet(valtozasok: "Sequence[str] | None" = None) -> str:
     )
 
 
-def _atmeneti(eredmeny: subprocess.CompletedProcess[str]) -> bool:
+def atmeneti_hiba(eredmeny: subprocess.CompletedProcess[str]) -> bool:
+    """Átmeneti (újrapróbálható) hibába futott-e a parancs?
+
+    ⚠️ Nyilvános, mert a kiadás utókövetése (#1338) UGYANEZT a kérdést
+    teszi fel: egy 503-as létezés-ellenőrzésből nem következik, hogy a
+    kiadás hiányzik. Két külön mintalista előbb-utóbb elcsúszna."""
     szoveg = f"{eredmeny.stdout or ''}\n{eredmeny.stderr or ''}".lower()
     return any(minta in szoveg for minta in _ATMENETI_MINTAK)
 
@@ -250,7 +267,7 @@ def ensure_release(
             )
             return 1
 
-        if _atmeneti(letezik):
+        if atmeneti_hiba(letezik):
             # A `gh` nem különbözteti meg a „nincs ilyen"-t a „nem érhető
             # el"-től, ezért ilyenkor NEM hozunk létre semmit, csak újra
             # megkérdezzük a következő körben.
