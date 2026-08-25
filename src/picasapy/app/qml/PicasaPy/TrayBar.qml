@@ -226,10 +226,12 @@ Column {
         // `compact` viszont a szélességtől függ — a kettőt összekötve
         // visszacsatolás keletkezne, és az ablak soha nem tudna kompakt
         // módba váltani. A szám ezért MÉRT állandó (kompakt mód: a sor
-        // igénye 830 + 20 margó = 850), és az őr-teszt ÉLŐBEN újraméri:
+        // igénye + margók). A szám PLATFORMFÜGGŐ: a fejlesztői gépen 850, a
+        // CI ubuntu-futóján 860 — a betű más. Ezért nem a mért érték áll
+        // itt, hanem egy RÁHAGYÁSOS padló (900), és az őr ÉLŐBEN újraméri:
         // ha a betű vagy a fordítás nő, a teszt elbukik, és ezt kell emelni.
         // Ugyanez a minta, mint a `compactBudget`-nél.
-        readonly property real requiredWidth: 850
+        readonly property real requiredWidth: 900
         readonly property bool separatorsVisible:
             width >= compactThreshold + 2 * actionCellWidth
 
