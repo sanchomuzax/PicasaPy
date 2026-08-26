@@ -25,6 +25,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   is elveti, ahogy az eredeti Picasa buboréksúgója írja („Az összes
   alkalmazott vágás elvetése"), és a gomb szürke, ha nincs mit elvetni. A
   művelet a Visszavonás gombbal visszafordítható.
+- **Az áthelyezett mappa azonnal a helyére kerül (#1538).** Ha egy egész
+  mappát helyeztél át, a képei **percekre eltűnhettek a könyvtárból**: a
+  program észrevette, hogy a régi helyről elfogytak, de az újat nem olvasta
+  be, így egyik helyen sem látszottak. (Mérve: az új hely 25 másodperc alatt
+  sem jelent meg, a régi 4,7 másodperc alatt eltűnt; ugyanez EGY képpel 0,11
+  másodperc.) Mostantól az áthelyezés után mindkét hely — az almappákkal
+  együtt — azonnal frissül.
 - **A másolt képek azonnal megjelennek (#1522).** Ha egy képet olyan mappába
   másoltál, amit a program még nem ismert, a másolat **percekig láthatatlan
   maradt** — odanavigálva üres mappát láttál. (Áthelyezésnél ez már eddig is
