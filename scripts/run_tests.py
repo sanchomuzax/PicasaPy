@@ -51,15 +51,18 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-#: A `subprocess.run` és az `os.kill` MODULSZINTŰ fogantyúja (#1375) — a
-#: teszt EZEKET cserélje: `monkeypatch.setattr(run_tests, "_run", …)`.
+#: A `subprocess.run`, az `os.kill` és a `shutil.rmtree` MODULSZINTŰ
+#: fogantyúja (#1375, #1395) — a teszt EZEKET cserélje:
+#: `monkeypatch.setattr(run_tests, "_run", …)`.
 #:
 #: A `monkeypatch.setattr(run_tests.subprocess, "run", …)` alak a GLOBÁLIS
 #: `subprocess`-t írja át. Itt ez különösen kellemetlen: a futtató saját
 #: tesztjei épp a részfutások indítását némítják el, és a csere közben
-#: minden más modul folyamatindítása is a hamis felvevőbe futna.
+#: minden más modul folyamatindítása is a hamis felvevőbe futna. Ugyanez az
+#: ok a `_rmtree`-re is (minta: `tools/golden/make_golden_kit_effects.py`).
 _run = subprocess.run
 _kill = os.kill
+_rmtree = shutil.rmtree
 
 # ⚠️ A windowsos konzol alapértelmezett kódlapja (cp1252) NEM ismeri a
 # magyar `ő` és `ű` betűket — egy `print()` rajtuk `UnicodeEncodeError`-rel
@@ -419,7 +422,54 @@ def _el_e_a_futas(konyvtar: Path) -> bool | None:
     return True
 
 
-def _takarits_regi_maradekot() -> None:
+#: Hányszor próbálja újra a törlést, ha zárolásba ütközik (#1395). Végtelen
+#: ciklus SOSEM: egy tartósan zárolt könyvtár csak a saját sorára
+#: korlátozza a kárt, a végső háló a következő futás takarítása.
+_TAKARITAS_UJRAPROBALKOZAS = 3
+
+#: Két kísérlet közti szünet. Rövidnek kell lennie, hogy a sikeres (nem
+#: zárolt) úton az újrapróbálkozás bevezetése ne okozzon érdemi lassulást —
+#: ott ugyanis egyetlen várakozás sem történik.
+_TAKARITAS_VARAKOZAS_S = 0.2
+
+
+def _takarits_egy_konyvtarat(
+    konyvtar: Path,
+    *,
+    alvo: Callable[[float], None] = time.sleep,
+) -> None:
+    """Egy maradék-könyvtár törlése korlátos újrapróbálkozással.
+
+    Zárolt fájlnál (pl. windowsos víruskereső/OneDrive zárolása, #998
+    osztálya) az első próbálkozás elbukhat, majd egy pillanattal később már
+    sikerül — ezért éri meg újrapróbálkozni. A próbálkozások száma VÉGES: ha
+    mind elfogy, a feladás NEM néma — egy naplósor mondja meg, melyik
+    könyvtárat nem sikerült törölni és miért, hogy a futtató (és aki
+    olvassa) tudja: itt nem történt takarítás.
+
+    Ha a könyvtár időközben (más munkamenet által) mégis eltűnt, az nem
+    hiba — a korábbi `ignore_errors=True` is így kezelte."""
+    utolso_hiba: OSError | None = None
+    for kiserlet in range(1, _TAKARITAS_UJRAPROBALKOZAS + 1):
+        try:
+            _rmtree(konyvtar)
+            return
+        except OSError as hiba:
+            if not konyvtar.exists():
+                return  # időközben más törölte — nem hiba
+            utolso_hiba = hiba
+            if kiserlet < _TAKARITAS_UJRAPROBALKOZAS:
+                alvo(_TAKARITAS_VARAKOZAS_S)
+    print(
+        f"TAKARÍTÁS SIKERTELEN: {konyvtar} nem törölhető "
+        f"({_TAKARITAS_UJRAPROBALKOZAS} próbálkozás után): {utolso_hiba}",
+        flush=True,
+    )
+
+
+def _takarits_regi_maradekot(
+    *, alvo: Callable[[float], None] = time.sleep
+) -> None:
     """Korábbi (megszakadt) futások saját maradékainak eltakarítása.
 
     CSAK a saját előtagunkra nyúlunk, és két lépcsőben döntünk:
@@ -439,7 +489,7 @@ def _takarits_regi_maradekot() -> None:
             regi = konyvtar.stat().st_mtime <= hatarido
             if not regi and _el_e_a_futas(konyvtar) is not False:
                 continue
-            shutil.rmtree(konyvtar, ignore_errors=True)
+            _takarits_egy_konyvtarat(konyvtar, alvo=alvo)
         except OSError:
             # más munkamenet épp törli, vagy nincs jogunk — nem baj
             continue

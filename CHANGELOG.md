@@ -5,7 +5,19 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
-## [Nem kiadott]
+## [0.8.104] – 2026-08-26
+
+### Javítva
+- **Az eredeti Picasa adatmappájának beolvasása nem akad el egy másik
+  fájlon (#1489).** A program eddig két néven kereste ugyanazt az
+  adatfájlt, holott a második név valójában egy **másik** fájlt jelöl: a
+  bélyegképek gyorstárát. Ahol mindkettő megvolt, csak a véletlenen múlt,
+  hogy a helyeset találta meg; ahol csak a gyorstár volt meg, ott egy ép
+  Picasa-mappát nyilvánított hibásnak. Mostantól a helyes fájlt keresi, és
+  ha az tényleg hiányzik, érthetően megmondja, melyik fájl hiányzik és mit
+  lehet tenni.
+
+## [0.8.103] – 2026-08-26
 
 ### Javítva
 - **A csillagozott képek nézete azonnal követi a csillag levételét (#1443).**
