@@ -327,3 +327,23 @@ jobs:
         # jelzés keletkezik, vagy ha a lista elavult tételt tartalmaz — így a
         # lista rövidülhet, de nem hízhat észrevétlenül.
         run: python scripts/check_dead_signals.py
+
+      - name: Felületről elérhetetlen vezérlő-képességek őre (#1476)
+        # Ugyanide illik, mint a néma jelzések őre: tisztán statikus, Qt
+        # nélkül fut, másodpercek alatt kész.
+        #
+        # Mit fog meg: a vezérlőn KÉSZ képességet (`@Slot`/`@Property`),
+        # amit a felület nem ér el. Ez a hibaosztály 2026-08-25-én EGY
+        # NAP alatt négyszer harapott meg minket (#1454, #1468, #1471,
+        # #1472) — mindannyiszor zöld tesztek mellett, mert a teszt
+        # közvetlenül a vezérlőt hívja, nem a felületet.
+        #
+        # A keresés MINŐSÍTETT (`<objektum>.<tag>`, aliasokkal): négy
+        # tagnév két vezérlőn is szerepel, a naiv `.tagnév` keresés
+        # ilyenkor élőnek látja a halottat.
+        #
+        # A bevezetéskori 56 ismert eset a `scripts/kepesseg_or_baseline.txt`-
+        # ben áll, tételes indoklással. A lépés akkor bukik, ha ÚJ szakadás
+        # keletkezik, ha a lista elavult tételt tartalmaz, vagy ha maga a
+        # vizsgálat lett üres (0 kontextus/tag/QML-fájl → 2-es kilépési kód).
+        run: python scripts/kepesseg_or.py

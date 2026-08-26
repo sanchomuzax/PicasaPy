@@ -1,0 +1,107 @@
+# A felületről elérhetetlen vezérlő-képességek DOKUMENTÁLT ALAPÁLLAPOTA — #1476
+#
+# Az őr: scripts/kepesseg_or.py (a CI `lint` jobjában fut).
+#
+# Ez a lista azokat a `@Slot`/`@Property` tagokat rögzíti, amelyek egy
+# regisztrált kontextus-objektumon ülnek, de a QML-ből MINŐSÍTETT alakban
+# (`<objektum>.<tag>`, aliasokkal együtt) senki nem hivatkozik rájuk. Azért
+# van lista, mert az őr bevezetése nem tehette azonnal pirosra a main-t; a
+# meglévő tételek javítása külön jegyek dolga.
+#
+# A LISTA CSAK RÖVIDÜLHET:
+#   * ÚJ szakadás → az őr bukik. Kösd be a QML-ből, töröld a tagot, vagy —
+#     ha a bekötetlenség TUDATOS — vedd fel ide, indoklással.
+#   * A lista HOSSZA sem nőhet: a felső korlát a szkriptben áll
+#     (MAX_BASELINE_ENTRIES), ezért új tételhez a számot is emelni kell —
+#     azt pedig a felülvizsgálat látja. Ahogy a lista fogy, vidd lejjebb.
+#   * Ha egy tétel bekötést kap, a sorát TÖRÖLNI kell: az őr az elavult
+#     bejegyzésre is bukik, hogy a lista ne konzerválja a múltat.
+#
+# Formátum soronként:  <kontextusObjektum>.<tag>  <jegyszám vagy indoklás>
+# Indoklás nélküli sor HIBA — a néma engedély pontosan az, ami ide nem kell.
+#
+# Az indoklások négy fajtája:
+#   #NNNN     — van rá nyitott jegy, ott dől el, kap-e felületet
+#   BELSŐ     — a terméken belül Pythonból hívjuk; a QML-nek nincs dolga vele
+#   FELVÁLTVA — a felület egy MÁSIK, bővebb alakot hív ugyanerre
+#   MÉRVE     — a #1476 bevezetésekor mért, még el nem döntött eset
+
+# -- #1473: az arcfelismerés keresési oldalának nincs belépési pontja ------
+faceScanController.isAvailable #1473 — az arckeresésnek nincs belépési pontja
+faceScanController.isEmbeddingAvailable #1473 — az arclenyomatolásnak nincs belépési pontja
+faceScanController.scanForFaces #1473 — a keresés maga; se menü, se gomb nem indítja
+faceScanController.cancelScan #1473 — a megszakítás; a naiv keresés a dedupController.cancelScan miatt élőnek látta
+faceScanController.unnamedAlbum #1473 — a Névtelenek album lekérdezése bekötetlen
+faceScanController.computeEmbeddings #1473 — a lenyomatolás indítása bekötetlen
+faceScanController.cancelEmbedding #1473 — a lenyomatolás megszakítása bekötetlen
+
+# -- #1474: az e-mail küldés két metódusa bekötetlen -----------------------
+emailController.prepareAttachments #1474 — a QML csak a beállítás-fül kliensválasztóját köti
+emailController.sendRows #1474 — a tényleges küldés sehonnan nem hívódik
+
+# -- #1475: a visszavonás-műveleteknek nincs gombjuk -----------------------
+controller.canUndoBatchEdit #1475 — a kötegelt szerkesztés visszavonása gomb nélkül áll
+controller.undoBatchEdit #1475 — ugyanaz, a művelet maga
+controller.canUndoPasteAllEffects #1475 — a Paste All Effects visszavonása gomb nélkül áll
+controller.undoPasteAllEffects #1475 — ugyanaz, a művelet maga
+controller.hasEffectsClipboard #1475 — a kép-specifikus effekt-vágólap (#152) UI nélkül áll
+controller.canUndoPasteEffects #1475 — ugyanannak a vágólapnak a visszavonás-jelzője
+controller.copyEffects #1475 — a menü a KÖTEGELT úton megy (photo_ops_controller), ez a kép-specifikus ág
+controller.pasteEffects #1475 — ugyanaz, a beillesztés
+controller.undoPasteEffects #1475 — ugyanaz, a visszavonás
+
+# -- FELVÁLTVA: a felület egy másik, bővebb alakot hív ---------------------
+controller.setShowHidden FELVÁLTVA — a menü a toggleShowHidden-t hívja (PicasaMenuBar.qml)
+controller.setDarkTheme FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml)
+controller.removeWatchedFolder FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből
+controller.folderDescription FELVÁLTVA — a felület a mappánkénti folderDescriptionOf(path) alakot hívja
+controller.setFolderDescription FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja
+fileOpsController.movePhoto FELVÁLTVA — a QML a többes movePhotos alakot hívja
+folderHierarchyController.setSimplified FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt
+
+# -- BELSŐ: a terméken belül Pythonból hívjuk ------------------------------
+controller.restoreSession BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor
+controller.setCollageTitle BELSŐ — a kollázs-vezérlő állítja (collage_controller.py:437, collage_save.py:918)
+controller.exportMovieFull BELSŐ — a beállítást az export_controller.py:371 olvassa vissza
+editController.redoAction BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t
+editController.cancelPendingPreview BELSŐ — az application.py:892 hívja leálláskor
+folderHierarchyController.setFolders BELSŐ — az application.py:704 tölti fel a fát
+startupStatus.report BELSŐ — az indítás lépéseit az application.py jelenti be
+startupStatus.finish BELSŐ — az indítás végét az application.py jelenti be
+
+# -- MÉRVE: még el nem döntött esetek (a #1476 zárójelentése sorolja fel) --
+# Ezekre a bevezetéskor NEM volt jegy. Külön-külön kell eldönteni: felület
+# kell hozzá, vagy törölni kell a tagot. Amíg nincs döntés, itt állnak —
+# de a sorok CÉLJA, hogy elfogyjanak.
+compactController.wastedPercent MÉRVE — a tömörítés-párbeszéd nem mutatja, mennyi hely nyerhető
+controller.collageFrameCenter MÉRVE — kollázs-keret középpont; a vászon nem köti
+controller.collageTitle MÉRVE — a kollázs címe a felületen nem jelenik meg
+controller.setCollageSavedPath MÉRVE — a mentett kollázs útja bekötetlen
+controller.collageSeed MÉRVE — a véletlen elrendezés magja bekötetlen
+controller.folderDateText MÉRVE — a mappa dátumfelirata bekötetlen (párja sincs …Of alakban)
+controller.locationOfRow MÉRVE — a sor helyadata bekötetlen
+controller.faceDetectionEnabledFor MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198)
+controller.setExportMovieFull MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ
+editController.revision MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma
+editController.redeyeActive MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart
+editController.enhanceActive MÉRVE — ugyanaz a minta: a panel a saját állapotát tartja
+editController.autolightActive MÉRVE — ugyanaz a minta
+editController.autocolorActive MÉRVE — ugyanaz a minta
+editController.hasRetouch MÉRVE — a retusálás megléte bekötetlen
+editController.hasFinetune MÉRVE — a finomhangolás megléte bekötetlen
+editController.hasCrop MÉRVE — a vágás megléte bekötetlen
+editController.clearCrop MÉRVE — a vágás törlése bekötetlen
+editController.canRenderEffect MÉRVE — a renderelhetőség kérdezése bekötetlen
+editController.isDeadLegacyEffect MÉRVE — az elavult effektek felismerése bekötetlen
+folderHierarchyController.expand MÉRVE — a fa egy ágának kinyitása bekötetlen (a toggle/expandAll be van kötve)
+folderHierarchyController.collapse MÉRVE — a fa egy ágának becsukása bekötetlen
+startupStatus.busy MÉRVE — a SplashScreen.qml:42 a saját `busy: !root.ready` alakját számolja
+
+# -- Osztály-szintű kivételek ---------------------------------------------
+# Ide az az osztály kerül, aminek VAN `@Slot`/`@Property` tagja, de EGYETLEN
+# kontextus-objektum sem éri el (se regisztrálva, se mixinként örökölve).
+# Ez a #1472 hibaalakja: a vezérlő kész, de soha nem példányosul.
+[OSZTALY]
+PrintController #1472 — a nyomtatás vezérlője soha nem példányosul, nincs setContextProperty
+FolderListModel BELSŐ — a QML a controller.folders tulajdonságon át kapja meg a modellt
+PhotoGridModel BELSŐ — a QML a controller.photos tulajdonságon át kapja meg a modellt
