@@ -5,6 +5,15 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Belső
+- **A felület által soha nem szólított vezérlő-tagok átvizsgálva (#1052).**
+  Huszonhat ilyen tagról született tételes döntés (hiba, szándékos vagy
+  halott kód), bizonyítékkal; a szándékosak magyar indoklást kaptak a kódban.
+  A felhasználó számára ebből most nem változik semmi — a feltárt hiányok
+  önálló jegyeken mennek tovább.
+
 ## [0.8.105] – 2026-08-26
 
 ### Javítva

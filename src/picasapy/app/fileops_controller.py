@@ -78,6 +78,9 @@ class FileOpsController(QObject):
             return
         self.photoRenamed.emit(path, str(new_path))
 
+    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a felület a TÖBBES
+    # `movePhotos` alakot hívja (FileOpsDialogs.qml:49); ez az egyes alak
+    # a Pythonból/tesztből induló egyfájlos úthoz marad.
     @Slot(str, str)
     def movePhoto(self, path: str, dest_folder: str) -> None:
         """Áthelyezés másik mappába. A célt a QML FolderDialog `file://`
