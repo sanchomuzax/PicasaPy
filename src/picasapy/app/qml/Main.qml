@@ -466,6 +466,25 @@ ApplicationWindow {
     // #422: „Exportálás HTML-oldalként…" a mappa-kontextusmenüből — a
     // dialógus itt él (a menüsáv is ezt nyitja)
     function openWebExport() { webExportDialog.open() }
+    // #1472: nyomtatás — HÁROM belépési pont vezet ide (Fájl ▸ Nyomtatás…,
+    // Ctrl+P, és a képtálca „Nyomtatás" gombja), ahogy az exportnál is.
+    // A célpont ugyanaz a HÁROM ág, mint a `rotateTargetRow()`-nál:
+    // diavetítés közben a VETÍTETT kép, a nézőben a MEGJELENÍTETT kép, a
+    // rácsban a kijelölés.
+    //
+    // ⚠️ A diavetítés ága nem elhagyható: a `startSlideshow()` NEM állítja
+    // a `viewerOpen`-t, tehát a menü és a Ctrl+P vetítés közben is
+    // engedélyezett marad — enélkül a felhasználó egy képet néz, és a
+    // RÁCS kijelölése menne nyomtatásra.
+    function printTargetRows() {
+        if (slideshow.visible)
+            return slideshow.currentIndex >= 0 ? [slideshow.currentIndex] : []
+        if (window.viewerOpen)
+            return photoViewer.currentIndex >= 0
+                ? [photoViewer.currentIndex] : []
+        return window.selectedRows()
+    }
+    function openPrint() { printDialog.openForRows(window.printTargetRows()) }
     // #422: a mappa-kontextusmenünek HÁROM megnyitási pontja van (a rács
     // üres területe, a bal panel mappa-sora, a rács mappa-fejléce), és
     // mindhárom UGYANAZT a menüt nyitja. A menü a FolderPane-ben él; a
@@ -710,6 +729,8 @@ ApplicationWindow {
         onCollageRequested: window.openCollageTab()
         onMovieRequested: createDialogs.openMovie()
         onExportRequested: exportDialogs.openForSelection()
+        // #1472: Fájl ▸ Nyomtatás… / Ctrl+P — a nyomtatás-párbeszéd
+        onPrintRequested: window.openPrint()
         onLocateRequested: {
             var p = controller.photos.filePathAt(window.selectedIndex)
             if (p.length > 0) fileOpsController.revealPhoto(p)
@@ -1722,6 +1743,9 @@ ApplicationWindow {
         appWindow: window
         viewerIndex: photoViewer.currentIndex
         onExportRequested: exportDialogs.openForSelection()
+        // #1472: a tálca „Nyomtatás" gombja — a jelzésnek eddig SEHOL nem
+        // volt kezelője, a gomb kattintható volt, és nem történt semmi
+        onPrintRequested: window.openPrint()
         // #361: kollázs/film a tálca ikonjairól is; #985: a kollázs innen is
         // a LAPOT nyitja (spec 3.2) — egy belépési út, nem kettő
         onCollageRequested: window.openCollageTab()
@@ -1931,6 +1955,9 @@ ApplicationWindow {
 
     // #351: webexport-dialógus (.tpl sablonmotor)
     WebExportDialog { id: webExportDialog }
+
+    // #1472: nyomtatás-párbeszéd (nyomtató-választó + PDF-fájlba nyomtatás)
+    PrintDialog { id: printDialog }
 
     // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
     // #422: „Arcok alaphelyzetbe állítása" — az eredeti szó szerinti

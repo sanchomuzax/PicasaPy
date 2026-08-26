@@ -26,6 +26,101 @@
         <source>default printer</source>
         <translation>alapértelmezett nyomtató</translation>
     </message>
+    <message>
+        <source>The print job could not be started.</source>
+        <translation>A nyomtatási feladat nem indítható el.</translation>
+    </message>
+    <message>
+        <source>None of the selected pictures could be printed: %1</source>
+        <translation>A kijelölt képek közül egyet sem lehetett kinyomtatni: %1</translation>
+    </message>
+</context>
+<context>
+    <name>PrintDialog</name>
+    <message>
+        <source>Print...</source>
+        <translation>Nyomtatás…</translation>
+    </message>
+    <message>
+        <source>Printing is unavailable: the Qt print support module is missing. On Debian/Ubuntu you can install it with: sudo apt install python3-pyside6.qtprintsupport</source>
+        <translation>A nyomtatás nem érhető el: hiányzik a Qt nyomtatás-támogató modulja. Debian és Ubuntu alatt ezzel a paranccsal pótolható: sudo apt install python3-pyside6.qtprintsupport</translation>
+    </message>
+    <message>
+        <source>No pictures to print.</source>
+        <translation>Nincs nyomtatható kép.</translation>
+    </message>
+    <message>
+        <source>Choose the target file.</source>
+        <translation>Válassza ki a célfájlt.</translation>
+    </message>
+    <message>
+        <source>These pictures could not be printed: %1</source>
+        <translation>Ezeket a képeket nem lehetett kinyomtatni: %1</translation>
+    </message>
+    <message>
+        <source>Pictures to print: %1 (one per page)</source>
+        <translation>Nyomtatandó képek: %1 (oldalanként egy)</translation>
+    </message>
+    <message>
+        <source>Printer:</source>
+        <translation>Nyomtató:</translation>
+    </message>
+    <message>
+        <source>Print to a PDF file...</source>
+        <translation>Nyomtatás PDF-fájlba…</translation>
+    </message>
+    <message>
+        <source>(not selected)</source>
+        <translation>(nincs kiválasztva)</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Tallózás…</translation>
+    </message>
+    <message>
+        <source>Fit to page:</source>
+        <translation>Illesztés a laphoz:</translation>
+    </message>
+    <message>
+        <source>Whole picture</source>
+        <translation>A teljes kép</translation>
+    </message>
+    <message>
+        <source>Fill the page (crop)</source>
+        <translation>Lapkitöltés (vágással)</translation>
+    </message>
+    <message>
+        <source>Orientation:</source>
+        <translation>Tájolás:</translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation>Automatikus</translation>
+    </message>
+    <message>
+        <source>Portrait</source>
+        <translation>Álló</translation>
+    </message>
+    <message>
+        <source>Landscape</source>
+        <translation>Fekvő</translation>
+    </message>
+    <message>
+        <source>Finished: %1</source>
+        <translation>Kész: %1</translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation>Nyomtatás</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Bezárás</translation>
+    </message>
+    <message>
+        <source>PDF documents (*.pdf)</source>
+        <translation>PDF-dokumentumok (*.pdf)</translation>
+    </message>
 </context>
 <context>
     <name>EmailController</name>

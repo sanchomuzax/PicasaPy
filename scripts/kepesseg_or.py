@@ -267,12 +267,26 @@ def _regisztraciok(application_py: Path) -> dict[str, str | None]:
             isinstance(csomopont, ast.Assign)
             and len(csomopont.targets) == 1
             and isinstance(csomopont.targets[0], ast.Name)
-            and isinstance(csomopont.value, ast.Call)
         ):
-            hivott = csomopont.value.func
-            nev = hivott.id if isinstance(hivott, ast.Name) else getattr(hivott, "attr", None)
-            if nev:
-                valtozo_osztalya[csomopont.targets[0].id] = nev
+            ertek = csomopont.value
+            # ⚠️ FELTÉTELES példányosítás (#1472): a védett importú
+            # vezérlők így születnek —
+            #     x = Osztaly(...) if Osztaly is not None else None
+            # mert a modulja (pl. `QtPrintSupport`) Debianon külön csomag
+            # (#664). Az osztályt a POZITÍV ág adja; enélkül az őr „fel nem
+            # oldott regisztrációt" jelentene, és a vezérlő MINDEN tagja
+            # némán kimaradna a méréséből.
+            if isinstance(ertek, ast.IfExp):
+                ertek = ertek.body
+            if isinstance(ertek, ast.Call):
+                hivott = ertek.func
+                nev = (
+                    hivott.id
+                    if isinstance(hivott, ast.Name)
+                    else getattr(hivott, "attr", None)
+                )
+                if nev:
+                    valtozo_osztalya[csomopont.targets[0].id] = nev
         if isinstance(csomopont, ast.FunctionDef):
             # A `main(controller: AppController, ...)` alakú paraméterek is
             # kontextusba kerülhetnek — az annotáció adja az osztályt.

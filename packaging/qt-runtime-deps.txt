@@ -25,3 +25,20 @@ libxkbcommon0
 # modul betöltése ezt húzza be — ha hiányzik, a videós rész némán más ágra
 # fut, mint a CI-ben.
 libpulse0
+
+# Qt nyomtatás-támogatás (#1472) — SZÁNDÉKOSAN NINCS ITT.
+#
+# A pip-es PySide6 wheel a QtPrintSupport modult MAGA hozza; ez a lista
+# viszont a CI-ben `apt-get install`-lal fut, és ott a
+# `python3-pyside6.qtprintsupport` **eltörte a telepítést** — a lépés
+# elhasalt, és vele a `libEGL1` sem került fel, tehát MINDEN teszt
+# elbukott `ImportError: libEGL.so.1`-gyel. (Mérve: #1472, a 32938928311
+# futás.)
+#
+# A csomag CSAK azoknak kell, akik a PySide6-ot a disztribúció
+# csomagjából telepítik (ott a Qt modulokra van bontva). Ezt a felhasználó
+# a hiányzó modul üzenetében kapja meg, a pontos `apt install` paranccsal
+# — nem ebben a listában, ami minden telepítésre kötelező.
+#
+# A megkülönböztetés hiánya (kötelező vs. csak-disztribúciós függőség)
+# önálló hiányosság: külön jegy.

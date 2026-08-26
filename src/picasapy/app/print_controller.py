@@ -65,6 +65,11 @@ class PrintController(QObject):
 
     printFinished = Signal(str)  # kimeneti fájl vagy nyomtató neve
     printFailed = Signal(str)
+    #: #1472: a feladatból KIMARADT képek fájlneve. A `QImage` nem nyit meg
+    #: videót és a legtöbb RAW-t — a rácsban viszont MINDKETTŐ látszik (a
+    #: bélyegkép elkészül), és a képtálca nyomtatás-gombja rájuk is élő.
+    #: Enélkül a felhasználó „Kész"-t látott, miközben egy kép kimaradt.
+    printSkipped = Signal(list)
 
     def __init__(
         self,
@@ -159,15 +164,29 @@ class PrintController(QObject):
             return False
 
         images: list[QImage] = []
+        skipped: list[str] = []
         for path in paths:
             image = QImage(str(path))
             if image.isNull():
                 _log.warning("nyomtatás: nem dekódolható kép — kihagyva: %s", path)
+                skipped.append(path.name)
                 continue
             images.append(image)
         if not images:
-            self.printFailed.emit(self.tr("No pictures to print."))
+            # ⚠️ a csak-videós (vagy csak-RAW) kijelölésnél a „Nincs
+            # nyomtatható kép." FÉLREVEZET: a felhasználó képeket JELÖLT KI,
+            # és bélyegképet is lát róluk. Nevezzük meg, mi nem ment át.
+            if skipped:
+                self.printFailed.emit(
+                    self.tr("None of the selected pictures could be printed: %1")
+                    .replace("%1", ", ".join(skipped))
+                )
+            else:
+                self.printFailed.emit(self.tr("No pictures to print."))
             return False
+        if skipped:
+            # a többi kimegy — de a kihagyás NEM tűnhet el a naplóban
+            self.printSkipped.emit(skipped)
 
         # a teljes feladat egy tájolást használ (ld. a modul docstringje) —
         # az első képhez igazítva, ha "auto"
@@ -179,7 +198,17 @@ class PrintController(QObject):
             if orientation_for_job == PrintOrientation.LANDSCAPE
             else QPageLayout.Orientation.Portrait
         )
-        self._paint_pages(printer, images, mode)
+        # #1472: a `_paint_pages` `RuntimeError`-t dob, ha a Qt nem tudja
+        # elindítani a feladatot (nem írható PDF-célfájl, elérhetetlen
+        # nyomtató). Amíg a vezérlő nem volt bekötve, ez senkit nem zavart;
+        # QML-slotból viszont a kivétel NÉMÁN elvész (csak a naplóba kerül),
+        # és a felhasználó egy néma párbeszédet néz. Jelzést kell kapnia.
+        try:
+            self._paint_pages(printer, images, mode)
+        except RuntimeError:
+            _log.exception("nyomtatás: a feladat nem indítható")
+            self.printFailed.emit(self.tr("The print job could not be started."))
+            return False
         return True
 
     @staticmethod

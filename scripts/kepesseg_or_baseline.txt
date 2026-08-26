@@ -102,6 +102,5 @@ startupStatus.busy MÉRVE — a SplashScreen.qml:42 a saját `busy: !root.ready`
 # kontextus-objektum sem éri el (se regisztrálva, se mixinként örökölve).
 # Ez a #1472 hibaalakja: a vezérlő kész, de soha nem példányosul.
 [OSZTALY]
-PrintController #1472 — a nyomtatás vezérlője soha nem példányosul, nincs setContextProperty
 FolderListModel BELSŐ — a QML a controller.folders tulajdonságon át kapja meg a modellt
 PhotoGridModel BELSŐ — a QML a controller.photos tulajdonságon át kapja meg a modellt

@@ -38,7 +38,7 @@ hivatkozik a QML. A szakadás mindig **tagszinten** van.
 
 | # | terület | a háttér | a felület | jegy |
 |---|---|---|---|---|
-| A | **Nyomtatás** | `print_controller.py`, **213 sor**, 2 tesztfájl | **soha nem példányosul** a termékkódban, nincs `setContextProperty`, **0** QML-hivatkozás; a `Print…` (Ctrl+P) és `Print Thumbnails…` menüpont `placeholder` | #1472 |
+| A | **Nyomtatás** | `print_controller.py`, **213 sor**, 2 tesztfájl | ~~**soha nem példányosul** a termékkódban, nincs `setContextProperty`, **0** QML-hivatkozás; a `Print…` (Ctrl+P) és `Print Thumbnails…` menüpont `placeholder`~~ — **BEKÖTVE (#1472)**: `PrintDialog.qml`, élő `Fájl ▸ Nyomtatás…`, élő Ctrl+P, és a képtálca gombja. A `Print Thumbnails…` SZÁNDÉKOSAN maradt helyfoglaló: az kontaktlap (több kép egy oldalon), amihez nincs motor | #1472 |
 | B | **Arcfelismerés indítása** | `scanForFaces`, `cancelScan`, `computeEmbeddings`, `cancelEmbedding`, `isAvailable`, `isEmbeddingAvailable`, `unnamedAlbum` | egyik sincs bekötve — közben a **névadó felület él**, és a `scanPercent` **haladást jelenít meg** egy indíthatatlan keresésről | #1473 |
 | C | **E-mail küldés** | `prepareAttachments`, `sendRows` | a QML az `emailController`-t **csak** a beállítás-fül kliensválasztójához köti (`OptionsTabEmail.qml`) | #1474 |
 | D | **Visszavonás UI nélkül** | `undoPasteAllEffects`, `canUndoPasteAllEffects`, `canUndoBatchEdit` | nincs gomb; a `Main.qml:754` **ki is mondja**: „csak a vezérlőn elérhető, UI-gomb nélkül". A hivatkozott **#426 és #152 LEZÁRVA** | #1475 |
@@ -71,10 +71,10 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *Kézzel ne szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` őrzi.*
 
 - vizsgált Python-fájl: **83**
-- vizsgált QML/JS-fájl: **140**
-- regisztrált kontextus-objektum: **18** (+1 nem QObject)
-- feloldott alias: **10**
-- kontextuson elérhető `@Slot`/`@Property` tag: **496**
+- vizsgált QML/JS-fájl: **141**
+- regisztrált kontextus-objektum: **19** (+1 nem QObject)
+- feloldott alias: **11**
+- kontextuson elérhető `@Slot`/`@Property` tag: **499**
 - ebből QML-ből NEM elérhető: **56**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
@@ -142,7 +142,6 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 |---|---|---:|---|
 | `FolderListModel` | `app/models.py` | 3 | BELSŐ — a QML a controller.folders tulajdonságon át kapja meg a modellt |
 | `PhotoGridModel` | `app/models.py` | 15 | BELSŐ — a QML a controller.photos tulajdonságon át kapja meg a modellt |
-| `PrintController` | `app/print_controller.py` | 3 | #1472 — a nyomtatás vezérlője soha nem példányosul, nincs setContextProperty |
 
 <!-- KEPESSEG_OR:VEGE -->
 

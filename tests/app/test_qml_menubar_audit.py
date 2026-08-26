@@ -219,6 +219,8 @@ class TestGyorsbillentyuk:
             ("shortcutNormalThumbnails", "Ctrl+2"),
             ("shortcutLocateOnDisk", "Ctrl+Return"),
             ("shortcutDeleteFromDisk", "Delete"),
+            # #1472: a Ctrl+P eddig csak FELIRAT volt a Nyomtatás… tételen
+            ("shortcutPrint", "Ctrl+P"),
         ):
             shortcut = window.findChild(QObject, name)
             assert shortcut is not None, name
@@ -230,8 +232,11 @@ class TestGyorsbillentyuk:
         window, controller, lib, engine = qml_app
         locate = window.findChild(QObject, "shortcutLocateOnDisk")
         delete = window.findChild(QObject, "shortcutDeleteFromDisk")
+        # #1472: a nyomtatás ugyanezen a feltételen áll
+        printing = window.findChild(QObject, "shortcutPrint")
         assert locate.property("enabled") is False
         assert delete.property("enabled") is False
+        assert printing.property("enabled") is False
 
     def test_thumbnail_shortcutok_mindig_elesek(self, qml_app):
         window, controller, lib, engine = qml_app
@@ -244,9 +249,11 @@ class TestGyorsbillentyuk:
         """Az inaktív pontok (pl. Ctrl+N, Ctrl+X, F1...) csak a feliratban
         jelennek meg — nem szabad hozzájuk élő `Shortcut {}` elemet kötni.
         Az egyetlen forrás-elhelyezésű `Shortcut` blokk a fájl elején van,
-        pontosan 4 elemmel (a fenti négy aktív tételhez)."""
+        pontosan 5 elemmel (a fenti öt aktív tételhez). A szám #1472-ben
+        nőtt négyről ötre: a `Nyomtatás…` tétel élővé vált, tehát a
+        Ctrl+P-nek is élő billentyűt kellett kapnia."""
         src = _source()
-        assert src.count("Shortcut {") == 4
+        assert src.count("Shortcut {") == 5
 
 
 class TestMukodoTetelekBillentyui:
