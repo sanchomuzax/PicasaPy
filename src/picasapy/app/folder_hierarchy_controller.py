@@ -17,11 +17,21 @@ Nincs benne fájlrendszer-olvasás: a mappalistát a hívó adja át (az index
 
 from __future__ import annotations
 
-import os
+import sys
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from .folder_hierarchy import build_hierarchy, expandable_paths, flatten
+
+
+def _platform() -> str:
+    """A futó platform — külön függvény, hogy a teszt helyettesíthesse.
+
+    A #1217 szabálya: a platform-döntés MODULSZINTŰ fogantyún át menjen, ne
+    nyers `os.name`/`platform.system()` hívással — különben a teszt nem
+    tudja kimondani, melyik ágat méri. A projekt saját őre fogta meg,
+    amikor ezt elsőre elrontottam."""
+    return sys.platform
 
 
 def _osszehasonlito_alak(path: str) -> str:
@@ -46,7 +56,11 @@ def _osszehasonlito_alak(path: str) -> str:
     # pontosan ezen bukott el a javítás első változatában:
     # `assert '/mnt/photo/Kepek/AI' in {'', '/'}`.
     # Ezért előbb a kis-nagybetű, és CSAK UTÁNA az elválasztó.
-    alak = os.path.normcase(path) if os.name == "nt" else path
+    # ⚠️ Nem `os.path.normcase`: az MAGA is platformfüggő (Linuxon
+    # azonosság), tehát a `_platform()` fogantyú kicserélése nem hatna rá,
+    # és a windowsos ágat Linuxon nem lehetne MÉRNI. Kifejezett kisbetűsítés
+    # kell — így a fogantyú tényleg eldönti, melyik ág fut.
+    alak = path.lower() if _platform().startswith("win") else path
     return alak.replace("\\", "/")
 
 

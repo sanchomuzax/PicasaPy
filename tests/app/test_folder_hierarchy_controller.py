@@ -281,6 +281,21 @@ class TestOsLancWindowsUtvonallal:
             f"buktatta a CI windows-lábát; kapott: {sorted(osok)}"
         )
 
+    def test_windows_agon_a_kis_nagybetu_sem_szamit(self, monkeypatch):
+        """A #1217 fogantyúján át MÉRJÜK a windowsos ágat is."""
+        from picasapy.app import folder_hierarchy_controller as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "win32")
+        assert modul._is_ancestor("C:/USERS", "C:\\users\\sancho\\Kepek")
+
+    def test_posix_agon_a_kis_nagybetu_SZAMIT(self, monkeypatch):
+        """POSIX-on két eltérő betűzésű mappa két KÜLÖNBÖZŐ mappa lehet —
+        az összemosás ott adatvesztő volna."""
+        from picasapy.app import folder_hierarchy_controller as modul
+
+        monkeypatch.setattr(modul, "_platform", lambda: "linux")
+        assert not modul._is_ancestor("/MNT/photo", "/mnt/photo/2011")
+
     def test_a_hasonlo_nevu_testver_NEM_os(self):
         """A határon elválasztónak kell állnia — a régi garancia marad."""
         assert "C:/Users/sanchoXYZ" not in self._osok("C:\\Users\\sancho\\Kepek")
