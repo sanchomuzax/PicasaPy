@@ -8,6 +8,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 ### Hozzáadva
+- **El lehet indítani az arcok keresését (#1473).** A program eddig
+  hirdette az arckeresés haladását a bal hasábban, de magát a keresést
+  SEHONNAN nem lehetett elindítani: se menüpont, se gomb nem vezetett
+  hozzá, pedig a motorja készen állt. Mostantól az **Eszközök ▸ Arcok
+  keresése…** menüpont megnyit egy ablakot, ahonnan a keresés
+  elindítható és bármikor meg is szakítható; a megtalált arcok a bal
+  hasáb **Névtelenek** albumában várják, hogy nevet adjon nekik. Az ablak
+  nem tapad az útba: bezárható, a keresés a háttérben megy tovább, a
+  haladás pedig a Névtelenek album mellett látszik. Második lépésként a
+  hasonló arcok csoportba is rendezhetők, hogy egyszerre lehessen nevet
+  adni nekik. **Fontos:** az arcfelismeréshez egy külön letölthető
+  modellfájl kell, ami alapból nincs a program mellett — ha hiányzik, az
+  ablak most már **megmondja, mi hiányzik és hova kell tenni**, ahelyett
+  hogy némán szürke gombot mutatna. (A modellfájl beszerzésére még nincs
+  gomb a programban.)
 - **Végre lehet nyomtatni a képeket (#1472).** A **Fájl ▸ Nyomtatás…**
   menüpont eddig szürke volt, a hozzá hirdetett **Ctrl+P** billentyű pedig
   egyáltalán nem működött, és a képek alatti sávban lévő **Nyomtatás** gomb

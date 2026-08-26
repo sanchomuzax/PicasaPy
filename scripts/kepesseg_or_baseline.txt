@@ -27,13 +27,6 @@
 #   MÉRVE     — a #1476 bevezetésekor mért, még el nem döntött eset
 
 # -- #1473: az arcfelismerés keresési oldalának nincs belépési pontja ------
-faceScanController.isAvailable #1473 — az arckeresésnek nincs belépési pontja
-faceScanController.isEmbeddingAvailable #1473 — az arclenyomatolásnak nincs belépési pontja
-faceScanController.scanForFaces #1473 — a keresés maga; se menü, se gomb nem indítja
-faceScanController.cancelScan #1473 — a megszakítás; a naiv keresés a dedupController.cancelScan miatt élőnek látta
-faceScanController.unnamedAlbum #1473 — a Névtelenek album lekérdezése bekötetlen
-faceScanController.computeEmbeddings #1473 — a lenyomatolás indítása bekötetlen
-faceScanController.cancelEmbedding #1473 — a lenyomatolás megszakítása bekötetlen
 
 # -- #1474: az e-mail küldés két metódusa bekötetlen -----------------------
 emailController.prepareAttachments #1474 — a QML csak a beállítás-fül kliensválasztóját köti

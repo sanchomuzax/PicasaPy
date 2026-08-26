@@ -158,9 +158,18 @@ PicasaPy-bővítés, jó helyen van jelölve.
 | Gombok konfigurálása... | — | **nem** | hiányzik |
 | Beállítások... | — | igen | inaktív (`Options...`) |
 
-**Nálunk van, az eredetiben nincs:** „Duplikátum-kereső..." (#287,
-`Find Duplicates...`) — szándékos PicasaPy-bővítés, az eredeti Picasa
-3.9-ben nem létezett ilyen beépített funkció.
+**Nálunk van, az eredetiben nincs:**
+
+* „Duplikátum-kereső..." (#287, `Find Duplicates...`) — szándékos
+  PicasaPy-bővítés, az eredeti Picasa 3.9-ben nem létezett ilyen beépített
+  funkció.
+* „Arcok keresése..." (#1473, `Find Faces...`) — az eredetiben az
+  arckeresés **háttérszál** volt (`BgFaceDetectThread`, alapból bekapcsolva,
+  a „Névcímkék" beállításfülről kapcsolható; ld.
+  [`picasa-arcfelismeres.md`](picasa-arcfelismeres.md) 1.1), tehát nem volt
+  hozzá menüpont. Nálunk ilyen háttérmotor MA NINCS, a keresés viszont kész
+  — a menüpont ezt teszi elindíthatóvá és megszakíthatóvá. Ha egyszer lesz
+  háttérmotorunk, ez a tétel felülvizsgálandó.
 
 ## 8. Súgó
 
