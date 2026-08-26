@@ -270,3 +270,69 @@ kulcsa **`minsize`**. A Picasa alapból elrejti a küszöb alatti képeket.
 **hozzáfűz**, nem felülír; a régió `mwg-rs:Area` (`stArea` típus), és a
 koordináták a kiírt **`mwg-rs:AppliedToDimensions`**-höz viszonyulnak. A
 `normalized` és a `pixel` mértékegység-sztring is jelen van.
+
+## A 19–22. adag (2026-08-27) — a `menu-lefedettseg.md` „soron következő"-jéből
+
+### 19. A vágólap-család — `ID_CUT` · `ID_COPY` · `ID_PASTE` · `ID_EDIT_COPYTEXT` · `ID_EDIT_PASTETEXT` · `ID_EDIT_COPYALLEFFECTS` · `ID_EDIT_PASTEALLEFFECTS`
+
+**Két névtérben ülnek**: `eMenuEdit` (főmenü) és **`Address`** — utóbbi egy
+**hét tételes szövegmező-helyimenü** (`0x007331e0`, 662 b):
+`ID_UNDO`, `ID_CUT`, `ID_COPY`, `ID_PASTE`, `ID_DELETE`, `ID_SELECTALL`,
+**`ID_AUTOCOMPLETE`** (kikapcsolható automatikus kitöltés).
+
+**Mit ír a vágólapra:** a `0x005378e0` (115 b, hívó `0x0040cd10`, indítás)
+**nyolc** formátumot regisztrál: `Shell IDList Array`, `Net Resource`,
+`FileGroupDescriptor`, `UniformResourceLocator`, `FileContents`,
+`FileName`, **`Preferred DropEffect`**, `Embedded Object` — az
+azonosítók a `[+0x08]`…`[+0x16]` mezőkben.
+
+⇒ **fájlokat** tesz a vágólapra (nem képadatot), és a Kivágás/Másolás
+különbségét a `Preferred DropEffect` hordozza. Jegy: **#1526**.
+
+### 20. A hat színcímke — `ID_S_RED` · `ID_S_ORANGE` · `ID_S_YELLOW` · `ID_S_GREEN` · `ID_S_BLUE` · `ID_S_PURPLE`
+
+Névtér: **`eMenuTools`** (az **Eszközök** menü, nem a Nézet).
+
+Mind a hat ugyanazt hívja (`0x005ccc41`–`0x005ccca2`), más tokennel:
+`mov edx, "color:<szín>"; call 0x0065b7b0`.
+
+A `0x0065b7b0` (131 b) **hat lépése**:
+
+1. `ebx = [this+0xf48]` — a **keresőmező** ablakkezelője (`0x0065b7b4`)
+2–3. a token **beírása a keresőmezőbe** (`0x0065b7ea`)
+4. a `searchcontainer/searchbutton` megjelenítése
+5. `SendMessage(mező, 0xB1 = EM_SETSEL, 0xFFFF, 0xFFFF)` — kurzor a végére (`0x0065b81d`)
+6. `0x0065b840(this,0,0,1)` — a lista újraépítése
+
+⇒ **A menüpont beírja a tokent a keresőmezőbe és elsüti a keresést** —
+nincs külön szűrő-modell. Van **hetedik** kezelő (`color:black`,
+`0x005ccca7`), de **nincs hozzá menüfelirat**. Jegy: **#1399**.
+
+### 21. A mentés-család — `ID_FILE_SAVEAS` · `ID_FILE_SAVEACOPY` · `ID_FILE_EXIT`
+
+A mentés **háttérszálon** fut: **`CFileSaveThread`** (`0x0053a790`, 2880 b).
+
+| mit | kulcs / érték |
+|---|---|
+| megerősítés | „Lemezre menti a módosításokat?" (`CThumbUI::FileSave::message`) |
+| egy fájl / több fájl | `messagetag1` / `messagetagX` — **külön mondat** |
+| „többé ne kérdezd" | **`DoNotAskFileSave`** beállításkulcs |
+| folyamatjelzés | `progfile` / `progfiles` — **századpontos** százalék, egyes/többes |
+| hiba 1 | névütközés (`filesaveerr2`) |
+| hiba 2 | fájlformátum (`filesaveerr3`) |
+| hiba 3 | lemezhiba, **fájlnévvel és hibakóddal** (`filesaveerr-win`) |
+
+Jegy: **#1527**.
+
+### 22. `ID_HELP_KEYBOARD_SHORTCUTS`
+
+**Böngészőt nyit**, nem párbeszédet: `HelpURL::Keyboard` =
+`…support/bin/answer.py?answer=`**`11139`** (a diszpécser `0x005cb990`
+használja). Felirat: **„Billentyűkódok"** — **nem** azonos az
+`eMenuView::Shortcuts` / `AlbumList::Shortcuts` „Gyorsbillentyűk"
+tételekkel.
+
+⚠️ A `0x009a16b0` (208 b) a **`runtime\shortcuts.xml`**-t nyitná meg, és a
+hívója **a menüsor építője** (`0x00559150`) ⇒ **adatvezérelt
+gyorsbillentyű-út létezik**, de a fájl **nincs mellékelve** (két
+ellenőrzés: `ls` és rekurzív `find`, nulla találat). Jegy: **#442**.
