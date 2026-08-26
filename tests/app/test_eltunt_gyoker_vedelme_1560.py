@@ -261,7 +261,9 @@ class TestAGyokerEltunesenekFelismerese:
         különben a windows-láb fedezet nélkül marad — a #1217 tanulsága
         szerint a platform-feltevés a tesztben a legdrágább.
 
-        Ezért itt magát az `os.stat`-ot cseréljük: minden olyan `OSError`,
+        Ezért itt a `sync._stat` MODULSZINTŰ fogantyúját cseréljük (#1375 —
+        a globális `os` átírása minden más modulra átszivárogna, és az
+        őrünk bukik rá): minden olyan `OSError`,
         ami NEM `FileNotFoundError`/`NotADirectoryError`, „elérhetetlen"
         marad, nem „eltűnt"."""
         from picasapy.index import sync as sync_modul
@@ -278,7 +280,7 @@ class TestAGyokerEltunesenekFelismerese:
             def hasal(_ut, _h=hiba):
                 raise _h
 
-            monkeypatch.setattr(sync_modul.os, "stat", hasal)
+            monkeypatch.setattr(sync_modul, "_stat", hasal)
             assert sync_modul.watched_root_missing(gyoker) is False, (
                 f"a(z) {hiba!r} hibát eltűntnek minősítettük"
             )

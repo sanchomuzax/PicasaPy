@@ -29,6 +29,21 @@ from picasapy.scanner import (
     scan_tree,
 )
 
+#: Az `os.stat` MODULSZINTŰ fogantyúja (#1375, #1560) — a teszt EZT cserélje:
+#: `monkeypatch.setattr(sync, "_stat", …)`.
+#:
+#: A `monkeypatch.setattr(sync.os, "stat", …)` alak a GLOBÁLIS `os`-t írja át,
+#: és a csere a teszt teljes idejére MINDEN más modulra is hat — a
+#: `test_szabalykonyv_szinkron` őre ezért bukik rá. A fogantyú cseréje viszont
+#: csak ezt az egy döntést mozdítja.
+#:
+#: Miért kell egyáltalán cserélhetőnek lennie: a `watched_root_missing`
+#: „eltűnt vs. elérhetetlen" elhatárolása azon múlik, MILYEN `OSError` jön —
+#: és az `ESTALE`/`ENOTCONN` fajtát fájlrendszerrel nem lehet előállítani, a
+#: jogosultság-alapú változat pedig Windowson hatástalan (ott a `chmod` nem
+#: korlátoz).
+_stat = os.stat
+
 _ROTATE = re.compile(r"^rotate\((\d+)\)$")
 
 # #143: az inkrementális kihagyás frissesség-védőablaka. A mappa- és
@@ -340,7 +355,7 @@ def watched_root_missing(root: str | Path) -> bool:
     kell, vissza fog jönni.
     """
     try:
-        stat = os.stat(root)
+        stat = _stat(root)
     except (FileNotFoundError, NotADirectoryError):
         return True  # a horgony tényleg nincs meg
     except OSError:
