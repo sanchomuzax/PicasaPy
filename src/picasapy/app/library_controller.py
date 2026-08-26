@@ -32,6 +32,7 @@ from picasapy.index import (
     clear_removed_folders_under,
     folder_paths_under,
     folder_scan_stamps,
+    move_folder_tree,
     open_index,
     remove_root,
     sync_folder,
@@ -1185,11 +1186,128 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         uj = normalize_path(to_local_path(new_path))
         if not regi or not uj:
             return
+        # #1542: ha MAGA a figyelt gyökér mozdult el, előbb a HORGONYT
+        # állítjuk helyre (index + `_roots` + `WatchedFolders.txt`), és
+        # csak utána megy a szokásos célzott újraolvasás — különben az új
+        # hely egyetlen gyökér alá sem esne, tehát a `_on_folders_dirty`
+        # némán kihagyná.
+        self._kovesd_a_gyoker_athelyezeset(regi, uj)
         mappak = _dedupe_paths(
             (*self._reszfa_a_lemezen(uj), *self._reszfa_az_indexbol(regi))
         )
         if mappak:
             self._on_folders_dirty(mappak)
+
+    def _kovesd_a_gyoker_athelyezeset(self, regi: str, uj: str) -> bool:
+        """A FIGYELT GYÖKÉR áthelyezésének követése (#1542).
+
+        Mérés a javítás előtt (valódi `AppController`, produkciós
+        `FOLDER_POLL_MS`, kétszintű könyvtár, három kép; részletek a
+        `tests/app/test_gyoker_athelyezes_kovetes_1542.py` docstringjében):
+        a gyökér áthelyezése után a `_roots` és a `WatchedFolders.txt` a
+        régi helyre mutatott, és **a produkciós alapbeállításban (figyelő
+        és #1275 lekérdezés bekapcsolva) az index KIÜRÜLT: 3 mappa/3 fotó
+        → 0/0**, a bal hasáb üres lett. A jegy leírásának az az állítása,
+        hogy „nem vész el index", tehát HAMIS volt: a #1538 védelme csak a
+        saját ágát fogja vissza, a lekérdezési kör viszont a látott (a
+        lemezen valóban eltűnt) mappákat függetlenül kiveszi.
+
+        A sorrend kötött, és mindegyik lépés az előző sikerére épül:
+
+        1. az INDEX részfájának ÁTÍRÁSA az új útra (`move_folder_tree`) —
+           sort nem töröl és nem hoz létre;
+        2. a `_roots` és a `WatchedFolders.txt` átállítása;
+        3. a figyelő újraindítása az új gyökérre;
+        4. a látott mappa átvezetése, ha épp a mozgatott fát nézte.
+
+        ## Mikor NEM követünk
+
+        **Ha a régi hely helyén (ugyanazon a néven) MÁS mappa áll.** Ez nem
+        elméleti: a felhasználó fájlkezelővel is mozgathat, és egy
+        szinkron-kliens vagy az XDG újra létrehozhatja a nevet. A gyökér az
+        egész könyvtár horgonya — ha a régi néven ÚJRA létezik mappa, akkor
+        a figyelt út egy VALÓDI helyet nevez meg, és az átállítás azt
+        jelentené, hogy némán abbahagyjuk egy létező mappa figyelését,
+        ráadásul a régi mappa indexsorait egy MÁSIK fizikai mappára
+        akasztjuk (útvonal szerint a kettő megkülönböztethetetlen). Ilyenkor
+        inkább nem írunk, csak naplózunk — és marad a #1538 védelme: a régi
+        oldal takarítása kimarad (`_reszfa_az_indexbol`).
+
+        Ugyanígy nem követünk, ha az ÚJ hely nem létező mappa, vagy ha az
+        index átírása ütközésbe fut — üres vagy hibás gyökérlistát semmilyen
+        ágon nem írunk ki.
+
+        Igazat ad, ha a gyökér ténylegesen követve lett."""
+        gyoker = self._find_root(regi)
+        if gyoker is None:
+            return False  # nem a gyökér mozdult — a #1538 útja változatlan
+        if not Path(uj).is_dir():
+            logger.warning(
+                "#1542: a figyelt gyökér új helye nem létező mappa (%s) — a "
+                "horgony változatlanul marad: %s",
+                uj,
+                gyoker,
+            )
+            return False
+        if Path(regi).exists():
+            logger.warning(
+                "#1542: a figyelt gyökér régi helyén (%s) ISMÉT áll valami — "
+                "a horgonyt NEM állítjuk át %s-ra, mert az egy létező mappa "
+                "figyelését hagyná abba némán.",
+                regi,
+                uj,
+            )
+            return False
+        try:
+            with open_index(self._db_path) as conn:
+                move_folder_tree(conn, regi, uj)
+        except (ValueError, sqlite3.Error, OSError):
+            # az index érintetlen maradt (a `move_folder_tree` vagy mindent
+            # átír, vagy semmit) — horgonyt sem írunk át, hogy a kettő ne
+            # csússzon szét
+            logger.exception(
+                "#1542: az áthelyezett gyökér indexsorait nem sikerült "
+                "átírni (%s → %s) — a horgony változatlan marad", regi, uj
+            )
+            return False
+        # a lista ÚJ példányként áll össze (immutabilitás): a sorrend és a
+        # többi gyökér érintetlen marad
+        self._roots = [uj if root == gyoker else root for root in self._roots]
+        try:
+            self._persist_roots()
+        except OSError:
+            # az index már az új útra mutat, a memóriabeli lista is — a
+            # fájl kiírása bukott meg. NEM némítjuk el: enélkül a következő
+            # indulás a régi helyet keresné.
+            logger.exception(
+                "#1542: a figyelt mappák fájlja nem íródott ki az áthelyezett "
+                "gyökérrel (%s)", uj
+            )
+        self._restart_watcher()
+        # #216: a régi úthoz tartozó leállítási jelző az új úton már nem
+        # érvényes — enélkül az új gyökér első syncje azonnal leállna
+        self._cancel_event(uj).clear()
+        self._athelyezett_gyoker_nezete(regi, uj)
+        self.statusChanged.emit()
+        logger.info("#1542: a figyelt gyökér követve: %s → %s", gyoker, uj)
+        return True
+
+    def _athelyezett_gyoker_nezete(self, regi: str, uj: str) -> None:
+        """A LÁTOTT mappa átvezetése az áthelyezett gyökér alatt (#1542).
+
+        Enélkül a rács a régi, már nem létező úton maradna (üres rács), és
+        a `session/lastFolder` is oda mutatna — a következő indítás megint
+        a semmit nyitná meg. Csak sima mappanézetben nyúlunk hozzá: keresés
+        vagy album nézetben a bal hasáb mást mutat, ott nincs mit
+        átvezetni."""
+        latott = self._current_folder
+        if not latott or self._view_mode[0] != "folder":
+            return
+        latott_path = Path(latott)
+        regi_path = Path(regi)
+        if latott_path != regi_path and not latott_path.is_relative_to(regi_path):
+            return
+        self.selectFolder(str(Path(uj) / latott_path.relative_to(regi_path)))
 
     def _reszfa_a_lemezen(self, folder: str) -> tuple[str, ...]:
         """Az áthelyezett mappa ÚJ oldala: maga a mappa és az almappái.
@@ -1213,7 +1331,16 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         `WatchedFolders.txt`-ben) még a régi helyre mutat: a teljes
         könyvtárat azon az alapon üríteni, hogy a program saját
         nyilvántartása szerint ott KELL lennie, kockázatosabb, mint egy
-        ideig elavult sorokat mutatni. A gyökér követése önálló feladat."""
+        ideig elavult sorokat mutatni.
+
+        #1542: ez a védelem MEGMARAD, csak a hatóköre szűkült. A gyökér
+        áthelyezését azóta a `_kovesd_a_gyoker_athelyezeset` KÖVETI — ha ez
+        sikerül, a régi utak már át vannak írva, tehát ez a lekérdezés
+        magától üres halmazt ad. A `_find_root`-os kapu így pontosan arra
+        az esetre marad, amikor a követés NEM sikerült (a régi néven ismét
+        áll egy mappa, az új hely nem létezik, vagy az index átírása
+        ütközött) — ott továbbra sem takarítunk. Mutációval mérve: e kapu
+        nélkül a bal hasáb ilyenkor teljesen kiürül."""
         if self._find_root(folder) is not None:
             return ()
         with open_index(self._db_path) as conn:

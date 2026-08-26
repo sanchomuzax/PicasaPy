@@ -17,6 +17,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   külön megmondja.
 
 ### Javítva
+- **A képmappád áthelyezése után sem veszik el a könyvtárad (#1542).** Ha a
+  programon belül magát a figyelt fő képmappádat helyezted át, a PicasaPy
+  továbbra is a régi, már nem létező helyet kereste — és a szokásos
+  ellenőrző körében **az egész könyvtárat kiürítette**: a bal hasáb üresen
+  maradt, a nyilvántartásból mind a mappák, mind a képek eltűntek. (Mérve:
+  3 mappa / 3 kép → 0 / 0 a program alapbeállításával; a fényképek magukon a
+  lemezen természetesen végig sértetlenek voltak.) Mostantól a program
+  **követi a mozgást**: a nyilvántartás átíródik az új helyre — egyetlen sor
+  törlése nélkül —, és a figyelt mappák beállítása is az új helyre mutat,
+  tehát a következő indításnál is minden a helyén van. (Mérve: 0,03–0,05
+  másodperc.) Ha közben a régi néven ismét áll egy mappa, a program
+  óvatosabb: nem ír át semmit, csak naplóz — nem hagy abba némán egy létező
+  mappát.
 - **A mentés-megerősítés a hivatalos szöveget és a helyes számot használja
   (#1527).** Egy kijelölt képnél egyes számú, többnél többes számú a mondat,
   és megjelent a **„többé ne kérdezd"** lehetőség, ami újraindítás után is
