@@ -20,6 +20,7 @@ a regisztrátumba (él/lefut-szélenként, ld. lent)."""
 from __future__ import annotations
 
 import logging
+import os
 import sqlite3
 import threading
 import time
@@ -29,6 +30,7 @@ from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.index import (
     clear_removed_folders_under,
+    folder_paths_under,
     folder_scan_stamps,
     open_index,
     remove_root,
@@ -1145,3 +1147,74 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
         if not folder_path:
             return
         self._on_folders_dirty([folder_path])
+
+    # SZÁNDÉKOSAN nincs `@Slot`: a hívó a `wire_fileops` PYTHON-oldali
+    # kötése (`folderMoved` → itt), a QML soha nem hívja. Slotként a
+    # `kepesseg_or.py` joggal jelezné felületről elérhetetlen képességnek.
+    def resyncMovedFolder(self, old_path: str, new_path: str) -> None:  # noqa: N802
+        """Egy ÁTHELYEZETT MAPPA két végének célzott újraolvasása (#1538).
+
+        A `resyncFolder` itt két okból nem elég:
+
+        1. **A mappa MAGA az érintett**, nem a szülője. A `wire_fileops`
+           `refresh()`-e fájlutakra van szabva (`_watched_folder_of` a
+           `.parent`-et veszi) — mappára alkalmazva a SZÜLŐT olvasná újra,
+           az pedig nem-rekurzív, tehát az áthelyezett mappa sora létre sem
+           jönne.
+        2. **A részfa is mozdul.** A `sync_folder` egyetlen mappát olvas,
+           az almappák sorai a régi (már nem létező) út alatt ragadnának.
+
+        Ezért mindkét oldal RÉSZFAKÉNT megy be a szokásos célzott
+        szinkronba (`_on_folders_dirty`):
+
+        * az ÚJ oldal a lemezről (az indexben még nincs benne),
+        * a RÉGI oldal az indexből (a lemezen már nincs meg).
+
+        A takarítás így is mappánként, a `sync_folder` `folder_looks_offline`
+        próbáján át történik: elérhetetlen (nem eltűnt) mappa sorai
+        megmaradnak, offline jelöléssel — nem törlünk olyan sort, amiről
+        nem tudjuk, hogy elavult.
+
+        Mérés a javítás előtt (valódi vezérlő, produkciós időzítők; a
+        részletek a `tests/app/test_mappa_athelyezes_resync_1538.py`
+        docstringjében): figyelő nélkül az ÚJ hely 25 s alatt sem jelent
+        meg, miközben a #1275 lekérdezés a RÉGI helyet 4,7 s alatt kiszedte
+        az indexből — a felhasználó képei tehát az ötperces rescanig SEHOL
+        nem voltak meg. Ugyanez EGY KÉPPEL 0,11 s."""
+        regi = normalize_path(to_local_path(old_path))
+        uj = normalize_path(to_local_path(new_path))
+        if not regi or not uj:
+            return
+        mappak = _dedupe_paths(
+            (*self._reszfa_a_lemezen(uj), *self._reszfa_az_indexbol(regi))
+        )
+        if mappak:
+            self._on_folders_dirty(mappak)
+
+    def _reszfa_a_lemezen(self, folder: str) -> tuple[str, ...]:
+        """Az áthelyezett mappa ÚJ oldala: maga a mappa és az almappái.
+
+        A bejárás a GUI-szálon fut, de csak könyvtárbejegyzéseket olvas
+        (fájlonkénti `stat` nélkül) — és ugyanez a hívási lánc épp az imént
+        MOZGATTA át a teljes fát ugyanezen a szálon
+        (`fileops_controller.moveFolder` → `shutil.move`), tehát a séta ára
+        ehhez képest elenyésző. Hibás/eltűnt ágon az `os.walk` csendben
+        kihagy — a hiányzó mappát a következő rescan rendezi."""
+        utak = [folder]
+        for szulo, alkonyvtarak, _fajlok in os.walk(folder):
+            utak.extend(str(Path(szulo) / nev) for nev in alkonyvtarak)
+        return tuple(utak)
+
+    def _reszfa_az_indexbol(self, folder: str) -> tuple[str, ...]:
+        """Az áthelyezett mappa RÉGI oldala: amit az index még ott tud.
+
+        ⚠️ Ha MAGÁT a figyelt gyökeret helyezték át, a takarítás KIMARAD.
+        A gyökér útvonala ilyenkor a figyelt mappák közt (és a
+        `WatchedFolders.txt`-ben) még a régi helyre mutat: a teljes
+        könyvtárat azon az alapon üríteni, hogy a program saját
+        nyilvántartása szerint ott KELL lennie, kockázatosabb, mint egy
+        ideig elavult sorokat mutatni. A gyökér követése önálló feladat."""
+        if self._find_root(folder) is not None:
+            return ()
+        with open_index(self._db_path) as conn:
+            return folder_paths_under(conn, folder)

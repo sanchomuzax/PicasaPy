@@ -364,6 +364,26 @@ def removed_folder_paths(conn: sqlite3.Connection) -> tuple[str, ...]:
     )
 
 
+def folder_paths_under(conn: sqlite3.Connection, root: str | Path) -> tuple[str, ...]:
+    """A `root` és az alatta lévő mappák INDEXBELI útvonalai (#1538).
+
+    Akkor kell, amikor egy részfa a LEMEZEN már nincs meg, tehát a „mi
+    tartozik ide" kérdésre csak az index tud válaszolni — a mappa-
+    áthelyezés RÉGI oldala pontosan ilyen. A hívó ezután mappánként
+    szinkronizál, így az eltűnt sorok a `sync_folder` saját
+    `folder_looks_offline` próbáján át esnek ki: egy ELÉRHETETLEN (nem
+    eltűnt) mappa sorai megmaradnak.
+
+    A LIKE-mintát a `_under_root_query` escape-eli, tehát a `%`/`_` a
+    mappanévben nem viselkedik jokerként. A sorrend determinisztikus
+    (`ORDER BY path`), hogy a naplók és a tesztek stabilak legyenek."""
+    root_path = Path(normalize_path(root))
+    query, params = _under_root_query("SELECT path", root_path)
+    return tuple(
+        row["path"] for row in conn.execute(f"{query} ORDER BY path", params)
+    )
+
+
 def folder_scan_stamps(
     conn: sqlite3.Connection, paths: tuple[str, ...]
 ) -> dict[str, tuple[int, int | None]]:

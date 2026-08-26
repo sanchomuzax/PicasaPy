@@ -67,6 +67,7 @@ from .schema import SCHEMA_VERSION
 from .sync import (
     add_removed_folder,
     clear_removed_folders_under,
+    folder_paths_under,
     folder_scan_stamps,
     removed_folder_paths,
     prune_foreign_folders,
@@ -126,6 +127,7 @@ __all__ = [
     "add_removed_folder",
     "clear_removed_folders_under",
     "remove_root",
+    "folder_paths_under",
     "removed_folder_paths",
     "replace_faces",
     "reset_all_faces",

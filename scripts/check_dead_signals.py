@@ -114,12 +114,13 @@ _QML_ASSIGNMENT = re.compile(
 #: kerülni. Ez a plafon ezt teszi TUDATOS lépéssé: új tételhez a számot is
 #: emelni kell, azt pedig a felülvizsgálat látja. Ahogy a lista fogy, ezt a
 #: számot ÉRDEMES lejjebb vinni — csökkenteni szabad, emelni csak indoklással.
-# A plafon a keresztfájlos fogadóellenőrzés (#1496) utáni mai lista hossza:
-# a `FaceScanDialog.qml` tizenegy fogadója addig láthatatlan volt, ezért a
-# lista tizenegy HAMIS tételt konzervált. Csak LEFELÉ szabad módosítani: ez
-# akadályozza meg, hogy valaki egy új néma jelzést a listába írva kerülje
-# meg az őrt.
-MAX_BASELINE_ENTRIES = 12
+# A plafon a keresztfájlos fogadóellenőrzés (#1496) utáni lista hossza volt
+# (12); a `FaceScanDialog.qml` tizenegy fogadója addig láthatatlan volt,
+# ezért a lista tizenegy HAMIS tételt konzervált. A #1538 óta 11: a
+# `folderMoved` fogadót kapott (`wire_fileops` → `resyncMovedFolder`).
+# Csak LEFELÉ szabad módosítani: ez akadályozza meg, hogy valaki egy új
+# néma jelzést a listába írva kerülje meg az őrt.
+MAX_BASELINE_ENTRIES = 11
 
 
 @dataclass(frozen=True)

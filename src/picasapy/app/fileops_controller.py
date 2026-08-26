@@ -67,8 +67,15 @@ class FileOpsController(QObject):
     # SEBESSÉGET is kiírta („Moving %d of %d (%s/s)") — egy nagy köteg
     # alatt ez mondja meg, hogy érdemes-e várni, vagy elment kávéért.
     batchProgress = Signal(str, str, int, int, float)
-    # #457: mappa áthelyezve — (régi út, új út); a hívó ebből frissíti az
-    # indexet és a bal hasábot
+    # #457: mappa áthelyezve — (régi út, új út). MINDKÉT út LOKÁLIS,
+    # normalizált alakban megy ki (#1538): a QML `FolderDialog` `file://`
+    # URL-t is adhat, és egy `file:///…` alakú „mappát" a fogadó oldal sem
+    # a lemezen, sem az indexben nem találná meg.
+    #
+    # Fogyasztó: `wire_fileops` → `resyncMovedFolder` (#1538) — a régi ÉS
+    # az új hely RÉSZFÁJA is célzott újraolvasást kap. QML-oldali
+    # feliratkozó szándékosan nincs: a bal hasábot és a rácsot az
+    # újraolvasás utáni modellfrissítés hozza rendbe.
     folderMoved = Signal(str, str)
 
     @Slot(str, str)
@@ -196,12 +203,15 @@ class FileOpsController(QObject):
                 "move_folder", self.tr("Choose a destination folder first.")
             )
             return
+        source = Path(_to_local_path(folder) or folder)
         try:
-            moved = move_folder(Path(_to_local_path(folder) or folder), Path(target_text))
+            moved = move_folder(source, Path(target_text))
         except FolderMoveError as error:
             self.operationFailed.emit("move_folder", str(error))
             return
-        self.folderMoved.emit(str(folder), str(moved))
+        # #1538: a NORMALIZÁLT forrás megy ki, nem a kapott nyers szöveg —
+        # az `file://` URL-t a fogadó oldal nem tudná megtalálni.
+        self.folderMoved.emit(str(source), str(moved))
 
     @Slot(str)
     def deletePhoto(self, path: str) -> None:

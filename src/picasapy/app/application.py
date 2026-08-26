@@ -521,6 +521,15 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
     # #1522: másolásnál CSAK a célmappa változott — a forrás érintetlen
     # marad, annak újraolvasása fölösleges lemez- és indexmunka volna.
     fileops.photoCopied.connect(lambda _source, new: refresh(new))
+    # #1538: a MAPPA áthelyezése SZÁNDÉKOSAN nem a `refresh()`-en megy. Az
+    # fájlutakra van szabva (`_watched_folder_of` a `.parent`-et veszi),
+    # tehát egy mappára a SZÜLŐT olvasná újra — ráadásul nem-rekurzívan,
+    # így sem az áthelyezett mappa sora, sem az almappáié nem kerülne a
+    # helyére. A részfa-logika a vezérlőben él (`resyncMovedFolder`), mert
+    # a RÉGI oldalhoz az INDEXET kell megkérdezni: a lemezen az már nincs.
+    fileops.folderMoved.connect(
+        lambda old, new: controller.resyncMovedFolder(old, new)
+    )
 
 
 def _configured_language() -> str:
