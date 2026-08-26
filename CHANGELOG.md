@@ -5,6 +5,18 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **Többször megvágott képnél a szerkesztő végre a valódi vágást mutatja
+  (#1550).** Ha egy képet a Picasában többször is megvágtál, a PicasaPy a
+  vágó-eszközben a *legelső* kivágást kínálta fel — nem azt, ami a képen
+  látszik. Aki csak megnyitotta a vágást és rányomott az Alkalmazra,
+  észrevétlenül visszaugrasztotta a képet egy régi kivágásra. Mostantól a
+  felület és a mentés is a **legutolsó** (érvényben lévő) vágást használja,
+  ahogy a kép maga. A fájljaidban semmi nem íródik át: a korábbi vágások
+  megmaradnak, a visszavonás továbbra is végigmegy rajtuk.
+
 ## [0.8.111] – 2026-08-26
 
 ### Javítva

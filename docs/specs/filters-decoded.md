@@ -25,6 +25,38 @@ filters=crop64=1,<hex>;...
 A PicasaPy-nak íráskor MINDKETTŐT írnia kell; olvasáskor a `crop=` az érvényes.
 (A tilt ezzel szemben a filters-láncból közvetlenül renderelődik.)
 
+#### Több `crop64` a láncban: az UTOLSÓ a hatályos (#1550)
+
+A lánc **több** `crop64`-et is tartalmazhat — a Picasa nem mindig cseréli a
+helyén, hanem a szerkesztési történet végére fűzi az újabb vágást. Ilyenkor
+a **lánc utolsó érvényes `crop64`-je** a hatályos; a korábbiak csak
+történet (a visszavonás alapja), a rendereléshez nem járulnak hozzá, és a
+vágások **nem kaszkádolnak**.
+
+Két, egymástól független bizonyíték (mindkettő újramérve a #1550-ben):
+
+1. **Éles korpusz** (859 `.picasa.ini`, 18 801 szekció, 5658 `filters=`
+   lánc): 763 láncban van `crop64`, ebből 761-hez tartozik `crop=` kulcs, és
+   mind a **761/761** esetben a `crop=` értéke *pontosan* a lánc utolsó
+   `crop64`-je. A **38** darab egynél több `crop64`-et tartalmazó láncnál is
+   **38/38** az utolsót tükrözi, az elsőt **nulla** esetben. `crop64` nélküli
+   `crop=` kulcs **nulla** van (0/761).
+2. **Képpont-mérés a render-láncon:** 800×600-as képre a
+   `crop64=1,0000000080008000;bw=1;crop64=1,c0008000ffffffff;` lánc
+   **200×300**-at ad. Az első `crop64` (bal felső negyed) szerint 400×300
+   lenne, a kettő kaszkádja pedig ennél is kisebb — tehát egyértelműen az
+   utolsó, egyszer alkalmazva.
+
+Ez a szabály a `render/chain.py` (#130), az `EditSession.crop()` (#1550) és
+az effektus-vágólap `crop_mirror_value()` (#1544) közös, EGYETLEN úton
+megvalósított viselkedése: a szerkesztő felülete (a vágó-eszköz előtöltött
+kijelölése, a „Visszavonás: Vágás"/„Alaphelyzet" gomb) és a mentés is az
+utolsót használja. Őr: `tests/app/qml_functional/test_tobbszoros_vagas_1550.py`.
+
+⚠️ A hatályos vágás kiválasztása **olvasási** szabály. A korábbi `crop64`
+bejegyzéseket a `.picasa.ini`-ből **nem takarítjuk ki** és nem migráljuk —
+a round-trip elv és a rétegenkénti visszavonás egyaránt a teljes láncra épül.
+
 ### `bw` = Rec.601 luma
 
 Mért súlyok az RGB rámpákból: R **0,3005**, G **0,5877**, B **0,1102**

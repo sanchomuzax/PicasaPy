@@ -39,8 +39,9 @@ tükör-kulcsot is követni kell; az értékét a `crop_mirror_value()` adja.
 
 from __future__ import annotations
 
+from picasapy.edit.session import EditSession
 from picasapy.ini.filters import parse_filters, serialize_filters
-from picasapy.ini.rect64 import decode_rect64, encode_rect64
+from picasapy.ini.rect64 import encode_rect64
 
 
 def copy_all_effects(filters_value: str | None) -> str:
@@ -95,11 +96,16 @@ def crop_mirror_value(filters_value: str | None) -> str | None:
     * 763 láncban van `crop64`, ebből **761**-hez tartozik `crop=` kulcs, és
       mind a 761 esetben az értéke **pontosan a lánc UTOLSÓ `crop64`-je**;
     * a 38 darab TÖBB `crop64`-et tartalmazó láncnál is **38/38** az
-      utolsót tükrözi, az elsőt **nulla** — ezért nem az
-      `EditSession.crop()`-ot használjuk (az az ELSŐ crop64-et adja), hanem
-      ugyanazt az „utolsó nyer" szabályt, amit a render-lánc is követ (#130,
-      `render/chain.py`);
+      utolsót tükrözi, az elsőt **nulla** — ugyanaz az „utolsó nyer"
+      szabály, amit a render-lánc is követ (#130, `render/chain.py`);
     * `crop64` nélküli láncnál egyetlen `crop=` kulcs sincs (0/761).
+
+    **#1550:** ez a függvény korábban maga kereste ki az utolsó `crop64`-et,
+    mert az `EditSession.crop()` akkor még az ELSŐT adta. A #1550 a
+    `crop()`-ot ugyanerre a szabályra állította, ezért a másolat megszűnt:
+    innentől a KÖZÖS úton megy. Így a felület (`hasCrop`, `cropSelection`),
+    a szerkesztő mentése és a beillesztés tükör-kulcsa nem tud elcsúszni
+    egymástól.
 
     Args:
         filters_value: Egy `filters=` lánc (`None`/üres = nincs lánc).
@@ -109,13 +115,5 @@ def crop_mirror_value(filters_value: str | None) -> str | None:
         `None`. Sérült/idegen hex-paraméternél is `None` (nem dob) — a
         #301-elv szerint.
     """
-    utolso = None
-    for op in parse_filters(filters_value or ""):
-        if op.matches("crop64") and len(op.params) >= 2:
-            utolso = op
-    if utolso is None:
-        return None
-    try:
-        return f"rect64({encode_rect64(decode_rect64(utolso.params[1]))})"
-    except ValueError:
-        return None
+    rect = EditSession.from_value(filters_value).crop()
+    return None if rect is None else f"rect64({encode_rect64(rect)})"
