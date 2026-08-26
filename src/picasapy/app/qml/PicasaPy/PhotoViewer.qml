@@ -768,7 +768,25 @@ Rectangle {
                     }
                     onQuickCropRequested: (kind) => cropOverlay.selectPreset(kind)
                     onCropPreviewHold: (held) => cropOverlay.previewHold = held
-                    onCropResetRequested: cropOverlay.resetSelection()
+                    // #1528: az „Alaphelyzet” az ALKALMAZOTT vágást veti
+                    // el, nem csak a húzott kijelölést. A szemantika NEM
+                    // következtetés: az eredeti Picasa saját szövegforrása
+                    // mondja ki — `editpanel/cropdiscard` buboréksúgója
+                    // „Discards any applied cropping” (editpaneltext.tre
+                    // 234–235), magyarul „Az összes alkalmazott vágás
+                    // elvetése” (panel-feliratok-hu.tsv 4982).
+                    //
+                    // A vágás nem vész el: a `clearCrop` undo-lépést tol,
+                    // tehát a Visszavonás gomb visszahozza (#465).
+                    onCropResetRequested: {
+                        cropOverlay.resetSelection()
+                        if (viewer.editCtl && viewer.editCtl.hasCrop)
+                            editController.clearCrop()
+                    }
+                    // #1528: a gomb tiltott, ha nincs mit elvetni — se
+                    // húzott kijelölés, se mentett vágás.
+                    cropResetEnabled: cropOverlay.hasSelection
+                        || (viewer.editCtl ? viewer.editCtl.hasCrop : false)
                     // #448: a három automatikus javaslat — a választott
                     // téglalap a KIJELÖLÉSBE kerül (nem alkalmazódik
                     // azonnal), hogy a felhasználó még igazíthasson rajta,

@@ -41,21 +41,7 @@ hivatkozik a QML. A szakadás mindig **tagszinten** van.
 | A | **Nyomtatás** | `print_controller.py`, **213 sor**, 2 tesztfájl | ~~**soha nem példányosul** a termékkódban, nincs `setContextProperty`, **0** QML-hivatkozás; a `Print…` (Ctrl+P) és `Print Thumbnails…` menüpont `placeholder`~~ — **BEKÖTVE (#1472)**: `PrintDialog.qml`, élő `Fájl ▸ Nyomtatás…`, élő Ctrl+P, és a képtálca gombja. A `Print Thumbnails…` SZÁNDÉKOSAN maradt helyfoglaló: az kontaktlap (több kép egy oldalon), amihez nincs motor | #1472 |
 | B | **Arcfelismerés indítása** | `scanForFaces`, `cancelScan`, `computeEmbeddings`, `cancelEmbedding`, `isAvailable`, `isEmbeddingAvailable`, `unnamedAlbum` | ~~egyik sincs bekötve — közben a **névadó felület él**, és a `scanPercent` **haladást jelenít meg** egy indíthatatlan keresésről~~ — **BEKÖTVE (#1473)**: `FaceScanDialog.qml`, élő `Eszközök ▸ Arcok keresése…`, megszakítható keresés és csoportosítás, hiányzó modellnél INDOKOLT tiltás. ⚠️ A modellfájl beszerzésére viszont továbbra sincs felületi út — a funkció friss telepítésen ezért végig szürke marad (külön jegy kell rá) | #1473 |
 | C | **E-mail küldés** | `prepareAttachments`, `sendRows` | a QML az `emailController`-t **csak** a beállítás-fül kliensválasztójához köti (`OptionsTabEmail.qml`) | #1474 |
-| D | **Visszavonás UI nélkül** | `undoPasteAllEffects`, `canUndoPasteAllEffects`, `undoBatchEdit`, `canUndoBatchEdit` | ~~nincs gomb; a `Main.qml:754` **ki is mondja**: „csak a vezérlőn elérhető, UI-gomb nélkül". A hivatkozott **#426 és #152 LEZÁRVA**~~ — **BEKÖTVE (#1475)**: a **Szerkesztés menü élén** két, művelet szerint nevesített tétel („Az összes effektus beillesztésének visszavonása", „Csoportos szerkesztés visszavonása") — ott, ahol az eredetiben az `eMenuEdit::ID_UNDO` áll —, mindegyik a SAJÁT `canUndo…`-jától szürkülve. ⚠️ A lelet **hármat** sorolt, valójában **négy** tag állt bekötetlenül: az `undoBatchEdit` maga is. A `Ctrl+Z` SZÁNDÉKOSAN maradt ki: két külön verem mellett nem dönthető el egyértelműen, melyiket sütné el | #1475 |
-
-### Testvérlap: a #1052 néma tagjai
-
-Ez a leltár azt méri, **mit nem ér el a QML** — akkor is felveszi a tagot,
-ha Pythonból hívjuk. A **#1052** ennél szűkebbet kérdez: mit nem hív **sem
-a QML, sem a Python**. A két lista nem azonos, és a #1052 huszonhat
-kérdéses tagjának tételes döntése — tagonként HIBA / SZÁNDÉKOS / HALOTT,
-bizonyítékkal — külön lapon áll:
-[`nema-tagok-1052.md`](nema-tagok-1052.md).
-
-Onnan ide visszaható eredmény: a három `*Active` property (`enhanceActive`,
-`autolightActive`, `autocolorActive`) indoklása **HIBÁS volt** („a panel a
-saját állapotát tartja" — a QML-fában egyáltalán nincs ilyen property), és
-`FELVÁLTVA`-ra javítva: a #116 óta a csempe a `*Enabled` párt köti.
+| D | **Visszavonás UI nélkül** | `undoPasteAllEffects`, `canUndoPasteAllEffects`, `canUndoBatchEdit` | nincs gomb; a `Main.qml:754` **ki is mondja**: „csak a vezérlőn elérhető, UI-gomb nélkül". A hivatkozott **#426 és #152 LEZÁRVA** | #1475 |
 
 ## 3. Elhatárolások — ezeket NE vegye fel senki hibaként
 
@@ -65,7 +51,7 @@ saját állapotát tartja" — a QML-fában egyáltalán nincs ilyen property), 
 | `fileops_controller.movePhoto` | egyes alak; a QML a `movePhotos` többes alakot használja |
 | `controller.statusText` | **él**, aliason át: `tray.ctl.statusText` (`TrayBar.qml:117`) |
 | `controller.setShowHidden` | a menü a `toggleShowHidden`-t hívja — szándékos |
-| `effects_controller` tagjai | **nem árva modul**: az `EffectsClipboardMixin` a `controller.py:47`-en át be van építve. A **kép-specifikus** vágólap (#152) áll UI nélkül, miközben a menü „Copy/Paste All Effects" a **kötegelt** úton megy (`photo_ops_controller`). A #1475 **eldöntötte**: a felület mögötti út a KÖTEGELT réteg — az eredetiben sincs külön kép-szintű effektus-vágólap, a művelet a *kijelölésre* hat. A kép-specifikus ág **megmarad**, mert tud kettőt, amit a kötegelt nem: átviszi a `crop64`-et, és **többszintű** undo-verme van (a kötegelté egyetlen lépés). A sorsáról **külön jegy** dönt |
+| `effects_controller` tagjai | **nem árva modul**: az `EffectsClipboardMixin` a `controller.py:47`-en át be van építve. A **kép-specifikus** vágólap (#152) áll UI nélkül, miközben a menü „Copy/Paste All Effects" a **kötegelt** úton megy (`photo_ops_controller.py:545/560`). Ez **döntést kíván**, nem hibajavítást — ld. #1475 |
 
 ## 4. A teljes mért lista — GENERÁLT
 
@@ -114,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 45.**
+**Felületről el nem ért vezérlő-tag: 43.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -147,9 +133,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `editController` | `autocolorActive` | Property | `app/edit_controller.py` | FELVÁLTVA — ugyanaz: a csempe az autocolorEnabled-et köti (PhotoViewer.qml:293) |
 | `editController` | `hasRetouch` | Property | `app/edit_controller.py` | MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116) |
 | `editController` | `hasFinetune` | Property | `app/edit_controller.py` | MÉRVE — a finomhangolás megléte bekötetlen |
-| `editController` | `hasCrop` | Property | `app/edit_controller.py` | MÉRVE — #1052: a vágás-panel „Alaphelyzet" gombja csak a KIJELÖLÉST törli, a mentett vágást nem; ez volna hozzá a jelző |
 | `editController` | `redoAction` | Property | `app/edit_controller.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
-| `editController` | `clearCrop` | Slot | `app/edit_controller.py` | MÉRVE — #1052: ugyanaz, a mentett vágás tényleges megszüntetése |
 | `editController` | `canRenderEffect` | Slot | `app/edit_controller.py` | MÉRVE — a renderelhetőség kérdezése bekötetlen |
 | `editController` | `isDeadLegacyEffect` | Slot | `app/edit_controller.py` | MÉRVE — az elavult effektek felismerése bekötetlen |
 | `editController` | `cancelPendingPreview` | Slot | `app/edit_controller.py` | BELSŐ — az application.py:892 hívja leálláskor |

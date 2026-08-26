@@ -9,6 +9,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 
 ### Javítva
+- **A vágásnál az „Alaphelyzet" gomb végre azt teszi, amit ígér (#1528).**
+  Eddig csak a most húzott keretet törölte, a korábban **elmentett vágást
+  nem** — miközben az előnézetben a vágatlan kép látszott, tehát a program
+  mást mutatott, mint amit valójában tárolt. Mostantól az elmentett vágást
+  is elveti, ahogy az eredeti Picasa buboréksúgója írja („Az összes
+  alkalmazott vágás elvetése"), és a gomb szürke, ha nincs mit elvetni. A
+  művelet a Visszavonás gombbal visszafordítható.
 - **A másolt képek azonnal megjelennek (#1522).** Ha egy képet olyan mappába
   másoltál, amit a program még nem ismert, a másolat **percekig láthatatlan
   maradt** — odanavigálva üres mappát láttál. (Áthelyezésnél ez már eddig is

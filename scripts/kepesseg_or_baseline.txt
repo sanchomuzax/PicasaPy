@@ -86,8 +86,6 @@ editController.autolightActive FELVÁLTVA — ugyanaz: a csempe az autolightEnab
 editController.autocolorActive FELVÁLTVA — ugyanaz: a csempe az autocolorEnabled-et köti (PhotoViewer.qml:293)
 editController.hasRetouch MÉRVE — #1052: SZÁNDÉKOS; a feliratot az undoLabel adja (#465), a csempe kiemelése a nyitott eszközt jelzi (#116)
 editController.hasFinetune MÉRVE — a finomhangolás megléte bekötetlen
-editController.hasCrop MÉRVE — #1052: a vágás-panel „Alaphelyzet" gombja csak a KIJELÖLÉST törli, a mentett vágást nem; ez volna hozzá a jelző
-editController.clearCrop MÉRVE — #1052: ugyanaz, a mentett vágás tényleges megszüntetése
 editController.canRenderEffect MÉRVE — a renderelhetőség kérdezése bekötetlen
 editController.isDeadLegacyEffect MÉRVE — az elavult effektek felismerése bekötetlen
 folderHierarchyController.expand MÉRVE — a fa egy ágának kinyitása bekötetlen (a toggle/expandAll be van kötve)
