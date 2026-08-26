@@ -67,7 +67,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # #141: a háttérszálas ini-írás/index-UPDATE eredménye — a rács-sor
     # frissítését a GUI-szálra tereli (Qt automatikusan sorba állítja a
     # más szálból jövő emitet, ahogy a watcherDirty is teszi).
-    _photoFieldUpdated = Signal(int, object)  # (photo_id, PhotoRecord | None)
+    # #1443: a harmadik elem az utómunka (hívható vagy None) — a GUI-szálon,
+    # a sor frissítése UTÁN, de a `photoOpFinished` ELŐTT fut le. Külön
+    # jelzés helyett azért ide, mert a tesztek (és a QML busy-jelzése) a
+    # `photoOpFinished`-re várnak: egy másik, később sorra kerülő jelzésen
+    # érkező utómunka a várakozás UTÁN futna le — néma versenyhelyzet.
+    _photoFieldUpdated = Signal(int, object, object)
     photoOpFailed = Signal(str)
     photoOpFinished = Signal()
     # #9 (2. lépés): tartós ini-ütközésnél (párhuzamos Picasa-írás) emberi
@@ -139,8 +144,8 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self.photoOpFailed.connect(self._on_photo_write_failed)
         self._renameBatchDone.connect(self._on_rename_batch_done)
 
-    @Slot(int, object)
-    def _on_photo_field_updated(self, photo_id: int, record) -> None:
+    @Slot(int, object, object)
+    def _on_photo_field_updated(self, photo_id: int, record, after=None) -> None:
         if record is not None:
             self._photos.update_photo(photo_id, record)
             # a thumbnail-provider saját (memóriabeli) nyilvántartását is
@@ -149,6 +154,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             # pótoljuk (olcsó, csak a jelen nézet listáját írja újra, nem
             # lemezműveletet indít)
             self._provider.register_photos(self._photos.photos)
+        # #1443: az utómunka a sor frissítése UTÁN, a befejezés-jelzés ELŐTT
+        # fut — így a `photoOpFinished`-re váró hívó (QML, teszt) már a
+        # végleges nézetet látja. `record is None` esetén is lefut: ha a kép
+        # eltűnt az indexből, a nézetnek pláne frissülnie kell.
+        if after is not None:
+            after()
         self.photoOpFinished.emit()
 
     @Slot(str)
@@ -158,12 +169,16 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self.syncFailed.emit(message)
         self.photoOpFinished.emit()
 
-    def _run_photo_write(self, photo_id: int, perform) -> None:
+    def _run_photo_write(self, photo_id: int, perform, after=None) -> None:
         """Ini/IPTC-írás (NAS: backup+temp+fsync) + célzott index-UPDATE
         háttérszálon (#141). A `perform()` a teljes lassú munkát végzi (fájl-
         írás + a {oszlop: érték} dict összeállítása), és teljes egészében a
         munkásszálon fut. #505: a busy-jelzést a `_start_background`
-        (`worker_thread.py`) intézi, nem itt."""
+        (`worker_thread.py`) intézi, nem itt.
+
+        `after`: opcionális utómunka (#1443), amit a GUI-szálon, a rács-sor
+        frissítése után hívunk. Írási hiba esetén NEM fut le — olyankor a
+        nézet tartalma sem változott."""
         self._ensure_photo_ops_wired()
 
         def worker() -> None:
@@ -176,16 +191,36 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             except _WRITE_ERRORS as error:
                 self.photoOpFailed.emit(str(error))
                 return
-            self._photoFieldUpdated.emit(photo_id, record)
+            self._photoFieldUpdated.emit(photo_id, record, after)
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-photowrite")
+
+    #: #1443: azok a nézetmódok, amelyek TAGSÁGA a csillag-mezőtől függ.
+    #: Ha itt állunk, a csillag ki/be kapcsolása nem egy sor megjelenését
+    #: változtatja, hanem a lista TARTALMÁT — a nézetet újra le kell
+    #: kérdezni. A mappa-nézetben ellenben a sornak maradnia kell.
+    _CSILLAG_SZURT_NEZETEK = ("starred",)
+
+    def _refresh_if_star_filtered(self) -> None:
+        """Újralekérdezés, ha a csillag a jelen nézet tagságát dönti el.
+
+        Szándékosan lekérdezés (`_refresh_view`) és nem sor-eltávolítás: így
+        a visszacsillagozás is magától bekerül, és a zöld eredménysáv
+        darabszáma is követ."""
+        if self._view_mode[0] in self._CSILLAG_SZURT_NEZETEK:
+            self._refresh_view()
 
     @Slot(int)
     def toggleStar(self, row: int) -> None:
         """Csillag be/ki — a .picasa.ini-be írva (kétirányú kompatibilitás:
         a párhuzamosan futó eredeti Picasa is látja). Levételkor a kulcs
-        törlődik, ahogy a Picasa csinálja."""
+        törlődik, ahogy a Picasa csinálja.
+
+        #1443: csillag-szűrt nézetben (Csillagozottak) a művelet a lista
+        TARTALMÁT változtatja, ezért utómunkaként újralekérdezzük a nézetet
+        — a kötegelt út (`toggleStarMany` → `_apply_batch`) ezt már eddig is
+        megtette."""
         photos = self._photos.photos
         if not 0 <= row < len(photos):
             return
@@ -203,7 +238,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             update_document(ini_path, mutate, backup=True)
             return {"star": int(new_star)}
 
-        self._run_photo_write(photo.id, perform)
+        self._run_photo_write(
+            photo.id, perform, after=self._refresh_if_star_filtered
+        )
 
     @Slot(int, str)
     def setCaption(self, row: int, text: str) -> None:

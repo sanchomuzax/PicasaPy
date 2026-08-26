@@ -745,12 +745,7 @@ class AppController(
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
             records = starred_photos(conn)
-        elapsed = time.perf_counter() - started
-        self._filter_active = True
-        self._filter_status = formatting.filter_status_text(
-            records, elapsed, QLocale(), self.tr
-        )
-        self._show(records)
+        self._show_filtered(records, time.perf_counter() - started)
 
     # -- virtuális albumok (#9) -----------------------------------------------
 
@@ -765,12 +760,7 @@ class AppController(
         started = time.perf_counter()
         with open_index(self._db_path) as conn:
             records = album_photos(conn, token)
-        elapsed = time.perf_counter() - started
-        self._filter_active = True
-        self._filter_status = formatting.filter_status_text(
-            records, elapsed, QLocale(), self.tr
-        )
-        self._show(records)
+        self._show_filtered(records, time.perf_counter() - started)
 
     @Slot()
     def clearFilter(self) -> None:
@@ -798,6 +788,21 @@ class AppController(
         else:
             sync_tree(conn, folder, progress=progress)
 
+    def _show_filtered(self, records, elapsed: float) -> None:
+        """Szűrt nézet megjelenítése a ZÖLD EREDMÉNYSÁV szövegével együtt.
+
+        #1443: eddig csak a `showStarred`/`showAlbum` állította a sáv
+        szövegét, az újralekérdezés (`_refresh_view`) nem — így a
+        „N folders / M pictures visible" a csillag levétele után elavult
+        darabszámot mutatott, miközben a rács már helyesen frissült.
+        A szöveget a `_show` közben kimenő `statusChanged` viszi ki, ezért
+        a beállítás sorrendben ELŐTTE áll."""
+        self._filter_active = True
+        self._filter_status = formatting.filter_status_text(
+            records, elapsed, QLocale(), self.tr
+        )
+        self._show(records)
+
     def _refresh_view(self) -> None:
         """Az aktuális nézet újratöltése az indexből (mód szerint)."""
         mode, param = self._view_mode
@@ -815,11 +820,15 @@ class AppController(
                 tuple(r for r in all_matches if r.folder_path == folder)
             )
         elif mode == "starred":
+            started = time.perf_counter()
             with open_index(self._db_path) as conn:
-                self._show(starred_photos(conn))
+                records = starred_photos(conn)
+            self._show_filtered(records, time.perf_counter() - started)
         elif mode == "album":
+            started = time.perf_counter()
             with open_index(self._db_path) as conn:
-                self._show(album_photos(conn, param))
+                records = album_photos(conn, param)
+            self._show_filtered(records, time.perf_counter() - started)
         elif self._refresh_people_view(mode, param):
             pass  # #26: a PeopleMixin saját ágon kezelte ("person" mód)
         elif mode == "geo":

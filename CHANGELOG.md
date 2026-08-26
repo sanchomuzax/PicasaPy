@@ -5,6 +5,16 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A csillagozott képek nézete azonnal követi a csillag levételét (#1443).**
+  Eddig, ha a **csillagozott** szűrőben állva levetted a csillagot egy képről,
+  a kép ottmaradt a listában, amíg más nézetre nem váltottál — vagyis nem azt
+  láttad, ami valójában van. Mostantól a kép rögtön kikerül a nézetből, és a
+  zöld eredménysáv is a valódi darabszámot mutatja (korábban akkor is
+  „2 kép látható" állt ott, amikor egy sem látszott).
+
 ## [0.8.101] – 2026-08-26
 
 ### Hozzáadva
