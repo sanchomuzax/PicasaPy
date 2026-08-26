@@ -29,6 +29,15 @@ class SearchMixin:
                 self._view_mode = ("folder", self._current_folder or "")
             else:
                 self._view_mode = ("search", query)
+                # #1500: a `color:`/`szín:` keresés gyorsítótárát EZ a
+                # hívás tölteti fel (háttérben), és ez jelzi a felületnek,
+                # ha még hiányos — enélkül a színkeresés némán, mindig
+                # üres listával tért vissza. Színtoken nélküli keresésnél
+                # azonnal visszatér, tehát a szöveges keresés útja
+                # változatlan. A SORREND fontos: előbb a jelzés, hogy a
+                # felhasználó akkor is tájékoztatást kapjon, ha a keresés
+                # amúgy nulla találatot ad.
+                self._note_color_search(conn, query)
                 records = search_photos(conn, query)
         if query:
             self._show_search_pane(records)

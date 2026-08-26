@@ -38,6 +38,7 @@ from .appearance_controller import AppearanceMixin
 from .batch_effect_controller import BatchEffectMixin
 from .busy_registry import get_app_busy_registry
 from .collage_controller import CollageMixin
+from .color_index_controller import ColorIndexMixin
 from .language_controller import LanguageMixin
 from .create_controller import CreateMixin
 from .custom_aspect_ratios_controller import CustomAspectRatiosMixin
@@ -90,6 +91,11 @@ class AppController(
     EditJournalMixin,
     FolderDateMixin,
     SearchMixin,
+    # #1500: a `color:`/`szín:` keresés gyorsítótárának háttér-feltöltése.
+    # A `SearchMixin` hívja (`_note_color_search`), ezért közvetlenül
+    # utána áll — a szelet lustán inicializálja magát, az `__init__`-hez
+    # (forró fájl) nem kell nyúlni.
+    ColorIndexMixin,
     KeywordsMixin,
     PhotoOpsMixin,
     BatchEffectMixin,

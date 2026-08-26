@@ -24,7 +24,11 @@ háttér-feltöltés újraszámolja.
 
 A kulcs- és előjel-kezelés megegyezik a `hashes.py`-éval (photo_hashes):
 a fájl AZONOSSÁGA a kulcs, nem az index-beli fotó-id, így a cache egy
-újraindexelést (új id) is túlél."""
+újraindexelést (új id) is túlél.
+
+#1500: a táblát feltöltő `backfill_colors`-nak MOSTANTÓL van éles hívója
+(`app/color_index_controller.py`) — előtte csak tesztek hívták, ezért a
+`color:`/`szín:` keresés mindig üres eredményt adott."""
 
 from __future__ import annotations
 
@@ -64,6 +68,32 @@ CREATE TABLE IF NOT EXISTS photo_colors (
     color_tokens TEXT NOT NULL
 );
 """
+
+
+#: A jelölt-lista és a haladásmérés KÖZÖS illesztési feltétele — egy
+#: helyen, hogy a kettő ne csúszhasson el egymástól.
+#:
+#: ⚠️ #1500: az mtime/méret RÉSZE a feltételnek, nem csak az útvonal. A
+#: `load_color_tokens` mindig is érvénytelennek látta a más mtime-ú sort,
+#: a jelölt-lista viszont csak az útvonalra illesztett — a két oldal
+#: ellentmondott egymásnak: az átszerkesztett kép sora örökre elavult
+#: maradt, mert a feltöltés soha többé nem nézte meg.
+_JOIN_FELTETEL = (
+    "c.path = f.path || :sep || p.name "
+    "AND c.mtime_ns = p.mtime_ns AND c.size = p.size"
+)
+
+#: A dekódolhatatlan fájl (törött JPEG, kiterjesztés szerint fényképnek
+#: látszó nem-kép) SENTINEL bejegyzése: üres tokenlista.
+#:
+#: ⚠️ #1500: enélkül a fájl minden körben újra jelölt lett, tehát a
+#: „hívd, amíg 0-t nem ad" hajtó ciklus SOHA nem ért véget — egy
+#: processzormag pörgött volna a munkamenet végéig, képenként 81 ms-ot
+#: (#1480 mérése) elégetve. Az üres lista a `_STORED_VALUES` egyikével sem
+#: egyezik, tehát a keresésnek nem lesz találata rá; a `load_color_tokens`
+#: üres sorozatot ad vissza. A fájl megváltozásakor (mtime/méret) a
+#: sentinel magától elavul, és a kép újra sorra kerül.
+_DEKODOLHATATLAN: tuple[str, ...] = ()
 
 
 def ensure_color_table(conn: sqlite3.Connection) -> None:
@@ -189,22 +219,51 @@ def compute_photo_color(path: str | Path) -> tuple[int, tuple[str, ...]] | None:
     return rgb_to_avgcolor(r, g, b, a), tokens
 
 
-def backfill_colors(conn: sqlite3.Connection, limit: int = 200) -> int:
-    """Legfeljebb `limit` darab, még szín-token nélküli FÉNYKÉP (nem videó)
-    feltöltése (#383, „ne blokkolja az indulást" — a hívó dolga ezt kis
-    kötegekben, háttérszálon, ismételten meghívni, amíg 0-t nem ad vissza).
+def color_index_progress(conn: sqlite3.Connection) -> tuple[int, int]:
+    """`(kész, összes)` — hány indexelt FÉNYKÉPHEZ van már érvényes
+    színtoken, és összesen hány van (#1500).
 
-    A jelölt-lista SQL-oldali `LEFT JOIN ... WHERE color_tokens IS NULL`
-    szűréssel jön, így nagy könyvtárnál sem kell Pythonban végigmenni a
-    teljes `photos` táblán minden híváskor. A visszatérési érték a
-    ténylegesen feldolgozott (sikeresen dekódolt VAGY véglegesen
+    A „kész" pontosan azt számolja, amit a `backfill_colors` jelölt-listája
+    NEM tekint többé teendőnek — a két lekérdezés ugyanazt a `LEFT JOIN`
+    feltételt használja, hogy a haladásjelző ne állhasson meg 99%-on.
+    A dekódolhatatlan fájl is késznek számít: van sora (üres tokenlistával),
+    tehát nem próbáljuk újra."""
+    ensure_color_table(conn)
+    row = conn.execute(
+        "SELECT COUNT(*) AS osszes, COUNT(c.path) AS kesz "
+        "FROM photos p JOIN folders f ON f.id = p.folder_id "
+        f"LEFT JOIN photo_colors c ON {_JOIN_FELTETEL} "
+        "WHERE p.kind = 'photo'",
+        {"sep": os.sep},
+    ).fetchone()
+    if row is None:
+        return 0, 0
+    return int(row["kesz"]), int(row["osszes"])
+
+
+def backfill_colors(conn: sqlite3.Connection, limit: int = 200) -> int:
+    """Legfeljebb `limit` darab, még érvényes szín-token nélküli FÉNYKÉP
+    (nem videó) feltöltése (#383, „ne blokkolja az indulást").
+
+    A hívó dolga ezt kis kötegekben, háttérszálon, ismételten meghívni,
+    amíg 0-t nem ad vissza — #1500 óta EZ a hívó megvan:
+    `app/color_index_controller.py`.
+
+    A jelölt-lista SQL-oldali `LEFT JOIN ... WHERE c.path IS NULL`
+    szűréssel jön (`_JOIN_FELTETEL`), így nagy könyvtárnál sem kell
+    Pythonban végigmenni a teljes `photos` táblán minden híváskor. A
+    visszatérési érték a ténylegesen feldolgozott (sikeresen dekódolt VAGY
     dekódolhatatlannak bizonyult) sorok száma — 0 jelzi, hogy nincs több
-    teendő."""
+    teendő.
+
+    ⚠️ #1500: MINDEN feldolgozott kép kap sort, a dekódolhatatlan is (üres
+    tokenlistával, ld. `_DEKODOLHATATLAN`). Enélkül a „hívd, amíg 0-t nem
+    ad" ciklus soha nem ért volna véget."""
     ensure_color_table(conn)
     rows = conn.execute(
         "SELECT f.path AS folder_path, p.name, p.mtime_ns, p.size "
         "FROM photos p JOIN folders f ON f.id = p.folder_id "
-        "LEFT JOIN photo_colors c ON c.path = f.path || :sep || p.name "
+        f"LEFT JOIN photo_colors c ON {_JOIN_FELTETEL} "
         "WHERE p.kind = 'photo' AND c.path IS NULL "
         "LIMIT :limit",
         {"sep": os.sep, "limit": int(limit)},
@@ -215,9 +274,10 @@ def backfill_colors(conn: sqlite3.Connection, limit: int = 200) -> int:
         full_path = str(Path(row["folder_path"]) / row["name"])
         result = compute_photo_color(full_path)
         processed += 1
-        if result is None:
-            continue
-        avgcolor, tokens = result
+        # #1500: a dekódolhatatlan fájl is KAP sort (üres tokenlistával) —
+        # különben ugyanő jönne vissza jelöltként minden további körben, és
+        # a hajtó ciklus soha nem érne véget (ld. `_DEKODOLHATATLAN`).
+        avgcolor, tokens = result if result is not None else (0, _DEKODOLHATATLAN)
         payload.append((full_path, row["mtime_ns"], row["size"], avgcolor, tokens))
     save_colors(conn, payload)
     conn.commit()

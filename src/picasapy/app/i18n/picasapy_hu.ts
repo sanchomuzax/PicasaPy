@@ -1425,6 +1425,10 @@
 <context>
     <name>AppController</name>
     <message>
+        <source>Color search is still being prepared: {0} of {1} photos have been analyzed so far. Photos that have not been analyzed yet cannot show up in the results, but the list fills in on its own as soon as the preparation finishes.</source>
+        <translation>A színkeresés adatai még készülnek: {1} fényképből eddig {0} van feldolgozva. A még fel nem dolgozott képek most nem jelenhetnek meg a találatok között, de amint a feldolgozás elkészül, a lista magától kiegészül.</translation>
+    </message>
+    <message>
         <source>DRAFT</source>
         <translation>PISZKOZAT</translation>
     </message>
@@ -3380,6 +3384,10 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
 </context>
 <context>
     <name>Main</name>
+    <message>
+        <source>Stop</source>
+        <translation>Leállítás</translation>
+    </message>
     <message>
         <location filename="../qml/Main.qml"/>
         <source>Collage</source>
