@@ -43,7 +43,7 @@ def _gh_issues() -> list[dict]:
     try:
         raw = subprocess.run(
             ["gh", "issue", "list", "--state", "open", "--limit", "500",
-             "--json", "number,title,labels"],
+             "--json", "number,title,labels,createdAt,updatedAt,comments"],
             cwd=REPO, capture_output=True, text=True, timeout=90, check=True,
         ).stdout
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError) as exc:
@@ -52,7 +52,10 @@ def _gh_issues() -> list[dict]:
         return []
     return [
         {"number": i["number"], "title": i["title"],
-         "labels": {label["name"] for label in i["labels"]}}
+         "labels": {label["name"] for label in i["labels"]},
+         "created": i.get("createdAt", "")[:10],
+         "updated": i.get("updatedAt", "")[:10],
+         "comments": len(i.get("comments") or [])}
         for i in json.loads(raw)
     ]
 
@@ -165,6 +168,19 @@ def main() -> int:
         print(_sor(i))
 
     print(f"\n✅ ELŐVEHETŐ MOST (ready, nem blokkolt): {len(ossz['elovehetp'])} jegy")
+
+    # A listás jegyek elrohadnak: 2026-08-26-i mérés szerint a 175 nyitott
+    # jegyből 87 (49 %) óta senki hozzá sem nyúlt. Ez a szakasz azért van,
+    # hogy a rothadás LÁTSZÓDJON — enélkül csendben nő.
+    erintetlen = [i for i in jegyek
+                  if i.get("created") and i["created"] == i.get("updated")
+                  and i.get("comments", 0) <= 1]
+    arany = (100 * len(erintetlen) // len(jegyek)) if jegyek else 0
+    print(f"\n🕸️  ÉRINTETLEN a nyitás óta: {len(erintetlen)}/{len(jegyek)} ({arany} %)")
+    for i in sorted(erintetlen, key=lambda x: x["created"])[:8]:
+        print(f"  #{i['number']:<5} {i['created']}  {i['title'][:64]}")
+    if len(erintetlen) > 8:
+        print(f"  … és még {len(erintetlen) - 8}")
 
     print(f"\n📄 SPEC-LAPOK NYITOTT KÉRDÉSSEL ({len(spec)}):")
     for lap, allapot in spec:

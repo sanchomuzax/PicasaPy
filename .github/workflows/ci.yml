@@ -347,3 +347,20 @@ jobs:
         # keletkezik, ha a lista elavult tételt tartalmaz, vagy ha maga a
         # vizsgálat lett üres (0 kontextus/tag/QML-fájl → 2-es kilépési kód).
         run: python scripts/kepesseg_or.py
+
+      - name: Menü-lefedettség: nem csökkenhet
+        # A LISTÁS JEGYEK ELROHADNAK. 2026-08-26-i mérés: a 175 nyitott
+        # jegyből 87 (49 %) óta senki hozzá sem nyúlt, amióta megnyílt.
+        # Egy 141 tételes pipálható lista egy jegy törzsében ugyanerre a
+        # sorsra jutna — ezért itt a lista nem kézi, hanem MÉRT.
+        #
+        # A `scripts/menu_lefedettseg.py` a bináris menü-leltárból és a
+        # `docs/specs/` lapokból számolja ki, hány menüparancs viselkedése
+        # van feltárva, és a `docs/menu-lefedettseg.md`-be írja. Ez a
+        # lépés akkor bukik, ha a szám CSÖKKEN — tehát a lefedettség
+        # visszafelé nem mehet észrevétlenül.
+        #
+        # Alsó korlát (#1468/#1476 tanulsága): ha maga a mérés üresedne ki
+        # (0 parancs a CSV-ből), a szkript nem „hibátlant" jelent, hanem
+        # hibázik — különben egy elgépelt útvonal is zöld lenne.
+        run: python scripts/menu_lefedettseg.py --ellenoriz
