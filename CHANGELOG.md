@@ -16,6 +16,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   visszavonása" — mindkettő szürke, ha épp nincs mit visszavonni. A kettő
   külön él, mert két külön műveletsort vonnak vissza.
 
+### Belső
+- **A felület által soha nem szólított vezérlő-tagok átvizsgálva (#1052).**
+  Huszonhat ilyen tagról született tételes döntés (hiba, szándékos vagy
+  halott kód), bizonyítékkal; a szándékosak magyar indoklást kaptak a kódban.
+  A felhasználó számára ebből most nem változik semmi — a feltárt hiányok
+  önálló jegyeken mennek tovább.
+
 ## [0.8.105] – 2026-08-26
 
 ### Javítva

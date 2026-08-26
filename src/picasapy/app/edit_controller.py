@@ -544,6 +544,9 @@ class EditController(QObject, BackgroundWorkerMixin):
 
     # -- retusálás (#148) ---------------------------------------------------
 
+    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a „Visszavonás: Retusálás"
+    # feliratot az `undoLabel` adja (#465), a csempe kiemelése pedig a NYITOTT
+    # eszközt jelzi (#116), nem a képen ülő mentett retusálást.
     @Property(bool, notify=toolsChanged)
     def hasRetouch(self) -> bool:
         """Van-e MENTETT retusálás — akár a jelenlegi (v2, folt-alapú, #445),
@@ -1698,6 +1701,8 @@ class EditController(QObject, BackgroundWorkerMixin):
 
     # -- csúszkás effekt-alpanel (#316) --------------------------------------
 
+    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): az „Örökség" fül ugyanezt az
+    # adatot a `legacyEffects` katalógus `enabled` mezőjéből kapja, egyben.
     @Slot(str, result=bool)
     def canRenderEffect(self, name: str) -> bool:
         """Kínálható-e ez az effekt ÁLLÍTHATÓ vezérlőként (#571, #1142)?
@@ -1714,6 +1719,8 @@ class EditController(QObject, BackgroundWorkerMixin):
         """
         return can_offer_filter_control(name)
 
+    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a fül a `legacyEffects`
+    # katalógus `dead` mezőjét olvassa, nem szűrőnevenként kérdez.
     @Slot(str, result=bool)
     def isDeadLegacyEffect(self, name: str) -> bool:
         """Halott (legacy) szűrőnév-e (#567)? A Picasa natív regiszterében
