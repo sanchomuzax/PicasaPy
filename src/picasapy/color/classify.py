@@ -1,39 +1,52 @@
-"""Átlagszín → Picasa-féle 10 színnév besorolás (#383).
+"""Picasa-féle színkeresés (`color:kék`) — a MÉRT osztályozó (#383, #1480).
 
-A Picasa `Picasa3.exe` string-táblájából előkerült 10 keresőtoken:
+A Picasa NEM az átlagszínt sorolja be. Egy **telítettséggel súlyozott
+hue-hisztogramot** épít a kép EGÉSZ raszteréről, **hét vödörrel**, és a
+**legnagyobb vödör nyer**. Az `avgcolor` ini-/PMP-mezőnek semmi köze
+hozzá: ugyanabban a kezelőfüggvényben készül, de külön ágon.
 
-    color:red  color:orange  color:yellow  color:green  color:blue
-    color:purple  color:pink  color:black  color:white  color:gray
+⚠️ A modul korábbi docstringje azt állította, hogy a pontos szabály „nincs
+dokumentálva és **nem mérhető**". **Ez téves volt, és megdőlt** (#1480):
+az algoritmus egyetlen 752 bájtos függvényben áll a `Picasa3.exe`-ben
+(`0x009dbd10`), konstansostul, és 2026-08-26-án ki lett mérve. A teljes
+bizonyítéklánc: `docs/specs/picasa-szinkereses.md`. Az alábbi konstansok
+tehát MÉRT Picasa-viselkedés, nem a mi döntésünk — ha valamelyik
+„gyanúsan rossznak" tűnik (pl. a hue-kör tetején lévő rés), az az eredeti
+viselkedése, és a hozzá tartozó teszt szándékosan őrzi.
 
-A program mellette egy `avgcolor` mezőt is tárolt (a kép átlagszíne), és a
-`color:kék`-féle keresés erre szűrt. A PONTOS Picasa-besorolási szabály
-(a HSV-sávhatárok, a fekete/szürke/fehér és a "pink" különválasztásának
-küszöbei) **nincs dokumentálva és nem mérhető** — a Picasa 2016 óta nem
-elérhető. Az alábbi küszöbök ezért a **mi józan döntésünk**, nem
-rekonstruált Picasa-viselkedés (ld. `docs/specs/picasa-ini-format.md`,
-„Színkereső tokenek" — a disclaimer ott is szerepel).
+Képpontonként (`0x009dbd98`–`0x009dbf53`), 8 bites csatornákkal, végig
+EGÉSZ aritmetikával:
 
-Az osztályozás menete:
-1. RGB → HSV.
-2. Ha a telítettség (S) alacsony: akromatikus ág — `black`/`gray`/`white`
-   a világosság (V) szerint.
-3. Egyébként a "pink" külön eset: a bíbor-vörös átmeneti hue-sávban, de
-   csak KÖZEPES telítettség és MAGAS világosság mellett (a Picasa "pink"-je
-   a magas világosságú, visszafogott telítettségű rózsaszín, nem a tiszta
-   bíbor/vörös).
-4. Egyébként hue-sáv szerinti besorolás (`red`/`orange`/`yellow`/`green`/
-   `blue`/`purple`).
+    MAX = max(R,G,B)      MIN = min(R,G,B)      Δ = MAX − MIN
+    ha MAX == 0                   → a képpont KIMARAD
+    S = Δ·255 / MAX                                        (0…255)
+    H1530 = (G−B)·255/Δ              , ha R a maximum
+          = (B−R)·255/Δ + 510        , ha G a maximum
+          = (R−G)·255/Δ + 1020       , egyébként
+    ha H1530 < 0 → H1530 += 1530
+    H = H1530 / 6                                          (0…254)
+    ha S <= 50                    → a képpont KIMARAD
+    vödör[ b = H/10 ] += S         ⇐ a SÚLY a telítettség, nem 1
+
+Az osztás mindenütt a C nullához csonkoló egészosztása (`idiv`), nem a
+Python lefelé kerekítő `//`-ja — a hue számlálója negatív is lehet.
+
+A döntés (`0x009dbf7d`–`0x009dbfc4`): nyolc vödör közül a legnagyobb nyer,
+**döntetlennél a magasabb index**. A nyolcadik vödörbe soha nem ír senki,
+így a végig üres hisztogramot ő nyeri — ez a névtábla `−1` indexe, ami
+egyszerre HÁROM tokent ad: `black`, `white`, `gray`. Az eredeti tehát a
+fekete/fehér/szürke között nem tesz különbséget.
 """
 
 from __future__ import annotations
 
-import colorsys
 from collections.abc import Sequence
 
 import numpy as np
 
-# A Picasa 10 színtokenje, angolul (ez a kanonikus, tárolt alak).
-COLOR_TOKENS: tuple[str, ...] = (
+# A hét hue-vödör tokenje, a mért névtábla (`0x00424c20`) sorrendjében:
+# 0=red, 1=orange, 2=yellow, 3=green, 4=blue, 5=purple, 6=pink.
+HUE_BUCKET_TOKENS: tuple[str, ...] = (
     "red",
     "orange",
     "yellow",
@@ -41,10 +54,15 @@ COLOR_TOKENS: tuple[str, ...] = (
     "blue",
     "purple",
     "pink",
-    "black",
-    "white",
-    "gray",
 )
+
+# A névtábla `−1` indexe EGYETLEN sztringben adja mindhármat
+# ("color:black color:white color:gray") — az akromatikus kép tehát
+# mindhárom tokenre illeszkedik, nem választunk közülük.
+ACHROMATIC_TOKENS: tuple[str, ...] = ("black", "white", "gray")
+
+# A 10 Picasa-színtoken (a keresés szótára), angolul.
+COLOR_TOKENS: tuple[str, ...] = HUE_BUCKET_TOKENS + ACHROMATIC_TOKENS
 
 # Magyar alakok a kereséshez (`szín:kék`) — SAJÁT fordítás, a hivatalos
 # Picasa-magyar terminológiában (docs/specs/picasa-hu-terminology.md) ez a
@@ -75,75 +93,188 @@ def resolve_color_alias(word: str) -> str | None:
     return TOKEN_ALIASES.get(word.strip().casefold())
 
 
-# --- HSV küszöbök (a mi döntésünk, ld. a modul-docstringet) -------------
+# --- MÉRT konstansok (Picasa3.exe 3.9.141.259, ld. a modul-docstringet) ---
 
-# Akromatikus ág: ez alatti telítettségnél a hue zajos/értelmetlen.
-_ACHROMATIC_SAT_MAX = 0.12
-_BLACK_VAL_MAX = 0.20
-_WHITE_VAL_MIN = 0.85
+#: `cmp ebp, 0x32` + `jle` (`0x009dbe8e`): az ennél nem telítettebb
+#: képpont kimarad. 50/255 ≈ 19,6 %.
+SATURATION_MIN = 50
 
-# "pink": a bíbor→vörös átmeneti hue-ív (fokban), amelyben — ha a
-# telítettség közepes és a világosság magas — rózsaszínnek számít a kép
-# (pl. #ffc0cb ≈ 349,5°, S≈0,25, V=1,0).
-_PINK_HUE_LO = 330.0
-_PINK_HUE_HI = 355.0
-_PINK_SAT_MIN = 0.12
-_PINK_SAT_MAX = 0.55
-_PINK_VAL_MIN = 0.55
+#: A hue-kör egysége a binárisban: 1530 = 6 × 255 (a két mért eltolás,
+#: 510,0 és 1020,0 ennek a harmada, illetve kétharmada).
+_HUE_CIRCLE = 1530
 
-# Hue-sávhatárok (fokban) a fennmaradó 6 kromatikus névre. A `red` a 0°
-# köré csavarodik (a [345°, 360°) és a [0°, 15°) tartomány is piros).
-_HUE_ORANGE_MAX = 45.0
-_HUE_YELLOW_MAX = 70.0
-_HUE_GREEN_MAX = 170.0
-_HUE_BLUE_MAX = 255.0
-_HUE_PURPLE_MAX = 345.0
-_HUE_RED_MIN = 345.0
-_HUE_RED_MAX = 15.0
+#: hue-tized (`b = H/10`) → vödör, a switch-ágak (`0x009dbea8`–
+#: `0x009dbf47`) szerint. A `-1` a MÉRT rés: a `b == 25` képpont (H
+#: 250–254, kb. 353,0–358,8°) egyetlen vödörbe sem kerül. Ez az eredeti
+#: viselkedése; a `tests/color/test_classify.py` szándékosan őrzi, hogy egy
+#: későbbi „javítás" ne tüntesse el némán.
+_BUCKET_OF_HUE_DECADE: tuple[int, ...] = (
+    0,  # b=0    piros (a kör alja)
+    1,
+    1,
+    1,  # b=1-3  narancs
+    2,  # b=4    sárga
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,  # b=5-11 zöld
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,  # b=12-17 kék
+    5,
+    5,
+    5,
+    5,  # b=18-21 lila
+    6,
+    6,  # b=22-23 rózsaszín
+    0,  # b=24   piros (a kör átfordul)
+    -1,  # b=25  a MÉRT rés — kimarad
+)
 
 
-def classify_color(r: int, g: int, b: int) -> str:
-    """Egy RGB (0-255) szín → a 10 Picasa-token egyike."""
-    hue, sat, val = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
-    hue_deg = hue * 360.0
+def _channels(image: np.ndarray, order: str) -> tuple[np.ndarray, ...]:
+    """A bemenet ellenőrzése + (R, G, B) csatornák `int32`-ként.
 
-    if sat < _ACHROMATIC_SAT_MAX:
-        if val < _BLACK_VAL_MAX:
-            return "black"
-        if val > _WHITE_VAL_MIN:
-            return "white"
-        return "gray"
+    `order`: "rgb" (alap) vagy "bgr" — az OpenCV dekódolója BGR-t ad, és
+    az eredeti raszter is BGRA volt. Az alfa-csatorna nem játszik."""
+    if image.ndim != 3 or image.shape[2] < 3:
+        raise ValueError("H×W×3(+) alakú kép szükséges")
+    if order not in {"rgb", "bgr"}:
+        raise ValueError(f"Ismeretlen csatorna-sorrend: {order!r}")
+    planes = image[:, :, :3].astype(np.int32)
+    first, second, third = planes[..., 0], planes[..., 1], planes[..., 2]
+    return (third, second, first) if order == "bgr" else (first, second, third)
 
-    if (
-        _PINK_HUE_LO <= hue_deg < _PINK_HUE_HI
-        and _PINK_SAT_MIN <= sat < _PINK_SAT_MAX
-        and val >= _PINK_VAL_MIN
+
+def _truncating_divide(numerator: np.ndarray, denominator: np.ndarray) -> np.ndarray:
+    """A C `idiv`-je: NULLÁHOZ csonkoló egészosztás (a Python `//`-ja
+    lefelé kerekít, ami a negatív hue-számlálónál mást adna)."""
+    quotient = np.abs(numerator) // denominator
+    return np.where(numerator < 0, -quotient, quotient)
+
+
+def _saturation(
+    red: np.ndarray, green: np.ndarray, blue: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """(MAX, Δ, S) képpontonként. `MAX == 0` (fekete képpont) esetén Δ is
+    0, tehát S = 0 — a hívó telítettség-szűrője úgyis kidobja, külön ág
+    nem kell hozzá."""
+    maximum = np.maximum(np.maximum(red, green), blue)
+    minimum = np.minimum(np.minimum(red, green), blue)
+    delta = maximum - minimum
+    safe_max = np.where(maximum == 0, 1, maximum)
+    return maximum, delta, delta * 255 // safe_max
+
+
+def _hue(
+    red: np.ndarray,
+    green: np.ndarray,
+    blue: np.ndarray,
+    maximum: np.ndarray,
+    delta: np.ndarray,
+) -> np.ndarray:
+    """H (0…254) a MEGTARTOTT képpontokra — Δ > 0 a hívó felelőssége.
+
+    A három ágat maszkonként, egymás után számoljuk (nem `np.where`-rel
+    az egész tömbön): így minden képpontra csak a rá vonatkozó ág fut le,
+    ami nagy rasztereknél mérhetően olcsóbb. Az ágválasztás sorrendje
+    mért: előbb R, aztán G, egyébként B."""
+    hue1530 = np.empty(red.shape, dtype=np.int32)
+    red_is_max = red == maximum
+    green_is_max = ~red_is_max & (green == maximum)
+    blue_is_max = ~red_is_max & ~green_is_max
+    for mask, first, second, offset in (
+        (red_is_max, green, blue, 0),
+        (green_is_max, blue, red, 510),
+        (blue_is_max, red, green, 1020),
     ):
-        return "pink"
+        hue1530[mask] = (
+            _truncating_divide((first[mask] - second[mask]) * 255, delta[mask]) + offset
+        )
+    np.add(hue1530, _HUE_CIRCLE, out=hue1530, where=hue1530 < 0)
+    return hue1530 // 6
 
-    return _hue_band(hue_deg)
+
+def pixel_bucket(red: int, green: int, blue: int) -> int | None:
+    """Egyetlen RGB képpont vödre (0…6), vagy `None`, ha a képpont kimarad
+    (fekete, `S <= 50`, vagy a mért résbe esik).
+
+    Elsősorban a határesetek tesztelhetőségéért van külön — a hisztogram
+    ugyanezt a matekot vektorizálva végzi."""
+    channels = tuple(np.array([value], dtype=np.int32) for value in (red, green, blue))
+    maximum, delta, saturation = _saturation(*channels)
+    if int(saturation[0]) <= SATURATION_MIN:
+        return None
+    hue = _hue(*channels, maximum, delta)
+    bucket = _BUCKET_OF_HUE_DECADE[int(hue[0]) // 10]
+    return None if bucket < 0 else bucket
 
 
-def _hue_band(hue_deg: float) -> str:
-    if hue_deg >= _HUE_RED_MIN or hue_deg < _HUE_RED_MAX:
-        return "red"
-    if hue_deg < _HUE_ORANGE_MAX:
-        return "orange"
-    if hue_deg < _HUE_YELLOW_MAX:
-        return "yellow"
-    if hue_deg < _HUE_GREEN_MAX:
-        return "green"
-    if hue_deg < _HUE_BLUE_MAX:
-        return "blue"
-    if hue_deg < _HUE_PURPLE_MAX:
-        return "purple"
-    return "red"  # 345°-ig bezárólag már a piros ág fedi; ez csak védőháló
+def hue_histogram(
+    image: np.ndarray | Sequence[Sequence[Sequence[int]]], *, order: str = "rgb"
+) -> tuple[int, ...]:
+    """A hét vödör telítettség-összege a kép EGÉSZ raszteréről.
+
+    A visszaadott hetes a `HUE_BUCKET_TOKENS` sorrendjét követi. Üres
+    raszterre (és ha minden képpont kimarad) csupa nulla."""
+    array = np.asarray(image)
+    red, green, blue = _channels(array, order)
+    if array.size == 0:
+        return (0,) * len(HUE_BUCKET_TOKENS)
+
+    maximum, delta, saturation = _saturation(red, green, blue)
+    # A hue-t CSAK a megmaradó képpontokra számoljuk ki — a kidobottakon
+    # (fekete, fakó) semmi dolgunk, és ez a raszter felét-harmadát is
+    # jelentheti.
+    keep = saturation > SATURATION_MIN
+    kept_saturation = saturation[keep].astype(np.int64)
+    if kept_saturation.size == 0:
+        return (0,) * len(HUE_BUCKET_TOKENS)
+    hue = _hue(red[keep], green[keep], blue[keep], maximum[keep], delta[keep])
+
+    buckets = np.asarray(_BUCKET_OF_HUE_DECADE, dtype=np.int64)[hue // 10]
+    # A résbe eső (−1) képpontokat itt dobjuk el — a `bincount` nem tűrné.
+    # A `weights` miatt a `bincount` float64-et ad, de az összeg felső
+    # korlátja 255 × képpontszám, ami messze a float64 egész-pontos
+    # tartományán belül van — a végén tehát veszteség nélkül egészítünk.
+    inside = buckets >= 0
+    totals = np.bincount(
+        buckets[inside],
+        weights=kept_saturation[inside],
+        minlength=len(HUE_BUCKET_TOKENS),
+    )
+    return tuple(int(value) for value in totals)
+
+
+def classify_image(
+    image: np.ndarray | Sequence[Sequence[Sequence[int]]], *, order: str = "rgb"
+) -> tuple[str, ...]:
+    """Egy dekódolt kép Picasa-színtokenjei.
+
+    Színes képre EGY token (a legnagyobb vödöré, döntetlennél a magasabb
+    indexűé — mért viselkedés). Ha egyetlen vödör sem kapott súlyt (a kép
+    akromatikus, vagy minden telített képpontja a mért résbe esett), az
+    eredmény a névtábla `−1` ága: MINDHÁROM akromatikus token."""
+    totals = hue_histogram(image, order=order)
+    winner = max(range(len(totals)), key=lambda index: (totals[index], index))
+    if totals[winner] == 0:
+        return ACHROMATIC_TOKENS
+    return (HUE_BUCKET_TOKENS[winner],)
 
 
 def average_color(
     image: np.ndarray | Sequence[Sequence[Sequence[int]]], *, order: str = "rgb"
 ) -> tuple[int, int, int, int] | None:
-    """Egy dekódolt kép Picasa-kompatibilis RGBA-átlaga.
+    """Egy dekódolt kép Picasa-kompatibilis RGBA-átlaga (`avgcolor`).
+
+    ⚠️ Ez NEM a színkeresés bemenete (#1480) — a Picasa is külön ágon
+    számolja. Az `avgcolor` önálló kép-metaadat.
 
     A Picasa a négy BGRA-bájt csatornánkénti összegét a képpontok számával
     egész osztással csonkolja. Háromcsatornás bemenetet átlátszatlannak
@@ -178,5 +309,5 @@ def rgb_to_avgcolor(r: int, g: int, b: int, a: int = 255) -> int:
 
 
 def avgcolor_to_rgb(value: int) -> tuple[int, int, int]:
-    """`avgcolor` (0xAARRGGBB) → RGB hármas; az alfa nem része a besorolásnak."""
+    """`avgcolor` (0xAARRGGBB) → RGB hármas."""
     return ((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF)

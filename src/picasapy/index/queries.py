@@ -161,8 +161,8 @@ def search_photos(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ..
     szabadszavas résztől ELVÁLNAK — a színszűrés a maradék szöveges
     kereséssel ÉS kapcsolatban van, több színtoken egymással VAGY
     kapcsolatban (ld. `search_color.parse_color_terms`). Ha egy képre még
-    nincs kiszámolt `color_token` (a háttér-feltöltés még nem érte el),
-    a kép egyszerűen kimarad a találatokból — nem hiba, csak hiányzó adat.
+    nincs kiszámolt színtoken (a háttér-feltöltés még nem érte el), a kép
+    egyszerűen kimarad a találatokból — nem hiba, csak hiányzó adat.
     """
     remainder, color_tokens = parse_color_terms(query)
     remainder = remainder.strip()

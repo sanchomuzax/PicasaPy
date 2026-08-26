@@ -299,35 +299,38 @@ color:red  color:orange  color:yellow  color:green  color:blue
 color:purple  color:pink  color:black  color:white  color:gray
 ```
 
-Mellettük az `avgcolor` mezőnév áll — vagyis a Picasa **képenként eltárolta
-az átlagszínt**, és a keresősávba írt `color:blue` erre szűrt. Ez a
-funkció a magyar UI-ban is elérhető volt, de eddig egyik specünkben sem
-szerepelt. A PicasaPy indexe ugyanezt olcsón megteheti (átlagszín →
-legközelebbi a 10 névből), és ezzel egy elveszettnek hitt Picasa-képesség
-tér vissza.
+Mellettük az `avgcolor` mezőnév áll. Ez a funkció a magyar UI-ban is
+elérhető volt, de eddig egyik specünkben sem szerepelt.
 
-### Megvalósítás (PicasaPy, #383)
+### Megvalósítás (PicasaPy, #383, #1480)
 
-**FONTOS DISCLAIMER:** a Picasa PONTOS HSV-küszöbei (hol a határ pl. `blue`
-és `purple` között, mikor számít egy kép `pink`-nek a sima `red`/`purple`
-helyett) **nem ismertek és nem mérhetők** — a Picasa 2016 óta nem elérhető,
-csak a `color:`/`avgcolor` NÉV maradt fenn az `.exe` string-táblájában. Az
-alábbi küszöbök a mi józan implementációnk, NEM rekonstruált Picasa-
-viselkedés. A pontos konstansok és a levezetés:
-`src/picasapy/color/classify.py`.
+> ⚠️ **JAVÍTVA (#1480, 2026-08-26).** Ez a szakasz korábban azt állította,
+> hogy a Picasa az **átlagszínt** (`avgcolor`) sorolta be, és hogy a pontos
+> küszöbök „nem ismertek és **nem mérhetők**". **Mindkettő téves volt.**
+> Az osztályozó egyetlen 752 bájtos függvényben áll a binárisban
+> (`0x009dbd10`), és ki lett mérve: a Picasa a kép EGÉSZ raszteréről épít
+> **telítettséggel súlyozott hue-hisztogramot**, hét vödörrel, és a
+> **legnagyobb vödör nyer**. Az `avgcolor` a keresésnek NEM bemenete —
+> ugyanabban a kezelőfüggvényben készül, de külön ágon (`0x004280d8`).
+> A teljes bizonyítéklánc: [`picasa-szinkereses.md`](picasa-szinkereses.md).
 
-Menete:
-1. RGB → HSV.
-2. Alacsony telítettségnél (S < 0,12) akromatikus ág: `black` (V < 0,20),
-   `white` (V > 0,85), egyébként `gray`.
-3. A bíbor→vörös átmeneti hue-ívben (330°–355°), közepes telítettség
-   (0,12 ≤ S < 0,55) ÉS magas világosság (V ≥ 0,55) mellett: `pink`.
-4. Egyébként hue-sáv: `red` (345°–360° és 0°–15°), `orange` (15°–45°),
-   `yellow` (45°–70°), `green` (70°–170°), `blue` (170°–255°),
-   `purple` (255°–345°).
+Menete (mért), képpontonként, végig egész aritmetikával:
+1. `MAX = max(R,G,B)`, `Δ = MAX − MIN`; ha `MAX == 0`, a képpont kimarad.
+2. `S = Δ·255/MAX`; ha `S <= 50` (≈19,6 %), a képpont kimarad.
+3. `H` a szabványos HSV-képlettel, de **1530 egységes** körön, majd
+   hatoddal skálázva (`H = H1530/6`, 0…254).
+4. `vödör[H/10] += S` — a súly a **telítettség**, nem 1. A hét vödör:
+   piros (`H/10` = 0 és 24), narancs (1–3), sárga (4), zöld (5–11),
+   kék (12–17), lila (18–21), rózsaszín (22–23). A `H/10 == 25`
+   (kb. 353,0–358,8°) egyetlen vödörbe sem kerül — ez az eredeti mért
+   **rése**, és reprodukáljuk.
+5. A legnagyobb vödör nyer, döntetlennél a magasabb indexű. Ha egyetlen
+   vödör sem kapott súlyt, az eredmény a névtábla `−1` ága, ami EGYSZERRE
+   három tokent ad: `black`, `white`, `gray` — a fekete/fehér/szürke
+   között az eredeti nem tesz különbséget.
 
-**Tárolás:** az átlagszín (`avgcolor`, 0xRRGGBB) és a hozzá tartozó
-`color_token` NEM a `.picasa.ini`-be kerül (a Picasa sem oda írta —
+**Tárolás:** a kép színtokenjei (`color_tokens`, szóközzel elválasztva) és
+az `avgcolor` (0xAARRGGBB, önálló kép-metaadat) NEM a `.picasa.ini`-be kerül (a Picasa sem oda írta —
 adatbázis-mező volt), hanem a PicasaPy SQLite-indexébe, egy önálló
 `photo_colors` táblába (`src/picasapy/index/colors.py`), a fájl
 AZONOSSÁGA szerint kulcsolva (útvonal, mtime_ns, méret) — ugyanaz a minta,
@@ -341,8 +344,11 @@ a DDL helye változik.
 
 **Feltöltés:** a `backfill_colors(conn, limit)` kötegenként (alapból 200
 kép) tölti fel a még hiányzó bejegyzéseket — a kis (bélyegkép-méretű,
-redukált JPEG-dekódolású) beolvasásból számol átlagszínt, nem a teljes
-felbontásból. Ismételt hívásra 0-t ad vissza, ha nincs több teendő — így
+redukált JPEG-dekódolású) beolvasásból dolgozik, nem a teljes
+felbontásból. Mért költség (Raspberry Pi 5, 120 kép, helyi lemez):
+~68 ms/kép beolvasás+dekódolás, amihez a hisztogram ~21 ms-ot tesz hozzá
+egy ~0,2 Mpx-es raszteren; a besorolás tehát nem okoz TOVÁBBI lemez- vagy
+hálózati forgalmat, csak processzoridőt. Ismételt hívásra 0-t ad vissza, ha nincs több teendő — így
 háttérszálon, kis kötegekben, az indulást nem blokkolva futtatható
 (az induláskori bekötés — pl. `prune_in_background` mintájára — az
 integrátor feladata, ld. a #383 jegy jelentését).
@@ -350,8 +356,9 @@ integrátor feladata, ld. a #383 jegy jelentését).
 **Keresés:** a `color:kék`/`szín:kék` token (mindkét nyelv egyenértékű,
 `src/picasapy/index/search_color.py`) a szabadszavas kereséstől
 elválasztva kerül feldolgozásra, ÉS kapcsolatban a maradék szöveges
-kereséssel; több színtoken egymással VAGY kapcsolatban (egy képnek csak
-egy átlagszíne van). Ha egy képre még nincs kiszámolt `color_token` (a
+kereséssel; több színtoken egymással VAGY kapcsolatban (egy képnek egy
+hue-vödre van; az akromatikus kép viszont mindhárom akromatikus tokenre
+illeszkedik). Ha egy képre még nincs kiszámolt színtoken (a
 háttér-feltöltés még nem érte el), a kép egyszerűen kimarad a
 találatokból — nem hibát dob.
 
