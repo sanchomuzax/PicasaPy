@@ -890,7 +890,15 @@ ApplicationWindow {
 
     // Kereső-javaslatok (#7): gépelés után rövid szünettel (debounce)
     // kérjük le, hogy NAS-on se fusson lekérdezés minden billentyűre.
+    // #1515: null-őr (#305 mintája). A 150 ms-os debounce miatt a hívás a
+    // gépeléstől ELVÁLIK: ha közben az ablak lebomlik, a `controller`
+    // kontextus-tulajdonság már null, és a hívás QML-szkripthibát dobna.
+    // Ez a felület egyetlen olyan pontja, ahol IDŐZÍTŐ hívja a
+    // controllert — a #1515 tesztje volt az első, amely a valódi
+    // (searchEdited → suggestionsTimer) úton ment végig, és kibukott.
     function refreshSuggestions() {
+        if (!controller)
+            return
         searchSuggestionsBox.suggestions =
             controller.searchSuggestions(toolbar.searchText)
     }

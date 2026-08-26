@@ -153,7 +153,9 @@ def geotagged_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     )
 
 
-def search_photos(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ...]:
+def search_photos(
+    conn: sqlite3.Connection, query: str, *, only_id: int | None = None
+) -> tuple[PhotoRecord, ...]:
     """Keresés MINDENBEN (Picasa): fájlnév/felirat/kulcsszó (FTS5) ÉS
     mappanév — az egyező nevű mappák teljes tartalma is találat.
 
@@ -163,12 +165,30 @@ def search_photos(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ..
     kapcsolatban (ld. `search_color.parse_color_terms`). Ha egy képre még
     nincs kiszámolt színtoken (a háttér-feltöltés még nem érte el), a kép
     egyszerűen kimarad a találatokból — nem hiba, csak hiányzó adat.
+
+    `only_id` (#1515): a találati halmazt EGYETLEN képre szűkíti, tehát a
+    visszatérés vagy üres, vagy egyelemű. Így lehet TAGSÁG-kérdést feltenni
+    („találat-e még ez a kép?") anélkül, hogy a teljes listát felépítenénk.
+    Mért különbség valósághű indexen (140 755 kép / 3 000 mappa): a teljes
+    lekérdezés medián **597 ms** (27 179 találatnál), az egy képre szűkített
+    **6–11 ms**.
+
+    A szűkítés SZÁNDÉKOSAN ugyanennek a függvénynek a paramétere, nem külön
+    „egyezik-e ez a kép" segéd: két külön implementációban a mappanév-ág, a
+    színtokenek és az idézőjel-védés is duplikálódna, és ha elcsúsznának, a
+    nézet NÉMÁN hibás tagságot mutatna.
     """
     remainder, color_tokens = parse_color_terms(query)
     remainder = remainder.strip()
     if not remainder and not color_tokens:
         return ()
-    records = _text_search(conn, remainder) if remainder else all_photos(conn)
+    if remainder:
+        records = _text_search(conn, remainder, only_id=only_id)
+    elif only_id is None:
+        records = all_photos(conn)
+    else:
+        found = photo_by_id(conn, only_id)
+        records = (found,) if found is not None else ()
     if color_tokens:
         wanted_paths = paths_with_color(conn, color_tokens)
         records = tuple(
@@ -177,9 +197,16 @@ def search_photos(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ..
     return records
 
 
-def _text_search(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ...]:
+def _text_search(
+    conn: sqlite3.Connection, query: str, *, only_id: int | None = None
+) -> tuple[PhotoRecord, ...]:
     """A korábbi (#383 előtti) szöveges keresés-logika, változatlanul —
     idézett FTS-kifejezés + casefold-os mappanév-egyezés.
+
+    #1515: az `only_id` egyetlen képre szűkít. A meglévő feltétel emiatt
+    ZÁRÓJELBE került: az FTS-egyezés és a mappanév-egyezés VAGY-a továbbra
+    is EGY egységként áll, a szűkítés pedig ÉS-sel jön rá. Zárójel nélkül a
+    mappanév-ág kibújna a szűkítés alól.
     """
     phrase = '"' + query.replace('"', '""') + '"'
     folded = query.casefold()
@@ -190,11 +217,13 @@ def _text_search(conn: sqlite3.Connection, query: str) -> tuple[PhotoRecord, ...
     ]
     placeholders = ",".join("?" * len(folder_ids))
     folder_clause = f" OR p.folder_id IN ({placeholders})" if folder_ids else ""
+    scope_clause = " AND p.id = ?" if only_id is not None else ""
+    scope_params = () if only_id is None else (only_id,)
     rows = conn.execute(
-        f"{_SELECT} WHERE p.id IN "
+        f"{_SELECT} WHERE (p.id IN "
         "(SELECT rowid FROM photos_fts WHERE photos_fts MATCH ?)"
-        f"{folder_clause} ORDER BY f.path, p.name",
-        (phrase, *folder_ids),
+        f"{folder_clause}){scope_clause} ORDER BY f.path, p.name",
+        (phrase, *folder_ids, *scope_params),
     )
     return _records(rows)
 

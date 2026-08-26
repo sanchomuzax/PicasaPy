@@ -39,7 +39,12 @@ from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.edit.effect_clipboard import copy_all_effects, paste_all_effects
 from picasapy.fileops import RenameItem, preview_name, rename_photos_many
-from picasapy.index import open_index, photo_by_id, update_photo_fields
+from picasapy.index import (
+    open_index,
+    photo_by_id,
+    search_photos,
+    update_photo_fields,
+)
 from picasapy.ini import (
     FilterWriteError,
     IniConflictError,
@@ -211,6 +216,44 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         if self._view_mode[0] in self._CSILLAG_SZURT_NEZETEK:
             self._refresh_view()
 
+    #: #1515: azok a nézetmódok, amelyek TAGSÁGÁT a keresés dönti el. A
+    #: `search-folder` (#45: keresés közben mappára kattintva) is ide
+    #: tartozik: a rács ott a találatok egy mappára szűkített része, tehát
+    #: a kiesés ott is kiesés.
+    _KERESES_SZURT_NEZETEK = ("search", "search-folder")
+
+    def _refresh_if_dropped_from_search(self, photo_id: int) -> None:
+        """Újralekérdezés, ha a kép KIESETT az aktuális keresés találatai
+        közül (#1515) — pl. mert töröltük a feliratot, ami miatt találat volt.
+
+        **Miért nem kérdezzük újra mindig?** Mérve, valósághű indexen
+        (140 755 kép / 3 000 mappa, a felhasználó gyűjteményének mérete):
+        a teljes `search_photos` medián **597 ms** egy 27 179 találatos
+        kulcsszónál, míg az EGY KÉPRE szűkített, ugyanazon a kódúton futó
+        tagság-lekérdezés **6–11 ms**. A költséget a találatszám (a
+        rekordépítés) viszi, nem az SQL, ezért a feliratmentésenkénti teljes
+        újralekérdezés a felhasználó gyűjteményén fél másodperces
+        akadásokat okozna. Összehasonlításul a #1443 csillag-nézete
+        162 ms — az volt még kifizethető, ez már nem.
+
+        **Bekerülést nem kell vizsgálni:** a szerkesztett kép a művelet
+        pillanatában LÁTSZIK a rácson (a `setCaption` sorszámot kap a
+        `self._photos` listájából), tehát biztosan találat VOLT. Csak az a
+        kérdés maradt, találat-e még.
+
+        Szándékosan `_refresh_view()` és nem sor-eltávolítás: így a bal
+        hasáb „Search results for … (N)" darabszáma és a találatos mappák
+        listája is követ, és a visszaadott felirat magától visszahozza a
+        képet."""
+        mode, param = self._view_mode
+        if mode not in self._KERESES_SZURT_NEZETEK:
+            return
+        query = param if mode == "search" else param[0]
+        with open_index(self._db_path) as conn:
+            if search_photos(conn, query, only_id=photo_id):
+                return  # találat maradt — a sor frissítése elég volt
+        self._refresh_view()
+
     @Slot(int)
     def toggleStar(self, row: int) -> None:
         """Csillag be/ki — a .picasa.ini-be írva (kétirányú kompatibilitás:
@@ -247,7 +290,11 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         """Felirat mentése — Picasa írási szabály (spec #3): JPEG-nél az
         IPTC-be (a képfájlba) írjuk, minden más formátumnál a .picasa.ini-be,
         ahogy a csillag/forgatás is. Az IPTC-írás sikertelensége esetén
-        (pl. sérült fájl) defenzíven az ini-útra esünk vissza."""
+        (pl. sérült fájl) defenzíven az ini-útra esünk vissza.
+
+        #1515: a felirat FTS-mező, tehát keresési nézetben a művelet a lista
+        TARTALMÁT is változtathatja — az utómunka ezért megnézi, találat
+        maradt-e a kép, és csak kiesésnél kérdezi újra a nézetet."""
         photos = self._photos.photos
         if not 0 <= row < len(photos):
             return
@@ -270,7 +317,11 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             update_document(ini_path, mutate, backup=True)
             return {"caption_ini": text or None}
 
-        self._run_photo_write(photo.id, perform)
+        self._run_photo_write(
+            photo.id,
+            perform,
+            after=lambda: self._refresh_if_dropped_from_search(photo.id),
+        )
 
     # -- tömeges átnevezés (#366, rename.fen paritás) ------------------------
 

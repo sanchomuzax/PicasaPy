@@ -37,6 +37,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   láttad, ami valójában van. Mostantól a kép rögtön kikerül a nézetből, és a
   zöld eredménysáv is a valódi darabszámot mutatja (korábban akkor is
   „2 kép látható" állt ott, amikor egy sem látszott).
+- **A keresés találati listája azonnal követi a felirat módosítását
+  (#1515).** Eddig, ha a keresés eredményében állva letörölted egy kép
+  feliratát — épp azt, ami miatt a kép találat volt —, a kép ottmaradt a
+  listában, amíg újra rá nem kerestél. Mostantól rögtön kikerül, és a bal
+  hasáb találatszáma is követ. A program előbb csak azt kérdezi meg, hogy a
+  szerkesztett kép találat maradt-e, és csak kieséskor futtatja újra a
+  keresést: így nagy gyűjteményben (140 ezer kép) egyetlen feliratmentés sem
+  akad meg. A címke- és az átnevezés-út mérés szerint eddig is helyes volt.
 
 ## [0.8.101] – 2026-08-26
 
