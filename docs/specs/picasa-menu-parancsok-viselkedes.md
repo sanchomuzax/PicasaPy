@@ -336,3 +336,60 @@ tételekkel.
 hívója **a menüsor építője** (`0x00559150`) ⇒ **adatvezérelt
 gyorsbillentyű-út létezik**, de a fájl **nincs mellékelve** (két
 ellenőrzés: `ls` és rekurzív `find`, nulla találat). Jegy: **#442**.
+
+## A 23–26. adag (2026-08-27, második menet)
+
+### 23. `ID_VIEW_SEPIA` · `ID_VIEW_BW` — ⚠️ NEM megjelenítési módok
+
+**Helyesbítés**: a 2026-08-26-i kör tíz „megjelenítési módot" említett;
+ebből **kettő effektust alkalmaz**. Ez magyarázza, hogy az `ID_VIEW_BW`
+**három** menüpozícióban van, és hogy a `&Szépia` felirat **két**
+parancshoz tartozik (`ID_PICTURE_SEPIA`, `ID_VIEW_SEPIA`).
+
+A diszpécser (`0x005cca47`–`0x005cca8e`) **kétágú**:
+
+```
+call 0x00579330            ; nyitva a szerkesztő? (37 b, "editpanel/preview")
+je   <2. ág>
+; 1. ÁG: mov edx,"editpanel/tab3"; call 0x009cd8a0  ⇒ a 3. FÜLRE VÁLT, ott alkalmaz
+; 2. ÁG: mov eax,"sepia"; call 0x005fe370           ⇒ KÖTEGELT a kijelölésre
+```
+
+A kötegelt applikátor `0x005fe370` (1662 b) a **`filters`** ini-kulcsot
+írja, és két hibaüzenete van: `IDS_NEEDS_SELECTION` („Ehhez a művelethez
+képek kijelölésére van szükség.") és `IDS_SOME_EDITS_FAILED_TYPE`
+(„…**mozgóképekre nem lehet effektusokat alkalmazni**."). Ugyanezt a
+mintát követi az `unsharp`/`unsharp2` is. Jegy: **#1409**.
+
+### 24. `ID_PASSPORT` — pontosan EGY arc
+
+`0x00531c60` (1032 b). A feltétel mérve:
+
+```
+0x00531d8c  call 0x0047ae90       ; arcfelismerés
+0x00531d95  and ecx, 0xfffffffe   ; ytVector méret = darab*2 | jelző
+0x00531d98  cmp ecx, 2            ; ⇐ pontosan EGY arc
+```
+
+Három felirat: `Passport0` = „Nem találhatók arcok", `Passport1` = „Úgy
+tűnik, több arc van a képen.", `Passportfail` = „Megpróbálkozik egy másik
+képpel?" (kérdés ⇒ igen/nem párbeszéd). Konstans: `0xc7dcc8` = **0,3**.
+Jegy: **#1401**.
+
+### 25. `ID_PICTURE_GEOUNTAG`
+
+A `geotag` ini-kulcs eltávolítása. **Nálunk a képesség kész és bekötött**
+(`geo_controller.py:99` → `PlacesPanel.qml:99`) — kizárólag a
+**menü-belépési pont** hiányzik a `Geotag` almenüből. Felirat:
+„Geocímkék törlése". Jegy: **#1404**.
+
+### 26. `ID_SEARCHTOKEN`
+
+`0x005d8330` (869 b) — bekérő párbeszéd. **Három** külön szöveg:
+a menüfelirat „&Címke megjelenítése albumként…", a párbeszéd címe
+`ThumbUI::addsearchtoken` = „Keresési címke hozzáadása", a felszólítás
+`CAlbumState::addsearchprompt` = „Írja be az albumként megjelenítendő
+címkét". Jegy: **#1406**.
+
+*(`ID_DELETE_EMPTY_ALBUMS` — „Üres **online** albumok törlése…" ⇒ Picasa
+Web, **hatókörön kívül**; a `menu_lefedettseg.py` kizáró listájára került.)*

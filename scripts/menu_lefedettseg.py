@@ -42,9 +42,10 @@ NEVSOR_LAPOK = {"picasa-menu-leltar.md"}
 VISELKEDES_LAP = "picasa-menu-parancsok-viselkedes.md"
 
 #: Nem építjük meg — a Picasa Web / Google+ / YouTube szolgáltatások 2016
+#: (az `ID_DELETE_EMPTY_ALBUMS` felirata kimondja: „Üres ONLINE albumok törlése")
 #: óta nem léteznek, a CD-írás és a telepítő-kezelés nem a mi dolgunk.
 HATOKORON_KIVUL = re.compile(
-    r"^ID_(FTPWEB|GETMYSTUFF|TOOLS_BATCH_UPLOAD|TOOLS_COLLAB|TOOLS_YOUTUBE"
+    r"^ID_(FTPWEB|GETMYSTUFF|TOOLS_BATCH_UPLOAD|TOOLS_COLLAB|TOOLS_YOUTUBE|DELETE_EMPTY_ALBUMS"
     r"|EXPORT_EARTH|HELP_UNINSTALL|HELP_CHECK_FOR_UPDATES|HELP_PICASA_FORUMS"
     r"|HELP_PICASA_README|HELP_RELEASENOTES|HELP_PRIVACY|HELP_DEFAULT)$"
 )
