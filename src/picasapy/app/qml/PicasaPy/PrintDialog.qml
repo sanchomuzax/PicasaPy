@@ -30,7 +30,14 @@ Window {
 
     // #305 mintája: null-őr. A vezérlőt az `application.py` regisztrálja;
     // a menüsávot/ablakot önmagában betöltő próbák nem.
-    readonly property var ctl:
+    // ⚠️ A név SZÁNDÉKOSAN nem `ctl` (#1476): azt a rövidítést öt másik
+    // QML-fájl is használja, mindegyik MÁS vezérlőre. A képesség-őr az
+    // álneveket ma globálisan oldja fel, tehát egy hatodik jelentés
+    // kétértelművé tenné, és az őr — konzervatívan — mind a hat fájl
+    // hivatkozásait eldobná. Mérve: a `ctl` alakkal 441-ről 424-re esett
+    // az élő hivatkozások száma. Az őr saját hibája (külön jegy), de a
+    // beszédesebb név itt amúgy is jobb.
+    readonly property var printCtl:
         (typeof printController !== "undefined") ? printController : null
 
     // a nyomtatandó sorok (a `controller.photos` modell sorindexei) — a
@@ -66,7 +73,7 @@ Window {
     property var lastSkipped: []
 
     readonly property bool canPrint:
-        printWindow.ctl !== null
+        printWindow.printCtl !== null
         && printWindow.rows.length > 0
         && (!printWindow.pdfSelected || printWindow.pdfTarget.length > 0)
 
@@ -84,17 +91,17 @@ Window {
         // miért nem tud dolgozni, ahelyett hogy szürke gombot mutatna
         // ⚠️ a tulajdonos NEM programozó: a puszta „hiányzik egy modul"
         // neki zsákutca. Az üzenet ezért kimondja a telepítő parancsot is.
-        printWindow.lastError = printWindow.ctl
+        printWindow.lastError = printWindow.printCtl
             ? "" : qsTr("Printing is unavailable: the Qt print support "
                         + "module is missing. On Debian/Ubuntu you can "
                         + "install it with: "
                         + "sudo apt install python3-pyside6.qtprintsupport")
-        printWindow.printers = printWindow.ctl ? printWindow.ctl.listPrinters() : []
+        printWindow.printers = printWindow.printCtl ? printWindow.printCtl.listPrinters() : []
         printWindow.visible = true
     }
 
     function startPrint() {
-        if (!printWindow.ctl) return
+        if (!printWindow.printCtl) return
         printWindow.lastError = ""
         printWindow.lastResult = ""
         printWindow.lastSkipped = []
@@ -110,18 +117,18 @@ Window {
                 printWindow.lastError = qsTr("Choose the target file.")
                 return
             }
-            printWindow.ctl.renderPrintPreviewPdf(
+            printWindow.printCtl.renderPrintPreviewPdf(
                 printWindow.rows, printWindow.fitMode,
                 printWindow.orientation, printWindow.pdfTarget)
             return
         }
-        printWindow.ctl.printRows(
+        printWindow.printCtl.printRows(
             printWindow.rows, printWindow.printerName,
             printWindow.fitMode, printWindow.orientation)
     }
 
     Connections {
-        target: printWindow.ctl
+        target: printWindow.printCtl
         function onPrintFinished(target) {
             printWindow.lastError = ""
             printWindow.lastResult = target

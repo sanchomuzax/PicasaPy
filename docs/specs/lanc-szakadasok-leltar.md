@@ -71,10 +71,10 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *Kézzel ne szerkeszd: a `tests/tools/test_kepesseg_or_1476.py` őrzi.*
 
 - vizsgált Python-fájl: **83**
-- vizsgált QML/JS-fájl: **140**
-- regisztrált kontextus-objektum: **18** (+1 nem QObject)
-- feloldott alias: **10**
-- kontextuson elérhető `@Slot`/`@Property` tag: **496**
+- vizsgált QML/JS-fájl: **141**
+- regisztrált kontextus-objektum: **19** (+1 nem QObject)
+- feloldott alias: **11**
+- kontextuson elérhető `@Slot`/`@Property` tag: **499**
 - ebből QML-ből NEM elérhető: **56**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
@@ -142,7 +142,6 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 |---|---|---:|---|
 | `FolderListModel` | `app/models.py` | 3 | BELSŐ — a QML a controller.folders tulajdonságon át kapja meg a modellt |
 | `PhotoGridModel` | `app/models.py` | 15 | BELSŐ — a QML a controller.photos tulajdonságon át kapja meg a modellt |
-| `PrintController` | `app/print_controller.py` | 3 | #1472 — a nyomtatás vezérlője soha nem példányosul, nincs setContextProperty |
 
 <!-- KEPESSEG_OR:VEGE -->
 
