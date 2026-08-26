@@ -16,6 +16,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
   is elveti, ahogy az eredeti Picasa buboréksúgója írja („Az összes
   alkalmazott vágás elvetése"), és a gomb szürke, ha nincs mit elvetni. A
   művelet a Visszavonás gombbal visszafordítható.
+- **A másolt képek azonnal megjelennek (#1522).** Ha egy képet olyan mappába
+  másoltál, amit a program még nem ismert, a másolat **percekig láthatatlan
+  maradt** — odanavigálva üres mappát láttál. (Áthelyezésnél ez már eddig is
+  rendben volt: mérve 0,06 másodperc, másolásnál 25 másodperc alatt sem
+  jelent meg.) Mostantól a másolás is azonnal beolvastatja a célmappát.
+### Hozzáadva
+- **Visszavonható lett az összes effektus beillesztése és a csoportos
+  szerkesztés (#1475).** Ez a két művelet eddig elvégezhető volt, de
+  visszacsinálni nem lehetett: a program tudta, hogyan kell, csak nem volt
+  hozzá menüpont. Mostantól a **Szerkesztés** menü élén ott az „Az összes
+  effektus beillesztésének visszavonása" és a „Csoportos szerkesztés
+  visszavonása" — mindkettő szürke, ha épp nincs mit visszavonni. A kettő
+  külön él, mert két külön műveletsort vonnak vissza.
+
 ### Belső
 - **A felület által soha nem szólított vezérlő-tagok átvizsgálva (#1052).**
   Huszonhat ilyen tagról született tételes döntés (hiba, szándékos vagy

@@ -100,14 +100,12 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 47.**
+**Felületről el nem ért vezérlő-tag: 43.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
 | `compactController` | `wastedPercent` | Property | `app/compact_controller.py` | MÉRVE — a tömörítés-párbeszéd nem mutatja, mennyi hely nyerhető |
 | `controller` | `setDarkTheme` | Slot | `app/appearance_controller.py` | FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml) |
-| `controller` | `canUndoBatchEdit` | Property | `app/batch_effect_controller.py` | #1475 — a kötegelt szerkesztés visszavonása gomb nélkül áll |
-| `controller` | `undoBatchEdit` | Slot | `app/batch_effect_controller.py` | #1475 — ugyanaz, a művelet maga |
 | `controller` | `collageFrameCenter` | Property | `app/collage_controller.py` | MÉRVE — kollázs-keret középpont; a vászon nem köti |
 | `controller` | `collageTitle` | Property | `app/collage_save.py` | MÉRVE — a kollázs címe a felületen nem jelenik meg |
 | `controller` | `setCollageTitle` | Slot | `app/collage_save.py` | BELSŐ — a kollázs-vezérlő állítja (collage_controller.py:437, collage_save.py:918) |
@@ -118,18 +116,16 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `restoreSession` | Slot | `app/controller.py` | BELSŐ — a controller.py:876 és a library_controller.py:346 hívja induláskor |
 | `controller` | `setFolderDescription` | Slot | `app/controller.py` | FELVÁLTVA — a felület a setFolderDescriptionOf(path, …) alakot hívja |
 | `controller` | `collageSeed` | Property | `app/create_controller.py` | MÉRVE — a véletlen elrendezés magja bekötetlen |
-| `controller` | `hasEffectsClipboard` | Property | `app/effects_controller.py` | #1475 — a kép-specifikus effekt-vágólap (#152) UI nélkül áll |
-| `controller` | `canUndoPasteEffects` | Property | `app/effects_controller.py` | #1475 — ugyanannak a vágólapnak a visszavonás-jelzője |
-| `controller` | `copyEffects` | Slot | `app/effects_controller.py` | #1475 — a menü a KÖTEGELT úton megy (photo_ops_controller), ez a kép-specifikus ág |
-| `controller` | `pasteEffects` | Slot | `app/effects_controller.py` | #1475 — ugyanaz, a beillesztés |
-| `controller` | `undoPasteEffects` | Slot | `app/effects_controller.py` | #1475 — ugyanaz, a visszavonás |
+| `controller` | `hasEffectsClipboard` | Property | `app/effects_controller.py` | MÉRVE — kép-specifikus effekt-vágólap (#152); külön jegyet vár |
+| `controller` | `canUndoPasteEffects` | Property | `app/effects_controller.py` | MÉRVE — ugyanannak a vágólapnak a visszavonás-jelzője |
+| `controller` | `copyEffects` | Slot | `app/effects_controller.py` | MÉRVE — a másolás; a felület a KÖTEGELT copyAllEffects-et hívja |
+| `controller` | `pasteEffects` | Slot | `app/effects_controller.py` | MÉRVE — a beillesztés; a felület a KÖTEGELT pasteAllEffects-et hívja |
+| `controller` | `undoPasteEffects` | Slot | `app/effects_controller.py` | MÉRVE — a visszavonás; a felületé az undoPasteAllEffects |
 | `controller` | `exportMovieFull` | Slot | `app/export_controller.py` | BELSŐ — a beállítást az export_controller.py:371 olvassa vissza |
 | `controller` | `setExportMovieFull` | Slot | `app/export_controller.py` | MÉRVE — a beállítás írása bekötetlen; a párja BELSŐ |
 | `controller` | `locationOfRow` | Slot | `app/geo_controller.py` | MÉRVE — a sor helyadata bekötetlen |
 | `controller` | `removeWatchedFolder` | Slot | `app/library_controller.py` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
 | `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py` | MÉRVE — a QML SAJÁT tükrét számolja (FolderStatePanel.qml:40, FolderManagerDialog.qml:198) |
-| `controller` | `canUndoPasteAllEffects` | Property | `app/photo_ops_controller.py` | #1475 — a Paste All Effects visszavonása gomb nélkül áll |
-| `controller` | `undoPasteAllEffects` | Slot | `app/photo_ops_controller.py` | #1475 — ugyanaz, a művelet maga |
 | `editController` | `revision` | Property | `app/edit_controller.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
 | `editController` | `redeyeActive` | Property | `app/edit_controller.py` | MÉRVE — az EditorPanel.qml:132 SAJÁT `property bool redeyeActive`-ot tart |
 | `editController` | `enhanceActive` | Property | `app/edit_controller.py` | FELVÁLTVA — a #116 az egygombos javításokról LEVETTE a „benyomva" állapotot; a csempe a párját, az enhanceEnabled-et köti (PhotoViewer.qml:291) |

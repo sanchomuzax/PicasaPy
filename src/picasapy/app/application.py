@@ -503,8 +503,9 @@ def _watched_folder_of(path: str, roots) -> str | None:
 
 def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
     """Fájlműveletek utáni index-frissítés (#15): a sikeres átnevezés/
-    áthelyezés/törlés után az érintett mappák célzott resyncje, hogy a rács
-    (és a .picasa.ini-t követő szekció) azonnal a valós állapotot mutassa."""
+    áthelyezés/másolás/törlés után az érintett mappák célzott resyncje, hogy
+    a rács (és a .picasa.ini-t követő szekció) azonnal a valós állapotot
+    mutassa."""
 
     def refresh(*paths: str) -> None:
         seen: set[str] = set()
@@ -517,6 +518,9 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
     fileops.photoRenamed.connect(lambda old, new: refresh(old, new))
     fileops.photoMoved.connect(lambda old, new: refresh(old, new))
     fileops.photoDeleted.connect(refresh)
+    # #1522: másolásnál CSAK a célmappa változott — a forrás érintetlen
+    # marad, annak újraolvasása fölösleges lemez- és indexmunka volna.
+    fileops.photoCopied.connect(lambda _source, new: refresh(new))
 
 
 def _configured_language() -> str:

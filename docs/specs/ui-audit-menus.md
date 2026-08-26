@@ -61,6 +61,7 @@ tartalmilag megegyeznek a Mappa-éval.
 
 | eredeti felirat | gyorsbillentyű | van-e nálunk | megjegyzés |
 |---|---|---|---|
+| Visszavonás / Újra | Ctrl+Z / Ctrl+Y | **eltérő** | ⚠️ A képernyőképekből ez a sor KIMARADT — az `eMenuEdit::ID_UNDO`/`ID_REDO` viszont a szállított szövegtárban ott van (`picasa-hu-terminology.md`). Nálunk a #1475 óta a menü élén **két, művelet szerint nevesített** tétel áll („Az összes effektus beillesztésének visszavonása", „Csoportos szerkesztés visszavonása") az eredeti EGY általános „Visszavonás"-a helyett, mert a #465 óta három külön verem van. Gyorsbillentyű SZÁNDÉKOSAN nincs: nem dönthető el egyértelműen, melyik vermet sütné el |
 | Kivágás | Ctrl+X | **nem** | hiányzik (a top-menüből; szövegmezőkben feltehetően OS-szinten működik) |
 | Másolás | Ctrl+C | **nem** | hiányzik |
 | Beillesztés | Ctrl+V | **nem** | hiányzik |

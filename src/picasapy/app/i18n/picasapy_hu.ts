@@ -4203,6 +4203,16 @@ Egy gyűjtemény megnyitásához kattintson duplán a nevére, vagy kattintson a
         <translation>S&amp;zerkesztés</translation>
     </message>
     <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="295"/>
+        <source>Undo Paste All Effects</source>
+        <translation>Az összes effektus beillesztésének visszavonása</translation>
+    </message>
+    <message>
+        <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="301"/>
+        <source>Undo Batch Edit</source>
+        <translation>Csoportos szerkesztés visszavonása</translation>
+    </message>
+    <message>
         <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="80"/>
         <source>Copy All Effects</source>
         <translation>Az összes effektus másolása</translation>
