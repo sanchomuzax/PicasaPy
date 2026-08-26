@@ -282,14 +282,26 @@ class TestAzAthelyezettMappaAzUjHelyenLatszik:
     def test_a_figyelt_gyoker_athelyezese_nem_uriti_ki_az_indexet(
         self, egyseg, qt_app, tmp_path
     ):
-        """Adatbiztonsági korlát: ha MAGÁT a figyelt gyökeret helyezik át,
-        a régi oldal takarítása KIMARAD.
+        """Adatbiztonsági korlát: a figyelt gyökér áthelyezése SEM ürítheti
+        ki a könyvtárat.
 
-        A gyökér útvonala a figyelt mappák közt (és a
-        `WatchedFolders.txt`-ben) ilyenkor a régi helyre mutat — a
-        könyvtár teljes tartalmát azon az alapon törölni, hogy a program
-        saját nyilvántartása szerint ott KELL lennie, kockázatosabb, mint
-        egy ideig elavult sorokat mutatni. A gyökér követése külön jegy."""
+        ## Mi változott a #1542-vel, és mi NEM
+
+        A #1538-ban ez a védelem úgy szólt, hogy a RÉGI oldal takarítása
+        kimarad — a gyökér útvonala ugyanis a figyelt mappák közt (és a
+        `WatchedFolders.txt`-ben) a régi helyre mutatott, tehát a program
+        saját nyilvántartása szerint ott KELLETT volna lennie. Mutációval
+        mérve: e védelem nélkül a bal hasáb ilyenkor teljesen kiürült
+        (`set()`).
+
+        A #1542 óta a horgony KÖVETI a mozgást (index-átírás + `_roots` +
+        `WatchedFolders.txt`), tehát a könyvtár nem a régi, hanem az ÚJ
+        útján marad meg. A KÖVETELMÉNY változatlan — „a könyvtár nem
+        tűnhet el" —, csak a helyes útvonal más; ezért néz ez az állítás
+        a `kivul` alá. A #1538 `_reszfa_az_indexbol`-kapuja MEGMARADT, és
+        pontosan arra az ágra érvényes, ahol a követés nem sikerül (pl. a
+        régi néven ismét áll egy mappa) — azt a
+        `tests/app/test_gyoker_athelyezes_kovetes_1542.py` méri."""
         ctl, fileops, library, _ = egyseg
         kivul = tmp_path / "mashol"
         kivul.mkdir()
@@ -302,6 +314,8 @@ class TestAzAthelyezettMappaAzUjHelyenLatszik:
 
         assert _var(qt_app, lambda: bool(kesz), 15.0), "nem futott célzott szinkron"
         _var(qt_app, lambda: False, 0.5)  # a modellfrissítés köre
-        assert str(library / "album") in self._mappa_utak(ctl), (
+        mappak = self._mappa_utak(ctl)
+        assert mappak, "a figyelt gyökér áthelyezésekor a könyvtár némán kiürült"
+        assert str(kivul / "kepek" / "album") in mappak, (
             "a figyelt gyökér áthelyezésekor a könyvtár némán kiürült"
         )

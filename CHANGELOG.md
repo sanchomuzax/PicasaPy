@@ -5,6 +5,23 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Javítva
+- **A képmappád áthelyezése után sem veszik el a könyvtárad (#1542).** Ha a
+  programon belül magát a figyelt fő képmappádat helyezted át, a PicasaPy
+  továbbra is a régi, már nem létező helyet kereste — és a szokásos
+  ellenőrző körében **az egész könyvtárat kiürítette**: a bal hasáb üresen
+  maradt, a nyilvántartásból mind a mappák, mind a képek eltűntek. (Mérve:
+  3 mappa / 3 kép → 0 / 0 a program alapbeállításával; a fényképek magukon a
+  lemezen természetesen végig sértetlenek voltak.) Mostantól a program
+  **követi a mozgást**: a nyilvántartás átíródik az új helyre — egyetlen sor
+  törlése nélkül —, és a figyelt mappák beállítása is az új helyre mutat,
+  tehát a következő indításnál is minden a helyén van. (Mérve: 0,03–0,05
+  másodperc.) Ha közben a régi néven ismét áll egy mappa, a program
+  óvatosabb: nem ír át semmit, csak naplóz — nem hagy abba némán egy létező
+  mappát.
+
 ## [0.8.112] – 2026-08-26
 
 ### Javítva

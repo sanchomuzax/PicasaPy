@@ -384,6 +384,115 @@ def folder_paths_under(conn: sqlite3.Connection, root: str | Path) -> tuple[str,
     )
 
 
+#: A #1542 útvonal-átírása ezeket a táblákat érinti — MINDEGYIK ABSZOLÚT
+#: útvonalat tárol kulcsként, tehát egy áthelyezett részfánál MIND elavul:
+#:
+#: * `folders` — a mappák sorai (a fotók a `folder_id`-n lógnak, azokhoz
+#:   ezért nem kell nyúlni: a részfa átírása egyetlen fotósort sem érint);
+#: * `folder_scan_state` — a „változott-e a mappa" pecsétek. Átírás nélkül
+#:   a teljes áthelyezett fa elavultnak látszana (fölösleges újraolvasás),
+#:   a régi sorok pedig örökre ottragadnának;
+#: * `removed_folders` — a #1249 SÍRKÖVEI. Átírás nélkül egy korábban
+#:   „Eltávolítás a Picasából"-val kivett almappa az áthelyezés után némán
+#:   VISSZAJÖNNE — a felhasználó döntése veszne el;
+#: * `photo_hashes` — a #294 dHash-gyorsítótára (FÁJL-útvonalra kulcsolva).
+#:   Tisztán származtatott adat, de átírás nélkül az egész gyűjtemény
+#:   hash-eit újra kellene számolni, a régi sorok meg szemétként maradnának.
+_PATH_TABLES = ("folders", "folder_scan_state", "removed_folders", "photo_hashes")
+
+
+def _reszfa_feltetel(root: Path) -> tuple[str, tuple[str, str]]:
+    """WHERE-feltétel + paraméterek egy `path` oszlop `root` alatti soraira.
+
+    Az `_under_root_query` mintája, de tábla NÉLKÜL: az `UPDATE`-be a
+    `FROM` záradék nem fér bele (SQLite 3.33 óta az `UPDATE … FROM` JOIN-t
+    jelent, és a `path` oszlop kétértelművé válna). A LIKE-minta itt is
+    escape-elt és elválasztóval zárt: a „…/kep" gyökér NEM foghatja meg a
+    „…/kepek" sorait."""
+    prefix = str(root).rstrip(os.sep) + os.sep
+    escaped = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return (
+        "WHERE path = ? OR path LIKE ? ESCAPE '\\'",
+        (str(root), escaped + "%"),
+    )
+
+
+def move_folder_tree(
+    conn: sqlite3.Connection, old_root: str | Path, new_root: str | Path
+) -> int:
+    """Egy ÁTHELYEZETT részfa útvonalainak ÁTÍRÁSA az indexben (#1542).
+
+    Akkor kell, amikor MAGA a figyelt gyökér mozdult el: a `_roots` és a
+    `WatchedFolders.txt` az új helyre áll, tehát az indexnek is oda kell
+    mutatnia — különben a gyökér alá már egyetlen indexsor sem esik, és a
+    következő induláskor a `prune_foreign_folders` (#58) az egészet
+    kitakarítaná.
+
+    ⚠️ **Ez a függvény SORT NEM TÖRÖL ÉS NEM HOZ LÉTRE** — kizárólag a
+    `path` oszlopokat írja át. Ez a jegy adatbiztonsági súlypontja: egy
+    áthelyezés nem járhat sorvesztéssel, és a törlés-majd-újraolvasás
+    (`remove_root` + rescan) egy megszakadt köznél épp azt tenné.
+
+    Ütközésnél (az ÚJ út alatt már van indexsor) `ValueError`-t dob és
+    SEMMIT nem módosít: két, útvonal szerint megkülönböztethetetlen
+    részfáról nem tippelünk, melyik a hatályos — a hívó ilyenkor inkább
+    nem követi a gyökeret.
+
+    Visszatérési érték: az átírt MAPPA-sorok száma (a naplóhoz és a
+    tesztek fogához)."""
+    old_path = Path(normalize_path(old_root))
+    new_path = Path(normalize_path(new_root))
+    if old_path == new_path:
+        return 0
+    _ensure_scan_state(conn)
+    _ensure_photo_hashes(conn)
+    utkozes, params = _reszfa_feltetel(new_path)
+    sor = conn.execute(
+        f"SELECT 1 FROM folders {utkozes} LIMIT 1", params
+    ).fetchone()
+    if sor is not None:
+        raise ValueError(
+            f"Az index már tartalmaz sorokat az új út alatt: {new_path} — "
+            "az áthelyezett részfa átírása kimarad."
+        )
+    # a levágandó előtag hossza; az SQLite `substr` 1-alapú, tehát a
+    # +1 adja a maradékot (a pontos egyezésnél üres sztringet)
+    vagas = len(str(old_path)) + 1
+    mozgatott = 0
+    try:
+        for table in _PATH_TABLES:
+            feltetel, params = _reszfa_feltetel(old_path)
+            kurzor = conn.execute(
+                f"UPDATE {table} SET path = ? || substr(path, ?) {feltetel}",
+                (str(new_path), vagas, *params),
+            )
+            if table == "folders":
+                mozgatott = kurzor.rowcount
+    except sqlite3.Error:
+        conn.rollback()
+        raise
+    conn.commit()
+    logger.info(
+        "#1542: az áthelyezett részfa átírva az indexben: %s → %s (%d mappa)",
+        old_path,
+        new_path,
+        mozgatott,
+    )
+    return mozgatott
+
+
+def _ensure_photo_hashes(conn: sqlite3.Connection) -> None:
+    """A #294 hash-gyorsítótár lusta létrehozása — a `move_folder_tree`
+    régi (a tábla bevezetése előtt született) indexen is futhat."""
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS photo_hashes ("
+        " path TEXT PRIMARY KEY,"
+        " mtime_ns INTEGER NOT NULL,"
+        " size INTEGER NOT NULL,"
+        " dhash INTEGER NOT NULL)"
+    )
+
+
 def folder_scan_stamps(
     conn: sqlite3.Connection, paths: tuple[str, ...]
 ) -> dict[str, tuple[int, int | None]]:
