@@ -17,7 +17,7 @@ import QtQuick.Layouts
 // védhető hely: innen indul, itt szakítható meg, és itt derül ki, ha a
 // modell hiányzik.
 //
-// ## Két szabály, amit ez az ablak betart
+// ## Három szabály, amit ez az ablak betart
 //
 // 1. **NEM MODÁLIS** (#449). A beolvasás alatt semmi nem blokkolhatja a
 //    felhasználót: az ablak bezárható, a munka fut tovább, a haladás pedig a
@@ -26,16 +26,28 @@ import QtQuick.Layouts
 //    MARAD, de mellette ott áll, hogy mi hiányzik és hova kell tenni — a
 //    szöveget a vezérlő adja (`unavailableReason()`), mert a modell helye
 //    csak Python-oldalról ismert.
+// 3. **A magyarázat mellett ott a MEGOLDÁS is** (#1496). A „másold ide ezt
+//    az ONNX-fájlt" típusú teendő a tulajdonosnak — aki nem programozó —
+//    zsákutca volt: a program megmondta, mi hiányzik, de nem adott rá utat.
+//    A hiányzó modell mellett ezért most egy **Letöltés** gomb is áll,
+//    haladásjelzővel és bármikori megszakítással. A letöltött fájl épségét
+//    (méret + SHA-256) a program ELLENŐRZI: csonka modellel a felismerés
+//    némán ROSSZUL működne, ezért a romlott fájlt eldobja, nem használja.
 Window {
     id: faceScanWindow
     objectName: "faceScanDialog"
     title: qsTr("Find Faces")
     // #449: SZÁNDÉKOSAN nem modális — ld. a fenti 1. szabályt.
     modality: Qt.NonModal
-    width: 560
-    height: 420
-    minimumWidth: 420
-    minimumHeight: 320
+    // #1496: az ablak megnőtt, mert a letöltő rész (gomb + haladássáv +
+    // a forrást/méretet/licencet megnevező szöveg) MÉRVE 439 képpontnyi
+    // tartalmat adott a korábbi 420 képpontos ablakba — vagyis a
+    // magyarázat alja levágódott volna. A magyar fordítás hosszabb az
+    // angolnál, ezért van bőven tartalék.
+    width: 620
+    height: 620
+    minimumWidth: 460
+    minimumHeight: 380
     color: Theme.canvasBg
 
     // A vezérlő. A Main.qml az ablak-szintű álnéven adja át; a név
@@ -47,6 +59,11 @@ Window {
     // -- állapot ----------------------------------------------------------
     property bool scanning: false
     property bool grouping: false
+    // #1496: fut-e éppen a modell letöltése
+    property bool downloading: false
+    // mit tölt le a program, honnan, mekkorát, milyen licenc alatt —
+    // üres, ha nincs mit letölteni (a vezérlő adja, `modelDownloadOffer()`)
+    property string downloadOffer: ""
     // Az elérhetőség SLOT-ból jön, nem NOTIFY-property-ből, ezért nem
     // magától frissül: megnyitáskor és minden befejezett munka után
     // kérdezzük újra.
@@ -65,6 +82,11 @@ Window {
     readonly property int scanPercent:
         faceScanWindow.faceScan ? faceScanWindow.faceScan.scanPercent : -1
 
+    // #1496: a letöltés haladása (−1, ha nem fut) — DEKLARATÍV kötés, a
+    // `scanPercent` mintája szerint.
+    readonly property int downloadPercent:
+        faceScanWindow.faceScan ? faceScanWindow.faceScan.modelDownloadPercent : -1
+
     // ⚠️ A vezérlő tagjait MINDIG a `faceScanWindow.faceScan.<tag>` teljes
     // alakban hívjuk, soha nem egy `var ctlr = …` helyi változón át: a
     // képesség-őr (#1476, `scripts/kepesseg_or.py`) MINŐSÍTETT alakot keres,
@@ -76,6 +98,7 @@ Window {
             faceScanWindow.embedderAvailable = false
             faceScanWindow.detectorReason = ""
             faceScanWindow.embedderReason = ""
+            faceScanWindow.downloadOffer = ""
             return
         }
         faceScanWindow.detectorAvailable = faceScanWindow.faceScan.isAvailable()
@@ -84,6 +107,7 @@ Window {
         faceScanWindow.detectorReason = faceScanWindow.faceScan.unavailableReason()
         faceScanWindow.embedderReason =
             faceScanWindow.faceScan.embeddingUnavailableReason()
+        faceScanWindow.downloadOffer = faceScanWindow.faceScan.modelDownloadOffer()
     }
 
     function refreshFound() {
@@ -121,6 +145,19 @@ Window {
     function cancelGrouping() {
         if (faceScanWindow.faceScan)
             faceScanWindow.faceScan.cancelEmbedding()
+    }
+
+    // #1496 -----------------------------------------------------------
+    function startDownload() {
+        if (!faceScanWindow.faceScan) return
+        faceScanWindow.statusText = ""
+        faceScanWindow.downloading = true
+        faceScanWindow.faceScan.downloadModels()
+    }
+
+    function cancelDownload() {
+        if (faceScanWindow.faceScan)
+            faceScanWindow.faceScan.cancelModelDownload()
     }
 
     Connections {
@@ -179,6 +216,15 @@ Window {
             faceScanWindow.grouping = false
             faceScanWindow.refreshAvailability()
         }
+        // #1496
+        function onModelDownloadStarted() { faceScanWindow.downloading = true }
+        function onModelDownloadFinished(ok, message) {
+            faceScanWindow.downloading = false
+            faceScanWindow.statusText = message
+            // A siker ITT válik láthatóvá: a vezérlő újraépítette a
+            // modelleket, tehát a keresés gombja élővé lesz.
+            faceScanWindow.refreshAvailability()
+        }
     }
 
     ColumnLayout {
@@ -227,6 +273,82 @@ Window {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             text: faceScanWindow.detectorReason
+            font.pixelSize: Theme.fontSize - 1
+            color: Theme.folderDate
+        }
+
+        // -- #1496: a hiányzó modell LETÖLTÉSE, a szürke gomb mellől ------
+        //
+        // A gomb ott áll, ahol a hiány kiderül. Letöltés közben is
+        // engedélyezve marad? NEM — de nem is tűnik el: a `downloading`
+        // állapotban a felirata változik, mellette pedig a Mégse.
+        RowLayout {
+            objectName: "faceScanDownloadRow"
+            visible: !faceScanWindow.detectorAvailable
+                     || !faceScanWindow.embedderAvailable
+            Layout.fillWidth: true
+            spacing: 8
+            PicasaButton {
+                objectName: "faceScanDownloadButton"
+                text: faceScanWindow.downloading
+                      ? qsTr("Downloading...")
+                      : qsTr("Download the model")
+                enabled: !!faceScanWindow.faceScan && !faceScanWindow.downloading
+                onClicked: faceScanWindow.startDownload()
+            }
+            PicasaButton {
+                objectName: "faceScanDownloadCancelButton"
+                visible: faceScanWindow.downloading
+                text: qsTr("Cancel")
+                onClicked: faceScanWindow.cancelDownload()
+            }
+            Item { Layout.fillWidth: true }
+        }
+
+        ColumnLayout {
+            objectName: "faceScanDownloadProgressPanel"
+            visible: faceScanWindow.downloading
+            Layout.fillWidth: true
+            spacing: 4
+
+            Text {
+                objectName: "faceScanDownloadProgressLabel"
+                Layout.fillWidth: true
+                elide: Text.ElideRight
+                text: faceScanWindow.downloadPercent >= 0
+                      ? qsTr("Downloading the model... %1% complete")
+                            .arg(faceScanWindow.downloadPercent)
+                      : qsTr("Downloading the model...")
+                font.pixelSize: Theme.fontSize
+                color: Theme.textGray
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 8
+                radius: 4
+                color: Theme.trackBg
+                border.color: Theme.chromeBorder
+
+                Rectangle {
+                    objectName: "faceScanDownloadProgressFill"
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+                    radius: parent.radius
+                    color: Theme.picasaGreen
+                    width: faceScanWindow.downloadPercent > 0
+                           ? parent.width * faceScanWindow.downloadPercent / 100
+                           : 0
+                }
+            }
+        }
+
+        Text {
+            objectName: "faceScanDownloadOfferText"
+            visible: faceScanWindow.downloadOffer.length > 0
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            text: faceScanWindow.downloadOffer
             font.pixelSize: Theme.fontSize - 1
             color: Theme.folderDate
         }

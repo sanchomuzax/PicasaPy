@@ -5,6 +5,29 @@ sorozat instabil. A teljes, gépi generálású kiadási jegyzék a
 [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalon él — ez a
 fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
+## [Nem kiadott]
+
+### Hozzáadva
+- **Az arcfelismeréshez szükséges fájlt már a program is le tudja tölteni
+  (#1496).** Az **Eszközök ▸ Arcok keresése…** ablak eddig megmondta ugyan,
+  hogy hiányzik egy modellfájl és hova kellene másolni — de a fájl
+  beszerzése a felhasználóra maradt, így friss telepítésen az **Arcok
+  keresése** gomb végig szürke volt. Mostantól a hiányt jelző szöveg
+  mellett ott a **Modell letöltése** gomb: megnyomásra a program lehozza a
+  szükséges fájlokat (összesen kb. 37 MB), közben mutatja, hol tart, és a
+  letöltés bármikor megszakítható. Amint kész, az **Arcok keresése** gomb
+  azonnal élővé válik — újraindítás nélkül. Az ablak kiírja, honnan jön a
+  fájl (az OpenCV Zoo nyílt forrású projektjéből), mekkora, milyen licenc
+  alatt áll, és hova kerül a gépen.
+- **A letöltött fájl épségét a program ellenőrzi (#1496).** Egy
+  félbeszakadt letöltésből fél fájl marad, és ettől az arckeresés **nem
+  hibaüzenetet ad, hanem rossz eredményt** — ami sokkal rosszabb. Ezért a
+  program a letöltés végén összeveti a fájl méretét és ujjlenyomatát a
+  várttal, és ha nem stimmel, **eldobja**, ahelyett hogy használná; a
+  korábban letöltött, jó fájlt egy elrontott újratöltés sem ronthatja el.
+  Ha nincs internet, azt is megmondja, ahelyett hogy némán nem történne
+  semmi.
+
 ## [0.8.100] – 2026-08-26
 
 ### Megváltozott

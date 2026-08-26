@@ -38,14 +38,16 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections.abc import Callable
 from pathlib import Path
 
 import cv2
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag
 from picasapy.faces import detector as detector_module
 from picasapy.faces import embedder as embedder_module
+from picasapy.faces import model_download
 from picasapy.faces.detector import FaceDetector
 from picasapy.faces.embedder import FaceEmbedder
 from picasapy.index import (
@@ -128,20 +130,38 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     # property is (−1 = épp nem fut).
     scanPercentChanged = Signal()
 
+    # #1496: a modellfájl LETÖLTÉSE a felületről. A #1473 óta a párbeszéd
+    # megmondja, mi hiányzik — de a felhasználó (aki nem programozó) ettől
+    # még nem jutott modellhez, mert a `download_model()` a termékkódból
+    # sehonnan nem hívódott.
+    modelDownloadStarted = Signal()
+    #: (siker, felhasználói mondat) — megszakításnál és hibánál is szól,
+    #: néma bukás SEHOL.
+    modelDownloadFinished = Signal(bool, str)
+    modelDownloadPercentChanged = Signal()
+
     def __init__(
         self,
         db_path: str | Path,
         detector: FaceDetector | None = None,
         embedder: FaceEmbedder | None = None,
         faces_helper: FacesHelper | None = None,
+        detector_factory: Callable[[], FaceDetector] | None = None,
+        embedder_factory: Callable[[], FaceEmbedder] | None = None,
     ) -> None:
         super().__init__()
         self._db_path = Path(db_path)
         # Tesztben/CI-ben injektálható helyettesítő detektor/embedder is
         # lehet — alapból a valódi (modell nélkül önmagát kikapcsoló)
         # YuNet/SFace-becsomagolás.
-        self._detector = detector if detector is not None else FaceDetector()
-        self._embedder = embedder if embedder is not None else FaceEmbedder()
+        # #1496: a modellek ÚJRAÉPÍTÉSE a letöltés után ezeken a gyárakon
+        # megy. Enélkül a frissen letöltött modell csak újraindítás után
+        # élne — a felhasználónak pedig azt ígérjük, hogy a letöltés után
+        # rögtön kereshet.
+        self._detector_factory = detector_factory or FaceDetector
+        self._embedder_factory = embedder_factory or FaceEmbedder
+        self._detector = detector if detector is not None else self._detector_factory()
+        self._embedder = embedder if embedder is not None else self._embedder_factory()
         # #26 (3. lépcső): a tömeges névadás EZEN keresztül írja a
         # `faces=`/`[Contacts2]`-t — a MEGLÉVŐ `FacesHelper.addFace()` úton,
         # nem új írási logikával (ld. jegy). `None`-nal is működik (pl. a
@@ -152,6 +172,9 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         self._embedding_stop_event: threading.Event | None = None
         #: #449: a futó szkennelés haladása százalékban, −1 ha nem fut
         self._scan_percent = -1
+        #: #1496: a futó modell-letöltés haladása, −1 ha nem fut
+        self._model_download_percent = -1
+        self._model_download_stop_event: threading.Event | None = None
 
     @Slot(result=bool)
     def isAvailable(self) -> bool:
@@ -194,11 +217,18 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
 
         A két modell UGYANABBA a mappába kerül (`embedder.default_model_path`
         is a detektor `default_model_dir()`-jét használja), csak a fájlnév
-        és a felülbíráló környezeti változó más."""
+        és a felülbíráló környezeti változó más.
+
+        #1496: az üzenet ELSŐ mondata ma a letöltés gombjára mutat. Amíg a
+        kézi másolás volt az egyetlen út, a mondat ott kezdődött — a
+        tulajdonosnak, aki nem programozó, ez zsákutca volt. A kézi út
+        megmarad (haladóknak és zárt hálózaton), de másodikként."""
         return self.tr(
-            'The face recognition model file is missing, so this step cannot '
-            'run. Copy the file "{0}" into this folder: {1} — or point the '
-            "{2} environment variable at it — and then restart PicasaPy."
+            "The face recognition model file is missing, so this step cannot "
+            'run. Press "Download the model" below, and PicasaPy will get it '
+            'for you. If you would rather do it by hand: copy the file "{0}" '
+            "into this folder — {1} — or point the {2} environment variable "
+            "at it, and then restart PicasaPy."
         ).format(filename, str(detector_module.default_model_dir()), env_var)
 
     @Property(int, notify=scanPercentChanged)
@@ -213,6 +243,164 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
         if percent != self._scan_percent:
             self._scan_percent = percent
             self.scanPercentChanged.emit()
+
+    # -- #1496: a modellfájl beszerzése a felületről ------------------------
+
+    @Property(int, notify=modelDownloadPercentChanged)
+    def modelDownloadPercent(self) -> int:  # noqa: N802 — QML-property-stílus
+        """A futó modell-letöltés haladása (0–100), vagy −1, ha nem fut.
+
+        A `scanPercent` mintáját követi: a párbeszéd sávja DEKLARATÍV
+        kötéssel figyeli, nem jelzés-kezelőből frissül."""
+        return self._model_download_percent
+
+    def _set_model_download_percent(self, percent: int) -> None:
+        if percent != self._model_download_percent:
+            self._model_download_percent = percent
+            self.modelDownloadPercentChanged.emit()
+
+    @Slot(result=str)
+    def modelDownloadOffer(self) -> str:  # noqa: N802 — QML-slot-stílus
+        """Mit tölt le a program, honnan, mekkorát és milyen licenc alatt.
+
+        Üres sztring, ha nincs mit letölteni — a párbeszéd ezt használja a
+        letöltő rész elrejtésére is.
+
+        Miért a vezérlő adja a szöveget, nem a QML: a méret és a licenc a
+        `model_download` specjeiben él, a célmappa pedig XDG-függő —
+        mindkettő csak Python-oldalról ismert (a `unavailableReason()`
+        ugyanezt az elvet követi, #1473)."""
+        hianyzo = model_download.missing_specs()
+        if not hianyzo:
+            return ""
+        megabajt = model_download.total_missing_bytes() / (1024 * 1024)
+        # A tizedesjegy elválasztója NYELVFÜGGŐ: magyarul vessző, angolul
+        # pont. Az f-sztring mindig pontot adna („37.1 MB” magyar mondat
+        # közepén) — a `QLocale` a felület nyelvéhez igazítja.
+        licencek = " + ".join(dict.fromkeys(spec.license_name for spec in hianyzo))
+        return self.tr(
+            "PicasaPy downloads the model file from the OpenCV Zoo project "
+            "({0} MB in total). Licence: {1} — free to use. The file is "
+            "saved here: {2}"
+        ).format(
+            QLocale().toString(megabajt, "f", 1),
+            licencek,
+            str(detector_module.default_model_dir()),
+        )
+
+    @Slot()
+    def downloadModels(self) -> None:  # noqa: N802 — QML-slot-stílus
+        """A hiányzó arcfelismerő modellek letöltése — háttérszálon.
+
+        SOHA nem indul magától: csak a felhasználó gombnyomására. Ez az
+        EGYETLEN éles hálózati hívás a programban, ezért a döntés az övé
+        marad (ld. `picasapy.faces.model_download` modul-docstring)."""
+        if self._model_download_percent >= 0:
+            return  # már fut — a második kattintás ne indítson újat
+        if not model_download.missing_specs():
+            # Nem néma: a fájl a helyén van, mégsem tölthető be — ilyenkor
+            # a felhasználónak a TÖRLÉS a teendője, nem az újratöltés.
+            self.modelDownloadFinished.emit(
+                False,
+                self.tr(
+                    "The model file is already in place, but PicasaPy could "
+                    "not load it. It may be damaged: delete it from {0} and "
+                    "download it again."
+                ).format(str(detector_module.default_model_dir())),
+            )
+            return
+        stop_event = threading.Event()
+        self._model_download_stop_event = stop_event
+        self._set_model_download_percent(0)
+        self.modelDownloadStarted.emit()
+        try:
+            self._start_background(
+                self._run_model_download,
+                args=(stop_event,),
+                name="picasapy-face-model-download",
+            )
+        except BaseException:
+            # Beragadás elleni őr: ha a szál el sem indul, a `_run_…`
+            # törzse — és vele a jelzőt visszaállító `finally` — SOSEM fut
+            # le, a felület pedig örökre „letöltés alatt" maradna. Ez a
+            # hibaosztály már kétszer megharapott minket (#550, #1375).
+            self._model_download_stop_event = None
+            self._set_model_download_percent(-1)
+            self.modelDownloadFinished.emit(
+                False, self.tr("The download could not be started.")
+            )
+            raise
+
+    @Slot()
+    def cancelModelDownload(self) -> None:  # noqa: N802 — QML-slot-stílus
+        """A folyamatban lévő letöltés megszakítása darabhatáron — a
+        félkész fájl NEM marad a modell helyén (`download_spec` takarít)."""
+        if self._model_download_stop_event is not None:
+            self._model_download_stop_event.set()
+
+    def _run_model_download(self, stop_event: threading.Event) -> None:
+        siker = False
+        uzenet = ""
+        try:
+            eredmenyek = model_download.download_missing(
+                progress=lambda kesz, ossz: self._report_model_download(
+                    kesz, ossz, stop_event
+                ),
+                cancel=stop_event,
+            )
+            siker, uzenet = self._download_uzenet(eredmenyek)
+        except Exception as error:  # noqa: BLE001 — a letöltés se fagyassza a UI-t
+            _log.exception("arcfelismerő modell letöltése hiba")
+            siker = False
+            uzenet = self.tr("The download failed: {0}").format(str(error))
+        finally:
+            if self._model_download_stop_event is stop_event:
+                self._model_download_stop_event = None
+            self._set_model_download_percent(-1)
+        if siker:
+            # A frissen letöltött modell AZONNAL használható legyen —
+            # újraindítás nélkül (ez a jegy 5. „kész, ha" pontja).
+            self._detector = self._detector_factory()
+            self._embedder = self._embedder_factory()
+        self.modelDownloadFinished.emit(siker, uzenet)
+
+    def _report_model_download(
+        self, kesz: int, ossz: int, stop_event: threading.Event
+    ) -> None:
+        if stop_event.is_set():
+            return
+        self._set_model_download_percent(round(100 * kesz / ossz) if ossz else 100)
+
+    def _download_uzenet(self, eredmenyek) -> tuple[bool, str]:
+        """A letöltés kimenete → EGY felhasználói mondat.
+
+        A `model_download` megnevezett `status`-t ad (nem kivételt és nem
+        puszta hamis értéket), hogy itt minden ághoz más, cselekvésre
+        váltható mondat tartozhasson."""
+        if not eredmenyek:
+            return False, self.tr("There was nothing to download.")
+        bukott = next((e for e in eredmenyek if not e.ok), None)
+        if bukott is None:
+            return True, self.tr(
+                "The face recognition model has been downloaded. "
+                "You can start the search now."
+            )
+        if bukott.status == model_download.STATUS_CANCELLED:
+            return False, self.tr("The download was cancelled. Nothing was saved.")
+        if bukott.status == model_download.STATUS_CORRUPT:
+            return False, self.tr(
+                "The downloaded file was damaged, so PicasaPy threw it away "
+                "instead of using it — a damaged model would find faces "
+                "wrongly. Please try again."
+            )
+        if bukott.status == model_download.STATUS_DISK:
+            return False, self.tr(
+                "The model could not be saved to disk: {0}"
+            ).format(bukott.detail)
+        return False, self.tr(
+            "PicasaPy could not reach the download source. Check your "
+            "internet connection and try again."
+        )
 
     @Slot()
     def scanForFaces(self) -> None:

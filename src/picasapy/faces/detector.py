@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import logging
 import os
-import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -83,26 +82,22 @@ def download_model(
     """A modell letöltése a megadott (vagy alapértelmezett) helyre.
 
     SOHA nem hívódik automatikusan — sem induláskor, sem tesztben, sem a
-    `FaceDetector`-ből. Kézi eszköz / dokumentált telepítési lépés a
-    felhasználónak vagy a csomagolásnak. Hálózat/lemez-hiba esetén
-    csendesen `False`-t ad vissza, nem dob kivételt."""
-    target = Path(dest) if dest is not None else default_model_path()
-    try:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        tmp = target.with_suffix(target.suffix + ".part")
-        with urllib.request.urlopen(url, timeout=timeout) as response:  # noqa: S310
-            payload = response.read()
-        tmp.write_bytes(payload)
-        tmp.replace(target)
-        return True
-    except (OSError, ValueError) as error:
-        logger.warning(
-            "Az arcfelismerő modell letöltése sikertelen (%s) — a funkció "
-            "kikapcsolva marad, a modell kézzel is elhelyezhető: %s",
-            error,
-            target,
-        )
-        return False
+    `FaceDetector`-ből. Hálózat/lemez-hiba esetén csendesen `False`-t ad
+    vissza, nem dob kivételt.
+
+    #1496: a törzse ma az ELLENŐRZŐ letöltőé
+    (`model_download.download_spec`) — méret + SHA-256 nélkül egy csonka
+    vagy elcserélt fájl némán a modell helyére kerülne, és a felismerés
+    rosszul, de LÁTSZÓLAG működne. A korábbi változat semmit nem
+    ellenőrzött. A felületi út (`FaceScanController.downloadModels`)
+    ugyanide fut be: nincs második, ellenőrizetlen letöltő a fában.
+
+    Az import SZÁNDÉKOSAN a függvény törzsében van: a `model_download`
+    ezt a modult importálja (`MODEL_FILENAME`, `default_model_dir`),
+    modul-szinten tehát körbe érne."""
+    from .model_download import DETECTOR_SPEC, download_spec
+
+    return download_spec(DETECTOR_SPEC, dest=dest, url=url, timeout=timeout).ok
 
 
 @dataclass(frozen=True)
