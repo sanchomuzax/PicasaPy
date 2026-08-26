@@ -704,6 +704,8 @@ ApplicationWindow {
         onClearSelectionRequested: window.clearSelection()
         onFolderManagerRequested: folderManager.open()
         onDedupRequested: dedupDialog.open()
+        // #1473: Eszközök → Arcok keresése…
+        onFaceScanRequested: faceScanDialog.open()
         // #350: Eszközök → Beállítások…
         onOptionsRequested: optionsDialog.open()
         // #351: Exportálás weboldalként
@@ -831,6 +833,10 @@ ApplicationWindow {
     // #294: az appWindow-bekötés a „kijelölt képek" hatókörhöz kell — enélkül
     // a dialógus a mappa-hatókörre esne vissza (integrátori bekötés).
     DedupDialog { id: dedupDialog; appWindow: window }
+    // #1473: az arckeresés belépési pontja. A vezérlőt az ablak-szintű
+    // álnéven kapja (#1236) — az ablak maga NEM modális, a keresés alatt a
+    // felhasználó tovább dolgozhat (#449).
+    FaceScanDialog { id: faceScanDialog; faceScan: window._faceScanController }
     // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő
     // gombjából (discoveryController.dialogRequested) vagy induláskori
     // automatikus felajánlásból (integrátori bekötés: picasaImportDialog.openAndDiscover())

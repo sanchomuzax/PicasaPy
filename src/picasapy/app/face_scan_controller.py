@@ -44,6 +44,8 @@ import cv2
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag
+from picasapy.faces import detector as detector_module
+from picasapy.faces import embedder as embedder_module
 from picasapy.faces.detector import FaceDetector
 from picasapy.faces.embedder import FaceEmbedder
 from picasapy.index import (
@@ -160,6 +162,44 @@ class FaceScanController(BackgroundWorkerMixin, QObject):
     def isEmbeddingAvailable(self) -> bool:
         """Igaz, ha a lenyomat-modell (SFace) betöltve."""
         return self._embedder.available
+
+    @Slot(result=str)
+    def unavailableReason(self) -> str:  # noqa: N802 — QML-slot-stílus
+        """Miért NEM indítható az arckeresés — üres sztring, ha indítható.
+
+        #1473: a néma tiltás nálunk visszatérő hibaosztály. A szürke gomb
+        önmagában csak annyit üzen, hogy „nem lehet"; a felhasználónak azt
+        kell megtudnia, MI hiányzik és HOVA kell tennie. A szöveget azért a
+        vezérlő adja, nem a QML: a modell helye XDG-függő felhasználói
+        mappa, amit csak Python-oldalról tudunk kiszámolni."""
+        if self._detector.available:
+            return ""
+        return self._model_missing_text(
+            detector_module.MODEL_FILENAME,
+            detector_module.MODEL_ENV_VAR,
+        )
+
+    @Slot(result=str)
+    def embeddingUnavailableReason(self) -> str:  # noqa: N802 — QML-slot-stílus
+        """Ugyanez a lenyomat-modellre (SFace) — üres, ha megvan."""
+        if self._embedder.available:
+            return ""
+        return self._model_missing_text(
+            embedder_module.MODEL_FILENAME,
+            embedder_module.MODEL_ENV_VAR,
+        )
+
+    def _model_missing_text(self, filename: str, env_var: str) -> str:
+        """A hiányzó modell egyetlen, cselekvésre váltható mondata.
+
+        A két modell UGYANABBA a mappába kerül (`embedder.default_model_path`
+        is a detektor `default_model_dir()`-jét használja), csak a fájlnév
+        és a felülbíráló környezeti változó más."""
+        return self.tr(
+            'The face recognition model file is missing, so this step cannot '
+            'run. Copy the file "{0}" into this folder: {1} — or point the '
+            "{2} environment variable at it — and then restart PicasaPy."
+        ).format(filename, str(detector_module.default_model_dir()), env_var)
 
     @Property(int, notify=scanPercentChanged)
     def scanPercent(self) -> int:  # noqa: N802 — QML-property-stílus
